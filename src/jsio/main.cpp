@@ -25,7 +25,7 @@
 #include "process.h"
 #include "static.h"
 
-bool _unsafeMode = false;
+#include "../common/jslibsModule.cpp"
 
 static PRInt32 instanceCount = 0;
 
@@ -42,14 +42,14 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
+	JL_CHK( InitJslibsModule(cx) );
+
 	if ( instanceCount == 0 && !PR_Initialized() ) {
 		
 		PR_Init(PR_SYSTEM_THREAD, PR_PRIORITY_NORMAL, 0); // NSPR ignores threads of type PR_SYSTEM_THREAD when determining when a call to PR_Cleanup should return.
 		PR_DisableClockInterrupts();
 	}
 	PR_AtomicIncrement(&instanceCount);
-
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 
 	INIT_CLASS( IoError );
 	INIT_CLASS( Descriptor );
@@ -67,11 +67,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	JL_BAD;
 }
 
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
-
-	return JS_FALSE;
-}
-
 EXTERN_C DLLEXPORT void ModuleFree() {
 
 	PR_AtomicDecrement(&instanceCount);
@@ -80,13 +75,3 @@ EXTERN_C DLLEXPORT void ModuleFree() {
 		PRStatus status = PR_Cleanup(); // doc. PR_Cleanup must be called by the primordial thread near the end of the main function. 
 	}
 }
-
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

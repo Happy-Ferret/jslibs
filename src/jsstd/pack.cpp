@@ -12,7 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-
 #include "stdafx.h"
 #include "pack.h"
 

@@ -299,30 +299,6 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 }
 
 
-// Atomic operations
-	// MS doc: http://msdn.microsoft.com/en-us/library/ms686360.aspx
-
-#if defined XP_WIN
-	typedef volatile LONG * JLAtomicPtr;
-#elif defined XP_UNIX
-	typedef volatile long * JLAtomicPtr;
-#endif // XP_UNIX
-
-	ALWAYS_INLINE bool JLAtomicInc( JLAtomicPtr ptr ) {
-
-		//InterlockedIncrement( atomic );
-		// int atomic_inc_and_test(atomic_t * v);
-		// __sync_fetch_and_add
-		return ++*ptr != 0;
-	}
-
-	ALWAYS_INLINE bool JLAtomicDec( JLAtomicPtr ptr ) {
-
-		// int atomic_dec_and_test(atomic_t * v);
-		return --*ptr != 0;
-	}
-
-
 #if defined XP_WIN
 #include <malloc.h> // malloc()
 #elif defined XP_UNIX
@@ -337,7 +313,9 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 #endif
 
 
+///////////////////////////////////////////////////////////////////////////////
 // system errors
+//
 	ALWAYS_INLINE void JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 
 #if defined XP_WIN
@@ -363,17 +341,25 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 #endif
 	}
 
+///////////////////////////////////////////////////////////////////////////////
 
 #define JLERROR (0)
 #define JLOK (1)
 #define JLTIMEOUT (-2)
 
+
+///////////////////////////////////////////////////////////////////////////////
 // atomic operations
+// 
+// MS doc: http://msdn.microsoft.com/en-us/library/ms686360.aspx
+//         http://msdn.microsoft.com/en-us/library/ms683590%28VS.85%29.aspx
+// Linux: http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
+
 	ALWAYS_INLINE int JLAtomicExchange(volatile long *ptr, long val) {
 	#if defined XP_WIN
-		return InterlockedExchange(ptr, val); // http://msdn.microsoft.com/en-us/library/ms683590%28VS.85%29.aspx
+		return InterlockedExchange(ptr, val);
 	#elif defined XP_UNIX // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ...
-		return __sync_lock_test_and_set(ptr, val); // http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
+		return __sync_lock_test_and_set(ptr, val);
 	#endif
 	}
 
@@ -381,20 +367,22 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	#if defined XP_WIN
 		InterlockedIncrement(ptr);
 	#elif defined XP_UNIX // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ...
-		__sync_add_and_fetch(val, 1);
+		__sync_add_and_fetch(ptr, 1);
 	#endif
 	}
 
 	ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	#if defined XP_WIN
-		return InterlockedExchangeAdd(ptr, val) + val; // http://msdn.microsoft.com/en-us/library/ms683590%28VS.85%29.aspx
+		return InterlockedExchangeAdd(ptr, val) + val;
 	#elif defined XP_UNIX // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ...
-		return __sync_add_and_fetch(val, val); // http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
+		return __sync_add_and_fetch(ptr, val);
 	#endif
 	}
 
 /*
+///////////////////////////////////////////////////////////////////////////////
 // condvar
+//
 #if defined XP_WIN
 	typedef struct {
 		HANDLE mutex;
@@ -431,7 +419,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 
 
+///////////////////////////////////////////////////////////////////////////////
 // semaphores
+//
+
 #if defined XP_WIN
 	typedef HANDLE JLSemaphoreHandler;
 #elif defined XP_UNIX
@@ -471,7 +462,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 				return JLOK;
 		}
 	#elif defined XP_UNIX
-		if ( timeout == -1 ) {
+		if ( msTimeout == -1 ) {
 			
 			if ( sem_wait(semaphore) == 0 )
 				return JLOK;
@@ -480,14 +471,14 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 			struct timeval tv;
 			struct timespec abstime;
 			gettimeofday(&tv, NULL);
-			__int64 then = tv.tv_sec * 1000000 + tv.tv_usec + msTimeout * 1000;
+			int64_t then = tv.tv_sec * 1000000 + tv.tv_usec + msTimeout * 1000;
 			abstime.tv_sec = then / 1000000;
 			abstime.tv_nsec = (then % 1000000) * 1000;
 			switch ( sem_timedwait(semaphore, &abstime) ) {
 				case ETIMEDOUT:
-					JLTIMEOUT;
+					return JLTIMEOUT;
 				case 0:
-					JLOK;
+					return JLOK;
 			}
 		}
 	#endif
@@ -525,17 +516,19 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	}
 
 
+///////////////////////////////////////////////////////////////////////////////
 // mutex
-/* notes:
-	A normal mutex cannot be locked repeatedly by the owner.
-	Attempts by a thread to relock an already held mutex,
-	or to lock a mutex that was held by another thread when that thread terminated result in a deadlock condition.
-	PTHREAD_MUTEX_NORMAL
-	A recursive mutex can be locked repeatedly by the owner.
-	The mutex doesn't become unlocked until the owner has called pthread_mutex_unlock() for
-	each successful lock request that it has outstanding on the mutex.
-	PTHREAD_MUTEX_RECURSIVE
-*/
+//
+//notes:
+//  A normal mutex cannot be locked repeatedly by the owner.
+//  Attempts by a thread to relock an already held mutex,
+//  or to lock a mutex that was held by another thread when that thread terminated result in a deadlock condition.
+//  PTHREAD_MUTEX_NORMAL
+//  A recursive mutex can be locked repeatedly by the owner.
+//  The mutex doesn't become unlocked until the owner has called pthread_mutex_unlock() for
+//  each successful lock request that it has outstanding on the mutex.
+//  PTHREAD_MUTEX_RECURSIVE
+
 #if defined XP_WIN
 	typedef HANDLE JLMutexHandler;
 #elif defined XP_UNIX
@@ -602,6 +595,8 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		return JLOK;
 	}
 
+
+///////////////////////////////////////////////////////////////////////////////
 // thread
 //   Linux: https://computing.llnl.gov/tutorials/pthreads/#PthreadsAPI
 
@@ -616,9 +611,9 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		typedef PTHREAD_START_ROUTINE JLThreadRoutine;
 	#elif defined XP_UNIX
 		#define JL_THREAD_PRIORITY_LOWEST 0
-		#define JL_THREAD_PRIORITY_LOW 15
-		#define JL_THREAD_PRIORITY_NORMAL 31
-		#define JL_THREAD_PRIORITY_HIGH 47
+		#define JL_THREAD_PRIORITY_LOW 40
+		#define JL_THREAD_PRIORITY_NORMAL 64
+		#define JL_THREAD_PRIORITY_HIGH 88
 		typedef pthread_t* JLThreadHandler;
 		typedef int JLThreadPriorityType;
 		#define JLThreadFuncDecl void*
@@ -683,14 +678,14 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 			return JLERROR;
 		int max = sched_get_priority_max(policy);
 		int min = sched_get_priority_min(policy);
-		param.sched_priority = min + priority * (max - min) / 128;
+		param.sched_priority = min + (max - min) * priority / 128;
 		if ( pthread_setschedparam(*thread, policy, &param) == 0 )
 			return JLOK;
 	#endif
 		return JLERROR;
 	}
 
-	ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) { //(TBD) how to manage errors ?
+	ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) {  // (TBD) how to manage errors ?
 
 		if ( !JLThreadOk(thread) )
 			return false;
@@ -735,8 +730,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		return JLOK;
 	}
 
-
+///////////////////////////////////////////////////////////////////////////////
 // dynamic libraries
+//
+
 #if defined XP_WIN
 	typedef HMODULE JLLibraryHandler;
 #elif defined XP_UNIX
@@ -748,8 +745,8 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	#if defined XP_WIN
 		return LoadLibrary(filename);
 	#elif defined XP_UNIX
-		dlerror();
-		void* handler = dlopen( filename, RTLD_LAZY ); // RTLD_NOW
+		dlerror(); // Resets the error indicator.
+		void* handler = dlopen(filename, RTLD_NOW); // RTLD_LAZY
 		return handler;
 	#endif
 	}
@@ -789,35 +786,24 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	#if defined XP_WIN
 		return (void*)GetProcAddress(libraryHandler, symbolName);
 	#elif defined XP_UNIX
-		dlerror();
+		dlerror(); // Resets the error indicator.
 		return dlsym(libraryHandler, symbolName);
 	#endif
 	}
 
-	ALWAYS_INLINE bool JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
+	ALWAYS_INLINE int JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
 
 	#if defined XP_WIN
 		if ( FreeLibrary(*libraryHandler) == 0 )
-			return false;
+			return JLERROR;
 	#elif defined XP_UNIX
-		dlerror();
+		dlerror(); // Resets the error indicator.
 		if ( dlclose(*libraryHandler) != 0 )
-			return false;
+			return JLERROR;
 	#endif
 		*libraryHandler = (JLLibraryHandler)0;
-		return true;
+		return JLOK;
 	}
-
-
-/* (TBD) manage error
-#if defined XP_UNIX
-	JL_S_ASSERT( id != 0, "Unable to load the module \"%s\": %s", libFileName, dlerror() );
-#else // XP_UNIX
-	JL_S_ASSERT( id != 0, "Unable to load the module \"%s\": %x", libFileName, GetLastError() );
-#endif // XP_UNIX
-*/
-
-
 
 #endif // _PLATFORM_H_
 

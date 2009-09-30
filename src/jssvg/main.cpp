@@ -14,7 +14,8 @@
 
 #include "stdafx.h"
 
-bool _unsafeMode = false;
+#define NO_DllMain
+#include "../common/jslibsModule.cpp"
 
 DECLARE_CLASS( SVG )
 
@@ -30,7 +31,7 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	rsvg_init();
 	INIT_CLASS( SVG );
@@ -39,22 +40,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	JL_BAD;
 }
 
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
-
-	return JS_FALSE;
-}
-
 EXTERN_C DLLEXPORT void ModuleFree() {
 
 	rsvg_term();
 }
-/*
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN
-*/

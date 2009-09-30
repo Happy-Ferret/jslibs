@@ -13,7 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "../common/jslibsModule.h"
+
+#include "../common/jslibsModule.cpp"
 
 DECLARE_STATIC()
 DECLARE_CLASS( Map )

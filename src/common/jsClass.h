@@ -15,6 +15,8 @@
 #ifndef _JSCLASS_H_
 #define _JSCLASS_H_
 
+#include "../common/jsNames.h"
+
 #include <ctype.h>
 
 #define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.

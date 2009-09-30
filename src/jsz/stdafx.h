@@ -5,13 +5,8 @@
 
 #pragma once
 
-#include "../common/platform.h"
-
-#include <jsapi.h>
-#include <stdlib.h>
-
-#include "../common/jsClass.h"
-
 #include "../common/jsHelper.h"
-#include "../common/jsNames.h"
+#include "../common/jsClass.h"
 #include "../common/jsConfiguration.h"
+
+#include <stdlib.h>

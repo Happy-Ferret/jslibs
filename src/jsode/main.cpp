@@ -24,17 +24,17 @@
 
 DECLARE_CLASS( Vector )
 
-bool _unsafeMode = false;
+#include "../common/jslibsModule.cpp"
 
 bool _odeFinalization = false;
 
 
 #ifdef XP_WIN
-// the following avoid ODE to be linked with User32.lib ( MessageBox* symbol is used in ../ode/src/ode/src/error.cpp )
-#pragma warning( push )
-#pragma warning(disable : 4273)
-int WINAPI MessageBoxA( HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType) { return IDOK; }
-#pragma warning( pop )
+// The following avoid the need for ODE to be linked with User32.lib ( MessageBox* symbol is used in ../ode/src/ode/src/error.cpp )
+	#pragma warning( push )
+	#pragma warning(disable : 4273)
+	int WINAPI MessageBoxA( HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType) { return IDOK; }
+	#pragma warning( pop )
 #endif
 
 
@@ -70,7 +70,7 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	int status = ode::dInitODE2(/*ode::dAllocateFlagCollisionData*/0);
 	JL_S_ASSERT( status != 0, "Unable to initialize ODE." );
@@ -109,31 +109,15 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	JL_BAD;
 }
 
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	
 	_odeFinalization = true;
-
 	return JS_TRUE;
 }
 
 EXTERN_C DLLEXPORT void ModuleFree() {
 
-
-
 	ode::dCloseODE();
 }
 
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN
-
-
-/*
-User guide: http://www.ode.org/ode-latest-userguide.html
-*/
+// User guide: http://www.ode.org/ode-latest-userguide.html

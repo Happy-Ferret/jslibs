@@ -14,17 +14,13 @@
 
 #include "stdafx.h"
 
-
 #include "misc.h"
-
-//#include "rsa.h"
 #include "asymmetricCipher.h"
-
 #include "prng.h"
 #include "hash.h"
 #include "cipher.h"
 
-bool _unsafeMode = false;
+#include "../common/jslibsModule.cpp"
 
 
 /**doc t:header
@@ -41,7 +37,7 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	ltc_mp = ltm_desc; // register math
 
@@ -122,13 +118,3 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

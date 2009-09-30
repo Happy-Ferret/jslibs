@@ -20,7 +20,7 @@
 #include "systray.h"
 #include "console.h"
 
-bool _unsafeMode = false;
+#include "../common/jslibsModule.cpp"
 
 
 /**doc t:header
@@ -34,7 +34,7 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	INIT_CLASS( WinError );
 	INIT_STATIC();
@@ -45,13 +45,3 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

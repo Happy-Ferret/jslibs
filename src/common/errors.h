@@ -16,7 +16,6 @@
 #ifndef _JSERRORS_H_
 #define _JSERRORS_H_
 
-#include "../common/jsNames.h"
 #include "../common/jsConfiguration.h"
 
 typedef enum J_ErrNum {

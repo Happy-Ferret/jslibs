@@ -13,25 +13,15 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include <string.h>
 
-#include <jscntxt.h>
-
-#include <jsprf.h>
-
-#include "../common/jsHelper.h"
-#include "../common/jsNames.h"
-#include "../common/jsConfiguration.h"
-#include "../common/errors.h"
 #include "../common/jslibsModule.h"
-#include "../common/jsClass.h"
 
 #include "host.h"
 
 JSBool jslangInit(JSContext *cx, JSObject *obj);
 
-bool _unsafeMode = false;
 
+//bool _unsafeMode = true;
 
 JSErrorFormatString errorFormatString[J_ErrLimit] = {
 	#define MSG_DEF(name, number, count, exception, format) { format, count, exception },
@@ -425,7 +415,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
 
 	HostPrivate *pv;
-	pv = (HostPrivate*)malloc(sizeof(HostPrivate)); // beware: don't realloc, because WatchDogThreadProc points on it !!!
+	pv = (HostPrivate*)jl_malloc(sizeof(HostPrivate)); // beware: don't realloc, because WatchDogThreadProc points on it !!!
 	JL_S_ASSERT_ALLOC( pv );
 	memset(pv, 0, sizeof(HostPrivate)); // mandatory !
 	SetHostPrivate(cx, pv);
@@ -449,10 +439,12 @@ bad:
 
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
 
+	_unsafeMode = unsafeMode;
+
 	HostPrivate *pv = GetHostPrivate(cx);
 	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 
-		pv = (HostPrivate*)malloc(sizeof(HostPrivate)); // beware: don't realloc, because WatchDogThreadProc points on it !!!
+		pv = (HostPrivate*)jl_malloc(sizeof(HostPrivate)); // beware: don't realloc, because WatchDogThreadProc points on it !!!
 		JL_S_ASSERT_ALLOC( pv );
 		memset(pv, 0, sizeof(HostPrivate)); // mandatory !
 		SetHostPrivate(cx, pv);
@@ -483,7 +475,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 // make GetErrorMessage available from any module
 
 	void **pGetErrorMessage;
-	pGetErrorMessage = (void**)malloc(sizeof(void*)); // free is done in DestroyHost()
+	pGetErrorMessage = (void**)jl_malloc(sizeof(void*)); // free is done in DestroyHost()
 	*pGetErrorMessage = (void*)&GetErrorMessage; // this indirection is needed for alignement purpose. see PRIVATE_TO_JSVAL and C function alignement.
 	JL_CHK( SetConfigurationPrivateValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(pGetErrorMessage)) );
 
@@ -547,7 +539,7 @@ JSBool DestroyHost( JSContext *cx ) {
 	jsval tmp;
 	JL_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, &tmp) );
 	if ( tmp != JSVAL_VOID && JSVAL_TO_PRIVATE(tmp) )
-		free( JSVAL_TO_PRIVATE(tmp) );
+		jl_free( JSVAL_TO_PRIVATE(tmp) );
 
 	JL_CHKM( RemoveConfiguration(cx), "Unable to remove the configuration item." );
 
@@ -582,11 +574,11 @@ JSBool DestroyHost( JSContext *cx ) {
 	while ( !jl::QueueIsEmpty(&pv->registredNativeClasses) )
 		jl::QueueShift(&pv->registredNativeClasses);
 
-	free(pv);
+	jl_free(pv);
 	return JS_TRUE;
 
 bad:
-	free(pv);
+	jl_free(pv);
 	return JS_FALSE;
 }
 
@@ -594,8 +586,8 @@ bad:
 /*
 void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
 
-	free(principals->codebase);
-	free(principals);
+	jl_free(principals->codebase);
+	jl_free(principals);
 }
 */
 
@@ -628,10 +620,10 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 // compile & executes the script
 
 /*
-	JSPrincipals *principals = (JSPrincipals*)malloc(sizeof(JSPrincipals));
+	JSPrincipals *principals = (JSPrincipals*)jl_malloc(sizeof(JSPrincipals));
 	JSPrincipals tmp = {0};
 	*principals = tmp;
-	principals->codebase = (char*)malloc(PATH_MAX);
+	principals->codebase = (char*)jl_malloc(PATH_MAX);
 	strncpy(principals->codebase, scriptFileName, PATH_MAX-1);
 	principals->refcount = 1;
 	principals->destroy = HostPrincipalsDestroy;
@@ -674,14 +666,25 @@ bad:
 #define MAX_LOAD 7
 #define WAIT_HEAD_FILLING 100
 
-static JLThreadHandler memoryFreeThread;
-static JLSemaphoreHandler memoryFreeThreadSem;
-
+// block-to-free chain
 static void *head;
+
+// thread stats
 static volatile long headLength;
 static volatile long load;
 
+// thread handler
+static JLThreadHandler memoryFreeThread;
 
+// thread actions
+enum MemThreadAction {
+	MemThreadExit,
+	MemThreadProcess
+};
+static MemThreadAction threadAction;
+static JLSemaphoreHandler memoryFreeThreadSem;
+
+// alloc functions
 void* HostThreadedMalloc( size_t size ) {
 
 	if ( size < sizeof(void*) )
@@ -709,16 +712,17 @@ void HostThreadedFree( void *ptr ) {
 //	return;
 //	free(ptr); return;
 	if ( load > MAX_LOAD ) { // too many things to free, the thread can not keep pace.
-
+			
 		free(ptr);
 		return;
 	}
 
-	//	*(void**)ptr = (void*)JLAtomicExchange((long*)&head, (long)ptr);
+//	*(void**)ptr = (void*)JLAtomicExchange((long*)&head, (long)ptr);
 	*(void**)ptr = head;
 	head = ptr;
 	JLAtomicIncrement(&headLength);
 }
+
 
 ALWAYS_INLINE void FreeHead() {
 
@@ -747,6 +751,7 @@ ALWAYS_INLINE void FreeHead() {
 	}
 }
 
+// the thread proc
 JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
 	
 	for (;;) {
@@ -757,11 +762,32 @@ JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
 			load++;
 			FreeHead();
 		}
-		if ( JLAcquireSemaphore(memoryFreeThreadSem, WAIT_HEAD_FILLING) != JLTIMEOUT )
-			JLThreadExit();
+
+		if ( JLAcquireSemaphore(memoryFreeThreadSem, WAIT_HEAD_FILLING) == JLOK )
+			switch ( threadAction ) {
+				case MemThreadExit:
+					JLThreadExit();
+				case MemThreadProcess:
+					;
+			}
 	}
 }
 
+// GC callback that triggers the thread
+JSGCCallback prevThreadMemoryManagementGCCallback;
+JSBool ThreadMemoryManagementGCCallback(JSContext *cx, JSGCStatus status) {
+	
+	if ( status == JSGC_END ) {
+
+		threadAction = MemThreadProcess;
+		JLReleaseSemaphore(memoryFreeThreadSem);
+	}
+	if ( !prevThreadMemoryManagementGCCallback )
+		return JS_TRUE;
+	return prevThreadMemoryManagementGCCallback(cx, status);
+}
+
+// initialisation and cleanup functions
 JSBool BeginThreadMemoryManagement( JSContext *cx ) {
 
 	HostPrivate *pv = GetHostPrivate(cx);
@@ -775,12 +801,20 @@ JSBool BeginThreadMemoryManagement( JSContext *cx ) {
 	memoryFreeThread = JLThreadStart(MemoryFreeThreadProc, NULL);
 //	JLThreadPriority(memoryFreeThread, JL_THREAD_PRIORITY_LOW);
 
-	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, HostThreadedFree);
+	jl_malloc = HostThreadedMalloc;
+	jl_calloc = HostThreadedCalloc;
+	jl_realloc = HostThreadedRealloc;
+	jl_free = HostThreadedFree;
 
-	pv->malloc = HostThreadedMalloc;
-	pv->calloc = HostThreadedCalloc;
-	pv->realloc = HostThreadedRealloc;
-	pv->free = HostThreadedFree;
+	pv->malloc = jl_malloc;
+	pv->calloc = jl_calloc;
+	pv->realloc = jl_realloc;
+	pv->free = jl_free;
+
+	prevThreadMemoryManagementGCCallback = JS_SetGCCallback(cx, ThreadMemoryManagementGCCallback);
+
+	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, jl_free); // spidermonkey's allocators already check for size < sizeof(void*), then no need to use jl_malloc, ...
+
 	return JS_TRUE;
 }
 
@@ -790,13 +824,21 @@ JSBool EndThreadMemoryManagement( JSContext *cx, bool freeQueue ) {
 	if ( pv == NULL )
 		return JS_FALSE;
 
-	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, free);
+	JS_SetGCCallback(cx, prevThreadMemoryManagementGCCallback);
 
-	pv->malloc = malloc;
-	pv->calloc = calloc;
-	pv->realloc = realloc;
-	pv->free = free;
+	jl_malloc = malloc;
+	jl_calloc = calloc;
+	jl_realloc = realloc;
+	jl_free = free;
 
+	pv->malloc = jl_malloc;
+	pv->calloc = jl_calloc;
+	pv->realloc = jl_realloc;
+	pv->free = jl_free;
+
+	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, jl_free);
+
+	threadAction = MemThreadExit;
 	JLReleaseSemaphore(memoryFreeThreadSem);
 
 	//	JLThreadCancel(memoryFreeThread); // cannot kill the thread while it is calling free() !
@@ -815,13 +857,14 @@ JSBool EndThreadMemoryManagement( JSContext *cx, bool freeQueue ) {
 	return JS_TRUE;
 }
 
-
+// DisabledFree
 static void DisabledFree( void *ptr ) {
 }
 
 JSBool DisableMemoryFree( JSContext *cx ) {
 
-	GetHostPrivate(cx)->free = DisabledFree;
-	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, DisabledFree);
+	jl_free = DisabledFree;
+	GetHostPrivate(cx)->free = jl_free;
+	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, jl_free);
 	return JS_TRUE;
 }

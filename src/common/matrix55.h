@@ -46,13 +46,13 @@ static Matrix55 Matrix55IdentityValue = {
 
 inline void Matrix55Free( Matrix55 *m ) {
 
-	free(m);
+	jl_free(m);
 }
 
 
 inline Matrix55 *Matrix55Alloc() {
 
-	return (Matrix55*)malloc(sizeof(Matrix55));
+	return (Matrix55*)jl_malloc(sizeof(Matrix55));
 }
 
 

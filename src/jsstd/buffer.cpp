@@ -20,11 +20,8 @@
 //
 
 #include "stdafx.h"
-#include <cstring>
 
-#include "../common/queue.h"
 #include "../jslang/blobPub.h"
-
 
 DECLARE_CLASS( Buffer )
 #include "buffer.h"
@@ -404,7 +401,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, unsigned 
 	pos = 0;
 
 	char *buf, staticBuffer[128];
-	buf = needleLength <= sizeof(staticBuffer) ? staticBuffer : (char*)malloc(needleLength); // the "ring buffer"
+	buf = needleLength <= sizeof(staticBuffer) ? staticBuffer : (char*)jl_malloc(needleLength); // the "ring buffer"
 
 
 	for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
@@ -429,7 +426,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, unsigned 
 	*foundAt = -1;
 end:
 	if ( buf != staticBuffer )
-		free(buf); // free the "ring buffer"
+		jl_free(buf); // free the "ring buffer"
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -678,7 +675,7 @@ DEFINE_FUNCTION_FAST( Match ) {
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &str, &len) ); // warning: GC on the returned buffer !
 
 	char *src;
-	src = (char *)malloc(len);
+	src = (char *)jl_malloc(len);
 	unsigned int amount;
 	amount = len;
 	JSBool st;
@@ -701,7 +698,7 @@ DEFINE_FUNCTION_FAST( Match ) {
 		JL_CHK( UnReadRawDataChunk(cx, JL_FOBJ, src, amount) );
 
 err:
-	free(src);
+	jl_free(src);
 	return JS_TRUE;
 	JL_BAD;
 }

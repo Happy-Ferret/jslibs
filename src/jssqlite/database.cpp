@@ -32,7 +32,7 @@
 
 DbContext* AddDbContext(sqlite3 *db) {
 
-	DbContext *pv = (DbContext*)malloc(sizeof(DbContext));
+	DbContext *pv = (DbContext*)jl_malloc(sizeof(DbContext));
 	pv->db = db;
 	QueueUnshift(dbContextList, pv);
 	return pv;
@@ -51,7 +51,7 @@ void RemoveDbContext(sqlite3 *db) {
 	for ( jl::QueueCell *it = jl::QueueBegin(dbContextList); it; it = jl::QueueNext(it) )
 		if ( ((DbContext*)QueueGetData(it))->db == db ) {
 
-			free(QueueGetData(it));
+			jl_free(QueueGetData(it));
 			QueueRemoveCell(dbContextList, it);
 			return;
 		}

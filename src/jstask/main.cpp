@@ -14,32 +14,16 @@
 
 #include "stdafx.h"
 
-DECLARE_CLASS( Task )
+#include "../common/jslibsModule.cpp"
 
+DECLARE_CLASS( Task )
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	INIT_CLASS( Task );
 
 	return JS_TRUE;
 	JL_BAD;
 }
-
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
-
-	return JS_FALSE;
-}
-
-EXTERN_C DLLEXPORT void ModuleFree() {
-}
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

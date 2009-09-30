@@ -271,9 +271,9 @@ DEFINE_CONSTRUCTOR() {
 bad:
 	if ( pv ) {
 		
-		free(pv);
+		jl_free(pv);
 		if ( pv->symmetric_XXX )
-			free(pv->symmetric_XXX);
+			jl_free(pv->symmetric_XXX);
 	}
 	return JS_FALSE;
 }

@@ -60,7 +60,7 @@ inline void Vector3Free( Vector3 *m ) {
 #ifdef SSE
 	return _aligned_free(m);
 #else // SSE
-	return free(m);
+	return jl_free(m);
 #endif // SSE
 
 }
@@ -71,7 +71,7 @@ inline Vector3 *Vector3Alloc() {
 #ifdef SSE
 	return (Vector3*)_aligned_malloc(sizeof(Vector3),16);
 #else // SSE
-	return (Vector3*)malloc(sizeof(Vector3));
+	return (Vector3*)jl_malloc(sizeof(Vector3));
 #endif // SSE
 
 }

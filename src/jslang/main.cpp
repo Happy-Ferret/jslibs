@@ -13,7 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "../common/jslibsModule.h"
 
 DECLARE_CLASS( Handle )
 DECLARE_CLASS( Blob )

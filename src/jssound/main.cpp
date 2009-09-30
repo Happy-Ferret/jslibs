@@ -17,8 +17,7 @@
 #include "static.h"
 //#include "sound.h"
 
-bool _unsafeMode = false;
-
+#include "../common/jslibsModule.cpp"
 
 /**doc t:header
 $MODULE_HEADER
@@ -37,7 +36,7 @@ DECLARE_CLASS(OggVorbisDecoder)
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	JL_CHK( INIT_STATIC() );
 //	INIT_CLASS( Sound );
@@ -48,20 +47,3 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
-
-	return JS_FALSE;
-}
-
-EXTERN_C DLLEXPORT void ModuleFree() {
-}
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

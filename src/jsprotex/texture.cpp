@@ -317,7 +317,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, unsigned int length, fl
 		JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(value), &curveArrayLength) );
 		JL_S_ASSERT( curveArrayLength < 1, "Invalid array size." );
 		PTYPE *curveArray;
-		curveArray = (PTYPE*)malloc(curveArrayLength * sizeof(PTYPE)); // (TBD) free the curveArray ???
+		curveArray = (PTYPE*)jl_malloc(curveArrayLength * sizeof(PTYPE)); // (TBD) free the curveArray ???
 		uint32 tmp;
 		JL_CHK( JsvalToFloatVector(cx, value, curveArray, curveArrayLength, &tmp) );
 		for ( i = 0; i < length; ++i )
@@ -817,7 +817,7 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 	if ( argc >= 2 ) {
 
 		useCurve = true;
-		curve = (float*)malloc( count * sizeof(float) ); // (TBD) free curve ???
+		curve = (float*)jl_malloc( count * sizeof(float) ); // (TBD) free curve ???
 		JL_CHK( InitCurveData( cx, JL_FARG(2), count, curve ) );
 	} else
 		useCurve = false;
@@ -2147,7 +2147,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	// JL_CHK( ArrayLength(cx, &count, JL_FARG(1)) );
 	JL_CHK( JS_GetArrayLength( cx, JSVAL_TO_OBJECT(JL_FARG(1)), &count ) );
 	float *kernel;
-	kernel = (float*)malloc(sizeof(float) * count);
+	kernel = (float*)jl_malloc(sizeof(float) * count);
 	JL_S_ASSERT_ALLOC( kernel );
 	//JL_CHK( FloatArrayToVector(cx, count, &JL_FARG(1), kernel) );
 	uint32 length;
@@ -2250,7 +2250,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 				tex->cbackBuffer[pos+c] = pixel[c];
 		}
 
-	free(kernel);
+	jl_free(kernel);
 	TextureSwapBuffers(tex);
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
@@ -2524,7 +2524,7 @@ DEFINE_FUNCTION_FAST( BoxBlur ) {
 		}
 	}
 
-//	free( line );
+//	jl_free( line );
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;
@@ -3457,7 +3457,7 @@ DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 	int count;
 	count = density * density;
 	Point *cellPoints;
-	cellPoints = (Point*)malloc(sizeof(Point)*count);
+	cellPoints = (Point*)jl_malloc(sizeof(Point)*count);
 
 	for ( int i = 0; i < count; i++ ) {
 
@@ -3519,7 +3519,7 @@ DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 		}
 	}
 
-	free(cellPoints);
+	jl_free(cellPoints);
 
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
@@ -3620,9 +3620,9 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 	channels = tex->channels;
 
 	float *curvex, *curvey;
-	curvex = (float*)malloc( width * sizeof(float) ); // (TBD) free curvex
+	curvex = (float*)jl_malloc( width * sizeof(float) ); // (TBD) free curvex
 	JL_CHK( InitCurveData( cx, JL_FARG(1), width, curvex ) );
-	curvey = (float*)malloc( height * sizeof(float) ); // (TBD) free curvey
+	curvey = (float*)jl_malloc( height * sizeof(float) ); // (TBD) free curvey
 	JL_CHK( InitCurveData( cx, JL_FARG(2), height, curvey ) );
 
 	unsigned int x, y, c, pos;
@@ -3636,8 +3636,8 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 
-	free(curvex);
-	free(curvey);
+	jl_free(curvex);
+	jl_free(curvey);
 	return JS_TRUE;
 
 bad:
@@ -3688,7 +3688,7 @@ DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 		radius = MAX( width, height ) / 2.0;
 
 	float *curve;
-	curve = (float*)malloc( (int)radius * sizeof(float) ); // (TBD) free curve
+	curve = (float*)jl_malloc( (int)radius * sizeof(float) ); // (TBD) free curve
 	JL_CHK( InitCurveData(cx, JL_FARG(1), (int)radius, curve) );
 
 	float aspectRatio;
@@ -3750,7 +3750,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 	BorderMode borderMode = borderWrap;
 
-	float *curve = (float*)malloc( radius * sizeof(float) ); // JS_malloc(cx,
+	float *curve = (float*)jl_malloc( radius * sizeof(float) ); // JS_malloc(cx,
 	InitCurveData( cx, JL_FARG(4), radius, curve );
 
 	// draw
@@ -3856,7 +3856,7 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 
 
 	float *curve;
-	curve = (float*)malloc( crackMaxLength * sizeof(float) );
+	curve = (float*)jl_malloc( crackMaxLength * sizeof(float) );
 	if ( JL_FARG_ISDEF(5) ) {
 
 		JL_CHK( InitCurveData( cx, JL_FARG(5), crackMaxLength, curve ) );
@@ -3900,7 +3900,7 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 			a = a + variation*(2 * genrand_real1() - 1);
 		}
 	}
-	free(curve);
+	jl_free(curve);
 	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
 	return JS_TRUE;
 	JL_BAD;

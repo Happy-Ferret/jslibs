@@ -252,7 +252,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT( hWnd != NULL, "Unable to CreateWindow." );
 	JL_SetPrivate(cx, obj, hWnd);
 
-	CxObj *cxobj = (CxObj*)malloc(sizeof(CxObj));
+	CxObj *cxobj = (CxObj*)jl_malloc(sizeof(CxObj));
 	cxobj->cx = cx;
 	cxobj->obj = obj;
 
@@ -337,7 +337,7 @@ DEFINE_FUNCTION( Close ) {
 	CxObj *cxobj = (CxObj*)GetWindowLong(hWnd, GWL_USERDATA);
 	DestroyWindow(hWnd);
 //	LONG status = SetWindowLong(hWnd, GWL_USERDATA, (LONG)NULL );  // If the function fails, the return value is zero.
-	free(cxobj);
+	jl_free(cxobj);
 	UnregisterClass(WINDOW_CLASS_NAME, GetModuleHandle(NULL));
 
 
@@ -378,7 +378,7 @@ DEFINE_FUNCTION( CreateOpenGLBitmap ) {
 	pfd.cDepthBits = 16 ;
 	pfd.iLayerType = PFD_MAIN_PLANE ; 
 
-//	char *mem = (char*)malloc( 100 * 100 * 3 * 3 );
+//	char *mem = (char*)jl_malloc( 100 * 100 * 3 * 3 );
 //	HBITMAP bitmap = CreateBitmap(100, 100, 3, 32, mem );
 
 	CreateDC( NULL, NULL, NULL, NULL );

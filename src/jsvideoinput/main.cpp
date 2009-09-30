@@ -14,11 +14,12 @@
 
 #include "stdafx.h"
 
+#include "../common/jslibsModule.cpp"
+
 #include "static.h"
 
 #include <videoinput.h>
 
-bool _unsafeMode = false;
 
 videoInput *vi = NULL;
 
@@ -26,7 +27,7 @@ DECLARE_CLASS( VideoInput )
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	JL_S_ASSERT(vi == NULL, "Invalid case: videoInput already initialized'");
 	videoInput::setVerbose(false);
@@ -40,22 +41,9 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	JL_BAD;
 }
 
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
-
-	return JS_FALSE;
-}
 
 EXTERN_C DLLEXPORT void ModuleFree() {
 
 	delete vi;
 
 }
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

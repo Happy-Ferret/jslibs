@@ -63,7 +63,7 @@ DEFINE_FUNCTION( ExtractIcon ) {
 		return JS_TRUE;
 	}
 	JSObject *icon = JS_NewObject(cx, classIcon, NULL, NULL);
-	HICON *phIcon = (HICON*)malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
+	HICON *phIcon = (HICON*)jl_malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
 	JL_S_ASSERT_ALLOC( phIcon );
 	*phIcon = hIcon;
 	JL_SetPrivate(cx, icon, phIcon);

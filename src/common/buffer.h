@@ -16,6 +16,7 @@
 #ifndef _BUFFER_H_
 #define _BUFFER_H_
 
+#include "../common/jlalloc.h"
 
 #define BUFFER_INIT_CHUNK_SIZE 8192
 #define BUFFER_INIT_CHUNK_LIST_SIZE 16
@@ -134,17 +135,17 @@ inline void BufferSetAllocators( Buffer *buffer, void* opaqueAllocatorContext, B
 
 inline void* _BufferAlloc( Buffer *buf, size_t size ) {
 
-	return buf->bufferAlloc ? buf->bufferAlloc(buf->opaqueAllocatorContext, size) : malloc(size);
+	return buf->bufferAlloc ? buf->bufferAlloc(buf->opaqueAllocatorContext, size) : jl_malloc(size);
 }
 
 inline void _BufferFree( Buffer *buf, void* memory ) {
 
-	return buf->bufferFree ? buf->bufferFree(buf->opaqueAllocatorContext, memory) : free(memory);
+	return buf->bufferFree ? buf->bufferFree(buf->opaqueAllocatorContext, memory) : jl_free(memory);
 }
 
 inline void* _BufferRealloc( Buffer *buf, void* memory, size_t size ) {
 
-	return buf->bufferRealloc ? buf->bufferRealloc(buf->opaqueAllocatorContext, memory, size) : realloc(memory, size);
+	return buf->bufferRealloc ? buf->bufferRealloc(buf->opaqueAllocatorContext, memory, size) : jl_realloc(memory, size);
 }
 
 
@@ -306,7 +307,7 @@ inline void BufferFinalize( Buffer *buffer ) {
 
 DEFINE_FUNCTION_FAST( Test ) {
 
-	char *ref = (char*)malloc(2000000);
+	char *ref = (char*)jl_malloc(2000000);
 	for ( int i = 0; i < 2000000; i++ )
 		ref[i] = rand() & 0xff; // 0->255
 	int refPos = 0;
@@ -326,7 +327,7 @@ DEFINE_FUNCTION_FAST( Test ) {
 
 	int l = BufferGetLength(&b);
 
-	char *tmp = (char*)malloc(l);
+	char *tmp = (char*)jl_malloc(l);
 	BufferCopyData(&b, tmp, l);
 
 	const char *d = BufferGetData(&b);

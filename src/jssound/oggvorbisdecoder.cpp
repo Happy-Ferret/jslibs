@@ -240,7 +240,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 		if ( frames > 0 ) {
 
 			size_t amount = frames * pv->ofInfo->channels * pv->bits/8; // amount in bytes
-			buf = (char*)malloc(amount);
+			buf = (char*)jl_malloc(amount);
 			JL_S_ASSERT_ALLOC(buf);
 
 	//		sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
@@ -279,7 +279,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 	*/
 
 			if ( JL_MaybeRealloc(amount, totalSize) )
-				buf = (char*)realloc(buf, totalSize);
+				buf = (char*)jl_realloc(buf, totalSize);
 		}
 
 	} else {
@@ -339,7 +339,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 			int size = *(int*)buffer;
 			buf = buf - size;
 			memcpy( buf, buffer+sizeof(int), size );
-			free(buffer);
+			jl_free(buffer);
 		}
 	}
 	pv->cx = NULL; // see definition

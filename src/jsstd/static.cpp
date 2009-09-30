@@ -14,15 +14,9 @@
 
 #include "stdafx.h"
 
-#include <string.h>
-
-#include "../common/jsNames.h"
-
 #include "jsxdrapi.h"
 #include "jscntxt.h"
 #include <jsdbgapi.h>
-
-#include "../common/buffer.h"
 
 DECLARE_CLASS( OperationLimit )
 DECLARE_CLASS( Sandbox )
@@ -1205,7 +1199,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	JSBool ok;
 	ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, filename, lineno, JL_FRVAL);
 
-	JLAcquireSemaphore(pv.sem); // prevent thread destruction before it has started
+	JLAcquireSemaphore(pv.sem, -1); // prevent thread destruction before it has started
 	JLFreeSemaphore(&pv.sem);
 	JL_CHK( JLThreadCancel(sandboxWatchDogThread) );
 	JL_CHK( JLWaitThread(sandboxWatchDogThread) );

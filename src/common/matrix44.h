@@ -100,7 +100,7 @@ inline void Matrix44Free( Matrix44 *m ) {
 #ifdef SSE
 	_aligned_free(m);
 #else // SSE
-	free(m);
+	jl_free(m);
 #endif // SSE
 
 }
@@ -113,7 +113,7 @@ inline Matrix44 *Matrix44Alloc() {
 	//      For example, if you use malloc(7), alignment is 4 bytes.
 	return (Matrix44*)_aligned_malloc(sizeof(Matrix44), __alignof(Matrix44));
 #else // SSE
-	return (Matrix44*)malloc(sizeof(Matrix44));
+	return (Matrix44*)jl_malloc(sizeof(Matrix44));
 #endif // SSE
 }
 

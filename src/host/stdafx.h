@@ -14,7 +14,12 @@
 
 #pragma once
 
-#include "../common/platform.h"
+#include "../common/jsHelper.h"
 
-#include <jsapi.h>
+#include <jsprf.h>
 
+#include "../common/jsConfiguration.h"
+#include "../common/jsClass.h"
+#include "../common/errors.h"
+
+#include <string.h>

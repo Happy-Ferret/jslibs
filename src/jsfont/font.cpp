@@ -278,7 +278,7 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	Glyph glyphs_static[32]; // memory optimization only
 	Glyph *glyphs;
 	if ( strlen > sizeof(glyphs_static)/sizeof(*glyphs_static) )
-		glyphs = (Glyph*)malloc(sizeof(Glyph) * strlen);
+		glyphs = (Glyph*)jl_malloc(sizeof(Glyph) * strlen);
 	else
 		glyphs = glyphs_static;
 
@@ -391,7 +391,7 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	}
 
 	if ( glyphs != glyphs_static ) // memory optimization only
-		free(glyphs);
+		jl_free(glyphs);
 	return JS_TRUE;
 	JL_BAD;
 }

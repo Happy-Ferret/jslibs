@@ -19,13 +19,12 @@
 #include <fcntl.h>
 #ifdef XP_WIN
 	#include <io.h>
-#endif
+#endif // XP_WIN
 
 #ifdef XP_UNIX
 	#include <unistd.h>
 	#include <dlfcn.h>
-#endif //XP_UNIX
-
+#endif // XP_UNIX
 
 //#include <stdio.h>
 #include <stdlib.h>
@@ -34,20 +33,9 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-// #include <limits.h> // included by ../common/platform.h
 #include <signal.h>
-
-#include <jsapi.h>
 
 #include "../common/jsHelper.h"
 #include "../common/jsConfiguration.h"
 
 #include "../host/host.h"
-#include "../common/jsNames.h"
-
-/*
-#include "jsstddef.h"
-#include "jsprf.h"
-#include "jsscript.h"
-#include "jscntxt.h"
-*/

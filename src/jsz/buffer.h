@@ -53,7 +53,7 @@ public:
 
 		for ( int i=0; i<=_currentIndex; i++ )
 			if ( _queue[i].mem != _staticMem )
-				free(_queue[i].mem);
+				jl_free(_queue[i].mem);
 	}
 
 	Buffer() {
@@ -63,7 +63,7 @@ public:
 		_hasStaticMem = true;
 
 		_queueLength = INITIAL_QUEUE_LENGTH;
-		_queue = (BufferChunk*)malloc( _queueLength * sizeof(BufferChunk) );
+		_queue = (BufferChunk*)jl_malloc( _queueLength * sizeof(BufferChunk) );
 		_currentIndex = 0;
 
 		_queue[0].mem = NULL;
@@ -127,7 +127,7 @@ public:
 			if ( _currentIndex >= _queueLength ) {
 
 				_queueLength *= 2;
-				_queue = (BufferChunk*)realloc( _queue, _queueLength * sizeof(BufferChunk) );
+				_queue = (BufferChunk*)jl_realloc( _queue, _queueLength * sizeof(BufferChunk) );
 			}
 
 			if ( _hasStaticMem && length <= sizeof(_staticMem) ) {
@@ -138,7 +138,7 @@ public:
 			} else {
 
 				_queue[_currentIndex].avail = length;
-				_queue[_currentIndex].mem = _queue[_currentIndex].data = (unsigned char*)malloc(length);
+				_queue[_currentIndex].mem = _queue[_currentIndex].data = (unsigned char*)jl_malloc(length);
 			}
 		}
 

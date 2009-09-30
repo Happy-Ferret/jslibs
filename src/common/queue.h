@@ -15,7 +15,7 @@
 #ifndef _QUEUE_H_
 #define _QUEUE_H_
 
-#include <stdlib.h>
+#include "../common/jlalloc.h"
 
 namespace jl {
 
@@ -36,7 +36,7 @@ inline void QueueInitialize( Queue *queue ) {
 
 inline Queue *QueueConstruct() {
 
-	Queue *queue = (Queue*)malloc(sizeof(Queue));
+	Queue *queue = (Queue*)jl_malloc(sizeof(Queue));
 	QueueInitialize(queue);
 	return queue;
 }
@@ -47,10 +47,10 @@ inline void QueueDestruct( Queue *queue ) {
 	while ( it != NULL ) {
 
 		QueueCell *next = it->next;
-		free(it);
+		jl_free(it);
 		it = next;
 	}
-	free(queue);
+	jl_free(queue);
 }
 
 inline bool QueueIsEmpty( Queue *queue ) {
@@ -66,7 +66,7 @@ inline void QueueSetData( QueueCell *cell, void *data ) {
 
 inline void QueuePush( Queue *queue, void *data ) {
 
-	QueueCell *cell = (QueueCell*)malloc(sizeof(QueueCell));
+	QueueCell *cell = (QueueCell*)jl_malloc(sizeof(QueueCell));
 	cell->data = data;
 	if ( QueueIsEmpty(queue) ) {
 
@@ -96,13 +96,13 @@ inline void *QueuePop( Queue *queue ) {
 		queue->end->next = NULL;
 	}
 	void *data = cell->data;
-	free(cell);
+	jl_free(cell);
 	return data;
 }
 
 inline void QueueUnshift( Queue *queue, void *data ) {
 
-	QueueCell *cell = (QueueCell*)malloc(sizeof(QueueCell));
+	QueueCell *cell = (QueueCell*)jl_malloc(sizeof(QueueCell));
 	cell->data = data;
 	if ( QueueIsEmpty(queue) ) {
 
@@ -132,7 +132,7 @@ inline void *QueueShift( Queue *queue ) {
 		queue->begin->prev = NULL;
 	}
 	void *data = cell->data;
-	free(cell);
+	jl_free(cell);
 	return data;
 }
 
@@ -166,7 +166,7 @@ inline void *QueueRemoveCell( Queue *queue, QueueCell *cell ) {
 	cell->prev->next = cell->next;
 	cell->next->prev = cell->prev;
 	void *data = cell->data;
-	free(cell);
+	jl_free(cell);
 	return data;
 }
 
@@ -174,7 +174,7 @@ inline void QueueInsertCell( Queue *queue, QueueCell *nextCell, void *data ) {
 
 	if ( nextCell == queue->begin )
 		return QueueUnshift(queue, data);
-	QueueCell *newCell = (QueueCell*)malloc(sizeof(QueueCell));
+	QueueCell *newCell = (QueueCell*)jl_malloc(sizeof(QueueCell));
 	newCell->data = data;
 	newCell->next = nextCell;
 	newCell->prev = nextCell->prev;
@@ -187,7 +187,7 @@ inline void QueueInsertCellAfter( Queue *queue, QueueCell *prevCell, void *data 
 
 	if ( prevCell == queue->end )
 		return QueuePush(queue, data);
-	QueueCell *newCell = (QueueCell*)malloc(sizeof(QueueCell));
+	QueueCell *newCell = (QueueCell*)jl_malloc(sizeof(QueueCell));
 	newCell->data = data;
 	newCell->prev = prevCell;
 	newCell->next = prevCell->next;

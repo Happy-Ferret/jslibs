@@ -185,7 +185,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
 		case WM_COMMAND: {
-			MSGInfo *msg = (MSGInfo*)malloc(sizeof(MSGInfo)); // (TBD) free msg ?
+			MSGInfo *msg = (MSGInfo*)jl_malloc(sizeof(MSGInfo)); // (TBD) free msg ?
 			// BOOL swapButtons = GetSystemMetrics(SM_SWAPBUTTON); // (TBD) use it
 
 			msg->lButton = GetAsyncKeyState(VK_LBUTTON) > 0; // (TBD) check !!
@@ -397,7 +397,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 			int mButton = trayWndMsg->lButton ? 1 : trayWndMsg->rButton ? 2 : 0;
 			int mouseX = trayWndMsg->mouseX;
 			int mouseY = trayWndMsg->mouseY;
-			free(trayWndMsg); // (TBD) check this
+			jl_free(trayWndMsg); // (TBD) check this
 			jsval functionVal;
 
 			switch ( message ) {

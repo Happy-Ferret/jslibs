@@ -28,6 +28,10 @@ DECLARE_CLASS( MidiEvent );
 DECLARE_CLASS( AudioMaster );
 DECLARE_CLASS( VSTPlugin );
 
+
+#include "../common/jslibsModule.cpp"
+
+
 class JsVst : public AudioEffectX, private JSApiHelper {
 private:
 
@@ -1352,19 +1356,6 @@ VST_EXPORT AEffect* main_plugin (audioMasterCallback audioMaster) { return VSTPl
 } // extern "C"
 
 //------------------------------------------------------------------------
-#if WIN32
-#include <windows.h>
-
-void* hInstance;
-
-extern "C" {
-BOOL WINAPI DllMain (HINSTANCE hInst, DWORD dwReason, LPVOID lpvReserved)
-{
-	hInstance = hInst;
-	return 1;
-}
-} // extern "C"
-#endif
 
 
 

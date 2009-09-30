@@ -380,7 +380,7 @@ void *_libObject = NULL; // TODO: explain why we must do this
 // very simple stack functions
 void StackPush( void **stack, void *ptr ) {
 
-  void **newItem = (void**)malloc( sizeof( void* ) * 2 ); // create a new item for the list ( pointer, pointer )
+  void **newItem = (void**)jl_malloc( sizeof( void* ) * 2 ); // create a new item for the list ( pointer, pointer )
   newItem[0] = *stack; // chain the list
   newItem[1] = ptr; // store the address of the new allocated memory
   *stack = newItem; // store the new start of the list in *list
@@ -392,7 +392,7 @@ void* StackPop( void **stack ) {
   item = (void**)*stack;
   ptr = item[1];
   *stack = item[0];
-  free( item );
+  jl_free( item );
   return ptr;
 }
 
@@ -404,7 +404,7 @@ void StackRemove( void **stack, void *ptr ) {
 
       void* item = *stack;
       *stack = **(void***)stack;
-      free( item );
+      jl_free( item );
       return;
     }
     stack = (void**)*stack;
@@ -459,7 +459,7 @@ void ** pptr = (void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT(val) );
 
   size_t size = type->size * ( argc >= 1 ? JSVAL_TO_INT( argv[0] ) : 1 ); // argv[0]: number of elements in the array
 
-  *pptr = malloc(size);
+  *pptr = jl_malloc(size);
 
   jsval rootObj;
   JS_GetReservedSlot( cx, JSVAL_TO_OBJECT(val), 0, &rootObj ); // get the slot[0] of the slot[1] object (NativeData)
@@ -485,7 +485,7 @@ JS_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
   void** ppList = &((void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT( rootObj ) ))[1]; // get the pointer to the list
   void *ptr = *(void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT(val) );
   StackRemove( ppList, ptr ); // remove the ptr from the stack to avoid it to be freed on Finalize
-  free(ptr);
+  jl_free(ptr);
   return JS_TRUE;
 }
 
@@ -799,8 +799,8 @@ void NativeData_Finalize(JSContext *cx, JSObject *obj) {
 
     // free all the memory allocated by the underlying objects
     while ( *ppList )
-      free( StackPop( ppList ) );
-    free( pv );
+      jl_free( StackPop( ppList ) );
+    jl_free( pv );
   }
 }
 
@@ -813,7 +813,7 @@ JSBool NativeData_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 
   JS_SetReservedSlot( cx, obj, 0, OBJECT_TO_JSVAL(obj) ); // the slot[0] points to this root object. We use this because all the memory allocations are stored in this object ( (*JL_GetPrivate)[1] )
 
-  void** ppPrivate = (void**)malloc( sizeof(void*) * 2 ); // freed in NativeData_Finalize
+  void** ppPrivate = (void**)jl_malloc( sizeof(void*) * 2 ); // freed in NativeData_Finalize
   ppPrivate[0] = NULL; // pointer to the start of the native data structure
   ppPrivate[1] = NULL; // chained-list of pointer to free
   JL_SetPrivate( cx, obj, ppPrivate );
@@ -881,8 +881,8 @@ JSBool NativeData_setter_String(JSContext *cx, JSObject *obj, jsval id, jsval *v
   char* str = JS_GetStringBytes( JSVAL_TO_STRING( *vp ) ); // this string is terminated with \0 or not? ( only thrust len )
 
   void** pptr = (void**)JL_GetPrivate( cx, obj );
-  char** sptr = (char**)malloc( sizeof(char*) );
-  *sptr = (char*)malloc( len+1 ); // len+1 because we will add a '\0' at the end ( don't thrust JS_GetStringBytes about '\0' )
+  char** sptr = (char**)jl_malloc( sizeof(char*) );
+  *sptr = (char*)jl_malloc( len+1 ); // len+1 because we will add a '\0' at the end ( don't thrust JS_GetStringBytes about '\0' )
   memcpy( *sptr, str, len );
   *((*sptr)+len) = '\0';
   *pptr = sptr;
@@ -1065,7 +1065,7 @@ JSBool NativeModule_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 
   if ( argc <= 1 || JSVAL_TO_BOOLEAN( argv[1] ) != JS_TRUE ) { // if automatic mode
 
-    void *rt = malloc( sizeof(void*) );
+    void *rt = jl_malloc( sizeof(void*) );
     *(void**)rt = obj;
     JS_AddRoot( cx, rt );
     StackPush( &_libObject, rt );
@@ -1218,7 +1218,7 @@ void Release_JSNI( JSContext *cx ) {
     }
 
     JS_RemoveRoot( cx, rt );
-    free( rt );
+    jl_free( rt );
   }
 }
 

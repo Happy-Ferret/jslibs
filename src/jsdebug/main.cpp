@@ -14,10 +14,11 @@
 
 #include "stdafx.h"
 
+#include "../common/jslibsModule.cpp"
+
 DECLARE_STATIC()
 DECLARE_CLASS( Debugger )
 
-bool _unsafeMode = false;
 jl::Queue *scriptFileList = NULL;
 JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc );
 
@@ -186,7 +187,7 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **sc
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	scriptFileList = jl::QueueConstruct();
 
@@ -230,14 +231,3 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	return JS_FALSE;
 }
 
-EXTERN_C DLLEXPORT void ModuleFree() {
-}
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

@@ -5,17 +5,9 @@
 
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-
-#include "../common/platform.h"
-
-#include <jsapi.h>
-#include "../common/jsNames.h"
-
 #include "../common/jsHelper.h"
 #include "../common/jsClass.h"
 #include "../common/jsConfiguration.h"
-
 
 #include <rsvg.h>
 #include <rsvg-cairo.h>

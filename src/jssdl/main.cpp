@@ -18,7 +18,7 @@
 #include "error.h"
 #include "sdl.h"
 
-bool _unsafeMode = false;
+#include "../common/jslibsModule.cpp"
 
 DECLARE_CLASS( Cursor )
 
@@ -36,10 +36,9 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	INIT_CLASS( SdlError );
 
@@ -58,21 +57,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	JL_BAD;
 }
 
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
-
-	return JS_FALSE;
-}
-
 EXTERN_C DLLEXPORT void ModuleFree() {
 
 	SDL_Quit();
 }
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

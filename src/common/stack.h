@@ -15,7 +15,8 @@
 #ifndef _STACK_H_
 #define _STACK_H_
 
-#include <stdlib.h>
+#include "../common/jlalloc.h"
+
 // very simple stack functions
 
 /* internal
@@ -106,7 +107,7 @@ inline bool StackHas( void * const * stack, const void *data ) {
 
 inline void StackPush( void **stack, void *data ) {
 
-  void **newItem = (void**)malloc( sizeof( void* ) * 2 ); // create a new item for the list ( pointer, pointer )
+  void **newItem = (void**)jl_malloc( sizeof( void* ) * 2 ); // create a new item for the list ( pointer, pointer )
   newItem[0] = *stack; // chain the list
   newItem[1] = data; // store the address of the new allocated memory
   *stack = newItem; // store the new start of the list in *list
@@ -118,7 +119,7 @@ inline void* StackPop( void **stack ) {
   void *data, **item = (void**)*stack;
   *stack = item[0]; // keep the chain
   data = item[1];
-  free( item );
+  jl_free( item );
   return data;
 }
 
@@ -159,7 +160,7 @@ inline bool StackRemove( void **stack, void *data ) {
 
 			void *tmp = *stack;
 			*stack = StackPrev(stack);
-			free(tmp);
+			jl_free(tmp);
 			return true;
 		}
 	return false;
@@ -169,7 +170,7 @@ inline bool StackRemove( void **stack, void *data ) {
 inline void StackFreeContent( void **stack ) {
 
 	while ( *stack )
-      free( StackPop( stack ) );
+      jl_free( StackPop( stack ) );
 }
 
 

@@ -14,11 +14,7 @@
 
 #include "stdafx.h"
 
-
 #include <jsxdrapi.h>
-
-//#include "../common/jsNativeInterface.h"
-#include "../common/queue.h"
 
 
 /**doc

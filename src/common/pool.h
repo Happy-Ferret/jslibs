@@ -15,7 +15,7 @@
 #ifndef _JL_POOL_H_
 #define _JL_POOL_H_
 
-#include <stdlib.h>
+#include "../common/jlalloc.h"
 
 namespace jl {
 
@@ -31,12 +31,12 @@ typedef struct Pool {
 inline void PoolInitialize( Pool *pool, size_t maxLength ) {
 	
 	pool->listLength = 4096 / sizeof(void*); // alloc 1 page
-	pool->list = (void**)malloc(pool->listLength * sizeof(void*));
+	pool->list = (void**)jl_malloc(pool->listLength * sizeof(void*));
 }
 
 inline void PoolFinalize( Pool *pool ) {
 	
-	free(pool->list);
+	jl_free(pool->list);
 }
 
 inline bool PoolIsEmpty( Pool *pool ) {
@@ -56,7 +56,7 @@ inline bool PoolPush( Pool *pool, void *item ) {
 		if ( pool->listLength >= pool->maxLength )
 			return false;
 		pool->listLength *= 2;
-		pool->list = (void**)realloc(pool->list, pool->listLength);
+		pool->list = (void**)jl_realloc(pool->list, pool->listLength);
 	}
 	pool->list[pool->length++] = item;
 	return true;

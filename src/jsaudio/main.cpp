@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include "error.h"
 
-bool _unsafeMode = false;
+#include "../common/jslibsModule.cpp"
 
 DECLARE_CLASS(Oal)
 DECLARE_CLASS(OalBuffer)
@@ -46,7 +46,7 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 /*
 	//JL_S_ASSERT( context == NULL, "Invalid initialization context." );
@@ -116,18 +116,3 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
-
-EXTERN_C DLLEXPORT void ModuleFree() {
-
-}
-
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

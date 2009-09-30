@@ -1463,14 +1463,14 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 	fflush(wf);
 	fclose(wf);
 
-	char *data = (char*)malloc(length+1);
+	char *data = (char*)jl_malloc(length+1);
 	JL_S_ASSERT_ALLOC( data );
 	fread(data, 1, length, rf);
 	data[length] = '\0';
 	fclose(rf);
 
 	JSString *jsstr = JS_NewStringCopyN(cx, data, length);
-	free(data);
+	jl_free(data);
 	JL_S_ASSERT_ALLOC( jsstr );
 
 	*JL_FRVAL = STRING_TO_JSVAL(jsstr);

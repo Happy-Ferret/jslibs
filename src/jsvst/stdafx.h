@@ -71,8 +71,6 @@
 // #include <limits.h> // included by ../common/platform.h
 #include <signal.h>
 
-#include <jsapi.h>
-
 #include "../common/jsHelper.h"
 
 #include "../host/host.h"

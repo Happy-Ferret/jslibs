@@ -263,7 +263,7 @@ $TOC_MEMBER $INAME
 		if ( frames > 0 ) {
 
 			size_t amount = frames * pv->sfInfo.channels * pv->bits/8; // amount in bytes
-			buf = (char*)malloc(amount);
+			buf = (char*)jl_malloc(amount);
 			JL_S_ASSERT_ALLOC(buf);
 
 			sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
@@ -274,7 +274,7 @@ $TOC_MEMBER $INAME
 			totalSize = items * sizeof(short);
 
 			if ( JL_MaybeRealloc(amount, totalSize) )
-				buf = (char*)realloc(buf, totalSize);
+				buf = (char*)jl_realloc(buf, totalSize);
 		}
 
 	} else {
@@ -326,7 +326,7 @@ $TOC_MEMBER $INAME
 			int size = *(int*)buffer;
 			buf = buf - size;
 			memcpy( buf, buffer+sizeof(int), size );
-			free(buffer);
+			jl_free(buffer);
 		}
 	}
 	pv->cx = NULL; // see definition

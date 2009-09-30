@@ -23,7 +23,7 @@ DECLARE_CLASS(Ogl)
 DECLARE_STATIC()
 DECLARE_CLASS( OglError )
 
-bool _unsafeMode = false;
+#include "../common/jslibsModule.cpp"
 
 /**doc t:header
 $MODULE_HEADER
@@ -36,11 +36,11 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
-#ifdef XP_WIN
+//#ifdef XP_WIN
 //	JL_CHK( INIT_CLASS( Window ) );
-#endif
+//#endif
 
 	INIT_STATIC();
 	INIT_CLASS( Transformation );
@@ -49,12 +49,3 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

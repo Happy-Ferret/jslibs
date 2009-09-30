@@ -43,7 +43,7 @@ inline float BufferSecTime( ALint bid ) {
 
 
 /*
-	jsval *pItem = (jsval*)malloc(sizeof(jsval));
+	jsval *pItem = (jsval*)jl_malloc(sizeof(jsval));
 	JL_S_ASSERT_ALLOC( pItem );
 	*pItem = value;
 	QueuePush( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback
@@ -53,7 +53,7 @@ inline float BufferSecTime( ALint bid ) {
 
 inline JSBool UnshiftJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 
-	jsval *pItem = (jsval*)malloc(sizeof(jsval));
+	jsval *pItem = (jsval*)jl_malloc(sizeof(jsval));
 	JL_S_ASSERT_ALLOC( pItem );
 	*pItem = value;
 	QueueUnshift( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback

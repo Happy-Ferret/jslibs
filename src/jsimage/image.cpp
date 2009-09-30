@@ -27,7 +27,7 @@ DEFINE_FINALIZE() {
 
 	void *data = JL_GetPrivate(cx, obj);
 	if ( data != NULL )
-		free(data);
+		jl_free(data);
 }
 
 DEFINE_FUNCTION( Alloc ) {
@@ -38,11 +38,11 @@ DEFINE_FUNCTION( Alloc ) {
 	void *data;
 	data = JL_GetPrivate(cx, obj);
 	if ( data != NULL )
-		free(data);
+		jl_free(data);
 
 	unsigned int size;
 	size = JSVAL_TO_INT(argv[0]);
-	data = malloc(size);
+	data = jl_malloc(size);
 	JL_SetPrivate(cx, obj, data);
 
 	return JS_TRUE;
@@ -71,7 +71,7 @@ DEFINE_FUNCTION( Free ) {
 	if ( data != NULL ) {
 
 		JL_SetPrivate(cx, obj, NULL);
-		free(data);
+		jl_free(data);
 	}
 	return JS_TRUE;
 }
@@ -129,7 +129,7 @@ DEFINE_FUNCTION( Trim ) {
 	if (reuseBuffer)
 		newData = data;
 	else {
-		newData = (char*)malloc( channels * (x1-x) * (y1-y) );
+		newData = (char*)jl_malloc( channels * (x1-x) * (y1-y) );
 		JL_SetPrivate(cx, obj, newData);
 	}
 
@@ -151,7 +151,7 @@ DEFINE_FUNCTION( Trim ) {
 	*rval = OBJECT_TO_JSVAL(obj); // allows to write: var texture = new Jpeg(f).Load().Trim(...)
 
 	if ( !reuseBuffer )
-		free(tmpDataPtr);
+		jl_free(tmpDataPtr);
 
 	return JS_TRUE;
 	JL_BAD;

@@ -116,7 +116,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	long bytes;
 	do {
 
-		char *buffer = (char*)malloc(bufferSize);
+		char *buffer = (char*)jl_malloc(bufferSize);
 		JL_S_ASSERT_ALLOC(buffer);
 
 		jl::StackPush(&stack, buffer);
@@ -168,7 +168,7 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 		int size = *(int*)buffer;
 		buf = buf - size;
 		memcpy( buf, buffer+sizeof(int), size );
-		free(buffer);
+		jl_free(buffer);
 	}
 
 	return JS_TRUE;
@@ -323,7 +323,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 	sf_count_t items;
 	do {
 
-		char *buffer = (char*)malloc(bufferSize);
+		char *buffer = (char*)jl_malloc(bufferSize);
 		JL_S_ASSERT_ALLOC(buffer);
 		jl::StackPush(&stack, buffer);
 
@@ -377,7 +377,7 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 		int size = *(int*)buffer;
 		buf = buf - size;
 		memcpy( buf, buffer+sizeof(int), size );
-		free(buffer);
+		jl_free(buffer);
 	}
 
 	return JS_TRUE;

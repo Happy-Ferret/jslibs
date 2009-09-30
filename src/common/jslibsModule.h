@@ -16,14 +16,12 @@
 #define _JSLIBSMODULE_H_
 
 #include "../common/platform.h"
-#include <jspubtd.h>
+#include "../common/jlalloc.h"
 
 extern bool _unsafeMode;
 
-extern void* (*jl_malloc)( size_t size );
-extern void* (*jl_calloc)( size_t num, size_t size );
-extern void (*jl_free)( void *ptr );
-extern void* (*jl_realloc)( void *ptr, size_t size );
+typedef struct JSContext JSContext;
+typedef struct JSObject JSObject;
 
 JSBool InitJslibsModule( JSContext *cx );
 

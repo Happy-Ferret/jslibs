@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#include "../common/jslibsModule.cpp"
+
 static unsigned char embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
 ;

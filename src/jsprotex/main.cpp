@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 
-bool _unsafeMode = false;
+#include "../common/jslibsModule.cpp"
 
 DECLARE_STATIC()
 DECLARE_CLASS( Texture )
@@ -34,7 +34,7 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	INIT_STATIC();
 	INIT_CLASS( Texture );
@@ -44,27 +44,3 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN
-
-
-/* MS doc:
-
-	To illustrate this, consider the following example:
-
-	   - .EXE is linked with MSVCRT.LIB
-	   - DLL A is linked with LIBCMT.LIB
-	   - DLL B is linked with CRTDLL.LIB
-
-	If the .EXE creates a CRT file handle using _create() or _open(), this file handle may only be passed to _lseek(), _read(), _write(), _close(), etc. in the .EXE file. Do not pass this CRT file handle to either DLL. Do not pass a CRT file handle obtained from either DLL to the other DLL or to the .EXE.
-	If DLL A allocates a block of memory with malloc(), only DLL A may call free(), _expand(), or realloc() to operate on that block. You cannot call malloc() from DLL A and try to free that block from the .EXE or from DLL B.
-	NOTE: If all three modules were linked with CRTDLL.LIB or all three were linked with MSVCRT.LIb, these restrictions would not apply.
-	 (source: http://support.microsoft.com/kb/94248)
-*/

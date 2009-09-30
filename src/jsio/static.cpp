@@ -104,7 +104,7 @@ DEFINE_FUNCTION( Poll ) {
 
 	// Optimization to avoid dynamic allocation when it is possible
 	if ( arrayIds->length > COUNTOF(staticPollDesc) )
-		pollDesc = (PRPollDesc*)malloc(arrayIds->length * sizeof(PRPollDesc));
+		pollDesc = (PRPollDesc*)jl_malloc(arrayIds->length * sizeof(PRPollDesc));
 	else
 		pollDesc = staticPollDesc;
 
@@ -155,7 +155,7 @@ DEFINE_FUNCTION( Poll ) {
 		*rval = JSVAL_ZERO;
 		JS_DestroyIdArray(cx, arrayIds);
 		if ( pollDesc != staticPollDesc )
-			free(pollDesc);
+			jl_free(pollDesc);
 		return JS_TRUE;
 	}
 
@@ -218,7 +218,7 @@ DEFINE_FUNCTION( Poll ) {
 //	JS_POP_TEMP_ROOT(cx, &tvr);
 	JS_DestroyIdArray(cx, arrayIds);
 	if ( pollDesc != staticPollDesc )
-		free(pollDesc);
+		jl_free(pollDesc);
 	return JS_TRUE;
 bad2:
 //	JS_POP_TEMP_ROOT(cx, &tvr);
@@ -226,7 +226,7 @@ bad:
 	if ( arrayIds )
 		JS_DestroyIdArray(cx, arrayIds);
 	if ( pollDesc != staticPollDesc )
-		free(pollDesc);
+		jl_free(pollDesc);
 	return JS_FALSE;
 }
 
@@ -585,7 +585,7 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 		JSIdArray *idArray;
 		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(JL_FARG(2)) ); // make a kind of auto-ptr for this
 		processArgc = idArray->length +1; // +1 is argv[0]
-		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
+		processArgv = (const char**)jl_malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
 		JL_S_ASSERT_ALLOC( processArgv );
 
 		for ( int i=0; i<processArgc -1; i++ ) { // -1 because argv[0]
@@ -602,7 +602,7 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 	} else {
 
 		processArgc = 0 +1; // +1 is argv[0]
-		processArgv = (const char**)malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
+		processArgv = (const char**)jl_malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
 	}
 
 	const char *path;
@@ -663,13 +663,13 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 
 
 	if ( processArgv )
-		free(processArgv);
+		jl_free(processArgv);
 	return JS_TRUE;
 bad_throw:
 	ThrowIoError(cx);
 bad:
 	if ( processArgv )
-		free(processArgv);
+		jl_free(processArgv);
 	return JS_FALSE;
 }
 */

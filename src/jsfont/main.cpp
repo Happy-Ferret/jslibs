@@ -21,7 +21,7 @@
 
 FT_Library _freetype;
 
-bool _unsafeMode = false;
+#include "../common/jslibsModule.cpp"
 
 
 /**doc t:header
@@ -37,7 +37,7 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	FT_Error status;
 	status = FT_Init_FreeType(&_freetype);
@@ -49,25 +49,9 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	JL_BAD;
 }
 
-
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
-
-	return JS_FALSE;
-}
-
-
 EXTERN_C DLLEXPORT void ModuleFree() {
 
 	FT_Error status;
 	status = FT_Done_FreeType(_freetype);
 //	JL_S_ASSERT( status == 0, "Unable to destroy FreeType2 library." );
 }
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

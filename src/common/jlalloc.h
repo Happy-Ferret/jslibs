@@ -12,20 +12,17 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "stdafx.h"
+#ifndef _JLALLOC_H_
+#define _JLALLOC_H_
 
-#include "trimesh.h"
+typedef void* (*jl_malloc_t)( size_t size );
+typedef void* (*jl_calloc_t)( size_t num, size_t size );
+typedef void (*jl_free_t)( void *ptr );
+typedef void* (*jl_realloc_t)( void *ptr, size_t size );
 
-#include "../common/jslibsModule.cpp"
+extern jl_malloc_t jl_malloc;
+extern jl_calloc_t jl_calloc;
+extern jl_realloc_t jl_realloc;
+extern jl_free_t jl_free;
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
-
-	JL_CHK( InitJslibsModule(cx) );
-
-	INIT_CLASS( Trimesh );
-
-	JL_CHK( JL_RegisterNativeClass(cx, classTrimesh) );
-
-	return JS_TRUE;
-	JL_BAD;
-}
+#endif // _JLALLOC_H_

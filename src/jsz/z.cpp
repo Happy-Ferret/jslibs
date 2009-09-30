@@ -85,12 +85,12 @@ $TOC_MEMBER $INAME
 
 voidpf jsz_alloc(voidpf opaque, uInt items, uInt size) {
 	
-	return malloc(items*size);
+	return jl_malloc(items*size);
 }
 
 void jsz_free(voidpf opaque, voidpf address) {
 	
-	free(address);
+	jl_free(address);
 }
 
 DEFINE_CONSTRUCTOR() {

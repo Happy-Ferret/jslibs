@@ -16,7 +16,7 @@
 
 DECLARE_STATIC()
 
-bool _unsafeMode = false;
+#include "../common/jslibsModule.cpp"
 
 /**doc t:header
 $MODULE_HEADER
@@ -35,7 +35,7 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	INIT_STATIC();
 //	INIT_CLASS( Image );
@@ -52,32 +52,3 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
-
-	return JS_TRUE;
-}
-
-/*
-BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved ) {
-
-  switch (ul_reason_for_call) {
-
-	  case DLL_PROCESS_ATTACH:
-	  case DLL_THREAD_ATTACH:
-	  case DLL_THREAD_DETACH:
-	  case DLL_PROCESS_DETACH:
-		  break;
-  }
-  return TRUE;
-}
-*/
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

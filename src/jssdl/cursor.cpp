@@ -65,7 +65,7 @@ DEFINE_CONSTRUCTOR() {
 	int length = sWidth * sHeight;
 
 	int cursorDataLength = 2*sHeight*sWidth/8;
-	unsigned char *cursorImage = (unsigned char *)malloc(cursorDataLength); // data + mask
+	unsigned char *cursorImage = (unsigned char *)jl_malloc(cursorDataLength); // data + mask
 	unsigned char *cursorMask = cursorImage + sHeight*sWidth/8;
 	memset(cursorImage, 0, cursorDataLength);
 	
@@ -102,13 +102,13 @@ DEFINE_CONSTRUCTOR() {
 	SDL_Cursor *cursor = SDL_CreateCursor(cursorImage, cursorMask, sWidth, sHeight, hotX, hotY);
 	if ( cursor == NULL ) {
 
-		free(cursorImage);
+		jl_free(cursorImage);
 		return ThrowSdlError(cx);
 	}
 
 	JL_SetPrivate(cx, obj, cursor);
 
-	free(cursorImage);
+	jl_free(cursorImage);
 	return JS_TRUE;
 	JL_BAD;
 }

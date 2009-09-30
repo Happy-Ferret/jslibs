@@ -15,15 +15,19 @@
 #ifndef _JSHELPER_H_
 #define _JSHELPER_H_
 
+#include "../common/jlalloc.h"
+
+#include "../common/platform.h"
+
+#include <jsapi.h>
+
 typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, unsigned int *amount );
 typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, const char **buffer, unsigned int *size );
 typedef JSBool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
 
-
 inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
 inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 
-#include "platform.h"
 #include "../common/queue.h"
 
 #include <cstring>
@@ -314,9 +318,6 @@ JL_MACRO_END
 #define JL_S_ASSERT_CLASS(jsObject, jsClass) \
 	JL_S_ASSERT( (jsObject) != NULL && JL_GetClass(jsObject) == (jsClass), J__ERRMSG_INVALID_CLASS " %s expected.", (jsClass)->name )
 
-//#define JL_S_ASSERT_CLASS_NAME(jsObject, className) \
-//	JL_S_ASSERT( IsClassName(jsObject, className), J__ERRMSG_INVALID_CLASS " %s expected.", className )
-
 #define JL_S_ASSERT_THIS_CLASS() \
 	JL_S_ASSERT_CLASS(obj, _class)
 
@@ -456,7 +457,7 @@ ALWAYS_INLINE JSClass* JL_GetStringClass( JSContext *cx ) {
 
 ALWAYS_INLINE bool JsvalIsData( JSContext *cx, jsval val ) {
 
-	return ( JSVAL_IS_STRING(val) || !JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL || JL_VALUE_IS_STRING_OBJECT(cx, val) );
+	return ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) || JL_VALUE_IS_STRING_OBJECT(cx, val) );
 }
 
 
@@ -625,7 +626,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		JL_CHKM( file != -1, "Unable to open file \"%s\" for reading.", compiledFileName );
 
 		int compFileSize = compFileStat.st_size; // filelength(file); ?
-		void *data = malloc(compFileSize); // (TBD) free on error
+		void *data = jl_malloc(compFileSize); // (TBD) free on error
 		int readCount = read( file, data, compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
 		JL_CHKM( readCount != -1 && readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
 		close( file );
@@ -637,7 +638,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		// (TBD) manage BIG_ENDIAN here ?
 		JS_XDRMemSetData(xdr, NULL, 0);
 		JS_XDRDestroy(xdr);
-		free(data);
+		jl_free(data);
 		if ( JS_GetScriptVersion(cx, script) < JS_GetVersion(cx) )
 			JL_REPORT_WARNING("Trying to xdr-decode an old script (%s).", compiledFileName);
 		return script; // Done.

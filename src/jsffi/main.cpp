@@ -16,25 +16,22 @@
 
 #include "ffi.h"
 
-extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+
+#include "../common/jslibsModule.cpp"
+
+
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	Init_JSNI(cx, obj);
 	return JS_TRUE;
 }
 
-extern "C" __declspec(dllexport) JSBool ModuleRelease(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
-	// (TBD) cleanup the global object
+	if ( InitJslibsModule(cx) != JS_TRUE )
+		return JS_FALSE;
+
 	Release_JSNI(cx);
 	Destroy_JSNI();
 	return JS_TRUE;
 }
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

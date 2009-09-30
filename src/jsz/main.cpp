@@ -14,15 +14,11 @@
 
 #include "stdafx.h"
 
-using namespace jl;
-#include "../common/buffer.h"
-
 #include "zError.h"
-
-bool _unsafeMode = false;
 
 DECLARE_CLASS( Z )
 
+#include "../common/jslibsModule.cpp"
 
 /**doc t:header
 $MODULE_HEADER
@@ -49,21 +45,11 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_FALSE;
 */
 
-
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx) );
 
 	INIT_CLASS( ZError );
 	INIT_CLASS( Z );
+
 	return JS_TRUE;
 	JL_BAD;
 }
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN
-
