@@ -151,6 +151,8 @@
 
 	#define strcasecmp stricmp
 
+	#define malloc_usable_size _msize
+
 #elif defined(_MACOSX) // MacosX platform
 
 	#define XP_UNIX // used by SpiderMonkey and jslibs

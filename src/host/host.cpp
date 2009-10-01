@@ -663,6 +663,83 @@ bad:
 }
 
 
+
+void *memoryPool[14] = {NULL};
+JLMutexHandler poolMutex[14];
+
+ALWAYS_INLINE int PoolSelect( size_t size ) {
+	
+	if ( size == 44 ) return 0;
+	if ( size == 16 ) return 1;
+	if ( size == 48 ) return 2;
+	if ( size == 12 ) return 3;
+/*
+
+	if ( size <=   18 ) return 5;
+	if ( size <=   38 ) return 6;
+	if ( size <=   68 ) return 7;
+	if ( size <=  128 ) return 8;
+	if ( size <=  512 ) return 9;
+	if ( size <= 1078 ) return 10;
+	if ( size <= 2096 ) return 11;
+	if ( size <= 4100 ) return 12;
+	if ( size <= 8200 ) return 13;
+*/
+	return -1;
+}
+
+
+ALWAYS_INLINE void MemoryPoolFree( void *ptr ) {
+
+	size_t size = malloc_usable_size(ptr);
+	int pool = PoolSelect(size);
+	if ( pool == -1 ) {
+
+		free(ptr);
+		return;
+	}
+
+	JLAcquireMutex(poolMutex[pool]);
+	*(void**)ptr = memoryPool[pool];
+	memoryPool[pool] = ptr;
+	JLReleaseMutex(poolMutex[pool]);
+}
+
+ALWAYS_INLINE void* MemoryPoolMalloc( size_t size ) {
+
+	int pool = PoolSelect(size);
+	if ( pool == -1 || memoryPool[pool] == NULL )
+		return malloc(size);
+	
+	JLAcquireMutex(poolMutex[pool]);
+	void *ptr = memoryPool[pool];
+	memoryPool[pool] = *(void**)memoryPool[pool];
+	JLReleaseMutex(poolMutex[pool]);
+	return ptr;
+}
+
+void MemoryPoolInit() {
+
+	for ( int i = 0; i < COUNTOF(poolMutex); i++ )
+		poolMutex[i] = JLCreateMutex();
+}
+
+void MemoryPoolFinalize() {
+
+	for ( int i = 0; i < COUNTOF(poolMutex); i++ ) {
+
+		JLFreeMutex(&poolMutex[i]);
+		while ( memoryPool[i] ) {
+
+			void *next = *(void**)memoryPool[i];
+			free(memoryPool[i]);
+			memoryPool[i] = next;
+		}
+	}
+}
+
+
+
 #define MAX_LOAD 7
 #define WAIT_HEAD_FILLING 100
 
@@ -689,7 +766,8 @@ void* HostThreadedMalloc( size_t size ) {
 
 	if ( size < sizeof(void*) )
 		size = sizeof(void*);
-	return malloc(size);
+//	return malloc(size);
+	return MemoryPoolMalloc(size);
 }
 
 void* HostThreadedCalloc( size_t num, size_t size ) {
@@ -709,14 +787,17 @@ void* HostThreadedRealloc( void *ptr, size_t size ) {
 
 void HostThreadedFree( void *ptr ) {
 
+//	fprintf(stderr, "%x ", malloc_usable_size(ptr)); // for stat
+
 //	return;
 //	free(ptr); return;
 	if ( load > MAX_LOAD ) { // too many things to free, the thread can not keep pace.
 			
-		free(ptr);
+//		free(ptr);
+		MemoryPoolFree(ptr);
 		return;
 	}
-
+	
 //	*(void**)ptr = (void*)JLAtomicExchange((long*)&head, (long)ptr);
 	*(void**)ptr = head;
 	head = ptr;
@@ -737,6 +818,8 @@ ALWAYS_INLINE void FreeHead() {
 	if ( !head )
 		return;
 
+//	putc('!', stdout);
+
 	headLength = 0;
 
 	void *it, *next = head;
@@ -746,7 +829,8 @@ ALWAYS_INLINE void FreeHead() {
 	while ( it ) {
 		
 		next = *(void**)it;
-		free(it);
+//		free(it);
+		MemoryPoolFree(it);
 		it = next;
 	}
 }
@@ -756,20 +840,17 @@ JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
 	
 	for (;;) {
 		
-		load = 0;
-		while ( headLength ) {
-			
-			load++;
-			FreeHead();
-		}
-
-		if ( JLAcquireSemaphore(memoryFreeThreadSem, WAIT_HEAD_FILLING) == JLOK )
+		if ( JLAcquireSemaphore(memoryFreeThreadSem, WAIT_HEAD_FILLING) == JLOK ) {
 			switch ( threadAction ) {
 				case MemThreadExit:
 					JLThreadExit();
 				case MemThreadProcess:
 					;
 			}
+		}
+
+		for ( load = 1; headLength; load++ )
+			FreeHead();
 	}
 }
 
@@ -794,6 +875,8 @@ JSBool BeginThreadMemoryManagement( JSContext *cx ) {
 	if ( pv == NULL )
 		return JS_FALSE;
 
+	MemoryPoolInit();
+
 	load = 0;
 	headLength = 0;
 	head = NULL;
@@ -813,7 +896,7 @@ JSBool BeginThreadMemoryManagement( JSContext *cx ) {
 
 	prevThreadMemoryManagementGCCallback = JS_SetGCCallback(cx, ThreadMemoryManagementGCCallback);
 
-	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, jl_free); // spidermonkey's allocators already check for size < sizeof(void*), then no need to use jl_malloc, ...
+	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, jl_free); // spidermonkey's allocators already check for  size < sizeof(void*)  , then no need to use jl_malloc, ...
 
 	return JS_TRUE;
 }
@@ -854,6 +937,8 @@ JSBool EndThreadMemoryManagement( JSContext *cx, bool freeQueue ) {
 	if ( head )
 		free(head);
 
+	MemoryPoolFinalize();
+
 	return JS_TRUE;
 }
 
@@ -868,3 +953,231 @@ JSBool DisableMemoryFree( JSContext *cx ) {
 	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, jl_free);
 	return JS_TRUE;
 }
+
+
+
+/* memory stat report maker:
+
+var stat = [];
+for each ( var sizehex in data.split(' ') ) {
+
+    var size = parseInt(sizehex, 16);
+    stat[size] = (stat[size]||0) + 1;
+}
+var stat2 = [];
+for ( var size in stat )
+    stat2.push( [Number(size), stat[size]] );
+stat2.sort(function(a,b) b[1]-a[1]);
+for each ( var i in stat2 )
+     Print( i[1] + ' x ' + i[0] )
+*/
+
+/*
+memory stats with qa.js at free time:
+
+43389 x 44
+22685 x 16
+13442 x 48
+10098 x 12
+6505 x 8192
+5171 x 1047
+4984 x 32
+3929 x 8
+2964 x 10359
+2679 x 4
+2193 x 34
+2000 x 2002
+1983 x 64
+1688 x 20
+1620 x 28
+1516 x 36
+1495 x 6
+1453 x 18
+1382 x 24
+1352 x 22
+1342 x 26
+1200 x 30
+1169 x 10
+1061 x 38
+1025 x 1078
+1002 x 2050
+1002 x 1025
+1000 x 1001
+880 x 14
+823 x 40
+685 x 42
+644 x 70
+620 x 68
+559 x 1040
+498 x 72
+478 x 35
+472 x 46
+456 x 50
+452 x 56
+435 x 54
+434 x 74
+383 x 52
+379 x 10001
+375 x 37
+353 x 58
+336 x 76
+332 x 128
+327 x 66
+315 x 60
+253 x 62
+243 x 80
+234 x 33
+231 x 9
+219 x 7
+203 x 27321
+186 x 78
+175 x 39
+167 x 31
+131 x 82
+123 x 29
+118 x 41
+116 x 88
+113 x 86
+112 x 23
+109 x 96
+108 x 43
+103 x 21
+100 x 5
+99 x 92
+94 x 90
+93 x 94
+93 x 45
+91 x 84
+88 x 27
+87 x 47
+84 x 25
+84 x 100
+82 x 256
+63 x 19
+58 x 512
+56 x 104
+52 x 1024
+52 x 102
+51 x 98
+47 x 49
+44 x 11
+42 x 51
+41 x 4096
+40 x 13
+36 x 1536
+34 x 55
+34 x 57
+34 x 112
+31 x 71
+29 x 138
+29 x 108
+29 x 53
+28 x 142
+28 x 69
+27 x 120
+24 x 17
+22 x 134
+22 x 15
+21 x 2048
+21 x 67
+21 x 73
+21 x 61
+21 x 106
+21 x 480
+20 x 124
+20 x 8211
+18 x 16384
+18 x 59
+17 x 65
+17 x 150
+17 x 146
+17 x 116
+16 x 272
+16 x 132
+16 x 3072
+16 x 65537
+15 x 140
+15 x 75
+15 x 114
+15 x 136
+14 x 130
+14 x 24576
+14 x 70144
+13 x 127
+12 x 164
+12 x 160
+12 x 192
+12 x 101
+11 x 110
+10 x 162
+9 x 63
+9 x 156
+9 x 1048577
+8 x 81
+8 x 154
+8 x 77
+8 x 103
+7 x 168
+7 x 91
+7 x 141
+7 x 135
+7 x 107
+6 x 280
+6 x 158
+6 x 152
+6 x 126
+6 x 97
+6 x 2097154
+6 x 1000001
+6 x 2000002
+5 x 79
+5 x 172
+5 x 384
+5 x 133
+4 x 282
+4 x 312
+4 x 336
+4 x 402
+4 x 170
+4 x 85
+4 x 87
+4 x 182
+4 x 122
+4 x 93
+4 x 144
+4 x 111
+4 x 105
+4 x 99
+3 x 2071
+3 x 225
+3 x 196
+3 x 374
+3 x 622
+3 x 334
+3 x 370
+3 x 382
+3 x 358
+3 x 166
+3 x 83
+3 x 174
+3 x 450
+3 x 33678
+3 x 148
+3 x 253
+3 x 137
+3 x 303
+3 x 115
+3 x 417
+3 x 322
+3 x 294
+3 x 220
+3 x 113
+3 x 95
+3 x 12966
+3 x 12961
+3 x 13083
+3 x 13072
+3 x 30001
+
+
+*/
