@@ -28,6 +28,7 @@ ALWAYS_INLINE JSBool InvalidateBlob( JSContext *cx, JSObject *blobObject ) {
 	return JS_SetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, JSVAL_VOID);
 }
 
+// invalid blob: see Blob::Free()
 ALWAYS_INLINE bool IsBlobValid( JSContext *cx, JSObject *blobObject ) {
 
 	jsval lengthVal;
@@ -836,7 +837,8 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
-	JL_S_ASSERT( !JSVAL_IS_NUMBER(id), "Cannot modify immutable objects" );
+//	JL_S_ASSERT( !JSVAL_IS_NUMBER(id), "Cannot modify immutable objects" );
+	JL_REPORT_WARNING( "Cannot modify immutable objects" );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -846,10 +848,8 @@ DEFINE_EQUALITY() {
 
 	if ( JsvalIsClass(v, _class) ) {
 
-		if ( !IsBlobValid(cx, obj) || !IsBlobValid(cx, JSVAL_TO_OBJECT(v)) ) {
-			
+		if ( !IsBlobValid(cx, obj) || !IsBlobValid(cx, JSVAL_TO_OBJECT(v)) )
 			JL_REPORT_ERROR("Invalid Blob object.");
-		}
 		
 		const char *buf1, *buf2;
 		size_t len1, len2;
