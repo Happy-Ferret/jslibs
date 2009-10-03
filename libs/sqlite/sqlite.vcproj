@@ -40,8 +40,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE=0;SQLITE_SYSTEM_MALLOC"
+				AdditionalIncludeDirectories="src;."
+				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE=0;_HAVE_SQLITE_CONFIG_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				BufferSecurityCheck="false"
@@ -106,8 +106,8 @@
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="2"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="src"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE=0;SQLITE_SYSTEM_MALLOC"
+				AdditionalIncludeDirectories="src;."
+				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE=0;_HAVE_SQLITE_CONFIG_H"
 				BufferSecurityCheck="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="0"
@@ -162,6 +162,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\src\config.h"
+				>
+			</File>
 			<File
 				RelativePath=".\src\sqlite3.h"
 				>
