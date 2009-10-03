@@ -35,9 +35,20 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
+EXTERN_C void* (*custom_malloc)( size_t size );
+EXTERN_C void* (*custom_calloc)( size_t num, size_t size );
+EXTERN_C void (*custom_free)( void *ptr );
+EXTERN_C void* (*custom_realloc)( void *ptr, size_t size );
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	JL_CHK( InitJslibsModule(cx) );
+
+	// custom_malloc are used by sqlite (see src/config.h)
+	custom_malloc = jl_malloc;
+	custom_calloc = jl_calloc;
+	custom_realloc = jl_realloc;
+	custom_free = jl_free;
 
 	if ( sqlite3_enable_shared_cache(true) != SQLITE_OK ) {
 
