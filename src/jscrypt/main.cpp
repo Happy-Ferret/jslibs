@@ -22,6 +22,19 @@
 
 #include "../common/jslibsModule.cpp"
 
+void * LTC_CALL ltc_malloc(size_t n) {
+	return jl_malloc(n);
+}
+void * LTC_CALL ltc_realloc(void *p, size_t n) {
+	return jl_realloc(p, n);
+}
+void * LTC_CALL ltc_calloc(size_t n, size_t s) {
+	return jl_calloc(n, s);
+}
+void LTC_CALL ltc_free(void *p) {
+	jl_free(p);
+}
+
 
 /**doc t:header
 $MODULE_HEADER
@@ -40,8 +53,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	JL_CHK( InitJslibsModule(cx) );
 
 	ltc_mp = ltm_desc; // register math
-
-	int regStatus;
 
 	const struct ltc_cipher_descriptor * cipherList[] = {
 		&blowfish_desc,
@@ -91,6 +102,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		&sober128_desc,
 	};
 
+	int regStatus;
+
 	for ( int i=0; i<sizeof(cipherList)/sizeof(*cipherList); i++ ) {
 
 		regStatus = register_cipher(cipherList[i]);
@@ -115,6 +128,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Cipher );
 	INIT_CLASS( Prng );
 	INIT_CLASS( Hash );
+
 	return JS_TRUE;
 	JL_BAD;
 }
