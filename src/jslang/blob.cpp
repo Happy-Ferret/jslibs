@@ -203,7 +203,8 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $BOOL wipe: clears the buffer before freeing it. This is useful when the blob contains sensitive data.
   $H note
-   Any access to a freed Blob will rise an error.
+   Any access to a freed Blob will rise an error.$LF
+	Use this function to free huge amounts of memory, like images or sounds, before the GC does it for you.
 **/
 DEFINE_FUNCTION_FAST( Free ) {
 
@@ -838,7 +839,9 @@ DEFINE_GET_PROPERTY() {
 DEFINE_SET_PROPERTY() {
 
 //	JL_S_ASSERT( !JSVAL_IS_NUMBER(id), "Cannot modify immutable objects" );
-	JL_REPORT_WARNING( "Cannot modify immutable objects" );
+	if ( !JSVAL_IS_NUMBER(id) )
+		return JS_TRUE;
+	JL_REPORT_WARNING( "Cannot modify immutable objects." );
 	return JS_TRUE;
 	JL_BAD;
 }
