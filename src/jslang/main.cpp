@@ -31,7 +31,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-JSBool jslangInit(JSContext *cx, JSObject *obj) {
+JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 
 	INIT_CLASS( Handle );
 	INIT_CLASS( Blob );

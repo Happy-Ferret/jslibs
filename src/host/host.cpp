@@ -25,7 +25,7 @@ EXTERN_C void* tc_realloc(void* ptr, size_t size) __THROW;
 EXTERN_C void* tc_calloc(size_t nmemb, size_t size) __THROW;
 EXTERN_C void tc_cfree(void* ptr) __THROW;
 
-JSBool jslangInit(JSContext *cx, JSObject *obj);
+JSBool jslangModuleInit(JSContext *cx, JSObject *obj);
 
 
 //bool _unsafeMode = true;
@@ -506,7 +506,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	JL_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
 
 // init static modules
-	JL_CHKM( jslangInit(cx, globalObject), "Unable to initialize jslang." );
+	JL_CHKM( jslangModuleInit(cx, globalObject), "Unable to initialize jslang." );
 
 	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_MODULE_REVISION_PROPERTY_NAME, INT_TO_JSVAL(JL_SvnRevToInt("$Revision$")), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
