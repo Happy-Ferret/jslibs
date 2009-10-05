@@ -17,8 +17,8 @@
 
 typedef void* (*jl_malloc_t)( size_t size );
 typedef void* (*jl_calloc_t)( size_t num, size_t size );
-typedef void (*jl_free_t)( void *ptr );
 typedef void* (*jl_realloc_t)( void *ptr, size_t size );
+typedef void (*jl_free_t)( void *ptr );
 
 extern jl_malloc_t jl_malloc;
 extern jl_calloc_t jl_calloc;
