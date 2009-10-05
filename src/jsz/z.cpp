@@ -105,11 +105,10 @@ DEFINE_CONSTRUCTOR() {
 	JL_SetPrivate(cx, obj, pv);
 	pv->stream.state = Z_NULL; // mendatory
 	
-	pv->stream.zalloc = Z_NULL;
-	pv->stream.zfree = Z_NULL;
-
-//	pv->stream.zalloc = jsz_alloc;
-//	pv->stream.zfree = jsz_free;
+//	pv->stream.zalloc = Z_NULL;
+//	pv->stream.zfree = Z_NULL;
+	pv->stream.zalloc = jsz_alloc;
+	pv->stream.zfree = jsz_free;
 
 	JL_CHK( JsvalToInt(cx, JL_ARG(1), &pv->method) );
 

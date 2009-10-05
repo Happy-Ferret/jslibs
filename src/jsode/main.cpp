@@ -22,6 +22,7 @@
 
 #include "geom.h"
 
+
 DECLARE_CLASS( Vector )
 
 #include "../common/jslibsModule.cpp"
@@ -68,9 +69,24 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
+//typedef void * dAllocFunction (size_t size);
+//typedef void * dReallocFunction (void *ptr, size_t oldsize, size_t newsize);
+//typedef void dFreeFunction (void *ptr, size_t size);
+
+void* odeReallocFunction (void *ptr, size_t oldsize, size_t newsize) {
+	return jl_realloc(ptr, newsize);
+}
+void odeFreeFunction (void *ptr, size_t size) {
+	jl_free(ptr);
+}
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	JL_CHK( InitJslibsModule(cx) );
+
+	ode::dSetAllocHandler(jl_malloc); // do not need an intermediate function because prototype match.
+	ode::dSetReallocHandler(odeReallocFunction);
+	ode::dSetFreeHandler(odeFreeFunction);
 
 	int status = ode::dInitODE2(/*ode::dAllocateFlagCollisionData*/0);
 	JL_S_ASSERT( status != 0, "Unable to initialize ODE." );
@@ -110,7 +126,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 }
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
-	
+
 	_odeFinalization = true;
 	return JS_TRUE;
 }
