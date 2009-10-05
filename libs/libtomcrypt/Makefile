@@ -4,7 +4,7 @@ TARGET_FILES = $(INT_DIR)libtomcrypt.a
 
 $(TARGET_FILES):
 	mkdir -p $(INT_DIR)
-	CFLAGS="-fPIC -DLTM_DESC -I../../libtommath/src" $(MAKE) -C ./src/ default
+	CFLAGS="-fPIC -DLTM_DESC -I../../libtommath/src -DXMALLOC=jl_malloc -DXCALLOC=jl_calloc -DXREALLOC=jl_realloc -DXFREE=jl_free" $(MAKE) -C ./src/ default
 	mv ./src/libtomcrypt.a $(INT_DIR)
 	patch --version
 	-patch -N -p0 -i libtomcrypt.patch #avoid conflict between src/makefile's clean goal and src/.svn/ content
