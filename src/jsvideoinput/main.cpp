@@ -16,8 +16,6 @@
 
 #include "../common/jslibsModule.cpp"
 
-#include "static.h"
-
 #include <videoinput.h>
 
 
@@ -34,7 +32,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	vi = new videoInput();
 	JL_S_ASSERT(vi != NULL, "Unable to create a videoInput object.");
 
-	INIT_STATIC();
 	INIT_CLASS( VideoInput );
 
 	return JS_TRUE;
@@ -45,5 +42,4 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 EXTERN_C DLLEXPORT void ModuleFree() {
 
 	delete vi;
-
 }
