@@ -18,6 +18,13 @@
 
 #include "host.h"
 
+// see jslibs/libs/perftools/src/src/windows/google/tcmalloc.h
+EXTERN_C void* tc_malloc(size_t size) __THROW;
+EXTERN_C void tc_free(void* ptr) __THROW;
+EXTERN_C void* tc_realloc(void* ptr, size_t size) __THROW;
+EXTERN_C void* tc_calloc(size_t nmemb, size_t size) __THROW;
+EXTERN_C void tc_cfree(void* ptr) __THROW;
+
 JSBool jslangInit(JSContext *cx, JSObject *obj);
 
 
@@ -591,7 +598,7 @@ void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
 }
 */
 
-JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) { // (TBD) support xdr files 
+JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) { // (TBD) support xdr files
 
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); //  | JSOPTION_DONT_REPORT_UNCAUGHT
 	// JSOPTION_COMPILE_N_GO:
@@ -668,7 +675,7 @@ void *memoryPool[14] = {NULL};
 JLMutexHandler poolMutex[14];
 
 ALWAYS_INLINE int PoolSelect( size_t size ) {
-	
+
 	if ( size == 44 ) return 0;
 	if ( size == 16 ) return 1;
 	if ( size == 48 ) return 2;
@@ -710,7 +717,7 @@ ALWAYS_INLINE void* MemoryPoolMalloc( size_t size ) {
 	int pool = PoolSelect(size);
 	if ( pool == -1 || memoryPool[pool] == NULL )
 		return malloc(size);
-	
+
 	JLAcquireMutex(poolMutex[pool]);
 	void *ptr = memoryPool[pool];
 	memoryPool[pool] = *(void**)memoryPool[pool];
@@ -766,23 +773,23 @@ void* HostThreadedMalloc( size_t size ) {
 
 	if ( size < sizeof(void*) )
 		size = sizeof(void*);
-//	return malloc(size);
-	return MemoryPoolMalloc(size);
+	return tc_malloc(size);
+//	return MemoryPoolMalloc(size);
 }
 
 void* HostThreadedCalloc( size_t num, size_t size ) {
-	
+
 	size = num * size;
 	if ( size < sizeof(void*) )
 		size = sizeof(void*);
-	return calloc(size, 1);
+	return tc_calloc(size, 1);
 }
 
 void* HostThreadedRealloc( void *ptr, size_t size ) {
 
 	if ( size < sizeof(void*) )
 		size = sizeof(void*);
-	return realloc(ptr, size);
+	return tc_realloc(ptr, size);
 }
 
 void HostThreadedFree( void *ptr ) {
@@ -790,14 +797,14 @@ void HostThreadedFree( void *ptr ) {
 //	fprintf(stderr, "%x ", malloc_usable_size(ptr)); // for stat
 
 //	return;
-//	free(ptr); return;
+	tc_free(ptr); return;
 	if ( load > MAX_LOAD ) { // too many things to free, the thread can not keep pace.
-			
+
 //		free(ptr);
 		MemoryPoolFree(ptr);
 		return;
 	}
-	
+
 //	*(void**)ptr = (void*)JLAtomicExchange((long*)&head, (long)ptr);
 	*(void**)ptr = head;
 	head = ptr;
@@ -809,7 +816,7 @@ ALWAYS_INLINE void FreeHead() {
 
 	//void *next, *tmp = (void*)JLAtomicExchange((long*)&head, 0);
 	//while ( tmp ) {
-	//	
+	//
 	//	next = *(void**)tmp;
 	//	free(tmp);
 	//	tmp = next;
@@ -827,7 +834,7 @@ ALWAYS_INLINE void FreeHead() {
 	*(void**)next = NULL;
 
 	while ( it ) {
-		
+
 		next = *(void**)it;
 //		free(it);
 		MemoryPoolFree(it);
@@ -837,9 +844,9 @@ ALWAYS_INLINE void FreeHead() {
 
 // the thread proc
 JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
-	
+
 	for (;;) {
-		
+
 		if ( JLAcquireSemaphore(memoryFreeThreadSem, WAIT_HEAD_FILLING) == JLOK ) {
 			switch ( threadAction ) {
 				case MemThreadExit:
@@ -857,7 +864,7 @@ JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
 // GC callback that triggers the thread
 JSGCCallback prevThreadMemoryManagementGCCallback;
 JSBool ThreadMemoryManagementGCCallback(JSContext *cx, JSGCStatus status) {
-	
+
 	if ( status == JSGC_FINALIZE_END ) {
 
 		threadAction = MemThreadProcess;
