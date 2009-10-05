@@ -496,12 +496,12 @@ $TOC_MEMBER $INAME
   Free the memory allocated by the current texture.
   This is not mandatory but may be useful to free memory before the GC did.
 **/
-DEFINE_FUNCTION( Free ) {
+DEFINE_FUNCTION_FAST( Free ) {
 
-	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
 
 	Texture *tex;
-	tex = (Texture*)JL_GetPrivate(cx, obj);
+	tex = (Texture*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 	TextureFreeBuffers(cx, tex);
 	return JS_TRUE;
