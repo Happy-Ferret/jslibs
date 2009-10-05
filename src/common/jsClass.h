@@ -41,19 +41,28 @@ struct JSLIBS_ConstIntegerSpec {
 #define CONST_DOUBLE_SINGLE(name) { name, #name },
 
 // functions
+
 #define BEGIN_FUNCTION_SPEC JSFunctionSpec _tmp_fs[] = { // *name, call, nargs, flags, extra
 #define END_FUNCTION_SPEC {0}}; _functionSpec = _tmp_fs;
 #define BEGIN_STATIC_FUNCTION_SPEC JSFunctionSpec _tmp_sfs[] = {
 #define END_STATIC_FUNCTION_SPEC {0}}; _staticFunctionSpec = _tmp_sfs;
 
-#define FUNCTION(name) JS_FS( #name, _##name, 0, 0, 0 ),
-#define FUNCTION_ARGC(name,nargs) JS_FS( #name, _##name, nargs, 0, 0 ),
-#define FUNCTION_ALIAS(alias, name) JS_FS( #alias, _##name, 0, 0, 0 ),
+#if defined(DEBUG)
+inline JSFastNative FastNativeFunction(JSFastNative f) { return f; } // used fo type check only.
+inline JSNative NativeFunction(JSNative f) { return f; } // used fo type check only.
+#else
+#define FastNativeFunction(f) (f)
+#define NativeFunction(f) (f)
+#endif // DEBUG
+
+#define FUNCTION(name) JS_FS( #name, NativeFunction(_##name), 0, 0, 0 ),
+#define FUNCTION_ARGC(name, nargs) JS_FS( #name, NativeFunction(_##name), nargs, 0, 0 ),
+#define FUNCTION_ALIAS(alias, name) JS_FS( #alias, NativeFunction(_##name), 0, 0, 0 ),
 
 	// JS_FN(name,fastcall,minargs,nargs,flags) vs JS_FN(name,fastcall,nargs,flags) (see. http://hg.mozilla.org/tracemonkey/diff/9e185457c656/js/src/jsapi.h)
-#define FUNCTION_FAST(name) JS_FN( #name, _##name, 0, 0 ),
-#define FUNCTION_FAST_ARGC(name,nargs) JS_FN( #name, _##name, nargs, 0 ),
-#define FUNCTION_FAST_ALIAS(alias, name) JS_FN( #alias, _##name, 0, 0 ),
+#define FUNCTION_FAST(name) JS_FN( #name, FastNativeFunction(_##name), 0, 0 ),
+#define FUNCTION_FAST_ARGC(name, nargs) JS_FN( #name, FastNativeFunction(_##name), nargs, 0 ),
+#define FUNCTION_FAST_ALIAS(alias, name) JS_FN( #alias, FastNativeFunction(_##name), 0, 0 ),
 
 // properties
 #define BEGIN_PROPERTY_SPEC JSPropertySpec _tmp_ps[] = { // *name, tinyid, flags, getter, setter
