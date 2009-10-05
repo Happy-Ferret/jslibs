@@ -183,27 +183,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\jswindow.cpp"
-				>
-				<FileConfiguration
-					Name="DBG|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="OPT|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath=".\main.cpp"
 				>
 				<FileConfiguration

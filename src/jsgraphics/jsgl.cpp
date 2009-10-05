@@ -70,22 +70,15 @@ typedef void* (__cdecl *glGetProcAddress_t)(const char*);
 static glGetProcAddress_t glGetProcAddress = NULL;
 
 #define DECLARE_OPENGL_EXTENSION( name, proto ) static proto name = NULL;
-#define LOAD_OPENGL_EXTENSION( name, proto ) \
-	if ( name != NULL ) \
-		JL_REPORT_WARNING("OpenGL extension %s has already been loaded.", #name ); \
-	name = (proto) glGetProcAddress( #name ); \
-	if ( name == NULL ) \
-		JL_REPORT_WARNING("OpenGL extension %s unavailable", #name );
-#define CHECK_OPENGL_EXTENSION( name ) JL_S_ASSERT( name != NULL, "OpenGL extension %s unavailable.", #name );
 
 DECLARE_OPENGL_EXTENSION( glPointParameteri, PFNGLPOINTPARAMETERIPROC );
 DECLARE_OPENGL_EXTENSION( glPointParameterf, PFNGLPOINTPARAMETERFPROC );
 DECLARE_OPENGL_EXTENSION( glPointParameterfv, PFNGLPOINTPARAMETERFVPROC );
-DECLARE_OPENGL_EXTENSION( glActiveTextureARB, PFNGLACTIVETEXTUREARBPROC );
-DECLARE_OPENGL_EXTENSION( glClientActiveTextureARB, PFNGLCLIENTACTIVETEXTUREARBPROC );
-DECLARE_OPENGL_EXTENSION( glMultiTexCoord1d, PFNGLMULTITEXCOORD1DARBPROC );
-DECLARE_OPENGL_EXTENSION( glMultiTexCoord2d, PFNGLMULTITEXCOORD2DARBPROC );
-DECLARE_OPENGL_EXTENSION( glMultiTexCoord3d, PFNGLMULTITEXCOORD3DARBPROC );
+DECLARE_OPENGL_EXTENSION( glActiveTexture, PFNGLACTIVETEXTUREPROC );
+DECLARE_OPENGL_EXTENSION( glClientActiveTexture, PFNGLCLIENTACTIVETEXTUREPROC );
+DECLARE_OPENGL_EXTENSION( glMultiTexCoord1d, PFNGLMULTITEXCOORD1DPROC );
+DECLARE_OPENGL_EXTENSION( glMultiTexCoord2d, PFNGLMULTITEXCOORD2DPROC );
+DECLARE_OPENGL_EXTENSION( glMultiTexCoord3d, PFNGLMULTITEXCOORD3DPROC );
 DECLARE_OPENGL_EXTENSION( glBindRenderbufferEXT, PFNGLBINDRENDERBUFFEREXTPROC );
 DECLARE_OPENGL_EXTENSION( glGenRenderbuffersEXT, PFNGLGENRENDERBUFFERSEXTPROC );
 DECLARE_OPENGL_EXTENSION( glDeleteRenderbuffersEXT, PFNGLDELETERENDERBUFFERSEXTPROC );
@@ -100,12 +93,52 @@ DECLARE_OPENGL_EXTENSION( glFramebufferTexture2DEXT, PFNGLFRAMEBUFFERTEXTURE2DEX
 DECLARE_OPENGL_EXTENSION( glFramebufferTexture3DEXT, PFNGLFRAMEBUFFERTEXTURE3DEXTPROC );
 DECLARE_OPENGL_EXTENSION( glFramebufferRenderbufferEXT, PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC );
 DECLARE_OPENGL_EXTENSION( glGetFramebufferAttachmentParameterivEXT, PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVEXTPROC );
-DECLARE_OPENGL_EXTENSION( glIsBufferARB, PFNGLISBUFFERARBPROC );
-DECLARE_OPENGL_EXTENSION( glGenBuffersARB, PFNGLGENBUFFERSARBPROC );
-DECLARE_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
-DECLARE_OPENGL_EXTENSION( glBufferDataARB, PFNGLBUFFERDATAARBPROC );
-DECLARE_OPENGL_EXTENSION( glMapBufferARB, PFNGLMAPBUFFERARBPROC );
-DECLARE_OPENGL_EXTENSION( glUnmapBufferARB, PFNGLUNMAPBUFFERARBPROC );
+DECLARE_OPENGL_EXTENSION( glIsBuffer, PFNGLISBUFFERPROC );
+DECLARE_OPENGL_EXTENSION( glGenBuffers, PFNGLGENBUFFERSPROC );
+DECLARE_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
+DECLARE_OPENGL_EXTENSION( glBufferData, PFNGLBUFFERDATAPROC );
+DECLARE_OPENGL_EXTENSION( glMapBuffer, PFNGLMAPBUFFERPROC );
+DECLARE_OPENGL_EXTENSION( glUnmapBuffer, PFNGLUNMAPBUFFERPROC );
+
+/*
+#define LOAD_OPENGL_EXTENSION( name, proto ) \
+	if ( name != NULL ) \
+		JL_REPORT_WARNING("OpenGL extension %s has already been loaded.", #name ); \
+	name = (proto) glGetProcAddress( #name ); \
+	if ( name == NULL ) \
+		JL_REPORT_WARNING("OpenGL extension %s unavailable", #name );
+*/
+
+#define INIT_OPENGL_EXTENSION( name, proto ) \
+JL_MACRO_BEGIN \
+	if ( name == NULL ) \
+		name = (proto)glGetProcAddress( #name ); \
+JL_MACRO_END
+
+#define JL_INIT_OPENGL_EXTENSION( name, proto ) \
+JL_MACRO_BEGIN \
+	INIT_OPENGL_EXTENSION(name, proto); \
+	JL_S_ASSERT( name != NULL, "OpenGL extension %s is unavailable.", #name ); \
+JL_MACRO_END
+
+
+/* test for gl ext initialization. (TBD) apply this initialization method
+
+void APIENTRY init_glPointParameteri(GLenum e, GLint i);
+PFNGLPOINTPARAMETERIPROC glPointParameteri = init_glPointParameteri;
+void APIENTRY init_glPointParameteri(GLenum e, GLint i) {
+
+	glPointParameteri = (PFNGLPOINTPARAMETERIPROC)glGetProcAddress("glPointParameteri");
+	if ( glPointParameteri == NULL )
+		glPointParameteri = init_glPointParameteri;
+	else
+		return glPointParameteri(e, i);
+}
+*/
+
+
+
+
 
 
 /**doc fileIndex:top
@@ -2471,16 +2504,16 @@ $TOC_MEMBER $INAME
  $INT $INAME()
   Returns a new buffer.
   $H OpenGL API
-   glGenBuffersARB
+   glGenBuffers
 **/
 DEFINE_FUNCTION_FAST( GenBuffer ) {
 	
-	CHECK_OPENGL_EXTENSION( glGenBuffersARB );
+	JL_INIT_OPENGL_EXTENSION( glGenBuffers, PFNGLGENBUFFERSPROC );
 	
 	JL_S_ASSERT_ARG(0);
 	GLuint buffer;
 
-	glGenBuffersARB(1, &buffer);
+	glGenBuffers(1, &buffer);
 	
 	*JL_FRVAL = INT_TO_JSVAL(buffer);
 	return JS_TRUE;
@@ -2495,17 +2528,17 @@ $TOC_MEMBER $INAME
    $ARG GLenum target
    $ARG $INT buffer
   $H OpenGL API
-   glBindBufferARB
+   glBindBuffer
 **/
 DEFINE_FUNCTION_FAST( BindBuffer ) {
 
-	CHECK_OPENGL_EXTENSION( glBindBufferARB );
+	JL_INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
 
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
 	
-	glBindBufferARB(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)));
+	glBindBuffer(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)));
 
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -2554,9 +2587,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( PointParameter ) {
 
-	CHECK_OPENGL_EXTENSION( glPointParameteri );
-	CHECK_OPENGL_EXTENSION( glPointParameterf );
-	CHECK_OPENGL_EXTENSION( glPointParameterfv );
+	JL_INIT_OPENGL_EXTENSION( glPointParameteri, PFNGLPOINTPARAMETERIPROC );
+	JL_INIT_OPENGL_EXTENSION( glPointParameterf, PFNGLPOINTPARAMETERFPROC );
+	JL_INIT_OPENGL_EXTENSION( glPointParameterfv, PFNGLPOINTPARAMETERFVPROC );
 
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -2595,16 +2628,16 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG GLenum texture
   $H OpenGL API
-   glActiveTextureARB
+   glActiveTexture
 **/
 DEFINE_FUNCTION_FAST( ActiveTexture ) {
 
-	CHECK_OPENGL_EXTENSION( glActiveTextureARB );
+	JL_INIT_OPENGL_EXTENSION( glActiveTexture, PFNGLACTIVETEXTUREPROC );
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	
-	glActiveTextureARB(JSVAL_TO_INT(JL_FARG(1)));
+	glActiveTexture(JSVAL_TO_INT(JL_FARG(1)));
 	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -2618,16 +2651,16 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG GLenum texture
   $H OpenGL API
-   glClientActiveTextureARB
+   glClientActiveTexture
 **/
 DEFINE_FUNCTION_FAST( ClientActiveTexture ) {
 
-	CHECK_OPENGL_EXTENSION( glClientActiveTextureARB );
+	JL_INIT_OPENGL_EXTENSION( glClientActiveTexture, PFNGLCLIENTACTIVETEXTUREPROC );
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
 
-	glClientActiveTextureARB(JSVAL_TO_INT(JL_FARG(1)));
+	glClientActiveTexture(JSVAL_TO_INT(JL_FARG(1)));
 	
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -2648,9 +2681,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 
-	CHECK_OPENGL_EXTENSION( glMultiTexCoord1d );
-	CHECK_OPENGL_EXTENSION( glMultiTexCoord2d );
-	CHECK_OPENGL_EXTENSION( glMultiTexCoord3d );
+	JL_INIT_OPENGL_EXTENSION( glMultiTexCoord1d, PFNGLMULTITEXCOORD1DPROC );
+	JL_INIT_OPENGL_EXTENSION( glMultiTexCoord2d, PFNGLMULTITEXCOORD2DPROC );
+	JL_INIT_OPENGL_EXTENSION( glMultiTexCoord3d, PFNGLMULTITEXCOORD3DPROC );
 
 	JL_S_ASSERT_ARG_RANGE(2,4);
 	*JL_FRVAL = JSVAL_VOID;
@@ -2697,7 +2730,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( BindRenderbuffer ) {
 
-	CHECK_OPENGL_EXTENSION( glBindRenderbufferEXT );
+	JL_INIT_OPENGL_EXTENSION( glBindRenderbufferEXT, PFNGLBINDRENDERBUFFEREXTPROC );
 
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -2719,7 +2752,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GenRenderbuffer ) {
 
-	CHECK_OPENGL_EXTENSION( glGenRenderbuffersEXT );
+	JL_INIT_OPENGL_EXTENSION( glGenRenderbuffersEXT, PFNGLGENRENDERBUFFERSEXTPROC);
 	
 	JL_S_ASSERT_ARG(0);
 	GLuint buffer;
@@ -2742,7 +2775,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DeleteRenderbuffer ) {
 
-	CHECK_OPENGL_EXTENSION( glDeleteRenderbuffersEXT );
+	JL_INIT_OPENGL_EXTENSION( glDeleteRenderbuffersEXT, PFNGLDELETERENDERBUFFERSEXTPROC );
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -2767,7 +2800,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( RenderbufferStorage ) {
 
-	CHECK_OPENGL_EXTENSION( glRenderbufferStorageEXT );
+	JL_INIT_OPENGL_EXTENSION( glRenderbufferStorageEXT, PFNGLRENDERBUFFERSTORAGEEXTPROC );
 
 	JL_S_ASSERT_ARG(4);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -2793,7 +2826,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetRenderbufferParameter ) {
 
-	CHECK_OPENGL_EXTENSION( glGetRenderbufferParameterivEXT );
+	JL_INIT_OPENGL_EXTENSION( glGetRenderbufferParameterivEXT, PFNGLGETRENDERBUFFERPARAMETERIVEXTPROC );
 
 	JL_S_ASSERT_ARG_RANGE(2,3);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -2830,7 +2863,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( BindFramebuffer ) {
 
-	CHECK_OPENGL_EXTENSION( glBindFramebufferEXT );
+	JL_INIT_OPENGL_EXTENSION( glBindFramebufferEXT, PFNGLBINDFRAMEBUFFEREXTPROC );
 
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -2850,7 +2883,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GenFramebuffer ) {
 
-	CHECK_OPENGL_EXTENSION( glGenFramebuffersEXT );
+	JL_INIT_OPENGL_EXTENSION( glGenFramebuffersEXT, PFNGLGENFRAMEBUFFERSEXTPROC );
 
 	JL_S_ASSERT_ARG(0);
 	GLuint buffer;
@@ -2871,7 +2904,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DeleteFramebuffer ) {
 
-	CHECK_OPENGL_EXTENSION( glDeleteFramebuffersEXT );
+	JL_INIT_OPENGL_EXTENSION( glDeleteFramebuffersEXT, PFNGLDELETEFRAMEBUFFERSEXTPROC );
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -2893,7 +2926,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( CheckFramebufferStatus ) {
 
-	CHECK_OPENGL_EXTENSION( glCheckFramebufferStatusEXT );
+	JL_INIT_OPENGL_EXTENSION( glCheckFramebufferStatusEXT, PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC );
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -2917,7 +2950,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( FramebufferTexture1D ) {
 
-	CHECK_OPENGL_EXTENSION( glFramebufferTexture1DEXT );
+	JL_INIT_OPENGL_EXTENSION( glFramebufferTexture1DEXT, PFNGLFRAMEBUFFERTEXTURE1DEXTPROC );
 
 	JL_S_ASSERT_ARG(5);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -2948,7 +2981,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( FramebufferTexture2D ) {
 
-	CHECK_OPENGL_EXTENSION( glFramebufferTexture2DEXT );
+	JL_INIT_OPENGL_EXTENSION( glFramebufferTexture2DEXT, PFNGLFRAMEBUFFERTEXTURE2DEXTPROC );
 
 	JL_S_ASSERT_ARG(5);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -2980,7 +3013,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( FramebufferTexture3D ) {
 
-	CHECK_OPENGL_EXTENSION( glFramebufferTexture3DEXT );
+	JL_INIT_OPENGL_EXTENSION( glFramebufferTexture3DEXT, PFNGLFRAMEBUFFERTEXTURE3DEXTPROC );
 
 	JL_S_ASSERT_ARG(5);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -3012,7 +3045,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( FramebufferRenderbuffer ) {
 
-	CHECK_OPENGL_EXTENSION( glFramebufferRenderbufferEXT );
+	JL_INIT_OPENGL_EXTENSION( glFramebufferRenderbufferEXT, PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC );
 
 	JL_S_ASSERT_ARG(5);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -3043,7 +3076,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetFramebufferAttachmentParameter ) {
 
-	CHECK_OPENGL_EXTENSION( glGetFramebufferAttachmentParameterivEXT );
+	JL_INIT_OPENGL_EXTENSION( glGetFramebufferAttachmentParameterivEXT, PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVEXTPROC  );
 
 	JL_S_ASSERT_ARG_RANGE(3,4);
 	JL_S_ASSERT_INT(JL_FARG(1));
@@ -3169,9 +3202,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 
-	CHECK_OPENGL_EXTENSION( glGenBuffersARB );
-	CHECK_OPENGL_EXTENSION( glBindBufferARB );
-	CHECK_OPENGL_EXTENSION( glBufferDataARB );
+	JL_INIT_OPENGL_EXTENSION( glGenBuffers, PFNGLGENBUFFERSPROC );
+	JL_INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
+	JL_INIT_OPENGL_EXTENSION( glBufferData, PFNGLBUFFERDATAPROC );
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_OBJECT(JL_FARG(1));
@@ -3186,42 +3219,42 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 	if ( srf->vertex ) {
 	
 		info->vertexCount = srf->vertexCount;
-		glGenBuffersARB(1, &info->vertexBuffer);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->vertexBuffer);
-		glBufferDataARB(GL_ARRAY_BUFFER_ARB, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->vertex, GL_STATIC_DRAW_ARB);
+		glGenBuffers(1, &info->vertexBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, info->vertexBuffer);
+		glBufferData(GL_ARRAY_BUFFER, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->vertex, GL_STATIC_DRAW);
 	} else
 		info->vertexBuffer = 0;
 
 	if ( srf->index ) {
 
 		info->indexCount = srf->indexCount;
-		glGenBuffersARB(1, &info->indexBuffer);
-		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, info->indexBuffer);
-		glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, srf->indexCount * sizeof(SURFACE_INDEX_TYPE), srf->index, GL_STATIC_DRAW_ARB);
+		glGenBuffers(1, &info->indexBuffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, info->indexBuffer);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, srf->indexCount * sizeof(SURFACE_INDEX_TYPE), srf->index, GL_STATIC_DRAW);
 	} else
 		info->indexBuffer = 0;
 
 	if ( srf->normal ) {
 
-		glGenBuffersARB(1, &info->normalBuffer);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->normalBuffer);
-		glBufferDataARB(GL_ARRAY_BUFFER_ARB, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->normal, GL_STATIC_DRAW_ARB);
+		glGenBuffers(1, &info->normalBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, info->normalBuffer);
+		glBufferData(GL_ARRAY_BUFFER, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->normal, GL_STATIC_DRAW);
 	} else
 		info->normalBuffer = 0;
 
 	if ( srf->textureCoordinate ) {
 
-		glGenBuffersARB(1, &info->texCoordBuffer);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->texCoordBuffer);
-		glBufferDataARB(GL_ARRAY_BUFFER_ARB, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->textureCoordinate, GL_STATIC_DRAW_ARB);
+		glGenBuffers(1, &info->texCoordBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, info->texCoordBuffer);
+		glBufferData(GL_ARRAY_BUFFER, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->textureCoordinate, GL_STATIC_DRAW);
 	} else
 		info->texCoordBuffer = 0;
 
 	if ( srf->color ) {
 
-		glGenBuffersARB(1, &info->colorBuffer);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->colorBuffer);
-		glBufferDataARB(GL_ARRAY_BUFFER_ARB, srf->vertexCount * 4 * sizeof(SURFACE_REAL_TYPE), srf->color, GL_STATIC_DRAW_ARB);
+		glGenBuffers(1, &info->colorBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, info->colorBuffer);
+		glBufferData(GL_ARRAY_BUFFER, srf->vertexCount * 4 * sizeof(SURFACE_REAL_TYPE), srf->color, GL_STATIC_DRAW);
 	} else
 		info->colorBuffer = 0;
 
@@ -3242,7 +3275,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 
-	CHECK_OPENGL_EXTENSION( glBindBufferARB );
+	JL_INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
 
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_OBJECT(JL_FARG(1));
@@ -3262,35 +3295,35 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 	if ( info->vertexBuffer ) {
 
 		glEnableClientState(GL_VERTEX_ARRAY);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->vertexBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, info->vertexBuffer);
 		glVertexPointer(3, dataType, 0, 0);
 	}
 
 	if ( info->normalBuffer ) {
 
 		glEnableClientState(GL_NORMAL_ARRAY);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->normalBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, info->normalBuffer);
 		glNormalPointer(dataType, 0, 0);
 	}
 
 	if ( info->texCoordBuffer ) {
 
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->texCoordBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, info->texCoordBuffer);
 		glTexCoordPointer(3, dataType, 0, 0);
 	}
 
 	if ( info->colorBuffer ) {
 
 		glEnableClientState(GL_COLOR_ARRAY);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, info->colorBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, info->colorBuffer);
 		glColorPointer(4, dataType, 0, 0);
 	}
 
 	if ( info->indexBuffer ) {
 
 		//	glEnableClientState(GL_INDEX_ARRAY);
-		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, info->indexBuffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, info->indexBuffer);
 		glDrawElements(mode, info->indexCount, GL_UNSIGNED_INT, 0); // 1 triangle = 3 vertex
 	} else {
 		
@@ -3309,8 +3342,8 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 	glDisableClientState(GL_VERTEX_ARRAY); // deactivate vertex array
 
 	// bind with 0, so, switch back to normal pointer operation
-//	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-//	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+//	glBindBuffer(GL_ARRAY_BUFFER, 0);
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	JL_CHK( CheckThrowCurrentOglError(cx) );
 
@@ -3327,43 +3360,47 @@ $TOC_MEMBER $INAME
    $ARG enum target
 	$ARG enum access
   $H OpenGL API
-   glMapBufferARB
+   glMapBuffer
 **/
 
 bool TextureBufferAlloc(TextureBuffer *tb, unsigned int size) {
 
-	if ( !glBufferDataARB || !glMapBufferARB || !glBindBufferARB )
+	INIT_OPENGL_EXTENSION( glBufferData, PFNGLBUFFERDATAPROC );
+	INIT_OPENGL_EXTENSION( glMapBuffer, PFNGLMAPBUFFERPROC );
+	INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
+
+	if ( glBufferData == NULL || glMapBuffer == NULL || glBindBuffer == NULL )
 		return false;
 
 	GLuint pbo = (GLuint)tb->pv;
 	
 	// the target tokens clearly specify the bound PBO will be used in one of 2 different operations; 
-	//GL_PIXEL_PACK_BUFFER_ARB to transfer pixel data to a PBO, or GL_PIXEL_UNPACK_BUFFER_ARB to transfer pixel data from PBO. 
-	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
+	//GL_PIXEL_PACK_BUFFER to transfer pixel data to a PBO, or GL_PIXEL_UNPACK_BUFFER to transfer pixel data from PBO. 
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
 	
 	// VBO memory manager will choose the best memory places for the buffer object based on these usage flags,for example, 
-	// GL_STATIC_DRAW_ARB and GL_STREAM_DRAW_ARB may use video memory, and GL_DYNAMIC_DRAW_ARB may use AGP memory.
+	// GL_STATIC_DRAW and GL_STREAM_DRAW may use video memory, and GL_DYNAMIC_DRAW may use AGP memory.
 	// Any _READ_ related buffers would be fine in system or AGP memory because the data should be easy to access.
-	glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, size, NULL, GL_DYNAMIC_READ_ARB);
+	glBufferData(GL_PIXEL_UNPACK_BUFFER, size, NULL, GL_DYNAMIC_READ);
 	
-	// glMapBufferARB() returns the pointer to the buffer object if success. Otherwise it returns NULL.
-	// The target parameter is GL_PIXEL_PACK_BUFFER_ARB or GL_PIXEL_UNPACK_BUFFER_ARB. The second parameter,
-	// access specifies what to do with the mapped buffer; read data from the PBO (GL_READ_ONLY_ARB),
-	// write data to the PBO (GL_WRITE_ONLY_ARB), or both (GL_READ_WRITE_ARB). 
-	tb->data = (float*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_READ_WRITE);
+	// glMapBuffer() returns the pointer to the buffer object if success. Otherwise it returns NULL.
+	// The target parameter is GL_PIXEL_PACK_BUFFER or GL_PIXEL_UNPACK_BUFFER. The second parameter,
+	// access specifies what to do with the mapped buffer; read data from the PBO (GL_READ_ONLY),
+	// write data to the PBO (GL_WRITE_ONLY), or both (GL_READ_WRITE). 
+	tb->data = (float*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_WRITE);
 	return true;
 }
 
 bool TextureBufferFree(TextureBuffer *tb) {
 
-	if ( !glUnmapBufferARB )
+	if ( !glUnmapBuffer )
 		return false;
 	
 	if ( tb->pv != NULL ) {
 		
 		GLuint pbo = (GLuint)tb->pv;
-		glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
-		glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB);
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 		tb->pv = NULL;
 	}
 	return true;
@@ -3380,13 +3417,13 @@ void TextureBufferFinalize(void* data) {
 
 DEFINE_FUNCTION_FAST( CreateTextureBuffer ) {
 
-	CHECK_OPENGL_EXTENSION( glGenBuffersARB );
-	CHECK_OPENGL_EXTENSION( glBindBufferARB );
+	JL_INIT_OPENGL_EXTENSION( glGenBuffers, PFNGLGENBUFFERSPROC );
+//	JL_INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
 
 	TextureBuffer *tb;
 	JL_CHK( CreateHandle(cx, 'TBUF', sizeof(TextureBuffer), (void**)&tb, TextureBufferFinalize, JL_FRVAL) );
 	GLuint pbo;
-	glGenBuffersARB(1, &pbo);
+	glGenBuffers(1, &pbo);
 	tb->pv = (void*)pbo;
 	return JS_TRUE;
 	JL_BAD;
@@ -3800,12 +3837,23 @@ static int MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 }
 
 
+void *windowsGLGetProcAddress(const char *procName) {
+	
+	return wglGetProcAddress(procName);
+}
+
 DEFINE_INIT() {
 
 	JL_CHK( SetMatrix44GetInterface(cx, obj, MatrixGet) );
 
+#ifdef XP_WIN
+	glGetProcAddress = windowsGLGetProcAddress;
+#else
 	JL_CHK( GetNativeFunction(cx, JS_GetGlobalObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
+#endif
 	JL_S_ASSERT( glGetProcAddress != NULL, "OpenGL extensions unavailable." );
+
+/*
 
 	LOAD_OPENGL_EXTENSION( glGenBuffersARB, PFNGLGENBUFFERSARBPROC );
 	LOAD_OPENGL_EXTENSION( glBindBufferARB, PFNGLBINDBUFFERARBPROC );
@@ -3838,6 +3886,7 @@ DEFINE_INIT() {
 	LOAD_OPENGL_EXTENSION( glMapBufferARB, PFNGLMAPBUFFERARBPROC );
 	LOAD_OPENGL_EXTENSION( glUnmapBufferARB, PFNGLUNMAPBUFFERARBPROC );
 	LOAD_OPENGL_EXTENSION( glIsBufferARB, PFNGLISBUFFERARBPROC );
+*/
 
 	return JS_TRUE;
 	JL_BAD;
