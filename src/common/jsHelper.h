@@ -193,9 +193,6 @@ ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, HostPrivate *hostPrivate, cons
 // same for fast native
 #define JL_FRVAL (&JS_RVAL(cx, vp))
 
-#define JL_MACRO_BEGIN do {
-#define JL_MACRO_END } while(0)
-
 #define JL_BAD bad:return(JS_FALSE)
 
 // check: used to forward an error. // (TBD) try ultra-safe mode at compile-time: #define JL_CHK( status ) (status)

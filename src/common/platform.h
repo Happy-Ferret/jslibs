@@ -150,8 +150,9 @@
 	#define LIST_SEPARATOR ';'
 
 	#define strcasecmp stricmp
-
 	#define malloc_usable_size _msize
+
+	#define __THROW throw()
 
 #elif defined(_MACOSX) // MacosX platform
 
@@ -202,6 +203,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
+
+#define JL_MACRO_BEGIN do {
+
+#define JL_MACRO_END } while(0)
 
 #define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
 

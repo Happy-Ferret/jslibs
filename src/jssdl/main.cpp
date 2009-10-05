@@ -36,6 +36,21 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
+/*
+EXTERN_C void* SDL_malloc( size_t size ) {
+	return jl_malloc(size);
+}
+EXTERN_C void* SDL_calloc( size_t num, size_t size ) {
+	return jl_calloc(num, size);
+}
+EXTERN_C void* SDL_realloc( void *ptr, size_t size ) {
+	return jl_realloc(ptr, size);
+}
+EXTERN_C void SDL_free( void *ptr ) {
+	return jl_free(ptr);
+}
+*/
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	JL_CHK( InitJslibsModule(cx) );

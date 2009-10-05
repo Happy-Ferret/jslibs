@@ -7,10 +7,6 @@
 
 #include <math.h>
 
-#include "../common/platform.h"
-
-#include <jsapi.h>
-
 #include "../common/jsHelper.h"
 #include "../common/jsClass.h"
 #include "../common/jsConversionHelper.h"

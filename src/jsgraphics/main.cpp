@@ -14,8 +14,6 @@
 
 #include "stdafx.h"
 
-//#include "jswindow.h"
-
 DECLARE_CLASS(Ogl)
 
 #include "jstransformation.h"
@@ -37,10 +35,6 @@ $MODULE_FOOTER
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	JL_CHK( InitJslibsModule(cx) );
-
-//#ifdef XP_WIN
-//	JL_CHK( INIT_CLASS( Window ) );
-//#endif
 
 	INIT_STATIC();
 	INIT_CLASS( Transformation );
