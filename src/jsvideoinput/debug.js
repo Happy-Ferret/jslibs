@@ -30,7 +30,9 @@ var t1 = TimeCounter();
 
 
 	frame++;
-	var texture = new Texture(vi.GetImage()).Resize(256,256);
+	var image = vi.GetImage();
+	var texture = new Texture(image).Resize(256,256);
+	image.Free();
 	
 	frames.push(texture);
 	if ( frames.length < 3 )
@@ -41,7 +43,9 @@ var t1 = TimeCounter();
 
 //	frames[1] = frames[2];
 
-	DisplayTexture(frames.shift());
+	var tmp = frames.shift();
+	DisplayTexture(tmp);
+	tmp.Free();
 
 
 //	var level = texture.GetGlobalLevel();

@@ -2,6 +2,15 @@
 
 LoadModule('jsstd');
 
+for ( var i = 0; i < 5; i++ ) {
+
+	Expand("$(a)b$(c)d$(e)f$(g)g$(i)j$(k)l$(m)n$(o)p");
+	Sleep(110);
+}
+
+Halt(); //////////////////////////////
+
+
 
 var i = 0;
 while ( !endSignal ) {
@@ -21,15 +30,6 @@ while ( !endSignal ) {
 Halt(); //////////////////////////////
 
 
-for ( var i = 0; i < 5; i++ ) {
-
-	Expand("$(a)b$(c)d$(e)f$(g)g$(i)j$(k)l$(m)n$(o)p");
-	Sleep(110);
-}
-
-
-	
-Halt(); //////////////////////////////
 
 
 var b = new Blob('abcde');

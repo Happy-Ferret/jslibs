@@ -6,6 +6,9 @@ LoadModule('jsdebug');
 LoadModule('jsstd');
 LoadModule('jsio');
 
+LoadModule('jssdl');
+
+LoadModule('jsgraphics');
 
 //////////////////////////////////////////////////////////////////////////////
 

@@ -518,8 +518,8 @@ var Scene3 = new function() {
 
 var Scene4 = new function() {
 
-	var tId = GenTexture();
-	Ogl.BindTexture(vTEXTURE_2D, tId);
+	var tId = Ogl.GenTexture();
+	Ogl.BindTexture(TEXTURE_2D, tId);
 
 //	var tb = Ogl.CreateTextureBuffer();
 //	Ogl.Test(tb);
@@ -695,8 +695,8 @@ for (var end = false; !end ;) {
 
 //	Scene1();
 //	Scene2.next();
-//	Scene3.next();
-	Scene4.next();
+	Scene3.next();
+//	Scene4.next();
 
 
 /*
