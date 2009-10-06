@@ -222,8 +222,7 @@ DEFINE_CALL() {
 	pv->stream.next_in = (Bytef*)inputData;
 
 	Buffer resultBuffer;
-	BufferInitialize(&resultBuffer, bufferTypeAuto, bufferGrowTypeAuto);
-	BufferSetAllocators(&resultBuffer, cx, wrapped_JS_malloc, wrapped_JS_free, wrapped_JS_realloc);
+	BufferInitialize(&resultBuffer, bufferTypeAuto, bufferGrowTypeAuto, cx, wrapped_JS_malloc, wrapped_JS_realloc, wrapped_JS_free);
 
 	// first length is a guess.
 	size_t length;

@@ -124,15 +124,6 @@ inline BufferType GuessType( const Buffer *buffer, size_t lastChunk, size_t requ
 		return bufferTypeChunk;
 }
 
-
-inline void BufferSetAllocators( Buffer *buffer, void* opaqueAllocatorContext, BufferAlloc bufferAlloc, BufferFree bufferFree, BufferRealloc bufferRealloc ) {
-
-	buffer->opaqueAllocatorContext = opaqueAllocatorContext;
-	buffer->bufferAlloc = bufferAlloc;
-	buffer->bufferFree = bufferFree;
-	buffer->bufferRealloc = bufferRealloc;
-}
-
 inline void* _BufferAlloc( Buffer *buf, size_t size ) {
 
 	return buf->bufferAlloc ? buf->bufferAlloc(buf->opaqueAllocatorContext, size) : jl_malloc(size);
@@ -149,9 +140,13 @@ inline void* _BufferRealloc( Buffer *buf, void* memory, size_t size ) {
 }
 
 
-inline void BufferInitialize( Buffer *buffer, BufferType type, BufferGrowType growType ) {
+inline void BufferInitialize( Buffer *buffer, BufferType type, BufferGrowType growType, void* opaqueAllocatorContext, BufferAlloc bufferAlloc, BufferRealloc bufferRealloc, BufferFree bufferFree ) {
 
-	BufferSetAllocators(buffer, NULL, NULL, NULL, NULL);
+	buffer->opaqueAllocatorContext = opaqueAllocatorContext;
+	buffer->bufferAlloc = bufferAlloc;
+	buffer->bufferFree = bufferFree;
+	buffer->bufferRealloc = bufferRealloc;
+
 	buffer->type = type;
 	buffer->growType = growType;
 

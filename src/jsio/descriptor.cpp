@@ -219,8 +219,7 @@ void* JSBufferRealloc(void * opaqueAllocatorContext, void* address, unsigned int
 JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 	Buffer buf;
-	BufferInitialize(&buf, bufferTypeChunk, bufferGrowTypeNoGuess);
-	BufferSetAllocators(&buf, cx, JSBufferAlloc, JSBufferFree, JSBufferRealloc);
+	BufferInitialize(&buf, bufferTypeChunk, bufferGrowTypeNoGuess, cx, JSBufferAlloc, JSBufferRealloc, JSBufferFree);
 	PRInt32 currentReadLength = 1024;
 	for (;;) {
 

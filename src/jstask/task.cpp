@@ -22,7 +22,7 @@
 
 using namespace jl;
 
-struct Private {
+struct TaskPrivate {
 
 	JLMutexHandler mutex;
 	JLThreadHandler threadHandle;
@@ -41,6 +41,11 @@ struct Private {
 	volatile size_t pendingResponseCount;
 
 	jl::Queue exceptionList;
+
+	//jl_malloc_t jl_malloc;
+	//jl_calloc_t jl_calloc;
+	//jl_realloc_t jl_realloc;
+	//jl_free_t jl_free;
 };
 
 
@@ -80,7 +85,7 @@ BEGIN_CLASS( Task )
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	TaskPrivate *pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
 
@@ -131,7 +136,7 @@ bad:
 }
 
 
-JSBool Task(JSContext *cx, Private *pv) {
+static JSBool Task(JSContext *cx, TaskPrivate *pv) {
 
 	jsval argv[3] = { JSVAL_NULL }; // argv[0] is rval and code
 	JSTempValueRooter tvr;
@@ -225,7 +230,7 @@ bad:
 }
 
 
-int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
+static int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
 
 	Buffer *eb = (Buffer*)privateData;
 	memcpy(BufferNewChunk(eb, length), buffer, length);
@@ -234,21 +239,27 @@ int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length )
 }
 
 
-JLThreadFuncDecl ThreadProc( void *threadArg ) {
+static JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 
 	Buffer errBuffer;
-	BufferInitialize(&errBuffer, bufferTypeRealloc, bufferGrowTypeDouble);
+	BufferInitialize(&errBuffer, bufferTypeRealloc, bufferGrowTypeDouble, NULL, NULL, NULL, NULL);
 
 	JSContext *cx = CreateHost(-1, -1, 0);
 	if ( cx == NULL )
 		return 0;
 
+	HostPrivate *hpv = GetHostPrivate(cx);
+	hpv->malloc = jl_malloc;
+	hpv->calloc = jl_calloc;
+	hpv->realloc = jl_realloc;
+	hpv->free = jl_free;
+
 	JL_CHK( InitHost(cx, _unsafeMode, NULL, TaskStdErrHostOutput, &errBuffer) );
 
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
 
-	Private *pv;
-	pv = (Private*)threadArg;
+	TaskPrivate *pv;
+	pv = (TaskPrivate*)threadArg;
 
 	JSBool status;
 	status = Task(cx, pv);
@@ -302,13 +313,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	Private *pv = NULL; // keep on top
+	TaskPrivate *pv = NULL; // keep on top
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_CLASS( obj, _class );
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_FUNCTION( JL_ARG(1) );
 
-	pv = (Private*)JS_malloc(cx, sizeof(Private));
+	pv = (TaskPrivate*)JS_malloc(cx, sizeof(TaskPrivate));
 	JL_CHK( pv );
 
 	JLThreadPriorityType priority;
@@ -352,7 +363,7 @@ DEFINE_CONSTRUCTOR() {
 	SerializerCreate(&pv->serializedCode);
 	JL_CHK( SerializeJsval(cx, &pv->serializedCode, &JL_ARG(1)));
 
-	pv->threadHandle = JLThreadStart(ThreadProc, pv);
+	pv->threadHandle = JLThreadStart(TaskThreadProc, pv);
 	JL_CHKM( JLThreadOk(pv->threadHandle), "Unable to create the thread." );
 
 	return JS_TRUE;
@@ -372,8 +383,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Request ) {
 
 	JL_S_ASSERT_CLASS( JL_FOBJ, _class );
-	Private *pv;
-	pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	TaskPrivate *pv;
+	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	Serialized serializedRequest;
@@ -403,8 +414,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Response ) {
 
 	JL_S_ASSERT_CLASS( JL_FOBJ, _class );
-	Private *pv;
-	pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	TaskPrivate *pv;
+	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	bool hasNoResponse;
@@ -477,8 +488,8 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( pendingRequestCount ) {
 
 	JL_S_ASSERT_CLASS( obj, _class );
-	Private *pv;
-	pv = (Private*)JL_GetPrivate(cx, obj);
+	TaskPrivate *pv;
+	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_CHK( JLAcquireMutex(pv->mutex) ); // --
 	JL_CHK( UIntToJsval(cx, pv->pendingRequestCount, vp) );
@@ -497,8 +508,8 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( processingRequestCount ) {
 
 	JL_S_ASSERT_CLASS( obj, _class );
-	Private *pv;
-	pv = (Private*)JL_GetPrivate(cx, obj);
+	TaskPrivate *pv;
+	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_CHK( JLAcquireMutex(pv->mutex) ); // --
 	JL_CHK( UIntToJsval(cx, pv->processingRequestCount, vp) );
@@ -516,8 +527,8 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( pendingResponseCount ) {
 
 	JL_S_ASSERT_CLASS( obj, _class );
-	Private *pv;
-	pv = (Private*)JL_GetPrivate(cx, obj);
+	TaskPrivate *pv;
+	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_CHK( JLAcquireMutex(pv->mutex) ); // --
 	JL_CHK( UIntToJsval(cx, pv->pendingResponseCount, vp) );
@@ -536,8 +547,8 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( idle ) {
 
 	JL_S_ASSERT_CLASS( obj, _class );
-	Private *pv;
-	pv = (Private*)JL_GetPrivate(cx, obj);
+	TaskPrivate *pv;
+	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_CHK( JLAcquireMutex(pv->mutex) ); // --
 	JL_CHK( BoolToJsval(cx, pv->pendingRequestCount + pv->processingRequestCount + pv->pendingResponseCount == 0 || pv->end, vp) );

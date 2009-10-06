@@ -159,7 +159,7 @@ inline JSNative NativeFunction(JSNative f) { return f; } // used fo type check o
 
 inline char *_NormalizeFunctionName( const char *name ) {
 
-	char *buf = strdup(name); // (TBD) free ?
+	char *buf = strdup(name); // (TBD) free ? DO FREE WITH STANDARD free() FUNCTION !!!!
 	buf[0] = tolower(buf[0]);
 	return buf;
 }

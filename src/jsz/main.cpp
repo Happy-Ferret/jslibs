@@ -31,6 +31,8 @@ $MODULE_FOOTER
 **/
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
+	JL_CHK( InitJslibsModule(cx) );
+
 /*
 	Buffer resultBuffer;
 	BufferInitialize(&resultBuffer, bufferTypeAuto, bufferGrowTypeAuto);
@@ -45,7 +47,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_FALSE;
 */
 
-	JL_CHK( InitJslibsModule(cx) );
 
 	INIT_CLASS( ZError );
 	INIT_CLASS( Z );

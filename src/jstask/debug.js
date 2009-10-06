@@ -1,11 +1,11 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsstd');
-LoadModule('jsio');
 LoadModule('jstask');
+LoadModule('jsio');
+LoadModule('jsstd');
 
 
-for ( var i = 0; i < 2; i++ ) {
+for ( var i = 0; i < 5; i++ ) {
 
 	var myTask = new Task(function() {
 		
@@ -32,6 +32,4 @@ for ( var i = 0; i < 2; i++ ) {
 	client.Connect('127.0.0.1', 8099);
 	var res = client.Read(5);
 	Print( res, '\n' );
-
-
 }

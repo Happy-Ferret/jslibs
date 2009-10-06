@@ -54,7 +54,7 @@ DEFINE_FUNCTION( Stringify ) {
 		if ( read ) {
 
 			Buffer buf;
-			BufferInitialize(&buf, bufferTypeAuto, bufferGrowTypeAuto);
+			BufferInitialize(&buf, bufferTypeAuto, bufferGrowTypeAuto, NULL, NULL, NULL, NULL);
 
 			size_t length;
 			do {
