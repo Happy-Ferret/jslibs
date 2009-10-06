@@ -1283,7 +1283,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Stop the execution of the program. This is a ungraceful way to finish a program and should only be used in critical cases.
 **/
-DEFINE_FUNCTION( Halt ) {
+DEFINE_FUNCTION_FAST( Halt ) {
 
 	return JS_FALSE;
 }
