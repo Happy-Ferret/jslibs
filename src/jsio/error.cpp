@@ -18,7 +18,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision:$
+$SVN_REVISION $Revision$
  You cannot construct this class.$LF
  Its aim is to throw as an exception on any NSPR runtime error.
 **/
@@ -121,7 +121,7 @@ DEFINE_XDR() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: $"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	HAS_XDR
 

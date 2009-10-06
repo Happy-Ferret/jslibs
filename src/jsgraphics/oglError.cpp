@@ -166,7 +166,7 @@ DEFINE_XDR() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: $"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_XDR
 	HAS_RESERVED_SLOTS(1)
 	HAS_HAS_INSTANCE // see issue#52
