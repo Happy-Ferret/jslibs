@@ -255,6 +255,15 @@ static void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) 
 //		png_error(png_ptr, "Trying to read after EOF."); // png_warning()
 }
 
+png_voidp malloc_fn(png_structp png_ptr, png_size_t size) {
+
+	return jl_malloc(size);
+}
+
+void free_fn(png_structp png_ptr, png_voidp ptr) {
+	
+	jl_free(ptr);
+}
 
 /**doc
 $TOC_MEMBER $INAME
@@ -280,6 +289,8 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	desc.obj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	desc.cx = cx;
+
+	png_set_mem_fn(desc.png, NULL, malloc_fn, free_fn);
 
 	png_set_read_fn( desc.png, (voidp)&desc, _png_read );
    png_read_info(desc.png, desc.info);

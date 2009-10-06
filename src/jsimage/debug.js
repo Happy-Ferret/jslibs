@@ -12,7 +12,10 @@ Print( img.width+'x'+img.height+'x'+img.channels, '\n' );
 Print( img.Load().length , '\n' );
 */
 
+//var texture = DecodePngImage(new File('Tremulous.png').Open( File.RDONLY ));
+//Print( texture.width+'x'+texture.height+'x'+texture.channels, '\n' );
 
-var texture = DecodePngImage(new File('Tremulous.png').Open( File.RDONLY ));
+var texture = DecodeJpegImage(new File('battleship_1280x1024.jpg').Open( File.RDONLY ));
 Print( texture.width+'x'+texture.height+'x'+texture.channels, '\n' );
+
 

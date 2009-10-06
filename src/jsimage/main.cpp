@@ -18,6 +18,19 @@ DECLARE_STATIC()
 
 #include "../common/jslibsModule.cpp"
 
+EXTERN_C void* jl_malloc_wrapper( size_t size ) {
+	return jl_malloc(size);
+}
+EXTERN_C void* jl_calloc_wrapper( size_t num, size_t size ) {
+	return jl_calloc(num, size);
+}
+EXTERN_C void* jl_realloc_wrapper( void *ptr, size_t size ) {
+	return jl_realloc(ptr, size);
+}
+EXTERN_C void jl_free_wrapper( void *ptr ) {
+	jl_free(ptr);
+}
+
 /**doc t:header
 $MODULE_HEADER
  This module manage jpeg and png image decomppression and png image compression.
@@ -34,6 +47,9 @@ $MODULE_FOOTER
 **/
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+
+//malloc=jl_malloc;calloc=jl_calloc;realloc=jl_realloc;free=jl_free
+//malloc=((void*(*)(size_t))jl_malloc);calloc=((void*(*)(size_t))jl_calloc);realloc=((void*(*)(void*,size_t))jl_realloc);free=((void(*)(void*))jl_free)
 
 	JL_CHK( InitJslibsModule(cx) );
 
