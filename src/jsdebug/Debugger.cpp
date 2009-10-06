@@ -60,7 +60,7 @@ enum BreakReason {
 };
 
 
-struct Private {
+struct DebuggerPrivate {
 
 	unsigned int interruptCounter;
 	unsigned int interruptCounterLimit;
@@ -100,7 +100,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 
 static JSTrapStatus InterruptCounterHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, (JSObject*)closure);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
 	if ( --pv->interruptCounter != 0 )
 		return JSTRAP_CONTINUE;
 	return BreakHandler(cx, (JSObject*)closure, JL_CurrentStackFrame(cx), FROM_INTERRUPT);
@@ -155,7 +155,7 @@ static JSTrapStatus DebuggerKeyword(JSContext *cx, JSScript *script, jsbytecode 
 
 static JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, (JSObject*)closure);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
 		return JSTRAP_CONTINUE;
 	if ( jsCodeSpec[*pc].format & JOF_DECLARING )
@@ -166,7 +166,7 @@ static JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval 
 
 static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, (JSObject*)closure);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
 		return JSTRAP_CONTINUE;
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
@@ -178,7 +178,7 @@ static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, js
 
 static JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, (JSObject*)closure);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( fp != pv->pframe )
 		return JSTRAP_CONTINUE;
@@ -188,7 +188,7 @@ static JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsv
 
 static JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, (JSObject*)closure);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) <= pv->lineno )
 		return JSTRAP_CONTINUE;
 
@@ -201,7 +201,7 @@ static JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc,
 
 static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakReason breakOrigin) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	JSScript *script;
@@ -318,7 +318,7 @@ bad:
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
 	JSRuntime *rt = JS_GetRuntime(cx);
@@ -365,11 +365,11 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
 
-	Private *pv;
-	pv = (Private*)JS_malloc(cx, sizeof(Private));
+	DebuggerPrivate *pv;
+	pv = (DebuggerPrivate*)JS_malloc(cx, sizeof(DebuggerPrivate));
 	JL_CHK( pv );
 
-	memset(pv, 0, sizeof(Private));
+	memset(pv, 0, sizeof(DebuggerPrivate));
 	JL_SetPrivate(cx, obj, pv);
 	pv->debugHooks = JS_GetGlobalDebugHooks(JS_GetRuntime(cx));
 
@@ -488,7 +488,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( interruptCounterLimit ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	if ( JSVAL_IS_VOID(*vp) ) {
@@ -518,7 +518,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( breakOnError ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
@@ -535,7 +535,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( breakOnException ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
@@ -552,7 +552,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( breakOnDebuggerKeyword ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
@@ -569,7 +569,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( breakOnExecute ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
@@ -586,7 +586,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( breakOnFirstExecute ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
@@ -603,7 +603,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( excludedFileList ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	JL_S_ASSERT_ARRAY( *vp );
@@ -619,13 +619,20 @@ DEFINE_PROPERTY( excludedFileList ) {
 
 	jsval tmp;
 	const char *buffer;
+	unsigned int bufferLength;
 	char *filename;
 	for ( jsuint i = 0; i < length; ++i ) {
 
 		JL_CHK( JS_GetElement(cx, arrayObject, i, &tmp ) );
-		JL_CHK( JsvalToString(cx, &tmp, &buffer) );
-		filename = strdup(buffer);
+
+		JL_CHK( JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength) );
+
+		//filename = strdup(buffer); // malloc/jl_free issue !
+		filename = (char*)jl_malloc(bufferLength +1);
 		JL_S_ASSERT_ALLOC( filename );
+		memcpy(filename, buffer, bufferLength);
+		filename[bufferLength] = '\0';
+
 		AddExcludedFile(&pv->excludedFiles, filename);
 	}
 

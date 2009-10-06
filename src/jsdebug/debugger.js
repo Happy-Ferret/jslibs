@@ -242,7 +242,7 @@ LoadModule('jsdebug');
 		
 		GetScriptList: function() {
 		
-			return scriptFilenameList;
+			return scriptFilenameList; // (TBD) remove excludedFileList from scriptFilenameList.
 		},
 		
 		GetActualLineno: function(filename, lineno) {

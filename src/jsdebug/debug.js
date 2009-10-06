@@ -3,7 +3,19 @@
 LoadModule('jsstd');
 LoadModule('jsdebug');
 
-	
+Exec('debugger.js');
+
+!function() {
+Exec('testForDebugger.js');
+}();
+
+CollectGarbage();
+
+debugger;
+
+
+
+	/*
 Print('processTime ', processTime, '\n');
 
 
@@ -28,3 +40,5 @@ MyTest = function (arg) {
 
 
 Print( DisassembleScript('debug.js', 3) );
+
+*/
