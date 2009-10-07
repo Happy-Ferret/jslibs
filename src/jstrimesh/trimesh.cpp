@@ -63,10 +63,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 
 	Surface *pv;
-	pv = (Surface*)JS_malloc(cx, sizeof(Surface));
+	pv = (Surface*)JS_calloc(cx, sizeof(Surface));
 	JL_CHK( pv );
-
-	memset(pv, 0, sizeof(Surface));
+//	memset(pv, 0, sizeof(Surface)); // see calloc
 
 	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;

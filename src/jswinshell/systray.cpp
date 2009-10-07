@@ -313,8 +313,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT( tpd.hWnd != NULL, "Unable to create the window." );
 	SetWindowLong(tpd.hWnd, GWL_USERDATA, GetCurrentThreadId() ); // thread where the messages will be routed
 
-	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_malloc(cx, sizeof(NOTIFYICONDATA) );
-	memset(nid, 0, sizeof(NOTIFYICONDATA));
+	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_calloc(cx, sizeof(NOTIFYICONDATA) );
+//	memset(nid, 0, sizeof(NOTIFYICONDATA)); // see calloc
 	nid->cbSize = sizeof(NOTIFYICONDATA);
 	nid->hWnd = tpd.hWnd;
 	nid->uID = TRAY_ID;
