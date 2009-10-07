@@ -366,9 +366,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 
 	DebuggerPrivate *pv;
-	pv = (DebuggerPrivate*)JS_calloc(cx, sizeof(DebuggerPrivate));
+	pv = (DebuggerPrivate*)JS_malloc(cx, sizeof(DebuggerPrivate));
 	JL_CHK( pv );
-	//memset(pv, 0, sizeof(DebuggerPrivate)); // see calloc
+	memset(pv, 0, sizeof(DebuggerPrivate));
 
 	JL_SetPrivate(cx, obj, pv);
 	pv->debugHooks = JS_GetGlobalDebugHooks(JS_GetRuntime(cx));

@@ -346,7 +346,9 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 		// allocates the resulting image buffer
 		size_t bufLength = width * height * 1; // 1 channel
 
-		char *buf = (char*)JS_calloc(cx, bufLength); // JS_malloc do not supports 0 bytes size
+		char *buf = (char*)JS_malloc(cx, bufLength); // JS_malloc do not supports 0 bytes size
+		JL_CHK( buf );
+		memset(buf, 0, bufLength);
 
 		jsval blobVal;
 		JL_CHK( JL_NewBlob(cx, buf, bufLength, &blobVal) );
@@ -359,7 +361,6 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 		JL_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
 
 		// render glyphs in the bitmap
-//		memset(buf, 0, bufLength); see calloc
 		for ( i=0; i<strlen; i++ ) {
 
 			if ( glyphs[i].image->format != FT_GLYPH_FORMAT_BITMAP )

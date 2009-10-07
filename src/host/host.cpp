@@ -443,7 +443,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	HostPrivate *pv = GetHostPrivate(cx);
 	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 
-		pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate)); // beware: don't realloc, because WatchDogThreadProc points on it !!!
+		pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc, because WatchDogThreadProc points on it !!!
 		JL_S_ASSERT_ALLOC( pv );
 //		memset(pv, 0, sizeof(HostPrivate)); // mandatory ! or use calloc
 		SetHostPrivate(cx, pv);
