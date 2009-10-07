@@ -16,7 +16,7 @@
 #ifndef _HOST_H_
 #define _HOST_H_
 
-#include <jsapi.h>
+//#include <jsapi.h>
 
 #define NAME_GLOBAL_CLASS "Global"
 #define NAME_GLOBAL_GLOBAL_OBJECT "global"
@@ -30,9 +30,9 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 JSBool DestroyHost( JSContext *cx );
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );
 
-JSBool BeginThreadMemoryManagement( JSContext *cx );
-JSBool EndThreadMemoryManagement( JSContext *cx, bool freeQueue );
-
-JSBool DisableMemoryFree( JSContext *cx );
+bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_realloc_t *realloc, jl_free_t *free );
+JSBool MemoryManagerEnableGCEvent( JSContext *cx );
+JSBool MemoryManagerDisableGCEvent( JSContext *cx );
+bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *calloc, jl_realloc_t *realloc, jl_free_t *free );
 
 #endif // _HOST_H_

@@ -15,6 +15,20 @@
 #ifndef _PLATFORM_H_
 #define _PLATFORM_H_
 
+
+///////////////////////////////////////////////////////////////////////////////
+// Miscellaneous
+
+#define JL_MACRO_BEGIN do {
+
+#define JL_MACRO_END } while(0)
+
+#define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Compiler specific configuration
+
 #if defined __cplusplus
 	#define EXTERN_C extern "C"
 #else
@@ -30,10 +44,6 @@
 		#define NDEBUG
 	#endif
 #endif
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Compiler specific configuration
 
 #if defined(__GNUC__) && (__GNUC__ > 2)
 	#define likely(expr)	__builtin_expect((expr), !0)
@@ -134,10 +144,8 @@
 	#define WIN32_LEAN_AND_MEAN   // Exclude rarely-used stuff from Windows headers
 	#include <windows.h>
 
-
 	#include <direct.h> // function declarations for directory handling/creation
 	#include <process.h> // threads, ...
-
 
 	#define int8_t   INT8
 	#define int16_t  INT16
@@ -148,7 +156,6 @@
 	#define uint16_t UINT16
 	#define uint32_t UINT32
 	#define uint64_t UINT64
-
 
 	#define LLONG __int64
 
@@ -194,7 +201,6 @@
 	#define O_SEQUENTIAL 0
 	#endif // O_SEQUENTIAL
 
-
 	#define LLONG long long
 
 	#define DLL_EXT ".so"
@@ -211,14 +217,71 @@
 //#endif
 
 
-///////////////////////////////////////////////////////////////////////////////
-// Miscellaneous
+#ifdef XP_UNIX
+void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath ) {
 
-#define JL_MACRO_BEGIN do {
+	if ( modulePath[0] == PATH_SEPARATOR ) { //  /jshost
 
-#define JL_MACRO_END } while(0)
+		strcpy(moduleFileName, modulePath);
+		return;
+	}
 
-#define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
+	if ( modulePath[0] == '.' && modulePath[1] == PATH_SEPARATOR ) { //  ./jshost
+
+		getcwd(moduleFileName, size);
+		strcat(moduleFileName, modulePath + 1 );
+		return;
+	}
+
+	if ( modulePath[0] == '.' && modulePath[1] == '.' && modulePath[2] == PATH_SEPARATOR ) { //  ../jshost
+
+		getcwd(moduleFileName, size);
+		strcat(moduleFileName, PATH_SEPARATOR_STRING);
+		strcat(moduleFileName, modulePath);
+		return;
+	}
+
+	if ( strchr( modulePath, PATH_SEPARATOR ) != NULL ) { //  xxx/../jshost
+
+		getcwd(moduleFileName, size);
+		strcat(moduleFileName, PATH_SEPARATOR_STRING);
+		strcat(moduleFileName, modulePath);
+		return;
+	}
+
+	char *envPath = getenv("PATH");
+	char *pos;
+
+	do {
+
+		pos = strchr( envPath, ':' );
+
+		if ( envPath[0] == PATH_SEPARATOR ) {
+
+			if ( pos == NULL ) {
+
+				strcpy(moduleFileName, envPath);
+			} else {
+
+				strncpy(moduleFileName, envPath, pos-envPath);
+				moduleFileName[pos-envPath] = '\0';
+			}
+
+			strcat(moduleFileName, PATH_SEPARATOR_STRING);
+			strcat(moduleFileName, modulePath);
+
+			if (access(moduleFileName, R_OK | X_OK ) == 0) // If the requested access is permitted, it returns 0.
+				return;
+		}
+
+		envPath = pos+1;
+
+	} while (pos != NULL);
+
+	moduleFileName[0] = '\0';
+	return;
+}
+#endif //XP_UNIX
 
 
 ///////////////////////////////////////////////////////////////////////////////

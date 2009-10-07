@@ -1,12 +1,57 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
 LoadModule('jsstd');
+LoadModule('jsz');
+LoadModule('jstask');
 
-for ( var i = 0; i < 5; i++ ) {
 
-	Expand("$(a)b$(c)d$(e)f$(g)g$(i)j$(k)l$(m)n$(o)p");
-	Sleep(110);
+	var randomString = '';
+	for ( var i = 0; i < 1024; ++i )
+		randomString += Math.random().toString(36).substr(2);
+   RandomString = function(length) { // [0-9A-Za-z]
+
+        var data = '';
+        while( data.length < length )
+            data += randomString.substring( Math.random()*randomString.length, Math.random()*randomString.length );
+        return data.substr(0, length);
+   }
+
+
+		var deflate = new Z(Z.DEFLATE);
+		var inflate = new Z(Z.INFLATE);
+		var source = RandomString(10000);
+		var str = deflate(source, true);	
+		var result = inflate(str, true);
+		
+		Print( result == source );
+
+Halt(); //////////////////////////////
+
+
+for ( var k = 0; k < 20; k++ ) {
+
+	var myTask = new Task(function(){});
+	for ( var i = 0; i < 1000; i++ )
+		myTask.Request(StringRepeat('x', 1000));
+
+	for ( var j = 0; j < 1000; j++ )
+		myTask.Response();
 }
+
+
+Halt(); //////////////////////////////
+
+
+	var inflate = new Z(Z.INFLATE);
+	inflate();
+
+
+for ( var i = 0; i < 500; i++ ) {
+
+	Print( Expand("$(a)b$(c)d$(e)f$(g)g$(i)j$(k)l$(m)n$(o)p") );
+//	Sleep(110);
+}
+
 
 Halt(); //////////////////////////////
 

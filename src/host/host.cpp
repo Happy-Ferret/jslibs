@@ -18,15 +18,7 @@
 
 #include "host.h"
 
-// see jslibs/libs/perftools/src/src/windows/google/tcmalloc.h
-EXTERN_C void* tc_malloc(size_t size) __THROW;
-EXTERN_C void tc_free(void* ptr) __THROW;
-EXTERN_C void* tc_realloc(void* ptr, size_t size) __THROW;
-EXTERN_C void* tc_calloc(size_t nmemb, size_t size) __THROW;
-EXTERN_C void tc_cfree(void* ptr) __THROW;
-
 JSBool jslangModuleInit(JSContext *cx, JSObject *obj);
-
 
 //bool _unsafeMode = true;
 
@@ -422,9 +414,9 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
 
 	HostPrivate *pv;
-	pv = (HostPrivate*)jl_malloc(sizeof(HostPrivate)); // beware: don't realloc, because WatchDogThreadProc points on it !!!
+	pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc, because WatchDogThreadProc points on it !!!
 	JL_S_ASSERT_ALLOC( pv );
-	memset(pv, 0, sizeof(HostPrivate)); // mandatory !
+//	memset(pv, 0, sizeof(HostPrivate)); // mandatory ! or use calloc
 	SetHostPrivate(cx, pv);
 
 	// setup WatchDog
@@ -451,9 +443,9 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	HostPrivate *pv = GetHostPrivate(cx);
 	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 
-		pv = (HostPrivate*)jl_malloc(sizeof(HostPrivate)); // beware: don't realloc, because WatchDogThreadProc points on it !!!
+		pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate)); // beware: don't realloc, because WatchDogThreadProc points on it !!!
 		JL_S_ASSERT_ALLOC( pv );
-		memset(pv, 0, sizeof(HostPrivate)); // mandatory !
+//		memset(pv, 0, sizeof(HostPrivate)); // mandatory ! or use calloc
 		SetHostPrivate(cx, pv);
 	}
 
@@ -558,7 +550,6 @@ JSBool DestroyHost( JSContext *cx ) {
 	//  - Is the only side effect of JS_DestroyContextNoGC that any finalizers I may have specified in custom objects will not get called ?
 	//  - Not if you destroy all contexts (whether by NoGC or not), destroy all runtimes, and call JS_ShutDown before exiting or hibernating.
 	//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
-	JS_CommenceRuntimeShutDown(rt);
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
 
@@ -671,6 +662,217 @@ bad:
 
 
 
+//////////////////////////////////////////////////////////////////////////////
+// Threaded memory deallocator
+
+static jl_malloc_t base_malloc;
+static jl_calloc_t base_calloc;
+static jl_realloc_t base_realloc;
+static jl_free_t base_free;
+
+#define MAX_LOAD 7
+#define WAIT_HEAD_FILLING 100
+
+// block-to-free chain
+static void *head;
+
+// thread stats
+static volatile long headLength;
+static volatile long load;
+
+// thread handler
+static JLThreadHandler memoryFreeThread;
+
+// thread actions
+enum MemThreadAction {
+	MemThreadExit,
+	MemThreadProcess
+};
+static volatile MemThreadAction threadAction;
+static JLSemaphoreHandler memoryFreeThreadSem;
+
+// alloc functions
+static void* JslibsMalloc( size_t size ) {
+
+	if (likely( size >= sizeof(void*) ))
+		return base_malloc(size);
+	return base_malloc(sizeof(void*));
+}
+
+static void* JslibsCalloc( size_t num, size_t size ) {
+
+	size = num * size;
+	if (likely( size >= sizeof(void*) ))
+		return base_calloc(size, 1);
+	return base_calloc(sizeof(void*), 1);
+}
+
+static void* JslibsRealloc( void *ptr, size_t size ) {
+
+	if (likely( size >= sizeof(void*) ))
+		return base_realloc(ptr, size);
+	return base_realloc(ptr, sizeof(void*));
+}
+
+static void JslibsFree( void *ptr ) {
+
+	if (unlikely( load > MAX_LOAD )) { // too many things to free, the thread can not keep pace.
+
+		base_free(ptr);
+		return;
+	}
+
+//	*(void**)ptr = (void*)JLAtomicExchange((long*)&head, (long)ptr);
+	*(void**)ptr = head;
+	head = ptr;
+	JLAtomicIncrement(&headLength);
+}
+
+
+ALWAYS_INLINE void FreeHead() {
+
+	//void *next, *tmp = (void*)JLAtomicExchange((long*)&head, 0);
+	//while ( tmp ) {
+	//
+	//	next = *(void**)tmp;
+	//	free(tmp);
+	//	tmp = next;
+	//}
+
+	if ( !head )
+		return;
+
+//	putc('!', stdout);
+
+	headLength = 0;
+
+	void *it, *next = head;
+	it = *(void**)next;
+	*(void**)next = NULL;
+
+	while ( it ) {
+
+		next = *(void**)it;
+		base_free(it);
+		it = next;
+	}
+}
+
+// the thread proc
+static JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
+
+	for (;;) {
+
+		if ( JLAcquireSemaphore(memoryFreeThreadSem, WAIT_HEAD_FILLING) == JLOK ) {
+			switch ( threadAction ) {
+				case MemThreadExit:
+					JLThreadExit();
+				case MemThreadProcess:
+					;
+			}
+		}
+
+		for ( load = 1; headLength; load++ )
+			FreeHead();
+	}
+}
+
+// GC callback that triggers the thread
+static JSGCCallback prevGCCallback;
+JSBool NewGCCallback(JSContext *cx, JSGCStatus status) {
+
+	if ( status == JSGC_FINALIZE_END ) {
+
+		threadAction = MemThreadProcess;
+		JLReleaseSemaphore(memoryFreeThreadSem);
+	}
+	if ( !prevGCCallback )
+		return JS_TRUE;
+	return prevGCCallback(cx, status);
+}
+
+JSBool MemoryManagerEnableGCEvent( JSContext *cx ) {
+
+	prevGCCallback = JS_SetGCCallback(cx, NewGCCallback);
+	return JS_TRUE;
+}
+
+JSBool MemoryManagerDisableGCEvent( JSContext *cx ) {
+
+	return JS_SetGCCallback(cx, prevGCCallback) == NewGCCallback;
+}
+
+
+// initialisation and cleanup functions
+bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_realloc_t *realloc, jl_free_t *free ) {
+
+	base_malloc = *malloc;
+	base_calloc = *calloc;
+	base_realloc = *realloc;
+	base_free = *free;
+
+	*malloc = JslibsMalloc;
+	*calloc = JslibsCalloc;
+	*realloc = JslibsRealloc;
+	*free = JslibsFree;
+
+	load = 0;
+	headLength = 0;
+	head = NULL;
+	memoryFreeThreadSem = JLCreateSemaphore(0);
+	memoryFreeThread = JLThreadStart(MemoryFreeThreadProc, NULL);
+//	JLThreadPriority(memoryFreeThread, JL_THREAD_PRIORITY_LOW);
+	return true;
+}
+
+
+bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *calloc, jl_realloc_t *realloc, jl_free_t *free ) {
+
+	*malloc = base_malloc;
+	*calloc = base_calloc;
+	*realloc = base_realloc;
+	*free = base_free;
+
+	threadAction = MemThreadExit;
+	JLReleaseSemaphore(memoryFreeThreadSem);
+
+	//	JLThreadCancel(memoryFreeThread); // cannot kill the thread while it is calling free() !
+	JLWaitThread(memoryFreeThread);
+
+	JLFreeSemaphore(&memoryFreeThreadSem);
+	JLFreeThread(&memoryFreeThread);
+
+	if ( freeQueue ) {
+
+		FreeHead();
+		if ( head )
+			base_free(head);
+	}
+	return true;
+}
+
+
+/* memory stat report maker:
+
+//	fprintf(stderr, "%x ", malloc_usable_size(ptr)); // for stat
+
+var stat = [];
+for each ( var sizehex in data.split(' ') ) {
+
+    var size = parseInt(sizehex, 16);
+    stat[size] = (stat[size]||0) + 1;
+}
+var stat2 = [];
+for ( var size in stat )
+    stat2.push( [Number(size), stat[size]] );
+stat2.sort(function(a,b) b[1]-a[1]);
+for each ( var i in stat2 )
+     Print( i[1] + ' x ' + i[0] )
+*/
+
+
+/* memory pool, to be fixed: memory grows endless
+
 void *memoryPool[14] = {NULL};
 JLMutexHandler poolMutex[14];
 
@@ -680,18 +882,17 @@ ALWAYS_INLINE int PoolSelect( size_t size ) {
 	if ( size == 16 ) return 1;
 	if ( size == 48 ) return 2;
 	if ( size == 12 ) return 3;
-/*
 
-	if ( size <=   18 ) return 5;
-	if ( size <=   38 ) return 6;
-	if ( size <=   68 ) return 7;
-	if ( size <=  128 ) return 8;
-	if ( size <=  512 ) return 9;
-	if ( size <= 1078 ) return 10;
-	if ( size <= 2096 ) return 11;
-	if ( size <= 4100 ) return 12;
-	if ( size <= 8200 ) return 13;
-*/
+	//if ( size <=   18 ) return 5;
+	//if ( size <=   38 ) return 6;
+	//if ( size <=   68 ) return 7;
+	//if ( size <=  128 ) return 8;
+	//if ( size <=  512 ) return 9;
+	//if ( size <= 1078 ) return 10;
+	//if ( size <= 2096 ) return 11;
+	//if ( size <= 4100 ) return 12;
+	//if ( size <= 8200 ) return 13;
+
 	return -1;
 }
 
@@ -744,447 +945,4 @@ void MemoryPoolFinalize() {
 		}
 	}
 }
-
-
-
-#define MAX_LOAD 7
-#define WAIT_HEAD_FILLING 100
-
-// block-to-free chain
-static void *head;
-
-// thread stats
-static volatile long headLength;
-static volatile long load;
-
-// thread handler
-static JLThreadHandler memoryFreeThread;
-
-// thread actions
-enum MemThreadAction {
-	MemThreadExit,
-	MemThreadProcess
-};
-static MemThreadAction threadAction;
-static JLSemaphoreHandler memoryFreeThreadSem;
-
-// alloc functions
-void* HostThreadedMalloc( size_t size ) {
-
-	if ( size < sizeof(void*) )
-		size = sizeof(void*);
-	return tc_malloc(size);
-//	return MemoryPoolMalloc(size);
-}
-
-void* HostThreadedCalloc( size_t num, size_t size ) {
-
-	size = num * size;
-	if ( size < sizeof(void*) )
-		size = sizeof(void*);
-	return tc_calloc(size, 1);
-}
-
-void* HostThreadedRealloc( void *ptr, size_t size ) {
-
-	if ( size < sizeof(void*) )
-		size = sizeof(void*);
-	return tc_realloc(ptr, size);
-}
-
-void HostThreadedFree( void *ptr ) {
-
-//	fprintf(stderr, "%x ", malloc_usable_size(ptr)); // for stat
-
-//	return;
-	tc_free(ptr); return;
-	if ( load > MAX_LOAD ) { // too many things to free, the thread can not keep pace.
-
-//		free(ptr);
-		MemoryPoolFree(ptr);
-		return;
-	}
-
-//	*(void**)ptr = (void*)JLAtomicExchange((long*)&head, (long)ptr);
-	*(void**)ptr = head;
-	head = ptr;
-	JLAtomicIncrement(&headLength);
-}
-
-
-ALWAYS_INLINE void FreeHead() {
-
-	//void *next, *tmp = (void*)JLAtomicExchange((long*)&head, 0);
-	//while ( tmp ) {
-	//
-	//	next = *(void**)tmp;
-	//	free(tmp);
-	//	tmp = next;
-	//}
-
-	if ( !head )
-		return;
-
-//	putc('!', stdout);
-
-	headLength = 0;
-
-	void *it, *next = head;
-	it = *(void**)next;
-	*(void**)next = NULL;
-
-	while ( it ) {
-
-		next = *(void**)it;
-//		free(it);
-		MemoryPoolFree(it);
-		it = next;
-	}
-}
-
-// the thread proc
-JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
-
-	for (;;) {
-
-		if ( JLAcquireSemaphore(memoryFreeThreadSem, WAIT_HEAD_FILLING) == JLOK ) {
-			switch ( threadAction ) {
-				case MemThreadExit:
-					JLThreadExit();
-				case MemThreadProcess:
-					;
-			}
-		}
-
-		for ( load = 1; headLength; load++ )
-			FreeHead();
-	}
-}
-
-// GC callback that triggers the thread
-JSGCCallback prevThreadMemoryManagementGCCallback;
-JSBool ThreadMemoryManagementGCCallback(JSContext *cx, JSGCStatus status) {
-
-	if ( status == JSGC_FINALIZE_END ) {
-
-		threadAction = MemThreadProcess;
-		JLReleaseSemaphore(memoryFreeThreadSem);
-	}
-	if ( !prevThreadMemoryManagementGCCallback )
-		return JS_TRUE;
-	return prevThreadMemoryManagementGCCallback(cx, status);
-}
-
-// initialisation and cleanup functions
-JSBool BeginThreadMemoryManagement( JSContext *cx ) {
-
-	HostPrivate *pv = GetHostPrivate(cx);
-	if ( pv == NULL )
-		return JS_FALSE;
-
-	MemoryPoolInit();
-
-	load = 0;
-	headLength = 0;
-	head = NULL;
-	memoryFreeThreadSem = JLCreateSemaphore(0);
-	memoryFreeThread = JLThreadStart(MemoryFreeThreadProc, NULL);
-//	JLThreadPriority(memoryFreeThread, JL_THREAD_PRIORITY_LOW);
-
-	jl_malloc = HostThreadedMalloc;
-	jl_calloc = HostThreadedCalloc;
-	jl_realloc = HostThreadedRealloc;
-	jl_free = HostThreadedFree;
-
-	pv->malloc = jl_malloc;
-	pv->calloc = jl_calloc;
-	pv->realloc = jl_realloc;
-	pv->free = jl_free;
-
-	prevThreadMemoryManagementGCCallback = JS_SetGCCallback(cx, ThreadMemoryManagementGCCallback);
-
-	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, jl_free); // spidermonkey's allocators already check for  size < sizeof(void*)  , then no need to use jl_malloc, ...
-
-	return JS_TRUE;
-}
-
-JSBool EndThreadMemoryManagement( JSContext *cx, bool freeQueue ) {
-
-	HostPrivate *pv = GetHostPrivate(cx);
-	if ( pv == NULL )
-		return JS_FALSE;
-
-	JS_SetGCCallback(cx, prevThreadMemoryManagementGCCallback);
-
-	jl_malloc = malloc;
-	jl_calloc = calloc;
-	jl_realloc = realloc;
-	jl_free = free;
-
-	pv->malloc = jl_malloc;
-	pv->calloc = jl_calloc;
-	pv->realloc = jl_realloc;
-	pv->free = jl_free;
-
-	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, jl_free);
-
-	threadAction = MemThreadExit;
-	JLReleaseSemaphore(memoryFreeThreadSem);
-
-	//	JLThreadCancel(memoryFreeThread); // cannot kill the thread while it is calling free() !
-	JLWaitThread(memoryFreeThread);
-
-	JLFreeSemaphore(&memoryFreeThreadSem);
-	JLFreeThread(&memoryFreeThread);
-
-	if ( !freeQueue )
-		return JS_TRUE;
-
-	FreeHead();
-	if ( head )
-		free(head);
-
-	MemoryPoolFinalize();
-
-	return JS_TRUE;
-}
-
-// DisabledFree
-static void DisabledFree( void *ptr ) {
-}
-
-JSBool DisableMemoryFree( JSContext *cx ) {
-
-	jl_free = DisabledFree;
-	GetHostPrivate(cx)->free = jl_free;
-	JSLIBS_RegisterAllocFunctions(malloc, calloc, realloc, jl_free);
-	return JS_TRUE;
-}
-
-
-
-/* memory stat report maker:
-
-var stat = [];
-for each ( var sizehex in data.split(' ') ) {
-
-    var size = parseInt(sizehex, 16);
-    stat[size] = (stat[size]||0) + 1;
-}
-var stat2 = [];
-for ( var size in stat )
-    stat2.push( [Number(size), stat[size]] );
-stat2.sort(function(a,b) b[1]-a[1]);
-for each ( var i in stat2 )
-     Print( i[1] + ' x ' + i[0] )
-*/
-
-/*
-memory stats with qa.js at free time:
-
-43389 x 44
-22685 x 16
-13442 x 48
-10098 x 12
-6505 x 8192
-5171 x 1047
-4984 x 32
-3929 x 8
-2964 x 10359
-2679 x 4
-2193 x 34
-2000 x 2002
-1983 x 64
-1688 x 20
-1620 x 28
-1516 x 36
-1495 x 6
-1453 x 18
-1382 x 24
-1352 x 22
-1342 x 26
-1200 x 30
-1169 x 10
-1061 x 38
-1025 x 1078
-1002 x 2050
-1002 x 1025
-1000 x 1001
-880 x 14
-823 x 40
-685 x 42
-644 x 70
-620 x 68
-559 x 1040
-498 x 72
-478 x 35
-472 x 46
-456 x 50
-452 x 56
-435 x 54
-434 x 74
-383 x 52
-379 x 10001
-375 x 37
-353 x 58
-336 x 76
-332 x 128
-327 x 66
-315 x 60
-253 x 62
-243 x 80
-234 x 33
-231 x 9
-219 x 7
-203 x 27321
-186 x 78
-175 x 39
-167 x 31
-131 x 82
-123 x 29
-118 x 41
-116 x 88
-113 x 86
-112 x 23
-109 x 96
-108 x 43
-103 x 21
-100 x 5
-99 x 92
-94 x 90
-93 x 94
-93 x 45
-91 x 84
-88 x 27
-87 x 47
-84 x 25
-84 x 100
-82 x 256
-63 x 19
-58 x 512
-56 x 104
-52 x 1024
-52 x 102
-51 x 98
-47 x 49
-44 x 11
-42 x 51
-41 x 4096
-40 x 13
-36 x 1536
-34 x 55
-34 x 57
-34 x 112
-31 x 71
-29 x 138
-29 x 108
-29 x 53
-28 x 142
-28 x 69
-27 x 120
-24 x 17
-22 x 134
-22 x 15
-21 x 2048
-21 x 67
-21 x 73
-21 x 61
-21 x 106
-21 x 480
-20 x 124
-20 x 8211
-18 x 16384
-18 x 59
-17 x 65
-17 x 150
-17 x 146
-17 x 116
-16 x 272
-16 x 132
-16 x 3072
-16 x 65537
-15 x 140
-15 x 75
-15 x 114
-15 x 136
-14 x 130
-14 x 24576
-14 x 70144
-13 x 127
-12 x 164
-12 x 160
-12 x 192
-12 x 101
-11 x 110
-10 x 162
-9 x 63
-9 x 156
-9 x 1048577
-8 x 81
-8 x 154
-8 x 77
-8 x 103
-7 x 168
-7 x 91
-7 x 141
-7 x 135
-7 x 107
-6 x 280
-6 x 158
-6 x 152
-6 x 126
-6 x 97
-6 x 2097154
-6 x 1000001
-6 x 2000002
-5 x 79
-5 x 172
-5 x 384
-5 x 133
-4 x 282
-4 x 312
-4 x 336
-4 x 402
-4 x 170
-4 x 85
-4 x 87
-4 x 182
-4 x 122
-4 x 93
-4 x 144
-4 x 111
-4 x 105
-4 x 99
-3 x 2071
-3 x 225
-3 x 196
-3 x 374
-3 x 622
-3 x 334
-3 x 370
-3 x 382
-3 x 358
-3 x 166
-3 x 83
-3 x 174
-3 x 450
-3 x 33678
-3 x 148
-3 x 253
-3 x 137
-3 x 303
-3 x 115
-3 x 417
-3 x 322
-3 x 294
-3 x 220
-3 x 113
-3 x 95
-3 x 12966
-3 x 12961
-3 x 13083
-3 x 13072
-3 x 30001
-
-
 */

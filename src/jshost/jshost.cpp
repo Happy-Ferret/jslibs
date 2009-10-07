@@ -16,97 +16,38 @@
 
 #include "../common/jslibsModule.cpp"
 
+EXTERN_C void * nedmalloc(size_t size) __THROW;
+EXTERN_C void * nedcalloc(size_t no, size_t size) __THROW;
+EXTERN_C void * nedrealloc(void *mem, size_t size) __THROW;
+EXTERN_C void   nedfree(void *mem) __THROW;
+
+
+//// dlmalloc is NOT threadsafe
+//#ifdef DEBUG
+//#define INSECURE 1
+//#endif // DEBUG
+//#define USE_DL_PREFIX 1
+//#include "../../libs/dlmalloc/malloc.c"
+
+static void DisabledFree( void* ) {}
+
 static unsigned char embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
 ;
 
-// to be used in the main() function only
 #define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { fprintf(stderr, errorMessage ); goto bad; }
 
 
-#ifdef XP_UNIX
-void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath ) {
-
-	if ( modulePath[0] == PATH_SEPARATOR ) { //  /jshost
-
-		strcpy(moduleFileName, modulePath);
-		return;
-	}
-
-	if ( modulePath[0] == '.' && modulePath[1] == PATH_SEPARATOR ) { //  ./jshost
-
-		getcwd(moduleFileName, size);
-		strcat(moduleFileName, modulePath + 1 );
-		return;
-	}
-
-	if ( modulePath[0] == '.' && modulePath[1] == '.' && modulePath[2] == PATH_SEPARATOR ) { //  ../jshost
-
-		getcwd(moduleFileName, size);
-		strcat(moduleFileName, PATH_SEPARATOR_STRING);
-		strcat(moduleFileName, modulePath);
-		return;
-	}
-
-	if ( strchr( modulePath, PATH_SEPARATOR ) != NULL ) { //  xxx/../jshost
-
-		getcwd(moduleFileName, size);
-		strcat(moduleFileName, PATH_SEPARATOR_STRING);
-		strcat(moduleFileName, modulePath);
-		return;
-	}
-
-	char *envPath = getenv("PATH");
-	char *pos;
-
-	do {
-
-		pos = strchr( envPath, ':' );
-
-		if ( envPath[0] == PATH_SEPARATOR ) {
-
-			if ( pos == NULL ) {
-
-				strcpy(moduleFileName, envPath);
-			} else {
-
-				strncpy(moduleFileName, envPath, pos-envPath);
-				moduleFileName[pos-envPath] = '\0';
-			}
-
-			strcat(moduleFileName, PATH_SEPARATOR_STRING);
-			strcat(moduleFileName, modulePath);
-
-			if (access(moduleFileName, R_OK | X_OK ) == 0) // If the requested access is permitted, it returns 0.
-				return;
-		}
-
-		envPath = pos+1;
-
-	} while (pos != NULL);
-
-	moduleFileName[0] = '\0';
-	return;
-}
-#endif //XP_UNIX
-
-
-volatile bool gEndSignal = false;
+bool gEndSignal = false;
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	JL_CHK( BoolToJsval(cx, gEndSignal, vp) );
-	return JS_TRUE;
-	JL_BAD;
+	return BoolToJsval(cx, gEndSignal, vp);
 }
 
 JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	bool tmp;
-	JL_CHK( JsvalToBool(cx, *vp, &tmp) );
-	gEndSignal = tmp;
-	return JS_TRUE;
-	JL_BAD;
+	return JsvalToBool(cx, *vp, &gEndSignal);
 }
 
 
@@ -137,33 +78,29 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 	return write(fileno(stderr), buffer, length);
 }
 
-/*
-void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
+//void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
+//	printf( "add - %s:%d - %s - %d - %p\n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticDepth, script );
+//}
+//void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
+//	printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticDepth, script );
+//}
 
-        printf( "add - %s:%d - %s - %d - %p\n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticDepth, script );
-}
-
-void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
-
-        printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticDepth, script );
-}
-*/
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
 
+// enable low fragmentation heap
 #ifdef XP_WIN
 	HANDLE heap = GetProcessHeap();
 	ULONG enable = 2;
-	HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable)); // enable low fragmentation heap
+	HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable));
 #endif // XP_WIN
 
 	JSContext *cx = NULL;
 
 	uint32 maxMem = (uint32)-1; // by default, there are no limit
 	uint32 maxAlloc = (uint32)-1; // by default, there are no limit
-
 	bool unsafeMode = false;
 	bool compileOnly = false;
 	float maybeGCInterval = 10; // seconds
@@ -220,7 +157,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		#endif // DEBUG
 	}
 
-
 #if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
 	if ( debug ) {
 		_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
@@ -238,12 +174,31 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	signal(SIGTERM, Interrupt);
 #endif // XP_WIN
 
+	//jl_malloc = dlmalloc;
+	//jl_calloc = dlcalloc;
+	//jl_realloc = dlrealloc;
+	//jl_free = dlfree;
+
+	jl_malloc = nedmalloc;
+	jl_calloc = nedcalloc;
+	jl_realloc = nedrealloc;
+	jl_free = nedfree;
+
+	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_realloc, &jl_free);
+	JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
+
 	cx = CreateHost(maxMem, maxAlloc, maybeGCInterval * 1000);
 	HOST_MAIN_ASSERT( cx != NULL, "Unable to create a javascript execution context." );
 
-	HOST_MAIN_ASSERT( BeginThreadMemoryManagement(cx), "Unable to create the memory management thread." );
+	MemoryManagerEnableGCEvent(cx);
+	HostPrivate *hpv = GetHostPrivate(cx);
+	hpv->camelCase = camelCase;
 
-	GetHostPrivate(cx)->camelCase = camelCase;
+	// custom memory allocators are transfered to the modules through the HostPrivate structure:
+	hpv->malloc = jl_malloc;
+	hpv->calloc = jl_calloc;
+	hpv->realloc = jl_realloc;
+	hpv->free = jl_free;
 
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT | JSOPTION_RELIMIT); // default, may be disabled in InitHost()
 
@@ -266,7 +221,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	DWORD len = GetModuleFileName(hInstance, hostFullPath, sizeof(hostFullPath));
 	HOST_MAIN_ASSERT( len != 0, "Unable to GetModuleFileName." );
 #else // XP_WIN
-	GetAbsoluteModulePath(hostFullPath, sizeof(hostFullPath), argv[0]);
+	JLGetAbsoluteModulePath(hostFullPath, sizeof(hostFullPath), argv[0]);
 	HOST_MAIN_ASSERT( hostFullPath[0] != '\0', "Unable to get module FileName." );
 //	int len = readlink("/proc/self/exe", moduleFileName, sizeof(moduleFileName)); // doc: readlink does not append a NUL character to buf.
 //	moduleFileName[len] = '\0';
@@ -292,7 +247,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JL_CHK( SetPropertyString(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, hostName) );
 
 	if ( sizeof(embeddedBootstrapScript)-1 ) {
-		
+
 		uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
 //		JL_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
@@ -311,7 +266,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	if ( useFileBootstrapScript ) {
-	
+
 		jsval tmp;
 		char bootstrapFilename[PATH_MAX +1];
 		strcpy(bootstrapFilename, hostPath);
@@ -323,7 +278,15 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	int exitValue;
 	jsval rval;
-	if ( ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval) == JS_TRUE ) {
+
+	JSBool executeStatus;
+	executeStatus = ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
+
+	jl_free = DisabledFree;
+	JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
+	hpv->free = jl_free;
+
+	if ( executeStatus == JS_TRUE ) {
 
 		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 ) // (TBD) enhance this, use JsvalToInt() ?
 			exitValue = JSVAL_TO_INT(rval);
@@ -350,8 +313,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		}
 	}
 
-	EndThreadMemoryManagement(cx, false);
-	DisableMemoryFree(cx);
+	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	DestroyHost(cx);
 	JS_ShutDown();
 
@@ -371,11 +333,12 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	return exitValue;
 bad:
-	
+
 	if ( cx ) {
 
-		EndThreadMemoryManagement(cx, false);
-		DisableMemoryFree(cx);
+		JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
+		jl_free = DisabledFree;
+		JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
 		DestroyHost(cx);
 	}
 	JS_ShutDown();
@@ -509,4 +472,3 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
  # [jslibsBuild Compile jslibs] (or only jshost if jslibs has already been compiled once)
 }}}
 **/
-

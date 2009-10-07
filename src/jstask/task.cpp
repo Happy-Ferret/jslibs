@@ -249,6 +249,8 @@ static JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 		return 0;
 
 	HostPrivate *hpv = GetHostPrivate(cx);
+
+// allocator must be threadsafe !
 	hpv->malloc = jl_malloc;
 	hpv->calloc = jl_calloc;
 	hpv->realloc = jl_realloc;
