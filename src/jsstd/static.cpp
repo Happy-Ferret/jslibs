@@ -41,7 +41,7 @@ $TOC_MEMBER $INAME
   Return an expanded string using key/value stored in _obj_.
   $LF
   If _obj_ is omitted, the current object is used to look for key/value.
-  $H example
+  $H example 1
   {{{
   function Test() {
    this.Expand = Expand;
@@ -51,7 +51,7 @@ $TOC_MEMBER $INAME
   }}}
   $H note
    undefined values are ignored in the resulting string.
-  $H example
+  $H example 2
   {{{
   Expand(' $(h) $(w)', { h:'Hello', w:'World' }); // returns "Hello World"
   }}}
@@ -79,6 +79,8 @@ DEFINE_FUNCTION_FAST( Expand ) {
 		mapIsFunction = false;
 		map = OBJECT_TO_JSVAL( JL_FOBJ );
 	}
+
+	JL_S_ASSERT( mapIsFunction || !JSVAL_IS_PRIMITIVE(map), "Object required." );
 
 	typedef struct {
 		const char *data;
@@ -327,6 +329,24 @@ DEFINE_FUNCTION_FAST( SetScope ) {
 	JL_BAD;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* *doc
+$TOC_MEMBER $INAME
+ $OBJ $INAME()
+  Get the currentScope.
+  }}}
+**/
+/*
+DEFINE_FUNCTION_FAST( GetCurrentScope ) {
+
+	JL_S_ASSERT_ARG(0);
+
+	JSStackFrame *fp = JL_CurrentStackFrame(cx);
+	*JL_FRVAL = OBJECT_TO_JSVAL( fp->??? );
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** xx doc
@@ -1405,6 +1425,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( Seal )
 		FUNCTION_FAST( Clear )
 		FUNCTION_FAST( SetScope )
+//		FUNCTION_FAST( GetCurrentScope )
 //		FUNCTION( HideProperties )
 		FUNCTION_FAST_ARGC( SetPropertyEnumerate, 3 )
 		FUNCTION_FAST_ARGC( SetPropertyReadonly, 3 )
