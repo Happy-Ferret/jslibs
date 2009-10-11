@@ -8,3 +8,5 @@ $(INT_DIR)Makefile:
 
 all clean distclean:: $(INT_DIR)Makefile
 	$(MAKE) -C $(INT_DIR) $@
+
+# -Dmalloc=jl_malloc_wrapper -Dcalloc=jl_calloc_wrapper -Drealloc=jl_realloc_wrapper -Dfree=jl_free_wrapper

@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="src"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;malloc=jl_malloc_wrapper;calloc=jl_calloc_wrapper;realloc=jl_realloc_wrapper;free=jl_free_wrapper"
 				UsePrecompiledHeader="0"
 				ForcedIncludeFiles="$(ProjectDir)stdafx.h"
 			/>
@@ -96,7 +96,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="src"
-				PreprocessorDefinitions="WIN32,NDEBUG,_LIB"
+				PreprocessorDefinitions="WIN32,NDEBUG,_LIB;malloc=jl_malloc_wrapper;calloc=jl_calloc_wrapper;realloc=jl_realloc_wrapper;free=jl_free_wrapper"
 				ForcedIncludeFiles="windows.h"
 			/>
 			<Tool
@@ -692,6 +692,13 @@
 						Name="VCCLCompilerTool"
 						UsePrecompiledHeader="2"
 						PrecompiledHeaderThrough="$(ProjectDir)StdAfx.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
 			</File>

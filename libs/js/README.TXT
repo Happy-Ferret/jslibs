@@ -100,3 +100,57 @@ compilation with gmake under windows ( Makefile.ref )
 
 Compile SpiderMonkey with MINGW:
   http://groups.google.com/group/netscape.public.mozilla.jseng/browse_frm/thread/f32dabd45aa075e0/d06225aa155b7642
+
+
+allocators replacement:
+-----------------------
+
+
+without patching:
+
+Makefile:
+	_CFLAGS += -Dmalloc=xmalloc -Dcalloc=xcmalloc -Drealloc=xrealloc -Dfree=xfree
+
+
+jsutil.cpp:
+	static xmalloc_t _xmalloc;
+	static xcalloc_t _xcalloc;
+	static xrealloc_t _xrealloc;
+	static xfree_t _xfree;
+
+	void* xmalloc( size_t size ) {
+		return _xmalloc();
+	}
+	void* xcmalloc( size_t size, size_t num ) {
+		return _cmalloc();
+	}
+	void* xrealloc( void *ptr, size_t size ) {
+		return _xrealloc();
+	}
+	void* xfree( void *ptr ) {
+		return _xfree();
+	}
+
+
+	JS_PUBLIC_API(void)
+	JSLIBS_RegisterAllocFunctions( malloc_t newmalloc, calloc_t newcalloc, realloc_t newrealloc, free_t newfree ) {
+
+		_xmalloc = newmalloc;
+		_xcalloc = newcalloc;
+		_xrealloc = newrealloc;
+		_xfree = newfree;
+	}
+
+
+jsutil.h
+
+	typedef void* (*malloc_t)( size_t );
+	typedef void* (*calloc_t)( size_t, size_t );
+	typedef void* (*realloc_t)( void*, size_t );
+	typedef void (*free_t)( void* );
+
+	extern JS_PUBLIC_API(void)
+	JSLIBS_RegisterAllocFunctions( malloc_t, calloc_t, realloc_t, free_t );
+
+
+
