@@ -715,6 +715,9 @@ static void* JslibsRealloc( void *ptr, size_t size ) {
 }
 
 static void JslibsFree( void *ptr ) {
+	
+	if (!ptr)
+		return;
 
 	if (unlikely( load > MAX_LOAD )) { // too many things to free, the thread can not keep pace.
 

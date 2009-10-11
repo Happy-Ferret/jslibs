@@ -16,6 +16,20 @@
 
 #include "../common/jslibsModule.cpp"
 
+EXTERN_C void * nedmalloc(size_t size) __THROW;
+EXTERN_C void * nedcalloc(size_t no, size_t size) __THROW;
+EXTERN_C void * nedrealloc(void *mem, size_t size) __THROW;
+EXTERN_C void   nedfree(void *mem) __THROW;
+
+void nedfree_handlenull(void *mem) {
+
+	if (mem)
+		nedfree(mem);
+}
+
+static void DisabledFree( void* ) {}
+
+
 // to be used in the main() function only
 #define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { goto bad; }
 //#define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { fprintf(stderr, errorMessage ); goto bad; }
@@ -120,10 +134,27 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		}
 	}
 
+	jl_malloc = nedmalloc;
+	jl_calloc = nedcalloc;
+	jl_realloc = nedrealloc;
+	jl_free = nedfree_handlenull;
+
+	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_realloc, &jl_free);
+	JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
+
 	cx = CreateHost(-1, -1, 0);
 	JL_CHK( cx != NULL );
 
-	JL_CHKM( BeginThreadMemoryManagement(cx), "Unable to create the memory management thread." );
+	MemoryManagerEnableGCEvent(cx);
+
+	HostPrivate *hpv = GetHostPrivate(cx);
+
+	// custom memory allocators are transfered to the modules through the HostPrivate structure:
+	hpv->malloc = jl_malloc;
+	hpv->calloc = jl_calloc;
+	hpv->realloc = jl_realloc;
+	hpv->free = jl_free;
+
 
 	JL_CHK( InitHost(cx, true, NULL, NULL, NULL) );
 	CHAR moduleFileName[PATH_MAX];
@@ -179,8 +210,13 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		if ( JS_IsExceptionPending(cx) )
 			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 
-	EndThreadMemoryManagement(cx, false);
-	DisableMemoryFree(cx);
+	MemoryManagerDisableGCEvent(cx);
+	FinalizeMemoryManager(false, &jl_malloc, &jl_calloc, &jl_realloc, &jl_free);
+	jl_free = DisabledFree;
+	JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
+	hpv->free = jl_free;
+
+	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	DestroyHost(cx);
 	JS_ShutDown();
 
@@ -191,8 +227,8 @@ bad:
 
 	if ( cx ) {
 
-		EndThreadMemoryManagement(cx, false);
-		DisableMemoryFree(cx);
+		jl_free = DisabledFree;
+		JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
 		DestroyHost(cx);
 	}
 	JS_ShutDown();

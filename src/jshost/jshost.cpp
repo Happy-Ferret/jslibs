@@ -21,6 +21,12 @@ EXTERN_C void * nedcalloc(size_t no, size_t size) __THROW;
 EXTERN_C void * nedrealloc(void *mem, size_t size) __THROW;
 EXTERN_C void   nedfree(void *mem) __THROW;
 
+void nedfree_handlenull(void *mem) {
+
+	if (mem)
+		nedfree(mem);
+}
+
 
 //// dlmalloc is NOT threadsafe
 //#ifdef DEBUG
@@ -182,7 +188,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	jl_malloc = nedmalloc;
 	jl_calloc = nedcalloc;
 	jl_realloc = nedrealloc;
-	jl_free = nedfree;
+	jl_free = nedfree_handlenull;
 
 	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_realloc, &jl_free);
 	JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
@@ -281,11 +287,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	JSBool executeStatus;
 	executeStatus = ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
-
-	jl_free = DisabledFree;
-	JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
-	hpv->free = jl_free;
-
 	if ( executeStatus == JS_TRUE ) {
 
 		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 ) // (TBD) enhance this, use JsvalToInt() ?
@@ -312,6 +313,12 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 			exitValue = EXIT_FAILURE;
 		}
 	}
+
+	MemoryManagerDisableGCEvent(cx);
+	FinalizeMemoryManager(false, &jl_malloc, &jl_calloc, &jl_realloc, &jl_free);
+	jl_free = DisabledFree;
+	JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
+	hpv->free = jl_free;
 
 	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	DestroyHost(cx);

@@ -3,6 +3,19 @@ LoadModule('jsio');
 LoadModule('jsdebug');
 
 
+function ExpandTest() {
+
+	var a = 123;
+	Print( Expand('$(a)', GetCurrentScope() ) );
+}
+
+ExpandTest(111);
+
+
+
+Halt(); //////////////////////////////
+
+
 var ids = '';
 var i = 0;
 var res = Expand('ab$(c)$(d)e$(f)g$(h)ij', function(id) { ids+=id; return i++ } );
