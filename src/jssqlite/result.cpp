@@ -54,6 +54,7 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 			break;
 		case SQLITE_TEXT:
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_value_text(value)));
+//			*rval = STRING_TO_JSVAL(JS_NewUCStringCopyZ(cx, (const jschar*)sqlite3_value_text16(value)));
 			break;
 		default:
 			JL_REPORT_ERROR( "Unable to convert data.");
@@ -501,12 +502,12 @@ DEFINE_PROPERTY( columnIndexes ) {
 	JL_BAD;
 }
 
-
-/**doc
+/*
+/ **doc
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY $DEPRECATED
   Indicates if the SQL statement must be re-evaluated.
-**/
+** /
 DEFINE_PROPERTY( expired ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
@@ -515,6 +516,7 @@ DEFINE_PROPERTY( expired ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+*/
 
 
 DEFINE_DEL_PROPERTY() {
@@ -558,7 +560,7 @@ CONFIGURE_CLASS
 		PROPERTY_READ( columnCount )
 		PROPERTY_READ( columnNames )
 		PROPERTY_READ( columnIndexes )
-		PROPERTY_READ( expired )
+//		PROPERTY_READ( expired )
 	END_PROPERTY_SPEC
 
 	BEGIN_FUNCTION_SPEC

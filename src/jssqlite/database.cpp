@@ -104,6 +104,8 @@ DEFINE_CONSTRUCTOR() {
 	else
 		flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE; // default
 
+//	flags |= SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_SHAREDCACHE;
+
 	const char *fileName;
 	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( JsvalToString(cx, &JL_ARG(1), &fileName) );
@@ -452,6 +454,10 @@ $TOC_MEMBER $INAME
   Is the amount of memory currently checked out.
 **/
 DEFINE_PROPERTY( memoryUsed ) {
+
+//	int val, tmp;
+//	sqlite3_status(SQLITE_STATUS_MEMORY_USED, &val, &tmp, false);
+//	if ( val ) {
 
 	*vp = INT_TO_JSVAL( sqlite3_memory_used() );
 	return JS_TRUE;

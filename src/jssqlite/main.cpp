@@ -35,25 +35,40 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-EXTERN_C void* (*custom_malloc)( size_t size );
-EXTERN_C void* (*custom_calloc)( size_t num, size_t size );
-EXTERN_C void (*custom_free)( void *ptr );
-EXTERN_C void* (*custom_realloc)( void *ptr, size_t size );
+EXTERN_C void* js_malloc_fct( size_t size ) {
+	return jl_malloc(size);
+}
+
+EXTERN_C void* js_calloc_fct( size_t num, size_t size ) {
+	return jl_calloc(num, size);
+}
+
+EXTERN_C void* js_realloc_fct( void *ptr, size_t size ) {
+	return jl_realloc(ptr, size);
+}
+
+EXTERN_C void js_free_fct( void *ptr ) {
+	jl_free(ptr);
+}
+
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	JL_CHK( InitJslibsModule(cx) );
 
-	// custom_malloc are used by sqlite (see src/config.h)
-	custom_malloc = jl_malloc;
-	custom_calloc = jl_calloc;
-	custom_realloc = jl_realloc;
-	custom_free = jl_free;
+	if ( sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) != SQLITE_OK )
+		JL_REPORT_ERROR( "Unable to disable memory stats." );
 
-	if ( sqlite3_enable_shared_cache(true) != SQLITE_OK ) {
+	//	sqlite3_mem_methods mem = {
+	//	sqlite3_config(SQLITE_CONFIG_MALLOC,...)
 
+	if ( sqlite3_initialize() != SQLITE_OK )
+		JL_REPORT_ERROR( "Unable to initialize sqlite." );
+
+	//	sqlite3_config(SQLITE_CONFIG_LOOKASIDE, sz, cnt);
+
+	if ( sqlite3_enable_shared_cache(true) != SQLITE_OK )
 		JL_REPORT_ERROR( "Unable to enable shared cache." );
-	}
 
 	dbContextList = jl::QueueConstruct();
 
@@ -77,6 +92,8 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 }
 
 EXTERN_C DLLEXPORT void ModuleFree() {
+
+	sqlite3_shutdown();
 
 	while ( !QueueIsEmpty(dbContextList) )
 		jl_free(QueuePop(dbContextList));
