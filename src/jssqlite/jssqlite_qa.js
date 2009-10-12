@@ -50,7 +50,7 @@ LoadModule('jssqlite');
 		var res = db.Query('select * from a');
 		
 		QA.ASSERT( res.columnCount, 3, 'column count' );
-		QA.ASSERT( res.expired, false, 'statement expired' );
+//		QA.ASSERT( res.expired, false, 'statement expired' ); // deprecated property has been removed
 		
 		QA.ASSERT( res.columnNames.join(','), 'b,c,d', 'columns name' ); 
 		QA.ASSERT( res.columnIndexes.b, 0, 'column name index' ); 
