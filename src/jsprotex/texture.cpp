@@ -101,13 +101,13 @@ inline JSBool TextureInit( JSContext *cx, Texture *tex, unsigned int width, unsi
 
 inline JSBool TextureResizeBackBuffer( JSContext *cx, Texture *tex, unsigned int newSize ) {
 	
-	if ( tex->cbackBuffer != NULL && tex->cbackBufferSize == tex->cbufferSize )
+	if ( tex->cbackBuffer != NULL && tex->cbackBufferSize == newSize )
 		return JS_TRUE;
-	tex->cbackBufferSize = newSize;
 	if ( tex->cbackBuffer == NULL )
 		tex->cbackBuffer = (PTYPE*)JS_malloc(cx, newSize);
 	else
 		tex->cbackBuffer = (PTYPE*)JS_realloc(cx, tex->cbackBuffer, newSize);
+	tex->cbackBufferSize = newSize;
 	return JS_TRUE;
 }
 
