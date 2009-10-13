@@ -160,31 +160,41 @@ int Test1() {
 	JSFunctionSpec fs[] = { JS_FN( "MyFunction", MyFunction, 0, 0 ), {0} };
 	JSObject *proto = JS_InitClass(cx, globalObject, NULL, &myClass.base, MyConstructor, 0, NULL, fs, NULL, NULL);
 
-/*
-	jsval rv;
-	char scriptSrc[] = "var b = new String(); for ( var i = 0; i < 2; i++ ) b.substr";
-	JS_EvaluateScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "test", 1, &rv);
-*/
+	// https://bugzilla.mozilla.org/show_bug.cgi?id=522101
+	// [22:25]	<brendan>	soubok: i gave you bugzilla canconfirm and editbugs privs so your bugs will start out NEW not UNCONFIRMED
+	JSObject *arr = JS_NewArrayObject(cx, 0, NULL);
+	JSScopeProperty *jssp = NULL;
+	JS_PropertyIterator(arr, &jssp); // Assertion failure: OBJ_IS_NATIVE(obj)
 
-	void *mem = JS_malloc(cx, 123);
-	JS_free(cx, mem);
+
+	char scriptSrc[] = "\
+var list = [];\
+function Add() {\
+   \
+    list.push(arguments);\
+}\
+\
+function Run() {\
+   \
+    for each ( var item in list )\
+        item[0](); \
+}\
+\
+for ( var i = 0; i < 10; i++ )\
+    Add(function(s) {});\
+\
+Run(); \
+	\
+";
+
+//	JSScript *script = JS_CompileScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "mytest", 1);
 	
-	char scriptSrc[] = "var b = new String(); for ( var i = 0; i < 2; i++ ) b.substr";
-	JSScript *script = JS_CompileScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "mytest.js", 1);
-	jsval rval;
-	JS_ExecuteScript(cx, globalObject, script, &rval);
-
-
-/*
-	char *fileName = "mytest.js";
-	FILE *scriptFile;
-	scriptFile = fopen(fileName, "r");
-	JSScript *script = JS_CompileFileHandle(cx, globalObject, fileName, scriptFile);
-	fclose(scriptFile);
+	FILE *file = fopen("mytest.js", "r");
+	JSScript *script = JS_CompileFileHandle(cx, globalObject, "mytest.js", file);
 
 	jsval rval;
-	JS_ExecuteScript(cx, globalObject, script, &rval);
-*/
+	JSBool st = JS_ExecuteScript(cx, globalObject, script, &rval);
+
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
@@ -245,6 +255,7 @@ int Test3() {
 
 //	void *mem = malloc(100);
 //	free(mem);
+
 
 
 	return EXIT_SUCCESS;

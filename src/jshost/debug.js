@@ -1,9 +1,38 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
+/*
+// run jsircbot with debuggers
+	LoadModule('jsstd'); LoadModule('jsio');
+	Exec('../jsdebug/debugger.js', false);
+	currentDirectory += '/../../../jsircbot';
+	arguments[1] = 'my_configuration.js';
+	Exec('main.js', false);
+	throw 0;
+*/
+
+
 LoadModule('jsstd');
 LoadModule('jsz');
 LoadModule('jstask');
 
+		var list = [];
+		function Add() {
+
+			 list.push(arguments);
+		}
+
+		function Run() {
+
+			 for each ( var item in list )
+				  item[0]();
+		}
+
+		for ( var i = 0; i < 10; i++ )
+			 Add(function(s) { });
+
+		Run();
+
+Halt(); //////////////////////////////
 
 	var randomString = '';
 	for ( var i = 0; i < 1024; ++i )
