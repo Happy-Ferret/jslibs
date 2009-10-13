@@ -994,7 +994,7 @@ DEFINE_FUNCTION_FAST( StackFrameInfo ) {
 	tmp = script ? INT_TO_JSVAL( JS_GetScriptLineExtent(cx, script) ) : JSVAL_VOID;
 	JL_CHK( JS_SetProperty(cx, frameInfo, "lineExtent", &tmp) );
 
-	tmp = OBJECT_TO_JSVAL(JS_GetFrameScopeChain(cx, fp));
+	tmp = OBJECT_TO_JSVAL(JS_GetFrameScopeChain(cx, fp)); // Assertion failure: FUN_INTERPRETED(this). (TBD) check if fp->fun is not a native function ?
 	JL_CHK( JS_SetProperty(cx, frameInfo, "scope", &tmp) );
 
 //	JL_CHK( JS_DefineProperty(cx, frameInfo, "variables", fp->varobj ? OBJECT_TO_JSVAL(fp->varobj) : JSVAL_VOID, NULL, NULL, JSPROP_ENUMERATE) );
@@ -1254,6 +1254,9 @@ DEFINE_FUNCTION_FAST( PropertiesList ) {
 			index++;
 			JS_PropertyIterator(srcObj, &jssp);
 		}
+		
+		if ( !followPrototypeChain )
+			break;
 
 		srcObj = JS_GetPrototype(cx, srcObj);
 	}
@@ -1304,6 +1307,8 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 	while ( srcObj ) {
 
 		jssp = NULL;
+		//about bz#522101
+		//<jorendorff>	I was going to say, something like if (OBJ_IS_DENSE_ARRAY(cx, obj)) { if (!js_MakeArraySlow(cx, obj)) return NULL; }
 		JS_PropertyIterator(srcObj, &jssp);
 
 		while ( jssp ) {
@@ -1351,6 +1356,9 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 			index++;
 			JS_PropertyIterator(srcObj, &jssp);
 		}
+
+		if ( !followPrototypeChain )
+			break;
 
 		srcObj = JS_GetPrototype(cx, srcObj);
 		prototypeLevel++;

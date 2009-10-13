@@ -2,6 +2,36 @@
 
 LoadModule('jsstd');
 LoadModule('jsdebug');
+LoadModule('jsio');
+LoadModule('jscrypt');
+LoadModule('jssqlite');
+LoadModule('jsode');
+LoadModule('jssound');
+LoadModule('jsz');
+LoadModule('jsimage');
+LoadModule('jsgraphics');
+LoadModule('jstask');
+LoadModule('jstrimesh');
+LoadModule('jsiconv');
+LoadModule('jsfont');
+
+var list = [];
+
+PropertiesInfo(list);
+
+
+Halt();
+
+for each ( var item in PropertiesList(global) )
+	String( item );
+
+for each ( var item in PropertiesInfo(global) )
+	String( PropertiesInfo(item.object) );
+
+
+
+
+Halt();
 
 Exec('debugger.js');
 
