@@ -399,7 +399,9 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	// JSOPTION_RELIMIT:
 	//  Throw exception on any regular expression which backtracks more than n^3 times, where n is length of the input string
 	// JSOPTION_JIT: "I think it's possible we'll remove even this little bit of API, and just have the JIT always-on. -j"
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_XML /*| JSOPTION_RELIMIT*/ | JSOPTION_JIT);
+	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
+	IFDEBUG( JL_S_ASSERT( JS_GetOptions(cx) == 0 ) );
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML /*| JSOPTION_RELIMIT*/ | JSOPTION_JIT | JSOPTION_ANONFUNFIX);
 
 	JSObject *globalObject;
 	globalObject = JS_NewObject(cx, &global_class, NULL, NULL);

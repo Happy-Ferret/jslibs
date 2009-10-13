@@ -665,10 +665,14 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		ungetc(s, scriptFile);
 	}
 
+	uint32 prevOpts;
 	if ( saveCompFile )
-		JS_SetOptions( cx, JS_GetOptions(cx) & ~JSOPTION_COMPILE_N_GO ); // see https://bugzilla.mozilla.org/show_bug.cgi?id=494363
+		prevOpts = JS_SetOptions( cx, JS_GetOptions(cx) & ~JSOPTION_COMPILE_N_GO ); // see https://bugzilla.mozilla.org/show_bug.cgi?id=494363
 
 	script = JS_CompileFileHandle(cx, obj, fileName, scriptFile);
+
+	if ( saveCompFile )
+		JS_SetOptions(cx, prevOpts);
 
 	fclose(scriptFile);
 	JL_CHKM( script, "Unable to compile the script %s.", fileName );
