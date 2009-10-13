@@ -1048,7 +1048,7 @@ DEFINE_FUNCTION_FAST( Exec ) {
 	JL_CHK( JsvalToString(cx, &JL_FARG(1), &filename) );
 
 	uint32 oldopts;
-	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
+	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); // JSOPTION_COMPILE_N_GO is properly removed in JLLoadScript if needed.
 	JSScript *script;
 	script = JLLoadScript( cx, JL_FOBJ, filename, useAndSaveCompiledScripts, useAndSaveCompiledScripts );
 	JS_SetOptions(cx, oldopts);

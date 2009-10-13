@@ -1,4 +1,28 @@
 LoadModule('jsstd');
+
+/// bug bz#522024
+
+		var list = [];
+		function Add() {
+
+			 list.push(arguments);
+		}
+
+		function Run() {
+
+			 for each ( var item in list )
+				  item[0]();
+		}
+
+		for ( var i = 0; i < 10; i++ )
+			 Add(function(s) { });
+
+		Run();
+
+/// JSOPTION_ANONFUNFIX option [frm]
+	
+	113 == function(x, y) {return x+y} (100, 13);
+
 	
 /// GC test [r]
 		

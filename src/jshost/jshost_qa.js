@@ -1,3 +1,11 @@
+/// access all properties of the global object [ft]
+
+		for each ( item in global ) {
+
+			var s = String(global[item]);
+		}
+
+
 /// arguments [ftmd]
 
 		QA.ASSERT( global.arguments[2], 'arg2', 'script argument 2' );

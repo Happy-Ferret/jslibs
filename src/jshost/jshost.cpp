@@ -180,15 +180,16 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	signal(SIGTERM, Interrupt);
 #endif // XP_WIN
 
-	//jl_malloc = dlmalloc;
-	//jl_calloc = dlcalloc;
-	//jl_realloc = dlrealloc;
-	//jl_free = dlfree;
-
 	jl_malloc = nedmalloc;
 	jl_calloc = nedcalloc;
 	jl_realloc = nedrealloc;
 	jl_free = nedfree_handlenull;
+#if 0
+	jl_malloc = malloc;
+	jl_calloc = calloc;
+	jl_realloc = realloc;
+	jl_free = free;
+#endif
 
 	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_realloc, &jl_free);
 	JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
@@ -206,7 +207,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	hpv->realloc = jl_realloc;
 	hpv->free = jl_free;
 
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT | JSOPTION_RELIMIT); // default, may be disabled in InitHost()
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT | JSOPTION_RELIMIT ); // default, may be disabled in InitHost()
 
 	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr, NULL), "Unable to initialize the host." );
 
