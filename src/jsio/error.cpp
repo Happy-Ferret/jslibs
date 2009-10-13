@@ -44,8 +44,7 @@ $TOC_MEMBER $INAME
 */
 DEFINE_PROPERTY( code ) {
 
-	JS_GetReservedSlot( cx, obj, 0, vp );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
-	return JS_TRUE;
+	return JS_GetReservedSlot( cx, obj, 0, vp );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
 }
 
 /**doc
@@ -54,8 +53,7 @@ $TOC_MEMBER $INAME
 */
 DEFINE_PROPERTY( os ) {
 
-	JS_GetReservedSlot( cx, obj, 1, vp );  // (TBD) use the obj.name proprety directly instead of slot 1 ?
-	return JS_TRUE;
+	return JS_GetReservedSlot( cx, obj, 1, vp );  // (TBD) use the obj.name proprety directly instead of slot 1 ?
 }
 
 /**doc
@@ -64,18 +62,19 @@ $TOC_MEMBER $INAME
 */
 DEFINE_PROPERTY( text ) {
 
-	JS_GetReservedSlot( cx, obj, 0, vp );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
+	JL_CHK( JS_GetReservedSlot(cx, obj, 0, vp) );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
+	if ( JSVAL_IS_VOID(*vp) )
+		return JS_TRUE;
 	PRErrorCode errorCode = JSVAL_TO_INT(*vp);
 	JSString *str = JS_NewStringCopyZ( cx, PR_ErrorToString( errorCode, PR_LANGUAGE_EN ) );
 	*vp = STRING_TO_JSVAL( str );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION( toString ) {
 
-	JL_CHK( _text(cx, obj, 0, rval) );
-	return JS_TRUE;
-	JL_BAD;
+	return _text(cx, obj, 0, rval);
 }
 
 DEFINE_HAS_INSTANCE() { // see issue#52

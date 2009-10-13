@@ -31,13 +31,14 @@ DEFINE_CONSTRUCTOR() {
 
 DEFINE_PROPERTY( code ) {
 
-	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE, vp );
-	return JS_TRUE;
+	return JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE, vp );
 }
 
 DEFINE_PROPERTY( text ) {
 
-	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE, vp );
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_WIN_ERROR_CODE, vp) );
+	if ( JSVAL_IS_VOID(*vp) )
+		return JS_TRUE;
 	DWORD messageId = JSVAL_TO_INT(*vp);
 	LPVOID lpvMessageBuffer;
 	DWORD res = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, messageId, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&lpvMessageBuffer, 0, NULL);
@@ -53,6 +54,7 @@ DEFINE_PROPERTY( text ) {
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyN( cx, (char*)lpvMessageBuffer, res+1 )); // doc: If the function succeeds, the return value is the number of TCHARs stored in the output buffer, excluding the terminating null character.
 	LocalFree(lpvMessageBuffer);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_HAS_INSTANCE() { // see issue#52

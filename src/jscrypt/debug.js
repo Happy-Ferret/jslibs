@@ -3,6 +3,10 @@
 LoadModule('jsstd');
 LoadModule('jscrypt');
 
+	String( CryptError.text );
+
+Halt();
+
 		var fortuna = new Prng('fortuna');
 		fortuna.AutoEntropy(123); // give more entropy
 

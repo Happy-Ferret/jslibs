@@ -32,18 +32,16 @@ BEGIN_CLASS( ZError )
 
 DEFINE_PROPERTY( code ) {
 
-	JS_GetReservedSlot( cx, obj, 0, vp );
-	return JS_TRUE;
+	return JS_GetReservedSlot( cx, obj, 0, vp );
 }
 
 DEFINE_PROPERTY( text ) {
 
-	JS_GetReservedSlot( cx, obj, 1, vp );
-	return JS_TRUE;
+	return JS_GetReservedSlot( cx, obj, 1, vp );
 }
 
 const char *ZConstString( int errorCode ) {
-	
+
 	switch (errorCode) {
 		case 0:
 			return "Z_OK";
@@ -70,6 +68,8 @@ const char *ZConstString( int errorCode ) {
 DEFINE_PROPERTY( const ) {
 
 	JS_GetReservedSlot( cx, obj, 0, vp );
+	if ( JSVAL_IS_VOID(*vp) )
+		return JS_TRUE;
 	int errorCode = JSVAL_TO_INT(*vp);
 	JSString *str = JS_NewStringCopyZ( cx, ZConstString(errorCode) );
 	*vp = STRING_TO_JSVAL( str );
@@ -79,9 +79,7 @@ DEFINE_PROPERTY( const ) {
 
 DEFINE_FUNCTION( toString ) {
 
-	JL_CHK( _text(cx, obj, 0, rval) );
-	return JS_TRUE;
-	JL_BAD;
+	return _text(cx, obj, 0, rval);
 }
 
 DEFINE_HAS_INSTANCE() { // see issue#52
@@ -92,7 +90,7 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 
 
 DEFINE_XDR() {
-	
+
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
 		jsval tmp;

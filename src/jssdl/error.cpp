@@ -36,15 +36,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( text ) {
 
-	JS_GetReservedSlot( cx, obj, 0, vp );
-	return JS_TRUE;
+	return JS_GetReservedSlot( cx, obj, 0, vp );
 }
 
 DEFINE_FUNCTION( toString ) {
 
-	JL_CHK( _text(cx, obj, 0, rval) );
-	return JS_TRUE;
-	JL_BAD;
+	return _text(cx, obj, 0, rval);
 }
 
 DEFINE_HAS_INSTANCE() { // see issue#52

@@ -43,8 +43,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( code ) {
 
-	JS_GetReservedSlot( cx, obj, SLOT_SQLITE_ERROR_CODE, vp );
-	return JS_TRUE;
+	return JS_GetReservedSlot( cx, obj, SLOT_SQLITE_ERROR_CODE, vp );
 }
 
 /**doc
@@ -53,8 +52,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( text ) {
 
-	JS_GetReservedSlot( cx, obj, SLOT_SQLITE_ERROR_TEXT, vp );
-	return JS_TRUE;
+	return JS_GetReservedSlot( cx, obj, SLOT_SQLITE_ERROR_TEXT, vp );
 }
 
 DEFINE_HAS_INSTANCE() { // see issue#52

@@ -1,5 +1,9 @@
 LoadModule('jscrypt');
 
+/// CryptError.text []
+	
+		String( CryptError.text );
+
 /// MD5 digest [ftrm]
 
 		var md5 = new Hash('md5');
