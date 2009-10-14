@@ -5,7 +5,7 @@
 	LoadModule('jsstd'); LoadModule('jsio');
 	Exec('../jsdebug/debugger.js', false);
 	currentDirectory += '/../../../jsircbot';
-	arguments[1] = 'my_configuration.js';
+	arguments[1] = 'my_configuration.js'; // simulate: jshost main.js my_configuration.js
 	Exec('main.js', false);
 	throw 0;
 */

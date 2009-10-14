@@ -457,34 +457,88 @@ ALWAYS_INLINE bool JsvalIsData( JSContext *cx, jsval val ) {
 	return ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) || JL_VALUE_IS_STRING_OBJECT(cx, val) );
 }
 
-
 /*
-ALWAYS_INLINE bool JL_IsAssigningCallResult( JSContext *cx ) {
+ALWAYS_INLINE bool JL_IsRValOptional( JSContext *cx, void *nativeFct ) {
 
 	struct CodeSpec {
 		 int8 length; // length including opcode byte
 		 uint32 format; // immediate operand format
 	};
 	static const CodeSpec codeSpec[] = {
-	#define OPDEF(op,val,name,token,length,nuses,ndefs,prec,format) \
-		{length, format},
-	#include "jsopcode.tbl"
-	#undef OPDEF
+		#define OPDEF(op,val,name,token,length,nuses,ndefs,prec,format) \
+			{length, format},
+		#include "jsopcode.tbl"
+		#undef OPDEF
 	};
 
+	//JSStackFrame *fp = JL_CurrentStackFrame(cx);
+	//while (fp) { // see js_GetScriptedCaller()
+	//	
+	//	if (fp->script)
+	//		break;
+	//	fp = fp->down;
+	//}
+	//jsval *vp1 = fp->regs->sp - (argc + 2);
+	//JSObject *obj2 = JSVAL_TO_OBJECT(*vp1);
+	//JSFunction *fun = GET_FUNCTION_PRIVATE(cx, obj2); // last function called from the script
+
+
+
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
-	if ( !fp || !fp->regs || !fp->script )
+	if ( fp->script ) // fast native
 		return false;
+
+	if ( !fp->fun || !FUN_SLOW_NATIVE(fp->fun) || fp->fun->u.n.native != nativeFct )
+		return false;
+
+	while (fp) { // see js_GetScriptedCaller()
+		
+		if (fp->script)
+			break;
+		fp = fp->down;
+	}
+
+	if ( !fp || !fp->regs )
+		return false;
+
+//	if ( !fp->fun || fp->fun->flags & JSFUN_FAST_NATIVE )
+//		return false;
+
+	jsbytecode *pcEnd = fp->script->code + fp->script->length;
 	jsbytecode *pc = fp->regs->pc;
-	pc += codeSpec[*pc].length;
-	if ( pc > fp->script->code + fp->script->length )
+
+	if ( *pc != JSOP_CALL )
 		return false;
 
-	// miss: var c = Test()[1];
+	while ( pc < pcEnd ) {
+		
+		pc += codeSpec[*pc].length;
+		switch ( *pc ) {
+			case JSOP_TRACE:
+				break; // skip
+			case JSOP_POPN: // regs.sp -= GET_UINT16(regs.pc);
+				if ( GET_UINT16(pc) >= 1 )
+					return true;
+				break;
+			case JSOP_POP: // regs.sp--;
+			case JSOP_VOID: // STORE_OPND(-1, JSVAL_VOID);
+				return true;
 
-	return (codeSpec[*pc].format & JOF_SET) || *pc == JSOP_ITER || *pc == JSOP_DUP;
+			//case JSOP_SETRVAL:
+			//case JSOP_POPV: // fp->rval = POP_OPND();
+			//	switch( *(pc + codeSpec[*pc].length) ) {
+			//		case JSOP_STOP:
+			//			return false; // var a = eval("TestDebug()");
+			//	}
+
+			default:
+				return false;
+		}
+	}
+	return false;
 }
 */
+
 
 ALWAYS_INLINE bool JL_InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
 

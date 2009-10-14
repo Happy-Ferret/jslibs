@@ -30,12 +30,12 @@
 void fpipe( FILE **read, FILE **write ) {
 
 	HANDLE readPipe, writePipe;
-	CreatePipe(&readPipe, &writePipe, NULL, 0);
+	CreatePipe(&readPipe, &writePipe, NULL, 65536);
 
 	// doc: The underlying handle is also closed by a call to _close,
 	//      so it is not necessary to call the Win32 function CloseHandle on the original handle. 
 	int readfd = _open_osfhandle((intptr_t)readPipe, _O_RDONLY);
-	int writefd = _open_osfhandle((intptr_t)writePipe, 32768);
+	int writefd = _open_osfhandle((intptr_t)writePipe, _O_WRONLY);
 	*read = fdopen(readfd, "r");
 	*write = fdopen(writefd, "w");
 }
@@ -1590,14 +1590,26 @@ DEFINE_PROPERTY( cpuLoad ) {
 #ifdef DEBUG
 DEFINE_FUNCTION( TestDebug ) {
 
+/*
 	// see https://bugzilla.mozilla.org/show_bug.cgi?id=488924
 	JSObject *o = JS_NewArrayObject(cx, 0, NULL);
 	JSScopeProperty *jssp;
 	jssp = NULL;
 	JS_PropertyIterator(o, &jssp);
+*/
+//	if ( JL_IsRValOptional(cx, _TestDebug) )
+//		printf("OPTIONAL\n");
+
 	return JS_TRUE;
 	JL_BAD;
 }
+
+DEFINE_FUNCTION_FAST( Test2Debug ) {
+
+	jsval arg = JSVAL_ONE;
+	return JS_CallFunctionValue(cx, JL_FOBJ, JL_FARG(1), 1, &arg, JL_FRVAL );
+}
+
 #endif // DEBUG
 
 
@@ -1628,6 +1640,7 @@ CONFIGURE_STATIC
 	#ifdef DEBUG
 		FUNCTION_FAST( DumpHeap )
 		FUNCTION( TestDebug )
+		FUNCTION_FAST( Test2Debug )
 	#endif // DEBUG
 		FUNCTION_FAST( DisableJIT )
 	END_STATIC_FUNCTION_SPEC

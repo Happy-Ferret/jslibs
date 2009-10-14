@@ -6,7 +6,7 @@
 		}
 
 
-/// arguments [ftmd]
+/// jshost arguments [ftm]
 
 		QA.ASSERT( global.arguments[2], 'arg2', 'script argument 2' );
 		QA.ASSERT( global.arguments[3], 'arg3', 'script argument 3' );
