@@ -453,7 +453,7 @@ ALWAYS_INLINE JSClass* JL_GetStringClass( JSContext *cx ) {
 #define JL_VALUE_IS_STRING_OBJECT(cx, val) (!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass)
 
 ALWAYS_INLINE bool JsvalIsData( JSContext *cx, jsval val ) {
-
+	
 	return ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) || JL_VALUE_IS_STRING_OBJECT(cx, val) );
 }
 
@@ -928,8 +928,7 @@ ALWAYS_INLINE JSBool JL_NewBlobCopyN( JSContext *cx, const void *data, unsigned 
 	char *blobBuf = (char*)JS_malloc(cx, amount);
 	JL_CHK( blobBuf );
 	memcpy( blobBuf, data, amount );
-	JL_CHK( JL_NewBlob(cx, blobBuf, amount, vp) );
-	return JS_TRUE;
+	return JL_NewBlob(cx, blobBuf, amount, vp);
 	JL_BAD;
 }
 
