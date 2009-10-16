@@ -86,14 +86,13 @@ JSBool WriteDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBlob(cx, chunk) ) {
+	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBlob(cx, chunk) && !JL_VALUE_IS_STRING_OBJECT(cx, chunk) ) {
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
 		JL_S_ASSERT( jsstr != NULL, "Unable to convert the chunk into a string." );
 		chunk = STRING_TO_JSVAL(jsstr);
 	}
-
-	// here, chunk is a JSString or a Blob
+	// here, chunk is an immutable data container ( string, JSString, Blob, ... ) excluding BufferGetInterface.
 
 	unsigned int strLen;
 	JL_CHK( JsvalToStringLength(cx, chunk, &strLen) );
@@ -126,13 +125,13 @@ JSBool UnReadDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBlob(cx, chunk) ) {
+	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBlob(cx, chunk) && !JL_VALUE_IS_STRING_OBJECT(cx, chunk) ) {
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
 		JL_S_ASSERT( jsstr != NULL, "Unable to convert the chunk into a string." );
 		chunk = STRING_TO_JSVAL(jsstr);
 	}
-	// here, chunk is a JSString or a Blob
+	// here, chunk is an immutable data container ( string, JSString, Blob, ... ) excluding BufferGetInterface.
 
 	unsigned int strLen;
 	JL_CHK( JsvalToStringLength(cx, chunk, &strLen) );
@@ -609,8 +608,8 @@ DEFINE_FUNCTION_FAST( Clear ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( data [, length] )
- * $VOID $INAME( buffer )
+ $VOID $INAME( data [, length] )
+ $VOID $INAME( buffer )
   Add _data_ in the buffer. If _length_ is used, only the first _length_ bytes of _data_ are added.
   The second form allow to add another whole buffer in the current buffer.
 **/
@@ -626,12 +625,15 @@ DEFINE_FUNCTION_FAST( Write ) {
 	jsval *arg1;
 	arg1 = &JL_FARG(1);
 
-	if ( JSVAL_IS_VOID(*arg1) ) {
+// rekated to buffer markers
+//	if ( JSVAL_IS_VOID(*arg1) ) {
+//	}
 
-	}
-
-	if ( JsvalIsClass(*arg1, _class ) ) // 
+	if ( JsvalIsClass(*arg1, _class) ) {
+		
+		JL_S_ASSERT_ARG(1);
 		return AddBuffer(cx, JL_FOBJ, JSVAL_TO_OBJECT( *arg1 ));
+	}
 
 	if ( JL_FARG_ISDEF(2) ) {
 
