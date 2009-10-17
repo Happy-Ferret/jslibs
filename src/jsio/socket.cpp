@@ -865,15 +865,22 @@ DEFINE_PROPERTY( OptionGetter ) {
 $TOC_MEMBER $INAME
  $STR $INAME $READONLY
   Get name of the connected peer.
-  Return the network address for the connected peer socket.
+  Return the network address for the connected peer socket or $UNDEF if the socket is not connected
 **/
 DEFINE_PROPERTY( peerName ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
 	PRNetAddr peerAddr;
-	if ( PR_GetPeerName(fd, &peerAddr) != PR_SUCCESS )
+	if ( PR_GetPeerName(fd, &peerAddr) != PR_SUCCESS ) {
+		
+		if ( PR_GetError() == PR_NOT_CONNECTED_ERROR ) {
+
+			*vp = JSVAL_VOID;
+			return JS_TRUE;
+		}
 		return ThrowIoError(cx);
+	}
 	char buf[MAX_IP_STRING + 1];
 	if ( PR_NetAddrToString(&peerAddr, buf, sizeof(buf)) != PR_SUCCESS )
 		return ThrowIoError(cx);
@@ -886,15 +893,22 @@ DEFINE_PROPERTY( peerName ) {
 $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   Get port of the connected peer.
-  Return the port for the connected peer socket.
+  Return the port for the connected peer socket or $UNDEF if the socket is not connected.
 **/
 DEFINE_PROPERTY( peerPort ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
 	PRNetAddr peerAddr;
-	if ( PR_GetPeerName(fd, &peerAddr) != PR_SUCCESS )
+	if ( PR_GetPeerName(fd, &peerAddr) != PR_SUCCESS ) {
+
+		if ( PR_GetError() == PR_NOT_CONNECTED_ERROR ) {
+
+			*vp = JSVAL_VOID;
+			return JS_TRUE;
+		}
 		return ThrowIoError(cx);
+	}
 	*vp = INT_TO_JSVAL( PR_ntohs(PR_NetAddrInetPort(&peerAddr)) );
 	return JS_TRUE;
 	JL_BAD;
