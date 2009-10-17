@@ -747,9 +747,10 @@ DEFINE_PROPERTY( OptionSetter ) {
 
 	switch ( sod.option ) {
 		case PR_SockOpt_Linger: { // http://developer.mozilla.org/en/docs/PRLinger
-				uint32 timeout;
-				JS_ValueToECMAUint32( cx, *vp, &timeout );
-				if ( timeout >= 0 ) {
+				unsigned int timeout;
+				JL_CHK( JsvalToUInt(cx, *vp, &timeout) );
+//				JS_ValueToECMAUint32( cx, *vp, &timeout );
+				if ( timeout > 0 ) {
 					sod.value.linger.polarity = PR_TRUE;
 					sod.value.linger.linger = PR_MillisecondsToInterval(timeout);
 				} else {
