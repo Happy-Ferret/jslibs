@@ -1225,6 +1225,12 @@ DEFINE_FUNCTION_FAST( PropertiesList ) {
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 
+	if ( !OBJ_IS_NATIVE(srcObj) ) { // (TBD) remove this workaround to bz#522101
+		
+		*JL_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
 	bool followPrototypeChain;
 	if ( JL_FARG_ISDEF(2) )
 		JL_CHK( JsvalToBool(cx, JL_FARG(2), &followPrototypeChain) );
@@ -1278,6 +1284,12 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+
+	if ( !OBJ_IS_NATIVE(srcObj) ) { // (TBD) remove this workaround to bz#522101
+		
+		*JL_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
 
 	bool followPrototypeChain;
 	if ( JL_FARG_ISDEF(2) )
@@ -1586,6 +1598,17 @@ DEFINE_PROPERTY( cpuLoad ) {
 }
 
 
+DEFINE_FUNCTION_FAST( DebugOutput ) {
+
+#if defined(_MSC_VER) && defined(DEBUG)
+	const char *str;
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &str) );
+	OutputDebugString(str);
+#endif // DEBUG
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 #ifdef DEBUG
 DEFINE_FUNCTION( TestDebug ) {
@@ -1637,7 +1660,9 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( EvalInStackFrame )
 		FUNCTION_FAST_ARGC( PropertiesList, 1 )
 		FUNCTION_FAST_ARGC( PropertiesInfo, 1 )
+		FUNCTION_FAST_ARGC( DebugOutput, 1 )
 	#ifdef DEBUG
+
 		FUNCTION_FAST( DumpHeap )
 		FUNCTION( TestDebug )
 		FUNCTION_FAST( Test2Debug )
