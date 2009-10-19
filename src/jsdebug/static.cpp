@@ -25,23 +25,6 @@
 #include <time.h>
 #include <string.h>
 
-
-#ifdef XP_WIN
-void fpipe( FILE **read, FILE **write ) {
-
-	HANDLE readPipe, writePipe;
-	CreatePipe(&readPipe, &writePipe, NULL, 65536);
-
-	// doc: The underlying handle is also closed by a call to _close,
-	//      so it is not necessary to call the Win32 function CloseHandle on the original handle. 
-	int readfd = _open_osfhandle((intptr_t)readPipe, _O_RDONLY);
-	int writefd = _open_osfhandle((intptr_t)writePipe, _O_WRONLY);
-	*read = fdopen(readfd, "r");
-	*write = fdopen(writefd, "w");
-}
-#endif // XP_WIN
-
-
 extern jl::Queue *scriptFileList;
 JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc ); // defined in main.cpp
 JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char *filename, unsigned int lineno);

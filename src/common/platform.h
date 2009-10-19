@@ -216,6 +216,31 @@
 //	#define O_BINARY 0
 //#endif
 
+#if defined XP_WIN
+	#include <io.h>
+#endif
+#include <fcntl.h>
+#include <stdio.h>
+inline void fpipe( FILE **read, FILE **write ) {
+
+	int readfd, writefd;
+#if defined XP_WIN
+	HANDLE readPipe, writePipe;
+	CreatePipe(&readPipe, &writePipe, NULL, 65536);
+	// doc: The underlying handle is also closed by a call to _close,
+	//      so it is not necessary to call the Win32 function CloseHandle on the original handle. 
+	readfd = _open_osfhandle((intptr_t)readPipe, _O_RDONLY);
+	writefd = _open_osfhandle((intptr_t)writePipe, _O_WRONLY);
+#elif defined XP_UNIX
+	int fd[2];
+	pipe(fd); // (TBD) check return value
+	readfd = fd[0];
+	writefd = fd[1];
+#endif
+	*read = fdopen(readfd, "r");
+	*write = fdopen(writefd, "w");
+}
+
 
 #ifdef XP_UNIX
 #include <string.h>
