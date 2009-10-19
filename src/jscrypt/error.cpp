@@ -32,8 +32,10 @@ DEFINE_PROPERTY( text ) {
 	JL_CHK( JS_GetReservedSlot( cx, obj, 0, vp ) );
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
-	int errorCode = JSVAL_TO_INT(*vp);
-	JSString *str = JS_NewStringCopyZ( cx, error_to_string(errorCode) );
+	int errorCode;
+	errorCode = JSVAL_TO_INT(*vp);
+	JSString *str;
+	str = JS_NewStringCopyZ( cx, error_to_string(errorCode) );
 	*vp = STRING_TO_JSVAL( str );
 	return JS_TRUE;
 	JL_BAD;

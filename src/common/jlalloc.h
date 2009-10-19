@@ -12,8 +12,12 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _JLALLOC_H_
-#define _JLALLOC_H_
+//#ifndef _JLALLOC_H_
+//#define _JLALLOC_H_
+
+#pragma once
+
+#include <sys/types.h>
 
 typedef void* (*jl_malloc_t)( size_t size );
 typedef void* (*jl_calloc_t)( size_t num, size_t size );
@@ -25,4 +29,4 @@ extern jl_calloc_t jl_calloc;
 extern jl_realloc_t jl_realloc;
 extern jl_free_t jl_free;
 
-#endif // _JLALLOC_H_
+//#endif // _JLALLOC_H_

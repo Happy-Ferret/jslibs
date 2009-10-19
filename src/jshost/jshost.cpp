@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	jl_calloc = nedcalloc;
 	jl_realloc = nedrealloc;
 	jl_free = nedfree_handlenull;
-#if 0
+#if 1
 	jl_malloc = malloc;
 	jl_calloc = calloc;
 	jl_realloc = realloc;
@@ -198,7 +198,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	HOST_MAIN_ASSERT( cx != NULL, "Unable to create a javascript execution context." );
 
 	MemoryManagerEnableGCEvent(cx);
-	HostPrivate *hpv = GetHostPrivate(cx);
+	HostPrivate *hpv;
+	hpv = GetHostPrivate(cx);
 	hpv->camelCase = camelCase;
 
 	// custom memory allocators are transfered to the modules through the HostPrivate structure:

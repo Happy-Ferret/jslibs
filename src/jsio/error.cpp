@@ -65,8 +65,10 @@ DEFINE_PROPERTY( text ) {
 	JL_CHK( JS_GetReservedSlot(cx, obj, 0, vp) );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
-	PRErrorCode errorCode = JSVAL_TO_INT(*vp);
-	JSString *str = JS_NewStringCopyZ( cx, PR_ErrorToString( errorCode, PR_LANGUAGE_EN ) );
+	PRErrorCode errorCode;
+	errorCode = JSVAL_TO_INT(*vp);
+	JSString *str;
+	str = JS_NewStringCopyZ( cx, PR_ErrorToString( errorCode, PR_LANGUAGE_EN ) );
 	*vp = STRING_TO_JSVAL( str );
 	return JS_TRUE;
 	JL_BAD;

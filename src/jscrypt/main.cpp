@@ -50,10 +50,6 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
-	JL_CHK( InitJslibsModule(cx) );
-
-	ltc_mp = ltm_desc; // register math
-
 	const struct ltc_cipher_descriptor * cipherList[] = {
 		&blowfish_desc,
 		&rc5_desc,
@@ -102,6 +98,9 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		&sober128_desc,
 	};
 
+	JL_CHK( InitJslibsModule(cx) );
+
+	ltc_mp = ltm_desc; // register math
 	int regStatus;
 
 	for ( int i=0; i<sizeof(cipherList)/sizeof(*cipherList); i++ ) {

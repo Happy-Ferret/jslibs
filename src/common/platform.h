@@ -218,7 +218,9 @@
 
 
 #ifdef XP_UNIX
-void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath ) {
+#include <string.h>
+#include <stdlib.h>
+ALWAYS_INLINE void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath ) {
 
 	if ( modulePath[0] == PATH_SEPARATOR ) { //  /jshost
 

@@ -12,6 +12,7 @@ BITS ?= 32
 
 INT_DIR = $(shell uname)_$(BUILD)_$(BITS)/
 
+# -Wfatal-errors
 ifeq ($(BUILD),dbg)
 	CFLAGS += -Wall -g3 -O0 -DDEBUG -I../../libs/js/$(INT_DIR) -I../../libs/js/src
 	#CFLAGS += -DJS_GCMETER -DJS_HASHMETER -DJS_GC_ZEAL -DJS_DUMP_PROPTREE_STATS -DJS_ARENAMETER
@@ -19,6 +20,7 @@ else
 	CFLAGS += -Wall -O3 -s -funroll-loops -I../../libs/js/$(INT_DIR) -I../../libs/js/src
 endif
 
+CFLAGS += -Wno-unused-parameter
 LDFLAGS += -Wl,-Bdynamic -L../../libs/js/$(INT_DIR) -lmozjs
 # -static-libgcc -Wl,-Bstatic,-lstdc++
 #,-lgcc_s
