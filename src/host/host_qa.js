@@ -54,7 +54,9 @@ LoadModule('jsstd');
 
 /// LoadModule in a namespace [ftrm]
 
+/// Load an inexisting module [ftrm]
 
+		QA.ASSERT( LoadModule('azyegyiazgiazygc'), false, 'loading inexisting module' );
 
 /// String memory usage (disabled GC) [tr]
 

@@ -276,15 +276,16 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	JL_S_ASSERT( libFileName != NULL && *libFileName != '\0', "Invalid module filename." );
 	JLLibraryHandler module;
 	module = JLDynamicLibraryOpen(libFileName);
-	JL_SAFE(
-		if ( !JLDynamicLibraryOk(module) ) {
+	if ( !JLDynamicLibraryOk(module) ) {
+		JL_SAFE(
 
 			char errorBuffer[256];
 			JLDynamicLibraryLastErrorMessage( errorBuffer, sizeof(errorBuffer) );
-			JL_REPORT_ERROR( "Unable to load the module \"%s\". %s", libFileName, errorBuffer );
-		}
-	);
-
+			JL_REPORT_WARNING( "Unable to load the module \"%s\". %s", libFileName, errorBuffer );
+		);
+		*rval = JSVAL_FALSE;
+		return JS_TRUE;
+	}
 	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) )
 		if ( (JLLibraryHandler)jl::QueueGetData(it) == module ) {
 
