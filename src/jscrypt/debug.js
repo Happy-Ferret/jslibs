@@ -3,8 +3,20 @@
 LoadModule('jsstd');
 LoadModule('jscrypt');
 
-	String( CryptError.text );
+		var rnd = new Prng('fortuna');
+		rnd.AutoEntropy(128); // give more entropy
+		var plainText = 'totqutyvq8wyetvq7ewryt9vq78yrt987wveyrt98v7weyr9tv87wery9twev87y9r78o';
+		plainText = plainText;
+		var rsa = new AsymmetricCipher('rsa', 'md5', rnd );
+		rsa.CreateKeys( 1024 );
+		var rsaPubKey = rsa.publicKey;
+		var rsa1 = new AsymmetricCipher( 'rsa', 'md5', rnd );
+		rsa1.publicKey = rsaPubKey;
+		var rsaEncryptedData = rsa1.Encrypt( plainText );
+		rsa.Decrypt( rsaEncryptedData );
 
+		
+		
 Halt();
 
 		var fortuna = new Prng('fortuna');

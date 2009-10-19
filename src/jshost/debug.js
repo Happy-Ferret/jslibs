@@ -2,13 +2,26 @@
 
 /*
 // run jsircbot with debuggers
-	LoadModule('jsstd'); LoadModule('jsio');
-	Exec('../jsdebug/debugger.js', false);
+	LoadModule('jsstd');
+	LoadModule('jsio');
+	LoadModule('jsdebug');
+//	Exec('../jsdebug/debugger.js', false);
 	currentDirectory += '/../../../jsircbot';
 	arguments[1] = 'my_configuration.js'; // simulate: jshost main.js my_configuration.js
 	Exec('main.js', false);
 	throw 0;
 */
+
+/*
+// run qa tests with debuggers
+	LoadModule('jsstd');
+	LoadModule('jsio');
+	currentDirectory += '/../..';
+	arguments[1] = '.*';
+	Exec('qa.js', false);
+	throw 0;
+*/
+
 
 
 LoadModule('jsstd');
