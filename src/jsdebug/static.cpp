@@ -1443,7 +1443,8 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 
 	JL_CHK( JsvalToString(cx, &JL_FARG(1), &filename) );
 	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &lineno) );
-	JSScript *script = ScriptByLocation(cx, scriptFileList, filename, lineno);
+	JSScript *script;
+	script = ScriptByLocation(cx, scriptFileList, filename, lineno);
 	JL_CHK( script );
 
 	int length;
@@ -1466,13 +1467,15 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 	fflush(wf);
 	fclose(wf);
 
-	char *data = (char*)jl_malloc(length+1);
+	char *data;
+	data = (char*)jl_malloc(length+1);
 	JL_S_ASSERT_ALLOC( data );
 	fread(data, 1, length, rf);
 	data[length] = '\0';
 	fclose(rf);
 
-	JSString *jsstr = JS_NewStringCopyN(cx, data, length);
+	JSString *jsstr;
+	jsstr = JS_NewStringCopyN(cx, data, length);
 	jl_free(data);
 	JL_S_ASSERT_ALLOC( jsstr );
 
