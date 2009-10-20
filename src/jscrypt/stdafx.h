@@ -9,5 +9,16 @@
 #include "../common/jsClass.h"
 #include "../common/jsConfiguration.h"
 
+#define XMALLOC jl_malloc_fct
+#define XCALLOC jl_calloc_fct
+#define XREALLOC jl_realloc_fct
+#define XFREE jl_free_fct
+
 #include <tomcrypt.h>
+
+//#undef XMALLOC
+//#undef XCALLOC
+//#undef XREALLOC
+//#undef XFREE
+
 #include "error.h"

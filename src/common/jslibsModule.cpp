@@ -28,6 +28,11 @@ jl_calloc_t jl_calloc = calloc;
 jl_realloc_t jl_realloc = realloc;
 jl_free_t jl_free = free;
 
+EXTERN_C void* jl_malloc_fct( size_t size ) { return jl_malloc(size); }
+EXTERN_C void* jl_calloc_fct( size_t num, size_t size ) { return jl_calloc(num, size); }
+EXTERN_C void* jl_realloc_fct( void *ptr, size_t size ) { return jl_realloc(ptr, size); }
+EXTERN_C void jl_free_fct( void *ptr ) { jl_free(ptr); }
+
 
 JSBool InitJslibsModule( JSContext *cx ) {
 

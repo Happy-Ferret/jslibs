@@ -18,7 +18,7 @@
 
 	<Tool
 		Name="VCCLCompilerTool"
-		PreprocessorDefinitions="WIN32;_DEBUG;_LIB;DEBUG;JS_HASHMETER;JS_GC_ZEAL"
+		PreprocessorDefinitions="WIN32;_DEBUG;_USRDLL;DEBUG;JS_HASHMETER;JS_GC_ZEAL"
 		AdditionalIncludeDirectories="..\..\libs\js\$(PlatformName)_$(ConfigurationName)\dist\include"
 		ExceptionHandling="0"
 		RuntimeLibrary="3"

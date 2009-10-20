@@ -18,6 +18,11 @@
 #include "../common/platform.h"
 #include "../common/jlalloc.h"
 
+EXTERN_C void* jl_malloc_fct( size_t size );
+EXTERN_C void* jl_calloc_fct( size_t num, size_t size );
+EXTERN_C void* jl_realloc_fct( void *ptr, size_t size );
+EXTERN_C void jl_free_fct( void *ptr );
+
 extern bool _unsafeMode;
 
 typedef struct JSContext JSContext;

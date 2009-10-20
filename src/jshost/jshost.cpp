@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	jl_calloc = nedcalloc;
 	jl_realloc = nedrealloc;
 	jl_free = nedfree_handlenull;
-#if 1
+#if 0
 	jl_malloc = malloc;
 	jl_calloc = calloc;
 	jl_realloc = realloc;

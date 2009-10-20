@@ -25,6 +25,29 @@ jl::Queue *dbContextList = NULL;
 
 #include "../common/jslibsModule.cpp"
 
+/*
+void* xMalloc(int s) {
+	return jl_malloc(s);
+}
+void xFree(void *p) {
+	return jl_free(p);
+}
+void* xRealloc(void *p, int s) {
+	return jl_realloc(p, s);
+}
+int xSize(void* p) {
+	return ; // missing function
+}
+int xRoundup(int s) {
+	return s;
+}
+int xInit(void*) {
+	return 0;
+}
+void xShutdown(void*) {
+}
+*/
+
 
 /**doc t:header
 $MODULE_HEADER
@@ -35,32 +58,17 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-EXTERN_C void* js_malloc_fct( size_t size ) {
-	return jl_malloc(size);
-}
-
-EXTERN_C void* js_calloc_fct( size_t num, size_t size ) {
-	return jl_calloc(num, size);
-}
-
-EXTERN_C void* js_realloc_fct( void *ptr, size_t size ) {
-	return jl_realloc(ptr, size);
-}
-
-EXTERN_C void js_free_fct( void *ptr ) {
-	jl_free(ptr);
-}
-
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+
+//	sqlite3_mem_methods mem = { xMalloc, xFree, xRealloc, xSize, xRoundup, xInit, xShutdown, NULL };
+//	sqlite3_config(SQLITE_CONFIG_MALLOC, &mem);
 
 	JL_CHK( InitJslibsModule(cx) );
 
 	if ( sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) != SQLITE_OK )
 		JL_REPORT_ERROR( "Unable to disable memory stats." );
 
-	//	sqlite3_mem_methods mem = {
-	//	sqlite3_config(SQLITE_CONFIG_MALLOC,...)
 
 	if ( sqlite3_initialize() != SQLITE_OK )
 		JL_REPORT_ERROR( "Unable to initialize sqlite." );

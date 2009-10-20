@@ -33,21 +33,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	JL_CHK( InitJslibsModule(cx) );
 
-/*
-	Buffer resultBuffer;
-	BufferInitialize(&resultBuffer, bufferTypeAuto, bufferGrowTypeAuto);
-	BufferNewChunk(&resultBuffer, 0);
-	BufferConfirm(&resultBuffer, 0);
-	BufferNewChunk(&resultBuffer, 1);
-	BufferConfirm(&resultBuffer, 1);
-//	free( BufferGetDataOwnership(&resultBuffer) );
-//	BufferGetData(&resultBuffer);
-	BufferFinalize(&resultBuffer);
-//	malloc(1);
-	return JS_FALSE;
-*/
-
-
 	INIT_CLASS( ZError );
 	INIT_CLASS( Z );
 

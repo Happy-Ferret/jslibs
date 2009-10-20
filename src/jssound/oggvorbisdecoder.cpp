@@ -17,8 +17,21 @@
 
 #include "../common/stack.h"
 
+
+#define malloc jl_malloc_fct
+#define calloc jl_calloc_fct
+#define realloc jl_realloc_fct
+#define free jl_free_fct
+
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
+
+#undef malloc
+#undef calloc
+#undef realloc
+#undef free
+
+
 
 #define SLOT_INPUT_STREAM 0
 

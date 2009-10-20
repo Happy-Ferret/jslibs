@@ -9,11 +9,20 @@
 #include "../common/jsClass.h"
 #include "../common/jsConfiguration.h"
 
-namespace sdl {
+#define DECLSPEC
 
-	#include <SDL.h>
-}
+#define malloc jl_malloc_fct
+#define calloc jl_calloc_fct
+#define realloc jl_realloc_fct
+#define free jl_free_fct
 
-using namespace sdl;
+//namespace sdl {
+#include <SDL.h>
+//}
 
-//#include <SDL_error.h>
+#undef malloc
+#undef calloc
+#undef realloc
+#undef free
+
+//using namespace sdl;

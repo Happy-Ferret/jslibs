@@ -26,11 +26,11 @@
 
 #undef FAR
 
-extern "C" {
+EXTERN_C {
 	#include <jpeglib.h>
+	#include <jerror.h>
 }
 
-#include <jerror.h>
 
 
 #include <png.h>
@@ -255,12 +255,12 @@ static void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) 
 //		png_error(png_ptr, "Trying to read after EOF."); // png_warning()
 }
 
-png_voidp malloc_fn(png_structp png_ptr, png_size_t size) {
+png_voidp malloc_wrapper(png_structp png_ptr, png_size_t size) {
 
 	return jl_malloc(size);
 }
 
-void free_fn(png_structp png_ptr, png_voidp ptr) {
+void free_wrapper(png_structp png_ptr, png_voidp ptr) {
 	
 	jl_free(ptr);
 }
@@ -290,7 +290,7 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	desc.obj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	desc.cx = cx;
 
-	png_set_mem_fn(desc.png, NULL, malloc_fn, free_fn);
+	png_set_mem_fn(desc.png, NULL, malloc_wrapper, free_wrapper);
 
 	png_set_read_fn( desc.png, (voidp)&desc, _png_read );
    png_read_info(desc.png, desc.info);

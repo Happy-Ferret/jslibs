@@ -18,18 +18,6 @@ DECLARE_STATIC()
 
 #include "../common/jslibsModule.cpp"
 
-EXTERN_C void* jl_malloc_wrapper( size_t size ) {
-	return jl_malloc(size);
-}
-EXTERN_C void* jl_calloc_wrapper( size_t num, size_t size ) {
-	return jl_calloc(num, size);
-}
-EXTERN_C void* jl_realloc_wrapper( void *ptr, size_t size ) {
-	return jl_realloc(ptr, size);
-}
-EXTERN_C void jl_free_wrapper( void *ptr ) {
-	jl_free(ptr);
-}
 
 /**doc t:header
 $MODULE_HEADER

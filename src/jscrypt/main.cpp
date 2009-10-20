@@ -22,19 +22,6 @@
 
 #include "../common/jslibsModule.cpp"
 
-void * LTC_CALL ltc_malloc(size_t n) {
-	return jl_malloc(n);
-}
-void * LTC_CALL ltc_realloc(void *p, size_t n) {
-	return jl_realloc(p, n);
-}
-void * LTC_CALL ltc_calloc(size_t n, size_t s) {
-	return jl_calloc(n, s);
-}
-void LTC_CALL ltc_free(void *p) {
-	jl_free(p);
-}
-
 
 /**doc t:header
 $MODULE_HEADER
