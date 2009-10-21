@@ -21,12 +21,27 @@
 
 typedef void* (*jl_malloc_t)( size_t size );
 typedef void* (*jl_calloc_t)( size_t num, size_t size );
+typedef void* (*jl_memalign_t)( size_t alignment, size_t size );
 typedef void* (*jl_realloc_t)( void *ptr, size_t size );
+typedef size_t (*jl_msize_t)( void *ptr );
 typedef void (*jl_free_t)( void *ptr );
+
+typedef struct {
+
+	jl_malloc_t malloc;
+	jl_calloc_t calloc;
+	jl_memalign_t memalign;
+	jl_realloc_t realloc;
+	jl_msize_t msize;
+	jl_free_t free;
+} jl_allocators_t;
+
 
 extern jl_malloc_t jl_malloc;
 extern jl_calloc_t jl_calloc;
+extern jl_memalign_t jl_memalign;
 extern jl_realloc_t jl_realloc;
+extern jl_msize_t jl_msize;
 extern jl_free_t jl_free;
 
 //#endif // _JLALLOC_H_

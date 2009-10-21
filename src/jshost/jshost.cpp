@@ -16,10 +16,12 @@
 
 #include "../common/jslibsModule.cpp"
 
-EXTERN_C void * nedmalloc(size_t size) __THROW;
-EXTERN_C void * nedcalloc(size_t no, size_t size) __THROW;
-EXTERN_C void * nedrealloc(void *mem, size_t size) __THROW;
-EXTERN_C void   nedfree(void *mem) __THROW;
+EXTERN_C void* nedmalloc(size_t size) __THROW;
+EXTERN_C void* nedcalloc(size_t no, size_t size) __THROW;
+EXTERN_C void* nedmemalign(size_t alignment, size_t bytes) __THROW;
+EXTERN_C void* nedrealloc(void *mem, size_t size) __THROW;
+EXTERN_C void nedfree(void *mem) __THROW;
+EXTERN_C size_t nedblksize(void *mem) __THROW;
 
 void nedfree_handlenull(void *mem) {
 
@@ -182,16 +184,21 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	jl_malloc = nedmalloc;
 	jl_calloc = nedcalloc;
+	jl_memalign = nedmemalign;
 	jl_realloc = nedrealloc;
+	jl_msize = nedblksize;
 	jl_free = nedfree_handlenull;
+
 #if 0
 	jl_malloc = malloc;
 	jl_calloc = calloc;
+	jl_memalign = _aligned_malloc;
 	jl_realloc = realloc;
+	jl_msize = malloc_usable_size;
 	jl_free = free;
 #endif
 
-	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_realloc, &jl_free);
+	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 	JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
 
 	cx = CreateHost(maxMem, maxAlloc, maybeGCInterval * 1000);
@@ -203,10 +210,12 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	hpv->camelCase = camelCase;
 
 	// custom memory allocators are transfered to the modules through the HostPrivate structure:
-	hpv->malloc = jl_malloc;
-	hpv->calloc = jl_calloc;
-	hpv->realloc = jl_realloc;
-	hpv->free = jl_free;
+	hpv->alloc.malloc = jl_malloc;
+	hpv->alloc.calloc = jl_calloc;
+	hpv->alloc.memalign = jl_memalign;
+	hpv->alloc.realloc = jl_realloc;
+	hpv->alloc.msize = jl_msize;
+	hpv->alloc.free = jl_free;
 
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT | JSOPTION_RELIMIT ); // default, may be disabled in InitHost()
 
@@ -317,10 +326,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	MemoryManagerDisableGCEvent(cx);
-	FinalizeMemoryManager(false, &jl_malloc, &jl_calloc, &jl_realloc, &jl_free);
+	FinalizeMemoryManager(false, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 	jl_free = DisabledFree;
-	JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
-	hpv->free = jl_free;
+//	JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
+	hpv->alloc.free = jl_free;
 
 	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	DestroyHost(cx);
@@ -347,7 +356,7 @@ bad:
 
 		JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 		jl_free = DisabledFree;
-		JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
+//		JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
 		DestroyHost(cx);
 	}
 	JS_ShutDown();

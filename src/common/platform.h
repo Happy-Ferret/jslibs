@@ -111,7 +111,8 @@
 
 #include <limits.h>
 #include <sys/types.h>
-
+#include <stdlib.h>
+#include <errno.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Platform specific configuration
@@ -166,10 +167,15 @@
 	#define LIST_SEPARATOR_STRING ";"
 	#define LIST_SEPARATOR ';'
 
+	#define __THROW throw()
+
 	#define strcasecmp stricmp
 	#define malloc_usable_size _msize
-
-	#define __THROW throw()
+	
+	inline void* memalign( size_t alignment, size_t size ) {
+		
+		return _aligned_malloc(alignment, size);
+	}
 
 #elif defined(_MACOSX) // MacosX platform
 
@@ -209,7 +215,24 @@
 	#define LIST_SEPARATOR_STRING ":"
 	#define LIST_SEPARATOR ':'
 
+	inline void* memalign( size_t alignment, size_t size ) {
+		
+		void *ptr;
+		posix_memalign(&ptr, alignment, size);
+		return ptr;
+	}
+
 #endif // Windows/MacosX/Linux platform
+
+
+/*
+	int posix_memalign(void **memptr, size_t alignment, size_t size) {
+		if (alignment % sizeof(void *) != 0)
+			return EINVAL;
+		*memptr = memalign(alignment, size);
+		return (*memptr != NULL ? 0 : ENOMEM);
+	}
+*/
 
 // MS specific ?
 //#ifndef O_BINARY

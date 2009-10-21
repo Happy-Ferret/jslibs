@@ -17,22 +17,23 @@
 #include "../common/jsHelper.h"
 #include "../common/jslibsModule.h"
 
-#include <malloc.h>
-
 // by default, we run in unsafe mode.
 bool _unsafeMode = true;
 
 // initialize with default allocators
 jl_malloc_t jl_malloc = malloc;
 jl_calloc_t jl_calloc = calloc;
+jl_memalign_t jl_memalign = memalign;
 jl_realloc_t jl_realloc = realloc;
+jl_msize_t jl_msize = malloc_usable_size;
 jl_free_t jl_free = free;
 
 EXTERN_C void* jl_malloc_fct( size_t size ) { return jl_malloc(size); }
 EXTERN_C void* jl_calloc_fct( size_t num, size_t size ) { return jl_calloc(num, size); }
+EXTERN_C void* jl_mamalign_fct( size_t alignment, size_t size ) { return jl_memalign(alignment, size); }
 EXTERN_C void* jl_realloc_fct( void *ptr, size_t size ) { return jl_realloc(ptr, size); }
+EXTERN_C size_t jl_msize_fct( void *ptr ) { return jl_msize(ptr); }
 EXTERN_C void jl_free_fct( void *ptr ) { jl_free(ptr); }
-
 
 JSBool InitJslibsModule( JSContext *cx ) {
 
@@ -40,10 +41,12 @@ JSBool InitJslibsModule( JSContext *cx ) {
 
 	_unsafeMode = pv ? pv->unsafeMode : _unsafeMode;
 
-	jl_malloc = pv && pv->malloc ? pv->malloc : jl_malloc; // ie. if we have a host and if the host has custom allocators.
-	jl_calloc = pv && pv->calloc ? pv->calloc : jl_calloc;
-	jl_realloc = pv && pv->realloc ? pv->realloc : jl_realloc;
-	jl_free = pv && pv->free ? pv->free : jl_free;
+	jl_malloc = pv && pv->alloc.malloc ? pv->alloc.malloc : jl_malloc; // ie. if we have a host and if the host has custom allocators.
+	jl_calloc = pv && pv->alloc.calloc ? pv->alloc.calloc : jl_calloc;
+	jl_memalign = pv && pv->alloc.memalign ? pv->alloc.memalign : jl_memalign;
+	jl_realloc = pv && pv->alloc.realloc ? pv->alloc.realloc : jl_realloc;
+	jl_msize = pv && pv->alloc.msize ? pv->alloc.msize : jl_msize;
+	jl_free = pv && pv->alloc.free ? pv->alloc.free : jl_free;
 
 	return JS_TRUE;
 }

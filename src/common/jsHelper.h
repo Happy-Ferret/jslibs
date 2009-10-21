@@ -78,10 +78,7 @@ struct HostPrivate {
 	jsid ids[8];
 	JSClass *stringObjectClass;
 	int camelCase;
-	void* (*malloc)( size_t size );
-	void* (*calloc)( size_t num, size_t size );
-	void* (*realloc)( void *ptr, size_t size );
-	void (*free)( void *ptr );
+	jl_allocators_t alloc;
 };
 
 ALWAYS_INLINE HostPrivate* GetHostPrivate( JSContext *cx ) {

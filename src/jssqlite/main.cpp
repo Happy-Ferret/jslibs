@@ -25,7 +25,6 @@ jl::Queue *dbContextList = NULL;
 
 #include "../common/jslibsModule.cpp"
 
-/*
 void* xMalloc(int s) {
 	return jl_malloc(s);
 }
@@ -36,7 +35,9 @@ void* xRealloc(void *p, int s) {
 	return jl_realloc(p, s);
 }
 int xSize(void* p) {
-	return ; // missing function
+	if ( p == NULL )
+		return 0;
+	return jl_msize(p);
 }
 int xRoundup(int s) {
 	return s;
@@ -46,7 +47,6 @@ int xInit(void*) {
 }
 void xShutdown(void*) {
 }
-*/
 
 
 /**doc t:header
@@ -58,11 +58,11 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
+static sqlite3_mem_methods mem = { xMalloc, xFree, xRealloc, xSize, xRoundup, xInit, xShutdown, NULL };
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
-
-//	sqlite3_mem_methods mem = { xMalloc, xFree, xRealloc, xSize, xRoundup, xInit, xShutdown, NULL };
-//	sqlite3_config(SQLITE_CONFIG_MALLOC, &mem);
+	
+	sqlite3_config(SQLITE_CONFIG_MALLOC, &mem);
 
 	JL_CHK( InitJslibsModule(cx) );
 

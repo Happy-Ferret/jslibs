@@ -30,9 +30,9 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 JSBool DestroyHost( JSContext *cx );
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );
 
-bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_realloc_t *realloc, jl_free_t *free );
+bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free );
 JSBool MemoryManagerEnableGCEvent( JSContext *cx );
 JSBool MemoryManagerDisableGCEvent( JSContext *cx );
-bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *calloc, jl_realloc_t *realloc, jl_free_t *free );
+bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free );
 
 #endif // _HOST_H_

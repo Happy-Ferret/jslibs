@@ -670,7 +670,9 @@ bad:
 
 static jl_malloc_t base_malloc;
 static jl_calloc_t base_calloc;
+static jl_memalign_t base_memalign;
 static jl_realloc_t base_realloc;
+static jl_msize_t base_msize;
 static jl_free_t base_free;
 
 #define MAX_LOAD 7
@@ -710,12 +712,27 @@ static void* JslibsCalloc( size_t num, size_t size ) {
 	return base_calloc(sizeof(void*), 1);
 }
 
+static void* JslibsMemalign( size_t alignment, size_t size ) {
+
+	if (likely( size >= sizeof(void*) ))
+		return base_memalign(alignment, size);
+	return base_memalign(alignment, sizeof(void*));
+}
+
+
 static void* JslibsRealloc( void *ptr, size_t size ) {
 
 	if (likely( size >= sizeof(void*) ))
 		return base_realloc(ptr, size);
 	return base_realloc(ptr, sizeof(void*));
 }
+
+
+static size_t JslibsMsize( void *ptr ) {
+
+	return base_msize(ptr);
+}
+
 
 static void JslibsFree( void *ptr ) {
 	
@@ -810,16 +827,21 @@ JSBool MemoryManagerDisableGCEvent( JSContext *cx ) {
 
 
 // initialisation and cleanup functions
-bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_realloc_t *realloc, jl_free_t *free ) {
-
+bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free ) {
+	
+	
 	base_malloc = *malloc;
 	base_calloc = *calloc;
+	base_memalign = *memalign;
 	base_realloc = *realloc;
+	base_msize = *msize;
 	base_free = *free;
 
 	*malloc = JslibsMalloc;
 	*calloc = JslibsCalloc;
+	*memalign = JslibsMemalign;
 	*realloc = JslibsRealloc;
+	*msize = JslibsMsize;
 	*free = JslibsFree;
 
 	load = 0;
@@ -832,11 +854,13 @@ bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_reall
 }
 
 
-bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *calloc, jl_realloc_t *realloc, jl_free_t *free ) {
+bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free ) {
 
 	*malloc = base_malloc;
 	*calloc = base_calloc;
+	*memalign = base_memalign;
 	*realloc = base_realloc;
+	*msize = base_msize;
 	*free = base_free;
 
 	threadAction = MemThreadExit;
