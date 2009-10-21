@@ -1,39 +1,50 @@
-*** src/Copie de jsutil.h	Tue Sep 22 17:17:30 2009
---- src/jsutil.h	Fri Sep 25 13:27:42 2009
+*** jsutil.h	2009-10-21 23:45:51.000000000 +0200
+--- src/jsutil.h	2009-10-21 23:34:25.000000000 +0200
 ***************
-*** 49,52 ****
---- 49,70 ----
+*** 47,78 ****
+  #include <stdlib.h>
+  
   JS_BEGIN_EXTERN_C
   
-+ typedef void* (*jslibs_malloc_t)( size_t size );
-+ typedef void* (*jslibs_calloc_t)( size_t num, size_t size );
-+ typedef void* (*jslibs_realloc_t)( void *ptr, size_t size );
-+ typedef void (*jslibs_free_t)( void *ptr );
-+ 
-+ extern jslibs_malloc_t jslibs_malloc;
-+ extern jslibs_calloc_t jslibs_calloc;
-+ extern jslibs_realloc_t jslibs_realloc;
-+ extern jslibs_free_t jslibs_free;
-+ 
-+ extern JS_PUBLIC_API(void)
-+ JSLIBS_RegisterAllocFunctions( jslibs_malloc_t malloc, jslibs_calloc_t calloc, jslibs_realloc_t realloc, jslibs_free_t free );
-+ 
-+ #define malloc jslibs_malloc
-+ #define calloc jslibs_calloc
-+ #define realloc jslibs_realloc
-+ #define free jslibs_free
-+ 
+- extern JS_PUBLIC_API(void)
+- JSLIBS_RegisterCustomAllocators(
+-   void* (*)( size_t ),
+-   void* (*)( size_t, size_t ),
+-   void* (*)( size_t, size_t ),
+-   void* (*)( void*, size_t ),
+-   size_t (*)( void* ),
+-   void (*)( void* )
+- );
+- 
+- extern void* (*custom_malloc)( size_t );
+- extern void* (*custom_calloc)( size_t, size_t );
+- extern void* (*custom_realloc)( void*, size_t );
+- extern void (*custom_free)( void* );
+- 
+- JS_END_EXTERN_C
+- 
+- #define malloc custom_malloc
+- #define calloc custom_calloc
+- #define realloc custom_realloc
+- #define free custom_free
+- 
+- JS_BEGIN_EXTERN_C
+- 
   /*
    * JS_Assert is present even in release builds, for the benefit of applications
+   * that build DEBUG and link against a non-DEBUG SpiderMonkey library.
+   */
+--- 47,54 ----
 ***************
-*** 204,207 ****
---- 222,230 ----
+*** 320,329 ****
+  #endif /* !defined(DEBUG) */
   
-  JS_END_EXTERN_C
-+ 
-+ #undef malloc
-+ #undef calloc
-+ #undef realloc
-+ #undef free
+  #endif /* defined(__cplusplus) */
   
+- #undef malloc
+- #undef calloc
+- #undef realloc
+- #undef free
+- 
   #endif /* jsutil_h___ */
+--- 296,300 ----

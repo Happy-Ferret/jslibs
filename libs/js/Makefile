@@ -19,8 +19,8 @@ TARGET_FILES=$(INT_DIR)dist/bin/*.{so,dll}
 
 $(INT_DIR)Makefile: ./src/configure
 	diff -q ./jsversion.h ./src/jsversion.h || cp ./jsversion.h ./src/
-	-patch -s -N ./src/jsutil.h ./jsutil.h.patch
-	-patch -s -N ./src/jsutil.cpp ./jsutil.cpp.patch	
+	-patch -t -N < ./jsutil.h.patch	
+	-patch -t -N < ./jsutil.cpp.patch
 	mkdir -p $(INT_DIR)
 	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" ../src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=501 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests
 

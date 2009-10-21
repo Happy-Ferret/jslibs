@@ -1,21 +1,30 @@
-*** src/Copie de jsutil.cpp	Tue Sep 22 17:17:30 2009
---- src/jsutil.cpp	Fri Sep 25 13:26:42 2009
+*** jsutil.cpp	2009-10-21 23:47:00.000000000 +0200
+--- src/jsutil.cpp	2009-10-21 23:34:25.000000000 +0200
 ***************
-*** 360,361 ****
---- 360,375 ----
+*** 358,382 ****
+      }
+  }
   
   #endif /* defined(DEBUG_notme) && defined(XP_UNIX) */
-+ 
-+ extern jslibs_malloc_t jslibs_malloc = malloc;
-+ extern jslibs_calloc_t jslibs_calloc = calloc;
-+ extern jslibs_realloc_t jslibs_realloc = realloc;
-+ extern jslibs_free_t jslibs_free = free;
-+ 
-+ JS_PUBLIC_API(void)
-+ JSLIBS_RegisterAllocFunctions( jslibs_malloc_t malloc, jslibs_calloc_t calloc, jslibs_realloc_t realloc, jslibs_free_t free ) {
-+ 
-+ 	jslibs_malloc = malloc;
-+ 	jslibs_calloc = calloc;
-+ 	jslibs_realloc = realloc;
-+ 	jslibs_free = free;
-+ }
+- 
+- void* (*custom_malloc)( size_t ) = malloc;
+- void* (*custom_calloc)( size_t, size_t ) = calloc;
+- void* (*custom_realloc)( void*, size_t ) = realloc;
+- void (*custom_free)( void* ) = free;
+- 
+- void JSLIBS_RegisterCustomAllocators(
+- 	void* (*malloc_)( size_t ),
+- 	void* (*calloc_)( size_t, size_t ),
+- 	void* (*memalign_)( size_t, size_t ),
+- 	void* (*realloc_)( void*, size_t ),
+- 	size_t (*msize_)( void* ),
+- 	void (*free_)( void* )
+- ) {
+- 
+- 	custom_malloc = malloc_;
+- 	custom_calloc = calloc_;
+- 	custom_realloc = realloc_;
+- 	custom_free = free_;
+- }
+- 
+--- 358,361 ----
