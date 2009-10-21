@@ -11,7 +11,7 @@ else
 	CFLAGS += -O0 -g
 endif
 
-CFLAGS += -DSQLITE_OMIT_AUTOINIT=1 -DSQLITE_OMIT_DEPRECATED=1 -DSQLITE_OMIT_PROGRESS_CALLBACK=1 -Dmalloc=js_malloc_fct -Dcalloc=js_calloc_fct -Drealloc=js_realloc_fct -Dfree=js_free_fct
+CFLAGS += -DSQLITE_OMIT_AUTOINIT=1 -DSQLITE_OMIT_DEPRECATED=1 -DSQLITE_OMIT_PROGRESS_CALLBACK=1
 
 $(TARGET_FILES):
 	mkdir -p $(INT_DIR)

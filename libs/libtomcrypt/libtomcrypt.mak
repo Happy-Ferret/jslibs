@@ -2,7 +2,7 @@
 
 include makefile.msvc
 
-CFLAGS = /Isrc/headers/ /I../../libtommath/src/ /DWIN32 /DLTC_SOURCE /DLTM_DESC /DNO_FILE /W3 /Ox /DXMALLOC=ltc_malloc /DXCALLOC=ltc_calloc /DXREALLOC=ltc_realloc /DXFREE=ltc_free
+CFLAGS = /Isrc/headers/ /I../../libtommath/src/ /DWIN32 /DLTC_SOURCE /DLTM_DESC /DNO_FILE /W3 /Ox /DXMALLOC=jl_malloc_fct /DXCALLOC=jl_calloc_fct /DXREALLOC=jl_realloc_fct /DXFREE=jl_free_fct
 ### DEBUG VERSION: /Od /Yd /Zi /ZI
 ### DEFAULT FLAGS: /Isrc/headers/ /Itestprof/ /Ox /DWIN32 /DLTC_SOURCE /W3 /Fo$@ $(CF)
 

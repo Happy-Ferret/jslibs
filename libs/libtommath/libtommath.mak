@@ -2,7 +2,7 @@
 
 include makefile.msvc
 
-CFLAGS = /I. /W3 /Ox /DWIN32 /DLTM_DESC /DXMALLOC=ltc_malloc /DXCALLOC=ltc_calloc /DXREALLOC=ltc_realloc /DXFREE=ltc_free
+CFLAGS = /I. /W3 /Ox /DWIN32 /DLTM_DESC /DXMALLOC=jl_malloc_fct /DXCALLOC=jl_calloc_fct /DXREALLOC=jl_realloc_fct /DXFREE=jl_free_fct
 LIBNAME = $(dest)
 
 .c.obj:
