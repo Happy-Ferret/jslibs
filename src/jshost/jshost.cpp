@@ -328,6 +328,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	MemoryManagerDisableGCEvent(cx);
 	FinalizeMemoryManager(false, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 	jl_free = DisabledFree;
+
 	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
 	hpv->alloc.free = jl_free;
 
@@ -356,7 +357,7 @@ bad:
 
 		JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 		jl_free = DisabledFree;
-//		JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
+		JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
 		DestroyHost(cx);
 	}
 	JS_ShutDown();

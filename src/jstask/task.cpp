@@ -41,11 +41,6 @@ struct TaskPrivate {
 	volatile size_t pendingResponseCount;
 
 	jl::Queue exceptionList;
-
-	//jl_malloc_t jl_malloc;
-	//jl_calloc_t jl_calloc;
-	//jl_realloc_t jl_realloc;
-	//jl_free_t jl_free;
 };
 
 
@@ -251,10 +246,12 @@ static JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 	HostPrivate *hpv = GetHostPrivate(cx);
 
 // allocator must be threadsafe !
-	hpv->malloc = jl_malloc;
-	hpv->calloc = jl_calloc;
-	hpv->realloc = jl_realloc;
-	hpv->free = jl_free;
+	hpv->alloc.malloc = jl_malloc;
+	hpv->alloc.calloc = jl_calloc;
+	hpv->alloc.memalign = jl_memalign;
+	hpv->alloc.realloc = jl_realloc;
+	hpv->alloc.msize = jl_msize;
+	hpv->alloc.free = jl_free;
 
 	JL_CHK( InitHost(cx, _unsafeMode, NULL, TaskStdErrHostOutput, &errBuffer) );
 

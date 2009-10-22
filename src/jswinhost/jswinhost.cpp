@@ -139,8 +139,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	jl_realloc = nedrealloc;
 	jl_free = nedfree_handlenull;
 
-	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_realloc, &jl_free);
-	JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
+
+	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
+	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
 
 	cx = CreateHost(-1, -1, 0);
 	JL_CHK( cx != NULL );
@@ -150,10 +151,12 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	HostPrivate *hpv = GetHostPrivate(cx);
 
 	// custom memory allocators are transfered to the modules through the HostPrivate structure:
-	hpv->malloc = jl_malloc;
-	hpv->calloc = jl_calloc;
-	hpv->realloc = jl_realloc;
-	hpv->free = jl_free;
+	hpv->alloc.malloc = jl_malloc;
+	hpv->alloc.calloc = jl_calloc;
+	hpv->alloc.memalign = jl_memalign;
+	hpv->alloc.realloc = jl_realloc;
+	hpv->alloc.msize = jl_msize;
+	hpv->alloc.free = jl_free;
 
 
 	JL_CHK( InitHost(cx, true, NULL, NULL, NULL) );
@@ -211,10 +214,10 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 
 	MemoryManagerDisableGCEvent(cx);
-	FinalizeMemoryManager(false, &jl_malloc, &jl_calloc, &jl_realloc, &jl_free);
+	FinalizeMemoryManager(false, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 	jl_free = DisabledFree;
-	JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
-	hpv->free = jl_free;
+	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
+	hpv->alloc.free = jl_free;
 
 	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	DestroyHost(cx);
@@ -228,7 +231,7 @@ bad:
 	if ( cx ) {
 
 		jl_free = DisabledFree;
-		JSLIBS_RegisterAllocFunctions(jl_malloc, jl_calloc, jl_realloc, jl_free);
+		JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
 		DestroyHost(cx);
 	}
 	JS_ShutDown();
