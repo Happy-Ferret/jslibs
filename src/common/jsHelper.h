@@ -682,15 +682,24 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 		JL_CHK( xdr );
 		JS_XDRMemSetData(xdr, data, compFileSize);
-		JL_CHK( JS_XDRScript(xdr, &script) );
-		// (TBD) manage BIG_ENDIAN here ?
-		JS_XDRMemSetData(xdr, NULL, 0);
-		JS_XDRDestroy(xdr);
-		jl_free(data);
-		if ( JS_GetScriptVersion(cx, script) < JS_GetVersion(cx) )
-			JL_REPORT_WARNING("Trying to xdr-decode an old script (%s).", compiledFileName);
-		return script; // Done.
+		
+		if ( JS_XDRScript(xdr, &script) == JS_TRUE ) {
+
+			// (TBD) manage BIG_ENDIAN here ?
+			JS_XDRMemSetData(xdr, NULL, 0);
+			JS_XDRDestroy(xdr);
+			jl_free(data);
+			if ( JS_GetScriptVersion(cx, script) < JS_GetVersion(cx) )
+				JL_REPORT_WARNING("Trying to xdr-decode an old script (%s).", compiledFileName);
+			return script; // Done.
+		} else {
+
+			JS_ClearPendingException(cx);
+		}
 	}
+
+	if ( !hasSrcFile )
+		return NULL; // no source, no compiled version of the source, die.
 
 // shebang support
 	FILE *scriptFile;
