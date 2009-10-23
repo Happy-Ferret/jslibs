@@ -85,7 +85,7 @@ LoadModule('jsio');
 	QA.ASSERT( myTask.pendingResponseCount, 0, 'pendingResponseCount');
 
 	
-/// multiple tasks [rf]
+/// multiple requests [rf]
 
 	var myTask = new Task(function(req) req);
 
@@ -101,6 +101,24 @@ LoadModule('jsio');
 
 	QA.ASSERT( myTask.pendingRequestCount, 0, 'pendingRequestCount');
 	QA.ASSERT( myTask.pendingResponseCount, 0, 'pendingResponseCount');
+
+
+/// multiple tasks [rf]
+
+	function TaskFunction() {
+		LoadModule('jsstd');
+		return Expand('1$(a)5', { a:234 });
+	}
+
+	var tasks = [];
+	for ( var i = 0; i < 30; i++ )
+		tasks.push(new Task(TaskFunction));
+
+	for each ( var t in tasks )
+		t.Request();
+
+	for each ( var t in tasks )
+		QA.ASSERT( t.Response(), '12345', 'task response' );
 
 
 /// task exception [rf]
