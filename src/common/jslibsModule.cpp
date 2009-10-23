@@ -14,8 +14,8 @@
 
 // (TBD) Should we create a new module for so few symbols ?
 
-#include "../common/jsHelper.h"
 #include "../common/jslibsModule.h"
+#include "../common/jsHelper.h"
 
 // by default, we run in unsafe mode.
 bool _unsafeMode = true;
@@ -25,7 +25,7 @@ jl_malloc_t jl_malloc = malloc;
 jl_calloc_t jl_calloc = calloc;
 jl_memalign_t jl_memalign = memalign;
 jl_realloc_t jl_realloc = realloc;
-jl_msize_t jl_msize = malloc_usable_size;
+jl_msize_t jl_msize = msize;
 jl_free_t jl_free = free;
 
 EXTERN_C void* jl_malloc_fct( size_t size ) { return jl_malloc(size); }

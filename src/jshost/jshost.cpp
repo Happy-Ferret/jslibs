@@ -16,6 +16,8 @@
 
 #include "../common/jslibsModule.cpp"
 
+bool disabledFree = false;
+
 EXTERN_C void* nedmalloc(size_t size) __THROW;
 EXTERN_C void* nedcalloc(size_t no, size_t size) __THROW;
 EXTERN_C void* nedmemalign(size_t alignment, size_t bytes) __THROW;
@@ -24,20 +26,12 @@ EXTERN_C void nedfree(void *mem) __THROW;
 EXTERN_C size_t nedblksize(void *mem) __THROW;
 
 void nedfree_handlenull(void *mem) {
-
-	if (mem)
+	
+	if ( mem != NULL && !disabledFree )
 		nedfree(mem);
 }
 
 
-//// dlmalloc is NOT threadsafe
-//#ifdef DEBUG
-//#define INSECURE 1
-//#endif // DEBUG
-//#define USE_DL_PREFIX 1
-//#include "../../libs/dlmalloc/malloc.c"
-
-static void DisabledFree( void* ) {}
 
 static unsigned char embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
@@ -182,6 +176,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	signal(SIGTERM, Interrupt);
 #endif // XP_WIN
 
+
 	jl_malloc = nedmalloc;
 	jl_calloc = nedcalloc;
 	jl_memalign = nedmemalign;
@@ -192,9 +187,9 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 #if 0
 	jl_malloc = malloc;
 	jl_calloc = calloc;
-	jl_memalign = _aligned_malloc;
+	jl_memalign = memalign;
 	jl_realloc = realloc;
-	jl_msize = malloc_usable_size;
+	jl_msize = msize;
 	jl_free = free;
 #endif
 
@@ -209,7 +204,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	hpv = GetHostPrivate(cx);
 	hpv->camelCase = camelCase;
 
-	// custom memory allocators are transfered to the modules through the HostPrivate structure:
+	// custom memory allocators are transfered to modules through the HostPrivate structure:
 	hpv->alloc.malloc = jl_malloc;
 	hpv->alloc.calloc = jl_calloc;
 	hpv->alloc.memalign = jl_memalign;
@@ -327,10 +322,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	MemoryManagerDisableGCEvent(cx);
 	FinalizeMemoryManager(false, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
-	jl_free = DisabledFree;
-
-	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
-	hpv->alloc.free = jl_free;
+	disabledFree = true;
 
 	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	DestroyHost(cx);
@@ -355,9 +347,8 @@ bad:
 
 	if ( cx ) {
 
+		disabledFree = true;
 		JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
-		jl_free = DisabledFree;
-		JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
 		DestroyHost(cx);
 	}
 	JS_ShutDown();

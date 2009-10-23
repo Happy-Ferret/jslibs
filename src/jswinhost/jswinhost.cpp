@@ -16,18 +16,20 @@
 
 #include "../common/jslibsModule.cpp"
 
-EXTERN_C void * nedmalloc(size_t size) __THROW;
-EXTERN_C void * nedcalloc(size_t no, size_t size) __THROW;
-EXTERN_C void * nedrealloc(void *mem, size_t size) __THROW;
-EXTERN_C void   nedfree(void *mem) __THROW;
+bool disabledFree = false;
+
+EXTERN_C void* nedmalloc(size_t size) __THROW;
+EXTERN_C void* nedcalloc(size_t no, size_t size) __THROW;
+EXTERN_C void* nedmemalign(size_t alignment, size_t bytes) __THROW;
+EXTERN_C void* nedrealloc(void *mem, size_t size) __THROW;
+EXTERN_C void nedfree(void *mem) __THROW;
+EXTERN_C size_t nedblksize(void *mem) __THROW;
 
 void nedfree_handlenull(void *mem) {
-
-	if (mem)
+	
+	if ( mem != NULL && !disabledFree )
 		nedfree(mem);
 }
-
-static void DisabledFree( void* ) {}
 
 
 // to be used in the main() function only
@@ -136,7 +138,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	jl_malloc = nedmalloc;
 	jl_calloc = nedcalloc;
+	jl_memalign = nedmemalign;
 	jl_realloc = nedrealloc;
+	jl_msize = nedblksize;
 	jl_free = nedfree_handlenull;
 
 
@@ -215,10 +219,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	MemoryManagerDisableGCEvent(cx);
 	FinalizeMemoryManager(false, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
-	jl_free = DisabledFree;
-	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
-	hpv->alloc.free = jl_free;
-
+	disabledFree = true;
 	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	DestroyHost(cx);
 	JS_ShutDown();
@@ -230,8 +231,7 @@ bad:
 
 	if ( cx ) {
 
-		jl_free = DisabledFree;
-		JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
+		disabledFree = true;
 		DestroyHost(cx);
 	}
 	JS_ShutDown();
