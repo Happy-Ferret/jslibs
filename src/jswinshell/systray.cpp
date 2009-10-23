@@ -888,26 +888,33 @@ END_CLASS
 === Examples ===
  $H example 1
  {{{
- var s = new Systray();
+LoadModule('jswinshell');
+LoadModule('jsio');
+LoadModule('jsimage');
 
- s.icon = new Icon(new Png(new File('calendar.png').Open(File.RDONLY)).Load());
- s.text = "calendar";
- s.menu = { exit_cmd:"exit" }
+var s = new Systray();
 
- s.onmousedown = function(button) {
-   if ( button == 2 )
-     s.PopupMenu();
- }
+s.icon = new Icon( DecodePngImage(new File('calendar.png').Open(File.RDONLY)) );
+s.text = 'calendar';
+s.menu = { exit_cmd:'exit' }
 
- s.oncommand = function(id) {
-   if ( id == 'exit_cmd' )
-     exit = true;
- }
+s.onmousedown = function(button) {
 
- while ( !exit ) {
-   s.ProcessEvents();
-   Sleep(100);
- }
+  if ( button == 2 )
+    s.PopupMenu();
+}
+
+s.oncommand = function(id) {
+
+  if ( id == 'exit_cmd' )
+    endSignal = true;
+}
+
+while ( !endSignal ) {
+
+  s.ProcessEvents();
+  Sleep(100);
+}
  }}}
 
  $H example 2
