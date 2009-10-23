@@ -245,7 +245,7 @@ function LaunchTests(itemList, cfg) {
 
 			cfg.quiet || Print( ' - '+testIndex+' - '+cx.item.file+' - '+ cx.item.name );
 
-			cfg.noGcBetweenTests || CollectGarbage();
+			cfg.nogcBetweenTests || CollectGarbage();
 
 			gcZeal = cfg.gcZeal;
 			disableGarbageCollection = cfg.nogcDuringTests;
@@ -269,7 +269,7 @@ function LaunchTests(itemList, cfg) {
 			disableGarbageCollection = false;
 			gcZeal = 0;
 			
-			cfg.noGcBetweenTests || CollectGarbage();
+			cfg.nogcBetweenTests || CollectGarbage();
 			cfg.quiet || Print('\n');
 
 		}
