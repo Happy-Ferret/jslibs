@@ -20,9 +20,6 @@
 
 #include "../common/queue.h"
 
-jl::Queue *dbContextList = NULL;
-
-
 #include "../common/jslibsModule.cpp"
 
 void* xMalloc(int s) {
@@ -35,19 +32,20 @@ void* xRealloc(void *p, int s) {
 	return jl_realloc(p, s);
 }
 int xSize(void* p) {
-	if ( p == NULL )
-		return 0;
 	return jl_msize(p);
 }
 int xRoundup(int s) {
 	return s;
 }
 int xInit(void*) {
-	return 0;
+	return SQLITE_OK;
 }
 void xShutdown(void*) {
 }
 
+static sqlite3_mem_methods mem = { xMalloc, xFree, xRealloc, xSize, xRoundup, xInit, xShutdown, NULL };
+
+jl::Queue *dbContextList = NULL;
 
 /**doc t:header
 $MODULE_HEADER
@@ -58,25 +56,14 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-static sqlite3_mem_methods mem = { xMalloc, xFree, xRealloc, xSize, xRoundup, xInit, xShutdown, NULL };
-
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
-	
-	sqlite3_config(SQLITE_CONFIG_MALLOC, &mem);
 
 	JL_CHK( InitJslibsModule(cx) );
 
-	if ( sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) != SQLITE_OK )
-		JL_REPORT_ERROR( "Unable to disable memory stats." );
-
-
-	if ( sqlite3_initialize() != SQLITE_OK )
-		JL_REPORT_ERROR( "Unable to initialize sqlite." );
-
-	//	sqlite3_config(SQLITE_CONFIG_LOOKASIDE, sz, cnt);
-
-	if ( sqlite3_enable_shared_cache(true) != SQLITE_OK )
-		JL_REPORT_ERROR( "Unable to enable shared cache." );
+	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) == SQLITE_OK, "Unable to disable memory stats." );
+	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MALLOC, &mem) == SQLITE_OK, "Unable to initialize memory manager." );
+	JL_CHKM( sqlite3_enable_shared_cache(true) == SQLITE_OK, "Unable to enable shared cache." );
+	JL_CHKM( sqlite3_initialize() == SQLITE_OK, "Unable to initialize sqlite." );
 
 	dbContextList = jl::QueueConstruct();
 
