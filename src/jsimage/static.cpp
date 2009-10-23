@@ -278,7 +278,8 @@ DEFINE_FUNCTION( DecodePngImage ) {
 
 	PngReadUserStruct desc;
 
-	desc.png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL );
+//	desc.png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL );
+	desc.png = png_create_read_struct_2(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL, NULL, malloc_wrapper, free_wrapper);
 	JL_S_ASSERT( desc.png != NULL, "Unable to png_create_read_struct.");
 	desc.info = png_create_info_struct(desc.png);
 	JL_S_ASSERT( desc.info != NULL, "Unable to png_create_info_struct.");
@@ -289,8 +290,6 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	desc.obj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	desc.cx = cx;
-
-	png_set_mem_fn(desc.png, NULL, malloc_wrapper, free_wrapper);
 
 	png_set_read_fn( desc.png, (voidp)&desc, _png_read );
    png_read_info(desc.png, desc.info);
