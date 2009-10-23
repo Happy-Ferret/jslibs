@@ -16,14 +16,15 @@
 #define _JSLIBSMODULE_H_
 
 #include "../common/platform.h"
-#include "../common/jlalloc.h"
+#include <sys/types.h>
+#include <jstypes.h>
 
-EXTERN_C void* jl_malloc_fct( size_t size );
-EXTERN_C void* jl_calloc_fct( size_t num, size_t size );
-EXTERN_C void* jl_memalign_fct( size_t alignment, size_t size );
-EXTERN_C void* jl_realloc_fct( void *ptr, size_t size );
-EXTERN_C size_t jl_msize_fct( void *ptr );
-EXTERN_C void jl_free_fct( void *ptr );
+EXTERN_C void* jl_malloc_fct( size_t );
+EXTERN_C void* jl_calloc_fct( size_t, size_t );
+EXTERN_C void* jl_memalign_fct( size_t  size_t );
+EXTERN_C void* jl_realloc_fct( void*, size_t );
+EXTERN_C size_t jl_msize_fct( void* );
+EXTERN_C void jl_free_fct( void* );
 
 extern bool _unsafeMode;
 

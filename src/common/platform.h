@@ -111,6 +111,7 @@
 
 #include <limits.h>
 #include <sys/types.h>
+#include <malloc.h>
 #include <stdlib.h>
 #include <errno.h>
 
@@ -170,8 +171,14 @@
 	#define __THROW throw()
 
 	#define strcasecmp stricmp
-	#define malloc_usable_size _msize
-	
+
+	inline size_t msize( void *ptr ) {
+
+		if ( ptr != NULL )
+			return _msize(ptr);
+		return 0;
+	}
+
 	inline void* memalign( size_t alignment, size_t size ) {
 		
 		return _aligned_malloc(alignment, size);
@@ -214,6 +221,13 @@
 	#define PATH_SEPARATOR '/'
 	#define LIST_SEPARATOR_STRING ":"
 	#define LIST_SEPARATOR ':'
+
+	inline size_t msize( void *ptr ) {
+
+		if ( ptr != NULL ) // (TBD) check if it is needed
+			return malloc_usable_size(ptr);
+		return 0;
+	}
 
 	inline void* memalign( size_t alignment, size_t size ) {
 		
@@ -936,71 +950,3 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	}
 
 #endif // _PLATFORM_H_
-
-/*
-Inline Functions In C
-	http://www.greenend.org.uk/rjk/2003/03/inline.html
-*/
-
-/*
-#ifndef BOOL
-	#define BOOL int
-#endif
-
-#ifndef TRUE
-	#define TRUE (1)
-#endif
-
-#ifndef FALSE
-	#define FALSE (0)
-#endif
-*/
-
-
-/* the following flags are used to build libs/js/src/shell/js.cpp :
-
--DEXPORT_JS_API
--DOSTYPE=\"WINNT5.1\"
--DOSARCH=WINNT
--DDEBUG
--D_DEBUG
--DDEBUG_ff
--DTRACING
--D_CRT_SECURE_NO_DEPRECATE=1
--D_CRT_NONSTDC_NO_DEPRECATE=1
--DWINVER=0x501
--D_WIN32_WINNT=0x501
--D_WIN32_IE=0x0500
--DJS_HAVE___INTN=1
--DHAVE_SYSTEMTIMETOFILETIME=1
--DHAVE_GETSYSTEMTIMEASFILETIME=1
--DJS_STDDEF_H_HAS_INTPTR_T=1
--DX_DISPLAY_MISSING=1
--DHAVE_SNPRINTF=1
--D_WINDOWS=1
--D_WIN32=1
--DWIN32=1
--DXP_WIN=1
--DXP_WIN32=1
--DHW_THREADS=1
--DSTDC_HEADERS=1
--DNEW_H=\<new\>
--DWIN32_LEAN_AND_MEAN=1
--DNO_X11=1
--DHAVE_MMINTRIN_H=1
--DHAVE_OLEACC_IDL=1
--DHAVE_ATLBASE_H=1
--D_X86_=1
--DD_INO=d_ino
--DFEATURE_NANOJIT=1
--DJS_TRACER=1
--DAVMPLUS_IA32=1
--DAVMPLUS_WIN32=1
--DCPP_THROW_NEW=throw\(\)
--DMOZ_DLL_SUFFIX=\".dll\"
--DMOZ_REFLOW_PERF=1
--DMOZ_REFLOW_PERF_DSP=1
--D_MOZILLA_CONFIG_H_
--DMOZILLA_CLIENT
-*/
-

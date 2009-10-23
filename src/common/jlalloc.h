@@ -12,19 +12,17 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-//#ifndef _JLALLOC_H_
-//#define _JLALLOC_H_
-
-#pragma once
+#ifndef _JLALLOC_H_
+#define _JLALLOC_H_
 
 #include <sys/types.h>
 
-typedef void* (*jl_malloc_t)( size_t size );
-typedef void* (*jl_calloc_t)( size_t num, size_t size );
-typedef void* (*jl_memalign_t)( size_t alignment, size_t size );
-typedef void* (*jl_realloc_t)( void *ptr, size_t size );
-typedef size_t (*jl_msize_t)( void *ptr );
-typedef void (*jl_free_t)( void *ptr );
+typedef void* (*jl_malloc_t)( size_t );
+typedef void* (*jl_calloc_t)( size_t, size_t );
+typedef void* (*jl_memalign_t)( size_t, size_t );
+typedef void* (*jl_realloc_t)( void*, size_t );
+typedef size_t (*jl_msize_t)( void* );
+typedef void (*jl_free_t)( void* );
 
 typedef struct {
 
@@ -36,7 +34,6 @@ typedef struct {
 	jl_free_t free;
 } jl_allocators_t;
 
-
 extern jl_malloc_t jl_malloc;
 extern jl_calloc_t jl_calloc;
 extern jl_memalign_t jl_memalign;
@@ -44,4 +41,4 @@ extern jl_realloc_t jl_realloc;
 extern jl_msize_t jl_msize;
 extern jl_free_t jl_free;
 
-//#endif // _JLALLOC_H_
+#endif // _JLALLOC_H_
