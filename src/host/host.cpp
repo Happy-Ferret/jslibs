@@ -609,7 +609,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	argsObj = JS_NewArrayObject(cx, argc, NULL);
 	JL_CHKM( argsObj != NULL, "Unable to create argument array on the global object." );
 
-	JL_CHKM( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS, OBJECT_TO_JSVAL(argsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), "unable to store the argument array." );
+	JL_CHKM( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS, OBJECT_TO_JSVAL(argsObj), NULL, NULL, /*JSPROP_READONLY | JSPROP_PERMANENT*/ 0), "unable to store the argument array." );
 
 	for ( int index = 0; index < argc; index++ ) {
 
