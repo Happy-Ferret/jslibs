@@ -2,6 +2,16 @@ LoadModule('jstask');
 LoadModule('jsio');
 
 
+/// many new threads
+
+	var i = 0;
+	while ( !endSignal && i++ < 1000 ) {
+
+		new Task(MyTask);
+		QA.GC();
+	}
+
+
 /// many Request with big data [r]
 
 	var myTask = new Task(function(){});

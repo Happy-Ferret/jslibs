@@ -1,24 +1,19 @@
- LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
 LoadModule('jstask');
 LoadModule('jsstd');
 LoadModule('jsio');
 
-function TaskFunction() {
-	LoadModule('jsstd');
-	return Expand('1$(a)5', { a:234 });
+function MyTask() {}
+
+var i = 0;
+while ( !endSignal && i++ < 1000 ) {
+
+	new Task(MyTask);
+	CollectGarbage();
 }
 
-var tasks = [];
-for ( var i = 0; i < 20; i++ )
-	tasks.push(new Task(TaskFunction));
-
-for each ( var t in tasks )
-	t.Request();
-
-for each ( var t in tasks )
-	Print( t.Response() == '12345', '\n' );
-
+		
 
 Halt();
 
