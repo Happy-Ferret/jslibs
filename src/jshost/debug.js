@@ -12,21 +12,23 @@
 	throw 0;
 */
 
-/*
+
 // run qa tests with debuggers
 	LoadModule('jsstd');
 	LoadModule('jsio');
 	currentDirectory += '/../..';
-	arguments[1] = '.*';
-	Exec('qa.js', false);
+	arguments = Array.concat('qa.js', '-flag f -rep 1 -loop -nogcb -quiet task'.split(' '));
+	Exec(arguments[0], false);
 	throw 0;
-*/
 
 
 
 LoadModule('jsstd');
 LoadModule('jsz');
 LoadModule('jstask');
+
+
+Print( -2 % 2 );
 
 		var list = [];
 		function Add() {
