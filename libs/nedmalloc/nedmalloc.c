@@ -756,7 +756,7 @@ static FORCEINLINE void GetThreadCache(nedpool **p, threadcache **tc, int *mymsp
 		*mymspace=-mycache-1;
 	}
 	assert(*mymspace>=0);
-	assert((long)(size_t)CURRENT_THREAD==(*tc)->threadid);
+	assert(*tc == NULL || (long)(size_t)CURRENT_THREAD==(*tc)->threadid);
 #ifdef FULLSANITYCHECKS
 	if(*tc)
 	{
