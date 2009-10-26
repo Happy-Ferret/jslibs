@@ -701,7 +701,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	if ( !hasSrcFile )
 		return NULL; // no source, no compiled version of the source, die.
 
-// shebang support
+	// shebang support
 	FILE *scriptFile;
 	scriptFile = fopen(fileName, "r");
 	JL_CHKM( scriptFile != NULL, "Script file \"%s\" cannot be opened.", fileName );

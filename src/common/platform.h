@@ -39,10 +39,6 @@
 	#if !defined(DEBUG)
 		#define DEBUG
 	#endif
-#else
-	#if !defined(NDEBUG)
-		#define NDEBUG
-	#endif
 #endif
 
 #if defined(__GNUC__) && (__GNUC__ > 2)

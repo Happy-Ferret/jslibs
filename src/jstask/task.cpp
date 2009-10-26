@@ -262,7 +262,7 @@ static JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 
 	JSBool status;
 	status = Task(cx, pv);
-
+	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	if ( status != JS_TRUE ) { // fatal errors
 
 		jsval ex;

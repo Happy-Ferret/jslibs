@@ -1342,7 +1342,7 @@ JSBool VetoingCallback(JSContext *cx, JSGCStatus status) {
 	return JS_TRUE;
 }
 
-JSGCCallback prevJSGCCallback = NULL;
+JSGCCallback prevJSGCCallback = NULL; // (TBD) restore the previous callback at the end (on REMOVE_CLASS ?)
 
 DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
 

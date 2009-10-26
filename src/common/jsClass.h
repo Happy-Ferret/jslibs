@@ -203,6 +203,7 @@ static JSBool RemoveStatic( JSContext *cx ) {
 	jsval _revision = JSVAL_VOID;
 
 #define END_STATIC \
+	JL_CHK(obj); \
 	if ( GetHostPrivate(cx)->camelCase == 1 ) \
 		_NormalizeFunctionNames(_staticFunctionSpec); \
 	if ( _staticFunctionSpec != NULL ) JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
@@ -268,6 +269,7 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 		jsval _revision = JSVAL_VOID;
 
 #define END_CLASS \
+		JL_CHK(obj); \
 		if ( GetHostPrivate(cx)->camelCase == 1 ) { \
 			_NormalizeFunctionNames(_functionSpec); \
 			_NormalizeFunctionNames(_staticFunctionSpec); \
@@ -276,6 +278,7 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
 		JSObject *dstObj; \
 		dstObj = _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype; \
+		JL_CHK(dstObj); \
 		if ( _constIntegerSpec != NULL ) \
 			for ( ; _constIntegerSpec->name; _constIntegerSpec++ ) \
 				JL_CHK( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
