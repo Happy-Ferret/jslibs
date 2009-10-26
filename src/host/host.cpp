@@ -88,7 +88,7 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 			jsval tmp;
 			JSTempValueRooter tvr;
 			JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // needed to protect the string.
-			JL_CHKB( StringAndLengthToJsval(cx, &tvr.u.value, message, length), bad2 );
+			JL_CHKB( StringAndLengthToJsval(cx, &tvr.u.value, message, length), bad2 ); // beware out of memory case !
 			JL_CHKB( JS_CallFunctionValue(cx, globalObject, fct, 1, &tvr.u.value, &tmp), bad2 );
 
 		bad2:
@@ -114,6 +114,12 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 	HostPrivate *pv = GetHostPrivate(cx);
 	if (likely( pv != NULL && JSREPORT_IS_WARNING(report->flags) && pv->unsafeMode )) // no warnings in unsafe mode.
 		return;
+
+	if ( report->errorNumber == JSMSG_OUT_OF_MEMORY ) { // (TBD) do something better
+		
+		fprintf(stderr, "%s\n", report->ucmessage );
+		return;
+	}
 
 	char *msg;
 
