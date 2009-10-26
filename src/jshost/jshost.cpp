@@ -16,7 +16,7 @@
 
 #include "../common/jslibsModule.cpp"
 
-bool disabledFree = false;
+volatile bool disabledFree = false;
 
 EXTERN_C void* nedmalloc(size_t size) __THROW;
 EXTERN_C void* nedcalloc(size_t no, size_t size) __THROW;
@@ -40,7 +40,7 @@ static unsigned char embeddedBootstrapScript[] =
 #define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { fprintf(stderr, errorMessage ); goto bad; }
 
 
-bool gEndSignal = false;
+bool gEndSignal = false; // (TBD) volatile ?
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
@@ -320,9 +320,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		}
 	}
 
+#ifndef DEBUG
+	disabledFree = true;
+#endif
 	MemoryManagerDisableGCEvent(cx);
 	FinalizeMemoryManager(false, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
-	disabledFree = true;
 
 	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	DestroyHost(cx);
