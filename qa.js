@@ -125,7 +125,7 @@ function RecursiveDir(path, callback) {
 }
 
 
-function CreateQaItemList(startDir, files, filter, flags) {
+function CreateQaItemList(startDir, files, include, exclude, flags) {
 
 	var hidden = /\/\./;
 	var qaFile = new RegExp(files);
@@ -175,7 +175,7 @@ function CreateQaItemList(startDir, files, filter, flags) {
 		}
 	}
 
-	itemList = [ item for each ( item in itemList ) if (  item.init || (!filter || filter(item.name) || filter(item.file)) && (!flags || flags(item.flags))  ) ];
+	itemList = [ item for each ( item in itemList ) if (  item.init || (include?include(item.name)||include(item.file):true) && !(exclude?exclude(item.name)||exclude(item.file):false) && (!flags || flags(item.flags))  ) ];
 	itemList = itemList.sort( function(a,b) a.init ? -1 : 1 ); // put all init function at the top of the test list.
 	return itemList;
 }
@@ -322,7 +322,7 @@ function ParseCommandLine(cfg) {
 
 
 
-var cfg = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', files:'_qa.js$', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0, quiet:false, runOnlyTestIndex:undefined };
+var cfg = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', files:'_qa.js$', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0, quiet:false, runOnlyTestIndex:undefined, exclude:undefined };
 ParseCommandLine(cfg);
 var configurationText = 'configuraion: '+[k+':'+v for ([k,v] in Iterator(cfg))].join(' - ');
 Print( configurationText, '\n\n' );
@@ -346,13 +346,14 @@ function MatchFlags(flags) {
 }
 
 
-var itemFilter = new RegExp(cfg.args[0] || '.*', 'i');
+var itemInclude = new RegExp(cfg.args[0] || '.*', 'i');
+var itemExclude = cfg.exclude ? new RegExp(cfg.exclude, 'i') : undefined;
 
 var testList;
 if ( cfg.load )
 	testList = eval(new File(cfg.load).content);
 else
-	testList = CreateQaItemList(cfg.directory, cfg.files, itemFilter, MatchFlags);
+	testList = CreateQaItemList(cfg.directory, cfg.files, itemInclude, itemExclude, MatchFlags);
 
 if ( cfg.listTestsOnly ) {
 	
