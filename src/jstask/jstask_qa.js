@@ -7,7 +7,7 @@ LoadModule('jsio');
 	var i = 0;
 	while ( !endSignal && i++ < 1000 ) {
 
-		new Task(MyTask);
+		new Task(function(){});
 		QA.GC();
 	}
 

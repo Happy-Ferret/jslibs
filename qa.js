@@ -324,7 +324,7 @@ function ParseCommandLine(cfg) {
 
 var cfg = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', files:'_qa.js$', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0, quiet:false, runOnlyTestIndex:undefined, exclude:undefined };
 ParseCommandLine(cfg);
-var configurationText = 'configuraion: '+['-'+k+':'+v for ([k,v] in Iterator(cfg))].join(' ');
+var configurationText = 'configuraion: '+['-'+k+' '+v for ([k,v] in Iterator(cfg))].join(' ');
 Print( configurationText, '\n\n' );
 
 if ( cfg.help )

@@ -16,7 +16,11 @@
 
 #include "../common/jslibsModule.cpp"
 
-bool disabledFree = false;
+//#define USE_DEFAULT_ALLOCATORS // uncomment to use dtandard malloc/free
+
+
+#ifndef USE_DEFAULT_ALLOCATORS
+volatile bool disabledFree = false;
 
 EXTERN_C void* nedmalloc(size_t size) __THROW;
 EXTERN_C void* nedcalloc(size_t no, size_t size) __THROW;
@@ -30,6 +34,7 @@ void nedfree_handlenull(void *mem) {
 	if ( mem != NULL && !disabledFree )
 		nedfree(mem);
 }
+#endif // USE_DEFAULT_ALLOCATORS
 
 
 // to be used in the main() function only
@@ -136,21 +141,33 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		}
 	}
 
+#ifndef USE_DEFAULT_ALLOCATORS
 	jl_malloc = nedmalloc;
 	jl_calloc = nedcalloc;
 	jl_memalign = nedmemalign;
 	jl_realloc = nedrealloc;
 	jl_msize = nedblksize;
 	jl_free = nedfree_handlenull;
+#else
+	jl_malloc = malloc;
+	jl_calloc = calloc;
+	jl_memalign = memalign;
+	jl_realloc = realloc;
+	jl_msize = msize;
+	jl_free = free;
+#endif // USE_DEFAULT_ALLOCATORS
 
-
+#ifndef USE_DEFAULT_ALLOCATORS
 	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
+#endif // USE_DEFAULT_ALLOCATORS
 
 	cx = CreateHost(-1, -1, 0);
 	JL_CHK( cx != NULL );
 
+#ifndef USE_DEFAULT_ALLOCATORS
 	MemoryManagerEnableGCEvent(cx);
+#endif // USE_DEFAULT_ALLOCATORS
 
 	HostPrivate *hpv = GetHostPrivate(cx);
 
@@ -217,9 +234,12 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		if ( JS_IsExceptionPending(cx) )
 			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 
+#ifndef USE_DEFAULT_ALLOCATORS
 	disabledFree = true;
 	MemoryManagerDisableGCEvent(cx);
-	FinalizeMemoryManager(false, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
+	FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
+#endif // USE_DEFAULT_ALLOCATORS
+
 	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	DestroyHost(cx);
 	JS_ShutDown();
@@ -231,7 +251,10 @@ bad:
 
 	if ( cx ) {
 
+#ifndef USE_DEFAULT_ALLOCATORS
 		disabledFree = true;
+#endif // USE_DEFAULT_ALLOCATORS
+		JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 		DestroyHost(cx);
 	}
 	JS_ShutDown();

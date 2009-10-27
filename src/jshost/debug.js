@@ -1,5 +1,15 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
+LoadLibrary('jsstd');
+LoadLibrary('jsio');
+
+currentDirectory += '/../../tests';
+
+Print( Directory.List(
+
+Halt();
+
+
 /*
 // run jsircbot with debuggers
 	LoadModule('jsstd');
@@ -12,16 +22,20 @@
 	throw 0;
 */
 
-
+/*
 // run qa tests with debuggers
 	LoadModule('jsstd');
 	LoadModule('jsio');
 	currentDirectory += '/../..';
-	arguments = Array.concat('qa.js', '-flag f -rep 1 -loop -nogcb -quiet task'.split(' '));
+	arguments = Array.concat('qa.js', '-flag f -rep 1 -loop -nogcBetweenTests -nogcDuringTests jsstd -runOnlyTestIndex 9'.split(' '));
 	Exec(arguments[0], false);
 	throw 0;
+*/
 
 
+LoadModule('jstask');
+LoadModule('jsstd');
+LoadModule('jsio');
 
 LoadModule('jsstd');
 LoadModule('jsz');

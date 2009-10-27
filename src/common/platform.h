@@ -73,7 +73,11 @@
 		#define FASTCALL
 	#endif
 
-	#define ALWAYS_INLINE __attribute__((always_inline)) __inline__
+	#ifdef DEBUG
+		#define ALWAYS_INLINE __inline__
+	#else
+		#define ALWAYS_INLINE __attribute__((always_inline)) __inline__
+	#endif
 
 #else
 
@@ -780,7 +784,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		int rc;
 		rc = pthread_create(thread, &attr, threadRoutine, pv);
 		pthread_attr_destroy(&attr);
-		return rc ? 0 : thread;
+		if ( rc == 0 ) // if no error
+			return thread;
+		free(thread);
+		return NULL;
 	#endif
 	}
 
@@ -862,8 +869,9 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		if ( CloseHandle(*pThread) == 0 )
 			return JLERROR;
 	#elif defined XP_UNIX
-		if ( pthread_detach(**pThread) != 0 )
-			return JLERROR;
+		if ( JLThreadIsActive( *pThread ) )
+			if ( pthread_detach(**pThread) != 0 )
+				return JLERROR;
 		free(*pThread);
 	#endif
 		*pThread = (JLThreadHandler)0;

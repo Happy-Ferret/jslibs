@@ -146,6 +146,7 @@ Copy('qa.js', './dist/tests');
 
 RecursiveDir('./src', function(file) /_qa\.js$/(file.name) && Copy(file.name, './dist/tests') );
 
+Copy('./tests/version.js', './dist/examples');
 Copy('./tests/helloworld.js', './dist/examples');
 Copy('./tests/systray.js', './dist/examples');
 Copy('./tests/miniInteractiveConsole.js', './dist/examples');

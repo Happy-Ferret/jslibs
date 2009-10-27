@@ -19,7 +19,7 @@
 
 /**doc
 $CLASS_HEADER Geom
-$SVN_REVISION $Revision: 2614 $
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( GeomCylinder )
 
@@ -119,7 +119,7 @@ DEFINE_PROPERTY( lengthGetter ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 2614 $"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PROTOTYPE( prototypeGeom )
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

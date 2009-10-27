@@ -24,7 +24,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision: 2618 $
+$SVN_REVISION $Revision$
 **/
 BEGIN_STATIC
 
@@ -301,7 +301,7 @@ DEFINE_FUNCTION_FAST( Vector3Dot ) {
 
 CONFIGURE_STATIC
 
-	REVISION(JL_SvnRevToInt("$Revision: 2618 $"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION_FAST_ARGC( FrustumSphere, 2 )
 		FUNCTION_FAST_ARGC( BoxToCircumscribedSphere, 1 )

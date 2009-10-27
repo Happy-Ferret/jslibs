@@ -24,7 +24,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision: 2212 $
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Process )
 
@@ -261,7 +261,7 @@ DEFINE_PROPERTY( stderr ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 2212 $"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS( 3 )

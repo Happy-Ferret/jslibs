@@ -101,7 +101,9 @@ $TOC_MEMBER $INAME
   Converts textData. If called without argument, this resets the conversion state to the initial state and returns $UNDEF.
 **/
 DEFINE_CALL() {
-		
+	
+	char *outBuf = NULL; // keep on top
+
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	JL_S_ASSERT_CLASS(thisObj, classIconv);
 
@@ -138,7 +140,6 @@ DEFINE_CALL() {
 	size_t inLeft;
 	inLeft = inLen;
 
-	char *outBuf;
 	size_t outLen;
 
 
@@ -250,7 +251,10 @@ DEFINE_CALL() {
 	}
 
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	if ( outBuf != NULL )
+		JS_free(cx, outBuf);
+	return JS_FALSE;
 }
 
 

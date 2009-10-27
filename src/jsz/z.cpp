@@ -58,10 +58,14 @@ DEFINE_FINALIZE() {
 	
 	if ( pv->stream.state != Z_NULL ) {
 		
+		int status;
 		if ( pv->method == DEFLATE )
-			deflateEnd(&pv->stream);
+			status = deflateEnd(&pv->stream);
 		else
-			inflateEnd(&pv->stream);
+			status = inflateEnd(&pv->stream);
+		
+		if ( status != Z_OK )
+			JL_REPORT_WARNING( "Unable to finalize zlib stream (%s).", pv->stream.msg );
 	}
 	JS_free(cx, pv);
 }

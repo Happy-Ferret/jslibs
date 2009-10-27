@@ -17,7 +17,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision: 2629 $
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Vector )
 
@@ -82,7 +82,7 @@ DEFINE_HAS_INSTANCE() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 2629 $"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1)
 	HAS_HAS_INSTANCE

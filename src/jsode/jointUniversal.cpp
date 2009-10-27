@@ -18,7 +18,7 @@
 
 /**doc
 $CLASS_HEADER Joint
-$SVN_REVISION $Revision: 2620 $
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( JointUniversal )
 
@@ -218,7 +218,7 @@ DEFINE_PROPERTY( angle2Rate ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 2620 $"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PROTOTYPE( prototypeJoint )
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

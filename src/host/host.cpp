@@ -561,6 +561,7 @@ JSBool DestroyHost( JSContext *cx ) {
 	//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
+	cx = NULL;
 
 
 	// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
@@ -581,11 +582,17 @@ JSBool DestroyHost( JSContext *cx ) {
 	while ( !jl::QueueIsEmpty(&pv->registredNativeClasses) )
 		jl::QueueShift(&pv->registredNativeClasses);
 
+
 	jl_free(pv);
 	return JS_TRUE;
 
 bad:
-	jl_free(pv);
+	// on error, do the minimum.
+	if ( cx ) {
+		
+		JS_DestroyContext(cx);
+		JS_DestroyRuntime(rt);
+	}
 	return JS_FALSE;
 }
 

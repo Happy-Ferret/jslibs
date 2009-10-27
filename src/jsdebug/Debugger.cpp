@@ -31,7 +31,7 @@ static const JSCodeSpec jsCodeSpec[] = {
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision: 2290 $
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Debugger )
 
@@ -643,7 +643,7 @@ DEFINE_PROPERTY( excludedFileList ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 2290 $"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

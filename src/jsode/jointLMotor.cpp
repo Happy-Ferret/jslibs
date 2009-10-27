@@ -18,7 +18,7 @@
 
 /**doc
 $CLASS_HEADER Joint
-$SVN_REVISION $Revision: 2555 $
+$SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( JointLMotor )
 
@@ -96,7 +96,7 @@ DEFINE_FUNCTION( SetAxis ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 2555 $"))
+	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PROTOTYPE( prototypeJoint )
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

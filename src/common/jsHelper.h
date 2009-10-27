@@ -818,10 +818,10 @@ ALWAYS_INLINE bool JL_UnregisterNativeClass( JSContext *cx, JSClass *jsClass ) {
 	return false;
 }
 
-ALWAYS_INLINE void JL_CleanRegisterNativeClasses( JSContext *cx ) {
-
-	jl::QueueDestruct(&GetHostPrivate(cx)->registredNativeClasses);
-}
+//ALWAYS_INLINE void JL_CleanRegisterNativeClasses( JSContext *cx ) {
+//
+//	jl::QueueDestruct(&GetHostPrivate(cx)->registredNativeClasses); // QueueDestruct make free( GetHostPrivate(cx)->registredNativeClasses ) !!!
+//}
 
 
 /*
