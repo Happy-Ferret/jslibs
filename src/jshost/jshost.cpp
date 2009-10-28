@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 //#define USE_DEFAULT_ALLOCATORS // uncomment to use dtandard malloc/free
 

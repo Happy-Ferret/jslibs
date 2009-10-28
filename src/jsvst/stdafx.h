@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "../common/platform.h"
+#include "jlplatform.h"
 
 #include <fcntl.h>
 #ifdef XP_WIN
@@ -25,15 +25,15 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-// #include <limits.h> // included by ../common/platform.h
+// #include <limits.h> // included by jlplatform.h
 #include <signal.h>
 
 #include <jsapi.h>
 
-#include "../common/jsHelper.h"
+#include "jlhelper.h"
 
 #include "../host/host.h"
-#include "../common/jsNames.h"
+#include "jlnames.h"
 
 /*
 #include "jsstddef.h"
@@ -48,7 +48,7 @@
 
 #pragma once
 
-#include "../common/platform.h"
+#include "jlplatform.h"
 
 #include <fcntl.h>
 #ifdef XP_WIN
@@ -68,13 +68,13 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-// #include <limits.h> // included by ../common/platform.h
+// #include <limits.h> // included by jlplatform.h
 #include <signal.h>
 
-#include "../common/jsHelper.h"
+#include "jlhelper.h"
 
 #include "../host/host.h"
-#include "../common/jsNames.h"
+#include "jlnames.h"
 
 /*
 #include "jsstddef.h"

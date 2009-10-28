@@ -18,7 +18,7 @@
 
 DECLARE_CLASS( Z )
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 /**doc t:header
 $MODULE_HEADER

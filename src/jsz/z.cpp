@@ -20,7 +20,7 @@
 #include "z.h"
 
 using namespace jl;
-#include "../common/buffer.h"
+#include <buffer.h>
 
 // current method
 enum Method {

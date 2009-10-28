@@ -19,7 +19,7 @@
 #include <cstring>
 
 //#include "../jslang/blobPub.h"
-#include "../common/stack.h"
+#include "stack.h"
 
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>

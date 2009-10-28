@@ -15,7 +15,7 @@
 #ifndef _JL_POOL_H_
 #define _JL_POOL_H_
 
-#include "../common/jlalloc.h"
+#include "jlalloc.h"
 
 namespace jl {
 

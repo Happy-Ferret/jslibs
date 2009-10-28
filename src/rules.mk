@@ -12,19 +12,22 @@ BITS ?= 32
 
 INT_DIR = $(shell uname)_$(BUILD)_$(BITS)/
 
-# -Wfatal-errors
-ifeq ($(BUILD),dbg)
-	CFLAGS += -Wall -g3 -O0 -fstack-protector-all -D_FORTIFY_SOURCE=2 -DDEBUG -I../../libs/js/$(INT_DIR) -I../../libs/js/src
-	#CFLAGS += -DJS_GCMETER -DJS_HASHMETER -DJS_GC_ZEAL -DJS_DUMP_PROPTREE_STATS -DJS_ARENAMETER
-	# -fmudflap // http://gcc.gnu.org/wiki/Mudflap_Pointer_Debugging
-else
-	CFLAGS += -Wall -g0 -O3 -s -funroll-loops -I../../libs/js/$(INT_DIR) -I../../libs/js/src
-endif
 
-CFLAGS += -Wno-unused-parameter
+CFLAGS += -I../common -I../../libs/js/$(INT_DIR) -I../../libs/js/src
+
+CFLAGS += -Wall -Wno-unused-parameter
 LDFLAGS += -Wl,-Bdynamic -L../../libs/js/$(INT_DIR) -lmozjs
+
 # -static-libgcc -Wl,-Bstatic,-lstdc++
 #,-lgcc_s
+#CFLAGS += -DJS_GCMETER -DJS_HASHMETER -DJS_GC_ZEAL -DJS_DUMP_PROPTREE_STATS -DJS_ARENAMETER
+# -fmudflap // http://gcc.gnu.org/wiki/Mudflap_Pointer_Debugging
+
+ifeq ($(BUILD),dbg)
+	CFLAGS += -g3 -O0 -fstack-protector-all -D_FORTIFY_SOURCE=2 -DDEBUG
+else
+	CFLAGS += -g0 -O3 -s -funroll-loops
+endif
 
 ifeq ($(BITS),64)
 	CFLAGS += -m64 -fPIC
@@ -33,7 +36,6 @@ else
 endif
 
 CFLAGS += $(INCLUDES) $(DEFINES) -fno-exceptions -fno-rtti -felide-constructors
-# -static-libgcc 
 
 OBJECTS = $(patsubst %.cpp,$(INT_DIR)%.o,$(filter %.cpp, $(SRC))) $(patsubst %.c,$(INT_DIR)%.o,$(filter %.c, $(SRC)))
 

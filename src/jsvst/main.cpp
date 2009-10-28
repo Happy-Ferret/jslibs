@@ -16,7 +16,7 @@
 #include <cstring>
 
 #include "../host/host.h"
-#include "../common/jsClass.h"
+#include "jlclass.h"
 #include "jsapihelper.h"
 
 #include <public.sdk/source/vst2.x/audioeffectx.h>
@@ -29,7 +29,7 @@ DECLARE_CLASS( AudioMaster );
 DECLARE_CLASS( VSTPlugin );
 
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 
 class JsVst : public AudioEffectX, private JSApiHelper {

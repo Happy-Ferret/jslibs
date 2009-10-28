@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "../common/jsHelper.h"
-#include "../common/jsClass.h"
-#include "../common/jsConfiguration.h"
+#include "jlhelper.h"
+#include "jlclass.h"
+#include "jlconfiguration.h"
 

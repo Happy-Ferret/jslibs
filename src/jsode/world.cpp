@@ -22,7 +22,7 @@
 
 #include "stdlib.h"
 
-#include "../common/vector3.h"
+#include "vector3.h"
 
 
 struct ColideContextPrivate {

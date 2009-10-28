@@ -17,7 +17,7 @@
 #include "static.h"
 #include "jabber.h"
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 /**doc t:header
 $MODULE_HEADER

@@ -12,8 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "../common/vector3.h"
-#include "../common/matrix44.h"
+#include "vector3.h"
+#include "matrix44.h"
 
 DECLARE_CLASS(Transformation)
 

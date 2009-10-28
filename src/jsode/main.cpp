@@ -25,7 +25,7 @@
 
 DECLARE_CLASS( Vector )
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 bool _odeFinalization = false;
 

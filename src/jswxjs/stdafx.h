@@ -22,14 +22,14 @@
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 #include <windows.h>
 
-#include "../common/platform.h"
+#include "jlplatform.h"
 
 #include <jsapi.h>
 
-#include "../common/jsHelper.h"
-#include "../common/jsClass.h"
-#include "../common/jsConfiguration.h"
-#include "../common/stack.h"
+#include "jlhelper.h"
+#include "jlclass.h"
+#include "jlconfiguration.h"
+#include "stack.h"
 
 #include <stdlib.h>
 #include <string.h>

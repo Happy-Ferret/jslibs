@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 
-#include "../common/queue.h"
+#include "queue.h"
 
 #include "error.h"
 

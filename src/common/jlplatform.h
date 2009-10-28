@@ -12,8 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _PLATFORM_H_
-#define _PLATFORM_H_
+#ifndef _JLPLATFORM_H_
+#define _JLPLATFORM_H_
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -952,4 +952,4 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		return JLOK;
 	}
 
-#endif // _PLATFORM_H_
+#endif // _JLPLATFORM_H_

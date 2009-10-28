@@ -14,12 +14,12 @@
 
 #pragma once
 
-#include "../common/jsHelper.h"
+#include "jlhelper.h"
 
 #include <jsprf.h>
 
-#include "../common/jsConfiguration.h"
-#include "../common/jsClass.h"
-#include "../common/errors.h"
+#include "jlconfiguration.h"
+#include "jlclass.h"
+#include "jlerrors.h"
 
 #include <string.h>

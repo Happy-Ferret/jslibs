@@ -12,7 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "../common/queue.h"
+#include "queue.h"
 
 DECLARE_CLASS( Database )
 

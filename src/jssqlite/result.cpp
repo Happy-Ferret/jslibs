@@ -21,9 +21,9 @@
 #include "result.h"
 #include "database.h"
 
-#include "../common/stack.h"
+#include "stack.h"
 
-// #include <limits.h> // included by ../common/platform.h
+// #include <limits.h> // included by jlplatform.h
 
 
 JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {

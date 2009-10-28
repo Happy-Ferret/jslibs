@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include "space.h"
 #include "geom.h"
-//#include "../common/jsNativeInterface.h"
+//#include "jlnativeinterface.h"
 
 /**doc
 $CLASS_HEADER Geom

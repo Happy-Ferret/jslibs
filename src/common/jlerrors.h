@@ -16,12 +16,12 @@
 #ifndef _JSERRORS_H_
 #define _JSERRORS_H_
 
-#include "../common/jsConfiguration.h"
+#include "jlconfiguration.h"
 
 typedef enum J_ErrNum {
 #define MSG_DEF(name, number, count, exception, format) \
     name = number,
-#include "../common/errors.msg"
+#include "jlerrors.msg"
 #undef MSG_DEF
     J_ErrLimit
 #undef MSGDEF

@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "../common/platform.h"
+#include "jlplatform.h"
 
 #include <fcntl.h>
 #ifdef XP_WIN
@@ -35,7 +35,7 @@
 #include <errno.h>
 #include <signal.h>
 
-#include "../common/jsHelper.h"
-#include "../common/jsConfiguration.h"
+#include "jlhelper.h"
+#include "jlconfiguration.h"
 
 #include "../host/host.h"

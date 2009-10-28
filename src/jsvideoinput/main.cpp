@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 #include <videoinput.h>
 

@@ -47,8 +47,8 @@ Note that post-multiplying with column-major matrices produces the same result a
 #include <stdlib.h>
 #include <math.h>
 
-#include "../common/vector3.h"
-#include "../common/vector4.h"
+#include "vector3.h"
+#include "vector4.h"
 
 #ifdef SSE // SSE (Streaming SIMD Extensions)
 

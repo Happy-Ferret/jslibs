@@ -15,7 +15,7 @@
 #ifndef _JSLIBSMODULE_H_
 #define _JSLIBSMODULE_H_
 
-#include "../common/platform.h"
+#include "jlplatform.h"
 #include <sys/types.h>
 #include <jstypes.h>
 

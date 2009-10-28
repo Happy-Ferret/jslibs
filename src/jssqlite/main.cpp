@@ -18,9 +18,9 @@
 #include "database.h"
 #include "result.h"
 
-#include "../common/queue.h"
+#include "queue.h"
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 void* xMalloc(int s) {
 	return jl_malloc(s);

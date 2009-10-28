@@ -15,9 +15,9 @@
 #ifndef _JSHELPER_H_
 #define _JSHELPER_H_
 
-#include "../common/jlalloc.h"
+#include "jlalloc.h"
 
-#include "../common/platform.h"
+#include "jlplatform.h"
 
 #include <jsapi.h>
 
@@ -28,7 +28,7 @@ typedef JSBool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
 inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
 inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 
-#include "../common/queue.h"
+#include "queue.h"
 
 #include <cstring>
 #include <stdarg.h>

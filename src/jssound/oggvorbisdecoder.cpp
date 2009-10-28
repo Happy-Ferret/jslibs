@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include <cstring>
 
-#include "../common/stack.h"
+#include "stack.h"
 
 
 #define malloc jl_malloc_fct

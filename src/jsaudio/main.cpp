@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include "error.h"
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 DECLARE_CLASS(Oal)
 DECLARE_CLASS(OalBuffer)

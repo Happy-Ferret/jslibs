@@ -17,7 +17,7 @@
 
 #include "jsopcode.h"
 
-#include "../common/stack.h"
+#include "stack.h"
 
 extern jl::Queue *scriptFileList;
 JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc );

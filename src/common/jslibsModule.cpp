@@ -14,8 +14,8 @@
 
 // (TBD) Should we create a new module for so few symbols ?
 
-#include "../common/jslibsModule.h"
-#include "../common/jsHelper.h"
+#include "jslibsModule.h"
+#include "jlhelper.h"
 
 // by default, we run in unsafe mode.
 bool _unsafeMode = true;

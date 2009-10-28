@@ -20,8 +20,8 @@
 
 #include "static.h"
 
-#include "../common/stack.h"
-#include "../common/buffer.h"
+#include "stack.h"
+#include "buffer.h"
 using namespace jl;
 
 /**doc fileIndex:topmost **/

@@ -20,7 +20,7 @@
 #include "systray.h"
 #include "console.h"
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 
 /**doc t:header

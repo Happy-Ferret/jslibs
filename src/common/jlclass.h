@@ -15,7 +15,7 @@
 #ifndef _JSCLASS_H_
 #define _JSCLASS_H_
 
-#include "../common/jsNames.h"
+#include "jlnames.h"
 
 #include <ctype.h>
 

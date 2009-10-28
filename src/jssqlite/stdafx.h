@@ -7,9 +7,9 @@
 #ifndef stdafx_h___
 #define stdafx_h___
 
-#include "../common/jsHelper.h"
-#include "../common/jsClass.h"
-#include "../common/jsConfiguration.h"
+#include "jlhelper.h"
+#include "jlclass.h"
+#include "jlconfiguration.h"
 
 #include <sqlite3.h>
 

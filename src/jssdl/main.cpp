@@ -18,7 +18,7 @@
 #include "error.h"
 #include "sdl.h"
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 DECLARE_CLASS( Cursor )
 

@@ -23,7 +23,7 @@ Manage GL extensions:
 
 DECLARE_CLASS(Ogl)
 
-//#include "../common/jsNativeInterface.h"
+//#include "jlnativeinterface.h"
 
 //#include "jstransformation.h"
 
@@ -40,8 +40,8 @@ DECLARE_CLASS(Ogl)
 #define _USE_MATH_DEFINES
 #include "math.h"
 
-#include "../common/matrix44.h"
-#include "../common/vector3.h"
+#include "matrix44.h"
+#include "vector3.h"
 
 /* doc.
   OpenGL matrices are 16-value arrays with base vectors laid out contiguously in memory. 

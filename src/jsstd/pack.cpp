@@ -15,16 +15,16 @@
 #include "stdafx.h"
 #include "pack.h"
 
-//#include "../common/jsNativeInterface.h"
+//#include "jlnativeinterface.h"
 
-#include "../common/jsConversionHelper.h"
+#include "jlconvert.h"
 
 DECLARE_CLASS( Buffer )
 #define SLOT_PACK_BUFFEROBJECT 0
 #include "buffer.h"
 
 
-// #include <limits.h> // included by ../common/platform.h
+// #include <limits.h> // included by jlplatform.h
 
 static Endian systemEndian; // it's safe to use static keyword.
 

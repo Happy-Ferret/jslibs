@@ -16,7 +16,7 @@
 
 DECLARE_STATIC()
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 
 /**doc t:header

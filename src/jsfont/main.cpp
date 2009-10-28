@@ -21,7 +21,7 @@
 
 FT_Library _freetype;
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 
 /**doc t:header

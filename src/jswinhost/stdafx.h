@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../common/jsHelper.h"
-#include "../common/jsConfiguration.h"
+#include "jlhelper.h"
+#include "jlconfiguration.h"
 
 #include "../host/host.h"

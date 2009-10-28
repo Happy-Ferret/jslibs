@@ -15,8 +15,8 @@
 #ifndef _JSCONFIGURATION_H_
 #define _JSCONFIGURATION_H_
 
-#include "../common/jsNames.h"
-#include "../common/jsHelper.h"
+#include "jlnames.h"
+#include "jlhelper.h"
 
 
 inline JSBool RemoveConfiguration(JSContext *cx) {

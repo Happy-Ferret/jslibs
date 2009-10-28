@@ -16,7 +16,7 @@
 
 #include "../host/host.h"
 
-#include "../common/buffer.h"
+#include "buffer.h"
 
 #include <errno.h>
 

@@ -16,7 +16,7 @@
 #ifndef _BUFFER_H_
 #define _BUFFER_H_
 
-#include "../common/jlalloc.h"
+#include "jlalloc.h"
 
 #define BUFFER_INIT_CHUNK_SIZE 8192
 #define BUFFER_INIT_CHUNK_LIST_SIZE 16

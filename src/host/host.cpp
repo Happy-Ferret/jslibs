@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 
-#include "../common/jslibsModule.h"
+#include "jslibsModule.h"
 
 #include "host.h"
 
@@ -24,7 +24,7 @@ JSBool jslangModuleInit(JSContext *cx, JSObject *obj);
 
 JSErrorFormatString errorFormatString[J_ErrLimit] = {
 	#define MSG_DEF(name, number, count, exception, format) { format, count, exception },
-	#include "../common/errors.msg"
+	#include "jlerrors.msg"
 	#undef MSG_DEF
 };
 

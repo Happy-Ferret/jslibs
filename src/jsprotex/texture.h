@@ -15,8 +15,8 @@
 #ifndef _TEXTURE_H_
 #define _TEXTURE_H_
 
-#include "../common/jsHelper.h"
-#include "../common/membuffer.h"
+#include "jlhelper.h"
+#include "membuffer.h"
 
 #define PTYPE float
 

@@ -25,7 +25,7 @@
 #include "process.h"
 #include "static.h"
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 static PRInt32 instanceCount = 0;
 

@@ -22,7 +22,7 @@
 #include <fcntl.h>
 
 bool _unsafeMode = false;
-#include "../common/jsHelper.h"
+#include "jlhelper.h"
 
 
 #ifndef O_BINARY

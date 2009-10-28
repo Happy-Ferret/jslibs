@@ -7,10 +7,10 @@
 
 #include <math.h>
 
-#include "../common/jsHelper.h"
-#include "../common/jsClass.h"
-#include "../common/jsConversionHelper.h"
-#include "../common/jsConfiguration.h"
+#include "jlhelper.h"
+#include "jlclass.h"
+#include "jlconvert.h"
+#include "jlconfiguration.h"
 
 #include <malloc.h>
 

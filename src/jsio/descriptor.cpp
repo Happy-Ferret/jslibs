@@ -22,7 +22,7 @@
 #include "file.h"
 #include "socket.h"
 
-#include "../common/buffer.h"
+#include "buffer.h"
 using namespace jl;
 
 /*

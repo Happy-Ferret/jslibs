@@ -15,7 +15,7 @@
 #ifndef _QUEUE_H_
 #define _QUEUE_H_
 
-#include "../common/jlalloc.h"
+#include "jlalloc.h"
 
 namespace jl {
 

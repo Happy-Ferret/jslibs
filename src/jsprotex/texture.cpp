@@ -30,13 +30,13 @@
 #include <limits.h>
 #include <float.h>
 
-#include "../common/vector3.h"
-#include "../common/vector4.h"
-#include "../common/matrix44.h"
-#include "../common/matrix55.h"
-#include "../common/jsConversionHelper.h"
+#include "vector3.h"
+#include "vector4.h"
+#include "matrix44.h"
+#include "matrix55.h"
+#include "jlconvert.h"
 
-#include "../common/membuffer.h"
+#include "membuffer.h"
 
 DECLARE_CLASS( Texture )
 

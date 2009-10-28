@@ -15,7 +15,7 @@
 #ifndef _BLOBAPI_H_
 #define _BLOBAPI_H_
 
-#include "../common/jsHelper.h"
+#include "jlhelper.h"
 
 
 ALWAYS_INLINE JSClass* BlobJSClass( JSContext *cx ) {

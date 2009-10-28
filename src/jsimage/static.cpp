@@ -16,7 +16,7 @@
 
 #include "../jslang/blobPub.h"
 
-//#include "../common/jsNativeInterface.h"
+//#include "jlnativeinterface.h"
 #include "static.h"
 
 

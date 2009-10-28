@@ -21,7 +21,7 @@ DECLARE_CLASS(Ogl)
 DECLARE_STATIC()
 DECLARE_CLASS( OglError )
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 /**doc t:header
 $MODULE_HEADER

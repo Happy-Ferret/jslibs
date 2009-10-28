@@ -15,7 +15,7 @@
 
 #include "stdafx.h"
 
-#include "../common/jsClass.h"
+#include "jlclass.h"
 
 #include <public.sdk/source/vst2.x/audioeffectx.h>
 

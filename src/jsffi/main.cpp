@@ -17,7 +17,7 @@
 #include "ffi.h"
 
 
-#include "../common/jslibsModule.cpp"
+#include "jslibsModule.cpp"
 
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {

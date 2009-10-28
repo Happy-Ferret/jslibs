@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "../common/vector5.h"
+#include "vector5.h"
 
 //#ifdef SSE // SSE (Streaming SIMD Extensions)
 //#include <xmmintrin.h>
