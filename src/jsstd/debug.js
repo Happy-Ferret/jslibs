@@ -2,15 +2,12 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
 
-
-function ExpandTest() {
-
-	var a = 123;
-	Print( Expand('$(a)', GetCurrentScope() ) );
+while ( !endSignal ) {
+	
+//	SandboxEval('for(;;);');
+	SandboxEval('for(;;);');
+	Print('.');
 }
-
-ExpandTest(111);
-
 
 
 Halt(); //////////////////////////////

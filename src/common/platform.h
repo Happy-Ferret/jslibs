@@ -894,8 +894,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		return LoadLibrary(filename);
 	#elif defined XP_UNIX
 		dlerror(); // Resets the error indicator.
-		void* handler = dlopen(filename, RTLD_NOW); // RTLD_LAZY
-		return handler;
+		return dlopen(filename, RTLD_LAZY); // RTLD_NOW
 	#endif
 	}
 

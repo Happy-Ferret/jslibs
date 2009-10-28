@@ -1106,7 +1106,7 @@ $TOC_MEMBER $INAME
 
 struct SandboxContextPrivate {
 
-	JLSemaphoreHandler sem;
+	JLSemaphoreHandler semEnd;
 	unsigned int maxExecutionTime;
 	JSContext *cx;
 	jsval queryFunctionValue;
@@ -1124,9 +1124,12 @@ JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
 
 	JSContext *scx = (JSContext*)threadArg;
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(scx);
-	JLReleaseSemaphore(pv->sem);
-	SleepMilliseconds(pv->maxExecutionTime);
+
+	//	SleepMilliseconds(pv->maxExecutionTime);
+	JLAcquireSemaphore(pv->semEnd, pv->maxExecutionTime); // used as a breakable Sleep. This avoids to Cancel the thread
+	
 	JS_TriggerOperationCallback(scx);
+	JLThreadExit();
 	return 0;
 }
 
@@ -1205,7 +1208,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 	JS_SetContextPrivate(scx, &pv);
 
-	pv.sem = JLCreateSemaphore(0);
+	pv.semEnd = JLCreateSemaphore(0);
 
 	JLThreadHandler sandboxWatchDogThread;
 	sandboxWatchDogThread = JLThreadStart(SandboxWatchDogThreadProc, scx);
@@ -1219,11 +1222,11 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	JSBool ok;
 	ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, filename, lineno, JL_FRVAL);
 
-	JLAcquireSemaphore(pv.sem, -1); // prevent thread destruction before it has started
-	JLFreeSemaphore(&pv.sem);
-	JL_CHK( JLThreadCancel(sandboxWatchDogThread) );
+	JL_CHK( JLReleaseSemaphore(pv.semEnd) );
+
 	JL_CHK( JLWaitThread(sandboxWatchDogThread) );
-	JLFreeThread(&sandboxWatchDogThread);
+	JL_CHK( JLFreeThread(&sandboxWatchDogThread) );
+	JL_CHK( JLFreeSemaphore(&pv.semEnd) );
 
 	prev = JS_SetOperationCallback(scx, prev);
 	JL_S_ASSERT( prev == SandboxMaxOperationCallback, "Invalid SandboxMaxOperationCallback handler." );

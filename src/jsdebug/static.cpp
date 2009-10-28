@@ -1661,7 +1661,7 @@ CONFIGURE_STATIC
 		PROPERTY_READ( currentFilename )
 		PROPERTY_READ( stackSize )
 	#ifdef JS_GC_ZEAL
-		PROPERTY_WRITE( gcZeal )
+		PROPERTY_WRITE_STORE( gcZeal )
 	#endif
 
 		PROPERTY_READ( gcNumber )

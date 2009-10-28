@@ -340,7 +340,7 @@ $TOC_MEMBER $INAME
   $BR
   If valueName is ommited, the returned value is the list of sub-keys.
   $BR
-  If valueName is given but $UNDEF, the returned value is the list of values.
+  If valueName is given but is $UNDEF, the returned value is the list of available values.
   $H example 1
   {{{
   RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip'); // returns ["FM"]

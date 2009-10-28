@@ -3,6 +3,14 @@
 LoadModule('jsstd');
 LoadModule('jswinshell');
 
+
+
+
+
+
+Halt(); //////////////////////////////////////////////////////////////////////
+
+
  LoadModule('jsstd');
  LoadModule('jswinshell');
 

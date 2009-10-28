@@ -21,12 +21,9 @@
 #ifndef USE_DEFAULT_ALLOCATORS
 volatile bool disabledFree = false;
 
-EXTERN_C void* nedmalloc(size_t size) __THROW;
-EXTERN_C void* nedcalloc(size_t no, size_t size) __THROW;
-EXTERN_C void* nedmemalign(size_t alignment, size_t bytes) __THROW;
-EXTERN_C void* nedrealloc(void *mem, size_t size) __THROW;
-EXTERN_C void nedfree(void *mem) __THROW;
-EXTERN_C size_t nedblksize(void *mem) __THROW;
+#define NO_NED_NAMESPACE
+#define NO_MALLINFO 1
+#include "../../libs/nedmalloc/nedmalloc.h"
 
 void nedfree_handlenull(void *mem) {
 	
@@ -197,6 +194,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 #ifndef USE_DEFAULT_ALLOCATORS
 	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
+	// if ( GetProcAddress(GetModuleHandle("mozjs.dll"), "JSLIBS_RegisterCustomAllocators") != NULL ) {	}
 	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
 #endif // USE_DEFAULT_ALLOCATORS
 
@@ -336,6 +334,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	DestroyHost(cx);
 	JS_ShutDown();
+	cx = NULL;
 
 #ifdef XP_WIN
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);

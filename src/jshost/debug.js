@@ -1,17 +1,7 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadLibrary('jsstd');
-LoadLibrary('jsio');
-
-currentDirectory += '/../../tests';
-
-Print( Directory.List(
-
-Halt();
-
-
 /*
-// run jsircbot with debuggers
+// run jsircbot
 	LoadModule('jsstd');
 	LoadModule('jsio');
 	LoadModule('jsdebug');
@@ -22,15 +12,62 @@ Halt();
 	throw 0;
 */
 
-/*
-// run qa tests with debuggers
+
+// run qa tests
 	LoadModule('jsstd');
 	LoadModule('jsio');
 	currentDirectory += '/../..';
-	arguments = Array.concat('qa.js', '-flag f -rep 1 -loop -nogcBetweenTests -nogcDuringTests jsstd -runOnlyTestIndex 9'.split(' '));
+	arguments = Array.concat('qa.js', '-gcZeal 0 -flag f -loop -rep 10 -nogcBetweenTests'.split(' '));
 	Exec(arguments[0], false);
 	throw 0;
-*/
+
+
+
+LoadModule('jsdebug');
+
+gcZeal = 2;
+
+LoadModule('jsio');
+LoadModule('jsstd');
+while (!endSignal) {
+
+
+	var buf = new Buffer();
+	buf.Write('\xAA\xBB\xCC\xDD');
+	var pack = new Pack(buf);
+	pack.ReadInt(4, false, true).toString(16);
+
+	var m = new Map();
+
+	m.__proto__ = 'AAA', 
+	m.__parent__ = 'BBB';
+	m.toString = 'CCC';
+	m.toSource = 'DDD';
+	m.__count__ = 'EEE';
+
+	var b = new Buffer();
+	b.Write({ toString:function(){return '01'} });
+	b.Write([2,3]);
+	b.Write(4567);
+	b.Write(8.9);
+	b.Read()
+
+	var res = Function("var v = 567; return SandboxEval('Query()', function(val) v)")();
+	var res = SandboxEval('Query(123)', function(val) val + 1 );
+
+
+	var res = SandboxEval('typeof File');
+	var res = SandboxEval('typeof LoadModule');
+
+	var res = SandboxEval('Math');
+
+	var res = Function("var v = 567; return SandboxEval('Query()', function(val) v)")();
+	var res = SandboxEval('Query(123)', function(val) val + 1 );
+	var obj = {};
+	(function() { SandboxEval('Query()', function(val) { obj })  })();
+	
+	Print('.');
+}
 
 
 LoadModule('jstask');

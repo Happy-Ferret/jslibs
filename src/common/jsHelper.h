@@ -68,7 +68,7 @@ struct HostPrivate {
 
 	void *privateData;
 	volatile unsigned int maybeGCInterval;
-	JLSemaphoreHandler watchDogSem;
+	JLSemaphoreHandler watchDogSemEnd;
 	JLThreadHandler watchDogThread;
 	bool unsafeMode;
 	HostOutput hostStdOut;

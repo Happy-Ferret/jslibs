@@ -52,7 +52,7 @@ static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) { //
 	for ( uintN i = 0; i < argc; ++i ) {
 
 		JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(i+1), &buffer, &length) );
-		pv->hostStdOut(pv->privateData, buffer, length);
+		JL_CHKM( pv->hostStdOut(pv->privateData, buffer, length) != -1, "Unable to use write on host's StdOut." );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -70,7 +70,7 @@ static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) { //
 	for ( uintN i = 0; i < argc; ++i ) {
 
 		JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(i+1), &buffer, &length) );
-		pv->hostStdErr(pv->privateData, buffer, length);
+		JL_CHKM( pv->hostStdErr(pv->privateData, buffer, length) != -1, "Unable to use write on host's StdErr." );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -84,6 +84,11 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 
 		jsval fct;
 		if (likely( GetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, &fct) == JS_TRUE && JsvalIsFunction(cx, fct) )) {
+			
+			// possible optimization, but not very useful since errors occurs rarely.
+			//JSFunction *fun = GET_FUNCTION_PRIVATE(cx, JSVAL_TO_OBJECT(fct));
+			//if ( FUN_FAST_NATIVE(fun) == (JSFastNative)JSDefaultStderrFunction )
+			//	goto standard_way;
 
 			jsval tmp;
 			JSTempValueRooter tvr;
@@ -227,12 +232,13 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 	JSContext *cx = (JSContext*)threadArg;
 	HostPrivate *pv = GetHostPrivate(cx);
 //	JSPackedBool *gcRunning = &cx->runtime->gcRunning;
-	JLReleaseSemaphore(pv->watchDogSem); // signals that the thread has started
+//	JLReleaseSemaphore(pv->watchDogSem); // signals that the thread has started
 	for (;;) {
 
-		SleepMilliseconds(pv->maybeGCInterval);
-//		if ( !*gcRunning )
-			JS_TriggerOperationCallback(cx);
+		//SleepMilliseconds(pv->maybeGCInterval); // use a timed semaphore instead (see SandboxEval)
+		if ( JLAcquireSemaphore(pv->watchDogSemEnd, pv->maybeGCInterval) != JLTIMEOUT ) // used as a breakable Sleep.
+			JLThreadExit();
+		JS_TriggerOperationCallback(cx);
 	}
 }
 
@@ -433,10 +439,10 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 
 		pv->maybeGCInterval = maybeGCInterval;
 		JS_SetOperationCallback(cx, OperationCallback);
-		pv->watchDogSem = JLCreateSemaphore(0);
+		pv->watchDogSemEnd = JLCreateSemaphore(0);
 		pv->watchDogThread = JLThreadStart(WatchDogThreadProc, cx);
 		//	JLThreadPriority(pv->watchDogThread, JL_THREAD_PRIORITY_LOW);
-		JL_CHKM( JLSemaphoreOk(pv->watchDogSem) && JLThreadOk(pv->watchDogThread), "Unable to create the thread." );
+		JL_CHKM( JLSemaphoreOk(pv->watchDogSemEnd) && JLThreadOk(pv->watchDogThread), "Unable to create the GC thread." );
 	}
 	return cx;
 
@@ -520,18 +526,16 @@ JSBool DestroyHost( JSContext *cx ) {
 
 	JSRuntime *rt = JS_GetRuntime(cx);
 
-//	ModuleReleaseAll(cx);
-
 	HostPrivate *pv = GetHostPrivate(cx);
 	JL_S_ASSERT( pv, "Invalid host context private." );
 
 	if ( JLThreadOk(pv->watchDogThread) ) {
 
-		JL_CHK( JLAcquireSemaphore(pv->watchDogSem, -1) ); // prevent thread destruction before it has started
-		JL_CHK( JLFreeSemaphore(&pv->watchDogSem) );
-		JL_CHK( JLThreadCancel(pv->watchDogThread) );
+		// beware: it is important to destroy the watchDogThread BEFORE destroying the cx or pv !!!
+		JL_CHK( JLReleaseSemaphore(pv->watchDogSemEnd) );
 		JL_CHK( JLWaitThread(pv->watchDogThread) );
-		JL_CHK( JLFreeThread(&pv->watchDogThread) ); // beware: it is important to destroy the thread BEFORE destroying the cx !!!
+		JL_CHK( JLFreeThread(&pv->watchDogThread) );
+		JL_CHK( JLFreeSemaphore(&pv->watchDogSemEnd) );
 	}
 
 	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) ) {

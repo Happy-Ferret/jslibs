@@ -14,11 +14,11 @@ INT_DIR = $(shell uname)_$(BUILD)_$(BITS)/
 
 # -Wfatal-errors
 ifeq ($(BUILD),dbg)
-	CFLAGS += -Wall -g3 -fstack-protector-all -D_FORTIFY_SOURCE=2 -O0 -DDEBUG -I../../libs/js/$(INT_DIR) -I../../libs/js/src
+	CFLAGS += -Wall -g3 -O0 -fstack-protector-all -D_FORTIFY_SOURCE=2 -DDEBUG -I../../libs/js/$(INT_DIR) -I../../libs/js/src
 	#CFLAGS += -DJS_GCMETER -DJS_HASHMETER -DJS_GC_ZEAL -DJS_DUMP_PROPTREE_STATS -DJS_ARENAMETER
 	# -fmudflap // http://gcc.gnu.org/wiki/Mudflap_Pointer_Debugging
 else
-	CFLAGS += -Wall -O3 -s -funroll-loops -I../../libs/js/$(INT_DIR) -I../../libs/js/src
+	CFLAGS += -Wall -g0 -O3 -s -funroll-loops -I../../libs/js/$(INT_DIR) -I../../libs/js/src
 endif
 
 CFLAGS += -Wno-unused-parameter
