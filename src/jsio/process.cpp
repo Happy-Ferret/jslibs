@@ -67,7 +67,7 @@ DEFINE_CONSTRUCTOR() {
 		JSIdArray *idArray;
 		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(JL_ARG(2)) ); // make a kind of auto-ptr for this
 		processArgc = idArray->length +1; // +1 is argv[0]
-		processArgv = (const char**)jl_malloc(sizeof(const char**) * (processArgc +1)); // +1 because the NULL list terminator.
+		processArgv = (const char**)alloca(sizeof(const char**) * (processArgc +1)); // +1 because the NULL list terminator.
 		JL_S_ASSERT_ALLOC( processArgv );
 
 		for ( int i=0; i<processArgc -1; i++ ) { // -1 because argv[0]
@@ -83,7 +83,7 @@ DEFINE_CONSTRUCTOR() {
 	} else {
 
 		processArgc = 0 +1; // +1 is argv[0]
-		processArgv = (const char**)jl_malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
+		processArgv = (const char**)alloca(sizeof(const char**) * (processArgc +1)); // +1 is NULL
 		JL_S_ASSERT_ALLOC( processArgv );
 	}
 
@@ -111,7 +111,7 @@ DEFINE_CONSTRUCTOR() {
 	process = PR_CreateProcess(path, (char * const *)processArgv, NULL, psattr); // (TBD) avoid cast to (char * const *)
 
 	PR_DestroyProcessAttr(psattr);
-	jl_free(processArgv);
+	//free(processArgv); // alloca do not need free
 
 	JL_CHKB( PR_Close(stderr_child) == PR_SUCCESS, bad_throw );
 	JL_CHKB( PR_Close(stdout_child) == PR_SUCCESS, bad_throw );

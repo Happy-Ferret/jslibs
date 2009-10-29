@@ -656,6 +656,7 @@ ALWAYS_INLINE JSBool JL_ValueOf( JSContext *cx, jsval *val, jsval *rval ) {
 ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFile, bool saveCompFile) {
 
 	JSScript *script = NULL;
+	void *data = NULL;
 
 	char compiledFileName[PATH_MAX];
 	strcpy( compiledFileName, fileName );
@@ -674,7 +675,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		JL_CHKM( file != -1, "Unable to open file \"%s\" for reading.", compiledFileName );
 
 		int compFileSize = compFileStat.st_size; // filelength(file); ?
-		void *data = jl_malloc(compFileSize); // (TBD) free on error
+		data = jl_malloc(compFileSize); // (TBD) free on error
 		int readCount = read( file, data, compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
 		JL_CHKM( readCount != -1 && readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
 		close( file );
@@ -689,11 +690,14 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 			JS_XDRMemSetData(xdr, NULL, 0);
 			JS_XDRDestroy(xdr);
 			jl_free(data);
+			data = NULL;
 			if ( JS_GetScriptVersion(cx, script) < JS_GetVersion(cx) )
 				JL_REPORT_WARNING("Trying to xdr-decode an old script (%s).", compiledFileName);
 			return script; // Done.
 		} else {
 
+			jl_free(data);
+			data = NULL;
 			JS_ClearPendingException(cx);
 		}
 	}
@@ -761,6 +765,9 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	return script;
 
 bad:
+	if ( data )
+		jl_free(data);
+
 	// report a warning ?
 	return script;
 }

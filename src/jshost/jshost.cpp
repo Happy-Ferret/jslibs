@@ -332,6 +332,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 #endif // USE_DEFAULT_ALLOCATORS
 
 	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
+	JS_SetGCCallback(cx, NULL);
 	DestroyHost(cx);
 	JS_ShutDown();
 	cx = NULL;
@@ -359,6 +360,7 @@ bad:
 		disabledFree = true;
 #endif // USE_DEFAULT_ALLOCATORS
 		JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
+		JS_SetGCCallback(cx, NULL);
 		DestroyHost(cx);
 	}
 	JS_ShutDown();

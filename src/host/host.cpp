@@ -693,7 +693,9 @@ static jl_msize_t base_msize;
 static jl_free_t base_free;
 
 #define MAX_LOAD 7
-#define WAIT_HEAD_FILLING 100
+#define WAIT_HEAD_FILLING 50
+#define BIG_ALLOC 4096
+
 
 // block-to-free chain
 static void *head;
@@ -713,27 +715,50 @@ enum MemThreadAction {
 static volatile MemThreadAction threadAction;
 static JLSemaphoreHandler memoryFreeThreadSem;
 
+//#define HEAD_IS_SIZE
+
+
 // alloc functions
 static void* JslibsMalloc( size_t size ) {
 
+#ifndef HEAD_IS_SIZE
 	if (likely( size >= sizeof(void*) ))
 		return base_malloc(size);
 	return base_malloc(sizeof(void*));
+#else
+	size += sizeof(void*);
+	void **ptr = (void**)base_malloc(size);
+	*(unsigned int*)ptr = size;
+	return ptr+1;
+#endif
 }
 
 static void* JslibsCalloc( size_t num, size_t size ) {
 
+#ifndef HEAD_IS_SIZE
 	size = num * size;
 	if (likely( size >= sizeof(void*) ))
 		return base_calloc(size, 1);
 	return base_calloc(sizeof(void*), 1);
+#else
+	size = num * size + sizeof(void*);
+	void **ptr = (void**)base_calloc(size, 1);
+	*(unsigned int*)ptr = size;
+	return ptr+1;
+#endif
 }
 
 static void* JslibsMemalign( size_t alignment, size_t size ) {
 
+#ifndef HEAD_IS_SIZE
 	if (likely( size >= sizeof(void*) ))
 		return base_memalign(alignment, size);
 	return base_memalign(alignment, sizeof(void*));
+#else
+	size += alignment;
+	void **ptr = (void**)base_memalign(alignment, size);
+	...
+#endif
 }
 
 
@@ -753,16 +778,15 @@ static size_t JslibsMsize( void *ptr ) {
 
 static void JslibsFree( void *ptr ) {
 	
-	if (!ptr)
+	if (unlikely( ptr == NULL ))
 		return;
 
-	if (unlikely( load > MAX_LOAD )) { // too many things to free, the thread can not keep pace.
+	if (unlikely( base_msize(ptr) >= BIG_ALLOC || load >= MAX_LOAD )) { // if blocks is big OR too many things to free, the thread can not keep pace.
 
 		base_free(ptr);
 		return;
 	}
 
-//	*(void**)ptr = (void*)JLAtomicExchange((long*)&head, (long)ptr);
 	*(void**)ptr = head;
 	head = ptr;
 	JLAtomicIncrement(&headLength);
@@ -770,19 +794,6 @@ static void JslibsFree( void *ptr ) {
 
 
 ALWAYS_INLINE void FreeHead() {
-
-	//void *next, *tmp = (void*)JLAtomicExchange((long*)&head, 0);
-	//while ( tmp ) {
-	//
-	//	next = *(void**)tmp;
-	//	free(tmp);
-	//	tmp = next;
-	//}
-
-	if ( !head )
-		return;
-
-//	putc('!', stdout);
 
 	headLength = 0;
 
@@ -846,7 +857,6 @@ JSBool MemoryManagerDisableGCEvent( JSContext *cx ) {
 // initialisation and cleanup functions
 bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free ) {
 	
-	
 	base_malloc = *malloc;
 	base_calloc = *calloc;
 	base_memalign = *memalign;
@@ -864,6 +874,7 @@ bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memal
 	load = 0;
 	headLength = 0;
 	head = NULL;
+	JslibsFree(JslibsMalloc(0)); // make head non-NULL
 	memoryFreeThreadSem = JLCreateSemaphore(0);
 	memoryFreeThread = JLThreadStart(MemoryFreeThreadProc, NULL);
 //	JLThreadPriority(memoryFreeThread, JL_THREAD_PRIORITY_LOW);
@@ -882,18 +893,15 @@ bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *ca
 
 	threadAction = MemThreadExit;
 	JLReleaseSemaphore(memoryFreeThreadSem);
-
-	//	JLThreadCancel(memoryFreeThread); // cannot kill the thread while it is calling free() !
+	// beware: Never use JLThreadCancel on a thread that call free().
 	JLWaitThread(memoryFreeThread);
-
-	JLFreeSemaphore(&memoryFreeThreadSem);
 	JLFreeThread(&memoryFreeThread);
+	JLFreeSemaphore(&memoryFreeThreadSem);
 
 	if ( freeQueue ) {
 
 		FreeHead();
-		if ( head )
-			base_free(head);
+		base_free(head);
 	}
 	return true;
 }

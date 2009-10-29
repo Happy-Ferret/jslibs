@@ -240,8 +240,7 @@ static JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 	BufferInitialize(&errBuffer, bufferTypeRealloc, bufferGrowTypeDouble, NULL, NULL, NULL, NULL);
 
 	JSContext *cx = CreateHost(-1, -1, 0);
-	if ( cx == NULL )
-		return 0;
+	JL_CHK( cx != NULL );
 
 	HostPrivate *hpv = GetHostPrivate(cx);
 
@@ -297,6 +296,7 @@ bad:
 	BufferFinalize(&errBuffer);
 	if ( cx )
 		DestroyHost(cx);
+	JLThreadExit();
 	return 0;
 }
 

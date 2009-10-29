@@ -2218,7 +2218,7 @@ DEFINE_FUNCTION_FAST( CallList ) {
 		jsuint length;
 		JL_CHK( JS_GetArrayLength(cx, jsArray, &length) );
 
-		GLuint *lists = (GLuint*)jl_malloc(length * sizeof(GLuint));
+		GLuint *lists = (GLuint*)alloca(length * sizeof(GLuint));
 		jsval value;
 		for (jsuint i=0; i<length; ++i) {
 
@@ -2228,7 +2228,7 @@ DEFINE_FUNCTION_FAST( CallList ) {
 
 		glCallLists(length, GL_UNSIGNED_INT, lists); // http://www.opengl.org/documentation/specs/man_pages/hardcopy/GL/html/gl/calllists.html
 
-		jl_free(lists);
+//		jl_free(lists); // alloca
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument");

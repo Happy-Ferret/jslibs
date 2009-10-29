@@ -105,6 +105,10 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
+	HANDLE heap = GetProcessHeap();
+	ULONG enable = 2;
+	HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable));
+
 	JSContext *cx = NULL;
 
 	errno_t err;
@@ -241,7 +245,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 #endif // USE_DEFAULT_ALLOCATORS
 
 	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
+	JS_SetGCCallback(cx, NULL);
 	DestroyHost(cx);
+	cx = NULL;
 	JS_ShutDown();
 
 	CloseHandle( instanceCheckMutex ); //ReleaseMutex
@@ -255,9 +261,12 @@ bad:
 		disabledFree = true;
 #endif // USE_DEFAULT_ALLOCATORS
 		JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
+		JS_SetGCCallback(cx, NULL);
 		DestroyHost(cx);
 	}
 	JS_ShutDown();
+
+	CloseHandle( instanceCheckMutex ); //ReleaseMutex
 	return -1;
 }
 
