@@ -122,7 +122,7 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 
 	if ( report->errorNumber == JSMSG_OUT_OF_MEMORY ) { // (TBD) do something better
 		
-		fprintf(stderr, "%s\n", report->ucmessage );
+		fprintf(stderr, "%s (%s:%d)\n", report->ucmessage, report->filename, report->lineno );
 		return;
 	}
 
