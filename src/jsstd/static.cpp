@@ -593,7 +593,7 @@ DEFINE_FUNCTION_FAST( ObjectToId ) {
 
 			objectIdAlloced *= 2;
 		}
-		objIdList = (ObjId*)JS_realloc(cx, objIdList, sizeof(ObjId) * objectIdAlloced); // (TBD) free objIdList at the end
+		objIdList = (ObjId*)JS_realloc(cx, objIdList, sizeof(ObjId) * objectIdAlloced); // (TBD) free objIdList at the end !
 		freeSlot = objIdList + prevAlloced;
 		memset(freeSlot, 0,(objectIdAlloced - prevAlloced) * sizeof(ObjId)); // init only new slots
 	}

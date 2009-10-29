@@ -1,6 +1,13 @@
 LoadModule('jstask');
 LoadModule('jsio');
 
+/// many some threads [f]
+
+	var i = 0;
+	while ( i++ < 17 ) {
+
+		new Task(function(){});
+	}
 
 /// many new threads
 

@@ -487,7 +487,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#define JLERROR (0)
+#define JLERROR (0) // (int)false
 #define JLOK (1)
 #define JLTIMEOUT (-2)
 
@@ -615,9 +615,9 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 			struct timeval tv;
 			struct timespec abstime;
 			gettimeofday(&tv, NULL);
-			int64_t then = tv.tv_sec * 1000000 + tv.tv_usec + msTimeout * 1000;
-			abstime.tv_sec = then / 1000000;
-			abstime.tv_nsec = (then % 1000000) * 1000;
+			int64_t then = tv.tv_sec * 1000000L + tv.tv_usec + msTimeout * 1000L;
+			abstime.tv_sec = then / 1000000L;
+			abstime.tv_nsec = (then % 1000000L) * 1000L;
 			switch ( sem_timedwait(semaphore, &abstime) ) {
 				case ETIMEDOUT:
 					return JLTIMEOUT;

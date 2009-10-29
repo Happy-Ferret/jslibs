@@ -102,7 +102,7 @@ DEFINE_FUNCTION( Poll ) {
 		return JS_TRUE;
 	}
 
-	// Optimization to avoid dynamic allocation when it is possible
+	// Optimization to avoid dynamic allocation when it is possible. There is also a potential use of alloca()
 	if ( arrayIds->length > COUNTOF(staticPollDesc) )
 		pollDesc = (PRPollDesc*)jl_malloc(arrayIds->length * sizeof(PRPollDesc));
 	else

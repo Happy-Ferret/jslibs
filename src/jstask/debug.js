@@ -4,16 +4,13 @@ LoadModule('jstask');
 LoadModule('jsstd');
 LoadModule('jsio');
 
-function MyTask() {}
-
 var i = 0;
-while ( !endSignal && i++ < 1000 ) {
+while ( !endSignal && i++ < 300 ) {
 
-	new Task(MyTask);
-	CollectGarbage();
+	new Task(function(){});
 }
 
-		
+
 
 Halt();
 
