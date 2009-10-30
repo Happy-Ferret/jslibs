@@ -242,7 +242,8 @@ static JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 	JSContext *cx = CreateHost(-1, -1, 0);
 	JL_CHK( cx != NULL );
 
-	HostPrivate *hpv = GetHostPrivate(cx);
+	HostPrivate *hpv;
+	hpv = GetHostPrivate(cx);
 
 // allocator must be threadsafe !
 	hpv->alloc.malloc = jl_malloc;
