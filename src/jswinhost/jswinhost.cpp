@@ -207,30 +207,14 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	// arguments
 //	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // see ExecuteScriptFileName()
-	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, moduleFileName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_FIRST_INSTANCE, BOOLEAN_TO_JSVAL(hasPrevInstance?JS_FALSE:JS_TRUE), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, scripthostpath), STRING_TO_JSVAL(JS_NewStringCopyZ(cx, moduleFileName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, scripthostname), STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, isfirstinstance), BOOLEAN_TO_JSVAL(hasPrevInstance?JS_FALSE:JS_TRUE), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	//#pragma comment (lib, "User32.lib")
 	//MessageBox(NULL, scriptName, "script name", 0);
 
-	if ( sizeof(embeddedBootstrapScript)-1 ) {
-
-		uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
-//		JL_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid embedded bootstrap." ); // for plain text scripts.
-		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
-		JL_CHK( xdr );
-		JS_XDRMemSetData(xdr, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1);
-		JSScript *script;
-		JL_CHK( JS_XDRScript(xdr, &script) );
-		JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
-		JS_XDRDestroy(xdr);
-		JSObject *bootstrapScriptObject = JS_NewScriptObject(cx, script);
-		JL_CHK( SetConfigurationReadonlyValue(cx, "bootstrapScript", OBJECT_TO_JSVAL(bootstrapScriptObject)) );
-		jsval tmp;
-		JL_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
-		JS_SetOptions(cx, prevOpt);
-	}
+	JL_CHK( ExecuteBootstrapScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1) ); // -1 because sizeof("") == 1
 
 	jsval rval;
 	const char *argv[] = { scriptName, lpCmdLine };

@@ -1,3 +1,9 @@
+/// configuration objet [ftrm]
+	
+	
+	
+
+
 /// access all properties of the global object [ft]
 
 		for each ( item in global ) {

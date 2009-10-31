@@ -62,6 +62,31 @@ extern bool _unsafeMode;
 	#define IFDEBUG(expr)
 #endif // DEBUG
 
+
+#define JLID_SPEC(name) JLID_##name
+enum {
+	JLID_SPEC( stdout ),
+	JLID_SPEC( stderr ),
+	JLID_SPEC( global ),
+	JLID_SPEC( arguments ),
+	JLID_SPEC( unsafeMode ),
+	JLID_SPEC( _revision ),
+	JLID_SPEC( _configuration ),
+	JLID_SPEC( scripthostpath ),
+	JLID_SPEC( scripthostname ),
+	JLID_SPEC( isfirstinstance ),
+	JLID_SPEC( _getErrorMessage ),
+	JLID_SPEC( bootstrapScript ),
+	JLID_SPEC( _NI_BufferGet ),
+	JLID_SPEC( _NI_StreamRead ),
+	JLID_SPEC( _NI_Matrix44Get ),
+	JLID_SPEC( Get ),
+	JLID_SPEC( Read ),
+	LAST_JSID // see HostPrivate::ids[]
+};
+#undef JLID_SPEC
+
+
 typedef int (*HostOutput)( void *privateData, const char *buffer, unsigned int length );
 
 struct HostPrivate {
@@ -70,15 +95,15 @@ struct HostPrivate {
 	volatile unsigned int maybeGCInterval;
 	JLSemaphoreHandler watchDogSemEnd;
 	JLThreadHandler watchDogThread;
-	bool unsafeMode;
 	HostOutput hostStdOut;
 	HostOutput hostStdErr;
 	jl::Queue moduleList;
 	jl::Queue registredNativeClasses;
-	jsid ids[8];
 	JSClass *stringObjectClass;
-	int camelCase;
 	jl_allocators_t alloc;
+	int camelCase;
+	bool unsafeMode;
+	jsid ids[LAST_JSID];
 };
 
 ALWAYS_INLINE HostPrivate* GetHostPrivate( JSContext *cx ) {
@@ -94,30 +119,23 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 	cx->runtime->data = (void*)hostPrivate;
 }
 
-#define PRIVATE_JSID__NI_BufferGet 0
-#define PRIVATE_JSID__NI_StreamRead 1
-#define PRIVATE_JSID__NI_Matrix44Get 2
-#define PRIVATE_JSID_Get 3
-#define PRIVATE_JSID_Read 4
+ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) {
 
-
-ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, HostPrivate *hostPrivate, const char *name, int index ) {
-
-	jsid id = hostPrivate->ids[index];
+	jsid id = GetHostPrivate(cx)->ids[index];
 	if (likely( id != 0 ))
 		return id;
 	JSString *jsstr = JS_InternString(cx, name);
 	if ( jsstr == 0 )
 		return 0;
-	if ( !JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &id) )
+	if ( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &id) != JS_TRUE )
 		return 0;
-	hostPrivate->ids[index] = id;
+	GetHostPrivate(cx)->ids[index] = id;
 	return id;
 }
 
-
-//#define JL_HOST_PRIVATE
-
+#define JLID_NAME(name) (JLID_##name, #name)
+#define JLID(cx, name) GetPrivateJsid(cx, JLID_##name, JLID_NAME(name))
+// example of use: jsid cfg = JLID(cx, _configuration); char *name = JLID_NAME(_configuration);
 
 ///////////////////////////////////////////////////////////////////////////////
 // common error messages
@@ -1717,7 +1735,8 @@ inline JSBool SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead
 
 inline NIStreamRead StreamReadNativeInterface( JSContext *cx, JSObject *obj ) {
 
-	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "_NI_StreamRead", PRIVATE_JSID__NI_StreamRead);
+//	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "_NI_StreamRead", PRIVATE_JSID__NI_StreamRead);
+	jsid propId = JLID(cx, _NI_StreamRead);
 	void *streamRead;
 	JSObject *obj2;
 	if ( propId == 0 || GetNativeInterface( cx, obj, &obj2, propId, &streamRead ) != JS_TRUE )
@@ -1732,7 +1751,8 @@ inline NIStreamRead StreamReadInterface( JSContext *cx, JSObject *obj ) {
 		return (NIStreamRead)fct;
 
 	jsval res;
-	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "Read", PRIVATE_JSID_Read);
+//	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "Read", PRIVATE_JSID_Read);
+	jsid propId = JLID(cx, Read);
 	if ( obj->getProperty(cx, propId, &res) != JS_TRUE || !JsvalIsFunction(cx, res) )
 		return NULL;
 
@@ -1770,7 +1790,8 @@ inline JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet p
 
 inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj ) {
 
-	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "_NI_BufferGet", PRIVATE_JSID__NI_BufferGet);
+//	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "_NI_BufferGet", PRIVATE_JSID__NI_BufferGet);
+	jsid propId = JLID(cx, _NI_BufferGet);
 	void *fct;
 	JSObject *obj2;
 	if ( propId == 0 || GetNativeInterface( cx, obj, &obj2, propId, &fct ) != JS_TRUE )
@@ -1784,7 +1805,8 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj ) {
 	if ( fct )
 		return (NIBufferGet)fct;
 
-	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "Get", PRIVATE_JSID_Get);
+//	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "Get", PRIVATE_JSID_Get);
+	jsid propId = JLID(cx, Get);
 	jsval res;
 	if ( obj->getProperty(cx, propId, &res) != JS_TRUE || !JsvalIsFunction(cx, res) ) // do not use toString() directly, but Get can call toString().
 		return NULL;
@@ -1823,7 +1845,8 @@ inline JSBool SetMatrix44GetInterface( JSContext *cx, JSObject *obj, NIMatrix44G
 
 inline NIMatrix44Get Matrix44GetNativeInterface( JSContext *cx, JSObject *obj ) {
 
-	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "_NI_Matrix44Get", PRIVATE_JSID__NI_Matrix44Get);
+//	jsid propId = GetPrivateJsid(cx, GetHostPrivate(cx), "_NI_Matrix44Get", PRIVATE_JSID__NI_Matrix44Get);
+	jsid propId = JLID(cx, _NI_Matrix44Get);
 	void *fct;
 	JSObject *obj2;
 	if ( propId == 0 || GetNativeInterface( cx, obj, &obj2, propId, &fct ) != JS_TRUE )

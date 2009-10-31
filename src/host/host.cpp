@@ -83,7 +83,7 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 	if (likely( globalObject != NULL )) {
 
 		jsval fct;
-		if (likely( GetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, &fct) == JS_TRUE && JsvalIsFunction(cx, fct) )) {
+		if (likely( GetConfigurationValue(cx, JLID_NAME(stderr), &fct) == JS_TRUE && JsvalIsFunction(cx, fct) )) {
 			
 			// possible optimization, but not very useful since errors occurs rarely.
 			//JSFunction *fun = GET_FUNCTION_PRIVATE(cx, JSVAL_TO_OBJECT(fct));
@@ -491,31 +491,31 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	void **pGetErrorMessage;
 	pGetErrorMessage = (void**)jl_malloc(sizeof(void*)); // free is done in DestroyHost()
 	*pGetErrorMessage = (void*)&GetErrorMessage; // this indirection is needed for alignement purpose. see PRIVATE_TO_JSVAL and C function alignement.
-	JL_CHK( SetConfigurationPrivateValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, PRIVATE_TO_JSVAL(pGetErrorMessage)) );
+	JL_CHK( SetConfigurationPrivateValue(cx, JLID_NAME(_getErrorMessage), PRIVATE_TO_JSVAL(pGetErrorMessage)) );
 
 
 	pv->hostStdErr = stdErr;
 	pv->hostStdOut = stdOut;
 
 // global functions & properties
-	JL_CHKM( JS_DefineProperty( cx, globalObject, NAME_GLOBAL_GLOBAL_OBJECT, OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "unable to define a property." );
+	JL_CHKM( JS_DefinePropertyById( cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "unable to define a property." );
 	JL_CHKM( JS_DefineFunction( cx, globalObject, GetHostPrivate(cx)->camelCase == 1 ? _NormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), "unable to define a property." );
 	// jslibs is not ready to support UnloadModule()
 	//	JL_CHKM( JS_DefineFunction( cx, globalObject, GetHostPrivate(cx)->camelCase == 1 ? _NormalizeFunctionName(NAME_GLOBAL_FUNCTION_UNLOAD_MODULE) : NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
 
-	JL_CHK( SetConfigurationReadonlyValue(cx, NAME_CONFIGURATION_UNSAFE_MODE, unsafeMode ? JSVAL_TRUE : JSVAL_FALSE) );
+	JL_CHK( SetConfigurationReadonlyValue(cx, JLID_NAME(unsafeMode), unsafeMode ? JSVAL_TRUE : JSVAL_FALSE) );
 
 // support this: var prevStderr = _configuration.stderr; _configuration.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
 	jsval value;
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStdoutFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	JL_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, value) );
+	JL_CHK( SetConfigurationValue(cx, JLID_NAME(stdout), value) );
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, (JSNative)JSDefaultStderrFunction, 1, JSFUN_FAST_NATIVE, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	JL_CHK( SetConfigurationValue(cx, NAME_CONFIGURATION_STDERR, value) );
+	JL_CHK( SetConfigurationValue(cx, JLID_NAME(stderr), value) );
 
 // init static modules
 	JL_CHKM( jslangModuleInit(cx, globalObject), "Unable to initialize jslang." );
 
-	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_MODULE_REVISION_PROPERTY_NAME, INT_TO_JSVAL(JL_SvnRevToInt("$Revision$")), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, _revision), INT_TO_JSVAL(JL_SvnRevToInt("$Revision$")), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -549,7 +549,7 @@ JSBool DestroyHost( JSContext *cx ) {
 	//	don't try to break linked objects with JS_GC(cx) !
 
 	jsval tmp;
-	JL_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, &tmp) );
+	JL_CHK( GetConfigurationValue(cx, JLID_NAME(_getErrorMessage), &tmp) );
 	if ( tmp != JSVAL_VOID && JSVAL_TO_PRIVATE(tmp) )
 		jl_free( JSVAL_TO_PRIVATE(tmp) );
 
@@ -626,7 +626,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	argsObj = JS_NewArrayObject(cx, argc, NULL);
 	JL_CHKM( argsObj != NULL, "Unable to create argument array on the global object." );
 
-	JL_CHKM( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS, OBJECT_TO_JSVAL(argsObj), NULL, NULL, /*JSPROP_READONLY | JSPROP_PERMANENT*/ 0), "unable to store the argument array." );
+	JL_CHKM( JS_DefinePropertyById(cx, globalObject, JLID(cx, arguments), OBJECT_TO_JSVAL(argsObj), NULL, NULL, /*JSPROP_READONLY | JSPROP_PERMANENT*/ 0), "unable to store the argument array." );
 
 	for ( int index = 0; index < argc; index++ ) {
 
@@ -672,7 +672,32 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 
 	//	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633, which can cause crashes in almost any program that uses JS_DestroyScript.
 
-	JL_CHKM( JS_DeleteProperty(cx, globalObject, NAME_GLOBAL_ARGUMENTS ), "Unable to remove argument property." );
+	JL_CHKM( JS_DeletePropertyById(cx, globalObject, JLID(cx, arguments)), "Unable to remove argument property." );
+	JS_SetOptions(cx, prevOpt);
+	return JS_TRUE;
+bad:
+	JS_SetOptions(cx, prevOpt);
+	return JS_FALSE;
+}
+
+
+JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, unsigned int xdrScriptLength ) {
+
+	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
+//	JL_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
+	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
+	JL_CHK( xdr );
+	JS_XDRMemSetData(xdr, xdrScript, xdrScriptLength);
+	JSScript *script;
+	JL_CHK( JS_XDRScript(xdr, &script) );
+	JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
+	JS_XDRDestroy(xdr);
+	JS_GetScriptObject(script);
+	JSObject *bootstrapScriptObject = JS_NewScriptObject(cx, script);
+	JL_CHK( SetConfigurationReadonlyValue(cx, JLID_NAME(bootstrapScript), OBJECT_TO_JSVAL(bootstrapScriptObject)) );
+	jsval tmp;
+	JL_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
+
 	JS_SetOptions(cx, prevOpt);
 	return JS_TRUE;
 bad:
@@ -837,9 +862,7 @@ JSBool NewGCCallback(JSContext *cx, JSGCStatus status) {
 		threadAction = MemThreadProcess;
 		JLReleaseSemaphore(memoryFreeThreadSem);
 	}
-	if ( !prevGCCallback )
-		return JS_TRUE;
-	return prevGCCallback(cx, status);
+	return prevGCCallback ? prevGCCallback(cx, status) : JS_TRUE;
 }
 
 JSBool MemoryManagerEnableGCEvent( JSContext *cx ) {

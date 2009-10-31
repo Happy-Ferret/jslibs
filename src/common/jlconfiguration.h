@@ -12,10 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _JSCONFIGURATION_H_
-#define _JSCONFIGURATION_H_
+#ifndef _JLCONFIGURATION_H_
+#define _JLCONFIGURATION_H_
 
-#include "jlnames.h"
 #include "jlhelper.h"
 
 
@@ -23,7 +22,7 @@ inline JSBool RemoveConfiguration(JSContext *cx) {
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	JL_S_ASSERT( globalObject != NULL, "Unable to find the global object." );
-	return JS_DeleteProperty(cx, globalObject, NAME_CONFIGURATION_OBJECT);
+	return JS_DeleteProperty(cx, globalObject, JLID_NAME(_configuration));
 	JL_BAD;
 }
 
@@ -33,10 +32,15 @@ inline JSObject *GetConfigurationObject(JSContext *cx) {
 	JSObject *cobj, *globalObject = JS_GetGlobalObject(cx);
 	JL_CHK( globalObject );
 	jsval configurationValue;
-	JL_CHK( JS_GetProperty(cx, globalObject, NAME_CONFIGURATION_OBJECT, &configurationValue) );
+//	JL_CHK( JS_GetProperty(cx, globalObject, NAME_CONFIGURATION_OBJECT, &configurationValue) );
+//	jsid configurationId = GetPrivateJsid(cx, GetHostPrivate(cx), NAME_CONFIGURATION_OBJECT, PRIVATE_JSID__configuration);
+	jsid configurationId = JLID(cx, _configuration);
+	JL_CHK( configurationId );
+	JL_CHK( JS_GetPropertyById(cx, globalObject, configurationId, &configurationValue) );
+
 	if ( JSVAL_IS_VOID( configurationValue ) ) { // if configuration object do not exist, we build one
 
-		cobj = JS_DefineObject(cx, globalObject, NAME_CONFIGURATION_OBJECT, NULL, NULL, 0 );
+		cobj = JS_DefineObject(cx, globalObject, JLID_NAME(_configuration), NULL, NULL, 0 );
 		JL_CHK( cobj ); // Doc: If the property already exists, or cannot be created, JS_DefineObject returns NULL.
 	} else {
 		JL_CHK( JSVAL_IS_OBJECT(configurationValue) );
@@ -81,4 +85,4 @@ inline JSBool SetConfigurationPrivateValue(JSContext *cx, const char *name, jsva
 	return JS_TRUE;
 }
 
-#endif // _JSCONFIGURATION_H_
+#endif // _JLCONFIGURATION_H_

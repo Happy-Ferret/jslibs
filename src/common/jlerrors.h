@@ -32,7 +32,7 @@ typedef enum J_ErrNum {
 static JSBool JL_ReportError( JSContext *cx, J_ErrNum name ) {
 
 	jsval tmp;
-	JL_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_GETERRORMESSAGE, &tmp) );
+	JL_CHK( GetConfigurationValue(cx, JLID_NAME(_getErrorMessage), &tmp) );
 	JSErrorCallback errorCallback;
 	errorCallback = NULL;
 	if ( !JSVAL_IS_VOID( tmp ) )

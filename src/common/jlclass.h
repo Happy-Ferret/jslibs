@@ -15,8 +15,6 @@
 #ifndef _JSCLASS_H_
 #define _JSCLASS_H_
 
-#include "jlnames.h"
-
 #include <ctype.h>
 
 #define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.
@@ -217,9 +215,9 @@ static JSBool RemoveStatic( JSContext *cx ) {
 	if ( _constDoubleSpec != NULL ) \
 		JL_CHK( JS_DefineConstDoubles(cx, obj, _constDoubleSpec) ); \
 	JSBool found; \
-	JL_CHK( JS_HasProperty(cx, obj, NAME_MODULE_REVISION_PROPERTY_NAME, &found) ); \
+	JL_CHK( JS_HasPropertyById(cx, obj, JLID(cx, _revision), &found) ); \
 	if ( !found ) \
-		JL_CHK( JS_DefineProperty(cx, obj, NAME_MODULE_REVISION_PROPERTY_NAME, _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
+		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
 	if ( _init ) \
 		JL_CHK( _init(cx, obj) ); \
 	return JS_TRUE; \
@@ -287,7 +285,7 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 		JL_CHKM( found, "Unable to set class flags." ); \
 		if ( _constDoubleSpec != NULL ) \
 			JL_CHK( JS_DefineConstDoubles(cx, dstObj, _constDoubleSpec) ); \
-		JL_CHK( JS_DefineProperty(cx, dstObj, NAME_MODULE_REVISION_PROPERTY_NAME, _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
+		JL_CHK( JS_DefinePropertyById(cx, dstObj, JLID(cx, _revision), _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
 		if ( _init ) \
 			JL_CHK( _init(cx, dstObj) ); \
 		return JS_TRUE; \

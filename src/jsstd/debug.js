@@ -2,12 +2,8 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
 
-while ( !endSignal ) {
-	
-//	SandboxEval('for(;;);');
-	SandboxEval('for(;;);');
-	Print('.');
-}
+Print('test');
+Print('test');
 
 
 Halt(); //////////////////////////////

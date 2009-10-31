@@ -18,17 +18,20 @@
 
 //#include <jsapi.h>
 
+#define NAME_MODULE_INIT "ModuleInit"
+#define NAME_MODULE_RELEASE "ModuleRelease"
+#define NAME_MODULE_FREE "ModuleFree"
+
 #define NAME_GLOBAL_CLASS "Global"
-#define NAME_GLOBAL_GLOBAL_OBJECT "global"
+
 #define NAME_GLOBAL_FUNCTION_LOAD_MODULE "LoadModule"
 #define NAME_GLOBAL_FUNCTION_UNLOAD_MODULE "UnloadModule"
-#define NAME_CONFIGURATION_UNSAFE_MODE "unsafeMode"
-#define NAME_GLOBAL_ARGUMENTS "arguments"
 
 JSContext* CreateHost( size_t maxMem, size_t maxAlloc, size_t maybeGCInterval );
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr, void* userPrivateData );
 JSBool DestroyHost( JSContext *cx );
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );
+JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, unsigned int xdrScriptLength );
 
 bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free );
 JSBool MemoryManagerEnableGCEvent( JSContext *cx );

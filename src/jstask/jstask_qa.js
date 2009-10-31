@@ -1,7 +1,7 @@
 LoadModule('jstask');
 LoadModule('jsio');
 
-/// many some threads [f]
+/// some new threads [f]
 
 	var i = 0;
 	while ( i++ < 17 ) {

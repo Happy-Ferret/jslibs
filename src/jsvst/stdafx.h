@@ -33,7 +33,6 @@
 #include "jlhelper.h"
 
 #include "../host/host.h"
-#include "jlnames.h"
 
 /*
 #include "jsstddef.h"
@@ -74,7 +73,6 @@
 #include "jlhelper.h"
 
 #include "../host/host.h"
-#include "jlnames.h"
 
 /*
 #include "jsstddef.h"

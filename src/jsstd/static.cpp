@@ -543,7 +543,7 @@ struct ObjId {
 
 ObjId *objIdList = NULL;
 unsigned int lastObjectId = 0;
-unsigned int objectIdAlloced = 0;
+unsigned int objectIdAllocated = 0;
 
 JSGCCallback prevObjectIdGCCallback = NULL;
 
@@ -551,7 +551,7 @@ JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 
 	if ( status == JSGC_MARK_END ) {
 
-		for ( ObjId *it = objIdList, *end = objIdList + objectIdAlloced; it < end; ++it ) {
+		for ( ObjId *it = objIdList, *end = objIdList + objectIdAllocated; it < end; ++it ) {
 
 			if ( it->obj && JS_IsAboutToBeFinalized(cx, it->obj) ) {
 
@@ -573,7 +573,7 @@ DEFINE_FUNCTION_FAST( ObjectToId ) {
 
 	ObjId *freeSlot;
 	freeSlot = NULL;
-	for ( ObjId *it = objIdList, *end = objIdList + objectIdAlloced; it < end; ++it ) {
+	for ( ObjId *it = objIdList, *end = objIdList + objectIdAllocated; it < end; ++it ) {
 
 		if ( it->obj == obj )
 			return UIntToJsval(cx, it->id, JL_FRVAL);
@@ -583,19 +583,19 @@ DEFINE_FUNCTION_FAST( ObjectToId ) {
 
 	if ( !freeSlot ) {
 
-		unsigned int prevAlloced = objectIdAlloced;
+		unsigned int prevAlloced = objectIdAllocated;
 
 		if ( !objIdList ) {
 
 			prevObjectIdGCCallback = JS_SetGCCallback(cx, ObjectIdGCCallback);
-			objectIdAlloced = 32;
+			objectIdAllocated = 32;
 		} else {
 
-			objectIdAlloced *= 2;
+			objectIdAllocated *= 2;
 		}
-		objIdList = (ObjId*)JS_realloc(cx, objIdList, sizeof(ObjId) * objectIdAlloced); // (TBD) free objIdList at the end !
+		objIdList = (ObjId*)JS_realloc(cx, objIdList, sizeof(ObjId) * objectIdAllocated); // (TBD) free objIdList at the end !
 		freeSlot = objIdList + prevAlloced;
-		memset(freeSlot, 0,(objectIdAlloced - prevAlloced) * sizeof(ObjId)); // init only new slots
+		memset(freeSlot, 0, (objectIdAllocated - prevAlloced) * sizeof(ObjId)); // init only new slots
 	}
 
 	freeSlot->id = ++lastObjectId;
@@ -635,7 +635,7 @@ DEFINE_FUNCTION_FAST( IdToObject ) {
 
 	if ( id > 0 && id <= lastObjectId ) {
 
-		for ( ObjId *it = objIdList, *end = objIdList + objectIdAlloced; it < end; ++it ) {
+		for ( ObjId *it = objIdList, *end = objIdList + objectIdAllocated; it < end; ++it ) {
 
 			if ( it->id == id ) {
 
@@ -1013,7 +1013,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Print ) {
 
 	jsval fval;
-	JL_CHK( GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, &fval) );
+	JL_CHK( GetConfigurationValue(cx, JLID_NAME(stdout), &fval) );
 	*JL_FRVAL = JSVAL_VOID;
 	if ( JsvalIsFunction(cx, fval) )
 		return JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fval, JL_ARGC, JL_FARGV, &fval);
@@ -1335,17 +1335,18 @@ $TOC_MEMBER $INAME
  $BOOL $INAME
   Set to $TRUE, this property desactivates the garbage collector.
 **/
-JSBool VetoingCallback(JSContext *cx, JSGCStatus status) {
+
+JSGCCallback prevJSGCCallback = NULL; // (TBD) restore the previous callback at the end (on REMOVE_CLASS ?)
+
+JSBool VetoingGCCallback(JSContext *cx, JSGCStatus status) {
 
 	// doc. JSGC_BEGIN: Start of GC. The callback may prevent GC from starting by returning JS_FALSE.
 	//      But even if the callback returns JS_TRUE, the garbage collector may determine that GC is not necessary,
 	//      in which case the other three callbacks are skipped.
 	if ( status == JSGC_BEGIN )
 		return JS_FALSE;
-	return JS_TRUE;
+	return prevJSGCCallback ? prevJSGCCallback(cx, status) : JS_TRUE;
 }
-
-JSGCCallback prevJSGCCallback = NULL; // (TBD) restore the previous callback at the end (on REMOVE_CLASS ?)
 
 DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
 
@@ -1355,13 +1356,13 @@ DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
 	JL_CHK( JsvalToBool(cx, *vp, &disableGC) );
 	if ( disableGC ) {
 
-		JSGCCallback tmp = JS_SetGCCallback(cx, VetoingCallback);
-		if ( tmp != VetoingCallback )
+		JSGCCallback tmp = JS_SetGCCallback(cx, VetoingGCCallback);
+		if ( tmp != VetoingGCCallback )
 			prevJSGCCallback = tmp;
 	} else {
 
 		JSGCCallback tmp = JS_SetGCCallback(cx, prevJSGCCallback);
-		if ( tmp != VetoingCallback )
+		if ( tmp != VetoingGCCallback )
 			JS_SetGCCallback(cx, tmp);
 	}
 	return JS_TRUE;
@@ -1373,7 +1374,7 @@ DEFINE_PROPERTY_GETTER( disableGarbageCollection ) {
 
 	JSGCCallback cb = JS_SetGCCallback(cx, NULL);
 	JS_SetGCCallback(cx, cb);
-	*vp = cb == VetoingCallback ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = cb == VetoingGCCallback ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
 }

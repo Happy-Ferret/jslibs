@@ -40,7 +40,7 @@ static unsigned char embeddedBootstrapScript[] =
 #define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { fprintf(stderr, errorMessage ); goto bad; }
 
 
-bool gEndSignal = false; // (TBD) volatile ?
+volatile bool gEndSignal = false;
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
@@ -49,7 +49,11 @@ JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	return JsvalToBool(cx, *vp, &gEndSignal);
+	bool tmp;
+	if ( JsvalToBool(cx, *vp, &tmp) != JS_TRUE )
+		return JS_FALSE;
+	gEndSignal = tmp;
+	return JS_TRUE;
 }
 
 
@@ -260,27 +264,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 //	RT_HOST_MAIN_ASSERT( name != NULL, "unable to get module FileName." );
 
-	JL_CHK( SetPropertyString(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_PATH, hostPath) );
-	JL_CHK( SetPropertyString(cx, globalObject, NAME_GLOBAL_SCRIPT_HOST_NAME, hostName) );
+	JL_CHK( SetPropertyString(cx, globalObject, JLID_NAME(scripthostpath), hostPath) );
+	JL_CHK( SetPropertyString(cx, globalObject, JLID_NAME(scripthostname), hostName) );
 
-	if ( sizeof(embeddedBootstrapScript)-1 ) {
-
-		uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
-//		JL_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
-		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
-		JL_CHK( xdr );
-		JS_XDRMemSetData(xdr, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1);
-		JSScript *script;
-		JL_CHK( JS_XDRScript(xdr, &script) );
-		JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
-		JS_XDRDestroy(xdr);
-		JS_GetScriptObject(script);
-		JSObject *bootstrapScriptObject = JS_NewScriptObject(cx, script);
-		JL_CHK( SetConfigurationReadonlyValue(cx, "bootstrapScript", OBJECT_TO_JSVAL(bootstrapScriptObject)) );
-		jsval tmp;
-		JL_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
-		JS_SetOptions(cx, prevOpt);
-	}
+	JL_CHK( ExecuteBootstrapScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1) ); // -1 because sizeof("") == 1
 
 	if ( useFileBootstrapScript ) {
 
@@ -350,7 +337,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 //		_CrtMemDumpAllObjectsSince(NULL);
 	}
 #endif
-
+//	flush(stdout);
+//	flush(stderr);
 	return exitValue;
 bad:
 

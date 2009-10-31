@@ -33,7 +33,7 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 int _puts(JSContext *cx, const char *str) {
 
 	jsval stdoutFunction;
-	if ( GetConfigurationValue(cx, NAME_CONFIGURATION_STDOUT, &stdoutFunction) && JsvalIsFunction(cx, stdoutFunction) ) {
+	if ( GetConfigurationValue(cx, JLID_NAME(stdout), &stdoutFunction) && JsvalIsFunction(cx, stdoutFunction) ) {
 
 		size_t len = strlen(str);
 		JSString *jsstr = JS_NewStringCopyN(cx, str, len);

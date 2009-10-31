@@ -17,7 +17,7 @@
 	LoadModule('jsstd');
 	LoadModule('jsio');
 	currentDirectory += '/../..';
-	arguments = Array.concat('qa.js', '-gcZeal 0 -flag f -rep 10 -nogcBetweenTests'.split(' '));
+	arguments = Array.concat('qa.js', '-quiet -gcZeal 2 -loop -rep 3 -nogcBetween -exclude jstask'.split(' '));
 	Exec(arguments[0], false);
 	throw 0;
 

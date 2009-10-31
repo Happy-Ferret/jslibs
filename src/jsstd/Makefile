@@ -2,6 +2,6 @@ TARGET     = jsstd.so
 SRC        = $(wildcard *.cpp)
 INCLUDES   =
 STATICLIBS =
-SHAREDLIBS =
+SHAREDLIBS = -lpthread
 
 include ../rules.mk
