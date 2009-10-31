@@ -612,12 +612,13 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 				return JLOK;
 		} else {
 
+			// see also: struct timespec ts; clock_gettime(CLOCK_REALTIME, &ts); link with -lrt
+			struct timespec ts;
 			struct timeval tv;
-			struct timespec abstime;
 			gettimeofday(&tv, NULL);
-			int64_t then = tv.tv_sec * 1000000L + tv.tv_usec + msTimeout * 1000L;
-			abstime.tv_sec = then / 1000000L;
-			abstime.tv_nsec = (then % 1000000L) * 1000L;
+			ts.tv_nsec = tv.tv_usec * 1000UL + (msTimeout % 1000)*1000000UL;
+			ts.tv_sec = tv.tv_sec + msTimeout / 1000UL + ts.tv_nsec / 1000000000UL;
+			ts.tv_nsec %= 1000000000UL;
 			switch ( sem_timedwait(semaphore, &abstime) ) {
 				case ETIMEDOUT:
 					return JLTIMEOUT;
