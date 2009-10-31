@@ -245,9 +245,9 @@ function LaunchTests(itemList, cfg) {
 
 			cfg.quiet || Print( ' - '+testIndex+' - '+cx.item.file+' - '+ cx.item.name );
 
-			cfg.nogcBetweenTests || CollectGarbage();
-
 			gcZeal = cfg.gcZeal;
+
+			cfg.nogcBetweenTests || CollectGarbage();
 			disableGarbageCollection = cfg.nogcDuringTests;
 
 			try {
@@ -266,10 +266,11 @@ function LaunchTests(itemList, cfg) {
 				CommonReportIssue(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', ex );
 			}
 
-			disableGarbageCollection = false;
 //			gcZeal = 0;
-			
+
+			disableGarbageCollection = cfg.nogcBetweenTests;
 			cfg.nogcBetweenTests || CollectGarbage();
+			
 			cfg.quiet || Print('\n');
 
 		}
