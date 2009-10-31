@@ -34,7 +34,8 @@ inline JSObject *GetConfigurationObject(JSContext *cx) {
 	jsval configurationValue;
 //	JL_CHK( JS_GetProperty(cx, globalObject, NAME_CONFIGURATION_OBJECT, &configurationValue) );
 //	jsid configurationId = GetPrivateJsid(cx, GetHostPrivate(cx), NAME_CONFIGURATION_OBJECT, PRIVATE_JSID__configuration);
-	jsid configurationId = JLID(cx, _configuration);
+	jsid configurationId;
+	configurationId = JLID(cx, _configuration);
 	JL_CHK( configurationId );
 	JL_CHK( JS_GetPropertyById(cx, globalObject, configurationId, &configurationValue) );
 

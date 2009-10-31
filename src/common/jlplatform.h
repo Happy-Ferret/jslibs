@@ -619,7 +619,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 			ts.tv_nsec = tv.tv_usec * 1000UL + (msTimeout % 1000)*1000000UL;
 			ts.tv_sec = tv.tv_sec + msTimeout / 1000UL + ts.tv_nsec / 1000000000UL;
 			ts.tv_nsec %= 1000000000UL;
-			switch ( sem_timedwait(semaphore, &abstime) ) {
+			switch ( sem_timedwait(semaphore, &ts) ) {
 				case ETIMEDOUT:
 					return JLTIMEOUT;
 				case 0:
