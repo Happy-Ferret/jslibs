@@ -397,10 +397,9 @@ ALWAYS_INLINE double AccurateTimeCounter() {
 	result = ::QueryPerformanceCounter(&performanceCount);
 	return 1000 * performanceCount.QuadPart / (double)frequency.QuadPart;
 #elif defined XP_UNIX
-	struct timeval time;
-	struct timezone tz;
-	gettimeofday(&time, &tz);
-	return (double)time.tv_sec / 1000L*1000L;
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return tv.tv_sec * (double)1000 + tv.tv_usec / (double)1000;
 #endif
 	return -1; // (TBD) see. js_IntervalNow() or JS_Now() ? no, it could be expensive and is not suitable for calls when a GC lock is held.
 /* see also:
