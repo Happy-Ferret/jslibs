@@ -693,7 +693,8 @@ JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, unsigned int xdrS
 	JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
 	JS_XDRDestroy(xdr);
 	JS_GetScriptObject(script);
-	JSObject *bootstrapScriptObject = JS_NewScriptObject(cx, script);
+	JSObject *bootstrapScriptObject;
+	bootstrapScriptObject = JS_NewScriptObject(cx, script);
 	JL_CHK( SetConfigurationReadonlyValue(cx, JLID_NAME(bootstrapScript), OBJECT_TO_JSVAL(bootstrapScriptObject)) );
 	jsval tmp;
 	JL_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
