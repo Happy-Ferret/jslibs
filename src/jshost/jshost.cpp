@@ -267,7 +267,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JL_CHK( SetPropertyString(cx, globalObject, JLID_NAME(scripthostpath), hostPath) );
 	JL_CHK( SetPropertyString(cx, globalObject, JLID_NAME(scripthostname), hostName) );
 
-	JL_CHK( ExecuteBootstrapScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1) ); // -1 because sizeof("") == 1
+	if ( sizeof(embeddedBootstrapScript)-1 > 0 )
+		JL_CHK( ExecuteBootstrapScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1) ); // -1 because sizeof("") == 1
 
 	if ( useFileBootstrapScript ) {
 
