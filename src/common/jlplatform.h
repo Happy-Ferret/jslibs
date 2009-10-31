@@ -394,12 +394,18 @@ ALWAYS_INLINE double AccurateTimeCounter() {
 #if defined XP_WIN
 	LARGE_INTEGER frequency, performanceCount;
 	BOOL result = ::QueryPerformanceFrequency(&frequency);
+	DWORD_PTR oldmask = ::SetThreadAffinityMask(::GetCurrentThread(), 0); // manage bug in BIOS or HAL
 	result = ::QueryPerformanceCounter(&performanceCount);
-	return 1000 * performanceCount.QuadPart / (double)frequency.QuadPart;
+	::SetThreadAffinityMask(::GetCurrentThread(), oldmask);
+	return (double)1000 * performanceCount.QuadPart / (double)frequency.QuadPart;
 #elif defined XP_UNIX
+
+	static long initTime = 0; // initTime helps in avoiding precision waste.
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	return tv.tv_sec * (double)1000 + tv.tv_usec / (double)1000;
+	if ( initTime == 0 )
+		initTime = tv.tv_sec;
+	return (double)(tv.tv_sec-initTime) * (double)1000 + tv.tv_usec / (double)1000;
 #endif
 	return -1; // (TBD) see. js_IntervalNow() or JS_Now() ? no, it could be expensive and is not suitable for calls when a GC lock is held.
 /* see also:
