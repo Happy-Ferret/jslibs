@@ -392,14 +392,16 @@ ALWAYS_INLINE void SleepMilliseconds(unsigned int ms) {
 ALWAYS_INLINE double AccurateTimeCounter() {
 
 #if defined XP_WIN
+	static LONGLONG initTime = 0; // initTime helps in avoiding precision waste.
 	LARGE_INTEGER frequency, performanceCount;
 	BOOL result = ::QueryPerformanceFrequency(&frequency);
 	DWORD_PTR oldmask = ::SetThreadAffinityMask(::GetCurrentThread(), 0); // manage bug in BIOS or HAL
 	result = ::QueryPerformanceCounter(&performanceCount);
+	if ( initTime == 0 )
+		initTime = performanceCount.QuadPart;
 	::SetThreadAffinityMask(::GetCurrentThread(), oldmask);
-	return (double)1000 * performanceCount.QuadPart / (double)frequency.QuadPart;
+	return (double)1000 * (performanceCount.QuadPart-initTime) / (double)frequency.QuadPart;
 #elif defined XP_UNIX
-
 	static long initTime = 0; // initTime helps in avoiding precision waste.
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
