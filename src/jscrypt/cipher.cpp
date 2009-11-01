@@ -155,19 +155,19 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( JsvalToString(cx, &argv[1], &cipherName) ); // warning: GC on the returned buffer !
 
 	const char *key;
-	size_t keyLength;
+	unsigned int keyLength;
 	JL_CHK( JsvalToStringAndLength(cx, &argv[2], &key, &keyLength) ); // warning: GC on the returned buffer !
 
 	const char *IV;
 	IV = NULL;
-	size_t IVLength;
+	unsigned int IVLength;
 	IVLength = 0;
 	if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) )
 		JL_CHK( JsvalToStringAndLength(cx, &argv[3], &IV, &IVLength ) ); // warning: GC on the returned buffer !
 
 	const char *optarg;
 	optarg = NULL;
-	size_t optargLength;
+	unsigned int optargLength;
 	optargLength = 0;
 	if ( argc >= 5 && !JSVAL_IS_VOID( argv[4] ) )
 		JL_CHK( JsvalToStringAndLength(cx, &argv[4], &optarg, &optargLength ) ); // warning: GC on the returned buffer !
@@ -197,64 +197,64 @@ DEFINE_CONSTRUCTOR() {
 		case mode_ecb: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_ECB));
 			JL_S_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_S_ASSERT( (int)keyLength >= cipher->min_key_length && (int)(int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+			JL_S_ASSERT( keyLength >= (unsigned)cipher->min_key_length && keyLength <= (unsigned)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
 //			JL_S_ASSERT( IV == NULL, "Initialization vector is invalid for this mode." );
 			JL_S_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
-			err = ecb_start( cipherIndex, (unsigned char *)key, (int)keyLength, numRounds, (symmetric_ECB *)pv->symmetric_XXX );
+			err = ecb_start( cipherIndex, (unsigned char *)key, (signed)keyLength, numRounds, (symmetric_ECB *)pv->symmetric_XXX );
 			break;
 		}
 		case mode_cfb: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_CFB));
 			JL_S_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_S_ASSERT( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+			JL_S_ASSERT( keyLength >= (unsigned)cipher->min_key_length && keyLength <= (unsigned)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
 //			JL_S_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			JL_S_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
-			err = cfb_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (int)keyLength, numRounds, (symmetric_CFB *)pv->symmetric_XXX );
+			err = cfb_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (signed)keyLength, numRounds, (symmetric_CFB *)pv->symmetric_XXX );
 			break;
 		}
 		case mode_ofb: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_OFB));
 			JL_S_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_S_ASSERT( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+			JL_S_ASSERT( keyLength >= (unsigned)cipher->min_key_length && keyLength <= (unsigned)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
 //			JL_S_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			JL_S_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
-			err = ofb_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (int)keyLength, numRounds, (symmetric_OFB *)pv->symmetric_XXX );
+			err = ofb_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (signed)keyLength, numRounds, (symmetric_OFB *)pv->symmetric_XXX );
 			break;
 		}
 		case mode_cbc: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_CBC));
 			JL_S_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_S_ASSERT( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+			JL_S_ASSERT( keyLength >= (unsigned)cipher->min_key_length && keyLength <= (unsigned)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
 //			JL_S_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			JL_S_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
-			err = cbc_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (int)keyLength, numRounds, (symmetric_CBC *)pv->symmetric_XXX );
+			err = cbc_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (signed)keyLength, numRounds, (symmetric_CBC *)pv->symmetric_XXX );
 			break;
 		}
 		case mode_ctr: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_CTR));
 			JL_S_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_S_ASSERT( (int)keyLength >= cipher->min_key_length && (int)keyLength <= (size_t)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+			JL_S_ASSERT( keyLength >= (unsigned)cipher->min_key_length && keyLength <= (unsigned)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
 //			JL_S_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			JL_S_ASSERT( optarg == NULL, "invalid 'arg' argument for this mode." );
-			err = ctr_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (int)keyLength, numRounds, CTR_COUNTER_LITTLE_ENDIAN, (symmetric_CTR *)pv->symmetric_XXX );
+			err = ctr_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (signed)keyLength, numRounds, CTR_COUNTER_LITTLE_ENDIAN, (symmetric_CTR *)pv->symmetric_XXX );
 			break;
 		}
 		case mode_lrw: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_LRW));
 			JL_S_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_S_ASSERT( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+			JL_S_ASSERT( keyLength >= (unsigned)cipher->min_key_length && keyLength <= (unsigned)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
 //			JL_S_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			JL_S_ASSERT( optargLength == (int)keyLength, "The tweak length must be %d bytes length (key size)", (int)keyLength );
-			err = lrw_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (int)keyLength, (unsigned char *)optarg, numRounds, (symmetric_LRW *)pv->symmetric_XXX );
+			err = lrw_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (signed)keyLength, (unsigned char *)optarg, numRounds, (symmetric_LRW *)pv->symmetric_XXX );
 			break;
 		}
 		case mode_f8: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_F8));
 			JL_S_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_S_ASSERT( (int)keyLength >= cipher->min_key_length && (int)keyLength <= cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
+			JL_S_ASSERT( keyLength >= (unsigned)cipher->min_key_length && keyLength <= (unsigned)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
 //			JL_S_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			JL_S_ASSERT( optargLength > 0, "This mode need the salt argument" );
-			err = f8_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (int)keyLength, (unsigned char *)optarg, optargLength, numRounds, (symmetric_F8 *)pv->symmetric_XXX );
+			err = f8_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (signed)keyLength, (unsigned char *)optarg, optargLength, numRounds, (symmetric_F8 *)pv->symmetric_XXX );
 			break;
 		}
 	}

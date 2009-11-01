@@ -152,5 +152,5 @@ JSBool ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
 	JS_SetReservedSlot( cx, error, 1, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage != NULL ? errorMessage : ZConstString(errorCode) )) );
 	JL_SAFE( ExceptionSetScriptLocation(cx, error) );
-	JL_BAD;
+	return JS_FALSE;
 }

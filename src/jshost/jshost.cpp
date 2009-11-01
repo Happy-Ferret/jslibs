@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 #ifndef USE_DEFAULT_ALLOCATORS
 	MemoryManagerEnableGCEvent(cx);
-#endif USE_DEFAULT_ALLOCATORS
+#endif // USE_DEFAULT_ALLOCATORS
 
 	HostPrivate *hpv;
 	hpv = GetHostPrivate(cx);
@@ -249,7 +249,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 //	strcpy(hostFullPath, argv[0]);
 #endif // XP_WIN
 
-	char *hostPath, *hostName;
+	char *hostName;
+	const char *hostPath;
 	hostName = strrchr( hostFullPath, PATH_SEPARATOR );
 	if ( hostName != NULL ) {
 

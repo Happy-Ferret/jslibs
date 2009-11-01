@@ -40,6 +40,9 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 		return;
 		
 	int status = iconv_close(pv->cd); // if ( status == -1 ) error is in errno.
+	if ( status == -1 )
+		JL_REPORT_WARNING("iconv_close failure in Iconv finalize (%d).", errno);
+
 	JS_free(cx, pv);
 }
 

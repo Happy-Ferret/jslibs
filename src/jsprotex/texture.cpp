@@ -1993,11 +1993,9 @@ DEFINE_FUNCTION_FAST( Resize ) {
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
-	int width;
+	unsigned int width, height, channels;
 	width = tex->width;
-	int height;
 	height = tex->height;
-	unsigned int channels;
 	channels = tex->channels;
 
 	size_t newWidth, newHeight;
@@ -2156,7 +2154,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	int size;
 	size = (int)sqrtf(count);
 
-	JL_S_ASSERT( size * size == count, "Invalid convolution kernel size.");
+	JL_S_ASSERT( size * size == (signed)count, "Invalid convolution kernel size.");
 
 	BorderMode borderMode;
 	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(2), &borderMode) );

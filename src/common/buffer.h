@@ -178,6 +178,8 @@ inline char *BufferNewChunk( Buffer *buffer, size_t maxLength ) {
 		return chunk->begin + chunk->pos;
 
 	switch ( buffer->type == bufferTypeAuto ? GuessType(buffer, buffer->chunkPos, maxLength) : buffer->type ) {
+		case bufferTypeAuto:
+			return NULL; // invalid case.
 		case bufferTypeRealloc:
 			chunk->size += NextChunkSize(buffer, buffer->chunkPos, maxLength);
 			chunk->begin = (char*)_BufferRealloc(buffer, chunk->begin, chunk->size);

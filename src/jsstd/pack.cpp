@@ -478,7 +478,6 @@ DEFINE_PROPERTY( systemIsBigEndian ) {
 
 	*vp = BOOLEAN_TO_JSVAL( systemEndian == BigEndian );
 	return JS_TRUE;
-	JL_BAD;
 }
 
 JSBool Init(JSContext *cx, JSObject *obj) {

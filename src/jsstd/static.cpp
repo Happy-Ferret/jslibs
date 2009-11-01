@@ -1376,7 +1376,6 @@ DEFINE_PROPERTY_GETTER( disableGarbageCollection ) {
 	JS_SetGCCallback(cx, cb);
 	*vp = cb == VetoingGCCallback ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
-	JL_BAD;
 }
 
 

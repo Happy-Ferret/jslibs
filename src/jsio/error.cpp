@@ -152,7 +152,7 @@ JSBool ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) 
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
 	JS_SetReservedSlot( cx, error, 1, INT_TO_JSVAL(osError) );
 	JL_SAFE( ExceptionSetScriptLocation(cx, error) );
-	JL_BAD;
+	return JS_FALSE;
 }
 
 

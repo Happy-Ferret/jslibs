@@ -471,7 +471,15 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 
 	jsval argv[64+1]; // argv[0] is rval
 
-	if ( sArgc > COUNTOF(argv)-1 ) {
+	// sArgc: If this parameter is -1, then the SQL function or aggregate may take any number of arguments between 0 and the limit set by sqlite3_limit(SQLITE_LIMIT_FUNCTION_ARG).
+	
+	if ( sArgc == -1 ) {
+
+		sqlite3_result_error(sCx, "Variadic arguments not supported", -1 );
+		goto bad;
+	}
+
+	if ( (unsigned)sArgc > COUNTOF(argv)-1 ) {
 
 		sqlite3_result_error(sCx, "Too many arguments", -1 );
 		return;

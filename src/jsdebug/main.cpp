@@ -201,7 +201,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		if ( !filename )
 			continue;
 		uintN lineno = JS_GetScriptBaseLineNumber(cx, script);
-		JSFunction *fun = JS_GetFrameFunction(cx, fp);
+//???		JSFunction *fun = JS_GetFrameFunction(cx, fp);
 		NewScriptHook(cx, filename, lineno, script, NULL, NULL);
 	}
 

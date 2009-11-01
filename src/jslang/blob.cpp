@@ -591,7 +591,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 		
 		jsval arg2 = JL_FARG(2);
 
-		if ( JSVAL_IS_INT(arg2) && JSVAL_TO_INT(arg2) < 0 || JsvalIsNInfinity(cx, arg2) ) {
+		if ( ( JSVAL_IS_INT(arg2) && JSVAL_TO_INT(arg2) < 0 ) || JsvalIsNInfinity(cx, arg2) ) {
 			
 			start = 0;
 		} else {
@@ -843,7 +843,6 @@ DEFINE_SET_PROPERTY() {
 		return JS_TRUE;
 	JL_REPORT_WARNING( "Cannot modify immutable objects." );
 	return JS_TRUE;
-	JL_BAD;
 }
 
 

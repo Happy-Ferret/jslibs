@@ -314,9 +314,9 @@ DEFINE_FUNCTION( List ) {
 			status = PR_GetFileInfo( fileName, &fileInfo );
 			JL_CHKB( status == PR_SUCCESS, bad_throw );
 
-			if ( flags & _SKIP_FILE && fileInfo.type == PR_FILE_FILE ||
-				  flags & _SKIP_DIRECTORY && fileInfo.type == PR_FILE_DIRECTORY ||
-				  flags & _SKIP_OTHER && fileInfo.type == PR_FILE_OTHER )
+			if ( ((flags & _SKIP_FILE) && fileInfo.type == PR_FILE_FILE) ||
+				  ((flags & _SKIP_DIRECTORY) && fileInfo.type == PR_FILE_DIRECTORY) ||
+				  ((flags & _SKIP_OTHER) && fileInfo.type == PR_FILE_OTHER) )
 				continue;
 		}
 

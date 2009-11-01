@@ -106,9 +106,7 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 	pv = GetHostPrivate(cx);
 	if (unlikely( pv == NULL || pv->hostStdErr == NULL ))
 		return;
-
 	pv->hostStdErr(pv->privateData, message, length); // else, use the default.
-bad:
 	return;
 }
 
@@ -122,7 +120,7 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 
 	if ( report->errorNumber == JSMSG_OUT_OF_MEMORY ) { // (TBD) do something better
 		
-		fprintf(stderr, "%s (%s:%d)\n", report->ucmessage, report->filename, report->lineno );
+		fprintf(stderr, "%s (%s:%d)\n", message, report->filename, report->lineno );
 		return;
 	}
 

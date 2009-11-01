@@ -103,7 +103,7 @@ DEFINE_FUNCTION( Poll ) {
 	}
 
 	// Optimization to avoid dynamic allocation when it is possible. There is also a potential use of alloca()
-	if ( arrayIds->length > COUNTOF(staticPollDesc) )
+	if ( (unsigned)arrayIds->length > COUNTOF(staticPollDesc) )
 		pollDesc = (PRPollDesc*)jl_malloc(arrayIds->length * sizeof(PRPollDesc));
 	else
 		pollDesc = staticPollDesc;

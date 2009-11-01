@@ -422,7 +422,7 @@ DEFINE_PROPERTY( contentSetter ) {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 	const char *buf;
-	size_t len;
+	unsigned int len;
 	JL_CHK( JsvalToStringAndLength(cx, vp, &buf, &len) );
 	PRInt32 bytesSent;
 	bytesSent = PR_Write( fd, buf, len );
@@ -431,7 +431,7 @@ DEFINE_PROPERTY( contentSetter ) {
 		PR_Close(fd);
 		return ThrowIoError(cx);
 	}
-	JL_S_ASSERT( bytesSent == len, "unable to set content" );
+	JL_S_ASSERT( (signed)bytesSent == len, "unable to set content" );
 	if ( PR_Close(fd) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	return JS_TRUE;

@@ -255,7 +255,7 @@ static char GCTraceFileName[PATH_MAX]; // (TBD) fix static keyword issue
 
 JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 
-	const char *statusStr[4] = { "JSGC_BEGIN", "JSGC_END", "JSGC_MARK_END", "JSGC_FINALIZE_END" };
+//	const char *statusStr[4] = { "JSGC_BEGIN", "JSGC_END", "JSGC_MARK_END", "JSGC_FINALIZE_END" };
 	if ( status == JSGC_MARK_END || status == JSGC_FINALIZE_END )
 		return JS_TRUE;
 
@@ -269,7 +269,7 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 
 	FILE *dumpFile;
 
-	if ( GCTraceFileName && GCTraceFileName[0] ) {
+	if ( GCTraceFileName[0] ) {
 
 		dumpFile = fopen(GCTraceFileName, "a");
 		if (!dumpFile) {
@@ -303,7 +303,7 @@ DEFINE_FUNCTION_FAST( TraceGC )
 	if ( argc > 0 ) { // start GC dump
 
 		jsval *argv = JS_ARGV(cx, vp);
-		JSObject *obj = JS_THIS_OBJECT(cx, vp);
+//		JSObject *obj = JS_THIS_OBJECT(cx, vp);
 
 		char *fileName = NULL;
 
@@ -1517,6 +1517,8 @@ DEFINE_PROPERTY( processTime ) {
 
 #endif // XP_WIN
 
+	JL_REPORT_WARNING("Not implemented.");
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -1580,6 +1582,8 @@ DEFINE_PROPERTY( cpuLoad ) {
 
 #endif // XP_WIN
 
+	JL_REPORT_WARNING("Not implemented.");
+	return JS_TRUE;
 	JL_BAD;
 }
 
