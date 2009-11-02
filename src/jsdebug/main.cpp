@@ -185,6 +185,12 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **sc
 
 
 
+void SourceHandler(const char *filename, uintN lineno, jschar *str, size_t length, void **listenerTSData, void *closure) {
+
+}
+
+
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	JL_CHK( InitJslibsModule(cx) );
@@ -208,6 +214,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	// records script creation/destruction from this point.
 	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, NULL);
 	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), DestroyScriptHook, NULL);
+
+//	JS_SetSourceHandler(JS_GetRuntime(cx), SourceHandler, NULL);
 
 	INIT_STATIC();
 	INIT_CLASS( Debugger );

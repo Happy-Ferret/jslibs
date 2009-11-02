@@ -17,6 +17,12 @@ LoadModule('jsfont');
 
 var list = [];
 
+function Test() {
+}
+
+Test(123);
+
+
 PropertiesInfo(list);
 
 
