@@ -705,8 +705,12 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 		JL_CHK( xdr );
 		JS_XDRMemSetData(xdr, data, compFileSize);
-		
-		if ( JS_XDRScript(xdr, &script) == JS_TRUE ) {
+
+		JSErrorReporter prevErrorReporter = JS_SetErrorReporter(cx, NULL);
+		JSBool status = JS_XDRScript(xdr, &script);
+		JS_SetErrorReporter(cx, prevErrorReporter);
+
+		if ( status == JS_TRUE ) {
 
 			// (TBD) manage BIG_ENDIAN here ?
 			JS_XDRMemSetData(xdr, NULL, 0);
@@ -720,7 +724,8 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 
 			jl_free(data);
 			data = NULL;
-			JS_ClearPendingException(cx);
+//			if ( JS_IsExceptionPending(cx) )
+//				JS_ClearPendingException(cx);
 		}
 	}
 
