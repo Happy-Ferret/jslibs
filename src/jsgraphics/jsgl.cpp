@@ -56,7 +56,7 @@ DECLARE_CLASS(Ogl)
 //#define GL_GLEXT_PROTOTYPES
 
 #include <gl/gl.h>
-#include "glext.h"
+#include "glext.h" // download at http://www.opengl.org/registry/#headers
 
 #include <gl/glu.h>
 
