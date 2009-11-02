@@ -266,8 +266,10 @@ int Test3() {
 int main(int argc, char* argv[]) {
 
 
+	
+	char *d = IntegerToString(-123, 10);
 
-	Test1();
+//	Test1();
 //	Test3();
 	//	return Test2();
 

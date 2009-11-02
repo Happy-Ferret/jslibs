@@ -171,8 +171,10 @@ ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) 
 ///////////////////////////////////////////////////////////////////////////////
 // helper macros
 
-#define JL_MIN(a,b) ( (a) < (b) ? (a) : (b) )
-#define JL_MAX(a,b) ( (a) > (b) ? (a) : (b) )
+//#define JL_MIN(a,b) ( (a) < (b) ? (a) : (b) )
+//#define JL_MAX(a,b) ( (a) > (b) ? (a) : (b) )
+template<class T> T JL_MIN(T a, T b) { return (a) < (b) ? (a) : (b); }
+template<class T> T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b); }
 
 // BEWARE: the following helper macros are only valid inside a JS Native function definition !
 
@@ -275,7 +277,8 @@ JL_MACRO_END
 // Reports a fatal errors, script must stop as soon as possible.
 #define JL_REPORT_ERROR(errorMessage, ...) \
 JL_MACRO_BEGIN \
-	JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__ ); goto bad; \
+	JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__ ); \
+	goto bad; \
 JL_MACRO_END
 
 
@@ -465,7 +468,8 @@ ALWAYS_INLINE JSClass* JL_GetStringClass( JSContext *cx ) {
 	return NULL;
 }
 
-#define JL_VALUE_IS_STRING_OBJECT(cx, val) (!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass)
+#define JL_VALUE_IS_STRING_OBJECT(cx, val) \
+	(!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass)
 
 ALWAYS_INLINE bool JsvalIsData( JSContext *cx, jsval val ) {
 	

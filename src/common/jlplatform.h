@@ -20,7 +20,6 @@
 // Miscellaneous
 
 #define JL_MACRO_BEGIN do {
-
 #define JL_MACRO_END } while(0)
 
 #define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
@@ -371,11 +370,22 @@ ALWAYS_INLINE Endian DetectSystemEndianType() {
 
 ALWAYS_INLINE char* IntegerToString(int val, int base) {
 
-	static char buf[64]; // (TBD) multithread and overflow warning !
+	bool neg;
+	static char buf[64]; // (TBD) threadsafe and overflow warning !
 	buf[63] = '\0';
+	if ( val < 0 ) {
+
+		val = -val;
+		neg = true;
+	} else {
+
+		neg = false;
+	}
 	int i = 62;
 	for(; val && i ; --i, val /= base)
 		buf[i] = "0123456789abcdefghijklmnopqrstuvwxyz"[val % base];
+	if ( neg )
+		buf[i--] = '-';
 	return &buf[i+1];
 }
 
@@ -902,7 +912,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		return LoadLibrary(filename);
 	#elif defined XP_UNIX
 		dlerror(); // Resets the error indicator.
-		return dlopen(filename, RTLD_LAZY); // RTLD_NOW
+		return dlopen(filename, RTLD_LAZY | RTLD_LOCAL); // RTLD_NOW / RTLD_GLOBAL
 	#endif
 	}
 

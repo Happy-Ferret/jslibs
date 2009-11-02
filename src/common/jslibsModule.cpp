@@ -18,7 +18,7 @@
 #include "jlhelper.h"
 
 // by default, we run in unsafe mode.
-bool _unsafeMode = true;
+DLLLOCAL bool _unsafeMode = true;
 
 // initialize with default allocators
 jl_malloc_t jl_malloc = malloc;

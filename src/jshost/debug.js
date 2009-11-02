@@ -12,7 +12,7 @@
 	throw 0;
 */
 
-
+/*
 // run qa tests
 	LoadModule('jsstd');
 	LoadModule('jsio');
@@ -20,10 +20,14 @@
 	arguments = Array.concat('qa.js', '-quiet -gcZeal 2 -loop -rep 3 -nogcBetween -exclude jstask'.split(' '));
 	Exec(arguments[0], false);
 	throw 0;
+*/
 
-
-
+LoadModule('jsstd');
 LoadModule('jsdebug');
+
+Print( TimeCounter() );
+
+Halt();
 
 gcZeal = 2;
 

@@ -14,6 +14,11 @@
 
 #include "stdafx.h"
 
+#ifdef VALGRIND
+#include "/usr/include/valgrind/valgrind.h"
+#include "/usr/include/valgrind/memcheck.h"
+#endif // VALGRIND
+
 #ifdef XP_WIN
 	#pragma comment(lib,"Psapi.lib") // need for currentMemoryUsage()
 	#include <Psapi.h>
@@ -240,6 +245,7 @@ DEFINE_FUNCTION_FAST( DumpHeap )
                    badTraceArg);
 	 return JS_FALSE;
 }
+
 #endif // DEBUG
 
 
@@ -498,7 +504,7 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 	bytes = pmc.PeakWorkingSetSize; // same value as "windows task manager" "peak mem usage"
 #else
 
-	JL_REPORT_WARNING("peakMemoryUsage() is not implemented yet for this platform.");
+	JL_REPORT_WARNING("Not implemented.");
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 
@@ -531,7 +537,7 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
 #else
 
-	JL_REPORT_WARNING("privateMemoryUsage() is not implemented yet for this platform.");
+	JL_REPORT_WARNING("Not implemented.");
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 
@@ -556,8 +562,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( gcNumber ) {
 
-	uint32 bytes = JS_GetGCParameter(JS_GetRuntime(cx), JSGC_NUMBER);
-	return JS_NewNumberValue(cx, bytes, vp);
+	return JS_NewNumberValue(cx, JS_GetGCParameter(JS_GetRuntime(cx), JSGC_NUMBER), vp);
 }
 
 
@@ -568,8 +573,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( gcMallocBytes ) {
 
-	uint32 bytes = JS_GetRuntime(cx)->gcMallocBytes;
-	return JS_NewNumberValue(cx, bytes, vp);
+	return JS_NewNumberValue(cx, JS_GetRuntime(cx)->gcMallocBytes, vp);
 }
 
 /**doc
@@ -579,8 +583,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( gcBytes ) {
 
-	uint32 bytes = JS_GetGCParameter(JS_GetRuntime(cx), JSGC_BYTES);
-	return JS_NewNumberValue(cx, bytes, vp);
+	return JS_NewNumberValue(cx, JS_GetGCParameter(JS_GetRuntime(cx), JSGC_BYTES), vp);
 }
 
 /*
@@ -599,27 +602,23 @@ $TOC_MEMBER $INAME
  $H note
   This function in only available in DEBUG mode.
 **/
-#ifdef JS_GC_ZEAL
 DEFINE_PROPERTY( gcZeal ) {
 
+#ifdef JS_GC_ZEAL
 	int zeal;
 	JL_CHKM( JsvalToInt(cx, *vp, &zeal), "Invalid value." );
 	JS_SetGCZeal(cx, zeal);
+#endif // JS_GC_ZEAL
 	return JS_TRUE;
 	JL_BAD;
 }
-#endif // JS_GC_ZEAL
 
 
-
-/**doc
-$TOC_MEMBER $INAME
- $INT $INAME()
-  TBD
-**/
+// undocumented
 DEFINE_FUNCTION_FAST( DisableJIT ) {
 
 	JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_JIT);
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -1594,10 +1593,73 @@ DEFINE_FUNCTION_FAST( DebugOutput ) {
 	const char *str;
 	JL_CHK( JsvalToString(cx, &JL_FARG(1), &str) );
 	OutputDebugString(str);
+	*JL_FRVAL = JSVAL_TRUE;
 #endif // DEBUG
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+#ifdef VALGRIND
+
+// http://valgrind.org/docs/manual/mc-manual.html#mc-manual.clientreqs
+
+// undocumented
+DEFINE_FUNCTION_FAST( CreateLeak ) {
+	
+	malloc(1234);
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+// undocumented
+DEFINE_FUNCTION_FAST( VALGRIND_DO_LEAK_CHECK ) {
+
+	// does a full memory leak check (like --leak-check=full) right now. 
+	// This is useful for incrementally checking for leaks between arbitrary places in the program's execution. It has no return value.
+	VALGRIND_DO_LEAK_CHECK;
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+// undocumented
+DEFINE_FUNCTION_FAST( VALGRIND_DO_QUICK_LEAK_CHECK ) {
+
+	// like VALGRIND_DO_LEAK_CHECK, except it produces only a leak summary (like --leak-check=summary). It has no return value.
+	VALGRIND_DO_QUICK_LEAK_CHECK;
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+// undocumented
+DEFINE_FUNCTION_FAST( VALGRIND_COUNT_LEAKS ) {
+
+	int leaked, dubious, reachable, suppressed;
+
+	// fills in the four arguments with the number of bytes of memory found by the previous leak check to be leaked (i.e. the sum of direct leaks and indirect leaks),
+	// dubious, reachable and suppressed. This is useful in test harness code, after calling VALGRIND_DO_LEAK_CHECK or VALGRIND_DO_QUICK_LEAK_CHECK.
+	VALGRIND_COUNT_LEAKS(leaked, dubious, reachable, suppressed);
+	
+	JSObject *arrayObj = JS_NewArrayObject(cx, 4, NULL);
+	*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+	jsval tmp;
+	tmp = INT_TO_JSVAL(leaked);
+	JS_SetElement(cx, arrayObj, 0, &tmp);
+	tmp = INT_TO_JSVAL(dubious);
+	JS_SetElement(cx, arrayObj, 1, &tmp);
+	tmp = INT_TO_JSVAL(reachable);
+	JS_SetElement(cx, arrayObj, 2, &tmp);
+	tmp = INT_TO_JSVAL(suppressed);
+	JS_SetElement(cx, arrayObj, 3, &tmp);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+#endif // VALGRIND
+
 
 
 #ifdef DEBUG
@@ -1651,22 +1713,29 @@ CONFIGURE_STATIC
 		FUNCTION_FAST_ARGC( PropertiesList, 1 )
 		FUNCTION_FAST_ARGC( PropertiesInfo, 1 )
 		FUNCTION_FAST_ARGC( DebugOutput, 1 )
+		FUNCTION_FAST( DisableJIT )
+	#ifdef VALGRIND
+		FUNCTION_FAST( CreateLeak )
+		FUNCTION_FAST( VALGRIND_DO_QUICK_LEAK_CHECK )
+		FUNCTION_FAST( VALGRIND_DO_LEAK_CHECK )
+		FUNCTION_FAST( VALGRIND_COUNT_LEAKS )
+	#endif // VALGRIND
 	#ifdef DEBUG
-
 		FUNCTION_FAST( DumpHeap )
+	#endif // DEBUG
+
+	// for internal tests
+	#ifdef DEBUG
 		FUNCTION( TestDebug )
 		FUNCTION_FAST( Test2Debug )
 	#endif // DEBUG
-		FUNCTION_FAST( DisableJIT )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( scriptFilenameList )
 		PROPERTY_READ( currentFilename )
 		PROPERTY_READ( stackSize )
-	#ifdef JS_GC_ZEAL
 		PROPERTY_WRITE_STORE( gcZeal )
-	#endif
 
 		PROPERTY_READ( gcNumber )
 		PROPERTY_READ( gcMallocBytes )
