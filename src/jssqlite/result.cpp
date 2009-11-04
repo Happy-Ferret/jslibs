@@ -23,9 +23,6 @@
 
 #include "stack.h"
 
-// #include <limits.h> // included by jlplatform.h
-
-
 JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 
 	int i;
@@ -202,12 +199,12 @@ BEGIN_CLASS( Result )
 
 DEFINE_FINALIZE() {
 
-// beware: we cannot finalize the result here because there is no way
-//         to get a reference to the database object that hold the statements stack.
-//         When this function is call (by the GC), it is possible that the
-//         database object (and its statement stack) has already be finalized !
+	// beware: we cannot finalize the result here because there is no way
+	//         to get a reference to the database object that hold the statements stack.
+	//         When this function is call (by the GC), it is possible that the
+	//         database object (and its statement stack) has already be finalized !
 
-	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
+	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	if ( pStmt != NULL ) {
 
 		//int status = sqlite3_finalize( pStmt ); // sqlite3_interrupt
@@ -230,21 +227,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Close ) {
 
-	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
+	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pStmt );
-	JL_SetPrivate( cx, obj, NULL );
+	JL_SetPrivate(cx, obj, NULL);
 
 	jsval v;
 	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
-	JL_CHK( JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(v), SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
-	void *stack;
-	stack = JSVAL_TO_PRIVATE(v);
-	jl::StackReplaceData( &stack, pStmt, NULL );
+	DatabasePrivate *dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(v));
+	JL_S_ASSERT_RESOURCE(dbpv);
+
+	jl::StackReplaceData(&dbpv->statementList, pStmt, NULL);
 
 	int status;
 	status = sqlite3_finalize( pStmt );
 	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
+		return SqliteThrowError( cx, status, sqlite3_errcode(dbpv->db), sqlite3_errmsg(dbpv->db) );
 	JS_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID);
 	return JS_TRUE;
 	JL_BAD;
@@ -260,16 +257,23 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Step ) {
 
-	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
+	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pStmt );
 
+	jsval dbVal;
+	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &dbVal) );
+	DatabasePrivate *dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(dbVal));
+	JL_S_ASSERT_RESOURCE(dbpv);
+
 	sqlite3 *db;
-	db = sqlite3_db_handle(pStmt);
-	GetDbContext(db)->cx = cx; // update the JS context used to call functions (see sqlite_function_call)
+	db = dbpv->db;
+	JL_ASSERT( db == sqlite3_db_handle(pStmt) );
 
 	// check if bindings are up to date
 	jsval bindingUpToDate;
 	JS_GetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, &bindingUpToDate);
+
+	dbpv->tmpcx = cx;
 	if ( bindingUpToDate != JSVAL_TRUE ) {
 
 		jsval queryArgument;
@@ -287,14 +291,15 @@ DEFINE_FUNCTION( Step ) {
 	int status;
 	status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
 
-	JL_SAFE( GetDbContext(db)->cx = NULL );
+	dbpv->tmpcx = NULL;
+
 	if ( JS_IsExceptionPending(cx) )
 		return JS_FALSE;
 
 	switch (status) {
 		case SQLITE_ERROR:
 		case SQLITE_SCHEMA:
-			return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle( pStmt )));
+			return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db));
 		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
 			JL_REPORT_ERROR( "this routine was called inappropriately" );
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
@@ -549,6 +554,9 @@ bad:
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
+
+	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(3)
 //	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_SET_PROPERTY
@@ -571,8 +579,5 @@ CONFIGURE_CLASS
 		FUNCTION( Row )
 		FUNCTION_FAST( next )
 	END_FUNCTION_SPEC
-
-	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(3)
 
 END_CLASS

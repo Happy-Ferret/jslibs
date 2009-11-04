@@ -237,7 +237,6 @@
 
 #endif // Windows/MacosX/Linux platform
 
-
 /*
 	int posix_memalign(void **memptr, size_t alignment, size_t size) {
 		if (alignment % sizeof(void *) != 0)
@@ -257,6 +256,32 @@
 #endif
 #include <fcntl.h>
 #include <stdio.h>
+
+
+#ifdef DEBUG
+
+inline void JL_Assert(const char *s, const char *file, unsigned int ln) {
+
+    fprintf(stderr, "Jslibs assertion failure: %s, at %s:%d\n", s, file, ln);
+#if defined(WIN32)
+    DebugBreak();
+    exit(3);
+#elif defined(XP_OS2) || (defined(__GNUC__) && defined(__i386))
+    asm("int $3");
+#endif
+    abort();
+}
+
+#define JL_ASSERT(expr) \
+    ((expr) ? (void)0 : JS_Assert(#expr, __FILE__, __LINE__))
+
+#else
+
+#define JL_ASSERT(expr) ((void) 0)
+
+#endif // DEBUG
+
+
 inline void fpipe( FILE **read, FILE **write ) {
 
 	int readfd, writefd;
@@ -519,7 +544,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	ALWAYS_INLINE int JLAtomicExchange(volatile long *ptr, long val) {
 	#if defined XP_WIN
 		return InterlockedExchange(ptr, val);
-	#elif defined XP_UNIX // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ...
+	#elif defined XP_UNIX // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ... //  #if defined(HAVE_GCC_ATOMIC32)
 		return __sync_lock_test_and_set(ptr, val);
 	#endif
 	}
@@ -527,7 +552,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	ALWAYS_INLINE void JLAtomicIncrement(volatile long *ptr) {
 	#if defined XP_WIN
 		InterlockedIncrement(ptr);
-	#elif defined XP_UNIX // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ...
+	#elif defined XP_UNIX
 		__sync_add_and_fetch(ptr, 1);
 	#endif
 	}
@@ -535,7 +560,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	#if defined XP_WIN
 		return InterlockedExchangeAdd(ptr, val) + val;
-	#elif defined XP_UNIX // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ...
+	#elif defined XP_UNIX
 		return __sync_add_and_fetch(ptr, val);
 	#endif
 	}

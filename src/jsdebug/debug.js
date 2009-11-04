@@ -15,12 +15,24 @@ LoadModule('jstrimesh');
 LoadModule('jsiconv');
 LoadModule('jsfont');
 
-var list = [];
 
-function Test() {
+
+
+var myTask = new Task(function() { LoadModule('jsdebug') } );
+myTask.Request();
+myTask.Response();
+
+onNewScript = function( filename, lineno, script, fct) {
+
+	Print( 'onNewScript ', filename, lineno, script, fct, '\n' );
 }
 
-Test(123);
+
+var list = [];
+
+eval('function Test() {	list[1]; } ');
+
+CollectGarbage();
 
 
 PropertiesInfo(list);

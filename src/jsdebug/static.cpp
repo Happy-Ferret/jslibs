@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#include "jsdebug.h"
+
 #ifdef VALGRIND
 #include "/usr/include/valgrind/valgrind.h"
 #include "/usr/include/valgrind/memcheck.h"
@@ -25,14 +27,6 @@
 	#pragma comment(lib,"pdh.lib") // need for performance counters usage
 	#include <pdh.h>
 #endif // XP_WIN
-
-#include <errno.h>
-#include <time.h>
-#include <string.h>
-
-extern jl::Queue *scriptFileList;
-JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc ); // defined in main.cpp
-JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char *filename, unsigned int lineno);
 
 
 int _puts(JSContext *cx, const char *str) {
@@ -820,6 +814,9 @@ DEFINE_PROPERTY( scriptFilenameList ) {
 
 	int index;
 	index = 0;
+
+	jl::Queue *scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
+
 	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
 
 		jl::Queue *scriptList = (jl::Queue*)jl::QueueGetData(it);
@@ -1442,6 +1439,9 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 
 	JL_CHK( JsvalToString(cx, &JL_FARG(1), &filename) );
 	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &lineno) );
+
+	jl::Queue *scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
+
 	JSScript *script;
 	script = ScriptByLocation(cx, scriptFileList, filename, lineno);
 	JL_CHK( script );
@@ -1613,6 +1613,19 @@ DEFINE_FUNCTION_FAST( CreateLeak ) {
 	JL_BAD;
 }
 
+
+// undocumented
+DEFINE_FUNCTION_FAST( VALGRIND_COUNT_ERRORS ) {
+
+	// Returns the number of errors found so far by Valgrind. Can be useful in test harness code when combined with the --log-fd=-1 option; this runs Valgrind silently,
+	// but the client program can detect when errors occur. Only useful for tools that report errors, e.g. it's useful for Memcheck,
+	// but for Cachegrind it will always return zero because Cachegrind doesn't report errors.
+	*JL_FRVAL = INT_TO_JSVAL( VALGRIND_COUNT_ERRORS );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 // undocumented
 DEFINE_FUNCTION_FAST( VALGRIND_DO_LEAK_CHECK ) {
 
@@ -1716,6 +1729,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( DisableJIT )
 	#ifdef VALGRIND
 		FUNCTION_FAST( CreateLeak )
+		FUNCTION_FAST( VALGRIND_COUNT_ERRORS )
 		FUNCTION_FAST( VALGRIND_DO_QUICK_LEAK_CHECK )
 		FUNCTION_FAST( VALGRIND_DO_LEAK_CHECK )
 		FUNCTION_FAST( VALGRIND_COUNT_LEAKS )

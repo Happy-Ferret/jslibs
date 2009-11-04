@@ -13,14 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jsdbgapi.h"
 
-#include "jsopcode.h"
+#include "jsdebug.h"
 
-#include "stack.h"
-
-extern jl::Queue *scriptFileList;
-JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc );
 
 static const JSCodeSpec jsCodeSpec[] = {
 	#define OPDEF(op,val,name,token,length,nuses,ndefs,prec,format) {length,nuses,ndefs,prec,format},

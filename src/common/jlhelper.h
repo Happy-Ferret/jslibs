@@ -97,6 +97,10 @@ struct HostPrivate {
 	JLThreadHandler watchDogThread;
 	HostOutput hostStdOut;
 	HostOutput hostStdErr;
+	struct ModulePrivate {
+		uint32_t moduleId;
+		void *privateData;
+	} modulePrivate[256]; // does not support than 256 modules.
 	jl::Queue moduleList;
 	jl::Queue registredNativeClasses;
 	JSClass *stringObjectClass;
@@ -119,13 +123,41 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 	cx->runtime->data = (void*)hostPrivate;
 }
 
+ALWAYS_INLINE bool SetModulePrivate( JSContext *cx, uint32_t moduleId, void *modulePrivate) {
+
+	unsigned char id = ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3];
+	HostPrivate::ModulePrivate *mpv = GetHostPrivate(cx)->modulePrivate;
+	while ( mpv[id].moduleId != 0 ) { // assumes that modulePrivate struct is init to 0
+		
+		if ( mpv[id].moduleId == moduleId )
+			return false; // module private already exist or moduleId not unique
+		++id; // uses unsigned char overflow
+	}
+	mpv[id].moduleId = moduleId;
+	mpv[id].privateData = modulePrivate;
+	return true;
+}
+
+ALWAYS_INLINE void* GetModulePrivate( JSContext *cx, uint32_t moduleId ) {
+	
+	unsigned char id = ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3];
+	HostPrivate::ModulePrivate *mpv = GetHostPrivate(cx)->modulePrivate;
+	while ( mpv[id].moduleId != moduleId ) {
+
+		++id; // uses unsigned char overflow
+	}
+	return mpv[id].privateData;
+}
+// example of use: static uint32_t moduleId = 'dbug'; SetModulePrivate(cx, moduleId, mpv);
+
+
 ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) {
 
 	jsid id = GetHostPrivate(cx)->ids[index];
 	if (likely( id != 0 ))
 		return id;
 	JSString *jsstr = JS_InternString(cx, name);
-	if ( jsstr == 0 )
+	if ( jsstr == NULL )
 		return 0;
 	if ( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &id) != JS_TRUE )
 		return 0;
@@ -136,6 +168,7 @@ ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) 
 #define JLID_NAME(name) (JLID_##name, #name)
 #define JLID(cx, name) GetPrivateJsid(cx, JLID_##name, JLID_NAME(name))
 // example of use: jsid cfg = JLID(cx, _configuration); char *name = JLID_NAME(_configuration);
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // common error messages
@@ -380,7 +413,7 @@ ALWAYS_INLINE JSStackFrame* JL_CurrentStackFrame(JSContext *cx) {
 
 	#ifdef DEBUG
 		JSStackFrame *fp = NULL;
-		JS_ASSERT( JS_FrameIterator(cx, &fp) == js_GetTopStackFrame(cx) ); // Mozilla JS engine private API behavior has changed.
+		JL_ASSERT( JS_FrameIterator(cx, &fp) == js_GetTopStackFrame(cx) ); // Mozilla JS engine private API behavior has changed.
 	#endif //DEBUG
 	return js_GetTopStackFrame(cx);
 }
@@ -420,19 +453,19 @@ ALWAYS_INLINE JSStackFrame *JL_StackFrameByIndex(JSContext *cx, int frameIndex) 
 
 ALWAYS_INLINE bool JsvalIsNaN( JSContext *cx, jsval val ) {
 
-	JS_ASSERT( sizeof(uint64_t) == sizeof(double) );
+	JL_ASSERT( sizeof(uint64_t) == sizeof(double) );
 	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsNaN; // see also JS_SameValue
 }
 
 ALWAYS_INLINE bool JsvalIsPInfinity( JSContext *cx, jsval val ) {
 
-	JS_ASSERT( sizeof(uint64_t) == sizeof(double) );
+	JL_ASSERT( sizeof(uint64_t) == sizeof(double) );
 	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsPositiveInfinity;
 }
 
 ALWAYS_INLINE bool JsvalIsNInfinity( JSContext *cx, jsval val ) {
 
-	JS_ASSERT( sizeof(uint64_t) == sizeof(double) );
+	JL_ASSERT( sizeof(uint64_t) == sizeof(double) );
 	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsNegativeInfinity;
 }
 
@@ -445,7 +478,7 @@ ALWAYS_INLINE bool JsvalIsScript( JSContext *cx, jsval val ) {
 ALWAYS_INLINE bool JsvalIsFunction( JSContext *cx, jsval val ) {
 
 	#ifdef DEBUG
-		JS_ASSERT( VALUE_IS_FUNCTION(cx, val) == (!JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val))) ); // Mozilla JS engine private API behavior has changed.
+		JL_ASSERT( VALUE_IS_FUNCTION(cx, val) == (!JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val))) ); // Mozilla JS engine private API behavior has changed.
 	#endif //DEBUG
 	//	return !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)); // faster than (JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION)
 	return VALUE_IS_FUNCTION(cx, val);
@@ -712,6 +745,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 
 		if ( status == JS_TRUE ) {
 
+//			*script->notes() = 0;
 			// (TBD) manage BIG_ENDIAN here ?
 			JS_XDRMemSetData(xdr, NULL, 0);
 			JS_XDRDestroy(xdr);
@@ -730,7 +764,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	}
 
 	if ( !hasSrcFile )
-		return NULL; // no source, no compiled version of the source, die.
+		goto bad; // no source, no compiled version of the source, die.
 
 	// shebang support
 	FILE *scriptFile;
@@ -761,6 +795,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		prevOpts = JS_SetOptions( cx, JS_GetOptions(cx) & ~JSOPTION_COMPILE_N_GO ); // see https://bugzilla.mozilla.org/show_bug.cgi?id=494363
 
 	script = JS_CompileFileHandle(cx, obj, fileName, scriptFile);
+//	*script->notes() = 0;
 
 	if ( saveCompFile )
 		JS_SetOptions(cx, prevOpts);
@@ -794,9 +829,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 bad:
 	if ( data )
 		jl_free(data);
-
-	// report a warning ?
-	return script;
+	return NULL; // report a warning ?
 }
 
 
@@ -1275,7 +1308,7 @@ ALWAYS_INLINE JSBool FloatToJsval( JSContext *cx, float f, jsval *rval ) {
 ALWAYS_INLINE JSBool ObjectToScript( JSContext *cx, JSObject *obj, JSScript **script ) {
 
 	#ifdef DEBUG
-		JS_ASSERT( JS_GetClass(obj) == &js_ScriptClass ); // Mozilla JS engine private API behavior has changed.
+		JL_ASSERT( JS_GetClass(obj) == &js_ScriptClass ); // Mozilla JS engine private API behavior has changed.
 	#endif //DEBUG
 
 	*script = (JSScript*)JL_GetPrivate(cx, obj);

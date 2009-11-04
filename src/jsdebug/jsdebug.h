@@ -12,19 +12,16 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "queue.h"
+#pragma once
 
-DECLARE_CLASS( Database )
+static const uint32_t moduleId = 'dbug';
 
-struct DatabasePrivate {
-	sqlite3 *db;
-	JSContext *tmpcx;
-	void *statementList;
-	void *fctpvList;
+struct ModulePrivate {
+	
+	jl::Queue scriptFileList;
+	jsid JLID_onNewScript;
 };
 
-struct FunctionPrivate {
-	DatabasePrivate *dbpv;
-	jsval fval;
-	JSObject *obj;
-};
+
+JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc );
+JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char *filename, unsigned int lineno);

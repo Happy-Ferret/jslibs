@@ -45,7 +45,6 @@ void xShutdown(void*) {
 
 static sqlite3_mem_methods mem = { xMalloc, xFree, xRealloc, xSize, xRoundup, xInit, xShutdown, NULL };
 
-jl::Queue *dbContextList = NULL;
 
 /**doc t:header
 $MODULE_HEADER
@@ -64,8 +63,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MALLOC, &mem) == SQLITE_OK, "Unable to initialize memory manager." );
 	JL_CHKM( sqlite3_enable_shared_cache(true) == SQLITE_OK, "Unable to enable shared cache." );
 	JL_CHKM( sqlite3_initialize() == SQLITE_OK, "Unable to initialize sqlite." );
-
-	dbContextList = jl::QueueConstruct();
 
 	INIT_CLASS( SqliteError );
 	INIT_CLASS( Result );
@@ -89,8 +86,4 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 EXTERN_C DLLEXPORT void ModuleFree() {
 
 	sqlite3_shutdown();
-
-	while ( !QueueIsEmpty(dbContextList) )
-		jl_free(QueuePop(dbContextList));
-	QueueDestruct(dbContextList);
 }

@@ -22,10 +22,34 @@
 	throw 0;
 */
 
+
 LoadModule('jsstd');
 LoadModule('jsdebug');
 
-Print( TimeCounter() );
+
+onNewScript = function( filename, lineno, script, fct) {
+
+	Print( 'onNewScript ', filename, lineno, script, fct, '\n' );
+}
+
+
+var list = [];
+
+eval('function Test() {	list[1]; } ');
+
+
+Halt(); //////////////////////////////////////////////////////////////////////////////
+
+
+function Test() {
+	
+	Print( TimeCounter() );
+}
+
+Test();
+
+Print( uneval(Test).quote() );
+
 
 Halt();
 

@@ -22,40 +22,9 @@
 
 #include "stack.h"
 
-// #include <limits.h> // included by jlplatform.h
 #include <stdlib.h>
 
 // (TBD) add User-defined Collation Sequences ( http://www.sqlite.org/datatype3.html )
-
-
-
-
-DbContext* AddDbContext(sqlite3 *db) {
-
-	DbContext *pv = (DbContext*)jl_malloc(sizeof(DbContext));
-	pv->db = db;
-	QueueUnshift(dbContextList, pv);
-	return pv;
-}
-
-DbContext* GetDbContext(sqlite3 *db) {
-
-	for ( jl::QueueCell *it = jl::QueueBegin(dbContextList); it; it = jl::QueueNext(it) )
-		if ( ((DbContext*)QueueGetData(it))->db == db )
-			return (DbContext*)QueueGetData(it);
-	return NULL;
-}
-
-void RemoveDbContext(sqlite3 *db) {
-
-	for ( jl::QueueCell *it = jl::QueueBegin(dbContextList); it; it = jl::QueueNext(it) )
-		if ( ((DbContext*)QueueGetData(it))->db == db ) {
-
-			jl_free(QueueGetData(it));
-			QueueRemoveCell(dbContextList, it);
-			return;
-		}
-}
 
 
 /**doc fileIndex:top
@@ -93,7 +62,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-//	int isThreadSafe = sqlite3_threadsafe();
+	DatabasePrivate *pv = NULL;
+
+	//	int isThreadSafe = sqlite3_threadsafe();
 
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
@@ -112,67 +83,72 @@ DEFINE_CONSTRUCTOR() {
 	else
 		fileName = ":memory:";
 
-	sqlite3 *db;
+	pv = (DatabasePrivate*)jl_malloc(sizeof(DatabasePrivate));
+	JL_S_ASSERT_ALLOC(pv);
+
 //	int status = sqlite3_open( fileName, &db ); // see. sqlite3_open_v2()
 	int status;
-	status = sqlite3_open_v2( fileName, &db, flags, NULL );
+	status = sqlite3_open_v2(fileName, &pv->db, flags, NULL);
 
-	AddDbContext(db)->obj = obj;
+	if ( pv->db == NULL )
+		JL_REPORT_ERROR("Unable to open the database %s.", fileName);
 
-	if ( status != SQLITE_OK || db == NULL  )
-		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
+	sqlite3_extended_result_codes(pv->db, true); // SQLite 3.3.8
+	if ( status != SQLITE_OK )
+		return SqliteThrowError( cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db) );
 
-	sqlite3_extended_result_codes(db, true); // SQLite 3.3.8
-
-	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(NULL));
-	JL_SetPrivate( cx, obj, db );
+	jl::StackInit(&pv->fctpvList);
+	jl::StackInit(&pv->statementList);
+	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	jl_free(pv);
+	return JS_FALSE;
 }
 
 
 DEFINE_FINALIZE() {
 
+	DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+	if ( pv == NULL )
+		return;
+
+//	jsval v;
+
+	//// finalize open database statements
+	//
+	//JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
+	//stack = JSVAL_TO_PRIVATE(v);
+	//while ( !jl::StackIsEnd(&stack) ) {
+	//	sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&stack);
+	//	status = sqlite3_clear_bindings( pStmt );
+	// (TBD) usefull ?
+	//	status = sqlite3_finalize( pStmt );
+	//}
+
 	int status;
-	sqlite3 *db = (sqlite3 *)JL_GetPrivate( cx, obj );
-	if ( db != NULL ) {
 
-		void *stack;
-		jsval v;
+	// finalize open database statements
+	while ( !jl::StackIsEnd(&pv->statementList) ) {
 
-		//// finalize open database statements
-		//
-		//JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
-		//stack = JSVAL_TO_PRIVATE(v);
-		//while ( !jl::StackIsEnd(&stack) ) {
-		//	sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&stack);
-		//	status = sqlite3_clear_bindings( pStmt );
-		// (TBD) usefull ?
-		//	status = sqlite3_finalize( pStmt );
-		//}
-
-
-		// finalize open database statements
-		JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
-		stack = JSVAL_TO_PRIVATE(v);
-		while ( !jl::StackIsEnd(&stack) ) {
-
-			sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&stack);
-			if ( pStmt == NULL ) // already finalized ( see Result:Close and Result:Finalize )
-				continue;
-			status = sqlite3_finalize( pStmt );
-			if ( status != SQLITE_OK ) {
-				// (TBD) report the error ?
-			}
-		}
-
-		RemoveDbContext(db);
-		// close the database
-		status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
+		sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&pv->statementList);
+		if ( pStmt == NULL ) // already finalized ( see Result:Close and Result:Finalize )
+			continue;
+		status = sqlite3_finalize(pStmt);
 		if ( status != SQLITE_OK )
-			JS_ReportError( cx, "unable to finalize the database (error:%d) ", status );
-		JL_SetPrivate( cx, obj, NULL );
+			JS_ReportError(cx, "Unable to finalize the statement (error:%d) ", status );
 	}
+
+	// close the database
+	status = sqlite3_close(pv->db); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
+	if ( status != SQLITE_OK )
+		JS_ReportError( cx, "unable to finalize the database (error:%d) ", status );
+	JL_SetPrivate( cx, obj, NULL );
+
+	while ( pv->fctpvList )
+		jl_free( jl::StackPop( &pv->fctpvList ) );
+
+	jl_free(pv);
 }
 
 
@@ -190,32 +166,37 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Close ) {
 
-	sqlite3 *db = (sqlite3 *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( db );
-	JL_SetPrivate( cx, obj, NULL );
+	DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_SetPrivate(cx, obj, NULL);
+
 	int status;
-	sqlite3_interrupt(db);
+	sqlite3_interrupt(pv->db);
+
+	while ( pv->fctpvList )
+		jl_free( jl::StackPop( &pv->fctpvList ) );
 
 	// finalize open database statements
-	jsval v;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v) );
-	void *stack;
-	stack = JSVAL_TO_PRIVATE(v);
-	while ( !jl::StackIsEnd(&stack) ) {
+	while ( !jl::StackIsEnd(&pv->statementList) ) {
 
-		sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&stack);
+		sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&pv->statementList);
 		if ( pStmt == NULL ) // already finalized ( see Result:Close )
 			continue;
 		status = sqlite3_finalize( pStmt );
 		if ( status != SQLITE_OK )
-			return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
+			return SqliteThrowError(cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db));
 	}
 	// close the database
-	status = sqlite3_close( db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
+	status = sqlite3_close( pv->db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
 	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
+		return SqliteThrowError(cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db));
+
+	jl_free(pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	jl_free(pv);
+	return JS_FALSE;
 }
 
 
@@ -268,9 +249,9 @@ DEFINE_FUNCTION( Query ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
-	sqlite3 *db;
-	db = (sqlite3*)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( db );
+	DatabasePrivate *pv;
+	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 
 	const char *sqlQuery;
 	size_t sqlQueryLength;
@@ -279,31 +260,26 @@ DEFINE_FUNCTION( Query ) {
 	const char *szTail;
 	sqlite3_stmt *pStmt;
 	int status;
-	status = sqlite3_prepare_v2( db, sqlQuery, sqlQueryLength, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
+	status = sqlite3_prepare_v2(pv->db, sqlQuery, sqlQueryLength, &pStmt, &szTail); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
+		return SqliteThrowError( cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db) );
 	JL_S_ASSERT( *szTail == '\0', "too many SQL statements." ); // for the moment, do not support multiple statements
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 //		JL_REPORT_ERROR( "Invalid SQL string." );
 
 	// remember the statement for later finalization
-	jsval v;
-	JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
-	void *stack;
-	stack = JSVAL_TO_PRIVATE(v);
-	jl::StackPush( &stack, pStmt );
-	JS_SetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, PRIVATE_TO_JSVAL(stack));
+	jl::StackPush(&pv->statementList, pStmt);
 
 	// create the Result (statement) object
 	JSObject *dbStatement;
 	dbStatement = JS_NewObject( cx, classResult, NULL, NULL );
-	JL_SetPrivate( cx, dbStatement, pStmt );
-	JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )); // link to avoid GC
+	JL_SetPrivate(cx, dbStatement, pStmt);
+	JL_CHK( JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )) ); // link to avoid GC
 	// (TBD) enhance
 	*rval = OBJECT_TO_JSVAL( dbStatement );
 
 	if ( argc >= 2 && !JSVAL_IS_PRIMITIVE(argv[1]) )
-		JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, argv[1]);
+		JL_CHK( JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, argv[1]) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -337,23 +313,24 @@ DEFINE_FUNCTION( Exec ) {
 	// see sqlite3_exec()
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	sqlite3 *db;
-	db = (sqlite3*)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( db );
 
-	GetDbContext(db)->cx = cx; // update the JS context used to call functions (see sqlite_function_call)
+	DatabasePrivate *pv;
+	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 
 	const char *sqlQuery;
 //	J_JSVAL_TO_STRING( argv[0], sqlQuery );
 	size_t sqlQueryLength;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
 
+	pv->tmpcx = cx;
+
 	const char *szTail;
 	sqlite3_stmt *pStmt;
 	int status;
-	status = sqlite3_prepare_v2( db, sqlQuery, sqlQueryLength, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
+	status = sqlite3_prepare_v2( pv->db, sqlQuery, sqlQueryLength, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
+		return SqliteThrowError( cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db) );
 	JL_S_ASSERT( *szTail == '\0', "Too many SQL statements." ); // for the moment, do not support multiple statements
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 //		JL_REPORT_ERROR( "Invalid SQL string." );
@@ -364,13 +341,14 @@ DEFINE_FUNCTION( Exec ) {
 		JL_CHK( SqliteSetupBindings(cx, pStmt, JSVAL_TO_OBJECT(argv[1]) , NULL ) ); // "@" : the the argument passed to Exec(), ":" nothing
 	status = sqlite3_step( pStmt ); // Evaluates the statement. The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
 
-	JL_SAFE( GetDbContext(db)->cx = NULL );
+	pv->tmpcx = NULL;
+
 	if ( JS_IsExceptionPending(cx) )
 		return JS_FALSE;
 
 	switch (status) {
 		case SQLITE_ERROR:
-			return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle( pStmt )), sqlite3_errmsg(sqlite3_db_handle( pStmt )));
+			return SqliteThrowError( cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db));
 		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
 			JL_REPORT_ERROR( "This routine was called inappropriately." );
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
@@ -385,7 +363,7 @@ DEFINE_FUNCTION( Exec ) {
 
 	status = sqlite3_finalize( pStmt );
 	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, status, sqlite3_errcode(sqlite3_db_handle(pStmt)), sqlite3_errmsg(sqlite3_db_handle(pStmt)) );
+		return SqliteThrowError( cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -404,9 +382,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( lastInsertRowid ) {
 
-	sqlite3 *db = (sqlite3 *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( db );
-	JS_NewNumberValue( cx, sqlite3_last_insert_rowid(db), vp ); // use JS_NewNumberValue because sqlite3_last_insert_rowid returns int64
+	DatabasePrivate *pv;
+	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	sqlite3_int64 lastId = sqlite3_last_insert_rowid(pv->db);
+	if (likely( lastId <= JSVAL_INT_MAX ))
+		*vp = INT_TO_JSVAL(lastId);
+	else
+		JL_CHK( JS_NewNumberValue(cx, lastId, vp) ); // use JS_NewNumberValue because sqlite3_last_insert_rowid returns int64
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -421,13 +404,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( changes ) {
 
-	sqlite3 *db = (sqlite3 *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( db );
+	DatabasePrivate *pv;
+	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 
 	// This function returns the number of database rows that were changed (or inserted or deleted) by the most recently completed INSERT, UPDATE, or DELETE statement.
 	// Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted. Auxiliary changes caused by triggers are not counted. Use the sqlite3_total_changes() function to find the total number of changes including changes caused by triggers.
 	//JS_NewNumberValue( cx, sqlite3_changes(db), vp );
-	*vp = INT_TO_JSVAL( sqlite3_changes(db) );
+	*vp = INT_TO_JSVAL( sqlite3_changes(pv->db) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -465,19 +449,17 @@ DEFINE_PROPERTY( memoryUsed ) {
 
 void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArgv ) {
 
-	jsval fVal = (jsval)sqlite3_user_data(sCx);
-	DbContext *pv = GetDbContext(sqlite3_context_db_handle(sCx));
-	JSContext *cx = pv->cx;
-
-	jsval argv[64+1]; // argv[0] is rval
+	FunctionPrivate *fpv = (FunctionPrivate*)sqlite3_user_data(sCx);
+	JSContext *cx = fpv->dbpv->tmpcx;
 
 	// sArgc: If this parameter is -1, then the SQL function or aggregate may take any number of arguments between 0 and the limit set by sqlite3_limit(SQLITE_LIMIT_FUNCTION_ARG).
-	
 	if ( sArgc == -1 ) {
 
 		sqlite3_result_error(sCx, "Variadic arguments not supported", -1 );
 		goto bad;
 	}
+
+	jsval argv[64+1]; // argv[0] is rval
 
 	if ( (unsigned)sArgc > COUNTOF(argv)-1 ) {
 
@@ -491,14 +473,14 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 	
 	for ( int r = 0; r < sArgc; r++ ) {
 
-		if ( SqliteToJsval(cx, sArgv[r], &argv[r+1]) == JS_FALSE ) {
+		if ( SqliteToJsval(cx, sArgv[r], &argv[r+1]) != JS_TRUE ) {
 
 			sqlite3_result_error(sCx, "Invalid type", -1 ); // (TBD) enhance error report & remove roots on error
 			goto bad;
 		}
 	}
 
-	if ( JS_CallFunctionValue(cx, pv->obj, fVal, sArgc, argv+1, argv) != JS_TRUE ) {
+	if ( JS_CallFunctionValue(cx, fpv->obj, fpv->fval, sArgc, argv+1, argv) != JS_TRUE ) {
 
 		sqlite3_result_error(sCx, "Function call error", -1 ); // (TBD) better error message
 		goto bad;
@@ -551,7 +533,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			break;
 		}
 		default:
-			sqlite3_result_error(sCx, "Unsupported data type", -1 ); // (TBD) better error message
+			sqlite3_result_error(sCx, "Unsupported data type", -1); // (TBD) better error message
 	}
 
 bad:
@@ -573,14 +555,27 @@ bad:
 DEFINE_SET_PROPERTY() {
 
 	if ( JsvalIsFunction(cx, *vp) ) {
+		
+		JL_S_ASSERT_THIS_CLASS();
 
-		sqlite3 *db = (sqlite3 *)JL_GetPrivate( cx, obj );
-		JL_S_ASSERT_RESOURCE( db );
+		DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+		JL_S_ASSERT_RESOURCE(pv);
+
 		const char *fName;
 		JL_CHK( JsvalToString(cx, &id, &fName) );
-		int status = sqlite3_create_function(db, fName, -1, SQLITE_ANY /*SQLITE_UTF8*/, (void*)*vp, sqlite_function_call, NULL, NULL);
+
+		FunctionPrivate *fpv = (FunctionPrivate*)jl_malloc(sizeof(FunctionPrivate));
+		JL_S_ASSERT_ALLOC(fpv);
+
+		jl::StackPush(&pv->fctpvList, fpv);
+
+		fpv->fval = *vp;
+		fpv->obj = obj;
+		fpv->dbpv = pv;
+
+		int status = sqlite3_create_function(pv->db, fName, -1, SQLITE_ANY /*SQLITE_UTF8*/, (void*)fpv, sqlite_function_call, NULL, NULL);
 		if ( status != SQLITE_OK )
-			return SqliteThrowError( cx, status, sqlite3_errcode(db), sqlite3_errmsg(db) );
+			return SqliteThrowError( cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -596,7 +591,6 @@ CONFIGURE_CLASS
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_SET_PROPERTY
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(1)
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

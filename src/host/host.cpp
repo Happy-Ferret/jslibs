@@ -465,6 +465,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	pv->privateData = userPrivateData;
 
 	jl::QueueInitialize(&pv->moduleList);
+
 	pv->unsafeMode = unsafeMode;
 
 	if ( unsafeMode )
@@ -583,7 +584,6 @@ JSBool DestroyHost( JSContext *cx ) {
 
 	while ( !jl::QueueIsEmpty(&pv->registredNativeClasses) )
 		jl::QueueShift(&pv->registredNativeClasses);
-
 
 	jl_free(pv);
 	return JS_TRUE;
@@ -810,6 +810,7 @@ static void JslibsFree( void *ptr ) {
 		base_free(ptr);
 		return;
 	}
+	
 
 	*(void**)ptr = head;
 	head = ptr;
@@ -827,6 +828,7 @@ ALWAYS_INLINE void FreeHead() {
 
 	while ( it ) {
 
+		JL_ASSERT( it != *(void**)it );
 		next = *(void**)it;
 		base_free(it);
 		it = next;

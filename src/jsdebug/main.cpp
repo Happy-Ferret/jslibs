@@ -16,11 +16,12 @@
 
 #include "jslibsModule.cpp"
 
+#include "jsdebug.h"
+
+
 DECLARE_STATIC()
 DECLARE_CLASS( Debugger )
 
-jl::Queue *scriptFileList = NULL;
-JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc );
 
 /**doc t:header
 $MODULE_HEADER
@@ -35,11 +36,16 @@ $MODULE_FOOTER
 //////////////////////
 // tools functions
 
+
 void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
 
 // (TBD) do we protect new file-based scripts against GC to allow later debugging them ?
 
 //	printf( "add - %s:%d-%d - %s - %d - %p\n", filename, lineno, lineno+JS_GetScriptLineExtent(cx, script), fun ? JS_GetFunctionName(fun):"", script->staticLevel, script );
+
+	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, moduleId);
+
+	jl::Queue *scriptFileList = &mpv->scriptFileList;
 
 	jl::QueueCell *it;
 	jl::Queue *scriptList = NULL;
@@ -50,7 +56,7 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 		scriptList = (jl::Queue*)jl::QueueGetData(it);
 		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
 		if ( s == script )
-			return; // (TBD) already added, check how it is possible.
+			goto done_scriptList; // (TBD) already added, check how it is possible.
 		if ( strcmp(filename, s->filename) == 0 )
 			break;
 	}
@@ -68,11 +74,12 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 			if ( script->staticLevel >= s->staticLevel ) {
 
 				jl::QueueInsertCell(scriptList, it, script);
-				return;
+				goto done_scriptList;
 			}
 		}
 		jl::QueuePush(scriptList, script);
 	}
+done_scriptList:
 
 /*
 	{
@@ -90,12 +97,74 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 	printf("</DUMP>\n\n");
 	}
 */
+
+//	for ( jl::QueueCell *it = jl::QueueBegin(newScriptHookList); it; it = jl::QueueNext(it) )
+//		((JSNewScriptHook)jl::QueueGetData(it))(cx, filename, lineno, script, fun, callerdata);
+
+	JSObject *moduleObject = (JSObject*)callerdata;
+	JL_ASSERT( moduleObject != NULL );
+	jsval jsHookFct;
+	JS_GetPropertyById(cx, moduleObject, mpv->JLID_onNewScript, &jsHookFct); // try to use ids
+	if ( JsvalIsFunction(cx, jsHookFct) ) {
+
+		jsval argv[5];
+		JL_ASSERT( JSVAL_NULL == 0 );
+		memset(argv, 0, sizeof(argv)); // { JSVAL_NULL }
+
+		JSTempValueRooter tvr;
+		JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
+		JL_CHKB( StringToJsval(cx, filename, &argv[1]), bad_1 );
+		argv[2] = INT_TO_JSVAL( lineno );
+		argv[3] = OBJECT_TO_JSVAL( JS_NewScriptObject(cx, script) );
+		argv[4] = OBJECT_TO_JSVAL( JS_GetFunctionObject(fun) );
+
+		JSBool status;
+		JSRuntime *rt = JS_GetRuntime(cx);
+		// avoid nested calls (NewScriptHook)
+		JS_SetNewScriptHook(rt, NULL, NULL); 
+		status = JS_CallFunctionValue(cx, moduleObject, jsHookFct, COUNTOF(argv)-1, argv+1, argv);
+		JS_SetNewScriptHook(rt, NewScriptHook, callerdata); 
+
+	bad_1:
+		JS_POP_TEMP_ROOT(cx, &tvr);
+	}
+
+
 }
 
 
 void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 
 //	printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticLevel, script );
+
+//	for ( jl::QueueCell *it = jl::QueueBegin(destroyScriptHookList); it; it = jl::QueueNext(it) )
+//		((JSDestroyScriptHook)jl::QueueGetData(it))(cx, script, callerdata);
+
+/* unable to do this while GC is running !!!
+	JSObject *moduleObject = (JSObject*)callerdata;
+	jsval jsHookFct;
+	JS_GetProperty(cx, moduleObject, "onDestroyScript", &jsHookFct); // try to use ids
+	if ( JsvalIsFunction(cx, jsHookFct) ) {
+
+		jsval argv[4];
+		JL_ASSERT( JSVAL_NULL == 0 );
+		memset(argv, 0, sizeof(argv)); // { JSVAL_NULL }
+
+		JSTempValueRooter tvr;
+		JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
+		JL_CHKB( StringToJsval(cx, JS_GetScriptFilename(cx, script), &argv[1]), bad_1 );
+		argv[2] = INT_TO_JSVAL( 0 );
+		argv[3] = OBJECT_TO_JSVAL( JS_GetScriptObject(script) );
+
+		// avoid nested calls (NewScriptHook)
+		JSBool status;
+		status = JS_CallFunctionValue(cx, moduleObject, jsHookFct, COUNTOF(argv)-1, argv+1, argv);
+	bad_1:
+		JS_POP_TEMP_ROOT(cx, &tvr);
+	}
+*/
+
+	jl::Queue *scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
 
 	jl::QueueCell *it, *it1;
 	jl::Queue *scriptList = NULL;
@@ -172,6 +241,8 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **sc
 		lineno += JS_GetScriptBaseLineNumber(cx, *script);
 	} else {
 
+		jl::Queue *scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
+
 		const char *filename;
 		JL_CHK( JsvalToString(cx, val, &filename) );
 		*script = ScriptByLocation(cx, scriptFileList, filename, lineno);
@@ -184,18 +255,25 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **sc
 }
 
 
-
 void SourceHandler(const char *filename, uintN lineno, jschar *str, size_t length, void **listenerTSData, void *closure) {
-
 }
 
 
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
+//	if ( instanceCount++ > 0 )
+//		JL_REPORT_ERROR( "Loading this module twice is not allowed." );
+
 	JL_CHK( InitJslibsModule(cx) );
 
-	scriptFileList = jl::QueueConstruct();
+	ModulePrivate *mpv = (ModulePrivate*)jl_malloc( sizeof(ModulePrivate) );
+	JL_S_ASSERT_ALLOC(mpv);
+	JL_CHKM( SetModulePrivate(cx, moduleId, mpv), "Module id already in use." );
+	
+	mpv->JLID_onNewScript = StringToJsid(cx, "onNewScript"); // see NewScriptHook
+
+	jl::QueueInitialize(&mpv->scriptFileList);
 
 	// record the caller's scripts (at least).
 	for ( JSStackFrame *fp = JL_CurrentStackFrame(cx); fp; fp = fp->down ) { // cf. JS_FrameIterator
@@ -207,13 +285,13 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		if ( !filename )
 			continue;
 		uintN lineno = JS_GetScriptBaseLineNumber(cx, script);
-//???		JSFunction *fun = JS_GetFrameFunction(cx, fp);
-		NewScriptHook(cx, filename, lineno, script, NULL, NULL);
+		JSFunction *fun = JS_GetFrameFunction(cx, fp);
+		NewScriptHook(cx, filename, lineno, script, fun, obj);
 	}
 
 	// records script creation/destruction from this point.
-	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NewScriptHook, NULL);
-	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), DestroyScriptHook, NULL);
+	JS_SetNewScriptHook(JS_GetRuntime(cx), NewScriptHook, obj); // obj is moduleObject in NewScriptHook()
+	JS_SetDestroyScriptHook(JS_GetRuntime(cx), DestroyScriptHook, obj); // obj is moduleObject in NewScriptHook()
 
 //	JS_SetSourceHandler(JS_GetRuntime(cx), SourceHandler, NULL);
 
@@ -229,13 +307,14 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
 	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
 
+	jl::Queue *scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
 	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
 
 		jl::Queue *scriptList = (jl::Queue*)jl::QueueGetData(it);
 		jl::QueueDestruct(scriptList);
 	}
-	jl::QueueDestruct(scriptFileList);
+
+	jl_free(GetModulePrivate(cx, moduleId));
 
 	return JS_FALSE;
 }
-

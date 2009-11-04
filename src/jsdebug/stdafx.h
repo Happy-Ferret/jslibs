@@ -8,3 +8,12 @@
 #include "jlhelper.h"
 #include "jlclass.h"
 #include "jlconfiguration.h"
+
+#include "jsdbgapi.h"
+#include "jsopcode.h"
+
+#include "stack.h"
+
+#include <errno.h>
+#include <time.h>
+#include <string.h>
