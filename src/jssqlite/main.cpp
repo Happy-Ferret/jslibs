@@ -57,6 +57,18 @@ $MODULE_FOOTER
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
+/* crash case: see http://www.sqlite.org/cvstrac/tktview?tn=3251
+	sqlite3_initialize();
+	sqlite3 *db;
+	sqlite3_open_v2(":memory:", &db, 0, NULL);
+	char *query = "select 1";
+	sqlite3_stmt *pStmt;
+	sqlite3_prepare_v2(db, query, strlen(query), &pStmt, NULL);
+	// ...
+	for ( sqlite3_stmt *pStmt = sqlite3_next_stmt(db, NULL); pStmt; pStmt = sqlite3_next_stmt(db, pStmt) )
+		sqlite3_finalize(pStmt); // pStmt is 0xfeefee at the 2nd loop
+*/
+
 	JL_CHK( InitJslibsModule(cx) );
 
 	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) == SQLITE_OK, "Unable to disable memory stats." );

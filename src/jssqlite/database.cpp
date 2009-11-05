@@ -83,22 +83,17 @@ DEFINE_CONSTRUCTOR() {
 	else
 		fileName = ":memory:";
 
-	pv = (DatabasePrivate*)jl_malloc(sizeof(DatabasePrivate));
-	JL_S_ASSERT_ALLOC(pv);
+	pv = (DatabasePrivate*)JS_malloc(cx, sizeof(DatabasePrivate));
+	JL_CHK(pv);
 
-//	int status = sqlite3_open( fileName, &db ); // see. sqlite3_open_v2()
-	int status;
-	status = sqlite3_open_v2(fileName, &pv->db, flags, NULL);
-
-	if ( pv->db == NULL )
-		JL_REPORT_ERROR("Unable to open the database %s.", fileName);
+	if ( sqlite3_open_v2(fileName, &pv->db, flags, NULL) != SQLITE_OK )
+		JL_CHK( SqliteThrowError(cx, pv->db) );
 
 	sqlite3_extended_result_codes(pv->db, true); // SQLite 3.3.8
-	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db) );
+	sqlite3_limit(pv->db, SQLITE_LIMIT_FUNCTION_ARG, MAX_FUNCTION_ARG);
 
 	jl::StackInit(&pv->fctpvList);
-	jl::StackInit(&pv->statementList);
+	jl::StackInit(&pv->stmtList);
 	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
 bad:
@@ -126,29 +121,30 @@ DEFINE_FINALIZE() {
 	//	status = sqlite3_finalize( pStmt );
 	//}
 
-	int status;
+	sqlite3_interrupt(pv->db);
 
-	// finalize open database statements
-	while ( !jl::StackIsEnd(&pv->statementList) ) {
-
-		sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&pv->statementList);
-		if ( pStmt == NULL ) // already finalized ( see Result:Close and Result:Finalize )
-			continue;
-		status = sqlite3_finalize(pStmt);
-		if ( status != SQLITE_OK )
-			JS_ReportError(cx, "Unable to finalize the statement (error:%d) ", status );
-	}
-
-	// close the database
-	status = sqlite3_close(pv->db); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
-	if ( status != SQLITE_OK )
-		JS_ReportError( cx, "unable to finalize the database (error:%d) ", status );
-	JL_SetPrivate( cx, obj, NULL );
-
-	while ( pv->fctpvList )
+	while ( !jl::StackIsEnd(&pv->fctpvList) )
 		jl_free( jl::StackPop( &pv->fctpvList ) );
 
-	jl_free(pv);
+	while ( !jl::StackIsEnd(&pv->stmtList) )
+		sqlite3_finalize( (sqlite3_stmt*)jl::StackPop( &pv->stmtList ) );
+
+/* crash
+	for ( sqlite3_stmt *pStmt = sqlite3_next_stmt(pv->db, NULL); pStmt; pStmt = sqlite3_next_stmt(pv->db, pStmt) ) {
+
+		status = sqlite3_finalize(pStmt);
+		if ( status != SQLITE_OK )
+			JS_ReportError(cx, "Unable to finalize the statement (%d) ", status );
+	}
+*/
+
+	// close the database
+	// All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
+	if ( sqlite3_close(pv->db) != SQLITE_OK )
+		JS_ReportError( cx, "%s (%d)", sqlite3_errmsg(pv->db), sqlite3_extended_errcode(pv->db) );
+	JL_SetPrivate( cx, obj, NULL );
+
+	JS_free(cx, pv);
 }
 
 
@@ -170,26 +166,27 @@ DEFINE_FUNCTION( Close ) {
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_SetPrivate(cx, obj, NULL);
 
-	int status;
 	sqlite3_interrupt(pv->db);
 
-	while ( pv->fctpvList )
+	while ( !jl::StackIsEnd(&pv->fctpvList) )
 		jl_free( jl::StackPop( &pv->fctpvList ) );
 
-	// finalize open database statements
-	while ( !jl::StackIsEnd(&pv->statementList) ) {
+	while ( !jl::StackIsEnd(&pv->stmtList) )
+		sqlite3_finalize( (sqlite3_stmt*)jl::StackPop( &pv->stmtList ) );
 
-		sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&pv->statementList);
-		if ( pStmt == NULL ) // already finalized ( see Result:Close )
-			continue;
-		status = sqlite3_finalize( pStmt );
+/* chash
+	for ( sqlite3_stmt *pStmt = sqlite3_next_stmt(pv->db, NULL); pStmt; pStmt = sqlite3_next_stmt(pv->db, pStmt) ) {
+
+		status = sqlite3_finalize(pStmt);
 		if ( status != SQLITE_OK )
-			return SqliteThrowError(cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db));
+			JS_ReportError(cx, "Unable to finalize the statement (error:%d) ", status );	
 	}
+*/
+
 	// close the database
-	status = sqlite3_close( pv->db ); // All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
-	if ( status != SQLITE_OK )
-		return SqliteThrowError(cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db));
+	// All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
+	if ( sqlite3_close( pv->db ) != SQLITE_OK )
+		JL_CHK( SqliteThrowError(cx, pv->db) );
 
 	jl_free(pv);
 	return JS_TRUE;
@@ -259,20 +256,20 @@ DEFINE_FUNCTION( Query ) {
 
 	const char *szTail;
 	sqlite3_stmt *pStmt;
-	int status;
-	status = sqlite3_prepare_v2(pv->db, sqlQuery, sqlQueryLength, &pStmt, &szTail); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
-	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db) );
+
+	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
+	if ( sqlite3_prepare_v2(pv->db, sqlQuery, sqlQueryLength, &pStmt, &szTail) != SQLITE_OK )
+		JL_CHK( SqliteThrowError(cx, pv->db) );
 	JL_S_ASSERT( *szTail == '\0', "too many SQL statements." ); // for the moment, do not support multiple statements
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 //		JL_REPORT_ERROR( "Invalid SQL string." );
 
-	// remember the statement for later finalization
-	jl::StackPush(&pv->statementList, pStmt);
+	jl::StackPush(&pv->stmtList, pStmt);
 
 	// create the Result (statement) object
 	JSObject *dbStatement;
-	dbStatement = JS_NewObject( cx, classResult, NULL, NULL );
+	dbStatement = JS_NewObject(cx, classResult, NULL, NULL);
+	JL_CHK( dbStatement );
 	JL_SetPrivate(cx, dbStatement, pStmt);
 	JL_CHK( JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )) ); // link to avoid GC
 	// (TBD) enhance
@@ -310,6 +307,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Exec ) {
 
+	sqlite3_stmt *pStmt = NULL;
 	// see sqlite3_exec()
 
 	JL_S_ASSERT_ARG_MIN( 1 );
@@ -323,55 +321,56 @@ DEFINE_FUNCTION( Exec ) {
 	size_t sqlQueryLength;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
 
-	pv->tmpcx = cx;
-
 	const char *szTail;
-	sqlite3_stmt *pStmt;
-	int status;
-	status = sqlite3_prepare_v2( pv->db, sqlQuery, sqlQueryLength, &pStmt, &szTail ); // If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
-	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db) );
+	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
+	if ( sqlite3_prepare_v2( pv->db, sqlQuery, sqlQueryLength, &pStmt, &szTail ) != SQLITE_OK )
+		JL_CHK( SqliteThrowError(cx, pv->db) );
 	JL_S_ASSERT( *szTail == '\0', "Too many SQL statements." ); // for the moment, do not support multiple statements
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 //		JL_REPORT_ERROR( "Invalid SQL string." );
 
 	// (TBD) support multiple statements
 
-	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) && JSVAL_IS_OBJECT(argv[1]) )
-		JL_CHK( SqliteSetupBindings(cx, pStmt, JSVAL_TO_OBJECT(argv[1]) , NULL ) ); // "@" : the the argument passed to Exec(), ":" nothing
-	status = sqlite3_step( pStmt ); // Evaluates the statement. The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
-
+	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) && JSVAL_IS_OBJECT( argv[1] ) )
+		JL_CHK( SqliteSetupBindings(cx, pStmt, JSVAL_TO_OBJECT( argv[1] ) , NULL) ); // "@" : the the argument passed to Exec(), ":" nothing
+	pv->tmpcx = cx;
+	int status;
+	status = sqlite3_step(pStmt); // Evaluates the statement. The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
 	pv->tmpcx = NULL;
 
-	if ( JS_IsExceptionPending(cx) )
-		return JS_FALSE;
+	JL_CHK( !JS_IsExceptionPending(cx) );
 
-	switch (status) {
-		case SQLITE_ERROR:
-			return SqliteThrowError( cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db));
-		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
-			JL_REPORT_ERROR( "This routine was called inappropriately." );
+	switch ( status ) {
+
+		case SQLITE_ROW:
+			//JL_CHK( SqliteColumnToJsval(cx, pStmt, 0, rval) );
+			JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, 0), rval) );
+			break;
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
 			*rval = JSVAL_VOID;
 			break;
-		case SQLITE_ROW:
-			JL_CHK( SqliteColumnToJsval(cx, pStmt, 0, rval) );
-			break;
+		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
+			JL_REPORT_ERROR( "This routine was called inappropriately." );
 		default:
-			JL_REPORT_ERROR("invalid case (status:%d)", status );
+			JL_CHK( SqliteThrowError(cx, pv->db) );
 	}
 
-	status = sqlite3_finalize( pStmt );
-	if ( status != SQLITE_OK )
-		return SqliteThrowError( cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db) );
+	if ( sqlite3_finalize(pStmt) != SQLITE_OK )
+		JL_CHK( SqliteThrowError(cx, pv->db) );
 
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pStmt != NULL )
+		sqlite3_finalize(pStmt);
+
+	return JS_FALSE;
 }
 
 /**doc
 === Properties ===
 **/
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -411,7 +410,7 @@ DEFINE_PROPERTY( changes ) {
 	// This function returns the number of database rows that were changed (or inserted or deleted) by the most recently completed INSERT, UPDATE, or DELETE statement.
 	// Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted. Auxiliary changes caused by triggers are not counted. Use the sqlite3_total_changes() function to find the total number of changes including changes caused by triggers.
 	//JS_NewNumberValue( cx, sqlite3_changes(db), vp );
-	*vp = INT_TO_JSVAL( sqlite3_changes(pv->db) );
+	*vp = INT_TO_JSVAL( sqlite3_changes(pv->db) ); // sqlite3_total_changes
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -428,7 +427,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( version ) {
 
-	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_libversion()));
+	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, sqlite3_libversion()));
   return JS_TRUE;
 }
 
@@ -451,23 +450,11 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 
 	FunctionPrivate *fpv = (FunctionPrivate*)sqlite3_user_data(sCx);
 	JSContext *cx = fpv->dbpv->tmpcx;
+	JL_S_ASSERT(cx != NULL, "Invalid context.");
+	
+	jsval argv[1 + MAX_FUNCTION_ARG]; // argv[0] is rval
 
-	// sArgc: If this parameter is -1, then the SQL function or aggregate may take any number of arguments between 0 and the limit set by sqlite3_limit(SQLITE_LIMIT_FUNCTION_ARG).
-	if ( sArgc == -1 ) {
-
-		sqlite3_result_error(sCx, "Variadic arguments not supported", -1 );
-		goto bad;
-	}
-
-	jsval argv[64+1]; // argv[0] is rval
-
-	if ( (unsigned)sArgc > COUNTOF(argv)-1 ) {
-
-		sqlite3_result_error(sCx, "Too many arguments", -1 );
-		return;
-	}
-
-	memset(argv, 0, sizeof(argv));
+	memset(argv, 0, sizeof(argv)); // set JSVAL_NULL
 	JSTempValueRooter tvr;
 	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
 	
@@ -475,25 +462,27 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 
 		if ( SqliteToJsval(cx, sArgv[r], &argv[r+1]) != JS_TRUE ) {
 
-			sqlite3_result_error(sCx, "Invalid type", -1 ); // (TBD) enhance error report & remove roots on error
-			goto bad;
+			//sqlite3_result_error(sCx, "Invalid argument type", -1 ); // (TBD) enhance error report
+			sqlite3_result_error_code(sCx, SQLITE_MISMATCH); // (TBD) check this
+			goto bad_unroot;
 		}
 	}
 
 	if ( JS_CallFunctionValue(cx, fpv->obj, fpv->fval, sArgc, argv+1, argv) != JS_TRUE ) {
 
 		sqlite3_result_error(sCx, "Function call error", -1 ); // (TBD) better error message
-		goto bad;
+		goto bad_unroot;
 	}
 
 	// (TBD) how to use sqlite3_result_value
 	switch ( JS_TypeOfValue(cx, argv[0]) ) {
+
 		case JSTYPE_VOID:
 		case JSTYPE_NULL:
 			sqlite3_result_null(sCx); // http://www.sqlite.org/nulls.html
 			break;
 		case JSTYPE_BOOLEAN:
-			sqlite3_result_int(sCx, JSVAL_TO_BOOLEAN(argv[0]) == JS_TRUE ? 1 : 0 );
+			sqlite3_result_int(sCx, argv[0] == JSVAL_TRUE ? 1 : 0 );
 			break;
 		case JSTYPE_NUMBER:
 			if ( JSVAL_IS_INT(argv[0]) ) {
@@ -502,7 +491,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			} else {
 
 				jsdouble jd;
-				JL_CHK( JS_ValueToNumber(cx, argv[0], &jd) );
+				JL_CHKB( JS_ValueToNumber(cx, argv[0], &jd), bad_unroot );
 				if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
 					sqlite3_result_int(sCx, (int)jd);
 				else
@@ -515,29 +504,33 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				sqlite3_result_null(sCx);
 				break;
 			}
-			if ( JL_GetClass(JSVAL_TO_OBJECT(argv[0])) == BlobJSClass(cx) ) { // beware: with SQLite, blob != text
+			if ( JL_GetClass(JSVAL_TO_OBJECT(argv[0])) == JL_GetRegistredNativeClass(cx, "Blob") ) { // beware: with SQLite, blob != text
 
 				const char *data;
 				size_t length;
-				JL_CHK( JsvalToStringAndLength(cx, &argv[0], &data, &length) );
+				JL_CHKB( JsvalToStringAndLength(cx, &argv[0], &data, &length), bad_unroot );
 				sqlite3_result_blob(sCx, data, length, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				break;
 			}
+			// else:
 		case JSTYPE_XML:
 		case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
 		case JSTYPE_STRING: {
 			const char *str;
 			size_t len;
-			JL_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
+			JL_CHKB( JsvalToStringAndLength(cx, &argv[0], &str, &len), bad_unroot );
 			sqlite3_result_text(sCx, str, len, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 			break;
 		}
 		default:
-			sqlite3_result_error(sCx, "Unsupported data type", -1); // (TBD) better error message
+			//sqlite3_result_error(sCx, "Unsupported data type", -1); // (TBD) better error message
+			sqlite3_result_error_code(sCx, SQLITE_MISMATCH); // (TBD) check this
 	}
 
-bad:
+bad_unroot:
 	JS_POP_TEMP_ROOT(cx, &tvr);
+bad:
+	return;
 }
 
 
@@ -554,28 +547,27 @@ bad:
 **/
 DEFINE_SET_PROPERTY() {
 
-	if ( JsvalIsFunction(cx, *vp) ) {
+	if ( JsvalIsFunction(cx, *vp) && JSVAL_IS_STRING(id) ) {
 		
 		JL_S_ASSERT_THIS_CLASS();
 
-		DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
-		JL_S_ASSERT_RESOURCE(pv);
-
-		const char *fName;
-		JL_CHK( JsvalToString(cx, &id, &fName) );
+		DatabasePrivate *dbpv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+		JL_S_ASSERT_RESOURCE(dbpv);
 
 		FunctionPrivate *fpv = (FunctionPrivate*)jl_malloc(sizeof(FunctionPrivate));
 		JL_S_ASSERT_ALLOC(fpv);
-
-		jl::StackPush(&pv->fctpvList, fpv);
-
 		fpv->fval = *vp;
 		fpv->obj = obj;
-		fpv->dbpv = pv;
+		fpv->dbpv = dbpv;
 
-		int status = sqlite3_create_function(pv->db, fName, -1, SQLITE_ANY /*SQLITE_UTF8*/, (void*)fpv, sqlite_function_call, NULL, NULL);
-		if ( status != SQLITE_OK )
-			return SqliteThrowError( cx, status, sqlite3_errcode(pv->db), sqlite3_errmsg(pv->db) );
+		// sArgc: If this parameter is -1, then the SQL function or aggregate may take any number of arguments between 0 and the limit set by sqlite3_limit(SQLITE_LIMIT_FUNCTION_ARG).
+//		int status = sqlite3_create_function(dbpv->db, fName, JS_GetFunctionArity(fun), SQLITE_ANY /*SQLITE_UTF8*/, (void*)fpv, sqlite_function_call, NULL, NULL);
+		if ( sqlite3_create_function16(dbpv->db, JS_GetStringChars(JS_ValueToString(cx, id)), JS_GetFunctionArity(JS_ValueToFunction(cx, *vp)), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL) != SQLITE_OK ) {
+			
+			jl_free(fpv);
+			JL_CHK( SqliteThrowError(cx, dbpv->db) );
+		}
+		jl::StackPush(&dbpv->fctpvList, fpv);
 	}
 	return JS_TRUE;
 	JL_BAD;

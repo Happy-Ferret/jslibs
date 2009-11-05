@@ -20,4 +20,3 @@ DECLARE_CLASS( Result )
 
 JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval );
 JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt, JSObject *objColon );
-JSBool SqliteColumnToJsval( JSContext *cx, sqlite3_stmt *pStmt, int iCol, jsval *rval );

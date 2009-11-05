@@ -3,47 +3,13 @@
 LoadModule('jsstd');
 LoadModule('jssqlite');
 
+try {
 
 
-		var db = new Database('');
+} catch(ex) {
 	
-		db.testFun = function(a) { return a*10 }
-		db.jseval = function(s){ return eval(s) };
-		
-		var blob = new Blob('qqwe\00\00fv1234');
-		
-		//var res = db.Exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});
-		var res = db.Exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});
-
-		Print( res, 1230, 'row result' );
-
-
-Halt();
-
-
-
-   var db = new Database();
-   db.Exec('create table t1 (name,id,c);');
-
-   db.Exec('insert into t1 (name, id,c) values ("Fred",6,7)');
-   db.Exec('insert into t1 (name, id,c) values ("Bart",3,4)');
-   db.Exec('insert into t1 (name, id,c) values ("Sally","b","c")');
-
-   var result1 = db.Query('Select ?, c From t1 Where id=?', ['name', 3] );
-   
-   
-	Print('before Step: \n');
-  Print( 'columnNames.toSource(): ' + result1.columnNames.toSource(), '\n' );   
-
-   Print( 'Col(0): ' + result1.Col(0) + '\n');
-   Print( 'Row().toSource(): ' + result1.Row().toSource(), '\n\n' );
-
-   Print('after Step: \n');
-   result1.Step();
-   Print( 'columnNames.toSource(): ' + result1.columnNames.toSource(), '\n' );
-   Print( 'Col(0): ' + result1.Col(0) + '\n');
-
-
+	Print(ex.toSource());
+}
 
 Halt(); //////////////////////////////////////////////////////////////////
 

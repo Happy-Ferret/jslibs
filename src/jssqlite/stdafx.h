@@ -13,4 +13,8 @@
 
 #include <sqlite3.h>
 
+#include <cstring>
+
+#include "stack.h"
+
 #endif // stdafx_h___

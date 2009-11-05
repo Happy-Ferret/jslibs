@@ -12,15 +12,15 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "queue.h"
-
 DECLARE_CLASS( Database )
+
+#define MAX_FUNCTION_ARG 64
 
 struct DatabasePrivate {
 	sqlite3 *db;
-	JSContext *tmpcx;
-	void *statementList;
+	void *stmtList;
 	void *fctpvList;
+	JSContext *tmpcx;
 };
 
 struct FunctionPrivate {
