@@ -170,7 +170,7 @@ function CreateQaItemList(startDir, files, include, exclude, flags) {
 			
 			item.func = function() {}
 			var lineno = ex.lineNumber - item.relativeLineNumber;
-			message = 'COMPILATION: @'+ item.file +':'+ lineno +' - '+ item.name +' - '+ ex;
+			var message = 'COMPILATION: @'+ item.file +':'+ lineno +' - '+ item.name +' - '+ ex;
 			Print( '*** ' + message, '\n' );
 		}
 	}
@@ -184,7 +184,7 @@ function CreateQaItemList(startDir, files, include, exclude, flags) {
 
 function CommonReportIssue(cx, type, location, testName, checkName, details) {
 
-	message = type +' @'+ location +' - '+ (testName||'') +' - '+ (checkName||'') +' - '+ details;
+	var message = type +' @'+ location +' - '+ (testName||'') +' - '+ (checkName||'') +' - '+ details;
 	cx.issueList.push(message);
 	Print( '\n X '+ message, '\n' );
 	
