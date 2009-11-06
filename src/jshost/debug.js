@@ -12,15 +12,15 @@
 	throw 0;
 */
 
-/*
+
 // run qa tests
 	LoadModule('jsstd');
 	LoadModule('jsio');
 	currentDirectory += '/../..';
-	arguments = Array.concat('qa.js', '-quiet -gcZeal 2 -loop -rep 3 -nogcBetween -exclude jstask'.split(' '));
+	arguments = Array.concat('qa.js', '-gcZeal 2 -rep 1 jssqlite'.split(' '));
 	Exec(arguments[0], false);
 	throw 0;
-*/
+
 
 
 LoadModule('jsstd');

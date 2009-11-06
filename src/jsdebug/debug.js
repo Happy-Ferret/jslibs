@@ -16,8 +16,6 @@ LoadModule('jsiconv');
 LoadModule('jsfont');
 
 
-
-
 var myTask = new Task(function() { LoadModule('jsdebug') } );
 myTask.Request();
 myTask.Response();

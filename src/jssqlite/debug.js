@@ -1,9 +1,39 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
+
 LoadModule('jsstd');
 LoadModule('jssqlite');
 
+var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };
+
+		var db = new Database();
+		var res1 = db.Query('select 1');
+		res1.columnNames[0];
+		var res2 = db.Query('select 2');
+		QA.ASSERT( res2.columnNames.join(','), '2', 'columns name' ); 
+
+
+throw 0;
+		
+
+// run qa tests
+	LoadModule('jsstd');
+	LoadModule('jsio');
+	currentDirectory += '/../..';
+	arguments = Array.concat('qa.js', '-gcZeal 2 -rep 1 jssqlite'.split(' '));
+	Exec(arguments[0], false);
+	throw 0;
+	
+	
+	
+
+LoadModule('jsstd');
+LoadModule('jssqlite');
+
+var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };
+
 try {
+
 
 
 } catch(ex) {

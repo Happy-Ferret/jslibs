@@ -1674,6 +1674,18 @@ DEFINE_FUNCTION_FAST( VALGRIND_COUNT_LEAKS ) {
 #endif // VALGRIND
 
 
+#ifdef DEBUG
+DEFINE_FUNCTION_FAST( Int3 ) {
+
+#if defined(WIN32)
+	DebugBreak();
+#elif defined(XP_OS2) || (defined(__GNUC__) && defined(__i386))
+	asm("int $3");
+#endif
+	return JS_TRUE;
+}
+#endif // DEBUG
+
 
 #ifdef DEBUG
 DEFINE_FUNCTION( TestDebug ) {
@@ -1736,6 +1748,7 @@ CONFIGURE_STATIC
 	#endif // VALGRIND
 	#ifdef DEBUG
 		FUNCTION_FAST( DumpHeap )
+		FUNCTION_FAST( Int3 )
 	#endif // DEBUG
 
 	// for internal tests

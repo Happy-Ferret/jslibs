@@ -182,3 +182,11 @@ LoadModule('jssqlite');
 
 		db.Close();
 
+
+/// columnNames property independency
+
+		var db = new Database();
+		var res1 = db.Query('select 1');
+		res1.columnNames[0];
+		var res2 = db.Query('select 2');
+		QA.ASSERT( res2.columnNames.join(','), '2', 'columns name' );

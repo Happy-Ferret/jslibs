@@ -262,12 +262,12 @@
 
 inline void JL_Assert(const char *s, const char *file, unsigned int ln) {
 
-    fprintf(stderr, "Jslibs assertion failure: %s, at %s:%d\n", s, file, ln);
+	fprintf(stderr, "Jslibs assertion failure: %s, at %s:%d\n", s, file, ln);
 #if defined(WIN32)
-    DebugBreak();
-    exit(3);
+	DebugBreak();
+	exit(3);
 #elif defined(XP_OS2) || (defined(__GNUC__) && defined(__i386))
-    asm("int $3");
+	asm("int $3");
 #endif
     abort();
 }

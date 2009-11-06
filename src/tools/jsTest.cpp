@@ -121,6 +121,11 @@ my_ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report)
 }
 
 
+JSBool Print(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+	
+	fputs(JS_GetStringBytes(JS_ValueToString(cx, argv[0])), stdout);
+	return JS_TRUE;
+}
 
 static void MyFinalize(JSContext *cx, JSObject *obj) {
 	
@@ -134,6 +139,15 @@ static JSBool MyConstructor(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 
 static JSBool MyFunction(JSContext *cx, uintN argc, jsval *vp) {
 
+	return JS_TRUE;
+}
+
+JSBool MyProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+	if ( *vp != JSVAL_VOID )
+		return JS_TRUE;
+
+	*vp = INT_TO_JSVAL(1234);
 	return JS_TRUE;
 }
 
@@ -195,6 +209,42 @@ Run(); \
 	jsval rval;
 	JSBool st = JS_ExecuteScript(cx, globalObject, script, &rval);
 
+
+	JS_DestroyContext(cx);
+	JS_DestroyRuntime(rt);
+	JS_ShutDown();
+	return EXIT_SUCCESS;
+}
+
+
+int Test4() {
+
+	JSRuntime *rt = JS_NewRuntime(0);
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
+	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+
+	JSObject *globalObject = JS_NewObject(cx, NULL, NULL, NULL);
+	JS_SetGlobalObject(cx, globalObject);
+	JS_InitStandardClasses(cx, globalObject);
+
+	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX);
+
+	JS_DefineFunction(cx, globalObject, "Print", Print, 0, 0);
+
+	JSClass myClass = { "MyClass", 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub, JSCLASS_NO_OPTIONAL_MEMBERS };
+	JSPropertySpec ps[] = { {"myProperty", 0, 0, MyProperty, NULL}, {NULL} };
+	JS_InitClass(cx, globalObject, NULL, &myClass, MyConstructor, 0, ps, NULL, NULL, NULL);
+
+
+	JS_DefineProperty(cx, globalObject, "test", JSVAL_VOID, NULL, NULL, JSPROP_GETTER);
+
+	char scriptSrc[] = "var oa = new MyClass; Print(oa.myProperty);   var ob = new MyClass; Print(ob.myProperty)"; // prints 11, expect 12
+
+	JSScript *script = JS_CompileScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "mytest", 1);
+	jsval rval;
+	JSBool st = JS_ExecuteScript(cx, globalObject, script, &rval);
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
@@ -267,7 +317,7 @@ int main(int argc, char* argv[]) {
 
 
 	
-	char *d = IntegerToString(-123, 10);
+	Test4();
 
 //	Test1();
 //	Test3();

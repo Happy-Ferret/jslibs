@@ -263,7 +263,7 @@ DEFINE_FUNCTION( Step ) {
 		if ( !JSVAL_IS_VOID( queryArgument ) )
 			argObj = JSVAL_TO_OBJECT(queryArgument);
 
-		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, BOOLEAN_TO_JSVAL(JS_TRUE)) );
+		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_TRUE) );
 		JL_CHK( SqliteSetupBindings(cx, pStmt, argObj, obj ) ); // ":" use result object. "@" is the object passed to Query()
 		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step().
 		//      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
@@ -327,10 +327,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Row ) {
 
-	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
+	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pStmt );
 
-	JL_CHK( _Step( cx, obj, 0, NULL, rval ) ); // if something goes wrong in Result_step ( error report has already been set )
+	JL_CHK( _Step(cx, obj, 0, NULL, rval) ); // if something goes wrong in Result_step ( error report has already been set )
 
 	if ( *rval == JSVAL_FALSE ) { // the statement has finished executing successfully
 
@@ -339,17 +339,20 @@ DEFINE_FUNCTION( Row ) {
 	}
 
 	// returns an array [ row1Data, row2Data, ... ] else return an object { row1Name:row1Data, row2Name:row2Data,  ... }
-	JSBool namedRows;
-	namedRows = JS_FALSE; // default value
+	bool namedRows;
 	if ( argc >= 1 )
-		JS_ValueToBoolean( cx, argv[0], &namedRows );
-	JSObject *row;
-	row = namedRows ? JS_NewObject(cx, NULL, NULL, NULL) : JS_NewArrayObject(cx, 0, NULL); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.
-	*rval = OBJECT_TO_JSVAL(row); // now, row is protectef fom GC ??
-	// If the previous call to sqlite3_step() returned SQLITE_DONE or an error code,
-	// then sqlite3_data_count() will return 0 whereas sqlite3_column_count() will continue to return the number of columns in the result set.
+		JL_CHK( JsvalToBool(cx, argv[0], &namedRows) );
+	else
+		namedRows = false; // default value
+
+	// If the previous call to sqlite3_step() returned SQLITE_DONE or an error code, then sqlite3_data_count() will return 0 
+	// whereas sqlite3_column_count() will continue to return the number of columns in the result set.
 	int columnCount;
 	columnCount = sqlite3_data_count(pStmt); // This routine returns 0 if pStmt is an SQL statement that does not return data (for example an UPDATE).
+
+	JSObject *row;
+	row = namedRows ? JS_NewObject(cx, NULL, NULL, NULL) : JS_NewArrayObject(cx, columnCount, NULL); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.
+	*rval = OBJECT_TO_JSVAL(row); // now, row is protectef fom GC ??
 	jsval colJsValue;
 	for ( int col = 0; col < columnCount; ++col ) {
 
@@ -357,9 +360,9 @@ DEFINE_FUNCTION( Row ) {
 		JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, col), &colJsValue) );
 
 		if ( namedRows )
-			JL_CHK( JS_SetProperty( cx, row, sqlite3_column_name( pStmt, col ), &colJsValue ) );
+			JL_CHK( JS_SetProperty(cx, row, sqlite3_column_name( pStmt, col ), &colJsValue) );
 		else
-			JL_CHK( JS_DefineElement( cx, row, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE ) );
+			JL_CHK( JS_DefineElement(cx, row, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -441,8 +444,8 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( columnNames ) {
 
 	// (TBD) check for changes, else just return *vp if != JSVAL_VOID
-	if ( *vp != JSVAL_VOID )
-		return JS_TRUE;
+//	if ( *vp != JSVAL_VOID ) // (TBD) see bz#526979
+//		return JS_TRUE;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pStmt );
@@ -458,6 +461,7 @@ DEFINE_PROPERTY( columnNames ) {
 		colJsValue = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_column_name( pStmt, col ))); // sqlite3_column_name can be called BEFORE sqlite3_step
 		JL_CHK( JS_DefineElement(cx, columnNames, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE | JSPROP_PERMANENT) );
 	}
+	
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -478,8 +482,8 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( columnIndexes ) {
 
 	// (TBD) check for changes, else just return *vp if != JSVAL_VOID
-	if ( *vp != JSVAL_VOID )
-		return JS_TRUE;
+//	if ( *vp != JSVAL_VOID )
+//		return JS_TRUE;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pStmt );
@@ -507,8 +511,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( sql ) {
 
-	if ( *vp != JSVAL_VOID )
-		return JS_TRUE;
+//	if ( *vp != JSVAL_VOID )
+//		return JS_TRUE;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pStmt );
@@ -521,13 +525,13 @@ DEFINE_PROPERTY( sql ) {
 
 DEFINE_DEL_PROPERTY() {
 
-	JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, BOOLEAN_TO_JSVAL(JS_FALSE) ); // invalidate current bindings
+	JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 	return JS_TRUE;
 }
 
 DEFINE_SET_PROPERTY() {
 
-	JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, BOOLEAN_TO_JSVAL(JS_FALSE) ); // invalidate current bindings
+	JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 	return JS_TRUE;
 }
 
@@ -539,7 +543,7 @@ DEFINE_EQUALITY() {
 
 DEFINE_ITERATOR_OBJECT() {
 
-	JL_S_ASSERT( !keysonly, "Only for each..in is supported." );
+	JL_S_ASSERT( !keysonly, "Only for each..in loop is supported." );
 	return obj;
 bad:
 	return NULL;
