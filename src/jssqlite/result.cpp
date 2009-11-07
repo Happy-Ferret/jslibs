@@ -215,7 +215,8 @@ DEFINE_FUNCTION( Close ) {
 
 	jsval v;
 	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
-	DatabasePrivate *dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(v));
+	DatabasePrivate *dbpv;
+	dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(v));
 	JL_S_ASSERT_RESOURCE(dbpv);
 
 	if ( sqlite3_finalize(pStmt) != SQLITE_OK )
@@ -244,7 +245,8 @@ DEFINE_FUNCTION( Step ) {
 
 	jsval dbVal;
 	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &dbVal) );
-	DatabasePrivate *dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(dbVal));
+	DatabasePrivate *dbpv;
+	dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(dbVal));
 	JL_S_ASSERT_RESOURCE(dbpv);
 
 	sqlite3 *db;

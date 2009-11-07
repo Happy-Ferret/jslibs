@@ -815,7 +815,8 @@ DEFINE_PROPERTY( scriptFilenameList ) {
 	int index;
 	index = 0;
 
-	jl::Queue *scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
+	jl::Queue *scriptFileList;
+	scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
 
 	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
 

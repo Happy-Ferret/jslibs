@@ -119,7 +119,8 @@ done_scriptList:
 		argv[4] = OBJECT_TO_JSVAL( JS_GetFunctionObject(fun) );
 
 		JSBool status;
-		JSRuntime *rt = JS_GetRuntime(cx);
+		JSRuntime *rt;
+		rt = JS_GetRuntime(cx);
 		// avoid nested calls (NewScriptHook)
 		JS_SetNewScriptHook(rt, NULL, NULL); 
 		status = JS_CallFunctionValue(cx, moduleObject, jsHookFct, COUNTOF(argv)-1, argv+1, argv);
@@ -267,7 +268,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	JL_CHK( InitJslibsModule(cx) );
 
-	ModulePrivate *mpv = (ModulePrivate*)jl_malloc( sizeof(ModulePrivate) );
+	ModulePrivate *mpv;
+	mpv = (ModulePrivate*)jl_malloc( sizeof(ModulePrivate) );
 	JL_S_ASSERT_ALLOC(mpv);
 	JL_CHKM( SetModulePrivate(cx, moduleId, mpv), "Module id already in use." );
 	

@@ -384,7 +384,8 @@ DEFINE_PROPERTY( lastInsertRowid ) {
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	sqlite3_int64 lastId = sqlite3_last_insert_rowid(pv->db);
+	sqlite3_int64 lastId;
+	lastId = sqlite3_last_insert_rowid(pv->db);
 	if (likely( lastId <= JSVAL_INT_MAX ))
 		*vp = INT_TO_JSVAL(lastId);
 	else
