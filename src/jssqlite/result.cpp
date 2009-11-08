@@ -445,9 +445,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( columnNames ) {
 
-	// (TBD) check for changes, else just return *vp if != JSVAL_VOID
-//	if ( *vp != JSVAL_VOID ) // (TBD) see bz#526979
-//		return JS_TRUE;
+//	jsid jid;
+//	JL_CHK( JS_ValueToId(cx, id, &jid) );
+//	const char * tmp = JS_GetStringBytes( JS_ValueToString(cx, id) );
+	
+	if ( *vp != JSVAL_VOID )
+		return JS_TRUE;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pStmt );
@@ -464,7 +467,7 @@ DEFINE_PROPERTY( columnNames ) {
 		JL_CHK( JS_DefineElement(cx, columnNames, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE | JSPROP_PERMANENT) );
 	}
 	
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -483,10 +486,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( columnIndexes ) {
 
-	// (TBD) check for changes, else just return *vp if != JSVAL_VOID
-//	if ( *vp != JSVAL_VOID )
-//		return JS_TRUE;
-
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pStmt );
 	JSObject *columnIndexes;
@@ -500,7 +499,7 @@ DEFINE_PROPERTY( columnIndexes ) {
 		colJsValue = INT_TO_JSVAL(col);
 		JL_CHK( JS_SetProperty( cx, columnIndexes, sqlite3_column_name( pStmt, col ), &colJsValue ) );
 	}
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -520,7 +519,7 @@ DEFINE_PROPERTY( sql ) {
 	JL_S_ASSERT_RESOURCE( pStmt );
 	JL_CHK( StringToJsval(cx, sqlite3_sql(pStmt), vp) );
 
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -566,10 +565,10 @@ CONFIGURE_CLASS
 	HAS_EQUALITY
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ_STORE( columnCount )
-		PROPERTY_READ_STORE( columnNames )
-		PROPERTY_READ_STORE( columnIndexes )
-		PROPERTY_READ_STORE( sql )
+		PROPERTY_READ( columnCount )
+		PROPERTY_READ( columnNames )
+		PROPERTY_READ( columnIndexes )
+		PROPERTY_READ( sql )
 	END_PROPERTY_SPEC
 
 	BEGIN_FUNCTION_SPEC

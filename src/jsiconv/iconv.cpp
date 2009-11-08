@@ -298,7 +298,7 @@ DEFINE_PROPERTY( list ) {
 		IteratorPrivate ipv = { cx, list, 0 };
 		iconvlist(do_one, &ipv);
 	}
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
 
@@ -312,7 +312,7 @@ DEFINE_PROPERTY( version ) {
 		strcat( versionStr, IntegerToString( _LIBICONV_VERSION & 0xFF, 10 ) );
 		return StringToJsval(cx, versionStr, vp);
 	}
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 
 
@@ -327,8 +327,8 @@ CONFIGURE_CLASS
 	HAS_CALL
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_READ_STORE( list )
-		PROPERTY_READ_STORE( version )
+		PROPERTY_READ( list )
+		PROPERTY_READ( version )
 	END_STATIC_PROPERTY_SPEC
 
 END_CLASS

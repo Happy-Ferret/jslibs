@@ -5,6 +5,14 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jstask');
 
+
+Print( numberOfProcessors );
+Print( numberOfProcessors );
+
+
+
+Halt();
+
 Exec('../common/tools.js');
 
 var f = new File('my_test_file.txt').Open();

@@ -501,7 +501,7 @@ DEFINE_PROPERTY( interruptCounterLimit ) {
 		pv->debugHooks->interruptHandlerData = NULL;
 	}
 
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -519,7 +519,7 @@ DEFINE_PROPERTY( breakOnError ) {
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
 	pv->debugHooks->debugErrorHook = b ? DebugErrorHookHandler : NULL;
 	pv->debugHooks->debugErrorHookData = b ? obj : NULL;
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -536,7 +536,7 @@ DEFINE_PROPERTY( breakOnException ) {
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
 	pv->debugHooks->throwHook = b ? ThrowHookHandler : NULL;
 	pv->debugHooks->throwHookData = b ? obj : NULL;
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -553,7 +553,7 @@ DEFINE_PROPERTY( breakOnDebuggerKeyword ) {
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
 	pv->debugHooks->debuggerHandler = b ? DebuggerKeyword : NULL;
 	pv->debugHooks->debuggerHandlerData = b ? obj : NULL;
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -570,7 +570,7 @@ DEFINE_PROPERTY( breakOnExecute ) {
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
 	pv->debugHooks->executeHook = b ? ExecuteHookHandler : NULL;
 	pv->debugHooks->executeHookData = b ? obj : NULL;
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -587,7 +587,7 @@ DEFINE_PROPERTY( breakOnFirstExecute ) {
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
 	pv->debugHooks->executeHook = b ? FirstExecuteHookHandler : NULL;
 	pv->debugHooks->executeHookData = b ? obj : NULL;
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -631,7 +631,7 @@ DEFINE_PROPERTY( excludedFileList ) {
 		AddExcludedFile(&pv->excludedFiles, filename);
 	}
 
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -650,13 +650,13 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_WRITE_STORE( excludedFileList )
-		PROPERTY_WRITE_STORE( interruptCounterLimit )
-		PROPERTY_WRITE_STORE( breakOnError )
-		PROPERTY_WRITE_STORE( breakOnException )
-		PROPERTY_WRITE_STORE( breakOnDebuggerKeyword )
-		PROPERTY_WRITE_STORE( breakOnExecute )
-		PROPERTY_WRITE_STORE( breakOnFirstExecute )
+		PROPERTY_WRITE( excludedFileList )
+		PROPERTY_WRITE( interruptCounterLimit )
+		PROPERTY_WRITE( breakOnError )
+		PROPERTY_WRITE( breakOnException )
+		PROPERTY_WRITE( breakOnDebuggerKeyword )
+		PROPERTY_WRITE( breakOnExecute )
+		PROPERTY_WRITE( breakOnFirstExecute )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

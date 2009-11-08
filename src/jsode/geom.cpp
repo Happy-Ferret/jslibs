@@ -256,7 +256,7 @@ DEFINE_PROPERTY( bodySetter ) {
 	ode::dBodyID bodyId;
 	JL_CHK( JsvalToBody(cx, *vp, &bodyId) );
 	ode::dGeomSetBody(geom, bodyId);
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -264,7 +264,8 @@ DEFINE_PROPERTY( bodyGetter ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geomId );
-	return BodyToJsval(cx, ode::dGeomGetBody(geomId), vp);
+	JL_CHK( BodyToJsval(cx, ode::dGeomGetBody(geomId), vp) );
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -359,7 +360,7 @@ DEFINE_PROPERTY( tansformation ) {
 		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
 		ode::dGeomSetOffsetRotation(geom, m3);
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
-		return JS_TRUE;
+		return JL_StoreProperty(cx, obj, id, vp, false);
 	}
 	JL_REPORT_ERROR("Invalid source.");
 	JL_BAD;
@@ -515,7 +516,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( impact )
-		PROPERTY_STORE( body ) // store it to keep a reference (GC protection)
+		PROPERTY( body ) // store it to keep a reference (GC protection)
 		PROPERTY_WRITE( tansformation )
 		PROPERTY_WRITE( offset )
 		PROPERTY( disabled )

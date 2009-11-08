@@ -2,6 +2,15 @@
 
 LoadModule('jsstd');
 LoadModule('jsdebug');
+
+gcZeal = 1;
+Print(gcZeal);
+
+gcZeal = 2;
+Print(gcZeal);
+
+Halt();
+
 LoadModule('jsio');
 LoadModule('jscrypt');
 LoadModule('jssqlite');

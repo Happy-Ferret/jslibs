@@ -86,7 +86,7 @@ DEFINE_PROPERTY( effect ) {
 	alAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_EFFECT, effect );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -153,7 +153,7 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_WRITE_STORE( effect )
+		PROPERTY_WRITE( effect )
 		PROPERTY( effectGain )
 		PROPERTY( effectSendAuto )
 	END_PROPERTY_SPEC

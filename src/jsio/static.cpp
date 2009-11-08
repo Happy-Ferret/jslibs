@@ -775,49 +775,46 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( systemInfo ) {
 
-	if ( JSVAL_IS_VOID( *vp ) ) {
+	char tmp[SYS_INFO_BUFFER_LENGTH];
 
-		char tmp[SYS_INFO_BUFFER_LENGTH];
+	JSObject *info = JS_NewObject(cx, NULL, NULL, NULL);
+	JL_CHK( info );
+	*vp = OBJECT_TO_JSVAL( info );
 
-		JSObject *info = JS_NewObject(cx, NULL, NULL, NULL);
-		JL_CHK( info );
-		*vp = OBJECT_TO_JSVAL( info );
-
-		PRStatus status;
+	PRStatus status;
 //		jsval tmpVal;
-		JSString *jsstr;
+	JSString *jsstr;
 
-		// (TBD) these properties must be read-only !!
+	// (TBD) these properties must be read-only !!
 
-		status = PR_GetSystemInfo( PR_SI_ARCHITECTURE, tmp, sizeof(tmp) );
-		if ( status != PR_SUCCESS )
-			return ThrowIoError(cx);
-		jsstr = JS_NewStringCopyZ(cx,tmp);
-		JL_CHK( jsstr );
+	status = PR_GetSystemInfo( PR_SI_ARCHITECTURE, tmp, sizeof(tmp) );
+	if ( status != PR_SUCCESS )
+		return ThrowIoError(cx);
+	jsstr = JS_NewStringCopyZ(cx,tmp);
+	JL_CHK( jsstr );
 //		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "architecture", &tmpVal);
-		JL_CHK( JS_DefineProperty(cx, info, "architecture", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefineProperty(cx, info, "architecture", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 
-		status = PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) );
-		if ( status != PR_SUCCESS )
-			return ThrowIoError(cx);
-		jsstr = JS_NewStringCopyZ(cx,tmp);
-		JL_CHK( jsstr );
+	status = PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) );
+	if ( status != PR_SUCCESS )
+		return ThrowIoError(cx);
+	jsstr = JS_NewStringCopyZ(cx,tmp);
+	JL_CHK( jsstr );
 //		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "name", &tmpVal);
-		JL_CHK( JS_DefineProperty(cx, info, "name", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefineProperty(cx, info, "name", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 
-		status = PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) );
-		if ( status != PR_SUCCESS )
-			return ThrowIoError(cx);
-		jsstr = JS_NewStringCopyZ(cx,tmp);
-		JL_CHK( jsstr );
+	status = PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) );
+	if ( status != PR_SUCCESS )
+		return ThrowIoError(cx);
+	jsstr = JS_NewStringCopyZ(cx,tmp);
+	JL_CHK( jsstr );
 //		tmpVal = STRING_TO_JSVAL(jsstr);
 //		JS_SetProperty(cx, info, "release", &tmpVal);
-		JL_CHK( JS_DefineProperty(cx, info, "release", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
-	}
+	JL_CHK( JS_DefineProperty(cx, info, "release", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
 
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
 
@@ -898,7 +895,7 @@ DEFINE_PROPERTY( numberOfProcessors ) {
 	if ( count < 0 )
 		JL_REPORT_ERROR( "Unable to get the number of processors." );
 	JL_CHK( IntToJsval(cx, count, vp) );
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
 
@@ -954,14 +951,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( directorySeparator ) {
 
-	if ( *vp == JSVAL_VOID ) {
-
-		jschar sep = PR_GetDirectorySeparator();
-		JSString *str = JS_InternUCStringN(cx, &sep, 1);
-		JL_CHK( str );
-		*vp = STRING_TO_JSVAL( str );
-	}
-	return JS_TRUE;
+	jschar sep = PR_GetDirectorySeparator();
+	JSString *str = JS_InternUCStringN(cx, &sep, 1);
+	JL_CHK( str );
+	*vp = STRING_TO_JSVAL( str );
+	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
 
@@ -976,14 +970,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( pathSeparator ) {
 
-	if ( *vp == JSVAL_VOID ) {
-
-		jschar sep = PR_GetPathSeparator();
-		JSString *str = JS_InternUCStringN(cx, &sep, 1);
-		JL_CHK( str );
-		*vp = STRING_TO_JSVAL( str );
-	}
-	return JS_TRUE;
+	jschar sep = PR_GetPathSeparator();
+	JSString *str = JS_InternUCStringN(cx, &sep, 1);
+	JL_CHK( str );
+	*vp = STRING_TO_JSVAL( str );
+	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
 
@@ -995,7 +986,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( version ) {
 
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, PR_VERSION));
-  return JS_TRUE;
+  return JL_StoreProperty(cx, obj, id, vp, true);
 }
 
 
@@ -1020,12 +1011,12 @@ CONFIGURE_STATIC
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( hostName )
 		PROPERTY_READ( physicalMemorySize )
-		PROPERTY_READ_STORE( systemInfo )
+		PROPERTY_READ( systemInfo )
 		PROPERTY( processPriority )
 		PROPERTY_READ( numberOfProcessors )
 		PROPERTY( currentDirectory )
-		PROPERTY_READ_STORE( directorySeparator )
-		PROPERTY_READ_STORE( pathSeparator )
+		PROPERTY_READ( directorySeparator )
+		PROPERTY_READ( pathSeparator )
 		PROPERTY_READ( version )
 	END_STATIC_PROPERTY_SPEC
 

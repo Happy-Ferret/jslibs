@@ -236,8 +236,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( name ) {
 
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, vp );
-	return JS_TRUE;
+	JL_CHK( JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, vp ) );
+	return JL_StoreProperty(cx, obj, id, vp, false);
+	JL_BAD;
 }
 
 
@@ -365,7 +366,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( exist )
-		PROPERTY_READ_STORE( name )
+		PROPERTY_READ( name )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC

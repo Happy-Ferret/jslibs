@@ -329,7 +329,7 @@ DEFINE_PROPERTY( effectSlot ) {
 	alSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, effectSlot, 0, AL_FILTER_NULL);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -348,7 +348,7 @@ DEFINE_PROPERTY( directFilter ) {
 	alSourcei(pv->sid, AL_DIRECT_FILTER, filter);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -369,7 +369,7 @@ DEFINE_PROPERTY_SETTER( buffer ) {
 
 	pv->totalTime = BufferSecTime(bid);
 
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -389,7 +389,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 		JL_CHK( JsvalToInt(cx, *vp, &tmp) ); // calls OalBuffer valueOf function
 		JL_S_ASSERT( alIsBuffer(tmp), "Invalid buffer." );
 		if ( tmp == bid )
-			return JS_TRUE;
+			goto out;
 	}
 
 	// find the buffer object in the list of jsval
@@ -402,13 +402,14 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 		if ( tmp == bid ) {
 
 			*vp = *val;
-			return JS_TRUE;
+			goto out;
 		}
 	}
 
 	JL_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
 	JL_CHK( IntToJsval(cx, bid, vp) );
-	return JS_TRUE;
+out:
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -695,10 +696,10 @@ CONFIGURE_CLASS
 		PROPERTY_READ( velocity )
 
 //		PROPERTY_WRITE_STORE( buffer )
-		PROPERTY_STORE( buffer )
+		PROPERTY( buffer )
 
-		PROPERTY_WRITE_STORE( effectSlot )
-		PROPERTY_WRITE_STORE( directFilter )
+		PROPERTY_WRITE( effectSlot )
+		PROPERTY_WRITE( directFilter )
 
 		PROPERTY_READ( remainingTime )
 

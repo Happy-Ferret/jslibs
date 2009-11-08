@@ -68,16 +68,11 @@ inline JSNative NativeFunction(JSNative f) { return f; } // used fo type check o
 #define BEGIN_STATIC_PROPERTY_SPEC JSPropertySpec _tmp_sps[] = {
 #define END_STATIC_PROPERTY_SPEC {0}}; _staticPropertySpec = _tmp_sps;
 
-#define PROPERTY(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
-#define PROPERTY_STORE(name) { #name, 0, JSPROP_PERMANENT              , _##name##Getter, _##name##Setter },
-#define PROPERTY_READ(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name, NULL }, // (TBD) rename into PROPERTY_GETTER
-#define PROPERTY_READ_STORE(name) { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY              , _##name, NULL },
-#define PROPERTY_WRITE(name)       { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name }, // (TBD) rename into PROPERTY_SETTER
-#define PROPERTY_WRITE_STORE(name) { #name, 0, JSPROP_PERMANENT              , NULL, _##name },
-#define PROPERTY_SWITCH(name, function)       { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
-#define PROPERTY_SWITCH_STORE(name, function) { #name, name, JSPROP_PERMANENT, _##function##Getter, _##function##Setter },
+#define PROPERTY(name)	{ #name, -1, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
+#define PROPERTY_READ(name)	{ #name, -1, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name, NULL }, // (TBD) rename into PROPERTY_GETTER
+#define PROPERTY_WRITE(name)	{ #name, -1, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name }, // (TBD) rename into PROPERTY_SETTER
+#define PROPERTY_SWITCH(name, function)	{ #name, name, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
 #define PROPERTY_SWITCH_READ(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##function, NULL },
-#define PROPERTY_SWITCH_READ_STORE(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY, _##function##Getter, NULL },
 //#define PROPERTY_SWITCH_ID(name, id, function)       { #name, id, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter },
 //#define PROPERTY_SWITCH_ID_STORE(name, id, function) { #name, id, JSPROP_PERMANENT, _##function##Getter, _##function##Setter },
 //#define PROPERTY_SWITCH_ID_READ_STORE(name, id, function) { #name, id, JSPROP_PERMANENT|JSPROP_READONLY, _##function##Getter, NULL },
@@ -93,7 +88,7 @@ inline JSNative NativeFunction(JSNative f) { return f; } // used fo type check o
 #define DEFINE_PROPERTY(name) static JSBool _##name(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_PROPERTY_GETTER(name) static JSBool _##name##Getter(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_PROPERTY_SETTER(name) static JSBool _##name##Setter(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-#define DEFINE_PROPERTY_NULL(name) static JSPropertyOp _##name = NULL;
+//#define DEFINE_PROPERTY_NULL(name) static JSPropertyOp _##name = NULL;
 
 
 #define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -168,6 +163,42 @@ inline void _NormalizeFunctionNames( JSFunctionSpec *functionSpec ) {
 		it->name = _NormalizeFunctionName(it->name);
 }
 
+// because it is difficult to override properties by tinyId (JSPropertyOp) see. bz#526979
+inline JSBool JL_DefineClassProperties(JSContext *cx, JSObject *obj, JSPropertySpec *ps) {
+
+	for (; ps->name; ps++) {
+
+		if ( ps->tinyid < 0 )
+			JL_CHK( JS_DefineProperty(cx, obj, ps->name, JSVAL_VOID, ps->getter, ps->setter, ps->flags) );
+		else
+			JL_CHK( JS_DefinePropertyWithTinyId(cx, obj, ps->name, ps->tinyid, JSVAL_VOID, ps->getter, ps->setter, ps->flags) );
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+// JL_StoreProperty is used to override a property definition (from the prototype to the obj.
+// if removeGetterAndSetter is false, it is up to the caller to filter calls using: if ( *vp != JSVAL_VOID ) return JS_TRUE;
+// if removeGetterAndSetter is true, the value is stored for r/w getter or setter will never be called again.
+inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool removeGetterAndSetter ) {
+
+	JSBool found;
+	uintN attrs;
+	JSPropertyOp getter, setter;
+	JL_CHK( JS_GetPropertyAttrsGetterAndSetterById(cx, obj, id, &attrs, &found, &getter, &setter) );
+	JL_CHKM( found, "Property not found." );
+	if ( (attrs & JSPROP_SHARED) == 0 ) // Has already been stored somewhere. The slot will be updated after JSPropertyOp returns.
+		return JS_TRUE;
+	attrs &= ~JSPROP_SHARED; // stored mean not shared.
+	if ( removeGetterAndSetter ) { // store and never call the getter or setter again.
+
+		getter = NULL;
+		setter = NULL;
+	}
+	return JS_DefinePropertyById(cx, obj, id, *vp, getter, setter, attrs);
+	JL_BAD;
+}
+
 
 // static definition
 #define DECLARE_STATIC() \
@@ -206,12 +237,14 @@ static JSBool RemoveStatic( JSContext *cx ) {
 		_NormalizeFunctionNames(_staticFunctionSpec); \
 	if ( _staticFunctionSpec != NULL ) JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
 	if ( _staticPropertySpec != NULL ) JS_DefineProperties(cx, obj, _staticPropertySpec); \
+	JSObject *dstObj; \
+	dstObj = obj; \
 	if ( _constIntegerSpec != NULL ) { \
-	  JSObject *dstObj; \
-	  dstObj = obj; \
 		for ( ; _constIntegerSpec->name; _constIntegerSpec++ ) \
 		JL_CHK( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
 	} \
+	if ( _staticPropertySpec != NULL ) \
+		JL_CHK( JL_DefineClassProperties(cx, dstObj, _staticPropertySpec) ); \
 	if ( _constDoubleSpec != NULL ) \
 		JL_CHK( JS_DefineConstDoubles(cx, obj, _constDoubleSpec) ); \
 	JSBool found; \
@@ -273,10 +306,14 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 			_NormalizeFunctionNames(_staticFunctionSpec); \
 		} \
 		JL_S_ASSERT( _class->name && _class->name[0], "Invalid class name." ); \
-		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, _propertySpec, _functionSpec, _staticPropertySpec, _staticFunctionSpec); \
+		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, NULL/*see JL_DefineClassProperties*/, _functionSpec, NULL/*see JL_DefineClassProperties*/, _staticFunctionSpec); \
 		JSObject *dstObj; \
 		dstObj = _constructor ? JS_GetConstructor(cx, *_prototype) : *_prototype; \
 		JL_CHK(dstObj); \
+		if ( _propertySpec != NULL ) \
+			JL_CHK( JL_DefineClassProperties(cx, *_prototype, _propertySpec) ); \
+		if ( _staticPropertySpec != NULL ) \
+			JL_CHK( JL_DefineClassProperties(cx, dstObj, _staticPropertySpec) ); \
 		if ( _constIntegerSpec != NULL ) \
 			for ( ; _constIntegerSpec->name; _constIntegerSpec++ ) \
 				JL_CHK( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \

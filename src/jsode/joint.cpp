@@ -274,7 +274,7 @@ DEFINE_PROPERTY_SETTER( body1 ) {
 	ode::dBodyID bodyId;
 	JL_CHK( JsvalToBody(cx, *vp, &bodyId) );
 	ode::dJointAttach(jointId, bodyId, ode::dJointGetBody(jointId, 1));
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -284,9 +284,10 @@ DEFINE_PROPERTY_GETTER( body1 ) {
 	JL_S_ASSERT_RESOURCE( jointId );
 	ode::dBodyID bodyId = ode::dJointGetBody(jointId, 0);
 	if ( bodyId )
-		return BodyToJsval(cx, bodyId, vp);
-	*vp = JSVAL_VOID;
-	return JS_TRUE;
+		BodyToJsval(cx, bodyId, vp);
+	else
+		*vp = JSVAL_VOID;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -303,7 +304,7 @@ DEFINE_PROPERTY_SETTER( body2 ) {
 	ode::dBodyID bodyId;
 	JL_CHK( JsvalToBody(cx, *vp, &bodyId) );
 	ode::dJointAttach(jointId, ode::dJointGetBody(jointId, 0), bodyId);
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -313,9 +314,10 @@ DEFINE_PROPERTY_GETTER( body2 ) {
 	JL_S_ASSERT_RESOURCE( jointId );
 	ode::dBodyID bodyId = ode::dJointGetBody(jointId, 1);
 	if ( bodyId )
-		return BodyToJsval(cx, bodyId, vp);
-	*vp = JSVAL_VOID;
-	return JS_TRUE;
+		BodyToJsval(cx, bodyId, vp);
+	else
+		*vp = JSVAL_VOID;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -593,8 +595,8 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_STORE( body1 ) // store it to keep a reference (GC protection)
-		PROPERTY_STORE( body2 ) // store it to keep a reference (GC protection)
+		PROPERTY( body1 ) // store it to keep a reference (GC protection)
+		PROPERTY( body2 ) // store it to keep a reference (GC protection)
 
 		PROPERTY( disabled )
 		PROPERTY( useFeedback )

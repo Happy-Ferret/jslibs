@@ -587,7 +587,7 @@ DEFINE_PROPERTY( info ) {
 	JL_CHK( JS_NewNumberValue(cx, fileInfo.modifyTime / (jsdouble)1000, &dateValue) );
 	JL_CHK( JS_DefineProperty(cx, fileInfoObj, "modifyTime", dateValue, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
 
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -699,7 +699,7 @@ CONFIGURE_CLASS
 		PROPERTY_READ( exist )
 		PROPERTY_READ( writable )
 		PROPERTY_READ( readable )
-		PROPERTY_READ_STORE( info )
+		PROPERTY_READ( info )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

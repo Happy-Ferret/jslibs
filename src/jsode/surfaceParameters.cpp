@@ -49,6 +49,7 @@ DEFINE_CONSTRUCTOR() {
 }
 
 #define SETBIT(value, mask, polarity) ((value) = (polarity) ? (value) | (mask) : (value) & ~(mask) )
+#define GETBIT(value, mask) (!!((value) | (mask)))
 
 /**doc
 === Properties ===
@@ -91,9 +92,66 @@ $TOC_MEMBER $INAME
 
 enum { mu, mu2, fDir1, bounce, bounceVel, softERP, softCFM, motion1, motion2, motionN, slip1, slip2 };
 
-DEFINE_PROPERTY_NULL( surfaceGetter )
+DEFINE_PROPERTY_GETTER( surface ) {
 
-DEFINE_PROPERTY( surfaceSetter ) {
+	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(surface); // (TBD) check if NULL is meaningful for joints !
+	
+	*vp = JSVAL_VOID;
+	switch(JSVAL_TO_INT(id)) {
+		case mu:
+			ODERealToJsval(cx, surface->mu);
+			break;
+		case mu2:
+			if ( GETBIT(surface->mode, ode::dContactMu2) )
+				*vp = ODERealToJsval(cx, surface->mu2);
+			break;
+		case fDir1:
+			if ( GETBIT(surface->mode, ode::dContactFDir1) )
+				*vp = ODERealToJsval(cx, surface->mu2);
+		case bounce:
+			if ( GETBIT(surface->mode, ode::dContactBounce) )
+				*vp = ODERealToJsval(cx, surface->bounce);
+			break;
+		case bounceVel:
+			if ( GETBIT(surface->mode, ode::dContactBounce) )
+				*vp = ODERealToJsval(cx, surface->bounce_vel);
+			break;
+		case softERP:
+			if ( GETBIT(surface->mode, ode::dContactSoftERP) )
+				*vp = ODERealToJsval(cx, surface->soft_erp);
+			break;
+		case softCFM:
+			if ( GETBIT(surface->mode, ode::dContactSoftCFM) )
+				*vp = ODERealToJsval(cx, surface->soft_cfm);
+			break;
+		case motion1:
+			if ( GETBIT(surface->mode, ode::dContactMotion1) )
+				*vp = ODERealToJsval(cx, surface->motion1);
+			break;
+		case motion2:
+			if ( GETBIT(surface->mode, ode::dContactMotion2) )
+				*vp = ODERealToJsval(cx, surface->motion2);
+			break;
+		case motionN:
+			if ( GETBIT(surface->mode, ode::dContactMotionN) )
+				*vp = ODERealToJsval(cx, surface->motionN);
+			break;
+		case slip1:
+			if ( GETBIT(surface->mode, ode::dContactSlip1) )
+				*vp = ODERealToJsval(cx, surface->slip1);
+			break;
+		case slip2:
+			if ( GETBIT(surface->mode, ode::dContactSlip2) )
+				*vp = ODERealToJsval(cx, surface->slip2);
+			break;
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_SETTER( surface ) {
 
 	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(surface); // (TBD) check if NULL is meaningful for joints !
@@ -180,6 +238,7 @@ DEFINE_PROPERTY( surfaceSetter ) {
 //	dContactApprox1_1	= 0x1000,
 //	dContactApprox1_2	= 0x2000,
 //	dContactApprox1	= 0x3000
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -192,17 +251,17 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_SWITCH_STORE( mu       , surface )
-		PROPERTY_SWITCH_STORE( mu2      , surface )
-		PROPERTY_SWITCH_STORE( bounce   , surface )
-		PROPERTY_SWITCH_STORE( bounceVel, surface )
-		PROPERTY_SWITCH_STORE( softERP  , surface )
-		PROPERTY_SWITCH_STORE( softCFM  , surface )
-		PROPERTY_SWITCH_STORE( motion1  , surface )
-		PROPERTY_SWITCH_STORE( motion2  , surface )
-		PROPERTY_SWITCH_STORE( motionN  , surface )
-		PROPERTY_SWITCH_STORE( slip1    , surface )
-		PROPERTY_SWITCH_STORE( slip2    , surface )
+		PROPERTY_SWITCH( mu       , surface )
+		PROPERTY_SWITCH( mu2      , surface )
+		PROPERTY_SWITCH( bounce   , surface )
+		PROPERTY_SWITCH( bounceVel, surface )
+		PROPERTY_SWITCH( softERP  , surface )
+		PROPERTY_SWITCH( softCFM  , surface )
+		PROPERTY_SWITCH( motion1  , surface )
+		PROPERTY_SWITCH( motion2  , surface )
+		PROPERTY_SWITCH( motionN  , surface )
+		PROPERTY_SWITCH( slip1    , surface )
+		PROPERTY_SWITCH( slip2    , surface )
 	END_PROPERTY_SPEC
 
 	HAS_PRIVATE

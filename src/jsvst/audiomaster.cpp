@@ -38,13 +38,10 @@ DEFINE_HAS_INSTANCE() {
 
 DEFINE_PROPERTY( version ) {
 
-	if ( JSVAL_IS_VOID( *vp ) ) {
-
-		audioMasterCallback audioMaster = (audioMasterCallback)JL_GetPrivate(cx, obj);
-		VstIntPtr version = audioMaster(0, audioMasterVersion, 0, 0, 0, 0);
-		*vp = INT_TO_JSVAL( version );
-	}
-	return JS_TRUE;
+	audioMasterCallback audioMaster = (audioMasterCallback)JL_GetPrivate(cx, obj);
+	VstIntPtr version = audioMaster(0, audioMasterVersion, 0, 0, 0, 0);
+	*vp = INT_TO_JSVAL( version );
+	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 
 
@@ -55,7 +52,7 @@ CONFIGURE_CLASS
 	HAS_HAS_INSTANCE
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ_STORE( version )
+		PROPERTY_READ( version )
 	END_PROPERTY_SPEC
 
 	BEGIN_FUNCTION_SPEC

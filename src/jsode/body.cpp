@@ -692,14 +692,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( mass ) {
 
-	if ( JSVAL_IS_VOID( *vp ) ) { // if mass do not exist, we have to create one.
-
-		JSObject *massObject = JS_NewObject(cx, classMass, NULL, NULL);
-		JL_S_ASSERT(massObject != NULL, "Unable to create the Mass object.");
-		*vp = OBJECT_TO_JSVAL(massObject);
-		JL_CHK( JS_SetReservedSlot(cx, massObject, MASS_SLOT_BODY, OBJECT_TO_JSVAL(obj)) );
-	}
-	return JS_TRUE;
+	JSObject *massObject = JS_NewObject(cx, classMass, NULL, NULL);
+	JL_S_ASSERT(massObject != NULL, "Unable to create the Mass object.");
+	*vp = OBJECT_TO_JSVAL(massObject);
+	JL_CHK( JS_SetReservedSlot(cx, massObject, MASS_SLOT_BODY, OBJECT_TO_JSVAL(obj)) );
+	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
 
@@ -762,7 +759,7 @@ DEFINE_PROPERTY( onMove ) {
 		ode::dBodySetMovedCallback(bodyId, NULL);
 	else
 		ode::dBodySetMovedCallback(bodyId, moveCallback);
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -810,11 +807,11 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( angularVel, vector )
 		PROPERTY_SWITCH( force     , vector )
 		PROPERTY_SWITCH( torque    , vector )
-		PROPERTY_READ_STORE( mass ) // mass is only a wrapper to dBodyGetMass and dBodySetMass
+		PROPERTY_READ( mass ) // mass is only a wrapper to dBodyGetMass and dBodySetMass
 
 //		PROPERTY_READ_STORE( position )
 
-		PROPERTY_WRITE_STORE( onMove )
+		PROPERTY_WRITE( onMove )
 
 	END_PROPERTY_SPEC
 

@@ -4,6 +4,18 @@
 LoadModule('jsstd');
 LoadModule('jssqlite');
 
+
+		var db = new Database();
+		var res1 = db.Query('select 1');
+		Print(res1.columnNames[0]);
+		Print(res1.columnNames[0]);
+
+//		var res2 = db.Query('select 2');
+//		Print( res2.columnNames.join(','), '2', 'columns name' );
+
+
+throw 0;
+
 var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };
 
 		var db = new Database();

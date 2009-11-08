@@ -603,7 +603,7 @@ DEFINE_PROPERTY( gcZeal ) {
 	JL_CHKM( JsvalToInt(cx, *vp, &zeal), "Invalid value." );
 	JS_SetGCZeal(cx, zeal);
 #endif // JS_GC_ZEAL
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -1763,7 +1763,7 @@ CONFIGURE_STATIC
 		PROPERTY_READ( scriptFilenameList )
 		PROPERTY_READ( currentFilename )
 		PROPERTY_READ( stackSize )
-		PROPERTY_WRITE_STORE( gcZeal )
+		PROPERTY_WRITE( gcZeal )
 
 		PROPERTY_READ( gcNumber )
 		PROPERTY_READ( gcMallocBytes )

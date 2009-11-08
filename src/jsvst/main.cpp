@@ -849,7 +849,7 @@ DEFINE_PROPERTY( numParams ) {
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	JL_S_ASSERT_INT( *vp );
 	vstPlugin->SetNumParams( JSVAL_TO_INT(*vp) );
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -859,20 +859,19 @@ DEFINE_PROPERTY( numInputs ) {
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	JL_S_ASSERT_INT( *vp );
 	vstPlugin->setNumInputs( JSVAL_TO_INT(*vp) );
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
 DEFINE_PROPERTY( numOutputs ) {
 
-	if ( JSVAL_IS_VOID(*vp) ) {
-
-		JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-		JL_S_ASSERT_RESOURCE( vstPlugin );
-		JL_S_ASSERT_INT( *vp );
-		vstPlugin->setNumOutputs( JSVAL_TO_INT(*vp) );
-	}
-	return JS_TRUE;
+	if ( !JSVAL_IS_VOID(*vp) )
+		return JS_TRUE;
+	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( vstPlugin );
+	JL_S_ASSERT_INT( *vp );
+	vstPlugin->setNumOutputs( JSVAL_TO_INT(*vp) );
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -1052,7 +1051,7 @@ DEFINE_PROPERTY( inputLatency ) {
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	*vp = JSVAL_TO_INT( vstPlugin->getInputLatency() );
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -1061,7 +1060,7 @@ DEFINE_PROPERTY( outputLatency ) {
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	*vp = JSVAL_TO_INT( vstPlugin->getOutputLatency() );
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -1072,7 +1071,7 @@ DEFINE_PROPERTY( initialDelay ) {
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	vstPlugin->setInitialDelay( JSVAL_TO_INT( *vp ) );
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -1087,7 +1086,7 @@ DEFINE_PROPERTY( uniqueID ) {
 	char *str = JS_GetStringBytes(jsstr);
 	VstInt32 vstid = CCONST( str[0], str[1], str[2], str[3] );
 	vstPlugin->setUniqueID( vstid );
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -1141,14 +1140,14 @@ CONFIGURE_CLASS
 		PROPERTY_READ( hostLanguage )
 		PROPERTY_READ( directory )
 
-		PROPERTY_WRITE_STORE( numPrograms )
-		PROPERTY_WRITE_STORE( numParams )
-		PROPERTY_WRITE_STORE( numInputs )
-		PROPERTY_WRITE_STORE( numOutputs )
-		PROPERTY_WRITE_STORE( uniqueID )
+		PROPERTY_WRITE( numPrograms )
+		PROPERTY_WRITE( numParams )
+		PROPERTY_WRITE( numInputs )
+		PROPERTY_WRITE( numOutputs )
+		PROPERTY_WRITE( uniqueID )
 
-		PROPERTY_WRITE_STORE( inputLatency )
-		PROPERTY_WRITE_STORE( outputLatency )
+		PROPERTY_WRITE( inputLatency )
+		PROPERTY_WRITE( outputLatency )
 
 		PROPERTY_READ( samplePos )
 		PROPERTY_READ( sampleRate )
@@ -1163,7 +1162,7 @@ CONFIGURE_CLASS
 		PROPERTY_READ( smpteOffset )
 		PROPERTY_READ( smpteFrameRate )
 		PROPERTY_READ( samplesToNextClock )
-		PROPERTY_WRITE_STORE( initialDelay )
+		PROPERTY_WRITE( initialDelay )
 	END_PROPERTY_SPEC
 
 	BEGIN_FUNCTION_SPEC

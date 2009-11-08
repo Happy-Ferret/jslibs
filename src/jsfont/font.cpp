@@ -465,7 +465,7 @@ DEFINE_PROPERTY( size ) {
 
 	JL_S_ASSERT( size >= 0, "Invalid font size." );
 	FTCHK( FT_Set_Pixel_Sizes(face, size, size) );
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -484,7 +484,7 @@ DEFINE_PROPERTY( encoding ) {
 	unsigned int encoding;
 	JL_CHK( JsvalToUInt(cx, *vp, &encoding) );
 	FTCHK( FT_Select_Charmap(face, (FT_Encoding)encoding) );
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -665,14 +665,14 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ(poscriptName)
-		PROPERTY_WRITE_STORE(size)
+		PROPERTY_WRITE(size)
 		PROPERTY(useKerning)
 		PROPERTY(horizontalPadding)
 		PROPERTY(verticalPadding)
 		PROPERTY(letterSpacing)
 		PROPERTY(italic)
 		PROPERTY(bold)
-		PROPERTY_WRITE_STORE(encoding)
+		PROPERTY_WRITE(encoding)
 		PROPERTY_READ(ascender)
 		PROPERTY_READ(descender)
 		PROPERTY_READ(width)

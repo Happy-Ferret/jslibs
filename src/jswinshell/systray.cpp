@@ -739,7 +739,7 @@ DEFINE_PROPERTY( icon ) {
 	nid->uFlags |= NIF_ICON;
 	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
 	JL_S_ASSERT( status == TRUE, "Unable to setup systray icon." );
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -873,7 +873,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY(menu)
-		PROPERTY_WRITE_STORE(icon) // _STORE  is needed to keep the reference to the image ( aboid GC )
+		PROPERTY_WRITE(icon) // _STORE  is needed to keep the reference to the image ( aboid GC )
 		PROPERTY(text)
 		PROPERTY_WRITE(visible)
 	END_PROPERTY_SPEC

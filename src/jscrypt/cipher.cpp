@@ -651,7 +651,7 @@ DEFINE_PROPERTY( list ) {
 		*vp = tvr.u.value;
 		JS_POP_TEMP_ROOT(cx, &tvr);
 	}
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 
 
@@ -677,7 +677,7 @@ CONFIGURE_CLASS
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_READ_STORE( list )
+		PROPERTY_READ( list )
 	END_STATIC_PROPERTY_SPEC
 
 	HAS_PRIVATE

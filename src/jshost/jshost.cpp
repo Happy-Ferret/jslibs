@@ -16,7 +16,7 @@
 
 #include "jslibsModule.cpp"
 
-//#define USE_DEFAULT_ALLOCATORS // uncomment to use dtandard malloc/free
+#define USE_DEFAULT_ALLOCATORS // uncomment to use dtandard malloc/free
 
 #ifndef USE_DEFAULT_ALLOCATORS
 volatile bool disabledFree = false;

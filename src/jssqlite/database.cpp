@@ -268,8 +268,10 @@ DEFINE_FUNCTION( Query ) {
 
 	// create the Result (statement) object
 	JSObject *dbStatement;
+	
 	dbStatement = JS_NewObject(cx, classResult, NULL, NULL);
 	JL_CHK( dbStatement );
+
 	JL_SetPrivate(cx, dbStatement, pStmt);
 	JL_CHK( JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )) ); // link to avoid GC
 	// (TBD) enhance

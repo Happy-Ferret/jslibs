@@ -487,14 +487,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( env ) {
 
-	if ( JSVAL_IS_VOID( *vp ) ) { //  create it if it does not exist and store it (cf. PROPERTY_READ_STORE)
-
-		JSObject *staticBody = JS_NewObject(cx, classBody, NULL, NULL);
-		JL_CHK(staticBody);
-		JL_SetPrivate(cx, staticBody, (ode::dBodyID)0);
-		*vp = OBJECT_TO_JSVAL(staticBody);
-	}
-	return JS_TRUE;
+	JSObject *staticBody = JS_NewObject(cx, classBody, NULL, NULL);
+	JL_CHK(staticBody);
+	JL_SetPrivate(cx, staticBody, (ode::dBodyID)0);
+	*vp = OBJECT_TO_JSVAL(staticBody);
+	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
 
@@ -522,7 +519,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( gravity )
-		PROPERTY_READ_STORE( env )
+		PROPERTY_READ( env )
 		PROPERTY_SWITCH( ERP, real )
 		PROPERTY_SWITCH( CFM, real )
 		PROPERTY_SWITCH( quickStepNumIterations, real )

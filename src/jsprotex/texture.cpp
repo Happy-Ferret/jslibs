@@ -4318,9 +4318,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( vmax ) {
 	
-	if ( *vp == JSVAL_VOID )
-		return JS_NewNumberValue(cx, PMAX, vp);
-	return JS_TRUE;
+	JS_NewNumberValue(cx, PMAX, vp);
+	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 
 
@@ -4528,7 +4527,7 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ_STORE(vmax)
+		PROPERTY_READ(vmax)
 		PROPERTY_READ(width)
 		PROPERTY_READ(height)
 		PROPERTY_READ(channels)
