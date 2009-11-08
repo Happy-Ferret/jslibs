@@ -146,7 +146,6 @@ inline JSNative NativeFunction(JSNative f) { return f; } // used fo type check o
 #define HAS_XDR _class->xdrObject = XDRObject;
 #define HAS_ITERATOR_OBJECT _xclass.base.flags |= JSCLASS_IS_EXTENDED; _xclass.iteratorObject = IteratorObject;
 
-
 #define REVISION(REV) (_revision = INT_TO_JSVAL(REV));
 
 
@@ -157,7 +156,7 @@ inline char *_NormalizeFunctionName( const char *name ) {
 	return buf;
 }
 
-inline void _NormalizeFunctionNames( JSFunctionSpec *functionSpec ) {
+inline void _NormalizeFunctionSpecNames( JSFunctionSpec *functionSpec ) {
 
 	for ( JSFunctionSpec *it = functionSpec; it && it->name; it++ )
 		it->name = _NormalizeFunctionName(it->name);
@@ -205,17 +204,6 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 	JSBool InitializeStatic(JSContext *cx, JSObject *obj);
 
 
-
-static JSBool RemoveStatic( JSContext *cx ) {
-
-	// (TBD)
-	// JS_InitClass( ... ?
-	return JS_TRUE;
-}
-
-#define REMOVE_STATIC() \
-	JL_CHK( RemoveStatic( cx ) )
-
 #define INIT_STATIC() \
 	InitializeStatic(cx, obj)
 
@@ -234,7 +222,7 @@ static JSBool RemoveStatic( JSContext *cx ) {
 #define END_STATIC \
 	JL_CHK(obj); \
 	if ( GetHostPrivate(cx)->camelCase == 1 ) \
-		_NormalizeFunctionNames(_staticFunctionSpec); \
+		_NormalizeFunctionSpecNames(_staticFunctionSpec); \
 	if ( _staticFunctionSpec != NULL ) \
 		JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
 	if ( _staticPropertySpec != NULL ) \
@@ -249,10 +237,7 @@ static JSBool RemoveStatic( JSContext *cx ) {
 		JL_CHK( JL_DefineClassProperties(cx, dstObj, _staticPropertySpec) ); \
 	if ( _constDoubleSpec != NULL ) \
 		JL_CHK( JS_DefineConstDoubles(cx, obj, _constDoubleSpec) ); \
-	JSBool found; \
-	JL_CHK( JS_HasPropertyById(cx, obj, JLID(cx, _revision), &found) ); \
-	if ( !found ) \
-		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
+	JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
 	if ( _init ) \
 		JL_CHK( _init(cx, obj) ); \
 	return JS_TRUE; \
@@ -265,16 +250,6 @@ static JSBool RemoveStatic( JSContext *cx ) {
 	extern JSClass *class##CLASSNAME; \
 	extern JSObject *prototype##CLASSNAME;
 
-
-static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
-
-	// (TBD)
-	// JS_InitClass( ... ?
-	return JS_TRUE;
-}
-
-#define REMOVE_CLASS( CLASSNAME ) \
-	JL_CHK( RemoveClass( cx, class##CLASSNAME ) )
 
 #define INIT_CLASS( CLASSNAME ) \
 	JL_CHK( InitializeClass##CLASSNAME(cx, obj) )
@@ -306,8 +281,8 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 #define END_CLASS \
 		JL_CHK(obj); \
 		if ( GetHostPrivate(cx)->camelCase == 1 ) { \
-			_NormalizeFunctionNames(_functionSpec); \
-			_NormalizeFunctionNames(_staticFunctionSpec); \
+			_NormalizeFunctionSpecNames(_functionSpec); \
+			_NormalizeFunctionSpecNames(_staticFunctionSpec); \
 		} \
 		JL_S_ASSERT( _class->name && _class->name[0], "Invalid class name." ); \
 		*_prototype = JS_InitClass(cx, obj, *_parentPrototype, _class, _constructor, 0, NULL/*see JL_DefineClassProperties*/, _functionSpec, NULL/*see JL_DefineClassProperties*/, _staticFunctionSpec); \

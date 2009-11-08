@@ -84,17 +84,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	JL_BAD;
 }
 
-
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
-
-	REMOVE_CLASS( SqliteError );
-	REMOVE_CLASS( Result );
-	REMOVE_CLASS( Database );
-
-	return JS_TRUE;
-	JL_BAD;
-}
-
 EXTERN_C DLLEXPORT void ModuleFree() {
 
 	sqlite3_shutdown();
