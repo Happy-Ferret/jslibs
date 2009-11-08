@@ -19,15 +19,15 @@
 
 #define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.
 
-struct JSLIBS_ConstIntegerSpec {
-	JSInt32         ival;
-	const char      *name;
+struct JLConstIntegerSpec {
+	jsint ival;
+	const char *name;
 };
 
 // declaration
 
 // const integer
-#define BEGIN_CONST_INTEGER_SPEC JSLIBS_ConstIntegerSpec _tmp_cis[] = {
+#define BEGIN_CONST_INTEGER_SPEC JLConstIntegerSpec _tmp_cis[] = {
 #define END_CONST_INTEGER_SPEC {0}}; _constIntegerSpec = _tmp_cis;
 #define CONST_INTEGER(name,value) { value, #name },
 #define CONST_INTEGER_SINGLE(name) { name, #name },
@@ -226,22 +226,24 @@ static JSBool RemoveStatic( JSContext *cx ) {
 	JSFunctionSpec *_staticFunctionSpec = NULL; \
 	JSPropertySpec *_staticPropertySpec = NULL; \
 	JSConstDoubleSpec *_constDoubleSpec = NULL; \
-	JSLIBS_ConstIntegerSpec *_constIntegerSpec = NULL; \
-	JSBool (* _init)(JSContext *cx, JSObject *obj) = NULL; \
-	JSBool (* _free)(JSContext *cx, JSObject *obj) = NULL; \
+	JLConstIntegerSpec *_constIntegerSpec = NULL; \
+	JSBool (*_init)(JSContext *cx, JSObject *obj) = NULL; \
+	JSBool (*_free)(JSContext *cx, JSObject *obj) = NULL; \
 	jsval _revision = JSVAL_VOID;
 
 #define END_STATIC \
 	JL_CHK(obj); \
 	if ( GetHostPrivate(cx)->camelCase == 1 ) \
 		_NormalizeFunctionNames(_staticFunctionSpec); \
-	if ( _staticFunctionSpec != NULL ) JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
-	if ( _staticPropertySpec != NULL ) JS_DefineProperties(cx, obj, _staticPropertySpec); \
+	if ( _staticFunctionSpec != NULL ) \
+		JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
+	if ( _staticPropertySpec != NULL ) \
+		JS_DefineProperties(cx, obj, _staticPropertySpec); \
 	JSObject *dstObj; \
 	dstObj = obj; \
 	if ( _constIntegerSpec != NULL ) { \
 		for ( ; _constIntegerSpec->name; _constIntegerSpec++ ) \
-		JL_CHK( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
+			JL_CHK( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
 	} \
 	if ( _staticPropertySpec != NULL ) \
 		JL_CHK( JL_DefineClassProperties(cx, dstObj, _staticPropertySpec) ); \
@@ -289,14 +291,16 @@ static JSBool RemoveClass( JSContext *cx, JSClass *cl ) {
 #define CONFIGURE_CLASS \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj) { \
 		JSNative _constructor = NULL; \
-		JSFunctionSpec *_functionSpec = NULL, *_staticFunctionSpec = NULL; \
-		JSPropertySpec *_propertySpec = NULL, *_staticPropertySpec = NULL; \
+		JSFunctionSpec *_functionSpec = NULL; \
+		JSFunctionSpec *_staticFunctionSpec = NULL; \
+		JSPropertySpec *_propertySpec = NULL; \
+		JSPropertySpec *_staticPropertySpec = NULL; \
 		JSConstDoubleSpec *_constDoubleSpec = NULL; \
-		JSLIBS_ConstIntegerSpec *_constIntegerSpec = NULL; \
+		JLConstIntegerSpec *_constIntegerSpec = NULL; \
 		JSObject *_tmp_prototype = NULL; \
 		JSObject **_parentPrototype = &_tmp_prototype; \
-		JSBool (* _init)(JSContext *cx, JSObject *obj) = NULL; \
-		JSBool (* _free)(JSContext *cx, JSObject *obj) = NULL; \
+		JSBool (*_init)(JSContext *cx, JSObject *obj) = NULL; \
+		JSBool (*_free)(JSContext *cx, JSObject *obj) = NULL; \
 		jsval _revision = JSVAL_VOID;
 
 #define END_CLASS \
