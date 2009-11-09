@@ -30,8 +30,8 @@ enum Method {
 
 
 /**doc
-----
-== jsz::Z class ==
+$CLASS_HEADER
+$SVN_REVISION $Revision$
 **/
 
 BEGIN_CLASS( Z )
@@ -51,19 +51,19 @@ struct Private {
 //}
 
 DEFINE_FINALIZE() {
-	
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
-	
+
 	if ( pv->stream.state != Z_NULL ) {
-		
+
 		int status;
 		if ( pv->method == DEFLATE )
 			status = deflateEnd(&pv->stream);
 		else
 			status = inflateEnd(&pv->stream);
-		
+
 		if ( status != Z_OK )
 			JL_REPORT_WARNING( "Unable to finalize zlib stream (%s).", pv->stream.msg );
 	}
@@ -73,7 +73,7 @@ DEFINE_FINALIZE() {
 
 /**doc
 $TOC_MEMBER $INAME
- *_Constructor_*( method [, compressionLevel ] )
+ $INAME( method [, compressionLevel ] )
   Constructs a new inflater or deflater object.
   $LF
   The _method_ can be Z.DEFLATE to compress data or Z.INFLATE to decompress data.
@@ -88,12 +88,12 @@ $TOC_MEMBER $INAME
 
 
 voidpf jsz_alloc(voidpf opaque, uInt items, uInt size) {
-	
+
 	return jl_malloc(items*size);
 }
 
 void jsz_free(voidpf opaque, voidpf address) {
-	
+
 	jl_free(address);
 }
 
@@ -108,7 +108,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_SetPrivate(cx, obj, pv);
 	pv->stream.state = Z_NULL; // mendatory
-	
+
 //	pv->stream.zalloc = Z_NULL;
 //	pv->stream.zfree = Z_NULL;
 	pv->stream.zalloc = jsz_alloc;
@@ -159,17 +159,17 @@ $TOC_MEMBER $INAME
 **/
 
 void* wrapped_JS_malloc(void * opaqueAllocatorContext, unsigned int size) {
-	
+
 	return JS_malloc((JSContext*)opaqueAllocatorContext, size);
 }
 
 void wrapped_JS_free(void * opaqueAllocatorContext, void* address) {
-	
+
 	return JS_free((JSContext*)opaqueAllocatorContext, address);
 }
 
 void* wrapped_JS_realloc(void * opaqueAllocatorContext, void* address, unsigned int size) {
-	
+
 	return JS_realloc((JSContext*)opaqueAllocatorContext, address, size);
 }
 
@@ -195,7 +195,7 @@ DEFINE_CALL() {
 		inputData = NULL;
 		inputLength = 0;
 	}
-	
+
 // force finish
 	bool forceFinish;
 	if ( JL_ARG_ISDEF(2) )
@@ -239,7 +239,7 @@ DEFINE_CALL() {
 
 		pv->stream.avail_out = length;
 		pv->stream.next_out = (Bytef*)BufferNewChunk(&resultBuffer, pv->stream.avail_out);
-		
+
 //		printf("D%d, ca%d ai%d ao%d ti%d to%d", method == DEFLATE, chunk->avail, stream->avail_in, stream->avail_out, stream->total_in, stream->total_out );
 		xflateStatus = pv->method == DEFLATE ? deflate(&pv->stream, flushType) : inflate(&pv->stream, flushType); // Before the call of inflate()/deflate(), the application should ensure that at least one of the actions is possible, by providing more input and/or consuming more output, ...
 //		printf("..ai%d ca%d ao%d ti%d to%d\n", 			method == DEFLATE, 			chunk->avail,			stream->avail_in, 			stream->avail_out, 			stream->total_in, 			stream->total_out		);
@@ -290,7 +290,7 @@ bad:
 
 /**doc
 $TOC_MEMBER $INAME
- $BOOL *idle* $READONLY
+ $BOOL $INAME $READONLY
   Is $TRUE if the redy to process new data.
 **/
 DEFINE_PROPERTY( idle ) {
@@ -305,7 +305,7 @@ DEFINE_PROPERTY( idle ) {
 
 /**doc
 $TOC_MEMBER $INAME
- *adler32* $READONLY
+ $INAME $READONLY
   Contains the adler32 checksum of the data.
   [http://en.wikipedia.org/wiki/Adler_checksum more].
 **/
@@ -321,7 +321,7 @@ DEFINE_PROPERTY( adler32 ) {
 
 /**doc
 $TOC_MEMBER $INAME
- *lengthIn* $READONLY
+ $INAME $READONLY
   Contains the current total amount of input data.
 **/
 DEFINE_PROPERTY( lengthIn ) {
@@ -336,7 +336,7 @@ DEFINE_PROPERTY( lengthIn ) {
 
 /**doc
 $TOC_MEMBER $INAME
- *lengthOut* $READONLY
+ $INAME $READONLY
   Contains the current total amount of output data.
 **/
 DEFINE_PROPERTY( lengthOut ) {
@@ -355,7 +355,7 @@ DEFINE_PROPERTY( lengthOut ) {
 
 /* *doc
 $TOC_MEMBER $INAME
- *idealInputLength* $READONLY
+ $INAME $READONLY
   This is the ideal size of input data to avoid buffer management overload.
 **/
 /*
