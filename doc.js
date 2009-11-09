@@ -8,7 +8,7 @@ var api = {
 
 	'\t': function(cx, item) {
 		
-		if ( !isNaN(item.attr.tab) )
+		if ( item.attr.tab && !isNaN(item.attr.tab) )
 			cx.center = StringRepeat(' ', item.attr.tab);
 		else {
 		
@@ -123,12 +123,12 @@ var api = {
 
 	$TOC_CLASS: function(cx, item) {
 	
-		cx.center = '==<font size="1" color="white">'+ExpandText( ReadArg(cx), api, item )+'</font>==';
+		cx.center = '==<font size="1" color="white">`'+ExpandText( ReadArg(cx), api, item )+'`</font>==';
 	},
 
 	$TOC_MEMBER: function(cx, item) {
 	
-		cx.center = '====<font size="1" color="white">'+ExpandText( ReadArg(cx), api, item )+'</font>====';
+		cx.center = '====<font size="1" color="white">`'+ExpandText( ReadArg(cx), api, item )+'`</font>====';
 	},
 
 	$CLASS_HEADER: function(cx, item) {
@@ -277,7 +277,7 @@ function ParseArguments(str) {
 
 function ReadCx(cx, re) {
 
-    res = re(cx.right);
+    var res = re(cx.right);
     if (res) {
         cx.right = cx.right.substr(res[0].length);
         return res;
@@ -386,7 +386,7 @@ function CreateDocItemList(startDir, api) {
 			source = source.replace(/\r\n|\r/g, '\n'); // cleanup
 			docExpr.lastIndex = 0;
 			var res, item;
-			while( res = docExpr(source) ) {
+			while( (res = docExpr(source)) ) {
 
 				if ( item ) // adjust the previous followingTextEnd
 					item.followingSourceTextEnd = docExpr.lastIndex - res[0].length;
