@@ -201,7 +201,7 @@ DEFINE_PROPERTY( eulerModeGetter ) {
 /**doc
 $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
-	In euler mode this is the corresponding euler angle rate of axis 1.
+  In euler mode this is the corresponding euler angle rate of axis 1.
 **/
 DEFINE_PROPERTY( angle0Rate ) {
 
@@ -214,7 +214,7 @@ DEFINE_PROPERTY( angle0Rate ) {
 /**doc
 $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
-	In euler mode this is the corresponding euler angle rate of axis 2.
+  In euler mode this is the corresponding euler angle rate of axis 2.
 **/
 DEFINE_PROPERTY( angle1Rate ) {
 
@@ -227,7 +227,7 @@ DEFINE_PROPERTY( angle1Rate ) {
 /**doc
 $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
-	In euler mode this is the corresponding euler angle rate of axis 3.
+  In euler mode this is the corresponding euler angle rate of axis 3.
 **/
 DEFINE_PROPERTY( angle2Rate ) {
 

@@ -204,7 +204,7 @@ $TOC_MEMBER $INAME
    $ARG $BOOL wipe: clears the buffer before freeing it. This is useful when the blob contains sensitive data.
   $H note
    Any access to a freed Blob will rise an error.$LF
-	Use this function to free huge amounts of memory, like images or sounds, before the GC does it for you.
+   Use this function to free huge amounts of memory, like images or sounds, before the GC does it for you.
 **/
 DEFINE_FUNCTION_FAST( Free ) {
 

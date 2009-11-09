@@ -3068,7 +3068,7 @@ $TOC_MEMBER $INAME
  $INT $INAME( target, attachment, pname [, count] )
   $H arguments
    $ARG enum target
-	$ARG enum attachment
+   $ARG enum attachment
    $ARG enum pname
    $ARG int|Array params
   $H OpenGL API
@@ -3358,7 +3358,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( target, access )
   $H arguments
    $ARG enum target
-	$ARG enum access
+   $ARG enum access
   $H OpenGL API
    glMapBuffer
 **/
