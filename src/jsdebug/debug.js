@@ -3,11 +3,13 @@
 LoadModule('jsstd');
 LoadModule('jsdebug');
 
-gcZeal = 1;
-Print(gcZeal);
+var b = new Blob('aze');
 
-gcZeal = 2;
-Print(gcZeal);
+for each ( var p in PropertiesInfo(b, true) ) {
+	
+	Print(uneval(p));
+}
+
 
 Halt();
 

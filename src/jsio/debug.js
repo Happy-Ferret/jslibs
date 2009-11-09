@@ -6,10 +6,15 @@ LoadModule('jsio');
 LoadModule('jstask');
 
 
-Print( numberOfProcessors );
-Print( numberOfProcessors );
-
-
+	var p = new Process(GetEnv('ComSpec'), ['/c', 'svn', 'info', '--xml']); // '-r', 'HEAD', 
+	var svnInfo = '';
+	for ( let data; data = p.stdout.Read(); )
+		svnInfo += data;
+		
+	Print( svnInfo );
+		
+		
+		
 
 Halt();
 
