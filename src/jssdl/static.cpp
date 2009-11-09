@@ -1004,7 +1004,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( version ) {
 
 	*vp = INT_TO_JSVAL( SDL_COMPILEDVERSION );
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 
 

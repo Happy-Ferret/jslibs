@@ -431,7 +431,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( version ) {
 
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, sqlite3_libversion()));
-  return JS_TRUE;
+  return JL_StoreProperty(cx, obj, id, vp, true);
 }
 
 /**doc

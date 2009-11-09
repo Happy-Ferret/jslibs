@@ -254,27 +254,24 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( list ) {
 
-	if ( JSVAL_IS_VOID( *vp ) ) {
+	JSTempValueRooter tvr;
+	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // (TBD) remove this workaround. cf. bz495422 || bz397177
 
-		JSTempValueRooter tvr;
-		JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // (TBD) remove this workaround. cf. bz495422 || bz397177
+	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
+	tvr.u.value = OBJECT_TO_JSVAL(list);
+	jsval value;
+	int i;
+	LTC_MUTEX_LOCK(&ltc_prng_mutex);
+	for (i=0; i<TAB_SIZE; i++)
+		if ( prng_is_valid(i) == CRYPT_OK ) {
 
-		JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
-		tvr.u.value = OBJECT_TO_JSVAL(list);
-		jsval value;
-		int i;
-		LTC_MUTEX_LOCK(&ltc_prng_mutex);
-		for (i=0; i<TAB_SIZE; i++)
-			if ( prng_is_valid(i) == CRYPT_OK ) {
+			value = JSVAL_ONE;
+			JS_SetProperty( cx, list, prng_descriptor[i].name, &value );
+		}
+	LTC_MUTEX_UNLOCK(&ltc_prng_mutex);
 
-				value = JSVAL_ONE;
-				JS_SetProperty( cx, list, prng_descriptor[i].name, &value );
-			}
-		LTC_MUTEX_UNLOCK(&ltc_prng_mutex);
-
-		*vp = tvr.u.value;
-		JS_POP_TEMP_ROOT(cx, &tvr);
-	}
+	*vp = tvr.u.value;
+	JS_POP_TEMP_ROOT(cx, &tvr);
 	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 

@@ -342,7 +342,7 @@ DEFINE_PROPERTY( tansformation ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
 
-	if ( JSVAL_IS_OBJECT(*vp) && !JSVAL_IS_NULL(*vp) ) {
+	if ( !JSVAL_IS_PRIMITIVE(*vp) ) {
 
 		JSObject *srcObj = JSVAL_TO_OBJECT(*vp);
 		float tmp[16], *m = tmp;

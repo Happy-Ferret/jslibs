@@ -290,28 +290,25 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 
 DEFINE_PROPERTY( list ) {
 
-	if ( JSVAL_IS_VOID( *vp ) ) {
-
-		JSObject *list = JS_NewArrayObject(cx, 0, NULL);
-		JL_CHK( list );
-		*vp = OBJECT_TO_JSVAL( list );
-		IteratorPrivate ipv = { cx, list, 0 };
-		iconvlist(do_one, &ipv);
-	}
+	JSObject *list = JS_NewArrayObject(cx, 0, NULL);
+	JL_CHK( list );
+	*vp = OBJECT_TO_JSVAL( list );
+	IteratorPrivate ipv;
+	ipv.cx = cx;
+	ipv.list = list;
+	ipv.listLen = 0;
+	iconvlist(do_one, &ipv);
 	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
 
 DEFINE_PROPERTY( version ) {
 
-	if ( JSVAL_IS_VOID( *vp ) ) {
-
-		char versionStr[16];
-		strcpy( versionStr, IntegerToString( _LIBICONV_VERSION >> 8, 10 ) );
-		strcat( versionStr, ".");
-		strcat( versionStr, IntegerToString( _LIBICONV_VERSION & 0xFF, 10 ) );
-		return StringToJsval(cx, versionStr, vp);
-	}
+	char versionStr[16];
+	strcpy( versionStr, IntegerToString( _LIBICONV_VERSION >> 8, 10 ) );
+	strcat( versionStr, ".");
+	strcat( versionStr, IntegerToString( _LIBICONV_VERSION & 0xFF, 10 ) );
+	return StringToJsval(cx, versionStr, vp);
 	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 

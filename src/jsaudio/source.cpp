@@ -408,6 +408,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 
 	JL_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
 	JL_CHK( IntToJsval(cx, bid, vp) );
+
 out:
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;

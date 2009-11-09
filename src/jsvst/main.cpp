@@ -865,8 +865,6 @@ DEFINE_PROPERTY( numInputs ) {
 
 DEFINE_PROPERTY( numOutputs ) {
 
-	if ( !JSVAL_IS_VOID(*vp) )
-		return JS_TRUE;
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	JL_S_ASSERT_INT( *vp );

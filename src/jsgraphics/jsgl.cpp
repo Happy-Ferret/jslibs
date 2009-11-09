@@ -3800,9 +3800,11 @@ DEFINE_PROPERTY(renderer) {
 $TOC_MEMBER $INAME
  $STR $INAME $READONLY
 **/
-DEFINE_PROPERTY(version) {
+DEFINE_PROPERTY( version ) {
 
-	return StringToJsval(cx, (char*)glGetString(GL_VERSION), vp);
+	if ( !StringToJsval(cx, (char*)glGetString(GL_VERSION), vp) )
+		return JS_FALSE;
+	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 
 /**doc
@@ -4066,7 +4068,7 @@ CONFIGURE_CLASS
 
 		PROPERTY_READ(vendor)
 		PROPERTY_READ(renderer)
-		PROPERTY_READ(version)
+		PROPERTY_READ( version )
 		PROPERTY_READ(extensions)
 	END_STATIC_PROPERTY_SPEC
 

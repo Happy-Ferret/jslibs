@@ -305,7 +305,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( version ) {
 
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, J__TOSTRING(VI_VERSION)));
-	return JS_TRUE;
+	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 
 
@@ -333,7 +333,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_READ(version)
+		PROPERTY_READ( version )
 		PROPERTY_READ(list)
 		PROPERTY_READ(hasDevice)
 	END_STATIC_PROPERTY_SPEC
