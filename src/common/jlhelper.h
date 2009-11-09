@@ -739,8 +739,16 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		JL_CHK( xdr );
 		JS_XDRMemSetData(xdr, data, compFileSize);
 
+		
+		// we wend silent failures.
 		JSErrorReporter prevErrorReporter = JS_SetErrorReporter(cx, NULL);
+		JSDebugErrorHook errHook = cx->debugHooks->debugErrorHook;
+		cx->debugHooks->debugErrorHook = NULL;
 		JSBool status = JS_XDRScript(xdr, &script);
+		cx->debugHooks->debugErrorHook = errHook;
+		if (cx->lastMessage)
+			JS_free(cx, cx->lastMessage);
+		cx->lastMessage = NULL;
 		JS_SetErrorReporter(cx, prevErrorReporter);
 
 		if ( status == JS_TRUE ) {
