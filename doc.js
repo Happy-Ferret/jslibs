@@ -1,6 +1,8 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+var allInOneFile = false;
+
 
 var api_DEF = {};
 
@@ -102,13 +104,14 @@ var api = {
 	},
 	
 	$MODULE_HEADER: function(cx, item) {
-
-		cx.center = '#summary '+item.lastDir+' module\n' + '#labels doc\n';
-		cx.center += '<b>If something seems wrong or incomplete, please enter a comment [#commentform at the bottom of the page].</b><br/><br/>';
+		
+		if ( !allInOneFile ) {
+		
+			cx.center = '#summary '+item.lastDir+' module\n' + '#labels doc\n';
+			cx.center += '<b>If something seems wrong or incomplete, please enter a comment [#commentform at the bottom of the page].</b><br/><br/>';
+		}
 		cx.center += '- [http://jslibs.googlecode.com/svn/trunk/'+item.path+'/ source] - [JSLibs main] - [http://code.google.com/p/jslibs/source/browse/trunk/'+item.path+'/'+item.lastDir+'_qa.js QA] -\n';
 		cx.center += '= '+item.lastDir+' module =\n';
-//		cx.center += '<wiki:toc max_depth="4"/>';
-		
 	},
 
 	$MODULE_FOOTER: function(cx, item) {
@@ -117,8 +120,11 @@ var api = {
 	},
 
 	$FILE_TOC: function(cx, item) {
-	
-		cx.center = '<wiki:toc max_depth="4"/>'; // '+(ReadArg(cx)||'1')+'
+
+		if ( !allInOneFile )
+			cx.center = '<wiki:toc max_depth="4"/>'; // '+(ReadArg(cx)||'1')+'
+		else
+			cx.center = '';
 	},
 
 	$TOC_CLASS: function(cx, item) {
@@ -447,6 +453,7 @@ function FlattenGroup( groupList ) {
 }
 
 
+// main ///////////////////////////////////////////////////////////////////////
 
 
 var itemList = CreateDocItemList('./src', api);
@@ -497,21 +504,37 @@ for each ( var module in moduleList )
 		}
 
 // write the doc
-//var f = new File( 'jslibs095doc.wiki' );
-//f.Open('w');
+
+if ( allInOneFile ) {
+	
+	var date = new Date();
+	date = (date.getDate())+'.'+(date.getMonth()+1)+'.'+(date.getFullYear());
+	var f = new File( 'jslibs_doc_'+date+'.wiki' );
+	f.Open('w');
+	f.Write('<wiki:toc max_depth="1"/>\n');
+	f.Write('\nDetailed table of content:\n<wiki:toc max_depth="4"/>\n');
+}
+
 
 for each ( var module in moduleList ) {
 
 	var moduleName = module[0][0].lastDir;
-	var f = new File( moduleName+'.wiki' );
-	f.Open('w');
+	if ( !allInOneFile ) {
+	
+		var f = new File( moduleName+'.wiki' );
+		f.Open('w');
+	}
 
 	for each ( var file in module )
 		for each ( var item in file ) {
 			if ( !('hidden' in item.attr) )
 				f.Write( item.text + '\n' ); 
 		}
-	f.Close();
+	if ( !allInOneFile )
+		f.Close();
 }
+
+if ( allInOneFile )
+	f.Close();
 
 Print('Done.\n');
