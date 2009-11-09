@@ -1,7 +1,7 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-var allInOneFile = false;
+var allInOneFile = true;
 
 
 var api_DEF = {};
@@ -508,9 +508,10 @@ for each ( var module in moduleList )
 if ( allInOneFile ) {
 	
 	var date = new Date();
-	date = (date.getDate())+'.'+(date.getMonth()+1)+'.'+(date.getFullYear());
+	date = (date.getFullYear())+'.'+(date.getMonth()+1)+'.'+(date.getDate());
 	var f = new File( 'jslibs_doc_'+date+'.wiki' );
 	f.Open('w');
+	f.Write(date+'\n');
 	f.Write('<wiki:toc max_depth="1"/>\n');
 	f.Write('\nDetailed table of content:\n<wiki:toc max_depth="4"/>\n');
 }
