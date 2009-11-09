@@ -237,6 +237,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 			BufferFinalize(&buf);
 			*rval = JSVAL_VOID;
+			return JS_TRUE;
 		} else
 		if ( res == -1 ) { // -1 indicates a failure. The reason for the failure can be obtained by calling PR_GetError.
 			
