@@ -256,13 +256,13 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 
 // see JSCLASS_SHARE_ALL_PROPERTIES
 #define BEGIN_CLASS(CLASSNAME) \
-	static JSExtendedClass _xclass = { { #CLASSNAME, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub, JSCLASS_NO_OPTIONAL_MEMBERS }, 0}; \
+	static JSExtendedClass _xclass = { { #CLASSNAME, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub, JSCLASS_NO_OPTIONAL_MEMBERS }, 0 }; \
 	JSClass *class##CLASSNAME = &_xclass.base; \
-	static JSClass *_class = &_xclass.base; \
 	JSObject *prototype##CLASSNAME = NULL; \
-	static JSObject **_prototype = &prototype##CLASSNAME; \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj); \
-	JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj) = _InitializeClass;
+	JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj) = _InitializeClass; \
+	static JSClass *_class = class##CLASSNAME; \
+	static JSObject **_prototype = &prototype##CLASSNAME;
 
 #define CONFIGURE_CLASS \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj) { \
