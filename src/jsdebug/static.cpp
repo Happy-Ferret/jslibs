@@ -1682,7 +1682,7 @@ DEFINE_FUNCTION_FAST( VALGRIND_COUNT_LEAKS ) {
 
 
 #ifdef DEBUG
-DEFINE_FUNCTION_FAST( Int3 ) {
+DEFINE_FUNCTION_FAST( DebugBreak ) {
 
 #if defined(WIN32)
 	DebugBreak();
@@ -1755,7 +1755,7 @@ CONFIGURE_STATIC
 	#endif // VALGRIND
 	#ifdef DEBUG
 		FUNCTION_FAST( DumpHeap )
-		FUNCTION_FAST( Int3 )
+		FUNCTION_FAST( DebugBreak )
 	#endif // DEBUG
 
 	// for internal tests
