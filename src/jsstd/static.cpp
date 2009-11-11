@@ -1323,6 +1323,37 @@ DEFINE_FUNCTION_FAST( Halt ) {
 === Static properties ===
 **/
 
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $ARRAY $INAME $READONLY
+  Is the filename of the script being executed.
+  $H note
+   The current filename is also available using: `StackFrameInfo(stackSize-1).filename` (see jsdebug module)
+**/
+DEFINE_PROPERTY( currentFilename ) {
+
+	JSStackFrame *fp = JL_CurrentStackFrame(cx);
+	if ( fp == NULL ) {
+
+		*vp = JSVAL_VOID;
+		return JS_TRUE;
+	}
+	JSScript *script = JS_GetFrameScript(cx, fp);
+	if ( script == NULL ) {
+
+		*vp = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	const char *filename = JS_GetScriptFilename(cx, script);
+	JL_CHK( StringToJsval(cx, filename, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
@@ -1469,6 +1500,7 @@ CONFIGURE_STATIC
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_READ( currentFilename )
 		PROPERTY_READ( isConstructing )
 		PROPERTY( disableGarbageCollection )
 //		PROPERTY( processPriority )
