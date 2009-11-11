@@ -213,6 +213,12 @@ template<class T> T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b); }
 
 #define JL_ARGC (argc)
 
+#define JL_FASTNATIVE_HELPER \
+	argc; \
+	JSObject *obj = JS_THIS_OBJECT(cx, vp); \
+	jsval *argv = JS_ARGV(cx, vp); \
+	jsval *rval = &JS_RVAL(cx, vp);
+
 // returns the ARGument Vector
 #define JL_ARGV (argv)
 // same for fast native (cf. http://developer.mozilla.org/en/docs/JS_ARGV)
