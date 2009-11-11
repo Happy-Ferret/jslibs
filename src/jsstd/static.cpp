@@ -1162,6 +1162,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	JSObject *globalObject;
 	globalObject = JS_NewObject(scx, classSandbox, NULL, NULL);
 	JL_CHK( globalObject );
+	*JL_FRVAL = OBJECT_TO_JSVAL(globalObject); // GC protection
 
 	SandboxContextPrivate pv;
 	pv.cx = cx;
@@ -1230,6 +1231,8 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 	prev = JS_SetOperationCallback(scx, prev);
 	JL_S_ASSERT( prev == SandboxMaxOperationCallback, "Invalid SandboxMaxOperationCallback handler." );
+
+	JL_CHK( JS_DeleteProperty(cx, globalObject, "Query") );
 
 	if (!ok) {
 
