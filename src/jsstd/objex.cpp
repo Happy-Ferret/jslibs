@@ -81,26 +81,25 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval i
 	JL_BAD;
 }
 
-JSBool AddProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_ADD_PROPERTY() {
 
 	return NotifyObject( ADD_SLOT, cx, obj, id, vp );
 }
 
-JSBool DelProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_DEL_PROPERTY() {
 
 	return NotifyObject( DEL_SLOT, cx, obj, id, vp );
 }
 
-JSBool GetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_GET_PROPERTY() {
 
 	return NotifyObject( GET_SLOT, cx, obj, id, vp );
 }
 
-JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+DEFINE_SET_PROPERTY() {
 
 	return NotifyObject( SET_SLOT, cx, obj, id, vp );
 }
-
 
 /**doc
 $TOC_MEMBER $INAME
