@@ -383,9 +383,7 @@ JL_MACRO_END
 
 #define JL_S_ASSERT_THIS_INSTANCE() \
 JL_MACRO_BEGIN \
-	JL_S_ASSERT_CLASS( (obj), (_class) ); \
-	JL_S_ASSERT( JL_GetClass(JS_GetPrototype(cx, (obj)) )== (_class), "Wrong prototype." ); \
-	JL_S_ASSERT( JS_GetConstructor(cx, (obj)) == JS_GetConstructor(cx, JS_GetPrototype(cx, (obj))), "Wrong constructor." ); \
+	JL_S_ASSERT( (obj) != *_prototype && JL_InheritFrom(cx, obj, _class), "Wrong instance." ); \
 JL_MACRO_END
 
 #define JL_S_ASSERT_CONSTRUCTING() \
@@ -614,10 +612,10 @@ ALWAYS_INLINE bool JL_IsRValOptional( JSContext *cx, void *nativeFct ) {
 ALWAYS_INLINE bool JL_InheritFrom( JSContext *cx, JSObject *obj, JSClass *clasp ) {
 
 	while ( obj != NULL ) {
-		
-		obj = JS_GetPrototype(cx, obj);
+
 		if ( JL_GetClass(obj) == clasp )
 			return true;
+		obj = JS_GetPrototype(cx, obj);
 	}
 	return false;
 }

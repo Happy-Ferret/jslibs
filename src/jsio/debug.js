@@ -5,7 +5,8 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jstask');
 
-
+var f = new File('test');
+f.closed;
 Descriptor.closed;
 
 
