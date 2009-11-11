@@ -459,7 +459,8 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( available ) {
 
 	JL_S_ASSERT_THIS_INSTANCE();
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
 
 	PRInt64 available;
@@ -492,7 +493,8 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( type ) {
 
 	JL_S_ASSERT_THIS_INSTANCE();
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
 	*vp = INT_TO_JSVAL( (int)PR_GetDescType(fd) );
 	return JS_TRUE;
@@ -510,7 +512,8 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( closed ) {
 
 	JL_S_ASSERT_THIS_INSTANCE();
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	*vp = BOOLEAN_TO_JSVAL( fd == NULL );
 	return JS_TRUE;
 	JL_BAD;
