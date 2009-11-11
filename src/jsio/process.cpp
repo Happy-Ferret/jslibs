@@ -163,13 +163,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Wait ) {
 
-	JL_S_ASSERT_CLASS( JL_FOBJ, _class );
+	JSObject *obj = JL_FOBJ;
+	JL_S_ASSERT_CLASS( obj, _class );
 	PRProcess *process;
-	process = (PRProcess*)JL_GetPrivate(cx, JL_FOBJ);
+	process = (PRProcess*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(process);
 	PRInt32 exitValue;
 	JL_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
-	JL_SetPrivate(cx, JL_FOBJ, NULL);
+	JL_SetPrivate(cx, obj, NULL);
 	JL_CHK( IntToJsval(cx, exitValue, JL_FRVAL) );
 	return JS_TRUE;
 	JL_BAD;
@@ -183,12 +184,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Detach ) {
 
-	JL_S_ASSERT_CLASS( JL_FOBJ, _class );
+	JSObject *obj = JL_FOBJ;
+	JL_S_ASSERT_CLASS( obj, _class );
 	PRProcess *process;
-	process = (PRProcess*)JL_GetPrivate(cx, JL_FOBJ);
+	process = (PRProcess*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(process);
 	JL_CHK( PR_DetachProcess(process) == PR_SUCCESS );
-	JL_SetPrivate(cx, JL_FOBJ, NULL); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
+	JL_SetPrivate(cx, obj, NULL); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -202,12 +204,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Kill ) {
 
-	JL_S_ASSERT_CLASS( JL_FOBJ, _class );
+	JSObject *obj = JL_FOBJ;
+	JL_S_ASSERT_CLASS( obj, _class );
 	PRProcess *process;
-	process = (PRProcess*)JL_GetPrivate(cx, JL_FOBJ);
+	process = (PRProcess*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(process);
 	JL_CHK( PR_KillProcess(process) == PR_SUCCESS );
-	JL_SetPrivate(cx, JL_FOBJ, NULL); // Invalidates the current process pointer.
+	JL_SetPrivate(cx, obj, NULL); // Invalidates the current process pointer.
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;

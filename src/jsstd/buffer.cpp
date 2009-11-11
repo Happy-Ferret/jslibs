@@ -615,9 +615,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Write ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JSObject *obj = JL_FOBJ;
+
+	JL_S_ASSERT_CLASS(obj, _class);
 	BufferPrivate *pv;
-	pv = (BufferPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 	
@@ -632,7 +634,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 	if ( JsvalIsClass(*arg1, _class) ) {
 		
 		JL_S_ASSERT_ARG(1);
-		return AddBuffer(cx, JL_FOBJ, JSVAL_TO_OBJECT( *arg1 ));
+		return AddBuffer(cx, obj, JSVAL_TO_OBJECT( *arg1 ));
 	}
 
 	if ( JL_FARG_ISDEF(2) ) {
@@ -648,10 +650,10 @@ DEFINE_FUNCTION_FAST( Write ) {
 		if ( amount > strLen )
 			amount = strLen;
 
-		return WriteRawDataChunk(cx, JL_FOBJ, amount, buf);
+		return WriteRawDataChunk(cx, obj, amount, buf);
 	} else {
 
-		return WriteDataChunk(cx, JL_FOBJ, *arg1);
+		return WriteDataChunk(cx, obj, *arg1);
 	}
 	JL_BAD;
 }
@@ -669,7 +671,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Match ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JSObject *obj = JL_FOBJ;
+
+	JL_S_ASSERT_CLASS(obj, _class);
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	const char *str;
@@ -681,7 +685,7 @@ DEFINE_FUNCTION_FAST( Match ) {
 	unsigned int amount;
 	amount = len;
 	JSBool st;
-	st = ReadRawDataAmount(cx, JL_FOBJ, &amount, src);
+	st = ReadRawDataAmount(cx, obj, &amount, src);
 	if ( st != JS_TRUE )
 		goto err;
 
@@ -697,7 +701,7 @@ DEFINE_FUNCTION_FAST( Match ) {
 		consume = false;
 
 	if ( !consume )
-		JL_CHK( UnReadRawDataChunk(cx, JL_FOBJ, src, amount) );
+		JL_CHK( UnReadRawDataChunk(cx, obj, src, amount) );
 
 err:
 	jl_free(src);

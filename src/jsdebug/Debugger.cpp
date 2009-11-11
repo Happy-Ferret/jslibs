@@ -390,6 +390,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN( 3 );
 
 	bool polarity;
@@ -409,10 +410,10 @@ DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
 	JS_ClearTrap(cx, script, pc, &prevHandler, &prevClosure);
 
 	if ( polarity ) {
-		JL_CHK( JS_SetTrap(cx, script, pc, TrapHandler, JL_FOBJ) );
+		JL_CHK( JS_SetTrap(cx, script, pc, TrapHandler, obj) );
 	} else {
-		if ( prevHandler != TrapHandler || prevClosure != JL_FOBJ )
-			JL_CHK( JS_SetTrap(cx, script, pc, TrapHandler, JL_FOBJ) );
+		if ( prevHandler != TrapHandler || prevClosure != obj )
+			JL_CHK( JS_SetTrap(cx, script, pc, TrapHandler, obj) );
 	}
 
 	*JL_FRVAL = INT_TO_JSVAL( JS_PCToLineNumber(cx, script, pc) );

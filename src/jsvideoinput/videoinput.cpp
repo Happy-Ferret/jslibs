@@ -164,14 +164,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Close ) {
 
+	JSObject *obj = JL_FOBJ;
+
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	if ( deviceIdVal == JSVAL_VOID ) // the device is already closed
 		return JS_TRUE;
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	vi->stopDevice(deviceId);
-	JL_CHK( JS_SetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, JSVAL_VOID) );
+	JL_CHK( JS_SetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, JSVAL_VOID) );
 	return JS_TRUE;
 	JL_BAD;
 }

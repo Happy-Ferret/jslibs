@@ -324,9 +324,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Close ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JSObject *obj = JL_FOBJ;
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	JL_CHK( CloseSharedMemory(cx, JL_FOBJ) );
+	JL_CHK( CloseSharedMemory(cx, obj) );
 	return JS_TRUE;
 	JL_BAD;
 }

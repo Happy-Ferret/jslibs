@@ -206,9 +206,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Free ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JSObject *obj = JL_FOBJ;
+	JL_S_ASSERT_CLASS(obj, _class);
 	void *pv;
-	pv = JL_GetPrivate(cx, JL_FOBJ);
+	pv = JL_GetPrivate(cx, obj);
 
 	if ( JL_FARG_ISDEF(1) ) {
 
@@ -217,17 +218,17 @@ DEFINE_FUNCTION_FAST( Free ) {
 		if ( wipe ) {
 
 			size_t length;
-			JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
+			JL_CHK( BlobLength(cx, obj, &length) );
 			memset(pv, 0, length);
 		}
 	}
 
 	JS_free(cx, pv);
-	JL_SetPrivate(cx, JL_FOBJ, NULL);
-	JL_CHK( InvalidateBlob(cx, JL_FOBJ) );
+	JL_SetPrivate(cx, obj, NULL);
+	JL_CHK( InvalidateBlob(cx, obj) );
 	// removes all of obj's own properties, except the special __proto__ and __parent__ properties, in a single operation.
 	// Properties belonging to objects on obj's prototype chain are not affected.
-	JS_ClearScope(cx, JL_FOBJ);
+	JS_ClearScope(cx, obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -242,15 +243,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( concat ) {
 
+	JSObject *obj = JL_FOBJ;
 	char *dst = NULL;
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JL_S_ASSERT_CLASS(obj, _class);
 
 	// note: var a = new String(123);  a.concat() !== a
 
 	size_t thisLength;
 	const char *thisBuffer;
-	JL_CHK( BlobBuffer(cx, JL_FOBJ, &thisBuffer) );
-	JL_CHK( BlobLength(cx, JL_FOBJ, &thisLength) );
+	JL_CHK( BlobBuffer(cx, obj, &thisBuffer) );
+	JL_CHK( BlobLength(cx, obj, &thisLength) );
 
 	size_t dstLen;
 	dstLen = thisLength;
@@ -316,14 +318,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( substr ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JSObject *obj = JL_FOBJ;
+	JL_S_ASSERT_CLASS(obj, _class);
 	JL_S_ASSERT_ARG_MIN(1);
 
 	const char *bstrBuffer;
-	JL_CHK( BlobBuffer(cx, JL_FOBJ, &bstrBuffer) );
+	JL_CHK( BlobBuffer(cx, obj, &bstrBuffer) );
 
 	size_t dataLength;
-	JL_CHK( BlobLength(cx, JL_FOBJ, &dataLength) );
+	JL_CHK( BlobLength(cx, obj, &dataLength) );
 
 	jsval arg1;
 	arg1 = JL_FARG(1);
@@ -407,7 +410,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( substring ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JSObject *obj = JL_FOBJ;
+	JL_S_ASSERT_CLASS(obj, _class);
 	if ( JL_ARGC == 0 ) {
 		
 		*JL_FRVAL = JL_FARG(1);
@@ -415,9 +419,9 @@ DEFINE_FUNCTION_FAST( substring ) {
 	}
 
 	const char *bstrBuffer;
-	JL_CHK( BlobBuffer(cx, JL_FOBJ, &bstrBuffer) );
+	JL_CHK( BlobBuffer(cx, obj, &bstrBuffer) );
 	size_t dataLength;
-	JL_CHK( BlobLength(cx, JL_FOBJ, &dataLength) );
+	JL_CHK( BlobLength(cx, obj, &dataLength) );
 
 	int indexA, indexB;
 /*
@@ -498,7 +502,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( indexOf ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JSObject *obj = JL_FOBJ;
+	JL_S_ASSERT_CLASS(obj, _class);
 	JL_S_ASSERT_ARG_MIN(1);
 
 	const char *sBuffer;
@@ -512,7 +517,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 	}
 
 	size_t length;
-	JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
+	JL_CHK( BlobLength(cx, obj, &length) );
 
 	long start;
 	if ( JL_FARG_ISDEF(2) ) {
@@ -534,7 +539,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 	}
 
 	const char *buffer;
-	JL_CHK( BlobBuffer(cx, JL_FOBJ, &buffer) );
+	JL_CHK( BlobBuffer(cx, obj, &buffer) );
 
 	for ( size_t i = start; i < length; i++ ) {
 
@@ -565,7 +570,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JSObject *obj = JL_FOBJ;
+	JL_S_ASSERT_CLASS(obj, _class);
 	JL_S_ASSERT_ARG_MIN(1);
 
 	const char *sBuffer;
@@ -575,8 +581,8 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
 	const char *buffer;
 	size_t length;
-	JL_CHK( BlobBuffer(cx, JL_FOBJ, &buffer) );
-	JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
+	JL_CHK( BlobBuffer(cx, obj, &buffer) );
+	JL_CHK( BlobLength(cx, obj, &length) );
 
 	if ( sLength == 0 && argc < 2 ) {
 
@@ -638,7 +644,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( charAt ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JSObject *obj = JL_FOBJ;
+	JL_S_ASSERT_CLASS(obj, _class);
 	int index;
 	if ( JL_FARG_ISDEF(1) ) {
 
@@ -663,7 +670,7 @@ DEFINE_FUNCTION_FAST( charAt ) {
 
 
 	size_t length;
-	JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
+	JL_CHK( BlobLength(cx, obj, &length) );
 
 	if ( length == 0 || index < 0 || (unsigned)index >= length ) {
 
@@ -672,7 +679,7 @@ DEFINE_FUNCTION_FAST( charAt ) {
 	}
 
 	const char *buffer;
-	JL_CHK( BlobBuffer(cx, JL_FOBJ, &buffer) );
+	JL_CHK( BlobBuffer(cx, obj, &buffer) );
 
 	jschar chr;
 	chr = ((char*)buffer)[index];
@@ -695,7 +702,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( charCodeAt ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JSObject *obj = JL_FOBJ;
+	JL_S_ASSERT_CLASS(obj, _class);
 	int index;
 	if ( JL_FARG_ISDEF(1) ) {
 
@@ -720,7 +728,7 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 	}
 
 	size_t length;
-	JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
+	JL_CHK( BlobLength(cx, obj, &length) );
 
 	if ( length == 0 || index < 0 || (unsigned)index >= length ) {
 
@@ -729,7 +737,7 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 	}
 
 	const char *buffer;
-	JL_CHK( BlobBuffer(cx, JL_FOBJ, &buffer) );
+	JL_CHK( BlobBuffer(cx, obj, &buffer) );
 	*JL_FRVAL = INT_TO_JSVAL( buffer[index] );
 	return JS_TRUE;
 	JL_BAD;
@@ -745,11 +753,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JSObject *obj = JL_FOBJ;
+	JL_S_ASSERT_CLASS(obj, _class);
 	void *pv;
-	pv = JL_GetPrivate(cx, JL_FOBJ);
+	pv = JL_GetPrivate(cx, obj);
 	size_t length;
-	JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
+	JL_CHK( BlobLength(cx, obj, &length) );
 	JSString *jsstr;
 	if ( length == 0 ) {
 

@@ -3,9 +3,10 @@ LoadModule('jsio');
 LoadModule('jsdebug');
 
 
-var o = new ObjEx();
+var b = new Buffer();
 
-Print( o instanceof ObjEx );
+b.Clear();
+
 
 
 Halt(); //////////////////////////////

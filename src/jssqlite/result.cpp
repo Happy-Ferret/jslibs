@@ -374,9 +374,11 @@ DEFINE_FUNCTION( Row ) {
 
 DEFINE_FUNCTION_FAST( next ) { // for details, see Row() function thet is the base of this function.
 
-	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, JL_FOBJ);
+	JSObject *obj = JL_FOBJ;
+
+	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pStmt );
-	JL_CHK( _Step(cx, JL_FOBJ, 0, NULL, JL_FRVAL) );
+	JL_CHK( _Step(cx, obj, 0, NULL, JL_FRVAL) );
 	if ( *JL_FRVAL == JSVAL_FALSE ) // means SQLITE_DONE
 		return JS_ThrowStopIteration(cx);
 	JSObject *row;

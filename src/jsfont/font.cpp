@@ -203,6 +203,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DrawString ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN(1);
 
 	FT_Face face;
@@ -235,37 +236,37 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
 	int letterSpacing;
 	letterSpacing = 0;
-	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, FONT_SLOT_LETTERSPACING, &tmp) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		JL_CHK( JsvalToInt(cx, tmp, &letterSpacing) );
 
 	int horizontalPadding;
 	horizontalPadding = 0;
-	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, FONT_SLOT_HORIZONTALPADDING, &tmp) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, FONT_SLOT_HORIZONTALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		JL_CHK( JsvalToInt(cx, tmp, &horizontalPadding) );
 
 	int verticalPadding;
 	verticalPadding = 0;
-	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, FONT_SLOT_VERTICALPADDING, &tmp) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, FONT_SLOT_VERTICALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		JL_CHK( JsvalToInt(cx, tmp, &verticalPadding) );
 
 	bool useKerning;
 	useKerning = true;
-	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, FONT_SLOT_USEKERNING, &tmp) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		JL_CHK( JsvalToBool(cx, tmp, &useKerning) );
 
 	bool isItalic;
 	isItalic = false;
-	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, FONT_SLOT_ITALIC, &tmp) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, FONT_SLOT_ITALIC, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		JL_CHK( JsvalToBool(cx, tmp, &isItalic) );
 
 	bool isBold;
 	isBold = false;
-	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, FONT_SLOT_BOLD, &tmp) );
+	JL_CHK( JS_GetReservedSlot(cx, obj, FONT_SLOT_BOLD, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		JL_CHK( JsvalToBool(cx, tmp, &isBold) );
 

@@ -58,6 +58,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Expand ) {
 
+	JSObject *obj = JL_FOBJ;
+
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	const char *srcBegin;
@@ -77,7 +79,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 	} else {
 
 		mapIsFunction = false;
-		map = OBJECT_TO_JSVAL( JL_FOBJ );
+		map = OBJECT_TO_JSVAL( obj );
 	}
 
 	JL_S_ASSERT( mapIsFunction || !JSVAL_IS_PRIMITIVE(map), "Object required." );
@@ -126,7 +128,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 		if ( mapIsFunction ) {
 
 			JL_CHKB( StringAndLengthToJsval(cx, JL_FRVAL, srcBegin, tok-srcBegin), bad_free_stack );
-			JL_CHKB( JS_CallFunctionValue(cx, JL_FOBJ, map, 1, JL_FRVAL, JL_FRVAL), bad_free_stack );
+			JL_CHKB( JS_CallFunctionValue(cx, obj, map, 1, JL_FRVAL, JL_FRVAL), bad_free_stack );
 		} else {
 
 			char tmp = *tok; // (TBD) try to replace this trick
@@ -1040,6 +1042,8 @@ $TOC_MEMBER $INAME
 // function copied from mozilla/js/src/js.c
 DEFINE_FUNCTION_FAST( Exec ) {
 
+	JSObject *obj = JL_FOBJ;
+
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	bool useAndSaveCompiledScripts;
@@ -1050,7 +1054,7 @@ DEFINE_FUNCTION_FAST( Exec ) {
 	uint32 oldopts;
 	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); // JSOPTION_COMPILE_N_GO is properly removed in JLLoadScript if needed.
 	JSScript *script;
-	script = JLLoadScript( cx, JL_FOBJ, filename, useAndSaveCompiledScripts, useAndSaveCompiledScripts );
+	script = JLLoadScript( cx, obj, filename, useAndSaveCompiledScripts, useAndSaveCompiledScripts );
 	JS_SetOptions(cx, oldopts);
 	JL_CHK( script );
 
@@ -1059,7 +1063,7 @@ DEFINE_FUNCTION_FAST( Exec ) {
 	scrobj = JS_NewScriptObject(cx, script);
 	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
 	JSBool ok;
-	ok = JS_ExecuteScript(cx, JL_FOBJ, script, JL_FRVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
+	ok = JS_ExecuteScript(cx, obj, script, JL_FRVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
 	JS_POP_TEMP_ROOT(cx, &tvr);
 	JL_CHK( ok );
 

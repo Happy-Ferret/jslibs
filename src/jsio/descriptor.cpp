@@ -121,8 +121,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Close ) {
 
+	JSObject *obj = JL_FOBJ;
 	*JL_FRVAL = JSVAL_VOID;
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, JL_FOBJ);
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
 
 	JL_S_ASSERT( fd != NULL, "The descriptor is already closed." ); // see PublicApiRules (http://code.google.com/p/jslibs/wiki/PublicApiRules)
 //	if ( !fd ) { // (TBD) apply jslibsAPIRules
@@ -138,8 +139,8 @@ DEFINE_FUNCTION_FAST( Close ) {
 		if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
 			return ThrowIoError(cx);
 	}
-	JL_SetPrivate(cx, JL_FOBJ, NULL);
-	JL_CHK( SetStreamReadInterface(cx, JL_FOBJ, NULL) );
+	JL_SetPrivate(cx, obj, NULL);
+	JL_CHK( SetStreamReadInterface(cx, obj, NULL) );
 	//	JS_ClearScope( cx, obj ); // (TBD) check if this can help to clear readable, writable, exception ?
 	return JS_TRUE;
 	JL_BAD;

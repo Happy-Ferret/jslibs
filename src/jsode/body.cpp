@@ -217,9 +217,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( AddForce ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_CLASS(JL_FOBJ, classBody);
-	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_CLASS(obj, classBody);
+	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( thisBodyID );
 	uint32 length;
 	ode::dVector3 forceVec;
@@ -245,9 +246,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( AddTorque ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_CLASS(JL_FOBJ, classBody);
-	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_CLASS(obj, classBody);
+	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( thisBodyID );
 	ode::dVector3 vector;
 	uint32 length;

@@ -115,11 +115,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Clear ) {
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JSObject *obj = JL_FOBJ;
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	Matrix44Identity(pv->mat);
 	pv->isIdentity = true;
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -132,10 +133,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClearRotation ) {
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JSObject *obj = JL_FOBJ;
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	Matrix44ClearRotation(pv->mat);
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -148,10 +150,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ClearTranslation ) {
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JSObject *obj = JL_FOBJ;
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	Matrix44ClearTranslation(pv->mat);
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -166,7 +169,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Load ) {
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JSObject *obj = JL_FOBJ;
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	JL_S_ASSERT_ARG(1);
@@ -177,7 +181,7 @@ DEFINE_FUNCTION_FAST( Load ) {
 		Matrix44Load(pv->mat, tmp);
 	pv->isIdentity = false; // (TBD) detect identity
 
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -192,8 +196,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( LoadRotation ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG(1);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	Matrix44 tmp, *m = &tmp;
@@ -213,7 +218,7 @@ DEFINE_FUNCTION_FAST( LoadRotation ) {
 
 	pv->isIdentity = false; // (TBD) detect identity
 
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -229,8 +234,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( LoadTranslation ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG(1);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	Matrix44 tmp, *m = &tmp;
@@ -242,7 +248,7 @@ DEFINE_FUNCTION_FAST( LoadTranslation ) {
 
 	pv->isIdentity = false; // (TBD) detect identity
 
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -259,8 +265,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Translate ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG(3);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	float x, y, z;
@@ -280,7 +287,7 @@ DEFINE_FUNCTION_FAST( Translate ) {
 		Matrix44Mult(pv->mat, pv->mat, &t);
 	}
 
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -297,8 +304,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Scale ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_RANGE(1,3);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	float x, y, z;
@@ -326,7 +334,7 @@ DEFINE_FUNCTION_FAST( Scale ) {
 		Matrix44Mult(pv->mat, pv->mat, &t);
 	}
 
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -345,8 +353,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( RotationFromQuaternion ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG(4);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	float w, x, y, z;
@@ -380,7 +389,7 @@ DEFINE_FUNCTION_FAST( RotationFromQuaternion ) {
 
 	pv->isIdentity = false;
 
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -426,10 +435,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Rotate ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG(4);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
 	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) );
@@ -469,10 +479,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( RotateX ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG(1);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
 	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) ); 
@@ -505,10 +516,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( RotateY ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG(1);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
 	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) ); 
@@ -541,10 +553,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( RotateZ ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG(1);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
 	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) );
@@ -593,8 +606,9 @@ DEFINE_FUNCTION_FAST( LookAt ) {
     m3 = z.m128;
 */
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_RANGE(6,9);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	float eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz;
@@ -634,7 +648,7 @@ DEFINE_FUNCTION_FAST( LookAt ) {
 
 	pv->isIdentity = false;
 
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -647,8 +661,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( RotateToVector ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG(3);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	float x, y, z;
@@ -675,7 +690,7 @@ DEFINE_FUNCTION_FAST( RotateToVector ) {
 		Matrix44Mult(pv->mat, pv->mat, &r);
 	}
 	
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -688,14 +703,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Invert ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG(0);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	if ( !pv->isIdentity )
 		Matrix44Invert(pv->mat);
 
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -710,8 +726,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Product ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_RANGE(1,2);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	Matrix44 tmp, *m = &tmp;
@@ -733,7 +750,7 @@ DEFINE_FUNCTION_FAST( Product ) {
 
 	pv->isIdentity = false;
 
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }

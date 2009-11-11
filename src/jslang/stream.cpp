@@ -121,7 +121,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Read ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JSObject *obj = JL_FOBJ;
+	JL_S_ASSERT_CLASS(obj, _class);
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	int amount;
@@ -133,7 +134,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 	size_t readAmount;
 	readAmount = amount;
-	JL_CHK( StreamRead(cx, JL_FOBJ, buffer, &readAmount ) );
+	JL_CHK( StreamRead(cx, obj, buffer, &readAmount ) );
 
 	if ( JL_MaybeRealloc(amount, readAmount) )
 		buffer = (char*)JS_realloc(cx, buffer, readAmount +1);

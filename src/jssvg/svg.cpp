@@ -137,7 +137,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Write ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JSObject *obj = JL_FOBJ;
+
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	RsvgHandle *handle = pv->handle;
 
@@ -156,7 +158,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 	gchar *tmp = handle->priv->base_uri;
 	CxObj cxobj;
 	cxobj.cx = cx;
-	cxobj.obj = JL_FOBJ;
+	cxobj.obj = obj;
 	handle->priv->base_uri = (gchar*)&cxobj; // hack base_uri to store cx and obj for rsvg_pixbuf_new_from_href()
 	status = rsvg_handle_write(handle, (const guchar *)data, length, &error);
 	handle->priv->base_uri = tmp;

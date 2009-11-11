@@ -83,7 +83,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, JL_FOBJ );
+	JSObject *obj = JL_FOBJ;
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
 
 	PRShutdownHow how;
@@ -98,7 +99,7 @@ DEFINE_FUNCTION_FAST( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUT
 		how = PR_SHUTDOWN_BOTH; // default
 
 	if ( how == PR_SHUTDOWN_RCV )
-		JL_CHK( SetStreamReadInterface(cx, JL_FOBJ, NULL) );
+		JL_CHK( SetStreamReadInterface(cx, obj, NULL) );
 
 	if (PR_Shutdown( fd, how ) != PR_SUCCESS) // is this compatible with linger ?? need to check PR_WOULD_BLOCK_ERROR ???
 		return ThrowIoError(cx);
@@ -276,9 +277,10 @@ $TOC_MEMBER $INAME
 //	descriptor writeable.
 DEFINE_FUNCTION_FAST( Connect ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN( 2 );
 	PRFileDesc *fd;
-	fd = (PRFileDesc*)JL_GetPrivate(cx, JL_FOBJ);
+	fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( fd );
 
 	unsigned int port;
@@ -333,8 +335,8 @@ DEFINE_FUNCTION_FAST( Connect ) {
 	}
 	// see 	PR_GetConnectStatus or PR_ConnectContinue INSTEAD ???
 
-	JL_CHK( SetStreamReadInterface(cx, JL_FOBJ, NativeInterfaceStreamRead) );
-	*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -349,11 +351,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( SendTo ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN( 3 );
 
 	PRFileDesc *fd;
-	if ( JL_GetClass(JL_FOBJ) == _class )
-		fd = (PRFileDesc*)JL_GetPrivate(cx, JL_FOBJ);
+	if ( JL_GetClass(obj) == _class )
+		fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
 	else
 		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
 	JL_S_ASSERT_RESOURCE( fd );
@@ -410,7 +413,7 @@ DEFINE_FUNCTION_FAST( SendTo ) {
 	else
 		*JL_FRVAL = JS_GetEmptyStringValue(cx); // nothing remains
 
-	if ( JL_GetClass(JL_FOBJ) != _class )
+	if ( JL_GetClass(obj) != _class )
 		PR_Close(fd);
 
 	return JS_TRUE;
@@ -427,14 +430,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( RecvFrom ) {
 
+	JSObject *obj = JL_FOBJ;
 	char *buffer = NULL;
 
 //	JL_S_ASSERT_CLASS( obj, _class );
 
 	PRFileDesc *fd;
-	if ( JL_GetClass(JL_FOBJ) == _class ) {
+	if ( JL_GetClass(obj) == _class ) {
 
-		fd = (PRFileDesc*)JL_GetPrivate(cx, JL_FOBJ);
+		fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
 		JL_S_ASSERT_RESOURCE( fd );
 	} else {
 
