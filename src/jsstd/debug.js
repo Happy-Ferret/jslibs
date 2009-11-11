@@ -2,9 +2,8 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
 
-Print(TimeCounter(), '\n');
-Sleep(1234);
-Print(TimeCounter(), '\n');
+
+Buffer.prototype.length;
 
 
 Halt(); //////////////////////////////

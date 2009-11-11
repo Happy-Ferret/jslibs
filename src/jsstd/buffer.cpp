@@ -984,6 +984,8 @@ DEFINE_PROPERTY( length ) {
 	JL_S_ASSERT_THIS_CLASS();
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+
 	*vp = INT_TO_JSVAL(pv->length);
 	return JS_TRUE;
 	JL_BAD;

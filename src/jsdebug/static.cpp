@@ -1320,6 +1320,12 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 			else
 				JL_CHK( JS_SetProperty(cx, descObj, "value", &tmp) );
 
+			tmp = jssp->getter != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+			JL_CHK( JS_SetProperty(cx, descObj, "getter", &tmp) );
+
+			tmp = jssp->setter != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+			JL_CHK( JS_SetProperty(cx, descObj, "setter", &tmp) );
+
 			tmp = desc.flags & JSPD_VARIABLE ? JSVAL_TRUE : JSVAL_FALSE; // doc. local variable in function
 			JL_CHK( JS_SetProperty(cx, descObj, "variable", &tmp) );
 

@@ -2,13 +2,33 @@
 
 LoadModule('jsstd');
 LoadModule('jsdebug');
+LoadModule('jsio');
+LoadModule('jssqlite');
 
-var b = new Blob('aze');
 
-for each ( var p in PropertiesInfo(b, true) ) {
-	
-	Print(uneval(p));
+function prop(obj, prev, lvl) {
+
+	if ( lvl > 6 )
+		return;
+	if ( IsPrimitive(obj) )
+		return;
+
+	for each ( name in PropertiesList(obj) ) {
+		
+		Print( (prev+'.'+name).quote(), ':\n' );
+		var v;
+		try {
+			v = obj[name];
+		} catch(ex) {
+			
+			Print(ex, '\n');
+		}
+		prop(v, prev+'.'+name, lvl+1);
+	}
 }
+
+prop(global, 'global', 0);
+
 
 
 Halt();

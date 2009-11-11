@@ -591,6 +591,11 @@ LoadModule('jsstd');
 		QA.ASSERT( val.aPropertyOfMyBlob, 12345, 'blob property' );
 		QA.ASSERT_STR( val, "my blob", 'blob content' );
 
+/// blob toSource [ftrm]
+
+	new Blob('123').toSource();
+	new Blob('123').__proto__.toSource();
+	
 
 /// map serialization [ftrm]
 

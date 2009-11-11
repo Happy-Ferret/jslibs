@@ -45,9 +45,7 @@ ALWAYS_INLINE JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *le
 	jsval lengthVal;
 	JL_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
 //	JL_S_ASSERT_INT( lengthVal );
-	JL_SAFE(
-		JL_CHKM( JSVAL_IS_INT( lengthVal ), "Invalidated blob." );
-	);
+	JL_S_ASSERT( JSVAL_IS_INT( lengthVal ), "Invalidated blob." );
 	*length = JSVAL_TO_INT( lengthVal );
 	return JS_TRUE;
 	JL_BAD;
@@ -775,7 +773,13 @@ DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
 DEFINE_FUNCTION_FAST( toSource ) {
 
 	// (TBD) try something faster !!
-	*JL_FRVAL = STRING_TO_JSVAL(JS_ValueToSource(cx, STRING_TO_JSVAL(JS_ValueToString(cx, OBJECT_TO_JSVAL(JL_FOBJ)))));
+
+	JSObject *obj = JL_FOBJ;
+	if ( obj == *_prototype )
+		*JL_FRVAL = JS_GetEmptyStringValue(cx);
+	else
+		*JL_FRVAL = STRING_TO_JSVAL( JS_ValueToString(cx, OBJECT_TO_JSVAL( obj )) );
+	*JL_FRVAL = STRING_TO_JSVAL( JS_ValueToSource(cx, *JL_FRVAL) );
 	return JS_TRUE;
 }
 

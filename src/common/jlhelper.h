@@ -369,6 +369,13 @@ JL_MACRO_END
 #define JL_S_ASSERT_THIS_CLASS() \
 	JL_S_ASSERT_CLASS(obj, _class)
 
+#define JL_S_ASSERT_THIS_INSTANCE() \
+JL_MACRO_BEGIN \
+	JL_S_ASSERT_CLASS( (obj), (_class) ); \
+	JL_S_ASSERT( JL_GetClass(JS_GetPrototype(cx, (obj)) )== (_class), "Wrong prototype." ); \
+	JL_S_ASSERT( JS_GetConstructor(cx, (obj)) == JS_GetConstructor(cx, JS_GetPrototype(cx, (obj))), "Wrong constructor." ); \
+JL_MACRO_END
+
 #define JL_S_ASSERT_CONSTRUCTING() \
 	JL_S_ASSERT( JS_IsConstructing(cx) == JS_TRUE, J__ERRMSG_NEED_CONSTRUCTION )
 

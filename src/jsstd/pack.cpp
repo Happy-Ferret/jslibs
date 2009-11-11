@@ -463,7 +463,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( systemIntSize ) {
 
-	JL_S_ASSERT_THIS_CLASS();
 	*vp = INT_TO_JSVAL( sizeof(int) );
 	return JS_TRUE;
 	JL_BAD;
