@@ -3,7 +3,9 @@ LoadModule('jsio');
 LoadModule('jsdebug');
 
 
-Buffer.prototype.length;
+var o = new ObjEx();
+
+Print( o instanceof ObjEx );
 
 
 Halt(); //////////////////////////////

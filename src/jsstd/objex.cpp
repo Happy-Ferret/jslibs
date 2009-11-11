@@ -125,6 +125,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_S_ASSERT_ARG_RANGE(0, 5);
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
 
@@ -154,18 +155,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Aux ) {
 
+	JL_FASTNATIVE_HELPER;
 	JL_S_ASSERT_ARG_RANGE(1, 2);
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(JL_FARG(1)), _class);
+	JL_S_ASSERT_THIS_INSTANCE();
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(JL_ARG(1)), _class);
 
 	JSObject *object;
-	object = JSVAL_TO_OBJECT(JL_FARG(1));
+	object = JSVAL_TO_OBJECT(JL_ARG(1));
 	JL_S_ASSERT_CLASS( object, _class );
-	JL_CHK( JS_GetReservedSlot( cx, object, AUX_SLOT, JL_FRVAL ) );
-	if ( JL_FARG_ISDEF(2) )
-	  JL_CHK( JS_SetReservedSlot( cx, object, AUX_SLOT, JL_FARG(2) ) );
+	JL_CHK( JS_GetReservedSlot( cx, object, AUX_SLOT, rval ) );
+	if ( JL_ARG_ISDEF(2) )
+	  JL_CHK( JS_SetReservedSlot( cx, object, AUX_SLOT, JL_ARG(2) ) );
 	return JS_TRUE;
 	JL_BAD;
+
 }
 
 //DEFINE_HAS_INSTANCE() { // see issue#52

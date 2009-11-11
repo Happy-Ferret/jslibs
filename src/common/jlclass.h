@@ -254,6 +254,7 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 #define INIT_CLASS( CLASSNAME ) \
 	JL_CHK( InitializeClass##CLASSNAME(cx, obj) )
 
+// see JSCLASS_SHARE_ALL_PROPERTIES
 #define BEGIN_CLASS(CLASSNAME) \
 	static JSExtendedClass _xclass = { { #CLASSNAME, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub, JSCLASS_NO_OPTIONAL_MEMBERS }, 0}; \
 	JSClass *class##CLASSNAME = &_xclass.base; \
