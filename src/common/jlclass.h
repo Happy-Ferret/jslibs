@@ -221,20 +221,18 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 
 #define END_STATIC \
 	JL_CHK(obj); \
+	JSObject *dstObj; \
+	dstObj = obj; \
 	if ( GetHostPrivate(cx)->camelCase == 1 ) \
 		_NormalizeFunctionSpecNames(_staticFunctionSpec); \
 	if ( _staticFunctionSpec != NULL ) \
 		JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
 	if ( _staticPropertySpec != NULL ) \
-		JS_DefineProperties(cx, obj, _staticPropertySpec); \
-	JSObject *dstObj; \
-	dstObj = obj; \
+		JL_CHK( JL_DefineClassProperties(cx, dstObj, _staticPropertySpec) ); \
 	if ( _constIntegerSpec != NULL ) { \
 		for ( ; _constIntegerSpec->name; _constIntegerSpec++ ) \
 			JL_CHK( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
 	} \
-	if ( _staticPropertySpec != NULL ) \
-		JL_CHK( JL_DefineClassProperties(cx, dstObj, _staticPropertySpec) ); \
 	if ( _constDoubleSpec != NULL ) \
 		JL_CHK( JS_DefineConstDoubles(cx, obj, _constDoubleSpec) ); \
 	JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
@@ -297,11 +295,11 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 		if ( _constIntegerSpec != NULL ) \
 			for ( ; _constIntegerSpec->name; _constIntegerSpec++ ) \
 				JL_CHK( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
+		if ( _constDoubleSpec != NULL ) \
+			JL_CHK( JS_DefineConstDoubles(cx, dstObj, _constDoubleSpec) ); \
 		JSBool found; \
 		JL_CHK( JS_SetPropertyAttributes(cx, obj, _class->name, JSPROP_READONLY | JSPROP_PERMANENT, &found) ); \
 		JL_CHKM( found, "Unable to set class flags." ); \
-		if ( _constDoubleSpec != NULL ) \
-			JL_CHK( JS_DefineConstDoubles(cx, dstObj, _constDoubleSpec) ); \
 		JL_CHK( JS_DefinePropertyById(cx, dstObj, JLID(cx, _revision), _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
 		if ( _init ) \
 			JL_CHK( _init(cx, dstObj) ); \
