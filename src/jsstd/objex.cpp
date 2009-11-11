@@ -68,12 +68,16 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval i
 	jsval aux;
 	JL_CHK( JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux ) );
 	jsval args[4]; // = { id, *vp, aux, INT_TO_JSVAL(slotIndex) }; // ( propertyName, propertyValue, auxObject, callbackIndex )
+	JSTempValueRooter tvr;
+	JS_PUSH_TEMP_ROOT(cx, COUNTOF(args), args, &tvr);
 	args[0] = id;
 	args[1] = *vp;
 	args[2] = aux;
 	args[3] = INT_TO_JSVAL(slotIndex);
 	// at the moment, no GC protection is needed for argv and rval.
-	return JS_CallFunctionValue( cx, obj, slot, COUNTOF(args), args, vp );
+	JSBool st = JS_CallFunctionValue( cx, obj, slot, COUNTOF(args), args, vp );
+	JS_POP_TEMP_ROOT(cx, &tvr);
+	return st;
 	JL_BAD;
 }
 
@@ -191,7 +195,7 @@ CONFIGURE_CLASS
 END_CLASS
 
 /**doc
-=== Example ===
+=== Example 1 ===
 {{{
 function addCallback( name, value ) {
 
@@ -208,7 +212,26 @@ prints:
 adding foo = 123
 </pre>
 
-=== Example ===
+=== Example 2 ===
+{{{
+LoadModule('jsstd');
+LoadModule('jsio');
+
+function OnGet(name, value, aux) {
+
+  if ( name == 'content' )
+    return new File(aux).content;
+  if ( name in this )
+    return value;
+  return this[name] = new ObjEx(undefined, undefined, OnGet, undefined, aux + '/' + name );
+}
+var root = new ObjEx(undefined, undefined, OnGet, undefined, 'c:');
+
+Print( root.windows.system32.drivers.etc.hosts.content );
+}}}
+
+
+=== Other example ===
 
  http://jsircbot.googlecode.com/svn/trunk/dataObject.js
 
