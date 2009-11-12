@@ -37,25 +37,35 @@ BEGIN_STATIC
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
- $STR $INAME( str [, obj | function] )
-  Return an expanded string using key/value stored in _obj_.
+ $STR $INAME( str [, obj | function ] )
+  Return an expanded string using key/value stored in _obj_ or returned by the function.
   $LF
-  If _obj_ is omitted, the current object is used to look for key/value.
+  If the 2nd argument is omitted, the key is a variable of the current scope chain.
+  $H note
+   $UNDEF values are ignored in the resulting string.
   $H example 1
   {{{
-  function Test() {
-   this.Expand = Expand;
-   this.a = 123;
-  }
-  Print( new Test().Expand('$(a)') );
+  Expand('$(h) $(xxx) $(w)', { h:'Hello', w:'World' }); // returns "Hello  World"
   }}}
-  $H note
-   undefined values are ignored in the resulting string.
   $H example 2
   {{{
-  Expand(' $(h) $(w)', { h:'Hello', w:'World' }); // returns "Hello World"
+  Expand('$(foo)-$(bar)', function(id) '<'+id+'>' ); // returns "<foo>-<bar>"
+  }}}
+  $H example 3
+  {{{
+  var aaa = 123;
+  function foo() {
+    var bbb = 456;
+    Print( Expand('$(aaa) $(bbb)') ); // prints 123 456
+  }
+  foo();
   }}}
 **/
+
+#define EXPAND_SOURCE_ARG 1
+#define EXPAND_SOURCE_ARG_FUNCTION 2
+#define EXPAND_SOURCE_SCOPE 3
+
 DEFINE_FUNCTION_FAST( Expand ) {
 
 	JSObject *obj = JL_FOBJ;
@@ -70,19 +80,34 @@ DEFINE_FUNCTION_FAST( Expand ) {
 	const char *srcEnd;
 	srcEnd = srcBegin + srcLen;
 
-	bool mapIsFunction;
+	int mapSource;
 	jsval map;
-	if ( JL_FARG_ISDEF(2) ) {
 
-		mapIsFunction = JsvalIsFunction(cx, JL_FARG(2));
-		map = JL_FARG(2);
-	} else {
+	if ( argc < 2 ) {
 
-		mapIsFunction = false;
-		map = OBJECT_TO_JSVAL( obj );
+		map = JSVAL_VOID;
+		mapSource = EXPAND_SOURCE_SCOPE;
+		goto next;
 	}
 
-	JL_S_ASSERT( mapIsFunction || !JSVAL_IS_PRIMITIVE(map), "Object required." );
+	if ( JsvalIsFunction(cx, JL_FARG(2)) ) {
+
+		map = JL_FARG(2);
+		mapSource = EXPAND_SOURCE_ARG_FUNCTION;
+		goto next;
+	}
+
+	if ( !JSVAL_IS_PRIMITIVE( JL_FARG(2) ) ) {
+			
+		map = JL_FARG(2);
+		mapSource = EXPAND_SOURCE_ARG;
+		goto next;
+	}
+
+	JL_REPORT_ERROR( "Invalid argument." );
+
+next:
+
 
 	typedef struct {
 		const char *data;
@@ -124,8 +149,14 @@ DEFINE_FUNCTION_FAST( Expand ) {
 		if ( tok == NULL ) // not found
 			break;
 
+		if ( mapSource == EXPAND_SOURCE_SCOPE ) {
 
-		if ( mapIsFunction ) {
+			char tmp = *tok; // (TBD) try to replace this trick
+			*((char*)tok) = '\0';
+			JL_CHKB( JL_GetVariableValue(cx, srcBegin, JL_FRVAL), bad_free_stack );
+			*((char*)tok) = tmp;
+		} else
+		if ( mapSource == EXPAND_SOURCE_ARG_FUNCTION ) {
 
 			JL_CHKB( StringAndLengthToJsval(cx, JL_FRVAL, srcBegin, tok-srcBegin), bad_free_stack );
 			JL_CHKB( JS_CallFunctionValue(cx, obj, map, 1, JL_FRVAL, JL_FRVAL), bad_free_stack );
