@@ -836,6 +836,11 @@ LoadModule('jsstd');
 		QA.ASSERT( Math.abs(mem1/mem0) < 1.1, true, 'with GC' );
 */
 
+/// Sandbox misc
+
+	var s = SandboxEval('var a = Math.abs(-123); a');
+	QA.ASSERT( s, 123, 'abs' );
+
 
 /// Sandbox watchdog
 	

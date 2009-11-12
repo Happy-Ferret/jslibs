@@ -42,7 +42,7 @@ DEFINE_NEW_RESOLVE() {
 
 CONFIGURE_CLASS
 
-	//	IS_GLOBAL // make JS_ResolveStandardClass failed
+	IS_GLOBAL
 	HAS_NEW_RESOLVE
 
 END_CLASS
