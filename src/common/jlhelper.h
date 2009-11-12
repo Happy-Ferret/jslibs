@@ -861,10 +861,11 @@ bad:
 // Get the value of a variable in the current or parent's scopes.
 ALWAYS_INLINE JSBool JL_GetVariableValue( JSContext *cx, const char *name, jsval *vp ) {
 
+	// see also JS_GetScopeChain(cx)
 	JSBool found;
-	for ( JSObject *scope = JS_GetScopeChain(cx); scope; scope = JS_GetParent(cx, scope) ) {
+	for ( JSObject *scope = JS_GetFrameScopeChain(cx, JS_GetScriptedCaller(cx, NULL)); scope; scope = JS_GetParent(cx, scope) ) {
 	
-		JL_CHK( JS_AlreadyHasOwnProperty(cx, scope, name, &found) );
+		JL_CHK( JS_HasProperty(cx, scope, name, &found) );
 		if ( found )
 			return JS_GetProperty(cx, scope, name, vp);
 	}
