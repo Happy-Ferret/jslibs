@@ -858,6 +858,22 @@ bad:
 }
 
 
+// Get the value of a variable in the current or parent's scopes.
+ALWAYS_INLINE JSBool JL_GetVariableValue( JSContext *cx, const char *name, jsval *vp ) {
+
+	JSBool found;
+	for ( JSObject *scope = JS_GetScopeChain(cx); scope; scope = JS_GetParent(cx, scope) ) {
+	
+		JL_CHK( JS_AlreadyHasOwnProperty(cx, scope, name, &found) );
+		if ( found )
+			return JS_GetProperty(cx, scope, name, vp);
+	}
+	*vp = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // jslibs tools
 
