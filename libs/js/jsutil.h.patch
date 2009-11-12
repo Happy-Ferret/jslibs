@@ -1,8 +1,10 @@
-@@ -47,8 +47,32 @@
+@@ -47,8 +47,34 @@
  #include <stdlib.h>
  
  JS_BEGIN_EXTERN_C
  
++#define JS_HAS_JSLIBS_RegisterCustomAllocators
++
 +extern JS_PUBLIC_API(void)
 +JSLIBS_RegisterCustomAllocators(
 +  void* (*)( size_t ),

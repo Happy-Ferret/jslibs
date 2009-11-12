@@ -199,7 +199,9 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 #ifndef USE_DEFAULT_ALLOCATORS
 	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 	// if ( GetProcAddress(GetModuleHandle("mozjs.dll"), "JSLIBS_RegisterCustomAllocators") != NULL ) {	}
+#ifdef JS_HAS_JSLIBS_RegisterCustomAllocators
 	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
+#endif // JS_HAS_JSLIBS_RegisterCustomAllocators
 #endif // USE_DEFAULT_ALLOCATORS
 
 	cx = CreateHost(maxMem, maxAlloc, maybeGCInterval * 1000);
