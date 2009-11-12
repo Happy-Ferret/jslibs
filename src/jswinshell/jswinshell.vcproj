@@ -59,7 +59,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="user32.lib gdi32.lib shell32.lib Comdlg32.lib Advapi32.lib"
+				AdditionalDependencies="user32.lib gdi32.lib shell32.lib Comdlg32.lib Advapi32.lib Ole32.lib oleaut32.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -136,7 +136,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="user32.lib gdi32.lib shell32.lib Comdlg32.lib Advapi32.lib"
+				AdditionalDependencies="user32.lib gdi32.lib shell32.lib Comdlg32.lib Advapi32.lib Ole32.lib oleaut32.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -221,6 +221,10 @@
 				RelativePath=".\systray.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\wincom.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -233,10 +237,6 @@
 			</File>
 			<File
 				RelativePath=".\error.h"
-				>
-			</File>
-			<File
-				RelativePath=".\global.h"
 				>
 			</File>
 			<File

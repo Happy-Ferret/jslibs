@@ -14,8 +14,10 @@
 
 #include "stdafx.h"
 
+DECLARE_CLASS( WinCOM )
+DECLARE_STATIC()
+
 #include "error.h"
-#include "global.h"
 #include "icon.h"
 #include "systray.h"
 #include "console.h"
@@ -41,6 +43,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Icon );
 	INIT_CLASS( Systray );
 	INIT_CLASS( Console );
+	INIT_CLASS( WinCOM );
 
 	return JS_TRUE;
 	JL_BAD;

@@ -3,7 +3,7 @@
 LoadModule('jsstd');
 LoadModule('jswinshell');
 
-
+new WinCOM('Scripting.FileSystemObject');
 
 
 
