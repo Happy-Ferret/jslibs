@@ -202,7 +202,7 @@ $TOC_MEMBER $INAME
  $TYPE Result $INAME( sqlStr [, map ] )
   Evaluates a SQL string and returns a Result object ready to be executed.
   $H arguments
-   $ARG $STR sqlStr:
+   $ARG $STR sqlStr: The SQL query string. ?NNN :VVV @VVV and $VVV parameters are accepted. $VVV argument lookup the current scope chain to find the VVV variable.
    $ARG $OBJ map: _map_ is bind to the SQL statement and can be access using '@' char ( see. *Exec* ). If you create new properties on the [Result] object, you can access then in the _sqlStr_ using ':' char. '?' allows you access the _map_ as an array ( see examples ).
     $H example 1
     {{{
@@ -217,7 +217,7 @@ $TOC_MEMBER $INAME
     }}}
     $H example 3
     {{{
-    var res = db.Query('SELECT ? + ?', [ 4, 5 ]);
+    var res = db.Query('SELECT ? + ?', [4,5]);
     Print( res.Row().toSource() ); // Prints: [9]
     }}}
   $H return value
@@ -227,18 +227,20 @@ $TOC_MEMBER $INAME
    `db.Query('SELECT * FROM ?', ['myTable']);` will failed with this exception: `SQLite error 1: near "?": syntax error`
   $H example 1
   {{{
+  ...
   var result = db.Query('SELECT name FROM table WHERE id=:userId' );
   result.userId = 1341;
+  result.Step();
   Print( result.Col(0) );
   }}}
   $H example 2
   {{{
-  var result = db.Query('SELECT name FROM table WHERE id=@userId', { userId:1341 } );
+  var result = db.Query('SELECT name FROM table WHERE id=@userId', { userId: 1341 } );
   Print( result.Col(0) );
   }}}
   $H example 3
   {{{
-  var result = db.Query('SELECT ? FROM table WHERE id=?', ['name', 1341] ); // array-like objects {0:'name', 1:1341, length:2} works too.
+  var result = db.Query('SELECT ? FROM table WHERE id=?', ['name', 1341] ); // array-like objects {0:'name', 1:1341, length:2} also work.
   Print( result.Col(0) );
   }}}
 **/
@@ -333,8 +335,8 @@ DEFINE_FUNCTION( Exec ) {
 
 	// (TBD) support multiple statements
 
-	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) && JSVAL_IS_OBJECT( argv[1] ) )
-		JL_CHK( SqliteSetupBindings(cx, pStmt, JSVAL_TO_OBJECT( argv[1] ) , NULL) ); // "@" : the the argument passed to Exec(), ":" nothing
+	JL_CHK( SqliteSetupBindings(cx, pStmt, argc < 2 || JSVAL_IS_PRIMITIVE( argv[1] ) ? NULL : JSVAL_TO_OBJECT( argv[1] ), obj) ); // "@" : the the argument passed to Exec(), ":" nothing
+
 	pv->tmpcx = cx;
 	int status;
 	status = sqlite3_step(pStmt); // Evaluates the statement. The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.

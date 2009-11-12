@@ -26,12 +26,14 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 			JL_CHK( IntToJsval(cx, sqlite3_value_int(value), rval) );
 			break;
 		case SQLITE_FLOAT:
-			JL_CHK( JS_NewNumberValue( cx, sqlite3_value_double(value), rval ) );
+			JL_CHK( JS_NewNumberValue(cx, sqlite3_value_double(value), rval) );
 			break;
 		case SQLITE_BLOB: {
 				int length = sqlite3_value_bytes(value);
-				void *data = JS_malloc(cx, length);
+				void *data = JS_malloc(cx, length +1);
 				JL_CHK( data );
+				((char*)data)[length] = '\0';
+				memcpy(data, sqlite3_value_blob(value), length);
 				JL_CHK( JL_NewBlobCopyN(cx, data, length, rval) );
 			}
 			break;
@@ -39,8 +41,8 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 			*rval = JSVAL_NULL;
 			break;
 		case SQLITE_TEXT:
-			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_value_text(value)));
-			// *rval = STRING_TO_JSVAL(JS_NewUCStringCopyZ(cx, (const jschar*)sqlite3_value_text16(value)));
+			*rval = STRING_TO_JSVAL(JS_NewStringCopyN(cx,(const char *)sqlite3_value_text(value), sqlite3_value_bytes(value)));
+			//*rval = STRING_TO_JSVAL(JS_NewUCStringCopyZ(cx, (const jschar*)sqlite3_value_text16(value)));
 			break;
 		default:
 			JL_REPORT_ERROR( "Unable to convert data." );
@@ -52,65 +54,98 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 
 
 // doc: The sqlite3_bind_*() routines must be called after sqlite3_prepare() or sqlite3_reset() and before sqlite3_step(). Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
-JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt, JSObject *objColon ) {
+JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj, JSObject *curObj ) {
+
+	jsval val;
+	int anonParamIndex = 0;
+	const char *name;
 
 	int count = sqlite3_bind_parameter_count(pStmt);
-	for ( int param = 1; param <= count; param++ ) {
+	for ( int param = 1; param <= count; param++ ) { // The first host parameter has an index of 1, not 0.
 
-		const char *name = sqlite3_bind_parameter_name( pStmt, param );
 		// doc: Parameters of the form "?" have no name. ... If the value n is out of range or if the n-th parameter is nameless, then NULL is returned.
+		name = sqlite3_bind_parameter_name(pStmt, param);
 
-//		JL_S_ASSERT( name != NULL, "Binding is out of range." ); // (TBD) better error message
+		if ( name == NULL || name[0] == '?' ) {
 
-		jsval val;
+			if ( argObj != NULL ) {
 
-		if ( name != NULL ) {
+				JL_CHK( JS_GetElement(cx, argObj, anonParamIndex, &val) ); // works with {0:2,1:2,2:2,length:3} and [2,2,2]
+				anonParamIndex++;
+				goto next;
+			}
 
-			JSObject *obj = NULL;
-
-			if ( objAt != NULL && name[0] == '@' )
-				obj = objAt;
-
-			if ( objColon != NULL && name[0] == ':' )
-				obj = objColon;
-
-			if ( obj == NULL )
-				continue;
-
-			JS_GetProperty(cx, obj, name+1, &val);
-		} else { // ? is used in the SQL statement, then use objAt as an array and param as index
-
-			JS_GetElement(cx, objAt, param-1, &val); // works with {0:2,1:2,2:2,length:3} and [2,2,2]
+			val = JSVAL_VOID;
+			JL_REPORT_WARNING("Unavailable %d-th anonymous parameter.", anonParamIndex);
+			goto next;
 		}
 
+		if ( name[0] == '$' ) {
+
+			JL_CHK( JL_GetVariableValue(cx, name+1, &val) );
+			goto next;
+		}
+
+		if ( name[0] == '@' )
+			if ( argObj != NULL )  {
+
+				JL_CHK( JS_GetProperty(cx, argObj, name+1, &val) );
+				goto next;
+			} else {
+			
+				val = JSVAL_VOID;
+				JL_REPORT_WARNING("Undefined %s parameter.", name);
+				goto next;
+			}
+
+		if ( name[0] == ':' )
+			if ( curObj != NULL ) {
+
+				JL_CHK( JS_GetProperty(cx, curObj, name+1, &val) );
+				goto next;
+			} else {
+			
+				val = JSVAL_VOID;
+				JL_REPORT_WARNING("Undefined %s parameter.", name);
+				goto next;
+			}
+
+next:
+
+		int ret;
 		// sqlite3_bind_value( pStmt, param,
 		// (TBD) how to use this
 		switch ( JS_TypeOfValue(cx, val) ) {
 			case JSTYPE_VOID:
 			case JSTYPE_NULL: // http://www.sqlite.org/nulls.html
-				sqlite3_bind_null(pStmt, param);
+				if ( sqlite3_bind_null(pStmt, param) != SQLITE_OK )
+					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				break;
 			case JSTYPE_BOOLEAN:
-				sqlite3_bind_int(pStmt, param, JSVAL_TO_BOOLEAN(val) == JS_TRUE ? 1 : 0 );
+				if ( sqlite3_bind_int(pStmt, param, JSVAL_TO_BOOLEAN(val) == JS_TRUE ? 1 : 0 ) != SQLITE_OK )
+					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				break;
 			case JSTYPE_NUMBER:
 				if ( JSVAL_IS_INT(val) ) {
 
-					sqlite3_bind_int(pStmt, param, JSVAL_TO_INT(val));
+					ret = sqlite3_bind_int(pStmt, param, JSVAL_TO_INT(val));
 				} else {
 
 					jsdouble jd;
-					JS_ValueToNumber(cx, val, &jd);
+					JL_CHK( JS_ValueToNumber(cx, val, &jd) );
 					if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
-						sqlite3_bind_int( pStmt, param, (int)jd );
+						ret = sqlite3_bind_int( pStmt, param, (int)jd );
 					else
-						sqlite3_bind_double(pStmt, param, jd);
+						ret = sqlite3_bind_double(pStmt, param, jd);
 				}
+				if ( ret != SQLITE_OK )
+					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				break;
 			case JSTYPE_OBJECT: // beware: no break; because we use the JSTYPE_STRING's case JS_ValueToString conversion
 				if ( JSVAL_IS_NULL(val) ) {
 
-					sqlite3_bind_null(pStmt, param);
+					if ( sqlite3_bind_null(pStmt, param) != SQLITE_OK )
+						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 					break;
 				}
 				if ( JL_GetClass(JSVAL_TO_OBJECT(val)) == JL_GetRegistredNativeClass(cx, "Blob") ) { // beware: with SQLite, blob != text
@@ -118,7 +153,8 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 					size_t length;
 					const char *data;
 					JL_CHK( JsvalToStringAndLength(cx, &val, &data, &length) );
-					sqlite3_bind_blob(pStmt, param, data, length, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+					if ( sqlite3_bind_blob(pStmt, param, data, length, SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 					break;
 				}
 			case JSTYPE_XML:
@@ -130,7 +166,8 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt,
 				const char *str;
 				size_t strLen;
 				JL_CHK( JsvalToStringAndLength(cx, &val, &str, &strLen) );
-				sqlite3_bind_text(pStmt, param, str, strLen, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+				if ( sqlite3_bind_text(pStmt, param, str, strLen, SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				}
 				break;
 			default:
@@ -261,12 +298,8 @@ DEFINE_FUNCTION( Step ) {
 
 		jsval queryArgument;
 		JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, &queryArgument) );
-		JSObject *argObj = NULL;
-		if ( !JSVAL_IS_VOID( queryArgument ) )
-			argObj = JSVAL_TO_OBJECT(queryArgument);
-
+		JL_CHK( SqliteSetupBindings(cx, pStmt, JSVAL_IS_PRIMITIVE( queryArgument ) ? NULL : JSVAL_TO_OBJECT( queryArgument ), obj) ); // ":" use result object. "@" is the object passed to Query()
 		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_TRUE) );
-		JL_CHK( SqliteSetupBindings(cx, pStmt, argObj, obj ) ); // ":" use result object. "@" is the object passed to Query()
 		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step().
 		//      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
 	}
@@ -409,7 +442,7 @@ DEFINE_FUNCTION( Reset ) {
 	JL_S_ASSERT_RESOURCE( pStmt );
 	if ( sqlite3_reset(pStmt) != SQLITE_OK )
 		return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
-	return JS_TRUE;
+	return JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 	JL_BAD;
 }
 
@@ -528,14 +561,12 @@ DEFINE_PROPERTY( sql ) {
 
 DEFINE_DEL_PROPERTY() {
 
-	JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
-	return JS_TRUE;
+	return JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 }
 
 DEFINE_SET_PROPERTY() {
 
-	JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
-	return JS_TRUE;
+	return JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 }
 
 DEFINE_EQUALITY() {

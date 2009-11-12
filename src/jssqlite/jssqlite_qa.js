@@ -190,3 +190,10 @@ LoadModule('jssqlite');
 		res1.columnNames[0];
 		var res2 = db.Query('select 2');
 		QA.ASSERT( res2.columnNames.join(','), '2', 'columns name' );
+
+/// parameters
+
+		var db = new Database();
+		var res = db.Query('select $dfgyisdfugyidfugyid, "test", $foo, ?, ?aaa, $foo, ?, @0', [5,6,7]);
+		QA.ASSERT_STR( res.columnNames.join(','), ',"test",$foo,?,aaa,$foo,?,@0', 'columns' );
+		QA.ASSERT_STR( res.Row(), 'test,567,5,6,567,7,5', 'row' );

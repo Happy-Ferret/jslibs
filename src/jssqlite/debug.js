@@ -3,15 +3,16 @@
 
 LoadModule('jsstd');
 LoadModule('jssqlite');
+			
 
+var foo = 567;
+function test() {
 
 		var db = new Database();
-		var res1 = db.Query('select 1');
-		Print(res1.columnNames[0]);
-		Print(res1.columnNames[0]);
-
-//		var res2 = db.Query('select 2');
-//		Print( res2.columnNames.join(','), '2', 'columns name' );
+		var res = db.Query('select $dfgyisdfugyidfugyid, "test", $foo, ?, ?aaa, $foo, ?, @0', [5,6,7]);
+		Print(res.columnNames.join(',')+'='+res.Row(), '\n'); // "test",$foo,?,aaa,$foo,?,@0=test,567,5,6,567,7,5
+}
+test();
 
 
 throw 0;

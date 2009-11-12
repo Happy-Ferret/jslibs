@@ -19,4 +19,4 @@ DECLARE_CLASS( Result )
 #define SLOT_RESULT_QUERY_ARGUMENT_OBJECT 2
 
 JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval );
-JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *objAt, JSObject *objColon );
+JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj, JSObject *curObj );
