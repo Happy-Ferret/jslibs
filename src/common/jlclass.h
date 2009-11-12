@@ -80,73 +80,85 @@ inline JSNative NativeFunction(JSNative f) { return f; } // used fo type check o
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
 
 
-// definition
-
+// class definition and configuration 
 #define DEFINE_FUNCTION_FAST(name) static JSBool _##name(JSContext *cx, uintN argc, jsval *vp)
 #define DEFINE_FUNCTION(name) static JSBool _##name(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 
 #define DEFINE_PROPERTY(name) static JSBool _##name(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_PROPERTY_GETTER(name) static JSBool _##name##Getter(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #define DEFINE_PROPERTY_SETTER(name) static JSBool _##name##Setter(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-//#define DEFINE_PROPERTY_NULL(name) static JSPropertyOp _##name = NULL;
 
 
-#define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
-#define DEFINE_OBJECT_CONSTRUCTOR() static JSBool ObjectConstructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
-#define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
-#define DEFINE_CONVERT() static JSBool Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
-#define DEFINE_RESOLVE() static JSBool Resolve(JSContext *cx, JSObject *obj, jsval id)
-#define DEFINE_NEW_RESOLVE() static JSBool NewResolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp)
-#define DEFINE_ENUMERATE() static JSBool Enumerate(JSContext *cx, JSObject *obj)
-#define DEFINE_TRACER() static void Tracer(JSTracer *trc, JSObject *obj)
-#define DEFINE_INIT() static JSBool Init(JSContext *cx, JSObject *obj)
-#define DEFINE_FREE() static JSBool Free(JSContext *cx, JSObject *obj)
-#define DEFINE_ADD_PROPERTY() static JSBool AddProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-#define DEFINE_DEL_PROPERTY() static JSBool DelProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-#define DEFINE_GET_PROPERTY() static JSBool GetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-#define DEFINE_SET_PROPERTY() static JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-#define DEFINE_HAS_INSTANCE() static JSBool HasInstance(JSContext *cx, JSObject *obj, jsval v, JSBool *bp)
-#define DEFINE_CALL() static JSBool Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
-#define DEFINE_EQUALITY() static JSBool Equality(JSContext *cx, JSObject *obj, jsval v, JSBool *bp)
-#define DEFINE_WRAPPED_OBJECT() static JSObject* WrappedObject(JSContext *cx, JSObject *obj)
-#define DEFINE_GET_OBJECT_OPS() static JSObjectOps* GetObjectOps(JSContext *cx, JSClass *clasp)
-#define DEFINE_CHECK_ACCESS() static JSBool CheckAccess(JSContext *cx, JSObject *obj, jsval id, JSAccessMode mode, jsval *vp)
-#define DEFINE_XDR() static JSBool XDRObject(JSXDRState *xdr, JSObject **objp)
-#define DEFINE_ITERATOR_OBJECT() static JSObject* IteratorObject(JSContext *cx, JSObject *obj, JSBool keysonly)
-
-// class configuration
-#define HAS_PRIVATE   _class->flags |= JSCLASS_HAS_PRIVATE;
-#define HAS_RESERVED_SLOTS(COUNT)   _class->flags |= JSCLASS_HAS_RESERVED_SLOTS(COUNT);
-#define HAS_PROTOTYPE(PROTOTYPE)   *_parentPrototype = (PROTOTYPE);
-#define CONSTRUCT_PROTOTYPE   _class->flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
-#define SHARE_ALL_PROPERTIES   _class->flags |= JSCLASS_SHARE_ALL_PROPERTIES;
-
-#define HAS_CONSTRUCTOR   _constructor = Constructor;
-#define HAS_OBJECT_CONSTRUCTOR   _class->construct = ObjectConstructor;
-#define HAS_CALL   _class->call = Call;
-#define HAS_FINALIZE   _class->finalize = Finalize;
-#define HAS_CONVERT   _class->convert = Convert;
-#define HAS_RESOLVE   _class->resolve = Resolve;
-#define HAS_NEW_RESOLVE   _class->flags |= JSCLASS_NEW_RESOLVE; _class->resolve = (JSResolveOp)NewResolve;
-#define HAS_NEW_RESOLVE_GETS_START   _class->flags |= JSCLASS_NEW_RESOLVE_GETS_START;
-#define HAS_ENUMERATE  _class->enumerate = Enumerate;
-#define HAS_TRACER   _class->flags |= JSCLASS_MARK_IS_TRACE; _class->mark = (JSMarkOp)Tracer;
-#define HAS_HAS_INSTANCE _class->hasInstance = HasInstance;
-#define HAS_EQUALITY _xclass.base.flags |= JSCLASS_IS_EXTENDED; _xclass.equality = Equality;
-#define HAS_WRAPPED_OBJECT _xclass.base.flags |= JSCLASS_IS_EXTENDED; _xclass.wrappedObject = WrappedObject;
-#define HAS_INIT  _init = Init;
-#define HAS_FREE  _free = Free;
-#define HAS_ADD_PROPERTY   _class->addProperty = AddProperty;
-#define HAS_DEL_PROPERTY   _class->delProperty = DelProperty;
-#define HAS_GET_PROPERTY   _class->getProperty = GetProperty;
-#define HAS_SET_PROPERTY   _class->setProperty = SetProperty;
-#define HAS_GET_OBJECT_OPS _class->getObjectOps = GetObjectOps;
-#define HAS_CHECK_ACCESS   _class->checkAccess = CheckAccess;
-#define IS_GLOBAL  _class->flags |= JSCLASS_IS_GLOBAL;
-#define HAS_XDR _class->xdrObject = XDRObject;
-#define HAS_ITERATOR_OBJECT _xclass.base.flags |= JSCLASS_IS_EXTENDED; _xclass.iteratorObject = IteratorObject;
-
+#define HAS_PRIVATE _class->flags |= JSCLASS_HAS_PRIVATE;
+#define HAS_RESERVED_SLOTS(COUNT) _class->flags |= JSCLASS_HAS_RESERVED_SLOTS(COUNT);
+#define HAS_PROTOTYPE(PROTOTYPE) *_parentPrototype = (PROTOTYPE);
+#define CONSTRUCT_PROTOTYPE _class->flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
+#define IS_GLOBAL _class->flags |= JSCLASS_GLOBAL_FLAGS;
+#define HAS_NEW_RESOLVE_GETS_START _class->flags |= JSCLASS_NEW_RESOLVE_GETS_START;
 #define REVISION(REV) (_revision = INT_TO_JSVAL(REV));
+
+#define HAS_CONSTRUCTOR _constructor = Constructor;
+#define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+
+#define HAS_OBJECT_CONSTRUCTOR _class->construct = ObjectConstructor;
+#define DEFINE_OBJECT_CONSTRUCTOR() static JSBool ObjectConstructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+
+#define HAS_CALL _class->call = Call;
+#define DEFINE_CALL() static JSBool Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+
+#define HAS_FINALIZE _class->finalize = Finalize;
+#define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
+
+#define HAS_CONVERT _class->convert = Convert;
+#define DEFINE_CONVERT() static JSBool Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
+
+#define HAS_RESOLVE _class->resolve = Resolve;
+#define DEFINE_RESOLVE() static JSBool Resolve(JSContext *cx, JSObject *obj, jsval id)
+
+#define HAS_NEW_RESOLVE _class->flags |= JSCLASS_NEW_RESOLVE; _class->resolve = (JSResolveOp)NewResolve;
+#define DEFINE_NEW_RESOLVE() static JSBool NewResolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp)
+
+#define HAS_ENUMERATE _class->enumerate = Enumerate;
+#define DEFINE_ENUMERATE() static JSBool Enumerate(JSContext *cx, JSObject *obj)
+
+#define HAS_TRACER _class->flags |= JSCLASS_MARK_IS_TRACE; _class->mark = (JSMarkOp)Tracer;
+#define DEFINE_TRACER() static void Tracer(JSTracer *trc, JSObject *obj)
+
+#define HAS_HAS_INSTANCE _class->hasInstance = HasInstance;
+#define DEFINE_HAS_INSTANCE() static JSBool HasInstance(JSContext *cx, JSObject *obj, jsval v, JSBool *bp)
+
+#define HAS_EQUALITY _xclass.base.flags |= JSCLASS_IS_EXTENDED; _xclass.equality = Equality;
+#define DEFINE_EQUALITY() static JSBool Equality(JSContext *cx, JSObject *obj, jsval v, JSBool *bp)
+
+#define HAS_WRAPPED_OBJECT _xclass.base.flags |= JSCLASS_IS_EXTENDED; _xclass.wrappedObject = WrappedObject;
+#define DEFINE_WRAPPED_OBJECT() static JSObject* WrappedObject(JSContext *cx, JSObject *obj)
+
+#define HAS_INIT _init = Init;
+#define DEFINE_INIT() static JSBool Init(JSContext *cx, JSObject *obj)
+
+#define HAS_ADD_PROPERTY _class->addProperty = AddProperty;
+#define DEFINE_ADD_PROPERTY() static JSBool AddProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+
+#define HAS_DEL_PROPERTY _class->delProperty = DelProperty;
+#define DEFINE_DEL_PROPERTY() static JSBool DelProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+
+#define HAS_GET_PROPERTY _class->getProperty = GetProperty;
+#define DEFINE_GET_PROPERTY() static JSBool GetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+
+#define HAS_SET_PROPERTY _class->setProperty = SetProperty;
+#define DEFINE_SET_PROPERTY() static JSBool SetProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+
+#define HAS_GET_OBJECT_OPS _class->getObjectOps = GetObjectOps;
+#define DEFINE_GET_OBJECT_OPS() static JSObjectOps* GetObjectOps(JSContext *cx, JSClass *clasp)
+
+#define HAS_CHECK_ACCESS _class->checkAccess = CheckAccess;
+#define DEFINE_CHECK_ACCESS() static JSBool CheckAccess(JSContext *cx, JSObject *obj, jsval id, JSAccessMode mode, jsval *vp)
+
+#define HAS_XDR _class->xdrObject = XDRObject;
+#define DEFINE_XDR() static JSBool XDRObject(JSXDRState *xdr, JSObject **objp)
+
+#define HAS_ITERATOR_OBJECT _xclass.base.flags |= JSCLASS_IS_EXTENDED; _xclass.iteratorObject = IteratorObject;
+#define DEFINE_ITERATOR_OBJECT() static JSObject* IteratorObject(JSContext *cx, JSObject *obj, JSBool keysonly)
 
 
 inline char *_NormalizeFunctionName( const char *name ) {
@@ -216,7 +228,6 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 	JSConstDoubleSpec *_constDoubleSpec = NULL; \
 	JLConstIntegerSpec *_constIntegerSpec = NULL; \
 	JSBool (*_init)(JSContext *cx, JSObject *obj) = NULL; \
-	JSBool (*_free)(JSContext *cx, JSObject *obj) = NULL; \
 	jsval _revision = JSVAL_VOID;
 
 #define END_STATIC \
@@ -252,7 +263,6 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 #define INIT_CLASS( CLASSNAME ) \
 	JL_CHK( InitializeClass##CLASSNAME(cx, obj) )
 
-// see JSCLASS_SHARE_ALL_PROPERTIES
 #define BEGIN_CLASS(CLASSNAME) \
 	static JSExtendedClass _xclass = { { #CLASSNAME, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub, JSCLASS_NO_OPTIONAL_MEMBERS }, 0 }; \
 	JSClass *class##CLASSNAME = &_xclass.base; \
@@ -274,7 +284,6 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 		JSObject *_tmp_prototype = NULL; \
 		JSObject **_parentPrototype = &_tmp_prototype; \
 		JSBool (*_init)(JSContext *cx, JSObject *obj) = NULL; \
-		JSBool (*_free)(JSContext *cx, JSObject *obj) = NULL; \
 		jsval _revision = JSVAL_VOID;
 
 #define END_CLASS \
