@@ -862,8 +862,11 @@ bad:
 ALWAYS_INLINE JSBool JL_GetVariableValue( JSContext *cx, const char *name, jsval *vp ) {
 
 	// see also JS_GetScopeChain(cx)
+	JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL);
+	if ( !fp )
+		return JS_GetProperty(cx, JS_GetGlobalObject(cx), name, vp);
 	JSBool found;
-	for ( JSObject *scope = JS_GetFrameScopeChain(cx, JS_GetScriptedCaller(cx, NULL)); scope; scope = JS_GetParent(cx, scope) ) {
+	for ( JSObject *scope = JS_GetFrameScopeChain(cx, fp); scope; scope = JS_GetParent(cx, scope) ) {
 	
 		JL_CHK( JS_HasProperty(cx, scope, name, &found) );
 		if ( found )
