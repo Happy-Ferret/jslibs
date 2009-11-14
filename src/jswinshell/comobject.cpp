@@ -30,6 +30,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	IUnknown *punk = NULL;
+
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG( 1 );
@@ -43,7 +45,6 @@ DEFINE_CONSTRUCTOR() {
 	if ( FAILED(res) )
 		JL_CHK( WinThrowError(cx, res) );
 
-	IUnknown *punk = NULL;
 	res = GetActiveObject(clsid, NULL, &punk);
 	if ( FAILED(res) ) {
 		
@@ -52,6 +53,8 @@ DEFINE_CONSTRUCTOR() {
 			JL_CHK( WinThrowError(cx, res) );
 	}
 
+	punk->AddRef();
+
 	IDispatch FAR* pdisp = (IDispatch FAR*)NULL;
 	res = punk->QueryInterface(IID_IDispatch, (void FAR* FAR*)&pdisp);
 	if ( FAILED(res) )
@@ -59,8 +62,12 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_CHK( NewComDispatch(cx, pdisp, rval) );
 
+	punk->Release();
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	if ( punk )
+		punk->Release();
+	return JS_FALSE;
 }
 
 DEFINE_INIT() {

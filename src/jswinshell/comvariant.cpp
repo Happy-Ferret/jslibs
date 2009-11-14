@@ -18,7 +18,7 @@
 #include "com.h"
 
 // acquire the ownership of the variant
-JSBool NewComVariant( JSContext *cx, VARIANTARG *variant, jsval *rval ) {
+JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
 	JSObject *varObj = JS_NewObject(cx, classComVariant, NULL, NULL);
 	*rval = OBJECT_TO_JSVAL( varObj );
@@ -27,12 +27,13 @@ JSBool NewComVariant( JSContext *cx, VARIANTARG *variant, jsval *rval ) {
 }
 
 
-JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANTARG *variant ) {
+JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 	if ( JSVAL_IS_STRING(*value) ) {
 		
+		JSString *jsStr = JSVAL_TO_STRING(*value);
 		V_VT(variant) = VT_BSTR;
-		V_BSTR(variant) = SysAllocString( (OLECHAR*)JS_GetStringChars(JSVAL_TO_STRING(*value)));
+		V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)JS_GetStringChars(jsStr), JS_GetStringLength(jsStr));
 		return JS_TRUE;
 	}
 
@@ -76,7 +77,7 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANTARG *variant ) {
 
 	if ( JSVAL_IS_VOID(*value) ) {
 
-		V_VT(variant) = VT_EMPTY;
+		V_VT(variant) = VT_EMPTY; // (TBD) or VT_VOID ???
 		return JS_TRUE;
 	}
 
@@ -89,9 +90,8 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANTARG *variant ) {
 	JL_S_ASSERT( !JSVAL_IS_PRIMITIVE(*value), "Logic error. Missing primitive conversion.");
 
 	JSObject *obj = JSVAL_TO_OBJECT(*value);
-	JSClass *cl = JL_GetClass(obj);
 
-	if ( cl == classComDispatch ) {
+	if ( JL_GetClass(obj) == classComDispatch ) {
 		
 		IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
 		JL_S_ASSERT_RESOURCE(disp);
@@ -100,6 +100,9 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANTARG *variant ) {
 		V_DISPATCH(variant) = disp;
 		return JS_TRUE;
 	}
+
+//	if ( JL_ValueIsBlob(cx, *value ) {
+//	}
 
 	if ( js_DateIsValid(cx, obj) ) {
 
@@ -123,19 +126,20 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANTARG *variant ) {
 	JL_S_ASSERT( str, "Unable to convert to string." );
 
 	V_VT(variant) = VT_BSTR;
-	V_BSTR(variant) = SysAllocString( (OLECHAR*)JS_GetStringChars(str) );
+	V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)JS_GetStringChars(str), JS_GetStringLength(str) );
 
 	return JS_TRUE;
 	JL_BAD;
 }
 
 // acquire the ownership of the variant
-JSBool VariantToJsval( JSContext *cx, VARIANTARG *variant, jsval *rval ) {
+JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 	
 	BOOL isRef = V_ISBYREF(variant);
 
 	switch (V_VT(variant)) {
 
+		case VT_HRESULT:
 		case VT_ERROR:
 
 			//JS_NewObject(cx, js_ErrorClass, NULL, NULL);
@@ -146,28 +150,48 @@ JSBool VariantToJsval( JSContext *cx, VARIANTARG *variant, jsval *rval ) {
 		case VT_NULL:
 			 *rval = JSVAL_NULL;
 			 break;
+		case VT_VOID:
 		case VT_EMPTY:
 			*rval = JSVAL_VOID;
 			 break;
 		case VT_DATE: {
 			
-				SYSTEMTIME time;
-				INT st = VariantTimeToSystemTime(isRef ? *V_DATEREF(variant) : V_DATE(variant), &time);
-				if ( st != TRUE )
-					JL_CHK( WinThrowError(cx, GetLastError()) );
-				JSObject *tmpObj;
-				tmpObj = js_NewDateObject(cx, time.wYear, time.wMonth-1, time.wDay, time.wHour, time.wMinute, time.wSecond);
-				JL_CHK( tmpObj );
-				*rval = OBJECT_TO_JSVAL(tmpObj);
-				break;
+			SYSTEMTIME time;
+			INT st = VariantTimeToSystemTime(isRef ? *V_DATEREF(variant) : V_DATE(variant), &time);
+			if ( st != TRUE )
+				JL_CHK( WinThrowError(cx, GetLastError()) );
+			JSObject *tmpObj;
+			tmpObj = js_NewDateObject(cx, time.wYear, time.wMonth-1, time.wDay, time.wHour, time.wMinute, time.wSecond);
+			JL_CHK( tmpObj );
+			*rval = OBJECT_TO_JSVAL(tmpObj);
 			}
+			break;
 		case VT_BSTR: {
+
 			BSTR bstr = isRef ? *V_BSTRREF(variant) : V_BSTR(variant);
 			JSString *str = JS_NewUCStringCopyN(cx, (const jschar*)bstr, SysStringLen(bstr));
 			*rval = STRING_TO_JSVAL(str);
 			}
 			break;
-		//case VT_BSTR_BLOB:
+		//case VT_BSTR_BLOB: // For system use only.
+
+//		case VT_PTR:
+		//case VT_SAFEARRAY: {
+
+		//	HRESULT res;
+		//	void *data;
+		//	res = SafeArrayAccessData(V_ARRAY(variant), &data);
+		//	if ( FAILED(res) )
+		//		JL_CHK( WinThrowError(cx, res) );
+
+		//	// (TBD) and now ?
+		//	JL_REPORT_ERROR("Not implemented yet!");
+
+		//	res = SafeArrayUnaccessData(V_UNION(pVar, data));
+		//	if ( FAILED(res) )
+		//		JL_CHK( WinThrowError(cx, res) );
+		//	}
+		//	break;
 
 
 		//case VT_LPWSTR:
@@ -183,6 +207,20 @@ JSBool VariantToJsval( JSContext *cx, VARIANTARG *variant, jsval *rval ) {
 			*rval = DOUBLE_TO_JSVAL( JS_NewDouble(cx, isRef ? *V_R4REF(variant) : V_R4(variant)) );
 		case VT_R8:
 			*rval = DOUBLE_TO_JSVAL( JS_NewDouble(cx, isRef ? *V_R8REF(variant) : V_R8(variant)) );
+
+		case VT_DECIMAL: {
+
+			HRESULT res;
+			VARIANT tmpVariant;
+			res = VariantChangeType(&tmpVariant, variant, 0, VT_R8);
+			if ( FAILED(res) )
+				JL_CHK( WinThrowError(cx, res) );
+			*rval = DOUBLE_TO_JSVAL( JS_NewDouble(cx, V_ISBYREF(&tmpVariant) ? *V_R8REF(&tmpVariant) : V_R8(&tmpVariant)) );
+			res = VariantClear(&tmpVariant);
+			if ( FAILED(res) )
+				JL_CHK( WinThrowError(cx, res) );
+			}
+			break;
 
 		case VT_BOOL:
 			*rval = BOOLEAN_TO_JSVAL(isRef ? *V_BOOLREF(variant) : V_BOOL(variant));
@@ -216,6 +254,8 @@ JSBool VariantToJsval( JSContext *cx, VARIANTARG *variant, jsval *rval ) {
 			JL_CHK( NewComDispatch(cx, isRef ? *V_DISPATCHREF(variant) : V_DISPATCH(variant), rval) );
 			break;
 
+		case VT_VARIANT:
+		case VT_UNKNOWN:
 		default:
 			JL_CHK( NewComVariant(cx, variant, rval) );
 			return JS_TRUE;

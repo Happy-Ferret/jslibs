@@ -61,7 +61,7 @@ static JSBool Invoke(JSContext *cx, uintN argc, jsval *vp) {
 	for ( uintN i = 0; i < argc; ++i ) {
 
 		VariantInit(&params.rgvarg[i]);
-		JsvalToVariant(cx, &JL_FARGV[i], &params.rgvarg[i]);
+		JL_CHK( JsvalToVariant(cx, &JL_FARGV[i], &params.rgvarg[i]) );
 	}
 
 	VARIANT *result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
@@ -71,10 +71,13 @@ static JSBool Invoke(JSContext *cx, uintN argc, jsval *vp) {
 	memset(&ex, 0, sizeof(EXCEPINFO));
 	UINT err = 0;
 	res = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD, &params, result, &ex, &err);
-	for ( uintN i = 0; i < argc; ++i )
-		VariantClear(&params.rgvarg[i]);
+	for ( uintN i = 0; i < argc; ++i ) {
 
-		
+		res = VariantClear(&params.rgvarg[i]);
+		if ( FAILED(res) )
+			JL_CHK( WinThrowError(cx, res) );
+	}
+
 	if ( res == DISP_E_MEMBERNOTFOUND ) { // see DEFINE_GET_PROPERTY
 
 		//	const char *funName = JS_GetFunctionName(JS_ValueToFunction(cx, JS_CALLEE(cx,vp)));
@@ -89,7 +92,7 @@ static JSBool Invoke(JSContext *cx, uintN argc, jsval *vp) {
 	if ( FAILED(res) )
 		JL_CHK( WinThrowError(cx, res) );
 
-	JL_CHK( VariantToJsval(cx, result, JL_FRVAL) );
+	JL_CHK( VariantToJsval(cx, result, JL_FRVAL) ); // loose variant ownership
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -137,6 +140,11 @@ DEFINE_GET_PROPERTY() {
 
 	if ( res == DISP_E_MEMBERNOTFOUND ) { // not a getter, then try a method
 
+		res = VariantClear(result);
+		if ( FAILED(res) )
+			JL_CHK( WinThrowError(cx, res) );
+		JS_free(cx, result);
+
 		JSFunction *fun = JS_NewFunction(cx, (JSNative)Invoke, 8, JSFUN_FAST_NATIVE, NULL, NULL);
 		JSObject *funObj = JS_GetFunctionObject(fun);
 		*vp = OBJECT_TO_JSVAL(funObj);
@@ -146,7 +154,7 @@ DEFINE_GET_PROPERTY() {
 		return JS_TRUE;
 	}
 
-	JL_CHK( VariantToJsval(cx, result, vp) );
+	JL_CHK( VariantToJsval(cx, result, vp) ); // loose variant ownership
 
 	return JS_TRUE;
 	JL_BAD;
@@ -154,6 +162,9 @@ DEFINE_GET_PROPERTY() {
 
 
 DEFINE_SET_PROPERTY() {
+
+//	JSBool found;
+//	JS_AlreadyHasOwnPropertyById(cx, obj, id, &found);
 
 	HRESULT res;
 
@@ -261,6 +272,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
+	HAS_ALL_PROPERTIES_SHARED
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( methodList )
