@@ -3,9 +3,22 @@
 LoadModule('jsstd');
 LoadModule('jswinshell');
 
-new WinCOM('Scripting.FileSystemObject');
+try {
+
+	var obj = new ComObject('Scripting.FileSystemObject');
+	var file = obj.CreateTextFile("foobar.txt");
+	file.Write("Hello World");
+	file.Close();
+	
+//	Print( o.CreateTextFile.dispid );
+	
+//	var a = o.test;
 
 
+} catch(ex) {
+	
+	Print( ex.text, '\n' );
+}
 
 
 Halt(); //////////////////////////////////////////////////////////////////////

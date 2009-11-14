@@ -13,14 +13,16 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include <jsdate.h>
 
-#include <Objbase.h>
+#include "com.h"
+
 
 /**doc
 $CLASS_HEADER
 $SVN_REVISION $Revision: 2555 $
 **/
-BEGIN_CLASS( WinCOM )
+BEGIN_CLASS( ComObject )
 
 /**doc
 $TOC_MEMBER $INAME
@@ -32,41 +34,34 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG( 1 );
 
-//	const char *name;
-//	JL_CHK( JsvalToString(cx, JL_ARG(1), &name) );
-
-//	CLSID clsid;
-//	GetClassFile(name, &clsid);
-
-//	
+	HRESULT res;
 	
 	LPOLESTR name = (LPOLESTR)JS_GetStringChars(JS_ValueToString(cx, JL_ARG(1)));
 
 	CLSID clsid;
+	res = name[0] == L'{' ? CLSIDFromString(name, &clsid) : CLSIDFromProgID(name, &clsid);
+	if ( FAILED(res) )
+		JL_CHK( WinThrowError(cx, res) );
 
-	HRESULT res;
-	if ( name[0] == L'{' )
-		res = CLSIDFromString(name, &clsid);
-	else
-		res = CLSIDFromProgID(name, &clsid);
-	if ( res != S_OK );
+	IUnknown *punk = NULL;
+	res = GetActiveObject(clsid, NULL, &punk);
+	if ( FAILED(res) ) {
+		
+		res = CoCreateInstance(clsid, NULL, CLSCTX_SERVER | CLSCTX_INPROC_HANDLER, IID_IUnknown, (void FAR* FAR*)&punk);
+		if ( FAILED(res) )
+			JL_CHK( WinThrowError(cx, res) );
+	}
 
-	IUnknown *unk = NULL;
-	res = GetActiveObject(clsid, NULL, &unk);
-	if ( res != S_OK )
-		res = CoCreateInstance(clsid, NULL, CLSCTX_INPROC_SERVER | CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_IUnknown, (void**)&unk);
+	IDispatch FAR* pdisp = (IDispatch FAR*)NULL;
+	res = punk->QueryInterface(IID_IDispatch, (void FAR* FAR*)&pdisp);
+	if ( FAILED(res) )
+		JL_CHK( WinThrowError(cx, res) );
 
-	//GetActiveObject(
-
-	//	CoCreateInstance(	
+	JL_CHK( NewComDispatch(cx, pdisp, rval) );
 
 	return JS_TRUE;
 	JL_BAD;
 }
-
-DEFINE_FINALIZE() {
-}
-
 
 DEFINE_INIT() {
 
@@ -81,7 +76,6 @@ CONFIGURE_CLASS
 	HAS_INIT
 //	HAS_PRIVATE
 	HAS_CONSTRUCTOR
-	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
 	END_FUNCTION_SPEC

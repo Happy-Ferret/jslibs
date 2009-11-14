@@ -82,6 +82,8 @@ enum {
 	JLID_SPEC( _NI_Matrix44Get ),
 	JLID_SPEC( Get ),
 	JLID_SPEC( Read ),
+	JLID_SPEC( name ),
+	JLID_SPEC( id ),
 	LAST_JSID // see HostPrivate::ids[]
 };
 #undef JLID_SPEC
@@ -871,6 +873,9 @@ ALWAYS_INLINE JSBool JL_GetVariableValue( JSContext *cx, const char *name, jsval
 		JL_CHK( JS_HasProperty(cx, scope, name, &found) );
 		if ( found )
 			return JS_GetProperty(cx, scope, name, vp);
+		//JS_GetProperty(cx, scope, name, vp);
+		//if ( *vp != JSVAL_VOID )
+		//	return JS_TRUE;
 	}
 	*vp = JSVAL_VOID;
 	return JS_TRUE;

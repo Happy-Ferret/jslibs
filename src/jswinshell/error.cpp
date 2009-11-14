@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include "error.h"
 
+
+
 /**doc
 $CLASS_HEADER
 $SVN_REVISION $Revision$
@@ -31,17 +33,28 @@ DEFINE_CONSTRUCTOR() {
 
 DEFINE_PROPERTY( code ) {
 
-	return JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE, vp );
+	jsval hi, lo;
+	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
+	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
+	JL_S_ASSERT_INT(hi);
+	JL_S_ASSERT_INT(lo);
+	DWORD err = (JSVAL_TO_INT(hi) << 16) | JSVAL_TO_INT(lo);
+	return UIntToJsval(cx, err, vp);
+	JL_BAD;
 }
 
 DEFINE_PROPERTY( text ) {
 
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_WIN_ERROR_CODE, vp) );
-	if ( JSVAL_IS_VOID(*vp) )
-		return JS_TRUE;
-	DWORD messageId = JSVAL_TO_INT(*vp);
+	jsval hi, lo;
+	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
+	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
+	JL_S_ASSERT_INT(hi);
+	JL_S_ASSERT_INT(lo);
+	DWORD err = (JSVAL_TO_INT(hi) << 16) | JSVAL_TO_INT(lo);
+
+
 	LPVOID lpvMessageBuffer;
-	DWORD res = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, messageId, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&lpvMessageBuffer, 0, NULL);
+	DWORD res = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&lpvMessageBuffer, 0, NULL);
 	if ( res == 0 )
 		return JS_FALSE;
 
@@ -68,7 +81,9 @@ DEFINE_XDR() {
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
 		jsval tmp;
-		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE, &tmp) );
+		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE_HI, &tmp) );
+		JS_XDRValue(xdr, &tmp);
+		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE_LO, &tmp) );
 		JS_XDRValue(xdr, &tmp);
 		return JS_TRUE;
 	}
@@ -78,7 +93,9 @@ DEFINE_XDR() {
 		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE, tmp) );
+		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE_HI, tmp) );
+		JS_XDRValue(xdr, &tmp);
+		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE_LO, tmp) );
 		return JS_TRUE;
 	}
 
@@ -105,7 +122,7 @@ CONFIGURE_CLASS
 		PROPERTY_READ( text )
 	END_PROPERTY_SPEC
 
-	HAS_RESERVED_SLOTS(1)
+	HAS_RESERVED_SLOTS(2)
 
 END_CLASS
 
@@ -116,7 +133,9 @@ JSBool WinThrowError( JSContext *cx, DWORD errorCode ) {
 	JSObject *error = JS_NewObject( cx, classWinError, NULL, NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
 //	JL_S_ASSERT( error != NULL, "Unable to create WinError object." );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-	JS_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE, INT_TO_JSVAL(errorCode) );
+
+	JS_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(errorCode >> 16 ) );
+	JS_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(errorCode & 0xFFFF ) );
 	JL_SAFE( ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;
 }

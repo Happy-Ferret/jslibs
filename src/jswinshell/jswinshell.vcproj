@@ -178,6 +178,18 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\comdispatch.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\comobject.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\comvariant.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\console.cpp"
 				>
 			</File>
@@ -221,16 +233,16 @@
 				RelativePath=".\systray.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\wincom.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\com.h"
+				>
+			</File>
 			<File
 				RelativePath=".\console.h"
 				>

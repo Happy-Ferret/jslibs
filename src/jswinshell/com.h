@@ -14,40 +14,17 @@
 
 #include "stdafx.h"
 
-#include "com.h"
-
-DECLARE_STATIC()
-
 #include "error.h"
-#include "icon.h"
-#include "systray.h"
-#include "console.h"
 
-#include "jslibsModule.cpp"
+#include <Objbase.h>
+
+DECLARE_CLASS( ComVariant )
+DECLARE_CLASS( ComDispatch )
+DECLARE_CLASS( ComObject )
 
 
-/**doc t:header
-$MODULE_HEADER
-$FILE_TOC
-**/
+JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANTARG *variant );
+JSBool VariantToJsval( JSContext *cx, VARIANTARG *variant, jsval *rval );
 
-/**doc t:footer
-$MODULE_FOOTER
-**/
-
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
-
-	JL_CHK( InitJslibsModule(cx) );
-
-	INIT_CLASS( WinError );
-	INIT_STATIC();
-	INIT_CLASS( Icon );
-	INIT_CLASS( Systray );
-	INIT_CLASS( Console );
-	INIT_CLASS( ComVariant );
-	INIT_CLASS( ComDispatch );
-	INIT_CLASS( ComObject );
-
-	return JS_TRUE;
-	JL_BAD;
-}
+JSBool NewComVariant( JSContext *cx, VARIANTARG *variant, jsval *rval );
+JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, jsval *rval );
