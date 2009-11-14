@@ -5,10 +5,14 @@ LoadModule('jswinshell');
 
 try {
 
-	var obj = new ComObject('Scripting.FileSystemObject');
-	var file = obj.CreateTextFile("foobar.txt");
-	file.Write("Hello World");
-	file.Close();
+	var fso = new ComObject('Scripting.FileSystemObject');
+	var file = fso.GetFile("foobar.txt");
+//	file.Write("Hello World");
+
+	file.DateLastAccessed = new Date();
+
+//	file.attributes = 2;
+//	file.Close();
 	
 //	Print( o.CreateTextFile.dispid );
 	

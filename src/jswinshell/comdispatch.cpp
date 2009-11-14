@@ -168,31 +168,45 @@ DEFINE_SET_PROPERTY() {
 	if ( FAILED(res) ) // dispid == DISPID_UNKNOWN
 		JL_CHK( WinThrowError(cx, res) );
 
-
 	VARIANTARG arg;
 	VariantInit(&arg);
 	JL_CHK( JsvalToVariant(cx, vp, &arg) );
 
+	WORD flags;
+	if ( V_VT(&arg) == VT_DISPATCH && V_ISBYREF(&arg) )
+		flags = DISPATCH_PROPERTYPUTREF;
+	else
+		flags = DISPATCH_PROPERTYPUT;
+
+	DISPID dispidPut = DISPID_PROPERTYPUT;
 	DISPPARAMS params;
 	params.rgvarg = &arg;
 	params.cArgs = 1;
-	params.rgdispidNamedArgs = NULL;
-	params.cNamedArgs = 0;
+	params.rgdispidNamedArgs = &dispidPut;
+	params.cNamedArgs = 1;
 
-	VARIANT *result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
-	VariantInit(result);
+	//VARIANT *result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
+	//VariantInit(result);
 
 	EXCEPINFO ex;
 	memset(&ex, 0, sizeof(EXCEPINFO));
-	UINT err = 0;
-	res = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_PROPERTYPUT, &params, result, &ex, &err);
+	UINT argErr = 0;
+	res = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, flags, &params, NULL, &ex, &argErr);
 	VariantClear(&arg);
 
-	if ( FAILED(res) )
-		JL_CHK( WinThrowError(cx, res) );
+	if ( FAILED(res) ) {
 
-	*vp = JSVAL_VOID;
-
+		switch ( res ) {
+			case DISP_E_BADPARAMCOUNT:
+				JL_REPORT_WARNING("Not a setter or read-only property.");
+				return JS_TRUE;
+			//case DISP_E_PARAMNOTFOUND:
+			//	JL_REPORT_WARNING("Invalid argument %d.", argErr);
+			//	return JS_TRUE;
+			default:
+				JL_CHK( WinThrowError(cx, res) );
+		}
+	}
 
 	return JS_TRUE;
 	JL_BAD;

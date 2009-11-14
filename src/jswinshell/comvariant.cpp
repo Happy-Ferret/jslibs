@@ -31,45 +31,102 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANTARG *variant ) {
 
 	if ( JSVAL_IS_STRING(*value) ) {
 		
-		variant->vt = VT_BSTR;
-		variant->bstrVal = SysAllocString( (OLECHAR*)JS_GetStringChars(JSVAL_TO_STRING(*value)));
-		return JS_TRUE;
-	}
-
-	if ( JSVAL_IS_INT(*value) ) {
-		
-		variant->vt = VT_I4;
-		variant->lVal = JSVAL_TO_INT(*value);
-		return JS_TRUE;
-	}
-
-	if ( JSVAL_IS_DOUBLE(*value) ) {
-		
-		variant->vt = VT_R8;
-		variant->dblVal = *JSVAL_TO_DOUBLE(*value);
+		V_VT(variant) = VT_BSTR;
+		V_BSTR(variant) = SysAllocString( (OLECHAR*)JS_GetStringChars(JSVAL_TO_STRING(*value)));
 		return JS_TRUE;
 	}
 
 	if ( JSVAL_IS_BOOLEAN(*value) ) {
 
-		variant->vt = VT_BOOL;
-		variant->boolVal = JSVAL_TO_BOOLEAN(*value) == JS_TRUE;
+		V_VT(variant) = VT_BOOL;
+		V_BOOL(variant) = JSVAL_TO_BOOLEAN(*value) == JS_TRUE;
 		return JS_TRUE;
 	}
 
-	if ( JSVAL_IS_NULL(*value) || JSVAL_IS_VOID(*value) ) {
-
-		variant->vt = VT_EMPTY;
-		variant->scode = 0;
+	if ( JSVAL_IS_INT(*value) ) {
+		
+		int i = JSVAL_TO_INT(*value);
+		if ( i >= SHRT_MIN && i <= SHRT_MAX ) {
+			
+			V_VT(variant) = VT_I2;
+			V_I2(variant) = i;
+			return JS_TRUE;
+		}
+		V_VT(variant) = VT_I4;
+		V_I4(variant) = i;
 		return JS_TRUE;
 	}
 
-	if ( !JSVAL_IS_PRIMITIVE(*value) ) {
+	if ( JSVAL_IS_DOUBLE(*value) ) {
+		
+		double d = *JSVAL_TO_DOUBLE(*value);
+		int32_t i = (int32_t)d;
 
-		// (TBD) Date, ...
+		if ( d == (double)i ) {
+
+			V_VT(variant) = VT_I4;
+			V_I4(variant) = i;
+			return JS_TRUE;
+		}
+
+		V_VT(variant) = VT_R8;
+		V_R8(variant) = d;
+		return JS_TRUE;
 	}
+
+	if ( JSVAL_IS_VOID(*value) ) {
+
+		V_VT(variant) = VT_EMPTY;
+		return JS_TRUE;
+	}
+
+	if ( JSVAL_IS_NULL(*value) ) {
+
+		V_VT(variant) = VT_NULL;
+		return JS_TRUE;
+	}
+
+	JL_S_ASSERT( !JSVAL_IS_PRIMITIVE(*value), "Logic error. Missing primitive conversion.");
+
+	JSObject *obj = JSVAL_TO_OBJECT(*value);
+	JSClass *cl = JL_GetClass(obj);
+
+	if ( cl == classComDispatch ) {
+		
+		IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
+		JL_S_ASSERT_RESOURCE(disp);
+		disp->AddRef();
+		V_VT(variant) = VT_DISPATCH;
+		V_DISPATCH(variant) = disp;
+		return JS_TRUE;
+	}
+
+	if ( js_DateIsValid(cx, obj) ) {
+
+		SYSTEMTIME time;
+		time.wDayOfWeek = 0; // unused by SystemTimeToVariantTime
+		time.wYear = js_DateGetYear(cx, obj);
+		time.wMonth = js_DateGetMonth(cx, obj)+1;
+		time.wDay = js_DateGetDate(cx, obj);
+		time.wHour = js_DateGetHours(cx, obj);
+		time.wMinute = js_DateGetMinutes(cx, obj);
+		time.wSecond = js_DateGetSeconds(cx, obj);
+		time.wMilliseconds = 0; // or js_DateGetMsecSinceEpoch(cx, obj) - ???
+
+		V_VT(variant) = VT_DATE;
+		SystemTimeToVariantTime(&time, &V_DATE(variant));
+		return JS_TRUE;
+	}
+
+	// last resort
+	JSString *str = JS_ValueToString(cx, *value);
+	JL_S_ASSERT( str, "Unable to convert to string." );
+
+	V_VT(variant) = VT_BSTR;
+	V_BSTR(variant) = SysAllocString( (OLECHAR*)JS_GetStringChars(str) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 // acquire the ownership of the variant
@@ -81,8 +138,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANTARG *variant, jsval *rval ) {
 
 		case VT_ERROR:
 
-			
-
+			//JS_NewObject(cx, js_ErrorClass, NULL, NULL);
 			// V_ERROR / V_ERRORREF
 			//JS_NewObject(cx, ComError, NULL, NULL); V_ERROR(variant)
 			*rval = JSVAL_VOID;
@@ -97,10 +153,11 @@ JSBool VariantToJsval( JSContext *cx, VARIANTARG *variant, jsval *rval ) {
 			
 				SYSTEMTIME time;
 				INT st = VariantTimeToSystemTime(isRef ? *V_DATEREF(variant) : V_DATE(variant), &time);
-				
+				if ( st != TRUE )
+					JL_CHK( WinThrowError(cx, GetLastError()) );
 				JSObject *tmpObj;
 				tmpObj = js_NewDateObject(cx, time.wYear, time.wMonth-1, time.wDay, time.wHour, time.wMinute, time.wSecond);
-
+				JL_CHK( tmpObj );
 				*rval = OBJECT_TO_JSVAL(tmpObj);
 				break;
 			}
