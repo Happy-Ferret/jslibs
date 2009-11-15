@@ -3,23 +3,49 @@
 LoadModule('jsstd');
 LoadModule('jswinshell');
 
+
+//var shell = new ComObject('WScript.Shell');
+//shell.popup('Bonjour, tout le monde!');
+
+//var typeLib = new ComObject('Scriptlet.TypeLib');
+//Print(typeLib.guid); // Should give you a new GUID for every typeLib instantiation
+
+/*
+var shell = new ComObject('WScript.Shell');
+var process = shell.exec('test.bat');
+stdoutput = process.stdOut.readAll();
+Print('out: ',stdoutput); // Should output the stdout of the dir command
+*/
+
+//var shell = new ComObject('WScript.Shell');
+//shell.Exec('calc.exe');
+
+
 try {
 
-	var fso = new ComObject('Scripting.FileSystemObject');
-	var file = fso.GetFile("foobar.txt");
+var xml = '<doc><el attr="foo" attr1="bar">Info</el></doc>';
+var xmlReader = new ComObject("Microsoft.XMLDOM");
+xmlReader.loadXML(xml);
+
+Print('Output: ' + xmlReader.childNodes[0].childNodes[0].attributes[1].nodeValue); // 'foo'
+Print('Output: ' + xmlReader.childNodes[0].childNodes[0].childNodes[0].nodeValue); // 'Info'
+
+//	var fso = new ComObject('Scripting.FileSystemObject');
+//	var file = fso.GetFile("foobar.txt");
 //	file.Write("Hello World");
 
-	file.attributes = 2;
-	file.attributes = 2;
+//	file.attributes();
+//	file.attributes = 2;
+
 //	file.Close();
-	
 //	Print( o.CreateTextFile.dispid );
-	
 //	var a = o.test;
 
+	Print('OK');
 
 } catch(ex) {
 	
+
 	Print( ex.text, '\n' );
 }
 

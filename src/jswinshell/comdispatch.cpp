@@ -42,6 +42,12 @@ DEFINE_FINALIZE() {
 
 static JSBool Invoke(JSContext *cx, uintN argc, jsval *vp) {
 
+#ifdef DEBUG
+	jsval dbg_funNameVal;
+	JS_GetPropertyById(cx, JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)), JLID(cx, name), &dbg_funNameVal);
+	jschar *dbg_name = JS_GetStringChars(JSVAL_TO_STRING( dbg_funNameVal ));
+#endif
+
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( disp );
 
@@ -79,6 +85,8 @@ static JSBool Invoke(JSContext *cx, uintN argc, jsval *vp) {
 	}
 
 	if ( res == DISP_E_MEMBERNOTFOUND ) { // see DEFINE_GET_PROPERTY
+		
+		// remove the function because it is not a DISPATCH_METHOD
 
 		//	const char *funName = JS_GetFunctionName(JS_ValueToFunction(cx, JS_CALLEE(cx,vp)));
 		jsval funNameVal;
@@ -98,23 +106,6 @@ static JSBool Invoke(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 
-DEFINE_GET_PROPERTY() {
-
-	HRESULT res;
-	DISPPARAMS params = {NULL, NULL, 0, 0};
-	EXCEPINFO ex = {0};
-	UINT err = 0;
-
-	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( disp );
-
-	jschar *name;
-	name = JS_GetStringChars(JSVAL_TO_STRING(id));
-
-	DISPID dispid;
-	res = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
-	if ( FAILED(res) ) // dispid == DISPID_UNKNOWN
-		JL_CHK( WinThrowError(cx, res) );
 
 /*
 	ITypeInfo *pTypeinfo;
@@ -133,12 +124,53 @@ DEFINE_GET_PROPERTY() {
 	pTypeinfo->ReleaseFuncDesc(pFuncDesc);
 */
 
-	VARIANT *result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
+DEFINE_GET_PROPERTY() {
+
+	HRESULT res;
+
+	DISPPARAMS params;
+	EXCEPINFO ex = {0};
+	UINT err = 0;
+	VARIANT *result = NULL; // bad:
+
+	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( disp );
+
+	result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
 	VariantInit(result);
+
+	if ( JSVAL_IS_INT(id) ) {
+
+		VARIANTARG arg;
+		VariantInit(&arg);
+		V_VT(&arg) = VT_I4;
+		V_I4(&arg) = JSVAL_TO_INT(id);
+
+		DISPID dispid = DISPID_VALUE;
+		params.rgvarg = &arg;
+		params.rgdispidNamedArgs = &dispid;
+		params.cArgs = 1;
+		params.cNamedArgs = 1;
+
+		res = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_PROPERTYGET, &params, result, &ex, &err);
+		goto end;
+	}
+
+	params.rgvarg = NULL;
+	params.rgdispidNamedArgs = NULL;
+	params.cArgs = 0;
+	params.cNamedArgs = 0;
+
+	jschar *name;
+	name = JS_GetStringChars(JSVAL_TO_STRING(id));
+	DISPID dispid;
+	res = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
+	if ( FAILED(res) ) // dispid == DISPID_UNKNOWN
+		JL_CHK( WinThrowError(cx, res) );
 
 	res = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_PROPERTYGET, &params, result, &ex, &err);
 
-	if ( res == DISP_E_MEMBERNOTFOUND ) { // not a getter, then try a method
+	if ( res == DISP_E_MEMBERNOTFOUND || res == DISP_E_BADPARAMCOUNT ) { // not a getter, then try a method
 
 		res = VariantClear(result);
 		if ( FAILED(res) )
@@ -154,10 +186,20 @@ DEFINE_GET_PROPERTY() {
 		return JS_TRUE;
 	}
 
-	JL_CHK( VariantToJsval(cx, result, vp) ); // loose variant ownership
+end:
+	if ( FAILED(res) )
+		JL_CHK( WinThrowError(cx, res) );
 
+	JL_CHK( VariantToJsval(cx, result, vp) ); // loose variant ownership
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( result != NULL ) {
+	
+		VariantClear(result);
+		JS_free(cx, result);
+	}
+	return JS_FALSE;
 }
 
 
@@ -272,7 +314,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
-	HAS_ALL_PROPERTIES_SHARED
+//	HAS_ALL_PROPERTIES_SHARED
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( methodList )

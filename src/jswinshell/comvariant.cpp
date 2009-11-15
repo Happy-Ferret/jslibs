@@ -205,8 +205,10 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 		//	break;
 		case VT_R4:
 			*rval = DOUBLE_TO_JSVAL( JS_NewDouble(cx, isRef ? *V_R4REF(variant) : V_R4(variant)) );
+			break;
 		case VT_R8:
 			*rval = DOUBLE_TO_JSVAL( JS_NewDouble(cx, isRef ? *V_R8REF(variant) : V_R8(variant)) );
+			break;
 
 		case VT_DECIMAL: {
 
@@ -223,7 +225,8 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			break;
 
 		case VT_BOOL:
-			*rval = BOOLEAN_TO_JSVAL(isRef ? *V_BOOLREF(variant) : V_BOOL(variant));
+			*rval = (isRef ? *V_BOOLREF(variant) : V_BOOL(variant)) ? JSVAL_TRUE : JSVAL_FALSE;
+			break;
 		case VT_I1:
 			*rval = INT_TO_JSVAL(isRef ? *V_I1REF(variant) : V_I1(variant));
 			break;
