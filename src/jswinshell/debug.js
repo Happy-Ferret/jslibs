@@ -27,6 +27,7 @@ var xml = '<doc><el attr="foo" attr1="bar">Info</el></doc>';
 var xmlReader = new ComObject("Microsoft.XMLDOM");
 xmlReader.loadXML(xml);
 
+
 Print('Output: ' + xmlReader.childNodes[0].childNodes[0].attributes[1].nodeValue); // 'foo'
 Print('Output: ' + xmlReader.childNodes[0].childNodes[0].childNodes[0].nodeValue); // 'Info'
 

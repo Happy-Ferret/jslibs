@@ -210,6 +210,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			*rval = DOUBLE_TO_JSVAL( JS_NewDouble(cx, isRef ? *V_R8REF(variant) : V_R8(variant)) );
 			break;
 
+		case VT_CY:
 		case VT_DECIMAL: {
 
 			HRESULT res;
@@ -285,6 +286,71 @@ DEFINE_FINALIZE() {
 	JS_free(cx, variant);
 }
 
+DEFINE_FUNCTION_FAST( toString ) {
+
+	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( variant );
+	char str[64];
+	*str = '\0';
+	strcat(str, "[");
+	strcat(str, _class->name);
+	strcat(str, " ");
+	if ( V_ISBYREF(variant) )
+		strcat(str, "*");
+	switch (V_VT(variant)) {
+		case VT_EMPTY: strcat(str, "EMPTY"); break;
+		case VT_NULL: strcat(str, "NULL"); break;
+		case VT_I2: strcat(str, "I2"); break;
+		case VT_I4: strcat(str, "I4"); break;
+		case VT_R4: strcat(str, "R4"); break;
+		case VT_R8: strcat(str, "R8"); break;
+		case VT_CY: strcat(str, "CY"); break;
+		case VT_DATE: strcat(str, "DATE"); break;
+		case VT_BSTR: strcat(str, "BSTR"); break;
+		case VT_DISPATCH: strcat(str, "DISPATCH"); break;
+		case VT_ERROR: strcat(str, "ERROR"); break;
+		case VT_BOOL: strcat(str, "BOOL"); break;
+		case VT_VARIANT: strcat(str, "VARIANT"); break;
+		case VT_UNKNOWN: strcat(str, "UNKNOWN"); break;
+		case VT_DECIMAL: strcat(str, "DECIMAL"); break;
+		case VT_I1: strcat(str, "I1"); break;
+		case VT_UI1: strcat(str, "UI1"); break;
+		case VT_UI2: strcat(str, "UI2"); break;
+		case VT_UI4: strcat(str, "UI4"); break;
+		case VT_I8: strcat(str, "I8"); break;
+		case VT_UI8: strcat(str, "UI8"); break;
+		case VT_INT: strcat(str, "INT"); break;
+		case VT_UINT: strcat(str, "UINT"); break;
+		case VT_VOID: strcat(str, "VOID"); break;
+		case VT_HRESULT: strcat(str, "HRESULT"); break;
+		case VT_PTR: strcat(str, "PTR"); break;
+		case VT_SAFEARRAY: strcat(str, "SAFEARRAY"); break;
+		case VT_CARRAY: strcat(str, "CARRAY"); break;
+		case VT_USERDEFINED: strcat(str, "USERDEFINED"); break;
+		case VT_LPSTR: strcat(str, "LPSTR"); break;
+		case VT_LPWSTR: strcat(str, "LPWSTR"); break;
+		case VT_RECORD: strcat(str, "RECORD"); break;
+		case VT_INT_PTR: strcat(str, "INT_PTR"); break;
+		case VT_UINT_PTR: strcat(str, "UINT_PTR"); break;
+		case VT_FILETIME: strcat(str, "FILETIME"); break;
+		case VT_BLOB: strcat(str, "BLOB"); break;
+		case VT_STREAM: strcat(str, "STREAM"); break;
+		case VT_STORAGE: strcat(str, "STORAGE"); break;
+		case VT_STREAMED_OBJECT: strcat(str, "STREAMED_OBJECT"); break;
+		case VT_STORED_OBJECT: strcat(str, "STORED_OBJECT"); break;
+		case VT_BLOB_OBJECT: strcat(str, "BLOB_OBJECT"); break;
+		case VT_CF: strcat(str, "CF"); break;
+		case VT_CLSID: strcat(str, "CLSID"); break;
+		case VT_VERSIONED_STREAM: strcat(str, "VERSIONED_STREAM"); break;
+		default:
+			strcat(str, "???");
+	}
+	strcat(str, "]");
+
+	return StringToJsval(cx, str, JL_FRVAL);
+	JL_BAD;
+}
+
 
 DEFINE_HAS_INSTANCE() {
 
@@ -297,4 +363,9 @@ CONFIGURE_CLASS
 	HAS_PRIVATE
 	HAS_HAS_INSTANCE
 	HAS_FINALIZE
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION_FAST( toString )
+	END_FUNCTION_SPEC
+
 END_CLASS
