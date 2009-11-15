@@ -3,11 +3,17 @@ LoadModule('jsio');
 LoadModule('jsdebug');
 
 
-var b = new Buffer();
-
-b.Clear();
-
-
+var f = new Function("\
+		var aaa = 123;\
+		function foo() {\
+			var bbb = 456;\
+			return Expand('$(aaa) $(bbb)');\
+		}\
+		Print( foo() );\
+		");
+		
+		f();
+		
 
 Halt(); //////////////////////////////
 

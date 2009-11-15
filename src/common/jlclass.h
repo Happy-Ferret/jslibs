@@ -95,6 +95,7 @@ inline JSNative NativeFunction(JSNative f) { return f; } // used fo type check o
 #define CONSTRUCT_PROTOTYPE _class->flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
 #define IS_GLOBAL _class->flags |= JSCLASS_GLOBAL_FLAGS;
 #define HAS_NEW_RESOLVE_GETS_START _class->flags |= JSCLASS_NEW_RESOLVE_GETS_START;
+#define HAS_ALL_PROPERTIES_SHARED _class->flags |= JSCLASS_SHARE_ALL_PROPERTIES;
 #define REVISION(REV) (_revision = INT_TO_JSVAL(REV));
 
 #define HAS_CONSTRUCTOR _constructor = Constructor;

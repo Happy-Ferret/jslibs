@@ -3,6 +3,36 @@
 LoadModule('jsstd');
 LoadModule('jswinshell');
 
+try {
+
+	var fso = new ComObject('Scripting.FileSystemObject');
+	var f = fso.GetFolder('c:\\');
+	
+	var col = f.SubFolders;
+
+Print( col.item(0) );
+
+
+
+/*
+var xml = '<doc><el attr="foo" attr1="bar">Info</el></doc>';
+var xmlReader = new ComObject("Microsoft.XMLDOM");
+xmlReader.loadXML(xml);
+Print('Output: ' + xmlReader.childNodes[0].childNodes[0].attributes[1].nodeValue); // 'foo'
+Print('Output: ' + xmlReader.childNodes[0].childNodes[0].childNodes[0].nodeValue); // 'Info'
+*/
+
+//	var fso = new ComObject('Scripting.FileSystemObject');
+//	var file = fso.GetFile("foobar.txt");
+//	file.Write("Hello World");
+
+//	file.attributes();
+//	file.attributes = 2;
+
+//	file.Close();
+//	Print( o.CreateTextFile.dispid );
+//	var a = o.test;
+
 
 //var shell = new ComObject('WScript.Shell');
 //shell.popup('Bonjour, tout le monde!');
@@ -21,30 +51,10 @@ Print('out: ',stdoutput); // Should output the stdout of the dir command
 //shell.Exec('calc.exe');
 
 
-try {
-
-var xml = '<doc><el attr="foo" attr1="bar">Info</el></doc>';
-var xmlReader = new ComObject("Microsoft.XMLDOM");
-xmlReader.loadXML(xml);
-
-
-Print('Output: ' + xmlReader.childNodes[0].childNodes[0].attributes[1].nodeValue); // 'foo'
-Print('Output: ' + xmlReader.childNodes[0].childNodes[0].childNodes[0].nodeValue); // 'Info'
-
-//	var fso = new ComObject('Scripting.FileSystemObject');
-//	var file = fso.GetFile("foobar.txt");
-//	file.Write("Hello World");
-
-//	file.attributes();
-//	file.attributes = 2;
-
-//	file.Close();
-//	Print( o.CreateTextFile.dispid );
-//	var a = o.test;
 
 	Print('OK');
 
-} catch(ex) {
+} catch(ex if ex instanceof WinError) {
 	
 
 	Print( ex.text, '\n' );

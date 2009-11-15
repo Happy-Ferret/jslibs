@@ -632,12 +632,19 @@ LoadModule('jsstd');
 			x:123,
 			y:'456',
 		}
-		QA.ASSERT( obj1.Expand('$(x)$(y)'), '123456', 'expanding a string using this as map' );
+		QA.ASSERT( obj1.Expand('$(x)$(y)', obj1), '123456', 'expanding a string using this as map' );
 		
 		var o = { title:'My HTML Page', titi:1234, toString:function() { return Expand( this.text, this ) } };
 		o.text = '<html><title>$(title)</title>\n'
 		QA.ASSERT_STR( o, '<html><title>My HTML Page</title>\n', 'expand string using this object' );
 
+		var aaa = 123;
+		function foo() {
+			var bbb = 456;
+			return Expand('$(aaa) $(bbb)');
+		}
+		QA.ASSERT_STR( foo(), '123 456', 'expand string using scope chain' );
+		
 
 /// Expand using a callback function [ftrm]
 
