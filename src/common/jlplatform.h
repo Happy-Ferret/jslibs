@@ -513,6 +513,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		if ( result != 0 ) {
 
 			strncpy(message, (char*)lpMsgBuf, maxLength-1);
+			LocalFree(lpMsgBuf);
 			message[maxLength-1] = '\0';
 		} else
 			*message = '\0';

@@ -352,6 +352,7 @@ static JSBool global_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags
 
 		JSBool resolved;
 		if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
+
 			return JS_FALSE;
 		if (resolved) {
 			*objp = obj;
@@ -484,6 +485,8 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 // creates a reference to the String object JSClass
 	pv->stringObjectClass = JL_GetStringClass(cx);
 	JL_CHKM( pv->stringObjectClass, "Unable to find the String class." );
+	pv->errorObjectClass = JL_GetErrorClass(cx);
+	JL_CHKM( pv->stringObjectClass, "Unable to find the Error class." );
 
 // make GetErrorMessage available from any module
 

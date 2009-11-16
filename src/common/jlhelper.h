@@ -106,6 +106,7 @@ struct HostPrivate {
 	jl::Queue moduleList;
 	jl::Queue registredNativeClasses;
 	JSClass *stringObjectClass;
+	JSClass *errorObjectClass;
 	jl_allocators_t alloc;
 	int camelCase;
 	bool unsafeMode;
@@ -510,6 +511,19 @@ ALWAYS_INLINE bool JsvalIsArray( JSContext *cx, jsval val ) {
 
 // Is string or has jslibs BufferGet interface (including Blob).
 //#define JL_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) ) // || JL_GetClass(JSVAL_TO_OBJECT(val)) == &js_StringClass
+
+
+ALWAYS_INLINE JSClass* JL_GetErrorClass( JSContext *cx ) {
+
+//	JS_GetClassObject(cx, ...	JSProto_Error
+	JSObject *globalObject = JS_GetGlobalObject(cx);
+	jsval errorVal;
+	JL_CHK( JS_CallFunctionName(cx, globalObject, "Error", 0, NULL, &errorVal) );
+	return JL_GetClass(JSVAL_TO_OBJECT(errorVal));
+
+bad:
+	return NULL;
+}
 
 
 ALWAYS_INLINE JSClass* JL_GetStringClass( JSContext *cx ) {
