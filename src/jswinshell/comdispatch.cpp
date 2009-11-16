@@ -18,17 +18,21 @@
 #include "com.h"
 
 
+BEGIN_CLASS( ComDispatch )
+
+
 JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, jsval *rval ) {
 
-	JSObject *varObj = JS_NewObject(cx, classComDispatch, NULL, NULL);
+	JSObject *varObj = JS_NewObject(cx, _class, NULL, NULL);
 	*rval = OBJECT_TO_JSVAL( varObj );
 	JL_SetPrivate(cx, varObj, pdisp);
 	pdisp->AddRef();
+
+
+
+
 	return JS_TRUE;
 }
-
-
-BEGIN_CLASS( ComDispatch )
 
 
 DEFINE_FINALIZE() {
@@ -56,7 +60,7 @@ static JSBool Invoke(JSContext *cx, uintN argc, jsval *vp) {
 	JS_GetPropertyById(cx, funObj, JLID(cx, id), &dispidVal);
 	DISPID dispid = JSVAL_TO_INT(dispidVal);
 
-	HRESULT res;
+	HRESULT hr;
 
 	DISPPARAMS params;
 	params.rgvarg = (VARIANTARG*)alloca(argc * sizeof(VARIANTARG));
@@ -74,31 +78,36 @@ static JSBool Invoke(JSContext *cx, uintN argc, jsval *vp) {
 	VariantInit(result);
 
 	EXCEPINFO ex;
-	memset(&ex, 0, sizeof(EXCEPINFO));
-	UINT err = 0;
-	res = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD, &params, result, &ex, &err);
+	UINT argErr;
+	hr = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD, &params, result, &ex, &argErr);
 	for ( uintN i = 0; i < argc; ++i ) {
 
-		res = VariantClear(&params.rgvarg[i]);
-		if ( FAILED(res) )
-			JL_CHK( WinThrowError(cx, res) );
+		hr = VariantClear(&params.rgvarg[i]);
+		if ( FAILED(hr) )
+			JL_CHK( WinThrowError(cx, hr) );
 	}
 
-	if ( res == DISP_E_MEMBERNOTFOUND ) { // see DEFINE_GET_PROPERTY
+	if ( hr == DISP_E_EXCEPTION ) {
+
+		JSString *exStr = JS_NewUCStringCopyZ(cx, (const jschar*)ex.bstrDescription);
+		JS_SetPendingException(cx, STRING_TO_JSVAL(exStr));
+		goto bad;
+	}
+
+	if ( hr == DISP_E_MEMBERNOTFOUND ) { // see DEFINE_GET_PROPERTY
 		
 		// remove the function because it is not a DISPATCH_METHOD
-
-		//	const char *funName = JS_GetFunctionName(JS_ValueToFunction(cx, JS_CALLEE(cx,vp)));
 		jsval funNameVal;
-		JS_GetPropertyById(cx, funObj, JLID(cx, name), &funNameVal);
+		JL_CHK( JS_GetPropertyById(cx, funObj, JLID(cx, name), &funNameVal) );
 		jschar *funName = JS_GetStringChars(JSVAL_TO_STRING( funNameVal ));
 		jsid id;
-		JS_ValueToId(cx, funNameVal, &id);
-		JS_DeletePropertyById(cx, JL_FOBJ, id);
+		JL_CHK( JS_ValueToId(cx, funNameVal, &id) );
+		JL_CHK( JS_DeletePropertyById(cx, JL_FOBJ, id) );
+		JL_CHK( WinThrowError(cx, hr) );
 	}
 
-	if ( FAILED(res) )
-		JL_CHK( WinThrowError(cx, res) );
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
 
 	JL_CHK( VariantToJsval(cx, result, JL_FRVAL) ); // loose variant ownership
 	return JS_TRUE;
@@ -106,31 +115,13 @@ static JSBool Invoke(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 
-
-/*
-	ITypeInfo *pTypeinfo;
-	res = disp->GetTypeInfo(0, 0, &pTypeinfo);
-	if ( FAILED(res) )
-		JL_CHK( WinThrowError(cx, res) );
-
-	FUNCDESC *pFuncDesc;
-	for ( UINT index = 0; SUCCEEDED(pTypeinfo->GetFuncDesc(index, &pFuncDesc)); ++index ) {
-	
-		if ( pFuncDesc->memid == dispid )
-			break;
-		pTypeinfo->ReleaseFuncDesc(pFuncDesc);
-	}
-	INVOKEKIND invkind = pFuncDesc->invkind;
-	pTypeinfo->ReleaseFuncDesc(pFuncDesc);
-*/
-
 DEFINE_GET_PROPERTY() {
 
-	HRESULT res;
+	HRESULT hr;
 
+	EXCEPINFO ex;
+	UINT err;
 	DISPPARAMS params;
-	EXCEPINFO ex = {0};
-	UINT err = 0;
 	VARIANT *result = NULL; // bad:
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
@@ -152,7 +143,7 @@ DEFINE_GET_PROPERTY() {
 		params.cArgs = 1;
 		params.cNamedArgs = 1;
 
-		res = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_PROPERTYGET, &params, result, &ex, &err);
+		hr = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_PROPERTYGET, &params, result, &ex, &err);
 		goto end;
 	}
 
@@ -164,31 +155,38 @@ DEFINE_GET_PROPERTY() {
 	jschar *name;
 	name = JS_GetStringChars(JSVAL_TO_STRING(id));
 	DISPID dispid;
-	res = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
-	if ( FAILED(res) ) // dispid == DISPID_UNKNOWN
-		JL_CHK( WinThrowError(cx, res) );
+	hr = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
+	if ( FAILED(hr) ) // dispid == DISPID_UNKNOWN
+		JL_CHK( WinThrowError(cx, hr) );
 
-	res = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_PROPERTYGET, &params, result, &ex, &err);
+	hr = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_PROPERTYGET, &params, result, &ex, &err);
 
-	if ( res == DISP_E_MEMBERNOTFOUND || res == DISP_E_BADPARAMCOUNT ) { // not a getter, then try a method
+	if ( hr == DISP_E_EXCEPTION ) {
 
-		res = VariantClear(result);
-		if ( FAILED(res) )
-			JL_CHK( WinThrowError(cx, res) );
+		JSString *exStr = JS_NewUCStringCopyZ(cx, (const jschar*)ex.bstrDescription);
+		JS_SetPendingException(cx, STRING_TO_JSVAL(exStr));
+		return JS_FALSE;
+	}
+
+	if ( hr == DISP_E_MEMBERNOTFOUND || hr == DISP_E_BADPARAMCOUNT ) { // not a getter, then guess it is a method
+
+		hr = VariantClear(result);
+		if ( FAILED(hr) )
+			JL_CHK( WinThrowError(cx, hr) );
 		JS_free(cx, result);
 
 		JSFunction *fun = JS_NewFunction(cx, (JSNative)Invoke, 8, JSFUN_FAST_NATIVE, NULL, NULL);
 		JSObject *funObj = JS_GetFunctionObject(fun);
 		*vp = OBJECT_TO_JSVAL(funObj);
-		JS_DefinePropertyById(cx, funObj, JLID(cx, id), INT_TO_JSVAL(dispid), NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY);
-		JS_DefinePropertyById(cx, funObj, JLID(cx, name), id, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY);
-		JS_DefinePropertyById(cx, obj, id, *vp, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY);
+		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, id), INT_TO_JSVAL(dispid), NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) );
+		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, name), id, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) );
+		JL_CHK( JS_DefinePropertyById(cx, obj, id, *vp, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) );
 		return JS_TRUE;
 	}
 
 end:
-	if ( FAILED(res) )
-		JL_CHK( WinThrowError(cx, res) );
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
 
 	JL_CHK( VariantToJsval(cx, result, vp) ); // loose variant ownership
 	return JS_TRUE;
@@ -208,7 +206,7 @@ DEFINE_SET_PROPERTY() {
 //	JSBool found;
 //	JS_AlreadyHasOwnPropertyById(cx, obj, id, &found);
 
-	HRESULT res;
+	HRESULT hr;
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( disp );
@@ -217,9 +215,9 @@ DEFINE_SET_PROPERTY() {
 	name = JS_GetStringChars(JSVAL_TO_STRING(id));
 
 	DISPID dispid;
-	res = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
-	if ( FAILED(res) ) // dispid == DISPID_UNKNOWN
-		JL_CHK( WinThrowError(cx, res) );
+	hr = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
+	if ( FAILED(hr) ) // dispid == DISPID_UNKNOWN
+		JL_CHK( WinThrowError(cx, hr) );
 
 	VARIANTARG arg;
 	VariantInit(&arg);
@@ -244,12 +242,12 @@ DEFINE_SET_PROPERTY() {
 	EXCEPINFO ex;
 	memset(&ex, 0, sizeof(EXCEPINFO));
 	UINT argErr = 0;
-	res = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, flags, &params, NULL, &ex, &argErr);
+	hr = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, flags, &params, NULL, &ex, &argErr);
 	VariantClear(&arg);
 
-	if ( FAILED(res) ) {
+	if ( FAILED(hr) ) {
 
-		switch ( res ) {
+		switch ( hr ) {
 			case DISP_E_BADPARAMCOUNT:
 				JL_REPORT_WARNING("Not a setter or read-only property.");
 				return JS_TRUE;
@@ -257,7 +255,7 @@ DEFINE_SET_PROPERTY() {
 			//	JL_REPORT_WARNING("Invalid argument %d.", argErr);
 			//	return JS_TRUE;
 			default:
-				JL_CHK( WinThrowError(cx, res) );
+				JL_CHK( WinThrowError(cx, hr) );
 		}
 	}
 
@@ -265,39 +263,118 @@ DEFINE_SET_PROPERTY() {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( methodList ) {
-/*
-	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
+
+DEFINE_FUNCTION_FAST( FunctionList ) {
+
+	ITypeInfo *pTypeinfo = NULL;
+
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_OBJECT(JL_FARG(1));
+
+	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_FARG(1)));
 	JL_S_ASSERT_RESOURCE( disp );
 
-	JSObject *methodList = JS_NewArrayObject(cx, 0, NULL);
+//	JSObject *memberList = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
+	JSObject *memberList = JS_NewObject(cx, NULL, NULL, NULL);
+	JL_CHK( memberList );
+	*JL_FRVAL = OBJECT_TO_JSVAL(memberList);
 
-	HRESULT res;
+	HRESULT hr;
 
-	ITypeInfo *pTypeinfo;
-	disp->GetTypeInfo(0, 0, &pTypeinfo);
+	UINT count;
+	hr = disp->GetTypeInfoCount(&count);
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
+
+	if ( count == 0 )
+		return JS_TRUE;
+
+	hr = disp->GetTypeInfo(0, 0, &pTypeinfo);
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
 
 	pTypeinfo->AddRef();
 
 	FUNCDESC *pFuncDesc;
-	for ( UINT index = 0; SUCCEEDED(pTypeinfo->GetFuncDesc(index, &pFuncDesc)); ++index ) {
-	
-		pFuncDesc->
+	for ( UINT i = 0; SUCCEEDED(pTypeinfo->GetFuncDesc(i, &pFuncDesc)); ++i ) {
+
+		BSTR bstrName = NULL;
+		hr = pTypeinfo->GetDocumentation(pFuncDesc->memid, &bstrName, NULL, NULL, NULL);
+		if ( FAILED(hr) )
+			JL_CHK( WinThrowError(cx, hr) );
+		JSString *jsstr = JS_NewUCStringCopyZ(cx, (const jschar*)bstrName);
+
+		jsval tmp = STRING_TO_JSVAL(jsstr);
+		JL_CHK( JS_SetElement(cx, memberList, i, &tmp) );
+//		JL_CHK( JS_DefineUCProperty(cx, memberList, (const jschar*)bstrName, SysStringLen(bstrName), INT_TO_JSVAL(pFuncDesc->invkind), NULL, NULL, JSPROP_ENUMERATE | JSPD_PERMANENT | JSPROP_READONLY) );
+
+		SysFreeString(bstrName);
 		pTypeinfo->ReleaseFuncDesc(pFuncDesc);
 	}
 
 	pTypeinfo->Release();
-*/
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pTypeinfo != NULL )
+		pTypeinfo->Release();
+	return JS_FALSE;
 }
 
-DEFINE_PROPERTY( propertyList ) {
 
-	return JS_TRUE;
-	JL_BAD;
+DEFINE_ITERATOR_OBJECT() {
+
+	HRESULT hr;
+
+	DISPPARAMS params = {0};
+	EXCEPINFO ex = {0};
+	UINT argErr = 0;
+	VARIANT result;
+
+	JL_S_ASSERT( !keysonly, "Only for each..in loop is supported." );
+
+	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( disp );
+
+	VariantInit(&result);
+	hr = disp->Invoke(DISPID_NEWENUM, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD | DISPATCH_PROPERTYGET, &params, &result, &ex, &argErr);
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
+
+	IUnknown *punk = NULL;
+	if ( V_VT(&result) == VT_UNKNOWN )
+		punk = V_ISBYREF(&result) ? *V_UNKNOWNREF(&result) : V_UNKNOWN(&result);
+	else
+	if ( V_VT(&result) == VT_DISPATCH )
+		punk = V_ISBYREF(&result) ? *V_DISPATCHREF(&result) : V_DISPATCH(&result);
+
+	JL_S_ASSERT( punk != NULL, "Invalid enum." );
+
+	IEnumVARIANT *pEnum = NULL;
+	hr = punk->QueryInterface(IID_IEnumVARIANT, (void**)&pEnum);
+
+	VariantClear(&result); // does the punk->Release();
+
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
+
+	JSTempValueRooter tvr;
+	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr);
+	JSBool st = NewComEnum(cx, pEnum, &tvr.u.value);
+	JS_POP_TEMP_ROOT(cx, &tvr);
+	JL_CHK(st);
+	return JSVAL_TO_OBJECT(tvr.u.value);
+
+bad:
+	return NULL;
 }
 
+
+DEFINE_EQUALITY() {
+
+	*bp = JS_FALSE;
+	return JS_TRUE;
+}
 
 
 DEFINE_HAS_INSTANCE() {
@@ -314,11 +391,11 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
-//	HAS_ALL_PROPERTIES_SHARED
+	HAS_ITERATOR_OBJECT
+	HAS_EQUALITY
 
-	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_READ( methodList )
-		PROPERTY_READ( propertyList )
-	END_STATIC_PROPERTY_SPEC
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION_FAST( FunctionList )
+	END_STATIC_FUNCTION_SPEC
 
 END_CLASS

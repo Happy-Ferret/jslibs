@@ -44,9 +44,13 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Icon );
 	INIT_CLASS( Systray );
 	INIT_CLASS( Console );
+
+	HRESULT hr;
+	hr = CoInitialize(NULL);
+	JL_S_ASSERT( SUCCEEDED(hr), "Unable to initialize COM sub system." );
 	INIT_CLASS( ComVariant );
+	INIT_CLASS( ComEnum );
 	INIT_CLASS( ComDispatch );
-	INIT_CLASS( ComObject );
 
 	return JS_TRUE;
 	JL_BAD;

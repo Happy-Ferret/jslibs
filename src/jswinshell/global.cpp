@@ -23,6 +23,9 @@
 #include <Commdlg.h>
 #include <shlobj.h>
 
+#include "com.h"
+
+
 /**doc fileIndex:topmost **/
 
 /**doc
@@ -330,6 +333,46 @@ DEFINE_FUNCTION( Beep ) {
 	Beep(freq, duration);
 	return JS_TRUE;
 	JL_BAD;
+}
+
+DEFINE_FUNCTION_FAST( CreateComObject ) {
+
+	IUnknown *punk = NULL;
+
+	JL_S_ASSERT_ARG( 1 );
+
+	HRESULT hr;
+	
+	LPOLESTR name = (LPOLESTR)JS_GetStringChars(JS_ValueToString(cx, JL_FARG(1)));
+
+	CLSID clsid;
+	hr = name[0] == L'{' ? CLSIDFromString(name, &clsid) : CLSIDFromProgID(name, &clsid);
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
+
+	hr = GetActiveObject(clsid, NULL, &punk);
+	if ( FAILED(hr) ) {
+		
+		hr = CoCreateInstance(clsid, NULL, CLSCTX_SERVER | CLSCTX_INPROC_HANDLER, IID_IUnknown, (void FAR* FAR*)&punk);
+		if ( FAILED(hr) )
+			JL_CHK( WinThrowError(cx, hr) );
+	}
+
+	punk->AddRef();
+
+	IDispatch FAR* pdisp = (IDispatch FAR*)NULL;
+	hr = punk->QueryInterface(IID_IDispatch, (void FAR* FAR*)&pdisp);
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
+
+	JL_CHK( NewComDispatch(cx, pdisp, JL_FRVAL) );
+
+	punk->Release();
+	return JS_TRUE;
+bad:
+	if ( punk )
+		punk->Release();
+	return JS_FALSE;
 }
 
 
@@ -739,6 +782,7 @@ CONFIGURE_STATIC
 		FUNCTION( MessageBeep )
 		FUNCTION( Beep )
 		FUNCTION_FAST( RegistryGet )
+		FUNCTION_FAST( CreateComObject )
 
 		FUNCTION_FAST( DirectoryChangesInit )
 		FUNCTION_FAST( DirectoryChangesLookup )

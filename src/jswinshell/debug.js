@@ -5,21 +5,41 @@ LoadModule('jswinshell');
 
 try {
 
-	var fso = new ComObject('Scripting.FileSystemObject');
+var xmlhttp = CreateComObject("Microsoft.XMLHTTP");
+xmlhttp.open("GET", "http://www.google.com/", false);
+xmlhttp.send(null);
+Print( xmlhttp.responseText );
+Halt();
+
+
+var xml = '<doc><el attr="foo" attr1="bar">Info</el></doc>';
+var xmlReader = CreateComObject("Microsoft.XMLDOM");
+xmlReader.loadXML(xml);
+Print('Output: ' + xmlReader.childNodes[0].childNodes[0].attributes[1].nodeValue); // 'foo'
+Print('Output: ' + xmlReader.childNodes[0].childNodes[0].childNodes[0].nodeValue); // 'Info'
+Halt();
+
+
+//var fso = CreateComObject('MSWinsock.Winsock');
+
+
+/*
+	var fso = CreateComObject('Scripting.FileSystemObject');
 	var f = fso.GetFolder('c:\\');
 	
 	var col = f.SubFolders;
 
-Print( col.item(0) );
+	Print( ComDispatch.FunctionList(col).toSource() );
 
+	Print( '\n' );
+	for each ( var folder in col ) {
+		
+		Print( folder.name, '\n' );
+	}
+*/
 
 
 /*
-var xml = '<doc><el attr="foo" attr1="bar">Info</el></doc>';
-var xmlReader = new ComObject("Microsoft.XMLDOM");
-xmlReader.loadXML(xml);
-Print('Output: ' + xmlReader.childNodes[0].childNodes[0].attributes[1].nodeValue); // 'foo'
-Print('Output: ' + xmlReader.childNodes[0].childNodes[0].childNodes[0].nodeValue); // 'Info'
 */
 
 //	var fso = new ComObject('Scripting.FileSystemObject');

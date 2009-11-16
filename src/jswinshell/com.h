@@ -18,6 +18,7 @@
 
 #include <Objbase.h>
 
+DECLARE_CLASS( ComEnum )
 DECLARE_CLASS( ComVariant )
 DECLARE_CLASS( ComDispatch )
 DECLARE_CLASS( ComObject )
@@ -28,3 +29,4 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval );
 
 JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval );
 JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, jsval *rval );
+JSBool NewComEnum( JSContext *cx, IEnumVARIANT *enumv, jsval *rval );

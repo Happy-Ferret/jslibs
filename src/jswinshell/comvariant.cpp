@@ -17,16 +17,8 @@
 
 #include "com.h"
 
-// acquire the ownership of the variant
-JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
-	JSObject *varObj = JS_NewObject(cx, classComVariant, NULL, NULL);
-	*rval = OBJECT_TO_JSVAL( varObj );
-	JL_SetPrivate(cx, varObj, variant);
-	return JS_TRUE;
-}
-
-
+// variant must be initialized (VariantInit())
 JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 	if ( JSVAL_IS_STRING(*value) ) {
@@ -40,7 +32,7 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 	if ( JSVAL_IS_BOOLEAN(*value) ) {
 
 		V_VT(variant) = VT_BOOL;
-		V_BOOL(variant) = JSVAL_TO_BOOLEAN(*value) == JS_TRUE;
+		V_BOOL(variant) = JSVAL_TO_BOOLEAN(*value) == JS_TRUE ? TRUE : FALSE;
 		return JS_TRUE;
 	}
 
@@ -101,6 +93,16 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 		return JS_TRUE;
 	}
 
+	if ( JL_GetClass(obj) == classComVariant ) {
+		
+		VARIANT *v = (VARIANT*)JL_GetPrivate(cx, obj);
+		JL_S_ASSERT_RESOURCE(v);
+		HRESULT hr = VariantCopy(variant, v); // Frees the destination variant and makes a copy of the source variant.
+		if ( FAILED(hr) )
+			JL_CHK( WinThrowError(cx, hr) );
+		return JS_TRUE;
+	}
+
 //	if ( JL_ValueIsBlob(cx, *value ) {
 //	}
 
@@ -137,15 +139,37 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 	
 	BOOL isRef = V_ISBYREF(variant);
 
-	switch (V_VT(variant)) {
+	switch ( V_VT(variant) ) {
 
-		case VT_HRESULT:
-		case VT_ERROR:
+		case VT_HRESULT: {
+			
+			HRESULT errorCode = isRef ? *V_I4REF(variant) : V_I4(variant);
+			LPVOID lpMsgBuf;
+			DWORD result = ::FormatMessage(
+				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
+				NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL
+			);
+			if ( result == 0 )
+				return JS_FALSE;
+			JSString *jsStr = JS_NewStringCopyZ(cx, (const char*)lpMsgBuf);
+			LocalFree(lpMsgBuf);
+			jsval errVal = STRING_TO_JSVAL(jsStr);
+			HostPrivate *hpv = GetHostPrivate(cx);
+			JL_CHK( JS_ConstructObjectWithArguments(cx, hpv->errorObjectClass, NULL, NULL, 1, &errVal) );
+			}
+			break;
+		case VT_ERROR: {
 
-			//JS_NewObject(cx, js_ErrorClass, NULL, NULL);
-			// V_ERROR / V_ERRORREF
-			//JS_NewObject(cx, ComError, NULL, NULL); V_ERROR(variant)
-			*rval = JSVAL_VOID;
+			SCODE scode;
+			if ( V_VT(variant) == VT_ERROR )
+				scode = isRef ? *V_ERRORREF(variant) : V_ERROR(variant);
+			else
+				scode = variant->scode;
+
+			JL_CHK( JS_NewNumberValue(cx, scode, rval) );
+			HostPrivate *hpv = GetHostPrivate(cx);
+			JL_CHK( JS_ConstructObjectWithArguments(cx, hpv->errorObjectClass, NULL, NULL, 1, rval) );
+			}
 			break;
 		case VT_NULL:
 			 *rval = JSVAL_NULL;
@@ -176,23 +200,49 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 		//case VT_BSTR_BLOB: // For system use only.
 
 //		case VT_PTR:
-		//case VT_SAFEARRAY: {
 
-		//	HRESULT res;
-		//	void *data;
-		//	res = SafeArrayAccessData(V_ARRAY(variant), &data);
-		//	if ( FAILED(res) )
-		//		JL_CHK( WinThrowError(cx, res) );
+		case VT_SAFEARRAY: {
 
-		//	// (TBD) and now ?
-		//	JL_REPORT_ERROR("Not implemented yet!");
+			SAFEARRAY *psa = isRef ? *V_ARRAYREF(variant) : V_ARRAY(variant);
+			HRESULT hr = SafeArrayLock(psa);
+			if ( FAILED(hr) )
+				JL_CHK( WinThrowError(cx, hr) );
 
-		//	res = SafeArrayUnaccessData(V_UNION(pVar, data));
-		//	if ( FAILED(res) )
-		//		JL_CHK( WinThrowError(cx, res) );
-		//	}
-		//	break;
+			if ( SafeArrayGetDim(psa) != 1 ) { // at the moment we only manage 1D arrays
 
+				SafeArrayUnlock(psa);
+				JL_CHK( NewComVariant(cx, variant, rval) );
+				return JS_TRUE;
+			}
+
+			long lBound, uBound;
+			SafeArrayGetLBound(psa, 0, &lBound);
+			SafeArrayGetUBound(psa, 0, &uBound);
+			long size = uBound - lBound;
+
+			VARIANT *varray = NULL;
+			SafeArrayAccessData(psa, (void**)&varray);
+
+			JSObject *jsArr = JS_NewArrayObject(cx, size, NULL);
+			JL_CHK( jsArr );
+			*rval = OBJECT_TO_JSVAL( jsArr );
+
+			for ( long i = 0; i < size; ++i ) {
+
+				VARIANT *pvar = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
+				JL_CHK( pvar );
+				VariantInit(pvar);
+				VariantCopyInd(pvar, &varray[i]);
+
+				jsval val;
+				JL_CHK( VariantToJsval(cx, pvar, &val) );
+				JL_CHK( JS_SetElement(cx, jsArr, i - lBound, &val) );
+			}
+
+			SafeArrayUnaccessData(psa);
+			SafeArrayUnlock(psa);
+			}
+			break;
 
 		//case VT_LPWSTR:
 		//case VT_BLOB: {
@@ -213,15 +263,16 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 		case VT_CY:
 		case VT_DECIMAL: {
 
-			HRESULT res;
+			HRESULT hr;
 			VARIANT tmpVariant;
-			res = VariantChangeType(&tmpVariant, variant, 0, VT_R8);
-			if ( FAILED(res) )
-				JL_CHK( WinThrowError(cx, res) );
+			VariantInit(&tmpVariant); // (TND) needed ?
+			hr = VariantChangeType(&tmpVariant, variant, 0, VT_R8); // see VarR8FromCy()
+			if ( FAILED(hr) )
+				JL_CHK( WinThrowError(cx, hr) );
 			*rval = DOUBLE_TO_JSVAL( JS_NewDouble(cx, V_ISBYREF(&tmpVariant) ? *V_R8REF(&tmpVariant) : V_R8(&tmpVariant)) );
-			res = VariantClear(&tmpVariant);
-			if ( FAILED(res) )
-				JL_CHK( WinThrowError(cx, res) );
+			hr = VariantClear(&tmpVariant);
+			if ( FAILED(hr) )
+				JL_CHK( WinThrowError(cx, hr) );
 			}
 			break;
 
@@ -265,9 +316,9 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			return JS_TRUE;
 	}
 
-	HRESULT res = VariantClear(variant);
-	if ( FAILED(res) )
-		JL_CHK( WinThrowError(cx, res) );
+	HRESULT hr = VariantClear(variant);
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
 	JS_free(cx, variant);
 
 	return JS_TRUE;
@@ -277,19 +328,95 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
 BEGIN_CLASS( ComVariant )
 
+
+// acquire the ownership of the variant
+JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval ) {
+
+	JSObject *varObj = JS_NewObject(cx, _class, NULL, NULL);
+	*rval = OBJECT_TO_JSVAL( varObj );
+	JL_SetPrivate(cx, varObj, variant);
+	return JS_TRUE;
+}
+
+
 DEFINE_FINALIZE() {
 
 	if ( obj == *_prototype )
 		return;
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, obj);
-	HRESULT res = VariantClear(variant);
+	HRESULT hr = VariantClear(variant);
 	JS_free(cx, variant);
 }
 
-DEFINE_FUNCTION_FAST( toString ) {
+
+DEFINE_FUNCTION_FAST( toDispatch ) {
+
+	HRESULT hr;
+
+	IUnknown *punk = NULL;
 
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( variant );
+
+	if ( V_VT(variant) != VT_UNKNOWN ) {
+
+		*JL_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	punk = V_ISBYREF(variant) ? *V_UNKNOWNREF(variant) : V_UNKNOWN(variant);
+	JL_CHK( punk );
+	punk->AddRef();
+
+	IDispatch *pdisp;
+	hr = punk->QueryInterface(IID_IDispatch, (void**)&pdisp);
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
+
+	JL_CHK( NewComDispatch(cx, pdisp, JL_FRVAL) );
+
+	punk->Release();
+	return JS_TRUE;
+
+bad:
+	if ( punk != NULL )
+		punk->Release();
+	return JS_TRUE;
+}
+
+
+DEFINE_FUNCTION_FAST( toString ) {
+
+	HRESULT hr;
+
+	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( variant );
+
+	VARIANT tmpVariant;
+	VariantInit(&tmpVariant);
+	hr = VariantChangeType(&tmpVariant, variant, 0, VT_BSTR);
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
+
+	BSTR bstr = V_ISBYREF(&tmpVariant) ? *V_BSTRREF(&tmpVariant) : V_BSTR(&tmpVariant);
+	JSString *str = JS_NewUCStringCopyN(cx, (const jschar*)bstr, SysStringLen(bstr));
+	JL_CHK(str);
+	*JL_FRVAL = STRING_TO_JSVAL(str);
+
+	hr = VariantClear(&tmpVariant);
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
+
+	return JS_TRUE;
+	JL_BAD;	
+}
+
+
+DEFINE_FUNCTION_FAST( toTypeName ) {
+
+	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( variant );
+
 	char str[64];
 	*str = '\0';
 	strcat(str, "[");
@@ -366,6 +493,8 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST( toString )
+		FUNCTION_FAST( toTypeName )
+		FUNCTION_FAST( toDispatch )
 	END_FUNCTION_SPEC
 
 END_CLASS
