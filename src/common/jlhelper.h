@@ -88,7 +88,6 @@ enum {
 };
 #undef JLID_SPEC
 
-
 typedef int (*HostOutput)( void *privateData, const char *buffer, unsigned int length );
 
 struct HostPrivate {
@@ -111,6 +110,7 @@ struct HostPrivate {
 	int camelCase;
 	bool unsafeMode;
 	jsid ids[LAST_JSID];
+	unsigned int hostPrivateSize;
 };
 
 ALWAYS_INLINE HostPrivate* GetHostPrivate( JSContext *cx ) {

@@ -41,6 +41,8 @@ JSBool InitJslibsModule( JSContext *cx ) {
 
 	_unsafeMode = pv ? pv->unsafeMode : _unsafeMode;
 
+	JL_S_ASSERT( !pv || pv->hostPrivateSize == 0 || pv->hostPrivateSize == sizeof(HostPrivate), "Incompatible host.");
+
 	jl_malloc = pv && pv->alloc.malloc ? pv->alloc.malloc : jl_malloc; // ie. if we have a host and if the host has custom allocators.
 	jl_calloc = pv && pv->alloc.calloc ? pv->alloc.calloc : jl_calloc;
 	jl_memalign = pv && pv->alloc.memalign ? pv->alloc.memalign : jl_memalign;
@@ -49,6 +51,7 @@ JSBool InitJslibsModule( JSContext *cx ) {
 	jl_free = pv && pv->alloc.free ? pv->alloc.free : jl_free;
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /* not needed
