@@ -92,6 +92,7 @@ typedef int (*HostOutput)( void *privateData, const char *buffer, unsigned int l
 
 struct HostPrivate {
 
+	bool unsafeMode;
 	void *privateData;
 	volatile unsigned int maybeGCInterval;
 	JLSemaphoreHandler watchDogSemEnd;
@@ -108,10 +109,12 @@ struct HostPrivate {
 	JSClass *errorObjectClass;
 	jl_allocators_t alloc;
 	int camelCase;
-	bool unsafeMode;
 	jsid ids[LAST_JSID];
 	unsigned int hostPrivateSize;
 };
+
+JS_STATIC_ASSERT( offsetof(HostPrivate, unsafeMode) == 0 ); // JL_S_ASSERT must be usable before hostPrivateSize is tested
+
 
 ALWAYS_INLINE HostPrivate* GetHostPrivate( JSContext *cx ) {
 
