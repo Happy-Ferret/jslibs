@@ -171,7 +171,12 @@ ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) 
 	return id;
 }
 
+#ifdef DEBUG
 #define JLID_NAME(name) (JLID_##name, #name)
+#else
+#define JLID_NAME(name) (#name)
+#endif // DEBUG
+
 #define JLID(cx, name) GetPrivateJsid(cx, JLID_##name, JLID_NAME(name))
 // example of use: jsid cfg = JLID(cx, _configuration); char *name = JLID_NAME(_configuration);
 
@@ -242,7 +247,11 @@ template<class T> T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b); }
 // is the current obj (this)
 #define JL_OBJ (obj)
 // same for fast native
+#ifdef DEBUG
 #define JL_FOBJ (argc, JS_THIS_OBJECT(cx, vp))
+#else
+#define JL_FOBJ (JS_THIS_OBJECT(cx, vp))
+#endif // DEBUG
 
 // the return value
 #define JL_RVAL (rval)
@@ -868,19 +877,16 @@ bad:
 // Get the value of a variable in the current or parent's scopes.
 ALWAYS_INLINE JSBool JL_GetVariableValue( JSContext *cx, const char *name, jsval *vp ) {
 
-	// see also JS_GetScopeChain(cx)
-	JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL);
-	if ( !fp )
-		return JS_GetProperty(cx, JS_GetGlobalObject(cx), name, vp);
 	JSBool found;
+	JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL);
 	for ( JSObject *scope = JS_GetFrameScopeChain(cx, fp); scope; scope = JS_GetParent(cx, scope) ) {
 
 		JL_CHK( JS_HasProperty(cx, scope, name, &found) );
-		if ( found )
-			return JS_GetProperty(cx, scope, name, vp);
-		//JS_GetProperty(cx, scope, name, vp);
-		//if ( *vp != JSVAL_VOID )
-		//	return JS_TRUE;
+		if ( found ) {
+
+			JL_CHK( JS_GetProperty(cx, scope, name, vp) );
+			return JS_TRUE;
+		}
 	}
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
