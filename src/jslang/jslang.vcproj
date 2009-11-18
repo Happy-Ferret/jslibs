@@ -208,15 +208,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\id.h"
-				>
-			</File>
-			<File
-				RelativePath=".\idPub.h"
-				>
-			</File>
-			<File
-				RelativePath=".\jslang.h"
+				RelativePath=".\handlePub.h"
 				>
 			</File>
 			<File
