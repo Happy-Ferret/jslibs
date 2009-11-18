@@ -51,11 +51,18 @@ Note that post-multiplying with column-major matrices produces the same result a
 #include "vector4.h"
 
 #ifdef SSE // SSE (Streaming SIMD Extensions)
-
 #include <xmmintrin.h>
 //#include <fvec.h>
+#endif // SSE (Streaming SIMD Extensions)
 
 typedef union { //  __declspec(align(16))
+	struct {
+		float m[4][4]; // m[line][col]
+	};
+	struct {
+		float raw[16];
+	};
+#ifdef SSE // SSE (Streaming SIMD Extensions)
 	struct {
 		__m128 m1;
 		__m128 m2;
@@ -65,29 +72,11 @@ typedef union { //  __declspec(align(16))
 	struct {
 		__m128 m128[4];
 	};
-	struct {
-		float m[4][4]; // m[line][col]
-	};
-	struct {
-		float raw[16];
-	};
-} Matrix44;
-
-#else // SSE (Streaming SIMD Extensions)
-
-typedef union {
-	struct {
-		float m[4][4];
-	};
-	struct {
-		float raw[16];
-	};
-} Matrix44;
-
 #endif // SSE (Streaming SIMD Extensions)
+} Matrix44;
 
-static Matrix44 Matrix44IdentityValue = {
-
+static Matrix44 Matrix44IdentityValue = { // init the first member of the union: Matrix44::m
+ 
  { { { 1.0f, 0.0f, 0.0f, 0.0f },
      { 0.0f, 1.0f, 0.0f, 0.0f },
      { 0.0f, 0.0f, 1.0f, 0.0f },
