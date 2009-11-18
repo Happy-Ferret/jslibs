@@ -28,7 +28,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
 
-#if defined __cplusplus
+#if defined(__cplusplus)
 	#define EXTERN_C extern "C"
 #else
 	#define EXTERN_C
@@ -58,7 +58,10 @@
 
 #elif defined(__GNUC__)
 
-	#if defined HAVE_GCCVISIBILITYPATCH
+// # pragma GCC diagnostic ignored "-Wformat"  /* Ignore Warning about printf format /
+// # pragma GCC diagnostic ignored "-Wunused-parameter"  / Ignore Warning about unused function parameter */
+
+#if defined(HAVE_GCCVISIBILITYPATCH)
 		#define DLLEXPORT __attribute__ ((visibility("default")))
 		#define DLLLOCAL __attribute__ ((visibility("hidden")))
 	#else
@@ -88,7 +91,7 @@
 #endif
 
 
-#if defined _MSC_VER
+#if defined(_MSC_VER)
 	// disable warnings:
 	#pragma warning(disable : 4244 4305)  // for VC++, no precision loss complaints
 	#pragma warning(disable : 4127)  // no "conditional expression is constant" complaints
@@ -251,7 +254,7 @@
 //	#define O_BINARY 0
 //#endif
 
-#if defined XP_WIN
+#if defined(XP_WIN)
 	#include <io.h>
 #endif
 #include <fcntl.h>
@@ -285,14 +288,14 @@ inline void JL_Assert(const char *s, const char *file, unsigned int ln) {
 inline void fpipe( FILE **read, FILE **write ) {
 
 	int readfd, writefd;
-#if defined XP_WIN
+#if defined(XP_WIN)
 	HANDLE readPipe, writePipe;
 	CreatePipe(&readPipe, &writePipe, NULL, 65536);
 	// doc: The underlying handle is also closed by a call to _close,
 	//      so it is not necessary to call the Win32 function CloseHandle on the original handle. 
 	readfd = _open_osfhandle((intptr_t)readPipe, _O_RDONLY);
 	writefd = _open_osfhandle((intptr_t)writePipe, _O_WRONLY);
-#elif defined XP_UNIX
+#elif defined(XP_UNIX)
 	int fd[2];
 	pipe(fd); // (TBD) check return value
 	readfd = fd[0];
@@ -417,16 +420,16 @@ ALWAYS_INLINE char* IntegerToString(int val, int base) {
 
 ALWAYS_INLINE void SleepMilliseconds(unsigned int ms) {
 
-#if defined XP_WIN
+#if defined(XP_WIN)
 	Sleep(ms); // winbase.h
-#elif defined XP_UNIX
+#elif defined(XP_UNIX)
 	usleep(ms * 1000); // unistd.h
 #endif // XP_UNIX
 }
 
 ALWAYS_INLINE double AccurateTimeCounter() {
 
-#if defined XP_WIN
+#if defined(XP_WIN)
 	static LONGLONG initTime = 0; // initTime helps in avoiding precision waste.
 	LARGE_INTEGER frequency, performanceCount;
 	BOOL result = ::QueryPerformanceFrequency(&frequency);
@@ -436,7 +439,7 @@ ALWAYS_INLINE double AccurateTimeCounter() {
 		initTime = performanceCount.QuadPart;
 	::SetThreadAffinityMask(::GetCurrentThread(), oldmask);
 	return (double)1000 * (performanceCount.QuadPart-initTime) / (double)frequency.QuadPart;
-#elif defined XP_UNIX
+#elif defined(XP_UNIX)
 	static long initTime = 0; // initTime helps in avoiding precision waste.
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -461,9 +464,9 @@ __int64 GetTime() {
 
 ALWAYS_INLINE int JLProcessId() {
 
-#if defined XP_WIN
+#if defined(XP_WIN)
 	return getpid();
-#elif defined XP_UNIX
+#elif defined(XP_UNIX)
 	return getpid();
 #endif // XP_UNIX
 	return -1; // (TBD)
@@ -475,7 +478,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	unsigned int r = 0x12345678;
 	r ^= (unsigned int)AccurateTimeCounter();
 	r ^= (unsigned int)JLProcessId();
-#if defined XP_WIN
+#if defined(XP_WIN)
 //	r ^= (u_int32_t)GetModuleHandle(NULL);
 	MEMORYSTATUS status;
 	GlobalMemoryStatus( &status );
@@ -485,9 +488,9 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 }
 
 
-#if defined XP_WIN
+#if defined(XP_WIN)
 #include <malloc.h> // malloc()
-#elif defined XP_UNIX
+#elif defined(XP_UNIX)
 #include <stdlib.h> // malloc()
 #include <time.h>
 #include <pthread.h>
@@ -504,7 +507,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 //
 	ALWAYS_INLINE void JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 
-#if defined XP_WIN
+#if defined(XP_WIN)
 		DWORD errorCode = ::GetLastError();
 		LPVOID lpMsgBuf;
 		DWORD result = ::FormatMessage(
@@ -517,7 +520,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 			message[maxLength-1] = '\0';
 		} else
 			*message = '\0';
-#elif defined XP_UNIX
+#elif defined(XP_UNIX)
 		const char *msgBuf = strerror(errno);
 		if ( msgBuf != NULL ) {
 
@@ -543,25 +546,25 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 // Linux: http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
 
 	ALWAYS_INLINE int JLAtomicExchange(volatile long *ptr, long val) {
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		return InterlockedExchange(ptr, val);
-	#elif defined XP_UNIX // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ... //  #if defined(HAVE_GCC_ATOMIC32)
+	#elif defined(XP_UNIX) // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ... //  #if defined(HAVE_GCC_ATOMIC32)
 		return __sync_lock_test_and_set(ptr, val);
 	#endif
 	}
 
 	ALWAYS_INLINE void JLAtomicIncrement(volatile long *ptr) {
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		InterlockedIncrement(ptr);
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		__sync_add_and_fetch(ptr, 1);
 	#endif
 	}
 
 	ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		return InterlockedExchangeAdd(ptr, val) + val;
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		return __sync_add_and_fetch(ptr, val);
 	#endif
 	}
@@ -570,19 +573,19 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 ///////////////////////////////////////////////////////////////////////////////
 // condvar
 //
-#if defined XP_WIN
+#if defined(XP_WIN)
 	typedef struct {
 		HANDLE mutex;
 		HANDLE event;
 	} *JLCondHandler;
-#elif defined XP_UNIX
+#elif defined(XP_UNIX)
 	typedef struct {
 		pthread_mutex_t mutex;
 		pthread_cond_t cond;
 	} *JLCondHandler;
 #endif
 
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 	ALWAYS_INLINE JLCondHandler JLCreateCond() {
 
 		JLCondHandler cond = (JLCondHandler)malloc(sizeof(*cond));
@@ -590,7 +593,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		cond->event = CreateEvent(NULL, TRUE, FALSE, NULL); // lpEventAttributes, bManualReset, bInitialState, lpName
 		return cond;
 	}
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 	ALWAYS_INLINE JLCondHandler JLCreateCond() {
 
 		JLCondHandler cond = (JLCondHandler)malloc(sizeof(*cond));
@@ -610,18 +613,18 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 // semaphores
 //
 
-#if defined XP_WIN
+#if defined(XP_WIN)
 	typedef HANDLE JLSemaphoreHandler;
-#elif defined XP_UNIX
+#elif defined(XP_UNIX)
 	typedef sem_t* JLSemaphoreHandler;
 #endif
 
 
 	ALWAYS_INLINE JLSemaphoreHandler JLCreateSemaphore( int initCount ) {
 
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		return CreateSemaphore(NULL, initCount, LONG_MAX, NULL);
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		sem_t *sem = (sem_t*)malloc(sizeof(sem_t)); // (TBD) max ???
 		if ( !sem )
 			return NULL;
@@ -641,14 +644,14 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 		if ( !JLSemaphoreOk(semaphore) )
 			return JLERROR;
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		switch ( WaitForSingleObject(semaphore, msTimeout == -1 ? INFINITE : msTimeout) ) {
 			case WAIT_TIMEOUT:
 				return JLTIMEOUT;
 			case WAIT_OBJECT_0:
 				return JLOK;
 		}
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		if ( msTimeout == -1 ) {
 			
 			if ( sem_wait(semaphore) == 0 )
@@ -677,10 +680,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 		if ( !JLSemaphoreOk(semaphore) )
 			return JLERROR;
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		if ( ReleaseSemaphore(semaphore, 1, NULL) == 0 )
 			return JLERROR;
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		if ( sem_post(semaphore) != 0 )
 			return JLERROR;
 	#endif
@@ -691,10 +694,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 		if ( !pSemaphore || !JLSemaphoreOk(*pSemaphore) )
 			return JLERROR;
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		if ( CloseHandle(*pSemaphore) == 0 )
 			return JLERROR;
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		if ( sem_destroy(*pSemaphore) != 0 )
 			return JLERROR;
 		free(*pSemaphore);
@@ -717,17 +720,17 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 //  each successful lock request that it has outstanding on the mutex.
 //  PTHREAD_MUTEX_RECURSIVE
 
-#if defined XP_WIN
+#if defined(XP_WIN)
 	typedef HANDLE JLMutexHandler;
-#elif defined XP_UNIX
+#elif defined(XP_UNIX)
 	typedef pthread_mutex_t* JLMutexHandler;
 #endif
 
 	ALWAYS_INLINE JLMutexHandler JLCreateMutex() {
 
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		return CreateMutex(NULL, FALSE, NULL);
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		pthread_mutex_t *mutex = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
 		pthread_mutex_init(mutex, NULL);
 		return mutex;
@@ -743,10 +746,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 		if ( !JLMutexOk(mutex) )
 			return JLERROR;
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		if ( WaitForSingleObject(mutex, INFINITE) != WAIT_OBJECT_0 )
 			return JLERROR;
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		if ( pthread_mutex_lock(mutex) != 0 )
 			return JLERROR;
 	#endif
@@ -757,10 +760,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 		if ( !JLMutexOk(mutex) )
 			return JLERROR;
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		if ( ReleaseMutex(mutex) == 0 )
 			return JLERROR;
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		if ( pthread_mutex_unlock(mutex) != 0 )
 			return JLERROR;
 	#endif
@@ -771,10 +774,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 		if ( !pMutex || !JLMutexOk(*pMutex) )
 			return JLERROR;
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		if ( CloseHandle(*pMutex) == 0 )
 			return JLERROR;
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		if ( pthread_mutex_destroy(*pMutex) != 0 )
 			return JLERROR;
 		free(*pMutex);
@@ -788,7 +791,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 // thread
 //   Linux: https://computing.llnl.gov/tutorials/pthreads/#PthreadsAPI
 
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		#define JL_THREAD_PRIORITY_LOWEST THREAD_PRIORITY_LOWEST
 		#define JL_THREAD_PRIORITY_LOW THREAD_PRIORITY_BELOW_NORMAL
 		#define JL_THREAD_PRIORITY_NORMAL THREAD_PRIORITY_NORMAL
@@ -797,7 +800,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 		typedef int JLThreadPriorityType;
 		#define JLThreadFuncDecl DWORD WINAPI
 		typedef PTHREAD_START_ROUTINE JLThreadRoutine;
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		#define JL_THREAD_PRIORITY_LOWEST 0
 		#define JL_THREAD_PRIORITY_LOW 40
 		#define JL_THREAD_PRIORITY_NORMAL 64
@@ -816,9 +819,9 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 	ALWAYS_INLINE JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv ) {
 
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		return CreateThread(NULL, 0, threadRoutine, pv, 0, NULL); // (TBD) need THREAD_TERMINATE ?
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		pthread_t *thread = (pthread_t*)malloc(sizeof(pthread_t));
 		if ( thread == NULL )
 			return NULL;
@@ -837,19 +840,19 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 	ALWAYS_INLINE void JLThreadExit() {
 
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		ExitThread(0);
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		pthread_exit(NULL);
 	#endif
 	}
 
 	ALWAYS_INLINE int JLThreadCancel( JLThreadHandler thread ) {
 
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		if ( TerminateThread(thread, 0) == 0 ) // doc. The handle must have the THREAD_TERMINATE access right. ... Use the GetExitCodeThread function to retrieve a thread's exit value.
 			return JLERROR;
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		if ( pthread_cancel(*thread) != 0 )
 			return JLERROR;
 	#endif
@@ -859,10 +862,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 	ALWAYS_INLINE int JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
 
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		if ( SetThreadPriority(thread, priority) != 0 )
 			return JLOK;
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		int policy;
 		struct sched_param param;
 		if ( pthread_getschedparam(*thread, &policy, &param) != 0 )
@@ -880,10 +883,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 		if ( !JLThreadOk(thread) )
 			return false;
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		DWORD result = WaitForSingleObject(thread, 0);
 		return result == WAIT_TIMEOUT; // else != WAIT_OBJECT_0 ?
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		int policy;
 		struct sched_param param;
 		return pthread_getschedparam(*thread, &policy, &param) != ESRCH; // errno.h
@@ -894,10 +897,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 		if ( !JLThreadOk(thread) )
 			return JLERROR;
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		if ( WaitForSingleObject(thread, INFINITE) != WAIT_OBJECT_0 )
 			return JLERROR;
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		void *status;
 		if ( pthread_join(*thread, &status) != 0 ) // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED.
 			return JLERROR;
@@ -909,10 +912,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 		if ( !pThread || !JLThreadOk(*pThread) )
 			return JLERROR;
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		if ( CloseHandle(*pThread) == 0 )
 			return JLERROR;
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		if ( JLThreadIsActive( *pThread ) )
 			if ( pthread_detach(**pThread) != 0 )
 				return JLERROR;
@@ -926,17 +929,17 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 // dynamic libraries
 //
 
-#if defined XP_WIN
+#if defined(XP_WIN)
 	typedef HMODULE JLLibraryHandler;
-#elif defined XP_UNIX
+#elif defined(XP_UNIX)
 	typedef void* JLLibraryHandler;
 #endif
 
 	ALWAYS_INLINE JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
 
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		return LoadLibrary(filename);
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		dlerror(); // Resets the error indicator.
 		return dlopen(filename, RTLD_LAZY | RTLD_LOCAL); // RTLD_NOW / RTLD_GLOBAL
 	#endif
@@ -949,7 +952,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 	ALWAYS_INLINE void JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
 
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		DWORD errorCode = ::GetLastError();
 		LPVOID lpMsgBuf;
 		DWORD result = ::FormatMessage(
@@ -961,7 +964,7 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 			message[maxLength-1] = '\0';
 		} else
 			*message = '\0';
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		const char *msgBuf = dlerror();
 		if ( msgBuf != NULL ) {
 
@@ -974,9 +977,9 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 	ALWAYS_INLINE void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
 
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		return (void*)GetProcAddress(libraryHandler, symbolName);
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		dlerror(); // Resets the error indicator.
 		return dlsym(libraryHandler, symbolName);
 	#endif
@@ -984,10 +987,10 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 
 	ALWAYS_INLINE int JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
 
-	#if defined XP_WIN
+	#if defined(XP_WIN)
 		if ( FreeLibrary(*libraryHandler) == 0 )
 			return JLERROR;
-	#elif defined XP_UNIX
+	#elif defined(XP_UNIX)
 		dlerror(); // Resets the error indicator.
 		if ( dlclose(*libraryHandler) != 0 )
 			return JLERROR;

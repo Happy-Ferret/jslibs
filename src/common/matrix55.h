@@ -20,9 +20,6 @@
 
 #include "vector5.h"
 
-//#ifdef SSE // SSE (Streaming SIMD Extensions)
-//#include <xmmintrin.h>
-
 typedef union {
 	struct {
 		float m[5][5]; // m[line][col]
