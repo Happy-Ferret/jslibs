@@ -335,14 +335,22 @@ DEFINE_FUNCTION( Beep ) {
 	JL_BAD;
 }
 
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( id )
+  Creates a new COM object by object name or CLSID.
+**/
 DEFINE_FUNCTION_FAST( CreateComObject ) {
+
+	HRESULT hr;
 
 	IUnknown *punk = NULL;
 
 	JL_S_ASSERT_ARG( 1 );
+	JL_S_ASSERT_STRING( JL_FARG(1) );
 
-	HRESULT hr;
-	
 	LPOLESTR name = (LPOLESTR)JS_GetStringChars(JS_ValueToString(cx, JL_FARG(1)));
 
 	CLSID clsid;

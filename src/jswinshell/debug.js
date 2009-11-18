@@ -3,12 +3,36 @@
 LoadModule('jsstd');
 LoadModule('jswinshell');
 
+Print('Start...\n');
+
 try {
 
+
 var xmlhttp = CreateComObject("Microsoft.XMLHTTP");
-xmlhttp.open("GET", "http://www.google.com/", false);
-xmlhttp.send(null);
+
+xmlhttp.open("GET", "http://www.google.com/");
+
+xmlhttp.send();
+// xmlhttp.onreadystatechange = function() { Print(xmlhttp.readyState) }
+
+
+
+
+
+Sleep(1000);
+
+
+
 Print( xmlhttp.responseText );
+
+Halt();
+
+
+
+var fso = CreateComObject('Scripting.FileSystemObject');
+var tmp = fso.GetFolder('c:\\');
+for each ( var folder in tmp.SubFolders )
+	Print( folder.name, '\n' );
 Halt();
 
 
@@ -21,26 +45,6 @@ Halt();
 
 
 //var fso = CreateComObject('MSWinsock.Winsock');
-
-
-/*
-	var fso = CreateComObject('Scripting.FileSystemObject');
-	var f = fso.GetFolder('c:\\');
-	
-	var col = f.SubFolders;
-
-	Print( ComDispatch.FunctionList(col).toSource() );
-
-	Print( '\n' );
-	for each ( var folder in col ) {
-		
-		Print( folder.name, '\n' );
-	}
-*/
-
-
-/*
-*/
 
 //	var fso = new ComObject('Scripting.FileSystemObject');
 //	var file = fso.GetFile("foobar.txt");
@@ -72,7 +76,7 @@ Print('out: ',stdoutput); // Should output the stdout of the dir command
 
 
 
-	Print('OK');
+	Print('\nDone.\n');
 
 } catch(ex if ex instanceof WinError) {
 	

@@ -27,10 +27,6 @@ JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, jsval *rval ) {
 	*rval = OBJECT_TO_JSVAL( varObj );
 	JL_SetPrivate(cx, varObj, pdisp);
 	pdisp->AddRef();
-
-
-
-
 	return JS_TRUE;
 }
 
@@ -44,7 +40,7 @@ DEFINE_FINALIZE() {
 }
 
 
-static JSBool Invoke(JSContext *cx, uintN argc, jsval *vp) {
+static JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 
 #ifdef DEBUG
 	jsval dbg_funNameVal;
@@ -120,7 +116,7 @@ DEFINE_GET_PROPERTY() {
 	HRESULT hr;
 
 	EXCEPINFO ex;
-	UINT err;
+	UINT argErr;
 	DISPPARAMS params;
 	VARIANT *result = NULL; // bad:
 
@@ -143,7 +139,7 @@ DEFINE_GET_PROPERTY() {
 		params.cArgs = 1;
 		params.cNamedArgs = 1;
 
-		hr = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_PROPERTYGET, &params, result, &ex, &err);
+		hr = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_PROPERTYGET, &params, result, &ex, &argErr);
 		goto end;
 	}
 
@@ -159,10 +155,11 @@ DEFINE_GET_PROPERTY() {
 	if ( FAILED(hr) ) // dispid == DISPID_UNKNOWN
 		JL_CHK( WinThrowError(cx, hr) );
 
-	hr = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_PROPERTYGET, &params, result, &ex, &err);
+	hr = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_PROPERTYGET, &params, result, &ex, &argErr);
 
 	if ( hr == DISP_E_EXCEPTION ) {
 
+//		int sev = HRESULT_SEVERITY(ex.scode); // 00:Success, 01:Informational, 10:Warning, 11:Error
 		JSString *exStr = JS_NewUCStringCopyZ(cx, (const jschar*)ex.bstrDescription);
 		JS_SetPendingException(cx, STRING_TO_JSVAL(exStr));
 		return JS_FALSE;
@@ -175,8 +172,10 @@ DEFINE_GET_PROPERTY() {
 			JL_CHK( WinThrowError(cx, hr) );
 		JS_free(cx, result);
 
-		JSFunction *fun = JS_NewFunction(cx, (JSNative)Invoke, 8, JSFUN_FAST_NATIVE, NULL, NULL);
+		JSFunction *fun = JS_NewFunction(cx, (JSNative)FunctionInvoke, 8, JSFUN_FAST_NATIVE, NULL, NULL);
+		JL_CHK( fun );
 		JSObject *funObj = JS_GetFunctionObject(fun);
+		JL_CHK( funObj );
 		*vp = OBJECT_TO_JSVAL(funObj);
 		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, id), INT_TO_JSVAL(dispid), NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) );
 		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, name), id, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) );
@@ -205,6 +204,8 @@ DEFINE_SET_PROPERTY() {
 
 //	JSBool found;
 //	JS_AlreadyHasOwnPropertyById(cx, obj, id, &found);
+//	jsval xxx;
+//	JS_LookupPropertyById(cx, obj, id, &xxx);
 
 	HRESULT hr;
 
@@ -221,7 +222,7 @@ DEFINE_SET_PROPERTY() {
 
 	VARIANTARG arg;
 	VariantInit(&arg);
-	JL_CHK( JsvalToVariant(cx, vp, &arg) );
+	JL_CHK( JsvalToVariant(cx, vp, &arg) ); // *vp will be stored in an object slot !
 
 	WORD flags;
 	if ( V_VT(&arg) == VT_DISPATCH && V_ISBYREF(&arg) )
@@ -302,6 +303,7 @@ DEFINE_FUNCTION_FAST( FunctionList ) {
 		hr = pTypeinfo->GetDocumentation(pFuncDesc->memid, &bstrName, NULL, NULL, NULL);
 		if ( FAILED(hr) )
 			JL_CHK( WinThrowError(cx, hr) );
+
 		JSString *jsstr = JS_NewUCStringCopyZ(cx, (const jschar*)bstrName);
 
 		jsval tmp = STRING_TO_JSVAL(jsstr);
@@ -372,7 +374,7 @@ bad:
 
 DEFINE_EQUALITY() {
 
-	*bp = JS_FALSE;
+	*bp = JSVAL_IS_OBJECT(v) && JSVAL_TO_OBJECT(v) == obj;
 	return JS_TRUE;
 }
 

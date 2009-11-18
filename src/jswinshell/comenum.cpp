@@ -46,27 +46,29 @@ DEFINE_FUNCTION_FAST( next ) {
 
 	HRESULT hr;
 
+	VARIANT *result = NULL;
+
 	IEnumVARIANT *ienumv = (IEnumVARIANT*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(ienumv);
 
-	VARIANT *result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
+	result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
 	VariantInit(result);
 	
-	ULONG fetched;
-	hr = ienumv->Next(1, result, &fetched);
-	if ( FAILED(hr) )
-		JL_CHK( WinThrowError(cx, hr) );
-	if ( fetched == 0 ) {
+	hr = ienumv->Next(1, result, NULL);
 
-		JS_ThrowStopIteration(cx);
-		JS_free(cx, result);
-		return JS_FALSE;
-	}
+	if ( hr != S_OK ) // The number of elements returned is less than 1.
+		JL_CHK( JS_ThrowStopIteration(cx) );
 
 	JL_CHK( VariantToJsval(cx, result, JL_FRVAL) ); // loose variant ownership
-
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( result ) {
+
+		VariantClear(result);
+		JS_free(cx, result);
+	}
+	return JS_FALSE;
 }
 
 

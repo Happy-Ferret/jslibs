@@ -18,6 +18,105 @@
 #include "com.h"
 
 
+// http://www.codeproject.com/KB/COM/dyn_idispatch.aspx?msg=935502
+class JSFunctionDispatch : public IDispatch {
+
+public:
+	// IUnknown
+	STDMETHOD_(ULONG, AddRef)( void ) {
+		
+		return ++_refs;
+	}
+
+	STDMETHOD_(ULONG, Release)( void ) {
+
+		if( --_refs == 0 ) {
+
+			delete this; // ???
+			return 0;
+		}
+		return _refs;
+	}
+
+	STDMETHOD(QueryInterface)( REFIID riid, void **ppvObject ) {
+
+		if( !IsEqualIID(riid, IID_IUnknown) && !IsEqualIID(riid, IID_IDispatch) ) {
+	
+			*ppvObject = NULL;      
+			return E_NOINTERFACE;
+		}
+
+		*ppvObject = this;
+		AddRef();
+		return NOERROR;
+	}
+
+	// IDispatch
+	STDMETHOD(GetTypeInfoCount)( UINT *pctinfo ) {
+/*		
+		if ( pctinfo == NULL )
+			return E_INVALIDARG;
+		*pctinfo = 1;
+		return NOERROR;
+*/
+		return E_NOTIMPL;
+	}
+
+	STDMETHOD(GetTypeInfo)( UINT iTInfo, LCID lcid, ITypeInfo **ppTInfo ) {
+/*
+		if (ppTInfo == NULL)
+			return E_INVALIDARG;
+		*ppTInfo = NULL;
+		if(iTInfo != 0)
+			return DISP_E_BADINDEX;
+		return NOERROR;
+*/
+		return DISP_E_BADINDEX;
+	}
+
+	STDMETHOD(GetIDsOfNames)( REFIID riid, LPOLESTR *rgszNames, UINT cNames, LCID lcid, DISPID *rgDispId ) {
+
+//		DispGetIDsOfNames
+		return DISP_E_UNKNOWNNAME;
+	}
+
+	STDMETHOD(Invoke)( DISPID dispIdMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pVarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr ) {
+
+		if ( !(wFlags & DISPATCH_METHOD) || dispIdMember != DISPID_VALUE )
+			return DISP_E_MEMBERNOTFOUND;
+
+		if ( riid != IID_NULL )
+			return DISP_E_UNKNOWNINTERFACE;
+		
+		uintN argc = pDispParams->cArgs;
+		jsval *argv = (jsval*)alloca((argc+1) * sizeof(jsval));
+		memset(argv, 0, (argc+1) * sizeof(jsval));
+		
+		JSTempValueRooter tvr;
+		JS_PUSH_TEMP_ROOT(_cx, argc+1, argv, &tvr);
+
+		JSBool status = JS_CallFunctionValue(_cx, JS_GetGlobalObject(_cx), OBJECT_TO_JSVAL(_funcObj), argc, argv+1, argv);
+//		if ( !status )
+
+		if ( pVarResult != NULL )
+			JsvalToVariant(_cx, argv, pVarResult);
+		
+		JS_POP_TEMP_ROOT(_cx, &tvr);
+
+		return NOERROR;
+	}
+
+	JSFunctionDispatch(JSContext *cx, JSObject *funcObj) : _refs(0), _cx(cx), _funcObj(funcObj) { }
+//	~JSFunctionDispatch() { }
+
+private:
+	JSContext *_cx;
+	JSObject *_funcObj;
+	ULONG _refs;
+};
+
+
+
 // variant must be initialized (VariantInit())
 JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
@@ -103,6 +202,15 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 		return JS_TRUE;
 	}
 
+	if ( JS_ObjectIsFunction(cx, obj) ) {
+
+		JSFunctionDispatch *disp = new JSFunctionDispatch(cx, obj);
+//		disp->AddRef(); (TBD) ???
+		V_VT(variant) = VT_DISPATCH;
+		V_DISPATCH(variant) = disp;
+		return JS_TRUE;
+	}
+
 //	if ( JL_ValueIsBlob(cx, *value ) {
 //	}
 
@@ -116,7 +224,7 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 		time.wHour = js_DateGetHours(cx, obj);
 		time.wMinute = js_DateGetMinutes(cx, obj);
 		time.wSecond = js_DateGetSeconds(cx, obj);
-		time.wMilliseconds = 0; // or js_DateGetMsecSinceEpoch(cx, obj) - ???
+		time.wMilliseconds = ((unsigned long)js_DateGetMsecSinceEpoch(cx, obj)) % 1000;
 
 		V_VT(variant) = VT_DATE;
 		SystemTimeToVariantTime(&time, &V_DATE(variant));
@@ -124,7 +232,7 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 	}
 
 	// last resort
-	JSString *str = JS_ValueToString(cx, *value);
+	JSString *str = JS_ValueToString(cx, *value); // see JS_ConvertValue
 	JL_S_ASSERT( str, "Unable to convert to string." );
 
 	V_VT(variant) = VT_BSTR;
@@ -133,6 +241,7 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 // acquire the ownership of the variant
 JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
@@ -143,7 +252,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
 		case VT_HRESULT: {
 			
-			HRESULT errorCode = isRef ? *V_I4REF(variant) : V_I4(variant);
+			HRESULT errorCode =  isRef ? *V_I4REF(variant) : V_I4(variant); // check ->scode and ResultFromScode
 			LPVOID lpMsgBuf;
 			DWORD result = ::FormatMessage(
 				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
@@ -215,12 +324,12 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 				return JS_TRUE;
 			}
 
-			long lBound, uBound;
+			long lBound, uBound, size;
 			SafeArrayGetLBound(psa, 0, &lBound);
 			SafeArrayGetUBound(psa, 0, &uBound);
-			long size = uBound - lBound;
+			size = uBound - lBound;
 
-			VARIANT *varray = NULL;
+			VARIANT *varray;
 			SafeArrayAccessData(psa, (void**)&varray);
 
 			JSObject *jsArr = JS_NewArrayObject(cx, size, NULL);
@@ -424,7 +533,7 @@ DEFINE_FUNCTION_FAST( toTypeName ) {
 	strcat(str, " ");
 	if ( V_ISBYREF(variant) )
 		strcat(str, "*");
-	switch (V_VT(variant)) {
+	switch ( V_VT(variant) ) {
 		case VT_EMPTY: strcat(str, "EMPTY"); break;
 		case VT_NULL: strcat(str, "NULL"); break;
 		case VT_I2: strcat(str, "I2"); break;
