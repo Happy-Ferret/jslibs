@@ -44,17 +44,13 @@ int main(int argc, char* argv[]) {
 	JS_InitStandardClasses(cx, globalObject);
 
 	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
-	//	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_ANONFUNFIX | JSOPTION_JIT); // same result with these options
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX);
 
 	JS_DefineFunction(cx, globalObject, "Print", Print, 0, 0);
 	JS_DefineFunction(cx, globalObject, "EvalVarByName", EvalVarByName, 0, 0);
 
 	char scriptSrc[] =
-	"var f = new Function(\"var myVar = 123; function foo() { Print(EvalVarByName('myVar')) }; foo()\"); f()";
-
-	// the following is working:
-	// "var f = new Function(\"var myVar = 123; function foo() { Print(myVar) }; foo()\"); f()";
-	//                                                                 ~~~~~
+	"function foo() { var myVar = 123; function bar() { Print( EvalVarByName('myVar') ) }; bar() }; foo()";
 
 	JSScript *script = JS_CompileScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "mytest", 1);
 	JS_ASSERT( script );
