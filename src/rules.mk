@@ -16,7 +16,7 @@ LDFLAGS += -Wl,-Bdynamic -L../../libs/js/$(INT_DIR) -lmozjs
 
 CFLAGS += -I../common -I../../libs/js/$(INT_DIR) -I../../libs/js/src
 
-CFLAGS += -Wall -Wno-unused-parameter -Wno-unused-value -Wno-unused-function
+CFLAGS += -Wall -Wno-unused-parameter -Wno-unused-value -Wno-unused-function -Wno-multichar
 
 # -static-libgcc -Wl,-Bstatic,-lstdc++
 #,-lgcc_s
