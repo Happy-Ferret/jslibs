@@ -3,17 +3,16 @@ LoadModule('jsio');
 LoadModule('jsdebug');
 
 
-var f = new Function("\
-		var aaa = 123;\
-		function foo() {\
-			var bbb = 456;\
-			return Expand('$(aaa) $(bbb)');\
-		}\
-		Print( foo() );\
-		");
-		
-		f();
-		
+var a = 'a';
+function foo() {
+  var b = 'b';
+  function bar() {
+	  var c = 'c';
+    Print( Expand('$(a)$(b)$(c)') + ' ('+a+b+c+')' );
+  };
+  bar();
+}; 	
+foo();	
 
 Halt(); //////////////////////////////
 

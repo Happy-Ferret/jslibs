@@ -1,6 +1,8 @@
 #define XP_WIN
 #include <jsapi.h>
 #include <jsdbgapi.h>
+#include <jscntxt.h>
+#include <jsscope.h>
 #include <cstring>
 
 JSBool Print(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
@@ -16,16 +18,33 @@ JSBool EvalVarByName(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 	const char *name = JS_GetStringBytes(JSVAL_TO_STRING(argv[0]));
 	JS_ASSERT( name );
 
-	JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL);
+
+	JSStackFrame *fp = js_GetTopStackFrame(cx); //JS_GetScriptedCaller(cx, NULL);
 	JS_ASSERT( fp );
+
+	JS_FrameIterator(cx, &fp);
+
+//	fp = JS_GetScriptedCaller(cx, fp);
 
 	JSBool found;
 	JSObject *scope = JS_GetFrameScopeChain(cx, fp);
 	for ( ; scope; scope = JS_GetParent(cx, scope) ) {
+/*
+		JSScopeProperty *it = NULL;
+		JS_PropertyIterator(scope, &it);
+		const char *n;
+		for ( ; it; JS_PropertyIterator(scope, &it) ) {
+			
+			JSPropertyDesc desc;
+			JS_GetPropertyDesc(cx, scope, it, &desc);
+			n = JS_GetStringBytes(JS_ValueToString(cx, desc.id));
+		}
+*/
 
 		JS_HasProperty(cx, scope, name, &found);
 		if ( found )
 			return JS_GetProperty(cx, scope, name, rval);
+	
 	}
 
 	*rval = JSVAL_VOID;
@@ -50,7 +69,7 @@ int main(int argc, char* argv[]) {
 	JS_DefineFunction(cx, globalObject, "EvalVarByName", EvalVarByName, 0, 0);
 
 	char scriptSrc[] =
-	"function foo() { var myVar = 123; function bar() { Print( EvalVarByName('myVar') ) }; bar() }; foo()";
+"var a = 'a'; function foo() { var b = 'b'; function bar() { var c = 'c'; Print( EvalVarByName('a')+' '+EvalVarByName('b')+' '+EvalVarByName('c')+'\\n' ); }; bar();};foo();";
 
 	JSScript *script = JS_CompileScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "mytest", 1);
 	JS_ASSERT( script );

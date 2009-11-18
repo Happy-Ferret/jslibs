@@ -9,11 +9,9 @@ try {
 
 
 var xmlhttp = CreateComObject("Microsoft.XMLHTTP");
-
 xmlhttp.open("GET", "http://www.google.com/");
-
+xmlhttp.onreadystatechange = function() { Print(xmlhttp.readyState) }
 xmlhttp.send();
-// xmlhttp.onreadystatechange = function() { Print(xmlhttp.readyState) }
 
 
 
