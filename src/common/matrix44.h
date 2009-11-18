@@ -88,10 +88,10 @@ typedef union {
 
 static Matrix44 Matrix44IdentityValue = {
 
-    1.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 1.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f
+ { { { 1.0f, 0.0f, 0.0f, 0.0f },
+     { 0.0f, 1.0f, 0.0f, 0.0f },
+     { 0.0f, 0.0f, 1.0f, 0.0f },
+     { 0.0f, 0.0f, 0.0f, 1.0f } } }
 };
 
 

@@ -395,7 +395,7 @@ DEFINE_FUNCTION( ReadString ) {
 
 		unsigned int amount;
 		JL_CHK( JsvalToUInt(cx, JL_ARG(1), &amount) );
-		JL_S_ASSERT( amount >= 0, "Invalid amount" );
+		JL_S_ASSERT( (int)amount >= 0, "Invalid amount" );
 		JL_CHK( ReadDataAmount(cx, bufferObject, amount, rval) );
 	} else {
 
@@ -465,7 +465,6 @@ DEFINE_PROPERTY( systemIntSize ) {
 
 	*vp = INT_TO_JSVAL( sizeof(int) );
 	return JS_TRUE;
-	JL_BAD;
 }
 
 /**doc

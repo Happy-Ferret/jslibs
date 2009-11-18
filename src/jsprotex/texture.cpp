@@ -1356,7 +1356,7 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 
 	JSObject *obj = JL_FOBJ;
 
-	JL_S_ASSERT_ARG_RANGE( 0,1 );
+	JL_S_ASSERT_ARG_MAX(1);
 
 	Texture *tex;
 	tex = (Texture *)JL_GetPrivate(cx, obj);
@@ -4563,6 +4563,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST( Add )
 		FUNCTION_FAST( Mult )
 		FUNCTION_FAST( Blend )
+		FUNCTION_FAST( Rotate90 )
 		FUNCTION_FAST( RotoZoom )
 		FUNCTION_FAST( Resize )
 		FUNCTION_FAST( Trim )

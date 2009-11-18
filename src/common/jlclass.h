@@ -28,22 +28,22 @@ struct JLConstIntegerSpec {
 
 // const integer
 #define BEGIN_CONST_INTEGER_SPEC JLConstIntegerSpec _tmp_cis[] = {
-#define END_CONST_INTEGER_SPEC {0}}; _constIntegerSpec = _tmp_cis;
+#define END_CONST_INTEGER_SPEC {0, NULL}}; _constIntegerSpec = _tmp_cis;
 #define CONST_INTEGER(name,value) { value, #name },
 #define CONST_INTEGER_SINGLE(name) { name, #name },
 
 // const double
 #define BEGIN_CONST_DOUBLE_SPEC JSConstDoubleSpec _tmp_cds[] = { // dval; *name; flags; spare[3];
-#define END_CONST_DOUBLE_SPEC {0}}; _constDoubleSpec = _tmp_cds;
-#define CONST_DOUBLE(name,value) { value, #name },
-#define CONST_DOUBLE_SINGLE(name) { name, #name },
+#define END_CONST_DOUBLE_SPEC {0, NULL, 0, {0, 0, 0}}}; _constDoubleSpec = _tmp_cds;
+#define CONST_DOUBLE(name,value) { value, #name, 0, {0, 0, 0}},
+#define CONST_DOUBLE_SINGLE(name) { name, #name, 0, {0, 0, 0}},
 
 // functions
 
 #define BEGIN_FUNCTION_SPEC JSFunctionSpec _tmp_fs[] = { // *name, call, nargs, flags, extra
-#define END_FUNCTION_SPEC {0}}; _functionSpec = _tmp_fs;
+#define END_FUNCTION_SPEC {NULL, NULL, 0, 0, 0}}; _functionSpec = _tmp_fs;
 #define BEGIN_STATIC_FUNCTION_SPEC JSFunctionSpec _tmp_sfs[] = {
-#define END_STATIC_FUNCTION_SPEC {0}}; _staticFunctionSpec = _tmp_sfs;
+#define END_STATIC_FUNCTION_SPEC {NULL, NULL, 0, 0, 0}}; _staticFunctionSpec = _tmp_sfs;
 
 #if defined(DEBUG)
 inline JSFastNative FastNativeFunction(JSFastNative f) { return f; } // used fo type check only.
@@ -64,9 +64,9 @@ inline JSNative NativeFunction(JSNative f) { return f; } // used fo type check o
 
 // properties
 #define BEGIN_PROPERTY_SPEC JSPropertySpec _tmp_ps[] = { // *name, tinyid, flags, getter, setter
-#define END_PROPERTY_SPEC {0}}; _propertySpec = _tmp_ps;
+#define END_PROPERTY_SPEC {NULL, 0, 0, 0, 0}}; _propertySpec = _tmp_ps;
 #define BEGIN_STATIC_PROPERTY_SPEC JSPropertySpec _tmp_sps[] = {
-#define END_STATIC_PROPERTY_SPEC {0}}; _staticPropertySpec = _tmp_sps;
+#define END_STATIC_PROPERTY_SPEC {NULL, 0, 0, 0, 0}}; _staticPropertySpec = _tmp_sps;
 
 #define PROPERTY(name)	{ #name, -1, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
 #define PROPERTY_READ(name)	{ #name, -1, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name, NULL }, // (TBD) rename into PROPERTY_GETTER
@@ -265,7 +265,7 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 	JL_CHK( InitializeClass##CLASSNAME(cx, obj) )
 
 #define BEGIN_CLASS(CLASSNAME) \
-	static JSExtendedClass _xclass = { { #CLASSNAME, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub, JSCLASS_NO_OPTIONAL_MEMBERS }, 0 }; \
+	static JSExtendedClass _xclass = { { #CLASSNAME, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub, JSCLASS_NO_OPTIONAL_MEMBERS }, 0, 0, 0, 0, 0, 0, 0, 0}; \
 	JSClass *class##CLASSNAME = &_xclass.base; \
 	JSObject *prototype##CLASSNAME = NULL; \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj); \

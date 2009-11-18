@@ -38,7 +38,7 @@ public:
 };
 
 void MemBufferFinalizeCallback( void* data ) {
-	
+
 	MemBuffer *membuf = (MemBuffer*)data;
 	if ( membuf->MemBufferFree ) // if the mem have to be freed.
 		membuf->MemBufferFree(membuf);
@@ -82,7 +82,7 @@ JSBool MemoryBufferObjectFree( JSContext *cx, jsval memBufferVal ) {
 
 	JL_S_ASSERT( IsIdType(cx, memBufferVal, 'MEMB'), "Invalid memory object." );
 	MemBuffer *membuf = (MemBuffer*)GetIdPrivate(cx, memBufferVal);
-	bool st = membuf->MemBufferFree(membuf); 
+	bool st = membuf->MemBufferFree(membuf);
 	JL_S_ASSERT( st, "Unable to free the buffer." );
 	return JS_TRUE;
 	JL_BAD;

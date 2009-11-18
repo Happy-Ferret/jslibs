@@ -88,14 +88,13 @@ DEFINE_FUNCTION( GetParam ) {
 		// (TDB) use FCGX_ParamArray instead ?
 		JSObject *argsObj = JS_NewObject(cx, NULL, NULL, NULL);
 		JL_CHK(argsObj);
-		int index = 0;
 		for ( char** ptr = _request.envp; *ptr; ptr++ ) {
 
 			char *separator = strchr( *ptr, '=' );
 			JL_S_ASSERT( separator != NULL, "Unable to find the value." );
 			*separator = '\0';
 			JSString *value = JS_NewStringCopyZ(cx, separator + 1);
-			JSBool jsStatus = JS_DefineProperty(cx, argsObj, *ptr, STRING_TO_JSVAL(value), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT);
+			JS_DefineProperty(cx, argsObj, *ptr, STRING_TO_JSVAL(value), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT);
 			*separator = '=';
 		}
 		*rval = OBJECT_TO_JSVAL(argsObj);
@@ -113,7 +112,7 @@ DEFINE_FUNCTION( Read ) {
 	str = (char*)JS_malloc(cx, len + 1);
 	int result;
 	result = FCGX_GetStr( str, len, _request.in );
-	if ( result = 0 ) {
+	if ( result == 0 ) {
 		
 		JS_free(cx, str);
 		*rval = JS_GetEmptyStringValue(cx);
@@ -579,7 +578,6 @@ END_STATIC
 
 
 
-/*
 DEFINE_FUNCTION( ParseRecord ) {
 
 	// http://www.fastcgi.com/devkit/doc/fcgi-spec.html

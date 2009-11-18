@@ -604,7 +604,9 @@ DEFINE_PROPERTY( gcZeal ) {
 	JS_SetGCZeal(cx, zeal);
 #endif // JS_GC_ZEAL
 	return JL_StoreProperty(cx, obj, id, vp, false);
+#ifdef JS_GC_ZEAL
 	JL_BAD;
+#endif // JS_GC_ZEAL
 }
 
 
@@ -1346,7 +1348,7 @@ JS_STATIC_ASSERT(JSTRY_ITER == 2);
 
 static const char* const TryNoteNames[] = { "catch", "finally", "iter" };
 
-static JSBool
+JSBool
 TryNotes(JSContext *cx, JSScript *script, FILE *gOutFile)
 {
     JSTryNote *tn, *tnlimit;
@@ -1497,7 +1499,9 @@ DEFINE_PROPERTY( processTime ) {
 
 	JL_REPORT_WARNING("Not implemented.");
 	return JS_TRUE;
-	JL_BAD;
+#ifdef XP_WIN
+        JL_BAD;
+#endif // XP_WIN
 }
 
 
@@ -1562,7 +1566,9 @@ DEFINE_PROPERTY( cpuLoad ) {
 
 	JL_REPORT_WARNING("Not implemented.");
 	return JS_TRUE;
+#ifdef XP_WIN
 	JL_BAD;
+#endif // XP_WIN
 }
 
 
@@ -1575,7 +1581,9 @@ DEFINE_FUNCTION_FAST( DebugOutput ) {
 	*JL_FRVAL = JSVAL_TRUE;
 #endif // DEBUG
 	return JS_TRUE;
+#ifdef XP_WIN
 	JL_BAD;
+#endif // XP_WIN
 }
 
 

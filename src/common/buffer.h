@@ -228,7 +228,7 @@ inline size_t BufferGetOptimalLength( const Buffer *buffer ) {
 }
 
 
-inline const size_t BufferGetLength( const Buffer *buffer ) {
+inline size_t BufferGetLength( const Buffer *buffer ) {
 
 	return buffer->length;
 }

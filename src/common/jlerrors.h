@@ -29,7 +29,7 @@ typedef enum J_ErrNum {
 
 
 // usage: JS_ReportErrorNumber(cx, my_GetErrorMessage, NULL, JSSMSG_OUT_OF_RANGE);
-static JSBool JL_ReportError( JSContext *cx, J_ErrNum name ) {
+inline JSBool JL_ReportError( JSContext *cx, J_ErrNum name ) {
 
 	jsval tmp;
 	JL_CHK( GetConfigurationValue(cx, JLID_NAME(_getErrorMessage), &tmp) );

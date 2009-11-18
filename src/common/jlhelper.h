@@ -134,7 +134,7 @@ ALWAYS_INLINE bool SetModulePrivate( JSContext *cx, uint32_t moduleId, void *mod
 	unsigned char id = ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3];
 	HostPrivate::ModulePrivate *mpv = GetHostPrivate(cx)->modulePrivate;
 	while ( mpv[id].moduleId != 0 ) { // assumes that modulePrivate struct is init to 0
-		
+
 		if ( mpv[id].moduleId == moduleId )
 			return false; // module private already exist or moduleId not unique
 		++id; // uses unsigned char overflow
@@ -145,7 +145,7 @@ ALWAYS_INLINE bool SetModulePrivate( JSContext *cx, uint32_t moduleId, void *mod
 }
 
 ALWAYS_INLINE void* GetModulePrivate( JSContext *cx, uint32_t moduleId ) {
-	
+
 	unsigned char id = ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3];
 	HostPrivate::ModulePrivate *mpv = GetHostPrivate(cx)->modulePrivate;
 	while ( mpv[id].moduleId != moduleId ) {
@@ -218,18 +218,6 @@ template<class T> T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b); }
 // BEWARE: the following helper macros are only valid inside a JS Native function definition !
 
 #define JL_ARGC (argc)
-
-//#define JL_FN_DEFINE_OBJ \
-//	JSObject *obj = JS_THIS_OBJECT(cx, vp); (argc);
-//
-//#define JL_FN_DEFINE_ARGV \
-//	jsval *argv = JS_ARGV(cx, vp); (argc);
-//
-//#define JL_FN_DEFINE_RVAL \
-//	jsval *rval = &JS_RVAL(cx, vp); (argc);
-
-//#define JL_FASTNATIVE_OBJ_ARGV_RVAL \
-//	JL_FN_DEFINE_OBJ; JL_FN_DEFINE_ARGV; JL_FN_DEFINE_RVAL
 
 // returns the ARGument Vector
 #define JL_ARGV (argv)
@@ -541,7 +529,7 @@ ALWAYS_INLINE JSClass* JL_GetStringClass( JSContext *cx ) {
 	(!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass)
 
 ALWAYS_INLINE bool JsvalIsData( JSContext *cx, jsval val ) {
-	
+
 	return ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) || JL_VALUE_IS_STRING_OBJECT(cx, val) );
 }
 
@@ -561,7 +549,7 @@ ALWAYS_INLINE bool JL_IsRValOptional( JSContext *cx, void *nativeFct ) {
 
 	//JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	//while (fp) { // see js_GetScriptedCaller()
-	//	
+	//
 	//	if (fp->script)
 	//		break;
 	//	fp = fp->down;
@@ -580,7 +568,7 @@ ALWAYS_INLINE bool JL_IsRValOptional( JSContext *cx, void *nativeFct ) {
 		return false;
 
 	while (fp) { // see js_GetScriptedCaller()
-		
+
 		if (fp->script)
 			break;
 		fp = fp->down;
@@ -599,7 +587,7 @@ ALWAYS_INLINE bool JL_IsRValOptional( JSContext *cx, void *nativeFct ) {
 		return false;
 
 	while ( pc < pcEnd ) {
-		
+
 		pc += codeSpec[*pc].length;
 		switch ( *pc ) {
 			case JSOP_TRACE:
@@ -775,7 +763,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		JL_CHK( xdr );
 		JS_XDRMemSetData(xdr, data, compFileSize);
 
-		
+
 		// we wend silent failures.
 		JSErrorReporter prevErrorReporter = JS_SetErrorReporter(cx, NULL);
 		JSDebugErrorHook errHook = cx->debugHooks->debugErrorHook;
@@ -886,7 +874,7 @@ ALWAYS_INLINE JSBool JL_GetVariableValue( JSContext *cx, const char *name, jsval
 		return JS_GetProperty(cx, JS_GetGlobalObject(cx), name, vp);
 	JSBool found;
 	for ( JSObject *scope = JS_GetFrameScopeChain(cx, fp); scope; scope = JS_GetParent(cx, scope) ) {
-	
+
 		JL_CHK( JS_HasProperty(cx, scope, name, &found) );
 		if ( found )
 			return JS_GetProperty(cx, scope, name, vp);

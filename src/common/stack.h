@@ -86,7 +86,7 @@ inline bool StackIsEnd( const void * const * stack ) {
 inline int StackLength( const void * const * stack ) {
 
 	register int length;
-	for ( length = 0; *stack; stack = (const void * const *)*stack, length++ );
+	for ( length = 0; *stack; stack = (const void * const *)*stack, length++ ) ;
 	return length;
 }
 
@@ -94,7 +94,7 @@ inline int StackLength( const void * const * stack ) {
 inline void* StackFind( void * const * stack, const void *data ) {
 
 	void *it;
-	for ( it = *stack; it && StackData(&it) != data; StackGoPrev(&it) );
+	for ( it = *stack; it && StackData(&it) != data; StackGoPrev(&it) ) ;
 	return it;
 }
 

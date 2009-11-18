@@ -412,7 +412,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, unsigned 
 			buf[pos++ % needleLength] = chunk[i]; // store one more char of the chunk in the ring buffer
 			if ( pos >= needleLength ) { // if we have enough data in the ring buffer to start the search
 
-				for ( j = 0; j < needleLength && needle[j] == buf[(pos+j) % needleLength]; j++ ); // search the 'needle' starting at the right position in the ring buffer.
+				for ( j = 0; j < needleLength && needle[j] == buf[(pos+j) % needleLength]; j++ ) ; // search the 'needle' starting at the right position in the ring buffer.
 				if( j == needleLength ) { // if all chars of the 'needle' are found
 
 					*foundAt = pos-needleLength;
@@ -741,7 +741,7 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 	else
 		amount = pv->length;
 
-	JL_S_ASSERT( amount >= 0, "Invalid amount" );
+	JL_S_ASSERT( (int)amount >= 0, "Invalid amount" );
 	JL_CHK( ReadDataAmount(cx, obj, amount, rval) );
 	return JS_TRUE;
 	JL_BAD;
@@ -762,7 +762,7 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 	JL_S_ASSERT_ARG(1);
 	unsigned int amount;
 	JL_CHK( JsvalToUInt(cx, JL_ARG(1), &amount) );
-	JL_S_ASSERT( amount >= 0, "Invalid amount" );
+	JL_S_ASSERT( (int)amount >= 0, "Invalid amount" );
 	unsigned int tmp;
 	tmp = amount;
 	JL_CHK( BufferSkipAmount(cx, obj, &tmp) );

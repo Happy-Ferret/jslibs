@@ -87,7 +87,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Open ) {
 
-	JL_S_ASSERT_ARG_RANGE(0,2);
+	JL_S_ASSERT_ARG_MAX(2);
 	JL_S_ASSERT( JL_GetPrivate( cx, obj ) == NULL, "File is already open." );
 
 	PRIntn flags;
@@ -431,7 +431,7 @@ DEFINE_PROPERTY( contentSetter ) {
 		PR_Close(fd);
 		return ThrowIoError(cx);
 	}
-	JL_S_ASSERT( (signed)bytesSent == len, "unable to set content" );
+	JL_S_ASSERT( bytesSent == (int)len, "unable to set content" );
 	if ( PR_Close(fd) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	return JS_TRUE;

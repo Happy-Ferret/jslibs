@@ -399,7 +399,7 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 	const char *sBuffer;
 	size_t bufferLength;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-	JL_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
+	JL_S_ASSERT( bufferLength == (size_t)(sWidth * sHeight * sChannels * 1), "Invalid image format." );
 
 	desc.png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	JL_S_ASSERT( desc.png != NULL, "Unable to png_create_write_struct.");

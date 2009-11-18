@@ -86,7 +86,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			goto next;
 		}
 
-		if ( name[0] == '@' )
+		if ( name[0] == '@' ) {
 			if ( argObj != NULL )  {
 
 				JL_CHK( JS_GetProperty(cx, argObj, name+1, &val) );
@@ -97,8 +97,8 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 				JL_REPORT_WARNING("Undefined %s parameter.", name);
 				goto next;
 			}
-
-		if ( name[0] == ':' )
+		}
+		if ( name[0] == ':' ) {
 			if ( curObj != NULL ) {
 
 				JL_CHK( JS_GetProperty(cx, curObj, name+1, &val) );
@@ -109,7 +109,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 				JL_REPORT_WARNING("Undefined %s parameter.", name);
 				goto next;
 			}
-
+		}
 next:
 
 		int ret;

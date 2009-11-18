@@ -544,7 +544,7 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 	for ( size_t i = start; i < length; i++ ) {
 
 		size_t j;
-		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ );
+		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ ) ;
 		if ( j == sLength ) {
 
 			JL_CHK( JS_NewNumberValue(cx, i, JL_FRVAL) );
@@ -621,7 +621,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 	for ( long i = start; i >= 0; i-- ) {
 
 		size_t j;
-		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ );
+		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ ) ;
 		if ( j == sLength ) {
 
 			JL_CHK( JS_NewNumberValue(cx, i, JL_FRVAL) );
