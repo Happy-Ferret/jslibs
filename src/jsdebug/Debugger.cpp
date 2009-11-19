@@ -173,6 +173,7 @@ static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, js
 
 static JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
+	// (TBD) manage return value with JS_GetFrameReturnValue()
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( fp != pv->pframe )

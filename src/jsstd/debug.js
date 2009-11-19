@@ -2,17 +2,29 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
 
+Print( IsBoolean( new Boolean(123) ) );
+Print( IsBoolean( new Number(123) ) );
+Print( IsBoolean( false ) );
+Halt();
+
+
 
 var a = 'a';
-function foo() {
-  var b = 'b';
-  function bar() {
-	  var c = 'c';
-    Print( Expand('$(a)$(b)$(c)') + ' ('+a+b+c+')' );
-  };
-  bar();
-}; 	
-foo();	
+function fb() {
+	var b = 'b';
+	function fc() {
+		var c = 'c';
+		function fd() {
+			var d = 'd';
+
+			Print( Expand('$(a)$(b)$(c)$(d)') + ' ('+a+b+c+d+')' );
+
+		};
+		fd();
+	}; 	
+	fc();	
+}
+fb();
 
 Halt(); //////////////////////////////
 
@@ -28,7 +40,6 @@ var s = new Buffer();
 for ( var i = 0; i < 2; i++ )
 	s.constructor;
 
-
 Halt(); //////////////////////////////
 
 
@@ -40,7 +51,6 @@ Halt(); //////////////////////////////
 	var b = new Buffer(o);
 	Print( uneval( b.Read(10) ) );
 	
-		
 Halt(); //////////////////////////////
 
 
@@ -59,7 +69,7 @@ obj.foo = 789;
 ObjEx.Aux(obj, {});
 
 
-Halt();
+Halt(); //////////////////////////////
 
 function addCallback( name, value ) {
 	

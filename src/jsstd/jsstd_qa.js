@@ -1,5 +1,13 @@
 LoadModule('jsstd');
 
+/// IsBoolean function [ftrm]
+
+		QA.ASSERT( IsBoolean( false ), true, 'boolean value' );
+		QA.ASSERT( IsBoolean( 0 ), false, 'not a boolean value' );
+		QA.ASSERT( IsBoolean( new Number(123) ), false, 'not a boolean object' );
+		QA.ASSERT( IsBoolean( new Boolean(123) ), true, 'boolean object' );
+
+
 /// Print returns undefined [ftrm]
 		QA.ASSERT( Print(), undefined, 'Print return value' );
 

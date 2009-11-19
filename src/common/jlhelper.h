@@ -102,11 +102,11 @@ struct HostPrivate {
 	struct ModulePrivate {
 		uint32_t moduleId;
 		void *privateData;
-	} modulePrivate[256]; // does not support than 256 modules.
+	} modulePrivate[256]; // does not support more than 256 modules.
 	jl::Queue moduleList;
 	jl::Queue registredNativeClasses;
 	JSClass *stringObjectClass;
-	JSClass *errorObjectClass;
+//	JSClass *errorObjectClass;
 	jl_allocators_t alloc;
 	int camelCase;
 	jsid ids[LAST_JSID];
@@ -247,11 +247,7 @@ template<class T> T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b); }
 // is the current obj (this)
 #define JL_OBJ (obj)
 // same for fast native
-#ifdef DEBUG
-#define JL_FOBJ (argc, JS_THIS_OBJECT(cx, vp))
-#else
-#define JL_FOBJ (JS_THIS_OBJECT(cx, vp))
-#endif // DEBUG
+#define JL_FOBJ (argc=argc, JS_THIS_OBJECT(cx, vp))
 
 // the return value
 #define JL_RVAL (rval)
@@ -429,6 +425,18 @@ ALWAYS_INLINE void JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 
+ALWAYS_INLINE JSClass* JL_GetStandardClass(JSContext *cx, JSProtoKey key) {
+
+	JSObject *constructor;
+	JL_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_Boolean, &constructor) );
+	JL_CHK(constructor);
+//	FUN_CLASP( JS_ValueToFunction(cx, OBJECT_TO_JSVAL(constructor)) );
+//	FUN_CLASP(static_cast<JSFunction*>(constructor));
+	return FUN_CLASP(GET_FUNCTION_PRIVATE(cx, constructor));
+bad:
+	return NULL;
+}
+
 ALWAYS_INLINE JSStackFrame* JL_CurrentStackFrame(JSContext *cx) {
 
 	#ifdef DEBUG
@@ -512,7 +520,7 @@ ALWAYS_INLINE bool JsvalIsArray( JSContext *cx, jsval val ) {
 // Is string or has jslibs BufferGet interface (including Blob).
 //#define JL_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) ) // || JL_GetClass(JSVAL_TO_OBJECT(val)) == &js_StringClass
 
-
+/*
 ALWAYS_INLINE JSClass* JL_GetErrorClass( JSContext *cx ) {
 
 //	JS_GetClassObject(cx, ...	JSProto_Error
@@ -533,6 +541,7 @@ ALWAYS_INLINE JSClass* JL_GetStringClass( JSContext *cx ) {
 		return JL_GetClass(emptyStringObject);
 	return NULL;
 }
+*/
 
 #define JL_VALUE_IS_STRING_OBJECT(cx, val) \
 	(!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass)
@@ -874,21 +883,37 @@ bad:
 }
 
 
+//ALWAYS_INLINE jsid StringToJsid( JSContext *cx, const char *cstr );
 // Get the value of a variable in the current or parent's scopes.
 ALWAYS_INLINE JSBool JL_GetVariableValue( JSContext *cx, const char *name, jsval *vp ) {
 
+//	JSStackFrame *fp1 = JS_GetScriptedCaller(cx, NULL);
+//	return JS_EvaluateInStackFrame(cx, fp1, name, strlen(name), "", 0, vp);
+
 	JSBool found;
 	JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL);
-	for ( JSObject *scope = JS_GetFrameScopeChain(cx, fp); scope; scope = JS_GetParent(cx, scope) ) {
+
+	for ( JSObject *scope = JS_GetFrameScopeChain(cx, fp); scope; scope = scope->getParent() ) {
 
 		JL_CHK( JS_HasProperty(cx, scope, name, &found) );
 		if ( found ) {
 
 			JL_CHK( JS_GetProperty(cx, scope, name, vp) );
+
+//			JS_LookupProperty(cx, scope, name, vp);
+//			uintN attrs;
+//			JS_GetPropertyAttributes(cx, scope, name, &attrs, &found);
+			
+//			JSPropertyDescriptor desc;
+//			JS_GetPropertyDescriptorById(cx, scope, StringToJsid(cx, name), 0, &desc);
+//			*vp = desc.value;
+
 			return JS_TRUE;
 		}
 	}
 	*vp = JSVAL_VOID;
+
+
 	return JS_TRUE;
 	JL_BAD;
 }

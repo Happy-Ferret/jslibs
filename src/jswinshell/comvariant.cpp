@@ -264,7 +264,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			LocalFree(lpMsgBuf);
 			jsval errVal = STRING_TO_JSVAL(jsStr);
 			HostPrivate *hpv = GetHostPrivate(cx);
-			JL_CHK( JS_ConstructObjectWithArguments(cx, hpv->errorObjectClass, NULL, NULL, 1, &errVal) );
+			JL_CHK( JS_ConstructObjectWithArguments(cx, JL_GetStandardClass(cx, JSProto_Error), NULL, NULL, 1, &errVal) );
 			}
 			break;
 		case VT_ERROR: {
@@ -277,7 +277,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
 			JL_CHK( JS_NewNumberValue(cx, scode, rval) );
 			HostPrivate *hpv = GetHostPrivate(cx);
-			JL_CHK( JS_ConstructObjectWithArguments(cx, hpv->errorObjectClass, NULL, NULL, 1, rval) );
+			JL_CHK( JS_ConstructObjectWithArguments(cx, JL_GetStandardClass(cx, JSProto_Error), NULL, NULL, 1, rval) );
 			}
 			break;
 		case VT_NULL:

@@ -16,6 +16,7 @@
 
 #include "jsxdrapi.h"
 #include "jscntxt.h"
+#include "jsnum.h"
 #include <jsdbgapi.h>
 
 DECLARE_CLASS( OperationLimit )
@@ -692,12 +693,45 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( IsBoolean ) {
 
-	JL_S_ASSERT_ARG(1);
-	*JL_FRVAL = JSVAL_IS_BOOLEAN(JL_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
-	return JS_TRUE;
+	if ( JSVAL_IS_BOOLEAN(JL_FARG(1)) ) {
+		
+		*JL_FRVAL = JSVAL_TRUE;
+		return JS_TRUE;
+	}
+
+	if ( JSVAL_IS_PRIMITIVE(JL_FARG(1)) ) {
+	
+		*JL_FRVAL = JSVAL_FALSE;
+		return JS_TRUE;
+	}
+
+	*JL_FRVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_FARG(1))) == JL_GetStandardClass(cx, JSProto_Boolean) ? JSVAL_TRUE : JSVAL_FALSE;
 	JL_BAD;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+  Returns $TRUE if the value is a number.
+**/
+DEFINE_FUNCTION_FAST( IsNumber ) {
+
+	if ( JSVAL_IS_NUMBER(JL_FARG(1)) ) {
+		
+		*JL_FRVAL = JSVAL_TRUE;
+		return JS_TRUE;
+	}
+
+	if ( JSVAL_IS_PRIMITIVE(JL_FARG(1)) ) {
+	
+		*JL_FRVAL = JSVAL_FALSE;
+		return JS_TRUE;
+	}
+
+	*JL_FRVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_FARG(1))) == JL_GetStandardClass(cx, JSProto_Number) ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -707,7 +741,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( IsPrimitive ) {
 
-	JL_S_ASSERT_ARG(1);
 	*JL_FRVAL = JSVAL_IS_PRIMITIVE(JL_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -722,27 +755,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( IsFunction ) {
 
-	JL_S_ASSERT_ARG(1);
 	*JL_FRVAL = VALUE_IS_FUNCTION(cx, JL_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME()
-  Returns $TRUE if the value is undefined (ie. (void 0)).
-  $H example
-  {{{
-  Print( IsVoid(undefined) ); // prints: true
-  }}}
-**/
-DEFINE_FUNCTION_FAST( IsVoid ) {
-
-	JL_S_ASSERT_ARG(1);
-	*JL_FRVAL = JSVAL_IS_VOID(JL_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1514,9 +1527,10 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( ObjectToId )
 		FUNCTION_FAST( IdToObject )
 		FUNCTION_FAST_ARGC( IsBoolean, 1 )
+		FUNCTION_FAST_ARGC( IsNumber, 1 )
 		FUNCTION_FAST_ARGC( IsPrimitive, 1 )
 		FUNCTION_FAST_ARGC( IsFunction, 1 )
-		FUNCTION_FAST_ARGC( IsVoid, 1 )
+//		FUNCTION_FAST_ARGC( IsVoid, 1 ) // value === undefined is better
 #ifdef JS_HAS_XDR
 		FUNCTION_FAST( XdrEncode )
 		FUNCTION_FAST( XdrDecode )
