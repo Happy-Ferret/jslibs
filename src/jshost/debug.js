@@ -1,47 +1,18 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-
-LoadModule('jsstd');
-LoadModule('jsio');
-
-
-Print( SandboxEval('1+1') );
-
-
-
-throw 0;
-
-
-/*
-// run jsircbot
-	LoadModule('jsstd');
-	LoadModule('jsio');
-	LoadModule('jsdebug');
-//	Exec('../jsdebug/debugger.js', false);
-	currentDirectory += '/../../../jsircbot';
-	arguments[1] = 'my_configuration.js'; // simulate: jshost main.js my_configuration.js
-	Exec('main.js', false);
-	throw 0;
-*/
-
-
-// run qa tests
-	LoadModule('jsstd');
-	LoadModule('jsio');
-	currentDirectory += '/../..';
-	arguments = Array.concat('qa.js', '-gcZeal 2 -rep 1 jssqlite'.split(' '));
-	Exec(arguments[0], false);
-	throw 0;
-
-
+// LoadModule('jsstd'); Exec('../common/tools.js');
+//  RunLocalQAFile();
+//  RunJsircbot(false);
+//  RunQATests('-gcZeal 2 -rep 1 jssqlite');
 
 LoadModule('jsstd');
 LoadModule('jsdebug');
 
+Exec('debugUC.js');
 
-onNewScript = function( filename, lineno, script, fct) {
 
-	Print( 'onNewScript ', filename, lineno, script, fct, '\n' );
-}
+
+//onNewScript = function( filename, lineno, script, fct) {
+//	Print( 'onNewScript ', filename, lineno, script, fct, '\n' );
+//}
 
 
 var list = [];

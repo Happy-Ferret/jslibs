@@ -42,7 +42,7 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval i
 //		return JS_TRUE;
 	jsid idid;
 	JL_CHK( JS_ValueToId(cx, id, &idid) );
-	if ( idid == ATOM_TO_JSID(cx->runtime->atomState.iteratorAtom) ) // (TBD) check if it is faster
+	if ( idid == JL_ATOMJSID(cx, iterator) )
 		return JS_TRUE;
 
 // (TBD) returns the current value too (cf.	JS_LookupProperty(cx, obj, )

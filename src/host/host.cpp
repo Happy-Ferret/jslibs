@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#define SVN_REVISION_STR "$Revision$"
+
 #include "jslibsModule.h"
 
 #include "host.h"
@@ -348,13 +350,14 @@ static JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STAND
 
 static JSBool global_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp) { // see LAZY_STANDARD_CLASSES
 
-	if ((flags & JSRESOLVE_ASSIGNING) == 0) {
+	if ( (flags & JSRESOLVE_ASSIGNING) == 0 ) {
 
 		JSBool resolved;
-		if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
-
+		if ( !JS_ResolveStandardClass(cx, obj, id, &resolved) )
 			return JS_FALSE;
-		if (resolved) {
+
+		if ( resolved ) {
+			
 			*objp = obj;
 			return JS_TRUE;
 		}
@@ -412,7 +415,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	//  Throw exception on any regular expression which backtracks more than n^3 times, where n is length of the input string
 	// JSOPTION_JIT: "I think it's possible we'll remove even this little bit of API, and just have the JIT always-on. -j"
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
-	IFDEBUG( JL_S_ASSERT( JS_GetOptions(cx) == 0, "Invalid default options.") );
+	IFDEBUG( JL_S_ASSERT(JS_GetOptions(cx) == 0, "Invalid default options.") );
 	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML /*| JSOPTION_RELIMIT*/ | JSOPTION_JIT | JSOPTION_ANONFUNFIX);
 
 	JSObject *globalObject;
@@ -485,15 +488,10 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	JL_CHK( globalObject->defineProperty(cx, ATOM_TO_JSID(JS_GetRuntime(cx)->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) ); // by default, undefined is only JSPROP_PERMANENT
 
 // creates a reference to the String object JSClass
-//	pv->stringObjectClass = JL_GetStringClass(cx);
 	pv->stringObjectClass = JL_GetStandardClass(cx, JSProto_String);
 	JL_CHKM( pv->stringObjectClass, "Unable to find the String class." );
-//	pv->errorObjectClass = JL_GetErrorClass(cx);
-//	pv->errorObjectClass = JL_GetStandardClass(cx, JSProto_Error);
-//	JL_CHKM( pv->stringObjectClass, "Unable to find the Error class." );
 
 // make GetErrorMessage available from any module
-
 	void **pGetErrorMessage;
 	pGetErrorMessage = (void**)jl_malloc(sizeof(void*)); // free is done in DestroyHost()
 	*pGetErrorMessage = (void*)&GetErrorMessage; // this indirection is needed for alignement purpose. see PRIVATE_TO_JSVAL and C function alignement.
@@ -521,7 +519,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 // init static modules
 	JL_CHKM( jslangModuleInit(cx, globalObject), "Unable to initialize jslang." );
 
-	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, _revision), INT_TO_JSVAL(JL_SvnRevToInt("$Revision$")), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, _revision), INT_TO_JSVAL(JL_SvnRevToInt(SVN_REVISION_STR)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	return JS_TRUE;
 	JL_BAD;

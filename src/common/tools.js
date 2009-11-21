@@ -75,3 +75,34 @@ function Dump() {
 		Print(uneval(arguments[i]), '  ');
 	Print('\n');
 }
+
+function RunLocalQAFile() {
+	
+	LoadModule('jsio');
+	global.QA = { __noSuchMethod__:function(id, args) {
+		Print( id, ':', uneval(args), '\n' )
+	} };
+	Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');
+	throw 0;
+}
+
+
+function RunQATests( argStr ) {
+
+	LoadModule('jsio');
+	currentDirectory += '/../..';
+	global.arguments = Array.concat('qa.js', argStr.split(' '));
+	Exec(global.arguments[0], false);
+	throw 0;
+}
+
+function RunJsircbot( withDebuggerEnabled ) {
+
+	LoadModule('jsio');
+	LoadModule('jsdebug');
+	withDebuggerEnabled && Exec('../jsdebug/debugger.js', false);
+	currentDirectory += '/../../../jsircbot';
+	global.arguments[1] = 'my_configuration.js'; // simulate: jshost main.js my_configuration.js
+	Exec('main.js', false);
+	throw 0;
+}

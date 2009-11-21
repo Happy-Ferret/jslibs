@@ -399,6 +399,10 @@ The main features are:
  * `-h` `-h`
   Help.
 
+$H beware
+ Options of the host must be *before* the script name.$LF
+ Options of the script must be *after* the script name.
+
 === Exit code ===
  * The exit code of jshost is 1 on error. On success, exit code is the last evaluated expression of the script.
    If this last expression is a positive integer, its value is returned, in any other case, 0 is returned.

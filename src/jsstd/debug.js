@@ -2,11 +2,30 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
 
+
+
+Halt(); ////////////////////////////////////
+
+
+Print( String.fromCharCode(256 + 100) ); // d
+Print( String.fromCharCode(256 + 100) == 'd' ) // false
+Halt(); ////////////////////////////////////
+
+
+var buf = new Buffer();
+var pack = new Pack(buf);
+
+pack.buffer.Write("ABCD");
+pack.WriteInt(1234, 4);
+
+Print( buf );
+Halt(); ////////////////////////////////////
+
+
 Print( IsBoolean( new Boolean(123) ) );
 Print( IsBoolean( new Number(123) ) );
 Print( IsBoolean( false ) );
-Halt();
-
+Halt(); /////////////////////////////////////
 
 
 var a = 'a';
@@ -25,7 +44,6 @@ function fb() {
 	fc();	
 }
 fb();
-
 Halt(); //////////////////////////////
 
 
@@ -39,7 +57,6 @@ Halt(); //////////////////////////////
 var s = new Buffer();
 for ( var i = 0; i < 2; i++ )
 	s.constructor;
-
 Halt(); //////////////////////////////
 
 

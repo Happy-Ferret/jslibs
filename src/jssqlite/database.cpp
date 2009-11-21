@@ -202,7 +202,7 @@ $TOC_MEMBER $INAME
  $TYPE Result $INAME( sqlStr [, map ] )
   Evaluates a SQL string and returns a Result object ready to be executed.
   $H arguments
-   $ARG $STR sqlStr: The SQL query string. ?NNN :VVV @VVV and $VVV parameters are accepted. $VVV argument lookup the current scope chain to find the VVV variable.
+   $ARG $STR sqlStr: The SQL query string. ?NNN :VVV and @VVV parameters are accepted.
    $ARG $OBJ map: _map_ is bind to the SQL statement and can be access using '@' char ( see. *Exec* ). If you create new properties on the [Result] object, you can access then in the _sqlStr_ using ':' char. '?' allows you access the _map_ as an array ( see examples ).
     $H example 1
     {{{

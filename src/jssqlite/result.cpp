@@ -80,13 +80,14 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			goto next;
 		}
 
-		if ( name[0] == '$' ) {
+		//if ( name[0] == '$' ) {
 
-			JL_CHK( JL_GetVariableValue(cx, name+1, &val) );
-			goto next;
-		}
+		//	JL_CHK( JL_GetVariableValue(cx, name+1, &val) );
+		//	goto next;
+		//}
 
 		if ( name[0] == '@' ) {
+
 			if ( argObj != NULL )  {
 
 				JL_CHK( JS_GetProperty(cx, argObj, name+1, &val) );
@@ -99,6 +100,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			}
 		}
 		if ( name[0] == ':' ) {
+
 			if ( curObj != NULL ) {
 
 				JL_CHK( JS_GetProperty(cx, curObj, name+1, &val) );

@@ -237,7 +237,7 @@ DEFINE_FUNCTION_FAST( Free ) {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE Blob $INAME( data [,data1 [,...]] )
-  Combines the text of two or more strings and returns a new string.
+  Combines the data of two or more blobs and returns a new blob.
   $H details
    [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/concat Mozilla]
 **/
@@ -309,9 +309,9 @@ bad:
 /**doc
 $TOC_MEMBER $INAME
  $TYPE Blob $INAME( start [, length ] )
-  Returns the bytes in a string beginning at the specified location through the specified number of characters.
+  Returns the bytes in a blob beginning at the specified location through the specified number of characters.
   $H arguments
-   $ARG $INT start: location at which to begin extracting characters (an integer between 0 and one less than the length of the string).
+   $ARG $INT start: location at which to begin extracting characters (an integer between 0 and one less than the length of the blob).
    $ARG $INT length: the number of characters to extract.
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/substr Mozilla]
@@ -496,7 +496,7 @@ $TOC_MEMBER $INAME
   Returns the index within the calling Blob object of the first occurrence of the specified value, starting the search at fromIndex, or -1 if the value is not found.
   $H arguments
    $ARG $STR searchValue: A string representing the value to search for.
-   $ARG $INT fromIndex: The location within the calling string to start the search from. It can be any integer between 0 and the length of the string. The default value is 0.
+   $ARG $INT fromIndex: The location within the calling blob to start the search from. It can be any integer between 0 and the length of the blob. The default value is 0.
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/indexOf Mozilla]
 **/
@@ -561,10 +561,10 @@ DEFINE_FUNCTION_FAST( indexOf ) {
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME( searchValue [, fromIndex] )
-  Returns the index within the calling Blob object of the last occurrence of the specified value, or -1 if not found. The calling string is searched backward, starting at fromIndex.
+  Returns the index within the calling Blob object of the last occurrence of the specified value, or -1 if not found. The calling blob is searched backward, starting at fromIndex.
   $H arguments
    $ARG $STR searchValue: A string representing the value to search for.
-   $ARG $INT fromIndex: The location within the calling string to start the search from, indexed from left to right. It can be any integer between 0 and the length of the string. The default value is the length of the string.
+   $ARG $INT fromIndex: The location within the calling blob to start the search from, indexed from left to right. It can be any integer between 0 and the length of the blob. The default value is the length of the blob.
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/lastIndexOf Mozilla]
 **/
@@ -638,7 +638,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME( index )
-  Returns the specified character from a string.
+  Returns the specified character from a blob.
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/charAt Mozilla]
 **/
@@ -952,6 +952,8 @@ DEFINE_NEW_RESOLVE() {
 	// Make sure we preserve any flags borrowing bits in classword.
 	obj->classword ^= (jsuword)obj->getClass();
 	obj->classword |= (jsuword)strObj->getClass();
+
+	//OBJ_SHAPE(obj)
 
 //	obj->map->ops = strObj->map->ops;
 //	memcpy(obj->map, &JSObjectMap(strObj->map->ops, strObj->map->shape), sizeof(JSObjectMap));

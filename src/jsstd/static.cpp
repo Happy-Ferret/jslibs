@@ -38,10 +38,8 @@ BEGIN_STATIC
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
- $STR $INAME( str [, obj | function ] )
+ $STR $INAME( str , object|function )
   Return an expanded string using key/value stored in _obj_ or returned by the function.
-  $LF
-  If the 2nd argument is omitted, the key is a variable of the current scope chain.
   $H note
    $UNDEF values are ignored in the resulting string.
   $H example 1
@@ -52,20 +50,11 @@ $TOC_MEMBER $INAME
   {{{
   Expand('$(foo)-$(bar)', function(id) '<'+id+'>' ); // returns "<foo>-<bar>"
   }}}
-  $H example 3
-  {{{
-  var aaa = 123;
-  function foo() {
-    var bbb = 456;
-    Print( Expand('$(aaa) $(bbb)') ); // prints 123 456
-  }
-  foo();
-  }}}
 **/
 
 #define EXPAND_SOURCE_ARG 1
 #define EXPAND_SOURCE_ARG_FUNCTION 2
-#define EXPAND_SOURCE_SCOPE 3
+//#define EXPAND_SOURCE_SCOPE 3
 
 DEFINE_FUNCTION_FAST( Expand ) {
 
@@ -84,12 +73,12 @@ DEFINE_FUNCTION_FAST( Expand ) {
 	int mapSource;
 	jsval map;
 
-	if ( argc < 2 ) {
+	//if ( argc < 2 ) {
 
-		map = JSVAL_VOID;
-		mapSource = EXPAND_SOURCE_SCOPE;
-		goto next;
-	}
+	//	map = JSVAL_VOID;
+	//	mapSource = EXPAND_SOURCE_SCOPE;
+	//	goto next;
+	//}
 
 	if ( JsvalIsFunction(cx, JL_FARG(2)) ) {
 
@@ -150,13 +139,13 @@ next:
 		if ( tok == NULL ) // not found
 			break;
 
-		if ( mapSource == EXPAND_SOURCE_SCOPE ) {
+		//if ( mapSource == EXPAND_SOURCE_SCOPE ) {
 
-			char tmp = *tok; // (TBD) try to replace this trick
-			*((char*)tok) = '\0';
-			JL_CHKB( JL_GetVariableValue(cx, srcBegin, JL_FRVAL), bad_free_stack );
-			*((char*)tok) = tmp;
-		} else
+		//	char tmp = *tok; // (TBD) try to replace this trick
+		//	*((char*)tok) = '\0';
+		//	JL_CHKB( JL_GetVariableValue(cx, srcBegin, JL_FRVAL), bad_free_stack );
+		//	*((char*)tok) = tmp;
+		//} else
 		if ( mapSource == EXPAND_SOURCE_ARG_FUNCTION ) {
 
 			JL_CHKB( StringAndLengthToJsval(cx, JL_FRVAL, srcBegin, tok-srcBegin), bad_free_stack );
@@ -881,45 +870,33 @@ DEFINE_FUNCTION( Assert ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME()
+ $INT $INAME()
   Performs an unconditional garbage collection in the JS memory pool.
 **/
 DEFINE_FUNCTION_FAST( CollectGarbage ) {
 
-	#ifdef JS_THREADSAFE
-	JS_BeginRequest( cx ); // http://developer.mozilla.org/en/docs/JS_BeginRequest
-	#endif
-
+	long gcBytesDiff = cx->runtime->gcBytes;
 	JS_GC( cx );
+	gcBytesDiff = cx->runtime->gcBytes - gcBytesDiff;
 
-	#ifdef JS_THREADSAFE
-	JS_EndRequest( cx );
-	#endif
-
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = INT_TO_JSVAL(gcBytesDiff);
 	return JS_TRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME()
+ $INT $INAME()
   Performs a conditional garbage collection of JS objects, doubles, and strings that are no longer needed by a script executing.
   This offers the JavaScript engine an opportunity to perform garbage collection if needed.
 **/
 DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 
-	#ifdef JS_THREADSAFE
-	JS_BeginRequest( cx ); // http://developer.mozilla.org/en/docs/JS_BeginRequest
-	#endif
-
+	long gcBytesDiff = cx->runtime->gcBytes;
 	JS_MaybeGC( cx );
+	gcBytesDiff = cx->runtime->gcBytes - gcBytesDiff;
 
-	#ifdef JS_THREADSAFE
-	JS_EndRequest( cx );
-	#endif
-
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_FRVAL = INT_TO_JSVAL(gcBytesDiff);
 	return JS_TRUE;
 }
 

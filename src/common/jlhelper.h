@@ -62,6 +62,8 @@ extern bool _unsafeMode;
 	#define IFDEBUG(expr)
 #endif // DEBUG
 
+// see JSAtomState struct in jsatom.h
+#define JL_ATOMJSID(CX, NAME) ATOM_TO_JSID(CX->runtime->atomState.NAME##Atom)
 
 #define JLID_SPEC(name) JLID_##name
 enum {
@@ -102,7 +104,7 @@ struct HostPrivate {
 	struct ModulePrivate {
 		uint32_t moduleId;
 		void *privateData;
-	} modulePrivate[256]; // does not support more than 256 modules.
+	} modulePrivate[1<<8]; // does not support more than 256 modules.
 	jl::Queue moduleList;
 	jl::Queue registredNativeClasses;
 	JSClass *stringObjectClass;
@@ -129,9 +131,15 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 	cx->runtime->data = (void*)hostPrivate;
 }
 
+
+ALWAYS_INLINE unsigned char ModulePrivateHash(uint32_t moduleId) {
+
+	return ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3] << 1;
+}
+
 ALWAYS_INLINE bool SetModulePrivate( JSContext *cx, uint32_t moduleId, void *modulePrivate) {
 
-	unsigned char id = ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3];
+	unsigned char id = ModulePrivateHash(moduleId);
 	HostPrivate::ModulePrivate *mpv = GetHostPrivate(cx)->modulePrivate;
 	while ( mpv[id].moduleId != 0 ) { // assumes that modulePrivate struct is init to 0
 
@@ -146,7 +154,7 @@ ALWAYS_INLINE bool SetModulePrivate( JSContext *cx, uint32_t moduleId, void *mod
 
 ALWAYS_INLINE void* GetModulePrivate( JSContext *cx, uint32_t moduleId ) {
 
-	unsigned char id = ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3];
+	unsigned char id = ModulePrivateHash(moduleId);
 	HostPrivate::ModulePrivate *mpv = GetHostPrivate(cx)->modulePrivate;
 	while ( mpv[id].moduleId != moduleId ) {
 
@@ -431,7 +439,6 @@ ALWAYS_INLINE JSClass* JL_GetStandardClass(JSContext *cx, JSProtoKey key) {
 	JL_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_Boolean, &constructor) );
 	JL_CHK(constructor);
 //	FUN_CLASP( JS_ValueToFunction(cx, OBJECT_TO_JSVAL(constructor)) );
-//	FUN_CLASP(static_cast<JSFunction*>(constructor));
 	return FUN_CLASP(GET_FUNCTION_PRIVATE(cx, constructor));
 bad:
 	return NULL;
@@ -693,9 +700,10 @@ inline JSBool SetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, c
 ALWAYS_INLINE JSBool JL_CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, jsval *rval, uintN argc, ... ) {
 
 	va_list ap;
-	jsval argv[32]; // argc MUST be <= 32
+//	jsval argv[32]; // argc MUST be <= 32
+//	JL_S_ASSERT( argc <= COUNTOF(argv), "Too many arguments." );
+	jsval *argv = (jsval*)alloca(argc*sizeof(jsval));
 	jsval rvalTmp;
-	JL_S_ASSERT( argc <= COUNTOF(argv), "Too many arguments." );
 	va_start(ap, argc);
 	for ( uintN i = 0; i < argc; i++ )
 		argv[i] = va_arg(ap, jsval);
@@ -712,9 +720,10 @@ ALWAYS_INLINE JSBool JL_CallFunction( JSContext *cx, JSObject *obj, jsval functi
 ALWAYS_INLINE JSBool JL_CallFunctionName( JSContext *cx, JSObject *obj, const char* functionName, jsval *rval, uintN argc, ... ) {
 
 	va_list ap;
-	jsval argv[32]; // argc MUST be <= 32
+//	jsval argv[32]; // argc MUST be <= 32
+//	JL_S_ASSERT( argc <= COUNTOF(argv), "Too many arguments." );
+	jsval *argv = (jsval*)alloca(argc*sizeof(jsval));
 	jsval rvalTmp;
-	JL_S_ASSERT( argc <= COUNTOF(argv), "Too many arguments." );
 	va_start(ap, argc);
 	for ( uintN i = 0; i < argc; i++ )
 		argv[i] = va_arg(ap, jsval);
@@ -736,7 +745,6 @@ ALWAYS_INLINE JSBool JL_ValueOf( JSContext *cx, jsval *val, jsval *rval ) {
 	}
 	return JSVAL_TO_OBJECT(*val)->defaultValue(cx, JSTYPE_VOID, rval);
 }
-
 
 // see http://unicode.org/faq/utf_bom.html#BOM
 enum JLEncodingType {
@@ -935,7 +943,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 
 		jschar *scriptText = (jschar *)alloca(scriptFileSize * 2);
 		size_t scriptTextLength = scriptFileSize * 2;
-		JL_CHKM( JS_DecodeBytes(cx, scriptBuffer, scriptFileSize, scriptText, &scriptTextLength), "Unable do decode UTF8 script." );
+		JL_CHKM( JS_DecodeBytes(cx, scriptBuffer, scriptFileSize, scriptText, &scriptTextLength), "Unable do decode UTF8 script (missing Byte Order Mark)." );
 		if ( scriptText[0] == '#' && scriptText[1] == '!' ) { // shebang support
 
 			scriptText[0] = '/';
@@ -944,7 +952,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
 	}
 
-	JL_CHKM( script, "Unable to compile the script %s.", fileName );
+	JL_CHKM( script, "Unable to compile the script \"%s\".", fileName );
 
 #endif //JL_UC
 
@@ -983,12 +991,18 @@ bad:
 }
 
 
+/*
+// Franck, this is hopeless. The JS engine is not going to keep around apparently-dead variables on the off chance that 
+// someone might call a native function that uses the debugger APIs to read them off the stack. The debugger APIs don't work that way.
+// ...
+// -j 
+
 //ALWAYS_INLINE jsid StringToJsid( JSContext *cx, const char *cstr );
 // Get the value of a variable in the current or parent's scopes.
 ALWAYS_INLINE JSBool JL_GetVariableValue( JSContext *cx, const char *name, jsval *vp ) {
 
-//	JSStackFrame *fp1 = JS_GetScriptedCaller(cx, NULL);
-//	return JS_EvaluateInStackFrame(cx, fp1, name, strlen(name), "", 0, vp);
+//	JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL);
+//	return JS_EvaluateInStackFrame(cx, fp, name, strlen(name), "", 0, vp);
 
 	JSBool found;
 	JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL);
@@ -1013,10 +1027,10 @@ ALWAYS_INLINE JSBool JL_GetVariableValue( JSContext *cx, const char *name, jsval
 	}
 	*vp = JSVAL_VOID;
 
-
 	return JS_TRUE;
 	JL_BAD;
 }
+*/
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1031,7 +1045,7 @@ ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *svnRev) {
 
 ALWAYS_INLINE bool JL_MaybeRealloc( int requested, int received ) {
 
-	return requested != 0 && (128 * received / requested < 115) && (requested - received > 32); // instead using percent, we use per-128
+	return requested != 0 && (128 * received / requested < 115) && (requested - received > 32); // "128 *": instead using percent, we use per-128
 }
 
 
@@ -1774,14 +1788,15 @@ ALWAYS_INLINE JSBool ExceptionSetScriptLocation( JSContext *cx, JSObject *obj ) 
 	const char *filename;
 	int lineno;
 	filename = JS_GetScriptFilename(cx, script);
-	JL_CHK( filename );
+	if ( filename == NULL || *filename == '\0' )
+		filename = "<no_filename>";
 	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 
 	jsval tmp;
 	JL_CHK( StringToJsval(cx, filename, &tmp) );
-	JL_CHK( JS_SetProperty(cx, obj, "fileName", &tmp) );
+	JL_CHK( JS_SetPropertyById(cx, obj, JL_ATOMJSID(cx, fileName), &tmp) );
 	JL_CHK( IntToJsval(cx, lineno, &tmp) );
-	JL_CHK( JS_SetProperty(cx, obj, "lineNumber", &tmp) );
+	JL_CHK( JS_SetPropertyById(cx, obj, JL_ATOMJSID(cx, lineNumber), &tmp) );
 
 	return JS_TRUE;
 	JL_BAD;
