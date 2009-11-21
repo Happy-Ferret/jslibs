@@ -308,7 +308,7 @@ function ParseCommandLine(cfg) {
 		if ( items.length > 1 )
 			throw Error('Multiple argument match: '+items.join(', '));
 		var item = items[0];
-		if ( IsVoid(item) )
+		if ( item == undefined )
 			throw Error('Invalid argument: '+args[1]);
 		if ( IsBoolean(cfg[item]) ) {
 		
