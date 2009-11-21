@@ -738,6 +738,50 @@ ALWAYS_INLINE JSBool JL_ValueOf( JSContext *cx, jsval *val, jsval *rval ) {
 }
 
 
+// see http://unicode.org/faq/utf_bom.html#BOM
+enum JLEncodingType {
+	unknown,
+	UTF32be,
+	UTF32le,
+	UTF16be,
+	UTF16le,
+	UTF8,
+	ASCII
+};
+
+ALWAYS_INLINE JLEncodingType JLDetectEncoding(char **buf, unsigned long *size) {
+
+	if ( *size < 2 )
+		return ASCII;
+	if ( (*buf)[0] == '\xFF' && (*buf)[1] == '\xFE' ) {
+
+		*buf += 2;
+		*size -= 2;
+		return UTF16le;
+	}
+	if ( (*buf)[0] == '\xFE' && (*buf)[1] == '\xFF' ) {
+
+		*buf += 2;
+		*size -= 2;
+		return UTF16be;
+	}
+	if ( *size >= 3 && (*buf)[0] == '\xEF' && (*buf)[1] == '\xBB' && (*buf)[2] == '\xBF' ) {
+
+		*buf += 3;
+		*size -= 3;
+		return UTF8;
+	}
+	// no BOM, then guess
+	if ( (*buf)[0] > 32 && (*buf)[1] > 32 )
+		return ASCII;
+	if ( (*buf)[0] != 0 && (*buf)[1] == 0 )
+		return UTF16le;
+	if ( (*buf)[0] == 0 && (*buf)[1] != 0 )
+		return UTF16be;
+	return unknown;
+}
+
+
 // XDR and bytecode compatibility:
 //   Backward compatibility is when you run old bytecode on a new engine, and that should work.
 //   What you seem to want is forward compatibility, which is new bytecode on an old engine, which is nothing we've ever promised.
@@ -754,6 +798,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 
 	JSScript *script = NULL;
 	void *data = NULL;
+	uint32 prevOpts = JS_GetOptions(cx);
 
 	char compiledFileName[PATH_MAX];
 	strcpy( compiledFileName, fileName );
@@ -803,7 +848,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 			data = NULL;
 			if ( JS_GetScriptVersion(cx, script) < JS_GetVersion(cx) )
 				JL_REPORT_WARNING("Trying to xdr-decode an old script (%s).", compiledFileName);
-			return script; // Done.
+			goto good;
 		} else {
 
 			jl_free(data);
@@ -816,11 +861,17 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	if ( !hasSrcFile )
 		goto bad; // no source, no compiled version of the source, die.
 
-	// shebang support
+	if ( saveCompFile )
+		JS_SetOptions( cx, JS_GetOptions(cx) & ~JSOPTION_COMPILE_N_GO ); // see https://bugzilla.mozilla.org/show_bug.cgi?id=494363
+
+#define JL_UC
+#ifndef JL_UC
+
 	FILE *scriptFile;
 	scriptFile = fopen(fileName, "r");
 	JL_CHKM( scriptFile != NULL, "Script file \"%s\" cannot be opened.", fileName );
 
+	// shebang support
 	char s, b;
 	s = getc(scriptFile);
 	if ( s == '#' ) {
@@ -840,26 +891,70 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		ungetc(s, scriptFile);
 	}
 
-	uint32 prevOpts;
-	if ( saveCompFile )
-		prevOpts = JS_SetOptions( cx, JS_GetOptions(cx) & ~JSOPTION_COMPILE_N_GO ); // see https://bugzilla.mozilla.org/show_bug.cgi?id=494363
-
 	script = JS_CompileFileHandle(cx, obj, fileName, scriptFile);
-//	*script->notes() = 0;
-
-	if ( saveCompFile )
-		JS_SetOptions(cx, prevOpts);
-
 	fclose(scriptFile);
+
+#else //JL_UC
+
+	int scriptFile = open(fileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+	JL_CHKM( scriptFile >= 0, "Unable to open file \"%s\" for reading.", fileName );
+
+	lseek(scriptFile, 0, SEEK_END);
+	unsigned long scriptFileSize = (unsigned)tell(scriptFile);
+	lseek(scriptFile, 0, SEEK_SET);
+	char *scriptBuffer = (char*)alloca(scriptFileSize);
+	int res = read(scriptFile, (void*)scriptBuffer, scriptFileSize);
+	close(scriptFile);
+	JL_CHKM( res >= 0, "Unable to read file \"%s\".", fileName );
+	scriptFileSize = (unsigned)res;
+
+	JLEncodingType enc = JLDetectEncoding(&scriptBuffer, &scriptFileSize);
+	if ( enc == ASCII ) {
+
+		char *scriptText = scriptBuffer;
+		size_t scriptTextLength = scriptFileSize;
+		if ( scriptText[0] == '#' && scriptText[1] == '!' ) { // shebang support
+
+			scriptText[0] = '/';
+			scriptText[1] = '/';
+		}
+		script = JS_CompileScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
+	} else
+	if ( enc == UTF16le ) {
+
+		jschar *scriptText = (jschar*)scriptBuffer;
+		size_t scriptTextLength = scriptFileSize / 2;
+		if ( scriptText[0] == '#' && scriptText[1] == '!' ) { // shebang support
+
+			scriptText[0] = '/';
+			scriptText[1] = '/';
+		}
+		script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
+	} else
+	if ( enc == UTF8 ) {
+
+		jschar *scriptText = (jschar *)alloca(scriptFileSize * 2);
+		size_t scriptTextLength = scriptFileSize * 2;
+		JL_CHKM( JS_DecodeBytes(cx, scriptBuffer, scriptFileSize, scriptText, &scriptTextLength), "Unable do decode UTF8 script." );
+		if ( scriptText[0] == '#' && scriptText[1] == '!' ) { // shebang support
+
+			scriptText[0] = '/';
+			scriptText[1] = '/';
+		}
+		script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
+	}
+
 	JL_CHKM( script, "Unable to compile the script %s.", fileName );
 
+#endif //JL_UC
+
 	if ( !saveCompFile )
-		return script; // Done.
+		goto good;
 
 	int file;
 	file = open(compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, srcFileStat.st_mode); // (TBD) check the mode
 	if ( file == -1 ) // if the file cannot be write, this is not an error ( eg. read-only drive )
-		return script;
+		goto good;
 
 	JSXDRState *xdr;
 	xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
@@ -874,9 +969,14 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	JL_CHK( write(file, buf, length) != -1 ); // On error, -1 is returned, and errno is set appropriately.
 	JL_CHK( close(file) == 0 );
 	JS_XDRDestroy(xdr);
+	goto good;
+
+good:
+	JS_SetOptions(cx, prevOpts);
 	return script;
 
 bad:
+	JS_SetOptions(cx, prevOpts);
 	if ( data )
 		jl_free(data);
 	return NULL; // report a warning ?
