@@ -835,7 +835,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		JS_XDRMemSetData(xdr, data, compFileSize);
 
 
-		// we wend silent failures.
+		// we want silent failures.
 		JSErrorReporter prevErrorReporter = JS_SetErrorReporter(cx, NULL);
 		JSDebugErrorHook errHook = cx->debugHooks->debugErrorHook;
 		cx->debugHooks->debugErrorHook = NULL;
@@ -928,7 +928,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		}
 		script = JS_CompileScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
 	} else
-	if ( enc == UTF16le ) {
+	if ( enc == UTF16le ) { // (TBD) support big-endian
 
 		jschar *scriptText = (jschar*)scriptBuffer;
 		size_t scriptTextLength = scriptFileSize / 2;
@@ -939,7 +939,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		}
 		script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
 	} else
-	if ( enc == UTF8 ) {
+	if ( enc == UTF8 ) { // (TBD) check if JS_DecodeBytes does the right things
 
 		jschar *scriptText = (jschar *)alloca(scriptFileSize * 2);
 		size_t scriptTextLength = scriptFileSize * 2;
