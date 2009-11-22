@@ -17,6 +17,8 @@
 
 #include "com.h"
 
+// see http://www.codeproject.com/KB/COM/TEventHandler.aspx
+//IConnectionPoint
 
 // http://www.codeproject.com/KB/COM/dyn_idispatch.aspx?msg=935502
 class JSFunctionDispatch : public IDispatch {
@@ -94,11 +96,12 @@ public:
 		
 		JSContext *cx = NULL;
 		JS_ContextIterator(_rt, &cx);
+		JS_ASSERT( cx != NULL );
 
 		JSTempValueRooter tvr;
 		JS_PUSH_TEMP_ROOT(cx, argc+1, argv, &tvr);
 
-		JSBool status = JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), OBJECT_TO_JSVAL(_funcObj), argc, argv+1, argv);
+		JSBool status = JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), _funcVal, argc, argv+1, argv);
 //		if ( !status )
 
 		if ( pVarResult != NULL )
@@ -109,23 +112,26 @@ public:
 		return NOERROR;
 	}
 
-	JSFunctionDispatch(JSRuntime *rt, JSObject *funcObj) : _refs(0), _rt(rt), _funcObj(funcObj) {
+	JSFunctionDispatch(JSRuntime *rt, jsval funcVal) : _refs(0), _rt(rt), _funcVal(funcVal) {
 
 		JSContext *cx = NULL;
 		JS_ContextIterator(_rt, &cx);
-		JS_AddRoot(cx, &_funcObj);
+		JS_ASSERT( cx != NULL );
+		JL_ASSERT( JSVAL_IS_GCTHING(funcVal) );
+		JS_AddRoot(cx, &_funcVal);
 	}
 
 	~JSFunctionDispatch() {
 	
 		JSContext *cx = NULL;
 		JS_ContextIterator(_rt, &cx);
-		JS_RemoveRoot(cx, &_funcObj);
+		JS_ASSERT( cx != NULL );
+		JS_RemoveRoot(cx, &_funcVal);
 	}
 
 private:
 	JSRuntime *_rt;
-	JSObject *_funcObj;
+	jsval _funcVal;
 	ULONG _refs;
 };
 
@@ -218,8 +224,8 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 	if ( JS_ObjectIsFunction(cx, obj) ) {
 
-		JSFunctionDispatch *disp = new JSFunctionDispatch(JS_GetRuntime(cx), obj);
-//		disp->AddRef(); (TBD) ???
+		JSFunctionDispatch *disp = new JSFunctionDispatch(JS_GetRuntime(cx), *value);
+		disp->AddRef(); // (TBD) ???
 		V_VT(variant) = VT_DISPATCH;
 		V_DISPATCH(variant) = disp;
 		return JS_TRUE;

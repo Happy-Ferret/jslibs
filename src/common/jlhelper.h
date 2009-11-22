@@ -433,6 +433,14 @@ ALWAYS_INLINE void JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 
+ALWAYS_INLINE JSContext *JL_GetContext(JSRuntime *rt) {
+
+	JSContext *cx = NULL;
+	JS_ContextIterator(rt, &cx);
+	JS_ASSERT( cx != NULL );
+	return cx;
+}
+
 ALWAYS_INLINE JSClass* JL_GetStandardClass(JSContext *cx, JSProtoKey key) {
 
 	JSObject *constructor;

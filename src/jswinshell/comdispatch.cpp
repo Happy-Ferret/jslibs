@@ -78,15 +78,30 @@ static JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 	hr = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD, &params, result, &ex, &argErr);
 	for ( uintN i = 0; i < argc; ++i ) {
 
-		hr = VariantClear(&params.rgvarg[i]);
-		if ( FAILED(hr) )
-			JL_CHK( WinThrowError(cx, hr) );
+		HRESULT hr1 = VariantClear(&params.rgvarg[i]);
+		if ( FAILED(hr1) )
+			JL_CHK( WinThrowError(cx, hr1) );
 	}
 
 	if ( hr == DISP_E_EXCEPTION ) {
-
-		JSString *exStr = JS_NewUCStringCopyZ(cx, (const jschar*)ex.bstrDescription);
-		JS_SetPendingException(cx, STRING_TO_JSVAL(exStr));
+/*
+		if ( ex.bstrDescription != NULL ) {
+			
+			JSString *exStr = JS_NewUCStringCopyZ(cx, (const jschar*)ex.bstrDescription);
+			JS_SetPendingException(cx, STRING_TO_JSVAL(exStr));
+		} else {
+			HRESULT errorCode = ex.scode;
+			LPVOID lpMsgBuf;
+			DWORD result = ::FormatMessage(
+				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
+				NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL
+			);
+			JSString *jsStr = JS_NewStringCopyZ(cx, (const char*)lpMsgBuf);
+			LocalFree(lpMsgBuf);
+			JS_SetPendingException(cx, STRING_TO_JSVAL(jsStr));
+		}
+*/
+		WinThrowError(cx, ex.wCode ? ex.wCode : ex.scode);
 		goto bad;
 	}
 

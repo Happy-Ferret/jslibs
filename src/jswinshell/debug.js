@@ -9,7 +9,7 @@ try {
 
 
 var xmlhttp = CreateComObject("Microsoft.XMLHTTP");
-xmlhttp.open("GET", "http://www.google.com/");
+xmlhttp.open("GET", "http://www.google.com/", false);
 xmlhttp.onreadystatechange = function() { Print(xmlhttp.readyState) }
 xmlhttp.send();
 
