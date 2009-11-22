@@ -92,25 +92,39 @@ public:
 		jsval *argv = (jsval*)alloca((argc+1) * sizeof(jsval));
 		memset(argv, 0, (argc+1) * sizeof(jsval));
 		
-		JSTempValueRooter tvr;
-		JS_PUSH_TEMP_ROOT(_cx, argc+1, argv, &tvr);
+		JSContext *cx = NULL;
+		JS_ContextIterator(_rt, &cx);
 
-		JSBool status = JS_CallFunctionValue(_cx, JS_GetGlobalObject(_cx), OBJECT_TO_JSVAL(_funcObj), argc, argv+1, argv);
+		JSTempValueRooter tvr;
+		JS_PUSH_TEMP_ROOT(cx, argc+1, argv, &tvr);
+
+		JSBool status = JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), OBJECT_TO_JSVAL(_funcObj), argc, argv+1, argv);
 //		if ( !status )
 
 		if ( pVarResult != NULL )
-			JsvalToVariant(_cx, argv, pVarResult);
+			JsvalToVariant(cx, argv, pVarResult);
 		
-		JS_POP_TEMP_ROOT(_cx, &tvr);
+		JS_POP_TEMP_ROOT(cx, &tvr);
 
 		return NOERROR;
 	}
 
-	JSFunctionDispatch(JSContext *cx, JSObject *funcObj) : _refs(0), _cx(cx), _funcObj(funcObj) { }
-//	~JSFunctionDispatch() { }
+	JSFunctionDispatch(JSRuntime *rt, JSObject *funcObj) : _refs(0), _rt(rt), _funcObj(funcObj) {
+
+		JSContext *cx = NULL;
+		JS_ContextIterator(_rt, &cx);
+		JS_AddRoot(cx, &_funcObj);
+	}
+
+	~JSFunctionDispatch() {
+	
+		JSContext *cx = NULL;
+		JS_ContextIterator(_rt, &cx);
+		JS_RemoveRoot(cx, &_funcObj);
+	}
 
 private:
-	JSContext *_cx;
+	JSRuntime *_rt;
 	JSObject *_funcObj;
 	ULONG _refs;
 };
@@ -204,7 +218,7 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 	if ( JS_ObjectIsFunction(cx, obj) ) {
 
-		JSFunctionDispatch *disp = new JSFunctionDispatch(cx, obj);
+		JSFunctionDispatch *disp = new JSFunctionDispatch(JS_GetRuntime(cx), obj);
 //		disp->AddRef(); (TBD) ???
 		V_VT(variant) = VT_DISPATCH;
 		V_DISPATCH(variant) = disp;
