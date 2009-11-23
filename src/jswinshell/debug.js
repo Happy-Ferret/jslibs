@@ -7,21 +7,18 @@ Print('Start...\n');
 
 try {
 
+function Test() {
+	var xmlhttp = CreateComObject("Microsoft.XMLHTTP");
+	xmlhttp.open("GET", "http://www.google.com/", false);
+	xmlhttp.onreadystatechange = function() { Print(xmlhttp.readyState) }
+//	xmlhttp.send();
 
-var xmlhttp = CreateComObject("Microsoft.XMLHTTP");
-xmlhttp.open("GET", "http://www.google.com/", false);
-xmlhttp.onreadystatechange = function() { Print(xmlhttp.readyState) }
-xmlhttp.send();
+//	Sleep(1000);
+	Print( xmlhttp.responseText );
+}
 
-
-
-
-
-Sleep(1000);
-
-
-
-Print( xmlhttp.responseText );
+Test();
+CollectGarbage();
 
 Halt();
 

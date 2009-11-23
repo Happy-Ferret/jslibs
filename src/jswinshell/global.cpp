@@ -344,9 +344,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( CreateComObject ) {
 
-	HRESULT hr;
-
 	IUnknown *punk = NULL;
+	IDispatch *pdisp = NULL;
+
+	HRESULT hr;
 
 	JL_S_ASSERT_ARG( 1 );
 	JL_S_ASSERT_STRING( JL_FARG(1) );
@@ -361,23 +362,24 @@ DEFINE_FUNCTION_FAST( CreateComObject ) {
 	hr = GetActiveObject(clsid, NULL, &punk);
 	if ( FAILED(hr) ) {
 		
-		hr = CoCreateInstance(clsid, NULL, CLSCTX_SERVER | CLSCTX_INPROC_HANDLER, IID_IUnknown, (void FAR* FAR*)&punk);
+		hr = CoCreateInstance(clsid, NULL, CLSCTX_SERVER, IID_IUnknown, (void **)&punk); // | CLSCTX_INPROC_HANDLER ???
 		if ( FAILED(hr) )
 			JL_CHK( WinThrowError(cx, hr) );
 	}
 
-	punk->AddRef();
-
-	IDispatch FAR* pdisp = (IDispatch FAR*)NULL;
-	hr = punk->QueryInterface(IID_IDispatch, (void FAR* FAR*)&pdisp);
+//	punk->AddRef(); // see http://stackoverflow.com/questions/645268/in-com-should-i-call-addref-after-cocreateinstance
+	hr = punk->QueryInterface(IID_IDispatch, (void **)&pdisp);
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
-
+//	pdisp->AddRef();
 	JL_CHK( NewComDispatch(cx, pdisp, JL_FRVAL) );
-
+	pdisp->Release();
 	punk->Release();
 	return JS_TRUE;
+
 bad:
+	if ( pdisp )
+		pdisp->Release();
 	if ( punk )
 		punk->Release();
 	return JS_FALSE;

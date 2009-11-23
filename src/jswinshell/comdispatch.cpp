@@ -101,8 +101,7 @@ static JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 			JS_SetPendingException(cx, STRING_TO_JSVAL(jsStr));
 		}
 */
-		WinThrowError(cx, ex.wCode ? ex.wCode : ex.scode);
-		goto bad;
+		JL_CHK( WinThrowError(cx, ex.wCode ? ex.wCode : ex.scode) ); // (TBD) fix this
 	}
 
 	if ( hr == DISP_E_MEMBERNOTFOUND ) { // see DEFINE_GET_PROPERTY
@@ -255,6 +254,13 @@ DEFINE_SET_PROPERTY() {
 	//VARIANT *result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
 	//VariantInit(result);
 
+//	IConnectionPoint *pcp;
+//	hr = disp->QueryInterface(IID_IConnectionPoint, (void**)&pcp);
+//	pcp->Release();
+//	IConnectionPointContainer *pcpc;
+//	hr = disp->QueryInterface(IID_IConnectionPointContainer, (void**)&pcpc);
+//	pcpc->Release();
+
 	EXCEPINFO ex;
 	memset(&ex, 0, sizeof(EXCEPINFO));
 	UINT argErr = 0;
@@ -341,6 +347,8 @@ bad:
 
 DEFINE_ITERATOR_OBJECT() {
 
+	IEnumVARIANT *pEnum = NULL;
+
 	HRESULT hr;
 
 	DISPPARAMS params = {0};
@@ -367,7 +375,6 @@ DEFINE_ITERATOR_OBJECT() {
 
 	JL_S_ASSERT( punk != NULL, "Invalid enum." );
 
-	IEnumVARIANT *pEnum = NULL;
 	hr = punk->QueryInterface(IID_IEnumVARIANT, (void**)&pEnum);
 
 	VariantClear(&result); // does the punk->Release();
@@ -380,9 +387,12 @@ DEFINE_ITERATOR_OBJECT() {
 	JSBool st = NewComEnum(cx, pEnum, &tvr.u.value);
 	JS_POP_TEMP_ROOT(cx, &tvr);
 	JL_CHK(st);
+	pEnum->Release();
 	return JSVAL_TO_OBJECT(tvr.u.value);
 
 bad:
+	if ( pEnum )
+		pEnum->Release();
 	return NULL;
 }
 

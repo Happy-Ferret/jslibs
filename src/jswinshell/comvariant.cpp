@@ -49,7 +49,7 @@ public:
 		}
 
 		*ppvObject = this;
-		AddRef();
+		AddRef(); // mandatory
 		return NOERROR;
 	}
 
@@ -118,15 +118,16 @@ public:
 		JS_ContextIterator(_rt, &cx);
 		JS_ASSERT( cx != NULL );
 		JL_ASSERT( JSVAL_IS_GCTHING(funcVal) );
-		JS_AddRoot(cx, &_funcVal);
+//		JS_AddRoot(cx, &_funcVal);
+		AddRef();
 	}
 
 	~JSFunctionDispatch() {
 	
-		JSContext *cx = NULL;
-		JS_ContextIterator(_rt, &cx);
-		JS_ASSERT( cx != NULL );
-		JS_RemoveRoot(cx, &_funcVal);
+//		JSContext *cx = NULL;
+//		JS_ContextIterator(_rt, &cx);
+//		JS_ASSERT( cx != NULL );
+//		JS_RemoveRoot(cx, &_funcVal);
 	}
 
 private:
@@ -224,10 +225,12 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 	if ( JS_ObjectIsFunction(cx, obj) ) {
 
-		JSFunctionDispatch *disp = new JSFunctionDispatch(JS_GetRuntime(cx), *value);
-		disp->AddRef(); // (TBD) ???
+		JSFunctionDispatch *disp = new JSFunctionDispatch(JS_GetRuntime(cx), *value); // does the AddRef
+		// beware: *value must be GC protected while disp is in use.
 		V_VT(variant) = VT_DISPATCH;
 		V_DISPATCH(variant) = disp;
+		// (TBD) fixme
+		// NewComDispatch(cx, disp, value); // GC protect the function stored in disp ?
 		return JS_TRUE;
 	}
 
@@ -271,7 +274,6 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 	switch ( V_VT(variant) ) {
 
 		case VT_HRESULT: {
-			
 			HRESULT errorCode =  isRef ? *V_I4REF(variant) : V_I4(variant); // check ->scode and ResultFromScode
 			LPVOID lpMsgBuf;
 			DWORD result = ::FormatMessage(
@@ -279,7 +281,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 				NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL
 			);
 			if ( result == 0 )
-				return JS_FALSE;
+				JL_CHK( WinThrowError(cx, GetLastError()) );
 			JSString *jsStr = JS_NewStringCopyZ(cx, (const char*)lpMsgBuf);
 			LocalFree(lpMsgBuf);
 			jsval errVal = STRING_TO_JSVAL(jsStr);
@@ -288,7 +290,6 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			}
 			break;
 		case VT_ERROR: {
-
 			SCODE scode;
 			if ( V_VT(variant) == VT_ERROR )
 				scode = isRef ? *V_ERRORREF(variant) : V_ERROR(variant);
@@ -308,7 +309,6 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			*rval = JSVAL_VOID;
 			 break;
 		case VT_DATE: {
-			
 			SYSTEMTIME time;
 			INT st = VariantTimeToSystemTime(isRef ? *V_DATEREF(variant) : V_DATE(variant), &time);
 			if ( st != TRUE )
@@ -320,7 +320,6 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			}
 			break;
 		case VT_BSTR: {
-
 			BSTR bstr = isRef ? *V_BSTRREF(variant) : V_BSTR(variant);
 			JSString *str = JS_NewUCStringCopyN(cx, (const jschar*)bstr, SysStringLen(bstr));
 			*rval = STRING_TO_JSVAL(str);
@@ -331,7 +330,6 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 //		case VT_PTR:
 
 		case VT_SAFEARRAY: {
-
 			SAFEARRAY *psa = isRef ? *V_ARRAYREF(variant) : V_ARRAY(variant);
 			HRESULT hr = SafeArrayLock(psa);
 			if ( FAILED(hr) )
@@ -340,8 +338,8 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			if ( SafeArrayGetDim(psa) != 1 ) { // at the moment we only manage 1D arrays
 
 				SafeArrayUnlock(psa);
-				JL_CHK( NewComVariant(cx, variant, rval) );
-				return JS_TRUE;
+				JL_CHK( NewComVariantCopy(cx, variant, rval) );
+				break;
 			}
 
 			long lBound, uBound, size;
@@ -391,7 +389,6 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
 		case VT_CY:
 		case VT_DECIMAL: {
-
 			HRESULT hr;
 			VARIANT tmpVariant;
 			VariantInit(&tmpVariant); // (TND) needed ?
@@ -441,9 +438,11 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 		case VT_VARIANT:
 		case VT_UNKNOWN:
 		default:
-			JL_CHK( NewComVariant(cx, variant, rval) );
-			return JS_TRUE;
+			JL_CHK( NewComVariantCopy(cx, variant, rval) );
+			break;
 	}
+
+	// at this point, the value has successfully been transformed into a jsval.
 
 	HRESULT hr = VariantClear(variant);
 	if ( FAILED(hr) )
@@ -467,6 +466,14 @@ JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval ) {
 	return JS_TRUE;
 }
 
+JSBool NewComVariantCopy( JSContext *cx, VARIANT *variant, jsval *rval ) {
+
+	VARIANT *newvariant = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
+	VariantInit(newvariant);
+	VariantCopy(newvariant, variant);
+	return NewComVariant(cx, newvariant, rval);
+}
+
 
 DEFINE_FINALIZE() {
 
@@ -480,9 +487,10 @@ DEFINE_FINALIZE() {
 
 DEFINE_FUNCTION_FAST( toDispatch ) {
 
-	HRESULT hr;
-
 	IUnknown *punk = NULL;
+	IDispatch *pdisp = NULL;
+
+	HRESULT hr;
 
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( variant );
@@ -497,18 +505,20 @@ DEFINE_FUNCTION_FAST( toDispatch ) {
 	JL_CHK( punk );
 	punk->AddRef();
 
-	IDispatch *pdisp;
 	hr = punk->QueryInterface(IID_IDispatch, (void**)&pdisp);
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
 
 	JL_CHK( NewComDispatch(cx, pdisp, JL_FRVAL) );
 
+	pdisp->Release();
 	punk->Release();
 	return JS_TRUE;
 
 bad:
-	if ( punk != NULL )
+	if ( pdisp )
+		pdisp->Release();
+	if ( punk )
 		punk->Release();
 	return JS_TRUE;
 }

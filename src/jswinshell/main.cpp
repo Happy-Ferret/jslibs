@@ -55,3 +55,14 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+
+	return JS_TRUE;
+}
+
+EXTERN_C DLLEXPORT void ModuleFree() {
+
+	CoUninitialize();
+}

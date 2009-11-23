@@ -17,6 +17,7 @@
 #include "error.h"
 
 #include <Objbase.h>
+#include <ocidl.h>
 
 DECLARE_CLASS( ComEnum )
 DECLARE_CLASS( ComVariant )
@@ -28,5 +29,6 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant );
 JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval );
 
 JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval );
+JSBool NewComVariantCopy( JSContext *cx, VARIANT *variant, jsval *rval );
 JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, jsval *rval );
 JSBool NewComEnum( JSContext *cx, IEnumVARIANT *enumv, jsval *rval );
