@@ -497,19 +497,22 @@ ALWAYS_INLINE JSStackFrame *JL_StackFrameByIndex(JSContext *cx, int frameIndex) 
 ALWAYS_INLINE bool JsvalIsNaN( JSContext *cx, jsval val ) {
 
 	JL_ASSERT( sizeof(uint64_t) == sizeof(double) );
-	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsNaN; // see also JS_SameValue
+//	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsNaN; // see also JS_SameValue
+	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)JSVAL_TO_DOUBLE(cx->runtime->NaNValue); // see also JS_SameValue
 }
 
 ALWAYS_INLINE bool JsvalIsPInfinity( JSContext *cx, jsval val ) {
 
 	JL_ASSERT( sizeof(uint64_t) == sizeof(double) );
-	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsPositiveInfinity;
+//	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsPositiveInfinity;
+	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)JSVAL_TO_DOUBLE(cx->runtime->positiveInfinityValue);
 }
 
 ALWAYS_INLINE bool JsvalIsNInfinity( JSContext *cx, jsval val ) {
 
 	JL_ASSERT( sizeof(uint64_t) == sizeof(double) );
-	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsNegativeInfinity;
+//	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsNegativeInfinity;
+	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)JSVAL_TO_DOUBLE(cx->runtime->negativeInfinityValue);
 }
 
 
@@ -845,10 +848,11 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 
 		// we want silent failures.
 		JSErrorReporter prevErrorReporter = JS_SetErrorReporter(cx, NULL);
-		JSDebugErrorHook errHook = cx->debugHooks->debugErrorHook;
-		cx->debugHooks->debugErrorHook = NULL;
+		JSDebugErrorHook debugErrorHook = cx->debugHooks->debugErrorHook;
+		void *debugErrorHookData = cx->debugHooks->debugErrorHookData;
+		JS_SetDebugErrorHook(JS_GetRuntime(cx), NULL, NULL);
 		JSBool status = JS_XDRScript(xdr, &script);
-		cx->debugHooks->debugErrorHook = errHook;
+		JS_SetDebugErrorHook(JS_GetRuntime(cx), debugErrorHook, debugErrorHookData);
 		if (cx->lastMessage)
 			JS_free(cx, cx->lastMessage);
 		cx->lastMessage = NULL;

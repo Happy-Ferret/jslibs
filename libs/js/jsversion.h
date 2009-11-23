@@ -1,4 +1,4 @@
-#define JS_VERSION 180
+#define JS_VERSION 185
 
 #define JS_HAS_STR_HTML_HELPERS 0       /* has str.anchor, str.bold, etc. */
 #define JS_HAS_PERL_SUBSTR      1       /* has str.substr */

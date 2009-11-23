@@ -60,7 +60,7 @@ struct DebuggerPrivate {
 	unsigned int interruptCounter;
 	unsigned int interruptCounterLimit;
 	void *excludedFiles;
-	JSDebugHooks *debugHooks; // current hooks cannot be changed while onBreak is being called.
+	JSDebugHooks *debugHooks; // because current hooks cannot be changed while onBreak is being called.
 	// previous break state
 	unsigned int stackFrameIndex;
 	JSStackFrame *frame;
@@ -245,23 +245,32 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	argv[7] = breakOrigin == FROM_STEP_OUT ? fp->regs->sp[-1] : JSVAL_VOID; // (TBD) try to get the functions's rval. ask in the mailing list.
 	argv[8] = script && JS_GetFramePC(cx, fp) == script->code ? JSVAL_TRUE : JSVAL_FALSE; // is entering function
 
+	// defer script's hooks assignment
 	JSDebugHooks prevHooks;
 	prevHooks = *JS_GetGlobalDebugHooks(rt); // save hooks
 	pv->debugHooks = &prevHooks; // beware: reference to a local variable, dont return with restoring the previous value !
 
 	// no hooks while onBreak is being called
-	JS_SetInterrupt(rt, NULL, NULL); // case: break on exception, continue, step
-	JS_SetDebuggerHandler(rt, NULL, NULL);
-	JS_SetDebugErrorHook(rt, NULL, NULL);
-	JS_SetThrowHook(rt, NULL, NULL);
-	JS_SetExecuteHook(rt, NULL, NULL);
+	JL_CHK( JS_SetInterrupt(rt, NULL, NULL) ); // case: break on exception, continue, step
+	JL_CHK( JS_SetDebuggerHandler(rt, NULL, NULL) );
+	JL_CHK( JS_SetDebugErrorHook(rt, NULL, NULL) );
+	JL_CHK( JS_SetThrowHook(rt, NULL, NULL) );
+	JL_CHK( JS_SetExecuteHook(rt, NULL, NULL) );
 	JS_SetNewScriptHookProc(rt, NULL, NULL); // beware: never remove JS_SetDestroyScriptHookProc hook !!!
 
 	JSBool status;
 	status = JS_CallFunctionValue(cx, obj, fval, COUNTOF(argv)-1, argv+1, &argv[0]);
 
-	pv->debugHooks = JS_GetGlobalDebugHooks(rt); // restore debug hooks
-	*JS_GetGlobalDebugHooks(rt) = prevHooks;
+	// apply the previous hooks that could be changed.
+	JS_ASSERT( pv->debugHooks );
+	JL_CHK( JS_SetInterrupt(rt, pv->debugHooks->interruptHandler, pv->debugHooks->interruptHandlerData) );
+	JL_CHK( JS_SetDebuggerHandler(rt, pv->debugHooks->debuggerHandler, pv->debugHooks->debuggerHandlerData) );
+	JL_CHK( JS_SetDebugErrorHook(rt, pv->debugHooks->debugErrorHook, pv->debugHooks->debugErrorHookData) );
+	JL_CHK( JS_SetThrowHook(rt, pv->debugHooks->throwHook, pv->debugHooks->throwHookData) );
+	JL_CHK( JS_SetExecuteHook(rt, pv->debugHooks->executeHook, pv->debugHooks->executeHookData) );
+	JS_SetNewScriptHookProc(rt, pv->debugHooks->newScriptHook, pv->debugHooks->newScriptHookData);
+
+	pv->debugHooks = NULL;
 
 	JL_CHK( status );
 
@@ -284,10 +293,10 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 			if ( pv->interruptCounterLimit ) {
 
 				pv->interruptCounter = pv->interruptCounterLimit;
-				JS_SetInterrupt(rt, InterruptCounterHandler, obj);
+				JL_CHK( JS_SetInterrupt(rt, InterruptCounterHandler, obj) );
 			} else {
 
-				JS_SetInterrupt(rt, NULL, NULL);
+				JL_CHK( JS_SetInterrupt(rt, NULL, NULL) );
 			}
 			break;
 		case DO_STEP:
@@ -367,7 +376,6 @@ DEFINE_CONSTRUCTOR() {
 	memset(pv, 0, sizeof(DebuggerPrivate));
 
 	JL_SetPrivate(cx, obj, pv);
-	pv->debugHooks = JS_GetGlobalDebugHooks(JS_GetRuntime(cx));
 
 	return JS_TRUE;
 	JL_BAD;
@@ -497,10 +505,18 @@ DEFINE_PROPERTY( interruptCounterLimit ) {
 		JL_CHK( JsvalToUInt(cx, *vp, &pv->interruptCounterLimit) );
 	}
 
-	if ( pv->interruptCounterLimit == 0 && pv->debugHooks->interruptHandler == InterruptCounterHandler ) { // cancel the current one.
+	JSRuntime *rt = JS_GetRuntime(cx);
+	if ( pv->interruptCounterLimit == 0 && (pv->debugHooks ? pv->debugHooks->interruptHandler : JS_GetGlobalDebugHooks(rt)->interruptHandler) == InterruptCounterHandler ) {
+		
+		// cancel the current one.
+		if ( pv->debugHooks ) { // defered hook assignment
 
-		pv->debugHooks->interruptHandler = NULL;
-		pv->debugHooks->interruptHandlerData = NULL;
+			pv->debugHooks->interruptHandler = NULL;
+			pv->debugHooks->interruptHandlerData = NULL;
+		} else {
+
+			JL_CHK( JS_SetInterrupt(rt, NULL, NULL) );
+		}
 	}
 
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -519,8 +535,16 @@ DEFINE_PROPERTY( breakOnError ) {
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
-	pv->debugHooks->debugErrorHook = b ? DebugErrorHookHandler : NULL;
-	pv->debugHooks->debugErrorHookData = b ? obj : NULL;
+
+	if ( pv->debugHooks ) { // defered hook assignment
+		
+		pv->debugHooks->debugErrorHook = b ? DebugErrorHookHandler : NULL;
+		pv->debugHooks->debugErrorHookData = b ? obj : NULL;
+	} else {
+
+		JL_CHK( JS_SetDebugErrorHook(JS_GetRuntime(cx), b ? DebugErrorHookHandler : NULL, b ? obj : NULL) );
+	}
+
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
@@ -536,8 +560,16 @@ DEFINE_PROPERTY( breakOnException ) {
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
-	pv->debugHooks->throwHook = b ? ThrowHookHandler : NULL;
-	pv->debugHooks->throwHookData = b ? obj : NULL;
+
+	if ( pv->debugHooks ) { // defered hook assignment
+		
+		pv->debugHooks->throwHook = b ? ThrowHookHandler : NULL;
+		pv->debugHooks->throwHookData = b ? obj : NULL;
+	} else {
+
+		JL_CHK( JS_SetThrowHook(JS_GetRuntime(cx), b ? ThrowHookHandler : NULL, b ? obj : NULL) );
+	}
+
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
@@ -553,8 +585,16 @@ DEFINE_PROPERTY( breakOnDebuggerKeyword ) {
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
-	pv->debugHooks->debuggerHandler = b ? DebuggerKeyword : NULL;
-	pv->debugHooks->debuggerHandlerData = b ? obj : NULL;
+
+	if ( pv->debugHooks ) { // defered hook assignment
+
+		pv->debugHooks->debuggerHandler = b ? DebuggerKeyword : NULL;
+		pv->debugHooks->debuggerHandlerData = b ? obj : NULL;
+	} else {
+		
+		JL_CHK( JS_SetDebuggerHandler(JS_GetRuntime(cx), b ? DebuggerKeyword : NULL,  b ? obj : NULL) );
+	}
+
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
@@ -570,8 +610,16 @@ DEFINE_PROPERTY( breakOnExecute ) {
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
-	pv->debugHooks->executeHook = b ? ExecuteHookHandler : NULL;
-	pv->debugHooks->executeHookData = b ? obj : NULL;
+
+	if ( pv->debugHooks ) { // defered hook assignment
+
+		pv->debugHooks->executeHook = b ? ExecuteHookHandler : NULL;
+		pv->debugHooks->executeHookData = b ? obj : NULL;
+	} else {
+
+		JL_CHK( JS_SetExecuteHook(JS_GetRuntime(cx), b ? ExecuteHookHandler : NULL, b ? obj : NULL) );
+	}
+
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
@@ -587,8 +635,16 @@ DEFINE_PROPERTY( breakOnFirstExecute ) {
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
-	pv->debugHooks->executeHook = b ? FirstExecuteHookHandler : NULL;
-	pv->debugHooks->executeHookData = b ? obj : NULL;
+
+	if ( pv->debugHooks ) { // defered hook assignment
+
+		pv->debugHooks->executeHook = b ? FirstExecuteHookHandler : NULL;
+		pv->debugHooks->executeHookData = b ? obj : NULL;
+	} else {
+		
+		JL_CHK( JS_SetExecuteHook(JS_GetRuntime(cx), b ? FirstExecuteHookHandler : NULL, b ? obj : NULL) );
+	}
+
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
