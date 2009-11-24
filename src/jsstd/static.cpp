@@ -695,7 +695,7 @@ DEFINE_FUNCTION_FAST( IsBoolean ) {
 	}
 
 	*JL_FRVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_FARG(1))) == JL_GetStandardClass(cx, JSProto_Boolean) ? JSVAL_TRUE : JSVAL_FALSE;
-	JL_BAD;
+	return JS_TRUE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
