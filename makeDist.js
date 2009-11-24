@@ -112,21 +112,29 @@ var dist = new Directory('./dist');
 if ( !dist.exist )
 	throw 'Unable to find '+dist.name;
 
-if ( arguments[0] == "--devsnapshot" ) {
+switch ( arguments[0] ) {
+	case '--devsnapshot':
+	
+		type = 'DEVSNAPSHOT';
+		jslibsVersion = '';
+		jslibsRevision = GetLatestSVNRevision();
+		changes = 'http://code.google.com/p/jslibs/source/list';
+		break;
+	case '--version':
 
-	var [type, jslibsVersion, jslibsRevision, changes] = GetLatestChanges();
-	changes = changes.replace(/<pre>|<\/pre>/g, ''); // cleanup
-	changes = changes.replace(/\n/g, '\r\n');
-	if ( jslibsRevision[0] == 'r' )
-		jslibsRevision = jslibsRevision.substr(1);
-	//jslibsRevision = 'r'+GetLatestSVNRevision();
-} else {
-
-	type = 'DEVSNAPSHOT';
-	jslibsVersion = '';
-	jslibsRevision = GetLatestSVNRevision();
-	changes = '';
+		var [type, jslibsVersion, jslibsRevision, changes] = GetLatestChanges();
+		changes = changes.replace(/<pre>|<\/pre>/g, ''); // cleanup
+		changes = changes.replace(/\n/g, '\r\n');
+		if ( jslibsRevision[0] == 'r' )
+			jslibsRevision = jslibsRevision.substr(1);
+		//jslibsRevision = 'r'+GetLatestSVNRevision();
+		break;
+	default:
+		Print( 'choose a type\n' );
+		throw 0;
 }
+
+
 
 var readme = Expand(new File('./dist/readme.txt.tpl').content, function(id) {
 	
@@ -141,6 +149,8 @@ var readme = Expand(new File('./dist/readme.txt.tpl').content, function(id) {
 			return IndentText(changes, '  ');
 	}
 });
+
+
 
 Copy('qa.js', './dist/tests');
 
@@ -179,5 +189,7 @@ Copy('./libs/openal/sdk/redist/OpenAL32.dll', './dist/bin');
 Copy('./libs/openal/sdk/redist/wrap_oal.dll', './dist/bin');
 
 new File('./dist/README.TXT').content = readme;
+
+
 
 Zip('./dist/*', 'jslibs_'+type+'_'+jslibsVersion+'_'+'r'+jslibsRevision+'.zip');
