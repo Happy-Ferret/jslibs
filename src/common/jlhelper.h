@@ -768,7 +768,7 @@ enum JLEncodingType {
 	ASCII
 };
 
-ALWAYS_INLINE JLEncodingType JLDetectEncoding(char **buf, unsigned long *size) {
+ALWAYS_INLINE JLEncodingType JLDetectEncoding(char **buf, int *size) {
 
 	if ( *size < 2 )
 		return ASCII;
@@ -920,7 +920,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	JL_CHKM( scriptFile >= 0, "Unable to open file \"%s\" for reading.", fileName );
 
 	lseek(scriptFile, 0, SEEK_END);
-	unsigned long scriptFileSize = (unsigned)tell(scriptFile);
+	int scriptFileSize = (unsigned)tell(scriptFile);
 	lseek(scriptFile, 0, SEEK_SET);
 	char *scriptBuffer = (char*)alloca(scriptFileSize);
 	int res = read(scriptFile, (void*)scriptBuffer, scriptFileSize);
@@ -954,8 +954,10 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	if ( enc == UTF8 ) { // (TBD) check if JS_DecodeBytes does the right things
 
 		jschar *scriptText = (jschar *)alloca(scriptFileSize * 2);
-		size_t scriptTextLength = scriptFileSize * 2;
-		JL_CHKM( JS_DecodeBytes(cx, scriptBuffer, scriptFileSize, scriptText, &scriptTextLength), "Unable do decode UTF8 script (missing Byte Order Mark)." );
+		int scriptTextLength = scriptFileSize * 2;
+
+		JL_CHKM( UTF8ToUTF16LE((unsigned char*)scriptText, &scriptTextLength, (unsigned char*)scriptBuffer, &scriptFileSize) >= 0, "Unable do decode UTF8 data." );
+
 		if ( scriptText[0] == '#' && scriptText[1] == '!' ) { // shebang support
 
 			scriptText[0] = '/';

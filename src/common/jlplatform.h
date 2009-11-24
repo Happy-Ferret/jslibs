@@ -108,6 +108,7 @@
 	#pragma warning(error : 4309) // warning C4309: 'initializing' : truncation of constant value
 	#pragma warning(error : 4700) // warning C4700: uninitialized local variable 'XXX' used
 	#pragma warning(error : 4533) // warning C4533: initialization of 'xxx' is skipped by 'goto YYY'
+	#pragma warning(error : 4002) // too many actual parameters for macro 'XXX'
 
 #endif // #if defined WIN32
 
@@ -487,6 +488,123 @@ ALWAYS_INLINE unsigned int JLSessionId() {
 	return r ? r : 1; // avoid returning 0
 }
 
+
+ALWAYS_INLINE unsigned int JLRemainingStackSize() {
+#if defined(XP_WIN)
+
+	NT_TIB *tib = (NT_TIB*)__readfsdword(0x18); // http://en.wikipedia.org/wiki/Win32_Thread_Information_Block
+	volatile BYTE *currentSP;
+	__asm mov [currentSP], esp;
+	return currentSP - (BYTE*)tib->StackLimit;
+#elif defined(XP_UNIX)
+
+	return (unsigned int)-1;
+#endif
+}
+
+
+#define xmlLittleEndian true
+static int
+UTF8ToUTF16LE(unsigned char* outb, int *outlen,
+            const unsigned char* in, int *inlen)
+{ // libxml2 - encoding.c - MIT License
+    unsigned short* out = (unsigned short*) outb;
+    const unsigned char* processed = in;
+    const unsigned char *const instart = in;
+    unsigned short* outstart= out;
+    unsigned short* outend;
+    const unsigned char* inend;
+    unsigned int c, d;
+    int trailing;
+    unsigned char *tmp;
+    unsigned short tmp1, tmp2;
+
+    /* UTF16LE encoding has no BOM */
+    if ((out == NULL) || (outlen == NULL) || (inlen == NULL)) return(-1);
+    if (in == NULL) {
+	*outlen = 0;
+	*inlen = 0;
+	return(0);
+    }
+    inend= in + *inlen;
+    outend = out + (*outlen / 2);
+    while (in < inend) {
+      d= *in++;
+      if      (d < 0x80)  { c= d; trailing= 0; }
+      else if (d < 0xC0) {
+          /* trailing byte in leading position */
+	  *outlen = (out - outstart) * 2;
+	  *inlen = processed - instart;
+	  return(-2);
+      } else if (d < 0xE0)  { c= d & 0x1F; trailing= 1; }
+      else if (d < 0xF0)  { c= d & 0x0F; trailing= 2; }
+      else if (d < 0xF8)  { c= d & 0x07; trailing= 3; }
+      else {
+	/* no chance for this in UTF-16 */
+	*outlen = (out - outstart) * 2;
+	*inlen = processed - instart;
+	return(-2);
+      }
+
+      if (inend - in < trailing) {
+          break;
+      } 
+
+      for ( ; trailing; trailing--) {
+          if ((in >= inend) || (((d= *in++) & 0xC0) != 0x80))
+	      break;
+          c <<= 6;
+          c |= d & 0x3F;
+      }
+
+      /* assertion: c is a single UTF-4 value */
+        if (c < 0x10000) {
+            if (out >= outend)
+	        break;
+	    if (xmlLittleEndian) {
+		*out++ = c;
+	    } else {
+		tmp = (unsigned char *) out;
+		*tmp = c ;
+		*(tmp + 1) = c >> 8 ;
+		out++;
+	    }
+        }
+        else if (c < 0x110000) {
+            if (out+1 >= outend)
+	        break;
+            c -= 0x10000;
+	    if (xmlLittleEndian) {
+		*out++ = 0xD800 | (c >> 10);
+		*out++ = 0xDC00 | (c & 0x03FF);
+	    } else {
+		tmp1 = 0xD800 | (c >> 10);
+		tmp = (unsigned char *) out;
+		*tmp = (unsigned char) tmp1;
+		*(tmp + 1) = tmp1 >> 8;
+		out++;
+
+		tmp2 = 0xDC00 | (c & 0x03FF);
+		tmp = (unsigned char *) out;
+		*tmp  = (unsigned char) tmp2;
+		*(tmp + 1) = tmp2 >> 8;
+		out++;
+	    }
+        }
+        else
+	    break;
+	processed = in;
+    }
+    *outlen = (out - outstart) * 2;
+    *inlen = processed - instart;
+    return(*outlen);
+}
+#undef xmlLittleEndian
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 #if defined(XP_WIN)
 #include <malloc.h> // malloc()
