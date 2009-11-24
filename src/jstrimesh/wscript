@@ -1,0 +1,11 @@
+# Build jstrimesh static lib
+
+def build(bld):
+
+    import Utils
+
+    task = bld.new_task_gen('cxx', 'cshlib')
+    task.target ='jstrimesh'
+    task.source = bld.path.ant_glob('*.cpp')
+    task.includes = '../common'
+    task.uselib = 'JLMOZJS'

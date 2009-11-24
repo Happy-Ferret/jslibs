@@ -1,0 +1,16 @@
+# Build jsimage dynamic library
+
+def configure(conf):
+
+    conf.check_cfg(package='libpng', args='--cflags --libs', atleast_version='1.2.40', uselib_store='PNG')
+    conf.check_cxx(header_name='sys/types.h stdio.h jpeglib.h', function_name='jpeg_CreateCompress', lib='jpeg', uselib_store='JPEG', msg='Checking for library jpeg')
+
+def build(bld):
+
+    import Utils
+    
+    task = bld.new_task_gen('cxx', 'cshlib')
+    task.target ='jsimage'
+    task.source = bld.path.ant_glob('*.cpp')
+    task.includes = '../common'
+    task.uselib = 'JLMOZJS PNG JPEG Z'

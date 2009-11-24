@@ -1,0 +1,12 @@
+# Build nedmalloc static library
+
+def build(bld):
+
+    import Utils
+
+    task = bld.new_task_gen('cc', 'cstaticlib')
+    task.target ='nedmalloc'
+    task.source = bld.path.ant_glob('*.c')
+
+    if bld.env.BUILD_MODE == 'optimize':
+        task.env.append_value('CFLAGS', '-DINSECURE=1')

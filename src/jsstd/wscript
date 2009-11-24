@@ -1,0 +1,12 @@
+# Build jsstd dynamic library
+
+def build(bld):
+
+    import Utils
+    
+    task = bld.new_task_gen('cxx', 'cshlib')
+    task.target ='jsstd'
+    task.source = bld.path.ant_glob('*.cpp')
+    task.includes = '../common'
+    task.lib = ['pthread']
+    task.uselib = 'JLMOZJS'

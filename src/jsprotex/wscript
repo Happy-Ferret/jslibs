@@ -1,0 +1,11 @@
+# Build jsprotex static lib
+
+def build(bld):
+
+    import Utils
+
+    task = bld.new_task_gen('cxx', 'cshlib')
+    task.target ='jsprotex'
+    task.source = bld.path.ant_glob('*.cpp') + ' ' + bld.path.ant_glob('*.c')
+    task.includes = '../common'
+    task.uselib = 'JLMOZJS'

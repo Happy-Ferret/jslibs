@@ -1,0 +1,39 @@
+# Build jshost program
+
+xdr_source = """
+embeddedBootstrapScript.js
+""".split()
+
+def detect(conf):
+	jsScriptToXDR = conf.find_program('jsScriptToXDR', var='JSTOXDR', mandatory=True)
+	fileToCRes = conf.find_program('fileToCRes', var='XDRTOCRES', mandatory=True)
+
+def build(bld):
+
+    import TaskGen
+
+    # Create .js.xdr
+    TaskGen.declare_chain(
+	name = 'jsScriptToXDR',
+	action = '${JSTOXDR} ${SRC} ${TGT}',
+	ext_in = '.js',
+	ext_out = '.js.xdr',
+        )
+
+
+    # Create .js.xdr.cres
+    TaskGen.declare_chain(
+	name = 'fileToCRes',
+	action = '${XDRTOCRES} ${SRC} ${TGT}',
+	ext_in = '.js.xdr',
+	ext_out = '.js.xdr.cres',
+        )
+    
+    # Compile jshost
+    jshost = bld.new_task_gen('cxx', 'cprogram')
+    jshost.target = 'jshost'
+    jshost.source = bld.path.ant_glob('*.cpp')
+    jshost.includes = '. ../common'
+    jshost.lib = ['dl', 'pthread']
+    jshost.uselib = 'JLMOZJS'
+    jshost.uselib_local = ['host', 'jslang', 'nedmalloc']

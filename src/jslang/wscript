@@ -1,0 +1,12 @@
+# Build jslang static lib
+
+def build(bld):
+
+    import Utils
+
+    task = bld.new_task_gen('cxx', 'cstaticlib')
+    task.target ='jslang'
+    task.source = bld.path.ant_glob('*.cpp')
+    task.includes = '../common'
+    task.uselib = 'JLMOZJS'
+

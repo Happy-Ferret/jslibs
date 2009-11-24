@@ -1,0 +1,11 @@
+# Build jsdebug dynamic library
+
+def build(bld):
+
+    import Utils
+    
+    task = bld.new_task_gen('cxx', 'cshlib')
+    task.target ='jsdebug'
+    task.source = bld.path.ant_glob('*.cpp')
+    task.includes = '../common'
+    task.uselib = 'JLMOZJS'

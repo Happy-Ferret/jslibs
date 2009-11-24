@@ -1,0 +1,37 @@
+# Build libiconv library
+
+def configure(conf):
+
+    import os
+
+    base_path = os.path.abspath(conf.blddir) + os.sep + conf.env.variant()
+
+    import Utils
+
+    conf.env.CPPPATH_JLICONV = Utils.to_list('%s/libs/libiconv/src/include/' % base_path)
+    conf.env.LIBPATH_JLICONV = Utils.to_list('%s/libs/libiconv/src/lib/' % base_path)
+    conf.env.LIB_JLICONV = Utils.to_list('iconv')
+
+def build(bld):
+    
+    # Launch configure
+    configure_execute = bld.new_task_gen()
+    configure_execute.before = "task-make-iconv"
+    configure_execute.source = 'src/configure'
+    configure_execute.target = 'src/Makefile'
+    configure_execute.rule ='cd ${SRC[0].bld_dir(env)} && am_cv_func_iconv="no" ${SRC[0].abspath()} --disable-rpath --enable-static=yes --enable-shared=no --disable-dependency-tracking am_cv_proto_iconv_arg1="const"'
+
+    # Launch makefile
+    make = bld.new_task_gen()
+    make.name = 'task-make-iconv'
+    make.before = 'cc cxx'
+    make.target = 'src/lib/libiconv.a'
+    make.rule ='(cd ${TGT[0].bld_dir(env)}/.. && make) && cp ${TGT[0].bld_dir(env)}/.libs/libiconv.a ${TGT}'
+
+    make_sources = ''
+
+    for f in make.bld.path.find_iter(in_pat=['*'], bld=False):
+        make_sources += f.relpath_gen(bld.path) + ' '
+
+    make.source = make_sources
+

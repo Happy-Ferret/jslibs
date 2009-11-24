@@ -1,0 +1,15 @@
+# Build jsz dynamic library
+
+def configure(conf):
+
+    conf.check_cxx(header_name='fcgiapp.h', function_name='FCGX_Accept_r', lib='fcgi', uselib_store='FCGI', msg='Checking for library fastcgi')
+
+def build(bld):
+
+    import Utils
+    
+    task = bld.new_task_gen('cxx', 'cshlib')
+    task.target ='jsfastcgi'
+    task.source = bld.path.ant_glob('*.cpp')
+    task.includes = '../common'
+    task.uselib = 'JLMOZJS FCGI'

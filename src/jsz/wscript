@@ -1,0 +1,15 @@
+# Build jsz dynamic library
+
+def configure(conf):
+
+    conf.check_cxx(header_name='zlib.h', function_name='inflate', lib='z', uselib_store='Z', msg='Checking for library zlib')
+
+def build(bld):
+
+    import Utils
+    
+    task = bld.new_task_gen('cxx', 'cshlib')
+    task.target ='jsz'
+    task.source = bld.path.ant_glob('*.cpp')
+    task.includes = '../common'
+    task.uselib = 'JLMOZJS Z'

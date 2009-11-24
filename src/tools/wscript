@@ -1,0 +1,25 @@
+# Build fileToCRes & jsScriptToXDR tools
+
+fileToCRes_source = """
+fileToCRes.cpp
+""".split()
+
+jsScriptToXDR_source = """
+jsScriptToXDR.cpp
+""".split()
+
+def build(bld):
+
+    # Compile jsScriptToXDR
+    jsScriptToXDR = bld.new_task_gen('cxx', 'cprogram')
+    jsScriptToXDR.target = 'jsScriptToXDR'
+    jsScriptToXDR.source = jsScriptToXDR_source
+    jsScriptToXDR.includes = '../common'
+    jsScriptToXDR.uselib = 'JLMOZJS'
+
+    # Compile fileToCRes
+    fileToCRes = bld.new_task_gen('cxx', 'cprogram')
+    fileToCRes.target = 'fileToCRes'
+    fileToCRes.source = fileToCRes_source
+    fileToCRes.includes = '../common'
+    fileToCRes.uselib = 'JLMOZJS'

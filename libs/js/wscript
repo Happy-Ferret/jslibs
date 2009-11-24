@@ -1,0 +1,150 @@
+# Build spider monkey library
+
+import os
+
+def configure(conf):
+
+    conf.find_program('autoconf2.13')
+    conf.find_program('diff')
+    conf.find_program('patch')
+    conf.find_program('make')
+    conf.find_program('mv')
+    conf.find_program('cp')
+
+    base_path = os.path.abspath(conf.blddir) + os.sep + conf.env.variant()
+
+    import Utils
+
+    conf.env.CPPPATH_JLMOZJS = Utils.to_list('%s/libs/js/src/dist/include/' % base_path)
+    conf.env.LIBPATH_JLMOZJS = Utils.to_list('%s/libs/js/src/dist/lib/' % base_path)
+    conf.env.LIB_JLMOZJS = Utils.to_list('mozjs')
+
+def _diff_check(directory, input, output):
+ 
+    import subprocess
+    import time
+ 
+    try:
+        p = subprocess.Popen(['diff', '-q', input, output], cwd=directory, 
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env={'LANG' : 'C'})
+        stdout = p.communicate(None)[0]
+
+        if p.returncode == 0:
+            return True;
+        else:
+            lines = stdout.splitlines()
+            print "Processing diff check between %s and %s... failed: diff: %s" % (input, output, stdout.strip()),
+
+    except OSError, e:
+        print "Processing diff check between %s and %s... failed: OSError: %s" % (input, output, e.strerror),
+
+    print "(need to re-run the target)"
+    return time.time()
+
+def _patch_check(directory, output, patch):
+ 
+    import subprocess
+    import time
+
+    try:
+        p = subprocess.Popen(['patch', '--dry-run', '-N', output, patch], cwd=directory, 
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env={'LANG' : 'C'})
+        stdout = p.communicate(None)[0]
+ 
+        if p.returncode == 0:
+            return True
+        else:
+            lines = stdout.splitlines()
+            for line in lines:
+                if line.startswith('Reversed (or previously applied) patch detected!'):
+                    return True;
+            print "Processing patch check on %s with patch %s... failed: patch: %s" % (output, patch, stdout.strip()),
+
+    except OSError, e:
+        print "Processing patch check on %s with patch %s... failed:OSError: %s" % (output, patch, stdout.strip(), e.strerror),
+
+    print "(need to re-run the target)"
+    return time.time()
+
+def build(bld):
+    
+    # Create configure
+    configure = bld.new_task_gen()
+    configure.before = 'task-configure'
+    configure.source = 'src/configure.in'
+    configure.target = 'src/configure'
+    configure.rule = 'cd ${SRC[0].src_dir(env)} && autoconf2.13 && cp ${TGT[0].abspath()} ${TGT[0].abspath(env)}'
+
+    # Copy needed files: jsversion.h
+    jsversion = bld.new_task_gen()
+    jsversion.before = 'task-configure'
+    jsversion.source = 'jsversion.h'
+    jsversion.target = 'src/jsversion.h'
+    jsversion.rule = 'cp ${SRC} ${TGT[0].abspath()} && cp ${SRC} ${TGT}'
+    jsversion.vars = 'DIFF'
+    jsversion.env.DIFF = _diff_check(bld.path.abspath(), jsversion.source, 'src/jsversion.h')
+
+    # Patch needed files: jsutils.h
+    jsutil_h = bld.new_task_gen()
+    jsutil_h.before = 'task-configure'
+    jsutil_h.source = 'jsutil.h.patch'
+    jsutil_h.target = 'src/jsutil.h'
+    jsutil_h.rule = 'patch --dry-run -N ${TGT[0].abspath()} ${SRC} && patch -N ${TGT[0].abspath()} ${SRC}; cp ${TGT[0].abspath()} ${TGT[0].abspath(env)}'
+    jsutil_h.vars = 'PATCH'
+    jsutil_h.env.PATCH = _patch_check(bld.path.abspath(), jsutil_h.target, jsutil_h.source)
+
+    # Patch needed files: jsutils.cpp
+    jsutil_cpp = bld.new_task_gen()
+    jsutil_cpp.before = 'task-configure'
+    jsutil_cpp.source = 'jsutil.cpp.patch'
+    jsutil_cpp.target = 'src/jsutil.cpp'
+    jsutil_cpp.rule = 'patch --dry-run -N ${TGT[0].abspath()} ${SRC} && patch -N ${TGT[0].abspath()} ${SRC}; cp ${TGT[0].abspath()} ${TGT[0].abspath(env)}'
+    jsutil_cpp.vars = 'PATCH'
+    jsutil_cpp.env.PATCH = _patch_check(bld.path.abspath(), jsutil_cpp.target, jsutil_cpp.source)
+
+    # Launch configure
+    configure_execute = bld.new_task_gen()
+    configure_execute.name = "task-configure"
+    configure_execute.before = "task-make-mozjs"
+    configure_execute.source = 'src/configure'
+    configure_execute.target = 'src/Makefile'
+
+    if bld.env.BUILD_MODE == 'debug':
+        configure_execute.env.CONFIGURE_OPTIONS = '--enable-debug --disable-optimize'
+    elif bld.env.BUILD_MODE == 'optimize':
+        configure_execute.env.CONFIGURE_OPTIONS = '--enable-optimize --enable-strip'
+    else:
+        configure_execute.env.CONFIGURE_OPTIONS = '--enable-optimize'
+
+    configure_execute.rule ='cd ${SRC[0].bld_dir(env)} && ${SRC[0].abspath()} ${CONFIGURE_OPTIONS} --with-windows-version=501 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests'
+
+    # Launch makefile
+    make = bld.new_task_gen()
+    make.name = 'task-make-mozjs'
+    make.before = 'cc cxx'
+    make.target = 'src/libmozjs.so'
+    make.rule ='cd ${TGT[0].bld_dir(env)} && make'
+
+    js_libs_sources = ''
+
+    import Node
+
+    ex_pat = Node.exclude_pats
+    ex_pat.append('configure')
+    ex_pat.append('jsversion.h')
+    ex_pat.append('jsutil.h')
+    ex_pat.append('jsutil.cpp')
+
+    prune_pat = Node.prune_pats
+    prune_pat.append('configure')
+    prune_pat.append('jsversion.h')
+    prune_pat.append('jsutil.h')
+    prune_pat.append('jsutil.cpp')
+
+    for f in make.bld.path.find_iter(in_pat=['*'], ex_pat=ex_pat, prune_pat=prune_pat, bld=False):
+        js_libs_sources += f.relpath_gen(bld.path) + ' '
+
+    make.source = js_libs_sources
+
+    # TODO: As 'make' task dependencies is calculate before jsversion.h changes
+    # second '$ ./waf build -v' will redo 'make all': Check if we can correct that

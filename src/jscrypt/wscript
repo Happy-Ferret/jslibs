@@ -1,0 +1,17 @@
+# Build jscrypt dynamic library
+
+def configure(conf):
+
+    conf.check_cfg(package='libtomcrypt', args='--cflags --libs', atleast_version='1.7', uselib_store='TOMCRYPT')
+    conf.check_cxx(header_name='tommath.h', function_name='mp_init', lib='tommath', uselib_store='TOMMATH', msg='Checking for library tommath')
+
+def build(bld):
+
+    import Utils
+    
+    task = bld.new_task_gen('cxx', 'cshlib')
+    task.target ='jscrypt'
+    task.source = bld.path.ant_glob('*.cpp')
+    task.includes = '../common'
+    task.defines = 'LTM_DESC'
+    task.uselib = 'JLMOZJS TOMCRYPT TOMMATH'

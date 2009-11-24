@@ -1,0 +1,13 @@
+# Build jsfont dynamic library
+
+def configure(conf):
+
+    conf.check_cfg(package='freetype2', args='--cflags --libs', atleast_version='9.22.3', uselib_store='FREETYPE')
+
+def build(bld):
+
+    task = bld.new_task_gen('cxx', 'cshlib')
+    task.target ='jsfont'
+    task.source = bld.path.ant_glob('*.cpp')
+    task.includes = '../common'
+    task.uselib = 'JLMOZJS FREETYPE'
