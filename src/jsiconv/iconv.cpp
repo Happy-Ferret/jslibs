@@ -287,7 +287,8 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 	return 0;
 }
 
-
+#define JL_HAS_ICONVLIST
+#ifdef JL_HAS_ICONVLIST
 DEFINE_PROPERTY( list ) {
 
 	JSObject *list = JS_NewArrayObject(cx, 0, NULL);
@@ -301,6 +302,8 @@ DEFINE_PROPERTY( list ) {
 	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
+#endif // JL_HAS_ICONVLIST
+
 
 DEFINE_PROPERTY( version ) {
 
@@ -324,7 +327,9 @@ CONFIGURE_CLASS
 	HAS_CALL
 
 	BEGIN_STATIC_PROPERTY_SPEC
+#ifdef JL_HAS_ICONVLIST
 		PROPERTY_READ( list )
+#endif // JL_HAS_ICONVLIST
 		PROPERTY_READ( version )
 	END_STATIC_PROPERTY_SPEC
 
