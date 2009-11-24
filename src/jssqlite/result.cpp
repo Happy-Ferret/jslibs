@@ -80,11 +80,12 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			goto next;
 		}
 
-		//if ( name[0] == '$' ) {
+		if ( name[0] == '$' ) {
 
-		//	JL_CHK( JL_GetVariableValue(cx, name+1, &val) );
-		//	goto next;
-		//}
+//			JL_CHK( JL_GetVariableValue(cx, name+1, &val) );
+//			goto next;
+			JL_REPORT_ERROR("Unsupported parameter prefix (%s).", name);
+		}
 
 		if ( name[0] == '@' ) {
 
