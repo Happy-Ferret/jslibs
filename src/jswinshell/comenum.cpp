@@ -26,10 +26,12 @@ BEGIN_CLASS( ComEnum )
 JSBool NewComEnum( JSContext *cx, IEnumVARIANT *ienumv, jsval *rval ) {
 
 	JSObject *varObj = JS_NewObject(cx, _class, NULL, NULL);
+	JL_CHK( varObj );
 	*rval = OBJECT_TO_JSVAL( varObj );
 	JL_SetPrivate(cx, varObj, ienumv);
 	ienumv->AddRef();
 	return JS_TRUE;
+	JL_BAD;
 }
 
 

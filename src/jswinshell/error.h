@@ -17,4 +17,5 @@ DECLARE_CLASS( WinError );
 #define SLOT_WIN_ERROR_CODE_HI 0
 #define SLOT_WIN_ERROR_CODE_LO 1
 
+JSBool WinNewError( JSContext *cx, DWORD errorCode, jsval *rval );
 JSBool WinThrowError( JSContext *cx, DWORD errorCode );

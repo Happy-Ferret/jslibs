@@ -24,7 +24,7 @@
 class JSFunctionDispatch : public IDispatch {
 
 public:
-	// IUnknown
+// IUnknown
 	STDMETHOD_(ULONG, AddRef)( void ) {
 		
 		return ++_refs;
@@ -34,7 +34,7 @@ public:
 
 		if( --_refs == 0 ) {
 
-			delete this; // ???
+			delete this;
 			return 0;
 		}
 		return _refs;
@@ -53,7 +53,7 @@ public:
 		return NOERROR;
 	}
 
-	// IDispatch
+// IDispatch
 	STDMETHOD(GetTypeInfoCount)( UINT *pctinfo ) {
 /*		
 		if ( pctinfo == NULL )
@@ -82,6 +82,7 @@ public:
 		return DISP_E_UNKNOWNNAME;
 	}
 
+	// doc: http://msdn.microsoft.com/en-us/library/ms221479.aspx
 	STDMETHOD(Invoke)( DISPID dispIdMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pVarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr ) {
 
 		if ( !(wFlags & DISPATCH_METHOD) || dispIdMember != DISPID_VALUE )
@@ -104,7 +105,9 @@ public:
 		JSBool status = JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), _funcVal, argc, argv+1, argv);
 //		if ( !status )
 
-		if ( pVarResult != NULL )
+		// pVarResult: location where the result is to be stored, or NULL if the caller expects no result.
+		// This argument is ignored if DISPATCH_PROPERTYPUT or DISPATCH_PROPERTYPUTREF is specified.
+		if ( pVarResult != NULL && (wFlags & (DISPATCH_PROPERTYPUT|DISPATCH_PROPERTYPUTREF)) != 0 )
 			JsvalToVariant(cx, argv, pVarResult);
 		
 		JS_POP_TEMP_ROOT(cx, &tvr);
@@ -274,19 +277,8 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 	switch ( V_VT(variant) ) {
 
 		case VT_HRESULT: {
-			HRESULT errorCode =  isRef ? *V_I4REF(variant) : V_I4(variant); // check ->scode and ResultFromScode
-			LPVOID lpMsgBuf;
-			DWORD result = ::FormatMessage(
-				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
-				NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL
-			);
-			if ( result == 0 )
-				JL_CHK( WinThrowError(cx, GetLastError()) );
-			JSString *jsStr = JS_NewStringCopyZ(cx, (const char*)lpMsgBuf);
-			LocalFree(lpMsgBuf);
-			jsval errVal = STRING_TO_JSVAL(jsStr);
-			HostPrivate *hpv = GetHostPrivate(cx);
-			JL_CHK( JS_ConstructObjectWithArguments(cx, JL_GetStandardClass(cx, JSProto_Error), NULL, NULL, 1, &errVal) );
+			HRESULT errorCode = isRef ? *V_I4REF(variant) : V_I4(variant); // check ->scode and ResultFromScode
+			JL_CHK( WinNewError(cx, errorCode, rval) );
 			}
 			break;
 		case VT_ERROR: {
@@ -295,10 +287,8 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 				scode = isRef ? *V_ERRORREF(variant) : V_ERROR(variant);
 			else
 				scode = variant->scode;
-
-			JL_CHK( JS_NewNumberValue(cx, scode, rval) );
-			HostPrivate *hpv = GetHostPrivate(cx);
-			JL_CHK( JS_ConstructObjectWithArguments(cx, JL_GetStandardClass(cx, JSProto_Error), NULL, NULL, 1, rval) );
+			// JL_CHK( JS_ConstructObjectWithArguments(cx, JL_GetStandardClass(cx, JSProto_Error), NULL, NULL, 1, rval) );
+			JL_CHK( WinNewError(cx, scode, rval) );
 			}
 			break;
 		case VT_NULL:
@@ -487,13 +477,16 @@ DEFINE_FINALIZE() {
 
 DEFINE_FUNCTION_FAST( toDispatch ) {
 
-	IUnknown *punk = NULL;
-	IDispatch *pdisp = NULL;
-
 	HRESULT hr;
 
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( variant );
+
+	if ( V_VT(variant) != VT_DISPATCH ) {
+
+		*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+		return JS_TRUE;
+	}
 
 	if ( V_VT(variant) != VT_UNKNOWN ) {
 
@@ -501,25 +494,19 @@ DEFINE_FUNCTION_FAST( toDispatch ) {
 		return JS_TRUE;
 	}
 
+	IUnknown *punk = NULL;
 	punk = V_ISBYREF(variant) ? *V_UNKNOWNREF(variant) : V_UNKNOWN(variant);
 	JL_CHK( punk );
-	punk->AddRef();
 
+	IDispatch *pdisp = NULL;
 	hr = punk->QueryInterface(IID_IDispatch, (void**)&pdisp);
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
 
 	JL_CHK( NewComDispatch(cx, pdisp, JL_FRVAL) );
-
-	pdisp->Release();
-	punk->Release();
 	return JS_TRUE;
 
 bad:
-	if ( pdisp )
-		pdisp->Release();
-	if ( punk )
-		punk->Release();
 	return JS_TRUE;
 }
 

@@ -84,23 +84,7 @@ static JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 	}
 
 	if ( hr == DISP_E_EXCEPTION ) {
-/*
-		if ( ex.bstrDescription != NULL ) {
-			
-			JSString *exStr = JS_NewUCStringCopyZ(cx, (const jschar*)ex.bstrDescription);
-			JS_SetPendingException(cx, STRING_TO_JSVAL(exStr));
-		} else {
-			HRESULT errorCode = ex.scode;
-			LPVOID lpMsgBuf;
-			DWORD result = ::FormatMessage(
-				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
-				NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL
-			);
-			JSString *jsStr = JS_NewStringCopyZ(cx, (const char*)lpMsgBuf);
-			LocalFree(lpMsgBuf);
-			JS_SetPendingException(cx, STRING_TO_JSVAL(jsStr));
-		}
-*/
+
 		JL_CHK( WinThrowError(cx, ex.wCode ? ex.wCode : ex.scode) ); // (TBD) fix this
 	}
 
@@ -108,13 +92,11 @@ static JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 		
 		// remove the function because it is not a DISPATCH_METHOD
 		jsval funNameVal;
+		jsid funNameId;
 		JL_CHK( JS_GetPropertyById(cx, funObj, JLID(cx, name), &funNameVal) );
-		jschar *funName = JS_GetStringChars(JSVAL_TO_STRING( funNameVal ));
-		jsid id;
-		JL_CHK( JS_ValueToId(cx, funNameVal, &id) );
-		JL_CHK( JS_DeletePropertyById(cx, JL_FOBJ, id) );
-		JL_CHK( WinThrowError(cx, hr) );
-	}
+		JL_CHK( JS_ValueToId(cx, funNameVal, &funNameId) );
+		JL_CHK( JS_DeletePropertyById(cx, JL_FOBJ, funNameId) );
+	} // ...
 
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
@@ -127,12 +109,13 @@ static JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 
 DEFINE_GET_PROPERTY() {
 
+	VARIANT *result = NULL; // bad:
+
 	HRESULT hr;
 
 	EXCEPINFO ex;
 	UINT argErr;
 	DISPPARAMS params;
-	VARIANT *result = NULL; // bad:
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( disp );
@@ -171,14 +154,6 @@ DEFINE_GET_PROPERTY() {
 
 	hr = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_PROPERTYGET, &params, result, &ex, &argErr);
 
-	if ( hr == DISP_E_EXCEPTION ) {
-
-//		int sev = HRESULT_SEVERITY(ex.scode); // 00:Success, 01:Informational, 10:Warning, 11:Error
-		JSString *exStr = JS_NewUCStringCopyZ(cx, (const jschar*)ex.bstrDescription);
-		JS_SetPendingException(cx, STRING_TO_JSVAL(exStr));
-		return JS_FALSE;
-	}
-
 	if ( hr == DISP_E_MEMBERNOTFOUND || hr == DISP_E_BADPARAMCOUNT ) { // not a getter, then guess it is a method
 
 		hr = VariantClear(result);
@@ -186,8 +161,7 @@ DEFINE_GET_PROPERTY() {
 			JL_CHK( WinThrowError(cx, hr) );
 		JS_free(cx, result);
 
-		JSFunction *fun = JS_NewFunction(cx, (JSNative)FunctionInvoke, 8, JSFUN_FAST_NATIVE, NULL, NULL);
-		JL_CHK( fun );
+		JSFunction *fun = JS_NewFunction(cx, (JSNative)FunctionInvoke, 8, JSFUN_FAST_NATIVE | JSFUN_LAMBDA, NULL, NULL);
 		JSObject *funObj = JS_GetFunctionObject(fun);
 		JL_CHK( funObj );
 		*vp = OBJECT_TO_JSVAL(funObj);
@@ -195,6 +169,15 @@ DEFINE_GET_PROPERTY() {
 		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, name), id, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) );
 		JL_CHK( JS_DefinePropertyById(cx, obj, id, *vp, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) );
 		return JS_TRUE;
+	}
+
+	if ( hr == DISP_E_EXCEPTION ) {
+
+//		int sev = HRESULT_SEVERITY(ex.scode); // 00:Success, 01:Informational, 10:Warning, 11:Error
+//		JSString *exStr = JS_NewUCStringCopyZ(cx, (const jschar*)ex.bstrDescription);
+//		JS_SetPendingException(cx, STRING_TO_JSVAL(exStr));
+		
+		JL_CHK( WinThrowError(cx, ex.wCode ? ex.wCode : ex.scode) ); // (TBD) fix this
 	}
 
 end:
@@ -363,8 +346,12 @@ DEFINE_ITERATOR_OBJECT() {
 
 	VariantInit(&result);
 	hr = disp->Invoke(DISPID_NEWENUM, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD | DISPATCH_PROPERTYGET, &params, &result, &ex, &argErr);
-	if ( FAILED(hr) )
+	if ( FAILED(hr) ) {
+		
+		if ( hr == DISP_E_EXCEPTION )
+			JL_CHK( WinThrowError(cx, ex.wCode ? ex.wCode : ex.scode) );
 		JL_CHK( WinThrowError(cx, hr) );
+	}
 
 	IUnknown *punk = NULL;
 	if ( V_VT(&result) == VT_UNKNOWN )
@@ -372,7 +359,6 @@ DEFINE_ITERATOR_OBJECT() {
 	else
 	if ( V_VT(&result) == VT_DISPATCH )
 		punk = V_ISBYREF(&result) ? *V_DISPATCHREF(&result) : V_DISPATCH(&result);
-
 	JL_S_ASSERT( punk != NULL, "Invalid enum." );
 
 	hr = punk->QueryInterface(IID_IEnumVARIANT, (void**)&pEnum);

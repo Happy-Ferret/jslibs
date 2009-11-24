@@ -16,7 +16,6 @@
 #include "error.h"
 
 
-
 /**doc
 $CLASS_HEADER
 $SVN_REVISION $Revision$
@@ -38,10 +37,37 @@ DEFINE_PROPERTY( code ) {
 	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
 	JL_S_ASSERT_INT(hi);
 	JL_S_ASSERT_INT(lo);
-	DWORD err = (JSVAL_TO_INT(hi) << 16) | JSVAL_TO_INT(lo);
-	return UIntToJsval(cx, err, vp);
+
+	JL_CHK( JS_NewNumberValue(cx, (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)), vp) );
+
+	return JS_TRUE;
 	JL_BAD;
 }
+
+
+const char *ErrorToConstName( DWORD err ) {
+
+	switch ( err ) {
+
+		#include "errorNamesCase.h"
+		default:
+			return NULL;
+	}
+}
+
+DEFINE_PROPERTY( const ) {
+
+	jsval hi, lo;
+	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
+	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
+	JL_S_ASSERT_INT(hi);
+	JL_S_ASSERT_INT(lo);
+
+	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, ErrorToConstName( (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)) )) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 DEFINE_PROPERTY( text ) {
 
@@ -50,8 +76,7 @@ DEFINE_PROPERTY( text ) {
 	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
 	JL_S_ASSERT_INT(hi);
 	JL_S_ASSERT_INT(lo);
-	DWORD err = (JSVAL_TO_INT(hi) << 16) | JSVAL_TO_INT(lo);
-
+	DWORD err = (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi));
 
 	LPVOID lpvMessageBuffer;
 	DWORD res = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&lpvMessageBuffer, 0, NULL);
@@ -69,6 +94,7 @@ DEFINE_PROPERTY( text ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
@@ -119,6 +145,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( code )
+		PROPERTY_READ( const )
 		PROPERTY_READ( text )
 	END_PROPERTY_SPEC
 
@@ -127,6 +154,17 @@ CONFIGURE_CLASS
 END_CLASS
 
 
+JSBool WinNewError( JSContext *cx, DWORD errorCode, jsval *rval ) {
+
+	JSObject *error = JS_NewObject( cx, classWinError, NULL, NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
+	
+	*rval = OBJECT_TO_JSVAL( error );
+
+	JS_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(HIWORD(errorCode)) );
+	JS_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(LOWORD(errorCode)) );
+	return JS_TRUE;
+}
+
 JSBool WinThrowError( JSContext *cx, DWORD errorCode ) {
 
 //	JL_SAFE(	JS_ReportWarning( cx, "WinError exception" ) );
@@ -134,8 +172,8 @@ JSBool WinThrowError( JSContext *cx, DWORD errorCode ) {
 //	JL_S_ASSERT( error != NULL, "Unable to create WinError object." );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 
-	JS_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(errorCode >> 16 ) );
-	JS_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(errorCode & 0xFFFF ) );
+	JS_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(HIWORD(errorCode)) );
+	JS_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(LOWORD(errorCode)) );
 	JL_SAFE( ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;
 }
