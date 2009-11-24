@@ -791,7 +791,7 @@ ALWAYS_INLINE JLEncodingType JLDetectEncoding(char **buf, int *size) {
 		return UTF8;
 	}
 	// no BOM, then guess
-	if ( (*buf)[0] > 32 && (*buf)[1] > 32 )
+	if ( (*buf)[0] >= 32 && (*buf)[1] >= 32 )
 		return ASCII;
 	if ( (*buf)[0] != 0 && (*buf)[1] == 0 )
 		return UTF16le;
