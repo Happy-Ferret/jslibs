@@ -2,7 +2,7 @@
 
 def configure(conf):
 
-    conf.check_cfg(package='sqlite', args='--cflags --libs', atleast_version='2.8.17', uselib_store='SQLITE')
+    conf.check_cfg(package='sqlite3', args='--cflags --libs', atleast_version='3.6.20', uselib_store='SQLITE')
 
 def build(bld):
 
