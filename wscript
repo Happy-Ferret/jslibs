@@ -52,6 +52,11 @@ def configure(conf):
 
         conf.setenv('optimize')
 
+    else:
+
+        conf.env['BUILD_MODE'] = 'default'
+
+
     # Check submodule configuration
     conf.sub_config('libs/js')
     conf.sub_config('libs/libiconv')
@@ -172,9 +177,9 @@ def build(bld):
 
     # Change all tasks default env to current one [debug, optimize, ...]
     for obj in bld.all_task_gen[:]:
-        obj_new = obj.clone(bld.env.BUILD_MODE)
         # In case of debug/optimize compilation avoid default compilation
         if bld.env.BUILD_MODE != 'default':
+            obj_new = obj.clone(bld.env.BUILD_MODE)
             obj.posted = True
 
 def shutdown():
