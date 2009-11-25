@@ -30,6 +30,7 @@
 JSContext* CreateHost( size_t maxMem, size_t maxAlloc, size_t maybeGCInterval );
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr, void* userPrivateData );
 JSBool DestroyHost( JSContext *cx );
+JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );
 JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, unsigned int xdrScriptLength );
 

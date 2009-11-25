@@ -646,13 +646,6 @@ LoadModule('jsstd');
 		o.text = '<html><title>$(title)</title>\n'
 		QA.ASSERT_STR( o, '<html><title>My HTML Page</title>\n', 'expand string using this object' );
 
-		var aaa = 123;
-		function foo() {
-			var bbb = 456;
-			return Expand('$(aaa) $(bbb)');
-		}
-		QA.ASSERT_STR( foo(), '123 456', 'expand string using scope chain' );
-		
 
 /// Expand using a callback function [ftrm]
 

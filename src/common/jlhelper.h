@@ -267,7 +267,10 @@ template<class T> T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b); }
 // check: used to forward an error. // (TBD) try ultra-safe mode at compile-time: #define JL_CHK( status ) (status)
 #define JL_CHK( status ) \
 JL_MACRO_BEGIN \
-	if (unlikely( !(status) )) { goto bad; } \
+	if (unlikely( !(status) )) { \
+		IFDEBUG( fprintf(stderr, "JL_CHK failed" IFDEBUG(" (@" J__CODE_LOCATION ")")) ); \
+		goto bad; \
+	} \
 JL_MACRO_END
 
 
@@ -286,7 +289,10 @@ JL_MACRO_END
 // check and branch to a errorLabel label on error.
 #define JL_CHKB( status, errorLabel ) \
 JL_MACRO_BEGIN \
-	if (unlikely( !(status) )) { goto errorLabel; } \
+	if (unlikely( !(status) )) { \
+		IFDEBUG( fprintf(stderr, "JL_CHKB(,%s) failed" IFDEBUG(" (@" J__CODE_LOCATION ")"), #errorLabel ) ); \
+		goto errorLabel; \
+	} \
 JL_MACRO_END
 
 
@@ -916,19 +922,25 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 
 #else //JL_UC
 
-	int scriptFile = open(fileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+	int scriptFile;
+	scriptFile = open(fileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
 	JL_CHKM( scriptFile >= 0, "Unable to open file \"%s\" for reading.", fileName );
 
-	lseek(scriptFile, 0, SEEK_END);
-	int scriptFileSize = (unsigned)tell(scriptFile);
+	int scriptFileSize;
+	scriptFileSize = lseek(scriptFile, 0, SEEK_END);
+//	int scriptFileSize;
+//	scriptFileSize = (unsigned)tell(scriptFile);
 	lseek(scriptFile, 0, SEEK_SET);
-	char *scriptBuffer = (char*)alloca(scriptFileSize);
-	int res = read(scriptFile, (void*)scriptBuffer, scriptFileSize);
+	char *scriptBuffer;
+	scriptBuffer = (char*)alloca(scriptFileSize);
+	int res;
+	res = read(scriptFile, (void*)scriptBuffer, scriptFileSize);
 	close(scriptFile);
 	JL_CHKM( res >= 0, "Unable to read file \"%s\".", fileName );
 	scriptFileSize = (unsigned)res;
 
-	JLEncodingType enc = JLDetectEncoding(&scriptBuffer, &scriptFileSize);
+	JLEncodingType enc;
+	enc = JLDetectEncoding(&scriptBuffer, &scriptFileSize);
 	if ( enc == ASCII ) {
 
 		char *scriptText = scriptBuffer;

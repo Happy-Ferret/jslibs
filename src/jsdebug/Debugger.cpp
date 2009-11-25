@@ -505,7 +505,8 @@ DEFINE_PROPERTY( interruptCounterLimit ) {
 		JL_CHK( JsvalToUInt(cx, *vp, &pv->interruptCounterLimit) );
 	}
 
-	JSRuntime *rt = JS_GetRuntime(cx);
+	JSRuntime *rt;
+	rt = JS_GetRuntime(cx);
 	if ( pv->interruptCounterLimit == 0 && (pv->debugHooks ? pv->debugHooks->interruptHandler : JS_GetGlobalDebugHooks(rt)->interruptHandler) == InterruptCounterHandler ) {
 		
 		// cancel the current one.

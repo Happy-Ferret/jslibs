@@ -112,6 +112,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	float maybeGCInterval = 10; // seconds
 	int camelCase = 0; // 0:default, 1:lower, 2:upper
 	bool useFileBootstrapScript = false;
+	const char *inlineScript = NULL;
 
 #ifdef DEBUG
 	bool debug; debug = false;
@@ -149,6 +150,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				break;
 			case 'b': // bootstrap
 				useFileBootstrapScript = true;
+				break;
+			case 'i': // inline script
+				// argumentVector++; // keep the script as argument[0]
+				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
+				inlineScript = *(argumentVector+1);
 				break;
 			case 'v': // version
 				fprintf( stderr, "Version r%d / %s\n", JL_SvnRevToInt("$Revision$"), JS_GetImplementationVersion() );
@@ -232,9 +238,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
 
 // script name
-	const char *scriptName;
-	scriptName = *argumentVector;
-	HOST_MAIN_ASSERT( scriptName != NULL, "No script specified." );
+	const char *scriptName = NULL;
+	if ( inlineScript == NULL )
+		scriptName = *argumentVector;
+	HOST_MAIN_ASSERT( inlineScript != NULL || scriptName != NULL, "No script specified." );
 
 	char hostFullPath[PATH_MAX +1];
 
@@ -288,7 +295,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	jsval rval;
 
 	JSBool executeStatus;
-	executeStatus = ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
+	if ( inlineScript == NULL )
+		executeStatus = ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
+	else
+		executeStatus = ExecuteScript(cx, inlineScript, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
+
 	if ( executeStatus == JS_TRUE ) {
 
 		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 ) // (TBD) enhance this, use JsvalToInt() ?

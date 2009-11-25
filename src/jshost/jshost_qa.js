@@ -1,9 +1,5 @@
 /// configuration objet [ftrm]
 	
-	
-	
-
-
 /// access all properties of the global object [ft]
 
 		for each ( item in global ) {
@@ -14,9 +10,9 @@
 
 /// jshost arguments [ftm]
 
-		QA.ASSERT( global.arguments[2], 'arg2', 'script argument 2' );
-		QA.ASSERT( global.arguments[3], 'arg3', 'script argument 3' );
-		QA.ASSERT( global.arguments[4], 'arg4', 'script argument 4' );
+	var process = new Process('jshost', ['-u', '-i', '_configuration.stdout(arguments)', '123', '-c']);
+	var res = process.stdout.Read();
+	QA.ASSERT_STR( res, "_configuration.stdout(arguments),123,-c", "jshost arguments" );
 
 
 /// global variables [ftrm]

@@ -612,7 +612,38 @@ void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
 }
 */
 
-JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) { // (TBD) support xdr files
+JSBool RemoveScriptArguments( JSContext *cx ) {
+
+	JSObject *globalObject = JS_GetGlobalObject(cx);
+	JL_CHKM( globalObject != NULL, "Global object not found." );
+	JL_CHKM( JS_DeletePropertyById(cx, globalObject, JLID(cx, arguments)), "Unable to cleanup script arguments." );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+JSBool CreateScriptArguments( JSContext *cx, int argc, const char * const * argv ) {
+
+	JSObject *globalObject = JS_GetGlobalObject(cx);
+	JL_CHKM( globalObject != NULL, "Global object not found." );
+
+	JSObject *argsObj;
+	argsObj = JS_NewArrayObject(cx, argc, NULL);
+	JL_CHKM( argsObj != NULL, "Unable to create script arguments." );
+
+	JL_CHKM( JS_DefinePropertyById(cx, globalObject, JLID(cx, arguments), OBJECT_TO_JSVAL(argsObj), NULL, NULL, /*JSPROP_READONLY | JSPROP_PERMANENT*/ 0), "Unable to store script arguments." );
+
+	for ( int index = 0; index < argc; index++ ) {
+
+		JSString *str = JS_NewStringCopyZ(cx, argv[index]);
+		JL_CHKM( str != NULL, "Unable to store the argument." );
+		JL_CHKM( JS_DefineElement(cx, argsObj, index, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE), "Unable to define the argument." );
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+JSBool ExecuteScript( JSContext *cx, const char *scriptText, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
 
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); //  | JSOPTION_DONT_REPORT_UNCAUGHT
 	// JSOPTION_COMPILE_N_GO:
@@ -624,19 +655,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	JL_CHKM( globalObject != NULL, "Global object not found." );
 
-// arguments
-	JSObject *argsObj;
-	argsObj = JS_NewArrayObject(cx, argc, NULL);
-	JL_CHKM( argsObj != NULL, "Unable to create argument array on the global object." );
-
-	JL_CHKM( JS_DefinePropertyById(cx, globalObject, JLID(cx, arguments), OBJECT_TO_JSVAL(argsObj), NULL, NULL, /*JSPROP_READONLY | JSPROP_PERMANENT*/ 0), "unable to store the argument array." );
-
-	for ( int index = 0; index < argc; index++ ) {
-
-		JSString *str = JS_NewStringCopyZ(cx, argv[index]);
-		JL_CHKM( str != NULL, "Unable to store the argument." );
-		JL_CHKM( JS_DefineElement(cx, argsObj, index, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE), "unable to define the argument." );
-	}
+	JL_CHK( CreateScriptArguments(cx, argc, argv) );
 
 // compile & executes the script
 
@@ -651,13 +670,14 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 */
 
 	JSScript *script;
-	script = JLLoadScript(cx, globalObject, scriptFileName, true, false); // use xdr if available, but don't save it.
+	script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "inline", 1);
 	JL_CHK( script );
 
 
 	JSTempValueRooter tvr;
 	JSObject *scrobj;
 	scrobj = JS_NewScriptObject(cx, script);
+	JL_CHK( scrobj );
 	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
 
 	// mendatory else the exception is converted into an error before JS_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
@@ -665,10 +685,64 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	JSBool status;
-	if ( !compileOnly )
+	if ( !compileOnly ) {
+
 		status = JS_ExecuteScript(cx, globalObject, script, rval); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
-	else
+	} else {
+
 		*rval = JSVAL_VOID;
+		status = JS_TRUE;
+	}
+
+
+	JS_POP_TEMP_ROOT(cx, &tvr);
+	JL_CHK( status );
+
+	//	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633, which can cause crashes in almost any program that uses JS_DestroyScript.
+
+	JL_CHK( RemoveScriptArguments( cx ) );
+	JS_SetOptions(cx, prevOpt);
+	return JS_TRUE;
+
+bad:
+	JS_SetOptions(cx, prevOpt);
+	return JS_FALSE;
+}
+
+
+
+JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) { // (TBD) support xdr files
+
+	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
+
+	JSObject *globalObject = JS_GetGlobalObject(cx);
+	JL_CHKM( globalObject != NULL, "Global object not found." );
+
+	JL_CHK( CreateScriptArguments(cx, argc, argv) );
+
+	JSScript *script;
+	script = JLLoadScript(cx, globalObject, scriptFileName, true, false); // use xdr if available, but don't save it.
+	JL_CHK( script );
+
+	JSTempValueRooter tvr;
+	JSObject *scrobj;
+	scrobj = JS_NewScriptObject(cx, script);
+	JL_CHK( scrobj );
+	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
+
+	// mendatory else the exception is converted into an error before JS_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
+
+	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
+	JSBool status;
+	if ( !compileOnly ) {
+
+		status = JS_ExecuteScript(cx, globalObject, script, rval); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+	} else {
+
+		*rval = JSVAL_VOID;
+		status = JS_TRUE;
+	}
 
 	JS_POP_TEMP_ROOT(cx, &tvr);
 	JL_CHK( status );

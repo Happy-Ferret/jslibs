@@ -566,8 +566,9 @@ $TOC_MEMBER $INAME
   Is the amount of bytes mallocated by the JavaScript engine. It is incremented each time the JavaScript engine allocates memory.
 **/
 DEFINE_PROPERTY( gcMallocBytes ) {
-
-	return JS_NewNumberValue(cx, JS_GetRuntime(cx)->gcMallocBytes, vp);
+	
+	JSRuntime *rt = JS_GetRuntime(cx);
+	return JS_NewNumberValue(cx, rt->gcMaxMallocBytes - rt->gcMallocBytes, vp);
 }
 
 /**doc
