@@ -28,8 +28,8 @@ LoadModule('jsstd');
 		
 		QA.GC();
 		var s = StringRepeat('x', 100000);
-		Print( gcMallocBytes )
 		QA.ASSERT( gcMallocBytes > 100000 && gcMallocBytes < 301000, true, 'Before GC' );
+
 		s = undefined;
 		QA.GC();
 		QA.ASSERT( gcMallocBytes < 100, true, 'After GC');
