@@ -19,6 +19,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
 
+#define J__STRINGIFY(x) #x
+#define J__TOSTRING(x) J__STRINGIFY(x)
+
 #define JL_MACRO_BEGIN do {
 #define JL_MACRO_END } while(0)
 

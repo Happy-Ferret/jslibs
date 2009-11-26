@@ -43,8 +43,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Stringify ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_MAX(1);
+	JL_S_ASSERT_ARG(1);
 
 	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 
@@ -103,11 +102,23 @@ DEFINE_FUNCTION( Stringify ) {
 }
 
 
+#ifdef DEBUG
+DEFINE_FUNCTION( jslang_test ) {
+
+	return JS_TRUE;
+	JL_BAD;
+}
+#endif // DEBUG
+
+
 CONFIGURE_STATIC
 
 //	REVISION(JL_SvnRevToInt("$Revision$")) // avoid to set a revision to the global context
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION_ARGC( Stringify, 1 )
+#ifdef DEBUG
+		FUNCTION( jslang_test )
+#endif // DEBUG
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC

@@ -186,11 +186,11 @@
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\common\errors.msg"
+			RelativePath=".\host_qa.js"
 			>
 		</File>
 		<File
-			RelativePath=".\host_qa.js"
+			RelativePath="..\common\jlerrors.msg"
 			>
 		</File>
 	</Files>

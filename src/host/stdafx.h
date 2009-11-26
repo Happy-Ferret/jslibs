@@ -20,6 +20,5 @@
 
 #include "jlconfiguration.h"
 #include "jlclass.h"
-#include "jlerrors.h"
 
 #include <string.h>

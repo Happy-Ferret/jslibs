@@ -16,9 +16,7 @@
 #define _JSHELPER_H_
 
 #include "jlalloc.h"
-
 #include "jlplatform.h"
-
 #include <jsapi.h>
 
 typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, unsigned int *amount );
@@ -41,8 +39,7 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 // JavaScript engine
 
 #ifdef _MSC_VER
-#pragma warning( push )
-#pragma warning( disable : 4800 ) // warning C4800: 'type' : forcing value to bool 'true' or 'false' (performance warning)
+#pragma warning( push, 0 )
 #endif // _MSC_VER
 
 #include <jscntxt.h>
@@ -53,14 +50,40 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #pragma warning( pop )
 #endif // _MSC_VER
 
-extern bool _unsafeMode;
 
+#ifdef DEBUG
+	#define J__CODE_LOCATION __FILE__ ":" J__TOSTRING(__LINE__)
+#else
+	#define J__CODE_LOCATION ""
+#endif // DEBUG
 
 #ifdef DEBUG
 	#define IFDEBUG(expr) expr
 #else
 	#define IFDEBUG(expr)
 #endif // DEBUG
+
+
+extern bool _unsafeMode;
+
+#define JL_SAFE_BEGIN if (unlikely( !_unsafeMode )) {
+#define JL_SAFE_END }
+
+#define JL_UNSAFE_BEGIN if (likely( _unsafeMode )) {
+#define JL_UNSAFE_END }
+
+
+#define JL_SAFE(code) \
+JL_MACRO_BEGIN \
+	if (unlikely( !_unsafeMode )) {code;} \
+JL_MACRO_END
+
+#define JL_UNSAFE(code) \
+JL_MACRO_BEGIN \
+	if (likely( _unsafeMode )) {code;} \
+JL_MACRO_END
+
+
 
 // see JSAtomState struct in jsatom.h
 #define JL_ATOMJSID(CX, NAME) ATOM_TO_JSID(CX->runtime->atomState.NAME##Atom)
@@ -77,7 +100,6 @@ enum {
 	JLID_SPEC( scripthostpath ),
 	JLID_SPEC( scripthostname ),
 	JLID_SPEC( isfirstinstance ),
-	JLID_SPEC( _getErrorMessage ),
 	JLID_SPEC( bootstrapScript ),
 	JLID_SPEC( _NI_BufferGet ),
 	JLID_SPEC( _NI_StreamRead ),
@@ -101,6 +123,8 @@ struct HostPrivate {
 	JLThreadHandler watchDogThread;
 	HostOutput hostStdOut;
 	HostOutput hostStdErr;
+	JSErrorCallback errorCallback;
+	JSLocaleCallbacks localeCallbacks;
 	struct ModulePrivate {
 		uint32_t moduleId;
 		void *privateData;
@@ -108,7 +132,6 @@ struct HostPrivate {
 	jl::Queue moduleList;
 	jl::Queue registredNativeClasses;
 	JSClass *stringObjectClass;
-//	JSClass *errorObjectClass;
 	jl_allocators_t alloc;
 	int camelCase;
 	jsid ids[LAST_JSID];
@@ -189,36 +212,6 @@ ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) 
 // example of use: jsid cfg = JLID(cx, _configuration); char *name = JLID_NAME(_configuration);
 
 
-///////////////////////////////////////////////////////////////////////////////
-// common error messages
-
-#define J__STRINGIFY(x) #x
-#define J__TOSTRING(x) J__STRINGIFY(x)
-
-#ifdef DEBUG
-	#define J__CODE_LOCATION __FILE__ ":" J__TOSTRING(__LINE__)
-#else
-	#define J__CODE_LOCATION ""
-#endif // DEBUG
-
-
-
-#define J__ERRMSG_NO_CONSTRUCT "This object cannot be construct."
-#define J__ERRMSG_NEED_CONSTRUCTION "Construction is needed for this object."
-#define J__ERRMSG_MISSING_ARGUMENT "This function require more arguments."
-#define J__ERRMSG_TOO_MANY_ARGUMENTS "You provide too many argument to the function."
-#define J__ERRMSG_INVALID_ARGUMENT_COUNT "Invalid argument count (%d)."
-#define J__ERRMSG_INVALID_CLASS "Wrong object type."
-#define J__ERRMSG_STRING_CONVERSION_FAILED "Unable to convert to string."
-#define J__ERRMSG_INT_CONVERSION_FAILED "Unable to convert to integer."
-#define J__ERRMSG_OUT_OF_MEMORY "Not enough memory to complete the allocation."
-#define J__ERRMSG_NOT_INITIALIZED "The object or resource is not proprely initialized."
-#define J__ERRMSG_INVALID_RESOURCE "The resource is invalid or not proprely initialized."
-#define J__ERRMSG_CLASS_CREATION_FAILED "Unable to create the class."
-#define J__ERRMSG_UNEXPECTED_TYPE "Unexpected data type."
-#define J__ERRMSG_INVALID_RANGE "Value is out of range."
-#define J__ERRMSG_UNINITIALIZED "Initialization failed."
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // helper macros
@@ -264,11 +257,35 @@ template<class T> T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b); }
 
 #define JL_BAD bad:return(JS_FALSE)
 
+
+///////////////////////////////////////////////////////////////////////////////
+// Error management
+
+typedef enum JLErrNum {
+#define MSG_DEF(name, number, count, exception, format) \
+	name = number,
+#include "jlerrors.msg"
+#undef MSG_DEF
+	JLErrLimit
+};
+
+// Report a jslibs error. see jlerrors.msg
+#define JL_REPORT_ERROR_NUM( cx, num, ... ) \
+JL_MACRO_BEGIN \
+	HostPrivate *hpv = GetHostPrivate(cx); \
+	if ( hpv != NULL && hpv->errorCallback != NULL ) \
+		JS_ReportErrorNumber(cx, hpv->errorCallback, NULL, (num), ##__VA_ARGS__); \
+	else \
+		JS_ReportError(cx, "Undefined error %d", (num)); \
+	goto bad; \
+JL_MACRO_END
+
+
 // check: used to forward an error. // (TBD) try ultra-safe mode at compile-time: #define JL_CHK( status ) (status)
 #define JL_CHK( status ) \
 JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { \
-		IFDEBUG( fprintf(stderr, "JL_CHK failed" IFDEBUG(" (@" J__CODE_LOCATION ")")) ); \
+		IFDEBUG( fprintf(stderr, "DEBUG: JL_CHK failed" IFDEBUG(" (@" J__CODE_LOCATION ")") "\n") ); \
 		goto bad; \
 	} \
 JL_MACRO_END
@@ -290,7 +307,7 @@ JL_MACRO_END
 #define JL_CHKB( status, errorLabel ) \
 JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { \
-		IFDEBUG( fprintf(stderr, "JL_CHKB(,%s) failed" IFDEBUG(" (@" J__CODE_LOCATION ")"), #errorLabel ) ); \
+	IFDEBUG( fprintf(stderr, "DEBUG: JL_CHKB(,%s) failed" IFDEBUG(" (@" J__CODE_LOCATION ")") "\n", #errorLabel ) ); \
 		goto errorLabel; \
 	} \
 JL_MACRO_END
@@ -306,23 +323,6 @@ JL_MACRO_BEGIN \
 	} \
 JL_MACRO_END
 
-
-#define JL_SAFE_BEGIN if (unlikely( !_unsafeMode )) {
-#define JL_SAFE_END }
-
-#define JL_UNSAFE_BEGIN if (likely( _unsafeMode )) {
-#define JL_UNSAFE_END }
-
-
-#define JL_SAFE(code) \
-JL_MACRO_BEGIN \
-	if (unlikely( !_unsafeMode )) {code;} \
-JL_MACRO_END
-
-#define JL_UNSAFE(code) \
-JL_MACRO_BEGIN \
-	if (likely( _unsafeMode )) {code;} \
-JL_MACRO_END
 
 
 // Reports warnings only in non-unsafeMode.
@@ -340,76 +340,199 @@ JL_MACRO_BEGIN \
 JL_MACRO_END
 
 
-
-// JL_S_ stands for (J)s(L)ibs _ (S)afemode _ and mean that these macros will only be meaningful when _unsafeMode is false (see jslibs unsafemode).
+// JL_S_ stands for (J)s(L)ibs _ (S)afemode _ and mean that these macros will only be meaningful when _unsafeMode is false. (see jslibs unsafemode).
 
 #define JL_S_ASSERT( condition, errorMessage, ... ) \
 JL_MACRO_BEGIN \
-	if (unlikely( !_unsafeMode )) if (unlikely( !(condition) )) { JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), ##__VA_ARGS__ ); goto bad; } \
+	JL_SAFE_BEGIN \
+		if (unlikely( !(condition) )) { \
+			JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), ##__VA_ARGS__ ); \
+			goto bad; \
+		} \
+	JL_SAFE_END \
 JL_MACRO_END
 
+
 #define JL_S_ASSERT_ARG(count) \
-	JL_S_ASSERT( argc == (count), J__ERRMSG_INVALID_ARGUMENT_COUNT " Need %d.", argc, count )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( argc < (count) ) JL_REPORT_ERROR_NUM( cx, JLSMSG_TOO_FEW_ARGUMENTS, #count ); \
+		if ( argc > (count) ) JL_REPORT_ERROR_NUM( cx, JLSMSG_TOO_MANY_ARGUMENTS, #count ); \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_ARG_MIN(minCount) \
-	JL_S_ASSERT( argc >= (minCount), J__ERRMSG_INVALID_ARGUMENT_COUNT " Need at least %d.", argc, minCount )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( argc < (minCount) ) JL_REPORT_ERROR_NUM( cx, JLSMSG_TOO_FEW_ARGUMENTS, #minCount ); \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_ARG_MAX(maxCount) \
-	JL_S_ASSERT( argc <= (maxCount), J__ERRMSG_INVALID_ARGUMENT_COUNT " Need no more than %d.", argc, maxCount )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( argc > (maxCount) ) JL_REPORT_ERROR_NUM( cx, JLSMSG_TOO_MANY_ARGUMENTS, #maxCount ); \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_ARG_RANGE(minCount, maxCount) \
-	JL_S_ASSERT( argc >= (minCount) && argc <= (maxCount), J__ERRMSG_INVALID_ARGUMENT_COUNT " Need between %d and %d.", argc, minCount, maxCount )
-
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( argc < (minCount) ) JL_REPORT_ERROR_NUM( cx, JLSMSG_TOO_FEW_ARGUMENTS, #minCount ); \
+		if ( argc > (maxCount) ) JL_REPORT_ERROR_NUM( cx, JLSMSG_TOO_MANY_ARGUMENTS, #maxCount ); \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_DEFINED(value) \
-	JL_S_ASSERT( !JSVAL_IS_VOID(value), "Value must be defined." )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( JSVAL_IS_VOID(value) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_NEED_DEFINED ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_TYPE(value, jsType) \
-	JL_S_ASSERT( JS_TypeOfValue(cx, (value)) == (jsType), J__ERRMSG_UNEXPECTED_TYPE )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( JS_TypeOfValue(cx, (value)) != (jsType) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_UNEXPECTED_TYPE ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
+
+#define JS_S_ASSERT_CONVERT(polarity, typeName) \
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( !(polarity) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_FAIL_TO_CONVERT, typeName ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_BOOLEAN(value) \
-	JL_S_ASSERT( JSVAL_IS_BOOLEAN(value), J__ERRMSG_UNEXPECTED_TYPE " Boolean expected." )
-
-#define JL_S_ASSERT_INT(value) \
-	JL_S_ASSERT( JSVAL_IS_INT(value), J__ERRMSG_UNEXPECTED_TYPE " Integer expected." )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( !JSVAL_IS_BOOLEAN(value) && !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) != JL_GetStandardClass(cx, JSProto_Boolean) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_EXPECT_TYPE, "a boolean" ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_NUMBER(value) \
-	JL_S_ASSERT( JSVAL_IS_NUMBER(value), J__ERRMSG_UNEXPECTED_TYPE " Number expected." )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( !JSVAL_IS_NUMBER(value) && !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) != JL_GetStandardClass(cx, JSProto_Number) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_EXPECT_TYPE, "a number" ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
+
+#define JL_S_ASSERT_INT(value) \
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( !JSVAL_IS_INT(value) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_EXPECT_TYPE, "an integer" ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_STRING(value) \
-	JL_S_ASSERT( JsvalIsData(cx, value), J__ERRMSG_UNEXPECTED_TYPE " String expected." )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( !JsvalIsData(cx, (value)) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_EXPECT_TYPE, "a string or a blob" ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_OBJECT(value) \
-	JL_S_ASSERT( !JSVAL_IS_PRIMITIVE(value), J__ERRMSG_UNEXPECTED_TYPE " Object expected." )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( JSVAL_IS_PRIMITIVE(value) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_EXPECT_TYPE, "an object" ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_ARRAY(value) \
-	JL_S_ASSERT( JsvalIsArray(cx, value), J__ERRMSG_UNEXPECTED_TYPE " Array expected." )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( !JsvalIsArray(cx, (value)) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_EXPECT_TYPE, "an array" ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_FUNCTION(value) \
-	JL_S_ASSERT( JsvalIsFunction(cx, (value)), " Function expected." )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( !JsvalIsFunction(cx, (value)) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_EXPECT_TYPE, "a function" ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_CLASS(jsObject, jsClass) \
-	JL_S_ASSERT( (jsObject) != NULL && JL_GetClass(jsObject) == (jsClass), J__ERRMSG_INVALID_CLASS " %s expected.", (jsClass)->name )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( (jsObject) == NULL || JL_GetClass(jsObject) != (jsClass) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_EXPECT_TYPE, (jsClass)->name ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_THIS_CLASS() \
 	JL_S_ASSERT_CLASS(obj, _class)
 
+#define JL_S_ASSERT_INHERITANCE(jsObject, jsClass) \
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( JL_InheritFrom(cx, (jsObject), (jsClass)) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_INVALID_INHERITANCE, (jsClass)->name ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
+
+
 #define JL_S_ASSERT_THIS_INSTANCE() \
 JL_MACRO_BEGIN \
-	JL_S_ASSERT( (obj) != *_prototype && JL_InheritFrom(cx, obj, _class), "Wrong instance." ); \
+	JL_SAFE_BEGIN \
+		if ( (obj) != *_prototype && JL_InheritFrom(cx, obj, _class) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_INVALID_INSTANCE, (_class)->name ); \
+		} \
+	JL_SAFE_END \
 JL_MACRO_END
 
 #define JL_S_ASSERT_CONSTRUCTING() \
-	JL_S_ASSERT( JS_IsConstructing(cx) == JS_TRUE, J__ERRMSG_NEED_CONSTRUCTION )
-
-#define JL_S_ASSERT_INITIALIZED(pointer) \
-	JL_S_ASSERT( (pointer) != NULL, J__ERRMSG_UNINITIALIZED )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( !JS_IsConstructing(cx) ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_NEED_CONSTRUCT ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_RESOURCE(resourcePointer) \
-	JL_S_ASSERT( (resourcePointer) != NULL, J__ERRMSG_INVALID_RESOURCE )
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( resourcePointer == NULL ) { \
+			JL_REPORT_ERROR_NUM( cx, JLSMSG_INVALID_RESOURCE ); \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
 
 #define JL_S_ASSERT_ALLOC(pointer) \
-	if (unlikely( (pointer) == NULL )) { JL_REPORT_WARNING( J__ERRMSG_OUT_OF_MEMORY ); JS_ReportOutOfMemory(cx); return JS_FALSE; } // This does not cause an exception to be thrown.
+JL_MACRO_BEGIN \
+	JL_SAFE_BEGIN \
+		if ( (pointer) == NULL ) { \
+			JL_REPORT_WARNING( "out of memory" ); \
+			JS_ReportOutOfMemory(cx); \
+			goto bad; \
+		} \
+	JL_SAFE_END \
+JL_MACRO_END
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -435,9 +558,20 @@ ALWAYS_INLINE void JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 	obj->setPrivate(data);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
+
+// eg. JS_NewObject(cx, JL_GetStandardClass(cx, JSProto_TypeError), NULL, NULL);
+ALWAYS_INLINE JSClass* JL_GetStandardClass(JSContext *cx, JSProtoKey key) {
+
+	JSObject *constructor;
+	JL_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_Boolean, &constructor) );
+	JL_CHK( constructor );
+//	FUN_CLASP( JS_ValueToFunction(cx, OBJECT_TO_JSVAL(constructor)) );
+	return FUN_CLASP(GET_FUNCTION_PRIVATE(cx, constructor));
+bad:
+	return NULL;
+}
 
 ALWAYS_INLINE JSContext *JL_GetContext(JSRuntime *rt) {
 
@@ -445,17 +579,6 @@ ALWAYS_INLINE JSContext *JL_GetContext(JSRuntime *rt) {
 	JS_ContextIterator(rt, &cx);
 	JS_ASSERT( cx != NULL );
 	return cx;
-}
-
-ALWAYS_INLINE JSClass* JL_GetStandardClass(JSContext *cx, JSProtoKey key) {
-
-	JSObject *constructor;
-	JL_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_Boolean, &constructor) );
-	JL_CHK(constructor);
-//	FUN_CLASP( JS_ValueToFunction(cx, OBJECT_TO_JSVAL(constructor)) );
-	return FUN_CLASP(GET_FUNCTION_PRIVATE(cx, constructor));
-bad:
-	return NULL;
 }
 
 ALWAYS_INLINE JSStackFrame* JL_CurrentStackFrame(JSContext *cx) {
@@ -1266,7 +1389,9 @@ ALWAYS_INLINE JSBool JsvalToStringAndLength( JSContext *cx, jsval *val, const ch
 	}
 	// and for anything else ...
 	JSString *jsstr = JS_ValueToString(cx, *val);
-	JL_S_ASSERT( jsstr != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
+
+	JS_S_ASSERT_CONVERT( jsstr != NULL, "string" );
+
 	*val = STRING_TO_JSVAL(jsstr); // protects *val against GC.
 	*size = JL_GetStringLength(jsstr);
 	*buffer = JS_GetStringBytes(jsstr); // JS_GetStringBytes never returns NULL, then useless to check if (*buffer != NULL).
@@ -1313,7 +1438,7 @@ ALWAYS_INLINE JSBool JsvalToString( JSContext *cx, jsval *val, const char** buff
 	}
 	// and for anything else ...
 	JSString *jsstr = JS_ValueToString(cx, *val);
-	JL_S_ASSERT( jsstr != NULL, J__ERRMSG_STRING_CONVERSION_FAILED );
+	JS_S_ASSERT_CONVERT( jsstr != NULL, "string" );
 	*val = STRING_TO_JSVAL(jsstr); // protects *val against GC.
 	*buffer = JS_GetStringBytes(jsstr); // JS_GetStringBytes never returns NULL, then useless to check if (*buffer != NULL).
 	return JS_TRUE;
@@ -1801,6 +1926,16 @@ ALWAYS_INLINE JSBool GetPropertyUInt( JSContext *cx, JSObject *obj, const char *
 
 ALWAYS_INLINE JSBool ExceptionSetScriptLocation( JSContext *cx, JSObject *obj ) {
 
+	 // see PopulateReportBlame()
+    //JSStackFrame *fp;
+    //for (fp = js_GetTopStackFrame(cx); fp; fp = fp->down) {
+    //    if (fp->regs) {
+    //        report->filename = fp->script->filename;
+    //        report->lineno = js_FramePCToLineNumber(cx, fp);
+    //        break;
+    //    }
+    //}
+
 	JSStackFrame *fp = NULL;
 	do {
 
@@ -1827,7 +1962,6 @@ ALWAYS_INLINE JSBool ExceptionSetScriptLocation( JSContext *cx, JSObject *obj ) 
 	return JS_TRUE;
 	JL_BAD;
 }
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1891,12 +2025,12 @@ ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsv
 
 //
 
-ALWAYS_INLINE JSBool SetNativeFunction( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
+ALWAYS_INLINE JSBool SetPrivateNativeFunction( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
 
 	return JS_DefineProperty(cx, obj, name, JSVAL_TRUE, NULL, (JSPropertyOp)nativeFct, JSPROP_READONLY | JSPROP_PERMANENT );
 }
 
-ALWAYS_INLINE JSBool GetNativeFunction( JSContext *cx, JSObject *obj, const char *name, void **nativeFct ) {
+ALWAYS_INLINE JSBool GetPrivateNativeFunction( JSContext *cx, JSObject *obj, const char *name, void **nativeFct ) {
 
 	uintN attrs;
 	JSBool found;
@@ -1907,7 +2041,7 @@ ALWAYS_INLINE JSBool GetNativeFunction( JSContext *cx, JSObject *obj, const char
 	JL_BAD;
 }
 
-ALWAYS_INLINE JSBool DeleteNativeFunction( JSContext *cx, JSObject *obj, const char *name ) {
+ALWAYS_INLINE JSBool RemovePrivateNativeFunction( JSContext *cx, JSObject *obj, const char *name ) {
 
 	return JS_DeleteProperty(cx, obj, name);
 }
@@ -2151,7 +2285,7 @@ inline JSBool JsvalToMatrix44( JSContext *cx, jsval val, float **m ) {
 		 0.0f, 0.0f, 0.0f, 1.0f
 	};
 
-	JL_S_ASSERT( JSVAL_IS_OBJECT(val), J__ERRMSG_UNEXPECTED_TYPE " Object expected." );
+	JL_S_ASSERT_OBJECT(val);
 
 	JSObject *matrixObj;
 	matrixObj = JSVAL_TO_OBJECT(val);

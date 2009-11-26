@@ -24,17 +24,18 @@ JSBool jslangModuleInit(JSContext *cx, JSObject *obj);
 
 //bool _unsafeMode = true;
 
-JSErrorFormatString errorFormatString[J_ErrLimit] = {
-	#define MSG_DEF(name, number, count, exception, format) { format, count, exception },
+JSErrorFormatString JLerrorFormatString[JLErrLimit] = {
+#define MSG_DEF(name, number, count, exception, format) { format, count, exception },
 	#include "jlerrors.msg"
-	#undef MSG_DEF
+#undef MSG_DEF
 };
 
 
 static const JSErrorFormatString *GetErrorMessage(void *userRef, const char *locale, const uintN errorNumber) {
 
-	if ((errorNumber > 0) && (errorNumber < J_ErrLimit))
-		return &errorFormatString[errorNumber];
+	uintN err = errorNumber - 1000;
+	if ( err > 0 && err < JLErrLimit )
+		return &JLerrorFormatString[err];
 	return NULL;
 }
 
@@ -492,11 +493,14 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	JL_CHKM( pv->stringObjectClass, "Unable to find the String class." );
 
 // make GetErrorMessage available from any module
-	void **pGetErrorMessage;
-	pGetErrorMessage = (void**)jl_malloc(sizeof(void*)); // free is done in DestroyHost()
-	*pGetErrorMessage = (void*)&GetErrorMessage; // this indirection is needed for alignement purpose. see PRIVATE_TO_JSVAL and C function alignement.
-	JL_CHK( SetConfigurationPrivateValue(cx, JLID_NAME(_getErrorMessage), PRIVATE_TO_JSVAL(pGetErrorMessage)) );
+//	void **pGetErrorMessage;
+//	pGetErrorMessage = (void**)jl_malloc(sizeof(void*)); // free is done in DestroyHost()
+//	*pGetErrorMessage = (void*)&GetErrorMessage; // this indirection is needed for alignement purpose. see PRIVATE_TO_JSVAL and C function alignement.
+//	JL_CHK( SetConfigurationPrivateValue(cx, JLID_NAME(_getErrorMessage), PRIVATE_TO_JSVAL(pGetErrorMessage)) );
+	JS_SetLocaleCallbacks(cx, &pv->localeCallbacks);
 
+	pv->errorCallback = GetErrorMessage;
+	pv->localeCallbacks.localeGetErrorMessage = pv->errorCallback;
 
 	pv->hostStdErr = stdErr;
 	pv->hostStdOut = stdOut;
@@ -552,10 +556,10 @@ JSBool DestroyHost( JSContext *cx ) {
 
 	//	don't try to break linked objects with JS_GC(cx) !
 
-	jsval tmp;
-	JL_CHK( GetConfigurationValue(cx, JLID_NAME(_getErrorMessage), &tmp) );
-	if ( tmp != JSVAL_VOID && JSVAL_TO_PRIVATE(tmp) )
-		jl_free( JSVAL_TO_PRIVATE(tmp) );
+//	jsval tmp;
+//	JL_CHK( GetConfigurationValue(cx, JLID_NAME(_getErrorMessage), &tmp) );
+//	if ( tmp != JSVAL_VOID && JSVAL_TO_PRIVATE(tmp) )
+//		jl_free( JSVAL_TO_PRIVATE(tmp) );
 
 	JL_CHKM( RemoveConfiguration(cx), "Unable to remove the configuration item." );
 

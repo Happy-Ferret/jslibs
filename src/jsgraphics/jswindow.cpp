@@ -524,7 +524,7 @@ DEFINE_FUNCTION( Mode ) {
 DEFINE_PROPERTY( clipCursor ) {
 
 	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_INITIALIZED(hWnd);
+	JL_S_ASSERT(hWnd != NULL, "Uninitialized data");
 	JSBool clip;
 	JS_ValueToBoolean(cx, *vp, &clip);
 	RECT r;

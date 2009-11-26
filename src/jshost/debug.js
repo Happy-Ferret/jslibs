@@ -4,20 +4,18 @@
 //  RunQATests('-gcZeal 2 -rep 1 jssqlite');
 
 LoadModule('jsstd');
-LoadModule('jsdebug');
+//LoadModule('jsdebug');
 
-Exec('debugUC.js');
+try {
 
+jslang_test(1,2,3);
+//new Array(-1);
 
+} catch(ex)	{
+	
+	Print(ex);
+}
 
-//onNewScript = function( filename, lineno, script, fct) {
-//	Print( 'onNewScript ', filename, lineno, script, fct, '\n' );
-//}
-
-
-var list = [];
-
-eval('function Test() {	list[1]; } ');
 
 
 Halt(); //////////////////////////////////////////////////////////////////////////////
