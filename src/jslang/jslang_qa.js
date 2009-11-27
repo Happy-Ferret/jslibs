@@ -562,6 +562,15 @@ LoadModule('jsstd');
 		QA.ASSERT( Stringify( new myStream() ), 'abcdefghi', 'force string conversion' );
 
 
+
+/// another non-native Stream [ftrm]
+
+		var buf = new Buffer();
+		buf.Write('abcdefghijklmnopqrstuvwxyz');
+		var res = Stringify({ Read:function(n) { return buf.Read(3); } });
+		QA.ASSERT_STR( res, 'abcdefghijklmnopqrstuvwxyz', 'stringified stream' );
+
+
 /// Stringify function [ftr]
 	
 		QA.ASSERT( 'test', Stringify('test'), 'force string conversion' );

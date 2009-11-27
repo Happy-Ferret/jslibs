@@ -18,7 +18,7 @@
 #include "jlhelper.h"
 
 
-inline JSBool RemoveConfiguration(JSContext *cx) {
+ALWAYS_INLINE JSBool RemoveConfiguration(JSContext *cx) {
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	JL_S_ASSERT( globalObject != NULL, "Unable to find the global object." );
@@ -53,7 +53,16 @@ bad:
 }
 
 
-inline JSBool GetConfigurationValue(JSContext *cx, const char *name, jsval *value) {
+ALWAYS_INLINE JSBool GetConfigurationValueById(JSContext *cx, jsid id, jsval *value) {
+
+	JSObject *cobj = GetConfigurationObject(cx);
+	if ( cobj )
+		return JS_GetPropertyById(cx, cobj, id, value);
+	*value = JSVAL_VOID;
+	return JS_TRUE;
+}
+
+ALWAYS_INLINE JSBool GetConfigurationValue(JSContext *cx, const char *name, jsval *value) {
 
 	JSObject *cobj = GetConfigurationObject(cx);
 	if ( cobj )
@@ -62,7 +71,7 @@ inline JSBool GetConfigurationValue(JSContext *cx, const char *name, jsval *valu
 	return JS_TRUE;
 }
 
-inline JSBool SetConfigurationValue(JSContext *cx, const char *name, jsval value) {
+ALWAYS_INLINE JSBool SetConfigurationValue(JSContext *cx, const char *name, jsval value) {
 
 	JSObject *cobj = GetConfigurationObject(cx);
 	if ( cobj )
@@ -70,7 +79,7 @@ inline JSBool SetConfigurationValue(JSContext *cx, const char *name, jsval value
 	return JS_TRUE;
 }
 
-inline JSBool SetConfigurationReadonlyValue(JSContext *cx, const char *name, jsval value) {
+ALWAYS_INLINE JSBool SetConfigurationReadonlyValue(JSContext *cx, const char *name, jsval value) {
 
 	JSObject *cobj = GetConfigurationObject(cx);
 	if ( cobj )
@@ -78,7 +87,7 @@ inline JSBool SetConfigurationReadonlyValue(JSContext *cx, const char *name, jsv
 	return JS_TRUE;
 }
 
-inline JSBool SetConfigurationPrivateValue(JSContext *cx, const char *name, jsval value) {
+ALWAYS_INLINE JSBool SetConfigurationPrivateValue(JSContext *cx, const char *name, jsval value) {
 
 	JSObject *cobj = GetConfigurationObject(cx);
 	if ( cobj )

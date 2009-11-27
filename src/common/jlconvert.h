@@ -27,7 +27,7 @@ inline JSBool JsvalToSInt8( JSContext *cx, jsval val, int8_t *result, bool *outO
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
 
 		double d = *JSVAL_TO_DOUBLE(val);
-		*outOfRange = d < (-128) || d > (127);
+		*outOfRange = d < (double)(-128) || d > (double)(127);
 		*result = (int8_t)(uint8_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
@@ -50,7 +50,7 @@ inline JSBool JsvalToUInt8( JSContext *cx, jsval val, uint8_t *result, bool *out
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
 
 		double d = *JSVAL_TO_DOUBLE(val);
-		*outOfRange = d < (0) || d > (0xff);
+		*outOfRange = d < (0) || d > (double)(0xff);
 		*result = (uint8_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
@@ -65,7 +65,6 @@ inline JSBool JsvalToUInt8( JSContext *cx, jsval val, uint8_t *result, bool *out
 }
 
 
-
 inline JSBool JsvalToSInt16( JSContext *cx, jsval val, int16_t *result, bool *outOfRange ) {
 
 	if ( JSVAL_IS_INT( val ) ) {
@@ -76,7 +75,7 @@ inline JSBool JsvalToSInt16( JSContext *cx, jsval val, int16_t *result, bool *ou
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
 
 		double d = *JSVAL_TO_DOUBLE(val);
-		*outOfRange = d < (-32768) || d > (32767);
+		*outOfRange = d < (double)(-32768) || d > (double)(32767);
 		*result = (int16_t)(uint16_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
@@ -99,7 +98,7 @@ inline JSBool JsvalToUInt16( JSContext *cx, jsval val, uint16_t *result, bool *o
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
 
 		double d = *JSVAL_TO_DOUBLE(val);
-		*outOfRange = d < (0) || d > 0xffff;
+		*outOfRange = d < (0) || d > (double)(0xffff);
 		*result = (uint16_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
@@ -124,7 +123,7 @@ inline JSBool JsvalToSInt32( JSContext *cx, jsval val, int32_t *result, bool *ou
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
 
 		double d = *JSVAL_TO_DOUBLE(val);
-		*outOfRange = d < (-2147483647L - 1) || d > (2147483647L);
+		*outOfRange = d < (double)(-2147483647L - 1) || d > (double)(2147483647L);
 		*result = (int32_t)(uint32_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
@@ -147,7 +146,7 @@ inline JSBool JsvalToUInt32( JSContext *cx, jsval val, uint32_t *result, bool *o
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
 
 		double d = *JSVAL_TO_DOUBLE(val);
-		*outOfRange = d < (0) || d > (0xffffffffUL);
+		*outOfRange = d < (0) || d > (double)(0xffffffffUL);
 		*result = (uint32_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 

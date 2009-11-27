@@ -25,29 +25,20 @@
 	JSEXN_LIMIT
 */
 
-MSG_DEF(JLSMSG_NOT_AN_ERROR,					1000, 0, JSEXN_NONE, "<Error #0 is reserved>")
-MSG_DEF(JLSMSG_OUT_OF_RANGE,					1001, 0, JSEXN_RANGEERR, "index out of range")
-MSG_DEF(JLSMSG_TOO_FEW_ARGUMENTS,			1002, 1, JSEXN_RANGEERR, "not enough arguments (min is {0})")
+MSG_DEF(JLSMSG_NOT_AN_ERROR,				1000, 0, JSEXN_NONE, "<Error #0 is reserved>")
+MSG_DEF(JLSMSG_OUT_OF_RANGE,				1001, 0, JSEXN_RANGEERR, "index out of range")
+MSG_DEF(JLSMSG_TOO_FEW_ARGUMENTS,		1002, 1, JSEXN_RANGEERR, "not enough arguments (min is {0})")
 MSG_DEF(JLSMSG_TOO_MANY_ARGUMENTS,		1003, 1, JSEXN_RANGEERR, "too many arguments (max is {0})")
-MSG_DEF(JLSMSG_NEED_DEFINED,					1004, 0, JSEXN_TYPEERR, "value must be defined")
-MSG_DEF(JLSMSG_UNEXPECTED_TYPE,				1005, 0, JSEXN_TYPEERR, "unexpected value type")
-MSG_DEF(JLSMSG_EXPECT_TYPE,						1006, 0, JSEXN_TYPEERR, "%s type is expected")
-MSG_DEF(JLSMSG_INVALID_INSTANCE,			1007, 0, JSEXN_TYPEERR, "%s instance is expected")
-MSG_DEF(JLSMSG_NEED_CONSTRUCT,				1008, 0, JSEXN_TYPEERR, "object needs to be constructed")
+MSG_DEF(JLSMSG_NEED_DEFINED,				1004, 0, JSEXN_TYPEERR, "value must be defined")
+MSG_DEF(JLSMSG_EXPECT_TYPE,				1005, 1, JSEXN_TYPEERR, "{0} is expected")
+MSG_DEF(JLSMSG_FAIL_TO_CONVERT_TO,		1006, 1, JSEXN_INTERNALERR, "fail to convert to {0}")
+MSG_DEF(JLSMSG_INVALID_INSTANCE,			1007, 1, JSEXN_TYPEERR, "{0} instance is expected")
+MSG_DEF(JLSMSG_NEED_CONSTRUCT,			1008, 0, JSEXN_TYPEERR, "object must be constructed")
 MSG_DEF(JLSMSG_INVALID_RESOURCE,	 		1009, 0, JSEXN_INTERNALERR, "object state is invalid")
-MSG_DEF(JLSMSG_FAIL_TO_CONVERT,				1010, 1, JSEXN_INTERNALERR, "fail to convert to {0}")
-MSG_DEF(JLSMSG_INVALID_INHERITANCE,		1011, 1, JSEXN_TYPEERR, "object must be a {0}")
+MSG_DEF(JLSMSG_INVALID_INHERITANCE,		1010, 1, JSEXN_TYPEERR, "object must be a {0}")
+MSG_DEF(JLSMSG_INVALIDATED_OBJECT,	 	1011, 1, JSEXN_INTERNALERR, "{0} object invalidated")
+MSG_DEF(JLSMSG_IMMUTABLE_OBJECT,			1012, 1, JSEXN_TYPEERR, "{0} is immutable")
 
-
-/* examples:
-MSG_DEF(JSSMSG_NOT_AN_ERROR,             0, 0, JSEXN_NONE, "<Error #0 is reserved>")
-MSG_DEF(JSSMSG_CANT_OPEN,                1, 2, JSEXN_NONE, "can't open {0}: {1}") 
-MSG_DEF(JSSMSG_TRAP_USAGE,               2, 0, JSEXN_NONE, "usage: trap [fun] [pc] expr") 
-MSG_DEF(JSSMSG_LINE2PC_USAGE,            3, 0, JSEXN_NONE, "usage: line2pc [fun] line") 
-MSG_DEF(JSSMSG_FILE_SCRIPTS_ONLY,        4, 0, JSEXN_NONE, "only works on JS scripts read from files") 
-MSG_DEF(JSSMSG_UNEXPECTED_EOF,           5, 1, JSEXN_NONE, "unexpected EOF in {0}") 
-MSG_DEF(JSSMSG_DOEXP_USAGE,              6, 0, JSEXN_NONE, "usage: doexp obj id") 
-*/
 
 /* errors to manage:
 

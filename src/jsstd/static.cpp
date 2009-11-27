@@ -1036,7 +1036,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Print ) {
 
 	jsval fval;
-	JL_CHK( GetConfigurationValue(cx, JLID_NAME(stdout), &fval) );
+	JL_CHK( GetConfigurationValueById(cx, JLID(cx, stdout), &fval) );
 	*JL_FRVAL = JSVAL_VOID;
 	if ( JsvalIsFunction(cx, fval) )
 		return JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fval, JL_ARGC, JL_FARGV, &fval);

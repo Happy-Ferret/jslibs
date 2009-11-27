@@ -181,6 +181,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\common\jlhelper.h"
+				>
+			</File>
+			<File
+				RelativePath="..\common\jlplatform.h"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>

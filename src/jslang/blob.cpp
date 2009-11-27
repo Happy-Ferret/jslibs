@@ -22,6 +22,12 @@
 #define SLOT_BLOB_LENGTH 0
 
 
+/**doc
+$CLASS_HEADER
+$SVN_REVISION $Revision$
+**/
+BEGIN_CLASS( Blob )
+
 ALWAYS_INLINE JSBool InvalidateBlob( JSContext *cx, JSObject *blobObject ) {
 
 	return JS_SetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, JSVAL_VOID);
@@ -44,7 +50,7 @@ ALWAYS_INLINE JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *le
 	jsval lengthVal;
 	JL_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
 //	JL_S_ASSERT_INT( lengthVal );
-	JL_S_ASSERT( JSVAL_IS_INT( lengthVal ), "Invalidated blob." );
+	JL_S_ASSERT_VALID( JSVAL_IS_INT(lengthVal), _class->name );
 	*length = JSVAL_TO_INT( lengthVal );
 	return JS_TRUE;
 	JL_BAD;
@@ -60,18 +66,12 @@ ALWAYS_INLINE JSBool BlobBuffer( JSContext *cx, JSObject *blobObject, const char
 }
 
 
-/**doc
-$CLASS_HEADER
-$SVN_REVISION $Revision$
-**/
-BEGIN_CLASS( Blob )
-
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
 	if ( JL_GetClass(obj) == classBlob ) {
 		
 		if ( !IsBlobValid(cx, obj) )
-			JL_REPORT_ERROR("Invalid Blob object.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, classBlob->name);
 		JL_CHK( BlobLength(cx, obj, size) );
 		JL_CHK( BlobBuffer(cx, obj, buf) );
 		return JS_TRUE;
@@ -850,10 +850,9 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
-//	JL_S_ASSERT( !JSVAL_IS_NUMBER(id), "Cannot modify immutable objects" );
 	if ( !JSVAL_IS_NUMBER(id) )
 		return JS_TRUE;
-	JL_REPORT_WARNING( "Cannot modify immutable objects." );
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_IMMUTABLE_OBJECT, _class->name);
 	return JS_TRUE;
 }
 
@@ -863,7 +862,7 @@ DEFINE_EQUALITY() {
 	if ( JsvalIsClass(v, _class) ) {
 
 		if ( !IsBlobValid(cx, obj) || !IsBlobValid(cx, JSVAL_TO_OBJECT(v)) )
-			JL_REPORT_ERROR("Invalid Blob object.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, classBlob->name);
 		
 		const char *buf1, *buf2;
 		size_t len1, len2;
@@ -891,10 +890,8 @@ DEFINE_NEW_RESOLVE() {
 	if ( JS_GetPrototype(cx, obj) != prototypeBlob )
 		return JS_TRUE;
 
-	if ( !IsBlobValid(cx, obj) ) {
-
-		JL_REPORT_ERROR("Invalid Blob object.");
-	}
+	if ( !IsBlobValid(cx, obj) )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, classBlob->name);
 
 	if ( !(flags & JSRESOLVE_QUALIFIED) || (flags & JSRESOLVE_ASSIGNING) )
 		return JS_TRUE;
