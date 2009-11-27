@@ -238,7 +238,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
 
 // script name
-	const char *scriptName = NULL;
+	const char *scriptName;
+	scriptName = NULL;
 	if ( inlineScript == NULL )
 		scriptName = *argumentVector;
 	HOST_MAIN_ASSERT( inlineScript != NULL || scriptName != NULL, "No script specified." );
