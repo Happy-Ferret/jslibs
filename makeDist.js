@@ -14,16 +14,24 @@ function Zip(dir, destFilename) {
 		Print(data);
 }
 
-function GetLatestSVNRevision() {
+function GetLatestRemoteSVNRevision() {
 	
-	Print( 'Get latest SVN revision', '\n' );
-	var p = new Process(GetEnv('ComSpec'), ['/c', 'svn', 'info', '--xml']); // '-r', 'HEAD', 
+	Print( 'Get latest remote SVN revision', '\n' );
+	var p = new Process('svn', ['--xml', 'info', '-r', 'HEAD']);
 	var svnInfo = '';
 	for ( let data; data = p.stdout.Read(); )
 		svnInfo += data;
-	svnInfo = new XML(svnInfo.replace(/<\?.*?\?>/, '')); // remove: <?xml version="1.0"?>
+	svnInfo = new XML(svnInfo.replace(/<\?.*?\?>/, ''));
 	return svnInfo.entry.@revision;
 }
+
+function GetSVNWorkingCopyVersion() {
+	
+	var p = new Process('svnversion');
+	var info = /(?:(\d+):)?(\d+)([MSP]*)/(p.stdout.Read());
+	return { mixed:Number(info[1]), wc:Number(info[2]), modified:info.indexOf('M')>0, switched:info.indexOf('S')>0, partial:info.indexOf('P')>0 };
+}
+
 
 
 function IndentText(text, indent) [ indent+line for each (line in text.split('\n')) ].join('\n');
@@ -114,20 +122,20 @@ if ( !dist.exist )
 
 switch ( arguments[0] ) {
 	case '--devsnapshot':
-	
 		type = 'DEVSNAPSHOT';
 		jslibsVersion = '';
-		jslibsRevision = GetLatestSVNRevision();
+		var info = GetSVNWorkingCopyVersion();
+		jslibsRevision = info.wc;
 		changes = 'http://code.google.com/p/jslibs/source/list';
 		break;
+		
 	case '--version':
-
 		var [type, jslibsVersion, jslibsRevision, changes] = GetLatestChanges();
 		changes = changes.replace(/<pre>|<\/pre>/g, ''); // cleanup
 		changes = changes.replace(/\n/g, '\r\n');
 		if ( jslibsRevision[0] == 'r' )
 			jslibsRevision = jslibsRevision.substr(1);
-		//jslibsRevision = 'r'+GetLatestSVNRevision();
+		//jslibsRevision = 'r'+GetLatestRemoteSVNRevision();
 		break;
 	default:
 		Print( 'choose a type\n' );
