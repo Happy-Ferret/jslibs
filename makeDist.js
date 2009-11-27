@@ -33,7 +33,6 @@ function GetSVNWorkingCopyVersion() {
 }
 
 
-
 function IndentText(text, indent) [ indent+line for each (line in text.split('\n')) ].join('\n');
 
 function GetLatestChanges() {
@@ -65,6 +64,13 @@ function GetLatestChanges() {
 	if ( res == null )
 		return [];
 	return res.slice(1);		
+}
+
+
+function GetClassRevision(moduleName, className) {
+
+  var proc = new Process('jshost', [ '-u', '-i', 'LoadModule("'+moduleName+'"); _configuration.stdout('+className+'._revision)']);
+  return Number(proc.stdout.Read());
 }
 
 
