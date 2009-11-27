@@ -120,7 +120,7 @@ var dist = new Directory('./dist');
 if ( !dist.exist )
 	throw 'Unable to find '+dist.name;
 
-switch ( arguments[0] ) {
+switch ( arguments[1] ) {
 	case '--devsnapshot':
 		type = 'DEVSNAPSHOT';
 		jslibsVersion = '';
