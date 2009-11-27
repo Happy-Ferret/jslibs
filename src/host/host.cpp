@@ -46,6 +46,7 @@ static const JSErrorFormatString *GetErrorMessage(void *userRef, const char *loc
 
 static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) { // fast native
 
+	*JL_FRVAL = JSVAL_VOID;
 	HostPrivate *pv = GetHostPrivate(cx);
 	if (unlikely( pv == NULL || pv->hostStdOut == NULL ))
 		return JS_TRUE;
@@ -64,6 +65,7 @@ static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) { //
 
 static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) { // fast native
 
+	*JL_FRVAL = JSVAL_VOID;
 	HostPrivate *pv = GetHostPrivate(cx);
 	if (unlikely( pv == NULL || pv->hostStdErr == NULL ))
 		return JS_TRUE;
