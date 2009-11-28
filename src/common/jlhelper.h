@@ -211,10 +211,6 @@ ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) 
 #define JLID(cx, name) GetPrivateJsid(cx, JLID_##name, #name)
 // example of use: jsid cfg = JLID(cx, _configuration); char *name = JLID_NAME(_configuration);
 
-inline int test() {
-	JLID(NULL, stdout);
-}
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // helper macros
