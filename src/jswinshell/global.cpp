@@ -779,6 +779,20 @@ DEFINE_PROPERTY( clipboardSetter ) {
 	JL_BAD;
 }
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME
+  Retrieves the current Windows ANSI code page identifier for the operating system.
+**/
+DEFINE_PROPERTY( codepage ) {
+
+	*vp = INT_TO_JSVAL(GetACP());
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
@@ -800,6 +814,7 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY( clipboard )
+		PROPERTY_READ( codepage )
 	END_STATIC_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

@@ -3,7 +3,9 @@
 LoadModule('jsstd');
 LoadModule('jswinshell');
 
-Print('Start...\n');
+Print('Start...\n', codepage);
+
+Halt();
 
 try {
 
