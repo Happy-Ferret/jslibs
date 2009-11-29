@@ -783,11 +783,23 @@ DEFINE_PROPERTY( clipboardSetter ) {
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME
-  Retrieves the current Windows ANSI code page identifier for the operating system.
+  current Windows ANSI code page identifier for the operating system.
 **/
-DEFINE_PROPERTY( codepage ) {
+DEFINE_PROPERTY( systemCodepage ) {
 
 	*vp = INT_TO_JSVAL(GetACP());
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME
+  current Windows ANSI code page identifier for the console.
+**/
+DEFINE_PROPERTY( consoleCodepage ) {
+
+	*vp = INT_TO_JSVAL(GetOEMCP());
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -814,7 +826,8 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY( clipboard )
-		PROPERTY_READ( codepage )
+		PROPERTY_READ( systemCodepage )
+		PROPERTY_READ( consoleCodepage )
 	END_STATIC_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC
