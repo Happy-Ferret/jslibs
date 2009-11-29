@@ -116,7 +116,7 @@ DEFINE_CALL() {
 
 	size_t status;
 
-	if ( !JL_ARG_ISDEF(1) ) {
+	if ( argc = 0 ) {
 		
 		status = iconv(pv->cd, NULL, NULL, NULL, NULL); // sets cd's conversion state to the initial state.
 		return JS_TRUE;

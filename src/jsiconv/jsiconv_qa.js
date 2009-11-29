@@ -118,3 +118,11 @@ LoadModule('jsiconv');
 	QA.ASSERT( res.length, 2, 'check the resulting string length' );
 	QA.ASSERT_STR( res, "z4", 'check the resulting string' );
 
+/// store UCS-2-INTERNAL to JS unicode
+
+  var utf8str = "\xC3\xA9t\xC3\xA9 \xC3\xA0 la plage"; // été à la plage
+  var conv = new Iconv('UCS-2-INTERNAL', 'UTF-8', true, false); // source is not wide (8bit), dest is wide (16bit)
+  var result = conv(utf8str);
+  QA.ASSERT_STR( result, 'été à la plage', 'check the intermediate' );
+  var conv = new Iconv('ISO-8859-1', 'UCS-2-INTERNAL', false, true); // source is not wide (8bit), dest is wide (16bit)
+  QA.ASSERT_STR( conv(result) == 'été à la plage', 'check the resulting string' );
