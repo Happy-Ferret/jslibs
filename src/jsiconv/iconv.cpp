@@ -53,8 +53,14 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $STR toCode: destination encoding (see Iconv.list property)
    $ARG $STR fromCode: source encoding (see Iconv.list property)
-   $ARG $BOOL toUseWide:
-   $ARG $BOOL fromUseWide:
+   $ARG $BOOL toUseWide: destination use 16bit per char.
+   $ARG $BOOL fromUseWide: source use 16bit per char.
+  $H example
+{{{
+  var consEnc = new Iconv(consoleCodepage, 'UCS-2-INTERNAL', false, true); // source is wide (16bit), dest is not wide (8bit)
+  Print( consEnc('été') );
+}}}
+
 **/
 DEFINE_CONSTRUCTOR() {
 
