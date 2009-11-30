@@ -12,17 +12,17 @@ DESCRIPTION:
   Check the project website http://jslibs.googlecode.com for more details.
 
 
-IMPORTANT:
+IMPORTANT PREREQUISITE:
   jslibs binaries are compiled with the dynamic version of the C Runtime Library (msvcr80.dll).
   This mean you need the "Visual C++ 2005 SP1 Redistributable Package (x86)" to be installed on your system.
-  To test if the package is already installed, just run ./bin/jshost.exe and if you get an error message, the package is not installed.
+  To test if the package is already installed, just run ./bin/jshost.exe and if you get an error message, the package must be installed.
   The Microsoft® C Runtime Library installer is provided with this jslibs package (vcredist_x86.exe).
-  The Microsoft® C Runtime Library is also available here:
+  The Microsoft® C Runtime Library is also available here for download:
     http://www.microsoft.com/downloads/details.aspx?familyid=200B2FD9-AE1A-4A14-984D-389C36F85647
 
 
 QUICK TEST:
-  Launch "run examples.cmd" and type:
+  Launch "run examples.cmd" file, and type:
     jshost helloworld.js
 
 
@@ -32,11 +32,11 @@ DOCUMENTATION:
 
 
 SOURCE CODE:
-  The source code of jslibs is available here:
+  The source code of jslibs is available from here:
     http://code.google.com/p/jslibs/source/checkout
 
 
-BUGS:
+BUGS AND KNOWN ISSUES:
   You can report bugs or issues here:
     http://code.google.com/p/jslibs/issues/list
 
