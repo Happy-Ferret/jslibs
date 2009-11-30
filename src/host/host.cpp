@@ -123,6 +123,7 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 	if (likely( pv != NULL && JSREPORT_IS_WARNING(report->flags) && pv->unsafeMode )) // no warnings in unsafe mode.
 		return;
 
+	// trap JSMSG_OUT_OF_MEMORY error to avoid calling stdErrRouter() that may allocate memory that will lead to nested call.
 	if ( report->errorNumber == JSMSG_OUT_OF_MEMORY ) { // (TBD) do something better
 		
 		fprintf(stderr, "%s (%s:%d)\n", message, report->filename, report->lineno );

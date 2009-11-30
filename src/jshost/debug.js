@@ -1,20 +1,13 @@
 // LoadModule('jsstd'); Exec('../common/tools.js');
-//  RunLocalQAFile();
-//  RunJsircbot(false);
-//  RunQATests('-gcZeal 2 -rep 1 jssqlite');
+// var QA = FakeQAApi;
+// RunLocalQAFile();
+// RunJsircbot(false);
+// RunQATests('-rep 1 jsstd -exclude jstask');
 
-LoadModule('jsstd');
-//LoadModule('jsdebug');
 
-try {
 
-jslang_test(1,2,3);
-//new Array(-1);
 
-} catch(ex)	{
-	
-	Print(ex);
-}
+
 
 
 

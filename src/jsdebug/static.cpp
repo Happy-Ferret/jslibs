@@ -71,6 +71,10 @@ int _printf(JSContext *cx, const char * format, ...) {
 /**doc
 $CLASS_HEADER
 $SVN_REVISION $Revision$
+
+Debug and introspection tools.$LF
+$H guidelines
+ Your program should run without using this module.
 **/
 BEGIN_STATIC
 
