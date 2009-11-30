@@ -268,6 +268,13 @@ typedef enum JLErrNum {
 	JLErrLimit
 };
 
+// Reports a fatal errors, script must stop as soon as possible.
+#define JL_REPORT_ERROR( errorMessage, ... ) \
+JL_MACRO_BEGIN \
+	JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__ ); \
+	goto bad; \
+JL_MACRO_END
+
 // Report a jslibs error. see jlerrors.msg
 #define JL_REPORT_ERROR_NUM( cx, num, ... ) \
 JL_MACRO_BEGIN \
@@ -279,13 +286,22 @@ JL_MACRO_BEGIN \
 	goto bad; \
 JL_MACRO_END
 
+
+// Reports warnings (optimisation: check non-unsafeMode. see ErrorReporter() in host.cpp).
+#define JL_REPORT_WARNING( errorMessage, ... ) \
+JL_MACRO_BEGIN \
+	if (unlikely( !_unsafeMode )) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__ ); \
+JL_MACRO_END
+
 #define JL_REPORT_WARNING_NUM( cx, num, ... ) \
 JL_MACRO_BEGIN \
-	HostPrivate *hpv = GetHostPrivate(cx); \
-	if ( hpv != NULL && hpv->errorCallback != NULL ) \
-		JS_ReportErrorFlagsAndNumber(cx, JSREPORT_WARNING, hpv->errorCallback, NULL, (num), ##__VA_ARGS__); \
-	else \
-		JS_ReportWarning(cx, "undefined warning %d", (num)); \
+	if (unlikely( !_unsafeMode )) { \
+		HostPrivate *hpv = GetHostPrivate(cx); \
+		if ( hpv != NULL && hpv->errorCallback != NULL ) \
+			JS_ReportErrorFlagsAndNumber(cx, JSREPORT_WARNING, hpv->errorCallback, NULL, (num), ##__VA_ARGS__); \
+		else \
+			JS_ReportWarning(cx, "undefined warning %d", (num)); \
+	} \
 JL_MACRO_END
 
 
@@ -332,22 +348,6 @@ JL_MACRO_BEGIN \
 JL_MACRO_END
 
 
-
-// Reports warnings only in non-unsafeMode.
-#define JL_REPORT_WARNING(errorMessage, ... ) \
-JL_MACRO_BEGIN \
-	if (unlikely( !_unsafeMode )) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__ ); \
-JL_MACRO_END
-
-
-// Reports a fatal errors, script must stop as soon as possible.
-#define JL_REPORT_ERROR(errorMessage, ...) \
-JL_MACRO_BEGIN \
-	JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__ ); \
-	goto bad; \
-JL_MACRO_END
-
-
 // JL_S_ stands for (J)s(L)ibs _ (S)afemode _ and mean that these macros will only be meaningful when _unsafeMode is false. (see jslibs unsafemode).
 
 #define JL_S_ASSERT( condition, errorMessage, ... ) \
@@ -359,7 +359,6 @@ JL_MACRO_BEGIN \
 		} \
 	JL_SAFE_END \
 JL_MACRO_END
-
 
 #define JL_S_ASSERT_ERROR_NUM( condition, errorNum, ... ) \
 JL_MACRO_BEGIN \
@@ -409,7 +408,7 @@ JL_MACRO_END
 	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_BOOLEAN(value) || !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClass(cx, JSProto_Boolean), JLSMSG_EXPECT_TYPE, "boolean" );
 
 #define JL_S_ASSERT_NUMBER(value) \
-	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_BOOLEAN(value) || !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClass(cx, JSProto_Number), JLSMSG_EXPECT_TYPE, "number" );
+	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_NUMBER(value) || !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClass(cx, JSProto_Number), JLSMSG_EXPECT_TYPE, "number" );
 
 #define JL_S_ASSERT_INT(value) \
 	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_INT(value), JLSMSG_EXPECT_TYPE, "integer" );
@@ -433,10 +432,10 @@ JL_MACRO_END
 	JL_S_ASSERT_CLASS(obj, _class)
 
 #define JL_S_ASSERT_INHERITANCE(jsObject, jsClass) \
-	JL_S_ASSERT_ERROR_NUM( !JL_InheritFrom(cx, (jsObject), (jsClass)), JLSMSG_INVALID_INHERITANCE, (jsClass)->name );
+	JL_S_ASSERT_ERROR_NUM( JL_InheritFrom(cx, (jsObject), (jsClass)), JLSMSG_INVALID_INHERITANCE, (jsClass)->name );
 
 #define JL_S_ASSERT_THIS_INSTANCE() \
-	JL_S_ASSERT_ERROR_NUM( (obj) == *_prototype || !JL_InheritFrom(cx, obj, _class), JLSMSG_INVALID_INHERITANCE, (_class)->name );
+	JL_S_ASSERT_ERROR_NUM( (obj) == *_prototype || JL_InheritFrom(cx, obj, _class), JLSMSG_INVALID_INHERITANCE, (_class)->name );
 
 #define JL_S_ASSERT_CONSTRUCTING() \
 	JL_S_ASSERT_ERROR_NUM( JS_IsConstructing(cx), JLSMSG_NEED_CONSTRUCT );
@@ -1111,9 +1110,9 @@ ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *svnRev) {
 	return p ? atol(p+1) : 0;
 }
 
-ALWAYS_INLINE bool JL_MaybeRealloc( int requested, int received ) {
+ALWAYS_INLINE bool JL_MaybeRealloc( unsigned int requested, unsigned int received ) {
 
-	return requested != 0 && (128 * received / requested < 115) && (requested - received > 32); // "128 *": instead using percent, we use per-128
+	return requested != 0 && (128 * received / requested < 96) && (requested - received > 64); // "128 *": instead using percent, we use per-128
 }
 
 

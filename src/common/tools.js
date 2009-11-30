@@ -106,3 +106,5 @@ function RunJsircbot( withDebuggerEnabled ) {
 	Exec('main.js', false);
 	throw 0;
 }
+
+var FakeQAApi = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };
