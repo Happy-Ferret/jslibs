@@ -1,5 +1,15 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
+LoadModule('jsode');
+
+var world = new World();
+var ball = new GeomSphere(world.space);
+ball.body = new Body(world);
+
+Halt();
+
+
+
 try {
 
 LoadModule('jsdebug');

@@ -16,7 +16,7 @@
 
 #include "jslibsModule.cpp"
 
-#define USE_DEFAULT_ALLOCATORS // uncomment to use dtandard malloc/free
+#define USE_DEFAULT_ALLOCATORS // uncomment to use standard malloc/free
 
 #ifndef USE_DEFAULT_ALLOCATORS
 volatile bool disabledFree = false;
@@ -92,9 +92,38 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 //}
 
 
+
+static void* DefaultMalloc( size_t size ) {
+	return malloc(size);
+}
+static void* DefaultCalloc( size_t num, size_t size ) {
+	return calloc(num, size);
+}
+static void* DefaultMemalign( size_t alignment, size_t size ) {
+	return memalign(alignment, size);
+}
+static void* DefaultRealloc( void *ptr, size_t size ) {
+	return realloc(ptr, size);
+}
+static size_t DefaultMsize( void *ptr ) {
+	return _msize(ptr);
+}
+static void DefaultFree( void *ptr ) {
+	free(ptr);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
+/*
+	JSLIBS_RegisterCustomAllocators(DefaultMalloc, DefaultCalloc, DefaultMemalign, DefaultRealloc, DefaultMsize, DefaultFree);
+	jl_malloc = DefaultMalloc;
+	jl_calloc = DefaultCalloc;
+	jl_memalign = DefaultMemalign;
+	jl_realloc = DefaultRealloc;
+	jl_msize = DefaultMsize;
+	jl_free = DefaultFree;
+*/
 
 // enable low fragmentation heap
 #ifdef XP_WIN

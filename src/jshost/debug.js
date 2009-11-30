@@ -6,6 +6,13 @@
 
 
 
+LoadModule('jsode');
+LoadModule('jsdebug');
+DisableJIT();
+
+var world = new World();
+var ball = new GeomSphere(world.space);
+ball.body = new Body(world);
 
 
 
