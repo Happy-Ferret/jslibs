@@ -24,6 +24,7 @@ struct Private {
 	bool wTo;
 	size_t remainderLen;
 	char remainderBuf[MB_LEN_MAX];
+	char invalidChar;
 };
 
 
@@ -48,13 +49,13 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( toCode, fromCode [ , toUseWide, fromUseWide ] )
+ $INAME( toCode, fromCode [ , toUsesWide, fromUsesWide ] )
   Constructs a new conversion object that transforms from _fromCode_ into _toCode_.
   $H arguments
    $ARG $STR toCode: destination encoding (see Iconv.list property)
    $ARG $STR fromCode: source encoding (see Iconv.list property)
-   $ARG $BOOL toUseWide: destination use 16bit per char.
-   $ARG $BOOL fromUseWide: source use 16bit per char.
+   $ARG $BOOL toUsesWide: destination uses 16bit per char.
+   $ARG $BOOL fromUsesWide: source uses 16bit per char.
   $H example
 {{{
   var consEnc = new Iconv(consoleCodepage, 'UCS-2-INTERNAL', false, true); // source is wide (16bit), dest is not wide (8bit)
@@ -66,7 +67,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_S_ASSERT_ARG_RANGE(2, 4);
 
 	const char *tocode;
 	const char *fromcode;
@@ -98,6 +99,8 @@ DEFINE_CONSTRUCTOR() {
 		else
 			JL_REPORT_ERROR( "Unknown iconv error." );
 	}
+
+	pv->invalidChar = '?';
 	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
 	JL_BAD;
@@ -122,9 +125,10 @@ DEFINE_CALL() {
 
 	size_t status;
 
-	if ( argc = 0 ) {
+	if ( JL_ARGC == 0 ) {
 		
 		status = iconv(pv->cd, NULL, NULL, NULL, NULL); // sets cd's conversion state to the initial state.
+		pv->remainderLen = 0;
 		return JS_TRUE;
 	}
 
@@ -133,12 +137,10 @@ DEFINE_CALL() {
 
 	if ( pv->wFrom ) { // source is wide.
 		
-		// (TBD) check the string size
-
 		JSString *jsstr = JS_ValueToString(cx, JL_ARG(1));
 		JL_ARG(1) = STRING_TO_JSVAL( jsstr );
 		inLen = JL_GetStringLength(jsstr) * 2;
-		inBuf = (char*)JS_GetStringChars(jsstr);
+		inBuf = (const char*)JS_GetStringChars(jsstr);
 	} else {
 
 		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &inBuf, &inLen) );
@@ -152,7 +154,7 @@ DEFINE_CALL() {
 	size_t outLen;
 
 
-	outLen = inLen + MB_LEN_MAX + 512; // * 3/2; // * 1.5 (we use + MB_LEN_MAX to avoid remainderLen... section to failed with E2BIG)
+	outLen = inLen + MB_LEN_MAX + 512; // (we use + MB_LEN_MAX to avoid "remainderLen section" to failed with E2BIG)
 	outBuf = (char*)JS_malloc(cx, outLen +1);
 	JL_CHK( outBuf );
 
@@ -161,12 +163,13 @@ DEFINE_CALL() {
 	size_t outLeft;
 	outLeft = outLen;
 
-	if ( pv->remainderLen ) { // have to process previous the incomplete multibyte sequence ?
+	if ( pv->remainderLen ) { // have to process a previous incomplete multibyte sequence ?
 
 		const char *tmpPtr;
 		size_t tmpLeft;
 		do {
-			pv->remainderBuf[pv->remainderLen++] = *inPtr;
+
+			pv->remainderBuf[pv->remainderLen++] = *inPtr; // complete the sequence with incomming data
 			inPtr++;
 			inLeft--;
 
@@ -178,24 +181,33 @@ DEFINE_CALL() {
 			if ( status != (size_t)(-1) )
 				break;
 
+			// E2BIG will never happens
+
 			// (TBD) manage EILSEQ like this ??? :
 			if ( errno == EILSEQ ) { // An invalid multibyte sequence has been encountered in the input.
 				
-				// (TBD) manage to add a '?' char
+				*outPtr = pv->invalidChar; // space should be available to acheive this.
+				outPtr++;
+				outLeft--;
+
 				inPtr--; // rewind by 1
 				inLeft++;
 				break;
 			}
 
 		} while ( errno == EINVAL && pv->remainderLen < sizeof(pv->remainderBuf) );
+
+		iconv(pv->cd, NULL, NULL, NULL, NULL); // reset
 		pv->remainderLen = 0;
 	}
 
 	do {
+
 		status = iconv(pv->cd, &inPtr, &inLeft, &outPtr, &outLeft); // doc: http://www.manpagez.com/man/4/iconv/
 
 		if ( status == (size_t)(-1) )
 			switch ( errno ) {
+
 				case E2BIG: { // There is not sufficient room at *outbuf.
 
 						int processedOut = outPtr - outBuf;
@@ -209,7 +221,7 @@ DEFINE_CALL() {
 
 				case EILSEQ: // An invalid multibyte sequence has been encountered in the input. *inPtr is left pointing to the beginning of the invalid multibyte sequence.
 
-					if ( outLeft < MB_LEN_MAX + 1 ) {
+					if ( outLeft < MB_LEN_MAX +1 ) {
 						
 						int processedOut = outPtr - outBuf;
 						outLen = inLen * processedOut / (inPtr - inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
@@ -220,7 +232,7 @@ DEFINE_CALL() {
 					}
 
 					status = iconv(pv->cd, NULL, NULL, &outPtr, &outLeft); // to set cd's conversion state to the initial state and store a corresponding shift sequence at *outbuf.
-					*outPtr = '?';
+					*outPtr = pv->invalidChar;
 					outPtr++;
 					outLeft--;
 					inPtr++;
@@ -229,7 +241,7 @@ DEFINE_CALL() {
 
 				case EINVAL: { // An incomplete multibyte sequence has been encountered in the input.
 
-					JL_S_ASSERT(inLeft < MB_LEN_MAX, "Unable to manage incomplete multibyte sequence.");
+					JL_S_ASSERT(inLeft < sizeof(pv->remainderBuf), "Unable to manage incomplete multibyte sequence.");
 					memcpy(pv->remainderBuf + pv->remainderLen, inPtr, inLeft); // save
 					pv->remainderLen = inLeft;
 					inPtr += inLeft;
@@ -238,35 +250,87 @@ DEFINE_CALL() {
 				}
 			}
 
-	} while( inLeft );
+	} while ( inLeft );
 
-	size_t length;
+	unsigned int length;
 	length = outPtr - outBuf;
+
+	if ( length == 0 ) {
+		
+		JS_free(cx, outBuf);
+		*JL_RVAL = JS_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
 
 	if ( JL_MaybeRealloc(outLen, length) ) {
 
 		outBuf = (char*)JS_realloc(cx, outBuf, length +1);
 		JL_CHK( outBuf );
 	}
-	outBuf[length] = '\0';
 
+	outBuf[length] = '\0'; // (TBD) manage \0 for wide char
+
+	JSString *jsEncStr;
 	if ( pv->wTo ) { // destination is wide.
-		
-		JSString *wstr = JS_NewUCString(cx, (jschar*)outBuf, (length+1) / 2);
-		*JL_RVAL = STRING_TO_JSVAL(wstr);
+	
+		if ( length % 2 != 0 )
+			JL_REPORT_WARNING("Invalid Unicode string length."); // (TBD) or report an error ?
+
+		jsEncStr = JS_NewUCString(cx, (jschar*)outBuf, (length +1) / 2);
 	} else {
 
-		JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
+		jsEncStr = JS_NewString(cx, outBuf, length); // loose outBuf ownership	// JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
 	}
+	*JL_RVAL = STRING_TO_JSVAL(jsEncStr);
 
 	return JS_TRUE;
+
 bad:
 	if ( outBuf != NULL )
 		JS_free(cx, outBuf);
 	return JS_FALSE;
 }
 
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME
+  Is the replacement char used when an invalid multibyte sequence has been encountered.
+**/
+DEFINE_PROPERTY_SETTER( invalidChar ) {
 
+	Private *pv;
+	pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+
+	const char *chr;
+	unsigned int length;
+	JL_CHK( JsvalToStringAndLength(cx, vp, &chr, &length) );
+	if ( length != 1 )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "one-char string");
+	pv->invalidChar = chr[0];
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_GETTER( invalidChar ) {
+
+	Private *pv;
+	pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );	
+	JL_CHK( StringAndLengthToJsval(cx, vp, &pv->invalidChar, 1) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( hasIncompleteSequence ) {
+
+	Private *pv;
+	pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );	
+	JL_CHK( BoolToJsval(cx, pv->remainderLen != 0, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
 
 /**doc
 $TOC_MEMBER $INAME
@@ -332,6 +396,11 @@ CONFIGURE_CLASS
 
 	HAS_CALL
 
+	BEGIN_PROPERTY_SPEC
+		PROPERTY( invalidChar )
+		PROPERTY_READ( hasIncompleteSequence )
+	END_PROPERTY_SPEC
+
 	BEGIN_STATIC_PROPERTY_SPEC
 #ifdef JL_HAS_ICONVLIST
 		PROPERTY_READ( list )
@@ -343,6 +412,12 @@ END_CLASS
 
 
 /**doc
+
+=== Note ===
+ To benefit JavaScript unicode strings, you have to use the UCS-2-INTERNAL (Full Unicode) encoding.$LF
+ eg. `var conv = new Iconv('UCS-2-INTERNAL', 'UTF-8', true, false);` $LF
+ See also the [http://en.wikipedia.org/wiki/List_of_Unicode_characters List of Unicode characters]
+
 === Example 1 ===
  Convert and convert back a string.
 {{{

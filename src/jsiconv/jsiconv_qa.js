@@ -125,4 +125,39 @@ LoadModule('jsiconv');
   var result = conv(utf8str);
   QA.ASSERT_STR( result, 'été à la plage', 'check the intermediate' );
   var conv = new Iconv('ISO-8859-1', 'UCS-2-INTERNAL', false, true); // source is not wide (8bit), dest is wide (16bit)
-  QA.ASSERT_STR( conv(result) == 'été à la plage', 'check the resulting string' );
+  QA.ASSERT_STR( conv(result), 'été à la plage', 'check the resulting string' );
+
+
+/// invalid char
+
+	var conv = new Iconv('UTF-8', 'UCS-2-INTERNAL', false, true);
+	QA.ASSERT_STR( conv.invalidChar, '?', 'default invalidChar' );
+	QA.ASSERT_EXCEPTION( function() { conv.invalidChar = '???' }, TypeError, 'invalid invalidChar' );
+	conv.invalidChar = '.';
+	QA.ASSERT_STR( conv.invalidChar, '.', 'new invalidChar' );
+
+
+/// invalid multibyte sequence 1
+
+	var conv = new Iconv('850', 'UTF-8');
+	
+	conv.invalidChar = ' ';
+	var result = conv('\xC3');
+	QA.ASSERT( conv.hasIncompleteSequence, true, 'incomplete sequence' );
+	conv();
+	QA.ASSERT( conv.hasIncompleteSequence, false, 'reset' );
+
+	var result = conv('\xC3');
+	QA.ASSERT( conv.hasIncompleteSequence, true, 'first part' );
+	result += conv('\xA9');
+	QA.ASSERT( conv.hasIncompleteSequence, false, 'last part' );
+
+
+/// invalid multibyte sequence 2
+
+	var conv = new Iconv('ISO-8859-1', 'UTF-8');
+	var result = conv('\xC3');
+	QA.ASSERT( conv.hasIncompleteSequence, true, 'first part' );
+	result += conv('\xC3\xA9ZzZ');
+	QA.ASSERT( conv.hasIncompleteSequence, false, 'last part' );
+	QA.ASSERT_STR( result, '?éZzZ', 'last part' );

@@ -5,12 +5,19 @@ LoadModule('jsio');
 LoadModule('jsiconv');
 LoadModule('jswinshell');
 
+	var conv = new Iconv('UTF-8', 'UCS-2-INTERNAL', false, true);
+	Print( conv.invalidChar, '?', 'default invalidChar' );
+	ASSERT_EXCEPTION( function() { conv.invalidChar = '???' }, TypeError, 'invalid invalidChar' );
+	conv.invalidChar = '.';
+	Print( conv.invalidChar, '.', 'new invalidChar' );
 
-//  Print( [ e for each ( e in Iconv.list ) if ( e.indexOf('850') >= 0 ) ].join('\n') ) // cmd: chcp
 
-  var conv = new Iconv(consoleCodepage, 'UCS-2-INTERNAL', false, true); // source is wide (16bit), dest is not wide (8bit)
-  Print( conv('été') );
-  
+
+Halt(); //////////////////////////////////////////
+
+	var conv = new Iconv('UCS-2-INTERNAL', 'UTF-8', true, false);
+	var result = conv(String.fromCharCode(0x20AC));
+	Print(result, '\n');
 
 
 Halt(); //////////////////////////////////////////
