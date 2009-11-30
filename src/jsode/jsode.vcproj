@@ -348,6 +348,10 @@
 			RelativePath="..\jsode\debug.js"
 			>
 		</File>
+		<File
+			RelativePath=".\jsode_qa.js"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
