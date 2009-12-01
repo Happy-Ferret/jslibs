@@ -13,6 +13,11 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+
+namespace ode {
+	#include "ode/../../ode/src/objects.h"
+}
+
 #include "world.h"
 #include "space.h"
 #include "body.h"
@@ -187,7 +192,39 @@ DEFINE_FINALIZE() {
 	ode::dJointGroupDestroy(pv->contactGroupId);
 
 	// destroy joints
+
+	ode::dxWorld *w = (ode::dxWorld*)pv->worldId;
+
+/*
+	dxJoint *nextj, *j = w->firstjoint;
+	while (j) {
+
+		nextj = (dxJoint*)j->next;
+
+//		JSObject *bodyObj = (JSObject*)ode::dJoinGetData(b);
+//		if ( bodyObj != NULL )
+//			JS_SetPrivate(cx, bodyObj, NULL);
+
+		j = nextj;
+	}
+*/
+
 	// destroy bodies
+
+	ode::dxBody *nextb, *b = w->firstbody;
+	while (b) {
+		
+		nextb = (ode::dxBody*) b->next;
+
+		JSObject *bodyObj = (JSObject*)ode::dBodyGetData(b);
+		if ( bodyObj != NULL )
+			JS_SetPrivate(cx, bodyObj, NULL);
+		b = nextb;
+	}
+
+// <soubok>	If an object A has a reference to an object B, should I expect B finalizer to be called after A finalizer ?
+// <shaver>	no
+
 	ode::dWorldDestroy(pv->worldId);
 	JS_free(cx, pv);
 }
