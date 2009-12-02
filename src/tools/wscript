@@ -8,10 +8,19 @@ jsScriptToXDR_source = """
 jsScriptToXDR.cpp
 """.split()
 
+def configure(conf):
+
+    import os
+    base_path = os.path.abspath(conf.blddir) + os.sep + conf.env.variant()
+
+    conf.env.JSTOXDR = "LD_LIBRARY_PATH=%s %s/src/tools/jsScriptToXDR" % (conf.env.LIBPATH_JLMOZJS[0], base_path)
+    conf.env.XDRTOCRES = "LD_LIBRARY_PATH=%s %s/src/tools/fileToCRes" % (conf.env.LIBPATH_JLMOZJS[0], base_path)
+
 def build(bld):
 
     # Compile jsScriptToXDR
     jsScriptToXDR = bld.new_task_gen('cxx', 'cprogram')
+    jsScriptToXDR.name = 'jsScriptToXDR'
     jsScriptToXDR.target = 'jsScriptToXDR'
     jsScriptToXDR.source = jsScriptToXDR_source
     jsScriptToXDR.includes = '../common'
@@ -19,6 +28,7 @@ def build(bld):
 
     # Compile fileToCRes
     fileToCRes = bld.new_task_gen('cxx', 'cprogram')
+    fileToCRes.name = 'fileToCRes'
     fileToCRes.target = 'fileToCRes'
     fileToCRes.source = fileToCRes_source
     fileToCRes.includes = '../common'

@@ -1,33 +1,21 @@
 # Build jshost program
 
-xdr_source = """
-embeddedBootstrapScript.js
-""".split()
-
-def detect(conf):
-	jsScriptToXDR = conf.find_program('jsScriptToXDR', var='JSTOXDR', mandatory=True)
-	fileToCRes = conf.find_program('fileToCRes', var='XDRTOCRES', mandatory=True)
-
 def build(bld):
 
-    import TaskGen
+    # Generate xdr
+    xdr = bld.new_task_gen()
+    xdr.before = 'xrdtocres'
+    xdr.name = 'jstoxrd'
+    xdr.source = 'embeddedBootstrapScript.js'
+    xdr.target = 'embeddedBootstrapScript.js.xdr'
+    xdr.rule = '${JSTOXDR} ${SRC} ${TGT} true bootstrap'
 
-    # Create .js.xdr
-    TaskGen.declare_chain(
-	name = 'jsScriptToXDR',
-	action = '${JSTOXDR} ${SRC} ${TGT}',
-	ext_in = '.js',
-	ext_out = '.js.xdr',
-        )
-
-
-    # Create .js.xdr.cres
-    TaskGen.declare_chain(
-	name = 'fileToCRes',
-	action = '${XDRTOCRES} ${SRC} ${TGT}',
-	ext_in = '.js.xdr',
-	ext_out = '.js.xdr.cres',
-        )
+    # Generate cres
+    cres = bld.new_task_gen()
+    cres.name = 'xrdtocres'
+    cres.source = 'embeddedBootstrapScript.js.xdr'
+    cres.target = 'embeddedBootstrapScript.js.xdr.cres'
+    cres.rule = '${XDRTOCRES} ${SRC} ${TGT}'
     
     # Compile jshost
     jshost = bld.new_task_gen('cxx', 'cprogram')

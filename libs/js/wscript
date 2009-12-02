@@ -110,11 +110,11 @@ def build(bld):
     configure_execute.target = 'src/Makefile'
 
     if bld.env.BUILD_MODE == 'debug':
-        configure_execute.env.CONFIGURE_OPTIONS = '--enable-debug --disable-optimize'
+        bld.env_of_name(bld.env.BUILD_MODE).CONFIGURE_OPTIONS = '--enable-debug --disable-optimize'
     elif bld.env.BUILD_MODE == 'optimize':
-        configure_execute.env.CONFIGURE_OPTIONS = '--enable-optimize --enable-strip'
+        bld.env_of_name(bld.env.BUILD_MODE).CONFIGURE_OPTIONS = '--enable-optimize --enable-strip'
     else:
-        configure_execute.env.CONFIGURE_OPTIONS = '--enable-optimize'
+        bld.env_of_name(bld.env.BUILD_MODE).CONFIGURE_OPTIONS = '--enable-optimize'
 
     configure_execute.rule ='cd ${SRC[0].bld_dir(env)} && ${SRC[0].abspath()} ${CONFIGURE_OPTIONS} --with-windows-version=501 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests'
 
