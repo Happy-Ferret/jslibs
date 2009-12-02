@@ -49,15 +49,21 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( Transformation )
 
 DEFINE_FINALIZE() {
-	
+
+	//beware: prototype may be finalized before the object
+	if ( *_prototype == NULL )
+		return;
+
 	if ( obj == *_prototype ) {
 
 		while ( !PoolIsEmpty(&matrixPool) )
 			Matrix44Free((Matrix44*)jl::PoolPop(&matrixPool));
 		jl::PoolFinalize(&matrixPool);
+		*_prototype = NULL;
 		return;
 	}
-//	printf("Fin:%d\n", matrixPoolLength);
+
+	//	printf("Fin:%d\n", matrixPoolLength);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	if ( !jl::PoolPush(&matrixPool, pv->mat) )
 		Matrix44Free(pv->mat);
