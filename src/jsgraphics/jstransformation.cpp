@@ -50,10 +50,6 @@ BEGIN_CLASS( Transformation )
 
 DEFINE_FINALIZE() {
 
-	//beware: prototype may be finalized before the object
-	if ( *_prototype == NULL )
-		return;
-
 	if ( obj == *_prototype ) {
 
 		while ( !PoolIsEmpty(&matrixPool) )
@@ -65,8 +61,16 @@ DEFINE_FINALIZE() {
 
 	//	printf("Fin:%d\n", matrixPoolLength);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	if ( !jl::PoolPush(&matrixPool, pv->mat) )
+	
+	if ( *_prototype != NULL ) { //beware: prototype may be finalized before the object
+
+		if ( !jl::PoolPush(&matrixPool, pv->mat) )
+			Matrix44Free(pv->mat);
+	} else {
+
 		Matrix44Free(pv->mat);
+	}
+
 	JS_free(cx, pv);
 }
 
