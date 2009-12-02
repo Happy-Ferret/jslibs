@@ -62,7 +62,8 @@ DEFINE_FINALIZE() {
 	//	printf("Fin:%d\n", matrixPoolLength);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	
-	if ( *_prototype != NULL ) { //beware: prototype may be finalized before the object
+	//beware: prototype may be finalized before the object
+	if ( *_prototype != NULL ) { // add to the pool if the pool is still alive !
 
 		if ( !jl::PoolPush(&matrixPool, pv->mat) )
 			Matrix44Free(pv->mat);
