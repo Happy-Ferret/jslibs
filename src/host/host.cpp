@@ -438,7 +438,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 	pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc, because WatchDogThreadProc points on it !!!
 	JL_S_ASSERT_ALLOC( pv );
 //	memset(pv, 0, sizeof(HostPrivate)); // mandatory ! or use calloc
-	pv->hostPrivateSize = sizeof(HostPrivate);
+	pv->hostPrivateVersion = JL_HOST_PRIVATE_VERSION;
 	SetHostPrivate(cx, pv);
 
 	// setup WatchDog
@@ -468,7 +468,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 		pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc, because WatchDogThreadProc points on it !!!
 		JL_S_ASSERT_ALLOC( pv );
 //		memset(pv, 0, sizeof(HostPrivate)); // mandatory ! or use calloc
-		pv->hostPrivateSize = sizeof(HostPrivate);
+		pv->hostPrivateVersion = JL_HOST_PRIVATE_VERSION;
 		SetHostPrivate(cx, pv);
 	}
 

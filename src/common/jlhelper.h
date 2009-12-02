@@ -112,33 +112,8 @@ enum {
 };
 #undef JLID_SPEC
 
-typedef int (*HostOutput)( void *privateData, const char *buffer, unsigned int length );
 
-struct HostPrivate {
-
-	bool unsafeMode;
-	void *privateData;
-	volatile unsigned int maybeGCInterval;
-	JLSemaphoreHandler watchDogSemEnd;
-	JLThreadHandler watchDogThread;
-	HostOutput hostStdOut;
-	HostOutput hostStdErr;
-	JSErrorCallback errorCallback;
-	JSLocaleCallbacks localeCallbacks;
-	struct ModulePrivate {
-		uint32_t moduleId;
-		void *privateData;
-	} modulePrivate[1<<8]; // does not support more than 256 modules.
-	jl::Queue moduleList;
-	jl::Queue registredNativeClasses;
-	JSClass *stringObjectClass;
-	jl_allocators_t alloc;
-	int camelCase;
-	jsid ids[LAST_JSID];
-	unsigned int hostPrivateSize;
-};
-
-JS_STATIC_ASSERT( offsetof(HostPrivate, unsafeMode) == 0 ); // JL_S_ASSERT must be usable before hostPrivateSize is tested
+#include <jlhostprivate.h>
 
 
 ALWAYS_INLINE HostPrivate* GetHostPrivate( JSContext *cx ) {
@@ -1102,13 +1077,6 @@ ALWAYS_INLINE JSBool JL_GetVariableValue( JSContext *cx, const char *name, jsval
 
 ///////////////////////////////////////////////////////////////////////////////
 // jslibs tools
-
-
-ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *svnRev) {
-
-	const char *p = strchr(svnRev, ' ');
-	return p ? atol(p+1) : 0;
-}
 
 ALWAYS_INLINE bool JL_MaybeRealloc( unsigned int requested, unsigned int received ) {
 

@@ -27,6 +27,15 @@
 
 #define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
 
+#define __DATE__YEAR ((((__DATE__ [7] - '0') * 10 + (__DATE__ [8] - '0')) * 10 + (__DATE__ [9] - '0')) * 10 + (__DATE__ [10] - '0'))
+#define __DATE__MONTH (__DATE__ [2] == 'n' ? (__DATE__ [1] == 'a' ? 0 : 5) : __DATE__ [2] == 'l' ? 6 : __DATE__ [2] == 'g' ? 7 : __DATE__ [2] == 'p' ? 8 : __DATE__ [2] == 't' ? 9 : __DATE__ [2] == 'v' ? 10 : 11)
+#define __DATE__DAY ((__DATE__ [4] == ' ' ? 0 : __DATE__ [4] - '0') * 10 + (__DATE__ [5] - '0'))
+#define __DATE__HOUR (((__TIME__[0]-'0')*10) + (__TIME__[1]-'0'))
+#define __DATE__MINUTE (((__TIME__[3]-'0')*10) + (__TIME__[4]-'0'))
+#define __DATE__SECOND (((__TIME__[6]-'0')*10) + (__TIME__[7]-'0'))
+
+#define JL_BUILD ( (((__DATE__YEAR * 12 + __DATE__MONTH) * 31 + __DATE__DAY) * 24 + __DATE__HOUR) - (((2006*12 + 6)*31 + 22)*24 + 0) ) // - Aug 22, 2006
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
@@ -243,6 +252,38 @@
 	}
 
 #endif // Windows/MacosX/Linux platform
+
+
+ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
+
+	if ( r == NULL || r[0] == '\0' || r[10] == '\0' || r[11] == '\0' || r[12] == '\0' || r[13] == '\0' )
+		return 0;
+
+	const unsigned int count = 
+		  r[11] == ' ' ? 1
+		: r[12] == ' ' ? 10
+		: r[13] == ' ' ? 100
+		: r[14] == ' ' ? 1000
+		: r[15] == ' ' ? 10000
+		: r[16] == ' ' ? 100000
+		: r[17] == ' ' ? 1000000
+		: r[18] == ' ' ? 10000000
+		: r[19] == ' ' ? 100000000
+		: 0;
+
+	return
+		(r[11] == ' ' ? 0 : (r[11]-'0') * (count/10) +
+		(r[12] == ' ' ? 0 : (r[12]-'0') * (count/100) + 
+		(r[13] == ' ' ? 0 : (r[13]-'0') * (count/1000) + 
+		(r[14] == ' ' ? 0 : (r[14]-'0') * (count/10000) + 
+		(r[15] == ' ' ? 0 : (r[15]-'0') * (count/100000) +
+		(r[16] == ' ' ? 0 : (r[16]-'0') * (count/1000000) +
+		(r[17] == ' ' ? 0 : (r[17]-'0') * (count/10000000) +
+		(r[18] == ' ' ? 0 : (r[18]-'0') * (count/100000000) +
+		(r[19] == ' ' ? 0 : (r[19]-'0') * (count/1000000000) +
+		0)))))))));
+}
+
 
 /*
 	int posix_memalign(void **memptr, size_t alignment, size_t size) {
