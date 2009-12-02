@@ -32,6 +32,8 @@ inline void PoolInitialize( Pool *pool, size_t maxLength ) {
 	
 	pool->listLength = 4096 / sizeof(void*); // alloc 1 page
 	pool->list = (void**)jl_malloc(pool->listLength * sizeof(void*));
+	pool->maxLength = maxLength;
+	pool->length = 0;
 }
 
 inline void PoolFinalize( Pool *pool ) {
