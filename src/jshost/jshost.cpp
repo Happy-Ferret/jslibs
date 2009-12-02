@@ -91,42 +91,12 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 //	printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticDepth, script );
 //}
 
-
-
-static void* DefaultMalloc( size_t size ) {
-	return malloc(size);
-}
-static void* DefaultCalloc( size_t num, size_t size ) {
-	return calloc(num, size);
-}
-static void* DefaultMemalign( size_t alignment, size_t size ) {
-	return memalign(alignment, size);
-}
-static void* DefaultRealloc( void *ptr, size_t size ) {
-	return realloc(ptr, size);
-}
-static size_t DefaultMsize( void *ptr ) {
-	return _msize(ptr);
-}
-static void DefaultFree( void *ptr ) {
-	free(ptr);
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
-/*
-	JSLIBS_RegisterCustomAllocators(DefaultMalloc, DefaultCalloc, DefaultMemalign, DefaultRealloc, DefaultMsize, DefaultFree);
-	jl_malloc = DefaultMalloc;
-	jl_calloc = DefaultCalloc;
-	jl_memalign = DefaultMemalign;
-	jl_realloc = DefaultRealloc;
-	jl_msize = DefaultMsize;
-	jl_free = DefaultFree;
-*/
 
-// enable low fragmentation heap
 #ifdef XP_WIN
+	// enable low fragmentation heap
 	HANDLE heap = GetProcessHeap();
 	ULONG enable = 2;
 	HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable));
@@ -144,7 +114,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	const char *inlineScript = NULL;
 
 #ifdef DEBUG
-	bool debug; debug = false;
+	bool debug;
+	debug = false;
 #endif
 
 	// (TBD) use getopt instead ?
@@ -186,11 +157,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				inlineScript = *(argumentVector+1);
 				break;
 			case 'v': // version
-				fprintf( stderr, "Version r%d / %s\n", JL_SvnRevToInt("$Revision$"), JS_GetImplementationVersion() );
+				fprintf( stderr, "Version r%d - Build %0.4d-%0.2d-%0.2d / %s\n", JL_SvnRevToInt("$Revision$"), __DATE__YEAR, __DATE__MONTH+1, __DATE__DAY, JS_GetImplementationVersion() );
 				return EXIT_SUCCESS;
 			case '?': // help
 			case 'h': //
-				fprintf( stderr, "Help: http://code.google.com/p/jslibs/wiki/jshost\n" );
+				fprintf( stderr, "Help: http://code.google.com/p/jslibs/wiki/jshost#Command_line_options\n" );
 				return EXIT_SUCCESS;
 		#ifdef DEBUG
 			case 'd': // debug
