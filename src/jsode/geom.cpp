@@ -26,8 +26,6 @@ check:
 #include "body.h"
 #include "geom.h"
 
-#include "vector3.h"
-
 JSBool ReadMatrix(JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
 	ode::dGeomID geomID = (ode::dGeomID)JL_GetPrivate(cx, obj);

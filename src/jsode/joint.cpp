@@ -17,9 +17,6 @@
 #include "body.h"
 #include "world.h"
 
-#include "math.h"
-
-
 
 void FinalizeJoint(JSContext *cx, JSObject *obj) {
 

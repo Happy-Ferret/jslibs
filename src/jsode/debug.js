@@ -2,11 +2,9 @@
 
 LoadModule('jsode');
 
-var world = new World();
-var ball = new GeomSphere(world.space);
-ball.body = new Body(world);
+new Body(new World());
 
-Halt();
+throw 0;
 
 
 

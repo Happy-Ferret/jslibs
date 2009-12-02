@@ -12,7 +12,7 @@
 #include "jlconvert.h"
 #include "jlconfiguration.h"
 
-#include <malloc.h>
+#include "vector3.h"
 
 namespace ode {
 	#include <ode/ode.h>

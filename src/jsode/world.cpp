@@ -15,19 +15,14 @@
 #include "stdafx.h"
 
 namespace ode {
-	#include "ode/../../ode/src/objects.h"
+	#include <../ode/src/objects.h>
+	#include <../ode/src/joints/joint.h>
 }
 
 #include "world.h"
 #include "space.h"
 #include "body.h"
 #include "geom.h"
-
-#include "jsobj.h"
-
-#include "stdlib.h"
-
-#include "vector3.h"
 
 
 struct ColideContextPrivate {
@@ -188,46 +183,53 @@ DEFINE_FINALIZE() {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
-//	ode::dxWorld* w = pv->worldId;
+
 	ode::dJointGroupDestroy(pv->contactGroupId);
 
-	// destroy joints
+	// <soubok> If an object A has a reference to an object B, should I expect B finalizer to be called after A finalizer ?  <shaver> no
+	// world may be destroy before bodies, then we have to
+	// destroy the javascript part of bodies before before bodies finalizers being called
 
-	ode::dxWorld *w = (ode::dxWorld*)pv->worldId;
-
-/*
-	dxJoint *nextj, *j = w->firstjoint;
-	while (j) {
-
-		nextj = (dxJoint*)j->next;
-
-//		JSObject *bodyObj = (JSObject*)ode::dJoinGetData(b);
-//		if ( bodyObj != NULL )
-//			JS_SetPrivate(cx, bodyObj, NULL);
-
-		j = nextj;
-	}
-*/
-
-	// destroy bodies
-
-	ode::dxBody *nextb, *b = w->firstbody;
-	while (b) {
-		
-		nextb = (ode::dxBody*) b->next;
-
-		JSObject *bodyObj = (JSObject*)ode::dBodyGetData(b);
+	ode::dxWorld *world = (ode::dxWorld*)pv->worldId;
+	for ( ode::dxBody *bodyIt = world->firstbody; bodyIt; bodyIt = (ode::dxBody*)bodyIt->next ) {
+	
+		JSObject *bodyObj = (JSObject*)ode::dBodyGetData(bodyIt);
 		if ( bodyObj != NULL )
 			JS_SetPrivate(cx, bodyObj, NULL);
-		b = nextb;
+			// ode::dBodySetData(bodyIt, NULL);
+
+		// same rule for geoms
+		for ( ode::dxGeom *geomIt = bodyIt->geom; geomIt; geomIt = ode::dGeomGetBodyNext(geomIt) ) {
+
+			JSObject *geomObj = (JSObject*)ode::dGeomGetData(geomIt);
+			if ( geomObj != NULL )
+				JS_SetPrivate(cx, geomObj, NULL);
+			// ode::dGeomSetData(geomIt, NULL);
+	  }
+
+		// same rule for joints
+		for ( ode::dxJointNode *jointIt = bodyIt->firstjoint; jointIt; jointIt = jointIt->next ) {
+		
+			JSObject *jointObj = (JSObject*)ode::dJointGetData(jointIt->joint);
+			if ( jointObj != NULL )
+				JS_SetPrivate(cx, jointObj, NULL);
+			// ode::dJointSetData(jointIt, NULL);
+		}
 	}
 
-// <soubok>	If an object A has a reference to an object B, should I expect B finalizer to be called after A finalizer ?
-// <shaver>	no
+	// same rule for joints
+	for ( ode::dxJoint *jointIt = world->firstjoint; jointIt; jointIt = (ode::dxJoint*)jointIt->next ) {
+	
+		JSObject *jointObj = (JSObject*)ode::dJointGetData(jointIt);
+		if ( jointObj != NULL )
+			JS_SetPrivate(cx, jointObj, NULL);
+		// ode::dJointSetData(jointIt, NULL);
+	}
 
 	ode::dWorldDestroy(pv->worldId);
 	JS_free(cx, pv);
 }
+
 
 /**doc
 $TOC_MEMBER $INAME
