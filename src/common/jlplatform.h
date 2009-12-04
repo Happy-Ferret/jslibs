@@ -125,6 +125,7 @@
 #endif // #if defined WIN32
 
 #include <math.h>
+#include <float.h>
 #include <limits.h>
 #include <sys/types.h>
 #include <malloc.h>
