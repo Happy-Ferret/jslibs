@@ -513,7 +513,7 @@ $TOC_MEMBER $INAME
  $THIS $INAME( otherTexture )
   Swaps the content of two textures the current one and _otherTexture_.
   $H arguments
-   $ARG Texture otherTexture: texture object against witch the exchange is done.
+   $ARG Texture otherTexture: texture object against wich the exchange is done.
   $H example
   {{{
   function AddAlphaChannel( tex ) {
@@ -591,7 +591,7 @@ $TOC_MEMBER $INAME
   Replace the _destinationChannel_ channel of the current texture with the _sourceChannel_ channel of the _otherTexture_.
   $H arguments
    $ARG $INT destinationChannel: a channel of the current texture.
-   $ARG Texture otherTexture: the texture from witch a channel will be imported.
+   $ARG Texture otherTexture: the texture from wich a channel will be imported.
    $ARG $INT destinationChannel: the channel of the _otherTexture_ to be imported.
   $H example
   {{{
@@ -925,7 +925,7 @@ $TOC_MEMBER $INAME
  $THIS $INAME( sourceTexture, sourceColorInfo [ , strength = 1] )
   Fill the current texture with a given color from _sourceTexture_.
   $H arguments
-   $ARG Texture sourceTexture: the texture from witch the color will be extracted.
+   $ARG Texture sourceTexture: the texture from wich the color will be extracted.
    $ARG colorInfo sourceColorInfo: The color to extract.
    $ARG $REAL strength: The strength of the exraction.
   $H note
