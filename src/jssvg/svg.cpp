@@ -674,7 +674,7 @@ DEFINE_PROPERTY(images) {
 	RsvgHandle *handle = (RsvgHandle*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(handle);
 
-	JL_CHK( JS_GetReservedSlot(cx, JL_OBJ, SLOT_IMAGES_OBJECT, vp) );
+	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, SLOT_IMAGES_OBJECT, vp) );
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		*vp = OBJECT_TO_JSVAL( JS_NewObject(cx, NULL, NULL, NULL) );

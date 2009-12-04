@@ -37,13 +37,13 @@ BEGIN_CLASS( OglError )
 
 DEFINE_PROPERTY( code ) {
 
-	return JS_GetReservedSlot( cx, obj, 0, vp );
+	return JL_GetReservedSlot( cx, obj, 0, vp );
 }
 
 
 DEFINE_PROPERTY( text ) {
 
-	JL_CHK( JS_GetReservedSlot( cx, obj, 0, vp ) );
+	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
 	int errorCode;
@@ -84,7 +84,7 @@ DEFINE_PROPERTY( text ) {
 
 DEFINE_PROPERTY( const ) {
 
-	JL_CHK( JS_GetReservedSlot( cx, obj, 0, vp ) );
+	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
 	int errorCode;
 	JL_CHK( JsvalToInt(cx, *vp, &errorCode) );
 	char *errStr;
@@ -139,7 +139,7 @@ DEFINE_XDR() {
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
 		jsval tmp;
-		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
+		JL_CHK( JL_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
 		JS_XDRValue(xdr, &tmp);
 		return JS_TRUE;
 	}

@@ -36,7 +36,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( text ) {
 
-	return JS_GetReservedSlot( cx, obj, 0, vp );
+	return JL_GetReservedSlot( cx, obj, 0, vp );
 }
 
 DEFINE_FUNCTION( toString ) {
@@ -56,7 +56,7 @@ DEFINE_XDR() {
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
 		jsval tmp;
-		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
+		JL_CHK( JL_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
 		JS_XDRValue(xdr, &tmp);
 		return JS_TRUE;
 	}

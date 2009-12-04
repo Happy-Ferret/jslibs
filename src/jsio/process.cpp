@@ -230,7 +230,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( stdin ) {
 
 	JL_S_ASSERT_CLASS( obj, _class );
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, vp) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -243,7 +243,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( stdout ) {
 
 	JL_S_ASSERT_CLASS( obj, _class );
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, vp) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -256,7 +256,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( stderr ) {
 
 	JL_S_ASSERT_CLASS( obj, _class );
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, vp) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

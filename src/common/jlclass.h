@@ -224,35 +224,35 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 
 #define CONFIGURE_STATIC \
 	JSBool InitializeStatic(JSContext *cx, JSObject *obj) { \
-	JSFunctionSpec *_staticFunctionSpec = NULL; \
-	JSPropertySpec *_staticPropertySpec = NULL; \
-	JSConstDoubleSpec *_constDoubleSpec = NULL; \
-	JLConstIntegerSpec *_constIntegerSpec = NULL; \
-	JSBool (*_init)(JSContext *cx, JSObject *obj) = NULL; \
-	jsval _revision = JSVAL_VOID;
+		JSFunctionSpec *_staticFunctionSpec = NULL; \
+		JSPropertySpec *_staticPropertySpec = NULL; \
+		JSConstDoubleSpec *_constDoubleSpec = NULL; \
+		JLConstIntegerSpec *_constIntegerSpec = NULL; \
+		JSBool (*_init)(JSContext *cx, JSObject *obj) = NULL; \
+		jsval _revision = JSVAL_VOID;
 
 #define END_STATIC \
-	JL_CHK(obj); \
-	JSObject *dstObj; \
-	dstObj = obj; \
-	if ( GetHostPrivate(cx)->camelCase == 1 ) \
-		_NormalizeFunctionSpecNames(_staticFunctionSpec); \
-	if ( _staticFunctionSpec != NULL ) \
-		JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
-	if ( _staticPropertySpec != NULL ) \
-		JL_CHK( JL_DefineClassProperties(cx, dstObj, _staticPropertySpec) ); \
-	if ( _constIntegerSpec != NULL ) { \
-		for ( ; _constIntegerSpec->name; _constIntegerSpec++ ) \
-			JL_CHK( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
-	} \
-	if ( _constDoubleSpec != NULL ) \
-		JL_CHK( JS_DefineConstDoubles(cx, obj, _constDoubleSpec) ); \
-	JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
-	if ( _init ) \
-		JL_CHK( _init(cx, obj) ); \
-	return JS_TRUE; \
-	JL_BAD; \
- }
+		JL_CHK(obj); \
+		JSObject *dstObj; \
+		dstObj = obj; \
+		if ( GetHostPrivate(cx)->camelCase == 1 ) \
+			_NormalizeFunctionSpecNames(_staticFunctionSpec); \
+		if ( _staticFunctionSpec != NULL ) \
+			JS_DefineFunctions(cx, obj, _staticFunctionSpec); \
+		if ( _staticPropertySpec != NULL ) \
+			JL_CHK( JL_DefineClassProperties(cx, dstObj, _staticPropertySpec) ); \
+		if ( _constIntegerSpec != NULL ) { \
+			for ( ; _constIntegerSpec->name; _constIntegerSpec++ ) \
+				JL_CHK( JS_DefineProperty(cx, dstObj, _constIntegerSpec->name, INT_TO_JSVAL(_constIntegerSpec->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
+		} \
+		if ( _constDoubleSpec != NULL ) \
+			JL_CHK( JS_DefineConstDoubles(cx, obj, _constDoubleSpec) ); \
+		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), _revision, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); \
+		if ( _init ) \
+			JL_CHK( _init(cx, obj) ); \
+		return JS_TRUE; \
+		JL_BAD; \
+	}
 
 // class definition
 #define DECLARE_CLASS( CLASSNAME ) \
@@ -266,11 +266,11 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 
 #define BEGIN_CLASS(CLASSNAME) \
 	static JSExtendedClass _xclass = { { #CLASSNAME, 0, JS_PropertyStub , JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_EnumerateStub, JS_ResolveStub , JS_ConvertStub, JS_FinalizeStub, JSCLASS_NO_OPTIONAL_MEMBERS }, 0, 0, 0, 0, 0, 0, 0, 0}; \
+	static JSClass *_class = &_xclass.base; \
 	JSClass *class##CLASSNAME = &_xclass.base; \
 	JSObject *prototype##CLASSNAME = NULL; \
 	static JSBool _InitializeClass(JSContext *cx, JSObject *obj); \
 	JSBool (*InitializeClass##CLASSNAME)(JSContext *cx, JSObject *obj) = _InitializeClass; \
-	static JSClass *_class = class##CLASSNAME; \
 	static JSObject **_prototype = &prototype##CLASSNAME;
 
 #define CONFIGURE_CLASS \

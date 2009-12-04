@@ -130,13 +130,14 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 }
 
 
-ALWAYS_INLINE unsigned char ModulePrivateHash(uint32_t moduleId) {
+ALWAYS_INLINE unsigned char ModulePrivateHash( const uint32_t moduleId ) {
 
 	return ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3] << 1;
 }
 
-ALWAYS_INLINE bool SetModulePrivate( JSContext *cx, uint32_t moduleId, void *modulePrivate) {
+ALWAYS_INLINE bool SetModulePrivate( JSContext *cx, const uint32_t moduleId, void *modulePrivate ) {
 
+	JL_ASSERT( moduleId != 0 );
 	unsigned char id = ModulePrivateHash(moduleId);
 	HostPrivate::ModulePrivate *mpv = GetHostPrivate(cx)->modulePrivate;
 	while ( mpv[id].moduleId != 0 ) { // assumes that modulePrivate struct is init to 0
@@ -152,6 +153,7 @@ ALWAYS_INLINE bool SetModulePrivate( JSContext *cx, uint32_t moduleId, void *mod
 
 ALWAYS_INLINE void* GetModulePrivate( JSContext *cx, uint32_t moduleId ) {
 
+	JL_ASSERT( moduleId != 0 );
 	unsigned char id = ModulePrivateHash(moduleId);
 	HostPrivate::ModulePrivate *mpv = GetHostPrivate(cx)->modulePrivate;
 	while ( mpv[id].moduleId != moduleId ) {
@@ -444,6 +446,26 @@ ALWAYS_INLINE void JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 
 	obj->setPrivate(data);
 }
+
+ALWAYS_INLINE JSBool JL_GetReservedSlot(JSContext *cx, JSObject *obj, uint32 index, jsval *vp) {
+
+	if (likely( _unsafeMode )) {
+
+		JL_ASSERT( OBJ_IS_NATIVE(obj) );
+		JSClass *clasp = obj->getClass();
+		JL_ASSERT( index < JSCLASS_RESERVED_SLOTS(clasp) || index < JSCLASS_RESERVED_SLOTS(clasp) + (clasp->reserveSlots ? clasp->reserveSlots(cx, obj) : 0) );
+		uint32 slot = JSSLOT_START(clasp) + index;
+		*vp = (slot < STOBJ_NSLOTS(obj)) ? STOBJ_GET_SLOT(obj, slot) : JSVAL_VOID;
+		return true;
+	}
+	return JS_GetReservedSlot(cx, obj, index, vp);
+}
+
+ALWAYS_INLINE JSBool JS_SetReservedSlot(JSContext *cx, JSObject *obj, uint32 index, jsval v) {
+
+	return JS_SetReservedSlot(cx, obj, index, v);
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions

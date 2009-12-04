@@ -46,7 +46,7 @@ struct AsymmetricCipherPrivate {
 JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **prngState) {
 
 	jsval prngVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
 	JL_S_ASSERT_OBJECT(	prngVal );
 	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(prngVal), classPrng );
 	PrngPrivate *prngPrivate;

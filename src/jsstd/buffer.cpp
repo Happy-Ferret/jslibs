@@ -173,7 +173,7 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, unsigned int amount ) 
 	JL_S_ASSERT_RESOURCE( pv );
 
 	jsval srcVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_SOURCE, &srcVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_SOURCE, &srcVal) );
 
 	if ( JSVAL_IS_VOID( srcVal ) ) // no source for refill
 		return JS_TRUE;

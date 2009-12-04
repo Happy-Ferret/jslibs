@@ -78,7 +78,7 @@ inline JSBool BlobLength( JSContext *cx, JSObject *bStringObject, size_t *length
 
 	JL_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
 	jsval lengthVal;
-	JL_CHK( JS_GetReservedSlot(cx, bStringObject, SLOT_BLOB_LENGTH, &lengthVal) );
+	JL_CHK( JL_GetReservedSlot(cx, bStringObject, SLOT_BLOB_LENGTH, &lengthVal) );
 	*length = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
 	return JS_TRUE;
 }
@@ -96,7 +96,7 @@ inline JSBool BlobGetBufferAndLength( JSContext *cx, JSObject *bStringObject, vo
 
 	JL_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
 	jsval lengthVal;
-	JL_CHK( JS_GetReservedSlot(cx, bStringObject, SLOT_BLOB_LENGTH, &lengthVal) );
+	JL_CHK( JL_GetReservedSlot(cx, bStringObject, SLOT_BLOB_LENGTH, &lengthVal) );
 	*dataLength = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
 	*data = JL_GetPrivate(cx, bStringObject);
 	return JS_TRUE;

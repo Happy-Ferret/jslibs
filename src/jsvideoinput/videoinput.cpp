@@ -30,7 +30,7 @@ DEFINE_FINALIZE() {
 	if ( obj == *_prototype )
 		return;
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	if ( deviceIdVal == JSVAL_VOID ) // the device is already closed
 		return;
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
@@ -110,7 +110,7 @@ DEFINE_FUNCTION_FAST( GetImage ) {
 
 	JL_S_ASSERT_ARG_RANGE( 0,1 );
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 
@@ -167,7 +167,7 @@ DEFINE_FUNCTION_FAST( Close ) {
 	JSObject *obj = JL_FOBJ;
 
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	if ( deviceIdVal == JSVAL_VOID ) // the device is already closed
 		return JS_TRUE;
@@ -186,7 +186,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( hasNewFrame ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( BoolToJsval(cx, vi->isFrameNew(deviceId), vp) ); 
@@ -201,7 +201,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( width ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( IntToJsval(cx, vi->getWidth(deviceId), vp) ); 
@@ -216,7 +216,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( height ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( IntToJsval(cx, vi->getHeight(deviceId), vp) ); 
@@ -231,7 +231,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( channels ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	int width = vi->getWidth(deviceId);
@@ -248,7 +248,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( name ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( StringToJsval(cx, videoInput::getDeviceName(deviceId), vp) );

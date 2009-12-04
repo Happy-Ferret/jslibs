@@ -93,13 +93,13 @@ BEGIN_CLASS( Joint )
 /*
 DEFINE_PROPERTY( body1 ) {
 
-	JS_GetReservedSlot(cx, obj, JOINT_SLOT_BODY1, vp);
+	JL_GetReservedSlot(cx, obj, JOINT_SLOT_BODY1, vp);
 	return JS_TRUE;
 	JL_BAD;
 }
 DEFINE_PROPERTY( body2 ) {
 
-	JS_GetReservedSlot(cx, obj, JOINT_SLOT_BODY2, vp);
+	JL_GetReservedSlot(cx, obj, JOINT_SLOT_BODY2, vp);
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -88,7 +88,7 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 	if ( !fd ) // check if not already closed
 		return;
 	jsval imported;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
 	if ( imported == JSVAL_TRUE ) // Descriptor was inported, then do not close it
 		return;
 	PRStatus status;
@@ -528,7 +528,7 @@ $TOC_MEMBER $INAME
 // 					JL_CHK( JS_SetReservedSlot(cx, JL_FOBJ, SLOT_JSIO_DESCRIPTOR_EOF, JSVAL_TRUE) );
 DEFINE_PROPERTY( eof ) {
 
-	return JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_EOF, vp);
+	return JL_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_EOF, vp);
 }
 */
 

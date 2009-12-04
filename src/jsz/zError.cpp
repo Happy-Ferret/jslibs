@@ -32,12 +32,12 @@ BEGIN_CLASS( ZError )
 
 DEFINE_PROPERTY( code ) {
 
-	return JS_GetReservedSlot( cx, obj, 0, vp );
+	return JL_GetReservedSlot( cx, obj, 0, vp );
 }
 
 DEFINE_PROPERTY( text ) {
 
-	return JS_GetReservedSlot( cx, obj, 1, vp );
+	return JL_GetReservedSlot( cx, obj, 1, vp );
 }
 
 const char *ZConstString( int errorCode ) {
@@ -67,7 +67,7 @@ const char *ZConstString( int errorCode ) {
 
 DEFINE_PROPERTY( const ) {
 
-	JS_GetReservedSlot( cx, obj, 0, vp );
+	JL_GetReservedSlot( cx, obj, 0, vp );
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
 	int errorCode = JSVAL_TO_INT(*vp);
@@ -94,9 +94,9 @@ DEFINE_XDR() {
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
 		jsval tmp;
-		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
+		JL_CHK( JL_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
 		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 1, &tmp) );
+		JL_CHK( JL_GetReservedSlot(xdr->cx, *objp, 1, &tmp) );
 		JS_XDRValue(xdr, &tmp);
 		return JS_TRUE;
 	}

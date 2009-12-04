@@ -44,7 +44,7 @@ $TOC_MEMBER $INAME
 */
 DEFINE_PROPERTY( code ) {
 
-	return JS_GetReservedSlot( cx, obj, 0, vp );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
+	return JL_GetReservedSlot( cx, obj, 0, vp );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
 }
 
 /**doc
@@ -53,7 +53,7 @@ $TOC_MEMBER $INAME
 */
 DEFINE_PROPERTY( os ) {
 
-	return JS_GetReservedSlot( cx, obj, 1, vp );  // (TBD) use the obj.name proprety directly instead of slot 1 ?
+	return JL_GetReservedSlot( cx, obj, 1, vp );  // (TBD) use the obj.name proprety directly instead of slot 1 ?
 }
 
 /**doc
@@ -62,7 +62,7 @@ $TOC_MEMBER $INAME
 */
 DEFINE_PROPERTY( text ) {
 
-	JL_CHK( JS_GetReservedSlot(cx, obj, 0, vp) );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
+	JL_CHK( JL_GetReservedSlot(cx, obj, 0, vp) );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
 	PRErrorCode errorCode;
@@ -91,9 +91,9 @@ DEFINE_XDR() {
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
 		jsval tmp;
-		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
+		JL_CHK( JL_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
 		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 1, &tmp) );
+		JL_CHK( JL_GetReservedSlot(xdr->cx, *objp, 1, &tmp) );
 		JS_XDRValue(xdr, &tmp);
 		return JS_TRUE;
 	}

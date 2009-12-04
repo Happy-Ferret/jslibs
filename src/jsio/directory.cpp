@@ -70,7 +70,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Open ) {
 
 	jsval jsvalDirectoryName;
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
+	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
 	JL_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
@@ -154,7 +154,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Make ) {
 
 	jsval jsvalDirectoryName;
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
+	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
 	JL_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
@@ -176,7 +176,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Remove ) {
 
 	jsval jsvalDirectoryName;
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
+	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
 	JL_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
@@ -207,7 +207,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( exist ) {
 
 	jsval jsvalDirectoryName;
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
+	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
 	JL_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
@@ -236,7 +236,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( name ) {
 
-	JL_CHK( JS_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, vp ) );
+	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, vp ) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }

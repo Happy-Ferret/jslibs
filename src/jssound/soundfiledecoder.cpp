@@ -380,7 +380,7 @@ DEFINE_PROPERTY( inputStream ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

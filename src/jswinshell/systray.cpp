@@ -504,7 +504,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 	//SetMenu(nid->hWnd, hMenu);
 
 	jsval menu;
-	JS_GetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, &menu);
+	JL_GetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, &menu);
 	JL_S_ASSERT_DEFINED(menu);
 	JSObject *menuObj = JSVAL_TO_OBJECT(menu);
 	JSIdArray *list = JS_Enumerate(cx, menuObj);
@@ -827,7 +827,7 @@ DEFINE_PROPERTY( menuSetter ) {
 
 DEFINE_PROPERTY( menuGetter ) {
 
-	JS_GetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, vp);
+	JL_GetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, vp);
 	return JS_TRUE;
 }
 

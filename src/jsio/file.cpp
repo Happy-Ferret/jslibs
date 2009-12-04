@@ -118,7 +118,7 @@ DEFINE_FUNCTION( Open ) {
 	}
 
 	jsval jsvalFileName;
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
@@ -192,7 +192,7 @@ DEFINE_FUNCTION( Delete ) {
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT( fd == NULL, "Cannot delete an open file." );
 	jsval jsvalFileName;
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
@@ -238,7 +238,7 @@ DEFINE_FUNCTION( Move ) {
 	JL_S_ASSERT( fd == NULL, "Cannot move an open file." );
 
 	jsval jsvalFileName;
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) ); // warning: GC on the returned buffer !
@@ -321,7 +321,7 @@ DEFINE_PROPERTY( contentGetter ) {
 
 	JL_S_ASSERT( (PRFileDesc*)JL_GetPrivate(cx, obj) == NULL, "Cannot get content of an open file.");
 	jsval jsvalFileName;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) ); // (TBD) add somthing like J_SCHK instead
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) ); // (TBD) add somthing like J_SCHK instead
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
@@ -402,7 +402,7 @@ DEFINE_PROPERTY( contentSetter ) {
 
 	JL_S_ASSERT( (PRFileDesc *)JL_GetPrivate( cx, obj ) == NULL, "Cannot set content of an open file.");
 	jsval jsvalFileName;
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
@@ -446,7 +446,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( nameGetter ) {
 
-	JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, vp );
+	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, vp );
 	return JS_TRUE;
 }
 
@@ -458,7 +458,7 @@ DEFINE_PROPERTY( nameSetter ) {
 	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT( fd == NULL, "Cannot rename an open file.");
 	jsval jsvalFileName;
-	JL_CHK( JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
+	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fromFileName, *toFileName;
 	JL_CHK( JsvalToString(cx, &jsvalFileName, &fromFileName) ); // warning: GC on the returned buffer !
@@ -479,7 +479,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( exist ) {
 
 	jsval jsvalFileName;
-	JL_CHK( JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
+	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
@@ -496,7 +496,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( writable ) {
 
 	jsval jsvalFileName;
-	JL_CHK( JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
+	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
@@ -513,7 +513,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( readable ) {
 
 	jsval jsvalFileName;
-	JL_CHK( JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
+	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
 	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
@@ -553,7 +553,7 @@ DEFINE_PROPERTY( info ) {
 	if ( fd == NULL ) {
 
 		jsval jsvalFileName;
-		JS_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+		JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 		JL_S_ASSERT_DEFINED( jsvalFileName );
 		const char *fileName;
 		JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );

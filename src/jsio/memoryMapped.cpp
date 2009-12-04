@@ -127,7 +127,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( file ) {
 
-	JL_CHK( JS_GetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, vp) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

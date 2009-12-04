@@ -33,8 +33,8 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_PROPERTY( code ) {
 
 	jsval hi, lo;
-	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
-	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
+	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
+	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
 	JL_S_ASSERT_INT(hi);
 	JL_S_ASSERT_INT(lo);
 
@@ -58,8 +58,8 @@ const char *ErrorToConstName( DWORD err ) {
 DEFINE_PROPERTY( const ) {
 
 	jsval hi, lo;
-	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
-	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
+	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
+	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
 	JL_S_ASSERT_INT(hi);
 	JL_S_ASSERT_INT(lo);
 
@@ -72,8 +72,8 @@ DEFINE_PROPERTY( const ) {
 DEFINE_PROPERTY( text ) {
 
 	jsval hi, lo;
-	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
-	JS_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
+	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
+	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
 	JL_S_ASSERT_INT(hi);
 	JL_S_ASSERT_INT(lo);
 	DWORD err = (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi));
@@ -107,9 +107,9 @@ DEFINE_XDR() {
 	if ( xdr->mode == JSXDR_ENCODE ) {
 
 		jsval tmp;
-		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE_HI, &tmp) );
+		JL_CHK( JL_GetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE_HI, &tmp) );
 		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE_LO, &tmp) );
+		JL_CHK( JL_GetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE_LO, &tmp) );
 		JS_XDRValue(xdr, &tmp);
 		return JS_TRUE;
 	}

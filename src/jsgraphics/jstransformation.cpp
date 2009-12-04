@@ -29,7 +29,7 @@
 
 // (TBD) move this in the class private
 
-jl::Pool matrixPool;
+jl::Pool matrixPool; // (TBD) manage thread safety
 
 
 static int GetMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.

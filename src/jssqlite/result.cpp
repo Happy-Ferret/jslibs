@@ -225,7 +225,7 @@ DEFINE_FINALIZE() {
 
 /* unable to do this because the database may have already been finalized.
 		jsval dbVal;
-		JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &dbVal);
+		JL_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &dbVal);
 		if ( !JSVAL_IS_VOID(dbVal) ) {
 
 			DatabasePrivate *dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(dbVal));
@@ -254,7 +254,7 @@ DEFINE_FUNCTION( Close ) {
 	JL_S_ASSERT_RESOURCE( pStmt );
 
 	jsval v;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
 	DatabasePrivate *dbpv;
 	dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(v));
 	JL_S_ASSERT_RESOURCE(dbpv);
@@ -284,7 +284,7 @@ DEFINE_FUNCTION( Step ) {
 	JL_S_ASSERT_RESOURCE( pStmt );
 
 	jsval dbVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &dbVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &dbVal) );
 	DatabasePrivate *dbpv;
 	dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(dbVal));
 	JL_S_ASSERT_RESOURCE(dbpv);
@@ -295,12 +295,12 @@ DEFINE_FUNCTION( Step ) {
 
 	// check if bindings are up to date
 	jsval bindingUpToDate;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, &bindingUpToDate) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, &bindingUpToDate) );
 
 	if ( bindingUpToDate != JSVAL_TRUE ) {
 
 		jsval queryArgument;
-		JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, &queryArgument) );
+		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, &queryArgument) );
 		JL_CHK( SqliteSetupBindings(cx, pStmt, JSVAL_IS_PRIMITIVE( queryArgument ) ? NULL : JSVAL_TO_OBJECT( queryArgument ), obj) ); // ":" use result object. "@" is the object passed to Query()
 		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_TRUE) );
 		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step().

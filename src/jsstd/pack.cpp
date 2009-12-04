@@ -157,7 +157,7 @@ DEFINE_FUNCTION( ReadInt ) {
 	JL_S_ASSERT_ARG_RANGE(1, 3);
 
 	jsval bufferVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
 	JL_S_ASSERT_DEFINED( bufferVal );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
@@ -266,7 +266,7 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 	JL_S_ASSERT_ARG_RANGE(1, 4);
 
 	jsval bufferVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
 	JL_S_ASSERT_DEFINED( bufferVal );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
@@ -344,7 +344,7 @@ DEFINE_FUNCTION( ReadReal ) {
 	JL_S_ASSERT_ARG(1);
 
 	jsval bufferVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
 	JL_S_ASSERT_DEFINED( bufferVal );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
@@ -386,7 +386,7 @@ DEFINE_FUNCTION( ReadString ) {
 
 	JL_S_ASSERT_THIS_CLASS();
 	jsval bufferVal;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
 	JL_S_ASSERT_DEFINED( bufferVal );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
@@ -446,7 +446,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( buffer ) {
 
 	JL_S_ASSERT_THIS_CLASS();
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, vp ) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, vp ) );
 	return JS_TRUE;
 	JL_BAD;
 }

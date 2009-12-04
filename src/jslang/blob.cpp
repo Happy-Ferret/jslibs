@@ -37,7 +37,7 @@ ALWAYS_INLINE JSBool InvalidateBlob( JSContext *cx, JSObject *blobObject ) {
 ALWAYS_INLINE bool IsBlobValid( JSContext *cx, JSObject *blobObject ) {
 
 	jsval lengthVal;
-	JL_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
+	JL_CHK( JL_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
 	return JSVAL_IS_INT( lengthVal ) != 0;
 bad:
 	return false;
@@ -48,7 +48,7 @@ ALWAYS_INLINE JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *le
 
 	JL_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	jsval lengthVal;
-	JL_CHK( JS_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
+	JL_CHK( JL_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
 //	JL_S_ASSERT_INT( lengthVal );
 	JL_S_ASSERT_VALID( JSVAL_IS_INT(lengthVal), _class->name );
 	*length = JSVAL_TO_INT( lengthVal );

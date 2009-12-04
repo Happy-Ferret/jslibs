@@ -60,7 +60,7 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		//   http://opende.sourceforge.net/wiki/index.php/Manual_(Joint_Types_and_Functions)#Contact
 
 		jsval obj1surf, obj2surf;
-		JL_CHK( JS_GetReservedSlot(cx, obj1, SLOT_GEOM_SURFACEPARAMETER, &obj1surf) );
+		JL_CHK( JL_GetReservedSlot(cx, obj1, SLOT_GEOM_SURFACEPARAMETER, &obj1surf) );
 		if ( JsvalIsClass(obj1surf, classSurfaceParameters) ) {
 			
 			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(obj1surf));
@@ -71,7 +71,7 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 			contact[i].surface = *ccp->defaultSurfaceParameters;
 		}
 
-		JL_CHK( JS_GetReservedSlot(cx, obj2, SLOT_GEOM_SURFACEPARAMETER, &obj2surf) );
+		JL_CHK( JL_GetReservedSlot(cx, obj2, SLOT_GEOM_SURFACEPARAMETER, &obj2surf) );
 		if ( JsvalIsClass(obj2surf, classSurfaceParameters) ) {
 
 			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(obj1surf));
@@ -91,8 +91,8 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 	//dReal slip1,slip2;	// ?
 
 	jsval func1, func2;
-	JL_CHK( JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom1), SLOT_GEOM_IMPACT_FUNCTION, &func1) );
-	JL_CHK( JS_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom2), SLOT_GEOM_IMPACT_FUNCTION, &func2) );
+	JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom1), SLOT_GEOM_IMPACT_FUNCTION, &func1) );
+	JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom2), SLOT_GEOM_IMPACT_FUNCTION, &func2) );
 
 	if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) {
 
@@ -301,7 +301,7 @@ DEFINE_FUNCTION( Step ) {
 	JL_CHK( JsvalToFloat(cx, JL_ARG(1), &stepSize) );
 
 	//jsval val;
-	//JS_GetReservedSlot(cx, obj, WORLD_SLOT_SPACE, &val);
+	//JL_GetReservedSlot(cx, obj, WORLD_SLOT_SPACE, &val);
 	//ode::dSpaceID space = (ode::dSpaceID)JSVAL_TO_PRIVATE(val);
 	//ode::dSpaceCollide(space,0,&nearCallback);
 
@@ -318,7 +318,7 @@ DEFINE_FUNCTION( Step ) {
 	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersObject)); // beware: local variable !
 	JL_S_ASSERT_RESOURCE( defaultSurfaceParameters );
 
-//	JS_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
+//	JL_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
 //	ode::dJointGroupID contactgroup = (ode::dJointGroupID)JSVAL_TO_PRIVATE(val);
 
 	ColideContextPrivate ccp;

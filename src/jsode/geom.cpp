@@ -282,7 +282,7 @@ DEFINE_PROPERTY( impactSetter ) {
 
 DEFINE_PROPERTY( impactGetter ) {
 
-	return JS_GetReservedSlot(cx, obj, SLOT_GEOM_IMPACT_FUNCTION, vp);
+	return JL_GetReservedSlot(cx, obj, SLOT_GEOM_IMPACT_FUNCTION, vp);
 }
 
 

@@ -112,7 +112,7 @@ DEFINE_FINALIZE() {
 
 	//// finalize open database statements
 	//
-	//JS_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
+	//JL_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
 	//stack = JSVAL_TO_PRIVATE(v);
 	//while ( !jl::StackIsEnd(&stack) ) {
 	//	sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&stack);

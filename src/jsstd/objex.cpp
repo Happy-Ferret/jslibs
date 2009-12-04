@@ -62,11 +62,11 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval i
 //	JL_CHK( JS_LookupPropertyWithFlags(cx, obj, JS_GetStringBytes(JS_ValueToString(cx, id)), JSRESOLVE_QUALIFIED|JSRESOLVE_ASSIGNING|JSRESOLVE_DECLARING, &prevValue) );
 
 	jsval slot;
-	JL_CHK( JS_GetReservedSlot( cx, obj, slotIndex , &slot ) );
+	JL_CHK( JL_GetReservedSlot( cx, obj, slotIndex , &slot ) );
 	if ( JSVAL_IS_VOID(slot) )
 		return JS_TRUE;
 	jsval aux;
-	JL_CHK( JS_GetReservedSlot( cx, obj, AUX_SLOT, &aux ) );
+	JL_CHK( JL_GetReservedSlot( cx, obj, AUX_SLOT, &aux ) );
 	jsval args[4]; // = { id, *vp, aux, INT_TO_JSVAL(slotIndex) }; // ( propertyName, propertyValue, auxObject, callbackIndex )
 	JSTempValueRooter tvr;
 	JS_PUSH_TEMP_ROOT(cx, COUNTOF(args), args, &tvr);
@@ -164,7 +164,7 @@ DEFINE_FUNCTION_FAST( Aux ) {
 	JSObject *object;
 	object = JSVAL_TO_OBJECT(JL_FARG(1));
 	JL_S_ASSERT_CLASS( object, _class );
-	JL_CHK( JS_GetReservedSlot( cx, object, AUX_SLOT, JL_FRVAL ) );
+	JL_CHK( JL_GetReservedSlot( cx, object, AUX_SLOT, JL_FRVAL ) );
 	if ( JL_FARG_ISDEF(2) )
 	  JL_CHK( JS_SetReservedSlot( cx, object, AUX_SLOT, JL_FARG(2) ) );
 	return JS_TRUE;

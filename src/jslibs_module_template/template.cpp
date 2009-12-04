@@ -51,7 +51,7 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 //	if ( xdr->mode == JSXDR_ENCODE ) {
 //
 //		jsval tmp;
-//		JL_CHK( JS_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
+//		JL_CHK( JL_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
 //		JS_XDRValue(xdr, &tmp);
 //		return JS_TRUE;
 //	}

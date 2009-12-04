@@ -34,7 +34,7 @@ inline JSBool PositionSet( JSContext *cx, JSObject *obj, int position ) {
 inline JSBool PositionGet( JSContext *cx, JSObject *obj, int *position ) {
 
 	jsval tmp;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_POSITION, &tmp) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_POSITION, &tmp) );
 	JL_CHK( JsvalToInt(cx, tmp, position) );
 	return JS_TRUE;
 	JL_BAD;
@@ -48,7 +48,7 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 	int position;
 	JL_CHK( PositionGet(cx, obj, &position) );
 	jsval source;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, &source) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, &source) );
 
 	const char *buffer;
 	size_t length;
@@ -182,7 +182,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( available ) {
 
 	JL_S_ASSERT_CLASS(obj, _class);
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) ); // use vp as a tmp variable
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) ); // use vp as a tmp variable
 	JSObject *srcObj;
 	if ( JSVAL_IS_OBJECT( *vp ) )
 		srcObj = JSVAL_TO_OBJECT( *vp );
@@ -207,7 +207,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( source ) {
 
 	JL_S_ASSERT_CLASS(obj, _class);
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
