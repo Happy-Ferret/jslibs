@@ -144,6 +144,8 @@ DEFINE_FUNCTION( Open ) {
 $TOC_MEMBER $INAME
  $INT $INAME( [ offset = 0 [, whence = File.`SEEK_SET` ] ] )
   Moves read-write file offset.
+ $H note
+  max offset is 2^53
 **/
 DEFINE_FUNCTION( Seek ) {
 
@@ -153,8 +155,9 @@ DEFINE_FUNCTION( Seek ) {
 	PRInt64 offset;
 	if ( JL_ARG_ISDEF(1) ) {
 
+		JL_S_ASSERT_LOSSLESS_INT( JL_ARG(1) );
 		jsdouble doubleOffset;
-		JS_ValueToNumber( cx, JL_ARG(1), &doubleOffset );
+		JL_CHK( JS_ValueToNumber( cx, JL_ARG(1), &doubleOffset ) );
 		offset = (PRInt64)doubleOffset;
 	} else
 		offset = 0; // default is arg is missing
@@ -280,11 +283,14 @@ DEFINE_FUNCTION( Move ) {
 $TOC_MEMBER $INAME
  $INT $INAME
   Get or set the current position of the file pointer. Same as Seek() function used with SEEK_SET.
+ $H note
+  max position is 2^53
 **/
 DEFINE_PROPERTY( positionSetter ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT( fd != NULL, "File is closed." );
+	JL_S_ASSERT_LOSSLESS_INT( *vp );
 	PRInt64 offset;
 	jsdouble doubleOffset;
 	JL_CHK( JS_ValueToNumber( cx, *vp, &doubleOffset ) );

@@ -384,6 +384,9 @@ JL_MACRO_END
 #define JL_S_ASSERT_BOOLEAN(value) \
 	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_BOOLEAN(value) || !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClass(cx, JSProto_Boolean), JLSMSG_EXPECT_TYPE, "boolean" );
 
+#define JL_S_ASSERT_LOSSLESS_INT(value) \
+	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_INT(value) || JSVAL_IS_DOUBLE(value) && *JSVAL_TO_DOUBLE(value) < MAX_INTDOUBLE && *JSVAL_TO_DOUBLE(value) > -MAX_INTDOUBLE, JLSMSG_EXPECT_TYPE, "smaller integer" );
+
 #define JL_S_ASSERT_NUMBER(value) \
 	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_NUMBER(value) || !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClass(cx, JSProto_Number), JLSMSG_EXPECT_TYPE, "number" );
 

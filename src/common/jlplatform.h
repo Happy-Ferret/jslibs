@@ -124,6 +124,7 @@
 
 #endif // #if defined WIN32
 
+#include <math.h>
 #include <limits.h>
 #include <sys/types.h>
 #include <malloc.h>
@@ -253,6 +254,8 @@
 
 #endif // Windows/MacosX/Linux platform
 
+
+#define MAX_INTDOUBLE ((double)pow((double)2, (double)DBL_MANT_DIG))
 
 ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
 
