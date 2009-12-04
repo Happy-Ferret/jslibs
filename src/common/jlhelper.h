@@ -461,7 +461,7 @@ ALWAYS_INLINE JSBool JL_GetReservedSlot(JSContext *cx, JSObject *obj, uint32 ind
 	return JS_GetReservedSlot(cx, obj, index, vp);
 }
 
-ALWAYS_INLINE JSBool JS_SetReservedSlot(JSContext *cx, JSObject *obj, uint32 index, jsval v) {
+ALWAYS_INLINE JSBool JL_SetReservedSlot(JSContext *cx, JSObject *obj, uint32 index, jsval v) {
 
 	return JS_SetReservedSlot(cx, obj, index, v);
 }
