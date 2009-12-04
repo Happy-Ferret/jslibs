@@ -597,12 +597,21 @@ LoadModule('jsio');
 /// MemoryMapped class [ftrm]
 
 		var thisFilename = QA.cx.item.file;
-		
 		var m = new MemoryMapped(new File(thisFilename).Open('r'));
-		
 		QA.ASSERT( m.file instanceof File, true, 'instanceof .file memeber' );
-
 		QA.ASSERT_STR( new Stream(m).Read(15), '// don\'t remove', 'convert to a Stream (1)' );
 		QA.ASSERT_STR( new Stream(m).Read(15), '// don\'t remove', 'convert to a Stream (2)' );
-
 		QA.ASSERT_STR( Stringify(m).substr(0,15), '// don\'t remove', 'stringify it' );
+
+
+/// MemoryMapped with offset [ftrm]
+
+		var thisFilename = QA.cx.item.file;
+		var m = new MemoryMapped(new File(thisFilename).Open('r'));
+		QA.ASSERT( m.file instanceof File, true, 'instanceof .file memeber' );
+		
+		m.offset = 3;
+		QA.ASSERT( m.offset, 3, 'get offset value' );
+		QA.ASSERT_STR( new Stream(m).Read(5), 'don\'t', 'convert to a Stream (1)' );
+		m.offset = 0;
+		QA.ASSERT_STR( new Stream(m).Read(15), '// don\'t remove', 'convert to a Stream (2)' );

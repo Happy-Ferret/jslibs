@@ -23,6 +23,7 @@
 struct MemoryMappedPrivate {
 	PRInt32 size;
 	PRFileMap *fmap;
+	unsigned int offset;
 	void *addr;
 };
 
@@ -30,8 +31,9 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
 	*size = pv->size;
-	*buf = (const char*)pv->addr;
+	*buf = ((const char*)pv->addr) + pv->offset;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -78,6 +80,7 @@ DEFINE_CONSTRUCTOR() {
 	pv = (MemoryMappedPrivate*)JS_malloc(cx, sizeof(MemoryMappedPrivate));
 	JL_CHK( pv );
 
+	pv->offset = 0;
 	pv->size = PR_Available(fd);
 
 	pv->fmap = PR_CreateFileMap(fd, pv->size, PR_PROT_READONLY);
@@ -133,6 +136,28 @@ DEFINE_PROPERTY( file ) {
 }
 
 /**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  offset from wich the buffer starts.
+**/
+DEFINE_PROPERTY_SETTER( offset ) {
+
+	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
+	JL_CHK( JsvalToUInt(cx, *vp, &pv->offset) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_GETTER( offset ) {
+
+	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
+	JL_CHK( UIntToJsval(cx, pv->offset, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
 === Native Interface ===
  * *NIBufferGet*
   This object can be used as a buffer source.
@@ -156,6 +181,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( file )
+		PROPERTY( offset )
 	END_PROPERTY_SPEC
 
 END_CLASS
