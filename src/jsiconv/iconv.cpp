@@ -58,7 +58,7 @@ $TOC_MEMBER $INAME
    $ARG $BOOL fromUsesWide: source uses 16bit per char.
   $H example
 {{{
-  var consEnc = new Iconv(consoleCodepage, 'UCS-2-INTERNAL', false, true); // source is wide (16bit), dest is not wide (8bit)
+  var consEnc = new Iconv(consoleCodepage, 'UCS-2le', false, true); // source is wide (16bit), dest is not wide (8bit)
   Print( consEnc('été') );
 }}}
 
@@ -386,6 +386,24 @@ DEFINE_PROPERTY( version ) {
 }
 
 
+DEFINE_PROPERTY( jsUC ) {
+
+	switch ( DetectSystemEndianType() ) {
+		case BigEndian:
+			JL_CHK( StringToJsval(cx, "UCS-2be", vp) );
+			break;
+		case LittleEndian:
+			JL_CHK( StringToJsval(cx, "UCS-2le", vp) );
+			break;
+		default:
+			*vp = JSVAL_VOID;
+			break;
+	}
+	return JL_StoreProperty(cx, obj, id, vp, true);
+	JL_BAD;
+}
+
+
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
@@ -406,6 +424,7 @@ CONFIGURE_CLASS
 		PROPERTY_READ( list )
 #endif // JL_HAS_ICONVLIST
 		PROPERTY_READ( version )
+		PROPERTY_READ( jsUC )
 	END_STATIC_PROPERTY_SPEC
 
 END_CLASS
@@ -414,8 +433,8 @@ END_CLASS
 /**doc
 
 === Note ===
- To benefit JavaScript unicode strings, you have to use the UCS-2-INTERNAL (Full Unicode) encoding.$LF
- eg. `var conv = new Iconv('UCS-2-INTERNAL', 'UTF-8', true, false);` $LF
+ To benefit JavaScript unicode strings, you have to use the UCS-2le encoding.$LF
+ eg. `var conv = new Iconv('UCS-2le', 'UTF-8', true, false);` $LF
  See also the [http://en.wikipedia.org/wiki/List_of_Unicode_characters List of Unicode characters]
 
 === Example 1 ===

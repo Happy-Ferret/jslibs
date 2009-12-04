@@ -54,7 +54,7 @@ LoadModule('jsiconv');
 
 /// test javascrit unicode char
 
-	var conv = new Iconv('UCS-2-INTERNAL', 'ISO-8859-1', true, true);
+	var conv = new Iconv(Iconv.jsUC, 'ISO-8859-1', true, true);
 	var res = conv('été');
 	
 	QA.ASSERT( res.length, 6, 'string length' );
@@ -99,18 +99,18 @@ LoadModule('jsiconv');
 	QA.ASSERT( res.length, 3, 'UC string length' );
 
 
-/// store UCS-2-INTERNAL to JS unicode
+/// store UCS-2le to JS unicode
 	
-	var conv = new Iconv('UCS-2-INTERNAL', 'ISO-8859-1', true, false); // source is not wide, dest is wide
+	var conv = new Iconv(Iconv.jsUC, 'ISO-8859-1', true, false); // source is not wide, dest is wide
 	var res = conv('été');
 	QA.ASSERT( res.length, 3, '"été" UC string length' );
 
 	QA.ASSERT( res, 'été', 'string test' );
 
 
-/// store UCS-2-INTERNAL to JS unicode
+/// store UCS-2le to JS unicode
 
-	var conv = new Iconv('UCS-2-INTERNAL', 'ISO-8859-1', true, false); // source is not wide, dest is wide
+	var conv = new Iconv(Iconv.jsUC, 'ISO-8859-1', true, false); // source is not wide, dest is wide
 
 	var src = "\u007A\u6C34";
 	var res = conv(src);
@@ -118,19 +118,19 @@ LoadModule('jsiconv');
 	QA.ASSERT( res.length, 2, 'check the resulting string length' );
 	QA.ASSERT_STR( res, "z4", 'check the resulting string' );
 
-/// store UCS-2-INTERNAL to JS unicode
+/// store UCS-2le to JS unicode
 
   var utf8str = "\xC3\xA9t\xC3\xA9 \xC3\xA0 la plage"; // été à la plage
-  var conv = new Iconv('UCS-2-INTERNAL', 'UTF-8', true, false); // source is not wide (8bit), dest is wide (16bit)
+  var conv = new Iconv(Iconv.jsUC, 'UTF-8', true, false); // source is not wide (8bit), dest is wide (16bit)
   var result = conv(utf8str);
   QA.ASSERT_STR( result, 'été à la plage', 'check the intermediate' );
-  var conv = new Iconv('ISO-8859-1', 'UCS-2-INTERNAL', false, true); // source is not wide (8bit), dest is wide (16bit)
+  var conv = new Iconv('ISO-8859-1', Iconv.jsUC, false, true); // source is not wide (8bit), dest is wide (16bit)
   QA.ASSERT_STR( conv(result), 'été à la plage', 'check the resulting string' );
 
 
 /// invalid char
 
-	var conv = new Iconv('UTF-8', 'UCS-2-INTERNAL', false, true);
+	var conv = new Iconv('UTF-8', Iconv.jsUC, false, true);
 	QA.ASSERT_STR( conv.invalidChar, '?', 'default invalidChar' );
 	QA.ASSERT_EXCEPTION( function() { conv.invalidChar = '???' }, TypeError, 'invalid invalidChar' );
 	conv.invalidChar = '.';
