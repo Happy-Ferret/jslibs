@@ -1,86 +1,121 @@
+#include <cstring>
+#include <stdlib.h>
+#include <stdio.h>
+
 #define XP_WIN
 #include <jsapi.h>
-#include <jsdbgapi.h>
-#include <jscntxt.h>
-#include <jsscope.h>
-#include <cstring>
 
-JSBool Print(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-	
-	fputs(JS_GetStringBytes(JS_ValueToString(cx, argv[0])), stdout);
-	return JS_TRUE;
+
+typedef const char ClassName[20];
+
+inline unsigned int ClassNameHashFct( ClassName n ) {
+
+	return 
+		(!n[ 0] ?  0 : (n[ 0]) ^ 
+		(!n[ 1] ?  1 : (n[ 1]<<1) ^ 
+		(!n[ 2] ?  2 : (n[ 2]) ^ 
+		(!n[ 3] ?  3 : (n[ 3]<<1) ^ 
+		(!n[ 4] ?  4 : (n[ 4]) ^ 
+		(!n[ 5] ?  5 : (n[ 5]<<1) ^ 
+		(!n[ 6] ?  6 : (n[ 6]) ^ 
+		(!n[ 7] ?  7 : (n[ 7]<<1) ^ 
+		(!n[ 8] ?  8 : (n[ 8]) ^ 
+		(!n[ 9] ?  9 : (n[ 9]<<1) ^ 
+		(!n[10] ? 10 : (n[10]) ^ 
+		(!n[11] ? 11 : (n[11]<<1) ^ 
+		(!n[12] ? 12 : (n[12]) ^ 
+		(!n[13] ? 13 : (n[13]<<1) ^ 
+		(!n[14] ? 14 : (n[14]) ^ 
+		(!n[15] ? 15 : (n[15]<<1) ^
+		(!n[16] ? 16 : (n[16]) ^ 
+		(!n[17] ? 17 : (n[17]<<1) ^ 
+		(!n[18] ? 18 : (n[18]) ^ 
+		(!n[19] ? 19 : (n[19]<<1) ^
+		0))))))))))))))))))));
 }
 
-JSBool EvalVarByName(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+struct ClassNameHash {
+	void *data;
+	ClassName name;
+};
+
+ClassNameHash classNameHash[1<<9];
+
+
+unsigned int GetClassNameHash( const ClassName *name, void *data ) {
 	
-	JS_ASSERT( JSVAL_IS_STRING(argv[0]) );
-	
-	const char *name = JS_GetStringBytes(JSVAL_TO_STRING(argv[0]));
-	JS_ASSERT( name );
+	unsigned int index = ClassNameHashFct(*name);
 
+	while ( classNameHash[index].data != 0 ) {
 
-	JSStackFrame *fp = js_GetTopStackFrame(cx); //JS_GetScriptedCaller(cx, NULL);
-	JS_ASSERT( fp );
-
-	JS_FrameIterator(cx, &fp);
-
-//	fp = JS_GetScriptedCaller(cx, fp);
-
-	JSBool found;
-	JSObject *scope = JS_GetFrameScopeChain(cx, fp);
-	for ( ; scope; scope = JS_GetParent(cx, scope) ) {
-/*
-		JSScopeProperty *it = NULL;
-		JS_PropertyIterator(scope, &it);
-		const char *n;
-		for ( ; it; JS_PropertyIterator(scope, &it) ) {
-			
-			JSPropertyDesc desc;
-			JS_GetPropertyDesc(cx, scope, it, &desc);
-			n = JS_GetStringBytes(JS_ValueToString(cx, desc.id));
-		}
-*/
-
-		JS_HasProperty(cx, scope, name, &found);
-		if ( found )
-			return JS_GetProperty(cx, scope, name, rval);
-	
+		index = (index + 1) % sizeof(classNameHash)/sizeof(*classNameHash);
 	}
+	return 0;
+}
 
-	*rval = JSVAL_VOID;
+
+
+static const char *className = "TEST";
+
+
+static JSBool _test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
 	return JS_TRUE;
 }
+
+static JSBool Constructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+
+	return JS_TRUE;
+}
+
+struct JLClassSpec {
+	JSExtendedClass xclasp;
+	JSNative constructor;
+	const char *parentProto;
+	JSFunctionSpec *fs;
+};
+
+static JLClassSpec* JLClassSpecInit() {
+
+	static JLClassSpec ci;
+	ci.xclasp.base.name = className;
+	ci.xclasp.base.flags = 0x12345678;
+	ci.xclasp.base.flags += 1;
+	
+	ci.constructor = Constructor;
+	ci.parentProto = NULL;
+
+	static JSFunctionSpec fs[] = {
+	
+		JS_FS( "test", _test, 0, 0, 0 ),
+	};
+
+	ci.fs = fs;
+//	JS_InitClass(
+
+	return &ci;
+}
+
+
+static JLClassSpec *cli = JLClassSpecInit();
+
+
 
 int main(int argc, char* argv[]) {
 
-	JSRuntime *rt = JS_NewRuntime(0);
-	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
-	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);
-	JSContext *cx = JS_NewContext(rt, 8192L);
+	static ClassName classname = "12345678";
+	
+	ClassName *classname1 = (ClassName*)malloc(sizeof(ClassName));
 
-	JSObject *globalObject = JS_NewObject(cx, NULL, NULL, NULL);
-	JS_SetGlobalObject(cx, globalObject);
-	JS_InitStandardClasses(cx, globalObject);
+	memcpy((void*)classname1, classname, sizeof(ClassName));
 
-	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX);
+	if ( classname == *classname1 ) {
+		
+		printf("ok");
+	}
+	
 
-	JS_DefineFunction(cx, globalObject, "Print", Print, 0, 0);
-	JS_DefineFunction(cx, globalObject, "EvalVarByName", EvalVarByName, 0, 0);
 
-	char scriptSrc[] =
-"var a = 'a'; function foo() { var b = 'b'; function bar() { var c = 'c'; Print( EvalVarByName('a')+' '+EvalVarByName('b')+' '+EvalVarByName('c')+'\\n' ); }; bar();};foo();";
-
-	JSScript *script = JS_CompileScript(cx, globalObject, scriptSrc, strlen(scriptSrc), "mytest", 1);
-	JS_ASSERT( script );
-
-	jsval rval;
-	JSBool st = JS_ExecuteScript(cx, globalObject, script, &rval);
-	JS_ASSERT( st );
-
-	JS_DestroyContext(cx);
-	JS_DestroyRuntime(rt);
-	JS_ShutDown();
 
 	return EXIT_SUCCESS;
 }

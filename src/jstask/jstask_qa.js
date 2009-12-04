@@ -12,7 +12,7 @@ LoadModule('jsio');
 /// many new threads
 
 	var i = 0;
-	while ( !endSignal && i++ < 300 ) {
+	while ( !endSignal && i++ < 100 ) {
 
 		new Task(function(){});
 		QA.GC();
