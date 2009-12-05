@@ -87,7 +87,12 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	JL_CHK( InitJslibsModule(cx) );
 
+#ifdef GMP_DESC
+	ltc_mp = gmp_desc; // register math
+#elif LTM_DESC
 	ltc_mp = ltm_desc; // register math
+#endif
+
 	int regStatus;
 
 	for ( unsigned int i = 0; i < COUNTOF(cipherList); i++ ) {

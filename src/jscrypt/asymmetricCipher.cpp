@@ -566,14 +566,14 @@ DEFINE_PROPERTY( keySize ) {
 	int keySize;
 	switch ( pv->cipher ) {
 		case rsa:
-			keySize = mp_unsigned_bin_size((mp_int*)(pv->key.rsaKey.N)) * 8; // Ok !
+			keySize = ltc_mp.get_digit_count(pv->key.rsaKey.N) * 8; // Ok !
 			break;
 		case ecc:
-			keySize = mp_unsigned_bin_size((mp_int*)(pv->key.eccKey.pubkey.x)) * 8; // Ok !
+			keySize = ltc_mp.get_digit_count(pv->key.eccKey.pubkey.x) * 8; // Ok !
 			break;
 		case dsa:
-//			keySize = mp_unsigned_bin_size((mp_int*)(pv->key.dsaKey.x)) * 8;
-			keySize = mp_unsigned_bin_size((mp_int*)(pv->key.dsaKey.y)) * 8; // ??? seems to randomly failed.
+//			keySize = mp_get_digit_count(pv->key.dsaKey.x) * 8;
+			keySize = ltc_mp.get_digit_count(pv->key.dsaKey.x) * 8; // ??? seems to randomly failed.
 			break;
 		default:
 			JL_REPORT_ERROR("Invalid case.");

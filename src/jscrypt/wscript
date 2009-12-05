@@ -13,5 +13,5 @@ def build(bld):
     task.target ='jscrypt'
     task.source = bld.path.ant_glob('*.cpp')
     task.includes = '../common'
-    task.defines = 'LTM_DESC'
+    task.defines = 'GMP_DESC'
     task.uselib = 'JLMOZJS TOMCRYPT TOMMATH'
