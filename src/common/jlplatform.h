@@ -262,7 +262,7 @@
      implementation-defined values, and should not be used in portable
      code.
 */
-#define JL_CAST_CSTR_TO_UINT32(x) ( (((const char[5])x)[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
+#define JL_CAST_CSTR_TO_UINT32(x) ((uint32_t)((((const char[5])x)[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3])))
 
 #define MAX_INTDOUBLE ((double)pow((double)2, (double)DBL_MANT_DIG))
 
