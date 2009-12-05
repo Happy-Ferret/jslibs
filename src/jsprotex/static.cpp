@@ -117,11 +117,11 @@ DEFINE_FUNCTION_FAST( PerlinNoise ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME()
-  Reinitialize the perlin noise state with the current random state. 
+  Reinitialize the perlin noise state with the current random state.
 **/
 DEFINE_FUNCTION_FAST( PerlinNoiseReinit ) {
 
-	JL_S_ASSERT_ARG(0);
+	JL_S_ASSERT_ARG_MAX(0);
 	InitNoise();
 	return JS_TRUE;
 	JL_BAD;

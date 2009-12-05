@@ -83,8 +83,6 @@ JL_MACRO_BEGIN \
 	if (likely( _unsafeMode )) {code;} \
 JL_MACRO_END
 
-
-
 // see JSAtomState struct in jsatom.h
 #define JL_ATOMJSID(CX, NAME) ATOM_TO_JSID(CX->runtime->atomState.NAME##Atom)
 
@@ -128,7 +126,6 @@ ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 //	JS_SetRuntimePrivate(JS_GetRuntime(cx), hostPrivate);
 	cx->runtime->data = (void*)hostPrivate;
 }
-
 
 ALWAYS_INLINE unsigned char ModulePrivateHash( const uint32_t moduleId ) {
 
@@ -180,7 +177,8 @@ ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) 
 }
 
 #ifdef DEBUG
-#define JLID_NAME(name) (JLID_##name, #name)
+static inline void __void__(int){};
+#define JLID_NAME(name) (__void__(JLID_##name), #name)
 #else
 #define JLID_NAME(name) (#name)
 #endif // DEBUG
@@ -237,7 +235,7 @@ template<class T> T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b); }
 ///////////////////////////////////////////////////////////////////////////////
 // Error management
 
-typedef enum JLErrNum {
+enum JLErrNum {
 #define MSG_DEF(name, number, count, exception, format) \
 	name = number,
 #include "jlerrors.msg"
@@ -382,13 +380,13 @@ JL_MACRO_END
 	JL_S_ASSERT_ERROR_NUM( (condition), JLSMSG_FAIL_TO_CONVERT_TO, typeName );
 
 #define JL_S_ASSERT_BOOLEAN(value) \
-	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_BOOLEAN(value) || !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClass(cx, JSProto_Boolean), JLSMSG_EXPECT_TYPE, "boolean" );
+	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_BOOLEAN(value) || (!JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClass(cx, JSProto_Boolean)), JLSMSG_EXPECT_TYPE, "boolean" );
 
 #define JL_S_ASSERT_LOSSLESS_INT(value) \
-	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_INT(value) || JSVAL_IS_DOUBLE(value) && *JSVAL_TO_DOUBLE(value) < MAX_INTDOUBLE && *JSVAL_TO_DOUBLE(value) > -MAX_INTDOUBLE, JLSMSG_EXPECT_TYPE, "smaller integer" );
+	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && *JSVAL_TO_DOUBLE(value) < MAX_INTDOUBLE && *JSVAL_TO_DOUBLE(value) > -MAX_INTDOUBLE), JLSMSG_EXPECT_TYPE, "smaller integer" );
 
 #define JL_S_ASSERT_NUMBER(value) \
-	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_NUMBER(value) || !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClass(cx, JSProto_Number), JLSMSG_EXPECT_TYPE, "number" );
+	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_NUMBER(value) || (!JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClass(cx, JSProto_Number)), JLSMSG_EXPECT_TYPE, "number" );
 
 #define JL_S_ASSERT_INT(value) \
 	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_INT(value), JLSMSG_EXPECT_TYPE, "integer" );
@@ -1059,10 +1057,10 @@ bad:
 
 
 /*
-// Franck, this is hopeless. The JS engine is not going to keep around apparently-dead variables on the off chance that 
+// Franck, this is hopeless. The JS engine is not going to keep around apparently-dead variables on the off chance that
 // someone might call a native function that uses the debugger APIs to read them off the stack. The debugger APIs don't work that way.
 // ...
-// -j 
+// -j
 
 //ALWAYS_INLINE jsid StringToJsid( JSContext *cx, const char *cstr );
 // Get the value of a variable in the current or parent's scopes.
@@ -1084,7 +1082,7 @@ ALWAYS_INLINE JSBool JL_GetVariableValue( JSContext *cx, const char *name, jsval
 //			JS_LookupProperty(cx, scope, name, vp);
 //			uintN attrs;
 //			JS_GetPropertyAttributes(cx, scope, name, &attrs, &found);
-			
+
 //			JSPropertyDescriptor desc;
 //			JS_GetPropertyDescriptorById(cx, scope, StringToJsid(cx, name), 0, &desc);
 //			*vp = desc.value;

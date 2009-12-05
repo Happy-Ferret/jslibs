@@ -129,13 +129,13 @@ static void* ExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, 
 //	if ( JS_IsNativeFrame(cx, fp) )
 //		return NULL;
 //	if ( before ) return closure;
-	JSBool status = BreakHandler(cx, (JSObject*)closure, fp, FROM_EXECUTE); // (TBD) manage return value
+	BreakHandler(cx, (JSObject*)closure, fp, FROM_EXECUTE); // (TBD) manage return value !
 	return NULL; // hookData for the "after" stage.
 }
 
 static void* FirstExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool *ok, void *closure) {
 
-	JSBool status = BreakHandler(cx, (JSObject*)closure, fp, FROM_EXECUTE); // (TBD) manage return value
+	BreakHandler(cx, (JSObject*)closure, fp, FROM_EXECUTE); // (TBD) manage return value !
 	JS_SetExecuteHook(JS_GetRuntime(cx), NULL, NULL);
 //	if ( status == JSTRAP_ERROR )
 //		*ok == JS_FALSE; // ok is NULL when before is true !!!
@@ -508,7 +508,7 @@ DEFINE_PROPERTY( interruptCounterLimit ) {
 	JSRuntime *rt;
 	rt = JS_GetRuntime(cx);
 	if ( pv->interruptCounterLimit == 0 && (pv->debugHooks ? pv->debugHooks->interruptHandler : JS_GetGlobalDebugHooks(rt)->interruptHandler) == InterruptCounterHandler ) {
-		
+
 		// cancel the current one.
 		if ( pv->debugHooks ) { // defered hook assignment
 
@@ -538,7 +538,7 @@ DEFINE_PROPERTY( breakOnError ) {
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
-		
+
 		pv->debugHooks->debugErrorHook = b ? DebugErrorHookHandler : NULL;
 		pv->debugHooks->debugErrorHookData = b ? obj : NULL;
 	} else {
@@ -563,7 +563,7 @@ DEFINE_PROPERTY( breakOnException ) {
 	JL_CHK( JsvalToBool(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
-		
+
 		pv->debugHooks->throwHook = b ? ThrowHookHandler : NULL;
 		pv->debugHooks->throwHookData = b ? obj : NULL;
 	} else {
@@ -592,7 +592,7 @@ DEFINE_PROPERTY( breakOnDebuggerKeyword ) {
 		pv->debugHooks->debuggerHandler = b ? DebuggerKeyword : NULL;
 		pv->debugHooks->debuggerHandlerData = b ? obj : NULL;
 	} else {
-		
+
 		JL_CHK( JS_SetDebuggerHandler(JS_GetRuntime(cx), b ? DebuggerKeyword : NULL,  b ? obj : NULL) );
 	}
 
@@ -642,7 +642,7 @@ DEFINE_PROPERTY( breakOnFirstExecute ) {
 		pv->debugHooks->executeHook = b ? FirstExecuteHookHandler : NULL;
 		pv->debugHooks->executeHookData = b ? obj : NULL;
 	} else {
-		
+
 		JL_CHK( JS_SetExecuteHook(JS_GetRuntime(cx), b ? FirstExecuteHookHandler : NULL, b ? obj : NULL) );
 	}
 

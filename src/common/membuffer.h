@@ -47,7 +47,7 @@ void MemBufferFinalizeCallback( void* data ) {
 JSBool MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, void* mem, unsigned int size, MemBufferFree_t free, MemBufferResize_t resize ) {
 
 	MemBuffer *membuf;
-	JL_CHK( CreateHandle(cx, 'MEMB', sizeof(MemBuffer), (void**)&membuf, MemBufferFinalizeCallback, memBufferVal) );
+	JL_CHK( CreateHandle(cx, JL_CAST_CSTR_TO_UINT32("MEMB"), sizeof(MemBuffer), (void**)&membuf, MemBufferFinalizeCallback, memBufferVal) );
 	membuf->mem = mem;
 	membuf->size = size;
 	membuf->MemBufferFree = free;
@@ -59,7 +59,7 @@ JSBool MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, v
 
 JSBool MemoryBufferObjectGet( JSContext *cx, jsval memBufferVal, MemBuffer **membuffer ) {
 
-	JL_S_ASSERT( IsHandleType(cx, memBufferVal, 'MEMB'), "Invalid memory object." );
+	JL_S_ASSERT( IsHandleType(cx, memBufferVal, JL_CAST_CSTR_TO_UINT32("MEMB")), "Invalid memory object." );
 	*membuffer = (MemBuffer*)GetHandlePrivate(cx, memBufferVal);
 	return JS_TRUE;
 	JL_BAD;

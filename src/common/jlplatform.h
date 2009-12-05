@@ -255,6 +255,14 @@
 
 #endif // Windows/MacosX/Linux platform
 
+/* Macro that avoid multicharacter constant: From gcc page:
+`-Wno-multichar'
+     Do not warn if a multicharacter constant (`'FOOF'') is used.
+     Usually they indicate a typo in the user's code, as they have
+     implementation-defined values, and should not be used in portable
+     code.
+*/
+#define JL_CAST_CSTR_TO_UINT32(x) ( (((const char[5])x)[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
 
 #define MAX_INTDOUBLE ((double)pow((double)2, (double)DBL_MANT_DIG))
 

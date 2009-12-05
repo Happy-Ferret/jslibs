@@ -146,7 +146,7 @@ DEFINE_CALL() {
 		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&inBuf, &inLen) );
 	}
 
-	char *inPtr;
+	const char *inPtr;
 	inPtr = inBuf;
 	size_t inLeft;
 	inLeft = inLen;
@@ -165,7 +165,7 @@ DEFINE_CALL() {
 
 	if ( pv->remainderLen ) { // have to process a previous incomplete multibyte sequence ?
 
-		char *tmpPtr;
+		const char *tmpPtr;
 		size_t tmpLeft;
 		do {
 
@@ -176,6 +176,7 @@ DEFINE_CALL() {
 			tmpPtr = pv->remainderBuf;
 			tmpLeft = pv->remainderLen;
 
+			// iconv() proto in jslibs/libs/libiconv: extern size_t iconv (iconv_t cd, const char* * inbuf, size_t *inbytesleft, char* * outbuf, size_t *outbytesleft);
 			status = iconv(pv->cd, &tmpPtr, &tmpLeft, &outPtr, &outLeft);
 
 			if ( status != (size_t)(-1) )
@@ -203,6 +204,7 @@ DEFINE_CALL() {
 
 	do {
 
+		// iconv() proto in jslibs/libs/libiconv: extern size_t iconv (iconv_t cd, const char* * inbuf, size_t *inbytesleft, char* * outbuf, size_t *outbytesleft);
 		status = iconv(pv->cd, &inPtr, &inLeft, &outPtr, &outLeft); // doc: http://www.manpagez.com/man/4/iconv/
 
 		if ( status == (size_t)(-1) )

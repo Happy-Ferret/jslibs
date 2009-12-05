@@ -26,7 +26,7 @@ volatile bool disabledFree = false;
 #include "../../libs/nedmalloc/nedmalloc.h"
 
 void nedfree_handlenull(void *mem) {
-	
+
 	if ( mem != NULL && !disabledFree )
 		nedfree(mem);
 }
@@ -112,6 +112,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	int camelCase = 0; // 0:default, 1:lower, 2:upper
 	bool useFileBootstrapScript = false;
 	const char *inlineScript = NULL;
+	const char *scriptName = NULL;
 
 #ifdef DEBUG
 	bool debug;
@@ -157,7 +158,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				inlineScript = *(argumentVector+1);
 				break;
 			case 'v': // version
-				fprintf( stderr, "Version r%d - Build %0.4d-%0.2d-%0.2d / %s\n", JL_SvnRevToInt("$Revision$"), __DATE__YEAR, __DATE__MONTH+1, __DATE__DAY, JS_GetImplementationVersion() );
+				fprintf( stderr, "Version r%d - Build %.4d-%.2d-%.2d / %s\n", JL_SvnRevToInt("$Revision$"), __DATE__YEAR, __DATE__MONTH+1, __DATE__DAY, JS_GetImplementationVersion() );
 				return EXIT_SUCCESS;
 			case '?': // help
 			case 'h': //
@@ -238,8 +239,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
 
 // script name
-	const char *scriptName;
-	scriptName = NULL;
 	if ( inlineScript == NULL )
 		scriptName = *argumentVector;
 	HOST_MAIN_ASSERT( inlineScript != NULL || scriptName != NULL, "No script specified." );

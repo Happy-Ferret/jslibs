@@ -1416,6 +1416,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DisassembleScript ) {
 
+	jl::Queue *scriptFileList = NULL;
+
 	JL_S_ASSERT_ARG(2);
 
 #ifdef DEBUG 
@@ -1426,7 +1428,7 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 	JL_CHK( JsvalToString(cx, &JL_FARG(1), &filename) );
 	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &lineno) );
 
-	jl::Queue *scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
+	scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
 
 	JSScript *script;
 	script = ScriptByLocation(cx, scriptFileList, filename, lineno);
@@ -1693,7 +1695,6 @@ DEFINE_FUNCTION( TestDebug ) {
 //		printf("OPTIONAL\n");
 
 	return JS_TRUE;
-	JL_BAD;
 }
 
 DEFINE_FUNCTION_FAST( Test2Debug ) {

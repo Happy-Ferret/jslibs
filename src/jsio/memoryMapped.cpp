@@ -33,7 +33,6 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t 
 	*size = pv->size;
 	*buf = ((const char*)pv->addr) + pv->offset;
 	return JS_TRUE;
-	JL_BAD;
 }
 
 /**doc

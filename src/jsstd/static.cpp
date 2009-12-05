@@ -88,7 +88,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 	}
 
 	if ( !JSVAL_IS_PRIMITIVE( JL_FARG(2) ) ) {
-			
+
 		map = JL_FARG(2);
 		mapSource = EXPAND_SOURCE_ARG;
 		goto next;
@@ -683,13 +683,13 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( IsBoolean ) {
 
 	if ( JSVAL_IS_BOOLEAN(JL_FARG(1)) ) {
-		
+
 		*JL_FRVAL = JSVAL_TRUE;
 		return JS_TRUE;
 	}
 
 	if ( JSVAL_IS_PRIMITIVE(JL_FARG(1)) ) {
-	
+
 		*JL_FRVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}
@@ -707,13 +707,13 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( IsNumber ) {
 
 	if ( JSVAL_IS_NUMBER(JL_FARG(1)) ) {
-		
+
 		*JL_FRVAL = JSVAL_TRUE;
 		return JS_TRUE;
 	}
 
 	if ( JSVAL_IS_PRIMITIVE(JL_FARG(1)) ) {
-	
+
 		*JL_FRVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}
@@ -746,7 +746,6 @@ DEFINE_FUNCTION_FAST( IsFunction ) {
 
 	*JL_FRVAL = VALUE_IS_FUNCTION(cx, JL_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
-	JL_BAD;
 }
 
 
@@ -1152,7 +1151,7 @@ JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
 
 	//	SleepMilliseconds(pv->maxExecutionTime);
 	JLAcquireSemaphore(pv->semEnd, pv->maxExecutionTime); // used as a breakable Sleep. This avoids to Cancel the thread
-	
+
 	JS_TriggerOperationCallback(scx);
 	JLThreadExit();
 	return 0;

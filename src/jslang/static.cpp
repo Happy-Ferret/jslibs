@@ -106,7 +106,6 @@ DEFINE_FUNCTION( Stringify ) {
 DEFINE_FUNCTION( jslang_test ) {
 
 	return JS_TRUE;
-	JL_BAD;
 }
 #endif // DEBUG
 
