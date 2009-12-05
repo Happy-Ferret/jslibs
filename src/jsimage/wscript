@@ -3,7 +3,25 @@
 def configure(conf):
 
     conf.check_cfg(package='libpng', args='--cflags --libs', atleast_version='1.2.40', uselib_store='PNG')
-    conf.check_cxx(header_name='sys/types.h stdio.h jpeglib.h', function_name='jpeg_CreateCompress', lib='jpeg', uselib_store='JPEG', msg='Checking for library jpeg')
+    conf.check_cxx(header_name='sys/types.h stdio.h jpeglib.h', fragment="""
+#include <sys/types.h>
+#include <stdio.h>
+#include <jpeglib.h>
+
+int main(void) {
+
+  void *p;
+  p=(void*)(jpeg_CreateCompress);
+
+  if( JPEG_LIB_VERSION >= 62 ) {
+
+    printf("ok\\n");
+    return 0;
+  }
+
+  return -1;
+}
+""", lib='jpeg', uselib_store='JPEG', msg='Checking for library jpeg >= 6b')
 
 def build(bld):
 

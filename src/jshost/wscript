@@ -17,11 +17,16 @@ def build(bld):
     cres.target = 'embeddedBootstrapScript.js.xdr.cres'
     cres.rule = '${XDRTOCRES} ${SRC} ${TGT}'
     
+    import os
+
     # Compile jshost
-    jshost = bld.new_task_gen('cxx', 'cprogram')
+    jshost = bld.new_task_gen(features='cxx cprogram qa')
     jshost.target = 'jshost'
     jshost.source = bld.path.ant_glob('*.cpp')
     jshost.includes = '. ../common'
     jshost.lib = ['dl', 'pthread']
     jshost.uselib = 'JLMOZJS'
     jshost.uselib_local = ['host', 'jslang', 'nedmalloc']
+    jshost.qa_cwd = os.path.abspath(bld.bdir) + os.sep + '..'
+    jshost.qa_argv = 'qa.js'
+    

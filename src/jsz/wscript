@@ -2,7 +2,26 @@
 
 def configure(conf):
 
-    conf.check_cxx(header_name='zlib.h', function_name='inflate', lib='z', uselib_store='Z', msg='Checking for library zlib')
+    conf.check_cxx(header_name='zlib.h', fragment="""
+#include <stdio.h>
+#include <zlib.h>
+ 
+int main(void) {
+ 
+  void *p;
+  p=(void*)(inflate);
+
+  if( ZLIB_VER_MAJOR    >= 1 &&
+      ZLIB_VER_MINOR    >= 2 &&
+      ZLIB_VER_REVISION >= 3 ) {
+   
+    printf("ok\\n");
+    return 0;
+  }
+ 
+  return -1;
+}
+""", execute=True, lib='z', uselib_store='Z', msg='Checking for zlib >= 1.2.3')
 
 def build(bld):
 

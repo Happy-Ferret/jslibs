@@ -2,7 +2,7 @@
 
 def configure(conf):
 
-    conf.check_cfg(package='freetype2', args='--cflags --libs', atleast_version='9.22.3', uselib_store='FREETYPE')
+    conf.check_cfg(package='freetype2', args='--cflags --libs', atleast_version='9.22.3', uselib_store='FREETYPE', msg='Checking for freetype2 >= 2.3.11')
 
 def build(bld):
 

@@ -1,11 +1,19 @@
 # Build jsiconv dynamic library
 
+def configure(conf):
+
+    conf.check_cxx(header_name='iconv.h', function_name='iconv', uselib_store='ICONV', msg='Checking for library iconv')
+    conf.check_cxx(header_name='iconv.h', function_name='iconvlist', msg='Checking for iconvlist function')
+
 def build(bld):
 
-    import Utils
-    
+    defines = []
+    if bld.env_of_name(bld.env.BUILD_MODE).HAVE_ICONVLIST:
+        defines.append('JL_HAS_ICONVLIST')
+
     task = bld.new_task_gen('cxx', 'cshlib')
     task.target ='jsiconv'
     task.source = bld.path.ant_glob('*.cpp')
     task.includes = '../common'
-    task.uselib = 'JLMOZJS JLICONV'
+    task.uselib = 'JLMOZJS ICONV'
+    task.defines = defines

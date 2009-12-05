@@ -8,5 +8,6 @@ def build(bld):
     task.target ='jstask'
     task.source = bld.path.ant_glob('*.cpp')
     task.includes = '../common'
+    task.lib = ['m', 'dl', 'pthread']
     task.uselib = 'JLMOZJS'
-    task.uselib_local = ['jslang']
+    task.uselib_local = ['host', 'jslang']
