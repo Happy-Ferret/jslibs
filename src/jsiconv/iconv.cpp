@@ -132,7 +132,7 @@ DEFINE_CALL() {
 		return JS_TRUE;
 	}
 
-	const char *inBuf;
+	char *inBuf;
 	size_t inLen;
 
 	if ( pv->wFrom ) { // source is wide.
@@ -140,13 +140,13 @@ DEFINE_CALL() {
 		JSString *jsstr = JS_ValueToString(cx, JL_ARG(1));
 		JL_ARG(1) = STRING_TO_JSVAL( jsstr );
 		inLen = JL_GetStringLength(jsstr) * 2;
-		inBuf = (const char*)JS_GetStringChars(jsstr);
+		inBuf = (char *)JS_GetStringChars(jsstr);
 	} else {
 
-		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &inBuf, &inLen) );
+		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&inBuf, &inLen) );
 	}
 
-	const char *inPtr;
+	char *inPtr;
 	inPtr = inBuf;
 	size_t inLeft;
 	inLeft = inLen;
@@ -165,7 +165,7 @@ DEFINE_CALL() {
 
 	if ( pv->remainderLen ) { // have to process a previous incomplete multibyte sequence ?
 
-		const char *tmpPtr;
+		char *tmpPtr;
 		size_t tmpLeft;
 		do {
 
@@ -357,7 +357,6 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 	return 0;
 }
 
-#define JL_HAS_ICONVLIST
 #ifdef JL_HAS_ICONVLIST
 DEFINE_PROPERTY( list ) {
 
@@ -378,9 +377,13 @@ DEFINE_PROPERTY( list ) {
 DEFINE_PROPERTY( version ) {
 
 	char versionStr[16];
+#ifdef _LIBICONV_VERSION
 	strcpy( versionStr, IntegerToString( _LIBICONV_VERSION >> 8, 10 ) );
 	strcat( versionStr, ".");
 	strcat( versionStr, IntegerToString( _LIBICONV_VERSION & 0xFF, 10 ) );
+#else
+	strcpy( versionStr, "system");
+#endif
 	return StringToJsval(cx, versionStr, vp);
 	return JL_StoreProperty(cx, obj, id, vp, true);
 }
