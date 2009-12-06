@@ -262,7 +262,8 @@
      implementation-defined values, and should not be used in portable
      code.
 */
-#define JL_CAST_CSTR_TO_UINT32(x) ((uint32_t)((((const char[5])x)[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3])))
+typedef const char ConstChar5[5];
+#define JL_CAST_CSTR_TO_UINT32(x) ((uint32_t)((((ConstChar5)x)[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3])))
 
 #define MAX_INTDOUBLE ((double)pow((double)2, (double)DBL_MANT_DIG))
 
@@ -320,20 +321,25 @@ ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *r) { // supports 9 digits 
 
 #ifdef DEBUG
 
-inline void JL_Assert(const char *s, const char *file, unsigned int ln) {
 
-	fprintf(stderr, "Jslibs assertion failure: %s, at %s:%d\n", s, file, ln);
+inline void JL_AssertAbort() {
 #if defined(WIN32)
 	DebugBreak();
 	exit(3);
 #elif defined(XP_OS2) || (defined(__GNUC__) && defined(__i386))
 	asm("int $3");
 #endif
-    abort();
+	abort();
+}
+
+inline void JL_Assert(const char *s, const char *file, unsigned int ln) {
+
+	fprintf(stderr, "Jslibs assertion failure: %s, at %s:%d\n", s, file, ln);
+	JL_AssertAbort();
 }
 
 #define JL_ASSERT(expr) \
-    ((expr) ? (void)0 : JS_Assert(#expr, __FILE__, __LINE__))
+    ((expr) ? (void)0 : JL_Assert(#expr, __FILE__, __LINE__))
 
 #else
 
