@@ -10,9 +10,10 @@ blddir = 'build'
 import preproc
 preproc.go_absolute_uselib = 1
 
-def set_options(opt):
+import Utils, Options
+from TaskGen import feature, before
 
-    import Options
+def set_options(opt):
 
     opt.tool_options('compiler_cxx')
     opt.add_option('--prefix', default=Options.default_prefix, dest='prefix',
@@ -26,33 +27,10 @@ def set_options(opt):
 
 def configure(conf):
 
-    import Options, Utils
-
     # Check compiler
     conf.check_tool('gcc g++')
 
-    # Check options
-    if Options.options.debug:
-        conf.env['BUILD_MODE'] = 'debug'
-        variant = conf.env.copy()
-        conf.set_env_name('debug', variant)
-        variant.set_variant('debug')
-
-        conf.setenv('debug')
-
-    elif Options.options.optimize:
-        conf.env['BUILD_MODE'] = 'optimize'
-        variant = conf.env.copy()
-        conf.set_env_name('optimize', variant)
-        variant.set_variant('optimize')
-
-        conf.setenv('optimize')
-
-    else:
-        conf.env['BUILD_MODE'] = 'default'
-
     # Check submodule configuration
-    conf.sub_config('libs/js')
     conf.sub_config('src/jsio')
     conf.sub_config('src/jssqlite')
     conf.sub_config('src/jsz')
@@ -61,7 +39,6 @@ def configure(conf):
     conf.sub_config('src/jsfastcgi')
     conf.sub_config('src/jsimage')
     conf.sub_config('src/jsfont')
-    conf.sub_config('src/tools')
 
     # Enable/Disable module
     conf.env['JL_ENABLED_MODULE'] = []
@@ -112,27 +89,49 @@ def configure(conf):
     else:
         conf.env['JL_DISABLED_MODULE'].append('jsfont (missing FreeType library)')
     
-    # Add gcc Warnings
+    # Add classic gcc Warnings
     conf.env.append_value('CFLAGS', Utils.to_list('-Wall'))
     conf.env.append_value('CXXFLAGS', Utils.to_list('-Wall -Wno-invalid-offsetof'))
 
+    # Add strong gcc Warnings
     if Options.options.warnings:
         # TODO: Due to spider monkey: -Wshadow -Wno-unused-parameter -Wno-invalid-offsetof
         conf.env.append_value('CFLAGS', Utils.to_list('-std=c89 -pedantic -Werror -Wextra -Wmissing-prototypes -Wno-unused-parameter'))
         conf.env.append_value('CXXFLAGS', Utils.to_list('-Werror -Wextra -Wno-unused-parameter'))
 
+    # Create debug and optimize variants
+    variant_dbg = conf.env.copy()
+    conf.set_env_name('debug', variant_dbg)
+    variant_dbg.set_variant('debug')
+
+    variant_opt = conf.env.copy()
+    conf.set_env_name('optimize', variant_opt)
+    variant_opt.set_variant('optimize')
+
+    # Set variant specific flags
     if Options.options.debug:
+        conf.env.BUILD_MODE = 'debug'
+        conf.setenv('debug')
         conf.env.append_value('CFLAGS', Utils.to_list('-g3 -O0 -fstack-protector-all -D_FORTIFY_SOURCE=2 -DDEBUG'))
         conf.env.append_value('CXXFLAGS', Utils.to_list('-g3 -O0 -fstack-protector-all -D_FORTIFY_SOURCE=2 -DDEBUG'))
 
     elif Options.options.optimize:
-        # Removed -felide-constructors (by default)
+        conf.env.BUILD_MODE = 'optimize'
+        conf.setenv('optimize')
         conf.env.append_value('CFLAGS', Utils.to_list('-s -O3 -funroll-loops -fno-exceptions -fno-rtti'))
         conf.env.append_value('CXXFLAGS', Utils.to_list('-s -O3 -funroll-loops -fno-exceptions -fno-rtti'))
 
     else:
+        conf.env.BUILD_MODE = 'default'
+        conf.setenv('default')
         conf.env.append_value('CFLAGS', Utils.to_list('-g0 -O2'))
         conf.env.append_value('CXXFLAGS', Utils.to_list('-g0 -O2'))
+
+    # Add variant dependant sub-module
+    for variant in ['debug', 'optimize', 'default']:
+        conf.setenv(variant)
+        conf.sub_config('libs/js')
+        conf.sub_config('src/tools')
 
     print "Checking for fortran...just kidding!"
 
@@ -160,8 +159,6 @@ def configure(conf):
     pretty_print_env('JL_ENABLED_MODULE', 'GREEN')
     pretty_print_env('JL_DISABLED_MODULE', 'YELLOW')
 
-from TaskGen import feature, before
-
 @feature('cprogram', 'cshlib', 'cstaticlib')
 @before('apply_link')
 def redefine_liboutput(self):
@@ -175,6 +172,7 @@ def build(bld):
 
     bld.add_subdirs('libs/js')
     bld.add_subdirs('src/tools')
+    bld.add_group()
 
     bld.add_subdirs('libs/nedmalloc')
 
@@ -182,7 +180,7 @@ def build(bld):
     bld.add_subdirs('src/jslang')
     bld.add_subdirs('src/jsdebug')
 
-    for module in bld.env_of_name(bld.env.BUILD_MODE)['JL_ENABLED_MODULE']:
+    for module in bld.env.JL_ENABLED_MODULE:
         bld.add_subdirs('src/' + module)
 
     bld.add_subdirs('src/jshost')
@@ -190,8 +188,8 @@ def build(bld):
     # Change all tasks default env to current one [debug, optimize, ...]
     for obj in bld.all_task_gen[:]:
 
-        # In case of debug/optimize compilation avoid default compilation
         if bld.env.BUILD_MODE != 'default':
+
             obj_new = obj.clone(bld.env.BUILD_MODE)
 
             # Keep task dependencies
@@ -207,6 +205,6 @@ def build(bld):
 
 def qa(ctx):
 
-    import Options, Scripting
+    import Scripting
     Options.options.__dict__['qa'] = True
     Scripting.commands += ['build']

@@ -11,5 +11,5 @@ def build(bld):
     task = bld.new_task_gen('cxx', 'cshlib')
     task.target ='jsio'
     task.source = bld.path.ant_glob('*.cpp')
-    task.includes = '../common' + ' %s/private' % bld.env_of_name(bld.env.BUILD_MODE).CPPPATH_NSPR[0]
+    task.includes = '../common' + ' %s/private' % bld.env.CPPPATH_NSPR[0]
     task.uselib = 'JLMOZJS NSPR'

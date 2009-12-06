@@ -108,12 +108,9 @@ def build(bld):
     configure_execute.source = 'src/configure'
     configure_execute.target = 'src/Makefile'
 
-    if bld.env.BUILD_MODE == 'debug':
-        bld.env_of_name(bld.env.BUILD_MODE).CONFIGURE_OPTIONS = '--enable-debug --disable-optimize'
-    elif bld.env.BUILD_MODE == 'optimize':
-        bld.env_of_name(bld.env.BUILD_MODE).CONFIGURE_OPTIONS = '--enable-optimize --enable-strip'
-    else:
-        bld.env_of_name(bld.env.BUILD_MODE).CONFIGURE_OPTIONS = '--enable-optimize'
+    bld.env_of_name('default').CONFIGURE_OPTIONS = '--enable-optimize'
+    bld.env_of_name('debug').CONFIGURE_OPTIONS = '--enable-debug --disable-optimize'
+    bld.env_of_name('optimize').CONFIGURE_OPTIONS = '--enable-optimize --enable-strip'
 
     configure_execute.rule ='cd ${SRC[0].bld_dir(env)} && ${SRC[0].abspath()} ${CONFIGURE_OPTIONS} --with-windows-version=501 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests'
     configure_execute.before = "task-make-mozjs"
@@ -140,7 +137,7 @@ def build(bld):
     prune_pat.append('jsutil.h')
     prune_pat.append('jsutil.cpp')
 
-    for f in make.bld.path.find_iter(in_pat=['*.h *.cpp'], ex_pat=ex_pat, prune_pat=prune_pat, bld=False):
+    for f in make.bld.path.find_iter(in_pat=['*.h', '*.cpp'], ex_pat=ex_pat, prune_pat=prune_pat, bld=False):
         js_libs_sources += f.relpath_gen(bld.path) + ' '
 
     make.source = js_libs_sources

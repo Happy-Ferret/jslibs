@@ -8,7 +8,7 @@ def configure(conf):
 def build(bld):
 
     defines = []
-    if bld.env_of_name(bld.env.BUILD_MODE).HAVE_ICONVLIST:
+    if bld.env.HAVE_ICONVLIST:
         defines.append('JL_HAS_ICONVLIST')
 
     task = bld.new_task_gen('cxx', 'cshlib')

@@ -16,6 +16,8 @@ def build(bld):
     cres.source = 'embeddedBootstrapScript.js.xdr'
     cres.target = 'embeddedBootstrapScript.js.xdr.cres'
     cres.rule = '${XDRTOCRES} ${SRC} ${TGT}'
+
+    bld.add_group()
     
     import os
 
