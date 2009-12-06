@@ -10,12 +10,13 @@ def configure(conf):
     conf.find_program('make')
     conf.find_program('cp')
 
-    base_path = os.path.abspath(conf.blddir) + os.sep + conf.env.variant()
+    bld_base_path = os.path.abspath(conf.blddir) + os.sep + conf.env.variant()
+    src_base_path = conf.get_curdir()
 
     import Utils
 
-    conf.env.CPPPATH_JLMOZJS = Utils.to_list('%s/libs/js/src/dist/include/' % base_path)
-    conf.env.LIBPATH_JLMOZJS = Utils.to_list('%s/libs/js/src/dist/lib/' % base_path)
+    conf.env.CPPPATH_JLMOZJS = Utils.to_list('%s/src/ ' % src_base_path + '%s/src/nanojit' % src_base_path)
+    conf.env.LIBPATH_JLMOZJS = Utils.to_list('%s/libs/js/src/dist/lib/' % bld_base_path)
     conf.env.LIB_JLMOZJS = Utils.to_list('mozjs')
 
 def _diff_check(directory, input, output):
