@@ -50,7 +50,7 @@ ALWAYS_INLINE JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *le
 	jsval lengthVal;
 	JL_CHK( JL_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
 //	JL_S_ASSERT_INT( lengthVal );
-	JL_S_ASSERT_VALID( JSVAL_IS_INT(lengthVal), _class->name );
+	JL_S_ASSERT_VALID( JSVAL_IS_INT(lengthVal), JL_THIS_CLASS->name );
 	*length = JSVAL_TO_INT( lengthVal );
 	return JS_TRUE;
 	JL_BAD;
@@ -68,10 +68,10 @@ ALWAYS_INLINE JSBool BlobBuffer( JSContext *cx, JSObject *blobObject, const char
 
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
-	if ( JL_GetClass(obj) == classBlob ) {
+	if ( JL_GetClass(obj) == JL_CLASS(Blob) ) {
 		
 		if ( !IsBlobValid(cx, obj) )
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, classBlob->name);
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
 		JL_CHK( BlobLength(cx, obj, size) );
 		JL_CHK( BlobBuffer(cx, obj, buf) );
 		return JS_TRUE;
@@ -149,7 +149,7 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( !JS_IsConstructing(cx) ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
 
-		obj = JS_NewObject(cx, _class, NULL, NULL);
+		obj = JS_NewObject(cx, JL_THIS_CLASS, NULL, NULL);
 		JL_S_ASSERT( obj != NULL, "Blob construction failed." );
 		*rval = OBJECT_TO_JSVAL(obj);
 	} else {
@@ -206,7 +206,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Free ) {
 
 	JSObject *obj = JL_FOBJ;
-	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	void *pv;
 	pv = JL_GetPrivate(cx, obj);
 
@@ -244,7 +244,7 @@ DEFINE_FUNCTION_FAST( concat ) {
 
 	JSObject *obj = JL_FOBJ;
 	char *dst = NULL;
-	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 
 	// note: var a = new String(123);  a.concat() !== a
 
@@ -318,7 +318,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( substr ) {
 
 	JSObject *obj = JL_FOBJ;
-	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	JL_S_ASSERT_ARG_MIN(1);
 
 	const char *bstrBuffer;
@@ -410,7 +410,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( substring ) {
 
 	JSObject *obj = JL_FOBJ;
-	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	if ( JL_ARGC == 0 ) {
 		
 		*JL_FRVAL = JL_FARG(1);
@@ -502,7 +502,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( indexOf ) {
 
 	JSObject *obj = JL_FOBJ;
-	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	JL_S_ASSERT_ARG_MIN(1);
 
 	const char *sBuffer;
@@ -570,7 +570,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( lastIndexOf ) {
 
 	JSObject *obj = JL_FOBJ;
-	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	JL_S_ASSERT_ARG_MIN(1);
 
 	const char *sBuffer;
@@ -644,7 +644,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( charAt ) {
 
 	JSObject *obj = JL_FOBJ;
-	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	int index;
 	if ( JL_FARG_ISDEF(1) ) {
 
@@ -702,7 +702,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( charCodeAt ) {
 
 	JSObject *obj = JL_FOBJ;
-	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	int index;
 	if ( JL_FARG_ISDEF(1) ) {
 
@@ -753,7 +753,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
 
 	JSObject *obj = JL_FOBJ;
-	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	void *pv;
 	pv = JL_GetPrivate(cx, obj);
 	size_t length;
@@ -783,7 +783,7 @@ DEFINE_FUNCTION_FAST( toSource ) {
 	// (TBD) try something faster !!
 
 	JSObject *obj = JL_FOBJ;
-	if ( obj == *_prototype )
+	if ( obj == JL_PROTOTYPE(cx, Blob) )
 		*JL_FRVAL = JS_GetEmptyStringValue(cx);
 	else
 		*JL_FRVAL = STRING_TO_JSVAL( JS_ValueToString(cx, OBJECT_TO_JSVAL( obj )) );
@@ -852,17 +852,17 @@ DEFINE_SET_PROPERTY() {
 
 	if ( !JSVAL_IS_NUMBER(id) )
 		return JS_TRUE;
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_IMMUTABLE_OBJECT, _class->name);
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_IMMUTABLE_OBJECT, JL_THIS_CLASS->name);
 	return JS_TRUE;
 }
 
 
 DEFINE_EQUALITY() {
 
-	if ( JsvalIsClass(v, _class) ) {
+	if ( JsvalIsClass(v, JL_THIS_CLASS) ) {
 
 		if ( !IsBlobValid(cx, obj) || !IsBlobValid(cx, JSVAL_TO_OBJECT(v)) )
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, classBlob->name);
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
 		
 		const char *buf1, *buf2;
 		size_t len1, len2;
@@ -887,11 +887,11 @@ DEFINE_NEW_RESOLVE() {
 
 	// (TBD) check if needed: yes else var s = new Blob('this is a string object');Print( s.substring() ); will failed
 	// check if obj is a Blob
-	if ( JS_GetPrototype(cx, obj) != prototypeBlob )
+	if ( JS_GetPrototype(cx, obj) != JL_PROTOTYPE(cx, Blob) )
 		return JS_TRUE;
 
 	if ( !IsBlobValid(cx, obj) )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, classBlob->name);
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
 
 	if ( !(flags & JSRESOLVE_QUALIFIED) || (flags & JSRESOLVE_ASSIGNING) )
 		return JS_TRUE;
@@ -903,7 +903,7 @@ DEFINE_NEW_RESOLVE() {
 	// search propId in Blob's prototype
 	JSProperty *prop;
 //	JL_CHK( OBJ_LOOKUP_PROPERTY(cx, prototypeBlob, propId, objp, &prop) );
-	JL_CHK( prototypeBlob->lookupProperty(cx, propId, objp, &prop) );
+	JL_CHK( JL_PROTOTYPE(cx, Blob)->lookupProperty(cx, propId, objp, &prop) );
 	if ( prop ) {
 
 //		OBJ_DROP_PROPERTY(cx, *objp, prop);

@@ -18,7 +18,7 @@ ALWAYS_INLINE JSBool JsvalToSpaceID( JSContext *cx, jsval val, ode::dSpaceID *sp
 
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *obj = JSVAL_TO_OBJECT(val);
-	JL_S_ASSERT_CLASS(obj, classSpace);
+	JL_S_ASSERT_CLASS(obj, JL_CLASS(Space));
 	*spaceId = (ode::dSpaceID)JL_GetPrivate(cx,obj);
 	return JS_TRUE;
 	JL_BAD;

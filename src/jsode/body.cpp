@@ -55,7 +55,7 @@ JSBool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj) {
 	
 	JL_S_ASSERT( ode::dBodyGetData(bodyId) == NULL, "Invalid case (object not finalized)." );
 	JL_S_ASSERT( bodyId != NULL, "Invalid ode object." );
-	*obj = JS_NewObject(cx, classBody, NULL, NULL);
+	*obj = JS_NewObject(cx, JL_CLASS(Body), NULL, NULL);
 	JL_CHK( *obj );
 	JL_CHK( SetMatrix44GetInterface(cx, *obj, ReadMatrix) );
 	JL_SetPrivate(cx, *obj, bodyId);
@@ -118,7 +118,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Destroy ) {
 
-	JL_S_ASSERT_CLASS(obj, classBody);
+	JL_S_ASSERT_CLASS(obj, JL_CLASS(Body));
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId ); // (TBD) manage world-connected ( when bodyId == 0 )
 //	JS_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, JSVAL_VOID);
@@ -146,7 +146,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( IsConnectedTo ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_CLASS(obj, classBody);
+	JL_S_ASSERT_CLASS(obj, JL_CLASS(Body));
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( thisBodyID );
 	ode::dBodyID otherBodyId;
@@ -219,7 +219,7 @@ DEFINE_FUNCTION_FAST( AddForce ) {
 
 	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_CLASS(obj, classBody);
+	JL_S_ASSERT_CLASS(obj, JL_CLASS(Body));
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( thisBodyID );
 	uint32 length;
@@ -248,7 +248,7 @@ DEFINE_FUNCTION_FAST( AddTorque ) {
 
 	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_CLASS(obj, classBody);
+	JL_S_ASSERT_CLASS(obj, JL_CLASS(Body));
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( thisBodyID );
 	ode::dVector3 vector;
@@ -694,7 +694,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( mass ) {
 
-	JSObject *massObject = JS_NewObject(cx, classMass, NULL, NULL);
+	JSObject *massObject = JS_NewObject(cx, JL_CLASS(Mass), NULL, NULL);
 	JL_S_ASSERT(massObject != NULL, "Unable to create the Mass object.");
 	*vp = OBJECT_TO_JSVAL(massObject);
 	JL_CHK( JS_SetReservedSlot(cx, massObject, MASS_SLOT_BODY, OBJECT_TO_JSVAL(obj)) );

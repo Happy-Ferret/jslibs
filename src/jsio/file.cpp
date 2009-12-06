@@ -619,7 +619,7 @@ DEFINE_PROPERTY( standard ) {
 		int32 i;
 		JS_ValueToInt32( cx, id, &i );
 
-		JSObject *obj = JS_NewObject(cx, classFile, NULL, NULL ); // no need to use classDescriptor as proto.
+		JSObject *obj = JS_NewObject(cx, JL_CLASS(File), NULL, NULL ); // no need to use classDescriptor as proto.
 		*vp = OBJECT_TO_JSVAL( obj );
 
 		PRFileDesc *fd = PR_GetSpecialFD((PRSpecialFD)i); // beware: cast !

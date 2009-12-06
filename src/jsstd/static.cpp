@@ -1138,7 +1138,7 @@ struct SandboxContextPrivate {
 
 JSBool SandboxMaxOperationCallback(JSContext *cx) {
 
-	JSObject *branchLimitExceptionObj = JS_NewObject(cx, classOperationLimit, NULL, NULL);
+	JSObject *branchLimitExceptionObj = JS_NewObject(cx, JL_CLASS(OperationLimit), NULL, NULL);
 	JL_CHK( branchLimitExceptionObj );
 	JS_SetPendingException(cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ));
 	JL_BAD;
@@ -1184,7 +1184,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	JS_SetOptions(scx, JS_GetOptions(cx) | JSOPTION_JIT | JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT); // new options are based on host's options. cf. moz bz#490616
 
 	JSObject *globalObject;
-	globalObject = JS_NewObject(scx, classSandbox, NULL, NULL);
+	globalObject = JS_NewObject(scx, JL_CLASS(Sandbox), NULL, NULL);
 	JL_CHK( globalObject );
 	*JL_FRVAL = OBJECT_TO_JSVAL(globalObject); // GC protection
 

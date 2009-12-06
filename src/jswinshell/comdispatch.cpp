@@ -20,20 +20,9 @@
 
 BEGIN_CLASS( ComDispatch )
 
-
-JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, jsval *rval ) {
-
-	JSObject *varObj = JS_NewObject(cx, _class, NULL, NULL);
-	*rval = OBJECT_TO_JSVAL( varObj );
-	JL_SetPrivate(cx, varObj, pdisp);
-	pdisp->AddRef();
-	return JS_TRUE;
-}
-
-
 DEFINE_FINALIZE() {
 
-	if ( obj == *_prototype )
+	if ( obj == JL_PROTOTYPE(cx, ComDispatch) )
 		return;
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
 	disp->Release();
@@ -392,7 +381,7 @@ DEFINE_EQUALITY() {
 
 DEFINE_HAS_INSTANCE() {
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == _class;
+	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
 	return JS_TRUE;
 }
 
@@ -412,3 +401,13 @@ CONFIGURE_CLASS
 	END_STATIC_FUNCTION_SPEC
 
 END_CLASS
+
+
+JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, jsval *rval ) {
+
+	JSObject *varObj = JS_NewObject(cx, JL_CLASS(ComDispatch), NULL, NULL);
+	*rval = OBJECT_TO_JSVAL( varObj );
+	JL_SetPrivate(cx, varObj, pdisp);
+	pdisp->AddRef();
+	return JS_TRUE;
+}

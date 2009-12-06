@@ -39,7 +39,7 @@ class Terminate {
 
 JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
-	JL_S_ASSERT( JL_InheritFrom(cx, obj, classDescriptor), "Invalid descriptor object." );
+	JL_S_ASSERT( JL_InheritFrom(cx, obj, JL_CLASS(Descriptor)), "Invalid descriptor object." );
 //	JL_S_ASSERT_CLASS(obj, classDescriptor);
 
 	PRFileDesc *fd;
@@ -575,19 +575,19 @@ DEFINE_FUNCTION( Import ) {
 	switch (type) {
 		case PR_DESC_FILE:
 			fd = PR_ImportFile(osfd);
-			descriptorObject = JS_NewObject(cx, classFile, NULL, NULL); // (TBD) check if proto is needed !
+			descriptorObject = JS_NewObject(cx, JL_CLASS(File), NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_SOCKET_TCP:
 			fd = PR_ImportTCPSocket(osfd);
-			descriptorObject = JS_NewObject(cx, classSocket, NULL, NULL); // (TBD) check if proto is needed !
+			descriptorObject = JS_NewObject(cx, JL_CLASS(Socket), NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_SOCKET_UDP:
 			fd = PR_ImportUDPSocket(osfd);
-			descriptorObject = JS_NewObject(cx, classSocket, NULL, NULL); // (TBD) check if proto is needed !
+			descriptorObject = JS_NewObject(cx, JL_CLASS(Socket), NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_PIPE:
 			fd = PR_ImportPipe(osfd);
-			descriptorObject = JS_NewObject(cx, classFile, NULL, NULL); // (TBD) check if proto is needed !
+			descriptorObject = JS_NewObject(cx, JL_CLASS(File), NULL, NULL); // (TBD) check if proto is needed !
 			break;
 		default:
 			JL_REPORT_ERROR("Invalid descriptor type.");

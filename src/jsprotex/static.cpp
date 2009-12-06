@@ -29,6 +29,8 @@ float Noise3DPerlin( float x, float y, float z, float alpha, float beta, int n )
 
 double PerlinNoise2(double x, double y, double z);
 
+BEGIN_STATIC
+
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( seed )

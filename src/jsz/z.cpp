@@ -177,7 +177,7 @@ DEFINE_CALL() {
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
-	JL_S_ASSERT_CLASS(thisObj, _class);
+	JL_S_ASSERT_CLASS(thisObj, JL_THIS_CLASS);
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, thisObj);

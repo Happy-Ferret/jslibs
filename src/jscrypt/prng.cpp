@@ -101,10 +101,10 @@ $TOC_MEMBER $INAME
 DEFINE_CALL() {
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
-	JL_S_ASSERT_CLASS( thisObj, _class );
+	JL_S_ASSERT_CLASS( thisObj, JL_THIS_CLASS );
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_CLASS( thisObj, _class );
+	JL_S_ASSERT_CLASS( thisObj, JL_THIS_CLASS );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, thisObj );
 	JL_S_ASSERT_RESOURCE( pv );
@@ -132,7 +132,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( AddEntropy ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
@@ -160,7 +160,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( AutoEntropy ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
@@ -188,7 +188,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( stateGetter ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
@@ -212,7 +212,7 @@ DEFINE_PROPERTY( stateGetter ) {
 
 DEFINE_PROPERTY( stateSetter ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
@@ -237,7 +237,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( name ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );

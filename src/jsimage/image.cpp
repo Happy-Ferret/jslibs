@@ -32,7 +32,7 @@ DEFINE_FINALIZE() {
 
 DEFINE_FUNCTION( Alloc ) {
 
-	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	JL_S_ASSERT_ARG_MIN(1);
 
 	void *data;

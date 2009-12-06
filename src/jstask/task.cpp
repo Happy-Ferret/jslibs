@@ -315,7 +315,7 @@ DEFINE_CONSTRUCTOR() {
 
 	TaskPrivate *pv = NULL; // keep on top
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_FUNCTION( JL_ARG(1) );
 
@@ -382,7 +382,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Request ) {
 
-	JL_S_ASSERT_CLASS( JL_FOBJ, _class );
+	JL_S_ASSERT_CLASS( JL_FOBJ, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -413,7 +413,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Response ) {
 
-	JL_S_ASSERT_CLASS( JL_FOBJ, _class );
+	JL_S_ASSERT_CLASS( JL_FOBJ, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -487,7 +487,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( pendingRequestCount ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -507,7 +507,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( processingRequestCount ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -526,7 +526,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( pendingResponseCount ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -546,7 +546,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( idle ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);

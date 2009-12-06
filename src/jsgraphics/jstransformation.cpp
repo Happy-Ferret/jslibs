@@ -50,12 +50,12 @@ BEGIN_CLASS( Transformation )
 
 DEFINE_FINALIZE() {
 
-	if ( obj == *_prototype ) {
+	if ( obj == JL_THIS_PROTOTYPE ) {
 
 		while ( !PoolIsEmpty(&matrixPool) )
 			Matrix44Free((Matrix44*)jl::PoolPop(&matrixPool));
 		jl::PoolFinalize(&matrixPool);
-		*_prototype = NULL;
+		*(JSObject**)JLGetClassNameHash(GetHostPrivate(cx), &jlClassSpec->className) = NULL;
 		return;
 	}
 
@@ -63,7 +63,7 @@ DEFINE_FINALIZE() {
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	
 	//beware: prototype may be finalized before the object
-	if ( *_prototype != NULL ) { // add to the pool if the pool is still alive !
+	if ( JL_THIS_PROTOTYPE != NULL ) { // add to the pool if the pool is still alive !
 
 		if ( !jl::PoolPush(&matrixPool, pv->mat) )
 			Matrix44Free(pv->mat);

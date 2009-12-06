@@ -242,7 +242,7 @@ DEFINE_FUNCTION_FAST( Accept ) {
 		return ThrowIoError(cx);
 
 	JSObject *object;
-	object = JS_NewObject(cx, classSocket, NULL, NULL);
+	object = JS_NewObject(cx, JL_CLASS(Socket), NULL, NULL);
 	JL_SetPrivate(cx, object, newFd);
 //	JL_CHK( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_FALSE) );
 //	JL_CHK( ReserveStreamReadInterface(cx, object) );
@@ -355,7 +355,7 @@ DEFINE_FUNCTION_FAST( SendTo ) {
 	JL_S_ASSERT_ARG_MIN( 3 );
 
 	PRFileDesc *fd;
-	if ( JL_GetClass(obj) == _class )
+	if ( JL_GetClass(obj) == JL_THIS_CLASS )
 		fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
 	else
 		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
@@ -413,7 +413,7 @@ DEFINE_FUNCTION_FAST( SendTo ) {
 	else
 		*JL_FRVAL = JS_GetEmptyStringValue(cx); // nothing remains
 
-	if ( JL_GetClass(obj) != _class )
+	if ( JL_GetClass(obj) != JL_THIS_CLASS )
 		PR_Close(fd);
 
 	return JS_TRUE;
@@ -436,7 +436,7 @@ DEFINE_FUNCTION_FAST( RecvFrom ) {
 //	JL_S_ASSERT_CLASS( obj, _class );
 
 	PRFileDesc *fd;
-	if ( JL_GetClass(obj) == _class ) {
+	if ( JL_GetClass(obj) == JL_THIS_CLASS ) {
 
 		fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
 		JL_S_ASSERT_RESOURCE( fd );
@@ -535,7 +535,7 @@ DEFINE_FUNCTION_FAST( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	JSObject *fileObj;
 	fileObj = JSVAL_TO_OBJECT( JL_FARG(1) );
-	JL_S_ASSERT_CLASS( fileObj, classFile );
+	JL_S_ASSERT_CLASS( fileObj, JL_CLASS(File) );
 	PRFileDesc *fileFd;
 	fileFd = (PRFileDesc*)JL_GetPrivate( cx, fileObj );
 	JL_S_ASSERT_RESOURCE( fileFd );

@@ -45,7 +45,7 @@ DEFINE_CONSTRUCTOR() {
 	} else {
 
 		//Doc: JS_NewObject, JS_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
-		obj = JS_NewObjectWithGivenProto(cx, _class, NULL, NULL);
+		obj = JS_NewObjectWithGivenProto(cx, JL_THIS_CLASS, NULL, NULL);
 		JL_CHK( obj );
 		*rval = OBJECT_TO_JSVAL(obj);
 	}
@@ -104,7 +104,7 @@ DEFINE_XDR() {
 
 	if ( xdr->mode == JSXDR_DECODE ) {
 
-		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
+		*objp = JS_NewObject(xdr->cx, JL_THIS_CLASS, NULL, NULL);
 		for (;;) {
 
 			JL_CHK( JS_XDRValue(xdr, &key) );

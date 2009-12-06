@@ -433,12 +433,12 @@ end:
 
 JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 
-	JL_S_ASSERT_CLASS( destBuffer, classBuffer );
+	JL_S_ASSERT_CLASS( destBuffer, JL_CLASS(Buffer) );
 	BufferPrivate *dpv;
 	dpv = (BufferPrivate*)JL_GetPrivate(cx, destBuffer);
 	JL_S_ASSERT_RESOURCE( dpv );
 
-	JL_S_ASSERT_CLASS( srcBuffer, classBuffer );
+	JL_S_ASSERT_CLASS( srcBuffer, JL_CLASS(Buffer) );
 	BufferPrivate *spv;
 	spv = (BufferPrivate*)JL_GetPrivate(cx, srcBuffer);
 	JL_S_ASSERT_RESOURCE( spv );
@@ -593,7 +593,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Clear ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JL_S_ASSERT_CLASS(JL_FOBJ, JL_THIS_CLASS);
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -617,7 +617,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	JSObject *obj = JL_FOBJ;
 
-	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -631,7 +631,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 //	if ( JSVAL_IS_VOID(*arg1) ) {
 //	}
 
-	if ( JsvalIsClass(*arg1, _class) ) {
+	if ( JsvalIsClass(*arg1, JL_THIS_CLASS) ) {
 		
 		JL_S_ASSERT_ARG(1);
 		return AddBuffer(cx, obj, JSVAL_TO_OBJECT( *arg1 ));
@@ -673,7 +673,7 @@ DEFINE_FUNCTION_FAST( Match ) {
 
 	JSObject *obj = JL_FOBJ;
 
-	JL_S_ASSERT_CLASS(obj, _class);
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	const char *str;
@@ -814,7 +814,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( IndexOf ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JL_S_ASSERT_CLASS(JL_FOBJ, JL_THIS_CLASS);
 	JL_S_ASSERT_ARG(1);
 	const char *boundary;
 	unsigned int boundaryLength;
@@ -841,7 +841,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Unread ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JL_S_ASSERT_CLASS(JL_FOBJ, JL_THIS_CLASS);
 	JL_S_ASSERT_ARG(1);
 	JL_CHK( UnReadDataChunk(cx, JL_FOBJ, JL_FARG(1)) );
 	*JL_FRVAL = JL_FARG(1);

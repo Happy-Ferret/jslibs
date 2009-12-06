@@ -336,7 +336,7 @@ DEFINE_CONSTRUCTOR() {
 
 DEFINE_FINALIZE() {
 
-	if ( obj == *_prototype )
+	if ( obj == JL_PROTOTYPE(cx, Systray) )
 		return;
 
 	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JL_GetPrivate(cx, obj);
@@ -589,7 +589,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 				}
 				if ( !JSVAL_IS_VOID( itemVal ) ) {
 					JSObject *iconObj = JSVAL_TO_OBJECT(itemVal);
-					JL_S_ASSERT_CLASS( iconObj, classIcon );
+					JL_S_ASSERT_CLASS( iconObj, JL_CLASS(Icon) );
 					HICON *phIcon = (HICON*)JL_GetPrivate(cx, iconObj);
 					JL_S_ASSERT_RESOURCE(phIcon);
 					HBITMAP hBMP = MenuItemBitmapFromIcon(*phIcon);
@@ -721,7 +721,7 @@ DEFINE_PROPERTY( icon ) {
 	if ( JSVAL_IS_OBJECT(*vp) && !JSVAL_IS_NULL( *vp ) ) {
 
 		JSObject *iconObj = JSVAL_TO_OBJECT(*vp);
-		JL_S_ASSERT_CLASS( iconObj, classIcon );
+		JL_S_ASSERT_CLASS( iconObj, JL_CLASS(Icon) );
 		HICON *phIcon = (HICON*)JL_GetPrivate(cx, iconObj);
 		JL_S_ASSERT_RESOURCE( phIcon );
 		hIcon = *phIcon;

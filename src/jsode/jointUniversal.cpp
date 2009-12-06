@@ -39,7 +39,7 @@ DEFINE_CONSTRUCTOR() {
 
 	ode::dJointGroupID groupId;
 	JL_S_ASSERT_OBJECT( JL_ARG(2) );
-	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), classJointGroup );
+	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
 	if ( JL_ARG_ISDEF(2) )
 		groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(2)));
 	else

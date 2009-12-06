@@ -105,7 +105,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Init ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MAX( 0 );
 
 	HashPrivate *pv;
@@ -130,7 +130,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Process ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_STRING( argv[0] );
 
@@ -170,7 +170,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Done ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -211,7 +211,7 @@ $TOC_MEMBER $INAME
 DEFINE_CALL() {
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
-	JL_S_ASSERT_CLASS( thisObj, _class );
+	JL_S_ASSERT_CLASS( thisObj, JL_THIS_CLASS );
 	
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_STRING( argv[0] );
@@ -266,7 +266,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( name ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -285,7 +285,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( blockSize ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -301,7 +301,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( length ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -317,7 +317,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( inputLength ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -341,7 +341,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CipherHash ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN(1);
 	const char *cipherName;
 	JL_CHK( JsvalToString(cx, &argv[0], &cipherName) );

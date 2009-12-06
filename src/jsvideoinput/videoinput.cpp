@@ -27,7 +27,7 @@ BEGIN_CLASS( VideoInput ) // Start the definition of the class. It defines some 
 
 DEFINE_FINALIZE() {
 
-	if ( obj == *_prototype )
+	if ( obj == JL_THIS_PROTOTYPE )
 		return;
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );

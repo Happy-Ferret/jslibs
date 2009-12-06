@@ -38,31 +38,31 @@ JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) 
 
 	switch( ode::dJointGetType(jointId) ) {
 		case ode::dJointTypeBall:
-			*obj = JS_NewObject(cx, classJointBall, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(JointBall), NULL, NULL);
 			break;
 		case ode::dJointTypeHinge:
-			*obj = JS_NewObject(cx, classJointHinge, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(JointHinge), NULL, NULL);
 			break;
 		case ode::dJointTypeSlider:
-			*obj = JS_NewObject(cx, classJointSlider, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(JointSlider), NULL, NULL);
 			break;
 		case ode::dJointTypeUniversal:
-			*obj = JS_NewObject(cx, classJointUniversal, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(JointUniversal), NULL, NULL);
 			break;
 		case ode::dJointTypePiston:
-			*obj = JS_NewObject(cx, classJointPiston, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(JointPiston), NULL, NULL);
 			break;
 		case ode::dJointTypeFixed:
-			*obj = JS_NewObject(cx, classJointFixed, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(JointFixed), NULL, NULL);
 			break;
 		case ode::dJointTypeAMotor:
-			*obj = JS_NewObject(cx, classJointAMotor, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(JointAMotor), NULL, NULL);
 			break;
 		case ode::dJointTypeLMotor:
-			*obj = JS_NewObject(cx, classJointLMotor, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(JointLMotor), NULL, NULL);
 			break;
 		case ode::dJointTypePlane2D:
-			*obj = JS_NewObject(cx, classJointPlane, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(JointPlane), NULL, NULL);
 			break;
 		default:
 			JL_REPORT_ERROR("Unable to reconstruct the joint.");
@@ -117,7 +117,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Destroy ) {
 
-	JL_S_ASSERT_INHERITANCE(obj, _class);
+	JL_S_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( jointId );
 	JS_free(cx, ode::dJointGetFeedback(jointId)); // NULL is supported

@@ -38,7 +38,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	JL_CHK( InitJslibsModule(cx) );
 
-	JL_CHK( INIT_STATIC() );
+	INIT_STATIC();
 //	INIT_CLASS( Sound );
 
 	INIT_CLASS( SoundFileDecoder );

@@ -126,17 +126,17 @@ DEFINE_CONSTRUCTOR() {
 	JL_SetPrivate(cx, obj, (void*)process);
 
 	JSObject *fdInObj;
-	fdInObj = JS_NewObject( cx, classPipe, NULL, NULL );
+	fdInObj = JS_NewObject( cx, JL_CLASS(Pipe), NULL, NULL );
 	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdInObj)) );
 	JL_SetPrivate( cx, fdInObj, stdin_parent );
 
 	JSObject *fdOutObj;
-	fdOutObj = JS_NewObject( cx, classPipe, NULL, NULL );
+	fdOutObj = JS_NewObject( cx, JL_CLASS(Pipe), NULL, NULL );
 	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOutObj)) );
 	JL_SetPrivate( cx, fdOutObj, stdout_parent );
 
 	JSObject *fdErrObj;
-	fdErrObj = JS_NewObject( cx, classPipe, NULL, NULL );
+	fdErrObj = JS_NewObject( cx, JL_CLASS(Pipe), NULL, NULL );
 	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErrObj)) );
 	JL_SetPrivate( cx, fdErrObj, stderr_parent );
 
@@ -164,7 +164,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Wait ) {
 
 	JSObject *obj = JL_FOBJ;
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(process);
@@ -185,7 +185,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Detach ) {
 
 	JSObject *obj = JL_FOBJ;
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(process);
@@ -205,7 +205,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( Kill ) {
 
 	JSObject *obj = JL_FOBJ;
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(process);
@@ -229,7 +229,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( stdin ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -242,7 +242,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( stdout ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -255,7 +255,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( stderr ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, vp) );
 	return JS_TRUE;
 	JL_BAD;

@@ -88,7 +88,7 @@ double PerlinNoise2(double x, double y, double z);
 #define PUNZNORM(p) ( (PUNNORM(p) + 1 ) / 2)
 
 
-inline JSBool TextureInit( JSContext *cx, Texture *tex, unsigned int width, unsigned int height, unsigned int channels ) {
+inline JSBool TextureInit( JSContext *cx, TextureStruct *tex, unsigned int width, unsigned int height, unsigned int channels ) {
 
 	tex->cbufferSize = width * height * channels * sizeof(PTYPE);
 	tex->cbuffer = (PTYPE*)JS_malloc(cx, tex->cbufferSize);
@@ -99,7 +99,7 @@ inline JSBool TextureInit( JSContext *cx, Texture *tex, unsigned int width, unsi
 	return JS_TRUE;
 }
 
-inline JSBool TextureResizeBackBuffer( JSContext *cx, Texture *tex, unsigned int newSize ) {
+inline JSBool TextureResizeBackBuffer( JSContext *cx, TextureStruct *tex, unsigned int newSize ) {
 	
 	if ( tex->cbackBuffer != NULL && tex->cbackBufferSize == newSize )
 		return JS_TRUE;
@@ -111,12 +111,12 @@ inline JSBool TextureResizeBackBuffer( JSContext *cx, Texture *tex, unsigned int
 	return JS_TRUE;
 }
 
-inline JSBool TextureSetupBackBuffer( JSContext *cx, Texture *tex ) {
+inline JSBool TextureSetupBackBuffer( JSContext *cx, TextureStruct *tex ) {
 
 	return TextureResizeBackBuffer(cx, tex, tex->cbufferSize);
 }
 
-inline void TextureSwapBuffers( Texture *tex ) {
+inline void TextureSwapBuffers( TextureStruct *tex ) {
 
 	PTYPE *tmpBuffer = tex->cbuffer;
 	tex->cbuffer = tex->cbackBuffer;
@@ -127,7 +127,7 @@ inline void TextureSwapBuffers( Texture *tex ) {
 	tex->cbackBufferSize = tmpBufferSize;
 }
 
-inline void TextureFreeBuffers( JSContext* cx, Texture *tex ) {
+inline void TextureFreeBuffers( JSContext* cx, TextureStruct *tex ) {
 
 	if ( tex->cbackBuffer != NULL ) {
 
@@ -142,21 +142,21 @@ inline void TextureFreeBuffers( JSContext* cx, Texture *tex ) {
 	}
 }
 
-inline bool TextureSameFormat( Texture *t1, Texture *t2 ) {
+inline bool TextureSameFormat( TextureStruct *t1, TextureStruct *t2 ) {
 
 	return t1->width == t2->width && t1->height == t2->height && t1->channels == t2->channels;
 }
 
 inline bool IsTexture( JSContext *cx, jsval val ) {
 
-	return JsvalIsClass(val, classTexture);
+	return JsvalIsClass(val, JL_CLASS(Texture));
 }
 
 
-JSBool ValueToTexture( JSContext* cx, jsval value, Texture **tex ) {
+JSBool ValueToTexture( JSContext* cx, jsval value, TextureStruct **tex ) {
 
 	JL_S_ASSERT( IsTexture(cx, value), "Invalid texture." );
-	*tex = (Texture *)JL_GetPrivate(cx, JSVAL_TO_OBJECT( value ));
+	*tex = (TextureStruct *)JL_GetPrivate(cx, JSVAL_TO_OBJECT( value ));
 	JL_S_ASSERT_RESOURCE(tex);
 	return JS_TRUE;
 	JL_BAD;
@@ -190,7 +190,7 @@ ALWAYS_INLINE unsigned int Mirror( int value, int limit ) { // (TBD) manage if v
 	return value;
 }
 
-ALWAYS_INLINE PTYPE* PosByMode( const Texture *tex, int x, int y, BorderMode mode ) {
+ALWAYS_INLINE PTYPE* PosByMode( const TextureStruct *tex, int x, int y, BorderMode mode ) {
 
 	switch ( mode ) {
 		case borderClamp:
@@ -375,7 +375,7 @@ BEGIN_CLASS( Texture )
 
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( tex );
 	*buf = (char*)tex->cbuffer;
 	*size = tex->width * tex->height * tex->channels * sizeof(PTYPE);
@@ -386,10 +386,10 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 
 DEFINE_FINALIZE() {
 
-	if ( obj == *_prototype )
+	if ( obj == JL_THIS_PROTOTYPE )
 		return;
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	if ( !tex )
 		return;
 
@@ -428,8 +428,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_MIN( 1 );
-	Texture *tex;
-	tex = (Texture *)JS_malloc(cx, sizeof(Texture));
+	TextureStruct *tex;
+	tex = (TextureStruct *)JS_malloc(cx, sizeof(TextureStruct));
 	JL_CHK( tex );
 	JL_SetPrivate(cx, obj, tex);
 	JL_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
@@ -455,7 +455,7 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( IsTexture(cx, *arg1) ) { // copy constructor
 
-		Texture *srcTex = (Texture *)JL_GetPrivate(cx, JSVAL_TO_OBJECT(*arg1));
+		TextureStruct *srcTex = (TextureStruct *)JL_GetPrivate(cx, JSVAL_TO_OBJECT(*arg1));
 		JL_S_ASSERT_RESOURCE(srcTex);
 
 		JL_CHK( TextureInit(cx, tex, srcTex->width, srcTex->height, srcTex->channels) );
@@ -498,10 +498,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Free ) {
 
-	JL_S_ASSERT_CLASS(JL_FOBJ, _class);
+	JL_S_ASSERT_CLASS(JL_FOBJ, JL_THIS_CLASS);
 
-	Texture *tex;
-	tex = (Texture*)JL_GetPrivate(cx, JL_FOBJ);
+	TextureStruct *tex;
+	tex = (TextureStruct*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 	TextureFreeBuffers(cx, tex);
 	return JS_TRUE;
@@ -530,11 +530,11 @@ DEFINE_FUNCTION_FAST( Swap ) {
 
 	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	JSObject *texObj;
 	texObj = JSVAL_TO_OBJECT( JL_FARG(1) );
-	JL_S_ASSERT_CLASS( texObj, _class );
+	JL_S_ASSERT_CLASS( texObj, JL_THIS_CLASS );
 	void *tmp;
 	tmp = JL_GetPrivate(cx, obj);
 	JL_SetPrivate(cx, obj, JL_GetPrivate(cx, texObj));
@@ -553,7 +553,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( ClearChannel ) {
 
 	JSObject *obj = JL_FOBJ;
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	if ( argc == 0 ) { // clear all channels
@@ -609,14 +609,14 @@ DEFINE_FUNCTION_FAST( SetChannel ) {
 
 	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN( 3 );
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int dstChannel;
 	JL_CHK( JsvalToInt(cx, JL_FARG(1), &dstChannel) );
 
-	Texture *tex1;
+	TextureStruct *tex1;
 	JL_CHK( ValueToTexture(cx, JL_FARG(2), &tex1) );
 
 	int srcChannel;
@@ -660,7 +660,7 @@ DEFINE_FUNCTION_FAST( ToHLS ) { // (TBD) test it
 	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
 
 	JSObject *obj = JL_FOBJ;
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	int channels;
 	channels = tex->channels;
@@ -735,7 +735,7 @@ DEFINE_FUNCTION_FAST( ToRGB ) { // (TBD) test it
 	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
 
 	JSObject *obj = JL_FOBJ;
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	int channels;
 	channels = tex->channels;
@@ -809,8 +809,8 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 
 	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	size_t count;
@@ -871,8 +871,8 @@ DEFINE_FUNCTION_FAST( Colorize ) {
 	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_RANGE(2,3);
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int channels;
@@ -939,12 +939,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( ExtractColor ) {
 
 	JSObject *obj = JL_FOBJ;
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	JL_S_ASSERT( tex->channels == 1, "Destination texture must have only 1 channel.");
 
-	Texture *texSrc;
+	TextureStruct *texSrc;
 	JL_CHK( ValueToTexture(cx, JL_FARG(1), &texSrc) );
 	JL_S_ASSERT( tex->width == texSrc->width && tex->height == texSrc->height, "Images must have the same width and height." );
 
@@ -990,7 +990,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( NormalizeLevels ) {
 
 	JSObject *obj = JL_FOBJ;
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	PTYPE min, max, tmp;
@@ -1031,8 +1031,8 @@ DEFINE_FUNCTION_FAST( ClampLevels ) { // (TBD) check if this algo is right
 	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN( 2 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	double min, max;
@@ -1070,8 +1070,8 @@ DEFINE_FUNCTION_FAST( CutLevels ) { // (TBD) check if this algo is right
 	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN( 2 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	double min, max;
@@ -1098,7 +1098,7 @@ DEFINE_FUNCTION_FAST( CutLevels ) { // (TBD) check if this algo is right
 // PTYPE ok
 DEFINE_FUNCTION_FAST( CutLevels ) {
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	PTYPE min, max;
@@ -1160,7 +1160,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( InvertLevels ) { // level = 1 / level
 
 	JSObject *obj = JL_FOBJ;
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	unsigned int i, size;
 	size = tex->width * tex->height * tex->channels;
@@ -1180,7 +1180,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( OppositeLevels ) { // level = -level
 
 	JSObject *obj = JL_FOBJ;
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	int tsize;
 	tsize = tex->width * tex->height * tex->channels;
@@ -1200,7 +1200,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( PowLevels ) { //
 
 	JSObject *obj = JL_FOBJ;
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	JL_S_ASSERT_ARG_MIN( 1 );
@@ -1232,8 +1232,8 @@ DEFINE_FUNCTION_FAST( MirrorLevels ) {
 	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	double threshold;
 	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &threshold) );
@@ -1280,8 +1280,8 @@ DEFINE_FUNCTION_FAST( WrapLevels ) { // real modulo
 	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	double wrap;
@@ -1313,7 +1313,7 @@ DEFINE_FUNCTION_FAST( AddNoise ) {
 
 	JSObject *obj = JL_FOBJ;
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	int channels;
 	channels = tex->channels;
@@ -1358,8 +1358,8 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 
 	JL_S_ASSERT_ARG_MAX(1);
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	DesaturateMode mode;
@@ -1436,8 +1436,8 @@ DEFINE_FUNCTION_FAST( Set ) {
 	JSObject *obj = JL_FOBJ;
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	unsigned int i, size, channels;
 	channels = tex->channels;
@@ -1452,7 +1452,7 @@ DEFINE_FUNCTION_FAST( Set ) {
 
 	if ( IsTexture(cx, *arg1) ) {
 
-		Texture *tex1;
+		TextureStruct *tex1;
 		JL_CHK( ValueToTexture(cx, *arg1, &tex1) );
 		
 		JL_S_ASSERT( TextureSameFormat(tex, tex1), "Textures must have the same size." );
@@ -1509,8 +1509,8 @@ DEFINE_FUNCTION_FAST( Add ) {
 	JSObject *obj = JL_FOBJ;
 
 	JL_S_ASSERT_ARG_RANGE( 1,2 );
-	Texture *tex;
-	tex = (Texture*)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	unsigned int i, c, channels, size;
 	channels = tex->channels;
@@ -1538,7 +1538,7 @@ DEFINE_FUNCTION_FAST( Add ) {
 
 	if ( IsTexture(cx, *arg1) ) {
 
-		Texture *tex1;
+		TextureStruct *tex1;
 		JL_CHK( ValueToTexture(cx, *arg1, &tex1) );
 
 		JL_S_ASSERT( tex1->width == tex->width && tex1->height == tex->height && ( tex1->channels == 1 || tex1->channels == channels), "Incompatible image format." );
@@ -1599,8 +1599,8 @@ DEFINE_FUNCTION_FAST( Mult ) {
 	JSObject *obj = JL_FOBJ;
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	unsigned int i, c, channels, size;
 	PTYPE *dPos, *sPos;
@@ -1622,7 +1622,7 @@ DEFINE_FUNCTION_FAST( Mult ) {
 
 	if ( IsTexture(cx, *arg1) ) {
 
-		Texture *tex1;
+		TextureStruct *tex1;
 		JL_CHK( ValueToTexture(cx, *arg1, &tex1) );
 		JL_S_ASSERT( tex1->width == tex->width && tex1->height == tex->height && ( tex1->channels == 1 || tex1->channels == channels), "Incompatible image format." );
 
@@ -1698,15 +1698,15 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 	JSObject *obj = JL_FOBJ;
 
 	JL_S_ASSERT_ARG_MIN( 2 );
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	int channels;
 	channels = tex->channels;
 	int tsize;
 	tsize = tex->width * tex->height * channels;
 
-	Texture *tex1;
+	TextureStruct *tex1;
 	JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
 	JL_S_ASSERT( TextureSameFormat(tex, tex1), "Images must have the same size." );
 
@@ -1714,7 +1714,7 @@ DEFINE_FUNCTION_FAST( Blend ) { // texture1, blenderTexture|blenderColor
 
 	if ( IsTexture(cx, JL_FARG(2)) ) {
 
-		Texture *blenderTex;
+		TextureStruct *blenderTex;
 		JL_CHK( ValueToTexture(cx, JL_FARG(1), &blenderTex) );
 		JL_S_ASSERT( TextureSameFormat(tex, blenderTex), "Images must have the same size." );
 		for ( int i = 0; i < tsize; i++ ) {
@@ -1769,8 +1769,8 @@ DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int turn;
@@ -1842,8 +1842,8 @@ DEFINE_FUNCTION_FAST( Flip ) {
 
 	JL_S_ASSERT_ARG_MIN( 2 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	bool flipX, flipY;
@@ -1890,8 +1890,8 @@ DEFINE_FUNCTION_FAST( RotoZoom ) { // source: FxGen
 
 	JL_S_ASSERT_ARG_MIN( 5 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	int width;
 	width = tex->width;
@@ -2026,8 +2026,8 @@ DEFINE_FUNCTION_FAST( Resize ) {
 	JSObject *obj = JL_FOBJ;
 
 	JL_S_ASSERT_ARG_MIN( 2 );
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	unsigned int width, height, channels;
 	width = tex->width;
@@ -2172,8 +2172,8 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	// (TBD) accumulate precalculated pixels ? ( like BoxBlur )
 	JL_S_ASSERT_ARG_MIN( 1 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	int width, height;
 	width = tex->width;
@@ -2319,8 +2319,8 @@ DEFINE_FUNCTION_FAST( Dilate ) {
 	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(3), &borderMode) );
 
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	int width, height, channels;
 	width = tex->width;
@@ -2406,8 +2406,8 @@ DEFINE_FUNCTION_FAST( ForEachPixel ) {
 	jsval functionValue;
 	functionValue = JL_FARG(1);
 
-	Texture *tex;
-	tex = (Texture*)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	unsigned int x, y, c, width, height, channels;
 	width = tex->width;
@@ -2487,8 +2487,8 @@ DEFINE_FUNCTION_FAST( BoxBlur ) {
 
 	JL_S_ASSERT_ARG_RANGE(2,3);
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	int width, height;
 	width = tex->width;
@@ -2582,7 +2582,7 @@ DEFINE_FUNCTION_FAST( NormalizeVectors ) {
 
 	JSObject *obj = JL_FOBJ;
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int width;
@@ -2626,7 +2626,7 @@ DEFINE_FUNCTION_FAST( Normals ) {
 
 	JSObject *obj = JL_FOBJ;
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	JL_CHK( TextureResizeBackBuffer(cx, tex, tex->width * tex->height * 3 * sizeof(PTYPE)) ); // need a 3 channels back buffer
@@ -2733,8 +2733,8 @@ DEFINE_FUNCTION_FAST( Light ) {
 
 	JL_S_ASSERT_ARG_MIN( 5 );
 
-	Texture *normals, *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *normals, *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int width;
@@ -2849,8 +2849,8 @@ DEFINE_FUNCTION_FAST( NR ) {
 
 	JL_S_ASSERT_ARG( 2 );
 
-	Texture *tex, *t1, *t2;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex, *t1, *t2;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	JL_CHK( ValueToTexture(cx, JL_FARG(1), &t1) );
@@ -2920,8 +2920,8 @@ DEFINE_FUNCTION_FAST( Trim ) { // (TBD) test this new version that use memcpy
 	JSObject *obj = JL_FOBJ;
 
 	JL_S_ASSERT_ARG_MIN( 4 );
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int x0, y0, x1, y1;
@@ -2996,8 +2996,8 @@ DEFINE_FUNCTION_FAST( Copy ) {
 
 	JL_S_ASSERT_ARG_MIN( 3 );
 
-	Texture *srcTex, *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *srcTex, *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	JL_CHK( ValueToTexture(cx, JL_FARG(1), &srcTex) );
 
@@ -3074,8 +3074,8 @@ DEFINE_FUNCTION_FAST( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borde
 
 	JL_S_ASSERT_ARG_MIN( 4 );
 
-	Texture *tex1, *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex1, *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	JL_CHK( ValueToTexture(cx, JL_FARG(1), &tex1) );
@@ -3169,8 +3169,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Export ) { // (int)x, (int)y, (int)width, (int)height. Returns a Blob
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	unsigned int sChannels, sWidth, sHeight;
@@ -3262,8 +3262,8 @@ DEFINE_FUNCTION_FAST( Import ) { // (Blob)image, (int)x, (int)y
 
 	JL_S_ASSERT_ARG_RANGE(1,4);
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
@@ -3364,8 +3364,8 @@ DEFINE_FUNCTION_FAST( Shift ) {
 
 	JL_S_ASSERT_ARG_RANGE( 2, 3 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int offsetX, offsetY;
@@ -3414,8 +3414,8 @@ DEFINE_FUNCTION_FAST( Displace ) {
 
 	JL_S_ASSERT_ARG_RANGE( 2,3 );
 
-	Texture *tex1, *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex1, *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	unsigned int width, height, channels;
 	width = tex->width;
@@ -3500,8 +3500,8 @@ DEFINE_FUNCTION_FAST( Cells ) { // source: FxGen
 	JL_CHK( JsvalToInt(cx, JL_FARG(1), &density) );
 	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &regularity) );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	density = MINMAX( density, 1, 128 );
@@ -3616,8 +3616,8 @@ DEFINE_FUNCTION_FAST( AddGradiantQuad ) {
 
 	JL_S_ASSERT_ARG_MIN( 4 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	unsigned int width, height, channels;
 	width = tex->width;
@@ -3678,8 +3678,8 @@ DEFINE_FUNCTION_FAST( AddGradiantLinear ) {
 
 	JL_S_ASSERT_ARG_MIN( 2 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	unsigned int width, height, channels;
@@ -3737,8 +3737,8 @@ DEFINE_FUNCTION_FAST( AddGradiantRadial ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	int width, height, channels;
 	width = tex->width;
@@ -3804,7 +3804,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 	JL_S_ASSERT_ARG_MIN( 3 );
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int width = tex->width;
@@ -3894,8 +3894,8 @@ DEFINE_FUNCTION_FAST( AddCracks ) { // source: FxGen
 
 	JL_S_ASSERT_ARG_MIN( 2 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int width;
@@ -3992,7 +3992,7 @@ DEFINE_FUNCTION_FAST( ApplyColorMatrix ) {
 
 	JSObject *obj = JL_FOBJ;
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	JL_S_ASSERT( tex->channels == 4, "Invalid channel count." );
 	JL_S_ASSERT_ARG(1);
@@ -4034,7 +4034,7 @@ DEFINE_FUNCTION_FAST( AddPerlin2 ) {
 
 	JSObject *obj = JL_FOBJ;
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 //	JL_S_ASSERT( tex->channels == 4, "Invalid channel count." );
 	JL_S_ASSERT_ARG_RANGE(3,4);
@@ -4101,8 +4101,8 @@ DEFINE_FUNCTION_FAST( SetRectangle ) {
 
 	JL_S_ASSERT_ARG_MIN( 5 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int x0, y0, x1, y1;
@@ -4149,8 +4149,8 @@ DEFINE_FUNCTION_FAST( SetPixel ) { // x, y, levels
 
 	JL_S_ASSERT_ARG_RANGE( 3, 4 );
 
-	Texture *tex;
-	tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex;
+	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int x, y;
@@ -4199,8 +4199,8 @@ DEFINE_FUNCTION_FAST( GetPixelAt ) {
 	sx = JSVAL_TO_INT(JL_FARG(1));
 	sy = JSVAL_TO_INT(JL_FARG(2));
 
-	Texture *tex;
-	tex = (Texture*)JL_GetPrivate(cx, JL_FOBJ);
+	TextureStruct *tex;
+	tex = (TextureStruct*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	BorderMode borderMode;
@@ -4224,7 +4224,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GetGlobalLevel ) {
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	unsigned int i, size;
@@ -4266,7 +4266,7 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( GetLevelRange ) {
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	unsigned int size, i;
@@ -4321,7 +4321,7 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION_FAST( GetBorderLevelRange ) {
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, JL_FOBJ);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(tex);
 
 	PTYPE min, max, tmp;
@@ -4412,7 +4412,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( width ) {
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	return IntToJsval(cx, tex->width, vp);
 	JL_BAD;
@@ -4426,7 +4426,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( height ) {
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	return IntToJsval(cx, tex->height, vp);
 	JL_BAD;
@@ -4440,7 +4440,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( channels ) {
 
-	Texture *tex = (Texture *)JL_GetPrivate(cx, obj);
+	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 	return IntToJsval(cx, tex->channels, vp);
 	JL_BAD;

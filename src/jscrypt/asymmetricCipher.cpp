@@ -22,7 +22,7 @@
 
 #include <math.h>
 
-enum AsymmetricCipher {
+enum AsymmetricCipherType {
 	rsa,
 	ecc,
 	dsa,
@@ -35,7 +35,7 @@ union AsymmetricKey {
 };
 
 struct AsymmetricCipherPrivate {
-	AsymmetricCipher cipher;
+	AsymmetricCipherType cipher;
 	AsymmetricKey key;
 	bool hasKey;
 	ltc_pkcs_1_paddings padding;
@@ -48,7 +48,7 @@ JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **pr
 	jsval prngVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
 	JL_S_ASSERT_OBJECT(	prngVal );
-	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(prngVal), classPrng );
+	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(prngVal), JL_CLASS(Prng) );
 	PrngPrivate *prngPrivate;
 	prngPrivate = (PrngPrivate *)JL_GetPrivate(cx, JSVAL_TO_OBJECT(prngVal));
 	JL_S_ASSERT_RESOURCE( prngPrivate );
@@ -116,7 +116,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	const char *asymmetricCipherName;
 	JL_CHK( JsvalToString(cx, &argv[0], &asymmetricCipherName) );
 
-	AsymmetricCipher asymmetricCipher;
+	AsymmetricCipherType asymmetricCipher;
 	if ( strcasecmp( asymmetricCipherName, "RSA" ) == 0 )
 		asymmetricCipher = rsa;
 	else if ( strcasecmp( asymmetricCipherName, "ECC" ) == 0 )
@@ -142,7 +142,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	if ( argc >= 3 ) {
 
 		JL_S_ASSERT_OBJECT(	argv[2] );
-		JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(argv[2]), classPrng );
+		JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(argv[2]), JL_CLASS(Prng) );
 		JL_CHK( JS_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, argv[2]) );
 	} else {
 
@@ -191,7 +191,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate(cx, obj);
@@ -256,7 +256,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
@@ -329,7 +329,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
@@ -400,7 +400,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
@@ -465,7 +465,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 2 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
@@ -527,7 +527,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( blockLength ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
@@ -558,7 +558,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( keySize ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
@@ -594,7 +594,7 @@ $TOC_MEMBER $INAME
 
 DEFINE_PROPERTY( keySetter ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
@@ -640,7 +640,7 @@ DEFINE_PROPERTY( keySetter ) {
 
 DEFINE_PROPERTY( keyGetter ) {
 
-	JL_S_ASSERT_CLASS( obj, _class );
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );

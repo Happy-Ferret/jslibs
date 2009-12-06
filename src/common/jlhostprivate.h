@@ -16,9 +16,18 @@
 // JL_HOST_PRIVATE_VERSION is supposed to change each time the structure is changed.
 #define JL_HOST_PRIVATE_VERSION (JL_SvnRevToInt("$Revision$"))
 
+
+typedef char JLClassName[20];
+
+struct JLClassNameHash {
+	JLClassName name;
+	void *data;
+};
+
 struct HostPrivate {
 
 	bool unsafeMode;
+	unsigned int hostPrivateVersion; // used to ensure compatibility between host and modules. see JL_HOST_PRIVATE_VERSION macro.
 	void *privateData;
 	volatile unsigned int maybeGCInterval;
 	JLSemaphoreHandler watchDogSemEnd;
@@ -37,7 +46,7 @@ struct HostPrivate {
 	jl_allocators_t alloc;
 	int camelCase;
 	jsid ids[LAST_JSID];
-	unsigned int hostPrivateVersion; // used to ensure compatibility between host and modules. see JL_HOST_PRIVATE_VERSION macro.
+	JLClassNameHash classNameHash[1<<9];
 };
 
 JS_STATIC_ASSERT( offsetof(HostPrivate, unsafeMode) == 0 ); // check this because JL_S_ASSERT macro must be usable before hostPrivateVersion is tested.

@@ -98,7 +98,7 @@ DEFINE_PROPERTY( text ) {
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == _class;
+	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
 	return JS_TRUE;
 }
 
@@ -116,7 +116,7 @@ DEFINE_XDR() {
 
 	if ( xdr->mode == JSXDR_DECODE ) {
 
-		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
+		*objp = JS_NewObject(xdr->cx, JL_THIS_CLASS, NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
 		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE_HI, tmp) );
@@ -156,7 +156,7 @@ END_CLASS
 
 JSBool WinNewError( JSContext *cx, DWORD errorCode, jsval *rval ) {
 
-	JSObject *error = JS_NewObject( cx, classWinError, NULL, NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
+	JSObject *error = JS_NewObject( cx, JL_CLASS(WinError), NULL, NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
 	
 	*rval = OBJECT_TO_JSVAL( error );
 
@@ -168,7 +168,7 @@ JSBool WinNewError( JSContext *cx, DWORD errorCode, jsval *rval ) {
 JSBool WinThrowError( JSContext *cx, DWORD errorCode ) {
 
 //	JL_SAFE(	JS_ReportWarning( cx, "WinError exception" ) );
-	JSObject *error = JS_NewObject( cx, classWinError, NULL, NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
+	JSObject *error = JS_NewObject( cx, JL_CLASS(WinError), NULL, NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
 //	JL_S_ASSERT( error != NULL, "Unable to create WinError object." );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 

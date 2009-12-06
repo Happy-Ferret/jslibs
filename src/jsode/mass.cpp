@@ -32,7 +32,7 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID
 	JL_S_ASSERT_OBJECT(bodyVal);
 	JSObject *bodyObject;
 	bodyObject = JSVAL_TO_OBJECT(bodyVal);
-	JL_S_ASSERT_CLASS(bodyObject, classBody);
+	JL_S_ASSERT_CLASS(bodyObject, JL_CLASS(Body));
 	*pBodyID = (ode::dBodyID)JL_GetPrivate(cx, bodyObject);
 	ode::dBodyGetMass(*pBodyID, pMass);
 	return JS_TRUE;

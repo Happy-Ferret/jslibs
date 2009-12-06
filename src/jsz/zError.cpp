@@ -27,19 +27,6 @@
  Its aim is to throw as an exception on any zlib runtime error.
 **/
 
-BEGIN_CLASS( ZError )
-
-
-DEFINE_PROPERTY( code ) {
-
-	return JL_GetReservedSlot( cx, obj, 0, vp );
-}
-
-DEFINE_PROPERTY( text ) {
-
-	return JL_GetReservedSlot( cx, obj, 1, vp );
-}
-
 const char *ZConstString( int errorCode ) {
 
 	switch (errorCode) {
@@ -65,6 +52,21 @@ const char *ZConstString( int errorCode ) {
 	return "UNKNOWN_ERROR";
 }
 
+
+
+BEGIN_CLASS( ZError )
+
+
+DEFINE_PROPERTY( code ) {
+
+	return JL_GetReservedSlot( cx, obj, 0, vp );
+}
+
+DEFINE_PROPERTY( text ) {
+
+	return JL_GetReservedSlot( cx, obj, 1, vp );
+}
+
 DEFINE_PROPERTY( const ) {
 
 	JL_GetReservedSlot( cx, obj, 0, vp );
@@ -84,7 +86,7 @@ DEFINE_FUNCTION( toString ) {
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == _class;
+	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
 	return JS_TRUE;
 }
 
@@ -103,7 +105,7 @@ DEFINE_XDR() {
 
 	if ( xdr->mode == JSXDR_DECODE ) {
 
-		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
+		*objp = JS_NewObject(xdr->cx, JL_THIS_CLASS, NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
 		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
@@ -147,7 +149,7 @@ END_CLASS
 
 JSBool ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
 
-	JSObject *error = JS_NewObject( cx, _class, NULL, NULL );
+	JSObject *error = JS_NewObject( cx, JL_CLASS(ZError), NULL, NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
 	JS_SetReservedSlot( cx, error, 1, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage != NULL ? errorMessage : ZConstString(errorCode) )) );

@@ -206,7 +206,7 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 	JSObject *obj = JSVAL_TO_OBJECT(*value);
 
-	if ( JL_GetClass(obj) == classComDispatch ) {
+	if ( JL_GetClass(obj) == JL_CLASS(ComDispatch) ) {
 		
 		IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
 		JL_S_ASSERT_RESOURCE(disp);
@@ -216,7 +216,7 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_GetClass(obj) == classComVariant ) {
+	if ( JL_GetClass(obj) == JL_CLASS(ComVariant) ) {
 		
 		VARIANT *v = (VARIANT*)JL_GetPrivate(cx, obj);
 		JL_S_ASSERT_RESOURCE(v);
@@ -446,28 +446,9 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
 BEGIN_CLASS( ComVariant )
 
-
-// acquire the ownership of the variant
-JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval ) {
-
-	JSObject *varObj = JS_NewObject(cx, _class, NULL, NULL);
-	*rval = OBJECT_TO_JSVAL( varObj );
-	JL_SetPrivate(cx, varObj, variant);
-	return JS_TRUE;
-}
-
-JSBool NewComVariantCopy( JSContext *cx, VARIANT *variant, jsval *rval ) {
-
-	VARIANT *newvariant = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
-	VariantInit(newvariant);
-	VariantCopy(newvariant, variant);
-	return NewComVariant(cx, newvariant, rval);
-}
-
-
 DEFINE_FINALIZE() {
 
-	if ( obj == *_prototype )
+	if ( obj == JL_PROTOTYPE(cx, ComVariant) )
 		return;
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, obj);
 	HRESULT hr = VariantClear(variant);
@@ -546,7 +527,7 @@ DEFINE_FUNCTION_FAST( toTypeName ) {
 	char str[64];
 	*str = '\0';
 	strcat(str, "[");
-	strcat(str, _class->name);
+	strcat(str, JL_THIS_CLASS->name);
 	strcat(str, " ");
 	if ( V_ISBYREF(variant) )
 		strcat(str, "*");
@@ -607,7 +588,7 @@ DEFINE_FUNCTION_FAST( toTypeName ) {
 
 DEFINE_HAS_INSTANCE() {
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == _class;
+	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
 	return JS_TRUE;
 }
 
@@ -625,3 +606,22 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 END_CLASS
+
+
+// acquire the ownership of the variant
+JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval ) {
+
+	JSObject *varObj = JS_NewObject(cx, JL_CLASS(ComVariant), NULL, NULL);
+	*rval = OBJECT_TO_JSVAL( varObj );
+	JL_SetPrivate(cx, varObj, variant);
+	return JS_TRUE;
+}
+
+JSBool NewComVariantCopy( JSContext *cx, VARIANT *variant, jsval *rval ) {
+
+	VARIANT *newvariant = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
+	VariantInit(newvariant);
+	VariantCopy(newvariant, variant);
+	return NewComVariant(cx, newvariant, rval);
+}
+

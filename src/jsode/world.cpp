@@ -250,11 +250,11 @@ DEFINE_CONSTRUCTOR() {
 	pv->worldId = ode::dWorldCreate();
 	pv->contactGroupId = ode::dJointGroupCreate(0); // see nearCallback()
 
-	JSObject *spaceObject = JS_ConstructObject(cx, classSpace, NULL, NULL); // no arguments = create a topmost space object
+	JSObject *spaceObject = JS_ConstructObject(cx, JL_CLASS(Space), NULL, NULL); // no arguments = create a topmost space object
 	JL_S_ASSERT( spaceObject != NULL, "Unable to construct Space for the World." );
 	JL_CHK( JS_DefineProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, OBJECT_TO_JSVAL(spaceObject), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) );
 
-	JSObject *surfaceParameters = JS_ConstructObject(cx, classSurfaceParameters, NULL, NULL);
+	JSObject *surfaceParameters = JS_ConstructObject(cx, JL_CLASS(SurfaceParameters), NULL, NULL);
 	JL_S_ASSERT( surfaceParameters != NULL, "Unable to construct classSurfaceParameters." );
 	JL_CHK( JS_DefineProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, OBJECT_TO_JSVAL(surfaceParameters), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) );
 
@@ -294,7 +294,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Step ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_CLASS(obj, classWorld);
+	JL_S_ASSERT_CLASS(obj, JL_CLASS(World));
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	float stepSize;
@@ -314,7 +314,7 @@ DEFINE_FUNCTION( Step ) {
 	jsval defaultSurfaceParametersObject;
 	JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject);
 	JL_S_ASSERT_OBJECT( defaultSurfaceParametersObject );
-	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), classSurfaceParameters ); // (TBD) simplify RT_ASSERT
+	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), JL_CLASS(SurfaceParameters) ); // (TBD) simplify RT_ASSERT
 	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersObject)); // beware: local variable !
 	JL_S_ASSERT_RESOURCE( defaultSurfaceParameters );
 
@@ -526,7 +526,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( env ) {
 
-	JSObject *staticBody = JS_NewObject(cx, classBody, NULL, NULL);
+	JSObject *staticBody = JS_NewObject(cx, JL_CLASS(Body), NULL, NULL);
 	JL_CHK(staticBody);
 	JL_SetPrivate(cx, staticBody, (ode::dBodyID)0);
 	*vp = OBJECT_TO_JSVAL(staticBody);

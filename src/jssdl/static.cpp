@@ -492,7 +492,7 @@ DEFINE_FUNCTION_FAST( SetCursor ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	JSObject *cursorObj = JSVAL_TO_OBJECT( JL_FARG(1) );
-	JL_S_ASSERT_CLASS( cursorObj, classCursor );
+	JL_S_ASSERT_CLASS( cursorObj, JL_CLASS(Cursor) );
 	SDL_Cursor *cursor = (SDL_Cursor *)JL_GetPrivate(cx, cursorObj);
 	JL_S_ASSERT_RESOURCE( cursor );
 	SDL_SetCursor(cursor);

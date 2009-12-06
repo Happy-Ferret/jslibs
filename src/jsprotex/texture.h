@@ -30,7 +30,7 @@
 
 
 
-struct Texture {
+struct TextureStruct {
 
 	PTYPE *cbuffer;
 	unsigned int cbufferSize;

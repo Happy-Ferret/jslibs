@@ -48,7 +48,7 @@ DEFINE_FUNCTION( toString ) {
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == _class;
+	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
 	return JS_TRUE;
 }
 
@@ -66,7 +66,7 @@ DEFINE_XDR() {
 
 	if ( xdr->mode == JSXDR_DECODE ) {
 
-		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
+		*objp = JS_NewObject(xdr->cx, JL_THIS_CLASS, NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
 		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
@@ -109,7 +109,7 @@ END_CLASS
 JSBool ThrowCryptError( JSContext *cx, int errorCode ) {
 
 //	JS_ReportWarning( cx, "CryptError exception" );
-	JSObject *error = JS_NewObject( cx, _class, NULL, NULL );
+	JSObject *error = JS_NewObject( cx, JL_CLASS(CryptError), NULL, NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JL_CHK( JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) ) );
 //	JS_SetReservedSlot( cx, error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );

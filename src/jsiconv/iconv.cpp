@@ -117,7 +117,7 @@ DEFINE_CALL() {
 	char *outBuf = NULL; // keep on top
 
 	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
-	JL_S_ASSERT_CLASS(thisObj, classIconv);
+	JL_S_ASSERT_CLASS(thisObj, JL_CLASS(Iconv));
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, thisObj);

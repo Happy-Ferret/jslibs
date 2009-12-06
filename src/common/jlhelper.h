@@ -407,13 +407,13 @@ JL_MACRO_END
 	JL_S_ASSERT_ERROR_NUM( (jsObject) != NULL && JL_GetClass(jsObject) == (jsClass), JLSMSG_EXPECT_TYPE, (jsClass)->name );
 
 #define JL_S_ASSERT_THIS_CLASS() \
-	JL_S_ASSERT_CLASS(obj, _class)
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS)
 
 #define JL_S_ASSERT_INHERITANCE(jsObject, jsClass) \
 	JL_S_ASSERT_ERROR_NUM( JL_InheritFrom(cx, (jsObject), (jsClass)), JLSMSG_INVALID_INHERITANCE, (jsClass)->name );
 
 #define JL_S_ASSERT_THIS_INSTANCE() \
-	JL_S_ASSERT_ERROR_NUM( (obj) == *_prototype || JL_InheritFrom(cx, obj, _class), JLSMSG_INVALID_INHERITANCE, (_class)->name );
+	JL_S_ASSERT_ERROR_NUM( (obj) == JL_THIS_PROTOTYPE || JL_InheritFrom(cx, obj, JL_THIS_CLASS), JLSMSG_INVALID_INHERITANCE, JL_THIS_CLASS->name );
 
 #define JL_S_ASSERT_CONSTRUCTING() \
 	JL_S_ASSERT_ERROR_NUM( JS_IsConstructing(cx), JLSMSG_NEED_CONSTRUCT );

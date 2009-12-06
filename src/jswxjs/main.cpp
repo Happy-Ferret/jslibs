@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+JLClassSpec *jlStaticSpec; // see DECLARE_STATIC() macro.
+
 #define MAX_WXJS_MODULES 32
 
 bool _unsafeMode = false;
@@ -72,6 +74,7 @@ CONFIGURE_STATIC
 		FUNCTION( UnloadWXJSModule )
 	END_STATIC_FUNCTION_SPEC
 END_STATIC
+
 
 
 

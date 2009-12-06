@@ -159,11 +159,11 @@ DEFINE_FUNCTION_FAST( Aux ) {
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 //	JL_S_ASSERT_THIS_INSTANCE();
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(JL_FARG(1)), _class);
+	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(JL_FARG(1)), JL_THIS_CLASS);
 
 	JSObject *object;
 	object = JSVAL_TO_OBJECT(JL_FARG(1));
-	JL_S_ASSERT_CLASS( object, _class );
+	JL_S_ASSERT_CLASS( object, JL_THIS_CLASS );
 	JL_CHK( JL_GetReservedSlot( cx, object, AUX_SLOT, JL_FRVAL ) );
 	if ( JL_FARG_ISDEF(2) )
 	  JL_CHK( JS_SetReservedSlot( cx, object, AUX_SLOT, JL_FARG(2) ) );

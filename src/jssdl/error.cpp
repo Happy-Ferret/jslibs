@@ -46,7 +46,7 @@ DEFINE_FUNCTION( toString ) {
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == _class;
+	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
 	return JS_TRUE;
 }
 
@@ -63,7 +63,7 @@ DEFINE_XDR() {
 
 	if ( xdr->mode == JSXDR_DECODE ) {
 
-		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
+		*objp = JS_NewObject(xdr->cx, JL_THIS_CLASS, NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
 		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
@@ -102,7 +102,7 @@ END_CLASS
 
 JSBool ThrowSdlError( JSContext *cx ) {
 
-	JSObject *errorObj = JS_NewObject( cx, _class, NULL, NULL );
+	JSObject *errorObj = JS_NewObject( cx, JL_CLASS(SdlError), NULL, NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( errorObj ) );
 	const char *errorMessage = SDL_GetError();
 	SDL_ClearError();

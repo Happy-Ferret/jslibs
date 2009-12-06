@@ -5,117 +5,82 @@
 #define XP_WIN
 #include <jsapi.h>
 
+#include "../common/jlhelper.h"
 
-typedef const char ClassName[20];
+bool _unsafeMode = false;
 
-inline unsigned int ClassNameHashFct( ClassName n ) {
 
-	return 
-		(!n[ 0] ?  0 : (n[ 0]) ^ 
-		(!n[ 1] ?  1 : (n[ 1]<<1) ^ 
-		(!n[ 2] ?  2 : (n[ 2]) ^ 
-		(!n[ 3] ?  3 : (n[ 3]<<1) ^ 
-		(!n[ 4] ?  4 : (n[ 4]) ^ 
-		(!n[ 5] ?  5 : (n[ 5]<<1) ^ 
-		(!n[ 6] ?  6 : (n[ 6]) ^ 
-		(!n[ 7] ?  7 : (n[ 7]<<1) ^ 
-		(!n[ 8] ?  8 : (n[ 8]) ^ 
-		(!n[ 9] ?  9 : (n[ 9]<<1) ^ 
-		(!n[10] ? 10 : (n[10]) ^ 
-		(!n[11] ? 11 : (n[11]<<1) ^ 
-		(!n[12] ? 12 : (n[12]) ^ 
-		(!n[13] ? 13 : (n[13]<<1) ^ 
-		(!n[14] ? 14 : (n[14]) ^ 
-		(!n[15] ? 15 : (n[15]<<1) ^
-		(!n[16] ? 16 : (n[16]) ^ 
-		(!n[17] ? 17 : (n[17]<<1) ^ 
-		(!n[18] ? 18 : (n[18]) ^ 
-		(!n[19] ? 19 : (n[19]<<1) ^
-		0))))))))))))))))))));
-}
 
-struct ClassNameHash {
-	void *data;
-	ClassName name;
+
+struct JLConstIntegerSpec {
+    int ival;
+    const char *name;
 };
 
-ClassNameHash classNameHash[1<<9];
+struct JLClassSpec {
+	JSExtendedClass xclasp;
+	JLClassName className;
+	JSNative constructor;
+	uintN nargs;
+	JLClassName parentProtoName;
+	JSPropertySpec *ps;
+	JSPropertySpec *static_ps;
+	JSFunctionSpec *fs;
+	JSFunctionSpec *static_fs;
+	JSConstDoubleSpec *ds;
+	JLConstIntegerSpec *is;
+	unsigned int revision;
+};
 
 
-unsigned int GetClassNameHash( const ClassName *name, void *data ) {
-	
-	unsigned int index = ClassNameHashFct(*name);
+namespace TEST {
+	extern JLClassSpec *classSpec;
+}
 
-	while ( classNameHash[index].data != 0 ) {
+ALWAYS_INLINE JSBool JLInitClass(JSContext *cx, JSObject *obj, JLClassSpec *cs);
 
-		index = (index + 1) % sizeof(classNameHash)/sizeof(*classNameHash);
-	}
+
+ALWAYS_INLINE int ClassNameTooLong() {
+	JL_ASSERT(false);
 	return 0;
 }
 
 
+ALWAYS_INLINE unsigned int xxx( const JLClassName *n ) {
 
-static const char *className = "TEST";
-
-
-static JSBool _test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
-	return JS_TRUE;
+	return 
+		(!*n[ 0] ?  0 : (*n[ 0]) ^ 
+		(!*n[ 1] ?  1 : (*n[ 1]<<1) ^ 
+		(!*n[ 2] ?  2 : (*n[ 2]) ^ 
+		(!*n[ 3] ?  3 : (*n[ 3]<<2) ^ 
+		(!*n[ 4] ?  4 : (*n[ 4]) ^ 
+		(!*n[ 5] ?  5 : (*n[ 5]<<1) ^ 
+		(!*n[ 6] ?  6 : (*n[ 6]) ^ 
+		(!*n[ 7] ?  7 : (*n[ 7]<<2) ^ 
+		(!*n[ 8] ?  8 : (*n[ 8]) ^ 
+		(!*n[ 9] ?  9 : (*n[ 9]<<1) ^ 
+		(!*n[10] ? 10 : (*n[10]) ^ 
+		(!*n[11] ? 11 : (*n[11]<<2) ^ 
+		(!*n[12] ? 12 : (*n[12]) ^ 
+		(!*n[13] ? 13 : (*n[13]<<1) ^ 
+		(!*n[14] ? 14 : (*n[14]) ^ 
+		(!*n[15] ? 15 : (*n[15]<<2) ^
+		(!*n[16] ? 16 : (*n[16]) ^ 
+		(!*n[17] ? 17 : (*n[17]<<1) ^ 
+		(!*n[18] ? 18 : (*n[18]) ^ 
+		(!*n[19] ? 19 : (*n[19]<<2) ^
+		0)))))))))))))))))))) &0x1FF;
 }
-
-static JSBool Constructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
-	return JS_TRUE;
-}
-
-struct JLClassSpec {
-	JSExtendedClass xclasp;
-	JSNative constructor;
-	const char *parentProto;
-	JSFunctionSpec *fs;
-};
-
-static JLClassSpec* JLClassSpecInit() {
-
-	static JLClassSpec ci;
-	ci.xclasp.base.name = className;
-	ci.xclasp.base.flags = 0x12345678;
-	ci.xclasp.base.flags += 1;
-	
-	ci.constructor = Constructor;
-	ci.parentProto = NULL;
-
-	static JSFunctionSpec fs[] = {
-	
-		JS_FS( "test", _test, 0, 0, 0 ),
-	};
-
-	ci.fs = fs;
-//	JS_InitClass(
-
-	return &ci;
-}
-
-
-static JLClassSpec *cli = JLClassSpecInit();
-
 
 
 int main(int argc, char* argv[]) {
 
-	static ClassName classname = "12345678";
-	
-	ClassName *classname1 = (ClassName*)malloc(sizeof(ClassName));
+//	JLInitClass(NULL, NULL, TEST::classSpec);
 
-	memcpy((void*)classname1, classname, sizeof(ClassName));
-
-	if ( classname == *classname1 ) {
-		
-		printf("ok");
-	}
-	
-
-
+	JLClassName test = "Handle";
+	unsigned int h;
+	h = xxx(&test);
+	printf("%u", h);
 
 	return EXIT_SUCCESS;
 }

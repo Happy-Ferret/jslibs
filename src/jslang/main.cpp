@@ -38,8 +38,8 @@ JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Stream );
 	INIT_STATIC();
 
-	JL_CHK( JL_RegisterNativeClass(cx, classBlob) );
-	JL_CHK( JL_RegisterNativeClass(cx, classHandle) );
+	JL_CHK( JL_RegisterNativeClass(cx, JL_CLASS(Blob)) );
+	JL_CHK( JL_RegisterNativeClass(cx, JL_CLASS(Handle)) );
 
 	return JS_TRUE;
 	JL_BAD;

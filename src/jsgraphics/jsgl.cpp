@@ -3459,7 +3459,7 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 
 	if ( JL_GetClass(tObj) == TextureJSClass(cx) ) {
 
-		Texture *tex = (Texture *)JL_GetPrivate(cx, tObj);
+		TextureStruct *tex = (TextureStruct*)JL_GetPrivate(cx, tObj);
 		JL_S_ASSERT_RESOURCE(tex);
 
 		data = tex->cbuffer;
@@ -3536,7 +3536,7 @@ DEFINE_FUNCTION_FAST( DrawImage ) {
 
 	if ( JL_GetClass(tObj) == TextureJSClass(cx) ) {
 
-		Texture *tex = (Texture *)JL_GetPrivate(cx, tObj);
+		TextureStruct *tex = (TextureStruct*)JL_GetPrivate(cx, tObj);
 		JL_S_ASSERT_RESOURCE(tex);
 
 		data = tex->cbuffer;

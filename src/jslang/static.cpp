@@ -101,9 +101,22 @@ DEFINE_FUNCTION( Stringify ) {
 	JL_BAD;
 }
 
+DECLARE_CLASS(Handle)
 
 #ifdef DEBUG
 DEFINE_FUNCTION( jslang_test ) {
+
+/*
+	jsval v;
+	JS_LookupPropertyWithFlags(cx, JS_GetGlobalObject(cx), "Handle", JSRESOLVE_CLASSNAME, &v);
+	JSObject *p = JS_GetPrototype(cx, JSVAL_TO_OBJECT(v));
+	JSClass *c = JS_GetClass(p);
+	JSObject *p1 = JL_PROTOTYPE(cx, Handle);
+	JSClass *c1 = JS_GetClass(p1);
+
+	JS_NewObject(cx, JL_CLASS(Handle), NULL, NULL);
+*/
+
 
 	return JS_TRUE;
 }

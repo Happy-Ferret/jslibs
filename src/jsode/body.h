@@ -22,7 +22,7 @@ ALWAYS_INLINE JSBool JsvalToBody( JSContext *cx, jsval val, ode::dBodyID *bodyId
 	
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *obj = JSVAL_TO_OBJECT(val);
-	JL_S_ASSERT_CLASS(obj, classBody);
+	JL_S_ASSERT_CLASS(obj, JL_CLASS(Body));
 	*bodyId = (ode::dBodyID)JL_GetPrivate(cx,obj); // may be null if body is world.env
 	return JS_TRUE;
 	JL_BAD;
@@ -34,7 +34,7 @@ ALWAYS_INLINE JSBool BodyToJsval( JSContext *cx, ode::dBodyID bodyId, jsval *val
 	JSObject *obj = (JSObject*)ode::dBodyGetData(bodyId);
 	if (unlikely( !obj ))
 		JL_CHK( ReconstructBody(cx, bodyId, &obj) );
-	JL_S_ASSERT_CLASS(obj, classBody);
+	JL_S_ASSERT_CLASS(obj, JL_CLASS(Body));
 	*val = OBJECT_TO_JSVAL( obj );
 	return JS_TRUE;
 	JL_BAD;

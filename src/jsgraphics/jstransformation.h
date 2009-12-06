@@ -28,7 +28,7 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval val, float **m ) {
 	JL_S_ASSERT_OBJECT(val);
 
 	JSObject *matrixObj = JSVAL_TO_OBJECT(val);
-	if ( JL_GetClass(matrixObj) == classTransformation ) {
+	if ( JL_GetClass(matrixObj) == JL_CLASS(Transformation) ) {
 		
 		TransformationPrivate *pv = (TransformationPrivate *)JL_GetPrivate(cx, matrixObj);
 		*m = pv->mat->raw;

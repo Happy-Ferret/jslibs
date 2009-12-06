@@ -41,7 +41,7 @@ ALWAYS_INLINE JSBool GeomToJsval( JSContext *cx, ode::dGeomID geomId, jsval *val
 	JSObject *obj = (JSObject*)ode::dGeomGetData(geomId);
 	if (unlikely( !obj ))
 		JL_CHK( ReconstructGeom(cx, geomId, &obj) );
-	JL_S_ASSERT(JL_InheritFrom(cx, obj, classGeom), "Invalid Geom* class.");
+	JL_S_ASSERT(JL_InheritFrom(cx, obj, JL_CLASS(Geom)), "Invalid Geom* class.");
 	*val = OBJECT_TO_JSVAL( obj );
 	return JS_TRUE;
 	JL_BAD;

@@ -29,7 +29,7 @@ ALWAYS_INLINE JSBool JsvalToWorldID( JSContext *cx, jsval val, ode::dWorldID *wo
 
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *worldObject = JSVAL_TO_OBJECT(val);
-	JL_S_ASSERT_CLASS(worldObject, classWorld);
+	JL_S_ASSERT_CLASS(worldObject, JL_CLASS(World));
 	*worldId = ((WorldPrivate*)JL_GetPrivate(cx, worldObject))->worldId;
 	JL_CHKM( *worldId, "Invalid world object." );
 	return JS_TRUE;

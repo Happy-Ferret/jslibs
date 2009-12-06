@@ -81,28 +81,28 @@ JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) {
 
 	switch( ode::dGeomGetClass(geomId) ) {
 		case ode::dSphereClass:
-			*obj = JS_NewObject(cx, classGeomSphere, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(GeomSphere), NULL, NULL);
 			break;
 		case ode::dBoxClass:
-			*obj = JS_NewObject(cx, classGeomBox, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(GeomBox), NULL, NULL);
 			break;
 		case ode::dCapsuleClass:
-			*obj = JS_NewObject(cx, classGeomCapsule, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(GeomCapsule), NULL, NULL);
 			break;
 		case ode::dCylinderClass:
-			*obj = JS_NewObject(cx, classGeomCylinder, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(GeomCylinder), NULL, NULL);
 			break;
 		case ode::dPlaneClass:
-			*obj = JS_NewObject(cx, classGeomPlane, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(GeomPlane), NULL, NULL);
 			break;
 		case ode::dRayClass:
-			*obj = JS_NewObject(cx, classGeomRay, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(GeomRay), NULL, NULL);
 			break;
 		case ode::dConvexClass:
-			*obj = JS_NewObject(cx, classGeomConvex, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(GeomConvex), NULL, NULL);
 			break;
 		case ode::dTriMeshClass:
-			*obj = JS_NewObject(cx, classGeomTrimesh, NULL, NULL);
+			*obj = JS_NewObject(cx, JL_CLASS(GeomTrimesh), NULL, NULL);
 			break;
 		default:
 			JL_REPORT_ERROR("Unable to reconstruct the geom.");
