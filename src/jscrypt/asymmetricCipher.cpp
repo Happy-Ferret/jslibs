@@ -554,7 +554,7 @@ DEFINE_PROPERTY( blockLength ) {
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME $READONLY
-  is the size of the current key.
+  is the size of the current private key.
 **/
 DEFINE_PROPERTY( keySize ) {
 
@@ -566,14 +566,13 @@ DEFINE_PROPERTY( keySize ) {
 	int keySize;
 	switch ( pv->cipher ) {
 		case rsa:
-			keySize = ltc_mp.get_digit_count(pv->key.rsaKey.N) * 8; // Ok !
+			keySize = ltc_mp.count_bits(pv->key.rsaKey.N); // Ok !
 			break;
 		case ecc:
-			keySize = ltc_mp.get_digit_count(pv->key.eccKey.pubkey.x) * 8; // Ok !
+			keySize = ltc_mp.count_bits(pv->key.eccKey.pubkey.x); // Ok !
 			break;
 		case dsa:
-//			keySize = mp_get_digit_count(pv->key.dsaKey.x) * 8;
-			keySize = ltc_mp.get_digit_count(pv->key.dsaKey.x) * 8; // ??? seems to randomly failed.
+			keySize = ltc_mp.count_bits(pv->key.dsaKey.x);
 			break;
 		default:
 			JL_REPORT_ERROR("Invalid case.");

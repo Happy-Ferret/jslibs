@@ -98,3 +98,20 @@ LoadModule('jscrypt');
 			var decipheredData = crypt.Decrypt( cipherData );
 			Print( 'decrypted data: '+decipheredData, '\n' );
 
+
+/// Key size
+
+  var fortuna = new Prng('fortuna');
+  fortuna.AutoEntropy(123); // give more entropy
+
+  var ecc = new AsymmetricCipher('ecc', 'md5', fortuna );
+  ecc.CreateKeys( 128 );
+  QA.ASSERT( ecc.keySize, 128, 'ecc key size' );
+
+  var dsa = new AsymmetricCipher('dsa', 'sha1', fortuna);
+  dsa.CreateKeys(64);
+  QA.ASSERT( dsa.keySize, 64, 'dsa key size' );
+
+  var rsa = new AsymmetricCipher('rsa', 'md5', fortuna );
+  rsa.CreateKeys( 1024 );
+  QA.ASSERT( rsa.keySize, 1024, 'rsa key size' );
