@@ -41,37 +41,44 @@ ALWAYS_INLINE void JLClassNameCopy( JLClassName *dst, const JLClassName *src ) {
 	((uint32_t*)dst)[4] = ((uint32_t*)src)[4];
 }
 
+
 ALWAYS_INLINE JLClassNameHashId JLClassNameHashFct( const JLClassName *n ) {
 
 	return 
-		(!*n[ 0] ?  0 : (*n[ 0]) ^ 
-		(!*n[ 1] ?  1 : (*n[ 1]<<1) ^ 
-		(!*n[ 2] ?  2 : (*n[ 2]) ^ 
-		(!*n[ 3] ?  3 : (*n[ 3]<<2) ^ 
-		(!*n[ 4] ?  4 : (*n[ 4]) ^ 
-		(!*n[ 5] ?  5 : (*n[ 5]<<1) ^ 
-		(!*n[ 6] ?  6 : (*n[ 6]) ^ 
-		(!*n[ 7] ?  7 : (*n[ 7]<<2) ^ 
-		(!*n[ 8] ?  8 : (*n[ 8]) ^ 
-		(!*n[ 9] ?  9 : (*n[ 9]<<1) ^ 
-		(!*n[10] ? 10 : (*n[10]) ^ 
-		(!*n[11] ? 11 : (*n[11]<<2) ^ 
-		(!*n[12] ? 12 : (*n[12]) ^ 
-		(!*n[13] ? 13 : (*n[13]<<1) ^ 
-		(!*n[14] ? 14 : (*n[14]) ^ 
-		(!*n[15] ? 15 : (*n[15]<<2) ^
-		(!*n[16] ? 16 : (*n[16]) ^ 
-		(!*n[17] ? 17 : (*n[17]<<1) ^ 
-		(!*n[18] ? 18 : (*n[18]) ^ 
-		(!*n[19] ? 19 : (*n[19]<<2) ^
+		(!(*n)[ 0] ?  0 : ((*n)[ 0]) ^ 
+		(!(*n)[ 1] ?  1 : ((*n)[ 1]<<1) ^ 
+		(!(*n)[ 2] ?  2 : ((*n)[ 2]) ^ 
+		(!(*n)[ 3] ?  3 : ((*n)[ 3]<<2) ^ 
+		(!(*n)[ 4] ?  4 : ((*n)[ 4]) ^ 
+		(!(*n)[ 5] ?  5 : ((*n)[ 5]<<1) ^ 
+		(!(*n)[ 6] ?  6 : ((*n)[ 6]) ^ 
+		(!(*n)[ 7] ?  7 : ((*n)[ 7]<<2) ^ 
+		(!(*n)[ 8] ?  8 : ((*n)[ 8]) ^ 
+		(!(*n)[ 9] ?  9 : ((*n)[ 9]<<1) ^ 
+		(!(*n)[10] ? 10 : ((*n)[10]) ^ 
+		(!(*n)[11] ? 11 : ((*n)[11]<<2) ^ 
+		(!(*n)[12] ? 12 : ((*n)[12]) ^ 
+		(!(*n)[13] ? 13 : ((*n)[13]<<1) ^ 
+		(!(*n)[14] ? 14 : ((*n)[14]) ^ 
+		(!(*n)[15] ? 15 : ((*n)[15]<<2) ^
+		(!(*n)[16] ? 16 : ((*n)[16]) ^ 
+		(!(*n)[17] ? 17 : ((*n)[17]<<1) ^ 
+		(!(*n)[18] ? 18 : ((*n)[18]) ^ 
+		(!(*n)[19] ? 19 : ((*n)[19]<<2) ^
 		0)))))))))))))))))))) & 0x1FF;
 }
 
-ALWAYS_INLINE void **JLGetClassNameHash( HostPrivate *hpv, JLClassName *name ) {
+
+ALWAYS_INLINE void **JLGetClassNameHash( HostPrivate *hpv, const JLClassName *name ) {
 
 	JLClassNameHashId index = JLClassNameHashFct(name);
 	JL_ASSERT( index >= 0 );
 	JL_ASSERT( index < COUNTOF(hpv->classNameHash) );
+
+#ifdef DEBUG
+	int count;
+	count = 0;
+#endif // DEBUG
 
 	for (;;) {
 			
@@ -87,6 +94,9 @@ ALWAYS_INLINE void **JLGetClassNameHash( HostPrivate *hpv, JLClassName *name ) {
 		}
 
 		index = (index + 1) % COUNTOF(hpv->classNameHash);
+#ifdef DEBUG
+		JL_ASSERT( count++ < COUNTOF(hpv->classNameHash) );
+#endif // DEBUG
 	}
 }
 
@@ -165,8 +175,6 @@ ALWAYS_INLINE void JLNormalizeFunctionSpecNames( JSFunctionSpec *functionSpec ) 
 inline JSBool JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JL_CHK(obj);
-	JSObject *dstObj;
-	dstObj = obj;
 
 	if ( GetHostPrivate(cx)->camelCase == 1 )
 		JLNormalizeFunctionSpecNames(cs->static_fs);
@@ -175,14 +183,14 @@ inline JSBool JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 		JL_CHK( JS_DefineFunctions(cx, obj, cs->static_fs) );
 
 	if ( cs->static_ps != NULL )
-		JL_CHK( JL_DefineClassProperties(cx, dstObj, cs->static_ps) );
+		JL_CHK( JL_DefineClassProperties(cx, obj, cs->static_ps) );
 
 	if ( cs->cis != NULL )
 		for ( JLConstIntegerSpec *it = cs->cis ; it->name; ++it )
-			JL_CHK( JS_DefineProperty(cx, dstObj, it->name, INT_TO_JSVAL(it->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+			JL_CHK( JS_DefineProperty(cx, obj, it->name, INT_TO_JSVAL(it->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( cs->cds != NULL )
-		JL_CHK( JS_DefineConstDoubles(cx, dstObj, cs->cds) );
+		JL_CHK( JS_DefineConstDoubles(cx, obj, cs->cds) );
 
 	if ( cs->init )
 		JL_CHK( cs->init(cx, obj) );
@@ -196,44 +204,52 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_CHK(obj);
 	JL_S_ASSERT( cs->xclasp.base.name && cs->xclasp.base.name[0], "Invalid class name." );
 
-	HostPrivate *hpv = GetHostPrivate(cx);
 	if ( GetHostPrivate(cx)->camelCase == 1 ) {
 
 		JLNormalizeFunctionSpecNames(cs->fs);
 		JLNormalizeFunctionSpecNames(cs->static_fs);
 	}
 
+	HostPrivate *hpv;
+	hpv = GetHostPrivate(cx);
+
 	JSObject *parent_proto;
 	if ( cs->parentProtoName[0] ) {
 
 		parent_proto = *(JSObject**)JLGetClassNameHash(hpv, &cs->parentProtoName);
-		JL_S_ASSERT( parent_proto != NULL, "parent prototype not found" );
+		JL_ASSERT( parent_proto != NULL ); // "parent prototype not found"
 	} else {
 
 		parent_proto = NULL;
 	}
 
-	JSObject *proto = JS_InitClass(cx, obj, parent_proto, &cs->xclasp.base, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
+	JSObject *proto;
+	proto = JS_InitClass(cx, obj, parent_proto, &cs->xclasp.base, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
 	
-	JSObject **protoPlace = (JSObject**)JLGetClassNameHash(hpv, &cs->className);
-	JL_S_ASSERT( *protoPlace == NULL, "prototype already defined" );
-	*protoPlace = proto;
+	JSObject **protoHashSlot;
+	protoHashSlot = (JSObject**)JLGetClassNameHash(hpv, &cs->className);
+	JL_ASSERT( *protoHashSlot == NULL ); // "prototype already defined" 
+	*protoHashSlot = proto;
 
-	JSObject *dstObj;
-	dstObj = cs->constructor ? JS_GetConstructor(cx, proto) : proto;
+	JSObject *staticDest;
+	staticDest = cs->constructor ? JS_GetConstructor(cx, proto) : proto;
 
 	if ( cs->ps != NULL )
 		JL_CHK( JL_DefineClassProperties(cx, proto, cs->ps) );
 
 	if ( cs->static_ps != NULL )
-		JL_CHK( JL_DefineClassProperties(cx, dstObj, cs->static_ps) );
+		JL_CHK( JL_DefineClassProperties(cx, staticDest, cs->static_ps) );
 
 	if ( cs->cis != NULL )
 		for ( JLConstIntegerSpec *it = cs->cis ; it->name; ++it )
-			JL_CHK( JS_DefineProperty(cx, dstObj, it->name, INT_TO_JSVAL(it->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+			JL_CHK( JS_DefineProperty(cx, staticDest, it->name, INT_TO_JSVAL(it->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( cs->cds != NULL )
-		JL_CHK( JS_DefineConstDoubles(cx, dstObj, cs->cds) );
+		JL_CHK( JS_DefineConstDoubles(cx, staticDest, cs->cds) );
+
+	JSBool found;
+	JL_CHK( JS_SetPropertyAttributes(cx, obj, cs->xclasp.base.name, JSPROP_READONLY | JSPROP_PERMANENT, &found) );
+	JL_ASSERT( found ); // "Unable to set class flags."
 
 	JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
@@ -246,47 +262,43 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 
 
-#define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.
-
-
-// static definition
 #define DECLARE_STATIC() \
 	extern JLClassSpec *jlStaticSpec; \
 
 #define INIT_STATIC() \
-	JL_CHK( JLInitStatic(cx, obj, jlStaticSpec ) );
+	JL_CHK( JLInitStatic(cx, obj, jlStaticSpec ) ); \
 
 #define BEGIN_STATIC \
 	static JLClassSpec *JLClassSpecInit(); \
-	JLClassSpec *jlStaticSpec = JLClassSpecInit();
+	JLClassSpec *jlStaticSpec = JLClassSpecInit(); \
 
 #define CONFIGURE_STATIC \
 	ALWAYS_INLINE JLClassSpec *JLClassSpecInit() { \
-		static JLClassSpec cs;
+		static JLClassSpec cs; \
 
 #define END_STATIC \
 		return &cs; \
-	}
+	} \
 
 
 
 #define DECLARE_CLASS(CLASSNAME) \
 	namespace CLASSNAME { \
 		extern JLClassSpec *jlClassSpec; \
-	}
+	} \
 
 #define INIT_CLASS(CLASSNAME) \
-	JL_CHK( JLInitClass(cx, obj, CLASSNAME::jlClassSpec ) );
+	JL_CHK( JLInitClass(cx, obj, CLASSNAME::jlClassSpec ) ); \
 
 #define BEGIN_CLASS(CLASSNAME) \
 	namespace CLASSNAME { \
-		static JLClassName className = #CLASSNAME; \
-		static JLClassSpec *JLClassSpecInit(); \
-		JLClassSpec *jlClassSpec = JLClassSpecInit();
+		static const JLClassName className = #CLASSNAME; \
+		ALWAYS_INLINE JLClassSpec *JLClassSpecInit(); \
+		JLClassSpec *jlClassSpec = JLClassSpecInit(); \
 
 #define CONFIGURE_CLASS \
 		ALWAYS_INLINE JLClassSpec *JLClassSpecInit() { \
-		static JLClassSpec cs; \
+			static JLClassSpec cs; \
 			JLClassNameCopy(&cs.className, &className); \
 			cs.xclasp.base.name = (char *)className; \
 			cs.xclasp.base.addProperty = JS_PropertyStub; \
@@ -296,22 +308,22 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 			cs.xclasp.base.enumerate = JS_EnumerateStub; \
 			cs.xclasp.base.resolve = JS_ResolveStub; \
 			cs.xclasp.base.convert = JS_ConvertStub; \
-			cs.xclasp.base.finalize = JS_FinalizeStub;
+			cs.xclasp.base.finalize = JS_FinalizeStub; \
 
 #define END_CLASS \
 			return &cs; \
 		} \
-	}
+	} \
 
 
-#define JL_CLASS(CLASSNAME) (&CLASSNAME::jlClassSpec->xclasp.base)
-#define JL_PROTOTYPE(cx, CLASSNAME) (*(JSObject**)JLGetClassNameHash(GetHostPrivate(cx), &CLASSNAME::jlClassSpec->className))
 
+#define JL_CLASS(CLASSNAME) (&(CLASSNAME::jlClassSpec->xclasp.base))
 #define JL_THIS_CLASS (&(jlClassSpec->xclasp.base))
-#define JL_THIS_PROTOTYPE (*(JSObject**)JLGetClassNameHash(GetHostPrivate(cx), &jlClassSpec->className))
 
+#define JL_PROTOTYPE(cx, CLASSNAME) (*(JSObject**)JLGetClassNameHash(GetHostPrivate(cx), &(CLASSNAME::jlClassSpec->className)))
+#define JL_THIS_PROTOTYPE (*(JSObject**)JLGetClassNameHash(GetHostPrivate(cx), &(jlClassSpec->className)))
 
-
+#define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.
 
 
 // const integer
@@ -342,8 +354,8 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 
 #if defined(DEBUG)
-inline JSFastNative FastNativeFunction(JSFastNative f) { return f; } // used fo type check only.
-inline JSNative NativeFunction(JSNative f) { return f; } // used fo type check only.
+inline JSFastNative FastNativeFunction(JSFastNative f) { return f; } // used for type check only.
+inline JSNative NativeFunction(JSNative f) { return f; } // used for type check only.
 #else
 #define FastNativeFunction(f) (f)
 #define NativeFunction(f) (f)
@@ -359,10 +371,10 @@ inline JSNative NativeFunction(JSNative f) { return f; } // used fo type check o
 #define FUNCTION_FAST_ALIAS(alias, name) JS_FN( #alias, FastNativeFunction(_##name), 0, 0 ),
 
 
-#define PROPERTY(name)	{ #name, -1, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
-#define PROPERTY_READ(name)	{ #name, -1, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name, NULL }, // (TBD) rename into PROPERTY_GETTER
-#define PROPERTY_WRITE(name)	{ #name, -1, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name }, // (TBD) rename into PROPERTY_SETTER
-#define PROPERTY_SWITCH(name, function)	{ #name, name, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
+#define PROPERTY(name) { #name, -1, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
+#define PROPERTY_READ(name) { #name, -1, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name, NULL }, // (TBD) rename into PROPERTY_GETTER
+#define PROPERTY_WRITE(name) { #name, -1, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name }, // (TBD) rename into PROPERTY_SETTER
+#define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
 #define PROPERTY_SWITCH_READ(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##function, NULL },
 #define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, _##getter, _##setter },
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
@@ -378,7 +390,7 @@ inline JSNative NativeFunction(JSNative f) { return f; } // used fo type check o
 
 #define HAS_PROTOTYPE(PROTOTYPENAME) \
 	static JLClassName parentProtoName = #PROTOTYPENAME; \
-	JLClassNameCopy(&cs.parentProtoName, &parentProtoName);
+	JLClassNameCopy(&cs.parentProtoName, &parentProtoName); \
 
 #define HAS_CONSTRUCTOR_ARGC(ARGC) cs.constructor = Constructor; cs.argc = (ARGC);
 #define HAS_CONSTRUCTOR cs.constructor = Constructor;
@@ -454,41 +466,7 @@ inline JSNative NativeFunction(JSNative f) { return f; } // used fo type check o
 #define DEFINE_PROPERTY_SETTER(name) static JSBool _##name##Setter(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 
 
-
-/*
-	cs.xclasp.base.name = className;
-	cs.xclasp.base.flags |= 0x12345678;
-	
-	cs.constructor = Constructor;
-
-	static JLClassName parentProtoName = "test";
-	JLClassNameCopy(&cs.parentProtoName, &parentProtoName);
-
-	static JSPropertySpec ps[] = {
-		{NULL, 0, 0, 0, 0}
-	}; cs.ps = ps;
-
-	static JSPropertySpec static_ps[] = {
-		{NULL, 0, 0, 0, 0}
-	}; cs.static_ps = static_ps;
-
-	static JSFunctionSpec fs[] = {
-		JS_FS( "test", _test, 0, 0, 0 ),
-		JS_FS_END
-	}; cs.fs = fs;
-
-	static JSFunctionSpec static_fs[] = {
-		JS_FS_END
-	}; cs.static_fs = static_fs;
-
-	return &cs;
-}
-*/
-
-
-
-
-#if 0
+#if 0 // previous version
 
 #include <ctype.h>
 
@@ -790,7 +768,7 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 		return JS_TRUE; \
 		JL_BAD; \
 	}
-
 #endif
+
 
 #endif // _JSCLASS_H_

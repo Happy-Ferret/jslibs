@@ -142,7 +142,7 @@ DEFINE_PROPERTY( anchor2 ) { // read only
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
-	HAS_PROTOTYPE( prototypeJoint )
+	HAS_PROTOTYPE( Joint )
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PRIVATE
