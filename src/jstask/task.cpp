@@ -131,7 +131,7 @@ bad:
 }
 
 
-static JSBool Task(JSContext *cx, TaskPrivate *pv) {
+static JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 
 	jsval argv[3] = { JSVAL_NULL }; // argv[0] is rval and code
 	JSTempValueRooter tvr;
@@ -261,7 +261,7 @@ static JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 	pv = (TaskPrivate*)threadArg;
 
 	JSBool status;
-	status = Task(cx, pv);
+	status = TheTask(cx, pv);
 	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	if ( status != JS_TRUE ) { // fatal errors
 
