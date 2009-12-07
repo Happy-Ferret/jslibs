@@ -72,6 +72,7 @@
 
 // # pragma GCC diagnostic ignored "-Wformat"  /* Ignore Warning about printf format /
 // # pragma GCC diagnostic ignored "-Wunused-parameter"  / Ignore Warning about unused function parameter */
+#pragma GCC diagnostic error "-Wdiv-by-zero"
 
 #if defined(HAVE_GCCVISIBILITYPATCH)
 		#define DLLEXPORT __attribute__ ((visibility("default")))
@@ -255,6 +256,10 @@
 
 #endif // Windows/MacosX/Linux platform
 
+
+
+static inline void jl_unused(int) {};
+
 /* Macro that avoid multicharacter constant: From gcc page:
 `-Wno-multichar'
      Do not warn if a multicharacter constant (`'FOOF'') is used.
@@ -262,8 +267,9 @@
      implementation-defined values, and should not be used in portable
      code.
 */
-typedef const char ConstChar5[5];
-#define JL_CAST_CSTR_TO_UINT32(x) ((uint32_t)((((ConstChar5)x)[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3])))
+
+// rise a "division by zero" if x is not a 5-char string.
+#define JL_CAST_CSTR_TO_UINT32(x) ( jl_unused(0/(sizeof(x) == 5 && x[3] == 0 ? 1 : 0)), (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
 
 #define MAX_INTDOUBLE ((double)pow((double)2, (double)DBL_MANT_DIG))
 
