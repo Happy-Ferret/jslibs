@@ -223,6 +223,7 @@
 	#include <unistd.h>
 	#include <sys/time.h>
 	#include <dlfcn.h>
+	#include <stdint.h>
 
 	#ifndef O_BINARY
 	#define O_BINARY 0
