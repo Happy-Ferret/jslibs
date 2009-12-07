@@ -269,7 +269,14 @@ static inline void jl_unused(int) {};
 */
 
 // rise a "division by zero" if x is not a 5-char string.
-#define JL_CAST_CSTR_TO_UINT32(x) ( jl_unused(0/(sizeof(x) == 5 && x[3] == 0 ? 1 : 0)), (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
+//#define JL_CAST_CSTR_TO_UINT32(x) ( jl_unused(0/(sizeof(x) == 5 && x[3] == 0 ? 1 : 0)), (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
+//#define JL_CAST_CSTR_TO_UINT32(x) ( (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
+
+ALWAYS_INLINE uint32_t JL_CAST_CSTR_TO_UINT32( const char cstr[5] ) {
+
+	return (cstr[0]<<24) | (cstr[1]<<16) | (cstr[2]<<8) | (cstr[3]);
+}
+
 
 #define MAX_INTDOUBLE ((double)pow((double)2, (double)DBL_MANT_DIG))
 

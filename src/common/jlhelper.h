@@ -177,8 +177,7 @@ ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) 
 }
 
 #ifdef DEBUG
-static inline void __void__(int){};
-#define JLID_NAME(name) (__void__(JLID_##name), #name)
+#define JLID_NAME(name) (jl_unused(JLID_##name), #name)
 #else
 #define JLID_NAME(name) (#name)
 #endif // DEBUG
