@@ -16,7 +16,7 @@
 
 #include "jslibsModule.cpp"
 
-#define USE_DEFAULT_ALLOCATORS // uncomment to use standard malloc/free
+//#define USE_DEFAULT_ALLOCATORS // uncomment to use standard malloc/free
 
 #ifndef USE_DEFAULT_ALLOCATORS
 volatile bool disabledFree = false;

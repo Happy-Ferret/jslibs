@@ -315,7 +315,10 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 		} \
 	} \
 
-
+//soubok>	in the JSClass finalize function, what is the best method to distinguish between object and prototype finalization ?
+//jorendorff>	that's hard to do... if you're willing to be imprecise about it, you can just check to see if the object's prototype has the same class.
+//jorendorff>	The best way is to keep the result of JS_InitClass around somewhere.
+//jorendorff>	Then just compare with == to see if you're finalizing that object.
 
 #define JL_CLASS(CLASSNAME) (&(CLASSNAME::jlClassSpec->xclasp.base))
 #define JL_THIS_CLASS (&(jlClassSpec->xclasp.base))
