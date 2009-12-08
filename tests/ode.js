@@ -8,7 +8,7 @@ floor.body = world.env;
 
 var ball = new GeomSphere(world.space);
 ball.body = new Body(world);
-ball.impact = function(n, geom1, geom2, pos) { 
+ball.impact = function(geom1, geom2) { 
 	
 	if ( geom1.body.linearVel[2] < 0 )
 		Print('impact velocity: '+-geom1.body.linearVel[2].toFixed(2)+'\n' );
