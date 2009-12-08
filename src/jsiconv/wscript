@@ -13,8 +13,8 @@ int main() { iconv(NULL, (const char **)NULL, NULL, NULL, NULL); return 0; }
 def build(bld):
 
     defines = []
-    if bld.env.HAVE_ICONVLIST:
-        defines.append('JL_HAS_ICONVLIST')
+    if not bld.env.HAVE_ICONVLIST:
+        defines.append('JL_NOT_HAS_ICONVLIST')
     if not bld.env.ICONV_PROTO_ARG_CONST:
         defines.append('JL_ICONV_PROTO_ARG_NOT_CONST')
 

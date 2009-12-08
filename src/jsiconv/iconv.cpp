@@ -64,6 +64,7 @@ $TOC_MEMBER $INAME
    $ARG $BOOL fromUsesWide: source uses 16bit per char.
   $H example
 {{{
+  LoadModule('winshell'); // required for consoleCodepage
   var consEnc = new Iconv(consoleCodepage, 'UCS-2le', false, true); // source is wide (16bit), dest is not wide (8bit)
   Print( consEnc('été') );
 }}}
@@ -365,7 +366,7 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 	return 0;
 }
 
-#ifdef JL_HAS_ICONVLIST
+#ifndef JL_NOT_HAS_ICONVLIST
 DEFINE_PROPERTY( list ) {
 
 	JSObject *list = JS_NewArrayObject(cx, 0, NULL);
