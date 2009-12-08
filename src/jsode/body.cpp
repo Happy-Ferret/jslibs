@@ -52,14 +52,22 @@ static JSBool ReadMatrix( JSContext *cx, JSObject *obj, float **pm) { // Doc: __
 
 
 JSBool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj) {
-	
-	JL_S_ASSERT( ode::dBodyGetData(bodyId) == NULL, "Invalid case (object not finalized)." );
-	JL_S_ASSERT( bodyId != NULL, "Invalid ode object." );
-	*obj = JS_NewObject(cx, JL_CLASS(Body), NULL, NULL);
-	JL_CHK( *obj );
+
+	if (unlikely( bodyId == (ode::dBodyID)0 )) { // bodyId may be null if body is world.env
+
+		*obj = JS_NewObject(cx, JL_CLASS(Body), NULL, NULL);
+		JL_CHK( *obj );
+	} else {
+
+		JL_S_ASSERT( ode::dBodyGetData(bodyId) == NULL, "Invalid case (object not finalized)." );
+		JL_S_ASSERT( bodyId != NULL, "Invalid ode object." );
+		*obj = JS_NewObject(cx, JL_CLASS(Body), NULL, NULL);
+		JL_CHK( *obj );
+		ode::dBodySetData(bodyId, *obj);
+	}
+
 	JL_CHK( SetMatrix44GetInterface(cx, *obj, ReadMatrix) );
 	JL_SetPrivate(cx, *obj, bodyId);
-	ode::dBodySetData(bodyId, *obj);
 	return JS_TRUE;
 	JL_BAD;
 }
