@@ -14,6 +14,12 @@
 
 #include "stdafx.h"
 
+#if defined(JL_ICONV_PROTO_ARG_CONST)
+#define JL_ICONV_PROTO_ARG const
+#else
+#define JL_ICONV_PROTO_ARG
+#endif
+
 #include <stddef.h>
 #include <iconv.h>
 #include <errno.h>
@@ -146,7 +152,7 @@ DEFINE_CALL() {
 		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&inBuf, &inLen) );
 	}
 
-	const char *inPtr;
+	JL_ICONV_PROTO_ARG char *inPtr;
 	inPtr = inBuf;
 	size_t inLeft;
 	inLeft = inLen;
@@ -158,14 +164,14 @@ DEFINE_CALL() {
 	outBuf = (char*)JS_malloc(cx, outLen +1);
 	JL_CHK( outBuf );
 
-	char *outPtr;
+	JL_ICONV_PROTO_ARG char *outPtr;
 	outPtr = outBuf;
 	size_t outLeft;
 	outLeft = outLen;
 
 	if ( pv->remainderLen ) { // have to process a previous incomplete multibyte sequence ?
 
-		const char *tmpPtr;
+		JL_ICONV_PROTO_ARG char *tmpPtr;
 		size_t tmpLeft;
 		do {
 

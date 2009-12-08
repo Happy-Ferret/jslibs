@@ -4,12 +4,19 @@ def configure(conf):
 
     conf.check_cxx(header_name='iconv.h', function_name='iconv', uselib_store='ICONV', msg='Checking for library iconv')
     conf.check_cxx(header_name='iconv.h', function_name='iconvlist', msg='Checking for iconvlist function')
+    conf.check_cxx(msg='Checking for iconv const proto', define_name="ICONV_PROTO_ARG_CONST", fragment='''
+#include <iconv.h>
+#include <stdlib.h>
+int main() { iconv(NULL, (const char **)NULL, NULL, (const char **)NULL, NULL); return 0; }
+''')
 
 def build(bld):
 
     defines = []
     if bld.env.HAVE_ICONVLIST:
         defines.append('JL_HAS_ICONVLIST')
+    if bld.env.ICONV_PROTO_ARG_CONST:
+        defines.append('JL_ICONV_PROTO_ARG_CONST')
 
     task = bld.new_task_gen('cxx', 'cshlib')
     task.target ='jsiconv'
