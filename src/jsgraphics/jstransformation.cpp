@@ -104,7 +104,8 @@ DEFINE_CONSTRUCTOR() {
 			Matrix44Identity(pv->mat);
 			pv->isIdentity = true;
 		} else {
-			
+
+			JL_S_ASSERT_OBJECT( JL_ARG(1) );
 			Matrix44 *m = pv->mat;
 			JL_CHKM( GetMatrixHelper(cx, JL_ARG(1), (float**)&m), "Unable to access Matrix44 interface." );
 			if ( m != pv->mat ) // check if the pointer has been modified
