@@ -57,7 +57,9 @@ function Init() {
 
 function Draw() {
 
-	trimeshTransformation.Product(new Transformation(true).RotateToVector(-speedX, speedY, 1));
+	if ( speedY || speedX )
+		trimeshTransformation.Product(new Transformation(true).RotateToVector(-speedX, speedY, 1));
+		
 	with (Ogl) {
 	
 		LoadMatrix(trimeshTransformation);
