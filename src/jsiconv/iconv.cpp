@@ -14,15 +14,15 @@
 
 #include "stdafx.h"
 
-#if defined(JL_ICONV_PROTO_ARG_CONST)
-#define JL_ICONV_PROTO_ARG const
-#else
-#define JL_ICONV_PROTO_ARG
-#endif
-
 #include <stddef.h>
 #include <iconv.h>
 #include <errno.h>
+
+#if defined(JL_ICONV_PROTO_ARG_NOT_CONST)
+#define JL_ICONV_PROTO_ARG
+#else
+#define JL_ICONV_PROTO_ARG const
+#endif
 
 struct Private {
 	iconv_t cd;
@@ -164,7 +164,7 @@ DEFINE_CALL() {
 	outBuf = (char*)JS_malloc(cx, outLen +1);
 	JL_CHK( outBuf );
 
-	JL_ICONV_PROTO_ARG char *outPtr;
+	char *outPtr;
 	outPtr = outBuf;
 	size_t outLeft;
 	outLeft = outLen;

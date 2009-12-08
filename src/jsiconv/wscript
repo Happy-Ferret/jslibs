@@ -15,8 +15,8 @@ def build(bld):
     defines = []
     if bld.env.HAVE_ICONVLIST:
         defines.append('JL_HAS_ICONVLIST')
-    if bld.env.ICONV_PROTO_ARG_CONST:
-        defines.append('JL_ICONV_PROTO_ARG_CONST')
+    if not bld.env.ICONV_PROTO_ARG_CONST:
+        defines.append('JL_ICONV_PROTO_ARG_NOT_CONST')
 
     task = bld.new_task_gen('cxx', 'cshlib')
     task.target ='jsiconv'
