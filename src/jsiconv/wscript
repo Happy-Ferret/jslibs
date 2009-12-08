@@ -7,7 +7,7 @@ def configure(conf):
     conf.check_cxx(msg='Checking for iconv const proto', define_name="ICONV_PROTO_ARG_CONST", fragment='''
 #include <iconv.h>
 #include <stdlib.h>
-int main() { iconv(NULL, (const char **)NULL, NULL, (const char **)NULL, NULL); return 0; }
+int main() { iconv(NULL, (const char **)NULL, NULL, NULL, NULL); return 0; }
 ''')
 
 def build(bld):
