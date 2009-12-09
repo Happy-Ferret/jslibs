@@ -58,9 +58,10 @@ inline bool PoolPush( Pool *pool, void *item ) {
 		if ( pool->listLength >= pool->maxLength )
 			return false;
 		pool->listLength *= 2;
-		pool->list = (void**)jl_realloc(pool->list, pool->listLength);
+		pool->list = (void**)jl_realloc(pool->list, pool->listLength * sizeof(void*));
 	}
-	pool->list[pool->length++] = item;
+	pool->list[pool->length] = item;
+	++pool->length;
 	return true;
 }
 
