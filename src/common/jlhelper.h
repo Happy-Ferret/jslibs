@@ -470,6 +470,11 @@ ALWAYS_INLINE JSBool JL_SetReservedSlot(JSContext *cx, JSObject *obj, uint32 ind
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 
+ALWAYS_INLINE bool JL_Ending(JSContext *cx) {
+
+	return cx->runtime->state == JSRTS_LANDING || cx->runtime->state == JSRTS_DOWN; // could be replaced by a flag in HostPrivate that keep the state of the engine.
+}
+
 // eg. JS_NewObject(cx, JL_GetStandardClass(cx, JSProto_TypeError), NULL, NULL);
 ALWAYS_INLINE JSClass* JL_GetStandardClass(JSContext *cx, JSProtoKey key) {
 

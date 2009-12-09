@@ -29,11 +29,11 @@
 
 // (TBD) move this in the class private
 
-jl::Pool matrixPool; // (TBD) manage thread safety
+jl::Pool matrixPool; // (TBD) manage thread safety / use modulePrivate
 
 
 static int GetMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
-	
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return false;
@@ -55,17 +55,17 @@ DEFINE_FINALIZE() {
 		while ( !PoolIsEmpty(&matrixPool) )
 			Matrix44Free((Matrix44*)jl::PoolPop(&matrixPool));
 		jl::PoolFinalize(&matrixPool);
-		*(JSObject**)JLGetClassNameHash(GetHostPrivate(cx), &jlClassSpec->className) = NULL;
+		JL_THIS_PROTOTYPE = NULL;
 		return;
 	}
 
 	//	printf("Fin:%d\n", matrixPoolLength);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	
+
 	//beware: prototype may be finalized before the object
 	if ( JL_THIS_PROTOTYPE != NULL ) { // add to the pool if the pool is still alive !
 
-		if ( !jl::PoolPush(&matrixPool, pv->mat) )
+		if ( JL_Ending(cx) || !jl::PoolPush(&matrixPool, pv->mat) ) // if the runtime is shutting down, there is no more need to fill the pool.
 			Matrix44Free(pv->mat);
 	} else {
 
@@ -79,7 +79,7 @@ DEFINE_FINALIZE() {
 /**doc
 $TOC_MEMBER $INAME
  $INAME( [init] )
-  Creates a new Transformation object. 
+  Creates a new Transformation object.
   If no argument is given, the transformation is not initialized.
   If _init_ is $NULL, the transformation is initialized to identity.
   If _init_ is a matrix, the transormation is initialized with the matrix.
@@ -98,9 +98,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_ALLOC(pv->mat);
 
 	if ( JL_ARGC >= 1 ) {
-		
+
 		if ( JSVAL_IS_NULL(JL_ARG(1)) ) {
-			
+
 			Matrix44Identity(pv->mat);
 			pv->isIdentity = true;
 		} else {
@@ -288,7 +288,7 @@ DEFINE_FUNCTION_FAST( Translate ) {
 	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &z) );
 
 	if ( pv->isIdentity ) {
-	
+
 		Matrix44SetTranslation(pv->mat, x, y, z);
 		pv->isIdentity = false;
 	} else {
@@ -325,17 +325,17 @@ DEFINE_FUNCTION_FAST( Scale ) {
 	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &x) );
 
 	if ( argc >= 3 ) {
-		
+
 		JL_CHK( JsvalToFloat(cx, JL_FARG(2), &y) );
 		JL_CHK( JsvalToFloat(cx, JL_FARG(3), &z) );
 	} else {
-		
+
 		y = x;
 		z = x;
 	}
 
 	if ( pv->isIdentity ) {
-	
+
 		Matrix44SetScale(pv->mat, x, y, z);
 		pv->isIdentity = false;
 	} else {
@@ -371,10 +371,10 @@ DEFINE_FUNCTION_FAST( RotationFromQuaternion ) {
 	JL_S_ASSERT_RESOURCE(pv);
 
 	float w, x, y, z;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &w) ); 
-	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &x) ); 
-	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &y) ); 
-	JL_CHK( JsvalToFloat(cx, JL_FARG(4), &z) ); 
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &w) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &x) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &y) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(4), &z) );
 
 	float fTx  = 2.0 * x;
 	float fTy  = 2.0 * y;
@@ -459,9 +459,9 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 		return JS_TRUE;
 
 	float x, y, z;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &x) ); 
-	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &y) ); 
-	JL_CHK( JsvalToFloat(cx, JL_FARG(4), &z) ); 
+	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &x) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &y) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(4), &z) );
 	Vector3 axis;
 	Vector3Set(&axis, x,y,z);
 
@@ -498,7 +498,7 @@ DEFINE_FUNCTION_FAST( RotateX ) {
 	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) ); 
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) );
 	if ( angle == 0.0f )
 		return JS_TRUE;
 
@@ -535,7 +535,7 @@ DEFINE_FUNCTION_FAST( RotateY ) {
 	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) ); 
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &angle) );
 	if ( angle == 0.0f )
 		return JS_TRUE;
 
@@ -701,7 +701,7 @@ DEFINE_FUNCTION_FAST( RotateToVector ) {
 		Matrix44SetRotation(&r, &up, DEG_TO_RAD(angle));
 		Matrix44Mult(pv->mat, pv->mat, &r);
 	}
-	
+
 	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 
 	return JS_TRUE;
@@ -745,7 +745,7 @@ DEFINE_FUNCTION_FAST( Product ) {
 
 	Matrix44 tmp, *m = &tmp;
 	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), (float**)&m) );
-	
+
 	bool preMultiply;
 	if ( JL_FARG_ISDEF(2) )
 		JL_CHK( JsvalToBool(cx, JL_FARG(2), &preMultiply) );
@@ -937,7 +937,7 @@ DEFINE_SET_PROPERTY() {
 
 DEFINE_INIT() {
 
-	jl::PoolInitialize( &matrixPool, 4096 );
+	jl::PoolInitialize( &matrixPool, 8192 );
 	return JS_TRUE;
 }
 
