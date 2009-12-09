@@ -9,7 +9,7 @@ var speedX = 0;
 var speedY = 0;
 
 var tremeshId;
-var trimeshTransformation = new Transformation(true);
+var trimeshTransformation = new Transformation(null);
 
 
 function Init() {
@@ -58,7 +58,7 @@ function Init() {
 function Draw() {
 
 	if ( speedY || speedX )
-		trimeshTransformation.Product(new Transformation(true).RotateToVector(-speedX, speedY, 1));
+		trimeshTransformation.Product(new Transformation(null).RotateToVector(-speedX, speedY, 1));
 		
 	with (Ogl) {
 	
