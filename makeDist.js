@@ -73,6 +73,7 @@ function GetClassRevision(moduleName, className) {
   return Number(proc.stdout.Read());
 }
 
+var copiedFilesDest = [];
 
 function Copy(fromFilename, toFilename) {
 	
@@ -92,6 +93,7 @@ function Copy(fromFilename, toFilename) {
 	for ( var buf; buf = fromFile.Read(65536); )
 		toFile.Write(buf);
 	toFile.Close();
+	copiedFilesDest.push(toFile.name);
 	fromFile.Close();
 }
 
@@ -203,7 +205,13 @@ Copy('./libs/openal/sdk/redist/OpenAL32.dll', './dist/bin');
 Copy('./libs/openal/sdk/redist/wrap_oal.dll', './dist/bin');
 
 new File('./dist/README.TXT').content = readme;
-
+copiedFilesDest.push('./dist/README.TXT');
 
 
 Zip('./dist/*', 'jslibs_'+type+'_'+jslibsVersion+'_'+'r'+jslibsRevision+'.zip');
+
+// cleanup
+
+for each ( var f in copiedFilesDest )
+	new File(f).Delete()
+	
