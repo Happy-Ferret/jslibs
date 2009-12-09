@@ -199,7 +199,7 @@
 
 	inline void* memalign( size_t alignment, size_t size ) {
 		
-		return _aligned_malloc(alignment, size);
+		return _aligned_malloc(size, alignment);
 	}
 
 #elif defined(_MACOSX) // MacosX platform
