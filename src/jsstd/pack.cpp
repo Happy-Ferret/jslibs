@@ -227,6 +227,10 @@ DEFINE_FUNCTION( ReadInt ) {
 		case sizeof(int64_t):
 			if (netConv)
 				Network64ToHost64(data);
+
+			if ( *(int64_t*)data > MAX_INTDOUBLE && *(int64_t*)data < -MAX_INTDOUBLE )
+				JL_REPORT_ERROR("Integer too big.");
+
 			if ( isSigned ) {
 
 				int64_t val = *(int64_t*)data;
