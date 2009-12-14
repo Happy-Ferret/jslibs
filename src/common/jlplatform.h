@@ -278,8 +278,25 @@ ALWAYS_INLINE uint32_t JL_CAST_CSTR_TO_UINT32( const char cstr[5] ) {
 	return (cstr[0]<<24) | (cstr[1]<<16) | (cstr[2]<<8) | (cstr[3]);
 }
 
+ALWAYS_INLINE int ipow(int base, int exp) {
+	
+	int result = 1;
+	while (exp) {
+		
+		if ( exp & 1 )
+			result *= base;
+		exp >>= 1;
+		base *= base;
+	}
+	return result;
+}
 
+#ifdef DEBUG
 #define MAX_INTDOUBLE ((double)pow((double)2, (double)DBL_MANT_DIG))
+//JS_STATIC_ASSERT( DBL_MANT_DIG == 53 );
+#else // DEBUG
+#define MAX_INTDOUBLE ((double)9007199254740992)
+#endif // DEBUG
 
 ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
 
