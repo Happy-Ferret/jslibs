@@ -528,6 +528,22 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( buf3.Read(6), '123xxx', 'read' );
 
 
+/// Pack int64
+
+	var buf = new Buffer();
+	var pack = new Pack(buf);
+
+	pack.WriteInt(-9007199254740991, 8, true);
+	var v = pack.ReadInt(8, true);
+	QA.ASSERT(v, -9007199254740991, "min value");
+
+	pack.WriteInt(9007199254740991, 8);
+	var v = pack.ReadInt(8);
+	QA.ASSERT(v, 9007199254740991, "max value");
+
+	QA.ASSERT_EXCEPTION( function() { pack.WriteInt(9007199254740992, 8, true) }, RangeError, "value overflow" );
+
+
 /// Pack endian [ftrm]
 	
 		if ( !Pack.systemIsBigEndian ) {

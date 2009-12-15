@@ -229,7 +229,7 @@ DEFINE_FUNCTION( ReadInt ) {
 				Network64ToHost64(data);
 
 			if ( *(int64_t*)data > MAX_INTDOUBLE && *(int64_t*)data < -MAX_INTDOUBLE )
-				JL_REPORT_ERROR("Integer too big.");
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
 
 			if ( isSigned ) {
 
@@ -242,22 +242,12 @@ DEFINE_FUNCTION( ReadInt ) {
 			}
 			break;
 		default:
-			JL_REPORT_ERROR("Unable to manage this size.");
+			JL_REPORT_ERROR("Unsupported data type.");
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
 
-#ifdef DEBUG
-DEFINE_FUNCTION( Test ) {
-
-	int32_t c;
-	bool isOutOfRange;
-	JsvalToSInt32(cx, JL_ARG(1), &c, &isOutOfRange);
-
-	return JS_TRUE;
-}
-#endif
 
 /**doc
 $TOC_MEMBER $INAME
@@ -323,13 +313,19 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 				Host32ToNetwork32(data);
 			break;
 		case sizeof(int64_t):
-			// (TBD) implement it
-			// break;
+			if ( isSigned )
+				JL_CHK( JsvalToSInt64(cx, jsvalue, (int64_t*)data, &outOfRange) );
+			else
+				JL_CHK( JsvalToUInt64(cx, jsvalue, (uint64_t*)data, &outOfRange) );
+			if ( netConv )
+				Host64ToNetwork64(data);
+			break;
 		default:
-			JL_REPORT_ERROR("Unable to manage this size.");
+			JL_REPORT_ERROR("Unsupported data type.");
 	}
 
-	JL_S_ASSERT( !outOfRange, "Value size too big to be stored." );
+	if ( outOfRange )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
 
 	JL_CHK( WriteRawDataChunk(cx, bufferObject, size, (char*)data) );
 
@@ -399,7 +395,8 @@ DEFINE_FUNCTION( ReadString ) {
 
 		unsigned int amount;
 		JL_CHK( JsvalToUInt(cx, JL_ARG(1), &amount) );
-		JL_S_ASSERT( (int)amount >= 0, "Invalid amount" );
+//		JL_S_ASSERT( (int)amount >= 0, "Invalid amount" );
+		JL_S_ASSERT_ERROR_NUM( (int)amount >= 0, JLSMSG_VALUE_OUTOFRANGE );
 		JL_CHK( ReadDataAmount(cx, bufferObject, amount, rval) );
 	} else {
 
@@ -503,9 +500,6 @@ CONFIGURE_CLASS
 		FUNCTION(ReadReal)
 		FUNCTION(ReadString)
 		FUNCTION(WriteInt)
-#ifdef DEBUG
-		FUNCTION(Test)
-#endif
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
