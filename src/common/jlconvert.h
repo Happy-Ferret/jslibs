@@ -161,6 +161,53 @@ inline JSBool JsvalToUInt32( JSContext *cx, jsval val, uint32_t *result, bool *o
 }
 
 
+// range if jsval is a jsdouble: +/-2^53
+inline JSBool JsvalToSInt64( JSContext *cx, jsval val, int64_t *result, bool *outOfRange ) {
+
+	if ( JSVAL_IS_INT( val ) ) {
+
+		int v = JSVAL_TO_INT( val );
+		*outOfRange = false;
+		*result = (int64_t)v;
+	} else if ( JSVAL_IS_DOUBLE( val ) ) {
+
+		double d = *JSVAL_TO_DOUBLE(val);
+		*outOfRange = d < -MAX_INTDOUBLE || d > MAX_INTDOUBLE || d != (double)(int64_t)d;
+		*result = (int64_t)d;
+	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
+
+		if ( JL_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(int64_t) )
+			return JS_FALSE;
+		*outOfRange = false;
+		*result = *(int64_t*)JS_GetStringBytes(JSVAL_TO_STRING( val ));
+	} else
+		return JS_FALSE;
+	return JS_TRUE;
+}
+
+inline JSBool JsvalToUInt64( JSContext *cx, jsval val, uint64_t *result, bool *outOfRange ) {
+
+	if ( JSVAL_IS_INT( val ) ) {
+
+		int v = JSVAL_TO_INT( val );
+		*outOfRange = false;
+		*result = (uint64_t)v;
+	} else if ( JSVAL_IS_DOUBLE( val ) ) {
+
+		double d = *JSVAL_TO_DOUBLE(val);
+		*outOfRange = d < 0 || d > MAX_INTDOUBLE || d != (double)(int64_t)d;
+		*result = (uint64_t)d;
+	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
+
+		if ( JL_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(uint64_t) )
+			return JS_FALSE;
+		*outOfRange = false;
+		*result = *(uint64_t*)JS_GetStringBytes(JSVAL_TO_STRING( val ));
+	} else
+		return JS_FALSE;
+	return JS_TRUE;
+}
+
 
 /*
 inline JSBool IntArgvToVector( JSContext *cx, int count, const jsval *argv, int *vector ) {
