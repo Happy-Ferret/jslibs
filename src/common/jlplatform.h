@@ -291,12 +291,17 @@ ALWAYS_INLINE int ipow(int base, int exp) {
 	return result;
 }
 
+/*
 #ifdef DEBUG
-#define MAX_INTDOUBLE ((double)pow((double)2, (double)DBL_MANT_DIG))
+#define MAX_INTDOUBLE ((double)pow((double)2, DBL_MANT_DIG))
 //JS_STATIC_ASSERT( DBL_MANT_DIG == 53 );
 #else // DEBUG
-#define MAX_INTDOUBLE ((double)9007199254740992)
+#define MAX_INTDOUBLE ((double)((unsigned __int64)1<<DBL_MANT_DIG)) // 9007199254740992
 #endif // DEBUG
+*/
+// since 9007199254740992 == 9007199254740993, we must subtract 1.
+#define MAX_INTDOUBLE ( (double)(((unsigned __int64)1<<DBL_MANT_DIG)-1) )
+
 
 ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
 
