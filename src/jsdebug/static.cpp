@@ -1347,9 +1347,9 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 
 
 
-JS_STATIC_ASSERT(JSTRY_CATCH == 0);
-JS_STATIC_ASSERT(JSTRY_FINALLY == 1);
-JS_STATIC_ASSERT(JSTRY_ITER == 2);
+JL_STATIC_ASSERT(JSTRY_CATCH == 0);
+JL_STATIC_ASSERT(JSTRY_FINALLY == 1);
+JL_STATIC_ASSERT(JSTRY_ITER == 2);
 
 static const char* const TryNoteNames[] = { "catch", "finally", "iter" };
 

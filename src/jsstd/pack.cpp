@@ -24,83 +24,6 @@ DECLARE_CLASS( Buffer )
 #include "buffer.h"
 
 
-// #include <limits.h> // included by jlplatform.h
-
-static Endian systemEndian; // it's safe to use static keyword.
-
-JSBool DetectSystemEndian(JSContext *cx) {
-
-	systemEndian = DetectSystemEndianType();
-	return JS_TRUE;
-}
-
-JSBool CheckSystemTypesSize(JSContext *cx) {
-
-	JL_S_ASSERT( sizeof(int8_t) == 1 && sizeof(int16_t) == 2 && sizeof(int32_t) == 4, "The system has no suitable type for using Pack class." );
-	return JS_TRUE;
-JL_BAD;
-}
-
-// cf. _swab()
-// 16 bits: #define SWAP_BYTES(X)           ((X & 0xff) << 8) | (X >> 8)
-// 32 bits swap: #define SWAP_BYTE(x) ((x<<24) | (x>>24) | ((x&0xFF00)<<8) | ((x&0xFF0000)>>8))
-#define BYTE_SWAP(ptr,a,b) { register char tmp = ((int8_t*)ptr)[a]; ((int8_t*)ptr)[a] = ((int8_t*)ptr)[b]; ((int8_t*)ptr)[b] = tmp; }
-
-void Host16ToNetwork16( void *pval ) {
-
-	if ( systemEndian == LittleEndian )
-		BYTE_SWAP( pval, 0, 1 )
-}
-
-void Host32ToNetwork32( void *pval ) {
-
-	if ( systemEndian == LittleEndian ) {
-
-		BYTE_SWAP( pval, 0, 3 )
-		BYTE_SWAP( pval, 1, 2 )
-	}
-}
-
-void Host64ToNetwork64( void *pval ) {
-
-	if ( systemEndian == LittleEndian ) {
-
-		BYTE_SWAP( pval, 0, 7 )
-		BYTE_SWAP( pval, 1, 6 )
-		BYTE_SWAP( pval, 2, 5 )
-		BYTE_SWAP( pval, 3, 4 )
-	}
-}
-
-
-void Network16ToHost16( void *pval ) {
-
-	if ( systemEndian == LittleEndian )
-		BYTE_SWAP( pval, 0, 1 )
-}
-
-void Network32ToHost32( void *pval ) {
-
-	if ( systemEndian == LittleEndian ) {
-
-		BYTE_SWAP( pval, 0, 3 )
-		BYTE_SWAP( pval, 1, 2 )
-	}
-}
-
-void Network64ToHost64( void *pval ) {
-
-	if ( systemEndian == LittleEndian ) {
-
-		BYTE_SWAP( pval, 0, 7 )
-		BYTE_SWAP( pval, 1, 6 )
-		BYTE_SWAP( pval, 2, 5 )
-		BYTE_SWAP( pval, 3, 4 )
-	}
-}
-
-
-
 /**doc
 $CLASS_HEADER
 $SVN_REVISION $Revision$
@@ -205,20 +128,40 @@ DEFINE_FUNCTION( ReadInt ) {
 				*rval = INT_TO_JSVAL( val );
 			}
 			break;
+		case 3: // 24-bit
+			if (netConv)
+				Network24ToHost24(data);
+			if ( isSigned ) {
+
+				int32_t val = (signed)(*(uint32_t*)data << 8) >> 8;
+				if ( INT_FITS_IN_JSVAL(val) )
+					*rval = INT_TO_JSVAL( val );
+				else
+					JL_CHK( JS_NewNumberValue(cx, val, rval) );
+
+			} else {
+
+				uint32_t val = *(uint32_t*)data;
+				if ( INT_FITS_IN_JSVAL(val) )
+					*rval = INT_TO_JSVAL( val );
+				else
+					JL_CHK( JS_NewNumberValue(cx, val, rval) );
+			}
+			break;
 		case sizeof(int32_t):
 			if (netConv)
 				Network32ToHost32(data);
 			if ( isSigned ) {
 
 				int32_t val = *(int32_t*)data;
-				if ( val >> JSVAL_INT_BITS == 0 ) // check if we can store the value in a simple JSVAL_INT
+				if ( INT_FITS_IN_JSVAL(val) )
 					*rval = INT_TO_JSVAL( val );
 				else // if not, we have to create a new number
 					JL_CHK( JS_NewNumberValue(cx, val, rval) );
 			} else {
 
 				uint32_t val = *(uint32_t*)data;
-				if ( val >> (JSVAL_INT_BITS-1) == 0 ) // check if we can store the value in a simple JSVAL_INT ( -1 because the sign )
+				if ( INT_FITS_IN_JSVAL(val) )
 					*rval = INT_TO_JSVAL( val );
 				else // if not, we have to create a new number
 					JL_CHK( JS_NewNumberValue(cx, val, rval) );
@@ -303,6 +246,14 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 				JL_CHK( JsvalToUInt16(cx, jsvalue, (uint16_t*)data, &outOfRange) );
 			if ( netConv )
 				Host16ToNetwork16(data);
+			break;
+		case 3: // 24-bit
+			if ( isSigned )
+				JL_CHK( JsvalToSInt24(cx, jsvalue, (int32_t*)data, &outOfRange) );
+			else
+				JL_CHK( JsvalToUInt24(cx, jsvalue, (uint32_t*)data, &outOfRange) );
+			if ( netConv )
+				Host24ToNetwork24(data);
 			break;
 		case sizeof(int32_t):
 			if ( isSigned )
@@ -475,14 +426,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( systemIsBigEndian ) {
 
-	*vp = BOOLEAN_TO_JSVAL( systemEndian == BigEndian );
+	*vp = BOOLEAN_TO_JSVAL( DetectSystemEndianType() == BigEndian );
 	return JS_TRUE;
 }
 
 JSBool Init(JSContext *cx, JSObject *obj) {
 
-	JL_CHK( DetectSystemEndian(cx) );
-	JL_CHK( CheckSystemTypesSize(cx) );
+	JL_S_ASSERT( sizeof(int8_t) == 1 && sizeof(int16_t) == 2 && sizeof(int32_t) == 4 && sizeof(int64_t) == 8, "The system has no suitable type for using Pack class." );
 	return JS_TRUE;
 	JL_BAD;
 }

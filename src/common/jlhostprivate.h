@@ -49,4 +49,4 @@ struct HostPrivate {
 	JLClassNameHash classNameHash[1<<9];
 };
 
-JS_STATIC_ASSERT( offsetof(HostPrivate, unsafeMode) == 0 ); // check this because JL_S_ASSERT macro must be usable before hostPrivateVersion is tested.
+JL_STATIC_ASSERT( offsetof(HostPrivate, unsafeMode) == 0 ); // check this because JL_S_ASSERT macro must be usable before hostPrivateVersion is tested.

@@ -258,6 +258,49 @@
 #endif // Windows/MacosX/Linux platform
 
 
+// MS specific ?
+//#ifndef O_BINARY
+//	#define O_BINARY 0
+//#endif
+
+#if defined(XP_WIN)
+	#include <io.h> // _open_osfhandle()
+#endif
+#include <fcntl.h> // _O_RDONLY, _O_WRONLY
+#include <stdio.h>
+
+
+#define JL_STATIC_ASSERT(cond) \
+	extern void jl_static_assert(int arg[(cond) ? 1 : -1])
+
+
+#ifdef DEBUG
+
+inline void JL_AssertAbort() {
+#if defined(WIN32)
+	DebugBreak();
+	exit(3);
+#elif defined(XP_OS2) || (defined(__GNUC__) && defined(__i386))
+	asm("int $3");
+#endif
+	abort();
+}
+
+inline void JL_Assert(const char *s, const char *file, unsigned int ln) {
+
+	fprintf(stderr, "jslibs assertion failure: %s, at %s:%d\n", s, file, ln);
+	JL_AssertAbort();
+}
+
+#define JL_ASSERT(expr) \
+	((expr) ? (void)0 : JL_Assert(#expr, __FILE__, __LINE__))
+
+#else
+
+#define JL_ASSERT(expr) ((void) 0)
+
+#endif // DEBUG
+
 
 static inline void jl_unused(int) {};
 
@@ -291,16 +334,13 @@ ALWAYS_INLINE int ipow(int base, int exp) {
 	return result;
 }
 
-/*
-#ifdef DEBUG
-#define MAX_INTDOUBLE ((double)pow((double)2, DBL_MANT_DIG))
-//JS_STATIC_ASSERT( DBL_MANT_DIG == 53 );
-#else // DEBUG
-#define MAX_INTDOUBLE ((double)((unsigned __int64)1<<DBL_MANT_DIG)) // 9007199254740992
-#endif // DEBUG
-*/
+
 // since 9007199254740992 == 9007199254740993, we must subtract 1.
-#define MAX_INTDOUBLE ( (double)(((unsigned __int64)1<<DBL_MANT_DIG)-1) )
+#define MAX_INTDOUBLE \
+	( (double)(((unsigned __int64)1<<DBL_MANT_DIG)-1) )
+
+JL_STATIC_ASSERT( (double)MAX_INTDOUBLE != (double)MAX_INTDOUBLE+1 );
+JL_STATIC_ASSERT( (double)MAX_INTDOUBLE+1 == (double)MAX_INTDOUBLE+2 );
 
 
 ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
@@ -334,54 +374,12 @@ ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *r) { // supports 9 digits 
 }
 
 
-/*
-	int posix_memalign(void **memptr, size_t alignment, size_t size) {
-		if (alignment % sizeof(void *) != 0)
-			return EINVAL;
-		*memptr = memalign(alignment, size);
-		return (*memptr != NULL ? 0 : ENOMEM);
-	}
-*/
-
-// MS specific ?
-//#ifndef O_BINARY
-//	#define O_BINARY 0
-//#endif
-
-#if defined(XP_WIN)
-	#include <io.h>
-#endif
-#include <fcntl.h>
-#include <stdio.h>
-
-
-#ifdef DEBUG
-
-
-inline void JL_AssertAbort() {
-#if defined(WIN32)
-	DebugBreak();
-	exit(3);
-#elif defined(XP_OS2) || (defined(__GNUC__) && defined(__i386))
-	asm("int $3");
-#endif
-	abort();
-}
-
-inline void JL_Assert(const char *s, const char *file, unsigned int ln) {
-
-	fprintf(stderr, "Jslibs assertion failure: %s, at %s:%d\n", s, file, ln);
-	JL_AssertAbort();
-}
-
-#define JL_ASSERT(expr) \
-    ((expr) ? (void)0 : JL_Assert(#expr, __FILE__, __LINE__))
-
-#else
-
-#define JL_ASSERT(expr) ((void) 0)
-
-#endif // DEBUG
+//int posix_memalign(void **memptr, size_t alignment, size_t size) {
+//	if (alignment % sizeof(void *) != 0)
+//		return EINVAL;
+//	*memptr = memalign(alignment, size);
+//	return (*memptr != NULL ? 0 : ENOMEM);
+//}
 
 
 inline void fpipe( FILE **read, FILE **write ) {
@@ -486,12 +484,83 @@ enum Endian {
 
 ALWAYS_INLINE Endian DetectSystemEndianType() {
 
-	switch ( *(unsigned long*)"\3\2\1" ) { // 03020100
+	switch ( *(uint32_t*)"\3\2\1" ) { // 03020100
 		case 0x03020100: return BigEndian;
 		case 0x00010203: return LittleEndian;
 		case 0x02030001: return MiddleEndian;
 	}
 	return UnknownEndian;
+}
+
+// cf. _swab()
+// 16 bits: #define SWAP_BYTES(X)           ((X & 0xff) << 8) | (X >> 8)
+// 32 bits swap: #define SWAP_BYTE(x) ((x<<24) | (x>>24) | ((x&0xFF00)<<8) | ((x&0xFF0000)>>8))
+#define JL_BYTESWAP(ptr,a,b) { register char tmp = ((int8_t*)ptr)[a]; ((int8_t*)ptr)[a] = ((int8_t*)ptr)[b]; ((int8_t*)ptr)[b] = tmp; }
+
+ALWAYS_INLINE void Host16ToNetwork16( void *pval ) {
+
+	if ( DetectSystemEndianType() == LittleEndian )
+		JL_BYTESWAP( pval, 0, 1 )
+}
+
+ALWAYS_INLINE void Host24ToNetwork24( void *pval ) {
+
+	if ( DetectSystemEndianType() == LittleEndian )
+		JL_BYTESWAP( pval, 0, 2 )
+}
+
+ALWAYS_INLINE void Host32ToNetwork32( void *pval ) {
+
+	if ( DetectSystemEndianType() == LittleEndian ) {
+
+		JL_BYTESWAP( pval, 0, 3 )
+		JL_BYTESWAP( pval, 1, 2 )
+	}
+}
+
+ALWAYS_INLINE void Host64ToNetwork64( void *pval ) {
+
+	if ( DetectSystemEndianType() == LittleEndian ) {
+
+		JL_BYTESWAP( pval, 0, 7 )
+		JL_BYTESWAP( pval, 1, 6 )
+		JL_BYTESWAP( pval, 2, 5 )
+		JL_BYTESWAP( pval, 3, 4 )
+	}
+}
+
+
+ALWAYS_INLINE void Network16ToHost16( void *pval ) {
+
+	if ( DetectSystemEndianType() == LittleEndian )
+		JL_BYTESWAP( pval, 0, 1 )
+}
+
+ALWAYS_INLINE void Network24ToHost24( void *pval ) {
+
+	if ( DetectSystemEndianType() == LittleEndian )
+		JL_BYTESWAP( pval, 0, 2 )
+}
+
+
+ALWAYS_INLINE void Network32ToHost32( void *pval ) {
+
+	if ( DetectSystemEndianType() == LittleEndian ) {
+
+		JL_BYTESWAP( pval, 0, 3 )
+		JL_BYTESWAP( pval, 1, 2 )
+	}
+}
+
+ALWAYS_INLINE void Network64ToHost64( void *pval ) {
+
+	if ( DetectSystemEndianType() == LittleEndian ) {
+
+		JL_BYTESWAP( pval, 0, 7 )
+		JL_BYTESWAP( pval, 1, 6 )
+		JL_BYTESWAP( pval, 2, 5 )
+		JL_BYTESWAP( pval, 3, 4 )
+	}
 }
 
 
