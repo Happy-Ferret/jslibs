@@ -154,7 +154,7 @@ DEFINE_FUNCTION_FAST( PointDepth ) {
 	JL_S_ASSERT_ARRAY( JL_FARG(1) );
 	float depth, point[3];
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, *vp, point, 3, &len) );
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), point, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Invalid array size." );
 
 	switch( ode::dGeomGetClass(geomId) ) {
