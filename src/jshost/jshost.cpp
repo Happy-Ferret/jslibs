@@ -16,9 +16,7 @@
 
 #include "jslibsModule.cpp"
 
-//#define USE_DEFAULT_ALLOCATORS // uncomment to use standard malloc/free
 
-#ifndef USE_DEFAULT_ALLOCATORS
 volatile bool disabledFree = false;
 
 #define NO_NED_NAMESPACE
@@ -30,7 +28,7 @@ void nedfree_handlenull(void *mem) {
 	if ( mem != NULL && !disabledFree )
 		nedfree(mem);
 }
-#endif // USE_DEFAULT_ALLOCATORS
+
 
 
 static unsigned char embeddedBootstrapScript[] =
@@ -170,6 +168,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		#endif // DEBUG
 	}
 
+
+	static const bool useJslibsMemoryManager = unsafeMode;
+
+
 #if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
 	if ( debug ) {
 		_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
@@ -187,36 +189,36 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	signal(SIGTERM, Interrupt);
 #endif // XP_WIN
 
-#ifndef USE_DEFAULT_ALLOCATORS
-	jl_malloc = nedmalloc;
-	jl_calloc = nedcalloc;
-	jl_memalign = nedmemalign;
-	jl_realloc = nedrealloc;
-	jl_msize = nedblksize;
-	jl_free = nedfree_handlenull;
-#else
-	jl_malloc = malloc;
-	jl_calloc = calloc;
-	jl_memalign = memalign;
-	jl_realloc = realloc;
-	jl_msize = msize;
-	jl_free = free;
-#endif // USE_DEFAULT_ALLOCATORS
+	if ( useJslibsMemoryManager ) {
 
-#ifndef USE_DEFAULT_ALLOCATORS
-	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
-	// if ( GetProcAddress(GetModuleHandle("mozjs.dll"), "JSLIBS_RegisterCustomAllocators") != NULL ) {	}
-#ifdef JS_HAS_JSLIBS_RegisterCustomAllocators
-	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
-#endif // JS_HAS_JSLIBS_RegisterCustomAllocators
-#endif // USE_DEFAULT_ALLOCATORS
+		jl_malloc = nedmalloc;
+		jl_calloc = nedcalloc;
+		jl_memalign = nedmemalign;
+		jl_realloc = nedrealloc;
+		jl_msize = nedblksize;
+		jl_free = nedfree_handlenull;
+		
+		InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
+		
+	#ifdef JS_HAS_JSLIBS_RegisterCustomAllocators
+		JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
+	#endif // JS_HAS_JSLIBS_RegisterCustomAllocators
+
+	} else {
+
+		jl_malloc = malloc;
+		jl_calloc = calloc;
+		jl_memalign = memalign;
+		jl_realloc = realloc;
+		jl_msize = msize;
+		jl_free = free;
+	}
 
 	cx = CreateHost(maxMem, maxAlloc, maybeGCInterval * 1000);
 	HOST_MAIN_ASSERT( cx != NULL, "Unable to create a javascript execution context." );
 
-#ifndef USE_DEFAULT_ALLOCATORS
-	MemoryManagerEnableGCEvent(cx);
-#endif // USE_DEFAULT_ALLOCATORS
+	if ( useJslibsMemoryManager )
+		MemoryManagerEnableGCEvent(cx);
 
 	HostPrivate *hpv;
 	hpv = GetHostPrivate(cx);
@@ -327,11 +329,12 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		}
 	}
 
-#ifndef USE_DEFAULT_ALLOCATORS
-	disabledFree = true;
-	MemoryManagerDisableGCEvent(cx);
-	FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
-#endif // USE_DEFAULT_ALLOCATORS
+	if ( useJslibsMemoryManager ) {
+	
+		disabledFree = true;
+		MemoryManagerDisableGCEvent(cx);
+		FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
+	}
 
 	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	JS_SetGCCallback(cx, NULL);
@@ -359,9 +362,8 @@ bad:
 
 	if ( cx ) {
 
-#ifndef USE_DEFAULT_ALLOCATORS
-		disabledFree = true;
-#endif // USE_DEFAULT_ALLOCATORS
+		if ( useJslibsMemoryManager )
+			disabledFree = true;
 		JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 		JS_SetGCCallback(cx, NULL);
 		DestroyHost(cx);

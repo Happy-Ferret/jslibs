@@ -142,6 +142,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( offset ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	JL_CHK( JsvalToUInt(cx, *vp, &pv->offset) );
 	return JS_TRUE;
 	JL_BAD;
@@ -150,6 +151,7 @@ DEFINE_PROPERTY_SETTER( offset ) {
 DEFINE_PROPERTY_GETTER( offset ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	JL_CHK( UIntToJsval(cx, pv->offset, vp) );
 	return JS_TRUE;
 	JL_BAD;

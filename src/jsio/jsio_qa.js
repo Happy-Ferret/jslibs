@@ -234,7 +234,7 @@ LoadModule('jsio');
 /// Creating a lot of sockets + GC [r]
 
 	var s = [];
-	for ( var j = 0; j < 30; j++ ) {
+	for ( var j = 0; j < 15; j++ ) {
 
 		for ( var i=0 ; i < 1000 ; i++ )
 			s.push(new Socket( Socket.TCP ));

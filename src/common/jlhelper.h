@@ -346,7 +346,6 @@ JL_MACRO_END
 JL_MACRO_BEGIN \
 	JL_SAFE_BEGIN \
 		if ( (pointer) == NULL ) { \
-			JL_REPORT_WARNING( "out of memory" ); \
 			JS_ReportOutOfMemory(cx); \
 			goto bad; \
 		} \
@@ -412,7 +411,7 @@ JL_MACRO_END
 	JL_S_ASSERT_ERROR_NUM( JL_InheritFrom(cx, (jsObject), (jsClass)), JLSMSG_INVALID_INHERITANCE, (jsClass)->name );
 
 #define JL_S_ASSERT_THIS_INSTANCE() \
-	JL_S_ASSERT_ERROR_NUM( (obj) == JL_THIS_PROTOTYPE || JL_InheritFrom(cx, obj, JL_THIS_CLASS), JLSMSG_INVALID_INHERITANCE, JL_THIS_CLASS->name );
+	JL_S_ASSERT_ERROR_NUM( JL_InheritFrom(cx, (obj), JL_THIS_CLASS) && (obj) != JL_THIS_PROTOTYPE, JLSMSG_INVALID_INHERITANCE, JL_THIS_CLASS->name );
 
 #define JL_S_ASSERT_CONSTRUCTING() \
 	JL_S_ASSERT_ERROR_NUM( JS_IsConstructing(cx), JLSMSG_NEED_CONSTRUCT );

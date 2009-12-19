@@ -72,7 +72,8 @@ DEFINE_CONSTRUCTOR() {
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME( size, [isSigned = false], [isNetworkEndian = false] )
-  Read an integer on the current stream. cf. systemIntSize property.
+  Read an integer on the current stream. cf. systemIntSize property.$LF
+  Supported sizes are 1, 2, 3, 4, 8 (for 8-bit, 16-bit, 24-bit, 32-bit, 64-bit). 64-bit values range is [-2^53-1, 2^53-1].
 **/
 DEFINE_FUNCTION( ReadInt ) {
 
@@ -185,6 +186,7 @@ DEFINE_FUNCTION( ReadInt ) {
 			}
 			break;
 		default:
+			JL_CHK( UnReadRawDataChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
 			JL_REPORT_ERROR("Unsupported data type.");
 	}
 	return JS_TRUE;
@@ -195,7 +197,8 @@ DEFINE_FUNCTION( ReadInt ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( intValue, size, [isSigned = false [, isNetworkEndian = false]] )
-  Write an integer to the current stream. cf. systemIntSize property.
+  Write an integer to the current stream. cf. systemIntSize property.$LF
+  Supported sizes are 1, 2, 3, 4, 8 (for 8-bit, 16-bit, 24-bit, 32-bit, 64-bit). 64-bit values range is [-2^53-1, 2^53-1].
 **/
 DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 

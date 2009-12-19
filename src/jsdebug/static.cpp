@@ -244,6 +244,14 @@ DEFINE_FUNCTION_FAST( DumpHeap )
 	 return JS_FALSE;
 }
 
+#elif // DEBUG
+
+DEFINE_FUNCTION_FAST( DumpHeap ) {
+
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_BAD;
+}
+
 #endif // DEBUG
 
 
@@ -502,9 +510,7 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 	bytes = pmc.PeakWorkingSetSize; // same value as "windows task manager" "peak mem usage"
 #else
 
-	JL_REPORT_WARNING("Not implemented.");
-	*vp = JSVAL_VOID;
-	return JS_TRUE;
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
 
 #endif // XP_WIN
 
@@ -535,9 +541,7 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
 #else
 
-	JL_REPORT_WARNING("Not implemented.");
-	*vp = JSVAL_VOID;
-	return JS_TRUE;
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
 
 #endif // XP_WIN
 
@@ -604,13 +608,17 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( gcZeal ) {
 
 #ifdef JS_GC_ZEAL
+
 	int zeal;
 	JL_CHKM( JsvalToInt(cx, *vp, &zeal), "Invalid value." );
 	JS_SetGCZeal(cx, zeal);
-#endif // JS_GC_ZEAL
 	return JL_StoreProperty(cx, obj, id, vp, false);
-#ifdef JS_GC_ZEAL
 	JL_BAD;
+
+#elif // JS_GC_ZEAL
+
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+
 #endif // JS_GC_ZEAL
 }
 
@@ -1470,7 +1478,7 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 
 #else // DEBUG
 	
-	*JL_FRVAL = JSVAL_VOID;
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
 
 #endif // DEBUG
 
@@ -1504,11 +1512,9 @@ DEFINE_PROPERTY( processTime ) {
 
 #endif // XP_WIN
 
-	JL_REPORT_WARNING("Not implemented.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
 	return JS_TRUE;
-#ifdef XP_WIN
-        JL_BAD;
-#endif // XP_WIN
+	JL_BAD;
 }
 
 
@@ -1571,11 +1577,8 @@ DEFINE_PROPERTY( cpuLoad ) {
 
 #endif // XP_WIN
 
-	JL_REPORT_WARNING("Not implemented.");
-	return JS_TRUE;
-#ifdef XP_WIN
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
 	JL_BAD;
-#endif // XP_WIN
 }
 
 
@@ -1678,6 +1681,15 @@ DEFINE_FUNCTION_FAST( DebugBreak ) {
 #endif
 	return JS_TRUE;
 }
+
+#elif // DEBUG
+
+DEFINE_FUNCTION_FAST( DebugBreak ) {
+
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_BAD;
+}
+
 #endif // DEBUG
 
 
@@ -1739,10 +1751,9 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( VALGRIND_DO_LEAK_CHECK )
 		FUNCTION_FAST( VALGRIND_COUNT_LEAKS )
 	#endif // VALGRIND
-	#ifdef DEBUG
+
 		FUNCTION_FAST( DumpHeap )
 		FUNCTION_FAST( DebugBreak )
-	#endif // DEBUG
 
 	// for internal tests
 	#ifdef DEBUG
