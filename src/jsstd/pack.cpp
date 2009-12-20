@@ -73,7 +73,8 @@ DEFINE_CONSTRUCTOR() {
 $TOC_MEMBER $INAME
  $INT $INAME( size, [isSigned = false], [isNetworkEndian = false] )
   Read an integer on the current stream. cf. systemIntSize property.$LF
-  Supported sizes are 1, 2, 3, 4, 8 (for 8-bit, 16-bit, 24-bit, 32-bit, 64-bit). 64-bit values range is [-2^53-1, 2^53-1].
+  Supported sizes are 1, 2, 3, 4, 8 (for 8-bit, 16-bit, 24-bit, 32-bit, 64-bit). 64-bit values range is [-2^53-1, 2^53-1].$LF
+  Returns $UNDEF if the buffer does not contain enough data to read the integer.
 **/
 DEFINE_FUNCTION( ReadInt ) {
 
@@ -290,7 +291,8 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 /**doc
 $TOC_MEMBER $INAME
  $REAL $INAME( size )
-  Read a 4-byte single precision real (float) or a 8-byte double precision real (double) on the current stream.
+  Read a 4-byte single precision real (float) or a 8-byte double precision real (double) on the current stream.$LF
+  Returns $UNDEF if the buffer does not contain enough data to read the integer.
 **/
 DEFINE_FUNCTION( ReadReal ) {
 
