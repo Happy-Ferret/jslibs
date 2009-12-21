@@ -826,52 +826,29 @@ enum MemThreadAction {
 static volatile MemThreadAction threadAction;
 static JLSemaphoreHandler memoryFreeThreadSem;
 
-//#define HEAD_IS_SIZE
-
 
 // alloc functions
 static void* JslibsMalloc( size_t size ) {
 
-#ifndef HEAD_IS_SIZE
 	if (likely( size >= sizeof(void*) ))
 		return base_malloc(size);
 	return base_malloc(sizeof(void*));
-#else
-	size += sizeof(void*);
-	void **ptr = (void**)base_malloc(size);
-	*(unsigned int*)ptr = size;
-	return ptr+1;
-#endif
 }
 
 static void* JslibsCalloc( size_t num, size_t size ) {
 
-#ifndef HEAD_IS_SIZE
 	size = num * size;
 	if (likely( size >= sizeof(void*) ))
 		return base_calloc(size, 1);
 	return base_calloc(sizeof(void*), 1);
-#else
-	size = num * size + sizeof(void*);
-	void **ptr = (void**)base_calloc(size, 1);
-	*(unsigned int*)ptr = size;
-	return ptr+1;
-#endif
 }
 
 static void* JslibsMemalign( size_t alignment, size_t size ) {
 
-#ifndef HEAD_IS_SIZE
 	if (likely( size >= sizeof(void*) ))
 		return base_memalign(alignment, size);
 	return base_memalign(alignment, sizeof(void*));
-#else
-	size += alignment;
-	void **ptr = (void**)base_memalign(alignment, size);
-	...
-#endif
 }
-
 
 static void* JslibsRealloc( void *ptr, size_t size ) {
 
@@ -880,12 +857,10 @@ static void* JslibsRealloc( void *ptr, size_t size ) {
 	return base_realloc(ptr, sizeof(void*));
 }
 
-
 static size_t JslibsMsize( void *ptr ) {
 
 	return base_msize(ptr);
 }
-
 
 static void JslibsFree( void *ptr ) {
 	
@@ -897,12 +872,12 @@ static void JslibsFree( void *ptr ) {
 		base_free(ptr);
 		return;
 	}
-	
 
 	*(void**)ptr = head;
 	head = ptr;
 	JLAtomicIncrement(&headLength);
 }
+
 
 
 ALWAYS_INLINE void FreeHead() {

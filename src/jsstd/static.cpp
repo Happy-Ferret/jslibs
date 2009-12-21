@@ -1241,7 +1241,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 		char reason[1024];
 		JLLastSysetmErrorMessage(reason, sizeof(reason));
-		JL_REPORT_ERROR( "Unable to create the thread (%s).", reason );
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, reason);
 	}
 
 	JSBool ok;

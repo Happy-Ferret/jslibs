@@ -41,6 +41,7 @@ MSG_DEF(JLSMSG_IMMUTABLE_OBJECT,			1012, 1, JSEXN_TYPEERR, "{0} is immutable")
 MSG_DEF(JLSMSG_VALUE_OUTOFRANGE,       1013, 0, JSEXN_RANGEERR, "value out of range")
 MSG_DEF(JLSMSG_PROGRAM_STOPPED,        1014, 0, JSEXN_NONE, "the program has been stopped")
 MSG_DEF(JLSMSG_NOT_IMPLEMENTED,        1015, 0, JSEXN_ERR, "not implemented")
+MSG_DEF(JLSMSG_OS_ERROR,               1016, 1, JSEXN_INTERNALERR, "{0}")
 
 
 

@@ -349,7 +349,7 @@ END_CLASS
 
 JSObject* CreateMidiEventObject( JSContext *cx, VstMidiEvent *midiEvent ) {
 
-	JSObject *midiEventObject = JS_NewObject(cx, classMidiEvent, NULL, NULL);
+	JSObject *midiEventObject = JS_NewObject(cx, JL_CLASS(MidiEvent), NULL, NULL);
 	if ( midiEventObject == NULL )
 		return NULL;
 	JL_SetPrivate(cx, midiEventObject, midiEvent);

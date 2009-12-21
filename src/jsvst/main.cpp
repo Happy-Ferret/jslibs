@@ -81,15 +81,15 @@ public:
 		JS_AddRoot(_cx, &_rval);
 		JS_AddRoot(_cx, &_arg);
 
-		InitializeClassMidiEvent(_cx, JS_GetGlobalObject(_cx));
-		InitializeClassAudioMaster(_cx, JS_GetGlobalObject(_cx));
-		InitializeClassVSTPlugin(_cx, JS_GetGlobalObject(_cx));
+		( JLInitClass(_cx, JS_GetGlobalObject(_cx), MidiEvent::jlClassSpec ) );
+		( JLInitClass(_cx, JS_GetGlobalObject(_cx), AudioMaster::jlClassSpec ) );
+		( JLInitClass(_cx, JS_GetGlobalObject(_cx), VSTPlugin::jlClassSpec ) );
 
 		JSObject *audioMasterObject = CreateAudioMasterObject(_cx, audioMaster);
 		_arg = OBJECT_TO_JSVAL(audioMasterObject);
 		JS_SetProperty(_cx, JS_GetGlobalObject(_cx), "audioMaster", &_arg);
 
-		vstPlugin = JS_DefineObject(_cx, JS_GetGlobalObject(_cx), "vstPlugin", classVSTPlugin, NULL, NULL);
+		vstPlugin = JS_DefineObject(_cx, JS_GetGlobalObject(_cx), "vstPlugin", JL_CLASS(VSTPlugin), NULL, NULL);
 		JL_SetPrivate(_cx, vstPlugin, this);
 
 		JSBool status = ExecuteScriptFileName(_cx, "vstPlugin.js", false, 0, NULL, &_rval);
@@ -1102,7 +1102,7 @@ DEFINE_FUNCTION_FAST( sendVstEventToHost ) {
 
 	bool res;
 
-	if ( JS_InstanceOf(cx, eventObj, classMidiEvent, NULL) == JS_TRUE ) {
+	if ( JS_InstanceOf(cx, eventObj, JL_CLASS(MidiEvent), NULL) == JS_TRUE ) {
 
 		VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, eventObj);
 		JL_S_ASSERT_RESOURCE(pv);
@@ -1122,7 +1122,7 @@ DEFINE_FUNCTION_FAST( sendVstEventToHost ) {
 
 DEFINE_HAS_INSTANCE() {
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == _class;
+	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
 	return JS_TRUE;
 }
 

@@ -52,12 +52,6 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 
 
 #ifdef DEBUG
-	#define J__CODE_LOCATION __FILE__ ":" J__TOSTRING(__LINE__)
-#else
-	#define J__CODE_LOCATION ""
-#endif // DEBUG
-
-#ifdef DEBUG
 	#define IFDEBUG(expr) expr
 #else
 	#define IFDEBUG(expr)
@@ -189,11 +183,6 @@ ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) 
 ///////////////////////////////////////////////////////////////////////////////
 // helper macros
 
-//#define JL_MIN(a,b) ( (a) < (b) ? (a) : (b) )
-//#define JL_MAX(a,b) ( (a) > (b) ? (a) : (b) )
-template<class T> T JL_MIN(T a, T b) { return (a) < (b) ? (a) : (b); }
-template<class T> T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b); }
-
 // BEWARE: the following helper macros are only valid inside a JS Native function definition !
 
 #define JL_ARGC (argc)
@@ -245,7 +234,7 @@ enum JLErrNum {
 // Reports a fatal errors, script must stop as soon as possible.
 #define JL_REPORT_ERROR( errorMessage, ... ) \
 JL_MACRO_BEGIN \
-	JS_ReportError( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__ ); \
+	JS_ReportError( cx, (errorMessage IFDEBUG(" (@" JL_CODE_LOCATION ")")), ##__VA_ARGS__ ); \
 	goto bad; \
 JL_MACRO_END
 
@@ -256,7 +245,7 @@ JL_MACRO_BEGIN \
 	if ( hpv != NULL && hpv->errorCallback != NULL ) \
 		JS_ReportErrorNumber(cx, hpv->errorCallback, NULL, (num), ##__VA_ARGS__); \
 	else \
-		JS_ReportError(cx, "undefined error %d", (num)); \
+		JS_ReportError(cx, "undefined nessage %d", (num)); \
 	goto bad; \
 JL_MACRO_END
 
@@ -264,7 +253,7 @@ JL_MACRO_END
 // Reports warnings (optimisation: check non-unsafeMode. see ErrorReporter() in host.cpp).
 #define JL_REPORT_WARNING( errorMessage, ... ) \
 JL_MACRO_BEGIN \
-	if (unlikely( !_unsafeMode )) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__ ); \
+	if (unlikely( !_unsafeMode )) JS_ReportWarning( cx, (errorMessage IFDEBUG(" (@" JL_CODE_LOCATION ")")), ##__VA_ARGS__ ); \
 JL_MACRO_END
 
 #define JL_REPORT_WARNING_NUM( cx, num, ... ) \
@@ -274,7 +263,7 @@ JL_MACRO_BEGIN \
 		if ( hpv != NULL && hpv->errorCallback != NULL ) \
 			JS_ReportErrorFlagsAndNumber(cx, JSREPORT_WARNING, hpv->errorCallback, NULL, (num), ##__VA_ARGS__); \
 		else \
-			JS_ReportWarning(cx, "undefined warning %d", (num)); \
+			JS_ReportWarning(cx, "undefined nessage %d", (num)); \
 	} \
 JL_MACRO_END
 
@@ -283,7 +272,7 @@ JL_MACRO_END
 #define JL_CHK( status ) \
 JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { \
-/*		IFDEBUG( fprintf(stderr, "DEBUG: JL_CHK failed" IFDEBUG(" (@" J__CODE_LOCATION ")") "\n") ); */ \
+/*		IFDEBUG( fprintf(stderr, "DEBUG: JL_CHK failed" IFDEBUG(" (@" JL_CODE_LOCATION ")") "\n") ); */ \
 		goto bad; \
 	} \
 JL_MACRO_END
@@ -295,7 +284,7 @@ JL_MACRO_END
 JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { \
 		if ( !JS_IsExceptionPending(cx) ) \
-			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__); \
+			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" JL_CODE_LOCATION ")")), ##__VA_ARGS__); \
 		goto bad; \
 	} \
 JL_MACRO_END
@@ -305,7 +294,7 @@ JL_MACRO_END
 #define JL_CHKB( status, errorLabel ) \
 JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { \
-/*	IFDEBUG( fprintf(stderr, "DEBUG: JL_CHKB(,%s) failed" IFDEBUG(" (@" J__CODE_LOCATION ")") "\n", #errorLabel ) ); */ \
+/*	IFDEBUG( fprintf(stderr, "DEBUG: JL_CHKB(,%s) failed" IFDEBUG(" (@" JL_CODE_LOCATION ")") "\n", #errorLabel ) ); */ \
 		goto errorLabel; \
 	} \
 JL_MACRO_END
@@ -316,7 +305,7 @@ JL_MACRO_END
 JL_MACRO_BEGIN \
 	if (unlikely( !(status) )) { \
 		if ( !JS_IsExceptionPending(cx) ) \
-			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" J__CODE_LOCATION ")")), ##__VA_ARGS__); \
+			JS_ReportError(cx, (errorMessage IFDEBUG(" (@" JL_CODE_LOCATION ")")), ##__VA_ARGS__); \
 		goto errorLabel; \
 	} \
 JL_MACRO_END
@@ -328,7 +317,7 @@ JL_MACRO_END
 JL_MACRO_BEGIN \
 	JL_SAFE_BEGIN \
 		if (unlikely( !(condition) )) { \
-			JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" J__CODE_LOCATION ")"), ##__VA_ARGS__ ); \
+			JS_ReportError( cx, errorMessage IFDEBUG(" (" #condition " @" JL_CODE_LOCATION ")"), ##__VA_ARGS__ ); \
 			goto bad; \
 		} \
 	JL_SAFE_END \
@@ -448,16 +437,19 @@ ALWAYS_INLINE void JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
 
 ALWAYS_INLINE JSBool JL_GetReservedSlot(JSContext *cx, JSObject *obj, uint32 index, jsval *vp) {
 
-	if (likely( _unsafeMode )) {
-
-		JL_ASSERT( OBJ_IS_NATIVE(obj) );
-		JSClass *clasp = obj->getClass();
-		JL_ASSERT( index < JSCLASS_RESERVED_SLOTS(clasp) || index < JSCLASS_RESERVED_SLOTS(clasp) + (clasp->reserveSlots ? clasp->reserveSlots(cx, obj) : 0) );
-		uint32 slot = JSSLOT_START(clasp) + index;
-		*vp = (slot < STOBJ_NSLOTS(obj)) ? STOBJ_GET_SLOT(obj, slot) : JSVAL_VOID;
-		return true;
-	}
-	return JS_GetReservedSlot(cx, obj, index, vp);
+	JL_ASSERT( OBJ_IS_NATIVE(obj) );
+	JSClass *clasp = obj->getClass();
+	JS_LOCK_OBJ(cx, obj);
+	JL_ASSERT( index < JSCLASS_RESERVED_SLOTS(clasp) || index < JSCLASS_RESERVED_SLOTS(clasp) + (clasp->reserveSlots ? clasp->reserveSlots(cx, obj) : 0) );
+	uint32 slot = JSSLOT_START(clasp) + index;
+	*vp = (slot < STOBJ_NSLOTS(obj)) ? STOBJ_GET_SLOT(obj, slot) : JSVAL_VOID;
+#ifdef DEBUG
+	jsval tmp;
+	JL_ASSERT( JS_GetReservedSlot(cx, obj, index, &tmp) == JS_TRUE );
+	JL_ASSERT( *vp == tmp ); // ensure that JL_GetReservedSlot gives the same result as JS_GetReservedSlot.
+#endif // DEBUG
+	JS_UNLOCK_OBJ(cx, obj);
+	return true;
 }
 
 ALWAYS_INLINE JSBool JL_SetReservedSlot(JSContext *cx, JSObject *obj, uint32 index, jsval v) {
@@ -803,49 +795,6 @@ ALWAYS_INLINE JSBool JL_ValueOf( JSContext *cx, jsval *val, jsval *rval ) {
 		return JS_TRUE;
 	}
 	return JSVAL_TO_OBJECT(*val)->defaultValue(cx, JSTYPE_VOID, rval);
-}
-
-// see http://unicode.org/faq/utf_bom.html#BOM
-enum JLEncodingType {
-	unknown,
-	UTF32be,
-	UTF32le,
-	UTF16be,
-	UTF16le,
-	UTF8,
-	ASCII
-};
-
-ALWAYS_INLINE JLEncodingType JLDetectEncoding(char **buf, int *size) {
-
-	if ( *size < 2 )
-		return ASCII;
-	if ( (*buf)[0] == '\xFF' && (*buf)[1] == '\xFE' ) {
-
-		*buf += 2;
-		*size -= 2;
-		return UTF16le;
-	}
-	if ( (*buf)[0] == '\xFE' && (*buf)[1] == '\xFF' ) {
-
-		*buf += 2;
-		*size -= 2;
-		return UTF16be;
-	}
-	if ( *size >= 3 && (*buf)[0] == '\xEF' && (*buf)[1] == '\xBB' && (*buf)[2] == '\xBF' ) {
-
-		*buf += 3;
-		*size -= 3;
-		return UTF8;
-	}
-	// no BOM, then guess
-	if ( (*buf)[0] > 0 && (*buf)[1] > 0 )
-		return ASCII;
-	if ( (*buf)[0] != 0 && (*buf)[1] == 0 )
-		return UTF16le;
-	if ( (*buf)[0] == 0 && (*buf)[1] != 0 )
-		return UTF16be;
-	return unknown;
 }
 
 

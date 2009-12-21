@@ -244,12 +244,13 @@ DEFINE_FUNCTION_FAST( DumpHeap )
 	 return JS_FALSE;
 }
 
-#elif // DEBUG
+#else // DEBUG
 
 DEFINE_FUNCTION_FAST( DumpHeap ) {
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
-	JL_BAD;
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
 }
 
 #endif // DEBUG
@@ -489,10 +490,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( peakMemoryUsage ) {
 
-	uint32 bytes;
-
 #ifdef XP_WIN
 
+	uint32 bytes;
 /*
 	DWORD  dwMin, dwMax;
 	HANDLE hProcess;
@@ -508,15 +508,14 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 	PROCESS_MEMORY_COUNTERS_EX pmc;
 	GetProcessMemoryInfo( hProcess, (PPROCESS_MEMORY_COUNTERS)&pmc, sizeof(pmc) ); // MEM_PRIVATE
 	bytes = pmc.PeakWorkingSetSize; // same value as "windows task manager" "peak mem usage"
-#else
-
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
-
-#endif // XP_WIN
-
 	JL_CHK( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 	JL_BAD;
+#endif // XP_WIN
+
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	*vp = JSVAL_VOID;
+	return JS_TRUE;
 }
 
 
@@ -527,9 +526,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( privateMemoryUsage ) {
 
-	uint32 bytes;
-
 #ifdef XP_WIN
+	uint32 bytes;
 	// SIZE_T is compatible with uint32
 	HANDLE hProcess = GetCurrentProcess(); // doc: (HANDLE)-1, that is interpreted as the current process handle
 	PROCESS_MEMORY_COUNTERS_EX pmc;
@@ -539,15 +537,14 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 
 //	bytes = pmc.PrivateUsage; // doc: The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE, data that is not mapped, and executable pages that have been written to.
 	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
-#else
-
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
-
-#endif // XP_WIN
-
 	JL_CHK( JS_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 	JL_BAD;
+#endif // XP_WIN
+
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	*vp = JSVAL_VOID;
+	return JS_TRUE;
 }
 
 
@@ -615,9 +612,11 @@ DEFINE_PROPERTY( gcZeal ) {
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 
-#elif // JS_GC_ZEAL
+#else // JS_GC_ZEAL
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	*vp = JSVAL_VOID;
+	return JS_TRUE;
 
 #endif // JS_GC_ZEAL
 }
@@ -1475,14 +1474,16 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 	JL_S_ASSERT_ALLOC( jsstr );
 
 	*JL_FRVAL = STRING_TO_JSVAL(jsstr);
+	return JS_TRUE;
 
 #else // DEBUG
 	
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
 
 #endif // DEBUG
 
-	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -1503,18 +1504,16 @@ DEFINE_PROPERTY( processTime ) {
 
 		char message[1024];
 		JLLastSysetmErrorMessage(message, sizeof(message));
-		JL_REPORT_ERROR("%s", message);
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, message);
 	}
 	return DoubleToJsval(cx, (kernelTime + userTime) / (double)10000 , vp);
-#else // XP_WIN
-
-	*vp = JSVAL_VOID;
+	JL_BAD;
 
 #endif // XP_WIN
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	*vp = JSVAL_VOID;
 	return JS_TRUE;
-	JL_BAD;
 }
 
 
@@ -1543,7 +1542,7 @@ DEFINE_PROPERTY( cpuLoad ) {
 
 			SetLastError(status);
 			JLLastSysetmErrorMessage(errorMessage, sizeof(errorMessage));
-			JL_REPORT_ERROR("%s", errorMessage);
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, errorMessage);
 		}
 
 		PdhAddCounter(query, TEXT("\\Processor(_Total)\\% Processor Time"), 0, &counter); // A total of ALL CPU's in the system
@@ -1556,7 +1555,7 @@ DEFINE_PROPERTY( cpuLoad ) {
 
 		SetLastError(status);
 		JLLastSysetmErrorMessage(errorMessage, sizeof(errorMessage));
-		JL_REPORT_ERROR("%s", errorMessage);
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, errorMessage);
 	}
 
 	status = PdhGetFormattedCounterValue(counter, PDH_FMT_DOUBLE | PDH_FMT_NOCAP100, &ret, &value);
@@ -1564,21 +1563,16 @@ DEFINE_PROPERTY( cpuLoad ) {
 
 		SetLastError(status);
 		JLLastSysetmErrorMessage(errorMessage, sizeof(errorMessage));
-		JL_REPORT_ERROR("%s", errorMessage);
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, errorMessage);
 	}
 
 	return DoubleToJsval(cx, value.doubleValue, vp);
-#else // XP_WIN
-
-
-	// cat /proc/stat
-
-	*vp = JSVAL_VOID;
-
+	JL_BAD;
 #endif // XP_WIN
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
-	JL_BAD;
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	*vp = JSVAL_VOID;
+	return JS_TRUE;
 }
 
 
@@ -1589,11 +1583,13 @@ DEFINE_FUNCTION_FAST( DebugOutput ) {
 	JL_CHK( JsvalToString(cx, &JL_FARG(1), &str) );
 	OutputDebugString(str);
 	*JL_FRVAL = JSVAL_TRUE;
-#endif // DEBUG
 	return JS_TRUE;
-#ifdef XP_WIN
 	JL_BAD;
 #endif // XP_WIN
+
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
 }
 
 
@@ -1671,26 +1667,23 @@ DEFINE_FUNCTION_FAST( VALGRIND_COUNT_LEAKS ) {
 #endif // VALGRIND
 
 
-#ifdef DEBUG
 DEFINE_FUNCTION_FAST( DebugBreak ) {
 
+	*JL_FRVAL = JSVAL_VOID;
+
+#ifdef DEBUG
 #if defined(WIN32)
 	DebugBreak();
 #elif defined(XP_OS2) || (defined(__GNUC__) && defined(__i386))
 	asm("int $3");
 #endif
 	return JS_TRUE;
-}
-
-#elif // DEBUG
-
-DEFINE_FUNCTION_FAST( DebugBreak ) {
-
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
-	JL_BAD;
-}
-
 #endif // DEBUG
+
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	return JS_TRUE;
+}
+
 
 
 #ifdef DEBUG

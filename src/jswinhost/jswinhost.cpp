@@ -16,25 +16,17 @@
 
 #include "jslibsModule.cpp"
 
-//#define USE_DEFAULT_ALLOCATORS // uncomment to use dtandard malloc/free
+#define NO_NED_NAMESPACE
+#define NO_MALLINFO 1
+#include "../../libs/nedmalloc/nedmalloc.h"
 
-
-#ifndef USE_DEFAULT_ALLOCATORS
 volatile bool disabledFree = false;
-
-EXTERN_C void* nedmalloc(size_t size) __THROW;
-EXTERN_C void* nedcalloc(size_t no, size_t size) __THROW;
-EXTERN_C void* nedmemalign(size_t alignment, size_t bytes) __THROW;
-EXTERN_C void* nedrealloc(void *mem, size_t size) __THROW;
-EXTERN_C void nedfree(void *mem) __THROW;
-EXTERN_C size_t nedblksize(void *mem) __THROW;
 
 void nedfree_handlenull(void *mem) {
 	
 	if ( mem != NULL && !disabledFree )
 		nedfree(mem);
 }
-#endif // USE_DEFAULT_ALLOCATORS
 
 
 // to be used in the main() function only
@@ -145,35 +137,30 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		}
 	}
 
-#ifndef USE_DEFAULT_ALLOCATORS
 	jl_malloc = nedmalloc;
 	jl_calloc = nedcalloc;
 	jl_memalign = nedmemalign;
 	jl_realloc = nedrealloc;
 	jl_msize = nedblksize;
 	jl_free = nedfree_handlenull;
-#else
+/*
 	jl_malloc = malloc;
 	jl_calloc = calloc;
 	jl_memalign = memalign;
 	jl_realloc = realloc;
 	jl_msize = msize;
 	jl_free = free;
-#endif // USE_DEFAULT_ALLOCATORS
+*/
 
-#ifndef USE_DEFAULT_ALLOCATORS
 	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 #ifdef JS_HAS_JSLIBS_RegisterCustomAllocators
 	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
 #endif // JS_HAS_JSLIBS_RegisterCustomAllocators
-#endif // USE_DEFAULT_ALLOCATORS
 
 	cx = CreateHost(-1, -1, 0);
 	JL_CHK( cx != NULL );
 
-#ifndef USE_DEFAULT_ALLOCATORS
 	MemoryManagerEnableGCEvent(cx);
-#endif // USE_DEFAULT_ALLOCATORS
 
 	HostPrivate *hpv = GetHostPrivate(cx);
 
@@ -225,11 +212,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		if ( JS_IsExceptionPending(cx) )
 			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 
-#ifndef USE_DEFAULT_ALLOCATORS
 	disabledFree = true;
 	MemoryManagerDisableGCEvent(cx);
 	FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
-#endif // USE_DEFAULT_ALLOCATORS
 
 	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	JS_SetGCCallback(cx, NULL);
@@ -244,9 +229,7 @@ bad:
 
 	if ( cx ) {
 
-#ifndef USE_DEFAULT_ALLOCATORS
 		disabledFree = true;
-#endif // USE_DEFAULT_ALLOCATORS
 		JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 		JS_SetGCCallback(cx, NULL);
 		DestroyHost(cx);

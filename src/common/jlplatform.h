@@ -36,6 +36,7 @@
 
 #define JL_BUILD ( (((__DATE__YEAR * 12 + __DATE__MONTH) * 31 + __DATE__DAY) * 24 + __DATE__HOUR) - (((2006*12 + 6)*31 + 22)*24 + 0) ) // - Aug 22, 2006
 
+#define JL_CODE_LOCATION __FILE__ ":" J__TOSTRING(__LINE__)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
@@ -269,6 +270,8 @@
 #include <fcntl.h> // _O_RDONLY, _O_WRONLY
 #include <stdio.h>
 
+template<class T> ALWAYS_INLINE T JL_MIN(T a, T b) { return (a) < (b) ? (a) : (b); } //#define JL_MIN(a,b) ( (a) < (b) ? (a) : (b) )
+template<class T> ALWAYS_INLINE T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b); } //#define JL_MAX(a,b) ( (a) > (b) ? (a) : (b) )
 
 #define JL_STATIC_ASSERT(cond) \
 	extern void jl_static_assert(int arg[(cond) ? 1 : -1])
@@ -670,11 +673,56 @@ ALWAYS_INLINE unsigned int JLRemainingStackSize() {
 }
 
 
+// see http://unicode.org/faq/utf_bom.html#BOM
+enum JLEncodingType {
+	unknown,
+	UTF32be,
+	UTF32le,
+	UTF16be,
+	UTF16le,
+	UTF8,
+	ASCII
+};
+
+ALWAYS_INLINE JLEncodingType JLDetectEncoding(char **buf, int *size) {
+
+	if ( *size < 2 )
+		return ASCII;
+	if ( (*buf)[0] == '\xFF' && (*buf)[1] == '\xFE' ) {
+
+		*buf += 2;
+		*size -= 2;
+		return UTF16le;
+	}
+	if ( (*buf)[0] == '\xFE' && (*buf)[1] == '\xFF' ) {
+
+		*buf += 2;
+		*size -= 2;
+		return UTF16be;
+	}
+	if ( *size >= 3 && (*buf)[0] == '\xEF' && (*buf)[1] == '\xBB' && (*buf)[2] == '\xBF' ) {
+
+		*buf += 3;
+		*size -= 3;
+		return UTF8;
+	}
+	// no BOM, then guess
+	if ( (*buf)[0] > 0 && (*buf)[1] > 0 )
+		return ASCII;
+	if ( (*buf)[0] != 0 && (*buf)[1] == 0 )
+		return UTF16le;
+	if ( (*buf)[0] == 0 && (*buf)[1] != 0 )
+		return UTF16be;
+	return unknown;
+}
+
+
 #define xmlLittleEndian true
+// source: libxml2 - encoding.c - MIT License
 static int
 UTF8ToUTF16LE(unsigned char* outb, int *outlen,
             const unsigned char* in, int *inlen)
-{ // libxml2 - encoding.c - MIT License
+{
     unsigned short* out = (unsigned short*) outb;
     const unsigned char* processed = in;
     const unsigned char *const instart = in;
