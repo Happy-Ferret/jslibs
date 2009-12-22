@@ -40,9 +40,9 @@ bad:
 ALWAYS_INLINE jsval ODERealToJsval( JSContext *cx, ode::dReal val ) {
 	
 	if ( val >= dInfinity )
-		return JS_GetPositiveInfinityValue(cx);
+		return cx->runtime->positiveInfinityValue; // return JS_GetPositiveInfinityValue(cx);
 	if ( val <= -dInfinity )
-		return JS_GetNegativeInfinityValue(cx);
+		return cx->runtime->negativeInfinityValue; // return JS_GetNegativeInfinityValue(cx);
 
 	jsval value;
 #if defined(dSINGLE)

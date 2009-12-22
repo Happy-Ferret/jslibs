@@ -68,8 +68,9 @@ DEFINE_CONSTRUCTOR() {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( axisIndex, rel, $TYPE vec3 axis )
+ $INAME( axisIndex, rel [, $TYPE vec3 axis ] )
   (TBD)
+  If the axis vecor is ommited, the axis is disabled.
 **/
 DEFINE_FUNCTION( SetAxis ) {
 	
@@ -78,7 +79,13 @@ DEFINE_FUNCTION( SetAxis ) {
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	int anum, rel;
 	JL_CHK( JsvalToInt(cx, JL_ARG(1), &anum) );
+	if ( !JL_ARG_ISDEF(3) ) {
+		
+		ode::dJointSetLMotorNumAxes(jointId, anum+1);
+		return JS_TRUE;
+	}
 	JL_CHK( JsvalToInt(cx, JL_ARG(2), &rel) );
+	
 	ode::dVector3 vector;
 	uint32 length;
 	JL_CHK( JsvalToFloatVector(cx, JL_ARG(3), vector, 3, &length) );

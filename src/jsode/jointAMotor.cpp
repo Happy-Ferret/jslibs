@@ -118,8 +118,9 @@ DEFINE_FUNCTION( AddTorque2 ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME()
+ $INAME( axisIndex, rel [, $TYPE vec3 axis ] )
   (TBD)
+  If the axis vecor is ommited, the axis is disabled.
 **/
 DEFINE_FUNCTION( SetAxis ) {
 	
@@ -128,6 +129,11 @@ DEFINE_FUNCTION( SetAxis ) {
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	int anum, rel;
 	JsvalToInt(cx, JL_ARG(1), &anum);
+	if ( !JL_ARG_ISDEF(3) ) {
+		
+		ode::dJointSetAMotorNumAxes(jointId, anum+1);
+		return JS_TRUE;
+	}
 	JsvalToInt(cx, JL_ARG(2), &rel);
 	ode::dVector3 vector;
 	uint32 length;

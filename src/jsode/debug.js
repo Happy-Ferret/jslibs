@@ -1,8 +1,51 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
+LoadModule('jsstd');
 LoadModule('jsode');
 
-new Body(new World());
+var w = new World();
+w.gravity = [0,0,-9.809];
+
+var floor = new GeomPlane(w.space);
+floor.body = w.env;
+
+var pod = new GeomBox(w.space);
+pod.body = new Body(w);
+pod.impact = function(n, geom1, geom2, pos) {
+	
+//	Print('hit at:', floor.PointDepth(pod.body.position).toFixed(2), '\n');
+}
+
+var m1 = new JointLMotor(w);
+m1.body1 = pod.body;
+m1.body2 = w.env;
+m1.SetAxis(0, 1, [0,0,1]);
+m1.maxForce = 15;
+m1.velocity = 10;
+
+
+//Print('m1.velocity=', m1.velocity, '\n'); Halt();
+
+
+pod.body.position = [0,0,5];
+//pod.body.angularVel = [0,0,0];
+
+m1.useFeedback = true;
+
+while ( !endSignal ) {
+	
+	Sleep(10);
+	w.Step(10);
+
+	Print(pod.body.position[0].toFixed(1),' ', pod.body.position[1].toFixed(1), ' ',pod.body.position[2].toFixed(1), '\n');
+//	Print(pod.body.angularVel, '\n');
+//	Print('force:', m1.body1Force[2].toFixed(2), '\n');
+
+}
+
+
+
+
 
 throw 0;
 
