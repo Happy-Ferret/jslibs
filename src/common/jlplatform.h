@@ -340,10 +340,10 @@ ALWAYS_INLINE int ipow(int base, int exp) {
 
 // since 9007199254740992 == 9007199254740993, we must subtract 1.
 #define MAX_INTDOUBLE \
-	( (double)(((unsigned __int64)1<<DBL_MANT_DIG)-1) )
+	( (double)(((uint64_t)1<<DBL_MANT_DIG)-1) )
 
-JL_STATIC_ASSERT( (double)MAX_INTDOUBLE != (double)MAX_INTDOUBLE+1 );
-JL_STATIC_ASSERT( (double)MAX_INTDOUBLE+1 == (double)MAX_INTDOUBLE+2 );
+JL_STATIC_ASSERT( MAX_INTDOUBLE != MAX_INTDOUBLE+1 );
+JL_STATIC_ASSERT( MAX_INTDOUBLE+1. == MAX_INTDOUBLE+2. );
 
 
 ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
