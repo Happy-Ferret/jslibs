@@ -336,7 +336,7 @@ ALWAYS_INLINE int ipow(int base, int exp) {
 	}
 	return result;
 }
-JS_STATIC_ASSERT
+
 JL_STATIC_ASSERT( DBL_MANT_DIG < 64 );
 
 // since 9007199254740992 == 9007199254740993, we must subtract 1.
