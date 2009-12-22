@@ -154,7 +154,7 @@ inline JSBool JsvalToUInt24( JSContext *cx, jsval val, uint32_t *result, bool *o
 
 	if ( JSVAL_IS_INT( val ) ) {
 
-		int v = JSVAL_TO_INT( val );
+		unsigned int v = JSVAL_TO_INT( val );
 		*outOfRange = v < 0 || v > (0xFFFFFFUL);
 		*result = (uint32_t)v;
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {

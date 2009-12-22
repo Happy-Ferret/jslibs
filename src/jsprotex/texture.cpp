@@ -265,6 +265,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLe
 		if ( *color++ == '#' && (length-1) / 2 >= levelMaxLength ) {
 
 			unsigned char val;
+			val = 0;
 			for ( i = 0; i < levelMaxLength; i++ ) {
 
 				if ( *color >= '0' && *color <= '9' ) val = *color - '0';
@@ -1405,6 +1406,8 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 				break;
 //			case desaturateLuminosity: // see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimprgb.h?revision=19720&view=markup
 //				break;
+			default:
+				JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
 		}
 		*dPos = val;
 		dPos++;
@@ -1793,9 +1796,6 @@ DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
 
 			pos = (x + y * width) * channels;
 			switch ( turn ) {
-				case 0:
-					pos1 = pos;
-					break;
 				case 1:
 					pos1 = ((width-1-y) + (x) * width) * channels;
 					break;
@@ -1804,6 +1804,10 @@ DEFINE_FUNCTION_FAST( Rotate90 ) { // (TBD) test it
 					break;
 				case 3:
 					pos1 = ((y) + (height-1-x) * width) * channels;
+					break;
+				case 0:
+				default:
+					pos1 = pos;
 					break;
 			}
 			for ( c = 0; c < channels; c++ )

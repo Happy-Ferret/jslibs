@@ -1423,11 +1423,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DisassembleScript ) {
 
+#ifdef DEBUG 
+
 	jl::Queue *scriptFileList = NULL;
 
 	JL_S_ASSERT_ARG(2);
-
-#ifdef DEBUG 
 	
 	const char *filename;
 	unsigned int lineno;
