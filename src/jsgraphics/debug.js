@@ -9,6 +9,12 @@ LoadModule('jstrimesh');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
 
+var e = QuaternionToEuler(EulerToQuaternion([-0.1, -0.2, -0.3]));
+Print( e, '\n' );
+
+Halt();
+
+
 // OpenGl doc: http://www.opengl.org/sdk/docs/man/
 
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync

@@ -1537,6 +1537,7 @@ ALWAYS_INLINE JSBool IntVectorToJsval( JSContext *cx, int *vector, uint32 length
 
 		JL_S_ASSERT_OBJECT(*val);
 		arrayObj = JSVAL_TO_OBJECT(*val);
+		JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
 	} else {
 
 		arrayObj = JS_NewArrayObject(cx, length, NULL);
@@ -1580,6 +1581,7 @@ ALWAYS_INLINE JSBool UIntVectorToJsval( JSContext *cx, unsigned int *vector, uin
 
 		JL_S_ASSERT_OBJECT(*val);
 		arrayObj = JSVAL_TO_OBJECT(*val);
+		JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
 	} else {
 
 		arrayObj = JS_NewArrayObject(cx, length, NULL);
@@ -1623,6 +1625,7 @@ ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, uin
 
 		JL_S_ASSERT_OBJECT(*val);
 		arrayObj = JSVAL_TO_OBJECT(*val);
+		JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
 	} else {
 
 		arrayObj = JS_NewArrayObject(cx, length, NULL);
@@ -1665,6 +1668,7 @@ ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, u
 
 		JL_S_ASSERT_OBJECT(*val);
 		arrayObj = JSVAL_TO_OBJECT(*val);
+		JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
 	} else {
 
 		arrayObj = JS_NewArrayObject(cx, length, NULL);
