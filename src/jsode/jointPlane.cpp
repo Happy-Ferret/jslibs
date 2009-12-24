@@ -40,12 +40,15 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
 	ode::dJointGroupID groupId;
-	JL_S_ASSERT_OBJECT( JL_ARG(2) );
-	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
-	if ( JL_ARG_ISDEF(2) )
+	if ( JL_ARG_ISDEF(2) ) {
+
+		JL_S_ASSERT_OBJECT( JL_ARG(2) );
+		JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
 		groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(2)));
-	else
+	} else {
+		
 		groupId = 0;
+	}
 
 	ode::dWorldID worldId;
 	JL_CHK( JsvalToWorldID( cx, JL_ARG(1), &worldId) );
@@ -67,10 +70,10 @@ $TOC_MEMBER $INAME
  $INAME()
 
 **/
-DEFINE_FUNCTION( ResetBody ) {
+DEFINE_FUNCTION_FAST( ResetBody ) {
 
 	// fc. http://opende.sourceforge.net/wiki/index.php/Manual_(Joint_Types_and_Functions)#Plane_2D
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 
 	ode::dBodyID bodyId = ode::dJointGetBody(jointId, 0);
@@ -123,7 +126,7 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(2) // body1, body2
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_ARGC( ResetBody, 0 )
+		FUNCTION_FAST_ARGC( ResetBody, 0 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

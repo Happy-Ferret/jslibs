@@ -41,12 +41,15 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
 	ode::dJointGroupID groupId;
+	if ( JL_ARG_ISDEF(2) ) {
+
 	JL_S_ASSERT_OBJECT( JL_ARG(2) );
 	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
-	if ( JL_ARG_ISDEF(2) )
 		groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(2)));
-	else
+	} else {
+
 		groupId = 0;
+	}
 
 	ode::dWorldID worldId;
 	JL_CHK( JsvalToWorldID( cx, JL_ARG(1), &worldId) );
@@ -68,13 +71,13 @@ $TOC_MEMBER $INAME
  $INAME()
   dJointAddAMotorTorques
 **/
-DEFINE_FUNCTION( AddTorque0 ) {
+DEFINE_FUNCTION_FAST( AddTorque0 ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	float torque;
-	JL_CHK( JsvalToFloat(cx, JL_ARG(1), &torque) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &torque) );
 	ode::dJointAddAMotorTorques(jointId, torque,0,0);
 	return JS_TRUE;
 	JL_BAD;
@@ -85,13 +88,13 @@ $TOC_MEMBER $INAME
  $INAME()
   dJointAddAMotorTorques
 **/
-DEFINE_FUNCTION( AddTorque1 ) {
+DEFINE_FUNCTION_FAST( AddTorque1 ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	float torque;
-	JL_CHK( JsvalToFloat(cx, JL_ARG(1), &torque) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &torque) );
 	ode::dJointAddAMotorTorques(jointId, 0,torque,0);
 	return JS_TRUE;
 	JL_BAD;
@@ -102,13 +105,13 @@ $TOC_MEMBER $INAME
  $INAME()
   dJointAddAMotorTorques
 **/
-DEFINE_FUNCTION( AddTorque2 ) {
+DEFINE_FUNCTION_FAST( AddTorque2 ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	float torque;
-	JL_CHK( JsvalToFloat(cx, JL_ARG(1), &torque) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &torque) );
 	ode::dJointAddAMotorTorques(jointId, 0,0,torque);
 	return JS_TRUE;
 	JL_BAD;
@@ -122,22 +125,22 @@ $TOC_MEMBER $INAME
   (TBD)
   If the axis vecor is ommited, the axis is disabled.
 **/
-DEFINE_FUNCTION( SetAxis ) {
+DEFINE_FUNCTION_FAST( SetAxis ) {
 	
 	JL_S_ASSERT_ARG_MIN( 3 );
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	int anum, rel;
-	JsvalToInt(cx, JL_ARG(1), &anum);
-	if ( !JL_ARG_ISDEF(3) ) {
+	JsvalToInt(cx, JL_FARG(1), &anum);
+	if ( !JL_FARG_ISDEF(3) ) {
 		
 		ode::dJointSetAMotorNumAxes(jointId, anum+1);
 		return JS_TRUE;
 	}
-	JsvalToInt(cx, JL_ARG(2), &rel);
+	JsvalToInt(cx, JL_FARG(2), &rel);
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, JL_ARG(3), vector, 3, &length) );
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 
 	if ( anum+1 > ode::dJointGetAMotorNumAxes(jointId) )
@@ -154,16 +157,16 @@ $TOC_MEMBER $INAME
  $INAME( axisIndex, angle )
   (TBD)
 **/
-DEFINE_FUNCTION( SetAngle ) {
+DEFINE_FUNCTION_FAST( SetAngle ) {
 	
 	JL_S_ASSERT_ARG(2);
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	
 	int anum;
 	float angle;
-	JsvalToInt(cx, JL_ARG(1), &anum);
-	JsvalToFloat(cx, JL_ARG(2), &angle);
+	JsvalToInt(cx, JL_FARG(1), &anum);
+	JsvalToFloat(cx, JL_FARG(2), &angle);
 
 	if ( anum+1 > ode::dJointGetAMotorNumAxes(jointId) )
 		ode::dJointSetAMotorNumAxes(jointId, anum+1);
@@ -254,11 +257,11 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(2) // body1, body2
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_ARGC( SetAxis, 3 )
-		FUNCTION_ARGC( SetAngle, 2 )
-		FUNCTION_ARGC( AddTorque0, 1 )
-		FUNCTION_ARGC( AddTorque1, 1 )
-		FUNCTION_ARGC( AddTorque2, 1 )
+		FUNCTION_FAST_ARGC( SetAxis, 3 )
+		FUNCTION_FAST_ARGC( SetAngle, 2 )
+		FUNCTION_FAST_ARGC( AddTorque0, 1 )
+		FUNCTION_FAST_ARGC( AddTorque1, 1 )
+		FUNCTION_FAST_ARGC( AddTorque2, 1 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

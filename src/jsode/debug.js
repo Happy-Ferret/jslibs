@@ -9,43 +9,36 @@ w.gravity = [0,0,-9.809];
 var floor = new GeomPlane(w.space);
 floor.body = w.env;
 
-var pod = new GeomBox(w.space);
-pod.body = new Body(w);
-pod.impact = function(n, geom1, geom2, pos) {
-	
-//	Print('hit at:', floor.PointDepth(pod.body.position).toFixed(2), '\n');
-}
-
 var m1 = new JointLMotor(w);
-m1.body1 = pod.body;
-m1.body2 = w.env;
+m1.body1 = new Body(w);
+m1.body1.position = [0,0,0];
 m1.SetAxis(0, 1, [0,0,1]);
-m1.maxForce = 15;
-m1.velocity = 10;
+m1.maxForce = 100;
+m1.velocity = 20;
 
+var m2 = new JointLMotor(w);
+m2.body1 = new Body(w);
+m2.body1.position = [1,0,0];
+m2.SetAxis(0, 1, [0,0,1]);
+m2.maxForce = 100;
+m2.velocity = 20;
 
-//Print('m1.velocity=', m1.velocity, '\n'); Halt();
-
-
-pod.body.position = [0,0,5];
-//pod.body.angularVel = [0,0,0];
-
-m1.useFeedback = true;
+var j1 = new JointFixed(w);
+j1.body1 = m2.body1;
+j1.body2 = m1.body1;
+j1.Set();
 
 while ( !endSignal ) {
 	
 	Sleep(10);
 	w.Step(10);
-
-	Print(pod.body.position[0].toFixed(1),' ', pod.body.position[1].toFixed(1), ' ',pod.body.position[2].toFixed(1), '\n');
-//	Print(pod.body.angularVel, '\n');
+	
+	var p = m1.body1.position;
+	Print(p[0].toFixed(3),' ', p[1].toFixed(3), ' ',p[2].toFixed(3), '         \r');
+//	Print(b1.angularVel, '                                      \r');
 //	Print('force:', m1.body1Force[2].toFixed(2), '\n');
 
 }
-
-
-
-
 
 throw 0;
 

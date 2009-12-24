@@ -131,8 +131,9 @@ $TOC_MEMBER $INAME
  $INAME()
   dGeomSetData NULL, dGeomDestroy
 **/
-DEFINE_FUNCTION( Destroy ) {
+DEFINE_FUNCTION_FAST( Destroy ) {
 
+	JSObject *obj = JL_FOBJ;
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geomId );
 	ode::dGeomDestroy(geomId);
@@ -508,7 +509,7 @@ CONFIGURE_CLASS
 //	HAS_PRIVATE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Destroy )
+		FUNCTION_FAST( Destroy )
 		FUNCTION_FAST( PointDepth )
 	END_FUNCTION_SPEC
 

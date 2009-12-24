@@ -124,8 +124,9 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   TBD dBodyDestroy
 **/
-DEFINE_FUNCTION( Destroy ) {
+DEFINE_FUNCTION_FAST( Destroy ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_CLASS(obj, JL_CLASS(Body));
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId ); // (TBD) manage world-connected ( when bodyId == 0 )
@@ -151,14 +152,15 @@ $TOC_MEMBER $INAME
  $BOOL $INAME( _body_ )
   TBD dAreConnected
 **/
-DEFINE_FUNCTION( IsConnectedTo ) {
-
+DEFINE_FUNCTION_FAST( IsConnectedTo ) {
+	
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_CLASS(obj, JL_CLASS(Body));
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( thisBodyID );
 	ode::dBodyID otherBodyId;
-	JL_CHK( JsvalToBody(cx, argv[0], &otherBodyId) );
+	JL_CHK( JsvalToBody(cx, JL_FARG(1), &otherBodyId) );
 	ode::dAreConnected(thisBodyID, otherBodyId);
 	return JS_TRUE;
 	JL_BAD;
@@ -273,9 +275,9 @@ DEFINE_FUNCTION_FAST( AddTorque ) {
 $TOC_MEMBER $INAME
  $VOID $INAME()
 **/
-DEFINE_FUNCTION( SetDampingDefaults ) {
+DEFINE_FUNCTION_FAST( SetDampingDefaults ) {
 
-	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, obj );
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_FOBJ );
 	JL_S_ASSERT_RESOURCE( bodyId );
 	ode::dBodySetDampingDefaults(bodyId);
 	return JS_TRUE;
@@ -787,13 +789,13 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Destroy )
-		FUNCTION( IsConnectedTo )
+		FUNCTION_FAST( Destroy )
+		FUNCTION_FAST_ARGC( IsConnectedTo, 1 )
 		FUNCTION_FAST_ARGC( GetGeom, 1 )
 		FUNCTION_FAST_ARGC( GetJoint, 1 )
 		FUNCTION_FAST_ARGC( AddForce, 1 )
 		FUNCTION_FAST_ARGC( AddTorque, 1 )
-		FUNCTION( SetDampingDefaults )
+		FUNCTION_FAST_ARGC( SetDampingDefaults, 0 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

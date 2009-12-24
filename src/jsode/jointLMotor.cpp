@@ -72,23 +72,23 @@ $TOC_MEMBER $INAME
   (TBD)
   If the axis vecor is ommited, the axis is disabled.
 **/
-DEFINE_FUNCTION( SetAxis ) {
+DEFINE_FUNCTION_FAST( SetAxis ) {
 	
 	JL_S_ASSERT_ARG_MIN( 3 );
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	int anum, rel;
-	JL_CHK( JsvalToInt(cx, JL_ARG(1), &anum) );
-	if ( !JL_ARG_ISDEF(3) ) {
+	JL_CHK( JsvalToInt(cx, JL_FARG(1), &anum) );
+	if ( !JL_FARG_ISDEF(3) ) {
 		
 		ode::dJointSetLMotorNumAxes(jointId, anum+1);
 		return JS_TRUE;
 	}
-	JL_CHK( JsvalToInt(cx, JL_ARG(2), &rel) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &rel) );
 	
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, JL_ARG(3), vector, 3, &length) );
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 
 	if ( anum+1 > ode::dJointGetLMotorNumAxes(jointId) )
@@ -114,7 +114,7 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(2) // body1, body2
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_ARGC( SetAxis, 3 )
+		FUNCTION_FAST_ARGC( SetAxis, 3 )
 	END_FUNCTION_SPEC
 
 END_CLASS

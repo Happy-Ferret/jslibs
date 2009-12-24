@@ -26,7 +26,7 @@ void FinalizeJoint(JSContext *cx, JSObject *obj) {
 	JS_free(cx, ode::dJointGetFeedback(jointId)); // NULL is supported
 	ode::dJointSetFeedback(jointId, NULL);
 	ode::dJointSetData(jointId, NULL);
-	if ( ode::dJointGetNumBodies(jointId) == 0 /*|| _odeFinalization*/ ) // geom is lost (limbo).
+	if ( ode::dJointGetNumBodies(jointId) == 0 /*|| _odeFinalization*/ ) // joint is lost (limbo).
 		ode::dJointDestroy(jointId);
 }
 
@@ -115,8 +115,9 @@ $TOC_MEMBER $INAME
  $INAME()
   TBD
 **/
-DEFINE_FUNCTION( Destroy ) {
+DEFINE_FUNCTION_FAST( Destroy ) {
 
+	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( jointId );
@@ -597,7 +598,7 @@ CONFIGURE_CLASS
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Destroy )
+		FUNCTION_FAST( Destroy )
 //		FUNCTION( GetBody )
 	END_FUNCTION_SPEC
 

@@ -39,12 +39,15 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
 	ode::dJointGroupID groupId;
-	JL_S_ASSERT_OBJECT( JL_ARG(2) );
-	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
-	if ( JL_ARG_ISDEF(2) )
+	if ( JL_ARG_ISDEF(2) ) {
+	
+		JL_S_ASSERT_OBJECT( JL_ARG(2) );
+		JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
 		groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(2)));
-	else
+	} else {
+
 		groupId = 0;
+	}
 	
 	ode::dWorldID worldId;
 	JL_CHK( JsvalToWorldID( cx, JL_ARG(1), &worldId) );
@@ -65,9 +68,9 @@ $TOC_MEMBER $INAME
  $INAME()
   Set the current position of body1 and body2 as fixed.
 **/
-DEFINE_FUNCTION( Set ) {
+DEFINE_FUNCTION_FAST( Set ) {
 
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dJointSetFixed(jointId);
 	return JS_TRUE;
@@ -85,7 +88,7 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(2) // body1, body2
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Set )
+		FUNCTION_FAST( Set )
 	END_FUNCTION_SPEC
 
 END_CLASS

@@ -46,8 +46,9 @@ DEFINE_CONSTRUCTOR() {
 $TOC_MEMBER $INAME
  $VOID $INAME()
 **/
-DEFINE_FUNCTION( Destroy ) {
+DEFINE_FUNCTION_FAST( Destroy ) {
 	
+	JSObject *obj = JL_FOBJ;
 	ode::dJointGroupID groupId = (ode::dJointGroupID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(groupId);
 	ode::dJointGroupDestroy(groupId);
@@ -60,9 +61,9 @@ DEFINE_FUNCTION( Destroy ) {
 $TOC_MEMBER $INAME
  $VOID $INAME()
 **/
-DEFINE_FUNCTION( Empty ) {
+DEFINE_FUNCTION_FAST( Empty ) {
 
-	ode::dJointGroupID groupId = (ode::dJointGroupID)JL_GetPrivate(cx, obj);
+	ode::dJointGroupID groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(groupId);
 	ode::dJointGroupEmpty(groupId);
 	return JS_TRUE;
@@ -77,8 +78,8 @@ CONFIGURE_CLASS
 	HAS_PRIVATE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Destroy )
-		FUNCTION( Empty )
+		FUNCTION_FAST( Destroy )
+		FUNCTION_FAST( Empty )
 	END_FUNCTION_SPEC
 
 END_CLASS

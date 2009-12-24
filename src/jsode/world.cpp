@@ -346,6 +346,8 @@ DEFINE_FUNCTION( Step ) {
 /**doc
 $TOC_MEMBER $INAME
  $INAME( $TYPE vec3 force, stepSize )
+  _stepSize_ is the step size for the next step that will be taken. 
+
 **/
 DEFINE_FUNCTION_FAST( ScaleImpulse ) {
 
@@ -552,8 +554,8 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Step )
-		FUNCTION_FAST( ScaleImpulse )
+		FUNCTION_ARGC( Step, 1 ) // not FAST because colide is called from here
+		FUNCTION_FAST_ARGC( ScaleImpulse, 2 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
