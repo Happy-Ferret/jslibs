@@ -251,10 +251,10 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_CHK( JS_SetPropertyAttributes(cx, obj, cs->xclasp.base.name, JSPROP_READONLY | JSPROP_PERMANENT, &found) );
 	JL_ASSERT( found ); // "Unable to set class flags."
 
-	JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( cs->init )
-		JL_CHK( cs->init(cx, obj) );
+		JL_CHK( cs->init(cx, staticDest) );
 
 	return JS_TRUE;
 	JL_BAD;

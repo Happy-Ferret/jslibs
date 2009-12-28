@@ -10,6 +10,11 @@ LoadModule('jssdl');
 LoadModule('jsgraphics');
 
 var e = QuaternionToEuler(EulerToQuaternion([-0.1, -0.2, -0.3]));
+var e = AxisAngleToQuaternion(QuaternionToAxisAngle([.1,.2,.3,.4]) );
+
+
+e = Vector3Length([2,2,2], [1,1,1]);
+
 Print( e, '\n' );
 
 Halt();

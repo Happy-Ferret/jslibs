@@ -437,7 +437,15 @@ DEFINE_PROPERTY_GETTER( caption ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME
   Sets/Gets the input grab state.
-  Grabbing means that the mouse is confined to the application window, and nearly all keyboard input is passed directly to the application, and not interpreted by a window manager, if any.
+  Grabbing means that the mouse is confined to the application window, 
+  and nearly all keyboard input is passed directly to the application, 
+  and not interpreted by a window manager, if any.$LF
+  To simulate an endless mouse surface, use $INAME like this:
+{{{
+ showCursor = false;
+ grabInput = true;
+}}}
+
 **/
 DEFINE_PROPERTY_SETTER( grabInput ) {
 
@@ -521,7 +529,7 @@ DEFINE_PROPERTY( videoDriverName ) {
 
 
 // see PollEvent
-JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval *rval ) {
+JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval *rval, bool *fired ) {
 
 	jsval fVal;
 
@@ -535,6 +543,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 					ev->active.gain == 1 ? JSVAL_TRUE : JSVAL_FALSE
 				};
 				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
+				*fired = true;
 			}
 			break;
 
@@ -556,6 +565,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 				JSBool status = JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
 				JL_CHK( status );
+				*fired = true;
 			}
 			break;
 
@@ -574,6 +584,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 				};
 				// no argv GC protection needed.
 				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
+				*fired = true;
 			}
 			break;
 
@@ -593,6 +604,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 				};
 				// no argv GC protection needed.
 				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
+				*fired = true;
 			}
 			break;
 
@@ -602,6 +614,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 
 				// no argv GC protection needed.
 				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, 0, NULL, rval) );
+				*fired = true;
 			}
 			break;
 
@@ -616,6 +629,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 				};
 				// no argv GC protection needed.
 				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
+				*fired = true;
 			}
 			break;
 
@@ -625,10 +639,14 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 
 				// no argv GC protection needed.
 				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, 0, NULL, rval) );
+				*fired = true;
 			}
 			break;
+		default:
+			*fired = false;
 	}
-	return JS_IsExceptionPending(cx) ? JS_FALSE : JS_TRUE; // (TBD) why this line is needed ?
+//	return JS_IsExceptionPending(cx) ? JS_FALSE : JS_TRUE; // (TBD) why this line is needed ?
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -656,7 +674,7 @@ $TOC_MEMBER $INAME
    }
    }}}
 **/
-DEFINE_FUNCTION_FAST( PollEvent ) {
+DEFINE_FUNCTION( PollEvent ) {
 
 	SDL_Event ev;
 	SDL_PumpEvents();
@@ -669,17 +687,18 @@ DEFINE_FUNCTION_FAST( PollEvent ) {
 
 	if ( status == 0 ) {
 		
-		*JL_FRVAL = JSVAL_FALSE;
+		*JL_RVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}
 
-	if ( JL_FARG_ISDEF(1) ) {
-	
-		JL_S_ASSERT_OBJECT( JL_FARG(1) );
-		JL_CHK( FireListener(cx, JSVAL_TO_OBJECT(JL_FARG(1)), &ev, JL_FRVAL) );
+	if ( JL_ARG_ISDEF(1) ) {
+		
+		bool fired;
+		JL_S_ASSERT_OBJECT( JL_ARG(1) );
+		JL_CHK( FireListener(cx, JSVAL_TO_OBJECT(JL_ARG(1)), &ev, JL_RVAL, &fired) );
 	}
 
-	*JL_FRVAL = JSVAL_TRUE;
+	*JL_RVAL = JSVAL_TRUE;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1022,7 +1041,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( GlSwapBuffers )
 		FUNCTION_FAST_ARGC( GlSetAttribute, 2 )
 		FUNCTION_FAST_ARGC( GlGetAttribute, 1 )
-		FUNCTION_FAST_ARGC( PollEvent, 1 )
+		FUNCTION_ARGC( PollEvent, 1 )
 		FUNCTION_FAST_ARGC( WarpMouse, 2 )
 		FUNCTION_FAST_ARGC( SetCursor, 1 )
 		FUNCTION_FAST_ARGC( GetKeyState, 1 )

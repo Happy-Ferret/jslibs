@@ -61,7 +61,9 @@ DEFINE_FUNCTION_FAST( NewVector3 ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $REAL $INAME( vector | x [,y,z] )
+ $REAL $INAME( vector )
+ $REAL $INAME( vector, vector2 )
+ $REAL $INAME( x,y,z )
   {{{
   $INAME(1,2,3) == $INAME([1,2,3]);
   }}}
@@ -74,7 +76,17 @@ DEFINE_FUNCTION_FAST( Vector3Length ) {
 		uint32 len;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v.raw, 3, &len) );
 		JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
-	}
+	} else
+	if ( argc == 2 ) {
+
+		Vector3 v2;
+		uint32 len;
+		JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v.raw, 3, &len) );
+		JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), v2.raw, 3, &len) );
+		JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+		Vector3SubVector3(&v, &v, &v2);
+	} else
 	if ( argc == 3 ) {
 
 		JL_CHK( JsvalToFloat(cx, JL_FARG(1), &v.x) );
@@ -89,7 +101,7 @@ DEFINE_FUNCTION_FAST( Vector3Length ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $ARRAY $INAME( vector )
+ $ARRAY $INAME( vector [ , dest ] )
   $H example 1
   {{{
   var v = [6,7,8];
@@ -111,7 +123,7 @@ DEFINE_FUNCTION_FAST( Vector3Normalize ) {
 
 	Vector3Normalize(&v, &v);
 
-	*JL_FRVAL = JL_FARG(1);
+	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
 	return FloatVectorToJsval(cx, v.raw, 3, JL_FRVAL, true);
 	JL_BAD;
 }
@@ -119,7 +131,7 @@ DEFINE_FUNCTION_FAST( Vector3Normalize ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $ARRAY $INAME( vector, vector2 )
+ $ARRAY $INAME( vector, vector2 [ , dest ] )
   vector += vector2
 **/
 DEFINE_FUNCTION_FAST( Vector3Add ) {
@@ -133,7 +145,7 @@ DEFINE_FUNCTION_FAST( Vector3Add ) {
 
 	Vector3AddVector3(&v, &v, &v2);
 
-	*JL_FRVAL = JL_FARG(1);
+	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(3) ? 3 : 1);
 	return FloatVectorToJsval(cx, v.raw, 3, JL_FRVAL, true);
 	JL_BAD;
 }
@@ -141,7 +153,7 @@ DEFINE_FUNCTION_FAST( Vector3Add ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $ARRAY $INAME( vector, vector2 )
+ $ARRAY $INAME( vector, vector2 [ , dest ] )
   vector -= vector2
 **/
 DEFINE_FUNCTION_FAST( Vector3Sub ) {
@@ -155,7 +167,7 @@ DEFINE_FUNCTION_FAST( Vector3Sub ) {
 
 	Vector3SubVector3(&v, &v, &v2);
 
-	*JL_FRVAL = JL_FARG(1);
+	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(3) ? 3 : 1);
 	return FloatVectorToJsval(cx, v.raw, 3, JL_FRVAL, true);
 	JL_BAD;
 }
@@ -163,7 +175,7 @@ DEFINE_FUNCTION_FAST( Vector3Sub ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $ARRAY $INAME( vector, vector2 )
+ $ARRAY $INAME( vector, vector2 [ , dest ] )
   vector *= vector2
 **/
 DEFINE_FUNCTION_FAST( Vector3Cross ) {
@@ -177,7 +189,7 @@ DEFINE_FUNCTION_FAST( Vector3Cross ) {
 
 	Vector3Cross(&v, &v, &v2);
 
-	*JL_FRVAL = JL_FARG(1);
+	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(3) ? 3 : 1);
 	return FloatVectorToJsval(cx, v.raw, 3, JL_FRVAL, true);
 	JL_BAD;
 }
@@ -185,7 +197,7 @@ DEFINE_FUNCTION_FAST( Vector3Cross ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $REAL $INAME( vector, vector2 )
+ $REAL $INAME( vector, vector2 [ , dest ] )
   vector . vector2
 **/
 DEFINE_FUNCTION_FAST( Vector3Dot ) {
@@ -196,6 +208,8 @@ DEFINE_FUNCTION_FAST( Vector3Dot ) {
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), v2.raw, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+
+	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(3) ? 3 : 1);
 	return FloatToJsval(cx, Vector3Dot(&v, &v2), JL_FRVAL);
 	JL_BAD;
 }
@@ -364,7 +378,9 @@ DEFINE_FUNCTION_FAST( QuaternionToEuler ) {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE vec4 $INAME( $TYPE vec3 src [, $TYPE vec4 dest] )
-  if _dest is $UNDEF, _src_ is used to store the result.
+  If _dest is omited, the result is stored in _src_.$LF
+  To store the result in a new array, use: `$INAME( str, [] );`
+
 **/
 DEFINE_FUNCTION_FAST( EulerToQuaternion ) {
 
@@ -414,6 +430,87 @@ DEFINE_FUNCTION_FAST( EulerToQuaternion ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME( $TYPE vec4 src [, $TYPE vec4 dest] )
+  _dest_ has the following form: [ x, y, z, angle ]
+  If _dest is omited, the result is stored in _src_.$LF
+**/
+DEFINE_FUNCTION_FAST( QuaternionToAxisAngle ) {
+
+	Vector4 quat;
+	uint32 len;
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), quat.raw, 4, &len) );
+	JL_S_ASSERT( len == 4, "Invalid quaternion." );
+
+	float halfAngle, sn;
+	halfAngle = acosf(quat.w);
+	sn = sinf(halfAngle);
+
+	if ( sn > 0.00001f || sn < -0.00001f ) {
+
+		Vector4Div(&quat, &quat, sn);
+		quat.w = halfAngle * 2.f;
+	} else {
+
+		Vector4Set(&quat, 0,0,0,0);
+	}
+
+	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
+	JL_CHK( FloatVectorToJsval(cx, quat.raw, 4, JL_FRVAL, true) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME( $TYPE vec4 src [, $TYPE vec4 dest] )
+  _src_ has the following form: [ x, y, z, angle ]
+**/
+DEFINE_FUNCTION_FAST( AxisAngleToQuaternion ) {
+
+	Vector4 axisAngle;
+	uint32 len;
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), axisAngle.raw, 4, &len) );
+	JL_S_ASSERT( len == 4, "Invalid quaternion." );
+
+	float halfAngle, cs, sn;
+	halfAngle = axisAngle.w / 2.f;
+	cs = cosf(halfAngle);
+	sn = sinf(halfAngle);
+
+	Vector4Mult(&axisAngle, &axisAngle, sn);
+	axisAngle.w = cs;
+
+	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
+	JL_CHK( FloatVectorToJsval(cx, axisAngle.raw, 4, JL_FRVAL, true) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME( $TYPE matrix44 matrix )
+**/
+DEFINE_FUNCTION_FAST( GetMatrix ) {
+
+	JL_S_ASSERT_ARG(1);
+	float tmp[16], *m = tmp;
+
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JSObject *matrixObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
+	JL_S_ASSERT( fct, "Invalid Matrix44 interface." );
+	JL_CHK( fct(cx, matrixObj, &m) );
+	JL_CHK( FloatVectorToJsval(cx, m, 16, JL_FRVAL, false) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
@@ -430,6 +527,10 @@ CONFIGURE_STATIC
 		FUNCTION_FAST_ARGC( BoxToCircumscribedSphere, 1 )
 		FUNCTION_FAST_ARGC( QuaternionToEuler, 1 )
 		FUNCTION_FAST_ARGC( EulerToQuaternion, 1 )
+		FUNCTION_FAST_ARGC( QuaternionToAxisAngle, 1 )
+		FUNCTION_FAST_ARGC( AxisAngleToQuaternion, 1 )
+		
+		FUNCTION_FAST_ARGC( GetMatrix, 1 )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

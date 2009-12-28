@@ -26,8 +26,8 @@ static JSBool ReadMatrix( JSContext *cx, JSObject *obj, float **pm) { // Doc: __
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 
-	const ode::dReal *m43 = dBodyGetRotation(bodyId);
-	const ode::dReal *pos = dBodyGetPosition(bodyId);
+	const ode::dReal *m43 = ode::dBodyGetRotation(bodyId);
+	const ode::dReal *pos = ode::dBodyGetPosition(bodyId);
 // (TBD) need center of mass ajustement ?
 	float *m = *pm;
 	m[0]  = m43[0];
@@ -283,6 +283,29 @@ DEFINE_FUNCTION_FAST( SetDampingDefaults ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( vector [ , dest ] )
+**/
+DEFINE_FUNCTION_FAST( Vector3ToWorld ) {
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_FOBJ );
+	JL_S_ASSERT_RESOURCE( bodyId );
+
+	Vector3 v;
+	uint32 len;
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v.raw, 3, &len) );
+	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+	ode::dVector3 result;
+	ode::dBodyVectorToWorld(bodyId, v.x, v.y, v.z, result);
+//	ode::dBodyGetRelPointPos(bodyId, v.x, v.y, v.z, result);
+	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
+	return FloatVectorToJsval(cx, result, 3, JL_FRVAL, true);
+	JL_BAD;
+}
+
 
 
 /**doc
@@ -796,6 +819,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( AddForce, 1 )
 		FUNCTION_FAST_ARGC( AddTorque, 1 )
 		FUNCTION_FAST_ARGC( SetDampingDefaults, 0 )
+		FUNCTION_FAST_ARGC( Vector3ToWorld, 2 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

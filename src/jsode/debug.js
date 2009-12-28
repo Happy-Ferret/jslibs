@@ -1,43 +1,179 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
 LoadModule('jsstd');
-LoadModule('jsode');
+Exec('../common/tools.js');
 
 var w = new World();
 w.gravity = [0,0,-9.809];
+w.gravity = [0,0,0];
 
-var floor = new GeomPlane(w.space);
-floor.body = w.env;
+//var floor = new GeomPlane(w.space);
+//floor.body = w.env;
 
 var m1 = new JointLMotor(w);
 m1.body1 = new Body(w);
-m1.body1.position = [0,0,0];
+m1.body1.position = [-2,0,0];
 m1.SetAxis(0, 1, [0,0,1]);
-m1.maxForce = 100;
-m1.velocity = 20;
+m1.maxForce = 0;
+m1.velocity = Infinity;
 
 var m2 = new JointLMotor(w);
 m2.body1 = new Body(w);
-m2.body1.position = [1,0,0];
+m2.body1.position = [2,0,0];
 m2.SetAxis(0, 1, [0,0,1]);
-m2.maxForce = 100;
-m2.velocity = 20;
+m2.maxForce = 0;
+m2.velocity = Infinity;
+
+var center = new Body(w);
+center.position = [0,0,0];
 
 var j1 = new JointFixed(w);
-j1.body1 = m2.body1;
+j1.body1 = center;
 j1.body2 = m1.body1;
 j1.Set();
 
-while ( !endSignal ) {
-	
-	Sleep(10);
-	w.Step(10);
-	
-	var p = m1.body1.position;
-	Print(p[0].toFixed(3),' ', p[1].toFixed(3), ' ',p[2].toFixed(3), '         \r');
-//	Print(b1.angularVel, '                                      \r');
-//	Print('force:', m1.body1Force[2].toFixed(2), '\n');
+var j2 = new JointFixed(w);
+j2.body1 = center;
+j2.body2 = m2.body1;
+j2.Set();
 
+var env3d = new Env3D();
+
+var aim = [10,0,10];
+
+while ( true ) {
+
+//
+
+	var len1 = Vector3Length(Vector3Sub(m1.body1.position, aim));
+	var len2 = Vector3Length(Vector3Sub(m2.body1.position, aim));
+	
+	var dist = Vector3Length(Vector3Sub(center.position, aim));
+	var dif = (len2 - len1) / 4;
+	var speed = Vector3Length(center.linearVel);
+	var veldir = -Vector3Dot(Vector3Normalize(center.linearVel), Vector3Normalize(Vector3Sub(center.position, aim)));
+	var dir = -Vector3Dot(center.Vector3ToWorld([0,0,1]), Vector3Normalize(Vector3Sub(center.position, aim)));
+	var yvel = center.angularVel[1];
+	var absyvel = Math.abs(yvel);
+	var attn = 1-1/(dist+1);
+
+
+	// curves: http://fooplot.com/
+	
+	var f1 = 0;
+	var f2 = 0;
+
+	if ( dir < 0.9 && absyvel < 0.5 && dist > 10 ) {
+
+		if ( dif < 0 )
+			f1 += -dif*attn;
+		else
+			f2 += dif*attn;
+	}
+	
+	if ( dir > 0.8 && veldir < 0.5 || dist > 100 ) {
+		
+		f1 += 1*attn;
+		f2 += 1*attn;
+	}
+
+	if ( dir > 0.5 || absyvel > 1 ) {
+
+		if ( yvel > 0 )
+			f2 += absyvel;
+		else
+			f1 += absyvel;
+	}
+
+	if ( veldir > -0.1 && veldir < 0.1 ) {
+		
+		f1 = 2;
+	}
+	
+
+
+/*
+	if ( dif < 0 )
+		f1 += -dif*10;
+	else
+		f2 += dif*10;
+
+	f1 += dist/20;
+	f2 += dist/20;
+	
+
+	if ( yvel > 0 )
+		f2 += absyvel*2;
+	else
+		f1 += absyvel*2;
+
+	if ( dir > 0.5 && veldir < -0.5 ) {
+
+		f1 += dir*5;
+		f2 += dir*5;
+	}
+
+	if ( dir > 0.5 && veldir > 0.5 ) {
+		
+		f1 /= 2;
+		f2 /= 2;
+	}
+*/
+	
+
+
+//
+
+
+	f1 += GetKeyState(K_LEFT) ? 1 : 0;
+	f2 += GetKeyState(K_RIGHT) ? 1 : 0;
+
+	m1.maxForce = f1;
+	m2.maxForce = f2;
+
+	w.Step(100);
+	
+//	env3d.AddTrail(1, m1.body1.position);
+//	env3d.AddTrail(2, m2.body1.position);
+	env3d.AddTrail(1, center.position);
+
+	env3d.Begin();
+	env3d.DrawGrid();
+	
+	env3d.DrawTrail(1);
+//	env3d.DrawTrail(2);
+	
+	Ogl.PushMatrix();
+	Ogl.MultMatrix(m1.body1);
+	env3d.Draw3DArrow();
+//	Ogl.LineWidth(m1.maxForce/2);
+	Ogl.Begin(Ogl.LINES);
+	Ogl.Color( 1,1,1, 1 ); Ogl.Vertex(0,0,-1); Ogl.Vertex(0,0,-1-m1.maxForce/2);
+	Ogl.End();
+//	Ogl.LineWidth(1);
+
+	Ogl.PopMatrix();
+
+	Ogl.PushMatrix();
+	Ogl.MultMatrix(m2.body1);
+	env3d.Draw3DArrow();
+
+//	Ogl.LineWidth(m2.maxForce/2);
+	Ogl.Begin(Ogl.LINES);
+	Ogl.Color( 1,1,1, 1 ); Ogl.Vertex(0,0,-1); Ogl.Vertex(0,0,-1-m2.maxForce/2);
+	Ogl.End();
+//	Ogl.LineWidth(1);
+	
+	Ogl.PopMatrix();
+
+	Ogl.PushMatrix();
+	Ogl.Translate(aim[0], aim[1], aim[2]);
+	env3d.Draw3DAxis();
+	Ogl.PopMatrix();
+
+	env3d.End();
+//	Print(env3d.fps.toFixed(0), '    \r');
+//	Sleep(10);
 }
 
 throw 0;
