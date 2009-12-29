@@ -287,6 +287,65 @@ DEFINE_FUNCTION_FAST( SetDampingDefaults ) {
 
 /**doc
 $TOC_MEMBER $INAME
+ $TYPE real $INAME( point )
+**/
+DEFINE_FUNCTION_FAST( GetRelativeVelocity ) {
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_FOBJ );
+	JL_S_ASSERT_RESOURCE( bodyId );
+
+	Vector3 pt;
+	uint32 len;
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), pt.raw, 3, &len) );
+	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+
+	Vector3 vel, pos;
+	Vector3LoadPtr(&vel, ode::dBodyGetLinearVel(bodyId));
+	Vector3LoadPtr(&pos, ode::dBodyGetPosition(bodyId));
+
+	float velocity;
+	Vector3SubVector3(&pt, &pt, &pos);
+	if ( !Vector3IsNull(&pt) ) {
+
+		Vector3Normalize(&pt, &pt);
+		velocity = Vector3Dot(&pt, &vel);
+//		Vector3Mult(&pt, &pt, Vector3Dot(&pt, &vel));
+	} else {
+
+		velocity = Vector3Length(&vel);
+	}
+//	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
+//	return FloatVectorToJsval(cx, pt.raw, 3, JL_FRVAL, true);
+	return FloatToJsval(cx, velocity, JL_FRVAL);
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( point [ , dest ] )
+**/
+DEFINE_FUNCTION_FAST( GetRelPointVel ) {
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_FOBJ );
+	JL_S_ASSERT_RESOURCE( bodyId );
+
+	float pt[3];
+	uint32 len;
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), pt, 3, &len) );
+
+	ode::dVector3 result;
+	ode::dBodyGetRelPointVel(bodyId, pt[0], pt[1], pt[2], result);
+
+	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
+	return FloatVectorToJsval(cx, result, 3, JL_FRVAL, true);
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
  $VOID $INAME( vector [ , dest ] )
 **/
 DEFINE_FUNCTION_FAST( Vector3ToWorld ) {
@@ -294,12 +353,13 @@ DEFINE_FUNCTION_FAST( Vector3ToWorld ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_FOBJ );
 	JL_S_ASSERT_RESOURCE( bodyId );
 
-	Vector3 v;
+	float v[3];
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v.raw, 3, &len) );
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 	ode::dVector3 result;
-	ode::dBodyVectorToWorld(bodyId, v.x, v.y, v.z, result);
+	ode::dBodyVectorToWorld(bodyId, v[0], v[1], v[2], result);
+
 //	ode::dBodyGetRelPointPos(bodyId, v.x, v.y, v.z, result);
 	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
 	return FloatVectorToJsval(cx, result, 3, JL_FRVAL, true);
@@ -819,6 +879,8 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC( AddForce, 1 )
 		FUNCTION_FAST_ARGC( AddTorque, 1 )
 		FUNCTION_FAST_ARGC( SetDampingDefaults, 0 )
+		FUNCTION_FAST_ARGC( GetRelativeVelocity, 1 )
+		FUNCTION_FAST_ARGC( GetRelPointVel, 2 )
 		FUNCTION_FAST_ARGC( Vector3ToWorld, 2 )
 	END_FUNCTION_SPEC
 

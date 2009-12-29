@@ -94,7 +94,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	ode::dSetDebugHandler(messageHandler);
 	ode::dSetMessageHandler(messageHandler);
 
-	INIT_CLASS( Vector );
+//	INIT_CLASS( Vector );
 	INIT_CLASS( JointGroup );
 	INIT_CLASS( Space );
 	INIT_CLASS( Joint );
