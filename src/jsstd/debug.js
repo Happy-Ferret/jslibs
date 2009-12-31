@@ -2,21 +2,9 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
 
-var buf = new Buffer();
-var pack = new Pack(buf);
 
-try {
-
-var v = pack.WriteInt("\xff\xff\xff", 3, true);
-
-
-
-
-} catch( ex ) {
-
-	Print(ex instanceof TypeError );
-}
-
+LoadModule('jsstd');
+Print( IsNumber( new Number(123) ), '\n' );
 
 
 

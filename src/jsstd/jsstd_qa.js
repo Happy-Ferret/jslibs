@@ -7,6 +7,12 @@ LoadModule('jsstd');
 		QA.ASSERT( IsBoolean( new Number(123) ), false, 'not a boolean object' );
 		QA.ASSERT( IsBoolean( new Boolean(123) ), true, 'boolean object' );
 
+/// IsNumber function [ftrm]
+
+		QA.ASSERT( IsNumber( 123 ), true, 'number value' );
+		QA.ASSERT( IsNumber( true ), false, 'not a number value' );
+		QA.ASSERT( IsNumber( new Boolean(123) ), false, 'number object' );
+		QA.ASSERT( IsNumber( new Number(123) ), true, 'not a number object' );
 
 /// Print returns undefined [ftrm]
 		QA.ASSERT( Print(), undefined, 'Print return value' );

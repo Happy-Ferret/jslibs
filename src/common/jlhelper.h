@@ -470,7 +470,7 @@ ALWAYS_INLINE bool JL_Ending(JSContext *cx) {
 ALWAYS_INLINE JSClass* JL_GetStandardClass(JSContext *cx, JSProtoKey key) {
 
 	JSObject *constructor;
-	JL_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_Boolean, &constructor) );
+	JL_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), key, &constructor) );
 	JL_CHK( constructor );
 //	FUN_CLASP( JS_ValueToFunction(cx, OBJECT_TO_JSVAL(constructor)) );
 	return FUN_CLASP(GET_FUNCTION_PRIVATE(cx, constructor));

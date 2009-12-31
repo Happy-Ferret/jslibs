@@ -678,7 +678,7 @@ DEFINE_FUNCTION_FAST( IdToObject ) {
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME()
-  Returns $TRUE if the value is a boolean.
+  Returns $TRUE if the value is a boolean value or object.
 **/
 DEFINE_FUNCTION_FAST( IsBoolean ) {
 
@@ -702,7 +702,7 @@ DEFINE_FUNCTION_FAST( IsBoolean ) {
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME()
-  Returns $TRUE if the value is a number.
+  Returns $TRUE if the value is a number value or object.
 **/
 DEFINE_FUNCTION_FAST( IsNumber ) {
 
