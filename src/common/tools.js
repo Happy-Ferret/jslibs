@@ -26,26 +26,34 @@ function DumpMatrix(m) {
 function Env3D() {
 	
 	var _this = this;
-
-//	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-	GlSetAttribute( GL_DOUBLEBUFFER, 1 );
-	GlSetAttribute( GL_DEPTH_SIZE, 16 );
-	GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
-	SetVideoMode( 640, 480, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
-	Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
-	Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
-	Ogl.Viewport(0,0,640,480);
-	Ogl.MatrixMode(Ogl.PROJECTION);
-	Ogl.Perspective(60, 0.1, 100000);
-	Ogl.MatrixMode(Ogl.MODELVIEW);
-	Ogl.ClearColor(0.2, 0.1, 0.4, 1);
-	Ogl.Enable(Ogl.DEPTH_TEST);
-	Ogl.Enable(Ogl.BLEND);
-	Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
 	
-	var t;
-	this.fps = 0;
-	this.frame = 0;
+	var desktopWidth = videoWidth;
+	var desktopHeight = videoHeight;
+
+	function InitVideo(width, height) {
+	
+	//	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+		GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+		GlSetAttribute( GL_DEPTH_SIZE, 16 );
+		GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+		if ( width && height )
+			SetVideoMode( width, height, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+		else
+			SetVideoMode( desktopWidth, desktopHeight, 32, OPENGL | RESIZABLE | FULLSCREEN ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+		Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
+		Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
+		Ogl.Viewport(0,0,videoWidth,videoHeight);
+		Ogl.MatrixMode(Ogl.PROJECTION);
+		Ogl.Perspective(60, 0.1, 100000);
+		Ogl.MatrixMode(Ogl.MODELVIEW);
+		Ogl.ClearColor(0.2, 0.1, 0.4, 1);
+		Ogl.Enable(Ogl.DEPTH_TEST);
+		Ogl.Enable(Ogl.BLEND);
+		Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+	}
+	
+	InitVideo(640, 480);
+	
 	
 	this.DrawGrid = function() {
 
@@ -59,7 +67,7 @@ function Env3D() {
 			Ogl.Begin(Ogl.LINES);
 			for ( var i = 0; i <= len; i++ ) {
 			
-				Ogl.Color(1, 1, 1, i == 0 ? 1 : 0.5-Math.abs(i/len)/2);
+				Ogl.Color(1, 1, 1, 0.5-Math.abs(i/len)/2);
 				
 				var powi = Math.pow(1.5, i);
 				Ogl.Vertex(-max, powi, 0); Ogl.Vertex(max, powi, 0);
@@ -164,15 +172,34 @@ function Env3D() {
 		Ogl.Begin(Ogl.LINE_STRIP); // Ogl.LINE_STRIP
 		for ( var i = 0; i < len; ++i ) {
 			
-			Ogl.Color( 1,0.5,0, 0.5+(i/len)/2 );
+			Ogl.Color( 1,0.5,0, 0.25+(i/len)/2 );
 			Ogl.Vertex( t[i][0], t[i][1], t[i][2] );
 		}
 		Ogl.End();
 	}
 	
-	
-	var eye = [Math.PI, -Math.PI/8, 3], dst = [0,0,0];
-	
+	var eye = [Math.PI, -Math.PI/8, 5], dst = [0,0,0];
+
+	var t;
+	this.fps = 0;
+	this.frame = 0;
+
+	var keyListeners = {};
+	this.AddKeyListener = function(key, fct) {
+		
+		var kl = keyListeners[key] || (keyListeners[key] = []);
+		kl.push(fct);
+	}	
+
+	this.RemoveKeyListener = function(key, fct) {
+		
+		var kl = keyListeners[key] || (keyListeners[key] = []);
+		var pos = kl.lastIndexOf(fct);
+		if ( pos != -1 )
+			kl.splice(pos, 1);
+	}	
+
+
 	var eventHandler = {
 
 		onVideoResize: function(w,h) {
@@ -180,12 +207,26 @@ function Env3D() {
 			Ogl.Viewport(0, 0, w, h);
 		},
 	
+		onKeyUp: function(key, mod) {
+
+			var kl = keyListeners[key];
+			if ( kl )
+				for ( var i = kl.length-1; i >= 0; --i )
+					kl[i](false, key, mod);
+		},
+		
 		onKeyDown: function(key, mod) {
 			
+			var kl = keyListeners[key];
+			if ( kl )
+				for ( var i = kl.length-1; i >= 0; --i )
+					kl[i](true, key, mod);
+						
 			switch (key) {
 				
 				case K_SPACE:
-					ToggleFullScreen();
+
+//					InitVideo();
 					break;
 				case K_ESCAPE:
 					//Halt();

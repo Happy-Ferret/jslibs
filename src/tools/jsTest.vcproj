@@ -183,6 +183,22 @@
 			<File
 				RelativePath=".\jsTest.cpp"
 				>
+				<FileConfiguration
+					Name="DBG|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="SSE"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="OPT|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="SSE"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 	</Files>

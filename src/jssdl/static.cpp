@@ -148,7 +148,7 @@ DEFINE_FUNCTION_FAST( VideoModeOK ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( width, height [ , bitsPerPixel [ , flags ] ] )
+ $VOID $INAME( [width], [height], [bitsPerPixel], [flags] )
   Set the requested video mode (allocating a shadow buffer if necessary).
   $H arguments
    $ARG $INT width: with
@@ -278,21 +278,23 @@ DEFINE_PROPERTY( icon ) {
 	JL_BAD;
 }
 
-
-/**doc
+/*
+/ **doc
 $TOC_MEMBER $INAME
  $BOOL $INAME()
   Toggle fullscreen mode without changing the contents of the screen.
   $H return value
    true if this function was able to toggle fullscreen mode (change from running in a window to fullscreen, or vice-versa). false if it is not implemented, or fails.
-**/
+** /
 DEFINE_FUNCTION_FAST( ToggleFullScreen ) {
 
 	SDL_Surface *surface = SDL_GetVideoSurface();
-	int status = SDL_WM_ToggleFullScreen( surface );
+	int status = SDL_WM_ToggleFullScreen( surface ); // This is currently only implemented in the X11 video driver.
 	*JL_FRVAL = status == 1 ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
+*/
+
 
 
 /**doc
@@ -1035,7 +1037,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( GetVideoModeList )
 		FUNCTION_FAST( VideoModeOK )
 		FUNCTION_FAST( SetVideoMode )
-		FUNCTION_FAST( ToggleFullScreen )
+//		FUNCTION_FAST( ToggleFullScreen )
 		FUNCTION_FAST( Iconify )
 		FUNCTION_FAST_ARGC( SetGamma, 3 )
 		FUNCTION_FAST( GlSwapBuffers )

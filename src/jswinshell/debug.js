@@ -2,8 +2,7 @@
 
 LoadModule('jsstd');
 LoadModule('jswinshell');
-
-Print('Start...\n', codepage);
+var typeLib = CreateComObject("Scriptlet.TypeLib");
 
 Halt();
 

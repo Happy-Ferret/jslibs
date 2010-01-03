@@ -142,6 +142,17 @@ inline void Vector3Set( Vector3 *v, const float _x, const float _y, const float 
 }
 
 
+inline bool Vector3IsNull( Vector3 *v ) {
+
+//#ifdef SSE
+	
+//	return _mm_cmpeq_ps(v->m128, _mm_setzero_ps()) == 0;
+//#else // SSE
+	return v->x == 0.f && v->z == 0.f && v->z == 0.f;
+//#endif // SSE
+}
+
+
 inline float Vector3Length( Vector3 *v ) {
 
 #ifdef SSE

@@ -6,6 +6,7 @@
 #include <jsapi.h>
 
 #include "../common/jlhelper.h"
+#include "../common/vector3.h"
 
 bool _unsafeMode = false;
 
@@ -77,10 +78,32 @@ int main(int argc, char* argv[]) {
 
 //	JLInitClass(NULL, NULL, TEST::classSpec);
 
-	JLClassName test = "Handle";
-	unsigned int h;
-	h = xxx(&test);
-	printf("%u", h);
+	Vector3 pt;
+	Vector3 vel, pos;
+	
+	Vector3Set(&vel, 0,2,0);
+	Vector3Set(&pos, 3,2,0);
+
+	Vector3Set(&pt, 3, 2, 0);
+
+	Vector3SubVector3(&pt, &pt, &pos);
+	Vector3Normalize(&pt, &pt);
+	float dot = Vector3Dot(&pt, &vel);
+	Vector3Mult(&pt, &pt, dot);
+
+
+
 
 	return EXIT_SUCCESS;
 }
+
+
+
+
+
+
+
+
+
+
+
