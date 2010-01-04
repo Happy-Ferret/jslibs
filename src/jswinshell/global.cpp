@@ -805,10 +805,48 @@ DEFINE_PROPERTY( consoleCodepage ) {
 }
 
 
+
+#ifdef DEBUG
+DEFINE_FUNCTION_FAST( jswinshelltest ) {
+
+	VARIANT *v = (VARIANT*)malloc(sizeof(VARIANT));
+	VariantInit(v);
+/*
+	V_VT(v) = VT_BSTR;
+	//V_BSTR(v) = SysAllocStringByteLen("A\x82Z", 3);
+	V_BSTR(v) = SysAllocStringLen((OLECHAR*)"\0A\0\x82\0Z", 3);
+
+
+	BSTR bstr = V_BSTR(v);
+	int len = SysStringLen(bstr);
+	char *str = (char*)bstr;
+*/
+
+	JSString *jsstr = JS_NewUCStringCopyN(cx, (jschar*)"\x81\0\x82\0\x83", 3);
+	
+	jsval val = STRING_TO_JSVAL(jsstr);
+	JsvalToVariant(cx, &val, v);
+	
+	VariantToJsval(cx, v, &val);
+
+	jschar *jsc = JS_GetStringChars(JSVAL_TO_STRING(val));
+
+
+
+	return JS_TRUE;
+	JL_BAD;
+}
+#endif //DEBUG
+
+
 CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
+		#ifdef DEBUG
+		FUNCTION_FAST( jswinshelltest )
+		#endif //DEBUG
+
 		FUNCTION( MessageBox )
 		FUNCTION( CreateProcess )
 		FUNCTION( ExtractIcon )

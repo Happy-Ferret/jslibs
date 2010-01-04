@@ -144,6 +144,69 @@ private:
 // variant must be initialized (VariantInit())
 JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
+	if ( JSVAL_IS_OBJECT(*value) ) {
+
+		JSObject *obj = JSVAL_TO_OBJECT(*value);
+
+		if ( JL_ObjectIsBlob(cx, obj) ) {
+			
+			const char *buf;
+			unsigned int len;
+			JL_CHK( JsvalToStringAndLength(cx, value, &buf, &len) );
+			V_VT(variant) = VT_BSTR;
+			V_BSTR(variant) = SysAllocStringByteLen(buf, len);
+			return JS_TRUE;
+		}
+
+		if ( JL_GetClass(obj) == JL_CLASS(ComDispatch) ) {
+			
+			IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
+			JL_S_ASSERT_RESOURCE(disp);
+			disp->AddRef();
+			V_VT(variant) = VT_DISPATCH;
+			V_DISPATCH(variant) = disp;
+			return JS_TRUE;
+		}
+
+		if ( JL_GetClass(obj) == JL_CLASS(ComVariant) ) {
+			
+			VARIANT *v = (VARIANT*)JL_GetPrivate(cx, obj);
+			JL_S_ASSERT_RESOURCE(v);
+			HRESULT hr = VariantCopy(variant, v); // Frees the destination variant and makes a copy of the source variant.
+			if ( FAILED(hr) )
+				JL_CHK( WinThrowError(cx, hr) );
+			return JS_TRUE;
+		}
+
+		if ( JS_ObjectIsFunction(cx, obj) ) {
+
+			JSFunctionDispatch *disp = new JSFunctionDispatch(JS_GetRuntime(cx), *value); // does the AddRef
+			// beware: *value must be GC protected while disp is in use.
+			V_VT(variant) = VT_DISPATCH;
+			V_DISPATCH(variant) = disp;
+			// (TBD) fixme
+			// NewComDispatch(cx, disp, value); // GC protect the function stored in disp ?
+			return JS_TRUE;
+		}
+
+		if ( js_DateIsValid(cx, obj) ) {
+
+			SYSTEMTIME time;
+			time.wDayOfWeek = 0; // unused by SystemTimeToVariantTime
+			time.wYear = js_DateGetYear(cx, obj);
+			time.wMonth = js_DateGetMonth(cx, obj)+1;
+			time.wDay = js_DateGetDate(cx, obj);
+			time.wHour = js_DateGetHours(cx, obj);
+			time.wMinute = js_DateGetMinutes(cx, obj);
+			time.wSecond = js_DateGetSeconds(cx, obj);
+			time.wMilliseconds = ((unsigned long)js_DateGetMsecSinceEpoch(cx, obj)) % 1000;
+
+			V_VT(variant) = VT_DATE;
+			SystemTimeToVariantTime(&time, &V_DATE(variant));
+			return JS_TRUE;
+		}
+	}
+
 	if ( JSVAL_IS_STRING(*value) ) {
 		
 		JSString *jsStr = JSVAL_TO_STRING(*value);
@@ -202,60 +265,6 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 		return JS_TRUE;
 	}
 
-	JL_S_ASSERT( !JSVAL_IS_PRIMITIVE(*value), "Logic error. Missing primitive conversion.");
-
-	JSObject *obj = JSVAL_TO_OBJECT(*value);
-
-	if ( JL_GetClass(obj) == JL_CLASS(ComDispatch) ) {
-		
-		IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
-		JL_S_ASSERT_RESOURCE(disp);
-		disp->AddRef();
-		V_VT(variant) = VT_DISPATCH;
-		V_DISPATCH(variant) = disp;
-		return JS_TRUE;
-	}
-
-	if ( JL_GetClass(obj) == JL_CLASS(ComVariant) ) {
-		
-		VARIANT *v = (VARIANT*)JL_GetPrivate(cx, obj);
-		JL_S_ASSERT_RESOURCE(v);
-		HRESULT hr = VariantCopy(variant, v); // Frees the destination variant and makes a copy of the source variant.
-		if ( FAILED(hr) )
-			JL_CHK( WinThrowError(cx, hr) );
-		return JS_TRUE;
-	}
-
-	if ( JS_ObjectIsFunction(cx, obj) ) {
-
-		JSFunctionDispatch *disp = new JSFunctionDispatch(JS_GetRuntime(cx), *value); // does the AddRef
-		// beware: *value must be GC protected while disp is in use.
-		V_VT(variant) = VT_DISPATCH;
-		V_DISPATCH(variant) = disp;
-		// (TBD) fixme
-		// NewComDispatch(cx, disp, value); // GC protect the function stored in disp ?
-		return JS_TRUE;
-	}
-
-//	if ( JL_ValueIsBlob(cx, *value ) {
-//	}
-
-	if ( js_DateIsValid(cx, obj) ) {
-
-		SYSTEMTIME time;
-		time.wDayOfWeek = 0; // unused by SystemTimeToVariantTime
-		time.wYear = js_DateGetYear(cx, obj);
-		time.wMonth = js_DateGetMonth(cx, obj)+1;
-		time.wDay = js_DateGetDate(cx, obj);
-		time.wHour = js_DateGetHours(cx, obj);
-		time.wMinute = js_DateGetMinutes(cx, obj);
-		time.wSecond = js_DateGetSeconds(cx, obj);
-		time.wMilliseconds = ((unsigned long)js_DateGetMsecSinceEpoch(cx, obj)) % 1000;
-
-		V_VT(variant) = VT_DATE;
-		SystemTimeToVariantTime(&time, &V_DATE(variant));
-		return JS_TRUE;
-	}
 
 	// last resort
 	JSString *str = JS_ValueToString(cx, *value); // see JS_ConvertValue

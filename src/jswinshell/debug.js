@@ -2,7 +2,25 @@
 
 LoadModule('jsstd');
 LoadModule('jswinshell');
-var typeLib = CreateComObject("Scriptlet.TypeLib");
+
+//jswinshelltest();
+
+try {
+
+	var fso = CreateComObject('Scripting.FileSystemObject');
+	var file = fso.CreateTextFile("testfile.txt")
+
+	for(var i = 1; i < 255; i++)
+		file.Write(String.fromCharCode(i));
+
+
+} catch(ex if ex instanceof WinError) {
+	
+
+	Print( ex.text, '\n' );
+}
+
+
 
 Halt();
 
