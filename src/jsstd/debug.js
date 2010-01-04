@@ -4,7 +4,8 @@ LoadModule('jsdebug');
 
 
 LoadModule('jsstd');
-Print( IsNumber( new Number(123) ), '\n' );
+function gen() {yield}
+Print( IsGenerator( gen() ), '\n' );
 
 
 

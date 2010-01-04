@@ -1151,9 +1151,15 @@ inline bool JsvalIsDataBuffer( JSContext *cx, jsval val ) {
 }
 */
 
+ALWAYS_INLINE bool JL_ObjectIsBlob( JSContext *cx, JSObject *obj ) {
+
+	return JL_GetClass(obj) == JL_GetRegistredNativeClass(cx, "Blob");
+}
+
+
 ALWAYS_INLINE bool JL_ValueIsBlob( JSContext *cx, jsval v ) {
 
-	return !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_GetRegistredNativeClass(cx, "Blob");
+	return !JSVAL_IS_PRIMITIVE(v) && JL_ObjectIsBlob(cx, JSVAL_TO_OBJECT(v));
 }
 
 

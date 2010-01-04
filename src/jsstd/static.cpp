@@ -751,6 +751,29 @@ DEFINE_FUNCTION_FAST( IsFunction ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
+ $BOOL $INAME()
+  Returns $TRUE if the value is a generator.
+**/
+DEFINE_FUNCTION_FAST( IsGenerator ) {
+
+	if ( !JSVAL_IS_OBJECT(JL_FARG(1)) ) {
+
+		*JL_FRVAL = JSVAL_FALSE;
+		return JS_TRUE;
+	}
+
+	jsval prop;
+	JL_CHK( JS_GetPropertyById(cx, JSVAL_TO_OBJECT(JL_FARG(1)), JL_ATOMJSID(cx, iterator), &prop) );
+
+	*JL_FRVAL = VALUE_IS_FUNCTION(cx, prop) ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
  $TYPE Blob $INAME( value )
   Encode (serialize) a JavaScript value into an XDR (eXternal Data Representation) blob.
   $H note
@@ -1507,6 +1530,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST_ARGC( IsNumber, 1 )
 		FUNCTION_FAST_ARGC( IsPrimitive, 1 )
 		FUNCTION_FAST_ARGC( IsFunction, 1 )
+		FUNCTION_FAST_ARGC( IsGenerator, 1 )
 //		FUNCTION_FAST_ARGC( IsVoid, 1 ) // value === undefined is better
 #ifdef JS_HAS_XDR
 		FUNCTION_FAST( XdrEncode )

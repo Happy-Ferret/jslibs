@@ -102,25 +102,44 @@ function Pod() {
 	var taskList = [];
 
 	this.Step = function() {
-	
-		if ( taskList.length == 0 )
-			return;
 		
-		try {
-			
-			taskList[0].next();
-		} catch (ex if ex instanceof StopIteration) {
-			
-			taskList.shift();
+		var task = taskList[0];
+		
+		if ( IsGenerator(task) ) {
+		
+			try {
+
+				task.next();
+			} catch (ex if ex instanceof StopIteration) {
+
+				taskList.shift();
+			}
+			return;
 		}
 		
+		if ( IsFunction(task) ) {
+
+			task();
+			return;
+		}
 	}
 	
-	this.PushLeft = function(force) taskList.unshift(new function() {
+	function CreateTask(task) {
+		
+		return function() {
+			
+			taskList.push(task.apply(this, arguments));
+		}
+	}
+	
+	
+	
+	
+	this.PushLeft = CreateTask(function(force) {
 	
 		m1.maxForce = force;
-		yield;
 	});
+	
 
 	this.PushRight = function(force) taskList.unshift(new function() {
 	
