@@ -24,6 +24,10 @@
 #include "descriptor.h"
 #include "pipe.h"
 
+#include <pprio.h> // nspr/include/nspr/private
+
+DECLARE_CLASS( File )
+
 /**doc fileIndex:topmost **/
 
 /**doc
@@ -715,6 +719,121 @@ DEFINE_FUNCTION_FAST( AvailableSpace ) {
 
 
 /**doc
+$TOC_MEMBER $INAME
+ $UNDEF $INAME( descriptor, [baudRate], [byteSize], [parity], [stopBits] )
+ baudRate: 
+  110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 56000, 57600, 115200, 128000, 256000
+ byteSize:
+  4, 5, 6, 7, 8
+ parity:
+  0: No parity.
+  1: Odd parity.
+  2: Even parity.
+  3: Mark parity.
+  4: Space parity.
+ stopBits:
+  0: 1 stop bit.
+  1: 1.5 stop bits.
+  2: 2 stop bits.
+
+ $H example
+ {{{
+ var f = new File( systemInfo.name == 'Linux' ? '/dev/ttyS0' : '//./com1' );
+ f.Open(File.RDWR);
+ ConfigureSerialPort(f, 9600);
+ f.Write('A');
+ f.Read(1);
+ }}}
+**/
+DEFINE_FUNCTION_FAST( ConfigureSerialPort ) {
+	
+	JL_S_ASSERT_ARG_RANGE(1,2);
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JSObject *fileObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_INHERITANCE( fileObj, JL_CLASS(File) );
+
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, fileObj);
+	JL_S_ASSERT( fd != NULL, "File is closed." );
+
+	unsigned int baudRate, byteSize, parity, stopBits;
+
+
+#ifdef XP_WIN
+	HANDLE fh = (HANDLE)PR_FileDesc2NativeHandle(fd);
+	
+	BOOL status;
+	DCB dcb;
+	COMMTIMEOUTS commTimeouts;
+
+	status = GetCommState(fh, &dcb);
+	if ( status == 0 )
+		JL_ThrowOSError(cx);
+		
+	status = GetCommTimeouts(fh, &commTimeouts);
+	if ( status == 0 )
+		JL_ThrowOSError(cx);
+	// (TBD) manage commTimeouts
+
+
+	if ( JL_FARG_ISDEF(2) ) {
+
+		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &baudRate) );
+		dcb.BaudRate = baudRate;
+	}
+
+	if ( JL_FARG_ISDEF(3) ) {
+		
+		JL_CHK( JsvalToUInt(cx, JL_FARG(3), &byteSize) );
+		dcb.ByteSize = byteSize;
+	}
+	
+	if ( JL_FARG_ISDEF(4) ) {
+		
+		JL_CHK( JsvalToUInt(cx, JL_FARG(4), &parity) );
+		dcb.Parity = parity;
+	}
+
+	if ( JL_FARG_ISDEF(5) ) {
+		
+		JL_CHK( JsvalToUInt(cx, JL_FARG(5), &stopBits) );
+		dcb.StopBits = stopBits;
+	}
+
+	dcb.fBinary = TRUE;
+	dcb.fDsrSensitivity = FALSE;
+	dcb.fOutX = FALSE;
+	dcb.fInX = FALSE;
+	dcb.fNull = FALSE;
+	dcb.fAbortOnError = TRUE;
+	dcb.fOutxCtsFlow = FALSE;
+	dcb.fOutxDsrFlow = FALSE;
+	dcb.fDtrControl = DTR_CONTROL_DISABLE;
+	dcb.fDsrSensitivity = FALSE;
+	dcb.fRtsControl = RTS_CONTROL_DISABLE;
+	dcb.fOutxCtsFlow = FALSE;
+	dcb.fOutxCtsFlow = FALSE;
+
+	status = SetCommState(fh, &dcb);
+	if ( status == 0 )
+		JL_ThrowOSError(cx);
+#endif // XP_WIN
+
+#ifdef XP_UNIX
+
+	struct termios tio;
+//	tcgetattr(
+	// (TBD) see http://www.comptechdoc.org/os/linux/programming/c/linux_pgcserial.html
+
+#endif // XP_UNIX
+
+
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
 === Static properties ===
 **/
 
@@ -988,7 +1107,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( version ) {
 
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, PR_VERSION));
-  return JL_StoreProperty(cx, obj, id, vp, true);
+	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 
 
@@ -1008,6 +1127,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( PostSemaphore )
 //		FUNCTION_FAST( CreateProcess )
 		FUNCTION_FAST( AvailableSpace )
+		FUNCTION_FAST( ConfigureSerialPort )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

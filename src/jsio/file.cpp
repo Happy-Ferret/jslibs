@@ -499,7 +499,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
   is true if the file is writable.
 **/
-DEFINE_PROPERTY( writable ) {
+DEFINE_PROPERTY( isWritable ) {
 
 	jsval jsvalFileName;
 	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
@@ -516,7 +516,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
   is true if the file is readable.
 **/
-DEFINE_PROPERTY( readable ) {
+DEFINE_PROPERTY( isReadable ) {
 
 	jsval jsvalFileName;
 	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
@@ -703,8 +703,8 @@ CONFIGURE_CLASS
 		PROPERTY( content )
 		PROPERTY( position )
 		PROPERTY_READ( exist )
-		PROPERTY_READ( writable )
-		PROPERTY_READ( readable )
+		PROPERTY_READ( isWritable )
+		PROPERTY_READ( isReadable )
 		PROPERTY_READ( info )
 	END_PROPERTY_SPEC
 

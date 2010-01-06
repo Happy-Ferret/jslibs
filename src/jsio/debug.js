@@ -5,10 +5,22 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jstask');
 
-var f = new File('test');
-f.closed;
-Descriptor.closed;
+var f = new File('com1:');
+f.Open(File.RDWR);
+ConfigureSerialPort(f, 9600);
+f.Write('A');
+f.Read(1);
 
+
+f.writable = function() { Print('writable') }
+//f.readable = function() { Print('readable') }
+
+Poll([f], 1000);
+
+/*
+f.Write('A');
+f.Read(1);
+*/
 
 Halt();
 
