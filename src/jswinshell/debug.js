@@ -11,13 +11,12 @@ try {
 	var file = fso.CreateTextFile("testfile.txt")
 
 	for(var i = 1; i < 255; i++)
-		file.Write(String.fromCharCode(i));
+		file.Write = 5;
 
 
 } catch(ex if ex instanceof WinError) {
-	
 
-	Print( ex.text, '\n' );
+	Print( ex.text, ' ', ex.const, ' (', ex.code, ')', '\n' );
 }
 
 

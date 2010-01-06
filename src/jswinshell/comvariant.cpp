@@ -140,8 +140,46 @@ private:
 };
 
 
+JSBool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
 
-// variant must be initialized (VariantInit())
+	const char *buf;
+	unsigned int len;
+	JL_CHK( JsvalToStringAndLength(cx, val, &buf, &len) );
+	variant->vt = VT_ARRAY | VT_UI1;
+	SAFEARRAYBOUND rgsabound[1];
+	rgsabound[0].cElements = len;
+	rgsabound[0].lLbound = 0;
+	variant->parray = SafeArrayCreate(VT_UI1, 1, rgsabound);
+	JL_S_ASSERT( variant->parray != NULL, "Failed to create the array." );
+	void *pArrayData = NULL;
+	HRESULT hr = SafeArrayAccessData(variant->parray, &pArrayData);
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
+	memcpy(pArrayData, buf, len);
+	SafeArrayUnaccessData(variant->parray);
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+JSBool VariantToBlob( JSContext *cx, VARIANT *variant, jsval *rval ) {
+
+	JL_S_ASSERT( variant->vt == (VT_ARRAY | VT_UI1), "Invalid variant type." );
+	void * pArrayData;
+	HRESULT hr = SafeArrayAccessData(variant->parray, &pArrayData);
+	if ( FAILED(hr) )
+		JL_CHK( WinThrowError(cx, hr) );
+	JL_CHK( JL_NewBlobCopyN(cx, pArrayData, variant->parray->rgsabound[0].cElements, rval) );
+	SafeArrayUnaccessData(variant->parray);
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+// variant must be initialized ( see VariantInit() )
 JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 	if ( JSVAL_IS_OBJECT(*value) ) {
@@ -149,6 +187,8 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 		JSObject *obj = JSVAL_TO_OBJECT(*value);
 
 		if ( JL_ObjectIsBlob(cx, obj) ) {
+
+			// see also: Write and read binary data in VARIANT - http://www.ucosoft.com/write-and-read-binary-data-in-variant.html
 			
 			const char *buf;
 			unsigned int len;
@@ -282,6 +322,12 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 	
 	BOOL isRef = V_ISBYREF(variant);
+	BOOL isArray = V_ISARRAY(variant);
+
+	if ( isArray && V_VT(variant) == VT_UI1 )
+		return VariantToBlob(cx, variant, rval);
+
+	JL_S_ASSERT( !isArray, "Unable to convert the variant." );
 
 	switch ( V_VT(variant) ) {
 
