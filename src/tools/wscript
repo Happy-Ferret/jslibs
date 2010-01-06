@@ -19,7 +19,7 @@ def configure(conf):
 def build(bld):
 
     # Compile jsScriptToXDR
-    jsScriptToXDR = bld.new_task_gen('cxx', 'cprogram')
+    jsScriptToXDR = bld.new_task_gen(features='cxx cprogram')
     jsScriptToXDR.name = 'jsScriptToXDR'
     jsScriptToXDR.target = 'jsScriptToXDR'
     jsScriptToXDR.source = jsScriptToXDR_source
@@ -27,7 +27,7 @@ def build(bld):
     jsScriptToXDR.uselib = 'JLMOZJS'
 
     # Compile fileToCRes
-    fileToCRes = bld.new_task_gen('cxx', 'cprogram')
+    fileToCRes = bld.new_task_gen(features='cxx cprogram sync')
     fileToCRes.name = 'fileToCRes'
     fileToCRes.target = 'fileToCRes'
     fileToCRes.source = fileToCRes_source

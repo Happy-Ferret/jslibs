@@ -11,7 +11,7 @@ import preproc
 preproc.go_absolute_uselib = 1
 
 import Utils, Options
-from TaskGen import feature, before
+from TaskGen import feature, before, after
 
 def set_options(opt):
 
@@ -90,13 +90,13 @@ def configure(conf):
         conf.env['JL_DISABLED_MODULE'].append('jsfont (missing FreeType library)')
     
     # Add classic gcc Warnings
-    conf.env.append_value('CFLAGS', Utils.to_list('-Wall'))
+    conf.env.append_value('CCFLAGS', Utils.to_list('-Wall'))
     conf.env.append_value('CXXFLAGS', Utils.to_list('-Wall -Wno-invalid-offsetof'))
 
     # Add strong gcc Warnings
     if Options.options.warnings:
         # TODO: Due to spider monkey: -Wshadow -Wno-unused-parameter -Wno-invalid-offsetof
-        conf.env.append_value('CFLAGS', Utils.to_list('-std=c89 -pedantic -Werror -Wextra -Wmissing-prototypes -Wno-unused-parameter'))
+        conf.env.append_value('CCFLAGS', Utils.to_list('-std=c89 -pedantic -Werror -Wextra -Wmissing-prototypes -Wno-unused-parameter'))
         conf.env.append_value('CXXFLAGS', Utils.to_list('-Werror -Wextra -Wno-unused-parameter'))
 
     # Create debug and optimize variants
@@ -112,19 +112,19 @@ def configure(conf):
     if Options.options.debug:
         conf.env.BUILD_MODE = 'debug'
         conf.setenv('debug')
-        conf.env.append_value('CFLAGS', Utils.to_list('-g3 -O0 -fstack-protector-all -D_FORTIFY_SOURCE=2 -DDEBUG'))
+        conf.env.append_value('CCFLAGS', Utils.to_list('-g3 -O0 -fstack-protector-all -D_FORTIFY_SOURCE=2 -DDEBUG'))
         conf.env.append_value('CXXFLAGS', Utils.to_list('-g3 -O0 -fstack-protector-all -D_FORTIFY_SOURCE=2 -DDEBUG'))
 
     elif Options.options.optimize:
         conf.env.BUILD_MODE = 'optimize'
         conf.setenv('optimize')
-        conf.env.append_value('CFLAGS', Utils.to_list('-s -O3 -funroll-loops -fno-exceptions -fno-rtti'))
+        conf.env.append_value('CCFLAGS', Utils.to_list('-s -O3 -funroll-loops -fno-exceptions -fno-rtti'))
         conf.env.append_value('CXXFLAGS', Utils.to_list('-s -O3 -funroll-loops -fno-exceptions -fno-rtti'))
 
     else:
         conf.env.BUILD_MODE = 'default'
         conf.setenv('default')
-        conf.env.append_value('CFLAGS', Utils.to_list('-g0 -O2'))
+        conf.env.append_value('CCFLAGS', Utils.to_list('-g0 -O2'))
         conf.env.append_value('CXXFLAGS', Utils.to_list('-g0 -O2'))
 
     # Add variant dependant sub-module
@@ -145,15 +145,13 @@ def configure(conf):
         Utils.pprint(color, " ".join(conf.env[env]))
 
     # Configuration summary
-    Utils.pprint('Normal', "\n")
-    Utils.pprint('Normal', "Configuration summary:")
-    Utils.pprint('Normal', "======================")
+    Utils.pprint('Normal', "\nConfiguration summary:\n======================")
 
     pretty_print_option('warnings');
     pretty_print_option('debug');
     pretty_print_option('optimize');
 
-    pretty_print_env('CFLAGS', 'CYAN')
+    pretty_print_env('CCFLAGS', 'CYAN')
     pretty_print_env('CXXFLAGS', 'CYAN')
 
     pretty_print_env('JL_ENABLED_MODULE', 'GREEN')
@@ -168,11 +166,15 @@ def redefine_liboutput(self):
     if sys.platform != 'win32':
         self.env.shlib_PATTERN = '%s.so'
 
+@feature('sync')
+@after('apply_lib_vars')
+def sync_with_add_group(self):
+    self.bld.add_group()
+
 def build(bld):
 
     bld.add_subdirs('libs/js')
     bld.add_subdirs('src/tools')
-    bld.add_group()
 
     bld.add_subdirs('libs/nedmalloc')
 
@@ -191,12 +193,6 @@ def build(bld):
         if bld.env.BUILD_MODE != 'default':
 
             obj_new = obj.clone(bld.env.BUILD_MODE)
-
-            # Keep task dependencies
-            if obj_new.name == 'fileToCRes':
-                bld.add_group()
-            elif obj_new.name == 'xrdtocres':
-                bld.add_group()
             obj.posted = True
 
     # QA feature support

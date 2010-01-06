@@ -73,7 +73,7 @@ def build(bld):
     configure.source = 'src/configure.in'
     configure.target = 'src/configure'
     configure.rule = 'cd ${SRC[0].src_dir(env)} && autoconf2.13 && cp ${TGT[0].abspath()} ${TGT[0].abspath(env)}'
-    configure.before = 'task-configure'
+    configure.before = 'task-js-configure'
 
     # Copy needed files: jsversion.h
     jsversion = bld.new_task_gen()
@@ -82,7 +82,7 @@ def build(bld):
     jsversion.rule = 'cp ${SRC} ${TGT[0].abspath()} && cp ${SRC} ${TGT}'
     jsversion.vars = 'DIFF'
     jsversion.env.DIFF = _diff_check(bld.path.abspath(), jsversion.source, jsversion.target)
-    jsversion.before = 'task-configure'
+    jsversion.before = 'task-js-configure'
 
     # Patch needed files: jsutils.h
     jsutil_h = bld.new_task_gen()
@@ -91,7 +91,7 @@ def build(bld):
     jsutil_h.rule = 'patch --dry-run -N ${TGT[0].abspath()} ${SRC} && patch -N ${TGT[0].abspath()} ${SRC}; cp ${TGT[0].abspath()} ${TGT[0].abspath(env)}'
     jsutil_h.vars = 'PATCH'
     jsutil_h.env.PATCH = _patch_check(bld.path.abspath(), jsutil_h.target, jsutil_h.source)
-    jsutil_h.before = 'task-configure'
+    jsutil_h.before = 'task-js-configure'
 
     # Patch needed files: jsutils.cpp
     jsutil_cpp = bld.new_task_gen()
@@ -100,11 +100,11 @@ def build(bld):
     jsutil_cpp.rule = 'patch --dry-run -N ${TGT[0].abspath()} ${SRC} && patch -N ${TGT[0].abspath()} ${SRC}; cp ${TGT[0].abspath()} ${TGT[0].abspath(env)}'
     jsutil_cpp.vars = 'PATCH'
     jsutil_cpp.env.PATCH = _patch_check(bld.path.abspath(), jsutil_cpp.target, jsutil_cpp.source)
-    jsutil_cpp.before = 'task-configure'
+    jsutil_cpp.before = 'task-js-configure'
 
     # Launch configure
     configure_execute = bld.new_task_gen()
-    configure_execute.name = "task-configure"
+    configure_execute.name = 'task-js-configure'
     configure_execute.source = 'src/configure'
     configure_execute.target = 'src/Makefile'
 
