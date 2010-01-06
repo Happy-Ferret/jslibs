@@ -1,11 +1,51 @@
 LoadModule('jsstd');
 LoadModule('jsio');
-LoadModule('jsdebug');
 
 
-LoadModule('jsstd');
-function gen() {yield}
-Print( IsGenerator( gen() ), '\n' );
+//Print( Switch( 5, 1, 'a', 2, 'b', 3, 'c', 'none' ) );
+
+Print( Switch( 2, [1, '1'], ['num', 'string'], 9 ) );
+
+Halt();
+
+
+var descList = [];
+var serv = new Socket(Socket.TCP);
+serv.Bind(8081);
+serv.Listen();
+descList.push(serv);
+const CRLF = '\r\n';
+
+function Respond() {
+
+ this.httpHeader += this.Read();
+ if ( this.httpHeader.indexOf(CRLF+CRLF) == -1 )
+   return;
+
+ Print('Received: \n' + this.httpHeader + '\n');
+ descList.splice(descList.indexOf(this), 1);
+
+ var writeOp = this.Write(
+  'HTTP/1.0 200 OK' + CRLF +
+  'Content-Type: text/html; charset=utf-8' + CRLF +
+  'Cache-Control: no-cache, must-revalidate' + CRLF +
+  'Pragma: no-cache' + CRLF + CRLF +
+  '<html><body>Hello from <a href="http://jslibs.googlecode.com/">jslibs</a> at ' + new Date() + '</body></html>' );
+ this.Close();
+};
+
+serv.readable = function () {
+
+ var desc = this.Accept();
+ desc.httpHeader = '';
+ desc.readable = Respond;
+ descList.push(desc);
+}
+
+Print('HTTP server minimal example. Point a web browser at http://localhost:8081. CTRL+C to exit\n');
+
+while ( !endSignal )
+ Poll(descList, 50);
 
 
 

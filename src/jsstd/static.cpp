@@ -207,6 +207,75 @@ bad:
 }
 
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+/ **doc
+$TOC_MEMBER $INAME
+ $VAL $INAME( value, case1, result1, case2, result2, ..., caseN, resultN, defaultResult )
+  Based on _value_, returns _resultN_ value for the matching _caseN_, or _defaultResult_ if sothing match.
+** /
+DEFINE_FUNCTION_FAST( Switch ) {
+
+	JL_S_ASSERT_ARG_MIN( 1 );
+
+	if ( argc <= 2 ) {
+		
+		*JL_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	unsigned int i;
+	for ( i = 1; i < argc; i += 2 )
+		
+		if ( JS_SameValue(cx, JL_FARGV[0], JL_FARGV[i]) ) { // see also JS_StrictlyEqual
+			
+			*JL_FRVAL = JL_FARGV[i+1];
+			return JS_TRUE;
+		}
+
+	if ( i > argc ) {
+
+		*JL_FRVAL = JL_FARGV[argc-1];
+		return JS_TRUE;
+	}
+
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
+
+/**doc
+$TOC_MEMBER $INAME
+ $VAL $INAME( value, caseArray, resultArray [, defaultResult] )
+**/
+DEFINE_FUNCTION_FAST( Switch ) {
+
+	JL_S_ASSERT_ARG_RANGE( 3, 4 );
+
+	JL_S_ASSERT_ARRAY( JL_FARG(2) );
+	JL_S_ASSERT_ARRAY( JL_FARG(3) );
+
+	JSObject *caseArray;
+	jsuint caseArrayLength;
+	caseArray = JSVAL_TO_OBJECT(JL_FARG(2));
+	JL_CHK( JS_GetArrayLength(cx, caseArray, &caseArrayLength) );
+
+	jsuint i;
+	for ( i = 0; i < caseArrayLength; ++i ) {
+	
+		JL_CHK( JS_GetElement(cx, caseArray, i, JL_FRVAL) );
+		if ( JS_SameValue(cx, JL_FARG(1), *JL_FRVAL) )
+			return JS_GetElement(cx, JSVAL_TO_OBJECT(JL_FARG(3)), i, JL_FRVAL);
+	}
+
+	*JL_FRVAL = argc >= 4 ? JL_FARG(4) : JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
@@ -1506,6 +1575,7 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION_FAST( Expand )
+		FUNCTION_FAST_ARGC( Switch, 4 )
 		FUNCTION_FAST( InternString )
 		FUNCTION_FAST( Seal )
 		FUNCTION_FAST( Clear )

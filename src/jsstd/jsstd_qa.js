@@ -1,5 +1,14 @@
 LoadModule('jsstd');
 
+/// Switch function [ftrm]
+
+	QA.ASSERT( Switch( 1, [1, '1'], ['num', 'string'] ), 'num', 'Switch type' );
+	QA.ASSERT( Switch( '1', [1, '1'], ['num', 'string'] ), 'str', 'Switch type' );
+
+	QA.ASSERT( Switch( 2, [1, '1'], ['num', 'string'] ), undefined, 'Switch not found' );
+	QA.ASSERT( Switch( 2, [1, '1'], ['num', 'string'], 'def' ), 'def', 'Switch default value' );
+
+
 /// IsBoolean function [ftrm]
 
 		QA.ASSERT( IsBoolean( false ), true, 'boolean value' );
