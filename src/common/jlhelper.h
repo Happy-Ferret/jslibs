@@ -461,6 +461,15 @@ ALWAYS_INLINE JSBool JL_SetReservedSlot(JSContext *cx, JSObject *obj, uint32 ind
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 
+ALWAYS_INLINE JSBool JL_ThrowOSError(JSContext *cx) {
+
+	char errMsg[1024];
+	JLLastSysetmErrorMessage(errMsg, sizeof(errMsg));
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, errMsg);
+bad:
+	return JS_FALSE;
+}
+
 ALWAYS_INLINE bool JL_Ending(JSContext *cx) {
 
 	return cx->runtime->state == JSRTS_LANDING || cx->runtime->state == JSRTS_DOWN; // could be replaced by a flag in HostPrivate that keep the state of the engine.
