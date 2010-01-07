@@ -17,8 +17,6 @@ def build(bld):
     cres.target = 'embeddedBootstrapScript.js.xdr.cres'
     cres.rule = '${XDRTOCRES} ${SRC} ${TGT}'
     cres.features = 'sync'
-
-    bld.add_group()
     
     import os
 
