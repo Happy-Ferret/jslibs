@@ -221,6 +221,7 @@ var api = {
 
 
 	$VOID:'<font size="1" color="gray">,,void,,</font>',
+	$VALUE:',,value,,',
 	$VAL:',,value,,',
 	$INT:',,integer,,',
 	$REAL:',,real,,',
