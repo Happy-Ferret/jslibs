@@ -84,7 +84,7 @@ DEFINE_FUNCTION( Poll ) {
 	JSObject *fdArrayObj;
 	fdArrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
-	if ( JL_ARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) && !JsvalIsPInfinity(cx, JL_ARG(2)) ) {
 
 		PRUint32 tmp;
 		JL_CHK( JsvalToUInt(cx, JL_ARG(2), &tmp) );

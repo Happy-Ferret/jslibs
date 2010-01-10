@@ -1,11 +1,28 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
+
+var count = MetaPoll( CoPool([s1, s2]), CoPollEvent(), CoWinCOMPoll(xhr), CoEndSignal() );
+
+
+
 LoadModule('jsstd');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
 LoadModule('jssvg');
 LoadModule('jsio');
 LoadModule('jsimage');
+
+
+SetVideoMode( 320, 200, 32, HWACCEL | OPENGL | RESIZABLE ); // | ASYNCBLIT
+
+
+//count = MetaPoll( ConfIOPool([s1, s2]), ConfSDLPoll(), ConfWinCOMPoll(xhr), ConfTimeout(100) );
+
+
+SDLDebugTest();
+
+
+Halt();
 
 
 var svgIcon = <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">

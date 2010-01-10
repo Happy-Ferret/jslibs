@@ -2199,5 +2199,12 @@ inline JSBool JsvalToMatrix44( JSContext *cx, jsval val, float **m ) {
 	JL_BAD;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// MetaPoll
+
+
+
+
+
 
 #endif // _JSHELPER_H_

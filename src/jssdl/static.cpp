@@ -1029,11 +1029,75 @@ DEFINE_PROPERTY( version ) {
 }
 
 
+
+#ifdef DEBUG
+
+JLThreadHandler thread;
+
+JLThreadFuncDecl BlockingEventLoop(void *threadArg) {
+
+	JLMutexHandler signalEventMutex = (JLMutexHandler)threadArg;
+
+	for (;;) {
+
+		SDL_PumpEvents();
+		if ( SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS) != 0 )
+			break;
+		SDL_Delay(1);
+	}
+
+	JLReleaseMutex(signalEventMutex);
+	JLThreadExit();
+	return 0;
+}
+
+void startPollFunction( JLSemaphoreHandler signalEventMutex ) {
+
+	thread = JLThreadStart(BlockingEventLoop, signalEventMutex);
+}
+
+void endPollFunction() {
+
+	SDL_Event ev;
+	ev.type = SDL_USEREVENT;
+	ev.user.code = 0;
+	ev.user.data1 = NULL;
+	ev.user.data2 = NULL;
+	SDL_PushEvent(&ev);
+
+	JLWaitThread(thread);
+}
+
+
+DEFINE_FUNCTION_FAST( SDLDebugTest ) {
+
+	// struct:
+	//   startPollFunction( signalEventMutex ) : starts the blocking thread and trigger the signalEventMutex when an event has arrived.
+	//   endPollFunction() : unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
+
+	JLMutexHandler signalEventMutex = JLCreateMutex();
+
+	startPollFunction(signalEventMutex);
+
+	Sleep(1000);
+	endPollFunction();
+
+	JLFreeMutex(&signalEventMutex);
+
+	return JS_TRUE;
+}
+
+#endif // DEBUG
+
+
 CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	BEGIN_STATIC_FUNCTION_SPEC
+		#ifdef DEBUG
+		FUNCTION_FAST( SDLDebugTest )
+		#endif // DEBUG
 		FUNCTION_FAST( GetVideoModeList )
 		FUNCTION_FAST( VideoModeOK )
 		FUNCTION_FAST( SetVideoMode )

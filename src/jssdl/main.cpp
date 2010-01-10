@@ -46,6 +46,9 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	if ( status != 0 )
 		return ThrowSdlError(cx);
 
+	SDL_EnableUNICODE(1);
+
+
 	INIT_STATIC();
 	INIT_CLASS( Cursor );
 

@@ -215,7 +215,7 @@ $TOC_MEMBER $INAME
  $VAL $INAME( value, case1, result1, case2, result2, ..., caseN, resultN, defaultResult )
   Based on _value_, returns _resultN_ value for the matching _caseN_, or _defaultResult_ if sothing match.
 ** /
-DEFINE_FUNCTION_FAST( Switch ) {
+DEFINE_FUNCTION_FAST( SwitchCase ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
@@ -250,7 +250,7 @@ DEFINE_FUNCTION_FAST( Switch ) {
 $TOC_MEMBER $INAME
  $VAL $INAME( value, caseArray, resultArray [, defaultResult] )
 **/
-DEFINE_FUNCTION_FAST( Switch ) {
+DEFINE_FUNCTION_FAST( SwitchCase ) {
 
 	JL_S_ASSERT_ARG_RANGE( 3, 4 );
 
@@ -1575,7 +1575,7 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION_FAST( Expand )
-		FUNCTION_FAST_ARGC( Switch, 4 )
+		FUNCTION_FAST_ARGC( SwitchCase, 4 )
 		FUNCTION_FAST( InternString )
 		FUNCTION_FAST( Seal )
 		FUNCTION_FAST( Clear )
