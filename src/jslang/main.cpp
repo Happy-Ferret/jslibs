@@ -14,6 +14,10 @@
 
 #include "stdafx.h"
 
+#include "jslang.h"
+
+static const uint32_t moduleId = JL_CAST_CSTR_TO_UINT32("lang");
+
 DECLARE_CLASS( Handle )
 DECLARE_CLASS( Blob )
 DECLARE_CLASS( Stream )
@@ -33,6 +37,11 @@ $MODULE_FOOTER
 
 JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 
+	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);
+	JL_CHK( SetModulePrivate(cx, moduleId, mpv) );
+
+	mpv->metaPollSignalEventSem = JLCreateSemaphore(0);
+
 	INIT_CLASS( Handle );
 	INIT_CLASS( Blob );
 	INIT_CLASS( Stream );
@@ -48,11 +57,30 @@ JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 
 JSBool jslangModuleRelease(JSContext *cx) {
 
+	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, moduleId);
+
+	for ( int i = 0; i < COUNTOF(mpv->metaPollThreadInfo); ++i ) {
+		
+		MetaPollThreadInfo *ti = &mpv->metaPollThreadInfo[i];
+		if ( ti->thread != 0 ) {
+
+//			JLAcquireMutex(ti->in);
+			ti->isEnd = true;
+			JLReleaseMutex(ti->in);
+			
+			JLFreeMutex(&ti->in);
+			JLFreeMutex(&ti->out);
+		}
+		JLFreeSemaphore(&mpv->metaPollSignalEventSem);
+	}
+	
+	jl_free( mpv );
+
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
 void jslangModuleFree() {
-}
 
+}

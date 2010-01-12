@@ -26,6 +26,9 @@
 
 #include <pprio.h> // nspr/include/nspr/private
 
+#include "../jslang/handlePub.h"
+
+
 DECLARE_CLASS( File )
 
 /**doc fileIndex:topmost **/
@@ -234,6 +237,53 @@ bad:
 		jl_free(pollDesc);
 	return JS_FALSE;
 }
+
+
+
+
+struct MetaIOPoll {
+	
+	MetaPoll mp;
+	PRFileDesc *endEvent;
+};
+
+void StartPoll( MetaPoll *mp ) {
+
+	MetaIOPoll *metaIOPoll = (MetaIOPoll*)mp;
+
+	PRPollDesc pollDesc[1];
+	pollDesc[0].fd = metaIOPoll->endEvent;
+	pollDesc[0].in_flags = PR_POLL_READ;
+	pollDesc[0].out_flags = 0;
+
+	PRInt32 count = PR_Poll(pollDesc, 1, PR_MillisecondsToInterval(1000));
+}
+
+JSBool EndPoll( MetaPoll *mp, JSContext *cx ) {
+
+	MetaIOPoll *metaIOPoll = (MetaIOPoll*)mp;
+
+	PRStatus status;
+	status = PR_SetPollableEvent(metaIOPoll->endEvent); // cancel the poll
+	status = PR_DestroyPollableEvent(metaIOPoll->endEvent);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_FUNCTION_FAST( ConfIOPool ) {
+	
+	MetaIOPoll *metaIOPoll;
+	JL_CHK( CreateHandle(cx, 'poll', sizeof(MetaIOPoll), (void**)&metaIOPoll, NULL, JL_FRVAL) );
+	metaIOPoll->mp.startPoll = StartPoll;
+	metaIOPoll->mp.endPoll = EndPoll;
+	metaIOPoll->endEvent = PR_NewPollableEvent();
+
+	return JS_TRUE;
+
+	JL_BAD;
+}
+
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1111,11 +1161,43 @@ DEFINE_PROPERTY( version ) {
 }
 
 
+#ifdef DEBUG
+JLThreadFuncDecl jsioTestThread( void *data ) {
+	
+	JLSemaphoreHandler sem = (JLMutexHandler)data;
+
+
+	JLThreadExit();
+	return 0;
+}
+
+DEFINE_FUNCTION( jsioTest ) {
+
+	JLSemaphoreHandler sem = JLCreateSemaphore(2);
+
+	JLAcquireSemaphore(sem, -1);
+	JLAcquireSemaphore(sem, -1);
+
+	JLThreadHandler thread = JLThreadStart(jsioTestThread, sem);
+
+
+	return JS_TRUE;
+	JL_BAD;
+}
+#endif // DEBUG
+
+
 CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
+
+		#ifdef DEBUG
+		FUNCTION( jsioTest )
+		#endif // DEBUG
+
 		FUNCTION( Poll ) // Do not turn it in FAST NATIVE because we need a stack frame for debuging
+		FUNCTION_FAST( ConfIOPool )
 		FUNCTION( IsReadable )
 		FUNCTION( IsWritable )
 		FUNCTION( IntervalNow )

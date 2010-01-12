@@ -18,11 +18,16 @@
 
 #include <cstring>
 
+#include "jslang.h"
+
 #include "static.h"
 
 #include "stack.h"
 #include "buffer.h"
 using namespace jl;
+
+DECLARE_CLASS(Handle)
+
 
 /**doc fileIndex:topmost **/
 
@@ -101,23 +106,91 @@ DEFINE_FUNCTION( Stringify ) {
 	JL_BAD;
 }
 
-DECLARE_CLASS(Handle)
+
+
+
+JLThreadFuncDecl MetaPollThread( void *data ) {
+
+	MetaPollThreadInfo *metaPollThreadInfo = (MetaPollThreadInfo*)data;
+	
+	for (;;) {
+
+		JLReleaseMutex(metaPollThreadInfo->out);
+		JLAcquireMutex(metaPollThreadInfo->in);
+		
+		if ( metaPollThreadInfo->isEnd )
+			JLThreadExit();
+		
+		metaPollThreadInfo->mpSlot->startPoll(metaPollThreadInfo->mpSlot);
+		JLReleaseSemaphore(metaPollThreadInfo->signalEventSem);
+		
+		JLReleaseMutex(metaPollThreadInfo->in);
+		JLAcquireMutex(metaPollThreadInfo->out);
+
+		#ifdef DEBUG
+		metaPollThreadInfo->mpSlot = NULL;
+		#endif // DEBUG
+	}
+	return 0;
+}
+
+DEFINE_FUNCTION( MetaPoll ) {
+
+	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, 'lang');
+
+	JL_S_ASSERT_ARG_MAX( COUNTOF(mpv->metaPollThreadInfo) );
+	MetaPoll *metaPollList[COUNTOF(mpv->metaPollThreadInfo)]; // cache
+
+	for ( uintN i = 0; i < argc; ++i ) {
+
+		JL_S_ASSERT( IsHandleType(cx, JL_ARGV[i], 'poll'), "Invalid MetaPoolable handle." );
+		MetaPoll *mp = (MetaPoll*)GetHandlePrivate(cx, JL_ARGV[i]);
+		
+		MetaPollThreadInfo *ti = &mpv->metaPollThreadInfo[i];
+		if ( ti->thread == 0 ) {
+
+			ti->out = JLCreateMutex();
+			ti->in = JLCreateMutex();
+			
+			JLAcquireMutex(ti->in);
+
+			ti->isEnd = false;
+			ti->thread = JLThreadStart(MetaPollThread, ti);
+			ti->signalEventSem = mpv->metaPollSignalEventSem;
+		}
+
+		ti->mpSlot = mp;
+
+		JLAcquireMutex(ti->out);
+		JLReleaseMutex(ti->in);
+
+		metaPollList[i] = mp;
+	}
+
+	JLAcquireSemaphore(mpv->metaPollSignalEventSem, -1); // wait for an event
+	JLReleaseSemaphore(mpv->metaPollSignalEventSem);
+
+	for ( uintN i = 0; i < argc; ++i ) {
+
+		MetaPollThreadInfo *ti = &mpv->metaPollThreadInfo[i];
+		MetaPoll *mp = metaPollList[i];
+
+		JL_CHK( mp->endPoll(mp, cx) ); // (TBD) on failure, also release the others.
+
+		JLAcquireMutex(ti->in);
+		JLReleaseMutex(ti->out);
+
+		JLAcquireSemaphore(mpv->metaPollSignalEventSem, -1);
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 
 #ifdef DEBUG
 DEFINE_FUNCTION( jslang_test ) {
-
-/*
-	jsval v;
-	JS_LookupPropertyWithFlags(cx, JS_GetGlobalObject(cx), "Handle", JSRESOLVE_CLASSNAME, &v);
-	JSObject *p = JS_GetPrototype(cx, JSVAL_TO_OBJECT(v));
-	JSClass *c = JS_GetClass(p);
-	JSObject *p1 = JL_PROTOTYPE(cx, Handle);
-	JSClass *c1 = JS_GetClass(p1);
-
-	JS_NewObject(cx, JL_CLASS(Handle), NULL, NULL);
-*/
-
-
 	return JS_TRUE;
 }
 #endif // DEBUG
@@ -127,10 +200,13 @@ CONFIGURE_STATIC
 
 //	REVISION(JL_SvnRevToInt("$Revision$")) // avoid to set a revision to the global context
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_ARGC( Stringify, 1 )
-#ifdef DEBUG
+
+		#ifdef DEBUG
 		FUNCTION( jslang_test )
-#endif // DEBUG
+		#endif // DEBUG
+
+		FUNCTION_ARGC( Stringify, 1 )
+		FUNCTION( MetaPoll )
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC

@@ -2199,12 +2199,13 @@ inline JSBool JsvalToMatrix44( JSContext *cx, jsval val, float **m ) {
 	JL_BAD;
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // MetaPoll
 
-
-
-
-
+struct MetaPoll {
+	void (*startPoll)( MetaPoll *mp ); // starts the blocking thread and call signalEvent() when an event has arrived.
+	JSBool (*endPoll)( MetaPoll *mp, JSContext *cx ); // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
+};
 
 #endif // _JSHELPER_H_

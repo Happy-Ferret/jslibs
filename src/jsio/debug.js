@@ -5,6 +5,16 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jstask');
 
+
+MetaPoll( ConfIOPool() );
+MetaPoll( ConfIOPool() );
+
+//jsioTest();
+
+
+Halt();
+
+
 var f = new File('com1:');
 f.Open(File.RDWR);
 ConfigureSerialPort(f, 9600);

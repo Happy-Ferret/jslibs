@@ -212,6 +212,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\jslang.h"
+				>
+			</File>
+			<File
 				RelativePath=".\static.h"
 				>
 			</File>
