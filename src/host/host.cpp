@@ -21,6 +21,8 @@
 #include "host.h"
 
 JSBool jslangModuleInit(JSContext *cx, JSObject *obj);
+JSBool jslangModuleRelease(JSContext *cx);
+void jslangModuleFree();
 
 //bool _unsafeMode = true;
 
@@ -557,6 +559,9 @@ JSBool DestroyHost( JSContext *cx ) {
 			moduleRelease(cx);
 	}
 
+	jslangModuleRelease(cx);
+
+
 	//	don't try to break linked objects with JS_GC(cx) !
 
 //	jsval tmp;
@@ -593,6 +598,9 @@ JSBool DestroyHost( JSContext *cx ) {
 		JL_CHK( JLDynamicLibraryClose(&module) );
 //#endif
 	}
+
+	jslangModuleFree();
+
 
 	while ( !jl::QueueIsEmpty(&pv->registredNativeClasses) )
 		jl::QueueShift(&pv->registredNativeClasses);

@@ -44,3 +44,15 @@ JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+JSBool jslangModuleRelease(JSContext *cx) {
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+void jslangModuleFree() {
+}
+
