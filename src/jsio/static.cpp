@@ -247,7 +247,10 @@ struct MetaIOPoll {
 	PRFileDesc *endEvent;
 };
 
-void StartPoll( MetaPoll *mp ) {
+JL_STATIC_ASSERT( offsetof(MetaIOPoll, mp) == 0 );
+
+
+static void StartPoll( MetaPoll *mp ) {
 
 	MetaIOPoll *metaIOPoll = (MetaIOPoll*)mp;
 
@@ -259,13 +262,14 @@ void StartPoll( MetaPoll *mp ) {
 	PRInt32 count = PR_Poll(pollDesc, 1, PR_MillisecondsToInterval(1000));
 }
 
-JSBool EndPoll( MetaPoll *mp, JSContext *cx ) {
+static JSBool EndPoll( MetaPoll *mp, JSContext *cx ) {
 
 	MetaIOPoll *metaIOPoll = (MetaIOPoll*)mp;
 
 	PRStatus status;
 	status = PR_SetPollableEvent(metaIOPoll->endEvent); // cancel the poll
 	status = PR_DestroyPollableEvent(metaIOPoll->endEvent);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -279,7 +283,6 @@ DEFINE_FUNCTION_FAST( ConfIOPool ) {
 	metaIOPoll->endEvent = PR_NewPollableEvent();
 
 	return JS_TRUE;
-
 	JL_BAD;
 }
 

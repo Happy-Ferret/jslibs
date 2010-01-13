@@ -16,6 +16,9 @@
 
 #include "jslibsModule.cpp"
 
+#include "../jslang/handlePub.h"
+
+
 
 volatile bool disabledFree = false;
 
@@ -38,20 +41,29 @@ static unsigned char embeddedBootstrapScript[] =
 #define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { fprintf(stderr, errorMessage ); goto bad; }
 
 
-volatile bool gEndSignal = false;
+
+volatile bool gEndSignalState = false;
+JLMutexHandler gEndSignalEvent;
+
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	return BoolToJsval(cx, gEndSignal, vp);
+	return BoolToJsval(cx, gEndSignalState, vp);
 }
 
 JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	bool tmp;
-	if ( JsvalToBool(cx, *vp, &tmp) != JS_TRUE )
-		return JS_FALSE;
-	gEndSignal = tmp;
+	JL_CHK( JsvalToBool(cx, *vp, &tmp) );
+	gEndSignalState = tmp;
+	
+	if ( gEndSignalState )
+		JLReleaseMutex(gEndSignalEvent);
+	else
+		JLAcquireMutex(gEndSignalEvent);
+
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -61,15 +73,63 @@ BOOL Interrupt(DWORD CtrlType) {
 // see. http://msdn2.microsoft.com/en-us/library/ms683242.aspx
 //	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT) // CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
 //		return FALSE;
-	gEndSignal = true;
+	gEndSignalState = true;
+	JLReleaseMutex(gEndSignalEvent);
 	return TRUE;
 }
 #else
 void Interrupt(int CtrlType) {
 
-	gEndSignal = true;
+	gEndSignalState = true;
+	JLReleaseMutex(gEndSignalEvent);
 }
 #endif // XP_WIN
+
+
+struct MetaPollEndSignalData {
+	
+	MetaPoll mp;
+	bool cancel;
+};
+
+
+static void EndSignalStartPoll( MetaPoll *mp ) {
+
+	MetaPollEndSignalData *mpes = (MetaPollEndSignalData*)mp;
+
+	while ( !gEndSignalState && !mpes->cancel ) {
+
+		JLAcquireMutex(gEndSignalEvent);
+		JLReleaseMutex(gEndSignalEvent);
+	}
+}
+
+static JSBool EndSignalEndPoll( MetaPoll *mp, JSContext *cx ) {
+
+	MetaPollEndSignalData *mpes = (MetaPollEndSignalData*)mp;
+	mpes->cancel = true;
+
+	JLReleaseMutex(gEndSignalEvent);
+	if ( !gEndSignalState )
+		JLAcquireMutex(gEndSignalEvent);
+
+	return JS_TRUE;
+}
+
+static JSBool MetaPollEndSignal(JSContext *cx, uintN argc, jsval *vp) {
+
+	JL_S_ASSERT_ARG(0);
+
+	MetaPollEndSignalData *mpes;
+	JL_CHK( CreateHandle(cx, 'poll', sizeof(MetaPollEndSignalData), (void**)&mpes, NULL, JL_FRVAL) );
+	mpes->mp.startPoll = EndSignalStartPoll;
+	mpes->mp.endPoll = EndSignalEndPoll;
+	mpes->cancel = false;
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 
 int HostStdout( void *privateData, const char *buffer, size_t length ) {
@@ -238,7 +298,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	JSObject *globalObject;
 	globalObject = JS_GetGlobalObject(cx);
+
+	gEndSignalEvent = JLCreateMutex();
 	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefineFunction(cx, globalObject, "MetaPollEndSignal", (JSNative)MetaPollEndSignal, 0, JSPROP_SHARED | JSPROP_PERMANENT | JSFUN_FAST_NATIVE) );
 
 // script name
 	if ( inlineScript == NULL )

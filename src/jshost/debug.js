@@ -4,18 +4,22 @@
 // RunJsircbot(false);
 // RunQATests('-rep 1 jsstd -exclude jstask');
 
-
-
 LoadModule('jsode');
-LoadModule('jsdebug');
-DisableJIT();
+LoadModule('jsstd');
 
-var world = new World();
-var ball = new GeomSphere(world.space);
-ball.body = new Body(world);
+var t0 = +new Date();
+
+while ( !endSignal ) {
+	Print('.');
+//	MetaPoll( MetaPollTimeout(2000), MetaPollTimeout(500), MetaPollTimeout(10) );
+	MetaPoll( MetaPollTimeout(10) );
+}
+
+var t = +new Date() - t0;
 
 
 
+Print( t, '\n' );
 
 
 Halt(); //////////////////////////////////////////////////////////////////////////////

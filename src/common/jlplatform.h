@@ -1055,8 +1055,9 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 //  each successful lock request that it has outstanding on the mutex.
 //  PTHREAD_MUTEX_RECURSIVE
 
+
 #if defined(XP_WIN)
-	typedef HANDLE JLMutexHandler;
+	typedef HANDLE JLMutexHandler; // (TBD) use CRITICAL_SECTION instead of Mutex on Windows.
 #elif defined(XP_UNIX)
 	typedef pthread_mutex_t* JLMutexHandler;
 #endif
