@@ -108,25 +108,22 @@ DEFINE_FUNCTION( Stringify ) {
 
 
 
-
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( ... )
+**/
 JLThreadFuncDecl MetaPollThread( void *data ) {
 
-	MetaPollThreadInfo *metaPollThreadInfo = (MetaPollThreadInfo*)data;
+	MetaPollThreadInfo *ti = (MetaPollThreadInfo*)data;
 	for (;;) {
 
-		JLReleaseMutex(metaPollThreadInfo->out);
-		JLAcquireMutex(metaPollThreadInfo->in);
-		if ( metaPollThreadInfo->isEnd )
+		JLAcquireSemaphore(ti->start, -1);
+		if ( ti->isEnd )
 			break;
-		JL_ASSERT( metaPollThreadInfo->mpSlot != NULL );
-		metaPollThreadInfo->mpSlot->startPoll(metaPollThreadInfo->mpSlot);
-		JLReleaseSemaphore(metaPollThreadInfo->signalEventSem);
-		JLReleaseMutex(metaPollThreadInfo->in);
-		JLAcquireMutex(metaPollThreadInfo->out);
-
-		#ifdef DEBUG
-		metaPollThreadInfo->mpSlot = NULL;
-		#endif // DEBUG
+		JL_ASSERT( ti->mpSlot != NULL );
+		ti->mpSlot->startPoll(ti->mpSlot);
+		ti->mpSlot = NULL;
+		JLReleaseSemaphore(ti->signalEventSem);
 	}
 	JLThreadExit();
 	return 0;
@@ -143,52 +140,62 @@ DEFINE_FUNCTION( MetaPoll ) {
 
 		JL_S_ASSERT( IsHandleType(cx, JL_ARGV[i], 'poll'), "Invalid MetaPoolable handle." );
 		MetaPoll *mp = (MetaPoll*)GetHandlePrivate(cx, JL_ARGV[i]);
+		JL_S_ASSERT_RESOURCE( mp );
 		
 		MetaPollThreadInfo *ti = &mpv->metaPollThreadInfo[i];
 		if ( ti->thread == 0 ) { // create the thread stuff, see jl_cmalloc in jslangModuleInit()
 
-			ti->out = JLCreateMutex();
-			ti->in = JLCreateMutex();
-			JLAcquireMutex(ti->in);
+			ti->start = JLCreateSemaphore(0);
 			ti->thread = JLThreadStart(MetaPollThread, ti);
 			JLThreadPriority(ti->thread, JL_THREAD_PRIORITY_HIGH);
-
 			ti->signalEventSem = mpv->metaPollSignalEventSem;
 			ti->isEnd = false;
 		}
-
+		JL_ASSERT( ti->mpSlot == NULL );
 		ti->mpSlot = mp;
-
-		JLAcquireMutex(ti->out);
-		JLReleaseMutex(ti->in);
-
+		JLReleaseSemaphore(ti->start);
 		metaPollList[i] = mp;
 	}
 
 	JLAcquireSemaphore(mpv->metaPollSignalEventSem, -1); // wait for an event (timeout can also be managed here)
 	JLReleaseSemaphore(mpv->metaPollSignalEventSem);
 
+	for ( uintN i = 0; i < argc; ++i ) {
+
+		volatile MetaPoll *mpSlot = mpv->metaPollThreadInfo[i].mpSlot; // avoids to mutex ti->mpSlot access.
+		if ( mpSlot )
+			mpSlot->cancelPoll(mpSlot);
+	}
+
+	for ( uintN i = 0; i < argc; ++i )
+		JLAcquireSemaphore(mpv->metaPollSignalEventSem, -1);
+
+	JL_ASSERT(argc <= JSVAL_INT_BITS); // bits
+	unsigned int events;
+	events = 0;
+	bool hasEvent;
 	JSBool ok;
 	ok = true;
 	for ( uintN i = 0; i < argc; ++i ) {
 
-		MetaPollThreadInfo *ti = &mpv->metaPollThreadInfo[i];
 		MetaPoll *mp = metaPollList[i];
-
-		if ( !mp->endPoll(mp, cx) )
+		if ( mp->endPoll(mp, &hasEvent, cx, obj) != JS_TRUE )
 			ok = JS_FALSE;
-
-		JLAcquireMutex(ti->in);
-		JLReleaseMutex(ti->out);
-		JLAcquireSemaphore(mpv->metaPollSignalEventSem, -1);
+		if ( hasEvent )
+			events |= 1 << i;
 	}
 
-	#ifdef DEBUG
-	int res = JLAcquireSemaphore(mpv->metaPollSignalEventSem, 0);
-	JL_S_ASSERT( res == JLTIMEOUT, "Invalid state" );
-	#endif // DEBUG
+#ifdef DEBUG
+	for ( uintN i = 0; i < argc; ++i ) {
 
-	*JL_RVAL = JSVAL_VOID;
+		MetaPollThreadInfo *ti = &mpv->metaPollThreadInfo[i];
+		JL_ASSERT( ti->mpSlot == NULL );
+	}
+	int res2 = JLAcquireSemaphore(mpv->metaPollSignalEventSem, 0);
+	JL_ASSERT( res2 == JLTIMEOUT ); // invalid state
+#endif // DEBUG
+
+	*JL_RVAL = INT_TO_JSVAL(events);
 	return ok;
 	JL_BAD;
 }
@@ -196,27 +203,37 @@ DEFINE_FUNCTION( MetaPoll ) {
 
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE id $INAME( msTimeout )
+**/
 struct MetaPollTimeout {
 	
 	MetaPoll mp;
 	unsigned int timeout;
 	JLSemaphoreHandler cancel;
+	bool canceled;
 };
 
 JL_STATIC_ASSERT( offsetof(MetaPollTimeout, mp) == 0 );
 
-
-static void StartPoll( MetaPoll *mp ) {
+static void StartPoll( volatile MetaPoll *mp ) {
 
 	MetaPollTimeout *mpt = (MetaPollTimeout*)mp;
-	JLAcquireSemaphore(mpt->cancel, mpt->timeout);
+	mpt->canceled = (JLAcquireSemaphore(mpt->cancel, mpt->timeout) == JLOK);
 }
 
-static JSBool EndPoll( MetaPoll *mp, JSContext *cx ) {
+static void CancelPoll( volatile MetaPoll *mp ) {
 
 	MetaPollTimeout *mpt = (MetaPollTimeout*)mp;
 	JLReleaseSemaphore(mpt->cancel);
+}
+
+static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+
+	MetaPollTimeout *mpt = (MetaPollTimeout*)mp;
 	JLFreeSemaphore(&mpt->cancel);
+	*hasEvent = !mpt->canceled;
 	return JS_TRUE;
 }
 
@@ -230,6 +247,7 @@ DEFINE_FUNCTION_FAST( MetaPollTimeout ) {
 	MetaPollTimeout *mpt;
 	JL_CHK( CreateHandle(cx, 'poll', sizeof(MetaPollTimeout), (void**)&mpt, NULL, JL_FRVAL) );
 	mpt->mp.startPoll = StartPoll;
+	mpt->mp.cancelPoll = CancelPoll;
 	mpt->mp.endPoll = EndPoll;
 	mpt->timeout = timeout;
 	mpt->cancel = JLCreateSemaphore(0);

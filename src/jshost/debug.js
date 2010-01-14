@@ -7,13 +7,33 @@
 LoadModule('jsode');
 LoadModule('jsstd');
 
+//var ev = MetaPoll( MetaPollTimeout(2000), MetaPollEndSignal() );
+
+var ev = MetaPoll( MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1) );
+Print( 'events flags: '+ev.toString(2)+'\n' );
+
+var ev = MetaPoll( MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1) );
+Print( 'events flags: '+ev.toString(2)+'\n' );
+
+Halt();
+
 var t0 = +new Date();
 
 while ( !endSignal ) {
+	
 	Print('.');
-//	MetaPoll( MetaPollTimeout(2000), MetaPollTimeout(500), MetaPollTimeout(10) );
-	MetaPoll( MetaPollTimeout(10) );
+	MetaPoll( MetaPollTimeout(2000), MetaPollEndSignal(), MetaPollEndSignal() );
 }
+
+endSignal = false;
+
+while ( !endSignal ) {
+	
+	Print('.');
+//	MetaPoll( MetaPollTimeout(2000), MetaPollTimeout(500), MetaPollTimeout(1) , MetaPollTimeout(10) );
+	MetaPoll( MetaPollTimeout(1), MetaPollEndSignal() );
+}
+
 
 var t = +new Date() - t0;
 

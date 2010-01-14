@@ -16,9 +16,8 @@
 
 struct MetaPollThreadInfo {
 
-	MetaPoll *mpSlot;
-	JLMutexHandler in, out;
-	JLSemaphoreHandler signalEventSem;
+	volatile MetaPoll *mpSlot;
+	JLSemaphoreHandler start, signalEventSem;
 	JLThreadHandler thread;
 	bool isEnd;
 };

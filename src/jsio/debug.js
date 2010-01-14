@@ -6,8 +6,8 @@ LoadModule('jsio');
 LoadModule('jstask');
 
 
-MetaPoll( ConfIOPool() );
-MetaPoll( ConfIOPool() );
+Print( MetaPoll( MetaPollIO(), MetaPollEndSignal() ).toString(2), '\n' );
+
 
 //jsioTest();
 

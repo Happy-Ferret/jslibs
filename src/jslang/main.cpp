@@ -64,12 +64,9 @@ JSBool jslangModuleRelease(JSContext *cx) {
 		MetaPollThreadInfo *ti = &mpv->metaPollThreadInfo[i];
 		if ( ti->thread != 0 ) {
 
-//			JLAcquireMutex(ti->in);
 			ti->isEnd = true;
-			JLReleaseMutex(ti->in);
-			
-			JLFreeMutex(&ti->in);
-			JLFreeMutex(&ti->out);
+			JLReleaseSemaphore(ti->start);
+			JLFreeMutex(&ti->start);
 		}
 		JLFreeSemaphore(&mpv->metaPollSignalEventSem);
 	}

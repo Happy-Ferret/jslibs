@@ -241,46 +241,56 @@ bad:
 
 
 
-struct MetaIOPoll {
+struct MetaPollIOData {
 	
 	MetaPoll mp;
-	PRFileDesc *endEvent;
+
+	PRPollDesc *pollDesc;
+	PRInt32 pollResult;
+	bool hasEvent;
 };
 
-JL_STATIC_ASSERT( offsetof(MetaIOPoll, mp) == 0 );
+JL_STATIC_ASSERT( offsetof(MetaPollIOData, mp) == 0 );
 
+static void StartPoll( volatile MetaPoll *mp ) {
 
-static void StartPoll( MetaPoll *mp ) {
-
-	MetaIOPoll *metaIOPoll = (MetaIOPoll*)mp;
-
-	PRPollDesc pollDesc[1];
-	pollDesc[0].fd = metaIOPoll->endEvent;
-	pollDesc[0].in_flags = PR_POLL_READ;
-	pollDesc[0].out_flags = 0;
-
-	PRInt32 count = PR_Poll(pollDesc, 1, PR_MillisecondsToInterval(1000));
+	MetaPollIOData *mpio = (MetaPollIOData*)mp;
+	mpio->pollResult = PR_Poll(mpio->pollDesc, 1, PR_INTERVAL_NO_TIMEOUT);
+	mpio->hasEvent = mpio->pollResult > 0 && !( mpio->pollDesc[0].out_flags & PR_POLL_READ );
 }
 
-static JSBool EndPoll( MetaPoll *mp, JSContext *cx ) {
+static void CancelPoll( volatile MetaPoll *mp ) {
 
-	MetaIOPoll *metaIOPoll = (MetaIOPoll*)mp;
-
+	MetaPollIOData *mpio = (MetaPollIOData*)mp;
 	PRStatus status;
-	status = PR_SetPollableEvent(metaIOPoll->endEvent); // cancel the poll
-	status = PR_DestroyPollableEvent(metaIOPoll->endEvent);
+	status = PR_SetPollableEvent(mpio->pollDesc[0].fd); // cancel the poll
+}
 
+static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+
+	MetaPollIOData *mpio = (MetaPollIOData*)mp;
+	PRStatus status;
+	status = PR_DestroyPollableEvent(mpio->pollDesc[0].fd);
+	*hasEvent = mpio->hasEvent;
+
+	jl_free(mpio->pollDesc);
 	return JS_TRUE;
 	JL_BAD;
 }
 
-DEFINE_FUNCTION_FAST( ConfIOPool ) {
+DEFINE_FUNCTION_FAST( MetaPollIO ) {
 	
-	MetaIOPoll *metaIOPoll;
-	JL_CHK( CreateHandle(cx, 'poll', sizeof(MetaIOPoll), (void**)&metaIOPoll, NULL, JL_FRVAL) );
-	metaIOPoll->mp.startPoll = StartPoll;
-	metaIOPoll->mp.endPoll = EndPoll;
-	metaIOPoll->endEvent = PR_NewPollableEvent();
+	MetaPollIOData *mpio;
+	JL_CHK( CreateHandle(cx, 'poll', sizeof(MetaPollIOData), (void**)&mpio, NULL, JL_FRVAL) );
+	mpio->mp.startPoll = StartPoll;
+	mpio->mp.cancelPoll = CancelPoll;
+	mpio->mp.endPoll = EndPoll;
+
+	mpio->pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * 1);
+
+	mpio->pollDesc[0].fd = PR_NewPollableEvent();
+	mpio->pollDesc[0].in_flags = PR_POLL_READ;
+	mpio->pollDesc[0].out_flags = 0;
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1200,7 +1210,7 @@ CONFIGURE_STATIC
 		#endif // DEBUG
 
 		FUNCTION( Poll ) // Do not turn it in FAST NATIVE because we need a stack frame for debuging
-		FUNCTION_FAST( ConfIOPool )
+		FUNCTION_FAST( MetaPollIO )
 		FUNCTION( IsReadable )
 		FUNCTION( IsWritable )
 		FUNCTION( IntervalNow )
