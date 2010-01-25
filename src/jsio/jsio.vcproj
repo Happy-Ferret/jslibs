@@ -272,6 +272,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\jsio.h"
+				>
+			</File>
+			<File
 				RelativePath=".\memoryMapped.h"
 				>
 			</File>

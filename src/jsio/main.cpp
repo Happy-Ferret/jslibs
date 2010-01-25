@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#include "jsio.h"
+
 #include "descriptor.h"
 #include "pipe.h"
 #include "file.h"
@@ -51,6 +53,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	}
 	PR_AtomicIncrement(&instanceCount);
 
+	JL_CHK( SetModulePrivate(cx, moduleId, jl_calloc(sizeof(JsioPrivate), 1)) );
+
 	INIT_CLASS( IoError );
 	INIT_CLASS( Descriptor );
 	INIT_CLASS( Pipe );
@@ -62,6 +66,18 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Semaphore );
 	INIT_CLASS( Process );
 	INIT_STATIC();
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+
+	JsioPrivate *mpv = (JsioPrivate*)GetModulePrivate(cx, moduleId);
+	if ( mpv->metaPollEvent != NULL )
+		PR_DestroyPollableEvent(mpv->metaPollEvent);
+
+	jl_free(mpv);
 
 	return JS_TRUE;
 	JL_BAD;

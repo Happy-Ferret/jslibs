@@ -6,7 +6,9 @@ LoadModule('jsio');
 LoadModule('jstask');
 
 
-Print( MetaPoll( MetaPollIO(), MetaPollEndSignal() ).toString(2), '\n' );
+Print( MetaPoll( MetaPollIO(), MetaPollTimeout(1000) ).toString(2), '\n' );
+
+//Print( MetaPoll( MetaPollEndSignal() ).toString(2), '\n' );
 
 
 //jsioTest();
