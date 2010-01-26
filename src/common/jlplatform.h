@@ -1132,15 +1132,17 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		#define JL_THREAD_PRIORITY_LOW THREAD_PRIORITY_BELOW_NORMAL
 		#define JL_THREAD_PRIORITY_NORMAL THREAD_PRIORITY_NORMAL
 		#define JL_THREAD_PRIORITY_HIGH THREAD_PRIORITY_ABOVE_NORMAL
+		#define JL_THREAD_PRIORITY_HIGHEST THREAD_PRIORITY_HIGHEST
 		typedef HANDLE JLThreadHandler;
 		typedef int JLThreadPriorityType;
 		#define JLThreadFuncDecl DWORD WINAPI
 		typedef PTHREAD_START_ROUTINE JLThreadRoutine;
 	#elif defined(XP_UNIX)
-		#define JL_THREAD_PRIORITY_LOWEST 0
-		#define JL_THREAD_PRIORITY_LOW 40
+		#define JL_THREAD_PRIORITY_LOWEST 32
+		#define JL_THREAD_PRIORITY_LOW 48
 		#define JL_THREAD_PRIORITY_NORMAL 64
-		#define JL_THREAD_PRIORITY_HIGH 88
+		#define JL_THREAD_PRIORITY_HIGH 80
+		#define JL_THREAD_PRIORITY_HIGHEST 96
 		typedef pthread_t* JLThreadHandler;
 		typedef int JLThreadPriorityType;
 		#define JLThreadFuncDecl void*

@@ -66,7 +66,7 @@ JSBool jslangModuleRelease(JSContext *cx) {
 
 			ti->isEnd = true;
 			JLReleaseSemaphore(ti->start);
-			JLFreeMutex(&ti->start);
+			JLFreeSemaphore(&ti->start);
 		}
 		JLFreeSemaphore(&mpv->metaPollSignalEventSem);
 	}

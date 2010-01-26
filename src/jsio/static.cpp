@@ -62,27 +62,29 @@ JSBool InitPollDesc( JSContext *cx, jsval prop, PRPollDesc *pollDesc ) {
 	pollDesc->fd = (PRFileDesc *)JL_GetPrivate(cx, fdObj); // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
 	// beware: fd == NULL is supported !
 
+	jsval tmp;
+
 	pollDesc->out_flags = 0;
 	pollDesc->in_flags = 0;
 
-	JL_CHK( JS_GetProperty( cx, fdObj, "writable", &prop ) );
-	if ( JsvalIsFunction(cx, prop) )
+	JL_CHK( JS_GetProperty( cx, fdObj, "writable", &tmp ) );
+	if ( JsvalIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_WRITE;
 
-	JL_CHK( JS_GetProperty( cx, fdObj, "readable", &prop ) );
-	if ( JsvalIsFunction(cx, prop) )
+	JL_CHK( JS_GetProperty( cx, fdObj, "readable", &tmp ) );
+	if ( JsvalIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_READ;
 
-	JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &prop ) );
-	if ( JsvalIsFunction(cx, prop) )
+	JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &tmp ) );
+	if ( JsvalIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_HUP;
 
-	JL_CHK( JS_GetProperty( cx, fdObj, "exception", &prop ) );
-	if ( JsvalIsFunction(cx, prop) )
+	JL_CHK( JS_GetProperty( cx, fdObj, "exception", &tmp ) );
+	if ( JsvalIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_EXCEPT;
 
-	JL_CHK( JS_GetProperty( cx, fdObj, "error", &prop ) );
-	if ( JsvalIsFunction(cx, prop) )
+	JL_CHK( JS_GetProperty( cx, fdObj, "error", &tmp ) );
+	if ( JsvalIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_ERR;
 
 	return JS_TRUE;
@@ -100,7 +102,6 @@ JSBool PollDescNotify( JSContext *cx, jsval prop, PRPollDesc *pollDesc, int inde
 
 	JSObject *fdObj;
 	fdObj = JSVAL_TO_OBJECT( prop );
-
 	JL_S_ASSERT_INHERITANCE(JSVAL_TO_OBJECT( prop ), JL_CLASS(Descriptor));
 
 	PRInt16 outFlag = pollDesc->out_flags;
@@ -349,7 +350,7 @@ struct MetaPollIOData {
 	
 	MetaPoll mp;
 
-	int fdArrayLen;
+	int fdCount;
 	PRPollDesc *pollDesc;
 	jsval *descVal;
 	PRInt32 pollResult;
@@ -360,35 +361,46 @@ JL_STATIC_ASSERT( offsetof(MetaPollIOData, mp) == 0 );
 static void StartPoll( volatile MetaPoll *mp ) {
 
 	MetaPollIOData *mpio = (MetaPollIOData*)mp;
-	mpio->pollResult = PR_Poll(mpio->pollDesc, 1, PR_INTERVAL_NO_TIMEOUT);
+	mpio->pollResult = PR_Poll(mpio->pollDesc, 1 + mpio->fdCount, PR_INTERVAL_NO_TIMEOUT);
 }
 
-static void CancelPoll( volatile MetaPoll *mp ) {
+static bool CancelPoll( volatile MetaPoll *mp ) {
 
 	MetaPollIOData *mpio = (MetaPollIOData*)mp;
 	PRStatus status;
 	status = PR_SetPollableEvent(mpio->pollDesc[0].fd); // cancel the poll
-	PR_WaitForPollableEvent(mpio->pollDesc[0].fd); // resets the event !
+	status = PR_WaitForPollableEvent(mpio->pollDesc[0].fd); // resets the event !
+	return true;
 }
 
 static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	MetaPollIOData *mpio = (MetaPollIOData*)mp;
 
-	if ( mpio->pollResult == -1 ) // failed. see PR_GetError()
-		JL_CHK( ThrowIoError(cx) ); // returns later
+	if ( mpio->pollResult == -1 )
+		JL_CHK( ThrowIoError(cx) );
 
 	*hasEvent = mpio->pollResult > 0 && !( mpio->pollDesc[0].out_flags & PR_POLL_READ );
 
-	JSBool ok;
-	ok = JS_TRUE;
-	for ( int i = 0; i < mpio->fdArrayLen; ++i ) {
-
-		if ( ok )
-			ok = PollDescNotify(cx, mpio->descVal[i], &mpio->pollDesc[1 + i], i);
-		JS_RemoveRoot(cx, &mpio->descVal[i]);
+	if ( !*hasEvent ) { // optimization
+	
+		for ( int i = 0; i < mpio->fdCount; ++i )
+			JL_CHK( JS_RemoveRoot(cx, &mpio->descVal[i]) );
+		jl_free(mpio->pollDesc);
+		jl_free(mpio->descVal);
+		return JS_TRUE;
 	}
 
+	jsval *tmp;
+	JSBool ok;
+	ok = JS_TRUE;
+	for ( int i = 0; i < mpio->fdCount; ++i ) {
+		
+		tmp = &mpio->descVal[i];
+		if ( ok )
+			ok = PollDescNotify(cx, *tmp, &mpio->pollDesc[1 + i], i);
+		JL_CHK( JS_RemoveRoot(cx, tmp) );
+	}
 	JL_CHK( ok );
 
 	jl_free(mpio->pollDesc);
@@ -399,7 +411,6 @@ bad:
 	jl_free(mpio->pollDesc);
 	jl_free(mpio->descVal);
 	return JS_FALSE;
-
 }
 
 DEFINE_FUNCTION_FAST( MetaPollIO ) {
@@ -416,28 +427,34 @@ DEFINE_FUNCTION_FAST( MetaPollIO ) {
 	mpio->mp.cancelPoll = CancelPoll;
 	mpio->mp.endPoll = EndPoll;
 
-		jsuint fdArrayLen;
-	JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &fdArrayLen) );
+	jsuint fdCount;
+	JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &fdCount) );
 
-	mpio->pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdArrayLen));
+	mpio->pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdCount)); // pollDesc[0] is the event fd
 	JL_S_ASSERT_ALLOC( mpio->pollDesc );
-	mpio->descVal = (jsval*)jl_malloc(sizeof(JSObject*) * (fdArrayLen));
+	mpio->descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
 	JL_S_ASSERT_ALLOC( mpio->descVal );
 
 	JsioPrivate *mpv = (JsioPrivate*)GetModulePrivate(cx, moduleId);
-	if ( mpv->metaPollEvent == NULL )
+	if ( mpv->metaPollEvent == NULL ) {
+		
 		mpv->metaPollEvent = PR_NewPollableEvent();
+		if ( mpv->metaPollEvent == NULL )
+			return ThrowIoError(cx);
+	}
 
 	mpio->pollDesc[0].fd = mpv->metaPollEvent;
 	mpio->pollDesc[0].in_flags = PR_POLL_READ;
 	mpio->pollDesc[0].out_flags = 0;
 	
-	mpio->fdArrayLen = fdArrayLen;
-	for ( jsuint i = 0; i < fdArrayLen; ++i ) {
-
-		JL_CHK( JS_GetElement(cx, fdArrayObj, i, &mpio->descVal[i]) );
-		JS_AddRoot(cx, &mpio->descVal[i]);
-		InitPollDesc(cx, mpio->descVal[i], &mpio->pollDesc[1 + i]); // pollDesc[0] is the event fd
+	mpio->fdCount = fdCount;
+	jsval *tmp;
+	for ( jsuint i = 0; i < fdCount; ++i ) {
+		
+		tmp = &mpio->descVal[i];
+		JL_CHK( JS_GetElement(cx, fdArrayObj, i, tmp) );
+		JL_CHK( JS_AddRoot(cx, tmp) );
+		JL_CHK( InitPollDesc(cx, *tmp, &mpio->pollDesc[1 + i]) );
 	}
 
 	return JS_TRUE;

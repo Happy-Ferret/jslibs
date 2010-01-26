@@ -2205,7 +2205,7 @@ inline JSBool JsvalToMatrix44( JSContext *cx, jsval val, float **m ) {
 
 struct MetaPoll {
 	void (*startPoll)( volatile MetaPoll *mp ); // starts the blocking thread and call signalEvent() when an event has arrived.
-	void (*cancelPoll)( volatile MetaPoll *mp ); // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
+	bool (*cancelPoll)( volatile MetaPoll *mp ); // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
 	JSBool (*endPoll)( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ); // process the result
 };
 

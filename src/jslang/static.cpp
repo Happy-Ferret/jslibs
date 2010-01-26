@@ -147,7 +147,7 @@ DEFINE_FUNCTION( MetaPoll ) {
 
 			ti->start = JLCreateSemaphore(0);
 			ti->thread = JLThreadStart(MetaPollThread, ti);
-			JLThreadPriority(ti->thread, JL_THREAD_PRIORITY_HIGH);
+			JLThreadPriority(ti->thread, JL_THREAD_PRIORITY_HIGHEST);
 			ti->signalEventSem = mpv->metaPollSignalEventSem;
 			ti->isEnd = false;
 		}
@@ -160,11 +160,25 @@ DEFINE_FUNCTION( MetaPoll ) {
 	JLAcquireSemaphore(mpv->metaPollSignalEventSem, -1); // wait for an event (timeout can also be managed here)
 	JLReleaseSemaphore(mpv->metaPollSignalEventSem);
 
+	bool canceled;
 	for ( uintN i = 0; i < argc; ++i ) {
 
 		volatile MetaPoll *mpSlot = mpv->metaPollThreadInfo[i].mpSlot; // avoids to mutex ti->mpSlot access.
-		if ( mpSlot )
-			mpSlot->cancelPoll(mpSlot);
+		if ( mpSlot ) {
+
+			canceled = mpSlot->cancelPoll(mpSlot);
+			if ( !canceled ) { // if !canceled, kill the thread
+
+				MetaPollThreadInfo *ti = &mpv->metaPollThreadInfo[i];
+				ti->mpSlot = NULL;
+				JLReleaseSemaphore(ti->signalEventSem);
+				JLThreadCancel(ti->thread);
+				JLWaitThread(ti->thread); // (TBD) needed ?
+				JLFreeSemaphore(&ti->start);
+				JLFreeThread(&ti->thread);
+				ti->thread = 0; // see thread creation place
+			}
+		}
 	}
 
 	for ( uintN i = 0; i < argc; ++i )
@@ -223,10 +237,11 @@ static void StartPoll( volatile MetaPoll *mp ) {
 	mpt->canceled = (JLAcquireSemaphore(mpt->cancel, mpt->timeout) == JLOK);
 }
 
-static void CancelPoll( volatile MetaPoll *mp ) {
+static bool CancelPoll( volatile MetaPoll *mp ) {
 
 	MetaPollTimeout *mpt = (MetaPollTimeout*)mp;
 	JLReleaseSemaphore(mpt->cancel);
+	return true;
 }
 
 static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ) {

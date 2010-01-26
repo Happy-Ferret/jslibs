@@ -99,18 +99,20 @@ static void EndSignalStartPoll( volatile MetaPoll *mp ) {
 		JLAcquireSemaphore(gEndSignalEvent, -1);
 }
 
-static void EndSignalCancelPoll( volatile MetaPoll *mp ) {
+static bool EndSignalCancelPoll( volatile MetaPoll *mp ) {
 
 	MetaPollEndSignalData *mpes = (MetaPollEndSignalData*)mp;
 	mpes->cancel = true;
-
 	JLReleaseSemaphore(gEndSignalEvent);
 	JLAcquireSemaphore(gEndSignalEvent, 0);
+
+	return true;
 }
 
 static JSBool EndSignalEndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	*hasEvent = gEndSignalState;
+
 	return JS_TRUE;
 }
 

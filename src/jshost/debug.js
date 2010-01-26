@@ -7,7 +7,14 @@
 LoadModule('jsode');
 LoadModule('jsstd');
 
-//var ev = MetaPoll( MetaPollTimeout(2000), MetaPollEndSignal() );
+MetaPoll( MetaPollTimeout(20000), MetaPollEndSignal() );
+endSignal = false;
+MetaPoll( MetaPollTimeout(20000), MetaPollEndSignal() );
+endSignal = false;
+MetaPoll( MetaPollTimeout(20000), MetaPollEndSignal() );
+
+
+Halt();
 
 var ev = MetaPoll( MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1) );
 Print( 'events flags: '+ev.toString(2)+'\n' );
