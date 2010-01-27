@@ -84,19 +84,19 @@ DEFINE_FINALIZE() {
 	if ( !pv )
 		return;
 
-	JL_CHK( JLAcquireMutex(pv->mutex) ); // --
+	JL_CHK( JLMutexAcquire(pv->mutex) ); // --
 	pv->end = true;
-	JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+	JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 
-	JLReleaseSemaphore(pv->requestSem); // +1 // unlock the thread an let it manage the "end"
+	JLSemaphoreRelease(pv->requestSem); // +1 // unlock the thread an let it manage the "end"
 
-	JL_CHK( JLWaitThread(pv->threadHandle) ); // wait for the end of the thread
-	JL_CHK( JLFreeThread(&pv->threadHandle) );
+	JL_CHK( JLThreadWait(pv->threadHandle, NULL) ); // wait for the end of the thread
+	JL_CHK( JLThreadFree(&pv->threadHandle) );
 
-	JL_CHK( JLFreeSemaphore(&pv->requestSem) );
-	JL_CHK( JLFreeSemaphore(&pv->responseSem) );
+	JL_CHK( JLSemaphoreFree(&pv->requestSem) );
+	JL_CHK( JLSemaphoreFree(&pv->responseSem) );
 
-	JLFreeMutex(&pv->mutex);
+	JLMutexFree(&pv->mutex);
 
 	// cleanup lists
 	while ( !QueueIsEmpty(&pv->responseList) ) {
@@ -154,19 +154,19 @@ static JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 
 	for (;;) {
 
-		JL_CHK( JLAcquireSemaphore(pv->requestSem, -1) ); // -1 // wait for a request
+		JL_CHK( JLSemaphoreAcquire(pv->requestSem, -1) ); // -1 // wait for a request
 
-		JL_CHK( JLAcquireMutex(pv->mutex) ); // --
+		JL_CHK( JLMutexAcquire(pv->mutex) ); // --
 		if ( pv->end ) { // manage the end of the thread
 
-			JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+			JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 			break;
 		}
 
 		Serialized serializedRequest = (Serialized)QueueShift(&pv->requestList);
 		pv->pendingRequestCount--;
 		pv->processingRequestCount++; // = 1;
-		JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+		JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 
 		JL_CHK( UnserializeJsval(cx, &serializedRequest, &argv[1]) );
 		SerializerFree(&serializedRequest);
@@ -193,12 +193,12 @@ static JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 			SerializerCreate(&serializedException);
 			JL_CHK( SerializeJsval(cx, &serializedException, &ex) );
 
-			JL_CHK( JLAcquireMutex(pv->mutex) ); // --
+			JL_CHK( JLMutexAcquire(pv->mutex) ); // --
 			QueuePush(&pv->exceptionList, serializedException);
 			QueuePush(&pv->responseList, NULL); // signals an exception
 			pv->pendingResponseCount++;
 			pv->processingRequestCount--;
-			JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+			JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 
 			JS_ClearPendingException(cx);
 		} else {
@@ -207,14 +207,14 @@ static JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 			SerializerCreate(&serializedResponse);
 			JL_CHK( SerializeJsval(cx, &serializedResponse, &argv[0]) ); // (TBD) need a better exception management
 
-			JL_CHK( JLAcquireMutex(pv->mutex) ); // --
+			JL_CHK( JLMutexAcquire(pv->mutex) ); // --
 			QueuePush(&pv->responseList, serializedResponse);
 			pv->pendingResponseCount++;
 			pv->processingRequestCount = 0;
-			JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+			JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 		}
 
-		JLReleaseSemaphore(pv->responseSem); // +1 // signals a response
+		JLSemaphoreRelease(pv->responseSem); // +1 // signals a response
 	}
 
 	JS_POP_TEMP_ROOT(cx, &tvr);
@@ -285,19 +285,19 @@ static JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 		SerializerCreate(&serializedException);
 		JL_CHK( SerializeJsval(cx, &serializedException, &ex) );
 
-		JL_CHK( JLAcquireMutex(pv->mutex) ); // --
+		JL_CHK( JLMutexAcquire(pv->mutex) ); // --
 		pv->end = true;
 		QueuePush(&pv->exceptionList, serializedException);
-		JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+		JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 
-		JLReleaseSemaphore(pv->responseSem); // +1
+		JLSemaphoreRelease(pv->responseSem); // +1
 	}
 
 bad:
 	BufferFinalize(&errBuffer);
 	if ( cx )
 		DestroyHost(cx);
-	JLThreadExit();
+	JLThreadExit(0);
 	return 0;
 }
 
@@ -344,7 +344,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_SetPrivate(cx, obj, pv);
 
-	pv->mutex = JLCreateMutex();
+	pv->mutex = JLMutexCreate();
 	JL_CHKM( JLMutexOk(pv->mutex), "Unable to create the mutex." );
 	pv->end = false;
 
@@ -395,11 +395,11 @@ DEFINE_FUNCTION_FAST( Request ) {
 		jsval arg = JSVAL_VOID;
 		JL_CHK( SerializeJsval(cx, &serializedRequest, &arg) );
 	}
-	JL_CHK( JLAcquireMutex(pv->mutex) ); // --
+	JL_CHK( JLMutexAcquire(pv->mutex) ); // --
 	QueuePush(&pv->requestList, serializedRequest);
 	pv->pendingRequestCount++;
-	JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
-	JLReleaseSemaphore(pv->requestSem); // +1 // signals a request
+	JL_CHK( JLMutexRelease(pv->mutex) ); // ++
+	JLSemaphoreRelease(pv->requestSem); // +1 // signals a request
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -419,13 +419,13 @@ DEFINE_FUNCTION_FAST( Response ) {
 	JL_S_ASSERT_RESOURCE(pv);
 
 	bool hasNoResponse;
-	JL_CHK( JLAcquireMutex(pv->mutex) ); // --
+	JL_CHK( JLMutexAcquire(pv->mutex) ); // --
 	hasNoResponse = QueueIsEmpty(&pv->responseList);
 
 	if ( QueueIsEmpty(&pv->responseList) && !QueueIsEmpty(&pv->exceptionList) ) {
 
 		Serialized serializedException = (Serialized)QueueShift(&pv->exceptionList);
-		JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+		JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 
 		jsval exception;
 		JL_CHK( UnserializeJsval(cx, &serializedException, &exception) );
@@ -436,21 +436,21 @@ DEFINE_FUNCTION_FAST( Response ) {
 
 	if ( pv->end ) {
 
-		JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+		JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 		jsval exception = JSVAL_VOID; // throw a StopTask exception
 		JS_SetPendingException(cx, exception);
 		return JS_FALSE;
 	}
 
-	JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+	JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 
-	JL_CHK( JLAcquireSemaphore(pv->responseSem, -1) ); // -1 // wait for a response
+	JL_CHK( JLSemaphoreAcquire(pv->responseSem, -1) ); // -1 // wait for a response
 
-	JL_CHK( JLAcquireMutex(pv->mutex) ); // --
+	JL_CHK( JLMutexAcquire(pv->mutex) ); // --
 
 	if ( QueueIsEmpty(&pv->responseList) ) { // || !JLThreadIsActive( pv->threadHandle )
 
-		JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+		JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 		*JL_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -462,7 +462,7 @@ DEFINE_FUNCTION_FAST( Response ) {
 	if ( SerializerIsEmpty( &serializedResponse ) ) { // an exception is signaled
 
 		Serialized serializedException = (Serialized)QueueShift(&pv->exceptionList);
-		JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+		JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 		jsval exception;
 		JL_CHK( UnserializeJsval(cx, &serializedException, &exception) ); // (TBD) throw a TaskException ?
 		JS_SetPendingException(cx, exception);
@@ -473,7 +473,7 @@ DEFINE_FUNCTION_FAST( Response ) {
 		JL_CHK( UnserializeJsval(cx, &serializedResponse, JL_FRVAL) );
 		SerializerFree(&serializedResponse);
 	}
-	JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+	JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 
 	return JS_TRUE;
 	JL_BAD;
@@ -491,10 +491,10 @@ DEFINE_PROPERTY( pendingRequestCount ) {
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( JLAcquireMutex(pv->mutex) ); // --
+	JL_CHK( JLMutexAcquire(pv->mutex) ); // --
 	JL_CHK( UIntToJsval(cx, pv->pendingRequestCount, vp) );
 //	JL_CHK( UIntToJsval(cx, pv->end ? 0 : pv->pendingRequestCount, vp) );
-	JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+	JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -511,9 +511,9 @@ DEFINE_PROPERTY( processingRequestCount ) {
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( JLAcquireMutex(pv->mutex) ); // --
+	JL_CHK( JLMutexAcquire(pv->mutex) ); // --
 	JL_CHK( UIntToJsval(cx, pv->processingRequestCount, vp) );
-	JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+	JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -530,10 +530,10 @@ DEFINE_PROPERTY( pendingResponseCount ) {
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( JLAcquireMutex(pv->mutex) ); // --
+	JL_CHK( JLMutexAcquire(pv->mutex) ); // --
 	JL_CHK( UIntToJsval(cx, pv->pendingResponseCount, vp) );
 //	JL_CHK( UIntToJsval(cx, pv->pendingResponseCount ? pv->pendingResponseCount : QueueIsEmpty(&pv->exceptionList) ? 0 : 1 , vp) );
-	JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+	JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -550,9 +550,9 @@ DEFINE_PROPERTY( idle ) {
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( JLAcquireMutex(pv->mutex) ); // --
+	JL_CHK( JLMutexAcquire(pv->mutex) ); // --
 	JL_CHK( BoolToJsval(cx, pv->pendingRequestCount + pv->processingRequestCount + pv->pendingResponseCount == 0 || pv->end, vp) );
-	JL_CHK( JLReleaseMutex(pv->mutex) ); // ++
+	JL_CHK( JLMutexRelease(pv->mutex) ); // ++
 	return JS_TRUE;
 	JL_BAD;
 }

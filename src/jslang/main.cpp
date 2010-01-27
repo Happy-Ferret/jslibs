@@ -16,8 +16,6 @@
 
 #include "jslang.h"
 
-static const uint32_t moduleId = JL_CAST_CSTR_TO_UINT32("lang");
-
 DECLARE_CLASS( Handle )
 DECLARE_CLASS( Blob )
 DECLARE_CLASS( Stream )
@@ -65,10 +63,10 @@ JSBool jslangModuleRelease(JSContext *cx) {
 		if ( ti->thread != 0 ) {
 
 			ti->isEnd = true;
-			JLReleaseSemaphore(ti->start);
-			JLFreeSemaphore(&ti->start);
+			JLSemaphoreRelease(ti->start);
+			JLSemaphoreFree(&ti->start);
 		}
-		JLFreeSemaphore(&mpv->metaPollSignalEventSem);
+		JLSemaphoreFree(&mpv->metaPollSignalEventSem);
 	}
 	
 	jl_free( mpv );

@@ -14,6 +14,10 @@
 
 #pragma once
 
+static const uint32_t moduleId = JL_CAST_CSTR_TO_UINT32("lang");
+
+#define METAPOLL_MAX_ITEM 31
+
 struct MetaPollThreadInfo {
 
 	volatile MetaPoll *mpSlot;
@@ -24,7 +28,6 @@ struct MetaPollThreadInfo {
 
 struct ModulePrivate {
 
-	MetaPollThreadInfo metaPollThreadInfo[16];
+	MetaPollThreadInfo metaPollThreadInfo[METAPOLL_MAX_ITEM];
 	JLSemaphoreHandler metaPollSignalEventSem;
 };
-

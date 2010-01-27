@@ -975,7 +975,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 
 	// msTimeout = -1 : no timeout
 	// returns true on a sucessfuly semaphore locked.
-	ALWAYS_INLINE int JLAcquireSemaphore( JLSemaphoreHandler semaphore, int msTimeout ) {
+	ALWAYS_INLINE int JLSemaphoreAcquire( JLSemaphoreHandler semaphore, int msTimeout ) {
 
 		if ( !JLSemaphoreOk(semaphore) )
 			return JLERROR;
@@ -993,10 +993,10 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 				return JLOK;
 		} else {
 
-			// see also: struct timespec ts; clock_gettime(CLOCK_REALTIME, &ts); link with -lrt
+			// see also: struct timespec ts; clock_gettime(CLOCK_REALTIME, &ts); then link with -lrt
 			struct timespec ts;
 			struct timeval tv;
-			gettimeofday(&tv, NULL);
+			gettimeofday(&tv, NULL); // function shall return 0 and no value shall be reserved to indicate an error.
 			ts.tv_nsec = tv.tv_usec * 1000UL + (msTimeout % 1000)*1000000UL;
 			ts.tv_sec = tv.tv_sec + msTimeout / 1000UL + ts.tv_nsec / 1000000000UL;
 			ts.tv_nsec %= 1000000000UL;
@@ -1011,7 +1011,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		return JLERROR;
 	}
 
-	ALWAYS_INLINE int JLReleaseSemaphore( JLSemaphoreHandler semaphore ) {
+	ALWAYS_INLINE int JLSemaphoreRelease( JLSemaphoreHandler semaphore ) {
 
 		if ( !JLSemaphoreOk(semaphore) )
 			return JLERROR;
@@ -1025,7 +1025,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		return JLOK;
 	}
 
-	ALWAYS_INLINE int JLFreeSemaphore( JLSemaphoreHandler *pSemaphore ) {
+	ALWAYS_INLINE int JLSemaphoreFree( JLSemaphoreHandler *pSemaphore ) {
 
 		if ( !pSemaphore || !JLSemaphoreOk(*pSemaphore) )
 			return JLERROR;
@@ -1062,7 +1062,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 	typedef pthread_mutex_t* JLMutexHandler;
 #endif
 
-	ALWAYS_INLINE JLMutexHandler JLCreateMutex() {
+	ALWAYS_INLINE JLMutexHandler JLMutexCreate() {
 
 	#if defined(XP_WIN)
 		return CreateMutex(NULL, FALSE, NULL);
@@ -1078,7 +1078,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		return mutex != (JLMutexHandler)0;
 	}
 
-	ALWAYS_INLINE int JLAcquireMutex( JLMutexHandler mutex ) {
+	ALWAYS_INLINE int JLMutexAcquire( JLMutexHandler mutex ) {
 
 		if ( !JLMutexOk(mutex) )
 			return JLERROR;
@@ -1092,7 +1092,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		return JLOK;
 	}
 
-	ALWAYS_INLINE int JLReleaseMutex( JLMutexHandler mutex ) {
+	ALWAYS_INLINE int JLMutexRelease( JLMutexHandler mutex ) {
 
 		if ( !JLMutexOk(mutex) )
 			return JLERROR;
@@ -1106,7 +1106,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		return JLOK;
 	}
 
-	ALWAYS_INLINE int JLFreeMutex( JLMutexHandler *pMutex ) {
+	ALWAYS_INLINE int JLMutexFree( JLMutexHandler *pMutex ) {
 
 		if ( !pMutex || !JLMutexOk(*pMutex) )
 			return JLERROR;
@@ -1176,12 +1176,12 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 	#endif
 	}
 
-	ALWAYS_INLINE void JLThreadExit() {
+	ALWAYS_INLINE void JLThreadExit( unsigned int exitValue ) {
 
 	#if defined(XP_WIN)
-		ExitThread(0);
+		ExitThread(exitValue);
 	#elif defined(XP_UNIX)
-		pthread_exit(NULL);
+		pthread_exit((void*)exitValue);
 	#endif
 	}
 
@@ -1231,22 +1231,23 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 	#endif
 	}
 
-	ALWAYS_INLINE int JLWaitThread( JLThreadHandler thread ) {
+	ALWAYS_INLINE int JLThreadWait( JLThreadHandler thread, unsigned int *exitValue ) {
 
 		if ( !JLThreadOk(thread) )
 			return JLERROR;
 	#if defined(XP_WIN)
 		if ( WaitForSingleObject(thread, INFINITE) != WAIT_OBJECT_0 )
 			return JLERROR;
+		if ( exitValue )
+			GetExitCodeThread(thread, (DWORD*)exitValue);
 	#elif defined(XP_UNIX)
-		void *status;
-		if ( pthread_join(*thread, &status) != 0 ) // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED.
+		if ( pthread_join(*thread, (void*)exitValue) != 0 ) // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED.
 			return JLERROR;
 	#endif
 		return JLOK;
 	}
 
-	ALWAYS_INLINE int JLFreeThread( JLThreadHandler *pThread ) {
+	ALWAYS_INLINE int JLThreadFree( JLThreadHandler *pThread ) {
 
 		if ( !pThread || !JLThreadOk(*pThread) )
 			return JLERROR;

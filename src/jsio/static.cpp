@@ -1342,9 +1342,7 @@ DEFINE_PROPERTY( version ) {
 JLThreadFuncDecl jsioTestThread( void *data ) {
 	
 	JLSemaphoreHandler sem = (JLMutexHandler)data;
-
-
-	JLThreadExit();
+	JLThreadExit(0);
 	return 0;
 }
 
@@ -1352,8 +1350,8 @@ DEFINE_FUNCTION( jsioTest ) {
 
 	JLSemaphoreHandler sem = JLCreateSemaphore(2);
 
-	JLAcquireSemaphore(sem, -1);
-	JLAcquireSemaphore(sem, -1);
+	JLSemaphoreAcquire(sem, -1);
+	JLSemaphoreAcquire(sem, -1);
 
 	JLThreadHandler thread = JLThreadStart(jsioTestThread, sem);
 

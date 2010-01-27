@@ -57,8 +57,8 @@ JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	JL_CHK( JsvalToBool(cx, *vp, &tmp) );
 	gEndSignalState = tmp;
 	
-	JLReleaseSemaphore(gEndSignalEvent);
-	JLAcquireSemaphore(gEndSignalEvent, 0);
+	JLSemaphoreRelease(gEndSignalEvent);
+	JLSemaphoreAcquire(gEndSignalEvent, 0);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -72,8 +72,8 @@ BOOL Interrupt(DWORD CtrlType) {
 //	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT) // CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
 //		return FALSE;
 	gEndSignalState = true;
-	JLReleaseSemaphore(gEndSignalEvent);
-	JLAcquireSemaphore(gEndSignalEvent, 0);
+	JLSemaphoreRelease(gEndSignalEvent);
+	JLSemaphoreAcquire(gEndSignalEvent, 0);
 	return TRUE;
 }
 #else
@@ -96,15 +96,15 @@ static void EndSignalStartPoll( volatile MetaPoll *mp ) {
 
 	MetaPollEndSignalData *mpes = (MetaPollEndSignalData*)mp;
 	while ( !gEndSignalState && !mpes->cancel )
-		JLAcquireSemaphore(gEndSignalEvent, -1);
+		JLSemaphoreAcquire(gEndSignalEvent, -1);
 }
 
 static bool EndSignalCancelPoll( volatile MetaPoll *mp ) {
 
 	MetaPollEndSignalData *mpes = (MetaPollEndSignalData*)mp;
 	mpes->cancel = true;
-	JLReleaseSemaphore(gEndSignalEvent);
-	JLAcquireSemaphore(gEndSignalEvent, 0);
+	JLSemaphoreRelease(gEndSignalEvent);
+	JLSemaphoreAcquire(gEndSignalEvent, 0);
 
 	return true;
 }

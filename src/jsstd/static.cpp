@@ -1241,10 +1241,10 @@ JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(scx);
 
 	//	SleepMilliseconds(pv->maxExecutionTime);
-	JLAcquireSemaphore(pv->semEnd, pv->maxExecutionTime); // used as a breakable Sleep. This avoids to Cancel the thread
+	JLSemaphoreAcquire(pv->semEnd, pv->maxExecutionTime); // used as a breakable Sleep. This avoids to Cancel the thread
 
 	JS_TriggerOperationCallback(scx);
-	JLThreadExit();
+	JLThreadExit(0);
 	return 0;
 }
 
@@ -1338,11 +1338,11 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	JSBool ok;
 	ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, filename, lineno, JL_FRVAL);
 
-	JL_CHK( JLReleaseSemaphore(pv.semEnd) );
+	JL_CHK( JLSemaphoreRelease(pv.semEnd) );
 
-	JL_CHK( JLWaitThread(sandboxWatchDogThread) );
-	JL_CHK( JLFreeThread(&sandboxWatchDogThread) );
-	JL_CHK( JLFreeSemaphore(&pv.semEnd) );
+	JL_CHK( JLThreadWait(sandboxWatchDogThread, NULL) );
+	JL_CHK( JLThreadFree(&sandboxWatchDogThread) );
+	JL_CHK( JLSemaphoreFree(&pv.semEnd) );
 
 	prev = JS_SetOperationCallback(scx, prev);
 	JL_S_ASSERT( prev == SandboxMaxOperationCallback, "Invalid SandboxMaxOperationCallback handler." );
@@ -1362,7 +1362,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	return ok;
 
 bad:
-	JLFreeThread(&sandboxWatchDogThread);
+	JLThreadFree(&sandboxWatchDogThread);
 	if ( scx )
 		JS_DestroyContextNoGC(scx);
 	return JS_FALSE;

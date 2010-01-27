@@ -242,8 +242,8 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 	for (;;) {
 
 		//SleepMilliseconds(pv->maybeGCInterval); // use a timed semaphore instead (see SandboxEval)
-		if ( JLAcquireSemaphore(pv->watchDogSemEnd, pv->maybeGCInterval) != JLTIMEOUT ) // used as a breakable Sleep.
-			JLThreadExit();
+		if ( JLSemaphoreAcquire(pv->watchDogSemEnd, pv->maybeGCInterval) != JLTIMEOUT ) // used as a breakable Sleep.
+			JLThreadExit(0);
 		JS_TriggerOperationCallback(cx);
 	}
 }
@@ -545,10 +545,10 @@ JSBool DestroyHost( JSContext *cx ) {
 	if ( JLThreadOk(pv->watchDogThread) ) {
 
 		// beware: it is important to destroy the watchDogThread BEFORE destroying the cx or pv !!!
-		JL_CHK( JLReleaseSemaphore(pv->watchDogSemEnd) );
-		JL_CHK( JLWaitThread(pv->watchDogThread) );
-		JL_CHK( JLFreeThread(&pv->watchDogThread) );
-		JL_CHK( JLFreeSemaphore(&pv->watchDogSemEnd) );
+		JL_CHK( JLSemaphoreRelease(pv->watchDogSemEnd) );
+		JL_CHK( JLThreadWait(pv->watchDogThread, NULL) );
+		JL_CHK( JLThreadFree(&pv->watchDogThread) );
+		JL_CHK( JLSemaphoreFree(&pv->watchDogSemEnd) );
 	}
 
 	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) ) {
@@ -910,10 +910,10 @@ static JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
 
 	for (;;) {
 
-		if ( JLAcquireSemaphore(memoryFreeThreadSem, WAIT_HEAD_FILLING) == JLOK ) {
+		if ( JLSemaphoreAcquire(memoryFreeThreadSem, WAIT_HEAD_FILLING) == JLOK ) {
 			switch ( threadAction ) {
 				case MemThreadExit:
-					JLThreadExit();
+					JLThreadExit(0);
 				case MemThreadProcess:
 					;
 			}
@@ -931,7 +931,7 @@ JSBool NewGCCallback(JSContext *cx, JSGCStatus status) {
 	if ( status == JSGC_FINALIZE_END ) {
 
 		threadAction = MemThreadProcess;
-		JLReleaseSemaphore(memoryFreeThreadSem);
+		JLSemaphoreRelease(memoryFreeThreadSem);
 	}
 	return prevGCCallback ? prevGCCallback(cx, status) : JS_TRUE;
 }
@@ -986,11 +986,11 @@ bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *ca
 	*free = base_free;
 
 	threadAction = MemThreadExit;
-	JLReleaseSemaphore(memoryFreeThreadSem);
+	JLSemaphoreRelease(memoryFreeThreadSem);
 	// beware: Never use JLThreadCancel on a thread that call free().
-	JLWaitThread(memoryFreeThread);
-	JLFreeThread(&memoryFreeThread);
-	JLFreeSemaphore(&memoryFreeThreadSem);
+	JLThreadWait(memoryFreeThread, NULL);
+	JLThreadFree(&memoryFreeThread);
+	JLSemaphoreFree(&memoryFreeThreadSem);
 
 	if ( freeQueue ) {
 
