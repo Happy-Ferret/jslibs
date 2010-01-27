@@ -17,6 +17,9 @@
 #include "static.h"
 #include "error.h"
 
+#include "../jslang/handlePub.h"
+
+
 DECLARE_CLASS( Cursor )
 
 /**doc fileIndex:topmost **/
@@ -1030,64 +1033,114 @@ DEFINE_PROPERTY( version ) {
 
 
 
-#ifdef DEBUG
 
-JLThreadHandler thread;
+struct MetaPollSDLData {
+	
+	MetaPoll mp;
 
-JLThreadFuncDecl BlockingEventLoop(void *threadArg) {
+	JLSemaphoreHandler cancel;
+	JSObject *listenersObj;
+};
 
-	JLMutexHandler signalEventMutex = (JLMutexHandler)threadArg;
+JL_STATIC_ASSERT( offsetof(MetaPollSDLData, mp) == 0 );
 
+static void StartPoll( volatile MetaPoll *mp ) {
+
+	MetaPollSDLData *mpsdl = (MetaPollSDLData*)mp;
 	for (;;) {
 
 		SDL_PumpEvents();
-		if ( SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS) != 0 )
-			break;
-		SDL_Delay(1);
+		if ( SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS) != 0 ) // unfortunately, this call is not blocking.
+			return;
+		if ( JLSemaphoreAcquire(mpsdl->cancel, 1) == JLOK )
+			return;
+	}
+}
+
+
+static bool CancelPoll( volatile MetaPoll *mp ) {
+
+	//SDL_Event ev;
+	//ev.type = SDL_USEREVENT;
+	//ev.user.code = 0;
+	//ev.user.data1 = NULL;
+	//ev.user.data2 = NULL;
+	//SDL_PushEvent(&ev);
+
+	MetaPollSDLData *mpsdl = (MetaPollSDLData*)mp;
+	JLSemaphoreRelease(mpsdl->cancel);
+	return true;
+}
+
+static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+
+	MetaPollSDLData *mpsdl = (MetaPollSDLData*)mp;
+	JLSemaphoreFree(&mpsdl->cancel);
+	
+	SDL_Event ev;
+	bool pump;
+	int status;
+	bool fired;
+	jsval rval;
+
+	pump = true;
+	for (;;) {
+		
+		if ( pump ) // we pump only if no event
+			SDL_PumpEvents();
+
+		status = SDL_PeepEvents(&ev, 1, SDL_GETEVENT, SDL_ALLEVENTS); // see SDL_EventState
+		if ( status == -1 )
+			return ThrowSdlError(cx);
+
+		if ( status == 0 ) {
+
+			if ( pump ) {
+
+				goto end;
+			} else {
+			
+				pump = true;
+				continue;
+			}
+		}
+
+		pump = false;
+
+		*hasEvent = true;
+
+		JL_CHK( FireListener(cx, mpsdl->listenersObj, &ev, &rval, &fired) );
 	}
 
-	JLReleaseMutex(signalEventMutex);
-	JLThreadExit();
-	return 0;
-}
-
-void startPollFunction( JLSemaphoreHandler signalEventMutex ) {
-
-	thread = JLThreadStart(BlockingEventLoop, signalEventMutex);
-}
-
-void endPollFunction() {
-
-	SDL_Event ev;
-	ev.type = SDL_USEREVENT;
-	ev.user.code = 0;
-	ev.user.data1 = NULL;
-	ev.user.data2 = NULL;
-	SDL_PushEvent(&ev);
-
-	JLWaitThread(thread);
+end:
+	//JS_RemoveRoot(cx, &mpsdl->listenersObj);
+	return JS_TRUE;
+bad:
+	//JS_RemoveRoot(cx, &mpsdl->listenersObj);
+	return JS_FALSE;
 }
 
 
-DEFINE_FUNCTION_FAST( SDLDebugTest ) {
+DEFINE_FUNCTION_FAST( MetaPollSDL ) {
 
-	// struct:
-	//   startPollFunction( signalEventMutex ) : starts the blocking thread and trigger the signalEventMutex when an event has arrived.
-	//   endPollFunction() : unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 
-	JLMutexHandler signalEventMutex = JLCreateMutex();
+	MetaPollSDLData *mpsdl;
+	JL_CHK( CreateHandle(cx, 'poll', sizeof(MetaPollSDLData), (void**)&mpsdl, NULL, JL_FRVAL) );
+	mpsdl->mp.startPoll = StartPoll;
+	mpsdl->mp.cancelPoll = CancelPoll;
+	mpsdl->mp.endPoll = EndPoll;
 
-	startPollFunction(signalEventMutex);
+	mpsdl->cancel = JLCreateSemaphore(0);
 
-	Sleep(1000);
-	endPollFunction();
-
-	JLFreeMutex(&signalEventMutex);
+	mpsdl->listenersObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	//JS_AddRoot(cx, &mpsdl->listenersObj); // (TBD) needed ?
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
-#endif // DEBUG
 
 
 CONFIGURE_STATIC
@@ -1095,9 +1148,6 @@ CONFIGURE_STATIC
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		#ifdef DEBUG
-		FUNCTION_FAST( SDLDebugTest )
-		#endif // DEBUG
 		FUNCTION_FAST( GetVideoModeList )
 		FUNCTION_FAST( VideoModeOK )
 		FUNCTION_FAST( SetVideoMode )
