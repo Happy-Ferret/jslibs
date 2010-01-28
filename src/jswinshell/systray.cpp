@@ -19,18 +19,34 @@
 
 #include <jsobj.h>
 
+#include "../jslang/handlePub.h"
+
+#include "queue.h"
+
 #include "icon.h"
 
 #include <commctrl.h>
 
-#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
-#define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
-#define WINDOW_CLASS_NAME "systray"
-#define TRAY_ID 1 // doc: Values from 0 to 12 are reserved and should not be used.
+
+#define WINDOW_CLASS_NAME "jslibs_systray"
+#define TRAY_ID 13 // doc: Values from 0 to 12 are reserved and should not be used.
 
 #define MSG_TRAY_CALLBACK (WM_USER + 1) // This message has two meanings: tray message + forward
 #define MSG_POPUP_MENU (WM_USER + 2)
+
+
+struct Private {
+	
+	HWND hwnd;
+	NOTIFYICONDATA nid;
+	HANDLE thread;
+//	HANDLE threadReady;
+	jl::Queue msgQueue;
+	HANDLE msgEvent;
+};
+
+
 
 // source: http://www.codeproject.com/shell/ctrayiconposition.asp
 BOOL CALLBACK FindTrayWnd(HWND hwnd, LPARAM lParam) {
@@ -158,6 +174,7 @@ static HBITMAP MenuItemBitmapFromIcon(HICON hIcon) {
 	return hBMP;
 }
 
+
 typedef struct MSGInfo {
 	HWND        hwnd;
 	UINT        message;
@@ -169,7 +186,11 @@ typedef struct MSGInfo {
 } MSGInfo;
 
 
+
+
 static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+
+	Private *pv = (Private*)GetWindowLongPtr(hWnd, GWL_USERDATA);
 
 	switch ( message ) {
 		case WM_DESTROY:
@@ -185,6 +206,7 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
 		case WM_COMMAND: {
+
 			MSGInfo *msg = (MSGInfo*)jl_malloc(sizeof(MSGInfo)); // (TBD) free msg ?
 			// BOOL swapButtons = GetSystemMetrics(SM_SWAPBUTTON); // (TBD) use it
 
@@ -212,55 +234,67 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			msg->message = message;
 			msg->wParam = wParam;
 			msg->lParam = lParam;
-			PostThreadMessage( GetWindowLong(hWnd, GWL_USERDATA), MSG_TRAY_CALLBACK, (WPARAM)msg, 0 );
+
+			jl::QueuePush(&pv->msgQueue, msg);
+			PulseEvent(pv->msgEvent);
+			//PostThreadMessage( GetWindowLong(hWnd, GWL_USERDATA), MSG_TRAY_CALLBACK, (WPARAM)msg, 0 );
 			return 0;
 		}
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam); // We do not want to handle this message so pass back to Windows to handle it in a default way
 }
 
-struct ThreadPrivateData {
 
-	HWND hWnd;
-	HANDLE syncEvent;
-};
 
-DWORD WINAPI WinThread( LPVOID lpParam ) {
+DWORD WINAPI SystrayThread( LPVOID lpParam ) {
 
-	ThreadPrivateData *tpd = (ThreadPrivateData*)lpParam;
-	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
-	HMENU hMenu = CreatePopupMenu(); // doc: A menu that is assigned to a window is automatically destroyed when the application closes.
-	HWND hWnd = CreateWindow( (LPSTR)WINDOW_CLASS_NAME, NULL, WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, (HWND)NULL, (HMENU)hMenu, hInst, (LPVOID)NULL );
-	tpd->hWnd = hWnd; // send back the hWnd value to the constructor
-	SetEvent(tpd->syncEvent); // beware: tpd is invalid after this line ( static data )
-	for ( MSG msg; GetMessage( &msg, NULL, 0, 0 ) != 0; ) {
+	Private *pv = (Private*)lpParam;
+
+	
+//	SetEvent(pv->threadReady);
+	MSG msg;
+
+	while ( GetMessage(&msg, pv->hwnd, 0, 0) ) {
 
 		switch ( msg.message ) {
+
 			case MSG_POPUP_MENU: {
+
 				POINT pos;
 				GetCursorPos(&pos);
-				SetForegroundWindow(hWnd);
-				TrackPopupMenuEx(hMenu, GetSystemMetrics(SM_MENUDROPALIGNMENT) | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pos.x, pos.y, hWnd, NULL);
-				PostMessage(hWnd, WM_NULL, 0, 0);
+				SetForegroundWindow(pv->hwnd);
+				TrackPopupMenuEx(GetMenu(pv->hwnd), GetSystemMetrics(SM_MENUDROPALIGNMENT) | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pos.x, pos.y, pv->hwnd, NULL);
+				PostMessage(pv->hwnd, WM_NULL, 0, 0);
 				// free menu data and menu items
-				for ( int i = GetMenuItemCount(hMenu); i > 0; i-- ) {
+				HMENU menu = GetMenu(pv->hwnd);
+				for ( int i = GetMenuItemCount(menu); i > 0; i-- ) {
 
 					MENUITEMINFO mii = { sizeof(MENUITEMINFO) };
 					mii.fType = MFT_RADIOCHECK; // doc: Displays selected menu items using a radio-button mark instead of a check mark if the hbmpChecked member is NULL.
 					mii.fMask = MIIM_CHECKMARKS; // doc: Retrieves or sets the hbmpChecked and hbmpUnchecked members.
-					BOOL st = GetMenuItemInfo(hMenu, 0, TRUE, &mii);
+					BOOL st = GetMenuItemInfo(menu, 0, TRUE, &mii);
 					if ( mii.hbmpChecked != NULL )
 						DeleteObject(mii.hbmpChecked);
-					DeleteMenu(hMenu, 0, MF_BYPOSITION);
+					DeleteMenu(menu, 0, MF_BYPOSITION);
 				}
 				break;
 			}
+
 			default:
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 		}
+
+//		PulseEvent(eventEvent);
 	}
+
+
+
 	return 0;
+
+bad:
+	return 0;
+
 }
 
 
@@ -280,12 +314,24 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
 
+	Private *pv = (Private*)jl_malloc(sizeof(Private));
+	JL_S_ASSERT_ALLOC( pv );
+	JL_SetPrivate(cx, obj, pv);
+
+
+
+
+
+
+	jl::QueueInitialize(&pv->msgQueue);
+
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
-	JL_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
+//	JL_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 
 	WNDCLASS wc; // = { 0, (WNDPROC)WndProc, 0, 0, hInst, NULL, NULL, NULL, NULL, WINDOW_CLASS_NAME };
 	wc.style = 0;
-	wc.lpfnWndProc = (WNDPROC)WndProc;
+	wc.lpfnWndProc = (WNDPROC)WndProc; // DefWindowProc
+//	wc.lpfnWndProc = (WNDPROC)DefWindowProc;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = hInst;
@@ -295,40 +341,41 @@ DEFINE_CONSTRUCTOR() {
 	wc.lpszMenuName = NULL;
 	wc.lpszClassName = WINDOW_CLASS_NAME;
 
-	ATOM rc = RegisterClass(&wc);
-	JL_S_ASSERT( rc != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS, "Unable to RegisterClass." );
+	ATOM rc = RegisterClass(&wc);	// (TBD) do UnregisterClass at the end
+//	JL_S_ASSERT( rc != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS, "Unable to RegisterClass." );
 
-//    OSVERSIONINFO os = { sizeof(os) };
-//    GetVersionx(&os);
-//    isWin2K = ( VER_PLATFORM_WIN32_NT == os.dwPlatformId && os.dwMajorVersion >= 5 );
 
-	ThreadPrivateData tpd;
-	tpd.hWnd = NULL;
-	tpd.syncEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
+//	PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE); // force the system to create the message queue for the current thread
 
-	MSG msg;
-	PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE); // force the system to create the message queue for the current thread
-	CreateThread( NULL, 0, WinThread, &tpd, 0, NULL );
-	WaitForSingleObject( tpd.syncEvent, INFINITE );
-	JL_S_ASSERT( tpd.hWnd != NULL, "Unable to create the window." );
-	SetWindowLong(tpd.hWnd, GWL_USERDATA, GetCurrentThreadId() ); // thread where the messages will be routed
+	// doc: A menu that is assigned to a window is automatically destroyed when the application closes.
 
-	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JS_malloc(cx, sizeof(NOTIFYICONDATA) );
-	memset(nid, 0, sizeof(NOTIFYICONDATA));
+	// nfo: It is important to note that the message loop and window procedure for the window must be in the thread that created the window.
+	//      If a different thread creates the window, the window won't get messages from DispatchMessage(), but will get messages from other sources.
+	pv->hwnd = CreateWindow( (LPSTR)WINDOW_CLASS_NAME, NULL, WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, (HWND)NULL, CreatePopupMenu(), hInst, (LPVOID)NULL );
+	SetWindowLongPtr(pv->hwnd, GWL_USERDATA, (LONG)pv);
 
-	nid->cbSize = sizeof(NOTIFYICONDATA);
-	nid->hWnd = tpd.hWnd;
-	nid->uID = TRAY_ID;
-	nid->uFlags = NIF_MESSAGE;
-	nid->uCallbackMessage = MSG_TRAY_CALLBACK; // doc: All Message Numbers below 0x0400 are RESERVED.
 
-	BOOL status = Shell_NotifyIcon(NIM_ADD, nid);
-	JL_S_ASSERT( status == TRUE, "Unable to setup systray icon." );
+	// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/shellcc/platform/shell/reference/structures/notifyicondata.asp
+	//	_tcscpy(nid.szTip, "tooltip");
 
-	JL_SetPrivate(cx, obj, (void*)nid);
+	memset(&pv->nid, 0, sizeof(NOTIFYICONDATA));
+	pv->nid.cbSize = sizeof(NOTIFYICONDATA);
+	pv->nid.hWnd = pv->hwnd;
+	pv->nid.uID = TRAY_ID;
+	pv->nid.uFlags = NIF_MESSAGE;
+	pv->nid.uCallbackMessage = MSG_TRAY_CALLBACK; // doc: All Message Numbers below 0x0400 are RESERVED.
 
-// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/shellcc/platform/shell/reference/structures/notifyicondata.asp
-//	_tcscpy(nid.szTip, "tooltip");
+	BOOL status = Shell_NotifyIcon(NIM_ADD, &pv->nid);
+//	JL_S_ASSERT( status == TRUE, "Unable to setup systray icon." );
+
+
+
+
+
+//	pv->threadReady = CreateEvent(NULL, FALSE, FALSE, NULL);
+	pv->thread = CreateThread(NULL, 0, SystrayThread, pv, 0, NULL);
+//	WaitForSingleObject(pv->threadReady, INFINITE);
+//	CloseHandle(pv->threadReady);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -339,13 +386,20 @@ DEFINE_FINALIZE() {
 	if ( obj == JL_PROTOTYPE(cx, Systray) )
 		return;
 
-	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JL_GetPrivate(cx, obj);
-	if ( !nid )
-		return;
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 
-	SendMessage( nid->hWnd, WM_CLOSE, 0, 0 ); // PostMessage
-	BOOL status = Shell_NotifyIcon(NIM_DELETE, nid); // (TBD) error check
-	JS_free(cx, nid);
+	SendMessage( pv->hwnd, WM_CLOSE, 0, 0 ); // PostMessage
+
+	WaitForSingleObject(pv->thread, INFINITE);
+
+	BOOL status;
+	status = Shell_NotifyIcon(NIM_DELETE, &pv->nid); // (TBD) error check
+//	BOOL status = Shell_NotifyIcon(NIM_DELETE, &pv->nid); // (TBD) error check
+//	JL_S_ASSERT( status == TRUE, "Unable to delete notification icon.");
+
+
+
+	jl_free(pv);
 }
 
 
@@ -360,12 +414,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Close ) {
 
-	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(nid);
-	SendMessage( nid->hWnd, WM_CLOSE, 0, 0 );
-	BOOL status = Shell_NotifyIcon(NIM_DELETE, nid); // (TBD) error check
-	JL_S_ASSERT( status == TRUE, "Unable to delete notification icon.");
-	JL_SetPrivate(cx, obj, NULL);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+
+	SendMessage( pv->nid.hWnd, WM_CLOSE, 0, 0 );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -379,98 +432,156 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ProcessEvents ) {
 
-	NOTIFYICONDATA *nid = (NOTIFYICONDATA*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(nid);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 
-	bool exitBool = false;
+	if ( jl::QueueIsEmpty(&pv->msgQueue) ) {
+
+		return JS_TRUE;
+	}
+
+
+	MSGInfo *trayWndMsg = (MSGInfo*)jl::QueueShift(&pv->msgQueue);
+
+	UINT message = trayWndMsg->message;
+	LPARAM lParam = trayWndMsg->lParam;
+	WPARAM wParam = trayWndMsg->wParam;
+	int mButton = trayWndMsg->lButton ? 1 : trayWndMsg->rButton ? 2 : 0;
+	int mouseX = trayWndMsg->mouseX;
+	int mouseY = trayWndMsg->mouseY;
+	jl_free(trayWndMsg); // (TBD) check this
+	jsval functionVal;
+
+	switch ( message ) {
+		case WM_SETFOCUS:
+			JS_GetProperty(cx, obj, "onfocus", &functionVal);
+			if ( !JSVAL_IS_VOID( functionVal ) )
+				JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, JSVAL_TRUE ) );
+			break;
+		case WM_KILLFOCUS:
+			JS_GetProperty(cx, obj, "onblur", &functionVal);
+			if ( !JSVAL_IS_VOID( functionVal ) )
+				JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, JSVAL_FALSE ) );
+			break;
+		case WM_CHAR:
+			JS_GetProperty(cx, obj, "onchar", &functionVal);
+			if ( !JSVAL_IS_VOID( functionVal ) ) {
+
+				char c = wParam;
+				JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
+			}
+			break;
+		case WM_COMMAND:
+			JS_GetProperty(cx, obj, "oncommand", &functionVal);
+			if ( !JSVAL_IS_VOID( functionVal ) ) {
+
+				jsval key;
+				JL_CHK( JS_IdToValue(cx, (jsid)wParam, &key) );
+				JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
+			}
+			break;
+		case MSG_TRAY_CALLBACK:
+			switch ( lParam ) {
+				case WM_MOUSEMOVE:
+					JS_GetProperty(cx, obj, "onmousemove", &functionVal);
+					if ( !JSVAL_IS_VOID( functionVal ) )
+						JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( mouseX ), INT_TO_JSVAL( mouseY ) ) );
+					break;
+				case WM_LBUTTONDOWN:
+				case WM_MBUTTONDOWN:
+				case WM_RBUTTONDOWN:
+					JS_GetProperty(cx, obj, "onmousedown", &functionVal);
+					if ( !JSVAL_IS_VOID( functionVal ) )
+						JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
+					break;
+				case WM_LBUTTONUP:
+				case WM_MBUTTONUP:
+				case WM_RBUTTONUP:
+					JS_GetProperty(cx, obj, "onmouseup", &functionVal);
+					if ( !JSVAL_IS_VOID( functionVal ) )
+						JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
+					break;
+				case WM_LBUTTONDBLCLK:
+				case WM_MBUTTONDBLCLK:
+				case WM_RBUTTONDBLCLK:
+					JS_GetProperty(cx, obj, "onmousedblclick", &functionVal);
+					if ( !JSVAL_IS_VOID( functionVal ) )
+						JL_CallFunction( cx, obj, functionVal, rval, 1, INT_TO_JSVAL( lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0 ) );
+					break;
+			} // switch lParam
+	} //  switch message
+
+		
+return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+struct MetaPollSystrayData {
+	
+	MetaPoll mp;
+
+	Private *systrayPrivate;
+
+	HANDLE eventEvent;
+	HANDLE cancelEvent;
+};
+
+JL_STATIC_ASSERT( offsetof(MetaPollSystrayData, mp) == 0 );
+
+static void StartPoll( volatile MetaPoll *mp ) {
+
+	MetaPollSystrayData *mpd = (MetaPollSystrayData*)mp;
+
 	MSG msg;
-	while ( PeekMessage( &msg, (HWND)-1, MSG_TRAY_CALLBACK, MSG_TRAY_CALLBACK, PM_REMOVE ) != 0 ) { // doc: If hWnd is -1, PeekMessage retrieves only messages on the current thread's message queue whose hwnd value is NULL
+	GetMessage(&msg, mpd->systrayPrivate->nid.hWnd, 0, 0);
 
-		MSGInfo *trayWndMsg = (MSGInfo*)msg.wParam;
-		if ( trayWndMsg->hwnd != nid->hWnd ) {
+//	GetMessage(&msg, (HWND)-1, 0, 0);
 
-			PostMessage( msg.hwnd, msg.message, msg.wParam, msg.lParam ); // this message is not for this tray icon
-		} else {
+//	HANDLE events[3] = { mpd->eventEvent, mpd->cancelEvent, mpd->systrayPrivate->nid.hWnd };
+//	DWORD res = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
+}
 
-			UINT message = trayWndMsg->message;
-			LPARAM lParam = trayWndMsg->lParam;
-			WPARAM wParam = trayWndMsg->wParam;
-			int mButton = trayWndMsg->lButton ? 1 : trayWndMsg->rButton ? 2 : 0;
-			int mouseX = trayWndMsg->mouseX;
-			int mouseY = trayWndMsg->mouseY;
-			jl_free(trayWndMsg); // (TBD) check this
-			jsval functionVal;
+static bool CancelPoll( volatile MetaPoll *mp ) {
 
-			switch ( message ) {
-				case WM_SETFOCUS:
-					JS_GetProperty(cx, obj, "onfocus", &functionVal);
-					if ( !JSVAL_IS_VOID( functionVal ) )
-						JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, JSVAL_TRUE ) );
-					break;
-				case WM_KILLFOCUS:
-					JS_GetProperty(cx, obj, "onblur", &functionVal);
-					if ( !JSVAL_IS_VOID( functionVal ) )
-						JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, JSVAL_FALSE ) );
-					break;
-				case WM_CHAR:
-					JS_GetProperty(cx, obj, "onchar", &functionVal);
-					if ( !JSVAL_IS_VOID( functionVal ) ) {
+	MetaPollSystrayData *mpd = (MetaPollSystrayData*)mp;
+	SetEvent(mpd->cancelEvent);
+	return true;
+}
 
-						char c = wParam;
-						JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
-					}
-					break;
-				case WM_COMMAND:
-					JS_GetProperty(cx, obj, "oncommand", &functionVal);
-					if ( !JSVAL_IS_VOID( functionVal ) ) {
+static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-						jsval key;
-						JL_CHK( JS_IdToValue(cx, (jsid)wParam, &key) );
-						JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
-					}
-					break;
-				case MSG_TRAY_CALLBACK:
-					switch ( lParam ) {
-						case WM_MOUSEMOVE:
-							JS_GetProperty(cx, obj, "onmousemove", &functionVal);
-							if ( !JSVAL_IS_VOID( functionVal ) )
-								JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( mouseX ), INT_TO_JSVAL( mouseY ) ) );
-							break;
-						case WM_LBUTTONDOWN:
-						case WM_MBUTTONDOWN:
-						case WM_RBUTTONDOWN:
-							JS_GetProperty(cx, obj, "onmousedown", &functionVal);
-							if ( !JSVAL_IS_VOID( functionVal ) )
-								JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
-							break;
-						case WM_LBUTTONUP:
-						case WM_MBUTTONUP:
-						case WM_RBUTTONUP:
-							JS_GetProperty(cx, obj, "onmouseup", &functionVal);
-							if ( !JSVAL_IS_VOID( functionVal ) )
-								JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
-							break;
-						case WM_LBUTTONDBLCLK:
-						case WM_MBUTTONDBLCLK:
-						case WM_RBUTTONDBLCLK:
-							JS_GetProperty(cx, obj, "onmousedblclick", &functionVal);
-							if ( !JSVAL_IS_VOID( functionVal ) )
-								JL_CallFunction( cx, obj, functionVal, rval, 1, INT_TO_JSVAL( lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0 ) );
-							break;
-					} // switch lParam
-			} //  switch message
-		}
+	MetaPollSystrayData *mpd = (MetaPollSystrayData*)mp;
 
-		//JsvalToBool(cx, *rval, &exitBool)
-		JSBool boolValue;
-		JS_ValueToBoolean(cx, *rval, &boolValue );
-		if ( boolValue == JS_TRUE )
-			exitBool = true;
-	} // while PeekMessage
-	*rval = exitBool ? JSVAL_TRUE : JSVAL_FALSE;
+	CloseHandle(mpd->cancelEvent);
+
 	return JS_TRUE;
 	JL_BAD;
 }
+
+DEFINE_FUNCTION_FAST( MetaPollable ) {
+	
+	JL_S_ASSERT_ARG(0);
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+
+	MetaPollSystrayData *mpd;
+	JL_CHK( CreateHandle(cx, 'poll', sizeof(MetaPollSystrayData), (void**)&mpd, NULL, JL_FRVAL) );
+	mpd->mp.startPoll = StartPoll;
+	mpd->mp.cancelPoll = CancelPoll;
+	mpd->mp.endPoll = EndPoll;
+
+	mpd->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+	mpd->systrayPrivate = pv;
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 
 
 /**doc
@@ -480,9 +591,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Focus ) {
 
-	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(nid);
-	SetForegroundWindow(nid->hWnd);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	SetForegroundWindow(pv->nid.hWnd);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -495,9 +606,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PopupMenu ) {
 
-	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(nid);
-	HMENU hMenu = GetMenu(nid->hWnd);
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+
+	HMENU hMenu = GetMenu(pv->nid.hWnd);
 	JL_S_ASSERT_RESOURCE(hMenu);
 	//DestroyMenu(hMenu);
 	//hMenu = CreatePopupMenu();
@@ -601,7 +713,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 		}
 	}
 	JS_DestroyIdArray(cx, list);
-	PostMessage(nid->hWnd, MSG_POPUP_MENU, 0, 0);
+	PostMessage(pv->nid.hWnd, MSG_POPUP_MENU, 0, 0);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -647,10 +759,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Position ) {
 
-	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(nid);
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+
 	RECT r;
-	BOOL res = FindOutPositionOfIconDirectly( nid->hWnd, nid->uID, &r );
+	BOOL res = FindOutPositionOfIconDirectly( pv->nid.hWnd, pv->nid.uID, &r );
 	JL_S_ASSERT( res == TRUE, "Unable to FindOutPositionOfIconDirectly." );
 	jsval v[] = { INT_TO_JSVAL(r.left), INT_TO_JSVAL(r.top) };
 
@@ -733,11 +846,12 @@ DEFINE_PROPERTY( icon ) {
 		JL_REPORT_ERROR("Invalid icon.");
 	}
 
-	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(nid);
-	nid->hIcon = hIcon;
-	nid->uFlags |= NIF_ICON;
-	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+
+	pv->nid.hIcon = hIcon;
+	pv->nid.uFlags |= NIF_ICON;
+	BOOL status = Shell_NotifyIcon(NIM_MODIFY, &pv->nid);
 	JL_S_ASSERT( status == TRUE, "Unable to setup systray icon." );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -752,11 +866,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( visible ) {
 
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+
 	JSBool state;
 	JL_CHK( JS_ValueToBoolean(cx, *vp, &state ) );
-	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(nid);
-	BOOL status = Shell_NotifyIcon( state == JS_TRUE ? NIM_ADD : NIM_DELETE, nid);
+	BOOL status = Shell_NotifyIcon( state == JS_TRUE ? NIM_ADD : NIM_DELETE, &pv->nid);
 	JL_S_ASSERT( status == TRUE || GetLastError() == NO_ERROR, "Unable to setup systray icon." );
 	return JS_TRUE;
 	JL_BAD;
@@ -769,14 +884,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( textSetter ) {
 
-	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(nid);
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
 	const char *tipText;
 	size_t tipLen;
 	JL_CHK( JsvalToStringAndLength(cx, vp, &tipText, &tipLen) );
-	strncpy( nid->szTip, tipText, MIN(sizeof(nid->szTip)-1,tipLen) );
-	nid->uFlags |= NIF_TIP;
-	BOOL status = Shell_NotifyIcon(NIM_MODIFY, nid);
+	strncpy( pv->nid.szTip, tipText, JL_MIN(sizeof(pv->nid.szTip)-1, tipLen) );
+	pv->nid.uFlags |= NIF_TIP;
+	BOOL status = Shell_NotifyIcon(NIM_MODIFY, &pv->nid);
 	JL_S_ASSERT( status == TRUE, "Unable to setup systray icon." );
 	return JS_TRUE;
 	JL_BAD;
@@ -784,10 +899,10 @@ DEFINE_PROPERTY( textSetter ) {
 
 DEFINE_PROPERTY( textGetter ) {
 
-	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(nid);
-	if ( nid->uFlags & NIF_TIP )
-		*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, nid->szTip) );
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	if ( pv->nid.uFlags & NIF_TIP )
+		*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, pv->nid.szTip) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -866,6 +981,7 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(Close)
 		FUNCTION(ProcessEvents)
+		FUNCTION_FAST(MetaPollable)
 		FUNCTION(PopupMenu)
 		FUNCTION(Focus)
 		FUNCTION(Position)

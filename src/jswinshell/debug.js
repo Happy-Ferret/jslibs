@@ -1,5 +1,49 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
+
+
+ LoadModule('jsstd');
+ LoadModule('jswinshell');
+
+ var s = new Systray();
+ s.icon = new Icon( 0 );
+ s.menu = { add:'Add', exit:'Exit', s1:{ separator:true } };
+ s.onmousedown = function( button ) {
+
+ 	s.PopupMenu();
+ }
+
+ s.oncommand = function( id, button ) {
+
+ 	switch ( id ) {
+ 		case 'exit':
+ 			return true;
+ 		case 'add':
+ 			var fileName = FileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
+ 			if ( !fileName )
+ 				return;
+ 			var icon = ExtractIcon( fileName );
+ 			var text = fileName.substr( fileName.lastIndexOf( '\\' ) + 1 );
+ 			s.menu[fileName] = { icon:icon, text:text };
+ 			break;
+ 		default:
+ 			if ( button == 1 )
+ 				CreateProcess( id );
+ 			else
+ 				if ( MessageBox( 'Remove item: ' + id + '? ', 'Question', MB_YESNO) == IDYES )
+ 					delete s.menu[id];
+ 		}
+ }
+
+do { Sleep(100) } while ( !s.ProcessEvents() );
+//MetaPoll( s.MetaPollable() );
+
+
+Halt(); //////////////////////////////////////////////////////////////////////
+
+
+
+
 LoadModule('jsstd');
 LoadModule('jswinshell');
 
@@ -100,44 +144,6 @@ Print('out: ',stdoutput); // Should output the stdout of the dir command
 
 Halt(); //////////////////////////////////////////////////////////////////////
 
-
- LoadModule('jsstd');
- LoadModule('jswinshell');
-
- var s = new Systray();
- s.icon = new Icon( 0 );
- s.menu = { add:'Add', exit:'Exit', s1:{ separator:true } };
- s.onmousedown = function( button ) {
-
- 	s.PopupMenu();
- }
-
- s.oncommand = function( id, button ) {
-
- 	switch ( id ) {
- 		case 'exit':
- 			return true;
- 		case 'add':
- 			var fileName = FileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
- 			if ( !fileName )
- 				return;
- 			var icon = ExtractIcon( fileName );
- 			var text = fileName.substr( fileName.lastIndexOf( '\\' ) + 1 );
- 			s.menu[fileName] = { icon:icon, text:text };
- 			break;
- 		default:
- 			if ( button == 1 )
- 				CreateProcess( id );
- 			else
- 				if ( MessageBox( 'Remove item: ' + id + '? ', 'Question', MB_YESNO) == IDYES )
- 					delete s.menu[id];
- 		}
- }
-
- do { Sleep(100) } while ( !s.ProcessEvents() );
-
-
-Halt(); //////////////////////////////////////////////////////////////////////
 
 
   var dch = DirectoryChangesInit('C:\\WINDOWS', 16, true);
