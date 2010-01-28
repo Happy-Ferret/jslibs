@@ -191,7 +191,7 @@ DEFINE_FUNCTION( MetaPoll ) {
 	for ( uintN i = 0; i < argc; ++i ) {
 
 		MetaPoll *mp = metaPollList[i];
-		if ( mp->endPoll(mp, &hasEvent, cx, obj) != JS_TRUE )
+		if ( mp->endPoll(mp, &hasEvent, cx, obj) != JS_TRUE ) // JSVAL_TO_OBJECT(JL_ARGV[i])
 			ok = JS_FALSE;
 		if ( hasEvent )
 			events |= 1 << i;

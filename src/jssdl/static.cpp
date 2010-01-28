@@ -1080,7 +1080,7 @@ static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSO
 	SDL_Event ev;
 	bool pump;
 	int status;
-	bool fired;
+	bool fired; // unused
 	jsval rval;
 
 	pump = true;
@@ -1091,8 +1091,7 @@ static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSO
 
 		status = SDL_PeepEvents(&ev, 1, SDL_GETEVENT, SDL_ALLEVENTS); // see SDL_EventState
 		if ( status == -1 )
-			return ThrowSdlError(cx);
-
+			JL_CHK( ThrowSdlError(cx) );
 		if ( status == 0 ) {
 
 			if ( pump ) {
@@ -1104,19 +1103,16 @@ static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSO
 				continue;
 			}
 		}
-
 		pump = false;
-
 		*hasEvent = true;
-
 		JL_CHK( FireListener(cx, mpsdl->listenersObj, &ev, &rval, &fired) );
 	}
 
 end:
-	//JS_RemoveRoot(cx, &mpsdl->listenersObj);
+	JS_RemoveRoot(cx, &mpsdl->listenersObj);
 	return JS_TRUE;
 bad:
-	//JS_RemoveRoot(cx, &mpsdl->listenersObj);
+	JS_RemoveRoot(cx, &mpsdl->listenersObj);
 	return JS_FALSE;
 }
 
@@ -1135,7 +1131,7 @@ DEFINE_FUNCTION_FAST( MetaPollSDL ) {
 	mpsdl->cancel = JLCreateSemaphore(0);
 
 	mpsdl->listenersObj = JSVAL_TO_OBJECT( JL_FARG(1) );
-	//JS_AddRoot(cx, &mpsdl->listenersObj); // (TBD) needed ?
+	JS_AddRoot(cx, &mpsdl->listenersObj);
 
 	return JS_TRUE;
 	JL_BAD;
