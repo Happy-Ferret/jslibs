@@ -2330,3 +2330,8 @@ HRESULT videoInput::routeCrossbar(ICaptureGraphBuilder2 **ppBuild, IBaseFilter *
 	return hr;
 }
    
+
+HANDLE videoInput::ImageEvent(int deviceID) {
+
+	return VDList[deviceID]->sgCallback->hEvent;
+}

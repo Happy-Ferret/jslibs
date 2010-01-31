@@ -240,7 +240,6 @@ class videoDevice{
 
 
 class videoInput{
-
 	public:
 		videoInput();
 		~videoInput();
@@ -379,6 +378,9 @@ class videoInput{
 		static void __cdecl basicThread(void * objPtr);
 
 		static char deviceNames[VI_MAX_CAMERAS][255];
+
+	public:
+		HANDLE ImageEvent(int deviceID);
 
 };
 
