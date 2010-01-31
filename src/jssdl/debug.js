@@ -1,7 +1,26 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
+LoadModule('jsstd');
+LoadModule('jssdl');
 
-var count = MetaPoll( CoPool([s1, s2]), CoPollEvent(), CoWinCOMPoll(xhr), CoEndSignal() );
+SetVideoMode( 320, 200, 32, HWACCEL | OPENGL | RESIZABLE ); // | ASYNCBLIT
+
+var listeners = {
+	onQuit: function() { 
+		endSignal = true;
+	}
+};
+
+while ( !endSignal ) {
+	
+	var e = MetaPoll( MetaPollSDL(listeners), MetaPollEndSignal() );
+	Print( e );
+}
+
+Halt();
+
+
+//var count = MetaPoll( CoPool([s1, s2]), CoPollEvent(), CoWinCOMPoll(xhr), CoEndSignal() );
 
 
 
@@ -19,10 +38,10 @@ SetVideoMode( 320, 200, 32, HWACCEL | OPENGL | RESIZABLE ); // | ASYNCBLIT
 //count = MetaPoll( ConfIOPool([s1, s2]), ConfSDLPoll(), ConfWinCOMPoll(xhr), ConfTimeout(100) );
 
 
-SDLDebugTest();
+//SDLDebugTest();
 
 
-Halt();
+//Halt();
 
 
 var svgIcon = <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">

@@ -165,7 +165,7 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 	int width, height, bpp;
 	Uint32 flags;
 
-	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo(); // If called before SDL_SetVideoMode(), 'vfmt' is the pixel format of the "best" video mode.
+//	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo(); // If called before SDL_SetVideoMode(), 'vfmt' is the pixel format of the "best" video mode.
 //	SDL_PixelFormat format = *videoInfo->vfmt;
 
 	const SDL_Surface* currentSurface = SDL_GetVideoSurface();
@@ -1133,6 +1133,8 @@ DEFINE_FUNCTION_FAST( MetaPollSDL ) {
 	mpsdl->listenersObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 	JS_AddRoot(cx, &mpsdl->listenersObj);
 
+	// see SetWindowsHookEx(WH_GETMESSAGE, ...
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1154,6 +1156,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST_ARGC( GlSetAttribute, 2 )
 		FUNCTION_FAST_ARGC( GlGetAttribute, 1 )
 		FUNCTION_ARGC( PollEvent, 1 )
+		FUNCTION_FAST_ARGC( MetaPollSDL, 1 )
 		FUNCTION_FAST_ARGC( WarpMouse, 2 )
 		FUNCTION_FAST_ARGC( SetCursor, 1 )
 		FUNCTION_FAST_ARGC( GetKeyState, 1 )

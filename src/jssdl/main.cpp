@@ -36,6 +36,14 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
+int VideoThread(void *unused) {
+
+
+	
+	return 0;
+}
+
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 	JL_CHK( InitJslibsModule(cx) );
@@ -47,6 +55,14 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		return ThrowSdlError(cx);
 
 	SDL_EnableUNICODE(1);
+
+/*
+	// http://www.libsdl.org/intro.en/usingthreads.html
+	SDL_Thread *thread;
+	thread = SDL_CreateThread(VideoThread, NULL);
+	JL_S_ASSERT( thread != NULL, "Unable to create thread: %s\n", SDL_GetError() );
+	//SDL_WaitThread(thread, NULL);
+*/
 
 
 	INIT_STATIC();
