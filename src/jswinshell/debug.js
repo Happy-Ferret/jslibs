@@ -17,7 +17,8 @@
 
  	switch ( id ) {
  		case 'exit':
- 			return true;
+ 			endSignal = true;
+ 			break;
  		case 'add':
  			var fileName = FileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
  			if ( !fileName )
@@ -35,8 +36,8 @@
  		}
  }
 
-do { Sleep(100) } while ( !s.ProcessEvents() );
-//MetaPoll( s.MetaPollable() );
+while ( !endSignal )
+	MetaPoll( s.MetaPollable(), MetaPollEndSignal() )
 
 
 Halt(); //////////////////////////////////////////////////////////////////////
