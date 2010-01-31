@@ -8,7 +8,25 @@ LoadModule('jsvideoinput');
 
 Exec('..\\common\\tools.js');
 
-CreateOpenGLWindow();
+	
+	//	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+		GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+		GlSetAttribute( GL_DEPTH_SIZE, 16 );
+		GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+		SetVideoMode( 640, 480, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+
+		Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
+		Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
+		Ogl.Viewport(0,0,videoWidth,videoHeight);
+		Ogl.MatrixMode(Ogl.PROJECTION);
+		Ogl.Perspective(60, 0.1, 100000);
+		Ogl.MatrixMode(Ogl.MODELVIEW);
+		Ogl.ClearColor(0.2, 0.1, 0.4, 1);
+		Ogl.Enable(Ogl.DEPTH_TEST);
+		Ogl.Enable(Ogl.BLEND);
+		Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+
+
 
 var vi = new VideoInput('QuickCam', 1, 1, 60); // try to get the smallest size and the lowest fps
 Print('full name: '+vi.name, '\n');
@@ -22,7 +40,13 @@ Print( vi.width + 'x' + vi.height, '\n' );
 var frames = [];
 var frame = 0;
 var key;
-while ( (key = GetKey()) != 27 ) {
+while ( !GetKeyState(K_ESCAPE) ) {
+
+	MetaPoll(MetaPollSDL({}));
+
+//	while( PollEvent({}) );
+
+	GlSwapBuffers();
 
 var t1 = TimeCounter();
 //CollectGarbage();

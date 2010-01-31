@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include <videoinput.h>
 
+#include "../jslang/handlePub.h"
+
 #define JSVIDEOINPUT_SLOT_DEVICEID 0
 
 extern videoInput *vi;
@@ -100,6 +102,85 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+struct MetaPollData {
+	
+	MetaPoll mp;
+	HANDLE imageEvent;
+	HANDLE cancelEvent;
+	JSObject *viObj;
+};
+
+JL_STATIC_ASSERT( offsetof(MetaPollData, mp) == 0 );
+
+static void StartPoll( volatile MetaPoll *mp ) {
+
+	MetaPollData *mpd = (MetaPollData*)mp;
+
+	HANDLE events[] = { mpd->imageEvent, mpd->cancelEvent };
+	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
+	JL_ASSERT( status != WAIT_FAILED );
+}
+
+static bool CancelPoll( volatile MetaPoll *mp ) {
+
+	MetaPollData *mpd = (MetaPollData*)mp;
+	SetEvent(mpd->cancelEvent);
+	return true;
+}
+
+static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+
+	MetaPollData *mpd = (MetaPollData*)mp;
+
+	CloseHandle(mpd->cancelEvent);
+	
+	*hasEvent = WaitForSingleObject(mpd->imageEvent, 0) == WAIT_OBJECT_0;
+
+	if ( *hasEvent ) {
+	
+		jsval fct, rval;
+		JS_GetProperty(cx, mpd->viObj, "onImage", &fct);
+		if ( JsvalIsFunction(cx, fct) )
+			JL_CHK( JS_CallFunctionValue(cx, mpd->viObj, fct, 0, NULL, &rval) );
+	}
+
+	JS_RemoveRoot(cx, &mpd->viObj);
+	return JS_TRUE;
+bad:
+	JS_RemoveRoot(cx, &mpd->viObj);
+	return JS_FALSE;
+}
+
+
+DEFINE_FUNCTION_FAST( MetaPollable ) {
+	
+	JL_S_ASSERT_ARG(0);
+
+	MetaPollData *mpd;
+	JL_CHK( CreateHandle(cx, 'poll', sizeof(MetaPollData), (void**)&mpd, NULL, JL_FRVAL) );
+	mpd->mp.startPoll = StartPoll;
+	mpd->mp.cancelPoll = CancelPoll;
+	mpd->mp.endPoll = EndPoll;
+
+	mpd->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+	jsval deviceIdVal;
+	JL_CHK( JL_GetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
+	int deviceId = JSVAL_TO_INT(deviceIdVal);
+
+	mpd->imageEvent = vi->ImageEvent(deviceId);
+
+	mpd->viObj = JL_FOBJ;
+
+	JS_AddRoot(cx, &mpd->viObj);
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 
 /**doc
@@ -322,6 +403,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
+		FUNCTION_FAST(MetaPollable)
 		FUNCTION_FAST(GetImage)
 		FUNCTION_FAST(Close)
 	END_FUNCTION_SPEC
