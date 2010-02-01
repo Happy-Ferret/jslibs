@@ -1,20 +1,57 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
+try { 
+
 LoadModule('jsstd');
 LoadModule('jssdl');
+LoadModule('jsgraphics');
 
 SetVideoMode( 320, 200, 32, HWACCEL | OPENGL | RESIZABLE ); // | ASYNCBLIT
+GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+GlSetAttribute( GL_DEPTH_SIZE, 16 );
+GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+
+Print( Ogl.error );
 
 var listeners = {
 	onQuit: function() { 
 		endSignal = true;
-	}
+	},
+	onVideoResize: function(w, h) {
+
+//		SetVideoMode(w, h);
+		Ogl.Viewport(0, 0, w, h);
+		Print( w, ' ', h, '\n' );
+	},	
 };
 
+Ogl.Viewport(0, 0, 32, 20);
+
+Ogl.ClearColor(0.2, 0.1, 0.4, 1);
+
+var angle = 0.;
 while ( !endSignal ) {
+
+	var e = MetaPoll( MetaPollSDL(listeners), MetaPollTimeout(10) );
+	//Print(e.toString(2), '  ');
+
+	Ogl.Clear(Ogl.COLOR_BUFFER_BIT);
+	Ogl.Rotate(1,1,1, angle++);
+	Ogl.Begin(Ogl.TRIANGLES);
+	Ogl.Vertex(0,0);
+	Ogl.Vertex(0,1);
+	Ogl.Vertex(1,0);
+	Ogl.End();
 	
-	var e = MetaPoll( MetaPollSDL(listeners), MetaPollEndSignal() );
-	Print( e );
+	var t0 = TimeCounter();
+	GlSwapBuffers();
+//	Print( (TimeCounter() - t0).toFixed(2), '\n'  )
+}
+
+} catch(ex) {
+
+	Print( ex );
 }
 
 Halt();

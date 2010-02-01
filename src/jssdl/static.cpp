@@ -19,6 +19,8 @@
 
 #include "../jslang/handlePub.h"
 
+SDL_Surface* SetVideoMode(int width, int height, int bpp, Uint32 flags);
+
 
 DECLARE_CLASS( Cursor )
 
@@ -193,7 +195,8 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 	} else
 		flags = currentSurface != NULL ? currentSurface->flags : 0; // if not given, use the previous setting or a default value.
 
-	SDL_Surface *surface = SDL_SetVideoMode(width, height, bpp, flags);
+//	SDL_Surface *surface = SDL_SetVideoMode(width, height, bpp, flags);
+	SDL_Surface *surface = SetVideoMode(width, height, bpp, flags);
 	if ( surface == NULL )
 		return ThrowSdlError(cx);
 	*JL_FRVAL = JSVAL_VOID;
@@ -1032,13 +1035,13 @@ DEFINE_PROPERTY( version ) {
 }
 
 
-
+extern JLSemaphoreHandler sdlEvent;
 
 struct MetaPollSDLData {
 	
 	MetaPoll mp;
 
-	JLSemaphoreHandler cancel;
+	bool cancel;
 	JSObject *listenersObj;
 };
 
@@ -1047,68 +1050,53 @@ JL_STATIC_ASSERT( offsetof(MetaPollSDLData, mp) == 0 );
 static void StartPoll( volatile MetaPoll *mp ) {
 
 	MetaPollSDLData *mpsdl = (MetaPollSDLData*)mp;
+	int status;
 	for (;;) {
 
-		SDL_PumpEvents();
-		if ( SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS) != 0 ) // unfortunately, this call is not blocking.
-			return;
-		if ( JLSemaphoreAcquire(mpsdl->cancel, 1) == JLOK )
-			return;
+		JLEventWait(sdlEvent);
+		status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS & ~SDL_EVENTMASK(SDL_USEREVENT));
+//		JL_ASSERT( mpsdl->cancel || status == 1 ); // (TBD) understand this case
+		if ( mpsdl->cancel || status == 1 )
+			break;
 	}
 }
 
-
 static bool CancelPoll( volatile MetaPoll *mp ) {
 
-	//SDL_Event ev;
-	//ev.type = SDL_USEREVENT;
-	//ev.user.code = 0;
-	//ev.user.data1 = NULL;
-	//ev.user.data2 = NULL;
-	//SDL_PushEvent(&ev);
-
 	MetaPollSDLData *mpsdl = (MetaPollSDLData*)mp;
-	JLSemaphoreRelease(mpsdl->cancel);
+	mpsdl->cancel = true;
+	JLEventTrigger(sdlEvent);
 	return true;
 }
 
 static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	MetaPollSDLData *mpsdl = (MetaPollSDLData*)mp;
-	JLSemaphoreFree(&mpsdl->cancel);
-	
-	SDL_Event ev;
-	bool pump;
+
 	int status;
 	bool fired; // unused
 	jsval rval;
 
-	pump = true;
+	*hasEvent = false;
+	SDL_Event ev[16];
 	for (;;) {
-		
-		if ( pump ) // we pump only if no event
-			SDL_PumpEvents();
 
-		status = SDL_PeepEvents(&ev, 1, SDL_GETEVENT, SDL_ALLEVENTS); // see SDL_EventState
+		status = SDL_PeepEvents(ev, COUNTOF(ev), SDL_GETEVENT, SDL_ALLEVENTS & ~SDL_EVENTMASK(SDL_USEREVENT) );
 		if ( status == -1 )
 			JL_CHK( ThrowSdlError(cx) );
-		if ( status == 0 ) {
 
-			if ( pump ) {
+		if ( status == 0 )
+			break;
 
-				goto end;
-			} else {
-			
-				pump = true;
-				continue;
-			}
-		}
-		pump = false;
 		*hasEvent = true;
-		JL_CHK( FireListener(cx, mpsdl->listenersObj, &ev, &rval, &fired) );
+
+		for ( int i = 0; i < status; i++ )
+			JL_CHK( FireListener(cx, mpsdl->listenersObj, &ev[i], &rval, &fired) );
+
+		if ( status < COUNTOF(ev) )
+			break;
 	}
 
-end:
 	JS_RemoveRoot(cx, &mpsdl->listenersObj);
 	return JS_TRUE;
 bad:
@@ -1128,7 +1116,7 @@ DEFINE_FUNCTION_FAST( MetaPollSDL ) {
 	mpsdl->mp.cancelPoll = CancelPoll;
 	mpsdl->mp.endPoll = EndPoll;
 
-	mpsdl->cancel = JLCreateSemaphore(0);
+	mpsdl->cancel = false;
 
 	mpsdl->listenersObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 	JS_AddRoot(cx, &mpsdl->listenersObj);
