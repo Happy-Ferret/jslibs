@@ -349,13 +349,13 @@ DEFINE_CONSTRUCTOR() {
 	pv->end = false;
 
 	QueueInitialize(&pv->requestList);
-	pv->requestSem = JLCreateSemaphore(0);
+	pv->requestSem = JLSemaphoreCreate(0);
 	pv->pendingRequestCount = 0;
 
 	pv->processingRequestCount = 0;
 
 	QueueInitialize(&pv->responseList);
-	pv->responseSem = JLCreateSemaphore(0);
+	pv->responseSem = JLSemaphoreCreate(0);
 	pv->pendingResponseCount = 0;
 
 	QueueInitialize(&pv->exceptionList);

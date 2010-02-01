@@ -279,7 +279,9 @@ template<class T> ALWAYS_INLINE T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b
 
 #ifdef DEBUG
 
-inline void JL_AssertAbort() {
+inline void JL_Assert(const char *s, const char *file, unsigned int ln) {
+
+	fprintf(stderr, "jslibs assertion failure: %s, at %s:%d\n", s, file, ln);
 #if defined(WIN32)
 	DebugBreak();
 	exit(3);
@@ -287,12 +289,6 @@ inline void JL_AssertAbort() {
 	asm("int $3");
 #endif
 	abort();
-}
-
-inline void JL_Assert(const char *s, const char *file, unsigned int ln) {
-
-	fprintf(stderr, "jslibs assertion failure: %s, at %s:%d\n", s, file, ln);
-	JL_AssertAbort();
 }
 
 #define JL_ASSERT(expr) \
@@ -942,7 +938,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 	}
 */
 
-
+// Pthreads-w32: http://sourceware.org/pthreads-win32/
 
 ///////////////////////////////////////////////////////////////////////////////
 // semaphores
@@ -955,7 +951,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 #endif
 
 
-	ALWAYS_INLINE JLSemaphoreHandler JLCreateSemaphore( int initCount ) {
+	ALWAYS_INLINE JLSemaphoreHandler JLSemaphoreCreate( int initCount ) {
 
 	#if defined(XP_WIN)
 		return CreateSemaphore(NULL, initCount, LONG_MAX, NULL);
@@ -991,6 +987,16 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 			
 			if ( sem_wait(semaphore) == 0 )
 				return JLOK;
+		} else
+		if ( msTimeout == 0 ) {
+
+			struct timespec ts = {0,0};
+			switch ( sem_timedwait(semaphore, &ts) ) {
+				case ETIMEDOUT:
+					return JLTIMEOUT;
+				case 0:
+					return JLOK;
+			}
 		} else {
 
 			// see also: struct timespec ts; clock_gettime(CLOCK_REALTIME, &ts); then link with -lrt
@@ -1119,6 +1125,74 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		free(*pMutex);
 	#endif
 		*pMutex = (JLMutexHandler)0;
+		return JLOK;
+	}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// event
+
+#if defined(XP_WIN)
+	typedef HANDLE JLEventHandler;
+#elif defined(XP_UNIX)
+	struct {
+		pthread_mutex_t mutex;
+		pthread_cond_t cond;
+		bool triggered;
+		bool autoReset;
+	} JLEventHandler_t;
+	typedef JLEventHandler_t *JLEventHandler;
+#endif
+
+	ALWAYS_INLINE JLEventHandler JLEventCreate( bool autoReset ) {
+	#if defined(XP_WIN)
+		return CreateEvent(NULL, !autoReset, FALSE, NULL);
+	#elif defined(XP_UNIX)
+		JLEventHandler ev = malloc(sizeof(JLEventHandler_t));
+		pthread_mutex_init(&ev->mutex, 0);
+		pthread_cond_init(&ev->cond, 0);
+		ev->triggered = false;
+		ev->autoReset = autoReset;
+	#endif
+	}
+
+	ALWAYS_INLINE int JLEventTrigger( JLEventHandler ev ) {
+	#if defined(XP_WIN)
+		if ( PulseEvent(ev) == 0 ) // PulseEvent
+			return JLERROR;
+	#elif defined(XP_UNIX)
+		pthread_mutex_lock(&ev->mutex);
+		ev->triggered = true;
+		pthread_cond_broadcast(&ev->cond); // pthread_cond_signal
+		if ( ev->autoReset )
+			ev->triggered = false;
+		pthread_mutex_unlock(&ev->mutex);
+	#endif
+		return JLOK;
+	}
+
+	ALWAYS_INLINE int JLEventReset( JLEventHandler ev ) {
+	#if defined(XP_WIN)
+		if ( ResetEvent(ev) == 0 )
+			return JLERROR;
+	#elif defined(XP_UNIX)
+		pthread_mutex_lock(&ev->mutex);
+		ev->triggered = false;
+		pthread_mutex_unlock(&ev->mutex);
+	#endif
+		return JLOK;
+	}
+
+	ALWAYS_INLINE int JLEventWait( JLEventHandler ev ) {
+	#if defined(XP_WIN)
+		if ( WaitForSingleObject(ev, INFINITE) == 0 )
+			return JLERROR;
+	#elif defined(XP_UNIX)
+     pthread_mutex_lock(&ev->mutex);
+     while ( !ev->triggered )
+         pthread_cond_wait(&ev->cond, &ev->mutex);
+     pthread_mutex_unlock(&ev->mutex);
+	#endif
 		return JLOK;
 	}
 

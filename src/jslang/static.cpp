@@ -145,7 +145,7 @@ DEFINE_FUNCTION( MetaPoll ) {
 		MetaPollThreadInfo *ti = &mpv->metaPollThreadInfo[i];
 		if ( ti->thread == 0 ) { // create the thread stuff, see jl_cmalloc in jslangModuleInit()
 
-			ti->start = JLCreateSemaphore(0);
+			ti->start = JLSemaphoreCreate(0);
 			ti->thread = JLThreadStart(MetaPollThread, ti);
 			JLThreadPriority(ti->thread, JL_THREAD_PRIORITY_HIGHEST);
 			ti->signalEventSem = mpv->metaPollSignalEventSem;
@@ -263,7 +263,7 @@ DEFINE_FUNCTION_FAST( MetaPollTimeout ) {
 	mpt->mp.cancelPoll = CancelPoll;
 	mpt->mp.endPoll = EndPoll;
 	mpt->timeout = timeout;
-	mpt->cancel = JLCreateSemaphore(0);
+	mpt->cancel = JLSemaphoreCreate(0);
 
 	return JS_TRUE;
 	JL_BAD;

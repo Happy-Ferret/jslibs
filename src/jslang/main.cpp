@@ -38,7 +38,7 @@ JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);
 	JL_CHK( SetModulePrivate(cx, moduleId, mpv) );
 
-	mpv->metaPollSignalEventSem = JLCreateSemaphore(0);
+	mpv->metaPollSignalEventSem = JLSemaphoreCreate(0);
 
 	INIT_CLASS( Handle );
 	INIT_CLASS( Blob );
@@ -64,6 +64,7 @@ JSBool jslangModuleRelease(JSContext *cx) {
 
 			ti->isEnd = true;
 			JLSemaphoreRelease(ti->start);
+			JLThreadWait(ti->thread, NULL);
 			JLSemaphoreFree(&ti->start);
 		}
 		JLSemaphoreFree(&mpv->metaPollSignalEventSem);

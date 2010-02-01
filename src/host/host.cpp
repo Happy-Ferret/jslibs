@@ -448,7 +448,7 @@ JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
 
 		pv->maybeGCInterval = maybeGCInterval;
 		JS_SetOperationCallback(cx, OperationCallback);
-		pv->watchDogSemEnd = JLCreateSemaphore(0);
+		pv->watchDogSemEnd = JLSemaphoreCreate(0);
 		pv->watchDogThread = JLThreadStart(WatchDogThreadProc, cx);
 		//	JLThreadPriority(pv->watchDogThread, JL_THREAD_PRIORITY_LOW);
 		JL_CHKM( JLSemaphoreOk(pv->watchDogSemEnd) && JLThreadOk(pv->watchDogThread), "Unable to create the GC thread." );
@@ -551,6 +551,8 @@ JSBool DestroyHost( JSContext *cx ) {
 		JL_CHK( JLSemaphoreFree(&pv->watchDogSemEnd) );
 	}
 
+	jslangModuleRelease(cx);
+
 	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) ) {
 
 		JLLibraryHandler module = (JLLibraryHandler)jl::QueueGetData(it);
@@ -558,8 +560,6 @@ JSBool DestroyHost( JSContext *cx ) {
 		if ( moduleRelease != NULL )
 			moduleRelease(cx);
 	}
-
-	jslangModuleRelease(cx);
 
 
 	//	don't try to break linked objects with JS_GC(cx) !
@@ -587,6 +587,7 @@ JSBool DestroyHost( JSContext *cx ) {
 	// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
 	//	ModuleFreeAll();
 
+	jslangModuleFree();
 
 	while ( !jl::QueueIsEmpty(&pv->moduleList) ) {
 
@@ -599,7 +600,6 @@ JSBool DestroyHost( JSContext *cx ) {
 //#endif
 	}
 
-	jslangModuleFree();
 
 
 	while ( !jl::QueueIsEmpty(&pv->registredNativeClasses) )
@@ -969,7 +969,7 @@ bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memal
 	headLength = 0;
 	head = NULL;
 	JslibsFree(JslibsMalloc(0)); // make head non-NULL
-	memoryFreeThreadSem = JLCreateSemaphore(0);
+	memoryFreeThreadSem = JLSemaphoreCreate(0);
 	memoryFreeThread = JLThreadStart(MemoryFreeThreadProc, NULL);
 //	JLThreadPriority(memoryFreeThread, JL_THREAD_PRIORITY_LOW);
 	return true;

@@ -1348,7 +1348,7 @@ JLThreadFuncDecl jsioTestThread( void *data ) {
 
 DEFINE_FUNCTION( jsioTest ) {
 
-	JLSemaphoreHandler sem = JLCreateSemaphore(2);
+	JLSemaphoreHandler sem = JLSemaphoreCreate(2);
 
 	JLSemaphoreAcquire(sem, -1);
 	JLSemaphoreAcquire(sem, -1);

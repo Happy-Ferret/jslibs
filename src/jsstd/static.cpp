@@ -1324,7 +1324,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 
 	JS_SetContextPrivate(scx, &pv);
 
-	pv.semEnd = JLCreateSemaphore(0);
+	pv.semEnd = JLSemaphoreCreate(0);
 
 	JLThreadHandler sandboxWatchDogThread;
 	sandboxWatchDogThread = JLThreadStart(SandboxWatchDogThreadProc, scx);

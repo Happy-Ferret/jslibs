@@ -300,7 +300,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JSObject *globalObject;
 	globalObject = JS_GetGlobalObject(cx);
 
-	gEndSignalEvent = JLCreateSemaphore(0);
+	gEndSignalEvent = JLSemaphoreCreate(0);
 	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
 	JL_CHK( JS_DefineFunction(cx, globalObject, "MetaPollEndSignal", (JSNative)MetaPollEndSignal, 0, JSPROP_SHARED | JSPROP_PERMANENT | JSFUN_FAST_NATIVE) );
 
