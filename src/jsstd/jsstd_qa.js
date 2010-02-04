@@ -1,12 +1,12 @@
 LoadModule('jsstd');
 
-/// Switch function [ftrm]
+/// SwitchCase function [ftrm]
 
-	QA.ASSERT( Switch( 1, [1, '1'], ['num', 'string'] ), 'num', 'Switch type' );
-	QA.ASSERT( Switch( '1', [1, '1'], ['num', 'string'] ), 'str', 'Switch type' );
+	QA.ASSERT( SwitchCase( 1, [1, '1'], ['num', 'str'] ), 'num', 'SwitchCase type' );
+	QA.ASSERT( SwitchCase( '1', [1, '1'], ['num', 'str'] ), 'str', 'SwitchCase type' );
 
-	QA.ASSERT( Switch( 2, [1, '1'], ['num', 'string'] ), undefined, 'Switch not found' );
-	QA.ASSERT( Switch( 2, [1, '1'], ['num', 'string'], 'def' ), 'def', 'Switch default value' );
+	QA.ASSERT( SwitchCase( 2, [1, '1'], ['num', 'str'] ), undefined, 'SwitchCase not found' );
+	QA.ASSERT( SwitchCase( 2, [1, '1'], ['num', 'str'], 'def' ), 'def', 'SwitchCase default value' );
 
 
 /// IsBoolean function [ftrm]
