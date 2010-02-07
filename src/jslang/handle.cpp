@@ -20,14 +20,14 @@ static uint32 globalKey = 0;
 
 BEGIN_CLASS( Handle )
 
-DEFINE_FINALIZE() {
+DEFINE_FINALIZE() { // see HandleClose()
 
 	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, obj);
-	if (!pv)
+	if ( !pv )
 		return;
 	if ( pv->finalizeCallback ) // callback function is present
 		pv->finalizeCallback((char*)pv + sizeof(HandlePrivate)); // (TBD) test it !
-	JS_free(cx, pv);
+	jl_free(pv);
 }
 
 
@@ -51,7 +51,7 @@ DEFINE_FUNCTION_FAST( toString ) {
 	}
 
 	handleStr = JS_NewStringCopyN(cx, str, sizeof(str));
-	JL_CHK(handleStr);
+	JL_CHK( handleStr );
 	*JL_FRVAL = STRING_TO_JSVAL(handleStr);
 	return JS_TRUE;
 	JL_BAD;
@@ -112,6 +112,7 @@ CONFIGURE_CLASS
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_INIT
 	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(HANDLE_PUBLIC_SLOT_COUNT);
 	HAS_FINALIZE
 	HAS_HAS_INSTANCE
 //	HAS_XDR

@@ -104,78 +104,80 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
-struct MetaPollData {
+struct UserProcessEvent {
 	
-	MetaPoll mp;
+	ProcessEvent pe;
 	HANDLE imageEvent;
 	HANDLE cancelEvent;
-	JSObject *viObj;
+	JSObject *obj;
 };
 
-JL_STATIC_ASSERT( offsetof(MetaPollData, mp) == 0 );
+JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-static void StartPoll( volatile MetaPoll *mp ) {
+static void VIStartWait( volatile ProcessEvent *pe ) {
 
-	MetaPollData *mpd = (MetaPollData*)mp;
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	HANDLE events[] = { mpd->imageEvent, mpd->cancelEvent };
+	HANDLE events[] = { upe->imageEvent, upe->cancelEvent };
 	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
 	JL_ASSERT( status != WAIT_FAILED );
 }
 
-static bool CancelPoll( volatile MetaPoll *mp ) {
+static bool VICancelWait( volatile ProcessEvent *pe ) {
 
-	MetaPollData *mpd = (MetaPollData*)mp;
-	SetEvent(mpd->cancelEvent);
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
+
+	SetEvent(upe->cancelEvent);
 	return true;
 }
 
-static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static JSBool VIEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-	MetaPollData *mpd = (MetaPollData*)mp;
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	CloseHandle(mpd->cancelEvent);
+	CloseHandle(upe->cancelEvent);
 	
-	*hasEvent = WaitForSingleObject(mpd->imageEvent, 0) == WAIT_OBJECT_0;
+	*hasEvent = WaitForSingleObject(upe->imageEvent, 0) == WAIT_OBJECT_0;
 
 	if ( *hasEvent ) {
 	
-		jsval fct, rval;
-		JS_GetProperty(cx, mpd->viObj, "onImage", &fct);
+		jsval fct, argv[2];
+		argv[1] = OBJECT_TO_JSVAL(upe->obj);
+
+		JL_CHK( JS_GetProperty(cx, upe->obj, "onImage", &fct) );
 		if ( JsvalIsFunction(cx, fct) )
-			JL_CHK( JS_CallFunctionValue(cx, mpd->viObj, fct, 0, NULL, &rval) );
+			JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, COUNTOF(argv)-1, argv+1, argv) );
 	}
 
-	JS_RemoveRoot(cx, &mpd->viObj);
 	return JS_TRUE;
 bad:
-	JS_RemoveRoot(cx, &mpd->viObj);
 	return JS_FALSE;
 }
 
 
-DEFINE_FUNCTION_FAST( MetaPollable ) {
+DEFINE_FUNCTION_FAST( Events ) {
 	
 	JL_S_ASSERT_ARG(0);
 
-	MetaPollData *mpd;
-	JL_CHK( CreateHandle(cx, 'poll', sizeof(MetaPollData), (void**)&mpd, NULL, JL_FRVAL) );
-	mpd->mp.startPoll = StartPoll;
-	mpd->mp.cancelPoll = CancelPoll;
-	mpd->mp.endPoll = EndPoll;
+	UserProcessEvent *upe;
+	JL_CHK( CreateHandle(cx, 'pev', sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	upe->pe.startWait = VIStartWait;
+	upe->pe.cancelWait = VICancelWait;
+	upe->pe.endWait = VIEndWait;
 
-	mpd->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 
-	mpd->imageEvent = vi->ImageEvent(deviceId);
+	upe->imageEvent = vi->ImageEvent(deviceId);
 
-	mpd->viObj = JL_FOBJ;
+	upe->obj = JL_FOBJ;
 
-	JS_AddRoot(cx, &mpd->viObj);
+	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, OBJECT_TO_JSVAL(upe->obj)) ); // GC protection
+
 
 	return JS_TRUE;
 	JL_BAD;
@@ -403,7 +405,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST(MetaPollable)
+		FUNCTION_FAST(Events)
 		FUNCTION_FAST(GetImage)
 		FUNCTION_FAST(Close)
 	END_FUNCTION_SPEC

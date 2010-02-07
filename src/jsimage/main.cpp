@@ -34,12 +34,12 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 //malloc=jl_malloc;calloc=jl_calloc;realloc=jl_realloc;free=jl_free
 //malloc=((void*(*)(size_t))jl_malloc);calloc=((void*(*)(size_t))jl_calloc);realloc=((void*(*)(void*,size_t))jl_realloc);free=((void(*)(void*))jl_free)
 
-	JL_CHK( InitJslibsModule(cx) );
+	JL_CHK( InitJslibsModule(cx, id)  );
 
 	INIT_STATIC();
 //	INIT_CLASS( Image );

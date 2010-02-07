@@ -14,20 +14,21 @@
 
 #pragma once
 
-static const uint32_t moduleId = JL_CAST_CSTR_TO_UINT32("lang");
+static const uint32_t jslangModuleId = JL_CAST_CSTR_TO_UINT32("lang");
 
-#define METAPOLL_MAX_ITEM 31
+#define PROCESSEVENT_MAX_ITEM 31
 
-struct MetaPollThreadInfo {
+struct ProcessEventThreadInfo {
 
-	volatile MetaPoll *mpSlot;
-	JLSemaphoreHandler start, signalEventSem;
+	volatile ProcessEvent *peSlot;
+	volatile bool isEnd;
+	JLSemaphoreHandler startSem;
+	JLSemaphoreHandler signalEventSem;
 	JLThreadHandler thread;
-	bool isEnd;
 };
 
 struct ModulePrivate {
 
-	MetaPollThreadInfo metaPollThreadInfo[METAPOLL_MAX_ITEM];
-	JLSemaphoreHandler metaPollSignalEventSem;
+	ProcessEventThreadInfo processEventThreadInfo[PROCESSEVENT_MAX_ITEM];
+	JLSemaphoreHandler processEventSignalEventSem;
 };

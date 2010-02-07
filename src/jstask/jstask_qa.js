@@ -1,6 +1,19 @@
 LoadModule('jstask');
 LoadModule('jsio');
 
+/// crash about serializer cleanup
+
+	var t = new Task(function(){
+		
+		LoadModule('jsstd');
+		Sleep(100);
+		return "test";
+	});
+
+	t.Request();
+	Sleep(10);
+
+
 /// some new threads [f]
 
 	var i = 0;

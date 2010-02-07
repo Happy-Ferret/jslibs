@@ -483,39 +483,41 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 
 
-struct MetaPollSystrayData {
+struct UserProcessEvent {
 	
-	MetaPoll mp;
+	ProcessEvent pe;
 	Private *systrayPrivate;
 	HANDLE cancelEvent;
 	JSObject *systrayObj;
 };
 
-JL_STATIC_ASSERT( offsetof(MetaPollSystrayData, mp) == 0 );
+JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-static void StartPoll( volatile MetaPoll *mp ) {
+static void SystrayStartWait( volatile ProcessEvent *pe ) {
 
-	MetaPollSystrayData *mpd = (MetaPollSystrayData*)mp;
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	HANDLE events[] = { mpd->systrayPrivate->event, mpd->cancelEvent };
+	HANDLE events[] = { upe->systrayPrivate->event, upe->cancelEvent };
 	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
 	JL_ASSERT( status != WAIT_FAILED );
 
 }
 
-static bool CancelPoll( volatile MetaPoll *mp ) {
+static bool SystrayCancelWait( volatile ProcessEvent *pe ) {
 
-	MetaPollSystrayData *mpd = (MetaPollSystrayData*)mp;
-	SetEvent(mpd->cancelEvent);
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
+
+	SetEvent(upe->cancelEvent);
 	return true;
 }
 
-static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-	MetaPollSystrayData *mpd = (MetaPollSystrayData*)mp;
-	Private *pv = mpd->systrayPrivate;
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	CloseHandle(mpd->cancelEvent);
+	Private *pv = upe->systrayPrivate;
+
+	CloseHandle(upe->cancelEvent);
 	
 	*hasEvent = !jl::QueueIsEmpty(&pv->msgQueue);
 
@@ -526,7 +528,7 @@ static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSO
 		EnterCriticalSection(&pv->cs);
 		trayMsg = (MSGInfo*)jl::QueueShift(&pv->msgQueue);
 		LeaveCriticalSection(&pv->cs);
-		if ( ProcessSystrayMessage(cx, mpd->systrayObj, trayMsg, &rval) != JS_TRUE ) {
+		if ( ProcessSystrayMessage(cx, upe->systrayObj, trayMsg, &rval) != JS_TRUE ) {
 			
 			jl_free(trayMsg);
 			goto bad;
@@ -534,30 +536,30 @@ static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSO
 		jl_free(trayMsg);
 	}	
 
-	JS_RemoveRoot(cx, &mpd->systrayObj);
 	return JS_TRUE;
 bad:
-	JS_RemoveRoot(cx, &mpd->systrayObj);
 	return JS_FALSE;
 }
 
-DEFINE_FUNCTION_FAST( MetaPollable ) {
+DEFINE_FUNCTION_FAST( Events ) {
 	
 	JL_S_ASSERT_ARG(0);
 	JSObject *obj = JL_FOBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
-	MetaPollSystrayData *mpd;
-	JL_CHK( CreateHandle(cx, 'poll', sizeof(MetaPollSystrayData), (void**)&mpd, NULL, JL_FRVAL) );
-	mpd->mp.startPoll = StartPoll;
-	mpd->mp.cancelPoll = CancelPoll;
-	mpd->mp.endPoll = EndPoll;
+	UserProcessEvent *upe;
+	JL_CHK( CreateHandle(cx, 'pev', sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	upe->pe.startWait = SystrayStartWait;
+	upe->pe.cancelWait = SystrayCancelWait;
+	upe->pe.endWait = SystrayEndWait;
 
-	mpd->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	mpd->systrayPrivate = pv;
-	mpd->systrayObj = obj;
-	JS_AddRoot(cx, &mpd->systrayObj);
+	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	upe->systrayPrivate = pv;
+	upe->systrayObj = obj;
+
+
+	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, OBJECT_TO_JSVAL(obj)) ); // GC protection
 
 	return JS_TRUE;
 	JL_BAD;
@@ -969,7 +971,7 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(Close)
 		FUNCTION(ProcessEvents)
-		FUNCTION_FAST(MetaPollable)
+		FUNCTION_FAST(Events)
 		FUNCTION(PopupMenu)
 		FUNCTION(Focus)
 		FUNCTION(Position)

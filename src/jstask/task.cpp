@@ -16,6 +16,8 @@
 
 #include "../host/host.h"
 
+#include "../jslang/handlepub.h"
+
 #include "buffer.h"
 
 #include <errno.h>
@@ -35,6 +37,8 @@ struct TaskPrivate {
 	volatile size_t pendingRequestCount;
 
 	volatile size_t processingRequestCount;
+
+	JLEventHandler responseEvent; // (TBD) replace responseSem by this signal (like a conditional variable).
 
 	JLSemaphoreHandler responseSem;
 	jl::Queue responseList;
@@ -95,31 +99,15 @@ DEFINE_FINALIZE() {
 
 	JL_CHK( JLSemaphoreFree(&pv->requestSem) );
 	JL_CHK( JLSemaphoreFree(&pv->responseSem) );
+	JL_CHK( JLEventFree(&pv->responseEvent) );
 
 	JLMutexFree(&pv->mutex);
-
-	// cleanup lists
-	while ( !QueueIsEmpty(&pv->responseList) ) {
-
-		Serialized ser = (Serialized)QueueShift(&pv->responseList);
-		SerializerFree(&ser);
-	}
-	pv->pendingResponseCount = 0;
 
 	while ( !QueueIsEmpty(&pv->requestList) ) {
 
 		Serialized ser = (Serialized)QueueShift(&pv->requestList);
 		SerializerFree(&ser);
 	}
-	pv->pendingRequestCount = 0;
-
-	while ( !QueueIsEmpty(&pv->exceptionList) ) {
-
-		Serialized ser = (Serialized)QueueShift(&pv->exceptionList);
-		SerializerFree(&ser);
-	}
-
-	pv->processingRequestCount = 0;
 
 	JS_free(cx, pv);
 	return;
@@ -215,6 +203,7 @@ static JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 		}
 
 		JLSemaphoreRelease(pv->responseSem); // +1 // signals a response
+		JLEventTrigger(pv->responseEvent);
 	}
 
 	JS_POP_TEMP_ROOT(cx, &tvr);
@@ -295,6 +284,21 @@ static JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 
 bad:
 	BufferFinalize(&errBuffer);
+
+	// These queues must be destroyed before cx because Serialized *ser hold a reference to the context that created the value.
+	JL_CHK( JLMutexAcquire(pv->mutex) ); // --
+	while ( !QueueIsEmpty(&pv->exceptionList) ) {
+
+		Serialized ser = (Serialized)QueueShift(&pv->exceptionList);
+		SerializerFree(&ser);
+	}
+	while ( !QueueIsEmpty(&pv->responseList) ) {
+
+		Serialized ser = (Serialized)QueueShift(&pv->responseList);
+		SerializerFree(&ser);
+	}
+	JL_CHK( JLMutexRelease(pv->mutex) ); // ++
+
 	if ( cx )
 		DestroyHost(cx);
 	JLThreadExit(0);
@@ -356,6 +360,8 @@ DEFINE_CONSTRUCTOR() {
 
 	QueueInitialize(&pv->responseList);
 	pv->responseSem = JLSemaphoreCreate(0);
+	pv->responseEvent = JLEventCreate(true);
+	JL_ASSERT( JLEventOk(pv->responseEvent) );
 	pv->pendingResponseCount = 0;
 
 	QueueInitialize(&pv->exceptionList);
@@ -558,6 +564,114 @@ DEFINE_PROPERTY( idle ) {
 }
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE Handle $INAME
+ $H example
+{{{
+LoadModule('jstask');
+LoadModule('jsstd');
+
+var t = new Task(function(data){
+	
+	LoadModule('jsstd');
+	Sleep(100);
+	return data+1;
+});
+
+t.onResponse = function(t) {
+
+	var v = t.Response();
+	t.Request( v );
+	Print(v, '\n');
+}
+
+t.Request(0);
+
+while (!endSignal)
+	ProcessEvents(t.Event(), EndSignalEvent());
+}}}
+**/
+struct UserProcessEvent {
+	
+	ProcessEvent pe;
+
+	bool canceled;
+	JSObject *obj;
+	TaskPrivate *pv;
+};
+
+JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+
+static void TaskStartWait( volatile ProcessEvent *pe ) {
+
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
+
+	while ( upe->pv->pendingResponseCount == 0 && !upe->canceled ) {
+		
+		int st = JLEventWait(upe->pv->responseEvent, -1);
+		JL_ASSERT( st );
+	}
+}
+
+static bool TaskCancelWait( volatile ProcessEvent *pe ) {
+
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
+
+	upe->canceled = true;
+	int st = JLEventTrigger(upe->pv->responseEvent);
+	JL_ASSERT( st );
+	return true;
+}
+
+static JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
+
+	*hasEvent = upe->pv->pendingResponseCount > 0;
+	if ( *hasEvent ) {
+	
+		jsval fct, argv[2];
+		argv[1] = OBJECT_TO_JSVAL(upe->obj); // already rooted
+
+		JL_CHK( JS_GetProperty(cx, upe->obj, "onResponse", &fct) );
+		if ( JsvalIsFunction(cx, fct) )
+			JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, COUNTOF(argv)-1, argv+1, argv) );
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+DEFINE_FUNCTION_FAST( Events ) {
+	
+	JL_S_ASSERT_ARG(0);
+	JL_S_ASSERT_CLASS( JL_FOBJ, JL_THIS_CLASS );
+
+	TaskPrivate *pv;
+	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+
+	UserProcessEvent *upe;
+	JL_CHK( CreateHandle(cx, 'pev', sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	upe->pe.startWait = TaskStartWait;
+	upe->pe.cancelWait = TaskCancelWait;
+	upe->pe.endWait = TaskEndWait;
+
+	upe->canceled = false;
+	upe->obj = JL_FOBJ;
+	upe->pv = pv;
+
+	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, OBJECT_TO_JSVAL(upe->obj)) ); // GC protection
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
@@ -569,6 +683,7 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(Request)
 		FUNCTION_FAST(Response)
+		FUNCTION_FAST(Events)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -577,9 +692,6 @@ CONFIGURE_CLASS
 		PROPERTY_READ(pendingResponseCount)
 		PROPERTY_READ(idle)
 	END_PROPERTY_SPEC
-
-	BEGIN_STATIC_FUNCTION_SPEC
-	END_STATIC_FUNCTION_SPEC
 
 END_CLASS
 

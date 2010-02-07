@@ -5,6 +5,7 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jstask');
 
+//jsioTest(); Halt();
 
 LoadModule('jsstd');
 LoadModule('jsio');
@@ -48,7 +49,7 @@ Print('HTTP server minimal example. Point a web browser at http://localhost:8081
 // Poll(descList, 50);
 
 while ( !endSignal )
-	MetaPoll( MetaPollIO(descList), MetaPollEndSignal() ); // MetaPollTimeout(50)
+	ProcessEvents( IOEvents(descList), EndSignalEvents(), TimeoutEvents(100) );
 
 
 //jsioTest();

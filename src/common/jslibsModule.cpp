@@ -35,13 +35,19 @@ EXTERN_C void* jl_realloc_fct( void *ptr, size_t size ) { return jl_realloc(ptr,
 EXTERN_C size_t jl_msize_fct( void *ptr ) { return jl_msize(ptr); }
 EXTERN_C void jl_free_fct( void *ptr ) { jl_free(ptr); }
 
-JSBool InitJslibsModule( JSContext *cx ) {
+DLLLOCAL uint32_t _moduleId = 0;
+
+JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
 
 	HostPrivate *pv = GetHostPrivate(cx);
 
 	_unsafeMode = pv ? pv->unsafeMode : _unsafeMode;
 
 	JL_S_ASSERT( !pv || pv->hostPrivateVersion == 0 || pv->hostPrivateVersion == JL_HOST_PRIVATE_VERSION, "Incompatible host.");
+
+	JL_ASSERT( _moduleId == 0 || _moduleId == id );
+	if ( _moduleId == 0 )
+		_moduleId = id;
 
 	jl_malloc = pv && pv->alloc.malloc ? pv->alloc.malloc : jl_malloc; // ie. if we have a host and if the host has custom allocators.
 	jl_calloc = pv && pv->alloc.calloc ? pv->alloc.calloc : jl_calloc;

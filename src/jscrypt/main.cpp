@@ -35,7 +35,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	const struct ltc_cipher_descriptor * cipherList[] = {
 		&blowfish_desc,
@@ -85,7 +85,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		&sober128_desc,
 	};
 
-	JL_CHK( InitJslibsModule(cx) );
+	JL_CHK( InitJslibsModule(cx, id)  );
 
 #ifdef GMP_DESC
 	ltc_mp = gmp_desc; // register math

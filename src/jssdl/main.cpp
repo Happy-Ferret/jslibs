@@ -60,24 +60,22 @@ SDL_Surface* SetVideoMode(int width, int height, int bpp, Uint32 flags) {
 
 	VideoMode vm = { width, height, bpp, flags };
 
-//	wglMakeCurrent(NULL, NULL);
-
 	SDL_Event ev;
 	ev.type = SDL_USEREVENT;
 	ev.user.code = USEREVENT_SET_VIDEO_MODE;
 	ev.user.data1 = &vm;
+
+	wglMakeCurrent(NULL, NULL);
 	SDL_PushEvent(&ev);
-
 	JLSemaphoreAcquire(commandDone, -1);
-
-//	wglMakeCurrent(deviceContext, openglContext); // Doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
+	wglMakeCurrent(deviceContext, openglContext); // Doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
 	return vm.returnValue;
 }
 
 int EventFilter( const SDL_Event *e ) {
 
 	if ( e->type == SDL_VIDEORESIZE ) {
-
+/*
 //		wglMakeCurrent(deviceContext, openglContext);
 		const SDL_Surface* currentSurface = SDL_GetVideoSurface();
 		int bpp = 0; // currentSurface->format->BitsPerPixel;
@@ -90,9 +88,9 @@ int EventFilter( const SDL_Event *e ) {
 		deviceContext = wglGetCurrentDC();
 		openglContext = wglGetCurrentContext();
 		wglMakeCurrent(NULL, NULL);
+*/
 	}
-
-	return 1; // return 1 so all events are added to queue
+	return 1; // 1, then the event will be added to the internal queue.
 }
 
 
@@ -142,15 +140,13 @@ int VideoThread( void *unused ) {
 				goto end;
 			case USEREVENT_SET_VIDEO_MODE: {
 				VideoMode *vm = (VideoMode*)ev.user.data1;
-//				if ( deviceContext )
-//					wglMakeCurrent(deviceContext, openglContext);
+				if ( deviceContext )
+					wglMakeCurrent(deviceContext, openglContext);
 				vm->returnValue = SDL_SetVideoMode(vm->width, vm->height, vm->bpp, vm->flags);
-
 				JL_ASSERT( vm->returnValue != NULL );
-
-//				deviceContext = wglGetCurrentDC();
-//				openglContext = wglGetCurrentContext();
-//				wglMakeCurrent(NULL, NULL);
+				deviceContext = wglGetCurrentDC();
+				openglContext = wglGetCurrentContext();
+				wglMakeCurrent(NULL, NULL);
 				JLSemaphoreRelease(commandDone);
 				break;
 			}
@@ -188,14 +184,14 @@ void EndVideo() {
 	SDL_PushEvent(&ev);
 	SDL_WaitThread(videoThreadHandler, NULL);
 	JLSemaphoreFree(&commandDone);
-	JLSemaphoreFree(&sdlEvent);
+	JLEventFree(&sdlEvent);
 }
 
 
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	JL_CHK( InitJslibsModule(cx) );
+	JL_CHK( InitJslibsModule(cx, id)  );
 
 	int status = SDL_Init(SDL_INIT_NOPARACHUTE);
 

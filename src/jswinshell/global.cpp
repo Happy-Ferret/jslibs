@@ -717,6 +717,90 @@ DEFINE_FUNCTION_FAST( DirectoryChangesLookup ) {
 
 
 
+struct UserProcessEvent {
+	
+	ProcessEvent pe;
+	DirectoryChanges *dc;
+	HANDLE cancelEvent;
+	bool canceled;
+	JSObject *systrayObj;
+};
+
+JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+
+static void DirectoryChangesStartWait( volatile ProcessEvent *pe ) {
+
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	
+	const HANDLE events[2] = { upe->cancelEvent, upe->dc->overlapped.hEvent };
+	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
+	JL_ASSERT( status != WAIT_FAILED );
+}
+
+static bool DirectoryChangesCancelWait( volatile ProcessEvent *pe ) {
+
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
+
+	upe->canceled = true;
+	BOOL status = SetEvent(upe->cancelEvent);
+	JL_ASSERT( status );
+
+	return true;
+}
+
+static JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+	
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
+
+	BOOL status = CloseHandle(upe->cancelEvent);
+	JL_ASSERT( status );
+
+	SetEvent(upe->dc->overlapped.hEvent);
+
+//	DWORD st = WaitForSingleObject(upe->dc->overlapped.hEvent, 0); // (TBD) why this does not work !??
+
+	if ( upe->canceled == false ) {
+
+		jsval fct, argv[2];
+		JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, &argv[1]) );
+		JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, &fct) );
+		JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fct, COUNTOF(argv)-1, argv+1, argv) );
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+DEFINE_FUNCTION_FAST( DirectoryChangesEvents ) {
+	
+	JL_S_ASSERT_ARG(2);
+
+	JL_S_ASSERT( IsHandleType(cx, JL_FARG(1), 'dmon'), "Unexpected argument type." );
+	JL_S_ASSERT_FUNCTION( JL_FARG(2) );
+
+	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_FARG(1));
+	JL_S_ASSERT_RESOURCE( dc );
+
+	UserProcessEvent *upe;
+	JL_CHK( CreateHandle(cx, 'pev', sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	upe->pe.startWait = DirectoryChangesStartWait;
+	upe->pe.cancelWait = DirectoryChangesCancelWait;
+	upe->pe.endWait = DirectoryChangesEndWait;
+
+	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1) ) );
+	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 1, JL_FARG(2) ) );
+
+	upe->canceled = false;
+	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	upe->dc = dc;
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 
 /**doc
 === Static properties ===
@@ -860,6 +944,7 @@ CONFIGURE_STATIC
 
 		FUNCTION_FAST( DirectoryChangesInit )
 		FUNCTION_FAST( DirectoryChangesLookup )
+		FUNCTION_FAST( DirectoryChangesEvents )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

@@ -36,9 +36,9 @@ $MODULE_FOOTER
 JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 
 	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);
-	JL_CHK( SetModulePrivate(cx, moduleId, mpv) );
+	JL_CHK( SetModulePrivate(cx, jslangModuleId, mpv) );
 
-	mpv->metaPollSignalEventSem = JLSemaphoreCreate(0);
+	mpv->processEventSignalEventSem = JLSemaphoreCreate(0);
 
 	INIT_CLASS( Handle );
 	INIT_CLASS( Blob );
@@ -55,19 +55,19 @@ JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 
 JSBool jslangModuleRelease(JSContext *cx) {
 
-	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, moduleId);
+	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, jslangModuleId);
 
-	for ( int i = 0; i < COUNTOF(mpv->metaPollThreadInfo); ++i ) {
+	for ( int i = 0; i < COUNTOF(mpv->processEventThreadInfo); ++i ) {
 		
-		MetaPollThreadInfo *ti = &mpv->metaPollThreadInfo[i];
+		ProcessEventThreadInfo *ti = &mpv->processEventThreadInfo[i];
 		if ( ti->thread != 0 ) {
 
 			ti->isEnd = true;
-			JLSemaphoreRelease(ti->start);
+			JLSemaphoreRelease(ti->startSem);
 			JLThreadWait(ti->thread, NULL);
-			JLSemaphoreFree(&ti->start);
+			JLSemaphoreFree(&ti->startSem);
 		}
-		JLSemaphoreFree(&mpv->metaPollSignalEventSem);
+		JLSemaphoreFree(&mpv->processEventSignalEventSem);
 	}
 	
 	jl_free( mpv );

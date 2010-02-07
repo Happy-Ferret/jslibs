@@ -2,18 +2,30 @@
 
 LoadModule('jstask');
 LoadModule('jsstd');
-LoadModule('jsio');
 
-var i = 0;
-while ( !endSignal && i++ < 300 ) {
+var t = new Task(function(data, idx){
+	
+	idx || LoadModule('jsstd');
+	Sleep(Math.random()*100);
+	return data+1;
+});
 
-	new Task(function(){});
+t.onResponse = function(t) {
+
+	var v = t.Response();
+	t.Request( v );
+	Print(v, '\n');
 }
 
+t.Request(0);
+
+while (!endSignal)
+	ProcessEvents(t.Events(), EndSignalEvents());
 
 
 Halt();
 
+LoadModule('jsio');
 
 
 myTask.Request();

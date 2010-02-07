@@ -55,7 +55,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 /* crash case: see http://www.sqlite.org/cvstrac/tktview?tn=3251
 	sqlite3_initialize();
@@ -69,7 +69,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 		sqlite3_finalize(pStmt); // pStmt is 0xfeefee at the 2nd loop
 */
 
-	JL_CHK( InitJslibsModule(cx) );
+	JL_CHK( InitJslibsModule(cx, id)  );
 
 	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) == SQLITE_OK, "Unable to disable memory stats." );
 	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MALLOC, &mem) == SQLITE_OK, "Unable to initialize memory manager." );

@@ -78,7 +78,7 @@ END_STATIC
 
 
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
 

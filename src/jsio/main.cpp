@@ -42,9 +42,9 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	JL_CHK( InitJslibsModule(cx) );
+	JL_CHK( InitJslibsModule(cx, id)  );
 
 	if ( instanceCount == 0 && !PR_Initialized() ) {
 
@@ -53,7 +53,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 	}
 	PR_AtomicIncrement(&instanceCount);
 
-	JL_CHK( SetModulePrivate(cx, moduleId, jl_calloc(sizeof(JsioPrivate), 1)) );
+	JL_CHK( SetModulePrivate(cx, _moduleId, jl_calloc(sizeof(JsioPrivate), 1)) );
 
 	INIT_CLASS( IoError );
 	INIT_CLASS( Descriptor );
@@ -73,9 +73,9 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
-	JsioPrivate *mpv = (JsioPrivate*)GetModulePrivate(cx, moduleId);
-	if ( mpv->metaPollEvent != NULL )
-		PR_DestroyPollableEvent(mpv->metaPollEvent);
+	JsioPrivate *mpv = (JsioPrivate*)GetModulePrivate(cx, _moduleId);
+	if ( mpv->peCancel != NULL )
+		PR_DestroyPollableEvent(mpv->peCancel);
 
 	jl_free(mpv);
 

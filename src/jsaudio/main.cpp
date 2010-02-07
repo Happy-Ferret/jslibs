@@ -44,9 +44,9 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	JL_CHK( InitJslibsModule(cx) );
+	JL_CHK( InitJslibsModule(cx, id)  );
 
 /*
 	//JL_S_ASSERT( context == NULL, "Invalid initialization context." );

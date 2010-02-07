@@ -14,10 +14,9 @@
 
 #pragma once
 
-static const uint32_t moduleId = JL_CAST_CSTR_TO_UINT32("io");
-
+//static const uint32_t moduleId = JL_CAST_CSTR_TO_UINT32("io"); // replaced by _moduleId
 
 struct JsioPrivate {
 
-	PRFileDesc *metaPollEvent;
+	PRFileDesc *peCancel;
 };

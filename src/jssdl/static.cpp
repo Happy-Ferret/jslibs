@@ -1035,43 +1035,43 @@ DEFINE_PROPERTY( version ) {
 }
 
 
-extern JLSemaphoreHandler sdlEvent;
+extern JLEventHandler sdlEvent;
 
-struct MetaPollSDLData {
+struct UserProcessEvent {
 	
-	MetaPoll mp;
+	ProcessEvent pe;
 
 	bool cancel;
 	JSObject *listenersObj;
 };
 
-JL_STATIC_ASSERT( offsetof(MetaPollSDLData, mp) == 0 );
+JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-static void StartPoll( volatile MetaPoll *mp ) {
+static void SDLStartWait( volatile ProcessEvent *pe ) {
 
-	MetaPollSDLData *mpsdl = (MetaPollSDLData*)mp;
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
 	int status;
 	for (;;) {
 
-		JLEventWait(sdlEvent);
+		JLEventWait(sdlEvent, -1);
 		status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS & ~SDL_EVENTMASK(SDL_USEREVENT));
 //		JL_ASSERT( mpsdl->cancel || status == 1 ); // (TBD) understand this case
-		if ( mpsdl->cancel || status == 1 )
+		if ( upe->cancel || status == 1 )
 			break;
 	}
 }
 
-static bool CancelPoll( volatile MetaPoll *mp ) {
+static bool SDLCancelWait( volatile ProcessEvent *pe ) {
 
-	MetaPollSDLData *mpsdl = (MetaPollSDLData*)mp;
-	mpsdl->cancel = true;
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	upe->cancel = true;
 	JLEventTrigger(sdlEvent);
 	return true;
 }
 
-static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-	MetaPollSDLData *mpsdl = (MetaPollSDLData*)mp;
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	int status;
 	bool fired; // unused
@@ -1091,35 +1091,32 @@ static JSBool EndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSO
 		*hasEvent = true;
 
 		for ( int i = 0; i < status; i++ )
-			JL_CHK( FireListener(cx, mpsdl->listenersObj, &ev[i], &rval, &fired) );
+			JL_CHK( FireListener(cx, upe->listenersObj, &ev[i], &rval, &fired) );
 
 		if ( status < COUNTOF(ev) )
 			break;
 	}
 
-	JS_RemoveRoot(cx, &mpsdl->listenersObj);
 	return JS_TRUE;
-bad:
-	JS_RemoveRoot(cx, &mpsdl->listenersObj);
-	return JS_FALSE;
+	JL_BAD;
 }
 
 
-DEFINE_FUNCTION_FAST( MetaPollSDL ) {
+DEFINE_FUNCTION_FAST( SDLEvents ) {
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 
-	MetaPollSDLData *mpsdl;
-	JL_CHK( CreateHandle(cx, 'poll', sizeof(MetaPollSDLData), (void**)&mpsdl, NULL, JL_FRVAL) );
-	mpsdl->mp.startPoll = StartPoll;
-	mpsdl->mp.cancelPoll = CancelPoll;
-	mpsdl->mp.endPoll = EndPoll;
+	UserProcessEvent *upe;
+	JL_CHK( CreateHandle(cx, 'pev', sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	upe->pe.startWait = SDLStartWait;
+	upe->pe.cancelWait = SDLCancelWait;
+	upe->pe.endWait = SDLEndWait;
 
-	mpsdl->cancel = false;
+	upe->cancel = false;
 
-	mpsdl->listenersObj = JSVAL_TO_OBJECT( JL_FARG(1) );
-	JS_AddRoot(cx, &mpsdl->listenersObj);
+	upe->listenersObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection
 
 	// see SetWindowsHookEx(WH_GETMESSAGE, ...
 
@@ -1144,11 +1141,11 @@ CONFIGURE_STATIC
 		FUNCTION_FAST_ARGC( GlSetAttribute, 2 )
 		FUNCTION_FAST_ARGC( GlGetAttribute, 1 )
 		FUNCTION_ARGC( PollEvent, 1 )
-		FUNCTION_FAST_ARGC( MetaPollSDL, 1 )
 		FUNCTION_FAST_ARGC( WarpMouse, 2 )
 		FUNCTION_FAST_ARGC( SetCursor, 1 )
 		FUNCTION_FAST_ARGC( GetKeyState, 1 )
 		FUNCTION_FAST_ARGC( GetKeyName, 1 )
+		FUNCTION_FAST_ARGC( SDLEvents, 1 )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

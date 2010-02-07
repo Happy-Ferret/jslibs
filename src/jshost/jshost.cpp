@@ -43,7 +43,7 @@ static unsigned char embeddedBootstrapScript[] =
 
 
 volatile bool gEndSignalState = false;
-JLSemaphoreHandler gEndSignalEvent;
+JLEventHandler gEndSignalEvent;
 
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
@@ -56,91 +56,91 @@ JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	bool tmp;
 	JL_CHK( JsvalToBool(cx, *vp, &tmp) );
 	gEndSignalState = tmp;
-	
-	JLSemaphoreRelease(gEndSignalEvent);
-	JLSemaphoreAcquire(gEndSignalEvent, 0);
-
+	JLEventTrigger(gEndSignalEvent);
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
 #ifdef XP_WIN
-BOOL Interrupt(DWORD CtrlType) {
+BOOL WINAPI Interrupt(DWORD CtrlType) {
 
 // see. http://msdn2.microsoft.com/en-us/library/ms683242.aspx
 //	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT) // CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
 //		return FALSE;
 	gEndSignalState = true;
-	JLSemaphoreRelease(gEndSignalEvent);
-	JLSemaphoreAcquire(gEndSignalEvent, 0);
+	JLEventTrigger(gEndSignalEvent);
 	return TRUE;
 }
 #else
 void Interrupt(int CtrlType) {
 
 	gEndSignalState = true;
-	JLReleaseSemaphore(gEndSignalEvent);
-	JLAcquireSemaphore(gEndSignalEvent, 0);
+	JLEventTrigger(gEndSignalEvent);
 }
 #endif // XP_WIN
 
 
-struct MetaPollEndSignalData {
+struct UserProcessEvent {
 	
-	MetaPoll mp;
+	ProcessEvent pe;
 	volatile bool cancel;
 };
 
-static void EndSignalStartPoll( volatile MetaPoll *mp ) {
+JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-	MetaPollEndSignalData *mpes = (MetaPollEndSignalData*)mp;
-	while ( !gEndSignalState && !mpes->cancel )
-		JLSemaphoreAcquire(gEndSignalEvent, -1);
+static void EndSignalStartWait( volatile ProcessEvent *pe ) {
+
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	while ( !gEndSignalState && !upe->cancel )
+		JLEventWait(gEndSignalEvent, -1);
 }
 
-static bool EndSignalCancelPoll( volatile MetaPoll *mp ) {
+static bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 
-	MetaPollEndSignalData *mpes = (MetaPollEndSignalData*)mp;
-	mpes->cancel = true;
-	JLSemaphoreRelease(gEndSignalEvent);
-	JLSemaphoreAcquire(gEndSignalEvent, 0);
-
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	upe->cancel = true;
+	JLEventTrigger(gEndSignalEvent);
 	return true;
 }
 
-static JSBool EndSignalEndPoll( volatile MetaPoll *mp, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	*hasEvent = gEndSignalState;
 
 	return JS_TRUE;
 }
 
-static JSBool MetaPollEndSignal(JSContext *cx, uintN argc, jsval *vp) {
+static JSBool EndSignalEvents(JSContext *cx, uintN argc, jsval *vp) {
 
 	JL_S_ASSERT_ARG(0);
 
-	MetaPollEndSignalData *mpes;
-	JL_CHK( CreateHandle(cx, 'poll', sizeof(MetaPollEndSignalData), (void**)&mpes, NULL, JL_FRVAL) );
-	mpes->mp.startPoll = EndSignalStartPoll;
-	mpes->mp.cancelPoll = EndSignalCancelPoll;
-	mpes->mp.endPoll = EndSignalEndPoll;
-	mpes->cancel = false;
+	UserProcessEvent *upe;
+	JL_CHK( CreateHandle(cx, 'pev', sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	upe->pe.startWait = EndSignalStartWait;
+	upe->pe.cancelWait = EndSignalCancelWait;
+	upe->pe.endWait = EndSignalEndWait;
+	upe->cancel = false;
 
 	return JS_TRUE;
 	JL_BAD;
 }
 
-
+static int stdout_fileno = -1;
+static int stderr_fileno = -1;
 
 int HostStdout( void *privateData, const char *buffer, size_t length ) {
 
-	return write(fileno(stdout), buffer, length);
+	if (unlikely( stdout_fileno == -1 ))
+		stdout_fileno = fileno(stdout);
+	return write(stdout_fileno, buffer, length);
 }
 
 int HostStderr( void *privateData, const char *buffer, size_t length ) {
 
-	return write(fileno(stderr), buffer, length);
+	if (unlikely( stderr_fileno == -1 ))
+		stderr_fileno = fileno(stderr);
+	return write(stderr_fileno, buffer, length);
 }
 
 //void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
@@ -243,7 +243,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 #ifdef XP_WIN
 	BOOL status;
-	status = SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, TRUE);
+	status = SetConsoleCtrlHandler(Interrupt, TRUE);
 	HOST_MAIN_ASSERT( status == TRUE, "Unable to set the Ctrl-C handler." );
 #else
 	signal(SIGINT, Interrupt);
@@ -300,9 +300,9 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JSObject *globalObject;
 	globalObject = JS_GetGlobalObject(cx);
 
-	gEndSignalEvent = JLSemaphoreCreate(0);
+	gEndSignalEvent = JLEventCreate(true);
 	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
-	JL_CHK( JS_DefineFunction(cx, globalObject, "MetaPollEndSignal", (JSNative)MetaPollEndSignal, 0, JSPROP_SHARED | JSPROP_PERMANENT | JSFUN_FAST_NATIVE) );
+	JL_CHK( JS_DefineFunction(cx, globalObject, "EndSignalEvents", (JSNative)EndSignalEvents, 0, JSPROP_SHARED | JSPROP_PERMANENT | JSFUN_FAST_NATIVE) );
 
 // script name
 	if ( inlineScript == NULL )
@@ -405,6 +405,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	DestroyHost(cx);
 	JS_ShutDown();
 	cx = NULL;
+
 
 #ifdef XP_WIN
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);

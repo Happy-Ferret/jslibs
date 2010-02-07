@@ -20,16 +20,16 @@
 #include "jslibsModule.cpp"
 
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+
+	if ( InitJslibsModule(cx, id)  != JS_TRUE )
+		return JS_FALSE;
 
 	Init_JSNI(cx, obj);
 	return JS_TRUE;
 }
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
-
-	if ( InitJslibsModule(cx) != JS_TRUE )
-		return JS_FALSE;
 
 	Release_JSNI(cx);
 	Destroy_JSNI();

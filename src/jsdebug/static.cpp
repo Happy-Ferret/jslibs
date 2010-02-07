@@ -830,7 +830,7 @@ DEFINE_PROPERTY( scriptFilenameList ) {
 	index = 0;
 
 	jl::Queue *scriptFileList;
-	scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
+	scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, _moduleId))->scriptFileList;
 
 	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
 
@@ -1435,7 +1435,7 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 	JL_CHK( JsvalToString(cx, &JL_FARG(1), &filename) );
 	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &lineno) );
 
-	scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
+	scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, _moduleId))->scriptFileList;
 
 	JSScript *script;
 	script = ScriptByLocation(cx, scriptFileList, filename, lineno);

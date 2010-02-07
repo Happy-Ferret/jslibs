@@ -28,16 +28,18 @@ EXTERN_C void jl_free_fct( void* );
 
 extern bool _unsafeMode;
 
+extern uint32_t _moduleId;
+
 typedef struct JSContext JSContext;
 typedef struct JSObject JSObject;
 
 JSBool InitJslibsModule( JSContext *cx );
 
-typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *);
+typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *, uint32_t id);
 typedef JSBool (*ModuleReleaseFunction)(JSContext *);
 typedef void (*ModuleFreeFunction)();
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj);
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id);
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx);
 EXTERN_C DLLEXPORT void ModuleFree();
 

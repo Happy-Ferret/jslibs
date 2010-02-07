@@ -79,9 +79,9 @@ void odeFreeFunction (void *ptr, size_t size) {
 	jl_free(ptr);
 }
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	JL_CHK( InitJslibsModule(cx) );
+	JL_CHK( InitJslibsModule(cx, id)  );
 
 	ode::dSetAllocHandler(jl_malloc); // do not need an intermediate function because prototype match.
 	ode::dSetReallocHandler(odeReallocFunction);

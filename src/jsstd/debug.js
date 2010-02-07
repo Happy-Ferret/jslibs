@@ -1,4 +1,19 @@
 LoadModule('jsstd');
+LoadModule('jstask');
+
+var myTask = new Task(function(){
+	LoadModule('jsstd');
+});
+
+myTask.Request();
+myTask.Response();
+
+Halt();
+
+
+
+
+LoadModule('jsstd');
 LoadModule('jsio');
 
 

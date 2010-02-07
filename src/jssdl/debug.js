@@ -12,8 +12,6 @@ GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
 GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 
-Print( Ogl.error );
-
 var listeners = {
 	onQuit: function() { 
 		endSignal = true;
@@ -30,10 +28,14 @@ Ogl.Viewport(0, 0, 32, 20);
 
 Ogl.ClearColor(0.2, 0.1, 0.4, 1);
 
+
+
+Halt();
+
 var angle = 0.;
 while ( !endSignal ) {
 
-	var e = MetaPoll( MetaPollSDL(listeners), MetaPollTimeout(10) );
+	var e = ProcessEvents( SDLEvents(listeners), TimeoutEvents(10) );
 	//Print(e.toString(2), '  ');
 
 	Ogl.Clear(Ogl.COLOR_BUFFER_BIT);
@@ -46,7 +48,7 @@ while ( !endSignal ) {
 	
 	var t0 = TimeCounter();
 	GlSwapBuffers();
-//	Print( (TimeCounter() - t0).toFixed(2), '\n'  )
+	Print( (TimeCounter() - t0).toFixed(2), '\n'  )
 }
 
 } catch(ex) {

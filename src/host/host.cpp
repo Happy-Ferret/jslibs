@@ -308,17 +308,18 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 		if ( (JLLibraryHandler)jl::QueueGetData(it) == module ) {
 
 			JL_CHK( JLDynamicLibraryClose(&module) );
-			*rval = JSVAL_VOID;
+			*rval = JSVAL_VOID; // already loaded
 			return JS_TRUE;
 		}
 
+	uint32_t uid = JLDynamicLibraryId(module); // module unique ID
 	ModuleInitFunction moduleInit;
 	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
 	JL_CHKBM( moduleInit, bad_dl_close, "Invalid module." );
-	JL_CHKBM( moduleInit(cx, obj), bad_dl_close, "Unable to initialize the module." );
+	JL_CHKBM( moduleInit(cx, obj, uid), bad_dl_close, "Unable to initialize the module." );
 
 	jl::QueueUnshift( &pv->moduleList, module ); // store the module (LIFO)
-	JL_CHK( JS_NewNumberValue(cx, (unsigned long)module, rval) ); // really needed ? yes, UnloadModule will need this ID
+	JL_CHK( JS_NewNumberValue(cx, uid, rval) ); // really needed ? yes, UnloadModule will need this ID
 	return JS_TRUE;
 
 bad_dl_close:

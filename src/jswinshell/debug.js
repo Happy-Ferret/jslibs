@@ -1,5 +1,33 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
+ LoadModule('jsstd');
+ LoadModule('jswinshell');
+
+var dch = DirectoryChangesInit('C:\\Temp', 16, true);
+
+function ChangesNotification() {
+
+	Print( DirectoryChangesLookup(dch) );
+//	Print( DirectoryChangesLookup(dch).join('\n'), '\n');
+}
+
+while (!endSignal) {
+
+	ProcessEvents( EndSignalEvents(), DirectoryChangesEvents(dch, ChangesNotification) );
+	Print('.');
+}
+
+/*
+  while (!endSignal) {
+	var changes = DirectoryChangesLookup(dch);
+	if ( changes )
+    Print( DirectoryChangesLookup(dch).join('\n'), '\n');
+    Sleep(1000);
+  }
+*/
+
+Halt(); //////////////////////////////////////////////////////////////////////
+
 
 
  LoadModule('jsstd');
@@ -37,7 +65,7 @@
  }
 
 while ( !endSignal )
-	MetaPoll( s.MetaPollable(), MetaPollEndSignal() )
+	ProcessEvents( s.Events(), EndSignalEvents() )
 
 
 Halt(); //////////////////////////////////////////////////////////////////////
@@ -147,16 +175,6 @@ Halt(); //////////////////////////////////////////////////////////////////////
 
 
 
-  var dch = DirectoryChangesInit('C:\\WINDOWS', 16, true);
-  while (!endSignal) {
-	var changes = DirectoryChangesLookup(dch);
-	if ( changes )
-    Print( DirectoryChangesLookup(dch).join('\n'), '\n');
-    Sleep(1000);
-  }
-
-
-Halt(); //////////////////////////////////////////////////////////////////////
 
 
 

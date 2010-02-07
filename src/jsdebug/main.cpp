@@ -43,7 +43,7 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 
 //	printf( "add - %s:%d-%d - %s - %d - %p\n", filename, lineno, lineno+JS_GetScriptLineExtent(cx, script), fun ? JS_GetFunctionName(fun):"", script->staticLevel, script );
 
-	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, moduleId);
+	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, _moduleId);
 
 	jl::Queue *scriptFileList = &mpv->scriptFileList;
 
@@ -165,7 +165,7 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 	}
 */
 
-	jl::Queue *scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
+	jl::Queue *scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, _moduleId))->scriptFileList;
 
 	jl::QueueCell *it, *it1;
 	jl::Queue *scriptList = NULL;
@@ -242,7 +242,7 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **sc
 		lineno += JS_GetScriptBaseLineNumber(cx, *script);
 	} else {
 
-		jl::Queue *scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
+		jl::Queue *scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, _moduleId))->scriptFileList;
 
 		const char *filename;
 		JL_CHK( JsvalToString(cx, val, &filename) );
@@ -261,17 +261,17 @@ void SourceHandler(const char *filename, uintN lineno, jschar *str, size_t lengt
 
 
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 //	if ( instanceCount++ > 0 )
 //		JL_REPORT_ERROR( "Loading this module twice is not allowed." );
 
-	JL_CHK( InitJslibsModule(cx) );
+	JL_CHK( InitJslibsModule(cx, id)  );
 
 	ModulePrivate *mpv;
 	mpv = (ModulePrivate*)jl_malloc( sizeof(ModulePrivate) );
 	JL_S_ASSERT_ALLOC(mpv);
-	JL_CHKM( SetModulePrivate(cx, moduleId, mpv), "Module id already in use." );
+	JL_CHKM( SetModulePrivate(cx, _moduleId, mpv), "Module id already in use." );
 	
 	mpv->JLID_onNewScript = StringToJsid(cx, "onNewScript"); // see NewScriptHook
 
@@ -309,14 +309,14 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	JS_SetNewScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
 	JS_SetDestroyScriptHookProc(JS_GetRuntime(cx), NULL, NULL);
 
-	jl::Queue *scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, moduleId))->scriptFileList;
+	jl::Queue *scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, _moduleId))->scriptFileList;
 	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
 
 		jl::Queue *scriptList = (jl::Queue*)jl::QueueGetData(it);
 		jl::QueueDestruct(scriptList);
 	}
 
-	jl_free(GetModulePrivate(cx, moduleId));
+	jl_free(GetModulePrivate(cx, _moduleId));
 
 	return JS_TRUE;
 	JL_BAD;

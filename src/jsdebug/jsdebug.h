@@ -16,8 +16,6 @@
 
 #include "jlhelper.h"
 
-static const uint32_t moduleId = JL_CAST_CSTR_TO_UINT32("dbug");
-
 struct ModulePrivate {
 	
 	jl::Queue scriptFileList;

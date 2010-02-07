@@ -2,19 +2,51 @@
 // var QA = FakeQAApi;
 // RunLocalQAFile();
 // RunJsircbot(false);
-// RunQATests('-rep 1 jsstd -exclude jstask');
+// RunQATests('-rep 3 -exclude jstask');
 
-LoadModule('jsode');
+// jslang_test(); throw 0;
+
 LoadModule('jsstd');
 
-MetaPoll( MetaPollTimeout(20000), MetaPollEndSignal() );
+Print('.'); Helt();
+
+
+ProcessEvents( TimeoutEvents(1000), EndSignalEvents() );
+Print('.');
 endSignal = false;
-MetaPoll( MetaPollTimeout(20000), MetaPollEndSignal() );
+ProcessEvents( TimeoutEvents(1000), EndSignalEvents() );
+Print('.');
 endSignal = false;
-MetaPoll( MetaPollTimeout(20000), MetaPollEndSignal() );
+ProcessEvents( TimeoutEvents(1000), EndSignalEvents() );
+Print('.');
 
 
 Halt();
+
+/*
+LoadModule('jsstd');
+LoadModule('jstask');
+
+var myTask = new Task(function(){
+	LoadModule('jsstd');
+});
+
+myTask.Request();
+myTask.Response();
+
+Halt();
+*/
+
+LoadModule('jsstd');
+LoadModule('jsio');
+descList = [];
+
+while ( !endSignal )
+	ProcessEvents( IOEvents(descList), EndSignalEvents() ); // MetaPollTimeout(50)
+
+Halt();
+
+
 
 var ev = MetaPoll( MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1), MetaPollTimeout(1) );
 Print( 'events flags: '+ev.toString(2)+'\n' );
