@@ -381,7 +381,13 @@ static bool BuffersSwappedCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
+extern HGLRC openglContext;
+extern HDC deviceContext;
+
+
 static JSBool BuffersSwappedEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+
+	wglMakeCurrent(deviceContext, openglContext); // Doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
 
 	return JS_TRUE;
 	JL_BAD;

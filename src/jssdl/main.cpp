@@ -50,8 +50,8 @@ JLEventHandler buffersSwapped;
 #define USEREVENT_SET_VIDEO_MODE 1
 #define USEREVENT_SET_SWAP_BUFFERS 2
 
-static HGLRC openglContext;
-static HDC deviceContext;
+HGLRC openglContext;
+HDC deviceContext;
 
 struct VideoMode {
 
