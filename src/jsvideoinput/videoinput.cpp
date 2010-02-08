@@ -104,6 +104,12 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE HANDLE $INAME()
+  Passively waits for a new image through the ProcessEvents function.
+**/
+
 struct UserProcessEvent {
 	
 	ProcessEvent pe;
@@ -154,7 +160,6 @@ bad:
 	return JS_FALSE;
 }
 
-
 DEFINE_FUNCTION_FAST( Events ) {
 	
 	JL_S_ASSERT_ARG(0);
@@ -165,7 +170,7 @@ DEFINE_FUNCTION_FAST( Events ) {
 	upe->pe.cancelWait = VICancelWait;
 	upe->pe.endWait = VIEndWait;
 
-	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	upe->cancelEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, JL_FOBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );

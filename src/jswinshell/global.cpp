@@ -568,7 +568,7 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( pathName, notifyFilter [ , watchSubtree = false ] )
+ $TYPE DirectoryChangesHandle $INAME( pathName, notifyFilter [ , watchSubtree = false ] )
   Creates a change notification handle and sets up initial change notification filter conditions.$LF
   _notifyFilter_ can be a combination of the following flags:
   * 0x01: Any file name change in the watched directory or subtree. Changes include renaming, creating, or deleting a file.
@@ -592,7 +592,7 @@ $TOC_MEMBER $INAME
 struct DirectoryChanges {
 	HANDLE hDirectory;
 	OVERLAPPED overlapped;
-	BYTE buffer[2][512*sizeof(FILE_NOTIFY_INFORMATION)];
+	BYTE buffer[2][2048];
 	int currentBuffer;
 	BOOL watchSubtree;
 	DWORD	notifyFilter;
@@ -601,8 +601,6 @@ struct DirectoryChanges {
 void FinalizeDirectoryHandle(void *data) {
 	
 	DirectoryChanges *dc = (DirectoryChanges*)data;
-	CloseHandle(dc->overlapped.hEvent);
-	dc->overlapped.hEvent = NULL;
 	CloseHandle(dc->hDirectory);
 }
 
@@ -632,10 +630,8 @@ DEFINE_FUNCTION_FAST( DirectoryChangesInit ) {
 	if ( dc->hDirectory == INVALID_HANDLE_VALUE )
 		return WinThrowError(cx, GetLastError());
 
-//	memset(&dc->overlapped, 0, sizeof(dc->overlapped));
-//   memset(&dc->buffer, 0, sizeof(dc->buffer));
 	dc->currentBuffer = 0;
-	dc->overlapped.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	dc->overlapped.hEvent = NULL;
 
 	if ( !ReadDirectoryChangesW(dc->hDirectory, &dc->buffer[dc->currentBuffer], sizeof(*dc->buffer), dc->watchSubtree, dc->notifyFilter, NULL, &dc->overlapped, NULL) )
 		return WinThrowError(cx, GetLastError());
@@ -646,7 +642,7 @@ DEFINE_FUNCTION_FAST( DirectoryChangesInit ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $ARR | $VOID $INAME( changeNotificationHandle )
+ $ARR $INAME( directoryChangesHandle [, wait] )
   Returns the list of changed files based on the filter provided to the DirectoryChangesInit() function.
   Each element of the list is a 2-element array that contain the filename and the action.$LF
   actions:
@@ -658,25 +654,37 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DirectoryChangesLookup ) {
 
-	JL_S_ASSERT_ARG_RANGE(1,1);
+	JL_S_ASSERT_ARG_RANGE(1,2);
 	JL_S_ASSERT( IsHandleType(cx, JL_FARG(1), 'dmon'), "Unexpected argument type." );
 	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_FARG(1));
+	JL_S_ASSERT_RESOURCE( dc );
 
-	DWORD res = WaitForSingleObject(dc->overlapped.hEvent, 0);
-	if ( res == -1 )
-		return WinThrowError(cx,  GetLastError());
+	bool wait;
+	if ( JL_FARG_ISDEF(2) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(2), &wait) );
+	else
+		wait = false;
 
-	if ( res != WAIT_OBJECT_0 ) {
-		
-		*JL_FRVAL = JSVAL_VOID;
-		return JS_TRUE;
+	if ( !wait ) {
+
+		DWORD res = WaitForSingleObject(dc->hDirectory, 0);
+		if ( res == -1 )
+			return WinThrowError(cx,  GetLastError());
+
+		if ( res != WAIT_OBJECT_0 ) { // non signaled
+			
+			JSObject *arrObj = JS_NewArrayObject(cx, 0, NULL);
+			JL_CHK( arrObj );
+			*JL_FRVAL = OBJECT_TO_JSVAL( arrObj );
+			return JS_TRUE;
+		}
 	}
 
 	DWORD dwNumberbytes;
-	if ( !GetOverlappedResult(dc->hDirectory, &dc->overlapped, &dwNumberbytes, FALSE) )
+	if ( !GetOverlappedResult(dc->hDirectory, &dc->overlapped, &dwNumberbytes, wait) )
 		return WinThrowError(cx, GetLastError());
 
-	dc->currentBuffer = 1 - dc->currentBuffer;
+	dc->currentBuffer = 1 - dc->currentBuffer; // swap buffers
 
 	if ( !ReadDirectoryChangesW(dc->hDirectory, &dc->buffer[dc->currentBuffer], sizeof(*dc->buffer), dc->watchSubtree, dc->notifyFilter, NULL, &dc->overlapped, NULL) )
 		return WinThrowError(cx, GetLastError());
@@ -715,15 +723,33 @@ DEFINE_FUNCTION_FAST( DirectoryChangesLookup ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE HANDLE $INAME( directoryChangesHandle [, onChanges] )
+  Passively waits for directory changes through the ProcessEvents function.
+  $H example:
+{{{
+LoadModule('jsstd');
+LoadModule('jswinshell');
 
+var dch = DirectoryChangesInit('C:\\', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
+
+function onChanges() {
+
+	Print( DirectoryChangesLookup(dch).join('\n'), '\n');
+}
+
+while ( !endSignal )
+	ProcessEvents( DirectoryChangesEvents(dch, onChanges), EndSignalEvents() );
+}}}
+**/
 
 struct UserProcessEvent {
 	
 	ProcessEvent pe;
+
 	DirectoryChanges *dc;
 	HANDLE cancelEvent;
-	bool canceled;
-	JSObject *systrayObj;
 };
 
 JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
@@ -732,7 +758,7 @@ static void DirectoryChangesStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 	
-	const HANDLE events[2] = { upe->cancelEvent, upe->dc->overlapped.hEvent };
+	const HANDLE events[2] = { upe->cancelEvent, upe->dc->hDirectory };
 	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
 	JL_ASSERT( status != WAIT_FAILED );
 }
@@ -741,7 +767,6 @@ static bool DirectoryChangesCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	upe->canceled = true;
 	BOOL status = SetEvent(upe->cancelEvent);
 	JL_ASSERT( status );
 
@@ -755,30 +780,32 @@ static JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent
 	BOOL status = CloseHandle(upe->cancelEvent);
 	JL_ASSERT( status );
 
-	SetEvent(upe->dc->overlapped.hEvent);
+	DWORD st = WaitForSingleObject(upe->dc->hDirectory, 0);
+	*hasEvent = (st == WAIT_OBJECT_0);
 
-//	DWORD st = WaitForSingleObject(upe->dc->overlapped.hEvent, 0); // (TBD) why this does not work !??
+	if ( !*hasEvent )
+		return JS_TRUE;
 
-	if ( upe->canceled == false ) {
+	jsval fct, argv[2];
+	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, &fct) );
+	if ( JSVAL_IS_VOID( fct ) )
+		return JS_TRUE;
 
-		jsval fct, argv[2];
-		JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, &argv[1]) );
-		JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, &fct) );
-		JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fct, COUNTOF(argv)-1, argv+1, argv) );
-	}
+	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, &argv[1]) );
+	JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fct, COUNTOF(argv)-1, argv+1, argv) );
 
 	return JS_TRUE;
 	JL_BAD;
 }
 
-
-
 DEFINE_FUNCTION_FAST( DirectoryChangesEvents ) {
 	
-	JL_S_ASSERT_ARG(2);
+	JL_S_ASSERT_ARG_RANGE(1,2);
 
 	JL_S_ASSERT( IsHandleType(cx, JL_FARG(1), 'dmon'), "Unexpected argument type." );
-	JL_S_ASSERT_FUNCTION( JL_FARG(2) );
+
+	if ( JL_FARG_ISDEF(2) )
+		JL_S_ASSERT_FUNCTION( JL_FARG(2) );
 
 	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_FARG(1));
 	JL_S_ASSERT_RESOURCE( dc );
@@ -789,11 +816,10 @@ DEFINE_FUNCTION_FAST( DirectoryChangesEvents ) {
 	upe->pe.cancelWait = DirectoryChangesCancelWait;
 	upe->pe.endWait = DirectoryChangesEndWait;
 
-	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1) ) );
-	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 1, JL_FARG(2) ) );
+	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(2) ) );
+	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 1, JL_FARG(1) ) );
 
-	upe->canceled = false;
-	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	upe->cancelEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	upe->dc = dc;
 
 	return JS_TRUE;

@@ -344,7 +344,15 @@ bad:
 }
 
 
-
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( _descriptorArray_ )
+  Passively waits for a descriptor event through the ProcessEvents function.
+  $H example:
+{{{
+(TBD)
+}}}
+**/
 
 struct UserProcessEvent {
 	

@@ -107,13 +107,24 @@ static bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 static JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	*hasEvent = gEndSignalState;
+	if ( !*hasEvent )
+		return JS_TRUE;
+
+	jsval fct, rval;
+	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, &fct) );
+	if ( JSVAL_IS_VOID( fct ) )
+		return JS_TRUE;
+
+	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, &fct) );
+	JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fct, 0, NULL, &rval) );
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 static JSBool EndSignalEvents(JSContext *cx, uintN argc, jsval *vp) {
 
-	JL_S_ASSERT_ARG(0);
+	JL_S_ASSERT_ARG_RANGE( 0, 1 );
 
 	UserProcessEvent *upe;
 	JL_CHK( CreateHandle(cx, 'pev', sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
@@ -122,9 +133,16 @@ static JSBool EndSignalEvents(JSContext *cx, uintN argc, jsval *vp) {
 	upe->pe.endWait = EndSignalEndWait;
 	upe->cancel = false;
 
+	if ( JL_FARG_ISDEF(1) ) {
+
+		JL_S_ASSERT_FUNCTION( JL_FARG(1) );
+		JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) );
+	}
+
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 static int stdout_fileno = -1;
 static int stderr_fileno = -1;

@@ -1,30 +1,23 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
- LoadModule('jsstd');
- LoadModule('jswinshell');
+LoadModule('jsstd');
+LoadModule('jswinshell');
 
-var dch = DirectoryChangesInit('C:\\Temp', 16, true);
+LoadModule('jsstd');
+LoadModule('jswinshell');
 
-function ChangesNotification() {
+var dch = DirectoryChangesInit('C:\\', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
 
-	Print( DirectoryChangesLookup(dch) );
-//	Print( DirectoryChangesLookup(dch).join('\n'), '\n');
+function ChangesNotificationFct() {
+
+	Print( DirectoryChangesLookup(dch).join('\n'), '\n');
 }
 
-while (!endSignal) {
+while ( !endSignal )
+	ProcessEvents( DirectoryChangesEvents(dch, ChangesNotificationFct), EndSignalEvents() );
+	
+	
 
-	ProcessEvents( EndSignalEvents(), DirectoryChangesEvents(dch, ChangesNotification) );
-	Print('.');
-}
-
-/*
-  while (!endSignal) {
-	var changes = DirectoryChangesLookup(dch);
-	if ( changes )
-    Print( DirectoryChangesLookup(dch).join('\n'), '\n');
-    Sleep(1000);
-  }
-*/
 
 Halt(); //////////////////////////////////////////////////////////////////////
 

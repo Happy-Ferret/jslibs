@@ -8,18 +8,17 @@
 
 LoadModule('jsstd');
 
-Print('.'); Helt();
-
-
-ProcessEvents( TimeoutEvents(1000), EndSignalEvents() );
-Print('.');
-endSignal = false;
-ProcessEvents( TimeoutEvents(1000), EndSignalEvents() );
-Print('.');
-endSignal = false;
-ProcessEvents( TimeoutEvents(1000), EndSignalEvents() );
-Print('.');
-
+  function onTimeout() {
+    
+    Print('.');
+  }
+  function onEndSignal() {
+    
+    Print('end signal detected');
+    throw 0;
+  }
+  for (;;)
+    ProcessEvents( TimeoutEvents(500, onTimeout), EndSignalEvents(onEndSignal) );
 
 Halt();
 

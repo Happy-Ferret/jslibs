@@ -110,7 +110,27 @@ DEFINE_FUNCTION( Stringify ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( ... )
+ $INT $INAME( eventsHandler1 [, ... [, eventsHandler30]] )
+  Passive event waiting.
+  Returns the bit field that represents the index (in arguments order) of the triggered events. eg. if eventsHandler1 event is triggered, bit 1 is set.
+  $H example 1
+{{{
+LoadModule('jsstd');
+
+function onTimeout() {
+
+  Print('.');
+}
+
+function onEndSignal() {
+
+  Print('end signal detected\n');
+  throw 0;
+}
+
+for (;;)
+  ProcessEvents( TimeoutEvents(500, onTimeout), EndSignalEvents(onEndSignal) );
+}}}
 **/
 JLThreadFuncDecl ProcessEventThread( void *data ) {
 
@@ -238,7 +258,8 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $TYPE id $INAME( msTimeout )
+ $TYPE id $INAME( msTimeout [, onTimeout] )
+ Passively waits for a timeout through the ProcessEvents function.
 **/
 struct UserProcessEvent {
 	
@@ -282,12 +303,25 @@ static JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSConte
 	int st = JLSemaphoreFree(&upe->cancel);
 	JL_ASSERT( st );
 	*hasEvent = !upe->canceled;
+	
+	if ( !*hasEvent )
+		return JS_TRUE;
+
+	jsval fct, rval;
+	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, &fct) );
+	if ( JSVAL_IS_VOID( fct ) )
+		return JS_TRUE;
+
+	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, &fct) );
+	JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fct, 0, NULL, &rval) );
+
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION_FAST( TimeoutEvents ) {
 
-	JL_S_ASSERT_ARG( 1 );
+	JL_S_ASSERT_ARG_RANGE( 1, 2 );
 
 	unsigned int timeout;
 	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &timeout) );
@@ -300,6 +334,12 @@ DEFINE_FUNCTION_FAST( TimeoutEvents ) {
 	upe->timeout = timeout;
 	upe->cancel = JLSemaphoreCreate(0);
 	JL_ASSERT( JLSemaphoreOk(upe->cancel) );
+
+	if ( JL_FARG_ISDEF(2) ) {
+
+		JL_S_ASSERT_FUNCTION( JL_FARG(2) );
+		JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(2)) );
+	}
 
 	return JS_TRUE;
 	JL_BAD;

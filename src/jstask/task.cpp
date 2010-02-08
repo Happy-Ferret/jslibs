@@ -568,12 +568,13 @@ DEFINE_PROPERTY( idle ) {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE Handle $INAME
+ Passively waits for a response through the ProcessEvents function. When a new response is available, the onResponse function of the Task object is called.
  $H example
 {{{
 LoadModule('jstask');
 LoadModule('jsstd');
 
-var t = new Task(function(data){
+var t = new Task(function(data) {
 	
 	LoadModule('jsstd');
 	Sleep(100);
@@ -589,7 +590,7 @@ t.onResponse = function(t) {
 
 t.Request(0);
 
-while (!endSignal)
+while ( !endSignal )
 	ProcessEvents(t.Event(), EndSignalEvent());
 }}}
 **/
@@ -630,15 +631,15 @@ static JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	*hasEvent = upe->pv->pendingResponseCount > 0;
-	if ( *hasEvent ) {
-	
-		jsval fct, argv[2];
-		argv[1] = OBJECT_TO_JSVAL(upe->obj); // already rooted
+	if ( !*hasEvent )
+		return JS_TRUE;
 
-		JL_CHK( JS_GetProperty(cx, upe->obj, "onResponse", &fct) );
-		if ( JsvalIsFunction(cx, fct) )
-			JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, COUNTOF(argv)-1, argv+1, argv) );
-	}
+	jsval fct, argv[2];
+	argv[1] = OBJECT_TO_JSVAL(upe->obj); // already rooted
+
+	JL_CHK( JS_GetProperty(cx, upe->obj, "onResponse", &fct) );
+	if ( JsvalIsFunction(cx, fct) )
+		JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, COUNTOF(argv)-1, argv+1, argv) );
 
 	return JS_TRUE;
 	JL_BAD;

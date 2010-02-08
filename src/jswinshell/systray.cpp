@@ -482,6 +482,11 @@ DEFINE_FUNCTION( ProcessEvents ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE HANDLE $INAME()
+  Passively waits for Systray events through the ProcessEvents function.
+**/
 
 struct UserProcessEvent {
 	
@@ -554,7 +559,7 @@ DEFINE_FUNCTION_FAST( Events ) {
 	upe->pe.cancelWait = SystrayCancelWait;
 	upe->pe.endWait = SystrayEndWait;
 
-	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	upe->cancelEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	upe->systrayPrivate = pv;
 	upe->systrayObj = obj;
 

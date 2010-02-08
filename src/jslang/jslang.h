@@ -16,7 +16,7 @@
 
 static const uint32_t jslangModuleId = JL_CAST_CSTR_TO_UINT32("lang");
 
-#define PROCESSEVENT_MAX_ITEM 31
+#define PROCESSEVENT_MAX_ITEM 30
 
 struct ProcessEventThreadInfo {
 
