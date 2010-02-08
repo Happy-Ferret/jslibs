@@ -42,10 +42,13 @@ JLEventHandler sdlEvent;
 
 JLSemaphoreHandler videoThreadReady;
 static SDL_Thread *videoThreadHandler;
-static JLSemaphoreHandler commandDone;
+static JLEventHandler commandDone;
+
+JLEventHandler buffersSwapped;
 
 #define USEREVENT_END 0
 #define USEREVENT_SET_VIDEO_MODE 1
+#define USEREVENT_SET_SWAP_BUFFERS 2
 
 static HGLRC openglContext;
 static HDC deviceContext;
@@ -56,7 +59,7 @@ struct VideoMode {
 	SDL_Surface *returnValue;
 };
 
-SDL_Surface* SetVideoMode(int width, int height, int bpp, Uint32 flags) {
+SDL_Surface* JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 
 	VideoMode vm = { width, height, bpp, flags };
 
@@ -67,10 +70,23 @@ SDL_Surface* SetVideoMode(int width, int height, int bpp, Uint32 flags) {
 
 	wglMakeCurrent(NULL, NULL);
 	SDL_PushEvent(&ev);
-	JLSemaphoreAcquire(commandDone, -1);
+	JLEventWait(commandDone, -1);
 	wglMakeCurrent(deviceContext, openglContext); // Doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
 	return vm.returnValue;
 }
+
+void JLSwapBuffers() {
+
+	JLEventReset(buffersSwapped);
+
+	wglMakeCurrent(NULL, NULL);
+
+	SDL_Event ev;
+	ev.type = SDL_USEREVENT;
+	ev.user.code = USEREVENT_SET_SWAP_BUFFERS;
+	SDL_PushEvent(&ev);
+}
+
 
 int EventFilter( const SDL_Event *e ) {
 
@@ -147,9 +163,17 @@ int VideoThread( void *unused ) {
 				deviceContext = wglGetCurrentDC();
 				openglContext = wglGetCurrentContext();
 				wglMakeCurrent(NULL, NULL);
-				JLSemaphoreRelease(commandDone);
+				JLEventTrigger(commandDone);
 				break;
 			}
+			case USEREVENT_SET_SWAP_BUFFERS:
+				if ( deviceContext )
+					wglMakeCurrent(deviceContext, openglContext);
+				SDL_GL_SwapBuffers();
+				wglMakeCurrent(NULL, NULL);
+
+				JLEventTrigger(buffersSwapped);
+			break;
 		}
 	}
 
@@ -166,8 +190,10 @@ bad:
 void StartVideo() {
 
 	videoThreadReady = JLSemaphoreCreate(0);
-	commandDone = JLSemaphoreCreate(0);
+	commandDone = JLEventCreate(true);
 	sdlEvent = JLEventCreate(true);
+	buffersSwapped = JLEventCreate(false);
+
 	// http://www.libsdl.org/intro.en/usingthreads.html
 	videoThreadHandler = SDL_CreateThread(VideoThread, NULL);
 //	if ( videoThreadHandler == NULL )
@@ -183,7 +209,7 @@ void EndVideo() {
 	ev.user.code = USEREVENT_END;
 	SDL_PushEvent(&ev);
 	SDL_WaitThread(videoThreadHandler, NULL);
-	JLSemaphoreFree(&commandDone);
+	JLEventFree(&commandDone);
 	JLEventFree(&sdlEvent);
 }
 

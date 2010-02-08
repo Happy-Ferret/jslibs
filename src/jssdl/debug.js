@@ -6,11 +6,14 @@ LoadModule('jsstd');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
 
+
 SetVideoMode( 320, 200, 32, HWACCEL | OPENGL | RESIZABLE ); // | ASYNCBLIT
-GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
 GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+
 
 var listeners = {
 	onQuit: function() { 
@@ -26,16 +29,13 @@ var listeners = {
 
 Ogl.Viewport(0, 0, 32, 20);
 
-Ogl.ClearColor(0.2, 0.1, 0.4, 1);
+Ogl.ClearColor(0,0,0, 1);
 
-
-
-Halt();
 
 var angle = 0.;
 while ( !endSignal ) {
 
-	var e = ProcessEvents( SDLEvents(listeners), TimeoutEvents(10) );
+	var e = ProcessEvents( SDLEvents(listeners), EndSignalEvents() );
 	//Print(e.toString(2), '  ');
 
 	Ogl.Clear(Ogl.COLOR_BUFFER_BIT);
@@ -48,6 +48,7 @@ while ( !endSignal ) {
 	
 	var t0 = TimeCounter();
 	GlSwapBuffers();
+	ProcessEvents(BuffersSwappedEvents());
 	Print( (TimeCounter() - t0).toFixed(2), '\n'  )
 }
 

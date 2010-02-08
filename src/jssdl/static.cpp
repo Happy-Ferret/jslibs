@@ -19,7 +19,8 @@
 
 #include "../jslang/handlePub.h"
 
-SDL_Surface* SetVideoMode(int width, int height, int bpp, Uint32 flags);
+SDL_Surface* JLSetVideoMode(int width, int height, int bpp, Uint32 flags);
+void JLSwapBuffers();
 
 
 DECLARE_CLASS( Cursor )
@@ -196,7 +197,7 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 		flags = currentSurface != NULL ? currentSurface->flags : 0; // if not given, use the previous setting or a default value.
 
 //	SDL_Surface *surface = SDL_SetVideoMode(width, height, bpp, flags);
-	SDL_Surface *surface = SetVideoMode(width, height, bpp, flags);
+	SDL_Surface *surface = JLSetVideoMode(width, height, bpp, flags);
 	if ( surface == NULL )
 		return ThrowSdlError(cx);
 	*JL_FRVAL = JSVAL_VOID;
@@ -359,11 +360,50 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( GlSwapBuffers ) {
 
-	SDL_GL_SwapBuffers();
+//	SDL_GL_SwapBuffers();
+	JLSwapBuffers();
 	// (TBD) check error	*SDL_GetError() != '\0' ???
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
+
+
+extern JLEventHandler buffersSwapped;
+
+static void BuffersSwappedStartWait( volatile ProcessEvent *pe ) {
+
+	JLEventWait(buffersSwapped, -1);
+}
+
+static bool BuffersSwappedCancelWait( volatile ProcessEvent *pe ) {
+
+	JLEventTrigger(buffersSwapped);
+	return true;
+}
+
+static JSBool BuffersSwappedEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+DEFINE_FUNCTION_FAST( BuffersSwappedEvents ) {
+
+	JL_S_ASSERT_ARG(0);
+
+	ProcessEvent *pe;
+	JL_CHK( CreateHandle(cx, 'pev', sizeof(ProcessEvent), (void**)&pe, NULL, JL_FRVAL) );
+	pe->startWait = BuffersSwappedStartWait;
+	pe->cancelWait = BuffersSwappedCancelWait;
+	pe->endWait = BuffersSwappedEndWait;
+
+//	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1035,6 +1075,12 @@ DEFINE_PROPERTY( version ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE HANDLE $INAME()
+  Passively waits for a SDL event through the ProcessEvents function.
+**/
+
 extern JLEventHandler sdlEvent;
 
 struct UserProcessEvent {
@@ -1138,6 +1184,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( Iconify )
 		FUNCTION_FAST_ARGC( SetGamma, 3 )
 		FUNCTION_FAST( GlSwapBuffers )
+		FUNCTION_FAST( BuffersSwappedEvents )
 		FUNCTION_FAST_ARGC( GlSetAttribute, 2 )
 		FUNCTION_FAST_ARGC( GlGetAttribute, 1 )
 		FUNCTION_ARGC( PollEvent, 1 )
