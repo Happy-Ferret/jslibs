@@ -267,6 +267,7 @@ struct UserProcessEvent {
 	unsigned int timeout;
 	JLSemaphoreHandler cancel;
 	bool canceled;
+	jsval callbackFunction;
 };
 
 JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
@@ -303,18 +304,12 @@ static JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSConte
 	int st = JLSemaphoreFree(&upe->cancel);
 	JL_ASSERT( st );
 	*hasEvent = !upe->canceled;
-	
 	if ( !*hasEvent )
 		return JS_TRUE;
-
-	jsval fct, rval;
-	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, &fct) );
-	if ( JSVAL_IS_VOID( fct ) )
+	jsval rval;
+	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
 		return JS_TRUE;
-
-	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, &fct) );
-	JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fct, 0, NULL, &rval) );
-
+	JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), upe->callbackFunction, 0, NULL, &rval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -325,6 +320,8 @@ DEFINE_FUNCTION_FAST( TimeoutEvents ) {
 
 	unsigned int timeout;
 	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &timeout) );
+	if ( JL_FARG_ISDEF(2) )
+		JL_S_ASSERT_FUNCTION( JL_FARG(2) );
 
 	UserProcessEvent *upe;
 	JL_CHK( CreateHandle(cx, 'pev', sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
@@ -334,11 +331,16 @@ DEFINE_FUNCTION_FAST( TimeoutEvents ) {
 	upe->timeout = timeout;
 	upe->cancel = JLSemaphoreCreate(0);
 	JL_ASSERT( JLSemaphoreOk(upe->cancel) );
+	SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(2));
 
 	if ( JL_FARG_ISDEF(2) ) {
 
 		JL_S_ASSERT_FUNCTION( JL_FARG(2) );
-		JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(2)) );
+		JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(2)) ); // GC protection only
+		upe->callbackFunction = JL_FARG(2);
+	} else {
+	
+		upe->callbackFunction = JSVAL_VOID;
 	}
 
 	return JS_TRUE;

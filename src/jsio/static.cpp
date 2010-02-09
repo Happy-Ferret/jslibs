@@ -46,9 +46,9 @@ BEGIN_STATIC
 === Static functions ===
 **/
 
-JSBool InitPollDesc( JSContext *cx, jsval prop, PRPollDesc *pollDesc ) {
+JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 
-	if ( JSVAL_IS_PRIMITIVE( prop ) ) {
+	if ( JSVAL_IS_PRIMITIVE( descVal ) ) {
 
 		pollDesc->fd = 0;
 		pollDesc->in_flags = 0;
@@ -56,8 +56,8 @@ JSBool InitPollDesc( JSContext *cx, jsval prop, PRPollDesc *pollDesc ) {
 		return JS_TRUE;
 	}
 
-	JSObject *fdObj = JSVAL_TO_OBJECT( prop );
-	JL_S_ASSERT_INHERITANCE(fdObj, JL_CLASS(Descriptor));
+	JSObject *fdObj = JSVAL_TO_OBJECT( descVal );
+	JL_S_ASSERT_INHERITANCE( fdObj, JL_CLASS( Descriptor ) );
 
 	pollDesc->fd = (PRFileDesc *)JL_GetPrivate(cx, fdObj); // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
 	// beware: fd == NULL is supported !
@@ -92,62 +92,62 @@ JSBool InitPollDesc( JSContext *cx, jsval prop, PRPollDesc *pollDesc ) {
 }
 
 
-
-JSBool PollDescNotify( JSContext *cx, jsval prop, PRPollDesc *pollDesc, int index ) {
+JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int index ) {
 
 	jsval tmp, cbArgv[3];
 
-	if ( JSVAL_IS_PRIMITIVE( prop ) )
+	if ( JSVAL_IS_PRIMITIVE( descVal ) )
 		return JS_TRUE;
 
 	JSObject *fdObj;
-	fdObj = JSVAL_TO_OBJECT( prop );
-	JL_S_ASSERT_INHERITANCE(JSVAL_TO_OBJECT( prop ), JL_CLASS(Descriptor));
+	fdObj = JSVAL_TO_OBJECT( descVal );
+	JL_S_ASSERT_INHERITANCE(JSVAL_TO_OBJECT( descVal ), JL_CLASS(Descriptor));
 
 	PRInt16 outFlag = pollDesc->out_flags;
 	
-	cbArgv[0] = prop;
+	cbArgv[0] = descVal;
 	cbArgv[1] = INT_TO_JSVAL(index);
 	cbArgv[2] = (outFlag & PR_POLL_HUP) ? JSVAL_TRUE : JSVAL_FALSE;
 
 	if ( outFlag & PR_POLL_ERR ) {
 
-		JL_CHK( JS_GetProperty( cx, fdObj, "error", &prop ) );
-		if ( JsvalIsFunction(cx, prop) )
-			JL_CHK( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "error", &descVal ) );
+		if ( JsvalIsFunction(cx, descVal) )
+			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_EXCEPT ) {
 
-		JL_CHK( JS_GetProperty( cx, fdObj, "exception", &prop ) );
-		if ( JsvalIsFunction(cx, prop) )
-			JL_CHK( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "exception", &descVal ) );
+		if ( JsvalIsFunction(cx, descVal) )
+			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_HUP ) {
 
-		JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &prop ) );
-		if ( JsvalIsFunction(cx, prop) )
-			JL_CHK( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &descVal ) );
+		if ( JsvalIsFunction(cx, descVal) )
+			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_READ ) {
 
-		JL_CHK( JS_GetProperty( cx, fdObj, "readable", &prop ) );
-		if ( JsvalIsFunction(cx, prop) )
-			JL_CHK( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "readable", &descVal ) );
+		if ( JsvalIsFunction(cx, descVal) )
+			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_WRITE ) {
 
-		JL_CHK( JS_GetProperty( cx, fdObj, "writable", &prop ) );
-		if ( JsvalIsFunction(cx, prop) )
-			JL_CHK( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "writable", &descVal ) );
+		if ( JsvalIsFunction(cx, descVal) )
+			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -157,13 +157,13 @@ $TOC_MEMBER $INAME
   $LF
   The function returns the number of events that occurs or 0 if the function timed out.
   $H note
-   The property is NOT cleared by the function.
+   The event callback property is NOT cleared by the function.
    If you want to stop receiving an event, you have to remove the property by yourself. eg. `delete socket1.writable`.
   $LF
   The second argument, _timeout_, defines the number of milliseconds the function has to wait before returning if no event has occured.
   _timeout_ can be undefined OR omited, in this case, no timeout is used.
   $H beware
-   No timeout means that the function will wait endless for events.
+   No timeout means that the function will endless wait for events.
   $H example
   {{{
   socket1.readable = function(soc) { Print( soc.Recv(); ) }
@@ -174,172 +174,72 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Poll ) {
 
-	// NSPR Poll Method:
-	//   http://www.mozilla.org/projects/nspr/tech-notes/poll-method.html
-
-	// http://developer.mozilla.org/en/docs/PR_Poll
-
 	PRInt32 result;
 	PRIntervalTime pr_timeout;
-	jsval tmp, prop;
-	jsint i;
-	JSIdArray *arrayIds = NULL;
-	PRPollDesc staticPollDesc[128]; // 1KB
-	PRPollDesc *pollDesc = staticPollDesc;
+	jsuint i;
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_S_ASSERT_ARG_RANGE( 1, 2 );
 	JL_S_ASSERT_ARRAY( JL_ARG(1) );
 	JSObject *fdArrayObj;
-	fdArrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
+	fdArrayObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 	if ( JL_ARG_ISDEF(2) && !JsvalIsPInfinity(cx, JL_ARG(2)) ) {
 
-		PRUint32 tmp;
-		JL_CHK( JsvalToUInt(cx, JL_ARG(2), &tmp) );
-		pr_timeout = PR_MillisecondsToInterval(tmp);
+		PRUint32 tmpint;
+		JL_CHKB( JsvalToUInt(cx, JL_ARG(2), &tmpint), bad1 );
+		pr_timeout = PR_MillisecondsToInterval(tmpint);
 	} else {
 
 		pr_timeout = PR_INTERVAL_NO_TIMEOUT;
 	}
 
-	arrayIds = JS_Enumerate(cx, fdArrayObj);
+	jsuint propsCount;
+	JL_CHKB( JS_GetArrayLength(cx, fdArrayObj, &propsCount), bad1 );
 
-	if ( arrayIds->length == 0 ) { // optimization
+	if ( propsCount == 0 ) { // optimization
 
-		JS_DestroyIdArray(cx, arrayIds);
-		result = PR_Poll(NULL, 0, pr_timeout); // we can replace this by a delay, but the function is Pool, not Sleep
+		result = PR_Poll(NULL, 0, pr_timeout); // we can replace this by a delay, but the function is Pool, not Sleep.
 		if ( result == -1 )
 			return ThrowIoError(cx);
 		*rval = JSVAL_ZERO;
 		return JS_TRUE;
 	}
 
-	// Optimization to avoid dynamic allocation when it is possible. There is also a potential use of alloca()
-	if ( (unsigned)arrayIds->length > COUNTOF(staticPollDesc) )
-		pollDesc = (PRPollDesc*)jl_malloc(arrayIds->length * sizeof(PRPollDesc));
-	else
-		pollDesc = staticPollDesc;
+	PRPollDesc *pollDesc;
+	pollDesc = (PRPollDesc*)jl_malloca(sizeof(PRPollDesc) * propsCount);
 
-	for ( i = 0; i < arrayIds->length; ++i ) {
+	jsval *props;
+	props = (jsval*)jl_malloca(sizeof(jsval) * propsCount);
+	JL_S_ASSERT_ALLOC( props );
+	memset(props, 0, sizeof(jsval) * propsCount); // needed because JS_PUSH_TEMP_ROOT
 
-		JL_CHK( JS_GetElement(cx, fdArrayObj, JSID_TO_INT(arrayIds->vector[i]), &prop) );
-		if ( JSVAL_IS_VOID( prop ) ) {
+	JSTempValueRooter tvr;
+	JS_PUSH_TEMP_ROOT(cx, propsCount, props, &tvr);
+	for ( i = 0; i < propsCount; ++i ) {
 
-			pollDesc[i].fd = 0;
-			pollDesc[i].in_flags = 0;
-			pollDesc[i].out_flags = 0;
-			continue;
-		}
-		JSObject *fdObj = JSVAL_TO_OBJECT( prop );
-		JL_S_ASSERT_INHERITANCE(fdObj, JL_CLASS(Descriptor));
-
-		pollDesc[i].fd = (PRFileDesc *)JL_GetPrivate(cx, fdObj); // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
-//		JL_S_ASSERT_RESOURCE( fd ); // beware: fd == NULL is supported !
-		pollDesc[i].in_flags = 0;
-		pollDesc[i].out_flags = 0;
-
-		JL_CHK( JS_GetProperty( cx, fdObj, "writable", &prop ) );
-		if ( JsvalIsFunction(cx, prop) )
-			pollDesc[i].in_flags |= PR_POLL_WRITE;
-
-		JL_CHK( JS_GetProperty( cx, fdObj, "readable", &prop ) );
-		if ( JsvalIsFunction(cx, prop) )
-			pollDesc[i].in_flags |= PR_POLL_READ;
-
-		JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &prop ) );
-		if ( JsvalIsFunction(cx, prop) )
-			pollDesc[i].in_flags |= PR_POLL_HUP;
-
-		JL_CHK( JS_GetProperty( cx, fdObj, "exception", &prop ) );
-		if ( JsvalIsFunction(cx, prop) )
-			pollDesc[i].in_flags |= PR_POLL_EXCEPT;
-
-		JL_CHK( JS_GetProperty( cx, fdObj, "error", &prop ) );
-		if ( JsvalIsFunction(cx, prop) )
-			pollDesc[i].in_flags |= PR_POLL_ERR;
+		JL_CHK( JS_GetElement(cx, fdArrayObj, i, &props[i]) );
+		JL_CHK( InitPollDesc(cx, props[i], &pollDesc[i]) );
 	}
 
-	result = PR_Poll(pollDesc, arrayIds->length, pr_timeout);
+	result = PR_Poll(pollDesc, propsCount, pr_timeout); // http://www.mozilla.org/projects/nspr/tech-notes/poll-method.html / http://developer.mozilla.org/en/docs/PR_Poll
 	if ( result == -1 ) // failed. see PR_GetError()
 		JL_CHK( ThrowIoError(cx) ); // returns later
 
-	if ( result == 0 ) { // has no event(s)
-
-		*rval = JSVAL_ZERO;
-		JS_DestroyIdArray(cx, arrayIds);
-		if ( pollDesc != staticPollDesc )
-			jl_free(pollDesc);
-		return JS_TRUE;
-	}
-
-	jsval cbArgv[3];
-
-	// the following protection against GC is not needed bacause all arguments are already safe (fd object, int, int)
-//	memset(cbArgv, 0, sizeof(cbArgv));
-//	JSTempValueRooter tvr;
-//	JS_PUSH_TEMP_ROOT(cx, COUNTOF(cbArgv), cbArgv, &tvr);
-
-	for ( i = 0; i < arrayIds->length; ++i ) {
-
-		JL_CHK( JS_GetElement(cx, fdArrayObj, JSID_TO_INT(arrayIds->vector[i]), &prop) );
-		if ( JSVAL_IS_VOID( prop ) ) // socket has been removed from the list while js func "poll()" is runing
-			continue;
-		JSObject *fdObj = JSVAL_TO_OBJECT( prop ); //JS_ValueToObject
-		PRInt16 outFlag = pollDesc[i].out_flags;
-		cbArgv[0] = prop;
-		cbArgv[1] = ID_TO_VALUE(arrayIds->vector[i]);
-		cbArgv[2] = (outFlag & PR_POLL_HUP) ? JSVAL_TRUE : JSVAL_FALSE;
-
-		if ( outFlag & PR_POLL_ERR ) {
-
-			JL_CHKB( JS_GetProperty( cx, fdObj, "error", &prop ), bad2 );
-			if ( JsvalIsFunction(cx, prop) )
-				JL_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
-		}
-
-		if ( outFlag & PR_POLL_EXCEPT ) {
-
-			JL_CHKB( JS_GetProperty( cx, fdObj, "exception", &prop ), bad2 );
-			if ( JsvalIsFunction(cx, prop) )
-				JL_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
-		}
-
-		if ( outFlag & PR_POLL_HUP ) {
-
-			JL_CHKB( JS_GetProperty( cx, fdObj, "hangup", &prop ), bad2 );
-			if ( JsvalIsFunction(cx, prop) )
-				JL_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
-		}
-
-		if ( outFlag & PR_POLL_READ ) {
-
-			JL_CHKB( JS_GetProperty( cx, fdObj, "readable", &prop ), bad2 );
-			if ( JsvalIsFunction(cx, prop) )
-				JL_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
-		}
-
-		if ( outFlag & PR_POLL_WRITE ) {
-
-			JL_CHKB( JS_GetProperty( cx, fdObj, "writable", &prop ), bad2 );
-			if ( JsvalIsFunction(cx, prop) )
-				JL_CHKB( JS_CallFunctionValue( cx, fdObj, prop, COUNTOF(cbArgv), cbArgv, &tmp ), bad2 );
-		}
-	} // for
+	if ( result > 0 ) // has event(s)
+		for ( i = 0; i < propsCount; ++i )
+			JL_CHK( PollDescNotify(cx,props[i], &pollDesc[i], i) );
 
 	*rval = INT_TO_JSVAL( result );
 
-//	JS_POP_TEMP_ROOT(cx, &tvr);
-	JS_DestroyIdArray(cx, arrayIds);
-	if ( pollDesc != staticPollDesc )
-		jl_free(pollDesc);
+	JS_POP_TEMP_ROOT(cx, &tvr);
+	jl_freea(props, sizeof(jsval) * propsCount);
+	jl_freea(pollDesc, sizeof(PRPollDesc) * propsCount);
 	return JS_TRUE;
-bad2:
-//	JS_POP_TEMP_ROOT(cx, &tvr);
 bad:
-	if ( arrayIds )
-		JS_DestroyIdArray(cx, arrayIds);
-	if ( pollDesc != staticPollDesc )
-		jl_free(pollDesc);
+	JS_POP_TEMP_ROOT(cx, &tvr);
+	jl_freea(props, sizeof(jsval) * propsCount);
+	jl_freea(pollDesc, sizeof(PRPollDesc) * propsCount);
+bad1:
 	return JS_FALSE;
 }
 

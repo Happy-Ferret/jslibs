@@ -1,4 +1,6 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+LoadModule('jsstd'); Exec('../common/tools.js');
+RunQATests('-rep 5 jsio');
 
 LoadModule('jsdebug');
 LoadModule('jsstd');
@@ -45,11 +47,11 @@ serv.readable = function () {
 
 Print('HTTP server minimal example. Point a web browser at http://localhost:8081. CTRL+C to exit\n');
 
-//while ( !endSignal )
-// Poll(descList, 50);
-
 while ( !endSignal )
-	ProcessEvents( IOEvents(descList), EndSignalEvents(), TimeoutEvents(100) );
+ Poll(descList, 50);
+
+//while ( !endSignal )
+//	ProcessEvents( IOEvents(descList), EndSignalEvents(), TimeoutEvents(100) );
 
 
 //jsioTest();

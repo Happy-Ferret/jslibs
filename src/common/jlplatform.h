@@ -1170,8 +1170,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 
 		JLEventHandler ev = (JLEventHandler)malloc(sizeof(*ev));
 	#if defined(XP_WIN)
-		ev->hEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // doc. bManualReset: system automatically resets the event state to nonsignaled after a *single waiting thread* has been released.
-		ev->autoReset = autoReset;
+		ev->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL); // doc. bManualReset: system automatically resets the event state to nonsignaled after a *single waiting thread* has been released.
 	#elif defined(XP_UNIX)
 		pthread_mutex_init(&ev->mutex, 0);
 		pthread_cond_init(&ev->cond, 0);

@@ -15,7 +15,10 @@
 #ifndef _JLALLOC_H_
 #define _JLALLOC_H_
 
+#include <jlplatform.h>
+
 #include <sys/types.h>
+#include <malloc.h>
 
 typedef void* (*jl_malloc_t)( size_t );
 typedef void* (*jl_calloc_t)( size_t, size_t );
@@ -40,5 +43,16 @@ extern jl_memalign_t jl_memalign;
 extern jl_realloc_t jl_realloc;
 extern jl_msize_t jl_msize;
 extern jl_free_t jl_free;
+
+#define JL_MALLOCA_THRESHOLD 8192
+
+#define jl_malloca(size) \
+	(unlikely( (size) > JL_MALLOCA_THRESHOLD ) ? jl_malloc(size) : alloca(size));
+
+#define jl_freea(ptr, size) \
+JL_MACRO_BEGIN \
+	if (unlikely( (size) > JL_MALLOCA_THRESHOLD )) \
+		jl_free(ptr); \
+JL_MACRO_END
 
 #endif // _JLALLOC_H_
