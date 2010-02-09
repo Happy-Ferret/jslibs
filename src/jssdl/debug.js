@@ -22,8 +22,8 @@ var listeners = {
 	onVideoResize: function(w, h) {
 
 //		SetVideoMode(w, h);
-		Ogl.Viewport(0, 0, w, h);
-		Print( w, ' ', h, '\n' );
+//		Ogl.Viewport(0, 0, w, h);
+		Print( w, 'x', h, '\n' );
 	},	
 };
 
@@ -32,11 +32,7 @@ Ogl.Viewport(0, 0, 32, 20);
 Ogl.ClearColor(0,0,0, 1);
 
 
-var angle = 0.;
-while ( !endSignal ) {
-
-	var e = ProcessEvents( SDLEvents(listeners), EndSignalEvents() );
-	//Print(e.toString(2), '  ');
+function BufferReady() {
 
 	Ogl.Clear(Ogl.COLOR_BUFFER_BIT);
 	Ogl.Rotate(1,1,1, angle++);
@@ -45,11 +41,17 @@ while ( !endSignal ) {
 	Ogl.Vertex(0,1);
 	Ogl.Vertex(1,0);
 	Ogl.End();
-	
+	GlSwapBuffers(true);
+}
+
+
+var angle = 0.;
+while ( !endSignal ) {
+
 	var t0 = TimeCounter();
-	GlSwapBuffers();
-	ProcessEvents(BuffersSwappedEvents());
-	Print( (TimeCounter() - t0).toFixed(2), '\n'  )
+	var e = ProcessEvents( SDLEvents(listeners), EndSignalEvents(), SurfaceReadyEvents(BufferReady) );
+	var t = TimeCounter() - t0;
+	Print(t.toFixed(2), ' ', e.toString(2), ' ',  '\n');
 }
 
 } catch(ex) {

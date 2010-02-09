@@ -38,20 +38,55 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-JLEventHandler sdlEvent;
-
-JLSemaphoreHandler videoThreadReady;
+static JLEventHandler videoThreadReady;
 static SDL_Thread *videoThreadHandler;
 static JLEventHandler commandDone;
+JLEventHandler sdlEvent;
 
-JLEventHandler buffersSwapped;
+volatile bool surfaceReady;
+JLEventHandler surfaceReadyEvent;
 
 #define USEREVENT_END 0
 #define USEREVENT_SET_VIDEO_MODE 1
 #define USEREVENT_SET_SWAP_BUFFERS 2
 
-HGLRC openglContext;
-HDC deviceContext;
+HGLRC _openglContext = NULL;
+HDC _deviceContext = NULL;
+
+bool AcquireGlContext() {
+
+	if ( _deviceContext && _openglContext ) {
+
+		BOOL st = wglMakeCurrent(_deviceContext, _openglContext); // doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
+		JL_ASSERT( st );
+		_deviceContext = NULL;
+		_openglContext = NULL;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool ReleaseGlContext() {
+
+	HDC hdc = wglGetCurrentDC();
+	HGLRC hglrc = wglGetCurrentContext();
+	if ( hdc && hglrc ) {
+
+		JL_ASSERT( _deviceContext == NULL );
+		JL_ASSERT( _openglContext == NULL );
+		_deviceContext = hdc;
+		_openglContext = hglrc;
+		BOOL st = wglMakeCurrent(NULL, NULL); // doc. makes the calling thread's current rendering context no longer current, and releases the device context that is used by the rendering context. In this case, hdc  is ignored.
+		JL_ASSERT( st );
+		return true;
+	} else {
+
+		return false;
+	}
+}
+
+
 
 struct VideoMode {
 
@@ -61,30 +96,33 @@ struct VideoMode {
 
 SDL_Surface* JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 
+	surfaceReady = false;
+
 	VideoMode vm = { width, height, bpp, flags };
 
 	SDL_Event ev;
 	ev.type = SDL_USEREVENT;
 	ev.user.code = USEREVENT_SET_VIDEO_MODE;
 	ev.user.data1 = &vm;
-
-	wglMakeCurrent(NULL, NULL);
+	ReleaseGlContext();
 	SDL_PushEvent(&ev);
 	JLEventWait(commandDone, -1);
-	wglMakeCurrent(deviceContext, openglContext); // Doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
+	AcquireGlContext();
 	return vm.returnValue;
 }
 
-void JLSwapBuffers() {
 
-	JLEventReset(buffersSwapped);
+bool JLAsyncSwapBuffers() {
 
-	wglMakeCurrent(NULL, NULL);
+	surfaceReady = false;
 
+	if ( !ReleaseGlContext() )
+		return false;
 	SDL_Event ev;
 	ev.type = SDL_USEREVENT;
 	ev.user.code = USEREVENT_SET_SWAP_BUFFERS;
 	SDL_PushEvent(&ev);
+	return true;
 }
 
 
@@ -92,18 +130,18 @@ int EventFilter( const SDL_Event *e ) {
 
 	if ( e->type == SDL_VIDEORESIZE ) {
 /*
-//		wglMakeCurrent(deviceContext, openglContext);
+		AcquireGlContext();
 		const SDL_Surface* currentSurface = SDL_GetVideoSurface();
-		int bpp = 0; // currentSurface->format->BitsPerPixel;
-		Uint32 flags = 0; //currentSurface->flags;
-
-//		wglMakeCurrent(NULL, NULL);
 		SDL_Surface *surface = SDL_SetVideoMode(e->resize.w, e->resize.h, currentSurface->format->BitsPerPixel, currentSurface->flags);
+//		const char *errorMessage = SDL_GetError();
 		JL_ASSERT( surface != NULL );
-
-		deviceContext = wglGetCurrentDC();
-		openglContext = wglGetCurrentContext();
-		wglMakeCurrent(NULL, NULL);
+		ReleaseGlContext();
+*/
+/*
+		SDL_Event ev = *e;
+		SDL_PushEvent(&ev);
+		JLEventTrigger(sdlEvent); // signal a non-user event
+		return 0;
 */
 	}
 	return 1; // 1, then the event will be added to the internal queue.
@@ -112,24 +150,18 @@ int EventFilter( const SDL_Event *e ) {
 
 int VideoThread( void *unused ) {
 
-	int err = SDL_InitSubSystem(SDL_INIT_VIDEO); // (TBD) SDL_INIT_EVENTTHREAD on Linux ?
-
+	int status;
+	status = SDL_InitSubSystem(SDL_INIT_VIDEO); // (TBD) SDL_INIT_EVENTTHREAD on Linux ?
+	JL_ASSERT( status != -1 );
 	SDL_SetEventFilter(EventFilter);
-
-	JLSemaphoreRelease(videoThreadReady);
-
+	JLEventTrigger(videoThreadReady);
 	SDL_PumpEvents();
 
-	int status;
 	SDL_Event ev;
 	for (;;) {
 		
-		//int status = SDL_PeepEvents(&ev, 1, SDL_GETEVENT, /*SDL_ALLEVENTS*/ SDL_EVENTMASK(SDL_USEREVENT));
-
 		status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS);
-		if ( status == -1 )
-			goto bad;
-
+		JL_ASSERT( status != -1 );
 		if ( status == 0 ) {
 
 			SDL_Delay(5);
@@ -140,9 +172,7 @@ int VideoThread( void *unused ) {
 		JL_ASSERT( status == 1 );
 
 		status = SDL_PeepEvents(&ev, 1, SDL_GETEVENT, SDL_EVENTMASK(SDL_USEREVENT));
-		if ( status == -1 )
-			goto bad;
-
+		JL_ASSERT( status != -1 );
 		if ( status == 0 ) {
 			
 			JLEventTrigger(sdlEvent); // signal a non-user event
@@ -155,51 +185,53 @@ int VideoThread( void *unused ) {
 			case USEREVENT_END:
 				goto end;
 			case USEREVENT_SET_VIDEO_MODE: {
+
 				VideoMode *vm = (VideoMode*)ev.user.data1;
-				if ( deviceContext )
-					wglMakeCurrent(deviceContext, openglContext);
+				AcquireGlContext();
 				vm->returnValue = SDL_SetVideoMode(vm->width, vm->height, vm->bpp, vm->flags);
 				JL_ASSERT( vm->returnValue != NULL );
-				deviceContext = wglGetCurrentDC();
-				openglContext = wglGetCurrentContext();
-				wglMakeCurrent(NULL, NULL);
-				JLEventTrigger(commandDone);
+				ReleaseGlContext();
+				surfaceReady = true;
+				status = JLEventTrigger(surfaceReadyEvent);
+				JL_ASSERT( status != JLERROR );
+				status = JLEventTrigger(commandDone);
+				JL_ASSERT( status != JLERROR );
 				break;
 			}
-			case USEREVENT_SET_SWAP_BUFFERS:
-				if ( deviceContext )
-					wglMakeCurrent(deviceContext, openglContext);
-				SDL_GL_SwapBuffers();
-				wglMakeCurrent(NULL, NULL);
+			case USEREVENT_SET_SWAP_BUFFERS: {
 
-				JLEventTrigger(buffersSwapped);
-			break;
+				AcquireGlContext();
+				SDL_GL_SwapBuffers();
+				ReleaseGlContext();
+				surfaceReady = true;
+				status = JLEventTrigger(surfaceReadyEvent);
+				JL_ASSERT( status != JLERROR );
+				break;
+			}
 		}
 	}
 
 end:
+	AcquireGlContext();
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 	return 0;
-
-bad:
-	SDL_QuitSubSystem(SDL_INIT_VIDEO);
-	return -1;
 }
 
 
 void StartVideo() {
 
-	videoThreadReady = JLSemaphoreCreate(0);
 	commandDone = JLEventCreate(true);
 	sdlEvent = JLEventCreate(true);
-	buffersSwapped = JLEventCreate(false);
+	surfaceReadyEvent = JLEventCreate(true);
+	surfaceReady = false;
 
+	videoThreadReady = JLEventCreate(false);
 	// http://www.libsdl.org/intro.en/usingthreads.html
 	videoThreadHandler = SDL_CreateThread(VideoThread, NULL);
 //	if ( videoThreadHandler == NULL )
 //		return ThrowSdlError(cx);
-	JLSemaphoreAcquire(videoThreadReady, -1);
-	JLSemaphoreFree(&videoThreadReady);
+	JLEventWait(videoThreadReady, -1);
+	JLEventFree(&videoThreadReady);
 }
 
 void EndVideo() {
@@ -211,8 +243,8 @@ void EndVideo() {
 	SDL_WaitThread(videoThreadHandler, NULL);
 	JLEventFree(&commandDone);
 	JLEventFree(&sdlEvent);
+	JLEventFree(&surfaceReadyEvent);
 }
-
 
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
@@ -234,7 +266,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	INIT_CLASS( Cursor );
 
 	typedef void* (__cdecl *glGetProcAddress_t)(const char*);
-
 	JL_CHK( SetPrivateNativeFunction(cx, JS_GetGlobalObject(cx), "_glGetProcAddress", (glGetProcAddress_t)SDL_GL_GetProcAddress) );
 
 	return JS_TRUE;

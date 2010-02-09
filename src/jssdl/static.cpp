@@ -19,8 +19,18 @@
 
 #include "../jslang/handlePub.h"
 
+extern volatile bool surfaceReady;
+extern JLEventHandler surfaceReadyEvent;
+
+extern HGLRC _openglContext;
+extern HDC _deviceContext;
+
+bool AcquireGlContext();
+bool ReleaseGlContext();
+
+
 SDL_Surface* JLSetVideoMode(int width, int height, int bpp, Uint32 flags);
-void JLSwapBuffers();
+bool JLAsyncSwapBuffers();
 
 
 DECLARE_CLASS( Cursor )
@@ -355,56 +365,104 @@ DEFINE_FUNCTION_FAST( SetGamma ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME()
+ $VOID $INAME( [async = false] )
   Perform a GL buffer swap on the current GL context.
 **/
 DEFINE_FUNCTION_FAST( GlSwapBuffers ) {
 
-//	SDL_GL_SwapBuffers();
-	JLSwapBuffers();
+	JL_S_ASSERT_ARG_RANGE(0,1);
+	bool async;
+	if ( JL_FARG_ISDEF(1) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(1), &async) );
+	else
+		async = false;
+
+	if ( async ) {
+
+		bool status = JLAsyncSwapBuffers();
+		JL_S_ASSERT( status, "OpenGL context not ready." );
+	} else {
+	
+		SDL_GL_SwapBuffers();
+	}
+	
 	// (TBD) check error	*SDL_GetError() != '\0' ???
 	*JL_FRVAL = JSVAL_VOID;
-	return JS_TRUE;
-}
-
-
-extern JLEventHandler buffersSwapped;
-
-static void BuffersSwappedStartWait( volatile ProcessEvent *pe ) {
-
-	JLEventWait(buffersSwapped, -1);
-}
-
-static bool BuffersSwappedCancelWait( volatile ProcessEvent *pe ) {
-
-	JLEventTrigger(buffersSwapped);
-	return true;
-}
-
-extern HGLRC openglContext;
-extern HDC deviceContext;
-
-
-static JSBool BuffersSwappedEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
-
-	wglMakeCurrent(deviceContext, openglContext); // Doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
-
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-DEFINE_FUNCTION_FAST( BuffersSwappedEvents ) {
+struct SurfaceReadyProcessEvent {
+	
+	ProcessEvent pe;
 
-	JL_S_ASSERT_ARG(0);
+	bool cancel;
+	jsval callbackFctVal;
+};
 
-	ProcessEvent *pe;
-	JL_CHK( CreateHandle(cx, 'pev', sizeof(ProcessEvent), (void**)&pe, NULL, JL_FRVAL) );
-	pe->startWait = BuffersSwappedStartWait;
-	pe->cancelWait = BuffersSwappedCancelWait;
-	pe->endWait = BuffersSwappedEndWait;
+JL_STATIC_ASSERT( offsetof(SurfaceReadyProcessEvent, pe) == 0 );
 
-//	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection
+static void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
+
+	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
+
+	while ( !surfaceReady && !upe->cancel ) {
+
+		int st = JLEventWait(surfaceReadyEvent, -1);
+		JL_ASSERT( st != JLERROR );
+	}
+}
+
+static bool SurfaceReadyCancelWait( volatile ProcessEvent *pe ) {
+
+	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
+	upe->cancel = true;
+	int st = JLEventTrigger(surfaceReadyEvent);
+	JL_ASSERT( st != JLERROR );
+	return true;
+}
+
+
+static JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+	
+	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
+
+	*hasEvent = surfaceReady;
+	if ( !*hasEvent )
+		return JS_TRUE;
+
+	AcquireGlContext();
+
+	if ( JSVAL_IS_VOID(upe->callbackFctVal) )
+		return JS_TRUE;
+	jsval rval;
+	JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), upe->callbackFctVal, 0, NULL, &rval) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+DEFINE_FUNCTION_FAST( SurfaceReadyEvents ) {
+
+	JL_S_ASSERT_ARG_RANGE(0,1);
+
+	SurfaceReadyProcessEvent *upe;
+	JL_CHK( CreateHandle(cx, 'pev', sizeof(SurfaceReadyProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	upe->pe.startWait = SurfaceReadyStartWait;
+	upe->pe.cancelWait = SurfaceReadyCancelWait;
+	upe->pe.endWait = SurfaceReadyEndWait;
+
+	upe->cancel = false;
+
+	if ( JL_FARG_ISDEF(1) && JsvalIsFunction(cx, JL_FARG(1)) ) {
+
+		JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection.
+		upe->callbackFctVal = JL_FARG(1);
+	} else {
+
+		upe->callbackFctVal = JSVAL_VOID;
+	}
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1190,7 +1248,7 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( Iconify )
 		FUNCTION_FAST_ARGC( SetGamma, 3 )
 		FUNCTION_FAST( GlSwapBuffers )
-		FUNCTION_FAST( BuffersSwappedEvents )
+		FUNCTION_FAST( SurfaceReadyEvents )
 		FUNCTION_FAST_ARGC( GlSetAttribute, 2 )
 		FUNCTION_FAST_ARGC( GlGetAttribute, 1 )
 		FUNCTION_ARGC( PollEvent, 1 )
