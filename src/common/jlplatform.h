@@ -869,10 +869,13 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 
 ///////////////////////////////////////////////////////////////////////////////
 
+// status
 #define JLERROR (0) // (int)false
 #define JLOK (1)
 #define JLTIMEOUT (-2)
 
+// param
+#define JLINFINITE (-1)
 
 ///////////////////////////////////////////////////////////////////////////////
 // atomic operations
@@ -989,21 +992,21 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 	}
 */
 
-	// msTimeout = -1 : no timeout
+	// msTimeout = JLINFINITE : no timeout
 	// returns true on a sucessfuly semaphore locked.
 	ALWAYS_INLINE int JLSemaphoreAcquire( JLSemaphoreHandler semaphore, int msTimeout ) {
 
 		if ( !JLSemaphoreOk(semaphore) )
 			return JLERROR;
 	#if defined(XP_WIN)
-		switch ( WaitForSingleObject(semaphore, msTimeout == -1 ? INFINITE : msTimeout) ) {
+		switch ( WaitForSingleObject(semaphore, msTimeout == JLINFINITE ? INFINITE : msTimeout) ) {
 			case WAIT_TIMEOUT:
 				return JLTIMEOUT;
 			case WAIT_OBJECT_0:
 				return JLOK;
 		}
 	#elif defined(XP_UNIX)
-		if ( msTimeout == -1 ) {
+		if ( msTimeout == JLINFINITE ) {
 			
 			if ( sem_wait(semaphore) == 0 )
 				return JLOK;
@@ -1157,6 +1160,8 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 
 	typedef struct {
 #if defined(XP_WIN)
+		volatile LONG waitingThreadCount;
+//		HANDLE mx;
 		HANDLE hEvent;
 #elif defined(XP_UNIX)
 		pthread_mutex_t mutex;
@@ -1169,14 +1174,17 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 	ALWAYS_INLINE JLEventHandler JLEventCreate( bool autoReset ) {
 
 		JLEventHandler ev = (JLEventHandler)malloc(sizeof(*ev));
+		ev->autoReset = autoReset;
 	#if defined(XP_WIN)
-		ev->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL); // doc. bManualReset: system automatically resets the event state to nonsignaled after a *single waiting thread* has been released.
+		ev->waitingThreadCount = 0;
+//		ev->mx = CreateMutex(NULL, FALSE, NULL);
+		ev->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+		// see also: CreateSemaphore(NULL,0,1,NULL);
 	#elif defined(XP_UNIX)
 		pthread_mutex_init(&ev->mutex, 0);
 		pthread_cond_init(&ev->cond, 0);
 		ev->triggered = false;
 	#endif
-		ev->autoReset = autoReset;
 		return ev;
 	}
 
@@ -1189,6 +1197,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 	#if defined(XP_WIN)
 		if ( CloseHandle((*ev)->hEvent) == 0 )
 			return JLERROR;
+//		CloseHandle((*ev)->mx);
 	#elif defined(XP_UNIX)
 		if ( pthread_cond_destroy(&ev->cond) != 0 )
 			return JLERROR;
@@ -1202,7 +1211,14 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 
 	ALWAYS_INLINE int JLEventTrigger( JLEventHandler ev ) {
 	#if defined(XP_WIN)
-		if ( (ev->autoReset ? PulseEvent(ev->hEvent) : SetEvent(ev->hEvent)) == 0 ) // doc. ... and then resets it to the nonsignaled state after releasing the appropriate number of waiting threads.
+
+		BOOL status = SetEvent(ev->hEvent);
+		//BOOL status = TRUE;
+		//WaitForSingleObject(ev->mx, INFINITE);
+		//if ( ev->waitingThreadCount != 0 || !ev->autoReset )
+		//	status = SetEvent(ev->hEvent);
+		//ReleaseMutex(ev->mx);
+		if ( status == FALSE )
 			return JLERROR;
 	#elif defined(XP_UNIX)
 		pthread_mutex_lock(&ev->mutex);
@@ -1227,17 +1243,32 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		return JLOK;
 	}
 
-	// msTimeout = -1 : no timeout
+	// msTimeout = JLINFINITE : no timeout
 	ALWAYS_INLINE int JLEventWait( JLEventHandler ev, int msTimeout ) {
 	#if defined(XP_WIN)
-		switch ( WaitForSingleObject(ev->hEvent, msTimeout == -1 ? INFINITE : msTimeout) ) {
-			case WAIT_TIMEOUT:
-				return JLTIMEOUT;
-			case WAIT_OBJECT_0:
-				return JLOK;
-		}
+		
+		InterlockedIncrement(&ev->waitingThreadCount);
+		DWORD status = WaitForSingleObject(ev->hEvent, msTimeout == JLINFINITE ? INFINITE : msTimeout);
+		if ( InterlockedDecrement(&ev->waitingThreadCount) == 0 && ev->autoReset )
+			if ( ResetEvent(ev->hEvent) == 0 )
+				return JLERROR;
+
+		//WaitForSingleObject(ev->mx, INFINITE);
+		//ev->waitingThreadCount++;
+		//DWORD status = SignalObjectAndWait(ev->mx, ev->hEvent, msTimeout == JLINFINITE ? INFINITE : msTimeout, FALSE);
+		//WaitForSingleObject(ev->mx, INFINITE);
+		//ev->waitingThreadCount--;
+		//if ( ev->waitingThreadCount == 0 && ev->autoReset )
+		//	ResetEvent(ev->hEvent);
+		//ReleaseMutex(ev->mx);
+
+		if ( status == WAIT_OBJECT_0 )
+			return JLOK;
+		if ( status == WAIT_TIMEOUT )
+			return JLTIMEOUT;
+
 	#elif defined(XP_UNIX)
-		if ( msTimeout == -1 ) {
+		if ( msTimeout == JLINFINITE ) {
 			
 		  pthread_mutex_lock(&ev->mutex);
 		  while ( !ev->triggered )

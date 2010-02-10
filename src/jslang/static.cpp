@@ -157,7 +157,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	int st;
 	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, jslangModuleId);
 
-	JL_S_ASSERT_ARG_MAX( COUNTOF(mpv->processEventThreadInfo) );
+	JL_S_ASSERT_ARG_RANGE( 1, COUNTOF(mpv->processEventThreadInfo) );
 	ProcessEvent *peList[COUNTOF(mpv->processEventThreadInfo)]; // cache to avoid calling GetHandlePrivate() too often.
 
 	for ( uintN i = 0; i < argc; ++i ) {
@@ -265,7 +265,7 @@ struct UserProcessEvent {
 	
 	ProcessEvent pe;
 	unsigned int timeout;
-	JLSemaphoreHandler cancel;
+	JLEventHandler cancel;
 	bool canceled;
 	jsval callbackFunction;
 };
@@ -279,8 +279,8 @@ static void TimeoutStartWait( volatile ProcessEvent *pe ) {
 	if ( upe->timeout > 0 ) {
 		
 		int st;
-		st = JLSemaphoreAcquire(upe->cancel, upe->timeout);
-		JL_ASSERT( st );
+		st = JLEventWait(upe->cancel, upe->timeout);
+		JL_ASSERT( st != JLERROR );
 		upe->canceled = (st == JLOK);
 	} else {
 		
@@ -292,7 +292,7 @@ static bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	int st = JLSemaphoreRelease(upe->cancel);
+	int st = JLEventTrigger(upe->cancel);
 	JL_ASSERT( st );
 	return true;
 }
@@ -301,14 +301,14 @@ static JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSConte
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	int st = JLSemaphoreFree(&upe->cancel);
+	int st = JLEventFree(&upe->cancel);
 	JL_ASSERT( st );
 	*hasEvent = !upe->canceled;
 	if ( !*hasEvent )
 		return JS_TRUE;
-	jsval rval;
 	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
 		return JS_TRUE;
+	jsval rval;
 	JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), upe->callbackFunction, 0, NULL, &rval) );
 	return JS_TRUE;
 	JL_BAD;
@@ -329,8 +329,8 @@ DEFINE_FUNCTION_FAST( TimeoutEvents ) {
 	upe->pe.cancelWait = TimeoutCancelWait;
 	upe->pe.endWait = TimeoutEndWait;
 	upe->timeout = timeout;
-	upe->cancel = JLSemaphoreCreate(0);
-	JL_ASSERT( JLSemaphoreOk(upe->cancel) );
+	upe->cancel = JLEventCreate(false);
+	JL_ASSERT( JLEventOk(upe->cancel) );
 	SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(2));
 
 	if ( JL_FARG_ISDEF(2) ) {

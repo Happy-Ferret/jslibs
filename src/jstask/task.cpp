@@ -611,7 +611,7 @@ static void TaskStartWait( volatile ProcessEvent *pe ) {
 
 	while ( upe->pv->pendingResponseCount == 0 && !upe->canceled ) {
 		
-		int st = JLEventWait(upe->pv->responseEvent, -1);
+		int st = JLEventWait(upe->pv->responseEvent, JLINFINITE);
 		JL_ASSERT( st );
 	}
 }
