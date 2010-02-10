@@ -11,9 +11,12 @@ GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
 GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 
-SetVideoMode(320, 200, 32, HWACCEL | OPENGL | RESIZABLE, true); // | ASYNCBLIT
-
 var listeners = {
+	onKeyDown:function(sym) {
+		
+		if ( sym == K_ESCAPE )
+			endSignal = true;
+	},
 	onQuit: function() {
 	 
 		endSignal = true;
@@ -22,16 +25,16 @@ var listeners = {
 
 		Print( w, 'x', h, '\n' );
 		SetVideoMode(w, h, undefined, undefined, true);
-		Ogl.Viewport(0, 0, w, h);
-	},	
+//		Ogl.Viewport(0, 0, w, h);
+	}
 };
 
+SetVideoMode(320, 200, 32, HWACCEL | OPENGL | RESIZABLE, false); // | ASYNCBLIT
 
+Ogl.Viewport(0, 0, 32, 32);
+Ogl.ClearColor(0,0,0, 1);
 
 function SurfaceReady() {
-
-	Ogl.Viewport(0, 0, 32, 32);
-	Ogl.ClearColor(0,0,0, 1);
 
 	Ogl.Clear(Ogl.COLOR_BUFFER_BIT);
 	Ogl.Rotate(1,1,1, angle++);
@@ -41,8 +44,8 @@ function SurfaceReady() {
 	Ogl.Vertex(1,0);
 	Ogl.End();
 	GlSwapBuffers(true);
+	GlSwapBuffers(true);
 }
-
 
 var angle = 0.;
 while ( !endSignal ) {
@@ -50,7 +53,7 @@ while ( !endSignal ) {
 	var t0 = TimeCounter();
 	var e = ProcessEvents( SDLEvents(listeners), EndSignalEvents(), SurfaceReadyEvents(SurfaceReady) );
 	var t = TimeCounter() - t0;
-//	Print(t.toFixed(2), ' ', e.toString(2), ' ',  '\n');
+	Print((1000/t).toFixed(2), 'fps ' /*, e.toString(2), ' '*/,  '\n');
 }
 
 } catch(ex) {

@@ -70,6 +70,7 @@ void AcquireGlContext() {
 //	JLSemaphoreAcquire(contextAvailable, JLINFINITE);
 	JLMutexAcquire(contextMutex);
 	JL_ASSERT( _deviceContext != NULL && _openglContext != NULL );
+	JL_ASSERT( wglGetCurrentDC() == NULL && wglGetCurrentContext() == NULL );
 	BOOL st = wglMakeCurrent(_deviceContext, _openglContext); // doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
 	JL_ASSERT( st );
 	_deviceContext = NULL;
@@ -82,7 +83,7 @@ void ReleaseGlContext() {
 	JLMutexAcquire(contextMutex);
 	HDC hdc = wglGetCurrentDC();
 	HGLRC hglrc = wglGetCurrentContext();
-	JL_ASSERT( hdc && hglrc );
+	JL_ASSERT( hdc != NULL && hglrc != NULL );
 	JL_ASSERT( _deviceContext == NULL && _openglContext == NULL );
 	_deviceContext = hdc;
 	_openglContext = hglrc;
