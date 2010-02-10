@@ -19,18 +19,17 @@
 
 #include "../jslang/handlePub.h"
 
+extern JLEventHandler sdlEvent;
+
 extern volatile bool surfaceReady;
 extern JLEventHandler surfaceReadyEvent;
 
-extern HGLRC _openglContext;
-extern HDC _deviceContext;
+bool OwnGlContext();
+void AcquireGlContext();
+void ReleaseGlContext();
 
-bool AcquireGlContext();
-bool ReleaseGlContext();
-
-
-SDL_Surface* JLSetVideoMode(int width, int height, int bpp, Uint32 flags);
-bool JLAsyncSwapBuffers();
+void JLSetVideoMode(int width, int height, int bpp, Uint32 flags, bool async);
+void JLAsyncSwapBuffers(bool async);
 
 
 DECLARE_CLASS( Cursor )
@@ -164,7 +163,7 @@ DEFINE_FUNCTION_FAST( VideoModeOK ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( [width], [height], [bitsPerPixel], [flags] )
+ $VOID $INAME( [width], [height], [bitsPerPixel], [flags] [, async] )
   Set the requested video mode (allocating a shadow buffer if necessary).
   $H arguments
    $ARG $INT width: with
@@ -175,13 +174,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( SetVideoMode ) {
 
+	JL_S_ASSERT_ARG_RANGE(0,5);
+
 	int width, height, bpp;
 	Uint32 flags;
 
 //	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo(); // If called before SDL_SetVideoMode(), 'vfmt' is the pixel format of the "best" video mode.
 //	SDL_PixelFormat format = *videoInfo->vfmt;
 
-	const SDL_Surface* currentSurface = SDL_GetVideoSurface();
+	const SDL_Surface* currentSurface;
+	currentSurface = SDL_GetVideoSurface();
 
 	if ( JL_FARG_ISDEF(1) )
 		JL_CHK( JsvalToInt(cx, JL_FARG(1), &width) );
@@ -206,10 +208,18 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 	} else
 		flags = currentSurface != NULL ? currentSurface->flags : 0; // if not given, use the previous setting or a default value.
 
+	bool async;
+	if ( JL_FARG_ISDEF(5) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(5), &async) );
+	else
+		async = false;
+
 //	SDL_Surface *surface = SDL_SetVideoMode(width, height, bpp, flags);
-	SDL_Surface *surface = JLSetVideoMode(width, height, bpp, flags);
-	if ( surface == NULL )
+	JLSetVideoMode(width, height, bpp, flags, async);
+	
+	if ( !async && SDL_GetVideoSurface() == NULL )
 		return ThrowSdlError(cx);
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -367,6 +377,7 @@ DEFINE_FUNCTION_FAST( SetGamma ) {
 $TOC_MEMBER $INAME
  $VOID $INAME( [async = false] )
   Perform a GL buffer swap on the current GL context.
+  If _async_ is true, you must wait for the SurfaceReadyEvents through the ProcessEvents() function before drawing again.
 **/
 DEFINE_FUNCTION_FAST( GlSwapBuffers ) {
 
@@ -379,91 +390,14 @@ DEFINE_FUNCTION_FAST( GlSwapBuffers ) {
 
 	if ( async ) {
 
-		bool status = JLAsyncSwapBuffers();
-		JL_S_ASSERT( status, "OpenGL context not ready." );
+		JLAsyncSwapBuffers(true);
 	} else {
 	
-		SDL_GL_SwapBuffers();
+		JLAsyncSwapBuffers(false); // SDL_GL_SwapBuffers();
 	}
 	
 	// (TBD) check error	*SDL_GetError() != '\0' ???
 	*JL_FRVAL = JSVAL_VOID;
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-struct SurfaceReadyProcessEvent {
-	
-	ProcessEvent pe;
-
-	bool cancel;
-	jsval callbackFctVal;
-};
-
-JL_STATIC_ASSERT( offsetof(SurfaceReadyProcessEvent, pe) == 0 );
-
-static void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
-
-	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
-
-	while ( !surfaceReady && !upe->cancel ) {
-
-		int st = JLEventWait(surfaceReadyEvent, -1);
-		JL_ASSERT( st != JLERROR );
-	}
-}
-
-static bool SurfaceReadyCancelWait( volatile ProcessEvent *pe ) {
-
-	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
-	upe->cancel = true;
-	int st = JLEventTrigger(surfaceReadyEvent);
-	JL_ASSERT( st != JLERROR );
-	return true;
-}
-
-
-static JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
-	
-	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
-
-	*hasEvent = surfaceReady;
-	if ( !*hasEvent )
-		return JS_TRUE;
-
-	AcquireGlContext();
-
-	if ( JSVAL_IS_VOID(upe->callbackFctVal) )
-		return JS_TRUE;
-	jsval rval;
-	JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), upe->callbackFctVal, 0, NULL, &rval) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-DEFINE_FUNCTION_FAST( SurfaceReadyEvents ) {
-
-	JL_S_ASSERT_ARG_RANGE(0,1);
-
-	SurfaceReadyProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, 'pev', sizeof(SurfaceReadyProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
-	upe->pe.startWait = SurfaceReadyStartWait;
-	upe->pe.cancelWait = SurfaceReadyCancelWait;
-	upe->pe.endWait = SurfaceReadyEndWait;
-
-	upe->cancel = false;
-
-	if ( JL_FARG_ISDEF(1) && JsvalIsFunction(cx, JL_FARG(1)) ) {
-
-		JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection.
-		upe->callbackFctVal = JL_FARG(1);
-	} else {
-
-		upe->callbackFctVal = JSVAL_VOID;
-	}
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1139,14 +1073,98 @@ DEFINE_PROPERTY( version ) {
 }
 
 
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE HANDLE $INAME()
+  Passively waits for the SDL drawing surface ready state through the ProcessEvents function.
+**/
+struct SurfaceReadyProcessEvent {
+	
+	ProcessEvent pe;
+
+	bool cancel;
+	jsval callbackFctVal;
+};
+
+JL_STATIC_ASSERT( offsetof(SurfaceReadyProcessEvent, pe) == 0 );
+
+static void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
+
+	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
+
+	int st;
+	while ( !surfaceReady && !upe->cancel ) {
+
+		st = JLEventWait(surfaceReadyEvent, JLINFINITE);
+		JL_ASSERT( st != JLERROR );
+	}
+}
+
+static bool SurfaceReadyCancelWait( volatile ProcessEvent *pe ) {
+
+	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
+
+	upe->cancel = true;
+	int st = JLEventTrigger(surfaceReadyEvent);
+	JL_ASSERT( st != JLERROR );
+	return true;
+}
+
+
+static JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+	
+	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
+
+	*hasEvent = surfaceReady;
+	if ( !*hasEvent )
+		return JS_TRUE;
+
+	if ( !OwnGlContext() )
+		AcquireGlContext();
+
+	if ( JSVAL_IS_VOID(upe->callbackFctVal) )
+		return JS_TRUE;
+	jsval rval;
+	JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), upe->callbackFctVal, 0, NULL, &rval) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+DEFINE_FUNCTION_FAST( SurfaceReadyEvents ) {
+
+	JL_S_ASSERT_ARG_RANGE(0,1);
+
+	SurfaceReadyProcessEvent *upe;
+	JL_CHK( CreateHandle(cx, 'pev', sizeof(SurfaceReadyProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	upe->pe.startWait = SurfaceReadyStartWait;
+	upe->pe.cancelWait = SurfaceReadyCancelWait;
+	upe->pe.endWait = SurfaceReadyEndWait;
+
+	upe->cancel = false;
+
+	if ( JL_FARG_ISDEF(1) && JsvalIsFunction(cx, JL_FARG(1)) ) {
+
+		JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection.
+		upe->callbackFctVal = JL_FARG(1);
+	} else {
+
+		upe->callbackFctVal = JSVAL_VOID;
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 /**doc
 $TOC_MEMBER $INAME
  $TYPE HANDLE $INAME()
   Passively waits for a SDL event through the ProcessEvents function.
 **/
-
-extern JLEventHandler sdlEvent;
-
 struct UserProcessEvent {
 	
 	ProcessEvent pe;
@@ -1163,10 +1181,12 @@ static void SDLStartWait( volatile ProcessEvent *pe ) {
 	int status;
 	for (;;) {
 
-		JLEventWait(sdlEvent, -1);
+		JLEventWait(sdlEvent, JLINFINITE);
+		if ( upe->cancel )
+			break;
 		status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS & ~SDL_EVENTMASK(SDL_USEREVENT));
-//		JL_ASSERT( mpsdl->cancel || status == 1 ); // (TBD) understand this case
-		if ( upe->cancel || status == 1 )
+		// JL_ASSERT( upe->cancel || status == 1 ); // (TBD) understand this case
+		if ( status == 1 )
 			break;
 	}
 }
@@ -1187,18 +1207,20 @@ static JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *
 	bool fired; // unused
 	jsval rval;
 
-	*hasEvent = false;
-	SDL_Event ev[16];
+	*hasEvent = true;
+	SDL_Event ev[128];
+
 	for (;;) {
 
 		status = SDL_PeepEvents(ev, COUNTOF(ev), SDL_GETEVENT, SDL_ALLEVENTS & ~SDL_EVENTMASK(SDL_USEREVENT) );
 		if ( status == -1 )
 			JL_CHK( ThrowSdlError(cx) );
 
-		if ( status == 0 )
-			break;
+		if ( status == 0 ) {
 
-		*hasEvent = true;
+			*hasEvent = false;
+			break;
+		}
 
 		for ( int i = 0; i < status; i++ )
 			JL_CHK( FireListener(cx, upe->listenersObj, &ev[i], &rval, &fired) );
@@ -1227,8 +1249,6 @@ DEFINE_FUNCTION_FAST( SDLEvents ) {
 
 	upe->listenersObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection
-
-	// see SetWindowsHookEx(WH_GETMESSAGE, ...
 
 	return JS_TRUE;
 	JL_BAD;

@@ -38,52 +38,58 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-static JLEventHandler videoThreadReady;
 static SDL_Thread *videoThreadHandler;
-static JLEventHandler commandDone;
+static JLEventHandler videoThreadReady;
+
+#define USEREVENT_END 0
+#define USEREVENT_SET_VIDEO_MODE 1
+#define USEREVENT_SWAP_BUFFERS 2
+
+static JLEventHandler userEvent;
 JLEventHandler sdlEvent;
 
 volatile bool surfaceReady;
 JLEventHandler surfaceReadyEvent;
 
-#define USEREVENT_END 0
-#define USEREVENT_SET_VIDEO_MODE 1
-#define USEREVENT_SET_SWAP_BUFFERS 2
 
+//static JLSemaphoreHandler contextAvailable;
+static JLMutexHandler contextMutex;
 HGLRC _openglContext = NULL;
 HDC _deviceContext = NULL;
 
-bool AcquireGlContext() {
+bool OwnGlContext() {
 
-	if ( _deviceContext && _openglContext ) {
-
-		BOOL st = wglMakeCurrent(_deviceContext, _openglContext); // doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
-		JL_ASSERT( st );
-		_deviceContext = NULL;
-		_openglContext = NULL;
-		return true;
-	} else {
-		return false;
-	}
+	JLMutexAcquire(contextMutex);
+	bool isOwner = (wglGetCurrentContext() != NULL && wglGetCurrentDC() != NULL);
+	JLMutexRelease(contextMutex);
+	return isOwner;
 }
 
-bool ReleaseGlContext() {
+void AcquireGlContext() {
 
+//	JLSemaphoreAcquire(contextAvailable, JLINFINITE);
+	JLMutexAcquire(contextMutex);
+	JL_ASSERT( _deviceContext != NULL && _openglContext != NULL );
+	BOOL st = wglMakeCurrent(_deviceContext, _openglContext); // doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
+	JL_ASSERT( st );
+	_deviceContext = NULL;
+	_openglContext = NULL;
+	JLMutexRelease(contextMutex);
+}
+
+void ReleaseGlContext() {
+	
+	JLMutexAcquire(contextMutex);
 	HDC hdc = wglGetCurrentDC();
 	HGLRC hglrc = wglGetCurrentContext();
-	if ( hdc && hglrc ) {
-
-		JL_ASSERT( _deviceContext == NULL );
-		JL_ASSERT( _openglContext == NULL );
-		_deviceContext = hdc;
-		_openglContext = hglrc;
-		BOOL st = wglMakeCurrent(NULL, NULL); // doc. makes the calling thread's current rendering context no longer current, and releases the device context that is used by the rendering context. In this case, hdc  is ignored.
-		JL_ASSERT( st );
-		return true;
-	} else {
-
-		return false;
-	}
+	JL_ASSERT( hdc && hglrc );
+	JL_ASSERT( _deviceContext == NULL && _openglContext == NULL );
+	_deviceContext = hdc;
+	_openglContext = hglrc;
+	BOOL st = wglMakeCurrent(NULL, NULL); // doc. makes the calling thread's current rendering context no longer current, and releases the device context that is used by the rendering context. In this case, hdc  is ignored.
+	JL_ASSERT( st );
+	JLMutexRelease(contextMutex);
+//	JLSemaphoreRelease(contextAvailable);
 }
 
 
@@ -91,58 +97,66 @@ bool ReleaseGlContext() {
 struct VideoMode {
 
 	int width; int height; int bpp; Uint32 flags;
-	SDL_Surface *returnValue;
 };
 
-SDL_Surface* JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
+void JLSetVideoMode(int width, int height, int bpp, Uint32 flags, bool async) {
+
+	bool hasSurface = (SDL_GetVideoSurface() != NULL);
+	if ( hasSurface )
+		while ( !surfaceReady )
+			JLEventWait(surfaceReadyEvent, JLINFINITE);
 
 	surfaceReady = false;
 
-	VideoMode vm = { width, height, bpp, flags };
+	if ( OwnGlContext() )
+		ReleaseGlContext();
+
+	VideoMode *vm = (VideoMode*)jl_malloc(sizeof(VideoMode));
+	vm->width = width;
+	vm->height = height;
+	vm->bpp = bpp;
+	vm->flags = flags;
 
 	SDL_Event ev;
 	ev.type = SDL_USEREVENT;
 	ev.user.code = USEREVENT_SET_VIDEO_MODE;
-	ev.user.data1 = &vm;
-	ReleaseGlContext();
+	ev.user.data1 = vm;
 	SDL_PushEvent(&ev);
-	JLEventWait(commandDone, -1);
+	JLEventTrigger(userEvent);
+	if ( async )
+		return;
+	while ( !surfaceReady )
+		JLEventWait(surfaceReadyEvent, JLINFINITE);
 	AcquireGlContext();
-	return vm.returnValue;
 }
 
 
-bool JLAsyncSwapBuffers() {
+void JLAsyncSwapBuffers(bool async) {
+
+	while ( !surfaceReady )
+		JLEventWait(surfaceReadyEvent, JLINFINITE);
 
 	surfaceReady = false;
 
-	if ( !ReleaseGlContext() )
-		return false;
+	if ( OwnGlContext() )
+		ReleaseGlContext();
+
 	SDL_Event ev;
 	ev.type = SDL_USEREVENT;
-	ev.user.code = USEREVENT_SET_SWAP_BUFFERS;
+	ev.user.code = USEREVENT_SWAP_BUFFERS;
 	SDL_PushEvent(&ev);
-	return true;
+	JLEventTrigger(userEvent);
+	if ( async )
+		return;
+	while ( !surfaceReady )
+		JLEventWait(surfaceReadyEvent, JLINFINITE);
+	AcquireGlContext();
 }
 
 
 int EventFilter( const SDL_Event *e ) {
 
 	if ( e->type == SDL_VIDEORESIZE ) {
-/*
-		AcquireGlContext();
-		const SDL_Surface* currentSurface = SDL_GetVideoSurface();
-		SDL_Surface *surface = SDL_SetVideoMode(e->resize.w, e->resize.h, currentSurface->format->BitsPerPixel, currentSurface->flags);
-//		const char *errorMessage = SDL_GetError();
-		JL_ASSERT( surface != NULL );
-		ReleaseGlContext();
-*/
-/*
-		SDL_Event ev = *e;
-		SDL_PushEvent(&ev);
-		JLEventTrigger(sdlEvent); // signal a non-user event
-		return 0;
-*/
 	}
 	return 1; // 1, then the event will be added to the internal queue.
 }
@@ -164,7 +178,7 @@ int VideoThread( void *unused ) {
 		JL_ASSERT( status != -1 );
 		if ( status == 0 ) {
 
-			SDL_Delay(5);
+			JLEventWait(userEvent, 5);
 			SDL_PumpEvents();
 			continue;
 		}
@@ -186,33 +200,41 @@ int VideoThread( void *unused ) {
 				goto end;
 			case USEREVENT_SET_VIDEO_MODE: {
 
+				bool hasSurface = (SDL_GetVideoSurface() != NULL);
+				if ( hasSurface )
+					AcquireGlContext();
+
 				VideoMode *vm = (VideoMode*)ev.user.data1;
-				AcquireGlContext();
-				vm->returnValue = SDL_SetVideoMode(vm->width, vm->height, vm->bpp, vm->flags);
-				JL_ASSERT( vm->returnValue != NULL );
+				SDL_Surface *surface = SDL_SetVideoMode(vm->width, vm->height, vm->bpp, vm->flags); // char *sdlError = SDL_GetError();
+				JL_ASSERT( surface != NULL );
 				ReleaseGlContext();
+
 				surfaceReady = true;
 				status = JLEventTrigger(surfaceReadyEvent);
-				JL_ASSERT( status != JLERROR );
-				status = JLEventTrigger(commandDone);
-				JL_ASSERT( status != JLERROR );
+				JL_ASSERT( status == JLOK );
+
+				jl_free(vm);
 				break;
 			}
-			case USEREVENT_SET_SWAP_BUFFERS: {
+			case USEREVENT_SWAP_BUFFERS: {
+
+				bool hasSurface = (SDL_GetVideoSurface() != NULL);
+				JL_ASSERT( hasSurface );
 
 				AcquireGlContext();
 				SDL_GL_SwapBuffers();
 				ReleaseGlContext();
+
 				surfaceReady = true;
 				status = JLEventTrigger(surfaceReadyEvent);
-				JL_ASSERT( status != JLERROR );
+				JL_ASSERT( status == JLOK );
 				break;
 			}
 		}
 	}
 
 end:
-	AcquireGlContext();
+//	AcquireGlContext();
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 	return 0;
 }
@@ -220,19 +242,21 @@ end:
 
 void StartVideo() {
 
-	commandDone = JLEventCreate(true);
+//	contextAvailable = JLSemaphoreCreate(0);
+	contextMutex = JLMutexCreate();
 	sdlEvent = JLEventCreate(true);
-	surfaceReadyEvent = JLEventCreate(true);
+	userEvent = JLEventCreate(true);
+
 	surfaceReady = false;
+	surfaceReadyEvent = JLEventCreate(true);
 
 	videoThreadReady = JLEventCreate(false);
-	// http://www.libsdl.org/intro.en/usingthreads.html
-	videoThreadHandler = SDL_CreateThread(VideoThread, NULL);
-//	if ( videoThreadHandler == NULL )
-//		return ThrowSdlError(cx);
-	JLEventWait(videoThreadReady, -1);
+	videoThreadHandler = SDL_CreateThread(VideoThread, NULL); // http://www.libsdl.org/intro.en/usingthreads.html
+	JL_ASSERT( videoThreadHandler != NULL ); // return ThrowSdlError(cx);
+	JLEventWait(videoThreadReady, JLINFINITE);
 	JLEventFree(&videoThreadReady);
 }
+
 
 void EndVideo() {
 
@@ -240,14 +264,22 @@ void EndVideo() {
 	ev.type = SDL_USEREVENT;
 	ev.user.code = USEREVENT_END;
 	SDL_PushEvent(&ev);
+	JLEventTrigger(userEvent);
+
 	SDL_WaitThread(videoThreadHandler, NULL);
-	JLEventFree(&commandDone);
-	JLEventFree(&sdlEvent);
+
 	JLEventFree(&surfaceReadyEvent);
+	JLEventFree(&userEvent);
+	JLEventFree(&sdlEvent);
+	JLMutexFree(&contextMutex);
+//	JLSemaphoreFree(&contextAvailable);
 }
 
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+
+	if ( SDL_WasInit(0) != 0 )
+		JL_REPORT_ERROR("SDL module already in use.");
 
 	JL_CHK( InitJslibsModule(cx, id)  );
 

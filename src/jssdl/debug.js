@@ -6,33 +6,32 @@ LoadModule('jsstd');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
 
-
-SetVideoMode( 320, 200, 32, HWACCEL | OPENGL | RESIZABLE ); // | ASYNCBLIT
-
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
 GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 
+SetVideoMode(320, 200, 32, HWACCEL | OPENGL | RESIZABLE, true); // | ASYNCBLIT
 
 var listeners = {
-	onQuit: function() { 
+	onQuit: function() {
+	 
 		endSignal = true;
 	},
 	onVideoResize: function(w, h) {
 
-//		SetVideoMode(w, h);
-//		Ogl.Viewport(0, 0, w, h);
 		Print( w, 'x', h, '\n' );
+		SetVideoMode(w, h, undefined, undefined, true);
+		Ogl.Viewport(0, 0, w, h);
 	},	
 };
 
-Ogl.Viewport(0, 0, 32, 20);
-
-Ogl.ClearColor(0,0,0, 1);
 
 
-function BufferReady() {
+function SurfaceReady() {
+
+	Ogl.Viewport(0, 0, 32, 32);
+	Ogl.ClearColor(0,0,0, 1);
 
 	Ogl.Clear(Ogl.COLOR_BUFFER_BIT);
 	Ogl.Rotate(1,1,1, angle++);
@@ -49,9 +48,9 @@ var angle = 0.;
 while ( !endSignal ) {
 
 	var t0 = TimeCounter();
-	var e = ProcessEvents( SDLEvents(listeners), EndSignalEvents(), SurfaceReadyEvents(BufferReady) );
+	var e = ProcessEvents( SDLEvents(listeners), EndSignalEvents(), SurfaceReadyEvents(SurfaceReady) );
 	var t = TimeCounter() - t0;
-	Print(t.toFixed(2), ' ', e.toString(2), ' ',  '\n');
+//	Print(t.toFixed(2), ' ', e.toString(2), ' ',  '\n');
 }
 
 } catch(ex) {
