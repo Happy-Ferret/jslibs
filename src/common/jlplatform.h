@@ -1212,14 +1212,19 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 	ALWAYS_INLINE int JLEventTrigger( JLEventHandler ev ) {
 	#if defined(XP_WIN)
 
-		BOOL status = SetEvent(ev->hEvent);
+		if ( ev->waitingThreadCount != 0 || !ev->autoReset ) {
+			
+			BOOL status = SetEvent(ev->hEvent);
+			if ( status == FALSE )
+				return JLERROR;
+		}
 		//BOOL status = TRUE;
 		//WaitForSingleObject(ev->mx, INFINITE);
 		//if ( ev->waitingThreadCount != 0 || !ev->autoReset )
 		//	status = SetEvent(ev->hEvent);
 		//ReleaseMutex(ev->mx);
-		if ( status == FALSE )
-			return JLERROR;
+		//if ( status == FALSE )
+		//	return JLERROR;
 	#elif defined(XP_UNIX)
 		pthread_mutex_lock(&ev->mutex);
 		ev->triggered = true;
