@@ -1154,166 +1154,9 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// event
-
-// see http://www.cs.wustl.edu/~schmidt/win32-cv-1.html (Strategies for Implementing POSIX Condition Variables on Win32)
-
-	typedef struct {
-#if defined(XP_WIN)
-		volatile LONG waitingThreadCount;
-//		HANDLE mx;
-		HANDLE hEvent;
-#elif defined(XP_UNIX)
-		pthread_mutex_t mutex;
-		pthread_cond_t cond;
-		bool triggered;
-#endif
-		bool autoReset;
-	} *JLEventHandler;
-
-	ALWAYS_INLINE JLEventHandler JLEventCreate( bool autoReset ) {
-
-		JLEventHandler ev = (JLEventHandler)malloc(sizeof(*ev));
-		ev->autoReset = autoReset;
-	#if defined(XP_WIN)
-		ev->waitingThreadCount = 0;
-//		ev->mx = CreateMutex(NULL, FALSE, NULL);
-		ev->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-		// see also: CreateSemaphore(NULL,0,1,NULL);
-	#elif defined(XP_UNIX)
-		pthread_mutex_init(&ev->mutex, 0);
-		pthread_cond_init(&ev->cond, 0);
-		ev->triggered = false;
-	#endif
-		return ev;
-	}
-
-	ALWAYS_INLINE bool JLEventOk( JLEventHandler ev ) {
-
-		return ev != (JLEventHandler)0;
-	}
-
-	ALWAYS_INLINE int JLEventFree( JLEventHandler *ev ) {
-	#if defined(XP_WIN)
-		if ( CloseHandle((*ev)->hEvent) == 0 )
-			return JLERROR;
-//		CloseHandle((*ev)->mx);
-	#elif defined(XP_UNIX)
-		if ( pthread_cond_destroy(&ev->cond) != 0 )
-			return JLERROR;
-		if ( pthread_mutex_destroy(&ev->mutex) != 0 )
-			return JLERROR;
-	#endif
-		free(*ev);
-		*ev = NULL;
-		return JLOK;
-	}
-
-	ALWAYS_INLINE int JLEventTrigger( JLEventHandler ev ) {
-	#if defined(XP_WIN)
-
-		if ( ev->waitingThreadCount != 0 || !ev->autoReset )
-			if ( SetEvent(ev->hEvent) == 0 )
-				return JLERROR;
-
-		//BOOL status = TRUE;
-		//WaitForSingleObject(ev->mx, INFINITE);
-		//if ( ev->waitingThreadCount != 0 || !ev->autoReset )
-		//	status = SetEvent(ev->hEvent);
-		//ReleaseMutex(ev->mx);
-		//if ( status == FALSE )
-		//	return JLERROR;
-
-	#elif defined(XP_UNIX)
-		pthread_mutex_lock(&ev->mutex);
-		ev->triggered = true;
-		pthread_cond_broadcast(&ev->cond); // pthread_cond_signal
-		if ( ev->autoReset )
-			ev->triggered = false;
-		pthread_mutex_unlock(&ev->mutex);
-	#endif
-		return JLOK;
-	}
-
-	ALWAYS_INLINE int JLEventReset( JLEventHandler ev ) {
-	#if defined(XP_WIN)
-		if ( ResetEvent(ev->hEvent) == 0 )
-			return JLERROR;
-	#elif defined(XP_UNIX)
-		pthread_mutex_lock(&ev->mutex);
-		ev->triggered = false;
-		pthread_mutex_unlock(&ev->mutex);
-	#endif
-		return JLOK;
-	}
-
-	// msTimeout = JLINFINITE : no timeout
-	ALWAYS_INLINE int JLEventWait( JLEventHandler ev, int msTimeout ) {
-	#if defined(XP_WIN)
-		
-		InterlockedIncrement(&ev->waitingThreadCount);
-		DWORD status = WaitForSingleObject(ev->hEvent, msTimeout == JLINFINITE ? INFINITE : msTimeout);
-		if ( InterlockedDecrement(&ev->waitingThreadCount) == 0 && ev->autoReset )
-			if ( ResetEvent(ev->hEvent) == 0 )
-				return JLERROR;
-
-		//WaitForSingleObject(ev->mx, INFINITE);
-		//ev->waitingThreadCount++;
-		//DWORD status = SignalObjectAndWait(ev->mx, ev->hEvent, msTimeout == JLINFINITE ? INFINITE : msTimeout, FALSE);
-		//WaitForSingleObject(ev->mx, INFINITE);
-		//ev->waitingThreadCount--;
-		//if ( ev->waitingThreadCount == 0 && ev->autoReset )
-		//	ResetEvent(ev->hEvent);
-		//ReleaseMutex(ev->mx);
-
-		if ( status == WAIT_OBJECT_0 )
-			return JLOK;
-		if ( status == WAIT_TIMEOUT )
-			return JLTIMEOUT;
-
-	#elif defined(XP_UNIX)
-		if ( msTimeout == JLINFINITE ) {
-			
-		  pthread_mutex_lock(&ev->mutex);
-		  while ( !ev->triggered )
-				pthread_cond_wait(&ev->cond, &ev->mutex);
-		  pthread_mutex_unlock(&ev->mutex);
-		  return JLOK;
-		} else {
-
-			struct timespec ts;
-			if ( msTimeout == 0 ) {
-
-				ts.tv_sec = 0;
-				ts.tv_nsec = 0;
-			} else {
-			
-				struct timeval tv;
-				if ( gettimeofday(&tv, NULL) != 0 )
-					return JLERROR;
-				ts.tv_nsec = tv.tv_usec * 1000UL + (msTimeout % 1000)*1000000UL;
-				ts.tv_sec = tv.tv_sec + msTimeout / 1000UL + ts.tv_nsec / 1000000000UL;
-				ts.tv_nsec %= 1000000000UL;
-			}
-
-			int rc = 0;
-			pthread_mutex_lock(&ev->mutex);
-			while ( !ev->triggered && rc == 0 )
-				rc = pthread_cond_wait(&ev->cond, &ev->mutex, &ts);
-			pthread_mutex_unlock(&ev->mutex);
-			if ( rc == 0 )
-				return JLOK;
-			if ( rc == ETIMEDOUT )
-				return JLTIMEOUT;
-			}
-		}
-	#endif
-		return JLERROR;
-	}
-
-
-///////////////////////////////////////////////////////////////////////////////
 // Condition Variables
+//
+// see http://www.cs.wustl.edu/~schmidt/win32-cv-1.html (Strategies for Implementing POSIX Condition Variables on Win32)
 
 #if defined(XP_WIN)
 
@@ -1383,6 +1226,188 @@ ALWAYS_INLINE int JLCondSignal( JLCondHandle cv ) {
 }
 
 #endif
+
+
+///////////////////////////////////////////////////////////////////////////////
+// event
+//
+// 5. Implementing Events on non-Win32 Platforms ( http://www.cs.wustl.edu/~schmidt/win32-cv-2.html )
+
+	typedef struct {
+#if defined(XP_WIN)
+		volatile LONG waitingThreadCount;
+		CRITICAL_SECTION cs;
+//		HANDLE mx;
+		HANDLE hEvent;
+		bool autoReset;
+#elif defined(XP_UNIX)
+		pthread_mutex_t mutex;
+		pthread_cond_t cond;
+		bool triggered;
+		bool autoReset;
+#endif
+	} *JLEventHandler;
+
+	ALWAYS_INLINE bool JLEventOk( JLEventHandler ev ) {
+
+		return ev != (JLEventHandler)0;
+	}
+
+	ALWAYS_INLINE JLEventHandler JLEventCreate( bool autoReset ) {
+
+		JLEventHandler ev = (JLEventHandler)malloc(sizeof(*ev));
+		ev->autoReset = autoReset;
+	#if defined(XP_WIN)
+		InitializeCriticalSection(&ev->cs);
+		ev->waitingThreadCount = 0;
+//		ev->mx = CreateMutex(NULL, FALSE, NULL);
+		ev->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+		// see also: CreateSemaphore(NULL,0,1,NULL);
+	#elif defined(XP_UNIX)
+		pthread_mutex_init(&ev->mutex, 0);
+		pthread_cond_init(&ev->cond, 0);
+		ev->triggered = false;
+	#endif
+		return ev;
+	}
+
+	ALWAYS_INLINE int JLEventFree( JLEventHandler *ev ) {
+	#if defined(XP_WIN)
+		DeleteCriticalSection(&(*ev)->cs);
+		if ( CloseHandle((*ev)->hEvent) == 0 )
+			return JLERROR;
+	#elif defined(XP_UNIX)
+		if ( pthread_cond_destroy(&ev->cond) != 0 )
+			return JLERROR;
+		if ( pthread_mutex_destroy(&ev->mutex) != 0 )
+			return JLERROR;
+	#endif
+		free(*ev);
+		*ev = NULL;
+		return JLOK;
+	}
+
+	ALWAYS_INLINE int JLEventTrigger( JLEventHandler ev ) {
+	#if defined(XP_WIN)
+		
+		BOOL st = TRUE;
+
+		EnterCriticalSection(&ev->cs);
+		if ( ev->waitingThreadCount != 0 || !ev->autoReset )
+			st = SetEvent(ev->hEvent);
+		LeaveCriticalSection(&ev->cs);
+		
+		if ( st == FALSE )
+			return JLERROR;
+
+		//BOOL status = TRUE;
+		//WaitForSingleObject(ev->mx, INFINITE);
+		//if ( ev->waitingThreadCount != 0 || !ev->autoReset )
+		//	status = SetEvent(ev->hEvent);
+		//ReleaseMutex(ev->mx);
+		//if ( status == FALSE )
+		//	return JLERROR;
+
+	#elif defined(XP_UNIX)
+		pthread_mutex_lock(&ev->mutex);
+		ev->triggered = true;
+		pthread_cond_broadcast(&ev->cond); // pthread_cond_signal
+		if ( ev->autoReset )
+			ev->triggered = false;
+		pthread_mutex_unlock(&ev->mutex);
+	#endif
+		return JLOK;
+	}
+
+	ALWAYS_INLINE int JLEventReset( JLEventHandler ev ) {
+	#if defined(XP_WIN)
+
+		BOOL st = TRUE;
+		EnterCriticalSection(&ev->cs);
+		st = ResetEvent(ev->hEvent);
+		LeaveCriticalSection(&ev->cs);
+		if ( st == FALSE )
+			return JLERROR;
+
+	#elif defined(XP_UNIX)
+		pthread_mutex_lock(&ev->mutex);
+		ev->triggered = false;
+		pthread_mutex_unlock(&ev->mutex);
+	#endif
+		return JLOK;
+	}
+
+	// msTimeout = JLINFINITE : no timeout
+	ALWAYS_INLINE int JLEventWait( JLEventHandler ev, int msTimeout ) {
+	#if defined(XP_WIN)
+		
+		BOOL st = TRUE;
+		EnterCriticalSection(&ev->cs);
+		ev->waitingThreadCount++;
+		LeaveCriticalSection(&ev->cs);
+
+		DWORD status = WaitForSingleObject(ev->hEvent, msTimeout == JLINFINITE ? INFINITE : msTimeout);
+
+		EnterCriticalSection(&ev->cs);
+		ev->waitingThreadCount--;
+		if ( ev->waitingThreadCount == 0 && ev->autoReset )
+			st = ResetEvent(ev->hEvent);
+		LeaveCriticalSection(&ev->cs);
+		if ( st == FALSE || status == WAIT_FAILED )
+			return JLERROR;
+		if ( status == WAIT_OBJECT_0 )
+			return JLOK;
+		if ( status == WAIT_TIMEOUT )
+			return JLTIMEOUT;
+
+		//WaitForSingleObject(ev->mx, INFINITE);
+		//ev->waitingThreadCount++;
+		//DWORD status = SignalObjectAndWait(ev->mx, ev->hEvent, msTimeout == JLINFINITE ? INFINITE : msTimeout, FALSE);
+		//WaitForSingleObject(ev->mx, INFINITE);
+		//ev->waitingThreadCount--;
+		//if ( ev->waitingThreadCount == 0 && ev->autoReset )
+		//	ResetEvent(ev->hEvent);
+		//ReleaseMutex(ev->mx);
+
+	#elif defined(XP_UNIX)
+		if ( msTimeout == JLINFINITE ) {
+			
+		  pthread_mutex_lock(&ev->mutex);
+		  while ( !ev->triggered )
+				pthread_cond_wait(&ev->cond, &ev->mutex);
+		  pthread_mutex_unlock(&ev->mutex);
+		  return JLOK;
+		} else {
+
+			struct timespec ts;
+			if ( msTimeout == 0 ) {
+
+				ts.tv_sec = 0;
+				ts.tv_nsec = 0;
+			} else {
+			
+				struct timeval tv;
+				if ( gettimeofday(&tv, NULL) != 0 )
+					return JLERROR;
+				ts.tv_nsec = tv.tv_usec * 1000UL + (msTimeout % 1000)*1000000UL;
+				ts.tv_sec = tv.tv_sec + msTimeout / 1000UL + ts.tv_nsec / 1000000000UL;
+				ts.tv_nsec %= 1000000000UL;
+			}
+
+			int rc = 0;
+			pthread_mutex_lock(&ev->mutex);
+			while ( !ev->triggered && rc == 0 )
+				rc = pthread_cond_wait(&ev->cond, &ev->mutex, &ts);
+			pthread_mutex_unlock(&ev->mutex);
+			if ( rc == 0 )
+				return JLOK;
+			if ( rc == ETIMEDOUT )
+				return JLTIMEOUT;
+			}
+		}
+	#endif
+		return JLERROR;
+	}
 
 
 ///////////////////////////////////////////////////////////////////////////////
