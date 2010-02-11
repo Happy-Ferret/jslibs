@@ -14,11 +14,11 @@
 
 #include "stdafx.h"
 
+#include "queue.h"
+
 #include "static.h"
 #include "error.h"
 #include "sdl.h"
-
-#include <windows.h>
 
 #include "jslibsModule.cpp"
 
@@ -38,21 +38,37 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
+// video thread
 static SDL_Thread *videoThreadHandler;
-static JLEventHandler videoThreadReady;
 
-#define USEREVENT_END 0
-#define USEREVENT_SET_VIDEO_MODE 1
-#define USEREVENT_SWAP_BUFFERS 2
+// internal events management
+jl::Queue internalEventQueue;
+JLMutexHandler internalEventQueueMutex;
+static JLSemaphoreHandler internalEventSem;
 
-static JLEventHandler userEvent;
-JLEventHandler sdlEvent;
+#define INTERNALEVENT_END 0
+#define INTERNALEVENT_SET_VIDEO_MODE 1
+#define INTERNALEVENT_SWAP_BUFFERS 2
 
+struct InternalEvent {
+	
+	int type;
+	union {
+		struct {
+			int width; int height; int bpp; Uint32 flags;
+		} vm;
+	};
+};
+
+// SDL events avability
+JLSemaphoreHandler sdlEventsSem;
+
+// surface ready
 volatile bool surfaceReady;
 JLEventHandler surfaceReadyEvent;
 
-
-//static JLSemaphoreHandler contextAvailable;
+// OpenGL context owner management
+static JLSemaphoreHandler contextAvailable;
 static JLMutexHandler contextMutex;
 HGLRC _openglContext = NULL;
 HDC _deviceContext = NULL;
@@ -67,7 +83,7 @@ bool OwnGlContext() {
 
 void AcquireGlContext() {
 
-//	JLSemaphoreAcquire(contextAvailable, JLINFINITE);
+	JLSemaphoreAcquire(contextAvailable, JLINFINITE);
 	JLMutexAcquire(contextMutex);
 	JL_ASSERT( _deviceContext != NULL && _openglContext != NULL );
 	JL_ASSERT( wglGetCurrentDC() == NULL && wglGetCurrentContext() == NULL );
@@ -90,16 +106,11 @@ void ReleaseGlContext() {
 	BOOL st = wglMakeCurrent(NULL, NULL); // doc. makes the calling thread's current rendering context no longer current, and releases the device context that is used by the rendering context. In this case, hdc  is ignored.
 	JL_ASSERT( st );
 	JLMutexRelease(contextMutex);
-//	JLSemaphoreRelease(contextAvailable);
+	JLSemaphoreRelease(contextAvailable);
 }
 
 
-
-struct VideoMode {
-
-	int width; int height; int bpp; Uint32 flags;
-};
-
+// asynchronous API called from static.cpp
 void JLSetVideoMode(int width, int height, int bpp, Uint32 flags, bool async) {
 
 	bool hasSurface = (SDL_GetVideoSurface() != NULL);
@@ -112,18 +123,17 @@ void JLSetVideoMode(int width, int height, int bpp, Uint32 flags, bool async) {
 	if ( OwnGlContext() )
 		ReleaseGlContext();
 
-	VideoMode *vm = (VideoMode*)jl_malloc(sizeof(VideoMode));
-	vm->width = width;
-	vm->height = height;
-	vm->bpp = bpp;
-	vm->flags = flags;
+	InternalEvent *iev = (InternalEvent*)jl_malloc(sizeof(InternalEvent));
+	iev->type = INTERNALEVENT_SET_VIDEO_MODE;
+	iev->vm.width = width;
+	iev->vm.height = height;
+	iev->vm.bpp = bpp;
+	iev->vm.flags = flags;
+	JLMutexAcquire(internalEventQueueMutex);
+	jl::QueuePush(&internalEventQueue, iev);
+	JLMutexRelease(internalEventQueueMutex);
+	JLSemaphoreRelease(internalEventSem);
 
-	SDL_Event ev;
-	ev.type = SDL_USEREVENT;
-	ev.user.code = USEREVENT_SET_VIDEO_MODE;
-	ev.user.data1 = vm;
-	SDL_PushEvent(&ev);
-	JLEventTrigger(userEvent);
 	if ( async )
 		return;
 	while ( !surfaceReady )
@@ -142,11 +152,13 @@ void JLAsyncSwapBuffers(bool async) {
 	if ( OwnGlContext() )
 		ReleaseGlContext();
 
-	SDL_Event ev;
-	ev.type = SDL_USEREVENT;
-	ev.user.code = USEREVENT_SWAP_BUFFERS;
-	SDL_PushEvent(&ev);
-	JLEventTrigger(userEvent);
+	InternalEvent *iev = (InternalEvent*)jl_malloc(sizeof(InternalEvent));
+	iev->type = INTERNALEVENT_SWAP_BUFFERS;
+	JLMutexAcquire(internalEventQueueMutex);
+	jl::QueuePush(&internalEventQueue, iev);
+	JLMutexRelease(internalEventQueueMutex);
+	JLSemaphoreRelease(internalEventSem);
+
 	if ( async )
 		return;
 	while ( !surfaceReady )
@@ -158,6 +170,17 @@ void JLAsyncSwapBuffers(bool async) {
 int EventFilter( const SDL_Event *e ) {
 
 	if ( e->type == SDL_VIDEORESIZE ) {
+/*
+		AcquireGlContext();
+		const SDL_Surface* currentSurface = SDL_GetVideoSurface();
+		SDL_Surface *surface = SDL_SetVideoMode(e->resize.w, e->resize.h, currentSurface->format->BitsPerPixel, currentSurface->flags);
+		// const char *errorMessage = SDL_GetError();
+		JL_ASSERT( surface != NULL );
+		ReleaseGlContext();
+		surfaceReady = true;
+		int status = JLEventTrigger(surfaceReadyEvent);
+		JL_ASSERT( status == JLOK );
+*/
 	}
 	return 1; // 1, then the event will be added to the internal queue.
 }
@@ -168,59 +191,47 @@ int VideoThread( void *unused ) {
 	int status;
 	status = SDL_InitSubSystem(SDL_INIT_VIDEO); // (TBD) SDL_INIT_EVENTTHREAD on Linux ?
 	JL_ASSERT( status != -1 );
-	SDL_SetEventFilter(EventFilter);
-	JLEventTrigger(videoThreadReady);
-	SDL_PumpEvents();
 
-	SDL_Event ev;
-	for (;;) {
+	SDL_SetEventFilter(EventFilter);
+	JLSemaphoreRelease(sdlEventsSem); // first event = thread ready
+
+	bool end = false;
+	while ( !end ) {
 		
+		SDL_PumpEvents();
 		status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS);
 		JL_ASSERT( status != -1 );
-		if ( status == 0 ) {
+		if ( status == 1 )
+			JLSemaphoreRelease(sdlEventsSem);
 
-			JLEventWait(userEvent, 5);
-			SDL_PumpEvents();
+		int st = JLSemaphoreAcquire(internalEventSem, 5);
+		JL_ASSERT( st != JLERROR );
+		if ( st == JLTIMEOUT )
 			continue;
-		}
 
-		JL_ASSERT( status == 1 );
+		JLMutexAcquire(internalEventQueueMutex);
+		JL_ASSERT( !jl::QueueIsEmpty(&internalEventQueue) );
+		InternalEvent *iev = (InternalEvent*)jl::QueueShift(&internalEventQueue);
+		JLMutexRelease(internalEventQueueMutex);
 
-		status = SDL_PeepEvents(&ev, 1, SDL_GETEVENT, SDL_EVENTMASK(SDL_USEREVENT));
-		JL_ASSERT( status != -1 );
-		if ( status == 0 ) {
-			
-			JLEventTrigger(sdlEvent); // signal a non-user event
-			continue;
-		}
-
-		JL_ASSERT( ev.type == SDL_USEREVENT );
-
-		switch ( ev.user.code ) {
-			case USEREVENT_END:
-				goto end;
-			case USEREVENT_SET_VIDEO_MODE: {
+		switch ( iev->type ) {
+			case INTERNALEVENT_SET_VIDEO_MODE: {
 
 				bool hasSurface = (SDL_GetVideoSurface() != NULL);
 				if ( hasSurface )
 					AcquireGlContext();
-
-				VideoMode *vm = (VideoMode*)ev.user.data1;
-				SDL_Surface *surface = SDL_SetVideoMode(vm->width, vm->height, vm->bpp, vm->flags); // char *sdlError = SDL_GetError();
+				SDL_Surface *surface = SDL_SetVideoMode(iev->vm.width, iev->vm.height, iev->vm.bpp, iev->vm.flags); // char *sdlError = SDL_GetError();
 				JL_ASSERT( surface != NULL );
 				ReleaseGlContext();
 
 				surfaceReady = true;
 				status = JLEventTrigger(surfaceReadyEvent);
 				JL_ASSERT( status == JLOK );
-
-				jl_free(vm);
 				break;
 			}
-			case USEREVENT_SWAP_BUFFERS: {
+			case INTERNALEVENT_SWAP_BUFFERS: {
 
-				bool hasSurface = (SDL_GetVideoSurface() != NULL);
-				JL_ASSERT( hasSurface );
+				JL_ASSERT( SDL_GetVideoSurface() != NULL ); // has a surface
 
 				AcquireGlContext();
 				SDL_GL_SwapBuffers();
@@ -231,50 +242,64 @@ int VideoThread( void *unused ) {
 				JL_ASSERT( status == JLOK );
 				break;
 			}
+			case INTERNALEVENT_END:
+				end = true;
+				break;
 		}
+
+		jl_free(iev);
 	}
 
-end:
-//	AcquireGlContext();
+	AcquireGlContext();
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 	return 0;
 }
 
-
+// video initializaion
 void StartVideo() {
 
-//	contextAvailable = JLSemaphoreCreate(0);
+	jl::QueueInitialize(&internalEventQueue);
+	internalEventQueueMutex = JLMutexCreate();
+	internalEventSem = JLSemaphoreCreate(0);
+
+	contextAvailable = JLSemaphoreCreate(0);
 	contextMutex = JLMutexCreate();
-	sdlEvent = JLEventCreate(true);
-	userEvent = JLEventCreate(true);
 
 	surfaceReady = false;
 	surfaceReadyEvent = JLEventCreate(true);
 
-	videoThreadReady = JLEventCreate(false);
+	sdlEventsSem = JLSemaphoreCreate(0);
+
 	videoThreadHandler = SDL_CreateThread(VideoThread, NULL); // http://www.libsdl.org/intro.en/usingthreads.html
 	JL_ASSERT( videoThreadHandler != NULL ); // return ThrowSdlError(cx);
-	JLEventWait(videoThreadReady, JLINFINITE);
-	JLEventFree(&videoThreadReady);
+
+	JLSemaphoreAcquire(sdlEventsSem, JLINFINITE); // first event = thread ready
 }
 
 
 void EndVideo() {
 
-	SDL_Event ev;
-	ev.type = SDL_USEREVENT;
-	ev.user.code = USEREVENT_END;
-	SDL_PushEvent(&ev);
-	JLEventTrigger(userEvent);
+	InternalEvent *iev = (InternalEvent*)jl_malloc(sizeof(InternalEvent));
+	iev->type = INTERNALEVENT_END;
+
+	JLMutexAcquire(internalEventQueueMutex);
+	jl::QueuePush(&internalEventQueue, iev);
+	JLMutexRelease(internalEventQueueMutex);
+	JLSemaphoreRelease(internalEventSem);
 
 	SDL_WaitThread(videoThreadHandler, NULL);
 
 	JLEventFree(&surfaceReadyEvent);
-	JLEventFree(&userEvent);
-	JLEventFree(&sdlEvent);
+	JLSemaphoreFree(&sdlEventsSem);
 	JLMutexFree(&contextMutex);
-//	JLSemaphoreFree(&contextAvailable);
+	JLSemaphoreFree(&contextAvailable);
+
+	while ( !jl::QueueIsEmpty(&internalEventQueue) )
+		jl_free(jl::QueuePop(&internalEventQueue));
+	JLMutexFree(&internalEventQueueMutex);
+	JLSemaphoreFree(&internalEventSem);
 }
+
 
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
@@ -290,9 +315,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	if ( status != 0 )
 		return ThrowSdlError(cx);
-
 	SDL_EnableUNICODE(1);
-
 	StartVideo();
 
 	INIT_STATIC();

@@ -19,7 +19,7 @@
 
 #include "../jslang/handlePub.h"
 
-extern JLEventHandler sdlEvent;
+extern JLSemaphoreHandler sdlEventsSem;
 
 extern volatile bool surfaceReady;
 extern JLEventHandler surfaceReadyEvent;
@@ -1094,10 +1094,9 @@ static void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
 
 	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
 
-	int st;
 	while ( !surfaceReady && !upe->cancel ) {
 
-		st = JLEventWait(surfaceReadyEvent, JLINFINITE);
+		int st = JLEventWait(surfaceReadyEvent, JLINFINITE);
 		JL_ASSERT( st != JLERROR );
 	}
 }
@@ -1181,10 +1180,10 @@ static void SDLStartWait( volatile ProcessEvent *pe ) {
 	int status;
 	for (;;) {
 
-		JLEventWait(sdlEvent, JLINFINITE);
+		JLSemaphoreAcquire(sdlEventsSem, JLINFINITE);
 		if ( upe->cancel )
 			break;
-		status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS & ~SDL_EVENTMASK(SDL_USEREVENT));
+		status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS);
 		// JL_ASSERT( upe->cancel || status == 1 ); // (TBD) understand this case
 		if ( status == 1 )
 			break;
@@ -1195,7 +1194,7 @@ static bool SDLCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 	upe->cancel = true;
-	JLEventTrigger(sdlEvent);
+	JLSemaphoreRelease(sdlEventsSem);
 	return true;
 }
 
@@ -1212,7 +1211,7 @@ static JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *
 
 	for (;;) {
 
-		status = SDL_PeepEvents(ev, COUNTOF(ev), SDL_GETEVENT, SDL_ALLEVENTS & ~SDL_EVENTMASK(SDL_USEREVENT) );
+		status = SDL_PeepEvents(ev, COUNTOF(ev), SDL_GETEVENT, SDL_ALLEVENTS);
 		if ( status == -1 )
 			JL_CHK( ThrowSdlError(cx) );
 

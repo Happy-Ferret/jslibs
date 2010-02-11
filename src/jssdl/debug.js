@@ -25,11 +25,11 @@ var listeners = {
 
 		Print( w, 'x', h, '\n' );
 		SetVideoMode(w, h, undefined, undefined, true);
-//		Ogl.Viewport(0, 0, w, h);
+		Ogl.Viewport(0, 0, w, h);
 	}
 };
 
-SetVideoMode(320, 200, 32, HWACCEL | OPENGL | RESIZABLE, false); // | ASYNCBLIT
+SetVideoMode(100, 100, 32, HWACCEL | OPENGL | RESIZABLE, false); // | ASYNCBLIT
 
 Ogl.Viewport(0, 0, 32, 32);
 Ogl.ClearColor(0,0,0, 1);
@@ -43,7 +43,6 @@ function SurfaceReady() {
 	Ogl.Vertex(0,1);
 	Ogl.Vertex(1,0);
 	Ogl.End();
-	GlSwapBuffers(true);
 	GlSwapBuffers(true);
 }
 
