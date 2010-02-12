@@ -19,10 +19,15 @@
 
 #include "../jslang/handlePub.h"
 
+extern int maxFPS;
+
 extern JLSemaphoreHandler sdlEventsSem;
 
 extern volatile bool surfaceReady;
-extern JLEventHandler surfaceReadyEvent;
+extern JLCondHandler surfaceReadyCond;
+extern JLMutexHandler surfaceReadyLock;
+
+extern bool HasSurface();
 
 bool OwnGlContext();
 void AcquireGlContext();
@@ -217,7 +222,7 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 //	SDL_Surface *surface = SDL_SetVideoMode(width, height, bpp, flags);
 	JLSetVideoMode(width, height, bpp, flags, async);
 	
-	if ( !async && SDL_GetVideoSurface() == NULL )
+	if ( !async && !HasSurface() )
 		return ThrowSdlError(cx);
 
 	*JL_FRVAL = JSVAL_VOID;
@@ -1073,6 +1078,39 @@ DEFINE_PROPERTY( version ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME
+  Sets/Gets the frames per second limit. Use Infinity for no limit.
+**/
+DEFINE_PROPERTY_SETTER( maxFPS ) {
+
+	if ( JsvalIsPInfinity(cx, *vp) ) {
+
+		maxFPS = JLINFINITE;
+	} else {
+
+		unsigned int value;
+		JL_CHK( JsvalToUInt(cx, *vp, &value) );
+		maxFPS = value;
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_GETTER( maxFPS ) {
+
+	if ( maxFPS == JLINFINITE ) {
+		
+		*vp = JS_GetPositiveInfinityValue(cx);
+	} else {
+
+		JL_CHK( UIntToJsval(cx, maxFPS, vp) );
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 
 /**doc
@@ -1094,20 +1132,20 @@ static void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
 
 	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
 
-	while ( !surfaceReady && !upe->cancel ) {
-
-		int st = JLEventWait(surfaceReadyEvent, JLINFINITE);
-		JL_ASSERT( st != JLERROR );
-	}
+	JLMutexAcquire(surfaceReadyLock);
+	while ( !surfaceReady && !upe->cancel )
+		JLCondWait(surfaceReadyCond, surfaceReadyLock);
+	JLMutexRelease(surfaceReadyLock);
 }
 
 static bool SurfaceReadyCancelWait( volatile ProcessEvent *pe ) {
 
 	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
 
+	JLMutexAcquire(surfaceReadyLock);
 	upe->cancel = true;
-	int st = JLEventTrigger(surfaceReadyEvent);
-	JL_ASSERT( st != JLERROR );
+	JLCondBroadcast(surfaceReadyCond);
+	JLMutexRelease(surfaceReadyLock);
 	return true;
 }
 
@@ -1279,7 +1317,8 @@ CONFIGURE_STATIC
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-	
+
+		PROPERTY( maxFPS )
 		PROPERTY_WRITE( icon )
 		PROPERTY( caption )
 		PROPERTY( grabInput )

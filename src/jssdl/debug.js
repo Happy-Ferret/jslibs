@@ -2,10 +2,12 @@
 
 try { 
 
+LoadModule('jsdebug');
 LoadModule('jsstd');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
 
+maxFPS = 60;
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
@@ -23,19 +25,17 @@ var listeners = {
 	},
 	onVideoResize: function(w, h) {
 
-		Print( w, 'x', h, '\n' );
-		SetVideoMode(w, h, undefined, undefined, true);
+		ProcessEvents( SurfaceReadyEvents() );
 		Ogl.Viewport(0, 0, w, h);
 	}
 };
 
-SetVideoMode(100, 100, 32, HWACCEL | OPENGL | RESIZABLE, false); // | ASYNCBLIT
+SetVideoMode(100, 100, 32, HWACCEL | OPENGL | RESIZABLE, true); // | ASYNCBLIT
 
-Ogl.Viewport(0, 0, 32, 32);
-Ogl.ClearColor(0,0,0, 1);
 
 function SurfaceReady() {
 
+	Ogl.ClearColor(0,0,1, 1);
 	Ogl.Clear(Ogl.COLOR_BUFFER_BIT);
 	Ogl.Rotate(1,1,1, angle++);
 	Ogl.Begin(Ogl.TRIANGLES);
@@ -43,6 +43,7 @@ function SurfaceReady() {
 	Ogl.Vertex(0,1);
 	Ogl.Vertex(1,0);
 	Ogl.End();
+	Ogl.Flush();
 	GlSwapBuffers(true);
 }
 
@@ -52,7 +53,7 @@ while ( !endSignal ) {
 	var t0 = TimeCounter();
 	var e = ProcessEvents( SDLEvents(listeners), EndSignalEvents(), SurfaceReadyEvents(SurfaceReady) );
 	var t = TimeCounter() - t0;
-	Print((1000/t).toFixed(2), 'fps ' /*, e.toString(2), ' '*/,  '\n');
+//	Print((1000/t).toFixed(2), 'fps ' /*, e.toString(2), ' '*/,  '\n');
 }
 
 } catch(ex) {
@@ -61,6 +62,7 @@ while ( !endSignal ) {
 }
 
 Halt();
+
 
 
 //var count = MetaPoll( CoPool([s1, s2]), CoPollEvent(), CoWinCOMPoll(xhr), CoEndSignal() );
