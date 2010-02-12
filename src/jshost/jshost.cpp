@@ -43,7 +43,8 @@ static unsigned char embeddedBootstrapScript[] =
 
 
 volatile bool gEndSignalState = false;
-JLEventHandler gEndSignalEvent;
+JLCondHandler gEndSignalCond;
+JLMutexHandler gEndSignalLock;
 
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
@@ -55,8 +56,14 @@ JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	bool tmp;
 	JL_CHK( JsvalToBool(cx, *vp, &tmp) );
+
+	//gEndSignalState = tmp;
+	//JLEventTrigger(gEndSignalEvent);
+	JLMutexAcquire(gEndSignalLock);
 	gEndSignalState = tmp;
-	JLEventTrigger(gEndSignalEvent);
+	JLCondBroadcast(gEndSignalCond);
+	JLMutexRelease(gEndSignalLock);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -68,15 +75,27 @@ BOOL WINAPI Interrupt(DWORD CtrlType) {
 // see. http://msdn2.microsoft.com/en-us/library/ms683242.aspx
 //	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT) // CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
 //		return FALSE;
+
+	//gEndSignalState = true;
+	//JLEventTrigger(gEndSignalEvent);
+	JLMutexAcquire(gEndSignalLock);
 	gEndSignalState = true;
-	JLEventTrigger(gEndSignalEvent);
+	JLCondBroadcast(gEndSignalCond);
+	JLMutexRelease(gEndSignalLock);
+
 	return TRUE;
 }
 #else
 void Interrupt(int CtrlType) {
 
+	//gEndSignalState = true;
+	//JLEventTrigger(gEndSignalEvent);
+
+	JLMutexAcquire(gEndSignalLock);
 	gEndSignalState = true;
-	JLEventTrigger(gEndSignalEvent);
+	JLCondBroadcast(gEndSignalCond);
+	JLMutexRelease(gEndSignalLock);
+
 }
 #endif // XP_WIN
 
@@ -84,7 +103,8 @@ void Interrupt(int CtrlType) {
 struct UserProcessEvent {
 	
 	ProcessEvent pe;
-	volatile bool cancel;
+
+	bool cancel;
 	jsval callbackFunction;
 };
 
@@ -93,15 +113,26 @@ JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 static void EndSignalStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	//while ( !gEndSignalState && !upe->cancel )
+	//	// <- issue if EndSignalCancelWait occurs exactely here
+	//	JLEventWait(gEndSignalEvent, JLINFINITE);
+	JLMutexAcquire(gEndSignalLock);
 	while ( !gEndSignalState && !upe->cancel )
-		JLEventWait(gEndSignalEvent, -1);
+		JLCondWait(gEndSignalCond, gEndSignalLock);
+	JLMutexRelease(gEndSignalLock);
 }
 
 static bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	//upe->cancel = true;
+	//JLEventTrigger(gEndSignalEvent);
+
+	JLMutexAcquire(gEndSignalLock);
 	upe->cancel = true;
-	JLEventTrigger(gEndSignalEvent);
+	JLCondBroadcast(gEndSignalCond);
+	JLMutexRelease(gEndSignalLock);
+
 	return true;
 }
 
@@ -320,7 +351,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JSObject *globalObject;
 	globalObject = JS_GetGlobalObject(cx);
 
-	gEndSignalEvent = JLEventCreate(true);
+//	gEndSignalEvent = JLEventCreate(true);
+	gEndSignalCond = JLCondCreate();
+	gEndSignalLock = JLMutexCreate();
+
 	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
 	JL_CHK( JS_DefineFunction(cx, globalObject, "EndSignalEvents", (JSNative)EndSignalEvents, 0, JSPROP_SHARED | JSPROP_PERMANENT | JSFUN_FAST_NATIVE) );
 

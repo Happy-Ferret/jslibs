@@ -1090,6 +1090,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 	typedef struct {
 #if defined(XP_WIN)
 		CRITICAL_SECTION cs;
+//		HANDLE mx;
 #elif defined(XP_UNIX)
 		pthread_mutex_t mx;
 #endif
@@ -1100,8 +1101,12 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		JLMutexHandler mutex = (JLMutexHandler)malloc(sizeof(*mutex));
 	#if defined(XP_WIN)
 		InitializeCriticalSection(&mutex->cs);
+//		mutex->mx = CreateMutex(NULL, FALSE, NULL);
+//		if ( mutex->mx == NULL )
+//			return NULL;
 	#elif defined(XP_UNIX)
-		pthread_mutex_init(&mutex->mx, NULL);
+		int st = pthread_mutex_init(&mutex->mx, NULL);
+		JL_ASSERT( st == 0 );
 	#endif
 		return mutex;
 	}
@@ -1111,45 +1116,42 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		return mutex != (JLMutexHandler)0;
 	}
 
-	ALWAYS_INLINE int JLMutexFree( JLMutexHandler *mutex ) {
+	ALWAYS_INLINE void JLMutexFree( JLMutexHandler *mutex ) {
 
-		if ( !*mutex || !JLMutexOk(*mutex) )
-			return JLERROR;
+		JL_ASSERT( *mutex != NULL && JLMutexOk(*mutex) );
 	#if defined(XP_WIN)
 		DeleteCriticalSection(&(*mutex)->cs);
+//		CloseHandle((*mutex)->mx);
 	#elif defined(XP_UNIX)
-		if ( pthread_mutex_destroy(&(*mutex)->mx) != 0 )
-			return JLERROR;
+		int st = pthread_mutex_destroy(&(*mutex)->mx);
+		JL_ASSERT( st == 0 );
 	#endif
 		free(*mutex);
 		*mutex = (JLMutexHandler)0;
-		return JLOK;
 	}
 
-	ALWAYS_INLINE int JLMutexAcquire( JLMutexHandler mutex ) {
+	ALWAYS_INLINE void JLMutexAcquire( JLMutexHandler mutex ) {
 
-		if ( !JLMutexOk(mutex) )
-			return JLERROR;
+		JL_ASSERT( JLMutexOk(mutex) );
 	#if defined(XP_WIN)
 		EnterCriticalSection(&mutex->cs);
+//		WaitForSingleObject(mutex->mx, INFINITE);
 	#elif defined(XP_UNIX)
-		if ( pthread_mutex_lock(&mutex->mx) != 0 )
-			return JLERROR;
+		int st = pthread_mutex_lock(&mutex->mx);
+		JL_ASSERT( st == 0 );
 	#endif
-		return JLOK;
 	}
 
-	ALWAYS_INLINE int JLMutexRelease( JLMutexHandler mutex ) {
+	ALWAYS_INLINE void JLMutexRelease( JLMutexHandler mutex ) {
 
-		if ( !JLMutexOk(mutex) )
-			return JLERROR;
+		JL_ASSERT( JLMutexOk(mutex) );
 	#if defined(XP_WIN)
 		LeaveCriticalSection(&mutex->cs);
+//		ReleaseMutex(mutex->mx);
 	#elif defined(XP_UNIX)
-		if ( pthread_mutex_unlock(&mutex->mx) != 0 )
-			return JLERROR;
+		int st = pthread_mutex_unlock(&mutex->mx);
+		JL_ASSERT( st == 0 );
 	#endif
-		return JLOK;
 	}
 
 
@@ -1158,71 +1160,285 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 //
 // see http://www.cs.wustl.edu/~schmidt/win32-cv-1.html (Strategies for Implementing POSIX Condition Variables on Win32)
 
+
 #if defined(XP_WIN)
 
 typedef struct {
-
 	unsigned int waiters_count;
-	CRITICAL_SECTION waiters_count_lock;
+	// doc. waiters_count_lock_ protects the waiters_count_ from being corrupted by race conditions.
+	//      This is not necessary as long as pthread_cond_signal and pthread_cond_broadcast are always called by a thread that has locked the same external_mutex used by pthread_cond_wait.
+	// CRITICAL_SECTION waiters_count_lock; 
 	HANDLE events[2]; // [signal, broadcast]
-} *JLCondHandle;
+} *JLCondHandler;
 
 
-ALWAYS_INLINE JLCondHandle JLCondCreate() {
+ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
+	
+	return cv != (JLCondHandler)0;
+}
 
-	JLCondHandle cv = (JLCondHandle)malloc(sizeof(*cv));
+ALWAYS_INLINE JLCondHandler JLCondCreate() {
+
+	JLCondHandler cv = (JLCondHandler)malloc(sizeof(*cv));
 	cv->waiters_count = 0;
-	InitializeCriticalSection(&cv->waiters_count_lock);
+//	InitializeCriticalSection(&cv->waiters_count_lock);
 	cv->events[0] = CreateEvent(NULL, FALSE, FALSE, NULL);
+	JL_ASSERT( cv->events[0] != NULL );
 	cv->events[1] = CreateEvent(NULL, TRUE, FALSE, NULL);
+	JL_ASSERT( cv->events[1] != NULL );
 	return cv;
 }
 
-ALWAYS_INLINE int JLCondFree( JLCondHandle *cv ) {
+ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 
-	CloseHandle((*cv)->events[1]);
-	CloseHandle((*cv)->events[0]);
-	DeleteCriticalSection(&(*cv)->waiters_count_lock);
+	JL_ASSERT( JLCondOk(*cv) );
+	BOOL st = CloseHandle((*cv)->events[1]);
+	JL_ASSERT( st );
+	st = CloseHandle((*cv)->events[0]);
+	JL_ASSERT( st );
+//	DeleteCriticalSection(&(*cv)->waiters_count_lock);
 	free(*cv);
 	*cv = NULL;
-	return JLOK;
 }
 
-ALWAYS_INLINE int JLCondWait( JLCondHandle cv, JLMutexHandler external_mutex ) {
+ALWAYS_INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
   
-	EnterCriticalSection(&cv->waiters_count_lock);
+	JL_ASSERT( JLCondOk(cv) );
+//	EnterCriticalSection(&cv->waiters_count_lock);
 	cv->waiters_count++;
-	LeaveCriticalSection(&cv->waiters_count_lock);
+//	LeaveCriticalSection(&cv->waiters_count_lock);
 	JLMutexRelease(external_mutex);
 	int result = WaitForMultipleObjects(2, cv->events, FALSE, INFINITE);
-	EnterCriticalSection(&cv->waiters_count_lock);
+	JL_ASSERT( result != WAIT_FAILED );
+//	EnterCriticalSection(&cv->waiters_count_lock);
 	cv->waiters_count--;
 	int last_waiter = result == WAIT_OBJECT_0 + 1 && cv->waiters_count == 0;
-	LeaveCriticalSection(&cv->waiters_count_lock);
-	if ( last_waiter )
-		ResetEvent(cv->events[1]); 
+//	LeaveCriticalSection(&cv->waiters_count_lock);
+	if ( last_waiter ) {
+
+		BOOL st = ResetEvent(cv->events[1]);
+		JL_ASSERT( st );
+	}
 	JLMutexAcquire(external_mutex);
 	return JLOK;
 }
 
-ALWAYS_INLINE int JLCondBroadcast( JLCondHandle cv ) {
-
-	EnterCriticalSection(&cv->waiters_count_lock);
+ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
+	
+	JL_ASSERT( JLCondOk(cv) );
+//	EnterCriticalSection(&cv->waiters_count_lock);
 	int have_waiters = cv->waiters_count > 0;
-	LeaveCriticalSection(&cv->waiters_count_lock);
-	if ( have_waiters )
-		SetEvent(cv->events[1]);
+//	LeaveCriticalSection(&cv->waiters_count_lock);
+	if ( have_waiters ) {
+
+		BOOL st = SetEvent(cv->events[1]);
+		JL_ASSERT( st );
+	}
+}
+
+ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
+
+	JL_ASSERT( JLCondOk(cv) );
+//	EnterCriticalSection(&cv->waiters_count_lock);
+	int have_waiters = cv->waiters_count > 0;
+//	LeaveCriticalSection(&cv->waiters_count_lock);
+	if ( have_waiters ) {
+
+		BOOL st = SetEvent(cv->events[0]);
+		JL_ASSERT( st );
+	}
+}
+
+
+
+/*
+typedef struct {
+	int waiters_count_;
+	// Number of waiting threads.
+
+//	CRITICAL_SECTION global_lock;
+	CRITICAL_SECTION waiters_count_lock_;
+	// Serialize access to <waiters_count_>.
+
+	HANDLE sema_;
+	// Semaphore used to queue up threads waiting for the condition to
+	// become signaled. 
+
+	HANDLE waiters_done_;
+	// An auto-reset event used by the broadcast/signal thread to wait
+	// for all the waiting thread(s) to wake up and be released from the
+	// semaphore. 
+
+	size_t was_broadcast_;
+	// Keeps track of whether we were broadcasting or signaling.  This
+	// allows us to optimize the code if we're just signaling.
+} *JLCondHandler;
+
+
+ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
+
+	return cv != (JLCondHandler)0;
+}
+
+ALWAYS_INLINE JLCondHandler JLCondCreate() {
+
+	JLCondHandler cv = (JLCondHandler)malloc(sizeof(*cv));
+	cv->waiters_count_ = 0;
+	cv->was_broadcast_ = 0;
+	cv->sema_ = CreateSemaphore(NULL, 0, 0x7fffffff, NULL);
+	InitializeCriticalSection (&cv->waiters_count_lock_);
+//	InitializeCriticalSection (&cv->global_lock);
+	cv->waiters_done_ = CreateEvent (NULL, FALSE, FALSE, NULL);
+	return cv;
+}
+
+
+ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
+
+	JL_ASSERT( JLCondOk(*cv) );
+	BOOL st = CloseHandle((*cv)->sema_);
+	JL_ASSERT( st );
+	DeleteCriticalSection(&(*cv)->waiters_count_lock_);
+//	DeleteCriticalSection(&(*cv)->global_lock);
+	free(*cv);
+	*cv = NULL;
+}
+
+
+ALWAYS_INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
+
+//  EnterCriticalSection (&cv->global_lock);
+
+  EnterCriticalSection (&cv->waiters_count_lock_);
+  cv->waiters_count_++;
+  LeaveCriticalSection (&cv->waiters_count_lock_);
+
+  SignalObjectAndWait(external_mutex->mx, cv->sema_, INFINITE, FALSE);
+
+  // Reacquire lock to avoid race conditions.
+  EnterCriticalSection (&cv->waiters_count_lock_);
+
+  // We're no longer waiting...
+  cv->waiters_count_--;
+
+  // Check to see if we're the last waiter after <pthread_cond_broadcast>.
+  int last_waiter = cv->was_broadcast_ && cv->waiters_count_ == 0;
+
+  LeaveCriticalSection (&cv->waiters_count_lock_);
+
+  // If we're the last waiter thread during this particular broadcast
+  // then let all the other threads proceed.
+  if (last_waiter)
+    // This call atomically signals the <waiters_done_> event and waits until
+    // it can acquire the <external_mutex>.  This is required to ensure fairness. 
+	 SignalObjectAndWait (cv->waiters_done_, external_mutex->mx, INFINITE, FALSE);
+  else
+    // Always regain the external mutex since that's the guarantee we
+    // give to our callers. 
+	 WaitForSingleObject(external_mutex->mx, INFINITE);
+
+//  LeaveCriticalSection (&cv->global_lock);
+
+  return JLOK;
+}
+
+
+ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
+
+//  EnterCriticalSection (&cv->global_lock);
+
+  EnterCriticalSection (&cv->waiters_count_lock_);
+  int have_waiters = cv->waiters_count_ > 0;
+  LeaveCriticalSection (&cv->waiters_count_lock_);
+
+  // If there aren't any waiters, then this is a no-op.  
+  if (have_waiters)
+    ReleaseSemaphore (cv->sema_, 1, 0);
+
+//  LeaveCriticalSection (&cv->global_lock);
+}
+
+
+ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
+
+//  EnterCriticalSection (&cv->global_lock);
+
+  // This is needed to ensure that <waiters_count_> and <was_broadcast_> are
+  // consistent relative to each other.
+  EnterCriticalSection (&cv->waiters_count_lock_);
+  int have_waiters = 0;
+
+  if (cv->waiters_count_ > 0) {
+    // We are broadcasting, even if there is just one waiter...
+    // Record that we are broadcasting, which helps optimize
+    // <pthread_cond_wait> for the non-broadcast case.
+    cv->was_broadcast_ = 1;
+    have_waiters = 1;
+  }
+
+  if (have_waiters) {
+    // Wake up all the waiters atomically.
+    ReleaseSemaphore (cv->sema_, cv->waiters_count_, 0);
+
+    LeaveCriticalSection (&cv->waiters_count_lock_);
+
+    // Wait for all the awakened threads to acquire the counting
+    // semaphore. 
+    WaitForSingleObject (cv->waiters_done_, INFINITE);
+    // This assignment is okay, even without the <waiters_count_lock_> held 
+    // because no other waiter threads can wake up to access it.
+    cv->was_broadcast_ = 0;
+  }
+  else
+    LeaveCriticalSection (&cv->waiters_count_lock_);
+
+//  LeaveCriticalSection (&cv->global_lock);
+}
+*/
+
+#elif defined(XP_UNIX)
+
+typedef struct {
+	pthread_cond_t cond;
+} *JLCondHandler;
+
+ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
+	
+	return cv != (JLCondHandler)0;
+}
+
+ALWAYS_INLINE JLCondHandler JLCondCreate() {
+
+	JLCondHandler cv = (JLCondHandler)malloc(sizeof(*cv));
+	cv->cond = PTHREAD_COND_INITIALIZER;
+	return cv;
+}
+
+ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
+
+	JL_ASSERT( JLCondOk(*cv) );
+	pthread_cond_destroy(&(*cv)->cond);
+	free(*cv);
+	*cv = NULL;
+}
+
+ALWAYS_INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
+  
+	JL_ASSERT( JLCondOk(cv) );
+	pthread_cond_wait(&cv->cond, external_mutex->mx);
 	return JLOK;
 }
 
-ALWAYS_INLINE int JLCondSignal( JLCondHandle cv ) {
+ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
+	
+	JL_ASSERT( JLCondOk(cv) );
+	pthread_cond_broadcast(&cv->cond);
+}
 
-	EnterCriticalSection(&cv->waiters_count_lock);
-	int have_waiters = cv->waiters_count > 0;
-	LeaveCriticalSection(&cv->waiters_count_lock);
-	if ( have_waiters )
-		SetEvent(cv->events[0]);
-	return JLOK;
+ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
+
+	JL_ASSERT( JLCondOk(cv) );
+	pthread_cond_signal(&cv->cond);
 }
 
 #endif
@@ -1235,17 +1451,15 @@ ALWAYS_INLINE int JLCondSignal( JLCondHandle cv ) {
 
 	typedef struct {
 #if defined(XP_WIN)
-		volatile LONG waitingThreadCount;
-		CRITICAL_SECTION cs;
-//		HANDLE mx;
 		HANDLE hEvent;
-		bool autoReset;
+		LONG waitingThreadCount;
+		CRITICAL_SECTION cs;
 #elif defined(XP_UNIX)
 		pthread_mutex_t mutex;
 		pthread_cond_t cond;
 		bool triggered;
-		bool autoReset;
 #endif
+		bool autoReset;
 	} *JLEventHandler;
 
 	ALWAYS_INLINE bool JLEventOk( JLEventHandler ev ) {
@@ -1256,13 +1470,16 @@ ALWAYS_INLINE int JLCondSignal( JLCondHandle cv ) {
 	ALWAYS_INLINE JLEventHandler JLEventCreate( bool autoReset ) {
 
 		JLEventHandler ev = (JLEventHandler)malloc(sizeof(*ev));
+		if ( ev == NULL )
+			return NULL;
 		ev->autoReset = autoReset;
 	#if defined(XP_WIN)
 		InitializeCriticalSection(&ev->cs);
 		ev->waitingThreadCount = 0;
-//		ev->mx = CreateMutex(NULL, FALSE, NULL);
 		ev->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-		// see also: CreateSemaphore(NULL,0,1,NULL);
+		if ( ev->hEvent == NULL )
+			return NULL;
+
 	#elif defined(XP_UNIX)
 		pthread_mutex_init(&ev->mutex, 0);
 		pthread_cond_init(&ev->cond, 0);
@@ -1271,42 +1488,35 @@ ALWAYS_INLINE int JLCondSignal( JLCondHandle cv ) {
 		return ev;
 	}
 
-	ALWAYS_INLINE int JLEventFree( JLEventHandler *ev ) {
+	ALWAYS_INLINE void JLEventFree( JLEventHandler *ev ) {
+
+		JL_ASSERT( JLEventOk(*ev) );
 	#if defined(XP_WIN)
 		DeleteCriticalSection(&(*ev)->cs);
-		if ( CloseHandle((*ev)->hEvent) == 0 )
-			return JLERROR;
+		BOOL st = CloseHandle((*ev)->hEvent);
+		JL_ASSERT( st );
 	#elif defined(XP_UNIX)
-		if ( pthread_cond_destroy(&ev->cond) != 0 )
-			return JLERROR;
-		if ( pthread_mutex_destroy(&ev->mutex) != 0 )
-			return JLERROR;
+		int st = pthread_cond_destroy(&ev->cond);
+		JL_ASSERT( st == 0 );
+		st = pthread_mutex_destroy(&ev->mutex);
+		JL_ASSERT( st == 0 );
 	#endif
 		free(*ev);
 		*ev = NULL;
-		return JLOK;
 	}
 
-	ALWAYS_INLINE int JLEventTrigger( JLEventHandler ev ) {
-	#if defined(XP_WIN)
+	ALWAYS_INLINE void JLEventTrigger( JLEventHandler ev ) {
 		
-		BOOL st = TRUE;
+		JL_ASSERT( JLEventOk(ev) );
+	#if defined(XP_WIN)
 
 		EnterCriticalSection(&ev->cs);
-		if ( ev->waitingThreadCount != 0 || !ev->autoReset )
-			st = SetEvent(ev->hEvent);
-		LeaveCriticalSection(&ev->cs);
-		
-		if ( st == FALSE )
-			return JLERROR;
+		if ( ev->waitingThreadCount != 0 || !ev->autoReset ) {
 
-		//BOOL status = TRUE;
-		//WaitForSingleObject(ev->mx, INFINITE);
-		//if ( ev->waitingThreadCount != 0 || !ev->autoReset )
-		//	status = SetEvent(ev->hEvent);
-		//ReleaseMutex(ev->mx);
-		//if ( status == FALSE )
-		//	return JLERROR;
+			BOOL st = SetEvent(ev->hEvent);
+			JL_ASSERT( st );
+		}
+		LeaveCriticalSection(&ev->cs);
 
 	#elif defined(XP_UNIX)
 		pthread_mutex_lock(&ev->mutex);
@@ -1316,32 +1526,29 @@ ALWAYS_INLINE int JLCondSignal( JLCondHandle cv ) {
 			ev->triggered = false;
 		pthread_mutex_unlock(&ev->mutex);
 	#endif
-		return JLOK;
 	}
 
-	ALWAYS_INLINE int JLEventReset( JLEventHandler ev ) {
+	ALWAYS_INLINE void JLEventReset( JLEventHandler ev ) {
+
+		JL_ASSERT( JLEventOk(ev) );
 	#if defined(XP_WIN)
 
-		BOOL st = TRUE;
 		EnterCriticalSection(&ev->cs);
-		st = ResetEvent(ev->hEvent);
+		BOOL st = ResetEvent(ev->hEvent);
+		JL_ASSERT( st == TRUE );
 		LeaveCriticalSection(&ev->cs);
-		if ( st == FALSE )
-			return JLERROR;
 
 	#elif defined(XP_UNIX)
 		pthread_mutex_lock(&ev->mutex);
 		ev->triggered = false;
 		pthread_mutex_unlock(&ev->mutex);
 	#endif
-		return JLOK;
 	}
 
 	// msTimeout = JLINFINITE : no timeout
 	ALWAYS_INLINE int JLEventWait( JLEventHandler ev, int msTimeout ) {
 	#if defined(XP_WIN)
 		
-		BOOL st = TRUE;
 		EnterCriticalSection(&ev->cs);
 		ev->waitingThreadCount++;
 		LeaveCriticalSection(&ev->cs);
@@ -1350,24 +1557,17 @@ ALWAYS_INLINE int JLCondSignal( JLCondHandle cv ) {
 
 		EnterCriticalSection(&ev->cs);
 		ev->waitingThreadCount--;
-		if ( ev->waitingThreadCount == 0 && ev->autoReset )
-			st = ResetEvent(ev->hEvent);
+		if ( ev->waitingThreadCount == 0 && ev->autoReset ) {
+			
+			BOOL st = ResetEvent(ev->hEvent);
+			JL_ASSERT( st == TRUE );
+		}
 		LeaveCriticalSection(&ev->cs);
-		if ( st == FALSE || status == WAIT_FAILED )
-			return JLERROR;
 		if ( status == WAIT_OBJECT_0 )
 			return JLOK;
 		if ( status == WAIT_TIMEOUT )
 			return JLTIMEOUT;
-
-		//WaitForSingleObject(ev->mx, INFINITE);
-		//ev->waitingThreadCount++;
-		//DWORD status = SignalObjectAndWait(ev->mx, ev->hEvent, msTimeout == JLINFINITE ? INFINITE : msTimeout, FALSE);
-		//WaitForSingleObject(ev->mx, INFINITE);
-		//ev->waitingThreadCount--;
-		//if ( ev->waitingThreadCount == 0 && ev->autoReset )
-		//	ResetEvent(ev->hEvent);
-		//ReleaseMutex(ev->mx);
+		return JLERROR;
 
 	#elif defined(XP_UNIX)
 		if ( msTimeout == JLINFINITE ) {
@@ -1405,8 +1605,8 @@ ALWAYS_INLINE int JLCondSignal( JLCondHandle cv ) {
 				return JLTIMEOUT;
 			}
 		}
-	#endif
 		return JLERROR;
+	#endif
 	}
 
 

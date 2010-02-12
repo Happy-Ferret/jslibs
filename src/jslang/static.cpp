@@ -292,8 +292,7 @@ static bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	int st = JLEventTrigger(upe->cancel);
-	JL_ASSERT( st );
+	JLEventTrigger(upe->cancel);
 	return true;
 }
 
@@ -301,8 +300,7 @@ static JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSConte
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	int st = JLEventFree(&upe->cancel);
-	JL_ASSERT( st );
+	JLEventFree(&upe->cancel);
 	*hasEvent = !upe->canceled;
 	if ( !*hasEvent )
 		return JS_TRUE;

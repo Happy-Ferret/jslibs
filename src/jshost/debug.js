@@ -9,9 +9,15 @@
 LoadModule('jsstd');
 
 
+while ( !endSignal )
+	ProcessEvents( EndSignalEvents() ); // MetaPollTimeout(50)
+
+Halt();
+
+
 var t0 = TimeCounter();
 var i = 0;
-while ( i++ < 100000 )
+while ( i++ < 1000 )
 	ProcessEvents( TimeoutEvents(0), TimeoutEvents(0), TimeoutEvents(0), TimeoutEvents(0), TimeoutEvents(0), TimeoutEvents(0), TimeoutEvents(0), TimeoutEvents(0) );
 
 Print( (TimeCounter() - t0).toFixed(3), ' ', i,  '\n' );
