@@ -27,6 +27,7 @@ var listeners = {
 
 		ProcessEvents( SurfaceReadyEvents() );
 		Ogl.Viewport(0, 0, w, h);
+		Print(w,'x',h, '\n');
 	}
 };
 

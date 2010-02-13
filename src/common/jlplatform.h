@@ -283,7 +283,7 @@ template<class T> ALWAYS_INLINE T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b
 #define JL_Failed( message, filename, lineno ) \
 JL_MACRO_BEGIN \
 	fprintf(stderr, "jslibs assertion failure: %s, at %s:%d\n", message, filename, lineno); \
-	DebugBreak(); exit(3); abort(); \
+	DebugBreak(); /*exit(3);*/ abort(); \
 JL_MACRO_END
 #elif defined(XP_OS2) || (defined(__GNUC__) && defined(__i386))
 #define JL_Assert( message, filename, lineno ) \
@@ -965,7 +965,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		return CreateSemaphore(NULL, initCount, LONG_MAX, NULL);
 	#elif defined(XP_UNIX)
 		sem_t *sem = (sem_t*)malloc(sizeof(sem_t)); // (TBD) max ???
-		if ( !sem )
+		if ( sem == NULL )
 			return NULL;
 		sem_init(sem, 0, initCount);
 		return sem;
@@ -996,20 +996,20 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 	// returns true on a sucessfuly semaphore locked.
 	ALWAYS_INLINE int JLSemaphoreAcquire( JLSemaphoreHandler semaphore, int msTimeout ) {
 
-		if ( !JLSemaphoreOk(semaphore) )
-			return JLERROR;
+		JL_ASSERT( JLSemaphoreOk(semaphore) );
 	#if defined(XP_WIN)
-		switch ( WaitForSingleObject(semaphore, msTimeout == JLINFINITE ? INFINITE : msTimeout) ) {
-			case WAIT_TIMEOUT:
-				return JLTIMEOUT;
-			case WAIT_OBJECT_0:
-				return JLOK;
-		}
+		DWORD status = WaitForSingleObject(semaphore, msTimeout == JLINFINITE ? INFINITE : msTimeout);
+		JL_ASSERT( status != WAIT_FAILED );
+		if ( status == WAIT_TIMEOUT )
+			return JLTIMEOUT;
+		return JLOK;
 	#elif defined(XP_UNIX)
+		int st;
 		if ( msTimeout == JLINFINITE ) {
 			
-			if ( sem_wait(semaphore) == 0 )
-				return JLOK;
+			st = sem_wait(semaphore);
+			JL_ASSERT( st == 0 );
+			return JLOK;
 		} else {
 
 			struct timespec ts;
@@ -1031,45 +1031,40 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 				ts.tv_sec = tv.tv_sec + msTimeout / 1000UL + ts.tv_nsec / 1000000000UL;
 				ts.tv_nsec %= 1000000000UL;
 			}
-			switch ( sem_timedwait(semaphore, &ts) ) {
-				case ETIMEDOUT:
-					return JLTIMEOUT;
-				case 0:
-					return JLOK;
-			}
+			st = sem_timedwait(semaphore, &ts);
+			if ( st == ETIMEDOUT )
+				return JLTIMEOUT;
+			JL_ASSERT( st == 0 );
+			return JLOK;
 		}
-	#endif
 		return JLERROR;
-	}
-
-	ALWAYS_INLINE int JLSemaphoreRelease( JLSemaphoreHandler semaphore ) {
-
-		if ( !JLSemaphoreOk(semaphore) )
-			return JLERROR;
-	#if defined(XP_WIN)
-		if ( ReleaseSemaphore(semaphore, 1, NULL) == 0 )
-			return JLERROR;
-	#elif defined(XP_UNIX)
-		if ( sem_post(semaphore) != 0 )
-			return JLERROR;
 	#endif
-		return JLOK;
 	}
 
-	ALWAYS_INLINE int JLSemaphoreFree( JLSemaphoreHandler *pSemaphore ) {
+	ALWAYS_INLINE void JLSemaphoreRelease( JLSemaphoreHandler semaphore ) {
 
-		if ( !pSemaphore || !JLSemaphoreOk(*pSemaphore) )
-			return JLERROR;
+		JL_ASSERT( JLSemaphoreOk(semaphore) );
 	#if defined(XP_WIN)
-		if ( CloseHandle(*pSemaphore) == 0 )
-			return JLERROR;
+		BOOL st = ReleaseSemaphore(semaphore, 1, NULL);
+		JL_ASSERT( st != FALSE );
 	#elif defined(XP_UNIX)
-		if ( sem_destroy(*pSemaphore) != 0 )
-			return JLERROR;
+		int st = sem_post(semaphore);
+		JL_ASSERT( st == 0 )
+	#endif
+	}
+
+	ALWAYS_INLINE void JLSemaphoreFree( JLSemaphoreHandler *pSemaphore ) {
+
+		JL_ASSERT( pSemaphore != NULL && JLSemaphoreOk(*pSemaphore) );
+	#if defined(XP_WIN)
+		BOOL st = CloseHandle(*pSemaphore);
+		JL_ASSERT( st != FALSE );
+	#elif defined(XP_UNIX)
+		int st = sem_destroy(*pSemaphore);
+		JL_ASSERT( st == 0 );
 		free(*pSemaphore);
 	#endif
 		*pSemaphore = (JLSemaphoreHandler)0;
-		return JLOK;
 	}
 
 
@@ -1096,9 +1091,16 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 #endif
 	} *JLMutexHandler;
 
+	ALWAYS_INLINE bool JLMutexOk( JLMutexHandler mutex ) {
+
+		return mutex != (JLMutexHandler)0;
+	}
+
 	ALWAYS_INLINE JLMutexHandler JLMutexCreate() {
 		
 		JLMutexHandler mutex = (JLMutexHandler)malloc(sizeof(*mutex));
+		if ( mutex == NULL )
+			return NULL;
 	#if defined(XP_WIN)
 		InitializeCriticalSection(&mutex->cs);
 //		mutex->mx = CreateMutex(NULL, FALSE, NULL);
@@ -1111,23 +1113,18 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		return mutex;
 	}
 
-	ALWAYS_INLINE bool JLMutexOk( JLMutexHandler mutex ) {
+	ALWAYS_INLINE void JLMutexFree( JLMutexHandler *pMutex ) {
 
-		return mutex != (JLMutexHandler)0;
-	}
-
-	ALWAYS_INLINE void JLMutexFree( JLMutexHandler *mutex ) {
-
-		JL_ASSERT( *mutex != NULL && JLMutexOk(*mutex) );
+		JL_ASSERT( *pMutex != NULL && JLMutexOk(*pMutex) );
 	#if defined(XP_WIN)
-		DeleteCriticalSection(&(*mutex)->cs);
+		DeleteCriticalSection(&(*pMutex)->cs);
 //		CloseHandle((*mutex)->mx);
 	#elif defined(XP_UNIX)
-		int st = pthread_mutex_destroy(&(*mutex)->mx);
+		int st = pthread_mutex_destroy(&(*pMutex)->mx);
 		JL_ASSERT( st == 0 );
 	#endif
-		free(*mutex);
-		*mutex = (JLMutexHandler)0;
+		free(*pMutex);
+		*pMutex = (JLMutexHandler)0;
 	}
 
 	ALWAYS_INLINE void JLMutexAcquire( JLMutexHandler mutex ) {
@@ -1180,6 +1177,8 @@ ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
 ALWAYS_INLINE JLCondHandler JLCondCreate() {
 
 	JLCondHandler cv = (JLCondHandler)malloc(sizeof(*cv));
+	if ( cv == NULL )
+		return NULL;
 	cv->waiters_count = 0;
 //	InitializeCriticalSection(&cv->waiters_count_lock);
 	cv->events[0] = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -1191,11 +1190,11 @@ ALWAYS_INLINE JLCondHandler JLCondCreate() {
 
 ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 
-	JL_ASSERT( JLCondOk(*cv) );
+	JL_ASSERT( cv != NULL && JLCondOk(*cv) );
 	BOOL st = CloseHandle((*cv)->events[1]);
-	JL_ASSERT( st );
+	JL_ASSERT( st != FALSE );
 	st = CloseHandle((*cv)->events[0]);
-	JL_ASSERT( st );
+	JL_ASSERT( st != FALSE );
 //	DeleteCriticalSection(&(*cv)->waiters_count_lock);
 	free(*cv);
 	*cv = NULL;
@@ -1217,7 +1216,7 @@ ALWAYS_INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) 
 	if ( last_waiter ) {
 
 		BOOL st = ResetEvent(cv->events[1]);
-		JL_ASSERT( st );
+		JL_ASSERT( st != FALSE );
 	}
 	JLMutexAcquire(external_mutex);
 	return JLOK;
@@ -1232,7 +1231,7 @@ ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
 	if ( have_waiters ) {
 
 		BOOL st = SetEvent(cv->events[1]);
-		JL_ASSERT( st );
+		JL_ASSERT( st != FALSE );
 	}
 }
 
@@ -1245,7 +1244,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	if ( have_waiters ) {
 
 		BOOL st = SetEvent(cv->events[0]);
-		JL_ASSERT( st );
+		JL_ASSERT( st != FALSE );
 	}
 }
 
@@ -1416,7 +1415,7 @@ ALWAYS_INLINE JLCondHandler JLCondCreate() {
 
 ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 
-	JL_ASSERT( JLCondOk(*cv) );
+	JL_ASSERT( cv != NULL && JLCondOk(*cv) );
 	pthread_cond_destroy(&(*cv)->cond);
 	free(*cv);
 	*cv = NULL;
@@ -1472,29 +1471,28 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		JLEventHandler ev = (JLEventHandler)malloc(sizeof(*ev));
 		if ( ev == NULL )
 			return NULL;
-		ev->autoReset = autoReset;
 	#if defined(XP_WIN)
 		InitializeCriticalSection(&ev->cs);
 		ev->waitingThreadCount = 0;
 		ev->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 		if ( ev->hEvent == NULL )
 			return NULL;
-
 	#elif defined(XP_UNIX)
 		pthread_mutex_init(&ev->mutex, 0);
 		pthread_cond_init(&ev->cond, 0);
 		ev->triggered = false;
 	#endif
+		ev->autoReset = autoReset;
 		return ev;
 	}
 
 	ALWAYS_INLINE void JLEventFree( JLEventHandler *ev ) {
 
-		JL_ASSERT( JLEventOk(*ev) );
+		JL_ASSERT( ev != NULL && JLEventOk(*ev) );
 	#if defined(XP_WIN)
 		DeleteCriticalSection(&(*ev)->cs);
 		BOOL st = CloseHandle((*ev)->hEvent);
-		JL_ASSERT( st );
+		JL_ASSERT( st != FALSE );
 	#elif defined(XP_UNIX)
 		int st = pthread_cond_destroy(&ev->cond);
 		JL_ASSERT( st == 0 );
@@ -1514,7 +1512,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		if ( ev->waitingThreadCount != 0 || !ev->autoReset ) {
 
 			BOOL st = SetEvent(ev->hEvent);
-			JL_ASSERT( st );
+			JL_ASSERT( st != FALSE );
 		}
 		LeaveCriticalSection(&ev->cs);
 
@@ -1535,7 +1533,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 		EnterCriticalSection(&ev->cs);
 		BOOL st = ResetEvent(ev->hEvent);
-		JL_ASSERT( st == TRUE );
+		JL_ASSERT( st != FALSE );
 		LeaveCriticalSection(&ev->cs);
 
 	#elif defined(XP_UNIX)
@@ -1547,6 +1545,8 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 	// msTimeout = JLINFINITE : no timeout
 	ALWAYS_INLINE int JLEventWait( JLEventHandler ev, int msTimeout ) {
+
+		JL_ASSERT( JLEventOk(ev) );
 	#if defined(XP_WIN)
 		
 		EnterCriticalSection(&ev->cs);
@@ -1554,6 +1554,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		LeaveCriticalSection(&ev->cs);
 
 		DWORD status = WaitForSingleObject(ev->hEvent, msTimeout == JLINFINITE ? INFINITE : msTimeout);
+		JL_ASSERT( status != WAIT_FAILED );
 
 		EnterCriticalSection(&ev->cs);
 		ev->waitingThreadCount--;
@@ -1563,13 +1564,12 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			JL_ASSERT( st == TRUE );
 		}
 		LeaveCriticalSection(&ev->cs);
-		if ( status == WAIT_OBJECT_0 )
-			return JLOK;
 		if ( status == WAIT_TIMEOUT )
 			return JLTIMEOUT;
-		return JLERROR;
+		return JLOK;
 
 	#elif defined(XP_UNIX)
+		int st;
 		if ( msTimeout == JLINFINITE ) {
 			
 		  pthread_mutex_lock(&ev->mutex);
@@ -1594,16 +1594,15 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 				ts.tv_nsec %= 1000000000UL;
 			}
 
-			int rc = 0;
+			st = 0;
 			pthread_mutex_lock(&ev->mutex);
-			while ( !ev->triggered && rc == 0 )
-				rc = pthread_cond_wait(&ev->cond, &ev->mutex, &ts);
+			while ( !ev->triggered && st == 0 )
+				st = pthread_cond_wait(&ev->cond, &ev->mutex, &ts);
 			pthread_mutex_unlock(&ev->mutex);
-			if ( rc == 0 )
-				return JLOK;
-			if ( rc == ETIMEDOUT )
+			if ( st == ETIMEDOUT )
 				return JLTIMEOUT;
-			}
+			JL_ASSERT( st == 0 );
+			return JLOK;
 		}
 		return JLERROR;
 	#endif
@@ -1663,6 +1662,23 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#endif
 	}
 
+	ALWAYS_INLINE void JLThreadFree( JLThreadHandler *pThread ) {
+		
+		JL_ASSERT( pThread != NULL && JLThreadOk(*pThread) );
+	#if defined(XP_WIN)
+		BOOL st = CloseHandle(*pThread);
+		JL_ASSERT( st != FALSE );
+	#elif defined(XP_UNIX)
+		if ( JLThreadIsActive( *pThread ) ) {
+			
+			int st = pthread_detach(**pThread);
+			JL_ASSERT( st == 0 );
+		}
+		free(*pThread);
+	#endif
+		*pThread = (JLThreadHandler)0;
+	}
+
 	ALWAYS_INLINE void JLThreadExit( unsigned int exitValue ) {
 
 	#if defined(XP_WIN)
@@ -1672,45 +1688,46 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#endif
 	}
 
-	ALWAYS_INLINE int JLThreadCancel( JLThreadHandler thread ) {
+	ALWAYS_INLINE void JLThreadCancel( JLThreadHandler thread ) {
 
+		JL_ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
-		if ( TerminateThread(thread, 0) == 0 ) // doc. The handle must have the THREAD_TERMINATE access right. ... Use the GetExitCodeThread function to retrieve a thread's exit value.
-			return JLERROR;
+		BOOL st = TerminateThread(thread, 0); // doc. The handle must have the THREAD_TERMINATE access right. ... Use the GetExitCodeThread function to retrieve a thread's exit value.
+		JL_ASSERT( st != 0 );
 	#elif defined(XP_UNIX)
-		if ( pthread_cancel(*thread) != 0 )
-			return JLERROR;
+		int st = pthread_cancel(*thread);
+		JL_ASSERT( st == 0 );
 	#endif
-		return JLOK;
 	}
 
 
-	ALWAYS_INLINE int JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
+	ALWAYS_INLINE void JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
 
+		JL_ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
-		if ( SetThreadPriority(thread, priority) != 0 )
-			return JLOK;
+		BOOL st = SetThreadPriority(thread, priority);
+		JL_ASSERT( st != FALSE );
 	#elif defined(XP_UNIX)
+		int st;
 		int policy;
 		struct sched_param param;
-		if ( pthread_getschedparam(*thread, &policy, &param) != 0 )
-			return JLERROR;
+		st = pthread_getschedparam(*thread, &policy, &param);
+		JL_ASSERT( st == 0 );
 		int max = sched_get_priority_max(policy);
 		int min = sched_get_priority_min(policy);
 		param.sched_priority = min + (max - min) * priority / 128;
-		if ( pthread_setschedparam(*thread, policy, &param) == 0 )
-			return JLOK;
+		st = pthread_setschedparam(*thread, policy, &param);
+		JL_ASSERT( st == 0 );
 	#endif
-		return JLERROR;
 	}
 
 	ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) {  // (TBD) how to manage errors ?
 
-		if ( !JLThreadOk(thread) )
-			return false;
+		JL_ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
-		DWORD result = WaitForSingleObject(thread, 0);
-		return result == WAIT_TIMEOUT; // else != WAIT_OBJECT_0 ?
+		DWORD status = WaitForSingleObject(thread, 0);
+		JL_ASSERT( status != WAIT_FAILED );
+		return status == WAIT_TIMEOUT; // else != WAIT_OBJECT_0 ?
 	#elif defined(XP_UNIX)
 		int policy;
 		struct sched_param param;
@@ -1718,38 +1735,20 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#endif
 	}
 
-	ALWAYS_INLINE int JLThreadWait( JLThreadHandler thread, unsigned int *exitValue ) {
+	ALWAYS_INLINE void JLThreadWait( JLThreadHandler thread, unsigned int *exitValue ) {
 
-		if ( !JLThreadOk(thread) )
-			return JLERROR;
+		JL_ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
-		if ( WaitForSingleObject(thread, INFINITE) != WAIT_OBJECT_0 )
-			return JLERROR;
+		BOOL st = WaitForSingleObject(thread, INFINITE);
+		JL_ASSERT( st == WAIT_OBJECT_0 );
 		if ( exitValue )
 			GetExitCodeThread(thread, (DWORD*)exitValue);
 	#elif defined(XP_UNIX)
-		if ( pthread_join(*thread, (void*)exitValue) != 0 ) // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED.
-			return JLERROR;
+		int st = pthread_join(*thread, (void*)exitValue); // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED.
+		JL_ASSERT( st == 0 );
 	#endif
-		return JLOK;
 	}
 
-	ALWAYS_INLINE int JLThreadFree( JLThreadHandler *pThread ) {
-
-		if ( !pThread || !JLThreadOk(*pThread) )
-			return JLERROR;
-	#if defined(XP_WIN)
-		if ( CloseHandle(*pThread) == 0 )
-			return JLERROR;
-	#elif defined(XP_UNIX)
-		if ( JLThreadIsActive( *pThread ) )
-			if ( pthread_detach(**pThread) != 0 )
-				return JLERROR;
-		free(*pThread);
-	#endif
-		*pThread = (JLThreadHandler)0;
-		return JLOK;
-	}
 
 ///////////////////////////////////////////////////////////////////////////////
 // dynamic libraries
@@ -1760,6 +1759,11 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 #elif defined(XP_UNIX)
 	typedef void* JLLibraryHandler;
 #endif
+
+	ALWAYS_INLINE bool JLDynamicLibraryOk( JLLibraryHandler libraryHandler ) {
+
+		return libraryHandler != (JLLibraryHandler)0;
+	}
 
 	ALWAYS_INLINE uint32_t JLDynamicLibraryId( JLLibraryHandler libraryHandler ) {
 		
@@ -1776,9 +1780,17 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#endif
 	}
 
-	ALWAYS_INLINE bool JLDynamicLibraryOk( JLLibraryHandler libraryHandler ) {
+	ALWAYS_INLINE void JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
 
-		return libraryHandler != (JLLibraryHandler)0;
+	#if defined(XP_WIN)
+		BOOL st = FreeLibrary(*libraryHandler);
+		JL_ASSERT( st != FALSE );
+	#elif defined(XP_UNIX)
+		dlerror(); // Resets the error indicator.
+		int st = dlclose(*libraryHandler);
+		JL_ASSERT( st == 0 );
+	#endif
+		*libraryHandler = (JLLibraryHandler)0;
 	}
 
 	ALWAYS_INLINE void JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
@@ -1814,20 +1826,6 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		dlerror(); // Resets the error indicator.
 		return dlsym(libraryHandler, symbolName);
 	#endif
-	}
-
-	ALWAYS_INLINE int JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
-
-	#if defined(XP_WIN)
-		if ( FreeLibrary(*libraryHandler) == 0 )
-			return JLERROR;
-	#elif defined(XP_UNIX)
-		dlerror(); // Resets the error indicator.
-		if ( dlclose(*libraryHandler) != 0 )
-			return JLERROR;
-	#endif
-		*libraryHandler = (JLLibraryHandler)0;
-		return JLOK;
 	}
 
 #endif // _JLPLATFORM_H_

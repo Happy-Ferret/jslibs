@@ -145,8 +145,7 @@ JLThreadFuncDecl ProcessEventThread( void *data ) {
 		JL_ASSERT( ti->peSlot != NULL );
 		ti->peSlot->startWait(ti->peSlot);
 		ti->peSlot = NULL;
-		st = JLSemaphoreRelease(ti->signalEventSem);
-		JL_ASSERT(st);
+		JLSemaphoreRelease(ti->signalEventSem);
 	}
 	JLThreadExit(0);
 	return 0;
@@ -178,8 +177,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 			JL_ASSERT( JLSemaphoreOk(ti->startSem) );
 			ti->thread = JLThreadStart(ProcessEventThread, ti);
 			JL_ASSERT( JLThreadOk(ti->thread) );
-			st = JLThreadPriority(ti->thread, JL_THREAD_PRIORITY_HIGHEST);
-			JL_ASSERT( st );
+			JLThreadPriority(ti->thread, JL_THREAD_PRIORITY_HIGHEST);
 			ti->signalEventSem = mpv->processEventSignalEventSem;
 			ti->isEnd = false;
 		}
@@ -187,14 +185,11 @@ DEFINE_FUNCTION( ProcessEvents ) {
 		JL_ASSERT( ti->isEnd == false );
 
 		ti->peSlot = pe;
-		st = JLSemaphoreRelease(ti->startSem);
-		JL_ASSERT( st );
+		JLSemaphoreRelease(ti->startSem);
 	}
 
-	st = JLSemaphoreAcquire(mpv->processEventSignalEventSem, -1); // wait for an event (timeout can also be managed here)
-	JL_ASSERT( st );
-	st = JLSemaphoreRelease(mpv->processEventSignalEventSem);
-	JL_ASSERT( st );
+	JLSemaphoreAcquire(mpv->processEventSignalEventSem, JLINFINITE); // wait for an event (timeout can also be managed here)
+	JLSemaphoreRelease(mpv->processEventSignalEventSem);
 
 	for ( uintN i = 0; i < argc; ++i ) {
 
@@ -205,16 +200,11 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 				ProcessEventThreadInfo *ti = &mpv->processEventThreadInfo[i];
 				ti->peSlot = NULL;
-				st = JLSemaphoreRelease(ti->signalEventSem); // see ProcessEventThread()
-				JL_ASSERT( st );
-				st = JLThreadCancel(ti->thread);
-				JL_ASSERT( st );
-				st = JLThreadWait(ti->thread, NULL); // (TBD) needed ?
-				JL_ASSERT( st );
-				st = JLSemaphoreFree(&ti->startSem);
-				JL_ASSERT( st );
-				st = JLThreadFree(&ti->thread);
-				JL_ASSERT( st );
+				JLSemaphoreRelease(ti->signalEventSem); // see ProcessEventThread()
+				JLThreadCancel(ti->thread);
+				JLThreadWait(ti->thread, NULL); // (TBD) needed ?
+				JLSemaphoreFree(&ti->startSem);
+				JLThreadFree(&ti->thread);
 				ti->thread = 0; // mean that "the thread is free/unused" (see thread creation place)
 			}
 		}
@@ -278,9 +268,7 @@ static void TimeoutStartWait( volatile ProcessEvent *pe ) {
 
 	if ( upe->timeout > 0 ) {
 		
-		int st;
-		st = JLEventWait(upe->cancel, upe->timeout);
-		JL_ASSERT( st != JLERROR );
+		int st = JLEventWait(upe->cancel, upe->timeout);
 		upe->canceled = (st == JLOK);
 	} else {
 		

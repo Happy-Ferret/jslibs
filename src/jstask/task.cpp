@@ -94,11 +94,11 @@ DEFINE_FINALIZE() {
 
 	JLSemaphoreRelease(pv->requestSem); // +1 // unlock the thread an let it manage the "end"
 
-	JL_CHK( JLThreadWait(pv->threadHandle, NULL) ); // wait for the end of the thread
-	JL_CHK( JLThreadFree(&pv->threadHandle) );
+	JLThreadWait(pv->threadHandle, NULL); // wait for the end of the thread
+	JLThreadFree(&pv->threadHandle);
 
-	JL_CHK( JLSemaphoreFree(&pv->requestSem) );
-	JL_CHK( JLSemaphoreFree(&pv->responseSem) );
+	JLSemaphoreFree(&pv->requestSem);
+	JLSemaphoreFree(&pv->responseSem);
 	JLEventFree(&pv->responseEvent);
 
 	JLMutexFree(&pv->mutex);
@@ -609,11 +609,8 @@ static void TaskStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	while ( upe->pv->pendingResponseCount == 0 && !upe->canceled ) {
-		
-		int st = JLEventWait(upe->pv->responseEvent, JLINFINITE);
-		JL_ASSERT( st );
-	}
+	while ( upe->pv->pendingResponseCount == 0 && !upe->canceled )
+		JLEventWait(upe->pv->responseEvent, JLINFINITE);
 	JLEventReset(upe->pv->responseEvent);
 }
 

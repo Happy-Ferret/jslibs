@@ -1338,11 +1338,11 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	JSBool ok;
 	ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, filename, lineno, JL_FRVAL);
 
-	JL_CHK( JLSemaphoreRelease(pv.semEnd) );
+	JLSemaphoreRelease(pv.semEnd);
 
-	JL_CHK( JLThreadWait(sandboxWatchDogThread, NULL) );
-	JL_CHK( JLThreadFree(&sandboxWatchDogThread) );
-	JL_CHK( JLSemaphoreFree(&pv.semEnd) );
+	JLThreadWait(sandboxWatchDogThread, NULL);
+	JLThreadFree(&sandboxWatchDogThread);
+	JLSemaphoreFree(&pv.semEnd);
 
 	prev = JS_SetOperationCallback(scx, prev);
 	JL_S_ASSERT( prev == SandboxMaxOperationCallback, "Invalid SandboxMaxOperationCallback handler." );

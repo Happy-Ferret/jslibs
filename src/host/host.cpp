@@ -307,7 +307,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) )
 		if ( (JLLibraryHandler)jl::QueueGetData(it) == module ) {
 
-			JL_CHK( JLDynamicLibraryClose(&module) );
+			JLDynamicLibraryClose(&module);
 			*rval = JSVAL_VOID; // already loaded
 			return JS_TRUE;
 		}
@@ -323,7 +323,7 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 	return JS_TRUE;
 
 bad_dl_close:
-	JL_CHK( JLDynamicLibraryClose(&module) );
+	JLDynamicLibraryClose(&module);
 bad:
 	return JS_FALSE;
 }
@@ -546,10 +546,10 @@ JSBool DestroyHost( JSContext *cx ) {
 	if ( JLThreadOk(pv->watchDogThread) ) {
 
 		// beware: it is important to destroy the watchDogThread BEFORE destroying the cx or pv !!!
-		JL_CHK( JLSemaphoreRelease(pv->watchDogSemEnd) );
-		JL_CHK( JLThreadWait(pv->watchDogThread, NULL) );
-		JL_CHK( JLThreadFree(&pv->watchDogThread) );
-		JL_CHK( JLSemaphoreFree(&pv->watchDogSemEnd) );
+		JLSemaphoreRelease(pv->watchDogSemEnd);
+		JLThreadWait(pv->watchDogThread, NULL);
+		JLThreadFree(&pv->watchDogThread);
+		JLSemaphoreFree(&pv->watchDogSemEnd);
 	}
 
 	jslangModuleRelease(cx);
@@ -597,7 +597,7 @@ JSBool DestroyHost( JSContext *cx ) {
 		if ( moduleFree != NULL )
 			moduleFree();
 //#ifndef DEBUG // else the memory block was allocated in a DLL that was unloaded prior to the _CrtMemDumpAllObjectsSince() call.
-		JL_CHK( JLDynamicLibraryClose(&module) );
+		JLDynamicLibraryClose(&module);
 //#endif
 	}
 

@@ -57,8 +57,6 @@ JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 	bool tmp;
 	JL_CHK( JsvalToBool(cx, *vp, &tmp) );
 
-	//gEndSignalState = tmp;
-	//JLEventTrigger(gEndSignalEvent);
 	JLMutexAcquire(gEndSignalLock);
 	gEndSignalState = tmp;
 	JLCondBroadcast(gEndSignalCond);
@@ -76,8 +74,6 @@ BOOL WINAPI Interrupt(DWORD CtrlType) {
 //	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT) // CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
 //		return FALSE;
 
-	//gEndSignalState = true;
-	//JLEventTrigger(gEndSignalEvent);
 	JLMutexAcquire(gEndSignalLock);
 	gEndSignalState = true;
 	JLCondBroadcast(gEndSignalCond);
@@ -87,9 +83,6 @@ BOOL WINAPI Interrupt(DWORD CtrlType) {
 }
 #else
 void Interrupt(int CtrlType) {
-
-	//gEndSignalState = true;
-	//JLEventTrigger(gEndSignalEvent);
 
 	JLMutexAcquire(gEndSignalLock);
 	gEndSignalState = true;
@@ -113,9 +106,7 @@ JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 static void EndSignalStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
-	//while ( !gEndSignalState && !upe->cancel )
-	//	// <- issue if EndSignalCancelWait occurs exactely here
-	//	JLEventWait(gEndSignalEvent, JLINFINITE);
+
 	JLMutexAcquire(gEndSignalLock);
 	while ( !gEndSignalState && !upe->cancel )
 		JLCondWait(gEndSignalCond, gEndSignalLock);
@@ -125,8 +116,6 @@ static void EndSignalStartWait( volatile ProcessEvent *pe ) {
 static bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
-	//upe->cancel = true;
-	//JLEventTrigger(gEndSignalEvent);
 
 	JLMutexAcquire(gEndSignalLock);
 	upe->cancel = true;
@@ -292,15 +281,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 #endif
 
-#ifdef XP_WIN
-	BOOL status;
-	status = SetConsoleCtrlHandler(Interrupt, TRUE);
-	HOST_MAIN_ASSERT( status == TRUE, "Unable to set the Ctrl-C handler." );
-#else
-	signal(SIGINT, Interrupt);
-	signal(SIGTERM, Interrupt);
-#endif // XP_WIN
-
 	if ( useJslibsMemoryManager ) {
 
 		jl_malloc = nedmalloc;
@@ -351,9 +331,17 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JSObject *globalObject;
 	globalObject = JS_GetGlobalObject(cx);
 
-//	gEndSignalEvent = JLEventCreate(true);
 	gEndSignalCond = JLCondCreate();
 	gEndSignalLock = JLMutexCreate();
+
+#ifdef XP_WIN
+	BOOL status;
+	status = SetConsoleCtrlHandler(Interrupt, TRUE);
+	HOST_MAIN_ASSERT( status == TRUE, "Unable to set the Ctrl-C handler." );
+#else
+	signal(SIGINT, Interrupt);
+	signal(SIGTERM, Interrupt);
+#endif // XP_WIN
 
 	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
 	JL_CHK( JS_DefineFunction(cx, globalObject, "EndSignalEvents", (JSNative)EndSignalEvents, 0, JSPROP_SHARED | JSPROP_PERMANENT | JSFUN_FAST_NATIVE) );

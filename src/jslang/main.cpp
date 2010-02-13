@@ -67,10 +67,10 @@ JSBool jslangModuleRelease(JSContext *cx) {
 			JLThreadWait(ti->thread, NULL);
 			JLSemaphoreFree(&ti->startSem);
 		}
-		JLSemaphoreFree(&mpv->processEventSignalEventSem);
 	}
+	JLSemaphoreFree(&mpv->processEventSignalEventSem);
 	
-	jl_free( mpv );
+	jl_free(mpv);
 
 	return JS_TRUE;
 	JL_BAD;

@@ -86,28 +86,28 @@ HDC _deviceContext = NULL;
 
 ALWAYS_INLINE bool OwnGlContext() {
 
-	JLMutexAcquire(contextMutex);
+//	JLMutexAcquire(contextMutex);
 	bool isOwner = (wglGetCurrentContext() != NULL && wglGetCurrentDC() != NULL);
-	JLMutexRelease(contextMutex);
+//	JLMutexRelease(contextMutex);
 	return isOwner;
 }
 
 ALWAYS_INLINE void AcquireGlContext() {
 
 	JLSemaphoreAcquire(contextAvailable, JLINFINITE);
-	JLMutexAcquire(contextMutex);
+//	JLMutexAcquire(contextMutex);
 	JL_ASSERT( _deviceContext != NULL && _openglContext != NULL );
 	JL_ASSERT( wglGetCurrentDC() == NULL && wglGetCurrentContext() == NULL );
 	BOOL st = wglMakeCurrent(_deviceContext, _openglContext); // doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
 	JL_ASSERT( st );
 	_deviceContext = NULL;
 	_openglContext = NULL;
-	JLMutexRelease(contextMutex);
+//	JLMutexRelease(contextMutex);
 }
 
 ALWAYS_INLINE void ReleaseGlContext() {
 	
-	JLMutexAcquire(contextMutex);
+//	JLMutexAcquire(contextMutex);
 	HDC hdc = wglGetCurrentDC();
 	HGLRC hglrc = wglGetCurrentContext();
 	JL_ASSERT( hdc != NULL && hglrc != NULL );
@@ -116,7 +116,7 @@ ALWAYS_INLINE void ReleaseGlContext() {
 	_openglContext = hglrc;
 	BOOL st = wglMakeCurrent(NULL, NULL); // doc. makes the calling thread's current rendering context no longer current, and releases the device context that is used by the rendering context. In this case, hdc  is ignored.
 	JL_ASSERT( st );
-	JLMutexRelease(contextMutex);
+//	JLMutexRelease(contextMutex);
 	JLSemaphoreRelease(contextAvailable);
 }
 
