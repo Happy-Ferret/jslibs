@@ -21,6 +21,8 @@
 
 FT_Library _freetype;
 
+#include "ftsymbols.h"
+
 #include "jslibsModule.cpp"
 
 
@@ -35,6 +37,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id)  );
@@ -45,6 +48,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	INIT_CLASS(Font);
 
+	JL_CHK( SetPrivateNativeFunction(cx, JS_GetGlobalObject(cx), "_ftSymbols", GetFTSymbols) );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -53,5 +58,6 @@ EXTERN_C DLLEXPORT void ModuleFree() {
 
 	FT_Error status;
 	status = FT_Done_FreeType(_freetype);
-//	JL_S_ASSERT( status == 0, "Unable to destroy FreeType2 library." );
+
+	//	JL_S_ASSERT( status == 0, "Unable to destroy FreeType2 library." );
 }
