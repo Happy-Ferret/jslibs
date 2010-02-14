@@ -1,16 +1,18 @@
 LoadModule('jsstd');
 LoadModule('jstask');
 
+LoadModule('jsstd');
+LoadModule('jstask');
+
 var myTask = new Task(function(){
 	LoadModule('jsstd');
+	return 123;
 });
 
 myTask.Request();
-myTask.Response();
+Print( myTask.Response() );
 
 Halt();
-
-
 
 
 LoadModule('jsstd');

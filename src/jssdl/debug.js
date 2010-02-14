@@ -42,6 +42,7 @@ function SurfaceReady() {
 	Ogl.Begin(Ogl.TRIANGLES);
 	Ogl.Vertex(0,0);
 	Ogl.Vertex(0,1);
+
 	Ogl.Vertex(1,0);
 	Ogl.End();
 	Ogl.Flush();

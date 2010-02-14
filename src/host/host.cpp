@@ -20,6 +20,14 @@
 
 #include "host.h"
 
+/*
+static JLMutexHandler globalModuleSlotLock;
+struct {
+	JLLibraryHandler module;
+	int instances;
+} globalModuleSlot[1<<8]; // does not support more than 256 modules.
+*/
+
 JSBool jslangModuleInit(JSContext *cx, JSObject *obj);
 JSBool jslangModuleRelease(JSContext *cx);
 void jslangModuleFree();

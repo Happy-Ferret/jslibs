@@ -892,11 +892,19 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 	#endif
 	}
 
-	ALWAYS_INLINE void JLAtomicIncrement(volatile long *ptr) {
+	ALWAYS_INLINE long JLAtomicIncrement(volatile long *ptr) {
 	#if defined(XP_WIN)
-		InterlockedIncrement(ptr);
+		return InterlockedIncrement(ptr);
 	#elif defined(XP_UNIX)
-		__sync_add_and_fetch(ptr, 1);
+		return __sync_add_and_fetch(ptr, 1);
+	#endif
+	}
+
+	ALWAYS_INLINE long JLAtomicDecrement(volatile long *ptr) {
+	#if defined(XP_WIN)
+		return InterlockedDecrement(ptr);
+	#elif defined(XP_UNIX)
+		return __sync_sub_and_fetch(ptr, 1);
 	#endif
 	}
 
@@ -1090,6 +1098,8 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		pthread_mutex_t mx;
 #endif
 	} *JLMutexHandler;
+
+	#define JLMutexInvalidHandler ((JLMutexHandler)0)
 
 	ALWAYS_INLINE bool JLMutexOk( JLMutexHandler mutex ) {
 

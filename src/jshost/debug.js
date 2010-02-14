@@ -6,6 +6,23 @@
 
 // jslang_test(); throw 0;
 
+
+LoadModule('jsstd');
+LoadModule('jstask');
+
+var myTask = new Task(function(){
+	LoadModule('jsstd');
+	return 123;
+});
+
+myTask.Request();
+Print( myTask.Response() );
+
+Halt();
+
+
+
+
 LoadModule('jsstd');
 
 
@@ -24,19 +41,6 @@ Print( (TimeCounter() - t0).toFixed(3), ' ', i,  '\n' );
 
 Halt();
 
-/*
-LoadModule('jsstd');
-LoadModule('jstask');
-
-var myTask = new Task(function(){
-	LoadModule('jsstd');
-});
-
-myTask.Request();
-myTask.Response();
-
-Halt();
-*/
 
 LoadModule('jsstd');
 LoadModule('jsio');
