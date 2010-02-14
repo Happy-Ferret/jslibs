@@ -39,7 +39,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
-	jl_free(GetModulePrivate(cx, _moduleId));
+//	jl_free(GetModulePrivate(cx, _moduleId));
 
 	return JS_FALSE;
 }
