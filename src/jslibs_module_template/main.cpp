@@ -14,15 +14,21 @@
 
 #include "stdafx.h"
 
-#include "static.h"
-#include "template.h"
+#include "jslibsModule.cpp"
 
-bool _unsafeMode = false;
+DECLARE_STATIC()
+DECLARE_CLASS( Template )
 
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	JL_CHK( InitJslibsModule(cx, id)  );
+
+	//ModulePrivate *mpv;
+	//mpv = (ModulePrivate*)jl_malloc( sizeof(ModulePrivate) );
+	//JL_S_ASSERT_ALLOC(mpv);
+	//JL_CHKM( SetModulePrivate(cx, _moduleId, mpv), "Module id already in use." );
+
 
 	INIT_STATIC();
 	INIT_CLASS( Template );
@@ -33,17 +39,10 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
+	jl_free(GetModulePrivate(cx, _moduleId));
+
 	return JS_FALSE;
 }
 
 EXTERN_C DLLEXPORT void ModuleFree() {
 }
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN
