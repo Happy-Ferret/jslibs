@@ -16,15 +16,13 @@
 
 #include "jslibsModule.cpp"
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include FT_GLYPH_H
-#include FT_OUTLINE_H
-#include FT_TRIGONOMETRY_H
-
 #include "../jsfont/ftsymbols.h"
 
-FT_DEFINE_SYMBOLS;
+//FT_DEFINE_SYMBOLS;
+
+#include "oglft/config.h"
+#include "oglft/OGLFT.h"
+
 
 DECLARE_STATIC()
 DECLARE_CLASS( Oglft )
@@ -32,7 +30,7 @@ DECLARE_CLASS( Oglft )
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	JL_CHK( InitJslibsModule(cx, id)  );
+	JL_CHK( InitJslibsModule(cx, id) );
 
 	//ModulePrivate *mpv;
 	//mpv = (ModulePrivate*)jl_malloc( sizeof(ModulePrivate) );
@@ -40,9 +38,13 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	//JL_CHKM( SetModulePrivate(cx, _moduleId, mpv), "Module id already in use." );
 
 	GetFTSymbols_t GetFTSymbols;
-	JL_CHK( GetPrivateNativeFunction(cx, JS_GetGlobalObject(cx), "_ftSymbols", (void**)&GetFTSymbols) );
+	JL_CHK( GetPrivateNativeFunction(cx, JS_GetGlobalObject(cx), "_GetFTSymbols", (void**)&GetFTSymbols) );
+	JL_S_ASSERT( GetFTSymbols != NULL, "jsfont module not loaded." );
+//	GetFTSymbols(&_ftSymbols);
 
-	GetFTSymbols(&_ftSymbols);
+
+	OGLFT::Outline* face = new OGLFT::Outline( "C:\\WINDOWS\\Fonts\\arial.ttf", 24 );
+	face->draw( 0, 0, "Here is some text" );
 
 
 	INIT_STATIC();
@@ -54,7 +56,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
-	jl_free(GetModulePrivate(cx, _moduleId));
+//	jl_free(GetModulePrivate(cx, _moduleId));
 
 	return JS_FALSE;
 }

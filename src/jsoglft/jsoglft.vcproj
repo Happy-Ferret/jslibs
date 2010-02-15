@@ -200,7 +200,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="oglft"
-						PreprocessorDefinitions="HAVE_CONFIG_H;OGLFT_NO_QT;OGLFT_NO_SOLID"
+						PreprocessorDefinitions="WIN32;_DEBUG;HAVE_CONFIG_H"
 						UsePrecompiledHeader="0"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
 						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
@@ -212,7 +212,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="oglft"
-						PreprocessorDefinitions="HAVE_CONFIG_H;OGLFT_NO_QT;OGLFT_NO_SOLID"
+						PreprocessorDefinitions="WIN32;NDEBUG;HAVE_CONFIG_H"
 						UsePrecompiledHeader="0"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
 						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
