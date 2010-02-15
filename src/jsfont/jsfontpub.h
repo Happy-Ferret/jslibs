@@ -12,15 +12,10 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _JSFONT_H_
-#define _JSFONT_H_
+#ifndef _JSFONTPUB_H_
+#define _JSFONTPUB_H_
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
 
-struct ModulePrivate {
 
-	FT_Library ftLibrary;
-};
 
-#endif // _JSFONT_H_
+#endif // _JSFONTPUB_H_

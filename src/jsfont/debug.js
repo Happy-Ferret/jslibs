@@ -12,6 +12,8 @@ f.verticalPadding = 10;
 f.horizontalPadding = 10;
 f.letterSpacing = 5;
 
+f.GetCharOutline('o'); Halt();
+
 var bump = new Texture(f.DrawString('Hello World', true));
 
 
