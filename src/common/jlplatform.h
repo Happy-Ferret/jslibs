@@ -1759,6 +1759,67 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#endif
 	}
 
+///////////////////////////////////////////////////////////////////////////////
+// thread-local storage
+//
+
+#if defined(XP_WIN)
+	typedef DWORD JLTLSKey;
+#elif defined(XP_UNIX)
+	typedef pthread_key_t JLTLSKey;
+#endif
+
+
+ALWAYS_INLINE JLTLSKey JLTLSAllocKey() {
+	JLTLSKey key;
+#if defined(XP_WIN)
+	key = TlsAlloc();
+	JL_ASSERT( key != TLS_OUT_OF_INDEXES );
+#elif defined(XP_UNIX)
+	int st = pthread_key_create(&key, NULL);
+	JL_ASSERT( st == 0 );
+#endif
+	return key;
+}
+
+
+ALWAYS_INLINE void JLTLSFreeKey( JLTLSKey key ) {
+#if defined(XP_WIN)
+	JL_ASSERT( key >= 0 && key < TLS_MINIMUM_AVAILABLE );
+	BOOL st = TlsFree(key);
+	JL_ASSERT( st != FALSE );
+#elif defined(XP_UNIX)
+	int st = pthread_key_delete(key);
+	JL_ASSERT( st == 0 );
+#endif
+}
+
+
+ALWAYS_INLINE void JLTLSSet( JLTLSKey key, void *value ) {
+#if defined(XP_WIN)
+	JL_ASSERT( key >= 0 && key < TLS_MINIMUM_AVAILABLE );
+	BOOL st = TlsSetValue(key, value);
+	JL_ASSERT( st != FALSE );
+#elif defined(XP_UNIX)
+	int st = pthread_setspecific(key, value);
+	JL_ASSERT( st == 0 );
+#endif
+}
+
+
+ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
+
+#if defined(XP_WIN)
+	void *value;
+	JL_ASSERT( key >= 0 && key < TLS_MINIMUM_AVAILABLE );
+	value = TlsGetValue(key);
+	JL_ASSERT( value != 0 || GetLastError() == ERROR_SUCCESS  );
+	return value;
+#elif defined(XP_UNIX)
+	return pthread_getspecific(key);
+#endif
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // dynamic libraries
