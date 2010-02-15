@@ -140,6 +140,62 @@ DEFINE_FUNCTION_FAST( SetSize ) {
 }
 */
 
+/*
+int MoveToFunc( const FT_Vector* to, void* user ) {
+
+	return 0;
+}
+int LineToFunc( const FT_Vector* to, void* user ) {
+
+	return 0;
+}
+int ConicToFunc( const FT_Vector* control, const FT_Vector* to, void* user ) {
+
+	return 0;
+}
+int CubicToFunc( const FT_Vector* control1, const FT_Vector* control2, const FT_Vector* to, void* user ) {
+
+	return 0;
+}
+
+DEFINE_FUNCTION_FAST( GetCharOutline ) {
+
+	JL_S_ASSERT_ARG_MIN(1);
+
+	FT_Face face;
+	face = (FT_Face)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(face);
+
+	FT_Outline_Funcs funcs;
+	funcs.move_to = MoveToFunc;
+	funcs.line_to = LineToFunc;
+	funcs.conic_to = ConicToFunc;
+	funcs.cubic_to = CubicToFunc;
+	funcs.delta = 0;
+	funcs.shift = 0;
+
+	JSString *jsstr;
+	jsstr = JS_ValueToString(cx, JL_FARG(1));
+	JL_S_ASSERT( jsstr != NULL, "Invalid string." );
+	JL_S_ASSERT( JL_GetStringLength(jsstr) == 1, "Invalid char" );
+	jschar *str;
+	str = JS_GetStringChars(jsstr);
+	JL_S_ASSERT( str != NULL, "Invalid string." );
+
+	FT_UInt glyphIndex = FT_Get_Char_Index( face, str[0] );
+	FT_Error error = FT_Load_Glyph( face, glyphIndex, FT_LOAD_DEFAULT );
+
+	FT_OutlineGlyph g;
+	FTCHK( FT_Get_Glyph( face->glyph, (FT_Glyph*)&g ) );
+
+	FTCHK( FT_Outline_Decompose(&g->outline, &funcs, NULL) );
+
+	FT_Done_Glyph( (FT_Glyph)g );
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
+
 /**doc
 $TOC_MEMBER $INAME
  $TYPE imageObject $INAME( oneChar )
@@ -667,6 +723,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_RESERVED_SLOTS(7)
 
 	BEGIN_FUNCTION_SPEC
+//		FUNCTION_FAST(GetCharOutline)
 		FUNCTION_FAST(DrawString)
 		FUNCTION_FAST(DrawChar)
 	END_FUNCTION_SPEC
