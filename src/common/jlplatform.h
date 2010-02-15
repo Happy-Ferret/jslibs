@@ -1769,7 +1769,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	typedef pthread_key_t JLTLSKey;
 #endif
 
-#define JLTLSKeyInvalid 0
+#define JLTLSInvalidKey 0
 
 ALWAYS_INLINE JLTLSKey JLTLSAllocKey() {
 	JLTLSKey key;

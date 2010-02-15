@@ -17,15 +17,15 @@ extern JLTLSKey _modulePrivateKey;
 
 #define DEFINE_MODULE_PRIVATE \
 	volatile long _modulePrivateCount = 0; \
-	JLTLSKey _modulePrivateKey = JLTLSKeyInvalid;
+	JLTLSKey _modulePrivateKey = JLTLSInvalidKey;
 
 ALWAYS_INLINE void* ModulePrivateAlloc(size_t size) {
 
 	if ( JLAtomicIncrement(&_modulePrivateCount) == 1 )
 		_modulePrivateKey = JLTLSAllocKey();
-	while ( _modulePrivateKey == JLTLSKeyInvalid ) // (TBD) replace this UGLY hack with a mutex (however this case is extremely rare).
+	while ( _modulePrivateKey == JLTLSInvalidKey ) // (TBD) replace this UGLY hack with a mutex (however this case is extremely rare).
 		Sleep(1);
-	JL_ASSERT( _modulePrivateKey != JLTLSKeyInvalid );
+	JL_ASSERT( _modulePrivateKey != JLTLSInvalidKey );
 	JL_ASSERT( JLTLSGet(_modulePrivateKey) == NULL ); // already allocated
 	void *modulePrivate = malloc(size);
 	JL_ASSERT( modulePrivate ); // not enough memory
