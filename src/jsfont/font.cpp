@@ -13,6 +13,11 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+
+#include "jlmoduleprivate.h"
+
+#include "jsfont.h"
+
 #include "font.h"
 
 #include <math.h>
@@ -32,8 +37,6 @@
 #define FONT_SLOT_LETTERSPACING 4
 #define FONT_SLOT_ITALIC 5
 #define FONT_SLOT_BOLD 6
-
-extern FT_Library _freetype;
 
 #define FTCHK( call ) do { \
 	if ( (call) != FT_Err_Ok ) { \
@@ -85,6 +88,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_MIN(1);
 
+//	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, _moduleId);
+
 //	FT_Long faceIndex = 0;
 	int faceIndex;
 	if ( JL_ARG_ISDEF(2) )
@@ -95,8 +100,10 @@ DEFINE_CONSTRUCTOR() {
 	const char *filePathName;
 	JL_CHK( JsvalToString(cx, &JL_ARG(1), &filePathName) );
 
+	ModulePrivate *mpv = (ModulePrivate*)ModulePrivateGet();
+
 	FT_Face face;
-	FTCHK( FT_New_Face( _freetype, filePathName, faceIndex, &face ) );
+	FTCHK( FT_New_Face( mpv->ftLibrary, filePathName, faceIndex, &face ) );
 	// from memory: FT_New_Memory_Face
 	// see. FT_Open_Face
 

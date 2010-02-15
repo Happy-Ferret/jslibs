@@ -14,12 +14,16 @@
 
 #include "stdafx.h"
 
+#include "jlmoduleprivate.h"
+DEFINE_MODULE_PRIVATE
+
+#include "jsfont.h"
+
 #include "font.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
-
-FT_Library _freetype;
+#include FT_MODULE_H
 
 #include "ftsymbols.h"
 
@@ -37,27 +41,55 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
+void* JsfontAlloc( FT_Memory memory, long size ) {
+	
+	return jl_malloc(size);
+}
+
+void JsfontFree( FT_Memory memory, void* block ) {
+
+	jl_free(block);
+}
+
+void* JsfontRealloc( FT_Memory  memory, long cur_size, long new_size, void* block ) {
+
+	return jl_realloc(block, new_size);
+}
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	JL_CHK( InitJslibsModule(cx, id)  );
+	ModulePrivate *mpv = (ModulePrivate*)ModulePrivateAlloc(sizeof(ModulePrivate));
 
+	JL_CHK( InitJslibsModule(cx, id) );
+
+	FT_Memory memory; // http://www.freetype.org/freetype2/docs/design/design-4.html
+	memory = (FT_Memory)jl_malloc(sizeof(*memory));
+	memory->user = NULL;
+	memory->alloc = JsfontAlloc;
+	memory->free = JsfontFree;
+	memory->realloc = JsfontRealloc;
 	FT_Error status;
-	status = FT_Init_FreeType(&_freetype);
+	status = FT_New_Library(memory, &mpv->ftLibrary);
 	JL_S_ASSERT( status == 0, "Unable to initialize FreeType2 library." );
+	FT_Add_Default_Modules(mpv->ftLibrary);
 
 	INIT_CLASS(Font);
 
-	JL_CHK( SetPrivateNativeFunction(cx, JS_GetGlobalObject(cx), "_ftSymbols", GetFTSymbols) );
+	JL_CHK( SetPrivateNativeFunction(cx, JS_GetGlobalObject(cx), "_GetFTSymbols", GetFTSymbols) );
 
 	return JS_TRUE;
 	JL_BAD;
 }
 
+EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+
+	return JS_TRUE;
+}
+
 EXTERN_C DLLEXPORT void ModuleFree() {
 
-	FT_Error status;
-	status = FT_Done_FreeType(_freetype);
+	ModulePrivate *mpv = (ModulePrivate*)ModulePrivateGet();
 
-	//	JL_S_ASSERT( status == 0, "Unable to destroy FreeType2 library." );
+	FT_Done_FreeType(mpv->ftLibrary);
+	ModulePrivateFree();
 }
