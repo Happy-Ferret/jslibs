@@ -1906,23 +1906,23 @@ ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsv
 
 //
 
-ALWAYS_INLINE JSBool SetPrivateNativeFunction( JSContext *cx, JSObject *obj, const char *name, void *nativeFct ) {
+ALWAYS_INLINE JSBool SetNativePrivatePointer( JSContext *cx, JSObject *obj, const char *name, void *ptr ) {
 
-	return JS_DefineProperty(cx, obj, name, JSVAL_TRUE, NULL, (JSPropertyOp)nativeFct, JSPROP_READONLY | JSPROP_PERMANENT );
+	return JS_DefineProperty(cx, obj, name, JSVAL_TRUE, NULL, (JSPropertyOp)ptr, JSPROP_READONLY | JSPROP_PERMANENT );
 }
 
-ALWAYS_INLINE JSBool GetPrivateNativeFunction( JSContext *cx, JSObject *obj, const char *name, void **nativeFct ) {
+ALWAYS_INLINE JSBool GetNativePrivatePointer( JSContext *cx, JSObject *obj, const char *name, void **ptr ) {
 
 	uintN attrs;
 	JSBool found;
-	JL_CHK( JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, NULL, (JSPropertyOp*)nativeFct) );
+	JL_CHK( JS_GetPropertyAttrsGetterAndSetter(cx, obj, name, &attrs, &found, NULL, (JSPropertyOp*)ptr) );
 	if ( !found )
-		*nativeFct = NULL;
+		*ptr = NULL;
 	return JS_TRUE;
 	JL_BAD;
 }
 
-ALWAYS_INLINE JSBool RemovePrivateNativeFunction( JSContext *cx, JSObject *obj, const char *name ) {
+ALWAYS_INLINE JSBool RemoveNativePrivatePointer( JSContext *cx, JSObject *obj, const char *name ) {
 
 	return JS_DeleteProperty(cx, obj, name);
 }
