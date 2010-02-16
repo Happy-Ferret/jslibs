@@ -30,7 +30,7 @@
 #include <OGLFT.h>
 
 namespace OGLFT {
-
+/*
   // This is the static instance of the FreeType library wrapper ...
 
   Library Library::library;
@@ -68,7 +68,7 @@ namespace OGLFT {
   {
     return library_;
   }
-
+*/
   // Load a new face
 
   Face::Face ( const char* filename, float point_size, FT_UInt resolution )

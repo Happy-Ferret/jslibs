@@ -6,3 +6,6 @@ LoadModule('jsio');
 LoadModule('jsfont');
 LoadModule('jsoglft');
 
+var f = new Font('c:\\windows\\fonts\\arial.ttf');
+
+DrawText(f, "test");

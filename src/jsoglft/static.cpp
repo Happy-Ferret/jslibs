@@ -14,6 +14,16 @@
 
 #include "stdafx.h"
 
+#include "jlmoduleprivate.h"
+#include "jsoglft.h"
+
+#include "../jsfont/jsfont.h"
+
+
+#include "oglft/config.h"
+#include "oglft/OGLFT.h"
+
+
 /**doc fileIndex:topmost **/
 
 /**doc
@@ -22,12 +32,35 @@ $SVN_REVISION $Revision: 3060 $
 **/
 BEGIN_STATIC
 
+DEFINE_FUNCTION_FAST( DrawText ) {
+
+	JL_S_ASSERT_ARG_RANGE(2,2);
+	
+	JL_S_ASSERT_OBJECT(JL_FARG(1));
+
+	FT_Face ftface = GetFace(cx, JSVAL_TO_OBJECT(JL_FARG(1)));
+
+	const char *text;
+	JL_CHK( JsvalToString(cx, &JL_FARG(2), &text) );
+
+	JsoglftPrivate *mpv = (JsoglftPrivate*)ModulePrivateGet();
+
+	OGLFT::Filled* face = new OGLFT::Filled(ftface);
+
+//	face->setForegroundColor( 1., 0., 0. );
+
+	face->draw(text);
+
+	return JS_TRUE;
+	JL_BAD;
+}
 
 
 CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision: 3060 $"))
 	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION_FAST( DrawText )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

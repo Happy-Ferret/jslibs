@@ -14,11 +14,15 @@
 
 #include "stdafx.h"
 
+#include "jlmoduleprivate.h"
+DEFINE_MODULE_PRIVATE
+
+#include "jsoglft.h"
+
 #include "jslibsModule.cpp"
 
-#include "../jsfont/ftsymbols.h"
-
-//FT_DEFINE_SYMBOLS;
+#include "../jsfont/jsfont.h"
+FT_DEFINE_SYMBOLS;
 
 #include "oglft/config.h"
 #include "oglft/OGLFT.h"
@@ -27,25 +31,27 @@
 DECLARE_STATIC()
 DECLARE_CLASS( Oglft )
 
+namespace OGLFT {
+
+	FT_Library& Library::instance ( void ) {
+
+		JsoglftPrivate *mpv = (JsoglftPrivate*)ModulePrivateGet();
+		return mpv->ftLibrary;
+	}
+}
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
+	JsoglftPrivate *mpv = (JsoglftPrivate*)ModulePrivateAlloc(sizeof(JsoglftPrivate));
+
 	JL_CHK( InitJslibsModule(cx, id) );
 
-	//ModulePrivate *mpv;
-	//mpv = (ModulePrivate*)jl_malloc( sizeof(ModulePrivate) );
-	//JL_S_ASSERT_ALLOC(mpv);
-	//JL_CHKM( SetModulePrivate(cx, _moduleId, mpv), "Module id already in use." );
+	JsfontModulePrivate *jsfontMpv;
+	JL_CHK( GetNativePrivatePointer(cx, JS_GetGlobalObject(cx), "_jsfontModulePrivate", (void**)&jsfontMpv) );
+	JL_S_ASSERT( jsfontMpv != NULL, "jsfont module not loaded." );
 
-	GetFTSymbols_t GetFTSymbols;
-	JL_CHK( GetPrivateNativeFunction(cx, JS_GetGlobalObject(cx), "_GetFTSymbols", (void**)&GetFTSymbols) );
-	JL_S_ASSERT( GetFTSymbols != NULL, "jsfont module not loaded." );
-//	GetFTSymbols(&_ftSymbols);
-
-
-	OGLFT::Outline* face = new OGLFT::Outline( "C:\\WINDOWS\\Fonts\\arial.ttf", 24 );
-	face->draw( 0, 0, "Here is some text" );
-
+	jsfontMpv->GetFTSymbols(&_ftSymbols);
+	mpv->ftLibrary = jsfontMpv->ftLibrary;
 
 	INIT_STATIC();
 	INIT_CLASS( Oglft );
@@ -62,4 +68,6 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 }
 
 EXTERN_C DLLEXPORT void ModuleFree() {
+
+	ModulePrivateFree();
 }
