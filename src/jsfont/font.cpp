@@ -18,8 +18,6 @@
 
 #include "jsfont.h"
 
-#include "font.h"
-
 #include <math.h>
 
 #include "../jslang/blobPub.h"
