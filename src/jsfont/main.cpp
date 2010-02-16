@@ -25,7 +25,7 @@ DEFINE_MODULE_PRIVATE
 #include FT_FREETYPE_H
 #include FT_MODULE_H
 
-#include "ftsymbols.h"
+#include "jsfontpub.h"
 
 #include "jslibsModule.cpp"
 
@@ -56,9 +56,10 @@ void* JsfontRealloc( FT_Memory  memory, long cur_size, long new_size, void* bloc
 	return jl_realloc(block, new_size);
 }
 
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	ModulePrivate *mpv = (ModulePrivate*)ModulePrivateAlloc(sizeof(ModulePrivate));
+	JsfontModulePrivate *mpv = (JsfontModulePrivate*)ModulePrivateAlloc(sizeof(JsfontModulePrivate));
 
 	JL_CHK( InitJslibsModule(cx, id) );
 
@@ -73,9 +74,11 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	JL_S_ASSERT( status == 0, "Unable to initialize FreeType2 library." );
 	FT_Add_Default_Modules(mpv->ftLibrary);
 
-	INIT_CLASS(Font);
+	mpv->GetFTSymbols = GetFTSymbols;
 
-	JL_CHK( SetPrivateNativeFunction(cx, JS_GetGlobalObject(cx), "_GetFTSymbols", GetFTSymbols) );
+	JL_CHK( SetNativePrivatePointer(cx, JS_GetGlobalObject(cx), "_jsfontModulePrivate", mpv) );
+
+	INIT_CLASS(Font);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -88,7 +91,7 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 EXTERN_C DLLEXPORT void ModuleFree() {
 
-	ModulePrivate *mpv = (ModulePrivate*)ModulePrivateGet();
+	JsfontModulePrivate *mpv = (JsfontModulePrivate*)ModulePrivateGet();
 
 	FT_Done_FreeType(mpv->ftLibrary);
 	ModulePrivateFree();

@@ -38,11 +38,12 @@
 #define FONT_SLOT_ITALIC 5
 #define FONT_SLOT_BOLD 6
 
-#define FTCHK( call ) do { \
+#define FTCHK( call ) \
+JL_MACRO_BEGIN \
 	if ( (call) != FT_Err_Ok ) { \
 		JL_REPORT_ERROR("freetype error."); \
 	} \
-} while(0)
+JL_MACRO_END
 
 /*
 typedef struct {
@@ -66,12 +67,12 @@ BEGIN_CLASS( Font ) // Start the definition of the class. It defines some symbol
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	FT_Face face = (FT_Face)JL_GetPrivate(cx, obj);
-	if ( face != NULL ) {
-
-		FT_Done_Face(face);
-		JL_SetPrivate(cx, obj, NULL);
-	}
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	if ( pv == NULL )
+		return;
+	FT_Done_Face(pv->face);
+	JL_SetPrivate(cx, obj, NULL);
+	jl_free(pv);
 }
 
 /**doc
@@ -90,7 +91,6 @@ DEFINE_CONSTRUCTOR() {
 
 //	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, _moduleId);
 
-//	FT_Long faceIndex = 0;
 	int faceIndex;
 	if ( JL_ARG_ISDEF(2) )
 		JL_CHK( JsvalToInt(cx, JL_ARG(2), &faceIndex) );
@@ -100,18 +100,20 @@ DEFINE_CONSTRUCTOR() {
 	const char *filePathName;
 	JL_CHK( JsvalToString(cx, &JL_ARG(1), &filePathName) );
 
-	ModulePrivate *mpv = (ModulePrivate*)ModulePrivateGet();
+	JsfontModulePrivate *mpv = (JsfontModulePrivate*)ModulePrivateGet();
 
-	FT_Face face;
-	FTCHK( FT_New_Face( mpv->ftLibrary, filePathName, faceIndex, &face ) );
+	JsfontPrivate *pv = (JsfontPrivate*)jl_malloc(sizeof(JsfontPrivate));
+
+	FTCHK( FT_New_Face( mpv->ftLibrary, filePathName, faceIndex, &pv->face ) );
 	// from memory: FT_New_Memory_Face
 	// see. FT_Open_Face
+	JL_S_ASSERT_ALLOC(pv->face);
 
-	JL_S_ASSERT_RESOURCE(face);
-	JL_SetPrivate(cx, obj, face);
+	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 /**doc
 === Methods ===
@@ -209,11 +211,10 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 
-	FT_Face face;
-	face = (FT_Face)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(face);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
 
-	JL_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
+	JL_S_ASSERT( pv->face->size->metrics.height > 0, "Invalid font size." );
 
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, JL_FARG(1));
@@ -223,12 +224,12 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 	str = JS_GetStringChars(jsstr);
 	JL_S_ASSERT( str != NULL, "Invalid string." );
 
-	FTCHK( FT_Load_Char(face, str[0], FT_LOAD_RENDER) );
+	FTCHK( FT_Load_Char(pv->face, str[0], FT_LOAD_RENDER) );
 
 	int width;
-	width = face->glyph->bitmap.width;
+	width = pv->face->glyph->bitmap.width;
 	int height;
-	height = face->glyph->bitmap.rows;
+	height = pv->face->glyph->bitmap.rows;
 
 	size_t bufLength;
 	bufLength = width * height * 1; // 1 channel
@@ -245,7 +246,7 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 	JL_CHK( SetPropertyInt(cx, blobObj, "width", width) );
 	JL_CHK( SetPropertyInt(cx, blobObj, "height", height) );
 	JL_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
-	memcpy( buf, face->glyph->bitmap.buffer, bufLength );
+	memcpy( buf, pv->face->glyph->bitmap.buffer, bufLength );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -269,11 +270,10 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN(1);
 
-	FT_Face face;
-	face = (FT_Face)JL_GetPrivate(cx, JL_FOBJ);
-	JL_S_ASSERT_RESOURCE(face);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
 
-	JL_S_ASSERT( face->size->metrics.height > 0, "Invalid font size." );
+	JL_S_ASSERT( pv->face->size->metrics.height > 0, "Invalid font size." );
 
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, JL_FARG(1));
@@ -359,41 +359,41 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
 	for ( i=0; i<strlen; i++ ) {
 
-		FT_UInt glyphIndex = FT_Get_Char_Index( face, str[i] );
-		FTCHK( FT_Load_Glyph(face, glyphIndex, FT_LOAD_DEFAULT) );
+		FT_UInt glyphIndex = FT_Get_Char_Index( pv->face, str[i] );
+		FTCHK( FT_Load_Glyph(pv->face, glyphIndex, FT_LOAD_DEFAULT) );
 		if ( isItalic )
-			FT_GlyphSlot_Oblique(face->glyph);
+			FT_GlyphSlot_Oblique(pv->face->glyph);
 		if ( isBold )
-			FT_GlyphSlot_Embolden(face->glyph);
+			FT_GlyphSlot_Embolden(pv->face->glyph);
 
-		FTCHK( FT_Get_Glyph(face->glyph, &glyphs[i].image) );
+		FTCHK( FT_Get_Glyph(pv->face->glyph, &glyphs[i].image) );
 
 		glyphs[i].pos.x = posX;
-		glyphs[i].pos.y = posY + face->size->metrics.ascender;
+		glyphs[i].pos.y = posY + pv->face->size->metrics.ascender;
 
 		// prepare next char
 		advance = 0;
 		if ( useKerning && prevGlyphIndex && glyphIndex ) {
 
 			FT_Vector delta;
-			FTCHK( FT_Get_Kerning( face, prevGlyphIndex, glyphIndex, FT_KERNING_DEFAULT, &delta ) );
+			FTCHK( FT_Get_Kerning( pv->face, prevGlyphIndex, glyphIndex, FT_KERNING_DEFAULT, &delta ) );
 			advance += delta.x;
 		}
 
-		advance += face->glyph->advance.x + (letterSpacing << 6);
+		advance += pv->face->glyph->advance.x + (letterSpacing << 6);
 		posX += advance;
 		prevGlyphIndex = glyphIndex;
 	}
 
 	if ( !keepTrailingSpace ) { // (TBD) enhance this
 
-		posX += -advance + face->glyph->metrics.horiBearingX + face->glyph->metrics.width; // we do not need the letterSpacing at the end of the text, but we need to advance by the glyph width.
+		posX += -advance + pv->face->glyph->metrics.horiBearingX + pv->face->glyph->metrics.width; // we do not need the letterSpacing at the end of the text, but we need to advance by the glyph width.
 	}
 
 	// Doc.	The ascender is the vertical distance from the horizontal baseline to the highest character coordinate in a font face.
 	//			Unfortunately, font formats define the ascender differently. For some, it represents the ascent of all capital latin characters (without accents),
 	//			for others it is the ascent of the highest accented character, and finally, other formats define it as being equal to global_bbox.yMax.
-	posY += face->size->metrics.ascender + -face->size->metrics.descender;
+	posY += pv->face->size->metrics.ascender + -pv->face->size->metrics.descender;
 
    // here, text extents from (0,0) to (posX,posY)
 
@@ -474,9 +474,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( ascender ) {
 
-	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(face);
-	*vp = INT_TO_JSVAL(face->size->metrics.ascender >> 6);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+	*vp = INT_TO_JSVAL(pv->face->size->metrics.ascender >> 6);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -490,9 +490,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( descender ) {
 
-	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(face);
-	*vp = INT_TO_JSVAL(face->size->metrics.descender >> 6);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+	*vp = INT_TO_JSVAL(pv->face->size->metrics.descender >> 6);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -504,9 +504,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( width ) {
 
-	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(face);
-	*vp = INT_TO_JSVAL(face->size->metrics.max_advance >> 6);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+	*vp = INT_TO_JSVAL(pv->face->size->metrics.max_advance >> 6);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -519,8 +519,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( size ) {
 
-	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(face);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
 
 	int size;
 	size = 0;
@@ -528,7 +528,7 @@ DEFINE_PROPERTY( size ) {
 		JL_CHK( JsvalToInt(cx, *vp, &size) );
 
 	JL_S_ASSERT( size >= 0, "Invalid font size." );
-	FTCHK( FT_Set_Pixel_Sizes(face, size, size) );
+	FTCHK( FT_Set_Pixel_Sizes(pv->face, size, size) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
@@ -543,11 +543,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( encoding ) {
 
-	FT_Face face = (FT_Face)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(face);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+
 	unsigned int encoding;
 	JL_CHK( JsvalToUInt(cx, *vp, &encoding) );
-	FTCHK( FT_Select_Charmap(face, (FT_Encoding)encoding) );
+	FTCHK( FT_Select_Charmap(pv->face, (FT_Encoding)encoding) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
@@ -560,9 +561,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( poscriptName ) {
 
-	FT_Face face = (FT_Face)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(face);
-	JL_CHK( StringToJsval(cx, FT_Get_Postscript_Name(face), vp) );
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+
+	JL_CHK( StringToJsval(cx, FT_Get_Postscript_Name(pv->face), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
