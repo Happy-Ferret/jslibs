@@ -14,8 +14,6 @@
 
 #include "stdafx.h"
 
-#include "static.h"
-
 
 /**doc fileIndex:topmost **/
 
