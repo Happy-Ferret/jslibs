@@ -12,6 +12,11 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#ifndef _JLMODULEPRIVATE_H_
+#define _JLMODULEPRIVATE_H_
+
+#include "jlplatform.h"
+
 extern volatile long _modulePrivateCount;
 extern JLTLSKey _modulePrivateKey;
 
@@ -24,7 +29,7 @@ ALWAYS_INLINE void* ModulePrivateAlloc(size_t size) {
 	if ( JLAtomicIncrement(&_modulePrivateCount) == 1 )
 		_modulePrivateKey = JLTLSAllocKey();
 	while ( _modulePrivateKey == JLTLSInvalidKey ) // (TBD) replace this UGLY hack with a mutex (however this case is extremely rare).
-		Sleep(1);
+		SleepMilliseconds(1);
 	JL_ASSERT( _modulePrivateKey != JLTLSInvalidKey );
 	JL_ASSERT( JLTLSGet(_modulePrivateKey) == NULL ); // already allocated
 	void *modulePrivate = malloc(size);
@@ -49,3 +54,5 @@ ALWAYS_INLINE void* ModulePrivateGet() {
 	JL_ASSERT( modulePrivate != NULL ); // already disallocated
 	return modulePrivate;
 }
+
+#endif // _JLMODULEPRIVATE_H_
