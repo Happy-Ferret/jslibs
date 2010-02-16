@@ -2495,6 +2495,51 @@ DEFINE_FUNCTION_FAST( RasterPos ) {
 }
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( x, y )
+  $H OpenGL API
+   glPixelZoom
+**/
+DEFINE_FUNCTION_FAST( PixelZoom ) {
+
+	JL_S_ASSERT_ARG(2);
+	double x, y;
+
+	*JL_FRVAL = JSVAL_VOID;
+
+	JsvalToDouble(cx, JL_FARG(1), &x);
+	JsvalToDouble(cx, JL_FARG(2), &y);
+	glPixelZoom(x, y);
+ 	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( map, values )
+  $H OpenGL API
+   glPixelMapfv
+**/
+DEFINE_FUNCTION_FAST( PixelMap ) {
+
+	JL_S_ASSERT_ARG(2);
+	*JL_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_ARRAY( JL_FARG(2) );
+
+	jsuint mapsize;
+	JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(JL_FARG(2)), &mapsize) );
+	GLfloat *values = (GLfloat*)alloca(mapsize*sizeof(*values));
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), values, mapsize, &mapsize ) );
+	glPixelMapfv(JSVAL_TO_INT(JL_FARG(1)), mapsize, values);
+
+ 	return JS_TRUE;
+	JL_BAD;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // OpenGL extensions
 
@@ -3518,21 +3563,22 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( internalformat | $UNDEF, texture )
+ $VOID $INAME( $UNDEF, texture [, internalformat] )
   $H OpenGL API
    glDrawPixels
 **/
 DEFINE_FUNCTION_FAST( DrawImage ) {
 
-	JL_S_ASSERT_ARG(2);
-	JL_S_ASSERT_OBJECT(JL_FARG(2));
+	JL_S_ASSERT_ARG_RANGE(1,2);
+	JL_S_ASSERT_OBJECT(JL_FARG(1));
 
 	GLsizei width, height;
 	GLenum format, type;
 	int channels;
 	const GLvoid *data;
-
-	JSObject *tObj = JSVAL_TO_OBJECT(JL_FARG(2));
+	
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JSObject *tObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 
 	if ( JL_GetClass(tObj) == TextureJSClass(cx) ) {
 
@@ -3557,10 +3603,10 @@ DEFINE_FUNCTION_FAST( DrawImage ) {
 		type = GL_UNSIGNED_BYTE;
 	}
 
-	if ( JL_FARG_ISDEF(1) ) {
+	if ( JL_FARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_INT(JL_FARG(1));
-		format = JSVAL_TO_INT(JL_FARG(1));
+		JL_S_ASSERT_INT(JL_FARG(2));
+		format = JSVAL_TO_INT(JL_FARG(2));
 	} else { // guess
 
 		switch ( channels ) {
@@ -4017,6 +4063,8 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(DeleteTexture, 1) // textureId
 		FUNCTION_FAST_ARGC(CopyTexImage2D, 8) // target, level, internalFormat, x, y, width, height, border
 		FUNCTION_FAST_ARGC(RasterPos, 4) // x,y,z,w
+		FUNCTION_FAST_ARGC(PixelZoom, 2) // x,y
+		FUNCTION_FAST_ARGC(PixelMap, 2) // map,<array>
 
 		FUNCTION_FAST_ARGC(DefineTextureImage, 3) // target, format, image (non-OpenGL API)
 
