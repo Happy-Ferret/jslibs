@@ -14,18 +14,16 @@
 
 #include "stdafx.h"
 
+DECLARE_CLASS( Font )
+
 #include "jlmoduleprivate.h"
 DEFINE_MODULE_PRIVATE
 
 #include "jsfont.h"
 
-#include "font.h"
-
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_MODULE_H
-
-#include "jsfontpub.h"
 
 #include "jslibsModule.cpp"
 
@@ -79,6 +77,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	JL_CHK( SetNativePrivatePointer(cx, JS_GetGlobalObject(cx), "_jsfontModulePrivate", mpv) );
 
 	INIT_CLASS(Font);
+
+	JL_CHK( JL_RegisterNativeClass(cx, JL_CLASS(Font)) );
 
 	return JS_TRUE;
 	JL_BAD;

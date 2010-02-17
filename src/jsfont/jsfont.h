@@ -15,11 +15,21 @@
 #ifndef _JSFONT_H_
 #define _JSFONT_H_
 
+#include "jlhelper.h"
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 #include FT_OUTLINE_H
 #include FT_TRIGONOMETRY_H
+
+
+#define FTCHK( call ) \
+JL_MACRO_BEGIN \
+	if ( (call) != FT_Err_Ok ) { \
+		JL_REPORT_ERROR("freetype error."); \
+	} \
+JL_MACRO_END
 
 
 struct FTSymbols {
@@ -43,6 +53,7 @@ struct FTSymbols {
 	FT_Error (*Glyph_Copy)( FT_Glyph source, FT_Glyph *target );
 	FT_Error (*Outline_Decompose)( FT_Outline* outline, const FT_Outline_Funcs* func_interface, void* user );
 	FT_Error (*Render_Glyph)( FT_GlyphSlot slot, FT_Render_Mode render_mode );
+	FT_Error (*New_Memory_Face)( FT_Library library, const FT_Byte* file_base, FT_Long file_size, FT_Long face_index, FT_Face *aface );
 };
 
 
@@ -66,7 +77,8 @@ struct FTSymbols {
 	FT_EXPORT( void ) FT_Vector_Rotate( FT_Vector* vec, FT_Angle angle ) { return _ftSymbols.Vector_Rotate( vec, angle ); } \
 	FT_EXPORT( FT_Error ) FT_Glyph_Copy( FT_Glyph source, FT_Glyph *target ) { return _ftSymbols.Glyph_Copy( source, target ); } \
 	FT_EXPORT( FT_Error ) FT_Outline_Decompose( FT_Outline* outline, const FT_Outline_Funcs* func_interface, void* user ) { return _ftSymbols.Outline_Decompose( outline, func_interface, user ); } \
-	FT_EXPORT( FT_Error ) FT_Render_Glyph( FT_GlyphSlot slot, FT_Render_Mode render_mode ) { return _ftSymbols.Render_Glyph( slot, render_mode ); }
+	FT_EXPORT( FT_Error ) FT_Render_Glyph( FT_GlyphSlot slot, FT_Render_Mode render_mode ) { return _ftSymbols.Render_Glyph( slot, render_mode ); } \
+	FT_EXPORT( FT_Error ) FT_New_Memory_Face( FT_Library library, const FT_Byte* file_base, FT_Long file_size, FT_Long face_index, FT_Face *aface ) { return _ftSymbols.New_Memory_Face( library, file_base, file_size, face_index, aface ); } \
 
 
 inline void GetFTSymbols(FTSymbols *sym) {
@@ -90,6 +102,7 @@ inline void GetFTSymbols(FTSymbols *sym) {
 	sym->Glyph_Copy = FT_Glyph_Copy;
 	sym->Outline_Decompose = FT_Outline_Decompose;
 	sym->Render_Glyph = FT_Render_Glyph;
+	sym->New_Memory_Face = FT_New_Memory_Face;
 }
 
 
@@ -101,18 +114,35 @@ struct JsfontModulePrivate {
 };
 
 
+#define FONT_SLOT_HORIZONTALPADDING 0
+#define FONT_SLOT_VERTICALPADDING 1
+#define FONT_SLOT_USEKERNING 2
+#define FONT_SLOT_SIZE 3
+#define FONT_SLOT_LETTERSPACING 4
+#define FONT_SLOT_ITALIC 5
+#define FONT_SLOT_BOLD 6
+
+
 // private structure of the Font class
 struct JsfontPrivate {
 
 	FT_Face face;
+
+	//int horizontalPadding;
+	//int verticalPadding;
+	//int useKerning;
+	//int size;
+	//int letterSpacing;
+	//bool italic;
+	//bool bold;
 };
 
 
-ALWAYS_INLINE FT_Face GetFace(JSContext *cx, JSObject *faceObj) {
+ALWAYS_INLINE JsfontPrivate* GetJsfontPrivate(JSContext *cx, JSObject *fontObj) {
 	
-	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, faceObj);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, fontObj);
 	JL_ASSERT( pv );
-	return pv->face;
+	return pv;
 }
 
 

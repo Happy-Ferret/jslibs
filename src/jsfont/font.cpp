@@ -28,21 +28,6 @@
 #include FT_OUTLINE_H
 #include FT_SYNTHESIS_H
 
-#define FONT_SLOT_HORIZONTALPADDING 0
-#define FONT_SLOT_VERTICALPADDING 1
-#define FONT_SLOT_USEKERNING 2
-#define FONT_SLOT_SIZE 3
-#define FONT_SLOT_LETTERSPACING 4
-#define FONT_SLOT_ITALIC 5
-#define FONT_SLOT_BOLD 6
-
-#define FTCHK( call ) \
-JL_MACRO_BEGIN \
-	if ( (call) != FT_Err_Ok ) { \
-		JL_REPORT_ERROR("freetype error."); \
-	} \
-JL_MACRO_END
-
 /*
 typedef struct {
 	FT_Face face;
