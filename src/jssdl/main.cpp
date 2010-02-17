@@ -99,7 +99,7 @@ ALWAYS_INLINE void AcquireGlContext() {
 	JL_ASSERT( _deviceContext != NULL && _openglContext != NULL );
 	JL_ASSERT( wglGetCurrentDC() == NULL && wglGetCurrentContext() == NULL );
 	BOOL st = wglMakeCurrent(_deviceContext, _openglContext); // doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
-	JL_ASSERT( st );
+	JL_ASSERT( st ); // (TBD) crash here
 	_deviceContext = NULL;
 	_openglContext = NULL;
 //	JLMutexRelease(contextMutex);

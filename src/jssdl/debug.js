@@ -6,8 +6,9 @@ LoadModule('jsdebug');
 LoadModule('jsstd');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
+LoadModule('jsfont');
+LoadModule('jsoglft');
 
-maxFPS = 60;
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 GlSetAttribute( GL_DEPTH_SIZE, 16 );
@@ -31,25 +32,38 @@ var listeners = {
 	}
 };
 
-SetVideoMode(100, 100, 32, HWACCEL | OPENGL | RESIZABLE, true); // | ASYNCBLIT
+SetVideoMode(100, 100, 32, HWACCEL | OPENGL | RESIZABLE, false); // | ASYNCBLIT
 
+var f = new Font('c:\\windows\\fonts\\arial.ttf');
+
+Ogl.Color(0,0,0);
+var textList = Draw3DText(f, "Hello", 24, true);
+
+var angle = 0;
 
 function SurfaceReady() {
 
-	Ogl.ClearColor(0,0,1, 1);
+	Ogl.ClearColor(0,0,0, 1);
 	Ogl.Clear(Ogl.COLOR_BUFFER_BIT);
-	Ogl.Rotate(1,1,1, angle++);
+	Ogl.LoadIdentity();
+	Ogl.Rotate(angle, 0,0,1);
+	//angle++;
+
+	Ogl.Color(1,1,0);
+
 	Ogl.Begin(Ogl.TRIANGLES);
 	Ogl.Vertex(0,0);
 	Ogl.Vertex(0,1);
-
 	Ogl.Vertex(1,0);
 	Ogl.End();
-	Ogl.Flush();
+
+	Ogl.Scale(0.01);
+	
+	Ogl.CallList(textList);
+
 	GlSwapBuffers(true);
 }
 
-var angle = 0.;
 while ( !endSignal ) {
 
 	var t0 = TimeCounter();
