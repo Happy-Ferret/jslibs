@@ -42,7 +42,7 @@ struct Private {
 $CLASS_HEADER
 $SVN_REVISION $Revision: 3060 $
 **/
-BEGIN_CLASS( Oglft ) // Start the definition of the class. It defines some symbols: _name, _class, _prototype
+BEGIN_CLASS( Font3D ) // Start the definition of the class. It defines some symbols: _name, _class, _prototype
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 

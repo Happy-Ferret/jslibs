@@ -216,7 +216,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\oglft.cpp"
+				RelativePath=".\font3d.cpp"
 				>
 			</File>
 			<File

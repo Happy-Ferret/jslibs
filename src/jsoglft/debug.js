@@ -16,7 +16,7 @@ SetVideoMode(100, 100, 32, HWACCEL | OPENGL | RESIZABLE, false);
 
 Ogl.Enable(Ogl.TEXTURE_2D);
 var f = new Font('c:\\windows\\fonts\\arial.ttf');
-var f3d = new Oglft(f, Oglft.GRAYSCALE, 48);
+var f3d = new Font3D(f, Font3D.GRAYSCALE, 48);
 
 Ogl.ClearColor(0,1,0, 1);
 f3d.SetBackgroundColor();

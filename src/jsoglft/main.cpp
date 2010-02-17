@@ -28,7 +28,7 @@ FT_DEFINE_SYMBOLS;
 
 
 DECLARE_STATIC()
-DECLARE_CLASS( Oglft )
+DECLARE_CLASS( Font3D )
 
 namespace OGLFT {
 
@@ -56,7 +56,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	// test: OGLFT::Filled* face = new OGLFT::Filled("c:\\windows\\fonts\\arial.ttf"); face->draw("test");
 
 	INIT_STATIC();
-	INIT_CLASS( Oglft );
+	INIT_CLASS( Font3D );
 
 	return JS_TRUE;
 	JL_BAD;
