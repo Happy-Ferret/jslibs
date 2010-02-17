@@ -19,8 +19,6 @@
 
 #include "../jsfont/jsfont.h"
 
-
-#include "oglft/config.h"
 #include "oglft/OGLFT.h"
 
 
@@ -32,24 +30,62 @@ $SVN_REVISION $Revision: 3060 $
 **/
 BEGIN_STATIC
 
-DEFINE_FUNCTION_FAST( DrawText ) {
 
-	JL_S_ASSERT_ARG_RANGE(2,2);
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( $TYPE Font font, str [, size] [, compileList] )
+  Draw a 3D string using the given font.
+  $H arguments
+   $ARG $TYE Font: a font object from the jsfont module.
+   $ARG $STR str: the string.
+   $ARG $INT size: the point size of the font to generate. A point is essentially 1/72th of an inch.
+**/
+DEFINE_FUNCTION_FAST( Draw3DText ) {
+
+	JL_S_ASSERT_ARG_RANGE( 2, 4 );
 	
 	JL_S_ASSERT_OBJECT(JL_FARG(1));
 
-	FT_Face ftface = GetFace(cx, JSVAL_TO_OBJECT(JL_FARG(1)));
+	JSObject *fontObj = JSVAL_TO_OBJECT(JL_FARG(1));
+
+	FT_Face ftface = GetJsfontPrivate(cx, fontObj)->face;
 
 	const char *text;
 	JL_CHK( JsvalToString(cx, &JL_FARG(2), &text) );
 
 	JsoglftPrivate *mpv = (JsoglftPrivate*)ModulePrivateGet();
 
-	OGLFT::Filled* face = new OGLFT::Filled(ftface);
+	float currentSize = ftface->size->metrics.y_scale / ftface->units_per_EM;
 
-//	face->setForegroundColor( 1., 0., 0. );
+	float size;
+	if ( JL_FARG_ISDEF(3) )
+		JL_CHK( JsvalToFloat(cx, JL_FARG(3), &size) );
+	else
+		size = currentSize;
 
-	face->draw(text);
+	bool compile;
+	if ( JL_FARG_ISDEF(4) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(4), &compile) );
+	else
+		compile = false;
+
+	OGLFT::Filled* face = new OGLFT::Filled(ftface, size);
+	
+//	face->setTessellationSteps(2);
+
+	if ( compile ) {
+
+		GLfloat color[4];
+		glGetFloatv(GL_CURRENT_COLOR, color);
+		face->setForegroundColor(color);
+
+		GLuint list = face->compile(text);
+		*JL_FRVAL = INT_TO_JSVAL(list);
+	} else {
+
+		face->draw(text);
+		*JL_FRVAL = JSVAL_VOID;
+	}
 
 	return JS_TRUE;
 	JL_BAD;
@@ -60,7 +96,7 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision: 3060 $"))
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST( DrawText )
+		FUNCTION_FAST( Draw3DText )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

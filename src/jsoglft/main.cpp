@@ -24,7 +24,6 @@ DEFINE_MODULE_PRIVATE
 #include "../jsfont/jsfont.h"
 FT_DEFINE_SYMBOLS;
 
-#include "oglft/config.h"
 #include "oglft/OGLFT.h"
 
 
@@ -40,6 +39,7 @@ namespace OGLFT {
 	}
 }
 
+
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JsoglftPrivate *mpv = (JsoglftPrivate*)ModulePrivateAlloc(sizeof(JsoglftPrivate));
@@ -52,6 +52,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	jsfontMpv->GetFTSymbols(&_ftSymbols);
 	mpv->ftLibrary = jsfontMpv->ftLibrary;
+
+	// test: OGLFT::Filled* face = new OGLFT::Filled("c:\\windows\\fonts\\arial.ttf"); face->draw("test");
 
 	INIT_STATIC();
 	INIT_CLASS( Oglft );
