@@ -2,7 +2,7 @@
 /*
  * OGLFT: A library for drawing text with OpenGL using the FreeType library
  * Copyright (C) 2002 lignum Computing, Inc. <oglft@lignumcomputing.com>
- * $Id: OGLFT.h,v 1.15 2003/10/01 14:41:09 allen Exp $
+ * $Id: OGLFT.h.cmake 107 2008-04-25 09:29:24Z brevilo $
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,23 +22,53 @@
 #ifndef OGLFT_H
 #define OGLFT_H
 
+//// CMake activates these definitions.
+//#cmakedefine ENABLE_QT
+//#cmakedefine ENABLE_GLE
+//#cmakedefine GLU_TESS_CALLBACK_TRIPLEDOT
+//#cmakedefine HAVE_OPENGL_DIR
+// Convert to our old options.
+#if !defined(ENABLE_QT)
+#define OGLFT_NO_QT
+#endif
+#if !defined(ENABLE_GLE)
+#define OGLFT_NO_SOLID
+#endif
+
 #include <cmath>
 #include <map>
 #include <list>
 #include <vector>
-#ifdef HAVE_MPATROL
-#include <mpdebug.h>
+
+#ifdef WIN32
+#include <windows.h>
 #endif
+
+#ifdef HAVE_OPENGL_DIR
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#else
 #include <GL/gl.h>
 #include <GL/glu.h>
+#endif
 
 #ifndef OGLFT_NO_SOLID
+#ifdef HAVE_OPENGL_DIR
+#include <OpenGL/gle.h>
+#else
 #include <GL/gle.h>
+#endif
 #endif
 
 #ifndef OGLFT_NO_QT
+#define OGLFT_QT_VERSION @DESIRED_QT_VERSION@
+#if OGLFT_QT_VERSION == 3
 #include <qstring.h>
 #include <qcolor.h>
+#elif OGLFT_QT_VERSION == 4
+#include <QString>
+#include <QColor>
+#endif
 #endif
 
 #include <ft2build.h>
@@ -46,6 +76,19 @@
 #include FT_GLYPH_H
 #include FT_OUTLINE_H
 #include FT_TRIGONOMETRY_H
+
+#ifdef _MSC_VER
+#ifdef OGLFT_BUILD
+#define OGLFT_API __declspec(dllexport)
+#else
+#define OGLFT_API __declspec(dllimport)
+#endif
+#else
+#define OGLFT_API
+#endif
+
+#undef OGLFT_API
+#define OGLFT_API
 
 //! All of OGLFT C++ objects are in this namespace.
 
@@ -68,7 +111,11 @@ namespace OGLFT {
   };
 
   //! Callback from GLU tessellation routines.
-  typedef void ( CALLBACK *GLUTessCallback)();
+#ifdef GLU_TESS_CALLBACK_TRIPLEDOT
+  typedef GLvoid (*GLUTessCallback)(...);
+#else
+  typedef GLvoid (*GLUTessCallback)();
+#endif
 
   //! The FreeType library instance.
   /*!
@@ -85,7 +132,7 @@ namespace OGLFT {
      * accessor method.
      * \return the global OGLFT FreeType library handle.
      */
-    static FT_Library& instance ( void );
+    static OGLFT_API FT_Library& instance ( void );
 
   protected:
     /*!
@@ -93,11 +140,11 @@ namespace OGLFT {
      * this library is loaded. Access the instance through the instance()
      * method.
      */
-    Library ( void );
+    OGLFT_API Library ( void );
     /*!
      * This destructor is automatically called when the program exits.
      */
-    ~Library( void );
+    OGLFT_API ~Library( void );
 
   private:
     static Library library;
@@ -107,7 +154,7 @@ namespace OGLFT {
   //! Advance describes the "advance" of a glyph, namely the distance in
   //! model space at which the NEXT glyph should be drawn. This class exists
   //! to assist the computation of string metrics.
-  struct Advance {
+  struct OGLFT_API Advance {
     float dx_;  //!< Advance increment in the X direction.
     float dy_;  //!< Advance increment in the Y direction.
 
@@ -118,23 +165,23 @@ namespace OGLFT {
     //! Initialize an advance from a FreeType advance member.
     Advance ( FT_Vector v )
     {
-      dx_ = v.x / 64.;
-      dy_ = v.y / 64.;
+      dx_ = v.x / 64.f;
+      dy_ = v.y / 64.f;
     }
 
     //! Increment Advance with a FreeType advance member.
     //! \return a reference to oneself.
     Advance& operator+= ( const FT_Vector v )
     {
-      dx_ += v.x / 64.;
-      dy_ += v.y / 64.;
+      dx_ += v.x / 64.f;
+      dy_ += v.y / 64.f;
       return *this;
     }
   };
 
   //! Describe the metrics of a glyph or string relative to the origin
   //! of the first character
-  struct BBox {
+  struct OGLFT_API BBox {
     float x_min_;     //!< The left-most position at which "ink" appears.
     float y_min_;     //!< the bottom-most position at which "ink" appears.
     float x_max_;     //!< The right-most position at which "ink" appears.
@@ -153,16 +200,16 @@ namespace OGLFT {
      */
     BBox ( FT_BBox ft_bbox )
     {
-      x_min_ = ft_bbox.xMin / 64.;
-      y_min_ = ft_bbox.yMin / 64.;
-      x_max_ = ft_bbox.xMax / 64.;
-      y_max_ = ft_bbox.yMax / 64.;
+      x_min_ = ft_bbox.xMin / 64.f;
+      y_min_ = ft_bbox.yMin / 64.f;
+      x_max_ = ft_bbox.xMax / 64.f;
+      y_max_ = ft_bbox.yMax / 64.f;
     }
 
     //! Scale the bounding box by a constant.
     //! \param k a constant to scale the bounding box by.
     //! \return a reference to oneself.
-    BBox& operator*= ( double k )
+    BBox& operator*= ( float k )
     {
       x_min_ *= k;
       y_min_ *= k;
@@ -207,8 +254,9 @@ namespace OGLFT {
   //! During tesselation of a polygonal Face (outline, filled or solid),
   //! an object which implements this interface can be used to compute a
   //! different color for each vertex.
-  class ColorTess {
+  class OGLFT_API ColorTess {
   public:
+    virtual ~ColorTess ( void ) {}
     //! Compute a color for this position. Note that the position is
     //! in the glyph's local coordinate system.
     //! \param p vertex position in glyph's local coordinate system. Argument is
@@ -220,8 +268,9 @@ namespace OGLFT {
   //! During tesselation of a polygonal Face (outline, filled or solid),
   //! an object which implements this interface can be used to compute a
   //! different texture coordinate for each vertex.
-  class TextureTess {
+  class OGLFT_API TextureTess {
   public:
+    virtual ~TextureTess ( void ) {}
     //! Compute a texture coordinate for this position. Note that the
     //! position is in the glyph's local coordinate system.
     //! \param p vertex position in glyph's local coordinate system. Argument is
@@ -249,7 +298,7 @@ namespace OGLFT {
   public:
     //! Thanks to the standard formerly known as PHIGS. Horizontal text
     //! justification constants.
-    enum HorizontalJustification {
+    enum OGLFT_API HorizontalJustification {
       LEFT,   //!< Left justified justification of text
       ORIGIN, //!< Natural origin alignment of text (default)
       CENTER, //!< Center justified alignment of text
@@ -258,7 +307,7 @@ namespace OGLFT {
 
     //! Thanks to the standard formerly known as PHIGS. Vertical text
     //! justification constants.
-    enum VerticalJustification {
+    enum OGLFT_API VerticalJustification {
       BOTTOM,   //!< Descender alignment of text
       BASELINE, //!< Baseline alignment of text (default)
       MIDDLE,   //!< Centered alignment of text
@@ -271,7 +320,7 @@ namespace OGLFT {
     //! be called from within an open display list. In IMMEDIATE mode,
     //! cached glyphs will be drawn if available, otherwise the FreeType
     //! data for a glyph is re-rendered each time.
-    enum GlyphCompileMode {
+    enum OGLFT_API GlyphCompileMode {
       COMPILE,    //!< Compile new glyphs when seen for the first time.
       IMMEDIATE   //!< Do not \em create display lists for glyphs.
     };
@@ -324,7 +373,7 @@ namespace OGLFT {
 
     //! PHIGS-like horizontal positioning of text.
     enum HorizontalJustification horizontal_justification_;
-    
+
     //! PHIGS-like vertical positioning of text.
     enum VerticalJustification vertical_justification_;
 
@@ -372,6 +421,18 @@ namespace OGLFT {
     Face ( const char* filename, float point_size = 12, FT_UInt resolution = 100 );
 
     /*!
+     * Construct a Face by loading a font from the given memory location.
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
+     * \param point_size the initial point size of the font to generate. A point
+     * is essentially 1/72th of an inch. Defaults to 12.
+     * \param resolution the pixel density of the display in dots per inch (DPI).
+     * Defaults to 100 DPI.
+     */
+    Face ( const FT_Byte* data_base, const FT_Long data_size,
+	   float point_size = 12, FT_UInt resolution = 100 );
+
+    /*!
      * Alternatively, the user may have already opened a face and just
      * wants to draw with it. This is useful for Multiple Master fonts or
      * combining multiple files to increase UNICODE point coverage.
@@ -403,6 +464,16 @@ namespace OGLFT {
      * \return true if face was successfully added.
      */
     bool addAuxiliaryFace ( const char* filename );
+
+    /*!
+     * Add another FT_Face to the OGLFT Face. Generally used to add more
+     * coverage of UNICODE points (at least that's the plan). This
+     * routine takes a memory location and takes ownership of the FT_Face.
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
+     * \return true if face was successfully added.
+     */
+    bool addAuxiliaryFace ( const FT_Byte* data_base, const FT_Long data_size );
 
     /*!
      * Add another FT_Face to the OGLFT Face. Generally used to add more
@@ -455,7 +526,7 @@ namespace OGLFT {
      * \param point_size the new point size in points (1/72-th inch).
      */
     void setPointSize ( float point_size );
-      
+
     /*!
      * \return the current point size.
      */
@@ -472,7 +543,7 @@ namespace OGLFT {
      * \param resolution the resolution in DPI (dots per inch).
      */
     void setResolution ( FT_UInt resolution );
-      
+
     /*!
      * \return the current raster resolution.
      */
@@ -691,7 +762,7 @@ namespace OGLFT {
      * \param c the (UNICODE) character to measure.
      * \return the bounding box of c.
      */
-    virtual BBox measure ( QChar c ) = 0;
+    virtual BBox measure ( const QChar c ) = 0;
 #endif /* OGLFT_NO_QT */
     /*!
      * Compute the bounding box info for a string.
@@ -914,16 +985,14 @@ namespace OGLFT {
 		double number );
 #endif /* OGLFT_NO_QT */
     /*!
-     * \return the nominal ascender from the face. This is in "notional"
-     * units.
+     * \return the face ascender, in point units.
      */
-    int ascender ( void ) { return faces_.front().face_->ascender; }
+    int ascender ( void );
 
     /*!
-     * \return the nominal descender from the face. This is in "notional"
-     * units.
+     * \return the face descender, in point units.
      */
-    int descender ( void ) { return faces_.front().face_->descender; }
+    int descender ( void );
 
   protected:
     // The various styles override these routines
@@ -990,7 +1059,7 @@ namespace OGLFT {
     //! lines and arcs at the original face definition resolution. To
     //! get to the proper glyph size, the vertices are scaled before
     //! they're passed to the GLU tessellation routines.
-    double vector_scale_;
+    float vector_scale_;
 
     //! Callbacks for FreeType glyph decomposition into outlines
     FT_Outline_Funcs interface_;
@@ -1134,8 +1203,19 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Polygonal ( const char* filename, float point_size = 12,
-		FT_UInt resolution = 100 );
+    OGLFT_API Polygonal ( const char* filename, float point_size = 12,
+			  FT_UInt resolution = 100 );
+
+    /*!
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
+     * \param point_size the initial point size of the font to generate. A point
+     * is essentially 1/72th of an inch. Defaults to 12.
+     * \param resolution the pixel density of the display in dots per inch (DPI).
+     * Defaults to 100 DPI.
+     */
+    OGLFT_API Polygonal ( const FT_Byte* data_base, const FT_Long data_size,
+			  float point_size = 12, FT_UInt resolution = 100);
 
     /*!
      * \param face open Freetype FT_Face.
@@ -1144,12 +1224,12 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Polygonal ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
+    OGLFT_API Polygonal ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
 
     /*!
      * The Polygonal destructor doesn't do anything in particular.
      */
-    virtual ~Polygonal ( void );
+    OGLFT_API virtual ~Polygonal ( void );
 
     /*!
      * TrueType and Type1 files describe the boundaries of glyphs with
@@ -1163,46 +1243,46 @@ namespace OGLFT {
      * \param tessellation_steps the number of steps to tessellate each curved
      * segment of a glyph outline.
      */
-    void setTessellationSteps ( unsigned int tessellation_steps );
+    OGLFT_API void setTessellationSteps ( unsigned int tessellation_steps );
 
     /*!
      * \return the number of steps used to tessellate curves in the
      * polygonal font types.
      */
-    unsigned int tessellationSteps ( void ) const { return tessellation_steps_; }
+    OGLFT_API unsigned int tessellationSteps ( void ) const { return tessellation_steps_; }
 
     /*!
      * Set the individual character rotation in the X direction.
      * \param character_rotation_x angle in degrees of the X rotation.
      */
-    void setCharacterRotationX ( GLfloat character_rotation_x );
+    OGLFT_API void setCharacterRotationX ( GLfloat character_rotation_x );
 
     /*!
      * Set the individual character rotation in the Y direction.
      * \param character_rotation_y angle in degrees of the Y rotation.
      */
-    void setCharacterRotationY ( GLfloat character_rotation_y );
+    OGLFT_API void setCharacterRotationY ( GLfloat character_rotation_y );
 
     /*!
      * Set the individual character rotation in the Z direction.
      * \param character_rotation_z angle in degrees of the Z rotation.
      */
-    void setCharacterRotationZ ( GLfloat character_rotation_z );
+    OGLFT_API void setCharacterRotationZ ( GLfloat character_rotation_z );
 
     /*!
      * \return the character rotation in the X direction.
      */
-    GLfloat characterRotationX ( void ) const { return character_rotation_.x_; }
+    OGLFT_API GLfloat characterRotationX ( void ) const { return character_rotation_.x_; }
 
     /*!
      * \return the character rotation in the Y direction.
      */
-    GLfloat characterRotationY ( void ) const { return character_rotation_.y_; }
+    OGLFT_API GLfloat characterRotationY ( void ) const { return character_rotation_.y_; }
 
     /*!
      * \return the character rotation in the Z direction.
      */
-    GLfloat characterRotationZ ( void ) const { return character_rotation_.z_; }
+    OGLFT_API GLfloat characterRotationZ ( void ) const { return character_rotation_.z_; }
 
     /*!
      * Set an optional color tesselation object. Each tesselated vertex
@@ -1210,41 +1290,41 @@ namespace OGLFT {
      * in space.
      * \param color_tess the color tesselation object.
      */
-    void setColorTess ( ColorTess* color_tess );
+    OGLFT_API void setColorTess ( ColorTess* color_tess );
     /*!
      * \return the color tesselation object.
      */
-    ColorTess* colorTess ( void ) const { return color_tess_; }
+    OGLFT_API ColorTess* colorTess ( void ) const { return color_tess_; }
     /*!
      * Set an optional texture coordinate tesselation object. Each
      * tessellated vertex is passed to this object, which returns
      * texture coordinates for that position in space.
      * \param texture_tess the texture coordinate tesselation object.
      */
-    void setTextureTess ( TextureTess* texture_tess );
+    OGLFT_API void setTextureTess ( TextureTess* texture_tess );
     /*!
      * \return the texture coordinate tesselation object.
      */
-    TextureTess* textureTess ( void ) const { return texture_tess_; }
+    OGLFT_API TextureTess* textureTess ( void ) const { return texture_tess_; }
 
     /*!
      * \return the height (i.e., line spacing) at the current character size.
      */
-    double height ( void ) const;
+    OGLFT_API double height ( void ) const;
 
     /*!
      * Implement measuring a character in a polygonal face.
      * \param c the (latin1) character to measure
      * \return the bounding box of c.
      */
-    BBox measure ( unsigned char c );
+    OGLFT_API BBox measure ( unsigned char c );
 #ifndef OGLFT_NO_QT
     /*!
      * Implement measuring a character in a polygonal face.
      * \param c the (UNICODE) character to measure
      * \return the bounding box of c.
      */
-    BBox measure ( const QChar c );
+    OGLFT_API BBox measure ( const QChar c );
 #endif /* OGLFT_NO_QT */
     /*!
      * Measure a string of characters. Note: currently, this merely
@@ -1252,7 +1332,7 @@ namespace OGLFT {
      * \param s string of (latin1) characters to measure
      * \return the bounding box of s.
      */
-    BBox measure ( const char* s ) { return Face::measure( s ); }
+    OGLFT_API BBox measure ( const char* s ) { return Face::measure( s ); }
 #ifndef OGLFT_NO_QT
     /*!
      * Implement measuring a formatted number
@@ -1260,7 +1340,7 @@ namespace OGLFT {
      * \param number to value to format
      * \return the bounding box of the formatted number
      */
-    BBox measure ( const QString& format, double number )
+    OGLFT_API BBox measure ( const QString& format, double number )
     { return Face::measure( format, number ); }
 #endif /* OGLFT_NO_QT */
 
@@ -1300,8 +1380,20 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Outline ( const char* filename, float point_size = 12,
-	      FT_UInt resolution = 100 );
+    OGLFT_API Outline ( const char* filename, float point_size = 12,
+			FT_UInt resolution = 100 );
+
+    /*!
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
+     * \param point_size the initial point size of the font to generate. A point
+     * is essentially 1/72th of an inch. Defaults to 12.
+     * \param resolution the pixel density of the display in dots per inch (DPI).
+     * Defaults to 100 DPI.
+     */
+    OGLFT_API Outline ( const FT_Byte* data_base, const FT_Long data_size,
+			float point_size = 12, FT_UInt resolution = 100 );
+
     /*!
      * \param face open FreeType FT_Face.
      * \param point_size the initial point size of the font to generate. A point
@@ -1309,7 +1401,7 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Outline ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
+    OGLFT_API Outline ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
 
     /*!
      * The destructor doesn't do anything in particular.
@@ -1372,8 +1464,20 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Filled ( const char* filename, float point_size = 12,
-	     FT_UInt resolution = 100 );
+    OGLFT_API Filled ( const char* filename, float point_size = 12,
+		       FT_UInt resolution = 100 );
+
+    /*!
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
+     * \param point_size the initial point size of the font to generate. A point
+     * is essentially 1/72th of an inch. Defaults to 12.
+     * \param resolution the pixel density of the display in dots per inch (DPI).
+     * Defaults to 100 DPI.
+     */
+    OGLFT_API Filled ( const FT_Byte* data_base, const FT_Long data_size,
+		       float point_size = 12, FT_UInt resolution = 100 );
+
     /*!
      * \param face open FreeType FT_Face.
      * \param point_size the initial point size of the font to generate. A point
@@ -1381,18 +1485,18 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Filled ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
+    OGLFT_API Filled ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
     /*!
      * The destructor deletes the GLU tessellation object allocated in
      * in the constructor.
      */
-    virtual ~Filled ( void );
+    OGLFT_API virtual ~Filled ( void );
 
     /*!
      * \return the list of extra vertices created by the GLU tessellation
      * combine callback.
      */
-    VertexInfoList& extraVertices ( void ) { return extra_vertices_; }
+    OGLFT_API VertexInfoList& extraVertices ( void ) { return extra_vertices_; }
 
   protected:
     void renderGlyph ( FT_Face face, FT_UInt glyph_index );
@@ -1403,13 +1507,13 @@ namespace OGLFT {
     static int conicToCallback ( FT_Vector* control, FT_Vector* to, Filled* filled);
     static int cubicToCallback ( FT_Vector* control1, FT_Vector* control2,
 				 FT_Vector* to, Filled* filled );
-    static void vertexCallback ( VertexInfo* vertex );
-    static void beginCallback ( GLenum which );
-    static void endCallback ( void );
-    static void combineCallback ( GLdouble coords[3], void* vertex_data[4],
+    static void CALLBACK vertexCallback ( VertexInfo* vertex );
+    static void CALLBACK beginCallback ( GLenum which );
+    static void CALLBACK endCallback ( void );
+    static void CALLBACK combineCallback ( GLdouble coords[3], void* vertex_data[4],
 				  GLfloat weight[4], void** out_data,
 				  Filled* filled );
-    static void errorCallback ( GLenum error_code );
+    static void CALLBACK errorCallback ( GLenum error_code );
   };
 
 #ifndef OGLFT_NO_SOLID
@@ -1483,7 +1587,18 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Solid ( const char* filename, float point_size = 12, FT_UInt resolution = 100 );
+    OGLFT_API Solid ( const char* filename, float point_size = 12, FT_UInt resolution = 100 );
+
+    /*!
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
+     * \param point_size the initial point size of the font to generate. A point
+     * is essentially 1/72th of an inch. Defaults to 12.
+     * \param resolution the pixel density of the display in dots per inch (DPI).
+     * Defaults to 100 DPI.
+     */
+    OGLFT_API Solid ( const FT_Byte* data_base, const FT_Long data_size,
+		      float point_size = 12, FT_UInt resolution = 100 );
 
     /*!
      * \param face open FreeType FT_Face.
@@ -1492,22 +1607,22 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Solid ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
+    OGLFT_API Solid ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
 
     /*!
      * The destructor doesn't do anything in particular.
      */
-    ~Solid ( void );
+    OGLFT_API ~Solid ( void );
     /*!
      * Set the thickness of the solid
      * \param depth thickness of the solid in model units.
      */
-    void setDepth ( double depth );
-      
+    OGLFT_API void setDepth ( double depth );
+
     /*!
      * \return the solid extrusion depth.
      */
-    double depth ( void ) const { return extrusion_.depth_; }
+    OGLFT_API double depth ( void ) const { return extrusion_.depth_; }
 
   private:
     // It would be nice if C/C++ had real matrix notation (like Perl!)
@@ -1546,7 +1661,19 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Raster ( const char* filename, float point_size = 12, FT_UInt resolution = 100 );
+    OGLFT_API Raster ( const char* filename, float point_size = 12, FT_UInt resolution = 100 );
+
+    /*!
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
+     * \param point_size the initial point size of the font to generate. A point
+     * is essentially 1/72th of an inch. Defaults to 12.
+     * \param resolution the pixel density of the display in dots per inch (DPI).
+     * Defaults to 100 DPI.
+     */
+    OGLFT_API Raster ( const FT_Byte* data_base, const FT_Long data_size,
+		       float point_size = 12, FT_UInt resolution = 100 );
+
     /*!
      * \param face open FreeType FT_Face.
      * \param point_size the initial point size of the font to generate. A point
@@ -1554,39 +1681,39 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Raster ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
+    OGLFT_API Raster ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
     /*!
      * The destructor doesn't do anything in particular.
      */
-    virtual ~Raster ( void );
+    OGLFT_API virtual ~Raster ( void );
     /*!
      * Set the individual character rotation in the Z direction.
      * \param character_rotation_z angle in degrees of Z rotation.
      */
-    void setCharacterRotationZ ( GLfloat character_rotation_z );
+    OGLFT_API void setCharacterRotationZ ( GLfloat character_rotation_z );
     /*!
      * \return the character rotation in the Z direction.
      */
-    GLfloat characterRotationZ ( void ) const { return character_rotation_z_; }
+    OGLFT_API GLfloat characterRotationZ ( void ) const { return character_rotation_z_; }
 
     /*!
      * \return the height (i.e., line spacing) at the current character size.
      */
-    double height ( void ) const;
+    OGLFT_API double height ( void ) const;
 
     /*!
      * Implement measuring a character in a raster face.
      * \param c the (latin1) character to measure
      * \return the bounding box of c.
      */
-    BBox measure ( unsigned char c );
+    OGLFT_API BBox measure ( unsigned char c );
 #ifndef OGLFT_NO_QT
     /*!
      * Implement measuring a character in a raster face.
      * \param c the (UNICODE) character to measure
      * \return the bounding box of c.
      */
-    BBox measure ( const QChar c );
+    OGLFT_API BBox measure ( const QChar c );
 #endif /* OGLFT_NO_QT */
     /*!
      * Measure a string of characters. Note: currently, this merely
@@ -1594,7 +1721,7 @@ namespace OGLFT {
      * \param s string of (latin1) characters to measure
      * \return the bounding box of s.
      */
-    BBox measure ( const char* s ) { return Face::measure( s ); }
+    OGLFT_API BBox measure ( const char* s ) { return Face::measure( s ); }
 #ifndef OGLFT_NO_QT
     /*!
      * Implement measuring a formatted number
@@ -1602,8 +1729,7 @@ namespace OGLFT {
      * \param number to value to format
      * \return the bounding box of the formatted number
      */
-    BBox measure ( const QString& format, double number )
-    { return Face::measure( format, number ); }
+    OGLFT_API BBox measure ( const QString& format, double number );
 #endif /* OGLFT_NO_QT */
 
   private:
@@ -1643,20 +1769,32 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Monochrome ( const char* filename, float point_size = 12,
-		 FT_UInt resolution = 100 );
+    OGLFT_API Monochrome ( const char* filename, float point_size = 12,
+			   FT_UInt resolution = 100 );
+
     /*!
-     * \param face open FreeType FT_Face.
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
      * \param point_size the initial point size of the font to generate. A point
      * is essentially 1/72th of an inch. Defaults to 12.
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Monochrome ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
+    OGLFT_API Monochrome ( const FT_Byte* data_base, const FT_Long data_size,
+			   float point_size = 12, FT_UInt resolution = 100 );
+
+    /*!
+     * \param font open FreeType FT_Face.
+     * \param point_size the initial point size of the font to generate. A point
+     * is essentially 1/72th of an inch. Defaults to 12.
+     * \param resolution the pixel density of the display in dots per inch (DPI).
+     * Defaults to 100 DPI.
+     */
+    OGLFT_API Monochrome ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
     /*!
      * The destructor doesn't do anything in particular.
      */
-    ~Monochrome ( void );
+    OGLFT_API ~Monochrome ( void );
   private:
     GLubyte* invertBitmap ( const FT_Bitmap& bitmap );
     void renderGlyph ( FT_Face face, FT_UInt glyph_index );
@@ -1692,8 +1830,20 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Grayscale ( const char* filename, float point_size = 12,
-		FT_UInt resolution = 100 );
+    OGLFT_API Grayscale ( const char* filename, float point_size = 12,
+			  FT_UInt resolution = 100 );
+
+    /*!
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
+     * \param point_size the initial point size of the font to generate. A point
+     * is essentially 1/72th of an inch. Defaults to 12.
+     * \param resolution the pixel density of the display in dots per inch (DPI).
+     * Defaults to 100 DPI.
+     */
+    OGLFT_API Grayscale ( const FT_Byte* data_base, const FT_Long data_size,
+			  float point_size = 12, FT_UInt resolution = 100 );
+
     /*!
      * \param face open FreeType FT_Face.
      * \param point_size the initial point size of the font to generate. A point
@@ -1701,11 +1851,11 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Grayscale ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
+    OGLFT_API Grayscale ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
     /*!
      * The destructor doesn't do anything in particular.
      */
-    ~Grayscale ( void );
+    OGLFT_API ~Grayscale ( void );
   private:
     GLubyte* invertPixmap ( const FT_Bitmap& bitmap );
     void renderGlyph ( FT_Face face, FT_UInt glyph_index );
@@ -1747,8 +1897,20 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Translucent ( const char* filename, float point_size = 12,
-		  FT_UInt resolution = 100 );
+    OGLFT_API Translucent ( const char* filename, float point_size = 12,
+			    FT_UInt resolution = 100 );
+
+    /*!
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
+     * \param point_size the initial point size of the font to generate. A point
+     * is essentially 1/72th of an inch. Defaults to 12.
+     * \param resolution the pixel density of the display in dots per inch (DPI).
+     * Defaults to 100 DPI.
+     */
+    OGLFT_API Translucent ( const FT_Byte* data_base, const FT_Long data_size,
+			    float point_size = 12, FT_UInt resolution = 100 );
+
     /*!
      * \param face open FreeType FT_Face.
      * \param point_size the initial point size of the font to generate. A point
@@ -1756,12 +1918,12 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Translucent ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
+    OGLFT_API Translucent ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
 
     /*!
      * The destructor doesn't do anything in particular.
      */
-    ~Translucent ( void );
+    OGLFT_API ~Translucent ( void );
 
   private:
     GLubyte* invertPixmapWithAlpha ( const FT_Bitmap& bitmap );
@@ -1821,8 +1983,19 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Texture ( const char* filename, float point_size = 12,
-	      FT_UInt resolution = 100 );
+    OGLFT_API Texture ( const char* filename, float point_size = 12,
+			FT_UInt resolution = 100 );
+
+    /*!
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
+     * \param point_size the initial point size of the font to generate. A point
+     * is essentially 1/72th of an inch. Defaults to 12.
+     * \param resolution the pixel density of the display in dots per inch (DPI).
+     * Defaults to 100 DPI.
+     */
+    OGLFT_API Texture ( const FT_Byte* data_base, const FT_Long data_size,
+			float point_size = 12, FT_UInt resolution = 100 );
 
     /*!
      * \param face open FreeType FT_Face.
@@ -1831,63 +2004,63 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    Texture ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
+    OGLFT_API Texture ( FT_Face face, float point_size = 12, FT_UInt resolution = 100 );
 
     /*!
      * The texture destructor doesn't really do anything.
      */
-    virtual ~Texture ( void );
+    OGLFT_API virtual ~Texture ( void );
     /*!
      * Set the individual character rotation in the X direction.
      * \param character_rotation_x angle in degrees of X rotation.
      */
-    void setCharacterRotationX ( GLfloat character_rotation_x );
+    OGLFT_API void setCharacterRotationX ( GLfloat character_rotation_x );
 
     /*!
      * Set the individual character rotation in the Y direction.
      * \param character_rotation_y angle in degrees of Y rotation.
      */
-    void setCharacterRotationY ( GLfloat character_rotation_y );
+    OGLFT_API void setCharacterRotationY ( GLfloat character_rotation_y );
 
     /*!
      * Set the individual character rotation in the Z direction.
      * \param character_rotation_z angle in degrees of Z rotation.
      */
-    void setCharacterRotationZ ( GLfloat character_rotation_z );
+    OGLFT_API void setCharacterRotationZ ( GLfloat character_rotation_z );
 
     /*!
      * \return the character rotation in the X direction.
      */
-    GLfloat characterRotationX ( void ) const { return character_rotation_.x_; }
+    OGLFT_API GLfloat characterRotationX ( void ) const { return character_rotation_.x_; }
 
     /*!
      * \return the character rotation in the Y direction.
      */
-    GLfloat characterRotationY ( void ) const { return character_rotation_.y_; }
+    OGLFT_API GLfloat characterRotationY ( void ) const { return character_rotation_.y_; }
 
     /*!
      * \return the character rotation in the Z direction.
      */
-    GLfloat characterRotationZ ( void ) const { return character_rotation_.z_; }
+    OGLFT_API GLfloat characterRotationZ ( void ) const { return character_rotation_.z_; }
 
     /*!
      * \return the height (i.e., line spacing) at the current character size.
      */
-    double height ( void ) const;
+    OGLFT_API double height ( void ) const;
 
     /*!
      * Implement measuring a character in a texture face.
      * \param c the (latin1) character to measure
      * \return the bounding box of c.
      */
-    BBox measure ( unsigned char c );
+    OGLFT_API BBox measure ( unsigned char c );
 #ifndef OGLFT_NO_QT
     /*!
      * Implement measuring a character in a texture face.
      * \param c the (UNICODE) character to measure
      * \return the bounding box of c.
      */
-    BBox measure ( const QChar c );
+    OGLFT_API BBox measure ( const QChar c );
 #endif /* OGLFT_NO_QT */
     /*!
      * Measure a string of characters. Note: currently, this merely
@@ -1895,15 +2068,18 @@ namespace OGLFT {
      * \param s string of (latin1) characters to measure
      * \return the bounding box of s.
      */
-    BBox measure ( const char* s ) { return Face::measure( s ); }
+    OGLFT_API BBox measure ( const char* s ) { return Face::measure( s ); }
 #ifndef OGLFT_NO_QT
+    OGLFT_API BBox measure ( const QString& s )
+    { return Face::measure( s ); }
+
     /*!
      * Implement measuring a formatted number
      * \param format the format string
      * \param number to value to format
      * \return the bounding box of the formatted number
      */
-    BBox measure ( const QString& format, double number )
+    OGLFT_API BBox measure ( const QString& format, double number )
     { return Face::measure( format, number ); }
 #endif /* OGLFT_NO_QT */
 
@@ -1971,8 +2147,20 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    MonochromeTexture ( const char* filename, float point_size = 12,
-			FT_UInt resolution = 100 );
+    OGLFT_API MonochromeTexture ( const char* filename, float point_size = 12,
+				  FT_UInt resolution = 100 );
+
+    /*!
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
+     * \param point_size the initial point size of the font to generate. A point
+     * is essentially 1/72th of an inch. Defaults to 12.
+     * \param resolution the pixel density of the display in dots per inch (DPI).
+     * Defaults to 100 DPI.
+     */
+    OGLFT_API MonochromeTexture ( const FT_Byte* data_base, const FT_Long data_size,
+				  float point_size = 12, FT_UInt resolution = 100 );
+
     /*!
      * \param face open FreeType FT_Face
      * \param point_size the initial point size of the font to generate. A point
@@ -1980,12 +2168,12 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    MonochromeTexture ( FT_Face face, float point_size = 12,
-			FT_UInt resolution = 100 );
+    OGLFT_API MonochromeTexture ( FT_Face face, float point_size = 12,
+				  FT_UInt resolution = 100 );
     /*!
      * The monochrome texture destructor doesn't really do anything.
      */
-    ~MonochromeTexture ( void );
+    OGLFT_API ~MonochromeTexture ( void );
   private:
     GLubyte* invertBitmap ( const FT_Bitmap& bitmap, int* width, int* height );
     void bindTexture ( FT_Face face, FT_UInt glyph_index );
@@ -2027,8 +2215,20 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    GrayscaleTexture ( const char* filename, float point_size = 12,
-		       FT_UInt resolution = 100 );
+    OGLFT_API GrayscaleTexture ( const char* filename, float point_size = 12,
+				 FT_UInt resolution = 100 );
+
+    /*!
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
+     * \param point_size the initial point size of the font to generate. A point
+     * is essentially 1/72th of an inch. Defaults to 12.
+     * \param resolution the pixel density of the display in dots per inch (DPI).
+     * Defaults to 100 DPI.
+     */
+    OGLFT_API GrayscaleTexture ( const FT_Byte* data_base, const FT_Long data_size,
+				 float point_size = 12, FT_UInt resolution = 100 );
+
     /*!
      * \param face open FreeType FT_Face.
      * \param point_size the initial point size of the font to generate. A point
@@ -2036,12 +2236,12 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    GrayscaleTexture ( FT_Face face, float point_size = 12,
-		       FT_UInt resolution = 100 );
+    OGLFT_API GrayscaleTexture ( FT_Face face, float point_size = 12,
+				 FT_UInt resolution = 100 );
     /*!
      * The grayscale texture destructor doesn't really do anything.
      */
-    ~GrayscaleTexture ( void );
+    OGLFT_API ~GrayscaleTexture ( void );
   private:
     GLubyte* invertPixmap ( const FT_Bitmap& bitmap, int* width, int* height );
     void bindTexture ( FT_Face face, FT_UInt glyph_index );
@@ -2089,8 +2289,20 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    TranslucentTexture ( const char* filename, float point_size = 12,
-			 FT_UInt resolution = 100 );
+    OGLFT_API TranslucentTexture ( const char* filename, float point_size = 12,
+				   FT_UInt resolution = 100 );
+
+    /*!
+     * \param data_base the memory location (base pointer) which contains the font face.
+     * \param data_size the size (in bytes) of the font data found at \ref data_base.
+     * \param point_size the initial point size of the font to generate. A point
+     * is essentially 1/72th of an inch. Defaults to 12.
+     * \param resolution the pixel density of the display in dots per inch (DPI).
+     * Defaults to 100 DPI.
+     */
+    OGLFT_API TranslucentTexture ( const FT_Byte* data_base, const FT_Long data_size,
+				   float point_size = 12, FT_UInt resolution = 100 );
+
     /*!
      * \param face open FreeType FT_Face.
      * \param point_size the initial point size of the font to generate. A point
@@ -2098,12 +2310,12 @@ namespace OGLFT {
      * \param resolution the pixel density of the display in dots per inch (DPI).
      * Defaults to 100 DPI.
      */
-    TranslucentTexture ( FT_Face face, float point_size = 12,
-			 FT_UInt resolution = 100 );
+    OGLFT_API TranslucentTexture ( FT_Face face, float point_size = 12,
+				   FT_UInt resolution = 100 );
     /*!
      * The translucent texture destructor doesn't really do anything.
      */
-    ~TranslucentTexture ( void );
+    OGLFT_API ~TranslucentTexture ( void );
   private:
     GLubyte* invertPixmap ( const FT_Bitmap& bitmap, int* width, int* height );
     void bindTexture ( FT_Face face, FT_UInt glyph_index );

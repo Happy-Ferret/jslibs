@@ -1,7 +1,8 @@
 /*
  * OGLFT: A library for drawing text with OpenGL using the FreeType library
  * Copyright (C) 2002 lignum Computing, Inc. <oglft@lignumcomputing.com>
- * $Id: OGLFT.cpp,v 1.11 2003/10/01 14:21:18 allen Exp $
+ * Copyright (C) 2008 Allen Barnett
+ * $Id:$
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,13 +22,12 @@
 
 #include <iostream>
 #include <iomanip>
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+
+#include "OGLFT.h"
+
 #ifndef OGLFT_NO_QT
 #include <qregexp.h>
 #endif
-#include <OGLFT.h>
 
 namespace OGLFT {
 /*
@@ -69,7 +69,7 @@ namespace OGLFT {
     return library_;
   }
 */
-  // Load a new face
+  // Load a new face from file
 
   Face::Face ( const char* filename, float point_size, FT_UInt resolution )
     : point_size_( point_size ), resolution_( resolution )
@@ -79,6 +79,32 @@ namespace OGLFT {
     FT_Face ft_face;
 
     FT_Error error = FT_New_Face( Library::instance(), filename, 0, &ft_face );
+
+    if ( error != 0 ) {
+      valid_ = false;
+      return;
+    }
+
+    // As of FreeType 2.1: only a UNICODE charmap is automatically activated.
+    // If no charmap is activated automatically, just use the first one.
+    if ( ft_face->charmap == 0 && ft_face->num_charmaps > 0 )
+      FT_Select_Charmap( ft_face, ft_face->charmaps[0]->encoding );
+
+    faces_.push_back( FaceData( ft_face ) );
+
+    init();
+  }
+
+  // Load a new face from memory
+
+  Face::Face ( const FT_Byte* data_base, const FT_Long data_size, float point_size, FT_UInt resolution )
+    : point_size_( point_size ), resolution_( resolution )
+  {
+    valid_ = true; // Assume the best :-)
+
+    FT_Face ft_face;
+
+    FT_Error error = FT_New_Memory_Face( Library::instance(), data_base, data_size, 0, &ft_face );
 
     if ( error != 0 ) {
       valid_ = false;
@@ -160,7 +186,7 @@ namespace OGLFT {
 	FT_Done_Face( faces_[i].face_ );
   }
 
-  // Add another Face to select characters from
+  // Add another Face to select characters from file.
 
   bool Face::addAuxiliaryFace ( const char* filename )
   {
@@ -178,7 +204,25 @@ namespace OGLFT {
     return true;
   }
 
-  // Add another Face to select characters from
+  // Add another Face to select characters from memory.
+
+  bool Face::addAuxiliaryFace ( const FT_Byte* data_base, const FT_Long data_size )
+  {
+    FT_Face ft_face;
+
+    FT_Error error = FT_New_Memory_Face( Library::instance(), data_base, data_size, 0, &ft_face );
+
+    if ( error != 0 )
+      return false;
+
+    faces_.push_back( FaceData( ft_face ) );
+
+    setCharSize();
+
+    return true;
+  }
+
+  // Add another Face to select characters from (face)
 
   bool Face::addAuxiliaryFace ( FT_Face face )
   {
@@ -354,7 +398,7 @@ namespace OGLFT {
       if ( string_rotation_ != 0. ) {
 	float angle;
 	if ( string_rotation_ < 0. ) {
-	  angle = 360. - fmod( fabs( string_rotation_ ), 360.f );
+	  angle = 360.f - fmod( fabs( string_rotation_ ), 360.f );
 	}
 	else {
 	  angle = fmod( string_rotation_, 360.f );
@@ -548,7 +592,7 @@ namespace OGLFT {
 
     float angle;
     if ( string_rotation_ < 0. ) {
-      angle = 360. - fmod( fabs( string_rotation_ ), 360.f );
+      angle = 360.f - fmod( fabs( string_rotation_ ), 360.f );
     }
     else {
       angle = fmod( string_rotation_, 360.f );
@@ -620,13 +664,21 @@ namespace OGLFT {
     // 3. optionally anything after it.
     // Note that since everything is optional, the match always succeeds.
     QRegExp format_regexp("((?:[^%]|%%)*)(%[0-9]*\\.?[0-9]*[efgp])?((?:[^%]|%%)*)");
+#if OGLFT_QT_VERSION == 3
     /*int pos = */ format_regexp.search( format );
+#elif OGLFT_QT_VERSION == 4
+    /*int pos = */ format_regexp.exactMatch( format );
+#endif
 
     QStringList list = format_regexp.capturedTexts();
 
     QStringList::Iterator it = list.begin();
 
+#if OGLFT_QT_VERSION == 3
     it = list.remove( it );	// Remove the "matched" string, leaving the pieces
+#elif OGLFT_QT_VERSION == 4
+    it = list.erase( it );	// Remove the "matched" string, leaving the pieces
+#endif
 
     if ( it == list.end() ) return QString::null; // Probably an error
 
@@ -644,20 +696,28 @@ namespace OGLFT {
       if ( !(*it).isEmpty() ) {
 	// Reparse this to extract the details of the format
 	QRegExp specifier_regexp( "([0-9]*)\\.?([0-9]*)([efgp])" );
+#if OGLFT_QT_VERSION == 3
 	(void)specifier_regexp.search( *it );
+#elif OGLFT_QT_VERSION == 4
+	(void)specifier_regexp.exactMatch( *it );
+#endif
 	QStringList specifier_list = specifier_regexp.capturedTexts();
 
 	QStringList::Iterator sit = specifier_list.begin();
-
+#if OGLFT_QT_VERSION == 3
 	sit = specifier_list.remove( sit );
-
+#elif OGLFT_QT_VERSION == 4
+	sit = specifier_list.erase( sit );
+#endif
 	int width = (*sit).toInt();
 	++sit;
 	int precision = (*sit).toInt();
 	++sit;
-
+#if OGLFT_QT_VERSION == 3
 	type = (*sit).at(0).latin1();
-
+#elif OGLFT_QT_VERSION == 4
+	type = (*sit).at(0).toLatin1();
+#endif
 	// The regular formats just use Qt's number formatting capability
 	if ( type == 'e' || type == 'f' || type == 'g' )
 	  value_format = QString( "%1" ).arg( number, width, type, precision );
@@ -692,18 +752,18 @@ namespace OGLFT {
 	      // Format the numerator and shift to 0xE000 sequence
 	      QString numerator = QString::number( b );
 	      for ( uint i = 0; i < numerator.length(); i++ ) {
-		numerator.at(i) = QChar( numerator.at(i).unicode() -
-					 QChar('0').unicode() +
-					 0xE000 );
+		numerator[i] = QChar( numerator.at(i).unicode() -
+				      QChar('0').unicode() +
+				      0xE000 );
 	      }
 	      value_format += numerator;
 	      value_format += QChar( 0xE00a ); // The '/'
 	      // Format the denominator and shift to 0xE010 sequence
 	      QString denominator = QString::number( c );
 	      for ( uint i = 0; i < denominator.length(); i++ ) {
-		denominator.at(i) = QChar( denominator.at(i).unicode() -
-					   QChar('0').unicode() +
-					   0xE010 );
+		denominator[i] = QChar( denominator.at(i).unicode() -
+					QChar('0').unicode() +
+					0xE010 );
 	      }
 	      value_format += denominator;
 	    }
@@ -979,21 +1039,6 @@ namespace OGLFT {
 
     draw( c );
   }
-
-  // Draw the (latin1) character at the given position. The MODELVIEW
-  // matrix is modified by the glyph advance.
-
-  void Face::draw ( GLfloat x, GLfloat y, GLfloat z, unsigned char c )
-  {
-    glTranslatef( x, y, z );
-
-    glColor4f( foreground_color_[R], foreground_color_[G], foreground_color_[B],
-	       foreground_color_[A] );
-
-    glRasterPos2i( 0, 0 );
-
-    draw( c );
-  }
 #ifndef OGLFT_NO_QT
   // Draw the (UNICODE) character at the given position. The MODELVIEW
   // matrix is modified by the glyph advance.
@@ -1009,23 +1054,7 @@ namespace OGLFT {
 
     draw( c );
   }
-
-  // Draw the (UNICODE) character at the given position. The MODELVIEW
-  // matrix is modified by the glyph advance.
-
-  void Face::draw ( GLfloat x, GLfloat y, GLfloat z, QChar c )
-  {
-    glTranslatef( x, y, z );
-
-    glColor4f( foreground_color_[R], foreground_color_[G], foreground_color_[B],
-	       foreground_color_[A] );
-
-    glRasterPos2i( 0, 0 );
-
-    draw( c );
-  }
 #endif /* OGLFT_NO_QT */
-
   // Draw the (latin1) string at the given position.
 
   void Face::draw ( GLfloat x, GLfloat y, const char* s )
@@ -1045,7 +1074,7 @@ namespace OGLFT {
       case LEFT:
 	dx = -bbox.x_min_; break;
       case CENTER:
-	dx = -( bbox.x_min_ + bbox.x_max_ ) / 2.; break;
+	dx = -( bbox.x_min_ + bbox.x_max_ ) / 2.f; break;
       case RIGHT:
 	dx = -bbox.x_max_; break;
       default:
@@ -1055,7 +1084,7 @@ namespace OGLFT {
       case BOTTOM:
 	dy = -bbox.y_min_; break;
       case MIDDLE:
-	dy = -( bbox.y_min_ + bbox.y_max_ ) / 2.; break;
+	dy = -( bbox.y_min_ + bbox.y_max_ ) / 2.f; break;
       case TOP:
 	dy = -bbox.y_max_; break;
       default:
@@ -1070,66 +1099,6 @@ namespace OGLFT {
     }
 
     glTranslatef( x, y, 0. );
-
-    glColor4f( foreground_color_[R], foreground_color_[G], foreground_color_[B],
-	       foreground_color_[A] );
-
-    glRasterPos2i( 0, 0 );
-
-    draw( s );
-
-    if ( horizontal_justification_ != ORIGIN ||
-	 vertical_justification_ != BASELINE )
-      glPopMatrix();
-
-    if ( !advance_ )
-      glPopMatrix();
-  }
-
-  // Draw the (latin1) string at the given position.
-
-  void Face::draw ( GLfloat x, GLfloat y, GLfloat z, const char* s )
-  {
-    if ( !advance_ )
-      glPushMatrix();
-
-    if ( horizontal_justification_ != ORIGIN ||
-	 vertical_justification_ != BASELINE ) {
-      glPushMatrix();
-
-      BBox bbox = measure_nominal( s );
-
-      GLfloat dx = 0, dy = 0;
-
-      switch ( horizontal_justification_ ) {
-      case LEFT:
-	dx = -bbox.x_min_; break;
-      case CENTER:
-	dx = -( bbox.x_min_ + bbox.x_max_ ) / 2.; break;
-      case RIGHT:
-	dx = -bbox.x_max_; break;
-      default:
-	break;
-      }
-      switch ( vertical_justification_ ) {
-      case BOTTOM:
-	dy = -bbox.y_min_; break;
-      case MIDDLE:
-	dy = -( bbox.y_min_ + bbox.y_max_ ) / 2.; break;
-      case TOP:
-	dy = -bbox.y_max_; break;
-      default:
-	break;
-      }
-
-      // There is probably a less expensive way to compute this
-
-      glRotatef( string_rotation_, 0., 0., 1. );
-      glTranslatef( dx, dy, 0 );
-      glRotatef( -string_rotation_, 0., 0., 1. );
-    }
-
-    glTranslatef( x, y, z );
 
     glColor4f( foreground_color_[R], foreground_color_[G], foreground_color_[B],
 	       foreground_color_[A] );
@@ -1169,6 +1138,8 @@ namespace OGLFT {
 	dx = -( bbox.x_min_ + bbox.x_max_ ) / 2.; break;
       case RIGHT:
 	dx = -bbox.x_max_; break;
+      case ORIGIN:
+	break;
       }
       switch ( vertical_justification_ ) {
       case BOTTOM:
@@ -1177,6 +1148,8 @@ namespace OGLFT {
 	dy = -( bbox.y_min_ + bbox.y_max_ ) / 2.; break;
       case TOP:
 	dy = -bbox.y_max_; break;
+      case BASELINE:
+	break;
       }
 
       // There is probably a less expensive way to compute this
@@ -1203,128 +1176,25 @@ namespace OGLFT {
       glPopMatrix();
   }
 
-  // Draw the (UNICODE) string at the given position.
-
-  void Face::draw ( GLfloat x, GLfloat y, GLfloat z, const QString& s )
-  {
-    if ( !advance_ )
-      glPushMatrix();
-
-    if ( horizontal_justification_ != ORIGIN ||
-	 vertical_justification_ != BASELINE ) {
-      glPushMatrix();
-
-      // In 3D, we need to exert more care in the computation of the
-      // bounding box of the text. NOTE: Needs to be fixed up for
-      // polygonal faces, too...
-
-      BBox bbox;
-      // Code from measure_nominal, but changed to use measureRaw instead
-      if ( string_rotation_ == 0. )
-	bbox = measureRaw( s );
-    
-      else {
-	// Undo rotation
-	for ( unsigned int f = 0; f < faces_.size(); f++ )
-	  FT_Set_Transform( faces_[f].face_, 0, 0 );
-
-	bbox = measureRaw( s );
-
-	// Redo rotation
-	float angle;
-	if ( string_rotation_ < 0. ) {
-	  angle = 360. - fmod( fabs( string_rotation_ ), 360.f );
-	}
-	else {
-	  angle = fmod( string_rotation_, 360.f );
-	}
-
-	FT_Matrix rotation_matrix;
-	FT_Vector sinus;
-
-	FT_Vector_Unit( &sinus, (FT_Angle)(angle * 0x10000L) );
-
-	rotation_matrix.xx = sinus.x;
-	rotation_matrix.xy = -sinus.y;
-	rotation_matrix.yx = sinus.y;
-	rotation_matrix.yy = sinus.x;
-
-	for ( unsigned int f = 0; f < faces_.size(); f++ )
-	  FT_Set_Transform( faces_[f].face_, &rotation_matrix, 0 );
-      }
-
-      // Determine the offset into the bounding box which will appear
-      // at the user's specified position.
-      GLfloat dx = 0, dy = 0;
-      switch ( horizontal_justification_ ) {
-      case LEFT:
-	dx = bbox.x_min_; break;
-      case CENTER:
-	dx = ( bbox.x_min_ + bbox.x_max_ ) / 2; break;
-      case RIGHT:
-	dx = bbox.x_max_; break;
-      }
-      switch ( vertical_justification_ ) {
-      case BOTTOM:
-	dy = bbox.y_min_; break;
-      case MIDDLE:
-	dy = ( bbox.y_min_ + bbox.y_max_ ) /2; break;
-      case TOP:
-	dy = bbox.y_max_; break;
-      }
-
-      // **Now** rotate these coordinates around into 3D modeling coordinates!
-      GLint viewport[4];
-      GLdouble modelview[16], projection[16];
-
-      glGetIntegerv( GL_VIEWPORT, viewport );
-      glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
-      glGetDoublev( GL_PROJECTION_MATRIX, projection );
-
-      GLdouble x0, y0, z0;
-      gluUnProject( 0, 0, 0, modelview, projection, viewport, &x0, &y0, &z0 );
-
-      GLdouble dx_m, dy_m, dz_m;
-      gluUnProject( dx, dy, 0., modelview, projection, viewport,&dx_m,&dy_m,&dz_m );
-
-      glTranslated( x0-dx_m, y0-dy_m, z0-dz_m );
-    }
-
-    glTranslatef( x, y, z );
-
-    glColor4f( foreground_color_[R], foreground_color_[G], foreground_color_[B],
-	       foreground_color_[A] );
-
-    glRasterPos2i( 0, 0 );
-
-    draw( s );
-
-    if ( horizontal_justification_ != ORIGIN ||
-	 vertical_justification_ != BASELINE )
-      glPopMatrix();
-
-    if ( !advance_ )
-      glPopMatrix();
-  }
-
   // Draw the number at the given position per the given format.
 
   void Face::draw ( GLfloat x, GLfloat y, const QString& format, double number )
   {
     draw( x, y, format_number( format, number ) );
   }
-
-  // Draw the number at the given position per the given format.
-
-  void Face::draw ( GLfloat x, GLfloat y, GLfloat z, const QString& format,
-		    double number )
-  {
-    draw( x, y, z, format_number( format, number ) );
-  }
 #endif /* OGLFT_NO_QT */
 
   Raster::Raster ( const char* filename, float point_size, FT_UInt resolution )
     : Face( filename, point_size, resolution )
+  {
+    if ( !isValid() ) return;
+
+    init();
+  }
+
+  Raster::Raster ( const FT_Byte* data_base, const FT_Long data_size,
+		   float point_size, FT_UInt resolution )
+    : Face( data_base, data_size, point_size, resolution )
   {
     if ( !isValid() ) return;
 
@@ -1421,19 +1291,19 @@ namespace OGLFT {
     GLdouble x, y, z;
     gluUnProject( bbox.x_min_, bbox.y_min_, 0., modelview, projection, viewport,
 		  &x, &y, &z );
-    bbox.x_min_ = x - x0;
-    bbox.y_min_ = y - y0;
+    bbox.x_min_ = (float)( x - x0 );
+    bbox.y_min_ = (float)( y - y0 );
 
     gluUnProject( bbox.x_max_, bbox.y_max_, 0., modelview, projection, viewport,
 		  &x, &y, &z );
-    bbox.x_max_ = x - x0;
-    bbox.y_max_ = y - y0;
+    bbox.x_max_ = (float)( x - x0 );
+    bbox.y_max_ = (float)( y - y0 );
 
     gluUnProject( bbox.advance_.dx_, bbox.advance_.dy_, 0., modelview, projection,
 		  viewport,
 		  &x, &y, &z );
-    bbox.advance_.dx_ = x - x0;
-    bbox.advance_.dy_ = y - y0;
+    bbox.advance_.dx_ = (float)( x - x0 );
+    bbox.advance_.dy_ = (float)( y - y0 );
 
     return bbox;
   }
@@ -1508,6 +1378,11 @@ namespace OGLFT {
 
     return bbox;
   }
+  
+  BBox Raster::measure ( const QString& format, double number )
+  {
+    return Face::measure( format, number );
+  } 
 #endif /* OGLFT_NO_QT */
 
   GLuint Raster::compileGlyph ( FT_Face face, FT_UInt glyph_index )
@@ -1547,7 +1422,7 @@ namespace OGLFT {
     if ( error != 0 )
       return;
 
-    rotation_offset_y_ = rotation_reference_face_->glyph->bitmap.rows / 2.;
+    rotation_offset_y_ = rotation_reference_face_->glyph->bitmap.rows / 2.f;
   }
 
   void Raster::clearCaches ( void )
@@ -1564,6 +1439,11 @@ namespace OGLFT {
   Monochrome::Monochrome ( const char* filename, float point_size,
 			   FT_UInt resolution )
     : Raster( filename, point_size, resolution )
+  {}
+
+  Monochrome::Monochrome ( const FT_Byte* data_base, const FT_Long data_size,
+			   float point_size, FT_UInt resolution )
+    : Raster( data_base, data_size, point_size, resolution )
   {}
 
   Monochrome::Monochrome ( FT_Face face, float point_size, FT_UInt resolution )
@@ -1663,7 +1543,7 @@ namespace OGLFT {
       error = FT_Glyph_Transform( glyph, &rotation_matrix, &rotation_offset );
     }
 
-    error = FT_Glyph_To_Bitmap( &glyph, FT_RENDER_MODE_MONO, 0, 1 );
+    error = FT_Glyph_To_Bitmap( &glyph, ft_render_mode_mono, 0, 1 );
 
     if ( error != 0 ) {
       FT_Done_Glyph( glyph );
@@ -1679,10 +1559,10 @@ namespace OGLFT {
     GLubyte* inverted_bitmap = invertBitmap( bitmap_glyph->bitmap );
 
     glBitmap( bitmap_glyph->bitmap.width, bitmap_glyph->bitmap.rows,
-	      -bitmap_glyph->left,
-	      bitmap_glyph->bitmap.rows - bitmap_glyph->top,
-	      face->glyph->advance.x / 64.,
-	      face->glyph->advance.y / 64.,
+	      (GLfloat)-bitmap_glyph->left,
+	      (GLfloat)( bitmap_glyph->bitmap.rows - bitmap_glyph->top ),
+	      face->glyph->advance.x / 64.f,
+	      face->glyph->advance.y / 64.f,
 	      inverted_bitmap );
 
     FT_Done_Glyph( glyph );
@@ -1691,8 +1571,13 @@ namespace OGLFT {
   }
 
   Grayscale::Grayscale ( const char* filename, float point_size,
-			   FT_UInt resolution )
+			 FT_UInt resolution )
     : Raster( filename, point_size, resolution )
+  {}
+
+  Grayscale::Grayscale ( const FT_Byte* data_base, const FT_Long data_size,
+			 float point_size, FT_UInt resolution )
+    : Raster( data_base, data_size, point_size, resolution )
   {}
 
   Grayscale::Grayscale ( FT_Face face, float point_size, FT_UInt resolution )
@@ -1770,7 +1655,7 @@ namespace OGLFT {
       error = FT_Glyph_Transform( glyph, &rotation_matrix, &rotation_offset );
     }
 
-    error = FT_Glyph_To_Bitmap( &glyph, FT_RENDER_MODE_NORMAL, 0, 1 );
+    error = FT_Glyph_To_Bitmap( &glyph, ft_render_mode_normal, 0, 1 );
 
     if ( error != 0 ) {
       FT_Done_Glyph( glyph );
@@ -1799,8 +1684,8 @@ namespace OGLFT {
     glPixelTransferf( GL_ALPHA_BIAS, background_color_[A] );
 
     glBitmap( 0, 0, 0, 0,
-	      bitmap_glyph->left,
-	      bitmap_glyph->top - bitmap_glyph->bitmap.rows,
+	      (GLfloat)bitmap_glyph->left,
+	      (GLfloat)( bitmap_glyph->top - bitmap_glyph->bitmap.rows ),
 	      0 );
 
     glDrawPixels( bitmap_glyph->bitmap.width, bitmap_glyph->bitmap.rows,
@@ -1811,9 +1696,9 @@ namespace OGLFT {
     // (without querying the state)
 
     glBitmap( 0, 0, 0, 0,
-	      -bitmap_glyph->left + face->glyph->advance.x / 64.,
-	      bitmap_glyph->bitmap.rows - bitmap_glyph->top +
-	      face->glyph->advance.y / 64.,
+	      (GLfloat)( -bitmap_glyph->left + face->glyph->advance.x / 64.f ),
+	      (GLfloat)( bitmap_glyph->bitmap.rows - bitmap_glyph->top +
+	      face->glyph->advance.y / 64. ),
 	      0 );
 
     FT_Done_Glyph( glyph );
@@ -1824,8 +1709,13 @@ namespace OGLFT {
   }
 
   Translucent::Translucent ( const char* filename, float point_size,
-			   FT_UInt resolution )
+			     FT_UInt resolution )
     : Raster( filename, point_size, resolution )
+  {}
+
+  Translucent::Translucent ( const FT_Byte* data_base, const FT_Long data_size,
+			     float point_size, FT_UInt resolution )
+    : Raster( data_base, data_size, point_size, resolution )
   {}
 
   Translucent::Translucent ( FT_Face face, float point_size, FT_UInt resolution )
@@ -1910,7 +1800,7 @@ namespace OGLFT {
       error = FT_Glyph_Transform( glyph, &rotation_matrix, &rotation_offset );
     }
 
-    error = FT_Glyph_To_Bitmap( &glyph, FT_RENDER_MODE_NORMAL, 0, 1 );
+    error = FT_Glyph_To_Bitmap( &glyph, ft_render_mode_normal, 0, 1 );
 
     if ( error != 0 ) {
       FT_Done_Glyph( glyph );
@@ -1940,8 +1830,8 @@ namespace OGLFT {
     // OpenGL have a similar function for pixmaps?)
 
     glBitmap( 0, 0, 0, 0,
-	      bitmap_glyph->left,
-	      bitmap_glyph->top - bitmap_glyph->bitmap.rows,
+	      (GLfloat)bitmap_glyph->left,
+	      (GLfloat)( bitmap_glyph->top - bitmap_glyph->bitmap.rows ),
 	      0 );
 
     glDrawPixels( bitmap_glyph->bitmap.width, bitmap_glyph->bitmap.rows,
@@ -1952,9 +1842,9 @@ namespace OGLFT {
     // (without querying the state)
 
     glBitmap( 0, 0, 0, 0,
-	      -bitmap_glyph->left + face->glyph->advance.x / 64.,
+	      -bitmap_glyph->left + face->glyph->advance.x / 64.f,
 	      bitmap_glyph->bitmap.rows - bitmap_glyph->top +
-	      face->glyph->advance.y / 64.,
+	      face->glyph->advance.y / 64.f,
 	      0 );
 
     FT_Done_Glyph( glyph );
@@ -1966,6 +1856,14 @@ namespace OGLFT {
 
   Polygonal::Polygonal ( const char* filename, float point_size, FT_UInt resolution )
     : Face( filename, point_size, resolution )
+  {
+    if ( !isValid() ) return;
+
+    init();
+  }
+
+  Polygonal::Polygonal ( const FT_Byte* data_base, const FT_Long data_size, float point_size, FT_UInt resolution)
+    : Face( data_base, data_size, point_size, resolution )
   {
     if ( !isValid() ) return;
 
@@ -1997,11 +1895,11 @@ namespace OGLFT {
     // they're passed to the GLU tessellation routines.
 
     if ( resolution_ != 0 )
-      vector_scale_ = (GLdouble)( point_size_ * resolution_ ) /
-	(GLdouble)( faces_.front().face_->units_per_EM * 72 );
+      vector_scale_ = ( point_size_ * resolution_ ) /
+	(float)( faces_.front().face_->units_per_EM * 72 );
     else // According to the FreeType documentation, resolution == 0 -> 72 DPI
-      vector_scale_ = (GLdouble)( point_size_ ) /
-	(GLdouble)( faces_.front().face_->units_per_EM );
+      vector_scale_ = ( point_size_ ) /
+	(float)( faces_.front().face_->units_per_EM );
 
     color_tess_ = 0;
     texture_tess_ = 0;
@@ -2126,10 +2024,10 @@ namespace OGLFT {
       return;
 
     vector_scale_ = ( point_size_ * resolution_ ) /
-      ( 72. * rotation_reference_face_->units_per_EM );
+      ( 72.f * rotation_reference_face_->units_per_EM );
 
     rotation_offset_y_ =
-      ( rotation_reference_face_->glyph->metrics.horiBearingY / 2. ) / 64.
+      ( rotation_reference_face_->glyph->metrics.horiBearingY / 2.f ) / 64.f
       * vector_scale_;
   }
 
@@ -2176,7 +2074,8 @@ namespace OGLFT {
     bbox = ft_bbox;
     bbox.advance_ = faces_[f].face_->glyph->advance;
 
-    bbox *= ( point_size_ * resolution_ ) / ( 72. * faces_[f].face_->units_per_EM );
+    bbox *=
+      ( point_size_ * resolution_ ) / ( 72.f * faces_[f].face_->units_per_EM );
 
     return bbox;
   }
@@ -2252,6 +2151,14 @@ namespace OGLFT {
     init();
   }
 
+  Outline::Outline ( const FT_Byte* data_base, const FT_Long data_size, float point_size, FT_UInt resolution)
+    : Polygonal( data_base, data_size, point_size, resolution )
+  {
+    if ( !isValid() ) return;
+
+    init();
+  }
+
   Outline::Outline ( FT_Face face, float point_size, FT_UInt resolution )
     : Polygonal( face, point_size, resolution )
   {
@@ -2278,22 +2185,23 @@ namespace OGLFT {
     if ( error != 0 )
       return;
 
-    FT_OutlineGlyph g;
+    FT_Glyph g;
 
-    error = FT_Get_Glyph( face->glyph, (FT_Glyph*)&g );
+    error = FT_Get_Glyph( face->glyph, &g );
 
-    if ( error != 0 )
+    if ( error != 0 || g->format != FT_GLYPH_FORMAT_OUTLINE )
       return;
 
-    vector_scale_ = ( point_size_ * resolution_ ) / ( 72. * face->units_per_EM );
+    vector_scale_ = ( point_size_ * resolution_ ) /
+      ( 72.f * face->units_per_EM );
 
     if ( character_rotation_.active_ ) {
       glPushMatrix();
-      glTranslatef( ( face->glyph->metrics.width / 2. +
-		      face->glyph->metrics.horiBearingX ) / 64.
+      glTranslatef( ( face->glyph->metrics.width / 2.f +
+		      face->glyph->metrics.horiBearingX ) / 64.f
 		    * vector_scale_,
 		    rotation_offset_y_,
-		    0. );
+		    0.f );
 
       if ( character_rotation_.x_ != 0. )
 	glRotatef( character_rotation_.x_, 1., 0., 0. );
@@ -2304,11 +2212,11 @@ namespace OGLFT {
       if ( character_rotation_.z_ != 0. )
 	glRotatef( character_rotation_.z_, 0., 0., 1. );
 
-      glTranslatef( -( face->glyph->metrics.width / 2. +
-		      face->glyph->metrics.horiBearingX ) / 64.
+      glTranslatef( -( face->glyph->metrics.width / 2.f +
+		      face->glyph->metrics.horiBearingX ) / 64.f
 		    * vector_scale_,
 		    -rotation_offset_y_,
-		    0. );
+		    0.f );
     }
 
     contour_open_ = false;
@@ -2317,7 +2225,8 @@ namespace OGLFT {
     // the outlines of the font by calling the various routines stored in
     // outline_interface_. These routines in turn call the GL vertex routines.
 
-    error = FT_Outline_Decompose( &g->outline, &interface_, this );
+    error = FT_Outline_Decompose( &((FT_OutlineGlyph)g)->outline,
+				  &interface_, this );
 
     FT_Done_Glyph( (FT_Glyph)g );
 
@@ -2333,9 +2242,9 @@ namespace OGLFT {
 
     // Drawing a character always advances the MODELVIEW.
 
-    glTranslatef( face->glyph->advance.x / 64. * vector_scale_,
-		  face->glyph->advance.y / 64. * vector_scale_,
-		  0. );
+    glTranslatef( face->glyph->advance.x / 64.f * vector_scale_,
+		  face->glyph->advance.y / 64.f * vector_scale_,
+		  0.f );
 
     for ( VILI vili = vertices_.begin(); vili != vertices_.end(); vili++ )
       delete *vili;
@@ -2516,6 +2425,15 @@ namespace OGLFT {
     init();
   }
 
+  Filled::Filled ( const FT_Byte* data_base, const FT_Long data_size,
+		   float point_size, FT_UInt resolution )
+    : Polygonal( data_base, data_size, point_size, resolution )
+  {
+    if ( !isValid() ) return;
+
+    init();
+  }
+
   Filled::Filled ( FT_Face face, float point_size, FT_UInt resolution )
     : Polygonal( face, point_size, resolution )
   {
@@ -2535,11 +2453,16 @@ namespace OGLFT {
 
     tess_obj_ = gluNewTess();
 
-    gluTessCallback( tess_obj_, GLU_TESS_VERTEX, (GLUTessCallback)vertexCallback );
-    gluTessCallback( tess_obj_, GLU_TESS_BEGIN, (GLUTessCallback)beginCallback );
-    gluTessCallback( tess_obj_, GLU_TESS_END, (GLUTessCallback)endCallback );
-    gluTessCallback( tess_obj_, GLU_TESS_COMBINE_DATA, (GLUTessCallback)combineCallback );
-    gluTessCallback( tess_obj_, GLU_TESS_ERROR, (GLUTessCallback)errorCallback );
+#if defined(WIN32)
+    typedef void (CALLBACK*(CB))();
+#else
+    typedef GLUTessCallback CB;
+#endif
+    gluTessCallback( tess_obj_, GLU_TESS_VERTEX, CB(vertexCallback) );
+    gluTessCallback( tess_obj_, GLU_TESS_BEGIN, CB(beginCallback) );
+    gluTessCallback( tess_obj_, GLU_TESS_END, CB(endCallback) );
+    gluTessCallback( tess_obj_, GLU_TESS_COMBINE_DATA, CB(combineCallback) );
+    gluTessCallback( tess_obj_, GLU_TESS_ERROR, CB(errorCallback) );
   }
 
   Filled::~Filled ( void )
@@ -2554,19 +2477,20 @@ namespace OGLFT {
     if ( error != 0 )
       return;
 
-    FT_OutlineGlyph g;
+    FT_Glyph g;
 
-    error = FT_Get_Glyph( face->glyph, (FT_Glyph*)&g );
+    error = FT_Get_Glyph( face->glyph, &g );
 
-    if ( error != 0 )
+    if ( error != 0 || g->format != FT_GLYPH_FORMAT_OUTLINE )
       return;
 
-    vector_scale_ = ( point_size_ * resolution_ ) / ( 72. * face->units_per_EM );
+    vector_scale_ = ( point_size_ * resolution_ ) /
+      ( 72.f * face->units_per_EM );
 
     if ( character_rotation_.active_ ) {
       glPushMatrix();
-      glTranslatef( ( face->glyph->metrics.width / 2. +
-		      face->glyph->metrics.horiBearingX ) / 64.
+      glTranslatef( ( face->glyph->metrics.width / 2.f +
+		      face->glyph->metrics.horiBearingX ) / 64.f
 		    * vector_scale_,
 		    rotation_offset_y_,
 		    0. );
@@ -2580,11 +2504,11 @@ namespace OGLFT {
       if ( character_rotation_.z_ != 0. )
 	glRotatef( character_rotation_.z_, 0., 0., 1. );
 
-      glTranslatef( -( face->glyph->metrics.width / 2. +
-		      face->glyph->metrics.horiBearingX ) / 64.
+      glTranslatef( -( face->glyph->metrics.width / 2.f +
+		      face->glyph->metrics.horiBearingX ) / 64.f
 		    * vector_scale_,
 		    -rotation_offset_y_,
-		    0. );
+		    0.f );
     }
 
     if ( depth_offset_ != 0. ) {
@@ -2607,7 +2531,8 @@ namespace OGLFT {
     // interface_. These routines in turn call the GLU tessellation routines
     // to create OGL polygons.
 
-    error = FT_Outline_Decompose( &g->outline, &interface_, this );
+    error = FT_Outline_Decompose( &((FT_OutlineGlyph)g)->outline,
+				  &interface_, this );
 
     FT_Done_Glyph( (FT_Glyph)g );
 
@@ -2851,6 +2776,15 @@ namespace OGLFT {
     init();
   }
 
+  Solid::Solid ( const FT_Byte* data_base, const FT_Long data_size,
+		 float point_size, FT_UInt resolution )
+    : Filled( data_base, data_size, point_size, resolution )
+  {
+    if ( !isValid() ) return;
+
+    init();
+  }
+
   Solid::Solid ( FT_Face face, float point_size, FT_UInt resolution )
     : Filled( face, point_size, resolution )
   {
@@ -2947,7 +2881,7 @@ namespace OGLFT {
     // are defined counter-clockwise. Trust the flag set by FreeType to
     // indicate this since it is critical to getting the orientation of the
     // surface normals correct.
-    if ( g->outline.flags & FT_OUTLINE_REVERSE_FILL ) {
+    if ( g->outline.flags & ft_outline_reverse_fill ) {
       extrusion_.normal_sign_.x_ = -1;
       extrusion_.normal_sign_.y_ = 1;
     }
@@ -3224,6 +3158,15 @@ namespace OGLFT {
     init();
   }
 
+  Texture::Texture ( const FT_Byte* data_base, const FT_Long data_size,
+		     float point_size, FT_UInt resolution )
+    : Face( data_base, data_size, point_size, resolution )
+  {
+    if ( !isValid() ) return;
+
+    init();
+  }
+
   Texture::Texture ( FT_Face face, float point_size, FT_UInt resolution )
     : Face( face, point_size, resolution )
   {
@@ -3319,7 +3262,7 @@ namespace OGLFT {
     if ( error != 0 )
       return;
 
-    rotation_offset_y_ = rotation_reference_face_->glyph->bitmap.rows / 2.;
+    rotation_offset_y_ = rotation_reference_face_->glyph->bitmap.rows / 2.f;
   }
 
   BBox Texture::measure ( unsigned char c )
@@ -3445,39 +3388,39 @@ namespace OGLFT {
 
     if ( character_rotation_.active_ ) {
       glPushMatrix();
-      glTranslatef( ( texture_info.width_ / 2. +
+      glTranslatef( ( texture_info.width_ / 2.f +
 		      texture_info.left_bearing_ ),
-		    rotation_offset_y_, 0. );
+		    rotation_offset_y_, 0.f );
 
       if ( character_rotation_.x_ != 0. )
-	glRotatef( character_rotation_.x_, 1., 0., 0. );
+	glRotatef( character_rotation_.x_, 1.f, 0.f, 0.f );
 
       if ( character_rotation_.y_ != 0. )
-	glRotatef( character_rotation_.y_, 0., 1., 0. );
+	glRotatef( character_rotation_.y_, 0.f, 1.f, 0.f );
 
       if ( character_rotation_.z_ != 0. )
-	glRotatef( character_rotation_.z_, 0., 0., 1. );
+	glRotatef( character_rotation_.z_, 0.f, 0.f, 1.f );
 
-      glTranslatef( -( texture_info.width_ / 2. +
+      glTranslatef( -( texture_info.width_ / 2.f +
 		      texture_info.left_bearing_ ),
-		    -rotation_offset_y_, 0. );
+		    -rotation_offset_y_, 0.f );
     }
 
     glBegin( GL_QUADS );
 
     glTexCoord2i( 0, 0 );
-    glVertex2f( texture_info.left_bearing_, texture_info.bottom_bearing_ );
+    glVertex2i( texture_info.left_bearing_, texture_info.bottom_bearing_ );
 
-    glTexCoord2f( texture_info.texture_s_, 0. );
-    glVertex2f( texture_info.left_bearing_ + texture_info.width_,
+    glTexCoord2f( texture_info.texture_s_, 0.f );
+    glVertex2i( texture_info.left_bearing_ + texture_info.width_,
 		texture_info.bottom_bearing_ );
 
     glTexCoord2f( texture_info.texture_s_, texture_info.texture_t_ );
-    glVertex2f( texture_info.left_bearing_ + texture_info.width_,
+    glVertex2i( texture_info.left_bearing_ + texture_info.width_,
 		texture_info.bottom_bearing_ + texture_info.height_ );
 
-    glTexCoord2f( 0., texture_info.texture_t_ );
-    glVertex2f( texture_info.left_bearing_,
+    glTexCoord2f( 0.f, texture_info.texture_t_ );
+    glVertex2i( texture_info.left_bearing_,
 		texture_info.bottom_bearing_ + texture_info.height_ );
     
     glEnd();
@@ -3487,8 +3430,8 @@ namespace OGLFT {
     }
 
     // Drawing a character always advances the MODELVIEW.
-    glTranslatef( texture_info.advance_.x / 64.,
-		  texture_info.advance_.y / 64.,
+    glTranslatef( texture_info.advance_.x / 64.f,
+		  texture_info.advance_.y / 64.f,
 		  0. );
   }
 
@@ -3540,6 +3483,11 @@ namespace OGLFT {
   MonochromeTexture::MonochromeTexture ( const char* filename, float point_size,
 					 FT_UInt resolution )
     : Texture( filename, point_size, resolution )
+  {}
+
+  MonochromeTexture::MonochromeTexture ( const FT_Byte* data_base, const FT_Long data_size,
+					 float point_size, FT_UInt resolution )
+    : Texture( data_base, data_size, point_size, resolution )
   {}
 
   MonochromeTexture::MonochromeTexture ( FT_Face face, float point_size,
@@ -3597,7 +3545,7 @@ namespace OGLFT {
     if ( error != 0 )
       return;
 
-    error = FT_Render_Glyph( face->glyph, FT_RENDER_MODE_MONO );
+    error = FT_Render_Glyph( face->glyph, ft_render_mode_mono );
 	
     if ( error != 0 )
       return;
@@ -3650,6 +3598,11 @@ namespace OGLFT {
     : Texture( filename, point_size, resolution )
   {}
 
+  GrayscaleTexture::GrayscaleTexture ( const FT_Byte* data_base, const FT_Long data_size,
+				       float point_size, FT_UInt resolution )
+    : Texture( data_base, data_size, point_size, resolution )
+  {}
+
   GrayscaleTexture::GrayscaleTexture ( FT_Face face, float point_size,
 				       FT_UInt resolution )
     : Texture( face, point_size, resolution )
@@ -3700,7 +3653,7 @@ namespace OGLFT {
     if ( error != 0 )
       return;
 
-    error = FT_Render_Glyph( face->glyph, FT_RENDER_MODE_NORMAL );
+    error = FT_Render_Glyph( face->glyph, ft_render_mode_normal );
 	
     if ( error != 0 )
       return;
@@ -3754,6 +3707,11 @@ namespace OGLFT {
     : Texture( filename, point_size, resolution )
   {}
 
+  TranslucentTexture::TranslucentTexture ( const FT_Byte* data_base, const FT_Long data_size,
+					   float point_size, FT_UInt resolution )
+    : Texture( data_base, data_size, point_size, resolution )
+  {}
+
   TranslucentTexture::TranslucentTexture ( FT_Face face, float point_size,
 					   FT_UInt resolution )
     : Texture( face, point_size, resolution )
@@ -3805,7 +3763,7 @@ namespace OGLFT {
     if ( error != 0 )
       return;
 
-    error = FT_Render_Glyph( face->glyph, FT_RENDER_MODE_NORMAL );
+    error = FT_Render_Glyph( face->glyph, ft_render_mode_normal );
 	
     if ( error != 0 )
       return;
