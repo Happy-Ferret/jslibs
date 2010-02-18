@@ -22,6 +22,7 @@
 #ifndef OGLFT_H
 #define OGLFT_H
 
+#define ENABLE_GLE
 //// CMake activates these definitions.
 //#cmakedefine ENABLE_QT
 //#cmakedefine ENABLE_GLE

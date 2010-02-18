@@ -23,6 +23,7 @@
 enum {
 	OUTLINE,
 	FILLED,
+	SOLID,
 	MONOCHROME,
 	MONOCHROME_TEXTURE,
 	GRAYSCALE,
@@ -30,6 +31,38 @@ enum {
 	TRANSLUCENT,
 	TRANSLUCENT_TEXTURE,
 };
+
+
+class ColorTess : public OGLFT::ColorTess {
+
+	JSRuntime *_rt;
+	JSObject *_obj;
+	jsval _function;
+	GLfloat _colorTmp[4];
+
+	GLfloat* color( GLdouble* p ) {
+
+		JSContext *cx = JL_GetContext(_rt);
+		jsval arg[2] = { JSVAL_NULL, JSVAL_NULL }; // memset(arg, 0, sizeof(arg));
+		JSTempValueRooter tvr;
+		JS_PUSH_TEMP_ROOT(cx, COUNTOF(arg), arg, &tvr);
+		JL_CHK( DoubleVectorToJsval(cx, p, 3, &arg[1], false) );
+		JL_CHK( JS_CallFunctionValue(cx, _obj, _function, COUNTOF(arg)-1, arg+1, arg) );
+		uint32 length;
+		JL_CHK( JsvalToFloatVector(cx, *arg, _colorTmp, COUNTOF(_colorTmp), &length) );
+		JS_POP_TEMP_ROOT(cx, &tvr);
+		return _colorTmp;
+	bad:
+		JS_ReportPendingException(cx);
+		JS_POP_TEMP_ROOT(cx, &tvr);
+		return _colorTmp;
+	}
+
+public:
+	ColorTess(JSRuntime *rt, JSObject *obj, jsval function) : _rt(rt), _obj(obj), _function(function) {
+	}
+};
+
 
 struct Private {
 
@@ -49,11 +82,45 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( pv == NULL )
 		return;
+
+	if ( pv->type == OUTLINE || pv->type == FILLED || pv->type == SOLID ) {
+
+		OGLFT::Polygonal *poly;
+//		poly = dynamic_cast<OGLFT::Polygonal*>(pv->face);
+		poly = (OGLFT::Polygonal*)pv->face;
+		OGLFT::ColorTess *colorTess = poly->colorTess();
+		if ( colorTess != NULL )
+			delete colorTess;
+	}
 	delete pv->face;
 	jl_free(pv);
 }
 
-DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Template() ) or activated ( a = Template() ). To distinguish the cases, use JS_IsConstructing() or use the JL_S_ASSERT_CONSTRUCTING() macro.
+/**doc
+$TOC_MEMBER $INAME
+ $INAME( font, type [, size] )
+  $H arguments
+   $ARG $OBJ font: a font object from the jsfont module.
+   $ARG $ENUM type: the drawing type:
+    $CONST OUTLINE
+    $CONST FILLED
+    $CONST SOLID
+    $CONST MONOCHROME
+    $CONST MONOCHROME_TEXTURE
+    $CONST GRAYSCALE
+    $CONST GRAYSCALE_TEXTURE
+    $CONST TRANSLUCENT
+	 $CONST TRANSLUCENT_TEXTURE
+   $ARG $REAL size: the point size of the font to generate. A point is essentially 1/72th of an inch. By default, the size of _font_ is used.
+  $H example
+{{{
+var font = new Font('c:\\windows\\fonts\\arial.ttf');
+var font3d = new Font3D(f, Font3D.OUTLINE, 48);
+...
+f3d.Draw('Hello World');
+}}}
+**/
+DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
@@ -65,7 +132,6 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 
 	FT_Face ftface = GetJsfontPrivate(cx, fontObj)->face;
 	JL_S_ASSERT_RESOURCE( ftface );
-
 
 	float currentSize = ftface->size->metrics.y_scale / ftface->units_per_EM;
 	float size;
@@ -80,12 +146,31 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 
 	JL_CHK( JsvalToInt(cx, JL_ARG(2), &pv->type) );
 	switch ( pv->type ) {
-		case OUTLINE:
-			pv->face = new OGLFT::Outline(ftface, size);
+		case OUTLINE: {
+			OGLFT::Outline *outline = new OGLFT::Outline(ftface, size);
+//			outline->setTessellationSteps(4);
+//			outline->setColorTess();
+//			outline->setTextureTess();
+			pv->face = outline;
 			break;
-		case FILLED:
-			pv->face = new OGLFT::Filled(ftface, size);
+		}
+		case FILLED: {
+			OGLFT::Filled *filled = new OGLFT::Filled(ftface, size);
+//			filled->setTessellationSteps(4);
+//			outline->setColorTess();
+//			outline->setTextureTess();
+			pv->face = filled;
 			break;
+		}
+		case SOLID: {
+			OGLFT::Solid *solid = new OGLFT::Solid(ftface, size);
+//			solid->setDepth(1.);
+//			filled->setTessellationSteps(4);
+//			outline->setColorTess();
+//			outline->setTextureTess();
+			pv->face = solid;
+			break;
+		}
 		case MONOCHROME:
 			pv->face = new OGLFT::Monochrome(ftface, size);
 			break;
@@ -98,18 +183,21 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 		case GRAYSCALE_TEXTURE:
 			pv->face = new OGLFT::GrayscaleTexture(ftface, size);
 			break;
+		case TRANSLUCENT:
+			pv->face = new OGLFT::Translucent(ftface, size);
+			break;
 		case TRANSLUCENT_TEXTURE:
 			pv->face = new OGLFT::TranslucentTexture(ftface, size);
 			break;
 		default:
-			JL_REPORT_ERROR("Invalid 3D font style");
+			JL_REPORT_ERROR("Invalid 3D font type");
 	}
 
 	JL_S_ASSERT( pv->face->isValid(), "Failed to create the font." );
 
-	JL_CHK( JL_SetReservedSlot(cx, obj, OGLFT_SLOT_FONT, JL_ARG(1)) );
+//	pv->face->setCompileMode(OGLFT::Face::COMPILE);
 
-	return JS_TRUE;
+	return JL_SetReservedSlot(cx, obj, OGLFT_SLOT_FONT, JL_ARG(1)); // GC protection
 	JL_BAD;
 }
 
@@ -117,29 +205,142 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 //	return JS_TRUE;
 //}
 
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $ARRAY $INAME( string [, absolute = false ] )
+  Compute the bounding box info for a string.
+  $H arguments
+   $ARG $STR string: the string to measure.
+   $ARG $BOOL absolute: if true, compute the bounding box info for a string with conversion to modeling coordinates.
+**/
+DEFINE_FUNCTION_FAST( Measure ) {
+	
+	JL_S_ASSERT_ARG_RANGE( 1, 2 );
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
+
+	bool absolute;
+	if ( JL_FARG_ISDEF(2) )
+		JL_CHK( JsvalToBool(cx, JL_FARG(2), &absolute) );
+	else
+		absolute = false;
+
+	const char *str;
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &str) );
+
+	{
+		OGLFT::BBox bbox = absolute ? pv->face->measure(str) : pv->face->measureRaw(str);
+		JSObject *arrObj = JS_NewArrayObject(cx, 4, NULL);
+		JL_CHK( arrObj );
+		*JL_FRVAL = OBJECT_TO_JSVAL(arrObj);
+		jsval tmp;
+		JL_CHK( FloatToJsval(cx, bbox.x_min_, &tmp) );
+		JL_CHK( JS_SetElement(cx, arrObj, 0, &tmp) );
+		JL_CHK( FloatToJsval(cx, bbox.y_min_, &tmp) );
+		JL_CHK( JS_SetElement(cx, arrObj, 1, &tmp) );
+		JL_CHK( FloatToJsval(cx, bbox.x_max_, &tmp) );
+		JL_CHK( JS_SetElement(cx, arrObj, 2, &tmp) );
+		JL_CHK( FloatToJsval(cx, bbox.y_max_, &tmp) );
+		JL_CHK( JS_SetElement(cx, arrObj, 3, &tmp) );
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( string, [ displayLists ], [ x ], [ y ] )
+  Draw a string using the current MODELVIEW matrix
+  $H arguments
+   $ARG $STR string: the string to draw.
+   $ARG $ARR displayLists: Specify an OpenGL display list to be invoked before each character in a string.
+   $ARG $REAL x: the X position.
+   $ARG $REAL y: the Y position.
+  $H example
+{{{
+var f = new Font('c:\\windows\\fonts\\arial.ttf');
+var f3d = new Font3D(f, Font3D.SOLID, 12);
+
+var red = Ogl.NewList();
+Ogl.Color(1,0,0);
+Ogl.Scale(2);
+Ogl.EndList();
+
+var green = Ogl.NewList();
+Ogl.Color(0,1,0);
+Ogl.Scale(0.5);
+Ogl.EndList();
+...
+f3d.Draw('test', [red, green, red, green]);
+}}}
+**/
 DEFINE_FUNCTION_FAST( Draw ) {
 
 	JL_S_ASSERT_ARG_RANGE( 1, 4 );
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( pv );
+
+	bool hasCharacterDisplayLists;
+	if ( JL_FARG_ISDEF(2) ) {
+		
+		OGLFT::DisplayLists lists;
+		JL_S_ASSERT_ARRAY(JL_FARG(2));
+		JSObject *arrObj = JSVAL_TO_OBJECT(JL_FARG(2));
+		jsuint length;
+		JL_CHK( JS_GetArrayLength(cx, arrObj, &length) );
+		for ( jsuint i = 0; i < length; i++ ) {
+
+			JL_CHK( JS_GetElement(cx, arrObj, i, JL_FRVAL) );
+			JL_S_ASSERT_INT( *JL_FRVAL );
+			lists.push_back(JSVAL_TO_INT( *JL_FRVAL ));
+		}
+		pv->face->setCharacterDisplayLists(lists);
+		hasCharacterDisplayLists = true;
+	} else {
+
+		hasCharacterDisplayLists = false;
+	}
+
+// set context for colorCallback ?
+
 	const char *str;
 	JL_CHK( JsvalToString(cx, &JL_FARG(1), &str) );
 
-	if ( JL_ARGC == 1 ) {
-
-		pv->face->draw(str);
-	} else {
+	if ( JL_ARGC >= 3 ) {
 
 		float x, y;
-		JL_CHK( JsvalToFloat(cx, JL_FARG(1), &x) );
-		JL_CHK( JsvalToFloat(cx, JL_FARG(2), &y) );
+		JL_CHK( JsvalToFloat(cx, JL_FARG(3), &x) );
+		JL_CHK( JsvalToFloat(cx, JL_FARG(4), &y) );
 		pv->face->draw(x, y, str);
+	} else {
+
+		pv->face->draw(str);
 	}
+
+	if ( hasCharacterDisplayLists )
+		pv->face->setCharacterDisplayLists(OGLFT::DisplayLists());
+
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( string )
+  Compile a string into an OpenGL display list for later rendering.
+  Essentially, the string is rendered at the origin of the current MODELVIEW.
+  $H note
+   No other display lists should be open when this routine is called. Also, the Face does not keep track of these lists, so you must delete them in order to recover the memory.
+  $H arguments
+   $ARG $STR string: the string to draw.
+  $H return value
+   the display list name for the string.
+**/
 DEFINE_FUNCTION_FAST( Compile ) {
 
 	JL_S_ASSERT_ARG( 1 );
@@ -154,6 +355,16 @@ DEFINE_FUNCTION_FAST( Compile ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( [ color ] )
+  This is the nominal color of the glyphs. A lot of other things can alter what you actually see! $LF
+  If the _color_ argument is ommited, the current OpenGL color is used instead (see. Ogl.Color).
+  $H node 
+   Changing the foreground color invalidates the glyph cache.
+  $H arguments
+   $ARG $ARR color: array of 4 values corresponding to the red, green, blue and alpha components of the foreground color.
+**/
 DEFINE_FUNCTION_FAST( SetColor ) {
 
 	JL_S_ASSERT_ARG_RANGE( 0, 1 );
@@ -184,6 +395,16 @@ DEFINE_FUNCTION_FAST( SetColor ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( [ color ] )
+  This is the nominal background color of the glyphs. A lot of other things can alter what you actually see! $LF
+  If the _color_ argument is ommited, the current OpenGL clear color is used instead (see Ogl.ClearColor).
+  $H note
+   changing the background color invalidates the glyph cache.
+  $H arguments
+   $ARG $ARR color: array of 4 values corresponding to the red, green, blue and alpha components of the background color.
+**/
 DEFINE_FUNCTION_FAST( SetBackgroundColor ) {
 
 	JL_S_ASSERT_ARG_RANGE( 0, 1 );
@@ -215,6 +436,11 @@ DEFINE_FUNCTION_FAST( SetBackgroundColor ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
+  Is the height (i.e., line spacing) at the current character size.
+**/
 DEFINE_PROPERTY( height ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -224,27 +450,109 @@ DEFINE_PROPERTY( height ) {
 	JL_BAD;
 }
 
-/*
-DEFINE_PROPERTY_GETTER( tessellationSteps ) {
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME
+  If advance is true, then the changes made to the MODELVIEW matrix to render a string are allowed to remain.
+  Otherwise, the library pushes the current MODELVIEW matrix onto the matrix stack,
+  renders the string and then pops it off again. Rendering a character always modifies the MODELVIEW matrix.
+**/
+DEFINE_PROPERTY_GETTER( advance ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	JL_CHK( IntToJsval(cx, pv->face->tessellationSteps(), vp) );
+	JL_CHK( BoolToJsval(cx, pv->face->advance(), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
-DEFINE_PROPERTY_SETTER( tessellationSteps ) {
+DEFINE_PROPERTY_SETTER( advance ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	int tessellation;
-	JL_CHK( JsvalToInt(cx, *vp, &tessellation) );
-	face->setTessellationSteps(tessellation);
+	bool advance;
+	JL_CHK( JsvalToBool(cx, *vp, &advance) );
+	pv->face->setAdvance(advance);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $FUNCTION $INAME
+  Each tesselated vertex is passed to this function, which returns a color for that position in space.
+  $H example
+{{{
+var f = new Font('c:\\windows\\fonts\\arial.ttf');
+var f3d = new Font3D(f, Font3D.FILLED, 48);
+f3d.colorCallback = function( pos ) {
+
+	return [pos[0]/20, pos[1]/20, pos[2]/20, 1]; // Bob ?
+}
+...
+f3d.Draw('Marley');
+}}}
+**/
+DEFINE_PROPERTY( colorCallback ) {
+
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+
+	if ( pv->type != OUTLINE && pv->type != FILLED && pv->type != SOLID )
+		JL_REPORT_ERROR("Operation not supported on this type of object.");
+
+	OGLFT::Polygonal *poly;
+//	poly = dynamic_cast<OGLFT::Polygonal*>(pv->face);
+	poly = (OGLFT::Polygonal*)pv->face;
+
+	if ( JSVAL_IS_VOID(*vp) ) {
+
+		OGLFT::ColorTess *colorTess = poly->colorTess();
+		if ( colorTess != NULL ) {
+
+			delete colorTess;
+			poly->setColorTess(NULL);
+		}
+	} else {
+
+		JL_S_ASSERT_FUNCTION( *vp );
+		OGLFT::ColorTess *colorTess = new ColorTess(JS_GetRuntime(cx), obj, *vp);
+		poly->setColorTess(colorTess);
+	}
+
+	return JL_StoreProperty(cx, obj, id, vp, false);
+	JL_BAD;
+}
+
+
+/*
+DEFINE_FUNCTION_FAST( SetCharacterDisplayLists ) {
+
+	OGLFT::DisplayLists lists;
+
+	JL_S_ASSERT_ARG( 1 );
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
+
+	JL_S_ASSERT_ARRAY(JL_FARG(1));
+	JSObject *arrObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	jsuint length;
+	JL_CHK( JS_GetArrayLength(cx, arrObj, &length) );
+	for ( jsuint i = 0; i < length; i++ ) {
+
+		JL_CHK( JS_GetElement(cx, arrObj, i, JL_FRVAL) );
+		JL_S_ASSERT_INT( *JL_FRVAL );
+		lists.push_back(JSVAL_TO_INT( *JL_FRVAL ));
+	}
+	pv->face->setCharacterDisplayLists(lists);
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 */
+
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
@@ -256,20 +564,24 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
+		FUNCTION_FAST(Measure)
 		FUNCTION_FAST(Draw)
 		FUNCTION_FAST(Compile)
 		FUNCTION_FAST(SetColor)
 		FUNCTION_FAST(SetBackgroundColor)
+//		FUNCTION_FAST(SetCharacterDisplayLists)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ(height)
-//		PROPERTY( tessellationSteps )
+		PROPERTY_READ( height )
+		PROPERTY( advance )
+		PROPERTY_WRITE( colorCallback )
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC
 		CONST_INTEGER_SINGLE( OUTLINE )
 		CONST_INTEGER_SINGLE( FILLED )
+		CONST_INTEGER_SINGLE( SOLID )
 		CONST_INTEGER_SINGLE( MONOCHROME )
 		CONST_INTEGER_SINGLE( MONOCHROME_TEXTURE )
 		CONST_INTEGER_SINGLE( GRAYSCALE )
