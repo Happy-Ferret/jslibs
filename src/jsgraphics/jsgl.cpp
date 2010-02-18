@@ -2498,18 +2498,19 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( RasterPos ) {
 
 	JL_S_ASSERT_ARG_RANGE(2,4);
+
 	double x, y, z, w;
 
 	*JL_FRVAL = JSVAL_VOID;
 
-	JsvalToDouble(cx, JL_FARG(1), &x);
-	JsvalToDouble(cx, JL_FARG(2), &y);
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &x) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &y) );
 	if ( argc >= 3 ) {
 
-		JsvalToDouble(cx, JL_FARG(3), &z);
+		JL_CHK( JsvalToDouble(cx, JL_FARG(3), &z) );
 		if ( argc >= 4 ) {
 
-			JsvalToDouble(cx, JL_FARG(4), &w);
+			JL_CHK( JsvalToDouble(cx, JL_FARG(4), &w) );
 			glRasterPos4d(x, y, z, w);
 			return JS_TRUE;
 		}
