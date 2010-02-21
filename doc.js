@@ -231,6 +231,7 @@ var api = {
 	$OBJECT:',,Object,,',
 	$OBJ:',,Object,,',
 	$FUNCTION:',,Function,,',
+	$FUNC:',,Function,,',
 	$FUN:',,Function,,',
 	$ARRAY:',,Array,,',
 	$ARR:',,Array,,',
