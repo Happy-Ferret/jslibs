@@ -38,7 +38,7 @@ class ColorTess : public OGLFT::ColorTess {
 	JSRuntime *_rt;
 	JSObject *_obj;
 	jsval _function;
-	GLfloat _colorTmp[4];
+	GLfloat _colorTmp[4]; // the GLfloat* color() return value directly goes in glColor()
 
 	GLfloat* color( GLdouble* p ) {
 
@@ -67,7 +67,8 @@ public:
 struct Private {
 
 	OGLFT::Face *face;
-	int type;
+	FT_Face ftface;
+	int style;
 	int size;
 };
 
@@ -83,7 +84,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	if ( pv == NULL )
 		return;
 
-	if ( pv->type == OUTLINE || pv->type == FILLED || pv->type == SOLID ) {
+	if ( pv->style == OUTLINE || pv->style == FILLED || pv->style == SOLID ) {
 
 		OGLFT::Polygonal *poly;
 //		poly = dynamic_cast<OGLFT::Polygonal*>(pv->face);
@@ -98,10 +99,10 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( font, type [, size] )
+ $INAME( font, style [, size] )
   $H arguments
    $ARG $OBJ font: a font object from the jsfont module.
-   $ARG $ENUM type: the drawing type:
+   $ARG $ENUM style: the drawing style:
     $CONST OUTLINE
     $CONST FILLED
     $CONST SOLID
@@ -112,10 +113,13 @@ $TOC_MEMBER $INAME
     $CONST TRANSLUCENT
 	 $CONST TRANSLUCENT_TEXTURE
    $ARG $REAL size: the point size of the font to generate. A point is essentially 1/72th of an inch. By default, the size of _font_ is used.
+  $H beware
+   For the raster styles (MONOCHROME, GRAYSCALE and TRANSLUCENT), it is essential that the pixel store unpacking alignment be set to 1.
   $H example
 {{{
+Ogl.PixelStore( Ogl.UNPACK_ALIGNMENT, 1 );
 var font = new Font('c:\\windows\\fonts\\arial.ttf');
-var font3d = new Font3D(f, Font3D.OUTLINE, 48);
+var font3d = new Font3D(f, Font3D.GRAYSCALE, 48);
 ...
 f3d.Draw('Hello World');
 }}}
@@ -144,33 +148,17 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_ALLOC(pv);
 	JL_SetPrivate(cx, obj, pv);
 
-	JL_CHK( JsvalToInt(cx, JL_ARG(2), &pv->type) );
-	switch ( pv->type ) {
-		case OUTLINE: {
-			OGLFT::Outline *outline = new OGLFT::Outline(ftface, size);
-//			outline->setTessellationSteps(4);
-//			outline->setColorTess();
-//			outline->setTextureTess();
-			pv->face = outline;
+	JL_CHK( JsvalToInt(cx, JL_ARG(2), &pv->style) );
+	switch ( pv->style ) {
+		case OUTLINE:
+			pv->face = new OGLFT::Outline(ftface, size);
 			break;
-		}
-		case FILLED: {
-			OGLFT::Filled *filled = new OGLFT::Filled(ftface, size);
-//			filled->setTessellationSteps(4);
-//			outline->setColorTess();
-//			outline->setTextureTess();
-			pv->face = filled;
+		case FILLED:
+			pv->face = new OGLFT::Filled(ftface, size);
 			break;
-		}
-		case SOLID: {
-			OGLFT::Solid *solid = new OGLFT::Solid(ftface, size);
-//			solid->setDepth(1.);
-//			filled->setTessellationSteps(4);
-//			outline->setColorTess();
-//			outline->setTextureTess();
-			pv->face = solid;
+		case SOLID:
+			pv->face = new OGLFT::Solid(ftface, size);
 			break;
-		}
 		case MONOCHROME:
 			pv->face = new OGLFT::Monochrome(ftface, size);
 			break;
@@ -190,10 +178,13 @@ DEFINE_CONSTRUCTOR() {
 			pv->face = new OGLFT::TranslucentTexture(ftface, size);
 			break;
 		default:
-			JL_REPORT_ERROR("Invalid 3D font type");
+			JL_REPORT_ERROR("Invalid 3D font style");
 	}
 
 	JL_S_ASSERT( pv->face->isValid(), "Failed to create the font." );
+
+	pv->ftface = ftface;
+	pv->size = size;
 
 //	pv->face->setCompileMode(OGLFT::Face::COMPILE);
 
@@ -250,78 +241,74 @@ DEFINE_FUNCTION_FAST( Measure ) {
 	JL_BAD;
 }
 
+
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( string, [ displayLists ], [ x ], [ y ] )
-  Draw a string using the current MODELVIEW matrix
+ $ARRAY $INAME( string )
+  Compute the width for a string.
+  $H arguments
+   $ARG $STR string: the string to measure.
+**/
+DEFINE_FUNCTION_FAST( Width ) {
+	
+	JL_S_ASSERT_ARG( 1 );
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE( pv );
+
+	const char *str;
+	JL_CHK( JsvalToString(cx, &JL_FARG(1), &str) );
+
+	float vector_scale_ = ( pv->size * 100 ) / ( 72.f * pv->ftface->units_per_EM );
+
+	{
+		OGLFT::BBox bbox = pv->face->measureRaw(str);
+		JL_CHK( FloatToJsval(cx, bbox.x_max_ * vector_scale_, JL_FRVAL) );
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( string [, x, y ] )
+  Draw a string using the current MODELVIEW matrix or at the given 2D point.
   $H arguments
    $ARG $STR string: the string to draw.
-   $ARG $ARR displayLists: Specify an OpenGL display list to be invoked before each character in a string.
    $ARG $REAL x: the X position.
    $ARG $REAL y: the Y position.
   $H example
 {{{
 var f = new Font('c:\\windows\\fonts\\arial.ttf');
 var f3d = new Font3D(f, Font3D.SOLID, 12);
-
-var red = Ogl.NewList();
-Ogl.Color(1,0,0);
-Ogl.Scale(2);
-Ogl.EndList();
-
-var green = Ogl.NewList();
-Ogl.Color(0,1,0);
-Ogl.Scale(0.5);
-Ogl.EndList();
 ...
-f3d.Draw('test', [red, green, red, green]);
+f3d.Draw('test');
 }}}
 **/
 DEFINE_FUNCTION_FAST( Draw ) {
 
-	JL_S_ASSERT_ARG_RANGE( 1, 4 );
+	JL_S_ASSERT_ARG_RANGE( 1, 3 );
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	bool hasCharacterDisplayLists;
-	if ( JL_FARG_ISDEF(2) ) {
-		
-		OGLFT::DisplayLists lists;
-		JL_S_ASSERT_ARRAY(JL_FARG(2));
-		JSObject *arrObj = JSVAL_TO_OBJECT(JL_FARG(2));
-		jsuint length;
-		JL_CHK( JS_GetArrayLength(cx, arrObj, &length) );
-		for ( jsuint i = 0; i < length; i++ ) {
-
-			JL_CHK( JS_GetElement(cx, arrObj, i, JL_FRVAL) );
-			JL_S_ASSERT_INT( *JL_FRVAL );
-			lists.push_back(JSVAL_TO_INT( *JL_FRVAL ));
-		}
-		pv->face->setCharacterDisplayLists(lists);
-		hasCharacterDisplayLists = true;
-	} else {
-
-		hasCharacterDisplayLists = false;
-	}
-
-// set context for colorCallback ?
-
 	const char *str;
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &str) );
+	unsigned int length;
+	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &str, &length) );
 
-	if ( JL_ARGC >= 3 ) {
+	if ( JL_ARGC >= 2 ) {
 
 		float x, y;
-		JL_CHK( JsvalToFloat(cx, JL_FARG(3), &x) );
-		JL_CHK( JsvalToFloat(cx, JL_FARG(4), &y) );
+		JL_CHK( JsvalToFloat(cx, JL_FARG(2), &x) );
+		JL_CHK( JsvalToFloat(cx, JL_FARG(3), &y) );
 		pv->face->draw(x, y, str);
 	} else {
 
-		pv->face->draw(str);
+		if ( length == 1 )
+			pv->face->draw(*str);
+		else
+			pv->face->draw(str);
 	}
-
-	if ( hasCharacterDisplayLists )
-		pv->face->setCharacterDisplayLists(OGLFT::DisplayLists());
 
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -481,6 +468,38 @@ DEFINE_PROPERTY_SETTER( advance ) {
 
 /**doc
 $TOC_MEMBER $INAME
+ $INT $INAME
+  Is the number of steps to tessellate each curved segment of a glyph outline.$LF
+  TrueType and Type1 files describe the boundaries of glyphs with quadratic and cubic curves, respectively.
+  Since OpenGL can only really draw straight lines, these curves have to be tessellated.
+  The number of steps used is fixed for all glyphs in the face, but can be changed through this property.
+  $H note
+   This value is only applicable for OUTLINE, FILLED and SOLID styles.
+   Changing this value invalidates any cached display lists for glyphs in this face.
+**/
+DEFINE_PROPERTY( tessellationSteps ) {
+
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+
+	if ( pv->style != OUTLINE && pv->style != FILLED && pv->style != SOLID )
+		JL_REPORT_ERROR("Operation not supported on this style of object.");
+
+	OGLFT::Polygonal *poly;
+//	poly = dynamic_cast<OGLFT::Polygonal*>(pv->face);
+	poly = (OGLFT::Polygonal*)pv->face;
+
+	int tess;
+	JL_CHK( JsvalToInt(cx, *vp, &tess) );
+	JL_S_ASSERT( tess > 0, "Invalid tessellation steps value." );
+	poly->setTessellationSteps(tess);
+	return JL_StoreProperty(cx, obj, id, vp, false);
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
  $FUNCTION $INAME
   Each tesselated vertex is passed to this function, which returns a color for that position in space.
   $H example
@@ -500,8 +519,8 @@ DEFINE_PROPERTY( colorCallback ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	if ( pv->type != OUTLINE && pv->type != FILLED && pv->type != SOLID )
-		JL_REPORT_ERROR("Operation not supported on this type of object.");
+	if ( pv->style != OUTLINE && pv->style != FILLED && pv->style != SOLID )
+		JL_REPORT_ERROR("Operation not supported on this style of object.");
 
 	OGLFT::Polygonal *poly;
 //	poly = dynamic_cast<OGLFT::Polygonal*>(pv->face);
@@ -565,6 +584,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_FAST(Measure)
+		FUNCTION_FAST(Width)
 		FUNCTION_FAST(Draw)
 		FUNCTION_FAST(Compile)
 		FUNCTION_FAST(SetColor)
@@ -575,6 +595,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( height )
 		PROPERTY( advance )
+		PROPERTY_WRITE( tessellationSteps )
 		PROPERTY_WRITE( colorCallback )
 	END_PROPERTY_SPEC
 
