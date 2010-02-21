@@ -6,8 +6,6 @@ LoadModule('jsdebug');
 LoadModule('jsstd');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
-LoadModule('jsfont');
-LoadModule('jsoglft');
 
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
@@ -34,11 +32,6 @@ var listeners = {
 
 SetVideoMode(100, 100, 32, HWACCEL | OPENGL | RESIZABLE, false); // | ASYNCBLIT
 
-var f = new Font('c:\\windows\\fonts\\arial.ttf');
-
-Ogl.Color(0,0,0);
-var textList = Draw3DText(f, "Hello", 24, true);
-
 var angle = 0;
 
 function SurfaceReady() {
@@ -46,8 +39,6 @@ function SurfaceReady() {
 	Ogl.ClearColor(0,0,0, 1);
 	Ogl.Clear(Ogl.COLOR_BUFFER_BIT);
 	Ogl.LoadIdentity();
-	Ogl.Rotate(angle, 0,0,1);
-	//angle++;
 
 	Ogl.Color(1,1,0);
 
@@ -57,10 +48,7 @@ function SurfaceReady() {
 	Ogl.Vertex(1,0);
 	Ogl.End();
 
-	Ogl.Scale(0.01);
-	
-	Ogl.CallList(textList);
-
+	Print('.');
 	GlSwapBuffers(true);
 }
 

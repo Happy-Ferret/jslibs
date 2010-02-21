@@ -29,7 +29,7 @@ extern JLMutexHandler surfaceReadyLock;
 
 extern bool HasSurface();
 
-bool OwnGlContext();
+bool HasGlContext();
 void AcquireGlContext();
 void ReleaseGlContext();
 
@@ -603,16 +603,26 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			JL_CHK( JS_GetProperty(cx, listenerObj, ev->type == SDL_KEYDOWN ? "onKeyDown" : "onKeyUp", &fVal) );
 			if ( JsvalIsFunction(cx, fVal) ) {
 
-				JSString *ucChar = JS_NewUCStringCopyN(cx, &ev->key.keysym.unicode, 1);
 				jsval argv[] = {
 					INT_TO_JSVAL(ev->key.keysym.sym),
 					INT_TO_JSVAL(ev->key.keysym.mod),
-					STRING_TO_JSVAL(ucChar),
-					INT_TO_JSVAL(ev->key.keysym.scancode),
+					JSVAL_NULL, // unicode char
+//					INT_TO_JSVAL(ev->key.keysym.scancode), // The scancode is hardware dependent, and should not be used by general applications.
 				};
 
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // protects the new string against the GC
+
+				JSString *ucChar;
+				if ( (ev->key.keysym.unicode & 0xFF80) == 0 ) {
+
+					const char ch = ev->key.keysym.unicode & 0x7F;
+					argv[2] = STRING_TO_JSVAL(JS_NewStringCopyN(cx, &ch, 1));
+				} else {
+
+					argv[2] = STRING_TO_JSVAL(JS_NewUCStringCopyN(cx, &ev->key.keysym.unicode, 1));
+				}
+
 				JSBool status = JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
 				JL_CHK( status );
@@ -950,6 +960,27 @@ DEFINE_PROPERTY_GETTER( keyRepeatInterval ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME
+  Enable/Disable UNICODE translation of keyboard input. This translation has some overhead, so translation defaults off.
+**/
+DEFINE_PROPERTY_SETTER( unicodeKeyboardTranslation ) {
+
+	bool enable;
+	JL_CHK( JsvalToBool(cx, *vp, &enable) );
+	SDL_EnableUNICODE(enable ? 1 : 0);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_GETTER( unicodeKeyboardTranslation ) {
+
+	int enable = SDL_EnableUNICODE(-1);
+	*vp = enable == 1 ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1152,13 +1183,16 @@ static bool SurfaceReadyCancelWait( volatile ProcessEvent *pe ) {
 
 static JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 	
+	if ( !HasGlContext() )
+		AcquireGlContext();
+
 	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
 
 	*hasEvent = surfaceReady;
 	if ( !*hasEvent )
 		return JS_TRUE;
 
-	if ( !OwnGlContext() )
+	if ( !HasGlContext() )
 		AcquireGlContext();
 
 	if ( JSVAL_IS_VOID(upe->callbackFctVal) )
@@ -1190,6 +1224,9 @@ DEFINE_FUNCTION_FAST( SurfaceReadyEvents ) {
 
 		upe->callbackFctVal = JSVAL_VOID;
 	}
+
+	if ( HasGlContext() )
+		ReleaseGlContext();
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1237,6 +1274,9 @@ static bool SDLCancelWait( volatile ProcessEvent *pe ) {
 }
 
 static JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+
+	if ( !HasGlContext() )
+		AcquireGlContext();
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -1287,6 +1327,9 @@ DEFINE_FUNCTION_FAST( SDLEvents ) {
 	upe->listenersObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection
 
+	if ( HasGlContext() )
+		ReleaseGlContext();
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1325,6 +1368,7 @@ CONFIGURE_STATIC
 		PROPERTY( showCursor )
 		PROPERTY( keyRepeatInterval )
 		PROPERTY( keyRepeatDelay )
+		PROPERTY( unicodeKeyboardTranslation )
 		PROPERTY_READ( videoWidth )
 		PROPERTY_READ( videoHeight )
 		PROPERTY_READ( videoDriverName )

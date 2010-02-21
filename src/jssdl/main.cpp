@@ -84,30 +84,39 @@ static JLMutexHandler contextMutex;
 HGLRC _openglContext = NULL;
 HDC _deviceContext = NULL;
 
-ALWAYS_INLINE bool OwnGlContext() {
+ALWAYS_INLINE bool HasGlContext() {
 
-//	JLMutexAcquire(contextMutex);
+	JLMutexAcquire(contextMutex);
 	bool isOwner = (wglGetCurrentContext() != NULL && wglGetCurrentDC() != NULL);
-//	JLMutexRelease(contextMutex);
+	JLMutexRelease(contextMutex);
 	return isOwner;
 }
 
 ALWAYS_INLINE void AcquireGlContext() {
+	
+//	needGlContext = true;
 
 	JLSemaphoreAcquire(contextAvailable, JLINFINITE);
-//	JLMutexAcquire(contextMutex);
+	JLMutexAcquire(contextMutex);
 	JL_ASSERT( _deviceContext != NULL && _openglContext != NULL );
 	JL_ASSERT( wglGetCurrentDC() == NULL && wglGetCurrentContext() == NULL );
 	BOOL st = wglMakeCurrent(_deviceContext, _openglContext); // doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
+#ifdef DEBUG	
+	if ( st != TRUE ) {
+		char err[1024];
+		JLLastSysetmErrorMessage(err, 1024);
+		printf("ERROR: %s\n", err);
+	}
+#endif
 	JL_ASSERT( st ); // (TBD) crash here
 	_deviceContext = NULL;
 	_openglContext = NULL;
-//	JLMutexRelease(contextMutex);
+	JLMutexRelease(contextMutex);
 }
 
 ALWAYS_INLINE void ReleaseGlContext() {
 	
-//	JLMutexAcquire(contextMutex);
+	JLMutexAcquire(contextMutex);
 	HDC hdc = wglGetCurrentDC();
 	HGLRC hglrc = wglGetCurrentContext();
 	JL_ASSERT( hdc != NULL && hglrc != NULL );
@@ -116,7 +125,7 @@ ALWAYS_INLINE void ReleaseGlContext() {
 	_openglContext = hglrc;
 	BOOL st = wglMakeCurrent(NULL, NULL); // doc. makes the calling thread's current rendering context no longer current, and releases the device context that is used by the rendering context. In this case, hdc  is ignored.
 	JL_ASSERT( st );
-//	JLMutexRelease(contextMutex);
+	JLMutexRelease(contextMutex);
 	JLSemaphoreRelease(contextAvailable);
 }
 
@@ -147,7 +156,7 @@ void JLSetVideoMode(int width, int height, int bpp, Uint32 flags, bool async) {
 		WaitSurfaceReady();
 	SetSurfaceReady(false);
 
-	if ( OwnGlContext() )
+	if ( HasGlContext() )
 		ReleaseGlContext();
 
 	InternalEvent *iev = (InternalEvent*)jl_malloc(sizeof(InternalEvent));
@@ -173,7 +182,7 @@ void JLAsyncSwapBuffers(bool async) {
 	WaitSurfaceReady();
 	SetSurfaceReady(false);
 
-	if ( OwnGlContext() )
+	if ( HasGlContext() )
 		ReleaseGlContext();
 	JLSemaphoreRelease(swapBuffersSem);
 
@@ -264,20 +273,21 @@ int SwapBuffersThread( void *unused ) {
 		if ( !HasSurface() )
 			continue;
 
-		AcquireGlContext();
-		
 		if ( maxFPS == JLINFINITE ) {
 		
+			AcquireGlContext();
 			SDL_GL_SwapBuffers();
+			ReleaseGlContext();
 		} else {
 
 			int t0 = AccurateTimeCounter();
+			AcquireGlContext();
 			SDL_GL_SwapBuffers();
+			ReleaseGlContext();
 			int wait = 1000/maxFPS - (AccurateTimeCounter() - t0);
 			if ( wait > 0 )
-				SleepMilliseconds(wait);
+				SleepMilliseconds(wait); // (TBD) to avoid blocking on exit, use a timed semaphore
 		}
-		ReleaseGlContext();
 		SetSurfaceReady(true);
 	}
 	return 0;
@@ -321,7 +331,7 @@ void EndVideo() {
 	InternalEvent *iev = (InternalEvent*)jl_malloc(sizeof(InternalEvent));
 	iev->type = INTERNALEVENT_END;
 
-	if ( SDL_GetVideoSurface() != NULL && OwnGlContext() )
+	if ( SDL_GetVideoSurface() != NULL && HasGlContext() )
 		ReleaseGlContext();
 
 	JLMutexAcquire(internalEventQueueMutex);
@@ -359,8 +369,9 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	if ( status != 0 )
 		return ThrowSdlError(cx);
-	SDL_EnableUNICODE(1);
 	StartVideo();
+
+//	SDL_EnableUNICODE(1); // see unicodeKeyboardTranslation property
 
 	INIT_STATIC();
 	INIT_CLASS( Cursor );
