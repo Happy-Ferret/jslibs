@@ -69,6 +69,22 @@ DECLARE_CLASS(Ogl)
 typedef void* (__cdecl *glGetProcAddress_t)(const char*);
 static glGetProcAddress_t glGetProcAddress = NULL;
 
+
+// The specification states that any command that is not valid is completely ignored and the proper error bit is set.
+// Calling glGetError in a Begin/End-pair is not valid, and so the command is ignored the GL_INVALID_OPERATION error bit is set.
+// Directly after the Begin/End-pair, the error is returned, because that's the first valid call to glGetError after the error occured.
+#if defined(DEBUG) && 0
+	#define JL_OGL_WARNING \
+	if ( !_unsafeMode ) { \
+		GLenum err = glGetError(); \
+		if ( err != GL_NO_ERROR ) \
+			JL_REPORT_WARNING("OpenGL error %d", err); \
+	}
+#else // DBUG
+	#define JL_OGL_WARNING
+#endif // DBUG
+
+
 #define DECLARE_OPENGL_EXTENSION( name, proto ) static proto name = NULL;
 
 DECLARE_OPENGL_EXTENSION( glPointParameteri, PFNGLPOINTPARAMETERIPROC );
@@ -622,6 +638,7 @@ DEFINE_FUNCTION_FAST( IsEnabled ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	*JL_FRVAL = BOOLEAN_TO_JSVAL( glIsEnabled(JSVAL_TO_INT(JL_FARG(1))) == GL_TRUE );
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -646,6 +663,7 @@ DEFINE_FUNCTION_FAST( GetBoolean ) {
 	GLboolean params;
 	glGetBooleanv(JSVAL_TO_INT(JL_FARG(1)), &params);
 	*JL_FRVAL = BOOLEAN_TO_JSVAL(params);
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -687,6 +705,7 @@ DEFINE_FUNCTION_FAST( GetInteger ) {
 
 		*JL_FRVAL = INT_TO_JSVAL( params[0] );
 	}
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -728,6 +747,7 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 
 		JL_CHK( DoubleToJsval(cx, params[0], JL_FRVAL) );
 	}
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -747,6 +767,7 @@ DEFINE_FUNCTION_FAST( DrawBuffer ) {
 	glDrawBuffer(mode);
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -767,6 +788,7 @@ DEFINE_FUNCTION_FAST( ReadBuffer ) {
 	glReadBuffer(mode);
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -792,6 +814,7 @@ DEFINE_FUNCTION_FAST( Accum ) {
 	glAccum(op, value);
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -817,6 +840,7 @@ DEFINE_FUNCTION_FAST( StencilFunc ) {
 	glStencilFunc(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)));
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -843,6 +867,7 @@ DEFINE_FUNCTION_FAST( StencilOp ) {
 	glStencilOp(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)));
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -867,6 +892,7 @@ DEFINE_FUNCTION_FAST( AlphaFunc ) {
 	glAlphaFunc( JSVAL_TO_INT(JL_FARG(1)), ref );
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -883,6 +909,7 @@ DEFINE_FUNCTION_FAST( Flush ) {
 	glFlush();
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 }
 
@@ -898,6 +925,7 @@ DEFINE_FUNCTION_FAST( Finish ) {
 	glFinish();
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 }
 
@@ -921,6 +949,7 @@ DEFINE_FUNCTION_FAST( Fog ) {
 
 		glFogi(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)));
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_FARG(2)) ) {
@@ -930,6 +959,7 @@ DEFINE_FUNCTION_FAST( Fog ) {
 		
 		glFogf( JSVAL_TO_INT(JL_FARG(1)), param );
 		
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
@@ -940,6 +970,7 @@ DEFINE_FUNCTION_FAST( Fog ) {
 
 		glFogfv( JSVAL_TO_INT(JL_FARG(1)), params );
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -966,6 +997,7 @@ DEFINE_FUNCTION_FAST( Hint ) {
 	glHint( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)) );
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -995,11 +1027,13 @@ DEFINE_FUNCTION_FAST( Vertex ) {
 		
 		glVertex3d(x, y, z);
 		
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 
 	glVertex2d(x, y);
 
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1026,6 +1060,7 @@ DEFINE_FUNCTION_FAST( Color ) {
 	if ( argc == 1 ) {
 		
 		glColor3d(r, r, r);
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}		
 	JsvalToDouble(cx, JL_FARG(2), &g);
@@ -1033,10 +1068,12 @@ DEFINE_FUNCTION_FAST( Color ) {
 	if ( argc == 3 ) {
 
 		glColor3d(r, g, b);
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}		
 	JsvalToDouble(cx, JL_FARG(4), &a);
 	glColor4d(r, g, b, a);
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1063,6 +1100,7 @@ DEFINE_FUNCTION_FAST( Normal ) {
 	glNormal3d(nx, ny, nz);
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1088,6 +1126,7 @@ DEFINE_FUNCTION_FAST( TexCoord ) {
 
 		glTexCoord1d(s);
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	double t;
@@ -1096,6 +1135,7 @@ DEFINE_FUNCTION_FAST( TexCoord ) {
 
 		glTexCoord2d(s, t);
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	double r;
@@ -1103,6 +1143,7 @@ DEFINE_FUNCTION_FAST( TexCoord ) {
 
 	glTexCoord3d(s, t, r);
 
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1129,6 +1170,7 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 
 		glTexParameteri( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
@@ -1138,6 +1180,7 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 		
 		glTexParameterf( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), param );
 		
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
@@ -1148,6 +1191,7 @@ DEFINE_FUNCTION_FAST( TexParameter ) {
 		
 		glTexParameterfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
 		
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 
@@ -1178,6 +1222,7 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 
 		glTexEnvi( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
@@ -1187,6 +1232,7 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 
 		glTexEnvf( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), param );
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
@@ -1197,6 +1243,7 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 
 		glTexEnvfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -1224,6 +1271,7 @@ DEFINE_FUNCTION_FAST( LightModel ) {
 
 		glLightModeli( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ) );
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_FARG(2)) ) {
@@ -1233,6 +1281,7 @@ DEFINE_FUNCTION_FAST( LightModel ) {
 
 		glLightModelf( JSVAL_TO_INT( JL_FARG(1) ), param );
 		
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
@@ -1243,6 +1292,7 @@ DEFINE_FUNCTION_FAST( LightModel ) {
 
 		glLightModelfv( JSVAL_TO_INT(JL_FARG(1)), params );
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -1272,6 +1322,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 
 		glLighti( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
@@ -1281,6 +1332,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 
 		glLightf( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), param );
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
@@ -1291,6 +1343,7 @@ DEFINE_FUNCTION_FAST( Light ) {
 
 		glLightfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -1316,6 +1369,7 @@ DEFINE_FUNCTION_FAST( ColorMaterial ) {
 
 	glColorMaterial(JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ));
 
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1341,6 +1395,7 @@ DEFINE_FUNCTION_FAST( Material ) {
 	if ( JSVAL_IS_INT(JL_FARG(3)) ) {
 
 		glMateriali( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
@@ -1348,6 +1403,7 @@ DEFINE_FUNCTION_FAST( Material ) {
 		double param;
 		JsvalToDouble(cx, JL_FARG(3), &param);
 		glMaterialf( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), param );
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
@@ -1356,6 +1412,7 @@ DEFINE_FUNCTION_FAST( Material ) {
 		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
 		glMaterialfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -1380,6 +1437,7 @@ DEFINE_FUNCTION_FAST( Enable ) {
 	glEnable( JSVAL_TO_INT(JL_FARG(1)) );
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1401,6 +1459,7 @@ DEFINE_FUNCTION_FAST( Disable ) {
 	glDisable( JSVAL_TO_INT(JL_FARG(1)) );
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1422,6 +1481,7 @@ DEFINE_FUNCTION_FAST( PointSize ) {
 	
 	glPointSize(size);
 	
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1443,6 +1503,7 @@ DEFINE_FUNCTION_FAST( LineWidth ) {
 	
 	glLineWidth(width);
 
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1464,6 +1525,7 @@ DEFINE_FUNCTION_FAST( ShadeModel ) {
 	glShadeModel(JSVAL_TO_INT( JL_FARG(1) ));
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1487,6 +1549,7 @@ DEFINE_FUNCTION_FAST( BlendFunc ) {
 	glBlendFunc(JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ));
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1508,6 +1571,7 @@ DEFINE_FUNCTION_FAST( DepthFunc ) {
 	glDepthFunc( JSVAL_TO_INT( JL_FARG(1) ) );
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1531,6 +1595,7 @@ DEFINE_FUNCTION_FAST( DepthRange ) {
 	
 	glDepthRange(zNear, zFar);
 	
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1552,6 +1617,7 @@ DEFINE_FUNCTION_FAST( CullFace ) {
 	glCullFace(JSVAL_TO_INT( JL_FARG(1) ));
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1573,6 +1639,7 @@ DEFINE_FUNCTION_FAST( FrontFace ) {
 	glFrontFace(JSVAL_TO_INT( JL_FARG(1) ));
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1594,6 +1661,7 @@ DEFINE_FUNCTION_FAST( ClearStencil ) {
 	glClearStencil(JSVAL_TO_INT( JL_FARG(1) ));
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1616,6 +1684,7 @@ DEFINE_FUNCTION_FAST( ClearDepth ) {
 	glClearDepth(depth);
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1644,6 +1713,7 @@ DEFINE_FUNCTION_FAST( ClearColor ) {
 	glClearColor(r, g, b, a);
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1672,6 +1742,7 @@ DEFINE_FUNCTION_FAST( ClearAccum ) {
 	glClearAccum(r, g, b, a);
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1693,6 +1764,7 @@ DEFINE_FUNCTION_FAST( Clear ) {
 	glClear(JSVAL_TO_INT(JL_FARG(1)));
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1720,6 +1792,7 @@ DEFINE_FUNCTION_FAST( ColorMask ) {
 	glColorMask(JSVAL_TO_BOOLEAN(JL_FARG(1)), JSVAL_TO_BOOLEAN(JL_FARG(2)), JSVAL_TO_BOOLEAN(JL_FARG(3)), JSVAL_TO_BOOLEAN(JL_FARG(4)) );
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1746,6 +1819,7 @@ DEFINE_FUNCTION_FAST( ClipPlane ) {
 	glClipPlane(JSVAL_TO_INT(JL_FARG(1)), equation);
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1773,6 +1847,7 @@ DEFINE_FUNCTION_FAST( Viewport ) {
 	glViewport(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)));
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1805,6 +1880,7 @@ DEFINE_FUNCTION_FAST( Frustum ) {
 	glFrustum(left, right, bottom, top, zNear, zFar);
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1837,6 +1913,7 @@ DEFINE_FUNCTION_FAST( Ortho ) {
 	glOrtho(left, right, bottom, top, zNear, zFar);
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1898,6 +1975,7 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 */
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1919,6 +1997,7 @@ DEFINE_FUNCTION_FAST( MatrixMode ) {
 	glMatrixMode(JSVAL_TO_INT( JL_FARG(1) ));
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1937,6 +2016,7 @@ DEFINE_FUNCTION_FAST( LoadIdentity ) {
 	glLoadIdentity();
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1955,6 +2035,7 @@ DEFINE_FUNCTION_FAST( PushMatrix ) {
 	glPushMatrix();
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1973,6 +2054,7 @@ DEFINE_FUNCTION_FAST( PopMatrix ) {
 	glPopMatrix();
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2000,6 +2082,7 @@ DEFINE_FUNCTION_FAST( LoadMatrix ) {
 	glLoadMatrixf(m);
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2027,6 +2110,7 @@ DEFINE_FUNCTION_FAST( MultMatrix ) {
 	glMultMatrixf(m);
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2055,6 +2139,7 @@ DEFINE_FUNCTION_FAST( Rotate ) {
 	glRotated(angle, x, y, z);
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2084,6 +2169,7 @@ DEFINE_FUNCTION_FAST( Translate ) {
 	glTranslated(x, y, z);
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2110,6 +2196,7 @@ DEFINE_FUNCTION_FAST( Scale ) {
 	if ( argc == 1 ) {
 
 		glScaled(x, x, x);
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	JsvalToDouble(cx, JL_FARG(2), &y);
@@ -2118,10 +2205,12 @@ DEFINE_FUNCTION_FAST( Scale ) {
 
 		JsvalToDouble(cx, JL_FARG(3), &z);
 		glScaled(x, y, z);
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 
 	glScaled(x, y, 1);
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2147,6 +2236,7 @@ DEFINE_FUNCTION_FAST( NewList ) {
 	glNewList(list, compileOnly ? GL_COMPILE : GL_COMPILE_AND_EXECUTE);
 	
 	*JL_FRVAL = INT_TO_JSVAL(list);
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2169,6 +2259,7 @@ DEFINE_FUNCTION_FAST( DeleteList ) {
 	glDeleteLists(JSVAL_TO_INT(JL_FARG(1)), 1);
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2187,6 +2278,7 @@ DEFINE_FUNCTION_FAST( EndList ) {
 	glEndList();
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2210,6 +2302,7 @@ DEFINE_FUNCTION_FAST( CallList ) {
 
 		glCallList(JSVAL_TO_INT(JL_FARG(1)));
 
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if (JsvalIsArray(cx, JL_FARG(1))) {
@@ -2229,6 +2322,7 @@ DEFINE_FUNCTION_FAST( CallList ) {
 		glCallLists(length, GL_UNSIGNED_INT, lists); // http://www.opengl.org/documentation/specs/man_pages/hardcopy/GL/html/gl/calllists.html
 
 //		jl_free(lists); // alloca
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument");
@@ -2252,6 +2346,7 @@ DEFINE_FUNCTION_FAST( Begin ) {
 	glBegin(JSVAL_TO_INT( JL_FARG(1) ));
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2270,6 +2365,7 @@ DEFINE_FUNCTION_FAST( End ) {
 	glEnd();
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2291,6 +2387,7 @@ DEFINE_FUNCTION_FAST( PushAttrib ) {
 	glPushAttrib(JSVAL_TO_INT( JL_FARG(1) ));
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2309,6 +2406,7 @@ DEFINE_FUNCTION_FAST( PopAttrib ) {
 	glPopAttrib();
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2329,6 +2427,7 @@ DEFINE_FUNCTION_FAST( GenTexture ) {
 	glGenTextures( 1, &texture );
 	
 	*JL_FRVAL = INT_TO_JSVAL(texture);
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2352,6 +2451,7 @@ DEFINE_FUNCTION_FAST( BindTexture ) {
 	glBindTexture( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ));
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2375,6 +2475,7 @@ DEFINE_FUNCTION_FAST( DeleteTexture ) {
 	glDeleteTextures(1, &texture);
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2421,6 +2522,7 @@ DEFINE_FUNCTION_FAST( CopyTexImage2D ) {
 	glCopyTexImage2D(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)), JSVAL_TO_INT(JL_FARG(5)), JSVAL_TO_INT(JL_FARG(6)), JSVAL_TO_INT(JL_FARG(7)), border);
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2456,6 +2558,7 @@ DEFINE_FUNCTION_FAST( TexSubImage2D ) {
 	glTexSubImage2D( GL_TEXTURE_2D, level, xoffset, yoffset, width, height, format,  border );
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2484,6 +2587,7 @@ DEFINE_FUNCTION_FAST( PixelStore ) {
 		glPixelStoref(pname, param);
 	}
 
+	JL_OGL_WARNING;
  	return JS_TRUE;
 	JL_BAD;
 }
@@ -2512,12 +2616,15 @@ DEFINE_FUNCTION_FAST( RasterPos ) {
 
 			JL_CHK( JsvalToDouble(cx, JL_FARG(4), &w) );
 			glRasterPos4d(x, y, z, w);
+			JL_OGL_WARNING;
 			return JS_TRUE;
 		}
 		glRasterPos3d(x, y, z);
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	glRasterPos2d(x, y);
+	JL_OGL_WARNING;
  	return JS_TRUE;
 	JL_BAD;
 }
@@ -2540,6 +2647,7 @@ DEFINE_FUNCTION_FAST( PixelZoom ) {
 	JsvalToDouble(cx, JL_FARG(1), &x);
 	JsvalToDouble(cx, JL_FARG(2), &y);
 	glPixelZoom(x, y);
+	JL_OGL_WARNING;
  	return JS_TRUE;
 	JL_BAD;
 }
@@ -2563,6 +2671,7 @@ DEFINE_FUNCTION_FAST( PixelMap ) {
 	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), values, mapsize, &mapsize ) );
 	glPixelMapfv(JSVAL_TO_INT(JL_FARG(1)), mapsize, values);
 
+	JL_OGL_WARNING;
  	return JS_TRUE;
 	JL_BAD;
 }
@@ -2589,6 +2698,7 @@ DEFINE_FUNCTION_FAST( GenBuffer ) {
 	glGenBuffers(1, &buffer);
 	
 	*JL_FRVAL = INT_TO_JSVAL(buffer);
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2614,6 +2724,7 @@ DEFINE_FUNCTION_FAST( BindBuffer ) {
 	glBindBuffer(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)));
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2643,6 +2754,7 @@ DEFINE_FUNCTION_FAST( BufferData ) {
 	
 	glBufferDataARB(target, buffer);
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2671,6 +2783,7 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
 
 		glPointParameteri(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)));
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_FARG(2)) ) {
@@ -2680,6 +2793,7 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 
 		glPointParameterf( JSVAL_TO_INT(JL_FARG(1)), param );
 		
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
@@ -2688,6 +2802,7 @@ DEFINE_FUNCTION_FAST( PointParameter ) {
 		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), params, COUNTOF(params), &length ) );
 		glPointParameterfv( JSVAL_TO_INT(JL_FARG(1)), params );
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -2713,6 +2828,7 @@ DEFINE_FUNCTION_FAST( ActiveTexture ) {
 	glActiveTexture(JSVAL_TO_INT(JL_FARG(1)));
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2736,6 +2852,7 @@ DEFINE_FUNCTION_FAST( ClientActiveTexture ) {
 	glClientActiveTexture(JSVAL_TO_INT(JL_FARG(1)));
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2769,6 +2886,7 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 	if ( JL_ARGC == 2 ) {
 
 		glMultiTexCoord1d(target, s);
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	double t;
@@ -2776,6 +2894,7 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 	if ( JL_ARGC == 3 ) {
 
 		glMultiTexCoord2d(target, s, t);
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	double r;
@@ -2783,6 +2902,7 @@ DEFINE_FUNCTION_FAST( MultiTexCoord ) {
 	if ( JL_ARGC == 4 ) {
 
 		glMultiTexCoord3d(target, s, t, r);
+		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -2812,6 +2932,7 @@ DEFINE_FUNCTION_FAST( BindRenderbuffer ) {
 	glBindRenderbufferEXT(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)) );
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2833,6 +2954,7 @@ DEFINE_FUNCTION_FAST( GenRenderbuffer ) {
 	glGenRenderbuffersEXT(1, &buffer);
 	
 	*JL_FRVAL = INT_TO_JSVAL(buffer);
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2855,6 +2977,7 @@ DEFINE_FUNCTION_FAST( DeleteRenderbuffer ) {
 	GLuint buffer = JSVAL_TO_INT(JL_FARG(1));
 	glDeleteRenderbuffersEXT(1, &buffer);
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2882,6 +3005,7 @@ DEFINE_FUNCTION_FAST( RenderbufferStorage ) {
 	JL_S_ASSERT_INT(JL_FARG(4));
 	glRenderbufferStorageEXT(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)) );
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2920,6 +3044,7 @@ DEFINE_FUNCTION_FAST( GetRenderbufferParameter ) {
 		*JL_FRVAL = INT_TO_JSVAL( params[0] );
 	}
 
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2943,6 +3068,7 @@ DEFINE_FUNCTION_FAST( BindFramebuffer ) {
 	JL_S_ASSERT_INT(JL_FARG(2));
 	glBindFramebufferEXT( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)) );
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2962,6 +3088,7 @@ DEFINE_FUNCTION_FAST( GenFramebuffer ) {
 	GLuint buffer;
 	glGenFramebuffersEXT(1, &buffer);
 	*JL_FRVAL = INT_TO_JSVAL(buffer);
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2984,6 +3111,7 @@ DEFINE_FUNCTION_FAST( DeleteFramebuffer ) {
 	GLuint buffer = JSVAL_TO_INT(JL_FARG(1));
 	glDeleteFramebuffersEXT(1, &buffer);
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3004,6 +3132,7 @@ DEFINE_FUNCTION_FAST( CheckFramebufferStatus ) {
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	*JL_FRVAL = INT_TO_JSVAL( glCheckFramebufferStatusEXT(JL_FARG(1)) );
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3035,6 +3164,7 @@ DEFINE_FUNCTION_FAST( FramebufferTexture1D ) {
 	glFramebufferTexture1DEXT( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)), JSVAL_TO_INT(JL_FARG(5)) );
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3066,6 +3196,7 @@ DEFINE_FUNCTION_FAST( FramebufferTexture2D ) {
 	glFramebufferTexture2DEXT( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)), JSVAL_TO_INT(JL_FARG(5)) );
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3099,6 +3230,7 @@ DEFINE_FUNCTION_FAST( FramebufferTexture3D ) {
 	glFramebufferTexture3DEXT( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)), JSVAL_TO_INT(JL_FARG(5)), JSVAL_TO_INT(JL_FARG(6)) );
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3129,6 +3261,7 @@ DEFINE_FUNCTION_FAST( FramebufferRenderbuffer ) {
 	glFramebufferRenderbufferEXT( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)) );
 	
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3171,6 +3304,7 @@ DEFINE_FUNCTION_FAST( GetFramebufferAttachmentParameter ) {
 		*JL_FRVAL = INT_TO_JSVAL( params[0] );
 	}
 
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3187,6 +3321,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( CreatePbuffer ) {
 
 
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3218,6 +3353,7 @@ DEFINE_FUNCTION_FAST( LookAt ) {
 
 	gluLookAt(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz);
 	
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3333,6 +3469,7 @@ DEFINE_FUNCTION_FAST( LoadTrimesh ) {
 
 	JL_CHK( CheckThrowCurrentOglError(cx) );
 
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3421,6 +3558,7 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 	JL_CHK( CheckThrowCurrentOglError(cx) );
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3498,6 +3636,7 @@ DEFINE_FUNCTION_FAST( CreateTextureBuffer ) {
 	GLuint pbo;
 	glGenBuffers(1, &pbo);
 	tb->pv = (void*)pbo;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3583,6 +3722,7 @@ DEFINE_FUNCTION_FAST( DefineTextureImage ) {
 	glTexImage2D( JSVAL_TO_INT(JL_FARG(1)), 0, format, width, height, 0, format, type, data );
 //	GLenum err = glGetError();
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3657,6 +3797,7 @@ DEFINE_FUNCTION_FAST( DrawImage ) {
 	glDrawPixels(width, height, format, type, data);
 
 	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3714,6 +3855,7 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 	JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3734,6 +3876,7 @@ DEFINE_FUNCTION_FAST( PixelWidthFactor ) {
 	GLfloat m[16];
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	glGetFloatv(GL_PROJECTION_MATRIX, m);
+	JL_OGL_WARNING;
 	return FloatToJsval(cx, viewport[2] * m[0], JL_FRVAL); // viewportHeight = viewport[3];
 	JL_BAD;
 }
@@ -3751,6 +3894,7 @@ DEFINE_FUNCTION_FAST( DrawPoint ) {
 	glBegin(GL_POINTS);
 	glVertex2i(0,0);
 	glEnd();
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3779,6 +3923,7 @@ DEFINE_FUNCTION_FAST( DrawDisk ) {
 		glVertex2f(c * radius, s * radius);
 	}
 	glEnd();
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3803,6 +3948,7 @@ DEFINE_FUNCTION_FAST( DrawSphere ) {
 	gluSphere(q, radius, slices, stacks);
 	gluDeleteQuadric(q);
 
+	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3827,6 +3973,7 @@ DEFINE_FUNCTION_FAST( KeepTranslation ) {
 	m[15] = 1.f;
 	glLoadMatrixf(m);
 
+	JL_OGL_WARNING;
 	return JS_TRUE;
 }
 

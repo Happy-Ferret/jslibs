@@ -493,6 +493,7 @@ bad:
 ALWAYS_INLINE JSContext *JL_GetContext(JSRuntime *rt) {
 
 	JSContext *cx = NULL;
+	JL_ASSERT( rt != NULL );
 	JS_ContextIterator(rt, &cx);
 	JS_ASSERT( cx != NULL );
 	return cx;
