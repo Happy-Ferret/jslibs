@@ -14,7 +14,7 @@ unicodeKeyboardTranslation = true;
 keyRepeatDelay = 300;
 keyRepeatInterval = 50;
 //SetVideoMode(1280, 1024, 32, HWACCEL | OPENGL | RESIZABLE | FULLSCREEN, false);
-SetVideoMode(800, 600, 32, HWACCEL | OPENGL | RESIZABLE, false);
+SetVideoMode(100, 100, 32, HWACCEL | OPENGL | RESIZABLE, false);
 //maxFPS = 100;
 
 Ogl.MatrixMode(Ogl.PROJECTION);
@@ -25,6 +25,8 @@ Ogl.MatrixMode(Ogl.MODELVIEW);
 var frame = 0;
 
 function SurfaceReady() {
+
+Print("draw + \n");
 
 	frame++;
 
@@ -45,6 +47,8 @@ function SurfaceReady() {
 	Sleep(100);
 	Ogl.Flush();
 	Ogl.Finish();
+
+Print("draw - \n");
 
 	GlSwapBuffers();
 }

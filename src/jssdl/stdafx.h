@@ -26,3 +26,5 @@
 #undef free
 
 //using namespace sdl;
+
+#define TRACE(s) do { write(1,s ## "\n",COUNTOF(s)); } while(0)

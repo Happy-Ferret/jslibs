@@ -233,13 +233,17 @@ int SwapBuffersThread( void *unused ) {
 		if ( maxFPS == JLINFINITE ) {
 		
 			AcquireGlContext();
+TRACE(" swap +");
 			SDL_GL_SwapBuffers();
+TRACE(" swap -");
 			ReleaseGlContext();
 		} else {
 
 			int t0 = AccurateTimeCounter();
 			AcquireGlContext();
+TRACE(" swap +");
 			SDL_GL_SwapBuffers();
+TRACE(" swap -");
 			ReleaseGlContext();
 			int wait = 1000/maxFPS - (AccurateTimeCounter() - t0);
 			if ( wait > 0 )
