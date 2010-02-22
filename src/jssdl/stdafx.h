@@ -9,7 +9,7 @@
 #include "jlclass.h"
 #include "jlconfiguration.h"
 
-#define DECLSPEC
+//#define DECLSPEC
 
 #define malloc jl_malloc_fct
 #define calloc jl_calloc_fct

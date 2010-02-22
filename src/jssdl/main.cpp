@@ -83,32 +83,54 @@ static JLSemaphoreHandler contextAvailable;
 static JLMutexHandler contextMutex;
 HGLRC _openglContext = NULL;
 HDC _deviceContext = NULL;
+bool _mustReleaseGlContext = false;
+
+
+bool MustReleaseGlContext() {
+
+	JLMutexAcquire(contextMutex);
+	bool polarity = _mustReleaseGlContext;
+	JLMutexRelease(contextMutex);
+	return polarity;
+}
 
 ALWAYS_INLINE bool HasGlContext() {
 
 	JLMutexAcquire(contextMutex);
-	bool isOwner = (wglGetCurrentContext() != NULL && wglGetCurrentDC() != NULL);
+	bool isOwner = ( _openglContext == NULL && _deviceContext == NULL && wglGetCurrentContext() != NULL && wglGetCurrentDC() != NULL );
 	JLMutexRelease(contextMutex);
 	return isOwner;
 }
 
 ALWAYS_INLINE void AcquireGlContext() {
 	
-//	needGlContext = true;
+	JLMutexAcquire(contextMutex);
+	_mustReleaseGlContext = true;
+	JLMutexRelease(contextMutex);
 
 	JLSemaphoreAcquire(contextAvailable, JLINFINITE);
+
 	JLMutexAcquire(contextMutex);
 	JL_ASSERT( _deviceContext != NULL && _openglContext != NULL );
 	JL_ASSERT( wglGetCurrentDC() == NULL && wglGetCurrentContext() == NULL );
 	BOOL st = wglMakeCurrent(_deviceContext, _openglContext); // doc. The OpenGL context is thread-specific. You have to make it current in the thread using glXMakeCurrent, wglMakeCurrent or aglSetCurrentContext, depending on your OS.
-#ifdef DEBUG	
-	if ( st != TRUE ) {
-		char err[1024];
-		JLLastSysetmErrorMessage(err, 1024);
-		printf("ERROR: %s\n", err);
+
+	while ( st != TRUE ) { // error 2004 - ERROR_TRANSFORM_NOT_SUPPORTED - "The requested transformation operation is not supported" // see http://www.gamedev.net/community/forums/topic.asp?topic_id=555299
+
+		// (TBD) find a better way to manage this error
+		//SleepMilliseconds(1);
+		st = wglMakeCurrent(_deviceContext, _openglContext);
+#ifdef DEBUG
+		if ( st != TRUE ) {
+
+			char err[1024];
+			JLLastSysetmErrorMessage(err, 1024);
+			printf("wglMakeCurrent error: %s\n", err);
+		}
+#endif // DEBUG
 	}
-#endif
-	JL_ASSERT( st ); // (TBD) crash here
+
+	JL_ASSERT( st );
 	_deviceContext = NULL;
 	_openglContext = NULL;
 	JLMutexRelease(contextMutex);
@@ -117,14 +139,15 @@ ALWAYS_INLINE void AcquireGlContext() {
 ALWAYS_INLINE void ReleaseGlContext() {
 	
 	JLMutexAcquire(contextMutex);
-	HDC hdc = wglGetCurrentDC();
 	HGLRC hglrc = wglGetCurrentContext();
-	JL_ASSERT( hdc != NULL && hglrc != NULL );
 	JL_ASSERT( _deviceContext == NULL && _openglContext == NULL );
+	HDC hdc = wglGetCurrentDC();
+	JL_ASSERT( hdc != NULL && hglrc != NULL );
 	_deviceContext = hdc;
 	_openglContext = hglrc;
 	BOOL st = wglMakeCurrent(NULL, NULL); // doc. makes the calling thread's current rendering context no longer current, and releases the device context that is used by the rendering context. In this case, hdc  is ignored.
 	JL_ASSERT( st );
+	_mustReleaseGlContext = false;
 	JLMutexRelease(contextMutex);
 	JLSemaphoreRelease(contextAvailable);
 }
@@ -179,6 +202,10 @@ void JLSetVideoMode(int width, int height, int bpp, Uint32 flags, bool async) {
 
 void JLAsyncSwapBuffers(bool async) {
 
+//	SDL_GL_SwapBuffers(); // IT WORKS !
+//	return;
+
+
 	WaitSurfaceReady();
 	SetSurfaceReady(false);
 
@@ -191,6 +218,38 @@ void JLAsyncSwapBuffers(bool async) {
 	WaitSurfaceReady();
 	AcquireGlContext();
 }
+
+
+int SwapBuffersThread( void *unused ) {
+
+	for (;;) {
+
+		JLSemaphoreAcquire(swapBuffersSem, JLINFINITE);
+		if ( swapBufferEndThread )
+			break;
+		if ( !HasSurface() )
+			continue;
+
+		if ( maxFPS == JLINFINITE ) {
+		
+			AcquireGlContext();
+			SDL_GL_SwapBuffers();
+			ReleaseGlContext();
+		} else {
+
+			int t0 = AccurateTimeCounter();
+			AcquireGlContext();
+			SDL_GL_SwapBuffers();
+			ReleaseGlContext();
+			int wait = 1000/maxFPS - (AccurateTimeCounter() - t0);
+			if ( wait > 0 )
+				SleepMilliseconds(wait); // (TBD) to avoid blocking on exit, use a timed semaphore
+		}
+		SetSurfaceReady(true);
+	}
+	return 0;
+}
+
 
 
 int EventFilter( const SDL_Event *e ) {
@@ -219,9 +278,11 @@ int VideoThread( void *unused ) {
 
 	bool end = false;
 	while ( !end ) {
-		
+	
+		// (TBD) hdc must be owned by this thread while SDL_PumpEvents and SDL_PeepEvents are running else wglMakeCurrent will rise an error when BeginPaint(SDL_Window, &ps); is running (on WM_PAINT)
 		SDL_PumpEvents();
 		status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS);
+
 		JL_ASSERT( status != -1 );
 		if ( status == 1 )
 			JLSemaphoreRelease(sdlEventsSem);
@@ -261,38 +322,6 @@ int VideoThread( void *unused ) {
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 	return 0;
 }
-
-
-int SwapBuffersThread( void *unused ) {
-
-	for (;;) {
-
-		JLSemaphoreAcquire(swapBuffersSem, JLINFINITE);
-		if ( swapBufferEndThread )
-			break;
-		if ( !HasSurface() )
-			continue;
-
-		if ( maxFPS == JLINFINITE ) {
-		
-			AcquireGlContext();
-			SDL_GL_SwapBuffers();
-			ReleaseGlContext();
-		} else {
-
-			int t0 = AccurateTimeCounter();
-			AcquireGlContext();
-			SDL_GL_SwapBuffers();
-			ReleaseGlContext();
-			int wait = 1000/maxFPS - (AccurateTimeCounter() - t0);
-			if ( wait > 0 )
-				SleepMilliseconds(wait); // (TBD) to avoid blocking on exit, use a timed semaphore
-		}
-		SetSurfaceReady(true);
-	}
-	return 0;
-}
-
 
 
 // video initializaion

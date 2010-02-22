@@ -27,9 +27,10 @@ extern volatile bool surfaceReady;
 extern JLCondHandler surfaceReadyCond;
 extern JLMutexHandler surfaceReadyLock;
 
-extern bool HasSurface();
-
+bool HasSurface();
+bool MustReleaseGlContext();
 bool HasGlContext();
+
 void AcquireGlContext();
 void ReleaseGlContext();
 
@@ -613,7 +614,6 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // protects the new string against the GC
 
-				JSString *ucChar;
 				if ( (ev->key.keysym.unicode & 0xFF80) == 0 ) {
 
 					const char ch = ev->key.keysym.unicode & 0x7F;
@@ -1183,9 +1183,6 @@ static bool SurfaceReadyCancelWait( volatile ProcessEvent *pe ) {
 
 static JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 	
-	if ( !HasGlContext() )
-		AcquireGlContext();
-
 	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
 
 	*hasEvent = surfaceReady;
@@ -1225,7 +1222,7 @@ DEFINE_FUNCTION_FAST( SurfaceReadyEvents ) {
 		upe->callbackFctVal = JSVAL_VOID;
 	}
 
-	if ( HasGlContext() )
+	if ( MustReleaseGlContext() && HasGlContext() )
 		ReleaseGlContext();
 
 	return JS_TRUE;
@@ -1302,7 +1299,7 @@ static JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *
 		for ( int i = 0; i < status; i++ )
 			JL_CHK( FireListener(cx, upe->listenersObj, &ev[i], &rval, &fired) );
 
-		if ( status < COUNTOF(ev) )
+		if ( status < COUNTOF(ev) ) 
 			break;
 	}
 
@@ -1327,7 +1324,7 @@ DEFINE_FUNCTION_FAST( SDLEvents ) {
 	upe->listenersObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection
 
-	if ( HasGlContext() )
+	if ( MustReleaseGlContext() && HasGlContext() )
 		ReleaseGlContext();
 
 	return JS_TRUE;
