@@ -23,18 +23,11 @@ extern int maxFPS;
 
 extern JLSemaphoreHandler sdlEventsSem;
 
-extern volatile bool surfaceReady;
+extern bool surfaceReady;
 extern JLCondHandler surfaceReadyCond;
 extern JLMutexHandler surfaceReadyLock;
 
-bool HasSurface();
-bool MustReleaseGlContext();
-bool HasGlContext();
-
-void AcquireGlContext();
-void ReleaseGlContext();
-
-void JLSetVideoMode(int width, int height, int bpp, Uint32 flags, bool async);
+void JLSetVideoMode(int width, int height, int bpp, Uint32 flags);
 void JLAsyncSwapBuffers(bool async);
 
 
@@ -169,7 +162,7 @@ DEFINE_FUNCTION_FAST( VideoModeOK ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( [width], [height], [bitsPerPixel], [flags] [, async] )
+ $VOID $INAME( [width], [height], [bitsPerPixel], [flags] )
   Set the requested video mode (allocating a shadow buffer if necessary).
   $H arguments
    $ARG $INT width: with
@@ -180,7 +173,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( SetVideoMode ) {
 
-	JL_S_ASSERT_ARG_RANGE(0,5);
+	JL_S_ASSERT_ARG_RANGE(0,4);
 
 	int width, height, bpp;
 	Uint32 flags;
@@ -214,16 +207,10 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 	} else
 		flags = currentSurface != NULL ? currentSurface->flags : 0; // if not given, use the previous setting or a default value.
 
-	bool async;
-	if ( JL_FARG_ISDEF(5) )
-		JL_CHK( JsvalToBool(cx, JL_FARG(5), &async) );
-	else
-		async = false;
-
 //	SDL_Surface *surface = SDL_SetVideoMode(width, height, bpp, flags);
-	JLSetVideoMode(width, height, bpp, flags, async);
+	JLSetVideoMode(width, height, bpp, flags);
 	
-	if ( !async && !HasSurface() )
+	if ( SDL_GetVideoSurface() == NULL )
 		return ThrowSdlError(cx);
 
 	*JL_FRVAL = JSVAL_VOID;
@@ -1189,9 +1176,6 @@ static JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JS
 	if ( !*hasEvent )
 		return JS_TRUE;
 
-	if ( !HasGlContext() )
-		AcquireGlContext();
-
 	if ( JSVAL_IS_VOID(upe->callbackFctVal) )
 		return JS_TRUE;
 	jsval rval;
@@ -1222,9 +1206,6 @@ DEFINE_FUNCTION_FAST( SurfaceReadyEvents ) {
 		upe->callbackFctVal = JSVAL_VOID;
 	}
 
-	if ( MustReleaseGlContext() && HasGlContext() )
-		ReleaseGlContext();
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1235,6 +1216,9 @@ DEFINE_FUNCTION_FAST( SurfaceReadyEvents ) {
 $TOC_MEMBER $INAME
  $TYPE HANDLE $INAME()
   Passively waits for a SDL event through the ProcessEvents function.
+  $H note
+   Receiving a SDL event do not mean that the surface is ready to be drawn.$LF
+	Call ProcessEvents( SurfaceReadyEvents() ); to ensur the surface is ready to use.
 **/
 struct UserProcessEvent {
 	
@@ -1272,8 +1256,8 @@ static bool SDLCancelWait( volatile ProcessEvent *pe ) {
 
 static JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-	if ( !HasGlContext() )
-		AcquireGlContext();
+//	if ( !HasGlContext() )
+//		AcquireGlContext();
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -1324,8 +1308,8 @@ DEFINE_FUNCTION_FAST( SDLEvents ) {
 	upe->listenersObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection
 
-	if ( MustReleaseGlContext() && HasGlContext() )
-		ReleaseGlContext();
+//	if ( HasGlContext() ) // MustReleaseGlContext() &&
+//		ReleaseGlContext();
 
 	return JS_TRUE;
 	JL_BAD;
