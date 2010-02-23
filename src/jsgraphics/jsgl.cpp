@@ -3359,6 +3359,40 @@ DEFINE_FUNCTION_FAST( LookAt ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE vec3 $INAME( x, y )
+  $H API
+   gluLookAt
+**/
+DEFINE_FUNCTION_FAST( UnProject ) {
+
+	JL_S_ASSERT_ARG(2);
+
+	int x, y;
+	JsvalToInt(cx, JL_FARG(1), &x);
+	JsvalToInt(cx, JL_FARG(2), &y);
+
+   GLint viewport[4];
+   GLdouble mvmatrix[16], projmatrix[16];
+   GLint realy;
+   GLdouble w[3];
+
+	glGetIntegerv(GL_VIEWPORT, viewport);
+   glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix);
+   glGetDoublev(GL_PROJECTION_MATRIX, projmatrix);
+	realy = viewport[3] - (GLint) y - 1;
+
+	gluUnProject((GLdouble) x, (GLdouble) realy, 0.0, mvmatrix, projmatrix, viewport, w+0, w+1, w+2);
+
+	JL_CHK( DoubleVectorToJsval(cx, w, 3, JL_FRVAL, false) );
+
+	JL_OGL_WARNING;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // non-OpenGL API
 
@@ -3807,10 +3841,6 @@ DEFINE_FUNCTION_FAST( DrawImage ) {
 $TOC_MEMBER $INAME
  $TYPE image $INAME()
   Returns the current contain of the viewport.
-  $H arguments
-   $ARG GLenum target
-   $ARG $INT internalformat: is the internal PixelFormat. If undefined, the function will use the format of _texture_.
-   $ARG $VAL texture: either a Texture object or an image object.
   $H return value
    An image object.
   $H note
@@ -4263,6 +4293,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(RenderToImage, 0) // (non-OpenGL API)
 
 		FUNCTION_FAST_ARGC(LookAt, 9) // (non-OpenGL API)
+		FUNCTION_FAST_ARGC(UnProject, 2) // (non-OpenGL API)
 
 		// OpenGL extensions
 		FUNCTION_FAST_ARGC(GenBuffer, 0)
