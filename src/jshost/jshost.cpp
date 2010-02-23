@@ -194,6 +194,8 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
 
+//	BOOL st = SetProcessAffinityMask(GetCurrentProcess(), 1);
+
 #ifdef XP_WIN
 	// enable low fragmentation heap
 	HANDLE heap = GetProcessHeap();

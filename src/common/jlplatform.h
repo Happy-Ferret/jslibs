@@ -38,6 +38,7 @@
 
 #define JL_CODE_LOCATION __FILE__ ":" J__TOSTRING(__LINE__)
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
 
@@ -272,6 +273,8 @@
 
 template<class T> ALWAYS_INLINE T JL_MIN(T a, T b) { return (a) < (b) ? (a) : (b); } //#define JL_MIN(a,b) ( (a) < (b) ? (a) : (b) )
 template<class T> ALWAYS_INLINE T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b); } //#define JL_MAX(a,b) ( (a) > (b) ? (a) : (b) )
+
+#define TRACE(s) do { write(1, s ## "\n",COUNTOF(s)); } while(0)
 
 #define JL_STATIC_ASSERT(cond) \
 	extern void jl_static_assert(int arg[(cond) ? 1 : -1])
