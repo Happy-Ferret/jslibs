@@ -607,7 +607,7 @@ ALWAYS_INLINE void SleepMilliseconds(unsigned int ms) {
 ALWAYS_INLINE double AccurateTimeCounter() {
 
 #if defined(XP_WIN)
-	static LONGLONG initTime = 0; // initTime helps in avoiding precision waste.
+	static volatile LONGLONG initTime = 0; // initTime helps in avoiding precision waste.
 	LARGE_INTEGER frequency, performanceCount;
 	BOOL result = ::QueryPerformanceFrequency(&frequency);
 	DWORD_PTR oldmask = ::SetThreadAffinityMask(::GetCurrentThread(), 0); // manage bug in BIOS or HAL
