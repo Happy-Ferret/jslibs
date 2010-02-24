@@ -225,6 +225,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( videoWidth ) {
 
+	//const SDL_Surface* currentSurface = SDL_GetVideoSurface();
+	//currentSurface->w
+	//currentSurface->h
+
 	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
 	*vp = videoInfo != NULL ? INT_TO_JSVAL( videoInfo->current_w ) : 0;
 	return JS_TRUE;
@@ -381,13 +385,8 @@ DEFINE_FUNCTION_FAST( GlSwapBuffers ) {
 	else
 		async = false;
 
-	if ( async ) {
-
-		JLAsyncSwapBuffers(true);
-	} else {
-	
-		JLAsyncSwapBuffers(false); // SDL_GL_SwapBuffers();
-	}
+	// SDL_GL_SwapBuffers();
+	JLAsyncSwapBuffers(async);
 	
 	// (TBD) check error	*SDL_GetError() != '\0' ???
 	*JL_FRVAL = JSVAL_VOID;
@@ -783,7 +782,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( mouseX ) {
 
 	int x;
-	Uint8 buttonState = SDL_GetMouseState(&x, NULL); // query only button state
+	SDL_GetMouseState(&x, NULL); // query only button state
 	*vp = INT_TO_JSVAL( x ); // query only button state
 	return JS_TRUE;
 }
@@ -796,7 +795,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( mouseY ) {
 
 	int y;
-	Uint8 buttonState = SDL_GetMouseState(NULL, &y); // query only button state
+	SDL_GetMouseState(NULL, &y); // query only button state
 	*vp = INT_TO_JSVAL( y ); // query only button state
 	return JS_TRUE;
 }
@@ -863,26 +862,30 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( GetKeyState ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	unsigned int key;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &key) );
+	JL_S_ASSERT_INT( JL_FARG(1) );
+	int key;
+	key = JSVAL_TO_INT( JL_FARG(1) );
+	JL_S_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, "Invalid key." );
 	Uint8 *keystate = SDL_GetKeyState(NULL);
-	JL_CHK( BoolToJsval(cx, keystate[key] != 0, JL_FRVAL) );
-	return JS_TRUE;
+	JL_ASSERT( keystate != NULL );
+	return BoolToJsval(cx, keystate[key] != 0, JL_FRVAL);
 	JL_BAD;
 }
 
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME( keysym )
-  Get the name of an keysym.
+  Get the name of the keysym.
   $H arguments
    $ARG $ENUM keysym
 **/
 DEFINE_FUNCTION_FAST( GetKeyName ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	unsigned int key;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &key) );
+	JL_S_ASSERT_INT( JL_FARG(1) );
+	int key;
+	key = JSVAL_TO_INT( JL_FARG(1) );
+	JL_S_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, "Invalid key." );
 	char *keyName = SDL_GetKeyName((SDLKey)key);
 	JSString *jsStr = JS_NewStringCopyZ(cx, keyName);
 	*JL_FRVAL = STRING_TO_JSVAL(jsStr);
@@ -1256,9 +1259,6 @@ static bool SDLCancelWait( volatile ProcessEvent *pe ) {
 
 static JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-//	if ( !HasGlContext() )
-//		AcquireGlContext();
-
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	int status;
@@ -1307,9 +1307,6 @@ DEFINE_FUNCTION_FAST( SDLEvents ) {
 
 	upe->listenersObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection
-
-//	if ( HasGlContext() ) // MustReleaseGlContext() &&
-//		ReleaseGlContext();
 
 	return JS_TRUE;
 	JL_BAD;

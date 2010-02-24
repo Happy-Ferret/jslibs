@@ -5,6 +5,7 @@ LoadModule('jsimage');
 LoadModule('jsstd');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
+LoadModule('jsprotex');
 
 GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
@@ -14,8 +15,8 @@ GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 unicodeKeyboardTranslation = true;
 keyRepeatDelay = 300;
 keyRepeatInterval = 50;
-//SetVideoMode(undefined, undefined, undefined, HWACCEL | OPENGL | RESIZABLE | FULLSCREEN);
-SetVideoMode(512, 512, 30, OPENGL);
+SetVideoMode(undefined, undefined, undefined, HWACCEL | OPENGL | RESIZABLE | FULLSCREEN);
+//SetVideoMode(512, 512, 30, OPENGL);
 //maxFPS = 60;
 
 Ogl.MatrixMode(Ogl.PROJECTION);
@@ -26,15 +27,44 @@ Ogl.MatrixMode(Ogl.MODELVIEW);
 Ogl.Enable( Ogl.TEXTURE_2D );
 
 
+const curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
+var tex = new Texture(16,16, 1).Set(0).AddGradiantRadial( curveGaussian( 0.5 ) );
+
+with (Ogl) {
+
+var textureId = GenTexture();
+BindTexture(TEXTURE_2D, textureId);
+DefineTextureImage(TEXTURE_2D, ALPHA, tex);
+TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR);
+TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
+//		PointParameter(POINT_DISTANCE_ATTENUATION, [0, 0, 0.01]); // 1/(a + b*d + c *d^2)
+Enable(POINT_SPRITE);
+TexEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
+//		TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
+		Enable(BLEND);
+//		BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
+
+
+// with LUMINANCE only		
+		//BlendFunc(SRC_ALPHA, ONE); // radioactive cloud
+		BlendFunc(SRC_ALPHA, ONE); // less radioactive cloud
+		//BlendFunc(ONE_MINUS_DST_COLOR, ONE); // normal cloud
+		//BlendFunc(ONE_MINUS_SRC_COLOR, ONE_MINUS_SRC_COLOR); // normal strange 1
+		//BlendFunc(ONE_MINUS_DST_COLOR, ONE_MINUS_SRC_COLOR); // normal strange 2
+		//BlendFunc(ZERO, ONE_MINUS_SRC_COLOR); // dark cloud
+		//BlendFunc(SRC_COLOR, ONE_MINUS_SRC_COLOR); // less dark cloud
+
+		PointSize(6);
+}
+
+
+
 var frame = 0;
-
 var listenerList = [];
-
-
 var sparkList = [];
 
 function Dist(x0,y0, x1,y1) Math.sqrt((x1-x0)*(x1-x0)+(y1-y0)*(y1-y0));
-
+var Int = Math.floor;
 function Rnd(min, max) Math.random() * (max-min) + min;
 function Rndi(min, max) Math.floor(Math.random() * (max-min) + min);
 
@@ -46,15 +76,13 @@ function Spark(x,y,angle,dist) {
 	var lines = [x,y];
 	var count = 1;
 	
-	var delta = 0;
+	var splitAt = Int(Rndv(10, 9));
+	var dieAt = Int(Rndv(50, 10));
 	
-	var splitAt = Rndv(3, 1);
-	var dieAt = Math.floor(Rndv(100, 50));
-	
-	var dustAt = 100;
+	var dustAt = 300;
 	
 	var len = Rndv(0.1, 0.05);
-	var deltaVar = Rndv(0.015, 0.015);
+	var deltaVar = Rnd(0, 0.01);
 	
 	var m = Ogl.UnProject(mouseX, mouseY);
 	var d1 = Dist( m[0], m[1], x + Math.cos(angle+deltaVar)*len, y + Math.sin(angle+deltaVar)*len );
@@ -74,11 +102,10 @@ function Spark(x,y,angle,dist) {
 
 //		Ogl.LineWidth(1+count/dustAt);
 
-		
 		var li = 1-count/dustAt;
-		Ogl.Color( deltaVar*10 * li, len * li, (li+0.5)*li );
+		Ogl.Color( li* (deltaVar*10), li* (deltaVar*10), li > 0.5 ? li+1 : li*2 );
 
-		if ( count > dustAt ) {
+		if ( count == dustAt ) {
 		
 			if ( callList )
 				Ogl.DeleteList(callList);
@@ -95,7 +122,7 @@ function Spark(x,y,angle,dist) {
 
 			if ( count <= dieAt ) {
 
-				Ogl.Begin( Ogl.LINE_STRIP );
+				Ogl.Begin( Ogl.POINTS ); // LINE_STRIP
 				for ( var i = 0; i < count; i++ )
 					Ogl.Vertex(lines[i*2],lines[i*2+1], (dist+i)/100);
 				Ogl.End();
@@ -108,20 +135,17 @@ function Spark(x,y,angle,dist) {
 
 		if ( count < dieAt ) {
 
-			delta += deltaVar;
-
-			angle += delta * way;
-
 			x += Math.cos(angle)*len;
 			y += Math.sin(angle)*len;
 
-			if ( count > splitAt ) {
-
-				sparkList.push( new Spark(x,y,angle, dist + count) );
-				splitAt = count + Rndv(1000, 5);
-			}
+			angle += deltaVar * count * way;
 
 			lines.push(x,y);
+		}
+
+		if ( count == splitAt ) {
+
+			sparkList.push( new Spark(x,y,angle, dist + count) );
 		}
 	
 		count++;
@@ -154,7 +178,7 @@ function SurfaceReady() {
 	Ogl.Finish();
 	
 	//Ogl.ReadBuffer( Ogl.BACK );
-	new File('movie'+frame+'.png').content = EncodePngImage(Ogl.RenderToImage());
+//	new File('movie'+frame+'.png').content = EncodePngImage(Ogl.RenderToImage());
 	// Create a movie file from single image files (png, jpegs) - http://www.miscdebris.net/blog/2008/04/28/create-a-movie-file-from-single-image-files-png-jpegs/
 
 	GlSwapBuffers(false);

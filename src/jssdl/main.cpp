@@ -38,8 +38,6 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-int maxFPS = JLINFINITE;
-
 // video thread
 static SDL_Thread *videoThreadHandler;
 
@@ -47,12 +45,12 @@ static SDL_Thread *videoThreadHandler;
 JLSemaphoreHandler sdlEventsSem;
 
 // swap buffer management
+int maxFPS;
 static SDL_Thread *swapBuffersThreadHandler;
 JLSemaphoreHandler swapBuffersSem;
 volatile bool swapBufferEndThread;
 
 // surface management
-
 HDC _hdc;
 bool surfaceReady;
 JLCondHandler surfaceReadyCond;
@@ -107,7 +105,7 @@ struct InternalEvent {
 };
 
 
-// asynchronous API called from static.cpp
+// API called from static.cpp
 void JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 
 	if ( HasSurface() ) {
@@ -129,6 +127,8 @@ void JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 
 	WaitSurfaceReady();
 
+	// create the OpenGL context for this thread.
+	JL_ASSERT( _hdc != NULL );
 	HGLRC hglrc = wglCreateContext(_hdc);
 	JL_ASSERT( hglrc != NULL );
 	BOOL st = wglMakeCurrent(_hdc, hglrc);
@@ -146,7 +146,18 @@ void JLAsyncSwapBuffers(bool async) {
 
 	if ( !async ) {
 
-		SDL_GL_SwapBuffers();
+		if ( maxFPS == JLINFINITE ) {
+		
+			SDL_GL_SwapBuffers();
+		} else {
+
+			long t0 = AccurateTimeCounter();
+			SDL_GL_SwapBuffers();
+			long t1 = AccurateTimeCounter();
+			long wait = 1000/maxFPS - (t1 - t0);
+			if ( wait > 0 )
+				SleepMilliseconds(wait);
+		}
 		SurfaceReady();
 	} else {
 
@@ -158,6 +169,8 @@ void JLAsyncSwapBuffers(bool async) {
 int SwapBuffersThread( void *unused ) {
 
 //	HGLRC hglrc = NULL;
+
+	long t0 = AccurateTimeCounter();
 
 	for (;;) {
 
@@ -179,22 +192,27 @@ int SwapBuffersThread( void *unused ) {
 			SDL_GL_SwapBuffers();
 		} else {
 
-			int t0 = AccurateTimeCounter();
 			SDL_GL_SwapBuffers();
-			int wait = 1000/maxFPS - (AccurateTimeCounter() - t0);
-			if ( wait > 0 )
-				SleepMilliseconds(wait); // (TBD) to avoid blocking on exit, use a timed semaphore
+			
+			long t1 = AccurateTimeCounter();
+			long wait = 1000/maxFPS - (t1 - t0);
+			if ( wait > 0 ) {
+
+				int st = JLSemaphoreAcquire(swapBuffersSem, wait);
+				if ( st == JLOK )
+					JLSemaphoreRelease(swapBuffersSem);
+			}
+			t0 = t1;
 		}
 
 		SurfaceReady();
 	}
-	
+
 	//if ( hglrc != NULL ) {
-
-	//	wglMakeCurrent(NULL, NULL);
-	//	wglDeleteContext(hglrc);
+	//	BOOL st = wglMakeCurrent(NULL, NULL);
+	//	if ( st == TRUE ) // fail in this case: Ogl.Begin( Ogl.LINE_STRIP ); xxxx;
+	//		wglDeleteContext(hglrc);
 	//}
-
 	return 0;
 }
 
@@ -231,12 +249,11 @@ int VideoThread( void *unused ) {
 		// (TBD) hdc must be owned by this thread while SDL_PumpEvents and SDL_PeepEvents are running else wglMakeCurrent will rise an error when BeginPaint(SDL_Window, &ps); is running (on WM_PAINT)
 		SDL_PumpEvents();
 		status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS);
-
 		JL_ASSERT( status != -1 );
 		if ( status == 1 )
 			JLSemaphoreRelease(sdlEventsSem);
 
-		int st = JLSemaphoreAcquire(internalEventSem, 5);
+		int st = JLSemaphoreAcquire(internalEventSem, 5); // see SDL_WaitEvent()
 		JL_ASSERT( st != JLERROR );
 		if ( st == JLTIMEOUT ) // no internal event
 			continue;
@@ -277,7 +294,8 @@ int VideoThread( void *unused ) {
 // video initializaion
 void StartVideo() {
 
-	_hdc = NULL;
+	maxFPS = JLINFINITE;
+	_hdc = NULL; // see INTERNALEVENT_SET_VIDEO_MODE case
 	// Creating an OpenGL Context (http://www.opengl.org/wiki/Creating_an_OpenGL_Context)
 
 	jl::QueueInitialize(&internalEventQueue);
@@ -304,17 +322,17 @@ void StartVideo() {
 void EndVideo() {
 
 	HGLRC hglrc = wglGetCurrentContext();
-	if ( hglrc ) {
+	if ( hglrc != NULL ) {
 
 		BOOL st = wglMakeCurrent(NULL, NULL);
-		JL_ASSERT( st == TRUE );
-		st = wglDeleteContext(hglrc);
-		JL_ASSERT( st == TRUE );
+		if ( st == TRUE ) // fail in this case: Ogl.Begin( Ogl.LINE_STRIP ); xxxx;
+			wglDeleteContext(hglrc);
 	}
 
 	swapBufferEndThread = true;
 	JLSemaphoreRelease(swapBuffersSem);
 	SDL_WaitThread(swapBuffersThreadHandler, NULL);
+	JLSemaphoreFree(&swapBuffersSem);
 
 	InternalEvent *iev = (InternalEvent*)jl_malloc(sizeof(InternalEvent));
 	iev->type = INTERNALEVENT_END;
@@ -328,8 +346,6 @@ void EndVideo() {
 		jl_free(jl::QueuePop(&internalEventQueue));
 	JLMutexFree(&internalEventQueueMutex);
 	JLSemaphoreFree(&internalEventSem);
-
-	JLSemaphoreFree(&swapBuffersSem);
 
 	JLMutexFree(&surfaceReadyLock);
 	JLCondFree(&surfaceReadyCond);
@@ -353,13 +369,13 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 		return ThrowSdlError(cx);
 	StartVideo();
 
+//	typedef void* (__cdecl *glGetProcAddress_t)(const char*);
+//	JL_CHK( SetNativePrivatePointer(cx, JS_GetGlobalObject(cx), "_glGetProcAddress", (glGetProcAddress_t)SDL_GL_GetProcAddress) );
+
 //	SDL_EnableUNICODE(1); // see unicodeKeyboardTranslation property
 
 	INIT_STATIC();
 	INIT_CLASS( Cursor );
-
-	typedef void* (__cdecl *glGetProcAddress_t)(const char*);
-	JL_CHK( SetNativePrivatePointer(cx, JS_GetGlobalObject(cx), "_glGetProcAddress", (glGetProcAddress_t)SDL_GL_GetProcAddress) );
 
 	return JS_TRUE;
 	JL_BAD;
