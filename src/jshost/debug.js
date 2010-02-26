@@ -8,6 +8,14 @@
 
 
 LoadModule('jsstd');
+
+
+while ( !endSignal )
+	ProcessEvents( EndSignalEvents() ); // MetaPollTimeout(50)
+Halt();
+
+
+LoadModule('jsstd');
 LoadModule('jstask');
 
 var myTask = new Task(function(){
@@ -17,19 +25,8 @@ var myTask = new Task(function(){
 
 myTask.Request();
 Print( myTask.Response() );
-
 Halt();
 
-
-
-
-LoadModule('jsstd');
-
-
-while ( !endSignal )
-	ProcessEvents( EndSignalEvents() ); // MetaPollTimeout(50)
-
-Halt();
 
 
 var t0 = TimeCounter();

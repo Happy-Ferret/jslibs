@@ -225,8 +225,20 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	for ( uintN i = 0; i < argc; ++i ) {
 
 		ProcessEvent *pe = peList[i];
+		
+		JSExceptionState *exState = NULL;
+		if ( JS_IsExceptionPending(cx) ) {
+
+			exState = JS_SaveExceptionState(cx);
+			JS_ClearPendingException(cx);
+		}
+
 		if ( pe->endWait(pe, &hasEvent, cx, JSVAL_TO_OBJECT(JL_ARGV[i])) != JS_TRUE ) // 
 			ok = JS_FALSE;
+		
+		if ( exState )
+			JS_RestoreExceptionState(cx, exState);
+
 		if ( hasEvent )
 			events |= 1 << i;
 		JL_CHK( HandleClose(cx, JL_ARGV[i]) );
