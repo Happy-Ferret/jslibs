@@ -23,6 +23,10 @@ extern int maxFPS;
 
 extern JLSemaphoreHandler sdlEventsSem;
 
+extern int desktopWidth;
+extern int desktopHeight;
+extern Uint8 desktopBitsPerPixel;
+
 extern bool surfaceReady;
 extern JLCondHandler surfaceReadyCond;
 extern JLMutexHandler surfaceReadyLock;
@@ -73,7 +77,7 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 		unsigned int bpp;
 		JL_CHK( JsvalToUInt(cx, JL_FARG(1), &bpp) );
 		format.BitsPerPixel = bpp;
-		format.BytesPerPixel = bpp / 8;
+		format.BytesPerPixel = bpp / 8; // (TBD) need to set both ?
 	}
 
 	if ( JL_FARG_ISDEF(2) )
@@ -169,7 +173,7 @@ $TOC_MEMBER $INAME
    $ARG $INT height: height
    $ARG $INT bitsPerPixel: bit depth, the number of bits per pixel (8, 16, 32). If omited, use the current bpp value.
    $ARG bitmsak flags: a bitwise-ored combination of the following flags. If omited, use the previous flags.
-    SWSURFACE, HWSURFACE, ASYNCBLIT, ANYFORMAT, HWPALETTE, DOUBLEBUF, FULLSCREEN, OPENGL, OPENGLBLIT, RESIZABLE, NOFRAME HWACCEL, SRCCOLORKEY, RLEACCELOK, RLEACCEL, SRCALPHA, PREALLOC
+    SWSURFACE, HWSURFACE, ASYNCBLIT, ANYFORMAT, HWPALETTE, DOUBLEBUF, OPENGL, OPENGLBLIT, RESIZABLE, NOFRAME HWACCEL, SRCCOLORKEY, RLEACCELOK, RLEACCEL, SRCALPHA, PREALLOC
 **/
 DEFINE_FUNCTION_FAST( SetVideoMode ) {
 
@@ -177,38 +181,49 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 
 	int width, height, bpp;
 	Uint32 flags;
+//	bool fullscreen;
 
 //	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo(); // If called before SDL_SetVideoMode(), 'vfmt' is the pixel format of the "best" video mode.
 //	SDL_PixelFormat format = *videoInfo->vfmt;
 
-	const SDL_Surface* currentSurface;
-	currentSurface = SDL_GetVideoSurface();
+	const SDL_Surface *surface;
+	surface = SDL_GetVideoSurface();
 
 	if ( JL_FARG_ISDEF(1) )
 		JL_CHK( JsvalToInt(cx, JL_FARG(1), &width) );
 	else
-		width = 0; // by default, use current width
+		width = surface != NULL ? surface->w : 0; // by default, use current width
 
 	if ( JL_FARG_ISDEF(2) )
 		JL_CHK( JsvalToInt(cx, JL_FARG(2), &height) );
 	else
-		height = 0; // by default, use current height
+		height = surface != NULL ? surface->h : 0; // by default, use current height
 
 	if ( JL_FARG_ISDEF(3) )
 		JL_CHK( JsvalToInt(cx, JL_FARG(3), &bpp) );
 	else
-		bpp = currentSurface != NULL ? currentSurface->format->BitsPerPixel : 0; // by default, use current or the default bpp
+		bpp = surface != NULL ? surface->format->BitsPerPixel : 0; // by default, use current or the default bpp
 
 	if ( JL_FARG_ISDEF(4) ) {
 
 		double tmp;
 		JL_CHK( JsvalToDouble(cx, JL_FARG(4), &tmp) ); // we need to use doubles because some values are greater than 2^31
 		flags = (Uint32)tmp;
-	} else
-		flags = currentSurface != NULL ? currentSurface->flags : 0; // if not given, use the previous setting or a default value.
+	} else {
+
+		flags = surface != NULL ? surface->flags : 0; // if not given, use the previous setting or a default value.
+	}
+
+	//if ( JL_FARG_ISDEF(5) )
+	//	JL_CHK( JsvalToBool(cx, JL_FARG(5), &fullscreen) ); // we need to use doubles because some values are greater than 2^31
+	//else
+	//	fullscreen = surface != NULL ? (surface->flags & SDL_FULLSCREEN) != 0 : 0;
+	//flags = flags & ~SDL_FULLSCREEN;
+	//if ( fullscreen )
+	//	flags = flags | SDL_FULLSCREEN;
 
 //	SDL_Surface *surface = SDL_SetVideoMode(width, height, bpp, flags);
-	JLSetVideoMode(width, height, bpp, flags);
+	JLSetVideoMode(width, height, bpp, flags );
 	
 	if ( SDL_GetVideoSurface() == NULL )
 		return ThrowSdlError(cx);
@@ -225,12 +240,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( videoWidth ) {
 
-	//const SDL_Surface* currentSurface = SDL_GetVideoSurface();
-	//currentSurface->w
-	//currentSurface->h
-
-	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
-	*vp = videoInfo != NULL ? INT_TO_JSVAL( videoInfo->current_w ) : 0;
+	const SDL_Surface *surface = SDL_GetVideoSurface();
+	*vp = surface != NULL ? INT_TO_JSVAL( surface->w ) : JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -241,10 +252,76 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( videoHeight ) {
 
-	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
-	*vp = videoInfo != NULL ? INT_TO_JSVAL( videoInfo->current_h ) : 0;
+	const SDL_Surface *surface = SDL_GetVideoSurface();
+	*vp = surface != NULL ? INT_TO_JSVAL( surface->h ) : JSVAL_VOID;
 	return JS_TRUE;
 }
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  Is the number of bits per pixel of the current video surface.
+**/
+DEFINE_PROPERTY( videoBitsPerPixel ) {
+
+	const SDL_Surface *surface = SDL_GetVideoSurface();
+	*vp = surface != NULL ? INT_TO_JSVAL( surface->format->BitsPerPixel ) : JSVAL_VOID;
+	return JS_TRUE;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  Is the current desktop surface width.
+**/
+DEFINE_PROPERTY( desktopWidth ) {
+
+	*vp = INT_TO_JSVAL( desktopWidth );
+	return JS_TRUE;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  Is the current desktop surface height.
+**/
+DEFINE_PROPERTY( desktopHeight ) {
+
+	*vp = INT_TO_JSVAL( desktopHeight );
+	return JS_TRUE;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  Is the number of bits per pixel of the desktop surface.
+**/
+DEFINE_PROPERTY( desktopBitsPerPixel ) {
+
+	*vp = *vp = INT_TO_JSVAL( desktopBitsPerPixel );
+	return JS_TRUE;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  Is the current video flags.
+**/
+DEFINE_PROPERTY( videoFlags ) {
+
+	const SDL_Surface *surface = SDL_GetVideoSurface();
+	if ( surface != NULL ) {
+
+		JL_CHK( DoubleToJsval(cx, surface->flags, vp) ); // we need to use doubles because some values are greater than 2^31
+	} else {
+
+		*vp = JSVAL_VOID;
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -313,26 +390,37 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( ToggleFullScreen ) {
 
 	SDL_Surface *surface = SDL_GetVideoSurface();
-	int status = SDL_WM_ToggleFullScreen( surface ); // This is currently only implemented in the X11 video driver.
-	*JL_FRVAL = status == 1 ? JSVAL_TRUE : JSVAL_FALSE;
+	if ( surface == NULL ) {
+
+		*JL_FRVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+//	int status = SDL_WM_ToggleFullScreen( surface ); // This is currently only implemented in the X11 video driver ??
+//	*JL_FRVAL = status == 1 ? JSVAL_TRUE : JSVAL_FALSE;
+
+	bool hasFullscreen = (surface->flags & SDL_FULLSCREEN) != 0;
+	JLSetVideoMode(surface->w, surface->h, surface->format->BitsPerPixel, hasFullscreen ? surface->flags & ~SDL_FULLSCREEN : surface->flags | SDL_FULLSCREEN);
+  	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 */
 
-
-
-/**doc
+/* use (videoFlags & FULLSCREEN) instead
+/ **doc
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
   Is true if the current video surface is a full screen display
-**/
-DEFINE_PROPERTY( fullScreen ) {
+** /
+DEFINE_PROPERTY( isFullScreen ) {
 
 	bool fullScreen = ( (SDL_GetVideoSurface()->flags & SDL_FULLSCREEN) != 0 );
 	JL_CHK( BoolToJsval(cx, fullScreen, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
+*/
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1154,6 +1242,7 @@ static void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
 	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
 
 	JLMutexAcquire(surfaceReadyLock);
+//	surfaceIdle = true;
 	while ( !surfaceReady && !upe->cancel )
 		JLCondWait(surfaceReadyCond, surfaceReadyLock);
 	JLMutexRelease(surfaceReadyLock);
@@ -1172,7 +1261,11 @@ static bool SurfaceReadyCancelWait( volatile ProcessEvent *pe ) {
 
 
 static JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
-	
+
+//	JLMutexAcquire(surfaceReadyLock);
+//	surfaceIdle = false;
+//	JLMutexRelease(surfaceReadyLock);
+
 	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
 
 	*hasEvent = surfaceReady;
@@ -1321,7 +1414,7 @@ CONFIGURE_STATIC
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION_FAST( GetVideoModeList )
 		FUNCTION_FAST( VideoModeOK )
-		FUNCTION_FAST( SetVideoMode )
+		FUNCTION_FAST_ARGC( SetVideoMode, 5 )
 //		FUNCTION_FAST( ToggleFullScreen )
 		FUNCTION_FAST( Iconify )
 		FUNCTION_FAST_ARGC( SetGamma, 3 )
@@ -1347,10 +1440,15 @@ CONFIGURE_STATIC
 		PROPERTY( keyRepeatInterval )
 		PROPERTY( keyRepeatDelay )
 		PROPERTY( unicodeKeyboardTranslation )
+		PROPERTY_READ( desktopWidth )
+		PROPERTY_READ( desktopHeight )
+		PROPERTY_READ( desktopBitsPerPixel )
 		PROPERTY_READ( videoWidth )
 		PROPERTY_READ( videoHeight )
+		PROPERTY_READ( videoBitsPerPixel )
+		PROPERTY_READ( videoFlags )
 		PROPERTY_READ( videoDriverName )
-		PROPERTY_READ( fullScreen )
+//		PROPERTY_READ( isFullScreen )
 		PROPERTY_READ( mouseX )
 		PROPERTY_READ( mouseY )
 		PROPERTY_READ( buttonState )

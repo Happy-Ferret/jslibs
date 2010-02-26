@@ -51,6 +51,9 @@ JLSemaphoreHandler swapBuffersSem;
 volatile bool swapBufferEndThread;
 
 // surface management
+int desktopWidth;
+int desktopHeight;
+Uint8 desktopBitsPerPixel;
 HDC _hdc;
 bool surfaceReady;
 JLCondHandler surfaceReadyCond;
@@ -76,7 +79,7 @@ ALWAYS_INLINE void InvalidateSurface() {
 	
 	JLMutexAcquire(surfaceReadyLock);
 	surfaceReady = false;
-//	JLCondBroadcast(surfaceReadyCond);
+	JLCondBroadcast(surfaceReadyCond);
 	JLMutexRelease(surfaceReadyLock);
 }
 
@@ -112,6 +115,9 @@ void JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 
 		WaitSurfaceReady();
 		InvalidateSurface();
+
+		JL_ASSERT( wglGetCurrentContext() );
+		JL_ASSERT( wglGetCurrentDC() );
 	}
 
 	InternalEvent *iev = (InternalEvent*)jl_malloc(sizeof(InternalEvent));
@@ -127,14 +133,17 @@ void JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 
 	WaitSurfaceReady();
 
-	// create the OpenGL context for this thread.
-	JL_ASSERT( _hdc != NULL );
-	HGLRC hglrc = wglCreateContext(_hdc);
-	JL_ASSERT( hglrc != NULL );
-	BOOL st = wglMakeCurrent(_hdc, hglrc);
-	JL_ASSERT( st == TRUE );
-}
+	// create the OpenGL context for this thread if needed.
+	HGLRC hglrc = wglGetCurrentContext();
+	if ( hglrc == NULL ) {
 
+		JL_ASSERT( _hdc != NULL );
+		hglrc = wglCreateContext(_hdc);
+		JL_ASSERT( hglrc != NULL );
+		BOOL st = wglMakeCurrent(_hdc, hglrc);
+		JL_ASSERT( st == TRUE );
+	}
+}
 
 void JLAsyncSwapBuffers(bool async) {
 
@@ -143,6 +152,9 @@ void JLAsyncSwapBuffers(bool async) {
 
 	WaitSurfaceReady();
 	InvalidateSurface();
+
+	JL_ASSERT( wglGetCurrentContext() );
+	JL_ASSERT( wglGetCurrentDC() );
 
 	if ( !async ) {
 
@@ -168,7 +180,7 @@ void JLAsyncSwapBuffers(bool async) {
 
 int SwapBuffersThread( void *unused ) {
 
-//	HGLRC hglrc = NULL;
+	HGLRC hglrc = NULL; // SwapBuffersThread must have its own opengl context else SwapBuffers(GL_hdc); (in WIN_GL_SwapBuffers) will crash !
 
 	long t0 = AccurateTimeCounter();
 
@@ -177,23 +189,22 @@ int SwapBuffersThread( void *unused ) {
 		JLSemaphoreAcquire(swapBuffersSem, JLINFINITE);
 		if ( swapBufferEndThread )
 			break;
-		
-		//if ( hglrc == NULL ) {
 
-		//	JL_ASSERT(_hdc);
-		//	hglrc = wglCreateContext(_hdc);
-		//	JL_ASSERT( hglrc != NULL );
-		//	BOOL st = wglMakeCurrent(_hdc, hglrc);
-		//	JL_ASSERT( st != NULL );
-		//}
+		if ( hglrc == NULL ) {
+
+			JL_ASSERT( _hdc );
+			hglrc = wglCreateContext(_hdc);
+			JL_ASSERT( hglrc != NULL );
+			BOOL st = wglMakeCurrent(_hdc, hglrc);
+			JL_ASSERT( st != NULL );
+		}
 
 		if ( maxFPS == JLINFINITE ) {
 		
 			SDL_GL_SwapBuffers();
 		} else {
-
-			SDL_GL_SwapBuffers();
 			
+			SDL_GL_SwapBuffers();
 			long t1 = AccurateTimeCounter();
 			long wait = 1000/maxFPS - (t1 - t0);
 			if ( wait > 0 ) {
@@ -204,33 +215,17 @@ int SwapBuffersThread( void *unused ) {
 			}
 			t0 = t1;
 		}
-
 		SurfaceReady();
 	}
 
-	//if ( hglrc != NULL ) {
-	//	BOOL st = wglMakeCurrent(NULL, NULL);
-	//	if ( st == TRUE ) // fail in this case: Ogl.Begin( Ogl.LINE_STRIP ); xxxx;
-	//		wglDeleteContext(hglrc);
-	//}
+	// delete the gl context of this thread.
+	if ( hglrc != NULL ) {
+
+		BOOL st = wglMakeCurrent(NULL, NULL);
+		if ( st == TRUE ) // fail in this case: Ogl.Begin( Ogl.LINE_STRIP ); xxxx;
+			wglDeleteContext(hglrc);
+	}
 	return 0;
-}
-
-
-
-int EventFilter( const SDL_Event *e ) {
-
-	if ( e->type == SDL_VIDEORESIZE ) {
-
-		JL_ASSERT( HasSurface() );
-		InvalidateSurface();
-		const SDL_Surface* currentSurface = SDL_GetVideoSurface();
-		SDL_Surface *surface = SDL_SetVideoMode(e->resize.w, e->resize.h, currentSurface->format->BitsPerPixel, currentSurface->flags);
-		JL_ASSERT( surface != NULL );
-		JL_ASSERT( _hdc == wglGetCurrentDC() );
-		SurfaceReady();
-	}
-	return 1; // 1, then the event will be added to the internal queue.
 }
 
 
@@ -240,15 +235,14 @@ int VideoThread( void *unused ) {
 	status = SDL_InitSubSystem(SDL_INIT_VIDEO); // (TBD) SDL_INIT_EVENTTHREAD on Linux ?
 	JL_ASSERT( status != -1 );
 
-	SDL_SetEventFilter(EventFilter);
 	JLSemaphoreRelease(sdlEventsSem); // first event = thread ready
 
 	bool end = false;
 	while ( !end ) {
 	
-		// (TBD) hdc must be owned by this thread while SDL_PumpEvents and SDL_PeepEvents are running else wglMakeCurrent will rise an error when BeginPaint(SDL_Window, &ps); is running (on WM_PAINT)
 		SDL_PumpEvents();
 		status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS);
+
 		JL_ASSERT( status != -1 );
 		if ( status == 1 )
 			JLSemaphoreRelease(sdlEventsSem);
@@ -265,15 +259,16 @@ int VideoThread( void *unused ) {
 
 		switch ( iev->type ) {
 			case INTERNALEVENT_SET_VIDEO_MODE: {
-
-				SDL_SetVideoMode(iev->vm.width, iev->vm.height, iev->vm.bpp, iev->vm.flags); // char *sdlError = SDL_GetError();
-				JL_ASSERT( HasSurface() );
+				
+				SDL_Surface *surface = SDL_SetVideoMode(iev->vm.width, iev->vm.height, iev->vm.bpp, iev->vm.flags); // char *sdlError = SDL_GetError();
+				JL_ASSERT( surface ); // (TBD) better management of this error
 				JL_ASSERT( _hdc == NULL || _hdc == wglGetCurrentDC() ); // assert hdc has not changed
 				if ( _hdc == NULL ) {
 
 					_hdc = wglGetCurrentDC();
 					JL_ASSERT( _hdc );
 				}
+				JL_ASSERT( wglGetCurrentContext() );
 				SurfaceReady();
 				break;
 			}
@@ -359,7 +354,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	if ( SDL_WasInit(0) != 0 )
 		JL_REPORT_ERROR("SDL module already in use.");
 
-	JL_CHK( InitJslibsModule(cx, id)  );
+	JL_CHK( InitJslibsModule(cx, id) );
 
 	int status = SDL_Init(SDL_INIT_NOPARACHUTE);
 
@@ -368,6 +363,11 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	if ( status != 0 )
 		return ThrowSdlError(cx);
 	StartVideo();
+
+	const SDL_VideoInfo *vi = SDL_GetVideoInfo();
+	desktopWidth = vi->current_w;
+	desktopHeight = vi->current_h;
+	desktopBitsPerPixel = vi->vfmt->BitsPerPixel; // bad: If this is called before SDL_SetVideoMode(), the 'vfmt' member of the returned structure will contain the pixel format of the "best" video mode.
 
 //	typedef void* (__cdecl *glGetProcAddress_t)(const char*);
 //	JL_CHK( SetNativePrivatePointer(cx, JS_GetGlobalObject(cx), "_glGetProcAddress", (glGetProcAddress_t)SDL_GL_GetProcAddress) );
