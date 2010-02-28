@@ -27,6 +27,7 @@ extern int desktopWidth;
 extern int desktopHeight;
 extern Uint8 desktopBitsPerPixel;
 
+extern SDL_Surface *_surface;
 extern bool surfaceReady;
 extern JLCondHandler surfaceReadyCond;
 extern JLMutexHandler surfaceReadyLock;
@@ -186,23 +187,20 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 //	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo(); // If called before SDL_SetVideoMode(), 'vfmt' is the pixel format of the "best" video mode.
 //	SDL_PixelFormat format = *videoInfo->vfmt;
 
-	const SDL_Surface *surface;
-	surface = SDL_GetVideoSurface();
-
 	if ( JL_FARG_ISDEF(1) )
 		JL_CHK( JsvalToInt(cx, JL_FARG(1), &width) );
 	else
-		width = surface != NULL ? surface->w : 0; // by default, use current width
+		width = _surface != NULL ? _surface->w : 0; // by default, use current width
 
 	if ( JL_FARG_ISDEF(2) )
 		JL_CHK( JsvalToInt(cx, JL_FARG(2), &height) );
 	else
-		height = surface != NULL ? surface->h : 0; // by default, use current height
+		height = _surface != NULL ? _surface->h : 0; // by default, use current height
 
 	if ( JL_FARG_ISDEF(3) )
 		JL_CHK( JsvalToInt(cx, JL_FARG(3), &bpp) );
 	else
-		bpp = surface != NULL ? surface->format->BitsPerPixel : 0; // by default, use current or the default bpp
+		bpp = _surface != NULL ? _surface->format->BitsPerPixel : 0; // by default, use current or the default bpp
 
 	if ( JL_FARG_ISDEF(4) ) {
 
@@ -211,7 +209,7 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 		flags = (Uint32)tmp;
 	} else {
 
-		flags = surface != NULL ? surface->flags : 0; // if not given, use the previous setting or a default value.
+		flags = _surface != NULL ? _surface->flags : 0; // if not given, use the previous setting or a default value.
 	}
 
 	//if ( JL_FARG_ISDEF(5) )
@@ -225,7 +223,7 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 //	SDL_Surface *surface = SDL_SetVideoMode(width, height, bpp, flags);
 	JLSetVideoMode(width, height, bpp, flags );
 	
-	if ( SDL_GetVideoSurface() == NULL )
+ 	if ( _surface == NULL )
 		return ThrowSdlError(cx);
 
 	*JL_FRVAL = JSVAL_VOID;

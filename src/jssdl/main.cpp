@@ -51,6 +51,8 @@ JLSemaphoreHandler swapBuffersSem;
 volatile bool swapBufferEndThread;
 
 // surface management
+const char *error;
+SDL_Surface *_surface;
 int desktopWidth;
 int desktopHeight;
 Uint8 desktopBitsPerPixel;
@@ -85,7 +87,7 @@ ALWAYS_INLINE void InvalidateSurface() {
 
 ALWAYS_INLINE bool HasSurface() {
 
-	return SDL_GetVideoSurface() != NULL;
+	return _surface != NULL;
 }
 
 
@@ -111,7 +113,7 @@ struct InternalEvent {
 // API called from static.cpp
 void JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 
-	if ( HasSurface() ) {
+	if ( _surface != NULL ) {
 
 		WaitSurfaceReady();
 		InvalidateSurface();
@@ -147,7 +149,7 @@ void JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 
 void JLAsyncSwapBuffers(bool async) {
 
-	if ( !HasSurface() )
+	if ( _surface == NULL )
 		return;
 
 	WaitSurfaceReady();
@@ -260,15 +262,23 @@ int VideoThread( void *unused ) {
 		switch ( iev->type ) {
 			case INTERNALEVENT_SET_VIDEO_MODE: {
 				
-				SDL_Surface *surface = SDL_SetVideoMode(iev->vm.width, iev->vm.height, iev->vm.bpp, iev->vm.flags); // char *sdlError = SDL_GetError();
-				JL_ASSERT( surface ); // (TBD) better management of this error
-				JL_ASSERT( _hdc == NULL || _hdc == wglGetCurrentDC() ); // assert hdc has not changed
-				if ( _hdc == NULL ) {
+				_surface = SDL_SetVideoMode(iev->vm.width, iev->vm.height, iev->vm.bpp, iev->vm.flags); // char *sdlError = SDL_GetError();
+				if ( _surface != NULL ) {
 
-					_hdc = wglGetCurrentDC();
-					JL_ASSERT( _hdc );
+					JL_ASSERT( _surface ); // (TBD) better management of this error
+					JL_ASSERT( _hdc == NULL || _hdc == wglGetCurrentDC() ); // assert hdc has not changed
+					if ( _hdc == NULL ) {
+
+						_hdc = wglGetCurrentDC();
+						JL_ASSERT( _hdc );
+					}
+					JL_ASSERT( wglGetCurrentContext() );
+				} else {
+
+					error = SDL_GetError();
+//					SDL_ClearError();
 				}
-				JL_ASSERT( wglGetCurrentContext() );
+
 				SurfaceReady();
 				break;
 			}
@@ -297,6 +307,7 @@ void StartVideo() {
 	internalEventQueueMutex = JLMutexCreate();
 	internalEventSem = JLSemaphoreCreate(0);
 
+	_surface = NULL;
 	surfaceReady = false;
 	surfaceReadyCond = JLCondCreate();
 	surfaceReadyLock = JLMutexCreate();
