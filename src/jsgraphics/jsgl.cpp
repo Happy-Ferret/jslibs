@@ -1042,6 +1042,7 @@ DEFINE_FUNCTION_FAST( Vertex ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( red, green, blue [, alpha] )
+ $VOID $INAME( colorArray )
   $H arguments
    $ARG $REAL red
    $ARG $REAL green
@@ -1055,25 +1056,39 @@ DEFINE_FUNCTION_FAST( Color ) {
 	JL_S_ASSERT_ARG_RANGE(1,4);
 	*JL_FRVAL = JSVAL_VOID;
 
-	double r, g, b, a;
-	JsvalToDouble(cx, JL_FARG(1), &r);
-	if ( argc == 1 ) {
-		
-		glColor3d(r, r, r);
-		JL_OGL_WARNING;
-		return JS_TRUE;
-	}		
-	JsvalToDouble(cx, JL_FARG(2), &g);
-	JsvalToDouble(cx, JL_FARG(3), &b);
-	if ( argc == 3 ) {
+	if ( JSVAL_IS_NUMBER(JL_FARG(1)) ) {
 
-		glColor3d(r, g, b);
+		double r, g, b, a;
+		JsvalToDouble(cx, JL_FARG(1), &r);
+		if ( argc == 1 ) {
+			
+			glColor3d(r, r, r);
+			JL_OGL_WARNING;
+			return JS_TRUE;
+		}		
+		JsvalToDouble(cx, JL_FARG(2), &g);
+		JsvalToDouble(cx, JL_FARG(3), &b);
+		if ( argc == 3 ) {
+
+			glColor3d(r, g, b);
+			JL_OGL_WARNING;
+			return JS_TRUE;
+		}		
+		JsvalToDouble(cx, JL_FARG(4), &a);
+		glColor4d(r, g, b, a);
 		JL_OGL_WARNING;
-		return JS_TRUE;
-	}		
-	JsvalToDouble(cx, JL_FARG(4), &a);
-	glColor4d(r, g, b, a);
-	JL_OGL_WARNING;
+	} else {
+
+		GLdouble color[4];
+		uint32 len;
+		JsvalToDoubleVector(cx, JL_FARG(1), color, 4, &len);
+		if ( len == 3 )
+			glColor3dv(color);
+		else if ( len == 4 )
+			glColor4dv(color);
+		else
+			JL_REPORT_ERROR("Unexpected array length.");
+	}
 	return JS_TRUE;
 	JL_BAD;
 }
