@@ -38,6 +38,8 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
+const char volatile *_error; // SDL error is managed per thread
+
 // video thread
 static SDL_Thread *videoThreadHandler;
 
@@ -45,18 +47,19 @@ static SDL_Thread *videoThreadHandler;
 JLSemaphoreHandler sdlEventsSem;
 
 // swap buffer management
-int maxFPS;
+int volatile _maxFPS;
 static SDL_Thread *swapBuffersThreadHandler;
 JLSemaphoreHandler swapBuffersSem;
-volatile bool swapBufferEndThread;
+bool volatile swapBufferEndThread;
 
 // surface management
-const char *error;
-SDL_Surface *_surface;
 int desktopWidth;
 int desktopHeight;
 Uint8 desktopBitsPerPixel;
-HDC _hdc;
+
+SDL_Surface volatile *_surface;
+HDC volatile _hdc;
+
 bool surfaceReady;
 JLCondHandler surfaceReadyCond;
 JLMutexHandler surfaceReadyLock;
@@ -85,11 +88,6 @@ ALWAYS_INLINE void InvalidateSurface() {
 	JLMutexRelease(surfaceReadyLock);
 }
 
-ALWAYS_INLINE bool HasSurface() {
-
-	return _surface != NULL;
-}
-
 
 // internal events management
 jl::Queue internalEventQueue;
@@ -111,7 +109,7 @@ struct InternalEvent {
 
 
 // API called from static.cpp
-void JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
+bool JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 
 	if ( _surface != NULL ) {
 
@@ -135,19 +133,29 @@ void JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 
 	WaitSurfaceReady();
 
+	if ( !_surface ) {
+
+		SDL_SetError((const char*)_error); // transmit the error to the current thread
+		_error = NULL;
+		return false;
+	}
+
 	// create the OpenGL context for this thread if needed.
 	HGLRC hglrc = wglGetCurrentContext();
 	if ( hglrc == NULL ) {
-
+		
+		// Creating an OpenGL Context (http://www.opengl.org/wiki/Creating_an_OpenGL_Context)
 		JL_ASSERT( _hdc != NULL );
 		hglrc = wglCreateContext(_hdc);
 		JL_ASSERT( hglrc != NULL );
 		BOOL st = wglMakeCurrent(_hdc, hglrc);
 		JL_ASSERT( st == TRUE );
 	}
+
+	return true;
 }
 
-void JLAsyncSwapBuffers(bool async) {
+void JLSwapBuffers(bool async) {
 
 	if ( _surface == NULL )
 		return;
@@ -160,7 +168,7 @@ void JLAsyncSwapBuffers(bool async) {
 
 	if ( !async ) {
 
-		if ( maxFPS == JLINFINITE ) {
+		if ( _maxFPS == JLINFINITE ) {
 		
 			SDL_GL_SwapBuffers();
 		} else {
@@ -168,7 +176,7 @@ void JLAsyncSwapBuffers(bool async) {
 			long t0 = AccurateTimeCounter();
 			SDL_GL_SwapBuffers();
 			long t1 = AccurateTimeCounter();
-			long wait = 1000/maxFPS - (t1 - t0);
+			long wait = 1000/_maxFPS - (t1 - t0);
 			if ( wait > 0 )
 				SleepMilliseconds(wait);
 		}
@@ -201,14 +209,14 @@ int SwapBuffersThread( void *unused ) {
 			JL_ASSERT( st != NULL );
 		}
 
-		if ( maxFPS == JLINFINITE ) {
+		if ( _maxFPS == JLINFINITE ) {
 		
 			SDL_GL_SwapBuffers();
 		} else {
 			
 			SDL_GL_SwapBuffers();
 			long t1 = AccurateTimeCounter();
-			long wait = 1000/maxFPS - (t1 - t0);
+			long wait = 1000/_maxFPS - (t1 - t0);
 			if ( wait > 0 ) {
 
 				int st = JLSemaphoreAcquire(swapBuffersSem, wait);
@@ -244,9 +252,8 @@ int VideoThread( void *unused ) {
 	
 		SDL_PumpEvents();
 		status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS);
-
 		JL_ASSERT( status != -1 );
-		if ( status == 1 )
+		if ( status == 1 ) // we have at least one SDL event, see SDLEndWait()
 			JLSemaphoreRelease(sdlEventsSem);
 
 		int st = JLSemaphoreAcquire(internalEventSem, 5); // see SDL_WaitEvent()
@@ -261,11 +268,11 @@ int VideoThread( void *unused ) {
 
 		switch ( iev->type ) {
 			case INTERNALEVENT_SET_VIDEO_MODE: {
-				
-				_surface = SDL_SetVideoMode(iev->vm.width, iev->vm.height, iev->vm.bpp, iev->vm.flags); // char *sdlError = SDL_GetError();
-				if ( _surface != NULL ) {
 
-					JL_ASSERT( _surface ); // (TBD) better management of this error
+				_surface = SDL_SetVideoMode(iev->vm.width, iev->vm.height, iev->vm.bpp, iev->vm.flags); // char *sdlError = SDL_GetError();
+
+				if ( _surface != NULL ) {
+		
 					JL_ASSERT( _hdc == NULL || _hdc == wglGetCurrentDC() ); // assert hdc has not changed
 					if ( _hdc == NULL ) {
 
@@ -275,8 +282,9 @@ int VideoThread( void *unused ) {
 					JL_ASSERT( wglGetCurrentContext() );
 				} else {
 
-					error = SDL_GetError();
-//					SDL_ClearError();
+					JL_ASSERT( _error == NULL );
+					_error = SDL_GetError(); // store the error
+					SDL_ClearError();
 				}
 
 				SurfaceReady();
@@ -299,9 +307,10 @@ int VideoThread( void *unused ) {
 // video initializaion
 void StartVideo() {
 
-	maxFPS = JLINFINITE;
+	_error = NULL;
+
+	_maxFPS = JLINFINITE;
 	_hdc = NULL; // see INTERNALEVENT_SET_VIDEO_MODE case
-	// Creating an OpenGL Context (http://www.opengl.org/wiki/Creating_an_OpenGL_Context)
 
 	jl::QueueInitialize(&internalEventQueue);
 	internalEventQueueMutex = JLMutexCreate();
@@ -375,7 +384,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 		return ThrowSdlError(cx);
 	StartVideo();
 
-	const SDL_VideoInfo *vi = SDL_GetVideoInfo();
+	const SDL_VideoInfo *vi = SDL_GetVideoInfo(); // Get the current information about the video hardware
 	desktopWidth = vi->current_w;
 	desktopHeight = vi->current_h;
 	desktopBitsPerPixel = vi->vfmt->BitsPerPixel; // bad: If this is called before SDL_SetVideoMode(), the 'vfmt' member of the returned structure will contain the pixel format of the "best" video mode.

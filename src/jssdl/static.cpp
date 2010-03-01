@@ -19,7 +19,7 @@
 
 #include "../jslang/handlePub.h"
 
-extern int maxFPS;
+extern int volatile _maxFPS;
 
 extern JLSemaphoreHandler sdlEventsSem;
 
@@ -27,13 +27,13 @@ extern int desktopWidth;
 extern int desktopHeight;
 extern Uint8 desktopBitsPerPixel;
 
-extern SDL_Surface *_surface;
+extern SDL_Surface volatile *_surface;
 extern bool surfaceReady;
 extern JLCondHandler surfaceReadyCond;
 extern JLMutexHandler surfaceReadyLock;
 
-void JLSetVideoMode(int width, int height, int bpp, Uint32 flags);
-void JLAsyncSwapBuffers(bool async);
+bool JLSetVideoMode(int width, int height, int bpp, Uint32 flags);
+void JLSwapBuffers(bool async);
 
 
 DECLARE_CLASS( Cursor )
@@ -88,9 +88,8 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 
 	SDL_Rect **modes = SDL_ListModes(&format, (Uint32)flags);
 
-	if ( modes == (SDL_Rect **)-1 ) {
-
-		// any dimension is okay for this format.
+	if ( modes == (SDL_Rect **)-1 ) { // any dimension is okay for this format.
+		
 		*JL_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -220,11 +219,12 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 	//if ( fullscreen )
 	//	flags = flags | SDL_FULLSCREEN;
 
-//	SDL_Surface *surface = SDL_SetVideoMode(width, height, bpp, flags);
-	JLSetVideoMode(width, height, bpp, flags );
-	
- 	if ( _surface == NULL )
+	bool status = JLSetVideoMode(width, height, bpp, flags);
+ 	if ( !status )
 		return ThrowSdlError(cx);
+	//_surface = SDL_SetVideoMode(width, height, bpp, flags);
+ //	if ( !_surface )
+	//	return ThrowSdlError(cx);
 
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -471,8 +471,10 @@ DEFINE_FUNCTION_FAST( GlSwapBuffers ) {
 	else
 		async = false;
 
-	// SDL_GL_SwapBuffers();
-	JLAsyncSwapBuffers(async);
+	SDL_ClearError(); // JLSwapBuffers or SDL_GL_SwapBuffers does not return an error status.
+	JLSwapBuffers(async); // SDL_GL_SwapBuffers();
+	if ( HasSDLError() )
+		return ThrowSdlError(cx);
 	
 	// (TBD) check error	*SDL_GetError() != '\0' ???
 	*JL_FRVAL = JSVAL_VOID;
@@ -756,6 +758,8 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			JL_CHK( JS_GetProperty(cx, listenerObj, "onVideoResize", &fVal) );
 			if ( JsvalIsFunction(cx, fVal) ) {
 
+//				SDL_Surface *surface = SDL_GetVideoSurface();
+//				const SDL_VideoInfo *video = SDL_GetVideoInfo();
 				jsval argv[] = {
 					INT_TO_JSVAL(ev->resize.w),
 					INT_TO_JSVAL(ev->resize.h)
@@ -1194,12 +1198,12 @@ DEFINE_PROPERTY_SETTER( maxFPS ) {
 
 	if ( JsvalIsPInfinity(cx, *vp) ) {
 
-		maxFPS = JLINFINITE;
+		_maxFPS = JLINFINITE;
 	} else {
 
 		unsigned int value;
 		JL_CHK( JsvalToUInt(cx, *vp, &value) );
-		maxFPS = value;
+		_maxFPS = value;
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -1207,12 +1211,12 @@ DEFINE_PROPERTY_SETTER( maxFPS ) {
 
 DEFINE_PROPERTY_GETTER( maxFPS ) {
 
-	if ( maxFPS == JLINFINITE ) {
+	if ( _maxFPS == JLINFINITE ) {
 		
 		*vp = JS_GetPositiveInfinityValue(cx);
 	} else {
 
-		JL_CHK( UIntToJsval(cx, maxFPS, vp) );
+		JL_CHK( UIntToJsval(cx, _maxFPS, vp) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -1470,6 +1474,7 @@ CONFIGURE_STATIC
 		CONST_DOUBLE( SWSURFACE	 ,SDL_SWSURFACE  )
 		CONST_DOUBLE( HWSURFACE	 ,SDL_HWSURFACE  )
 		CONST_DOUBLE( ASYNCBLIT	 ,SDL_ASYNCBLIT  )
+
 		CONST_DOUBLE( ANYFORMAT	 ,SDL_ANYFORMAT  )
 		CONST_DOUBLE( HWPALETTE	 ,SDL_HWPALETTE  )
 		CONST_DOUBLE( DOUBLEBUF	 ,SDL_DOUBLEBUF  )
@@ -1478,12 +1483,13 @@ CONFIGURE_STATIC
 		CONST_DOUBLE( OPENGLBLIT ,SDL_OPENGLBLIT )
 		CONST_DOUBLE( RESIZABLE	 ,SDL_RESIZABLE  )
 		CONST_DOUBLE( NOFRAME	 ,SDL_NOFRAME    )
-		CONST_DOUBLE( HWACCEL	 ,SDL_HWACCEL    )
-		CONST_DOUBLE( SRCCOLORKEY,SDL_SRCCOLORKEY)
-		CONST_DOUBLE( RLEACCELOK ,SDL_RLEACCELOK )
-		CONST_DOUBLE( RLEACCEL	 ,SDL_RLEACCEL   )
-		CONST_DOUBLE( SRCALPHA	 ,SDL_SRCALPHA   )
-		CONST_DOUBLE( PREALLOC	 ,SDL_PREALLOC   )
+
+//		CONST_DOUBLE( HWACCEL	 ,SDL_HWACCEL    )
+//		CONST_DOUBLE( SRCCOLORKEY,SDL_SRCCOLORKEY)
+//		CONST_DOUBLE( RLEACCELOK ,SDL_RLEACCELOK )
+//		CONST_DOUBLE( RLEACCEL	 ,SDL_RLEACCEL   )
+//		CONST_DOUBLE( SRCALPHA	 ,SDL_SRCALPHA   )
+//		CONST_DOUBLE( PREALLOC	 ,SDL_PREALLOC   )
 
 		CONST_DOUBLE( GL_RED_SIZE				, SDL_GL_RED_SIZE				 )
 		CONST_DOUBLE( GL_GREEN_SIZE			, SDL_GL_GREEN_SIZE			 )
