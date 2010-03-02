@@ -1006,6 +1006,7 @@ DEFINE_FUNCTION_FAST( Hint ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( x, y [, z] )
+ $VOID $INAME( $TYPE vec3 )
   $H arguments
    $ARG $REAL x
    $ARG $REAL y
@@ -1014,26 +1015,40 @@ $TOC_MEMBER $INAME
    glVertex3d, glVertex2d
 **/
 DEFINE_FUNCTION_FAST( Vertex ) {
-
-	JL_S_ASSERT_ARG_RANGE(2,3);
+	
 	*JL_FRVAL = JSVAL_VOID;
 
-	double x, y, z;
-	JsvalToDouble(cx, JL_FARG(1), &x);
-	JsvalToDouble(cx, JL_FARG(2), &y);
-	if ( JL_ARGC >= 3 ) {
+	if ( argc > 1 || JSVAL_IS_NUMBER(JL_FARG(1)) ) {
+		
+		JL_S_ASSERT_ARG_RANGE(2,3);
 
-		JsvalToDouble(cx, JL_FARG(3), &z);
-		
-		glVertex3d(x, y, z);
-		
+		double x, y, z;
+		JsvalToDouble(cx, JL_FARG(1), &x);
+		JsvalToDouble(cx, JL_FARG(2), &y);
+		if ( JL_ARGC >= 3 ) {
+
+			JsvalToDouble(cx, JL_FARG(3), &z);
+			glVertex3d(x, y, z);
+			JL_OGL_WARNING;
+			return JS_TRUE;
+		}
+		glVertex2d(x, y);
 		JL_OGL_WARNING;
-		return JS_TRUE;
+	} else {
+
+		JL_S_ASSERT_ARG(1);
+
+		GLdouble pos[3];
+		uint32 len;
+		JsvalToDoubleVector(cx, JL_FARG(1), pos, 3, &len);
+		if ( len == 2 )
+			glVertex2dv(pos);
+		else if ( len == 3 )
+			glVertex3dv(pos);
+		else
+			JL_REPORT_ERROR("Unexpected array length.");
 	}
 
-	glVertex2d(x, y);
-
-	JL_OGL_WARNING;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1053,10 +1068,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Color ) {
 
-	JL_S_ASSERT_ARG_RANGE(1,4);
+	JL_S_ASSERT_ARG_MIN(1);
 	*JL_FRVAL = JSVAL_VOID;
 
-	if ( JSVAL_IS_NUMBER(JL_FARG(1)) ) {
+	if ( argc > 1 || JSVAL_IS_NUMBER(JL_FARG(1)) ) {
+
+		JL_S_ASSERT_ARG_MAX(4);
 
 		double r, g, b, a;
 		JsvalToDouble(cx, JL_FARG(1), &r);
@@ -1078,6 +1095,8 @@ DEFINE_FUNCTION_FAST( Color ) {
 		glColor4d(r, g, b, a);
 		JL_OGL_WARNING;
 	} else {
+
+		JL_S_ASSERT_ARG(1);
 
 		GLdouble color[4];
 		uint32 len;
@@ -3873,6 +3892,8 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 	glGetIntegerv( GL_VIEWPORT, viewport );
 	int width = viewport[2];
 	int height = viewport[3];
+
+	// see GL_ARB_texture_rectangle / ARB_texture_non_power_of_two
 
 	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, width, height, 0);
 
