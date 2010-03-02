@@ -38,6 +38,17 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
+int volatile _maxFPS;
+
+SDL_Surface volatile *_surface;
+
+int desktopWidth;
+int desktopHeight;
+Uint8 desktopBitsPerPixel;
+
+
+#ifndef JL_NOTHREAD
+
 const char volatile *_error; // SDL error is managed per thread
 
 // video thread
@@ -47,17 +58,11 @@ static SDL_Thread *videoThreadHandler;
 JLSemaphoreHandler sdlEventsSem;
 
 // swap buffer management
-int volatile _maxFPS;
 static SDL_Thread *swapBuffersThreadHandler;
 JLSemaphoreHandler swapBuffersSem;
 bool volatile swapBufferEndThread;
 
 // surface management
-int desktopWidth;
-int desktopHeight;
-Uint8 desktopBitsPerPixel;
-
-SDL_Surface volatile *_surface;
 HDC volatile _hdc;
 
 bool surfaceReady;
@@ -155,6 +160,7 @@ bool JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 	return true;
 }
 
+
 void JLSwapBuffers(bool async) {
 
 	if ( _surface == NULL )
@@ -169,7 +175,7 @@ void JLSwapBuffers(bool async) {
 	if ( !async ) {
 
 		if ( _maxFPS == JLINFINITE ) {
-		
+					
 			SDL_GL_SwapBuffers();
 		} else {
 
@@ -271,21 +277,29 @@ int VideoThread( void *unused ) {
 
 				_surface = SDL_SetVideoMode(iev->vm.width, iev->vm.height, iev->vm.bpp, iev->vm.flags); // char *sdlError = SDL_GetError();
 
-				if ( _surface != NULL ) {
-		
-					JL_ASSERT( _hdc == NULL || _hdc == wglGetCurrentDC() ); // assert hdc has not changed
-					if ( _hdc == NULL ) {
-
-						_hdc = wglGetCurrentDC();
-						JL_ASSERT( _hdc );
-					}
-					JL_ASSERT( wglGetCurrentContext() );
-				} else {
+				if ( _surface == NULL ) {
 
 					JL_ASSERT( _error == NULL );
 					_error = SDL_GetError(); // store the error
 					SDL_ClearError();
+					SurfaceReady();
+					break;
 				}
+	
+				JL_ASSERT( _hdc == NULL || _hdc == wglGetCurrentDC() ); // assert hdc has not changed
+				if ( _hdc == NULL ) {
+
+					_hdc = wglGetCurrentDC();
+					JL_ASSERT( _hdc );
+				}
+				JL_ASSERT( wglGetCurrentContext() );
+
+#ifdef XP_WIN
+				RECT rect;
+				GetWindowRect(WindowFromDC(_hdc), &rect);
+				MoveWindow(WindowFromDC(_hdc), rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top-1, FALSE);
+				MoveWindow(WindowFromDC(_hdc), rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top, FALSE);
+#endif // XP_WIN				
 
 				SurfaceReady();
 				break;
@@ -302,7 +316,6 @@ int VideoThread( void *unused ) {
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 	return 0;
 }
-
 
 // video initializaion
 void StartVideo() {
@@ -367,6 +380,34 @@ void EndVideo() {
 	JLSemaphoreFree(&sdlEventsSem);
 }
 
+#else // JL_NOTHREAD
+
+bool JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
+
+	_surface = SDL_SetVideoMode(width, height, bpp, flags);
+	return _surface != NULL;
+}
+
+void JLSwapBuffers(bool async) {
+	
+	SDL_GL_SwapBuffers();
+}
+
+void StartVideo() {
+	
+	int status = SDL_Init(SDL_INIT_VIDEO);
+	JL_ASSERT( status != -1 );
+	_surface = NULL;
+	_maxFPS = JLINFINITE;
+}
+
+void EndVideo() {
+
+	SDL_QuitSubSystem(SDL_INIT_VIDEO);
+}
+
+#endif // JL_NOTHREAD
+
 
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
@@ -382,6 +423,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	if ( status != 0 )
 		return ThrowSdlError(cx);
+
 	StartVideo();
 
 	const SDL_VideoInfo *vi = SDL_GetVideoInfo(); // Get the current information about the video hardware

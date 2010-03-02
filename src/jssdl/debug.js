@@ -1,3 +1,4 @@
+
 try { 
 
 LoadModule('jsio');
@@ -29,6 +30,18 @@ var frame = 0;
 
 var objects = [];
 
+
+function BTree() {
+
+
+}
+
+
+var btree = new BTree();
+
+
+
+
 var evListeners = {};
 
 function AddEventListener(type, fct) {
@@ -39,30 +52,32 @@ function AddEventListener(type, fct) {
 
 function RemoveEventListener(type, fct) {
 
-	evListeners[type].splice(evListeners[type].indexOf(fct), 1);
+	evListeners[type].splice(evListeners[type].lastIndexOf(fct), 1);
 }
 
 function FireListeners(evName /*, ...*/) {
 
-	var listeners = evListeners[evName];
-	if ( listeners ) {
-	
-		for each ( var fct in listeners )
-			if ( fct.apply(this, arguments) === false )
+	var list = evListeners[evName];
+	if ( list ) {
+		
+		var len = list.length;
+		for ( var i = 0; i < len; ++i )
+			if ( list[i].apply(this, arguments) === false )
 				return;
 	}
 }
 
-function SetForeground(obj) {
+function MoveToForeground(obj) {
 	
 	var pos = objects.indexOf(obj);
-	if ( pos == 0 )
+	if ( pos == 0 || pos == -1 )
 		return;
 	objects.splice(pos, 1);
 	objects.unshift(obj);
 }
 
 ////////////////////////
+
 
 function Quad(color) {
 
@@ -73,20 +88,22 @@ function Quad(color) {
 	var w = 100;
 	var h = 50;
 	var border = 2;
+	var rnd = Math.random();
 	
 	var clist;
-
+	
 	this.Draw = function() {
 
 		Ogl.PushMatrix();
 		Ogl.Translate(px, py);
 		if ( clist ) {
 			
+			Ogl.Color(Math.sin((frame+rnd*100)/10)/2+0.5);
 			Ogl.CallList(clist);
 		} else {
 
 			clist = Ogl.NewList(Ogl.COMPILE);
-			Ogl.Color(color);
+//			Ogl.Color(color);
 			Ogl.Begin(Ogl.QUADS);
 			Ogl.Vertex(0,0);  Ogl.Vertex(w,0);  Ogl.Vertex(w,h);  Ogl.Vertex(0,h);
 			Ogl.End();
@@ -101,28 +118,28 @@ function Quad(color) {
 		Ogl.PopMatrix();
 	}
 	
-	this.HasPoint = function(x,y) {
+	function Hit(x,y) {
 		
 		return x >= px && y >= py && x <= px+w && y <= py+h;
 	}
 	
-	function onmousedown(ev, b, x,y) {
+	this.onmousedown = function(ev, b, x,y) {
 
-		if ( !_this.HasPoint(x,y) )
+		if ( !Hit(x,y) )
 			return true;
 		
-		SetForeground(_this);
+		MoveToForeground(_this);
 		
-		var dx = x-px;
-		var dy = y-py;
+		var ox = x-px;
+		var oy = y-py;
 		
 		function onmousemove(ev, x1,y1) {
 		
-			px = x1-dx;
-			py = y1-dy;
+			px = x1-ox;
+			py = y1-oy;
 		}
 		
-		function onmouseup(ev, b, x,y) {
+		function onmouseup(ev, b,x,y) {
 			
 			RemoveEventListener('mousemove', onmousemove);
 			RemoveEventListener('mouseup', onmouseup);
@@ -132,18 +149,14 @@ function Quad(color) {
 		AddEventListener('mouseup', onmouseup);
 		return false;
 	}
-	
-//	AddEventListener('mousedown', onmousedown);
-	this.onmousedown = onmousedown;
 }
 
 
 for ( var i = 0; i < 100; i++ ) {
 
 	objects.push(new Quad([1,0,0]));
-	objects.push(new Quad([0,1,0]));
-	objects.push(new Quad([0,0,1]));
 }
+
 
 ////////////////////////
 
@@ -170,8 +183,8 @@ var listeners = {
 		var len = objects.length;
 		for ( var i = 0; i < len; ++i ) {
 			
-			var o = objects[i];
-			if ( o.onmousedown && o.onmousedown('onmousedown', b, x, y) === false )
+			var fct = objects[i].onmousedown;
+			if ( fct && fct('onmousedown', b, x, y) === false )
 				break;
 		}
 		
@@ -220,9 +233,71 @@ var listeners = {
 
 
 while ( !endSignal )
-	var e = ProcessEvents( SDLEvents(listeners), EndSignalEvents(), SurfaceReadyEvents(SurfaceReady) );
+	var e = ProcessEvents( EndSignalEvents(), SDLEvents(listeners), SurfaceReadyEvents(SurfaceReady) );
+
+} catch(ex) {
+
+	throw(ex);
+}
+
+
+// test without threads (see JL_NOTHREAD #define)
+throw 0; /////////////////////////////////////////////////////////////////////
+
+try { 
+
+LoadModule('jsimage');
+LoadModule('jsstd');
+LoadModule('jssdl');
+LoadModule('jsgraphics');
+
+
+SetVideoMode(650,650, 0, OPENGL | RESIZABLE);
+Ogl.Viewport(0,0,videoWidth, videoHeight);
+Ogl.MatrixMode(Ogl.PROJECTION);
+Ogl.Ortho(0, videoWidth, videoHeight, 0, 0, 1000);
+Ogl.MatrixMode(Ogl.MODELVIEW);
+
+var done = false;
+
+var listeners = {
+	onQuit: function() {
+		done = true;
+	},
+	onKeyDown: function( key, modifiers, chr ) {
+		if ( key == K_ESCAPE )
+			done = true;
+	}
+}
+
+while ( !done && !endSignal ) {
+
+	Ogl.ClearColor(1,1,1,1);
+	Ogl.Clear(Ogl.COLOR_BUFFER_BIT|Ogl.DEPTH_BUFFER_BIT);
+	Ogl.LoadIdentity();
+
+	Ogl.Color(0);
+	Ogl.Begin(Ogl.QUADS);
+	Ogl.Vertex(0,0);  Ogl.Vertex(650,0);  Ogl.Vertex(650,650);  Ogl.Vertex(0,650);
+	Ogl.End();
+
+	Ogl.Flush();
+	Ogl.Finish();
+
+	GlSwapBuffers();
+
+	PollEvent(listeners);
+}
+
+
 
 } catch(ex) {
 
 	throw( ex );
 }
+
+
+
+throw 0; /////////////////////////////////////////////////////////////////////
+
+

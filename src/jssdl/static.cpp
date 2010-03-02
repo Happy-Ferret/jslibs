@@ -21,16 +21,24 @@
 
 extern int volatile _maxFPS;
 
-extern JLSemaphoreHandler sdlEventsSem;
+extern SDL_Surface volatile *_surface;
 
 extern int desktopWidth;
 extern int desktopHeight;
 extern Uint8 desktopBitsPerPixel;
 
-extern SDL_Surface volatile *_surface;
+#ifndef JL_NOTHREAD
+
+extern JLSemaphoreHandler sdlEventsSem;
 extern bool surfaceReady;
 extern JLCondHandler surfaceReadyCond;
 extern JLMutexHandler surfaceReadyLock;
+
+extern bool surfaceReady;
+extern JLCondHandler surfaceReadyCond;
+extern JLMutexHandler surfaceReadyLock;
+
+#endif // JL_NOTHREAD
 
 bool JLSetVideoMode(int width, int height, int bpp, Uint32 flags);
 void JLSwapBuffers(bool async);
@@ -1223,6 +1231,7 @@ DEFINE_PROPERTY_GETTER( maxFPS ) {
 }
 
 
+#ifndef JL_NOTHREAD
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1407,6 +1416,7 @@ DEFINE_FUNCTION_FAST( SDLEvents ) {
 	JL_BAD;
 }
 
+#endif // JL_NOTHREAD
 
 
 CONFIGURE_STATIC
@@ -1421,7 +1431,6 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( Iconify )
 		FUNCTION_FAST_ARGC( SetGamma, 3 )
 		FUNCTION_FAST( GlSwapBuffers )
-		FUNCTION_FAST( SurfaceReadyEvents )
 		FUNCTION_FAST_ARGC( GlSetAttribute, 2 )
 		FUNCTION_FAST_ARGC( GlGetAttribute, 1 )
 		FUNCTION_ARGC( PollEvent, 1 )
@@ -1429,7 +1438,10 @@ CONFIGURE_STATIC
 		FUNCTION_FAST_ARGC( SetCursor, 1 )
 		FUNCTION_FAST_ARGC( GetKeyState, 1 )
 		FUNCTION_FAST_ARGC( GetKeyName, 1 )
+#ifndef JL_NOTHREAD
+		FUNCTION_FAST( SurfaceReadyEvents )
 		FUNCTION_FAST_ARGC( SDLEvents, 1 )
+#endif // JL_NOTHREAD
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
