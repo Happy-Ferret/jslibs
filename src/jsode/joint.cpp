@@ -218,8 +218,8 @@ ALWAYS_INLINE void JointSetParam( ode::dJointID jointId, int parameter, ode::dRe
 			ode::dJointSetPistonParam(jointId, parameter, value);
 			return;
 		case ode::dJointTypePlane2D: // (TBD)
-//			ode::dJointSetPlane2DXParam(jointId, parameter, value); // (TBD) split them
-//			ode::dJointSetPlane2DYParam(jointId, parameter, value);
+			ode::dJointSetPlane2DXParam(jointId, parameter, value); // (TBD) split them ? see http://opende.sourceforge.net/wiki/index.php/HOWTO_constrain_objects_to_2d
+			ode::dJointSetPlane2DYParam(jointId, parameter, value);
 //			ode::dJointSetPlane2DAngleParam(jointId, parameter, value);
 			return;
 		case ode::dJointTypeLMotor:

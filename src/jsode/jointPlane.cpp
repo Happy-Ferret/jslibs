@@ -70,7 +70,7 @@ $TOC_MEMBER $INAME
  $INAME()
 
 **/
-DEFINE_FUNCTION_FAST( ResetBody ) {
+DEFINE_FUNCTION_FAST( AlignToZAxis ) {
 
 	// fc. http://opende.sourceforge.net/wiki/index.php/Manual_(Joint_Types_and_Functions)#Plane_2D
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
@@ -126,7 +126,7 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(2) // body1, body2
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST_ARGC( ResetBody, 0 )
+		FUNCTION_FAST_ARGC( AlignToZAxis, 0 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
