@@ -246,6 +246,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( videoWidth ) {
 
+//	const SDL_VideoInfo *info = SDL_GetVideoInfo();
 	const SDL_Surface *surface = SDL_GetVideoSurface();
 	*vp = surface != NULL ? INT_TO_JSVAL( surface->w ) : JSVAL_VOID;
 	return JS_TRUE;
@@ -715,6 +716,12 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 		case SDL_MOUSEMOTION:
 			JL_CHK( JS_GetProperty(cx, listenerObj, "onMouseMotion", &fVal) );
 			if ( JsvalIsFunction(cx, fVal) ) {
+
+				if ( ev->motion.x == (Uint16)-1 ) { // || ev->motion.y == (Uint16)-1
+					
+					*fired = false;
+					break;
+				}
 
 				SDLMod modState = SDL_GetModState();
 				jsval argv[] = {

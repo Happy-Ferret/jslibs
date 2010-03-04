@@ -23,13 +23,180 @@ function DumpMatrix(m) {
 	Print('\n' );
 }
 
+
+function UI() {
+	
+	var _this = this;
+
+	LoadModule('jssdl');
+	LoadModule('jsgraphics');
+	LoadModule('jsfont');
+	LoadModule('jsoglft');
+	
+	var font = new Font('c:\\windows\\fonts\\arial.ttf');
+	var f3d = new Font3D(font, Font3D.FILLED, 9);
+	var f2d = new Font3D(font, Font3D.GRAYSCALE, 9);
+
+	var DefaultVideoMode = OPENGL | RESIZABLE;
+
+	unicodeKeyboardTranslation = true;
+	keyRepeatDelay = 300;
+	keyRepeatInterval = 50;
+	maxFPS = 60;
+	
+	var currentWidth = desktopWidth/4;
+	var currentHeight = desktopHeight/4;
+	
+	GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+	GlSetAttribute( GL_DEPTH_SIZE, 16 );
+	GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+	SetVideoMode(currentWidth, currentHeight, undefined, DefaultVideoMode);
+	
+	Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
+	Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
+
+	Ogl.PixelStore( Ogl.UNPACK_ALIGNMENT, 1 );
+	
+	this.DrawGrid = function() {
+
+		if ( !arguments.callee.geometry ) {
+			
+			arguments.callee.geometry = Ogl.NewList(false);
+
+			Ogl.Enable(Ogl.DEPTH_TEST);
+			Ogl.Enable(Ogl.BLEND);
+			Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+			
+			var len = 20;
+			var max = Math.pow(1.5, len);
+
+			Ogl.Begin(Ogl.LINES);
+			for ( var i = 0; i <= len; i++ ) {
+			
+				Ogl.Color(1, 1, 1, 0.5-Math.abs(i/len)/2);
+				
+				var powi = Math.pow(1.5, i);
+				Ogl.Vertex(-max, powi, 0); Ogl.Vertex(max, powi, 0);
+				Ogl.Vertex(powi, -max, 0); Ogl.Vertex(powi, max, 0);
+			}
+			Ogl.End();
+			Ogl.EndList();
+		}
+		Ogl.CallList(arguments.callee.geometry);
+	}
+	
+	var listeners = {
+	
+		onKeyDown:function(sym, mod, chr) {
+
+			if ( sym == K_ESCAPE ) {
+				
+				endSignal = true;
+			}
+	
+			if ( sym == K_RETURN && (mod & KMOD_LALT) ) {
+
+				ProcessEvents( SurfaceReadyEvents() );
+				if ( videoFlags & FULLSCREEN ) {
+				
+					SetVideoMode(currentWidth, currentHeight, undefined, DefaultVideoMode);
+				} else {
+				
+					currentWidth = videoWidth;
+					currentHeight = videoHeight;
+					SetVideoMode(desktopWidth, desktopHeight, undefined, DefaultVideoMode | FULLSCREEN);
+				}
+				
+				ResetView();
+/*
+				Ogl.Viewport(0, 0, videoWidth, videoHeight);
+				Ogl.MatrixMode(Ogl.PROJECTION);
+				Ogl.LoadIdentity();
+				SetProj();
+				Ogl.MatrixMode(Ogl.MODELVIEW);
+*/				
+			}
+		},
+		onKeyUp:function(sym, mod, chr) {
+		},
+		onMouseButtonDown:function(button, x, y, buttonState, modState) {
+		},
+		onMouseButtonUp:function(button, x, y, buttonState, modState) {
+		},
+		onMouseMotion:function(x, y, relx, rely, state, mod) {
+		},
+	
+		onQuit: function() {
+		 
+			endSignal = true;
+		},
+		onVideoResize: function(w, h) {
+			
+//			Ogl.Viewport(0, 0, w,h);
+		},
+	};
+
+	var frame = 0;
+	
+	function SurfaceReady() {
+		
+		if ( !_this.Draw ) {
+		
+			Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
+			Ogl.Translate(-0.5,0,-1);
+			Ogl.Scale(0.01 * (Math.cos(frame/10)/10+0.9));
+			Ogl.Color(1,0,0);
+			f3d.Draw('nothing to draw');
+		} else {
+		
+			Ogl.ClearColor(0.2, 0.1, 0.4, 0);
+			Ogl.ClearDepth(1);
+			Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
+
+			Ogl.Viewport(0, 10, videoWidth, videoHeight-10);
+			Ogl.MatrixMode(Ogl.PROJECTION);
+			Ogl.LoadIdentity();
+			Ogl.Perspective(60, 0.1, 10000);
+			Ogl.MatrixMode(Ogl.MODELVIEW);
+			Ogl.LoadIdentity();
+		
+		Print(videoHeight, '\n');
+			_this.Draw(frame);
+/*			
+			Ogl.Viewport(0, 0, videoWidth, 10);
+
+			Ogl.MatrixMode(Ogl.PROJECTION);
+			Ogl.LoadIdentity();
+			Ogl.Ortho(0, 0, videoWidth, 10, 0, 1);
+			Ogl.MatrixMode(Ogl.MODELVIEW);
+			
+			Ogl.RasterPos(0,0,0);
+
+			f2d.SetBackgroundColor([0,0,0]);
+			f2d.SetColor([1]);
+			f2d.Draw('test');
+*/			
+		}
+		Ogl.Finish();
+		GlSwapBuffers(true);
+		frame++;
+	}
+
+	this.Loop = function() {
+		
+		while ( !endSignal )
+			ProcessEvents( EndSignalEvents(), SDLEvents(listeners), SurfaceReadyEvents(SurfaceReady) );
+	}
+}
+
+
+
+
 function Env3D() {
 	
 	var _this = this;
 	
-	var desktopWidth = videoWidth;
-	var desktopHeight = videoHeight;
-
 	function InitVideo(width, height) {
 	
 	//	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync

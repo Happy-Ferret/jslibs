@@ -245,11 +245,26 @@ int SwapBuffersThread( void *unused ) {
 }
 
 
+int EventFilter( const SDL_Event *e ) {
+
+	if ( e->type == SDL_VIDEORESIZE ) {
+		
+//		_surface = SDL_SetVideoMode(e->resize.w, e->resize.h, _surface->format->BitsPerPixel, _surface->flags);
+		// const char *errorMessage = SDL_GetError();
+//		JL_ASSERT( _surface != NULL );
+	}
+	return 1; // 1, then the event will be added to the internal queue.
+}
+
+
+
 int VideoThread( void *unused ) {
 
 	int status;
 	status = SDL_InitSubSystem(SDL_INIT_VIDEO); // (TBD) SDL_INIT_EVENTTHREAD on Linux ?
 	JL_ASSERT( status != -1 );
+	SDL_SetEventFilter(EventFilter);
+
 
 	JLSemaphoreRelease(sdlEventsSem); // first event = thread ready
 
