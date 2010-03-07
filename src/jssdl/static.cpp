@@ -22,6 +22,8 @@
 extern int volatile _maxFPS;
 
 extern SDL_Surface volatile *_surface;
+extern int volatile surfaceWidth;
+extern int volatile surfaceHeight;
 
 extern int desktopWidth;
 extern int desktopHeight;
@@ -29,10 +31,10 @@ extern Uint8 desktopBitsPerPixel;
 
 #ifndef JL_NOTHREAD
 
-extern JLSemaphoreHandler sdlEventsSem;
-extern bool surfaceReady;
-extern JLCondHandler surfaceReadyCond;
-extern JLMutexHandler surfaceReadyLock;
+//extern JLSemaphoreHandler sdlEventsSem;
+
+extern JLCondHandler sdlEventsCond;
+extern JLMutexHandler sdlEventsLock;
 
 extern bool surfaceReady;
 extern JLCondHandler surfaceReadyCond;
@@ -53,6 +55,146 @@ $CLASS_HEADER
 $SVN_REVISION $Revision$
 **/
 BEGIN_STATIC
+
+
+// see PollEvent
+JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval *rval, bool *fired ) {
+
+	jsval fVal;
+
+	switch (ev->type) {
+		case SDL_ACTIVEEVENT:
+			JL_CHK( JS_GetProperty(cx, listenerObj, "onActive", &fVal) );
+			if ( JsvalIsFunction(cx, fVal) ) {
+
+				jsval argv[] = {
+					ev->active.gain == 1 ? JSVAL_TRUE : JSVAL_FALSE
+				};
+				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
+				*fired = true;
+			}
+			break;
+
+		case SDL_KEYDOWN:
+		case SDL_KEYUP:
+			JL_CHK( JS_GetProperty(cx, listenerObj, ev->type == SDL_KEYDOWN ? "onKeyDown" : "onKeyUp", &fVal) );
+			if ( JsvalIsFunction(cx, fVal) ) {
+
+				jsval argv[] = {
+					INT_TO_JSVAL(ev->key.keysym.sym),
+					INT_TO_JSVAL(ev->key.keysym.mod),
+					JSVAL_NULL, // unicode char
+//					INT_TO_JSVAL(ev->key.keysym.scancode), // The scancode is hardware dependent, and should not be used by general applications.
+				};
+
+				JSTempValueRooter tvr;
+				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // protects the new string against the GC
+
+				if ( (ev->key.keysym.unicode & 0xFF80) == 0 ) {
+
+					const char ch = ev->key.keysym.unicode & 0x7F;
+					argv[2] = STRING_TO_JSVAL(JS_NewStringCopyN(cx, &ch, 1));
+				} else {
+
+					argv[2] = STRING_TO_JSVAL(JS_NewUCStringCopyN(cx, &ev->key.keysym.unicode, 1));
+				}
+
+				JSBool status = JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval);
+				JS_POP_TEMP_ROOT(cx, &tvr);
+				JL_CHK( status );
+				*fired = true;
+			}
+			break;
+
+		case SDL_MOUSEMOTION:
+			JL_CHK( JS_GetProperty(cx, listenerObj, "onMouseMotion", &fVal) );
+			if ( JsvalIsFunction(cx, fVal) ) {
+
+				if ( ev->motion.x == (Uint16)-1 ) { // || ev->motion.y == (Uint16)-1
+					
+					*fired = false;
+					break;
+				}
+
+				SDLMod modState = SDL_GetModState();
+				jsval argv[] = {
+					INT_TO_JSVAL(ev->motion.x),
+					INT_TO_JSVAL(ev->motion.y),
+					INT_TO_JSVAL(ev->motion.xrel),
+					INT_TO_JSVAL(ev->motion.yrel),
+					INT_TO_JSVAL(ev->motion.state),
+					INT_TO_JSVAL(modState),
+				};
+				// no argv GC protection needed.
+				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
+				*fired = true;
+			}
+			break;
+
+		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEBUTTONUP:
+			JL_CHK( JS_GetProperty(cx, listenerObj, ev->type == SDL_MOUSEBUTTONDOWN ? "onMouseButtonDown" : "onMouseButtonUp", &fVal) );
+			if ( JsvalIsFunction(cx, fVal) ) {
+
+				SDLMod modState = SDL_GetModState();
+				Uint8 buttonState = SDL_GetMouseState(NULL, NULL); // query only button state
+				jsval argv[] = {
+					INT_TO_JSVAL(ev->button.button),
+					INT_TO_JSVAL(ev->button.x),
+					INT_TO_JSVAL(ev->button.y),
+					INT_TO_JSVAL(buttonState),
+					INT_TO_JSVAL(modState),
+				};
+				// no argv GC protection needed.
+				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
+				*fired = true;
+			}
+			break;
+
+		case SDL_QUIT:
+			JL_CHK( JS_GetProperty(cx, listenerObj, "onQuit", &fVal) );
+			if ( JsvalIsFunction(cx, fVal) ) {
+
+				// no argv GC protection needed.
+				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, 0, NULL, rval) );
+				*fired = true;
+			}
+			break;
+
+		case SDL_VIDEORESIZE:
+			// ... and you must respond to the event by re-calling SDL_SetVideoMode() with the requested size (or another size that suits the application).
+			JL_CHK( JS_GetProperty(cx, listenerObj, "onVideoResize", &fVal) );
+			if ( JsvalIsFunction(cx, fVal) ) {
+
+//				SDL_Surface *surface = SDL_GetVideoSurface();
+//				const SDL_VideoInfo *video = SDL_GetVideoInfo();
+				jsval argv[] = {
+					INT_TO_JSVAL(ev->resize.w),
+					INT_TO_JSVAL(ev->resize.h)
+				};
+				// no argv GC protection needed.
+				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
+				*fired = true;
+			}
+			break;
+
+		case SDL_VIDEOEXPOSE:
+			JL_CHK( JS_GetProperty(cx, listenerObj, "onVideoExpose", &fVal) );
+			if ( JsvalIsFunction(cx, fVal) ) {
+
+				// no argv GC protection needed.
+				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, 0, NULL, rval) );
+				*fired = true;
+			}
+			break;
+		default:
+			*fired = false;
+	}
+//	return JS_IsExceptionPending(cx) ? JS_FALSE : JS_TRUE; // (TBD) why this line is needed ?
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 === Static functions ===
@@ -247,8 +389,8 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( videoWidth ) {
 
 //	const SDL_VideoInfo *info = SDL_GetVideoInfo();
-	const SDL_Surface *surface = SDL_GetVideoSurface();
-	*vp = surface != NULL ? INT_TO_JSVAL( surface->w ) : JSVAL_VOID;
+//	const SDL_Surface *surface = SDL_GetVideoSurface();
+	*vp = _surface != NULL ? INT_TO_JSVAL( surfaceWidth ) : JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -259,8 +401,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( videoHeight ) {
 
-	const SDL_Surface *surface = SDL_GetVideoSurface();
-	*vp = surface != NULL ? INT_TO_JSVAL( surface->h ) : JSVAL_VOID;
+//	const SDL_Surface *surface = SDL_GetVideoSurface();
+	*vp = _surface != NULL ? INT_TO_JSVAL( surfaceHeight ) : JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -271,8 +413,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( videoBitsPerPixel ) {
 
-	const SDL_Surface *surface = SDL_GetVideoSurface();
-	*vp = surface != NULL ? INT_TO_JSVAL( surface->format->BitsPerPixel ) : JSVAL_VOID;
+//	const SDL_Surface *surface = SDL_GetVideoSurface();
+	*vp = _surface != NULL ? INT_TO_JSVAL( _surface->format->BitsPerPixel ) : JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -317,10 +459,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( videoFlags ) {
 
-	const SDL_Surface *surface = SDL_GetVideoSurface();
-	if ( surface != NULL ) {
+//	const SDL_Surface *surface = SDL_GetVideoSurface();
+	if ( _surface != NULL ) {
 
-		JL_CHK( DoubleToJsval(cx, surface->flags, vp) ); // we need to use doubles because some values are greater than 2^31
+		JL_CHK( DoubleToJsval(cx, _surface->flags, vp) ); // we need to use doubles because some values are greater than 2^31
 	} else {
 
 		*vp = JSVAL_VOID;
@@ -658,146 +800,6 @@ DEFINE_PROPERTY( videoDriverName ) {
 		JL_CHK( StringToJsval(cx, name, vp) );
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-// see PollEvent
-JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval *rval, bool *fired ) {
-
-	jsval fVal;
-
-//	printf("DBG: event %d\n", ev->type);
-	switch (ev->type) {
-		case SDL_ACTIVEEVENT:
-			JL_CHK( JS_GetProperty(cx, listenerObj, "onActive", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
-
-				jsval argv[] = {
-					ev->active.gain == 1 ? JSVAL_TRUE : JSVAL_FALSE
-				};
-				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
-				*fired = true;
-			}
-			break;
-
-		case SDL_KEYDOWN:
-		case SDL_KEYUP:
-			JL_CHK( JS_GetProperty(cx, listenerObj, ev->type == SDL_KEYDOWN ? "onKeyDown" : "onKeyUp", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
-
-				jsval argv[] = {
-					INT_TO_JSVAL(ev->key.keysym.sym),
-					INT_TO_JSVAL(ev->key.keysym.mod),
-					JSVAL_NULL, // unicode char
-//					INT_TO_JSVAL(ev->key.keysym.scancode), // The scancode is hardware dependent, and should not be used by general applications.
-				};
-
-				JSTempValueRooter tvr;
-				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // protects the new string against the GC
-
-				if ( (ev->key.keysym.unicode & 0xFF80) == 0 ) {
-
-					const char ch = ev->key.keysym.unicode & 0x7F;
-					argv[2] = STRING_TO_JSVAL(JS_NewStringCopyN(cx, &ch, 1));
-				} else {
-
-					argv[2] = STRING_TO_JSVAL(JS_NewUCStringCopyN(cx, &ev->key.keysym.unicode, 1));
-				}
-
-				JSBool status = JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval);
-				JS_POP_TEMP_ROOT(cx, &tvr);
-				JL_CHK( status );
-				*fired = true;
-			}
-			break;
-
-		case SDL_MOUSEMOTION:
-			JL_CHK( JS_GetProperty(cx, listenerObj, "onMouseMotion", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
-
-				if ( ev->motion.x == (Uint16)-1 ) { // || ev->motion.y == (Uint16)-1
-					
-					*fired = false;
-					break;
-				}
-
-				SDLMod modState = SDL_GetModState();
-				jsval argv[] = {
-					INT_TO_JSVAL(ev->motion.x),
-					INT_TO_JSVAL(ev->motion.y),
-					INT_TO_JSVAL(ev->motion.xrel),
-					INT_TO_JSVAL(ev->motion.yrel),
-					INT_TO_JSVAL(ev->motion.state),
-					INT_TO_JSVAL(modState),
-				};
-				// no argv GC protection needed.
-				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
-				*fired = true;
-			}
-			break;
-
-		case SDL_MOUSEBUTTONDOWN:
-		case SDL_MOUSEBUTTONUP:
-			JL_CHK( JS_GetProperty(cx, listenerObj, ev->type == SDL_MOUSEBUTTONDOWN ? "onMouseButtonDown" : "onMouseButtonUp", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
-
-				SDLMod modState = SDL_GetModState();
-				Uint8 buttonState = SDL_GetMouseState(NULL, NULL); // query only button state
-				jsval argv[] = {
-					INT_TO_JSVAL(ev->button.button),
-					INT_TO_JSVAL(ev->button.x),
-					INT_TO_JSVAL(ev->button.y),
-					INT_TO_JSVAL(buttonState),
-					INT_TO_JSVAL(modState),
-				};
-				// no argv GC protection needed.
-				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
-				*fired = true;
-			}
-			break;
-
-		case SDL_QUIT:
-			JL_CHK( JS_GetProperty(cx, listenerObj, "onQuit", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
-
-				// no argv GC protection needed.
-				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, 0, NULL, rval) );
-				*fired = true;
-			}
-			break;
-
-		case SDL_VIDEORESIZE:
-			// ... and you must respond to the event by re-calling SDL_SetVideoMode() with the requested size (or another size that suits the application).
-			JL_CHK( JS_GetProperty(cx, listenerObj, "onVideoResize", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
-
-//				SDL_Surface *surface = SDL_GetVideoSurface();
-//				const SDL_VideoInfo *video = SDL_GetVideoInfo();
-				jsval argv[] = {
-					INT_TO_JSVAL(ev->resize.w),
-					INT_TO_JSVAL(ev->resize.h)
-				};
-				// no argv GC protection needed.
-				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
-				*fired = true;
-			}
-			break;
-
-		case SDL_VIDEOEXPOSE:
-			JL_CHK( JS_GetProperty(cx, listenerObj, "onVideoExpose", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
-
-				// no argv GC protection needed.
-				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, 0, NULL, rval) );
-				*fired = true;
-			}
-			break;
-		default:
-			*fired = false;
-	}
-//	return JS_IsExceptionPending(cx) ? JS_FALSE : JS_TRUE; // (TBD) why this line is needed ?
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1348,23 +1350,23 @@ static void SDLStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 	int status;
-	for (;;) {
-
-		JLSemaphoreAcquire(sdlEventsSem, JLINFINITE);
-		if ( upe->cancel )
-			break;
-		status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS);
-		// JL_ASSERT( upe->cancel || status == 1 ); // (TBD) understand this case
-		if ( status == 1 )
-			break;
-	}
+	JLMutexAcquire(sdlEventsLock);
+	while ( !upe->cancel && (status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS)) == 0 ) // no cancel and no SDL event
+		JLCondWait(sdlEventsCond, sdlEventsLock);
+	JLMutexRelease(sdlEventsLock);
+	JL_ASSERT( status != -1 );
+	// JL_ASSERT( upe->cancel || status == 1 ); // (TBD) understand this case
 }
 
 static bool SDLCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
+
+	JLMutexAcquire(sdlEventsLock);
 	upe->cancel = true;
-	JLSemaphoreRelease(sdlEventsSem);
+	JLCondBroadcast(sdlEventsCond);
+	JLMutexRelease(sdlEventsLock);
+
 	return true;
 }
 

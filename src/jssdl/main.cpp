@@ -41,6 +41,8 @@ $MODULE_FOOTER
 int volatile _maxFPS;
 
 SDL_Surface volatile *_surface;
+int volatile surfaceWidth;
+int volatile surfaceHeight;
 
 int desktopWidth;
 int desktopHeight;
@@ -51,11 +53,15 @@ Uint8 desktopBitsPerPixel;
 
 const char volatile *_error; // SDL error is managed per thread
 
+JLSemaphoreHandler threadReadySem;
+
 // video thread
 static SDL_Thread *videoThreadHandler;
 
 // SDL events avability
-JLSemaphoreHandler sdlEventsSem;
+
+JLCondHandler sdlEventsCond;
+JLMutexHandler sdlEventsLock;
 
 // swap buffer management
 static SDL_Thread *swapBuffersThreadHandler;
@@ -63,6 +69,8 @@ JLSemaphoreHandler swapBuffersSem;
 bool volatile swapBufferEndThread;
 
 // surface management
+JLMutexHandler surfaceLock; // avoid SDL_SetVideoMode while SDL_GL_SwapBuffers
+
 HDC volatile _hdc;
 
 bool surfaceReady;
@@ -138,7 +146,7 @@ bool JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 
 	WaitSurfaceReady();
 
-	if ( !_surface ) {
+	if ( !_surface && _error ) {
 
 		SDL_SetError((const char*)_error); // transmit the error to the current thread
 		_error = NULL;
@@ -176,11 +184,17 @@ void JLSwapBuffers(bool async) {
 
 		if ( _maxFPS == JLINFINITE ) {
 					
+			JLMutexAcquire(surfaceLock);
 			SDL_GL_SwapBuffers();
+			JLMutexRelease(surfaceLock);
 		} else {
 
 			long t0 = AccurateTimeCounter();
+			
+			JLMutexAcquire(surfaceLock);
 			SDL_GL_SwapBuffers();
+			JLMutexRelease(surfaceLock);
+
 			long t1 = AccurateTimeCounter();
 			long wait = 1000/_maxFPS - (t1 - t0);
 			if ( wait > 0 )
@@ -200,6 +214,8 @@ int SwapBuffersThread( void *unused ) {
 
 	long t0 = AccurateTimeCounter();
 
+	JLSemaphoreRelease(threadReadySem);
+
 	for (;;) {
 
 		JLSemaphoreAcquire(swapBuffersSem, JLINFINITE);
@@ -217,10 +233,15 @@ int SwapBuffersThread( void *unused ) {
 
 		if ( _maxFPS == JLINFINITE ) {
 		
+			JLMutexAcquire(surfaceLock);
 			SDL_GL_SwapBuffers();
+			JLMutexRelease(surfaceLock);
 		} else {
 			
+			JLMutexAcquire(surfaceLock);
 			SDL_GL_SwapBuffers();
+			JLMutexRelease(surfaceLock);
+
 			long t1 = AccurateTimeCounter();
 			long wait = 1000/_maxFPS - (t1 - t0);
 			if ( wait > 0 ) {
@@ -249,13 +270,11 @@ int EventFilter( const SDL_Event *e ) {
 
 	if ( e->type == SDL_VIDEORESIZE ) {
 		
-//		_surface = SDL_SetVideoMode(e->resize.w, e->resize.h, _surface->format->BitsPerPixel, _surface->flags);
-		// const char *errorMessage = SDL_GetError();
-//		JL_ASSERT( _surface != NULL );
+		surfaceWidth = e->resize.w;
+		surfaceHeight = e->resize.h;
 	}
 	return 1; // 1, then the event will be added to the internal queue.
 }
-
 
 
 int VideoThread( void *unused ) {
@@ -265,17 +284,36 @@ int VideoThread( void *unused ) {
 	JL_ASSERT( status != -1 );
 	SDL_SetEventFilter(EventFilter);
 
-
-	JLSemaphoreRelease(sdlEventsSem); // first event = thread ready
+//	bool win32hack = true;
 
 	bool end = false;
+	
+	JLSemaphoreRelease(threadReadySem);
 	while ( !end ) {
 	
 		SDL_PumpEvents();
+
+		JLMutexAcquire(sdlEventsLock);
 		status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS);
-		JL_ASSERT( status != -1 );
 		if ( status == 1 ) // we have at least one SDL event, see SDLEndWait()
-			JLSemaphoreRelease(sdlEventsSem);
+			JLCondBroadcast(sdlEventsCond);
+		JLMutexRelease(sdlEventsLock);
+		JL_ASSERT( status != -1 );
+
+/*
+		if ( videoResize ) {
+
+			videoResize = false;
+
+			JL_ASSERT( _surface != NULL );
+			JLMutexAcquire(surfaceLock);
+			_surface = SDL_SetVideoMode(surfaceWidth, surfaceHeight, _surface->format->BitsPerPixel, _surface->flags);
+			JLMutexRelease(surfaceLock);
+			JL_ASSERT( _surface != NULL );
+			surfaceWidth = _surface->w;
+			surfaceHeight = _surface->h;
+		}
+*/
 
 		int st = JLSemaphoreAcquire(internalEventSem, 5); // see SDL_WaitEvent()
 		JL_ASSERT( st != JLERROR );
@@ -290,7 +328,9 @@ int VideoThread( void *unused ) {
 		switch ( iev->type ) {
 			case INTERNALEVENT_SET_VIDEO_MODE: {
 
+				JLMutexAcquire(surfaceLock);
 				_surface = SDL_SetVideoMode(iev->vm.width, iev->vm.height, iev->vm.bpp, iev->vm.flags); // char *sdlError = SDL_GetError();
+				JLMutexRelease(surfaceLock);
 
 				if ( _surface == NULL ) {
 
@@ -301,6 +341,9 @@ int VideoThread( void *unused ) {
 					break;
 				}
 	
+				surfaceWidth = _surface->w;
+				surfaceHeight = _surface->h;
+
 				JL_ASSERT( _hdc == NULL || _hdc == wglGetCurrentDC() ); // assert hdc has not changed
 				if ( _hdc == NULL ) {
 
@@ -308,14 +351,14 @@ int VideoThread( void *unused ) {
 					JL_ASSERT( _hdc );
 				}
 				JL_ASSERT( wglGetCurrentContext() );
-
+/*
 #ifdef XP_WIN
 				RECT rect;
 				GetWindowRect(WindowFromDC(_hdc), &rect);
 				MoveWindow(WindowFromDC(_hdc), rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top-1, FALSE);
 				MoveWindow(WindowFromDC(_hdc), rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top, FALSE);
-#endif // XP_WIN				
-
+#endif // XP_WIN
+*/
 				SurfaceReady();
 				break;
 			}
@@ -340,25 +383,33 @@ void StartVideo() {
 	_maxFPS = JLINFINITE;
 	_hdc = NULL; // see INTERNALEVENT_SET_VIDEO_MODE case
 
+	surfaceLock = JLMutexCreate();
+
 	jl::QueueInitialize(&internalEventQueue);
 	internalEventQueueMutex = JLMutexCreate();
 	internalEventSem = JLSemaphoreCreate(0);
+
+	sdlEventsCond = JLCondCreate();
+	sdlEventsLock = JLMutexCreate();
 
 	_surface = NULL;
 	surfaceReady = false;
 	surfaceReadyCond = JLCondCreate();
 	surfaceReadyLock = JLMutexCreate();
 
-	sdlEventsSem = JLSemaphoreCreate(0);
+	threadReadySem = JLSemaphoreCreate(0);
 
 	swapBufferEndThread = false;
 	swapBuffersSem = JLSemaphoreCreate(0);
 	swapBuffersThreadHandler = SDL_CreateThread(SwapBuffersThread, NULL); // http://www.libsdl.org/intro.en/usingthreads.html
+	JL_ASSERT( swapBuffersThreadHandler != NULL ); // return ThrowSdlError(cx);
+	JLSemaphoreAcquire(threadReadySem, JLINFINITE);
 
 	videoThreadHandler = SDL_CreateThread(VideoThread, NULL); // http://www.libsdl.org/intro.en/usingthreads.html
 	JL_ASSERT( videoThreadHandler != NULL ); // return ThrowSdlError(cx);
-
-	JLSemaphoreAcquire(sdlEventsSem, JLINFINITE); // first event = thread ready
+	JLSemaphoreAcquire(threadReadySem, JLINFINITE);
+	
+	JLSemaphoreFree(&threadReadySem);
 }
 
 
@@ -392,7 +443,11 @@ void EndVideo() {
 
 	JLMutexFree(&surfaceReadyLock);
 	JLCondFree(&surfaceReadyCond);
-	JLSemaphoreFree(&sdlEventsSem);
+
+	JLMutexFree(&sdlEventsLock);
+	JLCondFree(&sdlEventsCond);
+
+	JLMutexFree(&surfaceLock);
 }
 
 #else // JL_NOTHREAD
