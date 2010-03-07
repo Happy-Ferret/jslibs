@@ -3965,11 +3965,11 @@ DEFINE_FUNCTION_FAST( DrawPoint ) {
 	JL_BAD;
 }
 
-
-/**doc
+/*
+/ **doc
 $TOC_MEMBER $INAME
 $INAME( radius [ , vertexCount = 12 ] )
-**/
+** /
 DEFINE_FUNCTION_FAST( DrawDisk ) {
 
 	float s, c, angle, radius;
@@ -3993,6 +3993,7 @@ DEFINE_FUNCTION_FAST( DrawDisk ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+*/
 
 
 /**doc
@@ -4012,6 +4013,55 @@ DEFINE_FUNCTION_FAST( DrawSphere ) {
 	gluQuadricTexture(q, GL_FALSE);
 	gluQuadricNormals(q, GLU_SMOOTH); // GLU_FLAT / GLU_SMOOTH
 	gluSphere(q, radius, slices, stacks);
+	gluDeleteQuadric(q);
+
+	JL_OGL_WARNING;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+$INAME( radius, slices, loops );
+**/
+DEFINE_FUNCTION_FAST( DrawDisk ) {
+
+	JL_S_ASSERT_ARG(3);
+	double radius;
+	int slices, loops;
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &radius) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &slices) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(3), &loops) );
+
+	GLUquadric *q = gluNewQuadric();
+	gluQuadricTexture(q, GL_FALSE);
+	gluQuadricNormals(q, GLU_SMOOTH); // GLU_FLAT / GLU_SMOOTH
+	gluDisk(q, 0, radius, slices, loops);
+	gluDeleteQuadric(q);
+
+	JL_OGL_WARNING;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+$INAME( radius, height, slices, stacks );
+**/
+DEFINE_FUNCTION_FAST( DrawCylinder ) {
+
+	JL_S_ASSERT_ARG(4);
+	double radius, height;
+	int slices, stacks;
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &radius) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &height) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(3), &slices) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(4), &stacks) );
+
+	GLUquadric *q = gluNewQuadric();
+	gluQuadricTexture(q, GL_FALSE);
+	gluQuadricNormals(q, GLU_SMOOTH); // GLU_FLAT / GLU_SMOOTH
+	gluCylinder(q, radius, radius, height, slices, stacks);
 	gluDeleteQuadric(q);
 
 	JL_OGL_WARNING;
@@ -4349,6 +4399,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(DrawPoint, 1)
 		FUNCTION_FAST_ARGC(DrawDisk, 2)
 		FUNCTION_FAST_ARGC(DrawSphere, 3)
+		FUNCTION_FAST_ARGC(DrawCylinder, 4)
 
 		FUNCTION_FAST_ARGC(KeepTranslation, 0)
 	END_STATIC_FUNCTION_SPEC
