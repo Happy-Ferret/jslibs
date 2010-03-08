@@ -4071,6 +4071,69 @@ DEFINE_FUNCTION_FAST( DrawCylinder ) {
 
 
 /**doc
+$TOC_MEMBER $INAME
+$INAME( lengthX, lengthY, lengthZ );
+**/
+DEFINE_FUNCTION_FAST( DrawBox ) {
+
+	JL_S_ASSERT_ARG(3);
+	float lengthX, lengthY, lengthZ;
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &lengthX) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &lengthY) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &lengthZ) );
+
+	lengthX /= 2.f;
+	lengthY /= 2.f;
+	lengthZ /= 2.f;
+
+	glBegin(GL_QUADS);
+
+	glNormal3f(1.0f, 0.0f, 0.0f);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f( lengthX, lengthY, lengthZ);
+	glTexCoord2f(0.0f, 0.0f); glVertex3f( lengthX,-lengthY, lengthZ);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f( lengthX,-lengthY,-lengthZ);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f( lengthX, lengthY,-lengthZ);
+
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f( lengthX, lengthY,-lengthZ);
+	glTexCoord2f(0.0f, 0.0f); glVertex3f( lengthX,-lengthY,-lengthZ);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f(-lengthX,-lengthY,-lengthZ);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f(-lengthX, lengthY,-lengthZ);
+
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f(-lengthX, lengthY,-lengthZ);
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(-lengthX,-lengthY,-lengthZ);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f(-lengthX,-lengthY, lengthZ);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f(-lengthX, lengthY, lengthZ);
+
+	glNormal3f(0.0f, 0.0f, 1.0f);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f(-lengthX, lengthY, lengthZ);
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(-lengthX,-lengthY, lengthZ);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f( lengthX,-lengthY, lengthZ);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f( lengthX, lengthY, lengthZ);
+
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f(-lengthX, lengthY,-lengthZ);
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(-lengthX, lengthY, lengthZ);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f( lengthX, lengthY, lengthZ);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f( lengthX, lengthY,-lengthZ);
+
+	glNormal3f(1.0f, -1.0f, 0.0f);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f(-lengthX,-lengthY, lengthZ);
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(-lengthX,-lengthY,-lengthZ);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f( lengthX,-lengthY,-lengthZ);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f( lengthX,-lengthY, lengthZ);
+
+	glEnd();
+
+	JL_OGL_WARNING;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
 $TOC_MEMBER $INAME()
 **/
 DEFINE_FUNCTION_FAST( KeepTranslation ) {
@@ -4400,6 +4463,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(DrawDisk, 2)
 		FUNCTION_FAST_ARGC(DrawSphere, 3)
 		FUNCTION_FAST_ARGC(DrawCylinder, 4)
+		FUNCTION_FAST_ARGC(DrawBox, 3)
 
 		FUNCTION_FAST_ARGC(KeepTranslation, 0)
 	END_STATIC_FUNCTION_SPEC

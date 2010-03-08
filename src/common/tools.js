@@ -49,7 +49,7 @@ function UI() {
 	
 	GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-	GlSetAttribute( GL_DEPTH_SIZE, 16 );
+	GlSetAttribute( GL_DEPTH_SIZE, 16);
 	GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 	SetVideoMode(currentWidth, currentHeight, undefined, DefaultVideoMode);
 	
@@ -57,6 +57,20 @@ function UI() {
 	Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
 
 	Ogl.PixelStore( Ogl.UNPACK_ALIGNMENT, 1 );
+
+	Ogl.Enable(Ogl.CULL_FACE);
+	Ogl.Enable(Ogl.DEPTH_TEST);
+
+//	Ogl.Enable(Ogl.BLEND);
+//	Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+	
+	this.SetLight = function([x,y,z]) {
+		
+		Ogl.Enable(Ogl.LIGHTING);
+		Ogl.Enable(Ogl.LIGHT0);
+		Ogl.Enable(Ogl.COLOR_MATERIAL);
+		Ogl.Light(Ogl.LIGHT0, Ogl.POSITION, [x,y,z,0]);
+	}
 	
 	this.DrawGrid = function() {
 
@@ -160,14 +174,13 @@ function UI() {
 		},
 	};
 
-	this.status = 'ok';
+	this.status = '';
 	var frame = 0;
 	
 	function SurfaceReady() {
 		
 		Ogl.Viewport(0, 0, videoWidth, videoHeight);
 		Ogl.ClearColor(0.2, 0.1, 0.4, 0);
-		Ogl.ClearDepth(1);
 		Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
 
 		if ( !_this.Draw ) {
@@ -199,6 +212,7 @@ function UI() {
 				Ogl.Ortho(0, videoWidth, 0, videoHeight, 0, 1);
 				Ogl.MatrixMode(Ogl.MODELVIEW);
 				Ogl.LoadIdentity();
+				Ogl.PushAttrib(Ogl.DEPTH_BUFFER_BIT);
 				Ogl.Disable(Ogl.DEPTH_TEST);
 				Ogl.Color(0);
 				Ogl.Begin(Ogl.QUADS);
@@ -208,6 +222,7 @@ function UI() {
 				f2d.SetBackgroundColor([0,0,0,0]);
 				f2d.SetColor([1]);
 				f2d.Draw('frame '+frame+' '+_this.status);
+				Ogl.PopAttrib();
 			}
 		}
 		Ogl.Finish();

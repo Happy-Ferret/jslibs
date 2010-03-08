@@ -273,7 +273,7 @@ int EventFilter( const SDL_Event *e ) {
 		surfaceWidth = e->resize.w;
 		surfaceHeight = e->resize.h;
 	}
-	return 1; // 1, then the event will be added to the internal queue.
+	return 1; // the event will be added to the internal queue.
 }
 
 
@@ -283,8 +283,6 @@ int VideoThread( void *unused ) {
 	status = SDL_InitSubSystem(SDL_INIT_VIDEO); // (TBD) SDL_INIT_EVENTTHREAD on Linux ?
 	JL_ASSERT( status != -1 );
 	SDL_SetEventFilter(EventFilter);
-
-//	bool win32hack = true;
 
 	bool end = false;
 	
@@ -349,16 +347,15 @@ int VideoThread( void *unused ) {
 
 					_hdc = wglGetCurrentDC();
 					JL_ASSERT( _hdc );
+#ifdef XP_WIN
+					RECT rect;
+					GetWindowRect(WindowFromDC(_hdc), &rect);
+					MoveWindow(WindowFromDC(_hdc), rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top-1, FALSE);
+					MoveWindow(WindowFromDC(_hdc), rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top, FALSE);
+#endif // XP_WIN
+
 				}
 				JL_ASSERT( wglGetCurrentContext() );
-/*
-#ifdef XP_WIN
-				RECT rect;
-				GetWindowRect(WindowFromDC(_hdc), &rect);
-				MoveWindow(WindowFromDC(_hdc), rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top-1, FALSE);
-				MoveWindow(WindowFromDC(_hdc), rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top, FALSE);
-#endif // XP_WIN
-*/
 				SurfaceReady();
 				break;
 			}
