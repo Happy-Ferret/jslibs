@@ -74,9 +74,7 @@ DEFINE_FUNCTION_FAST( AddForce ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(jointId);
-	ode::dReal force;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &force) );
-	ode::dJointAddSliderForce(jointId, force);
+	ode::dJointAddSliderForce(jointId, JSValToODEReal(cx, JL_FARG(1)));
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -98,7 +96,7 @@ DEFINE_PROPERTY( axisSetter ) {
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetSliderAxis( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -111,8 +109,7 @@ DEFINE_PROPERTY( axisGetter ) {
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetSliderAxis(jointId,vector);
-	//FloatVectorToArray(cx, 3, vector, vp);
-	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

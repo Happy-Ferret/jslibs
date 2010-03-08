@@ -35,13 +35,12 @@ struct ColideContextPrivate {
 static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 	
 	// Doc: http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29
-
-	ColideContextPrivate *ccp = (ColideContextPrivate*)data; // beware: *data is local to Step function
-
 	ode::dContact contact;
 	int n = ode::dCollide(geom1, geom2, 1, &contact.geom, sizeof(ode::dContact));
 	if ( n <= 0 )
 		return;
+
+	ColideContextPrivate *ccp = (ColideContextPrivate*)data; // beware: *data is local to Step function
 
 	JSContext *cx = ccp->cx;
 
@@ -246,6 +245,8 @@ DEFINE_CONSTRUCTOR() {
 	WorldPrivate *pv = (WorldPrivate*)JS_malloc(cx, sizeof(WorldPrivate));
 	JL_CHK( pv );
 	JL_SetPrivate(cx, obj, pv);
+	
+//	pv->stepTmpCx = NULL;
 
 	pv->worldId = ode::dWorldCreate();
 	pv->contactGroupId = ode::dJointGroupCreate(0); // see nearCallback()
@@ -329,12 +330,16 @@ DEFINE_FUNCTION( Step ) {
 
 	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
 
-//	pv->stepJsCx = cx;
+//	JL_ASSERT( pv->stepTmpCx == NULL );
+//	pv->stepTmpCx = cx;
 	if ( ode::dWorldGetQuickStepNumIterations(pv->worldId) == 0 )
 		ode::dWorldStep(pv->worldId, stepSize / 1000);
 	else
 		ode::dWorldQuickStep(pv->worldId, stepSize / 1000);
-//	pv->stepJsCx = NULL; // avoid using the JSContext outside the step
+
+	// see also: dWorldStepFast1 / dWorldSetAutoEnableDepthSF1
+
+//	pv->stepTmpCx = NULL; // avoid using the JSContext outside the step
 
 	ode::dJointGroupEmpty(pv->contactGroupId); // contactGroupId will be reused at the next step!
 
@@ -356,7 +361,7 @@ DEFINE_FUNCTION_FAST( ScaleImpulse ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dVector3 force;
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), force, COUNTOF(force), &len) );
+	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), force, COUNTOF(force), &len) );
 	JL_S_ASSERT( len >= 3, "Invalid array size." );
 
 	float stepSize;
@@ -390,8 +395,8 @@ DEFINE_PROPERTY( gravityGetter ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	ode::dVector3 gravity;
 	ode::dWorldGetGravity(pv->worldId, gravity);
-	//FloatVectorToArray(cx, 3, gravity, vp);
-	JL_CHK( FloatVectorToJsval(cx, gravity, 3, vp) );
+	//ODERealVectorToArray(cx, 3, gravity, vp);
+	JL_CHK( ODERealVectorToJsval(cx, gravity, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -403,7 +408,7 @@ DEFINE_PROPERTY( gravitySetter ) {
 	ode::dVector3 gravity;
 	//FloatArrayToVector(cx, 3, vp, gravity);
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, gravity, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, gravity, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dWorldSetGravity( pv->worldId, gravity[0], gravity[1], gravity[2] );
 	return JS_TRUE;

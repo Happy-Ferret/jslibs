@@ -88,7 +88,7 @@ DEFINE_FUNCTION_FAST( SetAxis ) {
 	
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, JL_FARG(3), vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 
 	if ( anum+1 > ode::dJointGetLMotorNumAxes(jointId) )

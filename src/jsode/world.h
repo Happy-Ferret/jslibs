@@ -21,7 +21,7 @@ DECLARE_CLASS( World )
 struct WorldPrivate {
 	ode::dWorldID worldId;
 	ode::dJointGroupID contactGroupId;
-//	JSContext *stepJsCx;
+//	JSContext *stepTmpCx;
 };
 
 

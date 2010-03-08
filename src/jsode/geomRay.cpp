@@ -96,7 +96,7 @@ DEFINE_PROPERTY( startSetter ) {
 	ode::dGeomRayGet(geom, start, dir);
 //	FloatArrayToVector(cx, 3, vp, start);
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, start, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, start, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);
 	return JS_TRUE;
@@ -109,8 +109,7 @@ DEFINE_PROPERTY( startGetter ) {
 	JL_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
-	//FloatVectorToArray(cx, 3, start, vp);
-	JL_CHK( FloatVectorToJsval(cx, start, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, start, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -129,7 +128,7 @@ DEFINE_PROPERTY( directionSetter ) {
 	ode::dGeomRayGet(geom, start, dir);
 //	FloatArrayToVector(cx, 3, vp, dir);
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, dir, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, dir, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);
 	return JS_TRUE;
@@ -142,8 +141,7 @@ DEFINE_PROPERTY( directionGetter ) {
 	JL_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
-	//FloatVectorToArray(cx, 3, dir, vp);
-	JL_CHK( FloatVectorToJsval(cx, dir, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, dir, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -59,7 +59,7 @@ DEFINE_FUNCTION_FAST( Translate ) {
 	real translation[3];
 //	JL_CHK( FloatArrayToVector(cx, 3, &argv[0], translation) );
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), translation, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), translation, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dMassTranslate(&mass, translation[0], translation[1], translation[2]);
 	ode::dBodySetMass(bodyID, &mass);
@@ -123,7 +123,7 @@ DEFINE_FUNCTION_FAST( SetBoxTotal ) {
 	real dimensions[3];
 	//	JL_CHK( FloatArrayToVector(cx, 3, &argv[1], dimensions) );
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), dimensions, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, JL_FARG(2), dimensions, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 
 // apply the formulae
@@ -184,7 +184,7 @@ DEFINE_PROPERTY( centerSetter ) {
 //	jsdouble translation[3];
 	//JL_CHK( FloatArrayToVector(cx, 3, vp, mass.c) );
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, mass.c, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, mass.c, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
@@ -197,8 +197,8 @@ DEFINE_PROPERTY( centerGetter ) {
 	ode::dBodyID bodyID;
 	ode::dMass mass;
 	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
-	//JL_CHK( FloatVectorToArray(cx, 3, mass.c, vp) );
-	JL_CHK( FloatVectorToJsval(cx, mass.c, 3, vp) );
+	//JL_CHK( ODERealVectorToArray(cx, 3, mass.c, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, mass.c, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

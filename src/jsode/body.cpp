@@ -87,6 +87,7 @@ DEFINE_FINALIZE() {
 //	if ( _odeFinalization )
 //		ode::dBodyDestroy(bodyId);
 //	else
+		ode::dBodySetMovedCallback(bodyId, NULL);
 		ode::dBodySetData(bodyId, NULL);
 }
 
@@ -234,12 +235,13 @@ DEFINE_FUNCTION_FAST( AddForce ) {
 	JL_S_ASSERT_RESOURCE( thisBodyID );
 	uint32 length;
 	ode::dVector3 forceVec;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), forceVec, 3, &length) );
+//	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), forceVec, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), forceVec, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	if ( JL_FARG_ISDEF(2) ) {
 
 		ode::dVector3 posVec;
-		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), posVec, 3, &length) );
+		JL_CHK( JsvalToODERealVector(cx, JL_FARG(2), posVec, 3, &length) );
 		JL_S_ASSERT( length >= 3, "Invalid array size." );
 		ode::dBodyAddForceAtPos(thisBodyID, forceVec[0], forceVec[1], forceVec[2], posVec[0], posVec[1], posVec[2] );
 		return JS_TRUE;
@@ -263,7 +265,7 @@ DEFINE_FUNCTION_FAST( AddTorque ) {
 	JL_S_ASSERT_RESOURCE( thisBodyID );
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dBodyAddTorque(thisBodyID, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -296,7 +298,7 @@ DEFINE_FUNCTION_FAST( GetRelativeVelocity ) {
 
 	Vector3 pt;
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), pt.raw, 3, &len) );
+	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), pt.raw, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 
 	Vector3 vel, pos;
@@ -315,7 +317,7 @@ DEFINE_FUNCTION_FAST( GetRelativeVelocity ) {
 		velocity = Vector3Length(&vel);
 	}
 //	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
-//	return FloatVectorToJsval(cx, pt.raw, 3, JL_FRVAL, true);
+//	return ODERealVectorToJsval(cx, pt.raw, 3, JL_FRVAL, true);
 	return FloatToJsval(cx, velocity, JL_FRVAL);
 	JL_BAD;
 }
@@ -333,13 +335,13 @@ DEFINE_FUNCTION_FAST( GetRelPointVel ) {
 
 	float pt[3];
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), pt, 3, &len) );
+	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), pt, 3, &len) );
 
 	ode::dVector3 result;
 	ode::dBodyGetRelPointVel(bodyId, pt[0], pt[1], pt[2], result);
 
 	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
-	return FloatVectorToJsval(cx, result, 3, JL_FRVAL, true);
+	return ODERealVectorToJsval(cx, result, 3, JL_FRVAL, true);
 	JL_BAD;
 }
 
@@ -355,14 +357,14 @@ DEFINE_FUNCTION_FAST( Vector3ToWorld ) {
 
 	float v[3];
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v, 3, &len) );
+	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), v, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 	ode::dVector3 result;
 	ode::dBodyVectorToWorld(bodyId, v[0], v[1], v[2], result);
 
 //	ode::dBodyGetRelPointPos(bodyId, v.x, v.y, v.z, result);
 	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
-	return FloatVectorToJsval(cx, result, 3, JL_FRVAL, true);
+	return ODERealVectorToJsval(cx, result, 3, JL_FRVAL, true);
 	JL_BAD;
 }
 
@@ -499,7 +501,7 @@ DEFINE_PROPERTY( finiteRotationAxisSetter ) {
 		vec[2] = 0;
 	} else {
 		
-		JL_CHK( JsvalToFloatVector(cx, *vp, vec, 3, &len) );
+		JL_CHK( JsvalToODERealVector(cx, *vp, vec, 3, &len) );
 	}
 	JL_S_ASSERT( len >= 3, "Invalid array size." );
 	ode::dBodySetFiniteRotationAxis(bodyId, vec[0], vec[1], vec[2]);
@@ -513,7 +515,7 @@ DEFINE_PROPERTY( finiteRotationAxisGetter ) {
 	JL_S_ASSERT_RESOURCE( bodyId );
 	ode::dVector3 vec;
 	ode::dBodyGetFiniteRotationAxis(bodyId, vec);
-	JL_CHK( FloatVectorToJsval(cx, vec, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, vec, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -730,8 +732,8 @@ DEFINE_PROPERTY( vectorGetter ) {
 			dim = 3;
 			break;
 	}
-	//FloatVectorToArray(cx, dim, vector, vp);
-	JL_CHK( FloatVectorToJsval(cx, vector, dim, vp) );
+	//ODERealVectorToArray(cx, dim, vector, vp);
+	JL_CHK( ODERealVectorToJsval(cx, vector, dim, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -746,32 +748,32 @@ DEFINE_PROPERTY( vectorSetter ) {
 	uint32 length;
 	switch ( JSVAL_TO_INT(id) ) {
 		case position:
-			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetPosition( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case quaternion:
-			JL_CHK( JsvalToFloatVector(cx, *vp, quatern, 4, &length) );
+			JL_CHK( JsvalToODERealVector(cx, *vp, quatern, 4, &length) );
 			JL_S_ASSERT( length >= 4, "Invalid array size." );
 			ode::dBodySetQuaternion( bodyID, quatern );
 			break;
 		case linearVel:
-			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetLinearVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case angularVel:
-			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetAngularVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case force:
-			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetForce( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case torque:
-			JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+			JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetTorque( bodyID, vector[0], vector[1], vector[2] );
 			break;
@@ -841,11 +843,18 @@ $TOC_MEMBER $INAME
 void moveCallback(ode::dBodyID bodyId) {
 
 	ode::dWorldID worldId = ode::dBodyGetWorld(bodyId);
-	if ( !worldId ) {
-		// error
-	}
+	JL_ASSERT( worldId != NULL );
+	JSObject *obj = (JSObject*)ode::dBodyGetData(bodyId);
+	if ( obj == NULL )
+		return;
+
+
+
+//	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+
 	// no way to access the JSContext
 }
+
 DEFINE_PROPERTY( onMove ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);

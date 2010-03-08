@@ -48,11 +48,20 @@ ALWAYS_INLINE jsval ODERealToJsval( JSContext *cx, ode::dReal val ) {
 #if defined(dSINGLE)
 	JL_CHK( FloatToJsval(cx, val, &value) );
 #else
-	JL_CHK( DoubleVectorToJsval(cx, val, &value) );
+	JL_CHK( DoubleToJsval(cx, val, &value) );
 #endif
 	return value;
 
 bad:
 	return 0;
 }
+
+
+#if defined(dSINGLE)
+	#define JsvalToODERealVector JsvalToFloatVector
+	#define ODERealVectorToJsval FloatVectorToJsval
+#else
+	#define JsvalToODERealVector JsvalToDoubleVector
+	#define ODERealVectorToJsval DoubleVectorToJsval
+#endif
 

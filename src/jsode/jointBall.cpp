@@ -74,7 +74,7 @@ DEFINE_PROPERTY( anchorSetter ) {
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetBallAnchor( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -87,8 +87,7 @@ DEFINE_PROPERTY( anchorGetter ) {
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetBallAnchor(jointId,vector);
-	//FloatVectorToArray(cx, 3, vector, vp);
-	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -105,7 +104,7 @@ DEFINE_PROPERTY( anchor2Setter ) {
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetBallAnchor2( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -118,7 +117,7 @@ DEFINE_PROPERTY( anchor2Getter ) {
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetBallAnchor2(jointId,vector);
-	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

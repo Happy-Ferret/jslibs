@@ -74,7 +74,7 @@ DEFINE_PROPERTY( anchorSetter ) {
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetUniversalAnchor( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -87,8 +87,8 @@ DEFINE_PROPERTY( anchorGetter ) {
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetUniversalAnchor(jointId,vector);
-	//FloatVectorToArray(cx, 3, vector, vp);
-	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	//ODERealVectorToArray(cx, 3, vector, vp);
+	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -104,7 +104,7 @@ DEFINE_PROPERTY( anchor2 ) {
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetUniversalAnchor2(jointId,vector);
-	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -121,7 +121,7 @@ DEFINE_PROPERTY( axis1Setter ) {
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetUniversalAxis1( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -134,7 +134,7 @@ DEFINE_PROPERTY( axis1Getter ) {
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetUniversalAxis1(jointId,vector);
-	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -151,7 +151,7 @@ DEFINE_PROPERTY( axis2Setter ) {
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetUniversalAxis2( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -164,7 +164,7 @@ DEFINE_PROPERTY( axis2Getter ) {
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetUniversalAxis2(jointId,vector);
-	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

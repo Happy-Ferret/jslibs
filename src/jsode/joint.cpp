@@ -423,16 +423,16 @@ DEFINE_PROPERTY( feedbackVectorSetter ) {
 	uint32 length;
 	switch(JSVAL_TO_INT(id)) {
 		case body1Force:
-			JL_CHK( JsvalToFloatVector(cx, *vp, feedback->f1, 3, &length) );
+			JL_CHK( JsvalToODERealVector(cx, *vp, feedback->f1, 3, &length) );
 			break;
 		case body1Torque:
-			JL_CHK( JsvalToFloatVector(cx, *vp, feedback->t1, 3, &length) );
+			JL_CHK( JsvalToODERealVector(cx, *vp, feedback->t1, 3, &length) );
 			break;
 		case body2Force:
-			JL_CHK( JsvalToFloatVector(cx, *vp, feedback->f2, 3, &length) );
+			JL_CHK( JsvalToODERealVector(cx, *vp, feedback->f2, 3, &length) );
 			break;
 		case body2Torque:
-			JL_CHK( JsvalToFloatVector(cx, *vp, feedback->t2, 3, &length) );
+			JL_CHK( JsvalToODERealVector(cx, *vp, feedback->t2, 3, &length) );
 			break;
 	}
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
@@ -449,16 +449,16 @@ DEFINE_PROPERTY( feedbackVectorGetter ) {
 	JL_S_ASSERT( feedback != NULL, "Feedback is disabled." );
 	switch(JSVAL_TO_INT(id)) {
 		case body1Force:
-			JL_CHK( FloatVectorToJsval(cx, feedback->f1, 3, vp) );
+			JL_CHK( ODERealVectorToJsval(cx, feedback->f1, 3, vp) );
 			break;
 		case body1Torque:
-			JL_CHK( FloatVectorToJsval(cx, feedback->t1, 3, vp) );
+			JL_CHK( ODERealVectorToJsval(cx, feedback->t1, 3, vp) );
 			break;
 		case body2Force:
-			JL_CHK( FloatVectorToJsval(cx, feedback->f2, 3, vp) );
+			JL_CHK( ODERealVectorToJsval(cx, feedback->f2, 3, vp) );
 			break;
 		case body2Torque:
-			JL_CHK( FloatVectorToJsval(cx, feedback->t2, 3, vp) );
+			JL_CHK( ODERealVectorToJsval(cx, feedback->t2, 3, vp) );
 			break;
 	}
 	return JS_TRUE;

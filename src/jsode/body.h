@@ -16,6 +16,12 @@ extern bool _odeFinalization;
 
 DECLARE_CLASS( Body )
 
+/*
+struct BodyPrivate {
+	ode::dBodyID bodyId;
+}
+*/
+
 JSBool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj);
 
 ALWAYS_INLINE JSBool JsvalToBody( JSContext *cx, jsval val, ode::dBodyID *bodyId ) {

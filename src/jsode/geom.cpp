@@ -155,7 +155,7 @@ DEFINE_FUNCTION_FAST( PointDepth ) {
 	JL_S_ASSERT_ARRAY( JL_FARG(1) );
 	float depth, point[3];
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), point, 3, &len) );
+	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), point, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Invalid array size." );
 
 	switch( ode::dGeomGetClass(geomId) ) {
@@ -375,7 +375,7 @@ DEFINE_PROPERTY( positionGetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
 	const ode::dReal *vector = ode::dGeomGetPosition(geom);
-	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -387,7 +387,7 @@ DEFINE_PROPERTY( positionSetter ) {
 	JL_S_ASSERT_RESOURCE(geom);
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomSetPosition( geom, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -416,7 +416,7 @@ DEFINE_PROPERTY( aabb ) {
 	tmp[4] = aabb[3];
 	tmp[5] = aabb[5];
 
-	JL_CHK( FloatVectorToJsval(cx, tmp, 6, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, tmp, 6, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -443,7 +443,7 @@ DEFINE_PROPERTY( boundarySphere ) {
 	float radius = Vector3Length(&center);
 	Vector3AddVector3(&center, &center, &v2);
 	
-	JL_CHK( FloatVectorToJsval(cx, center.raw, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, center.raw, 3, vp) );
 	jsval tmpVal;
 	JL_CHK( FloatToJsval(cx, radius, &tmpVal) );
 	JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT(*vp), 3, &tmpVal) );
@@ -460,8 +460,8 @@ DEFINE_PROPERTY( offsetPositionGetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
 	const ode::dReal *vector = ode::dGeomGetOffsetPosition(geom); // (TBD) dGeomGetOffsetRotation
-	//FloatVectorToArray(cx, 3, vector, vp);
-	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	//ODERealVectorToArray(cx, 3, vector, vp);
+	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -475,7 +475,7 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	size_t length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomSetOffsetPosition( geom, vector[0], vector[1], vector[2] ); // (TBD) dGeomSetOffsetWorldRotation
 	return JS_TRUE;

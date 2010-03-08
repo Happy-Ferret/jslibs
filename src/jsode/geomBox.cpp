@@ -70,7 +70,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomBoxSetLengths(geom, vector[0], vector[1], vector[2]);
 	return JS_TRUE;
@@ -83,8 +83,7 @@ DEFINE_PROPERTY( lengthsGetter ) {
 	JL_S_ASSERT_RESOURCE( geom );
 	ode::dVector3 result;
 	ode::dGeomBoxGetLengths(geom, result);
-	//FloatVectorToArray(cx, 3, result, vp);
-	JL_CHK( FloatVectorToJsval(cx, result, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, result, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

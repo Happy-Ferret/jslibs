@@ -74,9 +74,7 @@ DEFINE_FUNCTION_FAST( AddForce ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(jointId);
-	ode::dReal force;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &force) );
-	ode::dJointAddPistonForce(jointId, force);
+	ode::dJointAddPistonForce(jointId, JSValToODEReal(cx, JL_FARG(1)));
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -120,7 +118,7 @@ DEFINE_PROPERTY( anchorSetter ) {
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetPistonAnchor( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -133,8 +131,7 @@ DEFINE_PROPERTY( anchorGetter ) {
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetPistonAnchor(jointId,vector);
-	//FloatVectorToArray(cx, 3, vector, vp);
-	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -150,7 +147,7 @@ DEFINE_PROPERTY( anchor2 ) {
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetPistonAnchor2(jointId,vector);
-	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -167,7 +164,7 @@ DEFINE_PROPERTY( axisSetter ) {
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetPistonAxis( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -180,7 +177,7 @@ DEFINE_PROPERTY( axisGetter ) {
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetPistonAxis(jointId,vector);
-	JL_CHK( FloatVectorToJsval(cx, vector, 3, vp) );
+	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
