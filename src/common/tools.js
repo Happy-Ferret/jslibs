@@ -114,6 +114,8 @@ function UI() {
 	}
 	);
 	
+	this.mouse = {};
+	
 	var listeners = {
 	
 		onKeyDown:function(sym, mod, chr) {
@@ -156,10 +158,19 @@ function UI() {
 					keyListeners[name](false);
 		},
 		onMouseButtonDown:function(button, x, y, buttonState, modState) {
+		
+			var fct = _this.mouse['button'+button];
+			fct && fct(true);
 		},
 		onMouseButtonUp:function(button, x, y, buttonState, modState) {
+
+			var fct = _this.mouse['button'+button];
+			fct && fct(false);
 		},
 		onMouseMotion:function(x, y, relx, rely, state, mod) {
+
+			var fct = _this.mouse.move;
+			fct && fct(false);
 		},
 		
 		onQuit: function() {
