@@ -539,8 +539,9 @@ DEFINE_PROPERTY( jointParamSetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_S_ASSERT_NUMBER( *vp );
-	JointSetParam(jointId, JSVAL_TO_INT(id), JSValToODEReal(cx, *vp));
+	ode::dReal value;
+	JL_CHK( JsvalToODEReal(cx, *vp, &value) );
+	JointSetParam(jointId, JSVAL_TO_INT(id), value);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -549,7 +550,7 @@ DEFINE_PROPERTY( jointParamGetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	*vp = ODERealToJsval(cx, JointGetParam(jointId, JSVAL_TO_INT(id)));
+	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSVAL_TO_INT(id)), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -559,8 +560,9 @@ DEFINE_PROPERTY( jointParam1Setter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_S_ASSERT_NUMBER( *vp );
-	JointSetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup2, JSValToODEReal(cx, *vp));
+	ode::dReal real;
+	JL_CHK( JsvalToODEReal(cx, *vp, &real) );
+	JointSetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup2, real);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -569,7 +571,7 @@ DEFINE_PROPERTY( jointParam1Getter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	*vp = ODERealToJsval(cx, JointGetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup2));
+	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup2), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -579,8 +581,9 @@ DEFINE_PROPERTY( jointParam2Setter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_S_ASSERT_NUMBER( *vp );
-	JointSetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup3, JSValToODEReal(cx, *vp));
+	ode::dReal real;
+	JL_CHK( JsvalToODEReal(cx, *vp, &real) );
+	JointSetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup3, real);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -589,7 +592,7 @@ DEFINE_PROPERTY( jointParam2Getter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	*vp = ODERealToJsval(cx, JointGetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup3));
+	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup3), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -76,9 +76,9 @@ DEFINE_FUNCTION_FAST( AddTorque0 ) {
 	JL_S_ASSERT_ARG_MIN( 1 );
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
-	float torque;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &torque) );
-	ode::dJointAddAMotorTorques(jointId, torque,0,0);
+	ode::dReal real;
+	JL_CHK( JsvalToODEReal(cx, JL_FARG(1), &real) );
+	ode::dJointAddAMotorTorques(jointId, real,0,0);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -93,9 +93,9 @@ DEFINE_FUNCTION_FAST( AddTorque1 ) {
 	JL_S_ASSERT_ARG_MIN( 1 );
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
-	float torque;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &torque) );
-	ode::dJointAddAMotorTorques(jointId, 0,torque,0);
+	ode::dReal real;
+	JL_CHK( JsvalToODEReal(cx, JL_FARG(1), &real) );
+	ode::dJointAddAMotorTorques(jointId, 0,real,0);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -110,9 +110,9 @@ DEFINE_FUNCTION_FAST( AddTorque2 ) {
 	JL_S_ASSERT_ARG_MIN( 1 );
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
-	float torque;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &torque) );
-	ode::dJointAddAMotorTorques(jointId, 0,0,torque);
+	ode::dReal real;
+	JL_CHK( JsvalToODEReal(cx, JL_FARG(1), &real) );
+	ode::dJointAddAMotorTorques(jointId, 0,0,real);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -164,9 +164,9 @@ DEFINE_FUNCTION_FAST( SetAngle ) {
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	
 	int anum;
-	float angle;
+	ode::dReal angle;
 	JsvalToInt(cx, JL_FARG(1), &anum);
-	JsvalToFloat(cx, JL_FARG(2), &angle);
+	JL_CHK( JsvalToODEReal(cx, JL_FARG(2), &angle) );
 
 	if ( anum+1 > ode::dJointGetAMotorNumAxes(jointId) )
 		ode::dJointSetAMotorNumAxes(jointId, anum+1);

@@ -98,52 +98,52 @@ DEFINE_PROPERTY_GETTER( surface ) {
 	JL_S_ASSERT_RESOURCE(surface); // (TBD) check if NULL is meaningful for joints !
 	
 	*vp = JSVAL_VOID;
-	switch(JSVAL_TO_INT(id)) {
+	switch ( JSVAL_TO_INT(id) ) {
 		case mu:
-			ODERealToJsval(cx, surface->mu);
+			JL_CHK( ODERealToJsval(cx, surface->mu, vp) );
 			break;
 		case mu2:
 			if ( GETBIT(surface->mode, ode::dContactMu2) )
-				*vp = ODERealToJsval(cx, surface->mu2);
+				JL_CHK( ODERealToJsval(cx, surface->mu2, vp) );
 			break;
 		case fDir1:
 			if ( GETBIT(surface->mode, ode::dContactFDir1) )
-				*vp = ODERealToJsval(cx, surface->mu2);
+				JL_CHK( ODERealToJsval(cx, surface->mu2, vp) );
 		case bounce:
 			if ( GETBIT(surface->mode, ode::dContactBounce) )
-				*vp = ODERealToJsval(cx, surface->bounce);
+				JL_CHK( ODERealToJsval(cx, surface->bounce, vp) );
 			break;
 		case bounceVel:
 			if ( GETBIT(surface->mode, ode::dContactBounce) )
-				*vp = ODERealToJsval(cx, surface->bounce_vel);
+				JL_CHK( ODERealToJsval(cx, surface->bounce_vel, vp) );
 			break;
 		case softERP:
 			if ( GETBIT(surface->mode, ode::dContactSoftERP) )
-				*vp = ODERealToJsval(cx, surface->soft_erp);
+				JL_CHK( ODERealToJsval(cx, surface->soft_erp, vp) );
 			break;
 		case softCFM:
 			if ( GETBIT(surface->mode, ode::dContactSoftCFM) )
-				*vp = ODERealToJsval(cx, surface->soft_cfm);
+				JL_CHK( ODERealToJsval(cx, surface->soft_cfm, vp) );
 			break;
 		case motion1:
 			if ( GETBIT(surface->mode, ode::dContactMotion1) )
-				*vp = ODERealToJsval(cx, surface->motion1);
+				JL_CHK( ODERealToJsval(cx, surface->motion1, vp) );
 			break;
 		case motion2:
 			if ( GETBIT(surface->mode, ode::dContactMotion2) )
-				*vp = ODERealToJsval(cx, surface->motion2);
+				JL_CHK( ODERealToJsval(cx, surface->motion2, vp) );
 			break;
 		case motionN:
 			if ( GETBIT(surface->mode, ode::dContactMotionN) )
-				*vp = ODERealToJsval(cx, surface->motionN);
+				JL_CHK( ODERealToJsval(cx, surface->motionN, vp) );
 			break;
 		case slip1:
 			if ( GETBIT(surface->mode, ode::dContactSlip1) )
-				*vp = ODERealToJsval(cx, surface->slip1);
+				JL_CHK( ODERealToJsval(cx, surface->slip1, vp) );
 			break;
 		case slip2:
 			if ( GETBIT(surface->mode, ode::dContactSlip2) )
-				*vp = ODERealToJsval(cx, surface->slip2);
+				JL_CHK( ODERealToJsval(cx, surface->slip2, vp) );
 			break;
 	}
 
@@ -155,7 +155,6 @@ DEFINE_PROPERTY_SETTER( surface ) {
 
 	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(surface); // (TBD) check if NULL is meaningful for joints !
-	JL_S_ASSERT_NUMBER( *vp );
 
 	ode::dReal value;
 	bool set;
@@ -165,7 +164,7 @@ DEFINE_PROPERTY_SETTER( surface ) {
 	} else {
 
 		set = true;
-		value = JSValToODEReal(cx, *vp);
+		JL_CHK( JsvalToODEReal(cx, *vp, &value) );
 	}
 
 	switch(JSVAL_TO_INT(id)) {

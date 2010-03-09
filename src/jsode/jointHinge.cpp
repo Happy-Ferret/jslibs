@@ -173,7 +173,7 @@ DEFINE_PROPERTY( angle ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JS_NewDoubleValue(cx, ode::dJointGetHingeAngle(jointId), vp);
+	JL_CHK( JS_NewDoubleValue(cx, ode::dJointGetHingeAngle(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -187,7 +187,7 @@ DEFINE_PROPERTY( angleRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JS_NewDoubleValue(cx, ode::dJointGetHingeAngleRate(jointId), vp);
+	JL_CHK( JS_NewDoubleValue(cx, ode::dJointGetHingeAngleRate(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

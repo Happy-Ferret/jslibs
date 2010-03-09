@@ -153,7 +153,7 @@ DEFINE_FUNCTION_FAST( PointDepth ) {
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( geomId );
 	JL_S_ASSERT_ARRAY( JL_FARG(1) );
-	float depth, point[3];
+	ode::dReal depth, point[3];
 	uint32 len;
 	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), point, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Invalid array size." );
@@ -275,8 +275,10 @@ $TOC_MEMBER $INAME
   The impact callback.
 **/
 DEFINE_PROPERTY( impactSetter ) {
-
-	JL_S_ASSERT( JsvalIsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
+	
+//	JL_S_ASSERT( JsvalIsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
+	if ( !JSVAL_IS_VOID(*vp) )
+		JL_S_ASSERT_FUNCTION(*vp);
 	return JS_SetReservedSlot(cx, obj, SLOT_GEOM_IMPACT_FUNCTION, *vp);
 	JL_BAD;
 }
@@ -408,7 +410,7 @@ DEFINE_PROPERTY( aabb ) {
 	ode::dReal aabb[6];
 	ode::dGeomGetAABB(geom, aabb);
 
-	float tmp[6];
+	ode::dReal tmp[6];
 	tmp[0] = aabb[0];
 	tmp[1] = aabb[2];
 	tmp[2] = aabb[4];
@@ -440,7 +442,7 @@ DEFINE_PROPERTY( boundarySphere ) {
 
 	Vector3SubVector3(&center, &v1, &v2);
 	Vector3Div(&center, &center, 2);
-	float radius = Vector3Length(&center);
+	ode::dReal radius = Vector3Length(&center);
 	Vector3AddVector3(&center, &center, &v2);
 	
 	JL_CHK( ODERealVectorToJsval(cx, center.raw, 3, vp) );

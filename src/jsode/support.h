@@ -13,50 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-ALWAYS_INLINE ode::dReal JSValToODEReal( JSContext *cx, jsval val ) {
-
-	if ( JsvalIsPInfinity(cx, val) )
-		return dInfinity;
-	if ( JsvalIsNInfinity(cx, val) )
-		return -dInfinity;
-
-	ode::dReal value;
-#if defined(dSINGLE)
-	JL_CHK( JsvalToFloat(cx, val, &value) );
-#else
-	JL_CHK( JsvalToDouble(cx, val, &value) );
-#endif
-
-	if ( value > dInfinity )
-		return dInfinity;
-	if ( value < -dInfinity )
-		return -dInfinity;
-	return value;
-
-bad:
-	return 0;
-}
-
-ALWAYS_INLINE jsval ODERealToJsval( JSContext *cx, ode::dReal val ) {
-	
-	if ( val >= dInfinity )
-		return cx->runtime->positiveInfinityValue; // return JS_GetPositiveInfinityValue(cx);
-	if ( val <= -dInfinity )
-		return cx->runtime->negativeInfinityValue; // return JS_GetNegativeInfinityValue(cx);
-
-	jsval value;
-#if defined(dSINGLE)
-	JL_CHK( FloatToJsval(cx, val, &value) );
-#else
-	JL_CHK( DoubleToJsval(cx, val, &value) );
-#endif
-	return value;
-
-bad:
-	return 0;
-}
-
-
 #if defined(dSINGLE)
 	#define JsvalToODERealVector JsvalToFloatVector
 	#define ODERealVectorToJsval FloatVectorToJsval
@@ -65,3 +21,64 @@ bad:
 	#define ODERealVectorToJsval DoubleVectorToJsval
 #endif
 
+
+ALWAYS_INLINE JSBool JsvalToODEReal( JSContext *cx, const jsval val, ode::dReal *real ) {
+
+	if ( JsvalIsPInfinity(cx, val) ) {
+		
+		*real = dInfinity;
+		return JS_TRUE;
+	}
+
+	if ( JsvalIsNInfinity(cx, val) ) {
+		
+		*real = -dInfinity; 
+		return JS_TRUE;
+	}
+
+#if defined(dSINGLE)
+	JL_CHK( JsvalToFloat(cx, val, real) );
+#else
+	JL_CHK( JsvalToDouble(cx, val, real) );
+#endif
+
+	if ( *real > dInfinity ) {
+		
+		*real = dInfinity;
+		return JS_TRUE;
+	}
+
+	if ( *real < -dInfinity ) {
+
+		*real = -dInfinity;
+		return JS_TRUE;
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+ALWAYS_INLINE JSBool ODERealToJsval( JSContext *cx, const ode::dReal real, jsval *rval ) {
+	
+	if ( real >= dInfinity ) {
+		
+		*rval = cx->runtime->positiveInfinityValue; // return JS_GetPositiveInfinityValue(cx);
+		return JS_TRUE;
+	}
+
+	if ( real <= -dInfinity ) {
+	
+		*rval = cx->runtime->negativeInfinityValue; // return JS_GetNegativeInfinityValue(cx);
+		return JS_TRUE;
+	}
+
+#if defined(dSINGLE)
+	JL_CHK( FloatToJsval(cx, real, rval) );
+#else
+	JL_CHK( DoubleToJsval(cx, real, rval) );
+#endif
+
+	return JS_TRUE;
+	JL_BAD;
+}

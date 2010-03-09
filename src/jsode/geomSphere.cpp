@@ -63,9 +63,8 @@ DEFINE_PROPERTY( radiusSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
-	JL_S_ASSERT_NUMBER( *vp );
 	jsdouble radius;
-	JS_ValueToNumber(cx, *vp, &radius);
+	JL_CHK( JS_ValueToNumber(cx, *vp, &radius) );
 	ode::dGeomSphereSetRadius(geom, radius);
 	return JS_TRUE;
 	JL_BAD;
@@ -75,7 +74,7 @@ DEFINE_PROPERTY( radiusGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
-	JS_NewDoubleValue(cx, ode::dGeomSphereGetRadius(geom), vp); // see JS_NewNumberValue and JS_NewDouble
+	JL_CHK( JS_NewDoubleValue(cx, ode::dGeomSphereGetRadius(geom), vp) ); // see JS_NewNumberValue and JS_NewDouble
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -65,9 +65,8 @@ DEFINE_PROPERTY( lengthSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
-	JL_S_ASSERT_NUMBER( *vp );
 	jsdouble radius;
-	JS_ValueToNumber(cx, *vp, &radius);
+	JL_CHK( JS_ValueToNumber(cx, *vp, &radius) );
 	ode::dGeomRaySetLength(geom, radius);
 	return JS_TRUE;
 	JL_BAD;
@@ -213,7 +212,6 @@ DEFINE_PROPERTY( closestHitSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
-	JL_S_ASSERT_NUMBER( *vp );
 	int closestHit;
 	JL_CHK( JsvalToInt(cx, *vp, &closestHit) );
 	ode::dGeomRaySetClosestHit(geom, closestHit);

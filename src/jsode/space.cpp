@@ -51,7 +51,8 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JsvalToSpaceID(cx, argv[0], &parentSpace) );
 	else
 		parentSpace = 0;
-	ode::dSpaceID spaceId = ode::dSimpleSpaceCreate(parentSpace);
+//	ode::dSpaceID spaceId = ode::dSimpleSpaceCreate(parentSpace);
+	ode::dSpaceID spaceId = ode::dHashSpaceCreate(parentSpace);
 	JL_SetPrivate(cx, obj, spaceId); // dSimpleSpaceCreate / dHashSpaceCreate / dQuadTreeSpaceCreate
 	// ode::dHashSpaceSetLevels(spaceId,
 	// (TBD) use this

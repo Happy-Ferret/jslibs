@@ -16,11 +16,12 @@ extern bool _odeFinalization;
 
 DECLARE_CLASS( Body )
 
-/*
+
 struct BodyPrivate {
-	ode::dBodyID bodyId;
-}
-*/
+	JSObject *obj;
+	bool hasMoved;
+};
+
 
 JSBool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj);
 

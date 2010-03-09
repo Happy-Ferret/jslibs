@@ -36,6 +36,11 @@ void FinalizeGeom(JSContext *cx, JSObject *obj);
 
 JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj);
 
+ALWAYS_INLINE bool GeomHasJsObj( ode::dGeomID geomId ) {
+	
+	return ode::dGeomGetData(geomId) != NULL;
+}
+
 ALWAYS_INLINE JSBool GeomToJsval( JSContext *cx, ode::dGeomID geomId, jsval *val ) {
 
 	JSObject *obj = (JSObject*)ode::dGeomGetData(geomId);

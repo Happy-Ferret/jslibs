@@ -40,18 +40,6 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 	if ( n <= 0 )
 		return;
 
-	ColideContextPrivate *ccp = (ColideContextPrivate*)data; // beware: *data is local to Step function
-
-	JSContext *cx = ccp->cx;
-
-	ode::dBodyID body1 = dGeomGetBody(geom1);
-	ode::dBodyID body2 = dGeomGetBody(geom2);
-
-	jsval valGeom1, valGeom2;
-	JL_CHK( GeomToJsval(cx, geom1, &valGeom1) );
-	JL_CHK( GeomToJsval(cx, geom2, &valGeom2) );
-
-		
 /*
 		// tentative of fusion two differents surface parameters:
 		//   http://www.google.com/codesearch/p?hl=en#OdJU363NVS8/plugins/scmsvn/viewcvs.php/Feedback/Sources/PsOde/PsOdeWorld.cc%3Frev%3D3&amp;root%3Dopenmask&amp;view%3Dmarkup-001&q=dSurfaceParameters&l=51
@@ -89,66 +77,80 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 	//dReal motion1,motion2;	// add
 	//dReal slip1,slip2;	// ?
 
-	jsval func1, func2;
-	JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom1), SLOT_GEOM_IMPACT_FUNCTION, &func1) );
-	JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom2), SLOT_GEOM_IMPACT_FUNCTION, &func2) );
+	ColideContextPrivate *ccp = (ColideContextPrivate*)data; // beware: *data is local to Step function
 
-	if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) {
+	JSContext *cx = ccp->cx;
 
-		ode::dVector3 *pos = &contact.geom.pos;
+	ode::dBodyID body1 = dGeomGetBody(geom1);
+	ode::dBodyID body2 = dGeomGetBody(geom2);
 
-		float px = (*pos)[0];
-		float py = (*pos)[1];
-		float pz = (*pos)[2];
+	if ( GeomHasJsObj(geom1) || GeomHasJsObj(geom2) ) {
 
-		Vector3 vel, tmp, normal;
+		jsval valGeom1, valGeom2;
+		JL_CHK( GeomToJsval(cx, geom1, &valGeom1) );
+		JL_CHK( GeomToJsval(cx, geom2, &valGeom2) );
 
-		if ( body2 != NULL )
-			ode::dBodyGetPointVel(body2, px, py, pz, vel.raw);
-		else
-			Vector3Identity(&vel);
-		if ( body1 != NULL )
-			ode::dBodyGetPointVel(body1, px, py, pz, tmp.raw);
-		else
-			Vector3Identity(&tmp);
-		Vector3SubVector3(&vel, &vel, &tmp);
-		Vector3LoadPtr(&normal, contact.geom.normal);
-		float impactVelocity = Vector3Dot(&vel, &normal);
+		jsval func1, func2;
+		JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom1), SLOT_GEOM_IMPACT_FUNCTION, &func1) );
+		JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom2), SLOT_GEOM_IMPACT_FUNCTION, &func2) );
 
-		JSTempValueRooter tvr;
-		jsval argv[9];
-		JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
+		if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) {
 
-		argv[0] = JSVAL_NULL; // rval
-//		JL_CHKB( FloatToJsval(cx, contact.geom.depth, &argv[3]), bad_poproot );
-		JL_CHKB( FloatToJsval(cx, impactVelocity, &argv[3]), bad_poproot );
-		JL_CHKB( FloatToJsval(cx, contact.geom.pos[0], &argv[4]), bad_poproot );
-		JL_CHKB( FloatToJsval(cx, contact.geom.pos[1], &argv[5]), bad_poproot );
-		JL_CHKB( FloatToJsval(cx, contact.geom.pos[2], &argv[6]), bad_poproot );
+			ode::dVector3 *pos = &contact.geom.pos;
 
-		//contact.geom.side1; // TriIndex
-		//contact.geom.side2; // TriIndex
+			ode::dReal px = (*pos)[0];
+			ode::dReal py = (*pos)[1];
+			ode::dReal pz = (*pos)[2];
 
-		if ( !JSVAL_IS_VOID( func1 ) ) {
+			Vector3 vel, tmp, normal;
 
-			argv[1] = valGeom1;
-			argv[2] = valGeom2;
-			argv[7] = INT_TO_JSVAL( contact.geom.side1 );
-			argv[8] = INT_TO_JSVAL( contact.geom.side2 );
-			JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom1), func1, COUNTOF(argv)-1, argv+1, argv), bad_poproot );
+			if ( body2 != NULL )
+				ode::dBodyGetPointVel(body2, px, py, pz, vel.raw);
+			else
+				Vector3Identity(&vel);
+			if ( body1 != NULL )
+				ode::dBodyGetPointVel(body1, px, py, pz, tmp.raw);
+			else
+				Vector3Identity(&tmp);
+			Vector3SubVector3(&vel, &vel, &tmp);
+			Vector3LoadPtr(&normal, contact.geom.normal);
+			ode::dReal impactVelocity = Vector3Dot(&vel, &normal);
+
+			JSTempValueRooter tvr;
+			jsval argv[9];
+			JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
+
+			argv[0] = JSVAL_NULL; // rval
+	//		JL_CHKB( FloatToJsval(cx, contact.geom.depth, &argv[3]), bad_poproot );
+			JL_CHKB( FloatToJsval(cx, impactVelocity, &argv[3]), bad_poproot );
+			JL_CHKB( FloatToJsval(cx, contact.geom.pos[0], &argv[4]), bad_poproot );
+			JL_CHKB( FloatToJsval(cx, contact.geom.pos[1], &argv[5]), bad_poproot );
+			JL_CHKB( FloatToJsval(cx, contact.geom.pos[2], &argv[6]), bad_poproot );
+
+			//contact.geom.side1; // TriIndex
+			//contact.geom.side2; // TriIndex
+
+			if ( !JSVAL_IS_VOID( func1 ) ) {
+
+				argv[1] = valGeom1;
+				argv[2] = valGeom2;
+				argv[7] = INT_TO_JSVAL( contact.geom.side1 );
+				argv[8] = INT_TO_JSVAL( contact.geom.side2 );
+				JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom1), func1, COUNTOF(argv)-1, argv+1, argv), bad_poproot );
+			}
+
+			if ( !JSVAL_IS_VOID( func2 ) ) {
+
+				argv[1] = valGeom2;
+				argv[2] = valGeom1;
+				argv[7] = INT_TO_JSVAL( contact.geom.side2 );
+				argv[8] = INT_TO_JSVAL( contact.geom.side1 );
+				JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom2), func2, COUNTOF(argv)-1, argv+1, argv), bad_poproot );
+			}
+		
+		bad_poproot:
+			JS_POP_TEMP_ROOT(cx, &tvr);
 		}
-
-		if ( !JSVAL_IS_VOID( func2 ) ) {
-
-			argv[1] = valGeom2;
-			argv[2] = valGeom1;
-			argv[7] = INT_TO_JSVAL( contact.geom.side2 );
-			argv[8] = INT_TO_JSVAL( contact.geom.side1 );
-			JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom2), func2, COUNTOF(argv)-1, argv+1, argv), bad_poproot );
-		}
-	
-	bad_poproot:
-		JS_POP_TEMP_ROOT(cx, &tvr);
 	}
 
 	contact.surface = *ccp->defaultSurfaceParameters;
@@ -333,9 +335,9 @@ DEFINE_FUNCTION( Step ) {
 //	JL_ASSERT( pv->stepTmpCx == NULL );
 //	pv->stepTmpCx = cx;
 	if ( ode::dWorldGetQuickStepNumIterations(pv->worldId) == 0 )
-		ode::dWorldStep(pv->worldId, stepSize / 1000);
+		ode::dWorldStep(pv->worldId, stepSize / 1000.f);
 	else
-		ode::dWorldQuickStep(pv->worldId, stepSize / 1000);
+		ode::dWorldQuickStep(pv->worldId, stepSize / 1000.f);
 
 	// see also: dWorldStepFast1 / dWorldSetAutoEnableDepthSF1
 
@@ -383,6 +385,65 @@ DEFINE_FUNCTION_FAST( ScaleImpulse ) {
 /**doc
 === Properties ===
 **/
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE real $INAME
+  (TBD)
+**/
+DEFINE_PROPERTY_SETTER( autoDisableLinearThreshold ) {
+
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+	ode::dReal threshold;
+	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
+	ode::dWorldSetAutoDisableLinearThreshold(pv->worldId, threshold);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_GETTER( autoDisableLinearThreshold ) {
+
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+	ode::dReal threshold;
+	threshold = ode::dWorldGetAutoDisableLinearThreshold(pv->worldId);
+	JL_CHK( ODERealToJsval(cx, threshold, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE real $INAME
+  (TBD)
+**/
+DEFINE_PROPERTY_SETTER( autoDisableAngularThreshold ) {
+
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+	ode::dReal threshold;
+	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
+	ode::dWorldSetAutoDisableAngularThreshold(pv->worldId, threshold);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_GETTER( autoDisableAngularThreshold ) {
+
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pv );
+
+	ode::dReal threshold;
+	threshold = ode::dWorldGetAutoDisableAngularThreshold(pv->worldId);
+	JL_CHK( ODERealToJsval(cx, threshold, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -564,6 +625,8 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+		PROPERTY( autoDisableLinearThreshold )
+		PROPERTY( autoDisableAngularThreshold )
 		PROPERTY( gravity )
 		PROPERTY_READ( env )
 		PROPERTY_SWITCH( ERP, real )
