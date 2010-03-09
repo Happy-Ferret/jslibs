@@ -174,7 +174,7 @@ function UI() {
 		},
 	};
 
-	this.status = '';
+	this.status = 'status';
 	var frame = 0;
 	
 	function SurfaceReady() {
@@ -204,26 +204,30 @@ function UI() {
 			Ogl.MatrixMode(Ogl.MODELVIEW);
 			Ogl.LoadIdentity();
 		
+			var t0 = TimeCounter();
 			_this.Draw(frame);
-			if ( _this.status ) {
+			var fps = (1000/(TimeCounter()-t0)).toFixed(0);
 
-				Ogl.MatrixMode(Ogl.PROJECTION);
-				Ogl.LoadIdentity();
-				Ogl.Ortho(0, videoWidth, 0, videoHeight, 0, 1);
-				Ogl.MatrixMode(Ogl.MODELVIEW);
-				Ogl.LoadIdentity();
-				Ogl.PushAttrib(Ogl.DEPTH_BUFFER_BIT);
-				Ogl.Disable(Ogl.DEPTH_TEST);
-				Ogl.Color(0);
-				Ogl.Begin(Ogl.QUADS);
-				Ogl.Vertex(0,0); Ogl.Vertex(videoWidth,0); Ogl.Vertex(videoWidth,16); Ogl.Vertex(0,16);
-				Ogl.End();
-				Ogl.RasterPos(2,2,0);
-				f2d.SetBackgroundColor([0,0,0,0]);
-				f2d.SetColor([1]);
-				f2d.Draw('frame '+frame+' '+_this.status);
-				Ogl.PopAttrib();
-			}
+			Ogl.MatrixMode(Ogl.PROJECTION);
+			Ogl.LoadIdentity();
+			Ogl.Ortho(0, videoWidth, 0, videoHeight, 0, 1);
+			Ogl.MatrixMode(Ogl.MODELVIEW);
+			Ogl.LoadIdentity();
+			Ogl.PushAttrib(Ogl.DEPTH_BUFFER_BIT);
+			Ogl.Disable(Ogl.DEPTH_TEST);
+			Ogl.Color(0);
+			Ogl.Begin(Ogl.QUADS);
+			Ogl.Vertex(0,0); Ogl.Vertex(videoWidth,0); Ogl.Vertex(videoWidth,16); Ogl.Vertex(0,16);
+			Ogl.End();
+
+			f2d.SetBackgroundColor([0,0,0,0]);
+			f2d.SetColor([1]);
+			
+			var str = /*'frame '+frame+' - '+*/fps+'fps\t'+_this.status;
+			for ( var [i,chunk] in Iterator(str.split('\t')) )
+				f2d.Draw(chunk, 2 + i * 150, 2);
+			Ogl.PopAttrib();
+
 		}
 		Ogl.Finish();
 		GlSwapBuffers(true);

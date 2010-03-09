@@ -1349,7 +1349,7 @@ JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 static void SDLStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
-	int status;
+	int status = 0;
 	JLMutexAcquire(sdlEventsLock);
 	while ( !upe->cancel && (status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS)) == 0 ) // no cancel and no SDL event
 		JLCondWait(sdlEventsCond, sdlEventsLock);
