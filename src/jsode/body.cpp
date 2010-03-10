@@ -389,6 +389,35 @@ $TOC_MEMBER $INAME
  $BOOL $INAME
   (TBD)
 **/
+DEFINE_PROPERTY_SETTER( kinematic ) {
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( bodyId );
+	bool kinematic;
+	JL_CHK( JsvalToBool(cx, *vp, &kinematic) );
+	if ( kinematic )
+		ode::dBodySetKinematic(bodyId);
+	else
+		ode::dBodySetDynamic(bodyId);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_GETTER( kinematic ) {
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( bodyId );
+	JL_CHK( BoolToJsval(cx, ode::dBodyIsKinematic(bodyId) != 0, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME
+  (TBD)
+**/
 DEFINE_PROPERTY_SETTER( autoDisable ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
@@ -1010,6 +1039,8 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+
+		PROPERTY( kinematic )
 
 		PROPERTY( autoDisable )
 		PROPERTY( autoDisableLinearThreshold )

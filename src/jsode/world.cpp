@@ -77,6 +77,9 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 	//dReal motion1,motion2;	// add
 	//dReal slip1,slip2;	// ?
 
+	bool doContact;
+	doContact = true;
+
 	ColideContextPrivate *ccp = (ColideContextPrivate*)data; // beware: *data is local to Step function
 
 	JSContext *cx = ccp->cx;
@@ -84,15 +87,26 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 	ode::dBodyID body1 = dGeomGetBody(geom1);
 	ode::dBodyID body2 = dGeomGetBody(geom2);
 
-	if ( GeomHasJsObj(geom1) || GeomHasJsObj(geom2) ) {
+	bool geom1HasObj, geom2HasObj;
+	geom1HasObj = GeomHasJsObj(geom1);
+	geom2HasObj = GeomHasJsObj(geom2);
+
+	if ( geom1HasObj || geom2HasObj ) {
 
 		jsval valGeom1, valGeom2;
 		JL_CHK( GeomToJsval(cx, geom1, &valGeom1) );
 		JL_CHK( GeomToJsval(cx, geom2, &valGeom2) );
 
 		jsval func1, func2;
-		JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom1), SLOT_GEOM_IMPACT_FUNCTION, &func1) );
-		JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom2), SLOT_GEOM_IMPACT_FUNCTION, &func2) );
+		if ( geom1HasObj )
+			JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom1), SLOT_GEOM_IMPACT_FUNCTION, &func1) );
+		else
+			func1 = JSVAL_VOID;
+
+		if ( geom2HasObj )
+			JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom2), SLOT_GEOM_IMPACT_FUNCTION, &func2) );
+		else
+			func2 = JSVAL_VOID;
 
 		if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) {
 
@@ -137,6 +151,8 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 				argv[7] = INT_TO_JSVAL( contact.geom.side1 );
 				argv[8] = INT_TO_JSVAL( contact.geom.side2 );
 				JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom1), func1, COUNTOF(argv)-1, argv+1, argv), bad_poproot );
+				if ( *argv == JSVAL_FALSE )
+					doContact = false;
 			}
 
 			if ( !JSVAL_IS_VOID( func2 ) ) {
@@ -146,6 +162,8 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 				argv[7] = INT_TO_JSVAL( contact.geom.side2 );
 				argv[8] = INT_TO_JSVAL( contact.geom.side1 );
 				JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom2), func2, COUNTOF(argv)-1, argv+1, argv), bad_poproot );
+				if ( *argv == JSVAL_FALSE )
+					doContact = false;
 			}
 		
 		bad_poproot:
@@ -153,19 +171,22 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		}
 	}
 
-	contact.surface = *ccp->defaultSurfaceParameters;
-	// doc. fdir1 — Returns the "first friction direction" vector that defines a direction along which frictional 
-	//      force is applied if the contact’s surfaceuseFrictionDirection? flag is true.
-	//      If useFrictionDirection? is false, this setting is unused, though it can still be set.
-	if ( ccp->defaultSurfaceParameters->mode & ode::dContactFDir1 ) {
+	if ( doContact ) {
 
-		contact.fdir1[0] = 0;
-		contact.fdir1[1] = 0;
-		contact.fdir1[2] = 0;
+		contact.surface = *ccp->defaultSurfaceParameters;
+		if ( ccp->defaultSurfaceParameters->mode & ode::dContactFDir1 ) {
+
+			// doc. fdir1 — Returns the "first friction direction" vector that defines a direction along which frictional 
+			//      force is applied if the contact’s surfaceuseFrictionDirection? flag is true.
+			//      If useFrictionDirection? is false, this setting is unused, though it can still be set.
+			contact.fdir1[0] = 0;
+			contact.fdir1[1] = 0;
+			contact.fdir1[2] = 0;
+		}
+
+		ode::dJointID contactJoint = ode::dJointCreateContact(ccp->worldId, ccp->contactGroupId, &contact);
+		ode::dJointAttach(contactJoint, body1, body2);
 	}
-
-	ode::dJointID contactJoint = ode::dJointCreateContact(ccp->worldId, ccp->contactGroupId, &contact);
-	ode::dJointAttach(contactJoint, body1, body2);
 
 	return;
 bad:
@@ -310,19 +331,16 @@ DEFINE_FUNCTION( Step ) {
 
 	ode::dSpaceID spaceId;
 	jsval val;
-	JS_GetProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, &val);
+	JL_CHK( JS_GetProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, &val) );
 	JL_S_ASSERT_DEFINED( val );
 	JL_CHK( JsvalToSpaceID(cx, val, &spaceId) );
 
 	jsval defaultSurfaceParametersObject;
-	JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject);
+	JL_CHK( JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject) );
 	JL_S_ASSERT_OBJECT( defaultSurfaceParametersObject );
 	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), JL_CLASS(SurfaceParameters) ); // (TBD) simplify RT_ASSERT
 	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersObject)); // beware: local variable !
 	JL_S_ASSERT_RESOURCE( defaultSurfaceParameters );
-
-//	JL_GetReservedSlot(cx, obj, WORLD_SLOT_CONTACTGROUP, &val);
-//	ode::dJointGroupID contactgroup = (ode::dJointGroupID)JSVAL_TO_PRIVATE(val);
 
 	ColideContextPrivate ccp;
 	ccp.cx = cx; // the context will only be used while the worls step.
