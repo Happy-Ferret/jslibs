@@ -3069,8 +3069,9 @@ DEFINE_FUNCTION_FAST( GetRenderbufferParameter ) {
 
 	if ( JL_FARG_ISDEF(3) ) {
 		
+		JL_S_ASSERT_INT(JL_FARG(3));
 		int count;
-		JL_CHK( JsvalToInt(cx, JL_FARG(3), &count) );
+		count = JSVAL_TO_INT(JL_FARG(3));
 		JL_S_ASSERT( count <= COUNTOF(params), "Too many params" );
 		JL_CHK( IntVectorToJsval(cx, params, count, JL_FRVAL, false) );
 	} else {
@@ -3329,8 +3330,9 @@ DEFINE_FUNCTION_FAST( GetFramebufferAttachmentParameter ) {
 
 	if ( JL_FARG_ISDEF(4) ) {
 		
+		JL_S_ASSERT_INT( JL_FARG(4) );
 		int count;
-		JL_CHK( JsvalToInt(cx, JL_FARG(4), &count) );
+		count = JSVAL_TO_INT( JL_FARG(4) );
 		JL_S_ASSERT( count <= COUNTOF(params), "Too many params" );
 		JL_CHK( IntVectorToJsval(cx, params, count, JL_FRVAL, false) );
 	} else {
@@ -3402,10 +3404,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( UnProject ) {
 
 	JL_S_ASSERT_ARG(2);
+	JL_S_ASSERT_INT( JL_FARG(1) );
+	JL_S_ASSERT_INT( JL_FARG(2) );
 
 	int x, y;
-	JsvalToInt(cx, JL_FARG(1), &x);
-	JsvalToInt(cx, JL_FARG(2), &y);
+	x = JSVAL_TO_INT( JL_FARG(1) );
+	y = JSVAL_TO_INT( JL_FARG(2) );
 
    GLint viewport[4];
    GLdouble mvmatrix[16], projmatrix[16];
@@ -3882,16 +3886,26 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGenTextures, glBindTexture, glGetIntegerv, glCopyTexImage2D, glGetTexLevelParameteriv, glGetTexImage, glDeleteTextures
 **/
-DEFINE_FUNCTION_FAST( RenderToImage ) {
+DEFINE_FUNCTION_FAST( ReadImage ) {
 
+	GLint viewport[4];
+	glGetIntegerv(GL_VIEWPORT, viewport);
+	int x = viewport[0];
+	int y = viewport[1];
+	int width = viewport[2];
+	int height = viewport[3];
+
+	int channels = 4;  // 4 for RGBA
+	int lineLength = width * channels;
+	int length = lineLength * height;
+	JL_S_ASSERT( length > 0, "Invalid image size." );
+	GLvoid *data = JS_malloc(cx, length);
+	JL_CHK( data );
+
+/*
 	GLuint texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
-
-	GLint viewport[4];
-	glGetIntegerv( GL_VIEWPORT, viewport );
-	int width = viewport[2];
-	int height = viewport[3];
 
 	// see GL_ARB_texture_rectangle / ARB_texture_non_power_of_two
 
@@ -3903,12 +3917,21 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 	//glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPONENTS, &tComponents);
 	//  glGet	with arguments GL_PACK_ALIGNMENT and others
 
-	int length = tWidth * tHeight * 4; // RGBA
-	JL_S_ASSERT( length > 0, "Invalid image size." );
-	GLvoid *data = JS_malloc(cx, length);
-	JL_CHK( data );
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 	glDeleteTextures(1, &texture);
+*/
+
+	glReadPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+// v-flip image
+	void *tmp = alloca(lineLength);
+	int mid = height / 2;
+	for ( int line = 0; line < mid; ++line ) {
+
+		memcpy(tmp, (char*)data + (line*lineLength), lineLength);
+		memcpy((char*)data + (line*lineLength), (char*)data + ((height-1-line)*lineLength), lineLength);
+		memcpy((char*)data + ((height-1-line)*lineLength), tmp, lineLength);
+	}
 
 	jsval blobVal;
 	JL_CHK( JL_NewBlob(cx, data, length, &blobVal) );
@@ -3917,7 +3940,7 @@ DEFINE_FUNCTION_FAST( RenderToImage ) {
 	JL_S_ASSERT( blobObj, "Unable to create Blob object." );
 	*JL_FRVAL = OBJECT_TO_JSVAL(blobObj);
 
-	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(4), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
@@ -4439,7 +4462,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(GetFramebufferAttachmentParameter, 4) // target, attachment, pname [, count]
 
 		FUNCTION_FAST_ARGC(DrawImage, 3) // target, format, image (non-OpenGL API)
-		FUNCTION_FAST_ARGC(RenderToImage, 0) // (non-OpenGL API)
+		FUNCTION_FAST_ARGC(ReadImage, 0) // (non-OpenGL API)
 
 		FUNCTION_FAST_ARGC(LookAt, 9) // (non-OpenGL API)
 		FUNCTION_FAST_ARGC(UnProject, 2) // (non-OpenGL API)
