@@ -1294,8 +1294,11 @@ static JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JS
 
 	if ( JSVAL_IS_VOID(upe->callbackFctVal) )
 		return JS_TRUE;
-	jsval rval;
-	JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), upe->callbackFctVal, 0, NULL, &rval) );
+
+	jsval thisVal, rval;
+	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, &thisVal) ); // restore "this" object.
+
+	JL_CHK( JS_CallFunctionValue(cx, /*JS_GetGlobalObject(cx)*/ JSVAL_TO_OBJECT(thisVal), upe->callbackFctVal, 0, NULL, &rval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1321,6 +1324,8 @@ DEFINE_FUNCTION_FAST( SurfaceReadyEvents ) {
 
 		upe->callbackFctVal = JSVAL_VOID;
 	}
+
+	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 1, OBJECT_TO_JSVAL(JL_FOBJ)) ); // store "this" object.
 
 	return JS_TRUE;
 	JL_BAD;
