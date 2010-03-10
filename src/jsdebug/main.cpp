@@ -43,6 +43,8 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 
 //	printf( "add - %s:%d-%d - %s - %d - %p\n", filename, lineno, lineno+JS_GetScriptLineExtent(cx, script), fun ? JS_GetFunctionName(fun):"", script->staticLevel, script );
 
+	JL_ASSERT( filename != NULL );
+
 	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, _moduleId);
 
 	jl::Queue *scriptFileList = &mpv->scriptFileList;
