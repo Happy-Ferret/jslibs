@@ -1,5 +1,4 @@
-try { 
-
+LoadModule('jsstd');
 LoadModule('jsdebug');
 LoadModule('jsstd');
 LoadModule('jssdl');
@@ -7,101 +6,20 @@ LoadModule('jsgraphics');
 LoadModule('jsfont');
 LoadModule('jsoglft');
 
-GlSetAttribute( GL_DOUBLEBUFFER, 1 );
-GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-GlSetAttribute( GL_DEPTH_SIZE, 16 );
-GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+Exec('../common/tools.js');
 
-unicodeKeyboardTranslation = true;
-keyRepeatDelay = 300;
-keyRepeatInterval = 50;
-SetVideoMode(300, 300, 32, HWACCEL | OPENGL | RESIZABLE, false);
-maxFPS = 30;
-
-Ogl.MatrixMode(Ogl.PROJECTION);
-//Ogl.Ortho(0, 10, 0, 100, 0.01, 100);
-Ogl.Perspective(60, 0.01, 100);
-Ogl.MatrixMode(Ogl.MODELVIEW);
-
-Ogl.Enable(Ogl.DEPTH_TEST);
-Ogl.DepthFunc(Ogl.LEQUAL);
-
-//Ogl.Enable(Ogl.LIGHTING);
-Ogl.Enable(Ogl.LIGHT0);
-
-Ogl.ShadeModel(Ogl.SMOOTH);
-Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, [1.0, 1.0, 1.0, 1.0]);
-Ogl.Material(Ogl.FRONT, Ogl.SHININESS, 50);
-
-Ogl.ColorMaterial ( Ogl.FRONT_AND_BACK, Ogl.AMBIENT_AND_DIFFUSE ) ;
-Ogl.Enable ( Ogl.COLOR_MATERIAL ) ;
-Ogl.Color(1,1,1);
-
-Ogl.Enable(Ogl.CULL_FACE);
-Ogl.CullFace(Ogl.FRONT);
-
-//Ogl.Enable(Ogl.BLEND);
-//Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
-//Ogl.Enable(Ogl.TEXTURE_2D);
-
-var f = new Font('c:\\windows\\fonts\\arial.ttf');
-var f3d = new Font3D(f, Font3D.FILLED, 12);
-//f3d.tessellationSteps = 10;
-Ogl.PixelStore( Ogl.UNPACK_ALIGNMENT, 1 );
-
-f3d.SetBackgroundColor([0,0,0]);
-f3d.SetColor([1,0,0]);
-var frame = 0;
-
-function SurfaceReady() {
-
-	frame++;
-
-	var t = TimeCounter();
-
-	Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
-	Ogl.LoadIdentity();
-	
-//	Ogl.Light(Ogl.LIGHT0, Ogl.POSITION, [0, Math.sin(frame/10)*10, Math.cos(frame/10)*10, 0]);
-
-	Ogl.Translate(-5,5,-15);
-
-//	Ogl.Rotate(frame, 0,1,1);
-
-	Ogl.Scale(0.1);
-	Ogl.Scale(1,1,10);
-//	Print( f3d.Measure('test', true)[3], '         \r' );
-
-//	Ogl.RasterPos(0,0,0)
-//	f3d.advance = false;
-//	f3d.Draw('123', undefined, 0, 0);
-//	f3d.Draw('456', undefined, 0, -f3d.height);
-// f3d.Draw('789', undefined, 0, -f3d.height * 2);
-
-	te.Draw();
-
-	GlSwapBuffers(true);
-//	Print((1000/(TimeCounter() - t)).toFixed(2), 'fps               \r');
-}
+var f3d = new Font3D(new Font('c:\\windows\\fonts\\arial.ttf'), Font3D.FILLED, 9);
+//f3d.SetColor([1,0,0]);
 
 function TextEdit(text) {
 
-	var cursor = Ogl.NewList();
-	Ogl.Color(1,0,0);
-	Ogl.Begin(Ogl.QUADS);
-	Ogl.Vertex(0,0);
-	Ogl.Vertex(0,10);
-	Ogl.Vertex(10,10);
-	Ogl.Vertex(10,0);
-	Ogl.End();
-	Ogl.EndList();
-
 	text = text || '';
 	var pos = text.length;
-	this.KeyEventHandler = function(sym, char) {
+	
+	this.onKeyDown = function(sym, mod, chr) {
 		
-		if ( char >= ' ' )
-			text = text.substr(0, pos) + char + text.substr(pos++);
+		if ( chr >= ' ' )
+			text = text.substr(0, pos) + chr + text.substr(pos++);
 		else if ( sym == K_RETURN || sym == K_KP_ENTER )
 			text = text.substr(0, pos) + '\n' + text.substr(pos++);
 		else if ( sym == K_LEFT && pos > 0 )
@@ -156,7 +74,7 @@ function TextEdit(text) {
 		}
 	}
 	
-	this.Draw = function() {
+	this.Draw = function(frame) {
 
 		Ogl.LineWidth(2);
 		
@@ -173,7 +91,6 @@ function TextEdit(text) {
 			Ogl.Translate(Math.sin((frame/10+i)/20)*20, 0);
 			Ogl.Rotate(Math.sin((frame+i)/10)*10,0,0,1);
 			Ogl.Scale(1+Math.sin((frame+i)/20)/5);
-			
 		
 			if ( i == pos ) {
 
@@ -198,38 +115,26 @@ function TextEdit(text) {
 				x += f3d.Width(chr);
 			}
 
-//			Ogl.Rotate(rnd,0,0,-1);
 			Ogl.PopMatrix();
 		}
 	}
 }
 
+
+var ui = new UI();
+
 var te = new TextEdit('abc\ndefgh\nijk');
+ui.AddEventListener(te);
 
-var listeners = {
-	onKeyDown:function(sym, mod, char) {
 
-		te.KeyEventHandler(sym, char);
-		
-		if ( sym == K_ESCAPE )
-			endSignal = true;
-	},
-	onQuit: function() {
-	 
-		endSignal = true;
-	},
-	onVideoResize: function(w, h) {
+ui.Draw = function(frame) {
 
-		ProcessEvents( SurfaceReadyEvents() );
-		Ogl.Viewport(0, 0, w, h);
-//		Print(w,'x',h, '\n');
-	},
-};
+	Ogl.Enable(Ogl.CULL_FACE);
+	Ogl.CullFace(Ogl.FRONT);
 
-while ( !endSignal )
-	var e = ProcessEvents( SDLEvents(listeners), EndSignalEvents(), SurfaceReadyEvents(SurfaceReady) );
-
-} catch(ex) {
-
-	Print( ex );
+	Ogl.Translate(-5, 5, -15);
+	Ogl.Scale(0.1, 0.1, 1);
+	te.Draw(frame);
 }
+
+ui.Loop();

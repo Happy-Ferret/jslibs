@@ -1,11 +1,14 @@
 LoadModule('jsstd');
+LoadModule('jsode');
+LoadModule('jsimage');
+
 Exec('../common/tools.js');
 
 var ui = new UI();
 
 var world = new World();
-world.quickStepNumIterations = 30;
-world.gravity = [0,0,0];
+world.quickStepNumIterations = 20;
+world.gravity = [0,0,-9.8 / 10];
 world.linearDamping = 0.001;
 world.angularDamping = 0.001;
 //world.linearDampingThreshold = 0;
@@ -106,10 +109,9 @@ function Box(pos) {
 	this.body.autoDisable = true;
 }
 
-
 Box.prototype = {
 	Draw:function() {
-	
+
 		Ogl.PushMatrix();
 		Ogl.MultMatrix(this.geom);
 		Ogl.Color(0, this.geom.body.disabled ? 0 : 1, 0);
@@ -125,7 +127,6 @@ Box.prototype = {
 		}
 		Ogl.PopMatrix();
 	}
-
 }
 
 
@@ -136,31 +137,44 @@ ball.body.linearVel = [0,0,-100];
 scene.push( ball );
 
 
-for ( var i = -10; i < 10; ++i )
-	for ( var j = -10; j < 10; ++j )
-		scene.push( new Box([i*1.001, j*1.001, 0.5]) );
+var side = 10;
+var gap = 0.001;
+for ( var i = -side; i < side; ++i )
+	for ( var j = -side; j < side; ++j ) {
+		
+		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
+		scene.push( new Box([i*(1+gap), j*(1+gap), 1.5]) );
+	}
 		
 scene.push( new Floor() );
 
 
 var stop = false;
 ui.key.space = function(down) {
-
+	
 	stop = down;
 };
 
 ui.Draw = function(frame) {
 
-	Ogl.LookAt(Math.cos(frame/100)*25, Math.sin(frame/100)*20, 25, 0,0,15, 0,0,1);
+	Ogl.Enable(Ogl.TEXTURE_2D);
+
+	Ogl.LookAt(Math.cos(frame/100)*35, Math.sin(frame/100)*15, 25, 0,0,15, 0,0,1);
 
 	ui.SetLight([10,10,10]);
-//	ui.SetLight([Math.cos(frame/10)*10,Math.sin(frame/10)*10,0]);
-//	ui.SetLight(ball.body.position);
 
 	for ( var i = scene.length - 1; i >= 0; --i )
 		scene[i].Draw();
-
-	stop || world.Step(15);
+		
+	if ( stop ) {
+		
+		Ogl.Color(1);
+		ui.DrawText('paused', true);
+	} else
+		world.Step(15);
+	
+	Ogl.Finish();
+//	new File('video'+frame+'.png').content = EncodePngImage(Ogl.ReadImage());
 }
 
 ui.Loop();

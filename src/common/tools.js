@@ -1,11 +1,5 @@
 LoadModule('jsstd');
 LoadModule('jsio');
-LoadModule('jsimage');
-LoadModule('jsode');
-LoadModule('jsprotex');
-LoadModule('jstrimesh');
-LoadModule('jssdl');
-LoadModule('jsgraphics');
 
 function DumpVector(v) {
 
@@ -24,7 +18,7 @@ function DumpMatrix(m) {
 }
 
 
-function UI() {
+function UI(currentWidth, currentHeight) {
 	
 	var _this = this;
 
@@ -32,26 +26,28 @@ function UI() {
 	LoadModule('jsgraphics');
 	LoadModule('jsfont');
 	LoadModule('jsoglft');
+	//LoadModule('jsimage');
+	//LoadModule('jsprotex');
+	//LoadModule('jstrimesh');
 	
-	var font = new Font('c:\\windows\\fonts\\arial.ttf');
-	var f3d = new Font3D(font, Font3D.FILLED, 9);
-	var f2d = new Font3D(font, Font3D.GRAYSCALE/*TRANSLUCENT*/, 9);
+	var f3d = new Font3D(new Font('c:\\windows\\fonts\\arial.ttf'), Font3D.FILLED, 9);
+	var f2d = new Font3D(new Font('c:\\windows\\fonts\\arial.ttf'), Font3D.GRAYSCALE, 9); // TRANSLUCENT
 
-	var DefaultVideoMode = OPENGL | RESIZABLE;
+	var defaultVideoMode = OPENGL | RESIZABLE;
 
 	unicodeKeyboardTranslation = true;
 	keyRepeatDelay = 300;
 	keyRepeatInterval = 50;
 	maxFPS = 60;
 	
-	var currentWidth = desktopWidth/4;
-	var currentHeight = desktopHeight/4;
+	currentWidth = currentWidth || desktopWidth/4;
+	currentHeight = currentHeight || desktopHeight/4;
 	
 	GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 	GlSetAttribute( GL_DEPTH_SIZE, 16);
 	GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
-	SetVideoMode(currentWidth, currentHeight, undefined, DefaultVideoMode);
+	SetVideoMode(currentWidth, currentHeight, undefined, defaultVideoMode);
 	
 	Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
 	Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
@@ -60,7 +56,12 @@ function UI() {
 
 	Ogl.Enable(Ogl.CULL_FACE);
 	Ogl.Enable(Ogl.DEPTH_TEST);
-
+	
+//	Ogl.ShadeModel(Ogl.SMOOTH);
+//	Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, [1.0, 1.0, 1.0, 1.0]);
+//	Ogl.Material(Ogl.FRONT, Ogl.SHININESS, 50);
+//	Ogl.ColorMaterial ( Ogl.FRONT_AND_BACK, Ogl.AMBIENT_AND_DIFFUSE ) ;
+//	Ogl.Enable( Ogl.COLOR_MATERIAL );
 //	Ogl.Enable(Ogl.BLEND);
 //	Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
 	
@@ -100,29 +101,64 @@ function UI() {
 		Ogl.CallList(arguments.callee.geometry);
 	}
 	
-	var keyListeners = {};
+	this.DrawText = function(text, infront) {
+
+		Ogl.PushAttrib(Ogl.ENABLE_BIT);
+		Ogl.Disable(Ogl.CULL_FACE);
+		if ( infront ) {
+
+			Ogl.Disable(Ogl.DEPTH_TEST);
+			Ogl.Disable(Ogl.LIGHTING);
+			Ogl.PushMatrix();
+			Ogl.LoadIdentity();
+			Ogl.Translate(0,0,-1);
+			Ogl.Scale(0.02);
+		}
+		var str = text;
+		f3d.SetColor();
+		f3d.Draw(text, -f3d.Width(text)/2, 0);
+		if ( infront )
+			Ogl.PopMatrix();
+		Ogl.PopAttrib();
+	}
+	
+	
+	var keyObjListeners = {};
 	
 	this.key = new ObjEx(function(name, fct) {
-		
-		var sym = global['K_'+name.toUpperCase()];
-		keyListeners[sym] = fct;
-	},
-	function(name) {
-		
-		var sym = global['K_'+name.toUpperCase()];
-		delete keyListeners[sym];
-	}
+			
+			var sym = global['K_'+name.toUpperCase()];
+			keyObjListeners[sym] = fct;
+		},
+		function(name) {
+			
+			var sym = global['K_'+name.toUpperCase()];
+			delete keyObjListeners[sym];
+		}
 	);
-	
+
 	this.mouse = {};
+	
+	var eventListenerList = [];
+	this.AddEventListener = function(obj) {
+
+		eventListenerList.push(obj);
+	}
+	this.RemoveEventListener = function(obj) {
+
+		eventListenerList.splice(eventListenerList.lastIndexOf(obj), 1);
+	}
 	
 	var listeners = {
 	
 		onKeyDown:function(sym, mod, chr) {
 		
-			for ( var name in keyListeners )
+			for each ( var l in eventListenerList )
+				l.onKeyDown && l.onKeyDown.apply(l, arguments);
+		
+			for ( var name in keyObjListeners )
 				if ( sym == name )
-					keyListeners[name](true);
+					keyObjListeners[name](true);
 
 			if ( sym == K_ESCAPE ) {
 				
@@ -134,40 +170,44 @@ function UI() {
 				ProcessEvents( SurfaceReadyEvents() );
 				if ( videoFlags & FULLSCREEN ) {
 				
-					SetVideoMode(currentWidth, currentHeight, undefined, DefaultVideoMode);
+					SetVideoMode(currentWidth, currentHeight, undefined, defaultVideoMode);
 				} else {
 				
 					currentWidth = videoWidth;
 					currentHeight = videoHeight;
-					SetVideoMode(desktopWidth, desktopHeight, undefined, DefaultVideoMode | FULLSCREEN);
+					SetVideoMode(desktopWidth, desktopHeight, undefined, defaultVideoMode | FULLSCREEN);
 				}
-				
-/*
-				Ogl.Viewport(0, 0, videoWidth, videoHeight);
-				Ogl.MatrixMode(Ogl.PROJECTION);
-				Ogl.LoadIdentity();
-				SetProj();
-				Ogl.MatrixMode(Ogl.MODELVIEW);
-*/				
 			}
 		},
 		onKeyUp:function(sym, mod, chr) {
 
-			for ( var name in keyListeners )
+			for each ( var l in eventListenerList )
+				l.onKeyUp && l.onKeyUp.apply(l, arguments);
+
+			for ( var name in keyObjListeners )
 				if ( sym == name )
-					keyListeners[name](false);
+					keyObjListeners[name](false);
 		},
 		onMouseButtonDown:function(button, x, y, buttonState, modState) {
+
+			for each ( var l in eventListenerList )
+				l.onMouseButtonDown && l.onMouseButtonDown.apply(l, arguments);
 		
 			var fct = _this.mouse['button'+button];
 			fct && fct(true);
 		},
 		onMouseButtonUp:function(button, x, y, buttonState, modState) {
 
+			for each ( var l in eventListenerList )
+				l.onMouseButtonUp && l.onMouseButtonUp.apply(l, arguments);
+
 			var fct = _this.mouse['button'+button];
 			fct && fct(false);
 		},
 		onMouseMotion:function(x, y, relx, rely, state, mod) {
+
+			for each ( var l in eventListenerList )
+				l.onMouseMotion && l.onMouseMotion.apply(l, arguments);
 
 			var fct = _this.mouse.move;
 			fct && fct(false);
@@ -188,58 +228,57 @@ function UI() {
 	this.status = 'status';
 	var frame = 0;
 	
+	this.Projection = function() {
+		
+		Ogl.Perspective(60, 0.5, 1000);
+	}
+	
+	this.Draw = function() {
+
+		Ogl.PushAttrib(Ogl.ENABLE_BIT);
+		Ogl.Disable(Ogl.CULL_FACE);
+		var str = 'nothing to draw';
+		Ogl.Translate(-f3d.Width(str)/2, 0, -80);
+		f3d.Draw(str);
+		Ogl.PopAttrib();
+	}
+	
 	function SurfaceReady() {
 		
 		Ogl.Viewport(0, 0, videoWidth, videoHeight);
-		Ogl.ClearColor(0.2, 0.1, 0.4, 0);
+		Ogl.ClearColor(0.15, 0.2, 0.4, 0);
 		Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
 
-		if ( !_this.Draw ) {
+		Ogl.MatrixMode(Ogl.PROJECTION);
+		Ogl.LoadIdentity();
+		this.Projection();
+		Ogl.MatrixMode(Ogl.MODELVIEW);
+		Ogl.LoadIdentity();
+	
+		var t0 = TimeCounter();
+		this.Draw(frame);
+		var fps = (1000/(TimeCounter()-t0)).toFixed(0);
+
+		Ogl.MatrixMode(Ogl.PROJECTION);
+		Ogl.LoadIdentity();
+		Ogl.Ortho(0, videoWidth, 0, videoHeight, 0, 1);
+		Ogl.MatrixMode(Ogl.MODELVIEW);
+		Ogl.LoadIdentity();
+		Ogl.PushAttrib(Ogl.DEPTH_BUFFER_BIT);
+		Ogl.Disable(Ogl.DEPTH_TEST);
+		Ogl.Color(0);
+		Ogl.Begin(Ogl.QUADS);
+		Ogl.Vertex(0,0);  Ogl.Vertex(videoWidth,0);  Ogl.Vertex(videoWidth,16);  Ogl.Vertex(0,16);
+		Ogl.End();
+
+		f2d.SetBackgroundColor([0,0,0,0]);
+		f2d.SetColor([1]);
 		
-			Ogl.MatrixMode(Ogl.PROJECTION);
-			Ogl.LoadIdentity();
-			Ogl.Perspective(60, 0.1, 10);
-			Ogl.MatrixMode(Ogl.MODELVIEW);
-			Ogl.LoadIdentity();
+		var str = fps+'fps\t'+this.status;
+		for ( var [i,chunk] in Iterator(str.split('\t')) )
+			f2d.Draw(chunk, 2 + i * 150, 2);
+		Ogl.PopAttrib();
 
-			Ogl.Translate(-0.5, Math.cos(frame/10)/10, -1);
-			Ogl.Scale(2);
-			
-			Ogl.Color(1,0,0);
-			f3d.Draw('nothing to draw');
-		} else {
-
-			Ogl.MatrixMode(Ogl.PROJECTION);
-			Ogl.LoadIdentity();
-			Ogl.Perspective(60, 0.1, 10000);
-			Ogl.MatrixMode(Ogl.MODELVIEW);
-			Ogl.LoadIdentity();
-		
-			var t0 = TimeCounter();
-			_this.Draw(frame);
-			var fps = (1000/(TimeCounter()-t0)).toFixed(0);
-
-			Ogl.MatrixMode(Ogl.PROJECTION);
-			Ogl.LoadIdentity();
-			Ogl.Ortho(0, videoWidth, 0, videoHeight, 0, 1);
-			Ogl.MatrixMode(Ogl.MODELVIEW);
-			Ogl.LoadIdentity();
-			Ogl.PushAttrib(Ogl.DEPTH_BUFFER_BIT);
-			Ogl.Disable(Ogl.DEPTH_TEST);
-			Ogl.Color(0);
-			Ogl.Begin(Ogl.QUADS);
-			Ogl.Vertex(0,0); Ogl.Vertex(videoWidth,0); Ogl.Vertex(videoWidth,16); Ogl.Vertex(0,16);
-			Ogl.End();
-
-			f2d.SetBackgroundColor([0,0,0,0]);
-			f2d.SetColor([1]);
-			
-			var str = /*'frame '+frame+' - '+*/fps+'fps\t'+_this.status;
-			for ( var [i,chunk] in Iterator(str.split('\t')) )
-				f2d.Draw(chunk, 2 + i * 150, 2);
-			Ogl.PopAttrib();
-
-		}
 		Ogl.Finish();
 		GlSwapBuffers(true);
 		frame++;
@@ -248,7 +287,7 @@ function UI() {
 	this.Loop = function() {
 		
 		while ( !endSignal )
-			ProcessEvents( EndSignalEvents(), SDLEvents(listeners), SurfaceReadyEvents(SurfaceReady) );
+			ProcessEvents( EndSignalEvents(), SDLEvents(listeners), SurfaceReadyEvents.call(this, SurfaceReady) );
 	}
 }
 
