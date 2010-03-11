@@ -4,7 +4,7 @@ LoadModule('jsimage');
 
 Exec('../common/tools.js');
 
-var ui = new UI();
+var ui = new UI(800, 600);
 
 var world = new World();
 world.quickStepNumIterations = 20;
@@ -111,8 +111,9 @@ function Box(pos) {
 
 Box.prototype = {
 	Draw:function() {
-
+		
 		Ogl.PushMatrix();
+
 		Ogl.MultMatrix(this.geom);
 		Ogl.Color(0, this.geom.body.disabled ? 0 : 1, 0);
 
@@ -125,6 +126,7 @@ Box.prototype = {
 			Ogl.DrawBox.apply(null, this.geom.lengths);
 			Ogl.EndList();
 		}
+		
 		Ogl.PopMatrix();
 	}
 }
@@ -139,6 +141,7 @@ scene.push( ball );
 
 var side = 10;
 var gap = 0.001;
+
 for ( var i = -side; i < side; ++i )
 	for ( var j = -side; j < side; ++j ) {
 		
@@ -157,9 +160,7 @@ ui.key.space = function(down) {
 
 ui.Draw = function(frame) {
 
-	Ogl.Enable(Ogl.TEXTURE_2D);
-
-	Ogl.LookAt(Math.cos(frame/100)*35, Math.sin(frame/100)*15, 25, 0,0,15, 0,0,1);
+	Ogl.LookAt(Math.cos(frame/100)*50, Math.sin(frame/100)*15, Math.cos(frame/100)*20+25, 0,0,10, 0,0,1);
 
 	ui.SetLight([10,10,10]);
 
@@ -168,13 +169,20 @@ ui.Draw = function(frame) {
 		
 	if ( stop ) {
 		
-		Ogl.Color(1);
+		Ogl.Color(1,0,0);
 		ui.DrawText('paused', true);
-	} else
-		world.Step(15);
+	} else {
+		
+		world.Collide();
+		world.Step(20);
+	}
 	
 	Ogl.Finish();
-//	new File('video'+frame+'.png').content = EncodePngImage(Ogl.ReadImage());
+/*	
+	var img = Ogl.ReadImage();
+	new File('frame_'+frame+'.png').content = EncodePngImage(img);
+	img.Free();
+*/	
 }
 
 ui.Loop();

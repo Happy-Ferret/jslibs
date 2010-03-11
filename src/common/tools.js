@@ -299,6 +299,9 @@ function UI(currentWidth, currentHeight) {
 
 function Env3D() {
 	
+	LoadModule('jssdl');
+	LoadModule('jsgraphics');
+	
 	var _this = this;
 	
 	function InitVideo(width, height) {

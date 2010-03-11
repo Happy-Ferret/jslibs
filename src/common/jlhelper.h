@@ -215,6 +215,11 @@ ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) 
 // same for fast native
 #define JL_FOBJ (argc=argc, JS_THIS_OBJECT(cx, vp))
 
+// is the current obj (this) as a jsval
+#define JL_OBJVAL (OBJECT_TO_JSVAL(obj))
+// same for fast native
+#define JL_FOBJVAL (argc=argc, JS_THIS(cx, vp))
+
 // the return value
 #define JL_RVAL (rval)
 // same for fast native

@@ -347,14 +347,14 @@ int VideoThread( void *unused ) {
 
 					_hdc = wglGetCurrentDC();
 					JL_ASSERT( _hdc );
-/*
+
 #ifdef XP_WIN
 					RECT rect;
 					GetWindowRect(WindowFromDC(_hdc), &rect);
 					MoveWindow(WindowFromDC(_hdc), rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top-1, FALSE);
 					MoveWindow(WindowFromDC(_hdc), rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top, FALSE);
 #endif // XP_WIN
-*/
+
 				}
 				JL_ASSERT( wglGetCurrentContext() );
 				SurfaceReady();
