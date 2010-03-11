@@ -81,6 +81,8 @@ void odeFreeFunction (void *ptr, size_t size) {
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
+//	put_StackCommitSize
+
 	JL_CHK( InitJslibsModule(cx, id)  );
 
 	ode::dSetAllocHandler(jl_malloc); // do not need an intermediate function because prototype match.

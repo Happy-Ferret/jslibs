@@ -309,20 +309,19 @@ DEFINE_FUNCTION( Destroy ) {
 }
 */
 
+
+
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( stepsize )
-  $H arguments
-   $ARG real stepsize: The number of milliseconds that the simulation has to advance.
+ $VOID $INAME( [ space [, space2 ] ] )
 **/
-DEFINE_FUNCTION( Step ) {
+DEFINE_FUNCTION( Collide ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_ARG_RANGE(0,2);
+
 	JL_S_ASSERT_CLASS(obj, JL_CLASS(World));
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	float stepSize;
-	JL_CHK( JsvalToFloat(cx, JL_ARG(1), &stepSize) );
 
 	//jsval val;
 	//JL_GetReservedSlot(cx, obj, WORLD_SLOT_SPACE, &val);
@@ -330,10 +329,19 @@ DEFINE_FUNCTION( Step ) {
 	//ode::dSpaceCollide(space,0,&nearCallback);
 
 	ode::dSpaceID spaceId;
-	jsval val;
-	JL_CHK( JS_GetProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, &val) );
-	JL_S_ASSERT_DEFINED( val );
-	JL_CHK( JsvalToSpaceID(cx, val, &spaceId) );
+
+	if ( JL_ARGC == 0 ) {
+
+		jsval val;
+		JL_CHK( JS_GetProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, &val) );
+		JL_S_ASSERT_DEFINED( val );
+		JL_CHK( JsvalToSpaceID(cx, val, &spaceId) );
+	} else {
+		
+		JL_S_ASSERT_OBJECT( JL_ARG(1) );
+		JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Space));
+		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &spaceId) );
+	}
 
 	jsval defaultSurfaceParametersObject;
 	JL_CHK( JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject) );
@@ -348,22 +356,33 @@ DEFINE_FUNCTION( Step ) {
 	ccp.contactGroupId = pv->contactGroupId;
 	ccp.worldId = pv->worldId;
 
-	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback);
+	ode::dJointGroupEmpty(pv->contactGroupId); // contactGroupId will be reused at the next step!
+	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback); // ode::dSpaceCollide2(
 
-//	JL_ASSERT( pv->stepTmpCx == NULL );
-//	pv->stepTmpCx = cx;
+	return !JS_IsExceptionPending(cx); // an exception may have been thrown in nearCallback
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( stepsize )
+  $H arguments
+   $ARG real stepsize: The number of milliseconds that the simulation has to advance.
+**/
+DEFINE_FUNCTION_FAST( Step ) {
+
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_CLASS(JL_FOBJ, JL_CLASS(World));
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_RESOURCE(pv);
+	float stepSize;
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &stepSize) );
 	if ( ode::dWorldGetQuickStepNumIterations(pv->worldId) == 0 )
 		ode::dWorldStep(pv->worldId, stepSize / 1000.f);
 	else
 		ode::dWorldQuickStep(pv->worldId, stepSize / 1000.f);
-
-	// see also: dWorldStepFast1 / dWorldSetAutoEnableDepthSF1
-
-//	pv->stepTmpCx = NULL; // avoid using the JSContext outside the step
-
-	ode::dJointGroupEmpty(pv->contactGroupId); // contactGroupId will be reused at the next step!
-
-	return !JS_IsExceptionPending(cx); // an exception may have been thrown in nearCallback
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -638,7 +657,8 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_ARGC( Step, 1 ) // not FAST because colide is called from here
+		FUNCTION_ARGC( Collide, 2 ) // not FAST because colide is called from here
+		FUNCTION_FAST_ARGC( Step, 1 )
 		FUNCTION_FAST_ARGC( ScaleImpulse, 2 )
 	END_FUNCTION_SPEC
 
