@@ -58,7 +58,7 @@ BEGIN_STATIC
 
 
 // see PollEvent
-JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval *rval, bool *fired ) {
+JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SDL_Event *ev, jsval *rval, bool *fired ) {
 
 	jsval fVal;
 
@@ -70,7 +70,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 				jsval argv[] = {
 					ev->active.gain == 1 ? JSVAL_TRUE : JSVAL_FALSE
 				};
-				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
+				JL_CHK( JS_CallFunctionValue(cx, thisObj, fVal, COUNTOF(argv), argv, rval) );
 				*fired = true;
 			}
 			break;
@@ -99,7 +99,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 					argv[2] = STRING_TO_JSVAL(JS_NewUCStringCopyN(cx, &ev->key.keysym.unicode, 1));
 				}
 
-				JSBool status = JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval);
+				JSBool status = JS_CallFunctionValue(cx, thisObj, fVal, COUNTOF(argv), argv, rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
 				JL_CHK( status );
 				*fired = true;
@@ -126,7 +126,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 					INT_TO_JSVAL(modState),
 				};
 				// no argv GC protection needed.
-				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
+				JL_CHK( JS_CallFunctionValue(cx, thisObj, fVal, COUNTOF(argv), argv, rval) );
 				*fired = true;
 			}
 			break;
@@ -146,7 +146,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 					INT_TO_JSVAL(modState),
 				};
 				// no argv GC protection needed.
-				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
+				JL_CHK( JS_CallFunctionValue(cx, thisObj, fVal, COUNTOF(argv), argv, rval) );
 				*fired = true;
 			}
 			break;
@@ -156,7 +156,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			if ( JsvalIsFunction(cx, fVal) ) {
 
 				// no argv GC protection needed.
-				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, 0, NULL, rval) );
+				JL_CHK( JS_CallFunctionValue(cx, thisObj, fVal, 0, NULL, rval) );
 				*fired = true;
 			}
 			break;
@@ -173,7 +173,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 					INT_TO_JSVAL(ev->resize.h)
 				};
 				// no argv GC protection needed.
-				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, COUNTOF(argv), argv, rval) );
+				JL_CHK( JS_CallFunctionValue(cx, thisObj, fVal, COUNTOF(argv), argv, rval) );
 				*fired = true;
 			}
 			break;
@@ -183,7 +183,7 @@ JSBool FireListener( JSContext *cx, JSObject *listenerObj, SDL_Event *ev, jsval 
 			if ( JsvalIsFunction(cx, fVal) ) {
 
 				// no argv GC protection needed.
-				JL_CHK( JS_CallFunctionValue(cx, listenerObj, fVal, 0, NULL, rval) );
+				JL_CHK( JS_CallFunctionValue(cx, thisObj, fVal, 0, NULL, rval) );
 				*fired = true;
 			}
 			break;
@@ -849,7 +849,7 @@ DEFINE_FUNCTION( PollEvent ) {
 		
 		bool fired;
 		JL_S_ASSERT_OBJECT( JL_ARG(1) );
-		JL_CHK( FireListener(cx, JSVAL_TO_OBJECT(JL_ARG(1)), &ev, JL_RVAL, &fired) );
+		JL_CHK( FireListener(cx, obj, JSVAL_TO_OBJECT(JL_ARG(1)), &ev, JL_RVAL, &fired) );
 	}
 
 	*JL_RVAL = JSVAL_TRUE;
@@ -1325,7 +1325,7 @@ DEFINE_FUNCTION_FAST( SurfaceReadyEvents ) {
 		upe->callbackFctVal = JSVAL_VOID;
 	}
 
-	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 1, OBJECT_TO_JSVAL(JL_FOBJ)) ); // store "this" object.
+	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 1, JL_FOBJVAL) ); // store "this" object.
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1381,10 +1381,13 @@ static JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *
 
 	int status;
 	bool fired; // unused
-	jsval rval;
 
 	*hasEvent = true;
 	SDL_Event ev[128];
+
+	jsval tmp, rval;
+	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, &tmp) ); // restore "this" object.
+	JSObject *thisObj = JSVAL_TO_OBJECT( tmp );
 
 	for (;;) {
 
@@ -1399,7 +1402,7 @@ static JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *
 		}
 
 		for ( int i = 0; i < status; i++ )
-			JL_CHK( FireListener(cx, upe->listenersObj, &ev[i], &rval, &fired) );
+			JL_CHK( FireListener(cx, thisObj, upe->listenersObj, &ev[i], &rval, &fired) );
 
 		if ( status < COUNTOF(ev) ) 
 			break;
@@ -1425,6 +1428,7 @@ DEFINE_FUNCTION_FAST( SDLEvents ) {
 
 	upe->listenersObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection
+	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 1, JL_FOBJVAL) ); // store "this" object.
 
 	return JS_TRUE;
 	JL_BAD;
