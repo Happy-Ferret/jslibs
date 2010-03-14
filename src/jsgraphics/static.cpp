@@ -511,6 +511,95 @@ DEFINE_FUNCTION_FAST( GetMatrix ) {
 }
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE vec4 $INAME( $TYPE vec3 p1, $TYPE vec3 p2, $TYPE vec3 p3 )
+  Find the plane equation given 3 points.
+**/
+DEFINE_FUNCTION_FAST( PlaneFromPoints ) {
+
+	float plane[4], v0[3], v1[3], v2[3];
+
+	uint32 len;
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v0, 3, &len) );
+	JL_S_ASSERT( len == 3, "Invalid point." );
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), v1, 3, &len) );
+	JL_S_ASSERT( len == 3, "Invalid point." );
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), v2, 3, &len) );
+	JL_S_ASSERT( len == 3, "Invalid point." );
+
+
+	float vec0[3], vec1[3];
+
+	/* Need 2 vectors to find cross product. */
+	vec0[0] = v1[0] - v0[0];
+	vec0[1] = v1[1] - v0[1];
+	vec0[2] = v1[2] - v0[2];
+
+	vec1[0] = v2[0] - v0[0];
+	vec1[1] = v2[1] - v0[1];
+	vec1[2] = v2[2] - v0[2];
+
+	/* find cross product to get A, B, and C of plane equation */
+	plane[0] = vec0[1] * vec1[2] - vec0[2] * vec1[1];
+	plane[1] = -(vec0[0] * vec1[2] - vec0[2] * vec1[0]);
+	plane[2] = vec0[0] * vec1[1] - vec0[1] * vec1[0];
+
+	plane[3] = -(plane[0] * v0[0] + plane[1] * v0[1] + plane[2] * v0[2]);
+
+	return FloatVectorToJsval(cx, plane, 4, JL_FRVAL, false);
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE vec4 $INAME( $TYPE vec4 plane, $TYPE vec4 lightPos )
+  Create a matrix that will project the desired shadow.
+**/
+DEFINE_FUNCTION_FAST( ShadowMatrix ) {
+
+	float shadowMat[4][4], groundplane[4], lightpos[4];
+
+	uint32 len;
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), groundplane, 4, &len) );
+	JL_S_ASSERT( len == 4, "Invalid plane." );
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), lightpos, 4, &len) );
+	JL_S_ASSERT( len == 4, "Invalid light position." );
+
+	float dot;
+
+	/* Find dot product between light position vector and ground plane normal. */
+	dot = groundplane[0] * lightpos[0] + groundplane[1] * lightpos[1] + groundplane[2] * lightpos[2] + groundplane[3] * lightpos[3];
+
+	shadowMat[0][0] = dot - lightpos[0] * groundplane[0];
+	shadowMat[1][0] = 0.f - lightpos[0] * groundplane[1];
+	shadowMat[2][0] = 0.f - lightpos[0] * groundplane[2];
+	shadowMat[3][0] = 0.f - lightpos[0] * groundplane[3];
+
+	shadowMat[0][1] = 0.f - lightpos[1] * groundplane[0];
+	shadowMat[1][1] = dot - lightpos[1] * groundplane[1];
+	shadowMat[2][1] = 0.f - lightpos[1] * groundplane[2];
+	shadowMat[3][1] = 0.f - lightpos[1] * groundplane[3];
+
+	shadowMat[0][2] = 0.f - lightpos[2] * groundplane[0];
+	shadowMat[1][2] = 0.f - lightpos[2] * groundplane[1];
+	shadowMat[2][2] = dot - lightpos[2] * groundplane[2];
+	shadowMat[3][2] = 0.f - lightpos[2] * groundplane[3];
+
+	shadowMat[0][3] = 0.f - lightpos[3] * groundplane[0];
+	shadowMat[1][3] = 0.f - lightpos[3] * groundplane[1];
+	shadowMat[2][3] = 0.f - lightpos[3] * groundplane[2];
+	shadowMat[3][3] = dot - lightpos[3] * groundplane[3];
+
+	return FloatVectorToJsval(cx, (float*)shadowMat, 16, JL_FRVAL, false);
+	JL_BAD;
+}
+
+
+
 CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
@@ -531,6 +620,10 @@ CONFIGURE_STATIC
 		FUNCTION_FAST_ARGC( AxisAngleToQuaternion, 1 )
 		
 		FUNCTION_FAST_ARGC( GetMatrix, 1 )
+
+		FUNCTION_FAST_ARGC( PlaneFromPoints, 3 )
+		FUNCTION_FAST_ARGC( ShadowMatrix, 2 )
+
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
