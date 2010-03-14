@@ -2252,7 +2252,7 @@ DEFINE_FUNCTION_FAST( Scale ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( [ compileOnly ] )
+ $INT $INAME( [ $BOOL compileOnly ] )
   Returns a new display-list.
   $H OpenGL API
    glGenLists, glNewList

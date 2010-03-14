@@ -1,22 +1,6 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-function DumpVector(v) {
-
-	Print( v[0].toFixed(1), '  ', v[1].toFixed(1), '  ', v[2].toFixed(1), '\n' );
-}
-
-function DumpMatrix(m) {
-    
-	for (var y = 0; y < 4; ++y) {
-		Print('[ ' );
-		for (var x = 0; x < 4; ++x)
-			Print( m[x+y*4].toFixed(3) + '  ' );
-		Print(']\n' );
-	}
-	Print('\n' );
-}
-
 
 function UI(currentWidth, currentHeight) {
 	
@@ -40,14 +24,16 @@ function UI(currentWidth, currentHeight) {
 	keyRepeatInterval = 50;
 	maxFPS = 60;
 	
-	currentWidth = currentWidth || desktopWidth/4;
-	currentHeight = currentHeight || desktopHeight/4;
+	currentWidth = currentWidth || desktopWidth / 4;
+	currentHeight = currentHeight || desktopHeight / 4;
 	
 	GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 	GlSetAttribute( GL_DEPTH_SIZE, 16);
 	GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 	SetVideoMode(currentWidth, currentHeight, undefined, defaultVideoMode);
+	
+//	Print( Ogl.extensions.indexOf('shadow'), '\n' );
 	
 	Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
 	Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
@@ -65,12 +51,13 @@ function UI(currentWidth, currentHeight) {
 //	Ogl.Enable(Ogl.BLEND);
 //	Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
 	
-	this.SetLight = function([x,y,z]) {
+	this.SetLight = function([x,y,z, w]) {
 		
+		Ogl.LightModel(Ogl.LIGHT_MODEL_LOCAL_VIEWER, 1);
 		Ogl.Enable(Ogl.LIGHTING);
 		Ogl.Enable(Ogl.LIGHT0);
 		Ogl.Enable(Ogl.COLOR_MATERIAL);
-		Ogl.Light(Ogl.LIGHT0, Ogl.POSITION, [x,y,z,0]);
+		Ogl.Light(Ogl.LIGHT0, Ogl.POSITION, [x,y,z,w||0]);
 	}
 	
 	this.DrawGrid = function() {
@@ -101,23 +88,22 @@ function UI(currentWidth, currentHeight) {
 		Ogl.CallList(arguments.callee.geometry);
 	}
 	
-	this.DrawText = function(text, infront) {
+	this.DrawText = function(text, infrontFct) {
 
 		Ogl.PushAttrib(Ogl.ENABLE_BIT);
-		Ogl.Disable(Ogl.CULL_FACE);
-		if ( infront ) {
+		if ( infrontFct ) {
 
 			Ogl.Disable(Ogl.DEPTH_TEST);
 			Ogl.Disable(Ogl.LIGHTING);
 			Ogl.PushMatrix();
 			Ogl.LoadIdentity();
-			Ogl.Translate(0,0,-1);
-			Ogl.Scale(0.02);
+			infrontFct();
 		}
+		Ogl.Disable(Ogl.CULL_FACE);
 		var str = text;
 		f3d.SetColor();
-		f3d.Draw(text, -f3d.Width(text)/2, 0);
-		if ( infront )
+		f3d.Draw(text, -f3d.Width(text)/2, f3d.height);
+		if ( infrontFct )
 			Ogl.PopMatrix();
 		Ogl.PopAttrib();
 	}
@@ -233,6 +219,9 @@ function UI(currentWidth, currentHeight) {
 		Ogl.Perspective(60, 0.5, 1000);
 	}
 	
+	this.Idle = function() {
+	}
+	
 	this.Draw = function() {
 
 		Ogl.PushAttrib(Ogl.ENABLE_BIT);
@@ -243,11 +232,14 @@ function UI(currentWidth, currentHeight) {
 		Ogl.PopAttrib();
 	}
 	
+	var fps;
+	
 	function SurfaceReady() {
 		
+		var t0 = TimeCounter();
 		Ogl.Viewport(0, 0, videoWidth, videoHeight);
 		Ogl.ClearColor(0.15, 0.2, 0.4, 0);
-		Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
+		Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT | Ogl.STENCIL_BUFFER_BIT);
 
 		Ogl.MatrixMode(Ogl.PROJECTION);
 		Ogl.LoadIdentity();
@@ -255,9 +247,7 @@ function UI(currentWidth, currentHeight) {
 		Ogl.MatrixMode(Ogl.MODELVIEW);
 		Ogl.LoadIdentity();
 	
-		var t0 = TimeCounter();
 		this.Draw(frame);
-		var fps = (1000/(TimeCounter()-t0)).toFixed(0);
 
 		Ogl.MatrixMode(Ogl.PROJECTION);
 		Ogl.LoadIdentity();
@@ -281,6 +271,9 @@ function UI(currentWidth, currentHeight) {
 
 		Ogl.Finish();
 		GlSwapBuffers(true);
+		this.Idle();
+		
+		fps = (1000/(TimeCounter()-t0)).toFixed(0);
 		frame++;
 	}
 
@@ -613,7 +606,23 @@ function DisplayTexture( texture ) {
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
-function Dump() {
+function DumpVector(v) {
+
+	Print( v[0].toFixed(1), '  ', v[1].toFixed(1), '  ', v[2].toFixed(1), '\n' );
+}
+
+function DumpMatrix(m) {
+    
+	for (var y = 0; y < 4; ++y) {
+		Print('[ ' );
+		for (var x = 0; x < 4; ++x)
+			Print( m[x+y*4].toFixed(3) + '  ' );
+		Print(']\n' );
+	}
+	Print('\n' );
+}
+
+function Dump(/*...*/) {
 	
 	for ( var i = 0; i < arguments.length; i++ )
 		Print(uneval(arguments[i]), '  ');
