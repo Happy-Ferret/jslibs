@@ -769,6 +769,63 @@ DEFINE_PROPERTY( angularDampingThresholdSetter ) {
 	JL_BAD;
 }
 
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE real $INAME
+  (TBD)
+**/
+DEFINE_PROPERTY( jointsForce ) {
+
+	ode::dBodyID body = (ode::dBodyID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( body );
+
+	ode::dVector3 force = {0,0,0};
+
+	for ( int i = 0; i < ode::dBodyGetNumJoints(body); ++i ) {
+	
+		ode::dJointID jointId;
+		jointId = ode::dBodyGetJoint(body, i);
+		ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
+		if ( feedback ) {
+			
+			ode::dBodyID body1 = ode::dJointGetBody(jointId, 0);
+			if ( body == body1 ) {
+
+				force[0] += feedback->f1[0];
+				force[1] += feedback->f1[1];
+				force[2] += feedback->f1[2];
+			} else {
+
+				ode::dBodyID body2 = ode::dJointGetBody(jointId, 1);
+				if ( body == body2 ) {
+				
+					force[0] += feedback->f2[0];
+					force[1] += feedback->f2[1];
+					force[2] += feedback->f2[2];
+				}
+			}
+		}
+	}
+
+	JL_CHK( ODERealVectorToJsval(cx, force, 3, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE real $INAME
+  (TBD)
+**/
+DEFINE_PROPERTY( jointsTorque ) {
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 /*
 void BodyPositionSet(void *userData, int index, float value) {
 	
@@ -1057,6 +1114,9 @@ CONFIGURE_CLASS
 		PROPERTY( linearDampingThreshold )
 		PROPERTY( angularDamping )
 		PROPERTY( angularDampingThreshold )
+
+		PROPERTY_READ( jointsForce )
+		PROPERTY_READ( jointsTorque )
 
 //		PROPERTY_READ( isMoving )
 
