@@ -120,21 +120,23 @@ Box.prototype = {
 			return
 		Ogl.PushMatrix();
 		Ogl.MultMatrix(this.geom);
+		
 //		this.geom.body.disabled && Ogl.Color(0, 0.5, 0);
 		
-		var vel = this.body.linearVel;
-		var v = vel[0]+vel[1]+vel[2];
+//		var vel = this.body.linearVel;
+//		var v = vel[0]+vel[1]+vel[2];
 //		Ogl.Color(1+v/10,1,0);
-
-		Print( this.body.force, '\n' );
-
-		Ogl.Color(this.geom.impactVelocity*2, 1, 0);
-		this.geom.impactVelocity /= 1.01;
+		
+//		Ogl.Color(Vector3Length(this.body.jointsForce) / 10, 1, 0);
+		
+		Ogl.Color(this.geom.lastImpactVelocity*2,1,0);
+		this.geom.lastImpactVelocity /= 1.01;
 		
 		Ogl.CallList(this._clist);
 		Ogl.PopMatrix();
 	}
 }
+
 var imp = 0;
 function Box(pos) {
 	
@@ -145,10 +147,11 @@ function Box(pos) {
 	this.body.mass.value = 1;
 	this.body.position = pos;
 	this.body.autoDisable = true;
-	this.geom.impactVelocity = 0.0;
-	this.geom.impact = function(thisGeom, otherGeom, impactVelocity) {
+	
+	this.geom.lastImpactVelocity = 0.0;
+	this.geom.contact = function(thisGeom, otherGeom, impactVelocity) {
 
-		this.impactVelocity += impactVelocity;
+		this.lastImpactVelocity += impactVelocity;
 	}
 	this.Compile();
 }
@@ -167,7 +170,7 @@ for ( var i = -side; i < side; ++i )
 	for ( var j = -side; j < side; ++j ) {
 		
 		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
-		scene.push( new Box([i*(1+gap), j*(1+gap), 1.5]) );
+//		scene.push( new Box([i*(1+gap), j*(1+gap), 1.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 2.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 3.5]) );
 	}
