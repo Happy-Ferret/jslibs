@@ -279,13 +279,13 @@ DEFINE_PROPERTY( impactSetter ) {
 //	JL_S_ASSERT( JsvalIsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
 	if ( !JSVAL_IS_VOID(*vp) )
 		JL_S_ASSERT_FUNCTION(*vp);
-	return JS_SetReservedSlot(cx, obj, SLOT_GEOM_IMPACT_FUNCTION, *vp);
+	return JS_SetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, *vp);
 	JL_BAD;
 }
 
 DEFINE_PROPERTY( impactGetter ) {
 
-	return JL_GetReservedSlot(cx, obj, SLOT_GEOM_IMPACT_FUNCTION, vp);
+	return JL_GetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, vp);
 }
 
 

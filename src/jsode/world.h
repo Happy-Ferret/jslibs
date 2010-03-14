@@ -14,14 +14,13 @@
 
 DECLARE_CLASS( World )
 
-#define DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME "defaultSurfaceParameters"
-#define WORLD_SPACE_PROPERTY_NAME "space"
-
+#define SLOT_WORLD_SPACE 0
+#define SLOT_WORLD_DEFAULTSURFACEPARAMETERS 1
 
 struct WorldPrivate {
 	ode::dWorldID worldId;
 	ode::dJointGroupID contactGroupId;
-//	JSContext *stepTmpCx;
+	// JSContext *stepTmpCx;
 };
 
 

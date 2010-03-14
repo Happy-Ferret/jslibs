@@ -15,7 +15,7 @@
 extern bool _odeFinalization;
 
 #define SLOT_GEOM_SURFACEPARAMETER 0
-#define SLOT_GEOM_IMPACT_FUNCTION 1
+#define SLOT_GEOM_CONTACT_FUNCTION 1
 #define SLOT_TRIMESH_TRIMESH 2
 
 DECLARE_CLASS( SurfaceParameters )
@@ -36,6 +36,11 @@ void FinalizeGeom(JSContext *cx, JSObject *obj);
 
 JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj);
 
+ALWAYS_INLINE bool JsvalIsGeom( const jsval val ) {
+
+	return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT( val )) == JL_CLASS(Geom);
+}
+
 ALWAYS_INLINE bool GeomHasJsObj( ode::dGeomID geomId ) {
 	
 	return ode::dGeomGetData(geomId) != NULL;
@@ -48,6 +53,17 @@ ALWAYS_INLINE JSBool GeomToJsval( JSContext *cx, ode::dGeomID geomId, jsval *val
 		JL_CHK( ReconstructGeom(cx, geomId, &obj) );
 	JL_S_ASSERT(JL_InheritFrom(cx, obj, JL_CLASS(Geom)), "Invalid Geom* class.");
 	*val = OBJECT_TO_JSVAL( obj );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+ALWAYS_INLINE JSBool JsvalToGeom( JSContext *cx, const jsval val, ode::dGeomID *geom ) {
+
+	JL_S_ASSERT_OBJECT( val );
+	JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(val), JL_CLASS(Geom));
+	*geom = (ode::dGeomID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(val));
+	JL_S_ASSERT_RESOURCE( *geom );
 	return JS_TRUE;
 	JL_BAD;
 }

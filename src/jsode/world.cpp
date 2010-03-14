@@ -99,16 +99,21 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 
 		jsval func1, func2;
 		if ( geom1HasObj )
-			JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom1), SLOT_GEOM_IMPACT_FUNCTION, &func1) );
+			JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom1), SLOT_GEOM_CONTACT_FUNCTION, &func1) );
 		else
 			func1 = JSVAL_VOID;
 
 		if ( geom2HasObj )
-			JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom2), SLOT_GEOM_IMPACT_FUNCTION, &func2) );
+			JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom2), SLOT_GEOM_CONTACT_FUNCTION, &func2) );
 		else
 			func2 = JSVAL_VOID;
 
 		if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) {
+
+//			int arity1 = JS_GetFunctionArity(JS_ValueToFunction(cx, func1));
+//			int arity2 = JS_GetFunctionArity(JS_ValueToFunction(cx, func2));
+
+//			if ( arity1 >= 3 || arity2 >= 3 ) { // only compute the following if needed. aka the function will use it. UGH miss arguments variable
 
 			ode::dVector3 *pos = &contact.geom.pos;
 
@@ -128,27 +133,26 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 				Vector3Identity(&tmp);
 			Vector3SubVector3(&vel, &vel, &tmp);
 			Vector3LoadPtr(&normal, contact.geom.normal);
-			ode::dReal impactVelocity = Vector3Dot(&vel, &normal);
+			ode::dReal contactVelocity = Vector3Dot(&vel, &normal);
 
 			JSTempValueRooter tvr;
 			jsval argv[9];
 			JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
-
 			argv[0] = JSVAL_NULL; // rval
-	//		JL_CHKB( FloatToJsval(cx, contact.geom.depth, &argv[3]), bad_poproot );
-			JL_CHKB( FloatToJsval(cx, impactVelocity, &argv[3]), bad_poproot );
+
+			// geom.contact = function(thisGeom, otherGeom, contactVelocity, contactX, contactY, contactZ, side1, side2) { }
+
+			JL_CHKB( FloatToJsval(cx, contactVelocity, &argv[3]), bad_poproot ); // JL_CHKB( FloatToJsval(cx, contact.geom.depth, &argv[3]), bad_poproot );
 			JL_CHKB( FloatToJsval(cx, contact.geom.pos[0], &argv[4]), bad_poproot );
 			JL_CHKB( FloatToJsval(cx, contact.geom.pos[1], &argv[5]), bad_poproot );
 			JL_CHKB( FloatToJsval(cx, contact.geom.pos[2], &argv[6]), bad_poproot );
-
-			//contact.geom.side1; // TriIndex
-			//contact.geom.side2; // TriIndex
 
 			if ( !JSVAL_IS_VOID( func1 ) ) {
 
 				argv[1] = valGeom1;
 				argv[2] = valGeom2;
-				argv[7] = INT_TO_JSVAL( contact.geom.side1 );
+				//...
+				argv[7] = INT_TO_JSVAL( contact.geom.side1 ); // TriIndex
 				argv[8] = INT_TO_JSVAL( contact.geom.side2 );
 				JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom1), func1, COUNTOF(argv)-1, argv+1, argv), bad_poproot );
 				if ( *argv == JSVAL_FALSE )
@@ -159,7 +163,8 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 
 				argv[1] = valGeom2;
 				argv[2] = valGeom1;
-				argv[7] = INT_TO_JSVAL( contact.geom.side2 );
+				//...
+				argv[7] = INT_TO_JSVAL( contact.geom.side2 ); // TriIndex
 				argv[8] = INT_TO_JSVAL( contact.geom.side1 );
 				JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom2), func2, COUNTOF(argv)-1, argv+1, argv), bad_poproot );
 				if ( *argv == JSVAL_FALSE )
@@ -185,6 +190,15 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		}
 
 		ode::dJointID contactJoint = ode::dJointCreateContact(ccp->worldId, ccp->contactGroupId, &contact);
+
+/*
+		ode::dJointFeedback *fb = (ode::dJointFeedback*)jl_calloc(1, sizeof(ode::dJointFeedback));
+		JL_CHK(fb);
+		ode::dJointSetFeedback(contactJoint, fb);
+
+		fb destruction: (TBD)
+*/
+
 		ode::dJointAttach(contactJoint, body1, body2);
 	}
 
@@ -275,12 +289,12 @@ DEFINE_CONSTRUCTOR() {
 	pv->contactGroupId = ode::dJointGroupCreate(0); // see nearCallback()
 
 	JSObject *spaceObject = JS_ConstructObject(cx, JL_CLASS(Space), NULL, NULL); // no arguments = create a topmost space object
-	JL_S_ASSERT( spaceObject != NULL, "Unable to construct Space for the World." );
-	JL_CHK( JS_DefineProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, OBJECT_TO_JSVAL(spaceObject), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) );
+	JL_CHK( spaceObject );
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_WORLD_SPACE, OBJECT_TO_JSVAL(spaceObject)) );
 
 	JSObject *surfaceParameters = JS_ConstructObject(cx, JL_CLASS(SurfaceParameters), NULL, NULL);
-	JL_S_ASSERT( surfaceParameters != NULL, "Unable to construct classSurfaceParameters." );
-	JL_CHK( JS_DefineProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, OBJECT_TO_JSVAL(surfaceParameters), NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) );
+	JL_CHK( surfaceParameters );
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, OBJECT_TO_JSVAL(surfaceParameters)) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -313,7 +327,7 @@ DEFINE_FUNCTION( Destroy ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( [ space [, space2 ] ] )
+ $VOID $INAME( [ spaceOrGeom [, spaceOrGeom2 ] ] )
 **/
 DEFINE_FUNCTION( Collide ) {
 
@@ -323,31 +337,63 @@ DEFINE_FUNCTION( Collide ) {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
+	ode::dJointGroupEmpty(pv->contactGroupId); // contactGroupId will be reused at the next step!
+
+
 	//jsval val;
 	//JL_GetReservedSlot(cx, obj, WORLD_SLOT_SPACE, &val);
 	//ode::dSpaceID space = (ode::dSpaceID)JSVAL_TO_PRIVATE(val);
 	//ode::dSpaceCollide(space,0,&nearCallback);
 
-	ode::dSpaceID spaceId;
+	void *sg1Id, *sg2Id; // space or geom (see http://opende.sourceforge.net/wiki/index.php/Manual_%28Collision_Detection%29)
 
-	if ( JL_ARGC == 0 ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
-		jsval val;
-		JL_CHK( JS_GetProperty(cx, obj, WORLD_SPACE_PROPERTY_NAME, &val) );
-		JL_S_ASSERT_DEFINED( val );
-		JL_CHK( JsvalToSpaceID(cx, val, &spaceId) );
+		// doc. dSpaceCollide2 ... It can also test a single non-space geom against a space ...
+		JL_S_ASSERT_OBJECT( JL_ARG(2) );
+		if ( JsvalIsSpace(JL_ARG(2)) ) {
+
+			JL_CHK( JsvalToSpaceID(cx, JL_ARG(2), (ode::dSpaceID*)&sg2Id) );
+		} else {
+
+			JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(2)), JL_CLASS(Geom));
+			JL_CHK( JsvalToGeom(cx, JL_ARG(2), (ode::dGeomID*)&sg2Id) );
+		}
 	} else {
-		
-		JL_S_ASSERT_OBJECT( JL_ARG(1) );
-		JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Space));
-		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &spaceId) );
+
+		sg2Id = NULL;
 	}
 
-	jsval defaultSurfaceParametersObject;
-	JL_CHK( JS_GetProperty(cx, obj, DEFAULT_SURFACE_PARAMETERS_PROPERTY_NAME, &defaultSurfaceParametersObject) );
-	JL_S_ASSERT_OBJECT( defaultSurfaceParametersObject );
-	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), JL_CLASS(SurfaceParameters) ); // (TBD) simplify RT_ASSERT
-	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersObject)); // beware: local variable !
+
+	if ( JL_ARG_ISDEF(1) ) {
+
+		JL_S_ASSERT_OBJECT( JL_ARG(1) );
+		if ( sg2Id == NULL ) {
+
+			JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Space));
+			JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), (ode::dSpaceID*)&sg1Id) );
+		} else {
+
+			if ( JsvalIsSpace(JL_ARG(1)) ) {
+
+				JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), (ode::dSpaceID*)&sg1Id) );
+			} else {
+
+				JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Geom));
+				JL_CHK( JsvalToGeom(cx, JL_ARG(1), (ode::dGeomID*)&sg1Id) );
+			}
+		}
+	} else {
+
+		jsval val;
+		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_WORLD_SPACE, &val) );
+		JL_CHK( JsvalToSpaceID(cx, val, (ode::dSpaceID*)&sg1Id) );
+	}
+
+	jsval defaultSurfaceParametersVal;
+	JL_GetReservedSlot(cx, obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, &defaultSurfaceParametersVal);
+	//	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), JL_CLASS(SurfaceParameters) ); // (TBD) simplify RT_ASSERT
+	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersVal)); // beware: local variable !
 	JL_S_ASSERT_RESOURCE( defaultSurfaceParameters );
 
 	ColideContextPrivate ccp;
@@ -356,8 +402,10 @@ DEFINE_FUNCTION( Collide ) {
 	ccp.contactGroupId = pv->contactGroupId;
 	ccp.worldId = pv->worldId;
 
-	ode::dJointGroupEmpty(pv->contactGroupId); // contactGroupId will be reused at the next step!
-	ode::dSpaceCollide(spaceId, (void*)&ccp, &nearCallback); // ode::dSpaceCollide2(
+	if ( sg2Id == NULL )
+		ode::dSpaceCollide((ode::dSpaceID)sg1Id, (void*)&ccp, &nearCallback);
+	else
+		ode::dSpaceCollide2((ode::dGeomID)sg1Id, (ode::dGeomID)sg2Id, (void*)&ccp, &nearCallback);
 
 	return !JS_IsExceptionPending(cx); // an exception may have been thrown in nearCallback
 	JL_BAD;
@@ -376,7 +424,7 @@ DEFINE_FUNCTION_FAST( Step ) {
 	JL_S_ASSERT_CLASS(JL_FOBJ, JL_CLASS(World));
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE(pv);
-	float stepSize;
+	ode::dReal stepSize;
 	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &stepSize) );
 	if ( ode::dWorldGetQuickStepNumIterations(pv->worldId) == 0 )
 		ode::dWorldStep(pv->worldId, stepSize / 1000.f);
@@ -624,6 +672,29 @@ DEFINE_PROPERTY( realGetter ) {
 	JL_BAD;
 }
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE Body $INAME $READONLY
+  Returns the default surface parameters of the world.
+**/
+DEFINE_PROPERTY( defaultSurfaceParameters ) {
+
+	return JL_GetReservedSlot(cx, obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, vp);
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE Body $INAME $READONLY
+  Returns the default space of the world.
+**/
+DEFINE_PROPERTY( space ) {
+
+	return JL_GetReservedSlot(cx, obj, SLOT_WORLD_SPACE, vp);
+}
+
+
 /**doc
 $TOC_MEMBER $INAME
  $TYPE Body $INAME $READONLY
@@ -653,6 +724,10 @@ $TOC_MEMBER $INAME
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
+
+	HAS_PRIVATE
+	HAS_RESERVED_SLOTS(2)
+
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
@@ -666,6 +741,8 @@ CONFIGURE_CLASS
 		PROPERTY( autoDisableLinearThreshold )
 		PROPERTY( autoDisableAngularThreshold )
 		PROPERTY( gravity )
+		PROPERTY_READ( defaultSurfaceParameters )
+		PROPERTY_READ( space )
 		PROPERTY_READ( env )
 		PROPERTY_SWITCH( ERP, real )
 		PROPERTY_SWITCH( CFM, real )
@@ -680,5 +757,4 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( maxAngularSpeed, real )
 	END_PROPERTY_SPEC
 
-	HAS_PRIVATE
 END_CLASS
