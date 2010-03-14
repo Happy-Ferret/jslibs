@@ -14,6 +14,15 @@
 
 #include "stdafx.h"
 
+// set stack to 2MB:
+#ifdef XP_WIN
+	#pragma comment (linker, "/STACK:0x200000")
+#else
+	#pragma stacksize 2097152
+	//char stack[0x200000] __attribute__ ((section ("STACK"))) = { 0 };
+	//init_sp(stack + sizeof (stack));
+#endif
+
 #include "jslibsModule.cpp"
 
 #include "../jslang/handlePub.h"
