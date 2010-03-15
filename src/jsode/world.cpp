@@ -37,7 +37,7 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 	// Doc: http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29
 	ode::dContact contact;
 	int n = ode::dCollide(geom1, geom2, 1, &contact.geom, sizeof(ode::dContact));
-	if ( n <= 0 )
+	if ( n == 0 )
 		return;
 
 /*
@@ -77,10 +77,9 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 	//dReal motion1,motion2;	// add
 	//dReal slip1,slip2;	// ?
 
-	bool doContact;
-	doContact = true;
+	bool doContact = true;
 
-	ColideContextPrivate *ccp = (ColideContextPrivate*)data; // beware: *data is local to Step function
+	ColideContextPrivate *ccp = (ColideContextPrivate*)data; // beware: *data is local to Colide function
 
 	JSContext *cx = ccp->cx;
 
@@ -112,8 +111,7 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 
 //			int arity1 = JS_GetFunctionArity(JS_ValueToFunction(cx, func1));
 //			int arity2 = JS_GetFunctionArity(JS_ValueToFunction(cx, func2));
-
-//			if ( arity1 >= 3 || arity2 >= 3 ) { // only compute the following if needed. aka the function will use it. UGH miss arguments variable
+//			if ( arity1 >= 3 || arity2 >= 3 ) { // only compute the following if needed. aka the function will use it. UGH! miss arguments variable
 
 			ode::dVector3 *pos = &contact.geom.pos;
 
@@ -127,10 +125,12 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 				ode::dBodyGetPointVel(body2, px, py, pz, vel.raw);
 			else
 				Vector3Identity(&vel);
+
 			if ( body1 != NULL )
 				ode::dBodyGetPointVel(body1, px, py, pz, tmp.raw);
 			else
 				Vector3Identity(&tmp);
+
 			Vector3SubVector3(&vel, &vel, &tmp);
 			Vector3LoadPtr(&normal, contact.geom.normal);
 			ode::dReal contactVelocity = Vector3Dot(&vel, &normal);
@@ -191,13 +191,10 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 
 		ode::dJointID contactJoint = ode::dJointCreateContact(ccp->worldId, ccp->contactGroupId, &contact);
 
-/*
-		ode::dJointFeedback *fb = (ode::dJointFeedback*)jl_calloc(1, sizeof(ode::dJointFeedback));
-		JL_CHK(fb);
-		ode::dJointSetFeedback(contactJoint, fb);
-
-		fb destruction: (TBD)
-*/
+		//ode::dJointFeedback *fb = (ode::dJointFeedback*)jl_calloc(1, sizeof(ode::dJointFeedback));
+		//JL_CHK(fb);
+		//ode::dJointSetFeedback(contactJoint, fb);
+		//fb destruction: (TBD)
 
 		ode::dJointAttach(contactJoint, body1, body2);
 	}

@@ -769,11 +769,12 @@ DEFINE_PROPERTY( angularDampingThresholdSetter ) {
 	JL_BAD;
 }
 
-/**doc
+/*
+/ **doc
 $TOC_MEMBER $INAME
  $TYPE real $INAME
   (TBD)
-**/
+** /
 DEFINE_PROPERTY( jointsForce ) {
 
 	ode::dBodyID body = (ode::dBodyID)JL_GetPrivate(cx, obj);
@@ -813,17 +814,17 @@ DEFINE_PROPERTY( jointsForce ) {
 }
 
 
-/**doc
+/ **doc
 $TOC_MEMBER $INAME
  $TYPE real $INAME
   (TBD)
-**/
+** /
 DEFINE_PROPERTY( jointsTorque ) {
 
 	return JS_TRUE;
 	JL_BAD;
 }
-
+*/
 
 
 /*
@@ -1115,8 +1116,8 @@ CONFIGURE_CLASS
 		PROPERTY( angularDamping )
 		PROPERTY( angularDampingThreshold )
 
-		PROPERTY_READ( jointsForce )
-		PROPERTY_READ( jointsTorque )
+//		PROPERTY_READ( jointsForce )
+//		PROPERTY_READ( jointsTorque )
 
 //		PROPERTY_READ( isMoving )
 

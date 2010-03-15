@@ -271,27 +271,6 @@ DEFINE_PROPERTY( bodyGetter ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $FUNCTION *impact*
-  The impact callback.
-**/
-DEFINE_PROPERTY( impactSetter ) {
-	
-//	JL_S_ASSERT( JsvalIsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
-	if ( !JSVAL_IS_VOID(*vp) )
-		JL_S_ASSERT_FUNCTION(*vp);
-	return JS_SetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, *vp);
-	JL_BAD;
-}
-
-DEFINE_PROPERTY( impactGetter ) {
-
-	return JL_GetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, vp);
-}
-
-
-
-/**doc
-$TOC_MEMBER $INAME
  *offset*
   Sets the position and rotation of the geometry to its center of mass.
   $LF
@@ -488,16 +467,26 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 
 /**doc
 === Callback functions ===
- * *impact*(index, thisGeom, againstGeom, position);
+ * *contact*(thisGeom, againstGeom, contactVelocity, contactX, contactY, contactZ, side1, side2);
   This function is called each time two geometries collide together.
-  _index_ is the index of the collision between step and step+1.
-  $LF
   _thisGeom_ is the geometry that is colliding (usualy, `this` object).
   $LF
   _againstGeom_ is the geometry against with this geometry is colliding (the other Geom).
-  $LF
-  $TYPE vec3 _position_ is the position of the impact point in world position.
 **/
+DEFINE_PROPERTY( contactSetter ) {
+	
+//	JL_S_ASSERT( JsvalIsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
+	if ( !JSVAL_IS_VOID(*vp) )
+		JL_S_ASSERT_FUNCTION(*vp);
+	return JS_SetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, *vp);
+	JL_BAD;
+}
+
+DEFINE_PROPERTY( contactGetter ) {
+
+	return JL_GetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, vp);
+}
+
 
 /**doc
 === Native Interface ===
@@ -516,7 +505,7 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY( impact )
+		PROPERTY( contact )
 		PROPERTY( body ) // store it to keep a reference (GC protection)
 		PROPERTY_WRITE( tansformation )
 		PROPERTY_WRITE( offset )

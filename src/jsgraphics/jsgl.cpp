@@ -115,6 +115,7 @@ DECLARE_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
 DECLARE_OPENGL_EXTENSION( glBufferData, PFNGLBUFFERDATAPROC );
 DECLARE_OPENGL_EXTENSION( glMapBuffer, PFNGLMAPBUFFERPROC );
 DECLARE_OPENGL_EXTENSION( glUnmapBuffer, PFNGLUNMAPBUFFERPROC );
+DECLARE_OPENGL_EXTENSION( glPolygonOffsetEXT, PFNGLPOLYGONOFFSETEXTPROC );
 
 /*
 #define LOAD_OPENGL_EXTENSION( name, proto ) \
@@ -752,6 +753,8 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 	JL_BAD;
 }
 
+
+
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( mode )
@@ -835,9 +838,12 @@ DEFINE_FUNCTION_FAST( StencilFunc ) {
 	JL_S_ASSERT_ARG(3);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
-	JL_S_ASSERT_INT(JL_FARG(3));
+	JL_S_ASSERT_NUMBER(JL_FARG(3));
 
-	glStencilFunc(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)));
+	GLuint mask;
+	JL_CHK( JsvalToUInt(cx, JL_FARG(3), &mask) );
+
+	glStencilFunc(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), mask);
 
 	*JL_FRVAL = JSVAL_VOID;
 	JL_OGL_WARNING;
@@ -1337,7 +1343,7 @@ DEFINE_FUNCTION_FAST( LightModel ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( light, pname, params )
+ $VOID $INAME( light, pname, [ paramArray | param1, ... paramN ] )
   $H arguments
    $ARG GLenum light
    $ARG GLenum pname
@@ -1347,19 +1353,19 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Light ) {
 
-	JL_S_ASSERT_ARG(3);
+	JL_S_ASSERT_ARG_MIN(3);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
 
 	*JL_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(JL_FARG(3)) ) {
+	if ( argc == 3 && JSVAL_IS_INT(JL_FARG(3)) ) {
 
 		glLighti( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
 
 		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
+	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
 
 		double param;
 		JsvalToDouble(cx, JL_FARG(3), &param);
@@ -1369,9 +1375,10 @@ DEFINE_FUNCTION_FAST( Light ) {
 		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
-	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
 
-		GLfloat params[16];
+	GLfloat params[16];
+	if ( argc == 3 && JsvalIsArray(cx, JL_FARG(3)) ) {
+
 		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
 
@@ -1380,10 +1387,67 @@ DEFINE_FUNCTION_FAST( Light ) {
 		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
+
+	JL_S_ASSERT_ARG_MIN( 3 ); // at least
+	JL_ASSERT( argc-2 < COUNTOF(params) );
+	for ( unsigned int i = 2; i < argc; ++i )
+		JsvalToFloat(cx, JL_FARGV[i], &params[i-2]);
+	glLightfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
+	JL_OGL_WARNING;
+	return JS_TRUE;
+
+
 	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $REAL | $ARRAY $INAME( light, pname [, count] )
+  Return light source parameter values.
+  $H arguments
+   $ARG GLenum light: Specifies a light source.
+   $ARG GLenum pname: Specifies a light source parameter for light.
+   $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
+  $H return value
+   A single value or an Array of values of the selected parameter.
+  $H OpenGL API
+   glGetLightfv
+**/
+DEFINE_FUNCTION_FAST( GetLight ) {
+
+	JL_S_ASSERT_ARG_RANGE(2,3);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+
+
+	GLfloat params[16]; // (TBD) check if it is the max amount of data that glGetLightfv may returns.
+	glGetLightfv(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params);
+
+	if ( JL_FARG_ISDEF(3) ) {
+
+		JL_S_ASSERT_INT( JL_FARG(3) );
+		int count = JSVAL_TO_INT( JL_FARG(3) );
+		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
+		JL_CHK( arrayObj );
+		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		jsval tmpValue;
+		while (count--) {
+
+			JL_CHK( FloatToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+		}
+	} else {
+
+		JL_CHK( FloatToJsval(cx, params[0], JL_FRVAL) );
+	}
+	JL_OGL_WARNING;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 
 /**doc
@@ -1411,7 +1475,7 @@ DEFINE_FUNCTION_FAST( ColorMaterial ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( face, pname, params )
+ $VOID $INAME( face, pname, [ paramArray | param1, ... paramN ] )
   $H arguments
    $ARG GLenum face
    $ARG GLenum pname
@@ -1421,18 +1485,18 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Material ) {
 
-	JL_S_ASSERT_ARG(3);
+	JL_S_ASSERT_ARG_MIN( 3 );
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
 
 	*JL_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(JL_FARG(3)) ) {
+	if ( argc == 3 && JSVAL_IS_INT(JL_FARG(3)) ) {
 
 		glMateriali( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
 		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
+	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
 
 		double param;
 		JsvalToDouble(cx, JL_FARG(3), &param);
@@ -1440,15 +1504,25 @@ DEFINE_FUNCTION_FAST( Material ) {
 		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
-	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
 
-		GLfloat params[16];
+	GLfloat params[16]; // alloca ?
+	if ( argc == 3 && JsvalIsArray(cx, JL_FARG(3)) ) {
+
 		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
 		glMaterialfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
 		JL_OGL_WARNING;
 		return JS_TRUE;
 	}
+
+	JL_S_ASSERT_ARG_MIN( 3 ); // at least
+	JL_ASSERT( argc-2 < COUNTOF(params) );
+	for ( unsigned int i = 2; i < argc; ++i )
+		JsvalToFloat(cx, JL_FARGV[i], &params[i-2]);
+	glMaterialfv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );
+	JL_OGL_WARNING;
+	return JS_TRUE;
+
 	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
@@ -2107,12 +2181,7 @@ DEFINE_FUNCTION_FAST( LoadMatrix ) {
 	JL_S_ASSERT_ARG(1);
 	float tmp[16], *m = tmp;
 
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-	JSObject *matrixObj = JSVAL_TO_OBJECT( JL_FARG(1) );
-	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
-	JL_S_ASSERT( fct, "Invalid Matrix44 interface." );
-	JL_CHK( fct(cx, matrixObj, &m) );
-
+	JL_CHK( JsvalToMatrix44(cx, JL_FARG(1), &m) );
 	glLoadMatrixf(m);
 
 	*JL_FRVAL = JSVAL_VOID;
@@ -2135,11 +2204,7 @@ DEFINE_FUNCTION_FAST( MultMatrix ) {
 	JL_S_ASSERT_ARG(1);
 	float tmp[16], *m = tmp;
 
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-	JSObject *matrixObj = JSVAL_TO_OBJECT( JL_FARG(1) );
-	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
-	JL_S_ASSERT( fct, "Invalid Matrix44 interface." );
-	JL_CHK( fct(cx, matrixObj, &m) );
+	JL_CHK( JsvalToMatrix44(cx, JL_FARG(1), &m) );
 
 	glMultMatrixf(m);
 
@@ -2713,6 +2778,37 @@ DEFINE_FUNCTION_FAST( PixelMap ) {
 
 ///////////////////////////////////////////////////////////////////////////////
 // OpenGL extensions
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( factor, units )
+  $H arguments
+   $ARG $REAL factor
+   $ARG $REAL units
+  $H OpenGL API
+   glPolygonOffset
+**/
+DEFINE_FUNCTION_FAST( PolygonOffset ) {
+
+//	JL_INIT_OPENGL_EXTENSION( glPolygonOffsetEXT, PFNGLPOLYGONOFFSETEXTPROC );
+
+	JL_S_ASSERT_ARG(2);
+
+	GLfloat factor, units;
+
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &factor) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &units) );
+	
+	glPolygonOffset(factor, units);
+
+	*JL_FRVAL = JSVAL_VOID;
+	JL_OGL_WARNING;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 
 
 /**doc
@@ -4395,6 +4491,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(TexEnv, 3) // target, pname, param | array of params
 		FUNCTION_FAST_ARGC(LightModel, 2) // pname, param
 		FUNCTION_FAST_ARGC(Light, 3) // light, pname, param
+		FUNCTION_FAST_ARGC(GetLight, 3) // light, pname, count
 		FUNCTION_FAST_ARGC(ColorMaterial, 2) // face, mode
 		FUNCTION_FAST_ARGC(Material, 3) // face, pname, param
 		FUNCTION_FAST_ARGC(Enable, 1) // cap
@@ -4443,6 +4540,8 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(RasterPos, 4) // x,y,z,w
 		FUNCTION_FAST_ARGC(PixelZoom, 2) // x,y
 		FUNCTION_FAST_ARGC(PixelMap, 2) // map,<array>
+
+		FUNCTION_FAST_ARGC(PolygonOffset, 2) // factor, units
 
 		FUNCTION_FAST_ARGC(DefineTextureImage, 3) // target, format, image (non-OpenGL API)
 
