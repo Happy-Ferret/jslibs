@@ -561,10 +561,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ShadowMatrix ) {
 
-	float shadowMat[4][4], groundplane[4], lightpos[4];
+	float shadowMat[4][4], plane[4], lightpos[4];
 
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), groundplane, 4, &len) );
+	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), plane, 4, &len) );
 	JL_S_ASSERT( len == 4, "Invalid plane." );
 	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), lightpos, 4, &len) );
 	JL_S_ASSERT( len == 4, "Invalid light position." );
@@ -572,27 +572,27 @@ DEFINE_FUNCTION_FAST( ShadowMatrix ) {
 	float dot;
 
 	/* Find dot product between light position vector and ground plane normal. */
-	dot = groundplane[0] * lightpos[0] + groundplane[1] * lightpos[1] + groundplane[2] * lightpos[2] + groundplane[3] * lightpos[3];
+	dot = plane[0] * lightpos[0] + plane[1] * lightpos[1] + plane[2] * lightpos[2] + plane[3] * lightpos[3];
 
-	shadowMat[0][0] = dot - lightpos[0] * groundplane[0];
-	shadowMat[1][0] = 0.f - lightpos[0] * groundplane[1];
-	shadowMat[2][0] = 0.f - lightpos[0] * groundplane[2];
-	shadowMat[3][0] = 0.f - lightpos[0] * groundplane[3];
+	shadowMat[0][0] = dot - lightpos[0] * plane[0];
+	shadowMat[1][0] = 0.f - lightpos[0] * plane[1];
+	shadowMat[2][0] = 0.f - lightpos[0] * plane[2];
+	shadowMat[3][0] = 0.f - lightpos[0] * plane[3];
 
-	shadowMat[0][1] = 0.f - lightpos[1] * groundplane[0];
-	shadowMat[1][1] = dot - lightpos[1] * groundplane[1];
-	shadowMat[2][1] = 0.f - lightpos[1] * groundplane[2];
-	shadowMat[3][1] = 0.f - lightpos[1] * groundplane[3];
+	shadowMat[0][1] = 0.f - lightpos[1] * plane[0];
+	shadowMat[1][1] = dot - lightpos[1] * plane[1];
+	shadowMat[2][1] = 0.f - lightpos[1] * plane[2];
+	shadowMat[3][1] = 0.f - lightpos[1] * plane[3];
 
-	shadowMat[0][2] = 0.f - lightpos[2] * groundplane[0];
-	shadowMat[1][2] = 0.f - lightpos[2] * groundplane[1];
-	shadowMat[2][2] = dot - lightpos[2] * groundplane[2];
-	shadowMat[3][2] = 0.f - lightpos[2] * groundplane[3];
+	shadowMat[0][2] = 0.f - lightpos[2] * plane[0];
+	shadowMat[1][2] = 0.f - lightpos[2] * plane[1];
+	shadowMat[2][2] = dot - lightpos[2] * plane[2];
+	shadowMat[3][2] = 0.f - lightpos[2] * plane[3];
 
-	shadowMat[0][3] = 0.f - lightpos[3] * groundplane[0];
-	shadowMat[1][3] = 0.f - lightpos[3] * groundplane[1];
-	shadowMat[2][3] = 0.f - lightpos[3] * groundplane[2];
-	shadowMat[3][3] = dot - lightpos[3] * groundplane[3];
+	shadowMat[0][3] = 0.f - lightpos[3] * plane[0];
+	shadowMat[1][3] = 0.f - lightpos[3] * plane[1];
+	shadowMat[2][3] = 0.f - lightpos[3] * plane[2];
+	shadowMat[3][3] = dot - lightpos[3] * plane[3];
 
 	return FloatVectorToJsval(cx, (float*)shadowMat, 16, JL_FRVAL, false);
 	JL_BAD;
