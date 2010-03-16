@@ -1,5 +1,16 @@
 LoadModule('jsstd');
 
+/// Count object properties
+
+	QA.ASSERT( CountProperties({}), 0, 'test with 0 properties' );
+	QA.ASSERT( CountProperties({a:1}), 1, 'test with 1 properties' );
+	QA.ASSERT( CountProperties({a:1, b:2}), 2, 'test with 2 properties' );
+
+	var obj = {a:1, b:2};
+	delete obj.a;
+	delete obj.b;
+	QA.ASSERT( CountProperties(obj), 0, 'test with deleted properties' );
+
 /// SwitchCase function [ftrm]
 
 	QA.ASSERT( SwitchCase( 1, [1, '1'], ['num', 'str'] ), 'num', 'SwitchCase type' );
@@ -145,34 +156,34 @@ LoadModule('jsstd');
 		var m = new Map();
 
 		QA.ASSERT( '__proto__' in m, false, 'has no __proto__' );
-		QA.ASSERT( '__parent__' in m, false, 'has no __parent__' );
+//		QA.ASSERT( '__parent__' in m, false, 'has no __parent__' );
 		QA.ASSERT( 'toString' in m, false, 'has no toString' );
 		QA.ASSERT( 'toSource' in m, false, 'has no toSource' );
-		QA.ASSERT( '__count__' in m, false, 'has no __count__' );
+//		QA.ASSERT( '__count__' in m, false, 'has no __count__' );
 
 		m.__proto__ = 'AAA', 
-		m.__parent__ = 'BBB';
+//		m.__parent__ = 'BBB';
 		m.toString = 'CCC';
 		m.toSource = 'DDD';
-		m.__count__ = 'EEE';
+//		m.__count__ = 'EEE';
 
 		QA.ASSERT( m.__proto__, 'AAA', ' __proto__ custom fvalue' );
-		QA.ASSERT( m.__parent__, 'BBB', ' __parent__ custom fvalue' );
+//		QA.ASSERT( m.__parent__, 'BBB', ' __parent__ custom fvalue' );
 		QA.ASSERT( m.toString, 'CCC', 'toString custom fvalue' );
 		QA.ASSERT( m.toSource, 'DDD', 'toSource custom fvalue' );
-		QA.ASSERT( m.__count__, 'EEE', '__count__ custom fvalue' );
+//		QA.ASSERT( m.__count__, 'EEE', '__count__ custom fvalue' );
 		
 		delete m.__proto__;
-		delete m.__parent__;
+//		delete m.__parent__;
 		delete m.toString;
 		delete m.toSource;
-		delete m.__count__;
+//		delete m.__count__;
 		
 		QA.ASSERT( '__proto__' in m, false, 'has no __proto__' );
-		QA.ASSERT( '__parent__' in m, false, 'has no __parent__' );
+//		QA.ASSERT( '__parent__' in m, false, 'has no __parent__' );
 		QA.ASSERT( 'toString' in m, false, 'has no toString' );
 		QA.ASSERT( 'toSource' in m, false, 'has no toSource' );
-		QA.ASSERT( '__count__' in m, false, 'has no __count__' );
+//		QA.ASSERT( '__count__' in m, false, 'has no __count__' );
 
 		m.__proto__ = { a:1 };
 		QA.ASSERT( m.a, undefined, 'no __proto__ behavior' );
@@ -183,34 +194,34 @@ LoadModule('jsstd');
 		var m = Map();
 
 		QA.ASSERT( '__proto__' in m, false, 'has no __proto__' );
-		QA.ASSERT( '__parent__' in m, false, 'has no __parent__' );
+//		QA.ASSERT( '__parent__' in m, false, 'has no __parent__' );
 		QA.ASSERT( 'toString' in m, false, 'has no toString' );
 		QA.ASSERT( 'toSource' in m, false, 'has no toSource' );
-		QA.ASSERT( '__count__' in m, false, 'has no __count__' );
+//		QA.ASSERT( '__count__' in m, false, 'has no __count__' );
 
 		m.__proto__ = 'AAA', 
-		m.__parent__ = 'BBB';
+//		m.__parent__ = 'BBB';
 		m.toString = 'CCC';
 		m.toSource = 'DDD';
-		m.__count__ = 'EEE';
+//		m.__count__ = 'EEE';
 
 		QA.ASSERT( m.__proto__, 'AAA', ' __proto__ custom fvalue' );
-		QA.ASSERT( m.__parent__, 'BBB', ' __parent__ custom fvalue' );
+//		QA.ASSERT( m.__parent__, 'BBB', ' __parent__ custom fvalue' );
 		QA.ASSERT( m.toString, 'CCC', 'toString custom fvalue' );
 		QA.ASSERT( m.toSource, 'DDD', 'toSource custom fvalue' );
-		QA.ASSERT( m.__count__, 'EEE', '__count__ custom fvalue' );
+//		QA.ASSERT( m.__count__, 'EEE', '__count__ custom fvalue' );
 		
 		delete m.__proto__;
-		delete m.__parent__;
+//		delete m.__parent__;
 		delete m.toString;
 		delete m.toSource;
-		delete m.__count__;
+//		delete m.__count__;
 		
 		QA.ASSERT( '__proto__' in m, false, 'has no __proto__' );
-		QA.ASSERT( '__parent__' in m, false, 'has no __parent__' );
+//		QA.ASSERT( '__parent__' in m, false, 'has no __parent__' );
 		QA.ASSERT( 'toString' in m, false, 'has no toString' );
 		QA.ASSERT( 'toSource' in m, false, 'has no toSource' );
-		QA.ASSERT( '__count__' in m, false, 'has no __count__' );
+//		QA.ASSERT( '__count__' in m, false, 'has no __count__' );
 
 		m.__proto__ = { a:1 };
 		QA.ASSERT( m.a, undefined, 'no __proto__ behavior' );
@@ -760,7 +771,7 @@ LoadModule('jsstd');
 
 		var o = { x:5, y:6, z:7 };
 		QA.ASSERT( 'z' in o, true, 'has z property' );
-		Clear(o);
+		ClearObject(o);
 		QA.ASSERT( 'z' in o, false, 'property z is cleared' );
 
 
@@ -768,7 +779,7 @@ LoadModule('jsstd');
 	
 		var o = { x:5, y:6, z:7 };
 		QA.ASSERT( 'z' in o, true, 'has z property' );
-		Clear(o);
+		ClearObject(o);
 		QA.ASSERT( 'z' in o, false, 'property z is cleared' );
 
 
@@ -776,7 +787,7 @@ LoadModule('jsstd');
 /// Seal function [ftrm]
 		
 		var o = { a:1 };
-		Seal(o);
+		SealObject(o);
 		
 		try {
 			

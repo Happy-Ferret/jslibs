@@ -310,7 +310,7 @@ $TOC_MEMBER $INAME
   obj.c = 3; // Error: obj.c is read-only
 }}}
 **/
-DEFINE_FUNCTION_FAST( Seal ) {
+DEFINE_FUNCTION_FAST( SealObject ) {
 
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
@@ -322,6 +322,27 @@ DEFINE_FUNCTION_FAST( Seal ) {
 		deep = JS_FALSE;
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_SealObject(cx, JSVAL_TO_OBJECT(JL_FARG(1)), deep);
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( obj )
+  Returns the number of own properties of an object.
+**/
+DEFINE_FUNCTION_FAST( CountProperties ) {
+
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+
+	JSIdArray *arr;
+	arr = JS_Enumerate(cx, JSVAL_TO_OBJECT(JL_FARG(1)));
+	*JL_FRVAL = INT_TO_JSVAL(arr->length);
+	JS_DestroyIdArray(cx, arr);
+
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -344,7 +365,7 @@ $TOC_MEMBER $INAME
   Print( uneval(obj) ); // prints: ({})
   }}}
 **/
-DEFINE_FUNCTION_FAST( Clear ) {
+DEFINE_FUNCTION_FAST( ClearObject ) {
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
@@ -1577,8 +1598,9 @@ CONFIGURE_STATIC
 		FUNCTION_FAST( Expand )
 		FUNCTION_FAST_ARGC( SwitchCase, 4 )
 		FUNCTION_FAST( InternString )
-		FUNCTION_FAST( Seal )
-		FUNCTION_FAST( Clear )
+		FUNCTION_FAST( SealObject )
+		FUNCTION_FAST( CountProperties )
+		FUNCTION_FAST( ClearObject )
 		FUNCTION_FAST( SetScope )
 //		FUNCTION_FAST( GetCurrentScope )
 //		FUNCTION( HideProperties )
