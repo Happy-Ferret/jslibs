@@ -32,20 +32,25 @@ function UI(currentWidth, currentHeight) {
 	GlSetAttribute( GL_DEPTH_SIZE, 16);
 	GlSetAttribute( GL_STENCIL_SIZE, 8 );
 	GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+	
 	SetVideoMode(currentWidth, currentHeight, undefined, defaultVideoMode);
 	
 //	Print( Ogl.extensions.indexOf('shadow'), '\n' );
 	
 	Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
 	Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
+	Ogl.Hint(Ogl.POLYGON_SMOOTH_HINT, Ogl.NICEST);
+
+	Ogl.LightModel(Ogl.LIGHT_MODEL_LOCAL_VIEWER, 1); // see. http://gregs-blog.com/2007/12/21/theres-nothing-wrong-with-opengls-specular-lighting/
 
 	Ogl.PixelStore( Ogl.UNPACK_ALIGNMENT, 1 );
 
-	Ogl.Enable(Ogl.CULL_FACE);
-	Ogl.Enable(Ogl.DEPTH_TEST);
-//	Ogl.Enable(Ogl.TEXTURE_2D);
-
+	Ogl.Enable(Ogl.CULL_FACE);  // default: Ogl.FrontFace(Ogl.CCW);  Ogl.CullFace(Ogl.BACK);
 	
+	Ogl.Enable(Ogl.DEPTH_TEST);
+
+
+//	Ogl.Enable(Ogl.TEXTURE_2D);
 //	Ogl.ShadeModel(Ogl.SMOOTH);
 //	Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, [1.0, 1.0, 1.0, 1.0]);
 //	Ogl.Material(Ogl.FRONT, Ogl.SHININESS, 50);
@@ -53,31 +58,33 @@ function UI(currentWidth, currentHeight) {
 //	Ogl.Enable( Ogl.COLOR_MATERIAL );
 //	Ogl.Enable(Ogl.BLEND);
 //	Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+
 	
 	var lightPos;
 	this.SetLight = function(pos, dir) {
 		
 		if ( !lightPos ) {
 			
-			Ogl.LightModel(Ogl.LIGHT_MODEL_LOCAL_VIEWER, 1);
-			Ogl.Light(Ogl.LIGHT0, Ogl.DIFFUSE, 0.25, 0.25, 0.25, 1);
-			Ogl.Light(Ogl.LIGHT0, Ogl.CONSTANT_ATTENUATION, 0.1);
-			Ogl.Light(Ogl.LIGHT0, Ogl.LINEAR_ATTENUATION, 0.003);
+			Ogl.Light(Ogl.LIGHT0, Ogl.DIFFUSE, 1, 1, 1, 1);
+			//Ogl.Light(Ogl.LIGHT0, Ogl.CONSTANT_ATTENUATION, 0.1);
+			//Ogl.Light(Ogl.LIGHT0, Ogl.LINEAR_ATTENUATION, 0.003);
+			//Ogl.Light(Ogl.LIGHT0, Ogl.SPOT_EXPONENT, 0);
+			//Ogl.Light(Ogl.LIGHT0, Ogl.SPOT_CUTOFF, 180);
+			Ogl.Enable(Ogl.LIGHTING);
+			Ogl.Enable(Ogl.LIGHT0);
 		}
 
-		if ( pos ) {
-			
-			lightPos = pos;
+		lightPos = pos;
+		if ( pos )
 			Ogl.Light(Ogl.LIGHT0, Ogl.POSITION, pos);
-		}
 		if ( dir )
 			Ogl.Light(Ogl.LIGHT0, Ogl.SPOT_DIRECTION, dir);
-		
-		Ogl.Enable(Ogl.LIGHT0);
-		Ogl.Enable(Ogl.LIGHTING);
 	}
 
-	this.RenderWithShadows = function( plane, renderCallback ) { // see http://www.opengl.org/resources/code/samples/mjktips/TexShadowReflectLight.html
+	this.RenderWithShadows = function( plane, renderCallback ) {
+		
+		// see http://www.opengl.org/resources/code/samples/mjktips/TexShadowReflectLight.html
+		// see also http://dalab.se.sjtu.edu.cn/~jietan/shadowMappingTutorial.html
 
 		Ogl.Clear(Ogl.STENCIL_BUFFER_BIT);
 		Ogl.PolygonOffset(-2, -1); // set the scale and units used to calculate depth values.
@@ -85,7 +92,7 @@ function UI(currentWidth, currentHeight) {
 		// Draw the floor with stencil value 3.  This helps us only draw the shadow once per floor pixel (and only on the floor pixels).
 
 		Ogl.Enable(Ogl.STENCIL_TEST);
-		Ogl.StencilFunc(Ogl.ALWAYS, 3, 0xffffffff);
+		Ogl.StencilFunc(Ogl.ALWAYS, 3, -1);
 		Ogl.StencilOp(Ogl.KEEP, Ogl.KEEP, Ogl.REPLACE);
 
 		renderCallback(false, true);
@@ -95,7 +102,7 @@ function UI(currentWidth, currentHeight) {
 		Ogl.EndList();
 		
 		// Render the projected shadow.
-		Ogl.StencilFunc(Ogl.LESS, 2, 0xffffffff);  /* draw if ==1 */
+		Ogl.StencilFunc(Ogl.LESS, 2, -1);  /* draw if ==1 */
 		Ogl.StencilOp(Ogl.REPLACE, Ogl.REPLACE, Ogl.REPLACE);
 		
 		// To eliminate depth buffer artifacts, we use polygon offset to raise the depth of the projected shadow slightly so that it does not depth buffer alias with the floor.
@@ -153,9 +160,10 @@ function UI(currentWidth, currentHeight) {
 		Ogl.CallList(arguments.callee.geometry);
 	}
 	
+	
 	this.DrawText = function(text, infrontFct) {
 
-		Ogl.PushAttrib(Ogl.ENABLE_BIT);
+		Ogl.PushAttrib(Ogl.ENABLE_BIT|Ogl.POLYGON_BIT);
 		if ( infrontFct ) {
 
 			Ogl.Disable(Ogl.DEPTH_TEST);
@@ -184,12 +192,12 @@ function UI(currentWidth, currentHeight) {
 	
 	this.key = new ObjEx(function(name, fct) {
 			
-		var sym = global['K_'+name.toUpperCase()] || global['K_'+name.toLowerCase()];
+			var sym = global['K_'+name.toUpperCase()] || global['K_'+name.toLowerCase()];
 			keyObjListeners[sym] = fct;
 		},
 		function(name) {
 			
-		var sym = global['K_'+name.toUpperCase()] || global['K_'+name.toLowerCase()];
+			var sym = global['K_'+name.toUpperCase()] || global['K_'+name.toLowerCase()];
 			delete keyObjListeners[sym];
 		}
 	);
@@ -335,7 +343,6 @@ function UI(currentWidth, currentHeight) {
 
 		f2d.SetBackgroundColor([0,0,0,0]);
 		f2d.SetColor([1]);
-		
 		var str = fps+'fps\t'+this.status;
 		for ( var [i,chunk] in Iterator(str.split('\t')) )
 			f2d.Draw(chunk, 2 + i * 150, 2);
