@@ -915,6 +915,76 @@ DEFINE_PROPERTY( consoleCodepage ) {
 }
 
 
+///
+
+ALWAYS_INLINE void SetKeyState( BYTE vkey, bool state ) {
+
+	if ( (GetKeyState(vkey) & 1) != state ) {
+
+		keybd_event( vkey, 0x45, KEYEVENTF_EXTENDEDKEY | 0, 0 );
+		keybd_event( vkey, 0x45, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+	}
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME
+  Gets or sets the numlock key state.
+**/
+DEFINE_PROPERTY_GETTER( numlockState ) {
+
+	return BoolToJsval(cx, GetKeyState(VK_NUMLOCK) & 1, vp);
+}
+
+DEFINE_PROPERTY_SETTER( numlockState ) {
+
+	bool state;
+	JL_CHK( JsvalToBool(cx, *vp, &state) );
+	SetKeyState(VK_NUMLOCK, state);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME
+  Gets or sets the capslock key state.
+**/
+DEFINE_PROPERTY_GETTER( capslockState ) {
+
+	return BoolToJsval(cx, GetKeyState(VK_CAPITAL) & 1, vp);
+}
+
+DEFINE_PROPERTY_SETTER( capslockState ) {
+
+	bool state;
+	JL_CHK( JsvalToBool(cx, *vp, &state) );
+	SetKeyState(VK_CAPITAL, state);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME
+  Gets or sets the scrolllock key state.
+**/
+DEFINE_PROPERTY_GETTER( scrolllockState ) {
+
+	return BoolToJsval(cx, GetKeyState(VK_SCROLL) & 1, vp);
+}
+
+DEFINE_PROPERTY_SETTER( scrolllockState ) {
+
+	bool state;
+	JL_CHK( JsvalToBool(cx, *vp, &state) );
+	SetKeyState(VK_SCROLL, state);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 
 #ifdef DEBUG
 DEFINE_FUNCTION_FAST( jswinshelltest ) {
@@ -977,6 +1047,11 @@ CONFIGURE_STATIC
 		PROPERTY( clipboard )
 		PROPERTY_READ( systemCodepage )
 		PROPERTY_READ( consoleCodepage )
+
+		PROPERTY( numlockState )
+		PROPERTY( capslockState )
+		PROPERTY( scrolllockState )
+
 	END_STATIC_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC
