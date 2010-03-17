@@ -25,6 +25,9 @@ function Floor() {
 	
 	var self = this;
 
+	this.castShadow = false;
+	this.receiveShadow = true;
+
 	this.geom = new GeomPlane(world.space);
 	this.geom.params = [0,0,1,0];
 	this.geom.name = 'floor';
@@ -55,9 +58,7 @@ function Floor() {
 		return;
 	}
 	
-	this.Render = function(castShadow, receiveShadow ) {
-		
-		if ( castShadow ) return;
+	this.Render = function( shapeOnly ) {
 		
 		Ogl.PushMatrix();
 		Ogl.CallList(clist);
@@ -69,6 +70,9 @@ function Floor() {
 
 
 function Ball(pos) {
+
+	this.castShadow = true;
+	this.receiveShadow = true;
 	
 	var geom = new GeomSphere(world.space);
 	var body = new Body(world);
@@ -82,26 +86,27 @@ function Ball(pos) {
 	this.body = body;
 	this.geom = geom;
 	
-	var clist;
+	var shapeCL, objectCL;
 	this.Compile = function() {
 
-		clist = Ogl.NewList(true);
+		shapeCL = Ogl.NewList(true);
+		Ogl.DrawSphere(geom.radius, 15, 15);
+		Ogl.EndList();
+		
+		objectCL = Ogl.NewList(true);
 		Ogl.Material(Ogl.FRONT, Ogl.DIFFUSE, 1, 1, 1, 1);
 		Ogl.Material(Ogl.FRONT, Ogl.EMISSION, 0, 0, 0, 1);
 //		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
 //		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 0.1, 0.1, 0.1, 1);
-		
-		Ogl.DrawSphere(geom.radius, 15, 15);
+		Ogl.CallList(shapeCL);
 		Ogl.EndList();
 	}
 	
-	this.Render = function( castShadow, receiveShadow ) {
-		
-		if ( receiveShadow ) return;
+	this.Render = function( shapeOnly ) {
 		
 		Ogl.PushMatrix();
 		Ogl.MultMatrix(geom);
-		Ogl.CallList(clist);
+		Ogl.CallList(shapeOnly ? shapeCL : objectCL);
 		Ogl.PopMatrix();
 	}
 	this.Compile();	
@@ -110,23 +115,37 @@ function Ball(pos) {
 Box.prototype = {
 	Compile:function() {
 
-		this._clist = Ogl.NewList(true);
+		this.shapeCL = Ogl.NewList(true);
+		Ogl.DrawBox.apply(null, this.geom.lengths);
+		Ogl.EndList();
+
+		this.objectCL = Ogl.NewList(true);
 		Ogl.Material(Ogl.FRONT, Ogl.DIFFUSE, 0, 1, 0, 1);
 //		Ogl.Material(Ogl.FRONT, Ogl.EMISSION, 0, 0, 0, 1);
 //		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
 //		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 0, 0, 0, 1);
-		Ogl.DrawBox.apply(null, this.geom.lengths);
+		Ogl.CallList(this.shapeCL);
 		Ogl.EndList();
 	},
-	Render:function( castShadow, receiveShadow ) {
-		
-		if ( receiveShadow ) return;
-		
+	Render:function( shapeOnly ) {
+	
 		Ogl.PushMatrix();
 		Ogl.MultMatrix(this.geom);
-		Ogl.Material(Ogl.FRONT, Ogl.EMISSION, this.geom.contactVelocityAccu / 5, 0, 0, 1);
-		this.geom.contactVelocityAccu /= 1.01
-		Ogl.CallList(this._clist);
+		if ( shapeOnly ) {
+		
+			Ogl.CallList(this.shapeCL);
+		} else {
+	
+			Ogl.Material(Ogl.FRONT, Ogl.EMISSION, this.geom.contactVelocityAccu / 5, 0, 0, 1);
+			this.geom.contactVelocityAccu /= 1.01
+//			Ogl.CallList(this.objectCL);
+		Ogl.Material(Ogl.FRONT, Ogl.DIFFUSE, 0, 1, 0, 1);
+//		Ogl.Material(Ogl.FRONT, Ogl.EMISSION, 0, 0, 0, 1);
+//		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
+//		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 0, 0, 0, 1);
+		Ogl.CallList(this.shapeCL);
+
+		}
 		Ogl.PopMatrix();
 	}, 
 	GeomContact:function(thisGeom, otherGeom, contactVelocity) {
@@ -135,7 +154,10 @@ Box.prototype = {
 	}
 }
 
-function Box(pos) {
+function Box( pos ) {
+
+	this.castShadow = true;
+	this.receiveShadow = true;
 	
 	this.geom = new GeomBox(world.space);
 	this.body = new Body(world);
@@ -167,22 +189,9 @@ for ( var i = -side; i < side; ++i )
 		
 		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
 		scene.push( new Box([i*(1+gap), j*(1+gap), 1.5]) );
-		scene.push( new Box([i*(1+gap), j*(1+gap), 2.5]) );
+//		scene.push( new Box([i*(1+gap), j*(1+gap), 2.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 3.5]) );
 	}
-
-
-/* test
-scene.push( { Render:function(cast, receive) {
-	
-	Ogl.Material(Ogl.FRONT, Ogl.DIFFUSE, 1, 1, 1, 1);
-	Ogl.Material(Ogl.FRONT, Ogl.EMISSION, 1, 0, 0, 1);
-	Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
-//	Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 0, 0, 0, 1);
-	Ogl.DrawBox(10,10,20)
-}} );
-*/
-
 
 
 var paused = false;
@@ -212,16 +221,22 @@ ui.Draw = function(frame) {
 
 	if ( !ui.keyState.s ) {
 
-		ui.RenderWithShadows([0,0,1,0], function( castShadow, receiveShadow ) {
+		ui.RenderWithShadows1(function( castShadow, receiveShadow, shapeOnly ) {
 
-			for ( var i = scene.length - 1; i >= 0; --i )
-				scene[i].Render(castShadow, receiveShadow);
-		});
+			for ( var i = scene.length - 1; i >= 0; --i ) {
+			
+				var object = scene[i];
+				if ( object.castShadow == castShadow || object.receiveShadow == receiveShadow )
+					object.Render(shapeOnly);
+			}
+		}, [0,0,1,0]);
 	} else {
 
 		for ( var i = scene.length - 1; i >= 0; --i )
-			scene[i].Render(false, false);
+			scene[i].Render(false);
 	}
+
+
 	
 	if ( paused ) {
 		
@@ -237,10 +252,10 @@ ui.Draw = function(frame) {
 	
 	Ogl.Finish();
 	
-	var img = Ogl.ReadImage();
-	new File('frames/frame_'+frame+'.png').content = EncodePngImage(img);
-	img.Free();
-	CollectGarbage();
+//	var img = Ogl.ReadImage();
+//	new File('frames/frame_'+frame+'.png').content = EncodePngImage(img);
+//	img.Free();
+//	CollectGarbage();
 }
 
 ui.Idle = function() {

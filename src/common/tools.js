@@ -35,7 +35,9 @@ function UI(currentWidth, currentHeight) {
 	
 	SetVideoMode(currentWidth, currentHeight, undefined, defaultVideoMode);
 	
-//	Print( Ogl.extensions.indexOf('shadow'), '\n' );
+//	Print( 'OpenGL version ', Ogl.GetString(Ogl.VERSION), '\n' );
+	
+//	Print( Ogl.extensions.indexOf('power_of_two'), '\n' ); throw 0;
 	
 	Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
 	Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
@@ -60,7 +62,8 @@ function UI(currentWidth, currentHeight) {
 //	Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
 
 	
-	var lightPos;
+	var lightPos;// = [0,10,10, 1];
+	var lightDir = [0,0,0];
 	this.SetLight = function(pos, dir) {
 		
 		if ( !lightPos ) {
@@ -74,32 +77,31 @@ function UI(currentWidth, currentHeight) {
 			Ogl.Enable(Ogl.LIGHT0);
 		}
 
-		lightPos = pos;
-		if ( pos )
+		if ( pos ) {
+		
+			lightPos = pos;
 			Ogl.Light(Ogl.LIGHT0, Ogl.POSITION, pos);
-		if ( dir )
+		}
+		if ( dir ) {
+			
+			lightDir = dir;
 			Ogl.Light(Ogl.LIGHT0, Ogl.SPOT_DIRECTION, dir);
+		}
 	}
 
-	this.RenderWithShadows = function( plane, renderCallback ) {
+	this.RenderWithShadows = function( renderCallback, plane ) {
 		
 		// see http://www.opengl.org/resources/code/samples/mjktips/TexShadowReflectLight.html
-		// see also http://dalab.se.sjtu.edu.cn/~jietan/shadowMappingTutorial.html
 
 		Ogl.Clear(Ogl.STENCIL_BUFFER_BIT);
 		Ogl.PolygonOffset(-2, -1); // set the scale and units used to calculate depth values.
 		
 		// Draw the floor with stencil value 3.  This helps us only draw the shadow once per floor pixel (and only on the floor pixels).
-
 		Ogl.Enable(Ogl.STENCIL_TEST);
 		Ogl.StencilFunc(Ogl.ALWAYS, 3, -1);
 		Ogl.StencilOp(Ogl.KEEP, Ogl.KEEP, Ogl.REPLACE);
 
-		renderCallback(false, true);
-		
-		var cast = Ogl.NewList();
-		renderCallback(true, false);
-		Ogl.EndList();
+		renderCallback(true, true, false);
 		
 		// Render the projected shadow.
 		Ogl.StencilFunc(Ogl.LESS, 2, -1);  /* draw if ==1 */
@@ -117,11 +119,9 @@ function UI(currentWidth, currentHeight) {
       Ogl.PushMatrix();
 		// Project the shadow.
 		Ogl.MultMatrix(ShadowMatrix(plane, lightPos));
-		
-		//renderCastingShadow();
-		Ogl.CallList(cast);
-		Ogl.DeleteList(cast);
-		
+
+		renderCallback(true, false, true);
+
 		Ogl.PopMatrix();
       Ogl.Enable(Ogl.LIGHTING);
 		
@@ -130,7 +130,136 @@ function UI(currentWidth, currentHeight) {
 		Ogl.Disable(Ogl.POLYGON_OFFSET_FILL);
 		Ogl.Disable(Ogl.STENCIL_TEST);
 	}
-	
+
+
+
+	var shadowMapSize = 256;
+	var shadowMapTexture = Ogl.GenTexture();
+	Ogl.BindTexture(Ogl.TEXTURE_2D, shadowMapTexture);
+	Ogl.TexImage2D( Ogl.TEXTURE_2D, 0, Ogl.DEPTH_COMPONENT, shadowMapSize, shadowMapSize, 0, Ogl.DEPTH_COMPONENT, Ogl.UNSIGNED_BYTE, null );
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.NEAREST);
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.NEAREST);
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_S, Ogl.CLAMP);
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_T, Ogl.CLAMP);
+
+	this.RenderWithShadows1 = function( renderCallback ) {
+		
+		// http://www.paulsprojects.net/tutorials/smt/smt.html ( and http://dalab.se.sjtu.edu.cn/~jietan/shadowMappingTutorial.html )
+		
+//		Ogl.PushAttrib( Ogl.VIEWPORT_BIT | Ogl.ENABLE_BIT );
+//    Ogl.ShadeModel(Ogl.SMOOTH);
+//		Ogl.Enable(Ogl.NORMALIZE);
+
+// First pass - from light's point of view
+
+		Ogl.PushAttrib( Ogl.VIEWPORT_BIT | Ogl.LIGHTING_BIT );
+		Ogl.Viewport(0, 0, shadowMapSize, shadowMapSize);
+
+		Ogl.MatrixMode(Ogl.PROJECTION);
+		Ogl.PushMatrix();
+		Ogl.LoadIdentity();
+		Ogl.Perspective(45, 1, 2, 10);
+		var lightProjectionMatrix = Ogl.GetDouble(Ogl.PROJECTION_MATRIX, 16);
+		Ogl.MatrixMode(Ogl.MODELVIEW);
+		Ogl.PushMatrix();
+		Ogl.LookAt( lightPos[0], lightPos[1], lightPos[2],  lightDir[0], lightDir[1], lightDir[2],  0, 1, 0);
+		var lightViewMatrix = Ogl.GetDouble(Ogl.MODELVIEW_MATRIX, 16);
+
+		Ogl.ColorMaterial(Ogl.FRONT, Ogl.AMBIENT_AND_DIFFUSE);
+		Ogl.Enable(Ogl.COLOR_MATERIAL);
+		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 1,1,1,1);
+		Ogl.Material(Ogl.FRONT, Ogl.SHININESS, 16);
+		Ogl.Color(1);
+
+		Ogl.Disable(Ogl.LIGHTING);
+		
+		Ogl.CullFace(Ogl.FRONT);
+		Ogl.ShadeModel(Ogl.FLAT);
+		Ogl.ColorMask(false, false, false, false);
+		Ogl.ClearDepth(1);
+		Ogl.DepthFunc(Ogl.LEQUAL);
+		Ogl.Enable(Ogl.DEPTH_TEST);
+		Ogl.Clear(Ogl.DEPTH_BUFFER_BIT);
+		renderCallback(true, false, true); // render occluders
+		Ogl.BindTexture(Ogl.TEXTURE_2D, shadowMapTexture);
+		Ogl.CopyTexSubImage2D(Ogl.TEXTURE_2D, 0, 0, 0, 0, 0, shadowMapSize, shadowMapSize);
+		Ogl.ColorMask(true, true, true, true);
+		Ogl.ShadeModel(Ogl.SMOOTH);
+		Ogl.CullFace(Ogl.BACK);
+
+		Ogl.Enable(Ogl.LIGHTING);
+		
+		Ogl.PopMatrix();
+		Ogl.MatrixMode(Ogl.PROJECTION);
+		Ogl.PopMatrix();
+		Ogl.MatrixMode(Ogl.MODELVIEW);
+
+		Ogl.PopAttrib();
+
+		renderCallback(false, false, false); // render all
+
+
+//2nd pass - Draw from camera's point of view
+
+		Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
+		
+		//Use dim light to represent shadowed areas
+		Ogl.Light(Ogl.LIGHT0, Ogl.POSITION, lightPos);
+		Ogl.Light(Ogl.LIGHT0, Ogl.AMBIENT, 0.2, 0.2, 0.2, 1);
+		Ogl.Light(Ogl.LIGHT0, Ogl.DIFFUSE, 0.2, 0.2, 0.2, 1);
+		Ogl.Light(Ogl.LIGHT0, Ogl.SPECULAR, 0, 0, 0, 1);
+		
+		renderCallback(true, true, false); // render all
+
+
+//3rd pass - Draw with bright light
+		Ogl.Light(Ogl.LIGHT1, Ogl.DIFFUSE, 1,1,1, 1);
+		Ogl.Light(Ogl.LIGHT1, Ogl.SPECULAR, 1,1,1, 1);
+		
+		var mat = new Transformation(0.5, 0.0, 0.0, 0.0,  0.0, 0.5, 0.0, 0.0,  0.0, 0.0, 0.5, 0.0,  0.5, 0.5, 0.5, 1.0);
+		mat.Product(lightProjectionMatrix);
+		mat.Product(lightViewMatrix);
+
+
+		//Set up texture coordinate generation.
+		Ogl.TexGen(Ogl.S, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
+		Ogl.TexGen(Ogl.S, Ogl.EYE_PLANE, mat[0], mat[1], mat[2], mat[3]);
+		Ogl.Enable(Ogl.TEXTURE_GEN_S);
+
+		Ogl.TexGen(Ogl.T, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
+		Ogl.TexGen(Ogl.T, Ogl.EYE_PLANE, mat[4], mat[5], mat[6], mat[7]);
+		Ogl.Enable(Ogl.TEXTURE_GEN_T);
+
+		Ogl.TexGen(Ogl.R, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
+		Ogl.TexGen(Ogl.R, Ogl.EYE_PLANE, mat[8], mat[9], mat[10], mat[11]);
+		Ogl.Enable(Ogl.TEXTURE_GEN_R);
+
+		Ogl.TexGen(Ogl.Q, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
+		Ogl.TexGen(Ogl.Q, Ogl.EYE_PLANE, mat[12], mat[13], mat[14], mat[15]);
+		Ogl.Enable(Ogl.TEXTURE_GEN_Q);
+
+		//Bind & enable shadow map texture
+		Ogl.BindTexture(Ogl.TEXTURE_2D, shadowMapTexture);
+		Ogl.Enable(Ogl.TEXTURE_2D);
+
+
+		//Enable shadow comparison
+		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_COMPARE_MODE, Ogl.COMPARE_R_TO_TEXTURE);
+
+		//Shadow comparison should be true (ie not in shadow) if r<=texture
+		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_COMPARE_FUNC, Ogl.LEQUAL);
+
+		//Shadow comparison should generate an INTENSITY result
+		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.DEPTH_TEXTURE_MODE, Ogl.INTENSITY);
+
+
+		//Set alpha test to discard false comparisons
+		Ogl.AlphaFunc(Ogl.GEQUAL, 0.99);
+		Ogl.Enable(Ogl.ALPHA_TEST);
+		
+		renderCallback(true, true, false); // render all
+	}
+
 	
 	this.DrawGrid = function() {
 
@@ -163,7 +292,7 @@ function UI(currentWidth, currentHeight) {
 	
 	this.DrawText = function(text, infrontFct) {
 
-		Ogl.PushAttrib(Ogl.ENABLE_BIT|Ogl.POLYGON_BIT);
+		Ogl.PushAttrib(Ogl.ENABLE_BIT | Ogl.POLYGON_BIT);
 		if ( infrontFct ) {
 
 			Ogl.Disable(Ogl.DEPTH_TEST);
@@ -295,7 +424,7 @@ function UI(currentWidth, currentHeight) {
 	
 	this.Projection = function() {
 		
-		Ogl.Perspective(60, 0.5, 1000);
+		Ogl.Perspective(60, undefined, 0.5, 1000);
 	}
 	
 	this.Idle = function() {
@@ -390,7 +519,7 @@ function Env3D() {
 		Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
 		Ogl.Viewport(0,0,videoWidth,videoHeight);
 		Ogl.MatrixMode(Ogl.PROJECTION);
-		Ogl.Perspective(60, 0.1, 100000);
+		Ogl.Perspective(60, undefined, 0.1, 100000);
 		Ogl.MatrixMode(Ogl.MODELVIEW);
 		Ogl.ClearColor(0.2, 0.1, 0.4, 1);
 		Ogl.Enable(Ogl.DEPTH_TEST);
