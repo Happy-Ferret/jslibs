@@ -75,14 +75,25 @@ static glGetProcAddress_t glGetProcAddress = NULL;
 // Directly after the Begin/End-pair, the error is returned, because that's the first valid call to glGetError after the error occured.
 #if defined(DEBUG)
 
-	#define OGL_CHK
-	//if ( !_unsafeMode ) { \
-	//	GLenum err = glGetError(); \
-	//	if ( err != GL_NO_ERROR ) \
-	//		JL_REPORT_WARNING("OpenGL error %d", err); \
-	//}
+static bool _inBeginEnd = false;
+
+#define OGL_CHK \
+JL_MACRO_BEGIN \
+	if ( !_unsafeMode && !_inBeginEnd /*&& false*/ ) { \
+		GLenum err = glGetError(); \
+		if ( err != GL_NO_ERROR ) \
+			JL_REPORT_WARNING("OpenGL error %d", err); \
+	} \
+JL_MACRO_END
+
+#undef OGL_CHK
+#define OGL_CHK
+
+
 #else // DBUG
-	#define OGL_CHK
+
+#define OGL_CHK
+
 #endif // DBUG
 
 
@@ -179,7 +190,7 @@ $TOC_MEMBER $INAME
   $H return value
    true if the extension proc is available.
 **/
-DEFINE_FUNCTION_FAST( HasExtension ) {
+DEFINE_FUNCTION_FAST( HasExtensionProc ) {
 	
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_STRING(JL_FARG(1));
@@ -753,6 +764,26 @@ DEFINE_FUNCTION_FAST( GetDouble ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+  $STR$INAME( name )
+  $H arguments
+   $ARG GLenum name
+  $H return value
+   A string describing the current GL connection.
+  $H OpenGL API
+   glGetDoublev
+
+**/
+DEFINE_FUNCTION_FAST( GetString ) {
+
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	return StringToJsval(cx, (char*)glGetString(JSVAL_TO_INT(JL_FARG(1))), JL_FRVAL);  OGL_CHK;
+	JL_BAD;
+}
+
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1303,6 +1334,144 @@ DEFINE_FUNCTION_FAST( TexEnv ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( coord, pname, [ param | paramArray | param1, ..., paramN  ] )
+  $H arguments
+   $ARG GLenum target
+   $ARG GLenum pname
+   $ARG $VAL params: is either a number or an array of numbers.
+  $H OpenGL API
+   
+**/
+DEFINE_FUNCTION_FAST( TexGen ) {
+
+	JL_S_ASSERT_ARG_MIN(3);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+
+	*JL_FRVAL = JSVAL_VOID;
+	if ( argc == 3 && JSVAL_IS_INT(JL_FARG(3)) ) {
+
+		glTexGeni( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );  OGL_CHK;
+
+		;
+		return JS_TRUE;
+	}
+	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
+
+		double param;
+		JsvalToDouble(cx, JL_FARG(3), &param);
+
+		glTexGend( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), param );  OGL_CHK;
+
+		;
+		return JS_TRUE;
+	}
+
+	GLdouble params[16];
+	if ( argc == 3 && JsvalIsArray(cx, JL_FARG(3)) ) {
+
+		uint32 length;
+		JL_CHK( JsvalToDoubleVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
+
+		glTexGendv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );  OGL_CHK;
+
+		;
+		return JS_TRUE;
+	}
+
+	JL_S_ASSERT_ARG_MIN( 3 ); // at least
+	JL_ASSERT( argc-2 < COUNTOF(params) );
+	for ( unsigned int i = 2; i < argc; ++i )
+		JsvalToDouble(cx, JL_FARGV[i], &params[i-2]);
+	glTexGendv( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params );  OGL_CHK;
+	;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, level, internalFormat, width, height, border, format, type [, data] )
+  $H arguments
+	$ARG GLenum target
+ 	$ARG GLint level
+ 	$ARG GLint internalFormat
+ 	$ARG GLsizei width
+ 	$ARG GLsizei height
+ 	$ARG GLint border
+ 	$ARG GLenum format
+ 	$ARG GLenum type
+ 	$ARG Blob data
+  $H OpenGL API
+   glTexImage2D
+  $H OpenGL documentation
+   http://www.opengl.org/sdk/docs/man/xhtml/glTexImage2D.xml
+**/
+DEFINE_FUNCTION_FAST( TexImage2D ) {
+
+	JL_S_ASSERT_ARG_RANGE(8, 9);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_INT(JL_FARG(3));
+	JL_S_ASSERT_INT(JL_FARG(4));
+	JL_S_ASSERT_INT(JL_FARG(5));
+	JL_S_ASSERT_INT(JL_FARG(6));
+	JL_S_ASSERT_INT(JL_FARG(7));
+	JL_S_ASSERT_INT(JL_FARG(8));
+
+	const char *data;
+	if ( JL_FARG_ISDEF(9) && !JSVAL_IS_NULL(JL_FARG(9)) )
+		JL_CHK( JsvalToString(cx, &JL_FARG(9), &data) );
+	else
+		data = NULL; // (TBD)
+
+	glTexImage2D( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)), JSVAL_TO_INT(JL_FARG(5)), JSVAL_TO_INT(JL_FARG(6)), JSVAL_TO_INT(JL_FARG(7)), JSVAL_TO_INT(JL_FARG(8)), (GLvoid*)data );  OGL_CHK;
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, level, xoffset, yoffset, x, y, width, height )
+  $H arguments
+ 	$ARG GLenum target
+ 	$ARG GLint level
+ 	$ARG GLint xoffset
+ 	$ARG GLint yoffset
+ 	$ARG GLint x
+ 	$ARG GLint y
+ 	$ARG GLsizei width
+ 	$ARG GLsizei height
+  $H OpenGL API
+   glCopyTexSubImage2D
+  $H OpenGL documentation
+**/
+DEFINE_FUNCTION_FAST( CopyTexSubImage2D ) {
+
+	JL_S_ASSERT_ARG(8);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_INT(JL_FARG(3));
+	JL_S_ASSERT_INT(JL_FARG(4));
+	JL_S_ASSERT_INT(JL_FARG(5));
+	JL_S_ASSERT_INT(JL_FARG(6));
+	JL_S_ASSERT_INT(JL_FARG(7));
+	JL_S_ASSERT_INT(JL_FARG(8));
+
+	glCopyTexSubImage2D( JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), JSVAL_TO_INT(JL_FARG(4)), JSVAL_TO_INT(JL_FARG(5)), JSVAL_TO_INT(JL_FARG(6)), JSVAL_TO_INT(JL_FARG(7)), JSVAL_TO_INT(JL_FARG(8)) );  OGL_CHK;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 
 /**doc
@@ -2036,10 +2205,11 @@ DEFINE_FUNCTION_FAST( Ortho ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( fovy, zNear, zFar )
+ $VOID $INAME( fovY, [aspectRatio | $UNDEF], zNear, zFar )
   Set up a perspective projection matrix.
   $H arguments
    $ARG $REAL fovy
+   $ARG $REAL aspectRatio: If omitted (viewportWidth/viewportHeight) is used by default.
    $ARG $REAL zNear
    $ARG $REAL zFar
   $H note
@@ -2051,18 +2221,25 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 
 	//cf. gluPerspective(fovy, float(viewport[2]) / float(viewport[3]), zNear, zFar);
 
-	JL_S_ASSERT_ARG(3);
-	double fovy, zNear, zFar;
+	JL_S_ASSERT_ARG(4);
+	double fovy, zNear, zFar, aspect;
 	JsvalToDouble(cx, JL_FARG(1), &fovy);
-	JsvalToDouble(cx, JL_FARG(2), &zNear);
-	JsvalToDouble(cx, JL_FARG(3), &zFar);
+	// JsvalToDouble(cx, JL_FARG(2), &aspect)
+	JsvalToDouble(cx, JL_FARG(3), &zNear);
+	JsvalToDouble(cx, JL_FARG(4), &zFar);
 
 //	GLint prevMatrixMode;
 //	glGetIntegerv(GL_MATRIX_MODE, &prevMatrixMode);  OGL_CHK; // GL_MODELVIEW
 
-	GLint viewport[4];
-	glGetIntegerv( GL_VIEWPORT, viewport );  OGL_CHK;
-	double aspect = double(viewport[2]) / double(viewport[3]);
+	if ( JL_FARG_ISDEF(2) ) {
+
+		JsvalToDouble(cx, JL_FARG(2), &aspect);
+	} else {
+
+		GLint viewport[4];
+		glGetIntegerv(GL_VIEWPORT, viewport);  OGL_CHK;
+		aspect = ((double)viewport[2]) / ((double)viewport[3]);
+	}
 
 	double xmin, xmax, ymin, ymax;
 	ymax = zNear * tan(fovy * M_PI / 360.0f);
@@ -2474,6 +2651,10 @@ DEFINE_FUNCTION_FAST( Begin ) {
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
 	
+#ifdef DEBUG
+	_inBeginEnd = true;
+#endif // DEBUG
+
 	glBegin(JSVAL_TO_INT( JL_FARG(1) ));  OGL_CHK;
 	
 	*JL_FRVAL = JSVAL_VOID;
@@ -2494,9 +2675,13 @@ DEFINE_FUNCTION_FAST( End ) {
 	JL_S_ASSERT_ARG(0);
 
 	glEnd();  OGL_CHK;
-	
+
+#ifdef DEBUG
+	_inBeginEnd = false;
+#endif // DEBUG
+
 	*JL_FRVAL = JSVAL_VOID;
-	;
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3787,18 +3972,18 @@ bool TextureBufferAlloc(TextureBuffer *tb, unsigned int size) {
 	
 	// the target tokens clearly specify the bound PBO will be used in one of 2 different operations; 
 	//GL_PIXEL_PACK_BUFFER to transfer pixel data to a PBO, or GL_PIXEL_UNPACK_BUFFER to transfer pixel data from PBO. 
-	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);  OGL_CHK;
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
 	
 	// VBO memory manager will choose the best memory places for the buffer object based on these usage flags,for example, 
 	// GL_STATIC_DRAW and GL_STREAM_DRAW may use video memory, and GL_DYNAMIC_DRAW may use AGP memory.
 	// Any _READ_ related buffers would be fine in system or AGP memory because the data should be easy to access.
-	glBufferData(GL_PIXEL_UNPACK_BUFFER, size, NULL, GL_DYNAMIC_READ);  OGL_CHK;
+	glBufferData(GL_PIXEL_UNPACK_BUFFER, size, NULL, GL_DYNAMIC_READ);
 	
 	// glMapBuffer() returns the pointer to the buffer object if success. Otherwise it returns NULL.
 	// The target parameter is GL_PIXEL_PACK_BUFFER or GL_PIXEL_UNPACK_BUFFER. The second parameter,
 	// access specifies what to do with the mapped buffer; read data from the PBO (GL_READ_ONLY),
 	// write data to the PBO (GL_WRITE_ONLY), or both (GL_READ_WRITE). 
-	tb->data = (float*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_WRITE);  OGL_CHK;
+	tb->data = (float*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_WRITE);
 	return true;
 }
 
@@ -3810,8 +3995,8 @@ bool TextureBufferFree(TextureBuffer *tb) {
 	if ( tb->pv != NULL ) {
 		
 		GLuint pbo = (GLuint)tb->pv;
-		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);  OGL_CHK;
-		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);  OGL_CHK;
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 		tb->pv = NULL;
 	}
 	return true;
@@ -4319,7 +4504,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGetError
 **/
-DEFINE_PROPERTY(error) {
+DEFINE_PROPERTY( error ) {
 
 	// When an error occurs, the error flag is set to the appropriate error code value. No other errors are recorded
 	// until glGetError is called, the error code is returned, and the flag is reset to GL_NO_ERROR.
@@ -4328,29 +4513,29 @@ DEFINE_PROPERTY(error) {
 }
 
 
-
-/**doc
+/*
+/ **doc
 $TOC_MEMBER $INAME
  $STR $INAME $READONLY
-**/
+** /
 DEFINE_PROPERTY(vendor) {
 
 	return StringToJsval(cx, (char*)glGetString(GL_VENDOR), vp);  OGL_CHK;
 }
 
-/**doc
+/ **doc
 $TOC_MEMBER $INAME
  $STR $INAME $READONLY
-**/
+** /
 DEFINE_PROPERTY(renderer) {
 
 	return StringToJsval(cx, (char*)glGetString(GL_RENDERER), vp);  OGL_CHK;
 }
 
-/**doc
+/ **doc
 $TOC_MEMBER $INAME
  $STR $INAME $READONLY
-**/
+** /
 DEFINE_PROPERTY( version ) {
 
 	if ( !StringToJsval(cx, (char*)glGetString(GL_VERSION), vp) ) { OGL_CHK;
@@ -4361,14 +4546,15 @@ DEFINE_PROPERTY( version ) {
 	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 
-/**doc
+/ **doc
 $TOC_MEMBER $INAME
  $STR $INAME $READONLY
-**/
+** /
 DEFINE_PROPERTY(extensions) {
 
 	return StringToJsval(cx, (char*)glGetString(GL_EXTENSIONS), vp);  OGL_CHK;
 }
+*/
 
 
 static int MatrixGet(JSContext *cx, JSObject *obj, float **m) {
@@ -4465,17 +4651,16 @@ DEFINE_INIT() {
 #ifdef DEBUG
 DEFINE_FUNCTION_FAST( Test ) {
 
+/*
 	jsval id = JL_FARG(1);
 	JL_S_ASSERT( IsHandleType(cx, id, 'TBUF'), "Invalid buffer." );
 	TextureBuffer *tb = (TextureBuffer*)GetHandlePrivate(cx, id);
-
 	tb->TextureBufferAlloc(tb, sizeof(float) * 3 * 32 * 32); // RGB 32x32
 	//tb->TextureBufferFree(tb);
-
-	for ( int i = 0; i < 3 * 32*32; i++ ) {
-		
+	for ( int i = 0; i < 3 * 32*32; i++ )
 		tb->data[i] = 0.5;
-	}
+*/
+
 
 
 	return JS_TRUE;
@@ -4502,12 +4687,13 @@ CONFIGURE_CLASS
 #endif // DEBUG
 
 
-		FUNCTION_FAST_ARGC(HasExtension, 1) // procName
+		FUNCTION_FAST_ARGC(HasExtensionProc, 1) // procName
 	
 		FUNCTION_FAST_ARGC(IsEnabled, 1) // cap
-		FUNCTION_FAST_ARGC(GetBoolean, 1) // pname
-		FUNCTION_FAST_ARGC(GetInteger, 1) // pname
-		FUNCTION_FAST_ARGC(GetDouble, 1) // pname
+		FUNCTION_FAST_ARGC(GetBoolean, 2) // pname
+		FUNCTION_FAST_ARGC(GetInteger, 2) // pname
+		FUNCTION_FAST_ARGC(GetDouble, 2) // pname
+		FUNCTION_FAST_ARGC(GetString, 1)
 		FUNCTION_FAST_ARGC(DrawBuffer, 1) // mode
 		FUNCTION_FAST_ARGC(ReadBuffer, 1) // mode
 		FUNCTION_FAST_ARGC(Accum, 2) // op, value
@@ -4524,6 +4710,9 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(TexCoord, 3) // s [, t [,r ]]
 		FUNCTION_FAST_ARGC(TexParameter, 3) // target, pname, param | array of params
 		FUNCTION_FAST_ARGC(TexEnv, 3) // target, pname, param | array of params
+		FUNCTION_FAST_ARGC(TexGen, 3) // coord, pname, params
+		FUNCTION_FAST_ARGC(TexImage2D, 9) // target, level, internalFormat, width, height, border, format, type, data
+		FUNCTION_FAST_ARGC(CopyTexSubImage2D, 8) // target, level, xoffset, yoffset, x, y, width, height
 		FUNCTION_FAST_ARGC(LightModel, 2) // pname, param
 		FUNCTION_FAST_ARGC(Light, 3) // light, pname, param
 		FUNCTION_FAST_ARGC(GetLight, 3) // light, pname, count
@@ -4599,6 +4788,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(DrawImage, 3) // target, format, image (non-OpenGL API)
 		FUNCTION_FAST_ARGC(ReadImage, 0) // (non-OpenGL API)
 
+//		FUNCTION_FAST_ARGC(LookThroughAt, 9) // (non-OpenGL API)
 		FUNCTION_FAST_ARGC(LookAt, 9) // (non-OpenGL API)
 		FUNCTION_FAST_ARGC(UnProject, 2) // (non-OpenGL API)
 
@@ -4629,11 +4819,6 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ(error)
-
-		PROPERTY_READ(vendor)
-		PROPERTY_READ(renderer)
-		PROPERTY_READ( version )
-		PROPERTY_READ(extensions)
 	END_STATIC_PROPERTY_SPEC
 
 END_CLASS
