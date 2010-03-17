@@ -24,8 +24,10 @@
 #include <math.h>
 
 
+ALWAYS_INLINE float DEG_TO_RAD( const float angle ) {
 
-#define DEG_TO_RAD(a) (-angle * M_PI / 180.0f)
+	return -((float)(angle)) * ((float)M_PI) / 180.0f;
+}
 
 // (TBD) move this in the class private
 
@@ -61,6 +63,8 @@ DEFINE_FINALIZE() {
 
 	//	printf("Fin:%d\n", matrixPoolLength);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	if ( pv == NULL )
+		return;
 
 	//beware: prototype may be finalized before the object
 	if ( JL_THIS_PROTOTYPE != NULL ) { // add to the pool if the pool is still alive !
@@ -88,7 +92,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_RANGE(0,1);
+	JL_S_ASSERT_ARG_RANGE(0,16);
 
 	TransformationPrivate *pv = (TransformationPrivate *)JS_malloc(cx, sizeof(TransformationPrivate));
 	JL_CHK(pv);
@@ -98,8 +102,14 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_ALLOC(pv->mat);
 
 	if ( JL_ARGC >= 1 ) {
-
-		if ( JSVAL_IS_NULL(JL_ARG(1)) ) {
+			
+		if ( JL_ARGC == 16 ) {
+			
+			float *tmp = (float*)&pv->mat->raw;
+			for ( int i = 0; i < 16; ++i )
+				JL_CHK( JsvalToFloat(cx, JL_ARGV[i], (tmp++)) );
+			pv->isIdentity = false;
+		} else if ( JSVAL_IS_NULL(JL_ARG(1)) ) {
 
 			Matrix44Identity(pv->mat);
 			pv->isIdentity = true;
