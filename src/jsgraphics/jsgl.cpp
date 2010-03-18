@@ -86,8 +86,8 @@ JL_MACRO_BEGIN \
 	} \
 JL_MACRO_END
 
-#undef OGL_CHK
-#define OGL_CHK
+//#undef OGL_CHK
+//#define OGL_CHK
 
 
 #else // DBUG
@@ -1706,7 +1706,7 @@ DEFINE_FUNCTION_FAST( Material ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( cap )
+ $VOID $INAME( cap [, ..., capN] )
   $H arguments
    $ARG GLenum cap
   $H OpenGL API
@@ -1714,13 +1714,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Enable ) {
 
-	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	for ( uintN i = 0; i < JL_ARGC; ++i ) {
 
-	glEnable( JSVAL_TO_INT(JL_FARG(1)) );  OGL_CHK;
-
+		JL_S_ASSERT_INT(JL_FARGV[i]);
+		glEnable( JSVAL_TO_INT(JL_FARGV[i]) );  OGL_CHK;
+	}
 	*JL_FRVAL = JSVAL_VOID;
-	;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1728,7 +1728,7 @@ DEFINE_FUNCTION_FAST( Enable ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( cap )
+ $VOID $INAME( cap [, ..., capN] )
   $H arguments
    $ARG GLenum cap
   $H OpenGL API
@@ -1736,13 +1736,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( Disable ) {
 
-	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_ARG_MIN(1);
+	for ( uintN i = 0; i < JL_ARGC; ++i ) {
 
-	glDisable( JSVAL_TO_INT(JL_FARG(1)) );  OGL_CHK;
-
+		JL_S_ASSERT_INT(JL_FARGV[i]);
+		glDisable( JSVAL_TO_INT(JL_FARGV[i]) );  OGL_CHK;
+	}
 	*JL_FRVAL = JSVAL_VOID;
-	;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2879,6 +2879,35 @@ DEFINE_FUNCTION_FAST( TexSubImage2D ) {
 	JL_BAD;
 }
 */
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( pname, param )
+  $H OpenGL API
+   glPixelTransferi, glPixelTransferf
+**/
+DEFINE_FUNCTION_FAST( PixelTransfer ) {
+
+	JL_S_ASSERT_INT(JL_FARG(1));
+
+	GLenum pname = JSVAL_TO_INT( JL_FARG(1) );
+
+	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
+		
+		glPixelTransferi(pname, JSVAL_TO_INT( JL_FARG(2) ));  OGL_CHK;
+	} else {
+
+		JL_S_ASSERT_NUMBER(JL_FARG(2));
+		float param;
+		JsvalToFloat(cx, JL_FARG(2), &param);
+		glPixelTransferf(pname, param);  OGL_CHK;
+	}
+
+	;
+ 	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -4761,6 +4790,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(BindTexture, 2) // target, texture
 		FUNCTION_FAST_ARGC(DeleteTexture, 1) // textureId
 		FUNCTION_FAST_ARGC(CopyTexImage2D, 8) // target, level, internalFormat, x, y, width, height, border
+		FUNCTION_FAST_ARGC(PixelTransfer, 2) // pname, param
 		FUNCTION_FAST_ARGC(PixelStore, 2) // pname, param
 		FUNCTION_FAST_ARGC(RasterPos, 4) // x,y,z,w
 		FUNCTION_FAST_ARGC(PixelZoom, 2) // x,y

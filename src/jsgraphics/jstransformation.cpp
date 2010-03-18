@@ -185,6 +185,7 @@ DEFINE_FUNCTION_FAST( ClearTranslation ) {
 /**doc
 $TOC_MEMBER $INAME
  $THIS $INAME( matrix )
+ $THIS $INAME( v0, v1, ..., v15 )
   Load a 4x4 matrix as the current transformation.
   $H arguments
    $ARG $VAL matrix: an Array or an object that supports NIMatrix44Read native interface.
@@ -194,15 +195,23 @@ DEFINE_FUNCTION_FAST( Load ) {
 	JSObject *obj = JL_FOBJ;
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_ARG_MAX(16);
+
+	if ( JL_ARGC == 16 ) {
+		
+		float *tmp = (float*)&pv->mat->raw;
+		for ( int i = 0; i < 16; ++i )
+			JL_CHK( JsvalToFloat(cx, JL_FARGV[i], (tmp++)) );
+		pv->isIdentity = false;
+	} else {
 
 	JL_S_ASSERT_ARG(1);
-
-	Matrix44 *tmp = pv->mat;
-	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), (float**)&tmp) );
-	if ( tmp != pv->mat ) // check if the pointer has been modified
-		Matrix44Load(pv->mat, tmp);
-	pv->isIdentity = false; // (TBD) detect identity
-
+		Matrix44 *tmp = pv->mat;
+		JL_CHK( GetMatrixHelper(cx, JL_FARG(1), (float**)&tmp) );
+		if ( tmp != pv->mat ) // check if the pointer has been modified
+			Matrix44Load(pv->mat, tmp);
+		pv->isIdentity = false; // (TBD) detect identity
+	}
 	*JL_FRVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
