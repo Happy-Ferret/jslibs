@@ -83,12 +83,16 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( pv == NULL )
 		return;
+	if ( pv->face == NULL ) // has not been properly initialized. see constructor.
+		return;
 
 	if ( pv->style == OUTLINE || pv->style == FILLED || pv->style == SOLID ) {
 
+		JL_ASSERT( pv->face != NULL );
 		OGLFT::Polygonal *poly;
 //		poly = dynamic_cast<OGLFT::Polygonal*>(pv->face);
-		poly = (OGLFT::Polygonal*)pv->face;
+//		poly = (OGLFT::Polygonal*)pv->face;
+		poly = static_cast<OGLFT::Polygonal*>(pv->face);
 		OGLFT::ColorTess *colorTess = poly->colorTess();
 		if ( colorTess != NULL )
 			delete colorTess;
@@ -487,7 +491,8 @@ DEFINE_PROPERTY( tessellationSteps ) {
 
 	OGLFT::Polygonal *poly;
 //	poly = dynamic_cast<OGLFT::Polygonal*>(pv->face);
-	poly = (OGLFT::Polygonal*)pv->face;
+//	poly = (OGLFT::Polygonal*)pv->face;
+	poly = static_cast<OGLFT::Polygonal*>(pv->face);
 
 	int tess;
 	JL_CHK( JsvalToInt(cx, *vp, &tess) );
@@ -524,7 +529,8 @@ DEFINE_PROPERTY( colorCallback ) {
 
 	OGLFT::Polygonal *poly;
 //	poly = dynamic_cast<OGLFT::Polygonal*>(pv->face);
-	poly = (OGLFT::Polygonal*)pv->face;
+//	poly = (OGLFT::Polygonal*)pv->face;
+	poly = static_cast<OGLFT::Polygonal*>(pv->face);
 
 	if ( JSVAL_IS_VOID(*vp) ) {
 
