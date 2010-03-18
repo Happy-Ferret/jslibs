@@ -11,10 +11,10 @@ function UI(currentWidth, currentHeight) {
 	LoadModule('jsfont');
 	LoadModule('jsoglft');
 	//LoadModule('jsimage');
-	//LoadModule('jsprotex');
+	LoadModule('jsprotex');
 	//LoadModule('jstrimesh');
 	
-	var f3d = new Font3D(new Font('c:\\windows\\fonts\\arial.ttf'), Font3D.FILLED, 9);
+	var f3d = new Font3D(new Font('c:\\windows\\fonts\\arial.ttf'), Font3D.OUTLINE, 9);
 	var f2d = new Font3D(new Font('c:\\windows\\fonts\\arial.ttf'), Font3D.GRAYSCALE, 9); // TRANSLUCENT
 
 	var defaultVideoMode = OPENGL | RESIZABLE;
@@ -101,7 +101,7 @@ function UI(currentWidth, currentHeight) {
 		Ogl.StencilFunc(Ogl.ALWAYS, 3, -1);
 		Ogl.StencilOp(Ogl.KEEP, Ogl.KEEP, Ogl.REPLACE);
 
-		renderCallback(true, true, false);
+		renderCallback(4);
 		
 		// Render the projected shadow.
 		Ogl.StencilFunc(Ogl.LESS, 2, -1);  /* draw if ==1 */
@@ -120,7 +120,7 @@ function UI(currentWidth, currentHeight) {
 		// Project the shadow.
 		Ogl.MultMatrix(ShadowMatrix(plane, lightPos));
 
-		renderCallback(true, false, true);
+		renderCallback(3);
 
 		Ogl.PopMatrix();
       Ogl.Enable(Ogl.LIGHTING);
@@ -131,12 +131,12 @@ function UI(currentWidth, currentHeight) {
 		Ogl.Disable(Ogl.STENCIL_TEST);
 	}
 
-
+	var testTexture = CreateTexture();
 
 	var shadowMapSize = 256;
 	var shadowMapTexture = Ogl.GenTexture();
 	Ogl.BindTexture(Ogl.TEXTURE_2D, shadowMapTexture);
-	Ogl.TexImage2D( Ogl.TEXTURE_2D, 0, Ogl.DEPTH_COMPONENT, shadowMapSize, shadowMapSize, 0, Ogl.DEPTH_COMPONENT, Ogl.UNSIGNED_BYTE, null );
+	Ogl.TexImage2D(Ogl.TEXTURE_2D, 0, Ogl.DEPTH_COMPONENT, shadowMapSize, shadowMapSize, 0, Ogl.DEPTH_COMPONENT, Ogl.UNSIGNED_BYTE, null);
 	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.NEAREST);
 	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.NEAREST);
 	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_S, Ogl.CLAMP);
@@ -146,33 +146,41 @@ function UI(currentWidth, currentHeight) {
 		
 		// http://www.paulsprojects.net/tutorials/smt/smt.html ( and http://dalab.se.sjtu.edu.cn/~jietan/shadowMappingTutorial.html )
 		
-//		Ogl.PushAttrib( Ogl.VIEWPORT_BIT | Ogl.ENABLE_BIT );
-//    Ogl.ShadeModel(Ogl.SMOOTH);
-//		Ogl.Enable(Ogl.NORMALIZE);
+		var mat = new Transformation(0.5, 0.0, 0.0, 0.0,  0.0, 0.5, 0.0, 0.0,  0.0, 0.0, 0.5, 0.0,  0.5, 0.5, 0.5, 1.0);
+
+		Ogl.Enable(Ogl.NORMALIZE);
 
 // First pass - from light's point of view
 
-		Ogl.PushAttrib( Ogl.VIEWPORT_BIT | Ogl.LIGHTING_BIT );
+		Ogl.PushAttrib( Ogl.VIEWPORT_BIT | Ogl.LIGHTING_BIT ); // | Ogl.ENABLE_BIT
 		Ogl.Viewport(0, 0, shadowMapSize, shadowMapSize);
 
 		Ogl.MatrixMode(Ogl.PROJECTION);
 		Ogl.PushMatrix();
 		Ogl.LoadIdentity();
-		Ogl.Perspective(45, 1, 2, 10);
-		var lightProjectionMatrix = Ogl.GetDouble(Ogl.PROJECTION_MATRIX, 16);
+		
+		//var lightFov = Ogl.GetLight(Ogl.LIGHT0, Ogl.SPOT_CUTOFF) * 2;
+
+		Ogl.Perspective(60, 1, 10, 50);
+		//var lightProjectionMatrix = Ogl.GetDouble(Ogl.PROJECTION_MATRIX, 16);
+		mat.Product(Ogl, true);
+		
 		Ogl.MatrixMode(Ogl.MODELVIEW);
 		Ogl.PushMatrix();
+		Ogl.LoadIdentity();
 		Ogl.LookAt( lightPos[0], lightPos[1], lightPos[2],  lightDir[0], lightDir[1], lightDir[2],  0, 1, 0);
-		var lightViewMatrix = Ogl.GetDouble(Ogl.MODELVIEW_MATRIX, 16);
+//		var lightViewMatrix = Ogl.GetDouble(Ogl.MODELVIEW_MATRIX, 16);
+		mat.Product(Ogl, true);
 
-		Ogl.ColorMaterial(Ogl.FRONT, Ogl.AMBIENT_AND_DIFFUSE);
-		Ogl.Enable(Ogl.COLOR_MATERIAL);
-		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 1,1,1,1);
-		Ogl.Material(Ogl.FRONT, Ogl.SHININESS, 16);
-		Ogl.Color(1);
+
+//		Ogl.ColorMaterial(Ogl.FRONT, Ogl.AMBIENT_AND_DIFFUSE);
+//		Ogl.Enable(Ogl.COLOR_MATERIAL);
+//		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 1,1,1,1);
+//		Ogl.Material(Ogl.FRONT, Ogl.SHININESS, 16);
+//		Ogl.Color(1);
+
 
 		Ogl.Disable(Ogl.LIGHTING);
-		
 		Ogl.CullFace(Ogl.FRONT);
 		Ogl.ShadeModel(Ogl.FLAT);
 		Ogl.ColorMask(false, false, false, false);
@@ -180,84 +188,90 @@ function UI(currentWidth, currentHeight) {
 		Ogl.DepthFunc(Ogl.LEQUAL);
 		Ogl.Enable(Ogl.DEPTH_TEST);
 		Ogl.Clear(Ogl.DEPTH_BUFFER_BIT);
-		renderCallback(true, false, true); // render occluders
+//		Ogl.PolygonOffset(-2, -1); // set the scale and units used to calculate depth values.
+
+Ogl.Disable(Ogl.TEXTURE_2D);		
+		renderCallback(3); // render occluders + shape only
+		
 		Ogl.BindTexture(Ogl.TEXTURE_2D, shadowMapTexture);
 		Ogl.CopyTexSubImage2D(Ogl.TEXTURE_2D, 0, 0, 0, 0, 0, shadowMapSize, shadowMapSize);
 		Ogl.ColorMask(true, true, true, true);
 		Ogl.ShadeModel(Ogl.SMOOTH);
 		Ogl.CullFace(Ogl.BACK);
+		Ogl.Disable(Ogl.TEXTURE_2D);
 
-		Ogl.Enable(Ogl.LIGHTING);
 		
 		Ogl.PopMatrix();
 		Ogl.MatrixMode(Ogl.PROJECTION);
 		Ogl.PopMatrix();
 		Ogl.MatrixMode(Ogl.MODELVIEW);
-
 		Ogl.PopAttrib();
-
-		renderCallback(false, false, false); // render all
-
 
 //2nd pass - Draw from camera's point of view
 
-		Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
-		
 		//Use dim light to represent shadowed areas
-		Ogl.Light(Ogl.LIGHT0, Ogl.POSITION, lightPos);
+//		Ogl.Light(Ogl.LIGHT0, Ogl.POSITION, lightPos); // needed ?
 		Ogl.Light(Ogl.LIGHT0, Ogl.AMBIENT, 0.2, 0.2, 0.2, 1);
 		Ogl.Light(Ogl.LIGHT0, Ogl.DIFFUSE, 0.2, 0.2, 0.2, 1);
 		Ogl.Light(Ogl.LIGHT0, Ogl.SPECULAR, 0, 0, 0, 1);
 		
-		renderCallback(true, true, false); // render all
-
+		Ogl.Enable(Ogl.LIGHTING);
+		Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
+		renderCallback(4); // render objects that receive shadow
 
 //3rd pass - Draw with bright light
-		Ogl.Light(Ogl.LIGHT1, Ogl.DIFFUSE, 1,1,1, 1);
-		Ogl.Light(Ogl.LIGHT1, Ogl.SPECULAR, 1,1,1, 1);
+
+		Ogl.Light(Ogl.LIGHT0, Ogl.DIFFUSE, 1,1,1, 1);
+		Ogl.Light(Ogl.LIGHT0, Ogl.SPECULAR, 1,1,1, 1);
 		
-		var mat = new Transformation(0.5, 0.0, 0.0, 0.0,  0.0, 0.5, 0.0, 0.0,  0.0, 0.0, 0.5, 0.0,  0.5, 0.5, 0.5, 1.0);
-		mat.Product(lightProjectionMatrix);
-		mat.Product(lightViewMatrix);
+//		var mat = new Transformation(0.5, 0.0, 0.0, 0.0,  0.0, 0.5, 0.0, 0.0,  0.0, 0.0, 0.5, 0.0,  0.5, 0.5, 0.5, 1.0);
+//		mat.Product(lightProjectionMatrix);
+//		mat.Product(lightViewMatrix);
+
+//DumpMatrix(mat);
 
 
 		//Set up texture coordinate generation.
 		Ogl.TexGen(Ogl.S, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
-		Ogl.TexGen(Ogl.S, Ogl.EYE_PLANE, mat[0], mat[1], mat[2], mat[3]);
-		Ogl.Enable(Ogl.TEXTURE_GEN_S);
-
+		Ogl.TexGen(Ogl.S, Ogl.EYE_PLANE, mat[0], mat[4], mat[8], mat[12]);
+//		Ogl.TexGen(Ogl.S, Ogl.EYE_PLANE, mat[0], mat[1], mat[2], mat[3]);
 		Ogl.TexGen(Ogl.T, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
-		Ogl.TexGen(Ogl.T, Ogl.EYE_PLANE, mat[4], mat[5], mat[6], mat[7]);
-		Ogl.Enable(Ogl.TEXTURE_GEN_T);
-
+		Ogl.TexGen(Ogl.T, Ogl.EYE_PLANE, mat[5], mat[5], mat[9], mat[13]);
+//		Ogl.TexGen(Ogl.T, Ogl.EYE_PLANE, mat[4], mat[5], mat[6], mat[7]);
 		Ogl.TexGen(Ogl.R, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
-		Ogl.TexGen(Ogl.R, Ogl.EYE_PLANE, mat[8], mat[9], mat[10], mat[11]);
-		Ogl.Enable(Ogl.TEXTURE_GEN_R);
-
+		Ogl.TexGen(Ogl.R, Ogl.EYE_PLANE, mat[2], mat[6], mat[10], mat[14]);
+//		Ogl.TexGen(Ogl.R, Ogl.EYE_PLANE, mat[8], mat[9], mat[10], mat[11]);
 		Ogl.TexGen(Ogl.Q, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
-		Ogl.TexGen(Ogl.Q, Ogl.EYE_PLANE, mat[12], mat[13], mat[14], mat[15]);
-		Ogl.Enable(Ogl.TEXTURE_GEN_Q);
+		Ogl.TexGen(Ogl.Q, Ogl.EYE_PLANE, mat[3], mat[7], mat[11], mat[15]);
+//		Ogl.TexGen(Ogl.Q, Ogl.EYE_PLANE, mat[12], mat[13], mat[14], mat[15]);
+
+		Ogl.Enable(Ogl.TEXTURE_GEN_S, Ogl.TEXTURE_GEN_T, Ogl.TEXTURE_GEN_R, Ogl.TEXTURE_GEN_Q);
 
 		//Bind & enable shadow map texture
-		Ogl.BindTexture(Ogl.TEXTURE_2D, shadowMapTexture);
-		Ogl.Enable(Ogl.TEXTURE_2D);
+//		Ogl.BindTexture(Ogl.TEXTURE_2D, shadowMapTexture);
+//Ogl.BindTexture(Ogl.TEXTURE_2D, testTexture);
 
-
+		Ogl.PixelTransfer(
+/*
 		//Enable shadow comparison
 		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_COMPARE_MODE, Ogl.COMPARE_R_TO_TEXTURE);
-
 		//Shadow comparison should be true (ie not in shadow) if r<=texture
 		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_COMPARE_FUNC, Ogl.LEQUAL);
-
 		//Shadow comparison should generate an INTENSITY result
 		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.DEPTH_TEXTURE_MODE, Ogl.INTENSITY);
-
+*/
+		// ?? Each component is then multiplied by the signed scale factor GL_c_SCALE, added to the signed bias GL_c_BIAS, and clamped to the range [0,1] (see glPixelTransfer).
 
 		//Set alpha test to discard false comparisons
 		Ogl.AlphaFunc(Ogl.GEQUAL, 0.99);
 		Ogl.Enable(Ogl.ALPHA_TEST);
+		Ogl.Enable(Ogl.TEXTURE_2D);
 		
-		renderCallback(true, true, false); // render all
+		renderCallback(6); // render all objects
+
+		Ogl.Disable(Ogl.TEXTURE_2D);
+		Ogl.Disable(Ogl.ALPHA_TEST);
+		Ogl.Disable(Ogl.TEXTURE_GEN_S, Ogl.TEXTURE_GEN_T, Ogl.TEXTURE_GEN_R, Ogl.TEXTURE_GEN_Q);
 	}
 
 	
@@ -310,6 +324,82 @@ function UI(currentWidth, currentHeight) {
 		Ogl.PopAttrib();
 	}
 	
+	function CreateTexture() {
+
+		var size = 256;
+		var texture = new Texture(size, size, 4);
+		texture.Set(0).AddGradiantQuad('#ff0000ff', '#00ff00ff', '#0000ffff', '#ffffff00');
+		var glTexture = Ogl.GenTexture();
+		Ogl.BindTexture(Ogl.TEXTURE_2D, glTexture);
+		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.NEAREST);
+		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.NEAREST);
+		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_S, Ogl.CLAMP);
+		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_T, Ogl.CLAMP);		
+		Ogl.DefineTextureImage(Ogl.TEXTURE_2D, undefined, texture);
+		texture.Free();
+		return glTexture;
+	}
+
+	
+	//////////
+
+	this.Idle = function() { // default function
+	}
+	
+	this.Draw = function() { // default function
+
+		Ogl.PushAttrib(Ogl.ENABLE_BIT);
+		Ogl.Disable(Ogl.CULL_FACE);
+		var str = 'nothing to draw';
+		Ogl.Translate(-f3d.Width(str)/2, 0, -80);
+		f3d.Draw(str);
+		Ogl.PopAttrib();
+	}
+	
+	var fps;
+	
+	function SurfaceReady() {
+		
+		var t0 = TimeCounter();
+		Ogl.Viewport(0, 0, videoWidth, videoHeight);
+		Ogl.ClearColor(0.15, 0.2, 0.4, 0);
+		Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
+
+		Ogl.MatrixMode(Ogl.PROJECTION);
+		Ogl.LoadIdentity();
+		this.Projection();
+		Ogl.MatrixMode(Ogl.MODELVIEW);
+		Ogl.LoadIdentity();
+	
+		this.Draw(frame);
+
+		Ogl.MatrixMode(Ogl.PROJECTION);
+		Ogl.LoadIdentity();
+		Ogl.Ortho(0, videoWidth, 0, videoHeight, 0, 1);
+		Ogl.MatrixMode(Ogl.MODELVIEW);
+		Ogl.LoadIdentity();
+		Ogl.PushAttrib(Ogl.ENABLE_BIT);
+		Ogl.Disable(Ogl.LIGHTING);
+		Ogl.Disable(Ogl.DEPTH_TEST);
+		Ogl.Color(0);
+		Ogl.Begin(Ogl.QUADS);
+		Ogl.Vertex(0,0);  Ogl.Vertex(videoWidth,0);  Ogl.Vertex(videoWidth,16);  Ogl.Vertex(0,16);
+		Ogl.End();
+
+		f2d.SetBackgroundColor([0,0,0,0]);
+		f2d.SetColor([1]);
+		var str = fps+'fps\t'+this.status;
+		for ( var [i,chunk] in Iterator(str.split('\t')) )
+			f2d.Draw(chunk, 2 + i * 150, 2);
+		Ogl.PopAttrib();
+
+		Ogl.Finish();
+		GlSwapBuffers(true);
+		this.Idle();
+		
+		fps = (1000/(TimeCounter()-t0)).toFixed(0);
+		frame++;
+	}
 	
 	var keyObjListeners = {};
 
@@ -425,64 +515,6 @@ function UI(currentWidth, currentHeight) {
 	this.Projection = function() {
 		
 		Ogl.Perspective(60, undefined, 0.5, 1000);
-	}
-	
-	this.Idle = function() {
-	}
-	
-	this.Draw = function() {
-
-		Ogl.PushAttrib(Ogl.ENABLE_BIT);
-		Ogl.Disable(Ogl.CULL_FACE);
-		var str = 'nothing to draw';
-		Ogl.Translate(-f3d.Width(str)/2, 0, -80);
-		f3d.Draw(str);
-		Ogl.PopAttrib();
-	}
-	
-	var fps;
-	
-	function SurfaceReady() {
-		
-		var t0 = TimeCounter();
-		Ogl.Viewport(0, 0, videoWidth, videoHeight);
-		Ogl.ClearColor(0.15, 0.2, 0.4, 0);
-		Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
-
-		Ogl.MatrixMode(Ogl.PROJECTION);
-		Ogl.LoadIdentity();
-		this.Projection();
-		Ogl.MatrixMode(Ogl.MODELVIEW);
-		Ogl.LoadIdentity();
-	
-		this.Draw(frame);
-
-		Ogl.MatrixMode(Ogl.PROJECTION);
-		Ogl.LoadIdentity();
-		Ogl.Ortho(0, videoWidth, 0, videoHeight, 0, 1);
-		Ogl.MatrixMode(Ogl.MODELVIEW);
-		Ogl.LoadIdentity();
-		Ogl.PushAttrib(Ogl.ENABLE_BIT);
-		Ogl.Disable(Ogl.LIGHTING);
-		Ogl.Disable(Ogl.DEPTH_TEST);
-		Ogl.Color(0);
-		Ogl.Begin(Ogl.QUADS);
-		Ogl.Vertex(0,0);  Ogl.Vertex(videoWidth,0);  Ogl.Vertex(videoWidth,16);  Ogl.Vertex(0,16);
-		Ogl.End();
-
-		f2d.SetBackgroundColor([0,0,0,0]);
-		f2d.SetColor([1]);
-		var str = fps+'fps\t'+this.status;
-		for ( var [i,chunk] in Iterator(str.split('\t')) )
-			f2d.Draw(chunk, 2 + i * 150, 2);
-		Ogl.PopAttrib();
-
-		Ogl.Finish();
-		GlSwapBuffers(true);
-		this.Idle();
-		
-		fps = (1000/(TimeCounter()-t0)).toFixed(0);
-		frame++;
 	}
 
 	this.Loop = function() {

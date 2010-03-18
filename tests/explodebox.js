@@ -4,7 +4,7 @@ LoadModule('jsimage');
 
 Exec('../common/tools.js');
 
-var ui = new UI(800, 600);
+var ui = new UI(320, 320);
 
 var world = new World();
 world.quickStepNumIterations = 5;
@@ -32,12 +32,12 @@ function Floor() {
 	this.geom.params = [0,0,1,0];
 	this.geom.name = 'floor';
 	
-	var clist;
+	var shapeCL, objectCL;
 	this.Compile = function() {
 
 		var cx = 10, cy = 10;
 
-		clist = Ogl.NewList(true);
+		objectCL = Ogl.NewList(true);
 
 		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
 		Ogl.Material(Ogl.FRONT, Ogl.EMISSION, 0, 0, 0, 1);
@@ -51,7 +51,14 @@ function Floor() {
 					Ogl.Material(Ogl.FRONT, Ogl.DIFFUSE, 0.3, 0.3, 0.3, 1);
 				else
 					Ogl.Material(Ogl.FRONT, Ogl.DIFFUSE, 0.8, 0.8, 0.8, 1);
-				Ogl.Vertex(x,y);  Ogl.Vertex(x+1,y);  Ogl.Vertex(x+1,y+1);  Ogl.Vertex(x,y+1);
+				Ogl.TexCoord(0,0);
+				Ogl.Vertex(x,y);
+				Ogl.TexCoord(1,0);
+				Ogl.Vertex(x+1,y);
+				Ogl.TexCoord(1,1);
+				Ogl.Vertex(x+1,y+1);
+				Ogl.TexCoord(0,1);
+				Ogl.Vertex(x,y+1);
 			}
 		Ogl.End();
 		Ogl.EndList();
@@ -61,7 +68,7 @@ function Floor() {
 	this.Render = function( shapeOnly ) {
 		
 		Ogl.PushMatrix();
-		Ogl.CallList(clist);
+		Ogl.CallList(objectCL);
 		Ogl.PopMatrix();
 	}	
 
@@ -174,8 +181,8 @@ function Box( pos ) {
 
 var scene = [];
 
-var ball = new Ball([0, 0, -50]);
-ball.body.linearVel = [0, 0, 80];
+var ball = new Ball([0, 0, 0]);
+ball.body.linearVel = [0, 0, 10];
 scene.push( ball );
 
 scene.push( new Floor() );
@@ -187,8 +194,8 @@ var gap = 0.001;
 for ( var i = -side; i < side; ++i )
 	for ( var j = -side; j < side; ++j ) {
 		
-		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
-		scene.push( new Box([i*(1+gap), j*(1+gap), 1.5]) );
+//		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
+//		scene.push( new Box([i*(1+gap), j*(1+gap), 1.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 2.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 3.5]) );
 	}
@@ -221,15 +228,24 @@ ui.Draw = function(frame) {
 
 	if ( !ui.keyState.s ) {
 
-		ui.RenderWithShadows1(function( castShadow, receiveShadow, shapeOnly ) {
+		ui.RenderWithShadows1(function( flags ) {
 
 			for ( var i = scene.length - 1; i >= 0; --i ) {
 			
 				var object = scene[i];
-				if ( object.castShadow == castShadow || object.receiveShadow == receiveShadow )
-					object.Render(shapeOnly);
+				if ( object.castShadow != !(flags & 2) || object.receiveShadow != !(flags & 4) )
+					object.Render(flags & 1); // != 0 : shapeOnly
 			}
 		}, [0,0,1,0]);
+		
+/*
+		ui.RenderWithShadows1(function( occluders, shadowed ) {
+
+			for ( var i = scene.length - 1; i >= 0; --i )
+				scene[i].Render(occluders, shadowed);
+
+		});
+*/
 	} else {
 
 		for ( var i = scene.length - 1; i >= 0; --i )
