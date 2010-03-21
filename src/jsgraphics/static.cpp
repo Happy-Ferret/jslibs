@@ -556,22 +556,25 @@ DEFINE_FUNCTION_FAST( PlaneFromPoints ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $TYPE vec4 $INAME( $TYPE vec4 plane, $TYPE vec4 lightPos )
+ $TYPE vec4 $INAME( $TYPE vec4 plane, $TYPE vec4 lightPos [, $ARR destArray] )
   Create a matrix that will project the desired shadow.
+ $H see
+  http://www.opengl.org/resources/code/samples/advanced/advanced97/notes/node100.html
 **/
 DEFINE_FUNCTION_FAST( ShadowMatrix ) {
 
-	float shadowMat[4][4], plane[4], lightpos[4];
+	JL_S_ASSERT_ARG_RANGE(2,3);
+
+	double shadowMat[4][4], plane[4], lightpos[4];
 
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), plane, 4, &len) );
+	JL_CHK( JsvalToDoubleVector(cx, JL_FARG(1), plane, 4, &len) );
 	JL_S_ASSERT( len == 4, "Invalid plane." );
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), lightpos, 4, &len) );
+	JL_CHK( JsvalToDoubleVector(cx, JL_FARG(2), lightpos, 4, &len) );
 	JL_S_ASSERT( len == 4, "Invalid light position." );
 
-	float dot;
-
 	/* Find dot product between light position vector and ground plane normal. */
+	float dot;
 	dot = plane[0] * lightpos[0] + plane[1] * lightpos[1] + plane[2] * lightpos[2] + plane[3] * lightpos[3];
 
 	shadowMat[0][0] = dot - lightpos[0] * plane[0];
@@ -594,7 +597,15 @@ DEFINE_FUNCTION_FAST( ShadowMatrix ) {
 	shadowMat[2][3] = 0.f - lightpos[3] * plane[2];
 	shadowMat[3][3] = dot - lightpos[3] * plane[3];
 
-	return FloatVectorToJsval(cx, (float*)shadowMat, 16, JL_FRVAL, false);
+	if ( JL_ARGC == 3 ) {
+
+		JL_S_ASSERT_ARRAY(JL_FARG(3));
+		*JL_FRVAL = JL_FARG(3);
+		return DoubleVectorToJsval(cx, (double*)shadowMat, 16, JL_FRVAL, true);
+	} else {
+
+		return DoubleVectorToJsval(cx, (double*)shadowMat, 16, JL_FRVAL, false);
+	}
 	JL_BAD;
 }
 
