@@ -29,16 +29,14 @@ function UI(currentWidth, currentHeight) {
 	
 	GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-	GlSetAttribute( GL_DEPTH_SIZE, 16);
+	GlSetAttribute( GL_DEPTH_SIZE, 32);
 	GlSetAttribute( GL_STENCIL_SIZE, 8 );
 	GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 	
 	SetVideoMode(currentWidth, currentHeight, undefined, defaultVideoMode);
 	
 //	Print( 'OpenGL version ', Ogl.GetString(Ogl.VERSION), '\n' );
-	
-//	Print( Ogl.extensions.indexOf('power_of_two'), '\n' ); throw 0;
-	
+
 	Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
 	Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
 	Ogl.Hint(Ogl.POLYGON_SMOOTH_HINT, Ogl.NICEST);
@@ -50,6 +48,8 @@ function UI(currentWidth, currentHeight) {
 	Ogl.Enable(Ogl.CULL_FACE);  // default: Ogl.FrontFace(Ogl.CCW);  Ogl.CullFace(Ogl.BACK);
 	
 	Ogl.Enable(Ogl.DEPTH_TEST);
+	
+//	Ogl.Enable(Ogl.TEXTURE_RECTANGLE_ARB);
 
 
 //	Ogl.Enable(Ogl.TEXTURE_2D);
@@ -61,6 +61,21 @@ function UI(currentWidth, currentHeight) {
 //	Ogl.Enable(Ogl.BLEND);
 //	Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
 
+	this.FrustumPlanes = function() {
+	
+		// see http://www.gamedev.net/community/forums/topic.asp?topic_id=350620&whichpage=1&#2294920
+		
+		var t = new Transformation(Ogl.GetDouble(Ogl.MODELVIEW_MATRIX, 16));
+		t.Product(Ogl.GetDouble(Ogl.PROJECTION_MATRIX, 16));
+		return [
+			[ t[3] + t[0], t[7] + t[4], t[11] + t[ 8], t[15] + t[12] ], // left
+			[ t[3] - t[0], t[7] - t[4], t[11] - t[ 8], t[15] - t[12] ], // right
+			[ t[3] + t[1], t[7] + t[5], t[11] + t[ 9], t[15] + t[13] ], // bottom
+			[ t[3] - t[1], t[7] - t[5], t[11] - t[ 9], t[15] - t[13] ], // top
+			[ t[3] + t[2], t[7] + t[6], t[11] + t[10], t[15] + t[14] ], // near
+			[ t[3] - t[2], t[7] - t[6], t[11] - t[10], t[15] - t[14] ]  // far
+		];
+	}
 	
 	var lightPos;// = [0,10,10, 1];
 	var lightDir = [0,0,0];
@@ -89,12 +104,12 @@ function UI(currentWidth, currentHeight) {
 		}
 	}
 
+	var tmpShadowMatrix = [];
 	this.RenderWithShadows = function( renderCallback, plane ) {
 		
 		// see http://www.opengl.org/resources/code/samples/mjktips/TexShadowReflectLight.html
 
 		Ogl.Clear(Ogl.STENCIL_BUFFER_BIT);
-		Ogl.PolygonOffset(-2, -1); // set the scale and units used to calculate depth values.
 		
 		// Draw the floor with stencil value 3.  This helps us only draw the shadow once per floor pixel (and only on the floor pixels).
 		Ogl.Enable(Ogl.STENCIL_TEST);
@@ -104,48 +119,48 @@ function UI(currentWidth, currentHeight) {
 		renderCallback(4);
 		
 		// Render the projected shadow.
-		Ogl.StencilFunc(Ogl.LESS, 2, -1);  /* draw if ==1 */
+		Ogl.StencilFunc(Ogl.LESS, 2, -1);  // draw if ==1
 		Ogl.StencilOp(Ogl.REPLACE, Ogl.REPLACE, Ogl.REPLACE);
 		
 		// To eliminate depth buffer artifacts, we use polygon offset to raise the depth of the projected shadow slightly so that it does not depth buffer alias with the floor.
-		Ogl.Enable(Ogl.POLYGON_OFFSET_FILL);
-		
+		Ogl.PolygonOffset(-2, -1); // set the scale and units used to calculate depth values.
       // Render 50% black shadow color on top of whatever the floor appareance is.
-      Ogl.Enable(Ogl.BLEND);
+      Ogl.Enable(Ogl.POLYGON_OFFSET_FILL, Ogl.BLEND);
       Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
-      
-      Ogl.Disable(Ogl.LIGHTING); // Force the 50% black.
-      Ogl.Color(0.0, 0.0, 0.0, 0.6);
+		Ogl.Disable(Ogl.LIGHTING); // Force the 50% black.
+      Ogl.Color(0.0, 0.0, 0.0, 0.5);
       Ogl.PushMatrix();
-		// Project the shadow.
-		Ogl.MultMatrix(ShadowMatrix(plane, lightPos));
+		Ogl.MultMatrix(ShadowMatrix(plane, lightPos, tmpShadowMatrix));
 
 		renderCallback(3);
+//		new File('tmp.png').content = EncodePngImage(Ogl.ReadImage(true, Ogl.RGB));  throw 0;
 
 		Ogl.PopMatrix();
       Ogl.Enable(Ogl.LIGHTING);
-		
-      Ogl.Disable(Ogl.BLEND);
-		
-		Ogl.Disable(Ogl.POLYGON_OFFSET_FILL);
-		Ogl.Disable(Ogl.STENCIL_TEST);
+      Ogl.Disable(Ogl.BLEND, Ogl.POLYGON_OFFSET_FILL, Ogl.STENCIL_TEST);
 	}
+
 
 	var testTexture = CreateTexture();
 
-	var shadowMapSize = 256;
+	var shadowMapSize = 128;
 	var shadowMapTexture = Ogl.GenTexture();
 	Ogl.BindTexture(Ogl.TEXTURE_2D, shadowMapTexture);
 	Ogl.TexImage2D(Ogl.TEXTURE_2D, 0, Ogl.DEPTH_COMPONENT, shadowMapSize, shadowMapSize, 0, Ogl.DEPTH_COMPONENT, Ogl.UNSIGNED_BYTE, null);
-	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.NEAREST);
-	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.NEAREST);
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.LINEAR); // NEAREST
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
 	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_S, Ogl.CLAMP);
 	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_T, Ogl.CLAMP);
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_COMPARE_MODE, Ogl.COMPARE_R_TO_TEXTURE); //Enable shadow comparison
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_COMPARE_FUNC, Ogl.LEQUAL); //Shadow comparison should be true (ie not in shadow) if r<=texture
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.DEPTH_TEXTURE_MODE, Ogl.INTENSITY); //Shadow comparison should generate an INTENSITY result
+
 
 	this.RenderWithShadows1 = function( renderCallback ) {
 		
 		// http://www.paulsprojects.net/tutorials/smt/smt.html ( and http://dalab.se.sjtu.edu.cn/~jietan/shadowMappingTutorial.html )
-		
+		// http://www.google.com/codesearch/p?hl=en#4FSOSMZ6Pxc/distfiles/MesaDemos-5.0.tar.bz2|w8yTKn7FXYw/Mesa-5.0/demos/shadowtex.c
+
 		var mat = new Transformation(0.5, 0.0, 0.0, 0.0,  0.0, 0.5, 0.0, 0.0,  0.0, 0.0, 0.5, 0.0,  0.5, 0.5, 0.5, 1.0);
 
 		Ogl.Enable(Ogl.NORMALIZE);
@@ -158,115 +173,91 @@ function UI(currentWidth, currentHeight) {
 		Ogl.MatrixMode(Ogl.PROJECTION);
 		Ogl.PushMatrix();
 		Ogl.LoadIdentity();
-		
-		//var lightFov = Ogl.GetLight(Ogl.LIGHT0, Ogl.SPOT_CUTOFF) * 2;
-
-		Ogl.Perspective(60, 1, 10, 50);
-		//var lightProjectionMatrix = Ogl.GetDouble(Ogl.PROJECTION_MATRIX, 16);
-		mat.Product(Ogl, true);
+		Ogl.Perspective(60, 1, 30, 50); //var lightFov = Ogl.GetLight(Ogl.LIGHT0, Ogl.SPOT_CUTOFF) * 2;
+		mat.Product(Ogl);
 		
 		Ogl.MatrixMode(Ogl.MODELVIEW);
 		Ogl.PushMatrix();
 		Ogl.LoadIdentity();
-		Ogl.LookAt( lightPos[0], lightPos[1], lightPos[2],  lightDir[0], lightDir[1], lightDir[2],  0, 1, 0);
-//		var lightViewMatrix = Ogl.GetDouble(Ogl.MODELVIEW_MATRIX, 16);
-		mat.Product(Ogl, true);
+		Ogl.LookAt( lightPos[0], lightPos[1], lightPos[2],  lightDir[0], lightDir[1], lightDir[2],  0, 0, 1 );
+		mat.Product(Ogl);
 
-
-//		Ogl.ColorMaterial(Ogl.FRONT, Ogl.AMBIENT_AND_DIFFUSE);
-//		Ogl.Enable(Ogl.COLOR_MATERIAL);
-//		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 1,1,1,1);
-//		Ogl.Material(Ogl.FRONT, Ogl.SHININESS, 16);
-//		Ogl.Color(1);
-
-
+		Ogl.Disable(Ogl.TEXTURE_2D);
 		Ogl.Disable(Ogl.LIGHTING);
 		Ogl.CullFace(Ogl.FRONT);
 		Ogl.ShadeModel(Ogl.FLAT);
 		Ogl.ColorMask(false, false, false, false);
-		Ogl.ClearDepth(1);
+//		Ogl.ClearDepth(1); // default is 1
 		Ogl.DepthFunc(Ogl.LEQUAL);
 		Ogl.Enable(Ogl.DEPTH_TEST);
 		Ogl.Clear(Ogl.DEPTH_BUFFER_BIT);
-//		Ogl.PolygonOffset(-2, -1); // set the scale and units used to calculate depth values.
 
-Ogl.Disable(Ogl.TEXTURE_2D);		
+		Ogl.Enable(Ogl.POLYGON_OFFSET_FILL);
+//		Ogl.PolygonOffset(1, 2); // set the scale and units used to calculate depth values.
+		
+//		Ogl.DepthRange(0.5, 1);
+
 		renderCallback(3); // render occluders + shape only
+//		new File('zbuffer.png').content = EncodePngImage(Ogl.ReadImage(true, Ogl.DEPTH_COMPONENT));  throw 0;		
 		
 		Ogl.BindTexture(Ogl.TEXTURE_2D, shadowMapTexture);
+
+//		Ogl.PixelTransfer(Ogl.DEPTH_BIAS, 0);
+//		Ogl.PixelTransfer(Ogl.DEPTH_SCALE, 1);
+		
 		Ogl.CopyTexSubImage2D(Ogl.TEXTURE_2D, 0, 0, 0, 0, 0, shadowMapSize, shadowMapSize);
+
 		Ogl.ColorMask(true, true, true, true);
 		Ogl.ShadeModel(Ogl.SMOOTH);
 		Ogl.CullFace(Ogl.BACK);
-		Ogl.Disable(Ogl.TEXTURE_2D);
-
 		
 		Ogl.PopMatrix();
 		Ogl.MatrixMode(Ogl.PROJECTION);
 		Ogl.PopMatrix();
 		Ogl.MatrixMode(Ogl.MODELVIEW);
 		Ogl.PopAttrib();
-
+		
 //2nd pass - Draw from camera's point of view
 
 		//Use dim light to represent shadowed areas
-//		Ogl.Light(Ogl.LIGHT0, Ogl.POSITION, lightPos); // needed ?
-		Ogl.Light(Ogl.LIGHT0, Ogl.AMBIENT, 0.2, 0.2, 0.2, 1);
-		Ogl.Light(Ogl.LIGHT0, Ogl.DIFFUSE, 0.2, 0.2, 0.2, 1);
+		Ogl.Light(Ogl.LIGHT0, Ogl.POSITION, lightPos); // needed ?
+		Ogl.Light(Ogl.LIGHT0, Ogl.AMBIENT, 1.5, 0.5, 0.5, 1);
+		Ogl.Light(Ogl.LIGHT0, Ogl.DIFFUSE, 1.5, 0.5, 0.5, 1);
 		Ogl.Light(Ogl.LIGHT0, Ogl.SPECULAR, 0, 0, 0, 1);
 		
 		Ogl.Enable(Ogl.LIGHTING);
 		Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
+		
 		renderCallback(4); // render objects that receive shadow
 
 //3rd pass - Draw with bright light
 
 		Ogl.Light(Ogl.LIGHT0, Ogl.DIFFUSE, 1,1,1, 1);
 		Ogl.Light(Ogl.LIGHT0, Ogl.SPECULAR, 1,1,1, 1);
-		
-//		var mat = new Transformation(0.5, 0.0, 0.0, 0.0,  0.0, 0.5, 0.0, 0.0,  0.0, 0.0, 0.5, 0.0,  0.5, 0.5, 0.5, 1.0);
-//		mat.Product(lightProjectionMatrix);
-//		mat.Product(lightViewMatrix);
-
-//DumpMatrix(mat);
-
 
 		//Set up texture coordinate generation.
 		Ogl.TexGen(Ogl.S, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
 		Ogl.TexGen(Ogl.S, Ogl.EYE_PLANE, mat[0], mat[4], mat[8], mat[12]);
-//		Ogl.TexGen(Ogl.S, Ogl.EYE_PLANE, mat[0], mat[1], mat[2], mat[3]);
 		Ogl.TexGen(Ogl.T, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
-		Ogl.TexGen(Ogl.T, Ogl.EYE_PLANE, mat[5], mat[5], mat[9], mat[13]);
-//		Ogl.TexGen(Ogl.T, Ogl.EYE_PLANE, mat[4], mat[5], mat[6], mat[7]);
+		Ogl.TexGen(Ogl.T, Ogl.EYE_PLANE, mat[1], mat[5], mat[9], mat[13]);
 		Ogl.TexGen(Ogl.R, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
 		Ogl.TexGen(Ogl.R, Ogl.EYE_PLANE, mat[2], mat[6], mat[10], mat[14]);
-//		Ogl.TexGen(Ogl.R, Ogl.EYE_PLANE, mat[8], mat[9], mat[10], mat[11]);
 		Ogl.TexGen(Ogl.Q, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
 		Ogl.TexGen(Ogl.Q, Ogl.EYE_PLANE, mat[3], mat[7], mat[11], mat[15]);
-//		Ogl.TexGen(Ogl.Q, Ogl.EYE_PLANE, mat[12], mat[13], mat[14], mat[15]);
 
 		Ogl.Enable(Ogl.TEXTURE_GEN_S, Ogl.TEXTURE_GEN_T, Ogl.TEXTURE_GEN_R, Ogl.TEXTURE_GEN_Q);
 
 		//Bind & enable shadow map texture
-//		Ogl.BindTexture(Ogl.TEXTURE_2D, shadowMapTexture);
-//Ogl.BindTexture(Ogl.TEXTURE_2D, testTexture);
+		Ogl.BindTexture(Ogl.TEXTURE_2D, shadowMapTexture);  // Ogl.BindTexture(Ogl.TEXTURE_2D, testTexture);
 
-		Ogl.PixelTransfer(
-/*
-		//Enable shadow comparison
-		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_COMPARE_MODE, Ogl.COMPARE_R_TO_TEXTURE);
-		//Shadow comparison should be true (ie not in shadow) if r<=texture
-		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_COMPARE_FUNC, Ogl.LEQUAL);
-		//Shadow comparison should generate an INTENSITY result
-		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.DEPTH_TEXTURE_MODE, Ogl.INTENSITY);
-*/
 		// ?? Each component is then multiplied by the signed scale factor GL_c_SCALE, added to the signed bias GL_c_BIAS, and clamped to the range [0,1] (see glPixelTransfer).
 
 		//Set alpha test to discard false comparisons
 		Ogl.AlphaFunc(Ogl.GEQUAL, 0.99);
 		Ogl.Enable(Ogl.ALPHA_TEST);
-		Ogl.Enable(Ogl.TEXTURE_2D);
 		
+		Ogl.Enable(Ogl.TEXTURE_2D);
+
 		renderCallback(6); // render all objects
 
 		Ogl.Disable(Ogl.TEXTURE_2D);
@@ -328,7 +319,7 @@ Ogl.Disable(Ogl.TEXTURE_2D);
 
 		var size = 256;
 		var texture = new Texture(size, size, 4);
-		texture.Set(0).AddGradiantQuad('#ff0000ff', '#00ff00ff', '#0000ffff', '#ffffff00');
+		texture.Set(0).AddGradiantQuad('#ff0000ff', '#00ff00ff', '#0000ffff', '#ffffffff');
 		var glTexture = Ogl.GenTexture();
 		Ogl.BindTexture(Ogl.TEXTURE_2D, glTexture);
 		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.NEAREST);
@@ -551,7 +542,7 @@ function Env3D() {
 		Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
 		Ogl.Viewport(0,0,videoWidth,videoHeight);
 		Ogl.MatrixMode(Ogl.PROJECTION);
-		Ogl.Perspective(60, undefined, 0.1, 100000);
+		Ogl.Perspective(60, undefined, 1, 100);
 		Ogl.MatrixMode(Ogl.MODELVIEW);
 		Ogl.ClearColor(0.2, 0.1, 0.4, 1);
 		Ogl.Enable(Ogl.DEPTH_TEST);
