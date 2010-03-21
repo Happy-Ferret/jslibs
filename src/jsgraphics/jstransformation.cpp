@@ -775,9 +775,9 @@ DEFINE_FUNCTION_FAST( Product ) {
 		Matrix44Load(pv->mat, m);
 	else
 		if ( preMultiply )
-			Matrix44Mult(pv->mat, pv->mat, m);
-		else
 			Matrix44Mult(pv->mat, m, pv->mat);
+		else
+			Matrix44Mult(pv->mat, pv->mat, m);
 
 	pv->isIdentity = false;
 
