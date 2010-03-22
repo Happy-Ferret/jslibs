@@ -93,36 +93,8 @@ function Ball(pos) {
 	this.body = body;
 	this.geom = geom;
 	
-	var program;
 	var shapeCL, objectCL;
 	this.Compile = function() {
-
-		Assert( Ogl.HasExtensionName('GL_ARB_shading_language_100') );
-		Assert( Ogl.HasExtensionName('GL_ARB_shader_objects') );
-		Assert( Ogl.HasExtensionName('GL_ARB_vertex_shader') );
-
-		var shader = Ogl.CreateShaderObjectARB(Ogl.VERTEX_SHADER_ARB);
-		Ogl.ShaderSourceARB(shader, <><![CDATA[
-			
-			void main(void) {
-				
-				gl_Position = ftransform(); // gl_ModelViewProjectionMatrix * gl_Vertex;
-//				gl_FrontColor = vec4(0.4,0.4,0.8,1.0); //gl_Color;
-
-				gl_FrontColor = gl_Color;
-
-
-
-			}
-
-		]]></>.toString());
-		
-		Ogl.CompileShaderARB(shader);
-		program = Ogl.CreateProgramObjectARB();
-		Ogl.AttachObjectARB(program, shader);
-		Ogl.LinkProgramARB(program);
-	//	Ogl.DeleteObjectARB(shader);
-		Print( 'log: ', Ogl.GetInfoLogARB(shader), '\n' );
 
 		shapeCL = Ogl.NewList(true);
 		Ogl.DrawSphere(geom.radius, 15, 15);
@@ -141,9 +113,7 @@ function Ball(pos) {
 		
 		Ogl.PushMatrix();
 		Ogl.MultMatrix(geom);
-		Ogl.UseProgramObjectARB(program);
 		Ogl.CallList(shapeOnly ? shapeCL : objectCL);
-		Ogl.UseProgramObjectARB(0);
 		Ogl.PopMatrix();
 	}
 	this.Compile();	
@@ -224,11 +194,18 @@ var gap = 0.001;
 for ( var i = -side; i < side; ++i )
 	for ( var j = -side; j < side; ++j ) {
 		
-		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
+//		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 1.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 2.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 3.5]) );
 	}
+
+
+//scene.push( new Box([1,1, 0.5]) );
+
+
+//scene.push({Render:function( shapeOnly ) {  Ogl.DrawBox(10, 10, 10);  }});
+
 
 
 var paused = false;
@@ -252,13 +229,13 @@ var vmove = 0;
 
 ui.Draw = function(frame) {
 
-	Ogl.LookAt(Math.cos(frame/100)*50, Math.sin(frame/100)*15, Math.cos(vmove/100)*25+27, 0,0,5, 0,0,1);
+	Ogl.LookAt(Math.cos(frame/100)*50, Math.sin(frame/100)*15, Math.cos(vmove/100)*25+27, 0,0,0, 0,0,1);
 	
-	ui.SetLight([15,15,30, 1]);
+	ui.SetLight([15,15,25, 1]);
 
 	if ( !ui.keyState.s ) {
 
-		ui.RenderWithShadows(function( flags ) {
+		ui.RenderWithShadows3(function( flags ) {
 
 			for ( var i = scene.length - 1; i >= 0; --i ) {
 			

@@ -141,6 +141,92 @@ function UI(currentWidth, currentHeight) {
 	}
 
 
+	function ShadowVolumeProgram() {
+
+		Assert( Ogl.HasExtensionName('GL_ARB_shading_language_100') );
+		Assert( Ogl.HasExtensionName('GL_ARB_shader_objects') );
+		Assert( Ogl.HasExtensionName('GL_ARB_vertex_shader') );
+
+		var shadowVolumeShader = Ogl.CreateShaderObjectARB(Ogl.VERTEX_SHADER_ARB);
+		var source = <><![CDATA[
+
+			uniform int light;
+			void main(void) {
+
+				vec3 lightDir = (gl_ModelViewMatrix * gl_Vertex - gl_LightSource[light].position).xyz;
+				if ( dot(lightDir, gl_NormalMatrix * gl_Normal ) < 0.01 )
+					gl_Position = ftransform(); // gl_ModelViewProjectionMatrix * gl_Vertex;
+				else
+					gl_Position = gl_ProjectionMatrix * (gl_ModelViewMatrix * gl_Vertex + vec4(lightDir * vec3(1/0), 0));
+//				gl_Position = gl_ProjectionMatrix * ((gl_ModelViewMatrix * gl_Vertex) + vec4(vec3(-50), 1));
+
+			}
+		]]></>.toString();
+		
+		var source = <><![CDATA[
+
+			uniform int light;
+			void main(void) {
+				sdf
+//				gl_Position = ftransform();
+			}
+		]]></>.toString();
+
+		Ogl.ShaderSourceARB(shadowVolumeShader, source);
+		
+		Ogl.CompileShaderARB(shadowVolumeShader);
+		
+		if ( Ogl.GetObjectParameterARB(shadowVolumeShader, Ogl.OBJECT_COMPILE_STATUS_ARB) == 0 ) {
+
+			Print( 'CompileShaderARB log:\n', Ogl.GetInfoLogARB(shadowVolumeShader), '\n' );
+			throw 0;
+		}
+
+		var program = Ogl.CreateProgramObjectARB();
+		Ogl.AttachObjectARB(program, shadowVolumeShader);
+		Ogl.DeleteObjectARB(shadowVolumeShader);
+		Ogl.LinkProgramARB(program);
+		
+		this.Use = function( polarity ) {
+
+			Ogl.UseProgramObjectARB(polarity ? program : 0);
+		}
+		
+		this.Light = function( light ) {
+
+			Ogl.UseProgramObjectARB(program);
+			var loc = Ogl.GetUniformLocationARB(program, 'light');
+			Ogl.UniformARB(loc, light);
+			Ogl.UseProgramObjectARB(0);
+		}
+	}
+	
+	var shadowVolumeProgram = new ShadowVolumeProgram();
+
+	this.RenderWithShadows3 = function( renderCallback ) {
+	
+		shadowVolumeProgram.Light(0);
+		shadowVolumeProgram.Use(true);
+		
+		Ogl.Disable(Ogl.TEXTURE_2D);
+		Ogl.Disable(Ogl.LIGHTING);
+		Ogl.Disable(Ogl.DEPTH_TEST);
+				
+		//Ogl.Disable(Ogl.CULL_FACE);//  Ogl.FrontFace(Ogl.CCW);  Ogl.CullFace(Ogl.BACK);
+
+		Ogl.ShadeModel(Ogl.FLAT);
+		
+		renderCallback(3); // render occluders + shape only
+		shadowVolumeProgram.Use(false);
+		
+		
+	
+	
+	}
+
+
+
+
 	var testTexture = CreateTexture();
 
 	var shadowMapSize = 128;
@@ -264,6 +350,7 @@ function UI(currentWidth, currentHeight) {
 		Ogl.Disable(Ogl.ALPHA_TEST);
 		Ogl.Disable(Ogl.TEXTURE_GEN_S, Ogl.TEXTURE_GEN_T, Ogl.TEXTURE_GEN_R, Ogl.TEXTURE_GEN_Q);
 	}
+
 
 	
 	this.DrawGrid = function() {
