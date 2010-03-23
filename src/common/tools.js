@@ -37,6 +37,9 @@ function UI(currentWidth, currentHeight) {
 	
 //	Print( 'OpenGL version ', Ogl.GetString(Ogl.VERSION), '\n' );
 
+//	Assert( Ogl.HasExtensionName('GL_EXT_stencil_two_side') );
+
+
 	Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
 	Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
 	Ogl.Hint(Ogl.POLYGON_SMOOTH_HINT, Ogl.NICEST);
@@ -149,33 +152,20 @@ function UI(currentWidth, currentHeight) {
 
 		var shadowVolumeShader = Ogl.CreateShaderObjectARB(Ogl.VERTEX_SHADER_ARB);
 		var source = <><![CDATA[
-
-			uniform int light;
+			
+			const int light = 0;
 			void main(void) {
 
 				vec3 lightDir = (gl_ModelViewMatrix * gl_Vertex - gl_LightSource[light].position).xyz;
-				if ( dot(lightDir, gl_NormalMatrix * gl_Normal ) < 0.01 )
+				if ( dot(lightDir, gl_NormalMatrix * gl_Normal ) < 0.001 )
 					gl_Position = ftransform(); // gl_ModelViewProjectionMatrix * gl_Vertex;
 				else
-					gl_Position = gl_ProjectionMatrix * (gl_ModelViewMatrix * gl_Vertex + vec4(lightDir * vec3(1/0), 0));
-//				gl_Position = gl_ProjectionMatrix * ((gl_ModelViewMatrix * gl_Vertex) + vec4(vec3(-50), 1));
-
-			}
-		]]></>.toString();
-		
-		var source = <><![CDATA[
-
-			uniform int light;
-			void main(void) {
-				sdf
-//				gl_Position = ftransform();
+					gl_Position = gl_ProjectionMatrix * (gl_ModelViewMatrix * gl_Vertex + vec4(normalize(lightDir) * 1000000.0, 0));
 			}
 		]]></>.toString();
 
 		Ogl.ShaderSourceARB(shadowVolumeShader, source);
-		
 		Ogl.CompileShaderARB(shadowVolumeShader);
-		
 		if ( Ogl.GetObjectParameterARB(shadowVolumeShader, Ogl.OBJECT_COMPILE_STATUS_ARB) == 0 ) {
 
 			Print( 'CompileShaderARB log:\n', Ogl.GetInfoLogARB(shadowVolumeShader), '\n' );
@@ -184,12 +174,29 @@ function UI(currentWidth, currentHeight) {
 
 		var program = Ogl.CreateProgramObjectARB();
 		Ogl.AttachObjectARB(program, shadowVolumeShader);
-		Ogl.DeleteObjectARB(shadowVolumeShader);
-		Ogl.LinkProgramARB(program);
-		
-		this.Use = function( polarity ) {
 
-			Ogl.UseProgramObjectARB(polarity ? program : 0);
+		Ogl.DeleteObjectARB(shadowVolumeShader);
+		if ( Ogl.GetObjectParameterARB(shadowVolumeShader, Ogl.OBJECT_DELETE_STATUS_ARB) == 0 ) {
+
+			Print( 'LinkProgramARB log:\n', Ogl.GetInfoLogARB(program), '\n' );
+			throw 0;
+		}
+
+		Ogl.LinkProgramARB(program);
+		if ( Ogl.GetObjectParameterARB(program, Ogl.OBJECT_LINK_STATUS_ARB) == 0 ) {
+
+			Print( 'LinkProgramARB log:\n', Ogl.GetInfoLogARB(program), '\n' );
+			throw 0;
+		}
+		
+		this.On = function() {
+
+			Ogl.UseProgramObjectARB(program);
+		}
+
+		this.Off = function() {
+
+			Ogl.UseProgramObjectARB(0);
 		}
 		
 		this.Light = function( light ) {
@@ -204,25 +211,70 @@ function UI(currentWidth, currentHeight) {
 	var shadowVolumeProgram = new ShadowVolumeProgram();
 
 	this.RenderWithShadows3 = function( renderCallback ) {
-	
-		shadowVolumeProgram.Light(0);
-		shadowVolumeProgram.Use(true);
 		
-		Ogl.Disable(Ogl.TEXTURE_2D);
-		Ogl.Disable(Ogl.LIGHTING);
-		Ogl.Disable(Ogl.DEPTH_TEST);
-				
-		//Ogl.Disable(Ogl.CULL_FACE);//  Ogl.FrontFace(Ogl.CCW);  Ogl.CullFace(Ogl.BACK);
+		// see http://www.opengl.org/resources/code/samples/glut_examples/advanced/shadowvol.c
+		// http://www.angelfire.com/games5/duktroa/RealTimeShadowTutorial.htm
+		// http://www.gamedev.net/columns/hardcore/cgshadow/page2.asp
+		// http://joshbeam.com/articles/stenciled_shadow_volumes_in_opengl/
+		
+	
+		Ogl.Disable(Ogl.LIGHT0);
 
+		Ogl.Enable(Ogl.POLYGON_OFFSET_FILL);
+		
+		renderCallback(7);
+		
+		Ogl.Enable(Ogl.CULL_FACE);
+				
+		Ogl.ColorMask(false);
+		Ogl.DepthMask(false);
+
+		Ogl.Clear(Ogl.STENCIL_BUFFER_BIT);
+		Ogl.Enable(Ogl.STENCIL_TEST);
+		Ogl.StencilFunc(Ogl.ALWAYS, 0, -1);
+
+		Ogl.Disable(Ogl.LIGHTING);
 		Ogl.ShadeModel(Ogl.FLAT);
-		
-		renderCallback(3); // render occluders + shape only
-		shadowVolumeProgram.Use(false);
-		
-		
+
+//		Ogl.PolygonOffset(2, 1);
+
+		shadowVolumeProgram.On();
+
+		Ogl.StencilOp(Ogl.KEEP, Ogl.KEEP, Ogl.INCR);
+		Ogl.CullFace(Ogl.BACK);
+		var list = Ogl.NewList();
+		renderCallback(3); // render occluders shape only
+		Ogl.EndList()
 	
-	
+		Ogl.StencilOp(Ogl.KEEP, Ogl.KEEP, Ogl.DECR);
+		Ogl.CullFace(Ogl.FRONT);
+		Ogl.CallList(list);
+		Ogl.DeleteList(list);
+
+		shadowVolumeProgram.Off();
+		
+		Ogl.Disable(Ogl.POLYGON_OFFSET_FILL);
+		
+		Ogl.ShadeModel(Ogl.SMOOTH);
+		Ogl.Enable(Ogl.LIGHTING);
+		
+		Ogl.ColorMask(true);
+		Ogl.DepthMask(true);
+
+		Ogl.DepthFunc(Ogl.EQUAL);
+		Ogl.StencilFunc(Ogl.EQUAL, 0, -1);
+		Ogl.StencilOp(Ogl.KEEP, Ogl.KEEP, Ogl.KEEP);
+
+		Ogl.CullFace(Ogl.BACK);
+		Ogl.Enable(Ogl.LIGHT0);
+		
+		renderCallback(6);
+		
+		Ogl.Disable(Ogl.STENCIL_TEST);
+		Ogl.DepthFunc(Ogl.LEQUAL);
+
 	}
+
 
 
 

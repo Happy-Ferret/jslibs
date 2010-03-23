@@ -231,7 +231,7 @@ ui.Draw = function(frame) {
 
 	Ogl.LookAt(Math.cos(frame/100)*50, Math.sin(frame/100)*15, Math.cos(vmove/100)*25+27, 0,0,0, 0,0,1);
 	
-	ui.SetLight([15,15,25, 1]);
+	ui.SetLight([15,15,55, 1]);
 
 	if ( !ui.keyState.s ) {
 
