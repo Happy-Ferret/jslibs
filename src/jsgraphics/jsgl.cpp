@@ -127,7 +127,7 @@ DECLARE_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
 DECLARE_OPENGL_EXTENSION( glBufferData, PFNGLBUFFERDATAPROC );
 DECLARE_OPENGL_EXTENSION( glMapBuffer, PFNGLMAPBUFFERPROC );
 DECLARE_OPENGL_EXTENSION( glUnmapBuffer, PFNGLUNMAPBUFFERPROC );
-DECLARE_OPENGL_EXTENSION( glPolygonOffsetEXT, PFNGLPOLYGONOFFSETEXTPROC );
+//DECLARE_OPENGL_EXTENSION( glPolygonOffsetEXT, PFNGLPOLYGONOFFSETEXTPROC );
 
 DECLARE_OPENGL_EXTENSION( glCreateShaderObjectARB, PFNGLCREATESHADEROBJECTARBPROC );
 DECLARE_OPENGL_EXTENSION( glDeleteObjectARB, PFNGLDELETEOBJECTARBPROC );
@@ -166,6 +166,16 @@ DECLARE_OPENGL_EXTENSION( glUniformMatrix4fvARB, PFNGLUNIFORMMATRIX4FVARBPROC );
 
 DECLARE_OPENGL_EXTENSION( glGetObjectParameterfvARB, PFNGLGETOBJECTPARAMETERFVARBPROC );
 DECLARE_OPENGL_EXTENSION( glGetObjectParameterivARB, PFNGLGETOBJECTPARAMETERIVARBPROC );
+
+DECLARE_OPENGL_EXTENSION( glBindAttribLocationARB, PFNGLBINDATTRIBLOCATIONARBPROC );
+DECLARE_OPENGL_EXTENSION( glGetAttribLocationARB, PFNGLGETATTRIBLOCATIONARBPROC );
+
+DECLARE_OPENGL_EXTENSION( glVertexAttrib1sARB, PFNGLVERTEXATTRIB1SARBPROC );
+
+DECLARE_OPENGL_EXTENSION( glVertexAttrib1dARB, PFNGLVERTEXATTRIB1DARBPROC );
+DECLARE_OPENGL_EXTENSION( glVertexAttrib2dARB, PFNGLVERTEXATTRIB2DARBPROC );
+DECLARE_OPENGL_EXTENSION( glVertexAttrib3dARB, PFNGLVERTEXATTRIB3DARBPROC );
+DECLARE_OPENGL_EXTENSION( glVertexAttrib4dARB, PFNGLVERTEXATTRIB4DARBPROC );
 
 
 
@@ -1430,6 +1440,28 @@ DEFINE_FUNCTION_FAST( DepthFunc ) {
 	JL_BAD;
 }
 
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( func )
+  $H arguments
+   $ARG GLenum func
+  $H OpenGL API
+   glDepthMask
+**/
+DEFINE_FUNCTION_FAST( DepthMask ) {
+
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_BOOLEAN(JL_FARG(1));
+	
+	glDepthMask( JSVAL_TO_BOOLEAN( JL_FARG(1) ) );  OGL_CHK;
+	
+	*JL_FRVAL = JSVAL_VOID;
+	;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1672,6 +1704,7 @@ DEFINE_FUNCTION_FAST( Clear ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( red, green, blue, alpha )
+ $VOID $INAME( all )
   $H arguments
    $ARG boolean red
    $ARG boolean green
@@ -1682,6 +1715,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( ColorMask ) {
 
+	*JL_FRVAL = JSVAL_VOID;
+	if ( JL_ARGC == 1 ) {
+
+		JL_S_ASSERT_BOOLEAN(JL_FARG(1));
+		if ( JL_FARG(1) == JSVAL_FALSE ) {
+
+			glColorMask(0,0,0,0);  OGL_CHK;
+		} else {
+
+			glColorMask(1,1,1,1);  OGL_CHK;
+		}
+		return JS_TRUE;
+	}
+
 	JL_S_ASSERT_ARG(4);
 	JL_S_ASSERT_BOOLEAN(JL_FARG(1));
 	JL_S_ASSERT_BOOLEAN(JL_FARG(2));
@@ -1690,7 +1737,6 @@ DEFINE_FUNCTION_FAST( ColorMask ) {
 
 	glColorMask(JSVAL_TO_BOOLEAN(JL_FARG(1)), JSVAL_TO_BOOLEAN(JL_FARG(2)), JSVAL_TO_BOOLEAN(JL_FARG(3)), JSVAL_TO_BOOLEAN(JL_FARG(4)) );  OGL_CHK;
 
-	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3043,7 +3089,7 @@ DEFINE_FUNCTION_FAST( UniformARB ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( handle, pname )
+ $INT $INAME( obj, pname )
   (TBD)
  $H OpenGL API
   glGetObjectParameterfvARB, glGetObjectParameterivARB
@@ -3057,8 +3103,8 @@ DEFINE_FUNCTION_FAST( GetObjectParameterARB ) {
 	JL_S_ASSERT_INT(JL_FARG(1));
 	JL_S_ASSERT_INT(JL_FARG(2));
 
-	GLfloat params[16]; // (TBD) check if it is the max amount of data that glGetLightfv may returns.
-	glGetObjectParameterfvARB(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params);  OGL_CHK;
+	GLint params[16]; // (TBD) check if it is the max amount of data that glGetLightfv may returns.
+	glGetObjectParameterivARB(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params);  OGL_CHK;
 
 	if ( JL_FARG_ISDEF(3) ) {
 
@@ -3070,18 +3116,128 @@ DEFINE_FUNCTION_FAST( GetObjectParameterARB ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( FloatToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( IntToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( FloatToJsval(cx, params[0], JL_FRVAL) );
+		JL_CHK( IntToJsval(cx, params[0], JL_FRVAL) );
 	}
-	;
+
 	return JS_TRUE;
 	JL_BAD;
 }
 
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( programObj, index, name )
+  (TBD)
+ $H OpenGL API
+  glBindAttribLocationARB
+**/
+DEFINE_FUNCTION_FAST( BindAttribLocationARB ) {
+
+	JL_INIT_OPENGL_EXTENSION( glBindAttribLocationARB, PFNGLBINDATTRIBLOCATIONARBPROC );
+
+	JL_S_ASSERT_ARG(3);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	const char *name;
+	JL_CHK( JsvalToString(cx, &JL_FARG(3), &name) );
+	glBindAttribLocationARB(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), name);  OGL_CHK;
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( programObj, name )
+  (TBD)
+ $H OpenGL API
+  glGetAttribLocationARB
+**/
+DEFINE_FUNCTION_FAST( GetAttribLocationARB ) {
+
+	JL_INIT_OPENGL_EXTENSION( glGetAttribLocationARB, PFNGLGETATTRIBLOCATIONARBPROC );
+
+	JL_S_ASSERT_ARG(2);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	const char *name;
+	JL_CHK( JsvalToString(cx, &JL_FARG(2), &name) );
+	int location;
+	location = glGetAttribLocationARB(JSVAL_TO_INT(JL_FARG(1)), name);  OGL_CHK;
+	*JL_FRVAL = INT_TO_JSVAL(location);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( index, value )
+  (TBD)
+ $H OpenGL API
+  glVertexAttrib1dARB
+**/
+DEFINE_FUNCTION_FAST( VertexAttribARB ) {
+
+	JL_INIT_OPENGL_EXTENSION( glVertexAttrib1sARB, PFNGLVERTEXATTRIB1SARBPROC );
+
+	JL_INIT_OPENGL_EXTENSION( glVertexAttrib1dARB, PFNGLVERTEXATTRIB1DARBPROC );
+	JL_INIT_OPENGL_EXTENSION( glVertexAttrib2dARB, PFNGLVERTEXATTRIB2DARBPROC );
+	JL_INIT_OPENGL_EXTENSION( glVertexAttrib3dARB, PFNGLVERTEXATTRIB3DARBPROC );
+	JL_INIT_OPENGL_EXTENSION( glVertexAttrib4dARB, PFNGLVERTEXATTRIB4DARBPROC );
+
+	JL_S_ASSERT_ARG_RANGE(2, 5);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	int index;
+	index = JSVAL_TO_INT(JL_FARG(1));
+
+
+	*JL_FRVAL = JSVAL_VOID;
+	
+	jsval arg2 = JL_FARG(2);
+
+	GLdouble v1, v2, v3, v4;
+
+	if ( JL_ARGC == 2 && JSVAL_IS_INT(arg2) ) {
+
+		glVertexAttrib1sARB(index, JSVAL_TO_INT(arg2));  OGL_CHK;
+		return JS_TRUE;
+	}
+
+	if ( JSVAL_IS_NUMBER(arg2) ) {
+
+		JL_CHK( JsvalToDouble(cx, arg2, &v1) );
+		if ( JL_ARGC >= 3 ) {
+		
+			JL_CHK( JsvalToDouble(cx, JL_FARG(3), &v2) );
+			if ( JL_ARGC >= 4 ) {
+			
+				JL_CHK( JsvalToDouble(cx, JL_FARG(4), &v3) );
+				if ( JL_ARGC >= 5 ) {
+				
+					JL_CHK( JsvalToDouble(cx, JL_FARG(5), &v4) );
+					glVertexAttrib4dARB(index, v1, v2, v3, v4);  OGL_CHK;
+					return JS_TRUE;
+				}
+				glVertexAttrib3dARB(index, v1, v2, v3);  OGL_CHK;
+				return JS_TRUE;
+			}
+			glVertexAttrib2dARB(index, v1, v2);  OGL_CHK;
+			return JS_TRUE;
+		}
+		glVertexAttrib1dARB(index, v1);  OGL_CHK;
+		return JS_TRUE;
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
 
 /**doc
 $TOC_MEMBER $INAME
@@ -4489,6 +4645,72 @@ DEFINE_FUNCTION_FAST( DrawBox ) {
 	lengthZ /= 2.f;
 
 	glBegin(GL_QUADS);  OGL_CHK;
+/*
+	glNormal3f(1.0f, 0.0f,  0.0f); glVertex3f( lengthX, lengthY,-lengthZ);  OGL_CHK;
+	glNormal3f(1.0f, 0.0f,  0.0f); glVertex3f( lengthX,-lengthY,-lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 0.0f, -1.0f); glVertex3f( lengthX,-lengthY,-lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 0.0f, -1.0f); glVertex3f( lengthX, lengthY,-lengthZ);  OGL_CHK;
+
+	glNormal3f(-1.0f, 0.0f, 0.0f); glVertex3f( -lengthX, lengthY,-lengthZ);  OGL_CHK;
+	glNormal3f(-1.0f, 0.0f, 0.0f); glVertex3f( -lengthX,-lengthY,-lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 0.0f, -1.0f); glVertex3f( -lengthX,-lengthY,-lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 0.0f, -1.0f); glVertex3f( -lengthX, lengthY,-lengthZ);  OGL_CHK;
+
+	glNormal3f(0.0f, 1.0f,  0.0f); glVertex3f(  lengthX, lengthY,-lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 1.0f,  0.0f); glVertex3f( -lengthX, lengthY,-lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 0.0f, -1.0f); glVertex3f( -lengthX, lengthY,-lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 0.0f, -1.0f); glVertex3f(  lengthX, lengthY,-lengthZ);  OGL_CHK;
+
+	glNormal3f(0.0f, -1.0f, 0.0f); glVertex3f(  lengthX, -lengthY,-lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, -1.0f, 0.0f); glVertex3f( -lengthX, -lengthY,-lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 0.0f, -1.0f); glVertex3f( -lengthX, -lengthY,-lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 0.0f, -1.0f); glVertex3f(  lengthX, -lengthY,-lengthZ);  OGL_CHK;
+
+
+	glNormal3f(1.0f, 0.0f, 0.0f); glVertex3f( lengthX, lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(1.0f, 0.0f, 0.0f); glVertex3f( lengthX,-lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 0.0f, 1.0f); glVertex3f( lengthX,-lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 0.0f, 1.0f); glVertex3f( lengthX, lengthY, lengthZ);  OGL_CHK;
+
+	glNormal3f(-1.0f, 0.0f, 0.0f); glVertex3f( -lengthX, lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(-1.0f, 0.0f, 0.0f); glVertex3f( -lengthX,-lengthY, lengthZ);  OGL_CHK;
+	glNormal3f( 0.0f, 0.0f, 1.0f); glVertex3f( -lengthX,-lengthY, lengthZ);  OGL_CHK;
+	glNormal3f( 0.0f, 0.0f, 1.0f); glVertex3f( -lengthX, lengthY, lengthZ);  OGL_CHK;
+
+	glNormal3f(0.0f, 1.0f, 0.0f); glVertex3f(  lengthX, lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 1.0f, 0.0f); glVertex3f( -lengthX, lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 0.0f, 1.0f); glVertex3f( -lengthX, lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 0.0f, 1.0f); glVertex3f(  lengthX, lengthY, lengthZ);  OGL_CHK;
+
+	glNormal3f(0.0f, -1.0f, 0.0f); glVertex3f(  lengthX, -lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, -1.0f, 0.0f); glVertex3f( -lengthX, -lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(0.0f,  0.0f, 1.0f); glVertex3f( -lengthX, -lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(0.0f,  0.0f, 1.0f); glVertex3f(  lengthX, -lengthY, lengthZ);  OGL_CHK;
+
+
+
+	glNormal3f(1.0f, 0.0f, 0.0f); glVertex3f( lengthX, lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(1.0f, 0.0f, 0.0f); glVertex3f( lengthX, lengthY, -lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 1.0f, 0.0f); glVertex3f( lengthX, lengthY, -lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 1.0f, 0.0f); glVertex3f( lengthX, lengthY, lengthZ);  OGL_CHK;
+
+	glNormal3f(1.0f, 0.0f, 0.0f); glVertex3f( lengthX, -lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(1.0f, 0.0f, 0.0f); glVertex3f( lengthX, -lengthY, -lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, -1.0f, 0.0f); glVertex3f( lengthX, -lengthY, -lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, -1.0f, 0.0f); glVertex3f( lengthX, -lengthY, lengthZ);  OGL_CHK;
+
+	glNormal3f(-1.0f, 0.0f, 0.0f); glVertex3f( -lengthX, -lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(-1.0f, 0.0f, 0.0f); glVertex3f( -lengthX, -lengthY, -lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, -1.0f, 0.0f); glVertex3f( -lengthX, -lengthY, -lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, -1.0f, 0.0f); glVertex3f( -lengthX, -lengthY, lengthZ);  OGL_CHK;
+
+	glNormal3f(-1.0f, 0.0f, 0.0f); glVertex3f( -lengthX, lengthY, lengthZ);  OGL_CHK;
+	glNormal3f(-1.0f, 0.0f, 0.0f); glVertex3f( -lengthX, lengthY, -lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 1.0f, 0.0f); glVertex3f( -lengthX, lengthY, -lengthZ);  OGL_CHK;
+	glNormal3f(0.0f, 1.0f, 0.0f); glVertex3f( -lengthX, lengthY, lengthZ);  OGL_CHK;
+*/
+
+
 
 	glNormal3f(1.0f, 0.0f, 0.0f);  OGL_CHK;
 	glTexCoord2f(0.0f, 1.0f); glVertex3f( lengthX, lengthY, lengthZ);  OGL_CHK;
@@ -4528,7 +4750,7 @@ DEFINE_FUNCTION_FAST( DrawBox ) {
 
 	glEnd();  OGL_CHK;
 
-	;
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4753,6 +4975,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(ShadeModel, 1) // mode
 		FUNCTION_FAST_ARGC(BlendFunc, 2) // sfactor, dfactor
 		FUNCTION_FAST_ARGC(DepthFunc, 1) // func
+		FUNCTION_FAST_ARGC(DepthMask, 1) // mask
 		FUNCTION_FAST_ARGC(DepthRange, 2) // zNear, zFar
 		FUNCTION_FAST_ARGC(PolygonOffset, 2) // factor, units
 
