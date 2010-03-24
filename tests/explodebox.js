@@ -88,7 +88,7 @@ function Ball(pos) {
 	body.mass.value = 100;
 	body.position = pos;
 	
-	geom.contact = function(thisGeom, otherGeom) otherGeom.name != 'floor'; // don't hit the floor
+//	geom.contact = function(thisGeom, otherGeom) otherGeom.name != 'floor'; // don't hit the floor
 	
 	this.body = body;
 	this.geom = geom;
@@ -97,14 +97,15 @@ function Ball(pos) {
 	this.Compile = function() {
 
 		shapeCL = Ogl.NewList(true);
-		Ogl.DrawSphere(geom.radius, 15, 15);
+		// Ogl.DrawSphere(geom.radius, 4, 2); // diamond
+		Ogl.DrawSphere(geom.radius, 32, 16);
 		Ogl.EndList();
 		
 		objectCL = Ogl.NewList(true);
 		Ogl.Material(Ogl.FRONT, Ogl.DIFFUSE, 1, 1, 1, 1);
 		Ogl.Material(Ogl.FRONT, Ogl.EMISSION, 0, 0, 0, 1);
-//		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
-//		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 0.1, 0.1, 0.1, 1);
+		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
+		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 0.1, 0.1, 0.1, 1);
 		Ogl.CallList(shapeCL);
 		Ogl.EndList();
 	}
@@ -128,9 +129,8 @@ Box.prototype = {
 
 		this.objectCL = Ogl.NewList(true);
 		Ogl.Material(Ogl.FRONT, Ogl.DIFFUSE, 0, 1, 0, 1);
-//		Ogl.Material(Ogl.FRONT, Ogl.EMISSION, 0, 0, 0, 1);
-//		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
-//		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 0, 0, 0, 1);
+		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
+		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 0, 0, 0, 1);
 		Ogl.CallList(this.shapeCL);
 		Ogl.EndList();
 	},
@@ -145,13 +145,7 @@ Box.prototype = {
 	
 			Ogl.Material(Ogl.FRONT, Ogl.EMISSION, this.geom.contactVelocityAccu / 5, 0, 0, 1);
 			this.geom.contactVelocityAccu /= 1.01
-//			Ogl.CallList(this.objectCL);
-		Ogl.Material(Ogl.FRONT, Ogl.DIFFUSE, 0, 1, 0, 1);
-//		Ogl.Material(Ogl.FRONT, Ogl.EMISSION, 0, 0, 0, 1);
-//		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
-//		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 0, 0, 0, 1);
-		Ogl.CallList(this.shapeCL);
-
+			Ogl.CallList(this.objectCL);
 		}
 		Ogl.PopMatrix();
 	}, 
@@ -163,7 +157,7 @@ Box.prototype = {
 
 function Box( pos ) {
 
-	this.castShadow = true;
+	this.castShadow = false;//true;
 	this.receiveShadow = true;
 	
 	this.geom = new GeomBox(world.space);
@@ -181,9 +175,14 @@ function Box( pos ) {
 
 var scene = [];
 
-var ball = new Ball([0, 0, 12]);
+var ball = new Ball([0, 0, 20]);
 ball.body.linearVel = [0, 0, 10];
 scene.push( ball );
+
+var ball = new Ball([0, 0, 0.5]);
+ball.body.linearVel = [0, 0, 0];
+scene.push( ball );
+
 
 scene.push( new Floor() );
 
@@ -204,11 +203,11 @@ for ( var i = -side; i < side; ++i )
 //scene.push( new Box([1,1, 0.5]) );
 
 
-//scene.push({Render:function( shapeOnly ) {  Ogl.DrawBox(10, 10, 10);  }});
+//scene.push({castShadow:false, Render:function( shapeOnly ) {  Ogl.DrawBox(10, 10, 10);  }});
 
 
 
-var paused = false;
+var paused = true;
 ui.key.space = function(down) {
 	
 	paused = down;
@@ -229,7 +228,7 @@ var vmove = 0;
 
 ui.Draw = function(frame) {
 
-	Ogl.LookAt(Math.cos(frame/100)*50, Math.sin(frame/100)*15, Math.cos(vmove/100)*25+27, 0,0,0, 0,0,1);
+	Ogl.LookAt(Math.cos(vmove/100)*50, Math.sin(vmove/100)*15, Math.cos(vmove/100)*25+27, 0,0,0, 0,0,1);
 	
 	ui.SetLight([15,15,55, 1]);
 

@@ -80,6 +80,30 @@ function UI(currentWidth, currentHeight) {
 		];
 	}
 	
+	var fullQuadCL;
+	function FullQuad() {
+		
+		if ( fullQuadCL ) {
+		
+			Ogl.CallList(fullQuadCL);
+			return;
+		}
+		fullQuadCL = Ogl.NewList();
+		Ogl.PushMatrix();
+		Ogl.LoadIdentity();
+		Ogl.MatrixMode(Ogl.PROJECTION);
+		Ogl.PushMatrix();
+		Ogl.LoadIdentity();
+		Ogl.Begin(Ogl.QUADS);
+		Ogl.Vertex(-1,-1,0);  Ogl.Vertex(1,-1,0);  Ogl.Vertex(1,1,0);  Ogl.Vertex(-1,1,0);
+		Ogl.End();
+		Ogl.PopMatrix();
+		Ogl.MatrixMode(Ogl.MODELVIEW);
+		Ogl.PopMatrix();
+		Ogl.EndList();
+	}
+	
+	
 	var lightPos;// = [0,10,10, 1];
 	var lightDir = [0,0,0];
 	this.SetLight = function(pos, dir) {
@@ -87,6 +111,7 @@ function UI(currentWidth, currentHeight) {
 		if ( !lightPos ) {
 			
 			Ogl.Light(Ogl.LIGHT0, Ogl.DIFFUSE, 1, 1, 1, 1);
+			Ogl.Light(Ogl.LIGHT0, Ogl.AMBIENT, 0, 0, 0, 0.5);
 			//Ogl.Light(Ogl.LIGHT0, Ogl.CONSTANT_ATTENUATION, 0.1);
 			//Ogl.Light(Ogl.LIGHT0, Ogl.LINEAR_ATTENUATION, 0.003);
 			//Ogl.Light(Ogl.LIGHT0, Ogl.SPOT_EXPONENT, 0);
@@ -153,14 +178,19 @@ function UI(currentWidth, currentHeight) {
 		var shadowVolumeShader = Ogl.CreateShaderObjectARB(Ogl.VERTEX_SHADER_ARB);
 		var source = <><![CDATA[
 			
-			const int light = 0;
 			void main(void) {
 
-				vec3 lightDir = (gl_ModelViewMatrix * gl_Vertex - gl_LightSource[light].position).xyz;
-				if ( dot(lightDir, gl_NormalMatrix * gl_Normal ) < 0.001 )
-					gl_Position = ftransform(); // gl_ModelViewProjectionMatrix * gl_Vertex;
-				else
-					gl_Position = gl_ProjectionMatrix * (gl_ModelViewMatrix * gl_Vertex + vec4(normalize(lightDir) * 1000000.0, 0));
+				vec3 lightDir = (gl_ModelViewMatrix * gl_Vertex - gl_LightSource[0].position).xyz;
+				if ( dot(lightDir, gl_NormalMatrix * gl_Normal) < 0.0 ) { // if vertex is lit
+				
+					gl_Position = ftransform();
+				} else {
+
+					vec4 fin = gl_ProjectionMatrix * (gl_ModelViewMatrix * gl_Vertex + vec4(normalize(lightDir) * 10000.0, 0.0));
+					if ( fin.z > fin.w ) // avoid clipping
+						fin.z = fin.w; // move to the far plane
+					gl_Position = fin;
+				}
 			}
 		]]></>.toString();
 
@@ -199,16 +229,11 @@ function UI(currentWidth, currentHeight) {
 			Ogl.UseProgramObjectARB(0);
 		}
 		
-		this.Light = function( light ) {
-
-			Ogl.UseProgramObjectARB(program);
-			var loc = Ogl.GetUniformLocationARB(program, 'light');
-			Ogl.UniformARB(loc, light);
-			Ogl.UseProgramObjectARB(0);
-		}
 	}
 	
 	var shadowVolumeProgram = new ShadowVolumeProgram();
+	
+	var step1, step2, step3;
 
 	this.RenderWithShadows3 = function( renderCallback ) {
 		
@@ -216,66 +241,63 @@ function UI(currentWidth, currentHeight) {
 		// http://www.angelfire.com/games5/duktroa/RealTimeShadowTutorial.htm
 		// http://www.gamedev.net/columns/hardcore/cgshadow/page2.asp
 		// http://joshbeam.com/articles/stenciled_shadow_volumes_in_opengl/
-		
 	
-		Ogl.Disable(Ogl.LIGHT0);
-
+	
 		Ogl.Enable(Ogl.POLYGON_OFFSET_FILL);
-		
-		renderCallback(7);
-		
+		Ogl.PolygonOffset(0, -32);
+		renderCallback(6);
+		Ogl.Disable(Ogl.POLYGON_OFFSET_FILL);
+
 		Ogl.Enable(Ogl.CULL_FACE);
-				
+
 		Ogl.ColorMask(false);
 		Ogl.DepthMask(false);
-
-		Ogl.Clear(Ogl.STENCIL_BUFFER_BIT);
-		Ogl.Enable(Ogl.STENCIL_TEST);
-		Ogl.StencilFunc(Ogl.ALWAYS, 0, -1);
-
-		Ogl.Disable(Ogl.LIGHTING);
+		
 		Ogl.ShadeModel(Ogl.FLAT);
+		Ogl.Disable(Ogl.LIGHTING);
 
-//		Ogl.PolygonOffset(2, 1);
+		Ogl.StencilFunc(Ogl.ALWAYS, 0, 0);
+		Ogl.Enable(Ogl.STENCIL_TEST);
+		Ogl.Clear(Ogl.STENCIL_BUFFER_BIT);
 
 		shadowVolumeProgram.On();
-
-		Ogl.StencilOp(Ogl.KEEP, Ogl.KEEP, Ogl.INCR);
-		Ogl.CullFace(Ogl.BACK);
-		var list = Ogl.NewList();
+		
+//		Ogl.DepthFunc(Ogl.LESS);
+		
+		Ogl.StencilOp(Ogl.KEEP, Ogl.INCR, Ogl.KEEP);
+		Ogl.CullFace(Ogl.FRONT);
+		Ogl.EndList()
+	
+		var list = Ogl.NewList(false);
 		renderCallback(3); // render occluders shape only
 		Ogl.EndList()
 	
-		Ogl.StencilOp(Ogl.KEEP, Ogl.KEEP, Ogl.DECR);
-		Ogl.CullFace(Ogl.FRONT);
+		Ogl.StencilOp(Ogl.KEEP, Ogl.DECR, Ogl.KEEP);
+		Ogl.CullFace(Ogl.BACK);
 		Ogl.CallList(list);
 		Ogl.DeleteList(list);
 
 		shadowVolumeProgram.Off();
 		
-		Ogl.Disable(Ogl.POLYGON_OFFSET_FILL);
-		
-		Ogl.ShadeModel(Ogl.SMOOTH);
-		Ogl.Enable(Ogl.LIGHTING);
-		
-		Ogl.ColorMask(true);
-		Ogl.DepthMask(true);
-
-		Ogl.DepthFunc(Ogl.EQUAL);
-		Ogl.StencilFunc(Ogl.EQUAL, 0, -1);
+		Ogl.DepthFunc(Ogl.ALWAYS);
+		Ogl.StencilFunc(Ogl.NOTEQUAL, 0, -1);
 		Ogl.StencilOp(Ogl.KEEP, Ogl.KEEP, Ogl.KEEP);
 
-		Ogl.CullFace(Ogl.BACK);
-		Ogl.Enable(Ogl.LIGHT0);
+		Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+		Ogl.Enable(Ogl.BLEND);
 		
-		renderCallback(6);
+		Ogl.Color(Ogl.GetLight(Ogl.LIGHT0, Ogl.AMBIENT, 4));
+		Ogl.ColorMask(true);
+
+		FullQuad();
 		
+		Ogl.DepthMask(true);
+		Ogl.Disable(Ogl.BLEND);
+		Ogl.ShadeModel(Ogl.SMOOTH);
+		Ogl.Enable(Ogl.LIGHTING);
 		Ogl.Disable(Ogl.STENCIL_TEST);
 		Ogl.DepthFunc(Ogl.LEQUAL);
-
 	}
-
-
 
 
 
@@ -486,7 +508,8 @@ function UI(currentWidth, currentHeight) {
 		Ogl.PopAttrib();
 	}
 	
-	var fps;
+	var fps = 0.;
+	var fpsArray = [];
 	
 	function SurfaceReady() {
 		
@@ -518,6 +541,14 @@ function UI(currentWidth, currentHeight) {
 
 		f2d.SetBackgroundColor([0,0,0,0]);
 		f2d.SetColor([1]);
+		
+		fps = 0.;
+		var len = fpsArray.length;
+		for ( var i = 0; i < len; ++i )
+			fps += fpsArray[i];
+		fps = (fps / len).toFixed(1);
+		
+		
 		var str = fps+'fps\t'+this.status;
 		for ( var [i,chunk] in Iterator(str.split('\t')) )
 			f2d.Draw(chunk, 2 + i * 150, 2);
@@ -527,7 +558,11 @@ function UI(currentWidth, currentHeight) {
 		GlSwapBuffers(true);
 		this.Idle();
 		
-		fps = (1000/(TimeCounter()-t0)).toFixed(0);
+		fps = 1000/(TimeCounter()-t0);
+		if ( fpsArray.length > 50 )
+			fpsArray.shift();
+		fpsArray.push(fps);
+		
 		frame++;
 	}
 	
@@ -644,7 +679,7 @@ function UI(currentWidth, currentHeight) {
 	
 	this.Projection = function() {
 		
-		Ogl.Perspective(60, undefined, 0.5, 1000);
+		Ogl.Perspective(60, undefined, 0.5, 500);
 	}
 
 	this.Loop = function() {
@@ -1031,3 +1066,63 @@ function RunJsircbot( withDebuggerEnabled ) {
 }
 
 var FakeQAApi = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };
+
+
+/* z-pass
+		
+		Ogl.Light(Ogl.LIGHT0, Ogl.AMBIENT, 0.5, 0.5, 0.5, 1);
+		Ogl.Light(Ogl.LIGHT0, Ogl.DIFFUSE, 0.5, 0.5, 0.5, 1);
+
+		renderCallback(6);
+
+		Ogl.Enable(Ogl.CULL_FACE);
+
+		Ogl.ColorMask(false);
+		Ogl.DepthMask(false);
+		
+		Ogl.ShadeModel(Ogl.FLAT);
+		Ogl.Disable(Ogl.LIGHTING);
+
+		Ogl.Clear(Ogl.STENCIL_BUFFER_BIT);
+		Ogl.Enable(Ogl.STENCIL_TEST);
+		Ogl.StencilFunc(Ogl.ALWAYS, 0, -1);
+
+		shadowVolumeProgram.On();
+		
+		Ogl.DepthFunc(Ogl.LESS);
+		
+		Ogl.StencilOp(Ogl.KEEP, Ogl.KEEP, Ogl.INCR);
+		Ogl.CullFace(Ogl.BACK);
+		var list = Ogl.NewList();
+		renderCallback(3); // render occluders shape only
+		Ogl.EndList()
+	
+		Ogl.StencilOp(Ogl.KEEP, Ogl.KEEP, Ogl.DECR);
+		Ogl.CullFace(Ogl.FRONT);
+		Ogl.CallList(list);
+		Ogl.DeleteList(list);
+
+		shadowVolumeProgram.Off();
+		
+		Ogl.ShadeModel(Ogl.SMOOTH);
+		Ogl.Enable(Ogl.LIGHTING);
+		
+		Ogl.ColorMask(true);
+		Ogl.DepthMask(true);
+
+		Ogl.DepthFunc(Ogl.EQUAL);
+		Ogl.StencilFunc(Ogl.EQUAL, 0, -1);
+		Ogl.StencilOp(Ogl.KEEP, Ogl.KEEP, Ogl.KEEP);
+
+		Ogl.CullFace(Ogl.BACK);
+
+		Ogl.Light(Ogl.LIGHT0, Ogl.AMBIENT, 1, 1, 1, 1);
+		Ogl.Light(Ogl.LIGHT0, Ogl.DIFFUSE, 1, 1, 1, 1);
+				
+		renderCallback(6);
+		
+		Ogl.Disable(Ogl.STENCIL_TEST);
+		Ogl.DepthFunc(Ogl.LEQUAL);
+
+
+*/
