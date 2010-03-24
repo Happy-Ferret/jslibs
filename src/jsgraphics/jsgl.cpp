@@ -483,7 +483,42 @@ DEFINE_FUNCTION_FAST( StencilFunc ) {
 	JL_BAD;
 }
 
+/* Opengl 2.0+
+/ **doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( face, func, ref, mask )
+  $H arguments
+   $ARG GLenum face
+   $ARG GLenum func
+   $ARG $INT ref
+   $ARG $UINT mask
+  $H note
+   if mask is -1, 0xffffffff value is used as mask.
+  $H OpenGL API
+   glStencilFunc
+** /
+DEFINE_FUNCTION_FAST( StencilFuncSeparate ) {
 
+	JL_S_ASSERT_ARG(4);
+	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_INT(JL_FARG(3));
+	JL_S_ASSERT_NUMBER(JL_FARG(4));
+
+	GLuint mask;
+	if ( JL_FARG(4) == INT_TO_JSVAL(-1) )
+		mask = 0xffffffff;
+	else
+		JL_CHK( JsvalToUInt(cx, JL_FARG(4), &mask) );
+
+	glStencilFuncSeparate(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), JSVAL_TO_INT(JL_FARG(3)), mask);  OGL_CHK;
+
+	*JL_FRVAL = JSVAL_VOID;
+
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
 
 /**doc
 $TOC_MEMBER $INAME
@@ -509,6 +544,38 @@ DEFINE_FUNCTION_FAST( StencilOp ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( mask )
+  $H arguments
+   $ARG GLenum func
+  $H note
+   if mask is -1, 0xffffffff value is used as mask.
+  $H OpenGL API
+   glStencilMask
+**/
+DEFINE_FUNCTION_FAST( StencilMask ) {
+
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
+
+	GLuint mask;
+	if ( JL_FARG(1) == INT_TO_JSVAL(-1) )
+		mask = 0xffffffff;
+	else
+		JL_CHK( JsvalToUInt(cx, JL_FARG(1), &mask) );
+	
+	glStencilMask( mask );  OGL_CHK;
+	
+	*JL_FRVAL = JSVAL_VOID;
+	;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 
 /**doc
@@ -643,12 +710,13 @@ DEFINE_FUNCTION_FAST( Hint ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( x, y [, z] )
+ $VOID $INAME( x, y [, z [, w]] )
  $VOID $INAME( $TYPE vec3 )
   $H arguments
    $ARG $REAL x
    $ARG $REAL y
    $ARG $REAL z
+   $ARG $REAL w
   $H OpenGL API
    glVertex3d, glVertex2d
 **/
@@ -658,34 +726,40 @@ DEFINE_FUNCTION_FAST( Vertex ) {
 
 	if ( argc > 1 || JSVAL_IS_NUMBER(JL_FARG(1)) ) {
 		
-		JL_S_ASSERT_ARG_RANGE(2,3);
+		JL_S_ASSERT_ARG_RANGE(2,4);
 
-		double x, y, z;
+		double x, y, z, w;
 		JsvalToDouble(cx, JL_FARG(1), &x);
 		JsvalToDouble(cx, JL_FARG(2), &y);
 		if ( JL_ARGC >= 3 ) {
 
 			JsvalToDouble(cx, JL_FARG(3), &z);
+			if ( JL_ARGC >= 4 ) {
+	
+				JsvalToDouble(cx, JL_FARG(4), &w);
+				glVertex4d(x, y, z, w);  OGL_CHK;
+				return JS_TRUE;
+			}
 			glVertex3d(x, y, z);  OGL_CHK;
-			;
 			return JS_TRUE;
 		}
 		glVertex2d(x, y);  OGL_CHK;
-		;
+		return JS_TRUE;
+	}
+	
+	JL_S_ASSERT_ARG(1);
+
+	GLdouble pos[4];
+	uint32 len;
+	JsvalToDoubleVector(cx, JL_FARG(1), pos, COUNTOF(pos), &len);
+	if ( len == 2 ) {
+		glVertex2dv(pos);  OGL_CHK;
+	} else if ( len == 3 ) {
+		glVertex3dv(pos);  OGL_CHK;
+	} else if ( len == 4 ) {
+		glVertex4dv(pos);  OGL_CHK;
 	} else {
-
-		JL_S_ASSERT_ARG(1);
-
-		GLdouble pos[3];
-		uint32 len;
-		JsvalToDoubleVector(cx, JL_FARG(1), pos, 3, &len);
-		if ( len == 2 ) {
-			glVertex2dv(pos);  OGL_CHK;
-		} else if ( len == 3 ) {
-			glVertex3dv(pos);  OGL_CHK;
-		} else {
-			JL_REPORT_ERROR("Unexpected array length.");
-		}
+		JL_REPORT_ERROR("Unexpected array length.");
 	}
 
 	return JS_TRUE;
@@ -4949,12 +5023,13 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(Accum, 2) // op, value
 		FUNCTION_FAST_ARGC(StencilFunc, 3) // func, ref, mask
 		FUNCTION_FAST_ARGC(StencilOp, 3) // fail, zfail, zpass
+		FUNCTION_FAST_ARGC(StencilMask, 1) // mask
 		FUNCTION_FAST_ARGC(AlphaFunc, 2) // func, ref
 		FUNCTION_FAST_ARGC(Flush, 0)
 		FUNCTION_FAST_ARGC(Finish, 0)
 		FUNCTION_FAST_ARGC(Fog, 2) // pname, param | array of params
 		FUNCTION_FAST_ARGC(Hint, 2) // target, mode
-		FUNCTION_FAST_ARGC(Vertex, 3) // x, y [, z]
+		FUNCTION_FAST_ARGC(Vertex, 4) // x, y [, z [, w]]
 		FUNCTION_FAST_ARGC(Color, 4) // r, g, b [, a]
 		FUNCTION_FAST_ARGC(Normal, 3) // nx, ny, nz
 		FUNCTION_FAST_ARGC(TexCoord, 3) // s [, t [,r ]]
