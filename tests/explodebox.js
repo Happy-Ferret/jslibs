@@ -88,7 +88,7 @@ function Ball(pos) {
 	body.mass.value = 100;
 	body.position = pos;
 	
-//	geom.contact = function(thisGeom, otherGeom) otherGeom.name != 'floor'; // don't hit the floor
+	geom.contact = function(thisGeom, otherGeom) otherGeom.name != 'floor'; // don't hit the floor
 	
 	this.body = body;
 	this.geom = geom;
@@ -98,7 +98,7 @@ function Ball(pos) {
 
 		shapeCL = Ogl.NewList(true);
 		// Ogl.DrawSphere(geom.radius, 4, 2); // diamond
-		Ogl.DrawSphere(geom.radius, 32, 16);
+		Ogl.DrawSphere(geom.radius, 16, 8);
 		Ogl.EndList();
 		
 		objectCL = Ogl.NewList(true);
@@ -106,7 +106,7 @@ function Ball(pos) {
 		Ogl.Material(Ogl.FRONT, Ogl.EMISSION, 0, 0, 0, 1);
 		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
 		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 0.1, 0.1, 0.1, 1);
-		Ogl.CallList(shapeCL);
+		Ogl.DrawSphere(geom.radius, 32, 16);
 		Ogl.EndList();
 	}
 	
@@ -120,18 +120,72 @@ function Ball(pos) {
 	this.Compile();	
 }
 
+
+var FullCube = function(edged, exNorm) {
+
+	function Face() {
+
+		Ogl.Begin(Ogl.QUADS);
+		exNorm || Ogl.Normal(0, 0, -1);
+		exNorm && Ogl.Normal(1, 1, -1);
+		Ogl.TexCoord(0, 1);
+		Ogl.Vertex( .5, .5, -0.5);
+		exNorm && Ogl.Normal(1, -1, -1);
+		Ogl.TexCoord(0, 0);
+		Ogl.Vertex( .5,-.5, -0.5);
+		exNorm && Ogl.Normal(-1, -1, -1);
+		Ogl.TexCoord(1, 0);
+		Ogl.Vertex(-.5,-.5, -0.5);
+		exNorm && Ogl.Normal(-1, 1, -1);
+		Ogl.TexCoord(1, 1);
+		Ogl.Vertex(-.5, .5, -0.5);
+		Ogl.End();
+	}
+	
+	function Edge() {
+		if ( !edged )
+			return;
+		Ogl.Begin(Ogl.QUADS);
+		Ogl.Normal(1, 0, 0); Ogl.Vertex(.5, .5, -.5);
+		Ogl.Normal(1, 0, 0); Ogl.Vertex(.5,-.5, -.5);
+		Ogl.Normal(0, 0,-1); Ogl.Vertex(.5,-.5, -.5);
+		Ogl.Normal(0, 0,-1); Ogl.Vertex(.5, .5, -.5);
+		Ogl.End();
+	}
+	
+	Ogl.Rotate(90, 0,1,0); Face(); Edge();
+	Ogl.Rotate(90, 0,1,0); Face(); Edge();
+	Ogl.Rotate(90, 0,1,0); Face(); Edge();
+	Ogl.Rotate(90, 0,1,0); Face(); Edge();
+	Ogl.Rotate(90, 1,0,0); Face(); Edge();
+	Ogl.Rotate(90, 0,0,1); Edge();
+	Ogl.Rotate(90, 0,0,1); Edge();
+	Ogl.Rotate(90, 0,0,1); Edge();
+	Ogl.Rotate(180, 1,0,0); Face(); Edge();
+	Ogl.Rotate(90, 0,0,1); Edge();
+	Ogl.Rotate(90, 0,0,1); Edge();
+	Ogl.Rotate(90, 0,0,1); Edge();
+}
+
+
+
 Box.prototype = {
 	Compile:function() {
 
 		this.shapeCL = Ogl.NewList(true);
-		Ogl.DrawBox.apply(null, this.geom.lengths);
+		Ogl.Scale.apply(null, this.geom.lengths);
+		FullCube(true, false);
 		Ogl.EndList();
 
 		this.objectCL = Ogl.NewList(true);
 		Ogl.Material(Ogl.FRONT, Ogl.DIFFUSE, 0, 1, 0, 1);
 		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
 		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 0, 0, 0, 1);
-		Ogl.CallList(this.shapeCL);
+		Ogl.ShadeModel(Ogl.FLAT);
+//		Ogl.CallList(this.shapeCL);
+		Ogl.Scale.apply(null, this.geom.lengths);
+		FullCube();
+		Ogl.ShadeModel(Ogl.SMOOTH);
 		Ogl.EndList();
 	},
 	Render:function( shapeOnly ) {
@@ -157,7 +211,7 @@ Box.prototype = {
 
 function Box( pos ) {
 
-	this.castShadow = false;//true;
+	this.castShadow = true;
 	this.receiveShadow = true;
 	
 	this.geom = new GeomBox(world.space);
@@ -175,25 +229,21 @@ function Box( pos ) {
 
 var scene = [];
 
-var ball = new Ball([0, 0, 20]);
-ball.body.linearVel = [0, 0, 10];
-scene.push( ball );
-
-var ball = new Ball([0, 0, 0.5]);
-ball.body.linearVel = [0, 0, 0];
-scene.push( ball );
+var ball = new Ball([0, 0, -20]);
+ball.body.linearVel = [0, 0, 40];
+//scene.push( ball );
 
 
 scene.push( new Floor() );
 
 
-var side = 10;
+var side = 2;
 var gap = 0.001;
 
 for ( var i = -side; i < side; ++i )
 	for ( var j = -side; j < side; ++j ) {
 		
-//		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
+		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 1.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 2.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 3.5]) );
@@ -202,12 +252,20 @@ for ( var i = -side; i < side; ++i )
 
 //scene.push( new Box([1,1, 0.5]) );
 
+/*
+var rx = 0;
+scene.push({Render:function( shapeOnly ) {
+	Ogl.PushMatrix();
+	Ogl.Translate(0,0,10);
+	Ogl.Rotate(rx++, 1,1,1);
+	//Ogl.DrawBox(10, 10, 10);
+	FullCube();
+	Ogl.PopMatrix();	
+}});
+*/
 
-//scene.push({castShadow:false, Render:function( shapeOnly ) {  Ogl.DrawBox(10, 10, 10);  }});
 
-
-
-var paused = true;
+var paused = false;
 ui.key.space = function(down) {
 	
 	paused = down;
