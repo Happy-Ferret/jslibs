@@ -245,8 +245,480 @@ DEFINE_FUNCTION_FAST( IsEnabled ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
-	*JL_FRVAL = BOOLEAN_TO_JSVAL( glIsEnabled(JSVAL_TO_INT(JL_FARG(1))) == GL_TRUE );  OGL_CHK;
+	*JL_FRVAL = glIsEnabled(JSVAL_TO_INT(JL_FARG(1))) ? JSVAL_TRUE : JSVAL_FALSE;  OGL_CHK;
 	return JS_TRUE;
+	JL_BAD;
+}
+
+
+DEFINE_FUNCTION_FAST( Get ) {
+
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+
+	int pname = JSVAL_TO_INT( JL_FARG(1) );
+
+	switch ( pname ) { // http://www.opengl.org/sdk/docs/man/xhtml/glGet.xml
+
+		case GL_ALPHA_TEST:
+		case GL_AUTO_NORMAL:
+		case GL_BLEND:
+		case GL_CLIP_PLANE0:
+		case GL_CLIP_PLANE1:
+		case GL_CLIP_PLANE2:
+		case GL_CLIP_PLANE3:
+		case GL_CLIP_PLANE4:
+		case GL_CLIP_PLANE5:
+		case GL_COLOR_ARRAY:
+		case GL_COLOR_LOGIC_OP:
+		case GL_COLOR_MATERIAL:
+		case GL_COLOR_SUM:
+		case GL_COLOR_TABLE:
+		case GL_CONVOLUTION_1D:
+		case GL_CONVOLUTION_2D:
+		case GL_CULL_FACE:
+		case GL_CURRENT_RASTER_POSITION_VALID:
+		case GL_DEPTH_TEST:
+		case GL_DEPTH_WRITEMASK:
+		case GL_DITHER:
+		case GL_DOUBLEBUFFER:
+		case GL_EDGE_FLAG:
+		case GL_EDGE_FLAG_ARRAY:
+		case GL_FOG:
+		case GL_FOG_COORD_ARRAY:
+		case GL_HISTOGRAM:
+		case GL_INDEX_ARRAY:
+		case GL_INDEX_LOGIC_OP:
+		case GL_INDEX_MODE:
+		case GL_LIGHT0:
+		case GL_LIGHT1:
+		case GL_LIGHT2:
+		case GL_LIGHT3:
+		case GL_LIGHT4:
+		case GL_LIGHT5:
+		case GL_LIGHT6:
+		case GL_LIGHT7:
+		case GL_LIGHTING:
+		case GL_LIGHT_MODEL_LOCAL_VIEWER:
+		case GL_LIGHT_MODEL_TWO_SIDE:
+		case GL_LINE_SMOOTH:
+		case GL_LINE_STIPPLE:
+		case GL_MAP1_COLOR_4:
+		case GL_MAP1_INDEX:
+		case GL_MAP1_NORMAL:
+		case GL_MAP1_TEXTURE_COORD_1:
+		case GL_MAP1_TEXTURE_COORD_2:
+		case GL_MAP1_TEXTURE_COORD_3:
+		case GL_MAP1_TEXTURE_COORD_4:
+		case GL_MAP1_VERTEX_3:
+		case GL_MAP1_VERTEX_4:
+		case GL_MAP2_COLOR_4:
+		case GL_MAP2_INDEX:
+		case GL_MAP2_NORMAL:
+		case GL_MAP2_TEXTURE_COORD_1:
+		case GL_MAP2_TEXTURE_COORD_2:
+		case GL_MAP2_TEXTURE_COORD_3:
+		case GL_MAP2_TEXTURE_COORD_4:
+		case GL_MAP2_VERTEX_3:
+		case GL_MAP2_VERTEX_4:
+		case GL_MAP_COLOR:
+		case GL_MAP_STENCIL:
+		case GL_MINMAX:
+		case GL_NORMAL_ARRAY:
+		case GL_NORMALIZE:
+		case GL_PACK_LSB_FIRST:
+		case GL_PACK_SWAP_BYTES:
+		case GL_POINT_SMOOTH:
+		case GL_POINT_SPRITE:
+		case GL_POLYGON_OFFSET_FILL:
+		case GL_POLYGON_OFFSET_LINE:
+		case GL_POLYGON_OFFSET_POINT:
+		case GL_POLYGON_SMOOTH:
+		case GL_POLYGON_STIPPLE:
+		case GL_POST_COLOR_MATRIX_COLOR_TABLE:
+		case GL_POST_CONVOLUTION_COLOR_TABLE:
+		case GL_RESCALE_NORMAL:
+		case GL_RGBA_MODE:
+		case GL_SAMPLE_COVERAGE_INVERT:
+		case GL_SCISSOR_TEST:
+		case GL_SECONDARY_COLOR_ARRAY:
+		case GL_SEPARABLE_2D:
+		case GL_STENCIL_TEST:
+		case GL_STEREO:
+		case GL_TEXTURE_1D:
+		case GL_TEXTURE_2D:
+		case GL_TEXTURE_3D:
+		case GL_TEXTURE_COORD_ARRAY:
+		case GL_TEXTURE_CUBE_MAP:
+		case GL_TEXTURE_GEN_Q:
+		case GL_TEXTURE_GEN_R:
+		case GL_TEXTURE_GEN_S:
+		case GL_TEXTURE_GEN_T:
+		case GL_UNPACK_LSB_FIRST:
+		case GL_UNPACK_SWAP_BYTES:
+		case GL_VERTEX_ARRAY:
+		case GL_VERTEX_PROGRAM_POINT_SIZE:
+		case GL_VERTEX_PROGRAM_TWO_SIDE:
+		{
+			GLboolean params[1];
+			glGetBooleanv(pname, params);  OGL_CHK;
+			*JL_FRVAL = *params ? JSVAL_TRUE : JSVAL_FALSE;
+			return JS_TRUE;
+		}
+
+		case GL_COLOR_WRITEMASK:
+		{
+			GLboolean params[4];
+			glGetBooleanv(pname, params);  OGL_CHK;
+			jsval ret[] = {
+					params[0] ? JSVAL_TRUE : JSVAL_FALSE,
+					params[1] ? JSVAL_TRUE : JSVAL_FALSE,
+					params[2] ? JSVAL_TRUE : JSVAL_FALSE,
+					params[3] ? JSVAL_TRUE : JSVAL_FALSE
+			};
+			*JL_FRVAL = OBJECT_TO_JSVAL(JS_NewArrayObject(cx, COUNTOF(ret), ret));
+			JL_CHK( *JL_FRVAL != JSVAL_NULL );
+			return JS_TRUE;
+		}
+
+		case GL_ACCUM_ALPHA_BITS: // uint
+		case GL_ACCUM_BLUE_BITS: // uint
+		case GL_ACCUM_GREEN_BITS: // uint
+		case GL_ACCUM_RED_BITS: // uint
+		case GL_ACTIVE_TEXTURE: // enum
+		case GL_ALPHA_BITS: // uint
+		case GL_ALPHA_TEST_FUNC: // enum
+		case GL_ARRAY_BUFFER_BINDING: // name
+		case GL_ATTRIB_STACK_DEPTH: // uint
+		case GL_AUX_BUFFERS: // uint
+		case GL_BLEND_DST_ALPHA: // enum
+		case GL_BLEND_DST_RGB: // enum
+		case GL_BLEND_EQUATION_RGB: // enum
+		case GL_BLEND_EQUATION_ALPHA: // enum
+		case GL_BLEND_SRC_ALPHA: // enum
+		case GL_BLEND_SRC_RGB: // enum
+		case GL_BLUE_BITS: // uint
+		case GL_CLIENT_ACTIVE_TEXTURE: // enum
+		case GL_CLIENT_ATTRIB_STACK_DEPTH: // uint
+		case GL_COLOR_ARRAY_BUFFER_BINDING: // name
+		case GL_COLOR_ARRAY_SIZE: // uint
+		case GL_COLOR_ARRAY_STRIDE: // uint
+		case GL_COLOR_ARRAY_TYPE: // enum
+		case GL_COLOR_MATERIAL_FACE: // enum
+		case GL_COLOR_MATERIAL_PARAMETER: // enum
+		case GL_COLOR_MATRIX_STACK_DEPTH: // uint
+		case GL_CULL_FACE_MODE: // enum
+		case GL_CURRENT_PROGRAM: // uint
+		case GL_DEPTH_BITS: // uint
+		case GL_DEPTH_FUNC: // enum
+		case GL_DRAW_BUFFER0: // enum
+		case GL_DRAW_BUFFER1: // enum
+		case GL_DRAW_BUFFER2: // enum
+		case GL_DRAW_BUFFER3: // enum
+		case GL_DRAW_BUFFER4: // enum
+		case GL_DRAW_BUFFER5: // enum
+		case GL_DRAW_BUFFER6: // enum
+		case GL_DRAW_BUFFER7: // enum
+		case GL_DRAW_BUFFER8: // enum
+		case GL_DRAW_BUFFER9: // enum
+		case GL_DRAW_BUFFER10: // enum
+		case GL_DRAW_BUFFER11: // enum
+		case GL_DRAW_BUFFER12: // enum
+		case GL_DRAW_BUFFER13: // enum
+		case GL_DRAW_BUFFER14: // enum
+		case GL_DRAW_BUFFER15: // enum
+		case GL_EDGE_FLAG_ARRAY_BUFFER_BINDING: // enum
+		case GL_EDGE_FLAG_ARRAY_STRIDE: // uint
+		case GL_ELEMENT_ARRAY_BUFFER_BINDING: // name
+		case GL_FEEDBACK_BUFFER_SIZE: // uint
+		case GL_FEEDBACK_BUFFER_TYPE: // enum
+		case GL_FOG_COORD_ARRAY_BUFFER_BINDING:
+		case GL_FOG_COORD_ARRAY_STRIDE: // uint
+		case GL_FOG_COORD_ARRAY_TYPE: // enum
+		case GL_FOG_COORD_SRC: // enum
+		case GL_FOG_HINT: // enum
+		case GL_FOG_MODE: // enum
+		case GL_FRAGMENT_SHADER_DERIVATIVE_HINT: // enum
+		case GL_FRONT_FACE: // enum
+		case GL_GENERATE_MIPMAP_HINT: // enum
+		case GL_GREEN_BITS: // uint
+		case GL_INDEX_ARRAY_BUFFER_BINDING: // name
+		case GL_INDEX_ARRAY_STRIDE: // uint
+		case GL_INDEX_ARRAY_TYPE: // enum
+		case GL_INDEX_BITS: // uint
+		case GL_INDEX_OFFSET: // uint
+		case GL_INDEX_SHIFT: // int
+		case GL_INDEX_WRITEMASK: // uint
+		case GL_LIGHT_MODEL_COLOR_CONTROL: // enum
+		case GL_LINE_SMOOTH_HINT: // enum
+		case GL_LINE_STIPPLE_PATTERN: // uint
+		case GL_LINE_STIPPLE_REPEAT:
+		case GL_LIST_BASE: // uint
+		case GL_LIST_INDEX: // name
+		case GL_LIST_MODE : // enum
+		case GL_LOGIC_OP_MODE: // enum
+		case GL_MAP1_GRID_SEGMENTS: // uint
+		case GL_MATRIX_MODE: // enum
+		case GL_MAX_3D_TEXTURE_SIZE: // uint
+		case GL_MAX_CLIENT_ATTRIB_STACK_DEPTH: // uint
+		case GL_MAX_ATTRIB_STACK_DEPTH: // uint
+		case GL_MAX_CLIP_PLANES: // uint
+		case GL_MAX_COLOR_MATRIX_STACK_DEPTH: // uint
+		case GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS: // uint
+		case GL_MAX_CUBE_MAP_TEXTURE_SIZE: // uint
+		case GL_MAX_DRAW_BUFFERS: // uint
+		case GL_MAX_ELEMENTS_INDICES: // uint
+		case GL_MAX_ELEMENTS_VERTICES: // uint
+		case GL_MAX_EVAL_ORDER : // uint
+		case GL_MAX_FRAGMENT_UNIFORM_COMPONENTS : //uint
+		case GL_MAX_LIGHTS: // uint
+		case GL_MAX_LIST_NESTING: // uint
+		case GL_MAX_MODELVIEW_STACK_DEPTH: // uint
+		case GL_MAX_NAME_STACK_DEPTH: // uint
+		case GL_MAX_PIXEL_MAP_TABLE: // uint
+		case GL_MAX_PROJECTION_STACK_DEPTH: // uint
+		case GL_MAX_TEXTURE_COORDS: // uint
+		case GL_MAX_TEXTURE_IMAGE_UNITS: // uint
+		case GL_MAX_TEXTURE_SIZE: // uint
+		case GL_MAX_TEXTURE_STACK_DEPTH: // uint
+		case GL_MAX_TEXTURE_UNITS: // uint
+		case GL_MAX_VARYING_FLOATS: // uint
+		case GL_MAX_VERTEX_ATTRIBS: // uint
+		case GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS: // uint
+		case GL_MAX_VERTEX_UNIFORM_COMPONENTS: // uint
+		case GL_MODELVIEW_STACK_DEPTH: // uint
+		case GL_NAME_STACK_DEPTH: // uint
+		case GL_NORMAL_ARRAY_BUFFER_BINDING: // name
+		case GL_NORMAL_ARRAY_STRIDE: // uint
+		case GL_NORMAL_ARRAY_TYPE: // enum
+		case GL_NUM_COMPRESSED_TEXTURE_FORMATS: // uint
+		case GL_PACK_ALIGNMENT: // uint
+		case GL_PACK_IMAGE_HEIGHT: // uint
+		case GL_PACK_ROW_LENGTH: // uint
+		case GL_PACK_SKIP_IMAGES: // uint
+		case GL_PACK_SKIP_PIXELS: // uint
+		case GL_PACK_SKIP_ROWS: // uint
+		case GL_PERSPECTIVE_CORRECTION_HINT: // enum
+		case GL_PIXEL_MAP_A_TO_A_SIZE: // uint
+		case GL_PIXEL_MAP_B_TO_B_SIZE: // uint
+		case GL_PIXEL_MAP_G_TO_G_SIZE: // uint
+		case GL_PIXEL_MAP_I_TO_A_SIZE: // uint
+		case GL_PIXEL_MAP_I_TO_B_SIZE: // uint
+		case GL_PIXEL_MAP_I_TO_G_SIZE: // uint
+		case GL_PIXEL_MAP_I_TO_I_SIZE: // uint
+		case GL_PIXEL_MAP_I_TO_R_SIZE: // uint
+		case GL_PIXEL_MAP_R_TO_R_SIZE: // uint
+		case GL_PIXEL_MAP_S_TO_S_SIZE: // uint
+		case GL_PIXEL_PACK_BUFFER_BINDING: // name
+		case GL_PIXEL_UNPACK_BUFFER_BINDING: // name
+		case GL_POINT_SMOOTH_HINT: // enum
+		case GL_POLYGON_SMOOTH_HINT: // enum
+		case GL_PROJECTION_STACK_DEPTH: // uint
+		case GL_READ_BUFFER: // enum
+		case GL_RED_BITS: // uint
+		case GL_RENDER_MODE: // enum
+		case GL_SAMPLE_BUFFERS: // uint
+		case GL_SAMPLES: // uint
+		case GL_SECONDARY_COLOR_ARRAY_BUFFER_BINDING: // name
+		case GL_SECONDARY_COLOR_ARRAY_SIZE: // uint
+		case GL_SECONDARY_COLOR_ARRAY_STRIDE: // int
+		case GL_SECONDARY_COLOR_ARRAY_TYPE: // enum
+		case GL_SELECTION_BUFFER_SIZE: // uint
+		case GL_SHADE_MODEL: // enum
+		case GL_STENCIL_BACK_FAIL: // enum
+		case GL_STENCIL_BACK_FUNC: // enum
+		case GL_STENCIL_BACK_PASS_DEPTH_FAIL: // enum
+		case GL_STENCIL_BACK_PASS_DEPTH_PASS: // enum
+		case GL_STENCIL_BACK_REF: // uint
+		case GL_STENCIL_BACK_VALUE_MASK: // uint
+		case GL_STENCIL_BACK_WRITEMASK: // uint
+		case GL_STENCIL_BITS: // uint
+		case GL_STENCIL_CLEAR_VALUE:
+		case GL_STENCIL_FAIL: // enum
+		case GL_STENCIL_FUNC: // enum
+		case GL_STENCIL_PASS_DEPTH_FAIL: // enum
+		case GL_STENCIL_PASS_DEPTH_PASS: // enum
+		case GL_STENCIL_REF: // enum
+		case GL_STENCIL_VALUE_MASK: // enum
+		case GL_STENCIL_WRITEMASK: // uint
+		case GL_SUBPIXEL_BITS:
+		case GL_TEXTURE_BINDING_1D: // name
+		case GL_TEXTURE_BINDING_2D: // name
+		case GL_TEXTURE_BINDING_3D: // name
+		case GL_TEXTURE_BINDING_CUBE_MAP: // name
+		case GL_TEXTURE_COMPRESSION_HINT: // enum
+		case GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING: // name
+		case GL_TEXTURE_COORD_ARRAY_SIZE:
+		case GL_TEXTURE_COORD_ARRAY_STRIDE:
+		case GL_TEXTURE_COORD_ARRAY_TYPE: // enum
+		case GL_TEXTURE_STACK_DEPTH:
+		case GL_UNPACK_ALIGNMENT:
+		case GL_UNPACK_IMAGE_HEIGHT:
+		case GL_UNPACK_ROW_LENGTH:
+		case GL_UNPACK_SKIP_IMAGES:
+		case GL_UNPACK_SKIP_PIXELS:
+		case GL_UNPACK_SKIP_ROWS:
+		case GL_VERTEX_ARRAY_BUFFER_BINDING:
+		case GL_VERTEX_ARRAY_SIZE:
+		case GL_VERTEX_ARRAY_STRIDE:
+		case GL_VERTEX_ARRAY_TYPE: // enum
+		case GL_ZOOM_X:
+		case GL_ZOOM_Y:
+		{
+			GLint params[1];
+			glGetIntegerv(pname, params);  OGL_CHK;
+			*JL_FRVAL = INT_TO_JSVAL(*params);
+			return JS_TRUE;
+		}
+
+		case GL_MAP2_GRID_SEGMENTS:
+		case GL_MAX_VIEWPORT_DIMS:
+		case GL_POLYGON_MODE: // enum
+		{
+			GLint params[2];
+			glGetIntegerv(pname, params);  OGL_CHK;
+			jsval jsparams[] = {
+				INT_TO_JSVAL(params[0]),
+				INT_TO_JSVAL(params[1])
+			};
+			*JL_FRVAL = OBJECT_TO_JSVAL( JS_NewArrayObject(cx, COUNTOF(jsparams), jsparams) );
+			JL_CHK( *JL_FRVAL != JSVAL_NULL );
+			return JS_TRUE;
+		}
+
+		case GL_SCISSOR_BOX:
+		case GL_VIEWPORT:
+		{
+			GLint params[4];
+			glGetIntegerv(pname, params);  OGL_CHK;
+			jsval jsparams[] = {
+				INT_TO_JSVAL(params[0]),
+				INT_TO_JSVAL(params[1]),
+				INT_TO_JSVAL(params[2]),
+				INT_TO_JSVAL(params[3])
+			};
+			*JL_FRVAL = OBJECT_TO_JSVAL( JS_NewArrayObject(cx, COUNTOF(jsparams), jsparams) );
+			JL_CHK( *JL_FRVAL != JSVAL_NULL );
+			return JS_TRUE;
+		}
+
+		case GL_ALPHA_BIAS:
+		case GL_ALPHA_SCALE:
+		case GL_ALPHA_TEST_REF:
+		case GL_BLUE_BIAS:
+		case GL_BLUE_SCALE:
+		case GL_CURRENT_FOG_COORD:
+		case GL_CURRENT_INDEX:
+		case GL_CURRENT_RASTER_DISTANCE:
+		case GL_CURRENT_RASTER_INDEX:
+		case GL_DEPTH_BIAS:
+		case GL_DEPTH_CLEAR_VALUE:
+		case GL_DEPTH_RANGE:
+		case GL_DEPTH_SCALE:
+		case GL_FOG_DENSITY:
+		case GL_FOG_END:
+		case GL_FOG_INDEX:
+		case GL_FOG_START:
+		case GL_GREEN_BIAS:
+		case GL_GREEN_SCALE:
+		case GL_LINE_WIDTH:
+		case GL_LINE_WIDTH_GRANULARITY: // GL_SMOOTH_LINE_WIDTH_GRANULARITY
+		case GL_MAX_TEXTURE_LOD_BIAS:
+		case GL_POINT_FADE_THRESHOLD_SIZE:
+		case GL_POINT_SIZE:
+		case GL_POINT_SIZE_GRANULARITY:
+		case GL_POINT_SIZE_MAX:
+		case GL_POINT_SIZE_MIN:
+		case GL_POLYGON_OFFSET_FACTOR:
+		case GL_POLYGON_OFFSET_UNITS:
+		case GL_POST_COLOR_MATRIX_RED_BIAS:
+		case GL_POST_COLOR_MATRIX_GREEN_BIAS:
+		case GL_POST_COLOR_MATRIX_BLUE_BIAS:
+		case GL_POST_COLOR_MATRIX_ALPHA_BIAS:
+		case GL_POST_COLOR_MATRIX_RED_SCALE:
+		case GL_POST_COLOR_MATRIX_GREEN_SCALE:
+		case GL_POST_COLOR_MATRIX_BLUE_SCALE:
+		case GL_POST_COLOR_MATRIX_ALPHA_SCALE:
+		case GL_POST_CONVOLUTION_RED_BIAS:
+		case GL_POST_CONVOLUTION_GREEN_BIAS:
+		case GL_POST_CONVOLUTION_BLUE_BIAS:
+		case GL_POST_CONVOLUTION_ALPHA_BIAS:
+		case GL_POST_CONVOLUTION_RED_SCALE:
+		case GL_POST_CONVOLUTION_GREEN_SCALE:
+		case GL_POST_CONVOLUTION_BLUE_SCALE:
+		case GL_POST_CONVOLUTION_ALPHA_SCALE:
+		case GL_RED_BIAS:
+		case GL_RED_SCALE:
+		case GL_SAMPLE_COVERAGE_VALUE:
+		{
+			GLdouble params[1];
+			glGetDoublev(pname, params);  OGL_CHK;
+			return JS_NewDoubleValue(cx, *params, JL_FRVAL);
+		}
+
+		case GL_ALIASED_POINT_SIZE_RANGE:
+		case GL_ALIASED_LINE_WIDTH_RANGE:
+		case GL_LINE_WIDTH_RANGE: // GL_SMOOTH_LINE_WIDTH_RANGE
+		case GL_MAP1_GRID_DOMAIN:
+		case GL_POINT_SIZE_RANGE: // GL_SMOOTH_POINT_SIZE_RANGE
+		{
+			GLdouble params[2];
+			glGetDoublev(pname, params);  OGL_CHK;
+			return DoubleVectorToJsval(cx, params, COUNTOF(params), JL_FRVAL);
+		}
+
+		case GL_CURRENT_NORMAL:
+		case GL_POINT_DISTANCE_ATTENUATION:
+		{
+			GLdouble params[3];
+			glGetDoublev(pname, params);  OGL_CHK;
+			return DoubleVectorToJsval(cx, params, COUNTOF(params), JL_FRVAL);
+		}
+
+		case GL_ACCUM_CLEAR_VALUE:
+		case GL_BLEND_COLOR:
+		case GL_COLOR_CLEAR_VALUE:
+		case GL_CURRENT_COLOR:
+		case GL_CURRENT_RASTER_COLOR:
+		case GL_CURRENT_RASTER_POSITION:
+		case GL_CURRENT_RASTER_SECONDARY_COLOR:
+		case GL_CURRENT_RASTER_TEXTURE_COORDS:
+		case GL_CURRENT_SECONDARY_COLOR:
+		case GL_CURRENT_TEXTURE_COORDS:
+		case GL_FOG_COLOR:
+		case GL_LIGHT_MODEL_AMBIENT:
+		case GL_MAP2_GRID_DOMAIN:
+		{
+			GLdouble params[4];
+			glGetDoublev(pname, params);  OGL_CHK;
+			return DoubleVectorToJsval(cx, params, COUNTOF(params), JL_FRVAL);
+		}
+
+		case GL_COLOR_MATRIX:
+		case GL_MODELVIEW_MATRIX:
+		case GL_PROJECTION_MATRIX:
+		case GL_TEXTURE_MATRIX:
+		case GL_TRANSPOSE_COLOR_MATRIX:
+		case GL_TRANSPOSE_MODELVIEW_MATRIX:
+		case GL_TRANSPOSE_PROJECTION_MATRIX:
+		case GL_TRANSPOSE_TEXTURE_MATRIX:
+		{
+			GLdouble params[16];
+			glGetDoublev(pname, params);  OGL_CHK;
+			return DoubleVectorToJsval(cx, params, COUNTOF(params), JL_FRVAL);
+		}
+
+		case GL_COMPRESSED_TEXTURE_FORMATS: // enum
+		{
+			GLint count;
+			glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &count);
+			GLint *params = (GLint*)alloca(count * sizeof(GLenum));
+			glGetIntegerv(pname, params);
+			return IntVectorToJsval(cx, params, count, JL_FRVAL);
+		}
+	}
+
+	JL_REPORT_ERROR("Unknown pname");
 	JL_BAD;
 }
 
@@ -3553,10 +4025,18 @@ DEFINE_FUNCTION_FAST( UniformARB ) {
 
 	float v1, v2, v3, v4;
 
-	if ( JL_ARGC == 2 && JSVAL_IS_INT(arg2) ) {
+	if ( JL_ARGC == 2 ) {
+		
+		if ( JSVAL_IS_INT(arg2) ) {
 
-		glUniform1iARB(uniformLocation, JSVAL_TO_INT(arg2));  OGL_CHK;
-		return JS_TRUE;
+			glUniform1iARB(uniformLocation, JSVAL_TO_INT(arg2));  OGL_CHK;
+			return JS_TRUE;
+		}
+		if ( JSVAL_IS_BOOLEAN(arg2) ) {
+
+			glUniform1iARB(uniformLocation, arg2 == JSVAL_TRUE ? 1 : 0);  OGL_CHK;
+			return JS_TRUE;
+		}
 	}
 
 	if ( JSVAL_IS_NUMBER(arg2) ) {
@@ -4722,25 +5202,25 @@ DEFINE_FUNCTION_FAST( DrawDisk ) {
 
 /**doc
 $TOC_MEMBER $INAME
-$INAME( radius, height, slices, stacks );
+$INAME( baseRadius, topRadius, height, slices, stacks );
 **/
 DEFINE_FUNCTION_FAST( DrawCylinder ) {
 
-	JL_S_ASSERT_ARG(4);
-	double radius, height;
+	JL_S_ASSERT_ARG(5);
+	double baseRadius, topRadius, height;
 	int slices, stacks;
-	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &radius) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &height) );
-	JL_CHK( JsvalToInt(cx, JL_FARG(3), &slices) );
-	JL_CHK( JsvalToInt(cx, JL_FARG(4), &stacks) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &baseRadius) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &topRadius) );
+	JL_CHK( JsvalToDouble(cx, JL_FARG(3), &height) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(4), &slices) );
+	JL_CHK( JsvalToInt(cx, JL_FARG(5), &stacks) );
 
 	GLUquadric *q = gluNewQuadric();
 	gluQuadricTexture(q, GL_FALSE);
 	gluQuadricNormals(q, GLU_SMOOTH); // GLU_FLAT / GLU_SMOOTH
-	gluCylinder(q, radius, radius, height, slices, stacks);
+	gluCylinder(q, baseRadius, topRadius, height, slices, stacks);
 	gluDeleteQuadric(q);
 
-	;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4909,6 +5389,31 @@ DEFINE_FUNCTION_FAST( DrawBox ) {
 
 	glEnd();  OGL_CHK;
 
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME()
+**/
+DEFINE_FUNCTION_FAST( FullQuad ) {
+
+	glPushMatrix();
+	glLoadIdentity();
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	// Begin(QUADS); Vertex(-1,-1);  Vertex(1,-1);  Vertex(1,1);  Vertex(-1,1); End();
+	glBegin(GL_TRIANGLES);
+	glVertex2i(-1,-1);
+	glVertex2i(3,-1);
+	glVertex2i(-1,3);
+	glEnd();
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
 
 	return JS_TRUE;
 	JL_BAD;
@@ -5101,9 +5606,10 @@ CONFIGURE_CLASS
 // OpenGL 1.1 functions
 
 		FUNCTION_FAST_ARGC(IsEnabled, 1) // cap
-		FUNCTION_FAST_ARGC(GetBoolean, 2) // pname
-		FUNCTION_FAST_ARGC(GetInteger, 2) // pname
-		FUNCTION_FAST_ARGC(GetDouble, 2) // pname
+		FUNCTION_FAST_ARGC(Get, 1) // pname
+		FUNCTION_FAST_ARGC(GetBoolean, 2) // pname [,count]
+		FUNCTION_FAST_ARGC(GetInteger, 2) // pname [,count]
+		FUNCTION_FAST_ARGC(GetDouble, 2) // pname [,count]
 		FUNCTION_FAST_ARGC(GetString, 1)
 		FUNCTION_FAST_ARGC(DrawBuffer, 1) // mode
 		FUNCTION_FAST_ARGC(ReadBuffer, 1) // mode
@@ -5245,8 +5751,9 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(DrawPoint, 1)
 		FUNCTION_FAST_ARGC(DrawDisk, 2)
 		FUNCTION_FAST_ARGC(DrawSphere, 3)
-		FUNCTION_FAST_ARGC(DrawCylinder, 4)
+		FUNCTION_FAST_ARGC(DrawCylinder, 5)
 		FUNCTION_FAST_ARGC(DrawBox, 3)
+		FUNCTION_FAST_ARGC(FullQuad, 0)
 
 		FUNCTION_FAST_ARGC(KeepTranslation, 0)
 	END_STATIC_FUNCTION_SPEC
@@ -5308,437 +5815,4 @@ for (var end = false; !end ;) {
 
 }}}
 **/
-
-
-
-/*
-DEFINE_FUNCTION_FAST( Get ) {
-
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
-
-	int pname = JSVAL_TO_INT( JL_FARG(1) );
-
-	switch ( pname ) { // http://www.opengl.org/sdk/docs/man/xhtml/glGet.xml
-
-		case GL_ALPHA_TEST:
-		case GL_AUTO_NORMAL:
-		case GL_BLEND:
-		case GL_CLIP_PLANE0:
-		case GL_CLIP_PLANE1:
-		case GL_CLIP_PLANE2:
-		case GL_CLIP_PLANE3:
-		case GL_CLIP_PLANE4:
-		case GL_CLIP_PLANE5:
-		case GL_COLOR_ARRAY:
-		case GL_COLOR_LOGIC_OP:
-		case GL_COLOR_MATERIAL:
-		case GL_COLOR_SUM:
-		case GL_COLOR_TABLE:
-		case GL_CONVOLUTION_1D:
-		case GL_CONVOLUTION_2D:
-		case GL_CULL_FACE:
-		case GL_CURRENT_RASTER_POSITION_VALID:
-		case GL_DEPTH_TEST:
-		case GL_DEPTH_WRITEMASK:
-		case GL_DITHER:
-		case GL_DOUBLEBUFFER:
-		case GL_EDGE_FLAG:
-		case GL_EDGE_FLAG_ARRAY:
-		case GL_FOG:
-		case GL_FOG_COORD_ARRAY:
-		case GL_HISTOGRAM:
-		case GL_INDEX_ARRAY:
-		case GL_INDEX_LOGIC_OP:
-		case GL_INDEX_MODE:
-		case GL_LIGHT0:
-		case GL_LIGHT1:
-		case GL_LIGHT2:
-		case GL_LIGHT3:
-		case GL_LIGHT4:
-		case GL_LIGHT5:
-		case GL_LIGHT6:
-		case GL_LIGHT7:
-		case GL_LIGHTING:
-		case GL_LIGHT_MODEL_LOCAL_VIEWER:
-		case GL_LIGHT_MODEL_TWO_SIDE:
-		case GL_LINE_SMOOTH:
-		case GL_LINE_STIPPLE:
-		case GL_MAP1_COLOR_4:
-		case GL_MAP1_INDEX:
-		case GL_MAP1_NORMAL:
-		case GL_MAP1_TEXTURE_COORD_1:
-		case GL_MAP1_TEXTURE_COORD_2:
-		case GL_MAP1_TEXTURE_COORD_3:
-		case GL_MAP1_TEXTURE_COORD_4:
-		case GL_MAP1_VERTEX_3:
-		case GL_MAP1_VERTEX_4:
-		case GL_MAP2_COLOR_4:
-		case GL_MAP2_INDEX:
-		case GL_MAP2_NORMAL:
-		case GL_MAP2_TEXTURE_COORD_1:
-		case GL_MAP2_TEXTURE_COORD_2:
-		case GL_MAP2_TEXTURE_COORD_3:
-		case GL_MAP2_TEXTURE_COORD_4:
-		case GL_MAP2_VERTEX_3:
-		case GL_MAP2_VERTEX_4:
-		case GL_MAP_COLOR:
-		case GL_MAP_STENCIL:
-		case GL_MINMAX:
-		case GL_NORMAL_ARRAY:
-		case GL_NORMALIZE:
-		case GL_PACK_LSB_FIRST:
-		case GL_PACK_SWAP_BYTES:
-		case GL_POINT_SMOOTH:
-		case GL_POINT_SPRITE:
-		case GL_POLYGON_OFFSET_FILL:
-		case GL_POLYGON_OFFSET_LINE:
-		case GL_POLYGON_OFFSET_POINT:
-		case GL_POLYGON_SMOOTH:
-		case GL_POLYGON_STIPPLE:
-		case GL_POST_COLOR_MATRIX_COLOR_TABLE:
-		case GL_POST_CONVOLUTION_COLOR_TABLE:
-		case GL_RESCALE_NORMAL:
-		case GL_RGBA_MODE:
-		case GL_SAMPLE_COVERAGE_INVERT:
-		case GL_SCISSOR_TEST:
-		case GL_SECONDARY_COLOR_ARRAY:
-		case GL_SEPARABLE_2D:
-		case GL_STENCIL_TEST:
-		case GL_STEREO:
-		case GL_TEXTURE_1D:
-		case GL_TEXTURE_2D:
-		case GL_TEXTURE_3D:
-		case GL_TEXTURE_COORD_ARRAY:
-		case GL_TEXTURE_CUBE_MAP:
-		case GL_TEXTURE_GEN_Q:
-		case GL_TEXTURE_GEN_R:
-		case GL_TEXTURE_GEN_S:
-		case GL_TEXTURE_GEN_T:
-		case GL_UNPACK_LSB_FIRST:
-		case GL_UNPACK_SWAP_BYTES:
-		case GL_VERTEX_ARRAY:
-		case GL_VERTEX_PROGRAM_POINT_SIZE:
-		case GL_VERTEX_PROGRAM_TWO_SIDE:
-		{
-			GLboolean b;
-			glGetBooleanv(pname, &b);  OGL_CHK;
-			return JS_TRUE;
-		}
-
-
-		case GL_COLOR_WRITEMASK:
-		{
-		//	4 bool
-		}
-
-		case GL_ACCUM_ALPHA_BITS: // uint
-		case GL_ACCUM_BLUE_BITS: // uint
-		case GL_ACCUM_GREEN_BITS: // uint
-		case GL_ACCUM_RED_BITS: // uint
-		case GL_ACTIVE_TEXTURE: // enum
-		case GL_ALPHA_BITS: // uint
-		case GL_ALPHA_TEST_FUNC: // enum
-		case GL_ARRAY_BUFFER_BINDING: // name
-		case GL_ATTRIB_STACK_DEPTH: // uint
-		case GL_AUX_BUFFERS: // uint
-		case GL_BLEND_DST_ALPHA: // enum
-		case GL_BLEND_DST_RGB: // enum
-		case GL_BLEND_EQUATION_RGB: // enum
-		case GL_BLEND_EQUATION_ALPHA: // enum
-		case GL_BLEND_SRC_ALPHA: // enum
-		case GL_BLEND_SRC_RGB: // enum
-		case GL_BLUE_BITS: // uint
-		case GL_CLIENT_ACTIVE_TEXTURE: // enum
-		case GL_CLIENT_ATTRIB_STACK_DEPTH: // uint
-		case GL_COLOR_ARRAY_BUFFER_BINDING: // name
-		case GL_COLOR_ARRAY_SIZE: // uint
-		case GL_COLOR_ARRAY_STRIDE: // uint
-		case GL_COLOR_ARRAY_TYPE: // enum
-		case GL_COLOR_MATERIAL_FACE: // enum
-		case GL_COLOR_MATERIAL_PARAMETER: // enum
-		case GL_COLOR_MATRIX_STACK_DEPTH: // uint
-		case GL_CULL_FACE_MODE: // enum
-		case GL_CURRENT_PROGRAM: // uint
-		case GL_DEPTH_BITS: // uint
-		case GL_DEPTH_FUNC: // enum
-		case GL_DRAW_BUFFER0: // enum
-		case GL_DRAW_BUFFER1: // enum
-		case GL_DRAW_BUFFER2: // enum
-		case GL_DRAW_BUFFER3: // enum
-		case GL_DRAW_BUFFER4: // enum
-		case GL_DRAW_BUFFER5: // enum
-		case GL_DRAW_BUFFER6: // enum
-		case GL_DRAW_BUFFER7: // enum
-		case GL_DRAW_BUFFER8: // enum
-		case GL_DRAW_BUFFER9: // enum
-		case GL_DRAW_BUFFER10: // enum
-		case GL_DRAW_BUFFER11: // enum
-		case GL_DRAW_BUFFER12: // enum
-		case GL_DRAW_BUFFER13: // enum
-		case GL_DRAW_BUFFER14: // enum
-		case GL_DRAW_BUFFER15: // enum
-		case GL_EDGE_FLAG_ARRAY_BUFFER_BINDING: // enum
-		case GL_EDGE_FLAG_ARRAY_STRIDE: // uint
-		case GL_ELEMENT_ARRAY_BUFFER_BINDING: // name
-		case GL_FEEDBACK_BUFFER_SIZE: // uint
-		case GL_FEEDBACK_BUFFER_TYPE: // enum
-		case GL_FOG_COORD_ARRAY_BUFFER_BINDING:
-		case GL_FOG_COORD_ARRAY_STRIDE: // uint
-		case GL_FOG_COORD_ARRAY_TYPE: // enum
-		case GL_FOG_COORD_SRC: // enum
-		case GL_FOG_HINT: // enum
-		case GL_FOG_MODE: // enum
-		case GL_FRAGMENT_SHADER_DERIVATIVE_HINT: // enum
-		case GL_FRONT_FACE: // enum
-		case GL_GENERATE_MIPMAP_HINT: // enum
-		case GL_GREEN_BITS: // uint
-		case GL_INDEX_ARRAY_BUFFER_BINDING: // name
-		case GL_INDEX_ARRAY_STRIDE: // uint
-		case GL_INDEX_ARRAY_TYPE: // enum
-		case GL_INDEX_BITS: // uint
-		case GL_INDEX_OFFSET: // uint
-		case GL_INDEX_SHIFT: // int
-		case GL_INDEX_WRITEMASK: // uint
-		case GL_LIGHT_MODEL_COLOR_CONTROL: // enum
-		case GL_LINE_SMOOTH_HINT: // enum
-		case GL_LINE_STIPPLE_PATTERN: // uint
-		case GL_LINE_STIPPLE_REPEAT:
-		case GL_LIST_BASE: // uint
-		case GL_LIST_INDEX: // name
-		case GL_LIST_MODE : // enum
-		case GL_LOGIC_OP_MODE: // enum
-		case GL_MAP1_GRID_SEGMENTS: // uint
-		case GL_MATRIX_MODE: // enum
-		case GL_MAX_3D_TEXTURE_SIZE: // uint
-		case GL_MAX_CLIENT_ATTRIB_STACK_DEPTH: // uint
-		case GL_MAX_ATTRIB_STACK_DEPTH: // uint
-		case GL_MAX_CLIP_PLANES: // uint
-		case GL_MAX_COLOR_MATRIX_STACK_DEPTH: // uint
-		case GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS: // uint
-		case GL_MAX_CUBE_MAP_TEXTURE_SIZE: // uint
-		case GL_MAX_DRAW_BUFFERS: // uint
-		case GL_MAX_ELEMENTS_INDICES: // uint
-		case GL_MAX_ELEMENTS_VERTICES: // uint
-		case GL_MAX_EVAL_ORDER : // uint
-		case GL_MAX_FRAGMENT_UNIFORM_COMPONENTS : //uint
-		case GL_MAX_LIGHTS: // uint
-		case GL_MAX_LIST_NESTING: // uint
-		case GL_MAX_MODELVIEW_STACK_DEPTH: // uint
-		case GL_MAX_NAME_STACK_DEPTH: // uint
-		case GL_MAX_PIXEL_MAP_TABLE: // uint
-		case GL_MAX_PROJECTION_STACK_DEPTH: // uint
-		case GL_MAX_TEXTURE_COORDS: // uint
-		case GL_MAX_TEXTURE_IMAGE_UNITS: // uint
-		case GL_MAX_TEXTURE_SIZE: // uint
-		case GL_MAX_TEXTURE_STACK_DEPTH: // uint
-		case GL_MAX_TEXTURE_UNITS: // uint
-		case GL_MAX_VARYING_FLOATS: // uint
-		case GL_MAX_VERTEX_ATTRIBS: // uint
-		case GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS: // uint
-		case GL_MAX_VERTEX_UNIFORM_COMPONENTS: // uint
-		case GL_MODELVIEW_STACK_DEPTH: // uint
-		case GL_NAME_STACK_DEPTH: // uint
-		case GL_NORMAL_ARRAY_BUFFER_BINDING: // name
-		case GL_NORMAL_ARRAY_STRIDE: // uint
-		case GL_NORMAL_ARRAY_TYPE: // enum
-		case GL_NUM_COMPRESSED_TEXTURE_FORMATS: // uint
-		case GL_PACK_ALIGNMENT: // uint
-		case GL_PACK_IMAGE_HEIGHT: // uint
-		case GL_PACK_ROW_LENGTH: // uint
-		case GL_PACK_SKIP_IMAGES: // uint
-		case GL_PACK_SKIP_PIXELS: // uint
-		case GL_PACK_SKIP_ROWS: // uint
-		case GL_PERSPECTIVE_CORRECTION_HINT: // enum
-		case GL_PIXEL_MAP_A_TO_A_SIZE: // uint
-		case GL_PIXEL_MAP_B_TO_B_SIZE: // uint
-		case GL_PIXEL_MAP_G_TO_G_SIZE: // uint
-		case GL_PIXEL_MAP_I_TO_A_SIZE: // uint
-		case GL_PIXEL_MAP_I_TO_B_SIZE: // uint
-		case GL_PIXEL_MAP_I_TO_G_SIZE: // uint
-		case GL_PIXEL_MAP_I_TO_I_SIZE: // uint
-		case GL_PIXEL_MAP_I_TO_R_SIZE: // uint
-		case GL_PIXEL_MAP_R_TO_R_SIZE: // uint
-		case GL_PIXEL_MAP_S_TO_S_SIZE: // uint
-		case GL_PIXEL_PACK_BUFFER_BINDING: // name
-		case GL_PIXEL_UNPACK_BUFFER_BINDING: // name
-		case GL_POINT_SMOOTH_HINT: // enum
-		case GL_POLYGON_SMOOTH_HINT: // enum
-		case GL_PROJECTION_STACK_DEPTH: // uint
-		case GL_READ_BUFFER: // enum
-		case GL_RED_BITS: // uint
-		case GL_RENDER_MODE: // enum
-		case GL_SAMPLE_BUFFERS: // uint
-		case GL_SAMPLES: // uint
-		case GL_SECONDARY_COLOR_ARRAY_BUFFER_BINDING: // name
-		case GL_SECONDARY_COLOR_ARRAY_SIZE: // uint
-		case GL_SECONDARY_COLOR_ARRAY_STRIDE: // int
-		case GL_SECONDARY_COLOR_ARRAY_TYPE: // enum
-		case GL_SELECTION_BUFFER_SIZE: // uint
-		case GL_SHADE_MODEL: // enum
-		case GL_STENCIL_BACK_FAIL: // enum
-		case GL_STENCIL_BACK_FUNC: // enum
-		case GL_STENCIL_BACK_PASS_DEPTH_FAIL: // enum
-		case GL_STENCIL_BACK_PASS_DEPTH_PASS: // enum
-		case GL_STENCIL_BACK_REF: // uint
-		case GL_STENCIL_BACK_VALUE_MASK: // uint
-		case GL_STENCIL_BACK_WRITEMASK: // uint
-		case GL_STENCIL_BITS: // uint
-		case GL_STENCIL_CLEAR_VALUE:
-		case GL_STENCIL_FAIL: // enum
-		case GL_STENCIL_FUNC: // enum
-		case GL_STENCIL_PASS_DEPTH_FAIL: // enum
-		case GL_STENCIL_PASS_DEPTH_PASS: // enum
-		case GL_STENCIL_REF: // enum
-		case GL_STENCIL_VALUE_MASK: // enum
-		case GL_STENCIL_WRITEMASK: // uint
-		case GL_SUBPIXEL_BITS:
-		case GL_TEXTURE_BINDING_1D: // name
-		case GL_TEXTURE_BINDING_2D: // name
-		case GL_TEXTURE_BINDING_3D: // name
-		case GL_TEXTURE_BINDING_CUBE_MAP: // name
-		case GL_TEXTURE_COMPRESSION_HINT: // enum
-		case GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING: // name
-		case GL_TEXTURE_COORD_ARRAY_SIZE:
-		case GL_TEXTURE_COORD_ARRAY_STRIDE:
-		case GL_TEXTURE_COORD_ARRAY_TYPE: // enum
-		case GL_TEXTURE_STACK_DEPTH:
-		case GL_UNPACK_ALIGNMENT:
-		case GL_UNPACK_IMAGE_HEIGHT:
-		case GL_UNPACK_ROW_LENGTH:
-		case GL_UNPACK_SKIP_IMAGES:
-		case GL_UNPACK_SKIP_PIXELS:
-		case GL_UNPACK_SKIP_ROWS:
-		case GL_VERTEX_ARRAY_BUFFER_BINDING:
-		case GL_VERTEX_ARRAY_SIZE:
-		case GL_VERTEX_ARRAY_STRIDE:
-		case GL_VERTEX_ARRAY_TYPE: // enum
-		case GL_ZOOM_X:
-		case GL_ZOOM_Y:
-		{
-			GLint i;
-			glGetIntegerv(pname, &i);  OGL_CHK;
-			return JS_TRUE;
-		}
-
-		case GL_MAP2_GRID_SEGMENTS:
-		case GL_MAX_VIEWPORT_DIMS:
-		case GL_POLYGON_MODE: // enum
-		{
-		//	2 int
-		}
-
-		case GL_SCISSOR_BOX:
-		case GL_VIEWPORT:
-		{
-		//	4 int
-		}
-
-		case GL_ALPHA_BIAS:
-		case GL_ALPHA_SCALE:
-		case GL_ALPHA_TEST_REF:
-		case GL_BLUE_BIAS:
-		case GL_BLUE_SCALE:
-		case GL_CURRENT_FOG_COORD:
-		case GL_CURRENT_INDEX:
-		case GL_CURRENT_RASTER_DISTANCE:
-		case GL_CURRENT_RASTER_INDEX:
-		case GL_DEPTH_BIAS:
-		case GL_DEPTH_CLEAR_VALUE:
-		case GL_DEPTH_RANGE:
-		case GL_DEPTH_SCALE:
-		case GL_FOG_DENSITY:
-		case GL_FOG_END:
-		case GL_FOG_INDEX:
-		case GL_FOG_START:
-		case GL_GREEN_BIAS:
-		case GL_GREEN_SCALE:
-		case GL_INDEX_BITS:
-		case GL_LINE_WIDTH:
-		case GL_LINE_WIDTH_GRANULARITY:
-		case GL_MAX_TEXTURE_LOD_BIAS:
-		case GL_POINT_FADE_THRESHOLD_SIZE:
-		case GL_POINT_SIZE:
-		case GL_POINT_SIZE_GRANULARITY:
-		case GL_POINT_SIZE_MAX:
-		case GL_POINT_SIZE_MIN:
-		case GL_POLYGON_OFFSET_FACTOR:
-		case GL_POLYGON_OFFSET_UNITS:
-		case GL_POST_COLOR_MATRIX_RED_BIAS:
-		case GL_POST_COLOR_MATRIX_GREEN_BIAS:
-		case GL_POST_COLOR_MATRIX_BLUE_BIAS:
-		case GL_POST_COLOR_MATRIX_ALPHA_BIAS:
-		case GL_POST_COLOR_MATRIX_RED_SCALE:
-		case GL_POST_COLOR_MATRIX_GREEN_SCALE:
-		case GL_POST_COLOR_MATRIX_BLUE_SCALE:
-		case GL_POST_COLOR_MATRIX_ALPHA_SCALE:
-		case GL_POST_CONVOLUTION_RED_BIAS:
-		case GL_POST_CONVOLUTION_GREEN_BIAS:
-		case GL_POST_CONVOLUTION_BLUE_BIAS:
-		case GL_POST_CONVOLUTION_ALPHA_BIAS:
-		case GL_POST_CONVOLUTION_RED_SCALE:
-		case GL_POST_CONVOLUTION_GREEN_SCALE:
-		case GL_POST_CONVOLUTION_BLUE_SCALE:
-		case GL_POST_CONVOLUTION_ALPHA_SCALE:
-		case GL_RED_BIAS:
-		case GL_RED_SCALE:
-		case GL_SAMPLE_COVERAGE_VALUE:
-		case GL_SMOOTH_LINE_WIDTH_GRANULARITY:
-		{
-		//	1 real
-		}
-		case GL_ALIASED_POINT_SIZE_RANGE:
-		case GL_ALIASED_LINE_WIDTH_RANGE:
-		case GL_LINE_WIDTH_RANGE:
-		case GL_MAP1_GRID_DOMAIN:
-		case GL_POINT_SIZE_RANGE:
-		case GL_SMOOTH_LINE_WIDTH_RANGE:
-		case GL_SMOOTH_POINT_SIZE_RANGE:
-		{
-		//	2 real
-		}
-		case GL_CURRENT_NORMAL:
-		case GL_POINT_DISTANCE_ATTENUATION:
-		{
-		//	3 real
-		}
-		case GL_ACCUM_CLEAR_VALUE:
-		case GL_BLEND_COLOR:
-		case GL_COLOR_CLEAR_VALUE:
-		case GL_CURRENT_COLOR:
-		case GL_CURRENT_RASTER_COLOR:
-		case GL_CURRENT_RASTER_POSITION:
-		case GL_CURRENT_RASTER_SECONDARY_COLOR:
-		case GL_CURRENT_RASTER_TEXTURE_COORDS:
-		case GL_CURRENT_SECONDARY_COLOR:
-		case GL_CURRENT_TEXTURE_COORDS:
-		case GL_FOG_COLOR:
-		case GL_LIGHT_MODEL_AMBIENT:
-		case GL_MAP2_GRID_DOMAIN:
-		{
-		//	4 real
-		}
-		case GL_COLOR_MATRIX:
-		case GL_MODELVIEW_MATRIX:
-		case GL_PROJECTION_MATRIX:
-		case GL_TEXTURE_MATRIX:
-		case GL_TRANSPOSE_COLOR_MATRIX:
-		case GL_TRANSPOSE_MODELVIEW_MATRIX:
-		case GL_TRANSPOSE_PROJECTION_MATRIX:
-		case GL_TRANSPOSE_TEXTURE_MATRIX:
-		{
-			16 real
-		}
-		case GL_COMPRESSED_TEXTURE_FORMATS: // enum
-		{
-		//	GL_NUM_COMPRESSED_TEXTURE_FORMATS uint
-		}
-	
-	}
-
-//	*JL_FRVAL = BOOLEAN_TO_JSVAL(params);
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
 
