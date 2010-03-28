@@ -14,6 +14,8 @@ function UI(currentWidth, currentHeight) {
 	LoadModule('jsprotex');
 	//LoadModule('jstrimesh');
 	
+	this.frame = 0;
+	
 	var f3d = new Font3D(new Font('c:\\windows\\fonts\\arial.ttf'), Font3D.OUTLINE, 9);
 	var f2d = new Font3D(new Font('c:\\windows\\fonts\\arial.ttf'), Font3D.GRAYSCALE, 9); // TRANSLUCENT
 
@@ -23,7 +25,7 @@ function UI(currentWidth, currentHeight) {
 	keyRepeatDelay = 300;
 	keyRepeatInterval = 50;
 	maxFPS = 60;
-	
+		
 	currentWidth = currentWidth || desktopWidth / 4;
 	currentHeight = currentHeight || desktopHeight / 4;
 	
@@ -79,27 +81,18 @@ function UI(currentWidth, currentHeight) {
 			[ t[3] - t[2], t[7] - t[6], t[11] - t[10], t[15] - t[14] ]  // far
 		];
 	}
-	
-	SetScope(FullQuad, Ogl);
+
+	var fullQuadCL;
 	function FullQuad() {
 		
-		if ( arguments.callee.fullQuadCL ) {
-		
-			CallList(arguments.callee.fullQuadCL);
+		if ( fullQuadCL ) {
+
+			Ogl.CallList(fullQuadCL);
 			return;
 		}
-		arguments.callee.fullQuadCL = NewList();
-		PushMatrix();
-		LoadIdentity();
-		MatrixMode(PROJECTION);
-		PushMatrix();
-		LoadIdentity();
-		Begin(QUADS); Vertex(-1,-1);  Vertex(1,-1);  Vertex(1,1);  Vertex(-1,1); End();
-//		Begin(TRIANGLES); Vertex(-1,-1);  Vertex(3,-1);  Vertex(-1,3); End();
-		PopMatrix();
-		MatrixMode(MODELVIEW);
-		PopMatrix();
-		EndList();
+		fullQuadCL = Ogl.NewList();
+		Ogl.FullQuad()
+		Ogl.EndList();
 	}
 	
 	
@@ -114,7 +107,7 @@ function UI(currentWidth, currentHeight) {
 			//Ogl.Light(Ogl.LIGHT0, Ogl.CONSTANT_ATTENUATION, 0.1);
 			//Ogl.Light(Ogl.LIGHT0, Ogl.LINEAR_ATTENUATION, 0.003);
 			//Ogl.Light(Ogl.LIGHT0, Ogl.SPOT_EXPONENT, 0);
-			//Ogl.Light(Ogl.LIGHT0, Ogl.SPOT_CUTOFF, 180);
+			Ogl.Light(Ogl.LIGHT0, Ogl.SPOT_CUTOFF, 90);
 			Ogl.Enable(Ogl.LIGHTING);
 			Ogl.Enable(Ogl.LIGHT0);
 		}
@@ -132,16 +125,111 @@ function UI(currentWidth, currentHeight) {
 	}
 
 
+	var ShaderProgramProto = {
+		
+		AddVertexShader:function( source ) {
+			
+			if ( !this.program ) {
+				
+				Assert( Ogl.HasExtensionName('GL_ARB_shading_language_100', 'GL_ARB_shader_objects', 'GL_ARB_vertex_shader') );
+				this.program = Ogl.CreateProgramObjectARB();
+			}
 
-	function ShadowVolumeProgram(light) {
+			var shader = Ogl.CreateShaderObjectARB(Ogl.VERTEX_SHADER_ARB);
+			Ogl.ShaderSourceARB(shader, source);
+			Ogl.CompileShaderARB(shader);
+			if ( !Ogl.GetObjectParameterARB(shader, Ogl.OBJECT_COMPILE_STATUS_ARB) ) {
 
-		Assert( Ogl.HasExtensionName('GL_ARB_shading_language_100', 'GL_ARB_shader_objects', 'GL_ARB_vertex_shader') );
+				Print( 'CompileShaderARB log:\n', Ogl.GetInfoLogARB(shader), '\n' );
+				throw 0;
+			}
+			Ogl.AttachObjectARB(this.program, shader);
+			Ogl.DeleteObjectARB(shader);
+			if ( !Ogl.GetObjectParameterARB(shader, Ogl.OBJECT_DELETE_STATUS_ARB) ) {
 
-		var shadowVolumeShader = Ogl.CreateShaderObjectARB(Ogl.VERTEX_SHADER_ARB);
-		var l = 0;
+				Print( 'DeleteObjectARB log:\n', Ogl.GetInfoLogARB(this.program), '\n' );
+				throw 0;
+			}
+		},
+		
+		Link:function() {
+		
+			Ogl.LinkProgramARB(this.program);
+			if ( !Ogl.GetObjectParameterARB(this.program, Ogl.OBJECT_LINK_STATUS_ARB) ) {
+
+				Print( 'LinkProgramARB log:\n', Ogl.GetInfoLogARB(this.program), '\n' );
+				throw 0;
+			}
+		},
+		
+		_uniformLocationCache:{},
+		
+		Set:function(name, value) {
+		
+			var loc = this._uniformLocationCache[name];
+			if ( !loc )
+				this._uniformLocationCache[name] = loc = Ogl.GetUniformLocationARB(this.program, name);
+			Ogl.UniformARB(loc, value);
+		},
+		
+		On:function() {
+		
+			Ogl.UseProgramObjectARB(this.program);
+		},
+		
+		Off:function() {
+		
+			Ogl.UseProgramObjectARB(0);
+		}
+	}
+
+	ShadowVolumeProgram.prototype = ShaderProgramProto;
+	function ShadowVolumeProgram( light ) {
+
+		var source = <><![CDATA[
+			
+//			uniform int far;
+			uniform bool hasFog;
+
+			float far = 1000.0;
+
+			void main(void) {
+			
+				vec3 lightDir = (gl_ModelViewMatrix * gl_Vertex - gl_LightSource[$(lightIndex)].position).xyz;
+				if ( dot(lightDir, gl_NormalMatrix * gl_Normal) < 0.001 ) { // if vertex is lit
+				
+					gl_Position = ftransform();
+				} else {
+
+//					float far = gl_DepthRange.far / (gl_DepthRange.far - gl_DepthRange.near);
+					vec4 fin = gl_ProjectionMatrix * (gl_ModelViewMatrix * gl_Vertex + vec4(normalize(lightDir) * far, 0.0));
+					if ( fin.z > fin.w ) // avoid clipping
+						fin.z = fin.w; // move to the far plane
+					gl_Position = fin;
+				}
+				
+				if ( hasFog ) {
+
+					float alpha = sin(dot((gl_NormalMatrix * gl_Normal), vec3(0,0,-1)) * 1.57 ) * gl_Fog.scale * 20.0;
+					gl_FrontColor = vec4(gl_Fog.color.rgb, alpha);
+				}
+			}
+		]]></>.toString();
+		
+		this.AddVertexShader(Expand(source, { lightIndex: light-Ogl.LIGHT0 }));
+		this.Link();
+	}
+
+/*
+	LightConeProgram.prototype = ShaderProgramProto;
+	function LightConeProgram( light ) {
+
 		var source = <><![CDATA[
 
 			void main(void) {
+			
+				
+				Mat4 light = Mat4( 
 
 				vec3 lightDir = (gl_ModelViewMatrix * gl_Vertex - gl_LightSource[$(lightIndex)].position).xyz;
 				if ( dot(lightDir, gl_NormalMatrix * gl_Normal) < 0.001 ) { // if vertex is lit
@@ -149,73 +237,60 @@ function UI(currentWidth, currentHeight) {
 					gl_Position = ftransform();
 				} else {
 
-					vec4 fin = gl_ProjectionMatrix * (gl_ModelViewMatrix * gl_Vertex + vec4(normalize(lightDir) * 100000.0, 0.0));
-					if ( fin.z > fin.w ) // avoid clipping
-						fin.z = fin.w; // move to the far plane
+					vec4 fin = gl_ProjectionMatrix * (gl_ModelViewMatrix * gl_Vertex + vec4(normalize(lightDir) * 10000.0, 0.0));
+//					if ( fin.z > fin.w ) // avoid clipping
+//						fin.z = fin.w; // move to the far plane
 					gl_Position = fin;
 				}
+				
+				float factor = dot((gl_NormalMatrix * gl_Normal), vec3(0,0,-1));
+				
+				vec4 color = gl_Color;
+				color.a = factor;
+				gl_FrontColor = color;
 			}
 		]]></>.toString();
 		
-		source = Expand(source, { lightIndex: light-Ogl.LIGHT0 });
-		
-		Ogl.ShaderSourceARB(shadowVolumeShader, source);
-		Ogl.CompileShaderARB(shadowVolumeShader);
-		if ( Ogl.GetObjectParameterARB(shadowVolumeShader, Ogl.OBJECT_COMPILE_STATUS_ARB) == 0 ) {
-
-			Print( 'CompileShaderARB log:\n', Ogl.GetInfoLogARB(shadowVolumeShader), '\n' );
-			throw 0;
-		}
-
-		var program = Ogl.CreateProgramObjectARB();
-		Ogl.AttachObjectARB(program, shadowVolumeShader);
-
-		Ogl.DeleteObjectARB(shadowVolumeShader);
-		if ( Ogl.GetObjectParameterARB(shadowVolumeShader, Ogl.OBJECT_DELETE_STATUS_ARB) == 0 ) {
-
-			Print( 'LinkProgramARB log:\n', Ogl.GetInfoLogARB(program), '\n' );
-			throw 0;
-		}
-
-		Ogl.LinkProgramARB(program);
-		if ( Ogl.GetObjectParameterARB(program, Ogl.OBJECT_LINK_STATUS_ARB) == 0 ) {
-
-			Print( 'LinkProgramARB log:\n', Ogl.GetInfoLogARB(program), '\n' );
-			throw 0;
-		}
-		
-		this.On = function() {
-
-			Ogl.UseProgramObjectARB(program);
-		}
-
-		this.Off = function() {
-
-			Ogl.UseProgramObjectARB(0);
-		}
+		this.AddVertexShader(Expand(source, { lightIndex: light-Ogl.LIGHT0 }));
+		this.Link();            
 	}
+	var lightConeProgram = new LightConeProgram(Ogl.LIGHT0);
+*/
 	
 	var shadowVolumeProgram = new ShadowVolumeProgram(Ogl.LIGHT0);
 	
 	var useTwoSideStencil = Ogl.HasExtensionName('GL_EXT_stencil_two_side', 'GL_EXT_stencil_wrap');
 	var useSeparateStencil = Ogl.HasExtensionProc('glStencilOpSeparate');
 
+
+
+// Print( Ogl.GetDouble(Ogl.COLOR_CLEAR_VALUE, 4), '\n' ); Halt();
+
+	Ogl.Fog(Ogl.FOG_MODE, Ogl.LINEAR);
+	Ogl.Fog(Ogl.FOG_COLOR, [0.15, 0.2, 0.4, 1]);
+	Ogl.Fog(Ogl.FOG_DENSITY, 0);
+	Ogl.Hint(Ogl.FOG_HINT, Ogl.DONT_CARE);
+	Ogl.Fog(Ogl.FOG_START, 0.0);
+	Ogl.Fog(Ogl.FOG_END, 200.0);
+//	Ogl.Enable(Ogl.FOG);
+	
+	
 	this.RenderWithShadows3 = function( renderCallback ) {
 	
-	Ogl.Disable(Ogl.LIGHTING);
-	Ogl.Color(1,0,0);
-	FullQuad();
-	return;
 /*
-			Ogl.PolygonMode( Ogl.FRONT_AND_BACK, Ogl.LINE );
-			Ogl.Disable(Ogl.LIGHTING);
-			shadowVolumeProgram.On();
+			Ogl.PolygonMode(Ogl.FRONT_AND_BACK, Ogl.LINE);
+			Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+			Ogl.Color(1,1,1, 0.1)
 			Ogl.Enable(Ogl.CULL_FACE);
-			Ogl.Disable(Ogl.CULL_FACE);
-				renderCallback(3); // render occluders shape only
-			shadowVolumeProgram.Off();
-		return;		
+			Ogl.CullFace(Ogl.BACK);
+			Ogl.Enable(Ogl.BLEND);
+			rays.On();
+			renderCallback(3);
+			rays.Off();
+			Ogl.Disable(Ogl.BLEND);
+		return;
 */		
+
 		// see http://www.opengl.org/resources/code/samples/glut_examples/advanced/shadowvol.c
 		// http://www.angelfire.com/games5/duktroa/RealTimeShadowTutorial.htm
 		// http://www.gamedev.net/columns/hardcore/cgshadow/page2.asp
@@ -226,17 +301,29 @@ function UI(currentWidth, currentHeight) {
 			renderCallback(6);
 		Ogl.Disable(Ogl.POLYGON_OFFSET_FILL);
 
-		Ogl.ColorMask(false);
-		Ogl.DepthMask(false);
-		
-		Ogl.ShadeModel(Ogl.FLAT);
 		Ogl.Disable(Ogl.LIGHTING);
+		Ogl.DepthMask(false);
 
-		Ogl.StencilFunc(Ogl.ALWAYS, 0, -1);
+		var hasFog = Ogl.IsEnabled(Ogl.FOG);
+
+		if ( hasFog ) {
+		
+			Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+			Ogl.Enable(Ogl.BLEND);
+			Ogl.Enable(Ogl.CULL_FACE);
+			Ogl.CullFace(Ogl.BACK);
+		} else {
+
+			Ogl.ColorMask(false);
+		}
+		
+		Ogl.StencilFunc(Ogl.ALWAYS, 0, 0);
 		Ogl.Enable(Ogl.STENCIL_TEST);
 		Ogl.Clear(Ogl.STENCIL_BUFFER_BIT);
 
 		shadowVolumeProgram.On();
+//		shadowVolumeProgram.Set('far', 100);
+		shadowVolumeProgram.Set('hasFog', hasFog);
 		
 		Ogl.DepthFunc(Ogl.LESS); // needed ???
 
@@ -275,7 +362,7 @@ function UI(currentWidth, currentHeight) {
 		}
 
 		shadowVolumeProgram.Off();
-		
+
 		Ogl.DepthFunc(Ogl.ALWAYS);
 		Ogl.StencilFunc(Ogl.NOTEQUAL, 0, -1);
 		Ogl.StencilOp(Ogl.KEEP, Ogl.KEEP, Ogl.KEEP);
@@ -286,13 +373,57 @@ function UI(currentWidth, currentHeight) {
 		Ogl.Color(Ogl.GetLight(Ogl.LIGHT0, Ogl.AMBIENT)); // use light's ambiant color as shadow color
 		Ogl.ColorMask(true);
 
+		if ( !hasFog ) {
+
 			FullQuad();
+		} else {
+
+			renderCallback(5);
+		}
+
+		Ogl.Disable(Ogl.BLEND, Ogl.STENCIL_TEST);
 		
 		Ogl.DepthMask(true);
 		Ogl.DepthFunc(Ogl.LEQUAL);
-		Ogl.ShadeModel(Ogl.SMOOTH);
+		
+//		if ( hasFog ) {
+
+			Ogl.PushMatrix();
+/*
+		var mat = new Transformation(null);
+
+		Ogl.MatrixMode(Ogl.MODELVIEW);
+		Ogl.PushMatrix();
+		Ogl.LoadIdentity();
+		Ogl.LookAt( lightPos[0], lightPos[1], lightPos[2],  lightDir[0], lightDir[1], lightDir[2],  0, 0, 1 );
+		mat.Product(Ogl);
+
+		Ogl.MatrixMode(Ogl.PROJECTION);
+		Ogl.PushMatrix();
+		Ogl.LoadIdentity();
+		Ogl.Perspective(60, 1, 30, 50); //var lightFov = Ogl.GetLight(Ogl.LIGHT0, Ogl.SPOT_CUTOFF) * 2;
+		mat.Product(Ogl);
+		Ogl.PopMatrix();
+		Ogl.MatrixMode(Ogl.MODELVIEW);
+		Ogl.PopMatrix();
+		Ogl.LoadMatrix(mat);
+*/
+
+
+			Ogl.Perspective(15, 1, 1, 100);
+			Ogl.LookAt(10, 10, 10, 0,0,0, 0,0,1);
+
+			Ogl.PolygonMode(Ogl.FRONT_AND_BACK, Ogl.LINE);
+			Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+			Ogl.Color(1,1,1, 0.5)
+			Ogl.Disable(Ogl.CULL_FACE);
+			Ogl.DrawCylinder(1, 1, 100, 10, 10);
+			Ogl.PolygonMode(Ogl.FRONT_AND_BACK, Ogl.FILL);
+
+//		}
+
+		
 		Ogl.Enable(Ogl.LIGHTING);
-		Ogl.Disable(Ogl.BLEND, Ogl.STENCIL_TEST);
 	}
 
 
@@ -531,6 +662,16 @@ function UI(currentWidth, currentHeight) {
 	
 	//////////
 
+	this.status = 'status';
+	
+	this.Projection = function() {
+		
+		Ogl.Perspective(60, undefined, 0.5, 500);
+		
+//		// http://www.songho.ca/opengl/gl_projectionmatrix.html
+//		DumpMatrix(Ogl.Get(Ogl.PROJECTION_MATRIX)); Halt();
+	}
+
 	this.Idle = function() { // default function
 	}
 	
@@ -547,6 +688,7 @@ function UI(currentWidth, currentHeight) {
 	var fps = 0.;
 	var fpsArray = [];
 	
+
 	function SurfaceReady() {
 		
 		var t0 = TimeCounter();
@@ -560,7 +702,7 @@ function UI(currentWidth, currentHeight) {
 		Ogl.MatrixMode(Ogl.MODELVIEW);
 		Ogl.LoadIdentity();
 	
-		this.Draw(frame);
+		this.Draw(this.frame);
 
 		Ogl.MatrixMode(Ogl.PROJECTION);
 		Ogl.LoadIdentity();
@@ -599,7 +741,7 @@ function UI(currentWidth, currentHeight) {
 			fpsArray.shift();
 		fpsArray.push(fps);
 		
-		frame++;
+		this.frame++;
 	}
 	
 	var keyObjListeners = {};
@@ -709,14 +851,6 @@ function UI(currentWidth, currentHeight) {
 //			Ogl.Viewport(0, 0, w,h);
 		},
 	};
-
-	this.status = 'status';
-	var frame = 0;
-	
-	this.Projection = function() {
-		
-		Ogl.Perspective(60, undefined, 0.5, 500);
-	}
 
 	this.Loop = function() {
 		

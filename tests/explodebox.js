@@ -88,7 +88,7 @@ function Ball(pos) {
 	body.mass.value = 100;
 	body.position = pos;
 	
-	geom.contact = function(thisGeom, otherGeom) otherGeom.name != 'floor'; // don't hit the floor
+//	geom.contact = function(thisGeom, otherGeom) otherGeom.name != 'floor'; // don't hit the floor
 	
 	this.body = body;
 	this.geom = geom;
@@ -229,21 +229,25 @@ function Box( pos ) {
 
 var scene = [];
 
-var ball = new Ball([0, 0, -20]);
-ball.body.linearVel = [0, 0, 40];
-//scene.push( ball );
+var ball = new Ball([0, 0, 2]);
+ball.body.linearVel = [0, 0, 10];
+scene.push( ball );
+
+var ball = new Ball([0, 1, 40]);
+ball.body.linearVel = [0, 0, -10];
+scene.push( ball );
 
 
 scene.push( new Floor() );
 
 
-var side = 2;
+var side = 10;
 var gap = 0.001;
 
 for ( var i = -side; i < side; ++i )
 	for ( var j = -side; j < side; ++j ) {
 		
-		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
+//		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 1.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 2.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 3.5]) );
@@ -265,12 +269,18 @@ scene.push({Render:function( shapeOnly ) {
 */
 
 
-var paused = false;
+var paused = true;//false;
 ui.key.space = function(down) {
 	
 	paused = down;
 };
 
+ui.key.print = function(down) {
+	
+	var img = Ogl.ReadImage(true);
+	new File('screenshot.png').content = EncodePngImage(img);
+	img.Free();
+};
 
 var poly = false;
 ui.key.p = function(down) {
@@ -286,9 +296,9 @@ var vmove = 0;
 
 ui.Draw = function(frame) {
 
-	Ogl.LookAt(Math.cos(vmove/100)*50, Math.sin(vmove/100)*15, Math.cos(vmove/100)*25+27, 0,0,0, 0,0,1);
+	Ogl.LookAt(Math.cos(vmove/100)*50, Math.sin(vmove/100)*50, Math.cos(vmove/100)*25+40, 0,0,0, 0,0,1);
 	
-	ui.SetLight([15,15,55, 1]);
+	ui.SetLight([15,15,40, 1]);
 
 	if ( !ui.keyState.s ) {
 
