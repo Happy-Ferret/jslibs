@@ -107,7 +107,7 @@ function UI(currentWidth, currentHeight) {
 			//Ogl.Light(Ogl.LIGHT0, Ogl.CONSTANT_ATTENUATION, 0.1);
 			//Ogl.Light(Ogl.LIGHT0, Ogl.LINEAR_ATTENUATION, 0.003);
 			//Ogl.Light(Ogl.LIGHT0, Ogl.SPOT_EXPONENT, 0);
-			Ogl.Light(Ogl.LIGHT0, Ogl.SPOT_CUTOFF, 90);
+			Ogl.Light(Ogl.LIGHT0, Ogl.SPOT_CUTOFF, 60);
 			Ogl.Enable(Ogl.LIGHTING);
 			Ogl.Enable(Ogl.LIGHT0);
 		}
@@ -172,6 +172,14 @@ function UI(currentWidth, currentHeight) {
 			Ogl.UniformARB(loc, value);
 		},
 		
+		SetUniformMatrix:function(name, value) {
+		
+			var loc = this._uniformLocationCache[name];
+			if ( !loc )
+				this._uniformLocationCache[name] = loc = Ogl.GetUniformLocationARB(this.program, name);
+			Ogl.UniformMatrixARB(loc, value);
+		},
+
 		On:function() {
 		
 			Ogl.UseProgramObjectARB(this.program);
@@ -220,34 +228,19 @@ function UI(currentWidth, currentHeight) {
 		this.Link();
 	}
 
-/*
+
 	LightConeProgram.prototype = ShaderProgramProto;
 	function LightConeProgram( light ) {
 
 		var source = <><![CDATA[
 
+			uniform mat4 lightMatrix;
 			void main(void) {
 			
-				
-				Mat4 light = Mat4( 
-
-				vec3 lightDir = (gl_ModelViewMatrix * gl_Vertex - gl_LightSource[$(lightIndex)].position).xyz;
-				if ( dot(lightDir, gl_NormalMatrix * gl_Normal) < 0.001 ) { // if vertex is lit
-				
-					gl_Position = ftransform();
-				} else {
-
-					vec4 fin = gl_ProjectionMatrix * (gl_ModelViewMatrix * gl_Vertex + vec4(normalize(lightDir) * 10000.0, 0.0));
-//					if ( fin.z > fin.w ) // avoid clipping
-//						fin.z = fin.w; // move to the far plane
-					gl_Position = fin;
-				}
-				
-				float factor = dot((gl_NormalMatrix * gl_Normal), vec3(0,0,-1));
-				
-				vec4 color = gl_Color;
-				color.a = factor;
-				gl_FrontColor = color;
+				gl_Position = gl_ModelViewProjectionMatrix * /* lightMatrix * */ gl_Vertex;
+//				float alpha = sin(dot((gl_NormalMatrix * gl_Normal), vec3(0,0,-1)) * 1.57 ) * gl_Fog.scale * 100.0;
+				float alpha = 1.0-abs(dot((gl_NormalMatrix * gl_Normal), vec3(0,0,1)));
+				gl_FrontColor = vec4( gl_Color.rgb, alpha);
 			}
 		]]></>.toString();
 		
@@ -255,7 +248,8 @@ function UI(currentWidth, currentHeight) {
 		this.Link();            
 	}
 	var lightConeProgram = new LightConeProgram(Ogl.LIGHT0);
-*/
+
+
 	
 	var shadowVolumeProgram = new ShadowVolumeProgram(Ogl.LIGHT0);
 	
@@ -389,39 +383,32 @@ function UI(currentWidth, currentHeight) {
 //		if ( hasFog ) {
 
 			Ogl.PushMatrix();
-/*
-		var mat = new Transformation(null);
-
-		Ogl.MatrixMode(Ogl.MODELVIEW);
-		Ogl.PushMatrix();
-		Ogl.LoadIdentity();
-		Ogl.LookAt( lightPos[0], lightPos[1], lightPos[2],  lightDir[0], lightDir[1], lightDir[2],  0, 0, 1 );
-		mat.Product(Ogl);
-
-		Ogl.MatrixMode(Ogl.PROJECTION);
-		Ogl.PushMatrix();
-		Ogl.LoadIdentity();
-		Ogl.Perspective(60, 1, 30, 50); //var lightFov = Ogl.GetLight(Ogl.LIGHT0, Ogl.SPOT_CUTOFF) * 2;
-		mat.Product(Ogl);
-		Ogl.PopMatrix();
-		Ogl.MatrixMode(Ogl.MODELVIEW);
-		Ogl.PopMatrix();
-		Ogl.LoadMatrix(mat);
-*/
-
-
-			Ogl.Perspective(15, 1, 1, 100);
-			Ogl.LookAt(10, 10, 10, 0,0,0, 0,0,1);
-
-			Ogl.PolygonMode(Ogl.FRONT_AND_BACK, Ogl.LINE);
-			Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+			Ogl.LoadIdentity();
+			var lightFov = Ogl.GetLight(Ogl.LIGHT0, Ogl.SPOT_CUTOFF) * 2;
+			Ogl.Perspective(lightFov, 1, 1, 100);
+			Ogl.LookAt( lightPos[0], lightPos[1], lightPos[2],  lightDir[0], lightDir[1], lightDir[2],  0, 0, 1 );
+			var mat = new Transformation(Ogl).Invert();
+			Ogl.PopMatrix();
+			Ogl.MultMatrix(mat);
+		
+//			DumpMatrix(mat);  Halt();
+		
+//			Ogl.PolygonMode(Ogl.FRONT_AND_BACK, Ogl.LINE);
+			
+			Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA); // 
 			Ogl.Color(1,1,1, 0.5)
 			Ogl.Disable(Ogl.CULL_FACE);
-			Ogl.DrawCylinder(1, 1, 100, 10, 10);
-			Ogl.PolygonMode(Ogl.FRONT_AND_BACK, Ogl.FILL);
-
+			
+			lightConeProgram.On();
+//			lightConeProgram.SetUniformMatrix('lightMatrix', mat);
+			Ogl.Disable(Ogl.CULL_FACE);
+			Ogl.Enable(Ogl.BLEND);
+			Ogl.DrawCylinder(0.5, 0.5, 1, 96, 1);
+			Ogl.Disable(Ogl.BLEND);
+			Ogl.Enable(Ogl.CULL_FACE);
+			lightConeProgram.Off();
+//			Ogl.PolygonMode(Ogl.FRONT_AND_BACK, Ogl.FILL);
 //		}
-
 		
 		Ogl.Enable(Ogl.LIGHTING);
 	}

@@ -231,11 +231,11 @@ var scene = [];
 
 var ball = new Ball([0, 0, 2]);
 ball.body.linearVel = [0, 0, 10];
-scene.push( ball );
+//scene.push( ball );
 
 var ball = new Ball([0, 1, 40]);
 ball.body.linearVel = [0, 0, -10];
-scene.push( ball );
+//scene.push( ball );
 
 
 scene.push( new Floor() );
