@@ -218,7 +218,7 @@ function UI(currentWidth, currentHeight) {
 				
 				if ( hasFog ) {
 
-					float alpha = sin(dot((gl_NormalMatrix * gl_Normal), vec3(0,0,-1)) * 1.57 ) * gl_Fog.scale * 20.0;
+					float alpha = sin((gl_NormalMatrix * gl_Normal).z * 1.57 ) * gl_Fog.scale * 20.0;
 					gl_FrontColor = vec4(gl_Fog.color.rgb, alpha);
 				}
 			}
@@ -237,9 +237,15 @@ function UI(currentWidth, currentHeight) {
 			uniform mat4 lightMatrix;
 			void main(void) {
 			
+				// gl_NormalMatrix * gl_Normal == vec3(gl_ModelViewMatrix * vec4(gl_Normal,0.0))
+	
+			
 				gl_Position = gl_ModelViewProjectionMatrix * /* lightMatrix * */ gl_Vertex;
+				vec3 normal = vec3(gl_ModelViewProjectionMatrix * vec4(gl_Normal,0.0));
+				
 //				float alpha = sin(dot((gl_NormalMatrix * gl_Normal), vec3(0,0,-1)) * 1.57 ) * gl_Fog.scale * 100.0;
-				float alpha = 1.0-abs(dot((gl_NormalMatrix * gl_Normal), vec3(0,0,1)));
+
+				float alpha = 1.0-abs(normal.z);
 				gl_FrontColor = vec4( gl_Color.rgb, alpha);
 			}
 		]]></>.toString();
