@@ -43,6 +43,59 @@ DECLARE_CLASS(Ogl)
 #include "matrix44.h"
 #include "vector3.h"
 
+
+JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, unsigned int count, int *rval ) {
+	
+	unsigned int i;
+	if ( JSVAL_IS_PRIMITIVE(**argv) || !JsvalIsArray(cx, **argv) ) {
+
+		JL_S_ASSERT( *argc >= count, "Not enough arguments." );
+		for ( i = 0; i < count; ++i ) {
+
+			JL_CHK( JsvalToInt(cx, **argv, rval) );
+			++rval;
+			++*argv;
+		}
+		*argc -= count;
+		return JS_TRUE;
+	}
+	uint32 len;
+	JL_CHK( JsvalToIntVector(cx, **argv, rval, count, &len) );
+	JL_S_ASSERT( len == count, "Not enough elements." );
+	++*argv;
+	--*argc;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, unsigned int count, double *rval ) {
+	
+	unsigned int i;
+	if ( JSVAL_IS_PRIMITIVE(**argv) || !JsvalIsArray(cx, **argv) ) {
+
+		JL_S_ASSERT( *argc >= count, "Not enough arguments." );
+		for ( i = 0; i < count; ++i ) {
+
+			JL_CHK( JsvalToDouble(cx, **argv, rval) );
+			++rval;
+			++*argv;
+		}
+		*argc -= count;
+		return JS_TRUE;
+	}
+	uint32 len;
+	JL_CHK( JsvalToDoubleVector(cx, **argv, rval, count, &len) );
+	JL_S_ASSERT( len == count, "Not enough elements." );
+	++*argv;
+	--*argc;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+
+
 /* doc.
   OpenGL matrices are 16-value arrays with base vectors laid out contiguously in memory. 
   The translation components occupy the 13th, 14th, and 15th elements of the 16-element matrix, 
@@ -5716,7 +5769,11 @@ DEFINE_FUNCTION_FAST( Test ) {
 		tb->data[i] = 0.5;
 */
 
-
+/*
+	jsdouble d;
+	jsval val = JSVAL_NULL;
+	JL_CHK( JS_ValueToNumber(cx, val, &d) );
+*/
 
 	return JS_TRUE;
 	JL_BAD;

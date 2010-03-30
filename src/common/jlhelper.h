@@ -1378,13 +1378,8 @@ ALWAYS_INLINE JSBool JsvalToInt( JSContext *cx, jsval val, int *i ) {
 		*i = JSVAL_TO_INT(val);
 		return JS_TRUE;
 	}
-	if (unlikely( JSVAL_IS_NULL(val) )) {
-
-		*i = 0;
-		return JS_TRUE;
-	}
 	jsdouble d;
-	JL_CHK( JS_ValueToNumber(cx, val, &d) );
+	JL_CHK( JS_ValueToNumber(cx, val, &d) ); // JS_ValueToNumber also manage JSVAL_NULL
 	if (likely( d >= (jsdouble)INT_MIN && d <= (jsdouble)INT_MAX )) {
 
 		*i = (int)d;
@@ -1409,13 +1404,8 @@ ALWAYS_INLINE JSBool JsvalToUInt( JSContext *cx, jsval val, unsigned int *ui ) {
 		}
 		goto bad;
 	}
-	if (unlikely( JSVAL_IS_NULL(val) )) {
-
-		*ui = 0;
-		return JS_TRUE;
-	}
 	jsdouble d;
-	JL_CHK( JS_ValueToNumber(cx, val, &d) );
+	JL_CHK( JS_ValueToNumber(cx, val, &d) ); // JS_ValueToNumber also manage JSVAL_NULL
 	if (likely( d >= (jsdouble)0 && d <= (jsdouble)UINT_MAX )) {
 
 		*ui = (unsigned int)d;
