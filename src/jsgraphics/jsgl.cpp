@@ -139,8 +139,8 @@ JL_MACRO_BEGIN \
 	} \
 JL_MACRO_END
 
-#undef OGL_CHK
-#define OGL_CHK
+//#undef OGL_CHK
+//#define OGL_CHK
 
 
 #else // DBUG
@@ -149,8 +149,14 @@ JL_MACRO_END
 
 #endif // DBUG
 
-
 #define DECLARE_OPENGL_EXTENSION( NAME, PROTOTYPE ) static PROTOTYPE NAME = NULL;
+
+DECLARE_OPENGL_EXTENSION( glBlendColor, PFNGLBLENDCOLORPROC);
+DECLARE_OPENGL_EXTENSION( glBlendEquation, PFNGLBLENDEQUATIONPROC);
+DECLARE_OPENGL_EXTENSION( glDrawRangeElements, PFNGLDRAWRANGEELEMENTSPROC);
+DECLARE_OPENGL_EXTENSION( glTexImage3D, PFNGLTEXIMAGE3DPROC);
+DECLARE_OPENGL_EXTENSION( glTexSubImage3D, PFNGLTEXSUBIMAGE3DPROC);
+DECLARE_OPENGL_EXTENSION( glCopyTexSubImage3D, PFNGLCOPYTEXSUBIMAGE3DPROC)
 
 DECLARE_OPENGL_EXTENSION( glPointParameteri, PFNGLPOINTPARAMETERIPROC );
 DECLARE_OPENGL_EXTENSION( glPointParameterf, PFNGLPOINTPARAMETERFPROC );
@@ -1255,6 +1261,26 @@ DEFINE_FUNCTION_FAST( Vertex ) {
 
 /**doc
 $TOC_MEMBER $INAME
+ $VOID $INAME( flag )
+  $H arguments
+   $ARG $BOOL flag
+  $H OpenGL API
+   glEdgeFlag
+**/
+DEFINE_FUNCTION_FAST( EdgeFlag ) {
+
+	bool flag;
+	JL_CHK( JsvalToBool(cx, JL_FARG(1), &flag) );
+	glEdgeFlag(flag);
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
  $VOID $INAME( red, green, blue [, alpha] )
  $VOID $INAME( colorArray )
   $H arguments
@@ -1973,7 +1999,7 @@ DEFINE_FUNCTION_FAST( BlendFunc ) {
 	JL_S_ASSERT_INT(JL_FARG(2));
 
 	glBlendFunc(JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ));  OGL_CHK;
-	
+
 	*JL_FRVAL = JSVAL_VOID;
 	;
 	return JS_TRUE;
@@ -2788,11 +2814,11 @@ DEFINE_FUNCTION_FAST( NewList ) {
 	else
 		compileOnly = false;
 
-	GLuint list = glGenLists(1);  OGL_CHK;
+	GLuint list;
+	list = glGenLists(1);  OGL_CHK;
 	glNewList(list, compileOnly ? GL_COMPILE : GL_COMPILE_AND_EXECUTE);  OGL_CHK;
 	
 	*JL_FRVAL = INT_TO_JSVAL(list);
-	;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2811,11 +2837,8 @@ DEFINE_FUNCTION_FAST( DeleteList ) {
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_FARG(1));
-	
 	glDeleteLists(JSVAL_TO_INT(JL_FARG(1)), 1);  OGL_CHK;
-	
 	*JL_FRVAL = JSVAL_VOID;
-	;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2830,11 +2853,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( EndList ) {
 
 	JL_S_ASSERT_ARG(0);
-
 	glEndList();  OGL_CHK;
-
 	*JL_FRVAL = JSVAL_VOID;
-	;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3336,6 +3356,28 @@ DEFINE_FUNCTION_FAST( HasExtensionName ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME( mode )
+  $H arguments
+   $ARG GLenum mode
+  $H OpenGL API
+   glBlendEquation
+**/
+DEFINE_FUNCTION_FAST( BlendEquation ) {
+
+	INIT_OPENGL_EXTENSION( glBlendEquation, PFNGLBLENDEQUATIONPROC );
+	JL_S_ASSERT_ARG_MIN(1);
+	JL_S_ASSERT_INT(JL_FARG(1));
+
+	glBlendEquation(JSVAL_TO_INT(JL_FARG(1)));
+
+ 	return JS_TRUE;
+	JL_BAD;
+}
+
 
  
 /**doc
@@ -5304,10 +5346,9 @@ DEFINE_FUNCTION_FAST( DrawPoint ) {
 	double size;
 	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &size) );
 	glPointSize(size);  OGL_CHK; // get max with GL_POINT_SIZE_RANGE
-	glBegin(GL_POINTS);  OGL_CHK;
-	glVertex2i(0,0);  OGL_CHK;
+	glBegin(GL_POINTS);
+	glVertex2i(0,0);
 	glEnd();  OGL_CHK;
-	;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -5359,7 +5400,7 @@ DEFINE_FUNCTION_FAST( DrawSphere ) {
 	GLUquadric *q = gluNewQuadric();
 	gluQuadricTexture(q, GL_FALSE);
 	gluQuadricNormals(q, GLU_SMOOTH); // GLU_FLAT / GLU_SMOOTH
-	gluSphere(q, radius, slices, stacks);
+	gluSphere(q, radius, slices, stacks);  OGL_CHK;
 	gluDeleteQuadric(q);
 
 	;
@@ -5383,10 +5424,9 @@ DEFINE_FUNCTION_FAST( DrawDisk ) {
 	GLUquadric *q = gluNewQuadric();
 	gluQuadricTexture(q, GL_FALSE);
 	gluQuadricNormals(q, GLU_SMOOTH); // GLU_FLAT / GLU_SMOOTH
-	gluDisk(q, 0, radius, slices, loops);
+	gluDisk(q, 0, radius, slices, loops);  OGL_CHK;
 	gluDeleteQuadric(q);
 
-	;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -5407,9 +5447,11 @@ DEFINE_FUNCTION_FAST( DrawCylinder ) {
 	JL_CHK( JsvalToInt(cx, JL_FARG(5), &stacks) );
 
 	GLUquadric *q = gluNewQuadric();
-	gluQuadricTexture(q, GL_FALSE);
-	gluQuadricNormals(q, GLU_SMOOTH); // GLU_FLAT / GLU_SMOOTH
-	gluCylinder(q, baseRadius, topRadius, height, slices, stacks);
+	gluQuadricTexture(q, GL_FALSE); // GL_TRUE
+	gluQuadricNormals(q, GLU_SMOOTH); // GLU_NONE / GLU_FLAT / GLU_SMOOTH
+	gluQuadricOrientation(q, GLU_OUTSIDE); //  GLU_INSIDE
+	gluQuadricDrawStyle(q, GLU_FILL); // GLU_FILL / GLU_LINE / GLU_SILHOUETTE / GLU_POINT
+	gluCylinder(q, baseRadius, topRadius, height, slices, stacks);  OGL_CHK;
 	gluDeleteQuadric(q);
 
 	return JS_TRUE;
@@ -5818,6 +5860,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(Fog, 2) // pname, param | array of params
 		FUNCTION_FAST_ARGC(Hint, 2) // target, mode
 		FUNCTION_FAST_ARGC(Vertex, 4) // x, y [, z [, w]]
+		FUNCTION_FAST_ARGC(EdgeFlag, 1) // flag
 		FUNCTION_FAST_ARGC(Color, 4) // r, g, b [, a]
 		FUNCTION_FAST_ARGC(Normal, 3) // nx, ny, nz
 		FUNCTION_FAST_ARGC(TexCoord, 3) // s [, t [,r ]]
@@ -5891,6 +5934,7 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(HasExtensionProc, 1) // procName
 		FUNCTION_FAST_ARGC(HasExtensionName, 1) // name
 
+		FUNCTION_FAST_ARGC(BlendEquation, 1) // mode
 		FUNCTION_FAST_ARGC(StencilFuncSeparate, 4) // func, ref, mask
 		FUNCTION_FAST_ARGC(StencilOpSeparate, 4) // fail, zfail, zpass
 		FUNCTION_FAST_ARGC(ActiveStencilFaceEXT, 1) // face
