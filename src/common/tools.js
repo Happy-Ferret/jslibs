@@ -234,24 +234,18 @@ function UI(currentWidth, currentHeight) {
 
 		var source = <><![CDATA[
 
+			const float pi = 3.14159265;
 			uniform mat4 lightMatrix;
 			void main(void) {
-			
-				// gl_NormalMatrix * gl_Normal == vec3(gl_ModelViewMatrix * vec4(gl_Normal,0.0))
-	
-			
-				gl_Position = gl_ModelViewProjectionMatrix * /* lightMatrix * */ gl_Vertex;
-				vec3 normal = vec3(gl_ModelViewProjectionMatrix * vec4(gl_Normal,0.0));
-				
-//				float alpha = sin(dot((gl_NormalMatrix * gl_Normal), vec3(0,0,-1)) * 1.57 ) * gl_Fog.scale * 100.0;
 
-				float alpha = 1.0-abs(normal.z);
-				gl_FrontColor = vec4( gl_Color.rgb, alpha);
+				gl_FrontColor = vec4(gl_Color.rgb, ((gl_NormalMatrix * gl_Normal).z - 0.5) * gl_Color.a);
+				gl_BackColor =  vec4(1,0,0,0.5);
+				gl_Position = ftransform();
 			}
 		]]></>.toString();
 		
 		this.AddVertexShader(Expand(source, { lightIndex: light-Ogl.LIGHT0 }));
-		this.Link();            
+		this.Link();
 	}
 	var lightConeProgram = new LightConeProgram(Ogl.LIGHT0);
 
@@ -351,7 +345,6 @@ function UI(currentWidth, currentHeight) {
 			Ogl.Enable(Ogl.CULL_FACE);
 			Ogl.StencilOp(Ogl.KEEP, Ogl.INCR, Ogl.KEEP);
 			Ogl.CullFace(Ogl.FRONT);
-			Ogl.EndList()
 			var list = Ogl.NewList(false);
 				renderCallback(3); // render occluders shape only
 			Ogl.EndList()
@@ -395,25 +388,64 @@ function UI(currentWidth, currentHeight) {
 			Ogl.LookAt( lightPos[0], lightPos[1], lightPos[2],  lightDir[0], lightDir[1], lightDir[2],  0, 0, 1 );
 			var mat = new Transformation(Ogl).Invert();
 			Ogl.PopMatrix();
-			Ogl.MultMatrix(mat);
-		
-//			DumpMatrix(mat);  Halt();
+
+//			Ogl.MultMatrix(mat);
+//			Ogl.Scale(30);
+
 		
 //			Ogl.PolygonMode(Ogl.FRONT_AND_BACK, Ogl.LINE);
 			
-			Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA); // 
-			Ogl.Color(1,1,1, 0.5)
-			Ogl.Disable(Ogl.CULL_FACE);
+//			Ogl.BlendEquation(Ogl.FUNC_SUBTRACT_EXT);
+			Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE);
+			Ogl.Color(1,1,1, 1);
 			
 			lightConeProgram.On();
 //			lightConeProgram.SetUniformMatrix('lightMatrix', mat);
+			
 			Ogl.Disable(Ogl.CULL_FACE);
+//			Ogl.Enable(Ogl.CULL_FACE);
+			Ogl.CullFace(Ogl.FRONT);
+			
 			Ogl.Enable(Ogl.BLEND);
-			Ogl.DrawCylinder(0.5, 0.5, 1, 96, 1);
+			
+/*
+			Ogl.Begin(Ogl.TRIANGLES);
+			Ogl.Normal(0, 0, 1);
+			Ogl.Vertex(0, 0, 10);
+			
+			var count = 4;
+			var a = Math.PI * 2;
+			var step = a / count;
+			var x = 0, y = 1;
+			for ( var i = 0; i < count; ++i ) {
+			
+				Ogl.Normal(x, y, 0);
+				Ogl.Vertex(x*10, y*10);
+				
+				a -= step;
+				x = Math.sin(a);
+				y = Math.cos(a);
+				
+				Ogl.Normal(x, y, 0);
+				Ogl.Vertex(x*10, y*10);
+				
+				Ogl.Normal(0, 0, 1);
+				Ogl.Vertex(0, 0, 10);
+			}
+			Ogl.End();
+*/
+
+//			var lightFov = Ogl.GetLight(Ogl.LIGHT0, Ogl.SPOT_CUTOFF) * 2;
+		
+			Ogl.DrawCylinder(20, 0, 50, 64, 10);
+
 			Ogl.Disable(Ogl.BLEND);
 			Ogl.Enable(Ogl.CULL_FACE);
+			Ogl.CullFace(Ogl.BACK);
+
 			lightConeProgram.Off();
 //			Ogl.PolygonMode(Ogl.FRONT_AND_BACK, Ogl.FILL);
+
 //		}
 		
 		Ogl.Enable(Ogl.LIGHTING);
