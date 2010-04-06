@@ -35,14 +35,14 @@ function Floor() {
 	var shapeCL, objectCL;
 	this.Compile = function() {
 
-		var cx = 10, cy = 10;
+		var cx = 50, cy = 50;
 
 		objectCL = Ogl.NewList(true);
 
 		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
 		Ogl.Material(Ogl.FRONT, Ogl.EMISSION, 0, 0, 0, 1);
 
-		Ogl.Scale(20, 20, 1);
+		Ogl.Scale(1, 1, 1);
 		Ogl.Normal(0, 0, 1);
 		Ogl.Begin(Ogl.QUADS);
 		for ( var x = -cx; x < cx; x++ )
@@ -119,6 +119,32 @@ function Ball(pos) {
 	}
 	this.Compile();	
 }
+
+/*
+			Ogl.Begin(Ogl.TRIANGLES);
+			Ogl.Normal(0, 0, 1);
+
+			var count = 40;
+			var a = 0;
+			var step = Math.PI * 2 / count;
+			var x = 1, y = 0;
+			for ( var i = 0; i < count; ++i ) {
+			
+				Ogl.Normal(x, y, 0);
+				Ogl.Vertex(x*10, y*10);
+				
+				a += step;
+				x = Math.cos(a);
+				y = Math.sin(a);
+				
+				Ogl.Normal(x, y, 0);
+				Ogl.Vertex(x*10, y*10);
+				
+				Ogl.Normal(0, 0, 1);
+				Ogl.Vertex(0, 0, 40);
+			}
+			Ogl.End();
+*/
 
 
 var FullCube = function(edged, exNorm) {
@@ -231,11 +257,11 @@ var scene = [];
 
 var ball = new Ball([0, 0, 2]);
 ball.body.linearVel = [0, 0, 10];
-//scene.push( ball );
+scene.push( ball );
 
 var ball = new Ball([0, 1, 40]);
 ball.body.linearVel = [0, 0, -10];
-//scene.push( ball );
+scene.push( ball );
 
 
 scene.push( new Floor() );
@@ -297,8 +323,8 @@ var vmove = 0;
 ui.Draw = function(frame) {
 
 	Ogl.LookAt(Math.cos(vmove/100)*50, Math.sin(vmove/100)*50, Math.cos(vmove/100)*25+40, 0,0,0, 0,0,1);
-	
-	ui.SetLight([15,15,40, 1]);
+
+	ui.SetLight([10,10,30, 1], [0,0,0]);
 
 	if ( !ui.keyState.s ) {
 

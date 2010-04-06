@@ -26,7 +26,12 @@
 
 ALWAYS_INLINE float DEG_TO_RAD( const float angle ) {
 
-	return -((float)(angle)) * ((float)M_PI) / 180.0f;
+	return -(angle) * ((float)M_PI) / 180.0f;
+}
+
+ALWAYS_INLINE float RAD_TO_DEG( const float rad ) {
+
+	return rad * (-180.f / (float)M_PI);
 }
 
 // (TBD) move this in the class private

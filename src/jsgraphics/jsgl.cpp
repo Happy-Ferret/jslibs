@@ -2536,44 +2536,6 @@ DEFINE_FUNCTION_FAST( Perspective ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz )
-  $H API
-   gluLookAt
-**/
-DEFINE_FUNCTION_FAST( LookAt ) {
-
-	JL_S_ASSERT_ARG(9);
-	JL_S_ASSERT_NUMBER(JL_FARG(1));
-	JL_S_ASSERT_NUMBER(JL_FARG(2));
-	JL_S_ASSERT_NUMBER(JL_FARG(3));
-	JL_S_ASSERT_NUMBER(JL_FARG(4));
-	JL_S_ASSERT_NUMBER(JL_FARG(5));
-	JL_S_ASSERT_NUMBER(JL_FARG(6));
-	JL_S_ASSERT_NUMBER(JL_FARG(7));
-	JL_S_ASSERT_NUMBER(JL_FARG(8));
-	JL_S_ASSERT_NUMBER(JL_FARG(9));
-
-	double eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz;
-	JsvalToDouble(cx, JL_FARG(1), &eyex);
-	JsvalToDouble(cx, JL_FARG(2), &eyey);
-	JsvalToDouble(cx, JL_FARG(3), &eyez);
-
-	JsvalToDouble(cx, JL_FARG(4), &centerx);
-	JsvalToDouble(cx, JL_FARG(5), &centery);
-	JsvalToDouble(cx, JL_FARG(6), &centerz);
-
-	JsvalToDouble(cx, JL_FARG(7), &upx);
-	JsvalToDouble(cx, JL_FARG(8), &upy);
-	JsvalToDouble(cx, JL_FARG(9), &upz);
-
-	gluLookAt(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz);  OGL_CHK;
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-/**doc
-$TOC_MEMBER $INAME
  $VOID $INAME( mode )
   $H arguments
    $ARG GLenum mode
@@ -5622,7 +5584,7 @@ DEFINE_FUNCTION_FAST( DrawBox ) {
 
 	glEnd();  OGL_CHK;
 
-
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -5647,7 +5609,101 @@ DEFINE_FUNCTION_FAST( FullQuad ) {
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
 
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz )
+  $H API
+   gluLookAt
+**/
+DEFINE_FUNCTION_FAST( LookAt ) {
+
+	JL_S_ASSERT_ARG(9);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
+	JL_S_ASSERT_NUMBER(JL_FARG(2));
+	JL_S_ASSERT_NUMBER(JL_FARG(3));
+	JL_S_ASSERT_NUMBER(JL_FARG(4));
+	JL_S_ASSERT_NUMBER(JL_FARG(5));
+	JL_S_ASSERT_NUMBER(JL_FARG(6));
+	JL_S_ASSERT_NUMBER(JL_FARG(7));
+	JL_S_ASSERT_NUMBER(JL_FARG(8));
+	JL_S_ASSERT_NUMBER(JL_FARG(9));
+
+	double eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz;
+	JsvalToDouble(cx, JL_FARG(1), &eyex);
+	JsvalToDouble(cx, JL_FARG(2), &eyey);
+	JsvalToDouble(cx, JL_FARG(3), &eyez);
+
+	JsvalToDouble(cx, JL_FARG(4), &centerx);
+	JsvalToDouble(cx, JL_FARG(5), &centery);
+	JsvalToDouble(cx, JL_FARG(6), &centerz);
+
+	JsvalToDouble(cx, JL_FARG(7), &upx);
+	JsvalToDouble(cx, JL_FARG(8), &upy);
+	JsvalToDouble(cx, JL_FARG(9), &upz);
+
+	gluLookAt(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz);  OGL_CHK;
+	*JL_FRVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( pointX, pointY, pointZ [, upx, upy, upz] )
+**/
+DEFINE_FUNCTION_FAST( AimAt ) {
+
+	JL_S_ASSERT_ARG_RANGE(3,6);
+	JL_S_ASSERT_NUMBER(JL_FARG(1));
+	JL_S_ASSERT_NUMBER(JL_FARG(2));
+	JL_S_ASSERT_NUMBER(JL_FARG(3));
+
+	float px, py, pz, ux, uy, uz;
+	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &px) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &py) );
+	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &pz) );
+
+	if ( JL_ARGC == 6 ) {
+
+		JL_S_ASSERT_NUMBER(JL_FARG(4));
+		JL_S_ASSERT_NUMBER(JL_FARG(5));
+		JL_S_ASSERT_NUMBER(JL_FARG(6));
+
+		JL_CHK( JsvalToFloat(cx, JL_FARG(4), &ux) );
+		JL_CHK( JsvalToFloat(cx, JL_FARG(5), &uy) );
+		JL_CHK( JsvalToFloat(cx, JL_FARG(6), &uz) );
+	} else {
+
+		ux = 0.00001f;
+		uy = 0.00001f;
+		uz = 1.f;
+	}
+
+	Vector3 to, up, t;
+	Vector3Set(&to, px,py,pz);
+	Vector3Set(&up, ux,uy,uz);
+	Vector3Normalize(&to, &to);
+	Vector3Cross(&t, &up, &to);
+	Vector3Normalize(&t, &t);
+	Vector3Cross(&up, &to, &t);
+
+	float m[16] = {
+		t.x,  t.y,  t.z,  0,
+		up.x, up.y, up.z, 0,
+		to.x, to.y, to.z, 0,
+		0, 0, 0, 1
+	};
+
+	glMultMatrixf(m);
+
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -5673,9 +5729,12 @@ DEFINE_FUNCTION_FAST( KeepTranslation ) {
 	m[15] = 1.f;
 	glLoadMatrixf(m);  OGL_CHK;
 
-	;
+	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
+
+
+
 
 
 /**doc
@@ -5897,7 +5956,6 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(Viewport, 4) // x, y, width, height
 		FUNCTION_FAST_ARGC(Frustum, 6) // left, right, bottom, top, zNear, zFar
 		FUNCTION_FAST_ARGC(Perspective, 4) // fovY, aspectRatio, zNear, zFar (non-OpenGL API)
-		FUNCTION_FAST_ARGC(LookAt, 9) // (non-OpenGL API)
 		FUNCTION_FAST_ARGC(Ortho, 6) // left, right, bottom, top, zNear, zFar
 		FUNCTION_FAST_ARGC(MatrixMode, 1) // mode
 		FUNCTION_FAST_ARGC(LoadIdentity, 0)
@@ -5997,6 +6055,8 @@ CONFIGURE_CLASS
 		FUNCTION_FAST_ARGC(DrawBox, 3)
 		FUNCTION_FAST_ARGC(FullQuad, 0)
 
+		FUNCTION_FAST_ARGC(LookAt, 9) // (non-OpenGL API)
+		FUNCTION_FAST_ARGC(AimAt, 6)
 		FUNCTION_FAST_ARGC(KeepTranslation, 0)
 	END_STATIC_FUNCTION_SPEC
 
