@@ -13,6 +13,7 @@ function UI(currentWidth, currentHeight) {
 	//LoadModule('jsimage');
 	LoadModule('jsprotex');
 	//LoadModule('jstrimesh');
+	LoadModule('jssvg');
 	
 	this.frame = 0;
 	
@@ -39,7 +40,9 @@ function UI(currentWidth, currentHeight) {
 	
 //	Print( 'OpenGL version ', Ogl.GetString(Ogl.VERSION), '\n' );
 
-//	Assert( Ogl.HasExtensionName('GL_EXT_stencil_two_side') );
+//	Assert( Ogl.HasExtensionName('GL_EXT_stencil_two_side', 'GL_ARB_texture_env_combine') );
+	Assert( Ogl.HasExtensionName('GL_ARB_texture_env_combine') );
+
 
 
 	Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
@@ -407,50 +410,17 @@ function UI(currentWidth, currentHeight) {
 		Ogl.DepthMask(true);
 		Ogl.DepthFunc(Ogl.LEQUAL);
 		
-//		if ( hasFog ) {
-
-/*
-			Ogl.PushMatrix();
-			Ogl.LoadIdentity();
-			var lightFov = Ogl.GetLight(Ogl.LIGHT0, Ogl.SPOT_CUTOFF) * 2;
-			Ogl.Perspective(lightFov, 1, 1, 100);
-			Ogl.LookAt( lightPos[0], lightPos[1], lightPos[2],  lightDir[0], lightDir[1], lightDir[2],  0, 0, 1 );
-			var mat = new Transformation(Ogl).Invert();
-			Ogl.PopMatrix();
-			Ogl.MultMatrix(mat);
-*/
+		if ( hasFog ) {
+			Ogl.Disable( Ogl.TEXTURE_2D );
 			
-//			Ogl.Scale(30);
-		
-//			Ogl.PolygonMode(Ogl.FRONT_AND_BACK, Ogl.LINE);
-			
-//			Ogl.BlendEquation(Ogl.FUNC_SUBTRACT_EXT);
 			Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE);
 			Ogl.Color(1,1,1, 1);
-			
 			lightConeProgram.On();
-//			lightConeProgram.SetUniformMatrix('lightMatrix', mat);
-			
-//			Ogl.Disable(Ogl.CULL_FACE);
+
 			Ogl.Enable(Ogl.CULL_FACE);
 			Ogl.CullFace(Ogl.BACK);
 			
 			Ogl.Enable(Ogl.BLEND);
-
-/*
-		Ogl.Translate(0,0,10);
-		var size = 20;
-		with (Ogl) {
-			Disable(DEPTH_TEST);
-			Begin(LINES);
-			Color( 1,0,0, 0.75 ); Vertex( 0,0,0 ); Vertex( size,0,0 );
-			Color( 0,1,0, 0.75 ); Vertex( 0,0,0 ); Vertex( 0,size,0 );
-			Color( 0,0,1, 0.75 ); Vertex( 0,0,0 ); Vertex( 0,0,size );
-			End();
-			Enable(DEPTH_TEST);
-		}
-		Ogl.Color(1);
-*/		
 
 			Ogl.Translate(lightPos[0], lightPos[1], lightPos[2]);
 			Ogl.AimAt(lightDir[0]-lightPos[0], lightDir[1]-lightPos[1], lightDir[2]-lightPos[2]);
@@ -470,9 +440,7 @@ function UI(currentWidth, currentHeight) {
 			Ogl.Color(0,0,0,1);
 			Ogl.Translate(0,0,-2);
 			Ogl.DrawCylinder(0, 2, 3, 16, 1);
-			
-//			Ogl.PolygonMode(Ogl.FRONT_AND_BACK, Ogl.FILL);
-//		}
+		}
 		
 		Ogl.Enable(Ogl.LIGHTING);
 	}
@@ -515,18 +483,16 @@ function UI(currentWidth, currentHeight) {
 	}
 
 
-	function SpotlightTexture() {
-	
-		var mat = new Transformation();
-		
+	this.EnableSpotlightTexture = function() {
+
 		Ogl.PushMatrix();
 		Ogl.LoadIdentity();
+		Ogl.Translate(0.5, 0.5, 0.5);
+		Ogl.Scale(0.5);
 		var lightFov = Ogl.GetLight(Ogl.LIGHT0, Ogl.SPOT_CUTOFF) * 2;
-		Ogl.Perspective(lightFov, 1, 30, 50);
-		mat.Product(Ogl);
-		Ogl.LoadIdentity();
-		Ogl.LookAt( lightPos[0], lightPos[1], lightPos[2],  lightDir[0], lightDir[1], lightDir[2],  0, 0, 1 );
-		mat.Product(Ogl);
+		Ogl.Perspective(lightFov, 1, 1, 100);
+		Ogl.LookAt( lightPos[0], lightPos[1], lightPos[2],  lightDir[0], lightDir[1], lightDir[2],  0, 0, -1 );
+		var mat = Ogl.Get(Ogl.MODELVIEW_MATRIX);
 		Ogl.PopMatrix();
 	
 		//Set up texture coordinate generation.
@@ -534,16 +500,24 @@ function UI(currentWidth, currentHeight) {
 		Ogl.TexGen(Ogl.S, Ogl.EYE_PLANE, mat[0], mat[4], mat[8], mat[12]);
 		Ogl.TexGen(Ogl.T, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
 		Ogl.TexGen(Ogl.T, Ogl.EYE_PLANE, mat[1], mat[5], mat[9], mat[13]);
-		Ogl.TexGen(Ogl.R, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
-		Ogl.TexGen(Ogl.R, Ogl.EYE_PLANE, mat[2], mat[6], mat[10], mat[14]);
+//		Ogl.TexGen(Ogl.R, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
+//		Ogl.TexGen(Ogl.R, Ogl.EYE_PLANE, mat[2], mat[6], mat[10], mat[14]);
 		Ogl.TexGen(Ogl.Q, Ogl.TEXTURE_GEN_MODE, Ogl.EYE_LINEAR);
 		Ogl.TexGen(Ogl.Q, Ogl.EYE_PLANE, mat[3], mat[7], mat[11], mat[15]);
 
-		Ogl.Enable(Ogl.TEXTURE_GEN_S, Ogl.TEXTURE_GEN_T, Ogl.TEXTURE_GEN_R, Ogl.TEXTURE_GEN_Q);
+		Ogl.Enable(Ogl.TEXTURE_GEN_S, Ogl.TEXTURE_GEN_T, Ogl.TEXTURE_GEN_Q);
+//		Ogl.Enable(Ogl.TEXTURE_GEN_R);
 	}
 
+	this.DisableSpotlightTexture = function() {
+		
+		Ogl.Disable(Ogl.TEXTURE_GEN_S, Ogl.TEXTURE_GEN_T, Ogl.TEXTURE_GEN_Q);
+//		Ogl.Disable(Ogl.TEXTURE_GEN_R);
+	}
 
 	var testTexture = CreateTexture();
+	this.testTexture = testTexture;
+	
 
 	var shadowMapSize = 128;
 	var shadowMapTexture = Ogl.GenTexture();
@@ -728,7 +702,7 @@ function UI(currentWidth, currentHeight) {
 		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.NEAREST);
 		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.NEAREST);
 		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_S, Ogl.CLAMP);
-		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_T, Ogl.CLAMP);		
+		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_T, Ogl.CLAMP);
 		Ogl.DefineTextureImage(Ogl.TEXTURE_2D, undefined, texture);
 		texture.Free();
 		return glTexture;
@@ -763,8 +737,16 @@ function UI(currentWidth, currentHeight) {
 	var fps = 0.;
 	var fpsArray = [];
 	
+	var isInit = false;
 
 	function SurfaceReady() {
+	
+		if ( !isInit ) {
+
+			this.Init && this.Init();
+			isInit = true;
+		}
+
 		
 		var t0 = TimeCounter();
 		Ogl.Viewport(0, 0, videoWidth, videoHeight);

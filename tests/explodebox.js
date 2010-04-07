@@ -8,7 +8,7 @@ var ui = new UI(320, 320);
 
 var world = new World();
 world.quickStepNumIterations = 5;
-world.gravity = [0,0,-9.8 / 5];
+world.gravity = [0,0,-9.8 / 1];
 world.linearDamping = 0.01;
 world.angularDamping = 0.01;
 //world.linearDampingThreshold = 0;
@@ -35,14 +35,15 @@ function Floor() {
 	var shapeCL, objectCL;
 	this.Compile = function() {
 
-		var cx = 50, cy = 50;
+		var cx = 10, cy = 10;
+		var sx = 5, sy = 5;
 
 		objectCL = Ogl.NewList(true);
 
 		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
 		Ogl.Material(Ogl.FRONT, Ogl.EMISSION, 0, 0, 0, 1);
 
-		Ogl.Scale(1, 1, 1);
+		//Ogl.Scale(5);
 		Ogl.Normal(0, 0, 1);
 		Ogl.Begin(Ogl.QUADS);
 		for ( var x = -cx; x < cx; x++ )
@@ -52,13 +53,13 @@ function Floor() {
 				else
 					Ogl.Material(Ogl.FRONT, Ogl.DIFFUSE, 0.8, 0.8, 0.8, 1);
 				Ogl.TexCoord(0,0);
-				Ogl.Vertex(x,y);
+				Ogl.Vertex(x*sx,y*sy);
 				Ogl.TexCoord(1,0);
-				Ogl.Vertex(x+1,y);
+				Ogl.Vertex((x+1)*sx,y*sy);
 				Ogl.TexCoord(1,1);
-				Ogl.Vertex(x+1,y+1);
+				Ogl.Vertex((x+1)*sx,(y+1)*sy);
 				Ogl.TexCoord(0,1);
-				Ogl.Vertex(x,y+1);
+				Ogl.Vertex(x*sx,(y+1)*sy);
 			}
 		Ogl.End();
 		Ogl.EndList();
@@ -97,8 +98,7 @@ function Ball(pos) {
 	this.Compile = function() {
 
 		shapeCL = Ogl.NewList(true);
-		// Ogl.DrawSphere(geom.radius, 4, 2); // diamond
-		Ogl.DrawSphere(geom.radius, 16, 8);
+		Ogl.DrawSphere(geom.radius, 16, 8);  // Ogl.DrawSphere(geom.radius, 4, 2); // diamond
 		Ogl.EndList();
 		
 		objectCL = Ogl.NewList(true);
@@ -320,15 +320,73 @@ ui.key.p = function(down) {
 
 var vmove = 0;
 
+var spotlightTexture;
+ui.Init = function() {
+
+/*
+	var smiley = new SVG();	
+	smiley.Write(<svg version="1.1" baseProfile="full" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" zoomAndPan="magnify" id="Test File" viewBox="-21 -21 42 42">
+		<defs>
+		<radialGradient id="shine" cx=".2" cy=".2" r=".5" fx=".2" fy=".2">
+		  <stop offset="0" stop-color="white" stop-opacity=".7"/>
+		  <stop offset="1" stop-color="white" stop-opacity="0"/>
+		</radialGradient>
+		<radialGradient id="grad" cx=".5" cy=".5" r=".5" >
+		  <stop offset="0" stop-color="yellow"/>
+		  <stop offset=".75" stop-color="yellow"/>
+		  <stop offset=".95" stop-color="#ee0"/>
+		  <stop offset="1" stop-color="#e8e800"/>
+		</radialGradient>
+		</defs>
+		<circle r="20" stroke="black" stroke-width=".15" fill="url(#grad)"/>
+		<circle r="20" fill="url(#shine)"/>
+		<g id="right">
+		  <ellipse rx="2.5" ry="4" cx="-6" cy="-7" fill="black"/>
+		  <path fill="none" stroke="black" stroke-width=".5" stroke-linecap="round" d="M 10.6,2.7 a 4,4,0 0,0 4,3"/>
+		</g>
+		<use xlink:href="#right" transform="scale(-1,1)"/>
+		<path fill="none" stroke="black" stroke-width=".75" d="M -12,5 A 13.5,13.5,0 0,0 12,5 A 13,13,0 0,1 -12,5"/>
+	</svg>);
+	var texture = new Texture(smiley.RenderImage(256, 256, 3, true));
+*/
+
+	var size = 256;
+	var texture = new Texture(size, size, 1);
+	texture.Set(0);
+//	texture.AddGradiantRadial( [1,0,1,0,1,0,1,0] );
+	function curveGaussian(c) function(x) Math.exp( -(x*x)/(2*c*c) );
+	function sigmoid(c, d) function(x) 1/(Math.exp(c*(x-d))+1)
+	texture.AddGradiantRadial( sigmoid( 60, 0.97 ) ).Add(-0.3);
+
+	spotlightTexture = Ogl.GenTexture();
+	Ogl.BindTexture(Ogl.TEXTURE_2D, spotlightTexture);
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.LINEAR);
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_S, Ogl.CLAMP);
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_T, Ogl.CLAMP);
+	Ogl.DefineTextureImage(Ogl.TEXTURE_2D, undefined, texture);
+	texture.Free();
+}
+
 ui.Draw = function(frame) {
 
 	Ogl.LookAt(Math.cos(vmove/100)*50, Math.sin(vmove/100)*50, Math.cos(vmove/100)*25+40, 0,0,0, 0,0,1);
 
 	ui.SetLight([10,10,30, 1], [0,0,0]);
 
+
 	if ( !ui.keyState.s ) {
 
+		Ogl.ActiveTexture(Ogl.TEXTURE1);
+		Ogl.BindTexture(Ogl.TEXTURE_2D, spotlightTexture);
+		Ogl.TexEnv(Ogl.TEXTURE_ENV, Ogl.TEXTURE_ENV_MODE, Ogl.MODULATE);
+		Ogl.Enable(Ogl.TEXTURE_2D);
+//		Ogl.Disable(Ogl.LIGHTING);
+
 		ui.RenderWithShadows3(function( flags ) {
+			
+			if ( flags & 4 )
+				ui.EnableSpotlightTexture();
 
 			for ( var i = scene.length - 1; i >= 0; --i ) {
 			
@@ -336,7 +394,13 @@ ui.Draw = function(frame) {
 				if ( object.castShadow != !(flags & 2) || object.receiveShadow != !(flags & 4) )
 					object.Render(flags & 1); // != 0 : shapeOnly
 			}
+			
+			if ( flags & 4 )
+				ui.DisableSpotlightTexture();
+			
 		}, [0,0,1,0]);
+
+		Ogl.Disable(Ogl.TEXTURE_2D);
 	} else {
 
 		for ( var i = scene.length - 1; i >= 0; --i )
