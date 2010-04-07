@@ -151,6 +151,19 @@ JL_MACRO_END
 
 #define DECLARE_OPENGL_EXTENSION( NAME, PROTOTYPE ) static PROTOTYPE NAME = NULL;
 
+#define INIT_OPENGL_EXTENSION( NAME, PROTOTYPE ) \
+JL_MACRO_BEGIN \
+	if ( NAME == NULL ) \
+		NAME = (PROTOTYPE)glGetProcAddress( #NAME ); \
+JL_MACRO_END
+
+#define JL_INIT_OPENGL_EXTENSION( NAME, PROTOTYPE ) \
+JL_MACRO_BEGIN \
+	INIT_OPENGL_EXTENSION(NAME, PROTOTYPE); \
+	JL_S_ASSERT( NAME != NULL, "OpenGL extension %s is unavailable.", #NAME ); \
+JL_MACRO_END
+
+
 DECLARE_OPENGL_EXTENSION( glBlendColor, PFNGLBLENDCOLORPROC);
 DECLARE_OPENGL_EXTENSION( glBlendEquation, PFNGLBLENDEQUATIONPROC);
 DECLARE_OPENGL_EXTENSION( glDrawRangeElements, PFNGLDRAWRANGEELEMENTSPROC);
@@ -243,43 +256,6 @@ DECLARE_OPENGL_EXTENSION( glVertexAttrib4dARB, PFNGLVERTEXATTRIB4DARBPROC );
 DECLARE_OPENGL_EXTENSION( glStencilOpSeparate, PFNGLSTENCILOPSEPARATEPROC );
 DECLARE_OPENGL_EXTENSION( glStencilFuncSeparate, PFNGLSTENCILFUNCSEPARATEPROC );
 DECLARE_OPENGL_EXTENSION( glActiveStencilFaceEXT, PFNGLACTIVESTENCILFACEEXTPROC );
-
-
-/* test for gl ext initialization. (TBD) apply this initialization method
-
-void APIENTRY init_glPointParameteri(GLenum e, GLint i);
-PFNGLPOINTPARAMETERIPROC glPointParameteri = init_glPointParameteri;
-void APIENTRY init_glPointParameteri(GLenum e, GLint i) {
-
-	glPointParameteri = (PFNGLPOINTPARAMETERIPROC)glGetProcAddress("glPointParameteri");
-	if ( glPointParameteri == NULL )
-		glPointParameteri = init_glPointParameteri;
-	else
-		return glPointParameteri(e, i);
-}
-*/
-
-/*
-#define LOAD_OPENGL_EXTENSION( name, proto ) \
-	if ( name != NULL ) \
-		JL_REPORT_WARNING("OpenGL extension %s has already been loaded.", #name ); \
-	name = (proto) glGetProcAddress( #name ); \
-	if ( name == NULL ) \
-		JL_REPORT_WARNING("OpenGL extension %s unavailable", #name );
-*/
-
-#define INIT_OPENGL_EXTENSION( NAME, PROTOTYPE ) \
-JL_MACRO_BEGIN \
-	if ( NAME == NULL ) \
-		NAME = (PROTOTYPE)glGetProcAddress( #NAME ); \
-JL_MACRO_END
-
-#define JL_INIT_OPENGL_EXTENSION( NAME, PROTOTYPE ) \
-JL_MACRO_BEGIN \
-	INIT_OPENGL_EXTENSION(NAME, PROTOTYPE); \
-	JL_S_ASSERT( NAME != NULL, "OpenGL extension %s is unavailable.", #NAME ); \
-JL_MACRO_END
-
 
 
 
@@ -5293,8 +5269,13 @@ DEFINE_FUNCTION_FAST( PixelWidthFactor ) {
 	GLfloat m[16];
 	glGetIntegerv(GL_VIEWPORT, viewport);  OGL_CHK;
 	glGetFloatv(GL_PROJECTION_MATRIX, m);  OGL_CHK;
-	;
-	return FloatToJsval(cx, viewport[2] * m[0], JL_FRVAL); // viewportHeight = viewport[3];
+
+	float w;
+	w = viewport[2] * m[0];
+//	float h;
+//	h = viewport[3] * m[5];
+
+	return FloatToJsval(cx, w, JL_FRVAL); // sqrt(w*w+h*h)
 	JL_BAD;
 }
 
@@ -5756,49 +5737,6 @@ DEFINE_PROPERTY( error ) {
 	return JS_TRUE;
 }
 
-
-/*
-/ **doc
-$TOC_MEMBER $INAME
- $STR $INAME $READONLY
-** /
-DEFINE_PROPERTY(vendor) {
-
-	return StringToJsval(cx, (char*)glGetString(GL_VENDOR), vp);  OGL_CHK;
-}
-
-/ **doc
-$TOC_MEMBER $INAME
- $STR $INAME $READONLY
-** /
-DEFINE_PROPERTY(renderer) {
-
-	return StringToJsval(cx, (char*)glGetString(GL_RENDERER), vp);  OGL_CHK;
-}
-
-/ **doc
-$TOC_MEMBER $INAME
- $STR $INAME $READONLY
-** /
-DEFINE_PROPERTY( version ) {
-
-	if ( !StringToJsval(cx, (char*)glGetString(GL_VERSION), vp) ) { OGL_CHK;
-		
-		return JS_FALSE;
-	}
-
-	return JL_StoreProperty(cx, obj, id, vp, true);
-}
-
-/ **doc
-$TOC_MEMBER $INAME
- $STR $INAME $READONLY
-** /
-DEFINE_PROPERTY(extensions) {
-
-	return StringToJsval(cx, (char*)glGetString(GL_EXTENSIONS), vp);  OGL_CHK;
-}
-*/
 
 
 static int MatrixGet(JSContext *cx, JSObject *obj, float **m) {
