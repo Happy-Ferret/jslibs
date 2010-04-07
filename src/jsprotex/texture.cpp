@@ -316,7 +316,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, unsigned int length, fl
 
 		jsuint curveArrayLength;
 		JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(value), &curveArrayLength) );
-		JL_S_ASSERT( curveArrayLength < 1, "Invalid array size." );
+		JL_S_ASSERT( curveArrayLength >= 1, "Invalid array size." );
 		PTYPE *curveArray;
 		curveArray = (PTYPE*)alloca(curveArrayLength * sizeof(PTYPE));
 		uint32 tmp;
