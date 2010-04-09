@@ -159,17 +159,20 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	JL_S_ASSERT_ARG_RANGE( 1, COUNTOF(mpv->processEventThreadInfo) );
 	ProcessEvent *peList[COUNTOF(mpv->processEventThreadInfo)]; // cache to avoid calling GetHandlePrivate() too often.
 
-	for ( uintN i = 0; i < argc; ++i ) {
+	uintN i;
+	for ( i = 0; i < argc; ++i ) {
 
 		JL_S_ASSERT( IsHandleType(cx, JL_ARGV[i], 'pev'), "Invalid event handle." );
 		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, JL_ARGV[i]);
 		JL_S_ASSERT_RESOURCE( pe );
-		peList[i] = pe;
-
 		JL_ASSERT( pe->startWait );
 		JL_ASSERT( pe->cancelWait );
 		JL_ASSERT( pe->endWait );
-		
+		peList[i] = pe;
+	}
+
+	for ( i = 0; i < argc; ++i ) {
+
 		ProcessEventThreadInfo *ti = &mpv->processEventThreadInfo[i];
 		if ( ti->thread == 0 ) { // create the thread stuff, see jl_cmalloc in jslangModuleInit()
 
@@ -184,14 +187,14 @@ DEFINE_FUNCTION( ProcessEvents ) {
 		JL_ASSERT( ti->peSlot == NULL );
 		JL_ASSERT( ti->isEnd == false );
 
-		ti->peSlot = pe;
+		ti->peSlot = peList[i];
 		JLSemaphoreRelease(ti->startSem);
 	}
 
 	JLSemaphoreAcquire(mpv->processEventSignalEventSem, JLINFINITE); // wait for an event (timeout can also be managed here)
 	JLSemaphoreRelease(mpv->processEventSignalEventSem);
 
-	for ( uintN i = 0; i < argc; ++i ) {
+	for ( i = 0; i < argc; ++i ) {
 
 		volatile ProcessEvent *peSlot = mpv->processEventThreadInfo[i].peSlot; // avoids to mutex ti->mpSlot access.
 		if ( peSlot != NULL ) { // see ProcessEventThread(). if peSlot is null this mean that peSlot->startWait() has returned.
@@ -210,7 +213,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 		}
 	}
 
-	for ( uintN i = 0; i < argc; ++i ) {
+	for ( i = 0; i < argc; ++i ) {
 
 		st = JLSemaphoreAcquire(mpv->processEventSignalEventSem, -1);
 		JL_ASSERT( st );
@@ -222,7 +225,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	bool hasEvent;
 	JSBool ok;
 	ok = JS_TRUE;
-	for ( uintN i = 0; i < argc; ++i ) {
+	for ( i = 0; i < argc; ++i ) {
 
 		ProcessEvent *pe = peList[i];
 		
@@ -245,7 +248,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	}
 
 #ifdef DEBUG
-	for ( uintN i = 0; i < argc; ++i )
+	for ( i = 0; i < argc; ++i )
 		JL_ASSERT( mpv->processEventThreadInfo[i].peSlot == NULL );
 	JL_ASSERT( JLSemaphoreAcquire(mpv->processEventSignalEventSem, 0) == JLTIMEOUT ); // else invalid state
 #endif // DEBUG

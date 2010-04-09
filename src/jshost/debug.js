@@ -7,12 +7,13 @@
 // jslang_test(); throw 0;
 
 
-LoadModule('jsstd');
+//LoadModule('jsstd');
 
 
 while ( !endSignal )
 	ProcessEvents( EndSignalEvents() ); // MetaPollTimeout(50)
-Halt();
+
+throw 0;
 
 
 LoadModule('jsstd');
