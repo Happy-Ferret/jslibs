@@ -2972,8 +2972,10 @@ DEFINE_FUNCTION_FAST( BindTexture ) {
 
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_FARG(1));
-	JL_S_ASSERT_INT(JL_FARG(2));
-	glBindTexture( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ));  OGL_CHK;
+//	JL_S_ASSERT_INT(JL_FARG(2));
+	int texture;
+	JL_CHK( JsvalToInt(cx, JL_FARG(2), &texture) );
+	glBindTexture( JSVAL_TO_INT( JL_FARG(1) ), texture);  OGL_CHK;
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -5642,6 +5644,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( AimAt ) {
 
 	JL_S_ASSERT_ARG_RANGE(3,6);
+
 	JL_S_ASSERT_NUMBER(JL_FARG(1));
 	JL_S_ASSERT_NUMBER(JL_FARG(2));
 	JL_S_ASSERT_NUMBER(JL_FARG(3));
@@ -5713,9 +5716,6 @@ DEFINE_FUNCTION_FAST( KeepTranslation ) {
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
-
-
-
 
 
 /**doc
