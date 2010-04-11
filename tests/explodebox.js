@@ -2,7 +2,10 @@ LoadModule('jsstd');
 LoadModule('jsode');
 LoadModule('jsimage');
 
-Exec('../common/tools.js');
+Exec('../common/tools3d.js');
+
+LoadModule('jsvideoinput');
+var vi = new VideoInput('QuickCam', 1, 1, 15); // try to get the smallest size and the lowest fps
 
 var ui = new UI(320, 320);
 
@@ -120,87 +123,13 @@ function Ball(pos) {
 	this.Compile();	
 }
 
-/*
-			Ogl.Begin(Ogl.TRIANGLES);
-			Ogl.Normal(0, 0, 1);
-
-			var count = 40;
-			var a = 0;
-			var step = Math.PI * 2 / count;
-			var x = 1, y = 0;
-			for ( var i = 0; i < count; ++i ) {
-			
-				Ogl.Normal(x, y, 0);
-				Ogl.Vertex(x*10, y*10);
-				
-				a += step;
-				x = Math.cos(a);
-				y = Math.sin(a);
-				
-				Ogl.Normal(x, y, 0);
-				Ogl.Vertex(x*10, y*10);
-				
-				Ogl.Normal(0, 0, 1);
-				Ogl.Vertex(0, 0, 40);
-			}
-			Ogl.End();
-*/
-
-
-var FullCube = function(edged, exNorm) {
-
-	function Face() {
-
-		Ogl.Begin(Ogl.QUADS);
-		exNorm || Ogl.Normal(0, 0, -1);
-		exNorm && Ogl.Normal(1, 1, -1);
-		Ogl.TexCoord(0, 1);
-		Ogl.Vertex( .5, .5, -0.5);
-		exNorm && Ogl.Normal(1, -1, -1);
-		Ogl.TexCoord(0, 0);
-		Ogl.Vertex( .5,-.5, -0.5);
-		exNorm && Ogl.Normal(-1, -1, -1);
-		Ogl.TexCoord(1, 0);
-		Ogl.Vertex(-.5,-.5, -0.5);
-		exNorm && Ogl.Normal(-1, 1, -1);
-		Ogl.TexCoord(1, 1);
-		Ogl.Vertex(-.5, .5, -0.5);
-		Ogl.End();
-	}
-	
-	function Edge() {
-		if ( !edged )
-			return;
-		Ogl.Begin(Ogl.QUADS);
-		Ogl.Normal(1, 0, 0); Ogl.Vertex(.5, .5, -.5);
-		Ogl.Normal(1, 0, 0); Ogl.Vertex(.5,-.5, -.5);
-		Ogl.Normal(0, 0,-1); Ogl.Vertex(.5,-.5, -.5);
-		Ogl.Normal(0, 0,-1); Ogl.Vertex(.5, .5, -.5);
-		Ogl.End();
-	}
-	
-	Ogl.Rotate(90, 0,1,0); Face(); Edge();
-	Ogl.Rotate(90, 0,1,0); Face(); Edge();
-	Ogl.Rotate(90, 0,1,0); Face(); Edge();
-	Ogl.Rotate(90, 0,1,0); Face(); Edge();
-	Ogl.Rotate(90, 1,0,0); Face(); Edge();
-	Ogl.Rotate(90, 0,0,1); Edge();
-	Ogl.Rotate(90, 0,0,1); Edge();
-	Ogl.Rotate(90, 0,0,1); Edge();
-	Ogl.Rotate(180, 1,0,0); Face(); Edge();
-	Ogl.Rotate(90, 0,0,1); Edge();
-	Ogl.Rotate(90, 0,0,1); Edge();
-	Ogl.Rotate(90, 0,0,1); Edge();
-}
-
-
 
 Box.prototype = {
 	Compile:function() {
 
 		this.shapeCL = Ogl.NewList(true);
 		Ogl.Scale.apply(null, this.geom.lengths);
-		FullCube(true, false);
+		DrawCube(true, false);
 		Ogl.EndList();
 
 		this.objectCL = Ogl.NewList(true);
@@ -210,7 +139,7 @@ Box.prototype = {
 		Ogl.ShadeModel(Ogl.FLAT);
 //		Ogl.CallList(this.shapeCL);
 		Ogl.Scale.apply(null, this.geom.lengths);
-		FullCube();
+		DrawCube();
 		Ogl.ShadeModel(Ogl.SMOOTH);
 		Ogl.EndList();
 	},
@@ -253,7 +182,10 @@ function Box( pos ) {
 }
 
 
+
 var scene = [];
+
+scene.push( new Floor() );
 
 var ball = new Ball([0, 0, 2]);
 ball.body.linearVel = [0, 0, 10];
@@ -264,12 +196,9 @@ ball.body.linearVel = [0, 0, -10];
 scene.push( ball );
 
 
-scene.push( new Floor() );
-
 
 var side = 10;
 var gap = 0.001;
-
 for ( var i = -side; i < side; ++i )
 	for ( var j = -side; j < side; ++j ) {
 		
@@ -318,62 +247,73 @@ ui.key.p = function(down) {
 };
 
 
-var vmove = 0;
-
-var spotlightTexture;
-ui.Init = function() {
-
+var spotlightTexture = new OglTexture2D();
 /*
-	var smiley = new SVG();	
-	smiley.Write(<svg version="1.1" baseProfile="full" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" zoomAndPan="magnify" id="Test File" viewBox="-21 -21 42 42">
-		<defs>
-		<radialGradient id="shine" cx=".2" cy=".2" r=".5" fx=".2" fy=".2">
-		  <stop offset="0" stop-color="white" stop-opacity=".7"/>
-		  <stop offset="1" stop-color="white" stop-opacity="0"/>
-		</radialGradient>
-		<radialGradient id="grad" cx=".5" cy=".5" r=".5" >
-		  <stop offset="0" stop-color="yellow"/>
-		  <stop offset=".75" stop-color="yellow"/>
-		  <stop offset=".95" stop-color="#ee0"/>
-		  <stop offset="1" stop-color="#e8e800"/>
-		</radialGradient>
-		</defs>
-		<circle r="20" stroke="black" stroke-width=".15" fill="url(#grad)"/>
-		<circle r="20" fill="url(#shine)"/>
-		<g id="right">
-		  <ellipse rx="2.5" ry="4" cx="-6" cy="-7" fill="black"/>
-		  <path fill="none" stroke="black" stroke-width=".5" stroke-linecap="round" d="M 10.6,2.7 a 4,4,0 0,0 4,3"/>
-		</g>
-		<use xlink:href="#right" transform="scale(-1,1)"/>
-		<path fill="none" stroke="black" stroke-width=".75" d="M -12,5 A 13.5,13.5,0 0,0 12,5 A 13,13,0 0,1 -12,5"/>
-	</svg>);
-	var texture = new Texture(smiley.RenderImage(256, 256, 3, true));
+spotlightTexture.LoadSVG(<svg version="1.1" baseProfile="full" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" zoomAndPan="magnify" id="Test File" viewBox="-21 -21 42 42">
+	<defs>
+	<radialGradient id="shine" cx=".2" cy=".2" r=".5" fx=".2" fy=".2">
+	  <stop offset="0" stop-color="white" stop-opacity=".7"/>
+	  <stop offset="1" stop-color="white" stop-opacity="0"/>
+	</radialGradient>
+	<radialGradient id="grad" cx=".5" cy=".5" r=".5" >
+	  <stop offset="0" stop-color="yellow"/>
+	  <stop offset=".75" stop-color="yellow"/>
+	  <stop offset=".95" stop-color="#ee0"/>
+	  <stop offset="1" stop-color="#e8e800"/>
+	</radialGradient>
+	</defs>
+	<circle r="20" stroke="black" stroke-width=".15" fill="url(#grad)"/>
+	<circle r="20" fill="url(#shine)"/>
+	<g id="right">
+	  <ellipse rx="2.5" ry="4" cx="-6" cy="-7" fill="black"/>
+	  <path fill="none" stroke="black" stroke-width=".5" stroke-linecap="round" d="M 10.6,2.7 a 4,4,0 0,0 4,3"/>
+	</g>
+	<use xlink:href="#right" transform="scale(-1,1)"/>
+	<path fill="none" stroke="black" stroke-width=".75" d="M -12,5 A 13.5,13.5,0 0,0 12,5 A 13,13,0 0,1 -12,5"/>
+</svg>, 256, 256);
+Ogl.BindTexture(Ogl.TEXTURE_2D, spotlightTexture);
+*/
+/*	
+function curveGaussian(c) function(x) Math.exp( -(x*x)/(2*c*c) );
+function sigmoid(c, d) function(x) 1/(Math.exp(c*(x-d))+1)
+
+var texture = new Texture(256, 256, 1).Set(0);
+//	texture.AddGradiantRadial( [1,0,1,0,1,0,1,0] );
+texture.AddGradiantRadial( sigmoid( 50, 0.97 ) ).Add(-0.3);
+spotlightTexture.LoadImage(texture);
+texture.Free();
 */
 
-	var size = 256;
-	var texture = new Texture(size, size, 1);
-	texture.Set(0);
-//	texture.AddGradiantRadial( [1,0,1,0,1,0,1,0] );
-	function curveGaussian(c) function(x) Math.exp( -(x*x)/(2*c*c) );
-	function sigmoid(c, d) function(x) 1/(Math.exp(c*(x-d))+1)
-	texture.AddGradiantRadial( sigmoid( 60, 0.97 ) ).Add(-0.3);
+vi.onImage = function(vi) {
 
-	spotlightTexture = Ogl.GenTexture();
-	Ogl.BindTexture(Ogl.TEXTURE_2D, spotlightTexture);
-	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.LINEAR);
-	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
-	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_S, Ogl.CLAMP);
-	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_T, Ogl.CLAMP);
-	Ogl.DefineTextureImage(Ogl.TEXTURE_2D, undefined, texture);
+	var image = vi.GetImage(false);
+	var texture = new Texture(image).Resize(256,256, false);
+	image.Free();
+	function sigmoid(c, d) function(x) 1/(Math.exp(c*(x-d))+1)
+//	texture.AddGradiantRadial( sigmoid(50, 0.97) ).Add(-1);
+	spotlightTexture.LoadImage(texture);
 	texture.Free();
 }
+
+
+
+Ogl.Fog(Ogl.FOG_MODE, Ogl.LINEAR);
+Ogl.Fog(Ogl.FOG_COLOR, [0.15, 0.2, 0.4, 1]);
+Ogl.Fog(Ogl.FOG_DENSITY, 0);
+Ogl.Hint(Ogl.FOG_HINT, Ogl.DONT_CARE);
+Ogl.Fog(Ogl.FOG_START, 0.0);
+Ogl.Fog(Ogl.FOG_END, 200.0);
+//Ogl.Enable(Ogl.FOG);
+
+ui.light.SetPosition(10,10,50);
+
+var vmove = 0;
 
 ui.Draw = function(frame) {
 
 	Ogl.LookAt(Math.cos(vmove/100)*50, Math.sin(vmove/100)*50, Math.cos(vmove/100)*25+40, 0,0,0, 0,0,1);
 
-	ui.SetLight([10,10,30, 1], [0,0,0]);
-
+	ui.light.Update();
 
 	if ( !ui.keyState.s ) {
 
@@ -383,10 +323,10 @@ ui.Draw = function(frame) {
 		Ogl.Enable(Ogl.TEXTURE_2D);
 //		Ogl.Disable(Ogl.LIGHTING);
 
-		ui.RenderWithShadows3(function( flags ) {
+		ui.RenderWithShadows(function( flags ) {
 			
 			if ( flags & 4 )
-				ui.EnableSpotlightTexture();
+				ui.light.EnableProjectorTextureCoordinates();
 
 			for ( var i = scene.length - 1; i >= 0; --i ) {
 			
@@ -396,7 +336,7 @@ ui.Draw = function(frame) {
 			}
 			
 			if ( flags & 4 )
-				ui.DisableSpotlightTexture();
+				ui.light.DisableProjectorTextureCoordinates();
 			
 		}, [0,0,1,0]);
 
@@ -407,11 +347,9 @@ ui.Draw = function(frame) {
 			scene[i].Render(false);
 	}
 
-
-	
 	if ( paused ) {
 		
-		ui.DrawText('paused', function() {
+		DrawText('paused', function() {
 			Ogl.Translate(0,0.3,-1);
 			Ogl.Scale(0.01);
 			Ogl.Color(1,0,0);
@@ -438,4 +376,4 @@ ui.Idle = function() {
 	}
 }
 
-ui.Loop();
+ui.Loop(function(events) { events.push(vi.Events()) });

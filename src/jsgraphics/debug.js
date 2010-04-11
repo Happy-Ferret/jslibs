@@ -3,6 +3,8 @@
 LoadModule('jsstd'); Exec('../../tests/explodebox.js'); throw 0;
 
 
+/*
+
 LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsimage');

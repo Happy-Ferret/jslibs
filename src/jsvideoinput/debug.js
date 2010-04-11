@@ -5,12 +5,15 @@ LoadModule('jsio');
 LoadModule('jsimage');
 
 LoadModule('jsvideoinput');
+LoadModule('jssdl');
+LoadModule('jsgraphics');
+LoadModule('jsprotex');
 
 Exec('..\\common\\tools.js');
 
 	
 	//	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-		GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+//		GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 		GlSetAttribute( GL_DEPTH_SIZE, 16 );
 		GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 		SetVideoMode( 640, 480, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
@@ -19,7 +22,7 @@ Exec('..\\common\\tools.js');
 		Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
 		Ogl.Viewport(0,0,videoWidth,videoHeight);
 		Ogl.MatrixMode(Ogl.PROJECTION);
-		Ogl.Perspective(60, 0.1, 100000);
+		Ogl.Perspective(60, 1, 0.1, 100000);
 		Ogl.MatrixMode(Ogl.MODELVIEW);
 		Ogl.ClearColor(0.2, 0.1, 0.4, 1);
 		Ogl.Enable(Ogl.DEPTH_TEST);
@@ -37,12 +40,16 @@ var noise = new Texture(256,256,3).Set(0);
 
 Print( vi.width + 'x' + vi.height, '\n' );
 
+vi.onImage = function() {
+	Print('-');
+}
+
 var frames = [];
 var frame = 0;
 var key;
 while ( !GetKeyState(K_ESCAPE) ) {
 
-	MetaPoll(MetaPollSDL({}));
+	ProcessEvents(SDLEvents({}), vi.Events());
 
 //	while( PollEvent({}) );
 
