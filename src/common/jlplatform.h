@@ -324,22 +324,48 @@ static inline void jl_unused(int) {};
 //#define JL_CAST_CSTR_TO_UINT32(x) ( (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
 
 ALWAYS_INLINE uint32_t JL_CAST_CSTR_TO_UINT32( const char cstr[5] ) {
-
+	
+	JL_ASSERT(cstr[4] == 0);
 	return (cstr[0]<<24) | (cstr[1]<<16) | (cstr[2]<<8) | (cstr[3]);
 }
 
-ALWAYS_INLINE int ipow(int base, int exp) {
-	
-	int result = 1;
-	while (exp) {
-		
-		if ( exp & 1 )
-			result *= base;
-		exp >>= 1;
-		base *= base;
-	}
-	return result;
+
+ALWAYS_INLINE unsigned long int_sqrt(unsigned long x) {
+
+    register unsigned long op, res, one;
+
+    op = x;
+    res = 0;
+
+    one = 1 << 30;
+    while (one > op) one >>= 2;
+
+    while (one != 0) {
+
+        if (op >= res + one) {
+            op -= res + one;
+            res += one << 1;
+        }
+        res >>= 1;
+        one >>= 2;
+    }
+    return res;
 }
+
+
+ALWAYS_INLINE int int_pow(int base, int exp) {
+
+	int result = 1;
+    while (exp) {
+
+        if (exp & 1)
+            result *= base;
+        exp >>= 1;
+        base *= base;
+    }
+    return result;
+}
+
 
 JL_STATIC_ASSERT( DBL_MANT_DIG < 64 );
 

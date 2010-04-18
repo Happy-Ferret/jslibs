@@ -8,20 +8,6 @@ LoadModule('jswinshell');
 
 
 
-
-for ( var i = 0; i < 10; i++ ) {
-	
-	numlockState = !numlockState;
-	capslockState = !capslockState;
-	scrolllockState = !scrolllockState;
-	Sleep(50);
-}	
-
-
-Halt(); //////////////////////////////////////////////////////////////////////
-
-
-
 var dch = DirectoryChangesInit('C:\\', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
 
 function ChangesNotificationFct() {
@@ -36,6 +22,22 @@ while ( !endSignal )
 
 
 Halt(); //////////////////////////////////////////////////////////////////////
+
+
+
+
+for ( var i = 0; i < 10; i++ ) {
+	
+	numlockState = !numlockState;
+	capslockState = !capslockState;
+	scrolllockState = !scrolllockState;
+	Sleep(50);
+}	
+
+
+Halt(); //////////////////////////////////////////////////////////////////////
+
+
 
 
 

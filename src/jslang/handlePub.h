@@ -31,6 +31,7 @@ struct HandlePrivate {
 	HandleFinalizeCallback_t finalizeCallback;
 };
 
+#define JLHID(str) JL_CAST_CSTR_TO_UINT32(str)
 
 inline JSClass *GetHandleJSClass( JSContext *cx ) {
 

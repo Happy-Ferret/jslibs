@@ -621,7 +621,7 @@ DEFINE_FUNCTION_FAST( DirectoryChangesInit ) {
 		watchSubtree = false;
 
 	DirectoryChanges *dc;
-	JL_CHK( CreateHandle(cx, 'dmon', sizeof(DirectoryChanges), (void**)&dc, FinalizeDirectoryHandle, JL_FRVAL) );
+	JL_CHK( CreateHandle(cx, JLHID("dmon"), sizeof(DirectoryChanges), (void**)&dc, FinalizeDirectoryHandle, JL_FRVAL) );
 
 	dc->watchSubtree = watchSubtree;
 	dc->notifyFilter = notifyFilter;
@@ -655,7 +655,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION_FAST( DirectoryChangesLookup ) {
 
 	JL_S_ASSERT_ARG_RANGE(1,2);
-	JL_S_ASSERT( IsHandleType(cx, JL_FARG(1), 'dmon'), "Unexpected argument type." );
+	JL_S_ASSERT( IsHandleType(cx, JL_FARG(1), JLHID("dmon")), "Unexpected argument type." );
 	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_FARG(1));
 	JL_S_ASSERT_RESOURCE( dc );
 
@@ -802,7 +802,7 @@ DEFINE_FUNCTION_FAST( DirectoryChangesEvents ) {
 	
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
-	JL_S_ASSERT( IsHandleType(cx, JL_FARG(1), 'dmon'), "Unexpected argument type." );
+	JL_S_ASSERT( IsHandleType(cx, JL_FARG(1), JLHID("dmon")), "Unexpected argument type." );
 
 	if ( JL_FARG_ISDEF(2) )
 		JL_S_ASSERT_FUNCTION( JL_FARG(2) );

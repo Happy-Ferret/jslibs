@@ -20,45 +20,6 @@
 #include <math.h>
 
 
-// math tools
-
-unsigned long int_sqrt(unsigned long x) {
-
-    register unsigned long op, res, one;
-
-    op = x;
-    res = 0;
-
-    one = 1 << 30;
-    while (one > op) one >>= 2;
-
-    while (one != 0) {
-
-        if (op >= res + one) {
-            op -= res + one;
-            res += one << 1;
-        }
-        res >>= 1;
-        one >>= 2;
-    }
-    return res;
-}
-
-
-int int_pow(int base, int exp) {
-
-	int result = 1;
-    while (exp) {
-
-        if (exp & 1)
-            result *= base;
-        exp >>= 1;
-        base *= base;
-    }
-    return result;
-}
-
-
 /**doc fileIndex:topmost **/
 
 /**doc

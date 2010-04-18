@@ -813,17 +813,21 @@ bad:
 //////////////////////////////////////////////////////////////////////////////
 // Threaded memory deallocator
 
+// the "load" increase by one each time the thread loop without freeing the whole memory chunk list. When MAX_LOAD is reached, memory is freed synchronously.
+#define MAX_LOAD 7
+
+#define WAIT_HEAD_FILLING 50
+
+// memory chunks bigger than BIG_ALLOC are freed synchronously.
+#define BIG_ALLOC 4096
+
+
 static jl_malloc_t base_malloc;
 static jl_calloc_t base_calloc;
 static jl_memalign_t base_memalign;
 static jl_realloc_t base_realloc;
 static jl_msize_t base_msize;
 static jl_free_t base_free;
-
-#define MAX_LOAD 7
-#define WAIT_HEAD_FILLING 50
-#define BIG_ALLOC 4096
-
 
 // block-to-free chain
 static void *head;
@@ -840,6 +844,7 @@ enum MemThreadAction {
 	MemThreadExit,
 	MemThreadProcess
 };
+
 static volatile MemThreadAction threadAction;
 static JLSemaphoreHandler memoryFreeThreadSem;
 
@@ -854,7 +859,7 @@ static void* JslibsMalloc( size_t size ) {
 
 static void* JslibsCalloc( size_t num, size_t size ) {
 
-	size = num * size;
+	size *= num;
 	if (likely( size >= sizeof(void*) ))
 		return base_calloc(size, 1);
 	return base_calloc(sizeof(void*), 1);
@@ -881,7 +886,7 @@ static size_t JslibsMsize( void *ptr ) {
 
 static void JslibsFree( void *ptr ) {
 	
-	if (unlikely( ptr == NULL ))
+	if (unlikely( ptr == NULL )) // issue wuth nedmalloc free(NULL)
 		return;
 
 	if (unlikely( base_msize(ptr) >= BIG_ALLOC || load >= MAX_LOAD )) { // if blocks is big OR too many things to free, the thread can not keep pace.
@@ -894,7 +899,6 @@ static void JslibsFree( void *ptr ) {
 	head = ptr;
 	JLAtomicIncrement(&headLength);
 }
-
 
 
 ALWAYS_INLINE void FreeHead() {
@@ -945,6 +949,7 @@ JSBool NewGCCallback(JSContext *cx, JSGCStatus status) {
 	return prevGCCallback ? prevGCCallback(cx, status) : JS_TRUE;
 }
 
+// (TBD) manage nested GCCallbacks
 JSBool MemoryManagerEnableGCEvent( JSContext *cx ) {
 
 	prevGCCallback = JS_SetGCCallback(cx, NewGCCallback);
