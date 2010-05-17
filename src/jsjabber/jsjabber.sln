@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual C++ Express 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsjabber", "jsjabber.vcproj", "{C94E91F2-6211-4623-A835-C3C18791848C}"
 	ProjectSection(ProjectDependencies) = postProject
 		{2A086A4F-5F97-4499-B1CD-F3C3EBE58DBA} = {2A086A4F-5F97-4499-B1CD-F3C3EBE58DBA}

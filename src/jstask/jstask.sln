@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual C++ Express 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jstask", "jstask.vcproj", "{59CAD210-95BE-4CD1-9280-3522B6DDBCD5}"
 	ProjectSection(ProjectDependencies) = postProject
 		{22775C92-2F7C-407A-B01F-D8520E9F3452} = {22775C92-2F7C-407A-B01F-D8520E9F3452}

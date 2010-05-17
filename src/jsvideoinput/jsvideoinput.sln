@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual C++ Express 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsvideoinput", "jsvideoinput.vcproj", "{86D6D330-9D84-4F4C-83E3-8AE0CB9653E2}"
 	ProjectSection(ProjectDependencies) = postProject
 		{61FF797A-6D8B-4A02-8730-7A5BDAC50FB2} = {61FF797A-6D8B-4A02-8730-7A5BDAC50FB2}

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="9,00"
 	Name="libffi"
 	ProjectGUID="{FC6F5103-3A36-447D-9398-17D69D14467C}"
 	RootNamespace="libffi"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform

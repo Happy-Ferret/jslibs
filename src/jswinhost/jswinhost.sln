@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual C++ Express 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jswinhost", "jswinhost.vcproj", "{98728E89-FF4F-4A74-A508-07FBA279783B}"
 	ProjectSection(ProjectDependencies) = postProject
 		{D3BA293E-8AAC-4EE9-8171-56FE198FB40B} = {D3BA293E-8AAC-4EE9-8171-56FE198FB40B}

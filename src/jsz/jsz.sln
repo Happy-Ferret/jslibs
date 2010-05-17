@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual C++ Express 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsz", "jsz.vcproj", "{F00B77DF-185B-4F30-B71C-5D9786D76D94}"
 	ProjectSection(ProjectDependencies) = postProject
 		{B9898A5A-A1D6-4DBB-87F6-609F97BD7848} = {B9898A5A-A1D6-4DBB-87F6-609F97BD7848}

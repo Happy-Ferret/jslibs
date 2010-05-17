@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual C++ Express 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jssvg", "jssvg.vcproj", "{0CCF430F-3FE7-40DC-9D67-A1302E20621E}"
 	ProjectSection(ProjectDependencies) = postProject
 		{96E9258A-8812-4C08-96C7-7D8C0D00940B} = {96E9258A-8812-4C08-96C7-7D8C0D00940B}

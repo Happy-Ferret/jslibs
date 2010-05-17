@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="9,00"
 	Name="fontconfig-msvc"
 	ProjectGUID="{A52236DE-C5FF-4E14-8FBA-BCEE34291408}"
 	RootNamespace="fontconfig-msvc"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform

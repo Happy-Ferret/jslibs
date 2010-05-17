@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual C++ Express 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsffi", "jsffi.vcproj", "{10537403-E0A7-4883-87ED-6D2F42420372}"
 	ProjectSection(ProjectDependencies) = postProject
 		{FC6F5103-3A36-447D-9398-17D69D14467C} = {FC6F5103-3A36-447D-9398-17D69D14467C}

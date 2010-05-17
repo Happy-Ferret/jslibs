@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="9,00"
 	Name="gle"
 	ProjectGUID="{47897512-D0BC-4B5F-BC6B-213871B9E807}"
 	RootNamespace="gle"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform

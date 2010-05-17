@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual C++ Express 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jssound", "jssound.vcproj", "{C79FB5B8-46EA-48A1-AFF1-546E92F03F12}"
 	ProjectSection(ProjectDependencies) = postProject
 		{53EC80AD-D1DC-4783-B1E9-D3E77B097BF4} = {53EC80AD-D1DC-4783-B1E9-D3E77B097BF4}

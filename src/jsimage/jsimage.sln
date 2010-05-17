@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual C++ Express 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsimage", "jsimage.vcproj", "{01FF0714-4E8A-45D6-81D9-EBD41CFF24F7}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C2066F94-8E00-4BC3-9FDD-02CF98AFFB68} = {C2066F94-8E00-4BC3-9FDD-02CF98AFFB68}
