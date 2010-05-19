@@ -3,6 +3,26 @@
 LoadModule('jsstd');
 LoadModule('jscrypt');
 
+
+
+		var fortuna = new Prng('fortuna');
+		fortuna.AutoEntropy(123); // give more entropy
+		//Alice
+		var alice = new AsymmetricCipher('dsa', 'sha1', fortuna);
+		alice.CreateKeys(64);
+
+Print( alice.keySize, '\n' );
+
+		var publicKey = alice.publicKey;
+		//Bob
+		var bob = new AsymmetricCipher('dsa', 'sha1', fortuna);
+		bob.publicKey = publicKey;
+
+Print( bob.keySize, '\n' );
+		
+		
+Halt();	
+
 		var rnd = new Prng('fortuna');
 		rnd.AutoEntropy(128); // give more entropy
 		var plainText = 'totqutyvq8wyetvq7ewryt9vq78yrt987wveyrt98v7weyr9tv87wery9twev87y9r78o';

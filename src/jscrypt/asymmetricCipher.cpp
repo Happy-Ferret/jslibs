@@ -572,7 +572,7 @@ DEFINE_PROPERTY( keySize ) {
 			keySize = ltc_mp.count_bits(pv->key.eccKey.pubkey.x); // Ok !
 			break;
 		case dsa:
-			keySize = ltc_mp.count_bits(pv->key.dsaKey.x) / 2;
+			keySize = ltc_mp.count_bits(pv->key.dsaKey.q) / 2; // or x ???
 			break;
 		default:
 			JL_REPORT_ERROR("Invalid case.");
