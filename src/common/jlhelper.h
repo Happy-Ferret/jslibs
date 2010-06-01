@@ -765,41 +765,44 @@ ALWAYS_INLINE JSBool JS_CallFunctionId(JSContext *cx, JSObject *obj, jsid id, ui
 }
 
 
-// If needed, it is up to the caller to protect argv and rval against GC (see JS_PUSH_TEMP_ROOT)
 ALWAYS_INLINE JSBool JL_CallFunction( JSContext *cx, JSObject *obj, jsval functionValue, jsval *rval, uintN argc, ... ) {
 
 	va_list ap;
-//	jsval argv[32]; // argc MUST be <= 32
-//	JL_S_ASSERT( argc <= COUNTOF(argv), "Too many arguments." );
-	jsval *argv = (jsval*)alloca(argc*sizeof(jsval));
-	jsval rvalTmp;
+	jsval *argv = (jsval*)alloca((argc+1)*sizeof(jsval));
 	va_start(ap, argc);
-	for ( uintN i = 0; i < argc; i++ )
+	for ( uintN i = 1; i <= argc; i++ )
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
 	JL_S_ASSERT_FUNCTION( functionValue );
-	if ( rval == NULL )
-		rval = &rvalTmp;
-	JL_CHK( JS_CallFunctionValue(cx, obj, functionValue, argc, argv, rval) ); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
+	JSTempValueRooter tvr;
+	JS_PUSH_TEMP_ROOT(cx, argc+1, argv, &tvr);
+	argv[0] = JSVAL_NULL; // the rval
+	JSBool st = JS_CallFunctionValue(cx, obj, functionValue, argc, argv+1, argv); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
+	JS_POP_TEMP_ROOT(cx, &tvr);
+	JL_CHK( st ); 
+	if ( rval != NULL )
+		*rval = argv[0];
 	return JS_TRUE;
 	JL_BAD;
 }
 
-// If needed, it is up to the caller to protect argv and rval against GC (see JS_PUSH_TEMP_ROOT)
+
 ALWAYS_INLINE JSBool JL_CallFunctionName( JSContext *cx, JSObject *obj, const char* functionName, jsval *rval, uintN argc, ... ) {
 
 	va_list ap;
-//	jsval argv[32]; // argc MUST be <= 32
-//	JL_S_ASSERT( argc <= COUNTOF(argv), "Too many arguments." );
-	jsval *argv = (jsval*)alloca(argc*sizeof(jsval));
-	jsval rvalTmp;
+	jsval *argv = (jsval*)alloca((argc+1)*sizeof(jsval));
 	va_start(ap, argc);
-	for ( uintN i = 0; i < argc; i++ )
+	for ( uintN i = 1; i <= argc; i++ )
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
-	if ( rval == NULL )
-		rval = &rvalTmp;
-	JL_CHK( JS_CallFunctionName(cx, obj, functionName, argc, argv, &rvalTmp) ); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
+	JSTempValueRooter tvr;
+	JS_PUSH_TEMP_ROOT(cx, argc+1, argv, &tvr);
+	argv[0] = JSVAL_NULL; // the rval
+	JSBool st = JS_CallFunctionName(cx, obj, functionName, argc, argv+1, argv); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
+	JS_POP_TEMP_ROOT(cx, &tvr);
+	JL_CHK( st ); 
+	if ( rval != NULL )
+		*rval = argv[0];
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2029,7 +2032,7 @@ inline NIStreamRead StreamReadInterface( JSContext *cx, JSObject *obj ) {
 
 inline JSBool JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, unsigned int *size ) {
 
-	JSTempValueRooter tvr;
+	JSTempValueRooter tvr; // use AutoArrayRooter instead ?
 	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // needed to protect the returned value.
 
 //	JS_GetMethodById(cx, obj, JLID(cx, Get), NULL, &tvr.u.value);

@@ -1,12 +1,200 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
+LoadModule('jsio');
 LoadModule('jsstd');
 LoadModule('jswinshell');
+LoadModule('jssvg');
 
-LoadModule('jsstd');
-LoadModule('jswinshell');
+//LoadModule('jsdebug'); gcZeal = 2;
 
 
+var iconRed = new SVG();
+iconRed.Write(<svg><circle cx="8" cy="8" r="5" fill="orange"/></svg>);
+iconRed = new Icon( iconRed.RenderImage(16,16,3) );
+
+var iconGreen = new SVG();
+iconGreen.Write(<svg><circle cx="8" cy="8" r="5" fill="lightgreen"/></svg>);
+iconGreen = new Icon( iconGreen.RenderImage(16,16,3) );
+
+const SECOND = 1000;
+const MINUTE = 60*SECOND;
+const HOUR = 60*MINUTE;
+
+function Now() {
+	
+	return +new Date();
+}
+
+function Today() {
+	
+	var now = new Date();
+	var start = +new Date(now.getFullYear(), now.getMonth(), now.getDate());
+	return [start, start + 86400000-1];
+}
+
+function toHMS(time, elts) {
+	
+	var res = '';
+	var h = Math.floor(time / HOUR);
+	if ( h > 0 )
+		res += h+'h';
+	time -= h * HOUR;
+	var m = Math.floor(time / MINUTE);
+	if ( m > 0 )
+		res += ' '+m+'\'';
+	time -= m * MINUTE;
+	var s = Math.floor(time / SECOND);
+	res += ' '+s+'"';
+	return res;
+}
+
+var auto = true;
+var events = [];
+
+var systray = new Systray();
+systray.icon = iconGreen; //systray.icon = new Icon( 0 );
+systray.onmousedown = function( button ) {
+
+	var menu = [];
+	var pauseMenu = [];
+	
+	if ( button == 2 )
+		systray.PopupMenu(['Quit!']);
+
+	var pauseList = {};	
+	var today = Today();
+	var out = false;
+	var time = Now();
+	
+	var total = 0;
+	
+	for ( var i = 0; i < events.length; ++i ) {
+		
+		var state = events[i][0];
+		var evtime = events[i][1];
+
+		if ( evtime < today[0] || evtime > today[1] || state == 2 )
+			continue;
+			
+		if ( state == 1 ) {
+		
+			for ( var j = i; j < events.length && events[j][0] != 0; ++j );
+			var duration = (events[j] ? events[j][1] : Now()) - evtime;
+			total += duration;
+			var d = new Date(evtime);
+			pauseMenu.unshift({id:'p'+i, label:toHMS(duration)+' @ '+d.getHours()+':'+d.getMinutes()});
+		}
+			
+		if ( (state == 1) == out ) {
+			
+			time += (state ? 1 : -1) * evtime;
+			out = !out;
+		}
+	}
+	
+	if ( state == 1 ) {
+		
+		time -= Now();
+	}
+	
+	menu.push(toHMS(time));
+	menu.push({label:'Idle ('+toHMS(total)+')', popup:pauseMenu});
+	menu.push({label:'Force', icon:iconRed});
+	menu.push({label:'Auto', icon:iconGreen});
+	menu.push(null);
+	menu.push('Quit');
+	systray.PopupMenu(menu);
+}
+
+
+systray.oncommand = function( item, button ) {
+
+	var id = item instanceof Object ? item.id || item.label : item;
+	
+	if ( button == 2 && id[0] == 'p' ) {
+		
+		events[Number(id.substr(1))][0] = 2;
+	} else {
+	
+		switch (id) {
+			case 'Force':
+				Idle(true, Now());
+				auto = false;
+				break
+			case 'Auto':
+				Idle(false, Now());
+				auto = true;
+				break;
+			case 'Quit':
+				if ( MessageBox( 'Quit ?', 'Question', MB_YESNO) == IDYES )
+					throw 'end';
+				break;
+			case 'Quit!':
+				throw 'end';
+		}
+	}
+}
+
+/*
+var lastMoveUpdate;
+systray.onmousemove = function(x,y) {
+	
+	var now = Now();
+	if ( lastMoveUpdate + 1000 > now ) // note: undefined > 1234 == false
+		return;
+	lastMoveUpdate = now;
+	systray.text = toHMS(GetTime());
+}
+*/ 
+
+systray.onclose = function() {
+
+	throw 'end';
+}
+
+function Idle(polarity, date) {
+
+	events.push([polarity ? 1 : 0, date]);
+	systray.icon = polarity ? iconRed : iconGreen;
+}
+
+const IdleTres = 1*SECOND; // 5*MINUTE; // 
+
+var onTimeout;
+
+function IsIdle() {
+	
+	if ( auto && lastInputTime < IdleTres ) {
+
+		Idle(false, Now() - lastInputTime);
+		onTimeout = NotIdle;
+	}
+}
+
+function NotIdle() {
+	
+	if ( auto && lastInputTime > IdleTres ) {
+		
+		Idle(true, Now() - lastInputTime);
+		onTimeout = IsIdle;
+	}
+}
+
+IsIdle();
+  
+try {
+
+	for (;;)
+		ProcessEvents( systray.Events(), TimeoutEvents(0.1*SECOND, onTimeout) );
+		
+} catch (ex if ex == 'end') {}
+
+
+
+
+
+
+Halt(); //////////////////////////////////////////////////////////////////////
 
 var dch = DirectoryChangesInit('C:\\', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
 

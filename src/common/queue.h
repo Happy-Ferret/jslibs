@@ -157,6 +157,11 @@ inline void *QueueGetData( QueueCell *cell ) {
 	return cell->data;
 }
 
+inline void **QueueGetDataPtr( QueueCell *cell ) {
+
+	return &cell->data;
+}
+
 inline void *QueueRemoveCell( Queue *queue, QueueCell *cell ) {
 
 	if ( cell == queue->begin )

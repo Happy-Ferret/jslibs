@@ -13,5 +13,3 @@
  * ***** END LICENSE BLOCK ***** */
 
 DECLARE_CLASS( Systray )
-
-#define SLOT_SYSTRAY_MENU 0

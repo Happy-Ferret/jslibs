@@ -19,6 +19,7 @@
 #include "descriptor.h"
 #include "file.h"
 
+#define DEFAULT_ACCESS_RIGHTS (PR_IRWXU | PR_IRWXG) // read write permission for owner & group
 
 PRIntn FileOpenFlagsFromString( const char *strFlags, int length ) {
 
@@ -114,7 +115,7 @@ DEFINE_FUNCTION( Open ) {
 		JL_CHK( JsvalToInt(cx, JL_ARG(2), &mode) );
 	} else { // default
 
-		mode = PR_IRUSR | PR_IWUSR | PR_IRGRP | PR_IWGRP; // read write permission for owner & group
+		mode = DEFAULT_ACCESS_RIGHTS;
 	}
 
 	jsval jsvalFileName;
@@ -275,6 +276,8 @@ DEFINE_FUNCTION( Move ) {
 	JL_BAD;
 }
 
+
+
 /**doc
 === Properties ===
 **/
@@ -424,7 +427,7 @@ DEFINE_PROPERTY( contentSetter ) {
 		return JS_TRUE;
 	}
 	PRFileDesc *fd;
-	fd = PR_OpenFile( fileName, PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY, PR_IRUSR + PR_IWUSR ); // The mode parameter is currently applicable only on Unix platforms.
+	fd = PR_OpenFile( fileName, PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY, DEFAULT_ACCESS_RIGHTS ); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 	const char *buf;

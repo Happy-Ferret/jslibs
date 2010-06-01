@@ -27,7 +27,6 @@
 
 #include <commctrl.h>
 
-
 #define SYSTRAY_WINDOW_CLASS_NAME "jslibs_systray"
 #define SYSTRAY_ID 13 // doc: Values from 0 to 12 are reserved and should not be used.
 
@@ -42,6 +41,7 @@ struct Private {
 	HANDLE event;
 	jl::Queue msgQueue;
 	CRITICAL_SECTION cs; // protects msgQueue
+	jl::Queue popupMenuRoots;
 };
 
 
@@ -55,6 +55,21 @@ typedef struct MSGInfo {
 	int mouseX, mouseY;
 } MSGInfo;
 
+
+JL_STATIC_ASSERT(sizeof(jsval) <= sizeof(/*jl::QueueCell::data aka.*/void*));
+
+void AddPopupMenuRoot(JSContext *cx, JSObject *obj, jsval value) {
+
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	jl::QueuePush(&pv->popupMenuRoots, (void*)value);
+}
+
+void FreePopupMenuRoots(JSContext *cx, JSObject *obj) {
+
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	while ( !jl::QueueIsEmpty(&pv->popupMenuRoots) )
+		jl::QueuePop(&pv->popupMenuRoots);
+}
 
 
 // source: http://www.codeproject.com/shell/ctrayiconposition.asp
@@ -182,7 +197,69 @@ static HBITMAP MenuItemBitmapFromIcon(HICON hIcon) {
 }
 
 
+void ForwardMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+
+	MSGInfo *msg = (MSGInfo*)jl_malloc(sizeof(MSGInfo));
+	JL_ASSERT( msg != NULL );
+	// BOOL swapButtons = GetSystemMetrics(SM_SWAPBUTTON); // (TBD) use it
+
+	msg->hwnd = hWnd;
+	msg->message = message;
+	msg->wParam = wParam;
+	msg->lParam = lParam;
+
+	msg->lButton = GetAsyncKeyState(VK_LBUTTON) > 0; // (TBD) check !!
+	msg->rButton = GetAsyncKeyState(VK_RBUTTON) > 0; // (TBD) check !!
+	msg->mButton = GetAsyncKeyState(VK_MBUTTON) > 0; // (TBD) check !!
+
+	msg->shiftKey   = GetAsyncKeyState(VK_SHIFT)   > 0; // (TBD) check !!
+	msg->controlKey = GetAsyncKeyState(VK_CONTROL) > 0; // (TBD) check !!
+	msg->altKey     = GetAsyncKeyState(VK_MENU)    > 0; // (TBD) check !!
+
+	if ( message == MSG_TRAY_CALLBACK ) {
+
+		POINT pt;
+		GetCursorPos(&pt);
+		msg->mouseX = pt.x;
+		msg->mouseY = pt.y;
+	} else {
+
+		msg->mouseX = -1;
+		msg->mouseY = -1;
+	}
+
+	Private *pv = (Private*)GetWindowLongPtr(hWnd, GWL_USERDATA);
+	JL_ASSERT( pv != NULL );
+
+	EnterCriticalSection(&pv->cs);
+	jl::QueuePush(&pv->msgQueue, msg);
+	LeaveCriticalSection(&pv->cs);
+
+	PulseEvent(pv->event);
+}
+
+
+BOOL FreeMenu( HMENU menu ) {
+
+	for ( int i = GetMenuItemCount(menu); i > 0; i-- ) {
+
+		MENUITEMINFO mii = { sizeof(MENUITEMINFO) };
+		mii.fType = MFT_RADIOCHECK; // doc: Displays selected menu items using a radio-button mark instead of a check mark if the hbmpChecked member is NULL.
+		mii.fMask = MIIM_CHECKMARKS | MIIM_SUBMENU;
+		BOOL st = GetMenuItemInfo(menu, 0, TRUE, &mii);
+		if ( mii.hbmpChecked != NULL )
+			DeleteObject(mii.hbmpChecked);
+		if ( mii.hSubMenu != NULL )
+			FreeMenu(mii.hSubMenu);
+		DeleteMenu(menu, 0, MF_BYPOSITION);
+	}
+	return TRUE;
+}
+
+
 static LRESULT CALLBACK SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+
+//	char dbg[65535];  sprintf(dbg, "message:%x wParam:%x\n", message, wParam);  OutputDebugString(dbg);
 
 	switch ( message ) {
 
@@ -193,18 +270,7 @@ static LRESULT CALLBACK SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, L
 			SetForegroundWindow(hWnd);
 			TrackPopupMenuEx(GetMenu(hWnd), GetSystemMetrics(SM_MENUDROPALIGNMENT) | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pos.x, pos.y, hWnd, NULL);
 			PostMessage(hWnd, WM_NULL, 0, 0);
-			// free menu data and menu items
-			HMENU menu = GetMenu(hWnd);
-			for ( int i = GetMenuItemCount(menu); i > 0; i-- ) {
-
-				MENUITEMINFO mii = { sizeof(MENUITEMINFO) };
-				mii.fType = MFT_RADIOCHECK; // doc: Displays selected menu items using a radio-button mark instead of a check mark if the hbmpChecked member is NULL.
-				mii.fMask = MIIM_CHECKMARKS; // doc: Retrieves or sets the hbmpChecked and hbmpUnchecked members.
-				BOOL st = GetMenuItemInfo(menu, 0, TRUE, &mii);
-				if ( mii.hbmpChecked != NULL )
-					DeleteObject(mii.hbmpChecked);
-				DeleteMenu(menu, 0, MF_BYPOSITION);
-			}
+			FreeMenu(GetMenu(hWnd)); // free menu data and menu items
 			break;
 		}
 		case MSG_TRAY_CALLBACK:
@@ -214,52 +280,39 @@ static LRESULT CALLBACK SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, L
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
 		case WM_COMMAND: {
-
-			MSGInfo *msg = (MSGInfo*)jl_malloc(sizeof(MSGInfo));
-			JL_ASSERT( msg != NULL );
-			// BOOL swapButtons = GetSystemMetrics(SM_SWAPBUTTON); // (TBD) use it
-
-			msg->hwnd = hWnd;
-			msg->message = message;
-			msg->wParam = wParam;
-			msg->lParam = lParam;
-
-			msg->lButton = GetAsyncKeyState(VK_LBUTTON) > 0; // (TBD) check !!
-			msg->rButton = GetAsyncKeyState(VK_RBUTTON) > 0; // (TBD) check !!
-			msg->mButton = GetAsyncKeyState(VK_MBUTTON) > 0; // (TBD) check !!
-
-			msg->shiftKey   = GetAsyncKeyState(VK_SHIFT)   > 0; // (TBD) check !!
-			msg->controlKey = GetAsyncKeyState(VK_CONTROL) > 0; // (TBD) check !!
-			msg->altKey     = GetAsyncKeyState(VK_MENU)    > 0; // (TBD) check !!
-
-			if ( message == MSG_TRAY_CALLBACK ) {
-
-				POINT pt;
-				GetCursorPos(&pt);
-				msg->mouseX = pt.x;
-				msg->mouseY = pt.y;
-			} else {
-
-				msg->mouseX = -1;
-				msg->mouseY = -1;
-			}
-
-			Private *pv = (Private*)GetWindowLongPtr(hWnd, GWL_USERDATA);
-
-			EnterCriticalSection(&pv->cs);
-			jl::QueuePush(&pv->msgQueue, msg);
-			LeaveCriticalSection(&pv->cs);
-
-			PulseEvent(pv->event);
+			ForwardMessage(hWnd, message, wParam, lParam);
 			break;
 		}
+		case WM_SYSCOMMAND: // avoid any system command (including Alt-F4) from systray icon.
+
+			switch ( wParam ) {
+				case SC_CLOSE:
+					break;
+				case SC_SCREENSAVE: // not detected !
+				case SC_MONITORPOWER:
+
+					ForwardMessage(hWnd, message, wParam, lParam);
+					return DefWindowProc(hWnd, message, wParam, lParam);
+			}
+			break;
+
 		case WM_DESTROY:
 			PostQuitMessage(wParam);
 			break;
-		case WM_CLOSE:
+
+//		case WM_QUERYENDSESSION:
+		case WM_ENDSESSION: // test with: http://code.google.com/p/sendmessage/downloads/detail?name=SendMessage-1.0.1.exe&can=2&q=
+			ForwardMessage(hWnd, message, wParam, lParam);
+			 // doc: The application need not call the DestroyWindow or PostQuitMessage function when the session is ending.
+			 // doc: The system does not send any messages to gracefully close your app (such as WM_CLOSE, WM_DESTROY, or WM_QUIT). You must do it yourself. 
+			return DefWindowProc(hWnd, message, wParam, lParam);
+
+		case WM_CLOSE: // test with: taskkill /IM jswinhost.exe
+			ForwardMessage(hWnd, message, wParam, lParam);
 			DestroyMenu(GetMenu(hWnd)); // (TBD) needed ?
-			DestroyWindow(hWnd);
-			break;
+			// DestroyWindow(hWnd);
+			return DefWindowProc(hWnd, message, wParam, lParam); // doc: By default, the DefWindowProc function calls the DestroyWindow function to destroy the window.
+
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam); // We do not want to handle this message so pass back to Windows to handle it in a default way
 	}
@@ -286,7 +339,7 @@ DWORD WINAPI SystrayThread( LPVOID lpParam ) {
 	pv->nid.uCallbackMessage = MSG_TRAY_CALLBACK; // doc: All Message Numbers below 0x0400 are RESERVED.
 
 	// doc: The message loop and window procedure for the window must be in the thread that created the window.
-	pv->nid.hWnd = CreateWindow(SYSTRAY_WINDOW_CLASS_NAME, NULL, WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, CreatePopupMenu(), hInst, NULL);
+	pv->nid.hWnd = CreateWindow(SYSTRAY_WINDOW_CLASS_NAME, NULL, WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, HWND_MESSAGE, CreatePopupMenu(), hInst, NULL); // (TBD) use HWND_MESSAGE ?
 	SetWindowLongPtr(pv->nid.hWnd, GWL_USERDATA, (LONG)pv); // make pv available for SystrayWndProc
 
 	BOOL status = Shell_NotifyIcon(NIM_ADD, &pv->nid);
@@ -294,15 +347,22 @@ DWORD WINAPI SystrayThread( LPVOID lpParam ) {
 
 	PulseEvent(pv->event); // first pulse
 
+	BOOL st;
 	MSG msg;
-	while ( GetMessage(&msg, pv->nid.hWnd, 0, 0) ) {
+	while ( (st = GetMessage(&msg, pv->nid.hWnd, 0, 0)) != 0 ) {
 
+		if ( st == -1 ) // (TBD) manage the error
+			break;
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
 
 	status = Shell_NotifyIcon(NIM_DELETE, &pv->nid);
 	JL_ASSERT( status ); // JL_S_ASSERT( status == TRUE, "Unable to delete notification icon.");
+
+	pv->nid.hWnd = NULL; // see finalizer
+
+	// (TBD) call DestroyWindow() ???
 
 	return msg.wParam;
 }
@@ -331,6 +391,7 @@ DEFINE_CONSTRUCTOR() {
 	InitializeCriticalSection(&pv->cs);
 
 	jl::QueueInitialize(&pv->msgQueue);
+	jl::QueueInitialize(&pv->popupMenuRoots);
 
 	pv->event = CreateEvent(NULL, FALSE, FALSE, NULL);
 	pv->thread = CreateThread(NULL, 0, SystrayThread, pv, 0, NULL);
@@ -351,13 +412,20 @@ DEFINE_FINALIZE() {
 	if ( !pv )
 		return;
 
-	SendMessage( pv->nid.hWnd, WM_CLOSE, 0, 0 ); // PostMessage
+	if ( pv->nid.hWnd != NULL ) { // pv->nid.hWnd may have already been closed.
+
+		LRESULT res = SendMessage( pv->nid.hWnd, WM_CLOSE, 0, 0 ); // PostMessage
+	}
+
 	WaitForSingleObject(pv->thread, INFINITE);
+	CloseHandle(pv->thread); // doc: The thread object remains in the system until the thread has terminated and all handles to it have been closed through a call to CloseHandle.
 	CloseHandle(pv->event);
 	DeleteCriticalSection(&pv->cs);
 	
 	while ( !jl::QueueIsEmpty(&pv->msgQueue) )
 		jl_free(jl::QueuePop(&pv->msgQueue));
+
+	FreePopupMenuRoots(cx, obj);
 
 	jl_free(pv);
 }
@@ -393,6 +461,8 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 
 	jsval functionVal;
 
+//	char dbg[65535];  sprintf(dbg, "msg: %x\n", message);  OutputDebugString(dbg);
+
 	switch ( message ) {
 		case WM_SETFOCUS:
 			JL_CHK( JS_GetProperty(cx, obj, "onfocus", &functionVal) );
@@ -412,6 +482,17 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 				JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
 			}
 			break;
+
+		case WM_ENDSESSION: // case WM_QUERYENDSESSION:
+		case WM_CLOSE:
+			JL_CHK( JS_GetProperty(cx, obj, "onclose", &functionVal) );
+			if ( JsvalIsFunction(cx, functionVal) ) {
+
+				bool endCase = message == WM_ENDSESSION && lParam == 0;
+				JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, BOOLEAN_TO_JSVAL(endCase) ) );
+			}
+			break;
+
 		case WM_COMMAND:
 			JL_CHK( JS_GetProperty(cx, obj, "oncommand", &functionVal) );
 			if ( JsvalIsFunction(cx, functionVal) ) {
@@ -419,8 +500,27 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 				jsval key;
 				JL_CHK( JS_IdToValue(cx, (jsid)wParam, &key) );
 				JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
+				FreePopupMenuRoots(cx, obj);
 			}
 			break;
+
+		case WM_SYSCOMMAND: // avoid any system command (including Alt-F4) from systray icon.
+
+			switch ( wParam ) {
+				case SC_SCREENSAVE:
+				case SC_MONITORPOWER:
+
+					JL_CHK( JS_GetProperty(cx, obj, "onidle", &functionVal) );
+					if ( JsvalIsFunction(cx, functionVal) ) {
+
+						jsval key;
+						JL_CHK( JS_IdToValue(cx, (jsid)wParam, &key) );
+						JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
+					}
+				break;
+			}
+			break;
+
 		case MSG_TRAY_CALLBACK:
 			switch ( lParam ) {
 				case WM_MOUSEMOVE:
@@ -542,8 +642,7 @@ static JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSConte
 	}	
 
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION_FAST( Events ) {
@@ -585,133 +684,335 @@ DEFINE_FUNCTION( Focus ) {
 	JL_BAD;
 }
 
+ALWAYS_INLINE JSBool NormalizeMenuInfo( JSContext *cx, JSObject *obj, const jsval key, jsval *value ) {
 
-/**doc
-$TOC_MEMBER $INAME
- $VOID $INAME()
-  Opens the systray menu.
-**/
-DEFINE_FUNCTION( PopupMenu ) {
+	if ( JsvalIsFunction(cx, *value) )
+		return JL_CallFunction(cx, obj, *value, value, 1, key);
+	return JS_TRUE;
+}
 
-	JL_S_ASSERT_ARG(0);
+JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *hMenu ) {
 
-	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	*hMenu = CreatePopupMenu();
 
-	HMENU hMenu = GetMenu(pv->nid.hWnd);
-	JL_S_ASSERT_RESOURCE(hMenu);
-	//DestroyMenu(hMenu);
-	//hMenu = CreatePopupMenu();
-	//SetMenu(nid->hWnd, hMenu);
+	jsuint menuLength;
+	JL_CHK( JS_GetArrayLength(cx, menuObj, &menuLength) );
 
-	jsval menu;
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, &menu) );
-	JL_S_ASSERT_DEFINED(menu);
-	JSObject *menuObj = JSVAL_TO_OBJECT(menu);
-	JSIdArray *list = JS_Enumerate(cx, menuObj);
-	for ( int i = 0; i < list->length; i++ ) {
+	for ( jsuint i = 0; i < menuLength; ++i ) {
+		
+		UINT uFlags = 0;
+		bool isDefault = false;
+		HBITMAP hBMP = NULL;
+		jsval cmdid = JSVAL_VOID;
+		jsval label = JSVAL_VOID;
+		HMENU popupMenu;
 
 		jsval item;
-//		OBJ_GET_PROPERTY(cx, menuObj, list->vector[i], &item);
-		menuObj->getProperty(cx, list->vector[i], &item);
-		LPCSTR newItem = NULL;
-		UINT uFlags = MF_STRING;
+		JL_CHK( JS_GetElement(cx, menuObj, i, &item) );
 
-		if ( JSVAL_IS_STRING(item) ) {
+		JL_CHK( NormalizeMenuInfo(cx, menuObj, INT_TO_JSVAL(i), &item) );
 
-			JL_CHK( JsvalToString(cx, &item, &newItem) );
-			AppendMenu(hMenu, uFlags, list->vector[i], newItem);
-		} else if ( JSVAL_IS_OBJECT(item) && !JSVAL_IS_NULL(item) ) {
+		if ( JSVAL_IS_NULL(item) || JSVAL_IS_VOID(item) ) {
 
-			JSObject *itemObject = JSVAL_TO_OBJECT(item);
-			jsval key, itemVal;
+			uFlags |= MF_SEPARATOR;
+		} else 
+		if ( JSVAL_IS_STRING(item) || JL_VALUE_IS_STRING_OBJECT(cx, item) ) {
 
-			JL_CHK( JS_GetProperty(cx, itemObject, "text", &itemVal) );
-			if ( !JSVAL_IS_VOID( itemVal ) ) {
+			label = item;
+			cmdid = item;
+		} else
+		if ( !JSVAL_IS_PRIMITIVE(item) ) {
 
-				if ( JS_TypeOfValue(cx, itemVal) == JSTYPE_FUNCTION ) {
+			JSObject *itemObj = JSVAL_TO_OBJECT(item);
+			jsval key, value;
+			JSIdArray *list = JS_Enumerate(cx, itemObj);
+			JL_CHK( list );
+			for ( jsint j = 0; j < list->length; ++j ) {
+			
+				JL_CHK( JS_IdToValue(cx, list->vector[j], &key) );
+				JL_CHK( JS_GetPropertyById(cx, itemObj, list->vector[j], &value) );
+				
+				const char *keyStr;
+				JL_CHK( JsvalToString(cx, &key, &keyStr) );
 
-					JL_CHK( JS_IdToValue(cx, list->vector[i], &key) );
-					JL_CHK( JL_CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
+				if ( strcmp(keyStr, "id") == 0 ) {
+
+					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
+					cmdid = value;
+					continue;
 				}
-				if ( !JSVAL_IS_VOID( itemVal ) ) {
+				if ( strcmp(keyStr, "label") == 0 ) {
 
-					JL_CHK( JsvalToString(cx, &itemVal, &newItem) );
+					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
+					label = value;
+					continue;
 				}
-			}
-
-			JL_CHK( JS_GetProperty(cx, itemObject, "checked", &itemVal) );
-			if ( !JSVAL_IS_VOID( itemVal ) ) {
-				if ( JS_TypeOfValue(cx, itemVal) == JSTYPE_FUNCTION ) {
-
-					JL_CHK( JS_IdToValue(cx, list->vector[i], &key) );
-					JL_CHK( JL_CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
+				if ( strcmp(keyStr, "break") == 0 ) {
+					
+					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
+					bool b;
+					JL_CHK( JsvalToBool(cx, value, &b) );
+					if ( b )
+						uFlags |= MF_MENUBARBREAK;
+					continue;
 				}
-				if ( !JSVAL_IS_VOID( itemVal ) ) {
-					JSBool boolVal;
-					JL_CHK( JS_ValueToBoolean(cx, itemVal, &boolVal) );
-					if ( boolVal == JS_TRUE )
+				if ( strcmp(keyStr, "checked") == 0 ) {
+					
+					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
+					bool b;
+					JL_CHK( JsvalToBool(cx, value, &b) );
+					if ( b )
 						uFlags |= MF_CHECKED;
+					continue;
 				}
-			}
-
-			JL_CHK( JS_GetProperty(cx, itemObject, "grayed", &itemVal) );
-			if ( !JSVAL_IS_VOID( itemVal ) ) {
-				if ( JS_TypeOfValue(cx, itemVal) == JSTYPE_FUNCTION ) {
-
-					JL_CHK( JS_IdToValue(cx, list->vector[i], &key) );
-					JL_CHK( JL_CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
-				}
-
-				if ( !JSVAL_IS_VOID( itemVal ) ) {
-					JSBool boolVal;
-					JL_CHK( JS_ValueToBoolean(cx, itemVal, &boolVal) );
-					if ( boolVal == JS_TRUE )
+				if ( strcmp(keyStr, "grayed") == 0 ) {
+					
+					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
+					bool b;
+					JL_CHK( JsvalToBool(cx, value, &b) );
+					if ( b )
 						uFlags |= MF_GRAYED;
+					continue;
 				}
-			}
-
-			JL_CHK( JS_GetProperty(cx, itemObject, "separator", &itemVal) );
-			if ( itemVal == JSVAL_TRUE || itemVal == JSVAL_ONE )
-				uFlags |= MF_SEPARATOR;
-
-			AppendMenu(hMenu, uFlags, list->vector[i], newItem);
-
-			JL_CHK( JS_GetProperty(cx, itemObject, "default", &itemVal) );
-			if ( itemVal == JSVAL_TRUE || itemVal == JSVAL_ONE ) {
-
-				SetMenuDefaultItem(hMenu, i, TRUE);
-			}
-
-			JL_CHK( JS_GetProperty(cx, itemObject, "icon", &itemVal) ); // the menu item bitmap can only be added AFTER the item has been created
-			if ( !JSVAL_IS_VOID( itemVal ) ) {
-
-				if ( JS_TypeOfValue(cx, itemVal) == JSTYPE_FUNCTION ) {
-
-					JL_CHK( JS_IdToValue(cx, list->vector[i], &key) );
-					JL_CHK( JL_CallFunction(cx, obj, itemVal, &itemVal, 2, item, key) );
+				if ( strcmp(keyStr, "disabled") == 0 ) {
+					
+					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
+					bool b;
+					JL_CHK( JsvalToBool(cx, value, &b) );
+					if ( b )
+						uFlags |= MF_DISABLED;
+					continue;
 				}
-				if ( !JSVAL_IS_VOID( itemVal ) ) {
+				if ( strcmp(keyStr, "default") == 0 ) {
+					
+					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
+					JL_CHK( JsvalToBool(cx, value, &isDefault) );
+					continue;
+				}
+				if ( strcmp(keyStr, "icon") == 0 ) {
 
-					JSObject *iconObj = JSVAL_TO_OBJECT(itemVal);
+					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
+					JL_S_ASSERT_OBJECT( value );
+					JSObject *iconObj = JSVAL_TO_OBJECT(value);
 					JL_S_ASSERT_CLASS( iconObj, JL_CLASS(Icon) );
 					HICON *phIcon = (HICON*)JL_GetPrivate(cx, iconObj);
 					JL_S_ASSERT_RESOURCE(phIcon);
-					HBITMAP hBMP = MenuItemBitmapFromIcon(*phIcon);
+					hBMP = MenuItemBitmapFromIcon(*phIcon);
 					JL_S_ASSERT(hBMP != NULL, "Unable to create the menu item icon.");
-					BOOL res = SetMenuItemBitmaps(hMenu, i, MF_BYPOSITION, hBMP, hBMP ); // doc: When the menu is destroyed, these bitmaps are not destroyed; it is up to the application to destroy them.
-					JL_S_ASSERT( res != FALSE, "Unable to SetMenuItemBitmaps." );
+					continue;
+				}
+				if ( strcmp(keyStr, "popup") == 0 ) {
+
+					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
+					JL_S_ASSERT_OBJECT( value );
+					uFlags |= MF_POPUP;
+					JL_CHK( MakeMenu(cx, systrayObj, JSVAL_TO_OBJECT(value), &popupMenu) );
+					continue;
 				}
 			}
+			JS_DestroyIdArray(cx, list);
+		}
+
+		LPCTSTR lpNewItem;
+		UINT_PTR uIDNewItem;
+
+		if ( uFlags & MF_SEPARATOR ) {
+			
+			lpNewItem = NULL;
+		} else
+		if ( !JSVAL_IS_PRIMITIVE(label) && JL_GetClass(JSVAL_TO_OBJECT(label)) == JL_CLASS(Icon) ) {
+
+			uFlags |= MF_BITMAP;
+			HICON *phIcon = (HICON*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(label));
+			JL_S_ASSERT_RESOURCE(phIcon);
+			hBMP = MenuItemBitmapFromIcon(*phIcon);
+			JL_S_ASSERT(hBMP != NULL, "Unable to create the menu item icon.");
+			lpNewItem = (LPCTSTR)phIcon;
+		} else {
+
+			if ( label != JSVAL_VOID ) {
+
+				JL_CHK( JsvalToString(cx, &label, &lpNewItem) );
+				uFlags |= MF_STRING;
+			} else {
+
+				JL_REPORT_ERROR("Menu label must be defined.");
+			}
+		}
+
+		if ( uFlags & MF_SEPARATOR ) {
+			
+			uIDNewItem = 0;
+		} else
+		if ( uFlags & MF_POPUP ) {
+
+			uIDNewItem = (UINT_PTR)popupMenu;
+		} else {
+
+			if ( cmdid == JSVAL_VOID )
+				cmdid = label;
+//			AddPopupMenuRoot(cx, systrayObj, cmdid);
+//			uIDNewItem = (UINT_PTR)cmdid;
+			AddPopupMenuRoot(cx, systrayObj, item);
+			uIDNewItem = (UINT_PTR)item;
+		}
+
+		AppendMenu(*hMenu, uFlags, uIDNewItem, lpNewItem);
+
+		if ( isDefault )
+			SetMenuDefaultItem(*hMenu, i, TRUE);
+
+		if ( hBMP != NULL ) {
+
+			BOOL res = SetMenuItemBitmaps(*hMenu, i, MF_BYPOSITION, hBMP, hBMP ); // doc: When the menu is destroyed, these bitmaps are not destroyed; it is up to the application to destroy them.
+			JL_S_ASSERT( res != FALSE, "Unable to SetMenuItemBitmaps." );
 		}
 	}
 
-	JS_DestroyIdArray(cx, list);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( menuObject )
+  Opens the systray menu.
+ $H the menu object
+  The menuObject is an array that describes the content of the menu.
+  string item: the given string is used as id and label.
+  '---' string: an horizontal separator.
+  object item: the object contains detailed information about the menu item:
+   * ,,string,, *id*
+    The command id of this item.
+   * ,,string,, *label*
+    The text of the menu item.
+   * ,,boolean,, *checked*
+    Add a checked icon before the item.
+   * ,,boolean,, *grayed*
+    Make the menu item appear grayed and disabled.
+   * ,,boolean,, *disabled*
+    Make the menu item disabled.
+   * ,,boolean,, *default*
+    Set the menu item as the default item.
+   * ,,boolean,, *break*
+    Add a vertical separator before the item.
+   * ,,[Icon],, *icon*
+    The icon of the menu item.
+	* ,,object,, *popup*
+    A nested popup menu.
+  $H note
+   If a function is used to define a menu item or the value of an object item, its returned value is used as item value.
+  $H example
+{{{ 
+[ 
+  'Start',
+  'Stop',
+  '---',
+  function() { return 'uptime: '+new Date() }
+  { status:'sub', popup:function() { return [ 1,2,3,4,5 ] }
+  '---',
+  { text:'Exit', id:'do_exit', icon:iconRedCross },
+  }
+]
+}}}
+**/
+DEFINE_FUNCTION( PopupMenu ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_ARG(1);
+
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+
+	HMENU hMenu = GetMenu(pv->nid.hWnd);
+	JL_S_ASSERT_RESOURCE(hMenu);
+	DestroyMenu(hMenu);
+	FreePopupMenuRoots(cx, obj);
+	JL_CHK( MakeMenu(cx, obj, JSVAL_TO_OBJECT( JL_ARG(1) ), &hMenu) );
+	SetMenu(pv->nid.hWnd, hMenu);
+
 	PostMessage(pv->nid.hWnd, MSG_POPUP_MENU, 0, 0);
 
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( balloonObject )
+  Displays a systray balloon.
+*/
+DEFINE_FUNCTION( PopupBalloon ) {
+
+	Private *pv = (Private*)JS_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(pv);
+	BOOL status;
+
+	if ( JL_ARG_ISDEF(1) ) {
+	
+		JL_S_ASSERT_OBJECT( JL_ARG(1) );
+		JSObject *infoObj = JSVAL_TO_OBJECT(JL_ARG(1));
+
+		pv->nid.dwInfoFlags = NIIF_NONE;
+
+		JL_CHK( JS_GetProperty(cx, infoObj, "infoTitle", rval) );
+		if ( !JSVAL_IS_VOID(*rval) ) {
+
+			const char *infoTitleStr;
+			unsigned int infoTitleLen;
+			JL_CHK( JsvalToStringAndLength(cx, rval, &infoTitleStr, &infoTitleLen) );
+			int len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoTitleLen);
+			memcpy( pv->nid.szInfoTitle, infoTitleStr, JL_MIN(sizeof(pv->nid.szInfoTitle)-1, infoTitleLen) );
+			pv->nid.szInfoTitle[len] = '\0';
+		}
+
+		JL_CHK( JS_GetProperty(cx, infoObj, "info", rval) );
+		if ( !JSVAL_IS_VOID(*rval) ) {
+
+			const char *infoStr;
+			unsigned int infoLen;
+			JL_CHK( JsvalToStringAndLength(cx, rval, &infoStr, &infoLen) );
+			int len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoLen);
+			memcpy( pv->nid.szInfo, infoStr, len );
+			pv->nid.szInfo[len] = '\0';
+		}
+
+		JL_CHK( JS_GetProperty(cx, infoObj, "icon", rval) );
+		if ( !JSVAL_IS_VOID(*rval) ) {
+
+			const char *iconNameStr;
+			JL_CHK( JsvalToString(cx, rval, &iconNameStr) );
+			
+			if ( strcmp(iconNameStr, "info") == 0 )
+				pv->nid.dwInfoFlags |= NIIF_INFO;
+			else
+			if ( strcmp(iconNameStr, "warning") == 0 )
+				pv->nid.dwInfoFlags |= NIIF_WARNING;
+			else
+			if ( strcmp(iconNameStr, "error") == 0 )
+				pv->nid.dwInfoFlags |= NIIF_ERROR;
+		}
+
+//		pv->nid.uTimeout = 10000;
+
+		pv->nid.uFlags |= NIF_INFO;
+		status = Shell_NotifyIcon(NIM_MODIFY, &pv->nid);
+	} else {
+
+		pv->nid.szInfo[0] = '\0';
+		pv->nid.uFlags |= NIF_INFO;
+		status = Shell_NotifyIcon(NIM_MODIFY, &pv->nid);
+	}
+	if ( status == FALSE )
+		return WinThrowError(cx, GetLastError());
+
+	*rval = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /*
 DEFINE_FUNCTION( CallDefault ) {
@@ -818,6 +1119,7 @@ DEFINE_FUNCTION( Rect ) {
 === Properties ===
 **/
 
+
 /**doc
 $TOC_MEMBER $INAME
  $TYPE Icon | $TYPE null $INAME $WRITEONLY
@@ -884,7 +1186,10 @@ DEFINE_PROPERTY( textSetter ) {
 	const char *tipText;
 	size_t tipLen;
 	JL_CHK( JsvalToStringAndLength(cx, vp, &tipText, &tipLen) );
-	strncpy( pv->nid.szTip, tipText, JL_MIN(sizeof(pv->nid.szTip)-1, tipLen) );
+	int len = JL_MIN(sizeof(pv->nid.szTip)-1, tipLen);
+	memcpy(pv->nid.szTip, tipText, len);
+	pv->nid.szTip[len] = '\0';
+
 	pv->nid.uFlags |= NIF_TIP;
 	BOOL status = Shell_NotifyIcon(NIM_MODIFY, &pv->nid);
 	JL_S_ASSERT( status == TRUE, "Unable to setup systray icon." );
@@ -902,44 +1207,15 @@ DEFINE_PROPERTY( textGetter ) {
 	JL_BAD;
 }
 
-/**doc
-$TOC_MEMBER $INAME
- $OBJ $INAME
-  The object is a key:value map of all available commands in the menu.
-  each command has an single keyName and a description object that hole the following properties:
-   * ,,string | function,, *text*
-   * ,,boolean | function,, *checked*
-   * ,,boolean | function,, *grayed*
-   * ,,boolean,, *separator*
-   * ,,boolean,, *default*
-   * ,,[Icon] | function,, *icon*
-   $H example
-   {{{
-   tray.menu = {
-    my_ena:{ text:"enable", checked:true },
-    my_add:{ text:"delete", grayed:true },
-    sep1:{ separator:true },
-    my_exit:"Exit"
-   };
-   }}}
-   $LF
-   If the value of _text_, _checked_, _grayed_ or _icon_ is a function, it is called and the return value is used.
-   $H example
-   {{{
-   tray.menu = { ena:{ text:"enable", checked:function() { return isChecked } }, ...
-   }}}
-**/
-DEFINE_PROPERTY( menuSetter ) {
 
-	JS_SetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, *vp);
-	return JS_TRUE;
+DEFINE_TRACER() {
+
+	Private *pv = (Private*)JL_GetPrivate(trc->context, obj);
+	if ( pv )
+		for ( jl::QueueCell *it = jl::QueueBegin(&pv->popupMenuRoots); it; it = jl::QueueNext(it) )
+			JS_CALL_VALUE_TRACER(trc, (jsval)QueueGetData(it), "jswinshell/Systray/popupMenuRoots");
 }
 
-DEFINE_PROPERTY( menuGetter ) {
-
-	JL_GetReservedSlot(cx, obj, SLOT_SYSTRAY_MENU, vp);
-	return JS_TRUE;
-}
 
 /**doc
 === Callback functions ===
@@ -972,18 +1248,19 @@ CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
+	HAS_TRACER
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(Close)
 		FUNCTION(ProcessEvents)
 		FUNCTION_FAST(Events)
 		FUNCTION(PopupMenu)
+		FUNCTION(PopupBalloon)
 		FUNCTION(Focus)
 		FUNCTION(Position)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY(menu)
 		PROPERTY_WRITE(icon) // _STORE  is needed to keep the reference to the image ( aboid GC )
 		PROPERTY(text)
 		PROPERTY_WRITE(visible)

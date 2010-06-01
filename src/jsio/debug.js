@@ -1,10 +1,15 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-LoadModule('jsstd'); Exec('../common/tools.js');
-RunQATests('-rep 5 jsio');
+//LoadModule('jsstd'); Exec('../common/tools.js');
+//RunQATests('-rep 5 jsio');
+
+LoadModule('jsio');
+LoadModule('jswinshell');
+
+new File( DESKTOP+'\\test.txt' ).content = '1234';
+Halt();
 
 LoadModule('jsdebug');
 LoadModule('jsstd');
-LoadModule('jsio');
 LoadModule('jstask');
 
 //jsioTest(); Halt();
