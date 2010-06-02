@@ -1,109 +1,76 @@
-#include <cstring>
-#include <stdlib.h>
-#include <stdio.h>
-
 #define XP_WIN
 #include <jsapi.h>
+#include "jsxdrapi.h"
 
-#include "../common/jlhelper.h"
-#include "../common/vector3.h"
-
-bool _unsafeMode = false;
-
-
-
-
-struct JLConstIntegerSpec {
-    int ival;
-    const char *name;
+JSClass global_class = {
+	 "global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+    JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
 };
 
-struct JLClassSpec {
-	JSExtendedClass xclasp;
-	JLClassName className;
-	JSNative constructor;
-	uintN nargs;
-	JLClassName parentProtoName;
-	JSPropertySpec *ps;
-	JSPropertySpec *static_ps;
-	JSFunctionSpec *fs;
-	JSFunctionSpec *static_fs;
-	JSConstDoubleSpec *ds;
-	JLConstIntegerSpec *is;
-	unsigned int revision;
+JSBool MyXDRObject(JSXDRState *xdr, JSObject **objp);
+
+static JSClass myClass = { 
+	"MyClass", 0, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
+	NULL, NULL, NULL, NULL, MyXDRObject, NULL, NULL, NULL
 };
 
+JSBool MyXDRObject(JSXDRState *xdr, JSObject **objp) {
 
-namespace TEST {
-	extern JLClassSpec *classSpec;
-}
+	if ( xdr->mode == JSXDR_ENCODE ) {
 
-ALWAYS_INLINE JSBool JLInitClass(JSContext *cx, JSObject *obj, JLClassSpec *cs);
+		// ...
+		return JS_TRUE;
+	}
 
+	if ( xdr->mode == JSXDR_DECODE ) {
 
-ALWAYS_INLINE int ClassNameTooLong() {
-	JL_ASSERT(false);
-	return 0;
-}
+		*objp = JS_NewObject(xdr->cx, &myClass, NULL, NULL);
+		// ...
+		return JS_TRUE;
+	}
 
-
-ALWAYS_INLINE unsigned int xxx( const JLClassName *n ) {
-
-	return 
-		(!*n[ 0] ?  0 : (*n[ 0]) ^ 
-		(!*n[ 1] ?  1 : (*n[ 1]<<1) ^ 
-		(!*n[ 2] ?  2 : (*n[ 2]) ^ 
-		(!*n[ 3] ?  3 : (*n[ 3]<<2) ^ 
-		(!*n[ 4] ?  4 : (*n[ 4]) ^ 
-		(!*n[ 5] ?  5 : (*n[ 5]<<1) ^ 
-		(!*n[ 6] ?  6 : (*n[ 6]) ^ 
-		(!*n[ 7] ?  7 : (*n[ 7]<<2) ^ 
-		(!*n[ 8] ?  8 : (*n[ 8]) ^ 
-		(!*n[ 9] ?  9 : (*n[ 9]<<1) ^ 
-		(!*n[10] ? 10 : (*n[10]) ^ 
-		(!*n[11] ? 11 : (*n[11]<<2) ^ 
-		(!*n[12] ? 12 : (*n[12]) ^ 
-		(!*n[13] ? 13 : (*n[13]<<1) ^ 
-		(!*n[14] ? 14 : (*n[14]) ^ 
-		(!*n[15] ? 15 : (*n[15]<<2) ^
-		(!*n[16] ? 16 : (*n[16]) ^ 
-		(!*n[17] ? 17 : (*n[17]<<1) ^ 
-		(!*n[18] ? 18 : (*n[18]) ^ 
-		(!*n[19] ? 19 : (*n[19]<<2) ^
-		0)))))))))))))))))))) &0x1FF;
+	return JS_TRUE;
 }
 
 
 int main(int argc, char* argv[]) {
 
-//	JLInitClass(NULL, NULL, TEST::classSpec);
+	JSRuntime *rt = JS_NewRuntime(0);
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
+	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_JIT);
+	JSObject *globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
+	JS_InitStandardClasses(cx, globalObject);
 
-	Vector3 pt;
-	Vector3 vel, pos;
+	JS_InitClass(cx, globalObject, NULL, &myClass, NULL, 0, NULL, NULL, NULL, NULL);
+	JSObject *obj1 = JS_NewObject(cx, &myClass, NULL, NULL);
+
+
+	jsval val1 = OBJECT_TO_JSVAL( obj1 );
+	jsval val2;
+
+	JSXDRState *xdr1, *xdr2;
 	
-	Vector3Set(&vel, 0,2,0);
-	Vector3Set(&pos, 3,2,0);
+	xdr1 = JS_XDRNewMem(cx, JSXDR_ENCODE);
+	JS_XDRValue(xdr1, &val1);
+	uint32 length;
+	void *buffer;
+	buffer = JS_XDRMemGetData(xdr1, &length);
+	
+	xdr2 = JS_XDRNewMem(cx, JSXDR_DECODE);
+	JS_XDRMemSetData(xdr2, buffer, length);
+	JS_XDRValue(xdr2, &val2);
+	JS_XDRMemSetData(xdr2, NULL, 0); // <- Access violation reading location 0x00000000.
+	JS_XDRDestroy(xdr2);
 
-	Vector3Set(&pt, 3, 2, 0);
-
-	Vector3SubVector3(&pt, &pt, &pos);
-	Vector3Normalize(&pt, &pt);
-	float dot = Vector3Dot(&pt, &vel);
-	Vector3Mult(&pt, &pt, dot);
+	JS_XDRDestroy(xdr1);
 
 
-
+	JS_DestroyContext(cx);
+	JS_DestroyRuntime(rt);
+	JS_ShutDown();
 
 	return EXIT_SUCCESS;
 }
-
-
-
-
-
-
-
-
-
-
-
