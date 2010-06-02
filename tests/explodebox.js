@@ -5,7 +5,6 @@ LoadModule('jsimage');
 Exec('../common/tools3d.js');
 
 LoadModule('jsvideoinput');
-var vi = new VideoInput('QuickCam', 1, 1, 15); // try to get the smallest size and the lowest fps
 
 var ui = new UI(320, 320);
 
@@ -284,6 +283,9 @@ spotlightTexture.LoadImage(texture);
 texture.Free();
 */
 
+/*
+var vi = new VideoInput('QuickCam', 1, 1, 15); // try to get the smallest size and the lowest fps
+
 vi.onImage = function(vi) {
 
 	var image = vi.GetImage(false);
@@ -294,7 +296,7 @@ vi.onImage = function(vi) {
 	spotlightTexture.LoadImage(texture);
 	texture.Free();
 }
-
+*/
 
 
 Ogl.Fog(Ogl.FOG_MODE, Ogl.LINEAR);
@@ -376,4 +378,5 @@ ui.Idle = function() {
 	}
 }
 
-ui.Loop(function(events) { events.push(vi.Events()) });
+// ui.Loop(function(events) { events.push(vi.Events()) });
+ui.Loop();
