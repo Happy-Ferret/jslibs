@@ -103,7 +103,8 @@ JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int i
 	fdObj = JSVAL_TO_OBJECT( descVal );
 	JL_S_ASSERT_INHERITANCE(JSVAL_TO_OBJECT( descVal ), JL_CLASS(Descriptor));
 
-	PRInt16 outFlag = pollDesc->out_flags;
+	PRInt16 outFlag;
+	outFlag = pollDesc->out_flags;
 	
 	cbArgv[0] = descVal;
 	cbArgv[1] = INT_TO_JSVAL(index);
@@ -334,7 +335,8 @@ DEFINE_FUNCTION_FAST( IOEvents ) {
 	upe->descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
 	JL_S_ASSERT_ALLOC( upe->descVal );
 
-	JsioPrivate *mpv = (JsioPrivate*)GetModulePrivate(cx, _moduleId);
+	JsioPrivate *mpv;
+	mpv = (JsioPrivate*)GetModulePrivate(cx, _moduleId);
 	if ( mpv->peCancel == NULL ) {
 		
 		mpv->peCancel = PR_NewPollableEvent();
@@ -348,7 +350,8 @@ DEFINE_FUNCTION_FAST( IOEvents ) {
 	
 	upe->fdCount = fdCount;
 
-	JSObject *rootedValues = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *rootedValues;
+	rootedValues = JS_NewArrayObject(cx, 0, NULL);
 	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, OBJECT_TO_JSVAL(rootedValues)) );
 
 	jsval *tmp;
@@ -879,10 +882,12 @@ DEFINE_FUNCTION_FAST( ConfigureSerialPort ) {
 	
 	JL_S_ASSERT_ARG_RANGE(1,2);
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-	JSObject *fileObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	JSObject *fileObj;
+	fileObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 	JL_S_ASSERT_INHERITANCE( fileObj, JL_CLASS(File) );
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, fileObj);
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JL_GetPrivate(cx, fileObj);
 	JL_S_ASSERT( fd != NULL, "File is closed." );
 
 	unsigned int baudRate, byteSize, parity, stopBits;
@@ -950,7 +955,7 @@ DEFINE_FUNCTION_FAST( ConfigureSerialPort ) {
 
 #ifdef XP_UNIX
 
-	struct termios tio;
+//	struct termios tio;
 //	tcgetattr(
 	// (TBD) see http://www.comptechdoc.org/os/linux/programming/c/linux_pgcserial.html
 

@@ -777,7 +777,8 @@ ALWAYS_INLINE JSBool JL_CallFunction( JSContext *cx, JSObject *obj, jsval functi
 	JSTempValueRooter tvr;
 	JS_PUSH_TEMP_ROOT(cx, argc+1, argv, &tvr);
 	argv[0] = JSVAL_NULL; // the rval
-	JSBool st = JS_CallFunctionValue(cx, obj, functionValue, argc, argv+1, argv); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
+	JSBool st;
+	st = JS_CallFunctionValue(cx, obj, functionValue, argc, argv+1, argv); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
 	JS_POP_TEMP_ROOT(cx, &tvr);
 	JL_CHK( st ); 
 	if ( rval != NULL )

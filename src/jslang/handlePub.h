@@ -73,8 +73,10 @@ inline JSBool HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
 	JL_S_ASSERT_OBJECT( handleVal );
 	JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(handleVal), GetHandleJSClass(cx));
 
-	JSObject *handleObj = JSVAL_TO_OBJECT(handleVal);
-	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);
+	JSObject *handleObj;
+	handleObj = JSVAL_TO_OBJECT(handleVal);
+	HandlePrivate *pv;
+	pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);
 	JL_S_ASSERT_RESOURCE( pv );
 	if ( pv->finalizeCallback ) // callback function is present
 		pv->finalizeCallback((char*)pv + sizeof(HandlePrivate)); // (TBD) test it !
@@ -91,8 +93,10 @@ inline HANDLE_TYPE GetHandleType( JSContext *cx, jsval handleVal ) {
 	JL_S_ASSERT_OBJECT( handleVal );
 	JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(handleVal), GetHandleJSClass(cx));
 
-	JSObject *handleObj = JSVAL_TO_OBJECT(handleVal);
-	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);
+	JSObject *handleObj;
+	handleObj = JSVAL_TO_OBJECT(handleVal);
+	HandlePrivate *pv;
+	pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);
 	JL_CHK( pv != NULL );
 	return pv->handleType;
 bad:
@@ -116,7 +120,8 @@ inline void* GetHandlePrivate( JSContext *cx, jsval handleVal ) {
 	JL_S_ASSERT_OBJECT(handleVal);
 	JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(handleVal), GetHandleJSClass(cx));
 
-	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(handleVal));
+	HandlePrivate *pv;
+	pv = (HandlePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(handleVal));
 	JL_CHK( pv != NULL );
 	return (char*)pv + sizeof(HandlePrivate); // user data is just behind our private structure.
 bad:

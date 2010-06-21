@@ -16,7 +16,7 @@
 
 #include "../host/host.h"
 
-#include "../jslang/handlepub.h"
+#include "../jslang/handlePub.h"
 
 #include "buffer.h"
 

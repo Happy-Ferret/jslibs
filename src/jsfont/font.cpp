@@ -83,9 +83,11 @@ DEFINE_CONSTRUCTOR() {
 	const char *filePathName;
 	JL_CHK( JsvalToString(cx, &JL_ARG(1), &filePathName) );
 
-	JsfontModulePrivate *mpv = (JsfontModulePrivate*)ModulePrivateGet();
+	JsfontModulePrivate *mpv;
+	mpv = (JsfontModulePrivate*)ModulePrivateGet();
 
-	JsfontPrivate *pv = (JsfontPrivate*)jl_malloc(sizeof(JsfontPrivate));
+	JsfontPrivate *pv;
+	pv = (JsfontPrivate*)jl_malloc(sizeof(JsfontPrivate));
 
 	FTCHK( FT_New_Face( mpv->ftLibrary, filePathName, faceIndex, &pv->face ) );
 	// from memory: FT_New_Memory_Face
@@ -194,7 +196,8 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 
-	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JsfontPrivate *pv;
+	pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	JL_S_ASSERT( pv->face->size->metrics.height > 0, "Invalid font size." );
@@ -253,7 +256,8 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	JSObject *obj = JL_FOBJ;
 	JL_S_ASSERT_ARG_MIN(1);
 
-	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JsfontPrivate *pv;
+	pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	JL_S_ASSERT( pv->face->size->metrics.height > 0, "Invalid font size." );

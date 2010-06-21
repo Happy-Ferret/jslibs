@@ -1086,7 +1086,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 		JL_ASSERT( st != FALSE );
 	#elif defined(XP_UNIX)
 		int st = sem_post(semaphore);
-		JL_ASSERT( st == 0 )
+		JL_ASSERT( st == 0 );
 	#endif
 	}
 
@@ -1119,7 +1119,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 //  PTHREAD_MUTEX_RECURSIVE
 
 
-	typedef struct {
+	typedef struct __JSMUtexHandler {
 #if defined(XP_WIN)
 		CRITICAL_SECTION cs;
 //		HANDLE mx;
@@ -1199,7 +1199,7 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
 
 #if defined(XP_WIN)
 
-typedef struct {
+typedef struct __JLCondHandler {
 	unsigned int waiters_count;
 	// doc. waiters_count_lock_ protects the waiters_count_ from being corrupted by race conditions.
 	//      This is not necessary as long as pthread_cond_signal and pthread_cond_broadcast are always called by a thread that has locked the same external_mutex used by pthread_cond_wait.
@@ -1436,7 +1436,7 @@ ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
 
 #elif defined(XP_UNIX)
 
-typedef struct {
+typedef struct __JLCondHandler {
 	pthread_cond_t cond;
 } *JLCondHandler;
 
@@ -1448,7 +1448,8 @@ ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
 ALWAYS_INLINE JLCondHandler JLCondCreate() {
 
 	JLCondHandler cv = (JLCondHandler)malloc(sizeof(*cv));
-	cv->cond = PTHREAD_COND_INITIALIZER;
+//	cv->cond = PTHREAD_COND_INITIALIZER;
+	pthread_cond_init(&cv->cond, NULL);
 	return cv;
 }
 
@@ -1463,7 +1464,7 @@ ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 ALWAYS_INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
   
 	JL_ASSERT( JLCondOk(cv) );
-	pthread_cond_wait(&cv->cond, external_mutex->mx);
+	pthread_cond_wait(&cv->cond, &external_mutex->mx);
 	return JLOK;
 }
 
@@ -1487,7 +1488,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 //
 // 5. Implementing Events on non-Win32 Platforms ( http://www.cs.wustl.edu/~schmidt/win32-cv-2.html )
 
-	typedef struct {
+	typedef struct __JLEventHandler {
 #if defined(XP_WIN)
 		HANDLE hEvent;
 		LONG waitingThreadCount;
@@ -1533,9 +1534,9 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		BOOL st = CloseHandle((*ev)->hEvent);
 		JL_ASSERT( st != FALSE );
 	#elif defined(XP_UNIX)
-		int st = pthread_cond_destroy(&ev->cond);
+		int st = pthread_cond_destroy(&(*ev)->cond);
 		JL_ASSERT( st == 0 );
-		st = pthread_mutex_destroy(&ev->mutex);
+		st = pthread_mutex_destroy(&(*ev)->mutex);
 		JL_ASSERT( st == 0 );
 	#endif
 		free(*ev);
@@ -1636,7 +1637,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			st = 0;
 			pthread_mutex_lock(&ev->mutex);
 			while ( !ev->triggered && st == 0 )
-				st = pthread_cond_wait(&ev->cond, &ev->mutex, &ts);
+				st = pthread_cond_timedwait(&ev->cond, &ev->mutex, &ts);
 			pthread_mutex_unlock(&ev->mutex);
 			if ( st == ETIMEDOUT )
 				return JLTIMEOUT;
@@ -1680,6 +1681,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		return thread != (JLThreadHandler)0;
 	}
 
+
 	ALWAYS_INLINE JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv ) {
 
 	#if defined(XP_WIN)
@@ -1701,6 +1703,22 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#endif
 	}
 
+
+        ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) {  // (TBD) how to manage errors ?
+
+                JL_ASSERT( JLThreadOk(thread) );
+        #if defined(XP_WIN)
+                DWORD status = WaitForSingleObject(thread, 0);
+                JL_ASSERT( status != WAIT_FAILED );
+                return status == WAIT_TIMEOUT; // else != WAIT_OBJECT_0 ?
+        #elif defined(XP_UNIX)
+                int policy;
+                struct sched_param param;
+                return pthread_getschedparam(*thread, &policy, &param) != ESRCH; // errno.h
+        #endif
+        }
+
+
 	ALWAYS_INLINE void JLThreadFree( JLThreadHandler *pThread ) {
 		
 		JL_ASSERT( pThread != NULL && JLThreadOk(*pThread) );
@@ -1718,6 +1736,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		*pThread = (JLThreadHandler)0;
 	}
 
+
 	ALWAYS_INLINE void JLThreadExit( unsigned int exitValue ) {
 
 	#if defined(XP_WIN)
@@ -1726,6 +1745,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		pthread_exit((void*)exitValue);
 	#endif
 	}
+
 
 	ALWAYS_INLINE void JLThreadCancel( JLThreadHandler thread ) {
 
@@ -1760,19 +1780,6 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#endif
 	}
 
-	ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) {  // (TBD) how to manage errors ?
-
-		JL_ASSERT( JLThreadOk(thread) );
-	#if defined(XP_WIN)
-		DWORD status = WaitForSingleObject(thread, 0);
-		JL_ASSERT( status != WAIT_FAILED );
-		return status == WAIT_TIMEOUT; // else != WAIT_OBJECT_0 ?
-	#elif defined(XP_UNIX)
-		int policy;
-		struct sched_param param;
-		return pthread_getschedparam(*thread, &policy, &param) != ESRCH; // errno.h
-	#endif
-	}
 
 	ALWAYS_INLINE void JLThreadWait( JLThreadHandler thread, unsigned int *exitValue ) {
 
@@ -1783,7 +1790,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		if ( exitValue )
 			GetExitCodeThread(thread, (DWORD*)exitValue);
 	#elif defined(XP_UNIX)
-		int st = pthread_join(*thread, (void*)exitValue); // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED.
+		int st = pthread_join(*thread, (void**)exitValue); // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED.
 		JL_ASSERT( st == 0 );
 	#endif
 	}

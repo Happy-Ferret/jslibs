@@ -254,6 +254,7 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 			JLThreadExit(0);
 		JS_TriggerOperationCallback(cx);
 	}
+	JLThreadExit(0);
 }
 
 
@@ -320,7 +321,8 @@ static JSBool LoadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 			return JS_TRUE;
 		}
 
-	uint32_t uid = JLDynamicLibraryId(module); // module unique ID
+	uint32_t uid;
+	uid = JLDynamicLibraryId(module); // module unique ID
 	ModuleInitFunction moduleInit;
 	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
 	JL_CHKBM( moduleInit, bad_dl_close, "Invalid module." );
@@ -935,6 +937,7 @@ static JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
 		for ( load = 1; headLength; load++ )
 			FreeHead();
 	}
+	JLThreadExit(0);
 }
 
 // GC callback that triggers the thread
