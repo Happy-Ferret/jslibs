@@ -22,20 +22,20 @@
 
 DECLARE_CLASS( Stream );
 
-inline JSBool PositionSet( JSContext *cx, JSObject *obj, int position ) {
+inline JSBool PositionSet( JSContext *cx, JSObject *obj, size_t position ) {
 
 	jsval tmp;
-	JL_CHK( IntToJsval(cx, position, &tmp) );
+	JL_CHK( SizeToJsval(cx, position, &tmp) );
 	return JS_SetReservedSlot(cx, obj, SLOT_STREAM_POSITION, tmp);
 	JL_BAD;
 }
 
 
-inline JSBool PositionGet( JSContext *cx, JSObject *obj, int *position ) {
+inline JSBool PositionGet( JSContext *cx, JSObject *obj, size_t *position ) {
 
 	jsval tmp;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_POSITION, &tmp) );
-	JL_CHK( JsvalToInt(cx, tmp, position) );
+	JL_CHK( JsvalToSize(cx, tmp, position) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -45,7 +45,7 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
 	JL_S_ASSERT_CLASS(obj, JL_CLASS(Stream));
 
-	int position;
+	size_t position;
 	JL_CHK( PositionGet(cx, obj, &position) );
 	jsval source;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, &source) );
@@ -156,18 +156,17 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( positionGetter ) {
 
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	int position;
+	size_t position;
 	JL_CHK( PositionGet(cx, obj, &position) );
-	*vp = INT_TO_JSVAL( position );
-	return JS_TRUE;
+	return SizeToJsval(cx, position, vp);
 	JL_BAD;
 }
 
 DEFINE_PROPERTY( positionSetter ) {
 
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	int position;
-	JL_CHK( JsvalToInt(cx, *vp, &position) );
+	size_t position;
+	JL_CHK( JsvalToSize(cx, *vp, &position) );
 	JL_S_ASSERT( position >= 0, "Invalid stream position." );
 	JL_CHK( PositionSet(cx, obj, position) );
 	return JS_TRUE;
@@ -188,13 +187,13 @@ DEFINE_PROPERTY( available ) {
 		srcObj = JSVAL_TO_OBJECT( *vp );
 	else
 		JL_CHK( JS_ValueToObject(cx, *vp, &srcObj) );
-	int length, position;
+	size_t length, position;
 	JL_CHK( PositionGet(cx, obj, &position) );
 	JL_CHK( JS_GetProperty(cx, srcObj, "length", vp) ); // use vp as a tmp variable
 	if ( JSVAL_IS_VOID( *vp ) )
 		return JS_TRUE; // if length is not defined, the returned value is undefined
-	JL_CHK( JsvalToInt(cx, *vp, &length) );
-	JL_CHK( IntToJsval(cx, length - position, vp ) );
+	JL_CHK( JsvalToSize(cx, *vp, &length) );
+	JL_CHK( SizeToJsval(cx, length - position, vp ) );
 	return JS_TRUE;
 	JL_BAD;
 }

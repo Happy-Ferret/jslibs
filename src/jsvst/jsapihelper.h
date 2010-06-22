@@ -58,7 +58,7 @@ protected:
 
 	inline jsval IntToJsval( int i ) {
 
-		if ( INT_FITS_IN_JSVAL(i) )
+		if ( i >= JSVAL_INT_MIN && i <= JSVAL_INT_MAX )
 			return INT_TO_JSVAL(i);
 		jsval rval;
 		if ( !JS_NewNumberValue(_cx, i, &rval) )

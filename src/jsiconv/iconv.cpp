@@ -350,7 +350,7 @@ $TOC_MEMBER $INAME
 struct IteratorPrivate {
 	JSContext *cx;
 	JSObject *list;
-	size_t listLen;
+	int listLen;
 };
 
 int do_one( unsigned int namescount, const char * const * names, void* data ) {

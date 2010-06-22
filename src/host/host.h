@@ -27,9 +27,9 @@
 #define NAME_GLOBAL_FUNCTION_LOAD_MODULE "LoadModule"
 #define NAME_GLOBAL_FUNCTION_UNLOAD_MODULE "UnloadModule"
 
-typedef int (*HostOutput)( void *privateData, const char *buffer, unsigned int length );
+typedef int (*HostOutput)( void *privateData, const char *buffer, size_t length );
 
-JSContext* CreateHost( size_t maxMem, size_t maxAlloc, size_t maybeGCInterval );
+JSContext* CreateHost( uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval );
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr, void* userPrivateData );
 JSBool DestroyHost( JSContext *cx );
 JSBool ExecuteScript( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );

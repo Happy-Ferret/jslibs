@@ -32,7 +32,7 @@ void* xRealloc(void *p, int s) {
 	return jl_realloc(p, s);
 }
 int xSize(void* p) {
-	return jl_msize(p);
+	return (int)jl_msize(p);
 }
 int xRoundup(int s) {
 	return s;

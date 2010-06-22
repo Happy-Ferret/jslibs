@@ -61,23 +61,23 @@ enum BufferGrowType {
 
 struct BufferChunk {
 	char *begin;
-	unsigned int pos;
-	unsigned int size;
+	size_t pos;
+	size_t size;
 };
 
 
-typedef void* (*BufferAlloc) (void * opaqueAllocatorContext, unsigned int size);
+typedef void* (*BufferAlloc) (void * opaqueAllocatorContext, size_t size);
 typedef void (*BufferFree) (void * opaqueAllocatorContext, void* address);
-typedef void* (*BufferRealloc) (void * opaqueAllocatorContext, void* address, unsigned int size);
+typedef void* (*BufferRealloc) (void * opaqueAllocatorContext, void* address, size_t size);
 
 
 struct Buffer {
 	BufferType type;
 	BufferGrowType growType;
-	unsigned int length;
+	size_t length;
 	BufferChunk *chunkList;
-	unsigned int chunkPos;
-	unsigned int chunkListSize;
+	size_t chunkPos;
+	size_t chunkListSize;
 // static memory
 	BufferChunk staticChunkList[BUFFER_INIT_CHUNK_LIST_SIZE];
 	char staticBuffer[BUFFER_INIT_CHUNK_SIZE];

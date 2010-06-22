@@ -26,14 +26,14 @@ struct ClassPrivate {
 	char name[PATH_MAX +1];
 	PRSharedMemory *shm;
 	void *mem;
-	unsigned int size;
+	size_t size;
 	PRSem *accessSem;
 };
 
 
 struct MemHeader {
-	unsigned int currentDataLength;
-	unsigned int accessCount;
+	size_t currentDataLength;
+	int accessCount;
 };
 
 
@@ -271,7 +271,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
 
-	unsigned int dataLength;
+	size_t dataLength;
 	if ( JL_FARG_ISDEF(1) )
 		JL_CHK( JsvalToUInt(cx, JL_FARG(1), &dataLength) );
 	else
@@ -386,7 +386,7 @@ DEFINE_PROPERTY( contentGetter ) {
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
 
-	unsigned int dataLength;
+	size_t dataLength;
 	dataLength = mh->currentDataLength;
 	char *data;
 	data = (char*)JS_malloc(cx, dataLength +1);

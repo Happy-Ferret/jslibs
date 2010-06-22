@@ -32,8 +32,8 @@ struct HostPrivate {
 	volatile unsigned int maybeGCInterval;
 	JLSemaphoreHandler watchDogSemEnd;
 	JLThreadHandler watchDogThread;
-	int (*hostStdOut)( void *privateData, const char *buffer, unsigned int length );
-	int (*hostStdErr)( void *privateData, const char *buffer, unsigned int length );
+	int (*hostStdOut)( void *privateData, const char *buffer, size_t length );
+	int (*hostStdErr)( void *privateData, const char *buffer, size_t length );
 	JSErrorCallback errorCallback;
 	JSLocaleCallbacks localeCallbacks;
 	struct ModulePrivate {

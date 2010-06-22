@@ -21,7 +21,7 @@
 
 #define DEFAULT_ACCESS_RIGHTS (PR_IRWXU | PR_IRWXG) // read write permission for owner & group
 
-PRIntn FileOpenFlagsFromString( const char *strFlags, int length ) {
+PRIntn FileOpenFlagsFromString( const char *strFlags, size_t length ) {
 
 	if ( length == 0 || length > 2 )
 		return 0;
@@ -431,10 +431,12 @@ DEFINE_PROPERTY( contentSetter ) {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 	const char *buf;
-	unsigned int len;
+	size_t len;
 	JL_CHK( JsvalToStringAndLength(cx, vp, &buf, &len) );
 	PRInt32 bytesSent;
-	bytesSent = PR_Write( fd, buf, len );
+	
+	JL_S_ASSERT( len < PR_INT32_MAX, "Too many data." );
+	bytesSent = PR_Write( fd, buf, (PRInt32)len );
 	if ( bytesSent == -1 ) {
 		
 		PR_Close(fd);

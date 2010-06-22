@@ -392,9 +392,10 @@ DEFINE_FUNCTION_FAST( SendTo ) {
 	const char *str;
 	size_t len;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(3), &str, &len) );
+	JL_S_ASSERT( len <= PR_INT32_MAX, "Too many data." );
 
 	PRInt32 res;
-	res = PR_SendTo(fd, str, len, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
+	res = PR_SendTo(fd, str, (PRInt32)len, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
 	size_t sentAmount;
 	if ( res == -1 ) {
@@ -562,13 +563,17 @@ DEFINE_FUNCTION_FAST( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	const char *headers;
 	headers = NULL;
 	size_t headerLength;
-	if ( JL_FARG_ISDEF(3) )
+	if ( JL_FARG_ISDEF(3) ) {
+
 		JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(3), &headers, &headerLength) );
-	else
+		JL_S_ASSERT( headerLength <= PR_INT32_MAX, "Header too long." );
+	} else {
+
 		headerLength = 0;
+	}
 
 	PRInt32 bytes;
-	bytes = PR_TransmitFile( socketFd, fileFd, headers, headerLength, flag, connectTimeout );
+	bytes = PR_TransmitFile( socketFd, fileFd, headers, (PRInt32)headerLength, flag, connectTimeout );
 	if ( bytes == -1 )
 		return ThrowIoError(cx);
 
@@ -841,13 +846,16 @@ DEFINE_PROPERTY( OptionGetter ) {
 			*vp = sod.value.keep_alive == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
 			break;
 		case PR_SockOpt_RecvBufferSize:
-			*vp = INT_TO_JSVAL(sod.value.recv_buffer_size);
+//			*vp = INT_TO_JSVAL(sod.value.recv_buffer_size);
+			JL_CHK( SizeToJsval(cx, sod.value.recv_buffer_size, vp) );
 			break;
 		case PR_SockOpt_SendBufferSize:
-			*vp = INT_TO_JSVAL(sod.value.send_buffer_size);
+//			*vp = INT_TO_JSVAL((int)sod.value.send_buffer_size);
+			JL_CHK( SizeToJsval(cx, sod.value.send_buffer_size, vp) );
 			break;
 		case PR_SockOpt_MaxSegment:
-			*vp = INT_TO_JSVAL(sod.value.max_segment);
+//			*vp = INT_TO_JSVAL(sod.value.max_segment);
+			JL_CHK( SizeToJsval(cx, sod.value.max_segment, vp) );
 			break;
 		case PR_SockOpt_Nonblocking:
 			*vp = sod.value.non_blocking == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;

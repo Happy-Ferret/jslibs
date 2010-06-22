@@ -164,13 +164,14 @@ DEFINE_CONSTRUCTOR() {
 		size_t length;
 		const char *sBuffer;
 		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
+		JL_S_ASSERT( length >= JSVAL_INT_MIN && length <= JSVAL_INT_MAX, "Blob too long." );
 
 		dBuffer = JS_malloc(cx, length +1);
 		JL_CHK( dBuffer );
 		((char*)dBuffer)[length] = '\0';
 		memcpy(dBuffer, sBuffer, length);
 		JL_SetPrivate(cx, obj, dBuffer);
-		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(length) ) );
+		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL((int)length) ) );
 	} else {
 
 		JL_SetPrivate(cx, obj, NULL);
@@ -330,10 +331,10 @@ DEFINE_FUNCTION_FAST( substr ) {
 	jsval arg1;
 	arg1 = JL_FARG(1);
 
-	int start;
+	size_t start;
 	if ( JsvalIsPInfinity(cx, arg1) )
 		start = (signed)dataLength;
-	else if ( !JsvalToInt(cx, arg1, &start) )
+	else if ( !JsvalToSize(cx, arg1, &start) )
 		start = 0;
 
 	if ( start >= (signed)dataLength ) {
@@ -350,7 +351,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 
 	// now 0 <= start < dataLength
 
-	int length;
+	size_t length;
 	if ( argc >= 2 ) {
 
 		jsval arg2;
@@ -358,7 +359,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 
 		if ( JsvalIsPInfinity(cx, arg2) )
 			length = dataLength;
-		else if ( !JsvalToInt(cx, arg2, &length) )
+		else if ( !JsvalToSize(cx, arg2, &length) )
 			length = 0;
 
 		if ( length <= 0 ) {
@@ -584,12 +585,11 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 	JL_CHK( BlobLength(cx, obj, &length) );
 
 	if ( sLength == 0 && argc < 2 ) {
-
-		*JL_FRVAL = INT_TO_JSVAL(length);
-		return JS_TRUE;
+		
+		return SizeToJsval(cx, length, JL_FRVAL);
 	}
 
-	int start;
+	size_t start;
 	if ( JL_FARG_ISDEF(2) ) {
 		
 		jsval arg2 = JL_FARG(2);
@@ -604,7 +604,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 				start = length - sLength;
 			} else {
 				
-				JL_CHK( JsvalToInt(cx, JL_FARG(2), &start) );
+				JL_CHK( JsvalToSize(cx, JL_FARG(2), &start) );
 				if ( start + sLength > length ) {
 
 					start = length - sLength;
@@ -617,7 +617,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 		start = length - sLength;
 	}
 
-	for ( long i = start; i >= 0; i-- ) {
+	for ( size_t i = start; i >= 0; i-- ) {
 
 		size_t j;
 		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ ) ;
@@ -806,8 +806,7 @@ DEFINE_PROPERTY( length ) {
 	JL_S_ASSERT_THIS_CLASS();
 	size_t length;
 	JL_CHK( BlobLength(cx, obj, &length) );
-	*vp = INT_TO_JSVAL( length );
-	return JS_TRUE;
+	return SizeToJsval(cx, length, vp);
 	JL_BAD;
 }
 
@@ -979,9 +978,10 @@ DEFINE_XDR() {
 		JL_CHK( BlobLength(xdr->cx, *objp, &length) );
 		JL_CHK( BlobBuffer(xdr->cx, *objp, &buffer) );
 		uint32 tmp;
-		tmp = length;
+		JL_CHK( length <= (uint32)-1 ); // , "buffer too long."
+		tmp = (uint32)length;
 		JL_CHK( JS_XDRUint32(xdr, &tmp) );
-		JL_CHK( JS_XDRBytes(xdr, (char*)buffer, length) ); // ugly but safe de-const because we are JSXDR_ENCODE.
+		JL_CHK( JS_XDRBytes(xdr, (char*)buffer, tmp) ); // ugly but safe de-const because we are JSXDR_ENCODE.
 
 		JSObject *it;
 		it = JS_NewPropertyIterator(xdr->cx, *objp); // see JS_Enumerate that calls obj's JSClass.enumerate hook. JS_DestroyIdArray.

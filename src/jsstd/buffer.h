@@ -12,7 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-JSBool WriteRawDataChunk( JSContext *cx, JSObject *obj, unsigned int amount, const char *str );
-JSBool ReadRawDataAmount( JSContext *cx, JSObject *obj, unsigned int *amount, char *str );
-JSBool ReadDataAmount( JSContext *cx, JSObject *obj, unsigned int amount, jsval *rval );
-JSBool UnReadRawDataChunk( JSContext *cx, JSObject *obj, char *data, unsigned int length );
+JSBool WriteRawDataChunk( JSContext *cx, JSObject *obj, size_t amount, const char *str );
+JSBool ReadRawDataAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str );
+JSBool ReadDataAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval );
+JSBool UnReadRawDataChunk( JSContext *cx, JSObject *obj, char *data, size_t length );

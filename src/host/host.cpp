@@ -196,7 +196,7 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
     }
 
     /* report->linebuf usually ends with a newline. */
-    n = strlen(report->linebuf);
+    n = (int)strlen(report->linebuf);
     //fprintf(gErrFile, ":\n%s%s%s%s",
 	 msg = JS_smprintf(":\n%s%s%s%s",
             prefix,
@@ -393,7 +393,7 @@ static JSClass global_class = { // global variable, but this is not an issue eve
 
 
 // default: CreateHost(-1, -1, 0);
-JSContext* CreateHost(size_t maxMem, size_t maxAlloc, size_t maybeGCInterval ) {
+JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 
 //	JS_SetCStringsAreUTF8(); // don't use !
 	JSRuntime *rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.

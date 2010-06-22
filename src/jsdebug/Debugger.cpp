@@ -673,7 +673,7 @@ DEFINE_PROPERTY( excludedFileList ) {
 
 	jsval tmp;
 	const char *buffer;
-	unsigned int bufferLength;
+	size_t bufferLength;
 	char *filename;
 	for ( jsuint i = 0; i < length; ++i ) {
 

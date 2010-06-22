@@ -59,7 +59,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JsvalToBool(cx, JL_ARG(2), &useNetworkEndian) );
 	else
 		useNetworkEndian = false;
-	JL_SetPrivate(cx, obj, (void*)(useNetworkEndian ? 2 : 0));
+	JL_SetPrivate(cx, obj, (void*)(size_t)(useNetworkEndian ? 2 : 0));
 
 	return JS_TRUE;
 	JL_BAD;
@@ -87,8 +87,8 @@ DEFINE_FUNCTION( ReadInt ) {
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
-	unsigned int size;
-	JL_CHK( JsvalToUInt(cx, JL_ARG(1), &size) );
+	size_t size;
+	JL_CHK( JsvalToSize(cx, JL_ARG(1), &size) );
 
 	bool isSigned;
 	if ( JL_ARG_ISDEF(2) )
@@ -100,12 +100,12 @@ DEFINE_FUNCTION( ReadInt ) {
 	if ( JL_ARG_ISDEF(3) )
 		JL_CHK( JsvalToBool(cx, JL_ARG(3), &netConv) );
 	else
-		netConv = (int)JL_GetPrivate(cx, obj) != 0;
+		netConv = (size_t)JL_GetPrivate(cx, obj) != 0;
 
 	uint8_t data[8]; // = { 0 };
 	memset(data, 0, sizeof(data));
 
-	unsigned int amount;
+	size_t amount;
 	amount = size;
 	JL_CHK( ReadRawDataAmount(cx, bufferObject, &amount, (char*)data) );
 	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we have read.
@@ -136,7 +136,7 @@ DEFINE_FUNCTION( ReadInt ) {
 			if ( isSigned ) {
 
 				int32_t val = (signed)(*(uint32_t*)data << 8) >> 8;
-				if ( INT_FITS_IN_JSVAL(val) )
+				if ( val >= JSVAL_INT_MIN && val <= JSVAL_INT_MAX )
 					*rval = INT_TO_JSVAL( val );
 				else
 					JL_CHK( JS_NewNumberValue(cx, val, rval) );
@@ -144,7 +144,7 @@ DEFINE_FUNCTION( ReadInt ) {
 			} else {
 
 				uint32_t val = *(uint32_t*)data;
-				if ( INT_FITS_IN_JSVAL(val) )
+				if ( val >= JSVAL_INT_MIN && val <= JSVAL_INT_MAX )
 					*rval = INT_TO_JSVAL( val );
 				else
 					JL_CHK( JS_NewNumberValue(cx, val, rval) );
@@ -156,14 +156,14 @@ DEFINE_FUNCTION( ReadInt ) {
 			if ( isSigned ) {
 
 				int32_t val = *(int32_t*)data;
-				if ( INT_FITS_IN_JSVAL(val) )
+				if ( val >= JSVAL_INT_MIN && val <= JSVAL_INT_MAX )
 					*rval = INT_TO_JSVAL( val );
 				else // if not, we have to create a new number
 					JL_CHK( JS_NewNumberValue(cx, val, rval) );
 			} else {
 
 				uint32_t val = *(uint32_t*)data;
-				if ( INT_FITS_IN_JSVAL(val) )
+				if ( val >= JSVAL_INT_MIN && val <= JSVAL_INT_MAX )
 					*rval = INT_TO_JSVAL( val );
 				else // if not, we have to create a new number
 					JL_CHK( JS_NewNumberValue(cx, val, rval) );
@@ -215,8 +215,8 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 	jsval jsvalue;
 	jsvalue = JL_ARG(1);
 
-	unsigned int size;
-	JL_CHK( JsvalToUInt(cx, JL_ARG(2), &size) );
+	size_t size;
+	JL_CHK( JsvalToSize(cx, JL_ARG(2), &size) );
 
 	bool isSigned;
 	if ( JL_ARG_ISDEF(3) )
@@ -228,7 +228,7 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 	if ( JL_ARG_ISDEF(4) )
 		JL_CHK( JsvalToBool(cx, JL_ARG(4), &netConv) );
 	else
-		netConv = (int)JL_GetPrivate(cx, obj) != 0;
+		netConv = (size_t)JL_GetPrivate(cx, obj) != 0;
 
 	uint8_t data[8]; // = { 0 };
 	memset(data, 0, sizeof(data));
@@ -305,11 +305,9 @@ DEFINE_FUNCTION( ReadReal ) {
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
-	unsigned int size;
-	size = JSVAL_TO_INT( JL_ARG(1) );
-
+	size_t amount, size;
+	JL_CHK( JsvalToSize(cx, JL_ARG(1), &size) );
 	uint8_t data[16];
-	unsigned int amount;
 	amount = size;
 	JL_CHK( ReadRawDataAmount(cx, bufferObject, &amount, (char*)data) );
 	if ( amount < size ) { // not enough data to complete the requested operation, then unread the few data we read
@@ -382,7 +380,7 @@ DEFINE_PROPERTY_SETTER( useNetworkEndian ) {
 	JL_S_ASSERT_THIS_CLASS();
 	bool useNetworkEndian;
 	JL_CHK( JsvalToBool(cx, *vp, &useNetworkEndian) );
-	JL_SetPrivate(cx, obj, (void*)(useNetworkEndian ? 2 : 0));
+	JL_SetPrivate(cx, obj, (void*)(size_t)(useNetworkEndian ? 2 : 0));
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -390,7 +388,7 @@ DEFINE_PROPERTY_SETTER( useNetworkEndian ) {
 DEFINE_PROPERTY_GETTER( useNetworkEndian ) {
 
 	JL_S_ASSERT_THIS_CLASS();
-	return BoolToJsval(cx, (int)JL_GetPrivate(cx, obj) != 0, vp);
+	return BoolToJsval(cx, (size_t)JL_GetPrivate(cx, obj) != 0, vp);
 	JL_BAD;
 }
 

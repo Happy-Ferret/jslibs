@@ -19,8 +19,8 @@
 #include "jlplatform.h"
 #include <jsapi.h>
 
-typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, unsigned int *amount );
-typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, const char **buffer, unsigned int *size );
+typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, size_t *amount );
+typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, const char **buffer, size_t *size );
 typedef JSBool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
 
 inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
@@ -428,7 +428,7 @@ ALWAYS_INLINE JSClass* JL_GetClass(JSObject *obj) {
 	return obj->getClass();
 }
 
-ALWAYS_INLINE unsigned int JL_GetStringLength(JSString *jsstr) {
+ALWAYS_INLINE size_t JL_GetStringLength(JSString *jsstr) {
 
 	return jsstr->length();
 }
@@ -513,9 +513,9 @@ ALWAYS_INLINE JSStackFrame* JL_CurrentStackFrame(JSContext *cx) {
 	return js_GetTopStackFrame(cx);
 }
 
-ALWAYS_INLINE unsigned int JL_StackSize(JSContext *cx, JSStackFrame *fp) {
+ALWAYS_INLINE uint32_t JL_StackSize(JSContext *cx, JSStackFrame *fp) {
 
-	unsigned int length = 0;
+	uint32_t length = 0;
 	for ( ; fp; fp = fp->down ) // for ( JSStackFrame *fp = JL_CurrentStackFrame(cx); fp; JS_FrameIterator(cx, &fp) )
 		++length;
 	return length; // 0 is the first frame
@@ -854,15 +854,17 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		int file = open(compiledFileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
 		JL_CHKM( file != -1, "Unable to open file \"%s\" for reading.", compiledFileName );
 
-		int compFileSize = compFileStat.st_size; // filelength(file); ?
+		JL_S_ASSERT( compFileStat.st_size < UINT_MAX, "Compiled file too big." );
+		size_t compFileSize = compFileStat.st_size; // filelength(file); ?
 		data = jl_malloc(compFileSize); // (TBD) free on error
-		int readCount = read( file, data, compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
-		JL_CHKM( readCount != -1 && readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
+		int readCount = read( file, data, (unsigned int)compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
+		JL_CHKM( readCount >= 0 && (unsigned)readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
 		close( file );
 
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 		JL_CHK( xdr );
-		JS_XDRMemSetData(xdr, data, compFileSize);
+		JL_S_ASSERT( compFileSize <= (uint32)-1, "Compiled script too big." );
+		JS_XDRMemSetData(xdr, data, (uint32)compFileSize);
 
 
 		// we want silent failures.
@@ -939,15 +941,17 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	scriptFile = open(fileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
 	JL_CHKM( scriptFile >= 0, "Unable to open file \"%s\" for reading.", fileName );
 
-	int scriptFileSize;
+	size_t scriptFileSize;
 	scriptFileSize = lseek(scriptFile, 0, SEEK_END);
+	JL_S_ASSERT( scriptFileSize < UINT_MAX, "Compiled file too big." );
+
 //	int scriptFileSize;
 //	scriptFileSize = (unsigned)tell(scriptFile);
 	lseek(scriptFile, 0, SEEK_SET);
 	char *scriptBuffer;
 	scriptBuffer = (char*)alloca(scriptFileSize);
 	int res;
-	res = read(scriptFile, (void*)scriptBuffer, scriptFileSize);
+	res = read(scriptFile, (void*)scriptBuffer, (unsigned int)scriptFileSize);
 	close(scriptFile);
 	JL_CHKM( res >= 0, "Unable to read file \"%s\".", fileName );
 	scriptFileSize = (unsigned)res;
@@ -979,7 +983,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	if ( enc == UTF8 ) { // (TBD) check if JS_DecodeBytes does the right things
 
 		jschar *scriptText = (jschar *)alloca(scriptFileSize * 2);
-		int scriptTextLength = scriptFileSize * 2;
+		size_t scriptTextLength = scriptFileSize * 2;
 
 		JL_CHKM( UTF8ToUTF16LE((unsigned char*)scriptText, &scriptTextLength, (unsigned char*)scriptBuffer, &scriptFileSize) >= 0, "Unable do decode UTF8 data." );
 
@@ -1075,7 +1079,7 @@ ALWAYS_INLINE JSBool JL_GetVariableValue( JSContext *cx, const char *name, jsval
 ///////////////////////////////////////////////////////////////////////////////
 // jslibs tools
 
-ALWAYS_INLINE bool JL_MaybeRealloc( unsigned int requested, unsigned int received ) {
+ALWAYS_INLINE bool JL_MaybeRealloc( size_t requested, size_t received ) {
 
 	return requested != 0 && (128 * received / requested < 96) && (requested - received > 64); // "128 *": instead using percent, we use per-128
 }
@@ -1186,7 +1190,7 @@ ALWAYS_INLINE bool JL_ValueIsBlob( JSContext *cx, jsval v ) {
 
 
 // note: a Blob is either a JSString or a Blob object if the jslang module has been loaded.
-ALWAYS_INLINE JSBool JL_NewBlob( JSContext *cx, void* buffer, unsigned int length, jsval *vp ) {
+ALWAYS_INLINE JSBool JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
 
 	if (unlikely( length == 0 )) { // Empty Blob must acts like an empty string: !'' === true
 
@@ -1205,7 +1209,8 @@ ALWAYS_INLINE JSBool JL_NewBlob( JSContext *cx, void* buffer, unsigned int lengt
 		blob = JS_ConstructObject(cx, blobClass, NULL, NULL); // need to be constructed else Buffer NativeInterface will not be set !
 		JL_CHK( blob );
 		*vp = OBJECT_TO_JSVAL(blob);
-		JL_CHK( JS_SetReservedSlot(cx, blob, 0, INT_TO_JSVAL( length )) ); // 0 for SLOT_BLOB_LENGTH !!!
+		JL_S_ASSERT( length > JSVAL_INT_MAX, "Blob too big." );
+		JL_CHK( JS_SetReservedSlot(cx, blob, 0, INT_TO_JSVAL( (jsint)length )) ); // 0 for SLOT_BLOB_LENGTH !!!
 		JL_SetPrivate(cx, blob, buffer); // blob data
 		return JS_TRUE;
 	}
@@ -1226,7 +1231,7 @@ bad:
 }
 
 
-ALWAYS_INLINE JSBool JL_NewBlobCopyN( JSContext *cx, const void *data, unsigned int amount, jsval *vp ) {
+ALWAYS_INLINE JSBool JL_NewBlobCopyN( JSContext *cx, const void *data, size_t amount, jsval *vp ) {
 
 	if (unlikely( amount == 0 )) { // Empty Blob must acts like an empty string: !'' == true
 
@@ -1259,7 +1264,7 @@ ALWAYS_INLINE jsid StringToJsid( JSContext *cx, const char *cstr ) {
 
 
 // beware: caller should keep a reference to buffer as short time as possible, because it is difficult to protect it from GC.
-ALWAYS_INLINE JSBool JsvalToStringAndLength( JSContext *cx, jsval *val, const char** buffer, unsigned int *size ) {
+ALWAYS_INLINE JSBool JsvalToStringAndLength( JSContext *cx, jsval *val, const char** buffer, size_t *size ) {
 
 	if ( JSVAL_IS_STRING(*val) ) { // for string literals
 
@@ -1287,7 +1292,7 @@ ALWAYS_INLINE JSBool JsvalToStringAndLength( JSContext *cx, jsval *val, const ch
 }
 
 
-ALWAYS_INLINE JSBool JsvalToStringLength( JSContext *cx, jsval val, unsigned int *length ) {
+ALWAYS_INLINE JSBool JsvalToStringLength( JSContext *cx, jsval val, size_t *length ) {
 
 	if ( JSVAL_IS_STRING(val) ) { // for string literals
 
@@ -1318,7 +1323,7 @@ ALWAYS_INLINE JSBool JsvalToString( JSContext *cx, jsval *val, const char** buff
 	}
 	if (likely( !JSVAL_IS_PRIMITIVE(*val) )) { // for NIBufferGet support
 
-		unsigned int size; //unused
+		size_t size; //unused
 		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(*val));
 		if ( fct )
 			return fct(cx, JSVAL_TO_OBJECT(*val), buffer, &size);
@@ -1354,7 +1359,7 @@ ALWAYS_INLINE JSBool StringToJsval( JSContext *cx, const char* cstr, jsval *val 
 }
 
 
-ALWAYS_INLINE JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cstr, unsigned int length ) {
+ALWAYS_INLINE JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cstr, size_t length ) {
 
 	if (likely( length > 0 )) {
 
@@ -1373,6 +1378,28 @@ ALWAYS_INLINE JSBool StringAndLengthToJsval( JSContext *cx, jsval *val, const ch
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+ALWAYS_INLINE JSBool JsvalToSize( JSContext *cx, jsval val, size_t *i ) {
+
+	if (likely( JSVAL_IS_INT(val) )) {
+
+		*i = JSVAL_TO_INT(val);
+		return JS_TRUE;
+	}
+	jsdouble d;
+	JL_CHK( JS_ValueToNumber(cx, val, &d) ); // JS_ValueToNumber also manage JSVAL_NULL
+	if (likely( d >= 0 && d <= (jsdouble)(size_t)(-1) )) {
+
+		*i = (size_t)d;
+		return JS_TRUE;
+	}
+
+bad:
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "a size" );
+	return JS_FALSE;
+}
+
 
 
 ALWAYS_INLINE JSBool JsvalToInt( JSContext *cx, jsval val, int *i ) {
@@ -1422,9 +1449,25 @@ bad:
 }
 
 
+
+ALWAYS_INLINE JSBool SizeToJsval( JSContext *cx, size_t size, jsval *val ) {
+
+	if (likely( size <= JSVAL_INT_MAX )) {
+
+		*val = INT_TO_JSVAL((jsint)size);
+		return JS_TRUE;
+	}
+	return JS_NewNumberValue(cx, size, val);
+
+bad:
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "a size" );
+	return JS_FALSE;
+}
+
+
 ALWAYS_INLINE JSBool IntToJsval( JSContext *cx, int i, jsval *val ) {
 
-	if (likely( INT_FITS_IN_JSVAL(i) )) {
+	if (likely( i >= JSVAL_INT_MIN && i <= JSVAL_INT_MAX )) {
 
 		*val = INT_TO_JSVAL(i);
 		return JS_TRUE;
@@ -1548,7 +1591,7 @@ ALWAYS_INLINE JSBool ObjectToScript( JSContext *cx, JSObject *obj, JSScript **sc
 // vector convertion functions
 
 // if useValArray is true, val must be a valid array that is used to store the values.
-ALWAYS_INLINE JSBool IntVectorToJsval( JSContext *cx, int *vector, uint32 length, jsval *val, bool useValArray = false ) {
+ALWAYS_INLINE JSBool IntVectorToJsval( JSContext *cx, int *vector, jsuint length, jsval *val, bool useValArray = false ) {
 
 	JSObject *arrayObj;
 	if ( useValArray ) {
@@ -1563,7 +1606,7 @@ ALWAYS_INLINE JSBool IntVectorToJsval( JSContext *cx, int *vector, uint32 length
 		*val = OBJECT_TO_JSVAL(arrayObj);
 	}
 	jsval tmp;
-	for ( unsigned int i = 0; i < length; i++ ) {
+	for ( jsuint i = 0; i < length; i++ ) {
 
 		JL_CHK( IntToJsval(cx, vector[i], &tmp) );
 		JL_CHK( JS_SetElement(cx, arrayObj, i, &tmp) );
@@ -1574,7 +1617,7 @@ ALWAYS_INLINE JSBool IntVectorToJsval( JSContext *cx, int *vector, uint32 length
 }
 
 
-ALWAYS_INLINE JSBool JsvalToIntVector( JSContext *cx, jsval val, int *vector, uint32 maxLength, uint32 *currentLength ) {
+ALWAYS_INLINE JSBool JsvalToIntVector( JSContext *cx, jsval val, int *vector, jsuint maxLength, jsuint *currentLength ) {
 
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *arrayObj;
@@ -1592,7 +1635,7 @@ ALWAYS_INLINE JSBool JsvalToIntVector( JSContext *cx, jsval val, int *vector, ui
 
 
 
-ALWAYS_INLINE JSBool UIntVectorToJsval( JSContext *cx, unsigned int *vector, uint32 length, jsval *val, bool useValArray = false ) {
+ALWAYS_INLINE JSBool UIntVectorToJsval( JSContext *cx, unsigned int *vector, jsuint length, jsval *val, bool useValArray = false ) {
 
 	JSObject *arrayObj;
 	if ( useValArray ) {
@@ -1607,7 +1650,7 @@ ALWAYS_INLINE JSBool UIntVectorToJsval( JSContext *cx, unsigned int *vector, uin
 		*val = OBJECT_TO_JSVAL(arrayObj);
 	}
 	jsval tmp;
-	for ( unsigned int i = 0; i < length; i++ ) {
+	for ( jsuint i = 0; i < length; i++ ) {
 
 		JL_CHK( UIntToJsval(cx, vector[i], &tmp) );
 		JL_CHK( JS_SetElement(cx, arrayObj, i, &tmp) );
@@ -1619,7 +1662,7 @@ ALWAYS_INLINE JSBool UIntVectorToJsval( JSContext *cx, unsigned int *vector, uin
 
 
 
-ALWAYS_INLINE JSBool JsvalToUIntVector( JSContext *cx, jsval val, unsigned int *vector, uint32 maxLength, uint32 *currentLength ) {
+ALWAYS_INLINE JSBool JsvalToUIntVector( JSContext *cx, jsval val, unsigned int *vector, jsuint maxLength, jsuint *currentLength ) {
 
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *arrayObj;
@@ -1636,7 +1679,7 @@ ALWAYS_INLINE JSBool JsvalToUIntVector( JSContext *cx, jsval val, unsigned int *
 }
 
 
-ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, uint32 length, jsval *val, bool reuseValArray = false ) {
+ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, jsuint length, jsval *val, bool reuseValArray = false ) {
 
 	JSObject *arrayObj;
 	if ( reuseValArray ) {
@@ -1662,7 +1705,7 @@ ALWAYS_INLINE JSBool FloatVectorToJsval( JSContext *cx, const float *vector, uin
 }
 
 
-ALWAYS_INLINE JSBool JsvalToFloatVector( JSContext *cx, jsval val, float *vector, uint32 maxLength, uint32 *currentLength ) {
+ALWAYS_INLINE JSBool JsvalToFloatVector( JSContext *cx, jsval val, float *vector, jsuint maxLength, jsuint *currentLength ) {
 
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *arrayObj;
@@ -1679,7 +1722,7 @@ ALWAYS_INLINE JSBool JsvalToFloatVector( JSContext *cx, jsval val, float *vector
 }
 
 
-ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, uint32 length, jsval *val, bool reuseValArray = false ) {
+ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, jsuint length, jsval *val, bool reuseValArray = false ) {
 
 	JSObject *arrayObj;
 	if ( reuseValArray ) {
@@ -1705,7 +1748,7 @@ ALWAYS_INLINE JSBool DoubleVectorToJsval( JSContext *cx, const double *vector, u
 }
 
 
-ALWAYS_INLINE JSBool JsvalToDoubleVector( JSContext *cx, jsval val, double *vector, uint32 maxLength, uint32 *currentLength ) {
+ALWAYS_INLINE JSBool JsvalToDoubleVector( JSContext *cx, jsval val, double *vector, jsuint maxLength, jsuint *currentLength ) {
 
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *arrayObj;
@@ -1972,10 +2015,12 @@ ALWAYS_INLINE JSBool GetNativeInterface( JSContext *cx, JSObject *obj, JSObject 
 ///////////////////////////////////////////////////////////////////////////////
 // NativeInterface StreamRead
 
-inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, unsigned int *amount ) {
+inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *amount ) {
 
 	JSAutoTempValueRooter tvr(cx); // tvr.addr(); tvr.value()
-	JL_CHK( IntToJsval(cx, *amount, tvr.addr()) );
+
+	JL_S_ASSERT( *amount < INT_MAX, "Too many data." );
+	JL_CHK( IntToJsval(cx, (int)*amount, tvr.addr()) );
 	JL_CHKM( JS_CallFunctionId(cx, obj, JLID(cx, Read), 1, tvr.addr(), tvr.addr()), "Read() function not found.");
 
 	if ( JSVAL_IS_VOID(tvr.value()) ) { // (TBD)! with sockets, undefined mean 'closed', that is not supported.
@@ -1985,7 +2030,7 @@ inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, unsigned
 	}
 
 	const char *tmpBuf;
-	unsigned int size;
+	size_t size;
 	JL_CHK( JsvalToStringAndLength(cx, tvr.addr(), &tmpBuf, &size) );
 	*amount = JL_MIN(size, *amount);
 	memcpy(buffer, tmpBuf, *amount);
@@ -2031,7 +2076,7 @@ inline NIStreamRead StreamReadInterface( JSContext *cx, JSObject *obj ) {
 ///////////////////////////////////////////////////////////////////////////////
 // NativeInterface BufferGet
 
-inline JSBool JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, unsigned int *size ) {
+inline JSBool JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, size_t *size ) {
 
 	JSTempValueRooter tvr; // use AutoArrayRooter instead ?
 	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // needed to protect the returned value.

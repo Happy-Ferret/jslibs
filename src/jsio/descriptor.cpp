@@ -62,7 +62,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 		return JS_TRUE; // no data, but it is not an error.
 	}
 */
-	res = PR_Read(fd, buf, *amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
+	res = PR_Read(fd, buf, *amount > PR_INT32_MAX ? PR_INT32_MAX : (PRInt32)*amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
 	if ( res == -1 ) {
 
 		PRErrorCode errorCode = PR_GetError();

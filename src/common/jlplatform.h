@@ -25,8 +25,6 @@
 #define JL_MACRO_BEGIN do {
 #define JL_MACRO_END } while(0)
 
-#define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
-
 #define __DATE__YEAR ((((__DATE__ [7] - '0') * 10 + (__DATE__ [8] - '0')) * 10 + (__DATE__ [9] - '0')) * 10 + (__DATE__ [10] - '0'))
 #define __DATE__MONTH (__DATE__ [2] == 'n' ? (__DATE__ [1] == 'a' ? 0 : 5) : __DATE__ [2] == 'l' ? 6 : __DATE__ [2] == 'g' ? 7 : __DATE__ [2] == 'p' ? 8 : __DATE__ [2] == 't' ? 9 : __DATE__ [2] == 'v' ? 10 : 11)
 #define __DATE__DAY ((__DATE__ [4] == ' ' ? 0 : __DATE__ [4] - '0') * 10 + (__DATE__ [5] - '0'))
@@ -112,7 +110,7 @@
 	#pragma warning(disable : 4127)  // no "conditional expression is constant" complaints
 	#pragma warning(disable : 4311) // warning C4311: 'variable' : pointer truncation from 'type' to 'type'
 	#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
-	#pragma warning(disable : 4267) // warning C4267: 'var' : conversion from 'size_t' to 'type', possible loss of data
+//	#pragma warning(disable : 4267) // warning C4267: 'var' : conversion from 'size_t' to 'type', possible loss of data
 	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
 	#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
 	#pragma warning(disable : 4102) // warning C4102: 'xxx' : unreferenced label
@@ -378,12 +376,12 @@ JL_STATIC_ASSERT( MAX_INTDOUBLE != MAX_INTDOUBLE+1 );
 JL_STATIC_ASSERT( MAX_INTDOUBLE+1. == MAX_INTDOUBLE+2. );
 */
 
-ALWAYS_INLINE unsigned int JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
+ALWAYS_INLINE uint32_t JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
 
 	if ( r == NULL || r[0] == '\0' || r[10] == '\0' || r[11] == '\0' || r[12] == '\0' || r[13] == '\0' )
 		return 0;
 
-	const unsigned int count = 
+	const uint32_t count = 
 		  r[11] == ' ' ? 1
 		: r[12] == ' ' ? 10
 		: r[13] == ' ' ? 100
@@ -510,6 +508,20 @@ ALWAYS_INLINE void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, c
 ///////////////////////////////////////////////////////////////////////////////
 // Platform tools
 
+#include <cstddef>
+
+template<class T>
+struct DummyAlignStruct {
+  unsigned char first;
+  T second;
+};
+
+#define ALIGNOF(type) ( offsetof( DummyAlignStruct< type >, second ) )
+
+#define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
+
+
+
 enum Endian {
 	BigEndian,
 	LittleEndian,
@@ -621,7 +633,7 @@ ALWAYS_INLINE char* IntegerToString(int val, int base) {
 }
 
 
-ALWAYS_INLINE void SleepMilliseconds(unsigned int ms) {
+ALWAYS_INLINE void SleepMilliseconds(uint32_t ms) {
 
 #if defined(XP_WIN)
 	Sleep(ms); // winbase.h
@@ -676,22 +688,22 @@ ALWAYS_INLINE int JLProcessId() {
 }
 
 
-ALWAYS_INLINE unsigned int JLSessionId() {
+ALWAYS_INLINE uint32_t JLSessionId() {
 
-	unsigned int r = 0x12345678;
-	r ^= (unsigned int)AccurateTimeCounter();
-	r ^= (unsigned int)JLProcessId();
+	uint32_t r = 0x12345678;
+	r ^= (uint32_t)AccurateTimeCounter();
+	r ^= (uint32_t)JLProcessId();
 #if defined(XP_WIN)
 //	r ^= (u_int32_t)GetModuleHandle(NULL);
 	MEMORYSTATUS status;
 	GlobalMemoryStatus( &status );
-	r ^= (unsigned int)status.dwAvailPhys;
+	r ^= (uint32_t)status.dwAvailPhys;
 #endif // XP_WIN
 	return r ? r : 1; // avoid returning 0
 }
 
 
-ALWAYS_INLINE unsigned int JLRemainingStackSize() {
+ALWAYS_INLINE size_t JLRemainingStackSize() {
 #if defined(XP_WIN)
 
 	NT_TIB *tib = (NT_TIB*)__readfsdword(0x18); // http://en.wikipedia.org/wiki/Win32_Thread_Information_Block
@@ -716,7 +728,7 @@ enum JLEncodingType {
 	ASCII
 };
 
-ALWAYS_INLINE JLEncodingType JLDetectEncoding(char **buf, int *size) {
+ALWAYS_INLINE JLEncodingType JLDetectEncoding(char **buf, size_t *size) {
 
 	if ( *size < 2 )
 		return ASCII;
@@ -751,9 +763,10 @@ ALWAYS_INLINE JLEncodingType JLDetectEncoding(char **buf, int *size) {
 
 #define xmlLittleEndian true
 // source: libxml2 - encoding.c - MIT License
+// changes: outlen and inlen from integer to size_t, and the last redurned value
 static int
-UTF8ToUTF16LE(unsigned char* outb, int *outlen,
-            const unsigned char* in, int *inlen)
+UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
+            const unsigned char* in, size_t *inlen)
 {
     unsigned short* out = (unsigned short*) outb;
     const unsigned char* processed = in;
@@ -844,7 +857,8 @@ UTF8ToUTF16LE(unsigned char* outb, int *outlen,
     }
     *outlen = (out - outstart) * 2;
     *inlen = processed - instart;
-    return(*outlen);
+//    return(*outlen);
+	return(1);
 }
 #undef xmlLittleEndian
 
@@ -1879,9 +1893,9 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		return libraryHandler != (JLLibraryHandler)0;
 	}
 
-	ALWAYS_INLINE uint32_t JLDynamicLibraryId( JLLibraryHandler libraryHandler ) {
+	ALWAYS_INLINE uintptr_t JLDynamicLibraryId( JLLibraryHandler libraryHandler ) {
 		
-		return (uint32_t)libraryHandler;
+		return (uint32_t)( ((uintptr_t)libraryHandler >> ALIGNOF(void*)) & 0xffffffff ); // shift useless and keep 32bits.
 	}
 
 	ALWAYS_INLINE JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
