@@ -261,7 +261,7 @@ DEFINE_CALL() {
 
 	} while ( inLeft );
 
-	unsigned int length;
+	size_t length;
 	length = outPtr - outBuf;
 
 	if ( length == 0 ) {
@@ -312,7 +312,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 	JL_S_ASSERT_RESOURCE( pv );
 
 	const char *chr;
-	unsigned int length;
+	size_t length;
 	JL_CHK( JsvalToStringAndLength(cx, vp, &chr, &length) );
 	if ( length != 1 )
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "one-char string");

@@ -453,7 +453,7 @@ DEFINE_FUNCTION_FAST( ScaleImpulse ) {
 	ode::dWorldImpulseToForce(pv->worldId, stepSize / 1000, force[0], force[1], force[2], force);
 	
 	JSObject *objArr = JSVAL_TO_OBJECT(JL_FARG(1));
-	for ( size_t i = 0; i < COUNTOF(force); i++ ) {
+	for ( jsint i = 0; i < COUNTOF(force); i++ ) {
 
 		JL_CHK( FloatToJsval(cx, force[i], JL_FRVAL) );
 		JL_CHK( JS_SetElement(cx, objArr, i, JL_FRVAL) );

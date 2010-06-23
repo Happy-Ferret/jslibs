@@ -158,7 +158,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 
-void* wrapped_JS_malloc(void * opaqueAllocatorContext, unsigned int size) {
+void* wrapped_JS_malloc(void * opaqueAllocatorContext, size_t size) {
 
 	return JS_malloc((JSContext*)opaqueAllocatorContext, size);
 }
@@ -168,7 +168,7 @@ void wrapped_JS_free(void * opaqueAllocatorContext, void* address) {
 	return JS_free((JSContext*)opaqueAllocatorContext, address);
 }
 
-void* wrapped_JS_realloc(void * opaqueAllocatorContext, void* address, unsigned int size) {
+void* wrapped_JS_realloc(void * opaqueAllocatorContext, void* address, size_t size) {
 
 	return JS_realloc((JSContext*)opaqueAllocatorContext, address, size);
 }
@@ -222,7 +222,8 @@ DEFINE_CALL() {
 		//	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) ); (TBD) ???
 	}
 
-	pv->stream.avail_in = inputLength;
+	JL_ASSERT( inputLength <= (uInt)-1 );
+	pv->stream.avail_in = (uInt)inputLength;
 	pv->stream.next_in = (Bytef*)inputData;
 
 	Buffer resultBuffer;
@@ -237,7 +238,8 @@ DEFINE_CALL() {
 
 //		length = JL_MAX( length, BufferGetOptimalLength(&resultBuffer) );
 
-		pv->stream.avail_out = length;
+		JL_ASSERT( length <= (uInt)-1 );
+		pv->stream.avail_out = (uInt)length;
 		pv->stream.next_out = (Bytef*)BufferNewChunk(&resultBuffer, pv->stream.avail_out);
 
 //		printf("D%d, ca%d ai%d ao%d ti%d to%d", method == DEFLATE, chunk->avail, stream->avail_in, stream->avail_out, stream->total_in, stream->total_out );

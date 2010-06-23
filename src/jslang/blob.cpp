@@ -257,7 +257,7 @@ DEFINE_FUNCTION_FAST( concat ) {
 	size_t dstLen;
 	dstLen = thisLength;
 
-	unsigned int arg;
+	uintN arg;
 	for ( arg = 1; arg <= JL_ARGC; arg++ ) {
 	
 		if ( JsvalIsBlob(cx, JL_FARG(arg)) ) {

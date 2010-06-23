@@ -107,11 +107,11 @@ DEFINE_FUNCTION( Read ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	size_t len;
-	JL_CHK( JsvalToUInt(cx, argv[0], &len) );
+	JL_CHK( JsvalToSize(cx, argv[0], &len) );
 	char* str;
 	str = (char*)JS_malloc(cx, len + 1);
 	int result;
-	result = FCGX_GetStr( str, len, _request.in );
+	result = FCGX_GetStr( str, (int)len, _request.in );
 	if ( result == 0 ) {
 		
 		JS_free(cx, str);
@@ -133,7 +133,7 @@ DEFINE_FUNCTION( Write ) {
 	size_t len;
 	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
 	int result;
-	result = FCGX_PutStr(str, len, _request.out);
+	result = FCGX_PutStr(str, (int)len, _request.out);
 	if ( result >= 0 && (size_t)result < len ) { // returns unwritten data
 
 		JSString *jsstr = JS_NewDependentString(cx, JSVAL_TO_STRING(argv[0]), result, len - result);
@@ -159,7 +159,7 @@ DEFINE_FUNCTION( Log ) {
 	size_t len;
 	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
 	int result;
-	result = FCGX_PutStr(str, len, _request.err);
+	result = FCGX_PutStr(str, (int)len, _request.err);
 	JL_S_ASSERT( result != -1, "Unable to write to the log." );
 	FCGX_FFlush(_request.err);
 	return JS_TRUE;

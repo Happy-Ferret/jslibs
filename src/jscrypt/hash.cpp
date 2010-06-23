@@ -19,7 +19,7 @@ struct HashPrivate {
 
 	ltc_hash_descriptor *descriptor;
 	hash_state state;
-	int inputLength;
+	size_t inputLength;
 };
 
 
@@ -143,7 +143,7 @@ DEFINE_FUNCTION( Process ) {
 	size_t inLength;
 	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
 
-	err = pv->descriptor->process(&pv->state, (const unsigned char *)in, inLength); // Process a block of memory though the hash
+	err = pv->descriptor->process(&pv->state, (const unsigned char *)in, (unsigned long)inLength); // Process a block of memory though the hash
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 
@@ -236,7 +236,7 @@ DEFINE_CALL() {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	err = pv->descriptor->process(&pv->state, (const unsigned char *)in, inLength);
+	err = pv->descriptor->process(&pv->state, (const unsigned char *)in, (unsigned long)inLength);
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
@@ -321,8 +321,7 @@ DEFINE_PROPERTY( inputLength ) {
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	*vp = INT_TO_JSVAL( 	pv->inputLength );
-	return JS_TRUE;
+	return SizeToJsval(cx, pv->inputLength, vp);
 	JL_BAD;
 }	
 

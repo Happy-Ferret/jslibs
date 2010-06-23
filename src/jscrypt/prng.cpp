@@ -143,7 +143,7 @@ DEFINE_FUNCTION( AddEntropy ) {
 	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &entropy, &entropyLength) );
 
 	int err;
-	err = pv->prng.add_entropy( (const unsigned char *)entropy, entropyLength, &pv->state );
+	err = pv->prng.add_entropy( (const unsigned char *)entropy, (unsigned long)entropyLength, &pv->state );
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	err = pv->prng.ready(&pv->state);
@@ -218,11 +218,11 @@ DEFINE_PROPERTY( stateSetter ) {
 	JL_S_ASSERT_RESOURCE( pv );
 
 	const char *stateData;
-	unsigned int stateLength;
+	size_t stateLength;
 	JL_CHK( JsvalToStringAndLength(cx, vp, &stateData, &stateLength) );
 	JL_S_ASSERT( stateLength == (unsigned)pv->prng.export_size, "Invalid import size." );
 	int err;
-	err = pv->prng.pimport((unsigned char *)stateData, stateLength, &pv->state);
+	err = pv->prng.pimport((unsigned char *)stateData, (unsigned long)stateLength, &pv->state);
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	return JS_TRUE;

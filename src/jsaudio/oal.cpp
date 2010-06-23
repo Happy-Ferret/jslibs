@@ -809,7 +809,7 @@ DEFINE_FUNCTION_FAST( Buffer ) {
 	}
 
 	// Upload sound data to buffer
-	alBufferData(bufferID, format, buffer, bufferLength, rate);
+	alBufferData(bufferID, format, buffer, (ALsizei)bufferLength, rate);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_CHK( UIntToJsval(cx, bufferID, JL_FRVAL) );
@@ -1085,7 +1085,7 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
   alSource3i(sourceID, AL_POSITION, 0,0,0 );
 
   // Upload sound data to buffer
-  alBufferData(bufferID, format, buffer, bufferLength, rate);
+  alBufferData(bufferID, format, buffer, (ALsizei)bufferLength, rate);
 
 
   // Attach sound buffer to source
@@ -1105,12 +1105,12 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
   alGetBufferi(bufferID, AL_CHANNELS, &channels);
   alGetBufferi(bufferID, AL_SIZE, &size);
 
-	size_t totalTime = size / (channels * (bits/8) * freq) * 1000;
+	uint32_t totalTime = size / (channels * (bits/8) * freq) * 1000;
 
 	// Finally, play the sound!!!
 	alSourcePlay(sourceID);
 
-	Sleep(totalTime);
+	SleepMilliseconds(totalTime);
 
 	// Query the state of the souce
 	alGetSourcei(sourceID, AL_SOURCE_STATE, &state); // do { } while (state != AL_STOPPED);

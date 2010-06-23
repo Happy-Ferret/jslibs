@@ -63,7 +63,7 @@ DEFINE_FUNCTION_FAST( Expand ) {
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	const char *srcBegin;
-	unsigned int srcLen;
+	size_t srcLen;
 
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &srcBegin, &srcLen) );
 	JL_S_ASSERT( srcBegin[srcLen] == '\0', "Invalid input string." ); // else strstr may failed.
@@ -101,7 +101,7 @@ next:
 
 	typedef struct {
 		const char *data;
-		unsigned int length;
+		size_t length;
 		JSTempValueRooter tvr;
 		bool hasTvr;
 	} Chunk;
@@ -110,7 +110,7 @@ next:
 	jl::StackInit( &stack );
 	Chunk *chunk;
 	const char *tok;
-	int totalLength;
+	size_t totalLength;
 	totalLength = 0;
 
 	while ( *srcBegin != '\0' ) {
@@ -914,9 +914,9 @@ DEFINE_FUNCTION_FAST( XdrDecode ) {
 	xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 	JL_CHK( xdr );
 	const char *buffer;
-	unsigned int length;
+	size_t length;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &buffer, &length) );
-	JS_XDRMemSetData(xdr, (void*)buffer, length); // safe de-const cast: we are JSXDR_DECODE from the buffer.
+	JS_XDRMemSetData(xdr, (void*)buffer, (uint32)length); // safe de-const cast: we are JSXDR_DECODE from the buffer.
 	JL_CHK( JS_XDRValue(xdr, JL_FRVAL) );
 	//JL_CHK( JS_XDRScript(xdr, JL_FRVAL) );
 	JS_XDRMemSetData(xdr, NULL, 0);
@@ -986,12 +986,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( CollectGarbage ) {
 
-	long gcBytesDiff = cx->runtime->gcBytes;
+	size_t gcBytesDiff = cx->runtime->gcBytes;
 	JS_GC( cx );
 	gcBytesDiff = cx->runtime->gcBytes - gcBytesDiff;
-
-	*JL_FRVAL = INT_TO_JSVAL(gcBytesDiff);
-	return JS_TRUE;
+	return SizeToJsval(cx, gcBytesDiff, JL_FRVAL);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1003,12 +1001,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
 
-	long gcBytesDiff = cx->runtime->gcBytes;
+	size_t gcBytesDiff = cx->runtime->gcBytes;
 	JS_MaybeGC( cx );
 	gcBytesDiff = cx->runtime->gcBytes - gcBytesDiff;
-
-	*JL_FRVAL = INT_TO_JSVAL(gcBytesDiff);
-	return JS_TRUE;
+	return SizeToJsval(cx, gcBytesDiff, JL_FRVAL);
 }
 
 
@@ -1067,8 +1063,8 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 
 	JL_S_ASSERT_ARG(2);
 
-	unsigned int count;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &count) );
+	size_t count;
+	JL_CHK( JsvalToSize(cx, JL_FARG(2), &count) );
 	if ( count == 0 ) {
 
 		*JL_FRVAL = JS_GetEmptyStringValue(cx);
@@ -1076,7 +1072,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 	}
 
 	const char *buf;
-	unsigned int len;
+	size_t len;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &buf, &len) ); // warning: GC on the returned buffer !
 
 	if ( len == 0 ) {
@@ -1091,7 +1087,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 		return JS_TRUE;
 	}
 
-	unsigned int newLen;
+	size_t newLen;
 	newLen = len * count;
 
 	char *newBuf;
@@ -1105,7 +1101,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 	} else {
 
 		char *tmp = newBuf;
-		unsigned int i, j;
+		size_t i, j;
 		for ( i=0; i<count; i++ )
 			for ( j=0; j<len; j++ )
 				*(tmp++) = buf[j];
@@ -1321,7 +1317,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, JL_FARG(1));
 	JL_CHK( jsstr );
-	uintN srclen;
+	size_t srclen;
 	srclen = JL_GetStringLength(jsstr);
 	jschar *src;
 	src = JS_GetStringChars(jsstr);
@@ -1357,7 +1353,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	}
 
 	JSBool ok;
-	ok = JS_EvaluateUCScript(scx, globalObject, src, srclen, filename, lineno, JL_FRVAL);
+	ok = JS_EvaluateUCScript(scx, globalObject, src, (uintN)srclen, filename, lineno, JL_FRVAL);
 
 	JLSemaphoreRelease(pv.semEnd);
 
@@ -1431,7 +1427,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 
 	JL_S_ASSERT_ARG(1);
 	const char *buffer;
-	unsigned int length;
+	size_t length;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
 	JL_CHK( BoolToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, buffer, length) == JS_TRUE, rval) );
 	return JS_TRUE;

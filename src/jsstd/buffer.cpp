@@ -389,7 +389,7 @@ JSBool ReadDataAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval 
 }
 
 
-JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t needleLength, size_t *foundAt ) {
+JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t needleLength, bool *found, size_t *foundAt ) {
 
 	// (TBD) optimise this function for needleLength == 1 (eg. '\0' in a string)
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
@@ -415,6 +415,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t ne
 				for ( j = 0; j < needleLength && needle[j] == buf[(pos+j) % needleLength]; j++ ) ; // search the 'needle' starting at the right position in the ring buffer.
 				if( j == needleLength ) { // if all chars of the 'needle' are found
 
+					*found = true;
 					*foundAt = pos-needleLength;
 					goto end; // this is a cheap way to break all these nested loops
 				}
@@ -422,7 +423,8 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t ne
 		}
 	}
 
-	*foundAt = -1;
+	*found = false;
+//	*foundAt = -1;
 end:
 	if ( buf != staticBuffer )
 		jl_free(buf); // free the "ring buffer"
@@ -646,7 +648,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 		if ( strLen == 0 )
 			return JS_TRUE;
 
-		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &amount) );
+		JL_CHK( JsvalToSize(cx, JL_FARG(2), &amount) );
 		if ( amount > strLen )
 			amount = strLen;
 
@@ -737,7 +739,7 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 	size_t amount;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JsvalToUInt(cx, JL_ARG(1), &amount) );
+		JL_CHK( JsvalToSize(cx, JL_ARG(1), &amount) );
 	else
 		amount = pv->length;
 
@@ -761,12 +763,12 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 	JL_S_ASSERT_RESOURCE( pv );
 	JL_S_ASSERT_ARG(1);
 	size_t amount;
-	JL_CHK( JsvalToUInt(cx, JL_ARG(1), &amount) );
+	JL_CHK( JsvalToSize(cx, JL_ARG(1), &amount) );
 	JL_S_ASSERT( (int)amount >= 0, "Invalid amount" );
 	size_t tmp;
 	tmp = amount;
 	JL_CHK( BufferSkipAmount(cx, obj, &tmp) );
-	return UIntToJsval(cx, amount - tmp, JL_RVAL);
+	return SizeToJsval(cx, amount - tmp, JL_RVAL);
 	JL_BAD;
 }
 
@@ -791,11 +793,12 @@ DEFINE_FUNCTION( ReadUntil ) {
 		JL_CHK( JsvalToBool(cx, JL_ARG(2), &skip) );
 	else
 		skip = true;
-	size_t found;
-	JL_CHK( FindInBuffer(cx, obj, boundary, boundaryLength, &found) );
-	if ( found != -1 ) {
+	bool found;
+	size_t foundAt;
+	JL_CHK( FindInBuffer(cx, obj, boundary, boundaryLength, &found, &foundAt) );
+	if ( found ) {
 
-		JL_CHK( ReadDataAmount(cx, obj, found, rval) );
+		JL_CHK( ReadDataAmount(cx, obj, foundAt, rval) );
 		if ( skip ) {
 
 			jsval tmp;
@@ -819,8 +822,9 @@ DEFINE_FUNCTION_FAST( IndexOf ) {
 	const char *boundary;
 	size_t boundaryLength;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
-	size_t found;
-	JL_CHK( FindInBuffer(cx, JL_FOBJ, boundary, boundaryLength, &found) );
+	bool found;
+	size_t foundAt;
+	JL_CHK( FindInBuffer(cx, JL_FOBJ, boundary, boundaryLength, &found, &foundAt) );
 	*JL_FRVAL = INT_TO_JSVAL(found);
 	return JS_TRUE;
 	JL_BAD;
@@ -989,9 +993,7 @@ DEFINE_PROPERTY( length ) {
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-
-	*vp = INT_TO_JSVAL(pv->length);
-	return JS_TRUE;
+	return SizeToJsval(cx, pv->length, vp);
 	JL_BAD;
 }
 

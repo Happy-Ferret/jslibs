@@ -34,7 +34,7 @@ int _puts(JSContext *cx, const char *str) {
 	jsval stdoutFunction;
 	if ( GetConfigurationValue(cx, JLID_NAME(stdout), &stdoutFunction) && JsvalIsFunction(cx, stdoutFunction) ) {
 
-		size_t len = strlen(str);
+		int len = (int)strlen(str);
 		JSString *jsstr = JS_NewStringCopyN(cx, str, len);
 		if ( jsstr == NULL )
 			return EOF;
@@ -1035,7 +1035,7 @@ DEFINE_FUNCTION_FAST( EvalInStackFrame ) {
 
 	JSString *jsstr;
 	jsstr = JSVAL_TO_STRING( JL_FARG(1) );
-	JL_CHK( JS_EvaluateUCInStackFrame(cx, fp, JS_GetStringChars(jsstr), JL_GetStringLength(jsstr), JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), JL_FRVAL) );
+	JL_CHK( JS_EvaluateUCInStackFrame(cx, fp, JS_GetStringChars(jsstr), (uintN)JL_GetStringLength(jsstr), JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), JL_FRVAL) );
 
 	return JS_TRUE;
 	JL_BAD;

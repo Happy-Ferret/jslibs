@@ -287,7 +287,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			unsigned long lparamlen = 0;
 			if (argc >= 2 && !JSVAL_IS_VOID( argv[1] ))
 				JL_CHK( JsvalToStringAndLength(cx, &argv[1], &in, &inLength) );
-			err = rsa_encrypt_key_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
+			err = rsa_encrypt_key_ex( (unsigned char *)in, (unsigned long)inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
 			break;
 		}
 		case ecc: {
@@ -357,7 +357,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 				JL_CHK( JsvalToStringAndLength(cx, &argv[1], &lparam, &lparamlen) );
 
 			int stat = 0; // default: failed
-			err = rsa_decrypt_key_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, (const unsigned char *)lparam, lparamlen, hashIndex, pv->padding, &stat, &pv->key.rsaKey );
+			err = rsa_decrypt_key_ex( (unsigned char *)in, (unsigned long)inLength, (unsigned char *)out, &outLength, (const unsigned char *)lparam, (unsigned long)lparamlen, hashIndex, pv->padding, &stat, &pv->key.rsaKey );
 			// doc: if all went well pt == pt2, l2 == 16, res == 1
 			if ( err == CRYPT_OK && stat != 1 ) {
 
@@ -492,15 +492,15 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
 			int hashIndex = find_hash(pv->hashDescriptor->name);
 
-			rsa_verify_hash_ex( (unsigned char *)sign, signLength, (unsigned char *)data, dataLength, LTC_LTC_PKCS_1_PSS, hashIndex, saltLength, &stat, &pv->key.rsaKey );
+			rsa_verify_hash_ex( (unsigned char *)sign, (unsigned long)signLength, (unsigned char *)data, dataLength, LTC_LTC_PKCS_1_PSS, hashIndex, saltLength, &stat, &pv->key.rsaKey );
 			break;
 		}
 		case ecc: {
-			ecc_verify_hash( (unsigned char *)sign, signLength, (unsigned char *)data, dataLength, &stat, &pv->key.eccKey );
+			ecc_verify_hash( (unsigned char *)sign, (unsigned long)signLength, (unsigned char *)data, dataLength, &stat, &pv->key.eccKey );
 			break;
 		}
 		case dsa: {
-			dsa_verify_hash( (unsigned char *)sign, signLength, (unsigned char *)data, dataLength, &stat, &pv->key.dsaKey );
+			dsa_verify_hash( (unsigned char *)sign, (unsigned long)signLength, (unsigned char *)data, dataLength, &stat, &pv->key.dsaKey );
 			break;
 		}
 		default:
@@ -610,15 +610,15 @@ DEFINE_PROPERTY( keySetter ) {
 	err = -1; // default
 	switch ( pv->cipher ) {
 		case rsa:
-			err = rsa_import( (unsigned char *)key, keyLength, &pv->key.rsaKey );
+			err = rsa_import( (unsigned char *)key, (unsigned long)keyLength, &pv->key.rsaKey );
 			JL_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
 			break;
 		case ecc:
-			err = ecc_import( (unsigned char *)key, keyLength, &pv->key.eccKey );
+			err = ecc_import( (unsigned char *)key, (unsigned long)keyLength, &pv->key.eccKey );
 			JL_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
 			break;
 		case dsa: {
-			err = dsa_import( (unsigned char *)key, keyLength, &pv->key.dsaKey );
+			err = dsa_import( (unsigned char *)key, (unsigned long)keyLength, &pv->key.dsaKey );
 			JL_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
 			//int stat = 0;
 			//dsa_verify_key(&pv->key.dsaKey, &stat);

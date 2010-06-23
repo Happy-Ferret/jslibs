@@ -69,7 +69,7 @@ DEFINE_CONSTRUCTOR() {
 	alGenBuffers(1, &bid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	alBufferData(bid, format, buffer, bufferLength, rate); // Upload sound data to buffer
+	alBufferData(bid, format, buffer, (ALsizei)bufferLength, rate); // Upload sound data to buffer
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_SetPrivate(cx, obj, (void*)bid);

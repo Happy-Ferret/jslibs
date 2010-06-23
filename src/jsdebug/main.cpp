@@ -195,7 +195,7 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 
 
 
-JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char *filename, unsigned int lineno) {
+JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char *filename, uint32 lineno) {
 
 	jl::QueueCell *it;
 	jl::Queue *scriptList = NULL;

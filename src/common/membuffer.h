@@ -22,7 +22,7 @@
 struct MemBuffer;
 
 typedef bool (*MemBufferFree_t)(MemBuffer *mb); // it is up to the callee to update mem and size and pv.
-typedef bool (*MemBufferResize_t)(MemBuffer *mb, unsigned int newSize, bool preserveExistingData); // it is up to the callee to update mem and size and pv.
+typedef bool (*MemBufferResize_t)(MemBuffer *mb, size_t newSize, bool preserveExistingData); // it is up to the callee to update mem and size and pv.
 
 typedef bool (*MemBufferAcquire_t)(MemBuffer *mb, int mode);
 typedef bool (*MemBufferRelease_t)(MemBuffer *mb);
@@ -31,7 +31,7 @@ struct MemBuffer {
 //private:
 	void *mem;
 public:
-	unsigned int size; // in bytes
+	size_t size; // in bytes
 	MemBufferFree_t MemBufferFree;
 	MemBufferResize_t MemBufferResize;
 	void *pv; // private data for the user of this structure
@@ -44,7 +44,7 @@ void MemBufferFinalizeCallback( void* data ) {
 		membuf->MemBufferFree(membuf);
 }
 
-JSBool MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, void* mem, unsigned int size, MemBufferFree_t free, MemBufferResize_t resize ) {
+JSBool MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, void* mem, size_t size, MemBufferFree_t free, MemBufferResize_t resize ) {
 
 	MemBuffer *membuf;
 	JL_CHK( CreateHandle(cx, JL_CAST_CSTR_TO_UINT32("MEMB"), sizeof(MemBuffer), (void**)&membuf, MemBufferFinalizeCallback, memBufferVal) );
@@ -68,7 +68,7 @@ JSBool MemoryBufferObjectGet( JSContext *cx, jsval memBufferVal, MemBuffer **mem
 
 
 /*  everything can be done with the previous function (MemoryBufferObjectGet).
-JSBool MemoryBufferObjectResize( JSContext *cx, jsval memBufferVal, unsigned int newSize ) {
+JSBool MemoryBufferObjectResize( JSContext *cx, jsval memBufferVal, size_t newSize ) {
 
 	JL_S_ASSERT( IsIdType(cx, memBufferVal, 'MEMB'), "Invalid memory object." );
 	MemBuffer *membuf = (MemBuffer*)GetIdPrivate(cx, memBufferVal);

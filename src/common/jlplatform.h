@@ -109,7 +109,7 @@
 	#pragma warning(disable : 4244 4305)  // for VC++, no precision loss complaints
 	#pragma warning(disable : 4127)  // no "conditional expression is constant" complaints
 	#pragma warning(disable : 4311) // warning C4311: 'variable' : pointer truncation from 'type' to 'type'
-	#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
+//	#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
 //	#pragma warning(disable : 4267) // warning C4267: 'var' : conversion from 'size_t' to 'type', possible loss of data
 	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
 	#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
@@ -306,8 +306,24 @@ JL_MACRO_END
 
 #endif // DEBUG
 
+template<class T>
+static inline void JL_UNUSED(T) {};
 
-static inline void jl_unused(int) {};
+/* see also...
+#ifndef UNUSED
+#if defined(PACIFIC) || defined(_MSC_VER)
+#define UNUSED(x)
+#elif defined(__GNUC__)
+#define UNUSED(x) x __attribute__((unused))
+#elif defined(__HIGHC__)
+#define UNUSED(x) ((x) = (x))
+#else
+#define UNUSED(x) ((void)(x))
+#endif
+#endif
+
+*/
+
 
 /* Macro that avoid multicharacter constant: From gcc page:
 `-Wno-multichar'
@@ -706,13 +722,17 @@ ALWAYS_INLINE uint32_t JLSessionId() {
 ALWAYS_INLINE size_t JLRemainingStackSize() {
 #if defined(XP_WIN)
 
+	#pragma warning(push)
+	#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
 	NT_TIB *tib = (NT_TIB*)__readfsdword(0x18); // http://en.wikipedia.org/wiki/Win32_Thread_Information_Block
+	#pragma warning(pop) 
+
 	volatile BYTE *currentSP;
 	__asm mov [currentSP], esp;
 	return currentSP - (BYTE*)tib->StackLimit;
 #elif defined(XP_UNIX)
 
-	return (unsigned int)-1;
+	return (size_t)-1;
 #endif
 }
 
@@ -1098,6 +1118,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 	#if defined(XP_WIN)
 		BOOL st = ReleaseSemaphore(semaphore, 1, NULL);
 		JL_ASSERT( st != FALSE );
+		JL_UNUSED(st);
 	#elif defined(XP_UNIX)
 		int st = sem_post(semaphore);
 		JL_ASSERT( st == 0 );
@@ -1116,6 +1137,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 		free(*pSemaphore);
 	#endif
 		*pSemaphore = (JLSemaphoreHandler)0;
+		JL_UNUSED(st);
 	}
 
 
@@ -1270,6 +1292,7 @@ ALWAYS_INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) 
 
 		BOOL st = ResetEvent(cv->events[1]);
 		JL_ASSERT( st != FALSE );
+		JL_UNUSED(st);
 	}
 	JLMutexAcquire(external_mutex);
 	return JLOK;
@@ -1285,6 +1308,7 @@ ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
 
 		BOOL st = SetEvent(cv->events[1]);
 		JL_ASSERT( st != FALSE );
+		JL_UNUSED(st);
 	}
 }
 
@@ -1298,6 +1322,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 		BOOL st = SetEvent(cv->events[0]);
 		JL_ASSERT( st != FALSE );
+		JL_UNUSED(st);
 	}
 }
 
@@ -1555,6 +1580,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#endif
 		free(*ev);
 		*ev = NULL;
+		JL_UNUSED(st);
 	}
 
 	ALWAYS_INLINE void JLEventTrigger( JLEventHandler ev ) {
@@ -1567,6 +1593,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 			BOOL st = SetEvent(ev->hEvent);
 			JL_ASSERT( st != FALSE );
+			JL_UNUSED(st);
 		}
 		LeaveCriticalSection(&ev->cs);
 
@@ -1588,6 +1615,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		EnterCriticalSection(&ev->cs);
 		BOOL st = ResetEvent(ev->hEvent);
 		JL_ASSERT( st != FALSE );
+		JL_UNUSED(st);
 		LeaveCriticalSection(&ev->cs);
 
 	#elif defined(XP_UNIX)
@@ -1616,6 +1644,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			
 			BOOL st = ResetEvent(ev->hEvent);
 			JL_ASSERT( st == TRUE );
+			JL_UNUSED(st);
 		}
 		LeaveCriticalSection(&ev->cs);
 		if ( status == WAIT_TIMEOUT )
@@ -1656,6 +1685,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			if ( st == ETIMEDOUT )
 				return JLTIMEOUT;
 			JL_ASSERT( st == 0 );
+			JL_UNUSED(st);
 			return JLOK;
 		}
 		return JLERROR;
@@ -1739,11 +1769,13 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#if defined(XP_WIN)
 		BOOL st = CloseHandle(*pThread);
 		JL_ASSERT( st != FALSE );
+		JL_UNUSED(st);
 	#elif defined(XP_UNIX)
 		if ( JLThreadIsActive( *pThread ) ) {
 			
 			int st = pthread_detach(**pThread);
 			JL_ASSERT( st == 0 );
+			JL_UNUSED(st);
 		}
 		free(*pThread);
 	#endif
@@ -1771,6 +1803,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		int st = pthread_cancel(*thread);
 		JL_ASSERT( st == 0 );
 	#endif
+		JL_UNUSED(st);
 	}
 
 
@@ -1792,6 +1825,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		st = pthread_setschedparam(*thread, policy, &param);
 		JL_ASSERT( st == 0 );
 	#endif
+		JL_UNUSED(st);
 	}
 
 
@@ -1807,6 +1841,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		int st = pthread_join(*thread, (void**)exitValue); // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED.
 		JL_ASSERT( st == 0 );
 	#endif
+		JL_UNUSED(st);
 	}
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1846,6 +1881,7 @@ ALWAYS_INLINE void JLTLSFreeKey( JLTLSKey key ) {
 	int st = pthread_key_delete(key);
 	JL_ASSERT( st == 0 );
 #endif
+	JL_UNUSED(st);
 }
 
 
@@ -1860,6 +1896,7 @@ ALWAYS_INLINE void JLTLSSet( JLTLSKey key, void *value ) {
 	int st = pthread_setspecific(key, value);
 	JL_ASSERT( st == 0 );
 #endif
+	JL_UNUSED(st);
 }
 
 
@@ -1919,6 +1956,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		JL_ASSERT( st == 0 );
 	#endif
 		*libraryHandler = (JLLibraryHandler)0;
+		JL_UNUSED(st);
 	}
 
 	ALWAYS_INLINE void JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {

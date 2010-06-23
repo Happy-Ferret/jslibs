@@ -95,19 +95,19 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	int regStatus;
 
-	for ( unsigned int i = 0; i < COUNTOF(cipherList); i++ ) {
+	for ( size_t i = 0; i < COUNTOF(cipherList); i++ ) {
 
 		regStatus = register_cipher(cipherList[i]);
 		JL_S_ASSERT( regStatus != -1, "Unable to load cipher %s", cipherList[i]->name );
 	}
 
-	for ( unsigned int i = 0; i < COUNTOF(hashList); i++ ) {
+	for ( size_t i = 0; i < COUNTOF(hashList); i++ ) {
 
 		regStatus = register_hash(hashList[i]);
 		JL_S_ASSERT( regStatus != -1, "Unable to load hash %s", hashList[i]->name );
 	}
 
-	for ( unsigned int i = 0; i < COUNTOF(prngList); i++ ) {
+	for ( size_t i = 0; i < COUNTOF(prngList); i++ ) {
 
 		regStatus = register_prng(prngList[i]);
 		JL_S_ASSERT( regStatus != -1, "Unable to load prng %s", prngList[i]->name );

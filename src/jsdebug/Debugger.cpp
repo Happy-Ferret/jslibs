@@ -57,12 +57,12 @@ enum BreakReason {
 
 struct DebuggerPrivate {
 
-	unsigned int interruptCounter;
-	unsigned int interruptCounterLimit;
+	size_t interruptCounter;
+	size_t interruptCounterLimit;
 	void *excludedFiles;
 	JSDebugHooks *debugHooks; // because current hooks cannot be changed while onBreak is being called.
 	// previous break state
-	unsigned int stackFrameIndex;
+	uint32_t stackFrameIndex;
 	JSStackFrame *frame;
 	JSStackFrame *pframe;
 	JSScript *script;
@@ -232,7 +232,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	rt = JS_GetRuntime(cx);
 	uintN lineno;
 	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
-	unsigned int stackFrameIndex;
+	uint32_t stackFrameIndex;
 	stackFrameIndex = JL_StackSize(cx, fp)-1;
 
 	// argv[0] is reserved for the rval
@@ -502,7 +502,7 @@ DEFINE_PROPERTY( interruptCounterLimit ) {
 	} else {
 
 		JL_S_ASSERT_INT(*vp);
-		JL_CHK( JsvalToUInt(cx, *vp, &pv->interruptCounterLimit) );
+		JL_CHK( JsvalToSize(cx, *vp, &pv->interruptCounterLimit) );
 	}
 
 	JSRuntime *rt;

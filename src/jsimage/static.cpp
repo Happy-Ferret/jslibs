@@ -352,7 +352,7 @@ DEFINE_FUNCTION( DecodePngImage ) {
 typedef struct {
 	png_structp png;
 	png_infop info;
-	int pos;
+	size_t pos;
 	void *buffer;
 } PngWriteUserStruct;
 

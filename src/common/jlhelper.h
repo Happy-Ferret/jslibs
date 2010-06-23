@@ -854,8 +854,8 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		int file = open(compiledFileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
 		JL_CHKM( file != -1, "Unable to open file \"%s\" for reading.", compiledFileName );
 
-		JL_S_ASSERT( compFileStat.st_size < UINT_MAX, "Compiled file too big." );
 		size_t compFileSize = compFileStat.st_size; // filelength(file); ?
+		JL_S_ASSERT( compFileSize <= UINT_MAX, "Compiled file too big." ); // see read()
 		data = jl_malloc(compFileSize); // (TBD) free on error
 		int readCount = read( file, data, (unsigned int)compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
 		JL_CHKM( readCount >= 0 && (unsigned)readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
@@ -865,7 +865,6 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		JL_CHK( xdr );
 		JL_S_ASSERT( compFileSize <= (uint32)-1, "Compiled script too big." );
 		JS_XDRMemSetData(xdr, data, (uint32)compFileSize);
-
 
 		// we want silent failures.
 		JSErrorReporter prevErrorReporter = JS_SetErrorReporter(cx, NULL);
@@ -943,7 +942,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 
 	size_t scriptFileSize;
 	scriptFileSize = lseek(scriptFile, 0, SEEK_END);
-	JL_S_ASSERT( scriptFileSize < UINT_MAX, "Compiled file too big." );
+	JL_S_ASSERT( scriptFileSize <= UINT_MAX, "Compiled file too big." ); // see read()
 
 //	int scriptFileSize;
 //	scriptFileSize = (unsigned)tell(scriptFile);
@@ -1209,7 +1208,7 @@ ALWAYS_INLINE JSBool JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsv
 		blob = JS_ConstructObject(cx, blobClass, NULL, NULL); // need to be constructed else Buffer NativeInterface will not be set !
 		JL_CHK( blob );
 		*vp = OBJECT_TO_JSVAL(blob);
-		JL_S_ASSERT( length > JSVAL_INT_MAX, "Blob too big." );
+		JL_S_ASSERT( length <= JSVAL_INT_MAX, "Blob too long." );
 		JL_CHK( JS_SetReservedSlot(cx, blob, 0, INT_TO_JSVAL( (jsint)length )) ); // 0 for SLOT_BLOB_LENGTH !!!
 		JL_SetPrivate(cx, blob, buffer); // blob data
 		return JS_TRUE;
@@ -1396,7 +1395,7 @@ ALWAYS_INLINE JSBool JsvalToSize( JSContext *cx, jsval val, size_t *i ) {
 	}
 
 bad:
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "a size" );
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "size" );
 	return JS_FALSE;
 }
 
@@ -1460,7 +1459,7 @@ ALWAYS_INLINE JSBool SizeToJsval( JSContext *cx, size_t size, jsval *val ) {
 	return JS_NewNumberValue(cx, size, val);
 
 bad:
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "a size" );
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "size" );
 	return JS_FALSE;
 }
 
@@ -2256,5 +2255,114 @@ struct ProcessEvent {
 	bool (*cancelWait)( volatile ProcessEvent *self ); // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
 	JSBool (*endWait)( volatile ProcessEvent *self, bool *hasEvent, JSContext *cx, JSObject *obj ); // process the result
 };
+
+
+namespace jl {
+	
+	class Error {
+	public:
+		Error() {}
+	};
+
+	class ConvertError : public Error {
+	public:
+		ConvertError() {}
+	};
+
+	inline jsval ToJsval( JSContext *cx, int n ) {
+
+		if (likely( n >= JSVAL_INT_MIN && n <= JSVAL_INT_MAX ))
+			return INT_TO_JSVAL(jsint(n));
+		jsdouble *dp = JS_NewDouble(cx, jsdouble(n)); // weakRoots.newbornDouble
+		if (likely( dp ))
+			return DOUBLE_TO_JSVAL(dp);
+		throw ConvertError();
+	}
+
+	inline jsval ToJsval( JSContext *cx, size_t n ) {
+
+		if (likely( n <= JSVAL_INT_MAX ))
+			return INT_TO_JSVAL(jsint(n));
+		jsdouble *dp = JS_NewDouble(cx, jsdouble(n)); // weakRoots.newbornDouble
+		if (likely( dp ))
+			return DOUBLE_TO_JSVAL(dp);
+		throw ConvertError();
+	}
+
+	inline jsval ToJsval( JSContext *cx, double n ) {
+
+		jsdouble *dp = JS_NewDouble(cx, jsdouble(n)); // weakRoots.newbornDouble
+		if (likely( dp ))
+			return DOUBLE_TO_JSVAL(dp);
+		throw ConvertError();
+	}
+
+
+	template <class T>
+	inline T JsvalTo( JSContext *cx, jsval v );
+
+	template <>
+	inline int JsvalTo<int>( JSContext *cx, jsval v ) {
+		
+		if (likely( JSVAL_IS_INT(v) ))
+			return JSVAL_TO_INT(v);
+
+		jsdouble d;
+
+		if (likely( JSVAL_IS_DOUBLE(v) )) {
+			
+			d = *JSVAL_TO_DOUBLE(v);
+		} else {
+
+			if ( !JS_ValueToNumber(cx, v, &d) )
+				throw ConvertError();
+		}
+
+		if ( d >= jsdouble(INT_MIN) && d <= jsdouble(INT_MAX) )
+			return int(d);
+		throw ConvertError();
+	}
+
+
+	template <>
+	inline size_t JsvalTo<size_t>( JSContext *cx, jsval v ) {
+
+		if (likely( JSVAL_IS_INT(v) ))
+			return JSVAL_TO_INT(v);
+
+		jsdouble d;
+
+		if (likely( JSVAL_IS_DOUBLE(v) )) {
+			
+			d = *JSVAL_TO_DOUBLE(v);
+		} else {
+
+			if ( !JS_ValueToNumber(cx, v, &d) )
+				throw ConvertError();
+		}
+
+		if ( d >= 0 && d <= jsdouble(size_t(-1)) )
+			return size_t(d);
+		throw ConvertError();
+	}
+
+
+	template <>
+	inline double JsvalTo<double>( JSContext *cx, jsval v ) {
+
+		jsdouble d;
+
+		if (likely( JSVAL_IS_DOUBLE(v) ))
+			return *JSVAL_TO_DOUBLE(v);
+
+		if ( !JS_ValueToNumber(cx, v, &d) )
+			throw ConvertError();
+		return d;
+	}
+
+
+}
+
+
 
 #endif // _JSHELPER_H_

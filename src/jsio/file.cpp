@@ -435,7 +435,7 @@ DEFINE_PROPERTY( contentSetter ) {
 	JL_CHK( JsvalToStringAndLength(cx, vp, &buf, &len) );
 	PRInt32 bytesSent;
 	
-	JL_S_ASSERT( len < PR_INT32_MAX, "Too many data." );
+	JL_S_ASSERT( len <= PR_INT32_MAX, "Too many data." );
 	bytesSent = PR_Write( fd, buf, (PRInt32)len );
 	if ( bytesSent == -1 ) {
 		

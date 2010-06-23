@@ -44,9 +44,9 @@ DECLARE_CLASS(Ogl)
 #include "vector3.h"
 
 
-JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, unsigned int count, int *rval ) {
+JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rval ) {
 	
-	unsigned int i;
+	size_t i;
 	if ( JSVAL_IS_PRIMITIVE(**argv) || !JsvalIsArray(cx, **argv) ) {
 
 		JL_S_ASSERT( *argc >= count, "Not enough arguments." );
@@ -59,7 +59,7 @@ JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, unsigned int count, 
 		*argc -= count;
 		return JS_TRUE;
 	}
-	uint32 len;
+	jsuint len;
 	JL_CHK( JsvalToIntVector(cx, **argv, rval, count, &len) );
 	JL_S_ASSERT( len == count, "Not enough elements." );
 	++*argv;
@@ -68,9 +68,9 @@ JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, unsigned int count, 
 	JL_BAD;
 }
 
-JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, unsigned int count, double *rval ) {
+JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, double *rval ) {
 	
-	unsigned int i;
+	size_t i;
 	if ( JSVAL_IS_PRIMITIVE(**argv) || !JsvalIsArray(cx, **argv) ) {
 
 		JL_S_ASSERT( *argc >= count, "Not enough arguments." );
@@ -83,7 +83,7 @@ JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, unsigned int coun
 		*argc -= count;
 		return JS_TRUE;
 	}
-	uint32 len;
+	jsuint len;
 	JL_CHK( JsvalToDoubleVector(cx, **argv, rval, count, &len) );
 	JL_S_ASSERT( len == count, "Not enough elements." );
 	++*argv;
@@ -4911,7 +4911,7 @@ DEFINE_FUNCTION_FAST( ReadImage ) {
 struct OpenGlTrimeshInfo {
 
 	GLuint indexBuffer, vertexBuffer, normalBuffer, texCoordBuffer, colorBuffer;
-	int vertexCount, indexCount;
+	size_t vertexCount, indexCount;
 };
 
 void FinalizeTrimesh(void *pv) {
@@ -5061,11 +5061,11 @@ DEFINE_FUNCTION_FAST( DrawTrimesh ) {
 
 		//	glEnableClientState(GL_INDEX_ARRAY);  OGL_CHK;
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, info->indexBuffer);  OGL_CHK;
-		glDrawElements(mode, info->indexCount, GL_UNSIGNED_INT, 0);  OGL_CHK; // 1 triangle = 3 vertex
+		glDrawElements(mode, (GLsizei)info->indexCount, GL_UNSIGNED_INT, 0);  OGL_CHK; // 1 triangle = 3 vertex
 	} else {
 		
 		if ( info->vertexBuffer )
-			glDrawArrays(mode, 0, info->vertexCount);  OGL_CHK;
+			glDrawArrays(mode, 0, (GLsizei)info->vertexCount);  OGL_CHK;
 	}
 
 //	glDisableClientState(GL_INDEX_ARRAY);  OGL_CHK;

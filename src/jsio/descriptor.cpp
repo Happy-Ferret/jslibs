@@ -147,7 +147,7 @@ DEFINE_FUNCTION_FAST( Close ) {
 }
 
 
-JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, unsigned int amount, jsval *rval ) {
+JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, uint32_t amount, jsval *rval ) {
 
 	void *buf = JS_malloc(cx, amount +1);
 	JL_CHK( buf );
@@ -202,7 +202,7 @@ bad_free:
 }
 
 
-void* JSBufferAlloc(void * opaqueAllocatorContext, unsigned int size) {
+void* JSBufferAlloc(void * opaqueAllocatorContext, size_t size) {
 	
 	return JS_malloc((JSContext*)opaqueAllocatorContext, size);
 }
@@ -212,7 +212,7 @@ void JSBufferFree(void * opaqueAllocatorContext, void* address) {
 	JS_free((JSContext*)opaqueAllocatorContext, address);
 }
 
-void* JSBufferRealloc(void * opaqueAllocatorContext, void* address, unsigned int size) {
+void* JSBufferRealloc(void * opaqueAllocatorContext, void* address, size_t size) {
 
 	return JS_realloc((JSContext*)opaqueAllocatorContext, address, size);
 }
@@ -342,12 +342,13 @@ DEFINE_FUNCTION_FAST( Write ) {
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( fd );
-	unsigned int len, sentAmount;
+	size_t len, sentAmount;
 	const char *str;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &str, &len) );
 
+	JL_S_ASSERT( len <= PR_INT32_MAX, "Too many data." );
 	PRInt32 res;
-	res = PR_Write( fd, str, len );
+	res = PR_Write( fd, str, (PRInt32)len );
 	if (unlikely( res == -1 )) {
 
 		switch ( PR_GetError() ) { 
@@ -410,7 +411,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 	if (unlikely( sentAmount < len )) {
 
 		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
-		unsigned int remaining;
+		size_t remaining;
 		remaining = len - sentAmount;
 		buffer = JS_malloc(cx, remaining +1);
 		JL_CHK( buffer );

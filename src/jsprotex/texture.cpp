@@ -99,7 +99,7 @@ inline JSBool TextureInit( JSContext *cx, TextureStruct *tex, unsigned int width
 	return JS_TRUE;
 }
 
-inline JSBool TextureResizeBackBuffer( JSContext *cx, TextureStruct *tex, unsigned int newSize ) {
+inline JSBool TextureResizeBackBuffer( JSContext *cx, TextureStruct *tex, size_t newSize ) {
 	
 	if ( tex->cbackBuffer != NULL && tex->cbackBufferSize == newSize )
 		return JS_TRUE;
@@ -122,7 +122,7 @@ inline void TextureSwapBuffers( TextureStruct *tex ) {
 	tex->cbuffer = tex->cbackBuffer;
 	tex->cbackBuffer = tmpBuffer;
 
-	unsigned int tmpBufferSize = tex->cbufferSize;
+	size_t tmpBufferSize = tex->cbufferSize;
 	tex->cbufferSize = tex->cbackBufferSize;
 	tex->cbackBufferSize = tmpBufferSize;
 }
@@ -260,7 +260,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLe
 	if ( JSVAL_IS_STRING(value) ) {
 
 		const char *color;
-		unsigned int length;
+		size_t length;
 		JL_CHK( JsvalToStringAndLength(cx, &value, &color, &length) );
 		if ( *color++ == '#' && (length-1) / 2 >= levelMaxLength ) {
 
@@ -289,10 +289,10 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLe
 
 
 // curve: number | function | array | blob
-inline JSBool InitCurveData( JSContext* cx, jsval value, unsigned int length, float *curve ) { // length is the curve resolution
+inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) { // length is the curve resolution
 	
 	JSTempValueRooter tvr;
-	unsigned int i;
+	size_t i;
 
 	if ( JsvalIsFunction(cx, value) ) {
 
@@ -303,7 +303,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, unsigned int length, fl
 
 			fval = (double)i / (double)(length-1);
 			JL_CHKB( JS_NewDoubleValue(cx, fval, &argv[1]), bad2 );
-			argv[2] = INT_TO_JSVAL(i);
+			argv[2] = INT_TO_JSVAL((int)i);
 			JL_CHKB( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), value, 2, argv+1, argv), bad2 );
 			JL_CHKB( JS_ValueToNumber(cx, argv[0], &fval), bad2 );
 			curve[i] = fval;
@@ -815,7 +815,7 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 	JL_S_ASSERT_RESOURCE(tex);
 
 	size_t count;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &count) );
+	JL_CHK( JsvalToSize(cx, JL_FARG(1), &count) );
 	JL_S_ASSERT( count >= 1, "Invalid aliasing levels count." );
 
 	bool useCurve;
@@ -2038,7 +2038,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 	height = tex->height;
 	channels = tex->channels;
 
-	size_t newWidth, newHeight;
+	unsigned int newWidth, newHeight;
 	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &newWidth) );
 	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &newHeight) );
 
@@ -2066,7 +2066,7 @@ DEFINE_FUNCTION_FAST( Resize ) {
 	ry = (float)height / newHeight; // texture ratio y
 	size_t x, y, c;
 
-	int pos, pos1, pos2, pos3, pos4; // offset in the buffer
+	size_t pos, pos1, pos2, pos3, pos4; // offset in the buffer
 	float ratio1, ratio2, ratio3, ratio4; // pixel value ratio
 
 	for ( y = 0; y < newHeight; y++ )

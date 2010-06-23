@@ -297,7 +297,7 @@ DEFINE_FUNCTION_FAST( Draw ) {
 	JL_S_ASSERT_RESOURCE( pv );
 
 	const char *str;
-	unsigned int length;
+	size_t length;
 	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &str, &length) );
 
 	if ( JL_ARGC >= 2 ) {

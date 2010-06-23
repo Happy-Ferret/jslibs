@@ -347,8 +347,8 @@ DEFINE_FUNCTION( ReadString ) {
 
 	if ( JL_ARG_ISDEF(1) ) {
 
-		unsigned int amount;
-		JL_CHK( JsvalToUInt(cx, JL_ARG(1), &amount) );
+		size_t amount;
+		JL_CHK( JsvalToSize(cx, JL_ARG(1), &amount) );
 //		JL_S_ASSERT( (int)amount >= 0, "Invalid amount" );
 		JL_S_ASSERT_ERROR_NUM( (int)amount >= 0, JLSMSG_VALUE_OUTOFRANGE );
 		JL_CHK( ReadDataAmount(cx, bufferObject, amount, rval) );
@@ -418,7 +418,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( systemIntSize ) {
 
-	*vp = INT_TO_JSVAL( sizeof(int) );
+	*vp = INT_TO_JSVAL( sizeof(size_t) );
 	return JS_TRUE;
 }
 

@@ -961,7 +961,7 @@ DEFINE_FUNCTION( PopupBalloon ) {
 		if ( !JSVAL_IS_VOID(*rval) ) {
 
 			const char *infoTitleStr;
-			unsigned int infoTitleLen;
+			size_t infoTitleLen;
 			JL_CHK( JsvalToStringAndLength(cx, rval, &infoTitleStr, &infoTitleLen) );
 			int len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoTitleLen);
 			memcpy( pv->nid.szInfoTitle, infoTitleStr, JL_MIN(sizeof(pv->nid.szInfoTitle)-1, infoTitleLen) );
@@ -972,7 +972,7 @@ DEFINE_FUNCTION( PopupBalloon ) {
 		if ( !JSVAL_IS_VOID(*rval) ) {
 
 			const char *infoStr;
-			unsigned int infoLen;
+			size_t infoLen;
 			JL_CHK( JsvalToStringAndLength(cx, rval, &infoStr, &infoLen) );
 			int len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoLen);
 			memcpy( pv->nid.szInfo, infoStr, len );

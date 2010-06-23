@@ -139,8 +139,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_MIN( 2 );
 
-	unsigned int size;
-	JL_CHK( JsvalToUInt(cx, JL_ARG(2), &size) );
+	size_t size;
+	JL_CHK( JsvalToSize(cx, JL_ARG(2), &size) );
 
 	unsigned int mode;
 	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
@@ -226,10 +226,10 @@ DEFINE_FUNCTION_FAST( Write ) {
 	pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	unsigned int offset;
+	size_t offset;
 	offset = 0;
 	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &offset) );
+		JL_CHK( JsvalToSize(cx, JL_FARG(2), &offset) );
 
 	const char *data;
 	size_t dataLength;
@@ -262,10 +262,10 @@ DEFINE_FUNCTION_FAST( Read ) {
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	unsigned int offset;
+	size_t offset;
 	offset = 0;
 	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &offset) );
+		JL_CHK( JsvalToSize(cx, JL_FARG(2), &offset) );
 
 	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh;
@@ -273,7 +273,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 	size_t dataLength;
 	if ( JL_FARG_ISDEF(1) )
-		JL_CHK( JsvalToUInt(cx, JL_FARG(1), &dataLength) );
+		JL_CHK( JsvalToSize(cx, JL_FARG(1), &dataLength) );
 	else
 		dataLength = mh->currentDataLength;
 
