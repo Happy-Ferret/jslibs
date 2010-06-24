@@ -2259,42 +2259,63 @@ struct ProcessEvent {
 
 namespace jl {
 	
+
+
+	struct ContextPrivate {
+
+	};
+
+	ContextPrivate* GetContextPrivate( JSContext *cx ) {
+		
+		return reinterpret_cast<ContextPrivate*>(JS_GetContextPrivate(cx));
+	}
+
 	class Error {
-	public:
-		Error() {}
 	};
 
-	class ConvertError : public Error {
+	class LogicError : public Error {
 	public:
-		ConvertError() {}
+		LogicError() {}
 	};
 
-	inline jsval ToJsval( JSContext *cx, int n ) {
+	class RuntimeError : public Error {
+	public:
+		RuntimeError() {}
+	};
+
+
+	template <class T>
+	inline jsval JsvalFrom( JSContext *cx, T n );
+
+	template <>
+	inline jsval JsvalFrom<int>( JSContext *cx, int n ) {
 
 		if (likely( n >= JSVAL_INT_MIN && n <= JSVAL_INT_MAX ))
 			return INT_TO_JSVAL(jsint(n));
 		jsdouble *dp = JS_NewDouble(cx, jsdouble(n)); // weakRoots.newbornDouble
-		if (likely( dp ))
+		if (likely( dp != NULL ))
 			return DOUBLE_TO_JSVAL(dp);
-		throw ConvertError();
+		throw RuntimeError();
 	}
 
-	inline jsval ToJsval( JSContext *cx, size_t n ) {
+	template <>
+	inline jsval JsvalFrom<size_t>( JSContext *cx, size_t n ) {
 
 		if (likely( n <= JSVAL_INT_MAX ))
 			return INT_TO_JSVAL(jsint(n));
 		jsdouble *dp = JS_NewDouble(cx, jsdouble(n)); // weakRoots.newbornDouble
-		if (likely( dp ))
+		if (likely( dp != NULL ))
 			return DOUBLE_TO_JSVAL(dp);
-		throw ConvertError();
+		throw RuntimeError();
 	}
 
-	inline jsval ToJsval( JSContext *cx, double n ) {
+	template <>
+	inline jsval JsvalFrom<double>( JSContext *cx, double n ) {
 
 		jsdouble *dp = JS_NewDouble(cx, jsdouble(n)); // weakRoots.newbornDouble
-		if (likely( dp ))
+		if (likely( dp != NULL ))
 			return DOUBLE_TO_JSVAL(dp);
-		throw ConvertError();
+		throw RuntimeError();
 	}
 
 
@@ -2315,12 +2336,12 @@ namespace jl {
 		} else {
 
 			if ( !JS_ValueToNumber(cx, v, &d) )
-				throw ConvertError();
+				throw RuntimeError();
 		}
 
 		if ( d >= jsdouble(INT_MIN) && d <= jsdouble(INT_MAX) )
 			return int(d);
-		throw ConvertError();
+		throw LogicError();
 	}
 
 
@@ -2338,12 +2359,12 @@ namespace jl {
 		} else {
 
 			if ( !JS_ValueToNumber(cx, v, &d) )
-				throw ConvertError();
+				throw RuntimeError();
 		}
 
 		if ( d >= 0 && d <= jsdouble(size_t(-1)) )
 			return size_t(d);
-		throw ConvertError();
+		throw LogicError();
 	}
 
 
@@ -2356,7 +2377,7 @@ namespace jl {
 			return *JSVAL_TO_DOUBLE(v);
 
 		if ( !JS_ValueToNumber(cx, v, &d) )
-			throw ConvertError();
+			throw RuntimeError();
 		return d;
 	}
 

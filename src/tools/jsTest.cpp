@@ -1,6 +1,12 @@
+#define NOMINMAX
+#include <limits>
+
 #define XP_WIN
 #include <jsapi.h>
 #include "jsxdrapi.h"
+
+#include "../common/jlhelper.h"
+
 
 JSClass global_class = {
 	 "global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
@@ -34,7 +40,78 @@ JSBool MyXDRObject(JSXDRState *xdr, JSObject **objp) {
 }
 
 
+
+#define ASSERT JL_ASSERT
+/*
+	template <class D, class S>
+	inline D SafeConvert( S value );
+
+	template <class S>
+	inline int SafeConvert<int, S>( S value ) {
+			
+		ASSERT( value >= S(INT_MIN) && value <= S(INT_MAX) );
+		return int(value);
+	} /// error C2768: 'SafeConvert' : illegal use of explicit template arguments
+
+
+	template <class S>
+	inline size_t SafeConvert<size_t, S>( S value ) {
+			
+		ASSERT( value >= S(0) && value <= S(size_t(-1)) );
+		return size_t(value);
+	} /// error C2768: 'SafeConvert' : illegal use of explicit template arguments
+
+*/
+
+template <class D, class S>
+D SafeConvert(S src) {
+
+//#pragma warning(push)
+//#pragma warning(disable:4018)
+
+	ASSERT( src <= S(std::numeric_limits<D>::max()) );
+	ASSERT( std::numeric_limits<D>::min() >= 0 || src >= 0 );
+
+	ASSERT( std::numeric_limits<D>::min() < 0 || src >= 0 );
+
+
+//	ASSERT(value >= std::numeric_limits<D>::min() && D(value) <= std::numeric_limits<D>::max());
+//#pragma warning(pop)
+  return static_cast<D>(src);
+}
+	// ...
+
+	void test() {
+
+
+		SafeConvert<size_t>(  (int)1  );
+
+		SafeConvert<int>(  (size_t)UINT_MAX  );
+
+		SafeConvert<int>(  __int64(INT_MIN)-0  );
+		SafeConvert<int>(  __int64(INT_MAX)+0  );
+		SafeConvert<int>(  size_t(INT_MAX)+0  );
+
+
+
+
+
+		SafeConvert<int>(  size_t(INT_MAX)+1  );
+		SafeConvert<int>(  size_t(0)  );
+		SafeConvert<int>(  __int64(INT_MIN)-1  );
+		SafeConvert<int>(  __int64(INT_MAX)+1  );
+	}
+
+
+
+
+
+
 int main(int argc, char* argv[]) {
+
+
+
+
 
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
@@ -47,6 +124,18 @@ int main(int argc, char* argv[]) {
 	JS_InitClass(cx, globalObject, NULL, &myClass, NULL, 0, NULL, NULL, NULL, NULL);
 	JSObject *obj1 = JS_NewObject(cx, &myClass, NULL, NULL);
 
+	
+	test();
+
+/*
+	try {
+
+		try {
+			int i = jl::JsvalTo<int>(cx, jl::JsvalFrom<double>(cx, 1234));
+		} catch ( jl::JSAPIError err ) {}
+
+	} catch ( jl::JSAPIError err ) {}
+*/
 
 	jsval val1 = OBJECT_TO_JSVAL( obj1 );
 	jsval val2;
@@ -71,6 +160,7 @@ int main(int argc, char* argv[]) {
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
 	JS_ShutDown();
+
 
 	return EXIT_SUCCESS;
 }
