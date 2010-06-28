@@ -429,7 +429,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( systemIsBigEndian ) {
 
-	*vp = BOOLEAN_TO_JSVAL( DetectSystemEndianType() == BigEndian );
+	*vp = BOOLEAN_TO_JSVAL( JLHostEndian == JLBigEndian );
 	return JS_TRUE;
 }
 

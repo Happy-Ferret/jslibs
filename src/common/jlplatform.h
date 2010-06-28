@@ -15,6 +15,14 @@
 #ifndef _JLPLATFORM_H_
 #define _JLPLATFORM_H_
 
+#include <limits>
+
+///////////////////////////////////////////////////////////////////////////////
+// 
+
+#if CHAR_BIT != 8
+#error "unsupported char size"
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
@@ -133,6 +141,11 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include <fcntl.h> // _O_RDONLY, _O_WRONLY
+#include <stdio.h>
+#include <cstddef>
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Platform specific configuration
 
@@ -147,7 +160,9 @@
 	#endif // _DEBUG
 #endif // REPORT_MEMORY_LEAKS
 
+	#ifndef XP_WIN
 	#define XP_WIN // used by SpiderMonkey and jslibs
+	#endif
 
 	#ifndef WINVER         // Allow use of features specific to Windows 95 and Windows NT 4 or later.
 	#define WINVER 0x0501  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
@@ -158,13 +173,14 @@
 	#endif
 
 	#ifndef _WIN32_WINDOWS        // Allow use of features specific to Windows 98 or later.
-	#define _WIN32_WINDOWS 0x0501 // Change this to the appropriate value to target Windows Me or later.
+	#define _WIN32_WINDOWS 0x0501 // Change this to the appropriate value to target Windows Me or later. 0x501 = XP SP1.
 	#endif
 
+	#undef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN   // Exclude rarely-used stuff from Windows headers
 	#include <windows.h>
 
-	#include <direct.h> // function declarations for directory handling/creation
+//	#include <direct.h> // function declarations for directory handling/creation
 	#include <process.h> // threads, ...
 
 	typedef INT8  int8_t;
@@ -204,7 +220,9 @@
 
 #elif defined(_MACOSX) // MacosX platform
 
+	#ifndef XP_UNIX
 	#define XP_UNIX // used by SpiderMonkey and jslibs
+	#endif
 
 	#include <unistd.h>
 
@@ -218,7 +236,9 @@
 
 #else // Linux platform
 
+	#ifndef XP_UNIX
 	#define XP_UNIX // used by SpiderMonkey and jslibs
+	#endif
 
 	#include <unistd.h>
 	#include <sys/time.h>
@@ -257,17 +277,21 @@
 
 #endif // Windows/MacosX/Linux platform
 
+#define SIZE_T_MIN (static_cast<size_t>(0))
+#define SIZE_T_MAX (static_cast<size_t>(-1))
+
+
+
+#if defined(XP_WIN)
+#include <io.h> // _open_osfhandle()
+#endif
+
 
 // MS specific ?
 //#ifndef O_BINARY
 //	#define O_BINARY 0
 //#endif
 
-#if defined(XP_WIN)
-	#include <io.h> // _open_osfhandle()
-#endif
-#include <fcntl.h> // _O_RDONLY, _O_WRONLY
-#include <stdio.h>
 
 template<class T> ALWAYS_INLINE T JL_MIN(T a, T b) { return (a) < (b) ? (a) : (b); } //#define JL_MIN(a,b) ( (a) < (b) ? (a) : (b) )
 template<class T> ALWAYS_INLINE T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b); } //#define JL_MAX(a,b) ( (a) > (b) ? (a) : (b) )
@@ -284,7 +308,7 @@ template<class T> ALWAYS_INLINE T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b
 #define JL_Failed( message, filename, lineno ) \
 JL_MACRO_BEGIN \
 	fprintf(stderr, "jslibs assertion failure: %s, at %s:%d\n", message, filename, lineno); \
-	DebugBreak(); /*exit(3);*/ abort(); \
+	__asm { int 3 }; /*DebugBreak();*/ /*exit(3);*/ abort(); \
 JL_MACRO_END
 #elif defined(XP_OS2) || (defined(__GNUC__) && defined(__i386))
 #define JL_Assert( message, filename, lineno ) \
@@ -305,6 +329,44 @@ JL_MACRO_END
 #define JL_ASSERT(expr) ((void) 0)
 
 #endif // DEBUG
+
+
+namespace jl {
+
+	// eg. if ( IsSafeCast<int>(size_t(12345)) ) ...
+	template <class D, class S>
+	bool IsSafeCast(S src) {
+
+		D dsrc = static_cast<D>(src);
+		return static_cast<S>(dsrc) == src && (src < 0) == (dsrc < 0); // compare converted value and sign.
+	}
+
+	// eg. int i; if ( IsSafeCast(size_t(12345), i) ) ...
+	template <class D, class S>
+	bool IsSafeCast(S src, D) {
+
+		D dsrc = static_cast<D>(src);
+		return static_cast<S>(dsrc) == src && (src < 0) == (dsrc < 0); // compare converted value and sign.
+	}
+
+	// eg. int i = SafeCast<int>(size_t(12345));
+	template <class D, class S>
+	D SafeCast(S src) {
+
+		JL_ASSERT( (IsSafeCast<D>(src)) );
+		return static_cast<D>(src);
+	}
+
+	// eg. int i; i = SafeCast(size_t(12345), i);
+	template <class D, class S>
+	D SafeCast(S src, D) {
+
+		JL_ASSERT( (IsSafeCast<D>(src)) );
+		return static_cast<D>(src);
+	}
+
+}
+
 
 template<class T>
 static inline void JL_UNUSED(T) {};
@@ -336,11 +398,13 @@ static inline void JL_UNUSED(T) {};
 // rise a "division by zero" if x is not a 5-char string.
 //#define JL_CAST_CSTR_TO_UINT32(x) ( jl_unused(0/(sizeof(x) == 5 && x[3] == 0 ? 1 : 0)), (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
 //#define JL_CAST_CSTR_TO_UINT32(x) ( (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
+//	return (cstr[0]<<24) | (cstr[1]<<16) | (cstr[2]<<8) | (cstr[3]);
+//	return *(uint32_t*)cstr;
 
-ALWAYS_INLINE uint32_t JL_CAST_CSTR_TO_UINT32( const char cstr[5] ) {
+static ALWAYS_INLINE uint32_t JL_CAST_CSTR_TO_UINT32( const char cstr[5] ) {
 	
 	JL_ASSERT(cstr[4] == 0);
-	return (cstr[0]<<24) | (cstr[1]<<16) | (cstr[2]<<8) | (cstr[3]);
+	return *(uint32_t*)cstr;
 }
 
 
@@ -383,7 +447,7 @@ ALWAYS_INLINE int int_pow(int base, int exp) {
 
 JL_STATIC_ASSERT( DBL_MANT_DIG < 64 );
 
-// since 9007199254740992 == 9007199254740993, we must subtract 1.
+// since 9007199254740992 == 9007199254740993, we must subtract 1. see also std::numeric_limits<double>::digits
 #define MAX_INTDOUBLE \
 	( (double)(((uint64_t)1<<DBL_MANT_DIG)-1) )
 
@@ -524,36 +588,30 @@ ALWAYS_INLINE void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, c
 ///////////////////////////////////////////////////////////////////////////////
 // Platform tools
 
-#include <cstddef>
-
 template<class T>
 struct DummyAlignStruct {
   unsigned char first;
   T second;
 };
 
-#define ALIGNOF(type) ( offsetof( DummyAlignStruct< type >, second ) )
+#define ALIGNOF(type) ( offsetof( DummyAlignStruct<type>, second ) )
 
-#define COUNTOF(vector) (sizeof(vector)/sizeof(*vector))
+#define COUNTOF(vector) ( sizeof(vector)/sizeof(*vector) )
 
 
-
-enum Endian {
-	BigEndian,
-	LittleEndian,
-	MiddleEndian,
-	UnknownEndian
+enum {
+    JLBigEndian = 0x00010203ul,
+    JLLittleEndian = 0x03020100ul,
+    JLMiddleEndian = 0x01000302ul // or PDP endian
 };
 
-ALWAYS_INLINE Endian DetectSystemEndianType() {
+static const union {
+	unsigned char bytes[4];
+	uint32_t value;
+} JLHostEndianType = { { 0, 1, 2, 3 } };
 
-	switch ( *(uint32_t*)"\3\2\1" ) { // 03020100
-		case 0x03020100: return BigEndian;
-		case 0x00010203: return LittleEndian;
-		case 0x02030001: return MiddleEndian;
-	}
-	return UnknownEndian;
-}
+#define JLHostEndian (JLHostEndianType.value)
+
 
 // cf. _swab()
 // 16 bits: #define SWAP_BYTES(X)           ((X & 0xff) << 8) | (X >> 8)
@@ -562,19 +620,19 @@ ALWAYS_INLINE Endian DetectSystemEndianType() {
 
 ALWAYS_INLINE void Host16ToNetwork16( void *pval ) {
 
-	if ( DetectSystemEndianType() == LittleEndian )
+	if ( JLHostEndian == JLLittleEndian )
 		JL_BYTESWAP( pval, 0, 1 )
 }
 
 ALWAYS_INLINE void Host24ToNetwork24( void *pval ) {
 
-	if ( DetectSystemEndianType() == LittleEndian )
+	if ( JLHostEndian == JLLittleEndian )
 		JL_BYTESWAP( pval, 0, 2 )
 }
 
 ALWAYS_INLINE void Host32ToNetwork32( void *pval ) {
 
-	if ( DetectSystemEndianType() == LittleEndian ) {
+	if ( JLHostEndian == JLLittleEndian ) {
 
 		JL_BYTESWAP( pval, 0, 3 )
 		JL_BYTESWAP( pval, 1, 2 )
@@ -583,7 +641,7 @@ ALWAYS_INLINE void Host32ToNetwork32( void *pval ) {
 
 ALWAYS_INLINE void Host64ToNetwork64( void *pval ) {
 
-	if ( DetectSystemEndianType() == LittleEndian ) {
+	if ( JLHostEndian == JLLittleEndian ) {
 
 		JL_BYTESWAP( pval, 0, 7 )
 		JL_BYTESWAP( pval, 1, 6 )
@@ -595,20 +653,20 @@ ALWAYS_INLINE void Host64ToNetwork64( void *pval ) {
 
 ALWAYS_INLINE void Network16ToHost16( void *pval ) {
 
-	if ( DetectSystemEndianType() == LittleEndian )
+	if ( JLHostEndian == JLLittleEndian )
 		JL_BYTESWAP( pval, 0, 1 )
 }
 
 ALWAYS_INLINE void Network24ToHost24( void *pval ) {
 
-	if ( DetectSystemEndianType() == LittleEndian )
+	if ( JLHostEndian == JLLittleEndian )
 		JL_BYTESWAP( pval, 0, 2 )
 }
 
 
 ALWAYS_INLINE void Network32ToHost32( void *pval ) {
 
-	if ( DetectSystemEndianType() == LittleEndian ) {
+	if ( JLHostEndian == JLLittleEndian ) {
 
 		JL_BYTESWAP( pval, 0, 3 )
 		JL_BYTESWAP( pval, 1, 2 )
@@ -617,7 +675,7 @@ ALWAYS_INLINE void Network32ToHost32( void *pval ) {
 
 ALWAYS_INLINE void Network64ToHost64( void *pval ) {
 
-	if ( DetectSystemEndianType() == LittleEndian ) {
+	if ( JLHostEndian == JLLittleEndian ) {
 
 		JL_BYTESWAP( pval, 0, 7 )
 		JL_BYTESWAP( pval, 1, 6 )
@@ -657,6 +715,7 @@ ALWAYS_INLINE void SleepMilliseconds(uint32_t ms) {
 	usleep(ms * 1000); // unistd.h
 #endif // XP_UNIX
 }
+
 
 ALWAYS_INLINE double AccurateTimeCounter() {
 

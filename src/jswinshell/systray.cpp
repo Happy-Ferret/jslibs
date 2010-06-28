@@ -716,7 +716,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 
 			uFlags |= MF_SEPARATOR;
 		} else 
-		if ( JSVAL_IS_STRING(item) || JL_VALUE_IS_STRING_OBJECT(cx, item) ) {
+			if ( JSVAL_IS_STRING(item) || JsvalIsStringObject(cx, item) ) {
 
 			label = item;
 			cmdid = item;
@@ -963,7 +963,7 @@ DEFINE_FUNCTION( PopupBalloon ) {
 			const char *infoTitleStr;
 			size_t infoTitleLen;
 			JL_CHK( JsvalToStringAndLength(cx, rval, &infoTitleStr, &infoTitleLen) );
-			int len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoTitleLen);
+			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoTitleLen);
 			memcpy( pv->nid.szInfoTitle, infoTitleStr, JL_MIN(sizeof(pv->nid.szInfoTitle)-1, infoTitleLen) );
 			pv->nid.szInfoTitle[len] = '\0';
 		}
@@ -974,7 +974,7 @@ DEFINE_FUNCTION( PopupBalloon ) {
 			const char *infoStr;
 			size_t infoLen;
 			JL_CHK( JsvalToStringAndLength(cx, rval, &infoStr, &infoLen) );
-			int len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoLen);
+			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoLen);
 			memcpy( pv->nid.szInfo, infoStr, len );
 			pv->nid.szInfo[len] = '\0';
 		}
@@ -1186,7 +1186,7 @@ DEFINE_PROPERTY( textSetter ) {
 	const char *tipText;
 	size_t tipLen;
 	JL_CHK( JsvalToStringAndLength(cx, vp, &tipText, &tipLen) );
-	int len = JL_MIN(sizeof(pv->nid.szTip)-1, tipLen);
+	size_t len = JL_MIN(sizeof(pv->nid.szTip)-1, tipLen);
 	memcpy(pv->nid.szTip, tipText, len);
 	pv->nid.szTip[len] = '\0';
 

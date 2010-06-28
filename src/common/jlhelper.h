@@ -15,33 +15,20 @@
 #ifndef _JSHELPER_H_
 #define _JSHELPER_H_
 
+
+#include <sys/stat.h>
+
+//#include <../../js-confdefs.h> // bad WINVER and _WIN32_WINNT values.
+
 #include "jlalloc.h"
 #include "jlplatform.h"
-#include <jsapi.h>
-
-typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, size_t *amount );
-typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, const char **buffer, size_t *size );
-typedef JSBool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
-
-inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
-inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
-
 #include "queue.h"
-
-#include <cstring>
-#include <stdarg.h>
-#include <sys/stat.h>
-#ifdef XP_WIN
-	#include <io.h>
-#endif
-#include <fcntl.h>
-
-// JavaScript engine
 
 #ifdef _MSC_VER
 #pragma warning( push, 0 )
 #endif // _MSC_VER
 
+#include <jsapi.h>
 #include <jscntxt.h>
 #include <jsscope.h>
 #include <jsxdrapi.h>
@@ -51,6 +38,23 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #endif // _MSC_VER
 
 
+///////////////////////////////////////////////////////////////////////////////
+// Native Interface
+
+typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, size_t *amount );
+typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, const char **buffer, size_t *size );
+typedef JSBool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
+
+inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
+inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
+
+extern bool _unsafeMode;
+extern uint32_t _moduleId;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Debug tools
+
 #ifdef DEBUG
 	#define IFDEBUG(expr) expr
 #else
@@ -58,17 +62,14 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 #endif // DEBUG
 
 
-extern bool _unsafeMode;
-
-extern uint32_t _moduleId;
-
+///////////////////////////////////////////////////////////////////////////////
+// Safe Mode tools
 
 #define JL_SAFE_BEGIN if (unlikely( !_unsafeMode )) {
 #define JL_SAFE_END }
 
 #define JL_UNSAFE_BEGIN if (likely( _unsafeMode )) {
 #define JL_UNSAFE_END }
-
 
 #define JL_SAFE(code) \
 JL_MACRO_BEGIN \
@@ -81,112 +82,14 @@ JL_MACRO_BEGIN \
 JL_MACRO_END
 
 // see JSAtomState struct in jsatom.h
-#define JL_ATOMJSID(CX, NAME) ATOM_TO_JSID(CX->runtime->atomState.NAME##Atom)
-
-#define JLID_SPEC(name) JLID_##name
-enum {
-	JLID_SPEC( stdout ),
-	JLID_SPEC( stderr ),
-	JLID_SPEC( global ),
-	JLID_SPEC( arguments ),
-	JLID_SPEC( unsafeMode ),
-	JLID_SPEC( _revision ),
-	JLID_SPEC( _configuration ),
-	JLID_SPEC( scripthostpath ),
-	JLID_SPEC( scripthostname ),
-	JLID_SPEC( isfirstinstance ),
-	JLID_SPEC( bootstrapScript ),
-	JLID_SPEC( _NI_BufferGet ),
-	JLID_SPEC( _NI_StreamRead ),
-	JLID_SPEC( _NI_Matrix44Get ),
-	JLID_SPEC( Get ),
-	JLID_SPEC( Read ),
-	JLID_SPEC( name ),
-	JLID_SPEC( id ),
-	LAST_JSID // see HostPrivate::ids[]
-};
-#undef JLID_SPEC
-
-
-#include <jlhostprivate.h>
-
-
-ALWAYS_INLINE HostPrivate* GetHostPrivate( JSContext *cx ) {
-
-//	return (HostPrivate*)JS_GetRuntimePrivate(JS_GetRuntime(cx));
-//	return reinterpret_cast<HostPrivate*>(cx->runtime->data);
-	return (HostPrivate*)cx->runtime->data;
-}
-
-ALWAYS_INLINE void SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
-
-//	JS_SetRuntimePrivate(JS_GetRuntime(cx), hostPrivate);
-	cx->runtime->data = (void*)hostPrivate;
-}
-
-ALWAYS_INLINE unsigned char ModulePrivateHash( const uint32_t moduleId ) {
-
-	return ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3] << 1;
-}
-
-ALWAYS_INLINE bool SetModulePrivate( JSContext *cx, const uint32_t moduleId, void *modulePrivate ) {
-
-	JL_ASSERT( moduleId != 0 );
-	unsigned char id = ModulePrivateHash(moduleId);
-	HostPrivate::ModulePrivate *mpv = GetHostPrivate(cx)->modulePrivate;
-	while ( mpv[id].moduleId != 0 ) { // assumes that modulePrivate struct is init to 0
-
-		if ( mpv[id].moduleId == moduleId )
-			return false; // module private already exist or moduleId not unique
-		++id; // uses unsigned char overflow
-	}
-	mpv[id].moduleId = moduleId;
-	mpv[id].privateData = modulePrivate;
-	return true;
-}
-
-ALWAYS_INLINE void* GetModulePrivate( JSContext *cx, uint32_t moduleId ) {
-
-	JL_ASSERT( moduleId != 0 );
-	unsigned char id = ModulePrivateHash(moduleId);
-	HostPrivate::ModulePrivate *mpv = GetHostPrivate(cx)->modulePrivate;
-	while ( mpv[id].moduleId != moduleId ) {
-
-		++id; // uses unsigned char overflow
-	}
-	return mpv[id].privateData;
-}
-// example of use: static uint32_t moduleId = 'dbug'; SetModulePrivate(cx, moduleId, mpv);
-
-
-ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) {
-
-	jsid id = GetHostPrivate(cx)->ids[index];
-	if (likely( id != 0 ))
-		return id;
-	JSString *jsstr = JS_InternString(cx, name);
-	if ( jsstr == NULL )
-		return 0;
-	if ( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &id) != JS_TRUE )
-		return 0;
-	GetHostPrivate(cx)->ids[index] = id;
-	return id;
-}
-
-#ifdef DEBUG
-#define JLID_NAME(name) (JL_UNUSED(JLID_##name), #name)
-#else
-#define JLID_NAME(name) (#name)
-#endif // DEBUG
-
-#define JLID(cx, name) GetPrivateJsid(cx, JLID_##name, #name)
-// example of use: jsid cfg = JLID(cx, _configuration); char *name = JLID_NAME(_configuration);
+#define JL_ATOMJSID(CX, NAME) \
+	ATOM_TO_JSID(CX->runtime->atomState.NAME##Atom)
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // helper macros
 
-// BEWARE: the following helper macros are only valid inside a JS Native function definition !
+// BEWARE: the following helper macros are only valid inside a JS Native/FastNative function definition !
 
 #define JL_ARGC (argc)
 
@@ -229,6 +132,141 @@ ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) 
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// IDs cache
+
+// required by jlhostprivate.h
+#define JLID_SPEC(name) JLID_##name
+enum {
+	JLID_SPEC( stdout ),
+	JLID_SPEC( stderr ),
+	JLID_SPEC( global ),
+	JLID_SPEC( arguments ),
+	JLID_SPEC( unsafeMode ),
+	JLID_SPEC( _revision ),
+	JLID_SPEC( _configuration ),
+	JLID_SPEC( scripthostpath ),
+	JLID_SPEC( scripthostname ),
+	JLID_SPEC( isfirstinstance ),
+	JLID_SPEC( bootstrapScript ),
+	JLID_SPEC( _NI_BufferGet ),
+	JLID_SPEC( _NI_StreamRead ),
+	JLID_SPEC( _NI_Matrix44Get ),
+	JLID_SPEC( Get ),
+	JLID_SPEC( Read ),
+	JLID_SPEC( name ),
+	JLID_SPEC( id ),
+	LAST_JSID // see HostPrivate::ids[]
+};
+#undef JLID_SPEC
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Context private
+
+struct JLContextPrivate {
+};
+
+ALWAYS_INLINE JLContextPrivate* GetContextPrivate( const JSContext *cx ) {
+	
+	JL_ASSERT( JS_GetContextPrivate((JSContext*)cx) == cx->data );
+	return reinterpret_cast<JLContextPrivate*>(cx->data);
+}
+
+ALWAYS_INLINE void SetContextPrivate( const JSContext *cx, JLContextPrivate *ContextPrivate ) {
+
+	JL_ASSERT( JS_GetContextPrivate((JSContext*)cx) == cx->data );
+	cx->runtime->data = reinterpret_cast<void*>(ContextPrivate);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Host private
+
+#include <jlhostprivate.h>
+
+ALWAYS_INLINE HostPrivate* GetHostPrivate( const JSContext *cx ) {
+
+//	return (HostPrivate*)JS_GetRuntimePrivate(JS_GetRuntime(cx));
+//	return reinterpret_cast<HostPrivate*>(cx->runtime->data);
+	JL_ASSERT( JS_GetRuntimePrivate(JS_GetRuntime((JSContext*)cx)) == cx->runtime->data );
+	return (HostPrivate*)cx->runtime->data;
+}
+
+ALWAYS_INLINE void SetHostPrivate( const JSContext *cx, HostPrivate *hostPrivate ) {
+
+//	JS_SetRuntimePrivate(JS_GetRuntime(cx), hostPrivate);
+	cx->runtime->data = (void*)hostPrivate;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Module private
+
+ALWAYS_INLINE unsigned char ModulePrivateHash( const uint32_t moduleId ) {
+
+	return ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3] << 1;
+}
+
+ALWAYS_INLINE bool SetModulePrivate( const JSContext *cx, const uint32_t moduleId, void *modulePrivate ) {
+
+	JL_ASSERT( moduleId != 0 );
+	unsigned char id = ModulePrivateHash(moduleId);
+	HostPrivate::ModulePrivate *mpv = GetHostPrivate(cx)->modulePrivate;
+	while ( mpv[id].moduleId != 0 ) { // assumes that modulePrivate struct is init to 0
+
+		if ( mpv[id].moduleId == moduleId )
+			return false; // module private already exist or moduleId not unique
+		++id; // uses unsigned char overflow
+	}
+	mpv[id].moduleId = moduleId;
+	mpv[id].privateData = modulePrivate;
+	return true;
+}
+
+ALWAYS_INLINE void* GetModulePrivate( const JSContext *cx, uint32_t moduleId ) {
+
+	JL_ASSERT( moduleId != 0 );
+	unsigned char id = ModulePrivateHash(moduleId);
+	HostPrivate::ModulePrivate *mpv = GetHostPrivate(cx)->modulePrivate;
+	while ( mpv[id].moduleId != moduleId ) {
+
+		++id; // uses unsigned char overflow
+	}
+	return mpv[id].privateData;
+}
+// example of use: static uint32_t moduleId = 'dbug'; SetModulePrivate(cx, moduleId, mpv);
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// IDs cache management
+
+ALWAYS_INLINE jsid GetPrivateJsid( JSContext *cx, int index, const char *name ) {
+
+	jsid id = GetHostPrivate(cx)->ids[index];
+	if (likely( id != 0 ))
+		return id;
+	JSString *jsstr = JS_InternString(cx, name);
+	if ( jsstr == NULL )
+		return 0;
+	if ( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &id) != JS_TRUE )
+		return 0;
+	GetHostPrivate(cx)->ids[index] = id;
+	return id;
+}
+
+#ifdef DEBUG
+#define JLID_NAME(name) (JL_UNUSED(JLID_##name), #name)
+#else
+#define JLID_NAME(name) (#name)
+#endif // DEBUG
+
+#define JLID(cx, name) GetPrivateJsid(cx, JLID_##name, #name)
+// example of use: jsid cfg = JLID(cx, _configuration); char *name = JLID_NAME(_configuration);
+
+
+
+///////////////////////////////////////////////////////////////////////////////
 // Error management
 
 enum JLErrNum {
@@ -253,7 +291,7 @@ JL_MACRO_BEGIN \
 	if ( hpv != NULL && hpv->errorCallback != NULL ) \
 		JS_ReportErrorNumber(cx, hpv->errorCallback, NULL, (num), ##__VA_ARGS__); \
 	else \
-		JS_ReportError(cx, "undefined nessage %d", (num)); \
+		JS_ReportError(cx, "undefined message %d", (num)); \
 	goto bad; \
 JL_MACRO_END
 
@@ -271,7 +309,7 @@ JL_MACRO_BEGIN \
 		if ( hpv != NULL && hpv->errorCallback != NULL ) \
 			JS_ReportErrorFlagsAndNumber(cx, JSREPORT_WARNING, hpv->errorCallback, NULL, (num), ##__VA_ARGS__); \
 		else \
-			JS_ReportWarning(cx, "undefined nessage %d", (num)); \
+			JS_ReportWarning(cx, "undefined message %d", (num)); \
 	} \
 JL_MACRO_END
 
@@ -420,26 +458,29 @@ JL_MACRO_END
 	JL_S_ASSERT_ERROR_NUM( condition, JLSMSG_INVALIDATED_OBJECT, name );
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // helper macros to avoid a function call to the jsapi
 
-ALWAYS_INLINE JSClass* JL_GetClass(JSObject *obj) {
+ALWAYS_INLINE JSClass* JL_GetClass(const JSObject *obj) {
 
 	return obj->getClass();
 }
 
-ALWAYS_INLINE size_t JL_GetStringLength(JSString *jsstr) {
+ALWAYS_INLINE size_t JL_GetStringLength(const JSString *jsstr) {
 
 	return jsstr->length();
 }
 
-ALWAYS_INLINE void *JL_GetPrivate(JSContext *cx, JSObject *obj) {
+ALWAYS_INLINE void *JL_GetPrivate(const JSContext *cx, const JSObject *obj) {
 
+	JL_UNUSED(cx);
 	return obj->getPrivate();
 }
 
-ALWAYS_INLINE void JL_SetPrivate(JSContext *cx, JSObject *obj, void *data) {
+ALWAYS_INLINE void JL_SetPrivate(const JSContext *cx, JSObject *obj, void *data) {
 
+	JL_UNUSED(cx);
 	obj->setPrivate(data);
 }
 
@@ -448,12 +489,12 @@ ALWAYS_INLINE JSBool JL_GetReservedSlot(JSContext *cx, JSObject *obj, uint32 ind
 	JL_ASSERT( OBJ_IS_NATIVE(obj) );
 	JSClass *clasp = obj->getClass();
 	JS_LOCK_OBJ(cx, obj);
-	JL_ASSERT( index < JSCLASS_RESERVED_SLOTS(clasp) || index < JSCLASS_RESERVED_SLOTS(clasp) + (clasp->reserveSlots ? clasp->reserveSlots(cx, obj) : 0) );
+	JL_ASSERT( index < JSCLASS_RESERVED_SLOTS(clasp) || index < JSCLASS_RESERVED_SLOTS(clasp) + (clasp->reserveSlots ? clasp->reserveSlots((JSContext*)cx, obj) : 0) );
 	uint32 slot = JSSLOT_START(clasp) + index;
 	*vp = (slot < STOBJ_NSLOTS(obj)) ? STOBJ_GET_SLOT(obj, slot) : JSVAL_VOID;
 #ifdef DEBUG
 	jsval tmp;
-	JL_ASSERT( JS_GetReservedSlot(cx, obj, index, &tmp) == JS_TRUE );
+	JL_ASSERT( JS_GetReservedSlot((JSContext*)cx, obj, index, &tmp) == JS_TRUE );
 	JL_ASSERT( *vp == tmp ); // ensure that JL_GetReservedSlot gives the same result as JS_GetReservedSlot.
 #endif // DEBUG
 	JS_UNLOCK_OBJ(cx, obj);
@@ -466,43 +507,9 @@ ALWAYS_INLINE JSBool JL_SetReservedSlot(JSContext *cx, JSObject *obj, uint32 ind
 }
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
-// Helper functions
-
-ALWAYS_INLINE JSBool JL_ThrowOSError(JSContext *cx) {
-
-	char errMsg[1024];
-	JLLastSysetmErrorMessage(errMsg, sizeof(errMsg));
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, errMsg);
-bad:
-	return JS_FALSE;
-}
-
-ALWAYS_INLINE bool JL_Ending(JSContext *cx) {
-
-	return cx->runtime->state == JSRTS_LANDING || cx->runtime->state == JSRTS_DOWN; // could be replaced by a flag in HostPrivate that keep the state of the engine.
-}
-
-// eg. JS_NewObject(cx, JL_GetStandardClass(cx, JSProto_TypeError), NULL, NULL);
-ALWAYS_INLINE JSClass* JL_GetStandardClass(JSContext *cx, JSProtoKey key) {
-
-	JSObject *constructor;
-	JL_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), key, &constructor) );
-	JL_CHK( constructor );
-//	FUN_CLASP( JS_ValueToFunction(cx, OBJECT_TO_JSVAL(constructor)) );
-	return FUN_CLASP(GET_FUNCTION_PRIVATE(cx, constructor));
-bad:
-	return NULL;
-}
-
-ALWAYS_INLINE JSContext *JL_GetContext(JSRuntime *rt) {
-
-	JSContext *cx = NULL;
-	JL_ASSERT( rt != NULL );
-	JS_ContextIterator(rt, &cx);
-	JS_ASSERT( cx != NULL );
-	return cx;
-}
+// JS stack management functions
 
 ALWAYS_INLINE JSStackFrame* JL_CurrentStackFrame(JSContext *cx) {
 
@@ -513,8 +520,9 @@ ALWAYS_INLINE JSStackFrame* JL_CurrentStackFrame(JSContext *cx) {
 	return js_GetTopStackFrame(cx);
 }
 
-ALWAYS_INLINE uint32_t JL_StackSize(JSContext *cx, JSStackFrame *fp) {
+ALWAYS_INLINE uint32_t JL_StackSize(const JSContext *cx, const JSStackFrame *fp) {
 
+	JL_UNUSED(cx);
 	uint32_t length = 0;
 	for ( ; fp; fp = fp->down ) // for ( JSStackFrame *fp = JL_CurrentStackFrame(cx); fp; JS_FrameIterator(cx, &fp) )
 		++length;
@@ -546,40 +554,80 @@ ALWAYS_INLINE JSStackFrame *JL_StackFrameByIndex(JSContext *cx, int frameIndex) 
 	return fp;
 }
 
-ALWAYS_INLINE bool JsvalIsNaN( JSContext *cx, const jsval val ) {
 
-	JL_ASSERT( sizeof(uint64_t) == sizeof(double) );
+
+///////////////////////////////////////////////////////////////////////////////
+// Helper functions
+
+ALWAYS_INLINE JSBool JL_ThrowOSError(JSContext *cx) {
+
+	char errMsg[1024];
+	JLLastSysetmErrorMessage(errMsg, sizeof(errMsg));
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, errMsg);
+bad:
+	return JS_FALSE;
+}
+
+ALWAYS_INLINE bool JL_Ending(const JSContext *cx) {
+
+	return cx->runtime->state == JSRTS_LANDING || cx->runtime->state == JSRTS_DOWN; // could be replaced by a flag in HostPrivate that keep the state of the engine.
+}
+
+// eg. JS_NewObject(cx, JL_GetStandardClass(cx, JSProto_TypeError), NULL, NULL);
+ALWAYS_INLINE JSClass* JL_GetStandardClass(JSContext *cx, JSProtoKey key) {
+
+	JSObject *constructor;
+	JL_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), key, &constructor) );
+	JL_CHK( constructor );
+//	FUN_CLASP( JS_ValueToFunction(cx, OBJECT_TO_JSVAL(constructor)) );
+	return FUN_CLASP(GET_FUNCTION_PRIVATE(cx, constructor));
+bad:
+	return NULL;
+}
+
+ALWAYS_INLINE JSContext *JL_GetContext(JSRuntime *rt) {
+
+	JSContext *cx = NULL;
+	JL_ASSERT( rt != NULL );
+	JS_ContextIterator(rt, &cx);
+	JS_ASSERT( cx != NULL );
+	return cx;
+}
+
+ALWAYS_INLINE bool JsvalIsNaN( const JSContext *cx, const jsval val ) {
+
+	JL_STATIC_ASSERT( sizeof(uint64_t) == sizeof(double) );
 //	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsNaN; // see also JS_SameValue
 	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)JSVAL_TO_DOUBLE(cx->runtime->NaNValue); // see also JS_SameValue
 }
 
-ALWAYS_INLINE bool JsvalIsPInfinity( JSContext *cx, const jsval val ) {
+ALWAYS_INLINE bool JsvalIsPInfinity( const JSContext *cx, const jsval val ) {
 
-	JL_ASSERT( sizeof(uint64_t) == sizeof(double) );
+	JL_STATIC_ASSERT( sizeof(uint64_t) == sizeof(double) );
 //	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsPositiveInfinity;
 	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)JSVAL_TO_DOUBLE(cx->runtime->positiveInfinityValue);
 }
 
-ALWAYS_INLINE bool JsvalIsNInfinity( JSContext *cx, const jsval val ) {
+ALWAYS_INLINE bool JsvalIsNInfinity( const JSContext *cx, const jsval val ) {
 
-	JL_ASSERT( sizeof(uint64_t) == sizeof(double) );
+	JL_STATIC_ASSERT( sizeof(uint64_t) == sizeof(double) );
 //	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)cx->runtime->jsNegativeInfinity;
 	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)JSVAL_TO_DOUBLE(cx->runtime->negativeInfinityValue);
 }
 
 
-ALWAYS_INLINE bool JsvalIsScript( JSContext *cx, jsval val ) {
+ALWAYS_INLINE bool JsvalIsScript( const JSContext *cx, jsval val ) {
 
 	return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == &js_ScriptClass;
 }
 
-ALWAYS_INLINE bool JsvalIsFunction( JSContext *cx, jsval val ) {
+ALWAYS_INLINE bool JsvalIsFunction( const JSContext *cx, jsval val ) {
 
 	#ifdef DEBUG
-		JL_ASSERT( VALUE_IS_FUNCTION(cx, val) == (!JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val))) ); // Mozilla JS engine private API behavior has changed.
+		JL_ASSERT( VALUE_IS_FUNCTION((JSContext*)cx, val) == (!JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction((JSContext*)cx, JSVAL_TO_OBJECT(val))) ); // Mozilla JS engine private API behavior has changed.
 	#endif //DEBUG
 	//	return !JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val)); // faster than (JS_TypeOfValue(cx, (val)) == JSTYPE_FUNCTION)
-	return VALUE_IS_FUNCTION(cx, val);
+	return VALUE_IS_FUNCTION(cx, val); // or OBJ_GET_CLASS(cx, obj) == &js_FunctionClass
 }
 
 ALWAYS_INLINE bool JsvalIsArray( JSContext *cx, jsval val ) {
@@ -587,122 +635,18 @@ ALWAYS_INLINE bool JsvalIsArray( JSContext *cx, jsval val ) {
 	return !JSVAL_IS_PRIMITIVE(val) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(val));
 }
 
-// Is string or has jslibs BufferGet interface (including Blob).
-//#define JL_JSVAL_IS_STRING(val) ( JSVAL_IS_STRING(val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) ) // || JL_GetClass(JSVAL_TO_OBJECT(val)) == &js_StringClass
 
-/*
-ALWAYS_INLINE JSClass* JL_GetErrorClass( JSContext *cx ) {
-
-//	JS_GetClassObject(cx, ...	JSProto_Error
-	JSObject *globalObject = JS_GetGlobalObject(cx);
-	jsval errorVal;
-	JL_CHK( JS_CallFunctionName(cx, globalObject, "Error", 0, NULL, &errorVal) );
-	return JL_GetClass(JSVAL_TO_OBJECT(errorVal));
-
-bad:
-	return NULL;
+//#define JL_VALUE_IS_STRING_OBJECT(cx, val) \
+//	(!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass)
+ALWAYS_INLINE bool JsvalIsStringObject( const JSContext *cx, jsval val ) {
+	
+	return (!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass);
 }
-
-
-ALWAYS_INLINE JSClass* JL_GetStringClass( JSContext *cx ) {
-
-	JSObject *emptyStringObject;
-	if ( JS_ValueToObject(cx, JS_GetEmptyStringValue(cx), &emptyStringObject) )
-		return JL_GetClass(emptyStringObject);
-	return NULL;
-}
-*/
-
-#define JL_VALUE_IS_STRING_OBJECT(cx, val) \
-	(!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass)
 
 ALWAYS_INLINE bool JsvalIsData( JSContext *cx, jsval val ) {
 
-	return ( JSVAL_IS_STRING(val) || JL_VALUE_IS_STRING_OBJECT(cx, val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) );
+	return ( JSVAL_IS_STRING(val) || JsvalIsStringObject(cx, val) || (!JSVAL_IS_PRIMITIVE(val) && BufferGetInterface(cx, JSVAL_TO_OBJECT(val)) != NULL) );
 }
-
-/*
-ALWAYS_INLINE bool JL_IsRValOptional( JSContext *cx, void *nativeFct ) {
-
-	struct CodeSpec {
-		 int8 length; // length including opcode byte
-		 uint32 format; // immediate operand format
-	};
-	static const CodeSpec codeSpec[] = {
-		#define OPDEF(op,val,name,token,length,nuses,ndefs,prec,format) \
-			{length, format},
-		#include "jsopcode.tbl"
-		#undef OPDEF
-	};
-
-	//JSStackFrame *fp = JL_CurrentStackFrame(cx);
-	//while (fp) { // see js_GetScriptedCaller()
-	//
-	//	if (fp->script)
-	//		break;
-	//	fp = fp->down;
-	//}
-	//jsval *vp1 = fp->regs->sp - (argc + 2);
-	//JSObject *obj2 = JSVAL_TO_OBJECT(*vp1);
-	//JSFunction *fun = GET_FUNCTION_PRIVATE(cx, obj2); // last function called from the script
-
-
-
-	JSStackFrame *fp = JL_CurrentStackFrame(cx);
-	if ( fp->script ) // fast native
-		return false;
-
-	if ( !fp->fun || !FUN_SLOW_NATIVE(fp->fun) || fp->fun->u.n.native != nativeFct )
-		return false;
-
-	while (fp) { // see js_GetScriptedCaller()
-
-		if (fp->script)
-			break;
-		fp = fp->down;
-	}
-
-	if ( !fp || !fp->regs )
-		return false;
-
-//	if ( !fp->fun || fp->fun->flags & JSFUN_FAST_NATIVE )
-//		return false;
-
-	jsbytecode *pcEnd = fp->script->code + fp->script->length;
-	jsbytecode *pc = fp->regs->pc;
-
-	if ( *pc != JSOP_CALL )
-		return false;
-
-	while ( pc < pcEnd ) {
-
-		pc += codeSpec[*pc].length;
-		switch ( *pc ) {
-			case JSOP_TRACE:
-				break; // skip
-			case JSOP_POPN: // regs.sp -= GET_UINT16(regs.pc);
-				if ( GET_UINT16(pc) >= 1 )
-					return true;
-				break;
-			case JSOP_POP: // regs.sp--;
-			case JSOP_VOID: // STORE_OPND(-1, JSVAL_VOID);
-				return true;
-
-			//case JSOP_SETRVAL:
-			//case JSOP_POPV: // fp->rval = POP_OPND();
-			//	switch( *(pc + codeSpec[*pc].length) ) {
-			//		case JSOP_STOP:
-			//			return false; // var a = eval("TestDebug()");
-			//	}
-
-			default:
-				return false;
-		}
-	}
-	return false;
-}
-*/
-
 
 ALWAYS_INLINE bool JL_InheritFrom( JSContext *cx, JSObject *obj, const JSClass *clasp ) {
 
@@ -720,43 +664,6 @@ ALWAYS_INLINE bool JsvalIsClass( jsval val, const JSClass *jsClass ) {
 	return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
 }
 
-//ALWAYS_INLINE bool IsClassName( JSObject *obj, const char *name ) {
-//
-//	return obj != NULL && strcmp(JL_GetClass(obj)->name, name) == 0;
-//}
-
-/*
-ALWAYS_INLINE bool HasProperty( JSContext *cx, JSObject *obj, const char *propertyName ) {
-
-	uintN attr;
-	JSBool found;
-	JSBool status = JS_GetPropertyAttributes(cx, obj, propertyName, &attr, &found);
-	return ( status == JS_TRUE && found != JS_FALSE );
-}
-*/
-
-/*
-inline JSBool GetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, void **pv ) {
-
-	jsval tmp;
-	if ( JS_GetProperty(cx, obj, name, &tmp) == JS_FALSE )
-		return JS_FALSE;
-	*pv = JSVAL_IS_VOID( tmp ) ? NULL : JSVAL_TO_PRIVATE(tmp);
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
-/*
-inline JSBool SetNamedPrivate( JSContext *cx, JSObject *obj, const char *name, const void *pv ) {
-
-//	JL_SAFE(	if ( (int)pv % 2 ) return JS_FALSE; ); // check if *vp is 2-byte aligned
-	if ( JS_DefineProperty(cx, obj, name, PRIVATE_TO_JSVAL(pv), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) == JS_FALSE )
-		return JS_FALSE;
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
 
 ALWAYS_INLINE JSBool JS_CallFunctionId(JSContext *cx, JSObject *obj, jsid id, uintN argc, jsval *argv, jsval *rval) {
 
@@ -855,16 +762,14 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		JL_CHKM( file != -1, "Unable to open file \"%s\" for reading.", compiledFileName );
 
 		size_t compFileSize = compFileStat.st_size; // filelength(file); ?
-		JL_S_ASSERT( compFileSize <= UINT_MAX, "Compiled file too big." ); // see read()
 		data = jl_malloc(compFileSize); // (TBD) free on error
-		int readCount = read( file, data, (unsigned int)compFileSize ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
+		int readCount = read( file, data, jl::SafeCast<unsigned int>(compFileSize) ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
 		JL_CHKM( readCount >= 0 && (unsigned)readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
 		close( file );
 
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 		JL_CHK( xdr );
-		JL_S_ASSERT( compFileSize <= (uint32)-1, "Compiled script too big." );
-		JS_XDRMemSetData(xdr, data, (uint32)compFileSize);
+		JS_XDRMemSetData(xdr, data, jl::SafeCast<uint32>(compFileSize));
 
 		// we want silent failures.
 		JSErrorReporter prevErrorReporter = JS_SetErrorReporter(cx, NULL);
@@ -1086,13 +991,13 @@ ALWAYS_INLINE bool JL_MaybeRealloc( size_t requested, size_t received ) {
 
 // stores JSClasses that other jslibs modules may rely on.
 // note: in jslibs, class->name length is >= 1 (see END_CLASS macro)
-ALWAYS_INLINE bool JL_RegisterNativeClass( JSContext *cx, JSClass *jsClass ) {
+ALWAYS_INLINE bool JL_RegisterNativeClass( const JSContext *cx, const JSClass *jsClass ) {
 
 	QueuePush(&GetHostPrivate(cx)->registredNativeClasses, (void*)jsClass);
 	return true;
 }
 
-ALWAYS_INLINE JSClass *JL_GetRegistredNativeClass( JSContext *cx, const char *className ) {
+ALWAYS_INLINE JSClass *JL_GetRegistredNativeClass( const JSContext *cx, const char *className ) {
 
 	// see js_FindClassObject impl.
 	JSClass *jsClass;
@@ -1107,7 +1012,7 @@ ALWAYS_INLINE JSClass *JL_GetRegistredNativeClass( JSContext *cx, const char *cl
 	return NULL;
 }
 
-ALWAYS_INLINE bool JL_UnregisterNativeClass( JSContext *cx, JSClass *jsClass ) {
+ALWAYS_INLINE bool JL_UnregisterNativeClass( const JSContext *cx, const JSClass *jsClass ) {
 
 	for ( jl::QueueCell *it = jl::QueueBegin(&GetHostPrivate(cx)->registredNativeClasses); it; it = jl::QueueNext(it) ) {
 
@@ -1120,69 +1025,24 @@ ALWAYS_INLINE bool JL_UnregisterNativeClass( JSContext *cx, JSClass *jsClass ) {
 	return false;
 }
 
-//ALWAYS_INLINE void JL_CleanRegisterNativeClasses( JSContext *cx ) {
-//
-//	jl::QueueDestruct(&GetHostPrivate(cx)->registredNativeClasses); // QueueDestruct make free( GetHostPrivate(cx)->registredNativeClasses ) !!!
-//}
-
-
-/*
-// The following function wil only works if the class is defined in the global namespace (say global object)
-inline JSClass *GetGlobalClassByName( JSContext *cx, const char *className ) {
-
-	// see.  js_FindClassObject(cx, NULL, INT_TO_JSID(JSProto_StopIteration), &v)) / JS_GetClassObject
-
-	JSObject *globalObj = JS_GetGlobalObject(cx);
-	if ( globalObj == NULL )
-		return NULL;
-	jsval classConstructor;
-	if ( JS_LookupProperty(cx, globalObj, className, &classConstructor) != JS_TRUE )
-		return NULL;
-	if ( JsvalIsFunction(cx, classConstructor) ) {
-
-		JSFunction *fun = JS_ValueToFunction(cx, classConstructor);
-		if ( fun == NULL )
-			return NULL;
-		if ( !FUN_SLOW_NATIVE(fun) )
-			return NULL;
-		return fun->u.n.u.clasp; // return fun->u.n.clasp; // (TBD) replace this by a jsapi.h call and remove dependency to jsarena.h and jsfun.h
-	} else
-	if ( JSVAL_IS_OBJECT(classConstructor) ) {
-
-		return OBJ_GET_CLASS(cx, JSVAL_TO_OBJECT(classConstructor));
-	}
-	return NULL;
-}
-*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // test and conversion functions
 
-/*
-inline bool JsvalIsDataBuffer( JSContext *cx, jsval val ) {
 
-	if ( JSVAL_IS_STRING(val) )
-		return true;
-
-	if ( !JSVAL_IS_OBJECT(val) )
-		return false;
-//	NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val)); // why not BufferGetInterface() ?
-	NIBufferGet fct = BufferGetInterface(cx, JSVAL_TO_OBJECT(val));
-	if ( fct )
-		return true;
-	return false;
-//	if ( !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(cx, JSVAL_TO_OBJECT(val)) == BlobJSClass(cx) )
-//		return true;
+ALWAYS_INLINE jsval JL_GetEmptyStringValue( const JSContext *cx ) {
+	
+	return STRING_TO_JSVAL(cx->runtime->emptyString);
 }
-*/
 
-ALWAYS_INLINE bool JL_ObjectIsBlob( JSContext *cx, JSObject *obj ) {
+
+ALWAYS_INLINE bool JL_ObjectIsBlob( const JSContext *cx, const JSObject *obj ) {
 
 	return JL_GetClass(obj) == JL_GetRegistredNativeClass(cx, "Blob");
 }
 
 
-ALWAYS_INLINE bool JL_ValueIsBlob( JSContext *cx, jsval v ) {
+ALWAYS_INLINE bool JL_ValueIsBlob( const JSContext *cx, jsval v ) {
 
 	return !JSVAL_IS_PRIMITIVE(v) && JL_ObjectIsBlob(cx, JSVAL_TO_OBJECT(v));
 }
@@ -1195,7 +1055,7 @@ ALWAYS_INLINE JSBool JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsv
 
 		if ( buffer )
 			JS_free(cx, buffer);
-		*vp = JS_GetEmptyStringValue(cx);
+		*vp = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
@@ -1209,7 +1069,7 @@ ALWAYS_INLINE JSBool JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsv
 		JL_CHK( blob );
 		*vp = OBJECT_TO_JSVAL(blob);
 		JL_S_ASSERT( length <= JSVAL_INT_MAX, "Blob too long." );
-		JL_CHK( JS_SetReservedSlot(cx, blob, 0, INT_TO_JSVAL( (jsint)length )) ); // 0 for SLOT_BLOB_LENGTH !!!
+		JL_CHK( JL_SetReservedSlot(cx, blob, 0, INT_TO_JSVAL( (jsint)length )) ); // 0 for SLOT_BLOB_LENGTH !!!
 		JL_SetPrivate(cx, blob, buffer); // blob data
 		return JS_TRUE;
 	}
@@ -1244,6 +1104,7 @@ ALWAYS_INLINE JSBool JL_NewBlobCopyN( JSContext *cx, const void *data, size_t am
 	return JL_NewBlob(cx, blobBuf, amount, vp);
 	JL_BAD;
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1388,9 +1249,10 @@ ALWAYS_INLINE JSBool JsvalToSize( JSContext *cx, jsval val, size_t *i ) {
 	}
 	jsdouble d;
 	JL_CHK( JS_ValueToNumber(cx, val, &d) ); // JS_ValueToNumber also manage JSVAL_NULL
-	if (likely( d >= 0 && d <= (jsdouble)(size_t)(-1) )) {
+//	if (likely( d >= 0 && d <= (jsdouble)SIZE_T_MAX )) {
+	if (likely( jl::IsSafeCast(d, *i) )) { // test
 
-		*i = (size_t)d;
+		*i = static_cast<size_t>(d);
 		return JS_TRUE;
 	}
 
@@ -2257,18 +2119,11 @@ struct ProcessEvent {
 };
 
 
+#endif // _JSHELPER_H_
+
+
+/*
 namespace jl {
-	
-
-
-	struct ContextPrivate {
-
-	};
-
-	ContextPrivate* GetContextPrivate( JSContext *cx ) {
-		
-		return reinterpret_cast<ContextPrivate*>(JS_GetContextPrivate(cx));
-	}
 
 	class Error {
 	};
@@ -2291,8 +2146,8 @@ namespace jl {
 	inline jsval JsvalFrom<int>( JSContext *cx, int n ) {
 
 		if (likely( n >= JSVAL_INT_MIN && n <= JSVAL_INT_MAX ))
-			return INT_TO_JSVAL(jsint(n));
-		jsdouble *dp = JS_NewDouble(cx, jsdouble(n)); // weakRoots.newbornDouble
+			return INT_TO_JSVAL(static_cast<jsint>(n));
+		jsdouble *dp = JS_NewDouble(cx, static_cast<jsdouble>(n)); // weakRoots.newbornDouble
 		if (likely( dp != NULL ))
 			return DOUBLE_TO_JSVAL(dp);
 		throw RuntimeError();
@@ -2302,8 +2157,8 @@ namespace jl {
 	inline jsval JsvalFrom<size_t>( JSContext *cx, size_t n ) {
 
 		if (likely( n <= JSVAL_INT_MAX ))
-			return INT_TO_JSVAL(jsint(n));
-		jsdouble *dp = JS_NewDouble(cx, jsdouble(n)); // weakRoots.newbornDouble
+			return INT_TO_JSVAL(static_cast<jsint>(n));
+		jsdouble *dp = JS_NewDouble(cx, static_cast<jsdouble>(n)); // weakRoots.newbornDouble
 		if (likely( dp != NULL ))
 			return DOUBLE_TO_JSVAL(dp);
 		throw RuntimeError();
@@ -2312,7 +2167,7 @@ namespace jl {
 	template <>
 	inline jsval JsvalFrom<double>( JSContext *cx, double n ) {
 
-		jsdouble *dp = JS_NewDouble(cx, jsdouble(n)); // weakRoots.newbornDouble
+		jsdouble *dp = JS_NewDouble(cx, static_cast<jsdouble>(n)); // weakRoots.newbornDouble
 		if (likely( dp != NULL ))
 			return DOUBLE_TO_JSVAL(dp);
 		throw RuntimeError();
@@ -2339,11 +2194,10 @@ namespace jl {
 				throw RuntimeError();
 		}
 
-		if ( d >= jsdouble(INT_MIN) && d <= jsdouble(INT_MAX) )
-			return int(d);
+		if ( d >= static_cast<jsdouble>(INT_MIN) && d <= static_cast<jsdouble>(INT_MAX) )
+			return static_cast<int>(d);
 		throw LogicError();
 	}
-
 
 	template <>
 	inline size_t JsvalTo<size_t>( JSContext *cx, jsval v ) {
@@ -2362,11 +2216,10 @@ namespace jl {
 				throw RuntimeError();
 		}
 
-		if ( d >= 0 && d <= jsdouble(size_t(-1)) )
-			return size_t(d);
+		if ( d >= static_cast<jsdouble>(SIZE_T_MIN) && d <= static_cast<jsdouble>(SIZE_T_MAX) )
+			return static_cast<size_t>(d);
 		throw LogicError();
 	}
-
 
 	template <>
 	inline double JsvalTo<double>( JSContext *cx, jsval v ) {
@@ -2380,10 +2233,5 @@ namespace jl {
 			throw RuntimeError();
 		return d;
 	}
-
-
 }
-
-
-
-#endif // _JSHELPER_H_
+*/

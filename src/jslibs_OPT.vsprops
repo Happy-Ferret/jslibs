@@ -23,6 +23,7 @@
 		ExceptionHandling="0"
 		RuntimeTypeInfo="false"
 		RuntimeLibrary="2"
+		Optimization="3"
 	/>
 
 				<!-- tmp VCLinkerTool

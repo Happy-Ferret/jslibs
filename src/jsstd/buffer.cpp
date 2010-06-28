@@ -86,7 +86,7 @@ JSBool WriteDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBlob(cx, chunk) && !JL_VALUE_IS_STRING_OBJECT(cx, chunk) ) {
+	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBlob(cx, chunk) && !JsvalIsStringObject(cx, chunk) ) {
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
 		JL_S_ASSERT( jsstr != NULL, "Unable to convert the chunk into a string." );
@@ -125,7 +125,7 @@ JSBool UnReadDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBlob(cx, chunk) && !JL_VALUE_IS_STRING_OBJECT(cx, chunk) ) {
+	if ( !JSVAL_IS_STRING(chunk) && !JsvalIsBlob(cx, chunk) && !JsvalIsStringObject(cx, chunk) ) {
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
 		JL_S_ASSERT( jsstr != NULL, "Unable to convert the chunk into a string." );

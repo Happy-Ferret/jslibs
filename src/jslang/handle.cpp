@@ -38,7 +38,7 @@ DEFINE_FUNCTION_FAST( toString ) {
 	char str[] = "[Handle ????]";
 	if ( pv != NULL ) { // manage Print(Id) issue
 
-		if ( DetectSystemEndianType() == LittleEndian ) {
+		if ( JLHostEndian == JLLittleEndian ) {
 
 			str[4] = ((char*)&pv->handleType)[3];
 			str[5] = ((char*)&pv->handleType)[2];

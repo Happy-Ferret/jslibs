@@ -400,11 +400,11 @@ DEFINE_PROPERTY( version ) {
 
 DEFINE_PROPERTY( jsUC ) {
 
-	switch ( DetectSystemEndianType() ) {
-		case BigEndian:
+	switch ( JLHostEndian ) {
+		case JLBigEndian:
 			JL_CHK( StringToJsval(cx, "UCS-2be", vp) );
 			break;
-		case LittleEndian:
+		case JLLittleEndian:
 			JL_CHK( StringToJsval(cx, "UCS-2le", vp) );
 			break;
 		default:
