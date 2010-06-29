@@ -41,8 +41,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
+				Optimization="3"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="src\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;malloc=jl_malloc_fct;calloc=jl_calloc_fct;realloc=jl_realloc_fct;free=jl_free_fct"
 				StringPooling="true"

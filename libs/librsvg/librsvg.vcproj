@@ -106,6 +106,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="3"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="..\glib\src;..\glib\src\glib;..\glib\src\gmodule;&quot;..\gdk-pixbuf\src&quot;;..\libxml2\src\include;&quot;..\fontconfig-msvc\src&quot;;..\freetype\src\include;..\cairo\src\src;..\pango\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;LIBXML_STATIC;GLIB_STATIC_COMPILATION"
 				RuntimeLibrary="2"

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
@@ -108,6 +108,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="3"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="src;src/glib;&quot;src/../dependencies/proxy-libintl-20080418/include&quot;"
 				PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_LIB;GLIB_STATIC_COMPILATION;HAVE_CONFIG_H;G_LOG_DOMAIN=\&quot;Glib\&quot;;G_DISABLE_DEPRECATED;PCRE_STATIC;LINK_SIZE=2;MAX_NAME_SIZE=32;MAX_NAME_COUNT=10000;NEWLINE=-1;POSIX_MALLOC_THRESHOLD=10;MATCH_LIMIT=10000000;MATCH_LIMIT_RECURSION=10000000"
 				RuntimeLibrary="2"

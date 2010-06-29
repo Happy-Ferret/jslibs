@@ -106,6 +106,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="3"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories=".\src;..\glib\src;..\glib\src\glib;..\glib\src\gmodule"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;DISABLE_VISIBILITY;GLIB_STATIC_COMPILATION;GDK_PIXBUF_ENABLE_BACKEND"
 				RuntimeLibrary="2"

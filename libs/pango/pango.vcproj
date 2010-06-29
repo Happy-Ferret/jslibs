@@ -106,6 +106,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="3"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="src;src\pango;..\glib\src;..\glib\src\glib;..\glib\src\gmodule;..\freetype\src\include;..\cairo\src\src;&quot;..\fontconfig-msvc\src&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;PANGO_MODULE_PREFIX=_pango_basic_ft2;PANGO_ENABLE_ENGINE;PANGO_ENABLE_BACKEND;GLIB_STATIC_COMPILATION"
 				RuntimeLibrary="2"

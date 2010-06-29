@@ -105,8 +105,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="3"
 				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="src;."
 				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE=0;SQLITE_OMIT_AUTOINIT=1;SQLITE_OMIT_DEPRECATED=1;SQLITE_OMIT_PROGRESS_CALLBACK=1"
 				BufferSecurityCheck="false"

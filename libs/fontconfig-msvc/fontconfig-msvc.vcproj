@@ -106,6 +106,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="3"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories=".\src;.\src\src;..\freetype\src\include;..\libxml2\src\include"
 				PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_LIB;HAVE_CONFIG_H;KDEWIN32_EXPORT=extern"
 				RuntimeLibrary="2"

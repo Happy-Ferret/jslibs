@@ -106,7 +106,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				WholeProgramOptimization="false"
+				Optimization="3"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="src,src/glib"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_LIB;GLIB_STATIC_COMPILATION;GOBJECT_COMPILATION;HAVE_CONFIG_H;G_LOG_DOMAIN=\&quot;Glib-GObject\&quot;;G_DISABLE_DEPRECATED"
 				RuntimeLibrary="2"

@@ -277,8 +277,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
+				Optimization="3"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
 				PreprocessorDefinitions="dSINGLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_LIB;dSINGLE"
 				StringPooling="true"
@@ -582,8 +586,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
+				Optimization="3"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
 				PreprocessorDefinitions="dDOUBLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_LIB;dDOUBLE"
 				StringPooling="true"
