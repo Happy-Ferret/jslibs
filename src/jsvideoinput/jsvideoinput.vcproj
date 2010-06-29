@@ -116,9 +116,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../libs/videoinput"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				ExceptionHandling="0"
