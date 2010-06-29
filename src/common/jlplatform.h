@@ -15,36 +15,6 @@
 #ifndef _JLPLATFORM_H_
 #define _JLPLATFORM_H_
 
-#include <limits>
-
-///////////////////////////////////////////////////////////////////////////////
-// 
-
-#if CHAR_BIT != 8
-#error "unsupported char size"
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-// Miscellaneous
-
-#define J__STRINGIFY(x) #x
-#define J__TOSTRING(x) J__STRINGIFY(x)
-
-#define JL_MACRO_BEGIN do {
-#define JL_MACRO_END } while(0)
-
-#define __DATE__YEAR ((((__DATE__ [7] - '0') * 10 + (__DATE__ [8] - '0')) * 10 + (__DATE__ [9] - '0')) * 10 + (__DATE__ [10] - '0'))
-#define __DATE__MONTH (__DATE__ [2] == 'n' ? (__DATE__ [1] == 'a' ? 0 : 5) : __DATE__ [2] == 'l' ? 6 : __DATE__ [2] == 'g' ? 7 : __DATE__ [2] == 'p' ? 8 : __DATE__ [2] == 't' ? 9 : __DATE__ [2] == 'v' ? 10 : 11)
-#define __DATE__DAY ((__DATE__ [4] == ' ' ? 0 : __DATE__ [4] - '0') * 10 + (__DATE__ [5] - '0'))
-#define __DATE__HOUR (((__TIME__[0]-'0')*10) + (__TIME__[1]-'0'))
-#define __DATE__MINUTE (((__TIME__[3]-'0')*10) + (__TIME__[4]-'0'))
-#define __DATE__SECOND (((__TIME__[6]-'0')*10) + (__TIME__[7]-'0'))
-
-#define JL_BUILD ( (((__DATE__YEAR * 12 + __DATE__MONTH) * 31 + __DATE__DAY) * 24 + __DATE__HOUR) - (((2006*12 + 6)*31 + 22)*24 + 0) ) // - Aug 22, 2006
-
-#define JL_CODE_LOCATION __FILE__ ":" J__TOSTRING(__LINE__)
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
 
@@ -116,11 +86,11 @@
 	// disable warnings:
 	#pragma warning(disable : 4244 4305)  // for VC++, no precision loss complaints
 	#pragma warning(disable : 4127)  // no "conditional expression is constant" complaints
-	#pragma warning(disable : 4311) // warning C4311: 'variable' : pointer truncation from 'type' to 'type'
+//	#pragma warning(disable : 4311) // warning C4311: 'variable' : pointer truncation from 'type' to 'type'
 //	#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
 //	#pragma warning(disable : 4267) // warning C4267: 'var' : conversion from 'size_t' to 'type', possible loss of data
 	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
-	#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
+//	#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
 	#pragma warning(disable : 4102) // warning C4102: 'xxx' : unreferenced label
 //	#pragma warning(disable : 4125) // warning C4125: decimal digit terminates octal escape sequence
 	// force warning to error:
@@ -133,6 +103,8 @@
 
 #endif // #if defined WIN32
 
+#include <limits>
+
 #include <math.h>
 #include <float.h>
 #include <limits.h>
@@ -144,6 +116,12 @@
 #include <fcntl.h> // _O_RDONLY, _O_WRONLY
 #include <stdio.h>
 #include <cstddef>
+//#include <varargs.h>
+#include <stdarg.h>
+
+#if CHAR_BIT != 8
+#error "unsupported char size"
+#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -280,12 +258,9 @@
 #define SIZE_T_MIN (static_cast<size_t>(0))
 #define SIZE_T_MAX (static_cast<size_t>(-1))
 
-
-
 #if defined(XP_WIN)
 #include <io.h> // _open_osfhandle()
 #endif
-
 
 // MS specific ?
 //#ifndef O_BINARY
@@ -293,42 +268,115 @@
 //#endif
 
 
-template<class T> ALWAYS_INLINE T JL_MIN(T a, T b) { return (a) < (b) ? (a) : (b); } //#define JL_MIN(a,b) ( (a) < (b) ? (a) : (b) )
-template<class T> ALWAYS_INLINE T JL_MAX(T a, T b) { return (a) > (b) ? (a) : (b); } //#define JL_MAX(a,b) ( (a) > (b) ? (a) : (b) )
 
-#define TRACE(s) do { write(1, s ## "\n",COUNTOF(s)); } while(0)
+///////////////////////////////////////////////////////////////////////////////
+// Miscellaneous
+
+#define JL_MACRO_BEGIN do {
+#define JL_MACRO_END } while(0)
+
+#define JL__STRINGIFY(x) #x
+#define JL__TOSTRING(x) JL__STRINGIFY(x)
+
+#define JL_CODE_LOCATION __FILE__ ":" JL__TOSTRING(__LINE__)
+
+#define __DATE__YEAR ((((__DATE__ [7] - '0') * 10 + (__DATE__ [8] - '0')) * 10 + (__DATE__ [9] - '0')) * 10 + (__DATE__ [10] - '0'))
+#define __DATE__MONTH (__DATE__ [2] == 'n' ? (__DATE__ [1] == 'a' ? 0 : 5) : __DATE__ [2] == 'l' ? 6 : __DATE__ [2] == 'g' ? 7 : __DATE__ [2] == 'p' ? 8 : __DATE__ [2] == 't' ? 9 : __DATE__ [2] == 'v' ? 10 : 11)
+#define __DATE__DAY ((__DATE__ [4] == ' ' ? 0 : __DATE__ [4] - '0') * 10 + (__DATE__ [5] - '0'))
+#define __DATE__HOUR (((__TIME__[0]-'0')*10) + (__TIME__[1]-'0'))
+#define __DATE__MINUTE (((__TIME__[3]-'0')*10) + (__TIME__[4]-'0'))
+#define __DATE__SECOND (((__TIME__[6]-'0')*10) + (__TIME__[7]-'0'))
+
+#define JL_BUILD ( (((__DATE__YEAR * 12 + __DATE__MONTH) * 31 + __DATE__DAY) * 24 + __DATE__HOUR) - (((2006*12 + 6)*31 + 22)*24 + 0) ) // - Aug 22, 2006
+
+
+template<class T>
+static inline void JL_UNUSED(T) {};
+// see also...
+//#define UNUSED(x) x __attribute__((unused))
+//#define UNUSED(x) ((x) = (x))
+//#define UNUSED(x) ((void)(x))
 
 #define JL_STATIC_ASSERT(cond) \
 	extern void jl_static_assert(int arg[(cond) ? 1 : -1])
 
 
-#ifdef DEBUG
-
 #if defined(WIN32)
-#define JL_Failed( message, filename, lineno ) \
-JL_MACRO_BEGIN \
-	fprintf(stderr, "jslibs assertion failure: %s, at %s:%d\n", message, filename, lineno); \
-	__asm { int 3 }; /*DebugBreak();*/ /*exit(3);*/ abort(); \
-JL_MACRO_END
+#define JL_BREAK_HALT JL_MACRO_BEGIN   __debugbreak(); abort();   JL_MACRO_END
 #elif defined(XP_OS2) || (defined(__GNUC__) && defined(__i386))
-#define JL_Assert( message, filename, lineno ) \
-JL_MACRO_BEGIN \
-	fprintf(stderr, "jslibs assertion failure: %s, at %s:%d\n", message, filename, lineno); \
-	asm("int $3"); abort(); \
-JL_MACRO_END
+#define JL_BREAK_HALT JL_MACRO_BEGIN   asm("int $3"); abort();   JL_MACRO_END
 #endif // platforms
+
+#define JL_FAILED( message, location ) \
+JL_MACRO_BEGIN \
+	fprintf(stderr, "jslibs failure: %s, at %s\n", message, location); \
+	JL_BREAK_HALT; \
+JL_MACRO_END
+
+
+#ifdef DEBUG
 
 #define JL_ASSERT(expr) \
 JL_MACRO_BEGIN \
 	if ( !(expr) ) \
-		JL_Failed(#expr, __FILE__, __LINE__); \
+		JL_FAILED(#expr, JL_CODE_LOCATION); \
 JL_MACRO_END
 
 #else // DEBUG
 
-#define JL_ASSERT(expr) ((void) 0)
+#define JL_ASSERT(expr) ((void)0)
 
 #endif // DEBUG
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Platform tools
+
+template<class T>
+struct DummyAlignStruct {
+  unsigned char first;
+  T second;
+};
+
+#define ALIGNOF(type) ( offsetof( DummyAlignStruct<type>, second ) )
+
+#define COUNTOF(vector) ( sizeof(vector)/sizeof(*vector) )
+
+
+enum {
+    JLBigEndian = 0x00010203ul,
+    JLLittleEndian = 0x03020100ul,
+    JLMiddleEndian = 0x01000302ul // or PDP endian
+};
+
+static const union {
+	unsigned char bytes[4];
+	uint32_t value;
+} JLHostEndianType = { { 0, 1, 2, 3 } };
+
+#define JLHostEndian (JLHostEndianType.value)
+
+
+// since 9007199254740992 == 9007199254740993, we must subtract 1.
+// see also std::numeric_limits<double>::digits
+JL_STATIC_ASSERT( DBL_MANT_DIG < 64 );
+#define MAX_INTDOUBLE \
+	( (double)(((uint64_t)1<<DBL_MANT_DIG)-1) )
+
+// (TBD) fix needed on Linux
+//JL_STATIC_ASSERT( MAX_INTDOUBLE != MAX_INTDOUBLE+1 );
+//JL_STATIC_ASSERT( MAX_INTDOUBLE+1. == MAX_INTDOUBLE+2. );
+
+	
+template<class T>
+ALWAYS_INLINE T JL_MIN(T a, T b) {
+	return (a) < (b) ? (a) : (b);
+}
+
+template<class T>
+ALWAYS_INLINE T JL_MAX(T a, T b) {
+	return (a) > (b) ? (a) : (b);
+}
 
 
 namespace jl {
@@ -368,32 +416,13 @@ namespace jl {
 }
 
 
-template<class T>
-static inline void JL_UNUSED(T) {};
 
-/* see also...
-#ifndef UNUSED
-#if defined(PACIFIC) || defined(_MSC_VER)
-#define UNUSED(x)
-#elif defined(__GNUC__)
-#define UNUSED(x) x __attribute__((unused))
-#elif defined(__HIGHC__)
-#define UNUSED(x) ((x) = (x))
-#else
-#define UNUSED(x) ((void)(x))
-#endif
-#endif
-
-*/
-
-
-/* Macro that avoid multicharacter constant: From gcc page:
-`-Wno-multichar'
-     Do not warn if a multicharacter constant (`'FOOF'') is used.
-     Usually they indicate a typo in the user's code, as they have
-     implementation-defined values, and should not be used in portable
-     code.
-*/
+//Macro that avoid multicharacter constant: From gcc page:
+//`-Wno-multichar'
+//     Do not warn if a multicharacter constant (`'FOOF'') is used.
+//     Usually they indicate a typo in the user's code, as they have
+//     implementation-defined values, and should not be used in portable
+//     code.
 
 // rise a "division by zero" if x is not a 5-char string.
 //#define JL_CAST_CSTR_TO_UINT32(x) ( jl_unused(0/(sizeof(x) == 5 && x[3] == 0 ? 1 : 0)), (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
@@ -403,7 +432,7 @@ static inline void JL_UNUSED(T) {};
 
 static ALWAYS_INLINE uint32_t JL_CAST_CSTR_TO_UINT32( const char cstr[5] ) {
 	
-	JL_ASSERT(cstr[4] == 0);
+	JL_ASSERT(strlen(cstr) == 4);
 	return *(uint32_t*)cstr;
 }
 
@@ -444,17 +473,6 @@ ALWAYS_INLINE int int_pow(int base, int exp) {
     return result;
 }
 
-
-JL_STATIC_ASSERT( DBL_MANT_DIG < 64 );
-
-// since 9007199254740992 == 9007199254740993, we must subtract 1. see also std::numeric_limits<double>::digits
-#define MAX_INTDOUBLE \
-	( (double)(((uint64_t)1<<DBL_MANT_DIG)-1) )
-
-/* (TBD) fix needed on Linux
-JL_STATIC_ASSERT( MAX_INTDOUBLE != MAX_INTDOUBLE+1 );
-JL_STATIC_ASSERT( MAX_INTDOUBLE+1. == MAX_INTDOUBLE+2. );
-*/
 
 ALWAYS_INLINE uint32_t JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
 
@@ -588,54 +606,37 @@ ALWAYS_INLINE void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, c
 ///////////////////////////////////////////////////////////////////////////////
 // Platform tools
 
-template<class T>
-struct DummyAlignStruct {
-  unsigned char first;
-  T second;
-};
 
-#define ALIGNOF(type) ( offsetof( DummyAlignStruct<type>, second ) )
-
-#define COUNTOF(vector) ( sizeof(vector)/sizeof(*vector) )
-
-
-enum {
-    JLBigEndian = 0x00010203ul,
-    JLLittleEndian = 0x03020100ul,
-    JLMiddleEndian = 0x01000302ul // or PDP endian
-};
-
-static const union {
-	unsigned char bytes[4];
-	uint32_t value;
-} JLHostEndianType = { { 0, 1, 2, 3 } };
-
-#define JLHostEndian (JLHostEndianType.value)
-
-
-// cf. _swab()
-// 16 bits: #define SWAP_BYTES(X)           ((X & 0xff) << 8) | (X >> 8)
+// cf. _swab() -or- _rotl();
+// 16 bits: #define SWAP_BYTES(X) ((X & 0xff) << 8) | (X >> 8)
 // 32 bits swap: #define SWAP_BYTE(x) ((x<<24) | (x>>24) | ((x&0xFF00)<<8) | ((x&0xFF0000)>>8))
-#define JL_BYTESWAP(ptr,a,b) { register char tmp = ((int8_t*)ptr)[a]; ((int8_t*)ptr)[a] = ((int8_t*)ptr)[b]; ((int8_t*)ptr)[b] = tmp; }
+//#define JL_BYTESWAP(ptr,a,b) { register char tmp = ((int8_t*)ptr)[a]; ((int8_t*)ptr)[a] = ((int8_t*)ptr)[b]; ((int8_t*)ptr)[b] = tmp; }
+
+ALWAYS_INLINE void JL_BYTESWAP(void *ptr, size_t a, size_t b) {
+	
+	register char tmp = ((int8_t*)ptr)[a];
+	((int8_t*)ptr)[a] = ((int8_t*)ptr)[b];
+	((int8_t*)ptr)[b] = tmp;
+}
 
 ALWAYS_INLINE void Host16ToNetwork16( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
-		JL_BYTESWAP( pval, 0, 1 )
+		JL_BYTESWAP( pval, 0, 1 );
 }
 
 ALWAYS_INLINE void Host24ToNetwork24( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
-		JL_BYTESWAP( pval, 0, 2 )
+		JL_BYTESWAP( pval, 0, 2 );
 }
 
 ALWAYS_INLINE void Host32ToNetwork32( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
 
-		JL_BYTESWAP( pval, 0, 3 )
-		JL_BYTESWAP( pval, 1, 2 )
+		JL_BYTESWAP( pval, 0, 3 );
+		JL_BYTESWAP( pval, 1, 2 );
 	}
 }
 
@@ -643,10 +644,10 @@ ALWAYS_INLINE void Host64ToNetwork64( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
 
-		JL_BYTESWAP( pval, 0, 7 )
-		JL_BYTESWAP( pval, 1, 6 )
-		JL_BYTESWAP( pval, 2, 5 )
-		JL_BYTESWAP( pval, 3, 4 )
+		JL_BYTESWAP( pval, 0, 7 );
+		JL_BYTESWAP( pval, 1, 6 );
+		JL_BYTESWAP( pval, 2, 5 );
+		JL_BYTESWAP( pval, 3, 4 );
 	}
 }
 
@@ -654,13 +655,13 @@ ALWAYS_INLINE void Host64ToNetwork64( void *pval ) {
 ALWAYS_INLINE void Network16ToHost16( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
-		JL_BYTESWAP( pval, 0, 1 )
+		JL_BYTESWAP( pval, 0, 1 );
 }
 
 ALWAYS_INLINE void Network24ToHost24( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
-		JL_BYTESWAP( pval, 0, 2 )
+		JL_BYTESWAP( pval, 0, 2 );
 }
 
 
@@ -668,8 +669,8 @@ ALWAYS_INLINE void Network32ToHost32( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
 
-		JL_BYTESWAP( pval, 0, 3 )
-		JL_BYTESWAP( pval, 1, 2 )
+		JL_BYTESWAP( pval, 0, 3 );
+		JL_BYTESWAP( pval, 1, 2 );
 	}
 }
 
@@ -677,10 +678,10 @@ ALWAYS_INLINE void Network64ToHost64( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
 
-		JL_BYTESWAP( pval, 0, 7 )
-		JL_BYTESWAP( pval, 1, 6 )
-		JL_BYTESWAP( pval, 2, 5 )
-		JL_BYTESWAP( pval, 3, 4 )
+		JL_BYTESWAP( pval, 0, 7 );
+		JL_BYTESWAP( pval, 1, 6 );
+		JL_BYTESWAP( pval, 2, 5 );
+		JL_BYTESWAP( pval, 3, 4 );
 	}
 }
 
@@ -688,7 +689,7 @@ ALWAYS_INLINE void Network64ToHost64( void *pval ) {
 ALWAYS_INLINE char* IntegerToString(int val, int base) {
 
 	bool neg;
-	static char buf[64]; // (TBD) threadsafe and overflow warning !
+	char buf[64]; // (TBD) overflow warning !
 	buf[63] = '\0';
 	if ( val < 0 ) {
 
@@ -723,11 +724,14 @@ ALWAYS_INLINE double AccurateTimeCounter() {
 	static volatile LONGLONG initTime = 0; // initTime helps in avoiding precision waste.
 	LARGE_INTEGER frequency, performanceCount;
 	BOOL result = ::QueryPerformanceFrequency(&frequency);
+	JL_ASSERT( result );
 	DWORD_PTR oldmask = ::SetThreadAffinityMask(::GetCurrentThread(), 0); // manage bug in BIOS or HAL
 	result = ::QueryPerformanceCounter(&performanceCount);
+	JL_ASSERT( result );
 	if ( initTime == 0 )
 		initTime = performanceCount.QuadPart;
 	::SetThreadAffinityMask(::GetCurrentThread(), oldmask);
+	JL_UNUSED( result );
 	return (double)1000 * (performanceCount.QuadPart-initTime) / (double)frequency.QuadPart;
 #elif defined(XP_UNIX)
 	static long initTime = 0; // initTime helps in avoiding precision waste.
@@ -738,18 +742,18 @@ ALWAYS_INLINE double AccurateTimeCounter() {
 	return (double)(tv.tv_sec-initTime) * (double)1000 + tv.tv_usec / (double)1000;
 #endif
 	return -1; // (TBD) see. js_IntervalNow() or JS_Now() ? no, it could be expensive and is not suitable for calls when a GC lock is held.
-/* see also:
-__int64 GetTime() {
-    __int64 clock;
-    __asm {
-        rdtsc                        // Resad the RDTSC Timer
-        mov    dword ptr[clock], eax // Store the value in EAX and EDX Registers
-        mov    dword ptr[clock+4], edx
-    }
-    return clock;
 }
-*/
-}
+// see also:
+//__int64 GetTime() {
+//    __int64 clock;
+//    __asm {
+//        rdtsc                        // Resad the RDTSC Timer
+//        mov    dword ptr[clock], eax // Store the value in EAX and EDX Registers
+//        mov    dword ptr[clock+4], edx
+//    }
+//    return clock;
+//}
+
 
 
 ALWAYS_INLINE int JLProcessId() {
@@ -776,6 +780,15 @@ ALWAYS_INLINE uint32_t JLSessionId() {
 #endif // XP_WIN
 	return r ? r : 1; // avoid returning 0
 }
+
+
+#if defined(XP_WIN)
+static __declspec(naked) __declspec(noinline) size_t JLGetEIP() {
+
+	__asm pop eax;
+	__asm jmp eax;
+}
+#endif
 
 
 ALWAYS_INLINE size_t JLRemainingStackSize() {
@@ -965,7 +978,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 //
 	ALWAYS_INLINE void JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 
-#if defined(XP_WIN)
+	#if defined(XP_WIN)
 		DWORD errorCode = ::GetLastError();
 		LPVOID lpMsgBuf;
 		DWORD result = ::FormatMessage(
@@ -976,17 +989,21 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 			strncpy(message, (char*)lpMsgBuf, maxLength-1);
 			LocalFree(lpMsgBuf);
 			message[maxLength-1] = '\0';
-		} else
+		} else {
+
 			*message = '\0';
-#elif defined(XP_UNIX)
+		}
+	#elif defined(XP_UNIX)
 		const char *msgBuf = strerror(errno);
 		if ( msgBuf != NULL ) {
 
 			strncpy(message, msgBuf, maxLength-1);
 			message[maxLength-1] = '\0';
-		} else
+		} else {
+
 			*message = '\0';
-#endif
+		}
+	#endif
 	}
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1165,6 +1182,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 			if ( st == ETIMEDOUT )
 				return JLTIMEOUT;
 			JL_ASSERT( st == 0 );
+			JL_UNUSED( st );
 			return JLOK;
 		}
 		return JLERROR;
@@ -1177,11 +1195,11 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 	#if defined(XP_WIN)
 		BOOL st = ReleaseSemaphore(semaphore, 1, NULL);
 		JL_ASSERT( st != FALSE );
-		JL_UNUSED(st);
 	#elif defined(XP_UNIX)
 		int st = sem_post(semaphore);
 		JL_ASSERT( st == 0 );
 	#endif
+		JL_UNUSED( st );
 	}
 
 	ALWAYS_INLINE void JLSemaphoreFree( JLSemaphoreHandler *pSemaphore ) {
@@ -1243,6 +1261,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_init(&mutex->mx, NULL);
 		JL_ASSERT( st == 0 );
+		JL_UNUSED( st );
 	#endif
 		return mutex;
 	}
@@ -1256,6 +1275,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_destroy(&(*pMutex)->mx);
 		JL_ASSERT( st == 0 );
+		JL_UNUSED( st );
 	#endif
 		free(*pMutex);
 		*pMutex = (JLMutexHandler)0;
@@ -1270,6 +1290,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_lock(&mutex->mx);
 		JL_ASSERT( st == 0 );
+		JL_UNUSED( st );
 	#endif
 	}
 
@@ -1282,6 +1303,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_unlock(&mutex->mx);
 		JL_ASSERT( st == 0 );
+		JL_UNUSED( st );
 	#endif
 	}
 
@@ -1329,6 +1351,7 @@ ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 	JL_ASSERT( st != FALSE );
 	st = CloseHandle((*cv)->events[0]);
 	JL_ASSERT( st != FALSE );
+	JL_UNUSED( st );
 //	DeleteCriticalSection(&(*cv)->waiters_count_lock);
 	free(*cv);
 	*cv = NULL;
@@ -1434,6 +1457,7 @@ ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 	JL_ASSERT( JLCondOk(*cv) );
 	BOOL st = CloseHandle((*cv)->sema_);
 	JL_ASSERT( st );
+	JL_UNUSED( st );
 	DeleteCriticalSection(&(*cv)->waiters_count_lock_);
 //	DeleteCriticalSection(&(*cv)->global_lock);
 	free(*cv);
