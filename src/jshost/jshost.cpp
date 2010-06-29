@@ -58,10 +58,15 @@ JLMutexHandler gEndSignalLock;
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
+	JL_UNUSED(obj);
+	JL_UNUSED(id);
 	return BoolToJsval(cx, gEndSignalState, vp);
 }
 
 JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+
+	JL_UNUSED(obj);
+	JL_UNUSED(id);
 
 	bool tmp;
 	JL_CHK( JsvalToBool(cx, *vp, &tmp) );
@@ -83,6 +88,7 @@ BOOL WINAPI Interrupt(DWORD CtrlType) {
 //	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT) // CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
 //		return FALSE;
 
+	JL_UNUSED(CtrlType);
 	JLMutexAcquire(gEndSignalLock);
 	gEndSignalState = true;
 	JLCondBroadcast(gEndSignalCond);
@@ -136,6 +142,7 @@ static bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 
 static JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
+	JL_UNUSED(obj);
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	*hasEvent = gEndSignalState;
@@ -180,6 +187,7 @@ static int stderr_fileno = -1;
 
 int HostStdout( void *privateData, const char *buffer, size_t length ) {
 
+	JL_UNUSED(privateData);
 	if (unlikely( stdout_fileno == -1 ))
 		stdout_fileno = fileno(stdout);
 	return write(stdout_fileno, buffer, length);
@@ -187,6 +195,7 @@ int HostStdout( void *privateData, const char *buffer, size_t length ) {
 
 int HostStderr( void *privateData, const char *buffer, size_t length ) {
 
+	JL_UNUSED(privateData);
 	if (unlikely( stderr_fileno == -1 ))
 		stderr_fileno = fileno(stderr);
 	return write(stderr_fileno, buffer, length);

@@ -19,9 +19,9 @@
 //#include <libxml/xpath.h>
 //#include <libxml/parser.h>
 
-#include "svg.h"
 #include <libxml/xmlerror.h>
 
+DECLARE_CLASS( SVG )
 
 struct CxObj {
 

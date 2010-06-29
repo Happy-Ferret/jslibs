@@ -486,6 +486,7 @@ ALWAYS_INLINE void JL_SetPrivate(const JSContext *cx, JSObject *obj, void *data)
 
 ALWAYS_INLINE JSBool JL_GetReservedSlot(JSContext *cx, JSObject *obj, uint32 index, jsval *vp) {
 
+	JL_UNUSED(cx);
 	JL_ASSERT( OBJ_IS_NATIVE(obj) );
 	JSClass *clasp = obj->getClass();
 	JS_LOCK_OBJ(cx, obj);
@@ -618,11 +619,13 @@ ALWAYS_INLINE bool JsvalIsNInfinity( const JSContext *cx, const jsval val ) {
 
 ALWAYS_INLINE bool JsvalIsScript( const JSContext *cx, jsval val ) {
 
+	JL_UNUSED(cx);
 	return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == &js_ScriptClass;
 }
 
 ALWAYS_INLINE bool JsvalIsFunction( const JSContext *cx, jsval val ) {
 
+	JL_UNUSED(cx);
 	#ifdef DEBUG
 		JL_ASSERT( VALUE_IS_FUNCTION((JSContext*)cx, val) == (!JSVAL_IS_PRIMITIVE(val) && JS_ObjectIsFunction((JSContext*)cx, JSVAL_TO_OBJECT(val))) ); // Mozilla JS engine private API behavior has changed.
 	#endif //DEBUG
@@ -1360,6 +1363,7 @@ bad:
 
 ALWAYS_INLINE JSBool BoolToJsval( JSContext *cx, bool b, jsval *val ) {
 
+	JL_UNUSED(cx);
 	*val = b ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
