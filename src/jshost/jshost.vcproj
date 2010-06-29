@@ -118,10 +118,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				UseUnicodeResponseFiles="false"
-				Optimization="2"
-				InlineFunctionExpansion="2"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="_WINDOWS;WIN32;NDEBUG;_CONSOLE"
 				ExceptionHandling="0"
