@@ -99,8 +99,7 @@ public:
 		JS_ContextIterator(_rt, &cx);
 		JS_ASSERT( cx != NULL );
 
-		JSTempValueRooter tvr;
-		JS_PUSH_TEMP_ROOT(cx, argc+1, argv, &tvr);
+		js::AutoArrayRooter tvr(cx, argc+1, argv);
 
 		JSBool status = JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), _funcVal, argc, argv+1, argv);
 //		if ( !status )
@@ -110,8 +109,6 @@ public:
 		if ( pVarResult != NULL && (wFlags & (DISPATCH_PROPERTYPUT|DISPATCH_PROPERTYPUTREF)) != 0 )
 			JsvalToVariant(cx, argv, pVarResult);
 		
-		JS_POP_TEMP_ROOT(cx, &tvr);
-
 		return NOERROR;
 	}
 

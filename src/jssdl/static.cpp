@@ -86,9 +86,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 					JSVAL_NULL, // unicode char
 //					INT_TO_JSVAL(ev->key.keysym.scancode), // The scancode is hardware dependent, and should not be used by general applications.
 				};
-
-				JSTempValueRooter tvr;
-				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // protects the new string against the GC
+				js::AutoArrayRooter trv(cx, COUNTOF(argv), argv); // protects the new string against the GC
 
 				if ( (ev->key.keysym.unicode & 0xFF80) == 0 ) {
 
@@ -100,7 +98,6 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 				}
 
 				JSBool status = JS_CallFunctionValue(cx, thisObj, fVal, COUNTOF(argv), argv, rval);
-				JS_POP_TEMP_ROOT(cx, &tvr);
 				JL_CHK( status );
 				*fired = true;
 			}

@@ -155,6 +155,7 @@ enum {
 	JLID_SPEC( Read ),
 	JLID_SPEC( name ),
 	JLID_SPEC( id ),
+	JLID_SPEC( _Serialize ),
 	LAST_JSID // see HostPrivate::ids[]
 };
 #undef JLID_SPEC
@@ -487,12 +488,12 @@ ALWAYS_INLINE void JL_SetPrivate(const JSContext *cx, JSObject *obj, void *data)
 ALWAYS_INLINE JSBool JL_GetReservedSlot(JSContext *cx, JSObject *obj, uint32 index, jsval *vp) {
 
 	JL_UNUSED(cx);
-	JL_ASSERT( OBJ_IS_NATIVE(obj) );
+	JL_ASSERT( obj->isNative() );
 	JSClass *clasp = obj->getClass();
 	JS_LOCK_OBJ(cx, obj);
 	JL_ASSERT( index < JSCLASS_RESERVED_SLOTS(clasp) || index < JSCLASS_RESERVED_SLOTS(clasp) + (clasp->reserveSlots ? clasp->reserveSlots((JSContext*)cx, obj) : 0) );
 	uint32 slot = JSSLOT_START(clasp) + index;
-	*vp = (slot < STOBJ_NSLOTS(obj)) ? STOBJ_GET_SLOT(obj, slot) : JSVAL_VOID;
+	*vp = (slot < obj->numSlots()) ? obj->getSlot(slot) : JSVAL_VOID;
 #ifdef DEBUG
 	jsval tmp;
 	JL_ASSERT( JS_GetReservedSlot((JSContext*)cx, obj, index, &tmp) == JS_TRUE );
@@ -670,7 +671,7 @@ ALWAYS_INLINE bool JsvalIsClass( jsval val, const JSClass *jsClass ) {
 
 ALWAYS_INLINE JSBool JS_CallFunctionId(JSContext *cx, JSObject *obj, jsid id, uintN argc, jsval *argv, jsval *rval) {
 
-	JSAutoTempValueRooter tvr(cx); // tvr.addr(); tvr.value()
+	js::AutoValueRooter tvr(cx);
 	return JS_GetMethodById(cx, obj, id, NULL, tvr.addr()) && JS_CallFunctionValue(cx, obj, tvr.value(), argc, argv, rval);
 }
 
@@ -683,13 +684,11 @@ ALWAYS_INLINE JSBool JL_CallFunction( JSContext *cx, JSObject *obj, jsval functi
 	for ( uintN i = 1; i <= argc; i++ )
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
-	JL_S_ASSERT_FUNCTION( functionValue );
-	JSTempValueRooter tvr;
-	JS_PUSH_TEMP_ROOT(cx, argc+1, argv, &tvr);
+	js::AutoArrayRooter tvr(cx, argc+1, argv);
 	argv[0] = JSVAL_NULL; // the rval
+	JL_S_ASSERT_FUNCTION( functionValue );
 	JSBool st;
 	st = JS_CallFunctionValue(cx, obj, functionValue, argc, argv+1, argv); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
-	JS_POP_TEMP_ROOT(cx, &tvr);
 	JL_CHK( st ); 
 	if ( rval != NULL )
 		*rval = argv[0];
@@ -706,11 +705,9 @@ ALWAYS_INLINE JSBool JL_CallFunctionName( JSContext *cx, JSObject *obj, const ch
 	for ( uintN i = 1; i <= argc; i++ )
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
-	JSTempValueRooter tvr;
-	JS_PUSH_TEMP_ROOT(cx, argc+1, argv, &tvr);
+	js::AutoArrayRooter tvr(cx, argc+1, argv);
 	argv[0] = JSVAL_NULL; // the rval
 	JSBool st = JS_CallFunctionName(cx, obj, functionName, argc, argv+1, argv); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
-	JS_POP_TEMP_ROOT(cx, &tvr);
 	JL_CHK( st ); 
 	if ( rval != NULL )
 		*rval = argv[0];
@@ -1812,6 +1809,130 @@ ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, const Serialized *xdr, jsv
 	JL_BAD;
 }
 
+
+// serializer 2
+
+/*
+class JLSerializer {
+private:
+
+	class ISerializer {
+		virtual bool Process( jsval *val );
+	};
+
+
+	class Serializer : public ISerializer {
+		bool Process( jsval *val ) {
+		}
+	};
+
+	class UnSerializer : public ISerializer {
+		bool Process( jsval *val ) {
+		}
+	};
+
+	ISerializer *_serializer;
+
+public:
+	JLSerializer( bool serialize ) {
+
+		_serializer = serialize ? new Serializer() : new UnSerializer();
+	}
+
+	bool Process( jsval *val ) {
+	
+		_serializer->Process( jsval *val );
+	}
+};
+*/
+
+#include <deque>
+
+/*
+class JLAllocator {
+  void *operator new(size_t size);
+  void operator delete(void *p);
+  void *operator new[](size_t size);
+  void operator delete[](void *p);
+}
+*/
+/*
+class JLSerializationBuffer {
+
+	bool _serialize;
+
+	uint8_t *_start;
+	uint8_t *_pos;
+	size_t _length;
+
+public:
+	JLSerializationBuffer() : _serialize(true) {
+
+		_length = 4096;
+		_start = (uint8_t*)jl_malloc(_length);
+		JL_ASSERT(_start);
+		_pos = _start;
+	}
+
+	JLSerializationBuffer( uint8_t *data, size_t length ) : _serialize(false) {
+
+		_length = 4096;
+		_start = data;
+		_pos = _start;
+	}
+
+	bool ReserveBytes( size_t length ) {
+
+		size_t offset = _pos - _start;
+		if ( offset + length > _length ) {
+			
+			_length *= 2;
+			_start = (uint8_t*)jl_realloc(_start, _length);
+			JL_ASSERT(_start);
+			_pos = _start + offset;
+		}
+	}
+
+	bool Process( uint32_t &value ) {
+		
+		if ( _serialize ) {
+			
+			ReserveBytes(sizeof(uint32_t));
+			*(uint32_t*)_pos = value;
+		} else {
+
+			value = *(uint32_t*)_pos;
+		}
+		_pos += sizeof(uint32_t);
+		return true;
+	}
+};
+
+
+JSBool JLSerialize( JSContext *cx, jsval *val ) {
+
+	if ( JSVAL_IS_OBJECT(*val) ) {
+
+		JSObject *obj = JSVAL_TO_OBJECT(*val);
+
+		jsval fctVal;
+		JL_CHK( obj->getProperty(cx, JLID(cx, _Serialize), &fctVal) );
+		if ( JsvalIsFunction(cx, fctVal) ) {
+
+			
+
+		}
+
+	}
+
+
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
+
+
+///////////////////////////////////////////////////////////////////////////////
 //
 
 ALWAYS_INLINE JSBool SetNativePrivatePointer( JSContext *cx, JSObject *obj, const char *name, void *ptr ) {
@@ -1864,8 +1985,9 @@ ALWAYS_INLINE JSBool GetNativeInterface( JSContext *cx, JSObject *obj, JSObject 
 	JSProperty *prop;
 	JL_CHKM( obj->lookupProperty(cx, iid, obj2p, &prop), "Unable to get the native interface." ); //(TBD) use JS_LookupPropertyById or JS_GetPropertyById
 
-	if ( prop && obj == *obj2p && ((JSScopeProperty*)prop)->setter != (JSPropertyOp)-1 )
-		*nativeFct = (void*)((JSScopeProperty*)prop)->setter; // is NULL if obj is non-native
+
+	if ( prop && obj == *obj2p && ((JSScopeProperty*)prop)->setter() != (JSPropertyOp)-1 )
+		*nativeFct = (void*)((JSScopeProperty*)prop)->setter(); // is NULL if obj is non-native
 	else
 		*nativeFct = NULL;
 
@@ -1882,7 +2004,7 @@ ALWAYS_INLINE JSBool GetNativeInterface( JSContext *cx, JSObject *obj, JSObject 
 
 inline JSBool JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *amount ) {
 
-	JSAutoTempValueRooter tvr(cx); // tvr.addr(); tvr.value()
+	js::AutoValueRooter tvr(cx);
 
 	JL_S_ASSERT( *amount < INT_MAX, "Too many data." );
 	JL_CHK( IntToJsval(cx, (int)*amount, tvr.addr()) );
@@ -1943,21 +2065,16 @@ inline NIStreamRead StreamReadInterface( JSContext *cx, JSObject *obj ) {
 
 inline JSBool JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, size_t *size ) {
 
-	JSTempValueRooter tvr; // use AutoArrayRooter instead ?
-	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // needed to protect the returned value.
+	js::AutoValueRooter tvr(cx); // use AutoArrayRooter instead ?
 
 //	JS_GetMethodById(cx, obj, JLID(cx, Get), NULL, &tvr.u.value);
 //	JS_CallFunctionValue(cx, obj, tvr.u.value, 0, NULL, &tvr.u.value);
 
 //	JL_CHKM( JS_CallFunctionName(cx, obj, "Get", 0, NULL, &tvr.u.value), "Get() function not found."); // do not use toString() !? no !
-	JL_CHKM( JS_CallFunctionId(cx, obj, JLID(cx, Get), 0, NULL, &tvr.u.value), "Get() function not found.");
-	JL_CHK( JsvalToStringAndLength(cx, &tvr.u.value, buffer, size) ); // (TBD) GC warning, when tvr.u.value will be no more protected, the buffer will be unprotected.
-
-	JS_POP_TEMP_ROOT(cx, &tvr);
+	JL_CHKM( JS_CallFunctionId(cx, obj, JLID(cx, Get), 0, NULL, tvr.addr()), "Get() function not found.");
+	JL_CHK( JsvalToStringAndLength(cx, tvr.addr(), buffer, size) ); // (TBD) GC warning, when tvr.u.value will be no more protected, the buffer will be unprotected.
 	return JS_TRUE;
-bad:
-	JS_POP_TEMP_ROOT(cx, &tvr);
-	return JS_FALSE;
+	JL_BAD;
 }
 
 inline JSBool ReserveBufferGetInterface( JSContext *cx, JSObject *obj ) {

@@ -109,16 +109,8 @@ done_scriptList:
 	JS_GetPropertyById(cx, moduleObject, mpv->JLID_onNewScript, &jsHookFct); // try to use ids
 	if ( JsvalIsFunction(cx, jsHookFct) ) {
 
-		jsval argv[5];
-		JL_ASSERT( JSVAL_NULL == 0 );
-		memset(argv, 0, sizeof(argv)); // { JSVAL_NULL }
-
-		JSTempValueRooter tvr;
-		JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
-		JL_CHKB( StringToJsval(cx, filename, &argv[1]), bad_1 );
-		argv[2] = INT_TO_JSVAL( lineno );
-		argv[3] = OBJECT_TO_JSVAL( JS_NewScriptObject(cx, script) );
-		argv[4] = OBJECT_TO_JSVAL( JS_GetFunctionObject(fun) );
+		jsval argv[5] = { JSVAL_NULL, JSVAL_NULL, INT_TO_JSVAL( lineno ), OBJECT_TO_JSVAL( JS_NewScriptObject(cx, script) ), OBJECT_TO_JSVAL( JS_GetFunctionObject(fun) ) };
+		JL_CHK( StringToJsval(cx, filename, &argv[1]) );
 
 		JSBool status;
 		JSRuntime *rt;
@@ -127,12 +119,10 @@ done_scriptList:
 		JS_SetNewScriptHook(rt, NULL, NULL); 
 		status = JS_CallFunctionValue(cx, moduleObject, jsHookFct, COUNTOF(argv)-1, argv+1, argv);
 		JS_SetNewScriptHook(rt, NewScriptHook, callerdata); 
-
-	bad_1:
-		JS_POP_TEMP_ROOT(cx, &tvr);
 	}
 
-
+bad:
+	return;
 }
 
 

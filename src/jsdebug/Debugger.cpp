@@ -102,9 +102,9 @@ static JSTrapStatus InterruptCounterHandler(JSContext *cx, JSScript *script, jsb
 }
 
 
-static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, jsval closure) {
 
-	return BreakHandler(cx, (JSObject*)closure, JL_CurrentStackFrame(cx), FROM_BREAKPOINT);
+	return BreakHandler(cx, JSVAL_TO_OBJECT(closure), JL_CurrentStackFrame(cx), FROM_BREAKPOINT);
 }
 
 
@@ -200,6 +200,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
+
 	JSScript *script;
 	script = JS_GetFrameScript(cx, fp);
 	const char *filename;
@@ -212,12 +213,6 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 		return JSTRAP_ERROR;
 	if ( !JsvalIsFunction(cx, fval) ) // nothing to do
 		return JSTRAP_CONTINUE;
-
-	jsval argv[9];
-	memset(argv, 0, sizeof(argv)); // { JSVAL_NULL }
-
-	JSTempValueRooter tvr;
-	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
 
 	jsval exception;
 	JSBool hasException;
@@ -235,88 +230,94 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	uint32_t stackFrameIndex;
 	stackFrameIndex = JL_StackSize(cx, fp)-1;
 
-	// argv[0] is reserved for the rval
-	JL_CHK( StringToJsval(cx, filename, &argv[1]) );
-	argv[2] = INT_TO_JSVAL( lineno );
-	argv[3] = INT_TO_JSVAL( breakOrigin );
-	argv[4] = INT_TO_JSVAL( stackFrameIndex );
-	argv[5] = hasException ? JSVAL_TRUE : JSVAL_FALSE;
-	argv[6] = hasException ? exception : JSVAL_VOID;
-	argv[7] = breakOrigin == FROM_STEP_OUT ? fp->regs->sp[-1] : JSVAL_VOID; // (TBD) try to get the functions's rval. ask in the mailing list.
-	argv[8] = script && JS_GetFramePC(cx, fp) == script->code ? JSVAL_TRUE : JSVAL_FALSE; // is entering function
+	{
+		jsval argv[9] = {
+			JSVAL_NULL, // argv[0] is reserved for the rval
+			JSVAL_NULL,
+			INT_TO_JSVAL( lineno ),
+			INT_TO_JSVAL( breakOrigin ),
+			INT_TO_JSVAL( stackFrameIndex ),
+			hasException ? JSVAL_TRUE : JSVAL_FALSE,
+			hasException ? exception : JSVAL_VOID,
+			//breakOrigin == FROM_STEP_OUT ? fp->regs->sp[-1] : JSVAL_VOID; // (TBD) try to get the functions's rval. ask in the mailing list.
+			JSVAL_NULL,
+			script && JS_GetFramePC(cx, fp) == script->code ? JSVAL_TRUE : JSVAL_FALSE // is entering function
+		};
+		JL_CHK( StringToJsval(cx, filename, &argv[1]) );
+		
+		js::AutoArrayRooter tvr(cx, COUNTOF(argv), argv);
 
-	// defer script's hooks assignment
-	JSDebugHooks prevHooks;
-	prevHooks = *JS_GetGlobalDebugHooks(rt); // save hooks
-	pv->debugHooks = &prevHooks; // beware: reference to a local variable, dont return with restoring the previous value !
+		// defer script's hooks assignment
+		JSDebugHooks prevHooks;
+		prevHooks = *JS_GetGlobalDebugHooks(rt); // save hooks
+		pv->debugHooks = &prevHooks; // beware: reference to a local variable, dont return with restoring the previous value !
 
-	// no hooks while onBreak is being called
-	JL_CHK( JS_SetInterrupt(rt, NULL, NULL) ); // case: break on exception, continue, step
-	JL_CHK( JS_SetDebuggerHandler(rt, NULL, NULL) );
-	JL_CHK( JS_SetDebugErrorHook(rt, NULL, NULL) );
-	JL_CHK( JS_SetThrowHook(rt, NULL, NULL) );
-	JL_CHK( JS_SetExecuteHook(rt, NULL, NULL) );
-	JS_SetNewScriptHookProc(rt, NULL, NULL); // beware: never remove JS_SetDestroyScriptHookProc hook !!!
+		// no hooks while onBreak is being called
+		JL_CHK( JS_SetInterrupt(rt, NULL, NULL) ); // case: break on exception, continue, step
+		JL_CHK( JS_SetDebuggerHandler(rt, NULL, NULL) );
+		JL_CHK( JS_SetDebugErrorHook(rt, NULL, NULL) );
+		JL_CHK( JS_SetThrowHook(rt, NULL, NULL) );
+		JL_CHK( JS_SetExecuteHook(rt, NULL, NULL) );
+		JS_SetNewScriptHookProc(rt, NULL, NULL); // beware: never remove JS_SetDestroyScriptHookProc hook !!!
 
-	JSBool status;
-	status = JS_CallFunctionValue(cx, obj, fval, COUNTOF(argv)-1, argv+1, &argv[0]);
+		JSBool status;
+		status = JS_CallFunctionValue(cx, obj, fval, COUNTOF(argv)-1, argv+1, &argv[0]);
 
-	// apply the previous hooks that could be changed.
-	JS_ASSERT( pv->debugHooks );
-	JL_CHK( JS_SetInterrupt(rt, pv->debugHooks->interruptHandler, pv->debugHooks->interruptHandlerData) );
-	JL_CHK( JS_SetDebuggerHandler(rt, pv->debugHooks->debuggerHandler, pv->debugHooks->debuggerHandlerData) );
-	JL_CHK( JS_SetDebugErrorHook(rt, pv->debugHooks->debugErrorHook, pv->debugHooks->debugErrorHookData) );
-	JL_CHK( JS_SetThrowHook(rt, pv->debugHooks->throwHook, pv->debugHooks->throwHookData) );
-	JL_CHK( JS_SetExecuteHook(rt, pv->debugHooks->executeHook, pv->debugHooks->executeHookData) );
-	JS_SetNewScriptHookProc(rt, pv->debugHooks->newScriptHook, pv->debugHooks->newScriptHookData);
+		// apply the previous hooks that could be changed.
+		JS_ASSERT( pv->debugHooks );
+		JL_CHK( JS_SetInterrupt(rt, pv->debugHooks->interruptHook, pv->debugHooks->interruptHookData) );
+		JL_CHK( JS_SetDebuggerHandler(rt, pv->debugHooks->debuggerHandler, pv->debugHooks->debuggerHandlerData) );
+		JL_CHK( JS_SetDebugErrorHook(rt, pv->debugHooks->debugErrorHook, pv->debugHooks->debugErrorHookData) );
+		JL_CHK( JS_SetThrowHook(rt, pv->debugHooks->throwHook, pv->debugHooks->throwHookData) );
+		JL_CHK( JS_SetExecuteHook(rt, pv->debugHooks->executeHook, pv->debugHooks->executeHookData) );
+		JS_SetNewScriptHookProc(rt, pv->debugHooks->newScriptHook, pv->debugHooks->newScriptHookData);
 
-	pv->debugHooks = NULL;
+		pv->debugHooks = NULL;
 
-	JL_CHK( status );
+		JL_CHK( status );
 
-	JL_S_ASSERT_INT( argv[0] );
+		JL_S_ASSERT_INT( argv[0] );
 
-	if ( hasException ) // restore the exception
-		JS_SetPendingException(cx, exception); // (TBD) should return JSTRAP_ERROR ???
+		if ( hasException ) // restore the exception
+			JS_SetPendingException(cx, exception); // (TBD) should return JSTRAP_ERROR ???
 
-	// store the current state
-	pv->stackFrameIndex = stackFrameIndex;
-	pv->script = script;
-	pv->lineno = lineno;
-	pv->frame = fp;
-	pv->pframe = fp;
-	JS_FrameIterator(cx, &pv->pframe); // gets the parent frame
+		// store the current state
+		pv->stackFrameIndex = stackFrameIndex;
+		pv->script = script;
+		pv->lineno = lineno;
+		pv->frame = fp;
+		pv->pframe = fp;
+		JS_FrameIterator(cx, &pv->pframe); // gets the parent frame
 
-	switch (JSVAL_TO_INT( argv[0] )) {
+		switch (JSVAL_TO_INT( argv[0] )) {
 
-		case DO_CONTINUE:
-			if ( pv->interruptCounterLimit ) {
+			case DO_CONTINUE:
+				if ( pv->interruptCounterLimit ) {
 
-				pv->interruptCounter = pv->interruptCounterLimit;
-				JL_CHK( JS_SetInterrupt(rt, InterruptCounterHandler, obj) );
-			} else {
+					pv->interruptCounter = pv->interruptCounterLimit;
+					JL_CHK( JS_SetInterrupt(rt, InterruptCounterHandler, obj) );
+				} else {
 
-				JL_CHK( JS_SetInterrupt(rt, NULL, NULL) );
-			}
-			break;
-		case DO_STEP:
-			JS_SetInterrupt(rt, Step, obj);
-			break;
-		case DO_STEP_OVER:
-			JS_SetInterrupt(rt, StepOver, obj);
-			break;
-		case DO_STEP_THROUGH:
-			JS_SetInterrupt(rt, StepThrough, obj);
-			break;
-		case DO_STEP_OUT:
-			JS_SetInterrupt(rt, StepOut, obj);
-			break;
+					JL_CHK( JS_SetInterrupt(rt, NULL, NULL) );
+				}
+				break;
+			case DO_STEP:
+				JS_SetInterrupt(rt, Step, obj);
+				break;
+			case DO_STEP_OVER:
+				JS_SetInterrupt(rt, StepOver, obj);
+				break;
+			case DO_STEP_THROUGH:
+				JS_SetInterrupt(rt, StepThrough, obj);
+				break;
+			case DO_STEP_OUT:
+				JS_SetInterrupt(rt, StepOut, obj);
+				break;
+		}
 	}
 
-	JS_POP_TEMP_ROOT(cx, &tvr);
 	return JSTRAP_CONTINUE; // http://www.google.com/codesearch/p?hl=en#SPZdyP79RtQ/trunk/third_party/spidermonkey/js/src/jsinterp.c&q=JSTRAP_RETURN&l=742
 bad:
-	JS_POP_TEMP_ROOT(cx, &tvr);
 	return JSTRAP_ERROR;
 }
 
@@ -415,14 +416,14 @@ DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
 		JL_REPORT_ERROR("Invalid location.");
 
 	JSTrapHandler prevHandler;
-	void *prevClosure;
+	jsval prevClosure;
 	JS_ClearTrap(cx, script, pc, &prevHandler, &prevClosure);
 
 	if ( polarity ) {
-		JL_CHK( JS_SetTrap(cx, script, pc, TrapHandler, obj) );
+		JL_CHK( JS_SetTrap(cx, script, pc, TrapHandler, OBJECT_TO_JSVAL(obj)) );
 	} else {
-		if ( prevHandler != TrapHandler || prevClosure != obj )
-			JL_CHK( JS_SetTrap(cx, script, pc, TrapHandler, obj) );
+		if ( prevHandler != TrapHandler || prevClosure != OBJECT_TO_JSVAL(obj) )
+			JL_CHK( JS_SetTrap(cx, script, pc, TrapHandler, OBJECT_TO_JSVAL(obj)) );
 	}
 
 	*JL_FRVAL = INT_TO_JSVAL( JS_PCToLineNumber(cx, script, pc) );
@@ -451,7 +452,7 @@ DEFINE_FUNCTION_FAST( HasBreakpoint ) {
 		JL_REPORT_ERROR("Invalid location.");
 
 	JSTrapHandler prevHandler;
-	void *prevClosure;
+	jsval prevClosure;
 	JS_ClearTrap(cx, script, pc, &prevHandler, &prevClosure);
 	if ( prevHandler ) {
 
@@ -507,13 +508,13 @@ DEFINE_PROPERTY( interruptCounterLimit ) {
 
 	JSRuntime *rt;
 	rt = JS_GetRuntime(cx);
-	if ( pv->interruptCounterLimit == 0 && (pv->debugHooks ? pv->debugHooks->interruptHandler : JS_GetGlobalDebugHooks(rt)->interruptHandler) == InterruptCounterHandler ) {
+	if ( pv->interruptCounterLimit == 0 && (pv->debugHooks ? pv->debugHooks->interruptHook : JS_GetGlobalDebugHooks(rt)->interruptHook) == InterruptCounterHandler ) {
 
 		// cancel the current one.
 		if ( pv->debugHooks ) { // defered hook assignment
 
-			pv->debugHooks->interruptHandler = NULL;
-			pv->debugHooks->interruptHandlerData = NULL;
+			pv->debugHooks->interruptHook = NULL;
+			pv->debugHooks->interruptHookData = NULL;
 		} else {
 
 			JL_CHK( JS_SetInterrupt(rt, NULL, NULL) );

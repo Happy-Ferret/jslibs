@@ -357,14 +357,13 @@ DEFINE_ITERATOR_OBJECT() {
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
 
-	JSTempValueRooter tvr;
-	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr);
-	JSBool st = NewComEnum(cx, pEnum, &tvr.u.value);
-	JS_POP_TEMP_ROOT(cx, &tvr);
-	JL_CHK(st);
-	pEnum->Release();
-	return JSVAL_TO_OBJECT(tvr.u.value);
-
+	{
+		js::AutoValueRooter tvr(cx);
+		JSBool st = NewComEnum(cx, pEnum, tvr.addr());
+		JL_CHK(st);
+		pEnum->Release();
+		return JSVAL_TO_OBJECT(tvr.value());
+	}
 bad:
 	if ( pEnum )
 		pEnum->Release();

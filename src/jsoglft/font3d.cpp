@@ -44,17 +44,14 @@ class ColorTess : public OGLFT::ColorTess {
 
 		JSContext *cx = JL_GetContext(_rt);
 		jsval arg[2] = { JSVAL_NULL, JSVAL_NULL }; // memset(arg, 0, sizeof(arg));
-		JSTempValueRooter tvr;
-		JS_PUSH_TEMP_ROOT(cx, COUNTOF(arg), arg, &tvr);
+		js::AutoArrayRooter tvr(cx, COUNTOF(arg), arg);
 		JL_CHK( DoubleVectorToJsval(cx, p, 3, &arg[1], false) );
 		JL_CHK( JS_CallFunctionValue(cx, _obj, _function, COUNTOF(arg)-1, arg+1, arg) );
 		uint32 length;
 		JL_CHK( JsvalToFloatVector(cx, *arg, _colorTmp, COUNTOF(_colorTmp), &length) );
-		JS_POP_TEMP_ROOT(cx, &tvr);
 		return _colorTmp;
 	bad:
 		JS_ReportPendingException(cx);
-		JS_POP_TEMP_ROOT(cx, &tvr);
 		return _colorTmp;
 	}
 

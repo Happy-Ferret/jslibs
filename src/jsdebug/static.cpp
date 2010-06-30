@@ -39,10 +39,9 @@ int _puts(JSContext *cx, const char *str) {
 		if ( jsstr == NULL )
 			return EOF;
 	//	jsstr = JS_ConcatStrings(cx, jsstr, JS_NewStringCopyZ(cx, "\n"));
-		JSTempValueRooter tvr;
-		JS_PUSH_SINGLE_TEMP_ROOT(cx, STRING_TO_JSVAL(jsstr), &tvr); // protects jsstr against GC
-		JSBool status = JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), stdoutFunction, 1, &tvr.u.value, &tvr.u.value);
-		JS_POP_TEMP_ROOT(cx, &tvr);
+		
+		js::AutoValueRooter tvr(cx);
+		JSBool status = JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), stdoutFunction, 1, tvr.addr(), tvr.addr());
 		if ( status == JS_TRUE )
 			return len;
 	}
@@ -1191,7 +1190,8 @@ DEFINE_FUNCTION_FAST( PropertiesList ) {
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 
-	if ( !OBJ_IS_NATIVE(srcObj) ) { // (TBD) remove this workaround to bz#522101
+	
+	if ( !srcObj->isNative() ) { // (TBD) remove this workaround to bz#522101
 		
 		*JL_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
@@ -1251,7 +1251,7 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 
-	if ( !OBJ_IS_NATIVE(srcObj) ) { // (TBD) remove this workaround to bz#522101
+	if ( !srcObj->isNative() ) { // (TBD) remove this workaround to bz#522101
 		
 		*JL_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
@@ -1306,10 +1306,10 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 			else
 				JL_CHK( JS_SetProperty(cx, descObj, "value", &tmp) );
 
-			tmp = jssp->getter != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+			tmp = jssp->getter() != NULL ? JSVAL_TRUE : JSVAL_FALSE;
 			JL_CHK( JS_SetProperty(cx, descObj, "getter", &tmp) );
 
-			tmp = jssp->setter != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+			tmp = jssp->setter() != NULL ? JSVAL_TRUE : JSVAL_FALSE;
 			JL_CHK( JS_SetProperty(cx, descObj, "setter", &tmp) );
 
 			tmp = desc.flags & JSPD_VARIABLE ? JSVAL_TRUE : JSVAL_FALSE; // doc. local variable in function
@@ -1328,7 +1328,7 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 			tmp = desc.flags & JSPD_PERMANENT ? JSVAL_TRUE : JSVAL_FALSE;
 			JL_CHK( JS_SetProperty(cx, descObj, "permanent", &tmp) );
 
-			tmp = jssp->setter != NULL || jssp->getter != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+			tmp = jssp->setter() != NULL || jssp->getter() != NULL ? JSVAL_TRUE : JSVAL_FALSE;
 			JL_CHK( JS_SetProperty(cx, descObj, "native", &tmp) );
 
 			tmp = INT_TO_JSVAL(prototypeLevel);

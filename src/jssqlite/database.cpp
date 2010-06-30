@@ -460,8 +460,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 	jsval argv[1 + MAX_FUNCTION_ARG]; // argv[0] is rval
 
 	memset(argv, 0, sizeof(argv)); // set JSVAL_NULL
-	JSTempValueRooter tvr;
-	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
+	js::AutoArrayRooter(cx, COUNTOF(argv), argv);
 	
 	for ( int r = 0; r < sArgc; r++ ) {
 
@@ -533,7 +532,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 	}
 
 bad_unroot:
-	JS_POP_TEMP_ROOT(cx, &tvr);
+
 bad:
 	return;
 }

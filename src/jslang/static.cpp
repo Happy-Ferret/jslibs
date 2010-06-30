@@ -353,6 +353,10 @@ DEFINE_FUNCTION_FAST( TimeoutEvents ) {
 #ifdef DEBUG
 DEFINE_FUNCTION( jslang_test ) {
 
+
+		
+
+
 	return JS_TRUE;
 }
 #endif // DEBUG

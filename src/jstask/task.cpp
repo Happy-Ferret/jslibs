@@ -122,8 +122,7 @@ bad:
 static JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 
 	jsval argv[3] = { JSVAL_NULL }; // argv[0] is rval and code
-	JSTempValueRooter tvr;
-	JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
+	js::AutoArrayRooter tvr(cx, COUNTOF(argv), argv);
 
 	// no need to mutex this because this and the constructor are the only places that access pv->serializedCode.
 	JL_CHK( UnserializeJsval(cx, &pv->serializedCode, &argv[0]) );
@@ -206,10 +205,8 @@ static JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 		JLEventTrigger(pv->responseEvent);
 	}
 
-	JS_POP_TEMP_ROOT(cx, &tvr);
 	return JS_TRUE;
 bad:
-	JS_POP_TEMP_ROOT(cx, &tvr);
 	return JS_FALSE;
 }
 

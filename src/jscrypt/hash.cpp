@@ -371,11 +371,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( list ) {
 
-	JSTempValueRooter tvr;
-	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // (TBD) remove this workaround. cf. bz495422 || bz397177
-
-	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
-	tvr.u.value = OBJECT_TO_JSVAL(list);
+	js::AutoObjectRooter tvr(cx, JS_NewObject(cx, NULL, NULL, NULL)); // (TBD) remove this workaround. cf. bz495422 || bz397177
 	jsval value;
 	int i;
 	LTC_MUTEX_LOCK(&ltc_hash_mutex);
@@ -384,7 +380,7 @@ DEFINE_PROPERTY( list ) {
 
 			JSObject *desc = JS_NewObject( cx, NULL, NULL, NULL );
 			value = OBJECT_TO_JSVAL(desc);
-			JS_SetProperty( cx, list, hash_descriptor[i].name, &value );
+			JS_SetProperty( cx, tvr.object(), hash_descriptor[i].name, &value );
 
 			value = INT_TO_JSVAL( hash_descriptor[i].hashsize );
 			JS_SetProperty( cx, desc, "hashSize", &value );
@@ -393,8 +389,7 @@ DEFINE_PROPERTY( list ) {
 		}
 	LTC_MUTEX_UNLOCK(&ltc_hash_mutex);
 
-	*vp = tvr.u.value;
-	JS_POP_TEMP_ROOT(cx, &tvr);
+	*vp = OBJECT_TO_JSVAL(tvr.object());
 	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 

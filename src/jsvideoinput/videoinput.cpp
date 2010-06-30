@@ -365,12 +365,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( list ) {
 
-	JSTempValueRooter tvr;
-	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // (TBD) remove this workaround. cf. bz495422 || bz397177
+	js::AutoValueRooter tvr(cx); // (TBD) remove this workaround. cf. bz495422 || bz397177
 
 	int numDevices = videoInput::listDevices(true);
 	JSObject *list = JS_NewArrayObject(cx, numDevices, NULL);
-	tvr.u.value = OBJECT_TO_JSVAL(list);
+	tvr.setObject(list);
 	jsval value;
 	int i;
 	for ( i = 0; i < numDevices; i++ ) {
@@ -379,11 +378,9 @@ DEFINE_PROPERTY( list ) {
 		JL_CHK( JS_SetElement(cx, list, i, &value ) );
 	}
 
-	*vp = tvr.u.value;
-	JS_POP_TEMP_ROOT(cx, &tvr);
+	*vp = tvr.value();
 	return JS_TRUE;
 bad:
-	JS_POP_TEMP_ROOT(cx, &tvr);
 	return JS_FALSE;
 }
 

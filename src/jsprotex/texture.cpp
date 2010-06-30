@@ -291,24 +291,22 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLe
 // curve: number | function | array | blob
 inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) { // length is the curve resolution
 	
-	JSTempValueRooter tvr;
 	size_t i;
 
 	if ( JsvalIsFunction(cx, value) ) {
 
 		jsdouble fval;
 		jsval argv[3]; // argv[0] is the rval
-		JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
+		js::AutoArrayRooter tvr(cx, COUNTOF(argv), argv);
 		for ( i = 0; i < length; ++i ) {
 
 			fval = (double)i / (double)(length-1);
-			JL_CHKB( JS_NewDoubleValue(cx, fval, &argv[1]), bad2 );
+			JL_CHK( JS_NewDoubleValue(cx, fval, &argv[1]) );
 			argv[2] = INT_TO_JSVAL((int)i);
-			JL_CHKB( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), value, 2, argv+1, argv), bad2 );
-			JL_CHKB( JS_ValueToNumber(cx, argv[0], &fval), bad2 );
+			JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), value, 2, argv+1, argv) );
+			JL_CHK( JS_ValueToNumber(cx, argv[0], &fval) );
 			curve[i] = fval;
 		}
-		JS_POP_TEMP_ROOT(cx, &tvr);
 		return JS_TRUE;
 	}
 
@@ -357,8 +355,6 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *c
 	//return JS_TRUE;
 	JL_REPORT_ERROR("Invalid curve data.");
 
-bad2:
-	JS_POP_TEMP_ROOT(cx, &tvr);
 bad:
 	return JS_FALSE;
 }
@@ -2426,40 +2422,36 @@ DEFINE_FUNCTION_FAST( ForEachPixel ) {
 	cArrayObj = JS_NewArrayObject(cx, channels, NULL);
 	JL_CHK( cArrayObj );
 	callArgv[1] = OBJECT_TO_JSVAL(cArrayObj);
+	{
+		js::AutoArrayRooter tvr(cx, COUNTOF(callArgv), callArgv);
 
-	JSTempValueRooter tvr;
-	JS_PUSH_TEMP_ROOT(cx, COUNTOF(callArgv), callArgv, &tvr);
+		for ( y = 0; y < height; y++ ) { // faster than (for 0 to (width*height))
+			for ( x = 0; x < width; x++ ) {
 
-	for ( y = 0; y < height; y++ ) { // faster than (for 0 to (width*height))
-		for ( x = 0; x < width; x++ ) {
-
-			size_t pos = (x+y*width)*channels;
-			callArgv[2] = INT_TO_JSVAL(x);
-			callArgv[3] = INT_TO_JSVAL(y);
-			for ( c = 0; c < channels; c++ ) {
-
-				JL_CHKB( FloatToJsval(cx, tex->cbuffer[pos+c], &level), bad2 );
-				JL_CHKB( JS_SetElement(cx, cArrayObj, c, &level), bad2 );
-			}
-
-			JL_CHKB( JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(callArgv)-1, callArgv+1, callArgv), bad2 );
-
-			if ( callArgv[0] != JSVAL_FALSE ) { // function's return value
-
+				size_t pos = (x+y*width)*channels;
+				callArgv[2] = INT_TO_JSVAL(x);
+				callArgv[3] = INT_TO_JSVAL(y);
 				for ( c = 0; c < channels; c++ ) {
 
-					JL_CHKB( JS_GetElement(cx, cArrayObj, c, &level), bad2 );
-					JL_CHKB( JsvalToFloat(cx, level, &tex->cbackBuffer[pos+c]), bad2 );
+					JL_CHK( FloatToJsval(cx, tex->cbuffer[pos+c], &level) );
+					JL_CHK( JS_SetElement(cx, cArrayObj, c, &level) );
+				}
+
+				JL_CHK( JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(callArgv)-1, callArgv+1, callArgv) );
+
+				if ( callArgv[0] != JSVAL_FALSE ) { // function's return value
+
+					for ( c = 0; c < channels; c++ ) {
+
+						JL_CHK( JS_GetElement(cx, cArrayObj, c, &level) );
+						JL_CHK( JsvalToFloat(cx, level, &tex->cbackBuffer[pos+c]) );
+					}
 				}
 			}
 		}
 	}
-	JS_POP_TEMP_ROOT(cx, &tvr);
-
 	TextureSwapBuffers(tex);
 	return JS_TRUE;
-bad2:
-	JS_POP_TEMP_ROOT(cx, &tvr);
 bad:
 	return JS_FALSE;
 }

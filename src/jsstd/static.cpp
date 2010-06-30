@@ -16,7 +16,7 @@
 
 #include "jsxdrapi.h"
 #include "jscntxt.h"
-#include "jsnum.h"
+//#include "jsnum.h"
 #include <jsdbgapi.h>
 
 DECLARE_CLASS( OperationLimit )
@@ -102,8 +102,9 @@ next:
 	typedef struct {
 		const char *data;
 		size_t length;
-		JSTempValueRooter tvr;
-		bool hasTvr;
+		jsval value;
+//		JSTempValueRooter tvr;
+//		bool hasTvr;
 	} Chunk;
 
 	void *stack;
@@ -121,7 +122,7 @@ next:
 			chunk = (Chunk*)jl_malloc(sizeof(Chunk));
 			chunk->data = srcBegin;
 			chunk->length = srcEnd - srcBegin;
-			chunk->hasTvr = false;
+//			chunk->hasTvr = false;
 			totalLength += chunk->length;
 			jl::StackPush( &stack, chunk );
 			break;
@@ -130,7 +131,7 @@ next:
 		chunk = (Chunk*)jl_malloc(sizeof(Chunk));
 		chunk->data = srcBegin;
 		chunk->length = tok - srcBegin;
-		chunk->hasTvr = false;
+//		chunk->hasTvr = false;
 		totalLength += chunk->length;
 		jl::StackPush( &stack, chunk );
 
@@ -161,9 +162,9 @@ next:
 		if ( !JSVAL_IS_VOID( *JL_FRVAL ) ) {
 
 			chunk = (Chunk*)jl_malloc(sizeof(Chunk));
-			JS_PUSH_SINGLE_TEMP_ROOT(cx, *JL_FRVAL, &chunk->tvr);
-			chunk->hasTvr = true;
-			JL_CHKB( JsvalToStringAndLength(cx, &chunk->tvr.u.value, &chunk->data, &chunk->length), bad_free_stack );
+//			JS_PUSH_SINGLE_TEMP_ROOT(cx, *JL_FRVAL, &chunk->tvr);
+//			chunk->hasTvr = true;
+			JL_CHKB( JsvalToStringAndLength(cx, &chunk->value, &chunk->data, &chunk->length), bad_free_stack );
 			totalLength += chunk->length;
 			jl::StackPush( &stack, chunk );
 		}
@@ -182,8 +183,8 @@ next:
 		Chunk *chunk = (Chunk*)jl::StackPop(&stack);
 		expandedString -= chunk->length;
 		memcpy(expandedString, chunk->data, chunk->length);
-		if ( chunk->hasTvr )
-			JS_POP_TEMP_ROOT(cx, &chunk->tvr);
+//		if ( chunk->hasTvr )
+//			JS_POP_TEMP_ROOT(cx, &chunk->tvr);
 		jl_free(chunk);
 	}
 
@@ -198,8 +199,8 @@ bad_free_stack:
 	while ( !jl::StackIsEnd(&stack) ) {
 
 		Chunk *chunk = (Chunk*)jl::StackPop(&stack);
-		if ( chunk->hasTvr )
-			JS_POP_TEMP_ROOT(cx, &chunk->tvr);
+//		if ( chunk->hasTvr )
+//			JS_POP_TEMP_ROOT(cx, &chunk->tvr);
 		jl_free(chunk);
 	}
 bad:
@@ -1186,13 +1187,13 @@ DEFINE_FUNCTION_FAST( Exec ) {
 	JS_SetOptions(cx, oldopts);
 	JL_CHK( script );
 
-	JSTempValueRooter tvr;
+//	JSTempValueRooter tvr;
 	JSObject *scrobj;
 	scrobj = JS_NewScriptObject(cx, script);
-	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
+//	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
 	JSBool ok;
 	ok = JS_ExecuteScript(cx, obj, script, JL_FRVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
-	JS_POP_TEMP_ROOT(cx, &tvr);
+//	JS_POP_TEMP_ROOT(cx, &tvr);
 	JL_CHK( ok );
 
 	return JS_TRUE;
@@ -1463,7 +1464,7 @@ $TOC_MEMBER $INAME
    The current filename is also available using: `StackFrameInfo(stackSize-1).filename` (see jsdebug module)
 **/
 DEFINE_PROPERTY( currentFilename ) {
-
+	
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( fp == NULL ) {
 
@@ -1579,6 +1580,20 @@ JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 
 DEFINE_FUNCTION_FAST( Test ) {
+
+	JSXDRState *xdr1 = JS_XDRNewMem(cx, JSXDR_ENCODE);
+	JS_XDRValue(xdr1, &JL_FARG(1));
+	uint32 length;
+	void *buffer;
+	buffer = JS_XDRMemGetData(xdr1, &length);
+	
+	JSXDRState *xdr2 = JS_XDRNewMem(cx, JSXDR_DECODE);
+	JS_XDRMemSetData(xdr2, buffer, length);
+	JS_XDRValue(xdr2, JL_FRVAL);
+	JS_XDRMemSetData(xdr2, NULL, 0);
+	JS_XDRDestroy(xdr2);
+
+	JS_XDRDestroy(xdr1);
 
 	return JS_TRUE;
 }

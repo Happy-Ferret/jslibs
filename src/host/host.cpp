@@ -105,14 +105,13 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 			//if ( FUN_FAST_NATIVE(fun) == (JSFastNative)JSDefaultStderrFunction )
 			//	goto standard_way;
 
-			jsval tmp;
-			JSTempValueRooter tvr;
-			JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // needed to protect the string.
-			JL_CHKB( StringAndLengthToJsval(cx, &tvr.u.value, message, length), bad2 ); // beware out of memory case !
-			JL_CHKB( JS_CallFunctionValue(cx, globalObject, fct, 1, &tvr.u.value, &tmp), bad2 );
+			jsval unused;
+			js::AutoValueRooter tvr(cx); // needed to protect the string.
+
+			JL_CHKB( StringAndLengthToJsval(cx, tvr.addr(), message, length), bad2 ); // beware out of memory case !
+			JL_CHKB( JS_CallFunctionValue(cx, globalObject, fct, 1, tvr.addr(), &unused), bad2 );
 
 		bad2:
-			JS_POP_TEMP_ROOT(cx, &tvr);
 			return;
 		}
 	}
@@ -671,6 +670,8 @@ JSBool CreateScriptArguments( JSContext *cx, int argc, const char * const * argv
 
 JSBool ExecuteScript( JSContext *cx, const char *scriptText, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
 
+	js::AutoObjectRooter tvr(cx);
+
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); //  | JSOPTION_DONT_REPORT_UNCAUGHT
 	// JSOPTION_COMPILE_N_GO:
 	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
@@ -699,12 +700,10 @@ JSBool ExecuteScript( JSContext *cx, const char *scriptText, bool compileOnly, i
 	script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "inline", 1);
 	JL_CHK( script );
 
-
-	JSTempValueRooter tvr;
 	JSObject *scrobj;
 	scrobj = JS_NewScriptObject(cx, script);
 	JL_CHK( scrobj );
-	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
+	tvr.setObject(scrobj);
 
 	// mendatory else the exception is converted into an error before JS_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
@@ -721,7 +720,6 @@ JSBool ExecuteScript( JSContext *cx, const char *scriptText, bool compileOnly, i
 	}
 
 
-	JS_POP_TEMP_ROOT(cx, &tvr);
 	JL_CHK( status );
 
 	//	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633, which can cause crashes in almost any program that uses JS_DestroyScript.
@@ -739,6 +737,8 @@ bad:
 
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) { // (TBD) support xdr files
 
+	js::AutoObjectRooter tvr(cx);
+
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
 
 	JSObject *globalObject = JS_GetGlobalObject(cx);
@@ -750,11 +750,10 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	script = JLLoadScript(cx, globalObject, scriptFileName, true, false); // use xdr if available, but don't save it.
 	JL_CHK( script );
 
-	JSTempValueRooter tvr;
 	JSObject *scrobj;
 	scrobj = JS_NewScriptObject(cx, script);
 	JL_CHK( scrobj );
-	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
+	tvr.setObject(scrobj);
 
 	// mendatory else the exception is converted into an error before JS_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
@@ -770,7 +769,6 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 		status = JS_TRUE;
 	}
 
-	JS_POP_TEMP_ROOT(cx, &tvr);
 	JL_CHK( status );
 
 	//	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633, which can cause crashes in almost any program that uses JS_DestroyScript.

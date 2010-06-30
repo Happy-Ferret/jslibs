@@ -83,11 +83,8 @@ private:
 
 		jsval argv[3] = { INT_TO_JSVAL(level), INT_TO_JSVAL(area) };
 		StringToJsval(_cx, message.c_str(), &argv[2]);
-
-		JSTempValueRooter tvr;
-		JS_PUSH_TEMP_ROOT(_cx, COUNTOF(argv), argv, &tvr);
+		js::AutoArrayRooter tvr(_cx, COUNTOF(argv), argv);
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
-		JS_POP_TEMP_ROOT(_cx, &tvr);
 	}
 
 	bool onTLSConnect( const CertInfo& info ) {

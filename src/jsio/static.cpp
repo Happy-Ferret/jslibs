@@ -213,31 +213,28 @@ DEFINE_FUNCTION( Poll ) {
 	props = (jsval*)jl_malloca(sizeof(jsval) * propsCount);
 	JL_S_ASSERT_ALLOC( props );
 	memset(props, 0, sizeof(jsval) * propsCount); // needed because JS_PUSH_TEMP_ROOT
+	{
+		js::AutoArrayRooter tvr(cx, propsCount, props);
+		for ( i = 0; i < propsCount; ++i ) {
 
-	JSTempValueRooter tvr;
-	JS_PUSH_TEMP_ROOT(cx, propsCount, props, &tvr);
-	for ( i = 0; i < propsCount; ++i ) {
+			JL_CHK( JS_GetElement(cx, fdArrayObj, i, &props[i]) );
+			JL_CHK( InitPollDesc(cx, props[i], &pollDesc[i]) );
+		}
 
-		JL_CHK( JS_GetElement(cx, fdArrayObj, i, &props[i]) );
-		JL_CHK( InitPollDesc(cx, props[i], &pollDesc[i]) );
+		result = PR_Poll(pollDesc, propsCount, pr_timeout); // http://www.mozilla.org/projects/nspr/tech-notes/poll-method.html / http://developer.mozilla.org/en/docs/PR_Poll
+		if ( result == -1 ) // failed. see PR_GetError()
+			JL_CHK( ThrowIoError(cx) ); // returns later
+
+		if ( result > 0 ) // has event(s)
+			for ( i = 0; i < propsCount; ++i )
+				JL_CHK( PollDescNotify(cx,props[i], &pollDesc[i], i) );
+
+		*rval = INT_TO_JSVAL( result );
 	}
-
-	result = PR_Poll(pollDesc, propsCount, pr_timeout); // http://www.mozilla.org/projects/nspr/tech-notes/poll-method.html / http://developer.mozilla.org/en/docs/PR_Poll
-	if ( result == -1 ) // failed. see PR_GetError()
-		JL_CHK( ThrowIoError(cx) ); // returns later
-
-	if ( result > 0 ) // has event(s)
-		for ( i = 0; i < propsCount; ++i )
-			JL_CHK( PollDescNotify(cx,props[i], &pollDesc[i], i) );
-
-	*rval = INT_TO_JSVAL( result );
-
-	JS_POP_TEMP_ROOT(cx, &tvr);
 	jl_freea(props, sizeof(jsval) * propsCount);
 	jl_freea(pollDesc, sizeof(PRPollDesc) * propsCount);
 	return JS_TRUE;
 bad:
-	JS_POP_TEMP_ROOT(cx, &tvr);
 	jl_freea(props, sizeof(jsval) * propsCount);
 	jl_freea(pollDesc, sizeof(PRPollDesc) * propsCount);
 bad1:

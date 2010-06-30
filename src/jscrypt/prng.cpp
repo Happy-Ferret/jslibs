@@ -254,11 +254,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( list ) {
 
-	JSTempValueRooter tvr;
-	JS_PUSH_SINGLE_TEMP_ROOT(cx, JSVAL_NULL, &tvr); // (TBD) remove this workaround. cf. bz495422 || bz397177
-
-	JSObject *list = JS_NewObject( cx, NULL, NULL, NULL );
-	tvr.u.value = OBJECT_TO_JSVAL(list);
+	js::AutoObjectRooter tvr(cx, JS_NewObject(cx, NULL, NULL, NULL)); // (TBD) remove this workaround. cf. bz495422 || bz397177
+	
 	jsval value;
 	int i;
 	LTC_MUTEX_LOCK(&ltc_prng_mutex);
@@ -266,12 +263,11 @@ DEFINE_PROPERTY( list ) {
 		if ( prng_is_valid(i) == CRYPT_OK ) {
 
 			value = JSVAL_ONE;
-			JS_SetProperty( cx, list, prng_descriptor[i].name, &value );
+			JS_SetProperty( cx, tvr.object(), prng_descriptor[i].name, &value );
 		}
 	LTC_MUTEX_UNLOCK(&ltc_prng_mutex);
 
-	*vp = tvr.u.value;
-	JS_POP_TEMP_ROOT(cx, &tvr);
+	*vp = OBJECT_TO_JSVAL(tvr.object());
 	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 

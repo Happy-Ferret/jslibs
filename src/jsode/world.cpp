@@ -135,17 +135,17 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 			Vector3LoadPtr(&normal, contact.geom.normal);
 			ode::dReal contactVelocity = Vector3Dot(&vel, &normal);
 
-			JSTempValueRooter tvr;
+
 			jsval argv[9];
-			JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr);
+			js::AutoArrayRooter tvr(cx, COUNTOF(argv), argv);
 			argv[0] = JSVAL_NULL; // rval
 
 			// geom.contact = function(thisGeom, otherGeom, contactVelocity, contactX, contactY, contactZ, side1, side2) { }
 
-			JL_CHKB( FloatToJsval(cx, contactVelocity, &argv[3]), bad_poproot ); // JL_CHKB( FloatToJsval(cx, contact.geom.depth, &argv[3]), bad_poproot );
-			JL_CHKB( FloatToJsval(cx, contact.geom.pos[0], &argv[4]), bad_poproot );
-			JL_CHKB( FloatToJsval(cx, contact.geom.pos[1], &argv[5]), bad_poproot );
-			JL_CHKB( FloatToJsval(cx, contact.geom.pos[2], &argv[6]), bad_poproot );
+			JL_CHK( FloatToJsval(cx, contactVelocity, &argv[3]) ); // JL_CHK( FloatToJsval(cx, contact.geom.depth, &argv[3]) );
+			JL_CHK( FloatToJsval(cx, contact.geom.pos[0], &argv[4]) );
+			JL_CHK( FloatToJsval(cx, contact.geom.pos[1], &argv[5]) );
+			JL_CHK( FloatToJsval(cx, contact.geom.pos[2], &argv[6]) );
 
 			if ( !JSVAL_IS_VOID( func1 ) ) {
 
@@ -154,7 +154,7 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 				//...
 				argv[7] = INT_TO_JSVAL( contact.geom.side1 ); // TriIndex
 				argv[8] = INT_TO_JSVAL( contact.geom.side2 );
-				JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom1), func1, COUNTOF(argv)-1, argv+1, argv), bad_poproot );
+				JL_CHK( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom1), func1, COUNTOF(argv)-1, argv+1, argv) );
 				if ( *argv == JSVAL_FALSE )
 					doContact = false;
 			}
@@ -166,13 +166,10 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 				//...
 				argv[7] = INT_TO_JSVAL( contact.geom.side2 ); // TriIndex
 				argv[8] = INT_TO_JSVAL( contact.geom.side1 );
-				JL_CHKB( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom2), func2, COUNTOF(argv)-1, argv+1, argv), bad_poproot );
+				JL_CHK( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom2), func2, COUNTOF(argv)-1, argv+1, argv) );
 				if ( *argv == JSVAL_FALSE )
 					doContact = false;
 			}
-		
-		bad_poproot:
-			JS_POP_TEMP_ROOT(cx, &tvr);
 		}
 	}
 

@@ -137,16 +137,20 @@ int main(int argc, char* argv[]) {
 
 	printf("Deleting the destination file %s\n", argv[2]);
 	remove(argv[2]);
+	
+	JSClass global_class = {
+		 "global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+		 JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
+	};
 
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_JIT);
 	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
 	JS_SetErrorReporter(cx, my_ErrorReporter);
-
-	JSObject *globalObject = JS_NewObject(cx, NULL, NULL, NULL);
-	JS_SetGlobalObject(cx, globalObject);
+	JSObject *globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
 	//JSScript *script = JS_CompileFile(cx, JS_GetGlobalObject(cx), argv[1]);
