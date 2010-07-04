@@ -590,7 +590,7 @@ LoadModule('jsstd');
 		QA.ASSERT( s.length, len, 'string length' );
 
 
-/// blob serialization [ftrm]
+/// blob serialization [ftrmd]
 
 		var b = Blob("my blob");
 		b.aPropertyOfMyBlob = 12345;

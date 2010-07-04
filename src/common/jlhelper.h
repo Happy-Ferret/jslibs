@@ -575,6 +575,15 @@ ALWAYS_INLINE bool JL_Ending(const JSContext *cx) {
 	return cx->runtime->state == JSRTS_LANDING || cx->runtime->state == JSRTS_DOWN; // could be replaced by a flag in HostPrivate that keep the state of the engine.
 }
 
+
+ALWAYS_INLINE bool JL_ObjectIsObject( JSContext *cx, JSObject *obj ) {
+
+	JSObject *proto;
+	if ( js_GetClassPrototype(cx, NULL, JSProto_Object, &proto) )
+		return obj->getProto() == proto;
+	return false;
+}
+
 // eg. JS_NewObject(cx, JL_GetStandardClass(cx, JSProto_TypeError), NULL, NULL);
 ALWAYS_INLINE JSClass* JL_GetStandardClass(JSContext *cx, JSProtoKey key) {
 
@@ -1846,7 +1855,7 @@ public:
 };
 */
 
-#include <deque>
+//#include <deque>
 
 /*
 class JLAllocator {

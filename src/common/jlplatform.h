@@ -781,7 +781,7 @@ ALWAYS_INLINE uint32_t JLSessionId() {
 	return r ? r : 1; // avoid returning 0
 }
 
-
+/*
 #if defined(XP_WIN)
 static __declspec(naked) __declspec(noinline) size_t JLGetEIP() {
 
@@ -789,7 +789,7 @@ static __declspec(naked) __declspec(noinline) size_t JLGetEIP() {
 	__asm jmp eax;
 }
 #endif
-
+*/
 
 ALWAYS_INLINE size_t JLRemainingStackSize() {
 #if defined(XP_WIN)
