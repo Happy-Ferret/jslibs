@@ -13,6 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+
+#include "../common/jsvalserializer.h"
+
 #include <cstring>
 
 #include "jlhelper.h"
@@ -164,14 +167,14 @@ DEFINE_CONSTRUCTOR() {
 		size_t length;
 		const char *sBuffer;
 		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
-		JL_S_ASSERT( length >= JSVAL_INT_MIN && length <= JSVAL_INT_MAX, "Blob too long." );
+//		JL_S_ASSERT( length >= JSVAL_INT_MIN && length <= JSVAL_INT_MAX, "Blob too long." );
 
 		dBuffer = JS_malloc(cx, length +1);
 		JL_CHK( dBuffer );
 		((char*)dBuffer)[length] = '\0';
 		memcpy(dBuffer, sBuffer, length);
 		JL_SetPrivate(cx, obj, dBuffer);
-		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL((int)length) ) );
+		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(jl::SafeCast<int>(length))) );
 	} else {
 
 		JL_SetPrivate(cx, obj, NULL);
@@ -876,6 +879,7 @@ DEFINE_EQUALITY() {
 			return JS_TRUE;
 		}
 	}
+
 	*bp = JS_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -948,19 +952,19 @@ DEFINE_NEW_RESOLVE() {
 	obj->classword ^= (jsuword)obj->getClass();
 	obj->classword |= (jsuword)strObj->getClass();
 
+//	uint32 emptyShape;
+//	JSScope *scope = JSScope::create(cx, &js_StringObjectOps, strObj->getClass(), obj, emptyShape);
 	//OBJ_SHAPE(obj)
-
 //	obj->map->ops = strObj->map->ops;
 //	memcpy(obj->map, &JSObjectMap(strObj->map->ops, strObj->map->shape), sizeof(JSObjectMap));
-
 //	memcpy(obj->map, strObj->map, sizeof(JSObjectMap)); // ????????????
 //	uint32 emptyShape;
 //	OBJ_SCOPE(strObj->getProto())->getEmptyScopeShape(cx, strObj->getClass(), &emptyShape);
 //	JSScope *scope = JSScope::create(cx, NULL, strObj->getClass(), obj, emptyShape);
 //	obj->map = scope;
-
 //	JL_CHKM( MutateToJSString(cx, obj), "Unable to transform the Blob into a String." );
 //	const char *debug_name = JS_GetStringBytes(JS_ValueToString(cx, id));
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1051,16 +1055,38 @@ DEFINE_XDR() {
 }
 
 
+
 DEFINE_FUNCTION_FAST( _serialize ) {
 
-	*JL_FRVAL = JSVAL_VOID;
-	return JS_TRUE;
+	try {
+
+		size_t length;
+		JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
+		const char *buf;
+		JL_CHK( BlobBuffer(cx, JL_FOBJ, &buf) );
+		jl::Serializer &ser = jl::JsvalToSerializer(JL_FARG(1));
+		ser << jl::SerializerBufferInfo((const void *)buf, length);
+		if ( length > 0 )
+			ser << jl::SerializerObjectProperties(JL_FOBJ);
+		return JS_TRUE;
+	} catch ( JSBool ) {}
+	JL_BAD;
 }
+
 
 DEFINE_FUNCTION_FAST( _unserialize ) {
 
-	*JL_FRVAL = JSVAL_VOID;
-	return JS_TRUE;
+	try {
+
+		jl::SerializerBufferInfo buf;
+		jl::Unserializer &unser = jl::JsvalToUnserializer(JL_FARG(1));
+		unser >> buf;
+		JL_CHK( JL_NewBlobCopyN(cx, buf.Data(), buf.Length(), JL_FRVAL) );
+		if ( JSVAL_IS_OBJECT(*JL_FRVAL) )
+			unser >> jl::SerializerObjectProperties(JSVAL_TO_OBJECT(*JL_FRVAL));
+		return JS_TRUE;
+	} catch ( JSBool ) {}
+	JL_BAD;
 }
 
 
@@ -1089,6 +1115,7 @@ CONFIGURE_CLASS
 	HAS_XDR
 
 	BEGIN_FUNCTION_SPEC
+
 		FUNCTION_FAST(Free)
 		FUNCTION_FAST(concat)
 		FUNCTION_FAST(substr)
@@ -1097,8 +1124,8 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(lastIndexOf)
 		FUNCTION_FAST(charCodeAt)
 		FUNCTION_FAST(charAt)
-		FUNCTION_FAST(toString)
-		FUNCTION_FAST_ALIAS(valueOf, toString)
+//		FUNCTION_FAST(toString)
+//		FUNCTION_FAST_ALIAS(valueOf, toString)
 		FUNCTION_FAST(toSource)
 
 		FUNCTION_FAST(_serialize)

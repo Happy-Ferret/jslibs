@@ -155,7 +155,8 @@ enum {
 	JLID_SPEC( Read ),
 	JLID_SPEC( name ),
 	JLID_SPEC( id ),
-	JLID_SPEC( _Serialize ),
+	JLID_SPEC( _serialize ),
+	JLID_SPEC( _unserialize ),
 	LAST_JSID // see HostPrivate::ids[]
 };
 #undef JLID_SPEC
@@ -578,10 +579,8 @@ ALWAYS_INLINE bool JL_Ending(const JSContext *cx) {
 
 ALWAYS_INLINE bool JL_ObjectIsObject( JSContext *cx, JSObject *obj ) {
 
-	JSObject *proto;
-	if ( js_GetClassPrototype(cx, NULL, JSProto_Object, &proto) )
-		return obj->getProto() == proto;
-	return false;
+	JSObject *oproto;
+	return js_GetClassPrototype(cx, NULL, JSProto_Object, &oproto) && obj->getProto() == oproto;
 }
 
 // eg. JS_NewObject(cx, JL_GetStandardClass(cx, JSProto_TypeError), NULL, NULL);

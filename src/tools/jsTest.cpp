@@ -99,464 +99,106 @@ D SafeConvert(S src) {
 	}
 
 
-
-
-
 #include <../common/jslibsModule.cpp>
 
 
-class JLBufferInfo {
-private:
-	const uint8_t *_data;
-	size_t _length;
+#include <deque>
+
+template <class T>
+class my_allocator {
 public:
-	JLBufferInfo() {};
-	JLBufferInfo( const void *data, size_t count )
-		:_data((const uint8_t *)data), _length(count) {
+
+	typedef size_t    size_type;
+	typedef ptrdiff_t difference_type;
+	typedef T*        pointer;
+	typedef const T*  const_pointer;
+	typedef T&        reference;
+	typedef const T&  const_reference;
+	typedef T         value_type;
+
+	my_allocator() {};
+	my_allocator(const my_allocator&) {}
+
+	inline pointer allocate(size_type n, const void * = 0) {
+
+		T* t = (T*) malloc(n * sizeof(T));
+		return t;
 	}
-	template <class T>
-	JLBufferInfo( const T *data, size_t count )
-		:_data((const uint8_t *)data), _length(sizeof(T)*count) {
-	}
-
-	const uint8_t *Data() const {
-		
-		return _data;
-	}
-
-	size_t Length() const {
-		
-		return _length;
-	}
-};
-
-
-class JLSerializationBuffer {
-
-	uint8_t *_start;
-	uint8_t *_pos;
-	size_t _length;
-
-	void ReserveBytes( size_t length ) {
-
-		size_t offset = _pos - _start;
-		if ( offset + length > _length ) {
-			
-			_length = _length * 2 + length;
-			_start = (uint8_t*)jl_realloc(_start, _length);
-			JL_ASSERT( _start != NULL );
-			_pos = _start + offset;
-		}
-	}
-
-public:
-	~JLSerializationBuffer() {
-		
-		jl_free(_start);
-	}
-
-	JLSerializationBuffer() {
-
-		_length = 4096;
-		_start = (uint8_t*)jl_malloc(_length);
-		JL_ASSERT( _start != NULL );
-		_pos = _start;
-	}
-
-	const uint8_t *Data() const {
+  
+	inline void deallocate(void* p, size_type) {
 	
-		return _start;
+		if (p)
+			free(p);
 	}
 
-	size_t Length() const {
+	inline pointer address(reference x) const { return &x; }
+
+	inline const_pointer address(const_reference x) const { return &x; }
+
+	inline my_allocator<T>& operator=(const my_allocator&) { return *this; }
+
+	inline void construct(pointer p, const T& val) { new ((T*) p) T(val); }
+
+	inline void destroy(pointer p) { p->~T(); }
+
+	inline size_type max_size() const { return size_t(-1); }
+
+	template <class U>
+	struct rebind { typedef my_allocator<U> other; };
+
+	template <class U>
+	inline my_allocator(const my_allocator<U>&) {}
+
+	template <class U>
+	inline my_allocator& operator=(const my_allocator<U>&) { return *this; }
+};
+
 	
-		return _pos - _start;
-	}
+	
+	
+	
+#include "../common/stack.h"	
+	
 
-	JLSerializationBuffer& operator <<( const char *buf ) {
-
-		size_t length = strlen(buf)+1;
-		*this << length;
-		ReserveBytes(length);
-		memcpy(_pos, buf, length);
-		_pos += length;
-		return *this; 
-	}
-
-	JLSerializationBuffer& operator <<( const JLBufferInfo &buf ) {
-
-		*this << buf.Length();
-		ReserveBytes(buf.Length());
-		memcpy(_pos, buf.Data(), buf.Length());
-		_pos += buf.Length();
-		return *this; 
-	}
-
-	template <class T>
-	JLSerializationBuffer& operator <<( const T value ) {
-
-		ReserveBytes(sizeof(T));
-		*(T*)_pos = value;
-		_pos += sizeof(T);
-		return *this;
-	}
-};
-
-
-class JLUnSerializationBuffer {
-
-	const uint8_t *_start;
-	const uint8_t *_pos;
-	size_t _length;
-
-public:
-
-	JLUnSerializationBuffer( const uint8_t *data, size_t length )
-		:_length(length), _start(data), _pos(_start) {
-	}
-
-	bool AssertData( size_t length ) const {
-		
-		return (_pos - _start) + length <= _length;
-	}
-
-	JLUnSerializationBuffer& operator >>( const char *&buf ) {
-
-		size_t length;
-		*this >> length;
-		JL_ASSERT( AssertData(length) );
-		buf = (const char*)_pos;
-		_pos += length;
-		return *this; 
-	}
-
-	JLUnSerializationBuffer& operator >>( JLBufferInfo &buf ) {
-
-		size_t length;
-		*this >> length;
-		JL_ASSERT( AssertData(length) );
-		buf = JLBufferInfo(_pos, length);
-		_pos += length;
-		return *this; 
-	}
-
-	template <class T>
-	JLUnSerializationBuffer& operator >>( T &value ) {
-
-		JL_ASSERT( AssertData(sizeof(T)) );
-		value = *(T*)_pos;
-		_pos += sizeof(T);
-		return *this;
-	}
-};
-
-
-enum JLSerializeType {
-
-	JLTVoid = 0,
-	JLTNull,
-	JLTBool,
-	JLTInt,
-	JLTDouble,
-	JLTString,
-	JLTFunction,
-	JLTArray,
-	JLTObject,
-	JLTObjectValue,
-	JLTCustomObject,
-
-};
-
-
-class JLUnserializer {
-private:
-	JLUnSerializationBuffer buffer;
-
-public:
-	JLUnserializer( const uint8_t *data, size_t length )
-		: buffer(data, length) {
-	}
-
-	JSBool Unserialize( JSContext *cx, jsval &val ) {
-
-		unsigned char type;
-		buffer >> type;
-
-		switch (type) {
-			case JLTVoid:
-				val = JSVAL_VOID;
-				break;
-			case JLTNull:
-				val = JSVAL_NULL;
-				break;
-			case JLTBool: {
-				char b;
-				buffer >> b;
-				val = BOOLEAN_TO_JSVAL(b);
-				break;
-			}
-			case JLTInt: {
-				jsint i;
-				buffer >> i;
-				val = INT_TO_JSVAL(i);
-				break;
-			}
-			case JLTDouble: {
-				jsdouble d;
-				buffer >> d;
-				JL_CHK( JS_NewDoubleValue(cx, d, &val) );
-				break;
-			}
-			case JLTString: {
-				JLBufferInfo buf;
-				buffer >> buf;
-				JSString *jsstr;
-				jsstr = JS_NewUCStringCopyN(cx, (const jschar *)buf.Data(), buf.Length()/2);
-				val = STRING_TO_JSVAL(jsstr);
-				break;
-			}
-			case JLTFunction: {
-				JLBufferInfo buf;
-				buffer >> buf;
-				JSXDRState *xdr;
-				xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
-				JS_XDRMemSetData(xdr, (void*)buf.Data(), buf.Length());
-				JL_CHK( JS_XDRValue(xdr, &val) );
-				JS_XDRMemSetData(xdr, NULL, 0);
-				JS_XDRDestroy(xdr);
-				break;
-			}
-			case JLTArray: {
-
-				jsuint length;
-				buffer >> length;
-				JSObject *arr;
-				arr = JS_NewArrayObject(cx, length, NULL);
-				val = OBJECT_TO_JSVAL(arr);
-
-				jsval tmp;
-				for ( jsuint i = 0; i < length; ++i ) {
-					
-					JL_CHK( Unserialize(cx, tmp) );
-					JL_CHK( JS_SetElement(cx, arr, i, &tmp) );
-				}
-				break;
-			}
-			case JLTObject: {
-
-				jsint length;
-				buffer >> length;
-
-				JSObject *obj = JS_NewObject(cx, NULL, NULL, NULL);
-				val = OBJECT_TO_JSVAL(obj);
-
-				const char *name;
-
-				for ( int i = 0; i < length; ++i ) {
-					
-					buffer >> name;
-					jsval value;
-					JL_CHK( Unserialize(cx, value) );
-					JL_CHK( JS_SetProperty(cx, obj, name, &value) );
-				}
-				break;
-			}
-			case JLTObjectValue: {
-
-				const char *className;
-				buffer >> className;
-				jsval value;
-				JL_CHK( Unserialize(cx, value) );
-				JSObject *scope = JS_GetScopeChain(cx); // JS_GetGlobalForScopeChain
-				jsval prop;
-				JL_CHK( JS_GetProperty(cx, scope, className, &prop) );
-				JSObject *newObj = JS_New(cx, JSVAL_TO_OBJECT(prop), 1, &value);
-				val = OBJECT_TO_JSVAL(newObj);
-				break;
-			}
-			case JLTCustomObject: {
-
-				const char *className;
-				buffer >> className;
-				jsval value;
-				JL_CHK( Unserialize(cx, value) );
-				JSObject *scope = JS_GetScopeChain(cx); // JS_GetGlobalForScopeChain
-				jsval prop;
-				JL_CHK( JS_GetProperty(cx, scope, className, &prop) );
-				JSObject *obj = JSVAL_TO_OBJECT(prop);
-				jsval argv[] = { JSVAL_NULL, value };
-				js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
-
-//				JS_GetMethod(cx, obj->getProto(), "_unserialize", NULL, &fctVal);
-
-				//JL_CHK( JS_CallFunctionName(cx, obj->getProto(), "_unserialize", COUNTOF(argv-1), argv+1, argv) );
-				val = *argv;
-				break;
-			}
-
+  		bool iter1( int &value ) {
+				
+			printf("%d\n", value);
+			return false; // do not cancel iteration
 		}
-
-		return JS_TRUE;
-		JL_BAD;
-	}
-
-};
-
-
-
-
-class JLSerializer {
-private:
-	JLSerializationBuffer buffer;
-
-public:
-
-	JLSerializer()
-		: buffer() {
-	}
-
-	const uint8_t *Data() const {
-		
-		return buffer.Data();
-	}
-
-	size_t Length() const {
-		
-		return buffer.Length();
-	}
-
-	JSBool Serialize( JSContext *cx, jsval val ) {
-
-		unsigned char type;
-		if ( JSVAL_IS_PRIMITIVE(val) ) {
-
-			if ( JSVAL_IS_VOID(val) ) {
-				
-				type = JLTVoid;
-				buffer << type;
-			} else
-			if ( JSVAL_IS_NULL(val) ) {
-				
-				type = JLTNull;
-				buffer << type;
-			} else
-			if ( JSVAL_IS_BOOLEAN(val) ) {
-
-				type = JLTBool;
-				buffer << type << char(JSVAL_TO_BOOLEAN(val));
-			} else
-			if ( JSVAL_IS_INT(val) ) {
-				
-				type = JLTInt;
-				buffer << type << JSVAL_TO_INT(val);
-			} else
-			if ( JSVAL_IS_DOUBLE(val) ) {
-				
-				type = JLTDouble;
-				buffer << type << *JSVAL_TO_DOUBLE(val);
-			} else
-			if ( JSVAL_IS_STRING(val) ) {
-
-				type = JLTString;
-				JSString *jsstr = JSVAL_TO_STRING(val);
-				buffer << type << JLBufferInfo(JS_GetStringChars(jsstr), JS_GetStringLength(jsstr));
-			}
-		} else { // !JSVAL_IS_PRIMITIVE
-
-			JSObject *obj = JSVAL_TO_OBJECT(val);
-
-			if ( JS_IsArrayObject(cx, obj) ) {
-				
-				type = JLTArray;
-				jsuint length;
-				JL_CHK( JS_GetArrayLength(cx, obj, &length) );
-				buffer << type << length;
-
-				jsval elt;
-				for ( jsint i = 0; i < jl::SafeCast<jsint>(length); ++i ) {
-
-					JL_CHK( JS_GetElement(cx, obj, i, &elt) );
-					JL_CHK( Serialize(cx, elt) );
-				}
-			} else
-			if ( JS_ObjectIsFunction(cx, obj) ) {
-				
-				type = JLTFunction;
-				JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
-				JL_CHK( JS_XDRValue(xdr, &val) );
-				uint32 length;
-				void *buf = JS_XDRMemGetData(xdr, &length);
-				JL_ASSERT( buf );
-				buffer << type << JLBufferInfo(buf, length);
-				JS_XDRDestroy(xdr);
-			} else {
-
-				jsval fctVal;
-//				JL_CHK( obj->getProperty(cx, JLID(cx, _Serialize), &fctVal) );
-//				JL_CHK( JS_GetProperty(cx, obj, "_serialize", &fctVal) ); // JS_GetMethod(cx, obj, "_serialize", 
-				JL_CHK( JS_GetMethod(cx, obj, "_serialize", NULL, &fctVal) );
-
-				if ( fctVal != JSVAL_VOID ) {
-					
-					type = JLTCustomObject;
-					JL_ASSERT( JsvalIsFunction(cx, fctVal) );
-					jsval argv[] = { JSVAL_NULL };
-					js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
-					JL_CHK( JS_CallFunctionValue(cx, obj, fctVal, COUNTOF(argv-1), argv+1, argv) );
-//					JSString *jsstr = JS_ValueToString(cx, *argv);
-//					buffer << type << obj->getClass()->name << JLBufferInfo(JS_GetStringBytes(jsstr), JS_GetStringLength(jsstr));
-					buffer << type << obj->getClass()->name;
-					JL_CHK( Serialize(cx, *argv) );
-				} else
-				if ( JL_ObjectIsObject(cx, obj) ) {
-
-					type = JLTObject;
-					buffer << type;
-
-					JSIdArray *idArray = JS_Enumerate(cx, obj);
-					buffer << idArray->length;
-					jsval name, value;
-					for ( int i = 0; i < idArray->length; ++i ) {
-						
-						name = ID_TO_VALUE( idArray->vector[i] ); // JL_CHK( JS_IdToValue(cx, idArray->vector[i], &name) );
-						JSString *jsstr = JSVAL_IS_STRING(name) ? JSVAL_TO_STRING(name) : JS_ValueToString(cx, name);
-						buffer << JS_GetStringBytesZ(cx, jsstr);
-						JL_CHK( obj->getProperty(cx, idArray->vector[i], &value) );
-						JL_CHK( Serialize(cx, value) );
-					}
-					JS_DestroyIdArray(cx, idArray);
-				} else {
-
-					type = JLTObjectValue;
-					buffer << type << obj->getClass()->name;
-					jsval value;
-					JL_CHK( obj->defaultValue(cx, JSTYPE_VOID, &value) );
-					JL_CHK( Serialize(cx, value) );
-				}
-			}
-		}
-		
-		return JS_TRUE;
-		JL_BAD;
-	}
-};
-
-
-void BufferTest() {
-
-
-	JLSerializationBuffer s;
-	s << "test";
-
-	const char *buf;
-
-	JLUnSerializationBuffer u(s.Data(), s.Length());
-	u >> buf;
-}
-
-
-
+	
 int main(int argc, char* argv[]) {
+
+
+	std::deque<int, my_allocator<int>> test;
+
+	test.push_back(10);
+	test.push_back(11);
+	test.push_back(12);
+
+
+	jl::Stack<int> s;
+
+	*++s = 1;
+	*++s = 2;
+	*++s = 3;
+	*++s = 4;
+	*++s = 5;
+
+	s.Revert();
+
+
+	int x;
+
+	x = *s;
+	x = *--s;
+	x = *--s;
+	x = *--s;
+	x = *--s;
+	x = *--s;
+	x = *--s;
+
+
+
 
 /*
 	JLSerializationBuffer ser;

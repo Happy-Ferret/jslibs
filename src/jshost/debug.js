@@ -7,6 +7,21 @@
 
 LoadModule('jsstd');
 
+
+var b = new Blob('test');
+
+Print ( b == new String(''), '\n' );
+Print ( b == false, '\n' );
+
+Print ( b, '\n' );
+
+jslang_test(b);
+
+
+
+throw 0;
+
+
 Test5.prototype = new function() {
 
 	this._serialize = function() {
@@ -29,17 +44,31 @@ var obj5 = new Test5;
 obj5.val = 5566;
 
 
+function Test0( a ) {
+	
+	a++;
+	Print('a:'+a);
+	return a; 
+}
 
-//var v = { a:new Number(0.5), b:['aa', 1.3, [], [[[]]], undefined, null, 0 ], c:0.4, d:(new Array(3)), e:obj5 };
 
-v = new Blob();
-//v = new Test5();
-
+var v = {
+	o:'\u1234\u5678\u9012\u3456\u7890',
+	a:new Number(0.5), b:['aa', 1.3, [], [[[[[[{}]]]]]], undefined, null, 0 ], c:0.4, d:(new Array(3)), e:obj5,
+	f:new Date('1/2/2006'), g:new Blob('123456789'), h:0, i:NaN, j:{},
+	k:-1, l:[1,,3], m:'', n:1/3
+};
+ 
+v = new Blob('');
+//v.test = 123;
+//v = Test0;
 
 var uv = uneval(v);
 var vv = jslang_test(v);
+
 var uvv = uneval(vv);
-_configuration.stdout( uv == uvv, '\n' );
-_configuration.stdout( uneval(v), '\n' );
-_configuration.stdout( uneval(vv), '\n' );
+_configuration.stdout( '\n\n' );
+_configuration.stdout( 'uneval(v) : ', uneval(v), '\n' );
+_configuration.stdout( 'uneval(vv): ', uneval(vv), '\n' );
+_configuration.stdout( 'result : ', uv == uvv, '\n' );
 

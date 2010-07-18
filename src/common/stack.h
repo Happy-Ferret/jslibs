@@ -180,6 +180,157 @@ inline void StackFree( void **stack ) {
       StackPop( stack );
 }
 
+
+
+struct NoAlloc {
+private:
+	void *operator new(size_t size);
+	void *operator new[](size_t size);
+	void operator delete(void *ptr);
+	void operator delete[](void *ptr);
+};
+
+
+struct Alloc {
+	ALWAYS_INLINE void *operator new(size_t size) throw() { 
+		return jl_malloc(size);
+	}
+	ALWAYS_INLINE void *operator new[](size_t size) throw() {
+		return jl_malloc(size);
+	}
+	ALWAYS_INLINE void operator delete(void *ptr) {
+		jl_free(ptr);
+	}
+	ALWAYS_INLINE void operator delete[](void *ptr) {
+		jl_free(ptr);
+	}
+};
+
+
+template <typename T>
+class Stack : public Alloc {
+
+	struct StackItem : Alloc {
+
+		StackItem *prev;
+		T data;
+	};
+
+	StackItem* _top;
+
+public:
+	Stack() : _top(NULL) {
+
+	}
+
+	~Stack() {
+
+		while ( --*this );
+	}
+
+	operator bool() const {
+		
+		return _top != NULL;
+	}
+
+	ALWAYS_INLINE T& operator*() const {
+
+		return _top->data;
+	}
+
+	ALWAYS_INLINE Stack& operator++() { // postfix is: Stack& operator++(int unused) {...}
+
+		StackItem* newItem = new StackItem;
+		newItem->prev = _top;
+		_top = newItem;
+		return *this;
+	}
+
+	ALWAYS_INLINE Stack& operator--() {
+
+		StackItem* oldItem = _top;
+		_top = _top->prev;
+		delete oldItem;
+		return *this;
+	}
+
+	ALWAYS_INLINE size_t Length() const {
+
+		size_t length = 0;
+		for ( StackItem* item = _top; item; item = item->prev )
+			++length;
+		return length;
+	}
+
+	ALWAYS_INLINE bool Has( const T &ref ) const {
+
+		for ( StackItem* item = _top; item; item = item->prev )
+			if ( item->data == ref )
+				return true;
+		return false;
+	}
+
+/*
+	ALWAYS_INLINE void Revert() {
+
+	//for ( void *tmp, *ptr = *stack; *(void**)ptr != NULL; ) {
+
+	//	tmp = *stack;
+	//	*stack = *(void**)ptr;
+	//	*(void**)ptr = *(void**)*stack;
+	//	*(void**)*stack = tmp;
+	//}
+
+
+		StackItem* tmp;
+		StackItem* ptr;
+		
+		ptr = _top->prev;
+
+		while ( ptr->prev ) {
+
+			tmp = _top->prev;
+			_top->prev = ptr->prev;
+			ptr->prev = _top->prev->prev;
+			_top->prev->prev = tmp;
+		}
+	}
+*/
+
+
+	/* ForEach() example:
+
+  		bool iter1( int &value ) {
+				
+			printf("%d\n", value);
+			return false; // do not cancel iteration
+		}
+
+		struct {
+			bool operator()( int &value ) {
+
+				printf("%d\n", value);
+				return false;
+			}
+		} iter2;
+
+		jl::Stack<int> s;
+		s.ForEach( iter1 );
+		s.ForEach( iter2 );
+	*/
+	template <typename P>
+	ALWAYS_INLINE void ForEach( P &pred ) const {
+
+		for ( StackItem* item = _top; item; item = item->prev )
+			if ( pred( item->data ) )
+				return;
+	}
+
+};
+
+
+
 }
+
 
 #endif // _STACK_H_

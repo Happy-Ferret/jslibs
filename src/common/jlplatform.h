@@ -123,6 +123,8 @@
 #error "unsupported char size"
 #endif
 
+#define JL_PAGESIZE 4096
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Platform specific configuration
@@ -789,6 +791,8 @@ static __declspec(naked) __declspec(noinline) size_t JLGetEIP() {
 	__asm jmp eax;
 }
 #endif
+
+see _ReturnAddress()
 */
 
 ALWAYS_INLINE size_t JLRemainingStackSize() {

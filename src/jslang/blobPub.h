@@ -18,6 +18,69 @@
 #include "jlhelper.h"
 
 
+namespace jl {
+
+struct Alloc {
+	ALWAYS_INLINE void *operator new(size_t size) throw() { 
+		return jl_malloc(size);
+	}
+	ALWAYS_INLINE void *operator new[](size_t size) throw() {
+		return jl_malloc(size);
+	}
+	ALWAYS_INLINE void operator delete(void *ptr) {
+		jl_free(ptr);
+	}
+	ALWAYS_INLINE void operator delete[](void *ptr) {
+		jl_free(ptr);
+	}
+};
+
+
+struct Blob : Alloc {
+
+	size_t _size;
+	uint8_t *_data;
+
+	~Blob() {
+
+		jl_free(_data);
+	}
+
+	Blob() {
+
+		_data = NULL;
+	}
+
+	ALWAYS_INLINE void SetSize( size_t size ) {
+
+		_data = static_cast<uint8_t*>(jl_realloc(_data, size));
+	}
+};
+
+/*
+ALWAYS_INLINE JSClass* BlobJSClass( JSContext *cx ) {
+
+//	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+//	if (unlikely( jsClass == NULL ))
+//		jsClass = JL_GetRegistredNativeClass(cx, "Blob");
+//	return jsClass;
+	return JL_GetRegistredNativeClass(cx, "Blob");
+}
+
+
+ALWAYS_INLINE bool JsvalIsBlob( JSContext *cx, jsval val ) {
+
+	return JsvalIsClass(val, BlobJSClass(cx) );
+}
+*/
+
+}
+
+
+
+
+
+
 ALWAYS_INLINE JSClass* BlobJSClass( JSContext *cx ) {
 
 //	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
