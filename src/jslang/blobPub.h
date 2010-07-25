@@ -20,21 +20,6 @@
 
 namespace jl {
 
-struct Alloc {
-	ALWAYS_INLINE void *operator new(size_t size) throw() { 
-		return jl_malloc(size);
-	}
-	ALWAYS_INLINE void *operator new[](size_t size) throw() {
-		return jl_malloc(size);
-	}
-	ALWAYS_INLINE void operator delete(void *ptr) {
-		jl_free(ptr);
-	}
-	ALWAYS_INLINE void operator delete[](void *ptr) {
-		jl_free(ptr);
-	}
-};
-
 
 struct Blob : Alloc {
 

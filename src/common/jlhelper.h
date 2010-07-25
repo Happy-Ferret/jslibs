@@ -2248,6 +2248,170 @@ struct ProcessEvent {
 };
 
 
+
+///////////////////////////////////////////////////////////////////////////////
+// 
+
+
+namespace jl {
+
+	struct _NOVTABLE CppAllocators {
+		ALWAYS_INLINE void* operator new(size_t size) _NOTHROW {
+			return jl_malloc(size);
+		}
+		ALWAYS_INLINE void* operator new[](size_t size) _NOTHROW {
+			return jl_malloc(size);
+		}
+		ALWAYS_INLINE void operator delete(void *ptr, size_t size) {
+			jl_free(ptr);
+		}
+		ALWAYS_INLINE void operator delete[](void *ptr, size_t size) {
+			jl_free(ptr);
+		}
+	};
+
+	struct _NOVTABLE DefaultAlloc {
+		ALWAYS_INLINE void Free(void *ptr) {
+			jl_free(ptr);
+		}
+		ALWAYS_INLINE void* Alloc(size_t size) {
+			return jl_malloc(size);
+		}
+		ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
+			return jl_realloc(ptr, size);
+		}
+	};
+
+	template <const size_t PREALLOC = 0>
+	struct _NOVTABLE PreservAlloc {
+
+		uint8_t *_prealloc;
+		uint8_t *_preallocEnd;
+		void *_last;
+
+		ALWAYS_INLINE PreservAlloc() : _last(NULL), _prealloc(NULL) {
+		}
+
+		ALWAYS_INLINE ~PreservAlloc() {
+			
+			while ( _last != NULL ) {
+
+				void *tmp = _last;
+				_last = *(void**)_last;
+				if ( PREALLOC == 0 || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
+					jl_free(tmp);
+			}
+			if ( PREALLOC > 0 )
+				jl_free(_prealloc);
+		}
+
+		ALWAYS_INLINE void Free(void *ptr) {
+
+			*(void**)ptr = _last;
+			_last = ptr;
+		}
+
+		ALWAYS_INLINE void* Alloc(size_t size) {
+			
+			if ( size < sizeof(void*) )
+				size = sizeof(void*);
+
+			if ( PREALLOC > 0 && _prealloc == NULL ) {
+
+				_prealloc = (uint8_t*)jl_malloc(PREALLOC * size);
+				_preallocEnd = _prealloc + PREALLOC * size;
+				for ( uint8_t *it = _prealloc; it != _preallocEnd; it += size ) {
+
+					*(void**)it = _last;
+					_last = it;
+				}
+			}
+
+			if ( _last != NULL ) {
+
+				void *tmp = _last;
+				_last = *(void**)_last;
+				return tmp;
+			}
+			return jl_malloc(size);
+		}
+
+		ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
+
+			if ( size < sizeof(void*) )
+				size = sizeof(void*);
+			return jl_realloc(ptr, size);
+		}
+	};
+
+
+
+	template <const size_t SIZE = 1024>
+	struct StaticAlloc {
+
+		uint8_t _staticMem[SIZE];
+		uint8_t *_prealloc;
+		uint8_t *_preallocEnd;
+		void *_last;
+
+		ALWAYS_INLINE StaticAlloc() : _last(NULL), _prealloc(NULL) {
+		}
+
+		ALWAYS_INLINE ~StaticAlloc() {
+			
+			while ( _last != NULL ) {
+
+				void *tmp = _last;
+				_last = *(void**)_last;
+				if ( SIZE == 0 || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
+					jl_free(tmp);
+			}
+		}
+
+		ALWAYS_INLINE void Free(void *ptr) {
+
+			*(void**)ptr = _last;
+			_last = ptr;
+		}
+
+		ALWAYS_INLINE void* Alloc(size_t size) {
+			
+			if ( size < sizeof(void*) )
+				size = sizeof(void*);
+
+			if ( SIZE > 0 && _prealloc == NULL ) {
+
+				_prealloc = (uint8_t*)&_staticMem;
+				_preallocEnd = _prealloc + SIZE;
+				for ( uint8_t *it = _prealloc; it < _preallocEnd; it += size ) {
+
+					*(void**)it = _last;
+					_last = it;
+				}
+			}
+
+			if ( _last != NULL ) {
+
+				void *tmp = _last;
+				_last = *(void**)_last;
+				return tmp;
+			}
+			return jl_malloc(size);
+		}
+
+		ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
+
+			if ( size < sizeof(void*) )
+				size = sizeof(void*);
+			return jl_realloc(ptr, size);
+		}
+	};
+
+
+
+}
+
+
 #endif // _JSHELPER_H_
 
 
@@ -2364,3 +2528,4 @@ namespace jl {
 	}
 }
 */
+

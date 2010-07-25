@@ -142,6 +142,7 @@ inline QueueCell *QueueBegin( Queue *queue ) {
 	return queue->begin;
 }
 
+
 inline QueueCell *QueueEnd( Queue *queue ) {
 
 	return queue->end;
@@ -239,6 +240,184 @@ inline QueueCell *SearchFirstData( Queue *queue, void *data ) {
 }
 */
 
+
+template <typename T>
+class Queue1 : public Alloc {
+
+public:
+	struct QueueItem : Alloc {
+
+		QueueItem *prev;
+		QueueItem *next;
+		T data;
+	};
+
+private:
+	QueueItem *_begin;
+	QueueItem *_end;
+
+public:
+
+	Queue1() : _begin(NULL), _end(NULL) {
+	}
+
+	~Queue1() {
+
+		while ( _begin ) {
+		
+			QueueItem *tmp = _begin;
+			_begin = _begin->next;
+			delete tmp;
+		}
+	}
+
+	ALWAYS_INLINE operator bool() const {
+		
+		return _begin != NULL;
+	}
+
+	ALWAYS_INLINE QueueItem* Begin() const {
+
+		return _begin;
+	}
+
+	ALWAYS_INLINE QueueItem* End() const {
+
+		return _end;
+	}
+
+	ALWAYS_INLINE void AddEnd() {
+
+		QueueItem *newItem = new QueueItem;
+		if ( _end != NULL ) {
+
+			newItem->prev = _end;
+			newItem->next = NULL;
+			_end->next = newItem;
+			_end = newItem;
+		} else {
+
+			newItem->prev = NULL;
+			newItem->next = NULL;
+			_begin = newItem;
+			_end = newItem;
+		}
+	}
+
+	ALWAYS_INLINE void RemoveEnd() {
+
+		QueueItem *oldItem = _end;
+		if ( _begin != _end ) { // do we have only one cell ?
+
+			_end = oldItem->prev;
+			_end->next = NULL;
+		} else {
+
+			_begin = NULL;
+			_end = NULL;
+		}
+		delete oldItem;
+	}
+
+	ALWAYS_INLINE void AddBegin() {
+
+		QueueItem *newItem = new QueueItem;
+		if ( _begin != NULL ) {
+
+			newItem->prev = NULL;
+			newItem->next = _begin;
+			_begin->prev = newItem;
+			_begin = newItem;
+		} else {
+
+			newItem->next = NULL;
+			newItem->prev = NULL;
+			_begin = newItem;
+			_end = newItem;
+		}
+	}
+
+	ALWAYS_INLINE void RemoveBegin() {
+
+		QueueItem *oldItem = _begin;
+		if ( _begin != _end ) { // do we have only one cell ?
+
+			_begin = oldItem->next;
+			_begin->prev = NULL;
+		} else {
+
+			_begin = NULL;
+			_end = NULL;
+		}
+		delete oldItem;
+	}
+
+	ALWAYS_INLINE void Remove( QueueItem *item ) {
+
+		if ( item == _begin )
+			return RemoveBegin();
+		if ( item == _end )
+			return RemoveEnd();
+		item->prev->next = item->next;
+		item->next->prev = item->prev;
+		delete item;
+	}
+
+	ALWAYS_INLINE void Insert( QueueItem *nextItem, const T &data ) {
+
+		if ( nextItem == queue->begin ) {
+
+			AddBegin();
+			Begin()->data = data;
+		}
+		
+		QueueItem *newItem = new QueueItem;
+		newItem->data = data;
+		newItem->next = nextItem;
+		newItem->prev = nextItem->prev;
+		nextItem->prev->next = newItem;
+		nextItem->prev = newItem;
+	}
+
+
+	ALWAYS_INLINE QueueItem* Find( const T &data ) const {
+
+		for ( QueueItem *it = _begin; it; it = it->next )
+			if ( it->data == data )
+				return it;
+		return NULL;
+	}
+
+
+	ALWAYS_INLINE void Push( const T &item ) {
+
+		AddEnd();
+		End()->data = item;
+	}
+
+	ALWAYS_INLINE void Pop( T &item ) {
+
+		item = End()->data;
+		RemoveEnd();
+	}
+
+	ALWAYS_INLINE void Unshift( const T &item ) {
+		
+		AddBegin();
+		Begin()->data = item;
+	}
+
+	ALWAYS_INLINE void Shift( T &item ) {
+
+		item = Begin()->data;
+		RemoveBegin();
+	}
+
+};
+
+
+
 }
+
 
 #endif // _QUEUE_H_

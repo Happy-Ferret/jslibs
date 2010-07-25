@@ -101,7 +101,32 @@
 	#pragma warning(error : 4533) // warning C4533: initialization of 'xxx' is skipped by 'goto YYY'
 	#pragma warning(error : 4002) // too many actual parameters for macro 'XXX'
 
-#endif // #if defined WIN32
+	// Using STRICT to Improve Type Checking (http://msdn.microsoft.com/en-us/library/aa280394%28v=VS.60%29.aspx)
+	#define STRICT
+
+	#if !defined(DEBUG)
+		// Don's use secure standard library from VC++
+		#define _SECURE_SCL_THROWS 0
+		#define _SECURE_SCL 0
+		#define _HAS_ITERATOR_DEBUGGING 0
+	#endif // #DEBUG
+
+	#define NOMINMAX
+
+//	#define _CRT_SECURE_NO_DEPRECATE
+//	#define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES 1
+
+	#define _NOTHROW throw()
+	#define _NOVTABLE __declspec(novtable)
+
+#else // _MSC_VER
+
+	#define _NOTHROW
+	#define _NOVTABLE
+
+#endif // _MSC_VER
+
+
 
 #include <limits>
 
@@ -181,8 +206,6 @@
 	#define PATH_SEPARATOR '\\'
 	#define LIST_SEPARATOR_STRING ";"
 	#define LIST_SEPARATOR ';'
-
-	#define __THROW throw()
 
 	#define strcasecmp stricmp
 

@@ -1,11 +1,12 @@
-#define NOMINMAX
+#include "../common/jlhelper.h"
+
 #include <limits>
 
 #define XP_WIN
 #include <jsapi.h>
 #include "jsxdrapi.h"
 
-#include "../common/jlhelper.h"
+
 
 
 JSClass global_class = {
@@ -103,9 +104,10 @@ D SafeConvert(S src) {
 
 
 #include <deque>
+#include <vector>
 
 template <class T>
-class my_allocator {
+class StlAlloc {
 public:
 
 	typedef size_t    size_type;
@@ -116,41 +118,41 @@ public:
 	typedef const T&  const_reference;
 	typedef T         value_type;
 
-	my_allocator() {};
-	my_allocator(const my_allocator&) {}
+	template <class U>
+	struct rebind { typedef StlAlloc<U> other; };
 
-	inline pointer allocate(size_type n, const void * = 0) {
+	ALWAYS_INLINE StlAlloc() {};
+	ALWAYS_INLINE StlAlloc(const StlAlloc&) {}
 
-		T* t = (T*) malloc(n * sizeof(T));
-		return t;
+	ALWAYS_INLINE pointer allocate(size_type n, const void * = 0) {
+
+		printf("* alloc %d\n", n);
+		return (pointer)jl_malloc(n * sizeof(value_type));
 	}
   
-	inline void deallocate(void* p, size_type) {
+	ALWAYS_INLINE void deallocate(void* p, size_type n) {
 	
-		if (p)
-			free(p);
+		printf("* free %d\n", n);
+		jl_free(p);
 	}
 
-	inline pointer address(reference x) const { return &x; }
+	ALWAYS_INLINE pointer address(reference x) const { return &x; }
 
-	inline const_pointer address(const_reference x) const { return &x; }
+	ALWAYS_INLINE const_pointer address(const_reference x) const { return &x; }
 
-	inline my_allocator<T>& operator=(const my_allocator&) { return *this; }
+	ALWAYS_INLINE StlAlloc<T>& operator=(const StlAlloc&) { return *this; }
 
-	inline void construct(pointer p, const T& val) { new ((T*) p) T(val); }
+	ALWAYS_INLINE void construct(pointer p, const T& val) { new ((T*) p) T(val); }
 
-	inline void destroy(pointer p) { p->~T(); }
+	ALWAYS_INLINE void destroy(pointer p) { p->~T(); }
 
-	inline size_type max_size() const { return size_t(-1); }
-
-	template <class U>
-	struct rebind { typedef my_allocator<U> other; };
+	ALWAYS_INLINE size_type max_size() const { return size_t(-1); }
 
 	template <class U>
-	inline my_allocator(const my_allocator<U>&) {}
+	ALWAYS_INLINE StlAlloc(const StlAlloc<U>&) {}
 
 	template <class U>
-	inline my_allocator& operator=(const my_allocator<U>&) { return *this; }
+	ALWAYS_INLINE StlAlloc& operator=(const StlAlloc<U>&) { return *this; }
 };
 
 	
@@ -160,44 +162,101 @@ public:
 #include "../common/stack.h"	
 	
 
-  		bool iter1( int &value ) {
-				
-			printf("%d\n", value);
-			return false; // do not cancel iteration
+	struct abc {
+		int _a, _b, _c;
+		~abc() {
+			printf("destruct\n");
 		}
-	
+		abc(int a, int b, int c) : _a(a), _b(b), _c(c) {
+			printf("construct(...)\n");
+		}
+		abc() {
+			printf("construct()\n");
+		}
+		abc( const abc &src ) : _a(src._a), _b(src._b), _c(src._c) {
+			printf("construct( const& )\n");
+		}
+		abc& operator =( const abc &src ) {
+			_a = src._a;
+			_b = src._b;
+			_c = src._c;
+			printf("copy\n");
+			return *this;
+		}
+		bool operator ==( const abc &src ) {
+			printf("copy\n");
+			return _a == src._a && _b == src._b && _c == src._c;
+		}
+	};
+
+	ALWAYS_INLINE bool iter1( abc &value ) {
+			
+		printf("%d\n", value._a);
+		return false; // do not cancel iteration
+	}
+
+template <class T>
+void* NewBack(T &o) {
+
+	o.push_back(T::value_type());
+	return &o.back();
+}
+
+
+jl::Stack<abc, jl::StaticAlloc<1000>> s;
+
 int main(int argc, char* argv[]) {
 
+/*
+	std::deque<abc> q;
+	//new (&q.at(1)) abc(1,2,3);
 
-	std::deque<int, my_allocator<int>> test;
-
-	test.push_back(10);
-	test.push_back(11);
-	test.push_back(12);
-
-
-	jl::Stack<int> s;
-
-	*++s = 1;
-	*++s = 2;
-	*++s = 3;
-	*++s = 4;
-	*++s = 5;
-
-	s.Revert();
+	q.push_back(abc());
+	new (NewBack(q)) abc(1,2,3);
+*/
 
 
-	int x;
-
-	x = *s;
-	x = *--s;
-	x = *--s;
-	x = *--s;
-	x = *--s;
-	x = *--s;
-	x = *--s;
 
 
+//	int a;
+
+//	jl::Stack<abc, jl::PreservativeAlloc> s;
+
+	(++s)->_c = 3;
+
+	new (++s) abc(1,2,3);
+	
+	++s;
+
+	new (s) abc(4,5,6);
+
+	new (s[0]) abc(7,8,9);
+
+	s->_a;
+	s[2]->_a;
+
+	++s;
+	++s;
+	--s;
+	++s;
+	++s;
+	--s;
+	++s;
+	++s;
+	--s;
+	--s;
+	++s;
+	--s;
+	--s;
+	++s;
+	--s;
+	--s;
+	++s;
+
+
+
+//	jl::Stack<int> *p = new jl::Stack<int>[5];
+//	delete[] p;
 
 
 /*

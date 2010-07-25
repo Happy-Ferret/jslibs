@@ -182,35 +182,10 @@ inline void StackFree( void **stack ) {
 
 
 
-struct NoAlloc {
-private:
-	void *operator new(size_t size);
-	void *operator new[](size_t size);
-	void operator delete(void *ptr);
-	void operator delete[](void *ptr);
-};
+template <class T, class A = DefaultAlloc>
+class Stack : private A {
 
-
-struct Alloc {
-	ALWAYS_INLINE void *operator new(size_t size) throw() { 
-		return jl_malloc(size);
-	}
-	ALWAYS_INLINE void *operator new[](size_t size) throw() {
-		return jl_malloc(size);
-	}
-	ALWAYS_INLINE void operator delete(void *ptr) {
-		jl_free(ptr);
-	}
-	ALWAYS_INLINE void operator delete[](void *ptr) {
-		jl_free(ptr);
-	}
-};
-
-
-template <typename T>
-class Stack : public Alloc {
-
-	struct StackItem : Alloc {
+	struct StackItem {
 
 		StackItem *prev;
 		T data;
@@ -220,17 +195,22 @@ class Stack : public Alloc {
 
 public:
 	Stack() : _top(NULL) {
-
 	}
 
 	~Stack() {
 
-		while ( --*this );
+		while ( *this )
+			--*this;
 	}
 
-	operator bool() const {
+	ALWAYS_INLINE operator bool() const {
 		
 		return _top != NULL;
+	}
+
+	ALWAYS_INLINE operator T*() const {
+
+		return &_top->data;
 	}
 
 	ALWAYS_INLINE T& operator*() const {
@@ -238,9 +218,15 @@ public:
 		return _top->data;
 	}
 
+	ALWAYS_INLINE T* operator->() const {
+
+		return &_top->data;
+	}
+
 	ALWAYS_INLINE Stack& operator++() { // postfix is: Stack& operator++(int unused) {...}
 
-		StackItem* newItem = new StackItem;
+		StackItem *newItem = reinterpret_cast<StackItem*>(Alloc(sizeof(StackItem)));
+		::new (newItem) StackItem;
 		newItem->prev = _top;
 		_top = newItem;
 		return *this;
@@ -250,8 +236,15 @@ public:
 
 		StackItem* oldItem = _top;
 		_top = _top->prev;
-		delete oldItem;
+		oldItem->~StackItem();
+		Free(oldItem);
 		return *this;
+	}
+
+	ALWAYS_INLINE T* operator[]( int i ) const {
+
+		for ( StackItem* item = _top; i; item = item->prev, --i );
+		return &_top->data;
 	}
 
 	ALWAYS_INLINE size_t Length() const {
@@ -270,33 +263,45 @@ public:
 		return false;
 	}
 
-/*
+
+	ALWAYS_INLINE bool Remove( const T &ref ) {
+
+		if ( _top->data == ref ) {
+			
+			StackItem* tmp = _top;
+			_top = _top->prev;
+			tmp->~StackItem();
+			Free(tmp);
+			return true;
+		}
+		for ( StackItem *prev, *item = _top; prev = item->prev; item = prev ) {
+
+			if ( prev->data == ref ) {
+
+				item->prev = prev->prev;
+				prev->~StackItem();
+				Free(prev);
+				return true;
+			}
+		}
+		return false;
+	}
+
+
 	ALWAYS_INLINE void Revert() {
 
-	//for ( void *tmp, *ptr = *stack; *(void**)ptr != NULL; ) {
+		StackItem *tmp;
+		StackItem *next = NULL;
 
-	//	tmp = *stack;
-	//	*stack = *(void**)ptr;
-	//	*(void**)ptr = *(void**)*stack;
-	//	*(void**)*stack = tmp;
-	//}
-
-
-		StackItem* tmp;
-		StackItem* ptr;
-		
-		ptr = _top->prev;
-
-		while ( ptr->prev ) {
+		while ( _top ) {
 
 			tmp = _top->prev;
-			_top->prev = ptr->prev;
-			ptr->prev = _top->prev->prev;
-			_top->prev->prev = tmp;
+			_top->prev = next;
+			next = _top;
+			_top = tmp;
 		}
+		_top = next;
 	}
-*/
-
 
 	/* ForEach() example:
 
@@ -319,11 +324,12 @@ public:
 		s.ForEach( iter2 );
 	*/
 	template <typename P>
-	ALWAYS_INLINE void ForEach( P &pred ) const {
+	ALWAYS_INLINE bool ForEach( const P &pre ) const {
 
 		for ( StackItem* item = _top; item; item = item->prev )
-			if ( pred( item->data ) )
-				return;
+			if ( pre( item->data ) )
+				return true;
+		return false;
 	}
 
 };
