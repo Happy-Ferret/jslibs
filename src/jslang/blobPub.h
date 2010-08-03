@@ -21,7 +21,7 @@
 namespace jl {
 
 
-struct Blob : Alloc {
+struct Blob : CppAllocators {
 
 	size_t _size;
 	uint8_t *_data;

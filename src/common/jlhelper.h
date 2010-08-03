@@ -2255,7 +2255,9 @@ struct ProcessEvent {
 
 namespace jl {
 
-	struct _NOVTABLE CppAllocators {
+
+	class _NOVTABLE CppAllocators {
+	public:
 		ALWAYS_INLINE void* operator new(size_t size) _NOTHROW {
 			return jl_malloc(size);
 		}
@@ -2270,7 +2272,9 @@ namespace jl {
 		}
 	};
 
-	struct _NOVTABLE DefaultAlloc {
+
+	class _NOVTABLE DefaultAlloc {
+	public:
 		ALWAYS_INLINE void Free(void *ptr) {
 			jl_free(ptr);
 		}
@@ -2282,13 +2286,15 @@ namespace jl {
 		}
 	};
 
-	template <const size_t PREALLOC = 0>
-	struct _NOVTABLE PreservAlloc {
 
+	template <const size_t PREALLOC = 0>
+	class _NOVTABLE PreservAlloc : private DefaultAlloc {
+
+		void *_last;
 		uint8_t *_prealloc;
 		uint8_t *_preallocEnd;
-		void *_last;
-
+	
+	public:
 		ALWAYS_INLINE PreservAlloc() : _last(NULL), _prealloc(NULL) {
 		}
 
@@ -2299,10 +2305,10 @@ namespace jl {
 				void *tmp = _last;
 				_last = *(void**)_last;
 				if ( PREALLOC == 0 || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
-					jl_free(tmp);
+					DefaultAlloc::Free(tmp);
 			}
 			if ( PREALLOC > 0 )
-				jl_free(_prealloc);
+				DefaultAlloc::Free(_prealloc);
 		}
 
 		ALWAYS_INLINE void Free(void *ptr) {
@@ -2318,7 +2324,7 @@ namespace jl {
 
 			if ( PREALLOC > 0 && _prealloc == NULL ) {
 
-				_prealloc = (uint8_t*)jl_malloc(PREALLOC * size);
+				_prealloc = (uint8_t*)DefaultAlloc::Alloc(PREALLOC * size);
 				_preallocEnd = _prealloc + PREALLOC * size;
 				for ( uint8_t *it = _prealloc; it != _preallocEnd; it += size ) {
 
@@ -2333,28 +2339,27 @@ namespace jl {
 				_last = *(void**)_last;
 				return tmp;
 			}
-			return jl_malloc(size);
+			return DefaultAlloc::Alloc(size);
 		}
 
 		ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
 
 			if ( size < sizeof(void*) )
 				size = sizeof(void*);
-			return jl_realloc(ptr, size);
+			return DefaultAlloc::Realloc(ptr, size);
 		}
 	};
 
 
-
 	template <const size_t SIZE = 1024>
-	struct StaticAlloc {
+	class _NOVTABLE StaticAlloc : private DefaultAlloc {
 
-		uint8_t _staticMem[SIZE];
-		uint8_t *_prealloc;
-		uint8_t *_preallocEnd;
 		void *_last;
+		uint8_t _prealloc[SIZE+4];
+		uint8_t *_preallocEnd;
 
-		ALWAYS_INLINE StaticAlloc() : _last(NULL), _prealloc(NULL) {
+	public:
+		ALWAYS_INLINE StaticAlloc() : _last(NULL), _preallocEnd(NULL) {
 		}
 
 		ALWAYS_INLINE ~StaticAlloc() {
@@ -2363,8 +2368,8 @@ namespace jl {
 
 				void *tmp = _last;
 				_last = *(void**)_last;
-				if ( SIZE == 0 || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
-					jl_free(tmp);
+				if ( _preallocEnd == 0 || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
+					DefaultAlloc::Free(tmp);
 			}
 		}
 
@@ -2379,35 +2384,31 @@ namespace jl {
 			if ( size < sizeof(void*) )
 				size = sizeof(void*);
 
-			if ( SIZE > 0 && _prealloc == NULL ) {
+			if ( SIZE > 0 && _preallocEnd == NULL ) {
 
-				_prealloc = (uint8_t*)&_staticMem;
-				_preallocEnd = _prealloc + SIZE;
+				_preallocEnd = _prealloc + (sizeof(_prealloc)/size)*size; // cut
 				for ( uint8_t *it = _prealloc; it < _preallocEnd; it += size ) {
 
 					*(void**)it = _last;
 					_last = it;
 				}
 			}
-
 			if ( _last != NULL ) {
 
 				void *tmp = _last;
 				_last = *(void**)_last;
 				return tmp;
 			}
-			return jl_malloc(size);
+			return DefaultAlloc::Alloc(size);
 		}
 
 		ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
 
 			if ( size < sizeof(void*) )
 				size = sizeof(void*);
-			return jl_realloc(ptr, size);
+			return DefaultAlloc::Realloc(ptr, size);
 		}
 	};
-
-
 
 }
 
