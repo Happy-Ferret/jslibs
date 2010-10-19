@@ -316,7 +316,7 @@ namespace jl {
 
 	public:
 		Unserializer( JSContext *cx, const void *data, size_t length )
-		: cx(cx), _start((const uint8_t *)data), _length(length), _pos(_start) {
+		: cx(cx), _start((const uint8_t *)data), _pos(_start), _length(length) {
 		}
 
 		Unserializer& operator >>( const char *&buf ) {

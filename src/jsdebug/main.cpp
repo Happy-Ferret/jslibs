@@ -311,5 +311,5 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	jl_free(GetModulePrivate(cx, _moduleId));
 
 	return JS_TRUE;
-	JL_BAD;
+//	JL_BAD;
 }

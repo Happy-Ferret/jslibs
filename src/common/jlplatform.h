@@ -16,6 +16,31 @@
 #define _JLPLATFORM_H_
 
 ///////////////////////////////////////////////////////////////////////////////
+// 
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Miscellaneous
+
+#define J__STRINGIFY(x) #x
+#define J__TOSTRING(x) J__STRINGIFY(x)
+
+#define JL_MACRO_BEGIN do {
+#define JL_MACRO_END } while(0)
+
+#define __DATE__YEAR ((((__DATE__ [7] - '0') * 10 + (__DATE__ [8] - '0')) * 10 + (__DATE__ [9] - '0')) * 10 + (__DATE__ [10] - '0'))
+#define __DATE__MONTH (__DATE__ [2] == 'n' ? (__DATE__ [1] == 'a' ? 0 : 5) : __DATE__ [2] == 'l' ? 6 : __DATE__ [2] == 'g' ? 7 : __DATE__ [2] == 'p' ? 8 : __DATE__ [2] == 't' ? 9 : __DATE__ [2] == 'v' ? 10 : 11)
+#define __DATE__DAY ((__DATE__ [4] == ' ' ? 0 : __DATE__ [4] - '0') * 10 + (__DATE__ [5] - '0'))
+#define __DATE__HOUR (((__TIME__[0]-'0')*10) + (__TIME__[1]-'0'))
+#define __DATE__MINUTE (((__TIME__[3]-'0')*10) + (__TIME__[4]-'0'))
+#define __DATE__SECOND (((__TIME__[6]-'0')*10) + (__TIME__[7]-'0'))
+
+#define JL_BUILD ( (((__DATE__YEAR * 12 + __DATE__MONTH) * 31 + __DATE__DAY) * 24 + __DATE__HOUR) - (((2006*12 + 6)*31 + 22)*24 + 0) ) // - Aug 22, 2006
+
+#define JL_CODE_LOCATION __FILE__ ":" J__TOSTRING(__LINE__)
+
+
+///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
 
 #if defined(__cplusplus)
@@ -52,13 +77,13 @@
 // # pragma GCC diagnostic ignored "-Wunused-parameter"  / Ignore Warning about unused function parameter */
 #pragma GCC diagnostic error "-Wdiv-by-zero"
 
-#if defined(HAVE_GCCVISIBILITYPATCH)
-		#define DLLEXPORT __attribute__ ((visibility("default")))
-		#define DLLLOCAL __attribute__ ((visibility("hidden")))
-	#else
+//	#if defined(HAVE_GCCVISIBILITYPATCH)
+//		#define DLLEXPORT __attribute__ ((visibility("default")))
+//		#define DLLLOCAL __attribute__ ((visibility("hidden")))
+//	#else
 		#define DLLEXPORT
 		#define DLLLOCAL
-	#endif
+//	#endif
 
 	#if defined(__i386__) && ((__GNUC__ >= 4) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4))
 		#define FASTCALL __attribute__((fastcall))
@@ -296,23 +321,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
-
-#define JL_MACRO_BEGIN do {
-#define JL_MACRO_END } while(0)
-
-#define JL__STRINGIFY(x) #x
-#define JL__TOSTRING(x) JL__STRINGIFY(x)
-
-#define JL_CODE_LOCATION __FILE__ ":" JL__TOSTRING(__LINE__)
-
-#define __DATE__YEAR ((((__DATE__ [7] - '0') * 10 + (__DATE__ [8] - '0')) * 10 + (__DATE__ [9] - '0')) * 10 + (__DATE__ [10] - '0'))
-#define __DATE__MONTH (__DATE__ [2] == 'n' ? (__DATE__ [1] == 'a' ? 0 : 5) : __DATE__ [2] == 'l' ? 6 : __DATE__ [2] == 'g' ? 7 : __DATE__ [2] == 'p' ? 8 : __DATE__ [2] == 't' ? 9 : __DATE__ [2] == 'v' ? 10 : 11)
-#define __DATE__DAY ((__DATE__ [4] == ' ' ? 0 : __DATE__ [4] - '0') * 10 + (__DATE__ [5] - '0'))
-#define __DATE__HOUR (((__TIME__[0]-'0')*10) + (__TIME__[1]-'0'))
-#define __DATE__MINUTE (((__TIME__[3]-'0')*10) + (__TIME__[4]-'0'))
-#define __DATE__SECOND (((__TIME__[6]-'0')*10) + (__TIME__[7]-'0'))
-
-#define JL_BUILD ( (((__DATE__YEAR * 12 + __DATE__MONTH) * 31 + __DATE__DAY) * 24 + __DATE__HOUR) - (((2006*12 + 6)*31 + 22)*24 + 0) ) // - Aug 22, 2006
 
 
 template<class T>
@@ -714,7 +722,7 @@ ALWAYS_INLINE void Network64ToHost64( void *pval ) {
 ALWAYS_INLINE char* IntegerToString(int val, int base) {
 
 	bool neg;
-	char buf[64]; // (TBD) overflow warning !
+	static char buf[64]; // (TBD) overflow warning !
 	buf[63] = '\0';
 	if ( val < 0 ) {
 
@@ -1974,6 +1982,7 @@ ALWAYS_INLINE JLTLSKey JLTLSAllocKey() {
 	key++;
 #elif defined(XP_UNIX)
 	int st = pthread_key_create(&key, NULL);
+	JL_UNUSED( st );
 	JL_ASSERT( st == 0 );
 #endif
 	return key;

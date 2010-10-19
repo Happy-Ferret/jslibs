@@ -49,7 +49,7 @@ inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
 inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 
 extern bool _unsafeMode;
-extern uint32_t _moduleId;
+//extern uint32_t _moduleId;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -647,9 +647,10 @@ ALWAYS_INLINE bool JsvalIsArray( JSContext *cx, jsval val ) {
 	return !JSVAL_IS_PRIMITIVE(val) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(val));
 }
 
-
-//#define JL_VALUE_IS_STRING_OBJECT(cx, val) \
-//	(!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass)
+/*
+#define JL_VALUE_IS_STRING_OBJECT(cx, val) \
+	(!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass)
+*/
 ALWAYS_INLINE bool JsvalIsStringObject( const JSContext *cx, jsval val ) {
 	
 	return (!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass);
@@ -1328,9 +1329,9 @@ ALWAYS_INLINE JSBool SizeToJsval( JSContext *cx, size_t size, jsval *val ) {
 	}
 	return JS_NewNumberValue(cx, size, val);
 
-bad:
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "size" );
-	return JS_FALSE;
+//bad:
+//	JL_REPORT_WARNING_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "size" );
+//	return JS_FALSE;
 }
 
 

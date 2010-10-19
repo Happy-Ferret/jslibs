@@ -80,7 +80,7 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	jl_free(mpv);
 
 	return JS_TRUE;
-	JL_BAD;
+//	JL_BAD;
 }
 
 EXTERN_C DLLEXPORT void ModuleFree() {

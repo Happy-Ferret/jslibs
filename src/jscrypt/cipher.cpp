@@ -257,6 +257,8 @@ DEFINE_CONSTRUCTOR() {
 			err = f8_start( cipherIndex, (unsigned char *)IV, (unsigned char *)key, (int)keyLength, (unsigned char *)optarg, (int)optargLength, numRounds, (symmetric_F8 *)pv->symmetric_XXX );
 			break;
 		}
+		default:
+			JL_REPORT_ERROR("Invalid mode %u", mode);
 	}
 
 	if (err != CRYPT_OK) {
@@ -330,6 +332,8 @@ DEFINE_FUNCTION( Encrypt ) {
 		case mode_f8:
 			err = f8_encrypt( (const unsigned char *)pt, (unsigned char *)ct, (unsigned long)ptLength, (symmetric_F8 *)pv->symmetric_XXX );
 			break;
+		default:
+			JL_REPORT_ERROR("Invalid mode %u", pv->mode);
 	}
 
 	if (err != CRYPT_OK)
@@ -386,6 +390,8 @@ DEFINE_FUNCTION( Decrypt ) {
 		case mode_f8:
 			err = f8_decrypt( (const unsigned char *)ct, (unsigned char *)pt, (unsigned long)ctLength, (symmetric_F8 *)pv->symmetric_XXX );
 			break;
+		default:
+			JL_REPORT_ERROR("Invalid mode %u", pv->mode);
 	}
 
 	if (err != CRYPT_OK)
@@ -526,6 +532,8 @@ DEFINE_PROPERTY( IVSetter ) {
 				return ThrowCryptError(cx, err);
 			break;
 		}
+		default:
+			JL_REPORT_ERROR("Invalid mode %u", pv->mode);
 	}
 
 	return JS_TRUE;
@@ -596,6 +604,8 @@ DEFINE_PROPERTY( IVGetter ) {
 			err = f8_getiv( (unsigned char *)IV, &IVLength, tmp );
 			break;
 		}
+		default:
+			JL_REPORT_ERROR("Invalid mode %u", pv->mode);
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);

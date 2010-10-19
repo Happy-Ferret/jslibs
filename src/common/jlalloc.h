@@ -50,9 +50,9 @@ extern jl_free_t jl_free;
 	(unlikely( (size) > JL_MALLOCA_THRESHOLD ) ? jl_malloc(size) : alloca(size));
 
 #define jl_freea(ptr, size) \
-JL_MACRO_BEGIN \
-	if (unlikely( (size) > JL_MALLOCA_THRESHOLD )) \
+	if (unlikely( (size) > JL_MALLOCA_THRESHOLD )) { \
 		jl_free(ptr); \
-JL_MACRO_END
+	}
 
 #endif // _JLALLOC_H_
+

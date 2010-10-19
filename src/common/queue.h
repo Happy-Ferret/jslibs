@@ -241,7 +241,7 @@ inline QueueCell *SearchFirstData( Queue *queue, void *data ) {
 */
 
 
-template <typename T>
+template <typename T, typename Alloc>
 class Queue1 : public Alloc {
 
 public:
@@ -365,7 +365,7 @@ public:
 
 	ALWAYS_INLINE void Insert( QueueItem *nextItem, const T &data ) {
 
-		if ( nextItem == queue->begin ) {
+		if ( nextItem == Begin() ) {
 
 			AddBegin();
 			Begin()->data = data;

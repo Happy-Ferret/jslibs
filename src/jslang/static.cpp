@@ -165,7 +165,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	uintN i;
 	for ( i = 0; i < argc; ++i ) {
 
-		JL_S_ASSERT( IsHandleType(cx, JL_ARGV[i], 'pev'), "Invalid event handle." );
+		JL_S_ASSERT( IsHandleType(cx, JL_ARGV[i], JL_CAST_CSTR_TO_UINT32("pev")), "Invalid event handle." );
 		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, JL_ARGV[i]);
 		JL_S_ASSERT_RESOURCE( pe );
 		JL_ASSERT( pe->startWait );
@@ -328,7 +328,7 @@ DEFINE_FUNCTION_FAST( TimeoutEvents ) {
 		JL_S_ASSERT_FUNCTION( JL_FARG(2) );
 
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, 'pev', sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( CreateHandle(cx, JL_CAST_CSTR_TO_UINT32("pev"), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
 	upe->pe.startWait = TimeoutStartWait;
 	upe->pe.cancelWait = TimeoutCancelWait;
 	upe->pe.endWait = TimeoutEndWait;
@@ -375,7 +375,8 @@ DEFINE_FUNCTION( jslang_test ) {
 
 		return JS_TRUE;
 	} catch ( JSBool ) {}
-	JL_BAD;
+	return JS_TRUE;
+//	JL_BAD;
 }
 
 

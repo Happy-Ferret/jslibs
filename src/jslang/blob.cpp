@@ -340,7 +340,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 	else if ( !JsvalToSize(cx, arg1, &start) )
 		start = 0;
 
-	if ( start >= (signed)dataLength ) {
+	if ( start >= dataLength ) {
 
 		*JL_FRVAL = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
@@ -349,7 +349,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 	if ( start < 0 )
 		start = dataLength + start;
 
-	if ( start < 0 || start >= (int)dataLength )
+	if ( start < 0 || start >= dataLength )
 		start = 0;
 
 	// now 0 <= start < dataLength
@@ -371,7 +371,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 			return JS_TRUE;
 		}
 
-		if ( start + length > (int)dataLength )
+		if ( start + length > dataLength )
 			length = dataLength - start;
 
 	} else
@@ -1082,8 +1082,11 @@ DEFINE_FUNCTION_FAST( _unserialize ) {
 		jl::Unserializer &unser = jl::JsvalToUnserializer(JL_FARG(1));
 		unser >> buf;
 		JL_CHK( JL_NewBlobCopyN(cx, buf.Data(), buf.Length(), JL_FRVAL) );
-		if ( JSVAL_IS_OBJECT(*JL_FRVAL) )
-			unser >> jl::SerializerObjectProperties(JSVAL_TO_OBJECT(*JL_FRVAL));
+		if ( JSVAL_IS_OBJECT(*JL_FRVAL) ) {
+			
+			jl::SerializerObjectProperties objProp(JSVAL_TO_OBJECT(*JL_FRVAL));
+			unser >> objProp; //jl::SerializerObjectProperties(JSVAL_TO_OBJECT(*JL_FRVAL));
+		}
 		return JS_TRUE;
 	} catch ( JSBool ) {}
 	JL_BAD;

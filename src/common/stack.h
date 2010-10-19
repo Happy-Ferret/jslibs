@@ -225,7 +225,7 @@ public:
 
 	ALWAYS_INLINE Stack& operator++() { // postfix is: Stack& operator++(int unused) {...}
 
-		StackItem *newItem = reinterpret_cast<StackItem*>(Alloc(sizeof(StackItem)));
+		StackItem *newItem = reinterpret_cast<StackItem*>(A(sizeof(StackItem)));
 		::new (newItem) StackItem;
 		newItem->prev = _top;
 		_top = newItem;

@@ -15,6 +15,7 @@
 #include "stdafx.h"
 
 #include "jsdebug.h"
+#include "jslibsModule.h"
 
 #ifdef VALGRIND
 #include "/usr/include/valgrind/valgrind.h"
@@ -293,10 +294,10 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 	}
 
 	if ( status == JSGC_BEGIN )
-		fprintf( dumpFile, "%s - gcByte:%u gcMallocBytes:%u ... ", timeTmp, cx->runtime->gcBytes, cx->runtime->gcMallocBytes );
+		fprintf( dumpFile, "%s - gcByte:%lu gcMallocBytes:%lu ... ", timeTmp, cx->runtime->gcBytes, cx->runtime->gcMallocBytes );
 
 	if ( status == JSGC_END )
-		fprintf( dumpFile, "gcByte:%u gcMallocBytes:%u  \n", cx->runtime->gcBytes, cx->runtime->gcMallocBytes );
+		fprintf( dumpFile, "gcByte:%lu gcMallocBytes:%lu  \n", cx->runtime->gcBytes, cx->runtime->gcMallocBytes );
 
 	if ( dumpFile != stdout )
 		fclose(dumpFile);
@@ -1484,7 +1485,7 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 
 #endif // DEBUG
 
-	JL_BAD;
+//	JL_BAD;
 }
 
 

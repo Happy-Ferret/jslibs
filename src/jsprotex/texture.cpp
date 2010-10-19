@@ -1403,6 +1403,7 @@ DEFINE_FUNCTION_FAST( Desaturate ) {
 //			case desaturateLuminosity: // see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimprgb.h?revision=19720&view=markup
 //				break;
 			default:
+				val = 0;
 				JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
 		}
 		*dPos = val;
@@ -2090,6 +2091,10 @@ DEFINE_FUNCTION_FAST( Resize ) {
 
 					case borderClamp:
 						// (TBD)
+						pos1 = 0;
+						pos2 = 0;
+						pos3 = 0;
+						pos4 = 0;
 						break;
 					case borderWrap:
 						pos1 = (  ((spx + 0)        ) + ((spy + 0)         ) * width  ) * channels;
@@ -2099,11 +2104,23 @@ DEFINE_FUNCTION_FAST( Resize ) {
 						break;
 					case borderMirror:
 						// (TBD)
+						pos1 = 0;
+						pos2 = 0;
+						pos3 = 0;
+						pos4 = 0;
 						break;
 					case borderValue:
 						// (TBD)
+						pos1 = 0;
+						pos2 = 0;
+						pos3 = 0;
+						pos4 = 0;
 						break;
 					default:
+						pos1 = 0;
+						pos2 = 0;
+						pos3 = 0;
+						pos4 = 0;
 						JL_REPORT_ERROR( "Invalid border mode." );
 				}
 

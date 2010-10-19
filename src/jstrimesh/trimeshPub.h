@@ -20,13 +20,13 @@
 
 struct Surface {
 
-	int vertexCount;
+	unsigned int vertexCount;
 	SURFACE_REAL_TYPE *vertex; // x,y,z,...
 	SURFACE_REAL_TYPE *normal; // x,y,z,... 
 	SURFACE_REAL_TYPE *textureCoordinate; // s,t,r,...
 	SURFACE_REAL_TYPE *color; // r,g,b,a,...
 
-	int indexCount;
+	unsigned int indexCount;
 	SURFACE_INDEX_TYPE *index;
 };
 

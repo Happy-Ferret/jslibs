@@ -19,6 +19,7 @@
 #endif
 
 #include "jsio.h"
+#include "jslibsModule.h"
 
 #include "static.h"
 
@@ -319,7 +320,7 @@ DEFINE_FUNCTION_FAST( IOEvents ) {
 	fdArrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
 
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, 'pev', sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( CreateHandle(cx, JL_CAST_CSTR_TO_UINT32("pev"), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
 	upe->pe.startWait = IOStartWait;
 	upe->pe.cancelWait = IOCancelWait;
 	upe->pe.endWait = IOEndWait;
