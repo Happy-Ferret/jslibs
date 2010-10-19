@@ -16,6 +16,8 @@
 
 #include "../host/host.h"
 
+#include "../common/jsvalserializer.h"
+
 #include "../jslang/handlePub.h"
 
 #include "buffer.h"
@@ -24,13 +26,14 @@
 
 using namespace jl;
 
-struct TaskPrivate {
+struct TaskPrivate : CppAllocators {
 
 	JLMutexHandler mutex;
 	JLThreadHandler threadHandle;
 	bool end;
 
-	Serialized serializedCode;
+//	Serialized serializedCode;
+	jl::Serializer serializedCode;
 
 	JLSemaphoreHandler requestSem;
 	jl::Queue requestList;
@@ -84,7 +87,8 @@ BEGIN_CLASS( Task )
 
 DEFINE_FINALIZE() {
 
-	TaskPrivate *pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
+//	TaskPrivate *pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
+	TaskPrivate *pv = new TaskPrivate;
 	if ( !pv )
 		return;
 
@@ -125,8 +129,12 @@ static JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 	js::AutoArrayRooter tvr(cx, COUNTOF(argv), argv);
 
 	// no need to mutex this because this and the constructor are the only places that access pv->serializedCode.
-	JL_CHK( UnserializeJsval(cx, &pv->serializedCode, &argv[0]) );
-	SerializerFree(&pv->serializedCode);
+	//JL_CHK( UnserializeJsval(cx, &pv->serializedCode, &argv[0]) );
+	//SerializerFree(&pv->serializedCode);
+
+	jl::Unserializer(cx, pv->serializedCode) >> argv[0];
+	pv->serializedCode.Free();
+
 
 	JSFunction *fun;
 	fun = JS_ValueToFunction(cx, argv[0]);
@@ -363,8 +371,9 @@ DEFINE_CONSTRUCTOR() {
 
 	QueueInitialize(&pv->exceptionList);
 
-	SerializerCreate(&pv->serializedCode);
-	JL_CHK( SerializeJsval(cx, &pv->serializedCode, &JL_ARG(1)));
+//	SerializerCreate(&pv->serializedCode);
+//	JL_CHK( SerializeJsval(cx, &pv->serializedCode, &JL_ARG(1)));
+	pv->serializedCode << JL_ARG(1);
 
 	pv->threadHandle = JLThreadStart(TaskThreadProc, pv);
 	JL_CHKM( JLThreadOk(pv->threadHandle), "Unable to create the thread." );

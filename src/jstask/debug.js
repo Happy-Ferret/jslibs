@@ -3,6 +3,20 @@
 LoadModule('jstask');
 LoadModule('jsstd');
 
+	var t = new Task(function(){
+	
+		LoadModule('jsstd');
+
+		return new Blob();
+	});
+	t.Request();
+	t.Response();
+
+
+Halt();
+
+
+
 var t = new Task(function(data, idx){
 	
 	idx || LoadModule('jsstd');
@@ -24,6 +38,10 @@ while (!endSignal)
 
 
 Halt();
+
+
+
+
 
 LoadModule('jsio');
 

@@ -184,6 +184,7 @@ ALWAYS_INLINE void SetContextPrivate( const JSContext *cx, JLContextPrivate *Con
 ///////////////////////////////////////////////////////////////////////////////
 // Host private
 
+// Using a separate file allow a better versioning of the HostPrivate structure (see JL_HOST_PRIVATE_VERSION).
 #include <jlhostprivate.h>
 
 ALWAYS_INLINE HostPrivate* GetHostPrivate( const JSContext *cx ) {
@@ -2267,9 +2268,11 @@ namespace jl {
 		}
 		ALWAYS_INLINE void operator delete(void *ptr, size_t size) {
 			jl_free(ptr);
+			JL_UNUSED(size);
 		}
 		ALWAYS_INLINE void operator delete[](void *ptr, size_t size) {
 			jl_free(ptr);
+			JL_UNUSED(size);
 		}
 	};
 
@@ -2352,15 +2355,24 @@ namespace jl {
 	};
 
 
-	template <const size_t SIZE = 1024>
+	template <const size_t PREALLOC_SIZE = 1024>
 	class _NOVTABLE StaticAlloc : private DefaultAlloc {
 
+
 		void *_last;
-		uint8_t _prealloc[SIZE+4];
 		uint8_t *_preallocEnd;
+
+		uint8_t _prealloc[PREALLOC_SIZE];
+#ifdef DEBUG
+		size_t _dbg_size;
+#endif
 
 	public:
 		ALWAYS_INLINE StaticAlloc() : _last(NULL), _preallocEnd(NULL) {
+
+#ifdef DEBUG
+			_dbg_size = 0;
+#endif
 		}
 
 		ALWAYS_INLINE ~StaticAlloc() {
@@ -2369,7 +2381,7 @@ namespace jl {
 
 				void *tmp = _last;
 				_last = *(void**)_last;
-				if ( _preallocEnd == 0 || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
+				if ( _preallocEnd == NULL || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
 					DefaultAlloc::Free(tmp);
 			}
 		}
@@ -2382,12 +2394,21 @@ namespace jl {
 
 		ALWAYS_INLINE void* Alloc(size_t size) {
 			
+#ifdef DEBUG
+			JL_ASSERT( size != 0 );
+			if ( _dbg_size == 0 )
+				_dbg_size = size;
+			JL_ASSERT( size == _dbg_size );
+#endif
+
 			if ( size < sizeof(void*) )
 				size = sizeof(void*);
 
-			if ( SIZE > 0 && _preallocEnd == NULL ) {
 
-				_preallocEnd = _prealloc + (sizeof(_prealloc)/size)*size; // cut
+			if ( _preallocEnd == NULL ) {
+
+
+				_preallocEnd = _prealloc + (sizeof(_prealloc)/size)*size;
 				for ( uint8_t *it = _prealloc; it < _preallocEnd; it += size ) {
 
 					*(void**)it = _last;
@@ -2400,6 +2421,7 @@ namespace jl {
 				_last = *(void**)_last;
 				return tmp;
 			}
+
 			return DefaultAlloc::Alloc(size);
 		}
 
@@ -2407,6 +2429,7 @@ namespace jl {
 
 			if ( size < sizeof(void*) )
 				size = sizeof(void*);
+
 			return DefaultAlloc::Realloc(ptr, size);
 		}
 	};

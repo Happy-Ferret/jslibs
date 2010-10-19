@@ -16,6 +16,7 @@
 
 #include "jsdebug.h"
 #include "jslibsModule.h"
+#include "jslibsModule.h"
 
 #ifdef VALGRIND
 #include "/usr/include/valgrind/valgrind.h"

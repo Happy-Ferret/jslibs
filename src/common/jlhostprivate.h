@@ -21,6 +21,7 @@ typedef char JLClassName[20];
 
 struct JLClassNameHash {
 	JLClassName name;
+//	JSClass *jsclass;
 	void *data;
 };
 
@@ -46,7 +47,7 @@ struct HostPrivate {
 	jl_allocators_t alloc;
 	int camelCase;
 	jsid ids[LAST_JSID];
-	JLClassNameHash classNameHash[1<<9];
+	JLClassNameHash classNameHash[1<<9]; // does not support more than 512 classes.
 };
 
 JL_STATIC_ASSERT( offsetof(HostPrivate, unsafeMode) == 0 ); // check this because JL_S_ASSERT macro must be usable before hostPrivateVersion is tested.

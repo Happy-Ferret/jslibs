@@ -10,6 +10,10 @@ LoadModule('jsstd');
 
 var b = new Blob('test');
 
+
+b.match();
+
+
 Print ( b == new String(''), '\n' );
 Print ( b == false, '\n' );
 

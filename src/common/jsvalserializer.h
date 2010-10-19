@@ -29,12 +29,12 @@ namespace jl {
 		SerializerBufferInfo( const T *data, size_t count ) : _data(static_cast<const void *>(data)), _length(sizeof(T)*count) {}
 
 		const void * Data() const {
-			
+
 			return _data;
 		}
 
 		size_t Length() const {
-			
+
 			return _length;
 		}
 	};
@@ -47,7 +47,7 @@ namespace jl {
 		SerializerObjectProperties( JSObject *obj ) : _obj(obj) {}
 
 		operator JSObject*() const {
-			
+
 			return _obj;
 		}
 	};
@@ -82,7 +82,7 @@ namespace jl {
 
 			size_t offset = _pos - _start;
 			if ( offset + length > _length ) {
-				
+
 				_length = _length * 2 + length;
 				_start = (uint8_t*)jl_realloc(_start, _length); // if ( _start == NULL ) jl_alloc(_length)
 				JL_ASSERT( _start != NULL );
@@ -90,12 +90,13 @@ namespace jl {
 			}
 		}
 
+		Serializer();
 		Serializer( const Serializer & );
 
 	public:
 
 		~Serializer() {
-		
+
 			jl_free(_start);
 		}
 
@@ -104,13 +105,21 @@ namespace jl {
 			PrepareBytes(JL_PAGESIZE);
 		}
 
+		void Free() {
+
+			jl_free(_start);
+			_start = NULL;
+			_pos = NULL;
+			_length = 0;
+		}
+
 		const void * Data() const {
-		
+
 			return _start;
 		}
 
 		size_t Length() const {
-		
+
 			return _pos - _start;
 		}
 
@@ -121,7 +130,7 @@ namespace jl {
 			PrepareBytes(length);
 			memcpy(_pos, buf, length);
 			_pos += length;
-			return *this; 
+			return *this;
 		}
 
 		Serializer& operator <<( const SerializerBufferInfo &buf ) {
@@ -133,7 +142,7 @@ namespace jl {
 				memcpy(_pos, buf.Data(), buf.Length());
 				_pos += buf.Length();
 			}
-			return *this; 
+			return *this;
 		}
 
 		Serializer& operator <<( const SerializerObjectProperties &sop ) {
@@ -144,7 +153,7 @@ namespace jl {
 			*this << idArray->length;
 			jsval name, value;
 			for ( int i = 0; i < idArray->length; ++i ) {
-				
+
 				name = ID_TO_VALUE( idArray->vector[i] ); // JL_CHK( JS_IdToValue(cx, idArray->vector[i], &name) );
 				JSString *jsstr = JSVAL_IS_STRING(name) ? JSVAL_TO_STRING(name) : JS_ValueToString(cx, name);
 				*this << JS_GetStringBytesZ(cx, jsstr);
@@ -162,8 +171,12 @@ namespace jl {
 			char type;
 			if ( JSVAL_IS_PRIMITIVE(val) ) {
 
+//				switch (JS_TypeOfValue(cx, val)) {
+//				}
+
+
 				if ( JSVAL_IS_INT(val) ) {
-					
+
 					type = JLTInt;
 					*this << type << JSVAL_TO_INT(val);
 				} else
@@ -174,7 +187,7 @@ namespace jl {
 					*this << type << SerializerBufferInfo(JS_GetStringChars(jsstr), JS_GetStringLength(jsstr));
 				} else
 				if ( JSVAL_IS_VOID(val) ) {
-					
+
 					type = JLTVoid;
 					*this << type;
 				} else
@@ -184,7 +197,7 @@ namespace jl {
 					*this << type << char(JSVAL_TO_BOOLEAN(val));
 				} else
 				if ( JSVAL_IS_DOUBLE(val) ) {
-					
+
 					type = JLTDouble;
 					*this << type << *JSVAL_TO_DOUBLE(val);
 				} else
@@ -194,7 +207,7 @@ namespace jl {
 					*this << type;
 				} else
 				if ( JSVAL_IS_NULL(val) ) {
-					
+
 					type = JLTNull;
 					*this << type;
 				} else
@@ -226,7 +239,7 @@ namespace jl {
 					}
 				} else
 				if ( obj->isFunction() ) { // if ( JS_ObjectIsFunction(cx, obj) ) { // JsvalIsFunction(cx, val)
-					
+
 					type = JLTFunction;
 					JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
 					JL_CHK( JS_XDRValue(xdr, const_cast<jsval*>(&val)) ); // JSXDR_ENCODE, de-const can be done
@@ -239,13 +252,13 @@ namespace jl {
 
 					jsval serializeFctVal;
 					JL_CHK( JS_GetMethodById(cx, obj, JLID(cx, _serialize), NULL, &serializeFctVal) ); // JL_CHK( JS_GetProperty(cx, obj, "_serialize", &serializeFctVal) );
-					
+
 					if ( !JSVAL_IS_VOID( serializeFctVal ) ) {
-						
+
 						JL_ASSERT( JsvalIsFunction(cx, serializeFctVal) );
 
 						JSFunction *fct = JS_ValueToFunction(cx, serializeFctVal);
-						if ( fct->isInterpreted() ) { // poor unreliable
+						if ( fct->isInterpreted() ) { // weakly unreliable
 
 							type = JLTInterpretedObject;
 							*this << type;
@@ -281,7 +294,7 @@ namespace jl {
 					}
 				}
 			}
-			
+
 			return *this;
 		bad:
 			throw JS_FALSE;
@@ -308,7 +321,7 @@ namespace jl {
 		size_t _length;
 
 		bool AssertData( size_t length ) const {
-			
+
 			return (_pos - _start) + length <= _length;
 		}
 
@@ -316,7 +329,11 @@ namespace jl {
 
 	public:
 		Unserializer( JSContext *cx, const void *data, size_t length )
-		: cx(cx), _start((const uint8_t *)data), _pos(_start), _length(length) {
+			: cx(cx), _start((const uint8_t *)data), _pos(_start), _length(length) {
+		}
+
+		Unserializer( JSContext *cx, const Serializer &ser )
+			: cx(cx), _start((const uint8_t *)ser.Data()), _length(ser.Length()), _pos(_start) {
 		}
 
 		Unserializer& operator >>( const char *&buf ) {
@@ -327,7 +344,7 @@ namespace jl {
 				throw JS_FALSE;
 			buf = (const char*)_pos;
 			_pos += length;
-			return *this; 
+			return *this;
 		}
 
 		Unserializer& operator >>( SerializerBufferInfo &buf ) {
@@ -341,10 +358,10 @@ namespace jl {
 				buf = SerializerBufferInfo(_pos, length);
 				_pos += length;
 			} else {
-				
+
 				buf = SerializerBufferInfo(NULL, 0);
 			}
-			return *this; 
+			return *this;
 		}
 
 		Unserializer& operator >>( SerializerObjectProperties &sop ) {
@@ -352,10 +369,10 @@ namespace jl {
 			jsint length;
 			*this >> length;
 //			JSObject *obj = JS_NewObject(cx, NULL, NULL, NULL);
-			
+
 			const char *name;
 			for ( int i = 0; i < length; ++i ) {
-				
+
 				*this >> name;
 				jsval value;
 				*this >> value;
@@ -433,7 +450,7 @@ namespace jl {
 
 					jsval elt;
 					for ( jsuint i = 0; i < length; ++i ) {
-						
+
 						*this >> elt;
 						if ( elt != JSVAL_HOLE ) // optional check
 							JL_CHK( JS_SetElement(cx, arr, i, &elt) );
@@ -448,7 +465,7 @@ namespace jl {
 					val = OBJECT_TO_JSVAL(obj);
 					const char *name;
 					for ( int i = 0; i < length; ++i ) {
-						
+
 						*this >> name;
 						jsval value;
 						*this >> value;
@@ -530,6 +547,12 @@ namespace jl {
 			throw JS_FALSE;
 		}
 
+		Unserializer& operator >>( jsval *&val ) {
+
+			return operator >>(*val);
+		}
+
+
 		template <class T>
 		Unserializer& operator >>( T &value ) {
 
@@ -542,13 +565,15 @@ namespace jl {
 
 	};
 
+
+
 	inline Serializer& JsvalToSerializer(jsval &val) {
-		
+
 		return *static_cast<Serializer*>(JSVAL_TO_PRIVATE(val));
 	}
 
 	inline Unserializer& JsvalToUnserializer(jsval &val) {
-		
+
 		return *static_cast<Unserializer*>(JSVAL_TO_PRIVATE(val));
 	}
 

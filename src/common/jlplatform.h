@@ -144,6 +144,9 @@
 	#define _NOTHROW throw()
 	#define _NOVTABLE __declspec(novtable)
 
+	#include <intrin.h>
+	#pragma intrinsic(_ReturnAddress)
+
 #else // _MSC_VER
 
 	#define _NOTHROW
@@ -172,8 +175,6 @@
 #if CHAR_BIT != 8
 #error "unsupported char size"
 #endif
-
-#define JL_PAGESIZE 4096
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -800,6 +801,29 @@ ALWAYS_INLINE int JLProcessId() {
 }
 
 
+#define JL_PAGESIZE 4096
+
+ALWAYS_INLINE uint16_t JLPageSize() {
+
+	static uint16_t pageSize = 0;
+	if ( pageSize )
+		return pageSize;
+#if defined(XP_WIN)
+	SYSTEM_INFO siSysInfo;
+	GetSystemInfo(&siSysInfo); // WinBase.h
+	pageSize = siSysInfo.dwPageSize;
+#elif defined(XP_UNIX)
+	pageSize = sysconf(_SC_PAGESIZE); // unistd.h
+#elif defined(__i386__) || defined(__x86_64__)
+    pageSize = 4096;
+#else
+	#error Unable to detect system page size
+#endif
+	return pageSize;
+}
+
+
+
 ALWAYS_INLINE uint32_t JLSessionId() {
 
 	uint32_t r = 0x12345678;
@@ -814,17 +838,23 @@ ALWAYS_INLINE uint32_t JLSessionId() {
 	return r ? r : 1; // avoid returning 0
 }
 
+
 /*
-#if defined(XP_WIN)
 static __declspec(naked) __declspec(noinline) size_t JLGetEIP() {
 
 	__asm pop eax;
 	__asm jmp eax;
 }
-#endif
-
-see _ReturnAddress()
 */
+
+static size_t JLIP() {
+#if defined(XP_WIN)
+	return (size_t)_ReturnAddress();
+#elif defined(XP_UNIX)
+	return (size_t)__builtin_return_address(0);
+#endif
+}
+
 
 ALWAYS_INLINE size_t JLRemainingStackSize() {
 #if defined(XP_WIN)

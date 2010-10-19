@@ -296,6 +296,173 @@ inline void BufferFinalize( Buffer *buffer ) {
 }
 
 
+
+
+// static
+// realloc
+// dynamic
+
+/*
+template <const size_t STATIC_LENGTH = 1024>
+class BufferPolicyStatic {
+
+	uint8_t _static[STATIC_LENGTH];
+
+};
+
+
+class BufferPolicyChunks {
+
+
+
+	BufferChunk *_current;
+};
+*/
+
+
+class ChunkedBuffer {
+
+	struct BufferChunk {
+		size_t size;
+		size_t begin;
+		size_t end;
+		BufferChunk *prev, *next;
+		uint8_t buf;
+	};
+
+	BufferChunk *_pos;
+	size_t _used;
+
+	ChunkedBuffer( const ChunkedBuffer & );
+	ChunkedBuffer& operator=( const ChunkedBuffer & );
+
+	ALWAYS_INLINE void AddChunk( size_t length ) {
+
+		BufferChunk *chunk = (BufferChunk*)jl_malloc(sizeof(BufferChunk)+length-1); // -1 because the first byte is BufferChunk::buf
+		chunk->size = length;
+		chunk->begin = 0;
+		chunk->end = 0;
+		chunk->next = NULL;
+		chunk->prev = _pos;
+		_pos = chunk;
+	}
+
+public:
+
+	ALWAYS_INLINE ChunkedBuffer() {
+		
+		_pos = NULL;
+	}
+
+	ALWAYS_INLINE const size_t Length() const {
+	
+		return _used;
+	}
+
+
+	ALWAYS_INLINE uint8_t* Access( size_t length ) {
+
+		if ( _pos->size - _pos->end >= length )
+			return &_pos->buf + _pos->end;
+
+		if ( _pos->next == NULL ) {
+		
+			AddChunk(length);
+			return &_pos->buf;
+		}
+
+	}
+
+
+	ALWAYS_INLINE void MoveBy( size_t length ) {
+		
+		if ( length > 0 && _pos->next == NULL )
+			_used += length;
+
+
+		if ( _pos->end + length <= _pos->size ) {
+
+			_pos->end += length;
+		} else {
+
+
+
+		}
+
+
+	}
+
+
+
+
+
+
+};
+
+
+
+template <size_t STATIC_SIZE = 1024>
+class StaticBuffer {
+
+	size_t _used;
+	size_t _size;
+	uint8_t *_buf;
+	uint8_t _static[STATIC_SIZE];
+
+	StaticBuffer( const StaticBuffer & );
+	StaticBuffer& operator=( const StaticBuffer & );
+
+public:
+
+	ALWAYS_INLINE StaticBuffer() {
+
+		_buf = _static;
+		_size = STATIC_SIZE;
+		_used = 0;
+	}
+
+	ALWAYS_INLINE const uint8_t* Buffer() const {
+	
+		return _buf;
+	}
+
+	ALWAYS_INLINE const size_t Length() const {
+	
+		return _used;
+	}
+
+	ALWAYS_INLINE void MoveBy( size_t length ) {
+		
+		_used += length;
+	}
+
+	ALWAYS_INLINE uint8_t* Access( size_t length ) {
+
+		if ( _used + length > _size ) {
+
+			_size += _used + length;
+			if ( _buf == _static ) {
+				
+				_buf = static_cast<uint8_t*>(jl_malloc(_size));
+				memcpy(_buf, _static, _used);
+			} else {
+
+				_buf = static_cast<uint8_t*>(jl_realloc(_buf, _size));
+			}
+		}
+		return _buf + _used;
+	}
+
+	ALWAYS_INLINE void Write( void *data, size_t length ) {
+
+		memcpy(Access(length), data, length);
+		MoveBy(length);
+	}
+};
+
+
+
+
 }
 #endif // _BUFFER_H_
 

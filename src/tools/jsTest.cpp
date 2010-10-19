@@ -1,4 +1,10 @@
 #include "../common/jlhelper.h"
+#include "../common/buffer.h"
+
+/*
+#undef ALWAYS_INLINE
+#define ALWAYS_INLINE
+*/
 
 #include <limits>
 
@@ -156,7 +162,8 @@ public:
 };
 
 	
-	
+//#define log printf
+#define log
 	
 	
 #include "../common/stack.h"	
@@ -165,33 +172,33 @@ public:
 	struct abc {
 		int _a, _b, _c;
 		~abc() {
-			printf("destruct\n");
+			log("destruct\n");
 		}
 		abc(int a, int b, int c) : _a(a), _b(b), _c(c) {
-			printf("construct(...)\n");
+			log("construct(...)\n");
 		}
 		abc() {
-			printf("construct()\n");
+			log("construct()\n");
 		}
 		abc( const abc &src ) : _a(src._a), _b(src._b), _c(src._c) {
-			printf("construct( const& )\n");
+			log("construct( const& )\n");
 		}
 		abc& operator =( const abc &src ) {
 			_a = src._a;
 			_b = src._b;
 			_c = src._c;
-			printf("copy\n");
+			log("copy\n");
 			return *this;
 		}
 		bool operator ==( const abc &src ) {
-			printf("copy\n");
+			log("copy\n");
 			return _a == src._a && _b == src._b && _c == src._c;
 		}
 	};
 
 	ALWAYS_INLINE bool iter1( abc &value ) {
 			
-		printf("%d\n", value._a);
+		log("%d\n", value._a);
 		return false; // do not cancel iteration
 	}
 
@@ -203,9 +210,14 @@ void* NewBack(T &o) {
 }
 
 
-jl::Stack<abc, jl::StaticAlloc<1000>> s;
-
 int main(int argc, char* argv[]) {
+
+
+	jl::StaticBuffer<1024> b;
+	b.Write("test", 1000);
+	b.Write("test", 1000);
+
+
 
 /*
 	std::deque<abc> q;
@@ -216,21 +228,35 @@ int main(int argc, char* argv[]) {
 */
 
 
+	jl::Stack<abc, jl::StaticAlloc<>> s;
+	jl::Stack<abc> s1;
 
 
-//	int a;
+	new(++s1) abc(2,0,0);
+	new(++s1) abc(2,0,1);
+	new(++s) abc(1,0,0);
 
-//	jl::Stack<abc, jl::PreservativeAlloc> s;
+	s += s1;
 
-	(++s)->_c = 3;
+	size_t myeip = JLIP();
 
-	new (++s) abc(1,2,3);
-	
 	++s;
+	new(++s) abc(1,1,1);
+	--s;
+	s->_a = 5;
 
-	new (s) abc(4,5,6);
+	myeip = JLIP() - myeip;
 
-	new (s[0]) abc(7,8,9);
+	printf("**************** code length: %d\n", myeip);
+
+	s->_c = 5;
+
+	new(++s) abc(1,2,3);
+	
+
+	new(s) abc(4,5,6);
+
+	new(s[0]) abc(7,8,9);
 
 	s->_a;
 	s[2]->_a;
@@ -253,6 +279,7 @@ int main(int argc, char* argv[]) {
 	--s;
 	++s;
 
+	
 
 
 //	jl::Stack<int> *p = new jl::Stack<int>[5];
@@ -338,6 +365,13 @@ int main(int argc, char* argv[]) {
 	jsval res;
 	unser.Unserialize(cx, res);
 */
+
+	JSObject *o1 = JS_NewArrayObject(cx, 0, NULL);
+	JSScopeProperty *jssp;
+	jssp = NULL;
+	JS_PropertyIterator(o1, &jssp);
+
+
 
 	jsval rval;
 	char *script = "Class1.prototype = { _serialize:function(){} }; function Class1() { }; new Class1()";

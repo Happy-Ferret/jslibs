@@ -316,9 +316,12 @@ DEFINE_FUNCTION_FAST( IOEvents ) {
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_ARRAY(JL_FARG(1));
 
+	
+
 	JSObject *fdArrayObj;
 	fdArrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
 
+	
 	UserProcessEvent *upe;
 	JL_CHK( CreateHandle(cx, JL_CAST_CSTR_TO_UINT32("pev"), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
 	upe->pe.startWait = IOStartWait;
@@ -349,7 +352,7 @@ DEFINE_FUNCTION_FAST( IOEvents ) {
 	upe->fdCount = fdCount;
 
 	JSObject *rootedValues;
-	rootedValues = JS_NewArrayObject(cx, 0, NULL);
+	rootedValues = JS_NewArrayObject(cx, fdCount, NULL);
 	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, OBJECT_TO_JSVAL(rootedValues)) );
 
 	jsval *tmp;
