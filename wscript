@@ -45,7 +45,7 @@ def configure(conf):
     conf.env['JL_DISABLED_MODULE'] = []
 
     conf.env['JL_ENABLED_MODULE'].append('jsstd')
-    conf.env['JL_ENABLED_MODULE'].append('jstask')
+    #conf.env['JL_ENABLED_MODULE'].append('jstask')
     conf.env['JL_ENABLED_MODULE'].append('jsprotex')
     conf.env['JL_ENABLED_MODULE'].append('jstrimesh')
 
@@ -98,6 +98,9 @@ def configure(conf):
         # TODO: Due to spider monkey: -Wshadow -Wno-unused-parameter -Wno-invalid-offsetof
         conf.env.append_value('CCFLAGS', Utils.to_list('-std=c89 -pedantic -Werror -Wextra -Wmissing-prototypes -Wno-unused-parameter'))
         conf.env.append_value('CXXFLAGS', Utils.to_list('-Werror -Wextra -Wno-unused-parameter'))
+
+    conf.env.append_value('CCFLAGS', Utils.to_list('-fPIC'))
+    conf.env.append_value('CXXFLAGS', Utils.to_list('-fPIC'))
 
     # Create debug and optimize variants
     variant_dbg = conf.env.copy()
