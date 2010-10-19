@@ -7,5 +7,8 @@ $(INT_DIR)Makefile:
 	mkdir -p $(INT_DIR)
 	cd $(INT_DIR) && sh ../src/configure --enable-shared=no --disable-dependency-tracking
 
-all clean distclean:: $(INT_DIR)Makefile
+distclean clean::
+	-rm -R ./$(INT_DIR)
+
+all:: $(INT_DIR)Makefile
 	$(MAKE) -C $(INT_DIR) $@

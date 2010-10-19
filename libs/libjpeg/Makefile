@@ -12,8 +12,9 @@ $(INT_DIR)Makefile:
 	cp ./dummy.c src/cjpeg.c
 	cp ./dummy.c src/jpegtran.c
 
-distclean::
+distclean clean::
 	-rm -R ./$(INT_DIR)
 
-all clean:: $(INT_DIR)Makefile
+all:: $(INT_DIR)Makefile
 	$(MAKE) -C $(INT_DIR) $@
+
