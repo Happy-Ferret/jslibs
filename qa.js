@@ -18,7 +18,8 @@ function QAAPI(cx) {
 		return val;
 	}
 	
-	this.__defineGetter__('cx', function() cx);
+	//	this.__defineGetter__('cx', function() cx);
+	Object.defineProperty(this, 'cx', { get:function() cx });
 
 	this.FAILED = function( message ) {
 
