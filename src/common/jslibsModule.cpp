@@ -37,10 +37,10 @@ EXTERN_C void jl_free_fct( void *ptr ) { jl_free(ptr); }
 
 DLLLOCAL uint32_t _moduleId = 0;
 
+
 JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
 
-
-//	printf("_moduleId=%u (ptr:%p) / id=%u\n", _moduleId, &_moduleId, id);
+	// printf("id=%u / &_moduleId=%p / _moduleId=%u\n", &_moduleId, _moduleId, id);
 
 	HostPrivate *pv = GetHostPrivate(cx);
 

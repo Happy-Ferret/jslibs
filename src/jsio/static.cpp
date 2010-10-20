@@ -209,6 +209,7 @@ DEFINE_FUNCTION( Poll ) {
 
 	PRPollDesc *pollDesc;
 	pollDesc = (PRPollDesc*)jl_malloca(sizeof(PRPollDesc) * propsCount);
+	JL_S_ASSERT_ALLOC( pollDesc );
 
 	jsval *props;
 	props = (jsval*)jl_malloca(sizeof(jsval) * propsCount);

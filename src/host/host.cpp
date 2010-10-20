@@ -254,6 +254,7 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 		JS_TriggerOperationCallback(cx);
 	}
 	JLThreadExit(0);
+	return 0;
 }
 
 
@@ -936,6 +937,7 @@ static JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
 			FreeHead();
 	}
 	JLThreadExit(0);
+	return 0;
 }
 
 // GC callback that triggers the thread

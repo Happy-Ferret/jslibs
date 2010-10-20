@@ -73,17 +73,23 @@
 
 #elif defined(__GNUC__)
 
-// # pragma GCC diagnostic ignored "-Wformat"  /* Ignore Warning about printf format /
-// # pragma GCC diagnostic ignored "-Wunused-parameter"  / Ignore Warning about unused function parameter */
-#pragma GCC diagnostic error "-Wdiv-by-zero"
+	// # pragma GCC diagnostic ignored "-Wformat"  /* Ignore Warning about printf format /
+	// # pragma GCC diagnostic ignored "-Wunused-parameter"  / Ignore Warning about unused function parameter */
+	#pragma GCC diagnostic error "-Wdiv-by-zero"
 
-//	#if defined(HAVE_GCCVISIBILITYPATCH)
-//		#define DLLEXPORT __attribute__ ((visibility("default")))
-//		#define DLLLOCAL __attribute__ ((visibility("hidden")))
-//	#else
-		#define DLLEXPORT
-		#define DLLLOCAL
-//	#endif
+	// info. http://gcc.gnu.org/wiki/Visibility
+	// support of visibility attribute is mandatory to manage _moduleId scope (must be private but global for the .so)
+	//
+	//	without #define DLLLOCAL __attribute__ ((visibility("hidden")))
+	// DLLLOCAL uint32_t _moduleId = 0;
+	// if __attribute__ ((visibility("hidden"))) is not set for _moduleId,
+	// nm build/default/src/jsstd/jsstd | grep moduleId
+	// 000168a8 B _moduleId => uppercase B = global
+	// and should be:
+	// 000168a8 b _moduleId => lowercase b = local
+
+	#define DLLEXPORT __attribute__ ((visibility("default")))
+	#define DLLLOCAL __attribute__ ((visibility("hidden")))
 
 	#if defined(__i386__) && ((__GNUC__ >= 4) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4))
 		#define FASTCALL __attribute__((fastcall))
@@ -847,6 +853,7 @@ static __declspec(naked) __declspec(noinline) size_t JLGetEIP() {
 }
 */
 
+/*
 static size_t JLIP() {
 #if defined(XP_WIN)
 	return (size_t)_ReturnAddress();
@@ -854,7 +861,7 @@ static size_t JLIP() {
 	return (size_t)__builtin_return_address(0);
 #endif
 }
-
+*/
 
 ALWAYS_INLINE size_t JLRemainingStackSize() {
 #if defined(XP_WIN)

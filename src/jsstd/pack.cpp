@@ -144,7 +144,7 @@ DEFINE_FUNCTION( ReadInt ) {
 			} else {
 
 				uint32_t val = *(uint32_t*)data;
-				if ( val >= JSVAL_INT_MIN && val <= JSVAL_INT_MAX )
+				if ( val <= JSVAL_INT_MAX )
 					*rval = INT_TO_JSVAL( val );
 				else
 					JL_CHK( JS_NewNumberValue(cx, val, rval) );
@@ -163,7 +163,7 @@ DEFINE_FUNCTION( ReadInt ) {
 			} else {
 
 				uint32_t val = *(uint32_t*)data;
-				if ( val >= JSVAL_INT_MIN && val <= JSVAL_INT_MAX )
+				if ( val <= JSVAL_INT_MAX )
 					*rval = INT_TO_JSVAL( val );
 				else // if not, we have to create a new number
 					JL_CHK( JS_NewNumberValue(cx, val, rval) );

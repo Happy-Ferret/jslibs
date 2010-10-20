@@ -15,7 +15,7 @@ def configure(conf):
 
     import Utils
 
-    conf.env.CPPPATH_JLMOZJS = Utils.to_list('%s/src/ ' % src_base_path + '%s/src/nanojit' % src_base_path)
+    conf.env.CPPPATH_JLMOZJS = Utils.to_list('%s/libs/js/src/dist/include/' % bld_base_path)
     conf.env.LIBPATH_JLMOZJS = Utils.to_list('%s/libs/js/src/dist/lib/' % bld_base_path)
     conf.env.LIB_JLMOZJS = Utils.to_list('mozjs')
 

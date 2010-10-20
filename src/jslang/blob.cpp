@@ -1127,8 +1127,8 @@ CONFIGURE_CLASS
 		FUNCTION_FAST(lastIndexOf)
 		FUNCTION_FAST(charCodeAt)
 		FUNCTION_FAST(charAt)
-//		FUNCTION_FAST(toString)
-//		FUNCTION_FAST_ALIAS(valueOf, toString)
+		FUNCTION_FAST(toString)
+		FUNCTION_FAST_ALIAS(valueOf, toString)
 		FUNCTION_FAST(toSource)
 
 		FUNCTION_FAST(_serialize)

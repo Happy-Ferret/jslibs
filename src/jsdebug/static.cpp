@@ -15,7 +15,7 @@
 #include "stdafx.h"
 
 #include "jsdebug.h"
-#include "jslibsModule.h"
+
 #include "jslibsModule.h"
 
 #ifdef VALGRIND
@@ -41,7 +41,7 @@ int _puts(JSContext *cx, const char *str) {
 		if ( jsstr == NULL )
 			return EOF;
 	//	jsstr = JS_ConcatStrings(cx, jsstr, JS_NewStringCopyZ(cx, "\n"));
-		
+
 		js::AutoValueRooter tvr(cx);
 		JSBool status = JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), stdoutFunction, 1, tvr.addr(), tvr.addr());
 		if ( status == JS_TRUE )
@@ -295,10 +295,10 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 	}
 
 	if ( status == JSGC_BEGIN )
-		fprintf( dumpFile, "%s - gcByte:%lu gcMallocBytes:%lu ... ", timeTmp, cx->runtime->gcBytes, cx->runtime->gcMallocBytes );
+		fprintf( dumpFile, "%s - gcByte:%lu gcMallocBytes:%lu ... ", timeTmp, (unsigned long)cx->runtime->gcBytes, (unsigned long)cx->runtime->gcMallocBytes );
 
 	if ( status == JSGC_END )
-		fprintf( dumpFile, "gcByte:%lu gcMallocBytes:%lu  \n", cx->runtime->gcBytes, cx->runtime->gcMallocBytes );
+		fprintf( dumpFile, "gcByte:%lu gcMallocBytes:%lu  \n", (unsigned long)cx->runtime->gcBytes, (unsigned long)cx->runtime->gcMallocBytes );
 
 	if ( dumpFile != stdout )
 		fclose(dumpFile);
@@ -572,7 +572,7 @@ $TOC_MEMBER $INAME
   Is the amount of bytes mallocated by the JavaScript engine. It is incremented each time the JavaScript engine allocates memory.
 **/
 DEFINE_PROPERTY( gcMallocBytes ) {
-	
+
 	JSRuntime *rt = JS_GetRuntime(cx);
 	return JS_NewNumberValue(cx, rt->gcMaxMallocBytes - rt->gcMallocBytes, vp);
 }
@@ -644,7 +644,7 @@ DEFINE_FUNCTION( GetObjectPrivate ) {
 	JL_S_ASSERT_OBJECT( JL_ARG( 1 ) );
 
 	if ( !(JL_GetClass(obj)->flags & JSCLASS_HAS_PRIVATE) ) {
-		
+
 		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -1192,9 +1192,9 @@ DEFINE_FUNCTION_FAST( PropertiesList ) {
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 
-	
+
 	if ( !srcObj->isNative() ) { // (TBD) remove this workaround to bz#522101
-		
+
 		*JL_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -1228,7 +1228,7 @@ DEFINE_FUNCTION_FAST( PropertiesList ) {
 			index++;
 			JS_PropertyIterator(srcObj, &jssp);
 		}
-		
+
 		if ( !followPrototypeChain )
 			break;
 
@@ -1254,7 +1254,7 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 	srcObj = JSVAL_TO_OBJECT( JL_FARG(1) );
 
 	if ( !srcObj->isNative() ) { // (TBD) remove this workaround to bz#522101
-		
+
 		*JL_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -1405,11 +1405,11 @@ DEFINE_FUNCTION_FAST( ScriptByLocation ) {
 //		scrobj = JS_NewScriptObject(cx, script); // Doc: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_NewScriptObject
 
 	if ( scrobj == NULL ) {
-		
+
 		*JL_FRVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
-	
+
 	*JL_FRVAL = OBJECT_TO_JSVAL(scrobj);
 	return JS_TRUE;
 	JL_BAD;
@@ -1425,12 +1425,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION_FAST( DisassembleScript ) {
 
-#ifdef DEBUG 
+#ifdef DEBUG
 
 	jl::Queue *scriptFileList = NULL;
 
 	JL_S_ASSERT_ARG(2);
-	
+
 	const char *filename;
 	unsigned int lineno;
 
@@ -1479,7 +1479,7 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 	return JS_TRUE;
 
 #else // DEBUG
-	
+
 	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1601,7 +1601,7 @@ DEFINE_FUNCTION_FAST( DebugOutput ) {
 
 // undocumented
 DEFINE_FUNCTION_FAST( CreateLeak ) {
-	
+
 	malloc(1234);
 	*JL_FRVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1624,7 +1624,7 @@ DEFINE_FUNCTION_FAST( VALGRIND_COUNT_ERRORS ) {
 // undocumented
 DEFINE_FUNCTION_FAST( VALGRIND_DO_LEAK_CHECK ) {
 
-	// does a full memory leak check (like --leak-check=full) right now. 
+	// does a full memory leak check (like --leak-check=full) right now.
 	// This is useful for incrementally checking for leaks between arbitrary places in the program's execution. It has no return value.
 	VALGRIND_DO_LEAK_CHECK;
 	*JL_FRVAL = JSVAL_VOID;
@@ -1650,7 +1650,7 @@ DEFINE_FUNCTION_FAST( VALGRIND_COUNT_LEAKS ) {
 	// fills in the four arguments with the number of bytes of memory found by the previous leak check to be leaked (i.e. the sum of direct leaks and indirect leaks),
 	// dubious, reachable and suppressed. This is useful in test harness code, after calling VALGRIND_DO_LEAK_CHECK or VALGRIND_DO_QUICK_LEAK_CHECK.
 	VALGRIND_COUNT_LEAKS(leaked, dubious, reachable, suppressed);
-	
+
 	JSObject *arrayObj = JS_NewArrayObject(cx, 4, NULL);
 	*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
 	jsval tmp;

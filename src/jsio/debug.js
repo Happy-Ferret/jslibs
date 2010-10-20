@@ -6,6 +6,17 @@ LoadModule('jsio');
 LoadModule('jswinshell');
 
 new File( DESKTOP+'\\test.txt' ).content = '1234';
+
+
+
+Halt();
+
+
+
+LoadModule('jsio');
+LoadModule('jswinshell');
+
+new File( DESKTOP+'\\test.txt' ).content = '1234';
 Halt();
 
 LoadModule('jsdebug');

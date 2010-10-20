@@ -333,7 +333,7 @@ namespace jl {
 		}
 
 		Unserializer( JSContext *cx, const Serializer &ser )
-			: cx(cx), _start((const uint8_t *)ser.Data()), _length(ser.Length()), _pos(_start) {
+			: cx(cx), _start((const uint8_t *)ser.Data()), _pos(_start), _length(ser.Length()) {
 		}
 
 		Unserializer& operator >>( const char *&buf ) {

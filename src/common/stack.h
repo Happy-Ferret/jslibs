@@ -234,8 +234,7 @@ public:
 
 	ALWAYS_INLINE Stack& operator++() { // ++s
 
-		Item *newItem = reinterpret_cast<Item*>(A(sizeof(Item)));
-		::new (newItem) Item;
+		Item *newItem = ::new(Alloc(itemSize)) Item;
 		newItem->prev = _top;
 		_top = newItem;
 		return *this;
