@@ -328,7 +328,7 @@ DEFINE_FUNCTION_FAST( TimeoutEvents ) {
 		JL_S_ASSERT_FUNCTION( JL_FARG(2) );
 
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, JL_CAST_CSTR_TO_UINT32("pev"), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
 	upe->pe.startWait = TimeoutStartWait;
 	upe->pe.cancelWait = TimeoutCancelWait;
 	upe->pe.endWait = TimeoutEndWait;

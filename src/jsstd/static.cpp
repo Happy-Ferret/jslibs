@@ -863,13 +863,14 @@ DEFINE_FUNCTION_FAST( IsGenerator ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
+/* *doc
 $TOC_MEMBER $INAME
  $TYPE Blob $INAME( value )
   Encode (serialize) a JavaScript value into an XDR (eXternal Data Representation) blob.
   $H note
    All JavaScript values cannot be encoded into XDR. If the function failed to encode a value, an error is raised. The Map object can help you to encode Object and Array.
 **/
+/*
 #ifdef JS_HAS_XDR
 DEFINE_FUNCTION_FAST( XdrEncode ) {
 
@@ -896,7 +897,7 @@ DEFINE_FUNCTION_FAST( XdrEncode ) {
 	JL_BAD;
 }
 #endif // JS_HAS_XDR
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -905,7 +906,8 @@ $TOC_MEMBER $INAME
   Decode (deserialize) XDR (eXternal Data Representation) blob to a JavaScript value.
   $H beware
    Decoding malformed XDR data can lead the program to crash. This may be an important security issue. Decode only trusted data.
-**/
+* */
+/*
 #ifdef JS_HAS_XDR
 DEFINE_FUNCTION_FAST( XdrDecode ) {
 
@@ -926,7 +928,7 @@ DEFINE_FUNCTION_FAST( XdrDecode ) {
 	JL_BAD;
 }
 #endif // JS_HAS_XDR
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -1636,8 +1638,8 @@ CONFIGURE_STATIC
 		FUNCTION_FAST_ARGC( IsGenerator, 1 )
 //		FUNCTION_FAST_ARGC( IsVoid, 1 ) // value === undefined is better
 #ifdef JS_HAS_XDR
-		FUNCTION_FAST( XdrEncode )
-		FUNCTION_FAST( XdrDecode )
+//		FUNCTION_FAST( XdrEncode )
+//		FUNCTION_FAST( XdrDecode )
 #endif // JS_HAS_XDR
 		FUNCTION_FAST( Warning )
 		FUNCTION( Assert )

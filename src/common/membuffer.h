@@ -47,7 +47,7 @@ void MemBufferFinalizeCallback( void* data ) {
 JSBool MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, void* mem, size_t size, MemBufferFree_t free, MemBufferResize_t resize ) {
 
 	MemBuffer *membuf;
-	JL_CHK( CreateHandle(cx, JL_CAST_CSTR_TO_UINT32("MEMB"), sizeof(MemBuffer), (void**)&membuf, MemBufferFinalizeCallback, memBufferVal) );
+	JL_CHK( CreateHandle(cx, JLHID(MEMB), sizeof(MemBuffer), (void**)&membuf, MemBufferFinalizeCallback, memBufferVal) );
 	membuf->mem = mem;
 	membuf->size = size;
 	membuf->MemBufferFree = free;

@@ -106,7 +106,7 @@ JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int i
 
 	PRInt16 outFlag;
 	outFlag = pollDesc->out_flags;
-	
+
 	cbArgv[0] = descVal;
 	cbArgv[1] = INT_TO_JSVAL(index);
 	cbArgv[2] = (outFlag & PR_POLL_HUP) ? JSVAL_TRUE : JSVAL_FALSE;
@@ -255,7 +255,7 @@ $TOC_MEMBER $INAME
 **/
 
 struct UserProcessEvent {
-	
+
 	ProcessEvent pe;
 
 	int fdCount;
@@ -313,18 +313,18 @@ bad:
 }
 
 DEFINE_FUNCTION_FAST( IOEvents ) {
-	
+
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_ARRAY(JL_FARG(1));
 
-	
+
 
 	JSObject *fdArrayObj;
 	fdArrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
 
-	
+
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, JL_CAST_CSTR_TO_UINT32("pev"), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
 	upe->pe.startWait = IOStartWait;
 	upe->pe.cancelWait = IOCancelWait;
 	upe->pe.endWait = IOEndWait;
@@ -340,7 +340,7 @@ DEFINE_FUNCTION_FAST( IOEvents ) {
 	JsioPrivate *mpv;
 	mpv = (JsioPrivate*)GetModulePrivate(cx, _moduleId);
 	if ( mpv->peCancel == NULL ) {
-		
+
 		mpv->peCancel = PR_NewPollableEvent();
 		if ( mpv->peCancel == NULL )
 			return ThrowIoError(cx);
@@ -349,7 +349,7 @@ DEFINE_FUNCTION_FAST( IOEvents ) {
 	upe->pollDesc[0].fd = mpv->peCancel;
 	upe->pollDesc[0].in_flags = PR_POLL_READ;
 	upe->pollDesc[0].out_flags = 0;
-	
+
 	upe->fdCount = fdCount;
 
 	JSObject *rootedValues;
@@ -358,7 +358,7 @@ DEFINE_FUNCTION_FAST( IOEvents ) {
 
 	jsval *tmp;
 	for ( jsuint i = 0; i < fdCount; ++i ) {
-		
+
 		tmp = &upe->descVal[i];
 		JL_CHK( JS_GetElement(cx, fdArrayObj, i, tmp) );
 		JL_CHK( JS_SetElement(cx, rootedValues, i, tmp) );
@@ -856,7 +856,7 @@ DEFINE_FUNCTION_FAST( AvailableSpace ) {
 /**doc
 $TOC_MEMBER $INAME
  $UNDEF $INAME( descriptor, [baudRate], [byteSize], [parity], [stopBits] )
- baudRate: 
+ baudRate:
   110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 56000, 57600, 115200, 128000, 256000
  byteSize:
   4, 5, 6, 7, 8
@@ -881,7 +881,7 @@ $TOC_MEMBER $INAME
  }}}
 **/
 DEFINE_FUNCTION_FAST( ConfigureSerialPort ) {
-	
+
 	JL_S_ASSERT_ARG_RANGE(1,2);
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 	JSObject *fileObj;
@@ -897,7 +897,7 @@ DEFINE_FUNCTION_FAST( ConfigureSerialPort ) {
 
 #ifdef XP_WIN
 	HANDLE fh = (HANDLE)PR_FileDesc2NativeHandle(fd);
-	
+
 	BOOL status;
 	DCB dcb;
 	COMMTIMEOUTS commTimeouts;
@@ -905,7 +905,7 @@ DEFINE_FUNCTION_FAST( ConfigureSerialPort ) {
 	status = GetCommState(fh, &dcb);
 	if ( status == 0 )
 		JL_ThrowOSError(cx);
-		
+
 	status = GetCommTimeouts(fh, &commTimeouts);
 	if ( status == 0 )
 		JL_ThrowOSError(cx);
@@ -919,19 +919,19 @@ DEFINE_FUNCTION_FAST( ConfigureSerialPort ) {
 	}
 
 	if ( JL_FARG_ISDEF(3) ) {
-		
+
 		JL_CHK( JsvalToUInt(cx, JL_FARG(3), &byteSize) );
 		dcb.ByteSize = byteSize;
 	}
-	
+
 	if ( JL_FARG_ISDEF(4) ) {
-		
+
 		JL_CHK( JsvalToUInt(cx, JL_FARG(4), &parity) );
 		dcb.Parity = parity;
 	}
 
 	if ( JL_FARG_ISDEF(5) ) {
-		
+
 		JL_CHK( JsvalToUInt(cx, JL_FARG(5), &stopBits) );
 		dcb.StopBits = stopBits;
 	}
@@ -1275,7 +1275,7 @@ DEFINE_FUNCTION( jsioTest ) {
 */
 
 	return JS_TRUE;
-	JL_BAD;
+//	JL_BAD;
 }
 #endif // DEBUG
 

@@ -1477,6 +1477,7 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 
 	*JL_FRVAL = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
+	JL_BAD;
 
 #else // DEBUG
 
@@ -1486,7 +1487,6 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 
 #endif // DEBUG
 
-//	JL_BAD;
 }
 
 

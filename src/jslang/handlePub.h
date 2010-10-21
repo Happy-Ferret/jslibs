@@ -19,6 +19,8 @@
 
 #define HANDLE_PUBLIC_SLOT_COUNT 4
 
+#define JLHID(id) JL_CAST_CSTR_TO_UINT32(#id)
+
 typedef void (*HandleFinalizeCallback_t)(void* data);
 
 #define HANDLE_TYPE uint32_t
@@ -31,7 +33,6 @@ struct HandlePrivate {
 	HandleFinalizeCallback_t finalizeCallback;
 };
 
-#define JLHID(str) JL_CAST_CSTR_TO_UINT32(str)
 
 inline JSClass *GetHandleJSClass( JSContext *cx ) {
 

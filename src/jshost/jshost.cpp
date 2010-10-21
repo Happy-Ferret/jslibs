@@ -161,7 +161,7 @@ static JSBool EndSignalEvents(JSContext *cx, uintN argc, jsval *vp) {
 	JL_S_ASSERT_ARG_RANGE( 0, 1 );
 
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, JL_CAST_CSTR_TO_UINT32("pev"), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
 	upe->pe.startWait = EndSignalStartWait;
 	upe->pe.cancelWait = EndSignalCancelWait;
 	upe->pe.endWait = EndSignalEndWait;

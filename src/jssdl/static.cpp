@@ -1306,7 +1306,7 @@ DEFINE_FUNCTION_FAST( SurfaceReadyEvents ) {
 	JL_S_ASSERT_ARG_RANGE(0,1);
 
 	SurfaceReadyProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, 'pev', sizeof(SurfaceReadyProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(SurfaceReadyProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
 	upe->pe.startWait = SurfaceReadyStartWait;
 	upe->pe.cancelWait = SurfaceReadyCancelWait;
 	upe->pe.endWait = SurfaceReadyEndWait;
@@ -1416,7 +1416,7 @@ DEFINE_FUNCTION_FAST( SDLEvents ) {
 	JL_S_ASSERT_OBJECT( JL_FARG(1) );
 
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, 'pev', sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
 	upe->pe.startWait = SDLStartWait;
 	upe->pe.cancelWait = SDLCancelWait;
 	upe->pe.endWait = SDLEndWait;

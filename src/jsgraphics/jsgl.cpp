@@ -4906,7 +4906,7 @@ DEFINE_FUNCTION_FAST( ReadImage ) {
 */
 
 
-#define TRIMESH_ID_NAME 'GlTr'
+#define TRIMESH_ID_NAME JLHID(GlTr)
 
 struct OpenGlTrimeshInfo {
 
@@ -5159,7 +5159,7 @@ DEFINE_FUNCTION_FAST( CreateTextureBuffer ) {
 //	JL_INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
 
 	TextureBuffer *tb;
-	JL_CHK( CreateHandle(cx, 'TBUF', sizeof(TextureBuffer), (void**)&tb, TextureBufferFinalize, JL_FRVAL) );
+	JL_CHK( CreateHandle(cx, JLHID(TBUF), sizeof(TextureBuffer), (void**)&tb, TextureBufferFinalize, JL_FRVAL) );
 	GLuint pbo;
 	glGenBuffers(1, &pbo);  OGL_CHK;
 	tb->pv = (void*)pbo;

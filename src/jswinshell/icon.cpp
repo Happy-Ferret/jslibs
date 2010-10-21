@@ -112,6 +112,8 @@ DEFINE_CONSTRUCTOR() {
 		DeleteObject(maskBMP); 
 		JL_S_ASSERT( hIcon != NULL, "Unable to create the icon." );
 	}
+	
+	// FYI. How do I get the dimensions of a cursor or icon? (http://blogs.msdn.com/b/oldnewthing/archive/2010/10/20/10078140.aspx)
 
 	HICON *phIcon = (HICON*)JS_malloc(cx, sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
 	JL_CHK( phIcon );

@@ -74,6 +74,7 @@ namespace jl {
 	class Serializer {
 	private:
 		JSContext *cx;
+
 		uint8_t *_start;
 		uint8_t *_pos;
 		size_t _length;

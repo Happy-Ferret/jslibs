@@ -44,26 +44,26 @@ ALWAYS_INLINE void JLClassNameCopy( JLClassName *dst, const JLClassName *src ) {
 
 ALWAYS_INLINE JLClassNameHashId JLClassNameHashFct( const JLClassName *n ) {
 
-	return 
-		(!(*n)[ 0] ?  0 : ((*n)[ 0]) ^ 
-		(!(*n)[ 1] ?  1 : ((*n)[ 1]<<1) ^ 
-		(!(*n)[ 2] ?  2 : ((*n)[ 2]) ^ 
-		(!(*n)[ 3] ?  3 : ((*n)[ 3]<<2) ^ 
-		(!(*n)[ 4] ?  4 : ((*n)[ 4]) ^ 
-		(!(*n)[ 5] ?  5 : ((*n)[ 5]<<1) ^ 
-		(!(*n)[ 6] ?  6 : ((*n)[ 6]) ^ 
-		(!(*n)[ 7] ?  7 : ((*n)[ 7]<<2) ^ 
-		(!(*n)[ 8] ?  8 : ((*n)[ 8]) ^ 
-		(!(*n)[ 9] ?  9 : ((*n)[ 9]<<1) ^ 
-		(!(*n)[10] ? 10 : ((*n)[10]) ^ 
-		(!(*n)[11] ? 11 : ((*n)[11]<<2) ^ 
-		(!(*n)[12] ? 12 : ((*n)[12]) ^ 
-		(!(*n)[13] ? 13 : ((*n)[13]<<1) ^ 
-		(!(*n)[14] ? 14 : ((*n)[14]) ^ 
+	return
+		(!(*n)[ 0] ?  0 : ((*n)[ 0]) ^
+		(!(*n)[ 1] ?  1 : ((*n)[ 1]<<1) ^
+		(!(*n)[ 2] ?  2 : ((*n)[ 2]) ^
+		(!(*n)[ 3] ?  3 : ((*n)[ 3]<<2) ^
+		(!(*n)[ 4] ?  4 : ((*n)[ 4]) ^
+		(!(*n)[ 5] ?  5 : ((*n)[ 5]<<1) ^
+		(!(*n)[ 6] ?  6 : ((*n)[ 6]) ^
+		(!(*n)[ 7] ?  7 : ((*n)[ 7]<<2) ^
+		(!(*n)[ 8] ?  8 : ((*n)[ 8]) ^
+		(!(*n)[ 9] ?  9 : ((*n)[ 9]<<1) ^
+		(!(*n)[10] ? 10 : ((*n)[10]) ^
+		(!(*n)[11] ? 11 : ((*n)[11]<<2) ^
+		(!(*n)[12] ? 12 : ((*n)[12]) ^
+		(!(*n)[13] ? 13 : ((*n)[13]<<1) ^
+		(!(*n)[14] ? 14 : ((*n)[14]) ^
 		(!(*n)[15] ? 15 : ((*n)[15]<<2) ^
-		(!(*n)[16] ? 16 : ((*n)[16]) ^ 
-		(!(*n)[17] ? 17 : ((*n)[17]<<1) ^ 
-		(!(*n)[18] ? 18 : ((*n)[18]) ^ 
+		(!(*n)[16] ? 16 : ((*n)[16]) ^
+		(!(*n)[17] ? 17 : ((*n)[17]<<1) ^
+		(!(*n)[18] ? 18 : ((*n)[18]) ^
 		(!(*n)[19] ? 19 : ((*n)[19]<<2) ^
 		0)))))))))))))))))))) & 0x1FF;
 }
@@ -81,9 +81,9 @@ ALWAYS_INLINE void **JLGetClassNameHash( HostPrivate *hpv, const JLClassName *na
 #endif // DEBUG
 
 	for (;;) {
-			
+
 		JLClassNameHash *item = &hpv->classNameHash[index];
-		
+
 		if ( JLClassNameEqual(&item->name, name) )
 			return &item->data;
 
@@ -95,7 +95,7 @@ ALWAYS_INLINE void **JLGetClassNameHash( HostPrivate *hpv, const JLClassName *na
 
 		index = (index + 1) % COUNTOF(hpv->classNameHash);
 #ifdef DEBUG
-		JL_ASSERT( count++ < COUNTOF(hpv->classNameHash) );
+		JL_ASSERT( count++ < (int)COUNTOF(hpv->classNameHash) );
 #endif // DEBUG
 	}
 }
@@ -225,10 +225,10 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JSObject *proto;
 	proto = JS_InitClass(cx, obj, parent_proto, &cs->xclasp.base, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
-	
+
 	JSObject **protoHashSlot;
 	protoHashSlot = (JSObject**)JLGetClassNameHash(hpv, &cs->className);
-	JL_ASSERT( *protoHashSlot == NULL ); // "prototype already defined" 
+	JL_ASSERT( *protoHashSlot == NULL ); // "prototype already defined"
 	*protoHashSlot = proto;
 
 	JSObject *staticDest;
@@ -382,7 +382,7 @@ inline JSNative NativeFunction(JSNative f) { return f; } // used for type check 
 #define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, _##getter, _##setter },
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
 
-// configuration 
+// configuration
 #define HAS_PRIVATE cs.xclasp.base.flags |= JSCLASS_HAS_PRIVATE;
 #define HAS_RESERVED_SLOTS(COUNT) cs.xclasp.base.flags |= JSCLASS_HAS_RESERVED_SLOTS(COUNT);
 #define CONSTRUCT_PROTOTYPE cs.xclasp.base.flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
@@ -535,7 +535,7 @@ inline JSNative NativeFunction(JSNative f) { return f; } // used fo type check o
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
 
 
-// class definition and configuration 
+// class definition and configuration
 #define DEFINE_FUNCTION_FAST(name) static JSBool _##name(JSContext *cx, uintN argc, jsval *vp)
 #define DEFINE_FUNCTION(name) static JSBool _##name(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 

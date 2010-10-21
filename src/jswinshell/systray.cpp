@@ -653,7 +653,7 @@ DEFINE_FUNCTION_FAST( Events ) {
 	JL_S_ASSERT_RESOURCE(pv);
 
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, 'pev', sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
 	upe->pe.startWait = SystrayStartWait;
 	upe->pe.cancelWait = SystrayCancelWait;
 	upe->pe.endWait = SystrayEndWait;
