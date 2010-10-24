@@ -96,15 +96,12 @@ DEFINE_FUNCTION_FAST( Expand ) {
 
 	JL_REPORT_ERROR( "Invalid argument." );
 
-next:
 
+next:
 
 	typedef struct {
 		const char *data;
 		size_t length;
-		jsval value;
-//		JSTempValueRooter tvr;
-//		bool hasTvr;
 	} Chunk;
 
 	void *stack;
@@ -122,16 +119,15 @@ next:
 			chunk = (Chunk*)jl_malloc(sizeof(Chunk));
 			chunk->data = srcBegin;
 			chunk->length = srcEnd - srcBegin;
-//			chunk->hasTvr = false;
 			totalLength += chunk->length;
 			jl::StackPush( &stack, chunk );
 			break;
 		}
 
 		chunk = (Chunk*)jl_malloc(sizeof(Chunk));
+		JL_S_ASSERT_ALLOC(chunk);
 		chunk->data = srcBegin;
 		chunk->length = tok - srcBegin;
-//		chunk->hasTvr = false;
 		totalLength += chunk->length;
 		jl::StackPush( &stack, chunk );
 
@@ -153,7 +149,7 @@ next:
 			JL_CHKB( JS_CallFunctionValue(cx, obj, map, 1, JL_FRVAL, JL_FRVAL), bad_free_stack );
 		} else {
 
-			char tmp = *tok; // (TBD) try to replace this trick
+			char tmp = *tok; // (TBD) try to replace this trick ...
 			*((char*)tok) = '\0';
 			JL_CHKB( JS_GetProperty(cx, JSVAL_TO_OBJECT(map), srcBegin, JL_FRVAL), bad_free_stack );
 			*((char*)tok) = tmp;
@@ -162,9 +158,7 @@ next:
 		if ( !JSVAL_IS_VOID( *JL_FRVAL ) ) {
 
 			chunk = (Chunk*)jl_malloc(sizeof(Chunk));
-//			JS_PUSH_SINGLE_TEMP_ROOT(cx, *JL_FRVAL, &chunk->tvr);
-//			chunk->hasTvr = true;
-			JL_CHKB( JsvalToStringAndLength(cx, &chunk->value, &chunk->data, &chunk->length), bad_free_stack );
+			JL_CHKB( JsvalToStringAndLength(cx, JL_FRVAL, &chunk->data, &chunk->length), bad_free_stack );
 			totalLength += chunk->length;
 			jl::StackPush( &stack, chunk );
 		}
@@ -183,8 +177,6 @@ next:
 		Chunk *chunk = (Chunk*)jl::StackPop(&stack);
 		expandedString -= chunk->length;
 		memcpy(expandedString, chunk->data, chunk->length);
-//		if ( chunk->hasTvr )
-//			JS_POP_TEMP_ROOT(cx, &chunk->tvr);
 		jl_free(chunk);
 	}
 
@@ -199,8 +191,6 @@ bad_free_stack:
 	while ( !jl::StackIsEnd(&stack) ) {
 
 		Chunk *chunk = (Chunk*)jl::StackPop(&stack);
-//		if ( chunk->hasTvr )
-//			JS_POP_TEMP_ROOT(cx, &chunk->tvr);
 		jl_free(chunk);
 	}
 bad:

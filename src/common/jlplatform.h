@@ -334,9 +334,9 @@
 
 //template<class T>
 //static inline void JL_UNUSED(T) {};
-//#define UNUSED(x) x __attribute__((unused))
-//#define UNUSED(x) ((x) = (x))
-#define UNUSED(x) ((void)(x))
+//#define JL_UNUSED(x) x __attribute__((unused))
+//#define JL_UNUSED(x) ((x) = (x))
+#define JL_UNUSED(x) ((void)(x))
 
 #define JL_STATIC_ASSERT(cond) \
 	extern void jl_static_assert(int arg[(cond) ? 1 : -1])
@@ -1041,7 +1041,6 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 #include <pthread.h>
 #include <sched.h>
 #include <semaphore.h>
-#include <errno.h>
 #include <error.h>
 #endif
 
@@ -1256,7 +1255,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 			// st = sem_timedwait(semaphore, &ts);
 			while ((st = sem_timedwait(semaphore, &ts)) == -1 && errno == EINTR)
 				continue; // Restart if interrupted by handler
-			if ( st == ETIMEDOUT )
+			if ( st == -1 && errno == ETIMEDOUT )
 				return JLTIMEOUT;
 			JL_ASSERT( st == 0 );
 			JL_UNUSED( st );
@@ -1842,7 +1841,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			while ( !ev->triggered && st == 0 )
 				st = pthread_cond_timedwait(&ev->cond, &ev->mutex, &ts); // doc. shall not return an error code of [EINTR].
 			pthread_mutex_unlock(&ev->mutex);
-			if ( st == ETIMEDOUT )
+			if ( st == -1 && errno == ETIMEDOUT )
 				return JLTIMEOUT;
 			JL_ASSERT( st == 0 );
 			JL_UNUSED(st);

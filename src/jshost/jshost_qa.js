@@ -21,7 +21,7 @@
 		QA.ASSERT( scripthostname.substr(0, 6), 'jshost', 'script host name' );
 		QA.ASSERT_TYPE( _configuration, 'object', 'has configuration object' );
 		QA.ASSERT_TYPE( global, 'object', 'has "global" property' );
-		QA.ASSERT( global, Object.__parent__, 'global points to the right global object' );
+		// Obsolete in Gecko 2 (Firefox 4) // QA.ASSERT( global, Object.__parent__, 'global points to the right global object' );
 		
 		var mod = LoadModule('jsstd');
 		var mod1 = LoadModule('jsstd');

@@ -375,18 +375,17 @@ DEFINE_PROPERTY( list ) {
 	jsval value;
 	int i;
 	LTC_MUTEX_LOCK(&ltc_hash_mutex);
-	for (i=0; i<TAB_SIZE; i++)
-		if ( hash_is_valid(i) == CRYPT_OK ) {
+	for ( i=0; hash_is_valid(i) == CRYPT_OK; i++ ) {
 
-			JSObject *desc = JS_NewObject( cx, NULL, NULL, NULL );
-			value = OBJECT_TO_JSVAL(desc);
-			JS_SetProperty( cx, tvr.object(), hash_descriptor[i].name, &value );
+		JSObject *desc = JS_NewObject( cx, NULL, NULL, NULL );
+		value = OBJECT_TO_JSVAL(desc);
+		JS_SetProperty( cx, tvr.object(), hash_descriptor[i].name, &value );
 
-			value = INT_TO_JSVAL( hash_descriptor[i].hashsize );
-			JS_SetProperty( cx, desc, "hashSize", &value );
-			value = INT_TO_JSVAL( hash_descriptor[i].blocksize );
-			JS_SetProperty( cx, desc, "blockSize", &value );
-		}
+		value = INT_TO_JSVAL( hash_descriptor[i].hashsize );
+		JS_SetProperty( cx, desc, "hashSize", &value );
+		value = INT_TO_JSVAL( hash_descriptor[i].blocksize );
+		JS_SetProperty( cx, desc, "blockSize", &value );
+	}
 	LTC_MUTEX_UNLOCK(&ltc_hash_mutex);
 
 	*vp = OBJECT_TO_JSVAL(tvr.object());

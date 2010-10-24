@@ -179,6 +179,8 @@ DEFINE_FUNCTION( Poll ) {
 	PRInt32 result;
 	PRIntervalTime pr_timeout;
 	jsuint i;
+	PRPollDesc *pollDesc = NULL;
+	jsval *props = NULL;
 
 	JL_S_ASSERT_ARG_RANGE( 1, 2 );
 	JL_S_ASSERT_ARRAY( JL_ARG(1) );
@@ -207,11 +209,9 @@ DEFINE_FUNCTION( Poll ) {
 		return JS_TRUE;
 	}
 
-	PRPollDesc *pollDesc;
 	pollDesc = (PRPollDesc*)jl_malloca(sizeof(PRPollDesc) * propsCount);
 	JL_S_ASSERT_ALLOC( pollDesc );
 
-	jsval *props;
 	props = (jsval*)jl_malloca(sizeof(jsval) * propsCount);
 	JL_S_ASSERT_ALLOC( props );
 	memset(props, 0, sizeof(jsval) * propsCount); // needed because JS_PUSH_TEMP_ROOT

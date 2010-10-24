@@ -825,7 +825,7 @@ DEFINE_FUNCTION_FAST( IndexOf ) {
 	bool found;
 	size_t foundAt;
 	JL_CHK( FindInBuffer(cx, JL_FOBJ, boundary, boundaryLength, &found, &foundAt) );
-	*JL_FRVAL = INT_TO_JSVAL(found);
+	*JL_FRVAL = INT_TO_JSVAL(found ? foundAt : -1);
 	return JS_TRUE;
 	JL_BAD;
 }

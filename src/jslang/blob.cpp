@@ -337,7 +337,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 	size_t start;
 	if ( JsvalIsPInfinity(cx, arg1) )
 		start = (signed)dataLength;
-	else if ( !JsvalToSize(cx, arg1, &start) )
+	else if ( JsvalIsNegative(cx, arg1) || !JsvalToSize(cx, arg1, &start) )
 		start = 0;
 
 	if ( start >= dataLength ) {
@@ -362,7 +362,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 
 		if ( JsvalIsPInfinity(cx, arg2) )
 			length = dataLength;
-		else if ( !JsvalToSize(cx, arg2, &length) )
+		else if ( JsvalIsNegative(cx, arg2) || !JsvalToSize(cx, arg2, &length) )
 			length = 0;
 
 		if ( length <= 0 ) {
@@ -597,7 +597,7 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 		
 		jsval arg2 = JL_FARG(2);
 
-		if ( ( JSVAL_IS_INT(arg2) && JSVAL_TO_INT(arg2) < 0 ) || JsvalIsNInfinity(cx, arg2) ) {
+		if ( JsvalIsNegative(cx, arg2) || JsvalIsNInfinity(cx, arg2) ) {
 			
 			start = 0;
 		} else {

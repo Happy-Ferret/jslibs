@@ -626,6 +626,13 @@ ALWAYS_INLINE bool JsvalIsNInfinity( const JSContext *cx, const jsval val ) {
 	return JSVAL_IS_DOUBLE(val) && *(uint64_t*)JSVAL_TO_DOUBLE(val) == *(uint64_t*)JSVAL_TO_DOUBLE(cx->runtime->negativeInfinityValue);
 }
 
+ALWAYS_INLINE bool JsvalIsNegative( JSContext *cx, jsval val ) {
+
+	JL_UNUSED(cx);
+	JL_ASSERT( JSVAL_IS_NUMBER(val) );
+	return ( JSVAL_IS_INT(val) && JSVAL_TO_INT(val) < 0 || JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) < 0 );
+}
+
 
 ALWAYS_INLINE bool JsvalIsScript( const JSContext *cx, jsval val ) {
 
@@ -1254,7 +1261,9 @@ ALWAYS_INLINE JSBool JsvalToSize( JSContext *cx, jsval val, size_t *i ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
-		*i = JSVAL_TO_INT(val);
+		jsint ji = JSVAL_TO_INT(val);
+		JL_CHK( ji >= 0 );
+		*i = (size_t)ji;
 		return JS_TRUE;
 	}
 	jsdouble d;

@@ -662,7 +662,7 @@ LoadModule('jsstd');
 /// Expand function [ftrm]
 
 		QA.ASSERT( Expand('', { h:'Hello', w:'World' }), '', 'expanding an empty string' );
-		QA.ASSERT( Expand('Hello World'), 'Hello World', 'expanding a simple string' );
+		// no more supported // QA.ASSERT( Expand('Hello World'), 'Hello World', 'expanding a simple string' );
 		QA.ASSERT( Expand(' $(h) $(w)', { h:'Hello', w:'World' }), ' Hello World', 'expanding a string' );
 		QA.ASSERT( Expand(' $(h) $(w', { h:'Hello', w:'World' }), ' Hello ', 'expanding a bugous string' );
 		QA.ASSERT( Expand(' $(h) $(', { h:'Hello', w:'World' }), ' Hello ', 'expanding a bugous string' );
@@ -751,7 +751,7 @@ LoadModule('jsstd');
 		}
 
 
-/// XDR serialization [ftrm]
+/// XDR serialization [ftrmd]
 
 		var s = new Script('/./');
 		QA.ASSERT_EXCEPTION( function() XdrEncode(s), TypeError );

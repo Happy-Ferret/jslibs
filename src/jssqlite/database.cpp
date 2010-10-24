@@ -456,11 +456,13 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 	FunctionPrivate *fpv = (FunctionPrivate*)sqlite3_user_data(sCx);
 	JSContext *cx = fpv->dbpv->tmpcx;
 	JL_S_ASSERT(cx != NULL, "Invalid context.");
-	
-	jsval argv[1 + MAX_FUNCTION_ARG]; // argv[0] is rval
 
+	{ //scope
+
+	jsval argv[1 + MAX_FUNCTION_ARG]; // argv[0] is rval
+	JL_ASSERT(JSVAL_NULL == 0);
 	memset(argv, 0, sizeof(argv)); // set JSVAL_NULL
-	js::AutoArrayRooter(cx, COUNTOF(argv), argv);
+	js::AutoArrayRooter ar(cx, COUNTOF(argv), argv);
 	
 	for ( int r = 0; r < sArgc; r++ ) {
 
@@ -530,6 +532,8 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			//sqlite3_result_error(sCx, "Unsupported data type", -1); // (TBD) better error message
 			sqlite3_result_error_code(sCx, SQLITE_MISMATCH); // (TBD) check this
 	}
+
+	} //scope
 
 bad_unroot:
 

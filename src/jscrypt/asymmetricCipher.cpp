@@ -181,13 +181,13 @@ $TOC_MEMBER $INAME
  $INAME( keySize )
   Create RSA public and private keys.
   $LF
-  _keySize_ is the size of the key in bits (the value of _keySize_ is the modulus size).
+  _keySize_ is the size of the key in bits (the modulus size).
   $H note
    supported RSA keySize: from 1024 to 4096 bits
    $LF
    supported ECC keySize: 112, 128, 160, 192, 224, 256, 384, 521, 528 bits
    $LF
-   supported DSA keySize (Bits of Security): ???, 80, 120, 140, 160, ??? bits
+   supported DSA keySize (Bits of Security): ???, 64, 80, 120, 140, 160, ??? bits
 **/
 DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 

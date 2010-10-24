@@ -13,13 +13,22 @@ LoadModule('jscrypt');
 
 /// Cipher, Hash, Prng list [ftrm]
 	
-		QA.ASSERT( Cipher.list.__count__, 21, 'length of Cipher.list' );
+		function count(o) {
+		
+		  var n = 0;
+		  for (var p in o)
+			 n += Object.prototype.hasOwnProperty.call(o, p);
+		  return n;
+		}
+		
+	
+		QA.ASSERT( count(Cipher.list), 21, 'length of Cipher.list' );
 		QA.ASSERT( Cipher.list.toSource().length, 1609, 'length of Cipher.list.toString' );
 		
-		QA.ASSERT( Hash.list.__count__, 15, 'length of Cipher.list' );
+		QA.ASSERT( count(Hash.list), 15, 'length of Cipher.list' );
 		QA.ASSERT( Hash.list.toSource().length, 535, 'length of Hash.list.toString' );
 		
-		QA.ASSERT( Prng.list.__count__, 5, 'length of Cipher.list' );
+		QA.ASSERT( count(Prng.list), 5, 'length of Cipher.list' );
 		QA.ASSERT( Prng.list.toSource().length, 51, 'length of Prng.list.toString' );
 
 
@@ -30,13 +39,13 @@ LoadModule('jscrypt');
 		//Alice
 		var alice = new AsymmetricCipher('dsa', 'sha1', fortuna);
 		alice.CreateKeys(64);
-		QA.ASSERT( alice.keySize, 512, 'Asymmetric Cipher key size (alice)' );
+		QA.ASSERT( alice.keySize, 64, 'Asymmetric Cipher key size (alice)' );
 		var publicKey = alice.publicKey;
 		//Bob
 		var bob = new AsymmetricCipher('dsa', 'sha1', fortuna);
 		bob.publicKey = publicKey;
 		QA.ASSERT( bob.blockLength, 20, 'Asymmetric Cipher block length' );
-		QA.ASSERT( bob.keySize, 512, 'Asymmetric Cipher key size (bob)' );
+		QA.ASSERT( bob.keySize, 64, 'Asymmetric Cipher key size (bob)' );
 		var secretMessage = QA.RandomString(bob.blockLength);
 		var encryptedData = bob.Encrypt( secretMessage );
 		//Alice

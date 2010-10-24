@@ -259,12 +259,11 @@ DEFINE_PROPERTY( list ) {
 	jsval value;
 	int i;
 	LTC_MUTEX_LOCK(&ltc_prng_mutex);
-	for (i=0; i<TAB_SIZE; i++)
-		if ( prng_is_valid(i) == CRYPT_OK ) {
+	for ( i=0; prng_is_valid(i) == CRYPT_OK; i++ ) {
 
-			value = JSVAL_ONE;
-			JS_SetProperty( cx, tvr.object(), prng_descriptor[i].name, &value );
-		}
+		value = JSVAL_ONE;
+		JS_SetProperty( cx, tvr.object(), prng_descriptor[i].name, &value );
+	}
 	LTC_MUTEX_UNLOCK(&ltc_prng_mutex);
 
 	*vp = OBJECT_TO_JSVAL(tvr.object());

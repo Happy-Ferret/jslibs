@@ -1,8 +1,15 @@
 LoadModule('jsstd');
-LoadModule('jstask');
+
+
+var b = new Buffer();
+b.Write(' abcdef');
+Print( b.IndexOf('def'), '\n' );
+
+Halt();
 
 LoadModule('jsstd');
 LoadModule('jstask');
+
 
 var myTask = new Task(function(){
 	LoadModule('jsstd');

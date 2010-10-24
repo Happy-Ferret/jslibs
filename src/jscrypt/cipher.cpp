@@ -633,23 +633,20 @@ DEFINE_PROPERTY( list ) {
 	int i;
 	jsval tmp;
 	LTC_MUTEX_LOCK(&ltc_cipher_mutex);
-	for ( i = 0; i < TAB_SIZE; i++ ) {
+	for ( i = 0; cipher_is_valid(i) == CRYPT_OK; ++i ) {
 
-		if ( cipher_is_valid(i) == CRYPT_OK ) {
+		JSObject *desc = JS_NewObject( cx, NULL, NULL, NULL );
+		tmp = OBJECT_TO_JSVAL( desc );
+		JS_SetProperty( cx, tvr.object(), cipher_descriptor[i].name, &tmp );
 
-			JSObject *desc = JS_NewObject( cx, NULL, NULL, NULL );
-			tmp = OBJECT_TO_JSVAL( desc );
-			JS_SetProperty( cx, tvr.object(), cipher_descriptor[i].name, &tmp );
-
-			tmp = INT_TO_JSVAL( cipher_descriptor[i].min_key_length );
-			JS_SetProperty( cx, desc, "minKeyLength", &tmp );
-			tmp = INT_TO_JSVAL( cipher_descriptor[i].max_key_length );
-			JS_SetProperty( cx, desc, "maxKeyLength", &tmp );
-			tmp = INT_TO_JSVAL( cipher_descriptor[i].block_length );
-			JS_SetProperty( cx, desc, "blockLength", &tmp );
-			tmp = INT_TO_JSVAL( cipher_descriptor[i].default_rounds );
-			JS_SetProperty( cx, desc, "defaultRounds", &tmp );
-		}
+		tmp = INT_TO_JSVAL( cipher_descriptor[i].min_key_length );
+		JS_SetProperty( cx, desc, "minKeyLength", &tmp );
+		tmp = INT_TO_JSVAL( cipher_descriptor[i].max_key_length );
+		JS_SetProperty( cx, desc, "maxKeyLength", &tmp );
+		tmp = INT_TO_JSVAL( cipher_descriptor[i].block_length );
+		JS_SetProperty( cx, desc, "blockLength", &tmp );
+		tmp = INT_TO_JSVAL( cipher_descriptor[i].default_rounds );
+		JS_SetProperty( cx, desc, "defaultRounds", &tmp );
 	}
 	LTC_MUTEX_UNLOCK(&ltc_cipher_mutex);
 
