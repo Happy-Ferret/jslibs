@@ -135,7 +135,7 @@ DEFINE_FUNCTION( ReadInt ) {
 				Network24ToHost24(data);
 			if ( isSigned ) {
 
-				int32_t val = (signed)(*(uint32_t*)data << 8) >> 8;
+				int32_t val = (int32_t)(*(uint32_t*)data << 8) >> 8;
 				if ( val >= JSVAL_INT_MIN && val <= JSVAL_INT_MAX )
 					*rval = INT_TO_JSVAL( val );
 				else
@@ -179,11 +179,11 @@ DEFINE_FUNCTION( ReadInt ) {
 			if ( isSigned ) {
 
 				int64_t val = *(int64_t*)data;
-				JL_CHK( JS_NewNumberValue(cx, val, rval) );
+				JL_CHK( JS_NewNumberValue(cx, (jsdouble)val, rval) );
 			} else {
 
 				uint64_t val = *(uint64_t*)data;
-				JL_CHK( JS_NewNumberValue(cx, val, rval) );
+				JL_CHK( JS_NewNumberValue(cx, (jsdouble)val, rval) );
 			}
 			break;
 		default:

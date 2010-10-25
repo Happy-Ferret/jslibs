@@ -52,7 +52,6 @@ JSBool ReadMatrix(JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec
 	m[14] = pos[2];
 	m[15] = 1;
 	return JS_TRUE;
-	JL_BAD;
 }
 
 

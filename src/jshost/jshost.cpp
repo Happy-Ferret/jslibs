@@ -225,6 +225,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	uint32 maxMem = (uint32)-1; // by default, there are no limit
 	uint32 maxAlloc = (uint32)-1; // by default, there are no limit
+	bool warningsToErrors = false;
 	bool unsafeMode = false;
 	bool compileOnly = false;
 	float maybeGCInterval = 10; // seconds
@@ -255,10 +256,13 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 			case 'u': // avoid any runtime checks
 				unsafeMode = true;
 				break;
+			case 'w': // convert warnings to errors
+				warningsToErrors = true;
+				break;
 			case 'g': // operationLimitGC
 				argumentVector++;
 				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-				maybeGCInterval = atof(*argumentVector);
+				maybeGCInterval = (float)atof(*argumentVector);
 				break;
 			case 'c': // compileOnly
 				compileOnly = true;
@@ -326,7 +330,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		jl_free = free;
 	}
 
-	cx = CreateHost(maxMem, maxAlloc, maybeGCInterval * 1000);
+	cx = CreateHost(maxMem, maxAlloc, (uint32)(maybeGCInterval * 1000));
 	HOST_MAIN_ASSERT( cx != NULL, "Unable to create a javascript execution context." );
 
 	if ( useJslibsMemoryManager )
@@ -344,7 +348,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	hpv->alloc.msize = jl_msize;
 	hpv->alloc.free = jl_free;
 
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT | JSOPTION_RELIMIT ); // default, may be disabled in InitHost()
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT | JSOPTION_RELIMIT | (warningsToErrors ? JSOPTION_WERROR : 0) ); // default, may be disabled in InitHost()
 
 	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr, NULL), "Unable to initialize the host." );
 
@@ -522,6 +526,8 @@ The main features are:
   Compile-only. The script is compiled but not executed. This is useful to detect syntax errors.
  * `-u` (disabled by default)
   Run in unsafe-mode that is a kind of 'release mode'. In unsafe-mode, any runtime checks is avoid and warnings are not reported. This mode allow a better execution speed.
+ * `-w` (disabled by default)
+  Convert warnings to error.
  * `-m <size>` (default: no limit)
   Specifies the maximum memory usage of the script in megabytes.
  * `-n  <size>` (default: no limit)

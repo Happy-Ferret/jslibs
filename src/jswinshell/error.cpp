@@ -175,7 +175,8 @@ JSBool WinThrowError( JSContext *cx, DWORD errorCode ) {
 	JS_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(HIWORD(errorCode)) );
 	JS_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(LOWORD(errorCode)) );
 	JL_SAFE( ExceptionSetScriptLocation(cx, error) );
-	JL_BAD;
+	return JS_TRUE;
+//	JL_BAD;
 }
 
 

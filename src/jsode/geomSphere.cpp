@@ -65,7 +65,7 @@ DEFINE_PROPERTY( radiusSetter ) {
 	JL_S_ASSERT_RESOURCE( geom );
 	jsdouble radius;
 	JL_CHK( JS_ValueToNumber(cx, *vp, &radius) );
-	ode::dGeomSphereSetRadius(geom, radius);
+	ode::dGeomSphereSetRadius(geom, (ode::dReal)radius);
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -832,7 +832,7 @@ DEFINE_FUNCTION_FAST( Aliasing ) {
 		for ( int i = 0; i < tsize; i++ ) {
 
 			long curveIndex = (long)(count * tex->cbuffer[i] / PMAX);
-			tex->cbuffer[i] = curve[MINMAX(curveIndex, 0, (signed)count-1)];
+			tex->cbuffer[i] = curve[MINMAX(curveIndex, 0, (long)count - 1)];
 		}
 	else
 		for ( int i = 0; i < tsize; i++ )
@@ -2209,7 +2209,7 @@ DEFINE_FUNCTION_FAST( Convolution ) {
 	int size;
 	size = (int)sqrtf(count);
 
-	JL_S_ASSERT( size * size == (signed)count, "Invalid convolution kernel size.");
+	JL_S_ASSERT( size * size == (int)count, "Invalid convolution kernel size.");
 
 	BorderMode borderMode;
 	JL_CHK( JsvalToBorderMode(cx, JL_FSARG(2), &borderMode) );

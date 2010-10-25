@@ -67,7 +67,7 @@ DEFINE_PROPERTY( lengthSetter ) {
 	JL_S_ASSERT_RESOURCE( geom );
 	jsdouble radius;
 	JL_CHK( JS_ValueToNumber(cx, *vp, &radius) );
-	ode::dGeomRaySetLength(geom, radius);
+	ode::dGeomRaySetLength(geom, (ode::dReal)radius);
 	return JS_TRUE;
 	JL_BAD;
 }

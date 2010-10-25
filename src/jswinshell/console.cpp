@@ -71,7 +71,7 @@ DEFINE_FUNCTION( Close ) {
 		return WinThrowError(cx, GetLastError());
 //	JL_S_ASSERT( res != 0, "Unable to free the console." );
 	return JS_TRUE;
-	JL_BAD;
+//	JL_BAD;
 }
 
 

@@ -936,7 +936,7 @@ DEFINE_GET_PROPERTY() {
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	if ( slot >= 0 && (unsigned)slot < pv->length ) {
+	if ( slot >= 0 && (size_t)slot < pv->length ) {
 
 		size_t offset = 0;
 
@@ -948,7 +948,7 @@ DEFINE_GET_PROPERTY() {
 			jsval *pNewStr = (jsval*)QueueGetData(it);
 			JL_CHK( JsvalToStringLength(cx, *pNewStr, &chunkLength) );
 
-			if ( (unsigned)slot >= offset && (unsigned)slot < offset + chunkLength ) {
+			if ( (size_t)slot >= offset && (size_t)slot < offset + chunkLength ) {
 
 				JL_CHK( JsvalToString(cx, pNewStr, &chunk) ); // items in the queue are GC protected.
 

@@ -444,9 +444,7 @@ DEFINE_FUNCTION( Close ) {
 
 	Finalize(cx, obj);
 	JL_SetPrivate(cx, obj, NULL);
-
 	return JS_TRUE;
-	JL_BAD;
 }
 
 

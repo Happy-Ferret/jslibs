@@ -77,7 +77,7 @@ DEFINE_FUNCTION_FAST( AddTorque ) {
 	JL_S_ASSERT_RESOURCE(jointId);
 	jsdouble torque;
 	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &torque) );
-	ode::dJointAddHingeTorque(jointId, torque);
+	ode::dJointAddHingeTorque(jointId, (ode::dReal)torque);
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -178,7 +178,7 @@ DEFINE_FUNCTION( Seek ) {
 		return ThrowIoError(cx);
 
 	jsdouble newLocation;
-	newLocation = ret;
+	newLocation = (jsdouble)ret;
 	JS_NewDoubleValue( cx, newLocation, rval );
 	return JS_TRUE;
 	JL_BAD;
@@ -311,10 +311,10 @@ DEFINE_PROPERTY( positionGetter ) {
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT( fd != NULL, "File is closed." );
 	PRInt64 ret;
-	ret  = PR_Seek64( fd, 0, PR_SEEK_CUR );
+	ret = PR_Seek64( fd, 0, PR_SEEK_CUR );
 	if ( ret == -1 )
 		return ThrowIoError(cx);
-	JL_CHK( JS_NewNumberValue(cx, ret, vp) );
+	JL_CHK( JS_NewNumberValue(cx, (jsdouble)ret, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

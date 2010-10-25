@@ -169,7 +169,7 @@ struct JLContextPrivate {
 };
 
 ALWAYS_INLINE JLContextPrivate* GetContextPrivate( const JSContext *cx ) {
-	
+
 	JL_ASSERT( JS_GetContextPrivate((JSContext*)cx) == cx->data );
 	return reinterpret_cast<JLContextPrivate*>(cx->data);
 }
@@ -629,9 +629,15 @@ ALWAYS_INLINE bool JsvalIsNInfinity( const JSContext *cx, const jsval val ) {
 ALWAYS_INLINE bool JsvalIsNegative( JSContext *cx, jsval val ) {
 
 	JL_UNUSED(cx);
-	JL_ASSERT( JSVAL_IS_NUMBER(val) );
-	return ( JSVAL_IS_INT(val) && JSVAL_TO_INT(val) < 0 || JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) < 0 );
+	return ( (JSVAL_IS_INT(val) && JSVAL_TO_INT(val) < 0) || (JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) < 0) || JsvalIsNInfinity(cx, val) );
 }
+
+ALWAYS_INLINE bool JsvalIsRational( JSContext *cx, jsval val ) {
+
+	JL_UNUSED(cx);
+	return ( JSVAL_IS_INT(val) || (JSVAL_IS_DOUBLE(val) && *JSVAL_TO_DOUBLE(val) >= DBL_MIN && *JSVAL_TO_DOUBLE(val) <= DBL_MAX) );
+}
+
 
 
 ALWAYS_INLINE bool JsvalIsScript( const JSContext *cx, jsval val ) {
@@ -660,7 +666,7 @@ ALWAYS_INLINE bool JsvalIsArray( JSContext *cx, jsval val ) {
 	(!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass)
 */
 ALWAYS_INLINE bool JsvalIsStringObject( const JSContext *cx, jsval val ) {
-	
+
 	return (!JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == GetHostPrivate(cx)->stringObjectClass);
 }
 
@@ -706,7 +712,7 @@ ALWAYS_INLINE JSBool JL_CallFunction( JSContext *cx, JSObject *obj, jsval functi
 	JL_S_ASSERT_FUNCTION( functionValue );
 	JSBool st;
 	st = JS_CallFunctionValue(cx, obj, functionValue, argc, argv+1, argv); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
-	JL_CHK( st ); 
+	JL_CHK( st );
 	if ( rval != NULL )
 		*rval = argv[0];
 	return JS_TRUE;
@@ -725,7 +731,7 @@ ALWAYS_INLINE JSBool JL_CallFunctionName( JSContext *cx, JSObject *obj, const ch
 	js::AutoArrayRooter tvr(cx, argc+1, argv);
 	argv[0] = JSVAL_NULL; // the rval
 	JSBool st = JS_CallFunctionName(cx, obj, functionName, argc, argv+1, argv); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
-	JL_CHK( st ); 
+	JL_CHK( st );
 	if ( rval != NULL )
 		*rval = argv[0];
 	return JS_TRUE;
@@ -781,7 +787,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 		size_t compFileSize = compFileStat.st_size; // filelength(file); ?
 		data = jl_malloc(compFileSize); // (TBD) free on error
 		int readCount = read( file, data, jl::SafeCast<unsigned int>(compFileSize) ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
-		JL_CHKM( readCount >= 0 && (unsigned)readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
+		JL_CHKM( readCount >= 0 && (size_t)readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
 		close( file );
 
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
@@ -867,7 +873,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	JL_S_ASSERT( scriptFileSize <= UINT_MAX, "Compiled file too big." ); // see read()
 
 //	int scriptFileSize;
-//	scriptFileSize = (unsigned)tell(scriptFile);
+//	scriptFileSize = tell(scriptFile);
 	lseek(scriptFile, 0, SEEK_SET);
 	char *scriptBuffer;
 	scriptBuffer = (char*)alloca(scriptFileSize);
@@ -875,7 +881,7 @@ ALWAYS_INLINE JSScript* JLLoadScript(JSContext *cx, JSObject *obj, const char *f
 	res = read(scriptFile, (void*)scriptBuffer, (unsigned int)scriptFileSize);
 	close(scriptFile);
 	JL_CHKM( res >= 0, "Unable to read file \"%s\".", fileName );
-	scriptFileSize = (unsigned)res;
+	scriptFileSize = (size_t)res;
 
 	JLEncodingType enc;
 	enc = JLDetectEncoding(&scriptBuffer, &scriptFileSize);
@@ -1048,7 +1054,7 @@ ALWAYS_INLINE bool JL_UnregisterNativeClass( const JSContext *cx, const JSClass 
 
 
 ALWAYS_INLINE jsval JL_GetEmptyStringValue( const JSContext *cx ) {
-	
+
 	return STRING_TO_JSVAL(cx->runtime->emptyString);
 }
 
@@ -1268,8 +1274,7 @@ ALWAYS_INLINE JSBool JsvalToSize( JSContext *cx, jsval val, size_t *i ) {
 	}
 	jsdouble d;
 	JL_CHK( JS_ValueToNumber(cx, val, &d) ); // JS_ValueToNumber also manage JSVAL_NULL
-//	if (likely( d >= 0 && d <= (jsdouble)SIZE_T_MAX )) {
-	if (likely( jl::IsSafeCast(d, *i) )) { // test
+	if (likely( d >= 0 && d <= (jsdouble)SIZE_T_MAX )) { // cannot use jl::IsSafeCast(d, *i) because if d is not integer, the test fails.
 
 		*i = static_cast<size_t>(d);
 		return JS_TRUE;
@@ -1280,6 +1285,27 @@ bad:
 	return JS_FALSE;
 }
 
+
+
+ALWAYS_INLINE JSBool JsvalToSSize( JSContext *cx, jsval val, ssize_t *i ) {
+
+	if (likely( JSVAL_IS_INT(val) )) {
+
+		*i = JSVAL_TO_INT(val);
+		return JS_TRUE;
+	}
+	jsdouble d;
+	JL_CHK( JS_ValueToNumber(cx, val, &d) ); // JS_ValueToNumber also manage JSVAL_NULL
+	if (likely( d >= (jsdouble)SSIZE_T_MIN && d <= (jsdouble)SSIZE_T_MAX )) {
+
+		*i = static_cast<ssize_t>(d);
+		return JS_TRUE;
+	}
+
+bad:
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "ssize" );
+	return JS_FALSE;
+}
 
 
 ALWAYS_INLINE JSBool JsvalToInt( JSContext *cx, jsval val, int *i ) {
@@ -1338,10 +1364,17 @@ ALWAYS_INLINE JSBool SizeToJsval( JSContext *cx, size_t size, jsval *val ) {
 		return JS_TRUE;
 	}
 	return JS_NewNumberValue(cx, size, val);
+}
 
-//bad:
-//	JL_REPORT_WARNING_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "size" );
-//	return JS_FALSE;
+
+ALWAYS_INLINE JSBool SSizeToJsval( JSContext *cx, ssize_t size, jsval *val ) {
+
+	if (likely( size >= JSVAL_INT_MIN && size <= JSVAL_INT_MAX )) {
+
+		*val = INT_TO_JSVAL((jsint)size);
+		return JS_TRUE;
+	}
+	return JS_NewNumberValue(cx, size, val);
 }
 
 
@@ -1433,17 +1466,17 @@ ALWAYS_INLINE JSBool JsvalToFloat( JSContext *cx, jsval val, float *f ) {
 
 	if (likely( JSVAL_IS_DOUBLE(val) )) {
 
-		*f = *JSVAL_TO_DOUBLE(val);
+		*f = (float)*JSVAL_TO_DOUBLE(val);
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_INT(val) ) {
 
-		*f = JSVAL_TO_INT(val);
+		*f = (float)JSVAL_TO_INT(val);
 		return JS_TRUE;
 	}
 	jsdouble tmp;
 	JL_CHK( JS_ValueToNumber( cx, val, &tmp ) );
-	*f = tmp;
+	*f = (float)tmp;
 	return JS_TRUE;
 
 bad:
@@ -1859,7 +1892,7 @@ public:
 	}
 
 	bool Process( jsval *val ) {
-	
+
 		_serializer->Process( jsval *val );
 	}
 };
@@ -1904,7 +1937,7 @@ public:
 
 		size_t offset = _pos - _start;
 		if ( offset + length > _length ) {
-			
+
 			_length *= 2;
 			_start = (uint8_t*)jl_realloc(_start, _length);
 			JL_ASSERT(_start);
@@ -1913,9 +1946,9 @@ public:
 	}
 
 	bool Process( uint32_t &value ) {
-		
+
 		if ( _serialize ) {
-			
+
 			ReserveBytes(sizeof(uint32_t));
 			*(uint32_t*)_pos = value;
 		} else {
@@ -1938,7 +1971,7 @@ JSBool JLSerialize( JSContext *cx, jsval *val ) {
 		JL_CHK( obj->getProperty(cx, JLID(cx, _Serialize), &fctVal) );
 		if ( JsvalIsFunction(cx, fctVal) ) {
 
-			
+
 
 		}
 
@@ -2261,7 +2294,7 @@ struct ProcessEvent {
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// 
+//
 
 
 namespace jl {
@@ -2306,13 +2339,13 @@ namespace jl {
 		void *_last;
 		uint8_t *_prealloc;
 		uint8_t *_preallocEnd;
-	
+
 	public:
 		ALWAYS_INLINE PreservAlloc() : _last(NULL), _prealloc(NULL) {
 		}
 
 		ALWAYS_INLINE ~PreservAlloc() {
-			
+
 			while ( _last != NULL ) {
 
 				void *tmp = _last;
@@ -2331,7 +2364,7 @@ namespace jl {
 		}
 
 		ALWAYS_INLINE void* Alloc(size_t size) {
-			
+
 			if ( size < sizeof(void*) )
 				size = sizeof(void*);
 
@@ -2385,7 +2418,7 @@ namespace jl {
 		}
 
 		ALWAYS_INLINE ~StaticAlloc() {
-			
+
 			while ( _last != NULL ) {
 
 				void *tmp = _last;
@@ -2402,7 +2435,7 @@ namespace jl {
 		}
 
 		ALWAYS_INLINE void* Alloc(size_t size) {
-			
+
 #ifdef DEBUG
 			JL_ASSERT( size != 0 );
 			if ( _dbg_size == 0 )
@@ -2506,14 +2539,14 @@ namespace jl {
 
 	template <>
 	inline int JsvalTo<int>( JSContext *cx, jsval v ) {
-		
+
 		if (likely( JSVAL_IS_INT(v) ))
 			return JSVAL_TO_INT(v);
 
 		jsdouble d;
 
 		if (likely( JSVAL_IS_DOUBLE(v) )) {
-			
+
 			d = *JSVAL_TO_DOUBLE(v);
 		} else {
 
@@ -2535,7 +2568,7 @@ namespace jl {
 		jsdouble d;
 
 		if (likely( JSVAL_IS_DOUBLE(v) )) {
-			
+
 			d = *JSVAL_TO_DOUBLE(v);
 		} else {
 

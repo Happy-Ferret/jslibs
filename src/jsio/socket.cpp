@@ -452,12 +452,12 @@ DEFINE_FUNCTION_FAST( RecvFrom ) {
 	if ( available == -1 )
 		return ThrowIoError(cx);
 
-	buffer = (char *)JS_malloc(cx, available +1); // (TBD) optimize this if  available == 0 !!
+	buffer = (char *)JS_malloc(cx, (size_t)available +1); // (TBD) optimize this if  available == 0 !!
 	JL_CHK( buffer );
 
 	PRNetAddr addr;
 	PRInt32 res;
-	res = PR_RecvFrom(fd, buffer, available, 0, &addr, PR_INTERVAL_NO_TIMEOUT);
+	res = PR_RecvFrom(fd, buffer, (PRInt32)available, 0, &addr, PR_INTERVAL_NO_TIMEOUT);
 	if (unlikely( res == -1 )) {
 		goto bad_ex;
 /*

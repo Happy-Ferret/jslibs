@@ -46,7 +46,7 @@ LoadModule('jsstd');
 		}
 		
 		var mem = (privateMemoryUsage - mem0) / length / times;
-		QA.ASSERT( mem > 1 && mem < 1.02, true, 'Blob memory usage ('+mem+')' );
+		QA.ASSERT( mem > 1 && mem < 1.02, true, 'Blob memory usage ('+mem+') (test not available on all platforms)' );
 
 
 /// Blob toSource and Uneval [mrtf]
@@ -294,7 +294,7 @@ LoadModule('jsstd');
 	var s = "abcdefgh";
 	var b = Blob(s);
 	
-	var argGen = argGenerator(2, [undefined, NaN, - Infinity, -1000, -100, -10, -3, -2.5, -2, -1, -0.6, -0.5, -0.4, 0, 0.4, 0.5, 0.6, 1, 2, 2.5, 3, 10, 100, 1000, + Infinity, "", " "]);
+	var argGen = argGenerator(2, [undefined, NaN, - Infinity, -2147483649, -2147483648, -65535, -1000, -100, -10, -3, -2.5, -2, -1, -0.6, -0.5, -0.4, 0, 0.4, 0.5, 0.6, 1, 2, 2.5, 3, 10, 100, 1000, + Infinity, "", " ", "0", "1"]);
 	try {
 		 for (;;) {
 		 
@@ -606,7 +606,7 @@ LoadModule('jsstd');
 	new Blob('123').__proto__.toSource();
 	
 
-/// map serialization [ftrm]
+/// map serialization [ftrmd]
 
 		var obj = {a:1, b:2, c:3};
 		var m = Map(obj);

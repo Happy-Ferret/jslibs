@@ -899,7 +899,6 @@ DEFINE_PROPERTY( systemCodepage ) {
 
 	*vp = INT_TO_JSVAL(GetACP());
 	return JS_TRUE;
-	JL_BAD;
 }
 
 /**doc
@@ -911,7 +910,6 @@ DEFINE_PROPERTY( consoleCodepage ) {
 
 	*vp = INT_TO_JSVAL(GetOEMCP());
 	return JS_TRUE;
-	JL_BAD;
 }
 
 
@@ -1133,7 +1131,6 @@ DEFINE_PROPERTY( folderPath ) {
 		return StringToJsval(cx, path, vp);
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
-	JL_BAD;
 }
 
 
@@ -1141,7 +1138,6 @@ DEFINE_PROPERTY( folderPath ) {
 DEFINE_FUNCTION_FAST( jswinshelltest ) {
 
 	return JS_TRUE;
-	JL_BAD;
 }
 #endif //DEBUG
 

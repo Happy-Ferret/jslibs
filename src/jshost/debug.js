@@ -1,11 +1,20 @@
-// LoadModule('jsstd'); Exec('../common/tools.js');
-// var QA = FakeQAApi;
+LoadModule('jsstd'); Exec('../common/tools.js');
+var QA = FakeQAApi;
 // RunLocalQAFile();
 // RunJsircbot(false);
-// RunQATests('-rep 3 -exclude jstask');
+RunQATests('-rep 3 -exclude jstask'); throw 0;
+
+	var s = 'Ab \0c';
+	var b = Blob(s);
+	
+	Print( b.lastIndexOf('A', -1) );
+	
+
+Print('END')
 
 
-LoadModule('jsstd');
+
+throw 0;
 
 
 var b = new Blob('test');

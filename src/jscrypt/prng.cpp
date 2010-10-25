@@ -220,7 +220,7 @@ DEFINE_PROPERTY( stateSetter ) {
 	const char *stateData;
 	size_t stateLength;
 	JL_CHK( JsvalToStringAndLength(cx, vp, &stateData, &stateLength) );
-	JL_S_ASSERT( stateLength == (unsigned)pv->prng.export_size, "Invalid import size." );
+	JL_S_ASSERT( stateLength == (size_t)pv->prng.export_size, "Invalid import size." );
 	int err;
 	err = pv->prng.pimport((unsigned char *)stateData, (unsigned long)stateLength, &pv->state);
 	if ( err != CRYPT_OK )

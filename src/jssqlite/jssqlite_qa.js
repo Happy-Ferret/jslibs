@@ -173,7 +173,7 @@ LoadModule('jssqlite');
 		db.testFun = function(a) { return a*10 }
 		db.jseval = function(s){ return eval(s) };
 		
-		var blob = new Blob('qqwe\00\00fv1234');
+		var blob = new Blob('qqwe\0\0fv1234');
 		
 		//var res = db.Exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});
 		var res = db.Exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});

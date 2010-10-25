@@ -391,9 +391,9 @@ DEFINE_PROPERTY( lastInsertRowid ) {
 	sqlite3_int64 lastId;
 	lastId = sqlite3_last_insert_rowid(pv->db);
 	if (likely( lastId <= JSVAL_INT_MAX ))
-		*vp = INT_TO_JSVAL(lastId);
+		*vp = INT_TO_JSVAL((int)lastId);
 	else
-		JL_CHK( JS_NewNumberValue(cx, lastId, vp) ); // use JS_NewNumberValue because sqlite3_last_insert_rowid returns int64
+		JL_CHK( JS_NewNumberValue(cx, (jsdouble)lastId, vp) ); // use JS_NewNumberValue because sqlite3_last_insert_rowid returns int64
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -446,9 +446,7 @@ DEFINE_PROPERTY( memoryUsed ) {
 //	int val, tmp;
 //	sqlite3_status(SQLITE_STATUS_MEMORY_USED, &val, &tmp, false);
 //	if ( val ) {
-
-	*vp = INT_TO_JSVAL( sqlite3_memory_used() );
-	return JS_TRUE;
+	return SizeToJsval(cx, (size_t)sqlite3_memory_used(), vp);
 }
 
 void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArgv ) {
@@ -634,7 +632,7 @@ END_CLASS
  {{{
  Print('database version: ' + Database.version ,'\n' );
 
- var obj = { foo:Blob('qqwe\00\00fv1234') };
+ var obj = { foo:Blob('qqwe\0\0fv1234') };
  Print( 'testFunc = ' + db.Exec('SELECT length(:foo)', obj  ) ,'\n' );
  }}}
  $H example 2

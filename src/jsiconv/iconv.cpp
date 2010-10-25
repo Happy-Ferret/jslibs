@@ -283,7 +283,7 @@ DEFINE_CALL() {
 	if ( pv->wTo ) { // destination is wide.
 	
 		if ( length % 2 != 0 )
-			JL_REPORT_WARNING("Invalid Unicode string length."); // (TBD) or report an error ?
+			JL_REPORT_WARNING("Invalid string length."); // (TBD) or report an error ?
 
 		jsEncStr = JS_NewUCString(cx, (jschar*)outBuf, (length +1) / 2);
 	} else {
@@ -473,4 +473,14 @@ for each ( var c in converted )
  result += invConv(c);
 Print( result == 'été','\n' ); // should be true
 }}}
+
+=== Example 3 ===
+ Convert a JavaScript for printing in a Windows console
+{{{
+LoadModule('jsiconv');
+LoadModule('jswinshell'); // defines consoleCodepage
+var conv = new Iconv(consoleCodepage, Iconv.jsUC, false, true);
+Print ( conv('été') );
+}}}
+
 **/

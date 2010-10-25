@@ -5,6 +5,15 @@ LoadModule('jsio');
 LoadModule('jsiconv');
 LoadModule('jswinshell');
 
+	
+	var conv = new Iconv(consoleCodepage, Iconv.jsUC, false, true);
+	Print ( consoleCodepage )
+
+
+	
+Halt(); //////////////////////////////////////////
+	
+
 	var conv = new Iconv('UTF-8', 'UCS-2-INTERNAL', false, true);
 	Print( conv.invalidChar, '?', 'default invalidChar' );
 	ASSERT_EXCEPTION( function() { conv.invalidChar = '???' }, TypeError, 'invalid invalidChar' );

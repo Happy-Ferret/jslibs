@@ -271,6 +271,67 @@ DEFINE_FUNCTION( Close ) {
 }
 
 
+/*
+JSBool JssqliteStep( JSContext *cx, JSObject *obj, int *status ) {
+
+	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE( pStmt );
+
+	jsval dbVal;
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &dbVal) );
+	DatabasePrivate *dbpv;
+	dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(dbVal));
+	JL_S_ASSERT_RESOURCE(dbpv);
+
+	sqlite3 *db;
+	db = dbpv->db;
+	JL_ASSERT( db == sqlite3_db_handle(pStmt) );
+
+	// check if bindings are up to date
+	jsval bindingUpToDate;
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, &bindingUpToDate) );
+
+	if ( bindingUpToDate != JSVAL_TRUE ) {
+
+		jsval queryArgument;
+		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, &queryArgument) );
+		JL_CHK( SqliteSetupBindings(cx, pStmt, JSVAL_IS_PRIMITIVE( queryArgument ) ? NULL : JSVAL_TO_OBJECT( queryArgument ), obj) ); // ":" use result object. "@" is the object passed to Query()
+		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_TRUE) );
+		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step().
+		//      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
+	}
+
+	dbpv->tmpcx = cx;
+	*status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
+	dbpv->tmpcx = NULL;
+	
+	JL_CHK( !JS_IsExceptionPending(cx) );
+
+	switch ( status ) {
+
+		case SQLITE_ROW: // SQLITE_ROW is returned each time a new row of data is ready for processing by the caller
+			*rval = JSVAL_TRUE;
+			return JS_TRUE;
+		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
+			*rval = JSVAL_FALSE;
+			return JS_TRUE;
+		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
+			JL_REPORT_ERROR( "This routine was called inappropriately." );
+//		case SQLITE_ERROR:
+//		case SQLITE_SCHEMA: // (TBD) check for another error (doc. The database schema changed)
+//			JL_CHK( SqliteThrowError(cx, db) );
+	}
+//	JL_REPORT_ERROR("invalid case (status:%d)", status );
+	JL_CHK( SqliteThrowError(cx, db) );
+	JL_BAD;
+
+}
+*/
+
+
+
+
+
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME()
@@ -322,8 +383,8 @@ DEFINE_FUNCTION( Step ) {
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
 			*rval = JSVAL_FALSE;
 			return JS_TRUE;
-		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
-			JL_REPORT_ERROR( "This routine was called inappropriately." );
+//		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
+//			JL_REPORT_ERROR( "This routine was called inappropriately." );
 //		case SQLITE_ERROR:
 //		case SQLITE_SCHEMA: // (TBD) check for another error (doc. The database schema changed)
 //			JL_CHK( SqliteThrowError(cx, db) );

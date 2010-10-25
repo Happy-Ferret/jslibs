@@ -1567,7 +1567,7 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	return JS_TRUE;
-	JL_BAD;
+//	JL_BAD;
 }
 
 

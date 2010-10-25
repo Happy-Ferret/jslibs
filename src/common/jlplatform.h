@@ -115,15 +115,16 @@
 
 #if defined(_MSC_VER)
 	// disable warnings:
-	#pragma warning(disable : 4244 4305)  // for VC++, no precision loss complaints
+//	#pragma warning(disable : 4244 4305)  // for VC++, no precision loss complaints
 	#pragma warning(disable : 4127)  // no "conditional expression is constant" complaints
 //	#pragma warning(disable : 4311) // warning C4311: 'variable' : pointer truncation from 'type' to 'type'
 //	#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
 //	#pragma warning(disable : 4267) // warning C4267: 'var' : conversion from 'size_t' to 'type', possible loss of data
 	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
 //	#pragma warning(disable : 4100) // warning C4100: 'xxx' : unreferenced formal parameter
-	#pragma warning(disable : 4102) // warning C4102: 'xxx' : unreferenced label
+//	#pragma warning(disable : 4102) // warning C4102: 'xxx' : unreferenced label
 //	#pragma warning(disable : 4125) // warning C4125: decimal digit terminates octal escape sequence
+
 	// force warning to error:
 	#pragma warning(error : 4715) // not all control paths return a value
 	#pragma warning(error : 4018) // warning C4018: '<' : signed/unsigned mismatch
@@ -234,6 +235,16 @@
 
 	typedef __int64 LLONG;
 
+	#ifndef _SSIZE_T_DEFINED
+	#ifdef  _WIN64
+	typedef signed __int64    ssize_t;
+	#else
+	typedef _W64 signed int   ssize_t;
+	#endif
+	#define _SSIZE_T_DEFINED
+	#endif
+
+
 	#define PATH_MAX MAX_PATH
 	#define DLL_EXT ".dll"
 	#define PATH_SEPARATOR_STRING "\\"
@@ -314,8 +325,13 @@
 
 #endif // Windows/MacosX/Linux platform
 
+
 #define SIZE_T_MIN (static_cast<size_t>(0))
 #define SIZE_T_MAX (static_cast<size_t>(-1))
+
+#define SSIZE_T_MAX (static_cast<ssize_t>(SIZE_T_MAX / 2))
+#define SSIZE_T_MIN (static_cast<ssize_t>(-SSIZE_T_MAX - 1L))
+
 
 #if defined(XP_WIN)
 #include <io.h> // _open_osfhandle()
@@ -811,9 +827,9 @@ ALWAYS_INLINE int JLProcessId() {
 
 #define JL_PAGESIZE 4096
 
-ALWAYS_INLINE uint16_t JLPageSize() {
+ALWAYS_INLINE size_t JLPageSize() {
 
-	static uint16_t pageSize = 0;
+	static size_t pageSize = 0;
 	if ( pageSize )
 		return pageSize;
 #if defined(XP_WIN)

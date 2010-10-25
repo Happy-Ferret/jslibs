@@ -69,7 +69,7 @@ DEFINE_PROPERTY( radiusSetter ) {
 	ode::dGeomCylinderGetParams(geom, &radius, &length);
 	jsdouble value;
 	JL_CHK( JS_ValueToNumber(cx, *vp, &value) );
-	ode::dGeomCylinderSetParams(geom, value, length);
+	ode::dGeomCylinderSetParams(geom, (ode::dReal)value, length);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -98,7 +98,7 @@ DEFINE_PROPERTY( lengthSetter ) {
 	ode::dGeomCylinderGetParams(geom, &radius, &length);
 	jsdouble value;
 	JL_CHK( JS_ValueToNumber(cx, *vp, &value) );
-	ode::dGeomCylinderSetParams(geom, radius, value);
+	ode::dGeomCylinderSetParams(geom, radius, (ode::dReal)value);
 	return JS_TRUE;
 	JL_BAD;
 }

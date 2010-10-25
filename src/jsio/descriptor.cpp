@@ -477,7 +477,7 @@ DEFINE_PROPERTY( available ) {
 	}
 
 	if ( available <= JSVAL_INT_MAX )
-		*vp = INT_TO_JSVAL(available);
+		*vp = INT_TO_JSVAL( (jsint)available );
 	else
 		JL_CHK( JS_NewNumberValue(cx, (jsdouble)available, vp) );
 
@@ -497,7 +497,7 @@ DEFINE_PROPERTY( type ) {
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
-	*vp = INT_TO_JSVAL( (int)PR_GetDescType(fd) );
+	*vp = INT_TO_JSVAL( (jsint)PR_GetDescType(fd) );
 	return JS_TRUE;
 	JL_BAD;
 }

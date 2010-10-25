@@ -80,7 +80,7 @@ DEFINE_FUNCTION_FAST( Adjust ) {
 	JL_CHK( GetBodyAndMass(cx, JL_FOBJ, &bodyID, &mass) );
 	jsdouble newMass;
 	JL_CHK( JS_ValueToNumber(cx, JL_FARG(1), &newMass) );
-	ode::dMassAdjust(&mass, newMass);
+	ode::dMassAdjust(&mass, (ode::dReal)newMass);
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
 	JL_BAD;
@@ -127,7 +127,7 @@ DEFINE_FUNCTION_FAST( SetBoxTotal ) {
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 
 // apply the formulae
-	ode::dMassSetBoxTotal(&mass, totalMass, dimensions[0], dimensions[0], dimensions[0]);
+	ode::dMassSetBoxTotal(&mass, (ode::dReal)totalMass, dimensions[0], dimensions[0], dimensions[0]);
 // set mass object
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
@@ -151,7 +151,7 @@ DEFINE_PROPERTY( valueSetter ) {
 	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	jsdouble massValue;
 	JL_CHK( JS_ValueToNumber(cx, *vp, &massValue) );
-	mass.mass = massValue;
+	mass.mass = (ode::dReal)massValue;
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
 	JL_BAD;

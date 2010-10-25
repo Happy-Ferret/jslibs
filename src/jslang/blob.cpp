@@ -328,19 +328,23 @@ DEFINE_FUNCTION_FAST( substr ) {
 	const char *bstrBuffer;
 	JL_CHK( BlobBuffer(cx, obj, &bstrBuffer) );
 
-	size_t dataLength;
-	JL_CHK( BlobLength(cx, obj, &dataLength) );
+	size_t tmp;
+	ssize_t dataLength;
+	JL_CHK( BlobLength(cx, obj, &tmp) );
+	dataLength = tmp;
 
 	jsval arg1;
 	arg1 = JL_FARG(1);
 
-	size_t start;
+	ssize_t start;
+
+
 	if ( JsvalIsPInfinity(cx, arg1) )
-		start = (signed)dataLength;
-	else if ( JsvalIsNegative(cx, arg1) || !JsvalToSize(cx, arg1, &start) )
+		start = dataLength;
+	else if ( /*JSVAL_IS_VOID(arg1) || JsvalIsNaN(cx, arg1) || JsvalIsNInfinity(cx, arg1) ||*/ !JsvalToSSize(cx, arg1, &start) )
 		start = 0;
 
-	if ( start >= dataLength ) {
+	if ( start >= (ssize_t)dataLength ) {
 
 		*JL_FRVAL = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
@@ -349,12 +353,12 @@ DEFINE_FUNCTION_FAST( substr ) {
 	if ( start < 0 )
 		start = dataLength + start;
 
-	if ( start < 0 || start >= dataLength )
+	if ( start < 0 || start >= (ssize_t)dataLength )
 		start = 0;
 
 	// now 0 <= start < dataLength
 
-	size_t length;
+	ssize_t length;
 	if ( argc >= 2 ) {
 
 		jsval arg2;
@@ -362,7 +366,7 @@ DEFINE_FUNCTION_FAST( substr ) {
 
 		if ( JsvalIsPInfinity(cx, arg2) )
 			length = dataLength;
-		else if ( JsvalIsNegative(cx, arg2) || !JsvalToSize(cx, arg2, &length) )
+		else if ( /*JSVAL_IS_VOID(arg2) || JsvalIsNaN(cx, arg2) || JsvalIsNInfinity(cx, arg2) ||*/ !JsvalToSSize(cx, arg2, &length) )
 			length = 0;
 
 		if ( length <= 0 ) {
@@ -442,24 +446,24 @@ DEFINE_FUNCTION_FAST( substring ) {
 	jsval arg1;
 	arg1 = JL_FARG(1);
 	if ( JsvalIsPInfinity(cx, arg1) )
-		indexA = (signed)dataLength;
-	else if ( !JsvalToInt(cx, JL_FARG(1), &indexA) )
+		indexA = (int)dataLength;
+	else if ( JsvalIsNaN(cx, arg1) || JSVAL_IS_VOID(arg1) || JsvalIsNInfinity(cx, arg1) || !JsvalToInt(cx, arg1, &indexA) )
 		indexA = 0;
 
 	if ( JL_ARGC < 2 || JsvalIsPInfinity(cx, JL_FARG(2)) )
-		indexB = (signed)dataLength;
-	else if ( !JsvalToInt(cx, JL_FARG(2), &indexB) )
+		indexB = (int)dataLength;
+	else if ( JsvalIsNaN(cx, JL_FARG(2)) || JSVAL_IS_VOID(JL_FARG(2)) || JsvalIsNInfinity(cx, JL_FARG(2)) || !JsvalToInt(cx, JL_FARG(2), &indexB) )
 		indexB = 0;
 
 	if ( indexA < 0 )
 		indexA = 0;
-	else if ( indexA > (signed)dataLength )
-		indexA = (signed)dataLength;
+	else if ( indexA > (int)dataLength )
+		indexA = (int)dataLength;
 
 	if ( indexB < 0 )
 		indexB = 0;
-	else if ( indexB > (signed)dataLength )
-		indexB = (signed)dataLength;
+	else if ( indexB > (int)dataLength )
+		indexB = (int)dataLength;
 
 	if ( indexA > indexB ) {
 
@@ -468,7 +472,7 @@ DEFINE_FUNCTION_FAST( substring ) {
 		indexA = tmp;
 	}
 
-	if ( indexA == indexB || indexA >= (signed)dataLength ) {
+	if ( indexA == indexB || indexA >= (int)dataLength ) {
 
 		*JL_FRVAL = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
@@ -596,31 +600,30 @@ DEFINE_FUNCTION_FAST( lastIndexOf ) {
 	if ( JL_FARG_ISDEF(2) ) {
 		
 		jsval arg2 = JL_FARG(2);
+		if ( JsvalIsNegative(cx, arg2) ) {
 
-		if ( JsvalIsNegative(cx, arg2) || JsvalIsNInfinity(cx, arg2) ) {
-			
-			start = 0;
-		} else {
-
-			if ( JsvalIsPInfinity(cx, arg2) || JsvalIsNaN(cx, arg2) ) {
-				
-				start = length - sLength;
-			} else {
-				
-				JL_CHK( JsvalToSize(cx, JL_FARG(2), &start) );
-				if ( start + sLength > length ) {
-
-					start = length - sLength;
-				}
-			}
+			*JL_FRVAL = INT_TO_JSVAL(-1);
+			return JS_TRUE;
 		}
 
+		if ( JsvalIsPInfinity(cx, arg2) || JsvalIsNaN(cx, arg2) ) {
+			
+			start = length - sLength;
+		} else {
+			
+			JL_CHK( JsvalToSize(cx, JL_FARG(2), &start) );
+			if ( start + sLength > length ) {
+
+				start = length - sLength;
+			}
+		}
 	} else {
 
 		start = length - sLength;
 	}
 
-	for ( size_t i = start; i >= 0; i-- ) {
+
+	for ( long i = start; i >= 0; i-- ) {
 
 		size_t j;
 		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ ) ;
@@ -674,7 +677,7 @@ DEFINE_FUNCTION_FAST( charAt ) {
 	size_t length;
 	JL_CHK( BlobLength(cx, obj, &length) );
 
-	if ( length == 0 || index < 0 || (unsigned)index >= length ) {
+	if ( length == 0 || index < 0 || (size_t)index >= length ) {
 
 		*JL_FRVAL = JS_GetEmptyStringValue(cx);
 		return JS_TRUE;
@@ -732,7 +735,7 @@ DEFINE_FUNCTION_FAST( charCodeAt ) {
 	size_t length;
 	JL_CHK( BlobLength(cx, obj, &length) );
 
-	if ( length == 0 || index < 0 || (unsigned)index >= length ) {
+	if ( length == 0 || index < 0 || (size_t)index >= length ) {
 
 		*JL_FRVAL = JS_GetNaNValue(cx);
 		return JS_TRUE;

@@ -30,24 +30,15 @@
 const char *ZConstString( int errorCode ) {
 
 	switch (errorCode) {
-		case 0:
-			return "Z_OK";
-		case 1:
-			return "Z_STREAM_END";
-		case 2:
-			return "Z_NEED_DICT";
-		case -1:
-			return "Z_ERRNO";
-		case -2:
-			return "Z_STREAM_ERROR";
-		case -3:
-			return "Z_DATA_ERROR";
-		case -4:
-			return "Z_MEM_ERROR";
-		case -5:
-			return "Z_BUF_ERROR";
-		case -6:
-			return "Z_VERSION_ERROR";
+		case Z_OK: return "Z_OK";
+		case Z_STREAM_END: return "Z_STREAM_END";
+		case Z_NEED_DICT: return "Z_NEED_DICT";
+		case Z_ERRNO: return "Z_ERRNO";
+		case Z_STREAM_ERROR: return "Z_STREAM_ERROR";
+		case Z_DATA_ERROR: return "Z_DATA_ERROR";
+		case Z_MEM_ERROR: return "Z_MEM_ERROR";
+		case Z_BUF_ERROR: return "Z_BUF_ERROR";
+		case Z_VERSION_ERROR: return "Z_VERSION_ERROR";
 	}
 	return "UNKNOWN_ERROR";
 }
