@@ -182,9 +182,11 @@ function CreateQaItemList(startDir, files, include, exclude, flags) {
 }
 
 
+var globalIssueCount = 0;
 
 function CommonReportIssue(cx, type, location, testName, checkName, details) {
 
+	globalIssueCount++;
 	var message = type +' @'+ location +' - '+ (testName||'') +' - '+ (checkName||'') +' - '+ details;
 	cx.issueList.push(message);
 	Print( '\n X '+ message, '\n' );
@@ -244,7 +246,7 @@ function LaunchTests(itemList, cfg) {
 		
 		if ( cx.item.init || cfg.runOnlyTestIndex == undefined || cfg.runOnlyTestIndex == testIndex ) {
 
-			cfg.quiet || Print( ' - '+testIndex+' - '+cx.item.file+' - '+ cx.item.name );
+			cfg.quiet || Print( ' - '+testIndex+' - '+cx.item.file+':'+cx.item.line+' - '+ cx.item.name );
 
 //			gcZeal = cfg.gcZeal;
 
@@ -275,8 +277,8 @@ function LaunchTests(itemList, cfg) {
 			cfg.quiet || Print('\n');
 
 		}
-		
-		if ( cfg.stopAfterNIssues && issues > cfg.stopAfterNIssues )
+
+		if ( cfg.stopAfterNIssues && (globalIssueCount >= cfg.stopAfterNIssues) )
 			break;
 
 		if ( endSignal )
