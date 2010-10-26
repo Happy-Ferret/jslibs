@@ -18,20 +18,22 @@
 #include "prng.h"
 #include "hash.h"
 
-#include <tommath.h>
-
-#include <math.h>
-
 enum AsymmetricCipherType {
 	rsa,
 	ecc,
 	dsa,
+#ifdef MKAT
+	katja,
+#endif
 };
 
 union AsymmetricKey {
 	rsa_key rsaKey;
 	ecc_key eccKey;
 	dsa_key dsaKey;
+#ifdef MKAT
+	katja_key katjaKey;
+#endif
 };
 
 struct AsymmetricCipherPrivate {
@@ -84,6 +86,11 @@ DEFINE_FINALIZE() {
 			case dsa:
 				dsa_free( &pv->key.dsaKey );
 				break;
+#ifdef MKAT
+			case katja:
+				katja_free( &pv->key.katjaKey );
+				break;
+#endif
 		}
 	}
 	zeromem(pv, sizeof(AsymmetricCipherPrivate)); // safe clean
@@ -99,11 +106,12 @@ $TOC_MEMBER $INAME
     * rsa
     * ecc
     * dsa
+    * katja
    $ARG $STR hashName: is the hash that will be used to create the PSS (Probabilistic Signature Scheme) encoding. It should be the same as the hash used to hash the message being signed. See Hash class for available names.
    $ARG $OBJ prngObject: is an instantiated Prng object. Its current state will be used for key creation, data encryption/decryption, data signature/signature check. This argument can be ommited if you aim to decrypt data only.
    $ARG $STR PKCSVersion: is a string that contains the padding version used by RSA to encrypt/decrypd data:
-    * 1_OAEP (for PKCS #1 v2.1 encryption)
-    * 1_V1_5 (for PKCS #1 v1.5 encryption)
+    * 1_V1_5 (for PKCS#1 v1.5 padding)
+    * 1_OAEP (for PKCS#1 v2.0 encryption padding)
     If omitted, the default value is 1_OAEP.
     Only RSA use this argument.
 **/
@@ -119,10 +127,14 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	AsymmetricCipherType asymmetricCipher;
 	if ( strcasecmp( asymmetricCipherName, "RSA" ) == 0 )
 		asymmetricCipher = rsa;
-	else if ( strcasecmp( asymmetricCipherName, "ECC" ) == 0 )
-		asymmetricCipher = ecc;
 	else if ( strcasecmp( asymmetricCipherName, "DSA" ) == 0 )
 		asymmetricCipher = dsa;
+	else if ( strcasecmp( asymmetricCipherName, "ECC" ) == 0 )
+		asymmetricCipher = ecc;
+#ifdef MKAT
+	else if ( strcasecmp( asymmetricCipherName, "KATJA" ) == 0 )
+		asymmetricCipher = katja;
+#endif
 	else
 		JL_REPORT_ERROR("Invalid asymmetric cipher %s.", asymmetricCipherName);
 
@@ -149,21 +161,27 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 		JL_CHK( JS_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JSVAL_VOID) );
 	}
 
-	pv->padding = LTC_LTC_PKCS_1_OAEP;
+	if ( asymmetricCipher == rsa ) {
 
-	if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) ) {
+		if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) ) {
 
-		const char *paddingName;
-		JL_CHK( JsvalToString(cx, &argv[3], &paddingName) );
+			const char *paddingName;
+			JL_CHK( JsvalToString(cx, &argv[3], &paddingName) );
 
-		if ( strcmp(paddingName, "1_OAEP") == 0 ) {
+			if ( strcasecmp(paddingName, "1_OAEP") == 0 ) {
+				pv->padding = LTC_LTC_PKCS_1_OAEP;
+			} else
+			if ( strcasecmp(paddingName, "1_V1_5") == 0 ) {
+				pv->padding = LTC_LTC_PKCS_1_V1_5;
+			} else
+				JL_REPORT_ERROR("Invalid padding version.");
+		} else {
 
-			pv->padding = LTC_LTC_PKCS_1_OAEP;
-		} else if ( strcmp(paddingName, "1_V1_5") == 0 ) {
+			pv->padding = LTC_LTC_PKCS_1_OAEP; // default
+		}
+	} else {
 
-			pv->padding = LTC_LTC_PKCS_1_V1_5;
-		} else
-			JL_REPORT_ERROR("Invalid padding version.");
+		JL_S_ASSERT( !JL_ARG_ISDEF(4), "Too many arguments." );
 	}
 
 	pv->hasKey = false;
@@ -178,16 +196,17 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( keySize )
-  Create RSA public and private keys.
+ $INAME( keySize [, verify] )
+  Create public and private keys.
   $LF
-  _keySize_ is the size of the key in bits (the modulus size).
-  $H note
-   supported RSA keySize: from 1024 to 4096 bits
-   $LF
-   supported ECC keySize: 112, 128, 160, 192, 224, 256, 384, 521, 528 bits
-   $LF
-   supported DSA keySize (Bits of Security): ???, 64, 80, 120, 140, 160, ??? bits
+  _keySize_ is the size of the key in bits (the modulus size). from AsymmetricCipher.[RSA|ECC|DSA|KATJA]_MIN_KEYSIZE to AsymmetricCipher.[RSA|ECC|DSA|KATJA]_MAX_KEYSIZE bits.
+  $LF
+  _verify_ is a boolean. If true, the key is verified. (DSA only)
+  $H example:
+{{{
+var ac = new AsymmetricCipher( 'rsa', 'md5', new Prng('fortuna') );
+ac.CreateKeys( AsymmetricCipher.RSA_MIN_KEYSIZE );
+}}}
 **/
 DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 
@@ -214,7 +233,7 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 			break;
 		}
 		case ecc: {
-			int modulusSize = keySize / 8; // Bytes
+			int modulusSize = keySize;
 			err = ecc_make_key( prngState, prngIndex, modulusSize, &pv->key.eccKey );
 			break;
 		}
@@ -229,18 +248,34 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 			int groupSize = keySize / 4; // Bytes
 			int modulusSize = 1 << (keySize / 40 + 5); // Bytes
 			err = dsa_make_key( prngState, prngIndex, groupSize, modulusSize, &pv->key.dsaKey );
-
-			//int stat = 0; // default: failed
-			//dsa_verify_key(&pv->key.dsaKey, &stat);
-			//if (stat != 1) // If the result is stat = 1 the DSA key is valid (as far as valid mathematics are concerned).
-			//	JL_REPORT_ERROR("Invalid key.");
 			break;
 		}
+#ifdef MKAT
+		case katja: {
+			int modulusSize = keySize / 8; // Bytes
+			err = katja_make_key( prngState, prngIndex, modulusSize, &pv->key.katjaKey );
+			break;
+		}
+#endif
 		default:
 			JL_REPORT_ERROR("Invalid case.");
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
+
+	bool verify;
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JsvalToBool(cx, JL_ARG(2), &verify) );
+	else
+		verify = false;
+
+	if ( pv->cipher == dsa && verify ) {
+
+		int stat;
+		err = dsa_verify_key(&pv->key.dsaKey, &stat);
+		if ( err != CRYPT_OK || stat != 1 ) // If the result is stat = 1 the DSA key is valid (as far as valid mathematics are concerned).
+			JL_REPORT_ERROR("Invalid key.");
+	}
 
 	pv->hasKey = true;
 	return JS_TRUE;
@@ -253,6 +288,8 @@ $TOC_MEMBER $INAME
   This function returns the encrypted _data_ using a previously created or imported public key.
   $LF
   _data_ is the string to encrypt (usualy cipher keys).
+  $H note
+   This function may throw CRYPT_INVALID_HASH or CRYPT_PK_INVALID_SIZE if the data length is greater that the hash size (see blockLength property);
 **/
 DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 
@@ -285,7 +322,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			// This is useful to identify which system encoded the message. If no variance is desired then lparam can be set to NULL.
 			unsigned char *lparam = NULL; // default: lparam not used
 			unsigned long lparamlen = 0;
-			if (argc >= 2 && !JSVAL_IS_VOID( argv[1] ))
+			if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
 				JL_CHK( JsvalToStringAndLength(cx, &argv[1], &in, &inLength) );
 			err = rsa_encrypt_key_ex( (unsigned char *)in, (unsigned long)inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
 			break;
@@ -295,9 +332,20 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			break;
 		}
 		case dsa: {
+			// if inlen > hash_descriptor[hash].hashsize => ERROR
 			err = dsa_encrypt_key( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, prngState, prngIndex, hashIndex, &pv->key.dsaKey );
 			break;
 		}
+#ifdef MKAT
+		case katja: {
+			unsigned char *lparam = NULL; // default: lparam not used
+			unsigned long lparamlen = 0;
+			if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
+				JL_CHK( JsvalToStringAndLength(cx, &argv[1], &in, &inLength) );
+			err = katja_encrypt_key( (unsigned char *)in, (unsigned long)inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, &pv->key.katjaKey );
+			break;
+		}
+#endif
 		default:
 			JL_REPORT_ERROR("Invalid case.");
 	}
@@ -374,6 +422,27 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 			err = dsa_decrypt_key( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, &pv->key.dsaKey );
 			break;
 		}
+#ifdef MKAT
+		case katja: {
+
+			int hashIndex = find_hash(pv->hashDescriptor->name);
+
+			const char *lparam = NULL; // default: lparam not used
+			size_t lparamlen = 0;
+			if (argc >= 2 && !JSVAL_IS_VOID( argv[1] ))
+				JL_CHK( JsvalToStringAndLength(cx, &argv[1], &lparam, &lparamlen) );
+
+			int stat = 0; // default: failed
+			err = katja_decrypt_key( (unsigned char *)in, (unsigned long)inLength, (unsigned char *)out, &outLength, (const unsigned char *)lparam, (unsigned long)lparamlen, hashIndex, &stat, &pv->key.katjaKey );
+			// doc: if all went well pt == pt2, l2 == 16, res == 1
+			if ( err == CRYPT_OK && stat != 1 ) {
+
+				*rval = JSVAL_VOID;
+				return JS_TRUE;
+			}
+			break;
+		}
+#endif
 		default:
 			JL_REPORT_ERROR("Invalid case.");
 	}
@@ -442,6 +511,12 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 			err = dsa_sign_hash( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, prngState, prngIndex, &pv->key.dsaKey );
 			break;
 		}
+#ifdef MKAT
+		case katja: {
+			JL_REPORT_ERROR("Invalid operation.");
+			break;
+		}
+#endif
 		default:
 			JL_REPORT_ERROR("Invalid case.");
 	}
@@ -503,6 +578,12 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 			dsa_verify_hash( (unsigned char *)sign, (unsigned long)signLength, (unsigned char *)data, dataLength, &stat, &pv->key.dsaKey );
 			break;
 		}
+#ifdef MKAT
+		case katja: {
+			JL_REPORT_ERROR("Invalid operation.");
+			break;
+		}
+#endif
 		default:
 			JL_REPORT_ERROR("Invalid case.");
 	}
@@ -535,14 +616,30 @@ DEFINE_PROPERTY( blockLength ) {
 	int blockLength;
 	switch ( pv->cipher ) {
 		case rsa:
-			blockLength = mp_unsigned_bin_size((mp_int*)(pv->key.rsaKey.N)) - 2 * pv->hashDescriptor->hashsize - 2; // Ok !
+			// blockLength = mp_unsigned_bin_size((mp_int*)(pv->key.rsaKey.N)) - 2 * pv->hashDescriptor->hashsize - 2;
+			blockLength = ltc_mp.unsigned_size(pv->key.rsaKey.N) - 2 * pv->hashDescriptor->hashsize - 2;
 			break;
 		case ecc:
-			blockLength = pv->hashDescriptor->hashsize; // seems OK
+			blockLength = pv->hashDescriptor->hashsize;
 			break;
 		case dsa:
-			blockLength = pv->hashDescriptor->hashsize; // seems OK
+			blockLength = pv->hashDescriptor->hashsize;
 			break;
+#ifdef MKAT
+		case katja: { // (TBD)
+
+			// see katja_encrypt_key() and pkcs_1_oaep_encode() for details:
+			unsigned long modulus_bitlen, modulus_len, hLen;
+			modulus_bitlen = ltc_mp.count_bits(pv->key.katjaKey.N);
+			modulus_bitlen = ((modulus_bitlen << 1) / 3);
+			modulus_bitlen -= (modulus_bitlen & 7) + 8;
+			modulus_len = (modulus_bitlen >> 3) + (modulus_bitlen & 7 ? 1 : 0);
+			hLen = pv->hashDescriptor->hashsize;
+			blockLength = modulus_bitlen - 2*hLen - 2;
+			//bool tmp = (2*hLen >= (modulus_len - 2));
+			break;
+		}
+#endif
 		default:
 			JL_REPORT_ERROR("Invalid case.");
 	}
@@ -566,14 +663,20 @@ DEFINE_PROPERTY( keySize ) {
 	int keySize;
 	switch ( pv->cipher ) {
 		case rsa:
-			keySize = ltc_mp.count_bits(pv->key.rsaKey.N); // Ok !
+			keySize = ltc_mp.count_bits(pv->key.rsaKey.N);
 			break;
 		case ecc:
-			keySize = ltc_mp.count_bits(pv->key.eccKey.pubkey.x); // Ok !
+//			keySize = ltc_mp.count_bits(pv->key.eccKey.pubkey.x);
+			keySize = ecc_get_size(&pv->key.eccKey); // doc. returns INT_MAX on error
 			break;
 		case dsa:
-			keySize = ltc_mp.count_bits(pv->key.dsaKey.q) / 2; // or x ???
+			keySize = ltc_mp.count_bits(pv->key.dsaKey.q) / 2; // or .dsaKey.x ???
 			break;
+#ifdef MKAT
+		case katja:
+			keySize = ltc_mp.count_bits(pv->key.katjaKey.N);
+			break;
+#endif
 		default:
 			JL_REPORT_ERROR("Invalid case.");
 	}
@@ -586,10 +689,10 @@ DEFINE_PROPERTY( keySize ) {
 /**doc
 $TOC_MEMBER $INAME
  $STR *privateKey*
-  The private key encoded using PKCS #1. (Public Key Cryptographic Standard #1 v2.0 padding)
+  The private key.
 
  * $STR *publicKey*
-  The public key encoded using PKCS #1. (Public Key Cryptographic Standard #1 v2.0 padding)
+  The public key.
 **/
 
 DEFINE_PROPERTY( keySetter ) {
@@ -615,17 +718,22 @@ DEFINE_PROPERTY( keySetter ) {
 			break;
 		case ecc:
 			err = ecc_import( (unsigned char *)key, (unsigned long)keyLength, &pv->key.eccKey );
-			JL_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
+			JL_S_ASSERT( pv->key.eccKey.type == type, "Invalid key type." );
 			break;
-		case dsa: {
+		case dsa:
 			err = dsa_import( (unsigned char *)key, (unsigned long)keyLength, &pv->key.dsaKey );
-			JL_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
+			JL_S_ASSERT( pv->key.dsaKey.type == type, "Invalid key type." );
 			//int stat = 0;
 			//dsa_verify_key(&pv->key.dsaKey, &stat);
 			//if (stat != 1) // If the result is stat = 1 the DSA key is valid (as far as valid mathematics are concerned).
 			//	JL_REPORT_ERROR("Invalid key.");
 			break;
-		}
+#ifdef MKAT
+		case katja:
+			err = katja_import( (unsigned char *)key, (unsigned long)keyLength, &pv->key.katjaKey );
+			JL_S_ASSERT( pv->key.katjaKey.type == type, "Invalid key type." );
+			break;
+#endif
 		default:
 			JL_REPORT_ERROR("Invalid case.");
 	}
@@ -667,6 +775,11 @@ DEFINE_PROPERTY( keyGetter ) {
 		case dsa:
 			err = dsa_export( (unsigned char *)key, &keyLength, type, &pv->key.dsaKey );
 			break;
+#ifdef MKAT
+		case katja:
+			err = katja_export( (unsigned char *)key, &keyLength, type, &pv->key.katjaKey );
+			break;
+#endif
 		default:
 			JL_REPORT_ERROR("Invalid case.");
 	}
@@ -707,6 +820,25 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( privateKey, key )
 		PROPERTY_SWITCH( publicKey, key )
 	END_PROPERTY_SPEC
+
+	BEGIN_CONST_INTEGER_SPEC
+		#ifdef LTC_MRSA
+		CONST_INTEGER(RSA_MIN_KEYSIZE, MIN_RSA_SIZE)
+		CONST_INTEGER(RSA_MAX_KEYSIZE, MAX_RSA_SIZE)
+		#endif
+		#ifdef MKAT
+		CONST_INTEGER(KAT_MIN_KEYSIZE, MIN_KAT_SIZE)
+		CONST_INTEGER(KAT_MAX_KEYSIZE, MAX_KAT_SIZE)
+		#endif
+		#ifdef LTC_MECC
+		CONST_INTEGER(ECC_MIN_KEYSIZE, 0)
+		CONST_INTEGER(ECC_MAX_KEYSIZE, ECC_MAXSIZE)
+		#endif
+		#ifdef LTC_MDSA
+		CONST_INTEGER(DSA_MIN_KEYSIZE, 0)
+		CONST_INTEGER(DSA_MAX_KEYSIZE, LTC_MDSA_MAX_GROUP * 4) // see CreateKeys(): groupSize = keySize / 4;
+		#endif
+	END_CONST_INTEGER_SPEC
 
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS( 1 )

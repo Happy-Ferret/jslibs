@@ -69,10 +69,10 @@ def configure(conf):
     else:
         conf.env['JL_DISABLED_MODULE'].append('jsiconv (missing iconv library)')
 
-    if conf.env['HAVE_TOMCRYPT'] and conf.env['HAVE_MP_INIT']:
+    if conf.env['HAVE_TOMCRYPT']:
         conf.env['JL_ENABLED_MODULE'].append('jscrypt')
     else:
-        conf.env['JL_DISABLED_MODULE'].append('jscrypt (missing Tomcrypt or Tommath libraries)')
+        conf.env['JL_DISABLED_MODULE'].append('jscrypt (missing Tomcrypt library)')
 
     if conf.env['HAVE_FCGX_ACCEPT_R']:
         conf.env['JL_ENABLED_MODULE'].append('jsfastcgi')

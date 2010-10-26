@@ -27,6 +27,58 @@ DEFINE_PROPERTY( code ) {
 	return JL_GetReservedSlot( cx, obj, 0, vp );
 }
 
+
+
+const char *ConstString( int errorCode ) {
+
+	switch (errorCode) {
+
+		case CRYPT_OK: return "CRYPT_OK";
+		case CRYPT_ERROR: return "CRYPT_ERROR";
+		case CRYPT_NOP: return "CRYPT_NOP";
+		case CRYPT_INVALID_KEYSIZE: return "CRYPT_INVALID_KEYSIZE";
+		case CRYPT_INVALID_ROUNDS: return "CRYPT_INVALID_ROUNDS";
+		case CRYPT_FAIL_TESTVECTOR: return "CRYPT_FAIL_TESTVECTOR";
+		case CRYPT_BUFFER_OVERFLOW: return "CRYPT_BUFFER_OVERFLOW";
+		case CRYPT_INVALID_PACKET: return "CRYPT_INVALID_PACKET";
+		case CRYPT_INVALID_PRNGSIZE: return "CRYPT_INVALID_PRNGSIZE";
+		case CRYPT_ERROR_READPRNG: return "CRYPT_ERROR_READPRNG";
+		case CRYPT_INVALID_CIPHER: return "CRYPT_INVALID_CIPHER";
+		case CRYPT_INVALID_HASH: return "CRYPT_INVALID_HASH";
+		case CRYPT_INVALID_PRNG: return "CRYPT_INVALID_PRNG";
+		case CRYPT_MEM: return "CRYPT_MEM";
+		case CRYPT_PK_TYPE_MISMATCH: return "CRYPT_PK_TYPE_MISMATCH";
+		case CRYPT_PK_NOT_PRIVATE: return "CRYPT_PK_NOT_PRIVATE";
+		case CRYPT_INVALID_ARG: return "CRYPT_INVALID_ARG";
+		case CRYPT_FILE_NOTFOUND: return "CRYPT_FILE_NOTFOUND";
+		case CRYPT_PK_INVALID_TYPE: return "CRYPT_PK_INVALID_TYPE";
+		case CRYPT_PK_INVALID_SYSTEM: return "CRYPT_PK_INVALID_SYSTEM";
+		case CRYPT_PK_DUP: return "CRYPT_PK_DUP";
+		case CRYPT_PK_NOT_FOUND: return "CRYPT_PK_NOT_FOUND";
+		case CRYPT_PK_INVALID_SIZE: return "CRYPT_PK_INVALID_SIZE";
+		case CRYPT_INVALID_PRIME_SIZE: return "CRYPT_INVALID_PRIME_SIZE";
+		case CRYPT_PK_INVALID_PADDING : return "CRYPT_PK_INVALID_PADDING ";
+	}
+	return "UNKNOWN_ERROR";
+}
+
+
+DEFINE_PROPERTY( const ) {
+
+	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
+	if ( JSVAL_IS_VOID(*vp) )
+		return JS_TRUE;
+	int errorCode;
+	errorCode = JSVAL_TO_INT(*vp);
+	JSString *str;
+	str = JS_NewStringCopyZ( cx, ConstString(errorCode) );
+	*vp = STRING_TO_JSVAL( str );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 DEFINE_PROPERTY( text ) {
 
 	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
@@ -93,6 +145,7 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( code )
+		PROPERTY_READ( const )
 		PROPERTY_READ( text )
 	END_PROPERTY_SPEC
 

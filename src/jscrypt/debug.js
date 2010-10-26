@@ -3,6 +3,63 @@
 LoadModule('jsstd');
 LoadModule('jscrypt');
 
+try {
+
+		var acName = 'katja';
+		var acKeySize = 1024;
+
+		var rnd = new Prng('yarrow');
+//		rnd.AutoEntropy(128); // give more entropy
+		
+		var ac = new AsymmetricCipher( acName, 'sha512', rnd );
+		ac.CreateKeys( acKeySize, true );
+		var acPubKey = ac.publicKey;
+		Print( ac.keySize, '\n' );
+		
+		var ac2 = new AsymmetricCipher( acName, 'sha512', rnd );
+		ac2.publicKey = acPubKey;
+		Print( ac2.keySize, '\n' );
+
+		ac2.blockLength;
+		var plainText = StringRepeat(' ', ac2.blockLength );
+		Print( 'len ', plainText.length, '\n' );
+		
+		var enc = ac2.Encrypt( plainText );
+//		var res = ac.Decrypt( enc );
+//		Print ( res == plainText, '\n' );
+		
+//		Print('Rise an error:\n');
+//		var res = ac2.Decrypt( ac.Encrypt( plainText ) );
+
+
+} catch(ex) {
+	
+	Print( ex.const, '\n' );
+	Print( ex.lineNumber, '\n' );
+}
+
+	
+Halt();
+
+
+
+		var rnd = new Prng('fortuna');
+		rnd.AutoEntropy(128); // give more entropy
+		var plainText = 'totqutyvq8wyetvq7ewryt9vq78yrt987wveyrt98v7weyr9tv87wery9twev87y9r78o';
+		plainText = plainText;
+		var rsa = new AsymmetricCipher('rsa', 'md5', rnd );
+		rsa.CreateKeys( 1024 );
+		var rsaPubKey = rsa.publicKey;
+		var rsa1 = new AsymmetricCipher( 'rsa', 'md5', rnd );
+		rsa1.publicKey = rsaPubKey;
+		var rsaEncryptedData = rsa1.Encrypt( plainText );
+		var res = rsa.Decrypt( rsaEncryptedData );
+		Print ( res == plainText )
+
+		
+		
+Halt();
+
 
 
 		var fortuna = new Prng('fortuna');
@@ -23,21 +80,7 @@ Print( bob.keySize, '\n' );
 		
 Halt();	
 
-		var rnd = new Prng('fortuna');
-		rnd.AutoEntropy(128); // give more entropy
-		var plainText = 'totqutyvq8wyetvq7ewryt9vq78yrt987wveyrt98v7weyr9tv87wery9twev87y9r78o';
-		plainText = plainText;
-		var rsa = new AsymmetricCipher('rsa', 'md5', rnd );
-		rsa.CreateKeys( 1024 );
-		var rsaPubKey = rsa.publicKey;
-		var rsa1 = new AsymmetricCipher( 'rsa', 'md5', rnd );
-		rsa1.publicKey = rsaPubKey;
-		var rsaEncryptedData = rsa1.Encrypt( plainText );
-		rsa.Decrypt( rsaEncryptedData );
 
-		
-		
-Halt();
 
 		var fortuna = new Prng('fortuna');
 		fortuna.AutoEntropy(123); // give more entropy

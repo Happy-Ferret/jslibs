@@ -3,7 +3,6 @@
 def configure(conf):
 
     conf.check_cfg(package='libtomcrypt', args='--cflags --libs', atleast_version='1.17', uselib_store='TOMCRYPT')
-    conf.check_cxx(header_name='tommath.h', function_name='mp_init', lib='tommath', uselib_store='TOMMATH', msg='Checking for library tommath')
 
 def build(bld):
 
@@ -14,4 +13,5 @@ def build(bld):
     task.source = bld.path.ant_glob('*.cpp')
     task.includes = '../common'
     task.defines = 'GMP_DESC'
-    task.uselib = 'JLMOZJS TOMCRYPT TOMMATH'
+    task.uselib = 'JLMOZJS TOMCRYPT'
+
