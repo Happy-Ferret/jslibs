@@ -1,6 +1,6 @@
 # Build spider monkey library
 
-import os
+import Options, os
 
 def configure(conf):
 
@@ -119,7 +119,8 @@ def build(bld):
     make = bld.new_task_gen()
     make.name = 'task-make-mozjs'
     make.target = 'src/libmozjs.so'
-    make.rule ='cd ${TGT[0].bld_dir(env)} && make'
+    make.rule ='cd ${TGT[0].bld_dir(env)} && make -j${JOBS}'
+    make.env['JOBS'] = str(Options.options.jobs)
 
     js_libs_sources = ''
 
