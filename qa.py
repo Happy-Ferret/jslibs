@@ -60,6 +60,8 @@ def exec_qa(self):
         cmd = filename + ' ' + self.qa_argv
         cwd = self.qa_cwd
 
+        Utils.pprint('CYAN', "Executing qa: '%s' in dir: '%s'" % (cmd, cwd))
+
         try:
             fu = getattr(self.generator.bld, 'all_test_paths')
         except AttributeError:
