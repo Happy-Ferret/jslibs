@@ -4,11 +4,18 @@ APPNAME='jslibs'
 
 # these variables are mandatory ('/' are converted automatically)
 srcdir = '.'
-blddir = 'build'
+blddir = 'waf-build'
 
 # Take care of absolute header paths in 'uselib' referenced libraries
 import preproc
 preproc.go_absolute_uselib = 1
+
+# Create .tar.gz with ./waf dist
+import Scripting
+Scripting.g_gz = 'gz'
+
+# Keep Makefile.in for lib/js
+Scripting.excludes.remove("Makefile.in")
 
 import Utils, Options
 from TaskGen import feature, before, after
@@ -102,7 +109,12 @@ def configure(conf):
     conf.env.append_value('CCFLAGS', Utils.to_list('-fPIC'))
     conf.env.append_value('CXXFLAGS', Utils.to_list('-fPIC'))
 
+    # Update LIBDIR to ${PREFIX}/lib/jslibs/
+    conf.env['LIBDIR'] = "${PREFIX}/lib/jslibs/"
+
     # Create debug and optimize variants
+    conf.env.set_variant('default')
+
     variant_dbg = conf.env.copy()
     conf.set_env_name('debug', variant_dbg)
     variant_dbg.set_variant('debug')
@@ -201,6 +213,47 @@ def build(bld):
     # QA feature support
     import qa
     bld.add_post_fun(qa.summary)
+
+def debian(ctx):
+    Scripting.commands += ['dist', 'debuild']
+
+def debuild(ctx):
+    Utils.pprint('Normal', "Creating debian package", sep='')
+    extract_dir = APPNAME + '-' + VERSION
+    archive = extract_dir + '.tar.' + Scripting.g_gz
+    deb_archive = APPNAME + '_' + VERSION + '.orig.tar.' + Scripting.g_gz
+
+    import Build, Environment, os
+    bld = Build.BuildContext()
+    bld.load_dirs(os.path.abspath(srcdir), os.path.abspath(blddir))
+    env = Environment.Environment()
+    bld.load_envs()
+
+    link = bld.new_task_gen()
+    link.source = archive
+    link.target = deb_archive
+    link.rule = 'ln -sf ${SRC[0].abspath()} ${TGT[0].abspath()} && cp ${TGT[0].abspath()} ${TGT[0].abspath(env)}'
+    link.features = 'sync'
+
+    extract = bld.new_task_gen()
+    extract.source = deb_archive
+    extract.rule = 'cd ${SRC[0].src_dir(env)} && tar zxvf ${SRC[0].abspath()}'
+    extract.features = 'sync'
+    
+    dch = bld.new_task_gen()
+    dch.source = deb_archive
+    dch.rule = 'cd ${SRC[0].src_dir(env)}/${SRCDIR} && dch --newversion ${VERSION}-1 "New SVN release"'
+    dch.env.SRCDIR = extract_dir
+    dch.env.VERSION = VERSION
+    dch.features = 'sync'
+ 
+    debuild = bld.new_task_gen()
+    debuild.source = deb_archive
+    debuild.rule = 'cd ${SRC[0].src_dir(env)}/${SRCDIR} && debuild -us -uc --lintian-opts -i -I'
+    debuild.env.SRCDIR = extract_dir
+    debuild.features = 'sync'
+
+    bld.compile()
 
 def qa(ctx):
 
