@@ -839,6 +839,7 @@ LoadModule('jsstd');
 		QA.ASSERT( res.toString(), Math.toString(), 'Math object' );
 		QA.ASSERT( res == Math, false, 'Global objects' );
 
+
 /// Sandbox external access [tfm]
 
 		LoadModule('jsio');
@@ -894,5 +895,4 @@ LoadModule('jsstd');
 
 /// Sandbox watchdog
 	
-//		QA.ASSERT_EXCEPTION( function() { SandboxEval('for (var i=0; i<10000000; ++i);') }, OperationLimit, 'OperationLimit detection' );
-
+	QA.ASSERT_EXCEPTION( function() { SandboxEval('for (var i=0; i<10000000000; ++i);') }, OperationLimit, 'OperationLimit detection' );
