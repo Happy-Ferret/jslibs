@@ -836,8 +836,8 @@ LoadModule('jsstd');
 /// Sandbox global objects [tfm]
 	
 		var res = SandboxEval('Math');
-		QA.ASSERT( res.Math == Math, false, 'Global objects' );
-
+		QA.ASSERT( res.toString(), Math.toString(), 'Math object' );
+		QA.ASSERT( res == Math, false, 'Global objects' );
 
 /// Sandbox external access [tfm]
 
