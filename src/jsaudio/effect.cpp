@@ -49,6 +49,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
 	alGenEffects(1, &pv->effect);
@@ -69,12 +72,13 @@ $TOC_MEMBER $INAME
  $INT $INAME()
   Returns the internal OpenAL buffer id.
 **/
-DEFINE_FUNCTION_FAST( valueOf ) {
+DEFINE_FUNCTION( valueOf ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	JL_CHK( UIntToJsval(cx, pv->effect, JL_FRVAL) );
+	JL_CHK( JL_CValToJsval(cx, pv->effect, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -108,7 +112,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	int effectType;
-	JL_CHK( JsvalToInt(cx, *vp, &effectType) );
+	JL_CHK( 	JL_JsvalToCVal(cx, *vp, &effectType) );
 
 	alEffecti(pv->effect, AL_EFFECT_TYPE, effectType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -126,16 +130,17 @@ DEFINE_PROPERTY_GETTER( type ) {
 	alGetEffecti(pv->effect, AL_EFFECT_TYPE, &effectType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( IntToJsval(cx, effectType, vp) );
+	JL_CHK( JL_CValToJsval(cx, effectType, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
 /*
-DEFINE_FUNCTION_FAST( Test ) {
+DEFINE_FUNCTION( Test ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 
@@ -149,9 +154,9 @@ DEFINE_PROPERTY_SETTER( effectFloat ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = JSVAL_TO_INT(id);
+	ALenum param = JSID_TO_INT(id);
 	float f;
-	JL_CHK( JsvalToFloat(cx, *vp, &f) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &f) );
 	alEffectf(pv->effect, param, f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -162,11 +167,11 @@ DEFINE_PROPERTY_GETTER( effectFloat ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = JSVAL_TO_INT(id);
+	ALenum param = JSID_TO_INT(id);
 	float f;
 	alGetEffectf(pv->effect, param, &f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( FloatToJsval(cx, f, vp) );
+	JL_CHK(JL_CValToJsval(cx, f, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -175,9 +180,9 @@ DEFINE_PROPERTY_SETTER( effectInt ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = JSVAL_TO_INT(id);
+	ALenum param = JSID_TO_INT(id);
 	int i;
-	JL_CHK( JsvalToInt(cx, *vp, &i) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &i) );
 	alEffecti(pv->effect, param, i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -188,11 +193,11 @@ DEFINE_PROPERTY_GETTER( effectInt ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = JSVAL_TO_INT(id);
+	ALenum param = JSID_TO_INT(id);
 	int i;
 	alGetEffecti(pv->effect, param, &i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( IntToJsval(cx, i, vp) );
+	JL_CHK( JL_CValToJsval(cx, i, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -201,9 +206,9 @@ DEFINE_PROPERTY_SETTER( effectBool ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = JSVAL_TO_INT(id);
+	ALenum param = JSID_TO_INT(id);
 	bool b;
-	JL_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
 	alEffecti(pv->effect, param, b ? AL_TRUE : AL_FALSE);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -214,7 +219,7 @@ DEFINE_PROPERTY_GETTER( effectBool ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = JSVAL_TO_INT(id);
+	ALenum param = JSID_TO_INT(id);
 	int i;
 	alGetEffecti(pv->effect, param, &i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -390,8 +395,8 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST_ARGC( valueOf, 0 )
-//		FUNCTION_FAST( Test )
+		FUNCTION_ARGC( valueOf, 0 )
+//		FUNCTION( Test )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

@@ -31,19 +31,18 @@ struct Surface {
 };
 
 
-ALWAYS_INLINE JSClass* TrimeshJSClass( JSContext *cx ) {
+static ALWAYS_INLINE JSClass* JL_TrimeshJSClass( const JSContext *cx ) {
 
-//	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
-//	if (unlikely( jsClass == NULL ))
-//		jsClass = JL_GetRegistredNativeClass(cx, "Blob");
-//	return jsClass;
-	return JL_GetRegistredNativeClass(cx, "Trimesh");
+	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+	if (unlikely( clasp == NULL ))
+		clasp = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Trimesh")->clasp;
+	return clasp;
 }
 
 
-bool JsvalIsTrimesh( JSContext *cx, jsval val ) {
+bool JL_JsvalIsTrimesh( JSContext *cx, jsval val ) {
 
-	return JsvalIsClass(val, TrimeshJSClass(cx));
+	return JL_JsvalIsClass(val, JL_TrimeshJSClass(cx));
 }
 
 

@@ -1,10 +1,18 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-rep 1 -exclude jstask jsz');
+
 
 LoadModule('jsstd');
 LoadModule('jsz');
 
-	var inflate = new Z(Z.INFLATE);
-	inflate();
+		var data = 'clear data';
+		var deflatedData = new Z(Z.DEFLATE)(data, true);
+		var deflater = new Z(Z.DEFLATE);
+
+		Print( deflater(data,true) ==  deflatedData, '\n' );
+		Print( deflater(data,true) ==  deflatedData, '\n' );
+		Print( deflater(data,true) ==  deflatedData, '\n' );
+
 
 
 

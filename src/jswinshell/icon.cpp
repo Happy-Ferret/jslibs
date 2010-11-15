@@ -39,10 +39,12 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
+	jsval iconVal;
 	JL_S_ASSERT_ARG_MIN(1);
 
-	jsval iconVal = argv[0];
+	iconVal = JL_ARG(1);
 
 	HICON hIcon = NULL;
 
@@ -71,13 +73,13 @@ DEFINE_CONSTRUCTOR() {
 		HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 		JSObject *imgObj = JSVAL_TO_OBJECT(iconVal);
 
-//		JL_S_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JsvalIsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));
-		JL_S_ASSERT( JsvalIsData(cx, iconVal), "Invalid image object." );
+//		JL_S_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JL_JsvalIsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));
+		JL_S_ASSERT( JL_JsvalIsData(cx, iconVal), "Invalid image object." );
 
 		unsigned int width, height, channels, x, y;
-		JL_CHK( GetPropertyUInt(cx, imgObj, "width", &width) );
-		JL_CHK( GetPropertyUInt(cx, imgObj, "height", &height) );
-		JL_CHK( GetPropertyUInt(cx, imgObj, "channels", &channels) );
+		JL_CHK( JL_GetProperty(cx, imgObj, "width", &width) );
+		JL_CHK( JL_GetProperty(cx, imgObj, "height", &height) );
+		JL_CHK( JL_GetProperty(cx, imgObj, "channels", &channels) );
 		unsigned char *imageData = (unsigned char*)JL_GetPrivate(cx, imgObj);
 
 		// http://groups.google.com/group/microsoft.public.win32.programmer.gdi/browse_frm/thread/adaf38d715cef81/3825af9edde28cdc?lnk=st&q=RGB+CreateIcon&rnum=9&hl=en#3825af9edde28cdc

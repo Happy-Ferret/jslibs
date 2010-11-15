@@ -42,7 +42,7 @@ LoadModule('jsz');
 		QA.ASSERT_STR( inflater(deflatedData,true), data, '1st complete inflate' );
 		QA.ASSERT_STR( inflater(deflatedData,true), data, '2nd complete inflate' );
 		QA.ASSERT_STR( inflater(deflatedData,true), data, '3rd complete inflate' );
-
+		
 
 /// deflate object reusability [ftrm]
 
@@ -53,7 +53,7 @@ LoadModule('jsz');
 		QA.ASSERT_STR( deflater(data,true), deflatedData, '1st complete deflate' );
 		QA.ASSERT_STR( deflater(data,true), deflatedData, '2nd complete deflate' );
 		QA.ASSERT_STR( deflater(data,true), deflatedData, '3rd complete deflate' );
-
+		QA.ASSERT( deflater(data,true).length, deflatedData.length, '4rd complete deflate length' );
 
 /// inflate / deflate [ftrm]
 		

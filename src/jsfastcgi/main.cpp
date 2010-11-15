@@ -22,7 +22,7 @@ bool _unsafeMode = false;
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	_unsafeMode = JL_GetHostPrivate(cx)->unsafeMode;
 
 //	INIT_CLASS( FastCGI );
 	INIT_STATIC();

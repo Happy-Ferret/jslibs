@@ -26,7 +26,7 @@ DEFINE_NEW_RESOLVE() {
 
 //		jsval tmp;
 //		JS_IdToValue(cx, id, &tmp);
-//		char *str = JS_GetStringBytes(JS_ValueToString(cx, tmp));
+//		char *str = JL_GetStringBytes(JS_ValueToString(cx, tmp));
 
 		JL_CHK( JS_ResolveStandardClass(cx, obj, id, &resolved) );
 		if (resolved) {

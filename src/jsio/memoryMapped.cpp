@@ -62,14 +62,15 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
 	JSObject *fdObj;
 	fdObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_S_ASSERT_CLASS( fdObj, JL_CLASS(File) );
-	JL_CHK( JS_SetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, JL_ARG(1)) ); // avoid the file to be GCed while being used by MemoryMapped
+	JL_CHK( JL_SetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, JL_ARG(1)) ); // avoid the file to be GCed while being used by MemoryMapped
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc*)JL_GetPrivate(cx, fdObj);
@@ -90,7 +91,7 @@ DEFINE_CONSTRUCTOR() {
 	// Doc. The offset must be aligned to whole pages. !!!
 	PROffset64 offset;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JsvalToInt(cx, JL_ARG(2), &offset) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &offset) );
 	else
 		offset = 0;
 
@@ -143,7 +144,7 @@ DEFINE_PROPERTY_SETTER( offset ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( JsvalToSize(cx, *vp, &pv->offset) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &pv->offset) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -152,7 +153,7 @@ DEFINE_PROPERTY_GETTER( offset ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( SizeToJsval(cx, pv->offset, vp) );
+	JL_CHK( JL_CValToJsval(cx, pv->offset, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -49,6 +49,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+	
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
 	alGenAuxiliaryEffectSlots(1, &pv->effectSlot);
@@ -58,11 +61,12 @@ DEFINE_CONSTRUCTOR() {
 	JL_BAD;
 }
 
-DEFINE_FUNCTION_FAST( valueOf ) {
+DEFINE_FUNCTION( valueOf ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
-	JL_CHK( UIntToJsval(cx, pv->effectSlot, JL_FRVAL) );
+	JL_CHK( JL_CValToJsval(cx, pv->effectSlot, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -79,7 +83,7 @@ DEFINE_PROPERTY( effect ) {
 
 	ALuint effect;
 	if ( !JSVAL_IS_VOID(*vp) )
-		JL_CHK( JsvalToUInt(cx, *vp, &effect) );
+		JL_CHK( JL_JsvalToCVal(cx, *vp, &effect) );
 	else
 		effect = AL_EFFECT_NULL;
 
@@ -96,7 +100,7 @@ DEFINE_PROPERTY_SETTER( effectGain ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	float gain;
-	JL_CHK( JsvalToFloat(cx, *vp, &gain) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &gain) );
 	alAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, gain );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -110,7 +114,7 @@ DEFINE_PROPERTY_GETTER( effectGain ) {
 	float gain;
 	alGetAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, &gain );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( FloatToJsval(cx, gain, vp) );
+	JL_CHK(JL_CValToJsval(cx, gain, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -121,7 +125,7 @@ DEFINE_PROPERTY_SETTER( effectSendAuto ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	bool sendAuto;
-	JL_CHK( JsvalToBool(cx, *vp, &sendAuto) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &sendAuto) );
 	alAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, sendAuto ? AL_TRUE : AL_FALSE );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -135,7 +139,7 @@ DEFINE_PROPERTY_GETTER( effectSendAuto ) {
 	int sendAuto;
 	alGetAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, &sendAuto );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( BoolToJsval(cx, sendAuto == AL_TRUE ? true : false, vp) );
+	JL_CHK(JL_CValToJsval(cx, sendAuto == AL_TRUE ? true : false, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -149,7 +153,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( valueOf )
+		FUNCTION( valueOf )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

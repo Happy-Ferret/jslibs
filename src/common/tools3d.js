@@ -260,7 +260,7 @@ function Light( oglLight ) {
 	this.Update = function() {
 
 		Ogl.Light(oglLight, Ogl.POSITION, this.position);
-		Vector3Sub(this.aim, this.position, tmp);
+		Vec3Sub(this.aim, this.position, tmp);
 		Ogl.Light(oglLight, Ogl.SPOT_DIRECTION, tmp);
 	}
 	
@@ -342,7 +342,7 @@ function UI(currentWidth, currentHeight) {
 	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 	GlSetAttribute( GL_DEPTH_SIZE, 32);
 	GlSetAttribute( GL_STENCIL_SIZE, 8 );
-	GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+//	GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 	
 	SetVideoMode(currentWidth, currentHeight, undefined, defaultVideoMode);
 	

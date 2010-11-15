@@ -80,28 +80,28 @@ JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) {
 
 	switch( ode::dGeomGetClass(geomId) ) {
 		case ode::dSphereClass:
-			*obj = JS_NewObject(cx, JL_CLASS(GeomSphere), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomSphere), JL_PROTOTYPE(cx, GeomSphere), NULL);
 			break;
 		case ode::dBoxClass:
-			*obj = JS_NewObject(cx, JL_CLASS(GeomBox), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomBox), JL_PROTOTYPE(cx, GeomBox), NULL);
 			break;
 		case ode::dCapsuleClass:
-			*obj = JS_NewObject(cx, JL_CLASS(GeomCapsule), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomCapsule), JL_PROTOTYPE(cx, GeomCapsule), NULL);
 			break;
 		case ode::dCylinderClass:
-			*obj = JS_NewObject(cx, JL_CLASS(GeomCylinder), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomCylinder), JL_PROTOTYPE(cx, GeomCylinder), NULL);
 			break;
 		case ode::dPlaneClass:
-			*obj = JS_NewObject(cx, JL_CLASS(GeomPlane), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomPlane), JL_PROTOTYPE(cx, GeomPlane), NULL);
 			break;
 		case ode::dRayClass:
-			*obj = JS_NewObject(cx, JL_CLASS(GeomRay), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomRay), JL_PROTOTYPE(cx, GeomRay), NULL);
 			break;
 		case ode::dConvexClass:
-			*obj = JS_NewObject(cx, JL_CLASS(GeomConvex), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomConvex), JL_PROTOTYPE(cx, GeomConvex), NULL);
 			break;
 		case ode::dTriMeshClass:
-			*obj = JS_NewObject(cx, JL_CLASS(GeomTrimesh), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomTrimesh), JL_PROTOTYPE(cx, GeomTrimesh), NULL);
 			break;
 		default:
 			JL_REPORT_ERROR("Unable to reconstruct the geom.");
@@ -127,17 +127,20 @@ BEGIN_CLASS( Geom )
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME()
+ $VOID $INAME()
   dGeomSetData NULL, dGeomDestroy
 **/
-DEFINE_FUNCTION_FAST( Destroy ) {
+DEFINE_FUNCTION( Destroy ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
+
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geomId );
 	ode::dGeomDestroy(geomId);
 	JL_SetPrivate(cx, obj, NULL);
 	SetMatrix44GetInterface(cx, obj, NULL);
+	
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -147,14 +150,16 @@ DEFINE_FUNCTION_FAST( Destroy ) {
 $TOC_MEMBER $INAME
  $REAL $INAME( $TYPE vec3 point )
 **/
-DEFINE_FUNCTION_FAST( PointDepth ) {
+DEFINE_FUNCTION( PointDepth ) {
 
-	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( geomId );
-	JL_S_ASSERT_ARRAY( JL_FARG(1) );
+	JL_S_ASSERT_ARRAY( JL_ARG(1) );
 	ode::dReal depth, point[3];
 	uint32 len;
-	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), point, 3, &len) );
+	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), point, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Invalid array size." );
 
 	switch( ode::dGeomGetClass(geomId) ) {
@@ -174,7 +179,7 @@ DEFINE_FUNCTION_FAST( PointDepth ) {
 			JL_REPORT_ERROR("Not support for this geometry.");
 	}
 
-	JL_CHK( FloatToJsval(cx, depth, JL_FRVAL) );
+	JL_CHK( JL_CValToJsval(cx, depth, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -195,7 +200,7 @@ DEFINE_PROPERTY( disabledSetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
 	bool disabled;
-	JL_CHK( JsvalToBool(cx, *vp, &disabled) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &disabled) );
 	if ( disabled )
 		ode::dGeomDisable(geom);
 	else
@@ -225,7 +230,7 @@ DEFINE_PROPERTY( temporalCoherenceSetter ) {
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geomId);
 	bool enableState;
-	JL_CHK( JsvalToBool(cx, *vp, &enableState) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &enableState) );
 	ode::dGeomTriMeshEnableTC(geomId, ode::dGeomGetClass(geomId), enableState ? 1 : 0 );
 	return JS_TRUE;
 	JL_BAD;
@@ -252,7 +257,7 @@ DEFINE_PROPERTY( bodySetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
 	ode::dBodyID bodyId;
-	JL_CHK( JsvalToBody(cx, *vp, &bodyId) );
+	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
 	ode::dGeomSetBody(geom, bodyId);
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -367,7 +372,7 @@ DEFINE_PROPERTY( positionSetter ) {
 	JL_S_ASSERT_RESOURCE(geom);
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomSetPosition( geom, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -425,7 +430,7 @@ DEFINE_PROPERTY( boundarySphere ) {
 	
 	JL_CHK( ODERealVectorToJsval(cx, center.raw, 3, vp) );
 	jsval tmpVal;
-	JL_CHK( FloatToJsval(cx, radius, &tmpVal) );
+	JL_CHK( JL_CValToJsval(cx, radius, &tmpVal) );
 	JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT(*vp), 3, &tmpVal) );
 
 	return JS_TRUE;
@@ -455,7 +460,7 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	size_t length;
-	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomSetOffsetPosition( geom, vector[0], vector[1], vector[2] ); // (TBD) dGeomSetOffsetWorldRotation
 	return JS_TRUE;
@@ -474,10 +479,10 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 **/
 DEFINE_PROPERTY( contactSetter ) {
 	
-//	JL_S_ASSERT( JsvalIsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
+//	JL_S_ASSERT( JL_JsvalIsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
 	if ( !JSVAL_IS_VOID(*vp) )
 		JL_S_ASSERT_FUNCTION(*vp);
-	return JS_SetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, *vp);
+	return JL_SetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, *vp);
 	JL_BAD;
 }
 
@@ -499,8 +504,8 @@ CONFIGURE_CLASS
 //	HAS_PRIVATE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( Destroy )
-		FUNCTION_FAST( PointDepth )
+		FUNCTION( Destroy )
+		FUNCTION( PointDepth )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

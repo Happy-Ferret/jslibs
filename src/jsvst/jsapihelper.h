@@ -48,7 +48,7 @@ protected:
 			throw JsException(_cx, "cannot set the property");
 	}
 
-	inline int JsvalToInt( jsval val ) {
+	inline int 	JsvalToInt( jsval val ) {
 
 		int32 i;
 		if ( !JS_ValueToInt32(_cx, val, &i) )
@@ -61,27 +61,27 @@ protected:
 		if ( i >= JSVAL_INT_MIN && i <= JSVAL_INT_MAX )
 			return INT_TO_JSVAL(i);
 		jsval rval;
-		if ( !JS_NewNumberValue(_cx, i, &rval) )
+		if ( !JL_NewNumberValue(_cx, i, &rval) )
 			throw JsException(_cx, "cannot convert integer to a jsval");
 		return rval;
 	}
 
 	inline double JsvalToReal( jsval val ) {
 
-		jsdouble d;
-		if ( !JS_ValueToNumber(_cx, val, &d) )
-			throw JsException(_cx, "cannot convert to a real");
-		if ( DOUBLE_TO_JSVAL(&d) == JS_GetNaNValue(_cx) ) // (TBD) needed ?
+		if ( val == JL_GetNaNValue(_cx) ) // (TBD) needed ?
 			throw JsException(_cx, "not a number");
+		jsdouble d;
+		if ( !JL_JsvalToCVal(_cx, val, &d) )
+			throw JsException(_cx, "cannot convert to a real");
 		return d;
 	}
 
 	inline jsval RealToJsval( double d ) {
 
 		jsval rval;
-		if ( !JS_NewNumberValue(_cx, d, &rval) )
+		if ( !JL_NewNumberValue(_cx, d, &rval) )
 			throw JsException(_cx, "cannot convert the double to a jsval");
-		if ( rval == JS_GetNaNValue(_cx) ) // (TBD) needed ?
+		if ( rval == JL_GetNaNValue(_cx) ) // (TBD) needed ?
 			throw JsException(_cx, "not a number");
 		return rval;
 	}
@@ -105,7 +105,10 @@ protected:
 		val = STRING_TO_JSVAL(jsstr);
 		if ( jsstr == NULL )
 			throw JsException(_cx, "cannot convert the value to a string");
-		return JS_GetStringBytes(jsstr); // never fails
+		const char *s = JL_GetStringBytesZ(_cx, jsstr);
+		if ( s == NULL )
+			s = "";
+		return s; // never fails
 	}
 
 	inline void CopyJsvalToString( jsval val, char *str, size_t maxLength ) {
@@ -122,7 +125,10 @@ protected:
 		size_t len = JL_GetStringLength(jsstr);
 		if ( len > maxLength - 1 )
 			 len = maxLength - 1;
-		memcpy(str, JS_GetStringBytes(jsstr), len);
+		const char *s = JL_GetStringBytesZ(_cx, jsstr);
+		if ( s == NULL )
+			s = "";
+		memcpy(str, s, len);
 		str[len] = '\0';
 	}
 
@@ -131,7 +137,7 @@ protected:
 		if ( str == NULL )
 			return JSVAL_NULL;
 		if ( str[0] == '\0' )
-			return JS_GetEmptyStringValue(_cx);
+			return JL_GetEmptyStringValue(_cx);
 		JSString *jsstr = JS_NewStringCopyZ(_cx, str);
 		if ( jsstr == NULL )
 			throw JsException(_cx, "cannot create the string");
@@ -153,7 +159,7 @@ protected:
 		if ( !JSVAL_IS_PRIMITIVE(val) )
 			return false;
 		JSObject *stringPrototype;
-		if ( !JS_GetClassObject(_cx, JS_GetGlobalObject(_cx), JSProto_String, &stringPrototype) ) // (TBD) see JL_GetStringClass(cx);
+		if ( !JS_GetClassObject(_cx, JS_GetGlobalObject(_cx), JSProto_String, &stringPrototype) ) // (TBD) see GetStringClass(cx);
 			return false;
 		if ( JS_GetPrototype(_cx, JSVAL_TO_OBJECT(val)) == stringPrototype )
 			return true;
@@ -162,7 +168,7 @@ protected:
 
 	inline bool jsvalIsReal( jsval val ) {
 
-		return JSVAL_IS_DOUBLE(val);
+		return !!JSVAL_IS_DOUBLE(val);
 	}
 
 	inline int AssertRange( int value, int min, int max ) {

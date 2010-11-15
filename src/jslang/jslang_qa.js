@@ -31,6 +31,74 @@ LoadModule('jsstd');
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 
 
+/// Blob vs String
+
+	function tests(CHK, T) {
+
+		CHK( T('abcd').split('',0) );
+		CHK( T('abcd').split('',1) );
+		CHK( T('abcd').split('',2) );
+		CHK( T('abcd').split('',3) );
+		CHK( T('abcd').split('',4) );
+		CHK( T('abcd').split('',5) );
+
+		CHK( T('a').split('',0) );
+		CHK( T('a').split('',1) );
+		CHK( T('a').split('',2) );
+
+		CHK( T('').split('',0) );
+		CHK( T('').split('',1) );
+		CHK( T('').split('',2) );
+
+		CHK( T('').split('') );
+		CHK( T('1').split('') );
+		CHK( T('').split('1') );
+		CHK( T('1').split('1') );
+
+		CHK( T('abcd').split('') );
+		CHK( T('').split('') );
+	//	CHK( T('12').split(0,1) );
+	//	CHK( T('12').split(2, undefined) );
+		CHK( T('abcd').split('abcd') );
+		CHK( T('ababababab').split('a', 3) );
+		CHK( T('12').split(undefined) );
+		CHK( T('12').split('a') );
+		CHK( T('1a23aa').split('a') );
+
+		CHK( T('aaa|bbb|ccc').split('|') );
+		CHK( T('aaa||bbb||ccc').split('|') );
+		CHK( T('aaa||bbb||ccc').split('||') );
+	}
+
+	var res1 = [];
+	var res2 = [];
+	tests( function(r) res1.push(r), String );
+	tests( function(r) res2.push(r), Blob );
+
+	QA.ASSERT( uneval(res1), uneval(res2), 'all split() test' )
+
+
+/// Blob iterator object
+
+	var tmp = '';
+	var b = new Blob('ABC123');
+	for ( c in b )
+		tmp += c;
+	QA.ASSERT( tmp, '012345', 'for loop over Blob' )
+
+	var tmp = '';
+	var b = new Blob('ABC123');
+	for each ( c in b )
+		tmp += c;
+	QA.ASSERT( tmp, 'ABC123', 'for-each  loop over Blob' )
+
+
+/// Blob equality []
+		var b1 = new Blob('abc');
+		var b2 = Blob('abc');
+		QA.ASSERT_STR( b1, b2, 'Blob equality' )
+
+
 /// Blob memory usage []
 
 		var length = 1024*1024;
@@ -67,7 +135,7 @@ LoadModule('jsstd');
 		QA.ASSERT( blob._NI_BufferGet, true, 'returned Blob _NI_BufferGet is active' );
 
 
-/// Mutated Blob BufferGet NativeInterface [ftrm]
+/// Mutated Blob BufferGet NativeInterface [ftrm d]
 
 		var b = new Blob('123');
 		b.replace; // force mutation
@@ -75,7 +143,7 @@ LoadModule('jsstd');
 		QA.ASSERT(  b._NI_BufferGet, true, 'mutated blob has _NI_BufferGet' )
 
 
-/// Blob mutation preserves BufferGet NativeInterface [ftrm]
+/// Blob mutation preserves BufferGet NativeInterface [ftrm d]
 
 		var b = new Blob();
 		QA.ASSERT( b._NI_BufferGet, true, 'constructed Blob has _NI_BufferGet enabled' );
@@ -85,7 +153,7 @@ LoadModule('jsstd');
 		QA.ASSERT( b._NI_BufferGet, true, 'mutated Blob has _NI_BufferGet' );
 
 
-/// Blob mutation keep properties [ftrm]
+/// Blob mutation keep properties [ftrm d]
 	
 		var b = new Blob('abcdef');
 		b.prop1 = 11; b.prop2 = 22; b.prop3 = 33; b.prop4 = 44; b.prop5 = 55; b.prop6 = 66; b.prop7 = 77;
@@ -108,7 +176,7 @@ LoadModule('jsstd');
 		QA.ASSERT( b2 instanceof String, false, 'is not String' )
 
 
-/// Blob mutation on replace [ftrm]
+/// Blob mutation on replace [ftrm d]
 
 		var b1 = new Blob('abcdef');
 		var b2 = b1.replace('bcde', '123');
@@ -180,7 +248,7 @@ LoadModule('jsstd');
 		QA.ASSERT( e instanceof String, false )
 
 
-/// Blob misc mutation tests [ftrm]
+/// Blob misc mutation tests [ftrm d]
 
 	var b = Blob('123')
 	b.toUpperCase();
@@ -188,7 +256,7 @@ LoadModule('jsstd');
 	QA.ASSERT( b.constructor, String );
 
 
-/// Blob mutation reliability [ftrm]
+/// Blob mutation reliability [ftrm d]
 
 		var b = new Blob('123');
 		b.replace;
@@ -245,6 +313,13 @@ LoadModule('jsstd');
 		QA.ASSERT( Blob('1').charAt(), '1', 'Blob charAt' )
 		QA.ASSERT( Blob('1').charAt(-1), '', 'Blob charAt' )
 		QA.ASSERT( Blob('1').charAt(1), '', 'Blob charAt' )
+
+		QA.ASSERT( Blob('123').charAt(undefined), '1', 'Blob charAt' )
+		QA.ASSERT( Blob('123').charAt(NaN), '1', 'Blob charAt' )
+		QA.ASSERT( Blob('123').charAt(-Infinity), '', 'Blob charAt' )
+		QA.ASSERT( Blob('123').charAt(Infinity), '', 'Blob charAt' )
+		QA.ASSERT( Blob('123').charAt('2'), '3', 'Blob charAt' )
+		QA.ASSERT( Blob('123').charAt(''), '1', 'Blob charAt' )
 		
 		
 		var s = 'Ab \0c';
@@ -458,10 +533,10 @@ LoadModule('jsstd');
 
 /// Blob boolean test [ftrm]
 	
-		QA.ASSERT( !!Blob(''), true, 'empty Blob cast to boolean' );
+		QA.ASSERT( !!Blob(''), false, 'empty Blob cast to boolean' );
 		QA.ASSERT( !!Blob('x'), true, 'non-empty Blob cast to boolean' );
-//		QA.ASSERT( !!Blob(''), !!(''), 'empty Blob cast to boolean' );
-//		QA.ASSERT( !!Blob('a'), !!('a'), 'empty Blob cast to boolean' );
+		QA.ASSERT( !!Blob(''), !!(''), 'empty Blob cast to boolean' );
+		QA.ASSERT( !!Blob('a'), !!('a'), 'empty Blob cast to boolean' );
 
 
 /// Blob equality operator [ftrm]
@@ -600,11 +675,15 @@ LoadModule('jsstd');
 		QA.ASSERT( val.aPropertyOfMyBlob, 12345, 'blob property' );
 		QA.ASSERT_STR( val, "my blob", 'blob content' );
 
+
 /// blob toSource [ftrm]
 
 	new Blob('123').toSource();
-	new Blob('123').__proto__.toSource();
-	
+//	new Blob('123').__proto__.toSource();
+
+	var b = new Blob('123');
+	new Blob().__proto__.toSource.call(b);
+
 
 /// map serialization [ftrmd]
 

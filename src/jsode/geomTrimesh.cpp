@@ -44,19 +44,22 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	jsval trimeshVal;
+
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_RANGE(1, 3);
 	JL_S_ASSERT_OBJECT(JL_ARG(1));
 
 	ode::dSpaceID space;
 	if ( JL_ARG_ISDEF(2) ) // place it in a space ?
-		JL_CHK( JsvalToSpaceID(cx, JL_ARG(2), &space) );
+		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(2), &space) );
 	else
 		space = 0;
 
-	jsval trimeshVal = JL_ARG(1);
-	JL_S_ASSERT( JsvalIsTrimesh(cx, trimeshVal), "Invalid Trimesh object." );
+	trimeshVal = JL_ARG(1);
+	JL_S_ASSERT( JL_JsvalIsTrimesh(cx, trimeshVal), "Invalid Trimesh object." );
 	JSObject *trimesh = JSVAL_TO_OBJECT(trimeshVal);
 	Surface *srf = GetTrimeshSurface(cx, trimesh);
 	JL_S_ASSERT_RESOURCE( srf );
@@ -67,14 +70,14 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(3) ) {
 		
 		bool b;
-		JL_CHK( JsvalToBool(cx, JL_ARG(3), &b) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &b) );
 		if ( b )
 			ode::dGeomTriMeshDataPreprocess(triMeshDataID);
 	}
 
 	ode::dGeomID geomId = ode::dCreateTriMesh(space, triMeshDataID, NULL, NULL, NULL);
 
-	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_TRIMESH_TRIMESH, trimeshVal) );
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_TRIMESH_TRIMESH, trimeshVal) );
 
 	JL_SetPrivate(cx, obj, geomId);
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
@@ -94,7 +97,7 @@ DEFINE_PROPERTY( triangleCount ) {
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geomId );
 	int count = ode::dGeomTriMeshGetTriangleCount(geomId);
-	JL_CHK( IntToJsval(cx, count, vp) );
+	JL_CHK( JL_CValToJsval(cx, count, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

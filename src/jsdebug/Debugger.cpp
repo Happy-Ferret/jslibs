@@ -136,7 +136,7 @@ static void* ExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, 
 static void* FirstExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool *ok, void *closure) {
 
 	BreakHandler(cx, (JSObject*)closure, fp, FROM_EXECUTE); // (TBD) manage return value !
-	JS_SetExecuteHook(JS_GetRuntime(cx), NULL, NULL);
+	JS_SetExecuteHook(JL_GetRuntime(cx), NULL, NULL);
 //	if ( status == JSTRAP_ERROR )
 //		*ok == JS_FALSE; // ok is NULL when before is true !!!
 	return NULL;
@@ -211,7 +211,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	jsval fval;
 	if ( JS_GetProperty(cx, obj, "onBreak", &fval) == JS_FALSE )
 		return JSTRAP_ERROR;
-	if ( !JsvalIsFunction(cx, fval) ) // nothing to do
+	if ( !JL_JsvalIsFunction(cx, fval) ) // nothing to do
 		return JSTRAP_CONTINUE;
 
 	jsval exception;
@@ -224,7 +224,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	}
 
 	JSRuntime *rt;
-	rt = JS_GetRuntime(cx);
+	rt = JL_GetRuntime(cx);
 	uintN lineno;
 	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 	uint32_t stackFrameIndex;
@@ -243,7 +243,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 			JSVAL_NULL,
 			script && JS_GetFramePC(cx, fp) == script->code ? JSVAL_TRUE : JSVAL_FALSE // is entering function
 		};
-		JL_CHK( StringToJsval(cx, filename, &argv[1]) );
+		JL_CHK( JL_CValToJsval(cx, filename, &argv[1]) );
 		
 		js::AutoArrayRooter tvr(cx, COUNTOF(argv), argv);
 
@@ -327,7 +327,7 @@ DEFINE_FINALIZE() {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
-	JSRuntime *rt = JS_GetRuntime(cx);
+	JSRuntime *rt = JL_GetRuntime(cx);
 	JL_CHK( JS_SetInterrupt(rt, NULL, NULL) );
 	JL_CHK( JS_SetDebuggerHandler(rt, NULL, NULL) );
 	JL_CHK( JS_SetDebugErrorHook(rt, NULL, NULL) );
@@ -369,7 +369,7 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	DebuggerPrivate *pv;
 	pv = (DebuggerPrivate*)JS_malloc(cx, sizeof(DebuggerPrivate));
@@ -398,20 +398,20 @@ $TOC_MEMBER $INAME
   An existing breakpoint can be overwritten by a new breakpoint.
   Removing an nonexistent breakpoint does not matter.
 **/
-DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
+DEFINE_FUNCTION( ToggleBreakpoint ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 3 );
 
 	bool polarity;
-	JL_CHK( JsvalToBool(cx, JL_FARG(1), &polarity) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &polarity) );
 
 	uintN lineno;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(3), &lineno) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &lineno) );
 
 	JSScript *script;
 	jsbytecode *pc;
-	JL_CHK( GetScriptLocation(cx, &JL_FARG(2), lineno, &script, &pc) );
+	JL_CHK( GetScriptLocation(cx, &JL_ARG(2), lineno, &script, &pc) );
 	if ( script == NULL )
 		JL_REPORT_ERROR("Invalid location.");
 
@@ -426,7 +426,7 @@ DEFINE_FUNCTION_FAST( ToggleBreakpoint ) {
 			JL_CHK( JS_SetTrap(cx, script, pc, TrapHandler, OBJECT_TO_JSVAL(obj)) );
 	}
 
-	*JL_FRVAL = INT_TO_JSVAL( JS_PCToLineNumber(cx, script, pc) );
+	*JL_RVAL = INT_TO_JSVAL( JS_PCToLineNumber(cx, script, pc) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -438,16 +438,16 @@ $TOC_MEMBER $INAME
  $BOOL $INAME( function, relativeLineno )
   Returns $TRUE if the given line (actual line number) has a breakpoint, otherwise returns $FALSE.
 **/
-DEFINE_FUNCTION_FAST( HasBreakpoint ) {
+DEFINE_FUNCTION( HasBreakpoint ) {
 
 	JL_S_ASSERT_ARG_MIN( 2 );
 
 	uintN lineno;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &lineno) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &lineno) );
 
 	JSScript *script;
 	jsbytecode *pc;
-	JL_CHK( GetScriptLocation(cx, &JL_FARG(1), lineno, &script, &pc) );
+	JL_CHK( GetScriptLocation(cx, &JL_ARG(1), lineno, &script, &pc) );
 	if ( script == NULL )
 		JL_REPORT_ERROR("Invalid location.");
 
@@ -457,10 +457,10 @@ DEFINE_FUNCTION_FAST( HasBreakpoint ) {
 	if ( prevHandler ) {
 
 		JL_CHK( JS_SetTrap(cx, script, pc, prevHandler, prevClosure) );
-		*JL_FRVAL = JSVAL_TRUE;
+		*JL_RVAL = JSVAL_TRUE;
 	} else {
 
-		*JL_FRVAL = JSVAL_FALSE;
+		*JL_RVAL = JSVAL_FALSE;
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -472,10 +472,11 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Unconditionally remove all breakpoints.
 **/
-DEFINE_FUNCTION_FAST( ClearBreakpoints ) {
+DEFINE_FUNCTION( ClearBreakpoints ) {
 
 	JS_ClearAllTraps(cx);
-	*JL_FRVAL = JSVAL_VOID;
+	
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -503,11 +504,11 @@ DEFINE_PROPERTY( interruptCounterLimit ) {
 	} else {
 
 		JL_S_ASSERT_INT(*vp);
-		JL_CHK( JsvalToSize(cx, *vp, &pv->interruptCounterLimit) );
+		JL_CHK( JL_JsvalToCVal(cx, *vp, &pv->interruptCounterLimit) );
 	}
 
 	JSRuntime *rt;
-	rt = JS_GetRuntime(cx);
+	rt = JL_GetRuntime(cx);
 	if ( pv->interruptCounterLimit == 0 && (pv->debugHooks ? pv->debugHooks->interruptHook : JS_GetGlobalDebugHooks(rt)->interruptHook) == InterruptCounterHandler ) {
 
 		// cancel the current one.
@@ -536,7 +537,7 @@ DEFINE_PROPERTY( breakOnError ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	JL_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -544,7 +545,7 @@ DEFINE_PROPERTY( breakOnError ) {
 		pv->debugHooks->debugErrorHookData = b ? obj : NULL;
 	} else {
 
-		JL_CHK( JS_SetDebugErrorHook(JS_GetRuntime(cx), b ? DebugErrorHookHandler : NULL, b ? obj : NULL) );
+		JL_CHK( JS_SetDebugErrorHook(JL_GetRuntime(cx), b ? DebugErrorHookHandler : NULL, b ? obj : NULL) );
 	}
 
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -561,7 +562,7 @@ DEFINE_PROPERTY( breakOnException ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	JL_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -569,7 +570,7 @@ DEFINE_PROPERTY( breakOnException ) {
 		pv->debugHooks->throwHookData = b ? obj : NULL;
 	} else {
 
-		JL_CHK( JS_SetThrowHook(JS_GetRuntime(cx), b ? ThrowHookHandler : NULL, b ? obj : NULL) );
+		JL_CHK( JS_SetThrowHook(JL_GetRuntime(cx), b ? ThrowHookHandler : NULL, b ? obj : NULL) );
 	}
 
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -586,7 +587,7 @@ DEFINE_PROPERTY( breakOnDebuggerKeyword ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	JL_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -594,7 +595,7 @@ DEFINE_PROPERTY( breakOnDebuggerKeyword ) {
 		pv->debugHooks->debuggerHandlerData = b ? obj : NULL;
 	} else {
 
-		JL_CHK( JS_SetDebuggerHandler(JS_GetRuntime(cx), b ? DebuggerKeyword : NULL,  b ? obj : NULL) );
+		JL_CHK( JS_SetDebuggerHandler(JL_GetRuntime(cx), b ? DebuggerKeyword : NULL,  b ? obj : NULL) );
 	}
 
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -611,7 +612,7 @@ DEFINE_PROPERTY( breakOnExecute ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	JL_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -619,7 +620,7 @@ DEFINE_PROPERTY( breakOnExecute ) {
 		pv->debugHooks->executeHookData = b ? obj : NULL;
 	} else {
 
-		JL_CHK( JS_SetExecuteHook(JS_GetRuntime(cx), b ? ExecuteHookHandler : NULL, b ? obj : NULL) );
+		JL_CHK( JS_SetExecuteHook(JL_GetRuntime(cx), b ? ExecuteHookHandler : NULL, b ? obj : NULL) );
 	}
 
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -636,7 +637,7 @@ DEFINE_PROPERTY( breakOnFirstExecute ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	JL_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -644,7 +645,7 @@ DEFINE_PROPERTY( breakOnFirstExecute ) {
 		pv->debugHooks->executeHookData = b ? obj : NULL;
 	} else {
 
-		JL_CHK( JS_SetExecuteHook(JS_GetRuntime(cx), b ? FirstExecuteHookHandler : NULL, b ? obj : NULL) );
+		JL_CHK( JS_SetExecuteHook(JL_GetRuntime(cx), b ? FirstExecuteHookHandler : NULL, b ? obj : NULL) );
 	}
 
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -680,7 +681,7 @@ DEFINE_PROPERTY( excludedFileList ) {
 
 		JL_CHK( JS_GetElement(cx, arrayObject, i, &tmp ) );
 
-		JL_CHK( JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength) );
+		JL_CHK( JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength) );
 
 		//filename = strdup(buffer); // malloc/jl_free issue !
 		filename = (char*)jl_malloc(bufferLength +1);
@@ -704,9 +705,9 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( ToggleBreakpoint )
-		FUNCTION_FAST( HasBreakpoint )
-		FUNCTION_FAST( ClearBreakpoints )
+		FUNCTION( ToggleBreakpoint )
+		FUNCTION( HasBreakpoint )
+		FUNCTION( ClearBreakpoints )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -752,7 +753,7 @@ END_CLASS
 	////		nextPc += jsCodeSpec[op].length;
 	////		JS_SetTrap(cx, caller->script, nextPc, InterruptHandler, NULL);
 	//		JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
-	//		JS_SetInterrupt(JS_GetRuntime(cx), InterruptHandler, NULL);
+	//		JS_SetInterrupt(JL_GetRuntime(cx), InterruptHandler, NULL);
 	//		jsbytecode *nextPc = JS_GetFramePC(cx, caller);
 	//		JSOp op = JS_GetTrapOpcode(cx, caller->script, nextPc);
 	//		nextPc += jsCodeSpec[op].length;

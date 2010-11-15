@@ -38,31 +38,31 @@ JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) 
 
 	switch( ode::dJointGetType(jointId) ) {
 		case ode::dJointTypeBall:
-			*obj = JS_NewObject(cx, JL_CLASS(JointBall), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(JointBall), JL_PROTOTYPE(cx, JointBall), NULL);
 			break;
 		case ode::dJointTypeHinge:
-			*obj = JS_NewObject(cx, JL_CLASS(JointHinge), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(JointHinge), JL_PROTOTYPE(cx, JointHinge), NULL);
 			break;
 		case ode::dJointTypeSlider:
-			*obj = JS_NewObject(cx, JL_CLASS(JointSlider), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(JointSlider), JL_PROTOTYPE(cx, JointSlider), NULL);
 			break;
 		case ode::dJointTypeUniversal:
-			*obj = JS_NewObject(cx, JL_CLASS(JointUniversal), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(JointUniversal), JL_PROTOTYPE(cx, JointUniversal), NULL);
 			break;
 		case ode::dJointTypePiston:
-			*obj = JS_NewObject(cx, JL_CLASS(JointPiston), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(JointPiston), JL_PROTOTYPE(cx, JointPiston), NULL);
 			break;
 		case ode::dJointTypeFixed:
-			*obj = JS_NewObject(cx, JL_CLASS(JointFixed), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(JointFixed), JL_PROTOTYPE(cx, JointFixed), NULL);
 			break;
 		case ode::dJointTypeAMotor:
-			*obj = JS_NewObject(cx, JL_CLASS(JointAMotor), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(JointAMotor), JL_PROTOTYPE(cx, JointAMotor), NULL);
 			break;
 		case ode::dJointTypeLMotor:
-			*obj = JS_NewObject(cx, JL_CLASS(JointLMotor), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(JointLMotor), JL_PROTOTYPE(cx, JointLMotor), NULL);
 			break;
 		case ode::dJointTypePlane2D:
-			*obj = JS_NewObject(cx, JL_CLASS(JointPlane), NULL, NULL);
+			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(JointPlane), JL_PROTOTYPE(cx, JointPlane), NULL);
 			break;
 		default:
 			JL_REPORT_ERROR("Unable to reconstruct the joint.");
@@ -112,34 +112,36 @@ DEFINE_PROPERTY( body2 ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME()
+ $VOID $INAME()
   TBD
 **/
-DEFINE_FUNCTION_FAST( Destroy ) {
+DEFINE_FUNCTION( Destroy ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( jointId );
 	JS_free(cx, ode::dJointGetFeedback(jointId)); // NULL is supported
 	JL_SetPrivate(cx, obj, NULL);
 	ode::dJointDestroy(jointId);
+	
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
 /*
-DEFINE_FUNCTION_FAST( GetBody ) {
+DEFINE_FUNCTION( GetBody ) {
 
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( jointId );
 
 	JL_S_ASSERT_ARG_MIN(1);
 	int index;
-	JL_CHK( JsvalToInt(cx, JL_FARG(1), &index) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &index) );
 	if ( index < 0 || index >= ode::dJointGetNumBodies(jointId) ) {
 		
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
@@ -150,7 +152,7 @@ DEFINE_FUNCTION_FAST( GetBody ) {
 
 	// (TBD)! construct a new wrapper if it has been finalized !
 
-	*JL_FRVAL = jsBody ? OBJECT_TO_JSVAL( jsBody ) : JSVAL_VOID;
+	*JL_RVAL = jsBody ? OBJECT_TO_JSVAL( jsBody ) : JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -170,13 +172,13 @@ DEFINE_FUNCTION( Attach ) {
 
 	JS_ValueToObject(cx, argv[0], &body1Object);
 	JL_S_ASSERT_CLASS(body1Object, &classBody);
-	JS_SetReservedSlot(cx, obj, JOINT_SLOT_BODY1, argv[0]);
+	JL_SetReservedSlot(cx, obj, JOINT_SLOT_BODY1, argv[0]);
 	ode::dBodyID bodyID1 = (ode::dBodyID)JL_GetPrivate(cx, body1Object);
 //	JL_S_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
 
 	JS_ValueToObject(cx, argv[1], &body2Object);
 	JL_S_ASSERT_CLASS(body2Object, &classBody);
-	JS_SetReservedSlot(cx, obj, JOINT_SLOT_BODY2, argv[1]);
+	JL_SetReservedSlot(cx, obj, JOINT_SLOT_BODY2, argv[1]);
 	ode::dBodyID bodyID2 = (ode::dBodyID)JL_GetPrivate(cx, body2Object);
 //	JL_S_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
 
@@ -270,7 +272,7 @@ DEFINE_PROPERTY_SETTER( body1 ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( jointId );
 	ode::dBodyID bodyId;
-	JL_CHK( JsvalToBody(cx, *vp, &bodyId) );
+	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
 	ode::dJointAttach(jointId, bodyId, ode::dJointGetBody(jointId, 1));
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -300,7 +302,7 @@ DEFINE_PROPERTY_SETTER( body2 ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( jointId );
 	ode::dBodyID bodyId;
-	JL_CHK( JsvalToBody(cx, *vp, &bodyId) );
+	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
 	ode::dJointAttach(jointId, ode::dJointGetBody(jointId, 0), bodyId);
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -331,7 +333,7 @@ DEFINE_PROPERTY( disabledSetter ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( jointId );
 	bool disabled;
-	JL_CHK( JsvalToBool(cx, *vp, &disabled) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &disabled) );
 	if ( disabled )
 		ode::dJointDisable(jointId);
 	else
@@ -344,7 +346,7 @@ DEFINE_PROPERTY( disabledGetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( jointId );
-	JL_CHK( BoolToJsval(cx, ode::dJointIsEnabled(jointId) == 0, vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dJointIsEnabled(jointId) == 0, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -363,7 +365,7 @@ DEFINE_PROPERTY( useFeedbackSetter ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( jointId );
 	bool b;
-	JL_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
 	ode::dJointFeedback *currentFeedback = ode::dJointGetFeedback(jointId);
 	if ( !currentFeedback == !b ) // no changes
 		return JS_TRUE;
@@ -389,7 +391,7 @@ DEFINE_PROPERTY( useFeedbackGetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( jointId );
-	JL_CHK( BoolToJsval(cx, ode::dJointGetFeedback(jointId) != NULL, vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dJointGetFeedback(jointId) != NULL, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -421,18 +423,18 @@ DEFINE_PROPERTY( feedbackVectorSetter ) {
 	ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
 	JL_S_ASSERT( feedback != NULL, "Feedback is disabled." );
 	uint32 length;
-	switch(JSVAL_TO_INT(id)) {
+	switch(JSID_TO_INT(id)) {
 		case body1Force:
-			JL_CHK( JsvalToODERealVector(cx, *vp, feedback->f1, 3, &length) );
+			JL_CHK( JL_JsvalToODERealVector(cx, *vp, feedback->f1, 3, &length) );
 			break;
 		case body1Torque:
-			JL_CHK( JsvalToODERealVector(cx, *vp, feedback->t1, 3, &length) );
+			JL_CHK( JL_JsvalToODERealVector(cx, *vp, feedback->t1, 3, &length) );
 			break;
 		case body2Force:
-			JL_CHK( JsvalToODERealVector(cx, *vp, feedback->f2, 3, &length) );
+			JL_CHK( JL_JsvalToODERealVector(cx, *vp, feedback->f2, 3, &length) );
 			break;
 		case body2Torque:
-			JL_CHK( JsvalToODERealVector(cx, *vp, feedback->t2, 3, &length) );
+			JL_CHK( JL_JsvalToODERealVector(cx, *vp, feedback->t2, 3, &length) );
 			break;
 	}
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
@@ -447,7 +449,7 @@ DEFINE_PROPERTY( feedbackVectorGetter ) {
 	JL_S_ASSERT_RESOURCE( jointId );
 	ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
 	JL_S_ASSERT( feedback != NULL, "Feedback is disabled." );
-	switch(JSVAL_TO_INT(id)) {
+	switch(JSID_TO_INT(id)) {
 		case body1Force:
 			JL_CHK( ODERealVectorToJsval(cx, feedback->f1, 3, vp) );
 			break;
@@ -540,8 +542,8 @@ DEFINE_PROPERTY( jointParamSetter ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dReal value;
-	JL_CHK( JsvalToODEReal(cx, *vp, &value) );
-	JointSetParam(jointId, JSVAL_TO_INT(id), value);
+	JL_CHK( JL_JsvalToODEReal(cx, *vp, &value) );
+	JointSetParam(jointId, JSID_TO_INT(id), value);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -550,7 +552,7 @@ DEFINE_PROPERTY( jointParamGetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSVAL_TO_INT(id)), vp) );
+	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSID_TO_INT(id)), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -561,8 +563,8 @@ DEFINE_PROPERTY( jointParam1Setter ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dReal real;
-	JL_CHK( JsvalToODEReal(cx, *vp, &real) );
-	JointSetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup2, real);
+	JL_CHK( JL_JsvalToODEReal(cx, *vp, &real) );
+	JointSetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup2, real);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -571,7 +573,7 @@ DEFINE_PROPERTY( jointParam1Getter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup2), vp) );
+	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup2), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -582,8 +584,8 @@ DEFINE_PROPERTY( jointParam2Setter ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dReal real;
-	JL_CHK( JsvalToODEReal(cx, *vp, &real) );
-	JointSetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup3, real);
+	JL_CHK( JL_JsvalToODEReal(cx, *vp, &real) );
+	JointSetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup3, real);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -592,7 +594,7 @@ DEFINE_PROPERTY( jointParam2Getter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSVAL_TO_INT(id) + ode::dParamGroup3), vp) );
+	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup3), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -601,7 +603,7 @@ CONFIGURE_CLASS
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( Destroy )
+		FUNCTION( Destroy )
 //		FUNCTION( GetBody )
 	END_FUNCTION_SPEC
 

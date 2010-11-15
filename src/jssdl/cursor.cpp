@@ -44,18 +44,20 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	
 	JSObject *imageObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	int sWidth, sHeight, sChannels;
-	JL_CHK( GetPropertyInt(cx, imageObj, "width", &sWidth) );
-	JL_CHK( GetPropertyInt(cx, imageObj, "height", &sHeight) );
-	JL_CHK( GetPropertyInt(cx, imageObj, "channels", &sChannels) );
+	JL_CHK( JL_GetProperty(cx, imageObj, "width", &sWidth) );
+	JL_CHK( JL_GetProperty(cx, imageObj, "height", &sHeight) );
+	JL_CHK( JL_GetProperty(cx, imageObj, "channels", &sChannels) );
 
 	const unsigned char *sBuffer;
 	size_t bufferLength;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
 
 	JL_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 
@@ -89,12 +91,12 @@ DEFINE_CONSTRUCTOR() {
 	int hotX, hotY;
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JsvalToInt(cx, JL_ARG(2), &hotX) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &hotX) );
 	else
 		hotX = 0;
 	
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JsvalToInt(cx, JL_ARG(3), &hotY) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &hotY) );
 	else
 		hotY = 0;
 		

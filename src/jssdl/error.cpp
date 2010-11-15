@@ -41,12 +41,13 @@ DEFINE_PROPERTY( text ) {
 
 DEFINE_FUNCTION( toString ) {
 
-	return _text(cx, obj, 0, rval);
+	JL_DEFINE_FUNCTION_OBJ;
+	return _text(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
+	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
 
@@ -66,7 +67,7 @@ DEFINE_XDR() {
 		*objp = JS_NewObject(xdr->cx, JL_THIS_CLASS, NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
+		JL_CHK( JL_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
 		return JS_TRUE;
 	}
 
@@ -102,13 +103,13 @@ END_CLASS
 
 JSBool ThrowSdlError( JSContext *cx ) {
 
-	JSObject *errorObj = JS_NewObject( cx, JL_CLASS(SdlError), NULL, NULL );
+	JSObject *errorObj = JS_NewObjectWithGivenProto( cx, JL_CLASS(SdlError), JL_PROTOTYPE(cx, SdlError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( errorObj ) );
 	const char *errorMessage = SDL_GetError();
 	SDL_ClearError();
 //	if ( errorMessage == NULL || *errorMessage == '\0' )
 //		errorMessage = "Undefined error";
-	JS_SetReservedSlot( cx, errorObj, 0, errorMessage != NULL && *errorMessage != '\0' ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
-	JL_SAFE( ExceptionSetScriptLocation(cx, errorObj) );
+	JL_CHK( JL_SetReservedSlot( cx, errorObj, 0, errorMessage != NULL && *errorMessage != '\0' ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID ) );
+	JL_SAFE( JL_ExceptionSetScriptLocation(cx, errorObj) );
 	JL_BAD;
 }

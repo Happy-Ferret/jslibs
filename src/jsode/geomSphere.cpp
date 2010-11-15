@@ -36,11 +36,12 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_RANGE(0, 1);
 	ode::dSpaceID space;
 	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
-		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &space) );
+		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), &space) );
 	else
 		space = 0;
 	ode::dGeomID geomId = ode::dCreateSphere(space, 1.0f); // default radius is 1
@@ -64,7 +65,7 @@ DEFINE_PROPERTY( radiusSetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
 	jsdouble radius;
-	JL_CHK( JS_ValueToNumber(cx, *vp, &radius) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &radius) );
 	ode::dGeomSphereSetRadius(geom, (ode::dReal)radius);
 	return JS_TRUE;
 	JL_BAD;
@@ -74,7 +75,7 @@ DEFINE_PROPERTY( radiusGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
-	JL_CHK( JS_NewDoubleValue(cx, ode::dGeomSphereGetRadius(geom), vp) ); // see JS_NewNumberValue and JS_NewDouble
+	JL_CHK( ODERealToJsval(cx, ode::dGeomSphereGetRadius(geom), vp) ); // see JL_NewNumberValue and JS_NewDouble
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -60,7 +60,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	Surface *pv;
 	pv = (Surface*)JS_malloc(cx, sizeof(Surface));
@@ -77,15 +77,15 @@ DEFINE_CONSTRUCTOR() {
 //	return JS_TRUE;
 //}
 /*
-DEFINE_FUNCTION_FAST( AddVertex ) {
+DEFINE_FUNCTION( AddVertex ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	double x, y, z;
-	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &x) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &y) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &z) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &x) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &y) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &z) );
 
 	if ( pv->verticesDataSize < (pv->vertexCount + 1) * 3 * sizeof(SURFACE_REAL_TYPE) ) {
 		
@@ -100,7 +100,7 @@ DEFINE_FUNCTION_FAST( AddVertex ) {
 	*(pos++) = y;
 	*(pos++) = z;
 
-	JL_CHK( IntToJsval(cx, pv->vertexCount, JL_FRVAL) );
+	JL_CHK( JL_CValToJsval(cx, pv->vertexCount, JL_RVAL) );
 	pv->vertexCount += 1;
 
 	return JS_TRUE;
@@ -108,15 +108,15 @@ DEFINE_FUNCTION_FAST( AddVertex ) {
 }
 
 
-DEFINE_FUNCTION_FAST( AddTriangle ) {
+DEFINE_FUNCTION( AddTriangle ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	INDEX i1, i2, i3;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &i1) );
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &i2) );
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &i3) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &i1) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &i2) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &i3) );
 
 //	pv->indices = (INDEX*)JS_realloc(cx, pv->indices, (pv->indexCount + 1) * 3 * sizeof(SURFACE_REAL_TYPE));
 
@@ -133,7 +133,7 @@ DEFINE_FUNCTION_FAST( AddTriangle ) {
 	*(pos++) = i2;
 	*(pos++) = i3;
 
-	JL_CHK( IntToJsval(cx, pv->indexCount, JL_FRVAL) );
+	JL_CHK( JL_CValToJsval(cx, pv->indexCount, JL_RVAL) );
 	pv->indexCount += 1;
 	return JS_TRUE;
 	JL_BAD;
@@ -141,13 +141,13 @@ DEFINE_FUNCTION_FAST( AddTriangle ) {
 */
 
 /*
-DEFINE_FUNCTION_FAST( AddIndices ) {
+DEFINE_FUNCTION( AddIndices ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	for ( size_t i = 0; i < argc; i++ )
-		JL_S_ASSERT_INT(JL_FARG(i+1));
+		JL_S_ASSERT_INT(JL_ARG(i+1));
 
 	pv->indices = (SURFACE_INDEX_TYPE*)JS_realloc(cx, pv->indices, (pv->indexCount + argc) * sizeof(SURFACE_REAL_TYPE));
 	JL_CHK( pv->vertices );
@@ -157,7 +157,7 @@ DEFINE_FUNCTION_FAST( AddIndices ) {
 	SURFACE_INDEX_TYPE index;
 	for ( size_t i = 0; i < argc; i++ ) {
 
-		JL_CHK( JsvalToUInt(cx, JL_FARG(i+1), &index) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(i+1), &index) );
 		*(pos++) = index;
 	}
 
@@ -168,16 +168,19 @@ DEFINE_FUNCTION_FAST( AddIndices ) {
 */
 
 
-DEFINE_FUNCTION_FAST( DefineVertexBuffer ) {
+DEFINE_FUNCTION( DefineVertexBuffer ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARRAY( JL_FARG(1) );
+	JL_S_ASSERT_ARRAY( JL_ARG(1) );
 	Surface *pv;
-	pv  = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
+	pv  = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
+	*JL_RVAL = JSVAL_VOID;
+
 	JSObject *arrayObj;
-	arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
@@ -193,9 +196,9 @@ DEFINE_FUNCTION_FAST( DefineVertexBuffer ) {
 
 		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
 //		if ( sizeof(SURFACE_REAL_TYPE) == sizeof(float) )
-		JL_CHK( JsvalToFloat(cx, item, &pv->vertex[i]) );
+		JL_CHK( JL_JsvalToCVal(cx, item, &pv->vertex[i]) );
 //		else
-//			JL_CHK( JsvalToDouble(cx, item, &pv->vertex[i]) );
+//			JL_CHK( JL_JsvalToCVal(cx, item, &pv->vertex[i]) );
 	}
 	pv->vertexCount = count / 3;
 	return JS_TRUE;
@@ -203,16 +206,19 @@ DEFINE_FUNCTION_FAST( DefineVertexBuffer ) {
 }
 
 
-DEFINE_FUNCTION_FAST( DefineNormalBuffer ) {
+DEFINE_FUNCTION( DefineNormalBuffer ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARRAY( JL_FARG(1) );
+	JL_S_ASSERT_ARRAY( JL_ARG(1) );
 	Surface *pv;
-	pv  = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
+	pv  = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
+	*JL_RVAL = JSVAL_VOID;
+
 	JSObject *arrayObj;
-	arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
@@ -228,23 +234,26 @@ DEFINE_FUNCTION_FAST( DefineNormalBuffer ) {
 	for ( jsuint i = 0; i < count; i++ ) {
 
 		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
-		JL_CHK( JsvalToFloat(cx, item, &pv->normal[i]) );
+		JL_CHK( JL_JsvalToCVal(cx, item, &pv->normal[i]) );
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-DEFINE_FUNCTION_FAST( DefineTextureCoordinateBuffer ) {
+DEFINE_FUNCTION( DefineTextureCoordinateBuffer ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARRAY( JL_FARG(1) );
+	JL_S_ASSERT_ARRAY( JL_ARG(1) );
 	Surface *pv;
-	pv = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
+	pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
+	*JL_RVAL = JSVAL_VOID;
+
 	JSObject *arrayObj;
-	arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
@@ -260,23 +269,26 @@ DEFINE_FUNCTION_FAST( DefineTextureCoordinateBuffer ) {
 	for ( jsuint i = 0; i < count; i++ ) {
 
 		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
-		JL_CHK( JsvalToFloat(cx, item, &pv->textureCoordinate[i]) );
+		JL_CHK( JL_JsvalToCVal(cx, item, &pv->textureCoordinate[i]) );
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-DEFINE_FUNCTION_FAST( DefineColorBuffer ) {
+DEFINE_FUNCTION( DefineColorBuffer ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARRAY( JL_FARG(1) );
+	JL_S_ASSERT_ARRAY( JL_ARG(1) );
 	Surface *pv;
-	pv = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
+	pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
+	*JL_RVAL = JSVAL_VOID;
+
 	JSObject *arrayObj;
-	arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
@@ -292,23 +304,26 @@ DEFINE_FUNCTION_FAST( DefineColorBuffer ) {
 	for ( jsuint i = 0; i < count; i++ ) {
 
 		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
-		JL_CHK( JsvalToFloat(cx, item, &pv->color[i]) );
+		JL_CHK( JL_JsvalToCVal(cx, item, &pv->color[i]) );
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-DEFINE_FUNCTION_FAST( DefineIndexBuffer ) {
+DEFINE_FUNCTION( DefineIndexBuffer ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARRAY( JL_FARG(1) );
+	JL_S_ASSERT_ARRAY( JL_ARG(1) );
 	Surface *pv;
-	pv = (Surface*)JL_GetPrivate(cx, JL_FOBJ);
+	pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
+	*JL_RVAL = JSVAL_VOID;
+
 	JSObject *arrayObj;
-	arrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
 	jsuint count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
@@ -323,7 +338,7 @@ DEFINE_FUNCTION_FAST( DefineIndexBuffer ) {
 	for ( jsuint i = 0; i < count; i++ ) {
 
 		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
-		JL_CHK( JsvalToInt(cx, item, &pv->index[i]) );
+		JL_CHK( JL_JsvalToCVal(cx, item, &pv->index[i]) );
 	}
 	pv->indexCount = count;
 	return JS_TRUE;
@@ -335,7 +350,7 @@ DEFINE_PROPERTY( vertexCount ) {
 
 	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( IntToJsval(cx, pv->vertexCount, vp) );
+	JL_CHK( JL_CValToJsval(cx, pv->vertexCount, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -344,7 +359,7 @@ DEFINE_PROPERTY( indexCount ) {
 
 	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( IntToJsval(cx, pv->indexCount, vp) );
+	JL_CHK( JL_CValToJsval(cx, pv->indexCount, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -387,11 +402,11 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST_ARGC(DefineVertexBuffer, 1)
-		FUNCTION_FAST_ARGC(DefineNormalBuffer, 1)
-		FUNCTION_FAST_ARGC(DefineTextureCoordinateBuffer, 1)
-		FUNCTION_FAST_ARGC(DefineColorBuffer, 1)
-		FUNCTION_FAST_ARGC(DefineIndexBuffer, 1)
+		FUNCTION_ARGC(DefineVertexBuffer, 1)
+		FUNCTION_ARGC(DefineNormalBuffer, 1)
+		FUNCTION_ARGC(DefineTextureCoordinateBuffer, 1)
+		FUNCTION_ARGC(DefineColorBuffer, 1)
+		FUNCTION_ARGC(DefineIndexBuffer, 1)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

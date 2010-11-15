@@ -63,7 +63,7 @@ LoadModule('jsio');
 		 var fromFile = new File(fromFilename).Open(File.RDONLY);
 		 var toFile = new File(toFilename).Open(File.WRONLY | File.CREATE_FILE | File.TRUNCATE);
 		 for ( var buf; buf = fromFile.Read(65536); )
-		  toFile.Write(buf);
+		 toFile.Write(buf);
 		 toFile.Close();
 		 fromFile.Close();
 		}
@@ -89,6 +89,7 @@ LoadModule('jsio');
 /// File ancestor [ftrm]
 
 		var f = new File('');
+		QA.ASSERT( f instanceof File, true, 'File inheritance' );
 		QA.ASSERT( f instanceof Descriptor, true, 'Descriptor inheritance' );
 
 
@@ -135,6 +136,15 @@ LoadModule('jsio');
 		QA.ASSERT( processPriority, 2, 'is thread priority 2' );
 		
 		processPriority = save;
+
+
+/// Process pipes type [ftrm]
+
+	var cmdPath = GetEnv('ComSpec');
+	var process = new Process(cmdPath, ['/c', 'dir']);
+
+	QA.ASSERT( InheritFrom(process.stdout, Descriptor), true, 'stdout InheritFrom Descriptor' );
+	QA.ASSERT( process.stdout instanceof Descriptor, true, 'stdout instanceof Descriptor' );
 
 
 /// host name [ftm]

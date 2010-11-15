@@ -25,7 +25,7 @@ struct BodyPrivate {
 
 JSBool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj);
 
-ALWAYS_INLINE JSBool JsvalToBody( JSContext *cx, jsval val, ode::dBodyID *bodyId ) {
+ALWAYS_INLINE JSBool JL_JsvalToBody( JSContext *cx, jsval val, ode::dBodyID *bodyId ) {
 	
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *obj = JSVAL_TO_OBJECT(val);

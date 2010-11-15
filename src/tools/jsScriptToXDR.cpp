@@ -22,11 +22,19 @@
 	#include <unistd.h>
 #endif
 
+#ifdef _MSC_VER
+#pragma warning( push, 1 )
+#endif // _MSC_VER
+
 #include <jsapi.h>
 #include <jsxdrapi.h>
 #include <jsprf.h>
 
 #include <jsscript.h>
+
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif // _MSC_VER
 
 #include <stdio.h>
 #include <string.h>
@@ -147,10 +155,10 @@ int main(int argc, char* argv[]) {
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_JIT);
+	JS_SetOptions(cx, JS_GetOptions(cx));
 	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
 	JS_SetErrorReporter(cx, my_ErrorReporter);
-	JSObject *globalObject = JS_NewObject(cx, &global_class, NULL, NULL);
+	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class);
 	JS_InitStandardClasses(cx, globalObject);
 
 	//JSScript *script = JS_CompileFile(cx, JS_GetGlobalObject(cx), argv[1]);

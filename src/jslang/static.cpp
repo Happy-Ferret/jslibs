@@ -94,7 +94,7 @@ DEFINE_FUNCTION( Stringify ) {
 	const char *buffer;
 	size_t length;
 	 // this include NIBufferGet compatible objects
-	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) ); // warning: GC on the returned buffer !
 
 	char *newBuffer;
 	newBuffer = (char*)JS_malloc(cx, length +1);
@@ -157,7 +157,7 @@ JLThreadFuncDecl ProcessEventThread( void *data ) {
 DEFINE_FUNCTION( ProcessEvents ) {
 
 	int st;
-	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, jslangModuleId);
+	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
 
 	JL_S_ASSERT_ARG_RANGE( 1, COUNTOF(mpv->processEventThreadInfo) );
 	ProcessEvent *peList[COUNTOF(mpv->processEventThreadInfo)]; // cache to avoid calling GetHandlePrivate() too often.
@@ -318,30 +318,30 @@ static JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSConte
 	JL_BAD;
 }
 
-DEFINE_FUNCTION_FAST( TimeoutEvents ) {
+DEFINE_FUNCTION( TimeoutEvents ) {
 
 	JL_S_ASSERT_ARG_RANGE( 1, 2 );
 
 	unsigned int timeout;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &timeout) );
-	if ( JL_FARG_ISDEF(2) )
-		JL_S_ASSERT_FUNCTION( JL_FARG(2) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &timeout) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_S_ASSERT_FUNCTION( JL_ARG(2) );
 
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
 	upe->pe.startWait = TimeoutStartWait;
 	upe->pe.cancelWait = TimeoutCancelWait;
 	upe->pe.endWait = TimeoutEndWait;
 	upe->timeout = timeout;
 	upe->cancel = JLEventCreate(false);
 	JL_ASSERT( JLEventOk(upe->cancel) );
-	SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(2));
+	SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2));
 
-	if ( JL_FARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_FUNCTION( JL_FARG(2) );
-		JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(2)) ); // GC protection only
-		upe->callbackFunction = JL_FARG(2);
+		JL_S_ASSERT_FUNCTION( JL_ARG(2) );
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2)) ); // GC protection only
+		upe->callbackFunction = JL_ARG(2);
 	} else {
 	
 		upe->callbackFunction = JSVAL_VOID;
@@ -352,33 +352,33 @@ DEFINE_FUNCTION_FAST( TimeoutEvents ) {
 }
 
 
-#include "../jslang/blobPub.h"
+DEFINE_FUNCTION( InheritFrom ) {
+	
+	JL_S_ASSERT_ARG(2);
+
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(2) );
+
+	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_InheritFrom(cx, JSVAL_TO_OBJECT(JL_ARG(1)), JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1)))) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+//#include "../jslang/blobPub.h"
 
 
 #ifdef DEBUG
-#endif // DEBUG
 DEFINE_FUNCTION( jslang_test ) {
 
-	jl::Blob *b = new jl::Blob;
-	
-//	b->SetSize(123);
-	delete b;
 
+//	JL_GetScriptLocation(cx);
 
-
-	try {
-
-		jl::Serializer ser(cx);
-		ser << JL_ARG(1);
-		jl::Unserializer unser(cx, ser.Data(), ser.Length());
-		unser >> *rval;
-
-		return JS_TRUE;
-	} catch ( JSBool ) {}
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
-//	JL_BAD;
 }
-
+#endif // DEBUG
 
 
 CONFIGURE_STATIC
@@ -387,12 +387,13 @@ CONFIGURE_STATIC
 	BEGIN_STATIC_FUNCTION_SPEC
 
 		#ifdef DEBUG
-		#endif // DEBUG
 		FUNCTION( jslang_test )
+		#endif // DEBUG
 
+		FUNCTION_ARGC( InheritFrom, 2 )
 		FUNCTION_ARGC( Stringify, 1 )
 		FUNCTION( ProcessEvents )
-		FUNCTION_FAST( TimeoutEvents )
+		FUNCTION( TimeoutEvents )
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC

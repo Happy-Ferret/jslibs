@@ -62,22 +62,23 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	PRUintn count;
 	count = 0;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JsvalToUInt(cx, JL_ARG(2), &count) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &count) );
 
 	PRUintn mode;
 	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JsvalToUInt(cx, JL_ARG(3), &mode) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &mode) );
 
 	const char *name;
 	size_t nameLength;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &name, &nameLength) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &name, &nameLength) );
 	JL_S_ASSERT( nameLength < PATH_MAX, "Semaphore name too long." );
 
 	bool isCreation;
@@ -120,16 +121,19 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   If the value of the semaphore is > 0, decrement the value and return. If the value is 0, sleep until the value becomes > 0, then decrement the value and return. The "test and decrement" operation is performed atomically.
 **/
-DEFINE_FUNCTION_FAST( Wait ) {
+DEFINE_FUNCTION( Wait ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	PRStatus status;
 	status = PR_WaitSemaphore( pv->semaphore );
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
-	*JL_FRVAL = JSVAL_VOID;
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -139,16 +143,19 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Increment the value of the named semaphore by 1.
 **/
-DEFINE_FUNCTION_FAST( Post ) {
+DEFINE_FUNCTION( Post ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	PRStatus status;
 	status = PR_PostSemaphore( pv->semaphore );
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
-	*JL_FRVAL = JSVAL_VOID;
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -195,8 +202,8 @@ CONFIGURE_CLASS
 	HAS_PRIVATE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( Wait )
-		FUNCTION_FAST( Post )
+		FUNCTION( Wait )
+		FUNCTION( Post )
 	END_FUNCTION_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

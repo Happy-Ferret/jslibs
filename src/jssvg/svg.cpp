@@ -33,25 +33,26 @@ struct CxObj {
 JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPixbuf **pixbuf) {
 
 	*pixbuf = NULL;
-	jsval onImageFct, image;
+	jsval onImageFct;
 	JL_CHK( JS_GetProperty(cx, obj, "onImage", &onImageFct) );
-	if ( JsvalIsFunction(cx, onImageFct) ) {
+	if ( JL_JsvalIsFunction(cx, onImageFct) ) {
 
-		jsval nameVal;
-		JL_CHK( StringToJsval(cx, name, &nameVal) );
-		JL_CHK( JL_CallFunction(cx, obj, onImageFct, &image, 1, nameVal) );
-		if ( JSVAL_IS_OBJECT( image ) ) {
+		js::AutoValueRooter nameVal(cx), image(cx);
+		JL_CHK( JL_CValToJsval(cx, name, nameVal.jsval_addr()) );
+		JL_CHK( JS_CallFunctionValue(cx, obj, onImageFct, 1, nameVal.jsval_addr(), image.jsval_addr()) );
 
-			JSObject *imageObj = JSVAL_TO_OBJECT( image );
+		if ( JSVAL_IS_OBJECT( image.jsval_value() ) ) {
+
+			JSObject *imageObj = JSVAL_TO_OBJECT( image.jsval_value() );
 			int sWidth, sHeight, sChannels;
-			JL_CHK( GetPropertyInt(cx, imageObj, "width", &sWidth) );
-			JL_CHK( GetPropertyInt(cx, imageObj, "height", &sHeight) );
-			JL_CHK( GetPropertyInt(cx, imageObj, "channels", &sChannels) );
+			JL_CHK( JL_GetProperty(cx, imageObj, "width", &sWidth) );
+			JL_CHK( JL_GetProperty(cx, imageObj, "height", &sHeight) );
+			JL_CHK( JL_GetProperty(cx, imageObj, "channels", &sChannels) );
 
 			JL_S_ASSERT( sChannels == 3 || sChannels == 4, "Unsupported image format for %s.", name );
 			const char *sBuffer;
 			size_t bufferLength;
-			JL_CHK( JsvalToStringAndLength(cx, &image, &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
+			JL_CHK( JL_JsvalToStringAndLength(cx, image.jsval_addr(), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
 			JL_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 			*pixbuf = gdk_pixbuf_new_from_data((const guchar *)sBuffer, GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);
 			JL_S_ASSERT( *pixbuf == NULL, "Unable to create the pixbuf." );
@@ -105,7 +106,7 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
@@ -135,9 +136,9 @@ $TOC_MEMBER $INAME
   svg.Write('<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>');
   }}}
 **/
-DEFINE_FUNCTION_FAST( Write ) {
+DEFINE_FUNCTION( Write ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -145,7 +146,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	const char *data;
 	size_t length;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &data, &length) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &length) );
 
 	GError *error = NULL;
 	gboolean status;
@@ -175,7 +176,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 			JL_REPORT_ERROR("SVG error: %s", error->message);
 	}
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -193,7 +194,7 @@ DEFINE_PROPERTY( xmlData ) {
 
 	const char *data;
 	size_t length;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &data, &length) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &length) );
 
 	GError *error = NULL;
 	gboolean status;
@@ -241,9 +242,10 @@ $TOC_MEMBER $INAME
   new File('test.png').content = EncodePngImage( svgimage )
   }}}
 **/
-DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
+DEFINE_FUNCTION( RenderImage ) { // using cairo
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 	RsvgHandle *handle = pv->handle;
 
@@ -258,11 +260,11 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	rsvg_handle_get_dimensions(handle, &dim);
 
 	size_t imageWidth, imageHeight;
-	if ( JL_FARG_ISDEF(1) ) {
+	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_S_ASSERT_ARG_MIN(2);
-		JL_CHK( JsvalToUInt(cx, JL_FARG(1), &imageWidth) );
-		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &imageHeight) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &imageWidth) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &imageHeight) );
 	} else {
 
 		imageWidth = dim.width;
@@ -270,17 +272,17 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	}
 
 	size_t channels;
-	if ( JL_FARG_ISDEF(3) ) {
+	if ( JL_ARG_ISDEF(3) ) {
 
-		JL_CHK( JsvalToUInt(cx, JL_FARG(3), &channels) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &channels) );
 		JL_S_ASSERT( channels == 1 || channels == 3 || channels == 4, "Invalid format." );
 	} else
 		channels = 4;
 
-	if ( JL_FARG_ISDEF(4) ) { // fit
+	if ( JL_ARG_ISDEF(4) ) { // fit
 
 		bool fit;
-		JL_CHK( JsvalToBool(cx, JL_FARG(4), &fit) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &fit) );
 		if ( fit ) {
 
 			cairo_matrix_t tmp;
@@ -292,12 +294,12 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	}
 
 /*
-	if ( JL_FARG_ISDEF(4) ) {
+	if ( JL_ARG_ISDEF(4) ) {
 
-		JL_S_ASSERT_ARRAY( JL_FARG(4) );
+		JL_S_ASSERT_ARRAY( JL_ARG(4) );
 		double trVector[6];
 		size_t currentLength;
-		JL_CHK( JsvalToDoubleVector(cx, JL_FARG(4), trVector, COUNTOF(trVector), &currentLength ) );
+		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(4), trVector, COUNTOF(trVector), &currentLength ) );
 		JL_S_ASSERT( currentLength == 6, "Invalid transformation matrix size." );
 		cairo_matrix_t tmp = *(cairo_matrix_t*)&trVector;
 		cairo_matrix_multiply(&tr, &tmp, &tr);
@@ -305,9 +307,9 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 */
 
 	const char *id;
-	if ( JL_FARG_ISDEF(5) ) {
+	if ( JL_ARG_ISDEF(5) ) {
 
-		JL_CHK( JsvalToString(cx, &JL_FARG(5), &id) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &id) );
 		JL_S_ASSERT( id != NULL && id[0] == '#', "Invalid id." );
 	} else
 		id = NULL;
@@ -380,12 +382,12 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 	cairo_destroy(cr);
 	cairo_surface_destroy(surface);
 
-	jsval blobVal;
-	JL_CHK( JL_NewBlob(cx, image, length, &blobVal) );
+	JL_CHK( JL_NewBlob(cx, image, length, JL_RVAL) );
 	JSObject *blobObj;
-	JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
 	JL_S_ASSERT( blobObj, "Unable to create Blob object." );
-	*JL_FRVAL = OBJECT_TO_JSVAL(blobObj);
+	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
+
 	JL_CHK( JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
 	JL_CHK( JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
 	JL_CHK( JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
@@ -395,9 +397,9 @@ DEFINE_FUNCTION_FAST( RenderImage ) { // using cairo
 
 
 /*
-DEFINE_FUNCTION_FAST( GetImage ) { // using pixbuf
+DEFINE_FUNCTION( GetImage ) { // using pixbuf
 
-	RsvgHandle *handle = (RsvgHandle*)JL_GetPrivate(cx, JL_FOBJ);
+	RsvgHandle *handle = (RsvgHandle*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(handle);
 
 	GdkPixbuf *pb = rsvg_handle_get_pixbuf(handle);
@@ -416,7 +418,7 @@ DEFINE_FUNCTION_FAST( GetImage ) { // using pixbuf
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
 	JL_S_ASSERT( blobObj, "Unable to create Blob object." );
-	*JL_FRVAL = OBJECT_TO_JSVAL(blobObj);
+	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
 
 	JL_CHK( JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
 	JL_CHK( JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
@@ -436,32 +438,33 @@ $TOC_MEMBER $INAME
   $H return value
    true if the element visibility has been set, otherwise false.
 **/
-DEFINE_FUNCTION_FAST( SetVisible ) {
+DEFINE_FUNCTION( SetVisible ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(2);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 	RsvgHandle *handle = pv->handle;
 
 	const char *id;
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &id) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &id) );
 	JL_S_ASSERT( id != NULL && id[0] == '#', "Invalid id." );
 
 	bool visible;
-	JsvalToBool(cx, JL_FARG(2), &visible);
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &visible) );
 
 	RsvgNode *drawsub = rsvg_defs_lookup (handle->priv->defs, id);
 
 	if ( drawsub == NULL ) {
 
-		*JL_FRVAL = JSVAL_FALSE;
+		*JL_RVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}
 
 	drawsub->state->visible = visible ? TRUE : FALSE;
 
-	*JL_FRVAL = JSVAL_TRUE;
+	*JL_RVAL = JSVAL_TRUE;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -474,15 +477,18 @@ $TOC_MEMBER $INAME
   The effect of the new transformation is to first scale the coordinates by _sx_ and _sy_,
   then apply the original transformation to the coordinates.
 **/
-DEFINE_FUNCTION_FAST( Scale ) {
+DEFINE_FUNCTION( Scale ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(2);
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 	double sx, sy;
-	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &sx) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &sy) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sx) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &sy) );
 	cairo_matrix_scale(&pv->transformation, sx, sy);
+
+	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -494,14 +500,17 @@ $TOC_MEMBER $INAME
   The effect of the new transformation is to first rotate the coordinates by _radians_,
   then apply the original transformation to the coordinates.
 **/
-DEFINE_FUNCTION_FAST( Rotate ) {
+DEFINE_FUNCTION( Rotate ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(1);
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 	double angle;
-	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &angle) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &angle) );
 	cairo_matrix_rotate(&pv->transformation, angle);
+
+	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -513,15 +522,18 @@ $TOC_MEMBER $INAME
   The effect of the new transformation is to first translate the coordinates by _tx_ and _ty_,
   then apply the original transformation to the coordinates.
 **/
-DEFINE_FUNCTION_FAST( Translate ) {
+DEFINE_FUNCTION( Translate ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(2);
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 	double tx, ty;
-	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &tx) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &ty) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &tx) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &ty) );
 	cairo_matrix_translate(&pv->transformation, tx, ty);
+
+	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -549,17 +561,17 @@ DEFINE_PROPERTY(dpi) {
 	if ( JSVAL_IS_NUMBER(*vp) ) {
 
 		size_t dpi;
-		JL_CHK( JsvalToUInt(cx, *vp, &dpi) );
+		JL_CHK( JL_JsvalToCVal(cx, *vp, &dpi) );
 		rsvg_handle_set_dpi(handle, dpi);
 	} else
-	if ( JsvalIsArray(cx, *vp) ) {
+	if ( JL_JsvalIsArray(cx, *vp) ) {
 
 		size_t dpiX, dpiY;
 		jsval tmp;
 		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(*vp), 0, &tmp) );
-		JL_CHK( JsvalToUInt(cx, tmp, &dpiX) );
+		JL_CHK( JL_JsvalToCVal(cx, tmp, &dpiX) );
 		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(*vp), 1, &tmp) );
-		JL_CHK( JsvalToUInt(cx, tmp, &dpiY) );
+		JL_CHK( JL_JsvalToCVal(cx, tmp, &dpiY) );
 		rsvg_handle_set_dpi_x_y(handle, dpiX, dpiY);
 	} else
 		JL_REPORT_ERROR("Invalid case.");
@@ -580,7 +592,7 @@ DEFINE_PROPERTY(width) {
 
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
-	JL_CHK( UIntToJsval(cx, dim.width, vp) );
+	JL_CHK( JL_CValToJsval(cx, dim.width, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -598,7 +610,7 @@ DEFINE_PROPERTY(height) {
 
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
-	JL_CHK( UIntToJsval(cx, dim.height, vp) );
+	JL_CHK( JL_CValToJsval(cx, dim.height, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -616,7 +628,7 @@ DEFINE_PROPERTY(title) {
 
 	const char *title = rsvg_handle_get_title(handle);
 	if ( title != NULL )
-		JL_CHK( StringToJsval(cx, title, vp) );
+		JL_CHK( JL_CValToJsval(cx, title, vp) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -636,7 +648,7 @@ DEFINE_PROPERTY(metadata) {
 
 	const char *metadata = rsvg_handle_get_metadata(handle);
 	if ( metadata != NULL )
-		JL_CHK( StringToJsval(cx, metadata, vp) );
+		JL_CHK( JL_CValToJsval(cx, metadata, vp) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -656,7 +668,7 @@ DEFINE_PROPERTY(description) {
 
 	const char *description = rsvg_handle_get_desc(handle);
 	if ( description != NULL )
-		JL_CHK( StringToJsval(cx, description, vp) );
+		JL_CHK( JL_CValToJsval(cx, description, vp) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -678,7 +690,7 @@ DEFINE_PROPERTY(images) {
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		*vp = OBJECT_TO_JSVAL( JS_NewObject(cx, NULL, NULL, NULL) );
-		JL_CHK( JS_SetReservedSlot(cx, JL_OBJ, SLOT_IMAGES_OBJECT, *vp) );
+		JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_IMAGES_OBJECT, *vp) );
 	}
 	return JS_TRUE;
 }
@@ -708,13 +720,13 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST(Write)
-		FUNCTION_FAST(RenderImage)
-		FUNCTION_FAST(SetVisible)
-//		FUNCTION_FAST(GetImage)
-		FUNCTION_FAST(Scale)
-		FUNCTION_FAST(Rotate)
-		FUNCTION_FAST(Translate)
+		FUNCTION(Write)
+		FUNCTION(RenderImage)
+		FUNCTION(SetVisible)
+//		FUNCTION(GetImage)
+		FUNCTION(Scale)
+		FUNCTION(Rotate)
+		FUNCTION(Translate)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

@@ -12,7 +12,7 @@ LoadModule('jsdebug');
 	PropertiesList([]);
 
 
-/// gcMallocBytes test
+/// gcMallocBytes test [d]
 
 	var v0 = gcMallocBytes;
 	var s = StringRepeat('x', 100000);

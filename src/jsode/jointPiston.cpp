@@ -36,7 +36,8 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
 	ode::dJointGroupID groupId;
@@ -51,7 +52,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	ode::dWorldID worldId;
-	JL_CHK( JsvalToWorldID( cx, JL_ARG(1), &worldId) );
+	JL_CHK( JL_JsvalToWorldID( cx, JL_ARG(1), &worldId) );
 	ode::dJointID jointId = ode::dJointCreatePiston(worldId, groupId); // The joint group ID is 0 to allocate the joint normally.
 	ode::dJointSetData(jointId, obj);
 	ode::dJointSetFeedback(jointId, NULL);
@@ -69,14 +70,18 @@ $TOC_MEMBER $INAME
  $VOID $INAME( force )
   TBD
 **/
-DEFINE_FUNCTION_FAST( AddForce ) {
+DEFINE_FUNCTION( AddForce ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_S_ASSERT_ARG_MIN(1);
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(jointId);
 	ode::dReal real;
-	JL_CHK( JsvalToODEReal(cx, JL_FARG(1), &real) );
+	JL_CHK( JL_JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddPistonForce(jointId, real);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -86,19 +91,23 @@ $TOC_MEMBER $INAME
  $VOID $INAME( x, y, z,  dx, dy, dz )
   TBD
 **/
-DEFINE_FUNCTION_FAST( AxisDelta ) {
+DEFINE_FUNCTION( AxisDelta ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_S_ASSERT_ARG_MIN(1);
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(jointId);
 	float x,y,z,  dx, dy, dz;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(0), &x ) );
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &y ) );
-	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &z ) );
-	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &dx ) );
-	JL_CHK( JsvalToFloat(cx, JL_FARG(4), &dy ) );
-	JL_CHK( JsvalToFloat(cx, JL_FARG(5), &dz ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(0), &x ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &y ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &z ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &dx ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &dy ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &dz ) );
 	ode::dJointSetPistonAxisDelta(jointId, x,y,z, dx, dy, dz);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -120,7 +129,7 @@ DEFINE_PROPERTY( anchorSetter ) {
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetPistonAnchor( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -166,7 +175,7 @@ DEFINE_PROPERTY( axisSetter ) {
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetPistonAxis( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -193,7 +202,7 @@ DEFINE_PROPERTY( position ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( JS_NewDoubleValue(cx, ode::dJointGetPistonPosition(jointId), vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dJointGetPistonPosition(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -207,7 +216,7 @@ DEFINE_PROPERTY( positionRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( JS_NewDoubleValue(cx, ode::dJointGetPistonPositionRate(jointId), vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dJointGetPistonPositionRate(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -223,7 +232,7 @@ DEFINE_PROPERTY( angle ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( JS_NewDoubleValue(cx, ode::dJointGetPistonAngle(jointId), vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dJointGetPistonAngle(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -237,7 +246,7 @@ DEFINE_PROPERTY( angleRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( JS_NewDoubleValue(cx, ode::dJointGetPistonAngleRate(jointId), vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dJointGetPistonAngleRate(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -254,8 +263,8 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(2) // body1, body2
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST_ARGC( AddForce, 1 )
-		FUNCTION_FAST_ARGC( AxisDelta, 6 )
+		FUNCTION_ARGC( AddForce, 1 )
+		FUNCTION_ARGC( AxisDelta, 6 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

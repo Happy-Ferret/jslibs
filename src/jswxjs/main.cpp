@@ -43,7 +43,7 @@ DEFINE_FUNCTION( LoadWXJSModule ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 	const char *fileName;
-	JL_CHK( JsvalToString(cx, &argv[0], &fileName) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &fileName) );
 	char libFileName[PATH_MAX];
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );
@@ -57,7 +57,7 @@ DEFINE_FUNCTION( LoadWXJSModule ) {
 	WXJS_INIT_PROC moduleInit = (WXJS_INIT_PROC)::GetProcAddress( module, WXJS_INIT_CLASS );
 
 	JL_S_ASSERT( moduleInit != NULL, "Module initialization function not found in %s.", libFileName );
-	*rval = moduleInit( cx, obj ) ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = moduleInit( cx, JS_THIS_OBJECT(cx, vp) ) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -65,6 +65,7 @@ DEFINE_FUNCTION( LoadWXJSModule ) {
 
 DEFINE_FUNCTION( UnloadWXJSModule ) {
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -80,7 +81,7 @@ END_STATIC
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	_unsafeMode = GetHostPrivate(cx)->unsafeMode;
+	_unsafeMode = JL_GetHostPrivate(cx)->unsafeMode;
 
 	INIT_STATIC();
 	return JS_TRUE;

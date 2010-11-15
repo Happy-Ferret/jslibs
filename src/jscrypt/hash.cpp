@@ -65,11 +65,12 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	const char *hashName;
-	JL_CHK( JsvalToString(cx, &argv[0], &hashName) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &hashName) );
 
 	int hashIndex;
 	hashIndex = find_hash(hashName);
@@ -100,11 +101,12 @@ DEFINE_CONSTRUCTOR() {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME()
+ $VOID $INAME()
   Initialize the hash state.
 **/
 DEFINE_FUNCTION( Init ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MAX( 0 );
 
@@ -118,6 +120,7 @@ DEFINE_FUNCTION( Init ) {
 		return ThrowCryptError(cx, err);
 	pv->inputLength = 0;
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -130,9 +133,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Process ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_STRING( argv[0] );
+	JL_S_ASSERT_STRING( JL_ARG(1) );
 
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
@@ -141,7 +145,7 @@ DEFINE_FUNCTION( Process ) {
 	int err;
 	const char *in;
 	size_t inLength;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
 
 	err = pv->descriptor->process(&pv->state, (const unsigned char *)in, (unsigned long)inLength); // Process a block of memory though the hash
 	if ( err != CRYPT_OK )
@@ -149,6 +153,7 @@ DEFINE_FUNCTION( Process ) {
 
 	pv->inputLength += inLength;
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -170,7 +175,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Done ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -185,7 +192,7 @@ DEFINE_FUNCTION( Done ) {
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 
-	JL_CHK( JL_NewBlob( cx, out, outLength, rval ) );
+	JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -210,14 +217,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CALL() {
 
-	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
-	JL_S_ASSERT_CLASS( thisObj, JL_THIS_CLASS );
-	
+	JL_DEFINE_CALL_FUNCTION_OBJ;
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_STRING( argv[0] );
+	JL_S_ASSERT_STRING( JL_ARG(1) );
 
 	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate( cx, thisObj );
+	pv = (HashPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
 
 	int err;
@@ -230,7 +236,7 @@ DEFINE_CALL() {
 
 	const char *in;
 	size_t inLength;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
 
 	err = pv->descriptor->init(&pv->state);
 	if (err != CRYPT_OK)
@@ -249,7 +255,7 @@ DEFINE_CALL() {
 		return ThrowCryptError(cx, err);
 	pv->inputLength = 0;
 
-	JL_CHK( JL_NewBlob( cx, out, outLength, rval ) );
+	JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -321,7 +327,7 @@ DEFINE_PROPERTY( inputLength ) {
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	return SizeToJsval(cx, pv->inputLength, vp);
+	return JL_CValToJsval(cx, pv->inputLength, vp);
 	JL_BAD;
 }	
 
@@ -331,7 +337,7 @@ DEFINE_PROPERTY( inputLength ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( cipherName )
+ $VOID $INAME( cipherName )
    Initialize the CHC (chc_hash) state with _cipherName_ cipher.
    $LF
    An addition to the suite of hash functions is the Cipher Hash Construction or CHC mode.
@@ -340,16 +346,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CipherHash ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN(1);
+
 	const char *cipherName;
-	JL_CHK( JsvalToString(cx, &argv[0], &cipherName) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &cipherName) );
 	int cipherIndex;
 	cipherIndex = find_cipher(cipherName);
 	JL_S_ASSERT( cipherIndex >= 0, "Cipher not found: %s", cipherName );
 	int err;
 	if ((err = chc_register(cipherIndex)) != CRYPT_OK)
 		return ThrowCryptError(cx, err);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -377,7 +387,7 @@ DEFINE_PROPERTY( list ) {
 	LTC_MUTEX_LOCK(&ltc_hash_mutex);
 	for ( i=0; hash_is_valid(i) == CRYPT_OK; i++ ) {
 
-		JSObject *desc = JS_NewObject( cx, NULL, NULL, NULL );
+		JSObject *desc = JS_NewObject(cx, NULL, NULL, NULL);
 		value = OBJECT_TO_JSVAL(desc);
 		JS_SetProperty( cx, tvr.object(), hash_descriptor[i].name, &value );
 

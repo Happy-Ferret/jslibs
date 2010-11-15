@@ -34,15 +34,14 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( ObjEx )
 
 
-inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval id, jsval *vp ) {
+inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsid id, jsval *vp ) {
 
 // (TBD) because in constructor we do JS_SetPrototype(cx, obj, NULL) to create a 'true' empty object, is the next lines useful ?
 
-//	if ( JSVAL_IS_VOID(*vp) && strcmp( JS_GetStringBytes(JS_ValueToString(cx,id)), "__iterator__" ) == 0 ) // we don't want to override the iterator
+//	if ( JSVAL_IS_VOID(*vp) && strcmp( JL_GetStringBytes(JS_ValueToString(cx,id)), "__iterator__" ) == 0 ) // we don't want to override the iterator
 //		return JS_TRUE;
-	jsid idid;
-	JL_CHK( JS_ValueToId(cx, id, &idid) );
-	if ( idid == JL_ATOMJSID(cx, iterator) )
+	
+	if ( id == JL_ATOMJSID(cx, iterator) )
 		return JS_TRUE;
 
 // (TBD) returns the current value too (cf.	JS_LookupProperty(cx, obj, )
@@ -59,7 +58,7 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval i
 */
 
 //	jsval prevValue;
-//	JL_CHK( JS_LookupPropertyWithFlags(cx, obj, JS_GetStringBytes(JS_ValueToString(cx, id)), JSRESOLVE_QUALIFIED|JSRESOLVE_ASSIGNING|JSRESOLVE_DECLARING, &prevValue) );
+//	JL_CHK( JS_LookupPropertyWithFlags(cx, obj, JL_GetStringBytes(JS_ValueToString(cx, id)), JSRESOLVE_QUALIFIED|JSRESOLVE_ASSIGNING|JSRESOLVE_DECLARING, &prevValue) );
 
 	jsval slot;
 	JL_CHK( JL_GetReservedSlot( cx, obj, slotIndex , &slot ) );
@@ -68,7 +67,8 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsval i
 	jsval aux;
 	JL_CHK( JL_GetReservedSlot( cx, obj, AUX_SLOT, &aux ) );
 	jsval args[4]; // = { id, *vp, aux, INT_TO_JSVAL(slotIndex) }; // ( propertyName, propertyValue, auxObject, callbackIndex )
-	args[0] = id;
+	// args[0] = id;
+	JL_CHK( JS_IdToValue(cx, id, &args[0]) );
 	args[1] = *vp;
 	args[2] = aux;
 	args[3] = INT_TO_JSVAL(slotIndex);
@@ -126,18 +126,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_ARG_MAX(5);
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
+	JL_S_ASSERT_ARG_MAX(5);
+
 
 	for ( uintN i = 0; i < JL_ARGC && i < 4; i++ )
 		if ( JL_ARG_ISDEF(i+1) ) {
 
 			JL_S_ASSERT_FUNCTION(JL_ARG(i+1));
-			JL_CHK( JS_SetReservedSlot( cx, obj, i, JL_ARG(i+1) ) );
+			JL_CHK( JL_SetReservedSlot( cx, obj, i, JL_ARG(i+1) ) );
 		}
 	if ( JL_ARGC >= 5 ) // AUX object
-		JL_CHK( JS_SetReservedSlot( cx, obj, AUX_SLOT, JL_ARG(5) ) );
+		JL_CHK( JL_SetReservedSlot( cx, obj, AUX_SLOT, JL_ARG(5) ) );
 	JL_CHK( JS_SetPrototype(cx, obj, NULL) ); // this creates an empty object ( without __proto__, __parent__, toString, ... )
 	return JS_TRUE;
 	JL_BAD;
@@ -150,23 +152,23 @@ DEFINE_CONSTRUCTOR() {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( objex [, newAux] )
+ $VAL $INAME( objex [, newAux] )
   Returns the _auxObject_ stored in the _objex_.
   If newAux is given, it replaces the current auxiliary value of _objex_.
 **/
-DEFINE_FUNCTION_FAST( Aux ) {
+DEFINE_FUNCTION( Aux ) {
 
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 //	JL_S_ASSERT_THIS_INSTANCE();
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(JL_FARG(1)), JL_THIS_CLASS);
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(JL_ARG(1)), JL_THIS_CLASS);
 
 	JSObject *object;
-	object = JSVAL_TO_OBJECT(JL_FARG(1));
+	object = JSVAL_TO_OBJECT(JL_ARG(1));
 	JL_S_ASSERT_CLASS( object, JL_THIS_CLASS );
-	JL_CHK( JL_GetReservedSlot( cx, object, AUX_SLOT, JL_FRVAL ) );
-	if ( JL_FARG_ISDEF(2) )
-	  JL_CHK( JS_SetReservedSlot( cx, object, AUX_SLOT, JL_FARG(2) ) );
+	JL_CHK( JL_GetReservedSlot( cx, object, AUX_SLOT, JL_RVAL ) );
+	if ( JL_ARG_ISDEF(2) )
+	  JL_CHK( JL_SetReservedSlot( cx, object, AUX_SLOT, JL_ARG(2) ) );
 	return JS_TRUE;
 	JL_BAD;
 
@@ -174,7 +176,7 @@ DEFINE_FUNCTION_FAST( Aux ) {
 
 //DEFINE_HAS_INSTANCE() { // see issue#52
 //
-//	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == _class;
+//	*bp = JL_JsvalIsClass(*v, JL_THIS_CLASS);
 //	return JS_TRUE;
 //}
 
@@ -192,7 +194,7 @@ CONFIGURE_CLASS
 	HAS_SET_PROPERTY
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST(Aux)
+		FUNCTION(Aux)
 	END_STATIC_FUNCTION_SPEC
 
 END_CLASS

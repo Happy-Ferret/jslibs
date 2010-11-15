@@ -127,11 +127,11 @@ DEFINE_CONSTRUCTOR() {
 	CipherPrivate *pv = NULL; // see. bad label
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_S_ASSERT_ARG_MIN( 3 );
 
 	const char *modeName;
-	JL_CHK( JsvalToString(cx, &argv[0], &modeName) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &modeName) ); // warning: GC on the returned buffer !
 
 	CryptMode mode;
 	if ( strcasecmp( modeName, "ECB" ) == 0 )
@@ -152,30 +152,30 @@ DEFINE_CONSTRUCTOR() {
 		JL_REPORT_ERROR("Invalid mode %s", modeName);
 
 	const char *cipherName;
-	JL_CHK( JsvalToString(cx, &argv[1], &cipherName) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &cipherName) ); // warning: GC on the returned buffer !
 
 	const char *key;
 	size_t keyLength;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[2], &key, &keyLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &key, &keyLength) ); // warning: GC on the returned buffer !
 
 	const char *IV;
 	IV = NULL;
 	size_t IVLength;
 	IVLength = 0;
-	if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) )
-		JL_CHK( JsvalToStringAndLength(cx, &argv[3], &IV, &IVLength ) ); // warning: GC on the returned buffer !
+	if ( argc >= 4 && !JSVAL_IS_VOID( JL_ARG(4) ) )
+		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(4), &IV, &IVLength ) ); // warning: GC on the returned buffer !
 
 	const char *optarg;
 	optarg = NULL;
 	size_t optargLength;
 	optargLength = 0;
-	if ( argc >= 5 && !JSVAL_IS_VOID( argv[4] ) )
-		JL_CHK( JsvalToStringAndLength(cx, &argv[4], &optarg, &optargLength ) ); // warning: GC on the returned buffer !
+	if ( argc >= 5 && !JSVAL_IS_VOID( JL_ARG(5) ) )
+		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(5), &optarg, &optargLength ) ); // warning: GC on the returned buffer !
 
    int numRounds;
    numRounds= 0; // default value, us a default number of rounds.
-	if ( argc >= 6 && !JSVAL_IS_VOID( argv[5] ) )
-		JL_CHK( JsvalToInt(cx, argv[5], &numRounds) );
+	if ( argc >= 6 && !JSVAL_IS_VOID( JL_ARG(6) ) )
+		JL_CHK( 	JL_JsvalToCVal(cx, JL_ARG(6), &numRounds) );
 
 	pv = (CipherPrivate*)JS_malloc(cx, sizeof(CipherPrivate));
 	JL_CHK( pv );
@@ -291,15 +291,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Encrypt ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
+
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
 
 	const char *pt;
 	size_t ptLength;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &pt, &ptLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &pt, &ptLength) ); // warning: GC on the returned buffer !
 
 	char *ct;
 	ct = (char *)JS_malloc( cx, ptLength +1 );
@@ -339,7 +341,7 @@ DEFINE_FUNCTION( Encrypt ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JL_CHK( JL_NewBlob( cx, ct, ptLength, rval ) );
+	JL_CHK( JL_NewBlob( cx, ct, ptLength, JL_RVAL ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -352,15 +354,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Decrypt ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
+
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
 
 	const char *ct;
 	size_t ctLength;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &ct, &ctLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &ct, &ctLength) ); // warning: GC on the returned buffer !
 
 	char *pt;
 	pt = (char *)JS_malloc( cx, ctLength +1 );
@@ -397,7 +401,7 @@ DEFINE_FUNCTION( Decrypt ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JL_CHK( JL_NewBlob( cx, pt, ctLength, rval ) );
+	JL_CHK( JL_NewBlob( cx, pt, ctLength, JL_RVAL ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -478,7 +482,7 @@ DEFINE_PROPERTY( IVSetter ) {
 
 	const char *IV;
 	size_t IVLength;
-	JL_CHK( JsvalToStringAndLength(cx, vp, &IV, &IVLength) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &IV, &IVLength) );
 
 	int err;
 	switch ( pv->mode ) {

@@ -36,7 +36,7 @@ $MODULE_FOOTER
 JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 
 	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);
-	JL_CHK( SetModulePrivate(cx, jslangModuleId, mpv) );
+	JL_CHK( JL_SetModulePrivate(cx, jslangModuleId, mpv) );
 
 	mpv->processEventSignalEventSem = JLSemaphoreCreate(0);
 
@@ -45,9 +45,6 @@ JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Stream );
 	INIT_STATIC();
 
-	JL_CHK( JL_RegisterNativeClass(cx, JL_CLASS(Blob)) );
-	JL_CHK( JL_RegisterNativeClass(cx, JL_CLASS(Handle)) );
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -55,7 +52,7 @@ JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 
 JSBool jslangModuleRelease(JSContext *cx) {
 
-	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, jslangModuleId);
+	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
 
 	for ( size_t i = 0; i < COUNTOF(mpv->processEventThreadInfo); ++i ) {
 		

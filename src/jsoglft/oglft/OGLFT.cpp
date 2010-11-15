@@ -183,7 +183,7 @@ namespace OGLFT {
   {
     for ( unsigned int i = 0; i < faces_.size(); i++ )
       if ( faces_[i].free_on_exit_ )
-	FT_Done_Face( faces_[i].face_ );
+		FT_Done_Face( faces_[i].face_ );
   }
 
   // Add another Face to select characters from file.

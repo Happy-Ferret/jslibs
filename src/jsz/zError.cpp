@@ -72,12 +72,13 @@ DEFINE_PROPERTY( const ) {
 
 DEFINE_FUNCTION( toString ) {
 
-	return _text(cx, obj, 0, rval);
+	JL_DEFINE_FUNCTION_OBJ;
+	return _text(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
+	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
 
@@ -99,9 +100,9 @@ DEFINE_XDR() {
 		*objp = JS_NewObject(xdr->cx, JL_THIS_CLASS, NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
+		JL_CHK( JL_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
 		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 1, tmp) );
+		JL_CHK( JL_SetReservedSlot(xdr->cx, *objp, 1, tmp) );
 		return JS_TRUE;
 	}
 
@@ -140,10 +141,11 @@ END_CLASS
 
 JSBool ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
 
-	JSObject *error = JS_NewObject( cx, JL_CLASS(ZError), NULL, NULL );
+	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(ZError), JL_PROTOTYPE(cx, ZError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-	JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) );
-	JS_SetReservedSlot( cx, error, 1, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage != NULL ? errorMessage : ZConstString(errorCode) )) );
-	JL_SAFE( ExceptionSetScriptLocation(cx, error) );
+	JL_CHK( JL_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) ) );
+	JL_CHK( JL_SetReservedSlot( cx, error, 1, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage != NULL ? errorMessage : ZConstString(errorCode) )) ) );
+	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
 	return JS_FALSE;
+	JL_BAD;
 }

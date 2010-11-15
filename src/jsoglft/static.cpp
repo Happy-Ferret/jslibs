@@ -40,32 +40,32 @@ $TOC_MEMBER $INAME
    $ARG $STR str: the string.
    $ARG $INT size: the point size of the font to generate. A point is essentially 1/72th of an inch.
 **/
-DEFINE_FUNCTION_FAST( Draw3DText ) {
+DEFINE_FUNCTION( Draw3DText ) {
 
 	JL_S_ASSERT_ARG_RANGE( 2, 4 );
 	
-	JL_S_ASSERT_OBJECT(JL_FARG(1));
+	JL_S_ASSERT_OBJECT(JL_ARG(1));
 
-	JSObject *fontObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	JSObject *fontObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	FT_Face ftface = GetJsfontPrivate(cx, fontObj)->face;
 
 	const char *text;
-	JL_CHK( JsvalToString(cx, &JL_FARG(2), &text) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &text) );
 
 	JsoglftPrivate *mpv = (JsoglftPrivate*)ModulePrivateGet();
 
 	float currentSize = ftface->size->metrics.y_scale / ftface->units_per_EM;
 
 	float size;
-	if ( JL_FARG_ISDEF(3) )
-		JL_CHK( JsvalToFloat(cx, JL_FARG(3), &size) );
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &size) );
 	else
 		size = currentSize;
 
 	bool compile;
-	if ( JL_FARG_ISDEF(4) )
-		JL_CHK( JsvalToBool(cx, JL_FARG(4), &compile) );
+	if ( JL_ARG_ISDEF(4) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &compile) );
 	else
 		compile = false;
 
@@ -80,11 +80,11 @@ DEFINE_FUNCTION_FAST( Draw3DText ) {
 		face->setForegroundColor(color);
 
 		GLuint list = face->compile(text);
-		*JL_FRVAL = INT_TO_JSVAL(list);
+		*JL_RVAL = INT_TO_JSVAL(list);
 	} else {
 
 		face->draw(text);
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 	}
 
 	return JS_TRUE;
@@ -96,7 +96,7 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision: 3060 $"))
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST( Draw3DText )
+		FUNCTION( Draw3DText )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

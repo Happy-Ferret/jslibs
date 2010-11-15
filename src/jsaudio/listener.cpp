@@ -35,7 +35,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 
 	float pos[3];
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, *vp, pos, 3, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, *vp, pos, 3, &len) );
 
 	alListener3f(AL_POSITION, pos[0], pos[1], pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -51,7 +51,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 	alGetListener3f(AL_POSITION, &pos[0], &pos[1], &pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( FloatVectorToJsval(cx, pos, 3, vp) );
+	JL_CHK( JL_CValVectorToJsval(cx, pos, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -65,7 +65,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( metersPerUnit ) {
 
 	float metersPerUnit;
-	JL_CHK( JsvalToFloat(cx, *vp, &metersPerUnit) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &metersPerUnit) );
 
 	alListenerf(AL_METERS_PER_UNIT, metersPerUnit);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -81,7 +81,7 @@ DEFINE_PROPERTY_GETTER( metersPerUnit ) {
 	alGetListenerf(AL_METERS_PER_UNIT, &metersPerUnit);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( FloatToJsval(cx, metersPerUnit, vp) );
+	JL_CHK(JL_CValToJsval(cx, metersPerUnit, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

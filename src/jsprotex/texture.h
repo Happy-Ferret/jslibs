@@ -42,9 +42,13 @@ struct TextureStruct {
 	unsigned char channels;
 };
 
-inline JSClass* TextureJSClass( JSContext *cx ) {
 
-	return JL_GetRegistredNativeClass(cx, "Texture");
+static ALWAYS_INLINE JSClass* JL_TextureJSClass( const JSContext *cx ) {
+
+	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+	if (unlikely( clasp == NULL ))
+		clasp = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Texture")->clasp;
+	return clasp;
 }
 
 #endif // _TEXTURE_H_

@@ -81,11 +81,11 @@ $TOC_MEMBER $INAME
   }}}
 **/
 
-DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
+DEFINE_FUNCTION( DecodeOggVorbis ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-	JSObject *streamObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JSObject *streamObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 //	NIStreamRead streamReader;
 //	JL_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
@@ -147,16 +147,15 @@ DEFINE_FUNCTION_FAST( DecodeOggVorbis ) {
 	char *buf = (char*)JS_malloc(cx, totalSize);
 	JL_CHK( buf );
 
-	jsval bstr;
-	JL_CHK( JL_NewBlob(cx, buf, totalSize, &bstr) );
+	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
 	JSObject *bstrObj;
-	JL_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
+	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &bstrObj) );
 	JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
-	*JL_FRVAL = OBJECT_TO_JSVAL(bstrObj);
+	*JL_RVAL = OBJECT_TO_JSVAL(bstrObj);
 
-	JL_CHK( SetPropertyInt(cx, bstrObj, "bits", bits) ); // bits per sample
-	JL_CHK( SetPropertyInt(cx, bstrObj, "rate", info->rate) );
-	JL_CHK( SetPropertyInt(cx, bstrObj, "channels", info->channels) );
+	JL_CHK(JL_SetProperty(cx, bstrObj, "bits", bits) ); // bits per sample
+	JL_CHK(JL_SetProperty(cx, bstrObj, "rate", info->rate) );
+	JL_CHK(JL_SetProperty(cx, bstrObj, "channels", info->channels) );
 
 	ov_clear(&descriptor); // beware: info must be valid
 
@@ -186,13 +185,13 @@ sf_count_t SfGetFilelen(void *user_data) {
 	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 	if ( JSVAL_IS_VOID( tmpVal ) )
 		return -1;
-	JsvalToInt(pv->cx, tmpVal, &position); // (TBD) manage error
+	JL_JsvalToCVal(pv->cx, tmpVal, &position); // (TBD) manage error
 
 	int available;
 	JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal); // (TBD) manage error
 	if ( JSVAL_IS_VOID( tmpVal ) )
 		return -1;
-	JsvalToInt(pv->cx, tmpVal, &available); // (TBD) manage error
+	JL_JsvalToCVal(pv->cx, tmpVal, &available); // (TBD) manage error
 
 	return position + available;
 }
@@ -209,7 +208,7 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 		case SEEK_SET:
 			if ( offset < 0 )
 				return -1;
-			IntToJsval(pv->cx, offset, &tmpVal); // (TBD) manage error
+			JL_CValToJsval(pv->cx, offset, &tmpVal); // (TBD) manage error
 			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 			return 0;
 
@@ -217,10 +216,10 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
-			JsvalToInt(pv->cx, tmpVal, &position); // (TBD) manage error
+			JL_JsvalToCVal(pv->cx, tmpVal, &position); // (TBD) manage error
 
 			position += offset;
-			IntToJsval(pv->cx, position, &tmpVal); // (TBD) manage error
+			JL_CValToJsval(pv->cx, position, &tmpVal); // (TBD) manage error
 			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 			return 0;
 
@@ -228,17 +227,17 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal);
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
-			JsvalToInt(pv->cx, tmpVal, &available);
+			JL_JsvalToCVal(pv->cx, tmpVal, &available);
 
 			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
-			JsvalToInt(pv->cx, tmpVal, &position);
+			JL_JsvalToCVal(pv->cx, tmpVal, &position);
 
 			if ( offset > 0 || -offset > position + available )
 				return -1;
-			JsvalToInt(pv->cx, tmpVal, &position);
-			IntToJsval(pv->cx, position + available + offset, &tmpVal); // the pointer is set to the size of the file plus offset.
+			JL_JsvalToCVal(pv->cx, tmpVal, &position);
+			JL_CValToJsval(pv->cx, position + available + offset, &tmpVal); // the pointer is set to the size of the file plus offset.
 			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal);
 			return 0;
 
@@ -255,7 +254,7 @@ sf_count_t SfTell(void *user_data) {
 	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
 	if ( JSVAL_IS_VOID( tmpVal ) )
 		return -1;
-	JsvalToInt(pv->cx, tmpVal, &position);
+	JL_JsvalToCVal(pv->cx, tmpVal, &position);
 
 	return position;
 }
@@ -285,12 +284,12 @@ $TOC_MEMBER $INAME
   $H return value
    A sound object in a 16-bit per sample format.
 **/
-DEFINE_FUNCTION_FAST( DecodeSound ) {
+DEFINE_FUNCTION( DecodeSound ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-	JSObject *streamObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JSObject *streamObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 //	NIStreamRead streamReader;
 //	JL_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
@@ -354,18 +353,17 @@ DEFINE_FUNCTION_FAST( DecodeSound ) {
 
 //	JSObject *bstrObj = JL_NewBlob(cx, buf, totalSize);
 //	JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
-//	*JL_FRVAL = OBJECT_TO_JSVAL(bstrObj);
+//	*JL_RVAL = OBJECT_TO_JSVAL(bstrObj);
 
-	jsval bstr;
-	JL_CHK( JL_NewBlob(cx, buf, totalSize, &bstr) );
+	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
 	JSObject *bstrObj;
-	JL_CHK( JS_ValueToObject(cx, bstr, &bstrObj) );
+	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &bstrObj) );
 	JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
-	*JL_FRVAL = OBJECT_TO_JSVAL(bstrObj);
+	*JL_RVAL = OBJECT_TO_JSVAL(bstrObj);
 
-	JL_CHK( SetPropertyInt(cx, bstrObj, "bits", 16) ); // bits per sample
-	JL_CHK( SetPropertyInt(cx, bstrObj, "rate", info.samplerate) );
-	JL_CHK( SetPropertyInt(cx, bstrObj, "channels", info.channels) );
+	JL_CHK(JL_SetProperty(cx, bstrObj, "bits", 16) ); // bits per sample
+	JL_CHK(JL_SetProperty(cx, bstrObj, "rate", info.samplerate) );
+	JL_CHK(JL_SetProperty(cx, bstrObj, "channels", info.channels) );
 
 	sf_close(descriptor);
 
@@ -394,26 +392,26 @@ $TOC_MEMBER $INAME
   $H return value
    An array that contains each individual channel of the sound.
 **/
-DEFINE_FUNCTION_FAST( SplitChannels ) {
+DEFINE_FUNCTION( SplitChannels ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
 	unsigned int rate, channelCount, bits, frames;
-	JSObject *srcBlobObj = JSVAL_TO_OBJECT(JL_FARG(1));
-	JL_CHK( GetPropertyUInt(cx, srcBlobObj, "rate", &rate) );
-	JL_CHK( GetPropertyUInt(cx, srcBlobObj, "channels", &channelCount) );
-	JL_CHK( GetPropertyUInt(cx, srcBlobObj, "bits", &bits) );
-	JL_CHK( GetPropertyUInt(cx, srcBlobObj, "frames", &frames) );
+	JSObject *srcBlobObj = JSVAL_TO_OBJECT(JL_ARG(1));
+	JL_CHK(JL_GetProperty(cx, srcBlobObj, "rate", &rate) );
+	JL_CHK(JL_GetProperty(cx, srcBlobObj, "channels", &channelCount) );
+	JL_CHK(JL_GetProperty(cx, srcBlobObj, "bits", &bits) );
+	JL_CHK(JL_GetProperty(cx, srcBlobObj, "frames", &frames) );
 
 	JL_S_ASSERT( bits == 8 || bits == 16, "Invalid channel sound resolution." );
 
 	const char *srcBuf;
 	size_t srcBufLength;
-	JsvalToStringAndLength(cx, &JL_FARG(1), &srcBuf, &srcBufLength);
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &srcBuf, &srcBufLength) );
 
 	JSObject *destArray = JS_NewArrayObject(cx, 0, NULL);
-	*JL_FRVAL = OBJECT_TO_JSVAL(destArray);
+	*JL_RVAL = OBJECT_TO_JSVAL(destArray);
 
 	for ( size_t c = 0; c < channelCount; c++ ) {
 
@@ -439,10 +437,10 @@ DEFINE_FUNCTION_FAST( SplitChannels ) {
 		blobVal = OBJECT_TO_JSVAL(blobObj);
 		JL_CHK( JS_SetElement(cx, destArray, c, &blobVal) );
 
-		JL_CHK( SetPropertyInt(cx, blobObj, "bits", bits) );
-		JL_CHK( SetPropertyInt(cx, blobObj, "rate", rate) );
-		JL_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
-		JL_CHK( SetPropertyInt(cx, blobObj, "frames", frames ) );
+		JL_CHK(JL_SetProperty(cx, blobObj, "bits", bits) );
+		JL_CHK(JL_SetProperty(cx, blobObj, "rate", rate) );
+		JL_CHK(JL_SetProperty(cx, blobObj, "channels", 1) );
+		JL_CHK(JL_SetProperty(cx, blobObj, "frames", frames ) );
 	}
 
 	return JS_TRUE;
@@ -459,9 +457,9 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
-//		FUNCTION_FAST( DecodeOggVorbis )
-//		FUNCTION_FAST( DecodeSound )
-		FUNCTION_FAST( SplitChannels )
+//		FUNCTION( DecodeOggVorbis )
+//		FUNCTION( DecodeSound )
+		FUNCTION( SplitChannels )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

@@ -44,6 +44,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	INIT_CLASS( Buffer );
 	INIT_CLASS( Pack );
 	INIT_CLASS( ObjEx );
+
 	return JS_TRUE;
 	JL_BAD;
 }

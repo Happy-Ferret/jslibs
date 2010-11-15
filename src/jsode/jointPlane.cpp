@@ -36,7 +36,8 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
 	ode::dJointGroupID groupId;
@@ -51,7 +52,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	ode::dWorldID worldId;
-	JL_CHK( JsvalToWorldID( cx, JL_ARG(1), &worldId) );
+	JL_CHK( JL_JsvalToWorldID( cx, JL_ARG(1), &worldId) );
 	ode::dJointID jointId = ode::dJointCreatePlane2D(worldId, groupId); // The joint group ID is 0 to allocate the joint normally.
 	ode::dJointSetData(jointId, obj);
 	ode::dJointSetFeedback(jointId, NULL);
@@ -67,13 +68,15 @@ DEFINE_CONSTRUCTOR() {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME()
+ $VOID $INAME()
 
 **/
-DEFINE_FUNCTION_FAST( AlignToZAxis ) {
+DEFINE_FUNCTION( AlignToZAxis ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
 
 	// fc. http://opende.sourceforge.net/wiki/index.php/Manual_(Joint_Types_and_Functions)#Plane_2D
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 
 	ode::dBodyID bodyId = ode::dJointGetBody(jointId, 0);
@@ -92,6 +95,7 @@ DEFINE_FUNCTION_FAST( AlignToZAxis ) {
 	ode::dBodySetQuaternion(bodyId, quat);
 	ode::dBodySetAngularVel(bodyId, 0, 0, rot[2]);
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -126,7 +130,7 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(2) // body1, body2
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST_ARGC( AlignToZAxis, 0 )
+		FUNCTION_ARGC( AlignToZAxis, 0 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

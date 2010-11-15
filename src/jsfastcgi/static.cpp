@@ -64,7 +64,7 @@ DEFINE_FUNCTION( Accept ) {
 
 	int rc;
 	rc = FCGX_Accept_r(&_request);
-	*rval = INT_TO_JSVAL( rc );
+	*JL_RVAL = INT_TO_JSVAL( rc );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -74,15 +74,15 @@ DEFINE_FUNCTION( GetParam ) {
 	if ( argc >= 1 ) {
 
 		const char *paramName;
-		JL_CHK( JsvalToString(cx, &argv[0], &paramName) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &paramName) );
 		char *paramValue = FCGX_GetParam(paramName, _request.envp);
 		if ( paramValue != NULL ) {
 
 			JSString *jsstr = JS_NewStringCopyZ(cx, paramValue);
 			JL_CHK( jsstr );
-			*rval = STRING_TO_JSVAL( jsstr );
+			*JL_RVAL = STRING_TO_JSVAL( jsstr );
 		} else
-			*rval = JSVAL_VOID;
+			*JL_RVAL = JSVAL_VOID;
 	} else {
 		
 		// (TDB) use FCGX_ParamArray instead ?
@@ -97,7 +97,7 @@ DEFINE_FUNCTION( GetParam ) {
 			JS_DefineProperty(cx, argsObj, *ptr, STRING_TO_JSVAL(value), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT);
 			*separator = '=';
 		}
-		*rval = OBJECT_TO_JSVAL(argsObj);
+		*JL_RVAL = OBJECT_TO_JSVAL(argsObj);
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -107,7 +107,7 @@ DEFINE_FUNCTION( Read ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	size_t len;
-	JL_CHK( JsvalToSize(cx, argv[0], &len) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &len) );
 	char* str;
 	str = (char*)JS_malloc(cx, len + 1);
 	int result;
@@ -115,14 +115,14 @@ DEFINE_FUNCTION( Read ) {
 	if ( result == 0 ) {
 		
 		JS_free(cx, str);
-		*rval = JS_GetEmptyStringValue(cx);
+		*JL_RVAL = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 	str[result] = '\0';
 	JSString *jsstr;
 	jsstr = JS_NewString(cx, str, result);
 	JL_CHK( jsstr );
-	*rval = STRING_TO_JSVAL( jsstr );
+	*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -131,16 +131,16 @@ DEFINE_FUNCTION( Write ) {
 
 	const char *str;
 	size_t len;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) );
 	int result;
 	result = FCGX_PutStr(str, (int)len, _request.out);
 	if ( result >= 0 && (size_t)result < len ) { // returns unwritten data
 
-		JSString *jsstr = JS_NewDependentString(cx, JSVAL_TO_STRING(argv[0]), result, len - result);
+		JSString *jsstr = JS_NewDependentString(cx, JSVAL_TO_STRING(JL_ARG(1)), result, len - result);
 		JL_S_ASSERT( jsstr != NULL, "Unable to create the NewDependentString." );
-		*rval = STRING_TO_JSVAL( jsstr );
+		*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	} else
-		*rval = JS_GetEmptyStringValue(cx);
+		*JL_RVAL = JL_GetEmptyStringValue(cx);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -149,6 +149,7 @@ DEFINE_FUNCTION( Flush ) {
 
 	int result = FCGX_FFlush(_request.out);
 	JL_S_ASSERT( result != -1, "Unable to flush the output stream." );
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -157,11 +158,12 @@ DEFINE_FUNCTION( Log ) {
 
 	const char *str;
 	size_t len;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) );
 	int result;
 	result = FCGX_PutStr(str, (int)len, _request.err);
 	JL_S_ASSERT( result != -1, "Unable to write to the log." );
 	FCGX_FFlush(_request.err);
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -169,6 +171,7 @@ DEFINE_FUNCTION( Log ) {
 DEFINE_FUNCTION( ShutdownPending ) {
 
 	FCGX_ShutdownPending();
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -178,7 +181,7 @@ DEFINE_FUNCTION( URLEncode ) {
 	static unsigned char hex[] = "0123456789ABCDEF";
 	const char *src;
 	size_t srcLen;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &src, &srcLen) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &src, &srcLen) );
 	char *dest;
 	dest = (char *)JS_malloc(cx, 3 * srcLen + 1);
 	JL_CHK( dest );
@@ -198,7 +201,7 @@ DEFINE_FUNCTION( URLEncode ) {
 				*(it1++) = *it;
 
 	*it1 = '\0';
-	*rval = STRING_TO_JSVAL( JS_NewString(cx, dest, it1-dest ) ); // do not include the '\0' in the string length
+	*JL_RVAL = STRING_TO_JSVAL( JS_NewString(cx, dest, it1-dest ) ); // do not include the '\0' in the string length
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -210,7 +213,7 @@ DEFINE_FUNCTION( URLDecode ) {
 	JL_S_ASSERT_ARG_MIN( 1 );
 	const char *src;
 	size_t srcLen;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &src, &srcLen) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &src, &srcLen) );
 	char *dest;
 	dest = (char *)JS_malloc(cx, srcLen + 1);
 	JL_CHK( dest );
@@ -257,12 +260,12 @@ DEFINE_FUNCTION( URLDecode ) {
 				*(it1++) = *it;
 
 	*it1 = '\0';
-	*rval = STRING_TO_JSVAL( JS_NewString(cx, dest, it1-dest ) ); // do not include the '\0' in the string length
+	*JL_RVAL = STRING_TO_JSVAL( JS_NewString(cx, dest, it1-dest ) ); // do not include the '\0' in the string length
 	return JS_TRUE;
 
 decoding_error:
 	JS_free(cx, dest);
-	*rval = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -370,7 +373,7 @@ DEFINE_FUNCTION( ParseBeginRequestBody ) {
 //	FCGI_EndRequestBody *endRequestBody = (FCGI_EndRequestBody *)data;
 //	unsigned long appStatus = ((endRequestBody->appStatusB3 & 0x7f) << 24) + (endRequestBody->appStatusB2 << 16) + (endRequestBody->appStatusB1 << 8) + endRequestBody->appStatusB0;
 //	jsval appStatusVal;
-//	JS_NewNumberValue(cx, appStatus, &appStatusVal);
+//	JL_NewNumberValue(cx, appStatus, &appStatusVal);
 //	JS_DefineProperty(cx, record, "appStatus", appStatusVal, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 //	JS_DefineProperty(cx, record, "protocolStatus", INT_TO_JSVAL( endRequestBody->protocolStatus ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 //	return JS_TRUE;
@@ -479,7 +482,7 @@ DEFINE_FUNCTION( MakeEndRequestBody ) {
 	JL_CHK( body );
 
 	unsigned long appStatus;
-	JL_CHK( JsvalToUInt(cx, argv[0], &appStatus) );
+	JL_CHK( JL_JsvalToCVal(cx, argv[0], &appStatus) );
 	body->appStatusB0 = appStatus & 0xFF;
 	body->appStatusB1 = (appStatus >> 8) & 0xFF;
 	body->appStatusB2 = (appStatus >> 16) & 0xFF;
@@ -624,7 +627,7 @@ DEFINE_FUNCTION( ParseRecord ) {
 			FCGI_EndRequestBody *endRequestBody = (FCGI_EndRequestBody *)data;
 			unsigned long appStatus = ((endRequestBody->appStatusB3 & 0x7f) << 24) + (endRequestBody->appStatusB2 << 16) + (endRequestBody->appStatusB1 << 8) + endRequestBody->appStatusB0;
 			jsval appStatusVal;
-			JS_NewNumberValue(cx, appStatus, &appStatusVal);
+			JL_NewNumberValue(cx, appStatus, &appStatusVal);
 			JS_DefineProperty(cx, record, "appStatus", appStatusVal, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 			JS_DefineProperty(cx, record, "protocolStatus", INT_TO_JSVAL( endRequestBody->protocolStatus ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 			break;

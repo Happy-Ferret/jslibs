@@ -368,6 +368,7 @@ function RunJsircbot( withDebuggerEnabled ) {
 	withDebuggerEnabled && Exec('../jsdebug/debugger.js', false);
 	currentDirectory += '/../../../jsircbot';
 	global.arguments[1] = 'my_configuration.js'; // simulate: jshost main.js my_configuration.js
+	Print( 'RunJsircbot arguments: '+uneval(global.arguments), '\n' );
 	Exec('main.js', false);
 	throw 0;
 }

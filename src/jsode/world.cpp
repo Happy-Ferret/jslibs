@@ -48,7 +48,7 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 
 		jsval obj1surf, obj2surf;
 		JL_CHK( JL_GetReservedSlot(cx, obj1, SLOT_GEOM_SURFACEPARAMETER, &obj1surf) );
-		if ( JsvalIsClass(obj1surf, classSurfaceParameters) ) {
+		if ( JL_JsvalIsClass(obj1surf, classSurfaceParameters) ) {
 			
 			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(obj1surf));
 			JL_S_ASSERT_RESOURCE( surf );
@@ -59,7 +59,7 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		}
 
 		JL_CHK( JL_GetReservedSlot(cx, obj2, SLOT_GEOM_SURFACEPARAMETER, &obj2surf) );
-		if ( JsvalIsClass(obj2surf, classSurfaceParameters) ) {
+		if ( JL_JsvalIsClass(obj2surf, classSurfaceParameters) ) {
 
 			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(obj1surf));
 			JL_S_ASSERT_RESOURCE( surf );
@@ -142,10 +142,10 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 
 			// geom.contact = function(thisGeom, otherGeom, contactVelocity, contactX, contactY, contactZ, side1, side2) { }
 
-			JL_CHK( FloatToJsval(cx, contactVelocity, &argv[3]) ); // JL_CHK( FloatToJsval(cx, contact.geom.depth, &argv[3]) );
-			JL_CHK( FloatToJsval(cx, contact.geom.pos[0], &argv[4]) );
-			JL_CHK( FloatToJsval(cx, contact.geom.pos[1], &argv[5]) );
-			JL_CHK( FloatToJsval(cx, contact.geom.pos[2], &argv[6]) );
+			JL_CHK(JL_CValToJsval(cx, contactVelocity, &argv[3]) ); // JL_CHK(JL_CValToJsval(cx, contact.geom.depth, &argv[3]) );
+			JL_CHK(JL_CValToJsval(cx, contact.geom.pos[0], &argv[4]) );
+			JL_CHK(JL_CValToJsval(cx, contact.geom.pos[1], &argv[5]) );
+			JL_CHK(JL_CValToJsval(cx, contact.geom.pos[2], &argv[6]) );
 
 			if ( !JSVAL_IS_VOID( func1 ) ) {
 
@@ -271,7 +271,8 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 
 	WorldPrivate *pv = (WorldPrivate*)JS_malloc(cx, sizeof(WorldPrivate));
 	JL_CHK( pv );
@@ -282,11 +283,11 @@ DEFINE_CONSTRUCTOR() {
 	pv->worldId = ode::dWorldCreate();
 	pv->contactGroupId = ode::dJointGroupCreate(0); // see nearCallback()
 
-	JSObject *spaceObject = JS_ConstructObject(cx, JL_CLASS(Space), NULL, NULL); // no arguments = create a topmost space object
+	JSObject *spaceObject = JS_ConstructObject(cx, JL_CLASS(Space), JL_PROTOTYPE(cx, Space), NULL); // no arguments = create a topmost space object
 	JL_CHK( spaceObject );
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_WORLD_SPACE, OBJECT_TO_JSVAL(spaceObject)) );
 
-	JSObject *surfaceParameters = JS_ConstructObject(cx, JL_CLASS(SurfaceParameters), NULL, NULL);
+	JSObject *surfaceParameters = JS_ConstructObject(cx, JL_CLASS(SurfaceParameters), JL_PROTOTYPE(cx, SurfaceParameters), NULL);
 	JL_CHK( surfaceParameters );
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, OBJECT_TO_JSVAL(surfaceParameters)) );
 
@@ -325,11 +326,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Collide ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_RANGE(0,2);
-
 	JL_S_ASSERT_CLASS(obj, JL_CLASS(World));
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
+	*JL_RVAL = JSVAL_VOID;
 
 	ode::dJointGroupEmpty(pv->contactGroupId); // contactGroupId will be reused at the next step!
 
@@ -345,13 +347,13 @@ DEFINE_FUNCTION( Collide ) {
 
 		// doc. dSpaceCollide2 ... It can also test a single non-space geom against a space ...
 		JL_S_ASSERT_OBJECT( JL_ARG(2) );
-		if ( JsvalIsSpace(JL_ARG(2)) ) {
+		if ( JL_JsvalIsSpace(JL_ARG(2)) ) {
 
-			JL_CHK( JsvalToSpaceID(cx, JL_ARG(2), (ode::dSpaceID*)&sg2Id) );
+			JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(2), (ode::dSpaceID*)&sg2Id) );
 		} else {
 
 			JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(2)), JL_CLASS(Geom));
-			JL_CHK( JsvalToGeom(cx, JL_ARG(2), (ode::dGeomID*)&sg2Id) );
+			JL_CHK( JL_JsvalToGeom(cx, JL_ARG(2), (ode::dGeomID*)&sg2Id) );
 		}
 	} else {
 
@@ -365,23 +367,23 @@ DEFINE_FUNCTION( Collide ) {
 		if ( sg2Id == NULL ) {
 
 			JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Space));
-			JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), (ode::dSpaceID*)&sg1Id) );
+			JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), (ode::dSpaceID*)&sg1Id) );
 		} else {
 
-			if ( JsvalIsSpace(JL_ARG(1)) ) {
+			if ( JL_JsvalIsSpace(JL_ARG(1)) ) {
 
-				JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), (ode::dSpaceID*)&sg1Id) );
+				JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), (ode::dSpaceID*)&sg1Id) );
 			} else {
 
 				JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Geom));
-				JL_CHK( JsvalToGeom(cx, JL_ARG(1), (ode::dGeomID*)&sg1Id) );
+				JL_CHK( JL_JsvalToGeom(cx, JL_ARG(1), (ode::dGeomID*)&sg1Id) );
 			}
 		}
 	} else {
 
 		jsval val;
 		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_WORLD_SPACE, &val) );
-		JL_CHK( JsvalToSpaceID(cx, val, (ode::dSpaceID*)&sg1Id) );
+		JL_CHK( JL_JsvalToSpaceID(cx, val, (ode::dSpaceID*)&sg1Id) );
 	}
 
 	jsval defaultSurfaceParametersVal;
@@ -412,18 +414,22 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG real stepsize: The number of milliseconds that the simulation has to advance.
 **/
-DEFINE_FUNCTION_FAST( Step ) {
+DEFINE_FUNCTION( Step ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_CLASS(JL_FOBJ, JL_CLASS(World));
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_S_ASSERT_CLASS(JL_OBJ, JL_CLASS(World));
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 	ode::dReal stepSize;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &stepSize) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &stepSize) );
 	if ( ode::dWorldGetQuickStepNumIterations(pv->worldId) == 0 )
 		ode::dWorldStep(pv->worldId, stepSize / 1000.f);
 	else
 		ode::dWorldQuickStep(pv->worldId, stepSize / 1000.f);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -431,31 +437,34 @@ DEFINE_FUNCTION_FAST( Step ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( $TYPE vec3 force, stepSize )
+ $VOID $INAME( $TYPE vec3 force, stepSize )
   _stepSize_ is the step size for the next step that will be taken. 
 
 **/
-DEFINE_FUNCTION_FAST( ScaleImpulse ) {
+DEFINE_FUNCTION( ScaleImpulse ) {
 
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dVector3 force;
 	uint32 len;
-	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), force, COUNTOF(force), &len) );
+	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), force, COUNTOF(force), &len) );
 	JL_S_ASSERT( len >= 3, "Invalid array size." );
 
 	float stepSize;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &stepSize) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &stepSize) );
 	ode::dWorldImpulseToForce(pv->worldId, stepSize / 1000, force[0], force[1], force[2], force);
 	
-	JSObject *objArr = JSVAL_TO_OBJECT(JL_FARG(1));
+	JSObject *objArr = JSVAL_TO_OBJECT(JL_ARG(1));
 	for ( jsint i = 0; i < COUNTOF(force); i++ ) {
 
-		JL_CHK( FloatToJsval(cx, force[i], JL_FRVAL) );
-		JL_CHK( JS_SetElement(cx, objArr, i, JL_FRVAL) );
+		JL_CHK( JL_CValToJsval(cx, force[i], JL_RVAL) );
+		JL_CHK( JS_SetElement(cx, objArr, i, JL_RVAL) );
 	}
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -477,7 +486,7 @@ DEFINE_PROPERTY_SETTER( autoDisableLinearThreshold ) {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	ode::dReal threshold;
-	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
+	JL_CHK( JL_JsvalToODEReal(cx, *vp, &threshold) );
 	ode::dWorldSetAutoDisableLinearThreshold(pv->worldId, threshold);
 	return JS_TRUE;
 	JL_BAD;
@@ -505,7 +514,7 @@ DEFINE_PROPERTY_SETTER( autoDisableAngularThreshold ) {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	ode::dReal threshold;
-	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
+	JL_CHK( JL_JsvalToODEReal(cx, *vp, &threshold) );
 	ode::dWorldSetAutoDisableAngularThreshold(pv->worldId, threshold);
 	return JS_TRUE;
 	JL_BAD;
@@ -548,7 +557,7 @@ DEFINE_PROPERTY( gravitySetter ) {
 	ode::dVector3 gravity;
 	//FloatArrayToVector(cx, 3, vp, gravity);
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, *vp, gravity, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, *vp, gravity, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dWorldSetGravity( pv->worldId, gravity[0], gravity[1], gravity[2] );
 	return JS_TRUE;
@@ -580,8 +589,8 @@ DEFINE_PROPERTY( realSetter ) {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	float value;
-	JL_CHK( JsvalToFloat(cx, *vp, &value) );
-	switch ( JSVAL_TO_INT(id) ) {
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &value) );
+	switch ( JSID_TO_INT(id) ) {
 		case ERP:
 			ode::dWorldSetERP(pv->worldId, value);
 			break;
@@ -626,7 +635,7 @@ DEFINE_PROPERTY( realGetter ) {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	float value;
-	switch ( JSVAL_TO_INT(id) ) {
+	switch ( JSID_TO_INT(id) ) {
 		case ERP:
 			value = ode::dWorldGetERP(pv->worldId);
 			break;
@@ -661,7 +670,7 @@ DEFINE_PROPERTY( realGetter ) {
 			value = ode::dWorldGetMaxAngularSpeed(pv->worldId);
 			break;
 	}
-	JL_CHK( FloatToJsval(cx, value, vp) );
+	JL_CHK(JL_CValToJsval(cx, value, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -696,7 +705,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( env ) {
 
-	JSObject *staticBody = JS_NewObject(cx, JL_CLASS(Body), NULL, NULL);
+	JSObject *staticBody = JS_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
 	JL_CHK(staticBody);
 	JL_SetPrivate(cx, staticBody, (ode::dBodyID)0);
 	*vp = OBJECT_TO_JSVAL(staticBody);
@@ -727,8 +736,8 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_ARGC( Collide, 2 ) // not FAST because colide is called from here
-		FUNCTION_FAST_ARGC( Step, 1 )
-		FUNCTION_FAST_ARGC( ScaleImpulse, 2 )
+		FUNCTION_ARGC( Step, 1 )
+		FUNCTION_ARGC( ScaleImpulse, 2 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

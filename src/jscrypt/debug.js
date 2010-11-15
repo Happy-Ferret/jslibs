@@ -1,7 +1,12 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+ LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-rep 4 jscrypt');
 
 LoadModule('jsstd');
 LoadModule('jscrypt');
+
+var rnd = new Prng('yarrow');
+rnd(1);
+
 
 try {
 
@@ -17,7 +22,9 @@ try {
 		Print( ac.keySize, '\n' );
 		
 		var ac2 = new AsymmetricCipher( acName, 'sha512', rnd );
+
 		ac2.publicKey = acPubKey;
+
 		Print( ac2.keySize, '\n' );
 
 		ac2.blockLength;

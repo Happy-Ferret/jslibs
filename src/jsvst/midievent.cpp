@@ -47,7 +47,9 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_CHK( JS_SetReservedSlot(cx, obj, 0, JSVAL_TRUE) );
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
+	JL_CHK( JL_SetReservedSlot(cx, obj, 0, JSVAL_TRUE) );
 	VstMidiEvent *pv = (VstMidiEvent*)JS_malloc(cx, sizeof(VstMidiEvent));
 	JL_CHK( pv );
 
@@ -349,7 +351,7 @@ END_CLASS
 
 JSObject* CreateMidiEventObject( JSContext *cx, VstMidiEvent *midiEvent ) {
 
-	JSObject *midiEventObject = JS_NewObject(cx, JL_CLASS(MidiEvent), NULL, NULL);
+	JSObject *midiEventObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(MidiEvent), JL_PROTOTYPE(cx, MidiEvent), NULL);
 	if ( midiEventObject == NULL )
 		return NULL;
 	JL_SetPrivate(cx, midiEventObject, midiEvent);

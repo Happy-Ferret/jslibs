@@ -37,11 +37,12 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_RANGE(0, 1);
 	ode::dSpaceID space;
 	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
-		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &space) );
+		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), &space) );
 	else
 		space = 0;
 	ode::dGeomID geomId = ode::dCreateBox(space, 1.0f,1.0f,1.0f); // default lengths are 1
@@ -70,7 +71,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomBoxSetLengths(geom, vector[0], vector[1], vector[2]);
 	return JS_TRUE;

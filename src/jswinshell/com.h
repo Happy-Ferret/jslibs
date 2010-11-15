@@ -25,7 +25,7 @@ DECLARE_CLASS( ComDispatch )
 DECLARE_CLASS( ComObject )
 
 
-JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant );
+JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant );
 JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval );
 
 JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval );

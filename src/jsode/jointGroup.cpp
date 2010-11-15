@@ -30,7 +30,8 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG(0);
 	ode::dJointGroupID groupId = ode::dJointGroupCreate(0);
 	JL_SetPrivate(cx, obj, groupId);
@@ -46,13 +47,15 @@ DEFINE_CONSTRUCTOR() {
 $TOC_MEMBER $INAME
  $VOID $INAME()
 **/
-DEFINE_FUNCTION_FAST( Destroy ) {
+DEFINE_FUNCTION( Destroy ) {
 	
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	ode::dJointGroupID groupId = (ode::dJointGroupID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(groupId);
 	ode::dJointGroupDestroy(groupId);
 	JL_SetPrivate(cx, obj, NULL);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -61,11 +64,15 @@ DEFINE_FUNCTION_FAST( Destroy ) {
 $TOC_MEMBER $INAME
  $VOID $INAME()
 **/
-DEFINE_FUNCTION_FAST( Empty ) {
+DEFINE_FUNCTION( Empty ) {
 
-	ode::dJointGroupID groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+
+	ode::dJointGroupID groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(groupId);
 	ode::dJointGroupEmpty(groupId);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -78,8 +85,8 @@ CONFIGURE_CLASS
 	HAS_PRIVATE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( Destroy )
-		FUNCTION_FAST( Empty )
+		FUNCTION( Destroy )
+		FUNCTION( Empty )
 	END_FUNCTION_SPEC
 
 END_CLASS

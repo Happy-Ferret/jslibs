@@ -241,11 +241,11 @@ inline QueueCell *SearchFirstData( Queue *queue, void *data ) {
 */
 
 
-template <typename T, typename Alloc>
-class Queue1 : public Alloc {
+template <class T, class A = DefaultAlloc>
+class _NOVTABLE Queue1 : private A {
 
 public:
-	struct QueueItem : Alloc {
+	struct QueueItem /*: A*/ {
 
 		QueueItem *prev;
 		QueueItem *next;
@@ -257,6 +257,11 @@ private:
 	QueueItem *_end;
 
 public:
+
+	typedef Queue1<T,A> ThisType;
+	typedef T ValueType;
+	enum { itemSize = sizeof(QueueItem) };
+
 
 	Queue1() : _begin(NULL), _end(NULL) {
 	}
@@ -398,6 +403,11 @@ public:
 	ALWAYS_INLINE void Pop( T &item ) {
 
 		item = End()->data;
+		RemoveEnd();
+	}
+
+	ALWAYS_INLINE void Pop() {
+
 		RemoveEnd();
 	}
 

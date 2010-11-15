@@ -36,11 +36,12 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_RANGE(0, 1);
 	ode::dSpaceID space;
 	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
-		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &space) );
+		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), &space) );
 	else
 		space = 0;
 	ode::dGeomID geomId = ode::dCreateCapsule(space, 1, 1); // default radius and length are 1
@@ -68,7 +69,7 @@ DEFINE_PROPERTY( radiusSetter ) {
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	jsdouble value;
-	JL_CHK( JS_ValueToNumber(cx, *vp, &value) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &value) );
 	ode::dGeomCapsuleSetParams(geom, (ode::dReal)value, length);
 	return JS_TRUE;
 	JL_BAD;
@@ -80,7 +81,7 @@ DEFINE_PROPERTY( radiusGetter ) {
 	JL_S_ASSERT_RESOURCE( geom );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
-	JL_CHK( JS_NewDoubleValue(cx, radius, vp) ); // see JS_NewNumberValue and JS_NewDouble
+	JL_CHK( ODERealToJsval(cx, radius, vp) ); // see JL_NewNumberValue and JS_NewDouble
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -97,7 +98,7 @@ DEFINE_PROPERTY( lengthSetter ) {
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	jsdouble value;
-	JL_CHK( JS_ValueToNumber(cx, *vp, &value) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &value) );
 	ode::dGeomCapsuleSetParams(geom, radius, (ode::dReal)value);
 	return JS_TRUE;
 	JL_BAD;
@@ -109,7 +110,7 @@ DEFINE_PROPERTY( lengthGetter ) {
 	JL_S_ASSERT_RESOURCE( geom );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
-	JL_CHK( JS_NewDoubleValue(cx, length, vp) ); // see JS_NewNumberValue and JS_NewDouble
+	JL_CHK( ODERealToJsval(cx, length, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

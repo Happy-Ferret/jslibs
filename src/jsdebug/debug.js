@@ -2,8 +2,27 @@
 
 LoadModule('jsstd');
 LoadModule('jsdebug');
-LoadModule('jsio');
-LoadModule('jssqlite');
+//LoadModule('jsio');
+//LoadModule('jssqlite');
+
+
+
+
+
+var s = { a:1 };
+
+var bValue;
+
+Object.defineProperty(s, "b", {get : function(){ return bValue; },  
+                               set : function(newValue){ bValue = newValue; },  
+                               enumerable : true,  
+                               configurable : true});  
+
+Print( uneval(PropertiesInfo(s)) );
+
+
+
+Halt();
 
 
 function prop(obj, prev, lvl) {
@@ -28,7 +47,6 @@ function prop(obj, prev, lvl) {
 }
 
 prop(global, 'global', 0);
-
 
 
 Halt();

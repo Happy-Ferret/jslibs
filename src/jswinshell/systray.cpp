@@ -22,6 +22,7 @@
 #include "../jslang/handlePub.h"
 
 #include "queue.h"
+#include "stack.h"
 
 #include "icon.h"
 
@@ -41,7 +42,8 @@ struct Private {
 	HANDLE event;
 	jl::Queue msgQueue;
 	CRITICAL_SECTION cs; // protects msgQueue
-	jl::Queue popupMenuRoots;
+//	jl::Queue popupMenuRoots;
+	jl::Stack<jsval> popupMenuRoots;
 };
 
 
@@ -56,19 +58,25 @@ typedef struct MSGInfo {
 } MSGInfo;
 
 
-JL_STATIC_ASSERT(sizeof(jsval) <= sizeof(/*jl::QueueCell::data aka.*/void*));
+//JL_STATIC_ASSERT(sizeof(jsval) <= sizeof(/*jl::QueueCell::data aka.*/void*));
 
 void AddPopupMenuRoot(JSContext *cx, JSObject *obj, jsval value) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	jl::QueuePush(&pv->popupMenuRoots, (void*)value);
+//	jsid id;
+//	JL_JsvalToJsid(cx, &value, &id);
+//	JS_STATIC_ASSERT( sizeof(id) <= sizeof(void*) );
+	//jl::QueuePush(&pv->popupMenuRoots, *(void**)&id);
+	*++pv->popupMenuRoots = value;
 }
 
 void FreePopupMenuRoots(JSContext *cx, JSObject *obj) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	while ( !jl::QueueIsEmpty(&pv->popupMenuRoots) )
-		jl::QueuePop(&pv->popupMenuRoots);
+//	while ( !jl::QueueIsEmpty(&pv->popupMenuRoots) )
+//		jl::QueuePop(&pv->popupMenuRoots);
+	while ( pv->popupMenuRoots )
+		--pv;
 }
 
 
@@ -382,16 +390,19 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	Private *pv = (Private*)jl_malloc(sizeof(Private));
+	//Private *pv = (Private*)jl_malloc(sizeof(Private));
+
+	Private *pv = new Private();
 	JL_S_ASSERT_ALLOC( pv );
 	JL_SetPrivate(cx, obj, pv);
 
 	InitializeCriticalSection(&pv->cs);
 
 	jl::QueueInitialize(&pv->msgQueue);
-	jl::QueueInitialize(&pv->popupMenuRoots);
+//	jl::QueueInitialize(&pv->popupMenuRoots);
+
 
 	pv->event = CreateEvent(NULL, FALSE, FALSE, NULL);
 	pv->thread = CreateThread(NULL, 0, SystrayThread, pv, 0, NULL);
@@ -427,7 +438,8 @@ DEFINE_FINALIZE() {
 
 	FreePopupMenuRoots(cx, obj);
 
-	jl_free(pv);
+	//jl_free(pv);
+	delete pv;
 }
 
 
@@ -442,8 +454,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Close ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	Finalize(cx, obj);
 	JL_SetPrivate(cx, obj, NULL);
+	
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -464,40 +479,41 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 	switch ( message ) {
 		case WM_SETFOCUS:
 			JL_CHK( JS_GetProperty(cx, obj, "onfocus", &functionVal) );
-			if ( JsvalIsFunction(cx, functionVal) )
-				JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, JSVAL_TRUE ) );
+			if ( JL_JsvalIsFunction(cx, functionVal) )
+				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, JSVAL_TRUE ) );
 			break;
 		case WM_KILLFOCUS:
 			JL_CHK( JS_GetProperty(cx, obj, "onblur", &functionVal) );
-			if ( JsvalIsFunction(cx, functionVal) )
-				JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, JSVAL_FALSE ) );
+			if ( JL_JsvalIsFunction(cx, functionVal) )
+				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, JSVAL_FALSE ) );
 			break;
 		case WM_CHAR:
 			JL_CHK( JS_GetProperty(cx, obj, "onchar", &functionVal) );
-			if ( JsvalIsFunction(cx, functionVal) ) {
+			if ( JL_JsvalIsFunction(cx, functionVal) ) {
 
 				char c = wParam;
-				JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
+				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
 			}
 			break;
 
 		case WM_ENDSESSION: // case WM_QUERYENDSESSION:
 		case WM_CLOSE:
 			JL_CHK( JS_GetProperty(cx, obj, "onclose", &functionVal) );
-			if ( JsvalIsFunction(cx, functionVal) ) {
+			if ( JL_JsvalIsFunction(cx, functionVal) ) {
 
 				bool endCase = message == WM_ENDSESSION && lParam == 0;
-				JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, BOOLEAN_TO_JSVAL(endCase) ) );
+				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, BOOLEAN_TO_JSVAL(endCase) ) );
 			}
 			break;
 
 		case WM_COMMAND:
 			JL_CHK( JS_GetProperty(cx, obj, "oncommand", &functionVal) );
-			if ( JsvalIsFunction(cx, functionVal) ) {
+			if ( JL_JsvalIsFunction(cx, functionVal) ) {
 
 				jsval key;
-				JL_CHK( JS_IdToValue(cx, (jsid)wParam, &key) );
-				JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
+				JL_STATIC_ASSERT( sizeof(jsid) == sizeof(wParam) );
+				JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) );
+				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
 				FreePopupMenuRoots(cx, obj);
 			}
 			break;
@@ -509,11 +525,12 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 				case SC_MONITORPOWER:
 
 					JL_CHK( JS_GetProperty(cx, obj, "onidle", &functionVal) );
-					if ( JsvalIsFunction(cx, functionVal) ) {
+					if ( JL_JsvalIsFunction(cx, functionVal) ) {
 
 						jsval key;
-						JL_CHK( JS_IdToValue(cx, (jsid)wParam, &key) );
-						JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
+						JL_STATIC_ASSERT( sizeof(jsid) == sizeof(wParam) );
+						JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) );
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
 					}
 				break;
 			}
@@ -523,29 +540,29 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 			switch ( lParam ) {
 				case WM_MOUSEMOVE:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousemove", &functionVal) );
-					if ( JsvalIsFunction(cx, functionVal) )
-						JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( mouseX ), INT_TO_JSVAL( mouseY ) ) );
+					if ( JL_JsvalIsFunction(cx, functionVal) )
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( mouseX ), INT_TO_JSVAL( mouseY ) ) );
 					break;
 				case WM_LBUTTONDOWN:
 				case WM_MBUTTONDOWN:
 				case WM_RBUTTONDOWN:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousedown", &functionVal) );
-					if ( JsvalIsFunction(cx, functionVal) )
-						JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
+					if ( JL_JsvalIsFunction(cx, functionVal) )
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
 					break;
 				case WM_LBUTTONUP:
 				case WM_MBUTTONUP:
 				case WM_RBUTTONUP:
 					JL_CHK( JS_GetProperty(cx, obj, "onmouseup", &functionVal) );
-					if ( JsvalIsFunction(cx, functionVal) )
-						JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
+					if ( JL_JsvalIsFunction(cx, functionVal) )
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
 					break;
 				case WM_LBUTTONDBLCLK:
 				case WM_MBUTTONDBLCLK:
 				case WM_RBUTTONDBLCLK:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousedblclick", &functionVal) );
-					if ( JsvalIsFunction(cx, functionVal) )
-						JL_CHK( JL_CallFunction( cx, obj, functionVal, rval, 1, INT_TO_JSVAL( lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0 ) ) );
+					if ( JL_JsvalIsFunction(cx, functionVal) )
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, INT_TO_JSVAL( lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0 ) ) );
 					break;
 			} // switch lParam
 	} //  switch message
@@ -563,6 +580,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ProcessEvents ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
@@ -643,15 +661,15 @@ static JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSConte
 	JL_BAD;
 }
 
-DEFINE_FUNCTION_FAST( Events ) {
+DEFINE_FUNCTION( Events ) {
 	
 	JL_S_ASSERT_ARG(0);
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
 	upe->pe.startWait = SystrayStartWait;
 	upe->pe.cancelWait = SystrayCancelWait;
 	upe->pe.endWait = SystrayEndWait;
@@ -661,7 +679,7 @@ DEFINE_FUNCTION_FAST( Events ) {
 	upe->systrayObj = obj;
 
 
-	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, OBJECT_TO_JSVAL(obj)) ); // GC protection
+	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(obj)) ); // GC protection
 
 	return JS_TRUE;
 	JL_BAD;
@@ -675,17 +693,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Focus ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	SetForegroundWindow(pv->nid.hWnd);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
 ALWAYS_INLINE JSBool NormalizeMenuInfo( JSContext *cx, JSObject *obj, const jsval key, jsval *value ) {
 
-	if ( JsvalIsFunction(cx, *value) )
-		return JL_CallFunction(cx, obj, *value, value, 1, key);
+	if ( JL_JsvalIsFunction(cx, *value) )
+		return JL_CallFunctionVA(cx, obj, *value, value, 1, key);
 	return JS_TRUE;
 }
 
@@ -714,7 +736,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 
 			uFlags |= MF_SEPARATOR;
 		} else 
-			if ( JSVAL_IS_STRING(item) || JsvalIsStringObject(cx, item) ) {
+			if ( JSVAL_IS_STRING(item) || JL_JsvalIsStringObject(cx, item) ) {
 
 			label = item;
 			cmdid = item;
@@ -731,7 +753,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 				JL_CHK( JS_GetPropertyById(cx, itemObj, list->vector[j], &value) );
 				
 				const char *keyStr;
-				JL_CHK( JsvalToString(cx, &key, &keyStr) );
+				JL_CHK( JL_JsvalToCVal(cx, key, &keyStr) );
 
 				if ( strcmp(keyStr, "id") == 0 ) {
 
@@ -749,7 +771,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
-					JL_CHK( JsvalToBool(cx, value, &b) );
+					JL_CHK( JL_JsvalToCVal(cx, value, &b) );
 					if ( b )
 						uFlags |= MF_MENUBARBREAK;
 					continue;
@@ -758,7 +780,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
-					JL_CHK( JsvalToBool(cx, value, &b) );
+					JL_CHK( JL_JsvalToCVal(cx, value, &b) );
 					if ( b )
 						uFlags |= MF_CHECKED;
 					continue;
@@ -767,7 +789,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
-					JL_CHK( JsvalToBool(cx, value, &b) );
+					JL_CHK( JL_JsvalToCVal(cx, value, &b) );
 					if ( b )
 						uFlags |= MF_GRAYED;
 					continue;
@@ -776,7 +798,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
-					JL_CHK( JsvalToBool(cx, value, &b) );
+					JL_CHK( JL_JsvalToCVal(cx, value, &b) );
 					if ( b )
 						uFlags |= MF_DISABLED;
 					continue;
@@ -784,7 +806,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 				if ( strcmp(keyStr, "default") == 0 ) {
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
-					JL_CHK( JsvalToBool(cx, value, &isDefault) );
+					JL_CHK( JL_JsvalToCVal(cx, value, &isDefault) );
 					continue;
 				}
 				if ( strcmp(keyStr, "icon") == 0 ) {
@@ -830,7 +852,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 
 			if ( label != JSVAL_VOID ) {
 
-				JL_CHK( JsvalToString(cx, &label, &lpNewItem) );
+				JL_CHK( JL_JsvalToCVal(cx, label, &lpNewItem) );
 				uFlags |= MF_STRING;
 			} else {
 
@@ -852,8 +874,17 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 //			AddPopupMenuRoot(cx, systrayObj, cmdid);
 //			uIDNewItem = (UINT_PTR)cmdid;
 			AddPopupMenuRoot(cx, systrayObj, item);
-			uIDNewItem = (UINT_PTR)item;
+
+//			JL_STATIC_ASSERT( sizeof(jsval) == sizeof(UINT_PTR) );
+
+			jsid id;
+			JL_CHK( JL_JsvalToJsid(cx, &item, &id) );
+			JL_STATIC_ASSERT(sizeof(id) <= sizeof(UINT_PTR));
+			uIDNewItem = *(UINT_PTR*)&id;
 		}
+
+//		JS_ValueToId(
+//			JSID_IS_OBJECT
 
 		AppendMenu(*hMenu, uFlags, uIDNewItem, lpNewItem);
 
@@ -917,6 +948,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PopupMenu ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_S_ASSERT_ARG(1);
@@ -932,6 +965,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 
 	PostMessage(pv->nid.hWnd, MSG_POPUP_MENU, 0, 0);
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -944,6 +978,8 @@ $TOC_MEMBER $INAME
 */
 DEFINE_FUNCTION( PopupBalloon ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	BOOL status;
@@ -955,33 +991,33 @@ DEFINE_FUNCTION( PopupBalloon ) {
 
 		pv->nid.dwInfoFlags = NIIF_NONE;
 
-		JL_CHK( JS_GetProperty(cx, infoObj, "infoTitle", rval) );
-		if ( !JSVAL_IS_VOID(*rval) ) {
+		JL_CHK( JS_GetProperty(cx, infoObj, "infoTitle", JL_RVAL) );
+		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
 
 			const char *infoTitleStr;
 			size_t infoTitleLen;
-			JL_CHK( JsvalToStringAndLength(cx, rval, &infoTitleStr, &infoTitleLen) );
+			JL_CHK( JL_JsvalToStringAndLength(cx, JL_RVAL, &infoTitleStr, &infoTitleLen) );
 			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoTitleLen);
 			memcpy( pv->nid.szInfoTitle, infoTitleStr, JL_MIN(sizeof(pv->nid.szInfoTitle)-1, infoTitleLen) );
 			pv->nid.szInfoTitle[len] = '\0';
 		}
 
-		JL_CHK( JS_GetProperty(cx, infoObj, "info", rval) );
-		if ( !JSVAL_IS_VOID(*rval) ) {
+		JL_CHK( JS_GetProperty(cx, infoObj, "info", JL_RVAL) );
+		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
 
 			const char *infoStr;
 			size_t infoLen;
-			JL_CHK( JsvalToStringAndLength(cx, rval, &infoStr, &infoLen) );
+			JL_CHK( JL_JsvalToStringAndLength(cx, JL_RVAL, &infoStr, &infoLen) );
 			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoLen);
 			memcpy( pv->nid.szInfo, infoStr, len );
 			pv->nid.szInfo[len] = '\0';
 		}
 
-		JL_CHK( JS_GetProperty(cx, infoObj, "icon", rval) );
-		if ( !JSVAL_IS_VOID(*rval) ) {
+		JL_CHK( JS_GetProperty(cx, infoObj, "icon", JL_RVAL) );
+		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
 
 			const char *iconNameStr;
-			JL_CHK( JsvalToString(cx, rval, &iconNameStr) );
+			JL_CHK( JL_JsvalToCVal(cx, *JL_RVAL, &iconNameStr) );
 			
 			if ( strcmp(iconNameStr, "info") == 0 )
 				pv->nid.dwInfoFlags |= NIIF_INFO;
@@ -1006,7 +1042,7 @@ DEFINE_FUNCTION( PopupBalloon ) {
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
 
-	*rval = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1053,6 +1089,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Position ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
@@ -1062,9 +1100,9 @@ DEFINE_FUNCTION( Position ) {
 	jsval v[] = { INT_TO_JSVAL(r.left), INT_TO_JSVAL(r.top) };
 
 	JSObject *point;
-	if ( argc >= 1 && JSVAL_IS_OBJECT(argv[0]) && !JSVAL_IS_NULL(argv[0]) ) { // reuse
+	if ( argc >= 1 && JSVAL_IS_OBJECT(JL_ARG(1)) && !JSVAL_IS_NULL(JL_ARG(1)) ) { // reuse
 
-		point = JSVAL_TO_OBJECT(argv[0]); // (TBD) check this
+		point = JSVAL_TO_OBJECT(JL_ARG(1)); // (TBD) check this
 
 		JS_SetElement(cx, point, 0, &v[0]);
 		JS_SetElement(cx, point, 1, &v[1]);
@@ -1072,7 +1110,8 @@ DEFINE_FUNCTION( Position ) {
 
 		point = JS_NewArrayObject(cx, 2, v);
 	}
-	*rval = OBJECT_TO_JSVAL(point);
+	*JL_RVAL = OBJECT_TO_JSVAL(point);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1095,9 +1134,9 @@ DEFINE_FUNCTION( Rect ) {
 	jsval v[] = { INT_TO_JSVAL(rect.left), INT_TO_JSVAL(rect.top), INT_TO_JSVAL(rect.right-rect.left), INT_TO_JSVAL(rect.bottom-rect.top) };
 
 	JSObject *point;
-	if ( argc >= 1 && JSVAL_IS_OBJECT(argv[0]) && !JSVAL_IS_NULL(argv[0]) ) { // reuse
+	if ( argc >= 1 && JSVAL_IS_OBJECT(JL_ARG(1)) && !JSVAL_IS_NULL(JL_ARG(1)) ) { // reuse
 
-		point = JSVAL_TO_OBJECT(argv[0]); // (TBD) check this
+		point = JSVAL_TO_OBJECT(JL_ARG(1)); // (TBD) check this
 
 		JS_SetElement(cx, point, 0, &v[0]);
 		JS_SetElement(cx, point, 1, &v[1]);
@@ -1107,7 +1146,8 @@ DEFINE_FUNCTION( Rect ) {
 
 		point = JS_NewArrayObject(cx, 4, v);
 	}
-	*rval = OBJECT_TO_JSVAL(point);
+	*JL_RVAL = OBJECT_TO_JSVAL(point);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1183,7 +1223,7 @@ DEFINE_PROPERTY( textSetter ) {
 	JL_S_ASSERT_RESOURCE(pv);
 	const char *tipText;
 	size_t tipLen;
-	JL_CHK( JsvalToStringAndLength(cx, vp, &tipText, &tipLen) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &tipText, &tipLen) );
 	size_t len = JL_MIN(sizeof(pv->nid.szTip)-1, tipLen);
 	memcpy(pv->nid.szTip, tipText, len);
 	pv->nid.szTip[len] = '\0';
@@ -1209,9 +1249,25 @@ DEFINE_PROPERTY( textGetter ) {
 DEFINE_TRACER() {
 
 	Private *pv = (Private*)JL_GetPrivate(trc->context, obj);
-	if ( pv )
-		for ( jl::QueueCell *it = jl::QueueBegin(&pv->popupMenuRoots); it; it = jl::QueueNext(it) )
-			JS_CALL_VALUE_TRACER(trc, (jsval)QueueGetData(it), "jswinshell/Systray/popupMenuRoots");
+	if ( pv ) {
+
+//		for ( jl::QueueCell *it = jl::QueueBegin(&pv->popupMenuRoots); it; it = jl::QueueNext(it) )
+//			JS_CALL_VALUE_TRACER(trc, (jsval)QueueGetData(it), "jswinshell/Systray/popupMenuRoots");
+
+		struct Tmp {
+			JSTracer *_trc;
+			Tmp( JSTracer *trc ) : _trc(trc) {
+			}
+
+			bool operator()( jsval &value ) {
+
+				JS_CALL_VALUE_TRACER(_trc, value, "jswinshell/Systray/popupMenuRoots");
+				return false;
+			}
+		};
+
+		pv->popupMenuRoots.BackForEach( Tmp(trc) );
+	}
 }
 
 
@@ -1251,7 +1307,7 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(Close)
 		FUNCTION(ProcessEvents)
-		FUNCTION_FAST(Events)
+		FUNCTION(Events)
 		FUNCTION(PopupMenu)
 		FUNCTION(PopupBalloon)
 		FUNCTION(Focus)

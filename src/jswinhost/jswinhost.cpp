@@ -31,6 +31,11 @@ void nedfree_handlenull(void *mem) {
 		nedfree(mem);
 }
 
+size_t nedblksize_msize(void *mem) {
+
+	return nedblksize(0, mem);
+}
+
 
 // to be used in the main() function only
 #define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { goto bad; }
@@ -83,7 +88,7 @@ static JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	str = JS_ValueToString(cx, argv[0]);
 	JL_S_ASSERT( str != NULL, "Unable to convert argument to string.");
 	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
-	consoleStdErr( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
+	consoleStdErr( cx, JL_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
 }
 
@@ -93,7 +98,7 @@ static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	str = JS_ValueToString(cx, argv[0]);
 	JL_S_ASSERT( str != NULL, "Unable to convert argument to string.");
 	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
-	consoleStdOut( cx, JS_GetStringBytes(str), JS_GetStringLength(str) );
+	consoleStdOut( cx, JL_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
 }
 */
@@ -144,7 +149,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	jl_calloc = nedcalloc;
 	jl_memalign = nedmemalign;
 	jl_realloc = nedrealloc;
-	jl_msize = nedblksize;
+	jl_msize = nedblksize_msize;
 	jl_free = nedfree_handlenull;
 /*
 	jl_malloc = malloc;
@@ -165,7 +170,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	MemoryManagerEnableGCEvent(cx);
 
-	HostPrivate *hpv = GetHostPrivate(cx);
+	HostPrivate *hpv = JL_GetHostPrivate(cx);
 
 	// custom memory allocators are transfered to the modules through the HostPrivate structure:
 	hpv->alloc.malloc = jl_malloc;
@@ -219,7 +224,6 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	MemoryManagerDisableGCEvent(cx);
 	FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 
-	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	JS_SetGCCallback(cx, NULL);
 	DestroyHost(cx);
 	cx = NULL;
@@ -233,7 +237,6 @@ bad:
 	if ( cx ) {
 
 		disabledFree = true;
-		JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 		JS_SetGCCallback(cx, NULL);
 		DestroyHost(cx);
 	}

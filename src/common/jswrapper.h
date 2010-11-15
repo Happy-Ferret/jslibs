@@ -53,7 +53,7 @@ public:
   ToJsVal( JSContext *cx, double val ) : _cx(cx) {
 
     //_jsval = DOUBLE_TO_JSVAL( val );
-    JS_NewDoubleValue( cx, val, &_jsval );
+    JL_CValToJsval( cx, val, &_jsval );
   }
 
   ToJsVal( JSContext *cx, const char *val ) {
@@ -115,13 +115,19 @@ public:
 
   operator char*() {
 
-		return JS_GetStringBytes( JS_ValueToString(_cx,_jsval) );
+		const char *s = JL_GetStringBytesZ(_cx, JS_ValueToString(_cx,_jsval) );
+		if ( s == NULL )
+			s = "";
+		return s;
 	}
 
   operator String() {
 
-    JSString *str = JS_ValueToString(_cx,_jsval);
-	  return String( JS_GetStringBytes( str ), JS_GetStringLength( str ) );
+		JSString *str = JS_ValueToString(_cx,_jsval);
+		const char *s = JL_GetStringBytesZ( _cx, str );
+		if ( s == NULL )
+			s = "";
+		return String( s, JS_GetStringLength( str ) );
   }
 };
 

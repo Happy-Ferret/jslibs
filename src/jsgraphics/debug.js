@@ -1,7 +1,27 @@
+
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
+LoadModule('jsstd');
+LoadModule('jsio');
+LoadModule('jsimage');
+LoadModule('jsode');
+LoadModule('jsprotex');
+LoadModule('jstrimesh');
+LoadModule('jssdl');
+LoadModule('jsgraphics');
 LoadModule('jsstd'); Exec('../../tests/explodebox.js'); throw 0;
+//LoadModule('jsstd'); Exec('../../tests/arabesques.js'); throw 0;
 
+
+
+/*
+SetVideoMode( 640, 480, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+Print( Ogl.GetString(Ogl.VENDOR), '\n' );
+Print( Ogl.GetString(Ogl.RENDERER), '\n' );
+Print( Ogl.GetString(Ogl.VERSION), '\n' );
+Print( Ogl.GetString(Ogl.EXTENSIONS).split(' ').join('\n'), '\n' );
+Halt();
+*/
 
 /*
 

@@ -37,20 +37,25 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	jsval tmp;
+
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
 	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	int rate, channels, bits;
-	JL_CHK( GetPropertyInt(cx, blobObj, "rate", &rate) );
-	JL_CHK( GetPropertyInt(cx, blobObj, "channels", &channels) );
-	JL_CHK( GetPropertyInt(cx, blobObj, "bits", &bits) );
+	JL_CHK( JL_GetProperty(cx, blobObj, "rate", &rate) );
+	JL_CHK( JL_GetProperty(cx, blobObj, "channels", &channels) );
+	JL_CHK( JL_GetProperty(cx, blobObj, "bits", &bits) );
 
 	const char *buffer;
 	size_t bufferLength;
-	jsval tmp = OBJECT_TO_JSVAL(blobObj);
-	JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength); // warning: GC on the returned buffer !
+	tmp = OBJECT_TO_JSVAL(blobObj);
+	JL_CHK( JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength) ); // warning: GC on the returned buffer !
 
 	ALenum format; // The sound data format
 	switch (channels) {
@@ -83,9 +88,10 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /*
-DEFINE_FUNCTION_FAST( Free ) {
+DEFINE_FUNCTION( Free ) {
 
-	ALuint bid = (ALuint) JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	ALuint bid = (ALuint) JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( bid );
 	alBufferData(bid, AL_FORMAT_MONO8, NULL, 0, 0);
 	return JS_TRUE;
@@ -97,11 +103,12 @@ DEFINE_FUNCTION_FAST( Free ) {
 $TOC_MEMBER $INAME
  $INT $INAME()
 **/
-DEFINE_FUNCTION_FAST( valueOf ) {
+DEFINE_FUNCTION( valueOf ) {
 
-	ALuint bid = (ALuint) JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	ALuint bid = (ALuint) JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( bid );
-	JL_CHK( UIntToJsval(cx, bid, JL_FRVAL) );
+	JL_CHK( JL_CValToJsval(cx, bid, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -125,7 +132,7 @@ DEFINE_PROPERTY( frequency ) {
 	alGetBufferi(bid, AL_FREQUENCY, &frequency);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( IntToJsval(cx, frequency, vp) );
+	JL_CHK( JL_CValToJsval(cx, frequency, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -144,7 +151,7 @@ DEFINE_PROPERTY( size ) {
 	alGetBufferi(bid, AL_SIZE, &size);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( IntToJsval(cx, size, vp) );
+	JL_CHK( JL_CValToJsval(cx, size, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -164,7 +171,7 @@ DEFINE_PROPERTY( bits ) {
 	alGetBufferi(bid, AL_BITS, &bits);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( IntToJsval(cx, bits, vp) );
+	JL_CHK( JL_CValToJsval(cx, bits, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -183,7 +190,7 @@ DEFINE_PROPERTY( channels ) {
 	alGetBufferi(bid, AL_CHANNELS, &channels);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( IntToJsval(cx, channels, vp) );
+	JL_CHK( JL_CValToJsval(cx, channels, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -198,7 +205,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( valueOf )
+		FUNCTION( valueOf )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

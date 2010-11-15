@@ -28,11 +28,11 @@ LoadModule('jsstd');
 		
 		QA.GC();
 		var s = StringRepeat('x', 100000);
-		QA.ASSERT( gcMallocBytes > 100000 && gcMallocBytes < 301000, true, 'Before GC' );
+		//		QA.ASSERT( gcMallocBytes > 100000 && gcMallocBytes < 301000, true, 'Before GC' ); // GC stat not available any more
 
 		s = undefined;
 		QA.GC();
-		QA.ASSERT( gcMallocBytes < 100, true, 'After GC');
+		//		QA.ASSERT( gcMallocBytes < 100, true, 'After GC');
 		
 
 /// stdout standard output redirection [ftrm]
@@ -84,7 +84,8 @@ LoadModule('jsstd');
 /// undefined is read-only [ftrm]
 
 	QA.ASSERT( undefined in global, true, 'undefined is in global object' );
-	delete undefined
+	delete undefined;
+	delete global.undefined;
 	QA.ASSERT( undefined in global, true, 'undefined is in global object' );
 
 	QA.ASSERT( undefined, (void 0), 'undefined is (void 0)' );

@@ -56,16 +56,16 @@ $TOC_MEMBER $INAME
 #define EXPAND_SOURCE_ARG_FUNCTION 2
 //#define EXPAND_SOURCE_SCOPE 3
 
-DEFINE_FUNCTION_FAST( Expand ) {
+DEFINE_FUNCTION( Expand ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	const char *srcBegin;
 	size_t srcLen;
 
-	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &srcBegin, &srcLen) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &srcBegin, &srcLen) );
 	JL_S_ASSERT( srcBegin[srcLen] == '\0', "Invalid input string." ); // else strstr may failed.
 	const char *srcEnd;
 	srcEnd = srcBegin + srcLen;
@@ -80,16 +80,16 @@ DEFINE_FUNCTION_FAST( Expand ) {
 	//	goto next;
 	//}
 
-	if ( JsvalIsFunction(cx, JL_FARG(2)) ) {
+	if ( JL_JsvalIsFunction(cx, JL_ARG(2)) ) {
 
-		map = JL_FARG(2);
+		map = JL_ARG(2);
 		mapSource = EXPAND_SOURCE_ARG_FUNCTION;
 		goto next;
 	}
 
-	if ( !JSVAL_IS_PRIMITIVE( JL_FARG(2) ) ) {
+	if ( !JSVAL_IS_PRIMITIVE( JL_ARG(2) ) ) {
 
-		map = JL_FARG(2);
+		map = JL_ARG(2);
 		mapSource = EXPAND_SOURCE_ARG;
 		goto next;
 	}
@@ -140,25 +140,25 @@ next:
 
 		//	char tmp = *tok; // (TBD) try to replace this trick
 		//	*((char*)tok) = '\0';
-		//	JL_CHKB( JL_GetVariableValue(cx, srcBegin, JL_FRVAL), bad_free_stack );
+		//	JL_CHKB( JL_GetVariableValue(cx, srcBegin, JL_RVAL), bad_free_stack );
 		//	*((char*)tok) = tmp;
 		//} else
 		if ( mapSource == EXPAND_SOURCE_ARG_FUNCTION ) {
 
-			JL_CHKB( StringAndLengthToJsval(cx, JL_FRVAL, srcBegin, tok-srcBegin), bad_free_stack );
-			JL_CHKB( JS_CallFunctionValue(cx, obj, map, 1, JL_FRVAL, JL_FRVAL), bad_free_stack );
+			JL_CHKB( JL_StringAndLengthToJsval(cx, JL_RVAL, srcBegin, tok-srcBegin), bad_free_stack );
+			JL_CHKB( JS_CallFunctionValue(cx, obj, map, 1, JL_RVAL, JL_RVAL), bad_free_stack );
 		} else {
 
 			char tmp = *tok; // (TBD) try to replace this trick ...
 			*((char*)tok) = '\0';
-			JL_CHKB( JS_GetProperty(cx, JSVAL_TO_OBJECT(map), srcBegin, JL_FRVAL), bad_free_stack );
+			JL_CHKB( JS_GetProperty(cx, JSVAL_TO_OBJECT(map), srcBegin, JL_RVAL), bad_free_stack );
 			*((char*)tok) = tmp;
 		}
 
-		if ( !JSVAL_IS_VOID( *JL_FRVAL ) ) {
+		if ( !JSVAL_IS_VOID( *JL_RVAL ) ) {
 
 			chunk = (Chunk*)jl_malloc(sizeof(Chunk));
-			JL_CHKB( JsvalToStringAndLength(cx, JL_FRVAL, &chunk->data, &chunk->length), bad_free_stack );
+			JL_CHKB( JL_JsvalToStringAndLength(cx, JL_RVAL, &chunk->data, &chunk->length), bad_free_stack );
 			totalLength += chunk->length;
 			jl::StackPush( &stack, chunk );
 		}
@@ -183,7 +183,7 @@ next:
 	JSString *jsstr;
 	jsstr = JS_NewString(cx, expandedString, totalLength);
 	JL_CHK( jsstr );
-	*JL_FRVAL = STRING_TO_JSVAL( jsstr );
+	*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 
 bad_free_stack:
@@ -206,32 +206,32 @@ $TOC_MEMBER $INAME
  $VAL $INAME( value, case1, result1, case2, result2, ..., caseN, resultN, defaultResult )
   Based on _value_, returns _resultN_ value for the matching _caseN_, or _defaultResult_ if sothing match.
 ** /
-DEFINE_FUNCTION_FAST( SwitchCase ) {
+DEFINE_FUNCTION( SwitchCase ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	if ( argc <= 2 ) {
 		
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
 	unsigned int i;
 	for ( i = 1; i < argc; i += 2 )
 		
-		if ( JS_SameValue(cx, JL_FARGV[0], JL_FARGV[i]) ) { // see also JS_StrictlyEqual
+		if ( JS_SameValue(cx, JL_ARGV[0], JL_ARGV[i]) ) { // see also JS_StrictlyEqual
 			
-			*JL_FRVAL = JL_FARGV[i+1];
+			*JL_RVAL = JL_ARGV[i+1];
 			return JS_TRUE;
 		}
 
 	if ( i > argc ) {
 
-		*JL_FRVAL = JL_FARGV[argc-1];
+		*JL_RVAL = JL_ARGV[argc-1];
 		return JS_TRUE;
 	}
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -241,27 +241,27 @@ DEFINE_FUNCTION_FAST( SwitchCase ) {
 $TOC_MEMBER $INAME
  $VAL $INAME( value, caseArray, resultArray [, defaultResult] )
 **/
-DEFINE_FUNCTION_FAST( SwitchCase ) {
+DEFINE_FUNCTION( SwitchCase ) {
 
 	JL_S_ASSERT_ARG_RANGE( 3, 4 );
 
-	JL_S_ASSERT_ARRAY( JL_FARG(2) );
-	JL_S_ASSERT_ARRAY( JL_FARG(3) );
+	JL_S_ASSERT_ARRAY( JL_ARG(2) );
+	JL_S_ASSERT_ARRAY( JL_ARG(3) );
 
 	JSObject *caseArray;
 	jsuint caseArrayLength;
-	caseArray = JSVAL_TO_OBJECT(JL_FARG(2));
+	caseArray = JSVAL_TO_OBJECT(JL_ARG(2));
 	JL_CHK( JS_GetArrayLength(cx, caseArray, &caseArrayLength) );
 
 	jsuint i;
 	for ( i = 0; i < caseArrayLength; ++i ) {
 	
-		JL_CHK( JS_GetElement(cx, caseArray, i, JL_FRVAL) );
-		if ( JS_SameValue(cx, JL_FARG(1), *JL_FRVAL) )
-			return JS_GetElement(cx, JSVAL_TO_OBJECT(JL_FARG(3)), i, JL_FRVAL);
+		JL_CHK( JS_GetElement(cx, caseArray, i, JL_RVAL) );
+		if ( JS_SameValue(cx, JL_ARG(1), *JL_RVAL) )
+			return JS_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(3)), i, JL_RVAL);
 	}
 
-	*JL_FRVAL = argc >= 4 ? JL_FARG(4) : JSVAL_VOID;
+	*JL_RVAL = argc >= 4 ? JL_ARG(4) : JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -274,12 +274,12 @@ $TOC_MEMBER $INAME
   Make an interned string, a string that is automatically shared with other code that needs a string with the same value. Use this function with care.
 **/
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
-DEFINE_FUNCTION_FAST( InternString ) {
+DEFINE_FUNCTION( InternString ) {
 
 	JSString *str = JS_ValueToString(cx, vp[2]);
 	JL_CHK( str );
 	JL_CHK( JS_InternUCStringN(cx, JS_GetStringChars(str), JL_GetStringLength(str)) );
-	*vp = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -288,7 +288,7 @@ DEFINE_FUNCTION_FAST( InternString ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( obj [ , recursively  ] )
+ $VOID $INAME( obj )
   Prevent modification of object fields. ie. all write access to the object, either to add a new property, delete an existing property, or set the value or attributes of an existing property.
   If _recursively_ is $TRUE, the function seal any non-null objects in the graph connected to obj's slots.
   $H example
@@ -301,18 +301,13 @@ $TOC_MEMBER $INAME
   obj.c = 3; // Error: obj.c is read-only
 }}}
 **/
-DEFINE_FUNCTION_FAST( SealObject ) {
+DEFINE_FUNCTION( DeepFreezeObject ) {
 
-	JL_S_ASSERT_ARG_RANGE(1, 2);
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	//JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &obj) );
-	JSBool deep;
-	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JS_ValueToBoolean(cx, JL_FARG(2), &deep) );
-	else
-		deep = JS_FALSE;
-	*JL_FRVAL = JSVAL_VOID;
-	return JS_SealObject(cx, JSVAL_TO_OBJECT(JL_FARG(1)), deep);
+	*JL_RVAL = JSVAL_VOID;
+	return JS_DeepFreezeObject(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
 	JL_BAD;
 }
 
@@ -323,14 +318,14 @@ $TOC_MEMBER $INAME
  $INT $INAME( obj )
   Returns the number of own properties of an object.
 **/
-DEFINE_FUNCTION_FAST( CountProperties ) {
+DEFINE_FUNCTION( CountProperties ) {
 
 	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
 	JSIdArray *arr;
-	arr = JS_Enumerate(cx, JSVAL_TO_OBJECT(JL_FARG(1)));
-	*JL_FRVAL = INT_TO_JSVAL(arr->length);
+	arr = JS_Enumerate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
+	*JL_RVAL = INT_TO_JSVAL(arr->length);
 	JS_DestroyIdArray(cx, arr);
 
 	return JS_TRUE;
@@ -352,16 +347,17 @@ $TOC_MEMBER $INAME
   var obj = { a:1, b:[2,3,4], c:{} };
   Print( uneval(obj) ); // prints: ({a:1, b:[2, 3, 4], c:{}})
 
-  Clear(obj);
+  ClearObject(obj);
   Print( uneval(obj) ); // prints: ({})
   }}}
 **/
-DEFINE_FUNCTION_FAST( ClearObject ) {
+DEFINE_FUNCTION( ClearObject ) {
 
 	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-	JS_ClearScope(cx, JSVAL_TO_OBJECT( JL_FARG(1) ));
-	*JL_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JS_ClearScope(cx, JSVAL_TO_OBJECT( JL_ARG(1) ));
+	
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -421,208 +417,14 @@ $TOC_MEMBER $INAME
   fct(); // prints: foo
   }}}
 **/
-DEFINE_FUNCTION_FAST( SetScope ) {
+DEFINE_FUNCTION( SetScope ) {
 
 	JL_S_ASSERT_ARG(2);
 	JSObject *o, *p;
-	JL_CHK( JS_ValueToObject(cx, JL_FARG(1), &o) ); // o = JSVAL_TO_OBJECT(JL_FARG(1));
-	JL_CHK( JS_ValueToObject(cx, JL_FARG(2), &p) ); // p = JSVAL_TO_OBJECT(JL_FARG(2));
-	*JL_FRVAL = OBJECT_TO_JSVAL( JS_GetParent(cx, o) );
+	JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &o) ); // o = JSVAL_TO_OBJECT(JL_ARG(1));
+	JL_CHK( JS_ValueToObject(cx, JL_ARG(2), &p) ); // p = JSVAL_TO_OBJECT(JL_ARG(2));
+	*JL_RVAL = OBJECT_TO_JSVAL( JS_GetParent(cx, o) );
 	JL_CHK( JS_SetParent(cx, o, p) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* *doc
-$TOC_MEMBER $INAME
- $OBJ $INAME()
-  Get the currentScope.
-  }}}
-**/
-/*
-DEFINE_FUNCTION_FAST( GetCurrentScope ) {
-
-	JL_S_ASSERT_ARG(0);
-
-	JSStackFrame *fp = JL_CurrentStackFrame(cx);
-	*JL_FRVAL = OBJECT_TO_JSVAL( fp->??? );
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/** xx doc
-$TOC_MEMBER $INAME
- $VOID $INAME( obj, propertyName1 [, propertyName2 [, ... ] ] )
-  Hide properties from for-in loop.
-  $H example
-  {{{
-  var obj = { a:11, b:22, c:33 };
-  for ( var p in obj ) Print(p, ', '); // prints: a, b, c
-  HideProperties(obj, 'b');
-  for ( var p in obj ) Print(p, ', '); // prints: a, c
-  }}}
-**/
-/*
-DEFINE_FUNCTION( HideProperties ) {
-
-	JL_S_ASSERT_ARG_MIN( 2 );
-	JSObject *object;
-	JL_CHK( JS_ValueToObject( cx, JL_ARG(1), &object ) );
-//	const char *propertyName;
-//	uintN attributes;
-	for ( uintN i = 1; i < JL_ARGC; i++ ) {
-
-		jsid id;
-		uintN attrs;
-		JSObject *obj2;
-		JSProperty *prop;
-
-		JL_CHK( JS_ValueToId(cx, JL_ARG(1+i), &id) );
-		JL_CHK( OBJ_LOOKUP_PROPERTY(cx, object, id, &obj2, &prop) );
-		if (!prop || object != obj2) { // not found
-
-			if (prop)
-				OBJ_DROP_PROPERTY(cx, obj2, prop);
-			JL_REPORT_ERROR( "Invalid property name." );
-		}
-		JL_CHK( OBJ_GET_ATTRIBUTES(cx, object, id, prop, &attrs) );
-		attrs &= ~JSPROP_ENUMERATE;
-		JL_CHK( OBJ_SET_ATTRIBUTES(cx, object, id, prop, &attrs) );
-		OBJ_DROP_PROPERTY(cx, object, prop);
-
-
-	//JSBool found;
-	//	...
-	//	propertyName = JS_GetStringBytes( JS_ValueToString( cx, JL_ARG(i+1) ) );
-	//	JL_S_ASSERT( propertyName != NULL, "Invalid property name (%s).", propertyName );
-	//	JL_CHK( JS_GetPropertyAttributes( cx, object, propertyName, &attributes, &found ) );
-	//	if ( found == JS_FALSE )
-	//		continue;
-	//	attributes &= ~JSPROP_ENUMERATE;
-	//	JL_CHK( JS_SetPropertyAttributes( cx, object, propertyName, attributes, &found ) );
-
-	}
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $VOID $INAME( object, propertyName, polarity )
-  Show/Hide a property to for-in loop.
-  $H note
-   Using this function may change the order of the properties within the object.
-  $H example
-  {{{
-  var obj = { a:1, b:2, c:3 };
-  for ( var p in obj )
-   Print(p, ', '); // prints: a, b, c
-
-  SetPropertyEnumerate(obj, 'b', false);
-  for ( var p in obj )
-   Print(p, ', '); // prints: a, c
-
-  SetPropertyEnumerate(obj, 'b', true);
-  for ( var p in obj )
-   Print(p, ', '); // prints: a, c, b
-  }}}
-**/
-DEFINE_FUNCTION_FAST( SetPropertyEnumerate ) {
-
-	JL_S_ASSERT_ARG(3);
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-
-	JSObject *object;
-	object = JSVAL_TO_OBJECT( JL_FARG(1) );
-	jsid id;
-	JL_CHK( JS_ValueToId(cx, JL_FARG(2), &id) );
-	bool polarity;
-	JL_CHK( JsvalToBool(cx, JL_FARG(3), &polarity) );
-
-	uintN attrs;
-	JSObject *obj2;
-	JSProperty *prop;
-
-	JL_CHK( object->lookupProperty(cx, id, &obj2, &prop) );
-	if (!prop || object != obj2) { // not found
-
-		if (prop)
-			obj2->dropProperty(cx, prop);
-		JL_REPORT_ERROR( "Property not found" );
-	}
-	JL_CHK( object->getAttributes(cx, id, prop, &attrs) );
-	if ( polarity )
-		attrs |= JSPROP_ENUMERATE;
-	else
-		attrs &= ~JSPROP_ENUMERATE;
-	JL_CHK( object->setAttributes(cx, id, prop, &attrs) );
-	object->dropProperty(cx, prop);
-
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $VOID $INAME( object, propertyName, polarity )
-  Make a property not settable. Any attempt to modify a read-only property fail silently.
-  $H example
-  {{{
-  var obj = { a:1 }
-
-  Print( obj.a ); // prints: 1
-
-  obj.a = 2;
-  Print( obj.a ); // prints: 2
-
-  SetPropertyReadonly( obj, 'a', true );
-  obj.a = 3;
-  Print( obj.a ); // prints: 2
-
-  SetPropertyReadonly( obj, 'a', false );
-  obj.a = 4;
-  Print( obj.a ); // prints: 4
-  }}}
-**/
-DEFINE_FUNCTION_FAST( SetPropertyReadonly ) {
-
-	JL_S_ASSERT_ARG(3);
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-
-	JSObject *object;
-	object = JSVAL_TO_OBJECT( JL_FARG(1) );
-	jsid id;
-	JL_CHK( JS_ValueToId(cx, JL_FARG(2), &id) );
-	bool polarity;
-	JL_CHK( JsvalToBool(cx, JL_FARG(3), &polarity) );
-
-	uintN attrs;
-	JSObject *obj2;
-	JSProperty *prop;
-
-	JL_CHK( object->lookupProperty(cx, id, &obj2, &prop) );
-	if (!prop || object != obj2) { // not found
-
-		if (prop)
-			obj2->dropProperty(cx, prop);
-		JL_REPORT_ERROR( "Property not found" );
-	}
-	JL_CHK( object->getAttributes(cx, id, prop, &attrs) );
-	if ( polarity )
-		attrs |= JSPROP_READONLY;
-	else
-		attrs &= ~JSPROP_READONLY;
-	JL_CHK( object->setAttributes(cx, id, prop, &attrs) );
-	object->dropProperty(cx, prop);
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -668,19 +470,19 @@ JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 }
 
 
-DEFINE_FUNCTION_FAST( ObjectToId ) {
+DEFINE_FUNCTION( ObjectToId ) {
 
 	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	JSObject *obj;
-	obj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	obj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 	ObjId *freeSlot;
 	freeSlot = NULL;
 	for ( ObjId *it = objIdList, *end = objIdList + objectIdAllocated; it < end; ++it ) {
 
 		if ( it->obj == obj )
-			return UIntToJsval(cx, it->id, JL_FRVAL);
+			return JL_CValToJsval(cx, it->id, JL_RVAL);
 		if ( !freeSlot && it->id == 0 )
 			freeSlot = it;
 	}
@@ -705,7 +507,7 @@ DEFINE_FUNCTION_FAST( ObjectToId ) {
 	freeSlot->id = ++lastObjectId;
 	freeSlot->obj = obj;
 
-	return UIntToJsval(cx, lastObjectId, JL_FRVAL);
+	return JL_CValToJsval(cx, lastObjectId, JL_RVAL);
 	JL_BAD;
 }
 
@@ -729,13 +531,13 @@ $TOC_MEMBER $INAME
   Print( IdToObject(id) ); // prints: undefined
   }}}
 **/
-DEFINE_FUNCTION_FAST( IdToObject ) {
+DEFINE_FUNCTION( IdToObject ) {
 
 	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT_NUMBER( JL_FARG(1) );
+	JL_S_ASSERT_NUMBER( JL_ARG(1) );
 
 	unsigned int id;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &id) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &id) );
 
 	if ( id > 0 && id <= lastObjectId ) {
 
@@ -743,13 +545,13 @@ DEFINE_FUNCTION_FAST( IdToObject ) {
 
 			if ( it->id == id ) {
 
-				*JL_FRVAL = OBJECT_TO_JSVAL( it->obj );
+				*JL_RVAL = OBJECT_TO_JSVAL( it->obj );
 				return JS_TRUE;
 			}
 		}
 	}
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -761,21 +563,21 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a boolean value or object.
 **/
-DEFINE_FUNCTION_FAST( IsBoolean ) {
+DEFINE_FUNCTION( IsBoolean ) {
 
-	if ( JSVAL_IS_BOOLEAN(JL_FARG(1)) ) {
+	if ( JSVAL_IS_BOOLEAN(JL_ARG(1)) ) {
 
-		*JL_FRVAL = JSVAL_TRUE;
+		*JL_RVAL = JSVAL_TRUE;
 		return JS_TRUE;
 	}
 
-	if ( JSVAL_IS_PRIMITIVE(JL_FARG(1)) ) {
+	if ( JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 
-		*JL_FRVAL = JSVAL_FALSE;
+		*JL_RVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}
 
-	*JL_FRVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_FARG(1))) == JL_GetStandardClass(cx, JSProto_Boolean) ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClass(cx, JSProto_Boolean) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
 
@@ -785,21 +587,21 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a number value or object.
 **/
-DEFINE_FUNCTION_FAST( IsNumber ) {
+DEFINE_FUNCTION( IsNumber ) {
 
-	if ( JSVAL_IS_NUMBER(JL_FARG(1)) ) {
+	if ( JSVAL_IS_NUMBER(JL_ARG(1)) ) {
 
-		*JL_FRVAL = JSVAL_TRUE;
+		*JL_RVAL = JSVAL_TRUE;
 		return JS_TRUE;
 	}
 
-	if ( JSVAL_IS_PRIMITIVE(JL_FARG(1)) ) {
+	if ( JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 
-		*JL_FRVAL = JSVAL_FALSE;
+		*JL_RVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}
 
-	*JL_FRVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_FARG(1))) == JL_GetStandardClass(cx, JSProto_Number) ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClass(cx, JSProto_Number) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
 
@@ -809,9 +611,9 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a primitive ( null or not an object ).
 **/
-DEFINE_FUNCTION_FAST( IsPrimitive ) {
+DEFINE_FUNCTION( IsPrimitive ) {
 
-	*JL_FRVAL = JSVAL_IS_PRIMITIVE(JL_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = JSVAL_IS_PRIMITIVE(JL_ARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
 
@@ -822,9 +624,9 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a function.
 **/
-DEFINE_FUNCTION_FAST( IsFunction ) {
+DEFINE_FUNCTION( IsFunction ) {
 
-	*JL_FRVAL = VALUE_IS_FUNCTION(cx, JL_FARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = VALUE_IS_FUNCTION(cx, JL_ARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
 
@@ -835,18 +637,18 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a generator.
 **/
-DEFINE_FUNCTION_FAST( IsGenerator ) {
+DEFINE_FUNCTION( IsGenerator ) {
 
-	if ( !JSVAL_IS_OBJECT(JL_FARG(1)) ) {
+	if ( !JSVAL_IS_OBJECT(JL_ARG(1)) ) {
 
-		*JL_FRVAL = JSVAL_FALSE;
+		*JL_RVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}
 
 	jsval prop;
-	JL_CHK( JS_GetPropertyById(cx, JSVAL_TO_OBJECT(JL_FARG(1)), JL_ATOMJSID(cx, iterator), &prop) );
+	JL_CHK( JS_GetPropertyById(cx, JSVAL_TO_OBJECT(JL_ARG(1)), JL_ATOMJSID(cx, iterator), &prop) );
 
-	*JL_FRVAL = VALUE_IS_FUNCTION(cx, prop) ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = VALUE_IS_FUNCTION(cx, prop) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -862,26 +664,26 @@ $TOC_MEMBER $INAME
 **/
 /*
 #ifdef JS_HAS_XDR
-DEFINE_FUNCTION_FAST( XdrEncode ) {
+DEFINE_FUNCTION( XdrEncode ) {
 
 	JL_S_ASSERT_ARG(1);
 	JSXDRState *xdr;
 	xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
 	JL_CHK( xdr );
-	//if (unlikely( JsvalIsScript(cx, JL_FARG(1)) )) {
+	//if (unlikely( JL_JsvalIsScript(cx, JL_ARG(1)) )) {
 
-	//	JSScript *script = (JSScript*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_FARG(1)));
+	//	JSScript *script = (JSScript*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
 	//	JL_S_ASSERT_RESOURCE(script);
 	//	JL_CHK( JS_XDRScript(xdr, &script) );
 	//} else {
 
-		JL_CHK( JS_XDRValue(xdr, &JL_FARG(1)) );
+		JL_CHK( JS_XDRValue(xdr, &JL_ARG(1)) );
 	//}
 	uint32 length;
 	void *buffer;
 	buffer = JS_XDRMemGetData(xdr, &length);
 	JL_S_ASSERT( buffer != NULL, "Invalid xdr data." );
-	JL_CHK( JL_NewBlobCopyN(cx, buffer, length, JL_FRVAL) );
+	JL_CHK( JL_NewBlobCopyN(cx, buffer, length, JL_RVAL) );
 	JS_XDRDestroy(xdr);
 	return JS_TRUE;
 	JL_BAD;
@@ -899,7 +701,7 @@ $TOC_MEMBER $INAME
 * */
 /*
 #ifdef JS_HAS_XDR
-DEFINE_FUNCTION_FAST( XdrDecode ) {
+DEFINE_FUNCTION( XdrDecode ) {
 
 	JL_S_ASSERT_ARG(1);
 
@@ -908,10 +710,10 @@ DEFINE_FUNCTION_FAST( XdrDecode ) {
 	JL_CHK( xdr );
 	const char *buffer;
 	size_t length;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &buffer, &length) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
 	JS_XDRMemSetData(xdr, (void*)buffer, (uint32)length); // safe de-const cast: we are JSXDR_DECODE from the buffer.
-	JL_CHK( JS_XDRValue(xdr, JL_FRVAL) );
-	//JL_CHK( JS_XDRScript(xdr, JL_FRVAL) );
+	JL_CHK( JS_XDRValue(xdr, JL_RVAL) );
+	//JL_CHK( JS_XDRScript(xdr, JL_RVAL) );
 	JS_XDRMemSetData(xdr, NULL, 0);
 	JS_XDRDestroy(xdr);
 	return JS_TRUE;
@@ -926,13 +728,14 @@ $TOC_MEMBER $INAME
  $VOID $INAME( text )
   Report the given _text_ as warning. The warning is reported on the stderr. Warnings ignored in unsafeMode.
 **/
-DEFINE_FUNCTION_FAST( Warning ) {
+DEFINE_FUNCTION( Warning ) {
 
 	JL_S_ASSERT_ARG(1);
 	const char *message;
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &message) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &message) );
 	JL_CHK( JS_ReportWarning(cx, "%s", message) );
-	*JL_FRVAL = JSVAL_VOID;
+	
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -955,18 +758,21 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Assert ) {
 
 	JL_S_ASSERT_ARG_RANGE(1,2);
+
 	bool assert;
-	JL_CHK( JsvalToBool(cx, JL_ARG(1), &assert) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &assert) );
 	if ( !assert ) {
 
 		const char *message;
 		if ( JL_ARG_ISDEF(2) )
-			JL_CHK( JsvalToString(cx, &JL_ARG(2), &message) );
+			JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &message) );
 		else
 			message = "Assertion failed.";
 		JS_ReportError( cx, message );
 		return JS_FALSE;
 	}
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -977,12 +783,12 @@ $TOC_MEMBER $INAME
  $INT $INAME()
   Performs an unconditional garbage collection in the JS memory pool.
 **/
-DEFINE_FUNCTION_FAST( CollectGarbage ) {
+DEFINE_FUNCTION( CollectGarbage ) {
 
 	size_t gcBytesDiff = cx->runtime->gcBytes;
 	JS_GC( cx );
 	gcBytesDiff = cx->runtime->gcBytes - gcBytesDiff;
-	return SizeToJsval(cx, gcBytesDiff, JL_FRVAL);
+	return JL_CValToJsval(cx, gcBytesDiff, JL_RVAL);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -992,12 +798,12 @@ $TOC_MEMBER $INAME
   Performs a conditional garbage collection of JS objects, doubles, and strings that are no longer needed by a script executing.
   This offers the JavaScript engine an opportunity to perform garbage collection if needed.
 **/
-DEFINE_FUNCTION_FAST( MaybeCollectGarbage ) {
+DEFINE_FUNCTION( MaybeCollectGarbage ) {
 
 	size_t gcBytesDiff = cx->runtime->gcBytes;
 	JS_MaybeGC( cx );
 	gcBytesDiff = cx->runtime->gcBytes - gcBytesDiff;
-	return SizeToJsval(cx, gcBytesDiff, JL_FRVAL);
+	return JL_CValToJsval(cx, gcBytesDiff, JL_RVAL);
 }
 
 
@@ -1007,13 +813,14 @@ $TOC_MEMBER $INAME
  $REAL $INAME( time )
   Suspends the execution of the current program during _time_ milliseconds.
 **/
-DEFINE_FUNCTION_FAST( Sleep ) {
+DEFINE_FUNCTION( Sleep ) {
 
 	JL_S_ASSERT_ARG(1);
 	unsigned int time;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &time) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &time) );
 	SleepMilliseconds(time);
-	*JL_FRVAL = JSVAL_VOID;
+	
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1035,9 +842,9 @@ $TOC_MEMBER $INAME
   Print( 't2: '+TimeCounter(), '\n' ); // prints: 1743732003.6174989
   }}}
 **/
-DEFINE_FUNCTION_FAST( TimeCounter ) {
+DEFINE_FUNCTION( TimeCounter ) {
 
-	return DoubleToJsval(cx, AccurateTimeCounter(), JL_FRVAL);
+	return JL_CValToJsval(cx, AccurateTimeCounter(), JL_RVAL);
 }
 
 
@@ -1052,31 +859,31 @@ $TOC_MEMBER $INAME
   Print( StringRepeat('foo', 3) ); // prints: foofoofoo
   }}}
 **/
-DEFINE_FUNCTION_FAST( StringRepeat ) {
+DEFINE_FUNCTION( StringRepeat ) {
 
 	JL_S_ASSERT_ARG(2);
 
 	size_t count;
-	JL_CHK( JsvalToSize(cx, JL_FARG(2), &count) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &count) );
 	if ( count == 0 ) {
 
-		*JL_FRVAL = JS_GetEmptyStringValue(cx);
+		*JL_RVAL = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
 	const char *buf;
 	size_t len;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &buf, &len) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buf, &len) ); // warning: GC on the returned buffer !
 
 	if ( len == 0 ) {
 
-		*JL_FRVAL = JS_GetEmptyStringValue(cx);
+		*JL_RVAL = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
 	if ( count == 1 ) {
 
-		*JL_FRVAL = STRING_TO_JSVAL( JS_ValueToString(cx, JL_FARG(1)) ); // force string conversion because we must return a string.
+		*JL_RVAL = STRING_TO_JSVAL( JS_ValueToString(cx, JL_ARG(1)) ); // force string conversion because we must return a string.
 		return JS_TRUE;
 	}
 
@@ -1103,7 +910,7 @@ DEFINE_FUNCTION_FAST( StringRepeat ) {
 	JSString *jsstr;
 	jsstr = JS_NewString(cx, newBuf, newLen);
 	JL_CHK( jsstr );
-	*JL_FRVAL = STRING_TO_JSVAL( jsstr );
+	*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1133,13 +940,13 @@ $TOC_MEMBER $INAME
    Print('bar\n'); // prints nothing
    }}}
 **/
-DEFINE_FUNCTION_FAST( Print ) {
+DEFINE_FUNCTION( Print ) {
 
 	jsval fval;
 	JL_CHK( GetConfigurationValueById(cx, JLID(cx, stdout), &fval) );
-	*JL_FRVAL = JSVAL_VOID;
-	if ( JsvalIsFunction(cx, fval) )
-		return JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fval, JL_ARGC, JL_FARGV, &fval);
+	*JL_RVAL = JSVAL_VOID;
+	if ( JL_JsvalIsFunction(cx, fval) )
+		return JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fval, JL_ARGC, JL_ARGV, &fval);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1161,21 +968,21 @@ $TOC_MEMBER $INAME
   }}}
 **/
 // function copied from mozilla/js/src/js.c
-DEFINE_FUNCTION_FAST( Exec ) {
+DEFINE_FUNCTION( Exec ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	bool useAndSaveCompiledScripts;
-	useAndSaveCompiledScripts = !JL_FARG_ISDEF(2) || JL_FARG(2) == JSVAL_TRUE;
+	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || JL_ARG(2) == JSVAL_TRUE;
 	const char *filename;
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &filename) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &filename) );
 
 	uint32 oldopts;
 	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); // JSOPTION_COMPILE_N_GO is properly removed in JLLoadScript if needed.
 	JSScript *script;
-	script = JLLoadScript( cx, obj, filename, useAndSaveCompiledScripts, useAndSaveCompiledScripts );
+	script = JL_LoadScript( cx, obj, filename, useAndSaveCompiledScripts, useAndSaveCompiledScripts );
 	JS_SetOptions(cx, oldopts);
 	JL_CHK( script );
 
@@ -1184,7 +991,7 @@ DEFINE_FUNCTION_FAST( Exec ) {
 	scrobj = JS_NewScriptObject(cx, script);
 //	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
 	JSBool ok;
-	ok = JS_ExecuteScript(cx, obj, script, JL_FRVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
+	ok = JS_ExecuteScript(cx, obj, script, JL_RVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
 //	JS_POP_TEMP_ROOT(cx, &tvr);
 	JL_CHK( ok );
 
@@ -1239,7 +1046,7 @@ struct SandboxContextPrivate {
 
 JSBool SandboxMaxOperationCallback(JSContext *cx) {
 
-	JSObject *branchLimitExceptionObj = JS_NewObject(cx, JL_CLASS(OperationLimit), NULL, NULL);
+	JSObject *branchLimitExceptionObj = JS_NewObjectWithGivenProto(cx, JL_CLASS(OperationLimit), JL_PROTOTYPE(cx, OperationLimit), NULL);
 	JL_CHK( branchLimitExceptionObj );
 	JS_SetPendingException(cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ));
 	JL_BAD;
@@ -1264,51 +1071,52 @@ JSBool SandboxQueryFunction(JSContext *scx, uintN argc, jsval *vp) {
 	JSContext *cx = pv->cx; // needed to send errors in the right context.
 	if ( JSVAL_IS_VOID( pv->queryFunctionValue ) ) {
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 	} else {
 
-		JL_CHK( JS_CallFunctionValue(scx, JL_FOBJ, pv->queryFunctionValue, JL_ARGC, JL_FARGV, JL_FRVAL) );
-		JL_CHKM( JSVAL_IS_PRIMITIVE(*JL_FRVAL), "Only primitive value can be returned." );
+		JL_CHK( JS_CallFunctionValue(scx, JS_THIS_OBJECT(scx, vp), pv->queryFunctionValue, JL_ARGC, JL_ARGV, JL_RVAL) );
+		JL_CHKM( JSVAL_IS_PRIMITIVE(*JL_RVAL), "Only primitive value can be returned." );
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
 
-DEFINE_FUNCTION_FAST( SandboxEval ) {
+DEFINE_FUNCTION( SandboxEval ) {
 
 	JSContext *scx = NULL;
 
 	JL_S_ASSERT_ARG_RANGE(1, 3);
 
-	scx = JS_NewContext(JS_GetRuntime(cx), 8192L); // see host/host.cpp
+	scx = JS_NewContext(JL_GetRuntime(cx), 8192L); // see host/host.cpp
 	JL_CHK( scx );
-	JS_SetOptions(scx, JS_GetOptions(cx) | JSOPTION_JIT | JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT); // new options are based on host's options. cf. moz bz#490616
+	JS_SetOptions(scx, JS_GetOptions(cx) | JSOPTION_JIT | JSOPTION_METHODJIT | JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT); // new options are based on host's options. cf. moz bz#490616
 
 	JSObject *globalObject;
-	globalObject = JS_NewObject(scx, JL_CLASS(Sandbox), NULL, NULL);
+	globalObject = JS_NewGlobalObject(scx, JL_CLASS(Sandbox));
+	//	globalObject = JS_NewCompartmentAndGlobalObject(cx, JL_CLASS(Sandbox), NULL);
 	JL_CHK( globalObject );
-	*JL_FRVAL = OBJECT_TO_JSVAL(globalObject); // GC protection
+	*JL_RVAL = OBJECT_TO_JSVAL(globalObject); // GC protection
 
 	SandboxContextPrivate pv;
 	pv.cx = cx;
 
-	if ( JL_FARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_FUNCTION( JL_FARG(2) );
-		pv.queryFunctionValue = JL_FARG(2);
-		JL_CHK( JS_DefineFunction(scx, globalObject, "Query", (JSNative)SandboxQueryFunction, 1, JSFUN_FAST_NATIVE | JSPROP_PERMANENT | JSPROP_READONLY) );
+		JL_S_ASSERT_FUNCTION( JL_ARG(2) );
+		pv.queryFunctionValue = JL_ARG(2);
+		JL_CHK( JS_DefineFunction(scx, globalObject, "Query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
 	} else {
 
 		pv.queryFunctionValue = JSVAL_VOID;
 	}
 
-	if ( JL_FARG_ISDEF(3) )
-		JL_CHK( JsvalToUInt(cx, JL_FARG(3), &pv.maxExecutionTime) );
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &pv.maxExecutionTime) );
 	else
 		pv.maxExecutionTime = 1000; // default value
 
 	JSString *jsstr;
-	jsstr = JS_ValueToString(cx, JL_FARG(1));
+	jsstr = JS_ValueToString(cx, JL_ARG(1));
 	JL_CHK( jsstr );
 	size_t srclen;
 	srclen = JL_GetStringLength(jsstr);
@@ -1346,7 +1154,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	}
 
 	JSBool ok;
-	ok = JS_EvaluateUCScript(scx, globalObject, src, (uintN)srclen, filename, lineno, JL_FRVAL);
+	ok = JS_EvaluateUCScript(scx, globalObject, src, (uintN)srclen, filename, lineno, JL_RVAL);
 
 	JLSemaphoreRelease(pv.semEnd);
 
@@ -1357,7 +1165,7 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	prev = JS_SetOperationCallback(scx, prev);
 	JL_S_ASSERT( prev == SandboxMaxOperationCallback, "Invalid SandboxMaxOperationCallback handler." );
 
-	JL_CHK( JS_DeleteProperty(cx, globalObject, "Query") );
+	JL_CHK( JS_DeleteProperty(scx, globalObject, "Query") );
 
 	if (!ok) {
 
@@ -1372,7 +1180,6 @@ DEFINE_FUNCTION_FAST( SandboxEval ) {
 	return ok;
 
 bad:
-	JLThreadFree(&sandboxWatchDogThread);
 	if ( scx )
 		JS_DestroyContextNoGC(scx);
 	return JS_FALSE;
@@ -1418,11 +1225,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsStatementValid ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG(1);
+
 	const char *buffer;
 	size_t length;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
-	JL_CHK( BoolToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, buffer, length) == JS_TRUE, rval) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
+	JL_CHK( JL_CValToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, buffer, length) == JS_TRUE, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1434,7 +1243,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Stop the execution of the program. This is a ungraceful way to finish a program and should only be used in critical cases.
 **/
-DEFINE_FUNCTION_FAST( Halt ) {
+DEFINE_FUNCTION( Halt ) {
 
 	JL_REPORT_ERROR_NUM(cx, JLSMSG_PROGRAM_STOPPED);
 bad:	
@@ -1471,7 +1280,7 @@ DEFINE_PROPERTY( currentFilename ) {
 	}
 
 	const char *filename = JS_GetScriptFilename(cx, script);
-	JL_CHK( StringToJsval(cx, filename, vp) );
+	JL_CHK( JL_CValToJsval(cx, filename, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1485,7 +1294,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( isConstructing ) {
 
-	*vp = BOOLEAN_TO_JSVAL( JS_IsConstructing(cx) );
+	*vp = BOOLEAN_TO_JSVAL( JS_IsConstructing(cx, vp) );
 	return JS_TRUE;
 }
 
@@ -1514,7 +1323,7 @@ DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
 	// <shaver>	you could install a vetoing callback!
 	// <crowder>	oh, true
 	bool disableGC;
-	JL_CHK( JsvalToBool(cx, *vp, &disableGC) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &disableGC) );
 	if ( disableGC ) {
 
 		JSGCCallback tmp = JS_SetGCCallback(cx, VetoingGCCallback);
@@ -1571,17 +1380,17 @@ JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 }
 
 
-DEFINE_FUNCTION_FAST( Test ) {
+DEFINE_FUNCTION( Test ) {
 
 	JSXDRState *xdr1 = JS_XDRNewMem(cx, JSXDR_ENCODE);
-	JS_XDRValue(xdr1, &JL_FARG(1));
+	JS_XDRValue(xdr1, &JL_ARG(1));
 	uint32 length;
 	void *buffer;
 	buffer = JS_XDRMemGetData(xdr1, &length);
 	
 	JSXDRState *xdr2 = JS_XDRNewMem(cx, JSXDR_DECODE);
 	JS_XDRMemSetData(xdr2, buffer, length);
-	JS_XDRValue(xdr2, JL_FRVAL);
+	JS_XDRValue(xdr2, JL_RVAL);
 	JS_XDRMemSetData(xdr2, NULL, 0);
 	JS_XDRDestroy(xdr2);
 
@@ -1598,45 +1407,45 @@ CONFIGURE_STATIC
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST( Expand )
-		FUNCTION_FAST_ARGC( SwitchCase, 4 )
-		FUNCTION_FAST( InternString )
-		FUNCTION_FAST( SealObject )
-		FUNCTION_FAST( CountProperties )
-		FUNCTION_FAST( ClearObject )
-		FUNCTION_FAST( SetScope )
-//		FUNCTION_FAST( GetCurrentScope )
+		FUNCTION( Expand )
+		FUNCTION_ARGC( SwitchCase, 4 )
+		FUNCTION( InternString )
+		FUNCTION( DeepFreezeObject )
+		FUNCTION( CountProperties )
+		FUNCTION( ClearObject )
+		FUNCTION( SetScope )
+//		FUNCTION( GetCurrentScope )
 //		FUNCTION( HideProperties )
-		FUNCTION_FAST_ARGC( SetPropertyEnumerate, 3 )
-		FUNCTION_FAST_ARGC( SetPropertyReadonly, 3 )
+//		FUNCTION_ARGC( SetPropertyEnumerate, 3 )
+//		FUNCTION_ARGC( SetPropertyReadonly, 3 )
 
-		FUNCTION_FAST( Exec )
-		FUNCTION_FAST(SandboxEval)
+		FUNCTION( Exec )
+		FUNCTION( SandboxEval )
 		FUNCTION( IsStatementValid )
-		FUNCTION_FAST( StringRepeat )
-		FUNCTION_FAST( Print )
-		FUNCTION_FAST( Sleep )
-		FUNCTION_FAST( TimeCounter )
-		FUNCTION_FAST( CollectGarbage )
-		FUNCTION_FAST( MaybeCollectGarbage )
-		FUNCTION_FAST( ObjectToId )
-		FUNCTION_FAST( IdToObject )
-		FUNCTION_FAST_ARGC( IsBoolean, 1 )
-		FUNCTION_FAST_ARGC( IsNumber, 1 )
-		FUNCTION_FAST_ARGC( IsPrimitive, 1 )
-		FUNCTION_FAST_ARGC( IsFunction, 1 )
-		FUNCTION_FAST_ARGC( IsGenerator, 1 )
-//		FUNCTION_FAST_ARGC( IsVoid, 1 ) // value === undefined is better
+		FUNCTION( StringRepeat )
+		FUNCTION( Print )
+		FUNCTION( Sleep )
+		FUNCTION( TimeCounter )
+		FUNCTION( CollectGarbage )
+		FUNCTION( MaybeCollectGarbage )
+		FUNCTION( ObjectToId )
+		FUNCTION( IdToObject )
+		FUNCTION_ARGC( IsBoolean, 1 )
+		FUNCTION_ARGC( IsNumber, 1 )
+		FUNCTION_ARGC( IsPrimitive, 1 )
+		FUNCTION_ARGC( IsFunction, 1 )
+		FUNCTION_ARGC( IsGenerator, 1 )
+//		FUNCTION_ARGC( IsVoid, 1 ) // value === undefined is better
 #ifdef JS_HAS_XDR
-//		FUNCTION_FAST( XdrEncode )
-//		FUNCTION_FAST( XdrDecode )
+//		FUNCTION( XdrEncode )
+//		FUNCTION( XdrDecode )
 #endif // JS_HAS_XDR
-		FUNCTION_FAST( Warning )
+		FUNCTION( Warning )
 		FUNCTION( Assert )
-		FUNCTION_FAST( Halt )
+		FUNCTION( Halt )
 //		FUNCTION( StrSet )
 #ifdef _DEBUG
-		FUNCTION_FAST( Test )
+		FUNCTION( Test )
 #endif // _DEBUG
 	END_STATIC_FUNCTION_SPEC
 

@@ -369,7 +369,7 @@ public:
 	template <typename P>
 	ALWAYS_INLINE bool BackForEach( P &pre ) const {
 
-		for ( const Item* item = _top; item; item = item->prev )
+		for ( Item* item = _top; item; item = item->prev )
 			if ( pre( item->data ) )
 				return true;
 		return false;

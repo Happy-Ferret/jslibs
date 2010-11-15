@@ -38,7 +38,8 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	ode::dSurfaceParameters *pv = (ode::dSurfaceParameters*)JS_malloc(cx, sizeof(ode::dSurfaceParameters));
 	JL_CHK( pv );
 	pv->mu = dInfinity;
@@ -98,7 +99,7 @@ DEFINE_PROPERTY_GETTER( surface ) {
 	JL_S_ASSERT_RESOURCE(surface); // (TBD) check if NULL is meaningful for joints !
 	
 	*vp = JSVAL_VOID;
-	switch ( JSVAL_TO_INT(id) ) {
+	switch ( JSID_TO_INT(id) ) {
 		case mu:
 			JL_CHK( ODERealToJsval(cx, surface->mu, vp) );
 			break;
@@ -164,10 +165,10 @@ DEFINE_PROPERTY_SETTER( surface ) {
 	} else {
 
 		set = true;
-		JL_CHK( JsvalToODEReal(cx, *vp, &value) );
+		JL_CHK( JL_JsvalToODEReal(cx, *vp, &value) );
 	}
 
-	switch(JSVAL_TO_INT(id)) {
+	switch(JSID_TO_INT(id)) {
 		case mu:
 			if ( set )
 				surface->mu = value;

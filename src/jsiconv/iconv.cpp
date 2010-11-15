@@ -51,6 +51,8 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 		JL_REPORT_WARNING("iconv_close failure in Iconv finalize (%d).", errno);
 
 	JS_free(cx, pv);
+bad:
+	return;
 }
 
 /**doc
@@ -73,14 +75,15 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_RANGE(2, 4);
 
 	const char *tocode;
 	const char *fromcode;
 
-	JL_CHK( JsvalToString(cx, &JL_ARG(1), &tocode) );
-	JL_CHK( JsvalToString(cx, &JL_ARG(2), &fromcode) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &tocode) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &fromcode) );
 
 	Private *pv;
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
@@ -90,12 +93,12 @@ DEFINE_CONSTRUCTOR() {
 	pv->cd = iconv_open(tocode, fromcode);
 
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JsvalToBool(cx, JL_ARG(3), &pv->wTo) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &pv->wTo) );
 	else
 		pv->wTo = false;
 
 	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( JsvalToBool(cx, JL_ARG(4), &pv->wFrom) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &pv->wFrom) );
 	else
 		pv->wFrom = false;
 
@@ -121,13 +124,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CALL() {
 	
+	JL_DEFINE_CALL_FUNCTION_OBJ;
+
 	char *outBuf = NULL; // keep on top
 
-	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
-	JL_S_ASSERT_CLASS(thisObj, JL_CLASS(Iconv));
+	JL_S_ASSERT_CLASS(obj, JL_CLASS(Iconv));
 
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(cx, thisObj);
+	pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	size_t status;
@@ -150,7 +154,7 @@ DEFINE_CALL() {
 		inBuf = (char *)JS_GetStringChars(jsstr);
 	} else {
 
-		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&inBuf, &inLen) );
+		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&inBuf, &inLen) );
 	}
 
 	JL_ICONV_PROTO_ARG char *inPtr;
@@ -267,7 +271,7 @@ DEFINE_CALL() {
 	if ( length == 0 ) {
 		
 		JS_free(cx, outBuf);
-		*JL_RVAL = JS_GetEmptyStringValue(cx);
+		*JL_RVAL = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
@@ -313,7 +317,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 
 	const char *chr;
 	size_t length;
-	JL_CHK( JsvalToStringAndLength(cx, vp, &chr, &length) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &chr, &length) );
 	if ( length != 1 )
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "one-char string");
 	pv->invalidChar = chr[0];
@@ -326,7 +330,7 @@ DEFINE_PROPERTY_GETTER( invalidChar ) {
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );	
-	JL_CHK( StringAndLengthToJsval(cx, vp, &pv->invalidChar, 1) );
+	JL_CHK( JL_StringAndLengthToJsval(cx, vp, &pv->invalidChar, 1) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -336,7 +340,7 @@ DEFINE_PROPERTY( hasIncompleteSequence ) {
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );	
-	JL_CHK( BoolToJsval(cx, pv->remainderLen != 0, vp) );
+	JL_CHK(JL_CValToJsval(cx, pv->remainderLen != 0, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -359,7 +363,8 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 	jsval value;
 	while (namescount--) {
 
-		StringToJsval(ipv->cx, names[namescount], &value); // iconv_canonicalize
+		// (TBD) check errors
+		JL_CValToJsval(ipv->cx, names[namescount], &value); // iconv_canonicalize
 		JS_SetElement(ipv->cx, ipv->list, ipv->listLen, &value);
 		ipv->listLen++;
 	}
@@ -393,7 +398,7 @@ DEFINE_PROPERTY( version ) {
 #else
 	strcpy( versionStr, "system");
 #endif
-	return StringToJsval(cx, versionStr, vp);
+	return JL_CValToJsval(cx, versionStr, vp);
 	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 
@@ -402,10 +407,10 @@ DEFINE_PROPERTY( jsUC ) {
 
 	switch ( JLHostEndian ) {
 		case JLBigEndian:
-			JL_CHK( StringToJsval(cx, "UCS-2be", vp) );
+			JL_CHK( JL_CValToJsval(cx, "UCS-2be", vp) );
 			break;
 		case JLLittleEndian:
-			JL_CHK( StringToJsval(cx, "UCS-2le", vp) );
+			JL_CHK( JL_CValToJsval(cx, "UCS-2le", vp) );
 			break;
 		default:
 			*vp = JSVAL_VOID;

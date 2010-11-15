@@ -15,19 +15,19 @@
 #define SLOT_FUNCTION_ALLOC 0
 
 
-inline JSClass* ImageJSClass( JSContext *cx ) {
+static ALWAYS_INLINE JSClass* JL_ImageJSClass( const JSContext *cx ) {
 
-//	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
-//	if (unlikely( jsClass == NULL ))
-//		jsClass = JL_GetRegistredNativeClass(cx, "Image");
-	JSClass *jsClass = JL_GetRegistredNativeClass(cx, "Image");
-	return jsClass;
+	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+	if (unlikely( clasp == NULL ))
+		clasp = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Image")->clasp;
+	return clasp;
 }
 
 
 inline JSObject* NewImage( JSContext *cx, int width, int height, int channels, void *data ) {
 
-	JSObject *image = JS_NewObject(cx, ImageJSClass(cx), NULL, NULL);
+	ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Image");
+	JSObject *image = JS_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
 	if ( image == NULL )
 		return NULL;
 	JS_DefineProperty(cx, image, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );

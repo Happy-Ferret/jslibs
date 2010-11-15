@@ -34,7 +34,8 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
 	ode::dJointGroupID groupId;
@@ -49,7 +50,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 	
 	ode::dWorldID worldId;
-	JL_CHK( JsvalToWorldID( cx, JL_ARG(1), &worldId) );
+	JL_CHK( JL_JsvalToWorldID( cx, JL_ARG(1), &worldId) );
 	ode::dJointID jointId = ode::dJointCreateBall(worldId, groupId); // The joint group ID is 0 to allocate the joint normally.
 	ode::dJointSetData(jointId, obj);
 	ode::dJointSetFeedback(jointId, NULL);
@@ -74,7 +75,7 @@ DEFINE_PROPERTY( anchorSetter ) {
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetBallAnchor( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
@@ -104,7 +105,7 @@ DEFINE_PROPERTY( anchor2Setter ) {
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dJointSetBallAnchor2( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;

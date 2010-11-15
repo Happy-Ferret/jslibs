@@ -37,11 +37,12 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_RANGE(0, 1);
 	ode::dSpaceID space;
 	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
-		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &space) );
+		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), &space) );
 	else
 		space = 0;
 

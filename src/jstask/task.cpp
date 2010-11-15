@@ -237,7 +237,7 @@ static JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 	JL_CHK( cx != NULL );
 
 	HostPrivate *hpv;
-	hpv = GetHostPrivate(cx);
+	hpv = JL_GetHostPrivate(cx);
 
 // allocator must be threadsafe !
 	hpv->alloc.malloc = jl_malloc;
@@ -256,7 +256,6 @@ static JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 
 	JSBool status;
 	status = TheTask(cx, pv);
-	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	if ( status != JS_TRUE ) { // fatal errors
 
 		jsval ex;
@@ -323,8 +322,10 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	TaskPrivate *pv = NULL; // keep on top
+
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_FUNCTION( JL_ARG(1) );
 
@@ -335,7 +336,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(2) ) {
 
 		int p;
-		JL_CHK( JsvalToInt(cx, JL_ARG(2), &p) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &p) );
 		switch ( p ) {
 			case 0:
 				priority = JL_THREAD_PRIORITY_NORMAL;
@@ -392,17 +393,17 @@ $TOC_MEMBER $INAME
  $VOID $INAME( [data] )
   Send data to the task. This function do not block. If the task is already processing a request, next requests are automatically queued.
 **/
-DEFINE_FUNCTION_FAST( Request ) {
+DEFINE_FUNCTION( Request ) {
 
-	JL_S_ASSERT_CLASS( JL_FOBJ, JL_THIS_CLASS );
+	JL_S_ASSERT_CLASS( JL_OBJ, JL_THIS_CLASS );
 	TaskPrivate *pv;
-	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	Serialized serializedRequest;
 	SerializerCreate(&serializedRequest);
-	if ( JL_FARG_ISDEF(1) )
-		JL_CHK( SerializeJsval(cx, &serializedRequest, &JL_FARG(1)) ); // leak ???
+	if ( JL_ARG_ISDEF(1) )
+		JL_CHK( SerializeJsval(cx, &serializedRequest, &JL_ARG(1)) ); // leak ???
 	else {
 		jsval arg = JSVAL_VOID;
 		JL_CHK( SerializeJsval(cx, &serializedRequest, &arg) );
@@ -412,7 +413,8 @@ DEFINE_FUNCTION_FAST( Request ) {
 	pv->pendingRequestCount++;
 	JLMutexRelease(pv->mutex); // ++
 	JLSemaphoreRelease(pv->requestSem); // +1 // signals a request
-	*JL_FRVAL = JSVAL_VOID;
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -423,11 +425,11 @@ $TOC_MEMBER $INAME
  data $INAME()
   Read a response from the task. If no response is pending, the function wait until a response is available.
 **/
-DEFINE_FUNCTION_FAST( Response ) {
+DEFINE_FUNCTION( Response ) {
 
-	JL_S_ASSERT_CLASS( JL_FOBJ, JL_THIS_CLASS );
+	JL_S_ASSERT_CLASS( JL_OBJ, JL_THIS_CLASS );
 	TaskPrivate *pv;
-	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	bool hasNoResponse;
@@ -463,7 +465,7 @@ DEFINE_FUNCTION_FAST( Response ) {
 	if ( QueueIsEmpty(&pv->responseList) ) { // || !JLThreadIsActive( pv->threadHandle )
 
 		JLMutexRelease(pv->mutex); // ++
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
@@ -482,7 +484,7 @@ DEFINE_FUNCTION_FAST( Response ) {
 		return JS_FALSE;
 	} else {
 
-		JL_CHK( UnserializeJsval(cx, &serializedResponse, JL_FRVAL) );
+		JL_CHK( UnserializeJsval(cx, &serializedResponse, JL_RVAL) );
 		SerializerFree(&serializedResponse);
 	}
 	JLMutexRelease(pv->mutex); // ++
@@ -504,8 +506,8 @@ DEFINE_PROPERTY( pendingRequestCount ) {
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JLMutexAcquire(pv->mutex); // --
-	JL_CHK( UIntToJsval(cx, pv->pendingRequestCount, vp) );
-//	JL_CHK( UIntToJsval(cx, pv->end ? 0 : pv->pendingRequestCount, vp) );
+	JL_CHK( JL_CValToJsval(cx, pv->pendingRequestCount, vp) );
+//	JL_CHK( JL_CValToJsval(cx, pv->end ? 0 : pv->pendingRequestCount, vp) );
 	JLMutexRelease(pv->mutex); // ++
 	return JS_TRUE;
 	JL_BAD;
@@ -524,7 +526,7 @@ DEFINE_PROPERTY( processingRequestCount ) {
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JLMutexAcquire(pv->mutex); // --
-	JL_CHK( UIntToJsval(cx, pv->processingRequestCount, vp) );
+	JL_CHK( JL_CValToJsval(cx, pv->processingRequestCount, vp) );
 	JLMutexRelease(pv->mutex); // ++
 	return JS_TRUE;
 	JL_BAD;
@@ -543,8 +545,8 @@ DEFINE_PROPERTY( pendingResponseCount ) {
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JLMutexAcquire(pv->mutex); // --
-	JL_CHK( UIntToJsval(cx, pv->pendingResponseCount, vp) );
-//	JL_CHK( UIntToJsval(cx, pv->pendingResponseCount ? pv->pendingResponseCount : QueueIsEmpty(&pv->exceptionList) ? 0 : 1 , vp) );
+	JL_CHK( JL_CValToJsval(cx, pv->pendingResponseCount, vp) );
+//	JL_CHK( JL_CValToJsval(cx, pv->pendingResponseCount ? pv->pendingResponseCount : QueueIsEmpty(&pv->exceptionList) ? 0 : 1 , vp) );
 	JLMutexRelease(pv->mutex); // ++
 	return JS_TRUE;
 	JL_BAD;
@@ -563,7 +565,7 @@ DEFINE_PROPERTY( idle ) {
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JLMutexAcquire(pv->mutex); // --
-	JL_CHK( BoolToJsval(cx, pv->pendingRequestCount + pv->processingRequestCount + pv->pendingResponseCount == 0 || pv->end, vp) );
+	JL_CHK(JL_CValToJsval(cx, pv->pendingRequestCount + pv->processingRequestCount + pv->pendingResponseCount == 0 || pv->end, vp) );
 	JLMutexRelease(pv->mutex); // ++
 	return JS_TRUE;
 	JL_BAD;
@@ -641,7 +643,7 @@ static JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext 
 	argv[1] = OBJECT_TO_JSVAL(upe->obj); // already rooted
 
 	JL_CHK( JS_GetProperty(cx, upe->obj, "onResponse", &fct) );
-	if ( JsvalIsFunction(cx, fct) )
+	if ( JL_JsvalIsFunction(cx, fct) )
 		JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, COUNTOF(argv)-1, argv+1, argv) );
 
 	return JS_TRUE;
@@ -649,26 +651,26 @@ static JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext 
 }
 
 
-DEFINE_FUNCTION_FAST( Events ) {
+DEFINE_FUNCTION( Events ) {
 	
 	JL_S_ASSERT_ARG(0);
-	JL_S_ASSERT_CLASS( JL_FOBJ, JL_THIS_CLASS );
+	JL_S_ASSERT_CLASS( JL_OBJ, JL_THIS_CLASS );
 
 	TaskPrivate *pv;
-	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
 	upe->pe.startWait = TaskStartWait;
 	upe->pe.cancelWait = TaskCancelWait;
 	upe->pe.endWait = TaskEndWait;
 
 	upe->canceled = false;
-	upe->obj = JL_FOBJ;
+	upe->obj = JL_OBJ;
 	upe->pv = pv;
 
-	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, OBJECT_TO_JSVAL(upe->obj)) ); // GC protection
+	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(upe->obj)) ); // GC protection
 
 	return JS_TRUE;
 	JL_BAD;
@@ -685,9 +687,9 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST(Request)
-		FUNCTION_FAST(Response)
-		FUNCTION_FAST(Events)
+		FUNCTION(Request)
+		FUNCTION(Response)
+		FUNCTION(Events)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

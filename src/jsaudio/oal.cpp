@@ -38,15 +38,15 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alcOpenDevice, alcCreateContext, alcMakeContextCurrent
 **/
-DEFINE_FUNCTION_FAST( Open ) {
+DEFINE_FUNCTION( Open ) {
 
 	// Initialize the OpenAL library (cf. alutInit)
 
 	JL_S_ASSERT( alcGetCurrentContext() == NULL, "OpenAL already open." );
 
 	const char *deviceName;
-	if ( JL_FARG_ISDEF(1) )
-		JL_CHK( JsvalToString(cx, &JL_FARG(1), &deviceName) );
+	if ( JL_ARG_ISDEF(1) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &deviceName) );
 	else
 		deviceName = NULL;
 
@@ -79,7 +79,7 @@ DEFINE_FUNCTION_FAST( Open ) {
 
 	InitEfxApi();
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -92,7 +92,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alcGetCurrentContext, alcMakeContextCurrent, alcGetContextsDevice, alcDestroyContext, alcCloseDevice
 **/
-DEFINE_FUNCTION_FAST( Close ) {
+DEFINE_FUNCTION( Close ) {
 
 	ResetEfxApi();
 	// cf. alutExit
@@ -111,7 +111,8 @@ DEFINE_FUNCTION_FAST( Close ) {
 		JL_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
 	if (!alcCloseDevice (device))
 		JL_REPORT_ERROR("ALUT_ERROR_CLOSE_DEVICE");
-	*JL_FRVAL = JSVAL_VOID;
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -141,7 +142,7 @@ DEFINE_PROPERTY( maxAuxiliarySends ) {
 	ALCdevice *pDevice = alcGetContextsDevice(pContext);
 	ALCint numSends;
 	alcGetIntegerv(pDevice, ALC_MAX_AUXILIARY_SENDS, 1, &numSends);
-	JL_CHK( IntToJsval(cx, numSends, vp) );
+	JL_CHK( JL_CValToJsval(cx, numSends, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -156,14 +157,15 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDopplerFactor
 **/
-DEFINE_FUNCTION_FAST( DopplerFactor ) {
+DEFINE_FUNCTION( DopplerFactor ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_ARG(1));
 	float value;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &value) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &value) );
 	alDopplerFactor( value );
-	*JL_FRVAL = JSVAL_VOID;
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -178,14 +180,15 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDopplerVelocity
 **/
-DEFINE_FUNCTION_FAST( DopplerVelocity ) {
+DEFINE_FUNCTION( DopplerVelocity ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_ARG(1));
 	float value;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &value) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &value) );
 	alDopplerVelocity( value );
-	*JL_FRVAL = JSVAL_VOID;
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -200,14 +203,15 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alSpeedOfSound
 **/
-DEFINE_FUNCTION_FAST( SpeedOfSound ) {
+DEFINE_FUNCTION( SpeedOfSound ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_ARG(1));
 	float value;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &value) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &value) );
 	alSpeedOfSound( value );
-	*JL_FRVAL = JSVAL_VOID;
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -221,14 +225,15 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDistanceModel
 **/
-DEFINE_FUNCTION_FAST( DistanceModel ) {
+DEFINE_FUNCTION( DistanceModel ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_ARG(1));
 	unsigned int distanceModel;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &distanceModel) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &distanceModel) );
 	alDistanceModel( distanceModel );
-	*JL_FRVAL = JSVAL_VOID;
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -242,12 +247,13 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alEnable
 **/
-DEFINE_FUNCTION_FAST( Enable ) {
+DEFINE_FUNCTION( Enable ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
-	alEnable( JSVAL_TO_INT(JL_FARG(1)) );
-	*JL_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_INT(JL_ARG(1));
+	alEnable( JSVAL_TO_INT(JL_ARG(1)) );
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -261,12 +267,13 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDisable
 **/
-DEFINE_FUNCTION_FAST( Disable ) {
+DEFINE_FUNCTION( Disable ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
-	alDisable( JSVAL_TO_INT(JL_FARG(1)) );
-	*JL_FRVAL = JSVAL_VOID;
+	JL_S_ASSERT_INT(JL_ARG(1));
+	alDisable( JSVAL_TO_INT(JL_ARG(1)) );
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -280,11 +287,12 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alIsEnabled
 **/
-DEFINE_FUNCTION_FAST( IsEnabled ) {
+DEFINE_FUNCTION( IsEnabled ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
-	*JL_FRVAL = BOOLEAN_TO_JSVAL( alIsEnabled( JSVAL_TO_INT(JL_FARG(1)) ) );
+	JL_S_ASSERT_INT(JL_ARG(1));
+	*JL_RVAL = BOOLEAN_TO_JSVAL( alIsEnabled( JSVAL_TO_INT(JL_ARG(1)) ) );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -300,19 +308,20 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetString
 **/
-DEFINE_FUNCTION_FAST( GetString ) {
+DEFINE_FUNCTION( GetString ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
-	const ALchar* str = alGetString(JSVAL_TO_INT(JL_FARG(1)));
+	JL_S_ASSERT_INT(JL_ARG(1));
+	const ALchar* str = alGetString(JSVAL_TO_INT(JL_ARG(1)));
 	if ( str == NULL ) {
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 	JSString *jsstr = JS_NewStringCopyZ(cx, str);
 	JL_CHK( jsstr );
-	*JL_FRVAL = STRING_TO_JSVAL( jsstr );
+	*JL_RVAL = STRING_TO_JSVAL( jsstr );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -328,13 +337,14 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetBooleanv
 **/
-DEFINE_FUNCTION_FAST( GetBoolean ) {
+DEFINE_FUNCTION( GetBoolean ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_ARG(1));
 	ALboolean params;
-	alGetBooleanv(JSVAL_TO_INT(JL_FARG(1)), &params);
-	*JL_FRVAL = BOOLEAN_TO_JSVAL(params);
+	alGetBooleanv(JSVAL_TO_INT(JL_ARG(1)), &params);
+	*JL_RVAL = BOOLEAN_TO_JSVAL(params);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -352,21 +362,21 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetIntegerv
 **/
-DEFINE_FUNCTION_FAST( GetInteger ) {
+DEFINE_FUNCTION( GetInteger ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_ARG(1));
 
 	ALint params[16];
-	alGetIntegerv(JSVAL_TO_INT( JL_FARG(1) ), params);
+	alGetIntegerv(JSVAL_TO_INT( JL_ARG(1) ), params);
 
-	if ( JL_FARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_INT( JL_FARG(2) );
-		int count = JSVAL_TO_INT( JL_FARG(2) );
+		JL_S_ASSERT_INT( JL_ARG(2) );
+		int count = JSVAL_TO_INT( JL_ARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
-		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
@@ -375,7 +385,7 @@ DEFINE_FUNCTION_FAST( GetInteger ) {
 		}
 	} else {
 
-		*JL_FRVAL = INT_TO_JSVAL( params[0] );
+		*JL_RVAL = INT_TO_JSVAL( params[0] );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -393,30 +403,30 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetDoublev
 **/
-DEFINE_FUNCTION_FAST( GetDouble ) {
+DEFINE_FUNCTION( GetDouble ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_ARG(1));
 
 	ALdouble params[16];
-	alGetDoublev(JSVAL_TO_INT(JL_FARG(1)), params);
+	alGetDoublev(JSVAL_TO_INT(JL_ARG(1)), params);
 
-	if ( JL_FARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_INT( JL_FARG(2) );
-		int count = JSVAL_TO_INT( JL_FARG(2) );
+		JL_S_ASSERT_INT( JL_ARG(2) );
+		int count = JSVAL_TO_INT( JL_ARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
-		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( DoubleToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JL_CValToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( DoubleToJsval(cx, params[0], JL_FRVAL) );
+		JL_CHK( JL_CValToJsval(cx, params[0], JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -432,31 +442,31 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alListeneri, alListenerf, alListenerfv
 **/
-DEFINE_FUNCTION_FAST( Listener ) {
+DEFINE_FUNCTION( Listener ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_ARG(1));
 
-	*JL_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
+	*JL_RVAL = JSVAL_VOID;
+	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
 
-		alListeneri( JSVAL_TO_INT( JL_FARG(1) ), JSVAL_TO_INT( JL_FARG(2) ) );
+		alListeneri( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ) );
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_DOUBLE(JL_FARG(2)) ) {
+	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
 
 		jsdouble param;
-		JL_CHK( JS_ValueToNumber(cx, JL_FARG(2), &param) );
-		alListenerf( JSVAL_TO_INT( JL_FARG(1) ), param );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &param) );
+		alListenerf( JSVAL_TO_INT( JL_ARG(1) ), param );
 		return JS_TRUE;
 	}
-	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
+	if ( JL_JsvalIsArray(cx, JL_ARG(2)) ) {
 
 		ALfloat params[16];
 		uint32 length;
-//		J_JSVAL_TO_REAL_VECTOR( JL_FARG(2), params, length );
-		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), params, 16, &length) );
-		alListenerfv( JSVAL_TO_INT(JL_FARG(1)), params );
+//		J_JSVAL_TO_REAL_VECTOR( JL_ARG(2), params, length );
+		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), params, 16, &length) );
+		alListenerfv( JSVAL_TO_INT(JL_ARG(1)), params );
 		return JS_TRUE;
 	}
 
@@ -478,30 +488,30 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetListenerfv
 **/
-DEFINE_FUNCTION_FAST( GetListenerReal ) {
+DEFINE_FUNCTION( GetListenerReal ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_ARG(1));
 
 	ALfloat params[16];
-	alGetListenerfv(JSVAL_TO_INT(JL_FARG(1)), params);
+	alGetListenerfv(JSVAL_TO_INT(JL_ARG(1)), params);
 
-	if ( JL_FARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_INT( JL_FARG(2) );
-		int count = JSVAL_TO_INT( JL_FARG(2) );
+		JL_S_ASSERT_INT( JL_ARG(2) );
+		int count = JSVAL_TO_INT( JL_ARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
-		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 			
-			JL_CHK( FloatToJsval(cx, params[count], &tmpValue) );
+			JL_CHK(JL_CValToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( FloatToJsval(cx, params[0], JL_FRVAL) );
+		JL_CHK(JL_CValToJsval(cx, params[0], JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -515,11 +525,11 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alSourcei, alSourcef, alSourcefv
 **/
-DEFINE_FUNCTION_FAST( GenSource ) {
+DEFINE_FUNCTION( GenSource ) {
 
 	ALuint sourceID; // The OpenAL sound source
 	alGenSources(1, &sourceID);
-	JL_CHK( UIntToJsval(cx, sourceID, JL_FRVAL) );
+	JL_CHK( JL_CValToJsval(cx, sourceID, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -535,34 +545,34 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alSourcei, alSourcef, alSourcefv
 **/
-DEFINE_FUNCTION_FAST( Source ) {
+DEFINE_FUNCTION( Source ) {
 
 	JL_S_ASSERT_ARG_MIN(3);
-	JL_S_ASSERT_NUMBER(JL_FARG(1));
-	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_NUMBER(JL_ARG(1));
+	JL_S_ASSERT_INT(JL_ARG(2));
 
 	ALuint sid;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
 
-	*JL_FRVAL = JSVAL_VOID;
-	if ( JSVAL_IS_INT(JL_FARG(3)) ) {
+	*JL_RVAL = JSVAL_VOID;
+	if ( JSVAL_IS_INT(JL_ARG(3)) ) {
 
-		alSourcei( sid, JSVAL_TO_INT( JL_FARG(2) ), JSVAL_TO_INT( JL_FARG(3) ) );
+		alSourcei( sid, JSVAL_TO_INT( JL_ARG(2) ), JSVAL_TO_INT( JL_ARG(3) ) );
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_DOUBLE(JL_FARG(3)) ) {
+	if ( JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
 		float param;
-		JL_CHK( JsvalToFloat(cx, JL_FARG(3), &param) );
-		alSourcef( sid, JSVAL_TO_INT( JL_FARG(2) ), param );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &param) );
+		alSourcef( sid, JSVAL_TO_INT( JL_ARG(2) ), param );
 		return JS_TRUE;
 	}
-	if ( JsvalIsArray(cx, JL_FARG(3)) ) {
+	if ( JL_JsvalIsArray(cx, JL_ARG(3)) ) {
 
 		ALfloat params[16];
 		uint32 length;
-		JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), params, COUNTOF(params), &length ) );
-		alSourcefv( sid, JSVAL_TO_INT(JL_FARG(2)), params );
+		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+		alSourcefv( sid, JSVAL_TO_INT(JL_ARG(2)), params );
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -583,37 +593,37 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetSourcef
 **/
-DEFINE_FUNCTION_FAST( GetSourceReal ) {
+DEFINE_FUNCTION( GetSourceReal ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
-	JL_S_ASSERT_NUMBER(JL_FARG(1));
-	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_NUMBER(JL_ARG(1));
+	JL_S_ASSERT_INT(JL_ARG(2));
 
 	ALuint sid;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
 
 	ALfloat params[16];
 
-	ALenum pname = JSVAL_TO_INT(JL_FARG(2));
+	ALenum pname = JSVAL_TO_INT(JL_ARG(2));
 	alGetSourcef(sid, pname, params);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	if ( JL_FARG_ISDEF(3) ) {
+	if ( JL_ARG_ISDEF(3) ) {
 
-		JL_S_ASSERT_INT( JL_FARG(3) );
-		int count = JSVAL_TO_INT( JL_FARG(3) );
+		JL_S_ASSERT_INT( JL_ARG(3) );
+		int count = JSVAL_TO_INT( JL_ARG(3) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
-		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( FloatToJsval(cx, params[count], &tmpValue) );
+			JL_CHK(JL_CValToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( FloatToJsval(cx, params[0], JL_FRVAL) );
+		JL_CHK(JL_CValToJsval(cx, params[0], JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -624,38 +634,38 @@ DEFINE_FUNCTION_FAST( GetSourceReal ) {
 $TOC_MEMBER $INAME
  $REAL | $ARRAY $INAME( source, pname [, count] )
 **/
-DEFINE_FUNCTION_FAST( GetSourceInteger ) {
+DEFINE_FUNCTION( GetSourceInteger ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
-	JL_S_ASSERT_NUMBER(JL_FARG(1));
-	JL_S_ASSERT_INT(JL_FARG(2));
+	JL_S_ASSERT_NUMBER(JL_ARG(1));
+	JL_S_ASSERT_INT(JL_ARG(2));
 
 	ALuint sid;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
 
 	ALint params[16];
 
-	ALenum pname = JSVAL_TO_INT(JL_FARG(2));
+	ALenum pname = JSVAL_TO_INT(JL_ARG(2));
 	alGetSourcei(sid, pname, params);
 
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	if ( JL_FARG_ISDEF(3) ) {
+	if ( JL_ARG_ISDEF(3) ) {
 
-		JL_S_ASSERT_INT( JL_FARG(3) );
-		int count = JSVAL_TO_INT( JL_FARG(3) );
+		JL_S_ASSERT_INT( JL_ARG(3) );
+		int count = JSVAL_TO_INT( JL_ARG(3) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
-		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( IntToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JL_CValToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( IntToJsval(cx, params[0], JL_FRVAL) );
+		JL_CHK( JL_CValToJsval(cx, params[0], JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -671,13 +681,15 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDeleteBuffers
 **/
-DEFINE_FUNCTION_FAST( DeleteSource ) {
+DEFINE_FUNCTION( DeleteSource ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_NUMBER(JL_FARG(1));
+	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
 	alDeleteSources(1, &sid);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -693,27 +705,28 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDeleteBuffers
 **/
-DEFINE_FUNCTION_FAST( SourceQueueBuffers ) {
+DEFINE_FUNCTION( SourceQueueBuffers ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
-	JL_S_ASSERT_NUMBER(JL_FARG(1));
+	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
+	*JL_RVAL = JSVAL_VOID;
 
-	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
+	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
 
 		ALuint buffer;
-		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &buffer) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &buffer) );
 		alSourceQueueBuffers( sid, 1, &buffer );
 		JL_CHK( CheckThrowCurrentOalError(cx) );
 		return JS_TRUE;
 	}
 
-	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
+	if ( JL_JsvalIsArray(cx, JL_ARG(2)) ) {
 
 		ALuint params[1024];
  		uint32 length = COUNTOF(params);
-		JL_CHK( JsvalToUIntVector(cx, JL_FARG(2), params, COUNTOF(params), &length) );
+		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), params, COUNTOF(params), &length) );
 		alSourceQueueBuffers( sid, length, params );
 		JL_CHK( CheckThrowCurrentOalError(cx) );
 		return JS_TRUE;
@@ -735,26 +748,27 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDeleteBuffers
 **/
-DEFINE_FUNCTION_FAST( SourceUnqueueBuffers ) {
+DEFINE_FUNCTION( SourceUnqueueBuffers ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
-	JL_S_ASSERT_NUMBER(JL_FARG(1));
+	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
+	*JL_RVAL = JSVAL_VOID;
 
-	if ( JSVAL_IS_INT(JL_FARG(2)) ) {
+	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
 
 		ALuint buffer;
-		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &buffer) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &buffer) );
 		alSourceUnqueueBuffers( sid, 1, &buffer );
 		return JS_TRUE;
 	}
 
-	if ( JsvalIsArray(cx, JL_FARG(2)) ) {
+	if ( JL_JsvalIsArray(cx, JL_ARG(2)) ) {
 
 		ALuint params[1024];
 		uint32 length;
-		JL_CHK( JsvalToUIntVector(cx, JL_FARG(2), params, COUNTOF(params), &length) );
+		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), params, COUNTOF(params), &length) );
 		alSourceUnqueueBuffers( sid, length, params );
 		return JS_TRUE;
 	}
@@ -775,22 +789,23 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG soundObject sound: a sound object that contains PCM audio data and the following properties: rate, channels and bits.
 **/
-DEFINE_FUNCTION_FAST( Buffer ) {
+DEFINE_FUNCTION( Buffer ) {
 
+	jsval tmp;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
-	JSObject *blobObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	int rate, channels, bits;
-	JL_CHK( GetPropertyInt(cx, blobObj, "rate", &rate) );
-	JL_CHK( GetPropertyInt(cx, blobObj, "channels", &channels) );
-	JL_CHK( GetPropertyInt(cx, blobObj, "bits", &bits) );
+	JL_CHK( JL_GetProperty(cx, blobObj, "rate", &rate) );
+	JL_CHK( JL_GetProperty(cx, blobObj, "channels", &channels) );
+	JL_CHK( JL_GetProperty(cx, blobObj, "bits", &bits) );
 
 	const char *buffer;
 	size_t bufferLength;
-	jsval tmp = OBJECT_TO_JSVAL(blobObj);
-	JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength); // warning: GC on the returned buffer !
+	tmp = OBJECT_TO_JSVAL(blobObj);
+	JL_CHK( JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength) ); // warning: GC on the returned buffer !
 
 	ALuint bufferID; // The OpenAL sound buffer ID
 	alGenBuffers(1, &bufferID);
@@ -812,7 +827,7 @@ DEFINE_FUNCTION_FAST( Buffer ) {
 	alBufferData(bufferID, format, buffer, (ALsizei)bufferLength, rate);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( UIntToJsval(cx, bufferID, JL_FRVAL) );
+	JL_CHK( JL_CValToJsval(cx, bufferID, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -831,30 +846,30 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetBufferfv
 **/
-DEFINE_FUNCTION_FAST( GetBufferReal ) {
+DEFINE_FUNCTION( GetBufferReal ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_ARG(1));
 
 	ALfloat params[16];
-	alGetBufferfv(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params);
+	alGetBufferfv(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params);
 
-	if ( JL_FARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_INT( JL_FARG(2) );
-		int count = JSVAL_TO_INT( JL_FARG(2) );
+		JL_S_ASSERT_INT( JL_ARG(2) );
+		int count = JSVAL_TO_INT( JL_ARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
-		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( FloatToJsval(cx, params[count], &tmpValue) );
+			JL_CHK(JL_CValToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( FloatToJsval(cx, params[0], JL_FRVAL) );
+		JL_CHK(JL_CValToJsval(cx, params[0], JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -873,30 +888,30 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetBufferiv
 **/
-DEFINE_FUNCTION_FAST( GetBufferInteger ) {
+DEFINE_FUNCTION( GetBufferInteger ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_ARG(1));
 
 	ALint params[16];
-	alGetBufferiv(JSVAL_TO_INT(JL_FARG(1)), JSVAL_TO_INT(JL_FARG(2)), params);
+	alGetBufferiv(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params);
 
-	if ( JL_FARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_INT( JL_FARG(2) );
-		int count = JSVAL_TO_INT( JL_FARG(2) );
+		JL_S_ASSERT_INT( JL_ARG(2) );
+		int count = JSVAL_TO_INT( JL_ARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
-		*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( IntToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JL_CValToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( IntToJsval(cx, params[0], JL_FRVAL) );
+		JL_CHK( JL_CValToJsval(cx, params[0], JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -916,14 +931,16 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDeleteBuffers
 **/
-DEFINE_FUNCTION_FAST( DeleteBuffer ) {
+DEFINE_FUNCTION( DeleteBuffer ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_NUMBER(JL_FARG(1));
+	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint bufferId;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &bufferId ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &bufferId ) );
 //	alBufferData(bufferId, 0, NULL, 0, 0);
 	alDeleteBuffers(1, &bufferId);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -936,13 +953,15 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $INT source: the ID of the source to play.
 **/
-DEFINE_FUNCTION_FAST( PlaySource ) {
+DEFINE_FUNCTION( PlaySource ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_NUMBER(JL_FARG(1));
+	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
 	alSourcePlay(sid);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -955,13 +974,15 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $INT source: the ID of the source to play.
 **/
-DEFINE_FUNCTION_FAST( StopSource ) {
+DEFINE_FUNCTION( StopSource ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_NUMBER(JL_FARG(1));
+	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
 	alSourceStop(sid);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -974,13 +995,15 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $INT source: the ID of the source to play.
 **/
-DEFINE_FUNCTION_FAST( PauseSource ) {
+DEFINE_FUNCTION( PauseSource ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_NUMBER(JL_FARG(1));
+	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
 	alSourcePause(sid);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -993,48 +1016,53 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $INT source: the ID of the source to play.
 **/
-DEFINE_FUNCTION_FAST( RewindSource ) {
+DEFINE_FUNCTION( RewindSource ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_NUMBER(JL_FARG(1));
+	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &sid ) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
 	alSourceRewind(sid);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-/**doc
+/* *doc
 $TOC_MEMBER $INAME
- $VOID $INAME()
+ $INT $INAME()
   $H OpenaL API
    alGenEffects
 **/
-DEFINE_FUNCTION_FAST( GenEffect ) {
+/*
+DEFINE_FUNCTION( GenEffect ) {
 
 	ALuint eid;
 	alGenEffects(1, &eid);
-	JL_CHK( UIntToJsval(cx, eid, JL_FRVAL) );
+	JL_CHK( JL_CValToJsval(cx, eid, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
+*/
 
-/**doc
+/* *doc
 $TOC_MEMBER $INAME
- $VOID $INAME()
+ $VOID $INAME( effectId )
   $H OpenaL API
    alGenEffects
 **/
-DEFINE_FUNCTION_FAST( DeleteEffect ) {
+/*
+DEFINE_FUNCTION( DeleteEffect ) {
 
 	ALuint eid;
-	alDeleteEffects(1, &eid);
-	JL_CHK( UIntToJsval(cx, eid, JL_FRVAL) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &eid) );
+	alDeleteEffects(1, eid);
 	return JS_TRUE;
 	JL_BAD;
 }
-
+*/
 
 
 
@@ -1045,22 +1073,23 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG soundObject sound: sound object to play.
 **/
-DEFINE_FUNCTION_FAST( PlaySound ) {
+DEFINE_FUNCTION( PlaySound ) {
 
+	jsval tmp;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
-	JSObject *blobObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	int rate, channels, bits;
-	JL_CHK( GetPropertyInt(cx, blobObj, "rate", &rate) );
-	JL_CHK( GetPropertyInt(cx, blobObj, "channels", &channels) );
-	JL_CHK( GetPropertyInt(cx, blobObj, "bits", &bits) );
+	JL_CHK( JL_GetProperty(cx, blobObj, "rate", &rate) );
+	JL_CHK( JL_GetProperty(cx, blobObj, "channels", &channels) );
+	JL_CHK( JL_GetProperty(cx, blobObj, "bits", &bits) );
 
 	const char *buffer;
 	size_t bufferLength;
-	jsval tmp = OBJECT_TO_JSVAL(blobObj);
-	JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength); // warning: GC on the returned buffer !
+	tmp = OBJECT_TO_JSVAL(blobObj);
+	JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength); // warning: GC on the returned buffer !
 
 	ALint state;                // The state of the sound source
 	ALuint bufferID;            // The OpenAL sound buffer ID
@@ -1075,35 +1104,33 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
 	// Create sound buffer and source
 	alGenBuffers(1, &bufferID);
 
-  alGenSources(1, &sourceID);
+	alGenSources(1, &sourceID);
 
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-  // Set the source and listener to the same location
-  alListener3i(AL_POSITION, 0,0,0 );
+	// Set the source and listener to the same location
+	alListener3i(AL_POSITION, 0,0,0 );
 
-  alSource3i(sourceID, AL_POSITION, 0,0,0 );
+	alSource3i(sourceID, AL_POSITION, 0,0,0 );
 
-  // Upload sound data to buffer
-  alBufferData(bufferID, format, buffer, (ALsizei)bufferLength, rate);
+	// Upload sound data to buffer
+	alBufferData(bufferID, format, buffer, (ALsizei)bufferLength, rate);
 
+	// Attach sound buffer to source
+	alSourcei(sourceID, AL_BUFFER, bufferID);
 
-  // Attach sound buffer to source
-  alSourcei(sourceID, AL_BUFFER, bufferID);
+	// This is a busy wait loop but should be good enough for example purpose
 
+	{
+	// get the remaining time to play
+	ALint offset;
+	alGetSourcei(sourceID, AL_SAMPLE_OFFSET, &offset);
 
-  // This is a busy wait loop but should be good enough for example purpose
-
-  {
-  // get the remaining time to play
-  ALint offset;
-  alGetSourcei(sourceID, AL_SAMPLE_OFFSET, &offset);
-
-  ALint freq, bits, channels, size;
-  alGetBufferi(bufferID, AL_FREQUENCY, &freq);
-  alGetBufferi(bufferID, AL_BITS, &bits);
-  alGetBufferi(bufferID, AL_CHANNELS, &channels);
-  alGetBufferi(bufferID, AL_SIZE, &size);
+	ALint freq, bits, channels, size;
+	alGetBufferi(bufferID, AL_FREQUENCY, &freq);
+	alGetBufferi(bufferID, AL_BITS, &bits);
+	alGetBufferi(bufferID, AL_CHANNELS, &channels);
+	alGetBufferi(bufferID, AL_SIZE, &size);
 
 	uint32_t totalTime = size / (channels * (bits/8) * freq) * 1000;
 
@@ -1114,14 +1141,13 @@ DEFINE_FUNCTION_FAST( PlaySound ) {
 
 	// Query the state of the souce
 	alGetSourcei(sourceID, AL_SOURCE_STATE, &state); // do { } while (state != AL_STOPPED);
-  }
+	}
 
-  // Clean up sound buffer and source
-  alDeleteBuffers(1, &bufferID);
-  alDeleteSources(1, &sourceID);
+	// Clean up sound buffer and source
+	alDeleteBuffers(1, &bufferID);
+	alDeleteSources(1, &sourceID);
 
-//  *JL_FRVAL = JSVAL_VOID;
-
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1315,44 +1341,44 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_FUNCTION_SPEC
 
-		FUNCTION_FAST_ARGC( Open, 1 )
-		FUNCTION_FAST_ARGC( Close, 0 )
+		FUNCTION_ARGC( Open, 1 )
+		FUNCTION_ARGC( Close, 0 )
 
-		FUNCTION_FAST_ARGC( DopplerFactor, 1 )
-		FUNCTION_FAST_ARGC( DopplerVelocity, 1 )
-		FUNCTION_FAST_ARGC( SpeedOfSound, 1 )
-		FUNCTION_FAST_ARGC( DistanceModel, 1 )
+		FUNCTION_ARGC( DopplerFactor, 1 )
+		FUNCTION_ARGC( DopplerVelocity, 1 )
+		FUNCTION_ARGC( SpeedOfSound, 1 )
+		FUNCTION_ARGC( DistanceModel, 1 )
 
-		FUNCTION_FAST_ARGC( Enable, 1 )
-		FUNCTION_FAST_ARGC( Disable, 1 )
-		FUNCTION_FAST_ARGC( IsEnabled, 1 )
-		FUNCTION_FAST_ARGC( GetString, 1 )
-		FUNCTION_FAST_ARGC( GetBoolean, 1 )
-		FUNCTION_FAST_ARGC( GetInteger, 2 )
-		FUNCTION_FAST_ARGC( GetDouble, 2 )
+		FUNCTION_ARGC( Enable, 1 )
+		FUNCTION_ARGC( Disable, 1 )
+		FUNCTION_ARGC( IsEnabled, 1 )
+		FUNCTION_ARGC( GetString, 1 )
+		FUNCTION_ARGC( GetBoolean, 1 )
+		FUNCTION_ARGC( GetInteger, 2 )
+		FUNCTION_ARGC( GetDouble, 2 )
 
-		FUNCTION_FAST_ARGC( Listener, 2 )
-		FUNCTION_FAST_ARGC( GetListenerReal, 3 )
-		FUNCTION_FAST_ARGC( GenSource, 0 )
-		FUNCTION_FAST_ARGC( Source, 3 )
-		FUNCTION_FAST_ARGC( GetSourceInteger, 3 )
-		FUNCTION_FAST_ARGC( GetSourceReal, 3 )
-		FUNCTION_FAST_ARGC( DeleteSource, 1 )
-		FUNCTION_FAST_ARGC( SourceQueueBuffers, 2 )
-		FUNCTION_FAST_ARGC( SourceUnqueueBuffers, 2 )
-		FUNCTION_FAST_ARGC( Buffer, 1 )
-		FUNCTION_FAST_ARGC( GetBufferReal, 3 )
-		FUNCTION_FAST_ARGC( GetBufferInteger, 3 )
-		FUNCTION_FAST_ARGC( DeleteBuffer, 1 )
-		FUNCTION_FAST_ARGC( PlaySource, 1 )
-		FUNCTION_FAST_ARGC( StopSource, 1 )
-		FUNCTION_FAST_ARGC( PauseSource, 1 )
-		FUNCTION_FAST_ARGC( RewindSource, 1 )
+		FUNCTION_ARGC( Listener, 2 )
+		FUNCTION_ARGC( GetListenerReal, 3 )
+		FUNCTION_ARGC( GenSource, 0 )
+		FUNCTION_ARGC( Source, 3 )
+		FUNCTION_ARGC( GetSourceInteger, 3 )
+		FUNCTION_ARGC( GetSourceReal, 3 )
+		FUNCTION_ARGC( DeleteSource, 1 )
+		FUNCTION_ARGC( SourceQueueBuffers, 2 )
+		FUNCTION_ARGC( SourceUnqueueBuffers, 2 )
+		FUNCTION_ARGC( Buffer, 1 )
+		FUNCTION_ARGC( GetBufferReal, 3 )
+		FUNCTION_ARGC( GetBufferInteger, 3 )
+		FUNCTION_ARGC( DeleteBuffer, 1 )
+		FUNCTION_ARGC( PlaySource, 1 )
+		FUNCTION_ARGC( StopSource, 1 )
+		FUNCTION_ARGC( PauseSource, 1 )
+		FUNCTION_ARGC( RewindSource, 1 )
 
-		FUNCTION_FAST_ARGC( PlaySound, 1 ) // non-openal API
+		FUNCTION_ARGC( PlaySound, 1 ) // non-openal API
 
 		// OpenAL extensions
-		FUNCTION_FAST_ARGC( GenEffect, 0 )
+//		FUNCTION_ARGC( GenEffect, 0 )
 
 
 	END_STATIC_FUNCTION_SPEC

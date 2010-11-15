@@ -32,6 +32,8 @@ BEGIN_CLASS( SqliteError )
 /* see issue#52
 DEFINE_CONSTRUCTOR() {
 
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_REPORT_ERROR( "This object cannot be construct." ); // (TBD) remove constructor and define HAS_HAS_INSTANCE
 	return JS_TRUE;
 }
@@ -110,7 +112,7 @@ DEFINE_PROPERTY( text ) {
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
+	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
 
@@ -132,9 +134,9 @@ DEFINE_XDR() {
 		*objp = JS_NewObject(xdr->cx, JL_CLASS(SqliteError), NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, SLOT_SQLITE_ERROR_CODE, tmp) );
+		JL_CHK( JL_SetReservedSlot(xdr->cx, *objp, SLOT_SQLITE_ERROR_CODE, tmp) );
 		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, SLOT_SQLITE_ERROR_TEXT, tmp) );
+		JL_CHK( JL_SetReservedSlot(xdr->cx, *objp, SLOT_SQLITE_ERROR_TEXT, tmp) );
 		return JS_TRUE;
 	}
 
@@ -168,16 +170,27 @@ CONFIGURE_CLASS
 END_CLASS
 
 
+JSBool SqliteThrowErrorStatus( JSContext *cx, sqlite3 *db, int status ) {
+
+	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_PROTOTYPE(cx, SqliteError), NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
+	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
+	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(status) ) );
+	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, "???")) ) );
+	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
+	return JS_FALSE;
+	JL_BAD;
+}
+
+
 JSBool SqliteThrowError( JSContext *cx, sqlite3 *db ) {
 
-//	JL_SAFE(	JS_ReportWarning( cx, "SqliteError exception" ) );
-	JSObject *error = JS_NewObject( cx, JL_CLASS(SqliteError), NULL, NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
-//	JL_S_ASSERT( error != NULL, "Unable to create SqliteError object." );
+	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_PROTOTYPE(cx, SqliteError), NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-	JS_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(sqlite3_extended_errcode(db)) );
-	JS_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, sqlite3_errmsg(db))) );
-	JL_SAFE( ExceptionSetScriptLocation(cx, error) );
+	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(sqlite3_extended_errcode(db)) ) );
+	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, sqlite3_errmsg(db))) ) );
+	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
 	return JS_FALSE;
+	JL_BAD;
 }
 
 /**doc

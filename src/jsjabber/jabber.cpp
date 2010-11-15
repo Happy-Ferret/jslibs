@@ -46,11 +46,11 @@ JSBool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
 
 	JSObject *jidObj = JS_NewObject(cx, NULL, NULL, NULL);
 	*rval = OBJECT_TO_JSVAL(jidObj);
-	JL_CHK( SetPropertyString(cx, jidObj, "bare", jid->bare().c_str()) );
-	JL_CHK( SetPropertyString(cx, jidObj, "full", jid->full().c_str()) );
-	JL_CHK( SetPropertyString(cx, jidObj, "server", jid->server().c_str()) );
-	JL_CHK( SetPropertyString(cx, jidObj, "username", jid->username().c_str()) );
-	JL_CHK( SetPropertyString(cx, jidObj, "resource", jid->resource().c_str()) );
+	JL_CHK( JL_SetProperty(cx, jidObj, "bare", jid->bare().c_str()) );
+	JL_CHK( JL_SetProperty(cx, jidObj, "full", jid->full().c_str()) );
+	JL_CHK( JL_SetProperty(cx, jidObj, "server", jid->server().c_str()) );
+	JL_CHK( JL_SetProperty(cx, jidObj, "username", jid->username().c_str()) );
+	JL_CHK( JL_SetProperty(cx, jidObj, "resource", jid->resource().c_str()) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -75,14 +75,14 @@ private:
 		jsval fval, rval;
 		if ( !JS_GetProperty(_cx, _obj, "onLog", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
-		if ( !JsvalIsFunction(_cx, fval) ) {
+		if ( !JL_JsvalIsFunction(_cx, fval) ) {
 
 			JS_ReportError(_cx, "onLog is not a function.");
 			return;
 		}
 
 		jsval argv[3] = { INT_TO_JSVAL(level), INT_TO_JSVAL(area) };
-		StringToJsval(_cx, message.c_str(), &argv[2]);
+		JL_CValToJsval(_cx, message.c_str(), &argv[2]);
 		js::AutoArrayRooter tvr(_cx, COUNTOF(argv), argv);
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
 	}
@@ -93,28 +93,28 @@ private:
 		if ( !JS_GetProperty(_cx, _obj, "onTLSConnect", &fval) || JSVAL_IS_VOID( fval ) )
 			return true; // by default, accepts the certificate
 
-		if ( !JsvalIsFunction(_cx, fval) ) {
+		if ( !JL_JsvalIsFunction(_cx, fval) ) {
 
 			JS_ReportError(_cx, "onTLSConnect is not a function.");
 			return false;
 		}
 
 		JSObject *infoObj = JS_NewObject(_cx, NULL, NULL, NULL);
-		SetPropertyBool(_cx, _obj, "chain", info.chain);
-		SetPropertyString(_cx, _obj, "issuer", info.issuer.c_str());
-		SetPropertyString(_cx, _obj, "server", info.server.c_str());
-		SetPropertyInt(_cx, _obj, "dateFrom", info.date_from);
-		SetPropertyInt(_cx, _obj, "dateTo", info.date_to);
-		SetPropertyString(_cx, _obj, "protocol", info.protocol.c_str());
-		SetPropertyString(_cx, _obj, "cipher", info.cipher.c_str());
-		SetPropertyString(_cx, _obj, "mac", info.mac.c_str());
-		SetPropertyString(_cx, _obj, "compression", info.compression.c_str());
+		JL_SetProperty(_cx, _obj, "chain", info.chain);
+		JL_SetProperty(_cx, _obj, "issuer", info.issuer.c_str());
+		JL_SetProperty(_cx, _obj, "server", info.server.c_str());
+		JL_SetProperty(_cx, _obj, "dateFrom", info.date_from);
+		JL_SetProperty(_cx, _obj, "dateTo", info.date_to);
+		JL_SetProperty(_cx, _obj, "protocol", info.protocol.c_str());
+		JL_SetProperty(_cx, _obj, "cipher", info.cipher.c_str());
+		JL_SetProperty(_cx, _obj, "mac", info.mac.c_str());
+		JL_SetProperty(_cx, _obj, "compression", info.compression.c_str());
 
 		jsval argv[] = { OBJECT_TO_JSVAL(infoObj) };
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
 
 		bool res;
-		JsvalToBool(_cx, rval, &res);
+		JL_JsvalToCVal(_cx, rval, &res);
 		return res;
 	}
 
@@ -123,7 +123,7 @@ private:
 		jsval fval, rval;
 		if ( !JS_GetProperty(_cx, _obj, "onConnect", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
-		if ( !JsvalIsFunction(_cx, fval) ) {
+		if ( !JL_JsvalIsFunction(_cx, fval) ) {
 
 			JS_ReportError(_cx, "onConnect is not a function.");
 			return;
@@ -136,7 +136,7 @@ private:
 		jsval fval, rval;
 		if ( !JS_GetProperty(_cx, _obj, "onDisconnect", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
-		if ( !JsvalIsFunction(_cx, fval) ) {
+		if ( !JL_JsvalIsFunction(_cx, fval) ) {
 
 			JS_ReportError(_cx, "onDisconnect is not a function.");
 			return;
@@ -150,7 +150,7 @@ private:
 		jsval fval, rval;
 		if ( !JS_GetProperty(_cx, _obj, "onMessage", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
-		if ( !JsvalIsFunction(_cx, fval) ) {
+		if ( !JL_JsvalIsFunction(_cx, fval) ) {
 
 			JS_ReportError(_cx, "onMessage is not a function.");
 			return;
@@ -159,7 +159,7 @@ private:
 //		JS_EnterLocalRootScope(_cx);
 		jsval fromVal, body;
 		JidToJsval(_cx, &stanza->from(), &fromVal);
-		StringToJsval(_cx, stanza->body().c_str(), &body);
+		JL_CValToJsval(_cx, stanza->body().c_str(), &body);
 		jsval argv[] = { fromVal, body };
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
 //		js_LeaveLocalRootScope(_cx);
@@ -183,7 +183,7 @@ private:
 		jsval fval;
 		if ( !JS_GetProperty(_cx, _obj, "onRosterPresence", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
-		if ( !JsvalIsFunction(_cx, fval) ) {
+		if ( !JL_JsvalIsFunction(_cx, fval) ) {
 
 			JS_ReportError(_cx, "onRosterPresence is not a function.");
 			return;
@@ -191,8 +191,8 @@ private:
 
 		jsval fromVal, presenceVal, msgVal, tmp;
 		JidToJsval(_cx, &JID(item.jid()), &fromVal);
-		IntToJsval(_cx, presence, &presenceVal);
-		StringToJsval(_cx, msg.c_str(), &msgVal);
+		JL_CValToJsval(_cx, presence, &presenceVal);
+		JL_CValToJsval(_cx, msg.c_str(), &msgVal);
 
 		jsval argv[] = { fromVal, presenceVal, msgVal };
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &tmp); // errors will be managed later by JS_IsExceptionPending(cx)
@@ -254,14 +254,15 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN(2);
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
 	JL_SetPrivate(cx, obj, pv);
 	const char *jid, *password;
-	JL_CHK( JsvalToString(cx, &JL_ARG(1), &jid) );
-	JL_CHK( JsvalToString(cx, &JL_ARG(2), &password) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &jid) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &password) );
 	pv->handlers = new Handlers(obj);
 	pv->client = new Client(JID(jid), password);
 	pv->client->logInstance().registerLogHandler(LogLevelDebug, LogAreaAll, pv->handlers); // LogLevelDebug
@@ -289,16 +290,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Connect ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	JL_S_ASSERT_ARG_MIN(1);
 	const char *serverName;
-	JL_CHK( JsvalToString(cx, &JL_ARG(1), &serverName) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &serverName) );
 	pv->client->setServer( serverName );
 	if ( JL_ARG_ISDEF(2) ) {
 
 		int port;
-		JsvalToInt(cx, JL_ARG(2), &port);
+		JL_JsvalToCVal(cx, JL_ARG(2), &port);
 		pv->client->setPort( port);
 	}
 	pv->handlers->_cx = cx;
@@ -309,7 +311,7 @@ DEFINE_FUNCTION( Connect ) {
 
 	//bool usingCompression = pv->client->compression();
 
-	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() );
+	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() ); // (TBD) TM
 	if ( !connection )
 		return JS_TRUE;
 
@@ -317,7 +319,7 @@ DEFINE_FUNCTION( Connect ) {
 	if ( sock == -1 )
 		return JS_TRUE;
 
-	JL_CHK( IntToJsval(cx, sock, JL_RVAL) );
+	JL_CHK( JL_CValToJsval(cx, sock, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -330,6 +332,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Disconnect ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
@@ -340,6 +343,7 @@ DEFINE_FUNCTION( Disconnect ) {
 	if ( JS_IsExceptionPending(cx) )
 		return JS_FALSE;
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -352,6 +356,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Process ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
@@ -362,7 +367,7 @@ DEFINE_FUNCTION( Process ) {
 	if ( JS_IsExceptionPending(cx) )
 		return JS_FALSE;
 
-	JL_CHK( IntToJsval(cx, (int)cErr, rval) );
+	JL_CHK( JL_CValToJsval(cx, (int)cErr, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -379,14 +384,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SendMessage ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	JL_S_ASSERT_ARG_MIN(2);
 
 	const char *to, *body;
-	JL_CHK( JsvalToString(cx, &JL_ARG(1), &to) );
-	JL_CHK( JsvalToString(cx, &JL_ARG(2), &body) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &to) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &body) );
 
 	Tag *message = new Tag( "message" );
 	message->addAttribute( "type", "chat" );
@@ -397,6 +403,8 @@ DEFINE_FUNCTION( SendMessage ) {
 	message->addAttribute( "id", pv->client->getID() );
 
 	pv->client->send( message );
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -429,7 +437,7 @@ DEFINE_PROPERTY( socket ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() );
+	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() ); // (TBD) TM
 	if ( !connection ) {
 
 		*vp = JSVAL_VOID;
@@ -441,7 +449,7 @@ DEFINE_PROPERTY( socket ) {
 		*vp = JSVAL_VOID;
 		return JS_TRUE;
 	}
-	JL_CHK( IntToJsval(cx, sock, vp) );
+	JL_CHK( JL_CValToJsval(cx, sock, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -456,7 +464,7 @@ DEFINE_PROPERTY_GETTER( status ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	JL_CHK( StringToJsval(cx, pv->client->status().c_str(), vp) );
+	JL_CHK( JL_CValToJsval(cx, pv->client->status().c_str(), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -467,7 +475,7 @@ DEFINE_PROPERTY_SETTER( status ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	const char *status;
-	JL_CHK( JsvalToString(cx, vp, &status) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &status) );
 	pv->client->setPresence(pv->client->presence(), pv->client->priority(), status);
 	return JS_TRUE;
 	JL_BAD;
@@ -484,7 +492,7 @@ DEFINE_PROPERTY_GETTER( presence ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	Presence presence = pv->client->presence();
-	JL_CHK( IntToJsval(cx, presence, vp) );
+	JL_CHK( JL_CValToJsval(cx, presence, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -494,7 +502,7 @@ DEFINE_PROPERTY_SETTER( presence ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	int presence;
-	JL_CHK( JsvalToInt(cx, *vp, &presence) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &presence) );
 	pv->client->setPresence((Presence)presence, pv->client->priority(), pv->client->status());
 	return JS_TRUE;
 	JL_BAD;
@@ -534,7 +542,7 @@ DEFINE_PROPERTY( connectionTotalIn ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	int totalIn, totalOut;
 	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);
-	JL_CHK( IntToJsval(cx, totalIn, vp) );
+	JL_CHK( JL_CValToJsval(cx, totalIn, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -551,7 +559,7 @@ DEFINE_PROPERTY( connectionTotalOut ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	int totalIn, totalOut;
 	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);
-	JL_CHK( IntToJsval(cx, totalOut, vp) );
+	JL_CHK( JL_CValToJsval(cx, totalOut, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

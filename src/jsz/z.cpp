@@ -68,6 +68,8 @@ DEFINE_FINALIZE() {
 			JL_REPORT_WARNING( "Unable to finalize zlib stream (%s).", pv->stream.msg );
 	}
 	JS_free(cx, pv);
+bad:
+	return;
 }
 
 
@@ -100,6 +102,8 @@ void jsz_free(voidpf opaque, voidpf address) {
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN(1);
 
 	Private *pv;
@@ -114,12 +118,12 @@ DEFINE_CONSTRUCTOR() {
 	pv->stream.zalloc = jsz_alloc;
 	pv->stream.zfree = jsz_free;
 
-	JL_CHK( JsvalToInt(cx, JL_ARG(1), &pv->method) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &pv->method) );
 
 	if ( JL_ARG_ISDEF(2) ) {
 
 		JL_S_ASSERT( pv->method == DEFLATE, "The second argument is overmuch for this method.");
-		JL_CHK( JsvalToInt(cx, JL_ARG(1), &pv->level) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &pv->level) );
 		JL_S_ASSERT( pv->level >= Z_NO_COMPRESSION && pv->level <= Z_BEST_COMPRESSION, "Invalid compression level." );
 	} else {
 
@@ -175,12 +179,13 @@ void* wrapped_JS_realloc(void * opaqueAllocatorContext, void* address, size_t si
 
 DEFINE_CALL() {
 
-	JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ...
+	JL_DEFINE_CALL_FUNCTION_OBJ;
+
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
-	JL_S_ASSERT_CLASS(thisObj, JL_THIS_CLASS);
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(cx, thisObj);
+	pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
 
@@ -189,7 +194,7 @@ DEFINE_CALL() {
 	size_t inputLength;
 	if ( JL_ARG_ISDEF(1) ) {
 
-		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &inputData, &inputLength) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &inputData, &inputLength) ); // warning: GC on the returned buffer !
 	} else {
 
 		inputData = NULL;
@@ -199,7 +204,7 @@ DEFINE_CALL() {
 // force finish
 	bool forceFinish;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JsvalToBool(cx, JL_ARG(2), &forceFinish) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &forceFinish) );
 	else
 		forceFinish = false;
 
@@ -262,7 +267,7 @@ DEFINE_CALL() {
 
 	*BufferNewChunk(&resultBuffer, 1) = '\0';
 	BufferConfirm(&resultBuffer, 1);
-	JL_CHKB( JL_NewBlob(cx, (void*)BufferGetDataOwnership(&resultBuffer), BufferGetLength(&resultBuffer)-1, rval), bad_freebuf );
+	JL_CHKB( JL_NewBlob(cx, (void*)BufferGetDataOwnership(&resultBuffer), BufferGetLength(&resultBuffer)-1, JL_RVAL), bad_freebuf );
 //	js_UpdateMallocCounter(cx, 1);
 	BufferFinalize(&resultBuffer);
 
@@ -299,7 +304,7 @@ DEFINE_PROPERTY( idle ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( BoolToJsval(cx, pv->stream.state == Z_NULL, vp) );
+	JL_CHK( JL_CValToJsval(cx, pv->stream.state == Z_NULL, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -315,7 +320,7 @@ DEFINE_PROPERTY( adler32 ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( JS_NewNumberValue(cx, pv->stream.adler, vp) );
+	JL_CHK( JL_CValToJsval(cx, pv->stream.adler, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -330,7 +335,7 @@ DEFINE_PROPERTY( lengthIn ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( JS_NewNumberValue(cx, pv->stream.total_in, vp) );
+	JL_CHK( JL_CValToJsval(cx, pv->stream.total_in, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -345,7 +350,7 @@ DEFINE_PROPERTY( lengthOut ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( JS_NewNumberValue(cx, pv->stream.total_out, vp) );
+	JL_CHK( JL_CValToJsval(cx, pv->stream.total_out, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -363,7 +368,7 @@ $TOC_MEMBER $INAME
 /*
 DEFINE_PROPERTY( idealInputLength ) {
 
-	JS_NewNumberValue(cx, Buffer::staticBufferLength, vp);
+	JL_NewNumberValue(cx, Buffer::staticBufferLength, vp);
 	return JS_TRUE;
 }
 */

@@ -45,10 +45,11 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	ode::dSpaceID parentSpace;
 	if ( argc >= 1 )
-		JL_CHK( JsvalToSpaceID(cx, argv[0], &parentSpace) );
+		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), &parentSpace) );
 	else
 		parentSpace = 0;
 //	ode::dSpaceID spaceId = ode::dSimpleSpaceCreate(parentSpace);

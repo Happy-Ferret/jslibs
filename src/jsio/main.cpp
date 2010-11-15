@@ -53,7 +53,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	}
 	PR_AtomicIncrement(&instanceCount);
 
-	JL_CHK( SetModulePrivate(cx, _moduleId, jl_calloc(sizeof(JsioPrivate), 1)) );
+	JL_CHK( JL_SetModulePrivate(cx, _moduleId, jl_calloc(sizeof(JsioPrivate), 1)) );
 
 	INIT_CLASS( IoError );
 	INIT_CLASS( Descriptor );
@@ -73,7 +73,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
-	JsioPrivate *mpv = (JsioPrivate*)GetModulePrivate(cx, _moduleId);
+	JsioPrivate *mpv = (JsioPrivate*)JL_GetModulePrivate(cx, _moduleId);
 	if ( mpv->peCancel != NULL )
 		PR_DestroyPollableEvent(mpv->peCancel);
 

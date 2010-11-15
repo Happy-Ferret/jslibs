@@ -23,17 +23,17 @@ struct TransformationPrivate {
 };
 
 // This function tries to read a matrix44 from a Transformation object OR a NI_READ_MATRIX44 interface OR a javascript Array.
-inline JSBool GetMatrixHelper( JSContext *cx, jsval val, float **m ) {
+inline JSBool GetMatrixHelper( JSContext *cx, jsval &val, float **m ) {
 
-	JL_S_ASSERT_OBJECT(val);
+	if ( JSVAL_IS_OBJECT(val) ) {
 
-	JSObject *matrixObj = JSVAL_TO_OBJECT(val);
-	if ( JL_GetClass(matrixObj) == JL_CLASS(Transformation) ) {
-		
-		TransformationPrivate *pv = (TransformationPrivate *)JL_GetPrivate(cx, matrixObj);
-		*m = pv->mat->raw;
-		return JS_TRUE;
+		JSObject *matrixObj = JSVAL_TO_OBJECT(val);
+		if ( JL_GetClass(matrixObj) == JL_CLASS(Transformation) ) {
+			
+			TransformationPrivate *pv = (TransformationPrivate *)JL_GetPrivate(cx, matrixObj);
+			*m = pv->mat->raw;
+			return JS_TRUE;
+		}
 	}
-	return JsvalToMatrix44(cx, val, m);
-	JL_BAD;
+	return JL_JsvalToMatrix44(cx, val, m);
 }

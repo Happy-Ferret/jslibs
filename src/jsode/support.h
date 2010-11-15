@@ -13,33 +13,28 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-#if defined(dSINGLE)
-	#define JsvalToODERealVector JsvalToFloatVector
-	#define ODERealVectorToJsval FloatVectorToJsval
-#else
-	#define JsvalToODERealVector JsvalToDoubleVector
-	#define ODERealVectorToJsval DoubleVectorToJsval
-#endif
+#define JL_JsvalToODERealVector JL_JsvalToCValVector
 
+#define ODERealVectorToJsval JL_CValVectorToJsval
 
-ALWAYS_INLINE JSBool JsvalToODEReal( JSContext *cx, const jsval val, ode::dReal *real ) {
+ALWAYS_INLINE JSBool JL_JsvalToODEReal( JSContext *cx, const jsval val, ode::dReal *real ) {
 
-	if ( JsvalIsPInfinity(cx, val) ) {
+	if ( JL_JsvalIsPInfinity(cx, val) ) {
 		
 		*real = dInfinity;
 		return JS_TRUE;
 	}
 
-	if ( JsvalIsNInfinity(cx, val) ) {
+	if ( JL_JsvalIsNInfinity(cx, val) ) {
 		
 		*real = -dInfinity; 
 		return JS_TRUE;
 	}
 
 #if defined(dSINGLE)
-	JL_CHK( JsvalToFloat(cx, val, real) );
+	JL_CHK( JL_JsvalToCVal(cx, val, real) );
 #else
-	JL_CHK( JsvalToDouble(cx, val, real) );
+	JL_CHK( JL_JsvalToCVal(cx, val, real) );
 #endif
 
 	if ( *real > dInfinity ) {
@@ -63,20 +58,20 @@ ALWAYS_INLINE JSBool ODERealToJsval( JSContext *cx, const ode::dReal real, jsval
 	
 	if ( real >= dInfinity ) {
 		
-		*rval = cx->runtime->positiveInfinityValue; // return JS_GetPositiveInfinityValue(cx);
+		*rval = js::Jsvalify(cx->runtime->positiveInfinityValue); // return JS_GetPositiveInfinityValue(cx);
 		return JS_TRUE;
 	}
 
 	if ( real <= -dInfinity ) {
 	
-		*rval = cx->runtime->negativeInfinityValue; // return JS_GetNegativeInfinityValue(cx);
+		*rval = js::Jsvalify(cx->runtime->negativeInfinityValue); // return JS_GetNegativeInfinityValue(cx);
 		return JS_TRUE;
 	}
 
 #if defined(dSINGLE)
-	JL_CHK( FloatToJsval(cx, real, rval) );
+	JL_CHK( JL_CValToJsval(cx, real, rval) );
 #else
-	JL_CHK( DoubleToJsval(cx, real, rval) );
+	JL_CHK( JL_CValToJsval(cx, real, rval) );
 #endif
 
 	return JS_TRUE;

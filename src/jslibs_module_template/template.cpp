@@ -26,7 +26,8 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Template() ) or activated ( a = Template() ). To distinguish the cases, use JS_IsConstructing() or use the JL_S_ASSERT_CONSTRUCTING() macro.
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -60,7 +61,7 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 //		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
 //		jsval tmp;
 //		JS_XDRValue(xdr, &tmp);
-//		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
+//		JL_CHK( JL_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
 //		return JS_TRUE;
 //	}
 //

@@ -32,6 +32,7 @@ DEFINE_FINALIZE() {
 
 DEFINE_FUNCTION( Alloc ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	JL_S_ASSERT_ARG_MIN(1);
 
@@ -41,10 +42,11 @@ DEFINE_FUNCTION( Alloc ) {
 		jl_free(data);
 
 	unsigned int size;
-	size = JSVAL_TO_INT(argv[0]);
+	size = JSVAL_TO_INT(JL_ARG(1));
 	data = jl_malloc(size);
 	JL_SetPrivate(cx, obj, data);
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -53,19 +55,23 @@ DEFINE_FUNCTION( Alloc ) {
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JSFunction *allocFunction;
 	allocFunction = JS_NewFunction(cx, _Alloc, 0, 0, NULL, "Alloc");
 	JL_S_ASSERT( allocFunction != NULL, "Unable to create allocation function." );
 	JSObject *functionObject;
 	functionObject = JS_GetFunctionObject(allocFunction);
-	JS_SetReservedSlot(cx, obj, SLOT_FUNCTION_ALLOC, OBJECT_TO_JSVAL(functionObject));
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_FUNCTION_ALLOC, OBJECT_TO_JSVAL(functionObject)) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
 DEFINE_FUNCTION( Free ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	*JL_RVAL = JSVAL_VOID;
 
 	void *data = JL_GetPrivate(cx, obj);
 	if ( data != NULL ) {
@@ -78,11 +84,12 @@ DEFINE_FUNCTION( Free ) {
 
 DEFINE_FUNCTION( Trim ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(1);
 	int vect[4];
 	//IntArrayToVector(cx, 4, &argv[0], vect);
 	uint32 length;
-	JL_CHK( JsvalToIntVector(cx, argv[0], vect, 4, &length) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), vect, 4, &length) );
 	JL_S_ASSERT( length == 4, "Invalid array size." );
 
 	int x;
@@ -116,7 +123,7 @@ DEFINE_FUNCTION( Trim ) {
 	JSBool reuseBuffer;
 	reuseBuffer = false; // default
 	if ( argc >= 2 )
-		JS_ValueToBoolean(cx, argv[1], &reuseBuffer);
+		JS_ValueToBoolean(cx, JL_ARG(2), &reuseBuffer);
 
 	char *data;
 	data = (char*)JL_GetPrivate(cx, obj);
@@ -148,7 +155,7 @@ DEFINE_FUNCTION( Trim ) {
 	JS_DefineProperty(cx, obj, "width", INT_TO_JSVAL(newWidth), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, obj, "height", INT_TO_JSVAL(newHeight), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
-	*rval = OBJECT_TO_JSVAL(obj); // allows to write: var texture = new Jpeg(f).Load().Trim(...)
+	*JL_RVAL = OBJECT_TO_JSVAL(obj); // allows to write: var texture = new Jpeg(f).Load().Trim(...)
 
 	if ( !reuseBuffer )
 		jl_free(tmpDataPtr);
@@ -161,6 +168,7 @@ DEFINE_FUNCTION( Gamma ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }

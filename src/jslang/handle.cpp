@@ -16,7 +16,7 @@
 #include "handlePub.h"
 
 // the aim of *globalKey* is to ensure that a pointer in the process's virtual memory space can be serialized and unserializes safely.
-static uint32 globalKey = 0;
+static uint32_t globalKey = 0;
 
 BEGIN_CLASS( Handle )
 
@@ -31,9 +31,10 @@ DEFINE_FINALIZE() { // see HandleClose()
 }
 
 
-DEFINE_FUNCTION_FAST( toString ) {
+DEFINE_FUNCTION( toString ) {
 
-	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JSString *handleStr;
 	char str[] = "[Handle ????]";
 	if ( pv != NULL ) { // manage Print(Id) issue
@@ -52,7 +53,8 @@ DEFINE_FUNCTION_FAST( toString ) {
 
 	handleStr = JS_NewStringCopyN(cx, str, sizeof(str));
 	JL_CHK( handleStr );
-	*JL_FRVAL = STRING_TO_JSVAL(handleStr);
+	*JL_RVAL = STRING_TO_JSVAL(handleStr);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -60,15 +62,13 @@ DEFINE_FUNCTION_FAST( toString ) {
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
+	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
 
 DEFINE_INIT() {
 
-	JL_SAFE_BEGIN
-		globalKey = JLSessionId();
-	JL_SAFE_END
+	JL_SAFE( globalKey = JLSessionId() );
 	return JS_TRUE;
 }
 
@@ -118,7 +118,7 @@ CONFIGURE_CLASS
 //	HAS_XDR
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( toString )
+		FUNCTION( toString )
 	END_FUNCTION_SPEC
 
 END_CLASS

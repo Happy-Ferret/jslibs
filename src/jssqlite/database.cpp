@@ -62,12 +62,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	DatabasePrivate *pv = NULL;
 
 	//	int isThreadSafe = sqlite3_threadsafe();
-
-	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	
 
 	int flags;
 	if ( JL_ARG_ISDEF(2) )
@@ -79,7 +80,7 @@ DEFINE_CONSTRUCTOR() {
 
 	const char *fileName;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JsvalToString(cx, &JL_ARG(1), &fileName) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &fileName) );
 	else
 		fileName = ":memory:";
 
@@ -162,6 +163,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Close ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 	DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_SetPrivate(cx, obj, NULL);
@@ -189,6 +192,8 @@ DEFINE_FUNCTION( Close ) {
 		JL_CHK( SqliteThrowError(cx, pv->db) );
 
 	jl_free(pv);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 
 bad:
@@ -246,6 +251,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Query ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	DatabasePrivate *pv;
@@ -254,7 +260,7 @@ DEFINE_FUNCTION( Query ) {
 
 	const char *sqlQuery;
 	size_t sqlQueryLength;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
 
 	const char *szTail;
 	sqlite3_stmt *pStmt;
@@ -271,16 +277,16 @@ DEFINE_FUNCTION( Query ) {
 	// create the Result (statement) object
 	JSObject *dbStatement;
 	
-	dbStatement = JS_NewObject(cx, JL_CLASS(Result), NULL, NULL);
+	dbStatement = JS_NewObjectWithGivenProto(cx, JL_CLASS(Result), JL_PROTOTYPE(cx, Result), NULL);
 	JL_CHK( dbStatement );
 
 	JL_SetPrivate(cx, dbStatement, pStmt);
-	JL_CHK( JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )) ); // link to avoid GC
+	JL_CHK( JL_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )) ); // link to avoid GC
 	// (TBD) enhance
-	*rval = OBJECT_TO_JSVAL( dbStatement );
+	*JL_RVAL = OBJECT_TO_JSVAL( dbStatement );
 
-	if ( argc >= 2 && !JSVAL_IS_PRIMITIVE(argv[1]) )
-		JL_CHK( JS_SetReservedSlot(cx, dbStatement, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, argv[1]) );
+	if ( argc >= 2 && !JSVAL_IS_PRIMITIVE(JL_ARG(2)) )
+		JL_CHK( JL_SetReservedSlot(cx, dbStatement, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, JL_ARG(2)) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -311,6 +317,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Exec ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+	
 	sqlite3_stmt *pStmt = NULL;
 	// see sqlite3_exec()
 
@@ -323,7 +331,7 @@ DEFINE_FUNCTION( Exec ) {
 	const char *sqlQuery;
 //	J_JSVAL_TO_STRING( argv[0], sqlQuery );
 	size_t sqlQueryLength;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
 
 	const char *szTail;
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
@@ -335,7 +343,7 @@ DEFINE_FUNCTION( Exec ) {
 
 	// (TBD) support multiple statements
 
-	JL_CHK( SqliteSetupBindings(cx, pStmt, argc < 2 || JSVAL_IS_PRIMITIVE( argv[1] ) ? NULL : JSVAL_TO_OBJECT( argv[1] ), obj) ); // "@" : the the argument passed to Exec(), ":" nothing
+	JL_CHK( SqliteSetupBindings(cx, pStmt, argc < 2 || JSVAL_IS_PRIMITIVE( JL_ARG(2) ) ? NULL : JSVAL_TO_OBJECT( JL_ARG(2) ), obj) ); // "@" : the the argument passed to Exec(), ":" nothing
 
 	pv->tmpcx = cx;
 	int status;
@@ -348,10 +356,10 @@ DEFINE_FUNCTION( Exec ) {
 
 		case SQLITE_ROW:
 			//JL_CHK( SqliteColumnToJsval(cx, pStmt, 0, rval) );
-			JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, 0), rval) );
+			JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, 0), JL_RVAL) );
 			break;
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
-			*rval = JSVAL_VOID;
+			*JL_RVAL = JSVAL_VOID;
 			break;
 		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
 			JL_REPORT_ERROR( "This routine was called inappropriately." );
@@ -390,11 +398,7 @@ DEFINE_PROPERTY( lastInsertRowid ) {
 	JL_S_ASSERT_RESOURCE(pv);
 	sqlite3_int64 lastId;
 	lastId = sqlite3_last_insert_rowid(pv->db);
-	if (likely( lastId <= JSVAL_INT_MAX ))
-		*vp = INT_TO_JSVAL((int)lastId);
-	else
-		JL_CHK( JS_NewNumberValue(cx, (jsdouble)lastId, vp) ); // use JS_NewNumberValue because sqlite3_last_insert_rowid returns int64
-	return JS_TRUE;
+	return JL_CValToJsval(cx, lastId, vp);
 	JL_BAD;
 }
 
@@ -414,7 +418,7 @@ DEFINE_PROPERTY( changes ) {
 
 	// This function returns the number of database rows that were changed (or inserted or deleted) by the most recently completed INSERT, UPDATE, or DELETE statement.
 	// Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted. Auxiliary changes caused by triggers are not counted. Use the sqlite3_total_changes() function to find the total number of changes including changes caused by triggers.
-	//JS_NewNumberValue( cx, sqlite3_changes(db), vp );
+	//JL_NewNumberValue( cx, sqlite3_changes(db), vp );
 	*vp = INT_TO_JSVAL( sqlite3_changes(pv->db) ); // sqlite3_total_changes
 	return JS_TRUE;
 	JL_BAD;
@@ -443,10 +447,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( memoryUsed ) {
 
-//	int val, tmp;
+	//	int val, tmp;
 //	sqlite3_status(SQLITE_STATUS_MEMORY_USED, &val, &tmp, false);
 //	if ( val ) {
-	return SizeToJsval(cx, (size_t)sqlite3_memory_used(), vp);
+	return JL_CValToJsval(cx, (size_t)sqlite3_memory_used(), vp);
 }
 
 void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArgv ) {
@@ -458,7 +462,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 	{ //scope
 
 	jsval argv[1 + MAX_FUNCTION_ARG]; // argv[0] is rval
-	JL_ASSERT(JSVAL_NULL == 0);
+//	JL_ASSERT(JSVAL_NULL == 0);
 	memset(argv, 0, sizeof(argv)); // set JSVAL_NULL
 	js::AutoArrayRooter ar(cx, COUNTOF(argv), argv);
 	
@@ -495,7 +499,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			} else {
 
 				jsdouble jd;
-				JL_CHKB( JS_ValueToNumber(cx, argv[0], &jd), bad_unroot );
+				JL_CHKB( JL_JsvalToCVal(cx, argv[0], &jd), bad_unroot );
 				if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
 					sqlite3_result_int(sCx, (int)jd);
 				else
@@ -508,11 +512,13 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				sqlite3_result_null(sCx);
 				break;
 			}
-			if ( JL_GetClass(JSVAL_TO_OBJECT(argv[0])) == JL_GetRegistredNativeClass(cx, "Blob") ) { // beware: with SQLite, blob != text
+
+//			if ( JL_GetClass(JSVAL_TO_OBJECT(argv[0])) == JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Blob")->clasp ) { // beware: with SQLite, blob != text
+			if ( JL_JsvalIsBlob(cx, argv[0]) ) {
 
 				const char *data;
 				size_t length;
-				JL_CHKB( JsvalToStringAndLength(cx, &argv[0], &data, &length), bad_unroot );
+				JL_CHKB( JL_JsvalToStringAndLength(cx, &argv[0], &data, &length), bad_unroot );
 				sqlite3_result_blob(sCx, data, length, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				break;
 			}
@@ -522,7 +528,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 		case JSTYPE_STRING: {
 			const char *str;
 			size_t len;
-			JL_CHKB( JsvalToStringAndLength(cx, &argv[0], &str, &len), bad_unroot );
+			JL_CHKB( JL_JsvalToStringAndLength(cx, &argv[0], &str, &len), bad_unroot );
 			sqlite3_result_text(sCx, str, len, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 			break;
 		}
@@ -553,7 +559,7 @@ bad:
 **/
 DEFINE_SET_PROPERTY() {
 
-	if ( JsvalIsFunction(cx, *vp) && JSVAL_IS_STRING(id) ) {
+	if ( JL_JsvalIsFunction(cx, *vp) && JSID_IS_STRING(id) ) {
 		
 		JL_S_ASSERT_THIS_CLASS();
 
@@ -565,10 +571,10 @@ DEFINE_SET_PROPERTY() {
 		fpv->fval = *vp;
 		fpv->obj = obj;
 		fpv->dbpv = dbpv;
-
+		
 		// sArgc: If this parameter is -1, then the SQL function or aggregate may take any number of arguments between 0 and the limit set by sqlite3_limit(SQLITE_LIMIT_FUNCTION_ARG).
 //		int status = sqlite3_create_function(dbpv->db, fName, JS_GetFunctionArity(fun), SQLITE_ANY /*SQLITE_UTF8*/, (void*)fpv, sqlite_function_call, NULL, NULL);
-		if ( sqlite3_create_function16(dbpv->db, JS_GetStringChars(JS_ValueToString(cx, id)), JS_GetFunctionArity(JS_ValueToFunction(cx, *vp)), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL) != SQLITE_OK ) {
+		if ( sqlite3_create_function16(dbpv->db, JS_GetStringChars(JSID_TO_STRING(id)), JS_GetFunctionArity(JS_ValueToFunction(cx, *vp)), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL) != SQLITE_OK ) {
 			
 			jl_free(fpv);
 			JL_CHK( SqliteThrowError(cx, dbpv->db) );

@@ -1,9 +1,25 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-//LoadModule('jsstd'); Exec('../common/tools.js');
-//RunQATests('-rep 5 jsio');
+LoadModule('jsstd'); Exec('../common/tools.js');
+RunQATests('-rep 4 udp');
 
+LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jswinshell');
+
+try {
+
+	Print( Socket.GetHostsByAddr('10.10.10.10')[0] );
+} catch ( ex if ex instanceof IoError ) {
+
+	Print( ex.const, '\n' );
+}
+
+
+throw 0;
+
+
+
+
 
 new File( DESKTOP+'\\test.txt' ).content = '1234';
 

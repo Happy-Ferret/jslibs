@@ -322,7 +322,7 @@ Some links:
 Spidermonkey API reminder:
 -------------------------
 
-  JS_GetStringBytes translates a specified JS string, str, into a C character array. If successful, JS_GetStringBytes returns a pointer to the array. The array is automatically freed when str is finalized by the JavaScript garbage collection mechanism.
+  JL_GetStringBytes translates a specified JS string, str, into a C character array. If successful, JL_GetStringBytes returns a pointer to the array. The array is automatically freed when str is finalized by the JavaScript garbage collection mechanism.
   JS_GetStringChars provides a Unicode-enabled pointer to a JS string, str.
 
 
@@ -436,17 +436,18 @@ JSClass NativeData = {
 
 ////
 
-JSBool NativeType_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool NativeType_Construct(JSContext *cx, uintN argc, jsval *vp) {
 
-  if ( !JS_IsConstructing(cx) )
+  if ( !JS_IsConstructing(cx, vp) )
 	  return JS_FALSE;
 
   return JS_TRUE;
 }
 
 // .Alloc( sizeToAlloc, initialValue )
-JSBool NativeType_Alloc(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool NativeType_Alloc(JSContext *cx, uintN argc, jsval *vp) {
 
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
   ffi_type *type = (ffi_type*) JL_GetPrivate( cx, obj );
 
 jsval val;
@@ -454,10 +455,10 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
 void ** pptr = (void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT(val) );
 
-//  void ** x_pptr = (void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT(argv[-1]) );
+//  void ** x_pptr = (void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT(JS_ARGV(cx, vp)[-1]) );
 
 
-  size_t size = type->size * ( argc >= 1 ? JSVAL_TO_INT( argv[0] ) : 1 ); // argv[0]: number of elements in the array
+  size_t size = type->size * ( argc >= 1 ? JSVAL_TO_INT( JS_ARGV(cx, vp)[0] ) : 1 ); // JS_ARGV(cx, vp)[0]: number of elements in the array
 
   *pptr = jl_malloc(size);
 
@@ -468,14 +469,16 @@ void ** pptr = (void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT(val) );
   StackPush( ppList, *pptr );
 
   if ( argc >= 2 )
-    memset( *pptr, JSVAL_TO_INT( argv[1] ), size ); // initialize the memory // INFO: calloc Allocate storage for array, initializing every byte in allocated block to 0
+    memset( *pptr, JSVAL_TO_INT( JS_ARGV(cx, vp)[1] ), size ); // initialize the memory // INFO: calloc Allocate storage for array, initializing every byte in allocated block to 0
 
-  *rval = OBJECT_TO_JSVAL(obj); // allows .Alloc(100)[99] = 'd';
+  JS_RVAL(cx, vp) = OBJECT_TO_JSVAL(obj); // allows .Alloc(100)[99] = 'd';
   return JS_TRUE;
 }
 
 
-JSBool NativeType_Free(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool NativeType_Free(JSContext *cx, uintN argc, jsval *vp) {
+
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 
 jsval val;
 JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
@@ -492,7 +495,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
 /*
 // .Init( data1, data2, ... ) || .Vector( "this is a string\x00" ) || .Vector( offset, JSArray ) // all of this can be done with [ xxx, xxx, ... ]
-JSBool NativeType_Init(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool NativeType_Init(JSContext *cx, uintN argc, jsval *vp) {
 
   ffi_type *type = (ffi_type*) JL_GetPrivate( cx, obj );
   void ** pptr = (void**)JL_GetPrivate( cx, JS_GetParent( cx, obj ) ); CHANGE GetParent INTO slot[1]
@@ -501,25 +504,25 @@ JSBool NativeType_Init(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
   }
 
 
-  JS_GetStringBytes
+  JL_GetStringBytes
 
   return JS_TRUE;
 }
 */
 
 JSFunctionSpec NativeType_FunctionSpec[] = { // *name, call, nargs, flags, extra
- { "Alloc" , NativeType_Alloc , 1, 0, 0 },
- { "Free"  , NativeType_Free  , 0, 0, 0 },
-// { "Init", NativeType_Init, 0, 0, 0 },
+ { "Alloc" , NativeType_Alloc , 1, 0 },
+ { "Free"  , NativeType_Free  , 0, 0 },
+// { "Init", NativeType_Init, 0, 0 },
  { 0 }
 };
 
 // eg. var val = arg.PU32[0];
-JSBool NativeType_getter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool NativeType_getter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
-  if ( JSVAL_IS_INT( id ) ) {
+  if ( JSID_IS_INT( id ) ) {
 
-    int index = JSVAL_TO_INT( id );
+    int index = JSID_TO_INT( id );
     ffi_type *ffiType = (ffi_type*) JL_GetPrivate( cx, obj );
 
 
@@ -533,7 +536,8 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
     switch ( ffiType->type ) {
 
     case FFI_TYPE_INT:
-      JS_NewNumberValue( cx, (jsdouble)((signed int*)*pptr)[index], vp ); // JS_NewNumberValue checks INT_FITS_IN_JSVAL
+      //JS_NewNumberValue
+		 JL_CValToJsval( cx, (jsdouble)((signed int*)*pptr)[index], vp ); // JS_NewNumberValue checks INT_FITS_IN_JSVAL
       break;
 
     case FFI_TYPE_SINT8: // char => javascript string of 1 char
@@ -553,11 +557,13 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
       break;
 
     case FFI_TYPE_UINT32:
-      JS_NewNumberValue( cx, (jsdouble)((unsigned long*)*pptr)[index], vp );
+      //JS_NewNumberValue
+		 JL_CValToJsval( cx, (jsdouble)((unsigned long*)*pptr)[index], vp );
       break;
 
     case FFI_TYPE_SINT32:
-			JS_NewNumberValue( cx, (jsdouble)((signed long*)*pptr)[index], vp );
+			//JS_NewNumberValue
+		 JL_CValToJsval( cx, (jsdouble)((signed long*)*pptr)[index], vp );
       break;
 
     case FFI_TYPE_SINT64:
@@ -601,15 +607,15 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 }
 
 // eg. arg.PU32[0] = 12345;
-JSBool NativeType_setter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool NativeType_setter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
   // TODO: manage null & undefined
 
-  if ( JSVAL_IS_INT( id ) ) {
+  if ( JSID_IS_INT( id ) ) {
 
     // remove the property from the object ( JSPROP_SHARED ? ) JS_SetProperty
 
-    int index = JSVAL_TO_INT( id );
+    int index = JSID_TO_INT( id );
     ffi_type *ffiType = (ffi_type*) JL_GetPrivate( cx, obj );
 
 jsval val;
@@ -639,14 +645,19 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
         if ( JSVAL_IS_INT( *vp ) )
           *pVal = (signed char)JSVAL_TO_INT( *vp );
         else
-          if ( JSVAL_IS_STRING( *vp ) )
-            *pVal = JS_GetStringBytes( JSVAL_TO_STRING( *vp ) )[0];
-          else
+			  if ( JSVAL_IS_STRING( *vp ) ) {
+				  const char *s;
+				  s = JL_GetStringBytesZ( cx, JSVAL_TO_STRING( *vp ) );
+				  if ( s == NULL )
+					  return JS_FALSE;
+            *pVal = s[0];
+			  } else {
             if ( JSVAL_IS_DOUBLE( *vp ) ) {
               int32 val;
               JS_ValueToInt32( cx, *vp, &val ); // TODO: enhance this conversion
               *pVal = (signed char)val;
             }
+			  }
 
       }
       break;
@@ -689,7 +700,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
     case FFI_TYPE_SINT32: // PS32[0] = Number( -2147483648 to 2147483647 )
       {
-        signed long *pVal = &((signed long*)*pptr)[index];
+        int32 *pVal = &((int32*)*pptr)[index];
         if ( JSVAL_IS_INT( *vp ) )
           *pVal = JSVAL_TO_INT( *vp );
         else
@@ -699,7 +710,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
     case FFI_TYPE_UINT32: // PU32[0] = Number( 0 to 4294967295 )
       {
-        unsigned long *pVal = &((unsigned long*)*pptr)[index];
+        uint32 *pVal = &((uint32*)*pptr)[index];
         if ( JSVAL_IS_INT( *vp ) )
           *pVal = JSVAL_TO_INT( *vp );
         else
@@ -742,7 +753,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
           JS_SetReservedSlot( cx, obj, 0, *vp ); // it is important to keep a reference to the NativeData *vp to avoid it to be finalised before this one
         } else {
 
-          unsigned long *pVal = &((unsigned long*)*pptr)[index];
+          uint32 *pVal = &((uint32*)*pptr)[index];
           if ( JSVAL_IS_INT( *vp ) )
             *pVal = JSVAL_TO_INT( *vp );
           else
@@ -805,11 +816,13 @@ void NativeData_Finalize(JSContext *cx, JSObject *obj) {
 }
 
 
-JSBool NativeData_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool NativeData_Construct(JSContext *cx, uintN argc, jsval *vp) {
 
   // this is the root of the NativeData/NativeType chain; the only one that is Constructed
-  if ( !JS_IsConstructing(cx) ) // JS_IsConstructing(cx): var a = new Toto(123); !JS_IsConstructing(cx): var a = Toto(123);
+  if ( !JS_IsConstructing(cx, vp) ) // JS_IsConstructing(cx): var a = new Toto(123); !JS_IsConstructing(cx): var a = Toto(123);
 	  return JS_FALSE;
+
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 
   JS_SetReservedSlot( cx, obj, 0, OBJECT_TO_JSVAL(obj) ); // the slot[0] points to this root object. We use this because all the memory allocations are stored in this object ( (*JL_GetPrivate)[1] )
 
@@ -821,7 +834,7 @@ JSBool NativeData_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 }
 
 
-JSBool NativeData_getter_Type(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool NativeData_getter_Type(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
   static ffi_type* ffiTypeList[] = {
     &ffi_type_void, // 0
@@ -845,14 +858,14 @@ JSBool NativeData_getter_Type(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 
   JS_SetReservedSlot(cx, accessObj, 1, OBJECT_TO_JSVAL( obj ));
 
-  JL_SetPrivate( cx, accessObj, ffiTypeList[ JSVAL_TO_INT( id ) ] );
+  JL_SetPrivate( cx, accessObj, ffiTypeList[ JSID_TO_INT( id ) ] );
   *vp = OBJECT_TO_JSVAL( accessObj );
   return JS_TRUE;
 }
 
 // usage: var str = arg.String;
 // the string hold by arg MUST be null terminated, else use arg.Data(len)
-JSBool NativeData_getter_String(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool NativeData_getter_String(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
   void** pptr = (void**)JL_GetPrivate( cx, obj );
 
@@ -872,17 +885,19 @@ JSBool NativeData_getter_String(JSContext *cx, JSObject *obj, jsval id, jsval *v
 // usage: arg.String = 'qwerty';
 // the string CAN contain null char inside.
 // One more char is allocated for a null terminator BUT the interpretation of this char is NOT amndatory, this ending null char can keep unused.
-JSBool NativeData_setter_String(JSContext *cx, JSObject *obj, jsval id, jsval *vp) { // note: *vp is converted into a js string
+JSBool NativeData_setter_String(JSContext *cx, JSObject *obj, jsid id, jsval *vp) { // note: *vp is converted into a js string
 
   if ( JS_TypeOfValue( cx, *vp ) != JSTYPE_STRING )
     *vp = STRING_TO_JSVAL( JS_ValueToString( cx, *vp ) ); // convert any vp type to JS string
 
   size_t len = JS_GetStringLength( JSVAL_TO_STRING( *vp ) );
-  char* str = JS_GetStringBytes( JSVAL_TO_STRING( *vp ) ); // this string is terminated with \0 or not? ( only thrust len )
+  const char* str = JL_GetStringBytesZ( cx, JSVAL_TO_STRING( *vp ) ); // this string is terminated with \0 or not? ( only thrust len )
+  if ( str == NULL )
+	  return JS_FALSE;
 
   void** pptr = (void**)JL_GetPrivate( cx, obj );
   char** sptr = (char**)jl_malloc( sizeof(char*) );
-  *sptr = (char*)jl_malloc( len+1 ); // len+1 because we will add a '\0' at the end ( don't thrust JS_GetStringBytes about '\0' )
+  *sptr = (char*)jl_malloc( len+1 ); // len+1 because we will add a '\0' at the end ( don't thrust JL_GetStringBytes about '\0' )
   memcpy( *sptr, str, len );
   *((*sptr)+len) = '\0';
   *pptr = sptr;
@@ -899,19 +914,21 @@ JSBool NativeData_setter_String(JSContext *cx, JSObject *obj, jsval id, jsval *v
 
 // usage: var str = arg.Data(5);
 // allows to create a javascript string with binary data ( not based on ending '\0' character )
-JSBool NativeData_Data(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool NativeData_Data(JSContext *cx, uintN argc, jsval *vp) {
 
   int32 len;
-  if ( JS_TypeOfValue( cx, argv[0] ) != JSTYPE_NUMBER )
-    JS_ValueToInt32( cx, argv[0], &len );
+  if ( JS_TypeOfValue( cx, JS_ARGV(cx, vp)[0] ) != JSTYPE_NUMBER )
+    JS_ValueToInt32( cx, JS_ARGV(cx, vp)[0], &len );
   else
-    len = JSVAL_TO_INT(argv[0]);
+    len = JSVAL_TO_INT(JS_ARGV(cx, vp)[0]);
 
   if ( len < 0 ) {
 
     JS_ReportError( cx, "Invalid amount of data, must be >= 0" );
     return JS_FALSE;
   }
+
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 
   void** pptr = (void**)JL_GetPrivate( cx, obj );
 
@@ -923,7 +940,7 @@ JSBool NativeData_Data(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 
   char* data = *((char**)*pptr);
 
-  *rval = STRING_TO_JSVAL( JS_NewStringCopyN( cx, data, len ) );
+  JS_RVAL(cx, vp) = STRING_TO_JSVAL( JS_NewStringCopyN( cx, data, len ) );
   return JS_TRUE;
 }
 
@@ -946,7 +963,7 @@ JSPropertySpec NativeData_PropertySpec[] = { // *name, tinyid, flags, getter, se
 
 
 JSFunctionSpec NativeData_FunctionSpec[] = { // *name, call, nargs, flags, extra
- { "Data" , NativeData_Data , 1, 0, 0 },
+ { "Data" , NativeData_Data , 1, 0 },
  { 0 }
 };
 
@@ -954,7 +971,7 @@ JSFunctionSpec NativeData_FunctionSpec[] = { // *name, call, nargs, flags, extra
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-JSBool NativeProc_Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool NativeProc_Call(JSContext *cx, uintN argc, jsval *vp) {
 
   // !! avoid the GC to be called until the end of the call !! with 	JS_BeginRequest( cx ); ??
 
@@ -964,7 +981,7 @@ JSBool NativeProc_Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 
   for ( unsigned int argIterator = 0; argIterator < argc; ++argIterator ) {
 
-    jsval currentArg = argv[argIterator];
+    jsval currentArg = JS_ARGV(cx, vp)[argIterator];
     if ( JSVAL_IS_PRIMITIVE(currentArg) || !JS_InstanceOf( cx, JSVAL_TO_OBJECT( currentArg ), &NativeType, NULL ) ) {
 
       JS_ReportError( cx, "argument %d must be a NativeType ( current type: %d )", argIterator+1, JS_TypeOfValue( cx, currentArg ) );
@@ -980,7 +997,7 @@ JL_GetReservedSlot(cx, JSVAL_TO_OBJECT( currentArg ), 1, &val); // ..., JSVAL_TO
     ffiValueList[argIterator] = *((void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT(val) ) );
   }
 
-  JSObject *thisObj = JSVAL_TO_OBJECT(argv[-2]); // get 'this' object of the current object ... TODO: check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
+  JSObject *thisObj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)); // get 'this' object of the current object ... TODO: check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
 
   jsval val;
   JL_GetReservedSlot(cx, thisObj, 1, &val );
@@ -991,7 +1008,10 @@ JL_GetReservedSlot(cx, JSVAL_TO_OBJECT( currentArg ), 1, &val); // ..., JSVAL_TO
 
   // Pointer to a null-terminated string that specifies the function or variable name, or the function's ordinal value.
   // If this parameter is an ordinal value, it must be in the low-order word; the high-order word must be zero.
-  FARPROC procAddress = ::GetProcAddress( module, JSVAL_IS_INT( id ) ? (LPCSTR) LOWORD( JSVAL_TO_INT( id ) ) : JS_GetStringBytes(JSVAL_TO_STRING(id)) );
+  const char *procName = JL_GetStringBytesZ(cx, JSVAL_TO_STRING(id));
+  if ( procName == NULL )
+	  return JS_FALSE;
+  FARPROC procAddress = ::GetProcAddress( module, JSVAL_IS_INT( id ) ? (LPCSTR) LOWORD( JSVAL_TO_INT( id ) ) : procName );
 
   if ( procAddress == NULL ) {
 
@@ -1034,15 +1054,15 @@ JSClass NativeProc = {
 
 // argv[2] : close methode // false/undefined = release at the end, true = random released (GC-based)
 // lazy... arg[3] : load style : immediate / lazy
-JSBool NativeModule_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool NativeModule_Construct(JSContext *cx, uintN argc, jsval *vp) {
 
-//    char* str = JS_GetStringBytes( JS_ValueToString ( cx, OBJECT_TO_JSVAL(obj) ) );
+//    char* str = JL_GetStringBytes( JS_ValueToString ( cx, OBJECT_TO_JSVAL(obj) ) );
 
-	if ( !JSVAL_IS_STRING(argv[0]) )
-		argv[0] = STRING_TO_JSVAL( JS_ValueToString(cx, argv[0]) );
+	if ( !JSVAL_IS_STRING(JS_ARGV(cx, vp)[0]) )
+		JS_ARGV(cx, vp)[0] = STRING_TO_JSVAL( JS_ValueToString(cx, JS_ARGV(cx, vp)[0]) );
 
-  char *libName = JS_GetStringBytes( JSVAL_TO_STRING(argv[0]) ); // JS_GetStringBytes never returns NULL
-  if ( *libName == 0 )
+  const char *libName = JL_GetStringBytesZ( cx, JSVAL_TO_STRING(JS_ARGV(cx, vp)[0]) ); // JL_GetStringBytes never returns NULL
+  if ( libName == NULL || *libName == '\0' )
     return JS_FALSE;
 
   char libFileName[PATH_MAX];
@@ -1061,13 +1081,15 @@ JSBool NativeModule_Construct(JSContext *cx, JSObject *obj, uintN argc, jsval *a
     return JS_FALSE;
   }
 
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
   JL_SetPrivate( cx, obj, (void*)module );
 
-  if ( argc <= 1 || JSVAL_TO_BOOLEAN( argv[1] ) != JS_TRUE ) { // if automatic mode
+  if ( argc <= 1 || JSVAL_TO_BOOLEAN( JS_ARGV(cx, vp)[1] ) != JS_TRUE ) { // if automatic mode
 
-    void *rt = jl_malloc( sizeof(void*) );
-    *(void**)rt = obj;
-    JS_AddRoot( cx, rt );
+    JSObject **rt = (JSObject **)jl_malloc( sizeof(JSObject*) );
+    *rt = obj;
+    //JS_AddRoot( cx, rt );
+	 JS_AddObjectRoot(cx, rt);
     StackPush( &_libObject, rt );
     StackPush( &_loadedLibraries, module );
   }
@@ -1090,9 +1112,10 @@ void NativeModule_Finalize(JSContext *cx, JSObject *obj) {
 }
 
 
-JSBool NativeModule_Close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool NativeModule_Close(JSContext *cx, uintN argc, jsval *vp) {
 
-  void *pv = JL_GetPrivate( cx, obj );
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	void *pv = JL_GetPrivate( cx, obj );
   if ( pv != NULL ) {
 
     if ( StackHas( &_loadedLibraries, pv ) ) {
@@ -1126,27 +1149,28 @@ JSBool NativeModule_Close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 
 
 /*
-JSBool NativeModule_UnloadCallback(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool NativeModule_UnloadCallback(JSContext *cx, uintN argc, jsval *vp) {
 
   return JS_TRUE;
 }
 */
 
 
-JSBool NativeModule_Proc(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool NativeModule_Proc(JSContext *cx, uintN argc, jsval *vp) {
 
-  JSObject * fo = JS_NewObject( cx, &NativeProc, NULL, NULL );
-  JS_SetReservedSlot( cx, fo, 0, argv[0] );
-  JS_SetReservedSlot( cx, fo, 1, OBJECT_TO_JSVAL(obj) ); // OBJECT_TO_JSVAL(obj) == argv[-1] ???
-  *rval = OBJECT_TO_JSVAL( fo );
-  return JS_TRUE;
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	JSObject * fo = JS_NewObject( cx, &NativeProc, NULL, NULL );
+	JS_SetReservedSlot( cx, fo, 0, JS_ARGV(cx, vp)[0] );
+	JS_SetReservedSlot( cx, fo, 1, OBJECT_TO_JSVAL(obj) ); // OBJECT_TO_JSVAL(obj) == JS_ARGV(cx, vp)[-1] ???
+	JS_RVAL(cx, vp) = OBJECT_TO_JSVAL( fo );
+	return JS_TRUE;
 }
 
 
 
 JSFunctionSpec NativeModule_FunctionSpec[] = {
- { "Proc",  NativeModule_Proc, 1, 0, 0 },
- { "Close",  NativeModule_Close, 0, 0, 0 },
+ { "Proc",  NativeModule_Proc, 1, 0 },
+ { "Close",  NativeModule_Close, 0, 0 },
 // { "UnloadCallback",  NativeModule_UnloadCallback, 1, 0, 0 },
  { 0 }
 };
@@ -1161,27 +1185,30 @@ JSClass NativeModule = {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-JSBool NativeTools_JSContextToPtr(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool NativeTools_JSContextToPtr(JSContext *cx, uintN argc, jsval *vp) {
 
-  JS_NewNumberValue( cx, (jsdouble)(unsigned long)cx, rval );
+  //JS_NewNumberValue
+	JL_CValToJsval( cx, (jsdouble)(unsigned long)cx, &JS_RVAL(cx, vp) );
   return JS_TRUE;
 }
 
-JSBool NativeTools_JSObjectToPtr(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool NativeTools_JSObjectToPtr(JSContext *cx, uintN argc, jsval *vp) {
 
-  JSObject *object = JSVAL_TO_OBJECT(argv[0]);
-  JS_NewNumberValue( cx, (jsdouble)(unsigned long)object, rval );
+  JSObject *object = JSVAL_TO_OBJECT(JS_ARGV(cx, vp)[0]);
+  //JS_NewNumberValue
+  JL_CValToJsval( cx, (jsdouble)(unsigned long)object, &JS_RVAL(cx, vp) );
   return JS_TRUE;
 }
 
-JSBool NativeTools_PtrToJsval(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+/*
+JSBool NativeTools_PtrToJsval(JSContext *cx, uintN argc, jsval *vp) {
 
   unsigned long val;
-  JS_ValueToECMAUint32( cx, argv[0], &val );
-  *rval = (jsval)(void*)val;
+  JS_ValueToECMAUint32( cx, JS_ARGV(cx, vp)[0], &val );
+  JS_RVAL(cx, vp) = (jsval)(void*)val;
   return JS_TRUE;
 }
-
+*/
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1196,7 +1223,7 @@ void Init_JSNI( JSContext *cx, JSObject *obj ) {
 
   JS_DefineFunction( cx, obj, "JSContextToPtr", NativeTools_JSContextToPtr, 0, 0 );
   JS_DefineFunction( cx, obj, "JSObjectToPtr", NativeTools_JSObjectToPtr, 1, 0 );
-  JS_DefineFunction( cx, obj, "PtrToJsval", NativeTools_PtrToJsval, 1, 0 );
+//  JS_DefineFunction( cx, obj, "PtrToJsval", NativeTools_PtrToJsval, 1, 0 );
 }
 
 
@@ -1204,9 +1231,9 @@ void Release_JSNI( JSContext *cx ) {
 
   while ( _libObject ) {
 
-    void *rt = StackPop( &_libObject );
+    JSObject **rt = (JSObject **)StackPop( &_libObject );
 
-    JSObject *obj = (JSObject*)*(void**)rt;
+    JSObject *obj = *rt;
 
     jsval onRelease;
     JS_GetProperty( cx, obj, "onRelease", &onRelease );
@@ -1217,7 +1244,8 @@ void Release_JSNI( JSContext *cx ) {
       JS_CallFunctionValue( cx, obj, onRelease, 0, NULL, &tmp );
     }
 
-    JS_RemoveRoot( cx, rt );
+    //JS_RemoveRoot( cx, rt );
+	 JS_RemoveObjectRoot(cx, rt);
     jl_free( rt );
   }
 }

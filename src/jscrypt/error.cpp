@@ -78,7 +78,6 @@ DEFINE_PROPERTY( const ) {
 }
 
 
-
 DEFINE_PROPERTY( text ) {
 
 	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
@@ -93,14 +92,16 @@ DEFINE_PROPERTY( text ) {
 	JL_BAD;
 }
 
+
 DEFINE_FUNCTION( toString ) {
 
-	return _text(cx, obj, 0, rval);
+	JL_DEFINE_FUNCTION_OBJ;
+	return _text(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
+	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
 
@@ -121,7 +122,7 @@ DEFINE_XDR() {
 		*objp = JS_NewObject(xdr->cx, JL_THIS_CLASS, NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
+		JL_CHK( JL_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
 		return JS_TRUE;
 	}
 
@@ -162,10 +163,10 @@ END_CLASS
 JSBool ThrowCryptError( JSContext *cx, int errorCode ) {
 
 //	JS_ReportWarning( cx, "CryptError exception" );
-	JSObject *error = JS_NewObject( cx, JL_CLASS(CryptError), NULL, NULL );
+	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(CryptError), JL_PROTOTYPE(cx, CryptError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-	JL_CHK( JS_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) ) );
-//	JS_SetReservedSlot( cx, error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
-	JL_SAFE( ExceptionSetScriptLocation(cx, error) );
+	JL_CHK( JL_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) ) );
+//	JL_SetReservedSlot( cx, error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
+	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;
 }

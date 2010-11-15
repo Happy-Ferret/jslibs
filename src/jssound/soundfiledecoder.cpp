@@ -60,13 +60,13 @@ static sf_count_t SfGetFilelen(void *user_data) {
 	JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
 	if ( JSVAL_IS_VOID( tmpVal ) )
 		return -1;
-	JsvalToInt(pv->cx, tmpVal, &position); // (TBD) manage error
+	JL_JsvalToCVal(pv->cx, tmpVal, &position); // (TBD) manage error
 
 	int available;
 	JS_GetProperty(pv->cx, pv->streamObject, "available", &tmpVal); // (TBD) manage error
 	if ( JSVAL_IS_VOID( tmpVal ) )
 		return -1;
-	JsvalToInt(pv->cx, tmpVal, &available); // (TBD) manage error
+	JL_JsvalToCVal(pv->cx, tmpVal, &available); // (TBD) manage error
 
 	return position + available;
 }
@@ -83,7 +83,7 @@ static sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 		case SEEK_SET:
 			if ( offset < 0 )
 				return -1;
-			IntToJsval(pv->cx, offset, &tmpVal); // (TBD) manage error
+			JL_CValToJsval(pv->cx, offset, &tmpVal); // (TBD) manage error
 			JS_SetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
 			return 0;
 
@@ -91,10 +91,10 @@ static sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
-			JsvalToInt(pv->cx, tmpVal, &position); // (TBD) manage error
+			JL_JsvalToCVal(pv->cx, tmpVal, &position); // (TBD) manage error
 
 			position += offset;
-			IntToJsval(pv->cx, position, &tmpVal); // (TBD) manage error
+			JL_CValToJsval(pv->cx, position, &tmpVal); // (TBD) manage error
 			JS_SetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
 			return 0;
 
@@ -102,17 +102,17 @@ static sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			JS_GetProperty(pv->cx, pv->streamObject, "available", &tmpVal);
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
-			JsvalToInt(pv->cx, tmpVal, &available);
+			JL_JsvalToCVal(pv->cx, tmpVal, &available);
 
 			JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
-			JsvalToInt(pv->cx, tmpVal, &position);
+			JL_JsvalToCVal(pv->cx, tmpVal, &position);
 
 			if ( offset > 0 || -offset > position + available )
 				return -1;
-			JsvalToInt(pv->cx, tmpVal, &position);
-			IntToJsval(pv->cx, position + available + offset, &tmpVal); // the pointer is set to the size of the file plus offset.
+			JL_JsvalToCVal(pv->cx, tmpVal, &position);
+			JL_CValToJsval(pv->cx, position + available + offset, &tmpVal); // the pointer is set to the size of the file plus offset.
 			JS_SetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
 			return 0;
 	}
@@ -128,7 +128,7 @@ static sf_count_t SfTell(void *user_data) {
 	JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
 	if ( JSVAL_IS_VOID( tmpVal ) )
 		return -1;
-	JsvalToInt(pv->cx, tmpVal, &position);
+	JL_JsvalToCVal(pv->cx, tmpVal, &position);
 
 	return position;
 }
@@ -184,7 +184,8 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
@@ -192,7 +193,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( pv );
 	JL_SetPrivate(cx, obj, pv);
 
-	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_INPUT_STREAM, JL_ARG(1) ) );
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_INPUT_STREAM, JL_ARG(1) ) );
 	pv->streamObject = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	SF_INFO tmp; // = {0};
@@ -256,9 +257,12 @@ $TOC_MEMBER $INAME
   Print( block.rate+' frames/seconds', '\n' );
   Print( 'time: '+(block.frames/block.rate)+' seconds', '\n' );
   }}}
-**/DEFINE_FUNCTION_FAST( Read ) {
+**/
+DEFINE_FUNCTION( Read ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
 	JL_S_ASSERT( pv->sfInfo.channels == 1 || pv->sfInfo.channels == 2, "Unsupported channel count." );
@@ -267,10 +271,10 @@ $TOC_MEMBER $INAME
 	long totalSize = 0;
 
 	pv->cx = cx;
-	if ( JL_FARG_ISDEF(1) ) {
+	if ( JL_ARG_ISDEF(1) ) {
 
 		size_t frames;
-		JL_CHK( JsvalToUInt(cx, JL_FARG(1), &frames) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &frames) );
 
 		if ( frames > 0 ) {
 
@@ -345,21 +349,20 @@ $TOC_MEMBER $INAME
 
 	if ( totalSize == 0 ) {
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
-	jsval blobVal;
-	JL_CHK( JL_NewBlob(cx, buf, totalSize, &blobVal) );
+	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
 	JSObject *blobObj;
-	JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
 	JL_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
-	*JL_FRVAL = OBJECT_TO_JSVAL(blobObj);
+	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
 
-	JL_CHK( SetPropertyInt(cx, blobObj, "bits", pv->bits) ); // bits per sample
-	JL_CHK( SetPropertyInt(cx, blobObj, "rate", pv->sfInfo.samplerate) ); // samples per second
-	JL_CHK( SetPropertyInt(cx, blobObj, "channels", pv->sfInfo.channels) ); // 1:mono, 2:stereo
-	JL_CHK( SetPropertyInt(cx, blobObj, "frames", totalSize / (pv->sfInfo.channels * pv->bits / 8) ) );
+	JL_CHK(JL_SetProperty(cx, blobObj, "bits", pv->bits) ); // bits per sample
+	JL_CHK(JL_SetProperty(cx, blobObj, "rate", pv->sfInfo.samplerate) ); // samples per second
+	JL_CHK(JL_SetProperty(cx, blobObj, "channels", pv->sfInfo.channels) ); // 1:mono, 2:stereo
+	JL_CHK(JL_SetProperty(cx, blobObj, "frames", totalSize / (pv->sfInfo.channels * pv->bits / 8) ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -451,7 +454,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST(Read)
+		FUNCTION(Read)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

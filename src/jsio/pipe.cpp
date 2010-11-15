@@ -36,10 +36,20 @@ DEFINE_FINALIZE() {
 	FinalizeDescriptor(cx, obj); // defined in descriptor.cpp
 }
 
+
+//DEFINE_CONSTRUCTOR() {
+//
+//	JL_DEFINE_CONSTRUCTOR_OBJ;
+//	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+//	return JS_TRUE;
+//}
+
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PROTOTYPE( Descriptor )
+
+	//HAS_CONSTRUCTOR
 
 	HAS_FINALIZE
 

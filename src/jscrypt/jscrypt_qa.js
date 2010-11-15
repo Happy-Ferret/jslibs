@@ -114,8 +114,8 @@ LoadModule('jscrypt');
   fortuna.AutoEntropy(123); // give more entropy
 
   var ecc = new AsymmetricCipher('ecc', 'md5', fortuna );
-  ecc.CreateKeys( 128 );
-  QA.ASSERT( ecc.keySize, 128, 'ecc key size' );
+  ecc.CreateKeys( AsymmetricCipher.ECC_MAX_KEYSIZE );
+  QA.ASSERT( ecc.keySize, AsymmetricCipher.ECC_MAX_KEYSIZE, 'ecc key size' );
 
   var dsa = new AsymmetricCipher('dsa', 'sha1', fortuna);
   dsa.CreateKeys(64);

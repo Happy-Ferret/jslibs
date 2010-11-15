@@ -1,20 +1,86 @@
-LoadModule('jsstd'); Exec('../common/tools.js');
-var QA = FakeQAApi;
-// RunLocalQAFile();
-// RunJsircbot(false);
-RunQATests('-rep 3 -exclude jstask'); throw 0;
+LoadModule('jsstd');
+LoadModule('jssqlite');
 
-	var s = 'Ab \0c';
-	var b = Blob(s);
-	
-	Print( b.lastIndexOf('A', -1) );
-	
+var db = new Database(); // in-memory database
+db.Exec('create table t1 (name,value);');
+db.Exec('insert into t1 (name,value) values ("red","#F00")');
 
-Print('END')
+for (var i = 0; i < 10; i++ ) {
+
+Print(i, '\n');
 
 
+		var res = [ color.name+'='+color.value for each ( color in db.Query('SELECT * from t1') ) ].join(',');
+		
+		
+//		QA.ASSERT_STR( res, 'red=#F00,green=#0F0,blue=#00F', 'result' );
+}
 
 throw 0;
+
+
+
+LoadModule('jsstd'); Exec('../common/tools.js');
+//var QA = FakeQAApi;
+//RunLocalQAFile();
+//RunJsircbot(false); throw 0;
+// RunQATests('-rep 5 -exclude jstask jssqlite');
+
+
+
+
+
+
+
+
+
+
+var s = new Blob('ABC');
+s['test'] = 's';
+s[1] = 's';
+
+
+
+
+LoadModule('jsstd');
+
+var b1 = new Blob('abcdef');
+var b2 = b1.concat('123');
+
+var b1 = new Blob();
+for ( c in b1 )
+	Print(c+' ');
+
+
+var s = new String('ABC');
+
+for ( c in s )
+	Print(c+' ');
+
+
+
+
+var tmp = '';
+var b = new Blob('ABC123');
+for ( c in b )
+	tmp += c;
+
+Print(tmp);
+
+
+b['2'] = 5;
+b.Free();
+b[0]
+
+
+
+Print('END'); throw 0;
+
+
+
+
+
+Print('END'); throw 0;
 
 
 var b = new Blob('test');

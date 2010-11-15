@@ -36,7 +36,8 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
 	ode::dJointGroupID groupId;
@@ -51,7 +52,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	ode::dWorldID worldId;
-	JL_CHK( JsvalToWorldID(cx, JL_ARG(1), &worldId) );
+	JL_CHK( JL_JsvalToWorldID(cx, JL_ARG(1), &worldId) );
 	ode::dJointID jointId = ode::dJointCreateLMotor(worldId, groupId);
 	ode::dJointSetData(jointId, obj);
 	ode::dJointSetFeedback(jointId, NULL);
@@ -68,27 +69,31 @@ DEFINE_CONSTRUCTOR() {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( axisIndex, rel [, $TYPE vec3 axis ] )
+ $VOID $INAME( axisIndex, rel [, $TYPE vec3 axis ] )
   (TBD)
   If the axis vecor is ommited, the axis is disabled.
 **/
-DEFINE_FUNCTION_FAST( SetAxis ) {
+DEFINE_FUNCTION( SetAxis ) {
 	
+	JL_DEFINE_FUNCTION_OBJ;
+
 	JL_S_ASSERT_ARG_MIN( 3 );
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_FOBJ);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	*JL_RVAL = JSVAL_VOID;
+
 	int anum, rel;
-	JL_CHK( JsvalToInt(cx, JL_FARG(1), &anum) );
-	if ( !JL_FARG_ISDEF(3) ) {
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &anum) );
+	if ( !JL_ARG_ISDEF(3) ) {
 		
 		ode::dJointSetLMotorNumAxes(jointId, anum+1);
 		return JS_TRUE;
 	}
-	JL_CHK( JsvalToInt(cx, JL_FARG(2), &rel) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &rel) );
 	
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, JL_FARG(3), vector, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(3), vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 
 	if ( anum+1 > ode::dJointGetLMotorNumAxes(jointId) )
@@ -114,7 +119,7 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(2) // body1, body2
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST_ARGC( SetAxis, 3 )
+		FUNCTION_ARGC( SetAxis, 3 )
 	END_FUNCTION_SPEC
 
 END_CLASS

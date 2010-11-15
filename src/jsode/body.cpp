@@ -55,14 +55,14 @@ JSBool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj) {
 
 	if (unlikely( bodyId == (ode::dBodyID)0 )) { // bodyId may be null if body is world.env
 
-		*obj = JS_NewObject(cx, JL_CLASS(Body), NULL, NULL);
+		*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
 		JL_CHK( *obj );
 	} else {
 
 		JL_S_ASSERT( ode::dBodyGetData(bodyId) == NULL, "Invalid case (object not finalized)." );
 		JL_S_ASSERT( bodyId != NULL, "Invalid ode object." );
 
-		*obj = JS_NewObject(cx, JL_CLASS(Body), NULL, NULL);
+		*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
 		JL_CHK( *obj );
 //		BodyPrivate *bodypv = (BodyPrivate*)jl_malloc(sizeof(BodyPrivate));
 //		JL_S_ASSERT_ALLOC( bodypv );
@@ -105,11 +105,12 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN(1);
 
 	ode::dWorldID worldId;
-	JL_CHK( JsvalToWorldID(cx, JL_ARG(1), &worldId) );
+	JL_CHK( JL_JsvalToWorldID(cx, JL_ARG(1), &worldId) );
 
 //	BodyPrivate *bodypv = (BodyPrivate*)jl_malloc(sizeof(BodyPrivate));
 //	JL_S_ASSERT_ALLOC( bodypv );
@@ -135,13 +136,13 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   TBD dBodyDestroy
 **/
-DEFINE_FUNCTION_FAST( Destroy ) {
+DEFINE_FUNCTION( Destroy ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(obj, JL_CLASS(Body));
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId ); // (TBD) manage world-connected ( when bodyId == 0 )
-//	JS_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, JSVAL_VOID);
+//	JL_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, JSVAL_VOID);
 	JL_SetPrivate(cx, obj, NULL);
 /*
 	ode::dGeomID geomId;
@@ -150,10 +151,10 @@ DEFINE_FUNCTION_FAST( Destroy ) {
 		JSObject *jsGeom = ode::dGeomGetData(geomId);
 	}
 */
-
-
 	ode::dBodyDestroy(bodyId);
 	JL_CHK( SetMatrix44GetInterface(cx, obj, NULL) );
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -163,16 +164,18 @@ $TOC_MEMBER $INAME
  $BOOL $INAME( _body_ )
   TBD dAreConnected
 **/
-DEFINE_FUNCTION_FAST( IsConnectedTo ) {
+DEFINE_FUNCTION( IsConnectedTo ) {
 	
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_CLASS(obj, JL_CLASS(Body));
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( thisBodyID );
 	ode::dBodyID otherBodyId;
-	JL_CHK( JsvalToBody(cx, JL_FARG(1), &otherBodyId) );
+	JL_CHK( JL_JsvalToBody(cx, JL_ARG(1), &otherBodyId) );
 	ode::dAreConnected(thisBodyID, otherBodyId);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -182,22 +185,24 @@ DEFINE_FUNCTION_FAST( IsConnectedTo ) {
 $TOC_MEMBER $INAME
  $OBJ $INAME( index )
 **/
-DEFINE_FUNCTION_FAST( GetGeom ) {
+DEFINE_FUNCTION( GetGeom ) {
 
-	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_FOBJ );
+	JL_DEFINE_FUNCTION_OBJ;
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_OBJ );
 	JL_S_ASSERT_RESOURCE( bodyId );
 
 	JL_S_ASSERT_ARG_MIN(1);
 	int index;
-	JL_CHK( JsvalToInt(cx, JL_FARG(1), &index) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &index) );
 	ode::dGeomID geomId;
 	for ( geomId = ode::dBodyGetFirstGeom(bodyId); geomId && index--; geomId = ode::dBodyGetNextGeom(geomId) );
 	if ( geomId == NULL ) {
 		
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
-	return GeomToJsval(cx, geomId, JL_FRVAL);
+	return GeomToJsval(cx, geomId, JL_RVAL);
 	JL_BAD;
 }
 
@@ -205,29 +210,31 @@ DEFINE_FUNCTION_FAST( GetGeom ) {
 $TOC_MEMBER $INAME
  $OBJ $INAME( index )
 **/
-DEFINE_FUNCTION_FAST( GetJoint ) {
+DEFINE_FUNCTION( GetJoint ) {
 
-	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_FOBJ );
+	JL_DEFINE_FUNCTION_OBJ;
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_OBJ );
 	JL_S_ASSERT_RESOURCE( bodyId );
 
 	JL_S_ASSERT_ARG_MIN(1);
 	int index;
-	JL_CHK( JsvalToInt(cx, JL_FARG(1), &index) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &index) );
 	if ( index < 0 || index >= ode::dBodyGetNumJoints(bodyId) ) {
 		
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 	ode::dJointID jointId;
 	jointId = ode::dBodyGetJoint(bodyId, index);
 	if ( jointId == NULL ) {
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 	JSObject *jsJoint;
 	JL_CHK( JointToJSObject(cx, jointId, &jsJoint) );
-	*JL_FRVAL = OBJECT_TO_JSVAL( jsJoint );
+	*JL_RVAL = OBJECT_TO_JSVAL( jsJoint );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -236,27 +243,29 @@ DEFINE_FUNCTION_FAST( GetJoint ) {
 $TOC_MEMBER $INAME
  $VOID $INAME( $TYPE vec3 force [, $TYPE vec3 pos] )
 **/
-DEFINE_FUNCTION_FAST( AddForce ) {
+DEFINE_FUNCTION( AddForce ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_CLASS(obj, JL_CLASS(Body));
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( thisBodyID );
 	uint32 length;
 	ode::dVector3 forceVec;
-//	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), forceVec, 3, &length) );
-	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), forceVec, 3, &length) );
+//	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), forceVec, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), forceVec, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
-	if ( JL_FARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
 		ode::dVector3 posVec;
-		JL_CHK( JsvalToODERealVector(cx, JL_FARG(2), posVec, 3, &length) );
+		JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(2), posVec, 3, &length) );
 		JL_S_ASSERT( length >= 3, "Invalid array size." );
 		ode::dBodyAddForceAtPos(thisBodyID, forceVec[0], forceVec[1], forceVec[2], posVec[0], posVec[1], posVec[2] );
 		return JS_TRUE;
 	}
 	ode::dBodyAddForce(thisBodyID, forceVec[0], forceVec[1], forceVec[2] );
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -266,18 +275,20 @@ DEFINE_FUNCTION_FAST( AddForce ) {
 $TOC_MEMBER $INAME
  $VOID $INAME( $TYPE vec3 torque )
 **/
-DEFINE_FUNCTION_FAST( AddTorque ) {
+DEFINE_FUNCTION( AddTorque ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_CLASS(obj, JL_CLASS(Body));
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( thisBodyID );
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), vector, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dBodyAddTorque(thisBodyID, vector[0], vector[1], vector[2] );
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -287,11 +298,15 @@ DEFINE_FUNCTION_FAST( AddTorque ) {
 $TOC_MEMBER $INAME
  $VOID $INAME()
 **/
-DEFINE_FUNCTION_FAST( SetDampingDefaults ) {
+DEFINE_FUNCTION( SetDampingDefaults ) {
 
-	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_FOBJ );
+	JL_DEFINE_FUNCTION_OBJ;
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_OBJ );
 	JL_S_ASSERT_RESOURCE( bodyId );
 	ode::dBodySetDampingDefaults(bodyId);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -301,14 +316,16 @@ DEFINE_FUNCTION_FAST( SetDampingDefaults ) {
 $TOC_MEMBER $INAME
  $TYPE real $INAME( point )
 **/
-DEFINE_FUNCTION_FAST( GetRelativeVelocity ) {
+DEFINE_FUNCTION( GetRelativeVelocity ) {
 
-	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_FOBJ );
+	JL_DEFINE_FUNCTION_OBJ;
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_OBJ );
 	JL_S_ASSERT_RESOURCE( bodyId );
 
 	Vector3 pt;
 	uint32 len;
-	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), pt.raw, 3, &len) );
+	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), pt.raw, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 
 	Vector3 vel, pos;
@@ -326,9 +343,9 @@ DEFINE_FUNCTION_FAST( GetRelativeVelocity ) {
 
 		velocity = Vector3Length(&vel);
 	}
-//	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
-//	return ODERealVectorToJsval(cx, pt.raw, 3, JL_FRVAL, true);
-	return FloatToJsval(cx, velocity, JL_FRVAL);
+//	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
+//	return ODERealVectorToJsval(cx, pt.raw, 3, JL_RVAL, true);
+	return JL_CValToJsval(cx, velocity, JL_RVAL);
 	JL_BAD;
 }
 
@@ -338,20 +355,22 @@ DEFINE_FUNCTION_FAST( GetRelativeVelocity ) {
 $TOC_MEMBER $INAME
  $VOID $INAME( point [ , dest ] )
 **/
-DEFINE_FUNCTION_FAST( GetRelPointVel ) {
+DEFINE_FUNCTION( GetRelPointVel ) {
 
-	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_FOBJ );
+	JL_DEFINE_FUNCTION_OBJ;
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_OBJ );
 	JL_S_ASSERT_RESOURCE( bodyId );
 
 	ode::dReal pt[3];
 	uint32 len;
-	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), pt, 3, &len) );
+	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), pt, 3, &len) );
 
 	ode::dVector3 result;
 	ode::dBodyGetRelPointVel(bodyId, pt[0], pt[1], pt[2], result);
 
-	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
-	return ODERealVectorToJsval(cx, result, 3, JL_FRVAL, true);
+	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
+	return ODERealVectorToJsval(cx, result, 3, JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -360,21 +379,23 @@ DEFINE_FUNCTION_FAST( GetRelPointVel ) {
 $TOC_MEMBER $INAME
  $VOID $INAME( vector [ , dest ] )
 **/
-DEFINE_FUNCTION_FAST( Vector3ToWorld ) {
+DEFINE_FUNCTION( Vector3ToWorld ) {
 
-	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_FOBJ );
+	JL_DEFINE_FUNCTION_OBJ;
+
+	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_OBJ );
 	JL_S_ASSERT_RESOURCE( bodyId );
 
 	ode::dReal v[3];
 	uint32 len;
-	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), v, 3, &len) );
+	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), v, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 	ode::dVector3 result;
 	ode::dBodyVectorToWorld(bodyId, v[0], v[1], v[2], result);
 
 //	ode::dBodyGetRelPointPos(bodyId, v.x, v.y, v.z, result);
-	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
-	return ODERealVectorToJsval(cx, result, 3, JL_FRVAL, true);
+	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
+	return ODERealVectorToJsval(cx, result, 3, JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -394,7 +415,7 @@ DEFINE_PROPERTY_SETTER( kinematic ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	bool kinematic;
-	JL_CHK( JsvalToBool(cx, *vp, &kinematic) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &kinematic) );
 	if ( kinematic )
 		ode::dBodySetKinematic(bodyId);
 	else
@@ -407,7 +428,7 @@ DEFINE_PROPERTY_GETTER( kinematic ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
-	JL_CHK( BoolToJsval(cx, ode::dBodyIsKinematic(bodyId) != 0, vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dBodyIsKinematic(bodyId) != 0, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -423,7 +444,7 @@ DEFINE_PROPERTY_SETTER( autoDisable ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	bool autoDisable;
-	JL_CHK( JsvalToBool(cx, *vp, &autoDisable) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &autoDisable) );
 	ode::dBodySetAutoDisableFlag(bodyId, autoDisable ? 1 : 0);
 	return JS_TRUE;
 	JL_BAD;
@@ -433,7 +454,7 @@ DEFINE_PROPERTY_GETTER( autoDisable ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
-	JL_CHK( BoolToJsval(cx, ode::dBodyGetAutoDisableFlag(bodyId) != 0, vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dBodyGetAutoDisableFlag(bodyId) != 0, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -449,7 +470,7 @@ DEFINE_PROPERTY_SETTER( autoDisableLinearThreshold ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	ode::dReal threshold;
-	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
+	JL_CHK( JL_JsvalToODEReal(cx, *vp, &threshold) );
 	ode::dBodySetAutoDisableLinearThreshold(bodyId, threshold);
 	return JS_TRUE;
 	JL_BAD;
@@ -477,7 +498,7 @@ DEFINE_PROPERTY_SETTER( autoDisableAngularThreshold ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	ode::dReal threshold;
-	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
+	JL_CHK( JL_JsvalToODEReal(cx, *vp, &threshold) );
 	ode::dBodySetAutoDisableAngularThreshold(bodyId, threshold);
 	return JS_TRUE;
 	JL_BAD;
@@ -505,7 +526,7 @@ DEFINE_PROPERTY( disabledSetter ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	bool disabled;
-	JL_CHK( JsvalToBool(cx, *vp, &disabled) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &disabled) );
 	if ( disabled )
 		ode::dBodyDisable(bodyId);
 	else
@@ -518,7 +539,7 @@ DEFINE_PROPERTY( disabledGetter ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
-	JL_CHK( BoolToJsval(cx, ode::dBodyIsEnabled(bodyId) == 0, vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dBodyIsEnabled(bodyId) == 0, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -534,7 +555,7 @@ DEFINE_PROPERTY( gravityModeSetter ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	bool gravityMode;
-	JL_CHK( JsvalToBool(cx, *vp, &gravityMode) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &gravityMode) );
 	ode::dBodySetGravityMode(bodyId, gravityMode);
 	return JS_TRUE;
 	JL_BAD;
@@ -544,7 +565,7 @@ DEFINE_PROPERTY( gravityModeGetter ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
-	JL_CHK( BoolToJsval(cx, ode::dBodyGetGravityMode(bodyId) != 0, vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dBodyGetGravityMode(bodyId) != 0, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -561,7 +582,7 @@ DEFINE_PROPERTY( gyroscopicModeSetter ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	bool gravityMode;
-	JL_CHK( JsvalToBool(cx, *vp, &gravityMode) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &gravityMode) );
 	ode::dBodySetGyroscopicMode(bodyId, gravityMode);
 	return JS_TRUE;
 	JL_BAD;
@@ -571,7 +592,7 @@ DEFINE_PROPERTY( gyroscopicModeGetter ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
-	JL_CHK( BoolToJsval(cx, ode::dBodyGetGyroscopicMode(bodyId) != 0, vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dBodyGetGyroscopicMode(bodyId) != 0, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -587,7 +608,7 @@ DEFINE_PROPERTY( finiteRotationModeSetter ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	bool mode;
-	JL_CHK( JsvalToBool(cx, *vp, &mode) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &mode) );
 	ode::dBodySetFiniteRotationMode(bodyId, mode);
 	return JS_TRUE;
 	JL_BAD;
@@ -597,7 +618,7 @@ DEFINE_PROPERTY( finiteRotationModeGetter ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
-	JL_CHK( BoolToJsval(cx, ode::dBodyGetFiniteRotationMode(bodyId) != 0, vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dBodyGetFiniteRotationMode(bodyId) != 0, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -621,7 +642,7 @@ DEFINE_PROPERTY( finiteRotationAxisSetter ) {
 		vec[2] = 0;
 	} else {
 		
-		JL_CHK( JsvalToODERealVector(cx, *vp, vec, 3, &len) );
+		JL_CHK( JL_JsvalToODERealVector(cx, *vp, vec, 3, &len) );
 	}
 	JL_S_ASSERT( len >= 3, "Invalid array size." );
 	ode::dBodySetFiniteRotationAxis(bodyId, vec[0], vec[1], vec[2]);
@@ -649,7 +670,7 @@ DEFINE_PROPERTY( maxAngularSpeedGetter ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
-	JL_CHK( FloatToJsval(cx, ode::dBodyGetMaxAngularSpeed(bodyId), vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dBodyGetMaxAngularSpeed(bodyId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -659,7 +680,7 @@ DEFINE_PROPERTY( maxAngularSpeedSetter ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	ode::dReal maxAngularSpeed;
-	JL_CHK( JsvalToFloat(cx, *vp, &maxAngularSpeed) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &maxAngularSpeed) );
 	ode::dBodySetMaxAngularSpeed(bodyId, maxAngularSpeed);
 	return JS_TRUE;
 	JL_BAD;
@@ -674,7 +695,7 @@ DEFINE_PROPERTY( linearDampingGetter ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
-	JL_CHK( FloatToJsval(cx, ode::dBodyGetLinearDamping(bodyId), vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dBodyGetLinearDamping(bodyId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -684,7 +705,7 @@ DEFINE_PROPERTY( linearDampingSetter ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	ode::dReal scale;
-	JL_CHK( JsvalToFloat(cx, *vp, &scale) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &scale) );
 	ode::dBodySetLinearDamping(bodyId, scale);
 	return JS_TRUE;
 	JL_BAD;
@@ -700,7 +721,7 @@ DEFINE_PROPERTY( linearDampingThresholdGetter ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
-	JL_CHK( FloatToJsval(cx, ode::dBodyGetLinearDampingThreshold(bodyId), vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dBodyGetLinearDampingThreshold(bodyId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -710,7 +731,7 @@ DEFINE_PROPERTY( linearDampingThresholdSetter ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	ode::dReal threshold;
-	JL_CHK( JsvalToFloat(cx, *vp, &threshold) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &threshold) );
 	ode::dBodySetLinearDampingThreshold(bodyId, threshold);
 	return JS_TRUE;
 	JL_BAD;
@@ -727,7 +748,7 @@ DEFINE_PROPERTY( angularDampingGetter ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
-	JL_CHK( FloatToJsval(cx, ode::dBodyGetAngularDamping(bodyId), vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dBodyGetAngularDamping(bodyId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -737,7 +758,7 @@ DEFINE_PROPERTY( angularDampingSetter ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	ode::dReal scale;
-	JL_CHK( JsvalToFloat(cx, *vp, &scale) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &scale) );
 	ode::dBodySetAngularDamping(bodyId, scale);
 	return JS_TRUE;
 	JL_BAD;
@@ -753,7 +774,7 @@ DEFINE_PROPERTY( angularDampingThresholdGetter ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
-	JL_CHK( FloatToJsval(cx, ode::dBodyGetAngularDampingThreshold(bodyId), vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dBodyGetAngularDampingThreshold(bodyId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -763,7 +784,7 @@ DEFINE_PROPERTY( angularDampingThresholdSetter ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
 	ode::dReal threshold;
-	JL_CHK( JsvalToFloat(cx, *vp, &threshold) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &threshold) );
 	ode::dBodySetAngularDampingThreshold(bodyId, threshold);
 	return JS_TRUE;
 	JL_BAD;
@@ -909,7 +930,7 @@ DEFINE_PROPERTY( vectorGetter ) {
 
 	const ode::dReal *vector;
 	int dim;
-	switch ( JSVAL_TO_INT(id) ) {
+	switch ( JSID_TO_INT(id) ) {
 		case position:
 			vector = ode::dBodyGetPosition(bodyID);
 			dim = 3;
@@ -949,34 +970,34 @@ DEFINE_PROPERTY( vectorSetter ) {
 	ode::dVector3 vector;
 	ode::dVector4 quatern;
 	uint32 length;
-	switch ( JSVAL_TO_INT(id) ) {
+	switch ( JSID_TO_INT(id) ) {
 		case position:
-			JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+			JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetPosition( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case quaternion:
-			JL_CHK( JsvalToODERealVector(cx, *vp, quatern, 4, &length) );
+			JL_CHK( JL_JsvalToODERealVector(cx, *vp, quatern, 4, &length) );
 			JL_S_ASSERT( length >= 4, "Invalid array size." );
 			ode::dBodySetQuaternion( bodyID, quatern );
 			break;
 		case linearVel:
-			JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+			JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetLinearVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case angularVel:
-			JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+			JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetAngularVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case force:
-			JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+			JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetForce( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case torque:
-			JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+			JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 			JL_S_ASSERT( length >= 3, "Invalid array size." );
 			ode::dBodySetTorque( bodyID, vector[0], vector[1], vector[2] );
 			break;
@@ -992,10 +1013,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( mass ) {
 
-	JSObject *massObject = JS_NewObject(cx, JL_CLASS(Mass), NULL, NULL);
+	JSObject *massObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(Mass), JL_PROTOTYPE(cx, Mass), NULL);
 	JL_S_ASSERT(massObject != NULL, "Unable to create the Mass object.");
 	*vp = OBJECT_TO_JSVAL(massObject);
-	JL_CHK( JS_SetReservedSlot(cx, massObject, MASS_SLOT_BODY, OBJECT_TO_JSVAL(obj)) );
+	JL_CHK( JL_SetReservedSlot(cx, massObject, MASS_SLOT_BODY, OBJECT_TO_JSVAL(obj)) );
 	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
@@ -1010,13 +1031,13 @@ DEFINE_PROPERTY( mass ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME()
 **/
-DEFINE_FUNCTION_FAST( AreConnected ) {
+DEFINE_FUNCTION( AreConnected ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
 	ode::dBodyID body1, body2;
-	JL_CHK( JsvalToBody(cx, JL_FARG(1), &body1) );
-	JL_CHK( JsvalToBody(cx, JL_FARG(1), &body2) );
-	return BoolToJsval(cx, ode::dAreConnected(body1, body2) != 0, JL_FRVAL);
+	JL_CHK( JL_JsvalToBody(cx, JL_ARG(1), &body1) );
+	JL_CHK( JL_JsvalToBody(cx, JL_ARG(1), &body2) );
+	return JL_CValToJsval(cx, ode::dAreConnected(body1, body2) != 0, JL_RVAL);
 	JL_BAD;
 }
 
@@ -1084,16 +1105,16 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( Destroy )
-		FUNCTION_FAST_ARGC( IsConnectedTo, 1 )
-		FUNCTION_FAST_ARGC( GetGeom, 1 )
-		FUNCTION_FAST_ARGC( GetJoint, 1 )
-		FUNCTION_FAST_ARGC( AddForce, 1 )
-		FUNCTION_FAST_ARGC( AddTorque, 1 )
-		FUNCTION_FAST_ARGC( SetDampingDefaults, 0 )
-		FUNCTION_FAST_ARGC( GetRelativeVelocity, 1 )
-		FUNCTION_FAST_ARGC( GetRelPointVel, 2 )
-		FUNCTION_FAST_ARGC( Vector3ToWorld, 2 )
+		FUNCTION( Destroy )
+		FUNCTION_ARGC( IsConnectedTo, 1 )
+		FUNCTION_ARGC( GetGeom, 1 )
+		FUNCTION_ARGC( GetJoint, 1 )
+		FUNCTION_ARGC( AddForce, 1 )
+		FUNCTION_ARGC( AddTorque, 1 )
+		FUNCTION_ARGC( SetDampingDefaults, 0 )
+		FUNCTION_ARGC( GetRelativeVelocity, 1 )
+		FUNCTION_ARGC( GetRelPointVel, 2 )
+		FUNCTION_ARGC( Vector3ToWorld, 2 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -1136,7 +1157,7 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST_ARGC( AreConnected, 2 )
+		FUNCTION_ARGC( AreConnected, 2 )
 	END_STATIC_FUNCTION_SPEC
 
 END_CLASS

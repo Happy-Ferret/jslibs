@@ -131,18 +131,42 @@ LoadModule('jsstd');
 
 /// ObjectToId and IdToObject [rt]
 
-		var obj = { xxx:123 };
-		var id = ObjectToId(obj);
 
-		QA.ASSERT_TYPE( id, 'number', 'id type is good' );
-		QA.ASSERT( id >= 1, true, 'id is valid' );
-		QA.ASSERT( IdToObject(id), obj, 'obj->id->obj' );
+
+		var ids = function() {
+
+			var arr = [];
+			for ( var i=0; i < 256; i++ ) {
+				
+				var obj = { xxx:i };
+				var id = ObjectToId(obj)
+				QA.ASSERT( IdToObject(id), obj, 'obj->id->obj' );
+				arr.push(id);
+			}
+			return arr;
+		}();
 		
-		QA.ASSERT( IdToObject(id).xxx, 123, 'IdToObject validity before GC' );
-		obj = null;
+		var count = 0;
+		for each ( id in (ids) ) {
+
+			QA.ASSERT_TYPE( id, 'number', 'id type is good' );
+			QA.ASSERT( id >= 1, true, 'id is valid' );
+		
+			count += ((IdToObject(id) == undefined) ? 0 : 1);
+		}
+		QA.ASSERT( count, ids.length, 'IdToObject validity before GC' );
+		
 		QA.GC();
-		QA.ASSERT( IdToObject(id), undefined, 'IdToObject after GC' );
+
+		var count = 0;
+		for each ( id in (ids) ) {
+
+			QA.ASSERT_TYPE( id, 'number', 'id type is good' );
+			QA.ASSERT( id >= 1, true, 'id is valid' );
 		
+			count += ((IdToObject(id) == undefined) ? 0 : 1);
+		}
+		QA.ASSERT( count < ids.length, true, 'IdToObject after GC' );
 		
 		for ( var i = 0; i<500; i++ )
 			ObjectToId({});
@@ -643,8 +667,10 @@ LoadModule('jsstd');
 	
 		var o = { a:1, b:2, c:3, d:4 };
 
-		SetPropertyEnumerate(o, 'b', false);
-		SetPropertyEnumerate(o, 'c', false);
+		//SetPropertyEnumerate(o, 'b', false);
+		Object.defineProperty(o, 'b', {enumerable : false});  
+		//SetPropertyEnumerate(o, 'c', false);
+		Object.defineProperty(o, 'c', {enumerable : false});  
 		
 		QA.ASSERT( o.b, 2, 'do not delete' );
 		QA.ASSERT( [p for each (p in o)].join(','), '1,4', 'visible properties' );
@@ -787,7 +813,10 @@ LoadModule('jsstd');
 /// Seal function [ftrm]
 		
 		var o = { a:1 };
-		SealObject(o);
+		//SealObject(o);
+		DeepFreezeObject(o);
+		
+		
 		
 		try {
 			

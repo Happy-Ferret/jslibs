@@ -36,25 +36,34 @@ BEGIN_STATIC
 
 /**doc
 $TOC_MEMBER $INAME
- $ARRAY $INAME( vector | x [,y,z] )
+ $ARRAY $INAME( value )
+ $ARRAY $INAME( [x, y, z] )
+ $ARRAY $INAME( x, y, z )
 **/
-DEFINE_FUNCTION_FAST( NewVector3 ) {
+DEFINE_FUNCTION( Vec3 ) {
 	
 	Vector3 v;
-	if ( argc == 1 )	{
+	if ( argc == 1 ) {
 
-		uint32 len;
-		JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v.raw, 3, &len) );
-		JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
-	}
+		if ( JL_JsvalIsArray(cx, JL_ARG(1)) ) {
+
+			uint32 len;
+			JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
+			JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+		} else {
+
+			JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &v.x) );
+			v.z = v.y = v.x;
+		}
+	} else
 	if ( argc == 3 ) {
 
-		JL_CHK( JsvalToFloat(cx, JL_FARG(1), &v.x) );
-		JL_CHK( JsvalToFloat(cx, JL_FARG(2), &v.y) );
-		JL_CHK( JsvalToFloat(cx, JL_FARG(3), &v.z) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &v.x) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &v.y) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &v.z) );
 	}
-	return FloatVectorToJsval(cx, v.raw, 3, JL_FRVAL);
-	JL_REPORT_ERROR( "Invalid vector." );
+	return JL_CValVectorToJsval(cx, v.raw, 3, JL_RVAL);
+	JL_REPORT_ERROR( "Invalid vector3." );
 	JL_BAD;
 }
 
@@ -68,32 +77,32 @@ $TOC_MEMBER $INAME
   $INAME(1,2,3) == $INAME([1,2,3]);
   }}}
 **/
-DEFINE_FUNCTION_FAST( Vector3Length ) {
+DEFINE_FUNCTION( Vec3Length ) {
 	
 	Vector3 v;
 	if ( argc == 1 )	{
 
 		uint32 len;
-		JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v.raw, 3, &len) );
+		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
 		JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 	} else
 	if ( argc == 2 ) {
 
 		Vector3 v2;
 		uint32 len;
-		JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v.raw, 3, &len) );
+		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
 		JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
-		JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), v2.raw, 3, &len) );
+		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), v2.raw, 3, &len) );
 		JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 		Vector3SubVector3(&v, &v, &v2);
 	} else
 	if ( argc == 3 ) {
 
-		JL_CHK( JsvalToFloat(cx, JL_FARG(1), &v.x) );
-		JL_CHK( JsvalToFloat(cx, JL_FARG(2), &v.y) );
-		JL_CHK( JsvalToFloat(cx, JL_FARG(3), &v.z) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &v.x) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &v.y) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &v.z) );
 	}
-	return FloatToJsval(cx, Vector3Length(&v), JL_FRVAL);
+	return JL_CValToJsval(cx, Vector3Length(&v), JL_RVAL);
 	JL_REPORT_ERROR( "Unsupported vector type." );
 	JL_BAD;
 }
@@ -114,17 +123,17 @@ $TOC_MEMBER $INAME
   Print( Array.slice( Vector3Normalize( v ) ) ); // prints: 0.491455078125,0.5733642578125,0.6552734375
   }}}
 **/
-DEFINE_FUNCTION_FAST( Vector3Normalize ) {
+DEFINE_FUNCTION( Vec3Normalize ) {
 	
 	Vector3 v;
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v.raw, 3, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 
 	Vector3Normalize(&v, &v);
 
-	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
-	return FloatVectorToJsval(cx, v.raw, 3, JL_FRVAL, true);
+	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
+	return JL_CValVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -134,19 +143,19 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( vector, vector2 [ , dest ] )
   vector += vector2
 **/
-DEFINE_FUNCTION_FAST( Vector3Add ) {
+DEFINE_FUNCTION( Vec3Add ) {
 	
 	Vector3 v, v2;
-	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v.raw, 3, &len) );
+	uint32 len, len2;
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), v2.raw, 3, &len) );
-	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len2 );
 
 	Vector3AddVector3(&v, &v, &v2);
 
-	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(3) ? 3 : 1);
-	return FloatVectorToJsval(cx, v.raw, 3, JL_FRVAL, true);
+	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(3) ? 3 : 1);
+	return JL_CValVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -156,19 +165,19 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( vector, vector2 [ , dest ] )
   vector -= vector2
 **/
-DEFINE_FUNCTION_FAST( Vector3Sub ) {
+DEFINE_FUNCTION( Vec3Sub ) {
 	
 	Vector3 v, v2;
-	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v.raw, 3, &len) );
+	uint32 len, len2;
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), v2.raw, 3, &len) );
-	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len2 );
 
 	Vector3SubVector3(&v, &v, &v2);
 
-	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(3) ? 3 : 1);
-	return FloatVectorToJsval(cx, v.raw, 3, JL_FRVAL, true);
+	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(3) ? 3 : 1);
+	return JL_CValVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -178,19 +187,19 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( vector, vector2 [ , dest ] )
   vector *= vector2
 **/
-DEFINE_FUNCTION_FAST( Vector3Cross ) {
+DEFINE_FUNCTION( Vec3Cross ) {
 	
 	Vector3 v, v2;
-	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v.raw, 3, &len) );
+	uint32 len, len2;
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), v2.raw, 3, &len) );
-	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len2 );
 
 	Vector3Cross(&v, &v, &v2);
 
-	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(3) ? 3 : 1);
-	return FloatVectorToJsval(cx, v.raw, 3, JL_FRVAL, true);
+	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(3) ? 3 : 1);
+	return JL_CValVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -200,19 +209,20 @@ $TOC_MEMBER $INAME
  $REAL $INAME( vector, vector2 [ , dest ] )
   vector . vector2
 **/
-DEFINE_FUNCTION_FAST( Vector3Dot ) {
+DEFINE_FUNCTION( Vec3Dot ) {
 	
 	Vector3 v, v2;
-	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v.raw, 3, &len) );
+	uint32 len, len2;
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), v2.raw, 3, &len) );
-	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len2 );
 
-	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(3) ? 3 : 1);
-	return FloatToJsval(cx, Vector3Dot(&v, &v2), JL_FRVAL);
+	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(3) ? 3 : 1);
+	return JL_CValToJsval(cx, Vector3Dot(&v, &v2), JL_RVAL);
 	JL_BAD;
 }
+
 
 
 /**doc
@@ -220,12 +230,12 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( transformation [ , array ] ] )
   Returns the [x,y,z,radius] sphere that surrounds the frustrum and crosses the eye and far corners.
 **/
-DEFINE_FUNCTION_FAST( FrustumSphere ) {
+DEFINE_FUNCTION( FrustumSphere ) {
 	
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
 	Matrix44 tmpMat, *m = &tmpMat;
-	JL_CHK( GetMatrixHelper(cx, JL_FARG(1), (float**)&m) );
+	JL_CHK( GetMatrixHelper(cx, JL_ARG(1), (float**)&m) );
 
 	// see. http://www.flipcode.com/archives/Frustum_Culling.shtml
 
@@ -249,7 +259,7 @@ DEFINE_FUNCTION_FAST( FrustumSphere ) {
 
 	Vector3SubVector3(&p1, &p1, &p0);
 	Vector3SubVector3(&p2, &p2, &p0);
-	Vector3Mult(&p1, &p1, 0.5 * Vector3Dot(&p2, &p2) / Vector3Dot(&p1, &p1)); // now p1 is the center of the frustum sphere.
+	Vector3Mult(&p1, &p1, 0.5f * Vector3Dot(&p2, &p2) / Vector3Dot(&p1, &p1)); // now p1 is the center of the frustum sphere.
 	float radius = Vector3Length(&p1);
 	Vector3AddVector3(&p1, &p1, &p0);
 
@@ -258,18 +268,18 @@ DEFINE_FUNCTION_FAST( FrustumSphere ) {
 //	float d1 = Vector3Length(&tmp2);
 //	float d2 = Vector3Length(&center);
 
-	if ( JL_FARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_CHK( FloatVectorToJsval(cx, p1.raw, 3, &JL_FARG(2), true) );
-		*JL_FRVAL = JL_FARG(2);
+		JL_CHK( JL_CValVectorToJsval(cx, p1.raw, 3, &JL_ARG(2), true) );
+		*JL_RVAL = JL_ARG(2);
 	} else {
 
-		JL_CHK( FloatVectorToJsval(cx, p1.raw, 3, JL_FRVAL) );
+		JL_CHK( JL_CValVectorToJsval(cx, p1.raw, 3, JL_RVAL) );
 	}
 
 	jsval tmpVal;
-	JL_CHK( FloatToJsval(cx, radius, &tmpVal) );
-	JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT(*JL_FRVAL), 3, &tmpVal) );
+	JL_CHK(JL_CValToJsval(cx, radius, &tmpVal) );
+	JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT(*JL_RVAL), 3, &tmpVal) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -281,15 +291,15 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( $ARR box )
   _box_ is a JavaScript Array: [minx, miny, minz,  maxx, maxy, maxz]
 **/
-DEFINE_FUNCTION_FAST( BoxToCircumscribedSphere ) {
+DEFINE_FUNCTION( BoxToCircumscribedSphere ) {
 	
 	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT_ARRAY(JL_FARG(1));
+	JL_S_ASSERT_ARRAY(JL_ARG(1));
 
 	float aabb[6];
 
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), aabb, 6, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), aabb, 6, &len) );
 	JL_S_ASSERT( len == 6, "Invalid vector length (%d).", len );
 
 	Vector3 v1, v2, center;
@@ -301,11 +311,11 @@ DEFINE_FUNCTION_FAST( BoxToCircumscribedSphere ) {
 	float radius = Vector3Length(&center);
 	Vector3AddVector3(&center, &center, &v2);
 	
-	*JL_FRVAL = JL_FARG(1);
-	JL_CHK( FloatVectorToJsval(cx, center.raw, 3, JL_FRVAL, true) );
+	*JL_RVAL = JL_ARG(1);
+	JL_CHK( JL_CValVectorToJsval(cx, center.raw, 3, JL_RVAL, true) );
 	jsval tmpVal;
-	JL_CHK( FloatToJsval(cx, radius, &tmpVal) );
-	JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT(*JL_FRVAL), 3, &tmpVal) );
+	JL_CHK(JL_CValToJsval(cx, radius, &tmpVal) );
+	JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT(*JL_RVAL), 3, &tmpVal) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -317,14 +327,14 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME( $TYPE vec4 src [, $TYPE vec3 dest] )
   if _dest is $UNDEF, _src_ is used to store the result.
 **/
-DEFINE_FUNCTION_FAST( QuaternionToEuler ) {
+DEFINE_FUNCTION( QuaternionToEuler ) {
 
 	// see http://www.google.com/codesearch/p?hl=en#kpcXlMp9-Eg/cs7491/projects/proj002/cs7491.zip|pBok6PPJvB8/cs7491/MatrixLib/Quaternion.cpp&q=EulerToQuaternion%20lang:c++&l=185&t=1
 	// eg. http://www.euclideanspace.com/maths/geometry/rotations/conversions/eulerToQuaternion/steps/index.htm
 	Vector4 quat;
 	Vector3 euler;
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), quat.raw, 4, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), quat.raw, 4, &len) );
 	JL_S_ASSERT( len == 4, "Invalid quaternion." );
 
 /*
@@ -369,8 +379,8 @@ DEFINE_FUNCTION_FAST( QuaternionToEuler ) {
 	euler.x = atan2f(-(2*(q2q3-q0q1)),(q0q0-q1q1-q2q2+q3q3));
 	euler.z = atan2f(-(2*(q1q2-q0q3)),(q0q0+q1q1-q2q2-q3q3));
 
-	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( FloatVectorToJsval(cx, euler.raw, 3, JL_FRVAL, true) );
+	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
+	JL_CHK( JL_CValVectorToJsval(cx, euler.raw, 3, JL_RVAL, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -382,12 +392,12 @@ $TOC_MEMBER $INAME
   To store the result in a new array, use: `$INAME( str, [] );`
 
 **/
-DEFINE_FUNCTION_FAST( EulerToQuaternion ) {
+DEFINE_FUNCTION( EulerToQuaternion ) {
 
 	Vector3 euler;
 	Vector4 quat;
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), euler.raw, 3, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), euler.raw, 3, &len) );
 	JL_S_ASSERT( len == 3, "Invalid euler rotation." );
 	
 	float cosx,cosy,cosz,sinx,siny,sinz,cc,cs,sc,ss;
@@ -423,8 +433,8 @@ DEFINE_FUNCTION_FAST( EulerToQuaternion ) {
 	quat.w /= distance;
 */
 
-	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( FloatVectorToJsval(cx, quat.raw, 4, JL_FRVAL, true) );
+	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
+	JL_CHK( JL_CValVectorToJsval(cx, quat.raw, 4, JL_RVAL, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -436,11 +446,11 @@ $TOC_MEMBER $INAME
   _dest_ has the following form: [ x, y, z, angle ]
   If _dest is omited, the result is stored in _src_.$LF
 **/
-DEFINE_FUNCTION_FAST( QuaternionToAxisAngle ) {
+DEFINE_FUNCTION( QuaternionToAxisAngle ) {
 
 	Vector4 quat;
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), quat.raw, 4, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), quat.raw, 4, &len) );
 	JL_S_ASSERT( len == 4, "Invalid quaternion." );
 
 	float halfAngle, sn;
@@ -456,8 +466,8 @@ DEFINE_FUNCTION_FAST( QuaternionToAxisAngle ) {
 		Vector4Set(&quat, 0,0,0,0);
 	}
 
-	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( FloatVectorToJsval(cx, quat.raw, 4, JL_FRVAL, true) );
+	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
+	JL_CHK( JL_CValVectorToJsval(cx, quat.raw, 4, JL_RVAL, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -468,11 +478,11 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME( $TYPE vec4 src [, $TYPE vec4 dest] )
   _src_ has the following form: [ x, y, z, angle ]
 **/
-DEFINE_FUNCTION_FAST( AxisAngleToQuaternion ) {
+DEFINE_FUNCTION( AxisAngleToQuaternion ) {
 
 	Vector4 axisAngle;
 	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), axisAngle.raw, 4, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), axisAngle.raw, 4, &len) );
 	JL_S_ASSERT( len == 4, "Invalid quaternion." );
 
 	float halfAngle, cs, sn;
@@ -483,8 +493,8 @@ DEFINE_FUNCTION_FAST( AxisAngleToQuaternion ) {
 	Vector4Mult(&axisAngle, &axisAngle, sn);
 	axisAngle.w = cs;
 
-	*JL_FRVAL = JL_FARG(JL_FARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( FloatVectorToJsval(cx, axisAngle.raw, 4, JL_FRVAL, true) );
+	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
+	JL_CHK( JL_CValVectorToJsval(cx, axisAngle.raw, 4, JL_RVAL, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -493,19 +503,19 @@ DEFINE_FUNCTION_FAST( AxisAngleToQuaternion ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $TYPE vec3 $INAME( $TYPE matrix44 matrix )
+ $TYPE vec16 $INAME( $TYPE matrix44 matrix )
 **/
-DEFINE_FUNCTION_FAST( GetMatrix ) {
+DEFINE_FUNCTION( GetMatrix ) {
 
 	JL_S_ASSERT_ARG(1);
 	float tmp[16], *m = tmp;
 
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-	JSObject *matrixObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JSObject *matrixObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
 	JL_S_ASSERT( fct, "Invalid Matrix44 interface." );
 	JL_CHK( fct(cx, matrixObj, &m) );
-	JL_CHK( FloatVectorToJsval(cx, m, 16, JL_FRVAL, false) );
+	JL_CHK( JL_CValVectorToJsval(cx, m, 16, JL_RVAL, false) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -517,17 +527,17 @@ $TOC_MEMBER $INAME
  $TYPE vec4 $INAME( $TYPE vec3 p1, $TYPE vec3 p2, $TYPE vec3 p3 )
   Find the plane equation given 3 points.
 **/
-DEFINE_FUNCTION_FAST( PlaneFromPoints ) {
+DEFINE_FUNCTION( PlaneFromPoints ) {
 
 	float plane[4], v0[3], v1[3], v2[3];
 
-	uint32 len;
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(1), v0, 3, &len) );
-	JL_S_ASSERT( len == 3, "Invalid point." );
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(2), v1, 3, &len) );
-	JL_S_ASSERT( len == 3, "Invalid point." );
-	JL_CHK( JsvalToFloatVector(cx, JL_FARG(3), v2, 3, &len) );
-	JL_S_ASSERT( len == 3, "Invalid point." );
+	jsuint len1, len2, len3;
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v0, 3, &len1) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), v1, 3, &len2) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(3), v2, 3, &len3) );
+	JL_S_ASSERT( len1 == 3, "Invalid point (arg1)." );
+	JL_S_ASSERT( len2 == 3, "Invalid point (arg2)." );
+	JL_S_ASSERT( len3 == 3, "Invalid point (arg3)." );
 
 
 	float vec0[3], vec1[3];
@@ -548,7 +558,7 @@ DEFINE_FUNCTION_FAST( PlaneFromPoints ) {
 
 	plane[3] = -(plane[0] * v0[0] + plane[1] * v0[1] + plane[2] * v0[2]);
 
-	return FloatVectorToJsval(cx, plane, 4, JL_FRVAL, false);
+	return JL_CValVectorToJsval(cx, plane, 4, JL_RVAL, false);
 	JL_BAD;
 }
 
@@ -561,20 +571,20 @@ $TOC_MEMBER $INAME
  $H see
   http://www.opengl.org/resources/code/samples/advanced/advanced97/notes/node100.html
 **/
-DEFINE_FUNCTION_FAST( ShadowMatrix ) {
+DEFINE_FUNCTION( ShadowMatrix ) {
 
 	JL_S_ASSERT_ARG_RANGE(2,3);
 
 	double shadowMat[4][4], plane[4], lightpos[4];
 
-	uint32 len;
-	JL_CHK( JsvalToDoubleVector(cx, JL_FARG(1), plane, 4, &len) );
+	uint32 len, len1;
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), plane, 4, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), lightpos, 4, &len1) );
 	JL_S_ASSERT( len == 4, "Invalid plane." );
-	JL_CHK( JsvalToDoubleVector(cx, JL_FARG(2), lightpos, 4, &len) );
-	JL_S_ASSERT( len == 4, "Invalid light position." );
+	JL_S_ASSERT( len1 == 4, "Invalid light position." );
 
 	/* Find dot product between light position vector and ground plane normal. */
-	float dot;
+	double dot;
 	dot = plane[0] * lightpos[0] + plane[1] * lightpos[1] + plane[2] * lightpos[2] + plane[3] * lightpos[3];
 
 	shadowMat[0][0] = dot - lightpos[0] * plane[0];
@@ -599,12 +609,12 @@ DEFINE_FUNCTION_FAST( ShadowMatrix ) {
 
 	if ( JL_ARGC == 3 ) {
 
-		JL_S_ASSERT_ARRAY(JL_FARG(3));
-		*JL_FRVAL = JL_FARG(3);
-		return DoubleVectorToJsval(cx, (double*)shadowMat, 16, JL_FRVAL, true);
+		JL_S_ASSERT_ARRAY(JL_ARG(3));
+		*JL_RVAL = JL_ARG(3);
+		return JL_CValVectorToJsval(cx, (double*)shadowMat, 16, JL_RVAL, true);
 	} else {
 
-		return DoubleVectorToJsval(cx, (double*)shadowMat, 16, JL_FRVAL, false);
+		return JL_CValVectorToJsval(cx, (double*)shadowMat, 16, JL_RVAL, false);
 	}
 	JL_BAD;
 }
@@ -615,25 +625,25 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST_ARGC( NewVector3, 3 )
-		FUNCTION_FAST_ARGC( Vector3Length, 3 )
-		FUNCTION_FAST_ARGC( Vector3Normalize, 1 )
-		FUNCTION_FAST_ARGC( Vector3Add, 2 )
-		FUNCTION_FAST_ARGC( Vector3Sub, 2 )
-		FUNCTION_FAST_ARGC( Vector3Cross, 2 )
-		FUNCTION_FAST_ARGC( Vector3Dot, 2 )
+		FUNCTION_ARGC( Vec3, 3 )
+		FUNCTION_ARGC( Vec3Length, 3 )
+		FUNCTION_ARGC( Vec3Normalize, 1 )
+		FUNCTION_ARGC( Vec3Add, 2 )
+		FUNCTION_ARGC( Vec3Sub, 2 )
+		FUNCTION_ARGC( Vec3Cross, 2 )
+		FUNCTION_ARGC( Vec3Dot, 2 )
 
-		FUNCTION_FAST_ARGC( FrustumSphere, 2 )
-		FUNCTION_FAST_ARGC( BoxToCircumscribedSphere, 1 )
-		FUNCTION_FAST_ARGC( QuaternionToEuler, 1 )
-		FUNCTION_FAST_ARGC( EulerToQuaternion, 1 )
-		FUNCTION_FAST_ARGC( QuaternionToAxisAngle, 1 )
-		FUNCTION_FAST_ARGC( AxisAngleToQuaternion, 1 )
+		FUNCTION_ARGC( FrustumSphere, 2 )
+		FUNCTION_ARGC( BoxToCircumscribedSphere, 1 )
+		FUNCTION_ARGC( QuaternionToEuler, 1 )
+		FUNCTION_ARGC( EulerToQuaternion, 1 )
+		FUNCTION_ARGC( QuaternionToAxisAngle, 1 )
+		FUNCTION_ARGC( AxisAngleToQuaternion, 1 )
 		
-		FUNCTION_FAST_ARGC( GetMatrix, 1 )
+		FUNCTION_ARGC( GetMatrix, 1 )
 
-		FUNCTION_FAST_ARGC( PlaneFromPoints, 3 )
-		FUNCTION_FAST_ARGC( ShadowMatrix, 2 )
+		FUNCTION_ARGC( PlaneFromPoints, 3 )
+		FUNCTION_ARGC( ShadowMatrix, 2 )
 
 	END_STATIC_FUNCTION_SPEC
 

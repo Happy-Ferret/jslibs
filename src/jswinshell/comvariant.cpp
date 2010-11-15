@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include <jsdate.h>
 
+#include "../jslang/blobPub.h"
+
 #include "com.h"
 
 // see http://www.codeproject.com/KB/COM/TEventHandler.aspx
@@ -107,7 +109,7 @@ public:
 		// pVarResult: location where the result is to be stored, or NULL if the caller expects no result.
 		// This argument is ignored if DISPATCH_PROPERTYPUT or DISPATCH_PROPERTYPUTREF is specified.
 		if ( pVarResult != NULL && (wFlags & (DISPATCH_PROPERTYPUT|DISPATCH_PROPERTYPUTREF)) != 0 )
-			JsvalToVariant(cx, argv, pVarResult);
+			JL_JsvalToVariant(cx, argv, pVarResult);
 		
 		return NOERROR;
 	}
@@ -141,7 +143,7 @@ JSBool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
 
 	const char *buf;
 	size_t len;
-	JL_CHK( JsvalToStringAndLength(cx, val, &buf, &len) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, val, &buf, &len) );
 	variant->vt = VT_ARRAY | VT_UI1;
 	SAFEARRAYBOUND rgsabound[1];
 	rgsabound[0].cElements = len;
@@ -177,19 +179,19 @@ JSBool VariantToBlob( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
 
 // variant must be initialized ( see VariantInit() )
-JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
+JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 	if ( JSVAL_IS_OBJECT(*value) ) {
 
 		JSObject *obj = JSVAL_TO_OBJECT(*value);
 
-		if ( JL_ObjectIsBlob(cx, obj) ) {
+		if ( JL_GetClass(obj) == JL_BlobJSClass(cx) ) {
 
 			// see also: Write and read binary data in VARIANT - http://www.ucosoft.com/write-and-read-binary-data-in-variant.html
 			
 			const char *buf;
 			size_t len;
-			JL_CHK( JsvalToStringAndLength(cx, value, &buf, &len) );
+			JL_CHK( JL_JsvalToStringAndLength(cx, value, &buf, &len) );
 			V_VT(variant) = VT_BSTR;
 			V_BSTR(variant) = SysAllocStringByteLen(buf, len);
 			return JS_TRUE;
@@ -217,7 +219,7 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 		if ( JS_ObjectIsFunction(cx, obj) ) {
 
-			JSFunctionDispatch *disp = new JSFunctionDispatch(JS_GetRuntime(cx), *value); // does the AddRef
+			JSFunctionDispatch *disp = new JSFunctionDispatch(JL_GetRuntime(cx), *value); // does the AddRef
 			// beware: *value must be GC protected while disp is in use.
 			V_VT(variant) = VT_DISPATCH;
 			V_DISPATCH(variant) = disp;
@@ -275,7 +277,7 @@ JSBool JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 	if ( JSVAL_IS_DOUBLE(*value) ) {
 		
-		double d = *JSVAL_TO_DOUBLE(*value);
+		double d = JSVAL_TO_DOUBLE(*value);
 		int32_t i = (int32_t)d;
 
 		if ( d == (double)i ) {
@@ -423,10 +425,10 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 		//	}
 		//	break;
 		case VT_R4:
-			*rval = DOUBLE_TO_JSVAL( JS_NewDouble(cx, isRef ? *V_R4REF(variant) : V_R4(variant)) );
+			*rval = DOUBLE_TO_JSVAL( isRef ? *V_R4REF(variant) : V_R4(variant) );
 			break;
 		case VT_R8:
-			*rval = DOUBLE_TO_JSVAL( JS_NewDouble(cx, isRef ? *V_R8REF(variant) : V_R8(variant)) );
+			*rval = DOUBLE_TO_JSVAL( isRef ? *V_R8REF(variant) : V_R8(variant) );
 			break;
 
 		case VT_CY:
@@ -437,7 +439,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			hr = VariantChangeType(&tmpVariant, variant, 0, VT_R8); // see VarR8FromCy()
 			if ( FAILED(hr) )
 				JL_CHK( WinThrowError(cx, hr) );
-			*rval = DOUBLE_TO_JSVAL( JS_NewDouble(cx, V_ISBYREF(&tmpVariant) ? *V_R8REF(&tmpVariant) : V_R8(&tmpVariant)) );
+			*rval = DOUBLE_TO_JSVAL( V_ISBYREF(&tmpVariant) ? *V_R8REF(&tmpVariant) : V_R8(&tmpVariant) );
 			hr = VariantClear(&tmpVariant);
 			if ( FAILED(hr) )
 				JL_CHK( WinThrowError(cx, hr) );
@@ -454,10 +456,10 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			*rval = INT_TO_JSVAL(isRef ? *V_I2REF(variant) : V_I2(variant));
 			break;
 		case VT_I4:
-			JL_CHK( IntToJsval(cx, isRef ? *V_I4REF(variant) : V_I4(variant), rval) );
+			JL_CHK( JL_CValToJsval(cx, isRef ? *V_I4REF(variant) : V_I4(variant), rval) );
 			break;
 		case VT_INT:
-			JL_CHK( IntToJsval(cx, isRef ? *V_INTREF(variant) : V_INT(variant), rval) );
+			JL_CHK( JL_CValToJsval(cx, isRef ? *V_INTREF(variant) : V_INT(variant), rval) );
 			break;
 
 		case VT_UI1:
@@ -467,10 +469,10 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			*rval = INT_TO_JSVAL(isRef ? *V_UI2REF(variant) : V_UI2(variant));
 			break;
 		case VT_UI4:
-			JL_CHK( IntToJsval(cx, isRef ? *V_UI4REF(variant) : V_UI4(variant), rval) );
+			JL_CHK( JL_CValToJsval(cx, isRef ? *V_UI4REF(variant) : V_UI4(variant), rval) );
 			break;
 		case VT_UINT:
-			JL_CHK( IntToJsval(cx, isRef ? *V_UINTREF(variant) : V_UINT(variant), rval) );
+			JL_CHK( JL_CValToJsval(cx, isRef ? *V_UINTREF(variant) : V_UINT(variant), rval) );
 			break;
 
 		case VT_DISPATCH:
@@ -508,22 +510,23 @@ DEFINE_FINALIZE() {
 }
 
 
-DEFINE_FUNCTION_FAST( toDispatch ) {
+DEFINE_FUNCTION( toDispatch ) {
 
 	HRESULT hr;
 
-	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( variant );
 
 	if ( V_VT(variant) != VT_DISPATCH ) {
 
-		*JL_FRVAL = OBJECT_TO_JSVAL(JL_FOBJ);
+		*JL_RVAL = OBJECT_TO_JSVAL(JL_OBJ);
 		return JS_TRUE;
 	}
 
 	if ( V_VT(variant) != VT_UNKNOWN ) {
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
@@ -536,7 +539,7 @@ DEFINE_FUNCTION_FAST( toDispatch ) {
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
 
-	JL_CHK( NewComDispatch(cx, pdisp, JL_FRVAL) );
+	JL_CHK( NewComDispatch(cx, pdisp, JL_RVAL) );
 	return JS_TRUE;
 
 bad:
@@ -544,11 +547,12 @@ bad:
 }
 
 
-DEFINE_FUNCTION_FAST( toString ) {
+DEFINE_FUNCTION( toString ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
 
 	HRESULT hr;
-
-	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_FOBJ);
+	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( variant );
 
 	VARIANT tmpVariant;
@@ -560,7 +564,7 @@ DEFINE_FUNCTION_FAST( toString ) {
 	BSTR bstr = V_ISBYREF(&tmpVariant) ? *V_BSTRREF(&tmpVariant) : V_BSTR(&tmpVariant);
 	JSString *str = JS_NewUCStringCopyN(cx, (const jschar*)bstr, SysStringLen(bstr));
 	JL_CHK(str);
-	*JL_FRVAL = STRING_TO_JSVAL(str);
+	*JL_RVAL = STRING_TO_JSVAL(str);
 
 	hr = VariantClear(&tmpVariant);
 	if ( FAILED(hr) )
@@ -571,9 +575,11 @@ DEFINE_FUNCTION_FAST( toString ) {
 }
 
 
-DEFINE_FUNCTION_FAST( toTypeName ) {
+DEFINE_FUNCTION( toTypeName ) {
 
-	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+
+	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( variant );
 
 	char str[64];
@@ -633,14 +639,14 @@ DEFINE_FUNCTION_FAST( toTypeName ) {
 	}
 	strcat(str, "]");
 
-	return StringToJsval(cx, str, JL_FRVAL);
+	return JL_CValToJsval(cx, str, JL_RVAL);
 	JL_BAD;
 }
 
 
 DEFINE_HAS_INSTANCE() {
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
+	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
 
@@ -652,9 +658,9 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( toString )
-		FUNCTION_FAST( toTypeName )
-		FUNCTION_FAST( toDispatch )
+		FUNCTION( toString )
+		FUNCTION( toTypeName )
+		FUNCTION( toDispatch )
 	END_FUNCTION_SPEC
 
 END_CLASS
@@ -663,7 +669,7 @@ END_CLASS
 // acquire the ownership of the variant
 JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
-	JSObject *varObj = JS_NewObject(cx, JL_CLASS(ComVariant), NULL, NULL);
+	JSObject *varObj = JS_NewObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_PROTOTYPE(cx, ComVariant), NULL);
 	*rval = OBJECT_TO_JSVAL( varObj );
 	JL_SetPrivate(cx, varObj, variant);
 	return JS_TRUE;

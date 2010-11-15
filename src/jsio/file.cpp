@@ -63,9 +63,10 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_CHK( JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, JL_ARG(1) ) );
+	JL_CHK( JL_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, JL_ARG(1) ) );
 	JL_SetPrivate(cx, obj, NULL); // (TBD) optional ?
 	ReserveStreamReadInterface(cx, obj);
 	return JS_TRUE;
@@ -88,20 +89,22 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Open ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MAX(2);
+
 	JL_S_ASSERT( JL_GetPrivate( cx, obj ) == NULL, "File is already open." );
 
 	PRIntn flags;
 	if ( JL_ARG_ISDEF(1) ) {
 
-		if ( JSVAL_IS_INT( JL_ARG(1) ) ) {
+		if ( JSVAL_IS_NUMBER( JL_ARG(1) ) ) {
 
-			flags = JSVAL_TO_INT( JL_ARG(1) );
+			JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &flags) );
 		} else {
 
 			const char *strFlags;
 			size_t len;
-			JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &strFlags, &len) );
+			JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &strFlags, &len) );
 			flags = FileOpenFlagsFromString(strFlags, len);
 		}
 	} else {
@@ -112,7 +115,7 @@ DEFINE_FUNCTION( Open ) {
 	PRIntn mode;
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_CHK( JsvalToInt(cx, JL_ARG(2), &mode) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &mode) );
 	} else { // default
 
 		mode = DEFAULT_ACCESS_RIGHTS;
@@ -122,7 +125,7 @@ DEFINE_FUNCTION( Open ) {
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
+	JL_CHK( JL_JsvalToCVal(cx, jsvalFileName, &fileName) );
 
 	PRFileDesc *fd;
 	fd = PR_Open( fileName, flags, mode ); // The mode parameter is currently applicable only on Unix platforms.
@@ -135,7 +138,7 @@ DEFINE_FUNCTION( Open ) {
 //	JL_CHK( ReserveStreamReadInterface(cx, obj) ); // this reserves the NativeInterface, then it can be switched on/off safely (see Descriptor::Close)
 	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
-	*rval = OBJECT_TO_JSVAL(obj); // allows to write f.Open(...).Read()
+	*JL_RVAL = OBJECT_TO_JSVAL(obj); // allows to write f.Open(...).Read()
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -150,6 +153,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Seek ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT( fd != NULL, "File is closed." );
 
@@ -158,7 +163,7 @@ DEFINE_FUNCTION( Seek ) {
 
 		JL_S_ASSERT_LOSSLESS_INT( JL_ARG(1) );
 		jsdouble doubleOffset;
-		JL_CHK( JS_ValueToNumber( cx, JL_ARG(1), &doubleOffset ) );
+		JL_CHK( JL_JsvalToCVal( cx, JL_ARG(1), &doubleOffset ) );
 		offset = (PRInt64)doubleOffset;
 	} else
 		offset = 0; // default is arg is missing
@@ -177,9 +182,7 @@ DEFINE_FUNCTION( Seek ) {
 	if ( ret == -1 )
 		return ThrowIoError(cx);
 
-	jsdouble newLocation;
-	newLocation = (jsdouble)ret;
-	JS_NewDoubleValue( cx, newLocation, rval );
+	*JL_RVAL = DOUBLE_TO_JSVAL((jsdouble)ret);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -187,11 +190,13 @@ DEFINE_FUNCTION( Seek ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME()
+ $VOID $INAME()
   Delete a file from the filesystem.
   The operation may fail if the file is open.
 **/
 DEFINE_FUNCTION( Delete ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT( fd == NULL, "Cannot delete an open file." );
@@ -199,9 +204,11 @@ DEFINE_FUNCTION( Delete ) {
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
+	JL_CHK( JL_JsvalToCVal(cx, jsvalFileName, &fileName) );
 	if ( PR_Delete(fileName) != PR_SUCCESS )
 		return ThrowIoError(cx);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -215,16 +222,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Lock ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
+
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
 	bool doLock;
-	JL_CHK( JsvalToBool(cx, JL_ARG(1), &doLock) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &doLock) );
 	PRStatus st;
 	st = doLock ? PR_LockFile(fd) : PR_UnlockFile(fd);
 	if ( st != PR_SUCCESS )
 		return ThrowIoError(cx);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -236,7 +247,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Move ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
+
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT( fd == NULL, "Cannot move an open file." );
@@ -245,11 +258,11 @@ DEFINE_FUNCTION( Move ) {
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToCVal(cx, jsvalFileName, &fileName) ); // warning: GC on the returned buffer !
 
 	const char *destDirName;
 	size_t destDirNameLength;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &destDirName, &destDirNameLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &destDirName, &destDirNameLength) ); // warning: GC on the returned buffer !
 
 	const char *fileNameOnly;
 	fileNameOnly = strrchr(fileName, '/');
@@ -270,8 +283,9 @@ DEFINE_FUNCTION( Move ) {
 	jsstr = JS_NewStringCopyZ(cx, destFileName);
 	JL_CHK( jsstr );
 
-	JL_CHK( JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, STRING_TO_JSVAL(jsstr) ) );
+	JL_CHK( JL_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, STRING_TO_JSVAL(jsstr) ) );
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -296,7 +310,7 @@ DEFINE_PROPERTY( positionSetter ) {
 	JL_S_ASSERT_LOSSLESS_INT( *vp );
 	PRInt64 offset;
 	jsdouble doubleOffset;
-	JL_CHK( JS_ValueToNumber( cx, *vp, &doubleOffset ) );
+	JL_CHK( JL_JsvalToCVal( cx, *vp, &doubleOffset ) );
 	offset = (PRInt64)doubleOffset;
 	PRInt64 ret;
 	ret = PR_Seek64( fd, offset, PR_SEEK_SET );
@@ -314,8 +328,9 @@ DEFINE_PROPERTY( positionGetter ) {
 	ret = PR_Seek64( fd, 0, PR_SEEK_CUR );
 	if ( ret == -1 )
 		return ThrowIoError(cx);
-	JL_CHK( JS_NewNumberValue(cx, (jsdouble)ret, vp) );
-	return JS_TRUE;
+//	JL_CHK( JL_NewNumberValue(cx, (jsdouble)ret, vp) );
+//	return JS_TRUE;
+	return JL_CValToJsval(cx, ret, vp);
 	JL_BAD;
 }
 
@@ -333,7 +348,7 @@ DEFINE_PROPERTY( contentGetter ) {
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) ); // (TBD) add somthing like J_SCHK instead
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
+	JL_CHK( JL_JsvalToCVal(cx, jsvalFileName, &fileName) );
 
 	PRStatus status;
 	status = PR_Access(fileName, PR_ACCESS_READ_OK); // We want to read the whole file, then first check if the file is readable
@@ -386,7 +401,7 @@ DEFINE_PROPERTY( contentGetter ) {
 	if (unlikely( res == 0 )) {
 
 		JS_free(cx, buf);
-		*vp = JS_GetEmptyStringValue(cx);
+		*vp = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
@@ -414,7 +429,7 @@ DEFINE_PROPERTY( contentSetter ) {
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
+	JL_CHK( JL_JsvalToCVal(cx, jsvalFileName, &fileName) );
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		if ( PR_Delete(fileName) != PR_SUCCESS ) {
@@ -432,7 +447,7 @@ DEFINE_PROPERTY( contentSetter ) {
 		return ThrowIoError(cx);
 	const char *buf;
 	size_t len;
-	JL_CHK( JsvalToStringAndLength(cx, vp, &buf, &len) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &buf, &len) );
 	PRInt32 bytesSent;
 	
 	JL_S_ASSERT( len <= PR_INT32_MAX, "Too many data." );
@@ -472,11 +487,11 @@ DEFINE_PROPERTY( nameSetter ) {
 	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fromFileName, *toFileName;
-	JL_CHK( JsvalToString(cx, &jsvalFileName, &fromFileName) ); // warning: GC on the returned buffer !
-	JL_CHK( JsvalToString(cx, vp, &toFileName) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToCVal(cx, jsvalFileName, &fromFileName) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &toFileName) ); // warning: GC on the returned buffer !
 	if ( PR_Rename(fromFileName, toFileName) != PR_SUCCESS ) // if status == PR_FILE_EXISTS_ERROR ...
 		return ThrowIoError(cx);
-	JS_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, *vp );
+	JL_CHK( JL_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, *vp ) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -493,8 +508,8 @@ DEFINE_PROPERTY( exist ) {
 	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
-	return BoolToJsval(cx, PR_Access( fileName, PR_ACCESS_EXISTS ) == PR_SUCCESS, vp);
+	JL_CHK( JL_JsvalToCVal(cx, jsvalFileName, &fileName) );
+	return JL_CValToJsval(cx, PR_Access( fileName, PR_ACCESS_EXISTS ) == PR_SUCCESS, vp);
 	JL_BAD;
 }
 
@@ -510,8 +525,8 @@ DEFINE_PROPERTY( hasWriteAccess ) {
 	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
-	return BoolToJsval(cx, PR_Access( fileName, PR_ACCESS_WRITE_OK ) == PR_SUCCESS, vp);
+	JL_CHK( JL_JsvalToCVal(cx, jsvalFileName, &fileName) );
+	return JL_CValToJsval(cx, PR_Access( fileName, PR_ACCESS_WRITE_OK ) == PR_SUCCESS, vp);
 	JL_BAD;
 }
 
@@ -527,8 +542,8 @@ DEFINE_PROPERTY( hasReadAccess ) {
 	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	const char *fileName;
-	JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
-	return BoolToJsval(cx, PR_Access( fileName, PR_ACCESS_READ_OK ) == PR_SUCCESS, vp);
+	JL_CHK( JL_JsvalToCVal(cx, jsvalFileName, &fileName) );
+	return JL_CValToJsval(cx, PR_Access( fileName, PR_ACCESS_READ_OK ) == PR_SUCCESS, vp);
 	JL_BAD;
 }
 
@@ -567,7 +582,7 @@ DEFINE_PROPERTY( info ) {
 		JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 		JL_S_ASSERT_DEFINED( jsvalFileName );
 		const char *fileName;
-		JL_CHK( JsvalToString(cx, &jsvalFileName, &fileName) );
+		JL_CHK( JL_JsvalToCVal(cx, jsvalFileName, &fileName) );
 
 		status = PR_GetFileInfo( fileName, &fileInfo );
 	} else
@@ -592,10 +607,10 @@ DEFINE_PROPERTY( info ) {
 
 	jsval dateValue;
 
-	JL_CHK( JS_NewNumberValue(cx, fileInfo.creationTime / (jsdouble)1000, &dateValue) );
+	JL_CHK( JL_NewNumberValue(cx, fileInfo.creationTime / (jsdouble)1000, &dateValue) );
 	JL_CHK( JS_DefineProperty(cx, fileInfoObj, "creationTime", dateValue, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
 
-	JL_CHK( JS_NewNumberValue(cx, fileInfo.modifyTime / (jsdouble)1000, &dateValue) );
+	JL_CHK( JL_NewNumberValue(cx, fileInfo.modifyTime / (jsdouble)1000, &dateValue) );
 	JL_CHK( JS_DefineProperty(cx, fileInfoObj, "modifyTime", dateValue, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
 
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -621,10 +636,11 @@ DEFINE_PROPERTY( standard ) {
 
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
-		int32 i;
-		JS_ValueToInt32( cx, id, &i );
+		int i;
+		//JS_ValueToInt32( cx, id, &i );
+		i = JSID_TO_INT(id);
 
-		JSObject *obj = JS_NewObject(cx, JL_CLASS(File), NULL, NULL ); // no need to use classDescriptor as proto.
+		JSObject *obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_PROTOTYPE(cx, File), NULL ); // no need to use classDescriptor as proto.
 		*vp = OBJECT_TO_JSVAL( obj );
 
 		PRFileDesc *fd = PR_GetSpecialFD((PRSpecialFD)i); // beware: cast !
@@ -632,9 +648,10 @@ DEFINE_PROPERTY( standard ) {
 			return ThrowIoError(cx);
 		JL_SetPrivate( cx, obj, fd );
 
-		JS_SetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE); // avoid PR_Close
+		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) ); // avoid PR_Close
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 /**doc
@@ -719,25 +736,25 @@ CONFIGURE_CLASS
 		PROPERTY_CREATE( stderr, PR_StandardError,  JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
 	END_STATIC_PROPERTY_SPEC
 
-	BEGIN_CONST_DOUBLE_SPEC
+	BEGIN_CONST_INTEGER_SPEC
 // PR_Open flags
-		CONST_DOUBLE( RDONLY			,PR_RDONLY )
-		CONST_DOUBLE( WRONLY			,PR_WRONLY )
-		CONST_DOUBLE( RDWR			,PR_RDWR )
-		CONST_DOUBLE( CREATE_FILE	,PR_CREATE_FILE )
-		CONST_DOUBLE( APPEND			,PR_APPEND )
-		CONST_DOUBLE( TRUNCATE		,PR_TRUNCATE )
-		CONST_DOUBLE( SYNC			,PR_SYNC )
-		CONST_DOUBLE( EXCL			,PR_EXCL )
+		CONST_INTEGER( RDONLY		,PR_RDONLY )
+		CONST_INTEGER( WRONLY		,PR_WRONLY )
+		CONST_INTEGER( RDWR			,PR_RDWR )
+		CONST_INTEGER( CREATE_FILE	,PR_CREATE_FILE )
+		CONST_INTEGER( APPEND		,PR_APPEND )
+		CONST_INTEGER( TRUNCATE		,PR_TRUNCATE )
+		CONST_INTEGER( SYNC			,PR_SYNC )
+		CONST_INTEGER( EXCL			,PR_EXCL )
 // PRSeekWhence enum
-		CONST_DOUBLE( SEEK_SET			,PR_SEEK_SET )
-		CONST_DOUBLE( SEEK_CUR			,PR_SEEK_CUR )
-		CONST_DOUBLE( SEEK_END			,PR_SEEK_END )
+		CONST_INTEGER( SEEK_SET			,PR_SEEK_SET )
+		CONST_INTEGER( SEEK_CUR			,PR_SEEK_CUR )
+		CONST_INTEGER( SEEK_END			,PR_SEEK_END )
 // PRFileType enum
-		CONST_DOUBLE( FILE_FILE			,PR_FILE_FILE )
-		CONST_DOUBLE( FILE_DIRECTORY	,PR_FILE_DIRECTORY )
-		CONST_DOUBLE( FILE_OTHER		,PR_FILE_OTHER )
-	END_CONST_DOUBLE_SPEC
+		CONST_INTEGER( FILE_FILE			,PR_FILE_FILE )
+		CONST_INTEGER( FILE_DIRECTORY	,PR_FILE_DIRECTORY )
+		CONST_INTEGER( FILE_OTHER		,PR_FILE_OTHER )
+	END_CONST_INTEGER_SPEC
 
 END_CLASS
 

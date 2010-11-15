@@ -49,12 +49,14 @@ $TOC_MEMBER $INAME
   0.6221087664882906
   }}}
 **/
-DEFINE_FUNCTION_FAST( RandSeed ) {
+DEFINE_FUNCTION( RandSeed ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 	unsigned int seed;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &seed) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &seed) );
 	init_genrand(seed);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -65,11 +67,9 @@ $TOC_MEMBER $INAME
  $INT $INAME
   Generates a random number on `[ 0 , 0x7fffffff ]` interval.
 **/
-DEFINE_FUNCTION_FAST( RandInt ) {
+DEFINE_FUNCTION( RandInt ) {
 
-	int i = genrand_int31();
-	*JL_FRVAL = INT_TO_JSVAL(i);
-	return JS_TRUE;
+	return JL_CValToJsval(cx, genrand_int32(), JL_RVAL);
 }
 
 
@@ -78,38 +78,35 @@ $TOC_MEMBER $INAME
  $REAL $INAME
   Generates a random number on `[ 0 , 1 ]` real interval.
 **/
-DEFINE_FUNCTION_FAST( RandReal ) {
+DEFINE_FUNCTION( RandReal ) {
 
-	jsdouble d = genrand_real1();
-	JL_CHK( JS_NewNumberValue(cx, d, JL_FRVAL) );
-	return JS_TRUE;
-	JL_BAD;
+	return JL_CValToJsval(cx, genrand_real1(), JL_RVAL);
 }
 
 /**doc
 $TOC_MEMBER $INAME
  $REAL $INAME( n, a, b, x [,y [,z] ] )
 **/
-DEFINE_FUNCTION_FAST( PerlinNoise ) {
+DEFINE_FUNCTION( PerlinNoise ) {
 
 	JL_S_ASSERT_ARG_RANGE(4,6);
 	int n;
 	double a, b, x, y, z;
-	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &a) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &b) );
-	JL_CHK( JsvalToInt(cx, JL_FARG(3), &n) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &a) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &b) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &n) );
 
-	JL_CHK( JsvalToDouble(cx, JL_FARG(4), &x) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &x) );
 	if ( argc == 4 )
-		return DoubleToJsval(cx, Noise1DPerlin(x, a, b, n), JL_FRVAL);
+		return JL_CValToJsval(cx, Noise1DPerlin(x, a, b, n), JL_RVAL);
 
-	JL_CHK( JsvalToDouble(cx, JL_FARG(5), &y) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &y) );
 	if ( argc == 5 )
-		return DoubleToJsval(cx, Noise2DPerlin(x, y, a, b, n), JL_FRVAL);
+		return JL_CValToJsval(cx, Noise2DPerlin(x, y, a, b, n), JL_RVAL);
 
-	JL_CHK( JsvalToDouble(cx, JL_FARG(6), &z) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(6), &z) );
 	if ( argc == 6 )
-		return DoubleToJsval(cx, Noise3DPerlin(x, y, z, a, b, n), JL_FRVAL);
+		return JL_CValToJsval(cx, Noise3DPerlin(x, y, z, a, b, n), JL_RVAL);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -121,10 +118,12 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Reinitialize the perlin noise state with the current random state.
 **/
-DEFINE_FUNCTION_FAST( PerlinNoiseReinit ) {
+DEFINE_FUNCTION( PerlinNoiseReinit ) {
 
 	JL_S_ASSERT_ARG_MAX(0);
 	InitNoise();
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -134,14 +133,14 @@ DEFINE_FUNCTION_FAST( PerlinNoiseReinit ) {
 $TOC_MEMBER $INAME
  $REAL $INAME(x, y, z)
 **/
-DEFINE_FUNCTION_FAST( PerlinNoise2 ) {
+DEFINE_FUNCTION( PerlinNoise2 ) {
 
 	JL_S_ASSERT_ARG(3);
 	double x, y, z;
-	JL_CHK( JsvalToDouble(cx, JL_FARG(1), &x) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(2), &y) );
-	JL_CHK( JsvalToDouble(cx, JL_FARG(3), &z) );
-	return DoubleToJsval(cx, PerlinNoise2(x,y,z), JL_FRVAL);
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &x) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &y) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &z) );
+	return JL_CValToJsval(cx, PerlinNoise2(x,y,z), JL_RVAL);
 	JL_BAD;
 }
 
@@ -159,13 +158,13 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST( RandSeed )
-		FUNCTION_FAST( RandInt )
-		FUNCTION_FAST( RandReal )
-		FUNCTION_FAST( PerlinNoise )
-		FUNCTION_FAST( PerlinNoiseReinit )
+		FUNCTION( RandSeed )
+		FUNCTION( RandInt )
+		FUNCTION( RandReal )
+		FUNCTION( PerlinNoise )
+		FUNCTION( PerlinNoiseReinit )
 
-		FUNCTION_FAST( PerlinNoise2 )
+		FUNCTION( PerlinNoise2 )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

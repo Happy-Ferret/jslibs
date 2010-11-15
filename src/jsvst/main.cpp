@@ -67,8 +67,8 @@ public:
 
 	~JsVst() {
 
-		JS_RemoveRoot(_cx, &_arg);
-		JS_RemoveRoot(_cx, &_rval);
+		JS_RemoveValueRoot(_cx, &_arg);
+		JS_RemoveValueRoot(_cx, &_rval);
 		DestroyHost(_cx);
 	}
 
@@ -78,8 +78,8 @@ public:
 		InitHost(_cx, true, NULL, NULL, NULL);
 		JS_SetOptions(_cx, JSOPTION_DONT_REPORT_UNCAUGHT);
 
-		JS_AddRoot(_cx, &_rval);
-		JS_AddRoot(_cx, &_arg);
+		JS_AddValueRoot(_cx, &_rval);
+		JS_AddValueRoot(_cx, &_arg);
 
 		( JLInitClass(_cx, JS_GetGlobalObject(_cx), MidiEvent::jlClassSpec ) );
 		( JLInitClass(_cx, JS_GetGlobalObject(_cx), AudioMaster::jlClassSpec ) );
@@ -380,7 +380,7 @@ private:
 					return JsvalToBool(_rval);
 
 				if ( JSVAL_IS_NUMBER(_rval) ) {
-					setParameter(index, JsvalToReal(_rval));
+					setParameter(index, (float)JsvalToReal(_rval));
 					return true;
 				} else
 					return false;
@@ -395,7 +395,7 @@ private:
 		try {
 			jsval fval = GetProperty(vstPlugin, "getParameter");
 			if ( JsvalIsFunction(fval) )
-				return JsvalToReal(FunctionCall1(vstPlugin, fval, IntToJsval(index)));
+				return (float)JsvalToReal(FunctionCall1(vstPlugin, fval, IntToJsval(index)));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::getParameter(index);
 	}
@@ -619,11 +619,11 @@ private:
 					return 0;
 				CopyJsvalToString(GetProperty(jsMpn, "name"), mpn->name, kVstMaxNameLen);
 				_arg = GetProperty(jsMpn, "midiProgram");
-				mpn->midiProgram = JSVAL_IS_VOID(_arg) ? -1 : AssertRange(JsvalToInt(_arg), 0, 127);
+				mpn->midiProgram = JSVAL_IS_VOID(_arg) ? -1 : AssertRange( JsvalToInt(_arg), 0, 127);
 				_arg = GetProperty(jsMpn, "midiBankMsb");
-				mpn->midiBankMsb = JSVAL_IS_VOID(_arg) ? -1 : AssertRange(JsvalToInt(_arg), 0, 127);
+				mpn->midiBankMsb = JSVAL_IS_VOID(_arg) ? -1 : AssertRange( JsvalToInt(_arg), 0, 127);
 				_arg = GetProperty(jsMpn, "midiBankLsb");
-				mpn->midiBankLsb = JSVAL_IS_VOID(_arg) ? -1 : AssertRange(JsvalToInt(_arg), 0, 127);
+				mpn->midiBankLsb = JSVAL_IS_VOID(_arg) ? -1 : AssertRange( JsvalToInt(_arg), 0, 127);
 				_arg = GetProperty(jsMpn, "parentCategoryIndex");
 				mpn->parentCategoryIndex = JSVAL_IS_VOID(_arg) ? -1 : JsvalToInt(_arg);
 				mpn->flags = JsvalToBool(GetProperty(jsMpn, "isOmny")) ? kMidiIsOmni : 0;
@@ -665,7 +665,7 @@ private:
 
 //				JSObject *jsMpn = JS_NewObject(_cx, NULL, NULL, NULL);
 
-				_rval = FunctionCall2(vstPlugin, fval, JsvalToInt(channel), JsvalToInt(category->thisCategoryIndex) );
+				_rval = FunctionCall2(vstPlugin, fval, JL_JsvalToCVal(channel), 	JL_JsvalToCVal(category->thisCategoryIndex) );
 				
 				category->flags = 0;
 
@@ -692,7 +692,7 @@ private:
 			jsval fval = GetProperty(vstPlugin, "getMidiKeyName");
 			if ( JsvalIsFunction(fval) ) {
 
-				_rval = FunctionCall3(vstPlugin, fval, JsvalToInt(channel), JsvalToInt(keyName->thisProgramIndex), JsvalToInt(keyName->thisKeyNumber) );
+				_rval = FunctionCall3(vstPlugin, fval, IntToJsval(channel), IntToJsval(keyName->thisProgramIndex), IntToJsval(keyName->thisKeyNumber) );
 				if ( JSVAL_IS_VOID(_rval) )
 					return false; // If 0 is returned, no MidiKeyNames are defined for 'thisProgramIndex'.
 				CopyJsvalToString(_rval, keyName->keyName, kVstMaxNameLen);
@@ -722,9 +722,9 @@ private:
 		try {
 			jsval fval = GetProperty(vstPlugin, "setBlockSize");
 			if ( JsvalIsFunction(fval) )
-				FunctionCall1(vstPlugin, fval, IntToJsval(sampleRate));
+				FunctionCall1(vstPlugin, fval, IntToJsval((int)sampleRate));
 		} catch( JsException ) { ManageException(); }
-		return AudioEffectX::setBlockSize(sampleRate);
+		return AudioEffectX::setBlockSize((VstInt32)sampleRate);
 	}
 
 
@@ -879,7 +879,7 @@ DEFINE_PROPERTY( samplePos ) {
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(0); // samplePos always valid
 	if ( info != NULL )
-		JL_CHK( JS_NewNumberValue(cx, info->samplePos, vp ) );
+		JL_CHK( JL_NewNumberValue(cx, info->samplePos, vp ) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -892,7 +892,7 @@ DEFINE_PROPERTY( sampleRate ) {
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(0); // sampleRate always valid
 	if ( info != NULL )
-		JL_CHK( JS_NewNumberValue(cx, info->sampleRate, vp ) );
+		JL_CHK( JL_NewNumberValue(cx, info->sampleRate, vp ) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -905,7 +905,7 @@ DEFINE_PROPERTY( nanoSeconds ) {
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstNanosValid);
 	if ( info != NULL || (info->flags & kVstNanosValid) )
-		JL_CHK( JS_NewNumberValue(cx, info->nanoSeconds, vp ) );
+		JL_CHK( JL_NewNumberValue(cx, info->nanoSeconds, vp ) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -918,7 +918,7 @@ DEFINE_PROPERTY( ppqPos ) {
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstPpqPosValid);
 	if ( info != NULL || (info->flags & kVstPpqPosValid) )
-		JL_CHK( JS_NewNumberValue(cx, info->ppqPos, vp ) );
+		JL_CHK( JL_NewNumberValue(cx, info->ppqPos, vp ) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -931,7 +931,7 @@ DEFINE_PROPERTY( tempo ) {
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstTempoValid);
 	if ( info != NULL || (info->flags & kVstTempoValid) )
-		JL_CHK( JS_NewNumberValue(cx, info->tempo, vp ) );
+		JL_CHK( JL_NewNumberValue(cx, info->tempo, vp ) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -944,7 +944,7 @@ DEFINE_PROPERTY( barStartPos ) {
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstBarsValid);
 	if ( info != NULL || (info->flags & kVstBarsValid) )
-		JL_CHK( JS_NewNumberValue(cx, info->barStartPos, vp ) );
+		JL_CHK( JL_NewNumberValue(cx, info->barStartPos, vp ) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -957,7 +957,7 @@ DEFINE_PROPERTY( cycleStartPos ) {
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstCyclePosValid);
 	if ( info != NULL || (info->flags & kVstCyclePosValid) )
-		JL_CHK( JS_NewNumberValue(cx, info->cycleStartPos, vp ) );
+		JL_CHK( JL_NewNumberValue(cx, info->cycleStartPos, vp ) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -970,7 +970,7 @@ DEFINE_PROPERTY( cycleEndPos ) {
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstCyclePosValid);
 	if ( info != NULL || (info->flags & kVstCyclePosValid) )
-		JL_CHK( JS_NewNumberValue(cx, info->cycleEndPos, vp ) );
+		JL_CHK( JL_NewNumberValue(cx, info->cycleEndPos, vp ) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -1048,7 +1048,7 @@ DEFINE_PROPERTY( inputLatency ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
-	*vp = JSVAL_TO_INT( vstPlugin->getInputLatency() );
+	*vp = INT_TO_JSVAL( vstPlugin->getInputLatency() );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
@@ -1057,7 +1057,7 @@ DEFINE_PROPERTY( outputLatency ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
-	*vp = JSVAL_TO_INT( vstPlugin->getOutputLatency() );
+	*vp = INT_TO_JSVAL( vstPlugin->getOutputLatency() );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
@@ -1081,7 +1081,8 @@ DEFINE_PROPERTY( uniqueID ) {
 	JL_S_ASSERT_STRING( *vp );
 	JSString *jsstr = JS_ValueToString(cx, *vp);
 	JL_S_ASSERT( JL_GetStringLength(jsstr) == 4, "Invalid ID length" );
-	char *str = JS_GetStringBytes(jsstr);
+	const char *str = JL_GetStringBytesZ(cx, jsstr);
+	JL_CHK( str != NULL );
 	VstInt32 vstid = CCONST( str[0], str[1], str[2], str[3] );
 	vstPlugin->setUniqueID( vstid );
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -1090,15 +1091,16 @@ DEFINE_PROPERTY( uniqueID ) {
 
 
 // Send MIDI events back to Host application
-DEFINE_FUNCTION_FAST( sendVstEventToHost ) {
+DEFINE_FUNCTION( sendVstEventToHost ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
-	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, JL_FOBJ);
+	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 
-	JSObject *eventObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	JSObject *eventObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 	bool res;
 
@@ -1114,7 +1116,7 @@ DEFINE_FUNCTION_FAST( sendVstEventToHost ) {
 		res = vstPlugin->sendVstEventsToHost(&events);
 	}
 
-	*JL_FRVAL = res ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = res ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1122,7 +1124,7 @@ DEFINE_FUNCTION_FAST( sendVstEventToHost ) {
 
 DEFINE_HAS_INSTANCE() {
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
+	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
 
@@ -1164,7 +1166,7 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST_ARGC( sendVstEventToHost, 1 )
+		FUNCTION_ARGC( sendVstEventToHost, 1 )
 	END_FUNCTION_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

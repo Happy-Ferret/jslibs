@@ -31,13 +31,15 @@ DEFINE_FINALIZE() {
 
 static JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 #ifdef DEBUG
 	jsval dbg_funNameVal;
 	JS_GetPropertyById(cx, JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)), JLID(cx, name), &dbg_funNameVal);
 	jschar *dbg_name = JS_GetStringChars(JSVAL_TO_STRING( dbg_funNameVal ));
 #endif
 
-	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JL_FOBJ);
+	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( disp );
 
 	JSObject *funObj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp));
@@ -56,7 +58,7 @@ static JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 	for ( uintN i = 0; i < argc; ++i ) {
 
 		VariantInit(&params.rgvarg[i]);
-		JL_CHK( JsvalToVariant(cx, &JL_FARGV[i], &params.rgvarg[i]) );
+		JL_CHK( JL_JsvalToVariant(cx, &JL_ARGV[i], &params.rgvarg[i]) );
 	}
 
 	VARIANT *result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
@@ -83,14 +85,14 @@ static JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 		jsval funNameVal;
 		jsid funNameId;
 		JL_CHK( JS_GetPropertyById(cx, funObj, JLID(cx, name), &funNameVal) );
-		JL_CHK( JS_ValueToId(cx, funNameVal, &funNameId) );
-		JL_CHK( JS_DeletePropertyById(cx, JL_FOBJ, funNameId) );
+		JL_CHK( JL_JsvalToJsid(cx, &funNameVal, &funNameId) );
+		JL_CHK( JS_DeletePropertyById(cx, JL_OBJ, funNameId) );
 	} // ...
 
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
 
-	JL_CHK( VariantToJsval(cx, result, JL_FRVAL) ); // loose variant ownership
+	JL_CHK( VariantToJsval(cx, result, JL_RVAL) ); // loose variant ownership
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -112,12 +114,12 @@ DEFINE_GET_PROPERTY() {
 	result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
 	VariantInit(result);
 
-	if ( JSVAL_IS_INT(id) ) {
+	if ( JSID_IS_INT(id) ) {
 
 		VARIANTARG arg;
 		VariantInit(&arg);
 		V_VT(&arg) = VT_I4;
-		V_I4(&arg) = JSVAL_TO_INT(id);
+		V_I4(&arg) = JSID_TO_INT(id);
 
 		DISPID dispid = DISPID_VALUE;
 		params.rgvarg = &arg;
@@ -135,7 +137,7 @@ DEFINE_GET_PROPERTY() {
 	params.cNamedArgs = 0;
 
 	jschar *name;
-	name = JS_GetStringChars(JSVAL_TO_STRING(id));
+	name = JS_GetStringChars(JSID_TO_STRING(id));
 	DISPID dispid;
 	hr = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
 	if ( FAILED(hr) ) // dispid == DISPID_UNKNOWN
@@ -150,12 +152,14 @@ DEFINE_GET_PROPERTY() {
 			JL_CHK( WinThrowError(cx, hr) );
 		JS_free(cx, result);
 
-		JSFunction *fun = JS_NewFunction(cx, (JSNative)FunctionInvoke, 8, JSFUN_FAST_NATIVE | JSFUN_LAMBDA, NULL, NULL);
+		JSFunction *fun = JS_NewFunction(cx, FunctionInvoke, 8, JSFUN_LAMBDA, NULL, NULL);
 		JSObject *funObj = JS_GetFunctionObject(fun);
 		JL_CHK( funObj );
 		*vp = OBJECT_TO_JSVAL(funObj);
 		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, id), INT_TO_JSVAL(dispid), NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) );
-		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, name), id, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) );
+		jsval tmp;
+		JL_CHK( JS_IdToValue(cx, id, &tmp) );
+		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, name), tmp, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) );
 		JL_CHK( JS_DefinePropertyById(cx, obj, id, *vp, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) );
 		return JS_TRUE;
 	}
@@ -199,7 +203,8 @@ DEFINE_SET_PROPERTY() {
 	JL_S_ASSERT_RESOURCE( disp );
 
 	jschar *name;
-	name = JS_GetStringChars(JSVAL_TO_STRING(id));
+	JL_ASSERT( JSID_IS_STRING( id ) );
+	name = JS_GetStringChars(JSID_TO_STRING(id));
 
 	DISPID dispid;
 	hr = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
@@ -208,7 +213,7 @@ DEFINE_SET_PROPERTY() {
 
 	VARIANTARG arg;
 	VariantInit(&arg);
-	JL_CHK( JsvalToVariant(cx, vp, &arg) ); // *vp will be stored in an object slot !
+	JL_CHK( JL_JsvalToVariant(cx, vp, &arg) ); // *vp will be stored in an object slot !
 
 	WORD flags;
 	if ( V_VT(&arg) == VT_DISPATCH && V_ISBYREF(&arg) )
@@ -258,20 +263,20 @@ DEFINE_SET_PROPERTY() {
 }
 
 
-DEFINE_FUNCTION_FAST( FunctionList ) {
+DEFINE_FUNCTION( FunctionList ) {
 
 	ITypeInfo *pTypeinfo = NULL;
 
 	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT_OBJECT(JL_FARG(1));
+	JL_S_ASSERT_OBJECT(JL_ARG(1));
 
-	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_FARG(1)));
+	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
 	JL_S_ASSERT_RESOURCE( disp );
 
 //	JSObject *memberList = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
 	JSObject *memberList = JS_NewObject(cx, NULL, NULL, NULL);
 	JL_CHK( memberList );
-	*JL_FRVAL = OBJECT_TO_JSVAL(memberList);
+	*JL_RVAL = OBJECT_TO_JSVAL(memberList);
 
 	HRESULT hr;
 
@@ -359,10 +364,10 @@ DEFINE_ITERATOR_OBJECT() {
 
 	{
 		js::AutoValueRooter tvr(cx);
-		JSBool st = NewComEnum(cx, pEnum, tvr.addr());
+		JSBool st = NewComEnum(cx, pEnum, tvr.jsval_addr());
 		JL_CHK(st);
 		pEnum->Release();
-		return JSVAL_TO_OBJECT(tvr.value());
+		return JSVAL_TO_OBJECT(tvr.jsval_value());
 	}
 bad:
 	if ( pEnum )
@@ -371,16 +376,16 @@ bad:
 }
 
 
-DEFINE_EQUALITY() {
+DEFINE_EQUALITY_OP() {
 
-	*bp = JSVAL_IS_OBJECT(v) && JSVAL_TO_OBJECT(v) == obj;
+	*bp = js::Valueify(v)->isObject() && &js::Valueify(v)->toObject() == obj;
 	return JS_TRUE;
 }
 
 
 DEFINE_HAS_INSTANCE() {
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
+	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
 
@@ -393,10 +398,10 @@ CONFIGURE_CLASS
 	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
 	HAS_ITERATOR_OBJECT
-	HAS_EQUALITY
+	HAS_EQUALITY_OP
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST( FunctionList )
+		FUNCTION( FunctionList )
 	END_STATIC_FUNCTION_SPEC
 
 END_CLASS
@@ -404,7 +409,7 @@ END_CLASS
 
 JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, jsval *rval ) {
 
-	JSObject *varObj = JS_NewObject(cx, JL_CLASS(ComDispatch), NULL, NULL);
+	JSObject *varObj = JS_NewObjectWithGivenProto(cx, JL_CLASS(ComDispatch), JL_PROTOTYPE(cx, ComDispatch), NULL);
 	*rval = OBJECT_TO_JSVAL( varObj );
 	JL_SetPrivate(cx, varObj, pdisp);
 	pdisp->AddRef();

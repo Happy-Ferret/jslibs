@@ -42,7 +42,7 @@ JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
 
 	// printf("id=%u / &_moduleId=%p / _moduleId=%u\n", &_moduleId, _moduleId, id);
 
-	HostPrivate *pv = GetHostPrivate(cx);
+	HostPrivate *pv = JL_GetHostPrivate(cx);
 
 	_unsafeMode = pv ? pv->unsafeMode : _unsafeMode;
 

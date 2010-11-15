@@ -18,8 +18,9 @@
 
 	<Tool
 		Name="VCCLCompilerTool"
-		PreprocessorDefinitions="WIN32;NDEBUG;_USRDLL"
+		PreprocessorDefinitions="WIN32;NDEBUG;_USRDLL;_SECURE_SCL_THROWS=0;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0"
 		AdditionalIncludeDirectories="..\common;..\..\libs\js\$(PlatformName)_$(ConfigurationName)\dist\include"
+		UsePrecompiledHeader="0"
 		ExceptionHandling="0"
 		RuntimeTypeInfo="false"
 		RuntimeLibrary="2"
@@ -39,6 +40,7 @@
 
 	<Tool
 		Name="VCLinkerTool"
+		LinkTimeCodeGeneration="1"
 		GenerateDebugInformation="true"
 		IgnoreAllDefaultLibraries="false"
 		IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"

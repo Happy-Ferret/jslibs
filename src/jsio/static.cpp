@@ -69,23 +69,23 @@ JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 	pollDesc->in_flags = 0;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "writable", &tmp ) );
-	if ( JsvalIsFunction(cx, tmp) )
+	if ( JL_JsvalIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_WRITE;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "readable", &tmp ) );
-	if ( JsvalIsFunction(cx, tmp) )
+	if ( JL_JsvalIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_READ;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &tmp ) );
-	if ( JsvalIsFunction(cx, tmp) )
+	if ( JL_JsvalIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_HUP;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "exception", &tmp ) );
-	if ( JsvalIsFunction(cx, tmp) )
+	if ( JL_JsvalIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_EXCEPT;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "error", &tmp ) );
-	if ( JsvalIsFunction(cx, tmp) )
+	if ( JL_JsvalIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_ERR;
 
 	return JS_TRUE;
@@ -114,35 +114,35 @@ JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int i
 	if ( outFlag & PR_POLL_ERR ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "error", &descVal ) );
-		if ( JsvalIsFunction(cx, descVal) )
+		if ( JL_JsvalIsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_EXCEPT ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "exception", &descVal ) );
-		if ( JsvalIsFunction(cx, descVal) )
+		if ( JL_JsvalIsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_HUP ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &descVal ) );
-		if ( JsvalIsFunction(cx, descVal) )
+		if ( JL_JsvalIsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_READ ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "readable", &descVal ) );
-		if ( JsvalIsFunction(cx, descVal) )
+		if ( JL_JsvalIsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_WRITE ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "writable", &descVal ) );
-		if ( JsvalIsFunction(cx, descVal) )
+		if ( JL_JsvalIsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
@@ -187,10 +187,10 @@ DEFINE_FUNCTION( Poll ) {
 	JSObject *fdArrayObj;
 	fdArrayObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
-	if ( JL_ARG_ISDEF(2) && !JsvalIsPInfinity(cx, JL_ARG(2)) ) {
+	if ( JL_ARG_ISDEF(2) && !JL_JsvalIsPInfinity(cx, JL_ARG(2)) ) {
 
 		PRUint32 tmpint;
-		JL_CHKB( JsvalToUInt(cx, JL_ARG(2), &tmpint), bad1 );
+		JL_CHKB( JL_JsvalToCVal(cx, JL_ARG(2), &tmpint), bad1 );
 		pr_timeout = PR_MillisecondsToInterval(tmpint);
 	} else {
 
@@ -205,7 +205,7 @@ DEFINE_FUNCTION( Poll ) {
 		result = PR_Poll(NULL, 0, pr_timeout); // we can replace this by a delay, but the function is Pool, not Sleep.
 		if ( result == -1 )
 			return ThrowIoError(cx);
-		*rval = JSVAL_ZERO;
+		*JL_RVAL = JSVAL_ZERO;
 		return JS_TRUE;
 	}
 
@@ -231,7 +231,7 @@ DEFINE_FUNCTION( Poll ) {
 			for ( i = 0; i < propsCount; ++i )
 				JL_CHK( PollDescNotify(cx,props[i], &pollDesc[i], i) );
 
-		*rval = INT_TO_JSVAL( result );
+		*JL_RVAL = INT_TO_JSVAL( result );
 	}
 	jl_freea(props, sizeof(jsval) * propsCount);
 	jl_freea(pollDesc, sizeof(PRPollDesc) * propsCount);
@@ -312,19 +312,19 @@ bad:
 	return JS_FALSE;
 }
 
-DEFINE_FUNCTION_FAST( IOEvents ) {
+DEFINE_FUNCTION( IOEvents ) {
 
 	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT_ARRAY(JL_FARG(1));
+	JL_S_ASSERT_ARRAY(JL_ARG(1));
 
 
 
 	JSObject *fdArrayObj;
-	fdArrayObj = JSVAL_TO_OBJECT(JL_FARG(1));
+	fdArrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
 	upe->pe.startWait = IOStartWait;
 	upe->pe.cancelWait = IOCancelWait;
 	upe->pe.endWait = IOEndWait;
@@ -338,7 +338,7 @@ DEFINE_FUNCTION_FAST( IOEvents ) {
 	JL_S_ASSERT_ALLOC( upe->descVal );
 
 	JsioPrivate *mpv;
-	mpv = (JsioPrivate*)GetModulePrivate(cx, _moduleId);
+	mpv = (JsioPrivate*)JL_GetModulePrivate(cx, _moduleId);
 	if ( mpv->peCancel == NULL ) {
 
 		mpv->peCancel = PR_NewPollableEvent();
@@ -354,7 +354,7 @@ DEFINE_FUNCTION_FAST( IOEvents ) {
 
 	JSObject *rootedValues;
 	rootedValues = JS_NewArrayObject(cx, fdCount, NULL);
-	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, OBJECT_TO_JSVAL(rootedValues)) );
+	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(rootedValues)) );
 
 	jsval *tmp;
 	for ( jsuint i = 0; i < fdCount; ++i ) {
@@ -391,7 +391,7 @@ DEFINE_FUNCTION( IsReadable ) {
 	if ( JL_ARG_ISDEF(2) ) {
 
 		PRUint32 timeout;
-		JL_CHK( JsvalToUInt(cx, JL_ARG(2), &timeout) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &timeout) );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
 		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
@@ -405,7 +405,7 @@ DEFINE_FUNCTION( IsReadable ) {
 	result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
-	*rval = ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -430,7 +430,7 @@ DEFINE_FUNCTION( IsWritable ) {
 	if ( JL_ARG_ISDEF(2) ) {
 
 		PRUint32 timeout;
-		JL_CHK( JsvalToUInt(cx, JL_ARG(2), &timeout) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &timeout) );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else
 		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
@@ -444,7 +444,7 @@ DEFINE_FUNCTION( IsWritable ) {
 	result = PR_Poll( &desc, 1, prTimeout );
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
-	*rval = ( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = ( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -458,8 +458,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( IntervalNow ) {
 
 	PRUint32 interval = PR_IntervalToMilliseconds( PR_IntervalNow() ); // (TBD) Check if it may wrap around in about 12 hours. Is it related to the data type ???
-	JS_NewNumberValue( cx, interval, rval );
-	return JS_TRUE;
+	return JL_NewNumberValue(cx, interval, JL_RVAL);
 }
 
 
@@ -468,11 +467,10 @@ $TOC_MEMBER $INAME
  $INT $INAME()
   Returns the microseconds value of NSPR's free-running interval timer.
 **/
-DEFINE_FUNCTION_FAST( UIntervalNow ) {
+DEFINE_FUNCTION( UIntervalNow ) {
 
 	PRUint32 interval = PR_IntervalToMicroseconds( PR_IntervalNow() );
-	JS_NewNumberValue( cx, interval, &JS_RVAL(cx, vp) );
-	return JS_TRUE;
+	return JL_NewNumberValue(cx, interval, JL_RVAL);
 }
 
 
@@ -486,6 +484,8 @@ DEFINE_FUNCTION( Sleep ) {
 	uint32 timeout;
 	JL_CHK( JS_ValueToECMAUint32( cx, JL_ARG(1), &timeout ) );
 	PR_Sleep( PR_MillisecondsToInterval(timeout) );
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -500,7 +500,7 @@ DEFINE_FUNCTION( GetEnv ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 	const char *name;
-	JL_CHK( JsvalToString(cx, &JL_ARG(1), &name) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &name) );
 	char* value;
 	value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
 
@@ -512,7 +512,7 @@ DEFINE_FUNCTION( GetEnv ) {
 //		JSString *jsstr = JS_NewExternalString(cx, (jschar*)value, strlen(value), JS_AddExternalStringFinalizer(NULL)); only works with unicode strings
 		JSString *jsstr = JS_NewStringCopyZ(cx,value);
 		JL_CHK( jsstr );
-		*rval = STRING_TO_JSVAL(jsstr);
+		*JL_RVAL = STRING_TO_JSVAL(jsstr);
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -534,8 +534,8 @@ doc:
 
 	JL_S_ASSERT_ARG_MIN(1);
 	const char *name, *value;
-	JL_CHK( JsvalToString(cx, &JL_ARG(1), &name) );
-	JL_CHK( JsvalToString(cx, &JL_ARG(2), &value) );
+	JL_CHK( JL_JsvalToCVal(cx, &JL_ARG(1), &name) );
+	JL_CHK( JL_JsvalToCVal(cx, &JL_ARG(2), &value) );
 
 	PRStatus status = PR_SetEnv...
 
@@ -573,7 +573,7 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 		JL_REPORT_ERROR( "PR_GetRandomNoise is not implemented on this platform." );
 	}
 
-	JL_CHK( JL_NewBlob( cx, buf, size, rval ) );
+	JL_CHK( JL_NewBlob( cx, buf, size, JL_RVAL ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -616,18 +616,18 @@ $TOC_MEMBER $INAME
   $H note
    The "test and decrement" operation is performed atomically.
 **/
-DEFINE_FUNCTION_FAST( WaitSemaphore ) {
+DEFINE_FUNCTION( WaitSemaphore ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	PRUintn mode;
 	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
-	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &mode) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &mode) );
 
 	const char *name;
 	size_t nameLength;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &name, &nameLength) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &name, &nameLength) );
 
 	bool isCreation;
 	isCreation = true;
@@ -658,6 +658,7 @@ DEFINE_FUNCTION_FAST( WaitSemaphore ) {
 			return ThrowIoError(cx);
 	}
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -668,13 +669,13 @@ $TOC_MEMBER $INAME
  $VOID $INAME( semaphoreName )
   Increments the value of a specified semaphore.
 **/
-DEFINE_FUNCTION_FAST( PostSemaphore ) {
+DEFINE_FUNCTION( PostSemaphore ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	const char *name;
 	size_t nameLength;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &name, &nameLength) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &name, &nameLength) );
 
 	PRSem *semaphore;
 	semaphore = PR_OpenSemaphore(name, 0, 0, 0);
@@ -691,6 +692,7 @@ DEFINE_FUNCTION_FAST( PostSemaphore ) {
 			return ThrowIoError(cx);
 	}
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -714,17 +716,17 @@ $TOC_MEMBER $INAME
 **/
 /*
 // Doc. http://www.mozilla.org/projects/nspr/reference/html/prprocess.html#24535
-DEFINE_FUNCTION_FAST( CreateProcess ) {
+DEFINE_FUNCTION( CreateProcess ) {
 
 	const char **processArgv = NULL; // keep on top
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	int processArgc;
-	if ( JL_FARG_ISDEF(2) && JSVAL_IS_OBJECT(JL_FARG(2)) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(JL_FARG(2)) ) == JS_TRUE ) {
+	if ( JL_ARG_ISDEF(2) && JSVAL_IS_OBJECT(JL_ARG(2)) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(JL_ARG(2)) ) == JS_TRUE ) {
 
 		JSIdArray *idArray;
-		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(JL_FARG(2)) ); // make a kind of auto-ptr for this
+		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(JL_ARG(2)) ); // make a kind of auto-ptr for this
 		processArgc = idArray->length +1; // +1 is argv[0]
 		processArgv = (const char**)jl_malloc(sizeof(const char**) * (processArgc +1)); // +1 is NULL
 		JL_S_ASSERT_ALLOC( processArgv );
@@ -733,10 +735,10 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 
 			jsval propVal;
 			JL_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal ));
-			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(JL_FARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
+			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
 
 			const char *tmp;
-			JL_CHK( JsvalToString(cx, &propVal, &tmp) ); // warning: GC on the returned buffer !
+			JL_CHK( JL_JsvalToCVal(cx, &propVal, &tmp) ); // warning: GC on the returned buffer !
 			processArgv[i+1] = tmp;
 		}
 		JS_DestroyIdArray( cx, idArray );
@@ -747,15 +749,15 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 	}
 
 	const char *path;
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &path) );
+	JL_CHK( JL_JsvalToCVal(cx, &JL_ARG(1), &path) );
 
 	processArgv[0] = path;
 	processArgv[processArgc] = NULL;
 
 	bool waitEnd;
 	waitEnd = false;
-	if ( JL_FARG_ISDEF(3) )
-		JL_CHK( JsvalToBool(cx, JL_FARG(3), &waitEnd) );
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &waitEnd) );
 
 	PRFileDesc *stdout_child, *stdout_parent, *stdin_child, *stdin_parent;
 	JL_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
@@ -779,7 +781,7 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 
 		PRInt32 exitValue;
 		JL_CHKB( PR_WaitProcess( process, &exitValue ) == PR_SUCCESS, bad_throw );
-		*JL_FRVAL = INT_TO_JSVAL( exitValue );
+		*JL_RVAL = INT_TO_JSVAL( exitValue );
 	} else {
 
 //		status = PR_DetachProcess(process);
@@ -799,7 +801,7 @@ DEFINE_FUNCTION_FAST( CreateProcess ) {
 		vector[0] = OBJECT_TO_JSVAL( fdin );
 		vector[1] = OBJECT_TO_JSVAL( fdout );
 		JSObject *arrObj = JS_NewArrayObject(cx, 2, vector);
-		*JL_FRVAL = OBJECT_TO_JSVAL( arrObj );
+		*JL_RVAL = OBJECT_TO_JSVAL( arrObj );
 	}
 
 
@@ -826,11 +828,11 @@ $TOC_MEMBER $INAME
   Print( AvailableSpace('/var') );
   }}}
 **/
-DEFINE_FUNCTION_FAST( AvailableSpace ) {
+DEFINE_FUNCTION( AvailableSpace ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	const char *path;
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &path) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &path) );
 
 	jsdouble available;
 
@@ -847,7 +849,8 @@ DEFINE_FUNCTION_FAST( AvailableSpace ) {
 	available = (jsdouble)fsd.f_bsize * (jsdouble)fsd.f_bavail;
 #endif // XP_WIN
 
-	JL_CHK( JS_NewDoubleValue(cx, available, JL_FRVAL) );
+	*JL_RVAL = DOUBLE_TO_JSVAL( available );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -855,7 +858,7 @@ DEFINE_FUNCTION_FAST( AvailableSpace ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $UNDEF $INAME( descriptor, [baudRate], [byteSize], [parity], [stopBits] )
+ $VOID $INAME( descriptor, [baudRate], [byteSize], [parity], [stopBits] )
  baudRate:
   110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 56000, 57600, 115200, 128000, 256000
  byteSize:
@@ -880,12 +883,12 @@ $TOC_MEMBER $INAME
  f.Read(1);
  }}}
 **/
-DEFINE_FUNCTION_FAST( ConfigureSerialPort ) {
+DEFINE_FUNCTION( ConfigureSerialPort ) {
 
 	JL_S_ASSERT_ARG_RANGE(1,2);
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	JSObject *fileObj;
-	fileObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	fileObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_S_ASSERT_INHERITANCE( fileObj, JL_CLASS(File) );
 
 	PRFileDesc *fd;
@@ -912,27 +915,27 @@ DEFINE_FUNCTION_FAST( ConfigureSerialPort ) {
 	// (TBD) manage commTimeouts
 
 
-	if ( JL_FARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &baudRate) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &baudRate) );
 		dcb.BaudRate = baudRate;
 	}
 
-	if ( JL_FARG_ISDEF(3) ) {
+	if ( JL_ARG_ISDEF(3) ) {
 
-		JL_CHK( JsvalToUInt(cx, JL_FARG(3), &byteSize) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &byteSize) );
 		dcb.ByteSize = byteSize;
 	}
 
-	if ( JL_FARG_ISDEF(4) ) {
+	if ( JL_ARG_ISDEF(4) ) {
 
-		JL_CHK( JsvalToUInt(cx, JL_FARG(4), &parity) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &parity) );
 		dcb.Parity = parity;
 	}
 
-	if ( JL_FARG_ISDEF(5) ) {
+	if ( JL_ARG_ISDEF(5) ) {
 
-		JL_CHK( JsvalToUInt(cx, JL_FARG(5), &stopBits) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &stopBits) );
 		dcb.StopBits = stopBits;
 	}
 
@@ -964,7 +967,7 @@ DEFINE_FUNCTION_FAST( ConfigureSerialPort ) {
 #endif // XP_UNIX
 
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1008,7 +1011,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( physicalMemorySize ) {
 
 	PRUint64 mem = PR_GetPhysicalMemorySize();
-	JL_CHK( JS_NewNumberValue(cx, (jsdouble)mem, vp) );
+	JL_CHK( JL_NewNumberValue(cx, (jsdouble)mem, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1116,7 +1119,7 @@ DEFINE_PROPERTY( processPriorityGetter ) {
 DEFINE_PROPERTY( processPrioritySetter ) {
 
 	int priorityValue;
-	JL_CHK( JsvalToInt(cx, *vp, &priorityValue) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &priorityValue) );
 	PRThreadPriority priority;
 	switch (priorityValue) {
 		case -1:
@@ -1152,7 +1155,7 @@ DEFINE_PROPERTY( numberOfProcessors ) {
 	PRInt32 count = PR_GetNumberOfProcessors();
 	if ( count < 0 )
 		JL_REPORT_ERROR( "Unable to get the number of processors." );
-	JL_CHK( IntToJsval(cx, count, vp) );
+	JL_CHK( JL_CValToJsval(cx, count, vp) );
 	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
@@ -1186,7 +1189,7 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 DEFINE_PROPERTY_SETTER( currentDirectory ) {
 
 	const char *buf;
-	JL_CHK( JsvalToString(cx, vp, &buf ) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &buf ) );
 #ifdef XP_WIN
 //	_chdir(buf);
 	::SetCurrentDirectory(buf);
@@ -1274,6 +1277,7 @@ DEFINE_FUNCTION( jsioTest ) {
 	double t = AccurateTimeCounter() - t0;
 */
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 //	JL_BAD;
 }
@@ -1290,19 +1294,19 @@ CONFIGURE_STATIC
 		#endif // DEBUG
 
 		FUNCTION( Poll ) // Do not turn it in FAST NATIVE because we need a stack frame for debuging
-		FUNCTION_FAST( IOEvents )
+		FUNCTION( IOEvents )
 		FUNCTION( IsReadable )
 		FUNCTION( IsWritable )
 		FUNCTION( IntervalNow )
-		FUNCTION_FAST( UIntervalNow )
+//		FUNCTION( UIntervalNow )
 		FUNCTION( Sleep )
 		FUNCTION( GetEnv )
 		FUNCTION( GetRandomNoise )
-		FUNCTION_FAST( WaitSemaphore )
-		FUNCTION_FAST( PostSemaphore )
-//		FUNCTION_FAST( CreateProcess )
-		FUNCTION_FAST( AvailableSpace )
-		FUNCTION_FAST( ConfigureSerialPort )
+		FUNCTION( WaitSemaphore )
+		FUNCTION( PostSemaphore )
+//		FUNCTION( CreateProcess )
+		FUNCTION( AvailableSpace )
+		FUNCTION( ConfigureSerialPort )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

@@ -51,9 +51,10 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JS_SetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, JL_ARG(1) );
+	JL_CHK( JL_SetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, JL_ARG(1) ) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -69,11 +70,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Open ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
-	JL_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
+	JL_CHK( JL_JsvalToCVal(cx, jsvalDirectoryName, &directoryName) );
 
 	PRDir *dd;
 	dd = PR_OpenDir( directoryName );
@@ -81,7 +84,7 @@ DEFINE_FUNCTION( Open ) {
 		return ThrowIoError(cx);
 
 	JL_SetPrivate( cx, obj, dd );
-	*rval = OBJECT_TO_JSVAL(obj);
+	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -94,11 +97,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Close ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 	PRDir *dd = (PRDir *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT( dd != NULL, "directory is closed" );
 	if ( PR_CloseDir(dd) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	JL_SetPrivate( cx, obj, NULL );
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -114,6 +121,8 @@ $TOC_MEMBER $INAME
    A single directory item.
 **/
 DEFINE_FUNCTION( Read ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
 
 	PRDir *dd = (PRDir *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT( dd != NULL, "directory is closed" );
@@ -134,13 +143,13 @@ DEFINE_FUNCTION( Read ) {
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode == PR_NO_MORE_FILES_ERROR ) {
 
-			*rval = JSVAL_VOID;
+			*JL_RVAL = JSVAL_VOID;
 			return JS_TRUE;
 		} else
 			return ThrowIoError(cx);
 	}
 
-	*rval = STRING_TO_JSVAL(JS_NewStringCopyZ( cx, dirEntry->name ));
+	*JL_RVAL = STRING_TO_JSVAL(JS_NewStringCopyZ( cx, dirEntry->name ));
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -153,15 +162,19 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Make ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
-	JL_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
+	JL_CHK( JL_JsvalToCVal(cx, jsvalDirectoryName, &directoryName) );
 	PRIntn mode;
 	mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
 	if ( PR_MkDir(directoryName, mode) != PR_SUCCESS )
 		return ThrowIoError(cx);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -175,21 +188,24 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Remove ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
-	JL_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
+	JL_CHK( JL_JsvalToCVal(cx, jsvalDirectoryName, &directoryName) );
 
 	if ( PR_RmDir(directoryName) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
 
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode == PR_DIRECTORY_NOT_EMPTY_ERROR )
-			*rval = JSVAL_FALSE;
+			*JL_RVAL = JSVAL_FALSE;
 		else
 			return ThrowIoError(cx);
 	} else {
-			*rval = JSVAL_TRUE;
+
+			*JL_RVAL = JSVAL_TRUE;
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -210,7 +226,7 @@ DEFINE_PROPERTY( exist ) {
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
 	const char *directoryName;
-	JL_CHK( JsvalToString(cx, &jsvalDirectoryName, &directoryName) );
+	JL_CHK( JL_JsvalToCVal(cx, jsvalDirectoryName, &directoryName) );
 
 	PRDir *dd;
 	dd = PR_OpenDir( directoryName );
@@ -270,7 +286,7 @@ DEFINE_FUNCTION( List ) {
 	JL_S_ASSERT_ARG_MIN( 1 );
 	const char *directoryName;
 	size_t directoryNameLength;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &directoryName, &directoryNameLength) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &directoryName, &directoryNameLength) );
 	JL_S_ASSERT( directoryNameLength < PATH_MAX, "Path too long" );
 	dd = PR_OpenDir( directoryName );
 	JL_CHKB( dd, bad_throw);
@@ -287,7 +303,7 @@ DEFINE_FUNCTION( List ) {
 	JSObject *addrJsObj;
 	addrJsObj = JS_NewArrayObject(cx, 0, NULL);
 	JL_CHK( addrJsObj );
-	*rval = OBJECT_TO_JSVAL( addrJsObj );
+	*JL_RVAL = OBJECT_TO_JSVAL( addrJsObj );
 
 	int index;
 	index = 0;
@@ -373,17 +389,17 @@ CONFIGURE_CLASS
 		FUNCTION( List )
 	END_STATIC_FUNCTION_SPEC
 
-	BEGIN_CONST_DOUBLE_SPEC
-		CONST_DOUBLE(SKIP_NONE   ,PR_SKIP_NONE )
-		CONST_DOUBLE(SKIP_DOT    ,PR_SKIP_DOT )
-		CONST_DOUBLE(SKIP_DOT_DOT,PR_SKIP_DOT_DOT )
-		CONST_DOUBLE(SKIP_BOTH   ,PR_SKIP_BOTH )
-		CONST_DOUBLE(SKIP_HIDDEN ,PR_SKIP_HIDDEN )
+	BEGIN_CONST_INTEGER_SPEC
+		CONST_INTEGER(SKIP_NONE   ,PR_SKIP_NONE )
+		CONST_INTEGER(SKIP_DOT    ,PR_SKIP_DOT )
+		CONST_INTEGER(SKIP_DOT_DOT,PR_SKIP_DOT_DOT )
+		CONST_INTEGER(SKIP_BOTH   ,PR_SKIP_BOTH )
+		CONST_INTEGER(SKIP_HIDDEN ,PR_SKIP_HIDDEN )
 
-		CONST_DOUBLE(SKIP_FILE, _SKIP_FILE )
-		CONST_DOUBLE(SKIP_DIRECTORY, _SKIP_DIRECTORY )
-		CONST_DOUBLE(SKIP_OTHER, _SKIP_OTHER )
-	END_CONST_DOUBLE_SPEC
+		CONST_INTEGER(SKIP_FILE, _SKIP_FILE )
+		CONST_INTEGER(SKIP_DIRECTORY, _SKIP_DIRECTORY )
+		CONST_INTEGER(SKIP_OTHER, _SKIP_OTHER )
+	END_CONST_INTEGER_SPEC
 
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1)

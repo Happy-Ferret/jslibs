@@ -234,8 +234,10 @@ static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 DEFINE_CONSTRUCTOR() {
 
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 //	JSClass *test = JS_GetClass(obj);
-	JL_S_ASSERT_CLASS( obj, _class );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	JL_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 
@@ -282,6 +284,8 @@ DEFINE_FUNCTION( Open ) {
 	SetForegroundWindow(hWnd);
 	UpdateWindow(hWnd);
 	SetFocus(hWnd);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -290,6 +294,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( hWnd );
+	*JL_RVAL = JSVAL_VOID;
 
 //	jsval functionVal;
 	int msgCount;
@@ -340,7 +345,7 @@ DEFINE_FUNCTION( Close ) {
 	jl_free(cxobj);
 	UnregisterClass(WINDOW_CLASS_NAME, GetModuleHandle(NULL));
 
-
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -416,7 +421,7 @@ DEFINE_FUNCTION( CreateOpenGLContext ) {
 	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( hWnd );
 
-//	JS_SetReservedSlot(cx, obj, SLOT_WINDOW_OBJECT, argv[0]); // avoid being GC while Gl is in use
+//	JL_SetReservedSlot(cx, obj, SLOT_WINDOW_OBJECT, argv[0]); // avoid being GC while Gl is in use
 
 	BOOL res;
 	HDC hDC = GetDC(hWnd);
@@ -466,6 +471,8 @@ DEFINE_FUNCTION( CreateOpenGLContext ) {
 
 //  wglMakeCurrent(NULL,NULL); // This step is not required, but it can help find errors, especially when you are using multiple rendering contexts.
 //  wglDeleteContext(hRC);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -497,7 +504,7 @@ DEFINE_FUNCTION( Mode ) {
 		unsigned int size[2];
 //		IntArrayToVector(cx, 2, argv, size);
 		size_t length;
-		JL_CHK( JsvalToUIntVector(cx, argv[0], size, 2, &length) );
+		JL_CHK( JL_JsvalToCValVector(cx, argv[0], size, 2, &length) );
 		JL_S_ASSERT( length == 2, "Invalid array size." );
 		JL_CHK( JS_ValueToInt32(cx, argv[1], &bits) );
 		JL_CHK( JS_ValueToBoolean(cx, argv[2], &fullscreen) );
@@ -517,6 +524,8 @@ DEFINE_FUNCTION( Mode ) {
 		status = ChangeDisplaySettings(NULL, 0);
 	}
 	JL_S_ASSERT( status == DISP_CHANGE_SUCCESSFUL, "Unable to ChangeDisplaySettings.(%d)", status);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -543,7 +552,7 @@ DEFINE_PROPERTY( absoluteClipCursor ) {
 		int v[4];
 //		IntArrayToVector(cx, 4, vp, v);
 		size_t length;
-		JL_CHK( JsvalToIntVector(cx, *vp, v, 4, &length) );
+		JL_CHK( JL_JsvalToCValVector(cx, *vp, v, 4, &length) );
 		JL_S_ASSERT( length == 4, "Invalid array size." );
 
 		JSBool clip;
@@ -640,7 +649,7 @@ DEFINE_PROPERTY( rectSetter ) {
 	unsigned int length;
 
 //	J_JSVAL_TO_INT_VECTOR(*vp, v, length);
-	JL_CHK( JsvalToIntVector(cx, *vp, v, 4, &length) );
+	JL_CHK( JL_JsvalToCValVector(cx, *vp, v, 4, &length) );
 	JL_S_ASSERT( length == 4, "Invalid array size." );
 
 	SetWindowPos(hWnd, 0, v[0], v[1], v[2] - v[0], v[3] - v[1], SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
@@ -656,7 +665,7 @@ DEFINE_PROPERTY( cursorAbsolutePositionSetter ) {
 
 //	IntArrayToVector(cx, 2, vp, vec);
 	size_t length;
-	JL_CHK( JsvalToIntVector(cx, *vp, vec, 2, &length) );
+	JL_CHK( JL_JsvalToCValVector(cx, *vp, vec, 2, &length) );
 	JL_S_ASSERT( length == 2, "Invalid array size." );
 
 	BOOL sysStatus = SetCursorPos(vec[0], vec[1]); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
@@ -684,7 +693,7 @@ DEFINE_PROPERTY( cursorPositionSetter ) {
 	int vec[2];
 //	IntArrayToVector(cx, 2, vp, vec);
 	size_t length;
-	JL_CHK( JsvalToIntVector(cx, *vp, vec, 2, &length) );
+	JL_CHK( JL_JsvalToCValVector(cx, *vp, vec, 2, &length) );
 	JL_S_ASSERT( length == 2, "Invalid array size." );
 
 	POINT pt = { vec[0], vec[1] };
@@ -712,7 +721,7 @@ DEFINE_PROPERTY( title ) {
 	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(hWnd);
 	const char *title;
-	JL_CHK( JsvalToString(cx, vp, &title) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &title) );
 	SetWindowText(hWnd, title);
 	return JS_TRUE;
 }

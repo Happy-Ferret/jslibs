@@ -5,6 +5,9 @@ LoadModule('jsio');
 LoadModule('jsimage');
 
 LoadModule('jsvideoinput');
+
+Print( VideoInput.list.join('\n') ); throw 0;
+
 LoadModule('jssdl');
 LoadModule('jsgraphics');
 LoadModule('jsprotex');

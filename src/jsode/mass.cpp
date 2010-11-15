@@ -50,19 +50,23 @@ $TOC_MEMBER $INAME
   TBD dMassTranslate + dBodySetMass
 **/
 
-DEFINE_FUNCTION_FAST( Translate ) {
+DEFINE_FUNCTION( Translate ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_CHK( GetBodyAndMass(cx, JL_FOBJ, &bodyID, &mass) );
+	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 	real translation[3];
 //	JL_CHK( FloatArrayToVector(cx, 3, &argv[0], translation) );
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, JL_FARG(1), translation, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), translation, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dMassTranslate(&mass, translation[0], translation[1], translation[2]);
 	ode::dBodySetMass(bodyID, &mass);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -72,16 +76,20 @@ $TOC_MEMBER $INAME
  $VOID $INAME( mass )
   TBD dBodyGetMass, dMassAdjust, dBodySetMass
 **/
-DEFINE_FUNCTION_FAST( Adjust ) {
+DEFINE_FUNCTION( Adjust ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_CHK( GetBodyAndMass(cx, JL_FOBJ, &bodyID, &mass) );
+	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 	jsdouble newMass;
-	JL_CHK( JS_ValueToNumber(cx, JL_FARG(1), &newMass) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &newMass) );
 	ode::dMassAdjust(&mass, (ode::dReal)newMass);
 	ode::dBodySetMass(bodyID, &mass);
+	
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -92,13 +100,17 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   TBD dBodyGetMass, dMassSetZero, dBodySetMass
 **/
-DEFINE_FUNCTION_FAST( SetZero ) {
+DEFINE_FUNCTION( SetZero ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	JL_CHK( GetBodyAndMass(cx, JL_FOBJ, &bodyID, &mass) );
+	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 	ode::dMassSetZero(&mass);
 	ode::dBodySetMass(bodyID, &mass);
+	
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -106,30 +118,34 @@ DEFINE_FUNCTION_FAST( SetZero ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( mass, vec3 )
+ $VOID $INAME( mass, vec3 )
   TBD dBodyGetMass, dMassSetBoxTotal, dBodySetMass
 **/
-DEFINE_FUNCTION_FAST( SetBoxTotal ) {
+DEFINE_FUNCTION( SetBoxTotal ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
 
 	ode::dMass mass;
 	JL_S_ASSERT_ARG_MIN(2);
 // get mass object
 	ode::dBodyID bodyID;
-	JL_CHK( GetBodyAndMass(cx, JL_FOBJ, &bodyID, &mass) );
+	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 // arg 0
 	jsdouble totalMass;
-	JL_CHK( JS_ValueToNumber(cx, JL_FARG(1), &totalMass) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &totalMass) );
 // arg 1
 	real dimensions[3];
 	//	JL_CHK( FloatArrayToVector(cx, 3, &argv[1], dimensions) );
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, JL_FARG(2), dimensions, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(2), dimensions, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 
 // apply the formulae
 	ode::dMassSetBoxTotal(&mass, (ode::dReal)totalMass, dimensions[0], dimensions[0], dimensions[0]);
 // set mass object
 	ode::dBodySetMass(bodyID, &mass);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -150,7 +166,7 @@ DEFINE_PROPERTY( valueSetter ) {
 	ode::dMass mass;
 	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	jsdouble massValue;
-	JL_CHK( JS_ValueToNumber(cx, *vp, &massValue) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &massValue) );
 	mass.mass = (ode::dReal)massValue;
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
@@ -163,7 +179,7 @@ DEFINE_PROPERTY( valueGetter ) {
 	ode::dBodyID bodyID;
 	ode::dMass mass;
 	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
-	JL_CHK( JS_NewDoubleValue(cx, mass.mass, vp) );
+	JL_CHK( JL_CValToJsval(cx, mass.mass, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -184,7 +200,7 @@ DEFINE_PROPERTY( centerSetter ) {
 //	jsdouble translation[3];
 	//JL_CHK( FloatArrayToVector(cx, 3, vp, mass.c) );
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, *vp, mass.c, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, *vp, mass.c, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
@@ -209,10 +225,10 @@ CONFIGURE_CLASS
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( Translate )
-		FUNCTION_FAST( Adjust )
-		FUNCTION_FAST( SetBoxTotal )
-		FUNCTION_FAST( SetZero )
+		FUNCTION( Translate )
+		FUNCTION( Adjust )
+		FUNCTION( SetBoxTotal )
+		FUNCTION( SetZero )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

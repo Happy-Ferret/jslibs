@@ -119,10 +119,10 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Close the descriptor.
 **/
-DEFINE_FUNCTION_FAST( Close ) {
+DEFINE_FUNCTION( Close ) {
 
-	JSObject *obj = JL_FOBJ;
-	*JL_FRVAL = JSVAL_VOID;
+	JL_DEFINE_FUNCTION_OBJ;
+
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
 
 	JL_S_ASSERT( fd != NULL, "The descriptor is already closed." ); // see PublicApiRules (http://code.google.com/p/jslibs/wiki/PublicApiRules)
@@ -142,6 +142,7 @@ DEFINE_FUNCTION_FAST( Close ) {
 	JL_SetPrivate(cx, obj, NULL);
 	JL_CHK( SetStreamReadInterface(cx, obj, NULL) );
 	//	JS_ClearScope( cx, obj ); // (TBD) check if this can help to clear readable, writable, exception ?
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -175,7 +176,7 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, uint32_t amount, jsval *rval 
 //		if (likely( amount != 0 )) 
 			*rval = JSVAL_VOID;
 //		else
-//			*rval = JS_GetEmptyStringValue(cx);
+//			*rval = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
@@ -184,7 +185,7 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, uint32_t amount, jsval *rval 
 		JS_free( cx, buf );
 		switch ( PR_GetError() ) { // see Write() for details about errors
 			case PR_WOULD_BLOCK_ERROR:
-				*rval = JS_GetEmptyStringValue(cx); // mean no data available, but connection still established.
+				*rval = JL_GetEmptyStringValue(cx); // mean no data available, but connection still established.
 				return JS_TRUE;
 			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
 //			case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
@@ -264,7 +265,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 	if ( BufferGetLength(&buf) == 0 ) { // no data but NOT end of file/socket
 
 		BufferFinalize(&buf);
-		*rval = JS_GetEmptyStringValue(cx);
+		*rval = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
@@ -300,28 +301,29 @@ $TOC_MEMBER $INAME
   Print( soc.Read(undefined), '\n' );
   }}}
 **/
-DEFINE_FUNCTION_FAST( Read ) {
+DEFINE_FUNCTION( Read ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( fd );
 
 	if (likely( JL_ARGC == 0 )) {
 
 		PRInt32 available = PR_Available( fd ); // (TBD) use PRInt64 available = PR_Available64(fd);
 		if (likely( available != -1 )) // we can use the 'available' information (possible reason: PR_NOT_IMPLEMENTED_ERROR)
-			JL_CHK( ReadToJsval(cx, fd, available, JL_FRVAL) ); // may block !
+			JL_CHK( ReadToJsval(cx, fd, available, JL_RVAL) ); // may block !
 		else // 'available' is not usable with this fd type, then we use a buffered read (ie. read while there is someting to read)
-			JL_CHK( ReadAllToJsval(cx, fd, JL_FRVAL) );
+			JL_CHK( ReadAllToJsval(cx, fd, JL_RVAL) );
 	} else { // amount value is NOT provided, then try to read all
 
-		if (likely( !JSVAL_IS_VOID(JL_FARG(1)) )) {
+		if (likely( !JSVAL_IS_VOID(JL_ARG(1)) )) {
 
 			PRInt32 amount;
-			JL_CHK( JsvalToInt(cx, JL_FARG(1), &amount) );
-			JL_CHK( ReadToJsval(cx, fd, amount, JL_FRVAL) ); // (TBD) check if it is good to call it even if amount is 0.
+			JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &amount) );
+			JL_CHK( ReadToJsval(cx, fd, amount, JL_RVAL) ); // (TBD) check if it is good to call it even if amount is 0.
 		} else {
 
-			JL_CHK( ReadAllToJsval(cx, fd, JL_FRVAL) ); // may block ! (TBD) check if this case is useful.
+			JL_CHK( ReadAllToJsval(cx, fd, JL_RVAL) ); // may block ! (TBD) check if this case is useful.
 		}
 	}
 
@@ -336,15 +338,16 @@ $TOC_MEMBER $INAME
   If the whole data cannot be written, Write returns that have not be written.
   If the descriptor is disconnected (socket only), this function returns _undefined_.
 **/
-DEFINE_FUNCTION_FAST( Write ) {
+DEFINE_FUNCTION( Write ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG( 1 );
 	PRFileDesc *fd;
-	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_FOBJ);
+	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( fd );
 	size_t len, sentAmount;
 	const char *str;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &str, &len) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) );
 
 	JL_S_ASSERT( len <= PR_INT32_MAX, "Too many data." );
 	PRInt32 res;
@@ -387,7 +390,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 				// Subsequent operations fail with WSAECONNRESET.
 				// source: msdn, Winsock Error Codes
 
-				*JL_FRVAL = JSVAL_VOID;
+				*JL_RVAL = JSVAL_VOID;
 				return JS_TRUE;
 			default:
 				return ThrowIoError(cx);
@@ -404,7 +407,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	if (likely( sentAmount == len )) {
 
-		*JL_FRVAL = JS_GetEmptyStringValue(cx); // nothing remains
+		*JL_RVAL = JL_GetEmptyStringValue(cx); // nothing remains
 		return JS_TRUE;
 	}
 
@@ -417,11 +420,11 @@ DEFINE_FUNCTION_FAST( Write ) {
 		JL_CHK( buffer );
 		((char*)buffer)[remaining] = '\0';
 		memcpy(buffer, str, remaining);
-		JL_CHKB( JL_NewBlob(cx, buffer, remaining, JL_FRVAL), bad_free );
+		JL_CHKB( JL_NewBlob(cx, buffer, remaining, JL_RVAL), bad_free ); // (TBD) keep the type: return a string if the JL_ARG(1) is a sring.
  		return JS_TRUE;
 	}
 
-	*JL_FRVAL = JL_FARG(1); // nothing has been sent
+	*JL_RVAL = JL_ARG(1); // nothing has been sent
 
 	return JS_TRUE;
 bad_free:
@@ -435,12 +438,15 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Sync any buffered data for a fd to its backing device.
 **/
-DEFINE_FUNCTION_FAST( Sync ) {
+DEFINE_FUNCTION( Sync ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( fd );
 	JL_CHKB( PR_Sync(fd) == PR_SUCCESS, bad_ioerror );
-	*JL_FRVAL = JSVAL_VOID;
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 bad_ioerror:
 	ThrowIoError(cx);
@@ -476,12 +482,13 @@ DEFINE_PROPERTY( available ) {
 		return ThrowIoError(cx);
 	}
 
+	return JL_CValToJsval(cx, available, vp);
+/*
 	if ( available <= JSVAL_INT_MAX )
 		*vp = INT_TO_JSVAL( (jsint)available );
 	else
-		JL_CHK( JS_NewNumberValue(cx, (jsdouble)available, vp) );
-
-	return JS_TRUE;
+		JL_CHK( JL_NewNumberValue(cx, (jsdouble)available, vp) );
+*/
 	JL_BAD;
 }
 
@@ -526,7 +533,7 @@ $TOC_MEMBER $INAME
   Is $TRUE if the end of the file has been reached or the socket has been disconnected.
 **/
 /*
-// 					JL_CHK( JS_SetReservedSlot(cx, JL_FOBJ, SLOT_JSIO_DESCRIPTOR_EOF, JSVAL_TRUE) );
+// 					JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_JSIO_DESCRIPTOR_EOF, JSVAL_TRUE) );
 DEFINE_PROPERTY( eof ) {
 
 	return JL_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_EOF, vp);
@@ -545,10 +552,10 @@ DEFINE_FUNCTION( Import ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
 	//int stdfd;
-	//JL_CHK( JsvalToInt(cx, JL_ARG(1), &stdfd) );
+	//JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &stdfd) );
 
 	PRInt32 osfd;
-	JL_CHK( JsvalToInt(cx, JL_ARG(1), &osfd) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &osfd) );
 
 	//switch (stdfd) {
 	//	case 0:
@@ -566,7 +573,7 @@ DEFINE_FUNCTION( Import ) {
 	//}
 
 	int descType;
-	JL_CHK( JsvalToInt(cx, JL_ARG(2), &descType) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &descType) );
 	PRDescType type;
 	type = (PRDescType)descType;
 
@@ -576,19 +583,19 @@ DEFINE_FUNCTION( Import ) {
 	switch (type) {
 		case PR_DESC_FILE:
 			fd = PR_ImportFile(osfd);
-			descriptorObject = JS_NewObject(cx, JL_CLASS(File), NULL, NULL); // (TBD) check if proto is needed !
+			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_PROTOTYPE(cx, File), NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_SOCKET_TCP:
 			fd = PR_ImportTCPSocket(osfd);
-			descriptorObject = JS_NewObject(cx, JL_CLASS(Socket), NULL, NULL); // (TBD) check if proto is needed !
+			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_PROTOTYPE(cx, Socket), NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_SOCKET_UDP:
 			fd = PR_ImportUDPSocket(osfd);
-			descriptorObject = JS_NewObject(cx, JL_CLASS(Socket), NULL, NULL); // (TBD) check if proto is needed !
+			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_PROTOTYPE(cx, Socket), NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_PIPE:
 			fd = PR_ImportPipe(osfd);
-			descriptorObject = JS_NewObject(cx, JL_CLASS(File), NULL, NULL); // (TBD) check if proto is needed !
+			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_PROTOTYPE(cx, File), NULL); // (TBD) check if proto is needed !
 			break;
 		default:
 			JL_REPORT_ERROR("Invalid descriptor type.");
@@ -598,9 +605,9 @@ DEFINE_FUNCTION( Import ) {
 
 	JL_CHK( descriptorObject );
 	JL_SetPrivate(cx, descriptorObject, (void*)fd);
-	JL_CHK( JS_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
+	JL_CHK( JL_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
 
-	*rval = OBJECT_TO_JSVAL(descriptorObject);
+	*JL_RVAL = OBJECT_TO_JSVAL(descriptorObject);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -628,8 +635,7 @@ DEFINE_FUNCTION( Import ) {
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	// Check whether v is an instance of obj.
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(v), JL_GetClass(obj));
+	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
 
@@ -639,10 +645,10 @@ CONFIGURE_CLASS
 	HAS_HAS_INSTANCE // see issue#52
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( Close )
-		FUNCTION_FAST( Read )
-		FUNCTION_FAST( Write )
-		FUNCTION_FAST( Sync )
+		FUNCTION( Close )
+		FUNCTION( Read )
+		FUNCTION( Write )
+		FUNCTION( Sync )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -656,12 +662,12 @@ CONFIGURE_CLASS
 		FUNCTION( Import )
 	END_STATIC_FUNCTION_SPEC
 
-	BEGIN_CONST_DOUBLE_SPEC
-		CONST_DOUBLE( DESC_FILE			,PR_DESC_FILE )
-		CONST_DOUBLE( DESC_SOCKET_TCP	,PR_DESC_SOCKET_TCP )
-		CONST_DOUBLE( DESC_SOCKET_UDP ,PR_DESC_SOCKET_UDP )
-		CONST_DOUBLE( DESC_LAYERED	   ,PR_DESC_LAYERED )
-		CONST_DOUBLE( DESC_PIPE       ,PR_DESC_PIPE )
-	END_CONST_DOUBLE_SPEC
+	BEGIN_CONST_INTEGER_SPEC
+		CONST_INTEGER( DESC_FILE		,PR_DESC_FILE )
+		CONST_INTEGER( DESC_SOCKET_TCP	,PR_DESC_SOCKET_TCP )
+		CONST_INTEGER( DESC_SOCKET_UDP	,PR_DESC_SOCKET_UDP )
+		CONST_INTEGER( DESC_LAYERED		,PR_DESC_LAYERED )
+		CONST_INTEGER( DESC_PIPE		,PR_DESC_PIPE )
+	END_CONST_INTEGER_SPEC
 
 END_CLASS

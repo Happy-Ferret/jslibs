@@ -47,7 +47,7 @@ DEFINE_PROPERTY( text ) {
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
 	int errorCode;
-	JL_CHK( JsvalToInt(cx, *vp, &errorCode) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &errorCode) );
 	char *errStr;
 	switch (errorCode) {
 		case GL_NO_ERROR:
@@ -86,7 +86,7 @@ DEFINE_PROPERTY( const ) {
 
 	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
 	int errorCode;
-	JL_CHK( JsvalToInt(cx, *vp, &errorCode) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &errorCode) );
 	char *errStr;
 	switch (errorCode) {
 		case GL_NO_ERROR:
@@ -123,13 +123,15 @@ DEFINE_PROPERTY( const ) {
 
 DEFINE_FUNCTION( toString ) {
 
-	return _text(cx, obj, 0, rval);
+	JL_DEFINE_FUNCTION_OBJ;
+
+	return _text(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
+	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
 
@@ -149,7 +151,7 @@ DEFINE_XDR() {
 		*objp = JS_NewObject(xdr->cx, JL_THIS_CLASS, NULL, NULL);
 		jsval tmp;
 		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JS_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
+		JL_CHK( JL_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
 		return JS_TRUE;
 	}
 
@@ -185,11 +187,11 @@ END_CLASS
 
 JSBool ThrowOglError( JSContext *cx, GLenum err ) {
 
-	JSObject *error = JS_NewObject( cx, JL_CLASS(OglError), NULL, NULL );
+	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(OglError), JL_PROTOTYPE(cx, OglError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	jsval errVal;
-	JL_CHK( IntToJsval(cx, err, &errVal) );
-	JL_CHK( JS_SetReservedSlot( cx, error, 0, errVal ) );
-	JL_SAFE( ExceptionSetScriptLocation(cx, error) );
+	JL_CHK( JL_CValToJsval(cx, err, &errVal) );
+	JL_CHK( JL_SetReservedSlot( cx, error, 0, errVal ) );
+	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;
 }

@@ -14,6 +14,11 @@
 
 #include "stdafx.h"
 
+#include "jlplatform.h"
+
+#include <malloc.h>
+
+
 #include "jlmoduleprivate.h"
 DEFINE_MODULE_PRIVATE
 
@@ -52,6 +57,32 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	jsfontMpv->GetFTSymbols(&_ftSymbols);
 	mpv->ftLibrary = jsfontMpv->ftLibrary;
+
+/*
+	CHKHEAP();
+	char *t = new char[10000];
+	CHKHEAP();
+	delete[] t;
+
+	jl_free(0);
+
+	FT_Library ftLibrary;
+	CHKHEAP();
+	FT_Error fterr;
+	CHKHEAP();
+	fterr = FT_Init_FreeType(&ftLibrary);
+	CHKHEAP();
+	FT_Face face;
+	CHKHEAP();
+	fterr = FT_New_Face( ftLibrary, "c:\\windows\\fonts\\arial.ttf", 0, &face );
+	CHKHEAP();
+
+	OGLFT::Face *face3d = new OGLFT::Outline(face, 9);
+	CHKHEAP();
+	delete face3d;
+	CHKHEAP();
+
+*/
 
 	// test: OGLFT::Filled* face = new OGLFT::Filled("c:\\windows\\fonts\\arial.ttf"); face->draw("test");
 

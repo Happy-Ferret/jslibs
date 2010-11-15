@@ -35,7 +35,7 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	BOOL status = AllocConsole();
 	if ( status == FALSE )
@@ -70,6 +70,8 @@ DEFINE_FUNCTION( Close ) {
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
 //	JL_S_ASSERT( res != 0, "Unable to free the console." );
+	
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 //	JL_BAD;
 }
@@ -90,11 +92,13 @@ DEFINE_FUNCTION( Write ) {
 		return WinThrowError(cx, GetLastError());
 	const char *str;
 	size_t len;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) );
 	DWORD written;
 	BOOL status = WriteConsole(hStdout, str, len, &written, NULL);
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -118,7 +122,7 @@ DEFINE_FUNCTION( Read ) {
 	BOOL res = ReadConsole(hStdin, buffer, sizeof(buffer), &read, NULL);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	*rval = STRING_TO_JSVAL(JS_NewStringCopyN(cx, buffer, read));
+	*JL_RVAL = STRING_TO_JSVAL(JS_NewStringCopyN(cx, buffer, read));
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -135,7 +139,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( titleSetter ) {
 
 	const char *str;
-	JL_CHK( JsvalToString(cx, vp, &str) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &str) );
 	SetConsoleTitle(str);
 	return JS_TRUE;
 	JL_BAD;
@@ -147,7 +151,7 @@ DEFINE_PROPERTY( titleGetter ) {
 	DWORD res = GetConsoleTitle(buffer, sizeof(buffer));
 	JL_S_ASSERT( res >= 0, "Unable to GetConsoleTitle." );
 	if ( res == 0 )
-		*vp = JS_GetEmptyStringValue(cx);
+		*vp = JL_GetEmptyStringValue(cx);
 	else
 		*vp = STRING_TO_JSVAL(JS_NewStringCopyN(cx, buffer, res));
 	return JS_TRUE;

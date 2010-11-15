@@ -195,13 +195,11 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	data = (JOCTET *)JS_malloc(cx, length);
 	JL_CHK( data );
 
-	jsval blobVal;
-	JL_CHK( JL_NewBlob(cx, data, length, &blobVal) );
-
+	JL_CHK( JL_NewBlob(cx, data, length, JL_RVAL) );
 	JSObject *blobObj;
-	JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
 	JL_S_ASSERT( blobObj, "Unable to create Blob object." );
-	*rval = OBJECT_TO_JSVAL(blobObj);
+	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
 
 	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
@@ -321,12 +319,11 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	data = (png_bytep)JS_malloc(cx, length);
 	JL_CHK( data );
 
-	jsval blobVal;
-	JL_CHK( JL_NewBlob(cx, data, length, &blobVal) );
+	JL_CHK( JL_NewBlob(cx, data, length, JL_RVAL) );
 	JSObject *blobObj;
-	JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
+	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
 	JL_S_ASSERT( blobObj, "Unable to create Blob object." );
-	*rval = OBJECT_TO_JSVAL(blobObj);
+	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
 
 	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
@@ -367,28 +364,28 @@ void write_row_callback(png_structp png_ptr, png_bytep data, png_size_t size) {
 void output_flush_fn(png_structp png_ptr) {
 }
 
-DEFINE_FUNCTION_FAST( EncodePngImage ) {
+DEFINE_FUNCTION( EncodePngImage ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 
 	int compressionLevel;
-	if ( JL_FARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_INT( JL_FARG(2) );
-		compressionLevel = JSVAL_TO_INT( JL_FARG(2) );
+		JL_S_ASSERT_INT( JL_ARG(2) );
+		compressionLevel = JSVAL_TO_INT( JL_ARG(2) );
 		JL_S_ASSERT( compressionLevel >= 0 && compressionLevel <= 9, "Invalid compression level." );
 	} else {
 
 		compressionLevel = Z_DEFAULT_COMPRESSION;
 	}
 
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	JSObject *image;
-	image = JSVAL_TO_OBJECT( JL_FARG(1) );
+	image = JSVAL_TO_OBJECT( JL_ARG(1) );
 	int sWidth, sHeight, sChannels;
-	JL_CHK( GetPropertyInt(cx, image, "width", &sWidth) );
-	JL_CHK( GetPropertyInt(cx, image, "height", &sHeight) );
-	JL_CHK( GetPropertyInt(cx, image, "channels", &sChannels) );
+	JL_CHK( JL_GetProperty(cx, image, "width", &sWidth) );
+	JL_CHK( JL_GetProperty(cx, image, "height", &sHeight) );
+	JL_CHK( JL_GetProperty(cx, image, "channels", &sChannels) );
 
 	PngWriteUserStruct desc;
 
@@ -398,7 +395,7 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 
 	const char *sBuffer;
 	size_t bufferLength;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
 	JL_S_ASSERT( bufferLength == (size_t)(sWidth * sHeight * sChannels * 1), "Invalid image format." );
 
 	desc.png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -437,7 +434,7 @@ DEFINE_FUNCTION_FAST( EncodePngImage ) {
 	png_destroy_write_struct(&desc.png, &desc.info);
 
 	JS_realloc(cx, desc.buffer, desc.pos);
-	JL_CHK( JL_NewBlob(cx, desc.buffer, desc.pos, JL_FRVAL) );
+	JL_CHK( JL_NewBlob(cx, desc.buffer, desc.pos, JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -450,7 +447,7 @@ CONFIGURE_STATIC
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( DecodePngImage )
-		FUNCTION_FAST( EncodePngImage )
+		FUNCTION( EncodePngImage )
 		FUNCTION( DecodeJpegImage )
 //		FUNCTION( EncodeJpegImage )
 	END_STATIC_FUNCTION_SPEC

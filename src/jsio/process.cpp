@@ -53,12 +53,13 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT( !JL_ARG_ISDEF(2) || JsvalIsArray(cx, JL_ARG(2)), "Invalid 2nd argument" );
+	JL_S_ASSERT( !JL_ARG_ISDEF(2) || JL_JsvalIsArray(cx, JL_ARG(2)), "Invalid 2nd argument" );
 
 	const char *path;
-	JL_CHK( JsvalToString(cx, &JL_ARG(1), &path) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &path) );
 
 	int processArgc;
 	const char **processArgv;
@@ -76,7 +77,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal) );
 			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), JSVAL_TO_INT(propVal), &propVal) ); // (TBD) optimize
 			const char *tmp;
-			JL_CHK( JsvalToString(cx, &propVal, &tmp) ); // warning: GC on the returned buffer !
+			JL_CHK( JL_JsvalToCVal(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
 			processArgv[i+1] = tmp;
 		}
 		JS_DestroyIdArray( cx, idArray ); // (TBD) free it on error too !
@@ -126,18 +127,18 @@ DEFINE_CONSTRUCTOR() {
 	JL_SetPrivate(cx, obj, (void*)process);
 
 	JSObject *fdInObj;
-	fdInObj = JS_NewObject( cx, JL_CLASS(Pipe), NULL, NULL );
-	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdInObj)) );
+	fdInObj = JS_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL );
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdInObj)) );
 	JL_SetPrivate( cx, fdInObj, stdin_parent );
 
 	JSObject *fdOutObj;
-	fdOutObj = JS_NewObject( cx, JL_CLASS(Pipe), NULL, NULL );
-	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOutObj)) );
+	fdOutObj = JS_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL );
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOutObj)) );
 	JL_SetPrivate( cx, fdOutObj, stdout_parent );
 
 	JSObject *fdErrObj;
-	fdErrObj = JS_NewObject( cx, JL_CLASS(Pipe), NULL, NULL );
-	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErrObj)) );
+	fdErrObj = JS_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL );
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErrObj)) );
 	JL_SetPrivate( cx, fdErrObj, stderr_parent );
 
 	return JS_TRUE;
@@ -161,9 +162,9 @@ $TOC_MEMBER $INAME
   $H note
    In bash, `true;echo $?` prints `0` and `false;echo $?` prints `1`
 **/
-DEFINE_FUNCTION_FAST( Wait ) {
+DEFINE_FUNCTION( Wait ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
@@ -171,7 +172,7 @@ DEFINE_FUNCTION_FAST( Wait ) {
 	PRInt32 exitValue;
 	JL_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
 	JL_SetPrivate(cx, obj, NULL);
-	JL_CHK( IntToJsval(cx, exitValue, JL_FRVAL) );
+	JL_CHK( JL_CValToJsval(cx, exitValue, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -182,16 +183,16 @@ $TOC_MEMBER $INAME
  $INT $INAME()
   This function detaches the process. A detached process does not need to be and cannot be reaped.
 **/
-DEFINE_FUNCTION_FAST( Detach ) {
+DEFINE_FUNCTION( Detach ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(process);
 	JL_CHK( PR_DetachProcess(process) == PR_SUCCESS );
 	JL_SetPrivate(cx, obj, NULL); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -202,16 +203,16 @@ $TOC_MEMBER $INAME
  $INT $INAME()
   Terminates the process.
 **/
-DEFINE_FUNCTION_FAST( Kill ) {
+DEFINE_FUNCTION( Kill ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(process);
 	JL_CHK( PR_KillProcess(process) == PR_SUCCESS );
 	JL_SetPrivate(cx, obj, NULL); // Invalidates the current process pointer.
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -273,9 +274,9 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( Wait )
-		FUNCTION_FAST( Detach )
-		FUNCTION_FAST( Kill )
+		FUNCTION( Wait )
+		FUNCTION( Detach )
+		FUNCTION( Kill )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -283,11 +284,5 @@ CONFIGURE_CLASS
 		PROPERTY_READ( stdout )
 		PROPERTY_READ( stderr )
 	END_PROPERTY_SPEC
-
-	BEGIN_STATIC_PROPERTY_SPEC
-	END_STATIC_PROPERTY_SPEC
-
-	BEGIN_CONST_DOUBLE_SPEC
-	END_CONST_DOUBLE_SPEC
 
 END_CLASS

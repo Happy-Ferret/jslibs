@@ -36,7 +36,7 @@ void FinalizeGeom(JSContext *cx, JSObject *obj);
 
 JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj);
 
-ALWAYS_INLINE bool JsvalIsGeom( const jsval val ) {
+ALWAYS_INLINE bool JL_JsvalIsGeom( const jsval val ) {
 
 	return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT( val )) == JL_CLASS(Geom);
 }
@@ -58,7 +58,7 @@ ALWAYS_INLINE JSBool GeomToJsval( JSContext *cx, ode::dGeomID geomId, jsval *val
 }
 
 
-ALWAYS_INLINE JSBool JsvalToGeom( JSContext *cx, const jsval val, ode::dGeomID *geom ) {
+ALWAYS_INLINE JSBool JL_JsvalToGeom( JSContext *cx, const jsval val, ode::dGeomID *geom ) {
 
 	JL_S_ASSERT_OBJECT( val );
 	JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(val), JL_CLASS(Geom));

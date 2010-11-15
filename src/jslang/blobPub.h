@@ -17,10 +17,8 @@
 
 #include "jlhelper.h"
 
-
+/* the new Blob
 namespace jl {
-
-
 struct Blob : CppAllocators {
 
 	size_t _size;
@@ -41,58 +39,37 @@ struct Blob : CppAllocators {
 		_data = static_cast<uint8_t*>(jl_realloc(_data, size));
 	}
 };
-
-/*
-ALWAYS_INLINE JSClass* BlobJSClass( JSContext *cx ) {
-
-//	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
-//	if (unlikely( jsClass == NULL ))
-//		jsClass = JL_GetRegistredNativeClass(cx, "Blob");
-//	return jsClass;
-	return JL_GetRegistredNativeClass(cx, "Blob");
-}
-
-
-ALWAYS_INLINE bool JsvalIsBlob( JSContext *cx, jsval val ) {
-
-	return JsvalIsClass(val, BlobJSClass(cx) );
 }
 */
 
+
+static ALWAYS_INLINE JSClass* JL_BlobJSClass( const JSContext *cx ) {
+
+	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+	if (unlikely( clasp == NULL ))
+		clasp = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Blob")->clasp;
+	return clasp;
 }
 
 
+static ALWAYS_INLINE bool JL_JsvalIsBlob( const JSContext *cx, const jsval &val ) {
 
-
-
-
-ALWAYS_INLINE JSClass* BlobJSClass( JSContext *cx ) {
-
-//	static JSClass *jsClass = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
-//	if (unlikely( jsClass == NULL ))
-//		jsClass = JL_GetRegistredNativeClass(cx, "Blob");
-//	return jsClass;
-	return JL_GetRegistredNativeClass(cx, "Blob");
+	return JL_JsvalIsClass(val, JL_BlobJSClass(cx) );
 }
 
-
-ALWAYS_INLINE bool JsvalIsBlob( JSContext *cx, jsval val ) {
-
-	return JsvalIsClass(val, BlobJSClass(cx) );
-}
 
 /*
 
 // NewBlob takes ownership of jsMallocatedBuffer on success. Allocation must be done with JS_malloc
 inline JSObject* NewBlob( JSContext *cx, void *jsMallocatedBuffer, size_t bufferLength ) {
 
-	JSClass *blobClass = BlobJSClass(cx);
+	JSClass *blobClass = JL_BlobJSClass(cx);
 	if ( blobClass == NULL )
 		return NULL;
 	JSObject *obj = JS_NewObject(cx, blobClass, NULL, NULL);
 	if ( obj == NULL )
 		return NULL;
-	if ( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL( bufferLength )) != JS_TRUE )
+	if ( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL( bufferLength )) != JS_TRUE )
 		return NULL;
 	if ( JL_SetPrivate(cx, obj, jsMallocatedBuffer) != JS_TRUE )
 		return NULL;
@@ -111,7 +88,7 @@ inline JSBool NewBlobCopyN(JSContext *cx, const void *data, size_t amount, JSObj
 
 inline JSObject* NewEmptyBlob( JSContext *cx ) {
 
-	JSClass *blobClass = BlobJSClass(cx);
+	JSClass *blobClass = JL_BlobJSClass(cx);
 	if ( blobClass == NULL )
 		return NULL;
 	JSObject *obj = JS_NewObject(cx, blobClass, NULL, NULL);
@@ -124,7 +101,7 @@ inline JSObject* NewEmptyBlob( JSContext *cx ) {
 
 inline JSBool BlobLength( JSContext *cx, JSObject *bStringObject, size_t *length ) {
 
-	JL_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
+	JL_S_ASSERT_CLASS(bStringObject, JL_BlobJSClass( cx ));
 	jsval lengthVal;
 	JL_CHK( JL_GetReservedSlot(cx, bStringObject, SLOT_BLOB_LENGTH, &lengthVal) );
 	*length = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;
@@ -134,7 +111,7 @@ inline JSBool BlobLength( JSContext *cx, JSObject *bStringObject, size_t *length
 
 inline JSBool BlobBuffer( JSContext *cx, JSObject *bStringObject, const void **buffer ) {
 
-	JL_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
+	JL_S_ASSERT_CLASS(bStringObject, JL_BlobJSClass( cx ));
 	*buffer = JL_GetPrivate(cx, bStringObject);
 	return JS_TRUE;
 }
@@ -142,7 +119,7 @@ inline JSBool BlobBuffer( JSContext *cx, JSObject *bStringObject, const void **b
 
 inline JSBool BlobGetBufferAndLength( JSContext *cx, JSObject *bStringObject, void **data, size_t *dataLength ) {
 
-	JL_S_ASSERT_CLASS(bStringObject, BlobJSClass( cx ));
+	JL_S_ASSERT_CLASS(bStringObject, JL_BlobJSClass( cx ));
 	jsval lengthVal;
 	JL_CHK( JL_GetReservedSlot(cx, bStringObject, SLOT_BLOB_LENGTH, &lengthVal) );
 	*dataLength = JSVAL_IS_INT(lengthVal) ? JSVAL_TO_INT( lengthVal ) : 0;

@@ -118,11 +118,12 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] )
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN( 3 );
 
 	const char *asymmetricCipherName;
-	JL_CHK( JsvalToString(cx, &argv[0], &asymmetricCipherName) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &asymmetricCipherName) );
 
 	AsymmetricCipherType asymmetricCipher;
 	if ( strcasecmp( asymmetricCipherName, "RSA" ) == 0 )
@@ -145,7 +146,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 	pv->cipher = asymmetricCipher;
 
 	const char *hashName;
-	JL_CHK( JsvalToString(cx, &argv[1], &hashName) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &hashName) );
 	int hashIndex;
 	hashIndex = find_hash(hashName);
 	JL_S_ASSERT( hashIndex != -1, "hash %s is not available.", hashName );
@@ -153,20 +154,20 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 
 	if ( argc >= 3 ) {
 
-		JL_S_ASSERT_OBJECT(	argv[2] );
-		JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(argv[2]), JL_CLASS(Prng) );
-		JL_CHK( JS_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, argv[2]) );
+		JL_S_ASSERT_OBJECT(JL_ARG(3) );
+		JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(JL_ARG(3)), JL_CLASS(Prng) );
+		JL_CHK( JL_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JL_ARG(3)) );
 	} else {
 
-		JL_CHK( JS_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JSVAL_VOID) );
+		JL_CHK( JL_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JSVAL_VOID) );
 	}
 
 	if ( asymmetricCipher == rsa ) {
 
-		if ( argc >= 4 && !JSVAL_IS_VOID( argv[3] ) ) {
+		if ( argc >= 4 && !JSVAL_IS_VOID( JL_ARG(4) ) ) {
 
 			const char *paddingName;
-			JL_CHK( JsvalToString(cx, &argv[3], &paddingName) );
+			JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &paddingName) );
 
 			if ( strcasecmp(paddingName, "1_OAEP") == 0 ) {
 				pv->padding = LTC_LTC_PKCS_1_OAEP;
@@ -196,7 +197,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( keySize [, verify] )
+ $VOID $INAME( keySize [, verify] )
   Create public and private keys.
   $LF
   _keySize_ is the size of the key in bits (the modulus size). from AsymmetricCipher.[RSA|ECC|DSA|KATJA]_MIN_KEYSIZE to AsymmetricCipher.[RSA|ECC|DSA|KATJA]_MAX_KEYSIZE bits.
@@ -210,8 +211,10 @@ ac.CreateKeys( AsymmetricCipher.RSA_MIN_KEYSIZE );
 **/
 DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
+
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -221,7 +224,7 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 	JL_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
 
 	unsigned int keySize;
-	JL_CHK( JsvalToUInt(cx, argv[0], &keySize) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &keySize) );
 
 	int err;
 	err = -1; // default
@@ -265,7 +268,7 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 
 	bool verify;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JsvalToBool(cx, JL_ARG(2), &verify) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &verify) );
 	else
 		verify = false;
 
@@ -278,6 +281,8 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 	}
 
 	pv->hasKey = true;
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -293,7 +298,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_THIS_CLASS();
+
 	JL_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
@@ -309,7 +316,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 
 	const char *in;
 	size_t inLength;
-	JL_CHK( JsvalToStringAndLength( cx, &argv[0], &in, &inLength ) );
+	JL_CHK( JL_JsvalToStringAndLength( cx, &JL_ARG(1), &in, &inLength ) );
 
 	char out[4096];
 	unsigned long outLength;
@@ -322,8 +329,8 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			// This is useful to identify which system encoded the message. If no variance is desired then lparam can be set to NULL.
 			unsigned char *lparam = NULL; // default: lparam not used
 			unsigned long lparamlen = 0;
-			if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
-				JL_CHK( JsvalToStringAndLength(cx, &argv[1], &in, &inLength) );
+			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
+				JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(2), &in, &inLength) );
 			err = rsa_encrypt_key_ex( (unsigned char *)in, (unsigned long)inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
 			break;
 		}
@@ -340,8 +347,8 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 		case katja: {
 			unsigned char *lparam = NULL; // default: lparam not used
 			unsigned long lparamlen = 0;
-			if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
-				JL_CHK( JsvalToStringAndLength(cx, &argv[1], &in, &inLength) );
+			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
+				JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(2), &in, &inLength) );
 			err = katja_encrypt_key( (unsigned char *)in, (unsigned long)inLength, (unsigned char *)out, &outLength, lparam, lparamlen, prngState, prngIndex, hashIndex, &pv->key.katjaKey );
 			break;
 		}
@@ -352,7 +359,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JL_CHK( JL_NewBlobCopyN(cx, out, outLength, rval) );
+	JL_CHK( JL_NewBlobCopyN(cx, out, outLength, JL_RVAL) );
 	zeromem(out, sizeof(out)); // safe clear
 
 	return JS_TRUE;
@@ -377,6 +384,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
@@ -386,7 +394,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 	const char *in;
 	size_t inLength;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
 
 	char out[4096];
 	unsigned long outLength;
@@ -401,15 +409,15 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 			const char *lparam = NULL; // default: lparam not used
 			size_t lparamlen = 0;
-			if (argc >= 2 && !JSVAL_IS_VOID( argv[1] ))
-				JL_CHK( JsvalToStringAndLength(cx, &argv[1], &lparam, &lparamlen) );
+			if (argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ))
+				JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(2), &lparam, &lparamlen) );
 
 			int stat = 0; // default: failed
 			err = rsa_decrypt_key_ex( (unsigned char *)in, (unsigned long)inLength, (unsigned char *)out, &outLength, (const unsigned char *)lparam, (unsigned long)lparamlen, hashIndex, pv->padding, &stat, &pv->key.rsaKey );
 			// doc: if all went well pt == pt2, l2 == 16, res == 1
 			if ( err == CRYPT_OK && stat != 1 ) {
 
-				*rval = JSVAL_VOID;
+				*JL_RVAL = JSVAL_VOID;
 				return JS_TRUE;
 			}
 			break;
@@ -429,15 +437,15 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 			const char *lparam = NULL; // default: lparam not used
 			size_t lparamlen = 0;
-			if (argc >= 2 && !JSVAL_IS_VOID( argv[1] ))
-				JL_CHK( JsvalToStringAndLength(cx, &argv[1], &lparam, &lparamlen) );
+			if (argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ))
+				JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(2), &lparam, &lparamlen) );
 
 			int stat = 0; // default: failed
 			err = katja_decrypt_key( (unsigned char *)in, (unsigned long)inLength, (unsigned char *)out, &outLength, (const unsigned char *)lparam, (unsigned long)lparamlen, hashIndex, &stat, &pv->key.katjaKey );
 			// doc: if all went well pt == pt2, l2 == 16, res == 1
 			if ( err == CRYPT_OK && stat != 1 ) {
 
-				*rval = JSVAL_VOID;
+				*JL_RVAL = JSVAL_VOID;
 				return JS_TRUE;
 			}
 			break;
@@ -452,7 +460,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 	out[outLength] = '\0';
 
-	JL_CHK( JL_NewBlobCopyN( cx, out, outLength, rval ) );
+	JL_CHK( JL_NewBlobCopyN( cx, out, outLength, JL_RVAL ) );
 	zeromem(out, sizeof(out));
 
 	return JS_TRUE;
@@ -469,8 +477,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
+
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
@@ -483,7 +493,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 
 	const char *in;
 	size_t inLength;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &in, &inLength) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
 
 	char out[4096];
 	unsigned long outLength;
@@ -497,8 +507,8 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 			// A good saltLength default value is between 8 and 16 octets. Strictly, it must be small than modulus len - hLen - 2 where modulus len is the size of the RSA modulus (in octets), and hLen is the length of the message digest produced by the chosen hash.
 			// int saltLength = 16; // OR saltLength = mp_unsigned_bin_size((mp_int*)(pv->key.rsaKey.N)) - hash_descriptor[hashIndex].hashsize - 2  -1;
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH;
-			if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
-				JL_CHK( JsvalToInt(cx, argv[1], &saltLength) );
+			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
+				JL_CHK( 	JL_JsvalToCVal(cx, JL_ARG(2), &saltLength) );
 
 			err = rsa_sign_hash_ex( (unsigned char *)in, inLength, (unsigned char *)out, &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, hashIndex, saltLength, &pv->key.rsaKey );
 			break;
@@ -524,7 +534,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JL_CHK( JL_NewBlobCopyN( cx, out, outLength, rval ) );
+	JL_CHK( JL_NewBlobCopyN( cx, out, outLength, JL_RVAL ) );
 	zeromem(out, sizeof(out));
 
 	return JS_TRUE;
@@ -540,8 +550,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 2 );
+
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
@@ -549,11 +561,11 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
 	const char *data;
 	size_t dataLength;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[0], &data, &dataLength ) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &dataLength ) ); // warning: GC on the returned buffer !
 
 	const char *sign;
 	size_t signLength;
-	JL_CHK( JsvalToStringAndLength(cx, &argv[1], &sign, &signLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(2), &sign, &signLength) ); // warning: GC on the returned buffer !
 
 	int stat;
 	stat = 0; // default: failed
@@ -562,8 +574,8 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 	switch ( pv->cipher ) {
 		case rsa: {
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH; // default
-			if ( argc >= 3 && !JSVAL_IS_VOID( argv[2] ) )
-				JL_CHK( JsvalToInt(cx, argv[2], &saltLength) );
+			if ( argc >= 3 && !JSVAL_IS_VOID( JL_ARG(3) ) )
+				JL_CHK( 	JL_JsvalToCVal(cx, JL_ARG(3), &saltLength) );
 
 			int hashIndex = find_hash(pv->hashDescriptor->name);
 
@@ -591,7 +603,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	*rval = BOOLEAN_TO_JSVAL( stat == 1 ? JSVAL_TRUE : JSVAL_FALSE );
+	*JL_RVAL = BOOLEAN_TO_JSVAL( stat == 1 );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -703,11 +715,11 @@ DEFINE_PROPERTY( keySetter ) {
 	JL_S_ASSERT_RESOURCE( pv );
 
 	int type;
-	JL_CHK( JsvalToInt(cx, id, &type) );
+	type = JSID_TO_INT(id);
 
 	const char *key;
 	size_t keyLength;
-	JL_CHK( JsvalToStringAndLength(cx, vp, &key, &keyLength) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &key, &keyLength) );
 
 	int err;
 	err = -1; // default
@@ -754,11 +766,9 @@ DEFINE_PROPERTY( keyGetter ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	JL_S_ASSERT( pv->hasKey, "No key found." );
 
-	JSBool jsErr;
-	int32 type;
-	jsErr = JS_ValueToInt32(cx, id, &type);
-	JL_S_ASSERT( jsErr == JS_TRUE, "Invalid operation." );
-
+	int type;
+	type = JSID_TO_INT(id);
+	
 	char key[4096];
 	unsigned long keyLength;
 	keyLength = sizeof(key);

@@ -16,7 +16,7 @@
 
 // set stack to 2MB:
 #ifdef XP_WIN
-	#pragma comment (linker, "/STACK:0x200000")
+	#pragma comment (linker, "/STACK:0x400000")
 #else
 	#pragma stacksize 2097152
 	//char stack[0x200000] __attribute__ ((section ("STACK"))) = { 0 };
@@ -41,6 +41,10 @@ void nedfree_handlenull(void *mem) {
 		nedfree(mem);
 }
 
+size_t nedblksize_msize(void *mem) {
+
+	return nedblksize(0, mem);
+}
 
 
 static unsigned char embeddedBootstrapScript[] =
@@ -56,20 +60,20 @@ JLCondHandler gEndSignalCond;
 JLMutexHandler gEndSignalLock;
 
 
-JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
 	JL_UNUSED(obj);
 	JL_UNUSED(id);
-	return BoolToJsval(cx, gEndSignalState, vp);
+	return JL_CValToJsval(cx, bool(gEndSignalState), vp);
 }
 
-JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
 	JL_UNUSED(obj);
 	JL_UNUSED(id);
 
 	bool tmp;
-	JL_CHK( JsvalToBool(cx, *vp, &tmp) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &tmp) );
 
 	JLMutexAcquire(gEndSignalLock);
 	gEndSignalState = tmp;
@@ -161,17 +165,17 @@ static JSBool EndSignalEvents(JSContext *cx, uintN argc, jsval *vp) {
 	JL_S_ASSERT_ARG_RANGE( 0, 1 );
 
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
 	upe->pe.startWait = EndSignalStartWait;
 	upe->pe.cancelWait = EndSignalCancelWait;
 	upe->pe.endWait = EndSignalEndWait;
 	upe->cancel = false;
 
-	if ( JL_FARG_ISDEF(1) ) {
+	if ( JL_ARG_ISDEF(1) ) {
 
-		JL_S_ASSERT_FUNCTION( JL_FARG(1) );
-		JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection only
-		upe->callbackFunction = JL_FARG(1);
+		JL_S_ASSERT_FUNCTION( JL_ARG(1) );
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(1)) ); // GC protection only
+		upe->callbackFunction = JL_ARG(1);
 	} else {
 	
 		upe->callbackFunction = JSVAL_VOID;
@@ -200,6 +204,7 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 		stderr_fileno = fileno(stderr);
 	return write(stderr_fileno, buffer, length);
 }
+
 
 //void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
 //	printf( "add - %s:%d - %s - %d - %p\n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticDepth, script );
@@ -311,7 +316,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		jl_calloc = nedcalloc;
 		jl_memalign = nedmemalign;
 		jl_realloc = nedrealloc;
-		jl_msize = nedblksize;
+		jl_msize = nedblksize_msize;
 		jl_free = nedfree_handlenull;
 		
 		InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
@@ -337,7 +342,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		MemoryManagerEnableGCEvent(cx);
 
 	HostPrivate *hpv;
-	hpv = GetHostPrivate(cx);
+	hpv = JL_GetHostPrivate(cx);
 	hpv->camelCase = camelCase;
 
 	// custom memory allocators are transfered to modules through the HostPrivate structure:
@@ -368,7 +373,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 #endif // XP_WIN
 
 	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
-	JL_CHK( JS_DefineFunction(cx, globalObject, "EndSignalEvents", (JSNative)EndSignalEvents, 0, JSPROP_SHARED | JSPROP_PERMANENT | JSFUN_FAST_NATIVE) );
+	JL_CHK( JS_DefineFunction(cx, globalObject, "EndSignalEvents", (JSNative)EndSignalEvents, 0, JSPROP_SHARED | JSPROP_PERMANENT) );
 
 // script name
 	if ( inlineScript == NULL )
@@ -406,8 +411,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 //	RT_HOST_MAIN_ASSERT( name != NULL, "unable to get module FileName." );
 
-	JL_CHK( SetPropertyString(cx, globalObject, JLID_NAME(scripthostpath), hostPath) );
-	JL_CHK( SetPropertyString(cx, globalObject, JLID_NAME(scripthostname), hostName) );
+	JL_CHK( JL_SetProperty(cx, globalObject, JLID_NAME(cx, scripthostpath), hostPath) );
+	JL_CHK( JL_SetProperty(cx, globalObject, JLID_NAME(cx, scripthostname), hostName) );
 
 	if ( sizeof(embeddedBootstrapScript)-1 > 0 )
 		JL_CHK( ExecuteBootstrapScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1) ); // -1 because sizeof("") == 1
@@ -434,7 +439,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	if ( executeStatus == JS_TRUE ) {
 
-		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 ) // (TBD) enhance this, use JsvalToInt() ?
+		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 ) // (TBD) enhance this, use JL_JsvalToCVal() ?
 			exitValue = JSVAL_TO_INT(rval);
 		else
 			exitValue = EXIT_SUCCESS;
@@ -444,7 +449,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 			jsval ex;
 			JS_GetPendingException(cx, &ex);
-			JL_ValueOf(cx, &ex, &ex);
+			JL_ValueOf(cx, ex, &ex);
 			if ( JSVAL_IS_INT(ex) ) {
 
 				exitValue = JSVAL_TO_INT(ex);
@@ -466,7 +471,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 	}
 
-	JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 	JS_SetGCCallback(cx, NULL);
 	DestroyHost(cx);
 	JS_ShutDown();
@@ -495,7 +499,6 @@ bad:
 
 		if ( useJslibsMemoryManager )
 			disabledFree = true;
-		JS_CommenceRuntimeShutDown(JS_GetRuntime(cx));
 		JS_SetGCCallback(cx, NULL);
 		DestroyHost(cx);
 	}

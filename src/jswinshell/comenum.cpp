@@ -32,13 +32,15 @@ DEFINE_FINALIZE() {
 }
 
 
-DEFINE_FUNCTION_FAST( next ) {
+DEFINE_FUNCTION( next ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
 
 	HRESULT hr;
 
 	VARIANT *result = NULL;
 
-	IEnumVARIANT *ienumv = (IEnumVARIANT*)JL_GetPrivate(cx, JL_FOBJ);
+	IEnumVARIANT *ienumv = (IEnumVARIANT*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(ienumv);
 
 	result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
@@ -49,7 +51,7 @@ DEFINE_FUNCTION_FAST( next ) {
 	if ( hr != S_OK ) // The number of elements returned is less than 1.
 		JL_CHK( JS_ThrowStopIteration(cx) );
 
-	JL_CHK( VariantToJsval(cx, result, JL_FRVAL) ); // loose variant ownership
+	JL_CHK( VariantToJsval(cx, result, JL_RVAL) ); // loose variant ownership
 	return JS_TRUE;
 
 bad:
@@ -69,7 +71,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( next )
+		FUNCTION( next )
 	END_FUNCTION_SPEC
 
 END_CLASS
@@ -77,7 +79,7 @@ END_CLASS
 
 JSBool NewComEnum( JSContext *cx, IEnumVARIANT *ienumv, jsval *rval ) {
 
-	JSObject *varObj = JS_NewObject(cx, JL_CLASS(ComEnum), NULL, NULL);
+	JSObject *varObj = JS_NewObjectWithGivenProto(cx, JL_CLASS(ComEnum), JL_PROTOTYPE(cx, ComEnum), NULL);
 	JL_CHK( varObj );
 	*rval = OBJECT_TO_JSVAL( varObj );
 	JL_SetPrivate(cx, varObj, ienumv);

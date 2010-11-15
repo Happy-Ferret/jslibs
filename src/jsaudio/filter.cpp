@@ -48,6 +48,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
 
@@ -69,11 +72,12 @@ $TOC_MEMBER $INAME
  $INT $INAME()
   Returns the internal OpenAL filter id.
 **/
-DEFINE_FUNCTION_FAST( valueOf ) {
+DEFINE_FUNCTION( valueOf ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	JL_CHK( UIntToJsval(cx, pv->filter, JL_FRVAL) );
+	JL_CHK( JL_CValToJsval(cx, pv->filter, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -102,7 +106,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 	if ( JSVAL_IS_VOID(*vp) )
 		filterType = AL_FILTER_NULL;
 	else
-		JL_CHK( JsvalToInt(cx, *vp, &filterType) );
+		JL_CHK( 	JL_JsvalToCVal(cx, *vp, &filterType) );
 	alFilteri(pv->filter, AL_FILTER_TYPE, filterType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -120,7 +124,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 	if ( filterType == AL_FILTER_NULL )
 		*vp = JSVAL_VOID;
 	else
-		JL_CHK( IntToJsval(cx, filterType, vp) );
+		JL_CHK( JL_CValToJsval(cx, filterType, vp) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -132,9 +136,9 @@ DEFINE_PROPERTY_SETTER( filterFloat ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = JSVAL_TO_INT(id);
+	ALenum param = JSID_TO_INT(id);
 	float f;
-	JL_CHK( JsvalToFloat(cx, *vp, &f) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &f) );
 	alFilterf(pv->filter, param, f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -145,11 +149,11 @@ DEFINE_PROPERTY_GETTER( filterFloat ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = JSVAL_TO_INT(id);
+	ALenum param = JSID_TO_INT(id);
 	float f;
 	alGetFilterf(pv->filter, param, &f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( FloatToJsval(cx, f, vp) );
+	JL_CHK(JL_CValToJsval(cx, f, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -189,7 +193,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST_ARGC( valueOf, 0 )
+		FUNCTION_ARGC( valueOf, 0 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

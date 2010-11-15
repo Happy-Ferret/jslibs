@@ -21,6 +21,111 @@
 #include "jlhelper.h"
 #include "blobPub.h"
 
+
+static inline jsdouble
+js__DoubleToInteger(jsdouble d) // from jsnum.h
+{
+    if (d == 0)
+        return d;
+
+    if (!finite(d)) {
+
+        if (isnan(d))
+            return 0;
+        return d;
+    }
+
+    JSBool neg = (d < 0);
+    d = floor(neg ? -d : d);
+    return neg ? -d : d;
+}
+
+
+
+struct MemCmp { // from jsstr.cpp
+    typedef size_t Extent;
+    static ALWAYS_INLINE Extent computeExtent(const char *, size_t patlen) {
+        return (patlen - 1) * sizeof(char);
+    }
+    static ALWAYS_INLINE bool match(const char *p, const char *t, Extent extent) {
+        return memcmp(p, t, extent) == 0;
+    }
+};
+
+
+struct ManualCmp { // from jsstr.cpp
+    typedef const char *Extent;
+	 static ALWAYS_INLINE Extent computeExtent(const char *pat, size_t patlen) {
+        return pat + patlen;
+    }
+    static ALWAYS_INLINE bool match(const char *p, const char *t, Extent extent) {
+        for (; p != extent; ++p, ++t) {
+            if (*p != *t)
+                return false;
+        }
+        return true;
+    }
+};
+
+
+template <class InnerMatch> // from jsstr.cpp
+static ssize_t
+UnrolledMatch(const char *text, size_t textlen, const char *pat, size_t patlen)
+{
+    JL_ASSERT(patlen > 0 && textlen > 0);
+    const char *textend = text + textlen - (patlen - 1);
+    const char p0 = *pat;
+    const char *const patNext = pat + 1;
+    const typename InnerMatch::Extent extent = InnerMatch::computeExtent(pat, patlen);
+    uint8_t fixup;
+
+    const char *t = text;
+    switch ((textend - t) & 7) {
+      case 0: if (*t++ == p0) { fixup = 8; goto match; }
+      case 7: if (*t++ == p0) { fixup = 7; goto match; }
+      case 6: if (*t++ == p0) { fixup = 6; goto match; }
+      case 5: if (*t++ == p0) { fixup = 5; goto match; }
+      case 4: if (*t++ == p0) { fixup = 4; goto match; }
+      case 3: if (*t++ == p0) { fixup = 3; goto match; }
+      case 2: if (*t++ == p0) { fixup = 2; goto match; }
+      case 1: if (*t++ == p0) { fixup = 1; goto match; }
+    }
+    while (t != textend) {
+      if (t[0] == p0) { t += 1; fixup = 8; goto match; }
+      if (t[1] == p0) { t += 2; fixup = 7; goto match; }
+      if (t[2] == p0) { t += 3; fixup = 6; goto match; }
+      if (t[3] == p0) { t += 4; fixup = 5; goto match; }
+      if (t[4] == p0) { t += 5; fixup = 4; goto match; }
+      if (t[5] == p0) { t += 6; fixup = 3; goto match; }
+      if (t[6] == p0) { t += 7; fixup = 2; goto match; }
+      if (t[7] == p0) { t += 8; fixup = 1; goto match; }
+        t += 8;
+        continue;
+        do {
+            if (*t++ == p0) {
+              match:
+                if (!InnerMatch::match(patNext, t, extent))
+                    goto failed_match;
+                return t - text - 1;
+            }
+          failed_match:;
+        } while (--fixup > 0);
+    }
+    return -1;
+}
+
+
+static ALWAYS_INLINE ssize_t
+Match(const char *text, size_t textlen, const char *pat, size_t patlen) {
+
+	return 
+#if !defined(__linux__)
+		patlen > 128 ? UnrolledMatch<MemCmp>(text, textlen, pat, patlen) :
+#endif
+		UnrolledMatch<ManualCmp>(text, textlen, pat, patlen);
+}
+
+
 // SLOT_BLOB_LENGTH is the size of the content of the blob OR JSVAL_VOID if the blob has been invalidated (see Blob::Free() method)
 #define SLOT_BLOB_LENGTH 0
 
@@ -31,41 +136,28 @@ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Blob )
 
-ALWAYS_INLINE JSBool InvalidateBlob( JSContext *cx, JSObject *blobObject ) {
-
-	return JS_SetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, JSVAL_VOID);
-}
-
 // invalid blob: see Blob::Free()
-ALWAYS_INLINE bool IsBlobValid( JSContext *cx, JSObject *blobObject ) {
+static ALWAYS_INLINE bool
+IsBlobValid( JSContext *cx, JSObject *blobObject ) {
 
-	jsval lengthVal;
-	JL_CHK( JL_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
-	return JSVAL_IS_INT( lengthVal ) != 0;
-bad:
-	return false;
+	return JL_GetPrivate(cx, blobObject) != NULL;
 }
 
 
-ALWAYS_INLINE JSBool BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {
+static ALWAYS_INLINE JSBool
+BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {
 
-	JL_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	jsval lengthVal;
-	JL_CHK( JL_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) );
-//	JL_S_ASSERT_INT( lengthVal );
-	JL_S_ASSERT_VALID( JSVAL_IS_INT(lengthVal), JL_THIS_CLASS->name );
-	*length = JSVAL_TO_INT( lengthVal );
-	return JS_TRUE;
-	JL_BAD;
+	return JL_GetReservedSlot(cx, blobObject, SLOT_BLOB_LENGTH, &lengthVal) && JL_JsvalToCVal(cx, lengthVal, length);
 }
 
 
-ALWAYS_INLINE JSBool BlobBuffer( JSContext *cx, JSObject *blobObject, const char **buffer ) {
+static ALWAYS_INLINE JSBool
+BlobBuffer( JSContext *cx, const JSObject *blobObject, const char **buffer ) {
 
-	JL_S_ASSERT_CLASS(blobObject, BlobJSClass( cx ));
 	*buffer = (char*)JL_GetPrivate(cx, blobObject);
+	JL_ASSERT( *buffer != NULL );
 	return JS_TRUE;
-	JL_BAD;
 }
 
 
@@ -73,7 +165,7 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 
 	if ( JL_GetClass(obj) == JL_CLASS(Blob) ) {
 		
-		if ( !IsBlobValid(cx, obj) )
+		if (unlikely( !IsBlobValid(cx, obj) ))
 			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
 		JL_CHK( BlobLength(cx, obj, size) );
 		JL_CHK( BlobBuffer(cx, obj, buf) );
@@ -82,7 +174,9 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, OBJECT_TO_JSVAL(obj));
-	*buf = JS_GetStringBytes(jsstr);
+	*buf = JL_GetStringBytesZ(cx, jsstr);
+	if ( *buf == NULL )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "a valid string");
 	*size = JL_GetStringLength(jsstr);
 	return JS_TRUE;
 	JL_BAD;
@@ -90,12 +184,12 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf,
 
 
 /*
-inline JSBool JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
+inline JSBool JL_JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
 
 	size_t srcLen;
 	void *src, *dst = NULL;
 
-	if ( JsvalIsBlob(cx, val) ) {
+	if ( JL_JsvalIsBlob(cx, val) ) {
 
 		BlobGetBufferAndLength(cx, JSVAL_TO_OBJECT( val ), &src, &srcLen);
 		if ( srcLen > 0 ) {
@@ -144,29 +238,30 @@ $TOC_MEMBER $INAME
  $INAME( [data] )
   Creates an object that can contain binary data.
   $H note
-  When called in a non-constructor context, Object behaves identically.
+  When called in a non-constructor context, Object behaves identically. (TBD) update
 **/
 DEFINE_CONSTRUCTOR() {
 
-	void *dBuffer = NULL; // keep on top
+	void *dBuffer = NULL; // keep on top (see bad:)
 
-	if ( !JS_IsConstructing(cx) ) { // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
+	if ( !JS_IsConstructing(cx, vp) && ( JL_ARGC == 0 || JL_ARG(1) == JL_GetEmptyStringValue(cx) ) ) {
 
-		obj = JS_NewObject(cx, JL_THIS_CLASS, NULL, NULL);
-		JL_S_ASSERT( obj != NULL, "Blob construction failed." );
-		*rval = OBJECT_TO_JSVAL(obj);
-	} else {
-		
-//		JSClass *tmp = JL_GetRegistredNativeClass(cx, "Blob");
-//		printf("\n***DBG:%d\n", JS_GetClass(obj) == tmp);
-		JL_S_ASSERT_THIS_CLASS();
+		*JL_RVAL = JL_GetEmptyStringValue(cx);
+		return JS_TRUE;
 	}
 
-	if ( JL_ARGC >= 1 ) {
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
+	// supports this form (w/o new operator) : result.param1 = Blob('Hello World');
+
+
+	// see. "planning to remove non-fast natives" (http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/91ee3f1f5642e05b?pli=1)
+
+	if ( JL_ARGC != 0 ) {
 
 		size_t length;
 		const char *sBuffer;
-		JL_CHK( JsvalToStringAndLength(cx, &JL_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
 //		JL_S_ASSERT( length >= JSVAL_INT_MIN && length <= JSVAL_INT_MAX, "Blob too long." );
 
 		dBuffer = JS_malloc(cx, length +1);
@@ -174,14 +269,21 @@ DEFINE_CONSTRUCTOR() {
 		((char*)dBuffer)[length] = '\0';
 		memcpy(dBuffer, sBuffer, length);
 		JL_SetPrivate(cx, obj, dBuffer);
-		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(jl::SafeCast<int>(length))) );
+
+//		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(jl::SafeCast<int>(length))) );
+		jsval tmp;
+		JL_CHK( JL_CValToJsval(cx, length, &tmp) );
+		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, tmp) );
 	} else {
 
-		JL_SetPrivate(cx, obj, NULL);
-		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(0) ) );
+		dBuffer = JS_malloc(cx, 1);
+		JL_CHK( dBuffer );
+		((char*)dBuffer)[0] = '\0';
+		JL_SetPrivate(cx, obj, dBuffer);
+		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(0) ) );
 	}
 
-	JL_CHK( ReserveBufferGetInterface(cx, obj) );
+//	JL_CHK( ReserveBufferGetInterface(cx, obj) );
 	JL_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 	return JS_TRUE;
 
@@ -207,17 +309,23 @@ $TOC_MEMBER $INAME
    Any access to a freed Blob will rise an error.$LF
    Use this function to free huge amounts of memory, like images or sounds, before the GC does it for you.
 **/
-DEFINE_FUNCTION_FAST( Free ) {
+DEFINE_FUNCTION( Free ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
+
+	if (unlikely( !IsBlobValid(cx, obj) ))
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
+
+	*JL_RVAL = JSVAL_VOID;
+
 	void *pv;
 	pv = JL_GetPrivate(cx, obj);
 
-	if ( JL_FARG_ISDEF(1) ) {
+	if ( JL_ARG_ISDEF(1) ) {
 
 		bool wipe;
-		JL_CHK( JsvalToBool(cx, JL_FARG(1), &wipe ) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &wipe ) );
 		if ( wipe ) {
 
 			size_t length;
@@ -227,11 +335,12 @@ DEFINE_FUNCTION_FAST( Free ) {
 	}
 
 	JS_free(cx, pv);
-	JL_SetPrivate(cx, obj, NULL);
-	JL_CHK( InvalidateBlob(cx, obj) );
+	JL_SetPrivate(cx, obj, NULL); // InvalidateBlob(cx, obj)
+
 	// removes all of obj's own properties, except the special __proto__ and __parent__ properties, in a single operation.
 	// Properties belonging to objects on obj's prototype chain are not affected.
 	JS_ClearScope(cx, obj);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -244,11 +353,13 @@ $TOC_MEMBER $INAME
   $H details
    [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/concat Mozilla]
 **/
-DEFINE_FUNCTION_FAST( concat ) {
+DEFINE_FUNCTION( concat ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	char *dst = NULL;
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	if (unlikely( !IsBlobValid(cx, obj) ))
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
 
 	// note: var a = new String(123);  a.concat() !== a
 
@@ -263,16 +374,16 @@ DEFINE_FUNCTION_FAST( concat ) {
 	uintN arg;
 	for ( arg = 1; arg <= JL_ARGC; arg++ ) {
 	
-		if ( JsvalIsBlob(cx, JL_FARG(arg)) ) {
+		if ( JL_JsvalIsBlob(cx, JL_ARG(arg)) ) {
 
 			size_t tmp;
-			JL_CHK( BlobLength(cx, JSVAL_TO_OBJECT( JL_FARG(arg) ), &tmp) );
+			JL_CHK( BlobLength(cx, JSVAL_TO_OBJECT( JL_ARG(arg) ), &tmp) );
 			dstLen += tmp;
 		
 		} else {
 
-			JSString *jsstr = JS_ValueToString(cx, JL_FARG(arg));
-			JL_FARG(arg) = STRING_TO_JSVAL(jsstr);
+			JSString *jsstr = JS_ValueToString(cx, JL_ARG(arg));
+			JL_ARG(arg) = STRING_TO_JSVAL(jsstr);
 			dstLen += JL_GetStringLength(jsstr);
 		}
 	}
@@ -294,14 +405,15 @@ DEFINE_FUNCTION_FAST( concat ) {
 		
 		const char *buffer;
 		size_t length;
-		JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(arg), &buffer, &length) );
+		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(arg), &buffer, &length) );
 
 		memcpy(tmp, buffer, length);
 		tmp += length;
 	}
 
-	JL_CHK( JL_NewBlob(cx, dst, dstLen, JL_FRVAL) );
+	JL_CHK( JL_NewBlob(cx, dst, dstLen, JL_RVAL) );
 	return JS_TRUE;
+
 bad:
 	if ( dst )
 		JS_free(cx, dst);
@@ -319,83 +431,57 @@ $TOC_MEMBER $INAME
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/substr Mozilla]
 **/
-DEFINE_FUNCTION_FAST( substr ) {
 
-	JSObject *obj = JL_FOBJ;
+DEFINE_FUNCTION( substr ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_ARG_MIN(1);
+	if (unlikely( !IsBlobValid(cx, obj) ))
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
 
-	const char *bstrBuffer;
-	JL_CHK( BlobBuffer(cx, obj, &bstrBuffer) );
+	const char *buffer;
+	JL_CHK( BlobBuffer(cx, obj, &buffer) );
 
+	double length;
 	size_t tmp;
-	ssize_t dataLength;
 	JL_CHK( BlobLength(cx, obj, &tmp) );
-	dataLength = tmp;
+	length = tmp;
 
-	jsval arg1;
-	arg1 = JL_FARG(1);
+	if ( JL_ARGC == 0 )
+		return JL_NewBlobCopyN(cx, buffer, size_t(length), JL_RVAL);
 
-	ssize_t start;
+	double begin, end;
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &begin) );
+	begin = js__DoubleToInteger(begin);
 
-
-	if ( JsvalIsPInfinity(cx, arg1) )
-		start = dataLength;
-	else if ( /*JSVAL_IS_VOID(arg1) || JsvalIsNaN(cx, arg1) || JsvalIsNInfinity(cx, arg1) ||*/ !JsvalToSSize(cx, arg1, &start) )
-		start = 0;
-
-	if ( start >= (ssize_t)dataLength ) {
-
-		*JL_FRVAL = JS_GetEmptyStringValue(cx);
-		return JS_TRUE;
+	if ( begin < 0 ) {
+		
+		begin += length;
+		if ( begin < 0 )
+			begin = 0;
+	} else if ( begin > ssize_t(length) ) {
+		
+		begin = length;
 	}
 
-	if ( start < 0 )
-		start = dataLength + start;
+	if ( !JL_ARG_ISDEF(2) ) { // -or- if ( JL_ARGC == 1 ) {
+		
+		end = length;
+	} else {
+		
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &end) );
+		end = js__DoubleToInteger(end);
 
-	if ( start < 0 || start >= (ssize_t)dataLength )
-		start = 0;
+		if ( end < 0 )
+			end = 0;
 
-	// now 0 <= start < dataLength
+      end += begin;
+      if ( end > ssize_t(length) )
+          end = length;
+	}
 
-	ssize_t length;
-	if ( argc >= 2 ) {
-
-		jsval arg2;
-		arg2 = JL_FARG(2);
-
-		if ( JsvalIsPInfinity(cx, arg2) )
-			length = dataLength;
-		else if ( /*JSVAL_IS_VOID(arg2) || JsvalIsNaN(cx, arg2) || JsvalIsNInfinity(cx, arg2) ||*/ !JsvalToSSize(cx, arg2, &length) )
-			length = 0;
-
-		if ( length <= 0 ) {
-
-			*JL_FRVAL = JS_GetEmptyStringValue(cx);
-			return JS_TRUE;
-		}
-
-		if ( start + length > dataLength )
-			length = dataLength - start;
-
-	} else
-		length = dataLength - start;
-
-	// now 0 <= length < dataLength - start
-
-	void *buffer;
-	buffer = JS_malloc(cx, length +1);
-	JL_CHK( buffer );
-	((char*)buffer)[length] = '\0';
-
-	memcpy(buffer, ((int8_t*)bstrBuffer) + start, length);
-	JL_CHKB( JL_NewBlob(cx, buffer, length, JL_FRVAL), bad_free );
-
-	return JS_TRUE;
-bad_free:
-	JS_free(cx, buffer);
-bad:
-	return JS_FALSE;
+	return JL_NewBlobCopyN(cx, buffer + size_t(begin), size_t(end - begin), JL_RVAL);
+	JL_BAD;
 }
 
 
@@ -415,84 +501,54 @@ $TOC_MEMBER $INAME
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/substring Mozilla]
 **/
-DEFINE_FUNCTION_FAST( substring ) {
+DEFINE_FUNCTION( substring ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	if ( JL_ARGC == 0 ) {
+	if (unlikely( !IsBlobValid(cx, obj) ))
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
+
+	const char *buffer;
+	JL_CHK( BlobBuffer(cx, obj, &buffer) );
+
+	double length;
+	size_t tmp;
+	JL_CHK( BlobLength(cx, obj, &tmp) );
+	length = tmp;
+
+	if ( JL_ARGC == 0 )
+		return JL_NewBlobCopyN(cx, buffer, size_t(length), JL_RVAL);
+
+	double begin, end;
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &begin) );
+	begin = js__DoubleToInteger(begin);
+
+	if ( !JL_ARG_ISDEF(2) ) {
 		
-		*JL_FRVAL = JL_FARG(1);
-		return JS_TRUE;
+		end = length;
+	} else {
+
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &end) );
+		end = js__DoubleToInteger(end);
 	}
 
-	const char *bstrBuffer;
-	JL_CHK( BlobBuffer(cx, obj, &bstrBuffer) );
-	size_t dataLength;
-	JL_CHK( BlobLength(cx, obj, &dataLength) );
+    if (begin < 0)
+        begin = 0;
+    else if (begin > length)
+        begin = length;
 
-	int indexA, indexB;
-/*
-	jsval arg1 = JL_FARG(1);
-	jsval arg2 = JL_FARG(1);
+    if (end < 0)
+        end = 0;
+    else if (end > length)
+        end = length;
+    if (end < begin) {
+        /* ECMA emulates old JDK1.0 java.lang.String.substring. */
+        jsdouble tmp = begin;
+        begin = end;
+        end = tmp;
+    }
 
-	if ( JSVAL_IS_INT(arg1) )
-		indexA = JSVAL_TO_INT(arg1)
-	else {
-		
-		if ( arg1 == JS_GetPositiveInfinityValue(cx) )
-	}
-*/
-
-	jsval arg1;
-	arg1 = JL_FARG(1);
-	if ( JsvalIsPInfinity(cx, arg1) )
-		indexA = (int)dataLength;
-	else if ( JsvalIsNaN(cx, arg1) || JSVAL_IS_VOID(arg1) || JsvalIsNInfinity(cx, arg1) || !JsvalToInt(cx, arg1, &indexA) )
-		indexA = 0;
-
-	if ( JL_ARGC < 2 || JsvalIsPInfinity(cx, JL_FARG(2)) )
-		indexB = (int)dataLength;
-	else if ( JsvalIsNaN(cx, JL_FARG(2)) || JSVAL_IS_VOID(JL_FARG(2)) || JsvalIsNInfinity(cx, JL_FARG(2)) || !JsvalToInt(cx, JL_FARG(2), &indexB) )
-		indexB = 0;
-
-	if ( indexA < 0 )
-		indexA = 0;
-	else if ( indexA > (int)dataLength )
-		indexA = (int)dataLength;
-
-	if ( indexB < 0 )
-		indexB = 0;
-	else if ( indexB > (int)dataLength )
-		indexB = (int)dataLength;
-
-	if ( indexA > indexB ) {
-
-		int tmp = indexB;
-		indexB = indexA;
-		indexA = tmp;
-	}
-
-	if ( indexA == indexB || indexA >= (int)dataLength ) {
-
-		*JL_FRVAL = JS_GetEmptyStringValue(cx);
-		return JS_TRUE;
-	}
-
-
-	int length;
-	length = indexB - indexA;
-
-	void *buffer;
-	buffer = JS_malloc(cx, length +1);
-	JL_CHK( buffer );
-	((char*)buffer)[length] = '\0';
-
-	memcpy(buffer, ((int8_t*)bstrBuffer) + indexA, length);
-	JL_CHKB( JL_NewBlob(cx, buffer, length, JL_FRVAL), bad_free );
-
-	return JS_TRUE;
-bad_free:
-	JS_free(cx, buffer);
+	return JL_NewBlobCopyN(cx, buffer + size_t(begin), size_t(end - begin), JL_RVAL);
 	JL_BAD;
 }
 
@@ -507,59 +563,56 @@ $TOC_MEMBER $INAME
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/indexOf Mozilla]
 **/
-DEFINE_FUNCTION_FAST( indexOf ) {
+DEFINE_FUNCTION( indexOf ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_ARG_MIN(1);
+	if (unlikely( !IsBlobValid(cx, obj) ))
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
+	
+	if (JL_ARGC == 0)
+		return JL_CValToJsval(cx, -1, JL_RVAL);
 
-	const char *sBuffer;
-	size_t sLength;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &sBuffer, &sLength) ); // warning: GC on the returned buffer !
+	const char *text, *pat;
+	size_t textlen, patlen;
 
-	if ( sLength == 0 ) {
+	JL_CHK( BlobBuffer(cx, obj, &text) );
+	JL_CHK( BlobLength(cx, obj, &textlen) );
 
-		*JL_FRVAL = INT_TO_JSVAL(0);
-		return JS_TRUE;
-	}
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &pat, &patlen) );
 
-	size_t length;
-	JL_CHK( BlobLength(cx, obj, &length) );
+	jsuint start;
+	if (JL_ARGC > 1) {
 
-	long start;
-	if ( JL_FARG_ISDEF(2) ) {
-
-		JL_S_ASSERT_INT( JL_FARG(2) );
-		start = JSVAL_TO_INT( JL_FARG(2) );
-
-		if ( start < 0 )
+		double d;
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &d) );
+		d = js__DoubleToInteger(d);
+		if (d <= 0) {
 			start = 0;
-		else if ( start + sLength > length ) {
-
-			*JL_FRVAL = INT_TO_JSVAL(-1);
-			return JS_TRUE;
+		} else if (d > textlen) {
+			start = 0;
+			textlen = 0;
+		} else {
+			start = (jsint)d;
+			text += start;
+			textlen -= start;
 		}
+    } else {
 
-	} else {
+        start = 0;
+    }
 
-		start = 0;
-	}
+    if (patlen == 0)
+		 return JL_CValToJsval(cx, 0, JL_RVAL);
 
-	const char *buffer;
-	JL_CHK( BlobBuffer(cx, obj, &buffer) );
+    if (textlen < patlen)
+        return JL_CValToJsval(cx, -1, JL_RVAL);
 
-	for ( size_t i = start; i < length; i++ ) {
-
-		size_t j;
-		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ ) ;
-		if ( j == sLength ) {
-
-			JL_CHK( JS_NewNumberValue(cx, i, JL_FRVAL) );
-			return JS_TRUE;
-		}
-	}
-
-	*JL_FRVAL = INT_TO_JSVAL(-1);
+	ssize_t match = Match(text, textlen, pat, patlen);
+	if ( match == -1 )
+		*JL_RVAL = INT_TO_JSVAL(-1);
+	else 
+		JL_CHK( JL_CValToJsval(cx, start + match, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -575,66 +628,160 @@ $TOC_MEMBER $INAME
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/lastIndexOf Mozilla]
 **/
-DEFINE_FUNCTION_FAST( lastIndexOf ) {
+DEFINE_FUNCTION( lastIndexOf ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_ARG_MIN(1);
+	if (unlikely( !IsBlobValid(cx, obj) ))
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
 
-	const char *sBuffer;
-	size_t sLength;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &sBuffer, &sLength) ); // warning: GC on the returned buffer !
+	if (JL_ARGC == 0)
+		return JL_CValToJsval(cx, -1, JL_RVAL);
 
+	const char *text, *pat;
+	ssize_t i;
+	size_t textlen, patlen;
 
-	const char *buffer;
-	size_t length;
-	JL_CHK( BlobBuffer(cx, obj, &buffer) );
-	JL_CHK( BlobLength(cx, obj, &length) );
+	JL_CHK( BlobBuffer(cx, obj, &text) );
+	JL_CHK( BlobLength(cx, obj, &textlen) );
 
-	if ( sLength == 0 && argc < 2 ) {
-		
-		return SizeToJsval(cx, length, JL_FRVAL);
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &pat, &patlen) );
+
+	i = textlen - patlen; // Start searching here
+	if (i < 0) {
+		 
+		*JL_RVAL = INT_TO_JSVAL(-1);
+		return JS_TRUE;
 	}
 
-	size_t start;
-	if ( JL_FARG_ISDEF(2) ) {
+	if (JL_ARGC > 1) {
 		
-		jsval arg2 = JL_FARG(2);
-		if ( JsvalIsNegative(cx, arg2) ) {
+		double d;
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &d) );
+		if (!isnan(d)) {
 
-			*JL_FRVAL = INT_TO_JSVAL(-1);
-			return JS_TRUE;
+			d = js__DoubleToInteger(d);
+			if (d <= 0)
+				i = 0;
+			else if (d < i)
+				i = (jsint)d;
 		}
+	}
 
-		if ( JsvalIsPInfinity(cx, arg2) || JsvalIsNaN(cx, arg2) ) {
-			
-			start = length - sLength;
-		} else {
-			
-			JL_CHK( JsvalToSize(cx, JL_FARG(2), &start) );
-			if ( start + sLength > length ) {
+	if (patlen == 0)
+		return JL_CValToJsval(cx, i, JL_RVAL);
 
-				start = length - sLength;
+	const char *t = text + i;
+	const char *textend = text - 1;
+	const char p0 = *pat;
+	const char *patNext = pat + 1;
+	const char *patEnd = pat + patlen;
+
+	for (; t != textend; --t) {
+		if (*t == p0) {
+			const char *t1 = t + 1;
+			for (const char *p1 = patNext; p1 != patEnd; ++p1, ++t1) {
+				if (*t1 != *p1)
+					goto break_continue;
 			}
+			return JL_CValToJsval(cx, t - text, JL_RVAL);
 		}
-	} else {
+		break_continue:;
+	}
 
-		start = length - sLength;
+	*JL_RVAL = INT_TO_JSVAL(-1);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( [separator][, limit] )
+  Splits a Blob object into an array of strings by separating the blob into substrings
+  $H arguments
+   $ARG $STR separator: Specifies the character to use for separating the string. The separator is treated as a string. If separator is omitted, the array returned contains one element consisting of the entire string.
+   $ARG $INT limit: Integer specifying a limit on the number of splits to be found.
+  $H details
+   fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/split Mozilla]
+**/
+DEFINE_FUNCTION( split ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	if (unlikely( !IsBlobValid(cx, obj) ))
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
+
+	size_t blobLen;
+	const char *blob;
+	JL_CHK( BlobLength(cx, obj, &blobLen) );
+	JL_CHK( BlobBuffer(cx, obj, &blob) );
+
+	JSObject *arr;
+	arr = JS_NewArrayObject(cx, 0, NULL);
+	JL_CHK( arr );
+	*JL_RVAL = OBJECT_TO_JSVAL(arr);
+	jsuint arrLen;
+	arrLen = 0;
+
+	jsval chunk;
+
+	if ( JL_ARGC == 0 || JL_ARGC == 1 && JSVAL_IS_VOID(JL_ARG(1)) ) {
+
+		JL_CHK( JL_StringAndLengthToJsval(cx, &chunk, blob, blobLen) );
+		JL_CHK( JS_SetElement(cx, arr, 0, &chunk) );
+		JL_CHK( JS_SetArrayLength(cx, arr, 1) );
+		return JS_TRUE;
+	}
+
+	JL_S_ASSERT_STRING( JL_ARG(1) ); // regexp is not supported
+
+	size_t max;
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &max) );
+	else
+		max = SIZE_T_MAX;
+
+	const char *sep;
+	size_t sepLen;
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sep, &sepLen) );
+	ssize_t pos;
+
+	for (;;) {
+
+		if ( !max-- )
+			break;
+
+		if ( blobLen < sepLen ) {
+
+			JL_CHK( JL_StringAndLengthToJsval(cx, &chunk, blob, blobLen) );
+			JL_CHK( JS_SetElement(cx, arr, arrLen++, &chunk) );
+			break;
+		}
+
+		if ( sepLen )
+			pos = Match(blob, blobLen, sep, sepLen);
+		else 
+			pos = blobLen > 1 ? 1 : -1;
+
+		if ( pos == -1 ) {
+
+			JL_CHK( JL_StringAndLengthToJsval(cx, &chunk, blob, blobLen) );
+			JL_CHK( JS_SetElement(cx, arr, arrLen++, &chunk) );
+			break;
+		}
+		
+		JL_CHK( JL_StringAndLengthToJsval(cx, &chunk, blob, pos) );
+		JL_CHK( JS_SetElement(cx, arr, arrLen++, &chunk) );
+		
+		blob += pos + sepLen;
+		blobLen -= pos + sepLen;
 	}
 
 
-	for ( long i = start; i >= 0; i-- ) {
+	JL_CHK( JS_SetArrayLength(cx, arr, arrLen) );
 
-		size_t j;
-		for ( j = 0; j < sLength && buffer[i+j] == sBuffer[j]; j++ ) ;
-		if ( j == sLength ) {
-
-			JL_CHK( JS_NewNumberValue(cx, i, JL_FRVAL) );
-			return JS_TRUE;
-		}
-	}
-
-	*JL_FRVAL = INT_TO_JSVAL(-1);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -647,39 +794,30 @@ $TOC_MEMBER $INAME
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/charAt Mozilla]
 **/
-DEFINE_FUNCTION_FAST( charAt ) {
+DEFINE_FUNCTION( charAt ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	int index;
-	if ( JL_FARG_ISDEF(1) ) {
+	if (unlikely( !IsBlobValid(cx, obj) ))
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
 
-		jsval arg1 = JL_FARG(1);
-		if ( !JSVAL_IS_INT(arg1) ) {
+    jsdouble d;
 
-			if ( JsvalIsPInfinity(cx, arg1) || JsvalIsNInfinity(cx, arg1) || JsvalIsNaN(cx, arg1) ) {
-				
-				*JL_FRVAL = JS_GetEmptyStringValue(cx);
-				return JS_TRUE;
-			}
+    if ( JL_ARG_ISDEF(1) ) {
 
-			JL_CHK( JsvalToInt(cx, arg1, &index) );
-		} else {
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &d) );
+        d = js__DoubleToInteger(d);
+    } else {
 
-			index = JSVAL_TO_INT(arg1);
-		}
-	} else {
-
-		index = 0;
-	}
-
+		d = 0.0;
+    }
 
 	size_t length;
 	JL_CHK( BlobLength(cx, obj, &length) );
 
-	if ( length == 0 || index < 0 || (size_t)index >= length ) {
+	if ( d < 0 || length <= d ) {
 
-		*JL_FRVAL = JS_GetEmptyStringValue(cx);
+		*JL_RVAL = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
 
@@ -687,11 +825,12 @@ DEFINE_FUNCTION_FAST( charAt ) {
 	JL_CHK( BlobBuffer(cx, obj, &buffer) );
 
 	jschar chr;
-	chr = ((char*)buffer)[index];
-	JSString *str1;
-	str1 = JS_NewUCStringCopyN(cx, &chr, 1);
-	JL_CHK( str1 );
-	*JL_FRVAL = STRING_TO_JSVAL(str1);
+	chr = buffer[size_t(d)];
+
+	JSString *str;
+	str = JS_NewUCStringCopyN(cx, &chr, 1);
+	JL_CHK( str );
+	*JL_RVAL = STRING_TO_JSVAL(str);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -705,45 +844,38 @@ $TOC_MEMBER $INAME
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/charCodeAt Mozilla]
 **/
-DEFINE_FUNCTION_FAST( charCodeAt ) {
+DEFINE_FUNCTION( charCodeAt ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	int index;
-	if ( JL_FARG_ISDEF(1) ) {
+	if (unlikely( !IsBlobValid(cx, obj) ))
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
 
-		jsval arg1 = JL_FARG(1);
-		if ( !JSVAL_IS_INT(arg1) ) {
+    jsdouble d;
 
-			if ( JsvalIsPInfinity(cx, arg1) || JsvalIsNInfinity(cx, arg1) ) {
-				
-				*JL_FRVAL = JS_GetNaNValue(cx);
-				return JS_TRUE;
-			}
+    if ( JL_ARG_ISDEF(1) ) {
 
-			JL_CHK( JsvalToInt(cx, arg1, &index) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &d) );
+        d = js__DoubleToInteger(d);
+    } else {
 
-//			JL_REPORT_ERROR( J__ERRMSG_UNEXPECTED_TYPE " Integer expected." );
-			return JS_FALSE;
-		}
-		index = JSVAL_TO_INT(arg1);
-	} else {
-
-		index = 0;
-	}
+		d = 0.0;
+    }
 
 	size_t length;
 	JL_CHK( BlobLength(cx, obj, &length) );
 
-	if ( length == 0 || index < 0 || (size_t)index >= length ) {
+	if ( d < 0 || length <= d ) {
 
-		*JL_FRVAL = JS_GetNaNValue(cx);
+		*JL_RVAL = JL_GetNaNValue(cx);
 		return JS_TRUE;
 	}
 
 	const char *buffer;
 	JL_CHK( BlobBuffer(cx, obj, &buffer) );
-	*JL_FRVAL = INT_TO_JSVAL( buffer[index] );
+
+	*JL_RVAL = INT_TO_JSVAL( buffer[size_t(d)] );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -756,45 +888,52 @@ $TOC_MEMBER $INAME
   $H beware
    This function may be called automatically by the JavaScript engine when it needs to convert the Blob object to a JS string.
 **/
-DEFINE_FUNCTION_FAST( toString ) { // and valueOf ?
+DEFINE_FUNCTION( toString ) { // and valueOf ?
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	void *pv;
-	pv = JL_GetPrivate(cx, obj);
+	if (unlikely( !IsBlobValid(cx, obj) ))
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
+
 	size_t length;
 	JL_CHK( BlobLength(cx, obj, &length) );
 	JSString *jsstr;
 	if ( length == 0 ) {
 
-		jsstr = JSVAL_TO_STRING( JS_GetEmptyStringValue(cx) );
-	} else {
+		*JL_RVAL = JL_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	} 
 
-		jschar *ucStr = (jschar*)JS_malloc(cx, (length + 1) * sizeof(jschar));
-		ucStr[length] = 0;
-		for ( size_t i = 0; i < length; i++ )
-			ucStr[i] = ((unsigned char*)pv)[i]; // see js_InflateString in jsstr.c
-		jsstr = JS_NewUCString(cx, ucStr, length);
-	}
+	const char *buffer;
+	JL_CHK( BlobBuffer(cx, obj, &buffer) );
 
-	JL_S_ASSERT( jsstr != NULL, "Unable to convert Blob to String." );
-	*JL_FRVAL = STRING_TO_JSVAL(jsstr);
+	jschar *ucStr = (jschar*)JS_malloc(cx, (length + 1) * sizeof(jschar));
+	ucStr[length] = 0;
+	for ( size_t i = 0; i < length; i++ )
+		ucStr[i] = ((unsigned char*)buffer)[i]; // see js_InflateString in jsstr.c
+	jsstr = JS_NewUCString(cx, ucStr, length);
+	JL_CHK( jsstr );
+	*JL_RVAL = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-DEFINE_FUNCTION_FAST( toSource ) {
+DEFINE_FUNCTION( toSource ) {
 
 	// (TBD) try something faster !!
+	JL_DEFINE_FUNCTION_OBJ;
 
-	JSObject *obj = JL_FOBJ;
+	if (unlikely( !IsBlobValid(cx, obj) ))
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
+
 	if ( obj == JL_PROTOTYPE(cx, Blob) )
-		*JL_FRVAL = JS_GetEmptyStringValue(cx);
+		*JL_RVAL = JL_GetEmptyStringValue(cx);
 	else
-		*JL_FRVAL = STRING_TO_JSVAL( JS_ValueToString(cx, OBJECT_TO_JSVAL( obj )) );
-	*JL_FRVAL = STRING_TO_JSVAL( JS_ValueToSource(cx, *JL_FRVAL) );
+		*JL_RVAL = STRING_TO_JSVAL( JS_ValueToString(cx, OBJECT_TO_JSVAL( obj )) );
+	*JL_RVAL = STRING_TO_JSVAL( JS_ValueToSource(cx, *JL_RVAL) );
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -809,10 +948,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( length ) {
 
-	JL_S_ASSERT_THIS_CLASS();
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS)
+	if (unlikely( !IsBlobValid(cx, obj) ))
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
+
 	size_t length;
 	JL_CHK( BlobLength(cx, obj, &length) );
-	return SizeToJsval(cx, length, vp);
+	return JL_CValToJsval(cx, length, vp);
 	JL_BAD;
 }
 
@@ -824,24 +966,24 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_GET_PROPERTY() {
 
-//	JL_S_ASSERT_THIS_CLASS(); // when mutated, this is a String
-	if ( !JSVAL_IS_INT(id) )
-		return JS_TRUE;
+	JL_S_ASSERT_THIS_CLASS();
+	if (unlikely( !IsBlobValid(cx, obj) ))
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
 
-	jsint slot = JSVAL_TO_INT( id );
-
-	void *pv = JL_GetPrivate(cx, obj);
-	if ( pv == NULL )
+	if ( !JSID_IS_INT(id) )
 		return JS_TRUE;
 
 	size_t length;
+	const char *buffer;
 	JL_CHK( BlobLength(cx, obj, &length) );
+	JL_CHK( BlobBuffer(cx, obj, &buffer) );
 
-	if ( slot < 0 || slot >= (int)length )
+	jsint slot = JSID_TO_INT(id);
+	if ( slot < 0 || size_t(slot) >= length )
 		return JS_TRUE;
 
 	jschar chr;
-	chr = ((char*)pv)[slot];
+	chr = buffer[slot];
 	JSString *str1;
 	str1 = JS_NewUCStringCopyN(cx, &chr, 1);
 	JL_CHK( str1 );
@@ -855,124 +997,116 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
-	if ( !JSVAL_IS_NUMBER(id) )
-		return JS_TRUE;
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_IMMUTABLE_OBJECT, JL_THIS_CLASS->name);
+	if ( JSID_IS_INT(id) )
+		JL_REPORT_WARNING_NUM(cx, JLSMSG_IMMUTABLE_OBJECT, JL_THIS_CLASS->name); // see also JSMSG_READ_ONLY
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
-DEFINE_EQUALITY() {
+DEFINE_EQUALITY_OP() {
 
-	if ( JsvalIsClass(v, JL_THIS_CLASS) ) {
+	JL_CHKB( JL_JsvalIsClass(*v, JL_THIS_CLASS), not_eq );
 
-		if ( !IsBlobValid(cx, obj) || !IsBlobValid(cx, JSVAL_TO_OBJECT(v)) )
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
-		
-		const char *buf1, *buf2;
-		size_t len1, len2;
-		JL_CHK( BlobBuffer(cx, obj, &buf1) );
-		JL_CHK( BlobLength(cx, obj, &len1) );
-		JL_CHK( BlobBuffer(cx, JSVAL_TO_OBJECT(v), &buf2) );
-		JL_CHK( BlobLength(cx, JSVAL_TO_OBJECT(v), &len2) );
-		
-		if ( len1 == len2 && memcmp(buf1, buf2, len1) == 0 ) {
+	if ( !IsBlobValid(cx, obj) || !IsBlobValid(cx, &js::Valueify(v)->toObject()) )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
+	
+	const char *buf1, *buf2;
+	size_t len1, len2;
+	JL_CHK( BlobLength(cx, obj, &len1) );
+	JL_CHK( BlobLength(cx, js::Valueify(v)->toObjectOrNull(), &len2) );
+	JL_CHKB( len1 == len2, not_eq );
+	JL_CHK( BlobBuffer(cx, obj, &buf1) );
+	JL_CHK( BlobBuffer(cx, js::Valueify(v)->toObjectOrNull(), &buf2) );
+	JL_CHKB( memcmp(buf1, buf2, len1) == 0, not_eq );
+	*bp = JS_TRUE;
+	return JS_TRUE;
 
-			*bp = JS_TRUE;
-			return JS_TRUE;
-		}
-	}
-
+not_eq:
 	*bp = JS_FALSE;
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-DEFINE_NEW_RESOLVE() {
 
-	// (TBD) check if needed: yes else var s = new Blob('this is a string object');Print( s.substring() ); will failed
-	// check if obj is a Blob
-	if ( JS_GetPrototype(cx, obj) != JL_PROTOTYPE(cx, Blob) )
-		return JS_TRUE;
+static JSBool next_for(JSContext *cx, uintN argc, jsval *vp) {
 
-	if ( !IsBlobValid(cx, obj) )
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	jsval tmp;
+	JL_CHK( JS_GetPropertyById(cx, JS_THIS_OBJECT(cx, vp), INT_TO_JSID(0), &tmp) );
+	JSObject *blobObj = JSVAL_TO_OBJECT(tmp);
+	if ( !IsBlobValid(cx, blobObj) )
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
 
-	if ( !(flags & JSRESOLVE_QUALIFIED) || (flags & JSRESOLVE_ASSIGNING) )
-		return JS_TRUE;
+	JL_CHK( JS_GetPropertyById(cx, JS_THIS_OBJECT(cx, vp), INT_TO_JSID(1), &tmp) );
+	size_t pos = JSVAL_TO_INT(tmp);
+	size_t len;
+	JL_CHK( BlobLength(cx, blobObj, &len) );
+	if ( pos >= len )
+		return JS_ThrowStopIteration(cx);
 
-	jsid propId;
-	JL_CHK( JS_ValueToId(cx, id, &propId) );
+	*vp = INT_TO_JSVAL(pos);
 
-
-	// search propId in Blob's prototype
-	JSProperty *prop;
-//	JL_CHK( OBJ_LOOKUP_PROPERTY(cx, prototypeBlob, propId, objp, &prop) );
-	JL_CHK( JL_PROTOTYPE(cx, Blob)->lookupProperty(cx, propId, objp, &prop) );
-	if ( prop ) {
-
-//		OBJ_DROP_PROPERTY(cx, *objp, prop);
-		(*objp)->dropProperty(cx, prop);
-		return JS_TRUE;
-	}
-
-	// search propId in String's prototype.
-	JSObject *stringPrototype;
-	JL_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_String, &stringPrototype) );
-//	JL_CHK( OBJ_LOOKUP_PROPERTY(cx, stringPrototype, propId, objp, &prop) );
-	JL_CHK( stringPrototype->lookupProperty(cx, propId, objp, &prop) );
-	if ( prop )
-//		OBJ_DROP_PROPERTY(cx, *objp, prop);
-		(*objp)->dropProperty(cx, prop);
-	else
-		return JS_TRUE;
-
-	*objp = NULL; // let the engin find the property on the String's prototype.
-
-
-	const char *buffer;
-	size_t length;
-	JL_CHK( BlobBuffer(cx, obj, &buffer) );
-	JL_CHK( BlobLength(cx, obj, &length) );
-	
-	JSObject *strObj;
-	if ( buffer == NULL ) {
-		
-		JL_CHK( JS_ValueToObject(cx, JS_GetEmptyStringValue(cx), &strObj) );
-	} else {
-		
-		JSString *jsstr;
-		// ownership of buffer is given to the JSString
-		jsstr = JS_NewString(cx, (char*)buffer, length); // bad but JS_NewString don't accepts (const char *)
-		JL_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) );
-	}
-
-	obj->fslots[JSSLOT_PROTO] = strObj->fslots[JSSLOT_PROTO];
-	obj->fslots[JSSLOT_PRIVATE] = strObj->fslots[JSSLOT_PRIVATE];
-	
-	// Make sure we preserve any flags borrowing bits in classword.
-	obj->classword ^= (jsuword)obj->getClass();
-	obj->classword |= (jsuword)strObj->getClass();
-
-//	uint32 emptyShape;
-//	JSScope *scope = JSScope::create(cx, &js_StringObjectOps, strObj->getClass(), obj, emptyShape);
-	//OBJ_SHAPE(obj)
-//	obj->map->ops = strObj->map->ops;
-//	memcpy(obj->map, &JSObjectMap(strObj->map->ops, strObj->map->shape), sizeof(JSObjectMap));
-//	memcpy(obj->map, strObj->map, sizeof(JSObjectMap)); // ????????????
-//	uint32 emptyShape;
-//	OBJ_SCOPE(strObj->getProto())->getEmptyScopeShape(cx, strObj->getClass(), &emptyShape);
-//	JSScope *scope = JSScope::create(cx, NULL, strObj->getClass(), obj, emptyShape);
-//	obj->map = scope;
-//	JL_CHKM( MutateToJSString(cx, obj), "Unable to transform the Blob into a String." );
-//	const char *debug_name = JS_GetStringBytes(JS_ValueToString(cx, id));
+	tmp = INT_TO_JSVAL(pos+1);
+	JL_CHK( JS_SetPropertyById(cx, obj, INT_TO_JSID(1), &tmp) );
 
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
+static JSBool next_foreach(JSContext *cx, uintN argc, jsval *vp) {
+
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	jsval tmp;
+	JL_CHK( JS_GetPropertyById(cx, JS_THIS_OBJECT(cx, vp), INT_TO_JSID(0), &tmp) );
+	JSObject *blobObj = JSVAL_TO_OBJECT(tmp);
+	if ( !IsBlobValid(cx, blobObj) )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
+
+	JL_CHK( JS_GetPropertyById(cx, JS_THIS_OBJECT(cx, vp), INT_TO_JSID(1), &tmp) );
+	size_t pos = JSVAL_TO_INT(tmp);
+	size_t len;
+	JL_CHK( BlobLength(cx, blobObj, &len) );
+	if ( pos >= len )
+		return JS_ThrowStopIteration(cx);
+
+	const char *buf;
+	JL_CHK( BlobBuffer(cx, blobObj, &buf) );
+
+	jschar chr;
+	chr = buf[pos];
+	JSString *str;
+	str = JS_NewUCStringCopyN(cx, &chr, 1);
+	JL_CHK( str );
+	*vp = STRING_TO_JSVAL(str);
+
+	tmp = INT_TO_JSVAL(pos+1);
+	JL_CHK( JS_SetPropertyById(cx, obj, INT_TO_JSID(1), &tmp) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+DEFINE_ITERATOR_OBJECT() {
+
+	JSObject *itObj = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
+	JL_CHK( itObj );
+	JL_CHK( JS_DefineFunctionById(cx, itObj, JL_ATOMJSID(cx, next), keysonly ? next_for : next_foreach, 0, 0) );
+
+	jsval v;
+	v = OBJECT_TO_JSVAL(obj);
+	JL_CHK( JS_SetPropertyById(cx, itObj, INT_TO_JSID(0), &v) );
+	v = INT_TO_JSVAL(0);
+	JL_CHK( JS_SetPropertyById(cx, itObj, INT_TO_JSID(1), &v) );
+	return itObj;
+bad:
+	return NULL;
+}
+
+/*
 DEFINE_XDR() {
 	
 	jsid id;
@@ -997,11 +1131,12 @@ DEFINE_XDR() {
 		for (;;) {
 
 			JL_CHK( JS_NextProperty(xdr->cx, it, &id) );
-			if ( id != JSVAL_VOID ) { // ... or JSVAL_VOID if there is no such property left to visit.
+			if ( JSID_IS_VOID(id) ) { // ... or JSVAL_VOID if there is no such property left to visit.
 
 				JL_CHK( JS_IdToValue(xdr->cx, id, &key) );
 //				JL_CHK( OBJ_GET_PROPERTY(xdr->cx, *objp, id, &value) ); // returning false on error or exception, true on success.
-				JL_CHK( (*objp)->getProperty(xdr->cx, id, &value) ); // returning false on error or exception, true on success.
+				//JL_CHK( (*objp)->getProperty(xdr->cx, id, &value) ); // returning false on error or exception, true on success.
+				JL_CHK( JS_GetPropertyById(xdr->cx, *objp, id, &value) );
 				JL_CHK( JS_XDRValue(xdr, &key) );
 				JL_CHK( JS_XDRValue(xdr, &value) );
 			} else {
@@ -1036,7 +1171,8 @@ DEFINE_XDR() {
 				JS_ValueToId(xdr->cx, key, &id);
 				JL_CHKB( JS_XDRValue(xdr, &value), bad_free_buffer );
 //				JL_CHKB( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value), bad_free_buffer );
-				JL_CHKB( (*objp)->setProperty(xdr->cx, id, &value), bad_free_buffer );
+				//JL_CHKB( (*objp)->setProperty(xdr->cx, id, &value), bad_free_buffer );
+				JL_CHKB( JS_SetPropertyById(xdr->cx, *objp, id, &value), bad_free_buffer );
 			} else {
 
 				break;
@@ -1056,39 +1192,40 @@ DEFINE_XDR() {
 
 	JL_BAD;
 }
+*/
 
 
+DEFINE_FUNCTION( _serialize ) {
 
-DEFINE_FUNCTION_FAST( _serialize ) {
-
+	JL_DEFINE_FUNCTION_OBJ;
 	try {
 
 		size_t length;
-		JL_CHK( BlobLength(cx, JL_FOBJ, &length) );
+		JL_CHK( BlobLength(cx, JL_OBJ, &length) );
 		const char *buf;
-		JL_CHK( BlobBuffer(cx, JL_FOBJ, &buf) );
-		jl::Serializer &ser = jl::JsvalToSerializer(JL_FARG(1));
+		JL_CHK( BlobBuffer(cx, JL_OBJ, &buf) );
+		jl::Serializer &ser = jl::JsvalToSerializer(JL_ARG(1));
 		ser << jl::SerializerBufferInfo((const void *)buf, length);
 		if ( length > 0 )
-			ser << jl::SerializerObjectProperties(JL_FOBJ);
+			ser << jl::SerializerObjectProperties(JL_OBJ);
 		return JS_TRUE;
 	} catch ( JSBool ) {}
 	JL_BAD;
 }
 
 
-DEFINE_FUNCTION_FAST( _unserialize ) {
+DEFINE_FUNCTION( _unserialize ) {
 
 	try {
 
 		jl::SerializerBufferInfo buf;
-		jl::Unserializer &unser = jl::JsvalToUnserializer(JL_FARG(1));
+		jl::Unserializer &unser = jl::JsvalToUnserializer(JL_ARG(1));
 		unser >> buf;
-		JL_CHK( JL_NewBlobCopyN(cx, buf.Data(), buf.Length(), JL_FRVAL) );
-		if ( JSVAL_IS_OBJECT(*JL_FRVAL) ) {
+		JL_CHK( JL_NewBlobCopyN(cx, buf.Data(), buf.Length(), JL_RVAL) );
+		if ( JSVAL_IS_OBJECT(*JL_RVAL) ) {
 			
-			jl::SerializerObjectProperties objProp(JSVAL_TO_OBJECT(*JL_FRVAL));
-			unser >> objProp; //jl::SerializerObjectProperties(JSVAL_TO_OBJECT(*JL_FRVAL));
+			jl::SerializerObjectProperties objProp(JSVAL_TO_OBJECT(*JL_RVAL));
+			unser >> objProp; //jl::SerializerObjectProperties(JSVAL_TO_OBJECT(*JL_RVAL));
 		}
 		return JS_TRUE;
 	} catch ( JSBool ) {}
@@ -1116,26 +1253,28 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
-	HAS_EQUALITY
-	HAS_NEW_RESOLVE
-	HAS_XDR
+	HAS_EQUALITY_OP
+	HAS_ITERATOR_OBJECT
 
 	BEGIN_FUNCTION_SPEC
 
-		FUNCTION_FAST(Free)
-		FUNCTION_FAST(concat)
-		FUNCTION_FAST(substr)
-		FUNCTION_FAST(substring)
-		FUNCTION_FAST(indexOf)
-		FUNCTION_FAST(lastIndexOf)
-		FUNCTION_FAST(charCodeAt)
-		FUNCTION_FAST(charAt)
-		FUNCTION_FAST(toString)
-		FUNCTION_FAST_ALIAS(valueOf, toString)
-		FUNCTION_FAST(toSource)
+		FUNCTION(Free)
+		FUNCTION(concat)
+		FUNCTION_ARGC(substr, 2)
+		FUNCTION_ARGC(substring, 2)
+		FUNCTION(indexOf)
+		FUNCTION(lastIndexOf)
+		FUNCTION(split)
 
-		FUNCTION_FAST(_serialize)
-		FUNCTION_FAST(_unserialize)
+		FUNCTION(charCodeAt)
+		FUNCTION(charAt)
+		FUNCTION(toString)
+		FUNCTION_ALIAS(valueOf, toString)
+		FUNCTION(toSource)
+
+		FUNCTION(_serialize)
+		FUNCTION(_unserialize)
+
 	END_FUNCTION_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC

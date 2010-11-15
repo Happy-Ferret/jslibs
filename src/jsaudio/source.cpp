@@ -89,7 +89,7 @@ JSBool UnqueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 }
 */
 
-jsval UnqueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval *rval ) {
+JSBool UnqueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval *rval ) {
 
 	jsval *pval = (jsval*)QueueShift(queue);
 	*rval = *pval;
@@ -145,6 +145,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_S_ASSERT_CONSTRUCTING();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
 
@@ -167,25 +170,28 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDeleteBuffers
 **/
-DEFINE_FUNCTION_FAST( QueueBuffers ) {
+DEFINE_FUNCTION( QueueBuffers ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(1);
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
-	*JL_FRVAL = JSVAL_VOID;
+
 	ALuint bid;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &bid) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &bid) );
 	JL_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
 
 	alSourceQueueBuffers(pv->sid, 1, &bid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( QueueBuffersJsval(cx, pv->queue, JL_FARG(1)) );
+	JL_CHK( QueueBuffersJsval(cx, pv->queue, JL_ARG(1)) );
 
 	ALint queueSize;
 	alGetSourcei(pv->sid, AL_BUFFERS_QUEUED, &queueSize);
 	if ( queueSize == 1 )
 		pv->totalTime = 0;
 	pv->totalTime += BufferSecTime(bid);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -197,17 +203,18 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDeleteBuffers
 **/
-DEFINE_FUNCTION_FAST( UnqueueBuffers ) {
+DEFINE_FUNCTION( UnqueueBuffers ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 	ALuint bid;
 	alSourceUnqueueBuffers(pv->sid, 1, &bid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( UnqueueBuffersJsval(cx, pv->queue, JL_FRVAL ) );
+	JL_CHK( UnqueueBuffersJsval(cx, pv->queue, JL_RVAL ) );
 	JL_SAFE(
 		ALuint tmp;
-		JL_CHK( JsvalToUInt(cx, *JL_FRVAL, &tmp) );
+		JL_CHK( JL_JsvalToCVal(cx, *JL_RVAL, &tmp) );
 		JL_S_ASSERT( bid == tmp, "Internal error in UnqueueBuffers()." );
 	);
 	pv->totalTime -= BufferSecTime(bid);
@@ -217,82 +224,86 @@ DEFINE_FUNCTION_FAST( UnqueueBuffers ) {
 
 
 
-DEFINE_FUNCTION_FAST( Play ) {
+DEFINE_FUNCTION( Play ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	alSourcePlay(pv->sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
-DEFINE_FUNCTION_FAST( Pause ) {
+DEFINE_FUNCTION( Pause ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	alSourcePause(pv->sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
-DEFINE_FUNCTION_FAST( Stop ) {
+DEFINE_FUNCTION( Stop ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	alSourceStop(pv->sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
-DEFINE_FUNCTION_FAST( Rewind ) {
+DEFINE_FUNCTION( Rewind ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	alSourceRewind(pv->sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
 /*
-DEFINE_FUNCTION_FAST( Effect ) {
+DEFINE_FUNCTION( Effect ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_FARG(1));
+	JL_S_ASSERT_INT(JL_ARG(1));
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 	ALuint send;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &send) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &send) );
 
 	ALuint effectSlot = AL_EFFECTSLOT_NULL;
 	ALuint filter = AL_FILTER_NULL;
-	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JsvalToUInt(cx, JL_FARG(2), &effectSlot) );
-//	if ( JL_FARG_ISDEF(3) )
-//		JL_CHK( JsvalToUInt(cx, JL_FARG(3), &filter) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &effectSlot) );
+//	if ( JL_ARG_ISDEF(3) )
+//		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &filter) );
 
 //	ALCdevice *device = alcGetContextsDevice(alcGetCurrentContext());
 //	ALCint numSends;
 //	alcGetIntegerv(device, ALC_MAX_AUXILIARY_SENDS, 1, &numSends);
 
-	JL_CHK( JS_DefineProperty(cx, JL_FOBJ, "effect", JL_FARG(2), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefineProperty(cx, JL_OBJ, "effect", JL_ARG(2), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	alSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, effectSlot, send, filter);
 	return JS_TRUE;
@@ -301,11 +312,12 @@ DEFINE_FUNCTION_FAST( Effect ) {
 */
 
 
-DEFINE_FUNCTION_FAST( valueOf ) {
+DEFINE_FUNCTION( valueOf ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
-	JL_CHK( UIntToJsval(cx, pv->sid, JL_FRVAL) );
+	JL_CHK( JL_CValToJsval(cx, pv->sid, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -322,7 +334,7 @@ DEFINE_PROPERTY( effectSlot ) {
 
 	ALuint effectSlot;
 	if ( !JSVAL_IS_VOID(*vp) )
-		JL_CHK( JsvalToUInt(cx, *vp, &effectSlot) );
+		JL_CHK( JL_JsvalToCVal(cx, *vp, &effectSlot) );
 	else
 		effectSlot = AL_EFFECTSLOT_NULL;
 
@@ -341,7 +353,7 @@ DEFINE_PROPERTY( directFilter ) {
 
 	ALuint filter;
 	if ( !JSVAL_IS_VOID(*vp) )
-		JL_CHK( JsvalToUInt(cx, *vp, &filter) );
+		JL_CHK( JL_JsvalToCVal(cx, *vp, &filter) );
 	else
 		filter = AL_FILTER_NULL;
 
@@ -361,7 +373,7 @@ DEFINE_PROPERTY_SETTER( buffer ) {
 	if ( JSVAL_IS_VOID( *vp ) || *vp == JSVAL_ZERO )
 		bid = AL_NONE;
 	else
-		JL_CHK( JsvalToInt(cx, *vp, &bid) ); // calls OalBuffer valueOf function
+		JL_CHK( 	JL_JsvalToCVal(cx, *vp, &bid) ); // calls OalBuffer valueOf function
 	JL_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
 
 	alSourcei(pv->sid, AL_BUFFER, bid);
@@ -386,7 +398,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	if ( !JSVAL_IS_VOID( *vp ) ) {
 
 		ALint tmp;
-		JL_CHK( JsvalToInt(cx, *vp, &tmp) ); // calls OalBuffer valueOf function
+		JL_CHK( 	JL_JsvalToCVal(cx, *vp, &tmp) ); // calls OalBuffer valueOf function
 		JL_S_ASSERT( alIsBuffer(tmp), "Invalid buffer." );
 		if ( tmp == bid )
 			goto out;
@@ -397,7 +409,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 
 		jsval *val = (jsval*)QueueGetData(it);
 		ALint tmp;
-		JL_CHK( JsvalToInt(cx, *val, &tmp) ); // calls OalBuffer valueOf function
+		JL_CHK( 	JL_JsvalToCVal(cx, *val, &tmp) ); // calls OalBuffer valueOf function
 		JL_S_ASSERT( alIsBuffer(tmp), "Invalid buffer." );
 		if ( tmp == bid ) {
 
@@ -407,7 +419,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	}
 
 	JL_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
-	JL_CHK( IntToJsval(cx, bid, vp) );
+	JL_CHK( JL_CValToJsval(cx, bid, vp) );
 
 out:
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -423,7 +435,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	float pos[3];
 	size_t len;
-	JL_CHK( JsvalToFloatVector(cx, *vp, pos, 3, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, *vp, pos, 3, &len) );
 	alSource3f(pv->sid, AL_POSITION, pos[0], pos[1], pos[2]);
 	return JS_TRUE;
 	JL_BAD;
@@ -431,20 +443,21 @@ DEFINE_PROPERTY_SETTER( position ) {
 */
 
 
-DEFINE_FUNCTION_FAST( Position ) {
+DEFINE_FUNCTION( Position ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(3);
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 	float pos[3];
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &pos[0]) );
-	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &pos[1]) );
-	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &pos[2]) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &pos[0]) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &pos[1]) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &pos[2]) );
 
 	alSource3f(pv->sid, AL_POSITION, pos[0], pos[1], pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -459,7 +472,7 @@ DEFINE_PROPERTY( position ) {
 	alGetSource3f(pv->sid, AL_POSITION, &pos[0], &pos[1], &pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( FloatVectorToJsval(cx, pos, 3, vp) );
+	JL_CHK( JL_CValVectorToJsval(cx, pos, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -472,26 +485,27 @@ DEFINE_PROPERTY_SETTER( velocity ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	float pos[3];
 	size_t len;
-	JL_CHK( JsvalToFloatVector(cx, *vp, pos, 3, &len) );
+	JL_CHK( JL_JsvalToCValVector(cx, *vp, pos, 3, &len) );
 	alSource3f(pv->sid, AL_VELOCITY, pos[0], pos[1], pos[2]);
 	return JS_TRUE;
 	JL_BAD;
 }
 */
-DEFINE_FUNCTION_FAST( Velocity ) {
+DEFINE_FUNCTION( Velocity ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(3);
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_FOBJ);
+	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 	float pos[3];
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &pos[0]) );
-	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &pos[1]) );
-	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &pos[2]) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &pos[0]) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &pos[1]) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &pos[2]) );
 
 	alSource3f(pv->sid, AL_VELOCITY, pos[0], pos[1], pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -505,7 +519,7 @@ DEFINE_PROPERTY( velocity ) {
 	alGetSource3f(pv->sid, AL_VELOCITY, &pos[0], &pos[1], &pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( FloatVectorToJsval(cx, pos, 3, vp) );
+	JL_CHK( JL_CValVectorToJsval(cx, pos, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -536,7 +550,7 @@ DEFINE_PROPERTY( remainingTime ) {
 
 	ALfloat secOffset;
 	alGetSourcef(pv->sid, AL_SEC_OFFSET, &secOffset);
-	JL_CHK( FloatToJsval(cx, pv->totalTime - secOffset, vp) );
+	JL_CHK(JL_CValToJsval(cx, pv->totalTime - secOffset, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -591,9 +605,9 @@ DEFINE_PROPERTY_SETTER( sourceFloatInd ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = enumToConst[JSVAL_TO_INT(id)];
+	ALenum param = enumToConst[JSID_TO_INT(id)];
 	float f;
-	JL_CHK( JsvalToFloat(cx, *vp, &f) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &f) );
 	alSourcef(pv->sid, param, f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -604,11 +618,11 @@ DEFINE_PROPERTY_GETTER( sourceFloatInd ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = enumToConst[JSVAL_TO_INT(id)]; // see sourceFloatInd comment.
+	ALenum param = enumToConst[JSID_TO_INT(id)]; // see sourceFloatInd comment.
 	float f;
 	alGetSourcef(pv->sid, param, &f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( FloatToJsval(cx, f, vp) );
+	JL_CHK(JL_CValToJsval(cx, f, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -617,9 +631,9 @@ DEFINE_PROPERTY_SETTER( sourceIntInd ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = JSVAL_TO_INT(id);
+	ALenum param = JSID_TO_INT(id);
 	int i;
-	JL_CHK( JsvalToInt(cx, *vp, &i) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &i) );
 	alSourcei(pv->sid, param, i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -630,11 +644,11 @@ DEFINE_PROPERTY_GETTER( sourceIntInd ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = JSVAL_TO_INT(id);
+	ALenum param = JSID_TO_INT(id);
 	int i;
 	alGetSourcei(pv->sid, param, &i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( IntToJsval(cx, i, vp) );
+	JL_CHK( JL_CValToJsval(cx, i, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -643,9 +657,9 @@ DEFINE_PROPERTY_SETTER( sourceBoolInd ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = enumToConst[JSVAL_TO_INT(id)]; // see sourceFloatInd comment.
+	ALenum param = enumToConst[JSID_TO_INT(id)]; // see sourceFloatInd comment.
 	bool b;
-	JL_CHK( JsvalToBool(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
 	alSourcei(pv->sid, param, b ? AL_TRUE : AL_FALSE);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -656,7 +670,7 @@ DEFINE_PROPERTY_GETTER( sourceBoolInd ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	ALenum param = enumToConst[JSVAL_TO_INT(id)]; // see sourceFloatInd comment.
+	ALenum param = enumToConst[JSID_TO_INT(id)]; // see sourceFloatInd comment.
 	int i;
 	alGetSourcei(pv->sid, param, &i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -677,18 +691,18 @@ CONFIGURE_CLASS
 	HAS_TRACER
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST_ARGC( Position, 3 )
-		FUNCTION_FAST_ARGC( Velocity, 3 )
+		FUNCTION_ARGC( Position, 3 )
+		FUNCTION_ARGC( Velocity, 3 )
 
-		FUNCTION_FAST( Play )
-		FUNCTION_FAST( Pause )
-		FUNCTION_FAST( Stop )
-		FUNCTION_FAST( Rewind )
+		FUNCTION( Play )
+		FUNCTION( Pause )
+		FUNCTION( Stop )
+		FUNCTION( Rewind )
 
-		FUNCTION_FAST( QueueBuffers )
-		FUNCTION_FAST( UnqueueBuffers )
+		FUNCTION( QueueBuffers )
+		FUNCTION( UnqueueBuffers )
 
-		FUNCTION_FAST( valueOf )
+		FUNCTION( valueOf )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

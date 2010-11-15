@@ -69,19 +69,20 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN(1);
 
 //	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, _moduleId);
 
 	int faceIndex;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JsvalToInt(cx, JL_ARG(2), &faceIndex) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &faceIndex) );
 	else
 		faceIndex = 0;
 
 	const char *filePathName;
-	JL_CHK( JsvalToString(cx, &JL_ARG(1), &filePathName) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &filePathName) );
 
 	JsfontModulePrivate *mpv;
 	mpv = (JsfontModulePrivate*)ModulePrivateGet();
@@ -106,17 +107,17 @@ DEFINE_CONSTRUCTOR() {
 
 
 /*
-DEFINE_FUNCTION_FAST( SetSize ) {
+DEFINE_FUNCTION( SetSize ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
 
-	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_FOBJ);
+	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(face);
 
 	FT_UInt width, height;
 
-	JL_CHK( JsvalToInt(cx, JL_FARG(1), &width) ); // a value of 0 for one of the dimensions means same as the other.
-	JL_CHK( JsvalToInt(cx, JL_FARG(2), &height) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &width) ); // a value of 0 for one of the dimensions means same as the other.
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &height) );
 
 	FT_Error status;
 	status = FT_Set_Pixel_Sizes(face, width, height);
@@ -145,12 +146,12 @@ int CubicToFunc( const FT_Vector* control1, const FT_Vector* control2, const FT_
 	return 0;
 }
 
-DEFINE_FUNCTION_FAST( GetCharOutline ) {
+DEFINE_FUNCTION( GetCharOutline ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 
 	FT_Face face;
-	face = (FT_Face)JL_GetPrivate(cx, JL_FOBJ);
+	face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(face);
 
 	FT_Outline_Funcs funcs;
@@ -162,7 +163,7 @@ DEFINE_FUNCTION_FAST( GetCharOutline ) {
 	funcs.shift = 0;
 
 	JSString *jsstr;
-	jsstr = JS_ValueToString(cx, JL_FARG(1));
+	jsstr = JS_ValueToString(cx, JL_ARG(1));
 	JL_S_ASSERT( jsstr != NULL, "Invalid string." );
 	JL_S_ASSERT( JL_GetStringLength(jsstr) == 1, "Invalid char" );
 	jschar *str;
@@ -192,18 +193,19 @@ $TOC_MEMBER $INAME
   $H return value
    An image object that contains the char.
 **/
-DEFINE_FUNCTION_FAST( DrawChar ) {
+DEFINE_FUNCTION( DrawChar ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(1);
 
 	JsfontPrivate *pv;
-	pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	JL_S_ASSERT( pv->face->size->metrics.height > 0, "Invalid font size." );
 
 	JSString *jsstr;
-	jsstr = JS_ValueToString(cx, JL_FARG(1));
+	jsstr = JS_ValueToString(cx, JL_ARG(1));
 	JL_S_ASSERT( jsstr != NULL, "Invalid string." );
 	JL_S_ASSERT( JL_GetStringLength(jsstr) == 1, "Invalid char" );
 	jschar *str;
@@ -223,15 +225,14 @@ DEFINE_FUNCTION_FAST( DrawChar ) {
 	void *buf;
 	buf = JS_malloc(cx, bufLength);
 
-	jsval blobVal;
-	JL_CHK( JL_NewBlob(cx, buf, bufLength, &blobVal) );
+	JL_CHK( JL_NewBlob(cx, buf, bufLength, JL_RVAL) );
 	JSObject *blobObj;
-	JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
-	*JL_FRVAL = OBJECT_TO_JSVAL( blobObj );
+	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
+	*JL_RVAL = OBJECT_TO_JSVAL( blobObj );
 
-	JL_CHK( SetPropertyInt(cx, blobObj, "width", width) );
-	JL_CHK( SetPropertyInt(cx, blobObj, "height", height) );
-	JL_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
+	JL_CHK(JL_SetProperty(cx, blobObj, "width", width) );
+	JL_CHK(JL_SetProperty(cx, blobObj, "height", height) );
+	JL_CHK(JL_SetProperty(cx, blobObj, "channels", 1) );
 	memcpy( buf, pv->face->glyph->bitmap.buffer, bufLength );
 
 	return JS_TRUE;
@@ -251,19 +252,19 @@ $TOC_MEMBER $INAME
   $H return value
    An image object that contains the text or the length of the text in pixel.
 **/
-DEFINE_FUNCTION_FAST( DrawString ) {
+DEFINE_FUNCTION( DrawString ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(1);
 
 	JsfontPrivate *pv;
-	pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	JL_S_ASSERT( pv->face->size->metrics.height > 0, "Invalid font size." );
 
 	JSString *jsstr;
-	jsstr = JS_ValueToString(cx, JL_FARG(1));
+	jsstr = JS_ValueToString(cx, JL_ARG(1));
 	JL_S_ASSERT( jsstr != NULL, "Invalid string." );
 	jschar *str;
 	str = JS_GetStringChars(jsstr);
@@ -273,13 +274,13 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
 	bool keepTrailingSpace;
 	keepTrailingSpace = false;
-	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JsvalToBool(cx, JL_FARG(2), &keepTrailingSpace) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &keepTrailingSpace) );
 
 	bool getWidthOnly;
 	getWidthOnly = false;
-	if ( JL_FARG_ISDEF(3) )
-		JL_CHK( JsvalToBool(cx, JL_FARG(3), &getWidthOnly) );
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &getWidthOnly) );
 
 
 	jsval tmp;
@@ -288,37 +289,37 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 	letterSpacing = 0;
 	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		JL_CHK( JsvalToInt(cx, tmp, &letterSpacing) );
+		JL_CHK( JL_JsvalToCVal(cx, tmp, &letterSpacing) );
 
 	int horizontalPadding;
 	horizontalPadding = 0;
 	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_HORIZONTALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		JL_CHK( JsvalToInt(cx, tmp, &horizontalPadding) );
+		JL_CHK( JL_JsvalToCVal(cx, tmp, &horizontalPadding) );
 
 	int verticalPadding;
 	verticalPadding = 0;
 	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_VERTICALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		JL_CHK( JsvalToInt(cx, tmp, &verticalPadding) );
+		JL_CHK( JL_JsvalToCVal(cx, tmp, &verticalPadding) );
 
 	bool useKerning;
 	useKerning = true;
 	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		JL_CHK( JsvalToBool(cx, tmp, &useKerning) );
+		JL_CHK( JL_JsvalToCVal(cx, tmp, &useKerning) );
 
 	bool isItalic;
 	isItalic = false;
 	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_ITALIC, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		JL_CHK( JsvalToBool(cx, tmp, &isItalic) );
+		JL_CHK( JL_JsvalToCVal(cx, tmp, &isItalic) );
 
 	bool isBold;
 	isBold = false;
 	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_BOLD, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		JL_CHK( JsvalToBool(cx, tmp, &isBold) );
+		JL_CHK( JL_JsvalToCVal(cx, tmp, &isBold) );
 
 
 	typedef struct {
@@ -391,7 +392,7 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 
 	if ( getWidthOnly ) {
 
-		*JL_FRVAL = INT_TO_JSVAL( width );
+		*JL_RVAL = INT_TO_JSVAL( width );
 	} else {
 
 		// allocates the resulting image buffer
@@ -401,15 +402,14 @@ DEFINE_FUNCTION_FAST( DrawString ) {
 		JL_CHK( buf );
 		memset(buf, 0, bufLength);
 
-		jsval blobVal;
-		JL_CHK( JL_NewBlob(cx, buf, bufLength, &blobVal) );
+		JL_CHK( JL_NewBlob(cx, buf, bufLength, JL_RVAL) );
 		JSObject *blobObj;
-		JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
-		*JL_FRVAL = OBJECT_TO_JSVAL( blobObj );
+		JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
+		*JL_RVAL = OBJECT_TO_JSVAL( blobObj );
 
-		JL_CHK( SetPropertyInt(cx, blobObj, "width", width) );
-		JL_CHK( SetPropertyInt(cx, blobObj, "height", height) );
-		JL_CHK( SetPropertyInt(cx, blobObj, "channels", 1) );
+		JL_CHK(JL_SetProperty(cx, blobObj, "width", width) );
+		JL_CHK(JL_SetProperty(cx, blobObj, "height", height) );
+		JL_CHK(JL_SetProperty(cx, blobObj, "channels", 1) );
 
 		// render glyphs in the bitmap
 		for ( i=0; i<strlen; i++ ) {
@@ -512,7 +512,7 @@ DEFINE_PROPERTY( size ) {
 	int size;
 	size = 0;
 	if ( !JSVAL_IS_VOID( *vp ) )
-		JL_CHK( JsvalToInt(cx, *vp, &size) );
+		JL_CHK( JL_JsvalToCVal(cx, *vp, &size) );
 
 	JL_S_ASSERT( size >= 0, "Invalid font size." );
 	FTCHK( FT_Set_Pixel_Sizes(pv->face, size, size) );
@@ -534,7 +534,7 @@ DEFINE_PROPERTY( encoding ) {
 	JL_S_ASSERT_RESOURCE( pv );
 
 	unsigned int encoding;
-	JL_CHK( JsvalToUInt(cx, *vp, &encoding) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &encoding) );
 	FTCHK( FT_Select_Charmap(pv->face, (FT_Encoding)encoding) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -551,7 +551,7 @@ DEFINE_PROPERTY( poscriptName ) {
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	JL_CHK( StringToJsval(cx, FT_Get_Postscript_Name(pv->face), vp) );
+	JL_CHK( JL_CValToJsval(cx, FT_Get_Postscript_Name(pv->face), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -572,7 +572,7 @@ DEFINE_PROPERTY_GETTER( useKerning ) {
 
 DEFINE_PROPERTY_SETTER( useKerning ) {
 
-	return JS_SetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, *vp);
+	return JL_SetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, *vp);
 }
 
 
@@ -588,7 +588,7 @@ DEFINE_PROPERTY_GETTER( horizontalPadding ) {
 
 DEFINE_PROPERTY_SETTER( horizontalPadding ) {
 
-	return JS_SetReservedSlot(cx, obj, FONT_SLOT_HORIZONTALPADDING, *vp);
+	return JL_SetReservedSlot(cx, obj, FONT_SLOT_HORIZONTALPADDING, *vp);
 }
 
 
@@ -604,7 +604,7 @@ DEFINE_PROPERTY_GETTER( verticalPadding ) {
 
 DEFINE_PROPERTY_SETTER( verticalPadding ) {
 
-	return JS_SetReservedSlot(cx, obj, FONT_SLOT_VERTICALPADDING, *vp);
+	return JL_SetReservedSlot(cx, obj, FONT_SLOT_VERTICALPADDING, *vp);
 }
 
 
@@ -620,7 +620,7 @@ DEFINE_PROPERTY_GETTER( letterSpacing ) {
 
 DEFINE_PROPERTY_SETTER( letterSpacing ) {
 
-	return JS_SetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, *vp);
+	return JL_SetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, *vp);
 }
 
 
@@ -636,7 +636,7 @@ DEFINE_PROPERTY_GETTER( italic ) {
 
 DEFINE_PROPERTY_SETTER( italic ) {
 
-	return JS_SetReservedSlot(cx, obj, FONT_SLOT_ITALIC, *vp);
+	return JL_SetReservedSlot(cx, obj, FONT_SLOT_ITALIC, *vp);
 }
 
 
@@ -652,7 +652,7 @@ DEFINE_PROPERTY_GETTER( bold ) {
 
 DEFINE_PROPERTY_SETTER( bold ) {
 
-	return JS_SetReservedSlot(cx, obj, FONT_SLOT_BOLD, *vp);
+	return JL_SetReservedSlot(cx, obj, FONT_SLOT_BOLD, *vp);
 }
 
 /**doc
@@ -712,9 +712,9 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_RESERVED_SLOTS(7)
 
 	BEGIN_FUNCTION_SPEC
-//		FUNCTION_FAST(GetCharOutline)
-		FUNCTION_FAST(DrawString)
-		FUNCTION_FAST(DrawChar)
+//		FUNCTION(GetCharOutline)
+		FUNCTION(DrawString)
+		FUNCTION(DrawChar)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -732,27 +732,27 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 		PROPERTY_READ(width)
 	END_PROPERTY_SPEC
 
-	BEGIN_CONST_DOUBLE_SPEC
-		CONST_DOUBLE( NONE				,FT_ENCODING_NONE				)
-		CONST_DOUBLE( MS_SYMBOL			,FT_ENCODING_MS_SYMBOL		)
-		CONST_DOUBLE( UNICODE			,FT_ENCODING_UNICODE			)
-		CONST_DOUBLE( SJIS				,FT_ENCODING_SJIS				)
-		CONST_DOUBLE( GB2312				,FT_ENCODING_GB2312			)
-		CONST_DOUBLE( BIG5				,FT_ENCODING_BIG5				)
-		CONST_DOUBLE( WANSUNG			,FT_ENCODING_WANSUNG			)
-		CONST_DOUBLE( JOHAB				,FT_ENCODING_JOHAB			)
-		CONST_DOUBLE( MS_SJIS			,FT_ENCODING_MS_SJIS			)
-		CONST_DOUBLE( MS_GB2312			,FT_ENCODING_MS_GB2312		)
-		CONST_DOUBLE( MS_BIG5			,FT_ENCODING_MS_BIG5			)
-		CONST_DOUBLE( MS_WANSUNG		,FT_ENCODING_MS_WANSUNG		)
-		CONST_DOUBLE( MS_JOHAB			,FT_ENCODING_MS_JOHAB		)
-		CONST_DOUBLE( ADOBE_STANDARD	,FT_ENCODING_ADOBE_STANDARD)
-		CONST_DOUBLE( ADOBE_EXPERT		,FT_ENCODING_ADOBE_EXPERT	)
-		CONST_DOUBLE( ADOBE_CUSTOM		,FT_ENCODING_ADOBE_CUSTOM	)
-		CONST_DOUBLE( ADOBE_LATIN_1	,FT_ENCODING_ADOBE_LATIN_1	)
-		CONST_DOUBLE( OLD_LATIN_2		,FT_ENCODING_OLD_LATIN_2	)
-		CONST_DOUBLE( APPLE_ROMAN		,FT_ENCODING_APPLE_ROMAN	)
-	END_CONST_DOUBLE_SPEC
+	BEGIN_CONST_INTEGER_SPEC
+		CONST_INTEGER( NONE				,FT_ENCODING_NONE				)
+		CONST_INTEGER( MS_SYMBOL		,FT_ENCODING_MS_SYMBOL		)
+		CONST_INTEGER( UNICODE			,FT_ENCODING_UNICODE			)
+		CONST_INTEGER( SJIS				,FT_ENCODING_SJIS				)
+		CONST_INTEGER( GB2312			,FT_ENCODING_GB2312			)
+		CONST_INTEGER( BIG5				,FT_ENCODING_BIG5				)
+		CONST_INTEGER( WANSUNG			,FT_ENCODING_WANSUNG			)
+		CONST_INTEGER( JOHAB			,FT_ENCODING_JOHAB			)
+		CONST_INTEGER( MS_SJIS			,FT_ENCODING_MS_SJIS			)
+		CONST_INTEGER( MS_GB2312		,FT_ENCODING_MS_GB2312		)
+		CONST_INTEGER( MS_BIG5			,FT_ENCODING_MS_BIG5			)
+		CONST_INTEGER( MS_WANSUNG		,FT_ENCODING_MS_WANSUNG		)
+		CONST_INTEGER( MS_JOHAB			,FT_ENCODING_MS_JOHAB		)
+		CONST_INTEGER( ADOBE_STANDARD	,FT_ENCODING_ADOBE_STANDARD)
+		CONST_INTEGER( ADOBE_EXPERT		,FT_ENCODING_ADOBE_EXPERT	)
+		CONST_INTEGER( ADOBE_CUSTOM		,FT_ENCODING_ADOBE_CUSTOM	)
+		CONST_INTEGER( ADOBE_LATIN_1	,FT_ENCODING_ADOBE_LATIN_1	)
+		CONST_INTEGER( OLD_LATIN_2		,FT_ENCODING_OLD_LATIN_2	)
+		CONST_INTEGER( APPLE_ROMAN		,FT_ENCODING_APPLE_ROMAN	)
+	END_CONST_INTEGER_SPEC
 
 END_CLASS
 

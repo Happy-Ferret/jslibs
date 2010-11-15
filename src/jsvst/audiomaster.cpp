@@ -32,7 +32,7 @@ BEGIN_CLASS( AudioMaster )
 
 DEFINE_HAS_INSTANCE() {
 
-	*bp = !JSVAL_IS_PRIMITIVE(v) && JL_GetClass(JSVAL_TO_OBJECT(v)) == JL_THIS_CLASS;
+	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
 
@@ -63,7 +63,7 @@ END_CLASS
 
 JSObject * CreateAudioMasterObject( JSContext *cx, audioMasterCallback audioMaster ) {
 
-	JSObject *audioMasterObject = JS_NewObject(cx, JL_CLASS(AudioMaster), NULL, NULL);
+	JSObject *audioMasterObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(AudioMaster), JL_PROTOTYPE(cx, AudioMaster), NULL);
 	if ( audioMasterObject == NULL )
 		return NULL;
 	JL_SetPrivate(cx, audioMasterObject, audioMaster);

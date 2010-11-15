@@ -36,11 +36,12 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_RANGE(0, 1);
 	ode::dSpaceID space;
 	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
-		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &space) );
+		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), &space) );
 	else
 		space = 0;
 	ode::dGeomID geomId = ode::dCreatePlane(space, 0,0,1,0); // default lengths are 1
@@ -68,7 +69,7 @@ DEFINE_PROPERTY( paramsSetter ) {
 	JL_S_ASSERT_ARRAY( *vp );
 	ode::dVector4 params;
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, *vp, params, 4, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, *vp, params, 4, &length) );
 	JL_S_ASSERT( length >= 4, "Invalid array size." );
 	ode::dGeomPlaneSetParams(geom, params[0], params[1], params[2], params[3]);
 	return JS_TRUE;
@@ -98,7 +99,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	size_t length;
-	JL_CHK( JsvalToFloatVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JL_JsvalToCValVector(cx, *vp, vector, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomPlaneSetLengths(geom, vector[0], vector[1], vector[2]);
 	return JS_TRUE;

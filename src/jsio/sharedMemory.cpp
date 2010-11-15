@@ -136,19 +136,20 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_MIN( 2 );
 
 	size_t size;
-	JL_CHK( JsvalToSize(cx, JL_ARG(2), &size) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &size) );
 
 	unsigned int mode;
 	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JsvalToUInt(cx, JL_ARG(3), &mode) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &mode) );
 
 	const char *name;
-	JL_CHK( JsvalToString(cx, &JL_ARG(1), &name) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &name) );
 
 	char semName[PATH_MAX];
 	strcpy(semName, name);
@@ -216,24 +217,26 @@ bad_ioerror:
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( data [, offset] )
+ $VOID $INAME( data [, offset] )
   Write _data_ at _offset_ in the shared memory.
 **/
-DEFINE_FUNCTION_FAST( Write ) {
+DEFINE_FUNCTION( Write ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
+
 	ClassPrivate *pv;
-	pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	size_t offset;
 	offset = 0;
-	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JsvalToSize(cx, JL_FARG(2), &offset) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &offset) );
 
 	const char *data;
 	size_t dataLength;
-	JL_CHK( JsvalToStringAndLength(cx, &JL_FARG(1), &data, &dataLength) );
+	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &dataLength) );
 
 	JL_S_ASSERT( sizeof(MemHeader) + offset + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
 
@@ -247,6 +250,7 @@ DEFINE_FUNCTION_FAST( Write ) {
 
 	JL_CHK( Unlock(cx, pv) );
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -257,23 +261,25 @@ $TOC_MEMBER $INAME
  $STR $INAME( length [, offset] )
   Read _length_ bytes from _offset_ in the shared memory.
 **/
-DEFINE_FUNCTION_FAST( Read ) {
+DEFINE_FUNCTION( Read ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	JL_DEFINE_FUNCTION_OBJ;
+
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	size_t offset;
 	offset = 0;
-	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JsvalToSize(cx, JL_FARG(2), &offset) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &offset) );
 
 	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
 
 	size_t dataLength;
-	if ( JL_FARG_ISDEF(1) )
-		JL_CHK( JsvalToSize(cx, JL_FARG(1), &dataLength) );
+	if ( JL_ARG_ISDEF(1) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &dataLength) );
 	else
 		dataLength = mh->currentDataLength;
 
@@ -286,7 +292,7 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 	JL_CHK( Unlock(cx, pv) );
 
-	JL_CHK( JL_NewBlob( cx, data, dataLength, JL_FRVAL ) );
+	JL_CHK( JL_NewBlob( cx, data, dataLength, JL_RVAL ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -295,14 +301,16 @@ DEFINE_FUNCTION_FAST( Read ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME()
+ $VOID $INAME()
   Clears the content of the shared memory.
 **/
-DEFINE_FUNCTION_FAST( Clear ) {
+DEFINE_FUNCTION( Clear ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
+
 	ClassPrivate *pv;
-	pv = (ClassPrivate*)JL_GetPrivate(cx, JL_FOBJ);
+	pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
 	JL_CHK( Lock(cx, pv) );
@@ -312,6 +320,7 @@ DEFINE_FUNCTION_FAST( Clear ) {
 	memset( (char *)pv->mem + sizeof(MemHeader), 0, pv->size - sizeof(MemHeader) );
 	JL_CHK( Unlock(cx, pv) );
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -319,15 +328,17 @@ DEFINE_FUNCTION_FAST( Clear ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME()
+ $VOID $INAME()
   Close the shared memory.
 **/
-DEFINE_FUNCTION_FAST( Close ) {
+DEFINE_FUNCTION( Close ) {
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	JL_CHK( CloseSharedMemory(cx, obj) );
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -358,7 +369,7 @@ DEFINE_PROPERTY( contentSetter ) {
 
 		const char *data;
 		size_t dataLength;
-		JL_CHK( JsvalToStringAndLength(cx, vp, &data, &dataLength) );
+		JL_CHK( JL_JsvalToStringAndLength(cx, vp, &data, &dataLength) );
 
 		JL_S_ASSERT( sizeof(MemHeader) + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
 
@@ -393,7 +404,7 @@ DEFINE_PROPERTY( contentGetter ) {
 	JL_CHK( data );
 	data[dataLength] = '\0';
 
-	memmove(	data, (char *)pv->mem + sizeof(MemHeader), dataLength );
+	memmove( data, (char *)pv->mem + sizeof(MemHeader), dataLength );
 
 	JL_CHK( Unlock(cx, pv) );
 
@@ -477,10 +488,10 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_FAST( Read )
-		FUNCTION_FAST( Write )
-		FUNCTION_FAST( Clear )
-		FUNCTION_FAST( Close )
+		FUNCTION( Read )
+		FUNCTION( Write )
+		FUNCTION( Clear )
+		FUNCTION( Close )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

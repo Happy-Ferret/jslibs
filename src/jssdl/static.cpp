@@ -65,7 +65,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 	switch (ev->type) {
 		case SDL_ACTIVEEVENT:
 			JL_CHK( JS_GetProperty(cx, listenerObj, "onActive", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
+			if ( JL_JsvalIsFunction(cx, fVal) ) {
 
 				jsval argv[] = {
 					ev->active.gain == 1 ? JSVAL_TRUE : JSVAL_FALSE
@@ -78,7 +78,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 		case SDL_KEYDOWN:
 		case SDL_KEYUP:
 			JL_CHK( JS_GetProperty(cx, listenerObj, ev->type == SDL_KEYDOWN ? "onKeyDown" : "onKeyUp", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
+			if ( JL_JsvalIsFunction(cx, fVal) ) {
 
 				jsval argv[] = {
 					INT_TO_JSVAL(ev->key.keysym.sym),
@@ -94,7 +94,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 					argv[2] = STRING_TO_JSVAL(JS_NewStringCopyN(cx, &ch, 1));
 				} else {
 
-					argv[2] = STRING_TO_JSVAL(JS_NewUCStringCopyN(cx, &ev->key.keysym.unicode, 1));
+					argv[2] = STRING_TO_JSVAL(JS_NewUCStringCopyN(cx, (jschar*)&ev->key.keysym.unicode, 1));
 				}
 
 				JSBool status = JS_CallFunctionValue(cx, thisObj, fVal, COUNTOF(argv), argv, rval);
@@ -105,7 +105,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 
 		case SDL_MOUSEMOTION:
 			JL_CHK( JS_GetProperty(cx, listenerObj, "onMouseMotion", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
+			if ( JL_JsvalIsFunction(cx, fVal) ) {
 
 				if ( ev->motion.x == (Uint16)-1 ) { // || ev->motion.y == (Uint16)-1
 					
@@ -131,7 +131,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
 			JL_CHK( JS_GetProperty(cx, listenerObj, ev->type == SDL_MOUSEBUTTONDOWN ? "onMouseButtonDown" : "onMouseButtonUp", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
+			if ( JL_JsvalIsFunction(cx, fVal) ) {
 
 				SDLMod modState = SDL_GetModState();
 				Uint8 buttonState = SDL_GetMouseState(NULL, NULL); // query only button state
@@ -150,7 +150,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 
 		case SDL_QUIT:
 			JL_CHK( JS_GetProperty(cx, listenerObj, "onQuit", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
+			if ( JL_JsvalIsFunction(cx, fVal) ) {
 
 				// no argv GC protection needed.
 				JL_CHK( JS_CallFunctionValue(cx, thisObj, fVal, 0, NULL, rval) );
@@ -161,7 +161,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 		case SDL_VIDEORESIZE:
 			// ... and you must respond to the event by re-calling SDL_SetVideoMode() with the requested size (or another size that suits the application).
 			JL_CHK( JS_GetProperty(cx, listenerObj, "onVideoResize", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
+			if ( JL_JsvalIsFunction(cx, fVal) ) {
 
 //				SDL_Surface *surface = SDL_GetVideoSurface();
 //				const SDL_VideoInfo *video = SDL_GetVideoInfo();
@@ -177,7 +177,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 
 		case SDL_VIDEOEXPOSE:
 			JL_CHK( JS_GetProperty(cx, listenerObj, "onVideoExpose", &fVal) );
-			if ( JsvalIsFunction(cx, fVal) ) {
+			if ( JL_JsvalIsFunction(cx, fVal) ) {
 
 				// no argv GC protection needed.
 				JL_CHK( JS_CallFunctionValue(cx, thisObj, fVal, 0, NULL, rval) );
@@ -210,7 +210,7 @@ $TOC_MEMBER $INAME
    * an empty Array if there are no dimensions available for a particular format.
    * $UNDEF if any dimension is okay for the given format.
 **/
-DEFINE_FUNCTION_FAST( GetVideoModeList ) {
+DEFINE_FUNCTION( GetVideoModeList ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
 
@@ -220,16 +220,16 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 
 	double flags;
 
-	if ( JL_FARG_ISDEF(1) ) {
+	if ( JL_ARG_ISDEF(1) ) {
 
 		unsigned int bpp;
-		JL_CHK( JsvalToUInt(cx, JL_FARG(1), &bpp) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &bpp) );
 		format.BitsPerPixel = bpp;
 		format.BytesPerPixel = bpp / 8; // (TBD) need to set both ?
 	}
 
-	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JsvalToDouble(cx, JL_FARG(2), &flags) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &flags) );
 	else
 		flags = 0;
 
@@ -237,13 +237,13 @@ DEFINE_FUNCTION_FAST( GetVideoModeList ) {
 
 	if ( modes == (SDL_Rect **)-1 ) { // any dimension is okay for this format.
 		
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
 	JSObject *modesArray = JS_NewArrayObject(cx, 0, NULL);
 	JL_CHK(modesArray);
-	*JL_FRVAL = OBJECT_TO_JSVAL( modesArray );
+	*JL_RVAL = OBJECT_TO_JSVAL( modesArray );
 
 	jsval tmp;
 	for ( int i = 0; modes[i] != NULL; i++ ) {
@@ -275,37 +275,37 @@ $TOC_MEMBER $INAME
    If the requested mode is not supported under any bit depth or returns the bits-per-pixel of the closest available mode with the iven width and height.
    If this bits-per-pixel is different from the one used when setting the video mode, SDL_SetVideoMode() will succeed, but will emulate the requested bits-per-pixel with a shadow surface.
 **/
-DEFINE_FUNCTION_FAST( VideoModeOK ) {
+DEFINE_FUNCTION( VideoModeOK ) {
 
 	int width, height, bpp;
 	Uint32 flags;
 
-	if ( JL_FARG_ISDEF(1) )
-		JL_CHK( JsvalToInt(cx, JL_FARG(1), &width) );
+	if ( JL_ARG_ISDEF(1) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &width) );
 	else
 		width = 0; // by default, use current width
 
-	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JsvalToInt(cx, JL_FARG(2), &height) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &height) );
 	else
 		height = 0; // by default, use current height
 
-	if ( JL_FARG_ISDEF(3) )
-		JL_CHK( JsvalToInt(cx, JL_FARG(3), &bpp) );
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &bpp) );
 	else
 		bpp = 0; // by default, use current bpp
 
-	if ( JL_FARG_ISDEF(4) ) {
+	if ( JL_ARG_ISDEF(4) ) {
 
 		double tmp;
-		JL_CHK( JsvalToDouble(cx, JL_FARG(4), &tmp) ); // we need to use doubles because some values are greater than 2^31
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &tmp) ); // we need to use doubles because some values are greater than 2^31
 		flags = (Uint32)tmp;
 	} else
 		flags = 0;
 
 	int status = SDL_VideoModeOK(width, height, bpp, (Uint32)flags);
-//	JL_CHK( BoolToJsval(cx, status != 0, JL_FRVAL) );
-	JL_CHK( IntToJsval(cx, status, JL_FRVAL) );
+//	JL_CHK(JL_CValToJsval(cx, status != 0, JL_RVAL) );
+	JL_CHK( JL_CValToJsval(cx, status, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -322,7 +322,7 @@ $TOC_MEMBER $INAME
    $ARG bitmsak flags: a bitwise-ored combination of the following flags. If omited, use the previous flags.
     SWSURFACE, HWSURFACE, ASYNCBLIT, ANYFORMAT, HWPALETTE, DOUBLEBUF, OPENGL, OPENGLBLIT, RESIZABLE, NOFRAME HWACCEL, SRCCOLORKEY, RLEACCELOK, RLEACCEL, SRCALPHA, PREALLOC
 **/
-DEFINE_FUNCTION_FAST( SetVideoMode ) {
+DEFINE_FUNCTION( SetVideoMode ) {
 
 	JL_S_ASSERT_ARG_RANGE(0,4);
 
@@ -333,33 +333,33 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
 //	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo(); // If called before SDL_SetVideoMode(), 'vfmt' is the pixel format of the "best" video mode.
 //	SDL_PixelFormat format = *videoInfo->vfmt;
 
-	if ( JL_FARG_ISDEF(1) )
-		JL_CHK( JsvalToInt(cx, JL_FARG(1), &width) );
+	if ( JL_ARG_ISDEF(1) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &width) );
 	else
 		width = _surface != NULL ? _surface->w : 0; // by default, use current width
 
-	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JsvalToInt(cx, JL_FARG(2), &height) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &height) );
 	else
 		height = _surface != NULL ? _surface->h : 0; // by default, use current height
 
-	if ( JL_FARG_ISDEF(3) )
-		JL_CHK( JsvalToInt(cx, JL_FARG(3), &bpp) );
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &bpp) );
 	else
 		bpp = _surface != NULL ? _surface->format->BitsPerPixel : 0; // by default, use current or the default bpp
 
-	if ( JL_FARG_ISDEF(4) ) {
+	if ( JL_ARG_ISDEF(4) ) {
 
 		double tmp;
-		JL_CHK( JsvalToDouble(cx, JL_FARG(4), &tmp) ); // we need to use doubles because some values are greater than 2^31
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &tmp) ); // we need to use doubles because some values are greater than 2^31
 		flags = (Uint32)tmp;
 	} else {
 
 		flags = _surface != NULL ? _surface->flags : 0; // if not given, use the previous setting or a default value.
 	}
 
-	//if ( JL_FARG_ISDEF(5) )
-	//	JL_CHK( JsvalToBool(cx, JL_FARG(5), &fullscreen) ); // we need to use doubles because some values are greater than 2^31
+	//if ( JL_ARG_ISDEF(5) )
+	//	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &fullscreen) ); // we need to use doubles because some values are greater than 2^31
 	//else
 	//	fullscreen = surface != NULL ? (surface->flags & SDL_FULLSCREEN) != 0 : 0;
 	//flags = flags & ~SDL_FULLSCREEN;
@@ -373,7 +373,7 @@ DEFINE_FUNCTION_FAST( SetVideoMode ) {
  //	if ( !_surface )
 	//	return ThrowSdlError(cx);
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -459,7 +459,7 @@ DEFINE_PROPERTY( videoFlags ) {
 //	const SDL_Surface *surface = SDL_GetVideoSurface();
 	if ( _surface != NULL ) {
 
-		JL_CHK( DoubleToJsval(cx, _surface->flags, vp) ); // we need to use doubles because some values are greater than 2^31
+		JL_CHK( JL_CValToJsval(cx, uint32_t(_surface->flags), vp) ); // we need to use doubles because some values are greater than 2^31
 	} else {
 
 		*vp = JSVAL_VOID;
@@ -488,15 +488,15 @@ DEFINE_PROPERTY( icon ) {
 
 	JSObject *imageObj = JSVAL_TO_OBJECT( image );
 	int sWidth, sHeight, sChannels;
-	JL_CHK( GetPropertyInt(cx, imageObj, "width", &sWidth) );
-	JL_CHK( GetPropertyInt(cx, imageObj, "height", &sHeight) );
-	JL_CHK( GetPropertyInt(cx, imageObj, "channels", &sChannels) );
+	JL_CHK( JL_GetProperty(cx, imageObj, "width", &sWidth) );
+	JL_CHK( JL_GetProperty(cx, imageObj, "height", &sHeight) );
+	JL_CHK( JL_GetProperty(cx, imageObj, "channels", &sChannels) );
 
 	JL_S_ASSERT( sChannels == 3 || sChannels == 4, "Unsupported image format." );
 
 	const char *sBuffer;
 	size_t bufferLength;
-	JL_CHK( JsvalToStringAndLength(cx, &image, &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToStringAndLength(cx, &image, &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
 
 	JL_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 
@@ -533,21 +533,21 @@ $TOC_MEMBER $INAME
   $H return value
    true if this function was able to toggle fullscreen mode (change from running in a window to fullscreen, or vice-versa). false if it is not implemented, or fails.
 ** /
-DEFINE_FUNCTION_FAST( ToggleFullScreen ) {
+DEFINE_FUNCTION( ToggleFullScreen ) {
 
 	SDL_Surface *surface = SDL_GetVideoSurface();
 	if ( surface == NULL ) {
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
 //	int status = SDL_WM_ToggleFullScreen( surface ); // This is currently only implemented in the X11 video driver ??
-//	*JL_FRVAL = status == 1 ? JSVAL_TRUE : JSVAL_FALSE;
+//	*JL_RVAL = status == 1 ? JSVAL_TRUE : JSVAL_FALSE;
 
 	bool hasFullscreen = (surface->flags & SDL_FULLSCREEN) != 0;
 	JLSetVideoMode(surface->w, surface->h, surface->format->BitsPerPixel, hasFullscreen ? surface->flags & ~SDL_FULLSCREEN : surface->flags | SDL_FULLSCREEN);
-  	*JL_FRVAL = JSVAL_VOID;
+  	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 */
@@ -561,7 +561,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( isFullScreen ) {
 
 	bool fullScreen = ( (SDL_GetVideoSurface()->flags & SDL_FULLSCREEN) != 0 );
-	JL_CHK( BoolToJsval(cx, fullScreen, vp) );
+	JL_CHK(JL_CValToJsval(cx, fullScreen, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -573,10 +573,10 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Iconify the window in window managed environments. A successful iconification will result in an SDL_APPACTIVE loss event.
 **/
-DEFINE_FUNCTION_FAST( Iconify ) {
+DEFINE_FUNCTION( Iconify ) {
 
 	SDL_WM_IconifyWindow();
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -589,16 +589,17 @@ $TOC_MEMBER $INAME
    ARG integer green
    ARG integer blue
 **/
-DEFINE_FUNCTION_FAST( SetGamma ) {
+DEFINE_FUNCTION( SetGamma ) {
 
 	JL_S_ASSERT_ARG_MIN(3);
 	float r,g,b;
-	JL_CHK( JsvalToFloat(cx, JL_FARG(1), &r) );
-	JL_CHK( JsvalToFloat(cx, JL_FARG(2), &g) );
-	JL_CHK( JsvalToFloat(cx, JL_FARG(3), &b) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &r) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &g) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &b) );
 	if ( SDL_SetGamma(r, g, b) != 0 )
 		return ThrowSdlError(cx);
-	*JL_FRVAL = JSVAL_VOID;
+	
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -610,12 +611,12 @@ $TOC_MEMBER $INAME
   Perform a GL buffer swap on the current GL context.
   If _async_ is true, you must wait for the SurfaceReadyEvents through the ProcessEvents() function before drawing again.
 **/
-DEFINE_FUNCTION_FAST( GlSwapBuffers ) {
+DEFINE_FUNCTION( GlSwapBuffers ) {
 
 	JL_S_ASSERT_ARG_RANGE(0,1);
 	bool async;
-	if ( JL_FARG_ISDEF(1) )
-		JL_CHK( JsvalToBool(cx, JL_FARG(1), &async) );
+	if ( JL_ARG_ISDEF(1) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &async) );
 	else
 		async = false;
 
@@ -625,7 +626,7 @@ DEFINE_FUNCTION_FAST( GlSwapBuffers ) {
 		return ThrowSdlError(cx);
 	
 	// (TBD) check error	*SDL_GetError() != '\0' ???
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -639,16 +640,17 @@ $TOC_MEMBER $INAME
    $ARG $ENUM attribute:
    $ARG $INT value:
 **/
-DEFINE_FUNCTION_FAST( GlSetAttribute ) {
+DEFINE_FUNCTION( GlSetAttribute ) {
 
 	int attr;
 	int value;
 	JL_S_ASSERT_ARG_MIN(2);
-	JL_CHK( JsvalToInt(cx, JL_FARG(1), &attr) );
-	JL_CHK( JsvalToInt(cx, JL_FARG(2), &value) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &attr) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &value) );
 	if ( SDL_GL_SetAttribute((SDL_GLattr)attr, value) == -1 )
 		return ThrowSdlError(cx);
-	*JL_FRVAL = JSVAL_VOID;
+	
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -663,15 +665,16 @@ $TOC_MEMBER $INAME
   $H return value
    the value of the requested attribute.
 **/
-DEFINE_FUNCTION_FAST( GlGetAttribute ) {
+DEFINE_FUNCTION( GlGetAttribute ) {
 
 	int attr;
 	int value;
 	JL_S_ASSERT_ARG_MIN(2);
-	JL_CHK( JsvalToInt(cx, JL_FARG(1), &attr) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &attr) );
 	if ( SDL_GL_GetAttribute((SDL_GLattr)attr, &value) == -1 )
 		return ThrowSdlError(cx);
-	JL_CHK( IntToJsval(cx, value, JL_FRVAL) );
+	JL_CHK( JL_CValToJsval(cx, value, JL_RVAL) );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -687,7 +690,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( caption ) {
 
 	const char *title;
-	JL_CHK( JsvalToString(cx, vp, &title) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &title) );
 	SDL_WM_SetCaption(title, NULL);
 	return JS_TRUE;
 	JL_BAD;
@@ -700,7 +703,7 @@ DEFINE_PROPERTY_GETTER( caption ) {
 	if ( title == NULL ) // (TBD) check if possible
 		*vp = JSVAL_VOID;
 	else
-		JL_CHK( StringToJsval(cx, title, vp) );
+		JL_CHK( JL_CValToJsval(cx, title, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -724,7 +727,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( grabInput ) {
 
 	bool grab;
-	JL_CHK( JsvalToBool(cx, *vp, &grab) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &grab) );
 	SDL_WM_GrabInput( grab ? SDL_GRAB_ON : SDL_GRAB_OFF );
 	return JS_TRUE;
 	JL_BAD;
@@ -733,7 +736,7 @@ DEFINE_PROPERTY_SETTER( grabInput ) {
 DEFINE_PROPERTY_GETTER( grabInput ) {
 
 	SDL_GrabMode mode = SDL_WM_GrabInput( SDL_GRAB_QUERY );
-	JL_CHK( BoolToJsval(cx, mode == SDL_GRAB_ON ? true : false, vp) );
+	JL_CHK(JL_CValToJsval(cx, mode == SDL_GRAB_ON ? true : false, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -747,7 +750,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( showCursor ) {
 
 	bool show;
-	JL_CHK( JsvalToBool(cx, *vp, &show) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &show) );
 	SDL_ShowCursor( show ? 1 : 0 );
 	return JS_TRUE;
 	JL_BAD;
@@ -756,7 +759,7 @@ DEFINE_PROPERTY_SETTER( showCursor ) {
 DEFINE_PROPERTY_GETTER( showCursor ) {
 
 	int show = SDL_ShowCursor( -1 ); // query
-	JL_CHK( BoolToJsval(cx, show == 0 ? false : true, vp) );
+	JL_CHK(JL_CValToJsval(cx, show == 0 ? false : true, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -769,16 +772,17 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG ImageObject image:
 **/
-DEFINE_FUNCTION_FAST( SetCursor ) {
+DEFINE_FUNCTION( SetCursor ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
-	JSObject *cursorObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JSObject *cursorObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_S_ASSERT_CLASS( cursorObj, JL_CLASS(Cursor) );
 	SDL_Cursor *cursor = (SDL_Cursor *)JL_GetPrivate(cx, cursorObj);
 	JL_S_ASSERT_RESOURCE( cursor );
 	SDL_SetCursor(cursor);
-	*JL_FRVAL = JSVAL_VOID;
+	
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -794,7 +798,7 @@ DEFINE_PROPERTY( videoDriverName ) {
 	char name[1024];
 	char *status = SDL_VideoDriverName(name, sizeof(name));
 	if ( status != NULL )
-		JL_CHK( StringToJsval(cx, name, vp) );
+		JL_CHK( JL_CValToJsval(cx, name, vp) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -827,6 +831,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PollEvent ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	SDL_Event ev;
 	SDL_PumpEvents();
 
@@ -864,14 +869,15 @@ $TOC_MEMBER $INAME
    $ARG $INT x
    $ARG $INT y
 **/
-DEFINE_FUNCTION_FAST( WarpMouse ) {
+DEFINE_FUNCTION( WarpMouse ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
 	unsigned int x, y;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &x) );
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &y) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &x) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &y) );
 	SDL_WarpMouse(x, y);
-	*JL_FRVAL = JSVAL_VOID;
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -963,16 +969,16 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $ENUM keysym: the key to be tested. see key constants below.
 **/
-DEFINE_FUNCTION_FAST( GetKeyState ) {
+DEFINE_FUNCTION( GetKeyState ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT( JL_FARG(1) );
+	JL_S_ASSERT_INT( JL_ARG(1) );
 	int key;
-	key = JSVAL_TO_INT( JL_FARG(1) );
+	key = JSVAL_TO_INT( JL_ARG(1) );
 	JL_S_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, "Invalid key." );
 	Uint8 *keystate = SDL_GetKeyState(NULL);
 	JL_ASSERT( keystate != NULL );
-	return BoolToJsval(cx, keystate[key] != 0, JL_FRVAL);
+	return JL_CValToJsval(cx, keystate[key] != 0, JL_RVAL);
 	JL_BAD;
 }
 
@@ -983,16 +989,16 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $ENUM keysym
 **/
-DEFINE_FUNCTION_FAST( GetKeyName ) {
+DEFINE_FUNCTION( GetKeyName ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT( JL_FARG(1) );
+	JL_S_ASSERT_INT( JL_ARG(1) );
 	int key;
-	key = JSVAL_TO_INT( JL_FARG(1) );
+	key = JSVAL_TO_INT( JL_ARG(1) );
 	JL_S_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, "Invalid key." );
 	char *keyName = SDL_GetKeyName((SDLKey)key);
 	JSString *jsStr = JS_NewStringCopyZ(cx, keyName);
-	*JL_FRVAL = STRING_TO_JSVAL(jsStr);
+	*JL_RVAL = STRING_TO_JSVAL(jsStr);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1008,7 +1014,7 @@ DEFINE_PROPERTY_SETTER( keyRepeatDelay ) {
 
 	int delay, interval;
 	SDL_GetKeyRepeat(&delay, &interval);
-	JL_CHK( JsvalToInt(cx, *vp, &delay) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &delay) );
 	int status = SDL_EnableKeyRepeat(delay, interval);
 	if ( status == -1 )
 		return ThrowSdlError(cx);
@@ -1021,7 +1027,7 @@ DEFINE_PROPERTY_GETTER( keyRepeatDelay ) {
 
 	int delay, interval;
 	SDL_GetKeyRepeat(&delay, &interval);
-	JL_CHK( IntToJsval(cx, delay, vp) );
+	JL_CHK( JL_CValToJsval(cx, delay, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1036,7 +1042,7 @@ DEFINE_PROPERTY_SETTER( keyRepeatInterval ) {
 
 	int delay, interval;
 	SDL_GetKeyRepeat(&delay, &interval);
-	JL_CHK( JsvalToInt(cx, *vp, &interval) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &interval) );
 	int status = SDL_EnableKeyRepeat(delay, interval);
 	if ( status == -1 )
 		return ThrowSdlError(cx);
@@ -1048,7 +1054,7 @@ DEFINE_PROPERTY_GETTER( keyRepeatInterval ) {
 
 	int delay, interval;
 	SDL_GetKeyRepeat(&delay, &interval);
-	JL_CHK( IntToJsval(cx, interval, vp) );
+	JL_CHK( JL_CValToJsval(cx, interval, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1062,7 +1068,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( unicodeKeyboardTranslation ) {
 
 	bool enable;
-	JL_CHK( JsvalToBool(cx, *vp, &enable) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &enable) );
 	SDL_EnableUNICODE(enable ? 1 : 0);
 	return JS_TRUE;
 	JL_BAD;
@@ -1083,7 +1089,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( appStateActive ) {
 
-	JL_CHK( BoolToJsval(cx, (SDL_GetAppState() & SDL_APPACTIVE) != 0, vp) );
+	JL_CHK(JL_CValToJsval(cx, (SDL_GetAppState() & SDL_APPACTIVE) != 0, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1095,7 +1101,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( hasRDTSC ) {
 
-	JL_CHK( BoolToJsval(cx, SDL_HasRDTSC() == SDL_TRUE, vp) );
+	JL_CHK(JL_CValToJsval(cx, SDL_HasRDTSC() == SDL_TRUE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1106,7 +1112,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( hasMMX ) {
 
-	JL_CHK( BoolToJsval(cx, SDL_HasMMX() == SDL_TRUE, vp) );
+	JL_CHK(JL_CValToJsval(cx, SDL_HasMMX() == SDL_TRUE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1117,7 +1123,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( hasMMXExt ) {
 
-	JL_CHK( BoolToJsval(cx, SDL_HasMMXExt() == SDL_TRUE, vp) );
+	JL_CHK(JL_CValToJsval(cx, SDL_HasMMXExt() == SDL_TRUE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1128,7 +1134,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( has3DNow ) {
 
-	JL_CHK( BoolToJsval(cx, SDL_Has3DNow() == SDL_TRUE, vp) );
+	JL_CHK(JL_CValToJsval(cx, SDL_Has3DNow() == SDL_TRUE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1139,7 +1145,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( has3DNowExt ) {
 
-	JL_CHK( BoolToJsval(cx, SDL_Has3DNowExt() == SDL_TRUE, vp) );
+	JL_CHK(JL_CValToJsval(cx, SDL_Has3DNowExt() == SDL_TRUE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1150,7 +1156,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( hasSSE ) {
 
-	JL_CHK( BoolToJsval(cx, SDL_HasSSE() == SDL_TRUE, vp) );
+	JL_CHK(JL_CValToJsval(cx, SDL_HasSSE() == SDL_TRUE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1161,7 +1167,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( hasSSE2 ) {
 
-	JL_CHK( BoolToJsval(cx, SDL_HasSSE2() == SDL_TRUE, vp) );
+	JL_CHK(JL_CValToJsval(cx, SDL_HasSSE2() == SDL_TRUE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1172,7 +1178,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( hasAltiVec ) {
 
-	JL_CHK( BoolToJsval(cx, SDL_HasAltiVec() == SDL_TRUE, vp) );
+	JL_CHK(JL_CValToJsval(cx, SDL_HasAltiVec() == SDL_TRUE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1210,13 +1216,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( maxFPS ) {
 
-	if ( JsvalIsPInfinity(cx, *vp) ) {
+	if ( JL_JsvalIsPInfinity(cx, *vp) ) {
 
 		_maxFPS = JLINFINITE;
 	} else {
 
 		unsigned int value;
-		JL_CHK( JsvalToUInt(cx, *vp, &value) );
+		JL_CHK( JL_JsvalToCVal(cx, *vp, &value) );
 		_maxFPS = value;
 	}
 	return JS_TRUE;
@@ -1230,7 +1236,7 @@ DEFINE_PROPERTY_GETTER( maxFPS ) {
 		*vp = JS_GetPositiveInfinityValue(cx);
 	} else {
 
-		JL_CHK( UIntToJsval(cx, _maxFPS, vp) );
+		JL_CHK( JL_CValToJsval(cx, int32_t(_maxFPS), vp) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -1301,28 +1307,28 @@ static JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JS
 }
 
 
-DEFINE_FUNCTION_FAST( SurfaceReadyEvents ) {
+DEFINE_FUNCTION( SurfaceReadyEvents ) {
 
 	JL_S_ASSERT_ARG_RANGE(0,1);
 
 	SurfaceReadyProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(SurfaceReadyProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(SurfaceReadyProcessEvent), (void**)&upe, NULL, JL_RVAL) );
 	upe->pe.startWait = SurfaceReadyStartWait;
 	upe->pe.cancelWait = SurfaceReadyCancelWait;
 	upe->pe.endWait = SurfaceReadyEndWait;
 
 	upe->cancel = false;
 
-	if ( JL_FARG_ISDEF(1) && JsvalIsFunction(cx, JL_FARG(1)) ) {
+	if ( JL_ARG_ISDEF(1) && JL_JsvalIsFunction(cx, JL_ARG(1)) ) {
 
-		JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection.
-		upe->callbackFctVal = JL_FARG(1);
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(1)) ); // GC protection.
+		upe->callbackFctVal = JL_ARG(1);
 	} else {
 
 		upe->callbackFctVal = JSVAL_VOID;
 	}
 
-	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 1, JL_FOBJVAL) ); // store "this" object.
+	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_OBJVAL) ); // store "this" object.
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1410,22 +1416,22 @@ static JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *
 }
 
 
-DEFINE_FUNCTION_FAST( SDLEvents ) {
+DEFINE_FUNCTION( SDLEvents ) {
 
 	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
 	upe->pe.startWait = SDLStartWait;
 	upe->pe.cancelWait = SDLCancelWait;
 	upe->pe.endWait = SDLEndWait;
 
 	upe->cancel = false;
 
-	upe->listenersObj = JSVAL_TO_OBJECT( JL_FARG(1) );
-	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(1)) ); // GC protection
-	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 1, JL_FOBJVAL) ); // store "this" object.
+	upe->listenersObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(1)) ); // GC protection
+	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_OBJVAL) ); // store "this" object.
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1439,23 +1445,23 @@ CONFIGURE_STATIC
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_FAST( GetVideoModeList )
-		FUNCTION_FAST( VideoModeOK )
-		FUNCTION_FAST_ARGC( SetVideoMode, 5 )
-//		FUNCTION_FAST( ToggleFullScreen )
-		FUNCTION_FAST( Iconify )
-		FUNCTION_FAST_ARGC( SetGamma, 3 )
-		FUNCTION_FAST( GlSwapBuffers )
-		FUNCTION_FAST_ARGC( GlSetAttribute, 2 )
-		FUNCTION_FAST_ARGC( GlGetAttribute, 1 )
+		FUNCTION( GetVideoModeList )
+		FUNCTION( VideoModeOK )
+		FUNCTION_ARGC( SetVideoMode, 5 )
+//		FUNCTION( ToggleFullScreen )
+		FUNCTION( Iconify )
+		FUNCTION_ARGC( SetGamma, 3 )
+		FUNCTION( GlSwapBuffers )
+		FUNCTION_ARGC( GlSetAttribute, 2 )
+		FUNCTION_ARGC( GlGetAttribute, 1 )
 		FUNCTION_ARGC( PollEvent, 1 )
-		FUNCTION_FAST_ARGC( WarpMouse, 2 )
-		FUNCTION_FAST_ARGC( SetCursor, 1 )
-		FUNCTION_FAST_ARGC( GetKeyState, 1 )
-		FUNCTION_FAST_ARGC( GetKeyName, 1 )
+		FUNCTION_ARGC( WarpMouse, 2 )
+		FUNCTION_ARGC( SetCursor, 1 )
+		FUNCTION_ARGC( GetKeyState, 1 )
+		FUNCTION_ARGC( GetKeyName, 1 )
 #ifndef JL_NOTHREAD
-		FUNCTION_FAST( SurfaceReadyEvents )
-		FUNCTION_FAST_ARGC( SDLEvents, 1 )
+		FUNCTION( SurfaceReadyEvents )
+		FUNCTION_ARGC( SDLEvents, 1 )
 #endif // JL_NOTHREAD
 	END_STATIC_FUNCTION_SPEC
 
@@ -1496,48 +1502,47 @@ CONFIGURE_STATIC
 
 	END_STATIC_PROPERTY_SPEC
 
-	BEGIN_CONST_DOUBLE_SPEC
-
-		CONST_DOUBLE( SWSURFACE	 ,SDL_SWSURFACE  )
-		CONST_DOUBLE( HWSURFACE	 ,SDL_HWSURFACE  )
-		CONST_DOUBLE( ASYNCBLIT	 ,SDL_ASYNCBLIT  )
-
-		CONST_DOUBLE( ANYFORMAT	 ,SDL_ANYFORMAT  )
-		CONST_DOUBLE( HWPALETTE	 ,SDL_HWPALETTE  )
-		CONST_DOUBLE( DOUBLEBUF	 ,SDL_DOUBLEBUF  )
-		CONST_DOUBLE( FULLSCREEN ,SDL_FULLSCREEN )
-		CONST_DOUBLE( OPENGL		 ,SDL_OPENGL     )
-		CONST_DOUBLE( OPENGLBLIT ,SDL_OPENGLBLIT )
-		CONST_DOUBLE( RESIZABLE	 ,SDL_RESIZABLE  )
-		CONST_DOUBLE( NOFRAME	 ,SDL_NOFRAME    )
-
-//		CONST_DOUBLE( HWACCEL	 ,SDL_HWACCEL    )
-//		CONST_DOUBLE( SRCCOLORKEY,SDL_SRCCOLORKEY)
-//		CONST_DOUBLE( RLEACCELOK ,SDL_RLEACCELOK )
-//		CONST_DOUBLE( RLEACCEL	 ,SDL_RLEACCEL   )
-//		CONST_DOUBLE( SRCALPHA	 ,SDL_SRCALPHA   )
-//		CONST_DOUBLE( PREALLOC	 ,SDL_PREALLOC   )
-
-		CONST_DOUBLE( GL_RED_SIZE				, SDL_GL_RED_SIZE				 )
-		CONST_DOUBLE( GL_GREEN_SIZE			, SDL_GL_GREEN_SIZE			 )
-		CONST_DOUBLE( GL_BLUE_SIZE				, SDL_GL_BLUE_SIZE			 )
-		CONST_DOUBLE( GL_ALPHA_SIZE			, SDL_GL_ALPHA_SIZE			 )
-		CONST_DOUBLE( GL_BUFFER_SIZE			, SDL_GL_BUFFER_SIZE			 )
-		CONST_DOUBLE( GL_DOUBLEBUFFER			, SDL_GL_DOUBLEBUFFER		 )
-		CONST_DOUBLE( GL_DEPTH_SIZE			, SDL_GL_DEPTH_SIZE			 )
-		CONST_DOUBLE( GL_STENCIL_SIZE			, SDL_GL_STENCIL_SIZE		 )
-		CONST_DOUBLE( GL_ACCUM_RED_SIZE		, SDL_GL_ACCUM_RED_SIZE		 )
-		CONST_DOUBLE( GL_ACCUM_GREEN_SIZE	, SDL_GL_ACCUM_GREEN_SIZE	 )
-		CONST_DOUBLE( GL_ACCUM_BLUE_SIZE		, SDL_GL_ACCUM_BLUE_SIZE	 )
-		CONST_DOUBLE( GL_ACCUM_ALPHA_SIZE	, SDL_GL_ACCUM_ALPHA_SIZE	 )
-		CONST_DOUBLE( GL_STEREO					, SDL_GL_STEREO				 )
-		CONST_DOUBLE( GL_MULTISAMPLEBUFFERS	, SDL_GL_MULTISAMPLEBUFFERS )
-		CONST_DOUBLE( GL_MULTISAMPLESAMPLES	, SDL_GL_MULTISAMPLESAMPLES )
-		CONST_DOUBLE( GL_ACCELERATED_VISUAL	, SDL_GL_ACCELERATED_VISUAL )
-		CONST_DOUBLE( GL_SWAP_CONTROL			, SDL_GL_SWAP_CONTROL		 )
-	END_CONST_DOUBLE_SPEC
-
 	BEGIN_CONST_INTEGER_SPEC
+
+		CONST_INTEGER( SWSURFACE	 ,SDL_SWSURFACE  )
+		CONST_INTEGER( HWSURFACE	 ,SDL_HWSURFACE  )
+		CONST_INTEGER( ASYNCBLIT	 ,SDL_ASYNCBLIT  )
+
+		CONST_INTEGER( ANYFORMAT	 ,SDL_ANYFORMAT  )
+		CONST_INTEGER( HWPALETTE	 ,SDL_HWPALETTE  )
+		CONST_INTEGER( DOUBLEBUF	 ,SDL_DOUBLEBUF  )
+		CONST_INTEGER( FULLSCREEN ,SDL_FULLSCREEN )
+		CONST_INTEGER( OPENGL		 ,SDL_OPENGL     )
+		CONST_INTEGER( OPENGLBLIT ,SDL_OPENGLBLIT )
+		CONST_INTEGER( RESIZABLE	 ,SDL_RESIZABLE  )
+		CONST_INTEGER( NOFRAME	 ,SDL_NOFRAME    )
+
+//		CONST_INTEGER( HWACCEL	 ,SDL_HWACCEL    )
+//		CONST_INTEGER( SRCCOLORKEY,SDL_SRCCOLORKEY)
+//		CONST_INTEGER( RLEACCELOK ,SDL_RLEACCELOK )
+//		CONST_INTEGER( RLEACCEL	 ,SDL_RLEACCEL   )
+//		CONST_INTEGER( SRCALPHA	 ,SDL_SRCALPHA   )
+//		CONST_INTEGER( PREALLOC	 ,SDL_PREALLOC   )
+
+		CONST_INTEGER( GL_RED_SIZE				, SDL_GL_RED_SIZE				 )
+		CONST_INTEGER( GL_GREEN_SIZE			, SDL_GL_GREEN_SIZE			 )
+		CONST_INTEGER( GL_BLUE_SIZE				, SDL_GL_BLUE_SIZE			 )
+		CONST_INTEGER( GL_ALPHA_SIZE			, SDL_GL_ALPHA_SIZE			 )
+		CONST_INTEGER( GL_BUFFER_SIZE			, SDL_GL_BUFFER_SIZE			 )
+		CONST_INTEGER( GL_DOUBLEBUFFER			, SDL_GL_DOUBLEBUFFER		 )
+		CONST_INTEGER( GL_DEPTH_SIZE			, SDL_GL_DEPTH_SIZE			 )
+		CONST_INTEGER( GL_STENCIL_SIZE			, SDL_GL_STENCIL_SIZE		 )
+		CONST_INTEGER( GL_ACCUM_RED_SIZE		, SDL_GL_ACCUM_RED_SIZE		 )
+		CONST_INTEGER( GL_ACCUM_GREEN_SIZE	, SDL_GL_ACCUM_GREEN_SIZE	 )
+		CONST_INTEGER( GL_ACCUM_BLUE_SIZE		, SDL_GL_ACCUM_BLUE_SIZE	 )
+		CONST_INTEGER( GL_ACCUM_ALPHA_SIZE	, SDL_GL_ACCUM_ALPHA_SIZE	 )
+		CONST_INTEGER( GL_STEREO					, SDL_GL_STEREO				 )
+		CONST_INTEGER( GL_MULTISAMPLEBUFFERS	, SDL_GL_MULTISAMPLEBUFFERS )
+		CONST_INTEGER( GL_MULTISAMPLESAMPLES	, SDL_GL_MULTISAMPLESAMPLES )
+		CONST_INTEGER( GL_ACCELERATED_VISUAL	, SDL_GL_ACCELERATED_VISUAL ) // Recent ATI drivers not cooperating with SDL_GL_ACCELERATED_VISUAL (http://icculus.org/pipermail/quake3-bugzilla/2008-January/000485.html)
+		CONST_INTEGER( GL_SWAP_CONTROL			, SDL_GL_SWAP_CONTROL		 )
+	
+
 		CONST_INTEGER( K_UNKNOWN			, SDLK_UNKNOWN)
 		CONST_INTEGER( K_FIRST				, SDLK_FIRST)
 		CONST_INTEGER( K_BACKSPACE			, SDLK_BACKSPACE)

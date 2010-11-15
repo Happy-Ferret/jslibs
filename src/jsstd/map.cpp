@@ -38,17 +38,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	if ( JS_IsConstructing(cx) == JS_TRUE ) {
+	// see. JL_DEFINE_CONSTRUCTOR_OBJ;
+	JSObject *obj;
+	if ( !JS_IsConstructing_PossiblyWithGivenThisObject(cx, vp, &obj) || !obj ) {
 
-		JL_S_ASSERT_THIS_CLASS();
-		JL_CHK( JS_SetPrototype(cx, obj, NULL) );
-	} else {
-
-		//Doc: JS_NewObject, JS_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
+		// Doc. JS_NewObject, JS_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
 		obj = JS_NewObjectWithGivenProto(cx, JL_THIS_CLASS, NULL, NULL);
-		JL_CHK( obj );
-		*rval = OBJECT_TO_JSVAL(obj);
+		if ( obj == NULL )
+			return JS_FALSE;
+		JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
+	} else {
+		
+		JL_CHK( JS_SetPrototype(cx, obj, NULL) );
+		JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
 	}
+
 
 	if ( JL_ARG_ISDEF(1) ) {
 
@@ -62,7 +66,7 @@ DEFINE_CONSTRUCTOR() {
 		for (;;) {
 
 			JL_CHK( JS_NextProperty(cx, it, &id) );
-			if ( id == JSVAL_VOID )
+			if ( JSID_IS_VOID(id) )
 				break;
 			JL_CHK( JS_IdToValue(cx, id, &key) );
 			//JL_CHK( OBJ_GET_PROPERTY(cx, srcObj, id, &value) );
@@ -75,7 +79,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_BAD;
 }
 
-
+/*
 DEFINE_XDR() {
 
 	jsid id;
@@ -87,7 +91,7 @@ DEFINE_XDR() {
 		for (;;) {
 
 			JL_CHK( JS_NextProperty(xdr->cx, it, &id) );
-			if ( id == JSVAL_VOID ) { // ... or JSVAL_VOID if there is no such property left to visit.
+			if ( JSID_IS_VOID( id ) ) { // ... or JSVAL_VOID if there is no such property left to visit.
 
 				jsval tmp = JSVAL_VOID;
 				JL_CHK( JS_XDRValue(xdr, &tmp) );
@@ -126,12 +130,13 @@ DEFINE_XDR() {
 	return JS_TRUE;
 	JL_BAD;
 }
+*/
 
 
 CONFIGURE_CLASS
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
-	HAS_XDR
+//	HAS_XDR
 END_CLASS
 
 

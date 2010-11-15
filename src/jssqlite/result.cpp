@@ -18,15 +18,17 @@
 #include "result.h"
 #include "database.h"
 
+#include "../jslang/blobPub.h"
+
 JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 
 	switch( sqlite3_value_type(value) ) {
 
 		case SQLITE_INTEGER:
-			JL_CHK( IntToJsval(cx, sqlite3_value_int(value), rval) );
+			JL_CHK( JL_CValToJsval(cx, sqlite3_value_int(value), rval) );
 			break;
 		case SQLITE_FLOAT:
-			JL_CHK( JS_NewNumberValue(cx, sqlite3_value_double(value), rval) );
+			JL_CHK( JL_CValToJsval(cx, sqlite3_value_double(value), rval) );
 			break;
 		case SQLITE_BLOB: {
 				int length = sqlite3_value_bytes(value);
@@ -135,7 +137,7 @@ next:
 				} else {
 
 					jsdouble jd;
-					JL_CHK( JS_ValueToNumber(cx, val, &jd) );
+					JL_CHK( JL_JsvalToCVal(cx, val, &jd) );
 					if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
 						ret = sqlite3_bind_int( pStmt, param, (int)jd );
 					else
@@ -151,11 +153,12 @@ next:
 						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 					break;
 				}
-				if ( JL_GetClass(JSVAL_TO_OBJECT(val)) == JL_GetRegistredNativeClass(cx, "Blob") ) { // beware: with SQLite, blob != text
+//				if ( JL_GetClass(JSVAL_TO_OBJECT(val)) == JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Blob")->clasp ) { // beware: with SQLite, blob != text
+				if ( JL_JsvalIsBlob(cx, val) ) {
 
 					size_t length;
 					const char *data;
-					JL_CHK( JsvalToStringAndLength(cx, &val, &data, &length) );
+					JL_CHK( JL_JsvalToStringAndLength(cx, &val, &data, &length) );
 					if ( sqlite3_bind_blob(pStmt, param, data, length, SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 					break;
@@ -168,7 +171,7 @@ next:
 				// (TBD) GC protect (root) jsstr
 				const char *str;
 				size_t strLen;
-				JL_CHK( JsvalToStringAndLength(cx, &val, &str, &strLen) );
+				JL_CHK( JL_JsvalToStringAndLength(cx, &val, &str, &strLen) );
 				if ( sqlite3_bind_text(pStmt, param, str, strLen, SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				}
@@ -250,6 +253,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Close ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pStmt );
 
@@ -263,9 +267,10 @@ DEFINE_FUNCTION( Close ) {
 		JL_CHK( SqliteThrowError(cx, dbpv->db) );
 
 	jl::StackRemove(&dbpv->stmtList, pStmt);
-	JS_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID);
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID) );
 	JL_SetPrivate(cx, obj, NULL);
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -328,18 +333,8 @@ JSBool JssqliteStep( JSContext *cx, JSObject *obj, int *status ) {
 }
 */
 
+JSBool DoStep(JSContext *cx, JSObject *obj, jsval *rval) {
 
-
-
-
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME()
-  Executes one step in the previously evaluated SQL statement.
-  $H return value
-   returns true if another row is ready. false if the last line has been reached.
-**/
-DEFINE_FUNCTION( Step ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pStmt );
@@ -363,7 +358,7 @@ DEFINE_FUNCTION( Step ) {
 		jsval queryArgument;
 		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, &queryArgument) );
 		JL_CHK( SqliteSetupBindings(cx, pStmt, JSVAL_IS_PRIMITIVE( queryArgument ) ? NULL : JSVAL_TO_OBJECT( queryArgument ), obj) ); // ":" use result object. "@" is the object passed to Query()
-		JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_TRUE) );
+		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_TRUE) );
 		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step().
 		//      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
 	}
@@ -383,15 +378,35 @@ DEFINE_FUNCTION( Step ) {
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
 			*rval = JSVAL_FALSE;
 			return JS_TRUE;
-//		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
-//			JL_REPORT_ERROR( "This routine was called inappropriately." );
+		case SQLITE_MISUSE:
+			// doc. means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE.
+			//      Or it could be the case that a database connection is being used by a different thread than the one it was created it.
+			// doc. If an interface fails with SQLITE_MISUSE, that means the interface was invoked incorrectly by the application. In that case, the error code and message may or may not be set.
+			JL_CHK( SqliteThrowErrorStatus(cx, db, status) );
 //		case SQLITE_ERROR:
 //		case SQLITE_SCHEMA: // (TBD) check for another error (doc. The database schema changed)
 //			JL_CHK( SqliteThrowError(cx, db) );
 	}
 //	JL_REPORT_ERROR("invalid case (status:%d)", status );
+
 	JL_CHK( SqliteThrowError(cx, db) );
 	JL_BAD;
+}
+
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+  Executes one step in the previously evaluated SQL statement.
+  $H return value
+   returns true if another row is ready. false if the last line has been reached.
+**/
+DEFINE_FUNCTION( Step ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	return DoStep(cx, obj, JL_RVAL);
 }
 
 
@@ -404,13 +419,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Col ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
+
 	sqlite3_stmt *pStmt;
 	pStmt = (sqlite3_stmt*)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pStmt );
 	int col;
-	JL_CHK( JsvalToInt(cx, argv[0], &col) );
-	JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, col), rval) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &col) );
+	JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, col), JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -426,21 +443,22 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Row ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pStmt );
 
-	JL_CHK( _Step(cx, obj, 0, NULL, rval) ); // if something goes wrong in Result_step ( error report has already been set )
+	JL_CHK( DoStep(cx, obj, JL_RVAL) ); // if something goes wrong in Result_step ( error report has already been set )
 
-	if ( *rval == JSVAL_FALSE ) { // the statement has finished executing successfully
+	if ( *JL_RVAL == JSVAL_FALSE ) { // the statement has finished executing successfully
 
-		*rval = JSVAL_VOID; // return undefined
+		*JL_RVAL = JSVAL_VOID; // return undefined
 		return JS_TRUE;
 	}
 
 	// returns an array [ row1Data, row2Data, ... ] else return an object { row1Name:row1Data, row2Name:row2Data,  ... }
 	bool namedRows;
 	if ( argc >= 1 )
-		JL_CHK( JsvalToBool(cx, argv[0], &namedRows) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &namedRows) );
 	else
 		namedRows = false; // default value
 
@@ -451,7 +469,7 @@ DEFINE_FUNCTION( Row ) {
 
 	JSObject *row;
 	row = namedRows ? JS_NewObject(cx, NULL, NULL, NULL) : JS_NewArrayObject(cx, columnCount, NULL); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.
-	*rval = OBJECT_TO_JSVAL(row); // now, row is protectef fom GC ??
+	*JL_RVAL = OBJECT_TO_JSVAL(row); // now, row is protectef fom GC ??
 	jsval colJsValue;
 	for ( int col = 0; col < columnCount; ++col ) {
 
@@ -469,18 +487,20 @@ DEFINE_FUNCTION( Row ) {
 
 
 
-DEFINE_FUNCTION_FAST( next ) { // for details, see Row() function thet is the base of this function.
+DEFINE_FUNCTION( next ) { // for details, see Row() function thet is the base of this function.
 
-	JSObject *obj = JL_FOBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pStmt );
-	JL_CHK( _Step(cx, obj, 0, NULL, JL_FRVAL) );
-	if ( *JL_FRVAL == JSVAL_FALSE ) // means SQLITE_DONE
+	JL_CHK( DoStep(cx, obj, JL_RVAL) );
+
+	if ( *JL_RVAL == JSVAL_FALSE ) // means SQLITE_DONE
 		return JS_ThrowStopIteration(cx);
+
 	JSObject *row;
 	row = JS_NewObject(cx, NULL, NULL, NULL);
-	*JL_FRVAL = OBJECT_TO_JSVAL(row);
+	*JL_RVAL = OBJECT_TO_JSVAL(row);
 	int columnCount;
 	columnCount = sqlite3_data_count(pStmt);
 	jsval tmp;
@@ -502,11 +522,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Reset ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pStmt );
 	if ( sqlite3_reset(pStmt) != SQLITE_OK )
 		return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
-	return JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
+	*JL_RVAL = JSVAL_VOID;
+	return JL_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 	JL_BAD;
 }
 
@@ -546,7 +569,7 @@ DEFINE_PROPERTY( columnNames ) {
 
 //	jsid jid;
 //	JL_CHK( JS_ValueToId(cx, id, &jid) );
-//	const char * tmp = JS_GetStringBytes( JS_ValueToString(cx, id) );
+//	const char * tmp = JL_GetStringBytes( JS_ValueToString(cx, id) );
 	
 	if ( *vp != JSVAL_VOID )
 		return JS_TRUE;
@@ -616,7 +639,7 @@ DEFINE_PROPERTY( sql ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pStmt );
-	JL_CHK( StringToJsval(cx, sqlite3_sql(pStmt), vp) );
+	JL_CHK( JL_CValToJsval(cx, sqlite3_sql(pStmt), vp) );
 
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -625,15 +648,15 @@ DEFINE_PROPERTY( sql ) {
 
 DEFINE_DEL_PROPERTY() {
 
-	return JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
+	return JL_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 }
 
 DEFINE_SET_PROPERTY() {
 
-	return JS_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
+	return JL_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 }
 
-DEFINE_EQUALITY() {
+DEFINE_EQUALITY_OP() {
 
 	*bp = JS_FALSE;
 	return JS_TRUE;
@@ -659,7 +682,7 @@ CONFIGURE_CLASS
 	HAS_SET_PROPERTY
 	HAS_DEL_PROPERTY
 	HAS_ITERATOR_OBJECT
-	HAS_EQUALITY
+	HAS_EQUALITY_OP
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( columnCount )
@@ -674,7 +697,7 @@ CONFIGURE_CLASS
 		FUNCTION( Close )
 		FUNCTION( Col )
 		FUNCTION( Row )
-		FUNCTION_FAST( next )
+		FUNCTION( next )
 	END_FUNCTION_SPEC
 
 END_CLASS

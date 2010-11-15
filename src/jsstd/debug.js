@@ -1,9 +1,9 @@
-LoadModule('jsstd');
+LoadModule('jsstd'); Exec('../common/tools.js');
+// var QA = FakeQAApi;
+// RunLocalQAFile();
+RunJsircbot(false); throw 0;
+//RunQATests('-rep 1 -exclude jstask|blob ');
 
-
-var b = new Buffer();
-b.Write(' abcdef');
-Print( b.IndexOf('def'), '\n' );
 
 Halt();
 
@@ -38,7 +38,7 @@ var serv = new Socket(Socket.TCP);
 serv.Bind(8081);
 serv.Listen();
 descList.push(serv);
-const CRLF = '\r\n';
+//const CRLF = '\r\n';
 
 function Respond() {
 

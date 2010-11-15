@@ -469,8 +469,9 @@ public:
 
 /* QA test:
 
-DEFINE_FUNCTION_FAST( Test ) {
+DEFINE_FUNCTION( Test ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	char *ref = (char*)jl_malloc(2000000);
 	for ( int i = 0; i < 2000000; i++ )
 		ref[i] = rand() & 0xff; // 0->255

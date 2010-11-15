@@ -155,10 +155,18 @@ namespace jl {
 			jsval name, value;
 			for ( int i = 0; i < idArray->length; ++i ) {
 
-				name = ID_TO_VALUE( idArray->vector[i] ); // JL_CHK( JS_IdToValue(cx, idArray->vector[i], &name) );
+				//name = ID_TO_VALUE( idArray->vector[i] ); // JL_CHK( JS_IdToValue(cx, idArray->vector[i], &name) );
+				//name = js::Value(idArray->vector[i]);
+				//name = js::IdToJsval(idArray->vector[i]);
+				JL_CHK( JS_IdToValue(cx, idArray->vector[i], &name) );
+
 				JSString *jsstr = JSVAL_IS_STRING(name) ? JSVAL_TO_STRING(name) : JS_ValueToString(cx, name);
-				*this << JS_GetStringBytesZ(cx, jsstr);
-				JL_CHK( obj->getProperty(cx, idArray->vector[i], &value) );
+				const char *s = JL_GetStringBytesZ(cx, jsstr);
+				if ( s == NULL )
+					JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "a valid string");
+				*this << s;
+				//JL_CHK( obj->getProperty(cx, idArray->vector[i], &value) );
+				JL_CHK( JS_GetPropertyById(cx, obj, idArray->vector[i], &value) );
 				*this << value;
 			}
 			JS_DestroyIdArray(cx, idArray);
@@ -200,9 +208,9 @@ namespace jl {
 				if ( JSVAL_IS_DOUBLE(val) ) {
 
 					type = JLTDouble;
-					*this << type << *JSVAL_TO_DOUBLE(val);
+					*this << type << JSVAL_TO_DOUBLE(val);
 				} else
-				if ( val == JSVAL_HOLE ) {
+					if ( js::Valueify(val).isMagic(JS_ARRAY_HOLE) ) {
 
 					type = JLTHole;
 					*this << type;
@@ -233,13 +241,15 @@ namespace jl {
 						if ( JSVAL_IS_VOID( elt ) ) {
 
 							JL_CHK( JS_HasElement(cx, obj, i, &found) );
-							if ( !found )
-								elt = JSVAL_HOLE;
+							if ( !found ) {
+
+								elt = js::Jsvalify(js::MagicValue(JS_ARRAY_HOLE));
+							}
 						}
 						*this << elt;
 					}
 				} else
-				if ( obj->isFunction() ) { // if ( JS_ObjectIsFunction(cx, obj) ) { // JsvalIsFunction(cx, val)
+				if ( obj->isFunction() ) { // if ( JS_ObjectIsFunction(cx, obj) ) { // JL_JsvalIsFunction(cx, val)
 
 					type = JLTFunction;
 					JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
@@ -256,7 +266,7 @@ namespace jl {
 
 					if ( !JSVAL_IS_VOID( serializeFctVal ) ) {
 
-						JL_ASSERT( JsvalIsFunction(cx, serializeFctVal) );
+						JL_ASSERT( JL_JsvalIsFunction(cx, serializeFctVal) );
 
 						JSFunction *fct = JS_ValueToFunction(cx, serializeFctVal);
 						if ( fct->isInterpreted() ) { // weakly unreliable
@@ -269,7 +279,7 @@ namespace jl {
 							*this << unserializeFctVal;
 							jsval argv[] = { JSVAL_NULL };
 							js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
-							JL_CHK( JS_CallFunctionValue(cx, obj, serializeFctVal, COUNTOF(argv-1), argv+1, argv) );
+							JL_CHK( JS_CallFunctionValue(cx, obj, serializeFctVal, COUNTOF(argv)-1, argv+1, argv) );
 							*this << *argv;
 						} else {
 
@@ -277,7 +287,7 @@ namespace jl {
 							*this << type << obj->getClass()->name;
 							jsval argv[] = { JSVAL_NULL, PRIVATE_TO_JSVAL(this) };
 							js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
-							JL_CHK( JS_CallFunctionValue(cx, obj, serializeFctVal, COUNTOF(argv-1), argv+1, argv) );
+							JL_CHK( JS_CallFunctionValue(cx, obj, serializeFctVal, COUNTOF(argv)-1, argv+1, argv) );
 						}
 
 					} else
@@ -290,7 +300,7 @@ namespace jl {
 						type = JLTObjectValue;
 						*this << type << obj->getClass()->name;
 						jsval value;
-						JL_CHK( obj->defaultValue(cx, JSTYPE_VOID, &value) ); // JS_ConvertValue(cx, val, JSTYPE_VOID, &value);
+						JL_CHK( JL_ValueOf(cx, OBJECT_TO_JSVAL(obj), &value) );
 						*this << value;
 					}
 				}
@@ -426,12 +436,12 @@ namespace jl {
 
 					jsdouble d;
 					*this >> d;
-					JL_CHK( JS_NewDoubleValue(cx, d, &val) );
+					val = DOUBLE_TO_JSVAL(d);
 					break;
 				}
 				case JLTHole: {
 
-					val = JSVAL_HOLE; // jsbool.h
+					val = js::Jsvalify(js::MagicValue(JS_ARRAY_HOLE));
 					break;
 				}
 				case JLTNull: {
@@ -453,7 +463,7 @@ namespace jl {
 					for ( jsuint i = 0; i < length; ++i ) {
 
 						*this >> elt;
-						if ( elt != JSVAL_HOLE ) // optional check
+						if ( js::Valueify(elt).isMagic(JS_ARRAY_HOLE) ) // optional check
 							JL_CHK( JS_SetElement(cx, arr, i, &elt) );
 					}
 					break;
@@ -505,7 +515,7 @@ namespace jl {
 					*this >> value;
 					jsval argv[] = { JSVAL_NULL, value };
 					js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
-					JL_CHK( JS_CallFunctionValue(cx, globalObj, unserializeFctVal, COUNTOF(argv-1), argv+1, argv) );
+					JL_CHK( JS_CallFunctionValue(cx, globalObj, unserializeFctVal, COUNTOF(argv)-1, argv+1, argv) );
 					val = *argv;
 					break;
 				}
@@ -519,12 +529,12 @@ namespace jl {
 					JL_CHK( JS_GetProperty(cx, scope, className, &constructorVal) );
 					JSObject *constructorObj = JSVAL_TO_OBJECT(constructorVal); //JSFunction *fun = JS_ValueToConstructor(cx, constructor);
 					jsval prototypeVal;
-					JL_CHK( JS_GetPropertyById(cx, constructorObj, ATOM_TO_JSID(cx->runtime->atomState.classPrototypeAtom) /* "prototype" */, &prototypeVal) );
+					JL_CHK( JS_GetPropertyById(cx, constructorObj, JL_ATOMJSID(cx, classPrototype) /* "prototype" */, &prototypeVal) );
 					JSObject *proto = JSVAL_TO_OBJECT(prototypeVal);
 
 					jsval argv[] = { JSVAL_NULL, PRIVATE_TO_JSVAL(this) };
 					js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
-					JL_CHK( JS_CallFunctionId(cx, proto, JLID(cx, _unserialize), COUNTOF(argv-1), argv+1, argv) );
+					JL_CHK( JL_CallFunctionId(cx, proto, JLID(cx, _unserialize), COUNTOF(argv)-1, argv+1, argv) );
 					val = *argv;
 					break;
 				}

@@ -36,11 +36,12 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_CONSTRUCTING();
-	JL_S_ASSERT_THIS_CLASS();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	JL_S_ASSERT_ARG_RANGE(0, 1);
 	ode::dSpaceID space;
 	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
-		JL_CHK( JsvalToSpaceID(cx, JL_ARG(1), &space) );
+		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), &space) );
 	else
 		space = 0;
 	ode::dGeomID geomId = ode::dCreateRay(space, 1); // default ray length is 1
@@ -66,7 +67,7 @@ DEFINE_PROPERTY( lengthSetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
 	jsdouble radius;
-	JL_CHK( JS_ValueToNumber(cx, *vp, &radius) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &radius) );
 	ode::dGeomRaySetLength(geom, (ode::dReal)radius);
 	return JS_TRUE;
 	JL_BAD;
@@ -76,7 +77,7 @@ DEFINE_PROPERTY( lengthGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
-	JL_CHK( FloatToJsval(cx, ode::dGeomRayGetLength(geom), vp) );
+	JL_CHK( JL_CValToJsval(cx, ode::dGeomRayGetLength(geom), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -95,7 +96,7 @@ DEFINE_PROPERTY( startSetter ) {
 	ode::dGeomRayGet(geom, start, dir);
 //	FloatArrayToVector(cx, 3, vp, start);
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, *vp, start, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, *vp, start, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);
 	return JS_TRUE;
@@ -127,7 +128,7 @@ DEFINE_PROPERTY( directionSetter ) {
 	ode::dGeomRayGet(geom, start, dir);
 //	FloatArrayToVector(cx, 3, vp, dir);
 	uint32 length;
-	JL_CHK( JsvalToODERealVector(cx, *vp, dir, 3, &length) );
+	JL_CHK( JL_JsvalToODERealVector(cx, *vp, dir, 3, &length) );
 	JL_S_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);
 	return JS_TRUE;
@@ -157,7 +158,7 @@ DEFINE_PROPERTY( firstContactSetter ) {
 	JL_S_ASSERT_INT( *vp );
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
-	JL_CHK( JsvalToInt(cx, *vp, &firstContact) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &firstContact) );
 	ode::dGeomRaySetParams(geom, firstContact, backfaceCull);
 	return JS_TRUE;
 	JL_BAD;
@@ -169,7 +170,7 @@ DEFINE_PROPERTY( firstContactGetter ) {
 	JL_S_ASSERT_RESOURCE( geom );
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
-	JL_CHK( IntToJsval(cx, firstContact, vp) );
+	JL_CHK( JL_CValToJsval(cx, firstContact, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -185,7 +186,7 @@ DEFINE_PROPERTY( backfaceCullSetter ) {
 	JL_S_ASSERT_INT( *vp );
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
-	JL_CHK( JsvalToInt(cx, *vp, &backfaceCull) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &backfaceCull) );
 	ode::dGeomRaySetParams(geom, firstContact, backfaceCull);
 	return JS_TRUE;
 	JL_BAD;
@@ -197,7 +198,7 @@ DEFINE_PROPERTY( backfaceCullGetter ) {
 	JL_S_ASSERT_RESOURCE( geom );
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
-	JL_CHK( IntToJsval(cx, backfaceCull, vp) );
+	JL_CHK( JL_CValToJsval(cx, backfaceCull, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -213,7 +214,7 @@ DEFINE_PROPERTY( closestHitSetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
 	int closestHit;
-	JL_CHK( JsvalToInt(cx, *vp, &closestHit) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &closestHit) );
 	ode::dGeomRaySetClosestHit(geom, closestHit);
 	return JS_TRUE;
 	JL_BAD;
@@ -225,7 +226,7 @@ DEFINE_PROPERTY( closestHitGetter ) {
 	JL_S_ASSERT_RESOURCE( geom );
 	int closestHit;
 	closestHit = ode::dGeomRayGetClosestHit(geom);
-	JL_CHK( IntToJsval(cx, closestHit, vp) );
+	JL_CHK( JL_CValToJsval(cx, closestHit, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

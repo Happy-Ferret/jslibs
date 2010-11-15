@@ -52,25 +52,26 @@ DEFINE_FUNCTION( ExtractIcon ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	UINT iconIndex = 0;
 	if ( argc >= 2 )
-		JL_CHK( JsvalToUInt(cx, argv[1], &iconIndex) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &iconIndex) );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	JL_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 	const char *fileName;
-	JL_CHK( JsvalToString(cx, &argv[0], &fileName) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &fileName) );
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
 	if ( hIcon == NULL ) {
 
 //		if ( GetLastError() != 0 )
 //			return WinThrowError(cx, GetLastError());
-		*rval = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
-	JSObject *icon = JS_NewObject(cx, JL_CLASS(Icon), NULL, NULL);
+	JSObject *icon = JS_NewObjectWithGivenProto(cx, JL_CLASS(Icon), JL_PROTOTYPE(cx, Icon), NULL);
 	HICON *phIcon = (HICON*)jl_malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
 	JL_S_ASSERT_ALLOC( phIcon );
 	*phIcon = hIcon;
 	JL_SetPrivate(cx, icon, phIcon);
-	*rval = OBJECT_TO_JSVAL(icon);
+	*JL_RVAL = OBJECT_TO_JSVAL(icon);
+	
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -130,18 +131,18 @@ DEFINE_FUNCTION( MessageBox ) {
 
 	UINT type = 0;
 	if ( argc >= 3 )
-		JL_CHK( JsvalToUInt(cx, argv[2], &type) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &type) );
 
 	const char *caption = NULL;
-	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) )
-		JL_CHK( JsvalToString(cx, &argv[1], &caption) );
+	if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &caption) );
 
 	const char *text;
-	JL_CHK( JsvalToString(cx, &argv[0], &text) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &text) );
 
 	int res = MessageBox(NULL, text, caption, type);
 	JL_S_ASSERT( res != 0, "MessageBox call Failed." );
-	*rval = INT_TO_JSVAL( res );
+	*JL_RVAL = INT_TO_JSVAL( res );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -168,22 +169,22 @@ DEFINE_FUNCTION( CreateProcess ) {
 	const char *applicationName, *commandLine, *environment, *currentDirectory;
 
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JsvalToString(cx, &argv[0], &applicationName) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &applicationName) ); // warning: GC on the returned buffer !
 	else
 		applicationName = NULL;
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JsvalToString(cx, &argv[1], &commandLine) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &commandLine) ); // warning: GC on the returned buffer !
 	else
 		commandLine = NULL;
 
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JsvalToString(cx, &argv[2], &environment) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &environment) ); // warning: GC on the returned buffer !
 	else
 		environment = NULL;
 
 	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( JsvalToString(cx, &argv[3], &currentDirectory) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &currentDirectory) ); // warning: GC on the returned buffer !
 	else
 		currentDirectory = NULL;
 
@@ -200,6 +201,8 @@ DEFINE_FUNCTION( CreateProcess ) {
 
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -220,11 +223,11 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	char fileName[MAX_PATH];
 	char filter[255];
 
-	if ( argc >= 1 && !JSVAL_IS_VOID( argv[0] ) ) {
+	if ( argc >= 1 && !JSVAL_IS_VOID( JL_ARG(1) ) ) {
 
 		const char *str;
 		size_t len;
-		JL_CHK( JsvalToStringAndLength(cx, &argv[0], &str, &len) );
+		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) );
 		strcpy( filter, str );
 		for ( char *tmp = filter; tmp = strchr( tmp, '|' ); tmp++ )
 			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings.
@@ -232,10 +235,10 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 		ofn.lpstrFilter = filter;
 	}
 
-	if ( argc >= 2 && !JSVAL_IS_VOID( argv[1] ) ) {
+	if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) ) {
 
 		const char *tmp;
-		JL_CHK( JsvalToString(cx, &argv[1], &tmp) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &tmp) );
 		strcpy( fileName, tmp );
 	} else {
 		*fileName = '\0';
@@ -250,9 +253,9 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	JL_S_ASSERT( res == TRUE || err == 0, "Unable to GetOpenFileName." );
 
 	if ( res == FALSE && err == 0 )
-		*rval = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 	else
-		*rval = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, fileName) );
+		*JL_RVAL = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, fileName) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -267,11 +270,12 @@ DEFINE_FUNCTION( ExpandEnvironmentStrings ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 	const char *src;
-	JL_CHK( JsvalToString(cx, &argv[0], &src) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &src) );
 	TCHAR dst[MAX_PATH];
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
 	JL_S_ASSERT( res != 0, "Unable to ExpandEnvironmentStrings." );
-	*rval = STRING_TO_JSVAL( JS_NewStringCopyN(cx, dst, res) );
+	*JL_RVAL = STRING_TO_JSVAL( JS_NewStringCopyN(cx, dst, res) );
+	
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -286,8 +290,10 @@ DEFINE_FUNCTION( Sleep ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 	unsigned int timeout;
-	JL_CHK( JsvalToUInt(cx, argv[0], &timeout) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &timeout) );
 	Sleep(timeout);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -310,8 +316,10 @@ DEFINE_FUNCTION( MessageBeep ) {
 
 	UINT type = -1;
 	if ( argc >= 1 )
-		JL_CHK( JsvalToUInt(cx, argv[0], &type) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &type) );
 	MessageBeep(type);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -328,9 +336,11 @@ DEFINE_FUNCTION( Beep ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
 	unsigned int freq, duration;
-	JL_CHK( JsvalToUInt(cx, argv[0], &freq) );
-	JL_CHK( JsvalToUInt(cx, argv[1], &duration) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &freq) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &duration) );
 	Beep(freq, duration);
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -342,7 +352,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( id )
   Creates a new COM object by object name or CLSID.
 **/
-DEFINE_FUNCTION_FAST( CreateComObject ) {
+DEFINE_FUNCTION( CreateComObject ) {
 
 	IUnknown *punk = NULL;
 	IDispatch *pdisp = NULL;
@@ -350,9 +360,9 @@ DEFINE_FUNCTION_FAST( CreateComObject ) {
 	HRESULT hr;
 
 	JL_S_ASSERT_ARG( 1 );
-	JL_S_ASSERT_STRING( JL_FARG(1) );
+	JL_S_ASSERT_STRING( JL_ARG(1) );
 
-	LPOLESTR name = (LPOLESTR)JS_GetStringChars(JS_ValueToString(cx, JL_FARG(1)));
+	LPOLESTR name = (LPOLESTR)JS_GetStringChars(JS_ValueToString(cx, JL_ARG(1)));
 
 	CLSID clsid;
 	hr = name[0] == L'{' ? CLSIDFromString(name, &clsid) : CLSIDFromProgID(name, &clsid);
@@ -372,7 +382,7 @@ DEFINE_FUNCTION_FAST( CreateComObject ) {
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
 //	pdisp->AddRef();
-	JL_CHK( NewComDispatch(cx, pdisp, JL_FRVAL) );
+	JL_CHK( NewComDispatch(cx, pdisp, JL_RVAL) );
 	pdisp->Release();
 	punk->Release();
 	return JS_TRUE;
@@ -407,12 +417,12 @@ $TOC_MEMBER $INAME
   CreateProcess(undefined, defaultBrowser + ' http://jslibs.googlecode.com/');
   }}}
 **/
-DEFINE_FUNCTION_FAST( RegistryGet ) {
+DEFINE_FUNCTION( RegistryGet ) {
 
 	JL_S_ASSERT_ARG_RANGE(1,2);
 	
 	const char *path, *valueName;
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &path) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &path) );
 
 	HKEY rootHKey;
 	if ( !strncmp(path, "HKEY_CURRENT_USER", 17) ) {
@@ -481,11 +491,11 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 	if ( error != ERROR_SUCCESS )
 		return WinThrowError(cx, error);
 
-	if ( (argc == 1) || (argc >= 2 && JL_FARG(2) == JSVAL_VOID) ) {
+	if ( (argc == 1) || (argc >= 2 && JL_ARG(2) == JSVAL_VOID) ) {
 
 		JSObject *arrObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrObj );
-		*JL_FRVAL = OBJECT_TO_JSVAL(arrObj);
+		*JL_RVAL = OBJECT_TO_JSVAL(arrObj);
 
 		char name[16384]; // http://msdn.microsoft.com/en-us/library/ms724872%28VS.85%29.aspx
 		DWORD nameLength, index;
@@ -501,7 +511,7 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 			if ( error != ERROR_SUCCESS )
 				break;
 			jsval strName;
-			JL_CHK( StringAndLengthToJsval(cx, &strName, name, nameLength) );
+			JL_CHK( JL_StringAndLengthToJsval(cx, &strName, name, nameLength) );
 			JL_CHK( JS_SetElement(cx, arrObj, index, &strName) );
 			index++;
 		}
@@ -512,7 +522,7 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 		return JS_TRUE;
 	}
 
-	JL_CHK( JsvalToString(cx, &JL_FARG(2), &valueName) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &valueName) );
 
 	DWORD type, size;
 
@@ -530,23 +540,23 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 	// doc. http://msdn.microsoft.com/en-us/library/ms724884(VS.85).aspx
 	switch (type) {
 		case REG_NONE:
-			*JL_FRVAL = JSVAL_VOID;
+			*JL_RVAL = JSVAL_VOID;
 			JS_free(cx, buffer);
 			break;
 		case REG_BINARY:
-			JL_CHK( JL_NewBlob(cx, buffer, size, JL_FRVAL) );
+			JL_CHK( JL_NewBlob(cx, buffer, size, JL_RVAL) );
 			break;
 		case REG_DWORD:
-			JL_CHK( UIntToJsval(cx, *(DWORD*)buffer, JL_FRVAL) );
+			JL_CHK( JL_CValToJsval(cx, *(DWORD*)buffer, JL_RVAL) );
 			JS_free(cx, buffer);
 			break;
 		case REG_QWORD:
-			JL_CHK( DoubleToJsval(cx, (double)*(DWORD64*)buffer, JL_FRVAL) );
+			JL_CHK( JL_CValToJsval(cx, (double)*(DWORD64*)buffer, JL_RVAL) );
 			break;
 		case REG_LINK: {
 			JSString *jsstr = JS_NewUCString(cx, (jschar*)buffer, size/2);
 			JL_CHK( jsstr );
-			*JL_FRVAL = STRING_TO_JSVAL(jsstr);
+			*JL_RVAL = STRING_TO_JSVAL(jsstr);
 			break;
 		}
 		case REG_EXPAND_SZ:
@@ -554,7 +564,7 @@ DEFINE_FUNCTION_FAST( RegistryGet ) {
 		case REG_SZ: {
 			JSString *jsstr = JS_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
 			JL_CHK( jsstr );
-			*JL_FRVAL = STRING_TO_JSVAL(jsstr);
+			*JL_RVAL = STRING_TO_JSVAL(jsstr);
 			break;
 		}
 	}
@@ -604,24 +614,24 @@ void FinalizeDirectoryHandle(void *data) {
 	CloseHandle(dc->hDirectory);
 }
 
-DEFINE_FUNCTION_FAST( DirectoryChangesInit ) {
+DEFINE_FUNCTION( DirectoryChangesInit ) {
 
 	JL_S_ASSERT_ARG_RANGE(2,3);
 
 	const char *pathName;
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &pathName) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &pathName) );
 
 	unsigned int notifyFilter;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &notifyFilter) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &notifyFilter) );
 
 	bool watchSubtree;
-	if ( JL_FARG_ISDEF(3) )
-		JL_CHK( JsvalToBool(cx, JL_FARG(3), &watchSubtree) );
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &watchSubtree) );
 	else
 		watchSubtree = false;
 
 	DirectoryChanges *dc;
-	JL_CHK( CreateHandle(cx, JLHID(dmon), sizeof(DirectoryChanges), (void**)&dc, FinalizeDirectoryHandle, JL_FRVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(dmon), sizeof(DirectoryChanges), (void**)&dc, FinalizeDirectoryHandle, JL_RVAL) );
 
 	dc->watchSubtree = watchSubtree;
 	dc->notifyFilter = notifyFilter;
@@ -652,16 +662,16 @@ $TOC_MEMBER $INAME
   * 4: The file was renamed and this is the old name.
   * 5: The file was renamed and this is the new name.
 **/
-DEFINE_FUNCTION_FAST( DirectoryChangesLookup ) {
+DEFINE_FUNCTION( DirectoryChangesLookup ) {
 
 	JL_S_ASSERT_ARG_RANGE(1,2);
-	JL_S_ASSERT( IsHandleType(cx, JL_FARG(1), JLHID("dmon")), "Unexpected argument type." );
-	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_FARG(1));
+	JL_S_ASSERT( IsHandleType(cx, JL_ARG(1), JLHID("dmon")), "Unexpected argument type." );
+	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_ARG(1));
 	JL_S_ASSERT_RESOURCE( dc );
 
 	bool wait;
-	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JsvalToBool(cx, JL_FARG(2), &wait) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &wait) );
 	else
 		wait = false;
 
@@ -675,7 +685,7 @@ DEFINE_FUNCTION_FAST( DirectoryChangesLookup ) {
 			
 			JSObject *arrObj = JS_NewArrayObject(cx, 0, NULL);
 			JL_CHK( arrObj );
-			*JL_FRVAL = OBJECT_TO_JSVAL( arrObj );
+			*JL_RVAL = OBJECT_TO_JSVAL( arrObj );
 			return JS_TRUE;
 		}
 	}
@@ -694,7 +704,7 @@ DEFINE_FUNCTION_FAST( DirectoryChangesLookup ) {
 
 	JSObject *arrObj = JS_NewArrayObject(cx, 0, NULL);
 	JL_CHK( arrObj );
-	*JL_FRVAL = OBJECT_TO_JSVAL( arrObj );
+	*JL_RVAL = OBJECT_TO_JSVAL( arrObj );
 
 	jsval tmp;
 	jsval eltContent[2];
@@ -798,26 +808,26 @@ static JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent
 	JL_BAD;
 }
 
-DEFINE_FUNCTION_FAST( DirectoryChangesEvents ) {
+DEFINE_FUNCTION( DirectoryChangesEvents ) {
 	
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
-	JL_S_ASSERT( IsHandleType(cx, JL_FARG(1), JLHID("dmon")), "Unexpected argument type." );
+	JL_S_ASSERT( IsHandleType(cx, JL_ARG(1), JLHID("dmon")), "Unexpected argument type." );
 
-	if ( JL_FARG_ISDEF(2) )
-		JL_S_ASSERT_FUNCTION( JL_FARG(2) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_S_ASSERT_FUNCTION( JL_ARG(2) );
 
-	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_FARG(1));
+	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_ARG(1));
 	JL_S_ASSERT_RESOURCE( dc );
 
 	UserProcessEvent *upe;
-	JL_CHK( CreateHandle(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_FRVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
 	upe->pe.startWait = DirectoryChangesStartWait;
 	upe->pe.cancelWait = DirectoryChangesCancelWait;
 	upe->pe.endWait = DirectoryChangesEndWait;
 
-	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 0, JL_FARG(2) ) );
-	JL_CHK( SetHandleSlot(cx, *JL_FRVAL, 1, JL_FARG(1) ) );
+	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2) ) );
+	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(1) ) );
 
 	upe->cancelEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	upe->dc = dc;
@@ -873,7 +883,7 @@ DEFINE_PROPERTY( clipboardSetter ) {
 		JL_S_ASSERT( res != 0, "Unable to open the clipboard." );
 		const char *str;
 		size_t len;
-		JL_CHK( JsvalToStringAndLength(cx, vp, &str, &len) );
+		JL_CHK( JL_JsvalToStringAndLength(cx, vp, &str, &len) );
 		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, len + 1);
 		JL_S_ASSERT_ALLOC( hglbCopy );
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
@@ -932,13 +942,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( numlockState ) {
 
-	return BoolToJsval(cx, GetKeyState(VK_NUMLOCK) & 1, vp);
+	return JL_CValToJsval(cx, GetKeyState(VK_NUMLOCK) & 1, vp);
 }
 
 DEFINE_PROPERTY_SETTER( numlockState ) {
 
 	bool state;
-	JL_CHK( JsvalToBool(cx, *vp, &state) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &state) );
 	SetKeyState(VK_NUMLOCK, state);
 	return JS_TRUE;
 	JL_BAD;
@@ -951,13 +961,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( capslockState ) {
 
-	return BoolToJsval(cx, GetKeyState(VK_CAPITAL) & 1, vp);
+	return JL_CValToJsval(cx, GetKeyState(VK_CAPITAL) & 1, vp);
 }
 
 DEFINE_PROPERTY_SETTER( capslockState ) {
 
 	bool state;
-	JL_CHK( JsvalToBool(cx, *vp, &state) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &state) );
 	SetKeyState(VK_CAPITAL, state);
 	return JS_TRUE;
 	JL_BAD;
@@ -970,13 +980,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( scrolllockState ) {
 
-	return BoolToJsval(cx, GetKeyState(VK_SCROLL) & 1, vp);
+	return JL_CValToJsval(cx, GetKeyState(VK_SCROLL) & 1, vp);
 }
 
 DEFINE_PROPERTY_SETTER( scrolllockState ) {
 
 	bool state;
-	JL_CHK( JsvalToBool(cx, *vp, &state) );
+	JL_CHK( JL_JsvalToCVal(cx, *vp, &state) );
 	SetKeyState(VK_SCROLL, state);
 	return JS_TRUE;
 	JL_BAD;
@@ -994,7 +1004,7 @@ DEFINE_PROPERTY( lastInputTime ) {
 	lastInputInfo.cbSize = sizeof(LASTINPUTINFO);
 	if ( ::GetLastInputInfo(&lastInputInfo) == FALSE )
 		return WinThrowError(cx, GetLastError());
-	return DoubleToJsval(cx, ::GetTickCount() - lastInputInfo.dwTime, JL_FRVAL);
+	return JL_CValToJsval(cx, ::GetTickCount() - lastInputInfo.dwTime, JL_RVAL);
 }
 
 
@@ -1127,16 +1137,17 @@ enum {
 DEFINE_PROPERTY( folderPath ) {
 
 	TCHAR path[MAX_PATH];
-	if ( SUCCEEDED( SHGetFolderPath(NULL, JSVAL_TO_INT(id), NULL, 0, path) ) ) // |CSIDL_FLAG_CREATE
-		return StringToJsval(cx, path, vp);
+	if ( SUCCEEDED( SHGetFolderPath(NULL, JSID_TO_INT(id), NULL, 0, path) ) ) // |CSIDL_FLAG_CREATE
+		return JL_CValToJsval(cx, path, vp);
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 }
 
 
 #ifdef DEBUG
-DEFINE_FUNCTION_FAST( jswinshelltest ) {
+DEFINE_FUNCTION( jswinshelltest ) {
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 #endif //DEBUG
@@ -1147,7 +1158,7 @@ CONFIGURE_STATIC
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		#ifdef DEBUG
-		FUNCTION_FAST( jswinshelltest )
+		FUNCTION( jswinshelltest )
 		#endif //DEBUG
 
 		FUNCTION( MessageBox )
@@ -1158,12 +1169,12 @@ CONFIGURE_STATIC
 		FUNCTION( Sleep )
 		FUNCTION( MessageBeep )
 		FUNCTION( Beep )
-		FUNCTION_FAST( RegistryGet )
-		FUNCTION_FAST( CreateComObject )
+		FUNCTION( RegistryGet )
+		FUNCTION( CreateComObject )
 
-		FUNCTION_FAST( DirectoryChangesInit )
-		FUNCTION_FAST( DirectoryChangesLookup )
-		FUNCTION_FAST( DirectoryChangesEvents )
+		FUNCTION( DirectoryChangesInit )
+		FUNCTION( DirectoryChangesLookup )
+		FUNCTION( DirectoryChangesEvents )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

@@ -14,6 +14,9 @@
 
 #include "stdafx.h"
 
+#include <jsdbgapi.h>
+#include <jsscope.h>
+
 #include "jsdebug.h"
 
 #include "jslibsModule.h"
@@ -34,7 +37,7 @@
 int _puts(JSContext *cx, const char *str) {
 
 	jsval stdoutFunction;
-	if ( GetConfigurationValue(cx, JLID_NAME(stdout), &stdoutFunction) && JsvalIsFunction(cx, stdoutFunction) ) {
+	if ( GetConfigurationValue(cx, JLID_NAME(cx, stdout), &stdoutFunction) && JL_JsvalIsFunction(cx, stdoutFunction) ) {
 
 		int len = (int)strlen(str);
 		JSString *jsstr = JS_NewStringCopyN(cx, str, len);
@@ -43,7 +46,7 @@ int _puts(JSContext *cx, const char *str) {
 	//	jsstr = JS_ConcatStrings(cx, jsstr, JS_NewStringCopyZ(cx, "\n"));
 
 		js::AutoValueRooter tvr(cx);
-		JSBool status = JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), stdoutFunction, 1, tvr.addr(), tvr.addr());
+		JSBool status = JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), stdoutFunction, 1, tvr.jsval_addr(), tvr.jsval_addr());
 		if ( status == JS_TRUE )
 			return len;
 	}
@@ -148,10 +151,10 @@ $TOC_MEMBER $INAME
  $H note
   This function in only available in DEBUG mode.
 **/
-DEFINE_FUNCTION_FAST( DumpHeap )
+DEFINE_FUNCTION( DumpHeap )
 {
 
-    char *fileName;
+    const char *fileName;
     jsval v;
     void* startThing;
     uint32 startTraceKind;
@@ -172,7 +175,9 @@ DEFINE_FUNCTION_FAST( DumpHeap )
             if (!str)
                 return JS_FALSE;
             JS_ARGV(cx, vp)[0] = STRING_TO_JSVAL(str);
-            fileName = JS_GetStringBytes(str);
+            fileName = JL_GetStringBytesZ(cx, str);
+				if ( fileName == NULL )
+					fileName = "";
         }
     }
 
@@ -242,16 +247,19 @@ DEFINE_FUNCTION_FAST( DumpHeap )
   not_traceable_arg:
     JS_ReportError(cx, "argument '%s' is not null or a heap-allocated thing",
                    badTraceArg);
-	 return JS_FALSE;
+
+	*JL_RVAL = JSVAL_VOID;
+	return JS_FALSE;
 }
 
 #else // DEBUG
 
-DEFINE_FUNCTION_FAST( DumpHeap ) {
+DEFINE_FUNCTION( DumpHeap ) {
 
 	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 #endif // DEBUG
@@ -294,11 +302,13 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 		dumpFile = stdout;
 	}
 
-	if ( status == JSGC_BEGIN )
-		fprintf( dumpFile, "%s - gcByte:%lu gcMallocBytes:%lu ... ", timeTmp, (unsigned long)cx->runtime->gcBytes, (unsigned long)cx->runtime->gcMallocBytes );
+	// (TBD) JM
+//	if ( status == JSGC_BEGIN )
+//		fprintf( dumpFile, "%s - gcByte:%lu gcMallocBytes:%lu ... ", timeTmp, (unsigned long)cx->runtime->gcBytes, (unsigned long)cx->runtime->gcMallocBytes );
 
-	if ( status == JSGC_END )
-		fprintf( dumpFile, "gcByte:%lu gcMallocBytes:%lu  \n", (unsigned long)cx->runtime->gcBytes, (unsigned long)cx->runtime->gcMallocBytes );
+	// (TBD) JM
+//	if ( status == JSGC_END )
+//		fprintf( dumpFile, "gcByte:%lu gcMallocBytes:%lu  \n", (unsigned long)cx->runtime->gcBytes, (unsigned long)cx->runtime->gcMallocBytes );
 
 	if ( dumpFile != stdout )
 		fclose(dumpFile);
@@ -308,10 +318,10 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( [ filename ] )
+ $VOID $INAME( [ filename ] )
   TBD
 **/
-DEFINE_FUNCTION_FAST( TraceGC )
+DEFINE_FUNCTION( TraceGC )
 {
 
 	if ( argc > 0 ) { // start GC dump
@@ -319,7 +329,7 @@ DEFINE_FUNCTION_FAST( TraceGC )
 		jsval *argv = JS_ARGV(cx, vp);
 //		JSObject *obj = JS_THIS_OBJECT(cx, vp);
 
-		char *fileName = NULL;
+		const char *fileName = NULL;
 
 		if ( !JSVAL_IS_NULL( argv[0] ) ) {
 
@@ -328,7 +338,9 @@ DEFINE_FUNCTION_FAST( TraceGC )
 			if (!str)
 				 return JS_FALSE;
 			argv[0] = STRING_TO_JSVAL(str);
-			fileName = JS_GetStringBytes(str);
+			fileName = JL_GetStringBytesZ(cx, str);
+			if ( fileName == NULL )
+				fileName = "";
 		}
 
 		if (!fileName)
@@ -351,6 +363,7 @@ DEFINE_FUNCTION_FAST( TraceGC )
 		}
 	}
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -479,7 +492,7 @@ DEFINE_PROPERTY( currentMemoryUsage ) {
 	bytes = pinfo.vsize;
 #endif // XP_WIN
 
-	JL_CHK( JS_NewNumberValue(cx, bytes, vp) );
+	JL_CHK( JL_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -509,7 +522,7 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 	PROCESS_MEMORY_COUNTERS_EX pmc;
 	GetProcessMemoryInfo( hProcess, (PPROCESS_MEMORY_COUNTERS)&pmc, sizeof(pmc) ); // MEM_PRIVATE
 	bytes = pmc.PeakWorkingSetSize; // same value as "windows task manager" "peak mem usage"
-	JL_CHK( JS_NewNumberValue(cx, bytes, vp) );
+	JL_CHK( JL_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 	JL_BAD;
 #endif // XP_WIN
@@ -538,7 +551,7 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 
 //	bytes = pmc.PrivateUsage; // doc: The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE, data that is not mapped, and executable pages that have been written to.
 	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
-	JL_CHK( JS_NewNumberValue(cx, bytes, vp) );
+	JL_CHK( JL_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 	JL_BAD;
 #endif // XP_WIN
@@ -562,20 +575,25 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( gcNumber ) {
 
-	return JS_NewNumberValue(cx, JS_GetGCParameter(JS_GetRuntime(cx), JSGC_NUMBER), vp);
+	return JL_NewNumberValue(cx, JS_GetGCParameter(JL_GetRuntime(cx), JSGC_NUMBER), vp);
 }
 
 
-/**doc
+/* *doc
 $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the amount of bytes mallocated by the JavaScript engine. It is incremented each time the JavaScript engine allocates memory.
 **/
+/*
 DEFINE_PROPERTY( gcMallocBytes ) {
 
-	JSRuntime *rt = JS_GetRuntime(cx);
-	return JS_NewNumberValue(cx, rt->gcMaxMallocBytes - rt->gcMallocBytes, vp);
+	JSRuntime *rt = JL_GetRuntime(cx);
+
+	// (TBD) JM
+	
+	return JL_NewNumberValue(cx, JS_GetGCParameter(rt, JSGC_MAX_MALLOC_BYTES) - rt->gcMallocBytes, vp);
 }
+*/
 
 /**doc
 $TOC_MEMBER $INAME
@@ -584,7 +602,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( gcBytes ) {
 
-	return JS_NewNumberValue(cx, JS_GetGCParameter(JS_GetRuntime(cx), JSGC_BYTES), vp);
+	return JL_NewNumberValue(cx, JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES), vp);
 }
 
 /*
@@ -608,10 +626,9 @@ DEFINE_PROPERTY( gcZeal ) {
 #ifdef JS_GC_ZEAL
 
 	int zeal;
-	JL_CHKM( JsvalToInt(cx, *vp, &zeal), "Invalid value." );
+	JL_CHKM( JL_JsvalToCVal(cx, *vp, &zeal), "Invalid value." );
 	JS_SetGCZeal(cx, zeal);
 	return JL_StoreProperty(cx, obj, id, vp, false);
-	JL_BAD;
 
 #else // JS_GC_ZEAL
 
@@ -620,14 +637,17 @@ DEFINE_PROPERTY( gcZeal ) {
 	return JS_TRUE;
 
 #endif // JS_GC_ZEAL
+
+	JL_BAD;
 }
 
 
 // undocumented
-DEFINE_FUNCTION_FAST( DisableJIT ) {
+DEFINE_FUNCTION( DisableJIT ) {
 
-	JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_JIT);
-	*JL_FRVAL = JSVAL_VOID;
+	JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_JIT|JSOPTION_METHODJIT));
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
@@ -640,6 +660,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetObjectPrivate ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_OBJECT( JL_ARG( 1 ) );
 
@@ -650,7 +671,7 @@ DEFINE_FUNCTION( GetObjectPrivate ) {
 	}
 	unsigned long n;
 	n = (unsigned long)JL_GetPrivate(cx, JSVAL_TO_OBJECT( JL_ARG( 1 ) ));
-	JL_CHK( JS_NewNumberValue(cx, (double)n, JL_RVAL) );
+	JL_CHK( JL_NewNumberValue(cx, (double)n, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -716,7 +737,7 @@ TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval,
     str = (JSString *) closure;
     caller = JS_GetScriptedCaller(cx, NULL);
     if (!JS_EvaluateScript(cx, caller->scopeChain,
-                           JS_GetStringBytes(str), JS_GetStringLength(str),
+                           JL_GetStringBytes(str), JS_GetStringLength(str),
                            caller->script->filename, caller->script->lineno,
                            rval)) {
         return JSTRAP_ERROR;
@@ -831,7 +852,7 @@ DEFINE_PROPERTY( scriptFilenameList ) {
 	index = 0;
 
 	jl::Queue *scriptFileList;
-	scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, _moduleId))->scriptFileList;
+	scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;
 
 	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
 
@@ -839,7 +860,7 @@ DEFINE_PROPERTY( scriptFilenameList ) {
 		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
 
 		jsval filename;
-		JL_CHK( StringToJsval(cx, s->filename, &filename) );
+		JL_CHK( JL_CValToJsval(cx, s->filename, &filename) );
 		JL_CHK( JS_SetElement(cx, arr, index, &filename) );
 		++index;
 	}
@@ -864,22 +885,22 @@ $TOC_MEMBER $INAME
   GetActualLineno('nofile.js', 2); // returns: undefined
   }}}
 **/
-DEFINE_FUNCTION_FAST( GetActualLineno ) {
+DEFINE_FUNCTION( GetActualLineno ) {
 
 	JL_S_ASSERT_ARG_MIN( 2 );
 
 	uintN lineno;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &lineno) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &lineno) );
 
 	JSScript *script;
 	jsbytecode *pc;
-	JL_CHK( GetScriptLocation(cx, &JL_FARG(1), lineno, &script, &pc) );
+	JL_CHK( GetScriptLocation(cx, &JL_ARG(1), lineno, &script, &pc) );
 	if ( script == NULL ) {
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
-	*JL_FRVAL = INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc));
+	*JL_RVAL = INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc));
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -892,7 +913,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( stackSize ) {
 
-	return IntToJsval(cx, JL_StackSize(cx, JL_CurrentStackFrame(cx)), vp);
+	return JL_CValToJsval(cx, JL_StackSize(cx, JL_CurrentStackFrame(cx)), vp);
 }
 
 
@@ -916,31 +937,31 @@ $TOC_MEMBER $INAME
   * isEval: frame for eval.
   * isAssigning: a complex op is currently assigning to a property.
 **/
-DEFINE_FUNCTION_FAST( StackFrameInfo ) {
+DEFINE_FUNCTION( StackFrameInfo ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	unsigned int frameIndex;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(1), &frameIndex) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &frameIndex) );
 
 	JSStackFrame *fp;
 	fp = JL_StackFrameByIndex(cx, frameIndex);
 	if ( fp == NULL ) {
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
 	JSObject *frameInfo;
 	frameInfo = JS_NewObject(cx, NULL, NULL, NULL);
 	JL_CHK( frameInfo );
-	*JL_FRVAL = OBJECT_TO_JSVAL(frameInfo);
+	*JL_RVAL = OBJECT_TO_JSVAL(frameInfo);
 	jsval tmp;
 
 	JSScript *script;
 	script = JS_GetFrameScript(cx, fp);
 	if ( script )
-		JL_CHK( StringToJsval(cx, JS_GetScriptFilename(cx, script), &tmp) );
+		JL_CHK( JL_CValToJsval(cx, JS_GetScriptFilename(cx, script), &tmp) );
 	else
 		tmp = JSVAL_VOID;
 	JL_CHK( JS_SetProperty(cx, frameInfo, "filename", &tmp) );
@@ -966,14 +987,14 @@ DEFINE_FUNCTION_FAST( StackFrameInfo ) {
 
 //	JL_CHK( JS_DefineProperty(cx, frameInfo, "variables", fp->varobj ? OBJECT_TO_JSVAL(fp->varobj) : JSVAL_VOID, NULL, NULL, JSPROP_ENUMERATE) );
 
-	tmp = OBJECT_TO_JSVAL(JS_GetFrameThis(cx, fp));
+	JL_CHK( JS_GetFrameThis(cx, fp, &tmp) );
 	JL_CHK( JS_SetProperty(cx, frameInfo, "this", &tmp) );
 
-	if ( fp->argv ) {
+	if ( fp->hasArgs() ) {
 
 		JSObject *arguments;
-		arguments = JS_NewArrayObject(cx, fp->argc, fp->argv);
-//		arguments = js_GetArgsObject(cx, fp);
+		arguments = JS_NewArrayObject(cx, fp->numFormalArgs(), js::Jsvalify(fp->formalArgs()));
+		JL_CHK( arguments );
 		tmp = OBJECT_TO_JSVAL(arguments);
 	} else {
 
@@ -984,20 +1005,21 @@ DEFINE_FUNCTION_FAST( StackFrameInfo ) {
 	tmp = JS_GetFrameReturnValue(cx, fp);
 	JL_CHK( JS_SetProperty(cx, frameInfo, "rval", &tmp) );
 
-	tmp = BOOLEAN_TO_JSVAL(JS_IsNativeFrame(cx, fp));
+	// JS_IsNativeFrame
+	tmp = fp->isFunctionFrame() ? JSVAL_FALSE : JSVAL_TRUE; // (TBD) check if isFunctionFrame() <=> !isNative
 	JL_CHK( JS_SetProperty(cx, frameInfo, "isNative", &tmp) );
 
-	tmp = JS_IsConstructorFrame(cx, fp) ? JSVAL_TRUE : JSVAL_FALSE;
+	tmp = fp->isConstructing() ? JSVAL_TRUE : JSVAL_FALSE;
 	JL_CHK( JS_SetProperty(cx, frameInfo, "isConstructing", &tmp) );
 
-	tmp = fp->flags & JSFRAME_EVAL ? JSVAL_TRUE : JSVAL_FALSE;
+	tmp = fp->isEvalFrame() ? JSVAL_TRUE : JSVAL_FALSE;
 	JL_CHK( JS_SetProperty(cx, frameInfo, "isEval", &tmp) );
 
-	tmp = fp->flags & JSFRAME_ASSIGNING ? JSVAL_TRUE : JSVAL_FALSE;
+	tmp = fp->isAssigning() ? JSVAL_TRUE : JSVAL_FALSE;
 	JL_CHK( JS_SetProperty(cx, frameInfo, "isAssigning", &tmp) );
 
 //	JL_CHK( JS_DefineProperty(cx, frameInfo, "opnd", fp->regs->sp[-1], NULL, NULL, JSPROP_ENUMERATE) );
-//	char * s = JS_GetStringBytes(JS_ValueToString(cx, fp->regs->sp[-1]));
+//	char * s = JL_GetStringBytes(JS_ValueToString(cx, fp->regs->sp[-1]));
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1010,21 +1032,21 @@ $TOC_MEMBER $INAME
  Evaluates code in the given stack frame.
  0 is the older stack frame index. The current (last) stack frame index is (stackSize-1). See Locate() function for more details.
 **/
-DEFINE_FUNCTION_FAST( EvalInStackFrame ) {
+DEFINE_FUNCTION( EvalInStackFrame ) {
 
 	JL_S_ASSERT_ARG_MIN( 2 );
 
-	JL_S_ASSERT_STRING( JL_FARG(1) );
+	JL_S_ASSERT_STRING( JL_ARG(1) );
 
 	unsigned int frameIndex;
-	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &frameIndex) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &frameIndex) );
 
 	JSStackFrame *fp;
 	fp = JL_StackFrameByIndex(cx, frameIndex);
 
 	if ( fp == NULL ) {
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
@@ -1035,8 +1057,8 @@ DEFINE_FUNCTION_FAST( EvalInStackFrame ) {
 	pc = JS_GetFramePC(cx, fp);
 
 	JSString *jsstr;
-	jsstr = JSVAL_TO_STRING( JL_FARG(1) );
-	JL_CHK( JS_EvaluateUCInStackFrame(cx, fp, JS_GetStringChars(jsstr), (uintN)JL_GetStringLength(jsstr), JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), JL_FRVAL) );
+	jsstr = JSVAL_TO_STRING( JL_ARG(1) );
+	JL_CHK( JS_EvaluateUCInStackFrame(cx, fp, JS_GetStringChars(jsstr), (uintN)JL_GetStringLength(jsstr), JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1072,13 +1094,13 @@ $TOC_MEMBER $INAME
   16 test();
   }}}
 **/
-DEFINE_FUNCTION_FAST( Locate ) {
+DEFINE_FUNCTION( Locate ) {
 
 	JSStackFrame *fp;
-	if ( JL_FARG_ISDEF(1) ) {
+	if ( JL_ARG_ISDEF(1) ) {
 
 		int frame;
-		JL_CHK( JsvalToInt(cx, JL_FARG(1), &frame) );
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &frame) );
 		fp = JL_StackFrameByIndex(cx, frame);
 	} else {
 
@@ -1087,7 +1109,7 @@ DEFINE_FUNCTION_FAST( Locate ) {
 
 	if ( fp == NULL ) {
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
@@ -1098,14 +1120,14 @@ DEFINE_FUNCTION_FAST( Locate ) {
 
 	JSObject *arrObj;
 	arrObj = JS_NewArrayObject(cx, 2, NULL);
-	*JL_FRVAL = OBJECT_TO_JSVAL(arrObj);
+	*JL_RVAL = OBJECT_TO_JSVAL(arrObj);
 
 	jsval tmp;
 	if ( script ) {
 
 		const char *filename;
 		filename = JS_GetScriptFilename(cx, script);
-		JL_CHK( StringToJsval(cx, filename, &tmp) );
+		JL_CHK( JL_CValToJsval(cx, filename, &tmp) );
 	} else { // native frame ?
 
 		tmp = JSVAL_VOID;
@@ -1125,26 +1147,26 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( value )
   Try to find the definition location of the given value.
 **/
-DEFINE_FUNCTION_FAST( DefinitionLocation ) {
+DEFINE_FUNCTION( DefinitionLocation ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	JSScript *script;
 	script = NULL;
 
-	if ( JsvalIsFunction(cx, JL_FARG(1)) ) {
+	if ( JL_JsvalIsFunction(cx, JL_ARG(1)) ) {
 
 		JSFunction *fun;
-		fun = JS_ValueToFunction(cx, JL_FARG(1));
+		fun = JS_ValueToFunction(cx, JL_ARG(1));
 		if ( JS_GetFunctionScript(cx, fun) )
 			script = JS_GetFunctionScript(cx, fun);
 		goto next;
 	}
 
-	if ( !JSVAL_IS_PRIMITIVE( JL_FARG(1) ) ) {
+	if ( !JSVAL_IS_PRIMITIVE( JL_ARG(1) ) ) {
 
 		JSObject* obj;
-		obj = JS_GetConstructor(cx, JSVAL_TO_OBJECT( JL_FARG(1) ));
+		obj = JS_GetConstructor(cx, JSVAL_TO_OBJECT( JL_ARG(1) ));
 		JSFunction *fun;
 		fun = JS_ValueToFunction(cx, OBJECT_TO_JSVAL( obj ) );
 		if ( fun ) {
@@ -1155,24 +1177,24 @@ DEFINE_FUNCTION_FAST( DefinitionLocation ) {
 		}
 	}
 
-	if ( JsvalIsScript(cx, JL_FARG(1)) ) {
+	if ( JL_JsvalIsScript(cx, JL_ARG(1)) ) {
 
 		JSObject* obj;
-		obj = JSVAL_TO_OBJECT(JL_FARG(1));
+		obj = JSVAL_TO_OBJECT(JL_ARG(1));
 		script = (JSScript*)JL_GetPrivate(cx, obj);
 	}
 
 next:
 	if ( !script ) {
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
 	jsval values[2];
-	JL_CHK( StringToJsval(cx, script->filename, &values[0]) );
-	IntToJsval(cx, script->lineno, &values[1] );
-	*JL_FRVAL = OBJECT_TO_JSVAL( JS_NewArrayObject(cx, COUNTOF(values), values) );
+	JL_CHK( JL_CValToJsval(cx, script->filename, &values[0]) );
+	JL_CHK( JL_CValToJsval(cx, script->lineno, &values[1] ) );
+	*JL_RVAL = OBJECT_TO_JSVAL( JS_NewArrayObject(cx, COUNTOF(values), values) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1184,49 +1206,45 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( object [, followPrototypeChain = false ] )
   Returns an array of properties name.
 **/
-DEFINE_FUNCTION_FAST( PropertiesList ) {
+DEFINE_FUNCTION( PropertiesList ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
 	JSObject *srcObj;
-	srcObj = JSVAL_TO_OBJECT( JL_FARG(1) );
-
+	srcObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 	if ( !srcObj->isNative() ) { // (TBD) remove this workaround to bz#522101
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
 	bool followPrototypeChain;
-	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JsvalToBool(cx, JL_FARG(2), &followPrototypeChain) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &followPrototypeChain) );
 	else
 		followPrototypeChain = false;
 
 	JSObject *arrayObject;
 	arrayObject = JS_NewArrayObject(cx, 0, NULL);
 	JL_CHK( arrayObject );
-	*JL_FRVAL = OBJECT_TO_JSVAL( arrayObject );
+	*JL_RVAL = OBJECT_TO_JSVAL( arrayObject );
 
 	jsval tmp;
 	int index;
 	index = 0;
 
-	JSScopeProperty *jssp;
-
 	while ( srcObj ) {
 
-		jssp = NULL;
-		JS_PropertyIterator(srcObj, &jssp);
+		for ( const js::Shape *shape = srcObj->lastProperty(); shape; shape = shape->previous() ) {
+			
+			if ( !JSID_IS_EMPTY(shape->id) ) {
 
-		while ( jssp ) {
-
-			tmp = ID_TO_VALUE(jssp->id);
-			JL_CHK( JS_SetElement(cx, arrayObject, index, &tmp) );
+				JL_CHK( JS_IdToValue(cx, shape->id, &tmp) );
+				JL_CHK( JS_SetElement(cx, arrayObject, index, &tmp) );
+			}
 			index++;
-			JS_PropertyIterator(srcObj, &jssp);
 		}
 
 		if ( !followPrototypeChain )
@@ -1243,36 +1261,36 @@ DEFINE_FUNCTION_FAST( PropertiesList ) {
 /**doc
 $TOC_MEMBER $INAME
  $ARRAY $INAME( object [, followPrototypeChain = false ] )
- Returns an array of properties information.
+  Returns an array of properties information.
 **/
-DEFINE_FUNCTION_FAST( PropertiesInfo ) {
+DEFINE_FUNCTION( PropertiesInfo ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_FARG(1) );
+	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
 	JSObject *srcObj;
-	srcObj = JSVAL_TO_OBJECT( JL_FARG(1) );
+	srcObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 	if ( !srcObj->isNative() ) { // (TBD) remove this workaround to bz#522101
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
 	bool followPrototypeChain;
-	if ( JL_FARG_ISDEF(2) )
-		JL_CHK( JsvalToBool(cx, JL_FARG(2), &followPrototypeChain) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &followPrototypeChain) );
 	else
 		followPrototypeChain = false;
 
 //	JSObject *infoObject;
 //	infoObject = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
-//	*JL_FRVAL = OBJECT_TO_JSVAL( infoObject );
+//	*JL_RVAL = OBJECT_TO_JSVAL( infoObject );
 
 	JSObject *arrayObject;
 	arrayObject = JS_NewArrayObject(cx, 0, NULL);
 	JL_CHK( arrayObject );
-	*JL_FRVAL = OBJECT_TO_JSVAL( arrayObject );
+	*JL_RVAL = OBJECT_TO_JSVAL( arrayObject );
 
 	JSPropertyDesc desc;
 
@@ -1299,8 +1317,8 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 			tmp = OBJECT_TO_JSVAL(descObj);
 			JL_CHK( JS_SetElement(cx, arrayObject, index, &tmp) );
 
-			JL_CHK( JS_IdToValue(cx, jssp->id, &tmp) );
-			JL_CHK( JS_SetProperty(cx, descObj, "name", &tmp) );
+//			JL_CHK( JS_IdToValue(cx, jssp->id, &tmp) );
+			JL_CHK( JS_SetProperty(cx, descObj, "name", &desc.id) );
 
 			tmp = desc.value;
 			if ( desc.flags & JSPD_EXCEPTION ) // doc. exception occurred fetching the property, value is exception.
@@ -1308,10 +1326,10 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 			else
 				JL_CHK( JS_SetProperty(cx, descObj, "value", &tmp) );
 
-			tmp = jssp->getter() != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+			tmp = ((js::Shape*)jssp)->hasGetterValue() ? JSVAL_TRUE : JSVAL_FALSE;
 			JL_CHK( JS_SetProperty(cx, descObj, "getter", &tmp) );
 
-			tmp = jssp->setter() != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+			tmp = ((js::Shape*)jssp)->hasSetterValue() ? JSVAL_TRUE : JSVAL_FALSE;
 			JL_CHK( JS_SetProperty(cx, descObj, "setter", &tmp) );
 
 			tmp = desc.flags & JSPD_VARIABLE ? JSVAL_TRUE : JSVAL_FALSE; // doc. local variable in function
@@ -1330,7 +1348,8 @@ DEFINE_FUNCTION_FAST( PropertiesInfo ) {
 			tmp = desc.flags & JSPD_PERMANENT ? JSVAL_TRUE : JSVAL_FALSE;
 			JL_CHK( JS_SetProperty(cx, descObj, "permanent", &tmp) );
 
-			tmp = jssp->setter() != NULL || jssp->getter() != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+//			tmp = jssp->setter() != NULL || jssp->getter() != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+			tmp = ((js::Shape*)jssp)->isNative() ? JSVAL_TRUE : JSVAL_FALSE;
 			JL_CHK( JS_SetProperty(cx, descObj, "native", &tmp) );
 
 			tmp = INT_TO_JSVAL(prototypeLevel);
@@ -1389,15 +1408,15 @@ $TOC_MEMBER $INAME
  $TYPE Script $INAME( filename, lineno )
 **/
 /*
-DEFINE_FUNCTION_FAST( ScriptByLocation ) {
+DEFINE_FUNCTION( ScriptByLocation ) {
 
 	JL_S_ASSERT_ARG(2);
 
 	const char *filename;
 	unsigned int lineno;
 
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &filename) );
-	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &lineno) );
+	JL_CHK( JL_JsvalToCVal(cx, &JL_ARG(1), &filename) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &lineno) );
 	JSScript *script = ScriptByLocation(cx, scriptFileList, filename, lineno);
 	JL_CHK( script );
 	JSObject *scrobj = JS_GetScriptObject(script);
@@ -1406,11 +1425,11 @@ DEFINE_FUNCTION_FAST( ScriptByLocation ) {
 
 	if ( scrobj == NULL ) {
 
-		*JL_FRVAL = JSVAL_VOID;
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
-	*JL_FRVAL = OBJECT_TO_JSVAL(scrobj);
+	*JL_RVAL = OBJECT_TO_JSVAL(scrobj);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1423,7 +1442,7 @@ $TOC_MEMBER $INAME
  $H beware
   This function is only available in DEBUG mode.
 **/
-DEFINE_FUNCTION_FAST( DisassembleScript ) {
+DEFINE_FUNCTION( DisassembleScript ) {
 
 #ifdef DEBUG
 
@@ -1434,10 +1453,10 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 	const char *filename;
 	unsigned int lineno;
 
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &filename) );
-	JL_CHK( JsvalToUInt(cx, JL_FARG(2), &lineno) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &filename) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &lineno) );
 
-	scriptFileList = &((ModulePrivate*)GetModulePrivate(cx, _moduleId))->scriptFileList;
+	scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;
 
 	JSScript *script;
 	script = ScriptByLocation(cx, scriptFileList, filename, lineno);
@@ -1475,18 +1494,19 @@ DEFINE_FUNCTION_FAST( DisassembleScript ) {
 	jl_free(data);
 	JL_S_ASSERT_ALLOC( jsstr );
 
-	*JL_FRVAL = STRING_TO_JSVAL(jsstr);
+	*JL_RVAL = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
-	JL_BAD;
+
 
 #else // DEBUG
 
 	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 
 #endif // DEBUG
 
+	JL_BAD;
 }
 
 
@@ -1508,7 +1528,7 @@ DEFINE_PROPERTY( processTime ) {
 		JLLastSysetmErrorMessage(message, sizeof(message));
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, message);
 	}
-	return DoubleToJsval(cx, (kernelTime + userTime) / (double)10000 , vp);
+	return JL_CValToJsval(cx, (kernelTime + userTime) / (double)10000 , vp);
 	JL_BAD;
 
 #endif // XP_WIN
@@ -1568,7 +1588,7 @@ DEFINE_PROPERTY( cpuLoad ) {
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, errorMessage);
 	}
 
-	return DoubleToJsval(cx, value.doubleValue, vp);
+	return JL_CValToJsval(cx, value.doubleValue, vp);
 	JL_BAD;
 #endif // XP_WIN
 
@@ -1578,20 +1598,21 @@ DEFINE_PROPERTY( cpuLoad ) {
 }
 
 
-DEFINE_FUNCTION_FAST( DebugOutput ) {
+DEFINE_FUNCTION( DebugOutput ) {
 
 #if defined(_MSC_VER) && defined(DEBUG)
 	const char *str;
-	JL_CHK( JsvalToString(cx, &JL_FARG(1), &str) );
+	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &str) );
 	OutputDebugString(str);
-	*JL_FRVAL = JSVAL_TRUE;
+	*JL_RVAL = JSVAL_TRUE;
 	return JS_TRUE;
-	JL_BAD;
+
 #endif // XP_WIN
 
 	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1600,50 +1621,51 @@ DEFINE_FUNCTION_FAST( DebugOutput ) {
 // http://valgrind.org/docs/manual/mc-manual.html#mc-manual.clientreqs
 
 // undocumented
-DEFINE_FUNCTION_FAST( CreateLeak ) {
+DEFINE_FUNCTION( CreateLeak ) {
 
 	malloc(1234);
-	*JL_FRVAL = JSVAL_VOID;
+
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
 // undocumented
-DEFINE_FUNCTION_FAST( VALGRIND_COUNT_ERRORS ) {
+DEFINE_FUNCTION( VALGRIND_COUNT_ERRORS ) {
 
 	// Returns the number of errors found so far by Valgrind. Can be useful in test harness code when combined with the --log-fd=-1 option; this runs Valgrind silently,
 	// but the client program can detect when errors occur. Only useful for tools that report errors, e.g. it's useful for Memcheck,
 	// but for Cachegrind it will always return zero because Cachegrind doesn't report errors.
-	*JL_FRVAL = INT_TO_JSVAL( VALGRIND_COUNT_ERRORS );
+	*JL_RVAL = INT_TO_JSVAL( VALGRIND_COUNT_ERRORS );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
 // undocumented
-DEFINE_FUNCTION_FAST( VALGRIND_DO_LEAK_CHECK ) {
+DEFINE_FUNCTION( VALGRIND_DO_LEAK_CHECK ) {
 
 	// does a full memory leak check (like --leak-check=full) right now.
 	// This is useful for incrementally checking for leaks between arbitrary places in the program's execution. It has no return value.
 	VALGRIND_DO_LEAK_CHECK;
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
 // undocumented
-DEFINE_FUNCTION_FAST( VALGRIND_DO_QUICK_LEAK_CHECK ) {
+DEFINE_FUNCTION( VALGRIND_DO_QUICK_LEAK_CHECK ) {
 
 	// like VALGRIND_DO_LEAK_CHECK, except it produces only a leak summary (like --leak-check=summary). It has no return value.
 	VALGRIND_DO_QUICK_LEAK_CHECK;
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
 
 // undocumented
-DEFINE_FUNCTION_FAST( VALGRIND_COUNT_LEAKS ) {
+DEFINE_FUNCTION( VALGRIND_COUNT_LEAKS ) {
 
 	int leaked, dubious, reachable, suppressed;
 
@@ -1652,7 +1674,7 @@ DEFINE_FUNCTION_FAST( VALGRIND_COUNT_LEAKS ) {
 	VALGRIND_COUNT_LEAKS(leaked, dubious, reachable, suppressed);
 
 	JSObject *arrayObj = JS_NewArrayObject(cx, 4, NULL);
-	*JL_FRVAL = OBJECT_TO_JSVAL(arrayObj);
+	*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 	jsval tmp;
 	tmp = INT_TO_JSVAL(leaked);
 	JS_SetElement(cx, arrayObj, 0, &tmp);
@@ -1669,9 +1691,9 @@ DEFINE_FUNCTION_FAST( VALGRIND_COUNT_LEAKS ) {
 #endif // VALGRIND
 
 
-DEFINE_FUNCTION_FAST( DebugBreak ) {
+DEFINE_FUNCTION( DebugBreak ) {
 
-	*JL_FRVAL = JSVAL_VOID;
+	*JL_RVAL = JSVAL_VOID;
 
 #ifdef DEBUG
 #if defined(WIN32)
@@ -1684,6 +1706,7 @@ DEFINE_FUNCTION_FAST( DebugBreak ) {
 
 	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1701,13 +1724,15 @@ DEFINE_FUNCTION( TestDebug ) {
 //	if ( JL_IsRValOptional(cx, _TestDebug) )
 //		printf("OPTIONAL\n");
 
+	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION_FAST( Test2Debug ) {
+DEFINE_FUNCTION( Test2Debug ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
 	jsval arg = JSVAL_ONE;
-	return JS_CallFunctionValue(cx, JL_FOBJ, JL_FARG(1), 1, &arg, JL_FRVAL );
+	return JS_CallFunctionValue(cx, JL_OBJ, JL_ARG(1), 1, &arg, JL_RVAL );
 }
 
 #endif // DEBUG
@@ -1720,40 +1745,40 @@ CONFIGURE_STATIC
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( GetObjectPrivate )
 //		FUNCTION( DumpStats )
-		FUNCTION_FAST( TraceGC )
+		FUNCTION( TraceGC )
 
-//		FUNCTION_FAST( ScriptByLocation )
-		FUNCTION_FAST( DisassembleScript )
+//		FUNCTION( ScriptByLocation )
+		FUNCTION( DisassembleScript )
 
 //		FUNCTION( Trap )
 //		FUNCTION( Untrap )
 //		FUNCTION( LineToPC )
 //		FUNCTION( PCToLine )
 
-		FUNCTION_FAST( GetActualLineno )
-		FUNCTION_FAST( Locate )
-		FUNCTION_FAST( DefinitionLocation )
-		FUNCTION_FAST( StackFrameInfo )
-		FUNCTION_FAST( EvalInStackFrame )
-		FUNCTION_FAST_ARGC( PropertiesList, 1 )
-		FUNCTION_FAST_ARGC( PropertiesInfo, 1 )
-		FUNCTION_FAST_ARGC( DebugOutput, 1 )
-		FUNCTION_FAST( DisableJIT )
+		FUNCTION( GetActualLineno )
+		FUNCTION( Locate )
+		FUNCTION( DefinitionLocation )
+		FUNCTION( StackFrameInfo )
+		FUNCTION( EvalInStackFrame )
+		FUNCTION_ARGC( PropertiesList, 1 )
+		FUNCTION_ARGC( PropertiesInfo, 1 )
+		FUNCTION_ARGC( DebugOutput, 1 )
+		FUNCTION( DisableJIT )
 	#ifdef VALGRIND
-		FUNCTION_FAST( CreateLeak )
-		FUNCTION_FAST( VALGRIND_COUNT_ERRORS )
-		FUNCTION_FAST( VALGRIND_DO_QUICK_LEAK_CHECK )
-		FUNCTION_FAST( VALGRIND_DO_LEAK_CHECK )
-		FUNCTION_FAST( VALGRIND_COUNT_LEAKS )
+		FUNCTION( CreateLeak )
+		FUNCTION( VALGRIND_COUNT_ERRORS )
+		FUNCTION( VALGRIND_DO_QUICK_LEAK_CHECK )
+		FUNCTION( VALGRIND_DO_LEAK_CHECK )
+		FUNCTION( VALGRIND_COUNT_LEAKS )
 	#endif // VALGRIND
 
-		FUNCTION_FAST( DumpHeap )
-		FUNCTION_FAST( DebugBreak )
+		FUNCTION( DumpHeap )
+		FUNCTION( DebugBreak )
 
 	// for internal tests
 	#ifdef DEBUG
 		FUNCTION( TestDebug )
-		FUNCTION_FAST( Test2Debug )
+		FUNCTION( Test2Debug )
 	#endif // DEBUG
 	END_STATIC_FUNCTION_SPEC
 
@@ -1763,7 +1788,7 @@ CONFIGURE_STATIC
 		PROPERTY_WRITE( gcZeal )
 
 		PROPERTY_READ( gcNumber )
-		PROPERTY_READ( gcMallocBytes )
+//		PROPERTY_READ( gcMallocBytes )
 		PROPERTY_READ( gcBytes )
 		PROPERTY_READ( currentMemoryUsage )
 		PROPERTY_READ( peakMemoryUsage )
