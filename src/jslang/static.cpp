@@ -91,20 +91,14 @@ DEFINE_FUNCTION( Stringify ) {
 		}
 	}
 
-	const char *buffer;
-	size_t length;
-	 // this include NIBufferGet compatible objects
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) ); // warning: GC on the returned buffer !
-
-	char *newBuffer;
-	newBuffer = (char*)JS_malloc(cx, length +1);
-	JL_CHK( newBuffer );
-	newBuffer[length] = '\0';
-	memcpy(newBuffer, buffer, length);
-
+	{
+	JLStr str;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
 	JSString *jsstr;
-	jsstr = JS_NewString(cx, newBuffer, length);
+	jsstr = JS_NewUCString(cx, str.GetJsStrOwnership(), str.Length());
 	*JL_RVAL = STRING_TO_JSVAL( jsstr );
+	}
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -323,7 +317,7 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 	JL_S_ASSERT_ARG_RANGE( 1, 2 );
 
 	unsigned int timeout;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &timeout) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
 	if ( JL_ARG_ISDEF(2) )
 		JL_S_ASSERT_FUNCTION( JL_ARG(2) );
 

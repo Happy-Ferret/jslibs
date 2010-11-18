@@ -53,7 +53,7 @@ public:
   ToJsVal( JSContext *cx, double val ) : _cx(cx) {
 
     //_jsval = DOUBLE_TO_JSVAL( val );
-    JL_CValToJsval( cx, val, &_jsval );
+    JL_NativeToJsval( cx, val, &_jsval );
   }
 
   ToJsVal( JSContext *cx, const char *val ) {

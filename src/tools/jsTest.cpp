@@ -63,7 +63,20 @@ js::Class jl_BlobClass = {
 	}
 };
 
+
+// char *test;
+// JL_CHK( JL_Alloc(test,10);
+template <typename T>
+__forceinline bool JL_Alloc( T*&ptr, size_t count = 1 ) {
+
+	ptr = (T*)malloc(sizeof(T)*count);
+	return ptr != NULL;
+}
+
+
 int main(int argc, char* argv[]) {
+
+
 
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);

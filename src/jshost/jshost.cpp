@@ -64,7 +64,7 @@ JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
 	JL_UNUSED(obj);
 	JL_UNUSED(id);
-	return JL_CValToJsval(cx, bool(gEndSignalState), vp);
+	return JL_NativeToJsval(cx, bool(gEndSignalState), vp);
 }
 
 JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
@@ -73,7 +73,7 @@ JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 	JL_UNUSED(id);
 
 	bool tmp;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &tmp) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &tmp) );
 
 	JLMutexAcquire(gEndSignalLock);
 	gEndSignalState = tmp;
@@ -336,6 +336,13 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	cx = CreateHost(maxMem, maxAlloc, (uint32)(maybeGCInterval * 1000));
+
+#ifdef DEBUG	
+	if ( debug )
+		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_JIT | JSOPTION_METHODJIT | JSOPTION_PROFILING));
+#endif // DEBUG	
+
+
 	HOST_MAIN_ASSERT( cx != NULL, "Unable to create a javascript execution context." );
 
 	if ( useJslibsMemoryManager )
@@ -439,7 +446,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	if ( executeStatus == JS_TRUE ) {
 
-		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 ) // (TBD) enhance this, use JL_JsvalToCVal() ?
+		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 ) // (TBD) enhance this, use JL_JsvalToNative() ?
 			exitValue = JSVAL_TO_INT(rval);
 		else
 			exitValue = EXIT_SUCCESS;

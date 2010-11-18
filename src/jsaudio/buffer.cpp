@@ -37,7 +37,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	jsval tmp;
+	JLStr buffer;
 
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -52,10 +52,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( JL_GetProperty(cx, blobObj, "channels", &channels) );
 	JL_CHK( JL_GetProperty(cx, blobObj, "bits", &bits) );
 
-	const char *buffer;
-	size_t bufferLength;
-	tmp = OBJECT_TO_JSVAL(blobObj);
-	JL_CHK( JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), buffer) );
 
 	ALenum format; // The sound data format
 	switch (channels) {
@@ -74,7 +71,7 @@ DEFINE_CONSTRUCTOR() {
 	alGenBuffers(1, &bid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	alBufferData(bid, format, buffer, (ALsizei)bufferLength, rate); // Upload sound data to buffer
+	alBufferData(bid, format, buffer.GetStrConst(), (ALsizei)buffer.Length(), rate); // Upload sound data to buffer
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_SetPrivate(cx, obj, (void*)bid);
@@ -108,7 +105,7 @@ DEFINE_FUNCTION( valueOf ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	ALuint bid = (ALuint) JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( bid );
-	JL_CHK( JL_CValToJsval(cx, bid, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, bid, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -132,7 +129,7 @@ DEFINE_PROPERTY( frequency ) {
 	alGetBufferi(bid, AL_FREQUENCY, &frequency);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_CValToJsval(cx, frequency, vp) );
+	JL_CHK( JL_NativeToJsval(cx, frequency, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -151,7 +148,7 @@ DEFINE_PROPERTY( size ) {
 	alGetBufferi(bid, AL_SIZE, &size);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_CValToJsval(cx, size, vp) );
+	JL_CHK( JL_NativeToJsval(cx, size, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -171,7 +168,7 @@ DEFINE_PROPERTY( bits ) {
 	alGetBufferi(bid, AL_BITS, &bits);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_CValToJsval(cx, bits, vp) );
+	JL_CHK( JL_NativeToJsval(cx, bits, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -190,7 +187,7 @@ DEFINE_PROPERTY( channels ) {
 	alGetBufferi(bid, AL_CHANNELS, &channels);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_CValToJsval(cx, channels, vp) );
+	JL_CHK( JL_NativeToJsval(cx, channels, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

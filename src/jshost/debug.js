@@ -1,4 +1,61 @@
 LoadModule('jsstd');
+
+
+LoadModule('jsstd'); Exec('../common/tools.js');
+//var QA = FakeQAApi;
+//RunLocalQAFile();
+//RunJsircbot(false); throw 0;
+RunQATests('-rep 1 -exclude jstask');
+
+
+function makeLogger(obj) {
+
+	var proxy = Proxy.create({
+		get: function(rcvf, name) {
+			Print('get '+' '+name+' '+''+'\n');
+			return obj[name];
+		},
+		set: function(rcvf, name, val) {
+		
+		rcvf.toto
+			Print('set '+name+' '+val+' '+''+'\n');
+			obj[name] = val;
+			return true;
+		},
+		delete: function(name) {
+			Print('del '+name+'\n');
+			delete obj[name];
+			return false;
+		},
+		invoke: function(receiver, name, args) {
+			Print('call '+name+'\n');
+			obj[name].apply(obj, args);
+		},
+		
+	}, Object.getPrototypeOf(obj));
+	return proxy;
+}
+
+var o = makeLogger({});
+
+
+o.a = 5;
+/*
+o.a = 6;
+o.b = 6;
+Print( delete o.b );
+Print( o.b, '\n' );
+*/
+o.x(0);
+
+throw 0;
+
+
+
+
+
+
+LoadModule('jsstd');
 LoadModule('jssqlite');
 
 var db = new Database(); // in-memory database
@@ -20,11 +77,6 @@ throw 0;
 
 
 
-LoadModule('jsstd'); Exec('../common/tools.js');
-//var QA = FakeQAApi;
-//RunLocalQAFile();
-//RunJsircbot(false); throw 0;
-// RunQATests('-rep 5 -exclude jstask jssqlite');
 
 
 

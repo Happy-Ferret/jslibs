@@ -70,7 +70,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(3) ) {
 		
 		bool b;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &b) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &b) );
 		if ( b )
 			ode::dGeomTriMeshDataPreprocess(triMeshDataID);
 	}
@@ -97,7 +97,7 @@ DEFINE_PROPERTY( triangleCount ) {
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geomId );
 	int count = ode::dGeomTriMeshGetTriangleCount(geomId);
-	JL_CHK( JL_CValToJsval(cx, count, vp) );
+	JL_CHK( JL_NativeToJsval(cx, count, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

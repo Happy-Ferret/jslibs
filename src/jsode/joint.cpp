@@ -138,7 +138,7 @@ DEFINE_FUNCTION( GetBody ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 	int index;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &index) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &index) );
 	if ( index < 0 || index >= ode::dJointGetNumBodies(jointId) ) {
 		
 		*JL_RVAL = JSVAL_VOID;
@@ -333,7 +333,7 @@ DEFINE_PROPERTY( disabledSetter ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( jointId );
 	bool disabled;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &disabled) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &disabled) );
 	if ( disabled )
 		ode::dJointDisable(jointId);
 	else
@@ -346,7 +346,7 @@ DEFINE_PROPERTY( disabledGetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( jointId );
-	JL_CHK( JL_CValToJsval(cx, ode::dJointIsEnabled(jointId) == 0, vp) );
+	JL_CHK( JL_NativeToJsval(cx, ode::dJointIsEnabled(jointId) == 0, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -365,7 +365,7 @@ DEFINE_PROPERTY( useFeedbackSetter ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( jointId );
 	bool b;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 	ode::dJointFeedback *currentFeedback = ode::dJointGetFeedback(jointId);
 	if ( !currentFeedback == !b ) // no changes
 		return JS_TRUE;
@@ -391,7 +391,7 @@ DEFINE_PROPERTY( useFeedbackGetter ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( jointId );
-	JL_CHK( JL_CValToJsval(cx, ode::dJointGetFeedback(jointId) != NULL, vp) );
+	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetFeedback(jointId) != NULL, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

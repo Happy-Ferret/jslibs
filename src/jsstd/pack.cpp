@@ -57,7 +57,7 @@ DEFINE_CONSTRUCTOR() {
 
 	bool useNetworkEndian;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &useNetworkEndian) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &useNetworkEndian) );
 	else
 		useNetworkEndian = false;
 	JL_SetPrivate(cx, obj, (void*)(size_t)(useNetworkEndian ? 2 : 0));
@@ -90,17 +90,17 @@ DEFINE_FUNCTION( ReadInt ) {
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
 	size_t size;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &size) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &size) );
 
 	bool isSigned;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &isSigned) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &isSigned) );
 	else
 		isSigned = false;
 
 	bool netConv;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &netConv) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &netConv) );
 	else
 		netConv = (size_t)JL_GetPrivate(cx, obj) != 0;
 
@@ -219,17 +219,17 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 	jsvalue = JL_ARG(1);
 
 	size_t size;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &size) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &size) );
 
 	bool isSigned;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &isSigned) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &isSigned) );
 	else
 		isSigned = false;
 
 	bool netConv;
 	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &netConv) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &netConv) );
 	else
 		netConv = (size_t)JL_GetPrivate(cx, obj) != 0;
 
@@ -244,13 +244,13 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 			if ( isSigned )
 				JL_CHK( JL_JsvalToSInt8(cx, jsvalue, (int8_t*)data, &outOfRange) );
 			else
-				JL_CHK( JL_JsvalToCVal8(cx, jsvalue, (uint8_t*)data, &outOfRange) );
+				JL_CHK( JL_JsvalToUInt8(cx, jsvalue, (uint8_t*)data, &outOfRange) );
 			break;
 		case sizeof(int16_t):
 			if ( isSigned )
 				JL_CHK( JL_JsvalToSInt16(cx, jsvalue, (int16_t*)data, &outOfRange) );
 			else
-				JL_CHK( JL_JsvalToCVal16(cx, jsvalue, (uint16_t*)data, &outOfRange) );
+				JL_CHK( JL_JsvalToUInt16(cx, jsvalue, (uint16_t*)data, &outOfRange) );
 			if ( netConv )
 				Host16ToNetwork16(data);
 			break;
@@ -258,7 +258,7 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 			if ( isSigned )
 				JL_CHK( JL_JsvalToSInt24(cx, jsvalue, (int32_t*)data, &outOfRange) );
 			else
-				JL_CHK( JL_JsvalToCVal24(cx, jsvalue, (uint32_t*)data, &outOfRange) );
+				JL_CHK( JL_JsvalToUInt24(cx, jsvalue, (uint32_t*)data, &outOfRange) );
 			if ( netConv )
 				Host24ToNetwork24(data);
 			break;
@@ -266,7 +266,7 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 			if ( isSigned )
 				JL_CHK( JL_JsvalToSInt32(cx, jsvalue, (int32_t*)data, &outOfRange) );
 			else
-				JL_CHK( JL_JsvalToCVal32(cx, jsvalue, (uint32_t*)data, &outOfRange) );
+				JL_CHK( JL_JsvalToUInt32(cx, jsvalue, (uint32_t*)data, &outOfRange) );
 			if ( netConv )
 				Host32ToNetwork32(data);
 			break;
@@ -274,7 +274,7 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 			if ( isSigned )
 				JL_CHK( JL_JsvalToSInt64(cx, jsvalue, (int64_t*)data, &outOfRange) );
 			else
-				JL_CHK( JL_JsvalToCVal64(cx, jsvalue, (uint64_t*)data, &outOfRange) );
+				JL_CHK( JL_JsvalToUInt64(cx, jsvalue, (uint64_t*)data, &outOfRange) );
 			if ( netConv )
 				Host64ToNetwork64(data);
 			break;
@@ -311,7 +311,7 @@ DEFINE_FUNCTION( ReadReal ) {
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
 	size_t amount, size;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &size) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &size) );
 	uint8_t data[16];
 	amount = size;
 	JL_CHK( ReadRawDataAmount(cx, bufferObject, &amount, (char*)data) );
@@ -355,7 +355,7 @@ DEFINE_FUNCTION( ReadString ) {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		size_t amount;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &amount) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
 //		JL_S_ASSERT( (int)amount >= 0, "Invalid amount" );
 		JL_S_ASSERT_ERROR_NUM( (int)amount >= 0, JLSMSG_VALUE_OUTOFRANGE );
 		JL_CHK( ReadDataAmount(cx, bufferObject, amount, JL_RVAL) );
@@ -386,7 +386,7 @@ DEFINE_PROPERTY_SETTER( useNetworkEndian ) {
 
 	JL_S_ASSERT_THIS_CLASS();
 	bool useNetworkEndian;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &useNetworkEndian) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &useNetworkEndian) );
 	JL_SetPrivate(cx, obj, (void*)(size_t)(useNetworkEndian ? 2 : 0));
 	return JS_TRUE;
 	JL_BAD;
@@ -395,7 +395,7 @@ DEFINE_PROPERTY_SETTER( useNetworkEndian ) {
 DEFINE_PROPERTY_GETTER( useNetworkEndian ) {
 
 	JL_S_ASSERT_THIS_CLASS();
-	return JL_CValToJsval(cx, (size_t)JL_GetPrivate(cx, obj) != 0, vp);
+	return JL_NativeToJsval(cx, (size_t)JL_GetPrivate(cx, obj) != 0, vp);
 	JL_BAD;
 }
 

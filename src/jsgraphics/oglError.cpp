@@ -47,7 +47,7 @@ DEFINE_PROPERTY( text ) {
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
 	int errorCode;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &errorCode) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &errorCode) );
 	char *errStr;
 	switch (errorCode) {
 		case GL_NO_ERROR:
@@ -86,7 +86,7 @@ DEFINE_PROPERTY( const ) {
 
 	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
 	int errorCode;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &errorCode) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &errorCode) );
 	char *errStr;
 	switch (errorCode) {
 		case GL_NO_ERROR:
@@ -190,7 +190,7 @@ JSBool ThrowOglError( JSContext *cx, GLenum err ) {
 	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(OglError), JL_PROTOTYPE(cx, OglError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	jsval errVal;
-	JL_CHK( JL_CValToJsval(cx, err, &errVal) );
+	JL_CHK( JL_NativeToJsval(cx, err, &errVal) );
 	JL_CHK( JL_SetReservedSlot( cx, error, 0, errVal ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;

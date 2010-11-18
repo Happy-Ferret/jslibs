@@ -34,7 +34,7 @@
 #include "vector4.h"
 #include "matrix44.h"
 #include "matrix55.h"
-#include "jlconvert.h"
+//#include "jlconvert.h"
 
 #include "membuffer.h"
 
@@ -43,7 +43,7 @@ DECLARE_CLASS( Texture )
 //#pragma warning(disable : 4244) // warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
 
 EXTERN_C double genrand_real1(void); // mt19937ar-cok.c
-#define PRAND (genrand_real1())
+#define PRAND (PTYPE(genrand_real1()))
 
 double PerlinNoise2(double x, double y, double z);
 
@@ -69,13 +69,13 @@ double PerlinNoise2(double x, double y, double z);
 // max 'visible' value
 // with bytes, the range should be [0,255]
 // BUT with real, the range should be [0,1] or [0,1) ( use 1.f - FLT_EPSILON )
-#define PMAX (1.)
+#define PMAX (PTYPE(1))
 
 // full amplitude
 //#define PAMP (PMAX-PMIN)
 
 // middle pixel value (gray)
-#define PMID ( PMAX / 2 )
+#define PMID ( PMAX / PTYPE(2) )
 
 // normalize the pixel value to range 0..1
 #define PNORM(p) ((p) / PMAX)
@@ -84,10 +84,10 @@ double PerlinNoise2(double x, double y, double z);
 #define PUNNORM(p) ((p) * PMAX)
 
 // normalize the pixel value to range -1..1
-#define PZNORM(p) (PNORM(p) * 2 - 1)
+#define PZNORM(p) (PNORM(p) * PTYPE(2) - PTYPE(1))
 
 // un-normalize the pixel value from range -1..1
-#define PUNZNORM(p) ( (PUNNORM(p) + 1 ) / 2)
+#define PUNZNORM(p) ( (PUNNORM(p) + PTYPE(1) ) / PTYPE(2))
 
 
 inline JSBool TextureInit( JSContext *cx, TextureStruct *tex, unsigned int width, unsigned int height, unsigned int channels ) {
@@ -230,7 +230,7 @@ ALWAYS_INLINE PTYPE* PosByMode( const TextureStruct *tex, int x, int y, BorderMo
 JSBool JL_JsvalToBorderMode( JSContext* cx, jsval val, BorderMode *mode ) {
 	
 	if ( val != JSVAL_VOID )
-		return JL_JsvalToCVal(cx, val, (int*)mode);
+		return JL_JsvalToNative(cx, val, (int*)mode);
 	*mode = borderWrap;
 	return JS_TRUE;
 }
@@ -242,10 +242,8 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLe
 
 	if ( JSVAL_IS_NUMBER(value) ) {
 
-		float tmp;
-		JL_CHK( JL_JsvalToCVal(cx, value, &tmp) );
 		PTYPE val;
-		val = (PTYPE)tmp;
+		JL_CHK( JL_JsvalToNative(cx, value, &val) );
 		for ( i = 0; i < levelMaxLength; i++ )
 			level[i] = val;
 		return JS_TRUE;
@@ -261,9 +259,14 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLe
 
 	if ( JSVAL_IS_STRING(value) ) {
 
+		JLStr colorStr;
 		const char *color;
 		size_t length;
-		JL_CHK( JL_JsvalToStringAndLength(cx, &value, &color, &length) );
+//		JL_CHK( JL_JsvalToStringAndLength(cx, &value, &color, &length) );
+		JL_CHK( JL_JsvalToNative(cx, value, colorStr) );
+		color = colorStr.GetStrConst();
+		length = colorStr.Length();
+
 		if ( *color++ == '#' && (length-1) / 2 >= levelMaxLength ) {
 
 			unsigned char val;
@@ -297,17 +300,17 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *c
 
 	if ( JL_JsvalIsFunction(cx, value) ) {
 
-		jsdouble fval;
+		double fval;
 		jsval argv[3]; // argv[0] is the rval
 		js::AutoArrayRooter tvr(cx, COUNTOF(argv), argv);
 		for ( i = 0; i < length; ++i ) {
 
-			fval = (double)i / (double)(length-1);
+			fval = double(i) / double(length-1);
 			argv[1] = DOUBLE_TO_JSVAL(fval);
 			argv[2] = INT_TO_JSVAL((int)i);
 			JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), value, 2, argv+1, argv) );
-			JL_CHK( JL_JsvalToCVal(cx, argv[0], &fval) );
-			curve[i] = fval;
+			JL_CHK( JL_JsvalToNative(cx, argv[0], &fval) );
+			curve[i] = PTYPE(fval);
 		}
 		return JS_TRUE;
 	}
@@ -328,10 +331,10 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *c
 
 	if ( JSVAL_IS_NUMBER(value) ) {
 
-		jsdouble dval;
-		JL_CHK( JL_JsvalToCVal(cx, value, &dval) );
+		double dval;
+		JL_CHK( JL_JsvalToNative(cx, value, &dval) );
 		PTYPE val;
-		val = (PTYPE)dval;
+		val = PTYPE(dval);
 		for ( i = 0; i < length; ++i )
 			curve[i] = val;
 		return JS_TRUE;
@@ -339,12 +342,16 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *c
 
 	if ( JL_JsvalIsData(cx, value) ) {
 
+		JLStr curveData;
+
 		JSObject *bstrObj;
 		bstrObj = JSVAL_TO_OBJECT(value);
 		size_t bstrLen;
 		const uint8_t *bstrData;
-
-		JL_CHK( JL_JsvalToStringAndLength( cx, &value, (const char **)&bstrData, &bstrLen ) );
+//		JL_CHK( JL_JsvalToStringAndLength( cx, &value, (const char **)&bstrData, &bstrLen ) );
+		JL_CHK( JL_JsvalToNative(cx, value, curveData) );
+		bstrLen = curveData.Length();
+		bstrData = (const uint8_t *)curveData.GetStrConst();
 
 		for ( i = 0; i < length; ++i )
 			curve[i] = (PTYPE)bstrData[i * bstrLen / length] / 255.f; // (TBD) check
@@ -372,12 +379,13 @@ $SVN_REVISION $Revision$
 
 BEGIN_CLASS( Texture )
 
-JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
+JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( tex );
-	*buf = (char*)tex->cbuffer;
-	*size = tex->width * tex->height * tex->channels * sizeof(PTYPE);
+//	*buf = (char*)tex->cbuffer;
+//	*size = tex->width * tex->height * tex->channels * sizeof(PTYPE);
+	str = JLStr((const char *)tex->cbuffer,  tex->width * tex->height * tex->channels * sizeof(PTYPE));
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -440,9 +448,9 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARGC >= 3 ) {
 
 		int width, height, channels;
-		JL_CHK( JL_JsvalToCVal(cx, *arg1, &width) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &height) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &channels) );
+		JL_CHK( JL_JsvalToNative(cx, *arg1, &width) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &height) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &channels) );
 
 		JL_S_ASSERT( width > 0, "Invalid width." );
 		JL_S_ASSERT( height > 0, "Invalid height." );
@@ -465,6 +473,7 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( JL_JsvalIsData(cx, *arg1) ) { // construct from an image, blob, string, ...
 
+		JLStr bufferStr;
 		JSObject *imageObj;
 		JL_CHK( JS_ValueToObject(cx, *arg1, &imageObj) );
 		unsigned int i, tsize, sWidth, sHeight, sChannels;
@@ -475,7 +484,9 @@ DEFINE_CONSTRUCTOR() {
 		tsize = sWidth * sHeight * sChannels;
 
 		const uint8_t *buffer;
-		JL_CHK( JL_JsvalToCVal(cx, *arg1, (const char **)&buffer)); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToNative(cx, *arg1, bufferStr)); // warning: GC on the returned buffer !
+		buffer = (const uint8_t *)bufferStr.GetStrConst();
+
 		JL_CHK( TextureInit(cx, tex, sWidth, sHeight, sChannels) );
 		for ( i = 0; i < tsize; ++i )
 			tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
@@ -566,7 +577,7 @@ DEFINE_FUNCTION( ClearChannel ) {
 	if ( argc >= 1 ) {
 
 		int channel;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &channel) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &channel) );
 		JL_S_ASSERT( channel < tex->channels, "Invalid channel." );
 
 		PTYPE *ptr;
@@ -617,13 +628,13 @@ DEFINE_FUNCTION( SetChannel ) {
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int dstChannel;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &dstChannel) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &dstChannel) );
 
 	TextureStruct *tex1;
 	JL_CHK( ValueToTexture(cx, JL_ARG(2), &tex1) );
 
 	int srcChannel;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &srcChannel) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &srcChannel) );
 
 	int texChannel, tex1Channel;
 	texChannel = tex->channels;
@@ -748,8 +759,8 @@ DEFINE_FUNCTION( ToRGB ) { // (TBD) test it
 	int size;
 	size = tex->width * tex->height;
 	int pos;
-	float R, G, B, H, L, S;
-	float m1, m2;
+	PTYPE R, G, B, H, L, S;
+	PTYPE m1, m2;
 	for ( int i = 0; i < size; i++ ) {
 
 		pos = i * channels;
@@ -757,12 +768,12 @@ DEFINE_FUNCTION( ToRGB ) { // (TBD) test it
 		L = tex->cbuffer[pos+1];
 		S = tex->cbuffer[pos+2];
 
-		if (L <= 0.5)
-				m2 = L * ( 1.0 + S );
+		if (L <= PTYPE(0.5))
+				m2 = L * ( PTYPE(1) + S );
 		else
 				m2 = L + S - L * S;
-		m1 = 2.0 * L - m2;
-		if (S == 0.0) { // achromatic cast
+		m1 = PTYPE(2) * L - m2;
+		if (S == PTYPE(0)) { // achromatic cast
 
 			R = G = B = 1;
 		} else { // chromatic case
@@ -817,7 +828,7 @@ DEFINE_FUNCTION( Aliasing ) {
 	JL_S_ASSERT_RESOURCE(tex);
 
 	size_t count;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &count) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &count) );
 	JL_S_ASSERT( count >= 1, "Invalid aliasing levels count." );
 
 	bool useCurve;
@@ -885,13 +896,13 @@ DEFINE_FUNCTION( Colorize ) {
 	JL_CHK( InitLevelData(cx, JL_ARG(1), channels, colorSrc) );
 	JL_CHK( InitLevelData(cx, JL_ARG(2), channels, colorDst) );
 
-	double power;
+	PTYPE power;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &power) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &power) );
 	else
 		power = 1;
 
-	float ratio;
+	PTYPE ratio;
 	int pos, size;
 	size = tex->width * tex->height;
 	int c;
@@ -911,11 +922,11 @@ DEFINE_FUNCTION( Colorize ) {
 			continue;
 		}
 
-		if ( power != 1. )
-			ratio = powf(ratio, 1. / power);
+		if ( power != PTYPE(1) )
+			ratio = powf(ratio, PTYPE(1) / power);
 
 		for ( c = 0; c < channels; c++ )
-			tex->cbuffer[pos+c] = (tex->cbuffer[pos+c] * (1.-ratio) + colorDst[c] * ratio);
+			tex->cbuffer[pos+c] = (tex->cbuffer[pos+c] * (PTYPE(1) - ratio) + colorDst[c] * ratio);
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
@@ -957,13 +968,13 @@ DEFINE_FUNCTION( ExtractColor ) {
 	PTYPE color[PMAXCHANNELS];
 	JL_CHK( InitLevelData(cx, JL_ARG(2), srcChannels, color) );
 
-	double power;
+	PTYPE power;
 	if ( argc >= 3 )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &power) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &power) );
 	else
 		power = 1;
 
-	float ratio;
+	PTYPE ratio;
 	int pos, size;
 	size = tex->width * tex->height;
 	int c;
@@ -974,7 +985,7 @@ DEFINE_FUNCTION( ExtractColor ) {
 		for ( c = 0; c < srcChannels; c++ )
 			ratio *= ( PMAX - abs(texSrc->cbuffer[pos+c] - color[c]) ) / PMAX;
 		if ( power != 1 )
-			ratio = powf(ratio, 1 / power);
+			ratio = powf(ratio, PTYPE(1) / power);
 		tex->cbuffer[i] = ratio;
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -1038,9 +1049,9 @@ DEFINE_FUNCTION( ClampLevels ) { // (TBD) check if this algo is right
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
-	double min, max;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &min) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &max) );
+	PTYPE min, max;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &min) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &max) );
 
 	PTYPE tmp;
 	int tsize;
@@ -1078,8 +1089,8 @@ DEFINE_FUNCTION( CutLevels ) { // (TBD) check if this algo is right
 	JL_S_ASSERT_RESOURCE(tex);
 
 	double min, max;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &min) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &max) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &min) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &max) );
 
 	PTYPE tmp;
 	int tsize;
@@ -1114,13 +1125,13 @@ DEFINE_FUNCTION( CutLevels ) {
 
 	if ( argc >= 1 ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &min) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &min) );
 		max = min;
 	}
 
 	if ( argc >= 2 ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &max) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &max) );
 	}
 
 	PTYPE level, lmin, lmax; // local min & max
@@ -1168,7 +1179,7 @@ DEFINE_FUNCTION( InvertLevels ) { // level = 1 / level
 	unsigned int i, size;
 	size = tex->width * tex->height * tex->channels;
 	for ( i = 0; i < size; i++ )
-		tex->cbuffer[i] = 1. / tex->cbuffer[i];
+		tex->cbuffer[i] = PTYPE(1) / tex->cbuffer[i];
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
@@ -1208,8 +1219,8 @@ DEFINE_FUNCTION( PowLevels ) { //
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
-	double power;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &power) );
+	PTYPE power;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &power) );
 
 	int tsize;
 	tsize = tex->width * tex->height * tex->channels;
@@ -1238,12 +1249,12 @@ DEFINE_FUNCTION( MirrorLevels ) {
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
-	double threshold;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &threshold) );
+	PTYPE threshold;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &threshold) );
 
 	bool mirrorTop;
 	if ( argc >= 2 && !JSVAL_IS_VOID(JL_ARG(2)) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &mirrorTop) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &mirrorTop) );
 	else
 		mirrorTop = true;
 
@@ -1256,14 +1267,14 @@ DEFINE_FUNCTION( MirrorLevels ) {
 
 			value = tex->cbuffer[i];
 			if ( value > threshold )
-				tex->cbuffer[i] = 2 * threshold - value;
+				tex->cbuffer[i] = PTYPE(2) * threshold - value;
 		}
 	else
 		for ( i = 0; i < tsize; i++ ) {
 
 			value = tex->cbuffer[i];
 			if ( value < threshold )
-				tex->cbuffer[i] = 2 * threshold - value;
+				tex->cbuffer[i] = PTYPE(2) * threshold - value;
 		}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
@@ -1287,8 +1298,8 @@ DEFINE_FUNCTION( WrapLevels ) { // real modulo
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
 
-	double wrap;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &wrap) );
+	PTYPE wrap;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &wrap) );
 
 	PTYPE div;
 	int tsize;
@@ -1367,7 +1378,7 @@ DEFINE_FUNCTION( Desaturate ) {
 
 	DesaturateMode mode;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), (int*)&mode) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), (int*)&mode) );
 	else
 		mode = desaturateAverage;
 
@@ -1469,6 +1480,8 @@ DEFINE_FUNCTION( Set ) {
 
 	if ( JL_JsvalIsData(cx, *arg1) ) {
 		
+		JLStr bufferStr;
+
 		JSObject *imageObj;
 		JL_CHK( JS_ValueToObject(cx, *arg1, &imageObj) );
 		unsigned int i, tsize, sWidth, sHeight, sChannels;
@@ -1482,10 +1495,11 @@ DEFINE_FUNCTION( Set ) {
 		tsize = sWidth * sHeight * sChannels;
 
 		const uint8_t *buffer;
-		JL_CHK( JL_JsvalToCVal(cx, *arg1, (const char **)&buffer)); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToNative(cx, *arg1, bufferStr) ); // warning: GC on the returned buffer !
+		buffer = (const uint8_t *)bufferStr.GetStrConst();
 
 		for ( i = 0; i < tsize; i++ )
-			tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
+			tex->cbuffer[i] = (PTYPE)buffer[i] / PTYPE(255); // map [0 -> 255] to [0.0 -> 1.0]
 		JL_SetPrivate(cx, obj, tex);
 		return JS_TRUE;
 	}
@@ -1523,7 +1537,7 @@ DEFINE_FUNCTION( Add ) {
 
 	float factor;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &factor) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &factor) );
 	else
 		factor = 1.;
 
@@ -1534,7 +1548,7 @@ DEFINE_FUNCTION( Add ) {
 	if ( JSVAL_IS_NUMBER(*arg1) ) {
 
 		PTYPE value;
-		JL_CHK( JL_JsvalToCVal(cx, *arg1, &value) );
+		JL_CHK( JL_JsvalToNative(cx, *arg1, &value) );
 		size = tex->width * tex->height * tex->channels;
 		value *= factor;
 		for ( i = 0; i < size; i++ )
@@ -1619,7 +1633,7 @@ DEFINE_FUNCTION( Mult ) {
 	if ( JSVAL_IS_NUMBER(*arg1) ) {
 
 		PTYPE value;
-		JL_CHK( JL_JsvalToCVal(cx, *arg1, &value) );
+		JL_CHK( JL_JsvalToNative(cx, *arg1, &value) );
 		size = tex->width * tex->height * tex->channels;
 		for ( i = 0; i < size; i++ )
 			tex->cbuffer[i] *= value;
@@ -1780,7 +1794,7 @@ DEFINE_FUNCTION( Rotate90 ) { // (TBD) test it
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int turn;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &turn) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &turn) );
 
 	turn = Wrap(turn, turn);
 
@@ -1854,8 +1868,8 @@ DEFINE_FUNCTION( Flip ) {
 	JL_S_ASSERT_RESOURCE(tex);
 
 	bool flipX, flipY;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &flipX) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &flipY) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &flipX) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &flipY) );
 
 	TextureSetupBackBuffer(cx, tex);
 
@@ -1912,11 +1926,12 @@ DEFINE_FUNCTION( RotoZoom ) { // source: FxGen
 	int newHeight;
 	newHeight = height;
 
-	double centerX, centerY, zoomX, zoomY;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &centerX) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &centerY) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &zoomX) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &zoomY) );
+	PTYPE centerX, centerY;
+	double zoomX, zoomY;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &centerX) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &centerY) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &zoomX) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &zoomY) );
 
 //	zoomX = 0.5 - ( zoomX / 2 );
 //	zoomX = exp( zoomX * 6 );
@@ -1925,19 +1940,19 @@ DEFINE_FUNCTION( RotoZoom ) { // source: FxGen
 //	zoomY = exp( zoomY * 6 );
 
 	double rotate;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &rotate) ); // 1 for 1 turn
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &rotate) ); // 1 for 1 turn
 
 	rotate = M_PI * 2 * rotate;
 
 	float coefX;
-	coefX = zoomX * width / newWidth;
+	coefX = PTYPE(zoomX * width / newWidth);
 	float coefY;
-	coefY = zoomY * height / newHeight;
+	coefY = PTYPE(zoomY * height / newHeight);
 
 	float	cosVal;
-	cosVal = cos(rotate);
+	cosVal = PTYPE(cos(rotate));
 	float	sinVal;
-	sinVal = sin(rotate);
+	sinVal = PTYPE(sin(rotate));
 
 	float tw2;
 	tw2 = newWidth / 2.0f;
@@ -1966,8 +1981,8 @@ DEFINE_FUNCTION( RotoZoom ) { // source: FxGen
 
 			prx = abs(u - (long)u);	//Fraction
 			pry = abs(v - (long)v);	//Fraction
-			spx = Wrap(u, width);
-			spy = Wrap(v, height);
+			spx = Wrap(int(u), width);
+			spy = Wrap(int(v), height);
 
 			ratio1 = (1.f - prx) * (1.f - pry);
 			ratio2 = (prx) * (1.f - pry);
@@ -2042,12 +2057,12 @@ DEFINE_FUNCTION( Resize ) {
 	channels = tex->channels;
 
 	unsigned int newWidth, newHeight;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &newWidth) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &newHeight) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &newWidth) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &newHeight) );
 
 	bool interpolate;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &interpolate) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &interpolate) );
 	else
 		interpolate = false;
 
@@ -2087,8 +2102,8 @@ DEFINE_FUNCTION( Resize ) {
 
 				prx = abs(u - (long)u);	//Fraction
 				pry = abs(v - (long)v);	//Fraction
-				spx = Wrap(u, width);
-				spy = Wrap(v, height);
+				spx = Wrap(int(u), width);
+				spy = Wrap(int(v), height);
 
 
 
@@ -2213,7 +2228,7 @@ DEFINE_FUNCTION( Convolution ) {
 	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), kernel, count, &length) );
 
 	int size;
-	size = (int)sqrtf(count);
+	size = (int)sqrtf(float(count));
 
 	JL_S_ASSERT( size * size == (int)count, "Invalid convolution kernel size.");
 
@@ -2225,7 +2240,7 @@ DEFINE_FUNCTION( Convolution ) {
 	int offset;
 	offset = size / 2;
 	float sizeWeight;
-	sizeWeight = count;
+	sizeWeight = float(count);
 	float ratio;
 
 	PTYPE pixel[PMAXCHANNELS];
@@ -2331,10 +2346,10 @@ DEFINE_FUNCTION( Dilate ) {
 	JL_S_ASSERT_ARG_RANGE(1,3);
 
 	int iterations, radius;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &iterations) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &iterations) );
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &radius) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &radius) );
 	else
 		radius = 1;
 
@@ -2456,7 +2471,7 @@ DEFINE_FUNCTION( ForEachPixel ) {
 				callArgv[3] = INT_TO_JSVAL(y);
 				for ( c = 0; c < channels; c++ ) {
 
-					JL_CHK( JL_CValToJsval(cx, tex->cbuffer[pos+c], &level) );
+					JL_CHK( JL_NativeToJsval(cx, tex->cbuffer[pos+c], &level) );
 					JL_CHK( JS_SetElement(cx, cArrayObj, c, &level) );
 				}
 
@@ -2467,7 +2482,7 @@ DEFINE_FUNCTION( ForEachPixel ) {
 					for ( c = 0; c < channels; c++ ) {
 
 						JL_CHK( JS_GetElement(cx, cArrayObj, c, &level) );
-						JL_CHK( JL_JsvalToCVal(cx, level, &tex->cbackBuffer[pos+c]) );
+						JL_CHK( JL_JsvalToNative(cx, level, &tex->cbackBuffer[pos+c]) );
 					}
 				}
 			}
@@ -2514,12 +2529,12 @@ DEFINE_FUNCTION( BoxBlur ) {
 	height = tex->height;
 
 	int bw, bh, iterations; // blur width & height
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &bw) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &bh) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bw) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &bh) );
 
 
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &iterations) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &iterations) );
 	else
 		iterations = 1;
 
@@ -2650,11 +2665,11 @@ DEFINE_FUNCTION( Normals ) {
 
 	JL_CHK( TextureResizeBackBuffer(cx, tex, tex->width * tex->height * 3 * sizeof(PTYPE)) ); // need a 3 channels back buffer
 
-	double amp;
+	PTYPE amp;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &amp) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amp) );
 	else
-		amp = 1.;
+		amp = PTYPE(1);
 
 	unsigned int width, height, channels, x, y, pos;
 	width = tex->width;
@@ -2789,15 +2804,15 @@ DEFINE_FUNCTION( Light ) {
 	bool specularTexture;
 	specularTexture = false;
 
-	double bumpPower; // (TBD) default value
+	PTYPE bumpPower; // (TBD) default value
 	if ( argc >= 6 )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(6), &bumpPower) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &bumpPower) );
 	else
 		bumpPower = 1;
 
-	double specularPower; // (TBD) default value
+	PTYPE specularPower; // (TBD) default value
 	if ( argc >= 7 )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(7), &specularPower) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(7), &specularPower) );
 	else
 		specularPower = 1;
 
@@ -2903,7 +2918,7 @@ DEFINE_FUNCTION( NR ) {
 */
 
 // method 2
-		PTYPE m = ( *pos + *pos1 + *pos2 ) / 3.;
+		PTYPE m = ( *pos + *pos1 + *pos2 ) / PTYPE(3);
 
 		d1 = abs(*pos - m);
 		d2 = abs(*pos1 - m);
@@ -2944,10 +2959,10 @@ DEFINE_FUNCTION( Trim ) { // (TBD) test this new version that use memcpy
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int x0, y0, x1, y1;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &x0) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &y0) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &x1) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &y1) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x0) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &y0) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &x1) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &y1) );
 
 	unsigned int channels, width, height, newWidth, newHeight;
 	channels = tex->channels;
@@ -3023,8 +3038,8 @@ DEFINE_FUNCTION( Copy ) {
 	JL_S_ASSERT( tex->channels == srcTex->channels, "Invalid channel count." );
 
 	int px, py; // position
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &px) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &py) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &px) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &py) );
 
 	BorderMode borderMode;
 	JL_CHK( JL_JsvalToBorderMode(cx, JL_SARG(4), &borderMode) );
@@ -3101,8 +3116,8 @@ DEFINE_FUNCTION( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 	JL_S_ASSERT( tex->channels == tex1->channels, "Invalid channel count." );
 
 	int px, py; // position
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &px) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &py) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &px) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &py) );
 
 	BorderMode borderMode;
 	JL_CHK( JL_JsvalToBorderMode(cx, JL_SARG(4), &borderMode) );
@@ -3215,10 +3230,10 @@ DEFINE_FUNCTION( Export ) { // (int)x, (int)y, (int)width, (int)height. Returns 
 	} else {
 
 		JL_S_ASSERT_ARG_MIN( 4 );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &px) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &py) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &dWidth) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &dHeight) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &px) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &py) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &dWidth) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &dHeight) );
 	}
 
 	bufferLength = dWidth * dHeight * sChannels;
@@ -3278,6 +3293,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Import ) { // (Blob)image, (int)x, (int)y
 
+	JLStr bufferStr;
+
 	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_S_ASSERT_ARG_RANGE(1,4);
@@ -3294,8 +3311,8 @@ DEFINE_FUNCTION( Import ) { // (Blob)image, (int)x, (int)y
 	int px, py;
 	if ( JL_ARG_ISDEF(2) && JL_ARG_ISDEF(3) ) {
 		
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &px) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &py) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &px) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &py) );
 	} else {
 		
 		px = 0;
@@ -3313,8 +3330,8 @@ DEFINE_FUNCTION( Import ) { // (Blob)image, (int)x, (int)y
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	const uint8_t *buffer;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), (const char **)&buffer) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), bufferStr) );
+	const uint8_t *buffer = (const uint8_t *)bufferStr.GetStrConst();
 
 	if ( dWidth == sWidth && dHeight == sHeight && dChannels == sChannels && px == 0 && py == 0 ) { // optimization
 		
@@ -3389,8 +3406,8 @@ DEFINE_FUNCTION( Shift ) {
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int offsetX, offsetY;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &offsetX) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &offsetY) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &offsetX) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &offsetY) );
 
 	BorderMode borderMode;
 	JL_CHK( JL_JsvalToBorderMode(cx, JL_SARG(3), &borderMode) );
@@ -3450,11 +3467,11 @@ DEFINE_FUNCTION( Displace ) {
 	JL_S_ASSERT( width == tex1->width && height == tex1->height, "Textures must have the same size." );
 //	JL_S_ASSERT( displaceChannels >= 2, "Displacement texture must have 2 or more channels." );
 
-	double factor;
+	PTYPE factor;
 	if ( argc >= 2 )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &factor) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &factor) );
 	else
-		factor = 1.;
+		factor = PTYPE(1);
 
 	TextureSetupBackBuffer(cx, tex);
 
@@ -3479,8 +3496,8 @@ DEFINE_FUNCTION( Displace ) {
 
 			// (TBD) test !
 
-			sx = x + PZNORM( tex1->cbuffer[pos+0] ) * factor;
-			sy = y + PZNORM( tex1->cbuffer[pos+1] ) * factor;
+			sx = x + int(PZNORM( tex1->cbuffer[pos+0] ) * factor);
+			sy = y + int(PZNORM( tex1->cbuffer[pos+1] ) * factor);
 
 			sPos = PosByMode(tex, sx, sy, borderMode);
 			dPos = &tex->cbackBuffer[(x + y * width) * channels];
@@ -3516,9 +3533,9 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 	JL_S_ASSERT_ARG_MIN( 2 );
 
 	int density;
-	double regularity;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &density) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &regularity) );
+	PTYPE regularity;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &density) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &regularity) );
 
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
@@ -3545,13 +3562,13 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 
 	for ( int i = 0; i < count; i++ ) {
 
-		float rand1 = genrand_real1(); // [0,1]-real-interval
-		float rand2 = genrand_real1(); // [0,1]-real-interval
+		float rand1 = PRAND; // [0,1]-real-interval
+		float rand2 = PRAND; // [0,1]-real-interval
 		int x = i % density;
 		int y = i / density;
 
-		cellPoints[i].x = ( x + 0.5 + (rand1-0.5f) * (1.0f-regularity) ) / density;
-		cellPoints[i].y = ( y + 0.5 + (rand2-0.5f) * (1.0f-regularity) ) / density;
+		cellPoints[i].x = ( x + PTYPE(0.5) + (rand1 - PTYPE(0.5)) * (PTYPE(1) - regularity) ) / density;
+		cellPoints[i].y = ( y + PTYPE(0.5) + (rand2 - PTYPE(0.5)) * (PTYPE(1) - regularity) ) / density;
 	}
 
 	for (int y = 0; y < height; y++) {
@@ -3650,8 +3667,8 @@ DEFINE_FUNCTION( AddGradiantQuad ) {
 	JL_CHK( InitLevelData(cx, JL_ARG(3), channels, pixel3) );
 	JL_CHK( InitLevelData(cx, JL_ARG(4), channels, pixel4) );
 
-	float aspectRatio;
-	aspectRatio = width * height;
+	PTYPE aspectRatio;
+	aspectRatio = PTYPE(width * height);
 
 	float r1, r2, r3, r4;
 	unsigned int x, y, c, pos;
@@ -3767,15 +3784,15 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 	bool drawToCorner;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &drawToCorner) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &drawToCorner) );
 	else
 		drawToCorner = false;
 
-	float radius;
+	PTYPE radius;
 	if ( drawToCorner )
-		radius = Length2D( width, height ) / 2.0;
+		radius = Length2D( PTYPE(width), PTYPE(height) ) / PTYPE(2);
 	else
-		radius = MAX( width, height ) / 2.0;
+		radius = MAX( width, height ) / PTYPE(2);
 
 	float *curve;
 	curve = (float*)alloca( (int)radius * sizeof(float) );
@@ -3792,12 +3809,12 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 	for ( y = 0; y < height; y++ )
 		for ( x = 0; x < width; x++ ) {
 
-			dist = Length2D( (float)x / width - 0.5, (float)y / height - 0.5 ); // distance to the center ( 0..M_SQRT1_2 )
+			dist = Length2D( (float)x / width - 0.5f, (float)y / height - 0.5f ); // distance to the center ( 0..M_SQRT1_2 )
 
 			if ( drawToCorner ) {
 
 				pos = (x + y * width) * channels; // (TBD) use borderMode
-				curvePos = dist * (radius-1) / M_SQRT1_2;
+				curvePos = int(dist * (radius - PTYPE(1)) / PTYPE(M_SQRT1_2));
 				curveValue = curve[curvePos];
 				for ( c = 0; c < channels; c++ )
 					tex->cbuffer[pos+c] += curveValue;
@@ -3805,7 +3822,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 			if ( dist <= 0.5 ) { // if dist == 0.5, (int)(dist*radius) is out of the curve data
 
 				pos = (x + y * width) * channels; // (TBD) use borderMode
-				curvePos = dist * (radius-1) * 2;
+				curvePos = int(dist * (radius - PTYPE(1)) * PTYPE(2));
 				curveValue = curve[curvePos];
 				for ( c = 0; c < channels; c++ )
 					tex->cbuffer[pos+c] += curveValue;
@@ -3832,11 +3849,11 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 	int channels = tex->channels;
 
 	int ox, oy;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &ox) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &oy) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &ox) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &oy) );
 
 	int radius;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &radius) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &radius) );
 
 	BorderMode borderMode = borderWrap;
 
@@ -3926,14 +3943,14 @@ DEFINE_FUNCTION( AddCracks ) { // source: FxGen
 	channels = tex->channels;
 
 	int count;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &count) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &count) );
 
 	int crackMaxLength;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &crackMaxLength) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &crackMaxLength) );
 
 	double variation;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &variation) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &variation) );
 	else
 		variation = 0;
 
@@ -3965,9 +3982,9 @@ DEFINE_FUNCTION( AddCracks ) { // source: FxGen
 	n = 0;
 	while( n++ < count ) {
 
-		float x = genrand_real1() * width;
-		float y = genrand_real1() * height;
-		float a = 2.f * M_PI * genrand_real1();
+		float x = PRAND * width;
+		float y = PRAND * height;
+		float a = 2.f * float(M_PI) * PRAND;
 //		int crackLength = (int)(genrand_real1() * crackMaxLength);
 		int crackLength = crackMaxLength;
 
@@ -3989,7 +4006,7 @@ DEFINE_FUNCTION( AddCracks ) { // source: FxGen
 			if( x < 0.0 ) x = x + width;
 			if( y < 0.0 ) y = y + height;
 
-			a = a + variation*(2 * genrand_real1() - 1);
+			a = a + float(variation*(2 * genrand_real1() - 1));
 		}
 	}
 	//jl_free(curve); // alloca
@@ -4072,7 +4089,7 @@ DEFINE_FUNCTION( AddPerlin2 ) {
 	JL_S_ASSERT( len == 3, "Invalid 3D vector." );
 
 	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &alpha) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &alpha) );
 	else
 		alpha = 1;
 
@@ -4093,7 +4110,7 @@ DEFINE_FUNCTION( AddPerlin2 ) {
 			y = offset[1] + dirX[1]*tx + dirY[1]*ty;
 			z = offset[2] + dirX[2]*tx + dirY[2]*ty;
 
-			tex->cbuffer[pos] += PerlinNoise2(x, y, z)*alpha;
+			tex->cbuffer[pos] += PTYPE(PerlinNoise2(x, y, z) * alpha);
 			pos += tex->channels;
 		}
 
@@ -4126,10 +4143,10 @@ DEFINE_FUNCTION( SetRectangle ) {
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int x0, y0, x1, y1;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &x0) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &y0) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &x1) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &y1) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x0) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &y0) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &x1) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &y1) );
 
 	PTYPE pixel[PMAXCHANNELS];
 	JL_CHK( InitLevelData(cx, JL_ARG(5), tex->channels, pixel) );
@@ -4174,8 +4191,8 @@ DEFINE_FUNCTION( SetPixel ) { // x, y, levels
 	JL_S_ASSERT_RESOURCE(tex);
 
 	int x, y;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &x) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &y) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &y) );
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
@@ -4259,12 +4276,12 @@ DEFINE_FUNCTION( GetGlobalLevel ) {
 		size = tex->width * tex->height * tex->channels;
 		for ( i = 0; i < size; ++i )
 			sum += tex->cbuffer[i];
-		JL_CHK( JL_CValToJsval(cx, sum / (PTYPE)size, JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, sum / (PTYPE)size, JL_RVAL) );
 		return JS_TRUE;
 	}
 
 	int onlyChannel;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &onlyChannel) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &onlyChannel) );
 	PTYPE *pos;
 	pos = &tex->cbuffer[onlyChannel];
 
@@ -4274,7 +4291,7 @@ DEFINE_FUNCTION( GetGlobalLevel ) {
 		sum += *pos;
 		pos += tex->channels;
 	}
-	JL_CHK( JL_CValToJsval(cx, sum / (PTYPE)size, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, sum / (PTYPE)size, JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -4315,7 +4332,7 @@ DEFINE_FUNCTION( GetLevelRange ) {
 	} else {
 
 		int onlyChannel;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &onlyChannel) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &onlyChannel) );
 		
 		pos = &tex->cbuffer[onlyChannel];
 		size = tex->width * tex->height;
@@ -4442,7 +4459,7 @@ DEFINE_PROPERTY( width ) {
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
-	return JL_CValToJsval(cx, tex->width, vp);
+	return JL_NativeToJsval(cx, tex->width, vp);
 	JL_BAD;
 }
 
@@ -4456,7 +4473,7 @@ DEFINE_PROPERTY( height ) {
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
-	return JL_CValToJsval(cx, tex->height, vp);
+	return JL_NativeToJsval(cx, tex->height, vp);
 	JL_BAD;
 }
 
@@ -4470,7 +4487,7 @@ DEFINE_PROPERTY( channels ) {
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
-	return JL_CValToJsval(cx, tex->channels, vp);
+	return JL_NativeToJsval(cx, tex->channels, vp);
 	JL_BAD;
 }
 
@@ -4484,7 +4501,7 @@ DEFINE_PROPERTY( channels ) {
 //
 //	JL_S_ASSERT_ARG_MIN(1);
 //	unsigned long seed;
-//	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &seed) );
+//	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &seed) );
 //	jsdouble d = NoiseInt(seed);
 //	JL_CHK( JL_NewNumberValue(cx, d, rval) );
 //	return JS_TRUE;

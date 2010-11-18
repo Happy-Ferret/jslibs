@@ -65,7 +65,7 @@ DEFINE_PROPERTY( radiusSetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
 	jsdouble radius;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &radius) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &radius) );
 	ode::dGeomSphereSetRadius(geom, (ode::dReal)radius);
 	return JS_TRUE;
 	JL_BAD;

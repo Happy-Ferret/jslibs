@@ -316,10 +316,11 @@ LoadModule('jsstd');
 		QA.ASSERT( b.Read(), '', 'empty buffer read' );
 
 		b.Write('a');
-		QA.ASSERT( typeof b.Read(), 'object', 'buffer read' );
+//		QA.ASSERT( typeof b.Read(), 'object', 'buffer read' );
+		QA.ASSERT( typeof b.Read(), 'string', 'buffer read' );
 	
 		b.Write('a');
-		QA.ASSERT( b.Read() instanceof Blob, true, 'buffer read' );
+//		QA.ASSERT( b.Read() instanceof Blob, true, 'buffer read (instanceof)' );
 
 
 /// Buffer test 1 [ftrm]

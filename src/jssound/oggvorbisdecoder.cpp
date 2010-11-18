@@ -79,7 +79,7 @@ static int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 		case SEEK_SET:
 			if ( offset < 0 )
 				return -1;
-			JL_CValToJsval(pv->cx, offset, &tmpVal); // (TBD) manage error
+			JL_NativeToJsval(pv->cx, offset, &tmpVal); // (TBD) manage error
 			JS_SetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
 			return 0;
 
@@ -89,9 +89,9 @@ static int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 				return -1;
 			if ( offset == 0 ) // no move, just tested, but let -1 to be return if no position property available.
 				return 0;
-			JL_JsvalToCVal(pv->cx, tmpVal, &position); // (TBD) manage error
+			JL_JsvalToNative(pv->cx, tmpVal, &position); // (TBD) manage error
 			position += offset;
-			JL_CValToJsval(pv->cx, position, &tmpVal); // (TBD) manage error
+			JL_NativeToJsval(pv->cx, position, &tmpVal); // (TBD) manage error
 			JS_SetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
 			return 0;
 
@@ -99,17 +99,17 @@ static int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 			JS_GetProperty(pv->cx, pv->streamObject, "available", &tmpVal);
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
-			JL_JsvalToCVal(pv->cx, tmpVal, &available);
+			JL_JsvalToNative(pv->cx, tmpVal, &available);
 
 			JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
-			JL_JsvalToCVal(pv->cx, tmpVal, &position);
+			JL_JsvalToNative(pv->cx, tmpVal, &position);
 
 			if ( offset > 0 || -offset > position + available )
 				return -1;
-			JL_JsvalToCVal(pv->cx, tmpVal, &position);
-			JL_CValToJsval(pv->cx, position + available + offset, &tmpVal); // the pointer is set to the size of the file plus offset.
+			JL_JsvalToNative(pv->cx, tmpVal, &position);
+			JL_NativeToJsval(pv->cx, position + available + offset, &tmpVal); // the pointer is set to the size of the file plus offset.
 			JS_SetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
 			return 0;
 	}
@@ -128,7 +128,7 @@ static long tell_func(void *datasource) {
 	JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
 	if ( JSVAL_IS_VOID( tmpVal ) )
 		return -1;
-	JL_JsvalToCVal(pv->cx, tmpVal, &position);
+	JL_JsvalToNative(pv->cx, tmpVal, &position);
 	return position;
 }
 
@@ -251,7 +251,7 @@ DEFINE_FUNCTION( Read ) {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		size_t frames;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &frames) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &frames) );
 
 		if ( frames > 0 ) {
 

@@ -142,10 +142,10 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 
 			// geom.contact = function(thisGeom, otherGeom, contactVelocity, contactX, contactY, contactZ, side1, side2) { }
 
-			JL_CHK(JL_CValToJsval(cx, contactVelocity, &argv[3]) ); // JL_CHK(JL_CValToJsval(cx, contact.geom.depth, &argv[3]) );
-			JL_CHK(JL_CValToJsval(cx, contact.geom.pos[0], &argv[4]) );
-			JL_CHK(JL_CValToJsval(cx, contact.geom.pos[1], &argv[5]) );
-			JL_CHK(JL_CValToJsval(cx, contact.geom.pos[2], &argv[6]) );
+			JL_CHK(JL_NativeToJsval(cx, contactVelocity, &argv[3]) ); // JL_CHK(JL_NativeToJsval(cx, contact.geom.depth, &argv[3]) );
+			JL_CHK(JL_NativeToJsval(cx, contact.geom.pos[0], &argv[4]) );
+			JL_CHK(JL_NativeToJsval(cx, contact.geom.pos[1], &argv[5]) );
+			JL_CHK(JL_NativeToJsval(cx, contact.geom.pos[2], &argv[6]) );
 
 			if ( !JSVAL_IS_VOID( func1 ) ) {
 
@@ -423,7 +423,7 @@ DEFINE_FUNCTION( Step ) {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 	ode::dReal stepSize;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &stepSize) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &stepSize) );
 	if ( ode::dWorldGetQuickStepNumIterations(pv->worldId) == 0 )
 		ode::dWorldStep(pv->worldId, stepSize / 1000.f);
 	else
@@ -454,13 +454,13 @@ DEFINE_FUNCTION( ScaleImpulse ) {
 	JL_S_ASSERT( len >= 3, "Invalid array size." );
 
 	float stepSize;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &stepSize) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &stepSize) );
 	ode::dWorldImpulseToForce(pv->worldId, stepSize / 1000, force[0], force[1], force[2], force);
 	
 	JSObject *objArr = JSVAL_TO_OBJECT(JL_ARG(1));
 	for ( jsint i = 0; i < COUNTOF(force); i++ ) {
 
-		JL_CHK( JL_CValToJsval(cx, force[i], JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, force[i], JL_RVAL) );
 		JL_CHK( JS_SetElement(cx, objArr, i, JL_RVAL) );
 	}
 
@@ -589,7 +589,7 @@ DEFINE_PROPERTY( realSetter ) {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	float value;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &value) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
 	switch ( JSID_TO_INT(id) ) {
 		case ERP:
 			ode::dWorldSetERP(pv->worldId, value);
@@ -670,7 +670,7 @@ DEFINE_PROPERTY( realGetter ) {
 			value = ode::dWorldGetMaxAngularSpeed(pv->worldId);
 			break;
 	}
-	JL_CHK(JL_CValToJsval(cx, value, vp) );
+	JL_CHK(JL_NativeToJsval(cx, value, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

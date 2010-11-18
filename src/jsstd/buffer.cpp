@@ -82,6 +82,8 @@ inline JSBool PeekJsval( JSContext *cx, jl::QueueCell *cell, jsval *value ) {
 
 JSBool WriteDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 
+	JLStr str;
+
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -94,14 +96,15 @@ JSBool WriteDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	}
 	// here, chunk is an immutable data container ( string, JSString, Blob, ... ) excluding BufferGetInterface.
 
-	size_t strLen;
-	JL_CHK( JL_JsvalToStringLength(cx, chunk, &strLen) );
+//	size_t strLen;
+//	JL_CHK( JL_JsvalToStringLength(cx, chunk, &strLen) );
+	JL_CHK( JL_JsvalToNative(cx, chunk, str) );
 
 //	JL_CHK( JL_JsvalToStringLength(cx, chunk, &strLen) );
-	if ( strLen == 0 ) // optimization & RULES
+	if ( str.Length() == 0 ) // optimization & RULES
 		return JS_TRUE;
 	JL_CHK( PushJsval(cx, pv->queue, chunk) );
-	pv->length += strLen;
+	pv->length += str.Length();
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -122,6 +125,8 @@ JSBool WriteRawDataChunk( JSContext *cx, JSObject *obj, size_t amount, const cha
 
 JSBool UnReadDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 
+	JLStr str;
+
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
@@ -133,12 +138,13 @@ JSBool UnReadDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	}
 	// here, chunk is an immutable data container ( string, JSString, Blob, ... ) excluding BufferGetInterface.
 
-	size_t strLen;
-	JL_CHK( JL_JsvalToStringLength(cx, chunk, &strLen) );
-	if ( strLen == 0 ) // optimization && RULES
+	//size_t strLen;
+	//JL_CHK( JL_JsvalToStringLength(cx, chunk, &strLen) );
+	JL_CHK( JL_JsvalToNative(cx, chunk, str) );
+	if ( str.Length() == 0 ) // optimization && RULES
 		return JS_TRUE;
 	JL_CHK( UnshiftJsval(cx, pv->queue, chunk) );
-	pv->length += strLen;
+	pv->length += str.Length();
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -228,6 +234,8 @@ JSBool UnReadRawDataChunk( JSContext *cx, JSObject *obj, char *data, size_t leng
 
 JSBool ReadChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 
+	JLStr str;
+
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
@@ -242,9 +250,10 @@ JSBool ReadChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 	}
 
 	JL_CHK( ShiftJsval(cx, pv->queue, rval) );
-	size_t len;
-	JL_CHK( JL_JsvalToStringLength(cx, *rval, &len) );
-	pv->length -= len;
+//	size_t len;
+//	JL_CHK( JL_JsvalToStringLength(cx, *rval, &len) );
+	JL_CHK( JL_JsvalToNative(cx, *rval, str) );
+	pv->length -= str.Length();
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -275,12 +284,16 @@ JSBool ReadRawDataAmount( JSContext *cx, JSObject *obj, size_t *amount, char *st
 
 	while ( remainToRead > 0 ) { // while there is something to read,
 
+		JLStr str;
 		jsval item;
 		JL_CHK( ShiftJsval(cx, pv->queue, &item) );
 
 		size_t chunkLen;
 		const char *chunk;
-		JL_CHK( JL_JsvalToStringAndLength(cx, &item, &chunk, &chunkLen) ); // (TBD) GC protect item ? (can be a JSString or a NIBufferGet)
+		//JL_CHK( JL_JsvalToStringAndLength(cx, &item, &chunk, &chunkLen) ); // (TBD) GC protect item ? (can be a JSString or a NIBufferGet)
+		JL_CHK( JL_JsvalToNative(cx, item, str) );
+		chunkLen = str.Length();
+		chunk = str.GetStrConst();
 
 		if ( chunkLen <= remainToRead ) {
 
@@ -327,19 +340,27 @@ JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t *amount ) { // amo
 	remainToRead = *amount;
 	while ( remainToRead > 0 ) { // while there is something to read,
 
+		JLStr str;
 		jsval item;
 		size_t chunkLen;
 		JL_CHK( ShiftJsval(cx, pv->queue, &item) );
-		JL_CHK( JL_JsvalToStringLength(cx, item, &chunkLen) );
+		//JL_CHK( JL_JsvalToStringLength(cx, item, &chunkLen) );
+		JL_CHK( JL_JsvalToNative(cx, item, str) );
+		chunkLen = str.Length();
+
 		if ( chunkLen <= remainToRead ) {
 
 			remainToRead -= chunkLen;
 		} else {
 
-			const char *chunk;
-			JL_CHK( JL_JsvalToStringAndLength(cx, &item, &chunk, &chunkLen) );
+			JLStr str;
+
+			//const char *chunk;
+			//JL_CHK( JL_JsvalToStringAndLength(cx, &item, &chunk, &chunkLen) );
+			JL_CHK( JL_JsvalToNative(cx, item, str) );
+
 			jsval bstr;
-			JL_CHK( JL_NewBlobCopyN(cx, chunk + remainToRead, chunkLen - remainToRead, &bstr) );
+			JL_CHK( JL_NewBlobCopyN(cx, str.GetStrConst() + remainToRead, str.Length() - remainToRead, &bstr) );
 			UnshiftJsval(cx, pv->queue, bstr);
 			remainToRead = 0;
 		}
@@ -410,7 +431,12 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t ne
 	for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
 
 		jsval *pNewStr = (jsval*)QueueGetData(it);
-		JL_CHK( JL_JsvalToStringAndLength(cx, pNewStr, &chunk, &chunkLength) );
+		//JL_CHK( JL_JsvalToStringAndLength(cx, pNewStr, &chunk, &chunkLength) );
+		JLStr str;
+		JL_CHK( JL_JsvalToNative(cx, *pNewStr, str) );
+		chunkLength = str.Length();
+		chunk = str.GetStrConst();
+
 		for ( i = 0; i < chunkLength; i++ ) {
 
 			buf[pos++ % needleLength] = chunk[i]; // store one more char of the chunk in the ring buffer
@@ -634,36 +660,39 @@ DEFINE_FUNCTION( Write ) {
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 	
 	*JL_RVAL = JSVAL_VOID;
-	jsval *arg1;
-	arg1 = &JL_ARG(1);
+	jsval arg1;
+	arg1 = JL_ARG(1);
 
 // rekated to buffer markers
-//	if ( JSVAL_IS_VOID(*arg1) ) {
+//	if ( JSVAL_IS_VOID(arg1) ) {
 //	}
 
-	if ( JL_JsvalIsClass(*arg1, JL_THIS_CLASS) ) {
+	if ( JL_JsvalIsClass(arg1, JL_THIS_CLASS) ) {
 		
 		JL_S_ASSERT_ARG(1);
-		return AddBuffer(cx, obj, JSVAL_TO_OBJECT( *arg1 ));
+		return AddBuffer(cx, obj, JSVAL_TO_OBJECT(arg1));
 	}
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		size_t strLen, amount;
-		const char *buf;
-		JL_CHK( JL_JsvalToStringAndLength(cx, arg1, &buf, &strLen) ); // warning: GC on the returned buffer !
+		size_t amount;
+//		const char *buf;
+		
+		//JL_CHK( JL_JsvalToStringAndLength(cx, arg1, &buf, &strLen) ); // warning: GC on the returned buffer !
+		JLStr str;
+		JL_CHK( JL_JsvalToNative(cx, arg1, str) );
 
-		if ( strLen == 0 )
+		if ( str.Length() == 0 )
 			return JS_TRUE;
 
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &amount) );
-		if ( amount > strLen )
-			amount = strLen;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &amount) );
+		if ( amount > str.Length() )
+			amount = str.Length();
 
-		return WriteRawDataChunk(cx, obj, amount, buf);
+		return WriteRawDataChunk(cx, obj, amount, str.GetStrConst());
 	} else {
 
-		return WriteDataChunk(cx, obj, *arg1);
+		return WriteDataChunk(cx, obj, arg1);
 	}
 	JL_BAD;
 }
@@ -681,14 +710,18 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Match ) {
 
+	JLStr str;
+
 	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 
-	const char *str;
+//	const char *str;
 	size_t len;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) ); // warning: GC on the returned buffer !
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	len = str.Length();
 
 	char *src;
 	src = (char *)jl_malloc(len);
@@ -699,14 +732,14 @@ DEFINE_FUNCTION( Match ) {
 	if ( st != JS_TRUE )
 		goto err;
 
-	if ( amount != len )
+	if ( amount != str.Length() )
 		*JL_RVAL = JSVAL_FALSE;
 	else
-		*JL_RVAL = strncmp( str, src, len ) == 0 ? JSVAL_TRUE : JSVAL_FALSE;
+		*JL_RVAL = strncmp( str.GetStrConst(), src, len ) == 0 ? JSVAL_TRUE : JSVAL_FALSE;
 
 	bool consume;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &consume) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &consume) );
 	else
 		consume = false;
 
@@ -749,7 +782,7 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 	size_t amount;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &amount) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
 	else
 		amount = pv->length;
 
@@ -775,12 +808,12 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 	JL_S_ASSERT_RESOURCE( pv );
 	JL_S_ASSERT_ARG(1);
 	size_t amount;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &amount) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
 	JL_S_ASSERT( (int)amount >= 0, "Invalid amount" );
 	size_t tmp;
 	tmp = amount;
 	JL_CHK( BufferSkipAmount(cx, obj, &tmp) );
-	return JL_CValToJsval(cx, amount - tmp, JL_RVAL);
+	return JL_NativeToJsval(cx, amount - tmp, JL_RVAL);
 	JL_BAD;
 }
 
@@ -793,30 +826,33 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ReadUntil ) {
 
+	JLStr str;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 
-	const char *boundary;
-	size_t boundaryLength;
+//	const char *boundary;
+//	size_t boundaryLength;
 
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
 
 	bool skip;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &skip) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &skip) );
 	else
 		skip = true;
 	bool found;
 	size_t foundAt;
-	JL_CHK( FindInBuffer(cx, obj, boundary, boundaryLength, &found, &foundAt) );
+	JL_CHK( FindInBuffer(cx, obj, str.GetStrConst(), str.Length(), &found, &foundAt) );
 	if ( found ) {
 
 		JL_CHK( ReadDataAmount(cx, obj, foundAt, JL_RVAL) );
 		if ( skip ) {
 
 			jsval tmp;
-			JL_CHK( ReadDataAmount(cx, obj, boundaryLength, &tmp) ); // (TBD) optimization: skip without reading the data.
+			JL_CHK( ReadDataAmount(cx, obj, str.Length(), &tmp) ); // (TBD) optimization: skip without reading the data.
 		}
 	} else {
 
@@ -835,16 +871,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IndexOf ) {
 
+	JLStr str;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
 	JL_S_ASSERT_ARG(1);
 
-	const char *boundary;
-	size_t boundaryLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
+//	const char *boundary;
+//	size_t boundaryLength;
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &boundary, &boundaryLength) ); // warning: GC on the returned buffer !
+
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+
 	bool found;
 	size_t foundAt;
-	JL_CHK( FindInBuffer(cx, JL_OBJ, boundary, boundaryLength, &found, &foundAt) );
+	JL_CHK( FindInBuffer(cx, JL_OBJ, str.GetStrConst(), str.Length(), &found, &foundAt) );
 	*JL_RVAL = INT_TO_JSVAL(found ? foundAt : -1);
 	return JS_TRUE;
 	JL_BAD;
@@ -910,14 +951,17 @@ DEFINE_FUNCTION( toString ) {
 //	while ( !QueueIsEmpty(pv->queue) ) {
 	for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
 
+		JLStr str;
 //		JL_CHK( ShiftJsval(cx, pv->queue, rval) );
 		JL_CHK( PeekJsval(cx, it, JL_RVAL) );
 
-		const char *chunkBuf;
-		size_t chunkLen;
-		JL_CHK( JL_JsvalToStringAndLength(cx, JL_RVAL, &chunkBuf, &chunkLen) );
-		memcpy(buffer + pos, chunkBuf, chunkLen);
-		pos += chunkLen;
+//		const char *chunkBuf;
+//		size_t chunkLen;
+//		JL_CHK( JL_JsvalToStringAndLength(cx, JL_RVAL, &chunkBuf, &chunkLen) );
+		JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, str) );
+
+		memcpy(buffer + pos, str.GetStrConst(), str.Length());
+		pos += str.Length();
 	}
 
 	JSString *str;
@@ -964,25 +1008,27 @@ DEFINE_GET_PROPERTY() {
 
 		size_t offset = 0;
 
-		size_t chunkLength;
-		const char *chunk;
+//		size_t chunkLength;
+//		const char *chunk;
 
 		for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
 
 			jsval *pNewStr = (jsval*)QueueGetData(it);
-			JL_CHK( JL_JsvalToStringLength(cx, *pNewStr, &chunkLength) );
+//			JL_CHK( JL_JsvalToStringLength(cx, *pNewStr, &chunkLength) );
+			JLStr str;
+			JL_CHK( JL_JsvalToNative(cx, *pNewStr, str) );
 
-			if ( (size_t)slot >= offset && (size_t)slot < offset + chunkLength ) {
+			if ( (size_t)slot >= offset && (size_t)slot < offset + str.Length() ) {
 
-				JL_CHK( JL_JsvalToCVal(cx, *pNewStr, &chunk) ); // items in the queue are GC protected.
+				//JL_CHK( JL_JsvalToNative(cx, *pNewStr, &chunk) ); // items in the queue are GC protected.
 
-				jschar chr = ((char*)chunk)[slot - offset];
+				const jschar chr = str.GetStrConst()[slot - offset];
 				JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
 				JL_CHK( str1 );
 				*vp = STRING_TO_JSVAL(str1);
 				return JS_TRUE;
 			}
-			offset += chunkLength;
+			offset += str.Length();
 		}
 	}
 
@@ -1017,7 +1063,7 @@ DEFINE_PROPERTY( length ) {
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	return JL_CValToJsval(cx, pv->length, vp);
+	return JL_NativeToJsval(cx, pv->length, vp);
 	JL_BAD;
 }
 

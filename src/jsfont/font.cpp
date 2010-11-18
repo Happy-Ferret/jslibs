@@ -68,6 +68,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JLStr filePathName;
+
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
@@ -77,12 +79,11 @@ DEFINE_CONSTRUCTOR() {
 
 	int faceIndex;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &faceIndex) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &faceIndex) );
 	else
 		faceIndex = 0;
 
-	const char *filePathName;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &filePathName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), filePathName) );
 
 	JsfontModulePrivate *mpv;
 	mpv = (JsfontModulePrivate*)ModulePrivateGet();
@@ -116,8 +117,8 @@ DEFINE_FUNCTION( SetSize ) {
 
 	FT_UInt width, height;
 
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &width) ); // a value of 0 for one of the dimensions means same as the other.
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &height) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &width) ); // a value of 0 for one of the dimensions means same as the other.
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &height) );
 
 	FT_Error status;
 	status = FT_Set_Pixel_Sizes(face, width, height);
@@ -275,12 +276,12 @@ DEFINE_FUNCTION( DrawString ) {
 	bool keepTrailingSpace;
 	keepTrailingSpace = false;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &keepTrailingSpace) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &keepTrailingSpace) );
 
 	bool getWidthOnly;
 	getWidthOnly = false;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &getWidthOnly) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &getWidthOnly) );
 
 
 	jsval tmp;
@@ -289,37 +290,37 @@ DEFINE_FUNCTION( DrawString ) {
 	letterSpacing = 0;
 	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		JL_CHK( JL_JsvalToCVal(cx, tmp, &letterSpacing) );
+		JL_CHK( JL_JsvalToNative(cx, tmp, &letterSpacing) );
 
 	int horizontalPadding;
 	horizontalPadding = 0;
 	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_HORIZONTALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		JL_CHK( JL_JsvalToCVal(cx, tmp, &horizontalPadding) );
+		JL_CHK( JL_JsvalToNative(cx, tmp, &horizontalPadding) );
 
 	int verticalPadding;
 	verticalPadding = 0;
 	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_VERTICALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		JL_CHK( JL_JsvalToCVal(cx, tmp, &verticalPadding) );
+		JL_CHK( JL_JsvalToNative(cx, tmp, &verticalPadding) );
 
 	bool useKerning;
 	useKerning = true;
 	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		JL_CHK( JL_JsvalToCVal(cx, tmp, &useKerning) );
+		JL_CHK( JL_JsvalToNative(cx, tmp, &useKerning) );
 
 	bool isItalic;
 	isItalic = false;
 	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_ITALIC, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		JL_CHK( JL_JsvalToCVal(cx, tmp, &isItalic) );
+		JL_CHK( JL_JsvalToNative(cx, tmp, &isItalic) );
 
 	bool isBold;
 	isBold = false;
 	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_BOLD, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
-		JL_CHK( JL_JsvalToCVal(cx, tmp, &isBold) );
+		JL_CHK( JL_JsvalToNative(cx, tmp, &isBold) );
 
 
 	typedef struct {
@@ -512,7 +513,7 @@ DEFINE_PROPERTY( size ) {
 	int size;
 	size = 0;
 	if ( !JSVAL_IS_VOID( *vp ) )
-		JL_CHK( JL_JsvalToCVal(cx, *vp, &size) );
+		JL_CHK( JL_JsvalToNative(cx, *vp, &size) );
 
 	JL_S_ASSERT( size >= 0, "Invalid font size." );
 	FTCHK( FT_Set_Pixel_Sizes(pv->face, size, size) );
@@ -534,7 +535,7 @@ DEFINE_PROPERTY( encoding ) {
 	JL_S_ASSERT_RESOURCE( pv );
 
 	unsigned int encoding;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &encoding) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &encoding) );
 	FTCHK( FT_Select_Charmap(pv->face, (FT_Encoding)encoding) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -551,7 +552,7 @@ DEFINE_PROPERTY( poscriptName ) {
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	JL_CHK( JL_CValToJsval(cx, FT_Get_Postscript_Name(pv->face), vp) );
+	JL_CHK( JL_NativeToJsval(cx, FT_Get_Postscript_Name(pv->face), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

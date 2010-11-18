@@ -61,12 +61,16 @@ static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) { //
 	if (unlikely( pv == NULL || pv->hostStdOut == NULL ))
 		return JS_TRUE;
 
-	const char *buffer;
-	size_t length;
+//	const char *buffer;
+//	size_t length;
+
 	for ( uintN i = 0; i < argc; ++i ) {
 
-		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(i+1), &buffer, &length) );
-		JL_CHKM( pv->hostStdOut(pv->privateData, buffer, length) != -1, "Unable to use write on host's StdOut." );
+		//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(i+1), &buffer, &length) );
+		//JL_CHKM( pv->hostStdOut(pv->privateData, buffer, length) != -1, "Unable to use write on host's StdOut." );
+		JLStr str;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], str) );
+		JL_CHKM( pv->hostStdOut(pv->privateData, str.GetStrConst(), str.Length()) != -1, "Unable to use write on host's StdOut." );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -80,12 +84,13 @@ static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) { //
 	if (unlikely( pv == NULL || pv->hostStdErr == NULL ))
 		return JS_TRUE;
 
-	const char *buffer;
-	size_t length;
 	for ( uintN i = 0; i < argc; ++i ) {
 
-		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(i+1), &buffer, &length) );
-		JL_CHKM( pv->hostStdErr(pv->privateData, buffer, length) != -1, "Unable to use write on host's StdErr." );
+//		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(i+1), &buffer, &length) );
+//		JL_CHKM( pv->hostStdErr(pv->privateData, buffer, length) != -1, "Unable to use write on host's StdErr." );
+		JLStr str;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], str) );
+		JL_CHKM( pv->hostStdErr(pv->privateData, str.GetStrConst(), str.Length()) != -1, "Unable to use write on host's StdErr." );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -108,7 +113,8 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 			jsval unused;
 			js::AutoValueRooter tvr(cx); // needed to protect the string.
 
-			JL_CHKB( JL_StringAndLengthToJsval(cx, tvr.jsval_addr(), message, length), bad2 ); // beware out of memory case !
+//			JL_CHKB( JL_StringAndLengthToJsval(cx, tvr.jsval_addr(), message, length), bad2 ); // beware out of memory case !
+			JL_CHKB( JL_NativeToJsval(cx, message, length, tvr.jsval_addr()), bad2 ); // beware out of memory case !
 			JL_CHKB( JS_CallFunctionValue(cx, globalObject, fct, 1, tvr.jsval_addr(), &unused), bad2 );
 
 		bad2:
@@ -260,14 +266,19 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 
 static JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 
-//	CHKHEAP();
+	JLStr str;
+
+	//	CHKHEAP();
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(1);
-	const char *fileName;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &fileName) );
+//	const char *fileName;
+//	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+
 	char libFileName[PATH_MAX];
-	strcpy( libFileName, fileName );
+	strncpy( libFileName, str.GetStrConst(), str.Length() ); // (TBD) check
+	libFileName[str.Length()] = '\0';
 	strcat( libFileName, DLL_EXT );
 // MAC OSX: 	'@executable_path' ??
 
@@ -280,7 +291,7 @@ static JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 				obj = JSVAL_TO_OBJECT(JL_ARG(2));
 			} else {
 				const char *ns;
-				JL_CHK( JL_JsvalToCVal(cx, &JL_ARG(2), &ns) );
+				JL_CHK( JL_JsvalToNative(cx, &JL_ARG(2), &ns) );
 
 				jsval existingNsVal;
 				JL_CHK( JS_GetProperty(cx, obj, ns, &existingNsVal) );

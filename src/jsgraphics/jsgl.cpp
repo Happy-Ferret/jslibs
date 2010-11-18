@@ -52,7 +52,7 @@ JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rv
 		JL_S_ASSERT( *argc >= count, "Not enough arguments." );
 		for ( i = 0; i < count; ++i ) {
 
-			JL_CHK( JL_JsvalToCVal(cx, **argv, rval) );
+			JL_CHK( JL_JsvalToNative(cx, **argv, rval) );
 			++rval;
 			++*argv;
 		}
@@ -76,7 +76,7 @@ JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, doub
 		JL_S_ASSERT( *argc >= count, "Not enough arguments." );
 		for ( i = 0; i < count; ++i ) {
 
-			JL_CHK( JL_JsvalToCVal(cx, **argv, rval) );
+			JL_CHK( JL_JsvalToNative(cx, **argv, rval) );
 			++rval;
 			++*argv;
 		}
@@ -692,7 +692,7 @@ DEFINE_FUNCTION( Get ) {
 		{
 			GLdouble params[1];
 			glGetDoublev(pname, params);  OGL_CHK;
-			return JL_CValToJsval(cx, *params, JL_RVAL);
+			return JL_NativeToJsval(cx, *params, JL_RVAL);
 		}
 
 		case GL_ALIASED_POINT_SIZE_RANGE:
@@ -855,12 +855,12 @@ DEFINE_FUNCTION( GetDouble ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JL_CValToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JL_CValToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, params[0], JL_RVAL) );
 	}
 	;
 	return JS_TRUE;
@@ -883,7 +883,7 @@ DEFINE_FUNCTION( GetString ) {
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_ARG(1));
-	return JL_CValToJsval(cx, (char*)glGetString(JSVAL_TO_INT(JL_ARG(1))), JL_RVAL);  OGL_CHK;
+	return JL_NativeToJsval(cx, (char*)glGetString(JSVAL_TO_INT(JL_ARG(1))), JL_RVAL);  OGL_CHK;
 	JL_BAD;
 }
 
@@ -945,7 +945,7 @@ DEFINE_FUNCTION( Accum ) {
 	JL_S_ASSERT_INT(JL_ARG(1));
 	GLenum op = JSVAL_TO_INT(JL_ARG(1));
 	float value;
-	JL_JsvalToCVal(cx, JL_ARG(2), &value);
+	JL_JsvalToNative(cx, JL_ARG(2), &value);
 	
 	glAccum(op, value);  OGL_CHK;
 	
@@ -979,7 +979,7 @@ DEFINE_FUNCTION( StencilFunc ) {
 	if ( JL_ARG(3) == INT_TO_JSVAL(-1) )
 		mask = 0xffffffff;
 	else
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &mask) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &mask) );
 
 	glStencilFunc(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), mask);  OGL_CHK;
 
@@ -1035,7 +1035,7 @@ DEFINE_FUNCTION( StencilMask ) {
 	if ( JL_ARG(1) == INT_TO_JSVAL(-1) )
 		mask = 0xffffffff;
 	else
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &mask) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &mask) );
 	
 	glStencilMask( mask );  OGL_CHK;
 	
@@ -1060,7 +1060,7 @@ DEFINE_FUNCTION( AlphaFunc ) {
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_ARG(1));
 	float ref;
-	JL_JsvalToCVal(cx, JL_ARG(2), &ref);
+	JL_JsvalToNative(cx, JL_ARG(2), &ref);
 
 	glAlphaFunc( JSVAL_TO_INT(JL_ARG(1)), ref );  OGL_CHK;
 	
@@ -1129,7 +1129,7 @@ DEFINE_FUNCTION( Fog ) {
 	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
 
 		float param;
-		JL_JsvalToCVal(cx, JL_ARG(2), &param);
+		JL_JsvalToNative(cx, JL_ARG(2), &param);
 		
 		glFogf( JSVAL_TO_INT(JL_ARG(1)), param );  OGL_CHK;
 		
@@ -1198,14 +1198,14 @@ DEFINE_FUNCTION( Vertex ) {
 		JL_S_ASSERT_ARG_RANGE(2,4);
 
 		double x, y, z, w;
-		JL_JsvalToCVal(cx, JL_ARG(1), &x);
-		JL_JsvalToCVal(cx, JL_ARG(2), &y);
+		JL_JsvalToNative(cx, JL_ARG(1), &x);
+		JL_JsvalToNative(cx, JL_ARG(2), &y);
 		if ( JL_ARGC >= 3 ) {
 
-			JL_JsvalToCVal(cx, JL_ARG(3), &z);
+			JL_JsvalToNative(cx, JL_ARG(3), &z);
 			if ( JL_ARGC >= 4 ) {
 	
-				JL_JsvalToCVal(cx, JL_ARG(4), &w);
+				JL_JsvalToNative(cx, JL_ARG(4), &w);
 				glVertex4d(x, y, z, w);  OGL_CHK;
 				return JS_TRUE;
 			}
@@ -1247,7 +1247,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( EdgeFlag ) {
 
 	bool flag;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &flag) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &flag) );
 	glEdgeFlag(flag);
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1278,22 +1278,22 @@ DEFINE_FUNCTION( Color ) {
 		JL_S_ASSERT_ARG_MAX(4);
 
 		double r, g, b, a;
-		JL_JsvalToCVal(cx, JL_ARG(1), &r);
+		JL_JsvalToNative(cx, JL_ARG(1), &r);
 		if ( argc == 1 ) {
 			
 			glColor3d(r, r, r);  OGL_CHK;
 			;
 			return JS_TRUE;
 		}		
-		JL_JsvalToCVal(cx, JL_ARG(2), &g);
-		JL_JsvalToCVal(cx, JL_ARG(3), &b);
+		JL_JsvalToNative(cx, JL_ARG(2), &g);
+		JL_JsvalToNative(cx, JL_ARG(3), &b);
 		if ( argc == 3 ) {
 
 			glColor3d(r, g, b);  OGL_CHK;
 			;
 			return JS_TRUE;
 		}		
-		JL_JsvalToCVal(cx, JL_ARG(4), &a);
+		JL_JsvalToNative(cx, JL_ARG(4), &a);
 		glColor4d(r, g, b, a);  OGL_CHK;
 		;
 	} else {
@@ -1330,9 +1330,9 @@ DEFINE_FUNCTION( Normal ) {
 
 	JL_S_ASSERT_ARG(3);
 	double nx, ny, nz;
-	JL_JsvalToCVal(cx, JL_ARG(1), &nx);
-	JL_JsvalToCVal(cx, JL_ARG(2), &ny);
-	JL_JsvalToCVal(cx, JL_ARG(3), &nz);
+	JL_JsvalToNative(cx, JL_ARG(1), &nx);
+	JL_JsvalToNative(cx, JL_ARG(2), &ny);
+	JL_JsvalToNative(cx, JL_ARG(3), &nz);
 
 	glNormal3d(nx, ny, nz);  OGL_CHK;
 	
@@ -1358,7 +1358,7 @@ DEFINE_FUNCTION( TexCoord ) {
 	JL_S_ASSERT_ARG_RANGE(1,3);
 	*JL_RVAL = JSVAL_VOID;
 	double s;
-	JL_JsvalToCVal(cx, JL_ARG(1), &s);
+	JL_JsvalToNative(cx, JL_ARG(1), &s);
 	if ( JL_ARGC == 1 ) {
 
 		glTexCoord1d(s);  OGL_CHK;
@@ -1367,7 +1367,7 @@ DEFINE_FUNCTION( TexCoord ) {
 		return JS_TRUE;
 	}
 	double t;
-	JL_JsvalToCVal(cx, JL_ARG(2), &t);
+	JL_JsvalToNative(cx, JL_ARG(2), &t);
 	if ( JL_ARGC == 2 ) {
 
 		glTexCoord2d(s, t);  OGL_CHK;
@@ -1376,7 +1376,7 @@ DEFINE_FUNCTION( TexCoord ) {
 		return JS_TRUE;
 	}
 	double r;
-	JL_JsvalToCVal(cx, JL_ARG(3), &r);
+	JL_JsvalToNative(cx, JL_ARG(3), &r);
 
 	glTexCoord3d(s, t, r);  OGL_CHK;
 
@@ -1412,7 +1412,7 @@ DEFINE_FUNCTION( TexParameter ) {
 	if ( JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
 		float param;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &param) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &param) );
 		glTexParameterf( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), param );  OGL_CHK;
 		return JS_TRUE;
 	}
@@ -1456,7 +1456,7 @@ DEFINE_FUNCTION( TexEnv ) {
 	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
 		float param;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &param) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &param) );
 		glTexEnvf( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), param );  OGL_CHK;
 		return JS_TRUE;
 	}
@@ -1473,7 +1473,7 @@ DEFINE_FUNCTION( TexEnv ) {
 	JL_S_ASSERT_ARG_MIN( 3 ); // at least
 	JL_ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
-		JL_JsvalToCVal(cx, JL_ARGV[i], &params[i-2]);
+		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
 	glTexEnvfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
 	return JS_TRUE;
 	JL_BAD;
@@ -1505,7 +1505,7 @@ DEFINE_FUNCTION( TexGen ) {
 	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
 		double param;
-		JL_JsvalToCVal(cx, JL_ARG(3), &param);
+		JL_JsvalToNative(cx, JL_ARG(3), &param);
 		glTexGend( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), param );  OGL_CHK;
 		return JS_TRUE;
 	}
@@ -1522,7 +1522,7 @@ DEFINE_FUNCTION( TexGen ) {
 	JL_S_ASSERT_ARG_MIN( 3 ); // at least
 	JL_ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
-		JL_JsvalToCVal(cx, JL_ARGV[i], &params[i-2]);
+		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
 	glTexGendv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
 	return JS_TRUE;
 	JL_BAD;
@@ -1549,6 +1549,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( TexImage2D ) {
 
+	JLStr data;
 	JL_S_ASSERT_ARG_RANGE(8, 9);
 	JL_S_ASSERT_INT(JL_ARG(1));
 	JL_S_ASSERT_INT(JL_ARG(2));
@@ -1559,13 +1560,10 @@ DEFINE_FUNCTION( TexImage2D ) {
 	JL_S_ASSERT_INT(JL_ARG(7));
 	JL_S_ASSERT_INT(JL_ARG(8));
 
-	const char *data;
 	if ( JL_ARG_ISDEF(9) && !JSVAL_IS_NULL(JL_ARG(9)) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(9), &data) );
-	else
-		data = NULL; // (TBD)
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(9), data) );
 
-	glTexImage2D( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)), JSVAL_TO_INT(JL_ARG(6)), JSVAL_TO_INT(JL_ARG(7)), JSVAL_TO_INT(JL_ARG(8)), (GLvoid*)data );  OGL_CHK;
+	glTexImage2D( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)), JSVAL_TO_INT(JL_ARG(6)), JSVAL_TO_INT(JL_ARG(7)), JSVAL_TO_INT(JL_ARG(8)), (GLvoid*)data.GetStrConst() );  OGL_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1633,7 +1631,7 @@ DEFINE_FUNCTION( LightModel ) {
 	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
 
 		float param;
-		JL_JsvalToCVal(cx, JL_ARG(2), &param);
+		JL_JsvalToNative(cx, JL_ARG(2), &param);
 		glLightModelf( JSVAL_TO_INT( JL_ARG(1) ), param );  OGL_CHK;
 		return JS_TRUE;
 	}
@@ -1679,7 +1677,7 @@ DEFINE_FUNCTION( Light ) {
 	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
 		float param;
-		JL_JsvalToCVal(cx, JL_ARG(3), &param);
+		JL_JsvalToNative(cx, JL_ARG(3), &param);
 		glLightf( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), param );  OGL_CHK;
 		return JS_TRUE;
 	}
@@ -1696,7 +1694,7 @@ DEFINE_FUNCTION( Light ) {
 	JL_S_ASSERT_ARG_MIN( 3 ); // at least
 	JL_ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
-		JL_JsvalToCVal(cx, JL_ARGV[i], &params[i-2]);
+		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
 	glLightfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
 	return JS_TRUE;
 	JL_BAD;
@@ -1764,12 +1762,12 @@ DEFINE_FUNCTION( GetLight ) {
 		jsval tmpValue;
 		while ( count-- ) {
 
-			JL_CHK(JL_CValToJsval(cx, params[count], &tmpValue) );
+			JL_CHK(JL_NativeToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK(JL_CValToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK(JL_NativeToJsval(cx, params[0], JL_RVAL) );
 	}
 
 	return JS_TRUE;
@@ -1826,7 +1824,7 @@ DEFINE_FUNCTION( Material ) {
 	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
 		float param;
-		JL_JsvalToCVal(cx, JL_ARG(3), &param);
+		JL_JsvalToNative(cx, JL_ARG(3), &param);
 		glMaterialf( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), param );  OGL_CHK;
 		;
 		return JS_TRUE;
@@ -1845,7 +1843,7 @@ DEFINE_FUNCTION( Material ) {
 	JL_S_ASSERT_ARG_MIN( 3 ); // at least
 	JL_ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
-		JL_JsvalToCVal(cx, JL_ARGV[i], &params[i-2]);
+		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
 	glMaterialfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
 	;
 	return JS_TRUE;
@@ -1909,7 +1907,7 @@ DEFINE_FUNCTION( PointSize ) {
 
 	JL_S_ASSERT_ARG(1);
 	float size;
-	JL_JsvalToCVal(cx, JL_ARG(1), &size);
+	JL_JsvalToNative(cx, JL_ARG(1), &size);
 	
 	glPointSize(size);  OGL_CHK;
 	
@@ -1931,7 +1929,7 @@ DEFINE_FUNCTION( LineWidth ) {
 
 	JL_S_ASSERT_ARG(1);
 	float width;
-	JL_JsvalToCVal(cx, JL_ARG(1), &width);
+	JL_JsvalToNative(cx, JL_ARG(1), &width);
 	
 	glLineWidth(width);  OGL_CHK;
 
@@ -2041,8 +2039,8 @@ DEFINE_FUNCTION( DepthRange ) {
 
 	JL_S_ASSERT_ARG(2);
 	double zNear, zFar;
-	JL_JsvalToCVal(cx, JL_ARG(1), &zNear);
-	JL_JsvalToCVal(cx, JL_ARG(2), &zFar);
+	JL_JsvalToNative(cx, JL_ARG(1), &zNear);
+	JL_JsvalToNative(cx, JL_ARG(2), &zFar);
 	
 	glDepthRange(zNear, zFar);  OGL_CHK;
 	
@@ -2069,8 +2067,8 @@ DEFINE_FUNCTION( PolygonOffset ) {
 
 	GLfloat factor, units;
 
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &factor) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &units) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &factor) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &units) );
 	
 	glPolygonOffset(factor, units);  OGL_CHK;
 
@@ -2141,7 +2139,7 @@ DEFINE_FUNCTION( ClearStencil ) {
 	if ( JL_ARG(1) == INT_TO_JSVAL(-1) )
 		s = 0xffffffff;
 	else
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &s) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &s) );
 
 	glClearStencil(s);  OGL_CHK;
 	
@@ -2165,7 +2163,7 @@ DEFINE_FUNCTION( ClearDepth ) {
 	JL_S_ASSERT_NUMBER(JL_ARG(1));
 
 	double depth;
-	JL_JsvalToCVal(cx, JL_ARG(1), &depth);
+	JL_JsvalToNative(cx, JL_ARG(1), &depth);
 
 	glClearDepth(depth);  OGL_CHK;
 	
@@ -2195,10 +2193,10 @@ DEFINE_FUNCTION( ClearColor ) {
 	JL_S_ASSERT_NUMBER(JL_ARG(4));
 
 	float r, g, b, a;
-	JL_JsvalToCVal(cx, JL_ARG(1), &r);
-	JL_JsvalToCVal(cx, JL_ARG(2), &g);
-	JL_JsvalToCVal(cx, JL_ARG(3), &b);
-	JL_JsvalToCVal(cx, JL_ARG(4), &a);
+	JL_JsvalToNative(cx, JL_ARG(1), &r);
+	JL_JsvalToNative(cx, JL_ARG(2), &g);
+	JL_JsvalToNative(cx, JL_ARG(3), &b);
+	JL_JsvalToNative(cx, JL_ARG(4), &a);
 
 	glClearColor(r, g, b, a);  OGL_CHK;
 	
@@ -2228,10 +2226,10 @@ DEFINE_FUNCTION( ClearAccum ) {
 	JL_S_ASSERT_NUMBER(JL_ARG(4));
 
 	float r, g, b, a;
-	JL_JsvalToCVal(cx, JL_ARG(1), &r);
-	JL_JsvalToCVal(cx, JL_ARG(2), &g);
-	JL_JsvalToCVal(cx, JL_ARG(3), &b);
-	JL_JsvalToCVal(cx, JL_ARG(4), &a);
+	JL_JsvalToNative(cx, JL_ARG(1), &r);
+	JL_JsvalToNative(cx, JL_ARG(2), &g);
+	JL_JsvalToNative(cx, JL_ARG(3), &b);
+	JL_JsvalToNative(cx, JL_ARG(4), &a);
 	
 	glClearAccum(r, g, b, a);  OGL_CHK;
 	
@@ -2380,12 +2378,12 @@ DEFINE_FUNCTION( Frustum ) {
 	JL_S_ASSERT_NUMBER(JL_ARG(6));
 
 	jsdouble left, right, bottom, top, zNear, zFar;
-	JL_JsvalToCVal(cx, JL_ARG(1), &left);
-	JL_JsvalToCVal(cx, JL_ARG(2), &right);
-	JL_JsvalToCVal(cx, JL_ARG(3), &bottom);
-	JL_JsvalToCVal(cx, JL_ARG(4), &top);
-	JL_JsvalToCVal(cx, JL_ARG(5), &zNear);
-	JL_JsvalToCVal(cx, JL_ARG(6), &zFar);
+	JL_JsvalToNative(cx, JL_ARG(1), &left);
+	JL_JsvalToNative(cx, JL_ARG(2), &right);
+	JL_JsvalToNative(cx, JL_ARG(3), &bottom);
+	JL_JsvalToNative(cx, JL_ARG(4), &top);
+	JL_JsvalToNative(cx, JL_ARG(5), &zNear);
+	JL_JsvalToNative(cx, JL_ARG(6), &zFar);
 
 	glFrustum(left, right, bottom, top, zNear, zFar);  OGL_CHK;
 	
@@ -2419,12 +2417,12 @@ DEFINE_FUNCTION( Ortho ) {
 	JL_S_ASSERT_NUMBER(JL_ARG(6));
 
 	jsdouble left, right, bottom, top, zNear, zFar;
-	JL_JsvalToCVal(cx, JL_ARG(1), &left);
-	JL_JsvalToCVal(cx, JL_ARG(2), &right);
-	JL_JsvalToCVal(cx, JL_ARG(3), &bottom);
-	JL_JsvalToCVal(cx, JL_ARG(4), &top);
-	JL_JsvalToCVal(cx, JL_ARG(5), &zNear);
-	JL_JsvalToCVal(cx, JL_ARG(6), &zFar);
+	JL_JsvalToNative(cx, JL_ARG(1), &left);
+	JL_JsvalToNative(cx, JL_ARG(2), &right);
+	JL_JsvalToNative(cx, JL_ARG(3), &bottom);
+	JL_JsvalToNative(cx, JL_ARG(4), &top);
+	JL_JsvalToNative(cx, JL_ARG(5), &zNear);
+	JL_JsvalToNative(cx, JL_ARG(6), &zFar);
 
 	glOrtho(left, right, bottom, top, zNear, zFar);  OGL_CHK;
 	
@@ -2458,17 +2456,17 @@ DEFINE_FUNCTION( Perspective ) {
 
 
 	double fovy, zNear, zFar, aspect;
-	JL_JsvalToCVal(cx, JL_ARG(1), &fovy);
-	//	JL_JsvalToCVal(cx, JL_ARG(2), &aspect)
-	JL_JsvalToCVal(cx, JL_ARG(3), &zNear);
-	JL_JsvalToCVal(cx, JL_ARG(4), &zFar);
+	JL_JsvalToNative(cx, JL_ARG(1), &fovy);
+	//	JL_JsvalToNative(cx, JL_ARG(2), &aspect)
+	JL_JsvalToNative(cx, JL_ARG(3), &zNear);
+	JL_JsvalToNative(cx, JL_ARG(4), &zFar);
 
 //	GLint prevMatrixMode;
 //	glGetIntegerv(GL_MATRIX_MODE, &prevMatrixMode);  OGL_CHK; // GL_MODELVIEW
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_JsvalToCVal(cx, JL_ARG(2), &aspect);
+		JL_JsvalToNative(cx, JL_ARG(2), &aspect);
 	} else {
 
 		GLint viewport[4];
@@ -2642,10 +2640,10 @@ DEFINE_FUNCTION( Rotate ) {
 
 	JL_S_ASSERT_ARG(4);
 	jsdouble angle, x, y, z;
-	JL_JsvalToCVal(cx, JL_ARG(1), &angle);
-	JL_JsvalToCVal(cx, JL_ARG(2), &x);
-	JL_JsvalToCVal(cx, JL_ARG(3), &y);
-	JL_JsvalToCVal(cx, JL_ARG(4), &z);
+	JL_JsvalToNative(cx, JL_ARG(1), &angle);
+	JL_JsvalToNative(cx, JL_ARG(2), &x);
+	JL_JsvalToNative(cx, JL_ARG(3), &y);
+	JL_JsvalToNative(cx, JL_ARG(4), &z);
 	
 	glRotated(angle, x, y, z);  OGL_CHK;
 	
@@ -2669,10 +2667,10 @@ DEFINE_FUNCTION( Translate ) {
 
 	JL_S_ASSERT_ARG_RANGE(2,3);
 	double x, y, z;
-	JL_JsvalToCVal(cx, JL_ARG(1), &x);
-	JL_JsvalToCVal(cx, JL_ARG(2), &y);
+	JL_JsvalToNative(cx, JL_ARG(1), &x);
+	JL_JsvalToNative(cx, JL_ARG(2), &y);
 	if ( argc >= 3 )
-		JL_JsvalToCVal(cx, JL_ARG(3), &z);
+		JL_JsvalToNative(cx, JL_ARG(3), &z);
 	else
 		z = 0;
 	
@@ -2700,7 +2698,7 @@ DEFINE_FUNCTION( Scale ) {
 	JL_S_ASSERT_ARG_RANGE(1,3);
 	*JL_RVAL = JSVAL_VOID;
 	double x, y, z;
-	JL_JsvalToCVal(cx, JL_ARG(1), &x);
+	JL_JsvalToNative(cx, JL_ARG(1), &x);
 
 	if ( argc == 1 ) {
 
@@ -2708,11 +2706,11 @@ DEFINE_FUNCTION( Scale ) {
 		;
 		return JS_TRUE;
 	}
-	JL_JsvalToCVal(cx, JL_ARG(2), &y);
+	JL_JsvalToNative(cx, JL_ARG(2), &y);
 
 	if ( argc >= 3 ) {
 
-		JL_JsvalToCVal(cx, JL_ARG(3), &z);
+		JL_JsvalToNative(cx, JL_ARG(3), &z);
 		glScaled(x, y, z);  OGL_CHK;
 		;
 		return JS_TRUE;
@@ -2737,7 +2735,7 @@ DEFINE_FUNCTION( NewList ) {
 	JL_S_ASSERT_ARG_RANGE(0,1);
 	bool compileOnly;
 	if ( JL_ARG_ISDEF(1) )
-		JL_JsvalToCVal(cx, JL_ARG(1), &compileOnly);
+		JL_JsvalToNative(cx, JL_ARG(1), &compileOnly);
 	else
 		compileOnly = false;
 
@@ -2911,7 +2909,7 @@ DEFINE_FUNCTION( PushAttrib ) {
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	GLbitfield mask;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &mask) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &mask) );
 	glPushAttrib(mask);  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -2971,7 +2969,7 @@ DEFINE_FUNCTION( BindTexture ) {
 	JL_S_ASSERT_INT(JL_ARG(1));
 //	JL_S_ASSERT_INT(JL_ARG(2));
 	int texture;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &texture) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &texture) );
 	glBindTexture( JSVAL_TO_INT( JL_ARG(1) ), texture);  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -3104,7 +3102,7 @@ DEFINE_FUNCTION( PixelTransfer ) {
 
 		JL_S_ASSERT_NUMBER(JL_ARG(2));
 		float param;
-		JL_JsvalToCVal(cx, JL_ARG(2), &param);
+		JL_JsvalToNative(cx, JL_ARG(2), &param);
 		glPixelTransferf(pname, param);  OGL_CHK;
 	}
 
@@ -3133,7 +3131,7 @@ DEFINE_FUNCTION( PixelStore ) {
 
 		JL_S_ASSERT_NUMBER(JL_ARG(2));
 		float param;
-		JL_JsvalToCVal(cx, JL_ARG(2), &param);
+		JL_JsvalToNative(cx, JL_ARG(2), &param);
 		glPixelStoref(pname, param);  OGL_CHK;
 	}
 
@@ -3157,14 +3155,14 @@ DEFINE_FUNCTION( RasterPos ) {
 
 	*JL_RVAL = JSVAL_VOID;
 
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &x) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &y) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &y) );
 	if ( argc >= 3 ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &z) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &z) );
 		if ( argc >= 4 ) {
 
-			JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &w) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &w) );
 			glRasterPos4d(x, y, z, w);  OGL_CHK;
 			;
 			return JS_TRUE;
@@ -3194,8 +3192,8 @@ DEFINE_FUNCTION( PixelZoom ) {
 
 	*JL_RVAL = JSVAL_VOID;
 
-	JL_JsvalToCVal(cx, JL_ARG(1), &x);
-	JL_JsvalToCVal(cx, JL_ARG(2), &y);
+	JL_JsvalToNative(cx, JL_ARG(1), &x);
+	JL_JsvalToNative(cx, JL_ARG(2), &y);
 	glPixelZoom(x, y);  OGL_CHK;
 	;
  	return JS_TRUE;
@@ -3242,15 +3240,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( HasExtensionProc ) {
 	
+	JLStr procName;
 	JL_S_ASSERT_ARG_MIN(1);
-
 	JL_S_ASSERT( glGetProcAddress != NULL, "OpenGL extensions unavailable." );
 
-	const char *procName;
 	void *procAddr;
 	for ( uintN i = 0; i < JL_ARGC; ++i ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARGV[i], &procName) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], procName) );
 		procAddr = glGetProcAddress(procName);
 		if ( procAddr == NULL ) {
 
@@ -3281,11 +3278,14 @@ DEFINE_FUNCTION( HasExtensionName ) {
 
 	for ( uintN i = 0; i < JL_ARGC; ++i ) {
 
-		const char *name;
-		unsigned int nameLength;
-		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARGV[i], &name, &nameLength) );
+		JLStr name;
+//		const char *name;
+//		unsigned int nameLength;
+//		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARGV[i], &name, &nameLength) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], name) );
+
 		const char *pos = strstr(extensions, name);
-		if ( pos == NULL || ( pos[nameLength] != ' ' && pos[nameLength] != '\0' ) ) {
+		if ( pos == NULL || ( pos[name.Length()] != ' ' && pos[name.Length()] != '\0' ) ) {
 
 			*JL_RVAL = JSVAL_FALSE;
 			return JS_TRUE;
@@ -3347,7 +3347,7 @@ DEFINE_FUNCTION( StencilFuncSeparate ) {
 	if ( JL_ARG(4) == INT_TO_JSVAL(-1) )
 		mask = 0xffffffff;
 	else
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &mask) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &mask) );
 
 	glStencilFuncSeparate(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), mask);  OGL_CHK;
 
@@ -3863,7 +3863,8 @@ DEFINE_FUNCTION( GetInfoLogARB ) {
 	GLcharARB *buffer = (GLcharARB*)alloca(length+1);
 	buffer[length] = '\0'; // needed ?
 	glGetInfoLogARB(shaderHandle, length, &length, buffer);  OGL_CHK;
-	JL_CHK( JL_StringAndLengthToJsval(cx, JL_RVAL, buffer, length+1) );
+//	JL_CHK( JL_StringAndLengthToJsval(cx, JL_RVAL, buffer, length+1) );
+	JL_CHK( JL_NativeToJsval(cx, buffer, length+1, JL_RVAL) );
 	
 	return JS_TRUE;
 	JL_BAD;
@@ -3895,15 +3896,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ShaderSourceARB ) {
 
+	JLStr source;
 	JL_INIT_OPENGL_EXTENSION( glShaderSourceARB, PFNGLSHADERSOURCEARBPROC );
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_ARG(1));
 	JL_S_ASSERT_STRING(JL_ARG(2));
 	GLhandleARB shaderHandle;
 	shaderHandle = JSVAL_TO_INT( JL_ARG(1) );
-	const char *source;
-	JL_JsvalToCVal(cx, JL_ARG(2), &source);
-	glShaderSourceARB(shaderHandle, 1, &source, NULL);  OGL_CHK;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), source) );
+
+	const GLcharARB *buffer;
+	GLint length;
+	buffer = source.GetStrConst();
+	length = source.Length();
+
+	glShaderSourceARB(shaderHandle, 1, &buffer, &length);  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -4007,14 +4014,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetUniformLocationARB ) {
 
+	JLStr name;
+
 	JL_INIT_OPENGL_EXTENSION( glGetUniformLocationARB, PFNGLGETUNIFORMLOCATIONARBPROC );
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_ARG(1));
 	JL_S_ASSERT_STRING(JL_ARG(2));
 	GLhandleARB programHandle;
 	programHandle = JSVAL_TO_INT( JL_ARG(1) );
-	const char *name;
-	JL_JsvalToCVal(cx, JL_ARG(2), &name);
+
+	JL_JsvalToNative(cx, JL_ARG(2), name);
 	int uniformLocation;
 	uniformLocation = glGetUniformLocationARB(programHandle, name);  OGL_CHK;
 	*JL_RVAL = INT_TO_JSVAL(uniformLocation);
@@ -4089,16 +4098,16 @@ DEFINE_FUNCTION( UniformARB ) {
 
 	if ( JSVAL_IS_NUMBER(arg2) ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, arg2, &v1) );
+		JL_CHK( JL_JsvalToNative(cx, arg2, &v1) );
 		if ( JL_ARGC >= 3 ) {
 		
-			JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &v2) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v2) );
 			if ( JL_ARGC >= 4 ) {
 			
-				JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &v3) );
+				JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &v3) );
 				if ( JL_ARGC >= 5 ) {
 				
-					JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &v4) );
+					JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &v4) );
 					glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_CHK;
 					return JS_TRUE;
 				}
@@ -4177,16 +4186,16 @@ DEFINE_FUNCTION( UniformFloatARB ) {
 	float v1, v2, v3, v4;
 	if ( JSVAL_IS_NUMBER(arg2) ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, arg2, &v1) );
+		JL_CHK( JL_JsvalToNative(cx, arg2, &v1) );
 		if ( JL_ARGC >= 3 ) {
 		
-			JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &v2) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v2) );
 			if ( JL_ARGC >= 4 ) {
 			
-				JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &v3) );
+				JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &v3) );
 				if ( JL_ARGC >= 5 ) {
 				
-					JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &v4) );
+					JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &v4) );
 					glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_CHK;
 					return JS_TRUE;
 				}
@@ -4231,16 +4240,16 @@ DEFINE_FUNCTION( UniformIntegerARB ) {
 
 	if ( JSVAL_IS_NUMBER(arg2) ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, arg2, &v1) );
+		JL_CHK( JL_JsvalToNative(cx, arg2, &v1) );
 		if ( JL_ARGC >= 3 ) {
 		
-			JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &v2) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v2) );
 			if ( JL_ARGC >= 4 ) {
 			
-				JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &v3) );
+				JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &v3) );
 				if ( JL_ARGC >= 5 ) {
 				
-					JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &v4) );
+					JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &v4) );
 					glUniform4iARB(uniformLocation, v1, v2, v3, v4);  OGL_CHK;
 					return JS_TRUE;
 				}
@@ -4289,12 +4298,12 @@ DEFINE_FUNCTION( GetObjectParameterARB ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JL_CValToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JL_CValToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, params[0], JL_RVAL) );
 	}
 
 	return JS_TRUE;
@@ -4311,13 +4320,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( BindAttribLocationARB ) {
 
+	JLStr name;
+
 	JL_INIT_OPENGL_EXTENSION( glBindAttribLocationARB, PFNGLBINDATTRIBLOCATIONARBPROC );
 
 	JL_S_ASSERT_ARG(3);
 	JL_S_ASSERT_INT(JL_ARG(1));
 	JL_S_ASSERT_INT(JL_ARG(2));
-	const char *name;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &name) );
+
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), name) );
 	glBindAttribLocationARB(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), name);  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -4335,12 +4346,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetAttribLocationARB ) {
 
+	JLStr name;
+
 	JL_INIT_OPENGL_EXTENSION( glGetAttribLocationARB, PFNGLGETATTRIBLOCATIONARBPROC );
 
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_ARG(1));
-	const char *name;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &name) );
+
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), name) );
 	int location;
 	location = glGetAttribLocationARB(JSVAL_TO_INT(JL_ARG(1)), name);  OGL_CHK;
 	*JL_RVAL = INT_TO_JSVAL(location);
@@ -4387,16 +4400,16 @@ DEFINE_FUNCTION( VertexAttribARB ) {
 
 	if ( JSVAL_IS_NUMBER(arg2) ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, arg2, &v1) );
+		JL_CHK( JL_JsvalToNative(cx, arg2, &v1) );
 		if ( JL_ARGC >= 3 ) {
 		
-			JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &v2) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v2) );
 			if ( JL_ARGC >= 4 ) {
 			
-				JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &v3) );
+				JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &v3) );
 				if ( JL_ARGC >= 5 ) {
 				
-					JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &v4) );
+					JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &v4) );
 					glVertexAttrib4dARB(index, v1, v2, v3, v4);  OGL_CHK;
 					return JS_TRUE;
 				}
@@ -4521,7 +4534,7 @@ DEFINE_FUNCTION( PointParameter ) {
 	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
 
 		float param;
-		JL_JsvalToCVal(cx, JL_ARG(2), &param);
+		JL_JsvalToNative(cx, JL_ARG(2), &param);
 
 		glPointParameterf( JSVAL_TO_INT(JL_ARG(1)), param );  OGL_CHK;
 		
@@ -4612,7 +4625,7 @@ DEFINE_FUNCTION( MultiTexCoord ) {
 	GLenum target = JSVAL_TO_INT(JL_ARG(1));
 
 	double s;
-	JL_JsvalToCVal(cx, JL_ARG(2), &s);
+	JL_JsvalToNative(cx, JL_ARG(2), &s);
 	if ( JL_ARGC == 2 ) {
 
 		glMultiTexCoord1d(target, s);  OGL_CHK;
@@ -4620,7 +4633,7 @@ DEFINE_FUNCTION( MultiTexCoord ) {
 		return JS_TRUE;
 	}
 	double t;
-	JL_JsvalToCVal(cx, JL_ARG(3), &t);
+	JL_JsvalToNative(cx, JL_ARG(3), &t);
 	if ( JL_ARGC == 3 ) {
 
 		glMultiTexCoord2d(target, s, t);  OGL_CHK;
@@ -4628,7 +4641,7 @@ DEFINE_FUNCTION( MultiTexCoord ) {
 		return JS_TRUE;
 	}
 	double r;
-	JL_JsvalToCVal(cx, JL_ARG(4), &r);
+	JL_JsvalToNative(cx, JL_ARG(4), &r);
 	if ( JL_ARGC == 4 ) {
 
 		glMultiTexCoord3d(target, s, t, r);  OGL_CHK;
@@ -4711,6 +4724,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DrawImage ) {
 
+	JLStr dataStr;
+
 	JL_S_ASSERT_ARG_RANGE(1,2);
 	JL_S_ASSERT_OBJECT(JL_ARG(1));
 
@@ -4737,10 +4752,11 @@ DEFINE_FUNCTION( DrawImage ) {
 		JL_CHK( JL_GetProperty(cx, tObj, "width", &width) );
 		JL_CHK( JL_GetProperty(cx, tObj, "height", &height) );
 		JL_CHK( JL_GetProperty(cx, tObj, "channels", &channels) );
-		size_t bufferLength;
-		jsval tVal = OBJECT_TO_JSVAL(tObj);
-		JL_CHK( JL_JsvalToStringAndLength(cx, &tVal, (const char**)&data, &bufferLength ) );
-		JL_S_ASSERT( bufferLength == width * height * channels * 1, "Invalid image format." );
+		
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), dataStr) );
+		data = dataStr.GetStrConst();
+
+		JL_S_ASSERT( dataStr.Length() == width * height * channels * 1, "Invalid image format." );
 		JL_S_ASSERT_RESOURCE(data);
 		type = GL_UNSIGNED_BYTE;
 	}
@@ -4800,7 +4816,7 @@ DEFINE_FUNCTION( ReadImage ) {
 
 	bool flipY;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &flipY) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &flipY) );
 	else 
 		flipY = false;
 
@@ -5187,6 +5203,7 @@ $TOC_MEMBER $INAME
 // (TBD) manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
 DEFINE_FUNCTION( DefineTextureImage ) {
 
+	JLStr dataStr;
 	JL_S_ASSERT_ARG(3);
 	JL_S_ASSERT_INT(JL_ARG(1));
 //	JL_S_ASSERT_INT(JL_ARG(2)); // may be undefined
@@ -5214,10 +5231,11 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 		JL_CHKM( JL_GetProperty(cx, tObj, "width", &width), "Invalid texture object." );
 		JL_CHKM( JL_GetProperty(cx, tObj, "height", &height), "Invalid texture object." );
 		JL_CHKM( JL_GetProperty(cx, tObj, "channels", &channels), "Invalid texture object." );
-		size_t bufferLength;
-		jsval tVal = OBJECT_TO_JSVAL(tObj);
-		JL_CHK( JL_JsvalToStringAndLength(cx, &tVal, (const char**)&data, &bufferLength ) );
-		JL_S_ASSERT( bufferLength == width * height * channels * 1, "Invalid image format." );
+		
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), dataStr) );
+		data = dataStr.GetStrConst();
+
+		JL_S_ASSERT( dataStr.Length() == width * height * channels * 1, "Invalid image format." );
 		JL_S_ASSERT_RESOURCE(data);
 		type = GL_UNSIGNED_BYTE;
 	}
@@ -5280,7 +5298,7 @@ DEFINE_FUNCTION( PixelWidthFactor ) {
 //	float h;
 //	h = viewport[3] * m[5];
 
-	return JL_CValToJsval(cx, w, JL_RVAL); // sqrt(w*w+h*h)
+	return JL_NativeToJsval(cx, w, JL_RVAL); // sqrt(w*w+h*h)
 	JL_BAD;
 }
 
@@ -5292,7 +5310,7 @@ DEFINE_FUNCTION( DrawPoint ) {
 
 	JL_S_ASSERT_ARG(1);
 	float size;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &size) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &size) );
 	glPointSize(size);  OGL_CHK; // get max with GL_POINT_SIZE_RANGE
 	glBegin(GL_POINTS);
 	glVertex2i(0,0);
@@ -5313,9 +5331,9 @@ DEFINE_FUNCTION( DrawDisk ) {
 	float s, c, angle, radius;
 	int vertexCount;
 	JL_S_ASSERT_ARG_RANGE(1,2);
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &radius) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &radius) );
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &vertexCount) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &vertexCount) );
 	else
 		vertexCount = 12;
 	angle = 2*M_PI / vertexCount;
@@ -5343,9 +5361,9 @@ DEFINE_FUNCTION( DrawSphere ) {
 	JL_S_ASSERT_ARG(3);
 	double radius;
 	int slices, stacks;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &radius) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &slices) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &stacks) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &radius) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &slices) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &stacks) );
 
 	GLUquadric *q = gluNewQuadric();
 	gluQuadricTexture(q, GL_FALSE);
@@ -5367,9 +5385,9 @@ DEFINE_FUNCTION( DrawDisk ) {
 	JL_S_ASSERT_ARG(3);
 	double radius;
 	int slices, loops;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &radius) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &slices) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &loops) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &radius) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &slices) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &loops) );
 
 	GLUquadric *q = gluNewQuadric();
 	gluQuadricTexture(q, GL_FALSE);
@@ -5391,11 +5409,11 @@ DEFINE_FUNCTION( DrawCylinder ) {
 	JL_S_ASSERT_ARG(5);
 	double baseRadius, topRadius, height;
 	int slices, stacks;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &baseRadius) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &topRadius) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &height) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &slices) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &stacks) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &baseRadius) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &topRadius) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &height) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &slices) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &stacks) );
 
 	GLUquadric *q = gluNewQuadric();
 	gluQuadricTexture(q, GL_FALSE); // GL_TRUE
@@ -5419,9 +5437,9 @@ DEFINE_FUNCTION( DrawBox ) {
 
 	JL_S_ASSERT_ARG(3);
 	float lengthX, lengthY, lengthZ;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &lengthX) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &lengthY) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &lengthZ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &lengthX) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lengthY) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &lengthZ) );
 
 	lengthX /= 2.f;
 	lengthY /= 2.f;
@@ -5627,17 +5645,17 @@ DEFINE_FUNCTION( LookAt ) {
 	JL_S_ASSERT_NUMBER(JL_ARG(9));
 
 	double eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz;
-	JL_JsvalToCVal(cx, JL_ARG(1), &eyex);
-	JL_JsvalToCVal(cx, JL_ARG(2), &eyey);
-	JL_JsvalToCVal(cx, JL_ARG(3), &eyez);
+	JL_JsvalToNative(cx, JL_ARG(1), &eyex);
+	JL_JsvalToNative(cx, JL_ARG(2), &eyey);
+	JL_JsvalToNative(cx, JL_ARG(3), &eyez);
 
-	JL_JsvalToCVal(cx, JL_ARG(4), &centerx);
-	JL_JsvalToCVal(cx, JL_ARG(5), &centery);
-	JL_JsvalToCVal(cx, JL_ARG(6), &centerz);
+	JL_JsvalToNative(cx, JL_ARG(4), &centerx);
+	JL_JsvalToNative(cx, JL_ARG(5), &centery);
+	JL_JsvalToNative(cx, JL_ARG(6), &centerz);
 
-	JL_JsvalToCVal(cx, JL_ARG(7), &upx);
-	JL_JsvalToCVal(cx, JL_ARG(8), &upy);
-	JL_JsvalToCVal(cx, JL_ARG(9), &upz);
+	JL_JsvalToNative(cx, JL_ARG(7), &upx);
+	JL_JsvalToNative(cx, JL_ARG(8), &upy);
+	JL_JsvalToNative(cx, JL_ARG(9), &upz);
 
 	gluLookAt(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz);  OGL_CHK;
 	
@@ -5659,9 +5677,9 @@ DEFINE_FUNCTION( AimAt ) {
 	JL_S_ASSERT_NUMBER(JL_ARG(3));
 
 	float px, py, pz, ux, uy, uz;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &px) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &py) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &pz) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &px) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &py) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &pz) );
 
 	if ( JL_ARGC == 6 ) {
 
@@ -5669,9 +5687,9 @@ DEFINE_FUNCTION( AimAt ) {
 		JL_S_ASSERT_NUMBER(JL_ARG(5));
 		JL_S_ASSERT_NUMBER(JL_ARG(6));
 
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &ux) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &uy) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(6), &uz) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &ux) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &uy) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &uz) );
 	} else {
 
 		ux = 0.00001f;

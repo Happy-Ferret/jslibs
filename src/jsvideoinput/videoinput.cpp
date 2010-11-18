@@ -58,13 +58,13 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( !JSVAL_IS_STRING(JL_ARG(1)) ) {
 		
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &deviceId) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &deviceId) );
 		if ( deviceId >= numDevices )
 			JL_REPORT_ERROR("Invalid device ID.");
 	} else {
 	
-		const char *requiredDeviceName;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &requiredDeviceName) );
+		JLStr requiredDeviceName;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), requiredDeviceName) );
 		deviceId = -1;
 		for ( int i = 0; i < numDevices; i++ ) {
 
@@ -83,15 +83,15 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(4) ) {
 
 		int fps;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &fps) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &fps) );
 		vi->setIdealFramerate(deviceId, fps); // vi->VDList[deviceId]->requestedFrameTime;
 	}
 
 	if ( JL_ARG_ISDEF(2) && JL_ARG_ISDEF(3) ) {
 		
 		int width, height;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &width) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &height) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &width) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &height) );
 		vi->setupDevice(deviceId, width, height);
 	} else {
 	
@@ -220,7 +220,7 @@ DEFINE_FUNCTION( GetImage ) {
 
 	bool flipImage;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &flipImage) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &flipImage) );
 	else
 		flipImage = true;
 
@@ -280,7 +280,7 @@ DEFINE_PROPERTY( hasNewFrame ) {
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
-	JL_CHK(JL_CValToJsval(cx, vi->isFrameNew(deviceId), vp) ); 
+	JL_CHK(JL_NativeToJsval(cx, vi->isFrameNew(deviceId), vp) ); 
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -295,7 +295,7 @@ DEFINE_PROPERTY( width ) {
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
-	JL_CHK( JL_CValToJsval(cx, vi->getWidth(deviceId), vp) ); 
+	JL_CHK( JL_NativeToJsval(cx, vi->getWidth(deviceId), vp) ); 
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -310,7 +310,7 @@ DEFINE_PROPERTY( height ) {
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
-	JL_CHK( JL_CValToJsval(cx, vi->getHeight(deviceId), vp) ); 
+	JL_CHK( JL_NativeToJsval(cx, vi->getHeight(deviceId), vp) ); 
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -328,7 +328,7 @@ DEFINE_PROPERTY( channels ) {
 	int width = vi->getWidth(deviceId);
 	int height = vi->getHeight(deviceId);
 	int dataSize = vi->getSize(deviceId);
-	JL_CHK( JL_CValToJsval(cx, dataSize / (width * height), vp) ); 
+	JL_CHK( JL_NativeToJsval(cx, dataSize / (width * height), vp) ); 
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -343,7 +343,7 @@ DEFINE_PROPERTY( name ) {
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
-	JL_CHK( JL_CValToJsval(cx, videoInput::getDeviceName(deviceId), vp) );
+	JL_CHK( JL_NativeToJsval(cx, videoInput::getDeviceName(deviceId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -356,7 +356,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( hasDevice ) {
 
 	int numDevices = videoInput::listDevices(true);
-	JL_CHK(JL_CValToJsval(cx, numDevices > 0, vp) ); 
+	JL_CHK(JL_NativeToJsval(cx, numDevices > 0, vp) ); 
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -378,7 +378,7 @@ DEFINE_PROPERTY( list ) {
 	int i;
 	for ( i = 0; i < numDevices; i++ ) {
 
-		JL_CHK( JL_CValToJsval(cx, videoInput::getDeviceName(i), &value) );
+		JL_CHK( JL_NativeToJsval(cx, videoInput::getDeviceName(i), &value) );
 		JL_CHK( JS_SetElement(cx, list, i, &value ) );
 	}
 

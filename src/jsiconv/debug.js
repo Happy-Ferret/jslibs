@@ -1,3 +1,11 @@
+
+LoadModule('jsstd'); Exec('../common/tools.js');
+//var QA = FakeQAApi;
+//RunLocalQAFile();
+//RunJsircbot(false); throw 0;
+RunQATests('-rep 1 -exclude jstask jsiconv');
+
+
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
 LoadModule('jsstd');

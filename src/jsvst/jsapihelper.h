@@ -71,7 +71,7 @@ protected:
 		if ( val == JL_GetNaNValue(_cx) ) // (TBD) needed ?
 			throw JsException(_cx, "not a number");
 		jsdouble d;
-		if ( !JL_JsvalToCVal(_cx, val, &d) )
+		if ( !JL_JsvalToNative(_cx, val, &d) )
 			throw JsException(_cx, "cannot convert to a real");
 		return d;
 	}
@@ -99,16 +99,13 @@ protected:
 		return b ? JSVAL_TRUE : JSVAL_FALSE;
 	}
 
-	inline const char * JsvalToString( jsval &val ) { // beware: val is a reference !
+	inline JLStr JsvalToString( jsval &val ) { // beware: val is a reference !
 
 		JSString *jsstr = JS_ValueToString(_cx, val);
 		val = STRING_TO_JSVAL(jsstr);
 		if ( jsstr == NULL )
 			throw JsException(_cx, "cannot convert the value to a string");
-		const char *s = JL_GetStringBytesZ(_cx, jsstr);
-		if ( s == NULL )
-			s = "";
-		return s; // never fails
+		return JLStr(jsstr);
 	}
 
 	inline void CopyJsvalToString( jsval val, char *str, size_t maxLength ) {
@@ -125,10 +122,10 @@ protected:
 		size_t len = JL_GetStringLength(jsstr);
 		if ( len > maxLength - 1 )
 			 len = maxLength - 1;
-		const char *s = JL_GetStringBytesZ(_cx, jsstr);
-		if ( s == NULL )
-			s = "";
-		memcpy(str, s, len);
+		{
+		JLStr tmp(jsstr);
+		memcpy(str, tmp.GetStrConst(), tmp.Length());
+		}
 		str[len] = '\0';
 	}
 

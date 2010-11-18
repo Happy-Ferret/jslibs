@@ -45,7 +45,7 @@ DEFINE_CONSTRUCTOR() {
 
 	int descType;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &descType) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &descType) );
 	else
 		descType = PR_DESC_SOCKET_TCP; // default
 
@@ -147,7 +147,7 @@ DEFINE_FUNCTION( Bind ) {
 	unsigned int port;
 	if ( JL_ARG_ISDEF(1) ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &port) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &port) );
 		JL_S_ASSERT( port < 65536, "Invalid port number." );
 	} else {
 
@@ -156,8 +156,8 @@ DEFINE_FUNCTION( Bind ) {
 
 	if ( JL_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
-		const char *host;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &host) );
+		JLStr host;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), host) );
 
 		if ( PR_StringToNetAddr(host, &addr) != PR_SUCCESS )
 			return ThrowIoError(cx);
@@ -210,7 +210,7 @@ DEFINE_FUNCTION( Listen ) {
 	JL_S_ASSERT_RESOURCE( fd );
 	PRIntn backlog;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &backlog) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &backlog) );
 	else
 		backlog = 8; // too low ??
 
@@ -240,7 +240,7 @@ DEFINE_FUNCTION( Accept ) {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &timeoutInMilliseconds) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeoutInMilliseconds) );
 		timeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else {
 
@@ -289,6 +289,7 @@ $TOC_MEMBER $INAME
 //	descriptor writeable.
 DEFINE_FUNCTION( Connect ) {
 
+	JLStr host;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 2 );
 	PRFileDesc *fd;
@@ -296,20 +297,20 @@ DEFINE_FUNCTION( Connect ) {
 	JL_S_ASSERT_RESOURCE( fd );
 
 	unsigned int port;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &port) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &port) );
 	JL_S_ASSERT( port <= 65535, "Invalid port number." );
 
 	PRIntervalTime connectTimeout;
 	if ( JL_ARG_ISDEF(3) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &timeoutInMilliseconds) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &timeoutInMilliseconds) );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
 
-	const char *host;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &host) );
+//	const char *host;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), host) );
 
 	PRNetAddr addr;
 
@@ -363,6 +364,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SendTo ) {
 
+	JLStr host, str;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 3 );
 
@@ -374,11 +376,11 @@ DEFINE_FUNCTION( SendTo ) {
 	JL_S_ASSERT_RESOURCE( fd );
 
 	unsigned int port;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &port) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &port) );
 	JL_S_ASSERT( port < 65536, "Invalid port number." );
 
-	const char *host;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &host) );
+//	const char *host;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), host) );
 
 	PRNetAddr addr;
 
@@ -401,13 +403,14 @@ DEFINE_FUNCTION( SendTo ) {
 			return ThrowIoError(cx);
 	}
 
-	const char *str;
-	size_t len;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &str, &len) );
-	JL_S_ASSERT( len <= PR_INT32_MAX, "Too many data." );
+//	const char *str;
+//	size_t len;
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &str, &len) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), str) );
+	JL_S_ASSERT( str.Length() <= PR_INT32_MAX, "Too many data." );
 
 	PRInt32 res;
-	res = PR_SendTo(fd, str, (PRInt32)len, 0, &addr, PR_INTERVAL_NO_TIMEOUT );
+	res = PR_SendTo(fd, str.GetStrConst(), (PRInt32)str.Length(), 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
 	size_t sentAmount;
 	if ( res == -1 ) {
@@ -419,8 +422,8 @@ DEFINE_FUNCTION( SendTo ) {
 	} else
 		sentAmount = res;
 
-	if ( sentAmount < len )
-		*JL_RVAL = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_ARG(3) ), sentAmount, len - sentAmount) ); // return unsent data
+	if ( sentAmount < str.Length() )
+		*JL_RVAL = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_ARG(3) ), sentAmount, str.Length() - sentAmount) ); // return unsent data
 	else if ( sentAmount == 0 )
 		*JL_RVAL = JL_ARG(3); // nothing has been sent
 	else
@@ -490,13 +493,13 @@ DEFINE_FUNCTION( RecvFrom ) {
 	JL_CHKB( PR_NetAddrToString(&addr, peerName, sizeof(peerName)) == PR_SUCCESS, bad_ex ); // Converts a character string to a network address.
 
 	jsval tmp;
-	JL_CHK( JL_CValToJsval(cx, peerName, &tmp) );
+	JL_CHK( JL_NativeToJsval(cx, peerName, &tmp) );
 	JL_CHK( JS_SetElement(cx, arrayObject, 1, &tmp) );
 
 	PRUint16 port;
 	port = PR_NetAddrInetPort(&addr);
 
-	JL_CHK( JL_CValToJsval(cx, port, &tmp) );
+	JL_CHK( JL_NativeToJsval(cx, port, &tmp) );
 	JL_CHK( JS_SetElement(cx, arrayObject, 2, &tmp) );
 
 	if (likely( res > 0 )) {
@@ -542,6 +545,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
+	JLStr headers;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
 
@@ -562,7 +566,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	if ( JL_ARG_ISDEF(2) ) {
 
 		bool closeAfterTransmit;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &closeAfterTransmit) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &closeAfterTransmit) );
 		if ( closeAfterTransmit )
 			flag = PR_TRANSMITFILE_CLOSE_SOCKET;
 	}
@@ -571,30 +575,31 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	if ( JL_ARG_ISDEF(4) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &timeoutInMilliseconds) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &timeoutInMilliseconds) );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
 
-	const char *headers;
-	headers = NULL;
-	size_t headerLength;
+//	const char *headers;
+//	headers = NULL;
+//	size_t headerLength;
 	if ( JL_ARG_ISDEF(3) ) {
 
-		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &headers, &headerLength) );
-		JL_S_ASSERT( headerLength <= PR_INT32_MAX, "Header too long." );
+//		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &headers, &headerLength) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), headers) );
+		JL_S_ASSERT( headers.Length() <= PR_INT32_MAX, "Header too long." );
 	} else {
 
-		headerLength = 0;
+		headers = JLStr("", 0);
 	}
 
 	PRInt32 bytes;
-	bytes = PR_TransmitFile( socketFd, fileFd, headers, (PRInt32)headerLength, flag, connectTimeout );
+	bytes = PR_TransmitFile( socketFd, fileFd, headers.GetStrConst(), (PRInt32)headers.Length(), flag, connectTimeout );
 	if ( bytes == -1 )
 		return ThrowIoError(cx);
 
 	//JL_CHK( JL_NewNumberValue(cx, bytes, JL_RVAL) );
-	JL_CHK( JL_CValToJsval(cx, bytes, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, bytes, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -774,7 +779,7 @@ DEFINE_PROPERTY( OptionSetter ) {
 	switch ( sod.option ) {
 		case PR_SockOpt_Linger: { // http://developer.mozilla.org/en/docs/PRLinger
 				unsigned int timeout;
-				JL_CHK( JL_JsvalToCVal(cx, *vp, &timeout) );
+				JL_CHK( JL_JsvalToNative(cx, *vp, &timeout) );
 //				JS_ValueToECMAUint32( cx, *vp, &timeout );
 				if ( timeout > 0 ) {
 					sod.value.linger.polarity = PR_TRUE;
@@ -849,7 +854,7 @@ DEFINE_PROPERTY( OptionGetter ) {
 	switch ( sod.option ) {
 		case PR_SockOpt_Linger:
 			if ( sod.value.linger.polarity == PR_TRUE )
-				JL_CHK( JL_CValToJsval( cx, PR_IntervalToMilliseconds(sod.value.linger.linger), vp ) );
+				JL_CHK( JL_NativeToJsval( cx, PR_IntervalToMilliseconds(sod.value.linger.linger), vp ) );
 			else
 				*vp = JSVAL_ZERO;
 			break;
@@ -864,15 +869,15 @@ DEFINE_PROPERTY( OptionGetter ) {
 			break;
 		case PR_SockOpt_RecvBufferSize:
 //			*vp = INT_TO_JSVAL(sod.value.recv_buffer_size);
-			JL_CHK( JL_CValToJsval(cx, sod.value.recv_buffer_size, vp) );
+			JL_CHK( JL_NativeToJsval(cx, sod.value.recv_buffer_size, vp) );
 			break;
 		case PR_SockOpt_SendBufferSize:
 //			*vp = INT_TO_JSVAL((int)sod.value.send_buffer_size);
-			JL_CHK( JL_CValToJsval(cx, sod.value.send_buffer_size, vp) );
+			JL_CHK( JL_NativeToJsval(cx, sod.value.send_buffer_size, vp) );
 			break;
 		case PR_SockOpt_MaxSegment:
 //			*vp = INT_TO_JSVAL(sod.value.max_segment);
-			JL_CHK( JL_CValToJsval(cx, sod.value.max_segment, vp) );
+			JL_CHK( JL_NativeToJsval(cx, sod.value.max_segment, vp) );
 			break;
 		case PR_SockOpt_Nonblocking:
 			*vp = sod.value.non_blocking == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
@@ -997,6 +1002,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetHostsByName ) {
 
+	JLStr host;
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	char netdbBuf[PR_NETDB_BUF_SIZE];
@@ -1008,8 +1014,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	JL_CHK( addrJsObj );
 	*JL_RVAL = OBJECT_TO_JSVAL(addrJsObj);
 
-	const char *host;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &host) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), host) );
 
 	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS ) {
 
@@ -1032,7 +1037,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 		JL_CHKB( hostIndex != -1, bad_throw );
 		JL_CHKB( PR_NetAddrToString(&addr, addrStr, sizeof(addrStr)) == PR_SUCCESS, bad_throw ); // memory leak
 		jsval tmp;
-		JL_CHK( JL_CValToJsval(cx, addrStr, &tmp) );
+		JL_CHK( JL_NativeToJsval(cx, addrStr, &tmp) );
 		JL_CHK( JS_DefineElement(cx, addrJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
 	}
 	return JS_TRUE;
@@ -1065,10 +1070,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetHostsByAddr ) {
 
+	JLStr addr;
 	JL_S_ASSERT_ARG( 1 );
 
-	const char *addr; // MAX_IP_STRING
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &addr) );
+	//const char *addr; // MAX_IP_STRING
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), addr) );
 
 	PRNetAddr netaddr;
 	if ( PR_StringToNetAddr(addr, &netaddr) != PR_SUCCESS )
@@ -1090,7 +1096,7 @@ DEFINE_FUNCTION( GetHostsByAddr ) {
 
 	jsval tmp;
 
-	JL_CHK( JL_CValToJsval(cx, hostent.h_name, &tmp) );
+	JL_CHK( JL_NativeToJsval(cx, hostent.h_name, &tmp) );
 	JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
 	
 	if ( hostent.h_aliases == NULL )
@@ -1098,7 +1104,7 @@ DEFINE_FUNCTION( GetHostsByAddr ) {
 
 	for ( int i = 0; hostent.h_aliases[i]; ++i ) {
 
-		JL_CHK( JL_CValToJsval(cx, hostent.h_aliases[i], &tmp) );
+		JL_CHK( JL_NativeToJsval(cx, hostent.h_aliases[i], &tmp) );
 		JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
 	}
 

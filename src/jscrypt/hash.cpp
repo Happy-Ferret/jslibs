@@ -64,13 +64,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JLStr hashName;
+
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
-	const char *hashName;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &hashName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), hashName) );
 
 	int hashIndex;
 	hashIndex = find_hash(hashName);
@@ -133,6 +134,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Process ) {
 
+	JLStr in;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
@@ -143,15 +145,16 @@ DEFINE_FUNCTION( Process ) {
 	JL_S_ASSERT_RESOURCE( pv );
 
 	int err;
-	const char *in;
-	size_t inLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
+//	const char *in;
+//	size_t inLength;
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), in) );
 
-	err = pv->descriptor->process(&pv->state, (const unsigned char *)in, (unsigned long)inLength); // Process a block of memory though the hash
+	err = pv->descriptor->process(&pv->state, (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length()); // Process a block of memory though the hash
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 
-	pv->inputLength += inLength;
+	pv->inputLength += in.Length();
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -217,6 +220,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CALL() {
 
+	JLStr in;
+
 	JL_DEFINE_CALL_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
@@ -234,15 +239,17 @@ DEFINE_CALL() {
 	out = (char *)JS_malloc( cx, outLength );
 	JL_CHK( out );
 
-	const char *in;
-	size_t inLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
+//	const char *in;
+//	size_t inLength;
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), in) );
+
 
 	err = pv->descriptor->init(&pv->state);
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	err = pv->descriptor->process(&pv->state, (const unsigned char *)in, (unsigned long)inLength);
+	err = pv->descriptor->process(&pv->state, (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length());
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
@@ -327,7 +334,7 @@ DEFINE_PROPERTY( inputLength ) {
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	return JL_CValToJsval(cx, pv->inputLength, vp);
+	return JL_NativeToJsval(cx, pv->inputLength, vp);
 	JL_BAD;
 }	
 
@@ -346,12 +353,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CipherHash ) {
 
+	JLStr cipherName;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN(1);
 
-	const char *cipherName;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &cipherName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), cipherName) );
 	int cipherIndex;
 	cipherIndex = find_cipher(cipherName);
 	JL_S_ASSERT( cipherIndex >= 0, "Cipher not found: %s", cipherName );

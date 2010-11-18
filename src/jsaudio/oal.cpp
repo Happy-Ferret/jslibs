@@ -42,13 +42,12 @@ DEFINE_FUNCTION( Open ) {
 
 	// Initialize the OpenAL library (cf. alutInit)
 
+	JLStr deviceName;
+
 	JL_S_ASSERT( alcGetCurrentContext() == NULL, "OpenAL already open." );
 
-	const char *deviceName;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &deviceName) );
-	else
-		deviceName = NULL;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), deviceName) );
 
 	// Doc: alcOpenDevice() open the Device specified. Current options are:
 	//   "Generic Hardware"
@@ -57,7 +56,7 @@ DEFINE_FUNCTION( Open ) {
 	//   "DirectSound"
 	//   "MMSYSTEM"
 	// If no device name is specified, we will attempt to use DS3D.
-	ALCdevice *device = alcOpenDevice (deviceName);
+	ALCdevice *device = alcOpenDevice (deviceName.GetStrConstOrNull());
 	if (device == NULL)
 		JL_REPORT_ERROR("ALUT_ERROR_OPEN_DEVICE");
 
@@ -142,7 +141,7 @@ DEFINE_PROPERTY( maxAuxiliarySends ) {
 	ALCdevice *pDevice = alcGetContextsDevice(pContext);
 	ALCint numSends;
 	alcGetIntegerv(pDevice, ALC_MAX_AUXILIARY_SENDS, 1, &numSends);
-	JL_CHK( JL_CValToJsval(cx, numSends, vp) );
+	JL_CHK( JL_NativeToJsval(cx, numSends, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -162,7 +161,7 @@ DEFINE_FUNCTION( DopplerFactor ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_INT(JL_ARG(1));
 	float value;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &value) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 	alDopplerFactor( value );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -185,7 +184,7 @@ DEFINE_FUNCTION( DopplerVelocity ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_INT(JL_ARG(1));
 	float value;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &value) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 	alDopplerVelocity( value );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -208,7 +207,7 @@ DEFINE_FUNCTION( SpeedOfSound ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_INT(JL_ARG(1));
 	float value;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &value) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 	alSpeedOfSound( value );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -230,7 +229,7 @@ DEFINE_FUNCTION( DistanceModel ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_INT(JL_ARG(1));
 	unsigned int distanceModel;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &distanceModel) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &distanceModel) );
 	alDistanceModel( distanceModel );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -421,12 +420,12 @@ DEFINE_FUNCTION( GetDouble ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JL_CValToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JL_CValToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, params[0], JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -456,8 +455,8 @@ DEFINE_FUNCTION( Listener ) {
 	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
 
 		jsdouble param;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &param) );
-		alListenerf( JSVAL_TO_INT( JL_ARG(1) ), param );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &param) );
+		alListenerf( JSVAL_TO_INT( JL_ARG(1) ), (float)param );
 		return JS_TRUE;
 	}
 	if ( JL_JsvalIsArray(cx, JL_ARG(2)) ) {
@@ -506,12 +505,12 @@ DEFINE_FUNCTION( GetListenerReal ) {
 		jsval tmpValue;
 		while (count--) {
 			
-			JL_CHK(JL_CValToJsval(cx, params[count], &tmpValue) );
+			JL_CHK(JL_NativeToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK(JL_CValToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK(JL_NativeToJsval(cx, params[0], JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -529,7 +528,7 @@ DEFINE_FUNCTION( GenSource ) {
 
 	ALuint sourceID; // The OpenAL sound source
 	alGenSources(1, &sourceID);
-	JL_CHK( JL_CValToJsval(cx, sourceID, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, sourceID, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -552,7 +551,7 @@ DEFINE_FUNCTION( Source ) {
 	JL_S_ASSERT_INT(JL_ARG(2));
 
 	ALuint sid;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 
 	*JL_RVAL = JSVAL_VOID;
 	if ( JSVAL_IS_INT(JL_ARG(3)) ) {
@@ -563,7 +562,7 @@ DEFINE_FUNCTION( Source ) {
 	if ( JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
 		float param;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &param) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &param) );
 		alSourcef( sid, JSVAL_TO_INT( JL_ARG(2) ), param );
 		return JS_TRUE;
 	}
@@ -600,7 +599,7 @@ DEFINE_FUNCTION( GetSourceReal ) {
 	JL_S_ASSERT_INT(JL_ARG(2));
 
 	ALuint sid;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 
 	ALfloat params[16];
 
@@ -618,12 +617,12 @@ DEFINE_FUNCTION( GetSourceReal ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK(JL_CValToJsval(cx, params[count], &tmpValue) );
+			JL_CHK(JL_NativeToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK(JL_CValToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK(JL_NativeToJsval(cx, params[0], JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -641,7 +640,7 @@ DEFINE_FUNCTION( GetSourceInteger ) {
 	JL_S_ASSERT_INT(JL_ARG(2));
 
 	ALuint sid;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 
 	ALint params[16];
 
@@ -660,12 +659,12 @@ DEFINE_FUNCTION( GetSourceInteger ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JL_CValToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JL_CValToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, params[0], JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -686,7 +685,7 @@ DEFINE_FUNCTION( DeleteSource ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alDeleteSources(1, &sid);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -710,13 +709,13 @@ DEFINE_FUNCTION( SourceQueueBuffers ) {
 	JL_S_ASSERT_ARG_MIN(2);
 	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	*JL_RVAL = JSVAL_VOID;
 
 	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
 
 		ALuint buffer;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &buffer) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &buffer) );
 		alSourceQueueBuffers( sid, 1, &buffer );
 		JL_CHK( CheckThrowCurrentOalError(cx) );
 		return JS_TRUE;
@@ -753,13 +752,13 @@ DEFINE_FUNCTION( SourceUnqueueBuffers ) {
 	JL_S_ASSERT_ARG_MIN(2);
 	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	*JL_RVAL = JSVAL_VOID;
 
 	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
 
 		ALuint buffer;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &buffer) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &buffer) );
 		alSourceUnqueueBuffers( sid, 1, &buffer );
 		return JS_TRUE;
 	}
@@ -791,7 +790,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Buffer ) {
 
-	jsval tmp;
+	JLStr buffer;
+
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
@@ -802,10 +802,11 @@ DEFINE_FUNCTION( Buffer ) {
 	JL_CHK( JL_GetProperty(cx, blobObj, "channels", &channels) );
 	JL_CHK( JL_GetProperty(cx, blobObj, "bits", &bits) );
 
-	const char *buffer;
-	size_t bufferLength;
-	tmp = OBJECT_TO_JSVAL(blobObj);
-	JL_CHK( JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength) ); // warning: GC on the returned buffer !
+//	const char *buffer;
+//	size_t bufferLength;
+//	tmp = OBJECT_TO_JSVAL(blobObj);
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), buffer) );
 
 	ALuint bufferID; // The OpenAL sound buffer ID
 	alGenBuffers(1, &bufferID);
@@ -824,10 +825,10 @@ DEFINE_FUNCTION( Buffer ) {
 	}
 
 	// Upload sound data to buffer
-	alBufferData(bufferID, format, buffer, (ALsizei)bufferLength, rate);
+	alBufferData(bufferID, format, buffer.GetStrConst(), (ALsizei)buffer.Length(), rate);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_CValToJsval(cx, bufferID, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, bufferID, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -864,12 +865,12 @@ DEFINE_FUNCTION( GetBufferReal ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK(JL_CValToJsval(cx, params[count], &tmpValue) );
+			JL_CHK(JL_NativeToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK(JL_CValToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK(JL_NativeToJsval(cx, params[0], JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -906,12 +907,12 @@ DEFINE_FUNCTION( GetBufferInteger ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JL_CValToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JL_CValToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, params[0], JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -936,7 +937,7 @@ DEFINE_FUNCTION( DeleteBuffer ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint bufferId;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &bufferId ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bufferId ) );
 //	alBufferData(bufferId, 0, NULL, 0, 0);
 	alDeleteBuffers(1, &bufferId);
 
@@ -958,7 +959,7 @@ DEFINE_FUNCTION( PlaySource ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourcePlay(sid);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -979,7 +980,7 @@ DEFINE_FUNCTION( StopSource ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourceStop(sid);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -1000,7 +1001,7 @@ DEFINE_FUNCTION( PauseSource ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourcePause(sid);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -1021,7 +1022,7 @@ DEFINE_FUNCTION( RewindSource ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_NUMBER(JL_ARG(1));
 	ALuint sid;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sid ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourceRewind(sid);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -1041,7 +1042,7 @@ DEFINE_FUNCTION( GenEffect ) {
 
 	ALuint eid;
 	alGenEffects(1, &eid);
-	JL_CHK( JL_CValToJsval(cx, eid, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, eid, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1057,7 +1058,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( DeleteEffect ) {
 
 	ALuint eid;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &eid) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &eid) );
 	alDeleteEffects(1, eid);
 	return JS_TRUE;
 	JL_BAD;
@@ -1075,7 +1076,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PlaySound ) {
 
-	jsval tmp;
+	JLStr buffer;
+
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
@@ -1086,10 +1088,11 @@ DEFINE_FUNCTION( PlaySound ) {
 	JL_CHK( JL_GetProperty(cx, blobObj, "channels", &channels) );
 	JL_CHK( JL_GetProperty(cx, blobObj, "bits", &bits) );
 
-	const char *buffer;
-	size_t bufferLength;
-	tmp = OBJECT_TO_JSVAL(blobObj);
-	JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength); // warning: GC on the returned buffer !
+//	const char *buffer;
+//	size_t bufferLength;
+//	tmp = OBJECT_TO_JSVAL(blobObj);
+//	JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), buffer) );
 
 	ALint state;                // The state of the sound source
 	ALuint bufferID;            // The OpenAL sound buffer ID
@@ -1114,7 +1117,7 @@ DEFINE_FUNCTION( PlaySound ) {
 	alSource3i(sourceID, AL_POSITION, 0,0,0 );
 
 	// Upload sound data to buffer
-	alBufferData(bufferID, format, buffer, (ALsizei)bufferLength, rate);
+	alBufferData(bufferID, format, buffer.GetStrConst(), (ALsizei)buffer.Length(), rate);
 
 	// Attach sound buffer to source
 	alSourcei(sourceID, AL_BUFFER, bufferID);

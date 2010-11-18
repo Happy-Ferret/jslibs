@@ -79,7 +79,7 @@ DEFINE_FUNCTION( AddTorque ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(jointId);
 	jsdouble torque;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &torque) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &torque) );
 	ode::dJointAddHingeTorque(jointId, (ode::dReal)torque);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -178,7 +178,7 @@ DEFINE_PROPERTY( angle ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( JL_CValToJsval(cx, ode::dJointGetHingeAngle(jointId), vp) );
+	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetHingeAngle(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -192,7 +192,7 @@ DEFINE_PROPERTY( angleRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( JL_CValToJsval(cx, ode::dJointGetHingeAngleRate(jointId), vp) );
+	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetHingeAngleRate(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

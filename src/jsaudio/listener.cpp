@@ -65,7 +65,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( metersPerUnit ) {
 
 	float metersPerUnit;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &metersPerUnit) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &metersPerUnit) );
 
 	alListenerf(AL_METERS_PER_UNIT, metersPerUnit);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -81,7 +81,7 @@ DEFINE_PROPERTY_GETTER( metersPerUnit ) {
 	alGetListenerf(AL_METERS_PER_UNIT, &metersPerUnit);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK(JL_CValToJsval(cx, metersPerUnit, vp) );
+	JL_CHK(JL_NativeToJsval(cx, metersPerUnit, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

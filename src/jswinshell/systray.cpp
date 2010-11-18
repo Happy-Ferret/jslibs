@@ -748,12 +748,13 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 			JSIdArray *list = JS_Enumerate(cx, itemObj);
 			JL_CHK( list );
 			for ( jsint j = 0; j < list->length; ++j ) {
+
+				JLStr keyStr;
 			
 				JL_CHK( JS_IdToValue(cx, list->vector[j], &key) );
 				JL_CHK( JS_GetPropertyById(cx, itemObj, list->vector[j], &value) );
 				
-				const char *keyStr;
-				JL_CHK( JL_JsvalToCVal(cx, key, &keyStr) );
+				JL_CHK( JL_JsvalToNative(cx, key, keyStr) );
 
 				if ( strcmp(keyStr, "id") == 0 ) {
 
@@ -771,7 +772,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
-					JL_CHK( JL_JsvalToCVal(cx, value, &b) );
+					JL_CHK( JL_JsvalToNative(cx, value, &b) );
 					if ( b )
 						uFlags |= MF_MENUBARBREAK;
 					continue;
@@ -780,7 +781,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
-					JL_CHK( JL_JsvalToCVal(cx, value, &b) );
+					JL_CHK( JL_JsvalToNative(cx, value, &b) );
 					if ( b )
 						uFlags |= MF_CHECKED;
 					continue;
@@ -789,7 +790,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
-					JL_CHK( JL_JsvalToCVal(cx, value, &b) );
+					JL_CHK( JL_JsvalToNative(cx, value, &b) );
 					if ( b )
 						uFlags |= MF_GRAYED;
 					continue;
@@ -798,7 +799,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
-					JL_CHK( JL_JsvalToCVal(cx, value, &b) );
+					JL_CHK( JL_JsvalToNative(cx, value, &b) );
 					if ( b )
 						uFlags |= MF_DISABLED;
 					continue;
@@ -806,7 +807,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 				if ( strcmp(keyStr, "default") == 0 ) {
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
-					JL_CHK( JL_JsvalToCVal(cx, value, &isDefault) );
+					JL_CHK( JL_JsvalToNative(cx, value, &isDefault) );
 					continue;
 				}
 				if ( strcmp(keyStr, "icon") == 0 ) {
@@ -833,6 +834,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 			JS_DestroyIdArray(cx, list);
 		}
 
+		JLStr newItemStr;
 		LPCTSTR lpNewItem;
 		UINT_PTR uIDNewItem;
 
@@ -852,7 +854,9 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 
 			if ( label != JSVAL_VOID ) {
 
-				JL_CHK( JL_JsvalToCVal(cx, label, &lpNewItem) );
+				JL_CHK( JL_JsvalToNative(cx, label, newItemStr) );
+				
+				lpNewItem = newItemStr.GetStrConst();
 				uFlags |= MF_STRING;
 			} else {
 
@@ -994,30 +998,29 @@ DEFINE_FUNCTION( PopupBalloon ) {
 		JL_CHK( JS_GetProperty(cx, infoObj, "infoTitle", JL_RVAL) );
 		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
 
-			const char *infoTitleStr;
-			size_t infoTitleLen;
-			JL_CHK( JL_JsvalToStringAndLength(cx, JL_RVAL, &infoTitleStr, &infoTitleLen) );
-			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoTitleLen);
-			memcpy( pv->nid.szInfoTitle, infoTitleStr, JL_MIN(sizeof(pv->nid.szInfoTitle)-1, infoTitleLen) );
+			JLStr infoTitle;
+			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, infoTitle) );
+
+			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoTitle.Length());
+			memcpy( pv->nid.szInfoTitle, infoTitle.GetStrConst(), JL_MIN(sizeof(pv->nid.szInfoTitle)-1, infoTitle.Length()) );
 			pv->nid.szInfoTitle[len] = '\0';
 		}
 
 		JL_CHK( JS_GetProperty(cx, infoObj, "info", JL_RVAL) );
 		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
 
-			const char *infoStr;
-			size_t infoLen;
-			JL_CHK( JL_JsvalToStringAndLength(cx, JL_RVAL, &infoStr, &infoLen) );
-			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoLen);
-			memcpy( pv->nid.szInfo, infoStr, len );
-			pv->nid.szInfo[len] = '\0';
+			JLStr infoStr;
+			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, infoStr) );
+			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoStr.Length());
+			memcpy( pv->nid.szInfo, infoStr.GetStrConst(), infoStr.Length() );
+			pv->nid.szInfo[infoStr.Length()] = '\0';
 		}
 
 		JL_CHK( JS_GetProperty(cx, infoObj, "icon", JL_RVAL) );
 		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
 
-			const char *iconNameStr;
-			JL_CHK( JL_JsvalToCVal(cx, *JL_RVAL, &iconNameStr) );
+			JLStr iconNameStr;
+			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, iconNameStr) );
 			
 			if ( strcmp(iconNameStr, "info") == 0 )
 				pv->nid.dwInfoFlags |= NIIF_INFO;
@@ -1219,13 +1222,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( textSetter ) {
 
+	JLStr tipText;
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	const char *tipText;
-	size_t tipLen;
-	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &tipText, &tipLen) );
-	size_t len = JL_MIN(sizeof(pv->nid.szTip)-1, tipLen);
-	memcpy(pv->nid.szTip, tipText, len);
+	JL_CHK( JL_JsvalToNative(cx, *vp, tipText) );
+	size_t len = JL_MIN(sizeof(pv->nid.szTip)-1, tipText.Length());
+	memcpy(pv->nid.szTip, tipText.GetStrConst(), tipText.Length());
 	pv->nid.szTip[len] = '\0';
 
 	pv->nid.uFlags |= NIF_TIP;

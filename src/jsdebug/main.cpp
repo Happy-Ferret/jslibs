@@ -110,7 +110,7 @@ done_scriptList:
 	if ( JL_JsvalIsFunction(cx, jsHookFct) ) {
 
 		jsval argv[5] = { JSVAL_NULL, JSVAL_NULL, INT_TO_JSVAL( lineno ), OBJECT_TO_JSVAL( JS_NewScriptObject(cx, script) ), OBJECT_TO_JSVAL( JS_GetFunctionObject(fun) ) };
-		JL_CHK( JL_CValToJsval(cx, filename, &argv[1]) );
+		JL_CHK( JL_NativeToJsval(cx, filename, &argv[1]) );
 
 		JSBool status;
 		JSRuntime *rt;
@@ -236,9 +236,9 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **sc
 
 		jl::Queue *scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;
 
-		const char *filename;
-		JL_CHK( JL_JsvalToCVal(cx, *val, &filename) );
-		*script = ScriptByLocation(cx, scriptFileList, filename, lineno);
+		JLStr fileName;
+		JL_CHK( JL_JsvalToNative(cx, *val, fileName) );
+		*script = ScriptByLocation(cx, scriptFileList, fileName, lineno);
 		if ( *script == NULL )
 			return JS_TRUE;
 	}

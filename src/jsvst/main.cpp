@@ -665,7 +665,7 @@ private:
 
 //				JSObject *jsMpn = JS_NewObject(_cx, NULL, NULL, NULL);
 
-				_rval = FunctionCall2(vstPlugin, fval, JL_JsvalToCVal(channel), 	JL_JsvalToCVal(category->thisCategoryIndex) );
+				_rval = FunctionCall2(vstPlugin, fval, JL_JsvalToNative(channel), 	JL_JsvalToNative(category->thisCategoryIndex) );
 				
 				category->flags = 0;
 
@@ -1080,11 +1080,13 @@ DEFINE_PROPERTY( uniqueID ) {
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	JL_S_ASSERT_STRING( *vp );
 	JSString *jsstr = JS_ValueToString(cx, *vp);
-	JL_S_ASSERT( JL_GetStringLength(jsstr) == 4, "Invalid ID length" );
-	const char *str = JL_GetStringBytesZ(cx, jsstr);
-	JL_CHK( str != NULL );
-	VstInt32 vstid = CCONST( str[0], str[1], str[2], str[3] );
+	{
+	JLStr str(jsstr);
+	JL_S_ASSERT( str.Length() == 4, "Invalid ID length" );
+	JL_CHK( str.IsSet() );
+	VstInt32 vstid = CCONST( str.GetStrConst()[0], str.GetStrConst()[1], str.GetStrConst()[2], str.GetStrConst()[3] );
 	vstPlugin->setUniqueID( vstid );
+	}
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }

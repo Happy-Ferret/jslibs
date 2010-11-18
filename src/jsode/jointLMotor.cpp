@@ -83,13 +83,13 @@ DEFINE_FUNCTION( SetAxis ) {
 	*JL_RVAL = JSVAL_VOID;
 
 	int anum, rel;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &anum) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &anum) );
 	if ( !JL_ARG_ISDEF(3) ) {
 		
 		ode::dJointSetLMotorNumAxes(jointId, anum+1);
 		return JS_TRUE;
 	}
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &rel) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &rel) );
 	
 	ode::dVector3 vector;
 	uint32 length;

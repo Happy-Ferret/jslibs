@@ -52,15 +52,15 @@ DEFINE_FUNCTION( Vec3 ) {
 			JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 		} else {
 
-			JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &v.x) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &v.x) );
 			v.z = v.y = v.x;
 		}
 	} else
 	if ( argc == 3 ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &v.x) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &v.y) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &v.z) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &v.x) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &v.y) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v.z) );
 	}
 	return JL_CValVectorToJsval(cx, v.raw, 3, JL_RVAL);
 	JL_REPORT_ERROR( "Invalid vector3." );
@@ -98,11 +98,11 @@ DEFINE_FUNCTION( Vec3Length ) {
 	} else
 	if ( argc == 3 ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &v.x) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &v.y) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &v.z) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &v.x) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &v.y) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v.z) );
 	}
-	return JL_CValToJsval(cx, Vector3Length(&v), JL_RVAL);
+	return JL_NativeToJsval(cx, Vector3Length(&v), JL_RVAL);
 	JL_REPORT_ERROR( "Unsupported vector type." );
 	JL_BAD;
 }
@@ -219,7 +219,7 @@ DEFINE_FUNCTION( Vec3Dot ) {
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len2 );
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(3) ? 3 : 1);
-	return JL_CValToJsval(cx, Vector3Dot(&v, &v2), JL_RVAL);
+	return JL_NativeToJsval(cx, Vector3Dot(&v, &v2), JL_RVAL);
 	JL_BAD;
 }
 
@@ -278,7 +278,7 @@ DEFINE_FUNCTION( FrustumSphere ) {
 	}
 
 	jsval tmpVal;
-	JL_CHK(JL_CValToJsval(cx, radius, &tmpVal) );
+	JL_CHK(JL_NativeToJsval(cx, radius, &tmpVal) );
 	JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT(*JL_RVAL), 3, &tmpVal) );
 
 	return JS_TRUE;
@@ -314,7 +314,7 @@ DEFINE_FUNCTION( BoxToCircumscribedSphere ) {
 	*JL_RVAL = JL_ARG(1);
 	JL_CHK( JL_CValVectorToJsval(cx, center.raw, 3, JL_RVAL, true) );
 	jsval tmpVal;
-	JL_CHK(JL_CValToJsval(cx, radius, &tmpVal) );
+	JL_CHK(JL_NativeToJsval(cx, radius, &tmpVal) );
 	JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT(*JL_RVAL), 3, &tmpVal) );
 
 	return JS_TRUE;

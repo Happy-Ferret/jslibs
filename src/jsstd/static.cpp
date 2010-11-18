@@ -58,6 +58,8 @@ $TOC_MEMBER $INAME
 
 DEFINE_FUNCTION( Expand ) {
 
+	JLStr str;
+
 	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_S_ASSERT_ARG_RANGE(1, 2);
@@ -65,8 +67,13 @@ DEFINE_FUNCTION( Expand ) {
 	const char *srcBegin;
 	size_t srcLen;
 
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &srcBegin, &srcLen) );
+	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &srcBegin, &srcLen) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	srcLen = str.Length();
+	srcBegin = str.GetStrConst();
+
 	JL_S_ASSERT( srcBegin[srcLen] == '\0', "Invalid input string." ); // else strstr may failed.
+
 	const char *srcEnd;
 	srcEnd = srcBegin + srcLen;
 
@@ -100,7 +107,7 @@ DEFINE_FUNCTION( Expand ) {
 next:
 
 	typedef struct {
-		const char *data;
+		char *data;
 		size_t length;
 	} Chunk;
 
@@ -117,8 +124,11 @@ next:
 		if ( tok == NULL ) { // not found
 
 			chunk = (Chunk*)jl_malloc(sizeof(Chunk));
-			chunk->data = srcBegin;
 			chunk->length = srcEnd - srcBegin;
+			chunk->data = (char*)jl_malloc(chunk->length);
+			
+			memcpy(chunk->data, srcBegin, chunk->length);
+
 			totalLength += chunk->length;
 			jl::StackPush( &stack, chunk );
 			break;
@@ -126,8 +136,10 @@ next:
 
 		chunk = (Chunk*)jl_malloc(sizeof(Chunk));
 		JL_S_ASSERT_ALLOC(chunk);
-		chunk->data = srcBegin;
 		chunk->length = tok - srcBegin;
+		chunk->data = (char*)jl_malloc(chunk->length);
+		memcpy(chunk->data, srcBegin, chunk->length);
+//		chunk->data = srcBegin;
 		totalLength += chunk->length;
 		jl::StackPush( &stack, chunk );
 
@@ -145,7 +157,9 @@ next:
 		//} else
 		if ( mapSource == EXPAND_SOURCE_ARG_FUNCTION ) {
 
-			JL_CHKB( JL_StringAndLengthToJsval(cx, JL_RVAL, srcBegin, tok-srcBegin), bad_free_stack );
+			//JL_CHKB( JL_StringAndLengthToJsval(cx, JL_RVAL, srcBegin, tok - srcBegin), bad_free_stack );
+			JL_CHKB( JL_NativeToJsval(cx, srcBegin, tok - srcBegin, JL_RVAL), bad_free_stack );
+
 			JL_CHKB( JS_CallFunctionValue(cx, obj, map, 1, JL_RVAL, JL_RVAL), bad_free_stack );
 		} else {
 
@@ -158,7 +172,13 @@ next:
 		if ( !JSVAL_IS_VOID( *JL_RVAL ) ) {
 
 			chunk = (Chunk*)jl_malloc(sizeof(Chunk));
-			JL_CHKB( JL_JsvalToStringAndLength(cx, JL_RVAL, &chunk->data, &chunk->length), bad_free_stack );
+//			JL_CHKB( JL_JsvalToStringAndLength(cx, JL_RVAL, &chunk->data, &chunk->length), bad_free_stack );
+
+			JLStr str1;
+			JL_CHKB( JL_JsvalToNative(cx, *JL_RVAL, str1), bad_free_stack );
+			chunk->length = str1.Length();
+			chunk->data = str1.GetStrOwnership();
+
 			totalLength += chunk->length;
 			jl::StackPush( &stack, chunk );
 		}
@@ -177,6 +197,7 @@ next:
 		Chunk *chunk = (Chunk*)jl::StackPop(&stack);
 		expandedString -= chunk->length;
 		memcpy(expandedString, chunk->data, chunk->length);
+		jl_free(chunk->data);
 		jl_free(chunk);
 	}
 
@@ -482,7 +503,7 @@ DEFINE_FUNCTION( ObjectToId ) {
 	for ( ObjId *it = objIdList, *end = objIdList + objectIdAllocated; it < end; ++it ) {
 
 		if ( it->obj == obj )
-			return JL_CValToJsval(cx, it->id, JL_RVAL);
+			return JL_NativeToJsval(cx, it->id, JL_RVAL);
 		if ( !freeSlot && it->id == 0 )
 			freeSlot = it;
 	}
@@ -507,7 +528,7 @@ DEFINE_FUNCTION( ObjectToId ) {
 	freeSlot->id = ++lastObjectId;
 	freeSlot->obj = obj;
 
-	return JL_CValToJsval(cx, lastObjectId, JL_RVAL);
+	return JL_NativeToJsval(cx, lastObjectId, JL_RVAL);
 	JL_BAD;
 }
 
@@ -537,7 +558,7 @@ DEFINE_FUNCTION( IdToObject ) {
 	JL_S_ASSERT_NUMBER( JL_ARG(1) );
 
 	unsigned int id;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &id) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &id) );
 
 	if ( id > 0 && id <= lastObjectId ) {
 
@@ -730,10 +751,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Warning ) {
 
+	JLStr str;
 	JL_S_ASSERT_ARG(1);
-	const char *message;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &message) );
-	JL_CHK( JS_ReportWarning(cx, "%s", message) );
+//	const char *message;
+
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JS_ReportWarning(cx, "%s", str.GetStrConst()) );
 	
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -760,15 +783,16 @@ DEFINE_FUNCTION( Assert ) {
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
 	bool assert;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &assert) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &assert) );
 	if ( !assert ) {
 
-		const char *message;
+		JLStr str;
+
 		if ( JL_ARG_ISDEF(2) )
-			JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &message) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), str) );
 		else
-			message = "Assertion failed.";
-		JS_ReportError( cx, message );
+			str = JLStr("Assertion failed.");
+		JS_ReportError( cx, str.GetStrConst() );
 		return JS_FALSE;
 	}
 
@@ -788,7 +812,7 @@ DEFINE_FUNCTION( CollectGarbage ) {
 	size_t gcBytesDiff = cx->runtime->gcBytes;
 	JS_GC( cx );
 	gcBytesDiff = cx->runtime->gcBytes - gcBytesDiff;
-	return JL_CValToJsval(cx, gcBytesDiff, JL_RVAL);
+	return JL_NativeToJsval(cx, gcBytesDiff, JL_RVAL);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -803,7 +827,7 @@ DEFINE_FUNCTION( MaybeCollectGarbage ) {
 	size_t gcBytesDiff = cx->runtime->gcBytes;
 	JS_MaybeGC( cx );
 	gcBytesDiff = cx->runtime->gcBytes - gcBytesDiff;
-	return JL_CValToJsval(cx, gcBytesDiff, JL_RVAL);
+	return JL_NativeToJsval(cx, gcBytesDiff, JL_RVAL);
 }
 
 
@@ -817,7 +841,7 @@ DEFINE_FUNCTION( Sleep ) {
 
 	JL_S_ASSERT_ARG(1);
 	unsigned int time;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &time) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &time) );
 	SleepMilliseconds(time);
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -844,7 +868,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( TimeCounter ) {
 
-	return JL_CValToJsval(cx, AccurateTimeCounter(), JL_RVAL);
+	return JL_NativeToJsval(cx, AccurateTimeCounter(), JL_RVAL);
 }
 
 
@@ -861,10 +885,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( StringRepeat ) {
 
+	JLStr str;
+
 	JL_S_ASSERT_ARG(2);
 
 	size_t count;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &count) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &count) );
 	if ( count == 0 ) {
 
 		*JL_RVAL = JL_GetEmptyStringValue(cx);
@@ -873,7 +899,11 @@ DEFINE_FUNCTION( StringRepeat ) {
 
 	const char *buf;
 	size_t len;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buf, &len) ); // warning: GC on the returned buffer !
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buf, &len) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	buf = str.GetStrConst();
+	len = str.Length();
+
 
 	if ( len == 0 ) {
 
@@ -970,19 +1000,21 @@ $TOC_MEMBER $INAME
 // function copied from mozilla/js/src/js.c
 DEFINE_FUNCTION( Exec ) {
 
+	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	bool useAndSaveCompiledScripts;
 	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || JL_ARG(2) == JSVAL_TRUE;
-	const char *filename;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &filename) );
+//	const char *filename;
+//	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &filename) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
 
 	uint32 oldopts;
 	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); // JSOPTION_COMPILE_N_GO is properly removed in JLLoadScript if needed.
 	JSScript *script;
-	script = JL_LoadScript( cx, obj, filename, useAndSaveCompiledScripts, useAndSaveCompiledScripts );
+	script = JL_LoadScript( cx, obj, str, useAndSaveCompiledScripts, useAndSaveCompiledScripts );
 	JS_SetOptions(cx, oldopts);
 	JL_CHK( script );
 
@@ -1111,7 +1143,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 	}
 
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &pv.maxExecutionTime) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &pv.maxExecutionTime) );
 	else
 		pv.maxExecutionTime = 1000; // default value
 
@@ -1225,13 +1257,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsStatementValid ) {
 
+	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG(1);
 
-	const char *buffer;
-	size_t length;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
-	JL_CHK( JL_CValToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, buffer, length) == JS_TRUE, JL_RVAL) );
+	//const char *buffer;
+	//size_t length;
+	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_NativeToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, str.GetStrConst(), str.Length()) == JS_TRUE, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1280,7 +1314,7 @@ DEFINE_PROPERTY( currentFilename ) {
 	}
 
 	const char *filename = JS_GetScriptFilename(cx, script);
-	JL_CHK( JL_CValToJsval(cx, filename, vp) );
+	JL_CHK( JL_NativeToJsval(cx, filename, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1323,7 +1357,7 @@ DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
 	// <shaver>	you could install a vetoing callback!
 	// <crowder>	oh, true
 	bool disableGC;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &disableGC) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &disableGC) );
 	if ( disableGC ) {
 
 		JSGCCallback tmp = JS_SetGCCallback(cx, VetoingGCCallback);

@@ -537,7 +537,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
     case FFI_TYPE_INT:
       //JS_NewNumberValue
-		 JL_CValToJsval( cx, (jsdouble)((signed int*)*pptr)[index], vp ); // JS_NewNumberValue checks INT_FITS_IN_JSVAL
+		 JL_NativeToJsval( cx, (jsdouble)((signed int*)*pptr)[index], vp ); // JS_NewNumberValue checks INT_FITS_IN_JSVAL
       break;
 
     case FFI_TYPE_SINT8: // char => javascript string of 1 char
@@ -558,12 +558,12 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
     case FFI_TYPE_UINT32:
       //JS_NewNumberValue
-		 JL_CValToJsval( cx, (jsdouble)((unsigned long*)*pptr)[index], vp );
+		 JL_NativeToJsval( cx, (jsdouble)((unsigned long*)*pptr)[index], vp );
       break;
 
     case FFI_TYPE_SINT32:
 			//JS_NewNumberValue
-		 JL_CValToJsval( cx, (jsdouble)((signed long*)*pptr)[index], vp );
+		 JL_NativeToJsval( cx, (jsdouble)((signed long*)*pptr)[index], vp );
       break;
 
     case FFI_TYPE_SINT64:
@@ -1188,7 +1188,7 @@ JSClass NativeModule = {
 JSBool NativeTools_JSContextToPtr(JSContext *cx, uintN argc, jsval *vp) {
 
   //JS_NewNumberValue
-	JL_CValToJsval( cx, (jsdouble)(unsigned long)cx, &JS_RVAL(cx, vp) );
+	JL_NativeToJsval( cx, (jsdouble)(unsigned long)cx, &JS_RVAL(cx, vp) );
   return JS_TRUE;
 }
 
@@ -1196,7 +1196,7 @@ JSBool NativeTools_JSObjectToPtr(JSContext *cx, uintN argc, jsval *vp) {
 
   JSObject *object = JSVAL_TO_OBJECT(JS_ARGV(cx, vp)[0]);
   //JS_NewNumberValue
-  JL_CValToJsval( cx, (jsdouble)(unsigned long)object, &JS_RVAL(cx, vp) );
+  JL_NativeToJsval( cx, (jsdouble)(unsigned long)object, &JS_RVAL(cx, vp) );
   return JS_TRUE;
 }
 

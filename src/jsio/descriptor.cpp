@@ -319,7 +319,7 @@ DEFINE_FUNCTION( Read ) {
 		if (likely( !JSVAL_IS_VOID(JL_ARG(1)) )) {
 
 			PRInt32 amount;
-			JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &amount) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
 			JL_CHK( ReadToJsval(cx, fd, amount, JL_RVAL) ); // (TBD) check if it is good to call it even if amount is 0.
 		} else {
 
@@ -340,18 +340,23 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Write ) {
 
+	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG( 1 );
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( fd );
-	size_t len, sentAmount;
-	const char *str;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) );
+	size_t sentAmount;
 
-	JL_S_ASSERT( len <= PR_INT32_MAX, "Too many data." );
+//	size_t len;
+//	const char *str;
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) );
+
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+
+	JL_S_ASSERT( str.Length() <= PR_INT32_MAX, "Too many data." );
 	PRInt32 res;
-	res = PR_Write( fd, str, (PRInt32)len );
+	res = PR_Write( fd, str.GetStrConst(), (PRInt32)str.Length() );
 	if (unlikely( res == -1 )) {
 
 		switch ( PR_GetError() ) { 
@@ -405,21 +410,21 @@ DEFINE_FUNCTION( Write ) {
 
 	void *buffer;
 
-	if (likely( sentAmount == len )) {
+	if (likely( sentAmount == str.Length() )) {
 
 		*JL_RVAL = JL_GetEmptyStringValue(cx); // nothing remains
 		return JS_TRUE;
 	}
 
-	if (unlikely( sentAmount < len )) {
+	if (unlikely( sentAmount < str.Length() )) {
 
 		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
 		size_t remaining;
-		remaining = len - sentAmount;
+		remaining = str.Length() - sentAmount;
 		buffer = JS_malloc(cx, remaining +1);
 		JL_CHK( buffer );
 		((char*)buffer)[remaining] = '\0';
-		memcpy(buffer, str, remaining);
+		memcpy(buffer, str.GetStrConst(), remaining);
 		JL_CHKB( JL_NewBlob(cx, buffer, remaining, JL_RVAL), bad_free ); // (TBD) keep the type: return a string if the JL_ARG(1) is a sring.
  		return JS_TRUE;
 	}
@@ -482,7 +487,7 @@ DEFINE_PROPERTY( available ) {
 		return ThrowIoError(cx);
 	}
 
-	return JL_CValToJsval(cx, available, vp);
+	return JL_NativeToJsval(cx, available, vp);
 /*
 	if ( available <= JSVAL_INT_MAX )
 		*vp = INT_TO_JSVAL( (jsint)available );
@@ -552,10 +557,10 @@ DEFINE_FUNCTION( Import ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
 	//int stdfd;
-	//JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &stdfd) );
+	//JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &stdfd) );
 
 	PRInt32 osfd;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &osfd) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &osfd) );
 
 	//switch (stdfd) {
 	//	case 0:
@@ -573,7 +578,7 @@ DEFINE_FUNCTION( Import ) {
 	//}
 
 	int descType;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &descType) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &descType) );
 	PRDescType type;
 	type = (PRDescType)descType;
 

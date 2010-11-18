@@ -69,7 +69,7 @@ DEFINE_PROPERTY( radiusSetter ) {
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	jsdouble value;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &value) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
 	ode::dGeomCapsuleSetParams(geom, (ode::dReal)value, length);
 	return JS_TRUE;
 	JL_BAD;
@@ -98,7 +98,7 @@ DEFINE_PROPERTY( lengthSetter ) {
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	jsdouble value;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &value) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
 	ode::dGeomCapsuleSetParams(geom, radius, (ode::dReal)value);
 	return JS_TRUE;
 	JL_BAD;

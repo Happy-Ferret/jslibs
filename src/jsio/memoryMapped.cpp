@@ -27,11 +27,10 @@ struct MemoryMappedPrivate {
 	void *addr;
 };
 
-static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
+static JSBool BufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
-	*size = pv->size;
-	*buf = ((const char*)pv->addr) + pv->offset;
+	str = JLStr(((const char*)pv->addr) + pv->offset, pv->size);
 	return JS_TRUE;
 }
 
@@ -91,7 +90,7 @@ DEFINE_CONSTRUCTOR() {
 	// Doc. The offset must be aligned to whole pages. !!!
 	PROffset64 offset;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &offset) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &offset) );
 	else
 		offset = 0;
 
@@ -144,7 +143,7 @@ DEFINE_PROPERTY_SETTER( offset ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &pv->offset) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &pv->offset) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -153,7 +152,7 @@ DEFINE_PROPERTY_GETTER( offset ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( JL_CValToJsval(cx, pv->offset, vp) );
+	JL_CHK( JL_NativeToJsval(cx, pv->offset, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

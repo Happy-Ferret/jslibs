@@ -52,14 +52,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JLStr path;
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT( !JL_ARG_ISDEF(2) || JL_JsvalIsArray(cx, JL_ARG(2)), "Invalid 2nd argument" );
 
-	const char *path;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &path) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), path) );
 
 	int processArgc;
 	const char **processArgv;
@@ -73,12 +73,12 @@ DEFINE_CONSTRUCTOR() {
 
 		for ( int i=0; i<processArgc -1; i++ ) { // -1 because argv[0]
 
+			JLStr tmp;
 			jsval propVal;
 			JL_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal) );
 			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), JSVAL_TO_INT(propVal), &propVal) ); // (TBD) optimize
-			const char *tmp;
-			JL_CHK( JL_JsvalToCVal(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
-			processArgv[i+1] = tmp;
+			JL_CHK( JL_JsvalToNative(cx, propVal, tmp) ); // warning: GC on the returned buffer !
+			processArgv[i+1] = tmp.GetStrOwnership();
 		}
 		JS_DestroyIdArray( cx, idArray ); // (TBD) free it on error too !
 	} else {
@@ -112,6 +112,10 @@ DEFINE_CONSTRUCTOR() {
 	process = PR_CreateProcess(path, (char * const *)processArgv, NULL, psattr); // (TBD) avoid cast to (char * const *)
 
 	PR_DestroyProcessAttr(psattr);
+
+	if ( JL_ARG_ISDEF(2) ) // see GetStrOwnership
+		for ( int i=0; i<processArgc -1; i++ )
+			jl_free( const_cast<char*>(processArgv[i+1]) );
 	//free(processArgv); // alloca do not need free
 
 	JL_CHKB( PR_Close(stderr_child) == PR_SUCCESS, bad_throw );
@@ -172,7 +176,7 @@ DEFINE_FUNCTION( Wait ) {
 	PRInt32 exitValue;
 	JL_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
 	JL_SetPrivate(cx, obj, NULL);
-	JL_CHK( JL_CValToJsval(cx, exitValue, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, exitValue, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }

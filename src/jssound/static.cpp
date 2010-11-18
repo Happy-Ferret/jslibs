@@ -185,13 +185,13 @@ sf_count_t SfGetFilelen(void *user_data) {
 	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 	if ( JSVAL_IS_VOID( tmpVal ) )
 		return -1;
-	JL_JsvalToCVal(pv->cx, tmpVal, &position); // (TBD) manage error
+	JL_JsvalToNative(pv->cx, tmpVal, &position); // (TBD) manage error
 
 	int available;
 	JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal); // (TBD) manage error
 	if ( JSVAL_IS_VOID( tmpVal ) )
 		return -1;
-	JL_JsvalToCVal(pv->cx, tmpVal, &available); // (TBD) manage error
+	JL_JsvalToNative(pv->cx, tmpVal, &available); // (TBD) manage error
 
 	return position + available;
 }
@@ -202,13 +202,13 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 	StreamReadInfo *pv = (StreamReadInfo *)user_data;
 
 	jsval tmpVal;
-	int position, available;
+	size_t position, available;
 
 	switch (whence) {
 		case SEEK_SET:
 			if ( offset < 0 )
 				return -1;
-			JL_CValToJsval(pv->cx, offset, &tmpVal); // (TBD) manage error
+			JL_NativeToJsval(pv->cx, offset, &tmpVal); // (TBD) manage error
 			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 			return 0;
 
@@ -216,10 +216,10 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
-			JL_JsvalToCVal(pv->cx, tmpVal, &position); // (TBD) manage error
+			JL_JsvalToNative(pv->cx, tmpVal, &position); // (TBD) manage error
 
-			position += offset;
-			JL_CValToJsval(pv->cx, position, &tmpVal); // (TBD) manage error
+			position += size_t(offset);
+			JL_NativeToJsval(pv->cx, position, &tmpVal); // (TBD) manage error
 			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 			return 0;
 
@@ -227,17 +227,17 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal);
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
-			JL_JsvalToCVal(pv->cx, tmpVal, &available);
+			JL_JsvalToNative(pv->cx, tmpVal, &available);
 
 			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
-			JL_JsvalToCVal(pv->cx, tmpVal, &position);
+			JL_JsvalToNative(pv->cx, tmpVal, &position);
 
 			if ( offset > 0 || -offset > position + available )
 				return -1;
-			JL_JsvalToCVal(pv->cx, tmpVal, &position);
-			JL_CValToJsval(pv->cx, position + available + offset, &tmpVal); // the pointer is set to the size of the file plus offset.
+			JL_JsvalToNative(pv->cx, tmpVal, &position);
+			JL_NativeToJsval(pv->cx, position + available + offset, &tmpVal); // the pointer is set to the size of the file plus offset.
 			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal);
 			return 0;
 
@@ -254,7 +254,7 @@ sf_count_t SfTell(void *user_data) {
 	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
 	if ( JSVAL_IS_VOID( tmpVal ) )
 		return -1;
-	JL_JsvalToCVal(pv->cx, tmpVal, &position);
+	JL_JsvalToNative(pv->cx, tmpVal, &position);
 
 	return position;
 }
@@ -263,7 +263,7 @@ sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
 
 	StreamReadInfo *pv = (StreamReadInfo *)user_data;
 
-	size_t amount = count;
+	size_t amount = size_t(count);
 //	if ( pv->streamRead( pv->cx, pv->obj, (char*)ptr, &amount ) != JS_TRUE )
 //		return -1; // (TBD) find a better error
 	if ( StreamReadInterface( pv->cx, pv->obj)( pv->cx, pv->obj, (char*)ptr, &amount ) != JS_TRUE )
@@ -340,8 +340,8 @@ DEFINE_FUNCTION( DecodeSound ) {
 
 		} else {
 
-			*len = items * sizeof(short);
-			totalSize += items * sizeof(short);
+			*len = size_t(items) * sizeof(short);
+			totalSize += size_t(items) * sizeof(short);
 		}
 
 	} while (items > 0);
@@ -394,6 +394,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SplitChannels ) {
 
+	JLStr bufStr;
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
@@ -408,7 +409,10 @@ DEFINE_FUNCTION( SplitChannels ) {
 
 	const char *srcBuf;
 	size_t srcBufLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &srcBuf, &srcBufLength) );
+	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &srcBuf, &srcBufLength) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), bufStr) );
+	srcBufLength = bufStr.Length();
+	srcBuf = bufStr.GetStrConst();
 
 	JSObject *destArray = JS_NewArrayObject(cx, 0, NULL);
 	*JL_RVAL = OBJECT_TO_JSVAL(destArray);

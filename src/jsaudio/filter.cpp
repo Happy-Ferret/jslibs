@@ -77,7 +77,7 @@ DEFINE_FUNCTION( valueOf ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-	JL_CHK( JL_CValToJsval(cx, pv->filter, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, pv->filter, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -106,7 +106,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 	if ( JSVAL_IS_VOID(*vp) )
 		filterType = AL_FILTER_NULL;
 	else
-		JL_CHK( 	JL_JsvalToCVal(cx, *vp, &filterType) );
+		JL_CHK( 	JL_JsvalToNative(cx, *vp, &filterType) );
 	alFilteri(pv->filter, AL_FILTER_TYPE, filterType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -124,7 +124,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 	if ( filterType == AL_FILTER_NULL )
 		*vp = JSVAL_VOID;
 	else
-		JL_CHK( JL_CValToJsval(cx, filterType, vp) );
+		JL_CHK( JL_NativeToJsval(cx, filterType, vp) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -138,7 +138,7 @@ DEFINE_PROPERTY_SETTER( filterFloat ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	ALenum param = JSID_TO_INT(id);
 	float f;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &f) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &f) );
 	alFilterf(pv->filter, param, f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -153,7 +153,7 @@ DEFINE_PROPERTY_GETTER( filterFloat ) {
 	float f;
 	alGetFilterf(pv->filter, param, &f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK(JL_CValToJsval(cx, f, vp) );
+	JL_CHK(JL_NativeToJsval(cx, f, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

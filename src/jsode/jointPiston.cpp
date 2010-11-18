@@ -99,12 +99,12 @@ DEFINE_FUNCTION( AxisDelta ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(jointId);
 	float x,y,z,  dx, dy, dz;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(0), &x ) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &y ) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &z ) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &dx ) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &dy ) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &dz ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(0), &x ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &y ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &z ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &dx ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &dy ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &dz ) );
 	ode::dJointSetPistonAxisDelta(jointId, x,y,z, dx, dy, dz);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -202,7 +202,7 @@ DEFINE_PROPERTY( position ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( JL_CValToJsval(cx, ode::dJointGetPistonPosition(jointId), vp) );
+	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetPistonPosition(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -216,7 +216,7 @@ DEFINE_PROPERTY( positionRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( JL_CValToJsval(cx, ode::dJointGetPistonPositionRate(jointId), vp) );
+	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetPistonPositionRate(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -232,7 +232,7 @@ DEFINE_PROPERTY( angle ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( JL_CValToJsval(cx, ode::dJointGetPistonAngle(jointId), vp) );
+	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetPistonAngle(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -246,7 +246,7 @@ DEFINE_PROPERTY( angleRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( JL_CValToJsval(cx, ode::dJointGetPistonAngleRate(jointId), vp) );
+	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetPistonAngleRate(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

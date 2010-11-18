@@ -36,23 +36,26 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Base64Encode ) {
 
+	JLStr in;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_STRING(JL_ARG(1));
 
-	const char *in;
-	size_t inLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
+//	const char *in;
+//	size_t inLength;
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), in) );
 
 	unsigned long outLength;
-	outLength = 4 * (((unsigned long)inLength + 2) / 3) +1;
+	outLength = 4 * (((unsigned long)in.Length() + 2) / 3) +1;
 	char *out;
 	out = (char *)JS_malloc( cx, outLength +1 );
 	JL_CHK( out );
 	out[outLength] = '\0';
 
 	int err;
-	err = base64_encode( (const unsigned char *)in, (unsigned long)inLength, (unsigned char *)out, &outLength );
+	err = base64_encode( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
@@ -72,21 +75,24 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Base64Decode ) {
 
+	JLStr in;
+
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_STRING(JL_ARG(1));
-	const char *in;
-	size_t inLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
+//	const char *in;
+//	size_t inLength;
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), in) );
 
 	unsigned long outLength;
-	outLength = 3 * ((unsigned long)inLength-2) / 4 +1;
+	outLength = 3 * ((unsigned long)in.Length()-2) / 4 +1;
 	char *out;
 	out = (char *)JS_malloc(cx, outLength +1);
 	JL_CHK( out );
 	out[outLength] = '\0';
 
 	int err;
-	err = base64_decode( (const unsigned char *)in, (unsigned long)inLength, (unsigned char *)out, &outLength );
+	err = base64_decode( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
@@ -106,13 +112,18 @@ DEFINE_FUNCTION( HexEncode ) {
 
 	static const char hex[] = "0123456789ABCDEF";
 
+	JLStr data;
+
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	JL_S_ASSERT_STRING(JL_ARG(1));
 
 	const char *in;
 	size_t inLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), data) );
+	in = data.GetStrConst();
+	inLength = data.Length();
 
 	size_t outLength;
 	outLength = inLength * 2;
@@ -158,11 +169,17 @@ DEFINE_FUNCTION( HexDecode ) {
 		XX, 10, 11, 12, 13, 14, 15, XX, XX, XX, XX, XX, XX, XX, XX, XX
 	};
 
+	JLStr data;
+
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_STRING(JL_ARG(1));
+
 	const char *in;
 	size_t inLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), data) );
+	in = data.GetStrConst();
+	inLength = data.Length();
 
 	size_t outLength;
 	outLength = inLength / 2;

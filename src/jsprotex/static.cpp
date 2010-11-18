@@ -53,7 +53,7 @@ DEFINE_FUNCTION( RandSeed ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 	unsigned int seed;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &seed) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &seed) );
 	init_genrand(seed);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -69,7 +69,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( RandInt ) {
 
-	return JL_CValToJsval(cx, genrand_int32(), JL_RVAL);
+	return JL_NativeToJsval(cx, genrand_int32(), JL_RVAL);
 }
 
 
@@ -80,7 +80,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( RandReal ) {
 
-	return JL_CValToJsval(cx, genrand_real1(), JL_RVAL);
+	return JL_NativeToJsval(cx, genrand_real1(), JL_RVAL);
 }
 
 /**doc
@@ -92,21 +92,21 @@ DEFINE_FUNCTION( PerlinNoise ) {
 	JL_S_ASSERT_ARG_RANGE(4,6);
 	int n;
 	double a, b, x, y, z;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &a) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &b) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &n) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &a) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &b) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &n) );
 
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &x) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &x) );
 	if ( argc == 4 )
-		return JL_CValToJsval(cx, Noise1DPerlin(x, a, b, n), JL_RVAL);
+		return JL_NativeToJsval(cx, Noise1DPerlin(x, a, b, n), JL_RVAL);
 
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &y) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &y) );
 	if ( argc == 5 )
-		return JL_CValToJsval(cx, Noise2DPerlin(x, y, a, b, n), JL_RVAL);
+		return JL_NativeToJsval(cx, Noise2DPerlin(x, y, a, b, n), JL_RVAL);
 
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(6), &z) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &z) );
 	if ( argc == 6 )
-		return JL_CValToJsval(cx, Noise3DPerlin(x, y, z, a, b, n), JL_RVAL);
+		return JL_NativeToJsval(cx, Noise3DPerlin(x, y, z, a, b, n), JL_RVAL);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -137,10 +137,10 @@ DEFINE_FUNCTION( PerlinNoise2 ) {
 
 	JL_S_ASSERT_ARG(3);
 	double x, y, z;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &x) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &y) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &z) );
-	return JL_CValToJsval(cx, PerlinNoise2(x,y,z), JL_RVAL);
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &y) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &z) );
+	return JL_NativeToJsval(cx, PerlinNoise2(x,y,z), JL_RVAL);
 	JL_BAD;
 }
 

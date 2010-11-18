@@ -54,14 +54,15 @@ JSBool Unlock( JSContext *cx, ClassPrivate *pv ) {
 }
 
 
-static JSBool BufferGet( JSContext *cx, JSObject *obj, const char **buf, size_t *size ) {
+static JSBool BufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
-	*buf = (char *)pv->mem + sizeof(MemHeader);
-	*size = mh->currentDataLength;
+//	*buf = (char *)pv->mem + sizeof(MemHeader);
+//	*size = mh->currentDataLength;
+	str = JLStr((const char *)pv->mem + sizeof(MemHeader), mh->currentDataLength);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -135,21 +136,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JLStr name;
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_S_ASSERT_ARG_MIN( 2 );
 
 	size_t size;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &size) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &size) );
 
 	unsigned int mode;
 	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &mode) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &mode) );
 
-	const char *name;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &name) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), name) );
 
 	char semName[PATH_MAX];
 	strcpy(semName, name);
@@ -222,6 +223,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Write ) {
 
+	JLStr data;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
 
@@ -232,21 +234,22 @@ DEFINE_FUNCTION( Write ) {
 	size_t offset;
 	offset = 0;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &offset) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &offset) );
 
-	const char *data;
-	size_t dataLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &dataLength) );
-
-	JL_S_ASSERT( sizeof(MemHeader) + offset + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
+//	const char *data;
+//	size_t dataLength;
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &dataLength) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), data) );
+	
+	JL_S_ASSERT( sizeof(MemHeader) + offset + data.Length() <= pv->size, "SharedMemory too small to hold the given data." );
 
 	JL_CHK( Lock(cx, pv) );
 
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
-	if ( offset + dataLength > mh->currentDataLength )
-		mh->currentDataLength = offset + dataLength;
-	memmove(	(char *)pv->mem + sizeof(MemHeader) + offset, data, dataLength );
+	if ( offset + data.Length() > mh->currentDataLength )
+		mh->currentDataLength = offset + data.Length();
+	memmove( (char *)pv->mem + sizeof(MemHeader) + offset, data.GetStrConst(), data.Length() ); // doc. Use memmove to handle overlapping regions.
 
 	JL_CHK( Unlock(cx, pv) );
 
@@ -271,7 +274,7 @@ DEFINE_FUNCTION( Read ) {
 	size_t offset;
 	offset = 0;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &offset) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &offset) );
 
 	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh;
@@ -279,7 +282,7 @@ DEFINE_FUNCTION( Read ) {
 
 	size_t dataLength;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &dataLength) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &dataLength) );
 	else
 		dataLength = mh->currentDataLength;
 
@@ -367,18 +370,20 @@ DEFINE_PROPERTY( contentSetter ) {
 		JL_CHK( Unlock(cx, pv) );
 	} else {
 
-		const char *data;
-		size_t dataLength;
-		JL_CHK( JL_JsvalToStringAndLength(cx, vp, &data, &dataLength) );
+		JLStr data;
+//		const char *data;
+//		size_t dataLength;
+//		JL_CHK( JL_JsvalToStringAndLength(cx, vp, &data, &dataLength) );
+		JL_CHK( JL_JsvalToNative(cx, *vp, data) );
 
-		JL_S_ASSERT( sizeof(MemHeader) + dataLength <= pv->size, "SharedMemory too small to hold the given data." );
+		JL_S_ASSERT( sizeof(MemHeader) + data.Length() <= pv->size, "SharedMemory too small to hold the given data." );
 
 		JL_CHK( Lock(cx, pv) );
 
 		MemHeader *mh = (MemHeader*)pv->mem;
-		if ( dataLength > mh->currentDataLength )
-			mh->currentDataLength = dataLength;
-		memmove(	(char *)pv->mem + sizeof(MemHeader), data, dataLength );
+		if ( data.Length() > mh->currentDataLength )
+			mh->currentDataLength = data.Length();
+		memmove( (char *)pv->mem + sizeof(MemHeader), data.GetStrConst(), data.Length() ); // doc. Use memmove to handle overlapping regions.
 
 		JL_CHK( Unlock(cx, pv) );
 	}

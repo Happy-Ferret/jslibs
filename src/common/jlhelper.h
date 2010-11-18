@@ -84,11 +84,13 @@ JL_GetClass(const JSObject *obj) {
 	return obj->getJSClass();
 }
 
+/*
 static ALWAYS_INLINE const char*
 JL_GetStringBytesZ(JSContext *cx, JSString *jsstr) {
 
 	return JS_GetStringBytesZ(cx, jsstr);
 }
+*/
 
 static ALWAYS_INLINE size_t
 JL_GetStringLength(const JSString *jsstr) {
@@ -691,8 +693,10 @@ enum JLErrNum {
 ///////////////////////////////////////////////////////////////////////////////
 // Native Interface
 
+class JLStr;
+
 typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, size_t *amount );
-typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, const char **buffer, size_t *size );
+typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, JLStr &str );
 typedef JSBool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
 
 inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
@@ -1450,6 +1454,351 @@ JL_NewBlobCopyN( JSContext *cx, const void *data, size_t amount, jsval *vp ) {
 ///////////////////////////////////////////////////////////////////////////////
 // convertion functions
 
+/*
+typedef struct JLStr { size_t data; } JLStr;
+
+static ALWAYS_INLINE JLStr
+CStrToJLStr(const char *cstr) {
+
+	JLStr str;
+	str.data = size_t(cstr) | 1;
+	JL_ASSERT( size_t(cstr) != str.data );
+	return str;
+}
+
+
+static ALWAYS_INLINE const char *
+JLStrToCStr(const JLStr &jlstr) {
+
+	return (const char *)(jlstr.data & ~1);
+}
+
+static ALWAYS_INLINE void
+JLStrFree(const JLStr &jlstr) {
+
+	if ( jlstr.data & 1 )
+		jl_free((char*)JLStrToCStr(jlstr));
+}
+*/
+
+
+// char *test;
+// JL_CHK( JL_Alloc(test,10);
+template <typename T>
+static ALWAYS_INLINE bool
+JL_Alloc( T*&ptr, size_t count = 1 ) {
+
+	ptr = (T*)jl_malloc(sizeof(T)*count);
+	return ptr != NULL;
+}
+
+
+class JLStr {
+
+	struct Own {
+
+		uint32_t count;
+		const jschar *cjsstr;
+		const char *cstr;
+		jschar *jsstr;
+		char *str;
+		size_t len;
+	};
+	Own *_own;
+
+	ALWAYS_INLINE void NewOwn(const jschar *cjsstr, jschar *jsstr, const char *cstr, char *str, size_t len) {
+
+		JL_Alloc(_own);
+		_own->count = 1;
+		_own->cjsstr = cjsstr;
+		_own->jsstr = jsstr;
+		_own->cstr = cstr;
+		_own->str = str;
+		_own->len = len;
+		JL_ASSERT( IsSet() );
+	}
+
+public:
+	~JLStr() {
+		
+		if ( !_own || --_own->count )
+			return;
+		if ( _own->jsstr )
+			jl_free(_own->jsstr);
+		if ( _own->str )
+			jl_free(_own->str);
+		jl_free(_own);
+	}
+	
+	ALWAYS_INLINE JLStr() : _own(NULL) {
+
+		JL_ASSERT( !JS_CStringsAreUTF8() );
+	}
+
+	ALWAYS_INLINE JLStr(const JLStr &jlstr) : _own(jlstr._own) {
+		
+		JL_ASSERT( _own );
+		++_own->count;
+	}
+
+	ALWAYS_INLINE void operator=(const JLStr &jlstr) {
+
+		JL_ASSERT( !_own );
+		_own = jlstr._own;
+		++_own->count;
+	}
+
+	JLStr(JSString *jsstr) {
+
+		size_t length;
+		const jschar *str = JS_GetStringCharsAndLength(jsstr, &length); // doc. not null-terminated.
+		NewOwn(str, NULL, NULL, NULL, length);
+	}
+
+	JLStr(const jschar *str, size_t length) {
+		
+		NewOwn(str, NULL, NULL, NULL, length);
+	}
+
+	JLStr(jschar *str, size_t length) {
+
+		NewOwn(NULL, str, NULL, NULL, length);
+	}
+
+	JLStr(const char *str, size_t length = SIZE_MAX) {
+
+		NewOwn(NULL, NULL, str, NULL, length);
+	}
+
+	JLStr(char *str, size_t length = SIZE_MAX) {
+
+		NewOwn(NULL, NULL, NULL, str, length);
+	}
+
+
+	ALWAYS_INLINE bool IsSet() const {
+		
+		return _own && (_own->cjsstr || _own->jsstr || _own->cstr || _own->str);
+	}
+
+
+	ALWAYS_INLINE bool HasJsStr() const {
+
+		JL_ASSERT( IsSet() );
+
+		return _own->cjsstr || _own->jsstr;
+	}
+
+
+	ALWAYS_INLINE size_t Length() {
+		
+		JL_ASSERT( IsSet() );
+
+		if (_own->len != SIZE_MAX ) // not unknown length
+			return _own->len;
+		return _own->len = strlen(_own->cstr ? _own->cstr : _own->str);
+	}
+
+
+	ALWAYS_INLINE size_t LengthOrZero() {
+		
+		return IsSet() ? Length() : 0;
+	}
+
+
+	const jschar *GetJsStrConst() {
+
+		JL_ASSERT( IsSet() );
+
+		if ( _own->cjsstr )
+			return _own->cjsstr;
+
+		if ( _own->jsstr )
+			return _own->jsstr;
+		
+		const char *src = _own->cstr ? _own->cstr : _own->str;
+		jschar *dst;
+		JL_Alloc(dst, _own->len);
+		JL_ASSERT(dst != NULL);
+		_own->jsstr = dst;
+		for ( size_t i = _own->len; i > 0; --i )
+			*(dst++) = (unsigned char)*(src++);
+		return _own->jsstr;
+	}
+
+
+	const jschar *GetJsStrConstOrNull() {
+
+		return IsSet() ? GetJsStrConst() : NULL;
+	}
+
+
+	jschar *GetJsStrOwnership() {
+
+		JL_ASSERT( IsSet() );
+
+		GetJsStrConst();
+
+		jschar *tmp;
+		if ( _own->jsstr ) {
+
+			tmp = _own->jsstr;
+			_own->jsstr = NULL;
+			return tmp;
+		}
+
+		if ( _own->cjsstr ) {
+	
+			JL_Alloc(tmp, _own->len);
+			JL_ASSERT(tmp != NULL);
+			memcpy(tmp, _own->cjsstr, Length());
+			return tmp;
+		}
+
+		JL_ASSERT(false);
+		return NULL;
+	}
+
+
+	const char *GetStrConst() {
+
+		JL_ASSERT( IsSet() );
+
+		if ( _own->cstr )
+			return _own->cstr;
+
+		if ( _own->str )
+			return _own->str;
+		
+		const jschar *src = _own->cjsstr ? _own->cjsstr : _own->jsstr;
+		char *dst;
+		JL_Alloc(dst, _own->len + 1);
+		JL_ASSERT(dst != NULL);
+		_own->str = dst;
+		for ( size_t i = _own->len; i > 0; --i )
+			*(dst++) = (char)*(src++);
+		*dst = '\0';
+		return _own->str;
+	}
+
+
+	const char *GetStrConstOrNull() {
+
+		return IsSet() ? GetStrConst() : NULL;
+	}
+
+
+	char *GetStrOwnership() {
+
+		JL_ASSERT( IsSet() );
+
+		GetStrConst();
+
+		char *tmp;
+		if ( _own->str ) {
+
+			tmp = _own->str;
+			_own->str = NULL;
+			return tmp;
+		}
+
+		if ( _own->cstr ) {
+			
+			tmp = (char*)jl_malloc(sizeof(char) * _own->len);
+			JL_ASSERT(tmp != NULL);
+			memcpy(tmp, _own->cstr, Length());
+			return tmp;
+		}
+
+		return NULL;
+		JL_ASSERT(false);
+	}
+
+
+	ALWAYS_INLINE operator const char *() {
+
+		return GetStrConstOrNull();
+	}
+
+
+	ALWAYS_INLINE operator const jschar *() {
+
+		return GetJsStrConstOrNull();
+	}
+
+
+private:
+	void operator *();
+	void operator [](size_t);
+	void* operator new(size_t);
+	void* operator new[](size_t);
+};
+
+
+
+/*
+static INLINE JSBool
+JL_JsvalToStringLength( JSContext *cx, jsval &val, size_t *length ) {
+
+	if ( JSVAL_IS_STRING(val) ) { // for string literals
+
+		*length = JL_GetStringLength( JSVAL_TO_STRING(val) );
+		return JS_TRUE;
+	}
+	if ( !JSVAL_IS_PRIMITIVE(val) ) { // for NIBufferGet support
+
+		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val));
+		JLStr str;
+		if ( fct ) {
+
+			int st = fct(cx, JSVAL_TO_OBJECT(val), str);
+			*length = str.Length();
+			return st;
+		}
+	}
+
+	// and for anything else ...
+	JSString *jsstr = JS_ValueToString(cx, val); // unfortunately, we have to convert to a string to know its length
+	if ( jsstr == NULL )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "string" );
+	*length = JL_GetStringLength(jsstr);
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
+
+/*
+static INLINE JSBool
+JL_JsvalToStringAndLength( JSContext *cx, jsval *val, JLStr &str ) {
+
+	if ( JSVAL_IS_STRING(*val) ) { // for string literals
+
+		const jschar *chars = JS_GetStringChars(JSVAL_TO_STRING(*val));
+		JL_CHK( chars );
+		str = JLStr(chars);
+		return JS_TRUE;
+	}
+	if ( !JSVAL_IS_PRIMITIVE(*val) ) { // for NIBufferGet support
+
+		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(*val));
+		if ( fct )
+			return fct(cx, JSVAL_TO_OBJECT(*val), str);
+	}
+
+	// and for anything else ...
+	JSString *jsstr = JS_ValueToString(cx, *val);
+	if ( jsstr == NULL )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "string" );
+	const jschar *chars = JS_GetStringChars(JSVAL_TO_STRING(*val));
+	JL_CHK( chars );
+	str = JLStr(chars);
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
+
+
+/*
 
 // beware: caller should keep a reference to buffer as short time as possible, because it is difficult to protect it from GC.
 static INLINE JSBool
@@ -1484,32 +1833,9 @@ JL_JsvalToStringAndLength( JSContext *cx, jsval *val, const char** buffer, size_
 	return JS_TRUE;
 	JL_BAD;
 }
+*/
 
-
-static INLINE JSBool
-JL_JsvalToStringLength( JSContext *cx, jsval &val, size_t *length ) {
-
-	if ( JSVAL_IS_STRING(val) ) { // for string literals
-
-		*length = JL_GetStringLength( JSVAL_TO_STRING(val) );
-		return JS_TRUE;
-	}
-	if ( !JSVAL_IS_PRIMITIVE(val) ) { // for NIBufferGet support
-
-		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val));
-		const char* tmp;
-		if ( fct )
-			return fct(cx, JSVAL_TO_OBJECT(val), &tmp, length);
-	}
-	JSString *jsstr = JS_ValueToString(cx, val); // unfortunately, we have to convert to a string to know its length
-	if ( jsstr == NULL )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "string" );
-	*length = JL_GetStringLength(jsstr);
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
+/*
 static INLINE JSBool
 JL_StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cstr, size_t length ) {
 
@@ -1530,13 +1856,39 @@ JL_StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cstr, size_t l
 	return JS_TRUE;
 	JL_BAD;
 }
+*/
 
+
+// JLStr
+
+static ALWAYS_INLINE JSBool
+JL_JsvalToNative( JSContext *cx, jsval &val, JLStr &str ) {
+
+	if (likely( JSVAL_IS_STRING(val) )) { // for string literals
+
+		str = JLStr(JSVAL_TO_STRING(val));
+		return JS_TRUE;
+	}
+	if (likely( !JSVAL_IS_PRIMITIVE(val) )) { // for NIBufferGet support
+
+		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val));
+		if ( fct )
+			return fct(cx, JSVAL_TO_OBJECT(val), str);
+	}
+	JSString *jsstr = JS_ValueToString(cx, val);
+	if ( jsstr == NULL )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "string" );
+	val = STRING_TO_JSVAL(jsstr); // GC protection
+	str = JLStr(jsstr);
+	return JS_TRUE;
+	JL_BAD;
+}
 
 
 // c-strings
 
 static ALWAYS_INLINE JSBool
-JL_CValToJsval( JSContext *cx, const char* cval, jsval *vp ) {
+JL_NativeToJsval( JSContext *cx, const char* cval, jsval *vp ) {
 
 	if (unlikely( cval == NULL )) {
 
@@ -1557,53 +1909,41 @@ JL_CValToJsval( JSContext *cx, const char* cval, jsval *vp ) {
 }
 
 static ALWAYS_INLINE JSBool
-JL_JsvalToCVal( JSContext *cx, jsval &val, const char** cval ) {
+JL_NativeToJsval( JSContext *cx, const char* cval, size_t length, jsval *vp ) {
 
+	if (unlikely( cval == NULL )) {
 
-	if (likely( JSVAL_IS_STRING(val) )) { // for string literals
-
-		*cval = JL_GetStringBytesZ(cx, JSVAL_TO_STRING(val)); // JL_GetStringBytes never returns NULL, then JL_S_ASSERT( *cval != NULL, "Invalid string." ); is not needed.
-		if ( *cval == NULL )
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "a valid string");
+		*vp = JSVAL_VOID;
 		return JS_TRUE;
 	}
-	if (likely( !JSVAL_IS_PRIMITIVE(val) )) { // for NIBufferGet support
+	if (unlikely( *cval == '\0' )) {
 
-		size_t size; //unused
-		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val));
-		if ( fct )
-			return fct(cx, JSVAL_TO_OBJECT(val), cval, &size);
+		*vp = JL_GetEmptyStringValue(cx);
+		return JS_TRUE;
 	}
-	// and for anything else ...
-	JSString *jsstr = JS_ValueToString(cx, val);
-	//JS_S_ASSERT_CONVERT( jsstr != NULL, "string" );
-	if ( jsstr == NULL )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "string" );
-
-	val = STRING_TO_JSVAL(jsstr); // protects *val against GC.
-	*cval = JL_GetStringBytesZ(cx, jsstr);
-	if ( *cval == NULL )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "a valid string");
+	JSString *jsstr = JS_NewStringCopyN(cx, cval, length);
+	if (unlikely( jsstr == NULL ))
+		JL_REPORT_ERROR( "Unable to create the string." );
+	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-
 // int8 / uint8
 
-//static JSBool JL_CValToJsval( JSContext *cx, const int8_t &num, jsval *vp );
-static JSBool JL_JsvalToCVal( JSContext *cx, const jsval &val, int8_t *num );
-//static JSBool JL_CValToJsval( JSContext *cx, const uint8_t &num, jsval *vp );
-static JSBool JL_JsvalToCVal( JSContext *cx, const jsval &val, uint8_t *num );
+//static JSBool JL_NativeToJsval( JSContext *cx, const int8_t &num, jsval *vp );
+static JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, int8_t *num );
+//static JSBool JL_NativeToJsval( JSContext *cx, const uint8_t &num, jsval *vp );
+static JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num );
 
 
 // int16 / uint16
 
-//static JSBool JL_CValToJsval( JSContext *cx, const int16_t &num, jsval *vp );
-static JSBool JL_JsvalToCVal( JSContext *cx, const jsval &val, int16_t *num );
-//static JSBool JL_CValToJsval( JSContext *cx, const uint16_t &num, jsval *vp );
-static JSBool JL_JsvalToCVal( JSContext *cx, const jsval &val, uint16_t *num );
+//static JSBool JL_NativeToJsval( JSContext *cx, const int16_t &num, jsval *vp );
+static JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, int16_t *num );
+//static JSBool JL_NativeToJsval( JSContext *cx, const uint16_t &num, jsval *vp );
+static JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, uint16_t *num );
 
 
 // int32
@@ -1611,7 +1951,7 @@ static JSBool JL_JsvalToCVal( JSContext *cx, const jsval &val, uint16_t *num );
 JL_STATIC_ASSERT( _I32_MIN == JSVAL_INT_MIN && _I32_MAX == JSVAL_INT_MAX );
 
 static ALWAYS_INLINE JSBool
-JL_CValToJsval( JSContext *cx, const int32_t &num, jsval *vp ) {
+JL_NativeToJsval( JSContext *cx, const int32_t &num, jsval *vp ) {
 
 	JL_UNUSED(cx);
 	*vp = INT_TO_JSVAL(num);
@@ -1619,7 +1959,7 @@ JL_CValToJsval( JSContext *cx, const int32_t &num, jsval *vp ) {
 }
 
 static INLINE JSBool
-JL_JsvalToCVal( JSContext *cx, const jsval &val, int32_t *num ) {
+JL_JsvalToNative( JSContext *cx, const jsval &val, int32_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -1654,7 +1994,7 @@ JL_JsvalToCVal( JSContext *cx, const jsval &val, int32_t *num ) {
 JL_STATIC_ASSERT( _UI32_MAX >= JSVAL_INT_MAX );
 
 static ALWAYS_INLINE JSBool
-JL_CValToJsval( JSContext *cx, const uint32_t &num, jsval *vp ) {
+JL_NativeToJsval( JSContext *cx, const uint32_t &num, jsval *vp ) {
 
 	JL_UNUSED(cx);
 	if (likely( num <= uint32_t(JSVAL_INT_MAX) ))
@@ -1665,7 +2005,7 @@ JL_CValToJsval( JSContext *cx, const uint32_t &num, jsval *vp ) {
 }
 
 static INLINE JSBool
-JL_JsvalToCVal( JSContext *cx, const jsval &val, uint32_t *num ) {
+JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -1701,7 +2041,7 @@ JL_JsvalToCVal( JSContext *cx, const jsval &val, uint32_t *num ) {
 // int64
 
 static ALWAYS_INLINE JSBool
-JL_CValToJsval( JSContext *cx, const int64_t &num, jsval *vp ) {
+JL_NativeToJsval( JSContext *cx, const int64_t &num, jsval *vp ) {
 
 	if ( num >= int64_t(JSVAL_INT_MIN) && num <= int64_t(JSVAL_INT_MAX) ) {
 
@@ -1717,7 +2057,7 @@ JL_CValToJsval( JSContext *cx, const int64_t &num, jsval *vp ) {
 }
 
 static INLINE JSBool
-JL_JsvalToCVal( JSContext *cx, const jsval &val, int64_t *num ) {
+JL_JsvalToNative( JSContext *cx, const jsval &val, int64_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -1750,7 +2090,7 @@ JL_JsvalToCVal( JSContext *cx, const jsval &val, int64_t *num ) {
 // uint64
 
 static ALWAYS_INLINE JSBool
-JL_CValToJsval( JSContext *cx, const uint64_t &num, jsval *vp ) {
+JL_NativeToJsval( JSContext *cx, const uint64_t &num, jsval *vp ) {
 
 	if (likely( num <= uint64_t(JSVAL_INT_MAX) ))
 		*vp = INT_TO_JSVAL(int32(num));
@@ -1767,7 +2107,7 @@ JL_CValToJsval( JSContext *cx, const uint64_t &num, jsval *vp ) {
 }
 
 static INLINE JSBool
-JL_JsvalToCVal( JSContext *cx, const jsval &val, uint64_t *num ) {
+JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -1800,18 +2140,18 @@ JL_JsvalToCVal( JSContext *cx, const jsval &val, uint64_t *num ) {
 // long
 
 static ALWAYS_INLINE JSBool
-JL_CValToJsval( JSContext *cx, const long &num, jsval *vp ) {
+JL_NativeToJsval( JSContext *cx, const long &num, jsval *vp ) {
 
-	if ( sizeof(long) == sizeof(int64_t) ) return JL_CValToJsval(cx, int64_t(num), vp);
-	if ( sizeof(long) == sizeof(int32_t) ) return JL_CValToJsval(cx, int32_t(num), vp);
+	if ( sizeof(long) == sizeof(int64_t) ) return JL_NativeToJsval(cx, int64_t(num), vp);
+	if ( sizeof(long) == sizeof(int32_t) ) return JL_NativeToJsval(cx, int32_t(num), vp);
 	JL_ASSERT(false);
 }
 
 static ALWAYS_INLINE JSBool
-JL_JsvalToCVal( JSContext *cx, const jsval &val, long *num ) {
+JL_JsvalToNative( JSContext *cx, const jsval &val, long *num ) {
 
-	if ( sizeof(long) == sizeof(int64_t) ) return JL_JsvalToCVal(cx, val, (int64_t*)num);
-	if ( sizeof(long) == sizeof(int32_t) ) return JL_JsvalToCVal(cx, val, (int32_t*)num);
+	if ( sizeof(long) == sizeof(int64_t) ) return JL_JsvalToNative(cx, val, (int64_t*)num);
+	if ( sizeof(long) == sizeof(int32_t) ) return JL_JsvalToNative(cx, val, (int32_t*)num);
 	JL_ASSERT(false);
 }
 
@@ -1819,18 +2159,18 @@ JL_JsvalToCVal( JSContext *cx, const jsval &val, long *num ) {
 // unsigned long
 
 static ALWAYS_INLINE JSBool
-JL_CValToJsval( JSContext *cx, const unsigned long &num, jsval *vp ) {
+JL_NativeToJsval( JSContext *cx, const unsigned long &num, jsval *vp ) {
 
-	if ( sizeof(unsigned long) == sizeof(uint64_t) ) return JL_CValToJsval(cx, uint64_t(num), vp);
-	if ( sizeof(unsigned long) == sizeof(uint32_t) ) return JL_CValToJsval(cx, uint32_t(num), vp);
+	if ( sizeof(unsigned long) == sizeof(uint64_t) ) return JL_NativeToJsval(cx, uint64_t(num), vp);
+	if ( sizeof(unsigned long) == sizeof(uint32_t) ) return JL_NativeToJsval(cx, uint32_t(num), vp);
 	JL_ASSERT(false);
 }
 
 static ALWAYS_INLINE JSBool
-JL_JsvalToCVal( JSContext *cx, const jsval &val, unsigned long *num ) {
+JL_JsvalToNative( JSContext *cx, const jsval &val, unsigned long *num ) {
 
-	if ( sizeof(unsigned long) == sizeof(uint64_t) ) return JL_JsvalToCVal(cx, val, (uint64_t*)num);
-	if ( sizeof(unsigned long) == sizeof(uint32_t) ) return JL_JsvalToCVal(cx, val, (uint32_t*)num);
+	if ( sizeof(unsigned long) == sizeof(uint64_t) ) return JL_JsvalToNative(cx, val, (uint64_t*)num);
+	if ( sizeof(unsigned long) == sizeof(uint32_t) ) return JL_JsvalToNative(cx, val, (uint32_t*)num);
 	JL_ASSERT(false);
 }
 
@@ -1838,7 +2178,7 @@ JL_JsvalToCVal( JSContext *cx, const jsval &val, unsigned long *num ) {
 /*
 // size_t
 
-static ALWAYS_INLINE JSBool JL_CValToJsval( JSContext *cx, const size_t &num, jsval *vp ) {
+static ALWAYS_INLINE JSBool JL_NativeToJsval( JSContext *cx, const size_t &num, jsval *vp ) {
 
 	JL_UNUSED(cx);
 	if (likely( num <= JSVAL_INT_MAX ))
@@ -1848,7 +2188,7 @@ static ALWAYS_INLINE JSBool JL_CValToJsval( JSContext *cx, const size_t &num, js
 	return JS_TRUE;
 }
 
-static ALWAYS_INLINE JSBool JL_JsvalToCVal( JSContext *cx, const jsval &val, size_t *num ) {
+static ALWAYS_INLINE JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, size_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -1883,7 +2223,7 @@ static ALWAYS_INLINE JSBool JL_JsvalToCVal( JSContext *cx, const jsval &val, siz
 
 // ssize_t
 
-static ALWAYS_INLINE JSBool JL_CValToJsval( JSContext *cx, const ssize_t &num, jsval *vp ) {
+static ALWAYS_INLINE JSBool JL_NativeToJsval( JSContext *cx, const ssize_t &num, jsval *vp ) {
 
 	JL_UNUSED(cx);
 	if (likely( num >= JSVAL_INT_MIN && size <= JSVAL_INT_MAX ))
@@ -1893,7 +2233,7 @@ static ALWAYS_INLINE JSBool JL_CValToJsval( JSContext *cx, const ssize_t &num, j
 	return JS_TRUE;
 }
 
-static ALWAYS_INLINE JSBool JL_JsvalToCVal( JSContext *cx, const jsval &val, ssize_t *num ) {
+static ALWAYS_INLINE JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, ssize_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -1927,7 +2267,7 @@ static ALWAYS_INLINE JSBool JL_JsvalToCVal( JSContext *cx, const jsval &val, ssi
 // double
 
 static ALWAYS_INLINE JSBool
-JL_CValToJsval( JSContext *cx, const double &num, jsval *vp ) {
+JL_NativeToJsval( JSContext *cx, const double &num, jsval *vp ) {
 
 	JL_UNUSED(cx);
 	*vp = DOUBLE_TO_JSVAL(num);
@@ -1935,7 +2275,7 @@ JL_CValToJsval( JSContext *cx, const double &num, jsval *vp ) {
 }
 
 static ALWAYS_INLINE JSBool
-JL_JsvalToCVal( JSContext *cx, const jsval &val, double *num ) {
+JL_JsvalToNative( JSContext *cx, const jsval &val, double *num ) {
 
 	if (likely( JSVAL_IS_DOUBLE(val) )) {
 
@@ -1954,7 +2294,7 @@ JL_JsvalToCVal( JSContext *cx, const jsval &val, double *num ) {
 // float
 
 static ALWAYS_INLINE JSBool
-JL_CValToJsval( JSContext *cx, const float &num, jsval *vp ) {
+JL_NativeToJsval( JSContext *cx, const float &num, jsval *vp ) {
 
 	JL_UNUSED(cx);
 	*vp = DOUBLE_TO_JSVAL(num);
@@ -1962,7 +2302,7 @@ JL_CValToJsval( JSContext *cx, const float &num, jsval *vp ) {
 }
 
 static ALWAYS_INLINE JSBool
-JL_JsvalToCVal( JSContext *cx, const jsval &val, float *num ) {
+JL_JsvalToNative( JSContext *cx, const jsval &val, float *num ) {
 
 	if (likely( JSVAL_IS_DOUBLE(val) )) {
 
@@ -1985,7 +2325,7 @@ JL_JsvalToCVal( JSContext *cx, const jsval &val, float *num ) {
 // boolean
 
 static ALWAYS_INLINE JSBool
-JL_CValToJsval( JSContext *cx, const bool &b, jsval *vp ) {
+JL_NativeToJsval( JSContext *cx, const bool &b, jsval *vp ) {
 
 	JL_UNUSED(cx);
 	*vp = b ? JSVAL_TRUE : JSVAL_FALSE;
@@ -1993,7 +2333,7 @@ JL_CValToJsval( JSContext *cx, const bool &b, jsval *vp ) {
 }
 
 static ALWAYS_INLINE JSBool
-JL_JsvalToCVal( JSContext *cx, const jsval &val, bool *b ) {
+JL_JsvalToNative( JSContext *cx, const jsval &val, bool *b ) {
 
 	//if (likely( JSVAL_IS_BOOLEAN(val) )) {
 	//	*b = (JSVAL_TO_BOOLEAN(val) == JS_TRUE);
@@ -2040,7 +2380,7 @@ JL_CValVectorToJsval( JSContext *cx, const T *vector, jsuint length, jsval *val,
 
 	for ( jsuint i = 0; i < length; ++i ) {
 
-		JL_CHK( JL_CValToJsval(cx, vector[i], avr.jsval_addr()) );
+		JL_CHK( JL_NativeToJsval(cx, vector[i], avr.jsval_addr()) );
 		//JL_CHK( JS_SetPropertyById(cx, arrayObj, INT_TO_JSID(i), avr.jsval_addr()) );
 		JL_CHK( JS_SetElement(cx, arrayObj, i, avr.jsval_addr()) );
 	}
@@ -2063,7 +2403,7 @@ JL_JsvalToCValVector( JSContext *cx, jsval &val, T *vector, jsuint maxLength, js
 
 		JL_CHK( JS_GetElement(cx, arrayObj, i, &val) );
 		//JL_CHK( JS_GetPropertyById(cx, arrayObj, INT_TO_JSID(i), &val) );
-		JL_CHK( JL_JsvalToCVal(cx, val, &vector[i]) );
+		JL_CHK( JL_JsvalToNative(cx, val, &vector[i]) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -2080,7 +2420,7 @@ static ALWAYS_INLINE JSBool
 JL_SetProperty( JSContext *cx, JSObject *obj, const char *propertyName, const T &cval ) {
 
 	js::AutoValueRooter avr(cx);
-	JL_CHK( JL_CValToJsval(cx, cval, avr.jsval_addr()) );
+	JL_CHK( JL_NativeToJsval(cx, cval, avr.jsval_addr()) );
 	JL_CHKM( JS_SetProperty(cx, obj, propertyName, avr.jsval_addr()), "Unable to set the property %s.", propertyName );
 //	JL_CHKM( JS_DefineProperty(cx, obj, propertyName, avr.jsval_value(), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "Unable to set the property." ); // Doc. http://developer.mozilla.org/en/docs/JS_DefineUCProperty
 	return JS_TRUE;
@@ -2093,7 +2433,7 @@ JL_GetProperty( JSContext *cx, JSObject *obj, const char *propertyName, T *cval 
 
 	jsval v;
 	JL_CHKM( JS_GetProperty(cx, obj, propertyName, &v), "Unable to read the property %s.", propertyName );
-	JL_CHK( JL_JsvalToCVal(cx, v, cval) );
+	JL_CHK( JL_JsvalToNative(cx, v, cval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2166,9 +2506,9 @@ JL_ExceptionSetScriptLocation( JSContext *cx, JSObject *obj ) {
 	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 
 	jsval tmp;
-	JL_CHK( JL_CValToJsval(cx, filename, &tmp) );
+	JL_CHK( JL_NativeToJsval(cx, filename, &tmp) );
 	JL_CHK( JS_SetPropertyById(cx, obj, JL_ATOMJSID(cx, fileName), &tmp) );
-	JL_CHK( JL_CValToJsval(cx, lineno, &tmp) );
+	JL_CHK( JL_NativeToJsval(cx, lineno, &tmp) );
 	JL_CHK( JS_SetPropertyById(cx, obj, JL_ATOMJSID(cx, lineNumber), &tmp) );
 
 	return JS_TRUE;
@@ -2430,7 +2770,7 @@ JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *amount ) {
 	js::AutoValueRooter tvr(cx);
 
 	JL_S_ASSERT( *amount < INT_MAX, "Too many data." );
-	JL_CHK( JL_CValToJsval(cx, (int)*amount, tvr.jsval_addr()) );
+	JL_CHK( JL_NativeToJsval(cx, (int)*amount, tvr.jsval_addr()) );
 	JL_CHKM( JL_CallFunctionId(cx, obj, JLID(cx, Read), 1, tvr.jsval_addr(), tvr.jsval_addr()), "Read() function not found.");
 
 	if ( tvr.value().isUndefined() ) { // (TBD)! with sockets, undefined mean 'closed', that is not supported.
@@ -2439,11 +2779,13 @@ JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *amount ) {
 		return JS_TRUE;
 	}
 
-	const char *tmpBuf;
-	size_t size;
-	JL_CHK( JL_JsvalToStringAndLength(cx, js::Jsvalify(tvr.addr()), &tmpBuf, &size) );
-	*amount = JL_MIN(size, *amount);
-	memcpy(buffer, tmpBuf, *amount);
+	{
+	JLStr str;
+	JL_CHK( JL_JsvalToNative(cx, *tvr.jsval_addr(), str) );
+	*amount = str.Length();
+	memcpy(buffer, str.GetStrConst(), *amount);
+	}
+
 	return JS_TRUE;
 
 bad:
@@ -2492,7 +2834,7 @@ StreamReadInterface( JSContext *cx, JSObject *obj ) {
 // NativeInterface BufferGet
 
 inline JSBool
-JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, size_t *size ) {
+JSBufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
 
 	js::AutoValueRooter tvr(cx); // use AutoArrayRooter instead ?
 
@@ -2501,7 +2843,8 @@ JSBufferGet( JSContext *cx, JSObject *obj, const char **buffer, size_t *size ) {
 
 //	JL_CHKM( JS_CallFunctionName(cx, obj, "Get", 0, NULL, &tvr.u.value), "Get() function not found."); // do not use toString() !? no !
 	JL_CHKM( JL_CallFunctionId(cx, obj, JLID(cx, Get), 0, NULL, tvr.jsval_addr()), "Get() function not found.");
-	JL_CHK( JL_JsvalToStringAndLength(cx, tvr.jsval_addr(), buffer, size) ); // (TBD) GC warning, when tvr.u.value will be no more protected, the buffer will be unprotected.
+//	JL_CHK( JL_JsvalToStringAndLength(cx, tvr.jsval_addr(), buffer, size) ); // (TBD) GC warning, when tvr.u.value will be no more protected, the buffer will be unprotected.
+	JL_CHK( JL_JsvalToNative(cx, *tvr.jsval_addr(), str) );
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -178,7 +178,7 @@ DEFINE_FUNCTION( QueueBuffers ) {
 	JL_S_ASSERT_RESOURCE( pv );
 
 	ALuint bid;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &bid) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bid) );
 	JL_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
 
 	alSourceQueueBuffers(pv->sid, 1, &bid);
@@ -214,7 +214,7 @@ DEFINE_FUNCTION( UnqueueBuffers ) {
 	JL_CHK( UnqueueBuffersJsval(cx, pv->queue, JL_RVAL ) );
 	JL_SAFE(
 		ALuint tmp;
-		JL_CHK( JL_JsvalToCVal(cx, *JL_RVAL, &tmp) );
+		JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &tmp) );
 		JL_S_ASSERT( bid == tmp, "Internal error in UnqueueBuffers()." );
 	);
 	pv->totalTime -= BufferSecTime(bid);
@@ -290,14 +290,14 @@ DEFINE_FUNCTION( Effect ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 	ALuint send;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &send) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &send) );
 
 	ALuint effectSlot = AL_EFFECTSLOT_NULL;
 	ALuint filter = AL_FILTER_NULL;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &effectSlot) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &effectSlot) );
 //	if ( JL_ARG_ISDEF(3) )
-//		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &filter) );
+//		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &filter) );
 
 //	ALCdevice *device = alcGetContextsDevice(alcGetCurrentContext());
 //	ALCint numSends;
@@ -317,7 +317,7 @@ DEFINE_FUNCTION( valueOf ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
-	JL_CHK( JL_CValToJsval(cx, pv->sid, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, pv->sid, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -334,7 +334,7 @@ DEFINE_PROPERTY( effectSlot ) {
 
 	ALuint effectSlot;
 	if ( !JSVAL_IS_VOID(*vp) )
-		JL_CHK( JL_JsvalToCVal(cx, *vp, &effectSlot) );
+		JL_CHK( JL_JsvalToNative(cx, *vp, &effectSlot) );
 	else
 		effectSlot = AL_EFFECTSLOT_NULL;
 
@@ -353,7 +353,7 @@ DEFINE_PROPERTY( directFilter ) {
 
 	ALuint filter;
 	if ( !JSVAL_IS_VOID(*vp) )
-		JL_CHK( JL_JsvalToCVal(cx, *vp, &filter) );
+		JL_CHK( JL_JsvalToNative(cx, *vp, &filter) );
 	else
 		filter = AL_FILTER_NULL;
 
@@ -373,7 +373,7 @@ DEFINE_PROPERTY_SETTER( buffer ) {
 	if ( JSVAL_IS_VOID( *vp ) || *vp == JSVAL_ZERO )
 		bid = AL_NONE;
 	else
-		JL_CHK( 	JL_JsvalToCVal(cx, *vp, &bid) ); // calls OalBuffer valueOf function
+		JL_CHK( 	JL_JsvalToNative(cx, *vp, &bid) ); // calls OalBuffer valueOf function
 	JL_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
 
 	alSourcei(pv->sid, AL_BUFFER, bid);
@@ -398,7 +398,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	if ( !JSVAL_IS_VOID( *vp ) ) {
 
 		ALint tmp;
-		JL_CHK( 	JL_JsvalToCVal(cx, *vp, &tmp) ); // calls OalBuffer valueOf function
+		JL_CHK( 	JL_JsvalToNative(cx, *vp, &tmp) ); // calls OalBuffer valueOf function
 		JL_S_ASSERT( alIsBuffer(tmp), "Invalid buffer." );
 		if ( tmp == bid )
 			goto out;
@@ -409,7 +409,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 
 		jsval *val = (jsval*)QueueGetData(it);
 		ALint tmp;
-		JL_CHK( 	JL_JsvalToCVal(cx, *val, &tmp) ); // calls OalBuffer valueOf function
+		JL_CHK( 	JL_JsvalToNative(cx, *val, &tmp) ); // calls OalBuffer valueOf function
 		JL_S_ASSERT( alIsBuffer(tmp), "Invalid buffer." );
 		if ( tmp == bid ) {
 
@@ -419,7 +419,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	}
 
 	JL_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
-	JL_CHK( JL_CValToJsval(cx, bid, vp) );
+	JL_CHK( JL_NativeToJsval(cx, bid, vp) );
 
 out:
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -450,9 +450,9 @@ DEFINE_FUNCTION( Position ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 	float pos[3];
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &pos[0]) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &pos[1]) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &pos[2]) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pos[0]) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &pos[1]) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &pos[2]) );
 
 	alSource3f(pv->sid, AL_POSITION, pos[0], pos[1], pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -498,9 +498,9 @@ DEFINE_FUNCTION( Velocity ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 	float pos[3];
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &pos[0]) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &pos[1]) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &pos[2]) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pos[0]) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &pos[1]) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &pos[2]) );
 
 	alSource3f(pv->sid, AL_VELOCITY, pos[0], pos[1], pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -550,7 +550,7 @@ DEFINE_PROPERTY( remainingTime ) {
 
 	ALfloat secOffset;
 	alGetSourcef(pv->sid, AL_SEC_OFFSET, &secOffset);
-	JL_CHK(JL_CValToJsval(cx, pv->totalTime - secOffset, vp) );
+	JL_CHK(JL_NativeToJsval(cx, pv->totalTime - secOffset, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -607,7 +607,7 @@ DEFINE_PROPERTY_SETTER( sourceFloatInd ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	ALenum param = enumToConst[JSID_TO_INT(id)];
 	float f;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &f) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &f) );
 	alSourcef(pv->sid, param, f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -622,7 +622,7 @@ DEFINE_PROPERTY_GETTER( sourceFloatInd ) {
 	float f;
 	alGetSourcef(pv->sid, param, &f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK(JL_CValToJsval(cx, f, vp) );
+	JL_CHK(JL_NativeToJsval(cx, f, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -633,7 +633,7 @@ DEFINE_PROPERTY_SETTER( sourceIntInd ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	ALenum param = JSID_TO_INT(id);
 	int i;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &i) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &i) );
 	alSourcei(pv->sid, param, i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -648,7 +648,7 @@ DEFINE_PROPERTY_GETTER( sourceIntInd ) {
 	int i;
 	alGetSourcei(pv->sid, param, &i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( JL_CValToJsval(cx, i, vp) );
+	JL_CHK( JL_NativeToJsval(cx, i, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -659,7 +659,7 @@ DEFINE_PROPERTY_SETTER( sourceBoolInd ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	ALenum param = enumToConst[JSID_TO_INT(id)]; // see sourceFloatInd comment.
 	bool b;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 	alSourcei(pv->sid, param, b ? AL_TRUE : AL_FALSE);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;

@@ -61,6 +61,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JLStr name;
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
@@ -69,17 +70,15 @@ DEFINE_CONSTRUCTOR() {
 	PRUintn count;
 	count = 0;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &count) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &count) );
 
 	PRUintn mode;
 	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &mode) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &mode) );
 
-	const char *name;
-	size_t nameLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &name, &nameLength) );
-	JL_S_ASSERT( nameLength < PATH_MAX, "Semaphore name too long." );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), name) );
+	JL_S_ASSERT( name.Length() < PATH_MAX, "Semaphore name too long." );
 
 	bool isCreation;
 	isCreation = true;
@@ -99,8 +98,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( pv );
 
 //	strcpy( pv->name, name ); // (TBD) use memcpy instead ?
-	memcpy(pv->name, name, nameLength);
-	pv->name[nameLength] = '\0';
+	memcpy(pv->name, name.GetStrConst(), name.Length());
+	pv->name[name.Length()] = '\0';
 
 	pv->semaphore = semaphore;
 	pv->owner = isCreation;

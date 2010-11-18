@@ -1,8 +1,8 @@
 LoadModule('jsstd'); Exec('../common/tools.js');
 // var QA = FakeQAApi;
 // RunLocalQAFile();
-RunJsircbot(false); throw 0;
-//RunQATests('-rep 1 -exclude jstask|blob ');
+//RunJsircbot(false); throw 0;
+RunQATests('-rep 1 -exclude jstask jsstd');
 
 
 Halt();

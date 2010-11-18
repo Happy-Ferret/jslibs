@@ -73,8 +73,8 @@ DEFINE_FUNCTION( GetParam ) {
 
 	if ( argc >= 1 ) {
 
-		const char *paramName;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &paramName) );
+		JLStr paramName;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), paramName) );
 		char *paramValue = FCGX_GetParam(paramName, _request.envp);
 		if ( paramValue != NULL ) {
 
@@ -107,7 +107,7 @@ DEFINE_FUNCTION( Read ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 	size_t len;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &len) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &len) );
 	char* str;
 	str = (char*)JS_malloc(cx, len + 1);
 	int result;
@@ -129,14 +129,13 @@ DEFINE_FUNCTION( Read ) {
 
 DEFINE_FUNCTION( Write ) {
 
-	const char *str;
-	size_t len;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) );
+	JLStr str;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
 	int result;
-	result = FCGX_PutStr(str, (int)len, _request.out);
-	if ( result >= 0 && (size_t)result < len ) { // returns unwritten data
+	result = FCGX_PutStr(str, (int)str.Length(), _request.out);
+	if ( result >= 0 && (size_t)result < str.Length() ) { // returns unwritten data
 
-		JSString *jsstr = JS_NewDependentString(cx, JSVAL_TO_STRING(JL_ARG(1)), result, len - result);
+		JSString *jsstr = JS_NewDependentString(cx, JSVAL_TO_STRING(JL_ARG(1)), result, str.Length() - result);
 		JL_S_ASSERT( jsstr != NULL, "Unable to create the NewDependentString." );
 		*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	} else
@@ -156,11 +155,10 @@ DEFINE_FUNCTION( Flush ) {
 
 DEFINE_FUNCTION( Log ) {
 
-	const char *str;
-	size_t len;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) );
+	JLStr str;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
 	int result;
-	result = FCGX_PutStr(str, (int)len, _request.err);
+	result = FCGX_PutStr(str, (int)str.Length(), _request.err);
 	JL_S_ASSERT( result != -1, "Unable to write to the log." );
 	FCGX_FFlush(_request.err);
 	*JL_RVAL = JSVAL_VOID;
@@ -177,11 +175,18 @@ DEFINE_FUNCTION( ShutdownPending ) {
 
 DEFINE_FUNCTION( URLEncode ) {
 
+	JLStr srcStr;
+
 	JL_S_ASSERT_ARG_MIN( 1 );
 	static unsigned char hex[] = "0123456789ABCDEF";
 	const char *src;
 	size_t srcLen;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &src, &srcLen) );
+
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &src, &srcLen) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), srcStr) );
+	src = srcStr.GetStrConst();
+	srcLen = srcStr.Length();
+
 	char *dest;
 	dest = (char *)JS_malloc(cx, 3 * srcLen + 1);
 	JL_CHK( dest );
@@ -210,10 +215,17 @@ DEFINE_FUNCTION( URLEncode ) {
 
 DEFINE_FUNCTION( URLDecode ) {
 
+	JLStr srcStr;
+
 	JL_S_ASSERT_ARG_MIN( 1 );
 	const char *src;
 	size_t srcLen;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &src, &srcLen) );
+
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &src, &srcLen) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), srcStr) );
+	src = srcStr.GetStrConst();
+	srcLen = srcStr.Length();
+
 	char *dest;
 	dest = (char *)JS_malloc(cx, srcLen + 1);
 	JL_CHK( dest );
@@ -482,7 +494,7 @@ DEFINE_FUNCTION( MakeEndRequestBody ) {
 	JL_CHK( body );
 
 	unsigned long appStatus;
-	JL_CHK( JL_JsvalToCVal(cx, argv[0], &appStatus) );
+	JL_CHK( JL_JsvalToNative(cx, argv[0], &appStatus) );
 	body->appStatusB0 = appStatus & 0xFF;
 	body->appStatusB1 = (appStatus >> 8) & 0xFF;
 	body->appStatusB2 = (appStatus >> 16) & 0xFF;

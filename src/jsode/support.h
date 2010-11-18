@@ -32,9 +32,9 @@ ALWAYS_INLINE JSBool JL_JsvalToODEReal( JSContext *cx, const jsval val, ode::dRe
 	}
 
 #if defined(dSINGLE)
-	JL_CHK( JL_JsvalToCVal(cx, val, real) );
+	JL_CHK( JL_JsvalToNative(cx, val, real) );
 #else
-	JL_CHK( JL_JsvalToCVal(cx, val, real) );
+	JL_CHK( JL_JsvalToNative(cx, val, real) );
 #endif
 
 	if ( *real > dInfinity ) {
@@ -69,9 +69,9 @@ ALWAYS_INLINE JSBool ODERealToJsval( JSContext *cx, const ode::dReal real, jsval
 	}
 
 #if defined(dSINGLE)
-	JL_CHK( JL_CValToJsval(cx, real, rval) );
+	JL_CHK( JL_NativeToJsval(cx, real, rval) );
 #else
-	JL_CHK( JL_CValToJsval(cx, real, rval) );
+	JL_CHK( JL_NativeToJsval(cx, real, rval) );
 #endif
 
 	return JS_TRUE;

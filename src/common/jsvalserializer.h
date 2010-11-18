@@ -161,10 +161,15 @@ namespace jl {
 				JL_CHK( JS_IdToValue(cx, idArray->vector[i], &name) );
 
 				JSString *jsstr = JSVAL_IS_STRING(name) ? JSVAL_TO_STRING(name) : JS_ValueToString(cx, name);
-				const char *s = JL_GetStringBytesZ(cx, jsstr);
+				JL_CHK( jsstr );
+//				const char *s = JL_GetStringBytesZ(cx, jsstr);
+				const jschar *s = JS_GetStringCharsZ(cx, jsstr);
 				if ( s == NULL )
 					JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "a valid string");
-				*this << s;
+
+				*this << SerializerBufferInfo(JS_GetStringChars(jsstr), JS_GetStringLength(jsstr));
+
+//				*this << s;
 				//JL_CHK( obj->getProperty(cx, idArray->vector[i], &value) );
 				JL_CHK( JS_GetPropertyById(cx, obj, idArray->vector[i], &value) );
 				*this << value;
@@ -381,13 +386,13 @@ namespace jl {
 			*this >> length;
 //			JSObject *obj = JS_NewObject(cx, NULL, NULL, NULL);
 
-			const char *name;
 			for ( int i = 0; i < length; ++i ) {
 
+				SerializerBufferInfo name;
 				*this >> name;
 				jsval value;
 				*this >> value;
-				JL_CHK( JS_SetProperty(cx, /*obj*/sop, name, &value) );
+				JL_CHK( JS_SetUCProperty(cx, /*obj*/sop, (jschar*)name.Data(), name.Length(), &value) );
 			}
 
 //			sop = SerializerObjectProperties(obj);

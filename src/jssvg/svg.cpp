@@ -38,10 +38,12 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 	if ( JL_JsvalIsFunction(cx, onImageFct) ) {
 
 		js::AutoValueRooter nameVal(cx), image(cx);
-		JL_CHK( JL_CValToJsval(cx, name, nameVal.jsval_addr()) );
+		JL_CHK( JL_NativeToJsval(cx, name, nameVal.jsval_addr()) );
 		JL_CHK( JS_CallFunctionValue(cx, obj, onImageFct, 1, nameVal.jsval_addr(), image.jsval_addr()) );
 
 		if ( JSVAL_IS_OBJECT( image.jsval_value() ) ) {
+
+			JLStr buffer;
 
 			JSObject *imageObj = JSVAL_TO_OBJECT( image.jsval_value() );
 			int sWidth, sHeight, sChannels;
@@ -50,11 +52,14 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 			JL_CHK( JL_GetProperty(cx, imageObj, "channels", &sChannels) );
 
 			JL_S_ASSERT( sChannels == 3 || sChannels == 4, "Unsupported image format for %s.", name );
-			const char *sBuffer;
-			size_t bufferLength;
-			JL_CHK( JL_JsvalToStringAndLength(cx, image.jsval_addr(), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-			JL_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
-			*pixbuf = gdk_pixbuf_new_from_data((const guchar *)sBuffer, GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);
+
+//			const char *sBuffer;
+//			size_t bufferLength;
+//			JL_CHK( JL_JsvalToStringAndLength(cx, image.jsval_addr(), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
+			JL_CHK( JL_JsvalToNative(cx, *image.jsval_addr(), buffer) );
+
+			JL_S_ASSERT( buffer.Length() == sWidth * sHeight * sChannels * 1, "Invalid image format." );
+			*pixbuf = gdk_pixbuf_new_from_data((const guchar *)buffer.GetStrConst(), GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);
 			JL_S_ASSERT( *pixbuf == NULL, "Unable to create the pixbuf." );
 		}
 	}
@@ -138,15 +143,18 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Write ) {
 
+	JLStr data;
+
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	RsvgHandle *handle = pv->handle;
 
-	const char *data;
-	size_t length;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &length) );
+//	const char *data;
+//	size_t length;
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &length) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), data) );
 
 	GError *error = NULL;
 	gboolean status;
@@ -161,7 +169,7 @@ DEFINE_FUNCTION( Write ) {
 	cxobj.cx = cx;
 	cxobj.obj = obj;
 	handle->priv->base_uri = (gchar*)&cxobj; // hack base_uri to store cx and obj for rsvg_pixbuf_new_from_href()
-	status = rsvg_handle_write(handle, (const guchar *)data, length, &error);
+	status = rsvg_handle_write(handle, (const guchar *)data.GetStrConst(), data.Length(), &error);
 	handle->priv->base_uri = tmp;
 
 	if ( JS_IsExceptionPending(cx) )
@@ -244,6 +252,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( RenderImage ) { // using cairo
 
+	JLStr id;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -263,8 +273,8 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_S_ASSERT_ARG_MIN(2);
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &imageWidth) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &imageHeight) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &imageWidth) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &imageHeight) );
 	} else {
 
 		imageWidth = dim.width;
@@ -274,7 +284,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 	size_t channels;
 	if ( JL_ARG_ISDEF(3) ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &channels) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &channels) );
 		JL_S_ASSERT( channels == 1 || channels == 3 || channels == 4, "Invalid format." );
 	} else
 		channels = 4;
@@ -282,7 +292,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 	if ( JL_ARG_ISDEF(4) ) { // fit
 
 		bool fit;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &fit) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &fit) );
 		if ( fit ) {
 
 			cairo_matrix_t tmp;
@@ -306,14 +316,12 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 	}
 */
 
-	const char *id;
+//	const char *id;
 	if ( JL_ARG_ISDEF(5) ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(5), &id) );
-		JL_S_ASSERT( id != NULL && id[0] == '#', "Invalid id." );
-	} else
-		id = NULL;
-
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), id) );
+		JL_S_ASSERT( id.IsSet() && id.GetStrConst()[0] == '#', "Invalid id." );
+	}
 
 	cairo_format_t surfaceFormat;
 	switch ( channels ) {
@@ -339,7 +347,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 	//cairo_set_tolerance(cr, 0.1);
 
 	cairo_set_matrix(cr, &pv->transformation);
-	status = rsvg_handle_render_cairo_sub(handle, cr, id);
+	status = rsvg_handle_render_cairo_sub(handle, cr, id.GetStrConstOrNull());
 
 	JL_S_ASSERT( status == TRUE, "Unable to render the SVG. %s", cairo_status_to_string(cairo_status(cr)) );
 
@@ -440,6 +448,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SetVisible ) {
 
+	JLStr id;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(2);
 
@@ -447,14 +457,13 @@ DEFINE_FUNCTION( SetVisible ) {
 	JL_S_ASSERT_RESOURCE(pv);
 	RsvgHandle *handle = pv->handle;
 
-	const char *id;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &id) );
-	JL_S_ASSERT( id != NULL && id[0] == '#', "Invalid id." );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), id) );
+	JL_S_ASSERT( id.IsSet() && id.GetStrConst()[0] == '#', "Invalid id." );
 
 	bool visible;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &visible) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &visible) );
 
-	RsvgNode *drawsub = rsvg_defs_lookup (handle->priv->defs, id);
+	RsvgNode *drawsub = rsvg_defs_lookup (handle->priv->defs, id.GetStrConstOrNull());
 
 	if ( drawsub == NULL ) {
 
@@ -484,8 +493,8 @@ DEFINE_FUNCTION( Scale ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 	double sx, sy;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &sx) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &sy) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sx) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &sy) );
 	cairo_matrix_scale(&pv->transformation, sx, sy);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -507,7 +516,7 @@ DEFINE_FUNCTION( Rotate ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 	double angle;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &angle) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &angle) );
 	cairo_matrix_rotate(&pv->transformation, angle);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -529,8 +538,8 @@ DEFINE_FUNCTION( Translate ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 	double tx, ty;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &tx) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &ty) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &tx) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &ty) );
 	cairo_matrix_translate(&pv->transformation, tx, ty);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -561,7 +570,7 @@ DEFINE_PROPERTY(dpi) {
 	if ( JSVAL_IS_NUMBER(*vp) ) {
 
 		size_t dpi;
-		JL_CHK( JL_JsvalToCVal(cx, *vp, &dpi) );
+		JL_CHK( JL_JsvalToNative(cx, *vp, &dpi) );
 		rsvg_handle_set_dpi(handle, dpi);
 	} else
 	if ( JL_JsvalIsArray(cx, *vp) ) {
@@ -569,9 +578,9 @@ DEFINE_PROPERTY(dpi) {
 		size_t dpiX, dpiY;
 		jsval tmp;
 		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(*vp), 0, &tmp) );
-		JL_CHK( JL_JsvalToCVal(cx, tmp, &dpiX) );
+		JL_CHK( JL_JsvalToNative(cx, tmp, &dpiX) );
 		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(*vp), 1, &tmp) );
-		JL_CHK( JL_JsvalToCVal(cx, tmp, &dpiY) );
+		JL_CHK( JL_JsvalToNative(cx, tmp, &dpiY) );
 		rsvg_handle_set_dpi_x_y(handle, dpiX, dpiY);
 	} else
 		JL_REPORT_ERROR("Invalid case.");
@@ -592,7 +601,7 @@ DEFINE_PROPERTY(width) {
 
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
-	JL_CHK( JL_CValToJsval(cx, dim.width, vp) );
+	JL_CHK( JL_NativeToJsval(cx, dim.width, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -610,7 +619,7 @@ DEFINE_PROPERTY(height) {
 
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
-	JL_CHK( JL_CValToJsval(cx, dim.height, vp) );
+	JL_CHK( JL_NativeToJsval(cx, dim.height, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -628,7 +637,7 @@ DEFINE_PROPERTY(title) {
 
 	const char *title = rsvg_handle_get_title(handle);
 	if ( title != NULL )
-		JL_CHK( JL_CValToJsval(cx, title, vp) );
+		JL_CHK( JL_NativeToJsval(cx, title, vp) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -648,7 +657,7 @@ DEFINE_PROPERTY(metadata) {
 
 	const char *metadata = rsvg_handle_get_metadata(handle);
 	if ( metadata != NULL )
-		JL_CHK( JL_CValToJsval(cx, metadata, vp) );
+		JL_CHK( JL_NativeToJsval(cx, metadata, vp) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;
@@ -668,7 +677,7 @@ DEFINE_PROPERTY(description) {
 
 	const char *description = rsvg_handle_get_desc(handle);
 	if ( description != NULL )
-		JL_CHK( JL_CValToJsval(cx, description, vp) );
+		JL_CHK( JL_NativeToJsval(cx, description, vp) );
 	else
 		*vp = JSVAL_VOID;
 	return JS_TRUE;

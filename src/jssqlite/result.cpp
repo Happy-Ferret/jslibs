@@ -25,10 +25,10 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 	switch( sqlite3_value_type(value) ) {
 
 		case SQLITE_INTEGER:
-			JL_CHK( JL_CValToJsval(cx, sqlite3_value_int(value), rval) );
+			JL_CHK( JL_NativeToJsval(cx, sqlite3_value_int(value), rval) );
 			break;
 		case SQLITE_FLOAT:
-			JL_CHK( JL_CValToJsval(cx, sqlite3_value_double(value), rval) );
+			JL_CHK( JL_NativeToJsval(cx, sqlite3_value_double(value), rval) );
 			break;
 		case SQLITE_BLOB: {
 				int length = sqlite3_value_bytes(value);
@@ -137,7 +137,7 @@ next:
 				} else {
 
 					jsdouble jd;
-					JL_CHK( JL_JsvalToCVal(cx, val, &jd) );
+					JL_CHK( JL_JsvalToNative(cx, val, &jd) );
 					if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
 						ret = sqlite3_bind_int( pStmt, param, (int)jd );
 					else
@@ -156,10 +156,12 @@ next:
 //				if ( JL_GetClass(JSVAL_TO_OBJECT(val)) == JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Blob")->clasp ) { // beware: with SQLite, blob != text
 				if ( JL_JsvalIsBlob(cx, val) ) {
 
-					size_t length;
-					const char *data;
-					JL_CHK( JL_JsvalToStringAndLength(cx, &val, &data, &length) );
-					if ( sqlite3_bind_blob(pStmt, param, data, length, SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+//					size_t length;
+//					const char *data;
+//					JL_CHK( JL_JsvalToStringAndLength(cx, &val, &data, &length) );
+					JLStr data;
+					JL_CHK( JL_JsvalToNative(cx, val, data) );
+					if ( sqlite3_bind_blob(pStmt, param, data.GetStrConst(), data.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 					break;
 				}
@@ -169,10 +171,13 @@ next:
 
 				//JSString *jsstr = JS_ValueToString(cx, val);
 				// (TBD) GC protect (root) jsstr
-				const char *str;
-				size_t strLen;
-				JL_CHK( JL_JsvalToStringAndLength(cx, &val, &str, &strLen) );
-				if ( sqlite3_bind_text(pStmt, param, str, strLen, SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+//				const char *str;
+//				size_t strLen;
+//				JL_CHK( JL_JsvalToStringAndLength(cx, &val, &str, &strLen) );
+				JLStr str;
+				JL_CHK( JL_JsvalToNative(cx, val, str) );
+
+				if ( sqlite3_bind_text(pStmt, param, str, str.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				}
 				break;
@@ -426,7 +431,7 @@ DEFINE_FUNCTION( Col ) {
 	pStmt = (sqlite3_stmt*)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pStmt );
 	int col;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &col) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &col) );
 	JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, col), JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
@@ -458,7 +463,7 @@ DEFINE_FUNCTION( Row ) {
 	// returns an array [ row1Data, row2Data, ... ] else return an object { row1Name:row1Data, row2Name:row2Data,  ... }
 	bool namedRows;
 	if ( argc >= 1 )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &namedRows) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &namedRows) );
 	else
 		namedRows = false; // default value
 
@@ -639,7 +644,7 @@ DEFINE_PROPERTY( sql ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pStmt );
-	JL_CHK( JL_CValToJsval(cx, sqlite3_sql(pStmt), vp) );
+	JL_CHK( JL_NativeToJsval(cx, sqlite3_sql(pStmt), vp) );
 
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;

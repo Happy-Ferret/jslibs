@@ -42,30 +42,28 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Draw3DText ) {
 
+	JLStr text;
+
 	JL_S_ASSERT_ARG_RANGE( 2, 4 );
-	
 	JL_S_ASSERT_OBJECT(JL_ARG(1));
 
 	JSObject *fontObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	FT_Face ftface = GetJsfontPrivate(cx, fontObj)->face;
 
-	const char *text;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &text) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), text) );
 
 	JsoglftPrivate *mpv = (JsoglftPrivate*)ModulePrivateGet();
 
-	float currentSize = ftface->size->metrics.y_scale / ftface->units_per_EM;
-
 	float size;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &size) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &size) );
 	else
-		size = currentSize;
+		size = float(ftface->size->metrics.y_scale / ftface->units_per_EM);
 
 	bool compile;
 	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &compile) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &compile) );
 	else
 		compile = false;
 

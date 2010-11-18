@@ -148,13 +148,13 @@ DEFINE_FUNCTION( SetAxis ) {
 	*JL_RVAL = JSVAL_VOID;
 
 	int anum, rel;
-	JL_JsvalToCVal(cx, JL_ARG(1), &anum);
+	JL_JsvalToNative(cx, JL_ARG(1), &anum);
 	if ( !JL_ARG_ISDEF(3) ) {
 		
 		ode::dJointSetAMotorNumAxes(jointId, anum+1);
 		return JS_TRUE;
 	}
-	JL_JsvalToCVal(cx, JL_ARG(2), &rel);
+	JL_JsvalToNative(cx, JL_ARG(2), &rel);
 	ode::dVector3 vector;
 	uint32 length;
 	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(3), vector, 3, &length) );
@@ -184,7 +184,7 @@ DEFINE_FUNCTION( SetAngle ) {
 	
 	int anum;
 	ode::dReal angle;
-	JL_JsvalToCVal(cx, JL_ARG(1), &anum);
+	JL_JsvalToNative(cx, JL_ARG(1), &anum);
 	JL_CHK( JL_JsvalToODEReal(cx, JL_ARG(2), &angle) );
 
 	if ( anum+1 > ode::dJointGetAMotorNumAxes(jointId) )
@@ -212,7 +212,7 @@ DEFINE_PROPERTY( eulerModeSetter ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
 	bool eulerMode;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &eulerMode) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &eulerMode) );
 	ode::dJointSetAMotorMode(jointId, eulerMode ?  ode::dAMotorEuler :  ode::dAMotorUser);
 	return JS_TRUE;
 	JL_BAD;
@@ -223,7 +223,7 @@ DEFINE_PROPERTY( eulerModeGetter ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
 	bool eulerMode = ode::dJointGetAMotorMode(jointId) == ode::dAMotorEuler;
-	JL_CHK(JL_CValToJsval(cx, eulerMode, vp) );
+	JL_CHK(JL_NativeToJsval(cx, eulerMode, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -237,7 +237,7 @@ DEFINE_PROPERTY( angle0Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	return JL_CValToJsval(cx, ode::dJointGetAMotorAngleRate(jointId, 0), vp);
+	return JL_NativeToJsval(cx, ode::dJointGetAMotorAngleRate(jointId, 0), vp);
 	JL_BAD;
 }
 
@@ -250,7 +250,7 @@ DEFINE_PROPERTY( angle1Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	return JL_CValToJsval(cx, ode::dJointGetAMotorAngleRate(jointId, 1), vp);
+	return JL_NativeToJsval(cx, ode::dJointGetAMotorAngleRate(jointId, 1), vp);
 	JL_BAD;
 }
 
@@ -263,7 +263,7 @@ DEFINE_PROPERTY( angle2Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	return JL_CValToJsval(cx, ode::dJointGetAMotorAngleRate(jointId, 2), vp);
+	return JL_NativeToJsval(cx, ode::dJointGetAMotorAngleRate(jointId, 2), vp);
 	JL_BAD;
 }
 

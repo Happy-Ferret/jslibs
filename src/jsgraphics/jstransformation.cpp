@@ -126,7 +126,7 @@ DEFINE_CONSTRUCTOR() {
 			
 			float *tmp = (float*)&pv->mat->raw;
 			for ( int i = 0; i < 16; ++i )
-				JL_CHK( JL_JsvalToCVal(cx, JL_ARGV[i], (tmp++)) );
+				JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], (tmp++)) );
 			// see JL_CHK( JL_JsvalToCValVector(cx, *JL_ARGV, tmp, 16, &len) );
 			pv->isIdentity = false;
 		} else
@@ -173,7 +173,7 @@ DEFINE_FUNCTION( Load ) {
 		
 		float *tmp = (float*)&pv->mat->raw;
 		for ( int i = 0; i < 16; ++i )
-			JL_CHK( JL_JsvalToCVal(cx, JL_ARGV[i], (tmp++)) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], (tmp++)) );
 		// see JL_CHK( JL_JsvalToCValVector(cx, *JL_ARGV, tmp, 16, &len) );
 		pv->isIdentity = false;
 	} else
@@ -328,9 +328,9 @@ DEFINE_FUNCTION( Translate ) {
 	JL_S_ASSERT_RESOURCE(pv);
 
 	float x, y, z;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &x) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &y) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &z) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &y) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &z) );
 
 	if ( pv->isIdentity ) {
 
@@ -368,12 +368,12 @@ DEFINE_FUNCTION( Scale ) {
 	JL_S_ASSERT_RESOURCE(pv);
 
 	float x, y, z;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &x) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
 
 	if ( argc >= 3 ) {
 
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &y) );
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &z) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &y) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &z) );
 	} else {
 
 		y = x;
@@ -418,10 +418,10 @@ DEFINE_FUNCTION( RotationFromQuaternion ) {
 	JL_S_ASSERT_RESOURCE(pv);
 
 	float w, x, y, z;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &w) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &x) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &y) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &z) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &w) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &x) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &y) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &z) );
 
 	float fTx  = 2.0f * x;
 	float fTy  = 2.0f * y;
@@ -471,9 +471,9 @@ DEFINE_FUNCTION( TaitBryanRotation ) {
 	JL_S_ASSERT_RESOURCE(pv);
 
 	float roll, pitch, yaw;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &roll) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &pitch) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &yaw) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &roll) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &pitch) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &yaw) );
 
 	// (TBD)
 	pv->isIdentity = false;
@@ -503,14 +503,14 @@ DEFINE_FUNCTION( Rotate ) {
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &angle) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &angle) );
 	if ( angle == 0.0f )
 		return JS_TRUE;
 
 	float x, y, z;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &x) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &y) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &z) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &x) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &y) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &z) );
 	Vector3 axis;
 	Vector3Set(&axis, x,y,z);
 
@@ -547,7 +547,7 @@ DEFINE_FUNCTION( RotateX ) {
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &angle) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &angle) );
 	if ( angle == 0.0f )
 		return JS_TRUE;
 
@@ -584,7 +584,7 @@ DEFINE_FUNCTION( RotateY ) {
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &angle) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &angle) );
 	if ( angle == 0.0f )
 		return JS_TRUE;
 
@@ -621,7 +621,7 @@ DEFINE_FUNCTION( RotateZ ) {
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &angle) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &angle) );
 	if ( angle == 0.0f )
 		return JS_TRUE;
 
@@ -674,20 +674,20 @@ DEFINE_FUNCTION( LookAt ) {
 
 	float eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz;
 
-	JL_JsvalToCVal(cx, JL_ARG(1), &eyex);
-	JL_JsvalToCVal(cx, JL_ARG(2), &eyey);
-	JL_JsvalToCVal(cx, JL_ARG(3), &eyez);
+	JL_JsvalToNative(cx, JL_ARG(1), &eyex);
+	JL_JsvalToNative(cx, JL_ARG(2), &eyey);
+	JL_JsvalToNative(cx, JL_ARG(3), &eyez);
 
-	JL_JsvalToCVal(cx, JL_ARG(4), &centerx);
-	JL_JsvalToCVal(cx, JL_ARG(5), &centery);
-	JL_JsvalToCVal(cx, JL_ARG(6), &centerz);
+	JL_JsvalToNative(cx, JL_ARG(4), &centerx);
+	JL_JsvalToNative(cx, JL_ARG(5), &centery);
+	JL_JsvalToNative(cx, JL_ARG(6), &centerz);
 
 	Vector3 up;
 	if ( argc >= 7 ) {
 
-		JL_JsvalToCVal(cx, JL_ARG(7), &upx);
-		JL_JsvalToCVal(cx, JL_ARG(8), &upy);
-		JL_JsvalToCVal(cx, JL_ARG(9), &upz);
+		JL_JsvalToNative(cx, JL_ARG(7), &upx);
+		JL_JsvalToNative(cx, JL_ARG(8), &upy);
+		JL_JsvalToNative(cx, JL_ARG(9), &upz);
 		Vector3Set(&up, upx, upy, upz);
 	} else {
 
@@ -728,9 +728,9 @@ DEFINE_FUNCTION( RotateToVector ) {
 	JL_S_ASSERT_RESOURCE(pv);
 
 	float x, y, z;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &x) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &y) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &z) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &y) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &z) );
 
 	Vector3 to, up;
 	Vector3Set(&to, x,y,z);
@@ -797,7 +797,7 @@ DEFINE_FUNCTION( Product ) {
 
 	bool preMultiply;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &preMultiply) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &preMultiply) );
 	else
 		preMultiply = false;
 
@@ -844,13 +844,13 @@ DEFINE_FUNCTION( TransformVector ) {
 
 		Matrix44MultVector3(pv->mat, &dst, &src);
 
-		JL_CHK( JL_CValToJsval(cx, dst.x, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.x, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 0, &tmpValue) );
 
-		JL_CHK( JL_CValToJsval(cx, dst.y, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.y, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 1, &tmpValue) );
 
-		JL_CHK( JL_CValToJsval(cx, dst.z, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.z, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 2, &tmpValue) );
 	} else
 	if ( length == 4 ) {
@@ -860,16 +860,16 @@ DEFINE_FUNCTION( TransformVector ) {
 
 		Matrix44MultVector4(pv->mat, &dst, &src);
 
-		JL_CHK( JL_CValToJsval(cx, dst.x, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.x, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 0, &tmpValue) );
 
-		JL_CHK( JL_CValToJsval(cx, dst.y, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.y, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 1, &tmpValue) );
 
-		JL_CHK( JL_CValToJsval(cx, dst.z, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.z, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 2, &tmpValue) );
 
-		JL_CHK( JL_CValToJsval(cx, dst.w, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.w, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 3, &tmpValue) );
 	} else {
 
@@ -955,7 +955,7 @@ DEFINE_GET_PROPERTY() {
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
-	JL_CHK( JL_CValToJsval(cx, pv->mat->raw[slot], vp) );
+	JL_CHK( JL_NativeToJsval(cx, pv->mat->raw[slot], vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -973,7 +973,7 @@ DEFINE_SET_PROPERTY() {
 	JL_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
 
 //	pv->mat->raw[slot] = JSVAL_IS_DOUBLE(*vp) ? JSVAL_TO_DOUBLE(*vp) : JSVAL_TO_INT(*vp);
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &pv->mat->raw[slot]) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &pv->mat->raw[slot]) );
 
 	pv->isIdentity = false;
 	return JS_TRUE;

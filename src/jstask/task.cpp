@@ -336,7 +336,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(2) ) {
 
 		int p;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &p) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &p) );
 		switch ( p ) {
 			case 0:
 				priority = JL_THREAD_PRIORITY_NORMAL;
@@ -506,8 +506,8 @@ DEFINE_PROPERTY( pendingRequestCount ) {
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JLMutexAcquire(pv->mutex); // --
-	JL_CHK( JL_CValToJsval(cx, pv->pendingRequestCount, vp) );
-//	JL_CHK( JL_CValToJsval(cx, pv->end ? 0 : pv->pendingRequestCount, vp) );
+	JL_CHK( JL_NativeToJsval(cx, pv->pendingRequestCount, vp) );
+//	JL_CHK( JL_NativeToJsval(cx, pv->end ? 0 : pv->pendingRequestCount, vp) );
 	JLMutexRelease(pv->mutex); // ++
 	return JS_TRUE;
 	JL_BAD;
@@ -526,7 +526,7 @@ DEFINE_PROPERTY( processingRequestCount ) {
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JLMutexAcquire(pv->mutex); // --
-	JL_CHK( JL_CValToJsval(cx, pv->processingRequestCount, vp) );
+	JL_CHK( JL_NativeToJsval(cx, pv->processingRequestCount, vp) );
 	JLMutexRelease(pv->mutex); // ++
 	return JS_TRUE;
 	JL_BAD;
@@ -545,8 +545,8 @@ DEFINE_PROPERTY( pendingResponseCount ) {
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JLMutexAcquire(pv->mutex); // --
-	JL_CHK( JL_CValToJsval(cx, pv->pendingResponseCount, vp) );
-//	JL_CHK( JL_CValToJsval(cx, pv->pendingResponseCount ? pv->pendingResponseCount : QueueIsEmpty(&pv->exceptionList) ? 0 : 1 , vp) );
+	JL_CHK( JL_NativeToJsval(cx, pv->pendingResponseCount, vp) );
+//	JL_CHK( JL_NativeToJsval(cx, pv->pendingResponseCount ? pv->pendingResponseCount : QueueIsEmpty(&pv->exceptionList) ? 0 : 1 , vp) );
 	JLMutexRelease(pv->mutex); // ++
 	return JS_TRUE;
 	JL_BAD;
@@ -565,7 +565,7 @@ DEFINE_PROPERTY( idle ) {
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JLMutexAcquire(pv->mutex); // --
-	JL_CHK(JL_CValToJsval(cx, pv->pendingRequestCount + pv->processingRequestCount + pv->pendingResponseCount == 0 || pv->end, vp) );
+	JL_CHK(JL_NativeToJsval(cx, pv->pendingRequestCount + pv->processingRequestCount + pv->pendingResponseCount == 0 || pv->end, vp) );
 	JLMutexRelease(pv->mutex); // ++
 	return JS_TRUE;
 	JL_BAD;

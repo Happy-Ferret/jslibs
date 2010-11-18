@@ -49,14 +49,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ExtractIcon ) {
 
+	JLStr fileName;
 	JL_S_ASSERT_ARG_MIN(1);
 	UINT iconIndex = 0;
 	if ( argc >= 2 )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &iconIndex) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &iconIndex) );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	JL_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
-	const char *fileName;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &fileName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), fileName) );
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
 	if ( hIcon == NULL ) {
 
@@ -127,20 +127,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( MessageBox ) {
 
+	JLStr caption, text;
+
 	JL_S_ASSERT_ARG_MIN(1);
 
 	UINT type = 0;
 	if ( argc >= 3 )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &type) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &type) );
 
-	const char *caption = NULL;
 	if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &caption) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), caption) );
 
-	const char *text;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &text) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), text) );
 
-	int res = MessageBox(NULL, text, caption, type);
+	int res = MessageBox(NULL, text.GetStrConst(), caption.GetStrConstOrNull(), type);
 	JL_S_ASSERT( res != 0, "MessageBox call Failed." );
 	*JL_RVAL = INT_TO_JSVAL( res );
 	return JS_TRUE;
@@ -164,29 +164,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CreateProcess ) {
 
+	JLStr applicationName, commandLine, environment, currentDirectory;
+
 	JL_S_ASSERT_ARG_MIN(1);
 
-	const char *applicationName, *commandLine, *environment, *currentDirectory;
-
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &applicationName) ); // warning: GC on the returned buffer !
-	else
-		applicationName = NULL;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), applicationName) ); // warning: GC on the returned buffer !
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &commandLine) ); // warning: GC on the returned buffer !
-	else
-		commandLine = NULL;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), commandLine) ); // warning: GC on the returned buffer !
 
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &environment) ); // warning: GC on the returned buffer !
-	else
-		environment = NULL;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), environment) ); // warning: GC on the returned buffer !
 
 	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(4), &currentDirectory) ); // warning: GC on the returned buffer !
-	else
-		currentDirectory = NULL;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), currentDirectory) ); // warning: GC on the returned buffer !
 
 	STARTUPINFO si;
 	ZeroMemory(&si, sizeof(STARTUPINFO));
@@ -195,7 +187,7 @@ DEFINE_FUNCTION( CreateProcess ) {
 
 	// doc. commandLine parameter: The Unicode version of CreateProcess function, CreateProcessW, can modify the contents of this string !
 	PROCESS_INFORMATION pi;
-	BOOL st = CreateProcess( applicationName, (LPSTR)commandLine, NULL, NULL, FALSE, 0, (LPVOID)environment, currentDirectory, &si, &pi ); // doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
+	BOOL st = CreateProcess( applicationName.GetStrConstOrNull(), (LPSTR)commandLine.GetStrConstOrNull(), NULL, NULL, FALSE, 0, (LPVOID)environment.GetStrConstOrNull(), currentDirectory.GetStrConstOrNull(), &si, &pi ); // doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
 	if ( st == FALSE )
 		return WinThrowError(cx, GetLastError());
 
@@ -225,20 +217,19 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 
 	if ( argc >= 1 && !JSVAL_IS_VOID( JL_ARG(1) ) ) {
 
-		const char *str;
-		size_t len;
-		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) );
+		JLStr str;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
 		strcpy( filter, str );
 		for ( char *tmp = filter; tmp = strchr( tmp, '|' ); tmp++ )
 			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings.
-		filter[len+1] = '\0'; // The last string in the buffer must be terminated by two NULL characters.
+		filter[str.Length() + 1] = '\0'; // The last string in the buffer must be terminated by two NULL characters.
 		ofn.lpstrFilter = filter;
 	}
 
 	if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) ) {
 
-		const char *tmp;
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &tmp) );
+		JLStr tmp;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), tmp) );
 		strcpy( fileName, tmp );
 	} else {
 		*fileName = '\0';
@@ -268,9 +259,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ExpandEnvironmentStrings ) {
 
+	JLStr src;
 	JL_S_ASSERT_ARG_MIN(1);
-	const char *src;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &src) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), src) );
 	TCHAR dst[MAX_PATH];
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
 	JL_S_ASSERT( res != 0, "Unable to ExpandEnvironmentStrings." );
@@ -290,7 +281,7 @@ DEFINE_FUNCTION( Sleep ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 	unsigned int timeout;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &timeout) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
 	Sleep(timeout);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -316,7 +307,7 @@ DEFINE_FUNCTION( MessageBeep ) {
 
 	UINT type = -1;
 	if ( argc >= 1 )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &type) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &type) );
 	MessageBeep(type);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -336,8 +327,8 @@ DEFINE_FUNCTION( Beep ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
 	unsigned int freq, duration;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &freq) );
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &duration) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &freq) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &duration) );
 	Beep(freq, duration);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -419,10 +410,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( RegistryGet ) {
 
+	JLStr pathStr, valueName;
 	JL_S_ASSERT_ARG_RANGE(1,2);
 	
-	const char *path, *valueName;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &path) );
+	const char *path;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), pathStr) );
+	path = pathStr.GetStrConst();
 
 	HKEY rootHKey;
 	if ( !strncmp(path, "HKEY_CURRENT_USER", 17) ) {
@@ -511,7 +504,7 @@ DEFINE_FUNCTION( RegistryGet ) {
 			if ( error != ERROR_SUCCESS )
 				break;
 			jsval strName;
-			JL_CHK( JL_StringAndLengthToJsval(cx, &strName, name, nameLength) );
+			JL_CHK( JL_NativeToJsval(cx, name, nameLength, &strName) );
 			JL_CHK( JS_SetElement(cx, arrObj, index, &strName) );
 			index++;
 		}
@@ -522,7 +515,7 @@ DEFINE_FUNCTION( RegistryGet ) {
 		return JS_TRUE;
 	}
 
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &valueName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), valueName) );
 
 	DWORD type, size;
 
@@ -547,11 +540,11 @@ DEFINE_FUNCTION( RegistryGet ) {
 			JL_CHK( JL_NewBlob(cx, buffer, size, JL_RVAL) );
 			break;
 		case REG_DWORD:
-			JL_CHK( JL_CValToJsval(cx, *(DWORD*)buffer, JL_RVAL) );
+			JL_CHK( JL_NativeToJsval(cx, *(DWORD*)buffer, JL_RVAL) );
 			JS_free(cx, buffer);
 			break;
 		case REG_QWORD:
-			JL_CHK( JL_CValToJsval(cx, (double)*(DWORD64*)buffer, JL_RVAL) );
+			JL_CHK( JL_NativeToJsval(cx, (double)*(DWORD64*)buffer, JL_RVAL) );
 			break;
 		case REG_LINK: {
 			JSString *jsstr = JS_NewUCString(cx, (jschar*)buffer, size/2);
@@ -616,17 +609,17 @@ void FinalizeDirectoryHandle(void *data) {
 
 DEFINE_FUNCTION( DirectoryChangesInit ) {
 
+	JLStr pathName;
 	JL_S_ASSERT_ARG_RANGE(2,3);
 
-	const char *pathName;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &pathName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), pathName) );
 
 	unsigned int notifyFilter;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &notifyFilter) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &notifyFilter) );
 
 	bool watchSubtree;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &watchSubtree) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &watchSubtree) );
 	else
 		watchSubtree = false;
 
@@ -671,7 +664,7 @@ DEFINE_FUNCTION( DirectoryChangesLookup ) {
 
 	bool wait;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &wait) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &wait) );
 	else
 		wait = false;
 
@@ -879,19 +872,19 @@ DEFINE_PROPERTY( clipboardSetter ) {
 
 	if ( !JSVAL_IS_VOID( *vp ) ) {
 
+		JLStr str;
+
 		res = OpenClipboard(NULL);
 		JL_S_ASSERT( res != 0, "Unable to open the clipboard." );
-		const char *str;
-		size_t len;
-		JL_CHK( JL_JsvalToStringAndLength(cx, vp, &str, &len) );
-		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, len + 1);
+		JL_CHK( JL_JsvalToNative(cx, *vp, str) );
+		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, str.Length() + 1);
 		JL_S_ASSERT_ALLOC( hglbCopy );
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
 		JL_S_ASSERT( lptstrCopy != NULL, "Unable to lock memory." );
-		memcpy(lptstrCopy, str, len + 1);
-		lptstrCopy[len] = 0;
+		memcpy(lptstrCopy, str.GetStrConst(), str.Length() + 1);
+		lptstrCopy[str.Length()] = 0;
 		GlobalUnlock(hglbCopy);
-		HANDLE h = SetClipboardData(CF_TEXT,hglbCopy);
+		HANDLE h = SetClipboardData(CF_TEXT, hglbCopy);
 		JL_S_ASSERT( h != NULL, "Unable to SetClipboardData." );
 		CloseClipboard();
 	}
@@ -942,13 +935,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( numlockState ) {
 
-	return JL_CValToJsval(cx, GetKeyState(VK_NUMLOCK) & 1, vp);
+	return JL_NativeToJsval(cx, GetKeyState(VK_NUMLOCK) & 1, vp);
 }
 
 DEFINE_PROPERTY_SETTER( numlockState ) {
 
 	bool state;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &state) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
 	SetKeyState(VK_NUMLOCK, state);
 	return JS_TRUE;
 	JL_BAD;
@@ -961,13 +954,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( capslockState ) {
 
-	return JL_CValToJsval(cx, GetKeyState(VK_CAPITAL) & 1, vp);
+	return JL_NativeToJsval(cx, GetKeyState(VK_CAPITAL) & 1, vp);
 }
 
 DEFINE_PROPERTY_SETTER( capslockState ) {
 
 	bool state;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &state) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
 	SetKeyState(VK_CAPITAL, state);
 	return JS_TRUE;
 	JL_BAD;
@@ -980,13 +973,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( scrolllockState ) {
 
-	return JL_CValToJsval(cx, GetKeyState(VK_SCROLL) & 1, vp);
+	return JL_NativeToJsval(cx, GetKeyState(VK_SCROLL) & 1, vp);
 }
 
 DEFINE_PROPERTY_SETTER( scrolllockState ) {
 
 	bool state;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &state) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
 	SetKeyState(VK_SCROLL, state);
 	return JS_TRUE;
 	JL_BAD;
@@ -1004,7 +997,7 @@ DEFINE_PROPERTY( lastInputTime ) {
 	lastInputInfo.cbSize = sizeof(LASTINPUTINFO);
 	if ( ::GetLastInputInfo(&lastInputInfo) == FALSE )
 		return WinThrowError(cx, GetLastError());
-	return JL_CValToJsval(cx, ::GetTickCount() - lastInputInfo.dwTime, JL_RVAL);
+	return JL_NativeToJsval(cx, ::GetTickCount() - lastInputInfo.dwTime, JL_RVAL);
 }
 
 
@@ -1138,7 +1131,7 @@ DEFINE_PROPERTY( folderPath ) {
 
 	TCHAR path[MAX_PATH];
 	if ( SUCCEEDED( SHGetFolderPath(NULL, JSID_TO_INT(id), NULL, 0, path) ) ) // |CSIDL_FLAG_CREATE
-		return JL_CValToJsval(cx, path, vp);
+		return JL_NativeToJsval(cx, path, vp);
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 }

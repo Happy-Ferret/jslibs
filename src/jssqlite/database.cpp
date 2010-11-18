@@ -62,6 +62,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JLStr fileName;
+
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
@@ -69,7 +71,6 @@ DEFINE_CONSTRUCTOR() {
 
 	//	int isThreadSafe = sqlite3_threadsafe();
 	
-
 	int flags;
 	if ( JL_ARG_ISDEF(2) )
 		flags = JSVAL_TO_INT( JL_ARG(2) );
@@ -78,11 +79,10 @@ DEFINE_CONSTRUCTOR() {
 
 //	flags |= SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_SHAREDCACHE;
 
-	const char *fileName;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &fileName) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), fileName) );
 	else
-		fileName = ":memory:";
+		fileName = JLStr(":memory:");
 
 	pv = (DatabasePrivate*)JS_malloc(cx, sizeof(DatabasePrivate));
 	JL_CHK(pv);
@@ -251,6 +251,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Query ) {
 
+	JLStr sql;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
 
@@ -258,16 +259,19 @@ DEFINE_FUNCTION( Query ) {
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
-	const char *sqlQuery;
-	size_t sqlQueryLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
+//	const char *sqlQuery;
+//	size_t sqlQueryLength;
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), sql) );
+
 
 	const char *szTail;
 	sqlite3_stmt *pStmt;
 
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
-	if ( sqlite3_prepare_v2(pv->db, sqlQuery, sqlQueryLength, &pStmt, &szTail) != SQLITE_OK )
+	if ( sqlite3_prepare_v2(pv->db, sql, sql.Length(), &pStmt, &szTail) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, pv->db) );
+
 	JL_S_ASSERT( *szTail == '\0', "too many SQL statements." ); // for the moment, do not support multiple statements
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 //		JL_REPORT_ERROR( "Invalid SQL string." );
@@ -317,6 +321,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Exec ) {
 
+	JLStr sql;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	
 	sqlite3_stmt *pStmt = NULL;
@@ -328,14 +334,15 @@ DEFINE_FUNCTION( Exec ) {
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
-	const char *sqlQuery;
+//	const char *sqlQuery;
 //	J_JSVAL_TO_STRING( argv[0], sqlQuery );
-	size_t sqlQueryLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
+//	size_t sqlQueryLength;
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), sql) );
 
 	const char *szTail;
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
-	if ( sqlite3_prepare_v2( pv->db, sqlQuery, sqlQueryLength, &pStmt, &szTail ) != SQLITE_OK )
+	if ( sqlite3_prepare_v2( pv->db, sql, sql.Length(), &pStmt, &szTail ) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, pv->db) );
 	JL_S_ASSERT( *szTail == '\0', "Too many SQL statements." ); // for the moment, do not support multiple statements
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
@@ -398,7 +405,7 @@ DEFINE_PROPERTY( lastInsertRowid ) {
 	JL_S_ASSERT_RESOURCE(pv);
 	sqlite3_int64 lastId;
 	lastId = sqlite3_last_insert_rowid(pv->db);
-	return JL_CValToJsval(cx, lastId, vp);
+	return JL_NativeToJsval(cx, lastId, vp);
 	JL_BAD;
 }
 
@@ -450,7 +457,7 @@ DEFINE_PROPERTY( memoryUsed ) {
 	//	int val, tmp;
 //	sqlite3_status(SQLITE_STATUS_MEMORY_USED, &val, &tmp, false);
 //	if ( val ) {
-	return JL_CValToJsval(cx, (size_t)sqlite3_memory_used(), vp);
+	return JL_NativeToJsval(cx, (size_t)sqlite3_memory_used(), vp);
 }
 
 void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArgv ) {
@@ -499,7 +506,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			} else {
 
 				jsdouble jd;
-				JL_CHKB( JL_JsvalToCVal(cx, argv[0], &jd), bad_unroot );
+				JL_CHKB( JL_JsvalToNative(cx, argv[0], &jd), bad_unroot );
 				if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
 					sqlite3_result_int(sCx, (int)jd);
 				else
@@ -516,20 +523,26 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 //			if ( JL_GetClass(JSVAL_TO_OBJECT(argv[0])) == JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Blob")->clasp ) { // beware: with SQLite, blob != text
 			if ( JL_JsvalIsBlob(cx, argv[0]) ) {
 
-				const char *data;
-				size_t length;
-				JL_CHKB( JL_JsvalToStringAndLength(cx, &argv[0], &data, &length), bad_unroot );
-				sqlite3_result_blob(sCx, data, length, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+				//const char *data;
+				//size_t length;
+				//JL_CHKB( JL_JsvalToStringAndLength(cx, &argv[0], &data, &length), bad_unroot );
+				JLStr data;
+				JL_CHK( JL_JsvalToNative(cx, argv[0], data) );
+				sqlite3_result_blob(sCx, data.GetStrConst(), data.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				break;
 			}
 			// else:
 		case JSTYPE_XML:
 		case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
 		case JSTYPE_STRING: {
-			const char *str;
-			size_t len;
-			JL_CHKB( JL_JsvalToStringAndLength(cx, &argv[0], &str, &len), bad_unroot );
-			sqlite3_result_text(sCx, str, len, SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
+
+//			const char *str;
+//			size_t len;
+//			JL_CHKB( JL_JsvalToStringAndLength(cx, &argv[0], &str, &len), bad_unroot );
+
+			JLStr str;
+			JL_CHK( JL_JsvalToNative(cx, argv[0], str) );
+			sqlite3_result_text(sCx, str, str.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 			break;
 		}
 		default:

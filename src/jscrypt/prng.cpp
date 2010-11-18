@@ -48,13 +48,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JLStr prngName;
+
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
-	const char *prngName;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &prngName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), prngName) );
 
 	int prngIndex;
 	prngIndex = find_prng(prngName);
@@ -110,7 +111,7 @@ DEFINE_CALL() {
 	JL_S_ASSERT_RESOURCE( pv );
 
 	unsigned int readCount;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &readCount) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &readCount) );
 
 	char *pr;
 	pr = (char*)JS_malloc( cx, readCount );
@@ -132,6 +133,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( AddEntropy ) {
 
+	JLStr entropy;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
@@ -140,12 +143,10 @@ DEFINE_FUNCTION( AddEntropy ) {
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
 
-	const char *entropy;
-	size_t entropyLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &entropy, &entropyLength) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), entropy) );
 
 	int err;
-	err = pv->prng.add_entropy( (const unsigned char *)entropy, (unsigned long)entropyLength, &pv->state );
+	err = pv->prng.add_entropy( (const unsigned char *)entropy.GetStrConst(), (unsigned long)entropy.Length(), &pv->state );
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	err = pv->prng.ready(&pv->state);
@@ -173,7 +174,7 @@ DEFINE_FUNCTION( AutoEntropy ) {
 	JL_S_ASSERT_RESOURCE( pv );
 
 	unsigned int bits;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &bits) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bits) );
 	int err;
 	err = rng_make_prng( bits, find_prng(pv->prng.name), &pv->state, NULL );
 	if ( err != CRYPT_OK )
@@ -220,17 +221,18 @@ DEFINE_PROPERTY( stateGetter ) {
 
 DEFINE_PROPERTY( stateSetter ) {
 
+	JLStr state;
+
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
 
-	const char *stateData;
-	size_t stateLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &stateData, &stateLength) );
-	JL_S_ASSERT( stateLength == (size_t)pv->prng.export_size, "Invalid import size." );
+	JL_CHK( JL_JsvalToNative(cx, *vp, state) );
+
+	JL_S_ASSERT( state.Length() == (size_t)pv->prng.export_size, "Invalid import size." );
 	int err;
-	err = pv->prng.pimport((unsigned char *)stateData, (unsigned long)stateLength, &pv->state);
+	err = pv->prng.pimport((const unsigned char *)state.GetStrConst(), (unsigned long)state.Length(), &pv->state);
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	return JS_TRUE;

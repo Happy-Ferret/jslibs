@@ -70,16 +70,19 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Open ) {
 
+	JLStr str;
+
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
-	const char *directoryName;
-	JL_CHK( JL_JsvalToCVal(cx, jsvalDirectoryName, &directoryName) );
+//	const char *directoryName;
+//	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
+	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, str) );
 
 	PRDir *dd;
-	dd = PR_OpenDir( directoryName );
+	dd = PR_OpenDir( str.GetStrConst() );
 	if ( dd == NULL )
 		return ThrowIoError(cx);
 
@@ -162,16 +165,19 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Make ) {
 
+	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
-	const char *directoryName;
-	JL_CHK( JL_JsvalToCVal(cx, jsvalDirectoryName, &directoryName) );
+//	const char *directoryName;
+//	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
+	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, str) );
+
 	PRIntn mode;
 	mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
-	if ( PR_MkDir(directoryName, mode) != PR_SUCCESS )
+	if ( PR_MkDir(str.GetStrConst(), mode) != PR_SUCCESS )
 		return ThrowIoError(cx);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -188,15 +194,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Remove ) {
 
+	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
-	const char *directoryName;
-	JL_CHK( JL_JsvalToCVal(cx, jsvalDirectoryName, &directoryName) );
+//	const char *directoryName;
+//	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
+	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, str) );
 
-	if ( PR_RmDir(directoryName) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
+	if ( PR_RmDir(str.GetStrConst()) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
 
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode == PR_DIRECTORY_NOT_EMPTY_ERROR )
@@ -222,14 +230,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( exist ) {
 
+	JLStr str;
+
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
-	const char *directoryName;
-	JL_CHK( JL_JsvalToCVal(cx, jsvalDirectoryName, &directoryName) );
+//	const char *directoryName;
+//	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
+	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, str) );
 
 	PRDir *dd;
-	dd = PR_OpenDir( directoryName );
+	dd = PR_OpenDir(str.GetStrConst());
 
 	if ( dd == NULL ) {
 
@@ -282,13 +293,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( List ) {
 
+	JLStr directoryName;
 	PRDir *dd = NULL;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	const char *directoryName;
-	size_t directoryNameLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &directoryName, &directoryNameLength) );
-	JL_S_ASSERT( directoryNameLength < PATH_MAX, "Path too long" );
-	dd = PR_OpenDir( directoryName );
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &directoryName, &directoryNameLength) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), directoryName) );
+
+	JL_S_ASSERT( directoryName.Length() < PATH_MAX, "Path too long" );
+	dd = PR_OpenDir(directoryName.GetStrConst());
 	JL_CHKB( dd, bad_throw);
 
 	PRDirFlags flags;
@@ -324,7 +336,7 @@ DEFINE_FUNCTION( List ) {
 
 			char fileName[PATH_MAX];
 			strcpy( fileName, directoryName );
-			if ( directoryName[directoryNameLength-1] != '/' && directoryName[directoryNameLength-1] != '\\' )
+			if ( directoryName.GetStrConst()[directoryName.Length()-1] != '/' && directoryName.GetStrConst()[directoryName.Length()-1] != '\\' )
 				strcat( fileName, "/" );
 			strcat( fileName, dirEntry->name );
 

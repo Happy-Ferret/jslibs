@@ -18,11 +18,15 @@
 #include "fcgi.h"
 #include "static.h"
 
-bool _unsafeMode = false;
+//bool _unsafeMode = false;
+#include "jslibsModule.cpp"
+
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	_unsafeMode = JL_GetHostPrivate(cx)->unsafeMode;
+//	_unsafeMode = JL_GetHostPrivate(cx)->unsafeMode;
+	
+	JL_CHK( InitJslibsModule(cx, id)  );
 
 //	INIT_CLASS( FastCGI );
 	INIT_STATIC();

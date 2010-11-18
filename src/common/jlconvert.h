@@ -31,11 +31,10 @@ inline JSBool JL_JsvalToSInt8( JSContext *cx, jsval val, int8_t *result, bool *o
 		*result = (int8_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
-		if ( JL_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(int8_t) )
+		JLStr str;
+		if ( !JL_JsvalToNative(cx, val, str) || !str.IsSet() || str.Length() < sizeof(int8_t) )
 			return JS_FALSE;
-		const char *s = JL_GetStringBytesZ(cx, JSVAL_TO_STRING( val ));
-		if ( s == NULL )
-			return JS_FALSE;
+		const char *s = str.GetStrConst();
 		*result = s[0];
 		*outOfRange = false;
 	} else {
@@ -45,7 +44,7 @@ inline JSBool JL_JsvalToSInt8( JSContext *cx, jsval val, int8_t *result, bool *o
 	return JS_TRUE;
 }
 
-inline JSBool JL_JsvalToCVal8( JSContext *cx, jsval val, uint8_t *result, bool *outOfRange ) {
+inline JSBool JL_JsvalToUInt8( JSContext *cx, jsval val, uint8_t *result, bool *outOfRange ) {
 
 	if ( JSVAL_IS_INT( val ) ) {
 
@@ -59,11 +58,10 @@ inline JSBool JL_JsvalToCVal8( JSContext *cx, jsval val, uint8_t *result, bool *
 		*result = (uint8_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
-		if ( JL_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(uint8_t) )
+		JLStr str;
+		if ( !JL_JsvalToNative(cx, val, str) || !str.IsSet() || str.Length() < sizeof(uint8_t) )
 			return JS_FALSE;
-		const unsigned char *s = (unsigned char*)JL_GetStringBytesZ(cx, JSVAL_TO_STRING( val ));
-		if ( s == NULL )
-			return JS_FALSE;
+		const char *s = str.GetStrConst();
 		*result = (uint8_t)s[0];
 		*outOfRange = *result < 0;
 	} else {
@@ -88,11 +86,10 @@ inline JSBool JL_JsvalToSInt16( JSContext *cx, jsval val, int16_t *result, bool 
 		*result = (int16_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
-		if ( JL_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(int16_t) )
+		JLStr str;
+		if ( !JL_JsvalToNative(cx, val, str) || !str.IsSet() || str.Length() < sizeof(int16_t) )
 			return JS_FALSE;
-		const char *s = JL_GetStringBytesZ(cx, JSVAL_TO_STRING( val ));
-		if ( s == NULL )
-			return JS_FALSE;
+		const char *s = str.GetStrConst();
 		*result = s[0]<<8 | s[1];
 		*outOfRange = false;
 	} else {
@@ -102,7 +99,7 @@ inline JSBool JL_JsvalToSInt16( JSContext *cx, jsval val, int16_t *result, bool 
 	return JS_TRUE;
 }
 
-inline JSBool JL_JsvalToCVal16( JSContext *cx, jsval val, uint16_t *result, bool *outOfRange ) {
+inline JSBool JL_JsvalToUInt16( JSContext *cx, jsval val, uint16_t *result, bool *outOfRange ) {
 
 	if ( JSVAL_IS_INT( val ) ) {
 
@@ -116,11 +113,10 @@ inline JSBool JL_JsvalToCVal16( JSContext *cx, jsval val, uint16_t *result, bool
 		*result = (uint16_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
-		if ( JL_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(uint16_t) )
+		JLStr str;
+		if ( !JL_JsvalToNative(cx, val, str) || !str.IsSet() || str.Length() < sizeof(uint16_t) )
 			return JS_FALSE;
-		const unsigned char *s = (unsigned char*)JL_GetStringBytesZ(cx, JSVAL_TO_STRING( val ));
-		if ( s == NULL )
-			return JS_FALSE;
+		const char *s = str.GetStrConst();
 		*result = s[0]<<8 | s[1];
 		*outOfRange = *result < 0;
 	} else {
@@ -145,11 +141,10 @@ inline JSBool JL_JsvalToSInt24( JSContext *cx, jsval val, int32_t *result, bool 
 		*result = (int32_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
-		if ( JL_GetStringLength(JSVAL_TO_STRING( val )) < 3 )
+		JLStr str;
+		if ( !JL_JsvalToNative(cx, val, str) || !str.IsSet() || str.Length() < 3 )
 			return JS_FALSE;
-		const char *s = JL_GetStringBytesZ(cx, JSVAL_TO_STRING( val ));
-		if ( s == NULL )
-			return JS_FALSE;
+		const char *s = str.GetStrConst();
 		*result = ((s[0]<<8 | s[1])<<8) | s[2];
 		*outOfRange = false;
 	} else {
@@ -160,7 +155,7 @@ inline JSBool JL_JsvalToSInt24( JSContext *cx, jsval val, int32_t *result, bool 
 }
 
 
-inline JSBool JL_JsvalToCVal24( JSContext *cx, jsval val, uint32_t *result, bool *outOfRange ) {
+inline JSBool JL_JsvalToUInt24( JSContext *cx, jsval val, uint32_t *result, bool *outOfRange ) {
 
 	if ( JSVAL_IS_INT( val ) ) {
 
@@ -174,11 +169,10 @@ inline JSBool JL_JsvalToCVal24( JSContext *cx, jsval val, uint32_t *result, bool
 		*result = (uint32_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
-		if ( JL_GetStringLength(JSVAL_TO_STRING( val )) < 3 )
+		JLStr str;
+		if ( !JL_JsvalToNative(cx, val, str) || !str.IsSet() || str.Length() < 3 )
 			return JS_FALSE;
-		const unsigned char *s = (unsigned char*)JL_GetStringBytesZ(cx, JSVAL_TO_STRING( val ));
-		if ( s == NULL )
-			return JS_FALSE;
+		const char *s = str.GetStrConst();
 		*result = ((s[0]<<8 | s[1])<<8) | s[2];
 		*outOfRange = *result < 0;
 	} else {
@@ -203,11 +197,10 @@ inline JSBool JL_JsvalToSInt32( JSContext *cx, jsval val, int32_t *result, bool 
 		*result = (int32_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
-		if ( JL_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(int32_t) )
+		JLStr str;
+		if ( !JL_JsvalToNative(cx, val, str) || !str.IsSet() || str.Length() < sizeof(int32_t) )
 			return JS_FALSE;
-		const char *s = JL_GetStringBytesZ(cx, JSVAL_TO_STRING( val ));
-		if ( s == NULL )
-			return JS_FALSE;
+		const char *s = str.GetStrConst();
 		*result = (((s[0]<<8 | s[1])<<8) | s[2])<<8 | s[3];
 		*outOfRange = false;
 	} else {
@@ -217,7 +210,7 @@ inline JSBool JL_JsvalToSInt32( JSContext *cx, jsval val, int32_t *result, bool 
 	return JS_TRUE;
 }
 
-inline JSBool JL_JsvalToCVal32( JSContext *cx, jsval val, uint32_t *result, bool *outOfRange ) {
+inline JSBool JL_JsvalToUInt32( JSContext *cx, jsval val, uint32_t *result, bool *outOfRange ) {
 
 	if ( JSVAL_IS_INT( val ) ) {
 
@@ -231,11 +224,10 @@ inline JSBool JL_JsvalToCVal32( JSContext *cx, jsval val, uint32_t *result, bool
 		*result = (uint32_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
-		if ( JL_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(uint32_t) )
+		JLStr str;
+		if ( !JL_JsvalToNative(cx, val, str) || !str.IsSet() || str.Length() < sizeof(uint32_t) )
 			return JS_FALSE;
-		const unsigned char *s = (unsigned char*)JL_GetStringBytesZ(cx, JSVAL_TO_STRING( val ));
-		if ( s == NULL )
-			return JS_FALSE;
+		const char *s = str.GetStrConst();
 		*result = (((s[0]<<8 | s[1])<<8) | s[2])<<8 | s[3];
 		*outOfRange = *result < 0;
 	} else {
@@ -261,12 +253,11 @@ inline JSBool JL_JsvalToSInt64( JSContext *cx, jsval val, int64_t *result, bool 
 		*result = (int64_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
-		if ( JL_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(int64_t) )
+		JLStr str;
+		if ( !JL_JsvalToNative(cx, val, str) || !str.IsSet() || str.Length() < sizeof(int64_t) )
 			return JS_FALSE;
-		const char *s = JL_GetStringBytesZ(cx, JSVAL_TO_STRING( val ));
-		if ( s == NULL )
-			return JS_FALSE;
-		*result = (((s[0]<<8 | s[1])<<8) | s[2])<<8 | s[3];
+		const char *s = str.GetStrConst();
+		*result = (((((((s[0]<<8 | s[1])<<8) | s[2])<<8 | s[3]<<8) | s[4]<<8) | s[5]<<8) | s[6]<<8) | s[7];
 		*outOfRange = false;
 	} else {
 		
@@ -275,7 +266,7 @@ inline JSBool JL_JsvalToSInt64( JSContext *cx, jsval val, int64_t *result, bool 
 	return JS_TRUE;
 }
 
-inline JSBool JL_JsvalToCVal64( JSContext *cx, jsval val, uint64_t *result, bool *outOfRange ) {
+inline JSBool JL_JsvalToUInt64( JSContext *cx, jsval val, uint64_t *result, bool *outOfRange ) {
 
 	if ( JSVAL_IS_INT( val ) ) {
 
@@ -289,12 +280,11 @@ inline JSBool JL_JsvalToCVal64( JSContext *cx, jsval val, uint64_t *result, bool
 		*result = (uint64_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
-		if ( JL_GetStringLength(JSVAL_TO_STRING( val )) < sizeof(uint64_t) )
+		JLStr str;
+		if ( !JL_JsvalToNative(cx, val, str) || !str.IsSet() || str.Length() < sizeof(int64_t) )
 			return JS_FALSE;
-		const unsigned char *s = (unsigned char*)JL_GetStringBytesZ(cx, JSVAL_TO_STRING( val ));
-		if ( s == NULL )
-			return JS_FALSE;
-		*result = (((s[0]<<8 | s[1])<<8) | s[2])<<8 | s[3];
+		const char *s = str.GetStrConst();
+		*result = (((((((s[0]<<8 | s[1])<<8) | s[2])<<8 | s[3]<<8) | s[4]<<8) | s[5]<<8) | s[6]<<8) | s[7];
 		*outOfRange = *result < 0;
 	} else
 		return JS_FALSE;
@@ -409,7 +399,7 @@ inline JSBool FloatVectorToArray( JSContext *cx, int count, const float *vector,
 	jsval value;
 	for (int i=0; i<count; ++i) {
 
-		JL_NewNumberValue(cx, vector[i], &value); // JL_CValToJsval(cx, vector[i], &value);
+		JL_NewNumberValue(cx, vector[i], &value); // JL_NativeToJsval(cx, vector[i], &value);
 		JS_SetElement(cx, jsArray, i, &value);
 	}
 	return JS_TRUE;

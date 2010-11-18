@@ -25,7 +25,7 @@ DECLARE_CLASS( Stream );
 inline JSBool PositionSet( JSContext *cx, JSObject *obj, size_t position ) {
 
 	jsval tmp;
-	JL_CHK( JL_CValToJsval(cx, position, &tmp) );
+	JL_CHK( JL_NativeToJsval(cx, position, &tmp) );
 	return JL_SetReservedSlot(cx, obj, SLOT_STREAM_POSITION, tmp);
 	JL_BAD;
 }
@@ -35,7 +35,7 @@ inline JSBool PositionGet( JSContext *cx, JSObject *obj, size_t *position ) {
 
 	jsval tmp;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_POSITION, &tmp) );
-	JL_CHK( JL_JsvalToCVal(cx, tmp, position) );
+	JL_CHK( JL_JsvalToNative(cx, tmp, position) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -50,10 +50,11 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 	jsval source;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, &source) );
 
-	const char *buffer;
-	size_t length;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &source, &buffer, &length) ); // (TBD) GC protect source
+	{
+	JLStr str;
+	JL_CHK( JL_JsvalToNative(cx, source, str) ); // (TBD) GC protect source
 
+	size_t length = str.Length();
 	if ( length - position <= 0 ) { // position >= length
 
 		*amount = 0; // EOF
@@ -63,9 +64,10 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 	if ( position + *amount > length )
 		*amount = length - position;
 
-	memcpy( buf, buffer+position, *amount );
+	memcpy( buf, str.GetStrConst() + position, *amount );
 	position += *amount;
 	PositionSet(cx, obj, position);
+	}
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -120,7 +122,7 @@ DEFINE_FUNCTION( Read ) {
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	int amount;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &amount) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
 
 	char *buffer;
 	buffer = (char*)JS_malloc(cx, amount +1);
@@ -152,7 +154,7 @@ DEFINE_PROPERTY( positionGetter ) {
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	size_t position;
 	JL_CHK( PositionGet(cx, obj, &position) );
-	return JL_CValToJsval(cx, position, vp);
+	return JL_NativeToJsval(cx, position, vp);
 	JL_BAD;
 }
 
@@ -160,7 +162,7 @@ DEFINE_PROPERTY( positionSetter ) {
 
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	size_t position;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &position) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &position) );
 	JL_S_ASSERT( position >= 0, "Invalid stream position." );
 	JL_CHK( PositionSet(cx, obj, position) );
 	return JS_TRUE;
@@ -186,8 +188,8 @@ DEFINE_PROPERTY( available ) {
 	JL_CHK( JS_GetProperty(cx, srcObj, "length", vp) ); // use vp as a tmp variable
 	if ( JSVAL_IS_VOID( *vp ) )
 		return JS_TRUE; // if length is not defined, the returned value is undefined
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &length) );
-	JL_CHK( JL_CValToJsval(cx, length - position, vp ) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &length) );
+	JL_CHK( JL_NativeToJsval(cx, length - position, vp ) );
 	return JS_TRUE;
 	JL_BAD;
 }

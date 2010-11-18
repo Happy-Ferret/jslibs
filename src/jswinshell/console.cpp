@@ -86,15 +86,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Write ) {
 
+	JLStr str;
 	JL_S_ASSERT_ARG_MIN( 1 );
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	if ( hStdout == NULL )
 		return WinThrowError(cx, GetLastError());
-	const char *str;
-	size_t len;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
 	DWORD written;
-	BOOL status = WriteConsole(hStdout, str, len, &written, NULL);
+	BOOL status = WriteConsole(hStdout, str.GetStrConst(), str.Length(), &written, NULL);
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
 
@@ -138,8 +137,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( titleSetter ) {
 
-	const char *str;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &str) );
+	JLStr str;
+	JL_CHK( JL_JsvalToNative(cx, *vp, str) );
 	SetConsoleTitle(str);
 	return JS_TRUE;
 	JL_BAD;

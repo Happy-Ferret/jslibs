@@ -342,8 +342,9 @@
 #endif // Windows/MacosX/Linux platform
 
 
-#define SIZE_T_MIN (static_cast<size_t>(0))
-#define SIZE_T_MAX (static_cast<size_t>(-1))
+// #define SIZE_T_MIN (static_cast<size_t>(0))
+// #define SIZE_T_MAX (static_cast<size_t>(-1))
+//	see SIZE_MAX
 
 #define SSIZE_T_MAX (static_cast<ssize_t>(SIZE_T_MAX / 2))
 #define SSIZE_T_MIN (static_cast<ssize_t>(-SSIZE_T_MAX - 1L))

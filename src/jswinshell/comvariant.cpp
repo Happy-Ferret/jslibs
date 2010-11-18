@@ -141,12 +141,11 @@ private:
 
 JSBool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
 
-	const char *buf;
-	size_t len;
-	JL_CHK( JL_JsvalToStringAndLength(cx, val, &buf, &len) );
+	JLStr buf;
+	JL_CHK( JL_JsvalToNative(cx, *val, buf) );
 	variant->vt = VT_ARRAY | VT_UI1;
 	SAFEARRAYBOUND rgsabound[1];
-	rgsabound[0].cElements = len;
+	rgsabound[0].cElements = buf.Length();
 	rgsabound[0].lLbound = 0;
 	variant->parray = SafeArrayCreate(VT_UI1, 1, rgsabound);
 	JL_S_ASSERT( variant->parray != NULL, "Failed to create the array." );
@@ -154,7 +153,7 @@ JSBool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
 	HRESULT hr = SafeArrayAccessData(variant->parray, &pArrayData);
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
-	memcpy(pArrayData, buf, len);
+	memcpy(pArrayData, buf.GetStrConst(), buf.Length());
 	SafeArrayUnaccessData(variant->parray);
 
 	return JS_TRUE;
@@ -189,11 +188,10 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 			// see also: Write and read binary data in VARIANT - http://www.ucosoft.com/write-and-read-binary-data-in-variant.html
 			
-			const char *buf;
-			size_t len;
-			JL_CHK( JL_JsvalToStringAndLength(cx, value, &buf, &len) );
+			JLStr buf;
+			JL_CHK( JL_JsvalToNative(cx, *value, buf) );
 			V_VT(variant) = VT_BSTR;
-			V_BSTR(variant) = SysAllocStringByteLen(buf, len);
+			V_BSTR(variant) = SysAllocStringByteLen(buf.GetStrConst(), buf.Length());
 			return JS_TRUE;
 		}
 
@@ -456,10 +454,10 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			*rval = INT_TO_JSVAL(isRef ? *V_I2REF(variant) : V_I2(variant));
 			break;
 		case VT_I4:
-			JL_CHK( JL_CValToJsval(cx, isRef ? *V_I4REF(variant) : V_I4(variant), rval) );
+			JL_CHK( JL_NativeToJsval(cx, isRef ? *V_I4REF(variant) : V_I4(variant), rval) );
 			break;
 		case VT_INT:
-			JL_CHK( JL_CValToJsval(cx, isRef ? *V_INTREF(variant) : V_INT(variant), rval) );
+			JL_CHK( JL_NativeToJsval(cx, isRef ? *V_INTREF(variant) : V_INT(variant), rval) );
 			break;
 
 		case VT_UI1:
@@ -469,10 +467,10 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			*rval = INT_TO_JSVAL(isRef ? *V_UI2REF(variant) : V_UI2(variant));
 			break;
 		case VT_UI4:
-			JL_CHK( JL_CValToJsval(cx, isRef ? *V_UI4REF(variant) : V_UI4(variant), rval) );
+			JL_CHK( JL_NativeToJsval(cx, isRef ? *V_UI4REF(variant) : V_UI4(variant), rval) );
 			break;
 		case VT_UINT:
-			JL_CHK( JL_CValToJsval(cx, isRef ? *V_UINTREF(variant) : V_UINT(variant), rval) );
+			JL_CHK( JL_NativeToJsval(cx, isRef ? *V_UINTREF(variant) : V_UINT(variant), rval) );
 			break;
 
 		case VT_DISPATCH:
@@ -639,7 +637,7 @@ DEFINE_FUNCTION( toTypeName ) {
 	}
 	strcat(str, "]");
 
-	return JL_CValToJsval(cx, str, JL_RVAL);
+	return JL_NativeToJsval(cx, str, JL_RVAL);
 	JL_BAD;
 }
 

@@ -243,7 +243,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 			JSVAL_NULL,
 			script && JS_GetFramePC(cx, fp) == script->code ? JSVAL_TRUE : JSVAL_FALSE // is entering function
 		};
-		JL_CHK( JL_CValToJsval(cx, filename, &argv[1]) );
+		JL_CHK( JL_NativeToJsval(cx, filename, &argv[1]) );
 		
 		js::AutoArrayRooter tvr(cx, COUNTOF(argv), argv);
 
@@ -404,10 +404,10 @@ DEFINE_FUNCTION( ToggleBreakpoint ) {
 	JL_S_ASSERT_ARG_MIN( 3 );
 
 	bool polarity;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(1), &polarity) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &polarity) );
 
 	uintN lineno;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &lineno) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &lineno) );
 
 	JSScript *script;
 	jsbytecode *pc;
@@ -443,7 +443,7 @@ DEFINE_FUNCTION( HasBreakpoint ) {
 	JL_S_ASSERT_ARG_MIN( 2 );
 
 	uintN lineno;
-	JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &lineno) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
 
 	JSScript *script;
 	jsbytecode *pc;
@@ -504,7 +504,7 @@ DEFINE_PROPERTY( interruptCounterLimit ) {
 	} else {
 
 		JL_S_ASSERT_INT(*vp);
-		JL_CHK( JL_JsvalToCVal(cx, *vp, &pv->interruptCounterLimit) );
+		JL_CHK( JL_JsvalToNative(cx, *vp, &pv->interruptCounterLimit) );
 	}
 
 	JSRuntime *rt;
@@ -537,7 +537,7 @@ DEFINE_PROPERTY( breakOnError ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -562,7 +562,7 @@ DEFINE_PROPERTY( breakOnException ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -587,7 +587,7 @@ DEFINE_PROPERTY( breakOnDebuggerKeyword ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -612,7 +612,7 @@ DEFINE_PROPERTY( breakOnExecute ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -637,7 +637,7 @@ DEFINE_PROPERTY( breakOnFirstExecute ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	bool b;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -674,22 +674,12 @@ DEFINE_PROPERTY( excludedFileList ) {
 	JL_CHK( JS_GetArrayLength(cx, arrayObject, &length) );
 
 	jsval tmp;
-	const char *buffer;
-	size_t bufferLength;
-	char *filename;
 	for ( jsuint i = 0; i < length; ++i ) {
 
+		JLStr fileName;
 		JL_CHK( JS_GetElement(cx, arrayObject, i, &tmp ) );
-
-		JL_CHK( JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength) );
-
-		//filename = strdup(buffer); // malloc/jl_free issue !
-		filename = (char*)jl_malloc(bufferLength +1);
-		JL_S_ASSERT_ALLOC( filename );
-		memcpy(filename, buffer, bufferLength);
-		filename[bufferLength] = '\0';
-
-		AddExcludedFile(&pv->excludedFiles, filename);
+		JL_CHK( JL_JsvalToNative(cx, tmp, fileName) );
+		AddExcludedFile(&pv->excludedFiles, fileName.GetStrOwnership());
 	}
 
 	return JL_StoreProperty(cx, obj, id, vp, false);

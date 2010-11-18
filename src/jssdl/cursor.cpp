@@ -43,6 +43,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JLStr buffer;
+
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
@@ -57,7 +59,10 @@ DEFINE_CONSTRUCTOR() {
 
 	const unsigned char *sBuffer;
 	size_t bufferLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), buffer) );
+	sBuffer = (const unsigned char*)buffer.GetStrConst();
+	bufferLength = buffer.Length();
 
 	JL_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 
@@ -91,12 +96,12 @@ DEFINE_CONSTRUCTOR() {
 	int hotX, hotY;
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(2), &hotX) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &hotX) );
 	else
 		hotX = 0;
 	
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToCVal(cx, JL_ARG(3), &hotY) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &hotY) );
 	else
 		hotY = 0;
 		

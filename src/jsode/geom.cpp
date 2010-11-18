@@ -179,7 +179,7 @@ DEFINE_FUNCTION( PointDepth ) {
 			JL_REPORT_ERROR("Not support for this geometry.");
 	}
 
-	JL_CHK( JL_CValToJsval(cx, depth, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, depth, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -200,7 +200,7 @@ DEFINE_PROPERTY( disabledSetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
 	bool disabled;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &disabled) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &disabled) );
 	if ( disabled )
 		ode::dGeomDisable(geom);
 	else
@@ -230,7 +230,7 @@ DEFINE_PROPERTY( temporalCoherenceSetter ) {
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geomId);
 	bool enableState;
-	JL_CHK( JL_JsvalToCVal(cx, *vp, &enableState) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &enableState) );
 	ode::dGeomTriMeshEnableTC(geomId, ode::dGeomGetClass(geomId), enableState ? 1 : 0 );
 	return JS_TRUE;
 	JL_BAD;
@@ -430,7 +430,7 @@ DEFINE_PROPERTY( boundarySphere ) {
 	
 	JL_CHK( ODERealVectorToJsval(cx, center.raw, 3, vp) );
 	jsval tmpVal;
-	JL_CHK( JL_CValToJsval(cx, radius, &tmpVal) );
+	JL_CHK( JL_NativeToJsval(cx, radius, &tmpVal) );
 	JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT(*vp), 3, &tmpVal) );
 
 	return JS_TRUE;

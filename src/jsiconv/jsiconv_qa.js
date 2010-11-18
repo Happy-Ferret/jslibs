@@ -99,7 +99,7 @@ LoadModule('jsiconv');
 	QA.ASSERT( res.length, 3, 'UC string length' );
 
 
-/// store UCS-2le to JS unicode
+/// store UCS-2le to JS unicode (1)
 	
 	var conv = new Iconv(Iconv.jsUC, 'ISO-8859-1', true, false); // source is not wide, dest is wide
 	var res = conv('été');
@@ -108,17 +108,18 @@ LoadModule('jsiconv');
 	QA.ASSERT( res, 'été', 'string test' );
 
 
-/// store UCS-2le to JS unicode
+/// store UCS-2le to JS unicode (2)
 
 	var conv = new Iconv(Iconv.jsUC, 'ISO-8859-1', true, false); // source is not wide, dest is wide
 
-	var src = "\u007A\u6C34";
+//	var src = "\u007A\u6C34";
+	var src = "\u007A\u006C";
 	var res = conv(src);
 
 	QA.ASSERT( res.length, 2, 'check the resulting string length' );
-	QA.ASSERT_STR( res, "z4", 'check the resulting string' );
+	QA.ASSERT_STR( res, "zl", 'check the resulting string' );
 
-/// store UCS-2le to JS unicode
+/// store UCS-2le to JS unicode (3)
 
   var utf8str = "\xC3\xA9t\xC3\xA9 \xC3\xA0 la plage"; // été à la plage
   var conv = new Iconv(Iconv.jsUC, 'UTF-8', true, false); // source is not wide (8bit), dest is wide (16bit)

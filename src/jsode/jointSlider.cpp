@@ -130,7 +130,7 @@ DEFINE_PROPERTY( position ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( JL_CValToJsval(cx, ode::dJointGetSliderPosition(jointId), vp) );
+	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetSliderPosition(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -144,7 +144,7 @@ DEFINE_PROPERTY( positionRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	JL_CHK( JL_CValToJsval(cx, ode::dJointGetSliderPositionRate(jointId), vp) );
+	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetSliderPositionRate(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

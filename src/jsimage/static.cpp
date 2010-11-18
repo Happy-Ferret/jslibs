@@ -366,6 +366,8 @@ void output_flush_fn(png_structp png_ptr) {
 
 DEFINE_FUNCTION( EncodePngImage ) {
 
+	JLStr buffer;
+
 	JL_S_ASSERT_ARG_MIN(1);
 
 	int compressionLevel;
@@ -393,10 +395,12 @@ DEFINE_FUNCTION( EncodePngImage ) {
 	JL_CHK( desc.buffer );
 	desc.pos = 0;
 
-	const char *sBuffer;
-	size_t bufferLength;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-	JL_S_ASSERT( bufferLength == (size_t)(sWidth * sHeight * sChannels * 1), "Invalid image format." );
+//	const char *sBuffer;
+//	size_t bufferLength;
+//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), buffer) );
+
+	JL_S_ASSERT( buffer.Length() == (size_t)(sWidth * sHeight * sChannels * 1), "Invalid image format." );
 
 	desc.png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	JL_S_ASSERT( desc.png != NULL, "Unable to png_create_write_struct.");
@@ -428,7 +432,7 @@ DEFINE_FUNCTION( EncodePngImage ) {
 
 	png_write_info(desc.png, desc.info);
 	for ( int r = 0; r < sHeight; r++ )
-		png_write_row(desc.png, (png_bytep)sBuffer + sWidth * r * sChannels);
+		png_write_row(desc.png, (png_bytep)buffer.GetStrConst() + sWidth * r * sChannels);
 	png_write_end(desc.png, desc.info);
 
 	png_destroy_write_struct(&desc.png, &desc.info);

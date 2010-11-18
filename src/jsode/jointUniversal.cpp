@@ -180,7 +180,7 @@ DEFINE_PROPERTY( angle1 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	return JL_CValToJsval(cx, ode::dJointGetUniversalAngle1(jointId), vp);
+	return JL_NativeToJsval(cx, ode::dJointGetUniversalAngle1(jointId), vp);
 	JL_BAD;
 }
 
@@ -192,7 +192,7 @@ DEFINE_PROPERTY( angle2 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	return JL_CValToJsval(cx, ode::dJointGetUniversalAngle2(jointId), vp);
+	return JL_NativeToJsval(cx, ode::dJointGetUniversalAngle2(jointId), vp);
 	JL_BAD;
 }
 
@@ -204,7 +204,7 @@ DEFINE_PROPERTY( angle1Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	return JL_CValToJsval(cx, ode::dJointGetUniversalAngle1Rate(jointId), vp);
+	return JL_NativeToJsval(cx, ode::dJointGetUniversalAngle1Rate(jointId), vp);
 	JL_BAD;
 }
 
@@ -216,7 +216,7 @@ DEFINE_PROPERTY( angle2Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
-	return JL_CValToJsval(cx, ode::dJointGetUniversalAngle2Rate(jointId), vp);
+	return JL_NativeToJsval(cx, ode::dJointGetUniversalAngle2Rate(jointId), vp);
 	JL_BAD;
 }
 
