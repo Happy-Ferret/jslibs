@@ -498,7 +498,7 @@ DEFINE_PROPERTY( icon ) {
 	//const char *sBuffer;
 	//size_t bufferLength;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &image, &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, image, buffer) );
+	JL_CHK( JL_JsvalToNative(cx, image, &buffer) );
 
 	JL_S_ASSERT( buffer.Length() == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 
@@ -692,7 +692,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( caption ) {
 
 	JLStr title;
-	JL_CHK( JL_JsvalToNative(cx, *vp, title) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &title) );
 	SDL_WM_SetCaption(title, NULL);
 	return JS_TRUE;
 	JL_BAD;

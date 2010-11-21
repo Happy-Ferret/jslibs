@@ -81,8 +81,8 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_ARG_RANGE(2, 4);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), tocode) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), fromcode) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &tocode) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &fromcode) );
 
 	Private *pv;
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
@@ -157,7 +157,7 @@ DEFINE_CALL() {
 	//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&inBuf, &inLen) );
 	//}
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), data) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
 
 	if ( pv->wFrom ) {
 
@@ -332,7 +332,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 //	const char *chr;
 //	size_t length;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &chr, &length) );
-	JL_CHK( JL_JsvalToNative(cx, *vp, chr) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &chr) );
 	if ( chr.Length() != 1 )
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "one-char string");
 	pv->invalidChar = chr.GetConstStr()[0];

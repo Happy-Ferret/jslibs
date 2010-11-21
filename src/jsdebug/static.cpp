@@ -1450,7 +1450,7 @@ DEFINE_FUNCTION( DisassembleScript ) {
 
 	JL_S_ASSERT_ARG(2);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), filename) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &filename) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
 
 	scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;
@@ -1599,7 +1599,7 @@ DEFINE_FUNCTION( DebugOutput ) {
 
 #if defined(_MSC_VER) && defined(DEBUG)
 	JLStr str;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	OutputDebugString(str);
 	*JL_RVAL = JSVAL_TRUE;
 	return JS_TRUE;

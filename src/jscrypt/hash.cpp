@@ -71,7 +71,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), hashName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &hashName) );
 
 	int hashIndex;
 	hashIndex = find_hash(hashName);
@@ -148,7 +148,7 @@ DEFINE_FUNCTION( Process ) {
 //	const char *in;
 //	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), in) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
 
 	err = pv->descriptor->process(&pv->state, (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length()); // Process a block of memory though the hash
 	if ( err != CRYPT_OK )
@@ -243,7 +243,7 @@ DEFINE_CALL() {
 //	const char *in;
 //	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), in) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
 
 
 	err = pv->descriptor->init(&pv->state);
@@ -361,7 +361,7 @@ DEFINE_FUNCTION( CipherHash ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN(1);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), cipherName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &cipherName) );
 	int cipherIndex;
 	cipherIndex = find_cipher(cipherName);
 	JL_S_ASSERT( cipherIndex >= 0, "Cipher not found: %s", cipherName );

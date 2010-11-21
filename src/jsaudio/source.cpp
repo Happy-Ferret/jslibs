@@ -373,7 +373,7 @@ DEFINE_PROPERTY_SETTER( buffer ) {
 	if ( JSVAL_IS_VOID( *vp ) || *vp == JSVAL_ZERO )
 		bid = AL_NONE;
 	else
-		JL_CHK( 	JL_JsvalToNative(cx, *vp, &bid) ); // calls OalBuffer valueOf function
+		JL_CHK( JL_JsvalToNative(cx, *vp, &bid) ); // calls OalBuffer valueOf function
 	JL_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
 
 	alSourcei(pv->sid, AL_BUFFER, bid);
@@ -398,7 +398,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	if ( !JSVAL_IS_VOID( *vp ) ) {
 
 		ALint tmp;
-		JL_CHK( 	JL_JsvalToNative(cx, *vp, &tmp) ); // calls OalBuffer valueOf function
+		JL_CHK( JL_JsvalToNative(cx, *vp, &tmp) ); // calls OalBuffer valueOf function
 		JL_S_ASSERT( alIsBuffer(tmp), "Invalid buffer." );
 		if ( tmp == bid )
 			goto out;
@@ -409,7 +409,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 
 		jsval *val = (jsval*)QueueGetData(it);
 		ALint tmp;
-		JL_CHK( 	JL_JsvalToNative(cx, *val, &tmp) ); // calls OalBuffer valueOf function
+		JL_CHK( JL_JsvalToNative(cx, *val, &tmp) ); // calls OalBuffer valueOf function
 		JL_S_ASSERT( alIsBuffer(tmp), "Invalid buffer." );
 		if ( tmp == bid ) {
 

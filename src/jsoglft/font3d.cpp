@@ -222,7 +222,7 @@ DEFINE_FUNCTION( Measure ) {
 	else
 		absolute = false;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
 	{
 		OGLFT::BBox bbox = absolute ? pv->face->measure(str) : pv->face->measureRaw(str);
@@ -261,7 +261,7 @@ DEFINE_FUNCTION( Width ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
 	float vector_scale_ = ( pv->size * 100 ) / ( 72.f * pv->ftface->units_per_EM );
 
@@ -303,7 +303,7 @@ DEFINE_FUNCTION( Draw ) {
 //	const char *str;
 //	size_t length;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &length) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
 	if ( JL_ARGC >= 2 ) {
 
@@ -345,7 +345,7 @@ DEFINE_FUNCTION( Compile ) {
 	JL_S_ASSERT_ARG( 1 );
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE( pv );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	GLuint list = pv->face->compile(str);
 	*JL_RVAL = INT_TO_JSVAL(list);
 

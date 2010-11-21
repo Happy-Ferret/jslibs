@@ -500,7 +500,7 @@ DEFINE_FUNCTION( GetEnv ) {
 
 	JLStr name;
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), name) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
 	char* value;
 	value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
 
@@ -630,7 +630,7 @@ DEFINE_FUNCTION( WaitSemaphore ) {
 //	const char *name;
 //	size_t nameLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &name, &nameLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), name) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
 
 	bool isCreation;
 	isCreation = true;
@@ -680,7 +680,7 @@ DEFINE_FUNCTION( PostSemaphore ) {
 //	const char *name;
 //	size_t nameLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &name, &nameLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), name) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
 
 	PRSem *semaphore;
 	semaphore = PR_OpenSemaphore(name, 0, 0, 0);
@@ -837,7 +837,7 @@ DEFINE_FUNCTION( AvailableSpace ) {
 
 	JLStr path;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), path) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &path) );
 
 	jsdouble available;
 
@@ -1194,7 +1194,7 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 DEFINE_PROPERTY_SETTER( currentDirectory ) {
 
 	JLStr dir;
-	JL_CHK( JL_JsvalToNative(cx, *vp, dir ) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &dir ) );
 #ifdef XP_WIN
 //	_chdir(buf);
 	::SetCurrentDirectory(dir);

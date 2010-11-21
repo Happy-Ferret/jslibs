@@ -45,7 +45,7 @@ DEFINE_FUNCTION( Base64Encode ) {
 //	const char *in;
 //	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), in) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
 
 	unsigned long outLength;
 	outLength = 4 * (((unsigned long)in.Length() + 2) / 3) +1;
@@ -82,7 +82,7 @@ DEFINE_FUNCTION( Base64Decode ) {
 //	const char *in;
 //	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), in) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
 
 	unsigned long outLength;
 	outLength = 3 * ((unsigned long)in.Length()-2) / 4 +1;
@@ -121,7 +121,7 @@ DEFINE_FUNCTION( HexEncode ) {
 	const char *in;
 	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), data) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
 	in = data.GetConstStr();
 	inLength = data.Length();
 
@@ -177,7 +177,7 @@ DEFINE_FUNCTION( HexDecode ) {
 	const char *in;
 	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), data) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
 	in = data.GetConstStr();
 	inLength = data.Length();
 

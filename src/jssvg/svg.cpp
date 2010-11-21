@@ -56,7 +56,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 //			const char *sBuffer;
 //			size_t bufferLength;
 //			JL_CHK( JL_JsvalToStringAndLength(cx, image.jsval_addr(), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-			JL_CHK( JL_JsvalToNative(cx, *image.jsval_addr(), buffer) );
+			JL_CHK( JL_JsvalToNative(cx, *image.jsval_addr(), &buffer) );
 
 			JL_S_ASSERT( buffer.Length() == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 			*pixbuf = gdk_pixbuf_new_from_data((const guchar *)buffer.GetConstStr(), GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);
@@ -154,7 +154,7 @@ DEFINE_FUNCTION( Write ) {
 //	const char *data;
 //	size_t length;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &length) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), data) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
 
 	GError *error = NULL;
 	gboolean status;
@@ -319,7 +319,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 //	const char *id;
 	if ( JL_ARG_ISDEF(5) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), id) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &id) );
 		JL_S_ASSERT( id.IsSet() && id.GetConstStr()[0] == '#', "Invalid id." );
 	}
 
@@ -458,7 +458,7 @@ DEFINE_FUNCTION( SetVisible ) {
 	JL_S_ASSERT_RESOURCE(pv);
 	RsvgHandle *handle = pv->handle;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), id) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &id) );
 	JL_S_ASSERT( id.IsSet() && id.GetConstStr()[0] == '#', "Invalid id." );
 
 	bool visible;

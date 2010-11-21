@@ -69,7 +69,7 @@ static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) { //
 		//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(i+1), &buffer, &length) );
 		//JL_CHKM( pv->hostStdOut(pv->privateData, buffer, length) != -1, "Unable to use write on host's StdOut." );
 		JLStr str;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], str) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
 		JL_CHKM( pv->hostStdOut(pv->privateData, str.GetConstStr(), str.Length()) != -1, "Unable to use write on host's StdOut." );
 	}
 	return JS_TRUE;
@@ -89,7 +89,7 @@ static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) { //
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(i+1), &buffer, &length) );
 //		JL_CHKM( pv->hostStdErr(pv->privateData, buffer, length) != -1, "Unable to use write on host's StdErr." );
 		JLStr str;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], str) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
 		JL_CHKM( pv->hostStdErr(pv->privateData, str.GetConstStr(), str.Length()) != -1, "Unable to use write on host's StdErr." );
 	}
 	return JS_TRUE;
@@ -274,7 +274,7 @@ static JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 	JL_S_ASSERT_ARG_MIN(1);
 //	const char *fileName;
 //	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
 	char libFileName[PATH_MAX];
 	strncpy( libFileName, str.GetConstStr(), str.Length() ); // (TBD) check

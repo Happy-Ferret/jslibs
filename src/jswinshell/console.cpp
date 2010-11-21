@@ -91,7 +91,7 @@ DEFINE_FUNCTION( Write ) {
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	if ( hStdout == NULL )
 		return WinThrowError(cx, GetLastError());
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	DWORD written;
 	BOOL status = WriteConsole(hStdout, str.GetConstStr(), str.Length(), &written, NULL);
 	if ( status == FALSE )
@@ -138,7 +138,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( titleSetter ) {
 
 	JLStr str;
-	JL_CHK( JL_JsvalToNative(cx, *vp, str) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &str) );
 	SetConsoleTitle(str);
 	return JS_TRUE;
 	JL_BAD;

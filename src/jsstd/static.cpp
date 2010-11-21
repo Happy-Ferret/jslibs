@@ -68,7 +68,7 @@ DEFINE_FUNCTION( Expand ) {
 	size_t srcLen;
 
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &srcBegin, &srcLen) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	srcLen = str.Length();
 	srcBegin = str.GetConstStr();
 
@@ -175,7 +175,7 @@ next:
 //			JL_CHKB( JL_JsvalToStringAndLength(cx, JL_RVAL, &chunk->data, &chunk->length), bad_free_stack );
 
 			JLStr str1;
-			JL_CHKB( JL_JsvalToNative(cx, *JL_RVAL, str1), bad_free_stack );
+			JL_CHKB( JL_JsvalToNative(cx, *JL_RVAL, &str1), bad_free_stack );
 			chunk->length = str1.Length();
 			chunk->data = str1.GetStrZOwnership();
 
@@ -755,7 +755,7 @@ DEFINE_FUNCTION( Warning ) {
 	JL_S_ASSERT_ARG(1);
 //	const char *message;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	JL_CHK( JS_ReportWarning(cx, "%s", str.GetConstStr()) );
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -789,7 +789,7 @@ DEFINE_FUNCTION( Assert ) {
 		JLStr str;
 
 		if ( JL_ARG_ISDEF(2) )
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), str) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &str) );
 		else
 			str = JLStr("Assertion failed.", true);
 		JS_ReportError( cx, str.GetConstStr() );
@@ -900,7 +900,7 @@ DEFINE_FUNCTION( StringRepeat ) {
 	const char *buf;
 	size_t len;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buf, &len) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	buf = str.GetConstStr();
 	len = str.Length();
 
@@ -1009,7 +1009,7 @@ DEFINE_FUNCTION( Exec ) {
 	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || JL_ARG(2) == JSVAL_TRUE;
 //	const char *filename;
 //	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &filename) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
 	uint32 oldopts;
 	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); // JSOPTION_COMPILE_N_GO is properly removed in JLLoadScript if needed.
@@ -1264,7 +1264,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 	//const char *buffer;
 	//size_t length;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	JL_CHK( JL_NativeToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, str.GetConstStr(), str.Length()) == JS_TRUE, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;

@@ -74,7 +74,7 @@ DEFINE_FUNCTION( GetParam ) {
 	if ( argc >= 1 ) {
 
 		JLStr paramName;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), paramName) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &paramName) );
 		char *paramValue = FCGX_GetParam(paramName, _request.envp);
 		if ( paramValue != NULL ) {
 
@@ -130,7 +130,7 @@ DEFINE_FUNCTION( Read ) {
 DEFINE_FUNCTION( Write ) {
 
 	JLStr str;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	int result;
 	result = FCGX_PutStr(str.GetConstStr(), (int)str.Length(), _request.out);
 	if ( result >= 0 && (size_t)result < str.Length() ) { // returns unwritten data
@@ -156,7 +156,7 @@ DEFINE_FUNCTION( Flush ) {
 DEFINE_FUNCTION( Log ) {
 
 	JLStr str;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	int result;
 	result = FCGX_PutStr(str.GetConstStr(), (int)str.Length(), _request.err);
 	JL_S_ASSERT( result != -1, "Unable to write to the log." );
@@ -183,7 +183,7 @@ DEFINE_FUNCTION( URLEncode ) {
 	size_t srcLen;
 
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &src, &srcLen) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), srcStr) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
 	srcLen = srcStr.Length();
 	src = srcStr.GetConstStr();
 
@@ -222,7 +222,7 @@ DEFINE_FUNCTION( URLDecode ) {
 	size_t srcLen;
 
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &src, &srcLen) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), srcStr) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
 	srcLen = srcStr.Length();
 	src = srcStr.GetConstStr();
 

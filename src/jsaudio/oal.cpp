@@ -47,7 +47,7 @@ DEFINE_FUNCTION( Open ) {
 	JL_S_ASSERT( alcGetCurrentContext() == NULL, "OpenAL already open." );
 
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), deviceName) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &deviceName) );
 
 	// Doc: alcOpenDevice() open the Device specified. Current options are:
 	//   "Generic Hardware"
@@ -802,7 +802,7 @@ DEFINE_FUNCTION( Buffer ) {
 //	size_t bufferLength;
 //	tmp = OBJECT_TO_JSVAL(blobObj);
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), buffer) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &buffer) );
 
 	ALuint bufferID; // The OpenAL sound buffer ID
 	alGenBuffers(1, &bufferID);
@@ -1089,7 +1089,7 @@ DEFINE_FUNCTION( PlaySound ) {
 //	size_t bufferLength;
 //	tmp = OBJECT_TO_JSVAL(blobObj);
 //	JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), buffer) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &buffer) );
 
 	ALint state;                // The state of the sound source
 	ALuint bufferID;            // The OpenAL sound buffer ID

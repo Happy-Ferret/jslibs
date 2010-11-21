@@ -157,7 +157,7 @@ DEFINE_FUNCTION( Bind ) {
 	if ( JL_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
 		JLStr host;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), host) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &host) );
 
 		if ( PR_StringToNetAddr(host, &addr) != PR_SUCCESS )
 			return ThrowIoError(cx);
@@ -310,7 +310,7 @@ DEFINE_FUNCTION( Connect ) {
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
 
 //	const char *host;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), host) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &host) );
 
 	PRNetAddr addr;
 
@@ -380,7 +380,7 @@ DEFINE_FUNCTION( SendTo ) {
 	JL_S_ASSERT( port < 65536, "Invalid port number." );
 
 //	const char *host;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), host) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &host) );
 
 	PRNetAddr addr;
 
@@ -406,7 +406,7 @@ DEFINE_FUNCTION( SendTo ) {
 //	const char *str;
 //	size_t len;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &str, &len) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &str) );
 	JL_S_ASSERT( str.Length() <= PR_INT32_MAX, "Too many data." );
 
 	PRInt32 res;
@@ -586,7 +586,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	if ( JL_ARG_ISDEF(3) ) {
 
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &headers, &headerLength) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), headers) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &headers) );
 		JL_S_ASSERT( headers.Length() <= PR_INT32_MAX, "Header too long." );
 	}
 
@@ -1011,7 +1011,7 @@ DEFINE_FUNCTION( GetHostsByName ) {
 	JL_CHK( addrJsObj );
 	*JL_RVAL = OBJECT_TO_JSVAL(addrJsObj);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), host) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &host) );
 
 	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS ) {
 
@@ -1071,7 +1071,7 @@ DEFINE_FUNCTION( GetHostsByAddr ) {
 	JL_S_ASSERT_ARG( 1 );
 
 	//const char *addr; // MAX_IP_STRING
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), addr) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &addr) );
 
 	PRNetAddr netaddr;
 	if ( PR_StringToNetAddr(addr, &netaddr) != PR_SUCCESS )

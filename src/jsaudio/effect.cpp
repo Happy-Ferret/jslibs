@@ -112,7 +112,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	int effectType;
-	JL_CHK( 	JL_JsvalToNative(cx, *vp, &effectType) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &effectType) );
 
 	alEffecti(pv->effect, AL_EFFECT_TYPE, effectType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );

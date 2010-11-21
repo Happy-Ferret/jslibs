@@ -51,7 +51,7 @@ DEFINE_FUNCTION( Draw3DText ) {
 
 	FT_Face ftface = GetJsfontPrivate(cx, fontObj)->face;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), text) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &text) );
 
 	JsoglftPrivate *mpv = (JsoglftPrivate*)ModulePrivateGet();
 

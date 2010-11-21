@@ -124,7 +124,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 
 	JL_S_ASSERT_ARG_MIN( 3 );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), asymmetricCipherName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &asymmetricCipherName) );
 
 	AsymmetricCipherType asymmetricCipher;
 	if ( strcasecmp( asymmetricCipherName, "RSA" ) == 0 )
@@ -146,7 +146,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 
 	pv->cipher = asymmetricCipher;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), hashName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &hashName) );
 	int hashIndex;
 	hashIndex = find_hash(hashName);
 	JL_S_ASSERT( hashIndex != -1, "hash %s is not available.", hashName );
@@ -167,7 +167,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 		if ( argc >= 4 && !JSVAL_IS_VOID( JL_ARG(4) ) ) {
 
 			JLStr paddingName;
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), paddingName) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &paddingName) );
 
 			if ( strcasecmp(paddingName, "1_OAEP") == 0 ) {
 				pv->padding = LTC_LTC_PKCS_1_OAEP;
@@ -319,7 +319,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 //	const char *in;
 //	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength( cx, &JL_ARG(1), &in, &inLength ) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), in) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
 
 	char out[4096];
 	unsigned long outLength;
@@ -336,7 +336,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 //				JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(2), &in, &inLength) );
 			JLStr lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
-				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), lparam) );
+				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 			err = rsa_encrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
 			break;
 		}
@@ -353,7 +353,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 		case katja: {
 			JLStr lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
-				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), lparam) );
+				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 			err = katja_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, hashIndex, &pv->key.katjaKey );
 			break;
 		}
@@ -402,7 +402,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 //	const char *in;
 //	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), in) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
 
 	char out[4096];
 	unsigned long outLength;
@@ -417,7 +417,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 			JLStr lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
-				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), lparam) );
+				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 
 			int stat = 0; // default: failed
 			err = rsa_decrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), hashIndex, pv->padding, &stat, &pv->key.rsaKey );
@@ -444,7 +444,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 
 			JLStr lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
-				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), lparam) );
+				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 
 			int stat = 0; // default: failed
 			err = katja_decrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), hashIndex, &stat, &pv->key.katjaKey );
@@ -502,7 +502,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 //	const char *in;
 //	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), in) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
 
 	char out[4096];
 	unsigned long outLength;
@@ -576,8 +576,8 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 //	const char *sign;
 //	size_t signLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(2), &sign, &signLength) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), data) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), sign) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &sign) );
 
 	int stat;
 	stat = 0; // default: failed
@@ -734,7 +734,7 @@ DEFINE_PROPERTY( keySetter ) {
 //	const char *key;
 //	size_t keyLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &key, &keyLength) );
-	JL_CHK( JL_JsvalToNative(cx, *vp, key) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &key) );
 
 	int err;
 	err = -1; // default

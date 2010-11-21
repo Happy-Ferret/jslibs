@@ -353,7 +353,7 @@ DEFINE_FUNCTION( Write ) {
 //	const char *str;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
 	JL_S_ASSERT( str.Length() <= PR_INT32_MAX, "Too many data." );
 	PRInt32 res;

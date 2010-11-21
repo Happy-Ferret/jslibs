@@ -83,7 +83,7 @@ DEFINE_CONSTRUCTOR() {
 	else
 		faceIndex = 0;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), filePathName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &filePathName) );
 
 	JsfontModulePrivate *mpv;
 	mpv = (JsfontModulePrivate*)ModulePrivateGet();

@@ -64,7 +64,7 @@ DEFINE_CONSTRUCTOR() {
 	} else {
 	
 		JLStr requiredDeviceName;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), requiredDeviceName) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &requiredDeviceName) );
 		deviceId = -1;
 		for ( int i = 0; i < numDevices; i++ ) {
 

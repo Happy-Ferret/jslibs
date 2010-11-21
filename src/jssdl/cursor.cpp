@@ -60,7 +60,7 @@ DEFINE_CONSTRUCTOR() {
 	const unsigned char *sBuffer;
 	size_t bufferLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), buffer) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &buffer) );
 	bufferLength = buffer.Length();
 	sBuffer = (const unsigned char*)buffer.GetConstStr();
 

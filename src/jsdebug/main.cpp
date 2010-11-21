@@ -237,7 +237,7 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **sc
 		jl::Queue *scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;
 
 		JLStr fileName;
-		JL_CHK( JL_JsvalToNative(cx, *val, fileName) );
+		JL_CHK( JL_JsvalToNative(cx, *val, &fileName) );
 		*script = ScriptByLocation(cx, scriptFileList, fileName, lineno);
 		if ( *script == NULL )
 			return JS_TRUE;

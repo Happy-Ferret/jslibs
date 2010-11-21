@@ -160,7 +160,7 @@ next:
 //					const char *data;
 //					JL_CHK( JL_JsvalToStringAndLength(cx, &val, &data, &length) );
 					JLStr data;
-					JL_CHK( JL_JsvalToNative(cx, val, data) );
+					JL_CHK( JL_JsvalToNative(cx, val, &data) );
 					if ( sqlite3_bind_blob(pStmt, param, data.GetConstStr(), data.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 					break;
@@ -175,7 +175,7 @@ next:
 //				size_t strLen;
 //				JL_CHK( JL_JsvalToStringAndLength(cx, &val, &str, &strLen) );
 				JLStr str;
-				JL_CHK( JL_JsvalToNative(cx, val, str) );
+				JL_CHK( JL_JsvalToNative(cx, val, &str) );
 
 				if ( sqlite3_bind_text(pStmt, param, str.GetConstStr(), str.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));

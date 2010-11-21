@@ -54,7 +54,7 @@ JSBool Unlock( JSContext *cx, ClassPrivate *pv ) {
 }
 
 
-static JSBool BufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
+static JSBool BufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -62,7 +62,7 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
 	mh = (MemHeader*)pv->mem;
 //	*buf = (char *)pv->mem + sizeof(MemHeader);
 //	*size = mh->currentDataLength;
-	str = JLStr(((const char *)pv->mem) + sizeof(MemHeader), mh->currentDataLength, false);
+	*str = JLStr(((const char *)pv->mem) + sizeof(MemHeader), mh->currentDataLength, false);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -150,7 +150,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(3) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &mode) );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), name) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
 
 	char semName[PATH_MAX];
 	strcpy(semName, name);
@@ -239,7 +239,7 @@ DEFINE_FUNCTION( Write ) {
 //	const char *data;
 //	size_t dataLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &dataLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), data) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
 	
 	JL_S_ASSERT( sizeof(MemHeader) + offset + data.Length() <= pv->size, "SharedMemory too small to hold the given data." );
 
@@ -374,7 +374,7 @@ DEFINE_PROPERTY( contentSetter ) {
 //		const char *data;
 //		size_t dataLength;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, vp, &data, &dataLength) );
-		JL_CHK( JL_JsvalToNative(cx, *vp, data) );
+		JL_CHK( JL_JsvalToNative(cx, *vp, &data) );
 
 		JL_S_ASSERT( sizeof(MemHeader) + data.Length() <= pv->size, "SharedMemory too small to hold the given data." );
 

@@ -59,7 +59,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT( !JL_ARG_ISDEF(2) || JL_JsvalIsArray(cx, JL_ARG(2)), "Invalid 2nd argument" );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), path) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &path) );
 
 	int processArgc;
 	const char **processArgv;
@@ -77,7 +77,7 @@ DEFINE_CONSTRUCTOR() {
 			jsval propVal;
 			JL_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal) );
 			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), JSVAL_TO_INT(propVal), &propVal) ); // (TBD) optimize
-			JL_CHK( JL_JsvalToNative(cx, propVal, tmp) ); // warning: GC on the returned buffer !
+			JL_CHK( JL_JsvalToNative(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
 			processArgv[i+1] = tmp.GetStrZOwnership();
 		}
 		JS_DestroyIdArray( cx, idArray ); // (TBD) free it on error too !

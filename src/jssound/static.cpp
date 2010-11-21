@@ -412,7 +412,7 @@ DEFINE_FUNCTION( SplitChannels ) {
 	const char *srcBuf;
 	size_t srcBufLength;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &srcBuf, &srcBufLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), bufStr) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bufStr) );
 	srcBufLength = bufStr.Length();
 	srcBuf = bufStr.GetConstStr();
 

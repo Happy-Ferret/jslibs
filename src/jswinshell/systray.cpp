@@ -754,7 +754,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 				JL_CHK( JS_IdToValue(cx, list->vector[j], &key) );
 				JL_CHK( JS_GetPropertyById(cx, itemObj, list->vector[j], &value) );
 				
-				JL_CHK( JL_JsvalToNative(cx, key, keyStr) );
+				JL_CHK( JL_JsvalToNative(cx, key, &keyStr) );
 
 				if ( strcmp(keyStr, "id") == 0 ) {
 
@@ -854,7 +854,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 
 			if ( label != JSVAL_VOID ) {
 
-				JL_CHK( JL_JsvalToNative(cx, label, newItemStr) );
+				JL_CHK( JL_JsvalToNative(cx, label, &newItemStr) );
 				
 				lpNewItem = newItemStr.GetConstStr();
 				uFlags |= MF_STRING;
@@ -999,7 +999,7 @@ DEFINE_FUNCTION( PopupBalloon ) {
 		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
 
 			JLStr infoTitle;
-			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, infoTitle) );
+			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &infoTitle) );
 
 			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoTitle.Length());
 			memcpy( pv->nid.szInfoTitle, infoTitle.GetConstStr(), JL_MIN(sizeof(pv->nid.szInfoTitle)-1, infoTitle.Length()) );
@@ -1010,7 +1010,7 @@ DEFINE_FUNCTION( PopupBalloon ) {
 		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
 
 			JLStr infoStr;
-			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, infoStr) );
+			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &infoStr) );
 			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoStr.Length());
 			memcpy( pv->nid.szInfo, infoStr.GetConstStr(), infoStr.Length() );
 			pv->nid.szInfo[infoStr.Length()] = '\0';
@@ -1020,7 +1020,7 @@ DEFINE_FUNCTION( PopupBalloon ) {
 		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
 
 			JLStr iconNameStr;
-			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, iconNameStr) );
+			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &iconNameStr) );
 			
 			if ( strcmp(iconNameStr, "info") == 0 )
 				pv->nid.dwInfoFlags |= NIIF_INFO;
@@ -1225,7 +1225,7 @@ DEFINE_PROPERTY( textSetter ) {
 	JLStr tipText;
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	JL_CHK( JL_JsvalToNative(cx, *vp, tipText) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &tipText) );
 	size_t len = JL_MIN(sizeof(pv->nid.szTip)-1, tipText.Length());
 	memcpy(pv->nid.szTip, tipText.GetConstStr(), tipText.Length());
 	pv->nid.szTip[len] = '\0';

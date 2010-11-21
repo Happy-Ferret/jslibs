@@ -1561,7 +1561,7 @@ DEFINE_FUNCTION( TexImage2D ) {
 	JL_S_ASSERT_INT(JL_ARG(8));
 
 	if ( JL_ARG_ISDEF(9) && !JSVAL_IS_NULL(JL_ARG(9)) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(9), data) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(9), &data) );
 
 	glTexImage2D( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)), JSVAL_TO_INT(JL_ARG(6)), JSVAL_TO_INT(JL_ARG(7)), JSVAL_TO_INT(JL_ARG(8)), (GLvoid*)data.GetConstStr() );  OGL_CHK;
 
@@ -3247,7 +3247,7 @@ DEFINE_FUNCTION( HasExtensionProc ) {
 	void *procAddr;
 	for ( uintN i = 0; i < JL_ARGC; ++i ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], procName) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &procName) );
 		procAddr = glGetProcAddress(procName);
 		if ( procAddr == NULL ) {
 
@@ -3282,7 +3282,7 @@ DEFINE_FUNCTION( HasExtensionName ) {
 //		const char *name;
 //		unsigned int nameLength;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARGV[i], &name, &nameLength) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], name) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &name) );
 
 		const char *pos = strstr(extensions, name);
 		if ( pos == NULL || ( pos[name.Length()] != ' ' && pos[name.Length()] != '\0' ) ) {
@@ -3903,7 +3903,7 @@ DEFINE_FUNCTION( ShaderSourceARB ) {
 	JL_S_ASSERT_STRING(JL_ARG(2));
 	GLhandleARB shaderHandle;
 	shaderHandle = JSVAL_TO_INT( JL_ARG(1) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), source) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &source) );
 
 	const GLcharARB *buffer;
 	GLint length;
@@ -4023,7 +4023,7 @@ DEFINE_FUNCTION( GetUniformLocationARB ) {
 	GLhandleARB programHandle;
 	programHandle = JSVAL_TO_INT( JL_ARG(1) );
 
-	JL_JsvalToNative(cx, JL_ARG(2), name);
+	JL_JsvalToNative(cx, JL_ARG(2), &name);
 	int uniformLocation;
 	uniformLocation = glGetUniformLocationARB(programHandle, name);  OGL_CHK;
 	*JL_RVAL = INT_TO_JSVAL(uniformLocation);
@@ -4328,7 +4328,7 @@ DEFINE_FUNCTION( BindAttribLocationARB ) {
 	JL_S_ASSERT_INT(JL_ARG(1));
 	JL_S_ASSERT_INT(JL_ARG(2));
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), name) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &name) );
 	glBindAttribLocationARB(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), name);  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -4353,7 +4353,7 @@ DEFINE_FUNCTION( GetAttribLocationARB ) {
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_ARG(1));
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), name) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &name) );
 	int location;
 	location = glGetAttribLocationARB(JSVAL_TO_INT(JL_ARG(1)), name);  OGL_CHK;
 	*JL_RVAL = INT_TO_JSVAL(location);
@@ -4753,7 +4753,7 @@ DEFINE_FUNCTION( DrawImage ) {
 		JL_CHK( JL_GetProperty(cx, tObj, "height", &height) );
 		JL_CHK( JL_GetProperty(cx, tObj, "channels", &channels) );
 		
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), dataStr) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &dataStr) );
 		data = dataStr.GetConstStr();
 
 		JL_S_ASSERT( dataStr.Length() == width * height * channels * 1, "Invalid image format." );
@@ -5233,7 +5233,7 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 		JL_CHKM( JL_GetProperty(cx, tObj, "height", &height), "Invalid texture object." );
 		JL_CHKM( JL_GetProperty(cx, tObj, "channels", &channels), "Invalid texture object." );
 		
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), dataStr) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &dataStr) );
 		data = dataStr.GetConstStr();
 
 		JL_S_ASSERT( dataStr.Length() == width * height * channels * 1, "Invalid image format." );

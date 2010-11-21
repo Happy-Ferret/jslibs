@@ -80,7 +80,7 @@ DEFINE_CONSTRUCTOR() {
 //	flags |= SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_SHAREDCACHE;
 
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), fileName) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
 	else
 		fileName = JLStr(":memory:", true);
 
@@ -262,7 +262,7 @@ DEFINE_FUNCTION( Query ) {
 //	const char *sqlQuery;
 //	size_t sqlQueryLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), sql) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sql) );
 
 
 	const char *szTail;
@@ -338,7 +338,7 @@ DEFINE_FUNCTION( Exec ) {
 //	J_JSVAL_TO_STRING( argv[0], sqlQuery );
 //	size_t sqlQueryLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), sql) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sql) );
 
 	const char *szTail;
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
@@ -527,7 +527,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				//size_t length;
 				//JL_CHKB( JL_JsvalToStringAndLength(cx, &argv[0], &data, &length), bad_unroot );
 				JLStr data;
-				JL_CHK( JL_JsvalToNative(cx, argv[0], data) );
+				JL_CHK( JL_JsvalToNative(cx, argv[0], &data) );
 				sqlite3_result_blob(sCx, data.GetConstStr(), data.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				break;
 			}
@@ -541,7 +541,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 //			JL_CHKB( JL_JsvalToStringAndLength(cx, &argv[0], &str, &len), bad_unroot );
 
 			JLStr str;
-			JL_CHK( JL_JsvalToNative(cx, argv[0], str) );
+			JL_CHK( JL_JsvalToNative(cx, argv[0], &str) );
 			sqlite3_result_text(sCx, str.GetConstStr(), str.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 			break;
 		}

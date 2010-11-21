@@ -55,7 +55,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), prngName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &prngName) );
 
 	int prngIndex;
 	prngIndex = find_prng(prngName);
@@ -144,7 +144,7 @@ DEFINE_FUNCTION( AddEntropy ) {
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), entropy) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &entropy) );
 
 	int err;
 	err = pv->prng.add_entropy( (const unsigned char *)entropy.GetConstStr(), (unsigned long)entropy.Length(), &pv->state );
@@ -232,7 +232,7 @@ DEFINE_PROPERTY( stateSetter ) {
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
 
-	JL_CHK( JL_JsvalToNative(cx, *vp, state) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
 
 	JL_S_ASSERT( state.Length() == (size_t)pv->prng.export_size, "Invalid import size." );
 	int err;

@@ -52,7 +52,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( JL_GetProperty(cx, blobObj, "channels", &channels) );
 	JL_CHK( JL_GetProperty(cx, blobObj, "bits", &bits) );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), buffer) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &buffer) );
 
 	ALenum format; // The sound data format
 	switch (channels) {

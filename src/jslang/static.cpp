@@ -93,7 +93,7 @@ DEFINE_FUNCTION( Stringify ) {
 
 	{
 	JLStr str;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	JSString *jsstr;
 	jsstr = JS_NewUCString(cx, str.GetJsStrOwnership(), str.Length());
 	*JL_RVAL = STRING_TO_JSVAL( jsstr );

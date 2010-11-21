@@ -77,7 +77,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(3) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &mode) );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), name) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
 	JL_S_ASSERT( name.Length() < PATH_MAX, "Semaphore name too long." );
 
 	bool isCreation;

@@ -43,7 +43,7 @@ DEFINE_FUNCTION( LoadWXJSModule ) {
 
 	JLStr fileName;
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), fileName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
 	char libFileName[PATH_MAX];
 	strcpy( libFileName, fileName );
 	strcat( libFileName, DLL_EXT );

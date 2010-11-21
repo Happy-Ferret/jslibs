@@ -79,7 +79,7 @@ DEFINE_FUNCTION( Open ) {
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
-	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, str) );
+	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
 	PRDir *dd;
 	dd = PR_OpenDir( str.GetConstStr() );
@@ -173,7 +173,7 @@ DEFINE_FUNCTION( Make ) {
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
-	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, str) );
+	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
 	PRIntn mode;
 	mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
@@ -202,7 +202,7 @@ DEFINE_FUNCTION( Remove ) {
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
-	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, str) );
+	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
 	if ( PR_RmDir(str.GetConstStr()) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
 
@@ -237,7 +237,7 @@ DEFINE_PROPERTY( exist ) {
 	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
-	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, str) );
+	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
 	PRDir *dd;
 	dd = PR_OpenDir(str.GetConstStr());
@@ -297,7 +297,7 @@ DEFINE_FUNCTION( List ) {
 	PRDir *dd = NULL;
 	JL_S_ASSERT_ARG_MIN( 1 );
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &directoryName, &directoryNameLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), directoryName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &directoryName) );
 
 	JL_S_ASSERT( directoryName.Length() < PATH_MAX, "Path too long" );
 	dd = PR_OpenDir(directoryName.GetConstStr());

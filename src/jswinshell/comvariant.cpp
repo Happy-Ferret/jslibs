@@ -142,7 +142,7 @@ private:
 JSBool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
 
 	JLStr buf;
-	JL_CHK( JL_JsvalToNative(cx, *val, buf) );
+	JL_CHK( JL_JsvalToNative(cx, *val, &buf) );
 	variant->vt = VT_ARRAY | VT_UI1;
 	SAFEARRAYBOUND rgsabound[1];
 	rgsabound[0].cElements = buf.Length();
@@ -189,7 +189,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 			// see also: Write and read binary data in VARIANT - http://www.ucosoft.com/write-and-read-binary-data-in-variant.html
 			
 			JLStr buf;
-			JL_CHK( JL_JsvalToNative(cx, *value, buf) );
+			JL_CHK( JL_JsvalToNative(cx, *value, &buf) );
 			V_VT(variant) = VT_BSTR;
 			V_BSTR(variant) = SysAllocStringByteLen(buf.GetConstStr(), buf.Length());
 			return JS_TRUE;

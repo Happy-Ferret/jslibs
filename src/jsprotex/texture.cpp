@@ -263,7 +263,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLe
 		const char *color;
 		size_t length;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &value, &color, &length) );
-		JL_CHK( JL_JsvalToNative(cx, value, colorStr) );
+		JL_CHK( JL_JsvalToNative(cx, value, &colorStr) );
 		length = colorStr.Length();
 		color = colorStr.GetConstStr();
 
@@ -349,7 +349,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *c
 		size_t bstrLen;
 		const uint8_t *bstrData;
 //		JL_CHK( JL_JsvalToStringAndLength( cx, &value, (const char **)&bstrData, &bstrLen ) );
-		JL_CHK( JL_JsvalToNative(cx, value, curveData) );
+		JL_CHK( JL_JsvalToNative(cx, value, &curveData) );
 		bstrLen = curveData.Length();
 		bstrData = (const uint8_t *)curveData.GetConstStr();
 
@@ -379,13 +379,13 @@ $SVN_REVISION $Revision$
 
 BEGIN_CLASS( Texture )
 
-JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
+JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( tex );
 //	*buf = (char*)tex->cbuffer;
 //	*size = tex->width * tex->height * tex->channels * sizeof(PTYPE);
-	str = JLStr((const char *)tex->cbuffer,  tex->width * tex->height * tex->channels * sizeof(PTYPE), false);
+	*str = JLStr((const char *)tex->cbuffer,  tex->width * tex->height * tex->channels * sizeof(PTYPE), false);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -484,7 +484,7 @@ DEFINE_CONSTRUCTOR() {
 		tsize = sWidth * sHeight * sChannels;
 
 		const uint8_t *buffer;
-		JL_CHK( JL_JsvalToNative(cx, *arg1, bufferStr)); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToNative(cx, *arg1, &bufferStr)); // warning: GC on the returned buffer !
 		buffer = (const uint8_t *)bufferStr.GetConstStr();
 
 		JL_CHK( TextureInit(cx, tex, sWidth, sHeight, sChannels) );
@@ -1495,7 +1495,7 @@ DEFINE_FUNCTION( Set ) {
 		tsize = sWidth * sHeight * sChannels;
 
 		const uint8_t *buffer;
-		JL_CHK( JL_JsvalToNative(cx, *arg1, bufferStr) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToNative(cx, *arg1, &bufferStr) ); // warning: GC on the returned buffer !
 		buffer = (const uint8_t *)bufferStr.GetConstStr();
 
 		for ( i = 0; i < tsize; i++ )
@@ -3332,7 +3332,7 @@ DEFINE_FUNCTION( Import ) { // (Blob)image, (int)x, (int)y
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), bufferStr) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bufferStr) );
 	const uint8_t *buffer = (const uint8_t *)bufferStr.GetConstStr();
 
 	if ( dWidth == sWidth && dHeight == sHeight && dChannels == sChannels && px == 0 && py == 0 ) { // optimization

@@ -45,7 +45,7 @@ DEFINE_PROPERTY( text ) {
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
 	int errorCode;
-	JL_CHK( 	JL_JsvalToNative(cx, *vp, &errorCode) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &errorCode) );
 	char *errStr;
 	switch (errorCode) {
 		case AL_NO_ERROR:
@@ -87,7 +87,7 @@ DEFINE_PROPERTY( const ) {
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
 	int errorCode;
-	JL_CHK( 	JL_JsvalToNative(cx, *vp, &errorCode) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &errorCode) );
 	char *errStr;
 	switch (errorCode) {
 		case AL_NO_ERROR:

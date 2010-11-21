@@ -688,7 +688,7 @@ enum JLErrNum {
 class JLStr;
 
 typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, size_t *amount );
-typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, JLStr &str );
+typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, JLStr *str );
 typedef JSBool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
 
 inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
@@ -1834,137 +1834,14 @@ private:
 
 
 
-/*
-static INLINE JSBool
-JL_JsvalToStringLength( JSContext *cx, jsval &val, size_t *length ) {
-
-	if ( JSVAL_IS_STRING(val) ) { // for string literals
-
-		*length = JL_GetStringLength( JSVAL_TO_STRING(val) );
-		return JS_TRUE;
-	}
-	if ( !JSVAL_IS_PRIMITIVE(val) ) { // for NIBufferGet support
-
-		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val));
-		JLStr str;
-		if ( fct ) {
-
-			int st = fct(cx, JSVAL_TO_OBJECT(val), str);
-			*length = str.Length();
-			return st;
-		}
-	}
-
-	// and for anything else ...
-	JSString *jsstr = JS_ValueToString(cx, val); // unfortunately, we have to convert to a string to know its length
-	if ( jsstr == NULL )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "string" );
-	*length = JL_GetStringLength(jsstr);
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
-/*
-static INLINE JSBool
-JL_JsvalToStringAndLength( JSContext *cx, jsval *val, JLStr &str ) {
-
-	if ( JSVAL_IS_STRING(*val) ) { // for string literals
-
-		const jschar *chars = JS_GetStringChars(JSVAL_TO_STRING(*val));
-		JL_CHK( chars );
-		str = JLStr(chars);
-		return JS_TRUE;
-	}
-	if ( !JSVAL_IS_PRIMITIVE(*val) ) { // for NIBufferGet support
-
-		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(*val));
-		if ( fct )
-			return fct(cx, JSVAL_TO_OBJECT(*val), str);
-	}
-
-	// and for anything else ...
-	JSString *jsstr = JS_ValueToString(cx, *val);
-	if ( jsstr == NULL )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "string" );
-	const jschar *chars = JS_GetStringChars(JSVAL_TO_STRING(*val));
-	JL_CHK( chars );
-	str = JLStr(chars);
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
-
-/*
-
-// beware: caller should keep a reference to buffer as short time as possible, because it is difficult to protect it from GC.
-static INLINE JSBool
-JL_JsvalToStringAndLength( JSContext *cx, jsval *val, const char** buffer, size_t *size ) {
-
-	if ( JSVAL_IS_STRING(*val) ) { // for string literals
-
-		JSString *str = JSVAL_TO_STRING(*val);
-		*buffer = JL_GetStringBytesZ(cx, str); // JL_GetStringBytes never returns NULL, then JL_S_ASSERT( *buffer != NULL, "Invalid string." ); is not needed.
-		if ( *buffer == NULL )
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "a valid string");
-		*size = JL_GetStringLength(str);
-		return JS_TRUE;
-	}
-	if ( !JSVAL_IS_PRIMITIVE(*val) ) { // for NIBufferGet support
-
-		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(*val));
-		if ( fct )
-			return fct(cx, JSVAL_TO_OBJECT(*val), buffer, size);
-	}
-
-	// and for anything else ...
-	JSString *jsstr = JS_ValueToString(cx, *val);
-	if ( jsstr == NULL )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "string" );
-
-	*val = STRING_TO_JSVAL(jsstr); // protects *val against GC.
-	*size = JL_GetStringLength(jsstr);
-	*buffer = JL_GetStringBytesZ(cx, jsstr);
-	if ( *buffer == NULL )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "a valid string");
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
-/*
-static INLINE JSBool
-JL_StringAndLengthToJsval( JSContext *cx, jsval *val, const char* cstr, size_t length ) {
-
-	if (likely( length > 0 )) {
-
-		JSString *jsstr = JS_NewStringCopyN(cx, cstr, length);
-		if (unlikely( jsstr == NULL ))
-			JL_REPORT_ERROR( "Unable to create the string." );
-		*val = STRING_TO_JSVAL(jsstr);
-		return JS_TRUE;
-	}
-	if (unlikely( cstr == NULL )) {
-
-		*val = JSVAL_VOID;
-		return JS_TRUE;
-	}
-	*val = JL_GetEmptyStringValue(cx);
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
-
 // JLStr
 
 static ALWAYS_INLINE JSBool
-JL_JsvalToNative( JSContext *cx, jsval &val, JLStr &str ) {
+JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 
 	if (likely( JSVAL_IS_STRING(val) )) { // for string literals
 
-		str = JLStr(JSVAL_TO_STRING(val));
+		*str = JLStr(JSVAL_TO_STRING(val));
 		return JS_TRUE;
 	}
 	if (likely( !JSVAL_IS_PRIMITIVE(val) )) { // for NIBufferGet support
@@ -1977,7 +1854,7 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLStr &str ) {
 	if ( jsstr == NULL )
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "string" );
 	val = STRING_TO_JSVAL(jsstr); // GC protection
-	str = JLStr(jsstr);
+	*str = JLStr(jsstr);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2885,7 +2762,7 @@ JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *amount ) {
 
 	{
 	JLStr str;
-	JL_CHK( JL_JsvalToNative(cx, *tvr.jsval_addr(), str) );
+	JL_CHK( JL_JsvalToNative(cx, *tvr.jsval_addr(), &str) );
 	*amount = str.Length();
 	memcpy(buffer, str.GetConstStr(), *amount);
 	}
@@ -2938,7 +2815,7 @@ StreamReadInterface( JSContext *cx, JSObject *obj ) {
 // NativeInterface BufferGet
 
 inline JSBool
-JSBufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
+JSBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
 	js::AutoValueRooter tvr(cx); // use AutoArrayRooter instead ?
 

@@ -161,7 +161,7 @@ BlobBuffer( JSContext *cx, const JSObject *blobObject, const char **buffer ) {
 }
 
 
-JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
+JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
 	JL_ASSERT( JL_GetClass(obj) == JL_CLASS(Blob) );
 		
@@ -173,7 +173,7 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
 	JL_CHK( BlobLength(cx, obj, &len) );
 	JL_CHK( BlobBuffer(cx, obj, &buf) );
 
-	str = JLStr(buf, len, true);
+	*str = JLStr(buf, len, true);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -258,7 +258,7 @@ DEFINE_CONSTRUCTOR() {
 		
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
 		JLStr str;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) ); // warning: GC on the returned buffer !
 
 		size_t length = str.Length();
 		const char *sBuffer = str.GetConstStr();
@@ -408,7 +408,7 @@ DEFINE_FUNCTION( concat ) {
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(arg), &buffer, &length) );
 
 		JLStr str;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(arg), str) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(arg), &str) );
 		memcpy(tmp, str.GetConstStr(), str.Length());
 		tmp += str.Length();
 	}
@@ -586,7 +586,7 @@ DEFINE_FUNCTION( indexOf ) {
 
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &pat, &patlen) );
 	
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	patlen = str.Length();
 	pat = str.GetConstStr();
 
@@ -658,7 +658,7 @@ DEFINE_FUNCTION( lastIndexOf ) {
 	JL_CHK( BlobLength(cx, obj, &textlen) );
 
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &pat, &patlen) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	patlen = str.Length();
 	pat = str.GetConstStr();
 
@@ -765,7 +765,7 @@ DEFINE_FUNCTION( split ) {
 	const char *sep;
 	size_t sepLen;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sep, &sepLen) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	sepLen = str.Length();
 	sep = str.GetConstStr();
 

@@ -400,7 +400,7 @@ DEFINE_FUNCTION( EncodePngImage ) {
 //	const char *sBuffer;
 //	size_t bufferLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), buffer) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &buffer) );
 
 	JL_S_ASSERT( buffer.Length() == (size_t)(sWidth * sHeight * sChannels * 1), "Invalid image format." );
 

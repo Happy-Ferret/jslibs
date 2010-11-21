@@ -132,7 +132,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_S_ASSERT_ARG_MIN( 3 );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), modeName) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &modeName) ); // warning: GC on the returned buffer !
 
 	CryptMode mode;
 	if ( strcasecmp( modeName, "ECB" ) == 0 )
@@ -152,14 +152,14 @@ DEFINE_CONSTRUCTOR() {
 	else
 		JL_REPORT_ERROR("Invalid mode %s", modeName);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), cipherName) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), key) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &cipherName) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &key) ); // warning: GC on the returned buffer !
 
 	if ( argc >= 4 && !JSVAL_IS_VOID( JL_ARG(4) ) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), IV) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &IV) ); // warning: GC on the returned buffer !
 
 	if ( argc >= 5 && !JSVAL_IS_VOID( JL_ARG(5) ) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), optarg) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &optarg) ); // warning: GC on the returned buffer !
 
    int numRounds;
    numRounds = 0; // default value, us a default number of rounds.
@@ -293,7 +293,7 @@ DEFINE_FUNCTION( Encrypt ) {
 //	const char *pt;
 //	size_t ptLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &pt, &ptLength) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), pt) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pt) );
 
 	char *ct;
 	ct = (char *)JS_malloc(cx, pt.Length() +1);
@@ -359,7 +359,7 @@ DEFINE_FUNCTION( Decrypt ) {
 //	const char *ct;
 //	size_t ctLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &ct, &ctLength) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), ct) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &ct) );
 
 	char *pt;
 	pt = (char *)JS_malloc( cx, ct.Length() +1 );
@@ -480,7 +480,7 @@ DEFINE_PROPERTY( IVSetter ) {
 //	const char *IV;
 //	size_t IVLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &IV, &IVLength) );
-	JL_CHK( JL_JsvalToNative(cx, *vp, IV) );
+	JL_CHK( JL_JsvalToNative(cx, *vp, &IV) );
 
 	int err;
 	switch ( pv->mode ) {

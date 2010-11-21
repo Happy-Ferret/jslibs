@@ -52,7 +52,7 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
 	{
 	JLStr str;
-	JL_CHK( JL_JsvalToNative(cx, source, str) ); // (TBD) GC protect source
+	JL_CHK( JL_JsvalToNative(cx, source, &str) ); // (TBD) GC protect source
 
 	size_t length = str.Length();
 	if ( length - position <= 0 ) { // position >= length

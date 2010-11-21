@@ -106,7 +106,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 	if ( JSVAL_IS_VOID(*vp) )
 		filterType = AL_FILTER_NULL;
 	else
-		JL_CHK( 	JL_JsvalToNative(cx, *vp, &filterType) );
+		JL_CHK( JL_JsvalToNative(cx, *vp, &filterType) );
 	alFilteri(pv->filter, AL_FILTER_TYPE, filterType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;

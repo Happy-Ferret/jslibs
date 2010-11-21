@@ -195,7 +195,7 @@ DEFINE_CALL() {
 //	const char *inputData;
 //	size_t inputLength;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), inputData) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &inputData) ); // warning: GC on the returned buffer !
 //	else {
 //
 //		inputData = NULL;

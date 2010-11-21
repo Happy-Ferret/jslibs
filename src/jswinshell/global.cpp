@@ -56,7 +56,7 @@ DEFINE_FUNCTION( ExtractIcon ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &iconIndex) );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	JL_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), fileName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
 	if ( hIcon == NULL ) {
 
@@ -136,9 +136,9 @@ DEFINE_FUNCTION( MessageBox ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &type) );
 
 	if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), caption) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &caption) );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), text) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &text) );
 
 	int res = MessageBox(NULL, text.GetConstStr(), caption.GetStrConstOrNull(), type);
 	JL_S_ASSERT( res != 0, "MessageBox call Failed." );
@@ -169,16 +169,16 @@ DEFINE_FUNCTION( CreateProcess ) {
 	JL_S_ASSERT_ARG_MIN(1);
 
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), applicationName) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &applicationName) ); // warning: GC on the returned buffer !
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), commandLine) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &commandLine) ); // warning: GC on the returned buffer !
 
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), environment) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &environment) ); // warning: GC on the returned buffer !
 
 	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), currentDirectory) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &currentDirectory) ); // warning: GC on the returned buffer !
 
 	STARTUPINFO si;
 	ZeroMemory(&si, sizeof(STARTUPINFO));
@@ -218,7 +218,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	if ( argc >= 1 && !JSVAL_IS_VOID( JL_ARG(1) ) ) {
 
 		JLStr str;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 		strcpy( filter, str );
 		for ( char *tmp = filter; tmp = strchr( tmp, '|' ); tmp++ )
 			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings.
@@ -229,7 +229,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) ) {
 
 		JLStr tmp;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), tmp) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &tmp) );
 		strcpy( fileName, tmp );
 	} else {
 		*fileName = '\0';
@@ -261,7 +261,7 @@ DEFINE_FUNCTION( ExpandEnvironmentStrings ) {
 
 	JLStr src;
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), src) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &src) );
 	TCHAR dst[MAX_PATH];
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
 	JL_S_ASSERT( res != 0, "Unable to ExpandEnvironmentStrings." );
@@ -414,7 +414,7 @@ DEFINE_FUNCTION( RegistryGet ) {
 	JL_S_ASSERT_ARG_RANGE(1,2);
 	
 	const char *path;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), pathStr) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pathStr) );
 	path = pathStr.GetConstStr();
 
 	HKEY rootHKey;
@@ -515,7 +515,7 @@ DEFINE_FUNCTION( RegistryGet ) {
 		return JS_TRUE;
 	}
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), valueName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &valueName) );
 
 	DWORD type, size;
 
@@ -613,7 +613,7 @@ DEFINE_FUNCTION( DirectoryChangesInit ) {
 	JLStr pathName;
 	JL_S_ASSERT_ARG_RANGE(2,3);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), pathName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pathName) );
 
 	unsigned int notifyFilter;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &notifyFilter) );
@@ -877,7 +877,7 @@ DEFINE_PROPERTY( clipboardSetter ) {
 
 		res = OpenClipboard(NULL);
 		JL_S_ASSERT( res != 0, "Unable to open the clipboard." );
-		JL_CHK( JL_JsvalToNative(cx, *vp, str) );
+		JL_CHK( JL_JsvalToNative(cx, *vp, &str) );
 		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, str.Length() + 1);
 		JL_S_ASSERT_ALLOC( hglbCopy );
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
