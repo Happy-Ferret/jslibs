@@ -82,7 +82,7 @@ DEFINE_FUNCTION( Open ) {
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, str) );
 
 	PRDir *dd;
-	dd = PR_OpenDir( str.GetStrConst() );
+	dd = PR_OpenDir( str.GetConstStr() );
 	if ( dd == NULL )
 		return ThrowIoError(cx);
 
@@ -177,7 +177,7 @@ DEFINE_FUNCTION( Make ) {
 
 	PRIntn mode;
 	mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
-	if ( PR_MkDir(str.GetStrConst(), mode) != PR_SUCCESS )
+	if ( PR_MkDir(str.GetConstStr(), mode) != PR_SUCCESS )
 		return ThrowIoError(cx);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -204,7 +204,7 @@ DEFINE_FUNCTION( Remove ) {
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, str) );
 
-	if ( PR_RmDir(str.GetStrConst()) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
+	if ( PR_RmDir(str.GetConstStr()) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
 
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode == PR_DIRECTORY_NOT_EMPTY_ERROR )
@@ -240,7 +240,7 @@ DEFINE_PROPERTY( exist ) {
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, str) );
 
 	PRDir *dd;
-	dd = PR_OpenDir(str.GetStrConst());
+	dd = PR_OpenDir(str.GetConstStr());
 
 	if ( dd == NULL ) {
 
@@ -300,7 +300,7 @@ DEFINE_FUNCTION( List ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), directoryName) );
 
 	JL_S_ASSERT( directoryName.Length() < PATH_MAX, "Path too long" );
-	dd = PR_OpenDir(directoryName.GetStrConst());
+	dd = PR_OpenDir(directoryName.GetConstStr());
 	JL_CHKB( dd, bad_throw);
 
 	PRDirFlags flags;
@@ -336,7 +336,7 @@ DEFINE_FUNCTION( List ) {
 
 			char fileName[PATH_MAX];
 			strcpy( fileName, directoryName );
-			if ( directoryName.GetStrConst()[directoryName.Length()-1] != '/' && directoryName.GetStrConst()[directoryName.Length()-1] != '\\' )
+			if ( directoryName.GetConstStr()[directoryName.Length()-1] != '/' && directoryName.GetConstStr()[directoryName.Length()-1] != '\\' )
 				strcat( fileName, "/" );
 			strcat( fileName, dirEntry->name );
 

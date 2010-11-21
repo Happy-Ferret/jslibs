@@ -70,7 +70,7 @@ DEFINE_FUNCTION( Expand ) {
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &srcBegin, &srcLen) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
 	srcLen = str.Length();
-	srcBegin = str.GetStrConst();
+	srcBegin = str.GetConstStr();
 
 	JL_S_ASSERT( srcBegin[srcLen] == '\0', "Invalid input string." ); // else strstr may failed.
 
@@ -177,7 +177,7 @@ next:
 			JLStr str1;
 			JL_CHKB( JL_JsvalToNative(cx, *JL_RVAL, str1), bad_free_stack );
 			chunk->length = str1.Length();
-			chunk->data = str1.GetStrOwnership();
+			chunk->data = str1.GetStrZOwnership();
 
 			totalLength += chunk->length;
 			jl::StackPush( &stack, chunk );
@@ -756,7 +756,7 @@ DEFINE_FUNCTION( Warning ) {
 //	const char *message;
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
-	JL_CHK( JS_ReportWarning(cx, "%s", str.GetStrConst()) );
+	JL_CHK( JS_ReportWarning(cx, "%s", str.GetConstStr()) );
 	
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -791,8 +791,8 @@ DEFINE_FUNCTION( Assert ) {
 		if ( JL_ARG_ISDEF(2) )
 			JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), str) );
 		else
-			str = JLStr("Assertion failed.");
-		JS_ReportError( cx, str.GetStrConst() );
+			str = JLStr("Assertion failed.", true);
+		JS_ReportError( cx, str.GetConstStr() );
 		return JS_FALSE;
 	}
 
@@ -901,7 +901,7 @@ DEFINE_FUNCTION( StringRepeat ) {
 	size_t len;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buf, &len) ); // warning: GC on the returned buffer !
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
-	buf = str.GetStrConst();
+	buf = str.GetConstStr();
 	len = str.Length();
 
 
@@ -1265,7 +1265,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 	//size_t length;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
-	JL_CHK( JL_NativeToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, str.GetStrConst(), str.Length()) == JS_TRUE, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, str.GetConstStr(), str.Length()) == JS_TRUE, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }

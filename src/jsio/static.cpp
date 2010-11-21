@@ -562,8 +562,8 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 	JL_S_ASSERT_INT( JL_ARG(1) );
 	PRSize rndSize;
 	rndSize = JSVAL_TO_INT( JL_ARG(1) );
-	void *buf;
-	buf = (void*)JS_malloc(cx, rndSize);
+	uint8_t *buf;
+	buf = (uint8_t*)JS_malloc(cx, rndSize +1);
 	JL_CHK( buf );
 	PRSize size;
 	size = PR_GetRandomNoise(buf, rndSize);
@@ -573,6 +573,7 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 		JL_REPORT_ERROR( "PR_GetRandomNoise is not implemented on this platform." );
 	}
 
+	buf[size] = 0;
 	JL_CHK( JL_NewBlob( cx, buf, size, JL_RVAL ) );
 
 	return JS_TRUE;

@@ -59,7 +59,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 			JL_CHK( JL_JsvalToNative(cx, *image.jsval_addr(), buffer) );
 
 			JL_S_ASSERT( buffer.Length() == sWidth * sHeight * sChannels * 1, "Invalid image format." );
-			*pixbuf = gdk_pixbuf_new_from_data((const guchar *)buffer.GetStrConst(), GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);
+			*pixbuf = gdk_pixbuf_new_from_data((const guchar *)buffer.GetConstStr(), GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);
 			JL_S_ASSERT( *pixbuf == NULL, "Unable to create the pixbuf." );
 		}
 	}
@@ -169,7 +169,7 @@ DEFINE_FUNCTION( Write ) {
 	cxobj.cx = cx;
 	cxobj.obj = obj;
 	handle->priv->base_uri = (gchar*)&cxobj; // hack base_uri to store cx and obj for rsvg_pixbuf_new_from_href()
-	status = rsvg_handle_write(handle, (const guchar *)data.GetStrConst(), data.Length(), &error);
+	status = rsvg_handle_write(handle, (const guchar *)data.GetConstStr(), data.Length(), &error);
 	handle->priv->base_uri = tmp;
 
 	if ( JS_IsExceptionPending(cx) )
@@ -320,7 +320,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 	if ( JL_ARG_ISDEF(5) ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), id) );
-		JL_S_ASSERT( id.IsSet() && id.GetStrConst()[0] == '#', "Invalid id." );
+		JL_S_ASSERT( id.IsSet() && id.GetConstStr()[0] == '#', "Invalid id." );
 	}
 
 	cairo_format_t surfaceFormat;
@@ -360,7 +360,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 	size_t pixelCount = width * height;
 	size_t length = pixelCount * channels;
 
-	void *image = JS_malloc(cx, length);
+	void *image = JS_malloc(cx, length +1);
 	JL_CHK( image );
 
 
@@ -390,6 +390,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 	cairo_destroy(cr);
 	cairo_surface_destroy(surface);
 
+	((uint8_t*)image)[length] = 0;
 	JL_CHK( JL_NewBlob(cx, image, length, JL_RVAL) );
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
@@ -458,7 +459,7 @@ DEFINE_FUNCTION( SetVisible ) {
 	RsvgHandle *handle = pv->handle;
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), id) );
-	JL_S_ASSERT( id.IsSet() && id.GetStrConst()[0] == '#', "Invalid id." );
+	JL_S_ASSERT( id.IsSet() && id.GetConstStr()[0] == '#', "Invalid id." );
 
 	bool visible;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &visible) );

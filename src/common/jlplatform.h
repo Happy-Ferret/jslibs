@@ -374,7 +374,7 @@
 #define JL_STATIC_ASSERT(cond) \
 	extern void jl_static_assert(int arg[(cond) ? 1 : -1])
 
-
+/*
 #if defined(WIN32)
 #define JL_BREAK_HALT JL_MACRO_BEGIN   __debugbreak(); abort();   JL_MACRO_END
 #elif defined(XP_OS2) || (defined(__GNUC__) && defined(__i386))
@@ -382,25 +382,38 @@
 #else
 #define JL_BREAK_HALT JL_MACRO_BEGIN   abort();   JL_MACRO_END
 #endif // platforms
+*/
 
-#define JL_FAILED( message, location ) \
-	JL_MACRO_BEGIN \
-		fprintf(stderr, "jslibs failure: %s, at %s\n", message, location); \
-		JL_BREAK_HALT; \
-	JL_MACRO_END
+// see JS_Assert in jsutil.cpp
+static ALWAYS_INLINE void
+JL_AssertFailure( const char *message, const char *location ) {
+	
+	fprintf(stderr, "Assertion failure: %s @%s\n", message, location);
+	fflush(stderr);
+#if defined(WIN32)
+    *((int *) NULL) = 0;
+    exit(3);
+#elif defined(__APPLE__)
+    *((int *) NULL) = 0;  /* To continue from here in GDB: "return" then "continue". */
+    raise(SIGABRT);  /* In case above statement gets nixed by the optimizer. */
+#else
+    raise(SIGABRT);  /* To continue from here in GDB: "signal 0". */
+#endif
+}
 
 
 #ifdef DEBUG
 
 #define JL_ASSERT(expr) \
-	JL_MACRO_BEGIN \
-		if ( !(expr) ) \
-			JL_FAILED(#expr, JL_CODE_LOCATION); \
-	JL_MACRO_END
+    ( (expr) ? (void)0 : JL_AssertFailure(#expr, JL_CODE_LOCATION) )
+
+#define JL_ASSERT_IF(cond, expr) \
+    ( (!(cond) || (expr)) ? (void)0 : JL_AssertFailure(#expr, JL_CODE_LOCATION) )
 
 #else // DEBUG
 
 #define JL_ASSERT(expr) ((void)0)
+#define JL_ASSERT_IF(cond,expr) ((void) 0)
 
 #endif // DEBUG
 
@@ -2195,11 +2208,11 @@ static ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		// GetErrorMode() only exists on Vista and higher,
 		// call SetErrorMode() twice to achieve the same effect.
 		// see also SetThreadErrorMode()
-		UINT oldErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
-		SetErrorMode( oldErrorMode | SEM_FAILCRITICALERRORS ); // avoid error popups
+//		UINT oldErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
+//		SetErrorMode( oldErrorMode | SEM_FAILCRITICALERRORS ); // avoid error popups
 		HMODULE hModule = LoadLibrary(filename);
 		// Restore previous error mode.
-		SetErrorMode(oldErrorMode);
+//		SetErrorMode(oldErrorMode);
 		return hModule;
 	#elif defined(XP_UNIX)
 		dlerror(); // Resets the error indicator.

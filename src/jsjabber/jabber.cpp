@@ -265,7 +265,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), jid) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), password) );
 	pv->handlers = new Handlers(obj);
-	pv->client = new Client(JID(jid.GetStrConst()), password.GetStrConst());
+	pv->client = new Client(JID(jid.GetConstStr()), password.GetConstStr());
 	pv->client->logInstance().registerLogHandler(LogLevelDebug, LogAreaAll, pv->handlers); // LogLevelDebug
 	pv->client->registerConnectionListener( pv->handlers );
 	pv->client->rosterManager()->registerRosterListener( pv->handlers, true );
@@ -298,7 +298,7 @@ DEFINE_FUNCTION( Connect ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), serverName) );
-	pv->client->setServer( serverName.GetStrConst() );
+	pv->client->setServer( serverName.GetConstStr() );
 	if ( JL_ARG_ISDEF(2) ) {
 
 		int port;
@@ -399,10 +399,10 @@ DEFINE_FUNCTION( SendMessage ) {
 
 	Tag *message = new Tag( "message" );
 	message->addAttribute( "type", "chat" );
-	new Tag( message, "body", body.GetStrConst() );
+	new Tag( message, "body", body.GetConstStr() );
 
 	message->addAttribute( "from", pv->client->jid().full() );
-	message->addAttribute( "to", to.GetStrConst());
+	message->addAttribute( "to", to.GetConstStr());
 	message->addAttribute( "id", pv->client->getID() );
 
 	pv->client->send( message );
@@ -480,7 +480,7 @@ DEFINE_PROPERTY_SETTER( status ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 	JL_CHK( JL_JsvalToNative(cx, *vp, status) );
-	pv->client->setPresence(pv->client->presence(), pv->client->priority(), status.GetStrConst());
+	pv->client->setPresence(pv->client->presence(), pv->client->priority(), status.GetConstStr());
 	return JS_TRUE;
 	JL_BAD;
 }

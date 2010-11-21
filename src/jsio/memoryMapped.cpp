@@ -30,7 +30,7 @@ struct MemoryMappedPrivate {
 static JSBool BufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
-	str = JLStr(((const char*)pv->addr) + pv->offset, pv->size);
+	str = JLStr(((const char*)pv->addr) + pv->offset, pv->size, false);
 	return JS_TRUE;
 }
 

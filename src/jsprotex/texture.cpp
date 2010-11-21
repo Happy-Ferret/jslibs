@@ -264,8 +264,8 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLe
 		size_t length;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &value, &color, &length) );
 		JL_CHK( JL_JsvalToNative(cx, value, colorStr) );
-		color = colorStr.GetStrConst();
 		length = colorStr.Length();
+		color = colorStr.GetConstStr();
 
 		if ( *color++ == '#' && (length-1) / 2 >= levelMaxLength ) {
 
@@ -351,7 +351,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *c
 //		JL_CHK( JL_JsvalToStringAndLength( cx, &value, (const char **)&bstrData, &bstrLen ) );
 		JL_CHK( JL_JsvalToNative(cx, value, curveData) );
 		bstrLen = curveData.Length();
-		bstrData = (const uint8_t *)curveData.GetStrConst();
+		bstrData = (const uint8_t *)curveData.GetConstStr();
 
 		for ( i = 0; i < length; ++i )
 			curve[i] = (PTYPE)bstrData[i * bstrLen / length] / 255.f; // (TBD) check
@@ -385,7 +385,7 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
 	JL_S_ASSERT_RESOURCE( tex );
 //	*buf = (char*)tex->cbuffer;
 //	*size = tex->width * tex->height * tex->channels * sizeof(PTYPE);
-	str = JLStr((const char *)tex->cbuffer,  tex->width * tex->height * tex->channels * sizeof(PTYPE));
+	str = JLStr((const char *)tex->cbuffer,  tex->width * tex->height * tex->channels * sizeof(PTYPE), false);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -485,7 +485,7 @@ DEFINE_CONSTRUCTOR() {
 
 		const uint8_t *buffer;
 		JL_CHK( JL_JsvalToNative(cx, *arg1, bufferStr)); // warning: GC on the returned buffer !
-		buffer = (const uint8_t *)bufferStr.GetStrConst();
+		buffer = (const uint8_t *)bufferStr.GetConstStr();
 
 		JL_CHK( TextureInit(cx, tex, sWidth, sHeight, sChannels) );
 		for ( i = 0; i < tsize; ++i )
@@ -1496,7 +1496,7 @@ DEFINE_FUNCTION( Set ) {
 
 		const uint8_t *buffer;
 		JL_CHK( JL_JsvalToNative(cx, *arg1, bufferStr) ); // warning: GC on the returned buffer !
-		buffer = (const uint8_t *)bufferStr.GetStrConst();
+		buffer = (const uint8_t *)bufferStr.GetConstStr();
 
 		for ( i = 0; i < tsize; i++ )
 			tex->cbuffer[i] = (PTYPE)buffer[i] / PTYPE(255); // map [0 -> 255] to [0.0 -> 1.0]
@@ -3237,7 +3237,8 @@ DEFINE_FUNCTION( Export ) { // (int)x, (int)y, (int)width, (int)height. Returns 
 	}
 
 	bufferLength = dWidth * dHeight * sChannels;
-	buffer = (uint8_t*)JS_malloc(cx, bufferLength);
+	buffer = (uint8_t*)JS_malloc(cx, bufferLength +1);
+	JL_CHK( buffer );
 
 	unsigned int c, x, y, posDst, posSrc;
 	int sx, sy; // position in source
@@ -3254,6 +3255,7 @@ DEFINE_FUNCTION( Export ) { // (int)x, (int)y, (int)width, (int)height. Returns 
 				buffer[posDst+c] = (uint8_t)(MINMAX(tex->cbuffer[posSrc+c] * 255.f, 0, 255)); // map [0.0 -> 1.0] to [0 -> 255]
 		}
 
+	buffer[bufferLength] = 0;
 	JL_CHK( JL_NewBlob(cx, buffer, bufferLength, JL_RVAL ) );
 	JSObject *bstrObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &bstrObj) );
@@ -3331,7 +3333,7 @@ DEFINE_FUNCTION( Import ) { // (Blob)image, (int)x, (int)y
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), bufferStr) );
-	const uint8_t *buffer = (const uint8_t *)bufferStr.GetStrConst();
+	const uint8_t *buffer = (const uint8_t *)bufferStr.GetConstStr();
 
 	if ( dWidth == sWidth && dHeight == sHeight && dChannels == sChannels && px == 0 && py == 0 ) { // optimization
 		

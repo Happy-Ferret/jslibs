@@ -144,9 +144,10 @@ DEFINE_FUNCTION( DecodeOggVorbis ) {
 	} while (bytes > 0);
 
 	// convert data chunks into a single memory buffer.
-	char *buf = (char*)JS_malloc(cx, totalSize);
+	char *buf = (char*)JS_malloc(cx, totalSize +1);
 	JL_CHK( buf );
 
+	buf[totalSize] = '\0';
 	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
 	JSObject *bstrObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &bstrObj) );
@@ -355,6 +356,7 @@ DEFINE_FUNCTION( DecodeSound ) {
 //	JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
 //	*JL_RVAL = OBJECT_TO_JSVAL(bstrObj);
 
+	buf[totalSize] = '\0';
 	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
 	JSObject *bstrObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &bstrObj) );
@@ -412,7 +414,7 @@ DEFINE_FUNCTION( SplitChannels ) {
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &srcBuf, &srcBufLength) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), bufStr) );
 	srcBufLength = bufStr.Length();
-	srcBuf = bufStr.GetStrConst();
+	srcBuf = bufStr.GetConstStr();
 
 	JSObject *destArray = JS_NewArrayObject(cx, 0, NULL);
 	*JL_RVAL = OBJECT_TO_JSVAL(destArray);
@@ -420,7 +422,7 @@ DEFINE_FUNCTION( SplitChannels ) {
 	for ( size_t c = 0; c < channelCount; c++ ) {
 
 		size_t totalSize = frames * (bits/8);
-		char *buf = (char*)JS_malloc(cx, totalSize);
+		char *buf = (char*)JS_malloc(cx, totalSize +1);
 
 		if ( bits == 16 ) {
 
@@ -434,6 +436,7 @@ DEFINE_FUNCTION( SplitChannels ) {
 		}
 
 		jsval blobVal;
+		buf[totalSize] = '\0';
 		JL_CHK( JL_NewBlob(cx, buf, totalSize, &blobVal) );
 		JSObject *blobObj;
 		JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );

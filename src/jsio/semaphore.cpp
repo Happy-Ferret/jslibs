@@ -98,7 +98,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( pv );
 
 //	strcpy( pv->name, name ); // (TBD) use memcpy instead ?
-	memcpy(pv->name, name.GetStrConst(), name.Length());
+	memcpy(pv->name, name.GetConstStr(), name.Length());
 	pv->name[name.Length()] = '\0';
 
 	pv->semaphore = semaphore;

@@ -454,9 +454,9 @@ DEFINE_FUNCTION( Listener ) {
 	}
 	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
 
-		jsdouble param;
+		float param;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &param) );
-		alListenerf( JSVAL_TO_INT( JL_ARG(1) ), (float)param );
+		alListenerf( JSVAL_TO_INT( JL_ARG(1) ), param );
 		return JS_TRUE;
 	}
 	if ( JL_JsvalIsArray(cx, JL_ARG(2)) ) {
@@ -687,6 +687,7 @@ DEFINE_FUNCTION( DeleteSource ) {
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alDeleteSources(1, &sid);
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -712,15 +713,6 @@ DEFINE_FUNCTION( SourceQueueBuffers ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	*JL_RVAL = JSVAL_VOID;
 
-	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
-
-		ALuint buffer;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &buffer) );
-		alSourceQueueBuffers( sid, 1, &buffer );
-		JL_CHK( CheckThrowCurrentOalError(cx) );
-		return JS_TRUE;
-	}
-
 	if ( JL_JsvalIsArray(cx, JL_ARG(2)) ) {
 
 		ALuint params[1024];
@@ -731,8 +723,14 @@ DEFINE_FUNCTION( SourceQueueBuffers ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR("Invalid argument.");
+	ALuint buffer;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &buffer) );
+	alSourceQueueBuffers( sid, 1, &buffer );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
+
+//	JL_REPORT_ERROR("Invalid argument.");
+//	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -755,14 +753,6 @@ DEFINE_FUNCTION( SourceUnqueueBuffers ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	*JL_RVAL = JSVAL_VOID;
 
-	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
-
-		ALuint buffer;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &buffer) );
-		alSourceUnqueueBuffers( sid, 1, &buffer );
-		return JS_TRUE;
-	}
-
 	if ( JL_JsvalIsArray(cx, JL_ARG(2)) ) {
 
 		ALuint params[1024];
@@ -772,8 +762,14 @@ DEFINE_FUNCTION( SourceUnqueueBuffers ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR("Invalid argument.");
+	ALuint buffer;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &buffer) );
+	alSourceUnqueueBuffers( sid, 1, &buffer );
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
+
+//	JL_REPORT_ERROR("Invalid argument.");
+//	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -810,6 +806,7 @@ DEFINE_FUNCTION( Buffer ) {
 
 	ALuint bufferID; // The OpenAL sound buffer ID
 	alGenBuffers(1, &bufferID);
+	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	ALenum format; // The sound data format
 
@@ -825,7 +822,7 @@ DEFINE_FUNCTION( Buffer ) {
 	}
 
 	// Upload sound data to buffer
-	alBufferData(bufferID, format, buffer.GetStrConst(), (ALsizei)buffer.Length(), rate);
+	alBufferData(bufferID, format, buffer.GetConstStr(), (ALsizei)buffer.Length(), rate);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_CHK( JL_NativeToJsval(cx, bufferID, JL_RVAL) );
@@ -863,9 +860,9 @@ DEFINE_FUNCTION( GetBufferReal ) {
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
-		while (count--) {
+		while ( count-- ) {
 
-			JL_CHK(JL_NativeToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
@@ -1117,7 +1114,7 @@ DEFINE_FUNCTION( PlaySound ) {
 	alSource3i(sourceID, AL_POSITION, 0,0,0 );
 
 	// Upload sound data to buffer
-	alBufferData(bufferID, format, buffer.GetStrConst(), (ALsizei)buffer.Length(), rate);
+	alBufferData(bufferID, format, buffer.GetConstStr(), (ALsizei)buffer.Length(), rate);
 
 	// Attach sound buffer to source
 	alSourcei(sourceID, AL_BUFFER, bufferID);

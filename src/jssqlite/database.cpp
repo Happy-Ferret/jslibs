@@ -82,7 +82,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), fileName) );
 	else
-		fileName = JLStr(":memory:");
+		fileName = JLStr(":memory:", true);
 
 	pv = (DatabasePrivate*)JS_malloc(cx, sizeof(DatabasePrivate));
 	JL_CHK(pv);
@@ -269,7 +269,7 @@ DEFINE_FUNCTION( Query ) {
 	sqlite3_stmt *pStmt;
 
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
-	if ( sqlite3_prepare_v2(pv->db, sql, sql.Length(), &pStmt, &szTail) != SQLITE_OK )
+	if ( sqlite3_prepare_v2(pv->db, sql.GetConstStr(), sql.Length(), &pStmt, &szTail) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, pv->db) );
 
 	JL_S_ASSERT( *szTail == '\0', "too many SQL statements." ); // for the moment, do not support multiple statements
@@ -342,7 +342,7 @@ DEFINE_FUNCTION( Exec ) {
 
 	const char *szTail;
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
-	if ( sqlite3_prepare_v2( pv->db, sql, sql.Length(), &pStmt, &szTail ) != SQLITE_OK )
+	if ( sqlite3_prepare_v2( pv->db, sql.GetConstStr(), sql.Length(), &pStmt, &szTail ) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, pv->db) );
 	JL_S_ASSERT( *szTail == '\0', "Too many SQL statements." ); // for the moment, do not support multiple statements
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
@@ -528,7 +528,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				//JL_CHKB( JL_JsvalToStringAndLength(cx, &argv[0], &data, &length), bad_unroot );
 				JLStr data;
 				JL_CHK( JL_JsvalToNative(cx, argv[0], data) );
-				sqlite3_result_blob(sCx, data.GetStrConst(), data.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+				sqlite3_result_blob(sCx, data.GetConstStr(), data.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				break;
 			}
 			// else:
@@ -542,7 +542,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 
 			JLStr str;
 			JL_CHK( JL_JsvalToNative(cx, argv[0], str) );
-			sqlite3_result_text(sCx, str, str.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
+			sqlite3_result_text(sCx, str.GetConstStr(), str.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 			break;
 		}
 		default:

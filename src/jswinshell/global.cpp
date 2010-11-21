@@ -140,7 +140,7 @@ DEFINE_FUNCTION( MessageBox ) {
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), text) );
 
-	int res = MessageBox(NULL, text.GetStrConst(), caption.GetStrConstOrNull(), type);
+	int res = MessageBox(NULL, text.GetConstStr(), caption.GetStrConstOrNull(), type);
 	JL_S_ASSERT( res != 0, "MessageBox call Failed." );
 	*JL_RVAL = INT_TO_JSVAL( res );
 	return JS_TRUE;
@@ -415,7 +415,7 @@ DEFINE_FUNCTION( RegistryGet ) {
 	
 	const char *path;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), pathStr) );
-	path = pathStr.GetStrConst();
+	path = pathStr.GetConstStr();
 
 	HKEY rootHKey;
 	if ( !strncmp(path, "HKEY_CURRENT_USER", 17) ) {
@@ -527,7 +527,7 @@ DEFINE_FUNCTION( RegistryGet ) {
 		return WinThrowError(cx, error);
 	}
 
-	void *buffer = JS_malloc(cx, size);
+	void *buffer = JS_malloc(cx, size +1);
 	error = RegQueryValueEx(hKey, valueName, NULL, NULL, (LPBYTE)buffer, &size);
 
 	// doc. http://msdn.microsoft.com/en-us/library/ms724884(VS.85).aspx
@@ -537,6 +537,7 @@ DEFINE_FUNCTION( RegistryGet ) {
 			JS_free(cx, buffer);
 			break;
 		case REG_BINARY:
+			((uint8_t*)buffer)[size] = 0;
 			JL_CHK( JL_NewBlob(cx, buffer, size, JL_RVAL) );
 			break;
 		case REG_DWORD:
@@ -881,7 +882,7 @@ DEFINE_PROPERTY( clipboardSetter ) {
 		JL_S_ASSERT_ALLOC( hglbCopy );
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
 		JL_S_ASSERT( lptstrCopy != NULL, "Unable to lock memory." );
-		memcpy(lptstrCopy, str.GetStrConst(), str.Length() + 1);
+		memcpy(lptstrCopy, str.GetConstStr(), str.Length() + 1);
 		lptstrCopy[str.Length()] = 0;
 		GlobalUnlock(hglbCopy);
 		HANDLE h = SetClipboardData(CF_TEXT, hglbCopy);

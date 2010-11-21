@@ -78,7 +78,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal) );
 			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), JSVAL_TO_INT(propVal), &propVal) ); // (TBD) optimize
 			JL_CHK( JL_JsvalToNative(cx, propVal, tmp) ); // warning: GC on the returned buffer !
-			processArgv[i+1] = tmp.GetStrOwnership();
+			processArgv[i+1] = tmp.GetStrZOwnership();
 		}
 		JS_DestroyIdArray( cx, idArray ); // (TBD) free it on error too !
 	} else {
@@ -113,7 +113,7 @@ DEFINE_CONSTRUCTOR() {
 
 	PR_DestroyProcessAttr(psattr);
 
-	if ( JL_ARG_ISDEF(2) ) // see GetStrOwnership
+	if ( JL_ARG_ISDEF(2) ) // see GetStrZOwnership
 		for ( int i=0; i<processArgc -1; i++ )
 			jl_free( const_cast<char*>(processArgv[i+1]) );
 	//free(processArgv); // alloca do not need free

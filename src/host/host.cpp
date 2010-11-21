@@ -70,7 +70,7 @@ static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) { //
 		//JL_CHKM( pv->hostStdOut(pv->privateData, buffer, length) != -1, "Unable to use write on host's StdOut." );
 		JLStr str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], str) );
-		JL_CHKM( pv->hostStdOut(pv->privateData, str.GetStrConst(), str.Length()) != -1, "Unable to use write on host's StdOut." );
+		JL_CHKM( pv->hostStdOut(pv->privateData, str.GetConstStr(), str.Length()) != -1, "Unable to use write on host's StdOut." );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -90,7 +90,7 @@ static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) { //
 //		JL_CHKM( pv->hostStdErr(pv->privateData, buffer, length) != -1, "Unable to use write on host's StdErr." );
 		JLStr str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], str) );
-		JL_CHKM( pv->hostStdErr(pv->privateData, str.GetStrConst(), str.Length()) != -1, "Unable to use write on host's StdErr." );
+		JL_CHKM( pv->hostStdErr(pv->privateData, str.GetConstStr(), str.Length()) != -1, "Unable to use write on host's StdErr." );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -277,7 +277,7 @@ static JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
 
 	char libFileName[PATH_MAX];
-	strncpy( libFileName, str.GetStrConst(), str.Length() ); // (TBD) check
+	strncpy( libFileName, str.GetConstStr(), str.Length() ); // (TBD) check
 	libFileName[str.Length()] = '\0';
 	strcat( libFileName, DLL_EXT );
 // MAC OSX: 	'@executable_path' ??
@@ -318,12 +318,12 @@ static JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 	JLLibraryHandler module;
 	module = JLDynamicLibraryOpen(libFileName);
 	if ( !JLDynamicLibraryOk(module) ) {
-		JL_SAFE(
+		JL_SAFE_BEGIN
 
 			char errorBuffer[256];
 			JLDynamicLibraryLastErrorMessage( errorBuffer, sizeof(errorBuffer) );
 			JL_REPORT_WARNING( "Unable to load the module \"%s\". %s", libFileName, errorBuffer );
-		);
+		JL_SAFE_END
 		*JL_RVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}

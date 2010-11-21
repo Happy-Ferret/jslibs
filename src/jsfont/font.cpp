@@ -223,9 +223,11 @@ DEFINE_FUNCTION( DrawChar ) {
 	size_t bufLength;
 	bufLength = width * height * 1; // 1 channel
 
-	void *buf;
-	buf = JS_malloc(cx, bufLength);
+	uint8_t *buf;
+	buf = (uint8_t*)JS_malloc(cx, bufLength +1);
+	JL_CHK( buf );
 
+	buf[bufLength] = 0;
 	JL_CHK( JL_NewBlob(cx, buf, bufLength, JL_RVAL) );
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
@@ -399,9 +401,9 @@ DEFINE_FUNCTION( DrawString ) {
 		// allocates the resulting image buffer
 		size_t bufLength = width * height * 1; // 1 channel
 
-		char *buf = (char*)JS_malloc(cx, bufLength); // JS_malloc do not supports 0 bytes size
+		char *buf = (char*)JS_malloc(cx, bufLength +1); // JS_malloc do not supports 0 bytes size and blob need a trailing 0
 		JL_CHK( buf );
-		memset(buf, 0, bufLength);
+		memset(buf, 0, bufLength +1);
 
 		JL_CHK( JL_NewBlob(cx, buf, bufLength, JL_RVAL) );
 		JSObject *blobObj;

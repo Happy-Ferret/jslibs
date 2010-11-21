@@ -314,9 +314,9 @@ DEFINE_FUNCTION( Draw ) {
 	} else {
 
 		if ( str.Length() == 1 )
-			pv->face->draw(str.GetStrConst()[0]);
+			pv->face->draw(str.GetConstStr()[0]);
 		else
-			pv->face->draw(str.GetStrConst());
+			pv->face->draw(str);
 	}
 
 	*JL_RVAL = JSVAL_VOID;

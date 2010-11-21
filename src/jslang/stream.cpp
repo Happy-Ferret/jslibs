@@ -64,7 +64,7 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 	if ( position + *amount > length )
 		*amount = length - position;
 
-	memcpy( buf, str.GetStrConst() + position, *amount );
+	memcpy( buf, str.GetConstStr() + position, *amount );
 	position += *amount;
 	PositionSet(cx, obj, position);
 	}
@@ -136,7 +136,6 @@ DEFINE_FUNCTION( Read ) {
 		buffer = (char*)JS_realloc(cx, buffer, readAmount +1);
 
 	buffer[readAmount] = '\0';
-
 	JL_CHK( JL_NewBlob(cx, buffer, readAmount, JL_RVAL) );
 
 	return JS_TRUE;

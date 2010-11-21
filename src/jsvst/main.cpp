@@ -1084,7 +1084,7 @@ DEFINE_PROPERTY( uniqueID ) {
 	JLStr str(jsstr);
 	JL_S_ASSERT( str.Length() == 4, "Invalid ID length" );
 	JL_CHK( str.IsSet() );
-	VstInt32 vstid = CCONST( str.GetStrConst()[0], str.GetStrConst()[1], str.GetStrConst()[2], str.GetStrConst()[3] );
+	VstInt32 vstid = CCONST( str.GetConstStr()[0], str.GetConstStr()[1], str.GetConstStr()[2], str.GetConstStr()[3] );
 	vstPlugin->setUniqueID( vstid );
 	}
 	return JL_StoreProperty(cx, obj, id, vp, false);

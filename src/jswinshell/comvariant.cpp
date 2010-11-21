@@ -153,7 +153,7 @@ JSBool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
 	HRESULT hr = SafeArrayAccessData(variant->parray, &pArrayData);
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
-	memcpy(pArrayData, buf.GetStrConst(), buf.Length());
+	memcpy(pArrayData, buf.GetConstStr(), buf.Length());
 	SafeArrayUnaccessData(variant->parray);
 
 	return JS_TRUE;
@@ -191,7 +191,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 			JLStr buf;
 			JL_CHK( JL_JsvalToNative(cx, *value, buf) );
 			V_VT(variant) = VT_BSTR;
-			V_BSTR(variant) = SysAllocStringByteLen(buf.GetStrConst(), buf.Length());
+			V_BSTR(variant) = SysAllocStringByteLen(buf.GetConstStr(), buf.Length());
 			return JS_TRUE;
 		}
 

@@ -1563,7 +1563,7 @@ DEFINE_FUNCTION( TexImage2D ) {
 	if ( JL_ARG_ISDEF(9) && !JSVAL_IS_NULL(JL_ARG(9)) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(9), data) );
 
-	glTexImage2D( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)), JSVAL_TO_INT(JL_ARG(6)), JSVAL_TO_INT(JL_ARG(7)), JSVAL_TO_INT(JL_ARG(8)), (GLvoid*)data.GetStrConst() );  OGL_CHK;
+	glTexImage2D( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)), JSVAL_TO_INT(JL_ARG(6)), JSVAL_TO_INT(JL_ARG(7)), JSVAL_TO_INT(JL_ARG(8)), (GLvoid*)data.GetConstStr() );  OGL_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -3907,8 +3907,8 @@ DEFINE_FUNCTION( ShaderSourceARB ) {
 
 	const GLcharARB *buffer;
 	GLint length;
-	buffer = source.GetStrConst();
 	length = source.Length();
+	buffer = source.GetConstStr();
 
 	glShaderSourceARB(shaderHandle, 1, &buffer, &length);  OGL_CHK;
 	
@@ -4754,7 +4754,7 @@ DEFINE_FUNCTION( DrawImage ) {
 		JL_CHK( JL_GetProperty(cx, tObj, "channels", &channels) );
 		
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), dataStr) );
-		data = dataStr.GetStrConst();
+		data = dataStr.GetConstStr();
 
 		JL_S_ASSERT( dataStr.Length() == width * height * channels * 1, "Invalid image format." );
 		JL_S_ASSERT_RESOURCE(data);
@@ -4856,7 +4856,7 @@ DEFINE_FUNCTION( ReadImage ) {
 	int lineLength = width * channels;
 	int length = lineLength * height;
 	JL_S_ASSERT( length > 0, "Invalid image size." );
-	GLvoid *data = JS_malloc(cx, length);
+	GLvoid *data = JS_malloc(cx, length +1);
 	JL_CHK( data );
 
 /*
@@ -4892,6 +4892,7 @@ DEFINE_FUNCTION( ReadImage ) {
 		}
 	}
 
+	((uint8_t*)data)[length] = 0;
 	JL_CHK( JL_NewBlob(cx, data, length, JL_RVAL) );
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
@@ -5233,7 +5234,7 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 		JL_CHKM( JL_GetProperty(cx, tObj, "channels", &channels), "Invalid texture object." );
 		
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), dataStr) );
-		data = dataStr.GetStrConst();
+		data = dataStr.GetConstStr();
 
 		JL_S_ASSERT( dataStr.Length() == width * height * channels * 1, "Invalid image format." );
 		JL_S_ASSERT_RESOURCE(data);

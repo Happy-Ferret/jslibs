@@ -150,7 +150,7 @@ DEFINE_FUNCTION( Close ) {
 
 JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, uint32_t amount, jsval *rval ) {
 
-	void *buf = JS_malloc(cx, amount +1);
+	uint8_t *buf = (uint8_t*)JS_malloc(cx, amount +1);
 	JL_CHK( buf );
 
 	PRInt32 res;
@@ -160,10 +160,11 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, uint32_t amount, jsval *rval 
 
 		if (unlikely( JL_MaybeRealloc(amount, res) )) {
 
-			buf = (char*)JS_realloc(cx, buf, res +1); // realloc the string using its real size
+			buf = (uint8_t*)JS_realloc(cx, buf, res +1); // realloc the string using its real size
 			JL_CHK( buf );
 		}
-		((char*)buf)[res] = '\0';
+		
+		buf[res] = 0;
 		JL_CHKB( JL_NewBlob(cx, buf, res, rval), bad_free );
 		return JS_TRUE;
 	}
@@ -356,7 +357,7 @@ DEFINE_FUNCTION( Write ) {
 
 	JL_S_ASSERT( str.Length() <= PR_INT32_MAX, "Too many data." );
 	PRInt32 res;
-	res = PR_Write( fd, str.GetStrConst(), (PRInt32)str.Length() );
+	res = PR_Write( fd, str.GetConstStr(), (PRInt32)str.Length() );
 	if (unlikely( res == -1 )) {
 
 		switch ( PR_GetError() ) { 
@@ -408,8 +409,6 @@ DEFINE_FUNCTION( Write ) {
 	// (TBD) try to detect if the return value will be used else just return.
 	//	js_Disassemble1(cx, JL_CurrentStackFrame(cx)->script, JL_CurrentStackFrame(cx)->regs->pc +3, 0, false, stdout); // 00000:  setgvar "test"
 
-	void *buffer;
-
 	if (likely( sentAmount == str.Length() )) {
 
 		*JL_RVAL = JL_GetEmptyStringValue(cx); // nothing remains
@@ -419,21 +418,20 @@ DEFINE_FUNCTION( Write ) {
 	if (unlikely( sentAmount < str.Length() )) {
 
 		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
-		size_t remaining;
-		remaining = str.Length() - sentAmount;
-		buffer = JS_malloc(cx, remaining +1);
-		JL_CHK( buffer );
-		((char*)buffer)[remaining] = '\0';
-		memcpy(buffer, str.GetStrConst(), remaining);
-		JL_CHKB( JL_NewBlob(cx, buffer, remaining, JL_RVAL), bad_free ); // (TBD) keep the type: return a string if the JL_ARG(1) is a sring.
- 		return JS_TRUE;
+//		size_t remaining;
+//		remaining = str.Length() - sentAmount;
+//		buffer = JS_malloc(cx, remaining +1);
+//		JL_CHK( buffer );
+//		memcpy(buffer, str.GetConstStr() + sentAmount, remaining);
+//		((char*)buffer)[remaining] = '\0';
+//		JL_CHKB( JL_NewBlob(cx, buffer, remaining, JL_RVAL), bad_free ); // (TBD) keep the type: return a string if the JL_ARG(1) is a sring.
+//		JL_CHK( , bad_free ); // (TBD) keep the type: return a string if the JL_ARG(1) is a sring.
+ 		return JL_NewBlobCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL);
 	}
 
 	*JL_RVAL = JL_ARG(1); // nothing has been sent
 
 	return JS_TRUE;
-bad_free:
-	JS_free(cx, buffer);
 	JL_BAD;
 }
 

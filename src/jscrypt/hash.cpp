@@ -150,7 +150,7 @@ DEFINE_FUNCTION( Process ) {
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), in) );
 
-	err = pv->descriptor->process(&pv->state, (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length()); // Process a block of memory though the hash
+	err = pv->descriptor->process(&pv->state, (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length()); // Process a block of memory though the hash
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 
@@ -188,13 +188,14 @@ DEFINE_FUNCTION( Done ) {
 	unsigned long outLength;
 	outLength = pv->descriptor->hashsize;
 	char *out;
-	out = (char *)JS_malloc( cx, outLength );
+	out = (char *)JS_malloc( cx, outLength +1);
 	JL_CHK( out );
 	int err;
 	err = pv->descriptor->done(&pv->state, (unsigned char*)out); // Terminate the hash to get the digest
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 
+	out[outLength] = '\0';
 	JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
 	return JS_TRUE;
@@ -236,7 +237,7 @@ DEFINE_CALL() {
 	unsigned long outLength;
 	outLength = pv->descriptor->hashsize;
 	char *out;
-	out = (char *)JS_malloc( cx, outLength );
+	out = (char *)JS_malloc( cx, outLength +1);
 	JL_CHK( out );
 
 //	const char *in;
@@ -249,7 +250,7 @@ DEFINE_CALL() {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	err = pv->descriptor->process(&pv->state, (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length());
+	err = pv->descriptor->process(&pv->state, (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length());
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
@@ -262,6 +263,7 @@ DEFINE_CALL() {
 		return ThrowCryptError(cx, err);
 	pv->inputLength = 0;
 
+	out[outLength] = '\0';
 	JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
 	return JS_TRUE;

@@ -161,12 +161,12 @@ DEFINE_CALL() {
 
 	if ( pv->wFrom ) {
 
-		inBuf =  (char*)data.GetJsStrConst();
 		inLen = data.Length() * 2;
+		inBuf =  (char*)data.GetConstJsStr();
 	} else {
 
-		inBuf = (char*)data.GetStrConst();
 		inLen = data.Length();
+		inBuf = (char*)data.GetConstStr();
 	}
 
 
@@ -335,7 +335,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 	JL_CHK( JL_JsvalToNative(cx, *vp, chr) );
 	if ( chr.Length() != 1 )
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "one-char string");
-	pv->invalidChar = chr.GetStrConst()[0];
+	pv->invalidChar = chr.GetConstStr()[0];
 	return JS_TRUE;
 	JL_BAD;
 }

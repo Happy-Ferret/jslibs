@@ -337,16 +337,16 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			JLStr lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), lparam) );
-			err = rsa_encrypt_key_ex( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
+			err = rsa_encrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
 			break;
 		}
 		case ecc: {
-			err = ecc_encrypt_key( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, hashIndex, &pv->key.eccKey );
+			err = ecc_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, hashIndex, &pv->key.eccKey );
 			break;
 		}
 		case dsa: {
 			// if inlen > hash_descriptor[hash].hashsize => ERROR
-			err = dsa_encrypt_key( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, hashIndex, &pv->key.dsaKey );
+			err = dsa_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, hashIndex, &pv->key.dsaKey );
 			break;
 		}
 #ifdef MKAT
@@ -354,7 +354,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			JLStr lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), lparam) );
-			err = katja_encrypt_key( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, hashIndex, &pv->key.katjaKey );
+			err = katja_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, hashIndex, &pv->key.katjaKey );
 			break;
 		}
 #endif
@@ -420,7 +420,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), lparam) );
 
 			int stat = 0; // default: failed
-			err = rsa_decrypt_key_ex( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), hashIndex, pv->padding, &stat, &pv->key.rsaKey );
+			err = rsa_decrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), hashIndex, pv->padding, &stat, &pv->key.rsaKey );
 			// doc: if all went well pt == pt2, l2 == 16, res == 1
 			if ( err == CRYPT_OK && stat != 1 ) {
 
@@ -430,11 +430,11 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 			break;
 		}
 		case ecc: {
-			err = ecc_decrypt_key( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, &pv->key.eccKey );
+			err = ecc_decrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, &pv->key.eccKey );
 			break;
 		}
 		case dsa: {
-			err = dsa_decrypt_key( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, &pv->key.dsaKey );
+			err = dsa_decrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, &pv->key.dsaKey );
 			break;
 		}
 #ifdef MKAT
@@ -447,7 +447,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), lparam) );
 
 			int stat = 0; // default: failed
-			err = katja_decrypt_key( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), hashIndex, &stat, &pv->key.katjaKey );
+			err = katja_decrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), hashIndex, &stat, &pv->key.katjaKey );
 			// doc: if all went well pt == pt2, l2 == 16, res == 1
 			if ( err == CRYPT_OK && stat != 1 ) {
 
@@ -519,15 +519,15 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &saltLength) );
 
-			err = rsa_sign_hash_ex( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, hashIndex, saltLength, &pv->key.rsaKey );
+			err = rsa_sign_hash_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, hashIndex, saltLength, &pv->key.rsaKey );
 			break;
 		}
 		case ecc: {
-			err = ecc_sign_hash( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, &pv->key.eccKey );
+			err = ecc_sign_hash( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, &pv->key.eccKey );
 			break;
 		}
 		case dsa: {
-			err = dsa_sign_hash( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, &pv->key.dsaKey );
+			err = dsa_sign_hash( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, &pv->key.dsaKey );
 			break;
 		}
 #ifdef MKAT
@@ -591,15 +591,15 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 
 			int hashIndex = find_hash(pv->hashDescriptor->name);
 
-			rsa_verify_hash_ex( (const unsigned char *)sign.GetStrConst(), (unsigned long)sign.Length(), (const unsigned char *)data.GetStrConst(), (unsigned long)data.Length(), LTC_LTC_PKCS_1_PSS, hashIndex, saltLength, &stat, &pv->key.rsaKey );
+			rsa_verify_hash_ex( (const unsigned char *)sign.GetConstStr(), (unsigned long)sign.Length(), (const unsigned char *)data.GetConstStr(), (unsigned long)data.Length(), LTC_LTC_PKCS_1_PSS, hashIndex, saltLength, &stat, &pv->key.rsaKey );
 			break;
 		}
 		case ecc: {
-			ecc_verify_hash( (const unsigned char *)sign.GetStrConst(), (unsigned long)sign.Length(), (const unsigned char *)data.GetStrConst(), (unsigned long)data.Length(), &stat, &pv->key.eccKey );
+			ecc_verify_hash( (const unsigned char *)sign.GetConstStr(), (unsigned long)sign.Length(), (const unsigned char *)data.GetConstStr(), (unsigned long)data.Length(), &stat, &pv->key.eccKey );
 			break;
 		}
 		case dsa: {
-			dsa_verify_hash( (const unsigned char *)sign.GetStrConst(), (unsigned long)sign.Length(), (const unsigned char *)data.GetStrConst(), (unsigned long)data.Length(), &stat, &pv->key.dsaKey );
+			dsa_verify_hash( (const unsigned char *)sign.GetConstStr(), (unsigned long)sign.Length(), (const unsigned char *)data.GetConstStr(), (unsigned long)data.Length(), &stat, &pv->key.dsaKey );
 			break;
 		}
 #ifdef MKAT
@@ -740,15 +740,15 @@ DEFINE_PROPERTY( keySetter ) {
 	err = -1; // default
 	switch ( pv->cipher ) {
 		case rsa:
-			err = rsa_import( (const unsigned char *)key.GetStrConst(), (unsigned long)key.Length(), &pv->key.rsaKey );
+			err = rsa_import( (const unsigned char *)key.GetConstStr(), (unsigned long)key.Length(), &pv->key.rsaKey );
 			JL_S_ASSERT( pv->key.rsaKey.type == type, "Invalid key type." );
 			break;
 		case ecc:
-			err = ecc_import( (const unsigned char *)key.GetStrConst(), (unsigned long)key.Length(), &pv->key.eccKey );
+			err = ecc_import( (const unsigned char *)key.GetConstStr(), (unsigned long)key.Length(), &pv->key.eccKey );
 			JL_S_ASSERT( pv->key.eccKey.type == type, "Invalid key type." );
 			break;
 		case dsa:
-			err = dsa_import( (const unsigned char *)key.GetStrConst(), (unsigned long)key.Length(), &pv->key.dsaKey );
+			err = dsa_import( (const unsigned char *)key.GetConstStr(), (unsigned long)key.Length(), &pv->key.dsaKey );
 			JL_S_ASSERT( pv->key.dsaKey.type == type, "Invalid key type." );
 			//int stat = 0;
 			//dsa_verify_key(&pv->key.dsaKey, &stat);
@@ -757,7 +757,7 @@ DEFINE_PROPERTY( keySetter ) {
 			break;
 #ifdef MKAT
 		case katja:
-			err = katja_import( (const unsigned char *)key.GetStrConst(), (unsigned long)key.Length(), &pv->key.katjaKey );
+			err = katja_import( (const unsigned char *)key.GetConstStr(), (unsigned long)key.Length(), &pv->key.katjaKey );
 			JL_S_ASSERT( pv->key.katjaKey.type == type, "Invalid key type." );
 			break;
 #endif

@@ -173,7 +173,7 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
 	JL_CHK( BlobLength(cx, obj, &len) );
 	JL_CHK( BlobBuffer(cx, obj, &buf) );
 
-	str = JLStr(buf, len);
+	str = JLStr(buf, len, true);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -261,7 +261,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) ); // warning: GC on the returned buffer !
 
 		size_t length = str.Length();
-		const char *sBuffer = str.GetStrConst();
+		const char *sBuffer = str.GetConstStr();
 
 //		JL_S_ASSERT( length >= JSVAL_INT_MIN && length <= JSVAL_INT_MAX, "Blob too long." );
 
@@ -391,7 +391,6 @@ DEFINE_FUNCTION( concat ) {
 
 	dst = (char*)JS_malloc(cx, dstLen +1);
 	JL_CHK( dst );
-	dst[dstLen] = '\0';
 
 	char *tmp;
 	tmp = dst;
@@ -410,10 +409,11 @@ DEFINE_FUNCTION( concat ) {
 
 		JLStr str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(arg), str) );
-		memcpy(tmp, str.GetStrConst(), str.Length());
+		memcpy(tmp, str.GetConstStr(), str.Length());
 		tmp += str.Length();
 	}
 
+	dst[dstLen] = '\0';
 	JL_CHK( JL_NewBlob(cx, dst, dstLen, JL_RVAL) );
 	return JS_TRUE;
 
@@ -587,8 +587,8 @@ DEFINE_FUNCTION( indexOf ) {
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &pat, &patlen) );
 	
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
-	pat = str.GetStrConst();
 	patlen = str.Length();
+	pat = str.GetConstStr();
 
 
 	jsuint start;
@@ -659,8 +659,8 @@ DEFINE_FUNCTION( lastIndexOf ) {
 
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &pat, &patlen) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
-	pat = str.GetStrConst();
 	patlen = str.Length();
+	pat = str.GetConstStr();
 
 	i = textlen - patlen; // Start searching here
 	if (i < 0) {
@@ -766,8 +766,8 @@ DEFINE_FUNCTION( split ) {
 	size_t sepLen;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sep, &sepLen) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
-	sep = str.GetStrConst();
 	sepLen = str.Length();
+	sep = str.GetConstStr();
 
 	ssize_t pos;
 

@@ -279,7 +279,7 @@ DEFINE_FUNCTION( Read ) {
 		if ( frames > 0 ) {
 
 			size_t amount = frames * pv->sfInfo.channels * pv->bits/8; // amount in bytes
-			buf = (char*)jl_malloc(amount);
+			buf = (char*)jl_malloc(amount +1);
 			JL_S_ASSERT_ALLOC(buf);
 
 			sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
@@ -290,7 +290,7 @@ DEFINE_FUNCTION( Read ) {
 			totalSize = items * sizeof(short);
 
 			if ( JL_MaybeRealloc(amount, totalSize) )
-				buf = (char*)jl_realloc(buf, totalSize);
+				buf = (char*)jl_realloc(buf, totalSize +1);
 		}
 
 	} else {
@@ -331,7 +331,7 @@ DEFINE_FUNCTION( Read ) {
 		} while (items > 0);
 
 		// convert data chunks into a single memory buffer.
-		buf = (char*)JS_malloc(cx, totalSize);
+		buf = (char*)JS_malloc(cx, totalSize +1);
 		JL_CHK( buf );
 
 		// because the stack is LIFO, we have to start from the end.
@@ -353,6 +353,7 @@ DEFINE_FUNCTION( Read ) {
 		return JS_TRUE;
 	}
 
+	buf[totalSize] = 0;
 	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );

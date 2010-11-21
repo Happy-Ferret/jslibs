@@ -516,7 +516,7 @@ DEFINE_PROPERTY( icon ) {
 		 amask = 0xff000000;
 	#endif
 
-		 SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)buffer.GetStrConst(), sWidth, sHeight, 8 * sChannels, sWidth * sChannels, rmask, gmask, bmask, amask);
+		 SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)buffer.GetConstStr(), sWidth, sHeight, 8 * sChannels, sWidth * sChannels, rmask, gmask, bmask, amask);
 
 	if ( surface == NULL )
 		return ThrowSdlError(cx);

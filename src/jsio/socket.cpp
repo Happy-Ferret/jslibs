@@ -410,7 +410,7 @@ DEFINE_FUNCTION( SendTo ) {
 	JL_S_ASSERT( str.Length() <= PR_INT32_MAX, "Too many data." );
 
 	PRInt32 res;
-	res = PR_SendTo(fd, str.GetStrConst(), (PRInt32)str.Length(), 0, &addr, PR_INTERVAL_NO_TIMEOUT );
+	res = PR_SendTo(fd, str.GetConstStr(), (PRInt32)str.Length(), 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
 	size_t sentAmount;
 	if ( res == -1 ) {
@@ -588,13 +588,10 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &headers, &headerLength) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), headers) );
 		JL_S_ASSERT( headers.Length() <= PR_INT32_MAX, "Header too long." );
-	} else {
-
-		headers = JLStr("", 0);
 	}
 
 	PRInt32 bytes;
-	bytes = PR_TransmitFile( socketFd, fileFd, headers.GetStrConst(), (PRInt32)headers.Length(), flag, connectTimeout );
+	bytes = PR_TransmitFile( socketFd, fileFd, headers.GetStrConstOrNull(), (PRInt32)headers.LengthOrZero(), flag, connectTimeout );
 	if ( bytes == -1 )
 		return ThrowIoError(cx);
 

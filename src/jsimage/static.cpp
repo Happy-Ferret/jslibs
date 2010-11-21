@@ -192,9 +192,10 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	int length;
 	length = height * bytePerRow;
 	JOCTET * data;
-	data = (JOCTET *)JS_malloc(cx, length);
+	data = (JOCTET *)JS_malloc(cx, length +1);
 	JL_CHK( data );
 
+	data[length] = 0;
 	JL_CHK( JL_NewBlob(cx, data, length, JL_RVAL) );
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
@@ -316,9 +317,10 @@ DEFINE_FUNCTION( DecodePngImage ) {
 	int length;
 	length = height * bytePerRow;
 	png_bytep data;
-	data = (png_bytep)JS_malloc(cx, length);
+	data = (png_bytep)JS_malloc(cx, length +1);
 	JL_CHK( data );
 
+	data[length] = 0;
 	JL_CHK( JL_NewBlob(cx, data, length, JL_RVAL) );
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
@@ -432,12 +434,15 @@ DEFINE_FUNCTION( EncodePngImage ) {
 
 	png_write_info(desc.png, desc.info);
 	for ( int r = 0; r < sHeight; r++ )
-		png_write_row(desc.png, (png_bytep)buffer.GetStrConst() + sWidth * r * sChannels);
+		png_write_row(desc.png, (png_bytep)buffer.GetConstStr() + sWidth * r * sChannels);
 	png_write_end(desc.png, desc.info);
 
 	png_destroy_write_struct(&desc.png, &desc.info);
 
-	JS_realloc(cx, desc.buffer, desc.pos);
+	desc.buffer = JS_realloc(cx, desc.buffer, desc.pos +1);
+	JL_CHK( desc.buffer );
+
+	((uint8_t*)desc.buffer)[desc.pos] = 0;
 	JL_CHK( JL_NewBlob(cx, desc.buffer, desc.pos, JL_RVAL) );
 
 	return JS_TRUE;

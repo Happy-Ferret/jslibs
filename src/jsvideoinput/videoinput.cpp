@@ -215,7 +215,7 @@ DEFINE_FUNCTION( GetImage ) {
 		return JS_TRUE;
 	}
 
-	unsigned char *data = (unsigned char *)JS_malloc(cx, dataSize);
+	unsigned char *data = (unsigned char *)JS_malloc(cx, dataSize +1);
 	JL_CHK( data );
 
 	bool flipImage;
@@ -233,6 +233,7 @@ DEFINE_FUNCTION( GetImage ) {
 		return JS_TRUE;
 	}
 
+	data[dataSize] = 0;
 	JL_CHK( JL_NewBlob(cx, data, dataSize, JL_RVAL) );
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );

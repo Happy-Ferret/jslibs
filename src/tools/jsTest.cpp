@@ -77,6 +77,12 @@ __forceinline bool JL_Alloc( T*&ptr, size_t count = 1 ) {
 int main(int argc, char* argv[]) {
 
 
+	double dou = -1;
+
+		
+	unsigned int xx = dou;
+
+
 
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);

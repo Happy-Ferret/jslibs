@@ -109,7 +109,7 @@ DEFINE_FUNCTION( Open ) {
 //			JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &strFlags, &len) );
 			JLStr str;
 			JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
-			flags = FileOpenFlagsFromString(str.GetStrConst(), str.Length());
+			flags = FileOpenFlagsFromString(str.GetConstStr(), str.Length());
 		}
 	} else {
 
@@ -133,7 +133,7 @@ DEFINE_FUNCTION( Open ) {
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, str) );
 
 	PRFileDesc *fd;
-	fd = PR_Open(str.GetStrConst(), flags, mode); // The mode parameter is currently applicable only on Unix platforms.
+	fd = PR_Open(str.GetConstStr(), flags, mode); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 	JL_SetPrivate( cx, obj, fd );
@@ -211,7 +211,7 @@ DEFINE_FUNCTION( Delete ) {
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	JL_S_ASSERT_DEFINED( jsvalFileName );
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, str) );
-	if ( PR_Delete(str.GetStrConst()) != PR_SUCCESS )
+	if ( PR_Delete(str.GetConstStr()) != PR_SUCCESS )
 		return ThrowIoError(cx);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -457,7 +457,7 @@ DEFINE_PROPERTY( contentSetter ) {
 	PRInt32 bytesSent;
 	
 	JL_S_ASSERT( buf.Length() <= PR_INT32_MAX, "Too many data." );
-	bytesSent = PR_Write( fd, buf.GetStrConst(), (PRInt32)buf.Length() );
+	bytesSent = PR_Write( fd, buf.GetConstStr(), (PRInt32)buf.Length() );
 	if ( bytesSent == -1 ) {
 		
 		PR_Close(fd);

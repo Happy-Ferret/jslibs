@@ -93,7 +93,7 @@ DEFINE_FUNCTION( Write ) {
 		return WinThrowError(cx, GetLastError());
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), str) );
 	DWORD written;
-	BOOL status = WriteConsole(hStdout, str.GetStrConst(), str.Length(), &written, NULL);
+	BOOL status = WriteConsole(hStdout, str.GetConstStr(), str.Length(), &written, NULL);
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
 

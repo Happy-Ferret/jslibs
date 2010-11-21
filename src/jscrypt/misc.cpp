@@ -55,7 +55,7 @@ DEFINE_FUNCTION( Base64Encode ) {
 	out[outLength] = '\0';
 
 	int err;
-	err = base64_encode( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength );
+	err = base64_encode( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
@@ -89,13 +89,13 @@ DEFINE_FUNCTION( Base64Decode ) {
 	char *out;
 	out = (char *)JS_malloc(cx, outLength +1);
 	JL_CHK( out );
-	out[outLength] = '\0';
 
 	int err;
-	err = base64_decode( (const unsigned char *)in.GetStrConst(), (unsigned long)in.Length(), (unsigned char *)out, &outLength );
+	err = base64_decode( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
+	out[outLength] = '\0';
 	JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
 	return JS_TRUE;
@@ -122,7 +122,7 @@ DEFINE_FUNCTION( HexEncode ) {
 	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), data) );
-	in = data.GetStrConst();
+	in = data.GetConstStr();
 	inLength = data.Length();
 
 	size_t outLength;
@@ -178,7 +178,7 @@ DEFINE_FUNCTION( HexDecode ) {
 	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), data) );
-	in = data.GetStrConst();
+	in = data.GetConstStr();
 	inLength = data.Length();
 
 	size_t outLength;
@@ -186,11 +186,11 @@ DEFINE_FUNCTION( HexDecode ) {
 	char *out;
 	out = (char *)JS_malloc(cx, outLength +1);
 	JL_CHK( out );
-	out[outLength] = '\0';
 
 	for ( unsigned long i=0; i<outLength; ++i )
 		out[i] = unhex[ (unsigned char)in[i*2] ] << 4 | unhex[ (unsigned char)in[i*2+1] ];
 
+	out[outLength] = '\0';
 	JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
 	return JS_TRUE;

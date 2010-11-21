@@ -856,7 +856,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 
 				JL_CHK( JL_JsvalToNative(cx, label, newItemStr) );
 				
-				lpNewItem = newItemStr.GetStrConst();
+				lpNewItem = newItemStr.GetConstStr();
 				uFlags |= MF_STRING;
 			} else {
 
@@ -1002,7 +1002,7 @@ DEFINE_FUNCTION( PopupBalloon ) {
 			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, infoTitle) );
 
 			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoTitle.Length());
-			memcpy( pv->nid.szInfoTitle, infoTitle.GetStrConst(), JL_MIN(sizeof(pv->nid.szInfoTitle)-1, infoTitle.Length()) );
+			memcpy( pv->nid.szInfoTitle, infoTitle.GetConstStr(), JL_MIN(sizeof(pv->nid.szInfoTitle)-1, infoTitle.Length()) );
 			pv->nid.szInfoTitle[len] = '\0';
 		}
 
@@ -1012,7 +1012,7 @@ DEFINE_FUNCTION( PopupBalloon ) {
 			JLStr infoStr;
 			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, infoStr) );
 			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoStr.Length());
-			memcpy( pv->nid.szInfo, infoStr.GetStrConst(), infoStr.Length() );
+			memcpy( pv->nid.szInfo, infoStr.GetConstStr(), infoStr.Length() );
 			pv->nid.szInfo[infoStr.Length()] = '\0';
 		}
 
@@ -1227,7 +1227,7 @@ DEFINE_PROPERTY( textSetter ) {
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_CHK( JL_JsvalToNative(cx, *vp, tipText) );
 	size_t len = JL_MIN(sizeof(pv->nid.szTip)-1, tipText.Length());
-	memcpy(pv->nid.szTip, tipText.GetStrConst(), tipText.Length());
+	memcpy(pv->nid.szTip, tipText.GetConstStr(), tipText.Length());
 	pv->nid.szTip[len] = '\0';
 
 	pv->nid.uFlags |= NIF_TIP;

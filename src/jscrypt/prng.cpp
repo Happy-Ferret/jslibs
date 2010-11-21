@@ -114,12 +114,13 @@ DEFINE_CALL() {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &readCount) );
 
 	char *pr;
-	pr = (char*)JS_malloc( cx, readCount );
+	pr = (char*)JS_malloc( cx, readCount +1);
 	JL_CHK( pr );
 	unsigned long hasRead;
 	hasRead = pv->prng.read( (unsigned char*)pr, readCount, &pv->state );
 	JL_S_ASSERT( hasRead == readCount, "unable to read prng." );
 
+	pr[readCount] = '\0';
 	JL_CHK( JL_NewBlob( cx, pr, hasRead, JL_RVAL ) );
 
 	return JS_TRUE;
@@ -146,7 +147,7 @@ DEFINE_FUNCTION( AddEntropy ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), entropy) );
 
 	int err;
-	err = pv->prng.add_entropy( (const unsigned char *)entropy.GetStrConst(), (unsigned long)entropy.Length(), &pv->state );
+	err = pv->prng.add_entropy( (const unsigned char *)entropy.GetConstStr(), (unsigned long)entropy.Length(), &pv->state );
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	err = pv->prng.ready(&pv->state);
@@ -205,7 +206,9 @@ DEFINE_PROPERTY( stateGetter ) {
 	unsigned long size;
 	size = pv->prng.export_size;
 	char *stateData;
-	stateData = (char*)JS_malloc(cx, size);
+	stateData = (char*)JS_malloc(cx, size +1);
+	JL_CHK( stateData );
+
 	unsigned long stateLength;
 	stateLength = size;
 	int err;
@@ -214,6 +217,7 @@ DEFINE_PROPERTY( stateGetter ) {
 		return ThrowCryptError(cx, err);
 	JL_S_ASSERT( stateLength == size, "Invalid export size." );
 
+	stateData[size] = '\0';
 	JL_CHK( JL_NewBlob(cx, stateData, size, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -232,7 +236,7 @@ DEFINE_PROPERTY( stateSetter ) {
 
 	JL_S_ASSERT( state.Length() == (size_t)pv->prng.export_size, "Invalid import size." );
 	int err;
-	err = pv->prng.pimport((const unsigned char *)state.GetStrConst(), (unsigned long)state.Length(), &pv->state);
+	err = pv->prng.pimport((const unsigned char *)state.GetConstStr(), (unsigned long)state.Length(), &pv->state);
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	return JS_TRUE;

@@ -62,7 +62,7 @@ static JSBool BufferGet( JSContext *cx, JSObject *obj, JLStr &str ) {
 	mh = (MemHeader*)pv->mem;
 //	*buf = (char *)pv->mem + sizeof(MemHeader);
 //	*size = mh->currentDataLength;
-	str = JLStr((const char *)pv->mem + sizeof(MemHeader), mh->currentDataLength);
+	str = JLStr(((const char *)pv->mem) + sizeof(MemHeader), mh->currentDataLength, false);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -249,7 +249,7 @@ DEFINE_FUNCTION( Write ) {
 	mh = (MemHeader*)pv->mem;
 	if ( offset + data.Length() > mh->currentDataLength )
 		mh->currentDataLength = offset + data.Length();
-	memmove( (char *)pv->mem + sizeof(MemHeader) + offset, data.GetStrConst(), data.Length() ); // doc. Use memmove to handle overlapping regions.
+	memmove( (char *)pv->mem + sizeof(MemHeader) + offset, data.GetConstStr(), data.Length() ); // doc. Use memmove to handle overlapping regions.
 
 	JL_CHK( Unlock(cx, pv) );
 
@@ -289,12 +289,12 @@ DEFINE_FUNCTION( Read ) {
 	char *data;
 	data = (char*)JS_malloc(cx, dataLength +1);
 	JL_CHK( data );
-	data[dataLength] = '\0';
 
-	memmove(	data, (char *)pv->mem + sizeof(MemHeader) + offset, dataLength );
+	memmove( data, (char *)pv->mem + sizeof(MemHeader) + offset, dataLength );
 
 	JL_CHK( Unlock(cx, pv) );
 
+	data[dataLength] = '\0';
 	JL_CHK( JL_NewBlob( cx, data, dataLength, JL_RVAL ) );
 
 	return JS_TRUE;
@@ -383,7 +383,7 @@ DEFINE_PROPERTY( contentSetter ) {
 		MemHeader *mh = (MemHeader*)pv->mem;
 		if ( data.Length() > mh->currentDataLength )
 			mh->currentDataLength = data.Length();
-		memmove( (char *)pv->mem + sizeof(MemHeader), data.GetStrConst(), data.Length() ); // doc. Use memmove to handle overlapping regions.
+		memmove( (char *)pv->mem + sizeof(MemHeader), data.GetConstStr(), data.Length() ); // doc. Use memmove to handle overlapping regions.
 
 		JL_CHK( Unlock(cx, pv) );
 	}
@@ -407,12 +407,12 @@ DEFINE_PROPERTY( contentGetter ) {
 	char *data;
 	data = (char*)JS_malloc(cx, dataLength +1);
 	JL_CHK( data );
-	data[dataLength] = '\0';
 
 	memmove( data, (char *)pv->mem + sizeof(MemHeader), dataLength );
 
 	JL_CHK( Unlock(cx, pv) );
 
+	data[dataLength] = '\0';
 	JL_CHK( JL_NewBlob( cx, data, dataLength, vp ) );
 
 	return JS_TRUE;

@@ -32,9 +32,9 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 			break;
 		case SQLITE_BLOB: {
 				int length = sqlite3_value_bytes(value);
-				void *data = JS_malloc(cx, length +1);
+				uint8_t *data = (uint8_t*)JS_malloc(cx, length +1);
 				JL_CHK( data );
-				((char*)data)[length] = '\0';
+				data[length] = 0;
 				memcpy(data, sqlite3_value_blob(value), length);
 				JL_CHK( JL_NewBlobCopyN(cx, data, length, rval) );
 			}
@@ -161,7 +161,7 @@ next:
 //					JL_CHK( JL_JsvalToStringAndLength(cx, &val, &data, &length) );
 					JLStr data;
 					JL_CHK( JL_JsvalToNative(cx, val, data) );
-					if ( sqlite3_bind_blob(pStmt, param, data.GetStrConst(), data.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+					if ( sqlite3_bind_blob(pStmt, param, data.GetConstStr(), data.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 					break;
 				}
@@ -177,7 +177,7 @@ next:
 				JLStr str;
 				JL_CHK( JL_JsvalToNative(cx, val, str) );
 
-				if ( sqlite3_bind_text(pStmt, param, str, str.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+				if ( sqlite3_bind_text(pStmt, param, str.GetConstStr(), str.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				}
 				break;

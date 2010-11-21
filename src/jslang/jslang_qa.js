@@ -131,6 +131,7 @@ LoadModule('jsstd');
 		var blob = buffer.Read(2);
 		QA.ASSERT( blob.length, 2, 'buffer.Read() length' )
 		QA.ASSERT( blob instanceof Blob, true, 'buffer.Read() returns a Blob' )
+		QA.ASSERT( typeof blob, 'object', 'typeof blob' );
 		QA.ASSERT( '_NI_BufferGet' in blob, true, 'returned Blob has _NI_BufferGet' );
 		QA.ASSERT( blob._NI_BufferGet, true, 'returned Blob _NI_BufferGet is active' );
 

@@ -1,11 +1,9 @@
-LoadModule('jsstd');
-
 
 LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();
 //RunJsircbot(false); throw 0;
-RunQATests('-rep 1 -exclude jstask');
+RunQATests('-rep 1 -exclude jstask|jssqlite');
 
 
 function makeLogger(obj) {

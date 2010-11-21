@@ -124,7 +124,7 @@ protected:
 			 len = maxLength - 1;
 		{
 		JLStr tmp(jsstr);
-		memcpy(str, tmp.GetStrConst(), tmp.Length());
+		memcpy(str, tmp.GetConstStr(), tmp.Length());
 		}
 		str[len] = '\0';
 	}

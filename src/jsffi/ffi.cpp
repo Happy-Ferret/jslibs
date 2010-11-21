@@ -646,11 +646,12 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
           *pVal = (signed char)JSVAL_TO_INT( *vp );
         else
 			  if ( JSVAL_IS_STRING( *vp ) ) {
-				  const char *s;
-				  s = JL_GetStringBytesZ( cx, JSVAL_TO_STRING( *vp ) );
-				  if ( s == NULL )
-					  return JS_FALSE;
-            *pVal = s[0];
+
+				  size_t length;
+				  const jschar *s = JS_GetStringCharsAndLength(JSVAL_TO_STRING(*vp), &length);
+				  if ( length < 1 )
+					  return JS_ReportError( cx, "this conversion is not implemented yet !" ), JS_FALSE;
+            *pVal = (char)s[0];
 			  } else {
             if ( JSVAL_IS_DOUBLE( *vp ) ) {
               int32 val;
@@ -890,16 +891,21 @@ JSBool NativeData_setter_String(JSContext *cx, JSObject *obj, jsid id, jsval *vp
   if ( JS_TypeOfValue( cx, *vp ) != JSTYPE_STRING )
     *vp = STRING_TO_JSVAL( JS_ValueToString( cx, *vp ) ); // convert any vp type to JS string
 
-  size_t len = JS_GetStringLength( JSVAL_TO_STRING( *vp ) );
-  const char* str = JL_GetStringBytesZ( cx, JSVAL_TO_STRING( *vp ) ); // this string is terminated with \0 or not? ( only thrust len )
-  if ( str == NULL )
-	  return JS_FALSE;
+//  size_t len = JS_GetStringLength( JSVAL_TO_STRING( *vp ) );
+//  const char* str = JL_GetStringBytesZ( cx, JSVAL_TO_STRING( *vp ) ); // this string is terminated with \0 or not? ( only thrust len )
+//  if ( str == NULL )
+//	  return JS_FALSE;
+
+	JLStr str;
+	if ( !JL_JsvalToNative(cx, *vp, str) )
+		return JS_FALSE;
 
   void** pptr = (void**)JL_GetPrivate( cx, obj );
   char** sptr = (char**)jl_malloc( sizeof(char*) );
-  *sptr = (char*)jl_malloc( len+1 ); // len+1 because we will add a '\0' at the end ( don't thrust JL_GetStringBytes about '\0' )
-  memcpy( *sptr, str, len );
-  *((*sptr)+len) = '\0';
+//  *sptr = (char*)jl_malloc( len+1 ); // len+1 because we will add a '\0' at the end ( don't thrust JL_GetStringBytes about '\0' )
+//  memcpy( *sptr, str, len );
+//  *((*sptr)+len) = '\0';
+  *sptr = str.GetStrZOwnership();
   *pptr = sptr;
 
   jsval rootObj;
@@ -1008,9 +1014,16 @@ JL_GetReservedSlot(cx, JSVAL_TO_OBJECT( currentArg ), 1, &val); // ..., JSVAL_TO
 
   // Pointer to a null-terminated string that specifies the function or variable name, or the function's ordinal value.
   // If this parameter is an ordinal value, it must be in the low-order word; the high-order word must be zero.
-  const char *procName = JL_GetStringBytesZ(cx, JSVAL_TO_STRING(id));
-  if ( procName == NULL )
+
+//  const char *procName = JL_GetStringBytesZ(cx, JSVAL_TO_STRING(id));
+//  if ( procName == NULL )
+//	  return JS_FALSE;
+
+  JLStr procName;
+  if ( !JL_JsvalToNative(cx, id, procName) )
 	  return JS_FALSE;
+
+
   FARPROC procAddress = ::GetProcAddress( module, JSVAL_IS_INT( id ) ? (LPCSTR) LOWORD( JSVAL_TO_INT( id ) ) : procName );
 
   if ( procAddress == NULL ) {
@@ -1061,9 +1074,14 @@ JSBool NativeModule_Construct(JSContext *cx, uintN argc, jsval *vp) {
 	if ( !JSVAL_IS_STRING(JS_ARGV(cx, vp)[0]) )
 		JS_ARGV(cx, vp)[0] = STRING_TO_JSVAL( JS_ValueToString(cx, JS_ARGV(cx, vp)[0]) );
 
-  const char *libName = JL_GetStringBytesZ( cx, JSVAL_TO_STRING(JS_ARGV(cx, vp)[0]) ); // JL_GetStringBytes never returns NULL
-  if ( libName == NULL || *libName == '\0' )
-    return JS_FALSE;
+//  const char *libName = JL_GetStringBytesZ( cx, JSVAL_TO_STRING(JS_ARGV(cx, vp)[0]) ); // JL_GetStringBytes never returns NULL
+//  if ( libName == NULL || *libName == '\0' )
+//    return JS_FALSE;
+
+	JLStr libName;
+	if ( !JL_JsvalToNative(cx, JS_ARGV(cx, vp)[0], libName) )
+		return JS_FALSE;
+
 
   char libFileName[PATH_MAX];
   strcpy( libFileName, libName );
