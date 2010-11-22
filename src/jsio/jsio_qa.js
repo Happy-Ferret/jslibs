@@ -1,5 +1,6 @@
 // don't remove this first line !! ( see MemoryMapped test )
 LoadModule('jsio');
+LoadModule('jsdebug');
 
 /// File Read [tr]
 
@@ -141,9 +142,7 @@ LoadModule('jsio');
 /// Process pipes type [ftrm]
 
 	var cmdPath = GetEnv('ComSpec');
-	var process = new Process(cmdPath, ['/c', 'dir']);
-
-	QA.ASSERT( InheritFrom(process.stdout, Descriptor), true, 'stdout InheritFrom Descriptor' );
+	var process = new Process(cmdPath, ['/c', 'dir ..']);
 	QA.ASSERT( process.stdout instanceof Descriptor, true, 'stdout instanceof Descriptor' );
 
 
@@ -185,7 +184,7 @@ LoadModule('jsio');
 
 
 /// Non-blocking TCP Socket [trm]
-
+		
 		var count = 0;
 		var dlist = [];
 		var step = 0;
@@ -335,7 +334,7 @@ LoadModule('jsio');
 			if (ex.code == -5981) {
 				
 				QA.FAILED( 'unable to connect to '+host );
-				return;
+				throw 0;
 			}
 		}
 		
@@ -517,7 +516,7 @@ LoadModule('jsio');
 				var cmdPath = GetEnv('ComSpec');
 				QA.ASSERT( cmdPath.indexOf('cmd') != -1, true, 'cmd.exe path' );
 
-				var res = CreateProcess(cmdPath, ['/c', 'dir']);
+				var res = CreateProcess(cmdPath, ['/c', 'dir ..']);
 				QA.ASSERT_TYPE( res, Array, 'CreateProcess returns an array' );
 				QA.ASSERT( res.length, 2, 'CreateProcess array length' );
 				QA.ASSERT_TYPE( res[0], Descriptor, 'process stdin type' );
@@ -526,7 +525,7 @@ LoadModule('jsio');
 */
 				var cmdPath = GetEnv('ComSpec');
 				QA.ASSERT( cmdPath.indexOf('cmd') != -1, true, 'cmd.exe path' );
-				var process = new Process(cmdPath, ['/c', 'dir']);
+				var process = new Process(cmdPath, ['/c', 'dir ..']);
 				QA.ASSERT_TYPE( process.stdin, Descriptor, 'process stdin type' );
 				QA.ASSERT_TYPE( process.stdout, Descriptor, 'process stdout type' );
 				QA.ASSERT_TYPE( process.stderr, Descriptor, 'process stderr type' );
@@ -543,7 +542,7 @@ LoadModule('jsio');
 			case 'Windows_NT':
 				var cmd = GetEnv('ComSpec');
 				var args1 = ['/c', 'cd fvasdfvasdfvasdfv'];
-				var args2 = ['/c', 'dir'];
+				var args2 = ['/c', 'dir ..']; // (TBD) understand why ['/c', 'dir'] fails
 				break;
 			case 'Linux':
 				var cmd = GetEnv('SHELL');
@@ -552,15 +551,15 @@ LoadModule('jsio');
 				break;
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
-				return;
+				throw 0;
 		}
 				
 		var process = new Process(cmd, args1);
 		var exitCode = process.Wait();
 		QA.ASSERT( exitCode, 1, 'process exit code 1' );
 
-		var process = new Process(cmd, args2);
-		var exitCode = process.Wait();
+		var process2 = new Process(cmd, args2);
+		var exitCode = process2.Wait();
 		QA.ASSERT( exitCode, 0, 'process exit code 0' );
 
 
@@ -572,7 +571,7 @@ LoadModule('jsio');
 		} catch( ex if ex instanceof IoError ) {
 
 			QA.ASSERT( ex.code, -5994, 'CreateProcess error detection' );
-			return;
+			throw 0;
 		}
 		QA.FAILED( "no exception (cf mozilla bug #113095)" );
 	
@@ -582,7 +581,7 @@ LoadModule('jsio');
 		switch ( systemInfo.name ) {
 			case 'Windows_NT':
 				var cmd = GetEnv('ComSpec');
-				var args = ['/c', 'dir'];
+				var args = ['/c', 'dir ..'];
 				break;
 			case 'Linux':
 				var cmd = GetEnv('SHELL');
@@ -590,7 +589,7 @@ LoadModule('jsio');
 				break;
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
-				return;
+				throw 0;
 		}
 		
 		var process = new Process(cmd, args);
