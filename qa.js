@@ -58,7 +58,7 @@ function QAAPI(cx) {
 	
 		cx.Checkpoint('ASSERT_STR', testName);
 		if ( value != expect ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
-			cx.ReportIssue( '== ('+FormatVariable(value)+', expect '+FormatVariable(expect), testName );
+			cx.ReportIssue( '== '+FormatVariable(value)+', expect '+FormatVariable(expect), testName );
 	}
 
    this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
@@ -201,6 +201,14 @@ function CommonReportIssue(cx, type, location, testName, checkName, details) {
 
 function LaunchTests(itemList, cfg) {
 
+	var exportFile;
+
+	if ( cfg.export ) {
+	
+		exportFile = new File(cfg.export).Open('w');
+		exportFile.Write("LoadModule('jsstd');var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\\n' ) } };\n");
+	}
+
 	var cx = { 
 		checkCount:0, 
 		issueList:[], 
@@ -259,6 +267,10 @@ function LaunchTests(itemList, cfg) {
 				for ( var i = cfg.repeatEachTest; i && !endSignal ; --i ) {
 
 					void cx.item.func(qaapi);
+					if ( exportFile ) {
+						exportFile.Write('('+cx.item.func.toSource()+')(QA);\n');
+						exportFile.Sync();
+					}
 					if ( cx.item.init )
 						break;
 				}
@@ -289,6 +301,11 @@ function LaunchTests(itemList, cfg) {
 
 		if ( cfg.sleepBetweenTests )
 			Sleep(cfg.sleepBetweenTests);
+	}
+	
+	if ( exportFile ) {
+		
+		exportFile.Close();
 	}
 	
 	return [cx.issueList, cx.checkCount];
@@ -326,7 +343,7 @@ function ParseCommandLine(cfg) {
 
 
 
-var cfg = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', files:'_qa.js$', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0, quiet:false, verbose:false, runOnlyTestIndex:undefined, exclude:undefined };
+var cfg = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', files:'_qa.js$', priority:0, flags:'', export:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0, quiet:false, verbose:false, runOnlyTestIndex:undefined, exclude:undefined };
 ParseCommandLine(cfg);
 var configurationText = 'configuraion: '+['-'+k+' '+v for ([k,v] in Iterator(cfg))].join('  ');
 Print( configurationText, '\n\n' );
