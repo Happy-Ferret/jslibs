@@ -45,20 +45,20 @@ function QAAPI(cx) {
 			if ( (ex != exType) && !(ex instanceof exType) )
 				cx.ReportIssue('Invalid exception ('+ex.constructor.name+' != '+exType.name+')', testName );
 		}
-	} 
+	}
 
 	this.ASSERT = function( value, expect, testName ) {
 	
 		cx.Checkpoint('ASSERT', testName);
 		if ( value !== expect && !(typeof(value) == 'number' && isNaN(value) && typeof(expect) == 'number' && isNaN(expect)) )
-			cx.ReportIssue( FormatVariable(value)+' !== '+FormatVariable(expect), testName );
+			cx.ReportIssue( '=== ('+value.constructor.name+')'+FormatVariable(value)+', expect '+'('+expect.constructor.name+')'+FormatVariable(expect), testName );
 	}
 
 	this.ASSERT_STR = function( value, expect, testName ) {
 	
 		cx.Checkpoint('ASSERT_STR', testName);
 		if ( value != expect ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
-			cx.ReportIssue( FormatVariable(value)+' != '+FormatVariable(expect), testName );
+			cx.ReportIssue( '== ('+FormatVariable(value)+', expect '+FormatVariable(expect), testName );
 	}
 
    this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
@@ -71,12 +71,10 @@ function QAAPI(cx) {
 	  	}
    }
 
-
 	this.GC = function() {
 
 		cx.cfg.nogcDuringTests || CollectGarbage();
 	}
-
 
 	var randomData = '';
 	for ( var i = 0; i < 1024; ++i )
@@ -213,7 +211,9 @@ function LaunchTests(itemList, cfg) {
 			CommonReportIssue(cx, 'ASSERT',  this.item.file+':'+(Locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message );
 		},
 		Checkpoint:function(title, testName) {
-		
+			
+			if ( cfg.verbose )
+				Print( '\nCP - '+testName+': checkpoint: '+title+' ('+this.item.file+':'+(Locate(this.stackIndex+1)[1] - this.item.relativeLineNumber)+')' );
 			this.checkCount++;
 		}
 	};
@@ -326,7 +326,7 @@ function ParseCommandLine(cfg) {
 
 
 
-var cfg = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', files:'_qa.js$', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0, quiet:false, runOnlyTestIndex:undefined, exclude:undefined };
+var cfg = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', files:'_qa.js$', priority:0, flags:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0, quiet:false, verbose:false, runOnlyTestIndex:undefined, exclude:undefined };
 ParseCommandLine(cfg);
 var configurationText = 'configuraion: '+['-'+k+' '+v for ([k,v] in Iterator(cfg))].join('  ');
 Print( configurationText, '\n\n' );
@@ -389,6 +389,7 @@ issueList.reduce( function(previousValue, currentValue, index, array) {
     return currentValue;
 }, undefined );
 
+Print('Done\n');
 
 /* flags:
 
