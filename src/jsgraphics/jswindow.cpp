@@ -313,7 +313,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 		JL_SAFE( msgCount = 0 );
 		while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) { //GetInputState() // determines whether there are mouse-button or keyboard messages in the calling thread's message queue.
 
-			if (JS_IsExceptionPending(cx)) // need JS_ErrorFromException(...) ??
+			if (JL_IsExceptionPending(cx)) // need JS_ErrorFromException(...) ??
 				return JS_FALSE;
 
 			TranslateMessage(&msg);

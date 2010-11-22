@@ -64,6 +64,12 @@ JL_GetRuntimePrivate(JSRuntime *rt) {
 }
 
 static ALWAYS_INLINE JSBool
+JL_IsExceptionPending(JSContext *cx) {
+	
+	return (JSBool) cx->throwing;
+}
+
+static ALWAYS_INLINE JSBool
 JL_NewNumberValue(JSContext *cx, jsdouble d, jsval *rval) {
     
 	JL_UNUSED(cx);
@@ -550,7 +556,7 @@ enum JLErrNum {
 #define JL_CHKM( status, errorMessage, ... ) \
 	JL_MACRO_BEGIN \
 		if (unlikely( !(status) )) { \
-			if ( !JS_IsExceptionPending(cx) ) \
+			if ( !JL_IsExceptionPending(cx) ) \
 				JS_ReportError(cx, (errorMessage IFDEBUG(" (@" JL_CODE_LOCATION ")")), ##__VA_ARGS__); \
 			goto bad; \
 		} \
@@ -571,7 +577,7 @@ enum JLErrNum {
 #define JL_CHKBM( status, errorLabel, errorMessage, ... ) \
 	JL_MACRO_BEGIN \
 		if (unlikely( !(status) )) { \
-			if ( !JS_IsExceptionPending(cx) ) \
+			if ( !JL_IsExceptionPending(cx) ) \
 				JS_ReportError(cx, (errorMessage IFDEBUG(" (@" JL_CODE_LOCATION ")")), ##__VA_ARGS__); \
 			goto errorLabel; \
 		} \
@@ -1172,7 +1178,7 @@ JL_LoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFi
 
 			jl_free(data);
 			data = NULL;
-//			if ( JS_IsExceptionPending(cx) )
+//			if ( JL_IsExceptionPending(cx) )
 //				JS_ClearPendingException(cx);
 		}
 	}
@@ -1530,6 +1536,8 @@ class JLStr {
 
 	ALWAYS_INLINE jschar * CreateJsStr() {
 
+		JL_ASSERT( _own );
+		JL_ASSERT( _own->cstrz || _own->strz || _own->cstr || _own->str );
 		size_t length = Length();
 		const char *src;
 		if ( _own->cstrz )
@@ -1551,6 +1559,8 @@ class JLStr {
 
 	ALWAYS_INLINE char * CreateStrZ() {
 
+		JL_ASSERT( _own );
+		JL_ASSERT( _own->cjsstr || _own->jsstr );
 		size_t length = Length();
 		const jschar *src = _own->cjsstr ? _own->cjsstr : _own->jsstr;
 		char *dst;
@@ -1798,6 +1808,7 @@ public:
 
 		if ( _own->str ) {
 
+			JL_ASSERT( !_own->str );
 			JL_Realloc(_own->str, length + 1);
 			JL_ASSERT( _own->str );
 			_own->str[length] = '\0';
@@ -1807,7 +1818,8 @@ public:
 		}
 
 		if ( _own->cstr ) {
-
+			
+			JL_ASSERT( !_own->strz );
 			JL_Alloc(_own->strz, length + 1);
 			JL_ASSERT( _own->strz );
 			_own->strz[length] = '\0';

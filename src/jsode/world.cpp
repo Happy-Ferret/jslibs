@@ -403,7 +403,7 @@ DEFINE_FUNCTION( Collide ) {
 	else
 		ode::dSpaceCollide2((ode::dGeomID)sg1Id, (ode::dGeomID)sg2Id, (void*)&ccp, &nearCallback);
 
-	return !JS_IsExceptionPending(cx); // an exception may have been thrown in nearCallback
+	return !JL_IsExceptionPending(cx); // an exception may have been thrown in nearCallback
 	JL_BAD;
 }
 

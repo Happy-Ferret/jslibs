@@ -37,21 +37,27 @@ DEFINE_FUNCTION( toString ) {
 	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JSString *handleStr;
 	char str[] = "[Handle ????]";
-	if ( pv != NULL ) { // manage Print(Id) issue
+	if ( pv != NULL ) { // this manage Print(Handle) issue
 
+		char *ht = (char*)&pv->handleType;
 		if ( JLHostEndian == JLLittleEndian ) {
 
-			str[4] = ((char*)&pv->handleType)[3];
-			str[5] = ((char*)&pv->handleType)[2];
-			str[6] = ((char*)&pv->handleType)[1];
-			str[7] = ((char*)&pv->handleType)[0];
+			str[ 8] = ht[3];
+			str[ 9] = ht[2];
+			str[10] = ht[1];
+			str[11] = ht[0];
 		} else {
 
-			*((HANDLE_TYPE*)str+4) = pv->handleType;
+			*((HANDLE_TYPE*)str + 8) = pv->handleType;
 		}
+
+		if ( str[ 8] == '\0' )  str[ 8] = ' ';
+		if ( str[ 9] == '\0' )  str[ 9] = ' ';
+		if ( str[10] == '\0' )  str[10] = ' ';
+		if ( str[11] == '\0' )  str[11] = ' ';
 	}
 
-	handleStr = JS_NewStringCopyN(cx, str, sizeof(str));
+	handleStr = JS_NewStringCopyN(cx, str, sizeof(str)-1);
 	JL_CHK( handleStr );
 	*JL_RVAL = STRING_TO_JSVAL(handleStr);
 

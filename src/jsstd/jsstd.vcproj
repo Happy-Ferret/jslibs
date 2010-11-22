@@ -238,22 +238,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\map.h"
-				>
-			</File>
-			<File
-				RelativePath=".\objex.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pack.h"
-				>
-			</File>
-			<File
-				RelativePath=".\static.h"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>

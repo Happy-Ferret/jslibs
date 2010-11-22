@@ -84,7 +84,7 @@ private:
 		jsval argv[3] = { INT_TO_JSVAL(level), INT_TO_JSVAL(area) };
 		JL_NativeToJsval(_cx, message.c_str(), &argv[2]);
 		js::AutoArrayRooter tvr(_cx, COUNTOF(argv), argv);
-		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
+		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JL_IsExceptionPending(cx)
 	}
 
 	bool onTLSConnect( const CertInfo& info ) {
@@ -111,7 +111,7 @@ private:
 		JL_SetProperty(_cx, _obj, "compression", info.compression.c_str());
 
 		jsval argv[] = { OBJECT_TO_JSVAL(infoObj) };
-		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
+		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JL_IsExceptionPending(cx)
 
 		bool res;
 		JL_JsvalToNative(_cx, rval, &res);
@@ -128,7 +128,7 @@ private:
 			JS_ReportError(_cx, "onConnect is not a function.");
 			return;
 		}
-		JS_CallFunctionValue(_cx, _obj, fval, 0, NULL, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
+		JS_CallFunctionValue(_cx, _obj, fval, 0, NULL, &rval); // errors will be managed later by JL_IsExceptionPending(cx)
 	}
 
 	void onDisconnect(ConnectionError cErr) {
@@ -142,7 +142,7 @@ private:
 			return;
 		}
 		jsval argv[] = { INT_TO_JSVAL(cErr) };
-		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
+		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JL_IsExceptionPending(cx)
 	}
 
 	void handleMessage( Stanza *stanza, MessageSession *session ) {
@@ -161,7 +161,7 @@ private:
 		JidToJsval(_cx, &stanza->from(), &fromVal);
 		JL_NativeToJsval(_cx, stanza->body().c_str(), &body);
 		jsval argv[] = { fromVal, body };
-		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JS_IsExceptionPending(cx)
+		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JL_IsExceptionPending(cx)
 //		js_LeaveLocalRootScope(_cx);
 	}
 
@@ -195,7 +195,7 @@ private:
 		JL_NativeToJsval(_cx, msg.c_str(), &msgVal);
 
 		jsval argv[] = { fromVal, presenceVal, msgVal };
-		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &tmp); // errors will be managed later by JS_IsExceptionPending(cx)
+		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &tmp); // errors will be managed later by JL_IsExceptionPending(cx)
 	}
 
 // SIProfileFTHandler (file transfer)
@@ -308,7 +308,7 @@ DEFINE_FUNCTION( Connect ) {
 	pv->handlers->_cx = cx;
 	pv->client->connect(false); // the function returnes immediately after the connection has been established.
 	pv->handlers->_cx = NULL;
-	if ( JS_IsExceptionPending(cx) )
+	if ( JL_IsExceptionPending(cx) )
 		return JS_FALSE;
 
 	//bool usingCompression = pv->client->compression();
@@ -342,7 +342,7 @@ DEFINE_FUNCTION( Disconnect ) {
 	pv->client->disconnect();
 	pv->handlers->_cx = NULL;
 
-	if ( JS_IsExceptionPending(cx) )
+	if ( JL_IsExceptionPending(cx) )
 		return JS_FALSE;
 
 	*JL_RVAL = JSVAL_VOID;
@@ -366,7 +366,7 @@ DEFINE_FUNCTION( Process ) {
 	ConnectionError cErr = pv->client->recv();
 	pv->handlers->_cx = NULL;
 
-	if ( JS_IsExceptionPending(cx) )
+	if ( JL_IsExceptionPending(cx) )
 		return JS_FALSE;
 
 	JL_CHK( JL_NativeToJsval(cx, (int)cErr, JL_RVAL) );

@@ -217,7 +217,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	jsval rval;
 	const char *argv[] = { scriptName, lpCmdLine };
 	if ( ExecuteScriptFileName(cx, scriptName, false, COUNTOF(argv), argv, &rval) != JS_TRUE )
-		if ( JS_IsExceptionPending(cx) )
+		if ( JL_IsExceptionPending(cx) )
 			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 
 	disabledFree = true;

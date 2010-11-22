@@ -85,6 +85,7 @@ DEFINE_FUNCTION( Stringify ) {
 
 			BufferFinalize(&buf);
 			return JS_TRUE;
+
 		bad_freeBuffer:
 			BufferFinalize(&buf);
 			return JS_FALSE;
@@ -227,7 +228,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 		ProcessEvent *pe = peList[i];
 		
 		JSExceptionState *exState = NULL;
-		if ( JS_IsExceptionPending(cx) ) {
+		if ( JL_IsExceptionPending(cx) ) {
 
 			exState = JS_SaveExceptionState(cx);
 			JS_ClearPendingException(cx);
@@ -346,24 +347,8 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 }
 
 
-DEFINE_FUNCTION( InheritFrom ) {
-	
-	JL_S_ASSERT_ARG(2);
-
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
-	JL_S_ASSERT_OBJECT( JL_ARG(2) );
-
-	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_InheritFrom(cx, JSVAL_TO_OBJECT(JL_ARG(1)), JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1)))) );
-
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-//#include "../jslang/blobPub.h"
-
-
 #ifdef DEBUG
+//#include "../jslang/blobPub.h"
 DEFINE_FUNCTION( jslang_test ) {
 
 
@@ -384,7 +369,6 @@ CONFIGURE_STATIC
 		FUNCTION( jslang_test )
 		#endif // DEBUG
 
-		FUNCTION_ARGC( InheritFrom, 2 )
 		FUNCTION_ARGC( Stringify, 1 )
 		FUNCTION( ProcessEvents )
 		FUNCTION( TimeoutEvents )

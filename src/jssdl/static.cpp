@@ -187,7 +187,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 		default:
 			*fired = false;
 	}
-//	return JS_IsExceptionPending(cx) ? JS_FALSE : JS_TRUE; // (TBD) why this line is needed ?
+//	return JL_IsExceptionPending(cx) ? JS_FALSE : JS_TRUE; // (TBD) why this line is needed ?
 	return JS_TRUE;
 	JL_BAD;
 }

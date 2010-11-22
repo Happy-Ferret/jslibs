@@ -307,7 +307,7 @@ DEFINE_FUNCTION( DecodeSound ) {
 	JL_S_ASSERT( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
 	JL_S_ASSERT( descriptor != NULL, "Invalid stream." );
 
-	if ( JS_IsExceptionPending(cx) )
+	if ( JL_IsExceptionPending(cx) )
 		return JS_FALSE;
 
 	JL_S_ASSERT( info.channels == 1 || info.channels == 2, "Unsupported channel count." );

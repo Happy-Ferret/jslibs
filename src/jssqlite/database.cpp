@@ -357,7 +357,7 @@ DEFINE_FUNCTION( Exec ) {
 	status = sqlite3_step(pStmt); // Evaluates the statement. The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or 	SQLITE_MISUSE.
 	pv->tmpcx = NULL;
 
-	JL_CHK( !JS_IsExceptionPending(cx) );
+	JL_CHK( !JL_IsExceptionPending(cx) );
 
 	switch ( status ) {
 

@@ -373,7 +373,7 @@ function RunJsircbot( withDebuggerEnabled ) {
 	throw 0;
 }
 
-var FakeQAApi = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };
+var FakeQAApi = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args).substr(0,32), '\n' ) } };
 
 
 /* z-pass

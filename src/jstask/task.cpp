@@ -171,7 +171,7 @@ static JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 		if ( !status ) {
 
 			jsval ex;
-			if ( JS_IsExceptionPending(cx) ) { // manageable error
+			if ( JL_IsExceptionPending(cx) ) { // manageable error
 
 				JL_CHK( JS_GetPendingException(cx, &ex) );
 				if ( !IsSerializable(ex) ) {
@@ -259,7 +259,7 @@ static JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 	if ( status != JS_TRUE ) { // fatal errors
 
 		jsval ex;
-		if ( JS_IsExceptionPending(cx) ) {
+		if ( JL_IsExceptionPending(cx) ) {
 
 			JL_CHK( JS_GetPendingException(cx, &ex) );
 

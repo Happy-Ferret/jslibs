@@ -265,6 +265,8 @@ LoadModule('jsstd');
 		QA.ASSERT( StringRepeat( 'abc', 1 ), 'abc', '1 x string' );
 		QA.ASSERT( StringRepeat( 'abc', 10 ), 'abcabcabcabcabcabcabcabcabcabc', '10 x string' );
 
+		QA.ASSERT( StringRepeat( '\u1234', 2 ), '\u1234\u1234', 'UC string' );
+
 /// big StringRepeat[tr]
 
 		QA.ASSERT( StringRepeat( '123', 1024*1024 ).length, 3*1024*1024, '3MB' );
@@ -926,3 +928,30 @@ LoadModule('jsstd');
 /// Sandbox watchdog
 	
 	QA.ASSERT_EXCEPTION( function() { SandboxEval('for (var i=0; i<10000000000; ++i);') }, OperationLimit, 'OperationLimit detection' );
+
+
+/// Exec function
+	
+	var filename = QA.RandomString(10);
+	new File(filename).content = '_exectest++';
+	
+	_exectest = 5;
+	Exec(filename);
+	QA.ASSERT( _exectest, 6, 'Exec an expression script' );
+		
+	new File(filename).content = undefined;
+
+
+/// warning messages [ft]
+
+	var buffer = '';
+	var prev = _configuration.stderr;
+	_configuration.stderr = function(chunk) buffer += chunk;
+	try {
+		Warning('testing warning messages');
+	} catch (ex) {}
+	_configuration.stderr = prev;
+	
+	//Print(buffer.length)
+	QA.ASSERT_STR( buffer.indexOf('warning: testing warning messages') != -1, true, 'stderr redirection result' ); 
+

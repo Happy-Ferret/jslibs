@@ -315,7 +315,7 @@ JSBool JssqliteStep( JSContext *cx, JSObject *obj, int *status ) {
 	*status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
 	dbpv->tmpcx = NULL;
 	
-	JL_CHK( !JS_IsExceptionPending(cx) );
+	JL_CHK( !JL_IsExceptionPending(cx) );
 
 	switch ( status ) {
 
@@ -373,7 +373,7 @@ JSBool DoStep(JSContext *cx, JSObject *obj, jsval *rval) {
 	status = sqlite3_step( pStmt ); // The return value will be either SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
 	dbpv->tmpcx = NULL;
 	
-	JL_CHK( !JS_IsExceptionPending(cx) );
+	JL_CHK( !JL_IsExceptionPending(cx) );
 
 	switch ( status ) {
 

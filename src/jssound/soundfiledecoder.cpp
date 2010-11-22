@@ -205,7 +205,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->sfDescriptor = sf_open_virtual(&sfCallbacks, SFM_READ, &pv->sfInfo, pv);
 	pv->bits = 16;
 
-	if ( JS_IsExceptionPending(cx) )
+	if ( JL_IsExceptionPending(cx) )
 		return JS_FALSE;
 
 	// (TBD) manage sf_error_str()
@@ -284,7 +284,7 @@ DEFINE_FUNCTION( Read ) {
 
 			sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
 
-			if ( JS_IsExceptionPending(cx) )
+			if ( JL_IsExceptionPending(cx) )
 				return JS_FALSE; // (TBD) free memory
 
 			totalSize = items * sizeof(short);
@@ -314,7 +314,7 @@ DEFINE_FUNCTION( Read ) {
 			// pv->bits: ???=8, sf_read_short=16, sf_read_int=32
 			items = sf_read_short(pv->sfDescriptor, (short*)data, maxlen/sizeof(short)); // bits per sample
 
-			if ( JS_IsExceptionPending(cx) )
+			if ( JL_IsExceptionPending(cx) )
 				return JS_FALSE; // (TBD) free memory
 
 			JL_S_ASSERT( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );

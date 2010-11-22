@@ -695,9 +695,7 @@ JSBool CreateScriptArguments( JSContext *cx, int argc, const char * const * argv
 }
 
 
-JSBool ExecuteScript( JSContext *cx, const char *scriptText, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
-
-	js::AutoObjectRooter tvr(cx);
+JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
 
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); //  | JSOPTION_DONT_REPORT_UNCAUGHT
 	// JSOPTION_COMPILE_N_GO:
@@ -706,6 +704,8 @@ JSBool ExecuteScript( JSContext *cx, const char *scriptText, bool compileOnly, i
 	//  When returning from the outermost API call, prevent uncaught exceptions from being converted to error reports
 	//  we can use JS_ReportPendingException to report it manually
 
+	js::AutoObjectRooter scriptObjRoot(cx);
+
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	JL_CHKM( globalObject != NULL, "Global object not found." );
 
@@ -713,43 +713,30 @@ JSBool ExecuteScript( JSContext *cx, const char *scriptText, bool compileOnly, i
 
 // compile & executes the script
 
-/*
-	JSPrincipals *principals = (JSPrincipals*)jl_malloc(sizeof(JSPrincipals));
-	JSPrincipals tmp = {0};
-	*principals = tmp;
-	principals->codebase = (char*)jl_malloc(PATH_MAX);
-	strncpy(principals->codebase, scriptFileName, PATH_MAX-1);
-	principals->refcount = 1;
-	principals->destroy = HostPrincipalsDestroy;
-*/
+	//JSPrincipals *principals = (JSPrincipals*)jl_malloc(sizeof(JSPrincipals));
+	//JSPrincipals tmp = {0};
+	//*principals = tmp;
+	//principals->codebase = (char*)jl_malloc(PATH_MAX);
+	//strncpy(principals->codebase, scriptFileName, PATH_MAX-1);
+	//principals->refcount = 1;
+	//principals->destroy = HostPrincipalsDestroy;
 
 	JSScript *script;
 	script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "inline", 1);
 	JL_CHK( script );
+	scriptObjRoot.setObject(JS_NewScriptObject(cx, script));
 
-	JSObject *scrobj;
-	scrobj = JS_NewScriptObject(cx, script);
-	JL_CHK( scrobj );
-	tvr.setObject(scrobj);
-
-	// mendatory else the exception is converted into an error before JS_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
+	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
-	JSBool status;
-	if ( !compileOnly ) {
+	if ( !compileOnly )
 
-		status = JS_ExecuteScript(cx, globalObject, script, rval); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
-	} else {
-
+		JL_CHK( JS_ExecuteScript(cx, globalObject, script, rval) ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+	else
 		*rval = JSVAL_VOID;
-		status = JS_TRUE;
-	}
 
-
-	JL_CHK( status );
-
-	//	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633, which can cause crashes in almost any program that uses JS_DestroyScript.
+	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633, which can cause crashes in almost any program that uses JS_DestroyScript.
 
 	JL_CHK( RemoveScriptArguments( cx ) );
 	JS_SetOptions(cx, prevOpt);
@@ -764,43 +751,32 @@ bad:
 
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) { // (TBD) support xdr files
 
-	js::AutoObjectRooter tvr(cx);
-
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
-
+	js::AutoObjectRooter scriptObjRoot(cx);
 	JSObject *globalObject = JS_GetGlobalObject(cx);
 	JL_CHKM( globalObject != NULL, "Global object not found." );
-
 	JL_CHK( CreateScriptArguments(cx, argc, argv) );
 
 	JSScript *script;
 	script = JL_LoadScript(cx, globalObject, scriptFileName, true, false); // use xdr if available, but don't save it.
 	JL_CHK( script );
 
-	JSObject *scrobj;
-	scrobj = JS_NewScriptObject(cx, script);
-	JL_CHK( scrobj );
-	tvr.setObject(scrobj);
+	scriptObjRoot.setObject(JS_NewScriptObject(cx, script));
 
-	// mendatory else the exception is converted into an error before JS_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
+	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
-	JSBool status;
-	if ( !compileOnly ) {
 
-		status = JS_ExecuteScript(cx, globalObject, script, rval); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
-	} else {
-
+	if ( !compileOnly )
+		JL_CHK( JS_ExecuteScript(cx, globalObject, script, rval) ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+	else
 		*rval = JSVAL_VOID;
-		status = JS_TRUE;
-	}
 
-	JL_CHK( status );
+	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633 (FIXED), which can cause crashes in almost any program that uses JS_DestroyScript.
 
-	//	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633, which can cause crashes in almost any program that uses JS_DestroyScript.
-
-	JL_CHKM( JS_DeletePropertyById(cx, globalObject, JLID(cx, arguments)), "Unable to remove argument property." );
+	//JL_CHKM( JS_DeletePropertyById(cx, globalObject, JLID(cx, arguments)), "Unable to remove argument property." );
+	JL_CHK( RemoveScriptArguments(cx) );
 	JS_SetOptions(cx, prevOpt);
 	return JS_TRUE;
 
@@ -814,20 +790,19 @@ JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32 xdrScriptL
 
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
 //	JL_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
+	js::AutoObjectRooter scriptObjRoot(cx);
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 	JL_CHK( xdr );
 	JS_XDRMemSetData(xdr, xdrScript, xdrScriptLength);
-	JSScript *script;
+	JSScript *script = NULL;
 	JL_CHK( JS_XDRScript(xdr, &script) );
 	JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
 	JS_XDRDestroy(xdr);
-	JS_GetScriptObject(script);
-	JSObject *bootstrapScriptObject;
-	bootstrapScriptObject = JS_NewScriptObject(cx, script);
-	JL_CHK( SetConfigurationReadonlyValue(cx, JLID_NAME(cx, bootstrapScript), OBJECT_TO_JSVAL(bootstrapScriptObject)) );
+	scriptObjRoot.setObject(JS_NewScriptObject(cx, script));
+//	JL_CHK( SetConfigurationReadonlyValue(cx, JLID_NAME(cx, bootstrapScript), OBJECT_TO_JSVAL(bootstrapScriptObject)) ); // bootstrap script cannot be hidden
 	jsval tmp;
 	JL_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
-
+	JS_DestroyScript(cx, script);
 	JS_SetOptions(cx, prevOpt);
 	return JS_TRUE;
 bad:

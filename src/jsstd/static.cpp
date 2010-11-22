@@ -896,14 +896,15 @@ DEFINE_FUNCTION( StringRepeat ) {
 		*JL_RVAL = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
+	if ( count == 1 ) {
 
-	const char *buf;
+		*JL_RVAL = STRING_TO_JSVAL( JS_ValueToString(cx, JL_ARG(1)) ); // force string conversion because we must return a string.
+		return JS_TRUE;
+	}
+
 	size_t len;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buf, &len) ); // warning: GC on the returned buffer !
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	buf = str.GetConstStr();
 	len = str.Length();
-
 
 	if ( len == 0 ) {
 
@@ -911,34 +912,26 @@ DEFINE_FUNCTION( StringRepeat ) {
 		return JS_TRUE;
 	}
 
-	if ( count == 1 ) {
-
-		*JL_RVAL = STRING_TO_JSVAL( JS_ValueToString(cx, JL_ARG(1)) ); // force string conversion because we must return a string.
-		return JS_TRUE;
-	}
-
 	size_t newLen;
 	newLen = len * count;
 
-	char *newBuf;
-	newBuf = (char *)JS_malloc(cx, newLen +1);
+	jschar *newBuf;
+	JL_Alloc(newBuf, newLen);
 	JL_CHK( newBuf );
-	newBuf[newLen] = '\0';
 
-	if ( len == 1 ) {
+	const jschar *buf;
+	buf = str.GetConstJsStr();
 
-		memset(newBuf, *buf, newLen);
-	} else {
+	jschar *tmp = newBuf;
+	size_t i;
+	for ( i = 0; i < count; ++i ) {
 
-		char *tmp = newBuf;
-		size_t i, j;
-		for ( i=0; i<count; i++ )
-			for ( j=0; j<len; j++ )
-				*(tmp++) = buf[j];
+		memcpy(tmp, buf, len * sizeof(jschar));
+		tmp += len;
 	}
 
 	JSString *jsstr;
-	jsstr = JS_NewString(cx, newBuf, newLen);
+	jsstr = JS_NewUCString(cx, newBuf, newLen);
 	JL_CHK( jsstr );
 	*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
@@ -1002,7 +995,6 @@ DEFINE_FUNCTION( Exec ) {
 
 	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
-
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 
 	bool useAndSaveCompiledScripts;
@@ -1014,18 +1006,19 @@ DEFINE_FUNCTION( Exec ) {
 	uint32 oldopts;
 	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); // JSOPTION_COMPILE_N_GO is properly removed in JLLoadScript if needed.
 	JSScript *script;
-	script = JL_LoadScript( cx, obj, str, useAndSaveCompiledScripts, useAndSaveCompiledScripts );
+	script = JL_LoadScript(cx, obj, str, useAndSaveCompiledScripts, useAndSaveCompiledScripts);
 	JS_SetOptions(cx, oldopts);
 	JL_CHK( script );
 
-//	JSTempValueRooter tvr;
-	JSObject *scrobj;
-	scrobj = JS_NewScriptObject(cx, script);
-//	JS_PUSH_TEMP_ROOT_OBJECT(cx, scrobj, &tvr);
+	{
+	js::AutoObjectRooter scriptObjRoot(cx);
+	scriptObjRoot.setObject(JS_NewScriptObject(cx, script));
+	
 	JSBool ok;
 	ok = JS_ExecuteScript(cx, obj, script, JL_RVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
-//	JS_POP_TEMP_ROOT(cx, &tvr);
+	JS_DestroyScript(cx, script);
 	JL_CHK( ok );
+	}
 
 	return JS_TRUE;
 	JL_BAD;

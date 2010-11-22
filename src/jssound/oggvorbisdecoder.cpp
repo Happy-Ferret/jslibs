@@ -270,7 +270,7 @@ DEFINE_FUNCTION( Read ) {
 				JL_S_ASSERT( bitStream == prevBitstream, "Invalid ogg bitstream."); // bitstream has changed
 
 				// (TBD) update the channels, rate, ... according to: ov_info(&pv->ofDescriptor, bitStream);
-				if ( JS_IsExceptionPending(cx) )
+				if ( JL_IsExceptionPending(cx) )
 					return JS_FALSE; // (TBD) free memory
 
 				if ( bytes == OV_HOLE )
@@ -324,7 +324,7 @@ DEFINE_FUNCTION( Read ) {
 			bytes = ov_read(&pv->ofDescriptor, data, maxlen, 0, pv->bits / 8, 1, &bitStream);
 			JL_S_ASSERT( bitStream == prevBitstream, "Invalid ogg bitstream."); // bitstream has changed
 
-			if ( JS_IsExceptionPending(cx) )
+			if ( JL_IsExceptionPending(cx) )
 				return JS_FALSE; // (TBD) free memory
 
 			if ( bytes == OV_HOLE)

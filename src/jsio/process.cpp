@@ -61,6 +61,10 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &path) );
 
+	PRProcessAttr *psattr;
+	psattr = PR_NewProcessAttr();
+	JL_CHK( psattr );
+
 	int processArgc;
 	const char **processArgv;
 	if ( JL_ARG_ISDEF(2) ) {
@@ -88,7 +92,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_S_ASSERT_ALLOC( processArgv );
 	}
 
-	processArgv[0] = path;
+	processArgv[0] = path.GetConstStrZ();
 	processArgv[processArgc] = NULL;
 
 	PRFileDesc *stdin_child, *stdout_child, *stderr_child;
@@ -98,13 +102,12 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
 	JL_CHKB( PR_CreatePipe(&stderr_parent, &stderr_child) == PR_SUCCESS, bad_throw );
 
-	PRProcessAttr *psattr;
-	psattr = PR_NewProcessAttr();
-
 	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardInput, stdin_child);
 	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardOutput, stdout_child);
 	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardError, stderr_child);
-	// PR_ProcessAttrSetCurrentDirectory ?
+
+	//PR_ProcessAttrSetCurrentDirectory(psattr, 
+	//PR_ProcessAttrSetInheritableFD
 
 	// cf. bug 113095 -  PR_CreateProcess reports success even when it fails to create the process. (https://bugzilla.mozilla.org/show_bug.cgi?id=113095)
 	// workaround: check the rights and execution flag before runiong the file
@@ -114,19 +117,21 @@ DEFINE_CONSTRUCTOR() {
 	PR_DestroyProcessAttr(psattr);
 
 	if ( JL_ARG_ISDEF(2) ) // see GetStrZOwnership
-		for ( int i=0; i<processArgc -1; i++ )
+		for ( int i = 0; i < processArgc - 1; ++i )
 			jl_free( const_cast<char*>(processArgv[i+1]) );
 	//free(processArgv); // alloca do not need free
 
 	JL_CHKB( PR_Close(stderr_child) == PR_SUCCESS, bad_throw );
 	JL_CHKB( PR_Close(stdout_child) == PR_SUCCESS, bad_throw );
 	JL_CHKB( PR_Close(stdin_child) == PR_SUCCESS, bad_throw );
+
 	if ( !process ) {
 
 		JL_CHKB( PR_Close(stderr_parent) == PR_SUCCESS, bad_throw );
 		JL_CHKB( PR_Close(stdout_parent) == PR_SUCCESS, bad_throw );
 		JL_CHKB( PR_Close(stdin_parent) == PR_SUCCESS, bad_throw );
 	}
+
 	JL_CHKB( process != NULL, bad_throw );
 	JL_SetPrivate(cx, obj, (void*)process);
 

@@ -41,7 +41,7 @@ private:
 
 	void ManageException() {
 	
-		if ( JS_IsExceptionPending(_cx) ) {
+		if ( JL_IsExceptionPending(_cx) ) {
 
 			jsval fval, rval, ex;
 			fval = GetProperty(vstPlugin, "catch");
@@ -55,7 +55,7 @@ private:
 					JS_SetPendingException(_cx, rval);
 			}
 
-			if ( JS_IsExceptionPending(_cx) ) {
+			if ( JL_IsExceptionPending(_cx) ) {
 				
 				JS_ReportPendingException(_cx);
 				JS_ClearPendingException(_cx);

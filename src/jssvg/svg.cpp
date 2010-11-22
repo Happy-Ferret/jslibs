@@ -172,7 +172,7 @@ DEFINE_FUNCTION( Write ) {
 	status = rsvg_handle_write(handle, (const guchar *)data.GetConstStr(), data.Length(), &error);
 	handle->priv->base_uri = tmp;
 
-	if ( JS_IsExceptionPending(cx) )
+	if ( JL_IsExceptionPending(cx) )
 		return JS_FALSE;
 
 	if ( !status ) {
@@ -216,7 +216,7 @@ DEFINE_PROPERTY( xmlData ) {
 	status = rsvg_handle_write(handle, (const guchar *)data, length, &error);
 	handle->priv->base_uri = tmp;
 
-	if ( JS_IsExceptionPending(cx) )
+	if ( JL_IsExceptionPending(cx) )
 		return JS_FALSE;
 
 	if ( !status ) {

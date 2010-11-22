@@ -216,7 +216,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 
 	jsval exception;
 	JSBool hasException;
-	hasException = JS_IsExceptionPending(cx);
+	hasException = JL_IsExceptionPending(cx);
 	if ( hasException ) {
 
 		JL_CHK( JS_GetPendingException(cx, &exception) );

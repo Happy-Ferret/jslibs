@@ -130,10 +130,10 @@ LoadModule('jsstd');
 		buffer.Write('123');
 		var blob = buffer.Read(2);
 		QA.ASSERT( blob.length, 2, 'buffer.Read() length' )
-		QA.ASSERT( blob instanceof Blob, true, 'buffer.Read() returns a Blob' )
-		QA.ASSERT( typeof blob, 'object', 'typeof blob' );
-		QA.ASSERT( '_NI_BufferGet' in blob, true, 'returned Blob has _NI_BufferGet' );
-		QA.ASSERT( blob._NI_BufferGet, true, 'returned Blob _NI_BufferGet is active' );
+//		QA.ASSERT( blob instanceof Blob, true, 'buffer.Read() returns a Blob' )
+		QA.ASSERT( typeof blob, 'string', 'typeof blob' );
+//		QA.ASSERT( ('_NI_BufferGet' in blob), true, 'returned Blob has _NI_BufferGet' );
+//		QA.ASSERT( blob._NI_BufferGet, true, 'returned Blob _NI_BufferGet is active' );
 
 
 /// Mutated Blob BufferGet NativeInterface [ftrm d]
@@ -666,7 +666,7 @@ LoadModule('jsstd');
 		QA.ASSERT( s.length, len, 'string length' );
 
 
-/// blob serialization [ftrmd]
+/// blob serialization [ftrm d]
 
 		var b = Blob("my blob");
 		b.aPropertyOfMyBlob = 12345;
@@ -686,10 +686,58 @@ LoadModule('jsstd');
 	new Blob().__proto__.toSource.call(b);
 
 
-/// map serialization [ftrmd]
+/// map serialization [ftrm d]
 
 		var obj = {a:1, b:2, c:3};
 		var m = Map(obj);
 		var xdrData = XdrEncode(m);
 		var val = XdrDecode(xdrData);
 		QA.ASSERT_STR( uneval(obj), uneval(val), 'map content' );
+
+
+/// Stringify blob [ft]
+
+	var b = new Blob('123');
+	var c = Stringify(b);
+
+	QA.ASSERT_STR( c , 123, 'Stringified blob' );
+
+
+
+/// Handle object [ft]
+
+	var h = Handle;
+	QA.ASSERT_TYPE(h, Handle, 'handle object type');
+	QA.ASSERT_STR(h, '[Handle ????]', 'handle type string');
+	QA.ASSERT(h.constructor, Math.constructor, 'constructor test');
+	QA.ASSERT(h.prototype, Math.prototype, 'prototype test');
+	QA.ASSERT(Handle instanceof Object, true, 'instance test');
+
+
+
+/// Test InheritFrom() [ft d]
+
+	function A() {}
+	function B() {}
+	A.prototype = new B;
+	var a = new A;
+	var b = new B;
+	
+	QA.ASSERT(InheritFrom(a, A), false, 'InheritFrom is not instanceof a,B');
+	QA.ASSERT(InheritFrom(a, B), true, 'InheritFrom test a,B');
+	QA.ASSERT(InheritFrom(b, B), false, 'InheritFrom is not instanceof b,A');
+	QA.ASSERT(InheritFrom(b, A), false, 'InheritFrom test b,A');
+	QA.ASSERT(InheritFrom(a, b), false, 'InheritFrom test a,b');
+	QA.ASSERT(InheritFrom(b, a), false, 'InheritFrom test b,a');
+	QA.ASSERT(InheritFrom(A, B), false, 'InheritFrom test A,B');
+	QA.ASSERT(InheritFrom(B, A), false, 'InheritFrom test B,A');
+
+
+/// ProcessEvents() [t]
+
+	var timeout = TimeoutEvents(123);
+	var t = TimeCounter();
+	ProcessEvents(timeout);
+	t = TimeCounter() - t;
+	QA.ASSERT( t > 122 && t < 130, true, 'TimeoutEvents time ('+t+')' );
+	QA.ASSERT_EXCEPTION( function() ProcessEvents(timeout), Error, 'ProcessEvents reused' );

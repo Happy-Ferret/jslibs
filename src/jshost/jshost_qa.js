@@ -45,3 +45,12 @@
 /// embedded bootstrap script [ftrm]
 
 		QA.ASSERT( 'bootstrapScript' in _configuration, false, 'no embedded bootstrap script by default' );
+
+
+/// EndSignalEvents handle object [ft]
+
+	var h = EndSignalEvents();
+	QA.ASSERT_TYPE(h, Handle, 'handle object type');
+	QA.ASSERT_STR(h, '[Handle  pev]', 'handle type string');
+	QA.ASSERT_TYPE(h.toString, Function, 'handle toString is a function');
+	

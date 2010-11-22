@@ -17,7 +17,7 @@ class JsException {
 public:
 	JsException( JSContext *cx, const char *text, bool force = false ) {
 		
-		JSBool hasException = JS_IsExceptionPending(cx);
+		JSBool hasException = JL_IsExceptionPending(cx);
 		if ( force || !hasException )
 			JS_ReportError(cx, text);
 	}

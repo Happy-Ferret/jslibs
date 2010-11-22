@@ -442,7 +442,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	if ( inlineScript == NULL )
 		executeStatus = ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
 	else
-		executeStatus = ExecuteScript(cx, inlineScript, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
+		executeStatus = ExecuteScriptText(cx, inlineScript, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
 
 	if ( executeStatus == JS_TRUE ) {
 
@@ -452,7 +452,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 			exitValue = EXIT_SUCCESS;
 	} else {
 
-		if ( JS_IsExceptionPending(cx) ) { // see JSOPTION_DONT_REPORT_UNCAUGHT option.
+		if ( JL_IsExceptionPending(cx) ) { // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 
 			jsval ex;
 			JS_GetPendingException(cx, &ex);

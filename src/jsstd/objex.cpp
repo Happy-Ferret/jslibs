@@ -16,8 +16,6 @@
 
 #include <jscntxt.h>
 
-#include "objex.h"
-
 #define ADD_SLOT 0
 #define DEL_SLOT 1
 #define GET_SLOT 2

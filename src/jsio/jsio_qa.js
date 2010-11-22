@@ -292,6 +292,7 @@ LoadModule('jsdebug');
 
 /// TCP get [m]
 
+	do {
 		var res, host, hostList = ['proxy', 'www.google.com', 'localhost']; // try to find a web server on port 80
 		do {
 
@@ -334,11 +335,13 @@ LoadModule('jsdebug');
 			if (ex.code == -5981) {
 				
 				QA.FAILED( 'unable to connect to '+host );
-				throw 0;
+				break;
 			}
 		}
 		
 		QA.ASSERT( response.length > 0, true, 'has response content from '+host );
+		
+	} while (0);
 
 
 /// closing Socket [ftrm]
@@ -538,6 +541,7 @@ LoadModule('jsdebug');
 
 /// create process wait for exitcode [m]
 
+	do {
 		switch ( systemInfo.name ) {
 			case 'Windows_NT':
 				var cmd = GetEnv('ComSpec');
@@ -551,7 +555,7 @@ LoadModule('jsdebug');
 				break;
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
-				throw 0;
+				break;
 		}
 				
 		var process = new Process(cmd, args1);
@@ -561,23 +565,27 @@ LoadModule('jsdebug');
 		var process2 = new Process(cmd, args2);
 		var exitCode = process2.Wait();
 		QA.ASSERT( exitCode, 0, 'process exit code 0' );
-
+	
+	} while (0);
 
 /// create process error detection [ftrm]
 
+	do {
 		try {
 
 			var res = new Process('uryqoiwueyrqoweu');
 		} catch( ex if ex instanceof IoError ) {
 
 			QA.ASSERT( ex.code, -5994, 'CreateProcess error detection' );
-			throw 0;
+			break;
 		}
 		QA.FAILED( "no exception (cf mozilla bug #113095)" );
+	} while (0);
 	
 
 /// create process detach [m]
-		
+	
+	do {
 		switch ( systemInfo.name ) {
 			case 'Windows_NT':
 				var cmd = GetEnv('ComSpec');
@@ -589,12 +597,12 @@ LoadModule('jsdebug');
 				break;
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
-				throw 0;
+				break;
 		}
 		
 		var process = new Process(cmd, args);
 		process.Detach();
-
+	} while (0);
 
 /// current working directory [ftrm]
 	
