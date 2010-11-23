@@ -1182,7 +1182,7 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 //	_getcwd(buf, sizeof(buf));
 	::GetCurrentDirectory(COUNTOF(buf), buf);
 #else // XP_WIN
-	getcwd(buf, sizeof(buf));
+	getcwd(buf, sizeof(buf)); // need  #include <direct.h>
 #endif // XP_WIN
 	JSString *str = JS_NewStringCopyZ(cx, buf);
 	JL_CHK( str );
@@ -1196,7 +1196,7 @@ DEFINE_PROPERTY_SETTER( currentDirectory ) {
 	JLStr dir;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &dir ) );
 #ifdef XP_WIN
-//	_chdir(buf);
+//	_chdir(dir);
 	::SetCurrentDirectory(dir);
 #else // XP_WIN
 	chdir(dir);

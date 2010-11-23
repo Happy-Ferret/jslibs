@@ -36,10 +36,11 @@ DEFINE_FINALIZE() {
 		PR_DetachProcess(process); // may crash ?
 }
 
+#include <direct.h>
 
 /**doc
 $TOC_MEMBER $INAME
- $VAL $INAME( path [ , argv ] )
+ $VAL $INAME( path , [ argv ] , [ stdioRedirect = true ]  )
   This function starts a new process optionaly using the JavaScript Array _argv_ for arguments or _undefined_ for no arguments.
   $H note
    The new process inherits the environment of the parent process.
@@ -95,19 +96,28 @@ DEFINE_CONSTRUCTOR() {
 	processArgv[0] = path.GetConstStrZ();
 	processArgv[processArgc] = NULL;
 
+	bool stdioRedirect;
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &stdioRedirect) );
+	else
+		stdioRedirect = true;
+
 	PRFileDesc *stdin_child, *stdout_child, *stderr_child;
 	PRFileDesc *stdin_parent, *stdout_parent, *stderr_parent;
 
-	JL_CHKB( PR_CreatePipe(&stdin_parent, &stdin_child) == PR_SUCCESS, bad_throw );
-	JL_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
-	JL_CHKB( PR_CreatePipe(&stderr_parent, &stderr_child) == PR_SUCCESS, bad_throw );
+	if ( stdioRedirect ) {
 
-	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardInput, stdin_child);
-	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardOutput, stdout_child);
-	PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardError, stderr_child);
+		JL_CHKB( PR_CreatePipe(&stdin_parent, &stdin_child) == PR_SUCCESS, bad_throw );
+		JL_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
+		JL_CHKB( PR_CreatePipe(&stderr_parent, &stderr_child) == PR_SUCCESS, bad_throw );
 
-	//PR_ProcessAttrSetCurrentDirectory(psattr, 
-	//PR_ProcessAttrSetInheritableFD
+		PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardInput, stdin_child);
+		PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardOutput, stdout_child);
+		PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardError, stderr_child);
+	}
+
+	//	JL_CHKB( PR_ProcessAttrSetCurrentDirectory(psattr, buf) == PR_SUCCESS, bad_throw );
+	// PR_ProcessAttrSetInheritableFD
 
 	// cf. bug 113095 -  PR_CreateProcess reports success even when it fails to create the process. (https://bugzilla.mozilla.org/show_bug.cgi?id=113095)
 	// workaround: check the rights and execution flag before runiong the file
@@ -119,36 +129,43 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(2) ) // see GetStrZOwnership
 		for ( int i = 0; i < processArgc - 1; ++i )
 			jl_free( const_cast<char*>(processArgv[i+1]) );
+
 	//free(processArgv); // alloca do not need free
 
-	JL_CHKB( PR_Close(stderr_child) == PR_SUCCESS, bad_throw );
-	JL_CHKB( PR_Close(stdout_child) == PR_SUCCESS, bad_throw );
-	JL_CHKB( PR_Close(stdin_child) == PR_SUCCESS, bad_throw );
+	if ( stdioRedirect ) {
 
-	if ( !process ) {
+		JL_CHKB( PR_Close(stderr_child) == PR_SUCCESS, bad_throw );
+		JL_CHKB( PR_Close(stdout_child) == PR_SUCCESS, bad_throw );
+		JL_CHKB( PR_Close(stdin_child) == PR_SUCCESS, bad_throw );
 
-		JL_CHKB( PR_Close(stderr_parent) == PR_SUCCESS, bad_throw );
-		JL_CHKB( PR_Close(stdout_parent) == PR_SUCCESS, bad_throw );
-		JL_CHKB( PR_Close(stdin_parent) == PR_SUCCESS, bad_throw );
+		if ( !process ) {
+
+			JL_CHKB( PR_Close(stderr_parent) == PR_SUCCESS, bad_throw );
+			JL_CHKB( PR_Close(stdout_parent) == PR_SUCCESS, bad_throw );
+			JL_CHKB( PR_Close(stdin_parent) == PR_SUCCESS, bad_throw );
+		}
 	}
 
 	JL_CHKB( process != NULL, bad_throw );
 	JL_SetPrivate(cx, obj, (void*)process);
 
-	JSObject *fdInObj;
-	fdInObj = JS_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL );
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdInObj)) );
-	JL_SetPrivate( cx, fdInObj, stdin_parent );
+	if ( stdioRedirect ) {
 
-	JSObject *fdOutObj;
-	fdOutObj = JS_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL );
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOutObj)) );
-	JL_SetPrivate( cx, fdOutObj, stdout_parent );
+		JSObject *fdInObj;
+		fdInObj = JS_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL );
+		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdInObj)) );
+		JL_SetPrivate( cx, fdInObj, stdin_parent );
 
-	JSObject *fdErrObj;
-	fdErrObj = JS_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL );
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErrObj)) );
-	JL_SetPrivate( cx, fdErrObj, stderr_parent );
+		JSObject *fdOutObj;
+		fdOutObj = JS_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL );
+		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOutObj)) );
+		JL_SetPrivate( cx, fdOutObj, stdout_parent );
+
+		JSObject *fdErrObj;
+		fdErrObj = JS_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL );
+		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErrObj)) );
+		JL_SetPrivate( cx, fdErrObj, stderr_parent );
+	}
 
 	return JS_TRUE;
 
@@ -168,6 +185,8 @@ bad:
 $TOC_MEMBER $INAME
  $INT $INAME()
   The function waits the end of the nondetached process and returns its exit code. This function will fail if the process has beed detached.
+  $H note
+   This function will wait endless if stdin, stdout or stderr pipes are not read (emptied).
   $H note
    In bash, `true;echo $?` prints `0` and `false;echo $?` prints `1`
 **/

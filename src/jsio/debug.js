@@ -1,12 +1,24 @@
+if ( 0 ) {
 
-//LoadModule('jsstd'); Exec('../../qaexp.js');  throw 0;
-LoadModule('jsstd'); Exec('../common/tools.js');
+	LoadModule('jsstd');
+	LoadModule('jsio');
+
+	throw 0;
+}
+
+LoadModule('jsstd');  LoadModule('jsio');
 //RunJsircbot(false); throw 0;
+// var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+ Exec('../common/tools.js');
+//Exec('../../qaexp.js');  throw 0;
 //var QA = FakeQAApi;  RunLocalQAFile();
-RunQATests('-rep 1 -exclude jstask jsio');
+//RunSavedQAFile('../../exitissue');
+RunQATests('-exclude jstask');
 
 
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+
+throw 0;
+
 LoadModule('jsstd'); Exec('../common/tools.js');
 RunQATests('-rep 4 udp');
 

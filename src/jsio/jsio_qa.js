@@ -142,7 +142,7 @@ LoadModule('jsdebug');
 /// Process pipes type [ftrm]
 
 	var cmdPath = GetEnv('ComSpec');
-	var process = new Process(cmdPath, ['/c', 'dir ..']);
+	var process = new Process(cmdPath, ['/c', 'cd']);
 	QA.ASSERT( process.stdout instanceof Descriptor, true, 'stdout instanceof Descriptor' );
 
 
@@ -519,7 +519,7 @@ LoadModule('jsdebug');
 				var cmdPath = GetEnv('ComSpec');
 				QA.ASSERT( cmdPath.indexOf('cmd') != -1, true, 'cmd.exe path' );
 
-				var res = CreateProcess(cmdPath, ['/c', 'dir ..']);
+				var res = CreateProcess(cmdPath, ['/c', 'cd']);
 				QA.ASSERT_TYPE( res, Array, 'CreateProcess returns an array' );
 				QA.ASSERT( res.length, 2, 'CreateProcess array length' );
 				QA.ASSERT_TYPE( res[0], Descriptor, 'process stdin type' );
@@ -528,7 +528,7 @@ LoadModule('jsdebug');
 */
 				var cmdPath = GetEnv('ComSpec');
 				QA.ASSERT( cmdPath.indexOf('cmd') != -1, true, 'cmd.exe path' );
-				var process = new Process(cmdPath, ['/c', 'dir ..']);
+				var process = new Process(cmdPath, ['/c', 'cd']);
 				QA.ASSERT_TYPE( process.stdin, Descriptor, 'process stdin type' );
 				QA.ASSERT_TYPE( process.stdout, Descriptor, 'process stdout type' );
 				QA.ASSERT_TYPE( process.stderr, Descriptor, 'process stderr type' );
@@ -546,7 +546,7 @@ LoadModule('jsdebug');
 			case 'Windows_NT':
 				var cmd = GetEnv('ComSpec');
 				var args1 = ['/c', 'cd fvasdfvasdfvasdfv'];
-				var args2 = ['/c', 'dir ..']; // (TBD) understand why ['/c', 'dir'] fails
+				var args2 = ['/c', 'cd']; // if 'dir' is used instead of 'cd', one should empty the stdout pipe or process.Wait() will block.
 				break;
 			case 'Linux':
 				var cmd = GetEnv('SHELL');
@@ -562,11 +562,12 @@ LoadModule('jsdebug');
 		var exitCode = process.Wait();
 		QA.ASSERT( exitCode, 1, 'process exit code 1' );
 
-		var process2 = new Process(cmd, args2);
-		var exitCode = process2.Wait();
+		var process = new Process(cmd, args2);
+		var exitCode = process.Wait();
 		QA.ASSERT( exitCode, 0, 'process exit code 0' );
 	
 	} while (0);
+
 
 /// create process error detection [ftrm]
 
@@ -583,13 +584,14 @@ LoadModule('jsdebug');
 	} while (0);
 	
 
+
 /// create process detach [m]
 	
 	do {
 		switch ( systemInfo.name ) {
 			case 'Windows_NT':
 				var cmd = GetEnv('ComSpec');
-				var args = ['/c', 'dir ..'];
+				var args = ['/c', 'cd'];
 				break;
 			case 'Linux':
 				var cmd = GetEnv('SHELL');

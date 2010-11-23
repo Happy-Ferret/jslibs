@@ -351,6 +351,16 @@ function RunLocalQAFile() {
 	throw 0;
 }
 
+function RunSavedQAFile(fileName) {
+
+	LoadModule('jsstd');
+	LoadModule('jsio');
+	var itemList = eval('('+new File(fileName).content+')');
+	var qaapi = { __noSuchMethod__:function() {} };
+	for ( var i = 0; i < itemList.length; i++ )
+		itemList[i].func(qaapi);
+}
+
 
 function RunQATests( argStr ) {
 
