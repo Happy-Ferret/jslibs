@@ -690,8 +690,18 @@ LoadModule('jsstd');
 
 /// Expand function [ftrm]
 
+		QA.ASSERT( Expand('\u1234', {} ), '\u1234', 'unicode' );
+		QA.ASSERT( Expand('$(\u1234)', { '\u1234':'ok' } ), 'ok', 'unicode key' );
+		QA.ASSERT( Expand('$(foo)', { foo:'\u1234' } ), '\u1234', 'unicode value' );
+
+		QA.ASSERT( Expand('abcde', {} ), 'abcde', 'no expand' );
+		QA.ASSERT( Expand('ab$()cde', {} ), 'abcde', 'empty expand' );
+		QA.ASSERT( Expand('ab$(xx)cde', {} ), 'abcde', 'unknown expand' );
+		QA.ASSERT( Expand('$(foo)', {foo:'$(foo)'} ), '$(foo)', 'kind of escape for $()' );
 		QA.ASSERT( Expand('', { h:'Hello', w:'World' }), '', 'expanding an empty string' );
-		// no more supported // QA.ASSERT( Expand('Hello World'), 'Hello World', 'expanding a simple string' );
+		
+		QA.ASSERT( Expand('Hello World'), 'Hello World', 'expanding a simple string' );
+		
 		QA.ASSERT( Expand(' $(h) $(w)', { h:'Hello', w:'World' }), ' Hello World', 'expanding a string' );
 		QA.ASSERT( Expand(' $(h) $(w', { h:'Hello', w:'World' }), ' Hello ', 'expanding a bugous string' );
 		QA.ASSERT( Expand(' $(h) $(', { h:'Hello', w:'World' }), ' Hello ', 'expanding a bugous string' );

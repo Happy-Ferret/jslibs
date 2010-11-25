@@ -587,7 +587,8 @@ DEFINE_SET_PROPERTY() {
 		
 		// sArgc: If this parameter is -1, then the SQL function or aggregate may take any number of arguments between 0 and the limit set by sqlite3_limit(SQLITE_LIMIT_FUNCTION_ARG).
 //		int status = sqlite3_create_function(dbpv->db, fName, JS_GetFunctionArity(fun), SQLITE_ANY /*SQLITE_UTF8*/, (void*)fpv, sqlite_function_call, NULL, NULL);
-		if ( sqlite3_create_function16(dbpv->db, JS_GetStringChars(JSID_TO_STRING(id)), JS_GetFunctionArity(JS_ValueToFunction(cx, *vp)), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL) != SQLITE_OK ) {
+		// if ( sqlite3_create_function16(dbpv->db, JS_GetStringChars(JSID_TO_STRING(id)), JS_GetFunctionArity(JS_ValueToFunction(cx, *vp)), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL) != SQLITE_OK ) {
+		if ( sqlite3_create_function16(dbpv->db, JS_GetStringCharsZ(cx, JSID_TO_STRING(id)), JS_GetFunctionArity(JS_ValueToFunction(cx, *vp)), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL) != SQLITE_OK ) {
 			
 			jl_free(fpv);
 			JL_CHK( SqliteThrowError(cx, dbpv->db) );

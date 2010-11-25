@@ -36,7 +36,7 @@ static JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 #ifdef DEBUG
 	jsval dbg_funNameVal;
 	JS_GetPropertyById(cx, JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)), JLID(cx, name), &dbg_funNameVal);
-	jschar *dbg_name = JS_GetStringChars(JSVAL_TO_STRING( dbg_funNameVal ));
+	const jschar *dbg_name = JS_GetStringCharsZ(cx, JSVAL_TO_STRING( dbg_funNameVal ));
 #endif
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JL_OBJ);
@@ -136,8 +136,8 @@ DEFINE_GET_PROPERTY() {
 	params.cArgs = 0;
 	params.cNamedArgs = 0;
 
-	jschar *name;
-	name = JS_GetStringChars(JSID_TO_STRING(id));
+	const jschar *name;
+	name = JS_GetStringCharsZ(cx, JSID_TO_STRING(id));
 	DISPID dispid;
 	hr = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
 	if ( FAILED(hr) ) // dispid == DISPID_UNKNOWN
@@ -202,9 +202,9 @@ DEFINE_SET_PROPERTY() {
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( disp );
 
-	jschar *name;
+	const jschar *name;
 	JL_ASSERT( JSID_IS_STRING( id ) );
-	name = JS_GetStringChars(JSID_TO_STRING(id));
+	name = JS_GetStringCharsZ(cx, JSID_TO_STRING(id));
 
 	DISPID dispid;
 	hr = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);

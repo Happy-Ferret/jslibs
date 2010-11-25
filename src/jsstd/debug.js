@@ -1,8 +1,16 @@
+LoadModule('jsstd'); 
+
+Print( Expand('abcdef(X)$', { 'X':'ok' } ), 'ok', 'unicode key' );
+
+
+throw 0;
+
+
 LoadModule('jsstd'); Exec('../common/tools.js');
 // var QA = FakeQAApi;
 // RunLocalQAFile();
 //RunJsircbot(false); throw 0;
-RunQATests('-rep 1 -exclude jstask');
+RunQATests('-rep 1 -exclude jstask jsstd');
 
 
 Halt();

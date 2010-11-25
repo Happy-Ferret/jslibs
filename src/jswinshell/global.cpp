@@ -353,7 +353,7 @@ DEFINE_FUNCTION( CreateComObject ) {
 	JL_S_ASSERT_ARG( 1 );
 	JL_S_ASSERT_STRING( JL_ARG(1) );
 
-	LPOLESTR name = (LPOLESTR)JS_GetStringChars(JS_ValueToString(cx, JL_ARG(1)));
+	LPOLESTR name = (LPOLESTR)JS_GetStringCharsZ(cx, JS_ValueToString(cx, JL_ARG(1)));
 
 	CLSID clsid;
 	hr = name[0] == L'{' ? CLSIDFromString(name, &clsid) : CLSIDFromProgID(name, &clsid);

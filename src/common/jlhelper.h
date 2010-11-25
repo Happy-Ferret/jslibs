@@ -216,7 +216,8 @@ JL_SetReservedSlot(JSContext *cx, JSObject *obj, uintN slot, const jsval &v) {
 
 // define obj variable for native functions
 #define JL_DEFINE_FUNCTION_OBJ \
-	JSObject *obj = JS_THIS_OBJECT(cx, vp)
+	JSObject *obj = JS_THIS_OBJECT(cx, vp); \
+	JL_ASSERT( obj );
 
 #define JL_DEFINE_CALL_FUNCTION_OBJ \
 	JSObject *obj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp))
@@ -1608,7 +1609,7 @@ public:
 	ALWAYS_INLINE JLStr(JSString *jsstr) {
 
 		size_t length;
-		const jschar *str = JS_GetStringCharsAndLength(jsstr, &length); // doc. not null-terminated.
+		const jschar *str = JS_GetStringCharsAndLength(jsstr, &length); // doc. not null-terminated. // see also JS_GetStringCharsZ
 		NewOwn(str, NULL, NULL, NULL, NULL, NULL, length);
 	}
 

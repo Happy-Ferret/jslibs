@@ -246,9 +246,12 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 	if ( JSVAL_IS_STRING(*value) ) {
 		
-		JSString *jsStr = JSVAL_TO_STRING(*value);
+		JSString *jsstr = JSVAL_TO_STRING(*value);
 		V_VT(variant) = VT_BSTR;
-		V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)JS_GetStringChars(jsStr), JS_GetStringLength(jsStr));
+		size_t srclen;
+		const jschar *src;
+		src = JS_GetStringCharsAndLength(jsstr, &srclen);
+		V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)src, srclen);
 		return JS_TRUE;
 	}
 
@@ -304,11 +307,16 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 
 	// last resort
-	JSString *str = JS_ValueToString(cx, *value); // see JS_ConvertValue
-	JL_S_ASSERT( str, "Unable to convert to string." );
+	JSString *jsstr = JS_ValueToString(cx, *value); // see JS_ConvertValue
+	JL_S_ASSERT( jsstr, "Unable to convert to string." );
 
 	V_VT(variant) = VT_BSTR;
-	V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)JS_GetStringChars(str), JS_GetStringLength(str) );
+
+	size_t srclen;
+	const jschar *src;
+	src = JS_GetStringCharsAndLength(jsstr, &srclen);
+
+	V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)src, srclen );
 
 	return JS_TRUE;
 	JL_BAD;

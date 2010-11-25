@@ -208,10 +208,16 @@ DEFINE_FUNCTION( DrawChar ) {
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, JL_ARG(1));
 	JL_S_ASSERT( jsstr != NULL, "Invalid string." );
-	JL_S_ASSERT( JL_GetStringLength(jsstr) == 1, "Invalid char" );
-	jschar *str;
-	str = JS_GetStringChars(jsstr);
-	JL_S_ASSERT( str != NULL, "Invalid string." );
+
+//	JL_S_ASSERT( JL_GetStringLength(jsstr) == 1, "Invalid char" );
+//	jschar *str;
+//	str = JS_GetStringChars(jsstr);
+//	JL_S_ASSERT( str != NULL, "Invalid string." );
+
+	size_t strlen;
+	const jschar *str;
+	str = JS_GetStringCharsAndLength(jsstr, &strlen);
+	JL_S_ASSERT( strlen == 1, "Invalid char" );
 
 	FTCHK( FT_Load_Char(pv->face, str[0], FT_LOAD_RENDER) );
 
@@ -269,11 +275,14 @@ DEFINE_FUNCTION( DrawString ) {
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, JL_ARG(1));
 	JL_S_ASSERT( jsstr != NULL, "Invalid string." );
-	jschar *str;
-	str = JS_GetStringChars(jsstr);
-	JL_S_ASSERT( str != NULL, "Invalid string." );
+	//jschar *str;
+	//str = JS_GetStringChars(jsstr);
+	//JL_S_ASSERT( str != NULL, "Invalid string." );
+	//size_t strlen;
+	//strlen = JL_GetStringLength(jsstr);
 	size_t strlen;
-	strlen = JL_GetStringLength(jsstr);
+	const jschar *str;
+	str = JS_GetStringCharsAndLength(jsstr, &strlen);
 
 	bool keepTrailingSpace;
 	keepTrailingSpace = false;

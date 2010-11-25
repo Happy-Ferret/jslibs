@@ -1055,7 +1055,12 @@ DEFINE_FUNCTION( EvalInStackFrame ) {
 
 	JSString *jsstr;
 	jsstr = JSVAL_TO_STRING( JL_ARG(1) );
-	JL_CHK( JS_EvaluateUCInStackFrame(cx, fp, JS_GetStringChars(jsstr), (uintN)JL_GetStringLength(jsstr), JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), JL_RVAL) );
+
+	size_t strlen;
+	const jschar *str;
+	str = JS_GetStringCharsAndLength(jsstr, &strlen);
+
+	JL_CHK( JS_EvaluateUCInStackFrame(cx, fp, str, (uintN)strlen, JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;

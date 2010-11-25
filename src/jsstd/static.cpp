@@ -56,7 +56,75 @@ $TOC_MEMBER $INAME
 #define EXPAND_SOURCE_ARG_FUNCTION 2
 //#define EXPAND_SOURCE_SCOPE 3
 
+/*
+static jschar wstrstr(const jschar *src, const jschar *srcEnd, const jschar *sub, const jschar *subEnd) {
+
+	size_t subLen = subEnd - sub;
+	for (;;) {
+
+		const jschar *pos = wmemchr(src, sub[0], srcEnd - src);
+		if ( pos == NULL || srcEnd - pos < subLen )
+			return NULL;
+		if ( wmemcmp(pos, sub, subLen) == 0 )
+			return pos;
+		src = pos;
+	}
+}
+*/
+
 DEFINE_FUNCTION( Expand ) {
+
+#if 0
+	JL_DEFINE_FUNCTION_OBJ;
+
+	jl::Stack<jschar> stack;
+	js::AutoValueRooter value(cx);
+	JLStr srcStr;
+
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
+
+	JL_S_ASSERT_OBJECT( JL_ARG(2) );
+	JSObject *map;
+	map = JSVAL_TO_OBJECT( JL_ARG(2) );
+
+	ssize_t len;
+	const jschar *src, *srcEnd;
+	len = srcStr.Length();
+	src = srcStr.GetConstJsStr();
+	srcEnd = src + len;
+
+	const jschar *tmp, *txt;
+	txt = src;
+
+	for (;;) {
+
+
+		tmp = txt;
+		do {
+
+			tmp = wmemchr(tmp, L'$', srcEnd-tmp);
+			if ( !tmp )
+				break;
+			++tmp;
+		} while ( tmp != srcEnd && *tmp != L'(' );
+
+		if ( tmp ) {
+		
+			JL_CHK( JS_GetUCProperty(cx, map, tmp, srcEnd-tmp, value.jsval_addr()) );
+			JSString *jsstr = JS_ValueToString(cx, value.jsval_value());
+		}
+
+	}
+
+//	memchr(src, L'$'
+//	wcsstr(L"a", L"ab");
+
+
+	return JS_TRUE;
+	JL_BAD;
+
+#else
+
 
 	JLStr str;
 
@@ -133,6 +201,8 @@ next:
 			jl::StackPush( &stack, chunk );
 			break;
 		}
+
+
 
 		chunk = (Chunk*)jl_malloc(sizeof(Chunk));
 		JL_S_ASSERT_ALLOC(chunk);
@@ -216,6 +286,9 @@ bad_free_stack:
 	}
 bad:
 	return JS_FALSE;
+
+#endif
+
 }
 
 
@@ -297,9 +370,14 @@ $TOC_MEMBER $INAME
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 DEFINE_FUNCTION( InternString ) {
 
-	JSString *str = JS_ValueToString(cx, vp[2]);
-	JL_CHK( str );
-	JL_CHK( JS_InternUCStringN(cx, JS_GetStringChars(str), JL_GetStringLength(str)) );
+	JSString *jsstr = JS_ValueToString(cx, vp[2]);
+	JL_CHK( jsstr );
+
+	size_t length;
+	const jschar *chars;
+	chars = JS_GetStringCharsAndLength(jsstr, &length);
+
+	JL_CHK( JS_InternUCStringN(cx, chars, length) );
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1143,10 +1221,14 @@ DEFINE_FUNCTION( SandboxEval ) {
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, JL_ARG(1));
 	JL_CHK( jsstr );
+
+//	size_t srclen;
+//	srclen = JL_GetStringLength(jsstr);
+//	jschar *src;
+//	src = JS_GetStringChars(jsstr);
 	size_t srclen;
-	srclen = JL_GetStringLength(jsstr);
-	jschar *src;
-	src = JS_GetStringChars(jsstr);
+	const jschar *src;
+	src = JS_GetStringCharsAndLength(jsstr, &srclen);
 
 	JSOperationCallback prev;
 	prev = JS_SetOperationCallback(scx, SandboxMaxOperationCallback);

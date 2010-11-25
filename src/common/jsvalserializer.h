@@ -167,7 +167,12 @@ namespace jl {
 				if ( s == NULL )
 					JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "a valid string");
 
-				*this << SerializerBufferInfo(JS_GetStringChars(jsstr), JS_GetStringLength(jsstr));
+
+				// *this << SerializerBufferInfo(JS_GetStringChars(jsstr), JS_GetStringLength(jsstr));
+				size_t length;
+				const jschar *chars;
+				chars = JS_GetStringCharsAndLength(jsstr, &length);
+				*this << SerializerBufferInfo(chars, length);
 
 //				*this << s;
 				//JL_CHK( obj->getProperty(cx, idArray->vector[i], &value) );
@@ -198,7 +203,11 @@ namespace jl {
 
 					type = JLTString;
 					JSString *jsstr = JSVAL_TO_STRING(val);
-					*this << type << SerializerBufferInfo(JS_GetStringChars(jsstr), JS_GetStringLength(jsstr));
+					// *this << type << SerializerBufferInfo(JS_GetStringChars(jsstr), JS_GetStringLength(jsstr));
+					size_t length;
+					const jschar *chars;
+					chars = JS_GetStringCharsAndLength(jsstr, &length);
+					*this << type << SerializerBufferInfo(chars, length);
 				} else
 				if ( JSVAL_IS_VOID(val) ) {
 
