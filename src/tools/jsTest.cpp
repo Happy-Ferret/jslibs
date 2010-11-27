@@ -73,16 +73,23 @@ __forceinline bool JL_Alloc( T*&ptr, size_t count = 1 ) {
 	return ptr != NULL;
 }
 
+#include <windows.h>
+
+double AccurateTimeCounter() {
+
+	static volatile LONGLONG initTime = 0; // initTime helps in avoiding precision waste.
+	LARGE_INTEGER frequency, performanceCount;
+	BOOL result = ::QueryPerformanceFrequency(&frequency);
+	DWORD_PTR oldmask = ::SetThreadAffinityMask(::GetCurrentThread(), 0); // manage bug in BIOS or HAL
+	result = ::QueryPerformanceCounter(&performanceCount);
+	if ( initTime == 0 )
+		initTime = performanceCount.QuadPart;
+	::SetThreadAffinityMask(::GetCurrentThread(), oldmask);
+	return (double)1000 * (performanceCount.QuadPart-initTime) / (double)frequency.QuadPart;
+}
+
 
 int main(int argc, char* argv[]) {
-
-
-	double dou = -1;
-
-		
-	unsigned int xx = dou;
-
-
 
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
@@ -95,14 +102,31 @@ int main(int argc, char* argv[]) {
 
 	JS_InitClass(cx, globalObject, NULL, js::Jsvalify(&jl_BlobClass), constructor, 0, NULL, NULL, NULL, NULL);
 
-	jsval rval;
-	
-	char *script = 
-		"for ( var i = 0; i < 2; i++ )"
-		"  [ 0 for ( it in Blob() ) ];";
 
-	if ( !JS_EvaluateScript(cx, globalObject, script, strlen(script), "<inline>", 0, &rval) )
-		return EXIT_FAILURE;
+	JSObject *root = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
+	int index = 0;
+
+	jsval *value;
+	
+	double t, err;
+	t = AccurateTimeCounter();
+	err = AccurateTimeCounter() - t;
+	t = AccurateTimeCounter();
+
+	for ( int i = 0; i < 10000; i++ ) {
+
+		value = (jsval*)malloc(sizeof(jsval));
+
+		JS_SetPropertyById(cx, root, INT_TO_JSID(index++), value);
+		//JS_AddValueRoot(cx, value);
+	}
+
+
+	t = AccurateTimeCounter() - t - err;
+
+	printf("%f\n", t);
+
+
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);

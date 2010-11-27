@@ -219,16 +219,19 @@ public:
 
 	ALWAYS_INLINE operator T*() const {
 
+		JL_ASSERT( _top != NULL );
 		return &_top->data;
 	}
 
 	ALWAYS_INLINE T& operator*() const {
 
+		JL_ASSERT( _top != NULL );
 		return _top->data;
 	}
 
 	ALWAYS_INLINE T* operator->() const {
 
+		JL_ASSERT( _top != NULL );
 		return &_top->data;
 	}
 
@@ -242,6 +245,7 @@ public:
 
 	ALWAYS_INLINE Stack& operator--() { // --s
 
+		JL_ASSERT( _top != NULL );
 		Item* oldItem = _top;
 		_top = _top->prev;
 		oldItem->~Item();
@@ -283,12 +287,14 @@ public:
 
 	ALWAYS_INLINE T* operator[]( int i ) const {
 
+		JL_ASSERT( _top != NULL );
 		for ( Item* item = _top; i; item = item->prev, --i );
 		return &_top->data;
 	}
 
 	ALWAYS_INLINE size_t Length() const {
 
+		JL_ASSERT( _top != NULL );
 		size_t length = 0;
 		for ( Item* item = _top; item; item = item->prev )
 			++length;

@@ -546,7 +546,6 @@ enum JLErrNum {
 #define JL_CHK( status ) \
 	JL_MACRO_BEGIN \
 		if (unlikely( !(status) )) { \
-	/*		IFDEBUG( fprintf(stderr, "DEBUG: JL_CHK failed" IFDEBUG(" (@" JL_CODE_LOCATION ")") "\n") ); */ \
 			goto bad; \
 		} \
 	JL_MACRO_END
@@ -1873,6 +1872,32 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 }
 
 
+
+// jschar
+
+static ALWAYS_INLINE JSBool
+JL_NativeToJsval( JSContext *cx, const jschar* cval, size_t length, jsval *vp ) {
+
+	if (unlikely( cval == NULL )) {
+
+		*vp = JSVAL_VOID;
+		return JS_TRUE;
+	}
+	if (unlikely( length == 0 )) {
+
+		*vp = JL_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
+	JSString *jsstr = JS_NewUCStringCopyN(cx, cval, length);
+	if (unlikely( jsstr == NULL ))
+		JL_REPORT_ERROR( "Unable to create the string." );
+	*vp = STRING_TO_JSVAL(jsstr);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 // c-strings
 
 static ALWAYS_INLINE JSBool
@@ -1904,7 +1929,7 @@ JL_NativeToJsval( JSContext *cx, const char* cval, size_t length, jsval *vp ) {
 		*vp = JSVAL_VOID;
 		return JS_TRUE;
 	}
-	if (unlikely( *cval == '\0' )) {
+	if (unlikely( length == 0 )) {
 
 		*vp = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
