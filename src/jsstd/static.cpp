@@ -74,221 +74,129 @@ static jschar wstrstr(const jschar *src, const jschar *srcEnd, const jschar *sub
 
 DEFINE_FUNCTION( Expand ) {
 
-#if 0
 	JL_DEFINE_FUNCTION_OBJ;
-
-	jl::Stack<jschar> stack;
-	js::AutoValueRooter value(cx);
-	JLStr srcStr;
-
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
-
-	JL_S_ASSERT_OBJECT( JL_ARG(2) );
-	JSObject *map;
-	map = JSVAL_TO_OBJECT( JL_ARG(2) );
-
-	ssize_t len;
-	const jschar *src, *srcEnd;
-	len = srcStr.Length();
-	src = srcStr.GetConstJsStr();
-	srcEnd = src + len;
-
-	const jschar *tmp, *txt;
-	txt = src;
-
-	for (;;) {
-
-
-		tmp = txt;
-		do {
-
-			tmp = wmemchr(tmp, L'$', srcEnd-tmp);
-			if ( !tmp )
-				break;
-			++tmp;
-		} while ( tmp != srcEnd && *tmp != L'(' );
-
-		if ( tmp ) {
-		
-			JL_CHK( JS_GetUCProperty(cx, map, tmp, srcEnd-tmp, value.jsval_addr()) );
-			JSString *jsstr = JS_ValueToString(cx, value.jsval_value());
-		}
-
-	}
-
-//	memchr(src, L'$'
-//	wcsstr(L"a", L"ab");
-
-
-	return JS_TRUE;
-	JL_BAD;
-
-#else
-
-
-	JLStr str;
-
-	JL_DEFINE_FUNCTION_OBJ;
-
-	JL_S_ASSERT_ARG_RANGE(1, 2);
-
-	const char *srcBegin;
-	size_t srcLen;
-
-	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &srcBegin, &srcLen) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	srcLen = str.Length();
-	srcBegin = str.GetConstStr();
-
-	JL_S_ASSERT( srcBegin[srcLen] == '\0', "Invalid input string." ); // else strstr may failed.
-
-	const char *srcEnd;
-	srcEnd = srcBegin + srcLen;
-
-	int mapSource;
-	jsval map;
-
-	//if ( argc < 2 ) {
-
-	//	map = JSVAL_VOID;
-	//	mapSource = EXPAND_SOURCE_SCOPE;
-	//	goto next;
-	//}
-
-	if ( JL_JsvalIsFunction(cx, JL_ARG(2)) ) {
-
-		map = JL_ARG(2);
-		mapSource = EXPAND_SOURCE_ARG_FUNCTION;
-		goto next;
-	}
-
-	if ( !JSVAL_IS_PRIMITIVE( JL_ARG(2) ) ) {
-
-		map = JL_ARG(2);
-		mapSource = EXPAND_SOURCE_ARG;
-		goto next;
-	}
-
-	JL_REPORT_ERROR( "Invalid argument." );
-
-
-next:
 
 	typedef struct {
-		char *data;
-		size_t length;
+		const jschar *chars;
+		size_t count;
+		JSString *root;
 	} Chunk;
 
-	void *stack;
-	jl::StackInit( &stack );
-	Chunk *chunk;
-	const char *tok;
-	size_t totalLength;
-	totalLength = 0;
+	jl::Stack<Chunk> stack;
+	js::AutoValueRooter value(cx);
 
-	while ( *srcBegin != '\0' ) {
+	JLStr srcStr;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
 
-		tok = strstr(srcBegin, "$(");
-		if ( tok == NULL ) { // not found
+	JSObject *mapObj = NULL;
+	jsval *mapFct = NULL;
+	
+	if ( JL_JsvalIsFunction(cx, JL_ARG(2)) )
+		mapFct = &JL_ARG(2);
+	else
+	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(2)) )
+		mapObj = JSVAL_TO_OBJECT(JL_ARG(2));
 
-			chunk = (Chunk*)jl_malloc(sizeof(Chunk));
-			chunk->length = srcEnd - srcBegin;
-			chunk->data = (char*)jl_malloc(chunk->length);
+	ssize_t total;
+
+	const jschar *src, *srcEnd;
+	src = srcStr.GetConstJsStr();
+	srcEnd = src + srcStr.Length();
+
+	const jschar *txt, *key, *keyEnd;
+
+	total = 0;
+	txt = src;
+	for (;;) {
+
+		key = txt;
+		do {
+
+			key = wmemchr(key, L'$', srcEnd-key);
+			if ( key == NULL || ++key == srcEnd ) {
+
+				++stack;
+				stack->chars = txt;
+				stack->count = srcEnd - txt;
+				total += stack->count;
+				goto end;
+			}
+		} while ( *key != L'(' );
+
+		if ( key ) {
+
+			size_t txtLen = key - 1 - txt;
+			if ( txtLen > 0 ) {
+				
+				++stack;
+				stack->chars = txt;
+				stack->count = txtLen;
+				total += txtLen;
+			}
+
+			++key;
+			keyEnd = wmemchr(key, L')', srcEnd-key);
 			
-			memcpy(chunk->data, srcBegin, chunk->length);
+			if ( keyEnd ) {
 
-			totalLength += chunk->length;
-			jl::StackPush( &stack, chunk );
-			break;
+				txt = keyEnd+1;
+				
+				if ( mapObj ) {
+
+					JL_CHK( JS_GetUCProperty(cx, mapObj, key, keyEnd - key, value.jsval_addr()) );
+				} else
+				if ( mapFct ) {
+
+					JL_CHK( JL_NativeToJsval(cx, key, keyEnd - key, value.jsval_addr()) );
+					JL_CHK( JS_CallFunctionValue(cx, obj, *mapFct, 1, value.jsval_addr(), value.jsval_addr()) );
+				} else {
+
+					continue;
+				}
+
+				if ( value.value().isNullOrUndefined() )
+					continue;
+
+				++stack;
+				stack->root = JS_ValueToString(cx, value.jsval_value());
+				JS_AddStringRoot(cx, &stack->root);
+				stack->chars = JS_GetStringCharsAndLength(stack->root, &stack->count);
+				total += stack->count;
+			} else {
+
+				goto end;
+			}
 		}
-
-
-
-		chunk = (Chunk*)jl_malloc(sizeof(Chunk));
-		JL_S_ASSERT_ALLOC(chunk);
-		chunk->length = tok - srcBegin;
-		chunk->data = (char*)jl_malloc(chunk->length);
-		memcpy(chunk->data, srcBegin, chunk->length);
-//		chunk->data = srcBegin;
-		totalLength += chunk->length;
-		jl::StackPush( &stack, chunk );
-
-		srcBegin = tok + 2; // length of "$("
-		tok = strchr(srcBegin, ')'); // tok = strstr(srcBegin, ")"); // slower for only one char
-		if ( tok == NULL ) // not found
-			break;
-
-		//if ( mapSource == EXPAND_SOURCE_SCOPE ) {
-
-		//	char tmp = *tok; // (TBD) try to replace this trick
-		//	*((char*)tok) = '\0';
-		//	JL_CHKB( JL_GetVariableValue(cx, srcBegin, JL_RVAL), bad_free_stack );
-		//	*((char*)tok) = tmp;
-		//} else
-		if ( mapSource == EXPAND_SOURCE_ARG_FUNCTION ) {
-
-			//JL_CHKB( JL_StringAndLengthToJsval(cx, JL_RVAL, srcBegin, tok - srcBegin), bad_free_stack );
-			JL_CHKB( JL_NativeToJsval(cx, srcBegin, tok - srcBegin, JL_RVAL), bad_free_stack );
-
-			JL_CHKB( JS_CallFunctionValue(cx, obj, map, 1, JL_RVAL, JL_RVAL), bad_free_stack );
-		} else {
-
-			char tmp = *tok; // (TBD) try to replace this trick ...
-			*((char*)tok) = '\0';
-			JL_CHKB( JS_GetProperty(cx, JSVAL_TO_OBJECT(map), srcBegin, JL_RVAL), bad_free_stack );
-			*((char*)tok) = tmp;
-		}
-
-		if ( !JSVAL_IS_VOID( *JL_RVAL ) ) {
-
-			chunk = (Chunk*)jl_malloc(sizeof(Chunk));
-//			JL_CHKB( JL_JsvalToStringAndLength(cx, JL_RVAL, &chunk->data, &chunk->length), bad_free_stack );
-
-			JLStr str1;
-			JL_CHKB( JL_JsvalToNative(cx, *JL_RVAL, &str1), bad_free_stack );
-			chunk->length = str1.Length();
-			chunk->data = str1.GetStrZOwnership();
-
-			totalLength += chunk->length;
-			jl::StackPush( &stack, chunk );
-		}
-
-		srcBegin = tok + 1; // length of ")"
 	}
 
-	char *expandedString;
-	expandedString = (char*)JS_malloc(cx, totalLength +1);
-	JL_CHKB( expandedString, bad_free_stack );
-	expandedString[totalLength] = '\0';
+end:
 
-	expandedString += totalLength;
-	while ( !jl::StackIsEnd(&stack) ) {
+	jschar *res, *tmp;
+	res = (jschar*)JS_malloc(cx, total*sizeof(jschar));
+	tmp = res + total;
+	
+	while ( stack ) {
 
-		Chunk *chunk = (Chunk*)jl::StackPop(&stack);
-		expandedString -= chunk->length;
-		memcpy(expandedString, chunk->data, chunk->length);
-		jl_free(chunk->data);
-		jl_free(chunk);
+		tmp -= stack->count;
+		wmemcpy(tmp, stack->chars, stack->count);
+		JS_RemoveStringRoot(cx, &stack->root);
+		--stack;
 	}
 
 	JSString *jsstr;
-	jsstr = JS_NewString(cx, expandedString, totalLength);
+	jsstr = JS_NewUCString(cx, res, total);
 	JL_CHK( jsstr );
 	*JL_RVAL = STRING_TO_JSVAL( jsstr );
+
 	return JS_TRUE;
 
-bad_free_stack:
-
-	while ( !jl::StackIsEnd(&stack) ) {
-
-		Chunk *chunk = (Chunk*)jl::StackPop(&stack);
-		jl_free(chunk);
-	}
 bad:
+	while ( stack ) {
+
+		JS_RemoveStringRoot(cx, &stack->root);
+		--stack;
+	}
 	return JS_FALSE;
-
-#endif
-
 }
 
 

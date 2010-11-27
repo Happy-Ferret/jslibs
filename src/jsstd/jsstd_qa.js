@@ -707,7 +707,35 @@ LoadModule('jsstd');
 		QA.ASSERT( Expand(' $(h) $(', { h:'Hello', w:'World' }), ' Hello ', 'expanding a bugous string' );
 		QA.ASSERT( Expand(' $(h) $', { h:'Hello', w:'World' }), ' Hello $', 'expanding a string' );
 		QA.ASSERT( Expand(' $(h)', { h:'Hello', w:'World' }), ' Hello', 'expanding a string' );
-		
+
+		QA.ASSERT( Expand('$(c)'), '', 'expanding a string' );
+		QA.ASSERT( Expand('$(c)a'), 'a', 'expanding a string' );
+		QA.ASSERT( Expand('a$(c'), 'a', 'expanding a string' );
+		QA.ASSERT( Expand('a$()c'), 'ac', 'expanding a string' );
+		QA.ASSERT( Expand('a$(b)c'), 'ac', 'expanding a string' );
+		QA.ASSERT( Expand('a$(b)c', {}), 'ac', 'expanding a string' );
+		QA.ASSERT( Expand('a$(b)c', { b:'' }), 'ac', 'expanding a string' );
+		QA.ASSERT( Expand('$(b)c', { b:'' }), 'c', 'expanding a string' );
+		QA.ASSERT( Expand('a$(b)', { b:'' }), 'a', 'expanding a string' );
+		QA.ASSERT( Expand('a$()', { b:'' }), 'a', 'expanding a string' );
+		QA.ASSERT( Expand('$()a', { b:'' }), 'a', 'expanding a string' );
+		QA.ASSERT( Expand('$(b)$(b)$(b)', { b:'' }), '', 'expanding a string' );
+		QA.ASSERT( Expand('$(b)$(b)$(b)', { b:'x' }), 'xxx', 'expanding a string' );
+		QA.ASSERT( Expand('$(b)$(b$(b)', { b:'x' }), 'x', 'expanding a string' );
+		QA.ASSERT( Expand('$(b)$(b$(b)'), '', 'expanding a string' );
+
+		QA.ASSERT( Expand('$(b)$(b$(b)', function(key) key), 'bb$(b', 'expanding a string' );
+		QA.ASSERT( Expand('$(b)$(b$(b', function(key) key), 'b', 'expanding a string' );
+		QA.ASSERT( Expand('$()', function(key) key), '', 'expanding a string' );
+		QA.ASSERT( Expand('a$(b)c$(d)e', function(key) key), 'abcde', 'expanding a string' );
+		QA.ASSERT( Expand('$(b)c$(d)', function(key) key), 'bcd', 'expanding a string' );
+		QA.ASSERT( Expand('$(a)', function(key) undefined), '', 'expanding a string' );
+		QA.ASSERT( Expand('$(a)', function(key) null), '', 'expanding a string' );
+		QA.ASSERT( Expand('', function(key) key), '', 'expanding a string' );
+		QA.ASSERT( Expand('', function(key) key), '', 'expanding a string' );
+
+		QA.ASSERT_EXCEPTION( function() Expand('$()', function(key) { throw 123 }), 123, 'Expand function throw exception' );
+
 		var obj = {
 			toString: function() {
 				return 'Hello';
