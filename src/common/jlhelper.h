@@ -3193,9 +3193,7 @@ namespace jl {
 			if ( size < sizeof(void*) )
 				size = sizeof(void*);
 
-
 			if ( _preallocEnd == NULL ) {
-
 
 				_preallocEnd = _prealloc + (sizeof(_prealloc)/size)*size;
 				for ( uint8_t *it = _prealloc; it < _preallocEnd; it += size ) {

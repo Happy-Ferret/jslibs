@@ -82,7 +82,7 @@ DEFINE_FUNCTION( Expand ) {
 		JSString *root;
 	} Chunk;
 
-	jl::Stack<Chunk> stack;
+	jl::Stack<Chunk, jl::StaticAlloc<>> stack;
 	js::AutoValueRooter value(cx);
 
 	JLStr srcStr;
