@@ -2462,36 +2462,34 @@ JL_GetProperty( JSContext *cx, JSObject *obj, const char *propertyName, T *cval 
 ///////////////////////////////////////////////////////////////////////////////
 // exception
 
-/*
+
 static INLINE JSBool
-JL_GetScriptLocation( JSContext *cx ) {
+JL_GetScriptLocation( JSContext *cx, char *location, size_t locationLen ) {
 
 	JSStackFrame *fp = NULL;
+	do {
 
+		JS_FrameIterator(cx, &fp);
+	} while ( fp && !JS_GetFramePC(cx, fp) );
 
-	for (;;) {
-		do {
-
-			JS_FrameIterator(cx, &fp);
-		} while ( fp && !JS_GetFramePC(cx, fp) );
-
-		JL_CHK( fp );
-		JSScript *script;
-		script = JS_GetFrameScript(cx, fp);
-		JL_CHK( script );
-		const char *filename;
-		int lineno;
-		filename = JS_GetScriptFilename(cx, script);
-		if ( filename == NULL || *filename == '\0' )
-			filename = "<no_filename>";
-		lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
-	}
+	JL_CHK( fp );
+	JSScript *script;
+	script = JS_GetFrameScript(cx, fp);
+	JL_CHK( script );
+	int lineno;
+	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
+	const char *filename;
+	filename = JS_GetScriptFilename(cx, script);
+	if ( filename == NULL || *filename == '\0' )
+		filename = "<no_filename>";
+	strcpy(location, filename);
+	strcat(location, ":");
+	ltoa(lineno, location + strlen(location), 10);
 
 	return JS_TRUE;
-bad:
-	return NULL;
+	JL_BAD;
 }
-*/
+
 
 
 static INLINE JSBool

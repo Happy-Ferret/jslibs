@@ -159,7 +159,8 @@ DEFINE_FUNCTION( Expand ) {
 
 				++stack;
 				stack->root = JS_ValueToString(cx, value.jsval_value());
-				JS_AddStringRoot(cx, &stack->root);
+				JL_CHK( stack->root );
+				JL_CHK( JS_AddStringRoot(cx, &stack->root) );
 				stack->chars = JS_GetStringCharsAndLength(stack->root, &stack->count);
 				total += stack->count;
 			} else {
@@ -170,9 +171,9 @@ DEFINE_FUNCTION( Expand ) {
 	}
 
 end:
-
 	jschar *res, *tmp;
-	res = (jschar*)JS_malloc(cx, total*sizeof(jschar));
+	res = (jschar*)JS_malloc(cx, total * sizeof(jschar));
+	JL_CHK( res );
 	tmp = res + total;
 	
 	while ( stack ) {
@@ -284,7 +285,7 @@ DEFINE_FUNCTION( InternString ) {
 	size_t length;
 	const jschar *chars;
 	chars = JS_GetStringCharsAndLength(jsstr, &length);
-
+	JL_CHK( chars );
 	JL_CHK( JS_InternUCStringN(cx, chars, length) );
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -733,7 +734,7 @@ DEFINE_FUNCTION( XdrDecode ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( text )
-  Report the given _text_ as warning. The warning is reported on the stderr. Warnings ignored in unsafeMode.
+  Report the given _text_ as warning. The warning is reported on the stderr. Warnings are ignored in unsafeMode.
 **/
 DEFINE_FUNCTION( Warning ) {
 
@@ -754,7 +755,7 @@ DEFINE_FUNCTION( Warning ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( expression [, failureMessage ] )
-  If the argument expression compares equal to zero, the failureMessage is written to the standard error device and the program stops its execution.
+  If the argument expression compares equal to zero, the failureMessage is written to the standard error device and the program stops its execution. Asserts are ignored in unsafeMode.
   $H example
   {{{
   var foo = ['a', 'b', 'c'];
@@ -766,6 +767,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Assert ) {
 
+	if ( !JL_IS_SAFE )
+		return JS_TRUE;
+
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
 	bool assert;
@@ -773,12 +777,12 @@ DEFINE_FUNCTION( Assert ) {
 	if ( !assert ) {
 
 		JLStr str;
-
 		if ( JL_ARG_ISDEF(2) )
 			JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &str) );
 		else
 			str = JLStr("Assertion failed.", true);
-		JS_ReportError( cx, str.GetConstStr() );
+		
+		JS_ReportError( cx, "%s", str.GetConstStr());
 		return JS_FALSE;
 	}
 
@@ -846,10 +850,16 @@ $TOC_MEMBER $INAME
   {{{
   LoadModule('jsstd');
   LoadModule('jsio');
-  Print( 't0: '+TimeCounter(), '\n' ); // prints: 1743731894.4259675
-  Print( 't1: '+TimeCounter(), '\n' ); // prints: 1743731896.1083043
+  Print( 't0: '+TimeCounter(), '\n' );
+  Print( 't1: '+TimeCounter(), '\n' );
   Sleep(100);
-  Print( 't2: '+TimeCounter(), '\n' ); // prints: 1743732003.6174989
+  Print( 't2: '+TimeCounter(), '\n' );
+  }}}
+  prints:
+  {{{
+  t0: 0
+  t1: 0.15615914588863317
+  t2: 100.02473070050955
   }}}
 **/
 DEFINE_FUNCTION( TimeCounter ) {
@@ -954,7 +964,7 @@ DEFINE_FUNCTION( Print ) {
 	jsval fval;
 	JL_CHK( GetConfigurationValueById(cx, JLID(cx, stdout), &fval) );
 	*JL_RVAL = JSVAL_VOID;
-	if ( JL_JsvalIsFunction(cx, fval) )
+	if (likely( JL_JsvalIsFunction(cx, fval) ))
 		return JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fval, JL_ARGC, JL_ARGV, &fval);
 	return JS_TRUE;
 	JL_BAD;
@@ -1303,6 +1313,35 @@ DEFINE_PROPERTY( currentFilename ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $ARRAY $INAME $READONLY
+  Is the line number of the script being executed.
+**/
+DEFINE_PROPERTY( currentLineNumber ) {
+	
+	JSStackFrame *fp = JL_CurrentStackFrame(cx);
+	if ( fp == NULL ) {
+
+		*vp = JSVAL_VOID;
+		return JS_TRUE;
+	}
+	JSScript *script = JS_GetFrameScript(cx, fp);
+	if ( script == NULL ) {
+
+		*vp = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	uintN lineno;
+	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
+
+	JL_CHK( JL_NativeToJsval(cx, lineno, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
@@ -1468,6 +1507,7 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( currentFilename )
+		PROPERTY_READ( currentLineNumber )
 		PROPERTY_READ( isConstructing )
 		PROPERTY( disableGarbageCollection )
 //		PROPERTY( processPriority )

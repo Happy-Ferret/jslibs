@@ -1,10 +1,9 @@
 LoadModule('jsstd'); 
 
 
-//Print ( Expand('test$(A)') );
-//Print( uneval( Expand('$(w) qs fqsdf sqf', { w:'World' }) ), '\n' );
-//throw 0;
+Print( currentFilename+':'+currentLineNumber + '\n' );
 
+throw 0;
 
 LoadModule('jsstd'); Exec('../common/tools.js');
 // var QA = FakeQAApi;
