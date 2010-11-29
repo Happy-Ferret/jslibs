@@ -183,7 +183,7 @@ LoadModule('jssqlite');
 		db.Close();
 
 
-/// columnNames property independency
+/// columnNames property independency [rmtf]
 
 		var db = new Database();
 		var res1 = db.Query('select 1');
@@ -191,7 +191,8 @@ LoadModule('jssqlite');
 		var res2 = db.Query('select 2');
 		QA.ASSERT( res2.columnNames.join(','), '2', 'columns name' );
 
-/// parameters
+
+/// parameters [rmtf]
 
 		var db = new Database();
 		var res = db.Query('select "test", ?, ?aaa, ?, @0', [5,6,7]);

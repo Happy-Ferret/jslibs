@@ -108,7 +108,7 @@ LoadModule('jscrypt');
 			Print( 'decrypted data: '+decipheredData, '\n' );
 
 
-/// Key size
+/// Key size [rm]
 
   var fortuna = new Prng('fortuna');
   fortuna.AutoEntropy(123); // give more entropy

@@ -1,7 +1,7 @@
 LoadModule('jsstd');
 LoadModule('jstrimesh');
 
-/// basic test
+/// basic test [rmtf]
 
 	var t = new Trimesh();
 

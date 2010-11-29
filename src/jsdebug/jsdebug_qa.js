@@ -1,10 +1,12 @@
 LoadModule('jsdebug');
 
-/// list all properties of the global object
+
+/// list all properties of the global object  [rt]
 
 	PropertiesList( global );
 
-/// test OBJ_SCOPE in JS_PropertyIterator
+
+/// test OBJ_SCOPE in JS_PropertyIterator [rmtf]
 
 	PropertiesList({ a:123 });
 	PropertiesList(new String());

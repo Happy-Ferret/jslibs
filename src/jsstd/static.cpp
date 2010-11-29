@@ -119,7 +119,7 @@ DEFINE_FUNCTION( Expand ) {
 				stack->chars = txt;
 				stack->count = srcEnd - txt;
 				total += stack->count;
-				goto end;
+				goto assemble;
 			}
 		} while ( *key != L'(' );
 
@@ -158,30 +158,39 @@ DEFINE_FUNCTION( Expand ) {
 					continue;
 
 				++stack;
-				stack->root = JS_ValueToString(cx, value.jsval_value());
-				JL_CHK( stack->root );
-				JL_CHK( JS_AddStringRoot(cx, &stack->root) );
-				stack->chars = JS_GetStringCharsAndLength(stack->root, &stack->count);
+
+				if ( !value.value().isString() ) { // 'convert to string' and 'root new string' if necessary.
+
+					stack->root = JS_ValueToString(cx, value.jsval_value());
+					JL_CHK( stack->root );
+					JL_CHK( JS_AddStringRoot(cx, &stack->root) );
+					stack->chars = JS_GetStringCharsAndLength(stack->root, &stack->count);
+			} else {
+
+					stack->root = NULL;
+					stack->chars = JS_GetStringCharsAndLength(value.value().toString(), &stack->count);
+				}
+
 				total += stack->count;
 			} else {
 
-				goto end;
+				goto assemble;
 			}
 		}
 	}
 
-end:
+assemble:
 	jschar *res, *tmp;
 	res = (jschar*)JS_malloc(cx, total * sizeof(jschar));
 	JL_CHK( res );
 	tmp = res + total;
 	
-	while ( stack ) {
+	for ( ; stack; --stack ) {
 
 		tmp -= stack->count;
 		wmemcpy(tmp, stack->chars, stack->count);
-		JS_RemoveStringRoot(cx, &stack->root);
-		--stack;
+		if ( stack->root != NULL )
+			JS_RemoveStringRoot(cx, &stack->root);
 	}
 
 	JSString *jsstr;
@@ -194,7 +203,8 @@ end:
 bad:
 	while ( stack ) {
 
-		JS_RemoveStringRoot(cx, &stack->root);
+		if ( stack->root != NULL )
+			JS_RemoveStringRoot(cx, &stack->root);
 		--stack;
 	}
 	return JS_FALSE;

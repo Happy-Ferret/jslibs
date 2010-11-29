@@ -31,7 +31,7 @@ LoadModule('jsstd');
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 
 
-/// Blob vs String
+/// Blob vs String [rmtf]
 
 	function tests(CHK, T) {
 
@@ -78,7 +78,7 @@ LoadModule('jsstd');
 	QA.ASSERT( uneval(res1), uneval(res2), 'all split() test' )
 
 
-/// Blob iterator object
+/// Blob iterator object [rmtf]
 
 	var tmp = '';
 	var b = new Blob('ABC123');

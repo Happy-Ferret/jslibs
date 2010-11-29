@@ -91,6 +91,12 @@ double AccurateTimeCounter() {
 
 int main(int argc, char* argv[]) {
 
+
+	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+	SetProcessAffinityMask(GetCurrentProcess(), 1);
+
+
+
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);

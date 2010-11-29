@@ -1,11 +1,11 @@
 LoadModule('jsode');
 
-/// crash 1
+/// crash 1 [rmtf]
 
   new Body(new World);
 
 
-/// crash 2
+/// crash 2 [rmtf]
 
   var world = new World;
   var floor = new GeomPlane(world.space);

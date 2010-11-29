@@ -1,7 +1,8 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-/// bug bz#522024
+
+/// bug bz#522024 [rmtf]
 
 		var list = [];
 		function Add() {
@@ -19,6 +20,7 @@ LoadModule('jsio');
 			 Add(function(s) { });
 
 		Run();
+
 
 /// JSOPTION_ANONFUNFIX option [frm]
 	
@@ -150,7 +152,7 @@ LoadModule('jsio');
 	QA.ASSERT_STR( ex.message.indexOf('not enough arguments') != -1, true, 'LoadModule() error' ); 
 
 
-/// catched error messages
+/// catched error messages [rmtf]
 
 	var buffer = '';
 	var prev = _configuration.stderr;

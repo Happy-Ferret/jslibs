@@ -3147,7 +3147,6 @@ namespace jl {
 	template <const size_t PREALLOC_SIZE = 1024>
 	class _NOVTABLE StaticAlloc : private DefaultAlloc {
 
-
 		void *_last;
 		uint8_t *_preallocEnd;
 

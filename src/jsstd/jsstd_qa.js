@@ -1,6 +1,6 @@
 LoadModule('jsstd');
 
-/// Count object properties
+/// Count object properties [rmtf]
 
 	QA.ASSERT( CountProperties({}), 0, 'test with 0 properties' );
 	QA.ASSERT( CountProperties({a:1}), 1, 'test with 1 properties' );
@@ -581,7 +581,7 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( buf3.Read(6), '123xxx', 'read' );
 
 
-/// Pack int64
+/// Pack int64 [rmtf]
 
 	var buf = new Buffer();
 	var pack = new Pack(buf);
@@ -724,6 +724,8 @@ LoadModule('jsstd');
 		QA.ASSERT( Expand('$(b)$(b$(b)', { b:'x' }), 'x', 'expanding a string' );
 		QA.ASSERT( Expand('$(b)$(b$(b)'), '', 'expanding a string' );
 
+	
+		QA.ASSERT( Expand('a$(b()c)d', function(key) key), 'ab(c)d', 'expanding a string' );
 		QA.ASSERT( Expand('$(b)$(b$(b)', function(key) key), 'bb$(b', 'expanding a string' );
 		QA.ASSERT( Expand('$(b)$(b$(b', function(key) key), 'b', 'expanding a string' );
 		QA.ASSERT( Expand('$()', function(key) key), '', 'expanding a string' );
@@ -754,6 +756,13 @@ LoadModule('jsstd');
 		var o = { title:'My HTML Page', titi:1234, toString:function() { return Expand( this.text, this ) } };
 		o.text = '<html><title>$(title)</title>\n'
 		QA.ASSERT_STR( o, '<html><title>My HTML Page</title>\n', 'expand string using this object' );
+		
+		
+/// Big expand [tr]
+		
+	var exp = StringRepeat('$(X)', 1000);
+	for ( var i = 0 ; i < 10; ++i )
+		Expand(exp, {X:'123'});
 
 
 /// Expand using a callback function [ftrm]
@@ -957,18 +966,18 @@ LoadModule('jsstd');
 		QA.ASSERT( Math.abs(mem1/mem0) < 1.1, true, 'with GC' );
 */
 
-/// Sandbox misc
+/// Sandbox misc [rmtf]
 
 	var s = SandboxEval('var a = Math.abs(-123); a');
 	QA.ASSERT( s, 123, 'abs' );
 
 
-/// Sandbox watchdog
+/// Sandbox watchdog [rmt]
 	
 	QA.ASSERT_EXCEPTION( function() { SandboxEval('for (var i=0; i<10000000000; ++i);') }, OperationLimit, 'OperationLimit detection' );
 
 
-/// Exec function
+/// Exec function [f]
 	
 	var filename = QA.RandomString(10);
 	new File(filename).content = '_exectest++';

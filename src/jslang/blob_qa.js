@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-/// Blob::concat tests using Mozilla String tests
+/// Blob::concat tests using Mozilla String tests [rt]
 
 function TestCase( section, name, expected, result ) QA.ASSERT( result, expected, name );
 var SECTION = '';
@@ -38,7 +38,7 @@ QA.ASSERT( (bString instanceof Blob) && !(bString instanceof String), true, 'no 
 
 
 
-/// Blob::indexOf tests using Mozilla String tests
+/// Blob::indexOf tests using Mozilla String tests [rt]
 
 function TestCase( section, name, expected, result ) QA.ASSERT( result, expected, name );
 var SECTION = '';
@@ -81,7 +81,7 @@ QA.ASSERT( (noo instanceof Blob) && !(noo instanceof String), true, 'no mutation
 
 
 
-/// Blob::lastIndexOf tests using Mozilla String tests
+/// Blob::lastIndexOf tests using Mozilla String tests [rt]
 
 var TEST_STRING = new String( " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~" );
 
@@ -208,7 +208,7 @@ new TestCase( SECTION,  "String.lastIndexOf(" +TEST_STRING + ")", 0, TEST_STRING
 
 
 
-/// Blob::charAt tests using Mozilla String tests
+/// Blob::charAt tests using Mozilla String tests [rt]
 
 function TestCase( section, name, expected, result ) QA.ASSERT( result, expected, name );
 var SECTION = '';
@@ -240,7 +240,7 @@ new TestCase( SECTION,      "var MYOB = new Blob(1234567890); MYOB.charAt(Math.P
 
 
 
-/// Blob::charCodeAt tests using Mozilla String tests
+/// Blob::charCodeAt tests using Mozilla String tests [rt]
 
 function TestCase( section, name, expected, result ) QA.ASSERT( result, expected, name );
 var SECTION = '';
@@ -309,7 +309,7 @@ QA.ASSERT( (aString instanceof Blob) && !(aString instanceof String), true, 'no 
 
 
 
-/// Blob::substring tests using Mozilla String tests
+/// Blob::substring tests using Mozilla String tests [rt]
 
 function TestCase( section, name, expected, result ) QA.ASSERT_STR( result, expected, name );
 function AssertBlob(b) b instanceof Blob;

@@ -1,7 +1,7 @@
 LoadModule('jstask');
 LoadModule('jsio');
 
-/// crash about serializer cleanup
+/// crash about serializer cleanup [rmt]
 
 	var t = new Task(function(){
 		
@@ -22,7 +22,7 @@ LoadModule('jsio');
 		new Task(function(){});
 	}
 
-/// many new threads
+/// many new threads [r]
 
 	var i = 0;
 	while ( !endSignal && i++ < 100 ) {
@@ -297,7 +297,7 @@ LoadModule('jsio');
 	myTask.Response();
 
 
-/// blocking TCP client
+/// blocking TCP client []
 
 	var myTask = new Task(function() {
 
