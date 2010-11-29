@@ -1712,6 +1712,40 @@ DEFINE_FUNCTION( DebugBreak ) {
 }
 
 
+DEFINE_FUNCTION( SetPerfTestMode ) {
+
+	*JL_RVAL = JSVAL_VOID;
+
+#if defined(WIN32)
+
+	JL_CHK( SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS) );
+	JL_CHK( SetProcessPriorityBoost(GetCurrentProcess(), TRUE) );
+	JL_CHK( SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL) );
+	JL_CHK( SetThreadPriorityBoost(GetCurrentThread(), TRUE) );
+
+	SYSTEM_INFO sysinfo;
+	GetSystemInfo( &sysinfo );
+	if ( sysinfo.dwNumberOfProcessors > 1 ) {
+
+		DWORD processAffinityMask, systemAffinityMask;
+		JL_CHK( GetProcessAffinityMask(GetCurrentProcess(), &processAffinityMask, &systemAffinityMask) );
+		JL_CHK( systemAffinityMask != 0 );
+
+		int i;
+		for ( i = 0; !(systemAffinityMask & 1); ++i )
+			systemAffinityMask >>= 1;
+		JL_CHK( SetProcessAffinityMask(GetCurrentProcess(), 1 << i) ); // warning: Do not call SetProcessAffinityMask in a DLL that may be called by processes other than your own.
+		JL_CHK( SetThreadAffinityMask(GetCurrentThread(), 1 << i) );
+	}
+
+	Sleep(0);
+
+#endif // WIN32
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 #ifdef DEBUG
 DEFINE_FUNCTION( TestDebug ) {
@@ -1776,6 +1810,7 @@ CONFIGURE_STATIC
 
 		FUNCTION( DumpHeap )
 		FUNCTION( DebugBreak )
+		FUNCTION( SetPerfTestMode )
 
 	// for internal tests
 	#ifdef DEBUG
