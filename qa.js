@@ -313,6 +313,88 @@ function LaunchTests(itemList, cfg) {
 
 
 
+
+function PerfTest(itemList, cfg) {
+
+	var i;
+	var qaapi = { __noSuchMethod__:function() {}, RandomData:function() '123456789', RandomString:function() 'abcdefghij' };
+
+	SetPerfTestMode();
+	Sleep(100);
+	
+	CollectGarbage();
+
+	TimeCounter();
+	var t = TimeCounter();
+	var err = TimeCounter() - t;
+	
+	var fastItems = [];
+	for each ( var item in itemList ) {
+
+		// CollectGarbage();
+
+		var bestTime = 9999; 
+		for ( i = 0; i < 5; ++i ) {
+		
+			t = TimeCounter();
+			void item.func(qaapi);
+			t = TimeCounter() - t - err;
+			if ( t < bestTime )
+				bestTime = t;
+		}
+
+		if ( bestTime < 50 )
+			fastItems.push(item);
+	}
+
+	
+	CollectGarbage();
+	
+	var timeConstantItems = [];
+	for each ( var item in fastItems ) {
+
+		var diffTime = 0;
+		// CollectGarbage();
+		
+		var t0;
+		for ( i = 0; i < 10; ++i ) {
+		
+			t = TimeCounter();
+			void item.func(qaapi);
+			t = TimeCounter() - t - err;
+
+			if ( t0 != undefined )
+				diffTime += Math.abs(t0 - t);
+				
+			t0 = t;
+		}
+		
+		if ( diffTime / 10 < 1 )
+			timeConstantItems.push(item);
+	
+	}
+	
+	Print( 'total test count: ', itemList.length, '\n' );
+	Print( 'fast test count: ', fastItems.length, '\n' );
+	Print( 'time-constant item count: ', timeConstantItems.length, '\n' );
+
+/*
+	CollectGarbage();
+
+	t = TimeCounter();
+	for ( i = 0; i < 3; ++i )
+		for each ( var item in timeConstantItems )
+			for ( ii = 0; ii < 3; ++ii )
+				void item.func(qaapi);
+	t = TimeCounter() - t - err;
+	
+	Print( 'time: ', t, '\n' );
+*/	
+
+	itemList.splice(0, timeConstantItems);
+}
+
+
 function ParseCommandLine(cfg) {
 
 	var args = global.arguments;
@@ -342,77 +424,118 @@ function ParseCommandLine(cfg) {
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+// Main
 
-var cfg = { help:false, repeatEachTest:1, gcZeal:0, loopForever:false, directory:'src', files:'_qa.js$', priority:0, flags:'', export:'', save:'', load:'', disableJIT:false, listTestsOnly:false, nogcBetweenTests:false, nogcDuringTests:false, stopAfterNIssues:0, logFilename:'', sleepBetweenTests:0, quiet:false, verbose:false, runOnlyTestIndex:undefined, exclude:undefined };
-ParseCommandLine(cfg);
-var configurationText = 'configuraion: '+['-'+k+' '+v for ([k,v] in Iterator(cfg))].join('  ');
-Print( configurationText, '\n\n' );
+function Main() {
 
-if ( cfg.help )
-	Halt();
+	var cfg = { // default configuration
+		help:false,
+		repeatEachTest:1,
+		gcZeal:0, 
+		loopForever:false, 
+		directory:'src', 
+		files:'_qa.js$', 
+		priority:0, 
+		flags:'', 
+		export:'', 
+		save:'', 
+		load:'', 
+		disableJIT:false, 
+		listTestsOnly:false, 
+		nogcBetweenTests:false, 
+		nogcDuringTests:false, 
+		stopAfterNIssues:0, 
+		logFilename:'', 
+		sleepBetweenTests:0,
+		quiet:false, 
+		verbose:false, 
+		runOnlyTestIndex:undefined, 
+		exclude:undefined,
+		perfTest:false
+	};
 
 
-function MatchFlags(flags) {
-	
-	if ( flags.indexOf('d') != -1 )
-		return false;
-	if ( !cfg.flags )
-		return true;
-	if ( !flags )
-		return false;
-	for each ( var c in cfg.flags )
-		if ( flags.indexOf(c) == -1 )
+	ParseCommandLine(cfg);
+
+	var configurationText = 'configuraion: '+['-'+k+' '+v for ([k,v] in Iterator(cfg))].join('  ');
+	Print(configurationText, '\n\n');
+
+	if ( cfg.help ) {
+		
+		Print('(TBD)');
+		return;
+	}
+
+	var itemInclude = new RegExp(cfg.args[0] || '.*', 'i');
+	var itemExclude = cfg.exclude ? new RegExp(cfg.exclude, 'i') : undefined;
+
+
+	function MatchFlags(flags) {
+		
+		if ( flags.indexOf('d') != -1 )
 			return false;
-	 return true;
+		if ( !cfg.flags )
+			return true;
+		if ( !flags )
+			return false;
+		for each ( var c in cfg.flags )
+			if ( flags.indexOf(c) == -1 )
+				return false;
+		 return true;
+	}
+
+
+	var testList;
+	if ( cfg.load )
+		testList = eval(new File(cfg.load).content);
+	else
+		testList = CreateQaItemList(cfg.directory, cfg.files, itemInclude, itemExclude, MatchFlags);
+
+	if ( cfg.listTestsOnly ) {
+		
+		Print([String.quote(t.file+' - '+t.name) for each ( t in testList )].join('\n'), '\n', testList.length +' tests.', '\n');
+		return;
+	}
+
+	if ( cfg.save )
+		new File(cfg.save).content = uneval(testList);
+
+	if ( cfg.disableJIT )
+		DisableJIT();
+		
+	if ( cfg.perfTest )
+		PerfTest(testList, cfg);
+
+	var savePrio = processPriority;
+	processPriority = cfg.priority;
+	var t0 = TimeCounter();
+
+	var [issueList, checkCount] = LaunchTests(testList, cfg);
+
+	var t = TimeCounter() - t0;
+	processPriority = savePrio || 0; // savePrio may be undefined
+
+	Print( '\n'+StringRepeat('-',97)+'\n', configurationText, '\n\n', issueList.length +' issues, '+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
+	issueList.sort();
+	issueList.reduce( function(previousValue, currentValue, index, array) {
+
+		 if ( previousValue != currentValue )
+			Print( '- ' + currentValue, '\n' );
+		 return currentValue;
+	}, undefined );
 }
 
 
-var itemInclude = new RegExp(cfg.args[0] || '.*', 'i');
-var itemExclude = cfg.exclude ? new RegExp(cfg.exclude, 'i') : undefined;
-
-var testList;
-if ( cfg.load )
-	testList = eval(new File(cfg.load).content);
-else
-	testList = CreateQaItemList(cfg.directory, cfg.files, itemInclude, itemExclude, MatchFlags);
-
-if ( cfg.listTestsOnly ) {
-	
-	Print([String.quote(t.file+' - '+t.name) for each ( t in testList )].join('\n'), '\n', testList.length +' tests.', '\n');
-	Halt();
-}
-
-if ( cfg.save )
-	new File(cfg.save).content = uneval(testList);
-
-if ( cfg.disableJIT )
-	DisableJIT();
-
-var savePrio = processPriority;
-processPriority = cfg.priority;
-var t0 = TimeCounter();
-
-var [issueList, checkCount] = LaunchTests(testList, cfg);
-
-var t = TimeCounter() - t0;
-processPriority = savePrio || 0; // savePrio may be undefined
-
-Print( '\n'+StringRepeat('-',97)+'\n', configurationText, '\n\n', issueList.length +' issues, '+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
-issueList.sort();
-issueList.reduce( function(previousValue, currentValue, index, array) {
-
-    if ( previousValue != currentValue )
-		Print( '- ' + currentValue, '\n' );
-    return currentValue;
-}, undefined );
-
+Main();
 Print('Done\n');
 
-/* flags:
 
-	'd' for desactivated: the test is disabled.
-	'f' for fast: the test execution is fast. Time should be less that 10ms.
-	't' for time: the test execution time is always the same. The test do not use any variable-execution-time function (CollectGarbage, Poll, Socket, ...)
-	'r' for reliable: external parameters (like the platform, CPU load, TCP/IP connection, weather, ...) cannot make the test to fail.
-	'm' for low memory usage. The test uses the minimum amount of memory in the script part. no QA.RandomString(300000000) or StringRepeat('x', 10000000000)
-*/
+////////////////////////////////////////////////////////////////////////////////
+// flags:
+//
+//	'd' for desactivated: the test is disabled.
+//	'f' for fast: the test execution is fast. Time should be less that 10ms.
+//	't' for time: the test execution time is always the same. The test do not use any variable-execution-time function (CollectGarbage, Poll, Socket, ...)
+//	'r' for reliable: external parameters (like the platform, CPU load, TCP/IP connection, weather, ...) cannot make the test to fail.
+//	'm' for low memory usage. The test uses the minimum amount of memory in the script part. no QA.RandomString(300000000) or StringRepeat('x', 10000000000)
