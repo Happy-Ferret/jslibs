@@ -164,3 +164,13 @@ LoadModule('jsio');
 	QA.ASSERT_STR( buffer.length == 0, true, 'stderr redirection result' ); 
 
 
+/// mute error messages [rmtf]
+
+	var prev = _configuration.stderr;
+	delete _configuration.stderr;
+	
+	try {
+		eval('azer()');
+	} catch (ex) {}
+
+	_configuration.stderr = prev;

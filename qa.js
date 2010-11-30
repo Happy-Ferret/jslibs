@@ -3,6 +3,10 @@ LoadModule('jsio');
 LoadModule('jsdebug');
 
 
+////////////////////////////////////////////////////////////////////////////////
+// QA API
+
+
 function QAAPI(cx) {
 
 	function FormatVariable(val) {
@@ -101,6 +105,10 @@ function QAAPI(cx) {
 
 
 
+////////////////////////////////////////////////////////////////////////////////
+// QA item creation
+
+
 function RecursiveDir(path, callback) {
 	
 	(function(path) {
@@ -178,6 +186,42 @@ function CreateQaItemList(startDir, files, include, exclude, flags) {
 	itemList = itemList.sort( function(a,b) a.init ? -1 : 1 ); // put all init function at the top of the test list.
 	return itemList;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+// tools
+
+function ParseCommandLine(cfg) {
+
+	var args = global.arguments;
+	cfg.args = [];
+	while ( args.length > 1 ) {
+
+		if ( args[1][0] != '-' ) {
+		
+			cfg.args.push( args.splice(1,1) );
+			continue;
+		}
+		var items = [ c for (c in cfg) if ( c.toLowerCase().indexOf(args[1].substr(1).toLowerCase()) == 0 ) ];
+		if ( items.length > 1 )
+			throw Error('Multiple argument match: '+items.join(', '));
+		var item = items[0];
+		if ( item == undefined )
+			throw Error('Invalid argument: '+args[1]);
+		if ( IsBoolean(cfg[item]) ) {
+		
+			cfg[item] = !cfg[item];
+			args.splice(1,1);
+			continue;
+		}
+		cfg[item] = args[2];
+		args.splice(1,2);
+	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// run tests
 
 
 var globalIssueCount = 0;
@@ -268,6 +312,7 @@ function LaunchTests(itemList, cfg) {
 
 					void cx.item.func(qaapi);
 					if ( exportFile ) {
+
 						exportFile.Write('('+cx.item.func.toSource()+')(QA);\n');
 						exportFile.Sync();
 					}
@@ -313,119 +358,189 @@ function LaunchTests(itemList, cfg) {
 
 
 
+////////////////////////////////////////////////////////////////////////////////
+// perf tests
+
 
 function PerfTest(itemList, cfg) {
 
 	var i;
-	var qaapi = { __noSuchMethod__:function() {}, RandomData:function() '123456789', RandomString:function() 'abcdefghij' };
+	var qaapi = { __noSuchMethod__:function() {}, RandomData:function() 'qa_tmp_123456789', RandomString:function() 'qa_tmp_abcdefghij' };
+
+	var stdout = _configuration.stdout;
+	var stderr = _configuration.stderr;
+	delete _configuration.stdout;
+	delete _configuration.stderr;
 
 	SetPerfTestMode();
-	Sleep(100);
-	
 	CollectGarbage();
+	disableGarbageCollection = true;
+	Sleep(100);
 
-	TimeCounter();
+	TimeCounter(); TimeCounter(); TimeCounter(); TimeCounter();
 	var t = TimeCounter();
-	var err = TimeCounter() - t;
+	var timeError = TimeCounter() - t;
+
+	stdout('time error: '+timeError+'\n');
+
+	function PrefRefTest() {
+		
+		var tmp = 0.1;
+		function dummy() { return i / 11.1 }
+		for ( var i = 0; i < 10000; ++i )
+			tmp += Expand('$(A)$', {A:dummy(i)});
+		return tmp;
+	}
 	
+	PrefRefTest();
+	var t = TimeCounter();
+	PrefRefTest();
+	var perfRefTime = TimeCounter() - t - timeError;
+
+	stdout('ref time: '+perfRefTime+'\n');
+
+	stdout('total items: '+itemList.length+'\n');
+
 	var fastItems = [];
 	for each ( var item in itemList ) {
 
-		// CollectGarbage();
+		try {
 
-		var bestTime = 9999; 
-		for ( i = 0; i < 5; ++i ) {
+			var bestTime = Infinity; 
+			for ( i = 0; i < 9; ++i ) {
+			
+				t = TimeCounter();
+				void item.func(qaapi);
+				t = TimeCounter() - t - timeError;
+				
+				if ( t > perfRefTime * 1.5 ) {
+					
+					bestTime = Infinity;
+					break;
+				}
+				
+				if ( t < bestTime )
+					bestTime = t;
+			}
+
+			if ( bestTime < perfRefTime || item.init )
+				fastItems.push(item);
+				
+		} catch(ex) {}
+	}
+
+	stdout('fast items: '+fastItems.length+'\n');
+
+
+	var timeConstantItems = [];
+	for each ( var item in fastItems ) {
+
+		var t0, diffTime = 0.0, totalTime = 0.0;
+		for ( i = 0; i < 11; ++i ) {
 		
 			t = TimeCounter();
 			void item.func(qaapi);
+			t = TimeCounter() - t - timeError;
+			
+			totalTime += t;
+
+			if ( t0 != undefined )
+				diffTime += Math.abs(t0 - t);
+			
+			t0 = t;
+		}
+		
+		var div = diffTime / totalTime;
+		
+		if ( div < 0.25 || item.init )
+			timeConstantItems.push(item);
+	}
+	
+	stdout('time-constant items: '+timeConstantItems.length+'\n');
+
+	
+	_configuration.stdout = stdout;
+	_configuration.stderr = stderr;
+
+
+	var initSrc = [ '('+item.func.toSource()+')(qaapi);' for each ( item in timeConstantItems ) if ( item.init ) ];
+	var initSrcCount = initSrc.length;
+	initSrc = initSrc.join('');
+	
+	var testSrc = [ '('+item.func.toSource()+')(qaapi);' for each ( item in timeConstantItems ) if ( !item.init ) ];
+	testSrcCount = testSrc.length;
+	testSrc = testSrc.join('\n');
+
+	stdout( 'saving '+testSrcCount+' items\n' );
+
+	var exportFile = new File(cfg.perfTest).Open('w');
+	exportFile.Write(Expand(<><![CDATA[// AUTO-generated code. See jslibs/qa.js
+	
+		LoadModule("jsstd");
+		LoadModule("jsdebug");
+		var prev_stdout = _configuration.stdout;
+		var prev_stderr = _configuration.stderr;
+		delete _configuration.stdout;
+		delete _configuration.stderr;
+
+		$(INIT)
+		
+		function Tests() {
+		
+			$(TEST)
+		}
+
+		var qaapi = $(QAAPI);
+
+		SetPerfTestMode();
+		
+		TimeCounter();
+		var t = TimeCounter();
+		var err = TimeCounter() - t;
+	
+		for ( var i = 0; i < 5; ++i )
+			Tests(qaapi);
+		
+		CollectGarbage();
+		disableGarbageCollection = true;
+
+		var t = TimeCounter();
+		Tests(qaapi);
+		t = TimeCounter() - t - err;
+
+		var times = Math.floor( (parseInt(arguments[1])||1000) / t ); // 2s
+		
+		prev_stdout('loop: '+times+'x'+t.toFixed(4)+'ms\n');
+		
+		var bestTime = Infinity;
+		for ( var i = 0; i < times; ++i ) {
+		
+			var t = TimeCounter();
+			Tests(qaapi);
 			t = TimeCounter() - t - err;
 			if ( t < bestTime )
 				bestTime = t;
 		}
-
-		if ( bestTime < 50 )
-			fastItems.push(item);
-	}
-
-	
-	CollectGarbage();
-	
-	var timeConstantItems = [];
-	for each ( var item in fastItems ) {
-
-		var diffTime = 0;
-		// CollectGarbage();
 		
-		var t0;
-		for ( i = 0; i < 10; ++i ) {
-		
-			t = TimeCounter();
-			void item.func(qaapi);
-			t = TimeCounter() - t - err;
+		_configuration.stdout = prev_stdout;
+		_configuration.stderr = prev_stderr;
+		Print($(COUNT)+' tests in '+ bestTime.toFixed(4) +' ms\n');
 
-			if ( t0 != undefined )
-				diffTime += Math.abs(t0 - t);
-				
-			t0 = t;
-		}
-		
-		if ( diffTime / 10 < 1 )
-			timeConstantItems.push(item);
-	
-	}
-	
-	Print( 'total test count: ', itemList.length, '\n' );
-	Print( 'fast test count: ', fastItems.length, '\n' );
-	Print( 'time-constant item count: ', timeConstantItems.length, '\n' );
+	]]></>,{
+		QAAPI:qaapi.toSource(),
+		INIT:initSrc,
+		TEST:testSrc,
+		COUNT:testSrcCount
+	}));
 
-/*
-	CollectGarbage();
-
-	t = TimeCounter();
-	for ( i = 0; i < 3; ++i )
-		for each ( var item in timeConstantItems )
-			for ( ii = 0; ii < 3; ++ii )
-				void item.func(qaapi);
-	t = TimeCounter() - t - err;
-	
-	Print( 'time: ', t, '\n' );
-*/	
-
-	itemList.splice(0, timeConstantItems);
+	exportFile.Close();
 }
 
-
-function ParseCommandLine(cfg) {
-
-	var args = global.arguments;
-	cfg.args = [];
-	while ( args.length > 1 ) {
-
-		if ( args[1][0] != '-' ) {
-		
-			cfg.args.push( args.splice(1,1) );
-			continue;
-		}
-		var items = [ c for (c in cfg) if ( c.toLowerCase().indexOf(args[1].substr(1).toLowerCase()) == 0 ) ];
-		if ( items.length > 1 )
-			throw Error('Multiple argument match: '+items.join(', '));
-		var item = items[0];
-		if ( item == undefined )
-			throw Error('Invalid argument: '+args[1]);
-		if ( IsBoolean(cfg[item]) ) {
-		
-			cfg[item] = !cfg[item];
-			args.splice(1,1);
-			continue;
-		}
-		cfg[item] = args[2];
-		args.splice(1,2);
-	}
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Main
+
 
 function Main() {
 
@@ -452,7 +567,7 @@ function Main() {
 		verbose:false, 
 		runOnlyTestIndex:undefined, 
 		exclude:undefined,
-		perfTest:false
+		perfTest:''
 	};
 
 
@@ -485,7 +600,6 @@ function Main() {
 		 return true;
 	}
 
-
 	var testList;
 	if ( cfg.load )
 		testList = eval(new File(cfg.load).content);
@@ -504,8 +618,11 @@ function Main() {
 	if ( cfg.disableJIT )
 		DisableJIT();
 		
-	if ( cfg.perfTest )
+	if ( cfg.perfTest ) {
+	
 		PerfTest(testList, cfg);
+		return;
+	}
 
 	var savePrio = processPriority;
 	processPriority = cfg.priority;
