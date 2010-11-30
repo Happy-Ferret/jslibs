@@ -972,7 +972,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Print ) {
 
 	jsval fval;
-	JL_CHK( GetConfigurationValueById(cx, JLID(cx, stdout), &fval) );
+	JL_CHK( GetConfigurationValue(cx, JLID(cx, stdout), &fval) );
 	*JL_RVAL = JSVAL_VOID;
 	if (likely( JL_JsvalIsFunction(cx, fval) ))
 		return JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fval, JL_ARGC, JL_ARGV, &fval);

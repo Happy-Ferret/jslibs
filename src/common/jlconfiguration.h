@@ -53,11 +53,11 @@ bad:
 }
 
 
-ALWAYS_INLINE JSBool GetConfigurationValueById(JSContext *cx, jsid id, jsval *value) {
+ALWAYS_INLINE JSBool GetConfigurationValue(JSContext *cx, jsid id, jsval *value) {
 
 	JSObject *cobj = GetConfigurationObject(cx);
 	if ( cobj )
-		return JS_GetPropertyById(cx, cobj, id, value);
+		return JS_LookupPropertyById(cx, cobj, id, value);
 	*value = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -66,10 +66,11 @@ ALWAYS_INLINE JSBool GetConfigurationValue(JSContext *cx, const char *name, jsva
 
 	JSObject *cobj = GetConfigurationObject(cx);
 	if ( cobj )
-		return JS_GetProperty(cx, cobj, name, value);
+		return JS_LookupProperty(cx, cobj, name, value);
 	*value = JSVAL_VOID;
 	return JS_TRUE;
 }
+
 
 ALWAYS_INLINE JSBool SetConfigurationValue(JSContext *cx, const char *name, jsval value) {
 

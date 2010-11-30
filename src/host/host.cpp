@@ -103,7 +103,7 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 	if (likely( globalObject != NULL )) {
 
 		jsval fct;
-		if (likely( GetConfigurationValue(cx, JLID_NAME(cx, stderr), &fct) == JS_TRUE && JL_JsvalIsFunction(cx, fct) )) {
+		if (likely( GetConfigurationValue(cx, JLID(cx, stderr), &fct) == JS_TRUE && JL_JsvalIsFunction(cx, fct) )) {
 			
 			// possible optimization, but not very useful since errors occurs rarely.
 			//JSFunction *fun = GET_FUNCTION_PRIVATE(cx, JSVAL_TO_OBJECT(fct));
@@ -122,11 +122,13 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 		}
 	}
 
-	HostPrivate *pv;
-	pv = JL_GetHostPrivate(cx);
-	if (unlikely( pv == NULL || pv->hostStdErr == NULL ))
-		return;
-	pv->hostStdErr(pv->privateData, message, length); // else, use the default.
+
+	//HostPrivate *pv;
+	//pv = JL_GetHostPrivate(cx);
+	//if (unlikely( pv == NULL || pv->hostStdErr == NULL ))
+	//	return;
+	//pv->hostStdErr(pv->privateData, message, length); // else, use the default.
+
 	return;
 }
 
