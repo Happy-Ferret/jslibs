@@ -7,4 +7,3 @@
 
 #include "jlhelper.h"
 #include "jlclass.h"
-#include "jlconfiguration.h"

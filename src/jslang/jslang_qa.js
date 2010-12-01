@@ -703,6 +703,10 @@ LoadModule('jsstd');
 	QA.ASSERT_STR( c , 123, 'Stringified blob' );
 
 
+/// Stringify BufferGet [ftmr]
+
+	QA.ASSERT_STR( Stringify({ Get: function() { return 'ABCD' } }) , 'ABCD', 'Stringify BufferGet object' );
+
 
 /// Handle object [ft]
 

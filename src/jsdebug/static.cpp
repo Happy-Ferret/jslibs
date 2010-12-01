@@ -46,7 +46,7 @@ int _puts(JSContext *cx, const char *str) {
 	//	jsstr = JS_ConcatStrings(cx, jsstr, JS_NewStringCopyZ(cx, "\n"));
 
 		js::AutoValueRooter tvr(cx);
-		JSBool status = JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), stdoutFunction, 1, tvr.jsval_addr(), tvr.jsval_addr());
+		JSBool status = JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), stdoutFunction, 1, tvr.jsval_addr(), tvr.jsval_addr());
 		if ( status == JS_TRUE )
 			return len;
 	}

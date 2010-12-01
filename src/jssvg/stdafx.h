@@ -7,7 +7,6 @@
 
 #include "jlhelper.h"
 #include "jlclass.h"
-#include "jlconfiguration.h"
 
 #include <rsvg.h>
 #include <rsvg-cairo.h>

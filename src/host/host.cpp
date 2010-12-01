@@ -54,30 +54,51 @@ static const JSErrorFormatString *GetErrorMessage(void *userRef, const char *loc
 //	if ( !(condition) ) { consoleStdErr( cx, errorMessage, sizeof(errorMessage)-1 ); return -1; }
 
 
-static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) { // fast native
+static JSBool JSDefaultStdinFunction(JSContext *cx, uintN argc, jsval *vp) {
 
-	*JL_RVAL = JSVAL_VOID;
 	HostPrivate *pv = JL_GetHostPrivate(cx);
-	if (unlikely( pv == NULL || pv->hostStdOut == NULL ))
+	if (unlikely( pv == NULL || pv->hostStdIn == NULL )) {
+
+		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
+	}
+	char buffer[8192];
+	int status = pv->hostStdIn(pv->privateData, buffer, COUNTOF(buffer));
+	JL_CHKM( status != -1, "stdin read error." );
+	if ( status > 0 ) {
+	
+		JSString *jsstr = JS_NewStringCopyN(cx, buffer, status);
+		JL_CHK( jsstr );
+		*JL_RVAL = STRING_TO_JSVAL( jsstr );
+	} else {
 
-//	const char *buffer;
-//	size_t length;
-
-	for ( uintN i = 0; i < argc; ++i ) {
-
-		//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(i+1), &buffer, &length) );
-		//JL_CHKM( pv->hostStdOut(pv->privateData, buffer, length) != -1, "Unable to use write on host's StdOut." );
-		JLStr str;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
-		JL_CHKM( pv->hostStdOut(pv->privateData, str.GetConstStr(), str.Length()) != -1, "Unable to use write on host's StdOut." );
+		*JL_RVAL = JL_GetEmptyStringValue(cx);
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) { // fast native
+// Print() => _configuration->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
+static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
+
+	*JL_RVAL = JSVAL_VOID;
+	HostPrivate *pv = JL_GetHostPrivate(cx);
+	if (unlikely( pv == NULL || pv->hostStdOut == NULL ))
+		return JS_TRUE;
+
+	for ( uintN i = 0; i < argc; ++i ) {
+
+		JLStr str;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
+		JL_CHKM( pv->hostStdOut(pv->privateData, str.GetConstStr(), str.Length()) != -1, "stdout write error." );
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 	*JL_RVAL = JSVAL_VOID;
 	HostPrivate *pv = JL_GetHostPrivate(cx);
@@ -86,11 +107,9 @@ static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) { //
 
 	for ( uintN i = 0; i < argc; ++i ) {
 
-//		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(i+1), &buffer, &length) );
-//		JL_CHKM( pv->hostStdErr(pv->privateData, buffer, length) != -1, "Unable to use write on host's StdErr." );
 		JLStr str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
-		JL_CHKM( pv->hostStdErr(pv->privateData, str.GetConstStr(), str.Length()) != -1, "Unable to use write on host's StdErr." );
+		JL_CHKM( pv->hostStdErr(pv->privateData, str.GetConstStr(), str.Length()) != -1, "stderr write error." );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -99,7 +118,7 @@ static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) { //
 
 void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 
-	JSObject *globalObject = JS_GetGlobalObject(cx);
+	JSObject *globalObject = JL_GetGlobalObject(cx);
 	if (likely( globalObject != NULL )) {
 
 		jsval fct;
@@ -112,23 +131,17 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 
 			jsval unused;
 			js::AutoValueRooter tvr(cx); // needed to protect the string.
-
-//			JL_CHKB( JL_StringAndLengthToJsval(cx, tvr.jsval_addr(), message, length), bad2 ); // beware out of memory case !
-			JL_CHKB( JL_NativeToJsval(cx, message, length, tvr.jsval_addr()), bad2 ); // beware out of memory case !
-			JL_CHKB( JS_CallFunctionValue(cx, globalObject, fct, 1, tvr.jsval_addr(), &unused), bad2 );
-
-		bad2:
-			return;
+			JL_CHK( JL_NativeToJsval(cx, message, length, tvr.jsval_addr()) ); // beware out of memory case !
+			JL_CHK( JS_CallFunctionValue(cx, globalObject, fct, 1, tvr.jsval_addr(), &unused) );
 		}
 	}
-
 
 	//HostPrivate *pv;
 	//pv = JL_GetHostPrivate(cx);
 	//if (unlikely( pv == NULL || pv->hostStdErr == NULL ))
 	//	return;
 	//pv->hostStdErr(pv->privateData, message, length); // else, use the default.
-
+bad:
 	return;
 }
 
@@ -494,7 +507,7 @@ bad:
 }
 
 
-JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
+JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
 
 	_unsafeMode = unsafeMode;
 
@@ -518,7 +531,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_STRICT | JSOPTION_RELIMIT));
 
 	JSObject *globalObject;
-	globalObject = JS_GetGlobalObject(cx);
+	globalObject = JL_GetGlobalObject(cx);
 	JL_CHKM( globalObject != NULL, "Global object not found." );
 
 	//	JSBool found;
@@ -532,7 +545,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 	JL_CHK( JS_DefinePropertyById( cx, globalObject, ATOM_TO_JSID(JL_GetRuntime(cx)->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) ); // by default, undefined is only JSPROP_PERMANENT
 
 	// creates a reference to the String object JSClass
-	pv->stringObjectClass = JL_GetStandardClass(cx, JSProto_String);
+	pv->stringObjectClass = JL_GetStandardClassByKey(cx, JSProto_String);
 	JL_CHKM( pv->stringObjectClass, "Unable to find the String class." );
 
 // make GetErrorMessage available from any module
@@ -547,17 +560,21 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput s
 
 	pv->hostStdErr = stdErr;
 	pv->hostStdOut = stdOut;
+	pv->hostStdIn = stdIn;
 
 // global functions & properties
-	JL_CHKM( JS_DefinePropertyById( cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(JS_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "unable to define a property." );
+	JL_CHKM( JS_DefinePropertyById( cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(JL_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "unable to define a property." );
 	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == 1 ? JLNormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), "unable to define a property." );
 	// jslibs is not ready to support UnloadModule()
 	//	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == 1 ? _NormalizeFunctionName(NAME_GLOBAL_FUNCTION_UNLOAD_MODULE) : NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
 
-	JL_CHK( SetConfigurationReadonlyValue(cx, JLID_NAME(cx, unsafeMode), unsafeMode ? JSVAL_TRUE : JSVAL_FALSE) );
+	JL_CHK( SetConfigurationValue(cx, JLID_NAME(cx, unsafeMode), unsafeMode ? JSVAL_TRUE : JSVAL_FALSE, false) );
 
 // support this: var prevStderr = _configuration.stderr; _configuration.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
 	jsval value;
+
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStdinFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+	JL_CHK( SetConfigurationValue(cx, JLID_NAME(cx, stdin), value) );
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStdoutFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
 	JL_CHK( SetConfigurationValue(cx, JLID_NAME(cx, stdout), value) );
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStderrFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
@@ -667,7 +684,7 @@ void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
 
 JSBool RemoveScriptArguments( JSContext *cx ) {
 
-	JSObject *globalObject = JS_GetGlobalObject(cx);
+	JSObject *globalObject = JL_GetGlobalObject(cx);
 	JL_CHKM( globalObject != NULL, "Global object not found." );
 	JL_CHKM( JS_DeletePropertyById(cx, globalObject, JLID(cx, arguments)), "Unable to cleanup script arguments." );
 	return JS_TRUE;
@@ -676,7 +693,7 @@ JSBool RemoveScriptArguments( JSContext *cx ) {
 
 JSBool CreateScriptArguments( JSContext *cx, int argc, const char * const * argv ) {
 
-	JSObject *globalObject = JS_GetGlobalObject(cx);
+	JSObject *globalObject = JL_GetGlobalObject(cx);
 	JL_CHKM( globalObject != NULL, "Global object not found." );
 
 	JSObject *argsObj;
@@ -708,7 +725,7 @@ JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnl
 
 	js::AutoObjectRooter scriptObjRoot(cx);
 
-	JSObject *globalObject = JS_GetGlobalObject(cx);
+	JSObject *globalObject = JL_GetGlobalObject(cx);
 	JL_CHKM( globalObject != NULL, "Global object not found." );
 
 	JL_CHK( CreateScriptArguments(cx, argc, argv) );
@@ -755,7 +772,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
 	js::AutoObjectRooter scriptObjRoot(cx);
-	JSObject *globalObject = JS_GetGlobalObject(cx);
+	JSObject *globalObject = JL_GetGlobalObject(cx);
 	JL_CHKM( globalObject != NULL, "Global object not found." );
 	JL_CHK( CreateScriptArguments(cx, argc, argv) );
 
@@ -791,7 +808,7 @@ bad:
 JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32 xdrScriptLength ) {
 
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
-//	JL_CHKM( JS_EvaluateScript(cx, JS_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
+//	JL_CHKM( JS_EvaluateScript(cx, JL_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
 	js::AutoObjectRooter scriptObjRoot(cx);
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 	JL_CHK( xdr );
@@ -803,7 +820,7 @@ JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32 xdrScriptL
 	scriptObjRoot.setObject(JS_NewScriptObject(cx, script));
 //	JL_CHK( SetConfigurationReadonlyValue(cx, JLID_NAME(cx, bootstrapScript), OBJECT_TO_JSVAL(bootstrapScriptObject)) ); // bootstrap script cannot be hidden
 	jsval tmp;
-	JL_CHK( JS_ExecuteScript(cx, JS_GetGlobalObject(cx), script, &tmp) );
+	JL_CHK( JS_ExecuteScript(cx, JL_GetGlobalObject(cx), script, &tmp) );
 	JS_DestroyScript(cx, script);
 	JS_SetOptions(cx, prevOpt);
 	return JS_TRUE;

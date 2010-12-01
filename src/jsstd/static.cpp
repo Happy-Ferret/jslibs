@@ -194,7 +194,7 @@ assemble:
 	}
 
 	JSString *jsstr;
-	jsstr = JS_NewUCString(cx, res, total);
+	jsstr = JL_NewUCString(cx, res, total);
 	JL_CHK( jsstr );
 	*JL_RVAL = STRING_TO_JSVAL( jsstr );
 
@@ -595,7 +595,7 @@ DEFINE_FUNCTION( IsBoolean ) {
 		return JS_TRUE;
 	}
 
-	*JL_RVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClass(cx, JSProto_Boolean) ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Boolean) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
 
@@ -619,7 +619,7 @@ DEFINE_FUNCTION( IsNumber ) {
 		return JS_TRUE;
 	}
 
-	*JL_RVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClass(cx, JSProto_Number) ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Number) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
 
@@ -937,7 +937,7 @@ DEFINE_FUNCTION( StringRepeat ) {
 	}
 
 	JSString *jsstr;
-	jsstr = JS_NewUCString(cx, newBuf, newLen);
+	jsstr = JL_NewUCString(cx, newBuf, newLen);
 	JL_CHK( jsstr );
 	*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
@@ -971,11 +971,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Print ) {
 
+	// Print() => _configuration->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
+
 	jsval fval;
 	JL_CHK( GetConfigurationValue(cx, JLID(cx, stdout), &fval) );
 	*JL_RVAL = JSVAL_VOID;
 	if (likely( JL_JsvalIsFunction(cx, fval) ))
-		return JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fval, JL_ARGC, JL_ARGV, &fval);
+		return JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fval, JL_ARGC, JL_ARGV, &fval);
 	return JS_TRUE;
 	JL_BAD;
 }

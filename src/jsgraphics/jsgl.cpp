@@ -5803,7 +5803,7 @@ DEFINE_INIT() {
 #ifdef XP_WIN
 	glGetProcAddress = windowsGLGetProcAddress;
 #else
-	JL_CHK( GetPrivateNativeFunction(cx, JS_GetGlobalObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
+	JL_CHK( GetPrivateNativeFunction(cx, JL_GetGlobalObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
 #endif
 	JL_S_ASSERT( glGetProcAddress != NULL, "OpenGL extensions unavailable." );
 

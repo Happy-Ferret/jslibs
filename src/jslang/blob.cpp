@@ -937,7 +937,7 @@ DEFINE_FUNCTION( toString ) { // and valueOf ?
 	ucStr[length] = 0;
 	for ( size_t i = 0; i < length; i++ )
 		ucStr[i] = ((unsigned char*)buffer)[i]; // see js_InflateString in jsstr.c
-	jsstr = JS_NewUCString(cx, ucStr, length);
+	jsstr = JL_NewUCString(cx, ucStr, length);
 	JL_CHK( jsstr );
 	*JL_RVAL = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;

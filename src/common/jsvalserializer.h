@@ -523,7 +523,7 @@ namespace jl {
 					*this >> unserializeFctVal;
 					JL_S_ASSERT_FUNCTION( unserializeFctVal );
 					JSObject *globalObj;
-					globalObj = JS_GetGlobalObject(cx);
+					globalObj = JL_GetGlobalObject(cx);
 					JL_CHK( JS_SetParent(cx, JSVAL_TO_OBJECT(unserializeFctVal), globalObj) );
 					jsval value;
 					*this >> value;
@@ -562,7 +562,7 @@ namespace jl {
 					JL_S_ASSERT_FUNCTION( val );
 					JS_XDRMemSetData(xdr, NULL, 0);
 					JS_XDRDestroy(xdr);
-					JL_CHK( JS_SetParent(cx, JSVAL_TO_OBJECT(val), JS_GetGlobalObject(cx)) );
+					JL_CHK( JS_SetParent(cx, JSVAL_TO_OBJECT(val), JL_GetGlobalObject(cx)) );
 					break;
 				}
 			}

@@ -75,21 +75,21 @@ public:
 	JsVst( audioMasterCallback audioMaster ) : AudioEffectX(audioMaster, 0, 0), JSApiHelper(_cx) {
 
 		_cx = CreateHost(-1, -1, 0);
-		InitHost(_cx, true, NULL, NULL, NULL);
+		InitHost(_cx, true, NULL, NULL, NULL, NULL);
 		JS_SetOptions(_cx, JSOPTION_DONT_REPORT_UNCAUGHT);
 
 		JS_AddValueRoot(_cx, &_rval);
 		JS_AddValueRoot(_cx, &_arg);
 
-		( JLInitClass(_cx, JS_GetGlobalObject(_cx), MidiEvent::jlClassSpec ) );
-		( JLInitClass(_cx, JS_GetGlobalObject(_cx), AudioMaster::jlClassSpec ) );
-		( JLInitClass(_cx, JS_GetGlobalObject(_cx), VSTPlugin::jlClassSpec ) );
+		( JLInitClass(_cx, JL_GetGlobalObject(_cx), MidiEvent::jlClassSpec ) );
+		( JLInitClass(_cx, JL_GetGlobalObject(_cx), AudioMaster::jlClassSpec ) );
+		( JLInitClass(_cx, JL_GetGlobalObject(_cx), VSTPlugin::jlClassSpec ) );
 
 		JSObject *audioMasterObject = CreateAudioMasterObject(_cx, audioMaster);
 		_arg = OBJECT_TO_JSVAL(audioMasterObject);
-		JS_SetProperty(_cx, JS_GetGlobalObject(_cx), "audioMaster", &_arg);
+		JS_SetProperty(_cx, JL_GetGlobalObject(_cx), "audioMaster", &_arg);
 
-		vstPlugin = JS_DefineObject(_cx, JS_GetGlobalObject(_cx), "vstPlugin", JL_CLASS(VSTPlugin), NULL, NULL);
+		vstPlugin = JS_DefineObject(_cx, JL_GetGlobalObject(_cx), "vstPlugin", JL_CLASS(VSTPlugin), NULL, NULL);
 		JL_SetPrivate(_cx, vstPlugin, this);
 
 		JSBool status = ExecuteScriptFileName(_cx, "vstPlugin.js", false, 0, NULL, &_rval);

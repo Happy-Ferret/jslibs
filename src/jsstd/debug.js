@@ -1,4 +1,6 @@
-if ( 10 ) {
+LoadModule('jsstd');
+
+if ( 0 ) {
 
 	LoadModule('jsstd');  Exec('../../perftest.js');  throw 0;
 }
@@ -7,7 +9,8 @@ LoadModule('jsstd'); Exec('../common/tools.js');
 // var QA = FakeQAApi;
 // RunLocalQAFile();
 //RunJsircbot(false); throw 0;
-RunQATests('-perf perftest.js -exclude jstask');
+//RunQATests('-perf perftest.js -exclude jstask');
+RunQATests('-exclude jstask jsstd');
 
 
 Halt();

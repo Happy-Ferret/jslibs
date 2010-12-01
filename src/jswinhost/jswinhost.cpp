@@ -161,6 +161,8 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 */
 
 	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
+
+// jslibs and spidermonkey allocator should be the same, else JL_NewString() and JL_NewUCString() should be fixed !
 #ifdef JS_HAS_JSLIBS_RegisterCustomAllocators
 	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
 #endif // JS_HAS_JSLIBS_RegisterCustomAllocators
@@ -181,7 +183,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	hpv->alloc.free = jl_free;
 
 
-	JL_CHK( InitHost(cx, true, NULL, NULL, NULL) );
+	JL_CHK( InitHost(cx, true, NULL, NULL, NULL, NULL) );
 	CHAR moduleFileName[PATH_MAX];
 	strcpy(moduleFileName, moduleName);
 	char *name = strrchr( moduleFileName, '\\' );
@@ -200,7 +202,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	JL_S_ASSERT( err == 0, "Buffer overflow." );
 
 
-	JSObject *globalObject = JS_GetGlobalObject(cx);
+	JSObject *globalObject = JL_GetGlobalObject(cx);
 
 	// arguments
 //	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // see ExecuteScriptFileName()

@@ -548,7 +548,7 @@ DEFINE_FUNCTION( RegistryGet ) {
 			JL_CHK( JL_NativeToJsval(cx, (double)*(DWORD64*)buffer, JL_RVAL) );
 			break;
 		case REG_LINK: {
-			JSString *jsstr = JS_NewUCString(cx, (jschar*)buffer, size/2);
+			JSString *jsstr = JL_NewUCString(cx, (jschar*)buffer, size/2);
 			JL_CHK( jsstr );
 			*JL_RVAL = STRING_TO_JSVAL(jsstr);
 			break;
@@ -556,7 +556,7 @@ DEFINE_FUNCTION( RegistryGet ) {
 		case REG_EXPAND_SZ:
 		case REG_MULTI_SZ:
 		case REG_SZ: {
-			JSString *jsstr = JS_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
+			JSString *jsstr = JL_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
 			JL_CHK( jsstr );
 			*JL_RVAL = STRING_TO_JSVAL(jsstr);
 			break;
@@ -796,7 +796,7 @@ static JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent
 		return JS_TRUE;
 
 	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, &argv[1]) );
-	JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), fct, COUNTOF(argv)-1, argv+1, argv) );
+	JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fct, COUNTOF(argv)-1, argv+1, argv) );
 
 	return JS_TRUE;
 	JL_BAD;

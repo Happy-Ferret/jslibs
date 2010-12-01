@@ -122,7 +122,7 @@ IsHandleType( JSContext *cx, jsval handleVal, HANDLE_TYPE handleType ) {
 
 
 static INLINE void*
-GetHandlePrivate( JSContext *cx, jsval handleVal ) {
+GetHandlePrivate( JSContext *cx, const jsval &handleVal ) {
 
 	JL_S_ASSERT_OBJECT( handleVal );
 	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );

@@ -7,7 +7,6 @@
 
 #include "jlhelper.h"
 #include "jlclass.h"
-#include "jlconfiguration.h"
 
 #include <stack.h>
 //#include <buffer.h>

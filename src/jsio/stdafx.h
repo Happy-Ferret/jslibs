@@ -7,7 +7,6 @@
 
 #include "jlhelper.h"
 #include "jlclass.h"
-#include "jlconfiguration.h"
 
 // Check if NSPR is build in release/debug 
 #include <nspr.h>

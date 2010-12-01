@@ -1,7 +1,10 @@
-if ( 0 ) {
+if ( 10 ) {
 
 	LoadModule('jsstd');
 	LoadModule('jsio');
+
+	Print( File('debug.js').content.length );
+
 
 	throw 0;
 }

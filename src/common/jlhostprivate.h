@@ -31,6 +31,7 @@ struct HostPrivate {
 	volatile unsigned int maybeGCInterval;
 	JLSemaphoreHandler watchDogSemEnd;
 	JLThreadHandler watchDogThread;
+	int (*hostStdIn)( void *privateData, char *buffer, size_t bufferSize );
 	int (*hostStdOut)( void *privateData, const char *buffer, size_t length );
 	int (*hostStdErr)( void *privateData, const char *buffer, size_t length );
 	JSErrorCallback errorCallback;

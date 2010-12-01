@@ -7,7 +7,6 @@
 
 #include "jlhelper.h"
 #include "jlclass.h"
-#include "jlconfiguration.h"
 
 #define XMALLOC jl_malloc_fct
 #define XCALLOC jl_calloc_fct

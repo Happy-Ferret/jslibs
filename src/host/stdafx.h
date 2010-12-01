@@ -18,7 +18,6 @@
 
 #include <jsprf.h>
 
-#include "jlconfiguration.h"
 #include "jlclass.h"
 
 #include <string.h>

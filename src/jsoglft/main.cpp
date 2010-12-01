@@ -52,7 +52,9 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	JL_CHK( InitJslibsModule(cx, id) );
 
 	JsfontModulePrivate *jsfontMpv;
-	JL_CHK( GetNativePrivatePointer(cx, JS_GetGlobalObject(cx), "_jsfontModulePrivate", (void**)&jsfontMpv) );
+	//JL_CHK( GetNativePrivatePointer(cx, JL_GetGlobalObject(cx), "_jsfontModulePrivate", (void**)&jsfontMpv) );
+	JL_CHK( JL_GetProperty(cx, JL_GetGlobalObject(cx), "_jsfontModulePrivate", (void**)&jsfontMpv) );
+
 	JL_S_ASSERT( jsfontMpv != NULL, "jsfont module not loaded." );
 
 	jsfontMpv->GetFTSymbols(&_ftSymbols);

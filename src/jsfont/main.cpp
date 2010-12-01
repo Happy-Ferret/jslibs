@@ -74,7 +74,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	mpv->GetFTSymbols = GetFTSymbols;
 
-	JL_CHK( SetNativePrivatePointer(cx, JS_GetGlobalObject(cx), "_jsfontModulePrivate", mpv) );
+//	JL_CHK( SetNativePrivatePointer(cx, JL_GetGlobalObject(cx), "_jsfontModulePrivate", mpv) );
+	JL_CHK( JL_SetProperty(cx, JL_GetGlobalObject(cx), "_jsfontModulePrivate", (void*)mpv, false) );
 
 	INIT_CLASS(Font);
 

@@ -57,6 +57,7 @@ DEFINE_FUNCTION( Stringify ) {
 
 		JSObject *sobj;
 		sobj = JSVAL_TO_OBJECT( JL_ARG(1) );
+
 		NIStreamRead read = StreamReadInterface(cx, sobj);
 		if ( read ) {
 
@@ -79,7 +80,7 @@ DEFINE_FUNCTION( Stringify ) {
 			BufferCopyData(&buf, newBuffer, total);
 			
 			JSString *jsstr;
-			jsstr = JS_NewString(cx, newBuffer, total);
+			jsstr = JL_NewString(cx, newBuffer, total);
 			JL_CHK( jsstr );
 			*JL_RVAL = STRING_TO_JSVAL( jsstr );
 
@@ -90,13 +91,26 @@ DEFINE_FUNCTION( Stringify ) {
 			BufferFinalize(&buf);
 			return JS_FALSE;
 		}
+
+		NIBufferGet get = BufferGetInterface(cx, sobj);
+		if ( get ) {
+
+			JLStr str;
+			JL_CHK( get(cx, sobj, &str) );
+
+			JSString *jsstr;
+			jsstr = JL_NewUCString(cx, str.GetJsStrOwnership(), str.Length()); // (TBD) fix allocator issue missmatch between GetJsStrOwnership() and JS_NewUCString().
+			JL_CHK( jsstr );
+			*JL_RVAL = STRING_TO_JSVAL( jsstr );
+			return JS_TRUE;
+		}
 	}
 
 	{
 	JLStr str;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	JSString *jsstr;
-	jsstr = JS_NewUCString(cx, str.GetJsStrOwnership(), str.Length());
+	jsstr = JL_NewUCString(cx, str.GetJsStrOwnership(), str.Length()); // (TBD) allocator issue.
 	*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	}
 
@@ -162,7 +176,9 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 		JL_S_ASSERT( IsHandleType(cx, JL_ARGV[i], JL_CAST_CSTR_TO_UINT32("pev")), "Invalid event handle." );
 		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, JL_ARGV[i]);
-		JL_S_ASSERT_RESOURCE( pe );
+		//JL_S_ASSERT_RESOURCE( pe );
+		if ( pe == NULL )
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_RESOURCE);
 		JL_ASSERT( pe->startWait );
 		JL_ASSERT( pe->cancelWait );
 		JL_ASSERT( pe->endWait );
@@ -308,7 +324,7 @@ static JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSConte
 	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
 		return JS_TRUE;
 	jsval rval;
-	JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), upe->callbackFunction, 0, NULL, &rval) );
+	JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), upe->callbackFunction, 0, NULL, &rval) );
 	return JS_TRUE;
 	JL_BAD;
 }

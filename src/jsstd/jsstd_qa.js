@@ -862,22 +862,12 @@ LoadModule('jsstd');
 
 /// Seal function [ftrm]
 		
-		var o = { a:1 };
-		//SealObject(o);
+		var o = { a:1, b:{c:2} };
 		DeepFreezeObject(o);
-		
-		
-		
-		try {
-			
-			o.a = 123;
-			QA.FAILED('seal do not work');
-			
-		} catch(ex) {
-			
-			QA.ASSERT( ex.constructor, Error, 'object access exception' );
-			QA.ASSERT( ex.message, 'o.a is read-only', 'error message' );
-		}
+		o.a = 5;
+		QA.ASSERT( o.a, 1, 'freezed object' );
+		o.b.c = 6;
+		QA.ASSERT( o.b.c, 2, 'deep freezed object' );
 
 
 /// IsStatementValid  function [ftrm]

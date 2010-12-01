@@ -308,7 +308,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *c
 			fval = double(i) / double(length-1);
 			argv[1] = DOUBLE_TO_JSVAL(fval);
 			argv[2] = INT_TO_JSVAL((int)i);
-			JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), value, 2, argv+1, argv) );
+			JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), value, 2, argv+1, argv) );
 			JL_CHK( JL_JsvalToNative(cx, argv[0], &fval) );
 			curve[i] = PTYPE(fval);
 		}

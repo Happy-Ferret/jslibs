@@ -141,7 +141,7 @@ static JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 	JSObject *funObj;
 	funObj = JS_GetFunctionObject(fun);
 	JSObject *globalObj;
-	globalObj = JS_GetGlobalObject(cx);
+	globalObj = JL_GetGlobalObject(cx);
 	JL_CHK( JS_SetParent(cx, funObj, globalObj) ); // re-scope the function
 
 	size_t index;

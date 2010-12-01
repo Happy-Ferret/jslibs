@@ -27,10 +27,11 @@
 #define NAME_GLOBAL_FUNCTION_LOAD_MODULE "LoadModule"
 #define NAME_GLOBAL_FUNCTION_UNLOAD_MODULE "UnloadModule"
 
+typedef int (*HostInput)( void *privateData, char *buffer, size_t bufferLength );
 typedef int (*HostOutput)( void *privateData, const char *buffer, size_t length );
 
 JSContext* CreateHost( uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval );
-JSBool InitHost( JSContext *cx, bool unsafeMode, HostOutput stdOut, HostOutput stdErr, void* userPrivateData );
+JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData );
 JSBool DestroyHost( JSContext *cx );
 JSBool ExecuteScriptText( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );

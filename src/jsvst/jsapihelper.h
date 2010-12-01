@@ -156,7 +156,7 @@ protected:
 		if ( !JSVAL_IS_PRIMITIVE(val) )
 			return false;
 		JSObject *stringPrototype;
-		if ( !JS_GetClassObject(_cx, JS_GetGlobalObject(_cx), JSProto_String, &stringPrototype) ) // (TBD) see GetStringClass(cx);
+		if ( !JS_GetClassObject(_cx, JL_GetGlobalObject(_cx), JSProto_String, &stringPrototype) ) // (TBD) see GetStringClass(cx);
 			return false;
 		if ( JS_GetPrototype(_cx, JSVAL_TO_OBJECT(val)) == stringPrototype )
 			return true;

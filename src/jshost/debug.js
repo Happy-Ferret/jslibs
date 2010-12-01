@@ -1,5 +1,11 @@
-if (0) {
-	LoadModule('jsstd'); 
+LoadModule('jsstd');
+
+if ( 0 ) {
+
+	var timeout = TimeoutEvents(123);
+	ProcessEvents(timeout);
+	ProcessEvents(timeout);
+
 	throw 0;
 }
 

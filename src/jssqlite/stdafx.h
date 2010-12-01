@@ -9,7 +9,6 @@
 
 #include "jlhelper.h"
 #include "jlclass.h"
-#include "jlconfiguration.h"
 
 #include <sqlite3.h>
 

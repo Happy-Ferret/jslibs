@@ -302,10 +302,10 @@ DEFINE_CALL() {
 		if ( length % 2 != 0 )
 			JL_REPORT_WARNING("Invalid string length."); // (TBD) or report an error ?
 
-		jsEncStr = JS_NewUCString(cx, (jschar*)outBuf, (length +1) / 2);
+		jsEncStr = JL_NewUCString(cx, (jschar*)outBuf, (length +1) / 2);
 	} else {
 
-		jsEncStr = JS_NewString(cx, outBuf, length); // loose outBuf ownership	// JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
+		jsEncStr = JL_NewString(cx, outBuf, length); // loose outBuf ownership	// JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
 	}
 	*JL_RVAL = STRING_TO_JSVAL(jsEncStr);
 

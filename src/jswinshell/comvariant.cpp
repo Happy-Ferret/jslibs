@@ -103,7 +103,7 @@ public:
 
 		js::AutoArrayRooter tvr(cx, argc+1, argv);
 
-		JSBool status = JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), _funcVal, argc, argv+1, argv);
+		JSBool status = JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), _funcVal, argc, argv+1, argv);
 //		if ( !status )
 
 		// pVarResult: location where the result is to be stored, or NULL if the caller expects no result.
@@ -347,7 +347,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 				scode = isRef ? *V_ERRORREF(variant) : V_ERROR(variant);
 			else
 				scode = variant->scode;
-			// JL_CHK( JS_ConstructObjectWithArguments(cx, JL_GetStandardClass(cx, JSProto_Error), NULL, NULL, 1, rval) );
+			// JL_CHK( JS_ConstructObjectWithArguments(cx, JL_GetStandardClassByKey(cx, JSProto_Error), NULL, NULL, 1, rval) );
 			JL_CHK( WinNewError(cx, scode, rval) );
 			}
 			break;

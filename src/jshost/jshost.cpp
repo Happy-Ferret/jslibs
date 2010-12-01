@@ -18,7 +18,7 @@
 #ifdef XP_WIN
 	#pragma comment (linker, "/STACK:0x400000")
 #else
-	#pragma stacksize 2097152
+	#pragma stacksize 4194304
 	//char stack[0x200000] __attribute__ ((section ("STACK"))) = { 0 };
 	//init_sp(stack + sizeof (stack));
 #endif
@@ -155,7 +155,7 @@ static JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSCon
 	jsval rval;
 	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
 		return JS_TRUE;
-	JL_CHK( JS_CallFunctionValue(cx, JS_GetGlobalObject(cx), upe->callbackFunction, 0, NULL, &rval) );
+	JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), upe->callbackFunction, 0, NULL, &rval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -186,8 +186,17 @@ static JSBool EndSignalEvents(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 
+static int stdin_fileno = -1;
 static int stdout_fileno = -1;
 static int stderr_fileno = -1;
+
+int HostStdin( void *privateData, char *buffer, size_t bufferLength ) {
+
+	JL_UNUSED(privateData);
+	if (unlikely( stdin_fileno == -1 ))
+		stdin_fileno = fileno(stdin);
+	return read(stdin_fileno, (void*)buffer, bufferLength);
+}
 
 int HostStdout( void *privateData, const char *buffer, size_t length ) {
 
@@ -321,6 +330,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		
 		InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 		
+	// jslibs and spidermonkey allocator should be the same, else JL_NewString() and JL_NewUCString() should be fixed !
 	#ifdef JS_HAS_JSLIBS_RegisterCustomAllocators
 		JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
 	#endif // JS_HAS_JSLIBS_RegisterCustomAllocators
@@ -362,10 +372,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT | JSOPTION_RELIMIT | (warningsToErrors ? JSOPTION_WERROR : 0) ); // default, may be disabled in InitHost()
 
-	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdout, HostStderr, NULL), "Unable to initialize the host." );
+	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdin, HostStdout, HostStderr, NULL), "Unable to initialize the host." );
 
 	JSObject *globalObject;
-	globalObject = JS_GetGlobalObject(cx);
+	globalObject = JL_GetGlobalObject(cx);
 
 	gEndSignalCond = JLCondCreate();
 	gEndSignalLock = JLMutexCreate();

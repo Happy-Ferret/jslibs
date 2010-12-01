@@ -25,8 +25,17 @@
 #define J__STRINGIFY(x) #x
 #define J__TOSTRING(x) J__STRINGIFY(x)
 
-#define JL_MACRO_BEGIN do {
-#define JL_MACRO_END } while(0)
+
+#define JL_MACRO_BEGIN  do {
+
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+# define JL_MACRO_END \
+    } __pragma(warning(push)) __pragma(warning(disable:4127)) \
+    while (0) __pragma(warning(pop))
+#else
+# define JL_MACRO_END   } while (0)
+#endif
+
 
 #define __DATE__YEAR ((((__DATE__ [7] - '0') * 10 + (__DATE__ [8] - '0')) * 10 + (__DATE__ [9] - '0')) * 10 + (__DATE__ [10] - '0'))
 #define __DATE__MONTH (__DATE__ [2] == 'n' ? (__DATE__ [1] == 'a' ? 0 : 5) : __DATE__ [2] == 'l' ? 6 : __DATE__ [2] == 'g' ? 7 : __DATE__ [2] == 'p' ? 8 : __DATE__ [2] == 't' ? 9 : __DATE__ [2] == 'v' ? 10 : 11)

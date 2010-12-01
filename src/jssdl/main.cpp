@@ -500,7 +500,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	desktopBitsPerPixel = vi->vfmt->BitsPerPixel; // bad: If this is called before SDL_SetVideoMode(), the 'vfmt' member of the returned structure will contain the pixel format of the "best" video mode.
 
 //	typedef void* (__cdecl *glGetProcAddress_t)(const char*);
-//	JL_CHK( SetNativePrivatePointer(cx, JS_GetGlobalObject(cx), "_glGetProcAddress", (glGetProcAddress_t)SDL_GL_GetProcAddress) );
+//	JL_CHK( SetNativePrivatePointer(cx, JL_GetGlobalObject(cx), "_glGetProcAddress", (glGetProcAddress_t)SDL_GL_GetProcAddress) );
 
 //	SDL_EnableUNICODE(1); // see unicodeKeyboardTranslation property
 
