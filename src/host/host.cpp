@@ -79,7 +79,7 @@ static JSBool JSDefaultStdinFunction(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 
-// Print() => _configuration->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
+// Print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
 static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 	*JL_RVAL = JSVAL_VOID;
@@ -122,7 +122,7 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 	if (likely( globalObject != NULL )) {
 
 		jsval fct;
-		if (likely( GetConfigurationValue(cx, JLID(cx, stderr), &fct) == JS_TRUE && JL_JsvalIsFunction(cx, fct) )) {
+		if (likely( GetHostObjectValue(cx, JLID(cx, stderr), &fct) == JS_TRUE && JL_JsvalIsFunction(cx, fct) )) {
 			
 			// possible optimization, but not very useful since errors occurs rarely.
 			//JSFunction *fun = GET_FUNCTION_PRIVATE(cx, JSVAL_TO_OBJECT(fct));
@@ -568,17 +568,17 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	// jslibs is not ready to support UnloadModule()
 	//	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == 1 ? _NormalizeFunctionName(NAME_GLOBAL_FUNCTION_UNLOAD_MODULE) : NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
 
-	JL_CHK( SetConfigurationValue(cx, JLID_NAME(cx, unsafeMode), unsafeMode ? JSVAL_TRUE : JSVAL_FALSE, false) );
+	JL_CHK( SetHostObjectValue(cx, JLID_NAME(cx, unsafeMode), unsafeMode ? JSVAL_TRUE : JSVAL_FALSE, false) );
 
-// support this: var prevStderr = _configuration.stderr; _configuration.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
+// support this: var prevStderr = _host.stderr; _host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
 	jsval value;
 
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStdinFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	JL_CHK( SetConfigurationValue(cx, JLID_NAME(cx, stdin), value) );
+	JL_CHK( SetHostObjectValue(cx, JLID_NAME(cx, stdin), value) );
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStdoutFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	JL_CHK( SetConfigurationValue(cx, JLID_NAME(cx, stdout), value) );
+	JL_CHK( SetHostObjectValue(cx, JLID_NAME(cx, stdout), value) );
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStderrFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	JL_CHK( SetConfigurationValue(cx, JLID_NAME(cx, stderr), value) );
+	JL_CHK( SetHostObjectValue(cx, JLID_NAME(cx, stderr), value) );
 
 // init static modules
 	JL_CHKM( jslangModuleInit(cx, globalObject), "Unable to initialize jslang." );
@@ -624,7 +624,7 @@ JSBool DestroyHost( JSContext *cx ) {
 //	if ( tmp != JSVAL_VOID && JSVAL_TO_PRIVATE(tmp) )
 //		jl_free( JSVAL_TO_PRIVATE(tmp) );
 
-	JL_CHKM( RemoveConfiguration(cx), "Unable to remove the configuration item." );
+	JL_CHKM( RemoveHostObject(cx), "Unable to remove the host object." );
 
 	JS_SetGlobalObject(cx, JSVAL_TO_OBJECT(JSVAL_NULL)); // remove the global object (TBD) check if it is good or needed to do this.
 

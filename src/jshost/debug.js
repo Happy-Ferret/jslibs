@@ -235,8 +235,8 @@ var uv = uneval(v);
 var vv = jslang_test(v);
 
 var uvv = uneval(vv);
-_configuration.stdout( '\n\n' );
-_configuration.stdout( 'uneval(v) : ', uneval(v), '\n' );
-_configuration.stdout( 'uneval(vv): ', uneval(vv), '\n' );
-_configuration.stdout( 'result : ', uv == uvv, '\n' );
+_host.stdout( '\n\n' );
+_host.stdout( 'uneval(v) : ', uneval(v), '\n' );
+_host.stdout( 'uneval(vv): ', uneval(vv), '\n' );
+_host.stdout( 'result : ', uv == uvv, '\n' );
 

@@ -297,7 +297,7 @@ enum {
 	JLID_SPEC( arguments ),
 	JLID_SPEC( unsafeMode ),
 	JLID_SPEC( _revision ),
-	JLID_SPEC( _configuration ),
+	JLID_SPEC( _host ),
 	JLID_SPEC( scripthostpath ),
 	JLID_SPEC( scripthostname ),
 	JLID_SPEC( isfirstinstance ),
@@ -538,7 +538,7 @@ JL_GetPrivateJsid( JSContext *cx, int index, const char *name ) {
 
 
 #define JLID(cx, name) JL_GetPrivateJsid(cx, JLID_##name, #name)
-// example of use: jsid cfg = JLID(cx, _configuration); char *name = JLID_NAME(_configuration);
+// example of use: jsid cfg = JLID(cx, _host); char *name = JLID_NAME(_host);
 
 
 
@@ -2017,34 +2017,32 @@ JL_GetProperty( JSContext *cx, JSObject *obj, jsid id, T *cval ) {
 // Host info functions
 
 
-ALWAYS_INLINE JSBool RemoveConfiguration(JSContext *cx) {
+ALWAYS_INLINE JSBool RemoveHostObject(JSContext *cx) {
 
 	JSObject *globalObject = JL_GetGlobalObject(cx);
 	JL_S_ASSERT( globalObject != NULL, "Unable to find the global object." );
-	return JS_DeletePropertyById(cx, globalObject, JLID(cx, _configuration));
+	return JS_DeletePropertyById(cx, globalObject, JLID(cx, _host));
 	JL_BAD;
 }
 
 
-inline JSObject *GetConfigurationObject(JSContext *cx) {
+inline JSObject *GetHostObject(JSContext *cx) {
 
 	JSObject *cobj, *globalObject = JL_GetGlobalObject(cx);
 	JL_CHK( globalObject );
-	jsval configurationValue;
-//	JL_CHK( JS_GetProperty(cx, globalObject, NAME_CONFIGURATION_OBJECT, &configurationValue) );
-//	jsid configurationId = JL_GetPrivateJsid(cx, JL_GetHostPrivate(cx), NAME_CONFIGURATION_OBJECT, PRIVATE_JSID__configuration);
-	jsid configurationId;
-	configurationId = JLID(cx, _configuration);
-	JL_CHK( configurationId != JL_NullJsid() );
-	JL_CHK( JS_GetPropertyById(cx, globalObject, configurationId, &configurationValue) );
+	jsval hostObjectValue;
+	jsid hostObjectId;
+	hostObjectId = JLID(cx, _host);
+	JL_CHK( hostObjectId != JL_NullJsid() );
+	JL_CHK( JS_GetPropertyById(cx, globalObject, hostObjectId, &hostObjectValue) );
 
-	if ( JSVAL_IS_VOID( configurationValue ) ) { // if configuration object do not exist, we build one
+	if ( JSVAL_IS_VOID( hostObjectValue ) ) { // if configuration object do not exist, we build one
 
-		cobj = JS_DefineObject(cx, globalObject, JLID_NAME(cx, _configuration), NULL, NULL, 0 );
+		cobj = JS_DefineObject(cx, globalObject, JLID_NAME(cx, _host), NULL, NULL, 0 );
 		JL_CHK( cobj ); // Doc: If the property already exists, or cannot be created, JS_DefineObject returns NULL.
 	} else {
-		JL_CHK( JSVAL_IS_OBJECT(configurationValue) );
-		cobj = JSVAL_TO_OBJECT( configurationValue );
+		JL_CHK( JSVAL_IS_OBJECT(hostObjectValue) );
+		cobj = JSVAL_TO_OBJECT(hostObjectValue);
 	}
 	return cobj;
 bad:
@@ -2052,9 +2050,9 @@ bad:
 }
 
 
-ALWAYS_INLINE JSBool GetConfigurationValue(JSContext *cx, jsid id, jsval *value) {
+ALWAYS_INLINE JSBool GetHostObjectValue(JSContext *cx, jsid id, jsval *value) {
 
-	JSObject *cobj = GetConfigurationObject(cx);
+	JSObject *cobj = GetHostObject(cx);
 	if ( cobj )
 		return JS_LookupPropertyById(cx, cobj, id, value);
 	*value = JSVAL_VOID;
@@ -2062,9 +2060,9 @@ ALWAYS_INLINE JSBool GetConfigurationValue(JSContext *cx, jsid id, jsval *value)
 }
 
 
-ALWAYS_INLINE JSBool GetConfigurationValue(JSContext *cx, const char *name, jsval *value) {
+ALWAYS_INLINE JSBool GetHostObjectValue(JSContext *cx, const char *name, jsval *value) {
 
-	JSObject *cobj = GetConfigurationObject(cx);
+	JSObject *cobj = GetHostObject(cx);
 	if ( cobj )
 		return JS_LookupProperty(cx, cobj, name, value);
 	*value = JSVAL_VOID;
@@ -2072,9 +2070,9 @@ ALWAYS_INLINE JSBool GetConfigurationValue(JSContext *cx, const char *name, jsva
 }
 
 
-ALWAYS_INLINE JSBool SetConfigurationValue(JSContext *cx, const char *name, jsval value, bool modifiable = true, bool visible = true) {
+ALWAYS_INLINE JSBool SetHostObjectValue(JSContext *cx, const char *name, jsval value, bool modifiable = true, bool visible = true) {
 
-	JSObject *cobj = GetConfigurationObject(cx);
+	JSObject *cobj = GetHostObject(cx);
 	if ( cobj )
 		return JS_DefineProperty(cx, cobj, name, value, NULL, NULL, JSPROP_ENUMERATE | (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
 	return JS_TRUE;

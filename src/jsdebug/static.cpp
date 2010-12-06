@@ -37,7 +37,7 @@
 int _puts(JSContext *cx, const char *str) {
 
 	jsval stdoutFunction;
-	if ( GetConfigurationValue(cx, JLID_NAME(cx, stdout), &stdoutFunction) && JL_JsvalIsFunction(cx, stdoutFunction) ) {
+	if ( GetHostObjectValue(cx, JLID_NAME(cx, stdout), &stdoutFunction) && JL_JsvalIsFunction(cx, stdoutFunction) ) {
 
 		int len = (int)strlen(str);
 		JSString *jsstr = JS_NewStringCopyN(cx, str, len);

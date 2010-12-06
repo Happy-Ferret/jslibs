@@ -289,7 +289,7 @@ LoadModule('jsio');
 
 	function MyFileTask() {
 
-		_configuration.stderr('myerror');
+		_host.stderr('myerror');
 	}
 
 	var myTask = new Task(MyFileTask);

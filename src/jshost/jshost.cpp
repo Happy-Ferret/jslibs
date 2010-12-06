@@ -589,7 +589,7 @@ $H beware
   $H exemple
   {{{
   LoadModule('jsstd');
-  Print( 'Unsafe mode: '+_configuration.unsafeMode, '\n' );
+  Print( 'Unsafe mode: '+_host.unsafeMode, '\n' );
   }}}
   $H note
   You can avoid LoadModule to use the global object and load the module in your own namespace:
@@ -621,8 +621,8 @@ $H beware
  * *endSignal*
   Is $TRUE if a break signal (ctrl-c, ...) has been sent to jshost. This event can be reset.
 
-=== Configuration object ===
- jshost create a global `_configuration` object to provide other modules some useful informations like `stdout` access and `unsafeMode` flag.
+=== Host object ===
+ jshost create a global `_host` object to provide other modules some useful informations like `stdout` access and `unsafeMode` flag.
 
 == Remarks ==
 

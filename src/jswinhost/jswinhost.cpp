@@ -48,8 +48,8 @@ static unsigned char embeddedBootstrapScript[] =
 /*
 int consoleStdOut( JSContext *cx, const char *data, int length ) {
 
-	JSObject *obj = GetConfigurationObject(cx);
-	JL_S_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
+	JSObject *obj = GetHostObject(cx);
+	JL_S_ASSERT( obj != NULL, "Unable to get GetHostObject" );
 	jsval functionVal;
 	JS_GetProperty(cx, obj, "stdout", &functionVal);
 	if ( !JSVAL_IS_VOID( functionVal ) ) {
@@ -65,8 +65,8 @@ int consoleStdOut( JSContext *cx, const char *data, int length ) {
 
 int consoleStdErr( JSContext *cx, const char *data, int length ) {
 
-	JSObject *obj = GetConfigurationObject(cx);
-	JL_S_ASSERT( obj != NULL, "Unable to get GetConfigurationObject" );
+	JSObject *obj = GetHostObject(cx);
+	JL_S_ASSERT( obj != NULL, "Unable to get GetHostObject" );
 	jsval functionVal;
 	JS_GetProperty(cx, obj, "stderr", &functionVal);
 	if ( !JSVAL_IS_VOID( functionVal ) ) {
@@ -275,7 +275,7 @@ bad:
  * $BOOL *isfirstinstance* $READONLY
   is true if the current instance is the first one. This can help to avoid jswinhost to be run twice at the same time.
 
-=== Configuration object ===
+=== Host object ===
  see [jshost]
 
 === Remarks ===
@@ -287,8 +287,8 @@ Because jwinshost do not use a console window, errors and printed messages will 
 However, you can write your own output system:
 {{{
 LoadModule('jswinshell');
-_configuration.stdout = new Console().Write;
-_configuration.stderr = MessageBox;
+_host.stdout = new Console().Write;
+_host.stderr = MessageBox;
 LoadModule('jsstd');
 Print('toto');
 hkqjsfhkqsdu_error();

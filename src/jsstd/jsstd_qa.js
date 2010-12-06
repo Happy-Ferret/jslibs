@@ -982,12 +982,12 @@ LoadModule('jsstd');
 /// warning messages [ft]
 
 	var buffer = '';
-	var prev = _configuration.stderr;
-	_configuration.stderr = function(chunk) buffer += chunk;
+	var prev = _host.stderr;
+	_host.stderr = function(chunk) buffer += chunk;
 	try {
 		Warning('testing warning messages');
 	} catch (ex) {}
-	_configuration.stderr = prev;
+	_host.stderr = prev;
 	
 	//Print(buffer.length)
 	QA.ASSERT_STR( buffer.indexOf('warning: testing warning messages') != -1, true, 'stderr redirection result' ); 

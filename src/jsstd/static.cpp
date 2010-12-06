@@ -773,7 +773,7 @@ $TOC_MEMBER $INAME
   Print( foo[i] );
   }}}
   $H note
-   The error output can be redirected by redefining the _configuration.stderr function. see the Print() function.
+   The error output can be redirected by redefining the _host.stderr function. see the Print() function.
 **/
 DEFINE_FUNCTION( Assert ) {
 
@@ -955,7 +955,7 @@ $TOC_MEMBER $INAME
   Print( 'Hello', ' ', 'World', '\n' ); // prints: Hello World
   }}}
   $H note
-   The output can be redirected by redefining the _configuration.stdout function.
+   The output can be redirected by redefining the _host.stdout function.
    $H example 1
    {{{
    LoadModule('jsstd');
@@ -965,16 +965,16 @@ $TOC_MEMBER $INAME
    {{{
    LoadModule('jsstd');
    Print('foo\n'); // prints: foo
-   _configuration.stdout = function() {}
+   _host.stdout = function() {}
    Print('bar\n'); // prints nothing
    }}}
 **/
 DEFINE_FUNCTION( Print ) {
 
-	// Print() => _configuration->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
+	// Print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
 
 	jsval fval;
-	JL_CHK( GetConfigurationValue(cx, JLID(cx, stdout), &fval) );
+	JL_CHK( GetHostObjectValue(cx, JLID(cx, stdout), &fval) );
 	*JL_RVAL = JSVAL_VOID;
 	if (likely( JL_JsvalIsFunction(cx, fval) ))
 		return JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fval, JL_ARGC, JL_ARGV, &fval);

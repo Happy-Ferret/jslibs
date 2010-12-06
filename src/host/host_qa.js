@@ -42,10 +42,10 @@ LoadModule('jsio');
 
 		var buffer = '';
 
-		var prev = _configuration.stdout;
-		_configuration.stdout = function(chunk) buffer += chunk;
+		var prev = _host.stdout;
+		_host.stdout = function(chunk) buffer += chunk;
 		Print('this_is_a_test');
-		_configuration.stdout = prev;
+		_host.stdout = prev;
 
 		QA.ASSERT( buffer.indexOf('this_is_a_test') != -1, true, 'stdout redirection result' ); 
 
@@ -106,15 +106,15 @@ LoadModule('jsio');
 	QA.ASSERT_STR( global.valueOf(), '[object Global]', 'global class' );
 	QA.ASSERT( uneval( global ).length > 0, true, 'uneval global' );
 	QA.ASSERT( global.Math, Math, 'global std objects' );
-	QA.ASSERT_HAS_PROPERTIES( global, '_configuration,arguments' );
+	QA.ASSERT_HAS_PROPERTIES( global, '_host,arguments' );
 	QA.ASSERT( global.arguments[0].indexOf('js') != -1, true , 'current script' );
 	QA.ASSERT_TYPE( global.arguments, Array, 'arguments type' );
 
 
-/// global configuration object [f]
+/// global _host object [f]
 
-	QA.ASSERT( typeof global._configuration, 'object', '_configuration is object' );
-	QA.ASSERT_HAS_PROPERTIES( global._configuration, 'unsafeMode,stdout,stderr' );
+	QA.ASSERT( typeof global._host, 'object', '_host is object' );
+	QA.ASSERT_HAS_PROPERTIES( global._host, 'unsafeMode,stdout,stderr' );
 
 	
 /// jit enabled [t]
@@ -136,8 +136,8 @@ LoadModule('jsio');
 /// error messages
 
 	var buffer = '';
-	var prev = _configuration.stderr;
-	_configuration.stderr = function(chunk) buffer += chunk;
+	var prev = _host.stderr;
+	_host.stderr = function(chunk) buffer += chunk;
 	
 	var ex;
 	try {
@@ -146,7 +146,7 @@ LoadModule('jsio');
 		ex = _ex
 	}
 
-	_configuration.stderr = prev;
+	_host.stderr = prev;
 	
 	QA.ASSERT_STR( buffer.length == 0, true, 'stderr redirection result' ); 
 	QA.ASSERT_STR( ex.message.indexOf('not enough arguments') != -1, true, 'LoadModule() error' ); 
@@ -155,22 +155,22 @@ LoadModule('jsio');
 /// catched error messages [rmtf]
 
 	var buffer = '';
-	var prev = _configuration.stderr;
-	_configuration.stderr = function(chunk) buffer += chunk;
+	var prev = _host.stderr;
+	_host.stderr = function(chunk) buffer += chunk;
 	try {
 		eval('azer()');
 	} catch (ex) {}
-	_configuration.stderr = prev;
+	_host.stderr = prev;
 	QA.ASSERT_STR( buffer.length == 0, true, 'stderr redirection result' ); 
 
 
 /// mute error messages [rmtf]
 
-	var prev = _configuration.stderr;
-	delete _configuration.stderr;
+	var prev = _host.stderr;
+	delete _host.stderr;
 	
 	try {
 		eval('azer()');
 	} catch (ex) {}
 
-	_configuration.stderr = prev;
+	_host.stderr = prev;

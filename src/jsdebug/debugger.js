@@ -164,10 +164,10 @@ LoadModule('jsdebug');
 	var _breakContext;
 	var _stdout = '';
 	var _stderr = '';
-	var _prevStdout = _configuration.stdout;
-	var _prevStderr = _configuration.stdout;
-	_configuration.stdout = function() { _stdout += Array.slice(arguments).join(''); return _prevStdout.apply(this, arguments) }
-	_configuration.stderr = function() { _stderr += Array.slice(arguments).join(''); return _prevStderr.apply(this, arguments) }
+	var _prevStdout = _host.stdout;
+	var _prevStderr = _host.stdout;
+	_host.stdout = function() { _stdout += Array.slice(arguments).join(''); return _prevStdout.apply(this, arguments) }
+	_host.stderr = function() { _stderr += Array.slice(arguments).join(''); return _prevStderr.apply(this, arguments) }
 
 	function OriginToString( breakOrigin ) {
 
@@ -346,8 +346,8 @@ LoadModule('jsdebug');
 			delete dbg.onBreak;
 			dbg.ClearBreakpoints();
 			delete global.__dbg;
-			_configuration.stdout = _prevStdout;
-			_configuration.stdout = _prevStderr;
+			_host.stdout = _prevStdout;
+			_host.stdout = _prevStderr;
 			Action(Debugger.DO_CONTINUE);
 		},
 

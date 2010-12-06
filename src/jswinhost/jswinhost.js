@@ -5,7 +5,7 @@ LoadModule('jsstd');
 
 /*
 var cons = new Console()
-configuration.stderr = configuration.stdout = cons.Write;
+_host.stderr = configuration.stdout = cons.Write;
 LoadModule('jsstd');
 Print('toto');
 */
