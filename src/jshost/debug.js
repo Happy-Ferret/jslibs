@@ -1,242 +1,38 @@
 LoadModule('jsstd');
 
-if ( 0 ) {
-
-	LoadModule('jsio');
+var obj = {
+	_serialize: function(ser) {
 	
-	var str = new File('../../jsapiusage.txt').content;
-	var api = {};
-	var exp = /(JS_\w+)\(/ig;
-	while ( hit = exp(str) )
-		api[hit[1]] = api[hit[1]] ? api[hit[1]]+1 : 1;
+		ser.Write('ser obj');
+	},
+	_unserialize: function(unser) {
+	
+		return {};
 		
-	var arr = [];
-	for ( var [apiName, usageCount] in Iterator(api) ) {
-		
-		var o = {};
-		o.apiName = apiName;
-		o.usageCount = usageCount;
-		arr.push(o);
 	}
-	
-	arr.sort( function(a, b) {
-		
-		if ( a.usageCount < b.usageCount )
-			return 1;
-		if ( a.usageCount > b.usageCount )
-			return -1;
-		return 0;
-	});
-	
-	var f = new File('sorted.txt').Open();
-	for each ( var i in arr )
-		f.Write( i.usageCount + ': '+i.apiName+'\n' );
-	f.Close();
-
-	throw 0;
-}
-
-LoadModule('jsstd'); Exec('../common/tools.js');
-//var QA = FakeQAApi;
-//RunLocalQAFile();
-//RunJsircbot(false); throw 0;
-RunQATests('-rep 1 -exclude jstask jslang');
-
-
-
-
-function makeLogger(obj) {
-
-	var proxy = Proxy.create({
-		get: function(rcvf, name) {
-			Print('get '+' '+name+' '+''+'\n');
-			return obj[name];
-		},
-		set: function(rcvf, name, val) {
-		
-		rcvf.toto
-			Print('set '+name+' '+val+' '+''+'\n');
-			obj[name] = val;
-			return true;
-		},
-		delete: function(name) {
-			Print('del '+name+'\n');
-			delete obj[name];
-			return false;
-		},
-		invoke: function(receiver, name, args) {
-			Print('call '+name+'\n');
-			obj[name].apply(obj, args);
-		},
-		
-	}, Object.getPrototypeOf(obj));
-	return proxy;
-}
-
-var o = makeLogger({});
-
-
-o.a = 5;
-/*
-o.a = 6;
-o.b = 6;
-Print( delete o.b );
-Print( o.b, '\n' );
-*/
-o.x(0);
-
-throw 0;
-
-
-
-
-
-
-LoadModule('jsstd');
-LoadModule('jssqlite');
-
-var db = new Database(); // in-memory database
-db.Exec('create table t1 (name,value);');
-db.Exec('insert into t1 (name,value) values ("red","#F00")');
-
-for (var i = 0; i < 10; i++ ) {
-
-Print(i, '\n');
-
-
-		var res = [ color.name+'='+color.value for each ( color in db.Query('SELECT * from t1') ) ].join(',');
-		
-		
-//		QA.ASSERT_STR( res, 'red=#F00,green=#0F0,blue=#00F', 'result' );
-}
-
-throw 0;
-
-
-
-
-
-
-
-
-
-
-
-
-
-var s = new Blob('ABC');
-s['test'] = 's';
-s[1] = 's';
-
-
-
-
-LoadModule('jsstd');
-
-var b1 = new Blob('abcdef');
-var b2 = b1.concat('123');
-
-var b1 = new Blob();
-for ( c in b1 )
-	Print(c+' ');
-
-
-var s = new String('ABC');
-
-for ( c in s )
-	Print(c+' ');
-
-
-
-
-var tmp = '';
-var b = new Blob('ABC123');
-for ( c in b )
-	tmp += c;
-
-Print(tmp);
-
-
-b['2'] = 5;
-b.Free();
-b[0]
-
-
-
-Print('END'); throw 0;
-
-
-
-
-
-Print('END'); throw 0;
-
-
-var b = new Blob('test');
-
-
-b.match();
-
-
-Print ( b == new String(''), '\n' );
-Print ( b == false, '\n' );
-
-Print ( b, '\n' );
-
-jslang_test(b);
-
-
-
-throw 0;
-
-
-Test5.prototype = new function() {
-
-	this._serialize = function() {
-	
-		return this.val;
-	}
-	
-	this._unserialize = function(data) {
-			
-		var o = new Test5();
-		o.val = data;
-		return o;
-	}
-}
-
-function Test5() {
-}
-
-var obj5 = new Test5;
-obj5.val = 5566;
-
-
-function Test0( a ) {
-	
-	a++;
-	Print('a:'+a);
-	return a; 
-}
-
-
-var v = {
-	o:'\u1234\u5678\u9012\u3456\u7890',
-	a:new Number(0.5), b:['aa', 1.3, [], [[[[[[{}]]]]]], undefined, null, 0 ], c:0.4, d:(new Array(3)), e:obj5,
-	f:new Date('1/2/2006'), g:new Blob('123456789'), h:0, i:NaN, j:{},
-	k:-1, l:[1,,3], m:'', n:1/3
 };
- 
-v = new Blob('');
-//v.test = 123;
-//v = Test0;
 
-var uv = uneval(v);
-var vv = jslang_test(v);
 
-var uvv = uneval(vv);
-_host.stdout( '\n\n' );
-_host.stdout( 'uneval(v) : ', uneval(v), '\n' );
-_host.stdout( 'uneval(vv): ', uneval(vv), '\n' );
-_host.stdout( 'result : ', uv == uvv, '\n' );
+var s = new Serializer();
+s.Write('test');
+s.Write(100);
+s.Write([,undefined,1,2,3]);
+//s.Write(obj);
+s.Write(Blob('12345678'));
+
+var buffer = s.GetBuffer();
+//Print( buffer, '\n' );
+
+
+var s = new Unserializer(buffer);
+
+Print( uneval( s.Read() ) );
+Print( uneval( s.Read() ) );
+Print( uneval( s.Read() ) );
+
+Print( uneval( s.Read() ) );
+
+Print( '-=-' );
+
+throw 0;
 

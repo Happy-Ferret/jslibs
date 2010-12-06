@@ -25,7 +25,7 @@
 #endif
 
 #ifdef _MSC_VER
-#pragma warning( push, 1 )
+#pragma warning( push, 0 )
 #endif // _MSC_VER
 
 #include <jsapi.h>
@@ -2090,7 +2090,7 @@ static INLINE JSBool
 JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
 
 	JL_ASSERT( jl_msize(buffer) >= length + 1 );
-	JL_ASSERT( ((uint8_t*)buffer)[length] == 0 ); 
+	JL_ASSERT( ((uint8_t*)buffer)[length] == 0 );
 
 	if (unlikely( length == 0 || buffer == NULL )) { // Empty Blob must acts like an empty string: !'' === true
 

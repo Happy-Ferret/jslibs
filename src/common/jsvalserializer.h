@@ -16,17 +16,17 @@
 
 namespace jl {
 
-	class SerializerBufferInfo {
+	class SerializerConstBufferInfo {
 	private:
 		const void *_data;
 		size_t _length;
 	public:
-		SerializerBufferInfo() {}
+		SerializerConstBufferInfo() {}
 
-		SerializerBufferInfo( const void *data, size_t length ) : _data(static_cast<const void *>(data)), _length(length) {}
+		SerializerConstBufferInfo( const void *data, size_t length ) : _data(static_cast<const void *>(data)), _length(length) {}
 
 		template <class T>
-		SerializerBufferInfo( const T *data, size_t count ) : _data(static_cast<const void *>(data)), _length(sizeof(T)*count) {}
+		SerializerConstBufferInfo( const T *data, size_t count ) : _data(static_cast<const void *>(data)), _length(sizeof(T)*count) {}
 
 		const void * Data() const {
 
@@ -38,6 +38,31 @@ namespace jl {
 			return _length;
 		}
 	};
+
+/*
+	class SerializerBufferInfo {
+	private:
+		void *_data;
+		size_t _length;
+	public:
+		SerializerBufferInfo() {}
+
+		SerializerBufferInfo( void *data, size_t length ) : _data(data), _length(length) {}
+
+		template <class T>
+		SerializerBufferInfo( T *data, size_t count ) : _data((void*)data), _length(sizeof(T)*count) {}
+
+		void * Data() const {
+
+			return _data;
+		}
+
+		size_t Length() const {
+
+			return _length;
+		}
+	};
+*/
 
 	class SerializerObjectProperties {
 		JSObject *_obj;
@@ -73,18 +98,20 @@ namespace jl {
 
 	class Serializer {
 	private:
-		JSContext *cx;
+
+		jsval _serializerObj;
 
 		uint8_t *_start;
 		uint8_t *_pos;
 		size_t _length;
 
-		void PrepareBytes( size_t length ) {
+		void PrepareBytes( size_t length, bool exact = false ) {
 
 			size_t offset = _pos - _start;
 			if ( offset + length > _length ) {
 
-				_length = _length * 2 + length;
+				_length = (exact ? 0 : _length * 2) + length;
+
 				_start = (uint8_t*)jl_realloc(_start, _length); // if ( _start == NULL ) jl_alloc(_length)
 				JL_ASSERT( _start != NULL );
 				_pos = _start + offset;
@@ -98,14 +125,16 @@ namespace jl {
 
 		~Serializer() {
 
-			jl_free(_start);
+			if ( _start != NULL )
+				jl_free(_start);
 		}
 
-		Serializer( JSContext *cx ) : cx(cx), _start(NULL), _pos(NULL), _length(0) {
+		Serializer( jsval serializerObj )
+		: _serializerObj(serializerObj), _start(NULL), _pos(NULL), _length(0) {
 
 			PrepareBytes(JL_PAGESIZE);
 		}
-
+/*
 		void Free() {
 
 			jl_free(_start);
@@ -113,45 +142,45 @@ namespace jl {
 			_pos = NULL;
 			_length = 0;
 		}
+*/
+		void GetBufferOwnership( void **data, size_t *length ) {
 
-		const void * Data() const {
-
-			return _start;
+			PrepareBytes(1, true);
+			*_pos = 0;
+			*data = _start;
+			*length = _pos - _start;
+			_start = NULL;
+			_pos = NULL;
+			_length = 0;
 		}
 
-		size_t Length() const {
-
-			return _pos - _start;
-		}
-
-		Serializer& operator <<( const char *buf ) {
+		void Write( JSContext *cx, const char *buf ) {
 
 			size_t length = strlen(buf)+1;
-			*this << length;
+			Write(cx, length);
 			PrepareBytes(length);
 			memcpy(_pos, buf, length);
 			_pos += length;
-			return *this;
 		}
 
-		Serializer& operator <<( const SerializerBufferInfo &buf ) {
+		JSBool Write( JSContext *cx, const SerializerConstBufferInfo &buf ) {
 
-			*this << buf.Length();
+			Write(cx, buf.Length());
 			if ( buf.Length() > 0 ) {
 
 				PrepareBytes(buf.Length());
 				memcpy(_pos, buf.Data(), buf.Length());
 				_pos += buf.Length();
 			}
-			return *this;
+			return JS_TRUE;
 		}
 
-		Serializer& operator <<( const SerializerObjectProperties &sop ) {
+		JSBool Write( JSContext *cx, const SerializerObjectProperties &sop ) {
 
 			JSObject *obj = sop;
 
 			JSIdArray *idArray = JS_Enumerate(cx, obj); // Get an array of the all own enumerable properties of a given object.
-			*this << idArray->length;
+			Write(cx, idArray->length);
 			jsval name, value;
 			for ( int i = 0; i < idArray->length; ++i ) {
 
@@ -168,24 +197,23 @@ namespace jl {
 					JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "a valid string");
 
 
-				// *this << SerializerBufferInfo(JS_GetStringChars(jsstr), JS_GetStringLength(jsstr));
+				// *this << SerializerConstBufferInfo(JS_GetStringChars(jsstr), JS_GetStringLength(jsstr));
 				size_t length;
 				const jschar *chars;
 				chars = JS_GetStringCharsAndLength(jsstr, &length);
-				*this << SerializerBufferInfo(chars, length);
+				Write(cx, SerializerConstBufferInfo(chars, length));
 
 //				*this << s;
 				//JL_CHK( obj->getProperty(cx, idArray->vector[i], &value) );
 				JL_CHK( JS_GetPropertyById(cx, obj, idArray->vector[i], &value) );
-				*this << value;
+				Write(cx, value);
 			}
 			JS_DestroyIdArray(cx, idArray);
-			return *this;
-		bad:
-			throw JS_FALSE;
+			return JS_TRUE;
+			JL_BAD;
 		}
 
-		Serializer& operator <<( const jsval &val ) {
+		JSBool Write( JSContext *cx, const jsval &val ) {
 
 			char type;
 			if ( JSVAL_IS_PRIMITIVE(val) ) {
@@ -197,42 +225,46 @@ namespace jl {
 				if ( JSVAL_IS_INT(val) ) {
 
 					type = JLTInt;
-					*this << type << JSVAL_TO_INT(val);
+					Write(cx, type);
+					Write(cx, JSVAL_TO_INT(val));
 				} else
 				if ( JSVAL_IS_STRING(val) ) {
 
 					type = JLTString;
 					JSString *jsstr = JSVAL_TO_STRING(val);
-					// *this << type << SerializerBufferInfo(JS_GetStringChars(jsstr), JS_GetStringLength(jsstr));
+					// *this << type << SerializerConstBufferInfo(JS_GetStringChars(jsstr), JS_GetStringLength(jsstr));
 					size_t length;
 					const jschar *chars;
 					chars = JS_GetStringCharsAndLength(jsstr, &length);
-					*this << type << SerializerBufferInfo(chars, length);
+					Write(cx, type);
+					Write(cx, SerializerConstBufferInfo(chars, length));
 				} else
 				if ( JSVAL_IS_VOID(val) ) {
 
 					type = JLTVoid;
-					*this << type;
+					Write(cx, type);
 				} else
 				if ( JSVAL_IS_BOOLEAN(val) ) {
 
 					type = JLTBool;
-					*this << type << char(JSVAL_TO_BOOLEAN(val));
+					Write(cx, type);
+					Write(cx, char(JSVAL_TO_BOOLEAN(val)));
 				} else
 				if ( JSVAL_IS_DOUBLE(val) ) {
 
 					type = JLTDouble;
-					*this << type << JSVAL_TO_DOUBLE(val);
+					Write(cx, type);
+					Write(cx, JSVAL_TO_DOUBLE(val));
 				} else
 					if ( js::Valueify(val).isMagic(JS_ARRAY_HOLE) ) {
 
 					type = JLTHole;
-					*this << type;
+					Write(cx, type);
 				} else
 				if ( JSVAL_IS_NULL(val) ) {
 
 					type = JLTNull;
-					*this << type;
+					Write(cx,type);
 				} else
 					JL_REPORT_ERROR("Unsupported value.");
 
@@ -245,7 +277,8 @@ namespace jl {
 					type = JLTArray;
 					jsuint length;
 					JL_CHK( JS_GetArrayLength(cx, obj, &length) );
-					*this << type << length;
+					Write(cx, type);
+					Write(cx, length);
 
 					JSBool found;
 					jsval elt;
@@ -255,12 +288,10 @@ namespace jl {
 						if ( JSVAL_IS_VOID( elt ) ) {
 
 							JL_CHK( JS_HasElement(cx, obj, i, &found) );
-							if ( !found ) {
-
+							if ( !found )
 								elt = js::Jsvalify(js::MagicValue(JS_ARRAY_HOLE));
-							}
 						}
-						*this << elt;
+						Write(cx, elt);
 					}
 				} else
 				if ( obj->isFunction() ) { // if ( JS_ObjectIsFunction(cx, obj) ) { // JL_JsvalIsFunction(cx, val)
@@ -271,7 +302,8 @@ namespace jl {
 					uint32 length;
 					void *buf = JS_XDRMemGetData(xdr, &length);
 					JL_ASSERT( buf );
-					*this << type << SerializerBufferInfo(buf, length);
+					Write(cx, type);
+					Write(cx, SerializerConstBufferInfo(buf, length));
 					JS_XDRDestroy(xdr);
 				} else {
 
@@ -284,22 +316,27 @@ namespace jl {
 
 						JSFunction *fct = JS_ValueToFunction(cx, serializeFctVal);
 						if ( fct->isInterpreted() ) { // weakly unreliable
-
+/*
 							type = JLTInterpretedObject;
-							*this << type;
+							Write(cx, type);
 							jsval unserializeFctVal;
 							JL_CHK( JS_GetMethodById(cx, obj, JLID(cx, _unserialize), NULL, &unserializeFctVal) );
-							JL_S_ASSERT_FUNCTION( unserializeFctVal );
-							*this << unserializeFctVal;
-							jsval argv[] = { JSVAL_NULL };
+//							JL_S_ASSERT_FUNCTION( unserializeFctVal ); // assert object can be unserialized
+							if ( !JL_JsvalIsFunction(cx, unserializeFctVal) )
+								JL_REPORT_ERROR("unserializer function not found.");
+							Write(cx, unserializeFctVal);
+							jsval argv[] = { JSVAL_NULL, _serializerObj };
 							js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
 							JL_CHK( JS_CallFunctionValue(cx, obj, serializeFctVal, COUNTOF(argv)-1, argv+1, argv) );
-							*this << *argv;
+//							Write(cx, *argv);
+*/
+
 						} else {
 
 							type = JLTNativeObject;
-							*this << type << obj->getClass()->name;
-							jsval argv[] = { JSVAL_NULL, PRIVATE_TO_JSVAL(this) };
+							Write(cx, type);
+							Write(cx, obj->getClass()->name);
+							jsval argv[] = { JSVAL_NULL, _serializerObj };
 							js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
 							JL_CHK( JS_CallFunctionValue(cx, obj, serializeFctVal, COUNTOF(argv)-1, argv+1, argv) );
 						}
@@ -308,38 +345,41 @@ namespace jl {
 					if ( JL_ObjectIsObject(cx, obj) ) {
 
 						type = JLTObject;
-						*this << type << SerializerObjectProperties(obj);
+						Write(cx, type);
+						Write(cx, SerializerObjectProperties(obj));
 					} else { // fallback
 
 						type = JLTObjectValue;
-						*this << type << obj->getClass()->name;
+						Write(cx, type);
+						Write(cx, obj->getClass()->name);
 						jsval value;
 						JL_CHK( JL_ValueOf(cx, OBJECT_TO_JSVAL(obj), &value) );
-						*this << value;
+						Write(cx, value);
 					}
 				}
 			}
 
-			return *this;
-		bad:
-			throw JS_FALSE;
+			return JS_TRUE;
+			JL_BAD;
 		}
 
 		template <class T>
-		Serializer& operator <<( const T value ) {
+		JSBool Write( JSContext *cx, const T value ) {
 
 			PrepareBytes(sizeof(T));
 			*(T*)_pos = value;
 			_pos += sizeof(T);
-			return *this;
+			return JS_TRUE;
 		}
 
 	};
 
 
+
+
 	class Unserializer {
 	private:
-		JSContext *cx;
+		jsval _unserializerObj;
 
 		const uint8_t *_start;
 		const uint8_t *_pos;
@@ -350,85 +390,99 @@ namespace jl {
 			return (_pos - _start) + length <= _length;
 		}
 
+		Unserializer();
 		Unserializer( const Unserializer & );
 
 	public:
-		Unserializer( JSContext *cx, const void *data, size_t length )
-			: cx(cx), _start((const uint8_t *)data), _pos(_start), _length(length) {
+		Unserializer( jsval unserializerObj, const void *data, size_t length )
+		: _unserializerObj(unserializerObj), _start((const uint8_t *)data), _pos(_start), _length(length) {
+
 		}
 
-		Unserializer( JSContext *cx, const Serializer &ser )
-			: cx(cx), _start((const uint8_t *)ser.Data()), _pos(_start), _length(ser.Length()) {
-		}
-
-		Unserializer& operator >>( const char *&buf ) {
+		JSBool Read( JSContext *cx, const char *&buf ) {
 
 			size_t length;
-			*this >> length;
+			Read(cx, length);
 			if ( !AssertData(length) )
-				throw JS_FALSE;
+				return JS_FALSE;
 			buf = (const char*)_pos;
 			_pos += length;
-			return *this;
+			return JS_TRUE;
 		}
 
-		Unserializer& operator >>( SerializerBufferInfo &buf ) {
+		JSBool Read( JSContext *cx, SerializerConstBufferInfo &buf ) {
 
 			size_t length;
-			*this >> length;
+			Read(cx, length);
 			if ( length > 0 ) {
 
 				if ( !AssertData(length) )
-					throw JS_FALSE;
+					return JS_FALSE;
+				buf = SerializerConstBufferInfo(_pos, length);
+				_pos += length;
+			} else {
+
+				buf = SerializerConstBufferInfo(NULL, 0);
+			}
+			return JS_TRUE;
+		}
+/*
+		JSBool Read( JSContext *cx, SerializerBufferInfo &buf ) {
+
+			size_t length;
+			Read(cx, length);
+			if ( length > 0 ) {
+
+				if ( !AssertData(length) )
+					return JS_FALSE;
 				buf = SerializerBufferInfo(_pos, length);
 				_pos += length;
 			} else {
 
 				buf = SerializerBufferInfo(NULL, 0);
 			}
-			return *this;
+			return JS_TRUE;
 		}
-
-		Unserializer& operator >>( SerializerObjectProperties &sop ) {
+*/
+		JSBool Read( JSContext *cx, SerializerObjectProperties &sop ) {
 
 			jsint length;
-			*this >> length;
+			Read(cx, length);
 //			JSObject *obj = JS_NewObject(cx, NULL, NULL, NULL);
 
 			for ( int i = 0; i < length; ++i ) {
 
-				SerializerBufferInfo name;
-				*this >> name;
+				SerializerConstBufferInfo name;
 				jsval value;
-				*this >> value;
+				Read(cx, name);
+				Read(cx, value);
 				JL_CHK( JS_SetUCProperty(cx, /*obj*/sop, (jschar*)name.Data(), name.Length(), &value) );
 			}
 
 //			sop = SerializerObjectProperties(obj);
 
-			return *this;
-		bad:
-			throw JS_FALSE;
+			return JS_TRUE;
+			JL_BAD;
 		}
 
-		Unserializer& operator >>( jsval &val ) {
+		JSBool Read( JSContext *cx, jsval &val ) {
 
-			SerializerBufferInfo buf;
+			SerializerConstBufferInfo buf;
 			char type;
-			*this >> type;
+			Read(cx, type);
 
 			switch (type) {
 
 				case JLTInt: {
 
 					jsint i;
-					*this >> i;
+					Read(cx, i);
 					val = INT_TO_JSVAL(i);
 					break;
 				}
 				case JLTString: {
 
-					*this >> buf;
+					Read(cx, buf);
 					JSString *jsstr;
 					jsstr = JS_NewUCStringCopyN(cx, (const jschar *)buf.Data(), buf.Length()/2);
 					val = STRING_TO_JSVAL(jsstr);
@@ -442,14 +496,14 @@ namespace jl {
 				case JLTBool: {
 
 					char b;
-					*this >> b;
+					Read(cx, b);
 					val = BOOLEAN_TO_JSVAL(b);
 					break;
 				}
 				case JLTDouble: {
 
 					jsdouble d;
-					*this >> d;
+					Read(cx, d);
 					val = DOUBLE_TO_JSVAL(d);
 					break;
 				}
@@ -467,7 +521,7 @@ namespace jl {
 				case JLTArray: {
 
 					jsuint length;
-					*this >> length;
+					Read(cx, length);
 					JSObject *arr;
 					arr = JS_NewArrayObject(cx, length, NULL);
 					JL_S_ASSERT_ALLOC( arr );
@@ -476,9 +530,8 @@ namespace jl {
 					jsval elt;
 					for ( jsuint i = 0; i < length; ++i ) {
 
-						*this >> elt;
-						if ( js::Valueify(elt).isMagic(JS_ARRAY_HOLE) ) // optional check
-							JL_CHK( JS_SetElement(cx, arr, i, &elt) );
+						Read(cx, elt);
+						JL_CHK( JS_SetElement(cx, arr, i, &elt) );
 					}
 					break;
 				}
@@ -501,15 +554,15 @@ namespace jl {
 					JSObject *obj = JS_NewObject(cx, NULL, NULL, NULL);
 					val = OBJECT_TO_JSVAL(obj);
 					SerializerObjectProperties sop(obj);
-					*this >> sop;
+					Read(cx, sop);
 					break;
 				}
 				case JLTObjectValue: {
 
 					const char *className;
-					*this >> className;
 					jsval value;
-					*this >> value;
+					Read(cx, className);
+					Read(cx, value);
 					JSObject *scope = JS_GetScopeChain(cx); // JS_GetGlobalForScopeChain
 					jsval prop;
 					JL_CHK( JS_GetProperty(cx, scope, className, &prop) );
@@ -520,13 +573,13 @@ namespace jl {
 				case JLTInterpretedObject: {
 
 					jsval unserializeFctVal;
-					*this >> unserializeFctVal;
+					Read(cx, unserializeFctVal);
 					JL_S_ASSERT_FUNCTION( unserializeFctVal );
 					JSObject *globalObj;
 					globalObj = JL_GetGlobalObject(cx);
 					JL_CHK( JS_SetParent(cx, JSVAL_TO_OBJECT(unserializeFctVal), globalObj) );
 					jsval value;
-					*this >> value;
+					Read(cx, value);
 					jsval argv[] = { JSVAL_NULL, value };
 					js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
 					JL_CHK( JS_CallFunctionValue(cx, globalObj, unserializeFctVal, COUNTOF(argv)-1, argv+1, argv) );
@@ -536,25 +589,34 @@ namespace jl {
 				case JLTNativeObject: {
 
 					const char *className;
-					*this >> className;
-
+					Read(cx, className);
+/*
 					JSObject *scope = JS_GetScopeChain(cx); // JS_GetGlobalForScopeChain
 					jsval constructorVal;
 					JL_CHK( JS_GetProperty(cx, scope, className, &constructorVal) );
 					JSObject *constructorObj = JSVAL_TO_OBJECT(constructorVal); //JSFunction *fun = JS_ValueToConstructor(cx, constructor);
 					jsval prototypeVal;
-					JL_CHK( JS_GetPropertyById(cx, constructorObj, JL_ATOMJSID(cx, classPrototype) /* "prototype" */, &prototypeVal) );
+					JL_CHK( JS_GetPropertyById(cx, constructorObj, JL_ATOMJSID(cx, classPrototype), &prototypeVal) );
 					JSObject *proto = JSVAL_TO_OBJECT(prototypeVal);
-
-					jsval argv[] = { JSVAL_NULL, PRIVATE_TO_JSVAL(this) };
+					jsval argv[] = { JSVAL_NULL, _unserializerObj };
 					js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
 					JL_CHK( JL_CallFunctionId(cx, proto, JLID(cx, _unserialize), COUNTOF(argv)-1, argv+1, argv) );
+					val = *argv;
+*/
+
+					ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
+					JL_S_ASSERT( cpc->clasp, "Class %s not found.", className );
+					JSObject *newObject;
+					newObject = JS_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
+ 					jsval argv[] = { JSVAL_NULL, _unserializerObj };
+					js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
+					JL_CHK( JL_CallFunctionId(cx, newObject, JLID(cx, _unserialize), COUNTOF(argv)-1, argv+1, argv) );
 					val = *argv;
 					break;
 				}
 				case JLTFunction: {
 
-					*this >> buf;
+					Read(cx, buf);
 					JSXDRState *xdr;
 					xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 					JS_XDRMemSetData(xdr, const_cast<void*>(buf.Data()), buf.Length());
@@ -567,39 +629,39 @@ namespace jl {
 				}
 			}
 
-			return *this;
-		bad:
-			throw JS_FALSE;
+			return JS_TRUE;
+			JL_BAD;
 		}
 
-		Unserializer& operator >>( jsval *&val ) {
+		JSBool Read( JSContext *cx, jsval *&val ) {
 
-			return operator >>(*val);
+			return Read(cx, *val);
 		}
-
 
 		template <class T>
-		Unserializer& operator >>( T &value ) {
+		JSBool Read( JSContext *cx, T &value ) {
 
 			if ( !AssertData(sizeof(T)) )
-				throw JS_FALSE;
+				return JS_FALSE;
 			value = *(T*)_pos;
 			_pos += sizeof(T);
-			return *this;
+			return JS_TRUE;
 		}
 
 	};
 
 
 
-	inline Serializer& JsvalToSerializer(jsval &val) {
+	inline Serializer& JsvalToSerializer( JSContext *cx, jsval &val ) {
 
-		return *static_cast<Serializer*>(JSVAL_TO_PRIVATE(val));
+//		return *static_cast<Serializer*>(JSVAL_TO_PRIVATE(val));
+		return *static_cast<Serializer*>(JL_GetPrivate(cx, JSVAL_TO_OBJECT(val)));
 	}
 
-	inline Unserializer& JsvalToUnserializer(jsval &val) {
+	inline Unserializer& JsvalToUnserializer( JSContext *cx, jsval &val ) {
 
-		return *static_cast<Unserializer*>(JSVAL_TO_PRIVATE(val));
+//		return *static_cast<Unserializer*>(JSVAL_TO_PRIVATE(val));
+		return *static_cast<Unserializer*>(JL_GetPrivate(cx, JSVAL_TO_OBJECT(val)));
 	}
 
 }

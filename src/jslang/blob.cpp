@@ -18,7 +18,6 @@
 
 #include <cstring>
 
-#include "jlhelper.h"
 #include "blobPub.h"
 
 #include "jsproxy.h"
@@ -963,6 +962,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_GET_PROPERTY() {
 
+//	return JS_PropertyStub(cx, obj, id, vp);
+
 	JL_S_ASSERT_THIS_CLASS();
 	if (unlikely( !IsBlobValid(cx, obj) ))
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
@@ -1196,37 +1197,43 @@ DEFINE_XDR() {
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	try {
 
-		size_t length;
-		JL_CHK( BlobLength(cx, JL_OBJ, &length) );
-		const char *buf;
-		JL_CHK( BlobBuffer(cx, JL_OBJ, &buf) );
-		jl::Serializer &ser = jl::JsvalToSerializer(JL_ARG(1));
-		ser << jl::SerializerBufferInfo((const void *)buf, length);
-		if ( length > 0 )
-			ser << jl::SerializerObjectProperties(JL_OBJ);
-		return JS_TRUE;
-	} catch ( JSBool ) {}
+	size_t length;
+	JL_CHK( BlobLength(cx, JL_OBJ, &length) );
+	const char *buf;
+	JL_CHK( BlobBuffer(cx, JL_OBJ, &buf) );
+	JL_S_ASSERT_OBJECT(JL_ARG(1));
+	JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Serializer")->clasp);
+
+	jl::Serializer &ser = jl::JsvalToSerializer(cx, JL_ARG(1));
+	JL_CHK( ser.Write(cx, jl::SerializerConstBufferInfo(buf, length)) );
+	if ( length > 0 )
+		JL_CHK( ser.Write(cx, jl::SerializerObjectProperties(JL_OBJ)) );
+	return JS_TRUE;
+
 	JL_BAD;
 }
 
 
 DEFINE_FUNCTION( _unserialize ) {
 
-	try {
+	JL_DEFINE_FUNCTION_OBJ;
 
-		jl::SerializerBufferInfo buf;
-		jl::Unserializer &unser = jl::JsvalToUnserializer(JL_ARG(1));
-		unser >> buf;
-		JL_CHK( JL_NewBlobCopyN(cx, buf.Data(), buf.Length(), JL_RVAL) );
-		if ( JSVAL_IS_OBJECT(*JL_RVAL) ) {
-			
-			jl::SerializerObjectProperties objProp(JSVAL_TO_OBJECT(*JL_RVAL));
-			unser >> objProp; //jl::SerializerObjectProperties(JSVAL_TO_OBJECT(*JL_RVAL));
-		}
-		return JS_TRUE;
-	} catch ( JSBool ) {}
+	jl::SerializerConstBufferInfo buf;
+	JL_S_ASSERT_OBJECT(JL_ARG(1));
+	JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Unserializer")->clasp);
+	jl::Unserializer &unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
+	JL_CHK( unser.Read(cx, buf) );
+	
+	JL_CHK( JL_NewBlobCopyN(cx, buf.Data(), buf.Length(), JL_RVAL) );
+
+	if ( JSVAL_IS_OBJECT(*JL_RVAL) ) {
+		
+		jl::SerializerObjectProperties objProp(JSVAL_TO_OBJECT(*JL_RVAL));
+		JL_CHK( unser.Read(cx, objProp) ); //jl::SerializerObjectProperties(JSVAL_TO_OBJECT(*JL_RVAL));
+	}
+	return JS_TRUE;
+
 	JL_BAD;
 }
 
