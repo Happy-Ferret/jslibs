@@ -285,7 +285,6 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define HAS_RESERVED_SLOTS(COUNT) cs.clasp.flags |= JSCLASS_HAS_RESERVED_SLOTS(COUNT);
 #define CONSTRUCT_PROTOTYPE cs.clasp.flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
 #define IS_GLOBAL cs.clasp.flags |= JSCLASS_GLOBAL_FLAGS;
-#define HAS_NEW_RESOLVE_GETS_START cs.clasp.flags |= JSCLASS_NEW_RESOLVE_GETS_START;
 #define HAS_ALL_PROPERTIES_SHARED cs.clasp.flags |= JSCLASS_SHARE_ALL_PROPERTIES;
 #define REVISION(NUMBER) cs.revision = (NUMBER);
 
@@ -312,6 +311,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define DEFINE_RESOLVE() static JSBool Resolve(JSContext *cx, JSObject *obj, jsid id)
 
 #define HAS_NEW_RESOLVE cs.clasp.flags |= JSCLASS_NEW_RESOLVE; JSNewResolveOp tmp = NewResolve; cs.clasp.resolve = (JSResolveOp)tmp;
+#define HAS_NEW_RESOLVE_GETS_START cs.clasp.flags |= JSCLASS_NEW_RESOLVE_GETS_START; JSNewResolveOp tmp = NewResolve; cs.clasp.resolve = (JSResolveOp)tmp;
 #define DEFINE_NEW_RESOLVE() static JSBool NewResolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **objp)
 
 #define HAS_ENUMERATE cs.clasp.enumerate = Enumerate;
@@ -326,7 +326,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define HAS_EQUALITY_OP js::Valueify(&cs.clasp)->ext.equality = js::Valueify(EqualityOp);/* cs.clasp.flags |= JSObject::HAS_EQUALITY;*/
 #define DEFINE_EQUALITY_OP() static JSBool EqualityOp(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp)
 
-#define HAS_WRAPPED_OBJECT cs.clasp.flags |= JSCLASS_IS_EXTENDED; cs.wrappedObject = WrappedObject;
+#define HAS_WRAPPED_OBJECT js::Valueify(&cs.clasp)->ext.wrappedObject = WrappedObject;
 #define DEFINE_WRAPPED_OBJECT() static JSObject* WrappedObject(JSContext *cx, JSObject *obj)
 
 #define HAS_INIT cs.init = Init;
@@ -357,7 +357,17 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define DEFINE_ITERATOR_OBJECT() static JSObject* IteratorObject(JSContext *cx, JSObject *obj, JSBool keysonly)
 
 
+// ops
+
+#define HAS_OPS_LOOKUP_PROPERTY js::Valueify(&cs.clasp)->ops.lookupProperty = OpsLookupProperty;
+#define DEFINE_OPS_LOOKUP_PROPERTY() static JSBool OpsLookupProperty(JSContext *cx, JSObject *obj, jsid id, JSObject **objp, JSProperty **propp)
+
+#define HAS_OPS_GET_PROPERTY js::Valueify(&cs.clasp)->ops.getProperty = OpsGetProperty;
+#define DEFINE_OPS_GET_PROPERTY() static JSBool OpsGetProperty(JSContext *cx, JSObject *obj, JSObject *receiver, jsid id, js::Value *vp)
+
+
 // definition
+
 #define DEFINE_FUNCTION(name) static JSBool _##name(JSContext *cx, uintN argc, jsval *vp)
 
 #define DEFINE_PROPERTY(name) static JSBool _##name(JSContext *cx, JSObject *obj, jsid id, jsval *vp)

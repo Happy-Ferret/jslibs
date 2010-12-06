@@ -5,10 +5,6 @@ LoadModule('jsdebug');
 //LoadModule('jsio');
 //LoadModule('jssqlite');
 
-SetPerfTestMode();
-
-Sleep(1000);
-
 throw 0;
 
 

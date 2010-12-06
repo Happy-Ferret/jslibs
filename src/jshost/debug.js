@@ -2,9 +2,36 @@ LoadModule('jsstd');
 
 if ( 0 ) {
 
-	var timeout = TimeoutEvents(123);
-	ProcessEvents(timeout);
-	ProcessEvents(timeout);
+	LoadModule('jsio');
+	
+	var str = new File('../../jsapiusage.txt').content;
+	var api = {};
+	var exp = /(JS_\w+)\(/ig;
+	while ( hit = exp(str) )
+		api[hit[1]] = api[hit[1]] ? api[hit[1]]+1 : 1;
+		
+	var arr = [];
+	for ( var [apiName, usageCount] in Iterator(api) ) {
+		
+		var o = {};
+		o.apiName = apiName;
+		o.usageCount = usageCount;
+		arr.push(o);
+	}
+	
+	arr.sort( function(a, b) {
+		
+		if ( a.usageCount < b.usageCount )
+			return 1;
+		if ( a.usageCount > b.usageCount )
+			return -1;
+		return 0;
+	});
+	
+	var f = new File('sorted.txt').Open();
+	for each ( var i in arr )
+		f.Write( i.usageCount + ': '+i.apiName+'\n' );
+	f.Close();
 
 	throw 0;
 }
@@ -13,7 +40,9 @@ LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();
 //RunJsircbot(false); throw 0;
-RunQATests('-rep 1 -exclude jstask');
+RunQATests('-rep 1 -exclude jstask jslang');
+
+
 
 
 function makeLogger(obj) {

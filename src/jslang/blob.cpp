@@ -21,6 +21,8 @@
 #include "jlhelper.h"
 #include "blobPub.h"
 
+#include "jsproxy.h"
+
 
 static inline jsdouble
 js__DoubleToInteger(jsdouble d) // from jsnum.h
@@ -39,7 +41,6 @@ js__DoubleToInteger(jsdouble d) // from jsnum.h
     d = floor(neg ? -d : d);
     return neg ? -d : d;
 }
-
 
 
 struct MemCmp { // from jsstr.cpp
@@ -128,6 +129,9 @@ Match(const char *text, size_t textlen, const char *pat, size_t patlen) {
 
 // SLOT_BLOB_LENGTH is the size of the content of the blob OR JSVAL_VOID if the blob has been invalidated (see Blob::Free() method)
 #define SLOT_BLOB_LENGTH 0
+
+// kind of cache
+#define SLOT_BLOB_JSSTRING 1
 
 
 /**doc
@@ -246,6 +250,9 @@ DEFINE_CONSTRUCTOR() {
 		return JS_TRUE;
 	}
 
+
+//	js::NewProxyObject(cx, 
+
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	// supports this form (w/o new operator) : result.param1 = Blob('Hello World');
@@ -337,6 +344,7 @@ DEFINE_FUNCTION( Free ) {
 
 	JS_free(cx, pv);
 	JL_SetPrivate(cx, obj, NULL); // InvalidateBlob(cx, obj)
+	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_BLOB_JSSTRING, JSVAL_VOID) );
 
 	// removes all of obj's own properties, except the special __proto__ and __parent__ properties, in a single operation.
 	// Properties belonging to objects on obj's prototype chain are not affected.
@@ -907,43 +915,6 @@ DEFINE_FUNCTION( charCodeAt ) {
 }
 
 
-/**doc
-$TOC_MEMBER $INAME
- $STR $INAME()
-  Returns a JavaScript string version of the current Blob object.
-  $H beware
-   This function may be called automatically by the JavaScript engine when it needs to convert the Blob object to a JS string.
-**/
-DEFINE_FUNCTION( toString ) { // and valueOf ?
-
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	if (unlikely( !IsBlobValid(cx, obj) ))
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
-
-	size_t length;
-	JL_CHK( BlobLength(cx, obj, &length) );
-	JSString *jsstr;
-	if ( length == 0 ) {
-
-		*JL_RVAL = JL_GetEmptyStringValue(cx);
-		return JS_TRUE;
-	} 
-
-	const char *buffer;
-	JL_CHK( BlobBuffer(cx, obj, &buffer) );
-
-	jschar *ucStr = (jschar*)JS_malloc(cx, (length + 1) * sizeof(jschar));
-	ucStr[length] = 0;
-	for ( size_t i = 0; i < length; i++ )
-		ucStr[i] = ((unsigned char*)buffer)[i]; // see js_InflateString in jsstr.c
-	jsstr = JL_NewUCString(cx, ucStr, length);
-	JL_CHK( jsstr );
-	*JL_RVAL = STRING_TO_JSVAL(jsstr);
-	return JS_TRUE;
-	JL_BAD;
-}
-
 
 DEFINE_FUNCTION( toSource ) {
 
@@ -1132,6 +1103,7 @@ bad:
 	return NULL;
 }
 
+
 /*
 DEFINE_XDR() {
 	
@@ -1258,6 +1230,155 @@ DEFINE_FUNCTION( _unserialize ) {
 	JL_BAD;
 }
 
+JSBool GetBlobString( JSContext *cx, JSObject *obj, jsval *str ) {
+
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_BLOB_JSSTRING, str) );
+	if ( JSVAL_IS_VOID(*str) ) {
+
+		JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
+
+		if (unlikely( !IsBlobValid(cx, obj) ))
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
+
+		size_t length;
+		JL_CHK( BlobLength(cx, obj, &length) );
+
+		if ( length == 0 ) {
+
+			*str = JL_GetEmptyStringValue(cx);
+
+		} else {
+
+			const char *buffer;
+			JL_CHK( BlobBuffer(cx, obj, &buffer) );
+			JSString *jsstr;
+			jsstr = JS_NewStringCopyN(cx, buffer, length);
+			JL_CHK( jsstr );
+			*str = STRING_TO_JSVAL(jsstr);
+		}
+
+		JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_BLOB_JSSTRING, *str) );
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME()
+  Returns a JavaScript string version of the current Blob object.
+  $H beware
+   This function may be called automatically by the JavaScript engine when it needs to convert the Blob object to a JS string.
+**/
+DEFINE_FUNCTION( toString ) { // and valueOf ?
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
+
+	JL_CHK( GetBlobString(cx, obj, JL_RVAL) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/*
+DEFINE_NEW_RESOLVE() {
+
+	JSObject *blobProto = JL_PROTOTYPE(cx, Blob);
+
+	// check if obj is a Blob
+	if ( JS_GetPrototype(cx, obj) != blobProto )
+		return JS_TRUE;
+
+	if ( !IsBlobValid(cx, obj) )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
+
+	if ( !(flags & JSRESOLVE_QUALIFIED) || (flags & JSRESOLVE_ASSIGNING) )
+		return JS_TRUE;
+
+	// search id in Blob's prototype
+	JSProperty *prop;
+	JL_CHK( blobProto->lookupProperty(cx, id, objp, &prop) );
+	if ( prop )
+		return JS_TRUE;
+
+	// search id in String's prototype.
+	JSObject *stringProto;
+	JL_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_String, &stringProto) );
+
+	JL_CHK( stringProto->lookupProperty(cx, id, objp, &prop) );
+	if ( !prop )
+		return JS_TRUE;
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_OPS_LOOKUP_PROPERTY() {
+
+	return JS_TRUE;
+}
+
+const jschar *ToString(JSContext *cx, jsval val) {
+	
+	JSString *str = JS_ValueToString(cx, val);
+	return JS_GetStringCharsZ(cx, str);
+}
+
+const jschar *ToString(JSContext *cx, jsid id) {
+	
+	jsval val;
+	JS_IdToValue(cx, id, &val);
+	return ToString(cx, val);
+}
+*/
+
+
+DEFINE_FUNCTION( valueOf ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_CHK( GetBlobString(cx, obj, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/*
+
+DEFINE_OPS_GET_PROPERTY() {
+
+//	if ( id == ATOM_TO_JSID(cx->runtime->atomState.constructorAtom) ) {
+
+//		JSPropertyDescriptor desc;
+//		JS_GetPropertyDescriptorById(cx, obj, id, JSRESOLVE_QUALIFIED, &desc);
+
+	JSObject *blobProto = JL_PROTOTYPE(cx, Blob);
+
+//	wprintf(ToString(cx, id));
+
+	// search id in Blob's prototype
+
+	JS_LookupPropertyById(cx, obj, id, js::Jsvalify(vp));
+
+	if ( vp->isUndefined() ) {
+
+		GetBlobString(cx, obj, js::Jsvalify(vp));
+		JSObject *stringProto;
+		JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_String, &stringProto);
+
+		JS_LookupPropertyById(cx, stringProto, id, js::Jsvalify(vp));
+//		JS_DefineFunction(cx, obj, "toString", _valueOf, 0, 0);
+
+		JS_SetPrototype(cx, obj, stringProto);
+
+	}
+
+	return JS_TRUE;
+}
+*/
 
 
 /**doc
@@ -1274,13 +1395,19 @@ CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(1)
+	HAS_RESERVED_SLOTS(2)
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
 	HAS_EQUALITY_OP
 	HAS_ITERATOR_OBJECT
+
+//	HAS_OPS_LOOKUP_PROPERTY
+//	HAS_OPS_GET_PROPERTY
+
+//	HAS_NEW_RESOLVE
+//	HAS_NEW_RESOLVE_GETS_START
 
 	BEGIN_FUNCTION_SPEC
 

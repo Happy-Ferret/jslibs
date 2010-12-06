@@ -1512,6 +1512,30 @@ DEFINE_FUNCTION( DisassembleScript ) {
 }
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $STRING $INAME( filename, lineno )
+  Throw if the calling function failed to JIT
+**/
+DEFINE_FUNCTION( AssertJit ) {
+
+#ifdef JS_METHODJIT
+    if (JS_GetOptions(cx) & JSOPTION_METHODJIT) {
+        if (!cx->fp()->script()->getJIT(cx->fp()->isConstructing())) {
+			JL_REPORT_ERROR("unexpected failure to JIT");
+            return JS_FALSE;
+        }
+    }
+#endif
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 /**doc
 $TOC_MEMBER $INAME
  $INAME $READONLY
@@ -1785,6 +1809,8 @@ CONFIGURE_STATIC
 
 //		FUNCTION( ScriptByLocation )
 		FUNCTION( DisassembleScript )
+
+		FUNCTION( AssertJit )
 
 //		FUNCTION( Trap )
 //		FUNCTION( Untrap )

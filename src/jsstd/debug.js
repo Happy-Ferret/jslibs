@@ -1,5 +1,39 @@
 LoadModule('jsstd');
 
+var b = new Blob
+
+function makeLogger(obj) {
+
+	var proxy = Proxy.create({
+
+		get: function(rcvf, name) {
+			Print('get '+' '+name+' '+''+'\n');
+			return obj[name];
+		},
+		set: function(rcvf, name, val) {
+		
+			Print('set '+name+' '+val+' '+''+'\n');
+			obj[name] = val;
+			return true;
+		},
+
+	} , Object.getPrototypeOf(obj));
+	return proxy;
+}
+
+var arr = new String('123')
+
+var o = makeLogger(arr);
+
+Print( o.length, '\n' );
+
+Print( 'proto ', uneval( Object.getPrototypeOf(o) ), '\n' );
+
+
+throw 0;
+
+
+
 if ( 0 ) {
 
 	LoadModule('jsstd');  Exec('../../perftest.js');  throw 0;

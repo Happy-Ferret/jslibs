@@ -1449,7 +1449,7 @@ JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 
 DEFINE_FUNCTION( Test ) {
-
+/*
 	JSXDRState *xdr1 = JS_XDRNewMem(cx, JSXDR_ENCODE);
 	JS_XDRValue(xdr1, &JL_ARG(1));
 	uint32 length;
@@ -1463,6 +1463,20 @@ DEFINE_FUNCTION( Test ) {
 	JS_XDRDestroy(xdr2);
 
 	JS_XDRDestroy(xdr1);
+*/
+	JSObject *arr = JS_NewArrayObject(cx, 0, NULL);
+
+	jsval val;
+	val = JSVAL_ONE;
+
+	double t = AccurateTimeCounter();
+	
+	for ( int i = 0; i < 100000; ++i )
+		JL_Push(cx, arr, &val); 
+
+	t = AccurateTimeCounter() - t;
+	
+	printf( "%f\n", t );
 
 	return JS_TRUE;
 }

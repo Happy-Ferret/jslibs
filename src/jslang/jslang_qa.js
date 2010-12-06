@@ -31,6 +31,14 @@ LoadModule('jsstd');
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 
 
+/// Blob memory issue []
+
+	var s = StringRepeat(s, 100*1000*1000);
+	var b = new Blob(s);
+	for ( var i = 0; i < 100; ++i )
+		b.toString();
+
+
 /// Blob vs String [rmtf]
 
 	function tests(CHK, T) {

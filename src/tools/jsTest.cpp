@@ -1,6 +1,19 @@
 #define XP_WIN
+
+#ifdef _MSC_VER
+#pragma warning( push, 1 )
+#endif // _MSC_VER
+
 #include <jsapi.h>
 #include <jsvalue.h>
+
+#include <jsproxy.h>
+#include <jswrapper.h>
+
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif // _MSC_VER
+
 #include <string.h>
 
 JSClass global_class = {
@@ -88,14 +101,108 @@ double AccurateTimeCounter() {
 	return (double)1000 * (performanceCount.QuadPart-initTime) / (double)frequency.QuadPart;
 }
 
+const jschar *ToString(JSContext *cx, jsval val) {
+	
+	JSString *str = JS_ValueToString(cx, val);
+	return JS_GetStringCharsZ(cx, str);
+}
+
+
+const jschar *ToString(JSContext *cx, jsid id) {
+	
+	jsval val;
+	JS_IdToValue(cx, id, &val);
+	return ToString(cx, val);
+}
+
+
+
+class BlobProxyHandler : public js::JSProxyHandler {
+
+public:
+
+	BlobProxyHandler() : js::JSProxyHandler(NULL) {
+	}
+
+	virtual ~BlobProxyHandler() {
+	}
+
+private:
+
+	bool getPropertyDescriptor(JSContext *cx, JSObject *proxy, jsid id, bool set, js::PropertyDescriptor *desc) {
+
+		wprintf(L"getPropertyDescriptor %s ", ToString(cx, id));
+
+		JSObject *obj = &proxy->getProxyPrivate().toObject();
+
+		if ( !JS_GetPropertyDescriptorById(cx, obj, id, JSRESOLVE_QUALIFIED, Jsvalify(desc)) )
+			return false;
+
+		wprintf(L":= %s\n", ToString(cx, Jsvalify(desc->value)));
+		return true;
+	}
+
+	bool getOwnPropertyDescriptor(JSContext *cx, JSObject *proxy, jsid id, bool set, js::PropertyDescriptor *desc) {
+
+		wprintf(L"getOwnPropertyDescriptor %s ", ToString(cx, id));
+
+		JSObject *obj = &proxy->getProxyPrivate().toObject();
+
+		if ( !JS_GetPropertyDescriptorById(cx, obj, id, JSRESOLVE_QUALIFIED, Jsvalify(desc)) )
+			return false;
+
+		wprintf(L":= %s\n", ToString(cx, Jsvalify(desc->value)));
+
+		if (desc->obj != obj)
+			desc->obj = NULL;
+		return true;
+	}
+
+	bool defineProperty(JSContext *cx, JSObject *proxy, jsid id, js::PropertyDescriptor *desc) {
+
+		wprintf(L"defineProperty %s ", ToString(cx, id));
+
+		JSObject *obj = &proxy->getProxyPrivate().toObject();
+		if ( !JS_DefinePropertyById(cx, obj, id, js::Jsvalify(desc->value), js::Jsvalify(desc->getter), js::Jsvalify(desc->setter), desc->attrs) )
+			return false;
+
+		wprintf(L":= %s\n", ToString(cx, Jsvalify(desc->value)));
+
+		return true;
+	}
+
+	bool getOwnPropertyNames(JSContext *cx, JSObject *proxy, js::AutoIdVector &props) { 
+		return true;
+	}
+
+	bool delete_(JSContext *cx, JSObject *proxy, jsid id, bool *bp) {
+		return true;
+	}
+
+	bool enumerate(JSContext *cx, JSObject *proxy, js::AutoIdVector &props) {
+		return true;
+	}
+
+	bool fix(JSContext *cx, JSObject *proxy, js::Value *vp) {
+		return true;
+	}
+/*
+	bool get(JSContext *cx, JSObject *proxy, JSObject *receiver, jsid id, js::Value *vp) {
+		
+		JSObject *obj = &proxy->getProxyPrivate().toObject();
+		return JS_GetPropertyById(cx, obj, id, js::Jsvalify(vp));
+	}
+*/
+	bool set(JSContext *cx, JSObject *proxy, JSObject *receiver, jsid id, js::Value *vp) {
+		
+		JSObject *obj = &proxy->getProxyPrivate().toObject();
+		return JS_SetPropertyById(cx, obj, id, js::Jsvalify(vp));
+	}
+
+};
+
 
 int main(int argc, char* argv[]) {
-
-
-	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
-	SetProcessAffinityMask(GetCurrentProcess(), 1);
-
-
 
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
@@ -109,30 +216,33 @@ int main(int argc, char* argv[]) {
 	JS_InitClass(cx, globalObject, NULL, js::Jsvalify(&jl_BlobClass), constructor, 0, NULL, NULL, NULL, NULL);
 
 
-	JSObject *root = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
-	int index = 0;
+	JSObject *arr;
+	arr = JS_NewArrayObject(cx, 0, NULL);
 
-	jsval *value;
-	
-	double t, err;
-	t = AccurateTimeCounter();
-	err = AccurateTimeCounter() - t;
-	t = AccurateTimeCounter();
+	JSPropertyDescriptor desc;
+	JS_GetPropertyDescriptorById(cx, arr, ATOM_TO_JSID(rt->atomState.lengthAtom), 0, &desc);
 
-	for ( int i = 0; i < 10000; i++ ) {
+//	JS_GetPropertyAttrsGetterAndSetterById(cx, arr, ATOM_TO_JSID(rt->atomState.lengthAtom), 
 
-		value = (jsval*)malloc(sizeof(jsval));
-
-		JS_SetPropertyById(cx, root, INT_TO_JSID(index++), value);
-		//JS_AddValueRoot(cx, value);
-	}
+	//JS_GetPropertyById(cx, arr, ATOM_TO_JSID(rt->atomState.lengthAtom), &tmp);
 
 
-	t = AccurateTimeCounter() - t - err;
-
-	printf("%f\n", t);
 
 
+
+	BlobProxyHandler bph;
+	JSObject *proxy = js::NewProxyObject(cx, &bph, js::Valueify(OBJECT_TO_JSVAL(arr)), JS_GetPrototype(cx, arr), JS_GetParent(cx, JS_GetPrototype(cx, arr)));
+		
+
+	double tmp;
+	tmp = DOUBLE_TO_JSVAL(1.234);
+//	JS_CallFunctionName(cx, proxy, "push", 1, &tmp, &tmp2);
+//	JS_CallFunctionName(cx, proxy, "push", 1, &tmp, &tmp2);
+
+	JS_GetProperty(cx, proxy, "length", &tmp);
+	const jschar *str = JS_GetStringCharsZ(cx, JS_ValueToString(cx, tmp));
+
+	wprintf(L"length = %s\n", str);
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);

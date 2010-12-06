@@ -15,26 +15,20 @@
 #ifndef _JSHELPER_H_
 #define _JSHELPER_H_
 
-
-#include <sys/stat.h>
-
-//#include <../../js-confdefs.h> // bad WINVER and _WIN32_WINNT values.
-
-#include "jlalloc.h"
 #include "jlplatform.h"
 
+#include "jlalloc.h"
 #include "queue.h"
 
 #ifdef XP_WIN
 #define JS_SYS_TYPES_H_DEFINES_EXACT_SIZE_TYPES
 #endif
 
-#include <jsapi.h>
-
 #ifdef _MSC_VER
 #pragma warning( push, 1 )
 #endif // _MSC_VER
 
+#include <jsapi.h>
 #include <jscntxt.h>
 #include <jsscope.h>
 #include <jsvalue.h>
@@ -44,6 +38,7 @@
 #pragma warning( pop )
 #endif // _MSC_VER
 
+#include <sys/stat.h> // see JL_LoadScript()
 
 extern bool _unsafeMode;
 
@@ -314,6 +309,8 @@ enum {
 	JLID_SPEC( Read ),
 	JLID_SPEC( name ),
 	JLID_SPEC( id ),
+	JLID_SPEC( push ),
+	JLID_SPEC( pop ),
 	JLID_SPEC( _serialize ),
 	JLID_SPEC( _unserialize ),
 	LAST_JSID // see HostPrivate::ids[]
@@ -1920,6 +1917,7 @@ JL_CValVectorToJsval( JSContext *cx, const T *vector, jsuint length, jsval *val,
 		JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
 	} else {
 
+		// js_NewArrayObjectWithCapacity
 		arrayObj = JS_NewArrayObject(cx, length, NULL);
 		JL_CHK( arrayObj );
 		*val = OBJECT_TO_JSVAL(arrayObj);
@@ -2358,32 +2356,6 @@ JL_InheritFrom( JSContext *cx, JSObject *obj, const JSClass *clasp ) {
 }
 
 
-static INLINE JSBool
-JL_Push( JSContext *cx, JSObject *arr, jsval *value ) {
-
-	jsuint length;
-	JL_CHK( JS_GetArrayLength(cx, arr, &length) );
-	JL_CHK( JS_SetPropertyById(cx, arr, INT_TO_JSID(length), value) ); //JL_CHK( JS_SetElement(cx, arrObj, length, value) );
-	++length;
-	JL_CHK( JS_SetArrayLength(cx, arr, length) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-static INLINE JSBool
-JL_Pop( JSContext *cx, JSObject *arr, jsval *vp ) {
-
-	jsuint length;
-	JL_CHK( JS_GetArrayLength(cx, arr, &length) );
-	--length;
-	JL_CHK( JS_GetPropertyById(cx, arr, INT_TO_JSID(length), vp) ); //JL_CHK( JS_GetElement(cx, arrObj, length, vp) );
-	JL_CHK( JS_SetArrayLength(cx, arr, length) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
 static ALWAYS_INLINE JSBool
 JL_CallFunctionId(JSContext *cx, JSObject *obj, jsid id, uintN argc, jsval *argv, jsval *rval) {
 
@@ -2432,6 +2404,31 @@ JL_CallFunctionNameVA( JSContext *cx, JSObject *obj, const char* functionName, j
 	JL_CHK( st );
 	if ( rval != NULL )
 		*rval = argv[0];
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+static INLINE JSBool
+JL_Push( JSContext *cx, JSObject *arr, jsval *value ) {
+
+	jsuint length;
+	JL_CHK( JS_GetArrayLength(cx, arr, &length) );
+	JL_CHK( JS_SetPropertyById(cx, arr, INT_TO_JSID(length), value) ); //JL_CHK( JS_SetElement(cx, arrObj, length, value) );
+	JL_CHK( JS_SetArrayLength(cx, arr, length+1) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+static INLINE JSBool
+JL_Pop( JSContext *cx, JSObject *arr, jsval *vp ) {
+
+	jsuint length;
+	JL_CHK( JS_GetArrayLength(cx, arr, &length) );
+	--length;
+	JL_CHK( JS_GetPropertyById(cx, arr, INT_TO_JSID(length), vp) ); //JL_CHK( JS_GetElement(cx, arrObj, length, vp) );
+	JL_CHK( JS_SetArrayLength(cx, arr, length) );
 	return JS_TRUE;
 	JL_BAD;
 }
