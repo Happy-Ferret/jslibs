@@ -313,6 +313,7 @@ enum {
 	JLID_SPEC( pop ),
 	JLID_SPEC( _serialize ),
 	JLID_SPEC( _unserialize ),
+	JLID_SPEC( toXMLString ),
 	LAST_JSID // see HostPrivate::ids[]
 };
 #undef JLID_SPEC
@@ -795,6 +796,21 @@ JL_ObjectIsObject( JSContext *cx, JSObject *obj ) {
 	return js_GetClassPrototype(cx, NULL, JSProto_Object, &oproto) && obj->getProto() == oproto;
 }
 
+#if JS_HAS_XML_SUPPORT
+extern JS_FRIEND_DATA(js::Class) js_XMLClass;
+#endif // JS_HAS_XML_SUPPORT
+
+static ALWAYS_INLINE bool
+JL_ObjectIsXML( JSContext *cx, const JSObject *obj ) {
+
+	JL_UNUSED(cx);
+#if JS_HAS_XML_SUPPORT
+	return JL_GetClass(obj) == js::Jsvalify(&js_XMLClass);
+#else
+	return false
+#endif // JS_HAS_XML_SUPPORT
+}
+
 
 static ALWAYS_INLINE bool
 JL_JsvalIsNaN( const JSContext *cx, const jsval &val ) {
@@ -878,7 +894,7 @@ static ALWAYS_INLINE bool
 JL_JsvalIsClass( const jsval &val, const JSClass *jsClass ) {
 
 	//return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
-	return !js::Valueify(val).isPrimitive() && js::Valueify(val).toObject().getJSClass() == jsClass;
+	return jsClass != NULL && !js::Valueify(val).isPrimitive() && js::Valueify(val).toObject().getJSClass() == jsClass;
 }
 
 
@@ -2433,7 +2449,7 @@ JL_Pop( JSContext *cx, JSObject *arr, jsval *vp ) {
 
 
 static INLINE JSBool
-JL_ValueOf( JSContext *cx, const jsval &val, jsval *rval ) {
+JL_JsvalToPrimitive( JSContext *cx, const jsval &val, jsval *rval ) { // prev JL_ValueOf
 
 	if ( JSVAL_IS_PRIMITIVE(val) ) {
 
@@ -2441,13 +2457,16 @@ JL_ValueOf( JSContext *cx, const jsval &val, jsval *rval ) {
 		return JS_TRUE;
 	}
 	JSObject *obj = JSVAL_TO_OBJECT(val);
-	JSClass *clasp = JL_GetClass(obj);
-	if ( clasp->convert ) // note that JS_ConvertStub calls js_TryValueOf
-		return clasp->convert(cx, obj, JSTYPE_VOID, rval);
-	// (TBD) check if this case occurs.
-    jsval argv[1];
-    argv[0] = STRING_TO_JSVAL(ATOM_TO_STRING(cx->runtime->atomState.typeAtoms[JSTYPE_VOID]));
-	return JL_CallFunctionId(cx, obj, JL_ATOMJSID(cx, valueOf), 1, argv, rval);
+	if (unlikely( JL_ObjectIsXML(cx, obj) ))
+		return JL_CallFunctionId(cx, obj, JLID(cx, toXMLString), 0, NULL, rval);
+	//JSClass *clasp = JL_GetClass(obj);
+	//if ( clasp->convert ) // note that JS_ConvertStub calls js_TryValueOf
+	//	return clasp->convert(cx, obj, JSTYPE_VOID, rval);
+	JL_CHK( JL_CallFunctionId(cx, obj, JL_ATOMJSID(cx, valueOf), 0, NULL, rval) );
+	if ( !JSVAL_IS_PRIMITIVE(*rval) )
+		JL_CHK( JL_CallFunctionId(cx, obj, JL_ATOMJSID(cx, toString), 0, NULL, rval) );
+	return JS_TRUE;
+	JL_BAD;
 }
 
 

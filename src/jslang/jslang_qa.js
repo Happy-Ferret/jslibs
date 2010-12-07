@@ -753,3 +753,20 @@ LoadModule('jsstd');
 	t = TimeCounter() - t;
 	QA.ASSERT( t > 122 && t < 130, true, 'TimeoutEvents time ('+t+')' );
 	QA.ASSERT_EXCEPTION( function() ProcessEvents(timeout), Error, 'ProcessEvents reused' );
+
+
+/// Serialization / Unserialization
+
+	var myobj = [ '', 'string', [,undefined,'arrayelt'], 0, 1,234, NaN, -Infinity, +Infinity, new Blob(), new Blob('okmokm'), {a:1, b:2}, {},, new Date(), new Number(123), new String(123), <A>B</A>, /.*/ ];
+
+	var s = new Serializer();
+	s.Write(myobj);
+	var buffer = s.Done();
+
+	var s = new Unserializer(''+buffer);
+
+	myobj1 = s.Read();
+	var str = uneval(myobj);
+	var str1 = uneval(myobj1);
+	QA.ASSERT_STR( str, str1, 'several serialized / unserialized objects' );
+

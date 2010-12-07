@@ -466,7 +466,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 			jsval ex;
 			JS_GetPendingException(cx, &ex);
-			JL_ValueOf(cx, ex, &ex);
+			JL_JsvalToPrimitive(cx, ex, &ex);
 			if ( JSVAL_IS_INT(ex) ) {
 
 				exitValue = JSVAL_TO_INT(ex);

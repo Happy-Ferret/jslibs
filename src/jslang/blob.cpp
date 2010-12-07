@@ -962,8 +962,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_GET_PROPERTY() {
 
-//	return JS_PropertyStub(cx, obj, id, vp);
-
 	JL_S_ASSERT_THIS_CLASS();
 	if (unlikely( !IsBlobValid(cx, obj) ))
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
@@ -1197,20 +1195,20 @@ DEFINE_XDR() {
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT( jl::JsvalIsSerializer(cx, JL_ARG(1)), "Invalid serializer object." );
+	jl::Serializer *ser;
+	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
 
 	size_t length;
-	JL_CHK( BlobLength(cx, JL_OBJ, &length) );
 	const char *buf;
+	JL_CHK( BlobLength(cx, JL_OBJ, &length) );
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &buf) );
-	JL_S_ASSERT_OBJECT(JL_ARG(1));
-	JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Serializer")->clasp);
-
-	jl::Serializer &ser = jl::JsvalToSerializer(cx, JL_ARG(1));
-	JL_CHK( ser.Write(cx, jl::SerializerConstBufferInfo(buf, length)) );
-	if ( length > 0 )
-		JL_CHK( ser.Write(cx, jl::SerializerObjectProperties(JL_OBJ)) );
+	
+	JL_CHK( ser->Write(cx, jl::SerializerConstBufferInfo(buf, length)) );
+//	if ( length > 0 )
+	JL_CHK( ser->Write(cx, jl::SerializerObjectProperties(JL_OBJ)) );
 	return JS_TRUE;
-
 	JL_BAD;
 }
 
@@ -1218,24 +1216,34 @@ DEFINE_FUNCTION( _serialize ) {
 DEFINE_FUNCTION( _unserialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
-	jl::SerializerConstBufferInfo buf;
-	JL_S_ASSERT_OBJECT(JL_ARG(1));
-	JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Unserializer")->clasp);
-	jl::Unserializer &unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
-	JL_CHK( unser.Read(cx, buf) );
-	
-	JL_CHK( JL_NewBlobCopyN(cx, buf.Data(), buf.Length(), JL_RVAL) );
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT( jl::JsvalIsUnserializer(cx, JL_ARG(1)), "Invalid unserializer object." );
+	jl::Unserializer *unser;
+	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
 
 	if ( JSVAL_IS_OBJECT(*JL_RVAL) ) {
 		
-		jl::SerializerObjectProperties objProp(JSVAL_TO_OBJECT(*JL_RVAL));
-		JL_CHK( unser.Read(cx, objProp) ); //jl::SerializerObjectProperties(JSVAL_TO_OBJECT(*JL_RVAL));
+		jl::SerializerConstBufferInfo buf;
+		JL_CHK( unser->Read(cx, buf) );
+
+		void *dBuffer;
+		dBuffer = JS_malloc(cx, buf.Length() +1);
+		JL_CHK( dBuffer );
+		memcpy(dBuffer, buf.Data(), buf.Length());
+		((char*)dBuffer)[buf.Length()] = '\0';
+		JL_SetPrivate(cx, obj, dBuffer);
+
+		jsval tmp;
+		JL_CHK( JL_NativeToJsval(cx, buf.Length(), &tmp) );
+		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, tmp) );
+
+		jl::SerializerObjectProperties objProp(obj);
+		JL_CHK( unser->Read(cx, objProp) );
 	}
 	return JS_TRUE;
-
 	JL_BAD;
 }
+
 
 JSBool GetBlobString( JSContext *cx, JSObject *obj, jsval *str ) {
 
@@ -1405,8 +1413,8 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(2)
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-	HAS_GET_PROPERTY
-	HAS_SET_PROPERTY
+//	HAS_GET_PROPERTY
+//	HAS_SET_PROPERTY
 	HAS_EQUALITY_OP
 	HAS_ITERATOR_OBJECT
 
