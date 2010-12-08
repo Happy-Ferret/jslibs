@@ -47,7 +47,9 @@ static const jsbytecode emptyScriptCode[] = {JSOP_STOP, SRC_NULL};
 JSBool soubokTest_fct( JSContext *cx, uintN argc, jsval *vp ) {
 
 	JSXDRState *w = JS_XDRNewMem(cx, JSXDR_ENCODE);
-	JS_XDRValue(w, JS_ARGV(cx, vp)); 
+	JSFunction *fun = JS_ValueToFunction(cx, *JS_ARGV(cx, vp));
+	JSScript *funScript = FUN_SCRIPT(fun);
+	JS_XDRScript(w, &funScript);
 	return JS_TRUE;
 }
 
