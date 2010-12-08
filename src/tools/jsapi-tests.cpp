@@ -36,46 +36,26 @@ static const jsbytecode emptyScriptCode[] = {JSOP_STOP, SRC_NULL};
 #endif
 };
 
-
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-
-
 #include "jsapi-tests/tests.h"
-#include "jsscript.h"
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+
 #include "jsxdrapi.h"
 
-#include "jsfun.h"
+JSBool soubokTest_fct( JSContext *cx, uintN argc, jsval *vp ) {
+
+	JSXDRState *w = JS_XDRNewMem(cx, JSXDR_ENCODE);
+	JS_XDRValue(w, JS_ARGV(cx, vp)); 
+	return JS_TRUE;
+}
 
 BEGIN_TEST(soubokTest)
 {
-    const char *s = "(function() { return {} })";
-
-    // compile
-    JSScript *script = JS_CompileScript(cx, global, s, strlen(s), __FILE__, __LINE__);
-    CHECK(script);
-    JSObject *scrobj = JS_NewScriptObject(cx, script);
-    CHECK(scrobj);
-    jsvalRoot v(cx, OBJECT_TO_JSVAL(scrobj));
-
-    jsvalRoot res(cx);
-    CHECK(JS_ExecuteScript(cx, global, script, res.addr()));
-
-	CHECK(VALUE_IS_FUNCTION(cx, res.value()));
-
-    // freeze
-    JSXDRState *w = JS_XDRNewMem(cx, JSXDR_ENCODE);
-    CHECK(w);
-    CHECK(JS_XDRValue(w, res.addr()));
-
-    uint32 nbytes;
-    void *p = JS_XDRMemGetData(w, &nbytes);
-    CHECK(p);
-    void *frozen = JS_malloc(cx, nbytes);
-    CHECK(frozen);
-    memcpy(frozen, p, nbytes);
-    JS_XDRDestroy(w);
-
-    return true;
+	CHECK( JS_DefineFunction(cx, global, "fct", soubokTest_fct, 0, NULL) );
+	EXEC("fct( function() { return [] } )");
+	EXEC("fct( function() { return {} } )");
+	return true;
 }
 END_TEST(soubokTest)
