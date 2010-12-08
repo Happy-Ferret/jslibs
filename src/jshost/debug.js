@@ -1,13 +1,30 @@
 LoadModule('jsstd'); 
 
-//	var myobj = [ '', 'string', [,undefined,'arrayelt'], 0, 1,234, NaN, -Infinity, +Infinity, new Blob(), new Blob('okmokm'), {a:1, b:2}, {},, new Date(), new Number(123), new String(123), <A>B</A>, /.*/ ];
+	function JsClass() {
+	
+		var priv;
+		this.a = 5;
+		
+		this._serialize = function(ser) {
+		
+			ser.Write(this.a);
+			ser.Write(priv);
+		}
+		this._unserialize = function(unser) {
+			
+			this.a = unser.Read();
+			priv = unser.Read();
+		}
+	}
+		
+	var o = new JsClass();
+	o.a = 7;
 
-	var myobj = 'test';
-
+	var myobj = [ o, function() [,1,{__proto__:null}], '', 'string', {__proto__:null, a:2}, [], [,,,,,], [,undefined,'arrayelt'], true, false, null, 0, 0.0, 1,234, NaN, -Infinity, +Infinity, new Blob(), new Blob('okmokm'), {a:1, b:2, c:{d:3}}, {},, new Date(), new Number(123), new String(123), <A>B</A> ];
+	
 	var s = new Serializer();
 	s.Write(myobj);
 	var buffer = ''+s.Done();
-	
 	var s = new Unserializer(buffer);
 
 	myobj1 = s.Read();
@@ -15,8 +32,8 @@ LoadModule('jsstd');
 	var str = uneval(myobj);
 	var str1 = uneval(myobj1);
 	
-	Print( str, '\n' );
-	Print( str1, '\n' );
+	Print( '***', str, '\n' );
+	Print( '***', str1, '\n' );
 	Print( 'eq=', str1 == str, '\n' );
 
 Halt();

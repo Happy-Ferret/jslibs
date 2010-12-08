@@ -788,6 +788,14 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 ///////////////////////////////////////////////////////////////////////////////
 // Type check functions
 
+static ALWAYS_INLINE JSClass*
+JL_ObjectJSClass( JSContext *cx ) {
+
+	JSObject *oproto;
+	if ( js_GetClassPrototype(cx, NULL, JSProto_Object, &oproto) )
+		return JL_GetClass(oproto);
+	return NULL;
+}
 
 static ALWAYS_INLINE bool
 JL_ObjectIsObject( JSContext *cx, JSObject *obj ) {
@@ -858,6 +866,12 @@ JL_JsvalIsScript( const JSContext *cx, const jsval &val ) {
 	return JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == js::Jsvalify(&js_ScriptClass);
 }
 
+static ALWAYS_INLINE bool
+JL_ObjectIsFunction( const JSContext *cx, const JSObject *obj ) {
+
+	JL_UNUSED(cx);
+	return obj->isFunction();
+}
 
 static ALWAYS_INLINE bool
 JL_JsvalIsFunction( const JSContext *cx, const jsval &val ) {
@@ -923,6 +937,21 @@ JL_StringToJsid( JSContext *cx, const char *cstr ) {
 #else
 	return ATOM_TO_JSID(STRING_TO_ATOM(jsstr));
 #endif // DEBUG
+}
+
+
+static ALWAYS_INLINE JSFunction*
+JL_ObjectToFunction( JSContext *cx, const JSObject *obj ) {
+
+	JL_UNUSED(cx);
+	return GET_FUNCTION_PRIVATE(cx, obj);
+}
+
+static ALWAYS_INLINE JSFunction*
+JL_JsvalToFunction( JSContext *cx, const jsval &val ) {
+
+	JL_UNUSED(cx);
+	return GET_FUNCTION_PRIVATE(cx, JSVAL_TO_OBJECT(val));
 }
 
 

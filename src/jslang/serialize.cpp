@@ -72,14 +72,12 @@ DEFINE_FUNCTION( Done ) {
 	jl::Serializer* ser;
 	ser = (jl::Serializer*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(ser);
-	{
 	void *data;
 	size_t length;
 	JL_CHKM( ser->GetBufferOwnership(&data, &length), "Serializer buffer error.");
 	delete ser;
 	JL_SetPrivate(cx, obj, NULL);
 	return JL_NewBlob(cx, data, length, vp);
-	}
 	JL_BAD;
 }
 
@@ -118,17 +116,15 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
+	JLStr str;
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_STRING(JL_ARG(1));
-	{
-	JLStr str;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	jl::Unserializer *unser;
 	unser = new jl::Unserializer(OBJECT_TO_JSVAL(obj), str.GetStrZOwnership(), str.Length());
 	JL_S_ASSERT_ALLOC(unser);
 	JL_SetPrivate(cx, obj, unser);
-	}
 	return JS_TRUE;
 	JL_BAD;
 }
