@@ -101,105 +101,84 @@ double AccurateTimeCounter() {
 	return (double)1000 * (performanceCount.QuadPart-initTime) / (double)frequency.QuadPart;
 }
 
-const jschar *ToString(JSContext *cx, jsval val) {
-	
-	JSString *str = JS_ValueToString(cx, val);
-	return JS_GetStringCharsZ(cx, str);
-}
-
-
-const jschar *ToString(JSContext *cx, jsid id) {
-	
-	jsval val;
-	JS_IdToValue(cx, id, &val);
-	return ToString(cx, val);
-}
 
 
 
-class BlobProxyHandler : public js::JSProxyHandler {
+#define jl_free free
+#define jl_malloc malloc
 
-public:
 
-	BlobProxyHandler() : js::JSProxyHandler(NULL) {
+class SharedBuffer {
+
+	struct Shared {
+		size_t count;
+		size_t length;
+		char buffer[1]; // first char of the buffer
+	};
+	Shared *_shared;
+
+	void AddRef() {
+		
+		++_shared->count;
 	}
 
-	virtual ~BlobProxyHandler() {
+	void DelRef() {
+
+		if ( !--_shared->count )
+			jl_free(_shared);
+	}
+
+public:
+	~SharedBuffer() {
+		
+		DelRef();
+	}
+
+	SharedBuffer( size_t length ) {
+
+		_shared = (Shared*)jl_malloc(sizeof(*_shared)-1 + length);
+//		JL_ASSERT( _shared );
+		_shared->count = 1;
+		_shared->length = length;
+	}
+
+	SharedBuffer( const SharedBuffer &other ) {
+
+		_shared = other._shared;
+		AddRef();
+	}
+
+	const SharedBuffer & operator =( const SharedBuffer &other ) {
+
+		DelRef();
+		_shared = other._shared;
+		AddRef();
+		return *this;
+	}
+
+	size_t Length() const {
+	
+		return _shared->length;
+	}
+
+	char *Data() const {
+	
+		return _shared->buffer;
 	}
 
 private:
-
-	bool getPropertyDescriptor(JSContext *cx, JSObject *proxy, jsid id, bool set, js::PropertyDescriptor *desc) {
-
-		wprintf(L"getPropertyDescriptor %s ", ToString(cx, id));
-
-		JSObject *obj = &proxy->getProxyPrivate().toObject();
-
-		if ( !JS_GetPropertyDescriptorById(cx, obj, id, JSRESOLVE_QUALIFIED, Jsvalify(desc)) )
-			return false;
-
-		wprintf(L":= %s\n", ToString(cx, Jsvalify(desc->value)));
-		return true;
-	}
-
-	bool getOwnPropertyDescriptor(JSContext *cx, JSObject *proxy, jsid id, bool set, js::PropertyDescriptor *desc) {
-
-		wprintf(L"getOwnPropertyDescriptor %s ", ToString(cx, id));
-
-		JSObject *obj = &proxy->getProxyPrivate().toObject();
-
-		if ( !JS_GetPropertyDescriptorById(cx, obj, id, JSRESOLVE_QUALIFIED, Jsvalify(desc)) )
-			return false;
-
-		wprintf(L":= %s\n", ToString(cx, Jsvalify(desc->value)));
-
-		if (desc->obj != obj)
-			desc->obj = NULL;
-		return true;
-	}
-
-	bool defineProperty(JSContext *cx, JSObject *proxy, jsid id, js::PropertyDescriptor *desc) {
-
-		wprintf(L"defineProperty %s ", ToString(cx, id));
-
-		JSObject *obj = &proxy->getProxyPrivate().toObject();
-		if ( !JS_DefinePropertyById(cx, obj, id, js::Jsvalify(desc->value), js::Jsvalify(desc->getter), js::Jsvalify(desc->setter), desc->attrs) )
-			return false;
-
-		wprintf(L":= %s\n", ToString(cx, Jsvalify(desc->value)));
-
-		return true;
-	}
-
-	bool getOwnPropertyNames(JSContext *cx, JSObject *proxy, js::AutoIdVector &props) { 
-		return true;
-	}
-
-	bool delete_(JSContext *cx, JSObject *proxy, jsid id, bool *bp) {
-		return true;
-	}
-
-	bool enumerate(JSContext *cx, JSObject *proxy, js::AutoIdVector &props) {
-		return true;
-	}
-
-	bool fix(JSContext *cx, JSObject *proxy, js::Value *vp) {
-		return true;
-	}
-/*
-	bool get(JSContext *cx, JSObject *proxy, JSObject *receiver, jsid id, js::Value *vp) {
-		
-		JSObject *obj = &proxy->getProxyPrivate().toObject();
-		return JS_GetPropertyById(cx, obj, id, js::Jsvalify(vp));
-	}
-*/
-	bool set(JSContext *cx, JSObject *proxy, JSObject *receiver, jsid id, js::Value *vp) {
-		
-		JSObject *obj = &proxy->getProxyPrivate().toObject();
-		return JS_SetPropertyById(cx, obj, id, js::Jsvalify(vp));
-	}
-
+	SharedBuffer();
 };
+
+
+
+SharedBuffer Test() {
+
+	SharedBuffer sb(100);
+	SharedBuffer test(sb);
+
+	return sb;
+}
 
 
 int main(int argc, char* argv[]) {
@@ -213,36 +192,13 @@ int main(int argc, char* argv[]) {
 	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class);
 	JS_InitStandardClasses(cx, globalObject);
 
-	JS_InitClass(cx, globalObject, NULL, js::Jsvalify(&jl_BlobClass), constructor, 0, NULL, NULL, NULL, NULL);
+	SharedBuffer sb1(Test());
+
+	SharedBuffer sb2 = sb1;
+	sb2 = sb1;
+	sb1 = SharedBuffer(200);
 
 
-	JSObject *arr;
-	arr = JS_NewArrayObject(cx, 0, NULL);
-
-	JSPropertyDescriptor desc;
-	JS_GetPropertyDescriptorById(cx, arr, ATOM_TO_JSID(rt->atomState.lengthAtom), 0, &desc);
-
-//	JS_GetPropertyAttrsGetterAndSetterById(cx, arr, ATOM_TO_JSID(rt->atomState.lengthAtom), 
-
-	//JS_GetPropertyById(cx, arr, ATOM_TO_JSID(rt->atomState.lengthAtom), &tmp);
-
-
-
-
-
-	BlobProxyHandler bph;
-	JSObject *proxy = js::NewProxyObject(cx, &bph, js::Valueify(OBJECT_TO_JSVAL(arr)), JS_GetPrototype(cx, arr), JS_GetParent(cx, JS_GetPrototype(cx, arr)));
-		
-
-	double tmp;
-	tmp = DOUBLE_TO_JSVAL(1.234);
-//	JS_CallFunctionName(cx, proxy, "push", 1, &tmp, &tmp2);
-//	JS_CallFunctionName(cx, proxy, "push", 1, &tmp, &tmp2);
-
-	JS_GetProperty(cx, proxy, "length", &tmp);
-	const jschar *str = JS_GetStringCharsZ(cx, JS_ValueToString(cx, tmp));
-
-	wprintf(L"length = %s\n", str);
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
@@ -250,3 +206,4 @@ int main(int argc, char* argv[]) {
 
 	return EXIT_SUCCESS;
 }
+

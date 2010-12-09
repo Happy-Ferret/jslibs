@@ -2451,6 +2451,28 @@ JL_CallFunctionNameVA( JSContext *cx, JSObject *obj, const char* functionName, j
 	JL_BAD;
 }
 
+static INLINE JSBool
+JL_Eval( JSContext *cx, JSString *source, jsval *rval ) {
+
+	JSStackFrame *fp = NULL;
+	do {
+		JS_FrameIterator(cx, &fp);
+	} while ( fp && !JS_GetFramePC(cx, fp) );
+	JL_CHK( fp );
+	JSScript *script;
+	script = JS_GetFrameScript(cx, fp);
+	JL_CHK( script );
+	int lineno;
+	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
+	const char *filename;
+	filename = JS_GetScriptFilename(cx, script);
+
+	size_t length;
+	const jschar *chars;
+	chars = JS_GetStringCharsAndLength(source, &length);
+	return JS_EvaluateUCScript(cx, JS_GetScopeChain(cx), chars, length, filename, lineno, rval);
+	JL_BAD;
+}
 
 static INLINE JSBool
 JL_Push( JSContext *cx, JSObject *arr, jsval *value ) {
@@ -3191,6 +3213,72 @@ namespace jl {
 		}
 	};
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Shared buffer
+
+class SharedBuffer {
+
+	struct Shared {
+		size_t count;
+		size_t length;
+		char buffer[1]; // first char of the buffer
+	};
+	Shared *_shared;
+
+	void AddRef() {
+		
+		++_shared->count;
+	}
+
+	void DelRef() {
+
+		if ( !--_shared->count )
+			jl_free(_shared);
+	}
+
+public:
+	~SharedBuffer() {
+		
+		DelRef();
+	}
+
+	SharedBuffer( size_t length ) {
+
+		_shared = (Shared*)jl_malloc(sizeof(*_shared)-1 + length);
+//		JL_ASSERT( _shared );
+		_shared->count = 1;
+		_shared->length = length;
+	}
+
+	SharedBuffer( const SharedBuffer &other ) {
+
+		_shared = other._shared;
+		AddRef();
+	}
+
+	const SharedBuffer & operator =( const SharedBuffer &other ) {
+
+		DelRef();
+		_shared = other._shared;
+		AddRef();
+		return *this;
+	}
+
+	size_t Length() const {
+	
+		return _shared->length;
+	}
+
+	char *Data() const {
+	
+		return _shared->buffer;
+	}
+
+private:
+	SharedBuffer();
+};
+
 
 
 ///////////////////////////////////////////////////////////////////////////////

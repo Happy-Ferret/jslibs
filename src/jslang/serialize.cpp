@@ -138,6 +138,7 @@ DEFINE_FUNCTION( Read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG(0);
+
 	jl::Unserializer *unser;
 	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(cx, obj));
 	JL_S_ASSERT_RESOURCE(unser);

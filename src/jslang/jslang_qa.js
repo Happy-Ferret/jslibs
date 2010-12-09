@@ -757,15 +757,33 @@ LoadModule('jsstd');
 
 /// Serialization / Unserialization
 
-	var myobj = [ '', 'string', [,undefined,'arrayelt'], 0, 1,234, NaN, -Infinity, +Infinity, new Blob(), new Blob('okmokm'), {a:1, b:2}, {},, new Date(), new Number(123), new String(123), <A>B</A>, /.*/ ];
+	function JsClass() {
+	
+		this.a = 5;
+		this._serialize = function(ser) {
+		
+			ser.Write(this.a);
+		}
+		this._unserialize = function(unser) {
+			
+			var o = new JsClass();
+			o.a = unser.Read();
+			return o;
+		}
+	}
 
+	var ob = new JsClass();
+	ob.a = 7;
+
+	var myobj = [ ob, function() [,1,{__proto__:null}], '', 'string', {__proto__:null, a:2}, [], [,,,,,], [,undefined,'arrayelt'], true, false, (void 0), null, 0, 0.0, -0.0, 1,234, NaN, -Infinity, +Infinity, new Blob(), new Blob('okmokm'), {a:1, b:2, c:{d:3}}, {},, new Date(), new Number(123), new String(123), <A>B</A> ];
+	
 	var s = new Serializer();
 	s.Write(myobj);
 	var buffer = s.Done();
 
 	var s = new Unserializer(''+buffer);
 
-	myobj1 = s.Read();
+	var myobj1 = s.Read();
 	var str = uneval(myobj);
 	var str1 = uneval(myobj1);
 	QA.ASSERT_STR( str, str1, 'several serialized / unserialized objects' );
