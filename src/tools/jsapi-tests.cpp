@@ -14,50 +14,71 @@ void (*custom_free)( void* ) = free;
 JS_END_EXTERN_C
 
 
-static const jsbytecode emptyScriptCode[] = {JSOP_STOP, SRC_NULL};
-
-/* static */ const JSScript JSScript::emptyScriptConst = {
-    JS_INIT_STATIC_CLIST(NULL),
-    const_cast<jsbytecode*>(emptyScriptCode),
-    1, JSVERSION_DEFAULT, 0, 0, 0, 0, 0, 0, 0, true, false, false, false, false,
-    false,      /* usesEval */
-    false,      /* usesArguments */
-    true,       /* warnedAboutTwoArgumentEval */
-#ifdef JS_METHODJIT
-    false,      /* debugMode */
-#endif
-    const_cast<jsbytecode*>(emptyScriptCode),
-    {0, jsatomid(0)}, NULL, NULL, 0, 0, 0,
-    0,          /* nClosedArgs */
-    0,          /* nClosedVars */
-    NULL, {NULL},
-#ifdef CHECK_SCRIPT_OWNER
-    reinterpret_cast<JSThread*>(1)
-#endif
-};
-
-#include "jsapi-tests/tests.h"
-
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
+#include "tests.h"
 
-#include "jsxdrapi.h"
+int count = 0;
 
-JSBool soubokTest_fct( JSContext *cx, uintN argc, jsval *vp ) {
+static JSBool soubokTest_next(JSContext *cx, uintN argc, jsval *vp) {
 
-	JSXDRState *w = JS_XDRNewMem(cx, JSXDR_ENCODE);
-	JSFunction *fun = JS_ValueToFunction(cx, *JS_ARGV(cx, vp));
-	JSScript *funScript = FUN_SCRIPT(fun);
-	JS_XDRScript(w, &funScript);
+	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	if ( ++count == 5 )
+		return JS_ThrowStopIteration(cx);
 	return JS_TRUE;
 }
 
+static JSObject* soubokTest_IteratorObject(JSContext *cx, JSObject *obj, JSBool keysonly) {
+
+	JSObject *itObj = JS_NewObject(cx, NULL, NULL, NULL);
+	JS_DefineFunction(cx, itObj, "next", soubokTest_next, 0, 0);
+	count = 0;
+	return itObj;
+}
+
+JSBool soubokTest_constructor( JSContext *cx, uintN argc, jsval *vp ) {
+
+	JSObject *obj;
+	obj = JS_NewObjectForConstructor(cx, vp);
+	if ( obj == NULL )
+		return JS_FALSE;
+	JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
+	return JS_TRUE;
+}
+
+js::Class soubokTest_BlobClass = {
+    "Blob",
+	0,
+	js::PropertyStub,   /* addProperty */
+	js::PropertyStub,   /* delProperty */
+	js::PropertyStub,   /* getProperty */
+	js::PropertyStub,   /* setProperty */
+	js::EnumerateStub,
+	js::ResolveStub,
+	js::ConvertStub,
+    NULL,
+    NULL,           /* reserved0   */
+    NULL,           /* checkAccess */
+    NULL,           /* call        */
+    NULL,           /* construct   */
+    NULL,           /* xdrObject   */
+    NULL,           /* hasInstance */
+    NULL,           /* mark        */
+    {
+		NULL,
+		NULL,
+		NULL,
+		soubokTest_IteratorObject,
+		NULL
+	}
+};
+
+
 BEGIN_TEST(soubokTest)
 {
-	CHECK( JS_DefineFunction(cx, global, "fct", soubokTest_fct, 0, NULL) );
-	EXEC("fct( function() { return [] } )");
-	EXEC("fct( function() { return {} } )");
+	CHECK( JS_InitClass(cx, global, NULL, js::Jsvalify(&soubokTest_BlobClass), soubokTest_constructor, 0, NULL, NULL, NULL, NULL) );
+	EXEC("for ( var i = 0; i < 2; i++ ) [ 0 for ( it in Blob() ) ]");
 	return true;
 }
 END_TEST(soubokTest)
