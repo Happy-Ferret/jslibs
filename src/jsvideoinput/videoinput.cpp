@@ -403,7 +403,6 @@ DEFINE_PROPERTY( version ) {
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
-//	HAS_XDR
 	REVISION(JL_SvnRevToInt("$Revision$"))
 //	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1) // JSVIDEOINPUT_SLOT_DEVICEID

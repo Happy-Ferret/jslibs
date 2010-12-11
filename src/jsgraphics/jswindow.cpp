@@ -255,6 +255,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_SetPrivate(cx, obj, hWnd);
 
 	CxObj *cxobj = (CxObj*)jl_malloc(sizeof(CxObj));
+	JL_S_ASSERT_ALLOC( cxobj );
 	cxobj->cx = cx;
 	cxobj->obj = obj;
 

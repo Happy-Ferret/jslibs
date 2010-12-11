@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include "handlePub.h"
 
+#include "../common/jsvalserializer.h"
+
 // the aim of *globalKey* is to ensure that a pointer in the process's virtual memory space can be serialized and unserializes safely.
 static uint32_t globalKey = 0;
 
@@ -78,39 +80,37 @@ DEFINE_INIT() {
 	return JS_TRUE;
 }
 
-/*
-DEFINE_XDR() {
 
-	JSContext *cx = xdr->cx;
+DEFINE_FUNCTION( _serialize ) {
 
-	jsid id;
-	jsval key, value;
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT( jl::JsvalIsSerializer(cx, JL_ARG(1)), "Invalid serializer object." );
+	jl::Serializer *ser;
+	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
 
-	if ( xdr->mode == JSXDR_ENCODE ) {
+	ser->Write(cx, globalKey);
 
-		JS_XDRUint32(xdr, &globalKey);
-
-		return JS_TRUE;
-	}
-
-	if ( xdr->mode == JSXDR_DECODE ) {
-
-		uint32 gKey;
-		JS_XDRUint32(xdr, &gKey);
-		JL_S_ASSERT( gKey == globalKey, "Incompatible Id." );
-
-		return JS_TRUE;
-	}
-
-	if ( xdr->mode == JSXDR_FREE ) {
-
-		// (TBD) nothing to free ?
-		return JS_TRUE;
-	}
-
-	return JS_FALSE;
+	return JS_TRUE;
+	JL_BAD;
 }
-*/
+
+
+DEFINE_FUNCTION( _unserialize ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT( jl::JsvalIsUnserializer(cx, JL_ARG(1)), "Invalid unserializer object." );
+	jl::Unserializer *unser;
+	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
+
+	uint32_t gKey;
+	unser->Read(cx, gKey);
+	JL_S_ASSERT( gKey == globalKey, "Invalid session." );
+
+	return JS_TRUE;
+	JL_BAD;
+}
 
 
 CONFIGURE_CLASS
@@ -121,10 +121,14 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(HANDLE_PUBLIC_SLOT_COUNT);
 	HAS_FINALIZE
 	HAS_HAS_INSTANCE
-//	HAS_XDR
 
 	BEGIN_FUNCTION_SPEC
+
 		FUNCTION( toString )
+
+		FUNCTION( _serialize )
+		FUNCTION( _unserialize )
+
 	END_FUNCTION_SPEC
 
 END_CLASS

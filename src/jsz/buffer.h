@@ -64,6 +64,7 @@ public:
 
 		_queueLength = INITIAL_QUEUE_LENGTH;
 		_queue = (BufferChunk*)jl_malloc( _queueLength * sizeof(BufferChunk) );
+		JL_ASSERT( _queue );
 		_currentIndex = 0;
 
 		_queue[0].mem = NULL;
@@ -139,6 +140,7 @@ public:
 
 				_queue[_currentIndex].avail = length;
 				_queue[_currentIndex].mem = _queue[_currentIndex].data = (unsigned char*)jl_malloc(length);
+				JL_ASSERT( _queue[_currentIndex].mem );
 			}
 		}
 

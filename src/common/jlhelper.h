@@ -33,6 +33,7 @@
 #include <jsscope.h>
 #include <jsvalue.h>
 #include <jsxdrapi.h>
+#include <jstypedarray.h>
 
 #ifdef _MSC_VER
 #pragma warning( pop )
@@ -181,7 +182,7 @@ JL_NewString(JSContext *cx, char *bytes, size_t length) {
 //
 //#endif //
 
-	return JS_NewString(cx, bytes, length);
+	return JS_NewString(cx, bytes, length); // doc. https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_NewString
 }
 
 
@@ -199,7 +200,7 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 //
 //#endif //
 
-	return JS_NewUCString(cx, chars, length);
+	return JS_NewUCString(cx, chars, length); // doc. https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_NewString
 }
 
 
@@ -791,18 +792,81 @@ inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 static ALWAYS_INLINE JSClass*
 JL_ObjectJSClass( JSContext *cx ) {
 
-	JSObject *oproto;
-	if ( js_GetClassPrototype(cx, NULL, JSProto_Object, &oproto) )
-		return JL_GetClass(oproto);
+	JSObject *proto;
+	if ( js_GetClassPrototype(cx, NULL, JSProto_Object, &proto) )
+		return JL_GetClass(proto);
 	return NULL;
 }
+
+
+static ALWAYS_INLINE JSClass*
+JL_ErrorJSClass( JSContext *cx ) {
+
+	JSObject *proto;
+	if ( js_GetClassPrototype(cx, NULL, JSProto_Error, &proto) )
+		return JL_GetClass(proto);
+	return NULL;
+}
+
+
+static inline JSProtoKey
+JL_GetClassProtoKey(const JSClass *clasp) {
+    JSProtoKey key = JSCLASS_CACHED_PROTO_KEY(clasp);
+    if (key != JSProto_Null)
+        return key;
+    if (clasp->flags & JSCLASS_IS_ANONYMOUS)
+        return JSProto_Object;
+    return JSProto_Null;
+}
+
+
+static ALWAYS_INLINE JSProtoKey
+JL_GetObjectProtoKey( JSContext *cx, JSObject *obj ) {
+
+	JSObject *proto;
+	const JSObject *objProto = JS_GetPrototype(cx, obj);
+	JSProtoKey protoKey = JL_GetClassProtoKey(JL_GetClass(obj));
+	if ( !js_GetClassPrototype(cx, JS_GetGlobalForScopeChain(cx), protoKey, &proto) )
+		return JSProto_Null;
+	if ( objProto == proto )
+		return protoKey;
+	JSObject *global = JS_GetGlobalForScopeChain(cx);
+	JL_STATIC_ASSERT( sizeof(JSProto_Null) == sizeof(int) );
+	for ( int i = int(JSProto_Null)+1; i < int(JSProto_LIMIT); ++i ) {
+
+		if ( !js_GetClassPrototype(cx, global, JSProtoKey(i), &proto) )
+			break;
+		if ( objProto == proto )
+			return JSProtoKey(i);
+	}
+	return JSProto_Null; // not found;
+}
+
+
+static ALWAYS_INLINE JSProtoKey
+JL_GetErrorProtoKey( JSContext *cx, JSObject *obj ) {
+
+	JSObject *global = JS_GetGlobalForScopeChain(cx);
+	const JSObject *objProto = JS_GetPrototype(cx, obj);
+	JSObject *errorProto;
+	for ( int i = int(JSProto_Error); i <= int(JSProto_Error + JSEXN_LIMIT); ++i ) {
+
+		if ( !js_GetClassPrototype(cx, global, JSProtoKey(i), &errorProto) )
+			break;
+		if ( objProto == errorProto )
+			return JSProtoKey(i);
+	}
+	return JSProto_Null; // not found;
+}
+
 
 static ALWAYS_INLINE bool
 JL_ObjectIsObject( JSContext *cx, JSObject *obj ) {
 
 	JSObject *oproto;
-	return js_GetClassPrototype(cx, NULL, JSProto_Object, &oproto) && obj->getProto() == oproto;
+	return js_GetClassPrototype(cx, NULL, JSProto_Object, &oproto) && JL_GetClass(obj) == JL_GetClass(oproto) && obj->getProto() == oproto;
 }
+
 
 #if JS_HAS_XML_SUPPORT
 extern JS_FRIEND_DATA(js::Class) js_XMLClass;
@@ -1023,6 +1087,23 @@ JL_JsidToJsval( JSContext *cx, jsid id, jsval *val ) {
 ///////////////////////////////////////////////////////////////////////////////
 // convertion functions
 
+template <typename T>
+static ALWAYS_INLINE void
+JL_NullTerminate( T* &buf, size_t len ) {
+
+	JL_ASSERT( jl_msize(buf) >= len + 1 );
+	buf[len] = 0;
+}
+
+template <>
+static ALWAYS_INLINE void
+JL_NullTerminate( void* &buf, size_t len ) {
+
+	JL_ASSERT( jl_msize(buf) >= len + 1 );
+	((char*)buf)[len] = '\0';
+}
+
+
 
 template <typename T>
 static ALWAYS_INLINE bool
@@ -1043,82 +1124,99 @@ JL_Realloc( T*&ptr, size_t count = 1 ) {
 
 class JLStr {
 
-	struct Own {
-
-		size_t len;
-		uint32_t count;
-		const jschar *cjsstr;
-		jschar *jsstr;
-		const char *cstr;
-		char *str;
-		const char *cstrz;
-		char *strz;
+	enum {
+		OWN = 1,
+		NT = 2
 	};
-	Own *_own;
 
-	ALWAYS_INLINE void NewOwn(const jschar *cjsstr, jschar *jsstr, const char *cstr, char *str, const char *cstrz, char *strz, size_t len) {
+	struct Own {
+		size_t len;
+		jschar *jsstr;
+		char *str;
+		uint8_t jsstrFlags;
+		uint8_t strFlags;
+		uint32_t count;
+	} *_own;
+
+	ALWAYS_INLINE void NewOwn(const jschar *jsstr, const char *str, bool nullTerminated, bool hasOwnership, size_t length = SIZE_MAX) {
 
 		JL_Alloc(_own);
+		JL_ASSERT(_own);
 		_own->count = 1;
-		_own->len = len;
-		_own->cjsstr = cjsstr;
-		_own->jsstr = jsstr;
-		_own->cstr = cstr;
-		_own->str = str;
-		_own->cstrz = cstrz;
-		_own->strz = strz;
+		_own->len = length;
+		_own->jsstr = const_cast<jschar*>(jsstr);
+		_own->str = const_cast<char*>(str);
+		_own->jsstrFlags = jsstr ? (nullTerminated ? NT : 0) | (hasOwnership ? OWN : 0) : 0;
+		_own->strFlags = str ? (nullTerminated ? NT : 0) | (hasOwnership ? OWN : 0) : 0;
+
 		JL_ASSERT( IsSet() );
+		JL_ASSERT_IF( length != SIZE_MAX && hasOwnership && jsstr, jl_msize((void*)jsstr) >= length + 2 );
+		JL_ASSERT_IF( nullTerminated && jsstr, ((uint8_t*)jsstr)[length] == 0 );
+		JL_ASSERT_IF( length != SIZE_MAX && hasOwnership && str, jl_msize((void*)str) >= length + 1 );
+		JL_ASSERT_IF( nullTerminated && str, ((uint8_t*)str)[length] == 0 );
 	}
 
-	ALWAYS_INLINE jschar * CreateJsStr() {
-
-		JL_ASSERT( _own );
-		JL_ASSERT( _own->cstrz || _own->strz || _own->cstr || _own->str );
-		size_t length = Length();
-		const char *src;
-		if ( _own->cstrz )
-			src = _own->cstrz;
-		else if ( _own->strz )
-			src = _own->strz;
-		else if ( _own->cstr )
-			src = _own->cstr;
-		else if ( _own->str )
-			src = _own->str;
-		jschar *dst;
-		if ( !JL_Alloc(dst, length) )
-			return NULL;
-		jschar *tmp = dst;
-		for ( size_t i = length; i > 0; --i )
-			*(tmp++) = (unsigned char)*(src++);
-		return dst;
+	ALWAYS_INLINE bool HasFlags( uint32_t currentFlags, uint32_t flags ) {
+	
+		return (currentFlags & flags) == flags;
 	}
 
-	ALWAYS_INLINE char * CreateStrZ() {
-
-		JL_ASSERT( _own );
-		JL_ASSERT( _own->cjsstr || _own->jsstr );
+	void CreateOwnStrZ() {
+		
+		JL_ASSERT( IsSet() );
 		size_t length = Length();
-		const jschar *src = _own->cjsstr ? _own->cjsstr : _own->jsstr;
-		char *dst;
-		if ( !JL_Alloc(dst, length +1) )
-			return NULL;
-		char *tmp = dst;
-		for ( size_t i = length; i > 0; --i )
-			*(tmp++) = (char)*(src++);
-		*tmp = '\0';
-		return dst;
+		char *tmp;
+		JL_Alloc(tmp, length + 1);
+		JL_ASSERT( tmp );
+		tmp[length] = 0;
+		if ( _own->str ) {
+
+			memcpy(tmp, _own->str, length);
+			if ( _own->strFlags & OWN )
+				jl_free(_own->str);
+			_own->str = tmp;
+		} else {
+
+			_own->str = tmp;
+			jschar *src = _own->jsstr;
+			for ( size_t i = length; i > 0; --i )
+				*(tmp++) = (char)*(src++);
+		}
+		_own->strFlags |= OWN|NT;
+	}
+
+	void CreateOwnJsStrZ() {
+		
+		JL_ASSERT( IsSet() );
+		size_t length = Length();
+		jschar *tmp;
+		JL_Alloc(tmp, length + 1);
+		JL_ASSERT( tmp );
+		tmp[length] = 0;
+		if ( _own->jsstr ) {
+
+			memcpy(tmp, _own->jsstr, length * 2);
+			if ( _own->jsstrFlags & OWN )
+				jl_free(_own->jsstr);
+			_own->jsstr = tmp;
+		} else {
+
+			_own->jsstr = tmp;
+			char *src = _own->str;
+			for ( size_t i = length; i > 0; --i )
+				*(tmp++) = (unsigned char)*(src++);
+		}
+		_own->jsstrFlags |= OWN|NT;
 	}
 
 public:
 	~JLStr() {
-		
+
 		if ( !_own || --_own->count )
 			return;
-		if ( _own->jsstr )
+		if ( _own->jsstrFlags & OWN )
 			jl_free(_own->jsstr);
-		if ( _own->strz )
-			jl_free(_own->strz);
-		if ( _own->str )
+		if ( _own->strFlags & OWN )
 			jl_free(_own->str);
 		jl_free(_own);
 	}
@@ -1145,69 +1243,48 @@ public:
 
 		size_t length;
 		const jschar *str = JS_GetStringCharsAndLength(jsstr, &length); // doc. not null-terminated. // see also JS_GetStringCharsZ
-		NewOwn(str, NULL, NULL, NULL, NULL, NULL, length);
+		NewOwn(str, NULL, false, false, length);
 	}
 
-	ALWAYS_INLINE JLStr(const jschar *str, size_t length) {
-		
-		NewOwn(str, NULL, NULL, NULL, NULL, NULL, length);
+	ALWAYS_INLINE JLStr(const jschar *str, size_t length, bool nullTerminated) {
+
+		NewOwn(str, NULL, nullTerminated, false, length);
 	}
 
-	ALWAYS_INLINE JLStr(jschar *str, size_t length) { // give ownership of str to JLStr
+	ALWAYS_INLINE JLStr(jschar *str, size_t length, bool nullTerminated) { // give ownership of str to JLStr
 
-		NewOwn(NULL, str, NULL, NULL, NULL, NULL, length);
+		NewOwn(str, NULL, nullTerminated, true, length);
 	}
 
-	ALWAYS_INLINE JLStr(const char *str, bool hasZ) {
+	ALWAYS_INLINE JLStr(const char *str, bool nullTerminated) {
 
-		JL_ASSERT_IF( hasZ, ((uint8_t*)str)[strlen(str)] == 0 ); 
-
-		if ( hasZ )
-			NewOwn(NULL, NULL, NULL, NULL, str, NULL, SIZE_MAX);
-		else
-			NewOwn(NULL, NULL, str, NULL, NULL, NULL, SIZE_MAX);
+		NewOwn(NULL, str, nullTerminated, false);
 	}
 
-	ALWAYS_INLINE JLStr(const char *str, size_t length, bool hasZ) {
+	ALWAYS_INLINE JLStr(const char *str, size_t length, bool nullTerminated) {
 
-		JL_ASSERT_IF( hasZ, ((uint8_t*)str)[length] == 0 ); 
-
-		if ( hasZ )
-			NewOwn(NULL, NULL, NULL, NULL, str, NULL, length);
-		else
-			NewOwn(NULL, NULL, str, NULL, NULL, NULL, length);
+		NewOwn(NULL, str, nullTerminated, false, length);
 	}
 
-	ALWAYS_INLINE JLStr(char *str, bool hasZ) { // give ownership of str to JLStr
+	ALWAYS_INLINE JLStr(char *str, bool nullTerminated) { // give ownership of str to JLStr
 
-		JL_ASSERT_IF( hasZ, jl_msize(str) >= strlen(str) + 1 );
-
-		if ( hasZ )
-			NewOwn(NULL, NULL, NULL, NULL, NULL, str, SIZE_MAX);
-		else
-			NewOwn(NULL, NULL, NULL, str, NULL, NULL, SIZE_MAX);
+		NewOwn(NULL, str, nullTerminated, true);
 	}
 
-	ALWAYS_INLINE JLStr(char *str, size_t length, bool hasZ) { // give ownership of str to JLStr
+	ALWAYS_INLINE JLStr(char *str, size_t length, bool nullTerminated) { // give ownership of str to JLStr
 
-		JL_ASSERT_IF( hasZ, jl_msize(str) >= length + 1 );
-		JL_ASSERT_IF( hasZ, ((uint8_t*)str)[length] == 0 ); 
-
-		if ( hasZ )
-			NewOwn(NULL, NULL, NULL, NULL, NULL, str, length);
-		else
-			NewOwn(NULL, NULL, NULL, str, NULL, NULL, length);
+		NewOwn(NULL, str, nullTerminated, true, length);
 	}
 
 	ALWAYS_INLINE bool IsSet() const {
 		
-		return _own && (_own->cjsstr || _own->cstrz || _own->cstr || _own->jsstr || _own->str || _own->strz);
+		return _own && (_own->jsstr || _own->str);
 	}
 
 	ALWAYS_INLINE bool HasJsStr() const {
 
 		JL_ASSERT( _own );
-		return _own->cjsstr || _own->jsstr;
+		return !!_own->jsstr;
 	}
 
 	ALWAYS_INLINE size_t Length() {
@@ -1215,9 +1292,11 @@ public:
 		JL_ASSERT( IsSet() );
 		if ( _own->len != SIZE_MAX ) // known length
 			return _own->len;
-		JL_ASSERT( _own->cstrz || _own->strz );
-		_own->len = strlen(_own->cstrz ? _own->cstrz : _own->strz);
-		return _own->len;
+		if ( _own->str )
+			return _own->len = strlen(_own->str);
+		if ( _own->jsstr )
+			return _own->len = wcslen(_own->jsstr);
+		return 0;
 	}
 
 	ALWAYS_INLINE size_t LengthOrZero() {
@@ -1228,12 +1307,8 @@ public:
 	INLINE const jschar *GetConstJsStr() {
 
 		JL_ASSERT( IsSet() );
-		if ( _own->cjsstr )
-			return _own->cjsstr;
-		if ( _own->jsstr )
-			return _own->jsstr;
-		JL_ASSERT( !_own->jsstr );
-		_own->jsstr = CreateJsStr();
+		if ( !_own->jsstr )
+			CreateOwnJsStrZ();
 		return _own->jsstr;
 	}
 
@@ -1242,40 +1317,21 @@ public:
 		return IsSet() ? GetConstJsStr() : NULL;
 	}
 
-	INLINE jschar *GetJsStrOwnership() {
+	INLINE jschar *GetJsStrZOwnership() {
 
 		JL_ASSERT( IsSet() );
-		jschar *tmp;
-		if ( _own->jsstr ) {
-
-			tmp = _own->jsstr;
-			_own->jsstr = NULL;
-			return tmp;
-		}
-		if ( _own->cjsstr ) {
-	
-			size_t length = Length();
-			JL_Alloc(tmp, length); // js_malloc
-			JL_ASSERT(tmp != NULL);
-			memcpy(tmp, _own->cjsstr, length * sizeof(*tmp));
-			return tmp;
-		}
-		return CreateJsStr();
+		if ( !_own->jsstr || !HasFlags(_own->jsstrFlags, OWN|NT) )
+			CreateOwnJsStrZ();
+		jschar *tmp = _own->jsstr;
+		_own->jsstr = NULL;
+		return tmp;
 	}
 
 	INLINE const char *GetConstStr() {
-
-		JL_ASSERT( IsSet() );
-		if ( _own->strz )
-			return _own->strz;
-		if ( _own->cstrz )
-			return _own->cstrz;
-		if ( _own->cstr )
-			return _own->cstr;
-		if ( _own->str )
-			return _own->str;
-		_own->strz = CreateStrZ();
-		return _own->strz;
+		
+		if ( !_own->str )
+			CreateOwnStrZ();
+		return _own->str;
 	}
 
 	ALWAYS_INLINE const char *GetStrConstOrNull() {
@@ -1286,92 +1342,25 @@ public:
 	INLINE char *GetStrZOwnership() {
 
 		JL_ASSERT( IsSet() );
-
-		char *tmp;
-
-		if ( _own->strz ) {
-
-			tmp = _own->strz;
-			_own->strz = NULL;
-			return tmp;
-		}
-
-		size_t length = Length();
-
-		if ( _own->cstrz ) {
-			
-			JL_Alloc(tmp, length +1);
-			JL_ASSERT( tmp != NULL );
-			tmp[length] = '\0';
-			memcpy(tmp, _own->cstrz, length * sizeof(*tmp));
-			return tmp;
-		}
-
-		if ( _own->cstr ) {
-			
-			JL_Alloc(tmp, length +1);
-			JL_ASSERT( tmp != NULL );
-			tmp[length] = '\0';
-			memcpy(tmp, _own->cstr, length * sizeof(*tmp));
-			return tmp;
-		}
-
-		if ( _own->str ) {
-
-			tmp = _own->str;
-			_own->str = NULL;
-			JL_Realloc(tmp, length +1);
-			JL_ASSERT( tmp != NULL );
-			tmp[length] = '\0';
-			return tmp;
-		}
-
-		return CreateStrZ();
+		if ( !_own->str || HasFlags(_own->strFlags, OWN|NT) )
+			CreateOwnStrZ();
+		char *tmp = _own->str;
+		_own->str = NULL;
+		return tmp;
 	}
 
 	INLINE const char *GetConstStrZ() {
-	
-		if ( !IsSet() )
-			return NULL;
 
-		if ( _own->strz )
-			return _own->strz;
-
-		if ( _own->cstrz )
-			return _own->cstrz;
-
-		size_t length = Length();
-
-		if ( _own->str ) {
-
-			JL_ASSERT( !_own->str );
-			JL_Realloc(_own->str, length + 1);
-			JL_ASSERT( _own->str );
-			_own->str[length] = '\0';
-			_own->strz = _own->str;
-			_own->str = NULL;
-			return _own->strz;
-		}
-
-		if ( _own->cstr ) {
-			
-			JL_ASSERT( !_own->strz );
-			JL_Alloc(_own->strz, length + 1);
-			JL_ASSERT( _own->strz );
-			_own->strz[length] = '\0';
-			memcpy(_own->strz, _own->cstr, length);
-			return _own->strz;
-		}
-
-		_own->strz = CreateStrZ();
-		return _own->strz;
+		JL_ASSERT( IsSet() );
+		if ( !_own->str || !HasFlags(_own->strFlags, NT) )
+			CreateOwnStrZ();
+		return _own->str;
 	}
 
 	ALWAYS_INLINE operator const char *() {
 		
 		return GetConstStrZ();
 	}
-
 
 private:
 	void operator *();
@@ -1381,9 +1370,12 @@ private:
 };
 
 
+
+
+
 // JLStr
 
-static ALWAYS_INLINE JSBool
+static INLINE JSBool
 JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 
 	if (likely( JSVAL_IS_STRING(val) )) { // for string literals
@@ -1393,9 +1385,20 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 	}
 	if (likely( !JSVAL_IS_PRIMITIVE(val) )) { // for NIBufferGet support
 
-		NIBufferGet fct = BufferGetNativeInterface(cx, JSVAL_TO_OBJECT(val));
+		JSObject *obj = JSVAL_TO_OBJECT(val);
+		NIBufferGet fct = BufferGetNativeInterface(cx, obj);
 		if ( fct )
-			return fct(cx, JSVAL_TO_OBJECT(val), str);
+			return fct(cx, obj, str);
+
+		if ( js_IsTypedArray(obj) ) {
+
+			js::TypedArray *buf = js::TypedArray::fromJSObject(obj);
+			if ( buf->type == js::TypedArray::TYPE_UINT16 )
+				*str = JLStr((const jschar*)buf->data, buf->length / 2, false);
+			else
+				*str = JLStr((const char*)buf->data, buf->length, false);
+			return JS_TRUE;
+		}
 	}
 	JSString *jsstr = JS_ValueToString(cx, val);
 	if ( jsstr == NULL )
@@ -1423,8 +1426,9 @@ JL_NativeToJsval( JSContext *cx, const jschar* cval, size_t length, jsval *vp ) 
 		return JS_TRUE;
 	}
 	JSString *jsstr = JS_NewUCStringCopyN(cx, cval, length);
-	if (unlikely( jsstr == NULL ))
-		JL_REPORT_ERROR( "Unable to create the string." );
+	JL_CHK( jsstr );
+//	if (unlikely( jsstr == NULL ))
+//		JL_REPORT_ERROR_NUM(cx, JLSMSG_FAIL_TO_CREATE, "string");
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
@@ -1447,8 +1451,10 @@ JL_NativeToJsval( JSContext *cx, const char* cval, jsval *vp ) {
 		return JS_TRUE;
 	}
 	JSString *jsstr = JS_NewStringCopyZ(cx, cval);
-	if (unlikely( jsstr == NULL ))
-		JL_REPORT_ERROR( "Unable to create the string." );
+	JL_CHK( jsstr );
+
+//	if (unlikely( jsstr == NULL ))
+//		JL_REPORT_ERROR( "Unable to create the string." );
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
@@ -1468,8 +1474,10 @@ JL_NativeToJsval( JSContext *cx, const char* cval, size_t length, jsval *vp ) {
 		return JS_TRUE;
 	}
 	JSString *jsstr = JS_NewStringCopyN(cx, cval, length);
-	if (unlikely( jsstr == NULL ))
-		JL_REPORT_ERROR( "Unable to create the string." );
+	JL_CHK( jsstr );
+
+//	if (unlikely( jsstr == NULL ))
+//		JL_REPORT_ERROR( "Unable to create the string." );
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
@@ -2451,26 +2459,23 @@ JL_CallFunctionNameVA( JSContext *cx, JSObject *obj, const char* functionName, j
 	JL_BAD;
 }
 
+
 static INLINE JSBool
 JL_Eval( JSContext *cx, JSString *source, jsval *rval ) {
 
-	JSStackFrame *fp = NULL;
-	do {
-		JS_FrameIterator(cx, &fp);
-	} while ( fp && !JS_GetFramePC(cx, fp) );
-	JL_CHK( fp );
+	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
+	JL_CHK( frame );
 	JSScript *script;
-	script = JS_GetFrameScript(cx, fp);
+	script = JS_GetFrameScript(cx, frame);
 	JL_CHK( script );
-	int lineno;
-	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
-	const char *filename;
-	filename = JS_GetScriptFilename(cx, script);
-
+	const char *scriptFilename;
+	scriptFilename = JS_GetScriptFilename(cx, script);
+	JL_CHK( scriptFilename );
+	int scriptLineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, frame));
 	size_t length;
 	const jschar *chars;
 	chars = JS_GetStringCharsAndLength(source, &length);
-	return JS_EvaluateUCScript(cx, JS_GetScopeChain(cx), chars, length, filename, lineno, rval);
+	return JS_EvaluateUCScript(cx, JS_GetScopeChain(cx), chars, length, scriptFilename, scriptLineno, rval);
 	JL_BAD;
 }
 
@@ -2558,6 +2563,7 @@ JL_LoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFi
 
 		size_t compFileSize = compFileStat.st_size; // filelength(file); ?
 		data = jl_malloc(compFileSize); // (TBD) free on error
+		JL_S_ASSERT_ALLOC( data );
 		int readCount = read( file, data, jl::SafeCast<unsigned int>(compFileSize) ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
 		JL_CHKM( readCount >= 0 && (size_t)readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
 		close( file );
@@ -3039,6 +3045,14 @@ struct ProcessEvent {
 // memory management
 
 namespace jl {
+
+	class _NOVTABLE CppNoAlloc {
+		void* operator new(size_t);
+		void* operator new[](size_t);
+		void operator delete(void *, size_t);
+		void operator delete[](void *, size_t);
+	};
+
 
 	class _NOVTABLE CppAllocators {
 	public:

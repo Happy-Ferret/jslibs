@@ -45,39 +45,40 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 //}
 
 
+/*
+DEFINE_FUNCTION( _serialize ) {
 
-//DEFINE_XDR() {
-//	
-//	if ( xdr->mode == JSXDR_ENCODE ) {
-//
-//		jsval tmp;
-//		JL_CHK( JL_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
-//		JS_XDRValue(xdr, &tmp);
-//		return JS_TRUE;
-//	}
-//
-//	if ( xdr->mode == JSXDR_DECODE ) {
-//
-//		*objp = JS_NewObject(xdr->cx, _class, NULL, NULL);
-//		jsval tmp;
-//		JS_XDRValue(xdr, &tmp);
-//		JL_CHK( JL_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
-//		return JS_TRUE;
-//	}
-//
-//	if ( xdr->mode == JSXDR_FREE ) {
-//
-//		return JS_TRUE;
-//	}
-//
-//	JL_BAD;
-//}
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT( jl::JsvalIsSerializer(cx, JL_ARG(1)), "Invalid serializer object." );
+	jl::Serializer *ser;
+	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
+
+	//ser->Write(cx, globalKey);
+
+	return JS_TRUE;
+	JL_BAD;
+}
 
 
+DEFINE_FUNCTION( _unserialize ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT( jl::JsvalIsUnserializer(cx, JL_ARG(1)), "Invalid unserializer object." );
+	jl::Unserializer *unser;
+	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
+
+	//uint32_t gKey;
+	//unser->Read(cx, gKey);
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+*/
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
-
-//	HAS_XDR
 
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
@@ -87,12 +88,14 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
-	BEGIN_FUNCTION_SPEC
-//		FUNCTION(Func)
-	END_FUNCTION_SPEC
-
 	BEGIN_PROPERTY_SPEC
 //		PROPERTY(prop)
 	END_PROPERTY_SPEC
+
+	BEGIN_FUNCTION_SPEC
+//		FUNCTION(Func)
+//		FUNCTION_ARGC(_serialize, 1)
+//		FUNCTION_ARGC(_unserialize, 1)
+	END_FUNCTION_SPEC
 
 END_CLASS

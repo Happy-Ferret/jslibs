@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "../common/jsvalserializer.h"
 
 #ifdef _MACOSX // MacosX platform specific
 	#include <AGL/agl.h>
@@ -136,39 +137,51 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 }
 
 
-DEFINE_XDR() {
+DEFINE_FUNCTION( _serialize ) {
 
-	if ( xdr->mode == JSXDR_ENCODE ) {
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT( jl::JsvalIsSerializer(cx, JL_ARG(1)), "Invalid serializer object." );
+	jl::Serializer *ser;
+	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
 
-		jsval tmp;
-		JL_CHK( JL_GetReservedSlot(xdr->cx, *objp, 0, &tmp) );
-		JS_XDRValue(xdr, &tmp);
-		return JS_TRUE;
-	}
+	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JL_ATOMJSID(cx, fileName), JL_RVAL) );
+	JL_CHK( ser->Write(cx, *JL_RVAL) );
+	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JL_ATOMJSID(cx, lineNumber), JL_RVAL) );
+	JL_CHK( ser->Write(cx, *JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, 0, JL_RVAL) );
+	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
-	if ( xdr->mode == JSXDR_DECODE ) {
-
-		*objp = JS_NewObject(xdr->cx, JL_THIS_CLASS, NULL, NULL);
-		jsval tmp;
-		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JL_SetReservedSlot(xdr->cx, *objp, 0, tmp) );
-		return JS_TRUE;
-	}
-
-	if ( xdr->mode == JSXDR_FREE ) {
-
-		// (TBD) nothing to free ?
-		return JS_TRUE;
-	}
-
+	return JS_TRUE;
 	JL_BAD;
 }
+
+
+DEFINE_FUNCTION( _unserialize ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT( jl::JsvalIsUnserializer(cx, JL_ARG(1)), "Invalid unserializer object." );
+	jl::Unserializer *unser;
+	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
+
+	JL_CHK( unser->Read(cx, *JL_RVAL) );
+	JL_CHK( JS_SetPropertyById(cx, obj, JL_ATOMJSID(cx, fileName), JL_RVAL) );
+	JL_CHK( unser->Read(cx, *JL_RVAL) );
+	JL_CHK( JS_SetPropertyById(cx, obj, JL_ATOMJSID(cx, lineNumber), JL_RVAL) );
+	JL_CHK( unser->Read(cx, *JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, 0, *JL_RVAL) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
-	HAS_XDR
+
 	HAS_RESERVED_SLOTS(1)
 	HAS_HAS_INSTANCE // see issue#52
 
@@ -180,6 +193,8 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(toString)
+		FUNCTION_ARGC(_serialize, 1)
+		FUNCTION_ARGC(_unserialize, 1)
 	END_FUNCTION_SPEC
 
 END_CLASS

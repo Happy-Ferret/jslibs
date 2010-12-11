@@ -59,7 +59,7 @@ HandleCreate( JSContext *cx, HANDLE_TYPE handleType, size_t userDataSize, void**
 	*handleVal = OBJECT_TO_JSVAL(handleObj);
 	HandlePrivate *pv;
 	pv = (HandlePrivate*)jl_malloc(sizeof(HandlePrivate) + userDataSize);
-	JL_CHK( pv );
+	JL_S_ASSERT_ALLOC( pv );
 	JL_SetPrivate(cx, handleObj, pv);
 
 	pv->handleType = handleType;

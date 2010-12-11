@@ -135,7 +135,7 @@ static JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 	jl::Unserializer(cx, pv->serializedCode) >> argv[0];
 	pv->serializedCode.Free();
 
-
+(
 	JSFunction *fun;
 	fun = JS_ValueToFunction(cx, argv[0]);
 	JSObject *funObj;

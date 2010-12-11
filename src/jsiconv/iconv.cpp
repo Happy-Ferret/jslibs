@@ -179,7 +179,7 @@ DEFINE_CALL() {
 
 
 	outLen = inLen + MB_LEN_MAX + 512; // (we use + MB_LEN_MAX to avoid "remainderLen section" to failed with E2BIG)
-	outBuf = (char*)JS_malloc(cx, outLen +1);
+	outBuf = (char*)JS_malloc(cx, outLen +2);
 	JL_CHK( outBuf );
 
 	char *outPtr;
@@ -238,7 +238,7 @@ DEFINE_CALL() {
 
 						int processedOut = outPtr - outBuf;
 						outLen = inLen * processedOut / (inPtr - inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
-						outBuf = (char*)JS_realloc(cx, outBuf, outLen +1);
+						outBuf = (char*)JS_realloc(cx, outBuf, outLen +2);
 						JL_CHK(outBuf);
 						outPtr = outBuf + processedOut;
 						outLeft = outLen - processedOut;
@@ -251,7 +251,7 @@ DEFINE_CALL() {
 						
 						int processedOut = outPtr - outBuf;
 						outLen = inLen * processedOut / (inPtr - inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
-						outBuf = (char*)JS_realloc(cx, outBuf, outLen +1);
+						outBuf = (char*)JS_realloc(cx, outBuf, outLen +2);
 						JL_CHK(outBuf);
 						outPtr = outBuf + processedOut;
 						outLeft = outLen - processedOut;
@@ -290,7 +290,7 @@ DEFINE_CALL() {
 
 	if ( JL_MaybeRealloc(outLen, length) ) {
 
-		outBuf = (char*)JS_realloc(cx, outBuf, length +1);
+		outBuf = (char*)JS_realloc(cx, outBuf, length +2);
 		JL_CHK( outBuf );
 	}
 
@@ -301,8 +301,8 @@ DEFINE_CALL() {
 	
 		if ( length % 2 != 0 )
 			JL_REPORT_WARNING("Invalid string length."); // (TBD) or report an error ?
-
-		jsEncStr = JL_NewUCString(cx, (jschar*)outBuf, (length +1) / 2);
+		((jschar*)outBuf)[length / 2] = 0;
+		jsEncStr = JL_NewUCString(cx, (jschar*)outBuf, length / 2);
 	} else {
 
 		jsEncStr = JL_NewString(cx, outBuf, length); // loose outBuf ownership	// JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );

@@ -44,6 +44,7 @@ DEFINE_FUNCTION( Alloc ) {
 	unsigned int size;
 	size = JSVAL_TO_INT(JL_ARG(1));
 	data = jl_malloc(size);
+	JL_S_ASSERT_ALLOC( data );
 	JL_SetPrivate(cx, obj, data);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -137,6 +138,7 @@ DEFINE_FUNCTION( Trim ) {
 		newData = data;
 	else {
 		newData = (char*)jl_malloc( channels * (x1-x) * (y1-y) );
+		JL_S_ASSERT_ALLOC( newData );
 		JL_SetPrivate(cx, obj, newData);
 	}
 

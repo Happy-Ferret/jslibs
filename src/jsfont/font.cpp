@@ -90,6 +90,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JsfontPrivate *pv;
 	pv = (JsfontPrivate*)jl_malloc(sizeof(JsfontPrivate));
+	JL_S_ASSERT_ALLOC( pv );
 
 	FTCHK( FT_New_Face( mpv->ftLibrary, filePathName, faceIndex, &pv->face ) );
 	// from memory: FT_New_Memory_Face
@@ -341,10 +342,14 @@ DEFINE_FUNCTION( DrawString ) {
 
 	Glyph glyphs_static[32]; // memory optimization only
 	Glyph *glyphs;
-	if ( strlen > sizeof(glyphs_static)/sizeof(*glyphs_static) )
+	if ( strlen > sizeof(glyphs_static)/sizeof(*glyphs_static) ) {
+
 		glyphs = (Glyph*)jl_malloc(sizeof(Glyph) * strlen);
-	else
+		JL_S_ASSERT_ALLOC( glyphs );
+	} else {
+
 		glyphs = glyphs_static;
+	}
 
 	size_t i;
 

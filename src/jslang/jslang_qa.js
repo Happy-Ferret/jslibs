@@ -31,9 +31,9 @@ LoadModule('jsstd');
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 
 
-/// Blob memory issue []
+/// Blob memory issue [d]
 
-	var s = StringRepeat(s, 100*1000*1000);
+	var s = StringRepeat(s, 1000*1000);
 	var b = new Blob(s);
 	for ( var i = 0; i < 100; ++i )
 		b.toString();
@@ -774,17 +774,25 @@ LoadModule('jsstd');
 
 	var ob = new JsClass();
 	ob.a = 7;
-
-	var myobj = [ ob, function() [,1,{__proto__:null}], '', 'string', {__proto__:null, a:2}, [], [,,,,,], [,undefined,'arrayelt'], true, false, (void 0), null, 0, 0.0, -0.0, 1,234, NaN, -Infinity, +Infinity, new Blob(), new Blob('okmokm'), {a:1, b:2, c:{d:3}}, {},, new Date(), new Number(123), new String(123), <A>B</A> ];
 	
+	function ReferenceError() {
+		
+		try {
+			dgsdfgfvf6z5ef4sdfg();
+		} catch(ex) {
+			return ex;
+		}
+		return undefined;
+	}
+	
+	var myobj = [ ReferenceError(), new Error('error test'), ob, function() [,1,{__proto__:null}], '', 'string', {__proto__:null, a:2}, [], [,,,,,], [,undefined,'arrayelt'], true, false,
+	             (void 0), null, 0, 0.0, -0.0, 1,234, NaN, -Infinity, +Infinity, new Blob(), new Blob('okmokm'), {a:1, b:2, c:{d:3}}, {},, new Date(), new Number(123), new String(123), <A>B</A>,
+	             -2147483647-1, 0xffffffff, 'a', String(), new Error(), new URIError() ];
+	             
 	var s = new Serializer();
 	s.Write(myobj);
-	var buffer = s.Done();
-
-	var s = new Unserializer(''+buffer);
-
-	var myobj1 = s.Read();
+	var s = new Unserializer(String(s.Done()));
 	var str = uneval(myobj);
-	var str1 = uneval(myobj1);
+	var str1 = uneval(s.Read());
 	QA.ASSERT_STR( str, str1, 'several serialized / unserialized objects' );
 

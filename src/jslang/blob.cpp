@@ -1103,147 +1103,6 @@ bad:
 }
 
 
-/*
-DEFINE_XDR() {
-	
-	jsid id;
-	jsval key, value;
-
-	if ( xdr->mode == JSXDR_ENCODE ) {
-
-		const char *buffer;
-		size_t length;
-		JL_CHK( BlobLength(xdr->cx, *objp, &length) );
-		JL_CHK( BlobBuffer(xdr->cx, *objp, &buffer) );
-		uint32 tmp;
-		JL_CHK( length <= (uint32)-1 ); // , "buffer too long."
-		tmp = (uint32)length;
-		JL_CHK( JS_XDRUint32(xdr, &tmp) );
-		JL_CHK( JS_XDRBytes(xdr, (char*)buffer, tmp) ); // ugly but safe de-const because we are JSXDR_ENCODE.
-
-		JSObject *it;
-		it = JS_NewPropertyIterator(xdr->cx, *objp); // see JS_Enumerate that calls obj's JSClass.enumerate hook. JS_DestroyIdArray.
-		JL_CHK( it );
-
-		for (;;) {
-
-			JL_CHK( JS_NextProperty(xdr->cx, it, &id) );
-			if ( JSID_IS_VOID(id) ) { // ... or JSVAL_VOID if there is no such property left to visit.
-
-				JL_CHK( JS_IdToValue(xdr->cx, id, &key) );
-//				JL_CHK( OBJ_GET_PROPERTY(xdr->cx, *objp, id, &value) ); // returning false on error or exception, true on success.
-				//JL_CHK( (*objp)->getProperty(xdr->cx, id, &value) ); // returning false on error or exception, true on success.
-				JL_CHK( JS_GetPropertyById(xdr->cx, *objp, id, &value) );
-				JL_CHK( JS_XDRValue(xdr, &key) );
-				JL_CHK( JS_XDRValue(xdr, &value) );
-			} else {
-
-				jsval tmp = JSVAL_VOID;
-				JL_CHK( JS_XDRValue(xdr, &tmp) );
-				break;
-			}
-		}
-		return JS_TRUE;
-	}
-
-
-	if ( xdr->mode == JSXDR_DECODE ) {
-
-		uint32 length;
-		char *buffer;
-		JL_CHK( JS_XDRUint32(xdr, &length) );
-		buffer = (char*)JS_malloc(xdr->cx, length +1);
-		buffer[length] = '\0'; // (TBD) needed ?
-		JL_CHKB( JS_XDRBytes(xdr, buffer, length), bad_free_buffer );
-
-		jsval tmp;
-		JL_CHKB( JL_NewBlob(xdr->cx, buffer, length, &tmp), bad_free_buffer );
-		JL_CHKB( JS_ValueToObject(xdr->cx, tmp, objp), bad_free_buffer );
-
-		for (;;) {
-
-			JL_CHKB( JS_XDRValue(xdr, &key), bad_free_buffer );
-			if ( key != JSVAL_VOID ) {
-
-				JS_ValueToId(xdr->cx, key, &id);
-				JL_CHKB( JS_XDRValue(xdr, &value), bad_free_buffer );
-//				JL_CHKB( OBJ_SET_PROPERTY(xdr->cx, *objp, id, &value), bad_free_buffer );
-				//JL_CHKB( (*objp)->setProperty(xdr->cx, id, &value), bad_free_buffer );
-				JL_CHKB( JS_SetPropertyById(xdr->cx, *objp, id, &value), bad_free_buffer );
-			} else {
-
-				break;
-			}
-		}
-		return JS_TRUE;
-	bad_free_buffer:
-		JS_free(xdr->cx, buffer);
-		return JS_FALSE;
-	}
-
-	if ( xdr->mode == JSXDR_FREE ) {
-
-		// (TBD) nothing to free ?
-		return JS_TRUE;
-	}
-
-	JL_BAD;
-}
-*/
-
-
-DEFINE_FUNCTION( _serialize ) {
-
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT( jl::JsvalIsSerializer(cx, JL_ARG(1)), "Invalid serializer object." );
-	jl::Serializer *ser;
-	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
-
-	size_t length;
-	const char *buf;
-	JL_CHK( BlobLength(cx, JL_OBJ, &length) );
-	JL_CHK( BlobBuffer(cx, JL_OBJ, &buf) );
-	
-	JL_CHK( ser->Write(cx, jl::SerializerConstBufferInfo(buf, length)) );
-//	if ( length > 0 )
-	JL_CHK( ser->Write(cx, jl::SerializerObjectProperties(JL_OBJ)) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-DEFINE_FUNCTION( _unserialize ) {
-
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT( jl::JsvalIsUnserializer(cx, JL_ARG(1)), "Invalid unserializer object." );
-	jl::Unserializer *unser;
-	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
-
-	if ( JSVAL_IS_OBJECT(*JL_RVAL) ) {
-		
-		jl::SerializerConstBufferInfo buf;
-		JL_CHK( unser->Read(cx, buf) );
-
-		void *dBuffer;
-		dBuffer = JS_malloc(cx, buf.Length() +1);
-		JL_CHK( dBuffer );
-		memcpy(dBuffer, buf.Data(), buf.Length());
-		((char*)dBuffer)[buf.Length()] = '\0';
-		JL_SetPrivate(cx, obj, dBuffer);
-
-		jsval tmp;
-		JL_CHK( JL_NativeToJsval(cx, buf.Length(), &tmp) );
-		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, tmp) );
-
-		jl::SerializerObjectProperties objProp(obj);
-		JL_CHK( unser->Read(cx, objProp) );
-	}
-	return JS_TRUE;
-	JL_BAD;
-}
-
 
 JSBool GetBlobString( JSContext *cx, JSObject *obj, jsval *str ) {
 
@@ -1396,6 +1255,73 @@ DEFINE_OPS_GET_PROPERTY() {
 */
 
 
+
+
+DEFINE_FUNCTION( _serialize ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT( jl::JsvalIsSerializer(cx, JL_ARG(1)), "Invalid serializer object." );
+	jl::Serializer *ser;
+	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
+
+	if ( IsBlobValid(cx, JL_OBJ) ) {
+
+		size_t length;
+		const char *buf;
+		JL_CHK( BlobLength(cx, JL_OBJ, &length) );
+		JL_CHK( BlobBuffer(cx, JL_OBJ, &buf) );
+		JL_CHK( ser->Write(cx, true) ); // valid
+		JL_CHK( ser->Write(cx, jl::SerializerConstBufferInfo(buf, length)) );
+		JL_CHK( ser->Write(cx, jl::SerializerObjectOwnProperties(JL_OBJ)) );
+	} else {
+		
+		JL_CHK( ser->Write(cx, false) ); // invalid
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+DEFINE_FUNCTION( _unserialize ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT( jl::JsvalIsUnserializer(cx, JL_ARG(1)), "Invalid unserializer object." );
+	jl::Unserializer *unser;
+	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
+
+	bool validity;
+	JL_CHK( unser->Read(cx, validity) );
+
+	if ( validity ) {
+		
+		jl::SerializerConstBufferInfo buf;
+		JL_CHK( unser->Read(cx, buf) );
+
+		void *dBuffer;
+		dBuffer = JS_malloc(cx, buf.Length() +1);
+		JL_CHK( dBuffer );
+		memcpy(dBuffer, buf.Data(), buf.Length());
+		JL_NullTerminate(dBuffer, buf.Length());
+
+		JL_SetPrivate(cx, obj, dBuffer);
+
+		JL_CHK( JL_NativeToJsval(cx, buf.Length(), JL_RVAL) );
+		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, *JL_RVAL) );
+
+		JL_CHK( unser->Read(cx, jl::SerializerObjectOwnProperties(obj)) );
+	} else {
+
+		JL_SetPrivate(cx, obj, NULL);
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 /**doc
 === Note ===
  Blobs are immutable. This mean that its content cannot be modified after it is created.
@@ -1413,8 +1339,8 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(2)
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-//	HAS_GET_PROPERTY
-//	HAS_SET_PROPERTY
+	HAS_GET_PROPERTY
+	HAS_SET_PROPERTY
 	HAS_EQUALITY_OP
 	HAS_ITERATOR_OBJECT
 
@@ -1440,13 +1366,10 @@ CONFIGURE_CLASS
 		FUNCTION_ALIAS(valueOf, toString)
 		FUNCTION(toSource)
 
-		FUNCTION(_serialize)
-		FUNCTION(_unserialize)
+		FUNCTION_ARGC(_serialize, 1)
+		FUNCTION_ARGC(_unserialize, 1)
 
 	END_FUNCTION_SPEC
-
-	BEGIN_STATIC_FUNCTION_SPEC
-	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ(length)

@@ -1485,7 +1485,7 @@ DEFINE_FUNCTION( DisassembleScript ) {
 	fclose(wf);
 
 	char *data;
-	data = (char*)jl_malloc(length+1);
+	data = (char*)jl_malloc(length + 1);
 	JL_S_ASSERT_ALLOC( data );
 	fread(data, 1, length, rf);
 	data[length] = '\0';

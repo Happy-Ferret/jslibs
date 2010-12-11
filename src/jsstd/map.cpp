@@ -79,64 +79,10 @@ DEFINE_CONSTRUCTOR() {
 	JL_BAD;
 }
 
-/*
-DEFINE_XDR() {
-
-	jsid id;
-	jsval key, value;
-
-	if ( xdr->mode == JSXDR_ENCODE ) {
-
-		JSObject *it = JS_NewPropertyIterator(xdr->cx, *objp);
-		for (;;) {
-
-			JL_CHK( JS_NextProperty(xdr->cx, it, &id) );
-			if ( JSID_IS_VOID( id ) ) { // ... or JSVAL_VOID if there is no such property left to visit.
-
-				jsval tmp = JSVAL_VOID;
-				JL_CHK( JS_XDRValue(xdr, &tmp) );
-				break;
-			}
-			JL_CHK( JS_IdToValue(xdr->cx, id, &key) );
-//			JL_CHK( OBJ_GET_PROPERTY(xdr->cx, *objp, id, &value) ); // returning false on error or exception, true on success.
-			JL_CHK( JS_GetPropertyById(xdr->cx, *objp, id, &value) );
-			JL_CHK( JS_XDRValue(xdr, &key) );
-			JL_CHK( JS_XDRValue(xdr, &value) );
-		}
-		return JS_TRUE;
-	}
-
-	if ( xdr->mode == JSXDR_DECODE ) {
-
-		*objp = JS_NewObject(xdr->cx, JL_THIS_CLASS, NULL, NULL);
-		for (;;) {
-
-			JL_CHK( JS_XDRValue(xdr, &key) );
-			if ( key == JSVAL_VOID )
-				break;
-			JS_ValueToId(xdr->cx, key, &id);
-			JL_CHK( JS_XDRValue(xdr, &value) );
-			JL_CHK( (*objp)->setProperty(xdr->cx, id, &value) );
-		}
-		return JS_TRUE;
-	}
-
-	if ( xdr->mode == JSXDR_FREE ) {
-
-		// (TBD) nothing to free ?
-		return JS_TRUE;
-	}
-
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
 
 CONFIGURE_CLASS
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
-//	HAS_XDR
 END_CLASS
 
 

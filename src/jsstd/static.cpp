@@ -181,8 +181,10 @@ DEFINE_FUNCTION( Expand ) {
 
 assemble:
 	jschar *res, *tmp;
-	res = (jschar*)JS_malloc(cx, total * sizeof(jschar));
+	res = (jschar*)JS_malloc(cx, total * sizeof(jschar) + 2);
 	JL_CHK( res );
+	res[total] = 0;
+
 	tmp = res + total;
 	
 	for ( ; stack; --stack ) {
@@ -673,74 +675,6 @@ DEFINE_FUNCTION( IsGenerator ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* *doc
-$TOC_MEMBER $INAME
- $TYPE Blob $INAME( value )
-  Encode (serialize) a JavaScript value into an XDR (eXternal Data Representation) blob.
-  $H note
-   All JavaScript values cannot be encoded into XDR. If the function failed to encode a value, an error is raised. The Map object can help you to encode Object and Array.
-**/
-/*
-#ifdef JS_HAS_XDR
-DEFINE_FUNCTION( XdrEncode ) {
-
-	JL_S_ASSERT_ARG(1);
-	JSXDRState *xdr;
-	xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
-	JL_CHK( xdr );
-	//if (unlikely( JL_JsvalIsScript(cx, JL_ARG(1)) )) {
-
-	//	JSScript *script = (JSScript*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
-	//	JL_S_ASSERT_RESOURCE(script);
-	//	JL_CHK( JS_XDRScript(xdr, &script) );
-	//} else {
-
-		JL_CHK( JS_XDRValue(xdr, &JL_ARG(1)) );
-	//}
-	uint32 length;
-	void *buffer;
-	buffer = JS_XDRMemGetData(xdr, &length);
-	JL_S_ASSERT( buffer != NULL, "Invalid xdr data." );
-	JL_CHK( JL_NewBlobCopyN(cx, buffer, length, JL_RVAL) );
-	JS_XDRDestroy(xdr);
-	return JS_TRUE;
-	JL_BAD;
-}
-#endif // JS_HAS_XDR
-*/
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $VAL $INAME( xdrBlob )
-  Decode (deserialize) XDR (eXternal Data Representation) blob to a JavaScript value.
-  $H beware
-   Decoding malformed XDR data can lead the program to crash. This may be an important security issue. Decode only trusted data.
-* */
-/*
-#ifdef JS_HAS_XDR
-DEFINE_FUNCTION( XdrDecode ) {
-
-	JL_S_ASSERT_ARG(1);
-
-	JSXDRState *xdr;
-	xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
-	JL_CHK( xdr );
-	const char *buffer;
-	size_t length;
-	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
-	JS_XDRMemSetData(xdr, (void*)buffer, (uint32)length); // safe de-const cast: we are JSXDR_DECODE from the buffer.
-	JL_CHK( JS_XDRValue(xdr, JL_RVAL) );
-	//JL_CHK( JS_XDRScript(xdr, JL_RVAL) );
-	JS_XDRMemSetData(xdr, NULL, 0);
-	JS_XDRDestroy(xdr);
-	return JS_TRUE;
-	JL_BAD;
-}
-#endif // JS_HAS_XDR
-*/
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( text )
@@ -922,8 +856,9 @@ DEFINE_FUNCTION( StringRepeat ) {
 	newLen = len * count;
 
 	jschar *newBuf;
-	JL_Alloc(newBuf, newLen);
-	JL_CHK( newBuf );
+	JL_Alloc(newBuf, newLen +1);
+	JL_S_ASSERT_ALLOC( newBuf );
+	JL_NullTerminate(newBuf, newLen);
 
 	const jschar *buf;
 	buf = str.GetConstJsStr();
@@ -1518,10 +1453,6 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( IsFunction, 1 )
 		FUNCTION_ARGC( IsGenerator, 1 )
 //		FUNCTION_ARGC( IsVoid, 1 ) // value === undefined is better
-#ifdef JS_HAS_XDR
-//		FUNCTION( XdrEncode )
-//		FUNCTION( XdrDecode )
-#endif // JS_HAS_XDR
 		FUNCTION( Warning )
 		FUNCTION( Assert )
 		FUNCTION( Halt )

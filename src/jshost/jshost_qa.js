@@ -5,7 +5,6 @@
 			var s = String(global[item]);
 		}
 
-
 /// jshost arguments [ftm]
 
 	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments)', '123', '-c']);

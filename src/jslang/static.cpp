@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "jstypedarray.h"
 
 #include "../jslang/handlePub.h"
 
@@ -99,7 +100,29 @@ DEFINE_FUNCTION( Stringify ) {
 			JL_CHK( get(cx, sobj, &str) );
 
 			JSString *jsstr;
-			jsstr = JL_NewUCString(cx, str.GetJsStrOwnership(), str.Length()); // (TBD) fix allocator issue missmatch between GetJsStrOwnership() and JS_NewUCString().
+			jsstr = JL_NewUCString(cx, str.GetJsStrZOwnership(), str.Length()); // (TBD) fix allocator issue missmatch between GetJsStrOwnership() and JS_NewUCString().
+			JL_CHK( jsstr );
+			*JL_RVAL = STRING_TO_JSVAL( jsstr );
+			return JS_TRUE;
+		}
+
+		if ( js_IsArrayBuffer(sobj) ) {
+
+			js::ArrayBuffer *buf = js::ArrayBuffer::fromJSObject(sobj);
+			JSString *jsstr = JS_NewStringCopyN(cx, (char*)buf->data, buf->byteLength / sizeof(char) );
+			JL_CHK( jsstr );
+			*JL_RVAL = STRING_TO_JSVAL( jsstr );
+			return JS_TRUE;
+		}
+
+		if ( js_IsTypedArray(sobj) ) {
+
+			js::TypedArray *buf = js::TypedArray::fromJSObject(sobj);
+			JSString *jsstr;
+			if ( buf->type == js::TypedArray::TYPE_UINT16 )
+				jsstr = JS_NewUCStringCopyN(cx, (jschar*)buf->data, buf->length / sizeof(jschar) );
+			else
+				jsstr = JS_NewStringCopyN(cx, (char*)buf->data, buf->length / sizeof(char) );
 			JL_CHK( jsstr );
 			*JL_RVAL = STRING_TO_JSVAL( jsstr );
 			return JS_TRUE;
@@ -110,7 +133,7 @@ DEFINE_FUNCTION( Stringify ) {
 	JLStr str;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	JSString *jsstr;
-	jsstr = JL_NewUCString(cx, str.GetJsStrOwnership(), str.Length()); // (TBD) allocator issue.
+	jsstr = JL_NewUCString(cx, str.GetJsStrZOwnership(), str.Length()); // (TBD) allocator issue.
 	*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	}
 

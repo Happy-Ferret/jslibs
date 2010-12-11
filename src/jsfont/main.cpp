@@ -63,6 +63,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	FT_Memory memory; // http://www.freetype.org/freetype2/docs/design/design-4.html
 	memory = (FT_Memory)jl_malloc(sizeof(*memory));
+	JL_S_ASSERT_ALLOC( memory );
 	memory->user = NULL;
 	memory->alloc = JsfontAlloc;
 	memory->free = JsfontFree;

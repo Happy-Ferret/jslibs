@@ -981,6 +981,9 @@ LoadModule('jsstd');
 
 /// warning messages [ft]
 
+	if ( !_host.safeMode ) // warning messages are disabled in unsafe mode
+		return;
+		
 	var buffer = '';
 	var prev = _host.stderr;
 	_host.stderr = function(chunk) buffer += chunk;

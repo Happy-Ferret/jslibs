@@ -38,6 +38,7 @@ DEFINE_CONSTRUCTOR() {
 	ser = new jl::Serializer(OBJECT_TO_JSVAL(obj));
 	JL_S_ASSERT_ALLOC(ser);
 	JL_SetPrivate(cx, obj, ser);
+	ser->Write(cx, JL_THIS_REVISION);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -125,6 +126,9 @@ DEFINE_CONSTRUCTOR() {
 	unser = new jl::Unserializer(OBJECT_TO_JSVAL(obj), str.GetStrZOwnership(), str.Length());
 	JL_S_ASSERT_ALLOC(unser);
 	JL_SetPrivate(cx, obj, unser);
+	JLRevisionType rev;
+	JL_CHK( unser->Read(cx, rev) );
+	JL_S_ASSERT( rev == JL_THIS_REVISION, "Invalid serialized data version." );
 	return JS_TRUE;
 	JL_BAD;
 }

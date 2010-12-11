@@ -1,19 +1,6 @@
 #define XP_WIN
-
-#ifdef _MSC_VER
-#pragma warning( push, 1 )
-#endif // _MSC_VER
-
 #include <jsapi.h>
 #include <jsvalue.h>
-
-#include <jsproxy.h>
-#include <jswrapper.h>
-
-#ifdef _MSC_VER
-#pragma warning( pop )
-#endif // _MSC_VER
-
 #include <string.h>
 
 JSClass global_class = {
@@ -76,111 +63,6 @@ js::Class jl_BlobClass = {
 	}
 };
 
-
-// char *test;
-// JL_CHK( JL_Alloc(test,10);
-template <typename T>
-__forceinline bool JL_Alloc( T*&ptr, size_t count = 1 ) {
-
-	ptr = (T*)malloc(sizeof(T)*count);
-	return ptr != NULL;
-}
-
-#include <windows.h>
-
-double AccurateTimeCounter() {
-
-	static volatile LONGLONG initTime = 0; // initTime helps in avoiding precision waste.
-	LARGE_INTEGER frequency, performanceCount;
-	BOOL result = ::QueryPerformanceFrequency(&frequency);
-	DWORD_PTR oldmask = ::SetThreadAffinityMask(::GetCurrentThread(), 0); // manage bug in BIOS or HAL
-	result = ::QueryPerformanceCounter(&performanceCount);
-	if ( initTime == 0 )
-		initTime = performanceCount.QuadPart;
-	::SetThreadAffinityMask(::GetCurrentThread(), oldmask);
-	return (double)1000 * (performanceCount.QuadPart-initTime) / (double)frequency.QuadPart;
-}
-
-
-
-
-#define jl_free free
-#define jl_malloc malloc
-
-
-class SharedBuffer {
-
-	struct Shared {
-		size_t count;
-		size_t length;
-		char buffer[1]; // first char of the buffer
-	};
-	Shared *_shared;
-
-	void AddRef() {
-		
-		++_shared->count;
-	}
-
-	void DelRef() {
-
-		if ( !--_shared->count )
-			jl_free(_shared);
-	}
-
-public:
-	~SharedBuffer() {
-		
-		DelRef();
-	}
-
-	SharedBuffer( size_t length ) {
-
-		_shared = (Shared*)jl_malloc(sizeof(*_shared)-1 + length);
-//		JL_ASSERT( _shared );
-		_shared->count = 1;
-		_shared->length = length;
-	}
-
-	SharedBuffer( const SharedBuffer &other ) {
-
-		_shared = other._shared;
-		AddRef();
-	}
-
-	const SharedBuffer & operator =( const SharedBuffer &other ) {
-
-		DelRef();
-		_shared = other._shared;
-		AddRef();
-		return *this;
-	}
-
-	size_t Length() const {
-	
-		return _shared->length;
-	}
-
-	char *Data() const {
-	
-		return _shared->buffer;
-	}
-
-private:
-	SharedBuffer();
-};
-
-
-
-SharedBuffer Test() {
-
-	SharedBuffer sb(100);
-	SharedBuffer test(sb);
-
-	return sb;
-}
-
-
 int main(int argc, char* argv[]) {
 
 	JSRuntime *rt = JS_NewRuntime(0);
@@ -192,13 +74,16 @@ int main(int argc, char* argv[]) {
 	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class);
 	JS_InitStandardClasses(cx, globalObject);
 
-	SharedBuffer sb1(Test());
+	JS_InitClass(cx, globalObject, NULL, js::Jsvalify(&jl_BlobClass), constructor, 0, NULL, NULL, NULL, NULL);
 
-	SharedBuffer sb2 = sb1;
-	sb2 = sb1;
-	sb1 = SharedBuffer(200);
+	jsval rval;
+	
+	char *script = 
+		"for ( var i = 0; i < 2; i++ )"
+		"  [ 0 for ( it in Blob() ) ];";
 
-
+	if ( !JS_EvaluateScript(cx, globalObject, script, strlen(script), "<inline>", 0, &rval) )
+		return EXIT_FAILURE;
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
@@ -206,4 +91,3 @@ int main(int argc, char* argv[]) {
 
 	return EXIT_SUCCESS;
 }
-

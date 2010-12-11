@@ -43,6 +43,7 @@ MSG_DEF(JLSMSG_PROGRAM_STOPPED,        1014, 0, JSEXN_NONE, "the program has bee
 MSG_DEF(JLSMSG_NOT_IMPLEMENTED,        1015, 0, JSEXN_ERR, "not implemented")
 MSG_DEF(JLSMSG_OS_ERROR,               1016, 1, JSEXN_INTERNALERR, "OS: {0}")
 MSG_DEF(JLSMSG_VALUE_LOSSOFDATA,       1017, 0, JSEXN_ERR, "loss of data or precision")
+MSG_DEF(JLSMSG_FAIL_TO_CREATE,       1018, 1, JSEXN_INTERNALERR, "unable to create the {0}")
 
 
 

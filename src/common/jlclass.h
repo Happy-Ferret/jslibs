@@ -15,6 +15,7 @@
 #ifndef _JSCLASS_H_
 #define _JSCLASS_H_
 
+typedef uint32_t JLRevisionType;
 
 struct JLConstIntegerSpec {
     int ival;
@@ -33,7 +34,7 @@ struct JLClassSpec {
 	JSConstDoubleSpec *cds;
 	JLConstIntegerSpec *cis;
 	JSBool (*init)(JSContext *cx, JSObject *obj);
-	uint32_t revision;
+	JLRevisionType revision;
 };
 
 
@@ -233,6 +234,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 #define JL_CLASS(CLASSNAME) (&(CLASSNAME::jlClassSpec->clasp))
 #define JL_THIS_CLASS (&(jlClassSpec->clasp))
+#define JL_THIS_REVISION (jlClassSpec->revision)
 
 #define JL_PROTOTYPE(cx, CLASSNAME) (JL_GetCachedClassProto(JL_GetHostPrivate(cx), CLASSNAME::jlClassSpec->clasp.name)->proto)
 #define JL_THIS_PROTOTYPE (JL_GetCachedClassProto(JL_GetHostPrivate(cx), jlClassSpec->clasp.name)->proto)
@@ -349,9 +351,6 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 #define HAS_CHECK_ACCESS cs.clasp.checkAccess = CheckAccess;
 #define DEFINE_CHECK_ACCESS() static JSBool CheckAccess(JSContext *cx, JSObject *obj, jsid id, JSAccessMode mode, jsval *vp)
-
-#define HAS_XDR cs.clasp.xdrObject = XDRObject;
-#define DEFINE_XDR() static JSBool XDRObject(JSXDRState *xdr, JSObject **objp)
 
 #define HAS_ITERATOR_OBJECT js::Valueify(&cs.clasp)->ext.iteratorObject = IteratorObject;
 #define DEFINE_ITERATOR_OBJECT() static JSObject* IteratorObject(JSContext *cx, JSObject *obj, JSBool keysonly)

@@ -13,6 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "../common/jsvalserializer.h"
+
 #include "error.h"
 
 
@@ -96,50 +98,70 @@ DEFINE_PROPERTY( text ) {
 }
 
 
+DEFINE_FUNCTION( toString ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	return _text(cx, obj, JSID_EMPTY, JL_RVAL);
+}
+
+
 DEFINE_HAS_INSTANCE() { // see issue#52
 
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
 
-DEFINE_XDR() {
 
-	if ( xdr->mode == JSXDR_ENCODE ) {
 
-		jsval tmp;
-		JL_CHK( JL_GetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE_HI, &tmp) );
-		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JL_GetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE_LO, &tmp) );
-		JS_XDRValue(xdr, &tmp);
-		return JS_TRUE;
-	}
+DEFINE_FUNCTION( _serialize ) {
 
-	if ( xdr->mode == JSXDR_DECODE ) {
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT( jl::JsvalIsSerializer(cx, JL_ARG(1)), "Invalid serializer object." );
+	jl::Serializer *ser;
+	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
 
-		*objp = JS_NewObject(xdr->cx, JL_THIS_CLASS, NULL, NULL);
-		jsval tmp;
-		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JL_SetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE_HI, tmp) );
-		JS_XDRValue(xdr, &tmp);
-		JL_CHK( JL_SetReservedSlot(xdr->cx, *objp, SLOT_WIN_ERROR_CODE_LO, tmp) );
-		return JS_TRUE;
-	}
+	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JL_ATOMJSID(cx, fileName), JL_RVAL) );
+	JL_CHK( ser->Write(cx, *JL_RVAL) );
+	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JL_ATOMJSID(cx, lineNumber), JL_RVAL) );
+	JL_CHK( ser->Write(cx, *JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, SLOT_WIN_ERROR_CODE_HI, JL_RVAL) );
+	JL_CHK( ser->Write(cx, *JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, SLOT_WIN_ERROR_CODE_LO, JL_RVAL) );
+	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
-	if ( xdr->mode == JSXDR_FREE ) {
-
-		// (TBD) nothing to free ?
-		return JS_TRUE;
-	}
-
+	return JS_TRUE;
 	JL_BAD;
 }
+
+
+DEFINE_FUNCTION( _unserialize ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT( jl::JsvalIsUnserializer(cx, JL_ARG(1)), "Invalid unserializer object." );
+	jl::Unserializer *unser;
+	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
+
+	JL_CHK( unser->Read(cx, *JL_RVAL) );
+	JL_CHK( JS_SetPropertyById(cx, obj, JL_ATOMJSID(cx, fileName), JL_RVAL) );
+	JL_CHK( unser->Read(cx, *JL_RVAL) );
+	JL_CHK( JS_SetPropertyById(cx, obj, JL_ATOMJSID(cx, lineNumber), JL_RVAL) );
+	JL_CHK( unser->Read(cx, *JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_WIN_ERROR_CODE_HI, *JL_RVAL) );
+	JL_CHK( unser->Read(cx, *JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_WIN_ERROR_CODE_LO, *JL_RVAL) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
-	HAS_XDR
 //	HAS_CONSTRUCTOR // see issue#52
 	HAS_HAS_INSTANCE // see issue#52
 
@@ -148,6 +170,12 @@ CONFIGURE_CLASS
 		PROPERTY_READ( const )
 		PROPERTY_READ( text )
 	END_PROPERTY_SPEC
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION(toString)
+		FUNCTION_ARGC(_serialize, 1)
+		FUNCTION_ARGC(_unserialize, 1)
+	END_FUNCTION_SPEC
 
 	HAS_RESERVED_SLOTS(2)
 
