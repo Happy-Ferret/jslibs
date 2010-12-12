@@ -22,6 +22,16 @@ function QAAPI(cx) {
 		return val;
 	}
 	
+
+	function ValueType(val) {
+		
+		var type = typeof(val);
+		if (type == 'object' )
+			return val.consructor.name;
+		return type;
+	}
+	
+	
 	//	this.__defineGetter__('cx', function() cx);
 	Object.defineProperty(this, 'cx', { get:function() cx });
 
@@ -52,10 +62,10 @@ function QAAPI(cx) {
 	}
 
 	this.ASSERT = function( value, expect, testName ) {
-	
+
 		cx.Checkpoint('ASSERT', testName);
 		if ( value !== expect && !(typeof(value) == 'number' && isNaN(value) && typeof(expect) == 'number' && isNaN(expect)) )
-			cx.ReportIssue( '=== ('+value.constructor.name+')'+FormatVariable(value)+', expect '+'('+expect.constructor.name+')'+FormatVariable(expect), testName );
+			cx.ReportIssue( '=== ('+ValueType(value)+')'+FormatVariable(value)+', expect '+'('+ValueType(expect)+')'+FormatVariable(expect), testName );
 	}
 
 	this.ASSERT_STR = function( value, expect, testName ) {
@@ -83,23 +93,25 @@ function QAAPI(cx) {
 	var randomData = '';
 	for ( var i = 0; i < 1024; ++i )
 		randomData += String.fromCharCode(Math.random()*255);
-   this.RandomData = function(length) {
+		
+	this.RandomData = function(length) {
 
-        var data = '';
-        while( data.length < length )
-            data += randomData.substring( Math.random()*randomData.length, Math.random()*randomData.length );
-        return data.substr(0, length);
-   }
+		var data = '';
+		while( data.length < length )
+			data += randomData.substring( Math.random()*randomData.length, Math.random()*randomData.length );
+		return data.substr(0, length);
+	}
 
 	var randomString = '';
 	for ( var i = 0; i < 1024; ++i )
 		randomString += Math.random().toString(36).substr(2);
-   this.RandomString = function(length) { // [0-9A-Za-z]
+   
+	this.RandomString = function(length) { // [0-9A-Za-z]
 
-        var data = '';
-        while( data.length < length )
-            data += randomString.substring( Math.random()*randomString.length, Math.random()*randomString.length );
-        return data.substr(0, length);
+		var data = '';
+		while( data.length < length )
+			data += randomString.substring( Math.random()*randomString.length, Math.random()*randomString.length );
+		return data.substr(0, length);
    }
 }
 
@@ -170,7 +182,6 @@ function CreateQaItemList(startDir, files, include, exclude, flags) {
 	for each ( var item in itemList ) {
 
 		try {
-		
 			item.relativeLineNumber = Locate()[1]+1 - item.line;
 			item.func = new Function('QA', item.code.join('\n'));
 		} catch(ex) {
