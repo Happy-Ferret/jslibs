@@ -1140,7 +1140,7 @@ class JLStr {
 		uint32_t count;
 	} *_inner;
 
-	ALWAYS_INLINE void NewOwn(const jschar *jsstr, const char *str, bool nullTerminated, bool hasOwnership, size_t length = SIZE_MAX) {
+	ALWAYS_INLINE void NewInner(const jschar *jsstr, const char *str, bool nullTerminated, bool hasOwnership, size_t length = SIZE_MAX) {
 
 		JL_Alloc(_inner);
 		JL_ASSERT(_inner);
@@ -1189,15 +1189,14 @@ class JLStr {
 			if ( _inner->strFlags & OWN ) {
 				
 				_inner->jsstr = (jschar*)jl_realloc(_inner->str, (length+1) * 2);
-				_inner->str = NULL;
 				JL_ASSERT( _inner->jsstr );
+				_inner->str = NULL;
 				_inner->jsstr[length] = 0;
 
 				char *src = (char*)_inner->jsstr + length;
 				tmp = _inner->jsstr + length;
 				for ( size_t i = length; i > 0; --i )
 					*--tmp = (unsigned char)*--src;
-				
 			} else {
 
 				JL_Alloc(tmp, length + 1);
@@ -1235,13 +1234,27 @@ class JLStr {
 			_inner->str[length] = 0;
 		} else {
 
-			JL_Alloc(tmp, length + 1);
-			JL_ASSERT( tmp );
-			tmp[length] = 0;
-			_inner->str = tmp;
-			jschar *src = _inner->jsstr;
-			for ( size_t i = length; i > 0; --i )
-				*(tmp++) = (char)*(src++);
+			if ( _inner->jsstrFlags & OWN ) {
+
+				jschar *src = _inner->jsstr + length;
+				tmp = (char*)_inner->jsstr + length;
+				for ( size_t i = length; i > 0; --i )
+					*--tmp = (char)*--src;
+
+				_inner->str = (char*)jl_realloc(_inner->jsstr, length + 1);
+				JL_ASSERT( _inner->str );
+				_inner->jsstr = NULL;
+				_inner->str[length] = 0;
+			} else {
+
+				JL_Alloc(tmp, length + 1);
+				JL_ASSERT( tmp );
+				tmp[length] = 0;
+				_inner->str = tmp;
+				jschar *src = _inner->jsstr;
+				for ( size_t i = length; i > 0; --i )
+					*(tmp++) = (char)*(src++);
+			}
 		}
 		_inner->strFlags = OWN|NT;
 	}
@@ -1280,37 +1293,37 @@ public:
 
 		size_t length;
 		const jschar *str = JS_GetStringCharsAndLength(jsstr, &length); // doc. not null-terminated. // see also JS_GetStringCharsZ
-		NewOwn(str, NULL, false, false, length);
+		NewInner(str, NULL, false, false, length);
 	}
 
 	ALWAYS_INLINE JLStr(const jschar *str, size_t length, bool nullTerminated) {
 
-		NewOwn(str, NULL, nullTerminated, false, length);
+		NewInner(str, NULL, nullTerminated, false, length);
 	}
 
 	ALWAYS_INLINE JLStr(jschar *str, size_t length, bool nullTerminated) { // give ownership of str to JLStr
 
-		NewOwn(str, NULL, nullTerminated, true, length);
+		NewInner(str, NULL, nullTerminated, true, length);
 	}
 
 	ALWAYS_INLINE JLStr(const char *str, bool nullTerminated) {
 
-		NewOwn(NULL, str, nullTerminated, false);
+		NewInner(NULL, str, nullTerminated, false);
 	}
 
 	ALWAYS_INLINE JLStr(const char *str, size_t length, bool nullTerminated) {
 
-		NewOwn(NULL, str, nullTerminated, false, length);
+		NewInner(NULL, str, nullTerminated, false, length);
 	}
 
 	ALWAYS_INLINE JLStr(char *str, bool nullTerminated) { // give ownership of str to JLStr
 
-		NewOwn(NULL, str, nullTerminated, true);
+		NewInner(NULL, str, nullTerminated, true);
 	}
 
 	ALWAYS_INLINE JLStr(char *str, size_t length, bool nullTerminated) { // give ownership of str to JLStr
 
-		NewOwn(NULL, str, nullTerminated, true, length);
+		NewInner(NULL, str, nullTerminated, true, length);
 	}
 
 	ALWAYS_INLINE bool IsSet() const {
