@@ -109,7 +109,7 @@ DEFINE_FUNCTION( Stringify ) {
 		if ( js_IsArrayBuffer(sobj) ) {
 
 			js::ArrayBuffer *buf = js::ArrayBuffer::fromJSObject(sobj);
-			JSString *jsstr = JS_NewStringCopyN(cx, (char*)buf->data, buf->byteLength / sizeof(char) );
+			JSString *jsstr = JS_NewStringCopyN(cx, (char*)buf->data, buf->byteLength );
 			JL_CHK( jsstr );
 			*JL_RVAL = STRING_TO_JSVAL( jsstr );
 			return JS_TRUE;
@@ -120,9 +120,9 @@ DEFINE_FUNCTION( Stringify ) {
 			js::TypedArray *buf = js::TypedArray::fromJSObject(sobj);
 			JSString *jsstr;
 			if ( buf->type == js::TypedArray::TYPE_UINT16 )
-				jsstr = JS_NewUCStringCopyN(cx, (jschar*)buf->data, buf->length / sizeof(jschar) );
+				jsstr = JS_NewUCStringCopyN(cx, (jschar*)buf->data, buf->length );
 			else
-				jsstr = JS_NewStringCopyN(cx, (char*)buf->data, buf->length / sizeof(char) );
+				jsstr = JS_NewStringCopyN(cx, (char*)buf->data, buf->length );
 			JL_CHK( jsstr );
 			*JL_RVAL = STRING_TO_JSVAL( jsstr );
 			return JS_TRUE;

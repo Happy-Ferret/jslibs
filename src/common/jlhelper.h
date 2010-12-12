@@ -1166,8 +1166,8 @@ class JLStr {
 		JL_ASSERT( IsSet() );
 		JL_ASSERT_IF( _inner->str, !HasFlags(_inner->strFlags, OWN|NT) );
 
-		size_t length = Length();
 		char *tmp;
+		size_t length = Length();
 		if ( _inner->str ) {
 
 			if ( _inner->strFlags & OWN ) {
@@ -1200,8 +1200,8 @@ class JLStr {
 		JL_ASSERT( IsSet() );
 		JL_ASSERT_IF( _inner->jsstr, !HasFlags(_inner->jsstrFlags, OWN|NT) );
 
-		size_t length = Length();
 		jschar *tmp;
+		size_t length = Length();
 		if ( _inner->jsstr ) {
 
 			if ( _inner->jsstrFlags & OWN ) {
@@ -1414,7 +1414,7 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 
 			js::TypedArray *buf = js::TypedArray::fromJSObject(obj);
 			if ( buf->type == js::TypedArray::TYPE_UINT16 )
-				*str = JLStr((const jschar*)buf->data, buf->length / 2, false);
+				*str = JLStr((const jschar*)buf->data, buf->length, false);
 			else
 				*str = JLStr((const char*)buf->data, buf->length, false);
 			return JS_TRUE;
