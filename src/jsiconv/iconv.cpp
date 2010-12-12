@@ -305,7 +305,8 @@ DEFINE_CALL() {
 		jsEncStr = JL_NewUCString(cx, (jschar*)outBuf, length / 2);
 	} else {
 
-		jsEncStr = JL_NewString(cx, outBuf, length); // loose outBuf ownership	// JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
+		//jsEncStr = JL_NewString(cx, outBuf, length); // loose outBuf ownership	// JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
+		jsEncStr = JLStr(outBuf, length, true).GetJSString(cx);
 	}
 	*JL_RVAL = STRING_TO_JSVAL(jsEncStr);
 

@@ -120,7 +120,8 @@ DEFINE_FUNCTION( Read ) {
 	}
 	str[result] = '\0';
 	JSString *jsstr;
-	jsstr = JL_NewString(cx, str, result);
+	//jsstr = JL_NewString(cx, str, result);
+	jsstr = JLStr(str, result, true).GetJSString(cx);
 	JL_CHK( jsstr );
 	*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	return JS_TRUE;
@@ -206,7 +207,8 @@ DEFINE_FUNCTION( URLEncode ) {
 				*(it1++) = *it;
 
 	*it1 = '\0';
-	*JL_RVAL = STRING_TO_JSVAL( JL_NewString(cx, dest, it1-dest ) ); // do not include the '\0' in the string length
+	//*JL_RVAL = STRING_TO_JSVAL( JL_NewString(cx, dest, it1-dest ) ); // do not include the '\0' in the string length
+	*JL_RVAL = STRING_TO_JSVAL( JLStr(dest, it1-dest, true).GetJSString(cx) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -272,7 +274,8 @@ DEFINE_FUNCTION( URLDecode ) {
 				*(it1++) = *it;
 
 	*it1 = '\0';
-	*JL_RVAL = STRING_TO_JSVAL( JL_NewString(cx, dest, it1-dest ) ); // do not include the '\0' in the string length
+	//*JL_RVAL = STRING_TO_JSVAL( JL_NewString(cx, dest, it1-dest ) ); // do not include the '\0' in the string length
+	*JL_RVAL = STRING_TO_JSVAL( JLStr(dest, it1-dest, true).GetJSString(cx) );
 	return JS_TRUE;
 
 decoding_error:

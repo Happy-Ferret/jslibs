@@ -81,7 +81,8 @@ DEFINE_FUNCTION( Stringify ) {
 			BufferCopyData(&buf, newBuffer, total);
 			
 			JSString *jsstr;
-			jsstr = JL_NewString(cx, newBuffer, total);
+//			jsstr = JL_NewString(cx, newBuffer, total);
+			jsstr = JLStr(newBuffer, total, true).GetJSString(cx);
 			JL_CHK( jsstr );
 			*JL_RVAL = STRING_TO_JSVAL( jsstr );
 

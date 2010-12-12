@@ -164,6 +164,7 @@ JL_SetReservedSlot(JSContext *cx, JSObject *obj, uintN slot, const jsval &v) {
     return JS_TRUE;
 }
 
+/*
 ////
 // redefining these two function allow us to get ride of which allocator (jl/js) should be used.
 static ALWAYS_INLINE JSString *
@@ -184,6 +185,7 @@ JL_NewString(JSContext *cx, char *bytes, size_t length) {
 
 	return JS_NewString(cx, bytes, length); // doc. https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_NewString
 }
+*/
 
 
 static ALWAYS_INLINE JSString *
@@ -1161,6 +1163,55 @@ class JLStr {
 		return (currentFlags & flags) == flags;
 	}
 
+	void CreateOwnJsStrZ() {
+		
+		JL_ASSERT( IsSet() );
+		JL_ASSERT_IF( _inner->jsstr, !HasFlags(_inner->jsstrFlags, OWN|NT) );
+
+		jschar *tmp;
+		size_t length = Length();
+		if ( _inner->jsstr ) {
+
+			if ( _inner->jsstrFlags & OWN ) {
+
+				JL_Realloc(_inner->jsstr, length + 1);
+				JL_ASSERT( _inner->jsstr );
+			} else {
+
+				JL_Alloc(tmp, length + 1);
+				JL_ASSERT( tmp );
+				memcpy(tmp, _inner->jsstr, length * 2);
+				_inner->jsstr = tmp;
+			}
+			_inner->jsstr[length] = 0;
+		} else {
+
+			if ( _inner->strFlags & OWN ) {
+				
+				_inner->jsstr = (jschar*)jl_realloc(_inner->str, (length+1) * 2);
+				_inner->str = NULL;
+				JL_ASSERT( _inner->jsstr );
+				_inner->jsstr[length] = 0;
+
+				char *src = (char*)_inner->jsstr + length;
+				tmp = _inner->jsstr + length;
+				for ( size_t i = length; i > 0; --i )
+					*--tmp = (unsigned char)*--src;
+				
+			} else {
+
+				JL_Alloc(tmp, length + 1);
+				JL_ASSERT( tmp );
+				tmp[length] = 0;
+				_inner->jsstr = tmp;
+				char *src = _inner->str;
+				for ( size_t i = length; i > 0; --i )
+					*(tmp++) = (unsigned char)*(src++);
+			}
+		}
+		_inner->jsstrFlags = OWN|NT;
+	}
+
 	void CreateOwnStrZ() {
 		
 		JL_ASSERT( IsSet() );
@@ -1193,40 +1244,6 @@ class JLStr {
 				*(tmp++) = (char)*(src++);
 		}
 		_inner->strFlags = OWN|NT;
-	}
-
-	void CreateOwnJsStrZ() {
-		
-		JL_ASSERT( IsSet() );
-		JL_ASSERT_IF( _inner->jsstr, !HasFlags(_inner->jsstrFlags, OWN|NT) );
-
-		jschar *tmp;
-		size_t length = Length();
-		if ( _inner->jsstr ) {
-
-			if ( _inner->jsstrFlags & OWN ) {
-
-				JL_Realloc(_inner->jsstr, length + 1);
-				JL_ASSERT( _inner->jsstr );
-			} else {
-
-				JL_Alloc(tmp, length + 1);
-				JL_ASSERT( tmp );
-				memcpy(tmp, _inner->jsstr, length * 2);
-				_inner->jsstr = tmp;
-			}
-			_inner->jsstr[length] = 0;
-		} else {
-
-			JL_Alloc(tmp, length + 1);
-			JL_ASSERT( tmp );
-			tmp[length] = 0;
-			_inner->jsstr = tmp;
-			char *src = _inner->str;
-			for ( size_t i = length; i > 0; --i )
-				*(tmp++) = (unsigned char)*(src++);
-		}
-		_inner->jsstrFlags = OWN|NT;
 	}
 
 public:
@@ -1345,6 +1362,12 @@ public:
 		jschar *tmp = _inner->jsstr;
 		_inner->jsstr = NULL;
 		return tmp;
+	}
+
+	INLINE JSString *GetJSString(JSContext *cx) {
+
+		JL_ASSERT( IsSet() );
+		return JS_NewUCString(cx, GetJsStrZOwnership(), Length());
 	}
 
 	INLINE const char *GetConstStr() {
@@ -2189,16 +2212,18 @@ JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
 		return JS_TRUE;
 	}
 
-	JSString *jsstr;
+//	JSString *jsstr;
 	// JS_NewString takes ownership of bytes on success, avoiding a copy; but on error (signified by null return), it leaves bytes owned by the caller.
 	// So the caller must free bytes in the error case, if it has no use for them.
-	jsstr = JL_NewString(cx, (char*)buffer, length);
-	JL_CHK( jsstr );
+
+//	jsstr = JL_NewString(cx, (char*)buffer, length);
+//	JL_CHK( jsstr );
 	buffer = NULL; // see bad:
-	*vp = STRING_TO_JSVAL(jsstr); // protect from GC.
+//	*vp = STRING_TO_JSVAL(jsstr); // protect from GC.
+	*vp = STRING_TO_JSVAL( JLStr((char*)buffer, length, true).GetJSString(cx) );
 	// now we want a string object, not a string literal.
 	JSObject *strObj;
-	JL_CHK( JS_ValueToObject(cx, STRING_TO_JSVAL(jsstr), &strObj) ); // see. OBJ_DEFAULT_VALUE(cx, obj, JSTYPE_OBJECT, &v)
+	JL_CHK( JS_ValueToObject(cx, *vp, &strObj) ); // see. OBJ_DEFAULT_VALUE(cx, obj, JSTYPE_OBJECT, &v)
 	*vp = OBJECT_TO_JSVAL(strObj);
 	return JS_TRUE;
 

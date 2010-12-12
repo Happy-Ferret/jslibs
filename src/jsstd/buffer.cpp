@@ -403,7 +403,9 @@ JSBool ReadDataAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval 
 	}
 
 	str[amount] = '\0'; // (TBD) explain this
-	JSString *jsstr = JL_NewString(cx, str, amount);
+	//JSString *jsstr = JL_NewString(cx, str, amount);
+	JSString *jsstr;
+	jsstr = JLStr(str, amount, true).GetJSString(cx);
 	JL_CHK( jsstr );
 	*rval = STRING_TO_JSVAL(jsstr);
 
@@ -965,7 +967,8 @@ DEFINE_FUNCTION( toString ) {
 	}
 
 	JSString *str;
-	str = JL_NewString(cx, buffer, pv->length);
+	//str = JL_NewString(cx, buffer, pv->length);
+	str = JLStr(buffer, pv->length, true).GetJSString(cx);
 	JL_CHK( str );
 	*JL_RVAL = STRING_TO_JSVAL(str);
 //	pv->length = 0;

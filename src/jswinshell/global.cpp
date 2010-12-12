@@ -556,7 +556,8 @@ DEFINE_FUNCTION( RegistryGet ) {
 		case REG_EXPAND_SZ:
 		case REG_MULTI_SZ:
 		case REG_SZ: {
-			JSString *jsstr = JL_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
+			//JSString *jsstr = JL_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
+			JSString *jsstr = JLStr((char*)buffer, size-1, true).GetJSString(cx);
 			JL_CHK( jsstr );
 			*JL_RVAL = STRING_TO_JSVAL(jsstr);
 			break;

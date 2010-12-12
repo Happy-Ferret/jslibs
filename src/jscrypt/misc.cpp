@@ -60,7 +60,8 @@ DEFINE_FUNCTION( Base64Encode ) {
 		return ThrowCryptError(cx, err);
 
 	JSString *jssOutData;
-	jssOutData = JL_NewString( cx, out, outLength );
+	//jssOutData = JL_NewString( cx, out, outLength );
+	jssOutData = JLStr(out, outLength, true).GetJSString(cx);
 	JL_S_ASSERT( jssOutData != NULL, "unable to create the base64 string." );
 	*JL_RVAL = STRING_TO_JSVAL(jssOutData);
 
@@ -141,7 +142,8 @@ DEFINE_FUNCTION( HexEncode ) {
 	}
 
 	JSString *jssOutData;
-	jssOutData = JL_NewString( cx, out, outLength );
+	//jssOutData = JL_NewString( cx, out, outLength );
+	jssOutData = JLStr(out, outLength, true).GetJSString(cx);
 	JL_S_ASSERT( jssOutData != NULL, "unable to create the hex string." );
 	*JL_RVAL = STRING_TO_JSVAL(jssOutData);
 

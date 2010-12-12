@@ -1,9 +1,3 @@
-LoadModule('jsstd'); 
-var ta = new Uint16Array([100, 105, 109]);
-Print( ta );
-throw 0;
-
-
 
 LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;
