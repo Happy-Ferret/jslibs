@@ -1136,23 +1136,23 @@ class JLStr {
 		uint8_t jsstrFlags;
 		uint8_t strFlags;
 		uint32_t count;
-	} *_own;
+	} *_inner;
 
 	ALWAYS_INLINE void NewOwn(const jschar *jsstr, const char *str, bool nullTerminated, bool hasOwnership, size_t length = SIZE_MAX) {
 
-		JL_Alloc(_own);
-		JL_ASSERT(_own);
-		_own->count = 1;
-		_own->len = length;
-		_own->jsstr = const_cast<jschar*>(jsstr);
-		_own->str = const_cast<char*>(str);
-		_own->jsstrFlags = jsstr ? (nullTerminated ? NT : 0) | (hasOwnership ? OWN : 0) : 0;
-		_own->strFlags = str ? (nullTerminated ? NT : 0) | (hasOwnership ? OWN : 0) : 0;
+		JL_Alloc(_inner);
+		JL_ASSERT(_inner);
+		_inner->count = 1;
+		_inner->len = length;
+		_inner->jsstr = const_cast<jschar*>(jsstr);
+		_inner->str = const_cast<char*>(str);
+		_inner->jsstrFlags = jsstr ? (nullTerminated ? NT : 0) | (hasOwnership ? OWN : 0) : 0;
+		_inner->strFlags = str ? (nullTerminated ? NT : 0) | (hasOwnership ? OWN : 0) : 0;
 
 		JL_ASSERT( IsSet() );
 		JL_ASSERT_IF( length != SIZE_MAX && hasOwnership && jsstr, jl_msize((void*)jsstr) >= length + 2 );
-		JL_ASSERT_IF( nullTerminated && jsstr, ((uint8_t*)jsstr)[length] == 0 );
 		JL_ASSERT_IF( length != SIZE_MAX && hasOwnership && str, jl_msize((void*)str) >= length + 1 );
+		JL_ASSERT_IF( nullTerminated && jsstr, ((uint8_t*)jsstr)[length] == 0 );
 		JL_ASSERT_IF( nullTerminated && str, ((uint8_t*)str)[length] == 0 );
 	}
 
@@ -1164,79 +1164,99 @@ class JLStr {
 	void CreateOwnStrZ() {
 		
 		JL_ASSERT( IsSet() );
+		JL_ASSERT_IF( _inner->str, !HasFlags(_inner->strFlags, OWN|NT) );
+
 		size_t length = Length();
 		char *tmp;
-		JL_Alloc(tmp, length + 1);
-		JL_ASSERT( tmp );
-		tmp[length] = 0;
-		if ( _own->str ) {
+		if ( _inner->str ) {
 
-			memcpy(tmp, _own->str, length);
-			if ( _own->strFlags & OWN )
-				jl_free(_own->str);
-			_own->str = tmp;
+			if ( _inner->strFlags & OWN ) {
+
+				JL_Realloc(_inner->str, length + 1);
+				JL_ASSERT( _inner->str );
+			} else {
+
+				JL_Alloc(tmp, length + 1);
+				JL_ASSERT( tmp );
+				memcpy(tmp, _inner->str, length);
+				_inner->str = tmp;
+			}
+			_inner->str[length] = 0;
 		} else {
 
-			_own->str = tmp;
-			jschar *src = _own->jsstr;
+			JL_Alloc(tmp, length + 1);
+			JL_ASSERT( tmp );
+			tmp[length] = 0;
+			_inner->str = tmp;
+			jschar *src = _inner->jsstr;
 			for ( size_t i = length; i > 0; --i )
 				*(tmp++) = (char)*(src++);
 		}
-		_own->strFlags |= OWN|NT;
+		_inner->strFlags = OWN|NT;
 	}
 
 	void CreateOwnJsStrZ() {
 		
 		JL_ASSERT( IsSet() );
+		JL_ASSERT_IF( _inner->jsstr, !HasFlags(_inner->jsstrFlags, OWN|NT) );
+
 		size_t length = Length();
 		jschar *tmp;
-		JL_Alloc(tmp, length + 1);
-		JL_ASSERT( tmp );
-		tmp[length] = 0;
-		if ( _own->jsstr ) {
+		if ( _inner->jsstr ) {
 
-			memcpy(tmp, _own->jsstr, length * 2);
-			if ( _own->jsstrFlags & OWN )
-				jl_free(_own->jsstr);
-			_own->jsstr = tmp;
+			if ( _inner->jsstrFlags & OWN ) {
+
+				JL_Realloc(_inner->jsstr, length + 1);
+				JL_ASSERT( _inner->jsstr );
+			} else {
+
+				JL_Alloc(tmp, length + 1);
+				JL_ASSERT( tmp );
+				memcpy(tmp, _inner->jsstr, length * 2);
+				_inner->jsstr = tmp;
+			}
+			_inner->jsstr[length] = 0;
 		} else {
 
-			_own->jsstr = tmp;
-			char *src = _own->str;
+			JL_Alloc(tmp, length + 1);
+			JL_ASSERT( tmp );
+			tmp[length] = 0;
+			_inner->jsstr = tmp;
+			char *src = _inner->str;
 			for ( size_t i = length; i > 0; --i )
 				*(tmp++) = (unsigned char)*(src++);
 		}
-		_own->jsstrFlags |= OWN|NT;
+		_inner->jsstrFlags = OWN|NT;
 	}
 
 public:
 	~JLStr() {
 
-		if ( !_own || --_own->count )
+		if ( !_inner || --_inner->count )
 			return;
-		if ( _own->jsstrFlags & OWN )
-			jl_free(_own->jsstr);
-		if ( _own->strFlags & OWN )
-			jl_free(_own->str);
-		jl_free(_own);
+		if ( _inner->jsstrFlags & OWN )
+			jl_free(_inner->jsstr);
+		if ( _inner->strFlags & OWN )
+			jl_free(_inner->str);
+		jl_free(_inner);
 	}
 	
-	ALWAYS_INLINE JLStr() : _own(NULL) {
+	ALWAYS_INLINE JLStr() : _inner(NULL) {
 
 		JL_ASSERT( !JS_CStringsAreUTF8() );
 	}
 
-	ALWAYS_INLINE JLStr(const JLStr &jlstr) : _own(jlstr._own) {
+	ALWAYS_INLINE JLStr(const JLStr &jlstr) : _inner(jlstr._inner) {
 		
-		JL_ASSERT( _own );
-		++_own->count;
+		JL_ASSERT( _inner );
+		++_inner->count;
 	}
 
 	ALWAYS_INLINE void operator=(const JLStr &jlstr) {
 
-		JL_ASSERT( !_own );
-		_own = jlstr._own;
-		++_own->count;
+		JL_ASSERT( !_inner );
+		_inner = jlstr._inner;
+		++_inner->count;
 	}
 
 	ALWAYS_INLINE JLStr(JSString *jsstr) {
@@ -1278,24 +1298,24 @@ public:
 
 	ALWAYS_INLINE bool IsSet() const {
 		
-		return _own && (_own->jsstr || _own->str);
+		return _inner && (_inner->jsstr || _inner->str);
 	}
 
 	ALWAYS_INLINE bool HasJsStr() const {
 
-		JL_ASSERT( _own );
-		return !!_own->jsstr;
+		JL_ASSERT( _inner );
+		return !!_inner->jsstr;
 	}
 
 	ALWAYS_INLINE size_t Length() {
 		
 		JL_ASSERT( IsSet() );
-		if ( _own->len != SIZE_MAX ) // known length
-			return _own->len;
-		if ( _own->str )
-			return _own->len = strlen(_own->str);
-		if ( _own->jsstr )
-			return _own->len = wcslen(_own->jsstr);
+		if ( _inner->len != SIZE_MAX ) // known length
+			return _inner->len;
+		if ( _inner->str )
+			return _inner->len = strlen(_inner->str);
+		if ( _inner->jsstr )
+			return _inner->len = wcslen(_inner->jsstr);
 		return 0;
 	}
 
@@ -1307,9 +1327,9 @@ public:
 	INLINE const jschar *GetConstJsStr() {
 
 		JL_ASSERT( IsSet() );
-		if ( !_own->jsstr )
+		if ( !_inner->jsstr )
 			CreateOwnJsStrZ();
-		return _own->jsstr;
+		return _inner->jsstr;
 	}
 
 	ALWAYS_INLINE const jschar *GetJsStrConstOrNull() {
@@ -1320,18 +1340,18 @@ public:
 	INLINE jschar *GetJsStrZOwnership() {
 
 		JL_ASSERT( IsSet() );
-		if ( !_own->jsstr || !HasFlags(_own->jsstrFlags, OWN|NT) )
+		if ( !_inner->jsstr || !HasFlags(_inner->jsstrFlags, OWN|NT) )
 			CreateOwnJsStrZ();
-		jschar *tmp = _own->jsstr;
-		_own->jsstr = NULL;
+		jschar *tmp = _inner->jsstr;
+		_inner->jsstr = NULL;
 		return tmp;
 	}
 
 	INLINE const char *GetConstStr() {
 		
-		if ( !_own->str )
+		if ( !_inner->str )
 			CreateOwnStrZ();
-		return _own->str;
+		return _inner->str;
 	}
 
 	ALWAYS_INLINE const char *GetStrConstOrNull() {
@@ -1342,19 +1362,19 @@ public:
 	INLINE char *GetStrZOwnership() {
 
 		JL_ASSERT( IsSet() );
-		if ( !_own->str || HasFlags(_own->strFlags, OWN|NT) )
+		if ( !_inner->str || HasFlags(_inner->strFlags, OWN|NT) )
 			CreateOwnStrZ();
-		char *tmp = _own->str;
-		_own->str = NULL;
+		char *tmp = _inner->str;
+		_inner->str = NULL;
 		return tmp;
 	}
 
 	INLINE const char *GetConstStrZ() {
 
 		JL_ASSERT( IsSet() );
-		if ( !_own->str || !HasFlags(_own->strFlags, NT) )
+		if ( !_inner->str || !HasFlags(_inner->strFlags, NT) )
 			CreateOwnStrZ();
-		return _own->str;
+		return _inner->str;
 	}
 
 	ALWAYS_INLINE operator const char *() {
