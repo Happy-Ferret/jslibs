@@ -974,10 +974,13 @@ LoadModule('jsstd');
 	
 	_exectest = 5;
 	Exec(filename);
-	QA.ASSERT( _exectest, 6, 'Exec an expression script' );
+	QA.ASSERT( _exectest, 6, 'Exec an expression script (1)' );
+	Exec(filename);
+	QA.ASSERT( _exectest, 7, 'Exec an expression script (2)' );
 		
 	new File(filename).content = undefined;
-
+	QA.ASSERT( new File(filename).content, undefined, 'Exec etest file deletion' );
+	new File(filename+'xdr').content = undefined;
 
 /// warning messages [ft]
 

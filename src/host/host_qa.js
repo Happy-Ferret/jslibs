@@ -145,6 +145,8 @@ LoadModule('jsio');
 	} catch (_ex) {
 		ex = _ex
 	}
+	
+	QA.ASSERT(!!ex, true, "detect exception for empty LoadModule call");
 
 	_host.stderr = prev;
 	

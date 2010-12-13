@@ -16,12 +16,18 @@
 // JL_HOST_PRIVATE_VERSION is supposed to change each time the structure is changed.
 #define JL_HOST_PRIVATE_VERSION (JL_SvnRevToInt("$Revision$"))
 
+#define MAX_CLASS_PROTO_CACHE_BIT 9
+
 struct ClassProtoCache {
 	JSClass *clasp;
 	JSObject *proto;
 };
 
-#define MAX_CLASS_PROTO_CACHE_BIT 9
+#define DEF(RET, NAME, ARGS) RET(*NAME)ARGS;
+struct JLApi {
+#include "jlapi.tbl"
+};
+#undef DEF
 
 struct HostPrivate {
 
@@ -47,6 +53,7 @@ struct HostPrivate {
 	int camelCase;
 	jsid ids[LAST_JSID];
 	ClassProtoCache classProtoCache[1<<MAX_CLASS_PROTO_CACHE_BIT]; // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
+	JLApi *jlapi;
 };
 
 JL_STATIC_ASSERT( offsetof(HostPrivate, unsafeMode) == 0 ); // check this because JL_S_ASSERT macro must be usable before hostPrivateVersion is tested.

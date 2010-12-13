@@ -106,7 +106,7 @@ DEFINE_FUNCTION( Stringify ) {
 			*JL_RVAL = STRING_TO_JSVAL( jsstr );
 			return JS_TRUE;
 		}
-
+/*
 		if ( js_IsArrayBuffer(sobj) ) {
 
 			js::ArrayBuffer *buf = js::ArrayBuffer::fromJSObject(sobj);
@@ -128,6 +128,7 @@ DEFINE_FUNCTION( Stringify ) {
 			*JL_RVAL = STRING_TO_JSVAL( jsstr );
 			return JS_TRUE;
 		}
+*/
 	}
 
 	{

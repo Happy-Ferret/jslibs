@@ -1,9 +1,16 @@
+LoadModule('jsstd'); 
+
+Print(Stringify(Int8Array([100,101,102])));
+throw 0;
+
+
 
 LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();
 //RunJsircbot(false); throw 0;
-RunQATests('-rep 1 -exclude jstask');
+RunQATests('-rep 1 -perf perfset.js -exclude jstask');
+//Exec('../../perfset.js'); throw 0;
 
 
 function makeLogger(obj) {

@@ -20,6 +20,8 @@
 
 #include "host.h"
 
+#include "jlapiexport.h"
+
 /*
 static JLMutexHandler globalModuleSlotLock;
 struct {
@@ -522,6 +524,8 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	}
 
 	pv->privateData = userPrivateData;
+
+	pv->jlapi = &jlapi;
 
 	jl::QueueInitialize(&pv->moduleList);
 

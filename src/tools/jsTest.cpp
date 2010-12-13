@@ -63,27 +63,87 @@ js::Class jl_BlobClass = {
 	}
 };
 
+
+#define FUNDEF(ret, name) ret name
+
+FUNDEF(JSBool, f1)(JSContext *cx, int i) {
+	
+	return JS_TRUE;
+}
+
+
+
+/*
+template <
+#define DEF(N) typename N##_t,
+#include "exportlist.h"
+#undef DEF
+typename END
+>
+struct api {
+#define DEF(N) N##_t N;
+#include "exportlist.h"
+#undef DEF
+} api;
+*/
+
+
+#define DLLEXPORT
+
+
+//Is it possible for a DLL to access some symbols of the application that loaded it ?
+
+
+//I need to export some API functions from an application (exe) to its plugins (dll) without using a intermediate dll to export application's API.
+//My idea is to create a struct that contain all API function that my application want to export.
+
+
+#define EXP(x,y) x y
+
+// in the app.
+EXP(bool ApiFun1(int arg1, bool b), {
+	return true;
+})
+
+bool ApiFun2(double arg1) {
+	return true;
+}
+
+class HostApi {
+public:
+	virtual bool Log(const char *) = 0;
+};
+
+
+HostApi& GetHostApi();
+
 int main(int argc, char* argv[]) {
+
+	HostApi &api = GetHostApi();
+
+	api.Log("123");
+
+	HostApi *d = &api;
+
+
 
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_JIT);
-
 	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class);
 	JS_InitStandardClasses(cx, globalObject);
 
+/*
 	JS_InitClass(cx, globalObject, NULL, js::Jsvalify(&jl_BlobClass), constructor, 0, NULL, NULL, NULL, NULL);
-
 	jsval rval;
-	
 	char *script = 
 		"for ( var i = 0; i < 2; i++ )"
 		"  [ 0 for ( it in Blob() ) ];";
-
 	if ( !JS_EvaluateScript(cx, globalObject, script, strlen(script), "<inline>", 0, &rval) )
 		return EXIT_FAILURE;
+*/
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);

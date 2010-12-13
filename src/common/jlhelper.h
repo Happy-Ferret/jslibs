@@ -164,6 +164,7 @@ JL_SetReservedSlot(JSContext *cx, JSObject *obj, uintN slot, const jsval &v) {
     return JS_TRUE;
 }
 
+
 /*
 ////
 // redefining these two function allow us to get ride of which allocator (jl/js) should be used.
@@ -1186,6 +1187,7 @@ class JLStr {
 			_inner->jsstr[length] = 0;
 		} else {
 
+			JL_ASSERT( _inner->str );
 			if ( _inner->strFlags & OWN ) {
 				
 				_inner->jsstr = (jschar*)jl_realloc(_inner->str, (length+1) * 2);
@@ -1234,6 +1236,7 @@ class JLStr {
 			_inner->str[length] = 0;
 		} else {
 
+			JL_ASSERT( _inner->jsstr );
 			if ( _inner->jsstrFlags & OWN ) {
 
 				jschar *src = _inner->jsstr + length;
@@ -3578,7 +3581,6 @@ JSBool JLSerialize( JSContext *cx, jsval *val ) {
 	JL_BAD;
 }
 */
-
 
 
 #endif // _JSHELPER_H_
