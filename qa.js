@@ -378,10 +378,10 @@ function PerfTest(itemList, cfg) {
 	var i;
 	var qaapi = { __noSuchMethod__:function() {}, RandomData:function() 'qa_tmp_123456789', RandomString:function() 'qa_tmp_abcdefghij' };
 
-	var stdout = _configuration.stdout;
-	var stderr = _configuration.stderr;
-	delete _configuration.stdout;
-	delete _configuration.stderr;
+	var stdout = _host.stdout;
+	var stderr = _host.stderr;
+	delete _host.stdout;
+	delete _host.stderr;
 
 	SetPerfTestMode();
 	CollectGarbage();
@@ -470,8 +470,8 @@ function PerfTest(itemList, cfg) {
 	stdout('time-constant items: '+timeConstantItems.length+'\n');
 
 	
-	_configuration.stdout = stdout;
-	_configuration.stderr = stderr;
+	_host.stdout = stdout;
+	_host.stderr = stderr;
 
 
 	var initSrc = [ '('+item.func.toSource()+')(qaapi);' for each ( item in timeConstantItems ) if ( item.init ) ];
@@ -489,10 +489,10 @@ function PerfTest(itemList, cfg) {
 	
 		LoadModule("jsstd");
 		LoadModule("jsdebug");
-		var prev_stdout = _configuration.stdout;
-		var prev_stderr = _configuration.stderr;
-		delete _configuration.stdout;
-		delete _configuration.stderr;
+		var prev_stdout = _host.stdout;
+		var prev_stderr = _host.stderr;
+		delete _host.stdout;
+		delete _host.stderr;
 
 		$(INIT)
 		
@@ -533,8 +533,8 @@ function PerfTest(itemList, cfg) {
 				bestTime = t;
 		}
 		
-		_configuration.stdout = prev_stdout;
-		_configuration.stderr = prev_stderr;
+		_host.stdout = prev_stdout;
+		_host.stderr = prev_stderr;
 		Print($(COUNT)+' tests in '+ bestTime.toFixed(4) +' ms\n');
 
 	]]></>,{
