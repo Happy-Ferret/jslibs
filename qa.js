@@ -39,6 +39,8 @@ function QAAPI(cx) {
 
 		cx.ReportIssue( message, 'FAILURE' );
 	}
+	
+	this.NO_CRASH = function() {}
 
 	this.ASSERT_TYPE = function( value, type, testName ) {
 
