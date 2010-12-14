@@ -45,7 +45,7 @@ DEFINE_FUNCTION( Vec3 ) {
 	Vector3 v;
 	if ( argc == 1 ) {
 
-		if ( JL_JsvalIsArray(cx, JL_ARG(1)) ) {
+		if ( JL_IsArray(cx, JL_ARG(1)) ) {
 
 			uint32 len;
 			JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );

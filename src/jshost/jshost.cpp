@@ -28,7 +28,6 @@
 #include "../jslang/handlePub.h"
 
 
-
 volatile bool disabledFree = false;
 
 #define NO_NED_NAMESPACE
@@ -428,8 +427,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 //	RT_HOST_MAIN_ASSERT( name != NULL, "unable to get module FileName." );
 
-	JL_CHK( JL_SetProperty(cx, globalObject, JLID_NAME(cx, scripthostpath), hostPath) );
-	JL_CHK( JL_SetProperty(cx, globalObject, JLID_NAME(cx, scripthostname), hostName) );
+	JL_CHK( JL_SetProperty(cx, globalObject, JLID(cx, scripthostpath), hostPath) );
+	JL_CHK( JL_SetProperty(cx, globalObject, JLID(cx, scripthostname), hostName) );
 
 	if ( sizeof(embeddedBootstrapScript)-1 > 0 )
 		JL_CHK( ExecuteBootstrapScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1) ); // -1 because sizeof("") == 1

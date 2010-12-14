@@ -151,7 +151,7 @@ inline bool TextureSameFormat( TextureStruct *t1, TextureStruct *t2 ) {
 
 inline bool IsTexture( JSContext *cx, jsval val ) {
 
-	return JL_JsvalIsClass(val, JL_CLASS(Texture));
+	return JL_IsClass(val, JL_CLASS(Texture));
 }
 
 
@@ -249,7 +249,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLe
 		return JS_TRUE;
 	}
 
-	if ( JL_JsvalIsArray(cx, value) ) {
+	if ( JL_IsArray(cx, value) ) {
 
 		uint32 length;
 		JL_CHK( JL_JsvalToCValVector(cx, value, level, levelMaxLength, &length) );
@@ -298,7 +298,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *c
 	
 	size_t i;
 
-	if ( JL_JsvalIsFunction(cx, value) ) {
+	if ( JL_IsFunction(cx, value) ) {
 
 		double fval;
 		jsval argv[3]; // argv[0] is the rval
@@ -315,7 +315,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *c
 		return JS_TRUE;
 	}
 
-	if ( JL_JsvalIsArray(cx, value) ) {
+	if ( JL_IsArray(cx, value) ) {
 
 		jsuint curveArrayLength;
 		JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(value), &curveArrayLength) );
@@ -340,7 +340,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *c
 		return JS_TRUE;
 	}
 
-	if ( JL_JsvalIsData(cx, value) ) {
+	if ( JL_IsData(cx, value) ) {
 
 		JLStr curveData;
 
@@ -471,7 +471,7 @@ DEFINE_CONSTRUCTOR() {
 		return JS_TRUE;
 	}
 
-	if ( JL_JsvalIsData(cx, *arg1) ) { // construct from an image, blob, string, ...
+	if ( JL_IsData(cx, *arg1) ) { // construct from an image, blob, string, ...
 
 		JLStr bufferStr;
 		JSObject *imageObj;
@@ -1464,7 +1464,7 @@ DEFINE_FUNCTION( Set ) {
 	jsval *arg1;
 	arg1 = &JL_ARG(1);
 
-//	if ( JSVAL_IS_NUMBER(*arg1) || JL_JsvalIsArray(cx, *arg1) || JSVAL_IS_STRING(*arg1) ) {
+//	if ( JSVAL_IS_NUMBER(*arg1) || JL_IsArray(cx, *arg1) || JSVAL_IS_STRING(*arg1) ) {
 //	}
 
 	if ( IsTexture(cx, *arg1) ) {
@@ -1478,7 +1478,7 @@ DEFINE_FUNCTION( Set ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_JsvalIsData(cx, *arg1) ) {
+	if ( JL_IsData(cx, *arg1) ) {
 		
 		JLStr bufferStr;
 
@@ -1584,7 +1584,7 @@ DEFINE_FUNCTION( Add ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_JsvalIsArray(cx, *arg1) ) {
+	if ( JL_IsArray(cx, *arg1) ) {
 
 		PTYPE *pos, level, pixel[PMAXCHANNELS];
 		JL_CHK( InitLevelData(cx, *arg1, channels, pixel) );
@@ -1670,7 +1670,7 @@ DEFINE_FUNCTION( Mult ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_JsvalIsArray(cx, *arg1) ) {
+	if ( JL_IsArray(cx, *arg1) ) {
 
 		PTYPE *pos, level, pixel[PMAXCHANNELS];
 		JL_CHK( InitLevelData(cx, *arg1, channels, pixel) );

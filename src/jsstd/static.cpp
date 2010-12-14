@@ -91,7 +91,7 @@ DEFINE_FUNCTION( Expand ) {
 	JSObject *mapObj = NULL;
 	jsval *mapFct = NULL;
 	
-	if ( JL_JsvalIsFunction(cx, JL_ARG(2)) )
+	if ( JL_IsFunction(cx, JL_ARG(2)) )
 		mapFct = &JL_ARG(2);
 	else
 	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(2)) )
@@ -911,7 +911,7 @@ DEFINE_FUNCTION( Print ) {
 	jsval fval;
 	JL_CHK( GetHostObjectValue(cx, JLID(cx, stdout), &fval) );
 	*JL_RVAL = JSVAL_VOID;
-	if (likely( JL_JsvalIsFunction(cx, fval) ))
+	if (likely( JL_IsFunction(cx, fval) ))
 		return JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fval, JL_ARGC, JL_ARGV, &fval);
 	return JS_TRUE;
 	JL_BAD;

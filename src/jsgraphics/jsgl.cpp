@@ -47,7 +47,7 @@ DECLARE_CLASS(Ogl)
 JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rval ) {
 	
 	size_t i;
-	if ( JSVAL_IS_PRIMITIVE(**argv) || !JL_JsvalIsArray(cx, **argv) ) {
+	if ( JSVAL_IS_PRIMITIVE(**argv) || !JL_IsArray(cx, **argv) ) {
 
 		JL_S_ASSERT( *argc >= count, "Not enough arguments." );
 		for ( i = 0; i < count; ++i ) {
@@ -71,7 +71,7 @@ JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rv
 JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, double *rval ) {
 	
 	size_t i;
-	if ( JSVAL_IS_PRIMITIVE(**argv) || !JL_JsvalIsArray(cx, **argv) ) {
+	if ( JSVAL_IS_PRIMITIVE(**argv) || !JL_IsArray(cx, **argv) ) {
 
 		JL_S_ASSERT( *argc >= count, "Not enough arguments." );
 		for ( i = 0; i < count; ++i ) {
@@ -1136,7 +1136,7 @@ DEFINE_FUNCTION( Fog ) {
 		;
 		return JS_TRUE;
 	}
-	if ( JL_JsvalIsArray(cx, JL_ARG(2)) ) {
+	if ( JL_IsArray(cx, JL_ARG(2)) ) {
 
 		GLfloat params[16];
 		uint32 length;
@@ -1416,7 +1416,7 @@ DEFINE_FUNCTION( TexParameter ) {
 		glTexParameterf( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), param );  OGL_CHK;
 		return JS_TRUE;
 	}
-	if ( JL_JsvalIsArray(cx, JL_ARG(3)) ) {
+	if ( JL_IsArray(cx, JL_ARG(3)) ) {
 
 		GLfloat params[16];
 		uint32 length;
@@ -1462,7 +1462,7 @@ DEFINE_FUNCTION( TexEnv ) {
 	}
 
 	GLfloat params[16];
-	if ( argc == 3 && JL_JsvalIsArray(cx, JL_ARG(3)) ) {
+	if ( argc == 3 && JL_IsArray(cx, JL_ARG(3)) ) {
 
 		uint32 length;
 		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
@@ -1511,7 +1511,7 @@ DEFINE_FUNCTION( TexGen ) {
 	}
 
 	GLdouble params[16];
-	if ( argc == 3 && JL_JsvalIsArray(cx, JL_ARG(3)) ) {
+	if ( argc == 3 && JL_IsArray(cx, JL_ARG(3)) ) {
 
 		uint32 length;
 		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
@@ -1636,7 +1636,7 @@ DEFINE_FUNCTION( LightModel ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_JsvalIsArray(cx, JL_ARG(2)) ) {
+	if ( JL_IsArray(cx, JL_ARG(2)) ) {
 
 		GLfloat params[16];
 		uint32 length;
@@ -1683,7 +1683,7 @@ DEFINE_FUNCTION( Light ) {
 	}
 
 	GLfloat params[16];
-	if ( argc == 3 && JL_JsvalIsArray(cx, JL_ARG(3)) ) {
+	if ( argc == 3 && JL_IsArray(cx, JL_ARG(3)) ) {
 
 		uint32 length;
 		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
@@ -1831,7 +1831,7 @@ DEFINE_FUNCTION( Material ) {
 	}
 
 	GLfloat params[16]; // alloca ?
-	if ( argc == 3 && JL_JsvalIsArray(cx, JL_ARG(3)) ) {
+	if ( argc == 3 && JL_IsArray(cx, JL_ARG(3)) ) {
 
 		uint32 length;
 		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
@@ -2807,7 +2807,7 @@ DEFINE_FUNCTION( CallList ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_JsvalIsArray(cx, JL_ARG(1)) ) {
+	if ( JL_IsArray(cx, JL_ARG(1)) ) {
 
 		JSObject *jsArray = JSVAL_TO_OBJECT(JL_ARG(1));
 		jsuint length;
@@ -4121,7 +4121,7 @@ DEFINE_FUNCTION( UniformARB ) {
 		return JS_TRUE;
 	}
 	
-	if ( JL_JsvalIsArray(cx, arg2) ) {
+	if ( JL_IsArray(cx, arg2) ) {
 
 		JSObject *arrayObj;
 		arrayObj = JSVAL_TO_OBJECT(JL_ARG(2));
@@ -4541,7 +4541,7 @@ DEFINE_FUNCTION( PointParameter ) {
 		;
 		return JS_TRUE;
 	}
-	if ( JL_JsvalIsArray(cx, JL_ARG(2)) ) {
+	if ( JL_IsArray(cx, JL_ARG(2)) ) {
 
 		GLfloat params[16];
 		uint32 length;

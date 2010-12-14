@@ -113,7 +113,7 @@ bad:
 static ALWAYS_INLINE bool
 IsHandleType( JSContext *cx, jsval handleVal, HANDLE_TYPE handleType ) {
 
-	if ( !JL_JsvalIsClass(handleVal, JL_HandleJSClass(cx)) )
+	if ( !JL_IsClass(handleVal, JL_HandleJSClass(cx)) )
 		return false;
 	JSObject *handleObj = JSVAL_TO_OBJECT(handleVal);
 	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);

@@ -54,5 +54,22 @@ extern jl_free_t jl_free;
 		jl_free(ptr); \
 	}
 
+template <typename T>
+static ALWAYS_INLINE bool
+JL_Alloc( T*&ptr, size_t count = 1 ) {
+
+	ptr = (T*)jl_malloc(sizeof(T)*count);
+	return ptr != NULL;
+}
+
+template <typename T>
+static ALWAYS_INLINE bool
+JL_Realloc( T*&ptr, size_t count = 1 ) {
+
+	ptr = (T*)jl_realloc(ptr, sizeof(T)*count);
+	return ptr != NULL;
+}
+
+
 #endif // _JLALLOC_H_
 

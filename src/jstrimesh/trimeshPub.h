@@ -42,7 +42,7 @@ static ALWAYS_INLINE JSClass* JL_TrimeshJSClass( const JSContext *cx ) {
 
 bool JL_JsvalIsTrimesh( JSContext *cx, jsval val ) {
 
-	return JL_JsvalIsClass(val, JL_TrimeshJSClass(cx));
+	return JL_IsClass(val, JL_TrimeshJSClass(cx));
 }
 
 

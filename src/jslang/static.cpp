@@ -56,8 +56,7 @@ DEFINE_FUNCTION( Stringify ) {
 
 	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 
-		JSObject *sobj;
-		sobj = JSVAL_TO_OBJECT( JL_ARG(1) );
+		JSObject *sobj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 		NIStreamRead read = StreamReadInterface(cx, sobj);
 		if ( read ) {
@@ -94,8 +93,9 @@ DEFINE_FUNCTION( Stringify ) {
 			return JS_FALSE;
 		}
 
+/*
 		NIBufferGet get = BufferGetInterface(cx, sobj);
-		if ( get ) {
+		if ( get ) { // Case already managed in JL_JsvalToNative()
 
 			JLStr str;
 			JL_CHK( get(cx, sobj, &str) );
@@ -106,7 +106,15 @@ DEFINE_FUNCTION( Stringify ) {
 			*JL_RVAL = STRING_TO_JSVAL( jsstr );
 			return JS_TRUE;
 		}
-/*
+
+		if ( JS_IsArrayObject(cx, sobj) ) { // Case already managed in JL_JsvalToNative()
+
+			JLStr str;
+			JL_CHK( JL_JSArrayToBuffer(cx, sobj, &str) );
+			*JL_RVAL = STRING_TO_JSVAL( str.GetJSString(cx) );
+			return JS_TRUE;
+		}
+
 		if ( js_IsArrayBuffer(sobj) ) {
 
 			js::ArrayBuffer *buf = js::ArrayBuffer::fromJSObject(sobj);
@@ -116,7 +124,7 @@ DEFINE_FUNCTION( Stringify ) {
 			return JS_TRUE;
 		}
 
-		if ( js_IsTypedArray(sobj) ) {
+		if ( js_IsTypedArray(sobj) ) { // Case already managed in JL_JsvalToNative()
 
 			js::TypedArray *buf = js::TypedArray::fromJSObject(sobj);
 			JSString *jsstr;

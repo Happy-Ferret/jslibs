@@ -3,19 +3,10 @@ if ( 10 ) {
 	LoadModule('jsstd');
 	LoadModule('jsio');
 
-	var filename = 'testXXX1';
-	new File(filename).content = '_exectest++';
-	Print( uneval( new File(filename).content ) );
-	throw 0;
-	
-	_exectest = 5;
-	Exec(filename);
-		
-	new File(filename).content = undefined;
-//	QA.ASSERT( new File(filename).content, undefined, 'Exec etest file deletion' );
-//	fxdr.Delete();
-//	QA.ASSERT( fxdr.exist, false, 'XDR file is deleted' );
 
+	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments)', '123', '-c']);
+	var res = process.stdout.Read();
+	Print( res ==  "_host.stdout(arguments),123,-c");
 
 
 	throw 0;

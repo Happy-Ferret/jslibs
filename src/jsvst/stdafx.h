@@ -28,8 +28,6 @@
 // #include <limits.h> // included by jlplatform.h
 #include <signal.h>
 
-#include <jsapi.h>
-
 #include "jlhelper.h"
 
 #include "../host/host.h"

@@ -711,9 +711,26 @@ LoadModule('jsstd');
 	QA.ASSERT_STR( c , 123, 'Stringified blob' );
 
 
+/// Stringify StreamRead [ftmr]
+
+	var i = 10;
+	var res = Stringify({ Read: function(count) i-- ? 'Str' : '' } );
+	QA.ASSERT_STR( res, 'StrStrStrStrStrStrStrStrStrStr', 'Stringify StreamRead object' );
+
+
 /// Stringify BufferGet [ftmr]
 
 	QA.ASSERT_STR( Stringify({ Get: function() { return 'ABCD' } }) , 'ABCD', 'Stringify BufferGet object' );
+
+
+/// Stringify TypedArray [ftmr]
+
+	QA.ASSERT_STR( Stringify(Int8Array([100,101,102])), 'def', 'Int8Array to string' );
+
+
+/// Stringify Array [ftmr]
+
+	QA.ASSERT_STR( Stringify([100,101,102]), 'def', 'JSArray to string' );
 
 
 /// Handle object [ft]

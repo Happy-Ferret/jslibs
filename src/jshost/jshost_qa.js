@@ -1,15 +1,23 @@
 /// access all properties of the global object [ft]
 
-		for each ( item in global ) {
+	for each ( item in global ) {
 
-			var s = String(global[item]);
-		}
+		var s = String(global[item]);
+	}
+
 
 /// jshost arguments [ftm]
 
-	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments)', '123', '-c']);
+	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments.toString())', '123', '-c']);
 	var res = process.stdout.Read();
-	QA.ASSERT_STR( res, "_host.stdout(arguments),123,-c", "jshost arguments" );
+	QA.ASSERT_STR( res, "_host.stdout(arguments.toString()),123,-c", "jshost arguments" );
+
+
+/// jshost stderr [ftm]
+
+	var process = new Process('jshost', ['-u', '-i', '_host.stderr("46t5be4qg6b5e46grb5we4g5rn4trnehirwerwer")']);
+	var res = process.stderr.Read();
+	QA.ASSERT_STR( res, "46t5be4qg6b5e46grb5we4g5rn4trnehirwerwer", "jshost arguments" );
 
 
 /// global variables [ftrm]
@@ -51,3 +59,18 @@
 	QA.ASSERT_STR(h, '[Handle  pev]', 'handle type string');
 	QA.ASSERT_TYPE(h.toString, Function, 'handle toString is a function');
 	
+
+/// NativeInterface hacking
+
+	var b = new Blob('abc');
+
+	QA.NO_CRASH( Stringify(b), 'abc' );
+
+	var c = {};
+	c._NI_BufferGet = b._NI_BufferGet;
+	QA.NO_CRASH( Stringify(c) );
+
+	QA.NO_CRASH( Stringify({ _NI_BufferGet:function() {} }) );
+
+	QA.NO_CRASH( Stringify({ __proto__:b}) );
+

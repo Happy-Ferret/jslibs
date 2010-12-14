@@ -37,7 +37,7 @@
 int _puts(JSContext *cx, const char *str) {
 
 	jsval stdoutFunction;
-	if ( GetHostObjectValue(cx, JLID_NAME(cx, stdout), &stdoutFunction) && JL_JsvalIsFunction(cx, stdoutFunction) ) {
+	if ( GetHostObjectValue(cx, JLID(cx, stdout), &stdoutFunction) && JL_IsFunction(cx, stdoutFunction) ) {
 
 		int len = (int)strlen(str);
 		JSString *jsstr = JS_NewStringCopyN(cx, str, len);
@@ -1156,7 +1156,7 @@ DEFINE_FUNCTION( DefinitionLocation ) {
 	JSScript *script;
 	script = NULL;
 
-	if ( JL_JsvalIsFunction(cx, JL_ARG(1)) ) {
+	if ( JL_IsFunction(cx, JL_ARG(1)) ) {
 
 		JSFunction *fun;
 		fun = JS_ValueToFunction(cx, JL_ARG(1));
@@ -1179,7 +1179,7 @@ DEFINE_FUNCTION( DefinitionLocation ) {
 		}
 	}
 
-	if ( JL_JsvalIsScript(cx, JL_ARG(1)) ) {
+	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(1)) && JL_IsScript(cx, JSVAL_TO_OBJECT(JL_ARG(1))) ) {
 
 		JSObject* obj;
 		obj = JSVAL_TO_OBJECT(JL_ARG(1));

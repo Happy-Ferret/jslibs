@@ -16,8 +16,6 @@
 #ifndef _HOST_H_
 #define _HOST_H_
 
-//#include <jsapi.h>
-
 #define NAME_MODULE_INIT "ModuleInit"
 #define NAME_MODULE_RELEASE "ModuleRelease"
 #define NAME_MODULE_FREE "ModuleFree"

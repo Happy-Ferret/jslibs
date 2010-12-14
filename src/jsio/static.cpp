@@ -69,23 +69,23 @@ JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 	pollDesc->in_flags = 0;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "writable", &tmp ) );
-	if ( JL_JsvalIsFunction(cx, tmp) )
+	if ( JL_IsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_WRITE;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "readable", &tmp ) );
-	if ( JL_JsvalIsFunction(cx, tmp) )
+	if ( JL_IsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_READ;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &tmp ) );
-	if ( JL_JsvalIsFunction(cx, tmp) )
+	if ( JL_IsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_HUP;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "exception", &tmp ) );
-	if ( JL_JsvalIsFunction(cx, tmp) )
+	if ( JL_IsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_EXCEPT;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "error", &tmp ) );
-	if ( JL_JsvalIsFunction(cx, tmp) )
+	if ( JL_IsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_ERR;
 
 	return JS_TRUE;
@@ -114,35 +114,35 @@ JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int i
 	if ( outFlag & PR_POLL_ERR ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "error", &descVal ) );
-		if ( JL_JsvalIsFunction(cx, descVal) )
+		if ( JL_IsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_EXCEPT ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "exception", &descVal ) );
-		if ( JL_JsvalIsFunction(cx, descVal) )
+		if ( JL_IsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_HUP ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &descVal ) );
-		if ( JL_JsvalIsFunction(cx, descVal) )
+		if ( JL_IsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_READ ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "readable", &descVal ) );
-		if ( JL_JsvalIsFunction(cx, descVal) )
+		if ( JL_IsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_WRITE ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "writable", &descVal ) );
-		if ( JL_JsvalIsFunction(cx, descVal) )
+		if ( JL_IsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
@@ -187,7 +187,7 @@ DEFINE_FUNCTION( Poll ) {
 	JSObject *fdArrayObj;
 	fdArrayObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
-	if ( JL_ARG_ISDEF(2) && !JL_JsvalIsPInfinity(cx, JL_ARG(2)) ) {
+	if ( JL_ARG_ISDEF(2) && !JL_IsPInfinity(cx, JL_ARG(2)) ) {
 
 		PRUint32 tmpint;
 		JL_CHKB( JL_JsvalToNative(cx, JL_ARG(2), &tmpint), bad1 );

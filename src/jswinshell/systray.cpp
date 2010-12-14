@@ -479,17 +479,17 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 	switch ( message ) {
 		case WM_SETFOCUS:
 			JL_CHK( JS_GetProperty(cx, obj, "onfocus", &functionVal) );
-			if ( JL_JsvalIsFunction(cx, functionVal) )
+			if ( JL_IsFunction(cx, functionVal) )
 				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, JSVAL_TRUE ) );
 			break;
 		case WM_KILLFOCUS:
 			JL_CHK( JS_GetProperty(cx, obj, "onblur", &functionVal) );
-			if ( JL_JsvalIsFunction(cx, functionVal) )
+			if ( JL_IsFunction(cx, functionVal) )
 				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, JSVAL_FALSE ) );
 			break;
 		case WM_CHAR:
 			JL_CHK( JS_GetProperty(cx, obj, "onchar", &functionVal) );
-			if ( JL_JsvalIsFunction(cx, functionVal) ) {
+			if ( JL_IsFunction(cx, functionVal) ) {
 
 				char c = wParam;
 				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
@@ -499,7 +499,7 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 		case WM_ENDSESSION: // case WM_QUERYENDSESSION:
 		case WM_CLOSE:
 			JL_CHK( JS_GetProperty(cx, obj, "onclose", &functionVal) );
-			if ( JL_JsvalIsFunction(cx, functionVal) ) {
+			if ( JL_IsFunction(cx, functionVal) ) {
 
 				bool endCase = message == WM_ENDSESSION && lParam == 0;
 				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, BOOLEAN_TO_JSVAL(endCase) ) );
@@ -508,7 +508,7 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 
 		case WM_COMMAND:
 			JL_CHK( JS_GetProperty(cx, obj, "oncommand", &functionVal) );
-			if ( JL_JsvalIsFunction(cx, functionVal) ) {
+			if ( JL_IsFunction(cx, functionVal) ) {
 
 				jsval key;
 				JL_STATIC_ASSERT( sizeof(jsid) == sizeof(wParam) );
@@ -525,7 +525,7 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 				case SC_MONITORPOWER:
 
 					JL_CHK( JS_GetProperty(cx, obj, "onidle", &functionVal) );
-					if ( JL_JsvalIsFunction(cx, functionVal) ) {
+					if ( JL_IsFunction(cx, functionVal) ) {
 
 						jsval key;
 						JL_STATIC_ASSERT( sizeof(jsid) == sizeof(wParam) );
@@ -540,28 +540,28 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 			switch ( lParam ) {
 				case WM_MOUSEMOVE:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousemove", &functionVal) );
-					if ( JL_JsvalIsFunction(cx, functionVal) )
+					if ( JL_IsFunction(cx, functionVal) )
 						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( mouseX ), INT_TO_JSVAL( mouseY ) ) );
 					break;
 				case WM_LBUTTONDOWN:
 				case WM_MBUTTONDOWN:
 				case WM_RBUTTONDOWN:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousedown", &functionVal) );
-					if ( JL_JsvalIsFunction(cx, functionVal) )
+					if ( JL_IsFunction(cx, functionVal) )
 						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
 					break;
 				case WM_LBUTTONUP:
 				case WM_MBUTTONUP:
 				case WM_RBUTTONUP:
 					JL_CHK( JS_GetProperty(cx, obj, "onmouseup", &functionVal) );
-					if ( JL_JsvalIsFunction(cx, functionVal) )
+					if ( JL_IsFunction(cx, functionVal) )
 						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
 					break;
 				case WM_LBUTTONDBLCLK:
 				case WM_MBUTTONDBLCLK:
 				case WM_RBUTTONDBLCLK:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousedblclick", &functionVal) );
-					if ( JL_JsvalIsFunction(cx, functionVal) )
+					if ( JL_IsFunction(cx, functionVal) )
 						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, INT_TO_JSVAL( lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0 ) ) );
 					break;
 			} // switch lParam
@@ -706,7 +706,7 @@ DEFINE_FUNCTION( Focus ) {
 
 ALWAYS_INLINE JSBool NormalizeMenuInfo( JSContext *cx, JSObject *obj, const jsval key, jsval *value ) {
 
-	if ( JL_JsvalIsFunction(cx, *value) )
+	if ( JL_IsFunction(cx, *value) )
 		return JL_CallFunctionVA(cx, obj, *value, value, 1, key);
 	return JS_TRUE;
 }
@@ -736,7 +736,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 
 			uFlags |= MF_SEPARATOR;
 		} else 
-			if ( JSVAL_IS_STRING(item) || JL_JsvalIsStringObject(cx, item) ) {
+			if ( JSVAL_IS_STRING(item) || (!JSVAL_IS_PRIMITIVE(item) && JL_IsStringObject(cx, JSVAL_TO_OBJECT(item))) ) {
 
 			label = item;
 			cmdid = item;

@@ -572,7 +572,7 @@ bad:
 **/
 DEFINE_SET_PROPERTY() {
 
-	if ( JL_JsvalIsFunction(cx, *vp) && JSID_IS_STRING(id) ) {
+	if ( JL_IsFunction(cx, *vp) && JSID_IS_STRING(id) ) {
 		
 		JL_S_ASSERT_THIS_CLASS();
 

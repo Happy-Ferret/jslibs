@@ -163,7 +163,7 @@ LoadModule('jsio');
 		eval('azer()');
 	} catch (ex) {}
 	_host.stderr = prev;
-	QA.ASSERT_STR( buffer.length == 0, true, 'stderr redirection result' ); 
+	QA.ASSERT_STR( buffer.length == 0, true, 'stderr redirection result' );
 
 
 /// mute error messages [rmtf]
@@ -176,3 +176,4 @@ LoadModule('jsio');
 	} catch (ex) {}
 
 	_host.stderr = prev;
+

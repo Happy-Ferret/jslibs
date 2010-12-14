@@ -211,7 +211,7 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 	jsval fval;
 	if ( JS_GetProperty(cx, obj, "onBreak", &fval) == JS_FALSE )
 		return JSTRAP_ERROR;
-	if ( !JL_JsvalIsFunction(cx, fval) ) // nothing to do
+	if ( !JL_IsFunction(cx, fval) ) // nothing to do
 		return JSTRAP_CONTINUE;
 
 	jsval exception;

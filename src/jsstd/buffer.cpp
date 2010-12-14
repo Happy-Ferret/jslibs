@@ -88,7 +88,7 @@ JSBool WriteDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !JL_JsvalIsStringObject(cx, chunk) ) {
+	if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !( !JSVAL_IS_PRIMITIVE(chunk) && JL_IsStringObject(cx, JSVAL_TO_OBJECT(chunk)) ) ) {
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
 		JL_S_ASSERT( jsstr != NULL, "Unable to convert the chunk into a string." );
@@ -130,7 +130,7 @@ JSBool UnReadDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
 
-	if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !JL_JsvalIsStringObject(cx, chunk) ) {
+	if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !(!JSVAL_IS_PRIMITIVE(chunk) && JL_IsStringObject(cx, JSVAL_TO_OBJECT(chunk))) ) {
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
 		JL_S_ASSERT( jsstr != NULL, "Unable to convert the chunk into a string." );
@@ -571,7 +571,7 @@ DEFINE_CONSTRUCTOR() {
 
 /*
 		// (TBD) loop over all args
-		if ( JL_JsvalIsClass(JL_ARG(1), _class) ) {
+		if ( JL_IsClass(JL_ARG(1), _class) ) {
 
 			return AddBuffer(cx, obj, JSVAL_TO_OBJECT( JL_ARG(1) ));
 		} else {
@@ -600,7 +600,7 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION( Clone ) {
 
 		// (TBD) loop over all args
-		if ( JL_JsvalIsClass(JL_ARG(1), _class) ) {
+		if ( JL_IsClass(JL_ARG(1), _class) ) {
 
 			return AddBuffer(cx, obj, JSVAL_TO_OBJECT( JL_ARG(1) ));
 		} else {
@@ -667,7 +667,7 @@ DEFINE_FUNCTION( Write ) {
 //	if ( JSVAL_IS_VOID(arg1) ) {
 //	}
 
-	if ( JL_JsvalIsClass(arg1, JL_THIS_CLASS) ) {
+	if ( JL_IsClass(arg1, JL_THIS_CLASS) ) {
 		
 		JL_S_ASSERT_ARG(1);
 		return AddBuffer(cx, obj, JSVAL_TO_OBJECT(arg1));

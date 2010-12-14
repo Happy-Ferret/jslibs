@@ -152,7 +152,7 @@ static JSBool VIEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *c
 		argv[1] = OBJECT_TO_JSVAL(upe->obj);
 
 		JL_CHK( JS_GetProperty(cx, upe->obj, "onImage", &fct) );
-		if ( JL_JsvalIsFunction(cx, fct) )
+		if ( JL_IsFunction(cx, fct) )
 			JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, COUNTOF(argv)-1, argv+1, argv) );
 	}
 

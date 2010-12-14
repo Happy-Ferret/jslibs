@@ -107,7 +107,7 @@ done_scriptList:
 	JL_ASSERT( moduleObject != NULL );
 	jsval jsHookFct;
 	JS_GetPropertyById(cx, moduleObject, mpv->JLID_onNewScript, &jsHookFct); // try to use ids
-	if ( JL_JsvalIsFunction(cx, jsHookFct) ) {
+	if ( JL_IsFunction(cx, jsHookFct) ) {
 
 		jsval argv[5] = { JSVAL_NULL, JSVAL_NULL, INT_TO_JSVAL( lineno ), OBJECT_TO_JSVAL( JS_NewScriptObject(cx, script) ), OBJECT_TO_JSVAL( JS_GetFunctionObject(fun) ) };
 		JL_CHK( JL_NativeToJsval(cx, filename, &argv[1]) );
@@ -137,7 +137,7 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 	JSObject *moduleObject = (JSObject*)callerdata;
 	jsval jsHookFct;
 	JS_GetProperty(cx, moduleObject, "onDestroyScript", &jsHookFct); // try to use ids
-	if ( JL_JsvalIsFunction(cx, jsHookFct) ) {
+	if ( JL_IsFunction(cx, jsHookFct) ) {
 
 		jsval argv[4];
 		JL_ASSERT( JSVAL_NULL == 0 );
@@ -219,14 +219,14 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 
 JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc ) {
 
-	if ( JL_JsvalIsFunction(cx, *val) ) {
+	if ( JL_IsFunction(cx, *val) ) {
 
 		*script = JS_GetFunctionScript(cx, JS_ValueToFunction(cx, *val));
 		if ( *script == NULL )
 			return JS_TRUE;
 		lineno += JS_GetScriptBaseLineNumber(cx, *script);
 	} else
-	if ( JL_JsvalIsScript(cx, *val) ) {
+	if ( !JSVAL_IS_PRIMITIVE(*val) && JL_IsScript(cx, JSVAL_TO_OBJECT(*val)) ) {
 
 		*script = (JSScript *) JL_GetPrivate(cx, JSVAL_TO_OBJECT(*val));
 		if ( *script == NULL )
@@ -265,7 +265,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	JL_S_ASSERT_ALLOC( mpv );
 	JL_CHKM( JL_SetModulePrivate(cx, _moduleId, mpv), "Module id already in use." );
 	
-	mpv->JLID_onNewScript = JL_StringToJsid(cx, "onNewScript"); // see NewScriptHook
+	mpv->JLID_onNewScript = JL_StringToJsid(cx, L"onNewScript"); // see NewScriptHook
 
 	jl::QueueInitialize(&mpv->scriptFileList);
 

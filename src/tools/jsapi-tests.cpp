@@ -74,11 +74,23 @@ js::Class soubokTest_BlobClass = {
 	}
 };
 
-
+/*
 BEGIN_TEST(soubokTest)
 {
-	CHECK( JS_InitClass(cx, global, NULL, js::Jsvalify(&soubokTest_BlobClass), soubokTest_constructor, 0, NULL, NULL, NULL, NULL) );
-	EXEC("for ( var i = 0; i < 2; i++ ) [ 0 for ( it in Blob() ) ]");
+//	CHECK( JS_InitClass(cx, global, NULL, js::Jsvalify(&soubokTest_BlobClass), soubokTest_constructor, 0, NULL, NULL, NULL, NULL) );
+//	EXEC("for ( var i = 0; i < 2; i++ ) [ 0 for ( it in Blob() ) ]");
 	return true;
 }
 END_TEST(soubokTest)
+*/
+
+
+BEGIN_TEST(soubokTest2)
+{
+	jschar str[] = L"ABCD";
+	JSString *jsstr = JS_NewUCString(cx, str, 2);
+
+
+	return true;
+}
+END_TEST(soubokTest2)

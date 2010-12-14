@@ -54,7 +54,7 @@ static ALWAYS_INLINE JSClass* JL_BlobJSClass( const JSContext *cx ) {
 
 static ALWAYS_INLINE bool JL_JsvalIsBlob( const JSContext *cx, const jsval &val ) {
 
-	return JL_JsvalIsClass(val, JL_BlobJSClass(cx) );
+	return JL_IsClass(val, JL_BlobJSClass(cx) );
 }
 
 

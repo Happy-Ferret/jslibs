@@ -459,7 +459,7 @@ DEFINE_FUNCTION( Listener ) {
 		alListenerf( JSVAL_TO_INT( JL_ARG(1) ), param );
 		return JS_TRUE;
 	}
-	if ( JL_JsvalIsArray(cx, JL_ARG(2)) ) {
+	if ( JL_IsArray(cx, JL_ARG(2)) ) {
 
 		ALfloat params[16];
 		uint32 length;
@@ -566,7 +566,7 @@ DEFINE_FUNCTION( Source ) {
 		alSourcef( sid, JSVAL_TO_INT( JL_ARG(2) ), param );
 		return JS_TRUE;
 	}
-	if ( JL_JsvalIsArray(cx, JL_ARG(3)) ) {
+	if ( JL_IsArray(cx, JL_ARG(3)) ) {
 
 		ALfloat params[16];
 		uint32 length;
@@ -713,7 +713,7 @@ DEFINE_FUNCTION( SourceQueueBuffers ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	*JL_RVAL = JSVAL_VOID;
 
-	if ( JL_JsvalIsArray(cx, JL_ARG(2)) ) {
+	if ( JL_IsArray(cx, JL_ARG(2)) ) {
 
 		ALuint params[1024];
  		uint32 length = COUNTOF(params);
@@ -753,7 +753,7 @@ DEFINE_FUNCTION( SourceUnqueueBuffers ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	*JL_RVAL = JSVAL_VOID;
 
-	if ( JL_JsvalIsArray(cx, JL_ARG(2)) ) {
+	if ( JL_IsArray(cx, JL_ARG(2)) ) {
 
 		ALuint params[1024];
 		uint32 length;

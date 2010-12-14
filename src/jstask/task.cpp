@@ -643,7 +643,7 @@ static JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext 
 	argv[1] = OBJECT_TO_JSVAL(upe->obj); // already rooted
 
 	JL_CHK( JS_GetProperty(cx, upe->obj, "onResponse", &fct) );
-	if ( JL_JsvalIsFunction(cx, fct) )
+	if ( JL_IsFunction(cx, fct) )
 		JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, COUNTOF(argv)-1, argv+1, argv) );
 
 	return JS_TRUE;

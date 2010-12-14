@@ -19,13 +19,13 @@
 
 ALWAYS_INLINE JSBool JL_JsvalToODEReal( JSContext *cx, const jsval val, ode::dReal *real ) {
 
-	if ( JL_JsvalIsPInfinity(cx, val) ) {
+	if ( JL_IsPInfinity(cx, val) ) {
 		
 		*real = dInfinity;
 		return JS_TRUE;
 	}
 
-	if ( JL_JsvalIsNInfinity(cx, val) ) {
+	if ( JL_IsNInfinity(cx, val) ) {
 		
 		*real = -dInfinity; 
 		return JS_TRUE;

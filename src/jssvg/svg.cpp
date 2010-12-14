@@ -35,7 +35,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 	*pixbuf = NULL;
 	jsval onImageFct;
 	JL_CHK( JS_GetProperty(cx, obj, "onImage", &onImageFct) );
-	if ( JL_JsvalIsFunction(cx, onImageFct) ) {
+	if ( JL_IsFunction(cx, onImageFct) ) {
 
 		js::AutoValueRooter nameVal(cx), image(cx);
 		JL_CHK( JL_NativeToJsval(cx, name, nameVal.jsval_addr()) );
@@ -574,7 +574,7 @@ DEFINE_PROPERTY(dpi) {
 		JL_CHK( JL_JsvalToNative(cx, *vp, &dpi) );
 		rsvg_handle_set_dpi(handle, dpi);
 	} else
-	if ( JL_JsvalIsArray(cx, *vp) ) {
+	if ( JL_IsArray(cx, *vp) ) {
 
 		size_t dpiX, dpiY;
 		jsval tmp;

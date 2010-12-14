@@ -174,7 +174,7 @@ DEFINE_FUNCTION( Aux ) {
 
 //DEFINE_HAS_INSTANCE() { // see issue#52
 //
-//	*bp = JL_JsvalIsClass(*v, JL_THIS_CLASS);
+//	*bp = JL_IsClass(*v, JL_THIS_CLASS);
 //	return JS_TRUE;
 //}
 

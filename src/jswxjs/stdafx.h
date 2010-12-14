@@ -24,8 +24,6 @@
 
 #include "jlplatform.h"
 
-#include <jsapi.h>
-
 #include "jlhelper.h"
 #include "jlclass.h"
 #include "stack.h"

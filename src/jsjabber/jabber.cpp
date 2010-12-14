@@ -75,7 +75,7 @@ private:
 		jsval fval, rval;
 		if ( !JS_GetProperty(_cx, _obj, "onLog", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
-		if ( !JL_JsvalIsFunction(_cx, fval) ) {
+		if ( !JL_IsFunction(_cx, fval) ) {
 
 			JS_ReportError(_cx, "onLog is not a function.");
 			return;
@@ -93,7 +93,7 @@ private:
 		if ( !JS_GetProperty(_cx, _obj, "onTLSConnect", &fval) || JSVAL_IS_VOID( fval ) )
 			return true; // by default, accepts the certificate
 
-		if ( !JL_JsvalIsFunction(_cx, fval) ) {
+		if ( !JL_IsFunction(_cx, fval) ) {
 
 			JS_ReportError(_cx, "onTLSConnect is not a function.");
 			return false;
@@ -123,7 +123,7 @@ private:
 		jsval fval, rval;
 		if ( !JS_GetProperty(_cx, _obj, "onConnect", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
-		if ( !JL_JsvalIsFunction(_cx, fval) ) {
+		if ( !JL_IsFunction(_cx, fval) ) {
 
 			JS_ReportError(_cx, "onConnect is not a function.");
 			return;
@@ -136,7 +136,7 @@ private:
 		jsval fval, rval;
 		if ( !JS_GetProperty(_cx, _obj, "onDisconnect", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
-		if ( !JL_JsvalIsFunction(_cx, fval) ) {
+		if ( !JL_IsFunction(_cx, fval) ) {
 
 			JS_ReportError(_cx, "onDisconnect is not a function.");
 			return;
@@ -150,7 +150,7 @@ private:
 		jsval fval, rval;
 		if ( !JS_GetProperty(_cx, _obj, "onMessage", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
-		if ( !JL_JsvalIsFunction(_cx, fval) ) {
+		if ( !JL_IsFunction(_cx, fval) ) {
 
 			JS_ReportError(_cx, "onMessage is not a function.");
 			return;
@@ -183,7 +183,7 @@ private:
 		jsval fval;
 		if ( !JS_GetProperty(_cx, _obj, "onRosterPresence", &fval) || JSVAL_IS_VOID( fval ) )
 			return;
-		if ( !JL_JsvalIsFunction(_cx, fval) ) {
+		if ( !JL_IsFunction(_cx, fval) ) {
 
 			JS_ReportError(_cx, "onRosterPresence is not a function.");
 			return;

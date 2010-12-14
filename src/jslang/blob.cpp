@@ -1002,7 +1002,7 @@ DEFINE_SET_PROPERTY() {
 
 DEFINE_EQUALITY_OP() {
 
-	JL_CHKB( JL_JsvalIsClass(*v, JL_THIS_CLASS), not_eq );
+	JL_CHKB( JL_IsClass(*v, JL_THIS_CLASS), not_eq );
 
 	if ( !IsBlobValid(cx, obj) || !IsBlobValid(cx, &js::Valueify(v)->toObject()) )
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);

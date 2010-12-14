@@ -48,7 +48,7 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 
 		jsval obj1surf, obj2surf;
 		JL_CHK( JL_GetReservedSlot(cx, obj1, SLOT_GEOM_SURFACEPARAMETER, &obj1surf) );
-		if ( JL_JsvalIsClass(obj1surf, classSurfaceParameters) ) {
+		if ( JL_IsClass(obj1surf, classSurfaceParameters) ) {
 			
 			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(obj1surf));
 			JL_S_ASSERT_RESOURCE( surf );
@@ -59,7 +59,7 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		}
 
 		JL_CHK( JL_GetReservedSlot(cx, obj2, SLOT_GEOM_SURFACEPARAMETER, &obj2surf) );
-		if ( JL_JsvalIsClass(obj2surf, classSurfaceParameters) ) {
+		if ( JL_IsClass(obj2surf, classSurfaceParameters) ) {
 
 			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(obj1surf));
 			JL_S_ASSERT_RESOURCE( surf );

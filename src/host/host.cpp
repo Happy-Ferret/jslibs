@@ -124,7 +124,7 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 	if (likely( globalObject != NULL )) {
 
 		jsval fct;
-		if (likely( GetHostObjectValue(cx, JLID(cx, stderr), &fct) == JS_TRUE && JL_JsvalIsFunction(cx, fct) )) {
+		if (likely( GetHostObjectValue(cx, JLID(cx, stderr), &fct) == JS_TRUE && JL_IsFunction(cx, fct) )) {
 			
 			// possible optimization, but not very useful since errors occurs rarely.
 			//JSFunction *fun = GET_FUNCTION_PRIVATE(cx, JSVAL_TO_OBJECT(fct));
@@ -572,17 +572,17 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	// jslibs is not ready to support UnloadModule()
 	//	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == 1 ? _NormalizeFunctionName(NAME_GLOBAL_FUNCTION_UNLOAD_MODULE) : NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
 
-	JL_CHK( SetHostObjectValue(cx, JLID_NAME(cx, unsafeMode), unsafeMode ? JSVAL_TRUE : JSVAL_FALSE, false) );
+	JL_CHK( SetHostObjectValue(cx, JLID(cx, unsafeMode), unsafeMode ? JSVAL_TRUE : JSVAL_FALSE, false) );
 
 // support this: var prevStderr = _host.stderr; _host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
 	jsval value;
 
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStdinFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	JL_CHK( SetHostObjectValue(cx, JLID_NAME(cx, stdin), value) );
+	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdin), value) );
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStdoutFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	JL_CHK( SetHostObjectValue(cx, JLID_NAME(cx, stdout), value) );
+	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdout), value) );
 	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStderrFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
-	JL_CHK( SetHostObjectValue(cx, JLID_NAME(cx, stderr), value) );
+	JL_CHK( SetHostObjectValue(cx, JLID(cx, stderr), value) );
 
 // init static modules
 	JL_CHKM( jslangModuleInit(cx, globalObject), "Unable to initialize jslang." );
@@ -701,7 +701,7 @@ JSBool CreateScriptArguments( JSContext *cx, int argc, const char * const * argv
 	JL_CHKM( globalObject != NULL, "Global object not found." );
 
 	JSObject *argsObj;
-	argsObj = JS_NewArrayObject(cx, argc, NULL); // JL_JsvalIsArray(cx, OBJECT_TO_JSVAL(argsObj));
+	argsObj = JS_NewArrayObject(cx, argc, NULL); // JL_IsArray(cx, OBJECT_TO_JSVAL(argsObj));
 	
 	JL_CHKM( argsObj != NULL, "Unable to create script arguments." );
 

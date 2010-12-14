@@ -73,8 +73,8 @@ DEFINE_CONSTRUCTOR() {
 		HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 		JSObject *imgObj = JSVAL_TO_OBJECT(iconVal);
 
-//		JL_S_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JL_JsvalIsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));
-		JL_S_ASSERT( JL_JsvalIsData(cx, iconVal), "Invalid image object." );
+//		JL_S_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JL_IsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));
+		JL_S_ASSERT( JL_IsData(cx, iconVal), "Invalid image object." );
 
 		unsigned int width, height, channels, x, y;
 		JL_CHK( JL_GetProperty(cx, imgObj, "width", &width) );

@@ -18,8 +18,6 @@
 
 #include "stdlib.h"
 
-#include <jsapi.h>
-
 #include "jlhelper.h"
 #include "jlclass.h"
 //#include "jlconvert.h"

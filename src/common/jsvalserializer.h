@@ -296,7 +296,7 @@ namespace jl {
 				return JS_TRUE;
 			}
 			
-			if ( JL_ObjectIsFunction(cx, obj) ) {
+			if ( JL_IsFunction(cx, obj) ) {
 /*
 				JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
 				JL_CHK( JS_XDRValue(xdr, const_cast<jsval*>(&val)) ); // JSXDR_ENCODE, de-const can be done
@@ -373,7 +373,7 @@ namespace jl {
 			}
 
 			// simple object
-			if ( JL_ObjectIsObject(cx, obj) ) {
+			if ( JL_IsObjectObject(cx, obj) ) {
 
 				JL_CHK( Write(cx, JLSTObject) );
 				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
@@ -734,7 +734,7 @@ namespace jl {
 	ALWAYS_INLINE bool
 	JsvalIsSerializer( JSContext *cx, jsval &val ) {
 
-		return JL_JsvalIsClass(val, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Serializer")->clasp);
+		return JL_IsClass(val, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Serializer")->clasp);
 	}
 
 	ALWAYS_INLINE Serializer*
@@ -748,7 +748,7 @@ namespace jl {
 	ALWAYS_INLINE bool
 	JsvalIsUnserializer( JSContext *cx, jsval &val ) {
 
-		return JL_JsvalIsClass(val, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Unserializer")->clasp);
+		return JL_IsClass(val, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Unserializer")->clasp);
 	}
 
 	ALWAYS_INLINE Unserializer*
