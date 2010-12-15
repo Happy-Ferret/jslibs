@@ -59,18 +59,3 @@
 	QA.ASSERT_STR(h, '[Handle  pev]', 'handle type string');
 	QA.ASSERT_TYPE(h.toString, Function, 'handle toString is a function');
 	
-
-/// NativeInterface hacking
-
-	var b = new Blob('abc');
-
-	QA.NO_CRASH( Stringify(b), 'abc' );
-
-	var c = {};
-	c._NI_BufferGet = b._NI_BufferGet;
-	QA.NO_CRASH( Stringify(c) );
-
-	QA.NO_CRASH( Stringify({ _NI_BufferGet:function() {} }) );
-
-	QA.NO_CRASH( Stringify({ __proto__:b}) );
-

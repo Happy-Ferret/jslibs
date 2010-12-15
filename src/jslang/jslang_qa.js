@@ -813,3 +813,10 @@ LoadModule('jsstd');
 	var str1 = uneval(s.Read());
 	QA.ASSERT_STR( str, str1, 'several serialized / unserialized objects' );
 
+
+/// Stringify TypedArray
+
+	QA.ASSERT_STR( Stringify(new Float32Array()), '', 'stringify empty float array' );
+	QA.ASSERT_STR( Stringify(new Int8Array()), '', 'stringify empty Int8Array' );
+	QA.ASSERT_STR( Stringify(new Int8Array([100,100,100])), 'ddd', 'stringify Int8Array "ddd"' );
+	QA.ASSERT_STR( Stringify(new Uint16Array([100,100,100])), 'ddd', 'stringify Uint16Array "ddd"' );

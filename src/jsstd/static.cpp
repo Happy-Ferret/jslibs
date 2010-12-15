@@ -716,6 +716,8 @@ DEFINE_FUNCTION( Assert ) {
 
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
+	// see. js_DecompileValueGenerator  (http://infomonkey.cdleary.com/questions/144/how-to-get-the-script-text-code-at-runtime)
+
 	bool assert;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &assert) );
 	if ( !assert ) {

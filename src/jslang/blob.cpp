@@ -143,7 +143,7 @@ BEGIN_CLASS( Blob )
 static ALWAYS_INLINE bool
 IsBlobValid( JSContext *cx, JSObject *blobObject ) {
 
-	return JL_GetPrivate(cx, blobObject) != NULL;
+	return JL_HasPrivate(cx, blobObject) && JL_GetPrivate(cx, blobObject) != NULL;
 }
 
 

@@ -1,9 +1,9 @@
 LoadModule('jsstd');
-if ( 0 ) {
-	LoadModule('jsstd');  Exec('../../perftest.js');  throw 0;
-}
 
-Halt();
+
+
+
+//throw 0;
 
 
 LoadModule('jsstd'); Exec('../common/tools.js');
@@ -11,7 +11,7 @@ LoadModule('jsstd'); Exec('../common/tools.js');
 // RunLocalQAFile();
 //RunJsircbot(false); throw 0;
 //RunQATests('-perf perftest.js -exclude jstask');
-RunQATests('-exclude jstask jsstd');
+RunQATests('-nogcB -nogcD -exclude jstask jsstd');
 
 
 Halt();

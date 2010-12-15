@@ -324,10 +324,9 @@ namespace jl {
 
 				JL_S_ASSERT_FUNCTION( serializeFctVal );
 
-				JSObject *objectProto;
-				JL_CHK( js_GetClassPrototype(cx, NULL, JSProto_Object, &objectProto) );
-
-				if ( JL_GetClass(obj) != JL_GetClass(objectProto) ) { // native serializable object
+//				JSObject *objectProto;
+//				JL_CHK( js_GetClassPrototype(cx, NULL, JSProto_Object, &objectProto) );
+				if ( JL_GetClass(obj) != JL_GetStandardClassByKey(cx, JSProto_Object) ) { // native serializable object
 
 					JL_CHK( Write(cx, JLSTSerializableNativeObject) );
 					JL_CHK( Write(cx, JL_GetClass(obj)->name) );
@@ -388,7 +387,7 @@ namespace jl {
 				return JS_TRUE;
 			}
 
-			if ( JL_GetClass(obj) == JL_ErrorJSClass(cx) ) {
+			if ( JL_GetClass(obj) == JL_GetStandardClassByKey(cx, JSProto_Error) ) {
 
 				JSProtoKey errorProtoKey = JL_GetErrorProtoKey(cx, obj); // see JL_ObjectProtoKey(cx, obj);
 				JL_ASSERT( errorProtoKey != JSProto_Null );

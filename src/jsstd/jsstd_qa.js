@@ -131,15 +131,13 @@ LoadModule('jsstd');
 
 /// ObjectToId and IdToObject [rt]
 
-
-
 		var ids = function() {
 
 			var arr = [];
 			for ( var i=0; i < 256; i++ ) {
 				
 				var obj = { xxx:i };
-				var id = ObjectToId(obj)
+				var id = ObjectToId(obj);
 				QA.ASSERT( IdToObject(id), obj, 'obj->id->obj' );
 				arr.push(id);
 			}
@@ -166,7 +164,7 @@ LoadModule('jsstd');
 		
 			count += ((IdToObject(id) == undefined) ? 0 : 1);
 		}
-		QA.ASSERT( count < ids.length, true, 'IdToObject after GC' );
+		QA.ASSERT( count < ids.length, true, 'IdToObject after GC (may fail if CG is desactivated)' );
 		
 		for ( var i = 0; i<500; i++ )
 			ObjectToId({});
@@ -964,7 +962,7 @@ LoadModule('jsstd');
 
 /// Sandbox watchdog [rmt]
 	
-	QA.ASSERT_EXCEPTION( function() { SandboxEval('for (var i=0; i<10000000000; ++i);') }, OperationLimit, 'OperationLimit detection' );
+	QA.ASSERT_EXCEPTION( function() { SandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 250) }, OperationLimit, 'OperationLimit detection' );
 
 
 /// Exec function [f]

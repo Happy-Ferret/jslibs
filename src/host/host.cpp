@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+// #include <jsreflect.h>
 
 #define SVN_REVISION_STR "$Revision$"
 
@@ -285,12 +286,8 @@ static JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 
 	JLStr str;
 
-	//	CHKHEAP();
-
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(1);
-//	const char *fileName;
-//	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
 	char libFileName[PATH_MAX];
@@ -408,6 +405,13 @@ static JSBool global_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags,
 		JSBool resolved;
 		if ( !JS_ResolveStandardClass(cx, obj, id, &resolved) )
 			return JS_FALSE;
+
+		//if ( !resolved && JSID_IS_ATOM(id, CLASS_ATOM(cx, Reflect)) ) {
+
+		//	if ( !js_InitReflectClass(cx, obj) )
+		//		return JS_FALSE;
+		//	resolved = JS_TRUE;
+		//}
 
 		if ( resolved ) {
 			

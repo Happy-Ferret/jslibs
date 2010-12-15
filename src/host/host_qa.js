@@ -60,7 +60,7 @@ LoadModule('jsio');
 		QA.ASSERT( LoadModule(0.0), false, 'loading inexisting module' );
 		QA.ASSERT( LoadModule(''), false, 'loading inexisting module' );
 		QA.ASSERT( LoadModule(NaN), false, 'loading inexisting module' );
-		QA.ASSERT_EXCEPTION(function() LoadModule(), RangeError, 'call LoadModule() without arguments');
+		//QA.ASSERT_EXCEPTION(function() LoadModule(), RangeError, 'call LoadModule() without arguments');
 
 
 /// String memory usage (disabled GC) [tr d]
@@ -133,25 +133,28 @@ LoadModule('jsio');
 	QA.ASSERT( Blob._revision > 3000, true, 'Blob revision number' );
 
 
-/// error messages
+/// error messages []
 
 	var buffer = '';
 	var prev = _host.stderr;
 	_host.stderr = function(chunk) buffer += chunk;
 	
-	var ex;
+	var ex = undefined;
 	try {
 		LoadModule();
 	} catch (_ex) {
 		ex = _ex
 	}
 	
-	QA.ASSERT(!!ex, true, "detect exception for empty LoadModule call");
+	QA.ASSERT(!ex, _host.unsafeMode, "detect exception for empty LoadModule call");
 
 	_host.stderr = prev;
 	
 	QA.ASSERT_STR( buffer.length == 0, true, 'stderr redirection result' ); 
-	QA.ASSERT_STR( ex.message.indexOf('not enough arguments') != -1, true, 'LoadModule() error' ); 
+	
+	if ( !_host.unsafeMode )
+		QA.ASSERT_STR( ex.message.indexOf('not enough arguments') != -1, true, 'LoadModule() error' ); 
+
 
 
 /// catched error messages [rmtf]
@@ -177,3 +180,18 @@ LoadModule('jsio');
 
 	_host.stderr = prev;
 
+/// NativeInterface hacking
+
+	var b = new Blob('abc');
+
+	QA.NO_CRASH( Stringify(b), 'abc' );
+
+	var c = {};
+	c._NI_BufferGet = b._NI_BufferGet;
+	QA.NO_CRASH( Stringify(c) );
+
+	QA.NO_CRASH( Stringify({ _NI_BufferGet:function() {} }) );
+
+	try {
+	QA.NO_CRASH( Stringify({ __proto__:b}) );
+	} catch(ex) {}

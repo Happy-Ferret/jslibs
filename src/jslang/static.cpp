@@ -78,12 +78,7 @@ DEFINE_FUNCTION( Stringify ) {
 			JL_CHK( newBuffer );
 			newBuffer[total] = '\0';
 			BufferCopyData(&buf, newBuffer, total);
-			
-			JSString *jsstr;
-//			jsstr = JL_NewString(cx, newBuffer, total);
-			jsstr = JLStr(newBuffer, total, true).GetJSString(cx);
-			JL_CHK( jsstr );
-			*JL_RVAL = STRING_TO_JSVAL( jsstr );
+			*JL_RVAL = STRING_TO_JSVAL( JLStr(newBuffer, total, true).GetJSString(cx) );
 
 			BufferFinalize(&buf);
 			return JS_TRUE;
@@ -92,59 +87,13 @@ DEFINE_FUNCTION( Stringify ) {
 			BufferFinalize(&buf);
 			return JS_FALSE;
 		}
-
-/*
-		NIBufferGet get = BufferGetInterface(cx, sobj);
-		if ( get ) { // Case already managed in JL_JsvalToNative()
-
-			JLStr str;
-			JL_CHK( get(cx, sobj, &str) );
-
-			JSString *jsstr;
-			jsstr = JL_NewUCString(cx, str.GetJsStrZOwnership(), str.Length()); // (TBD) fix allocator issue missmatch between GetJsStrOwnership() and JS_NewUCString().
-			JL_CHK( jsstr );
-			*JL_RVAL = STRING_TO_JSVAL( jsstr );
-			return JS_TRUE;
-		}
-
-		if ( JS_IsArrayObject(cx, sobj) ) { // Case already managed in JL_JsvalToNative()
-
-			JLStr str;
-			JL_CHK( JL_JSArrayToBuffer(cx, sobj, &str) );
-			*JL_RVAL = STRING_TO_JSVAL( str.GetJSString(cx) );
-			return JS_TRUE;
-		}
-
-		if ( js_IsArrayBuffer(sobj) ) {
-
-			js::ArrayBuffer *buf = js::ArrayBuffer::fromJSObject(sobj);
-			JSString *jsstr = JS_NewStringCopyN(cx, (char*)buf->data, buf->byteLength );
-			JL_CHK( jsstr );
-			*JL_RVAL = STRING_TO_JSVAL( jsstr );
-			return JS_TRUE;
-		}
-
-		if ( js_IsTypedArray(sobj) ) { // Case already managed in JL_JsvalToNative()
-
-			js::TypedArray *buf = js::TypedArray::fromJSObject(sobj);
-			JSString *jsstr;
-			if ( buf->type == js::TypedArray::TYPE_UINT16 )
-				jsstr = JS_NewUCStringCopyN(cx, (jschar*)buf->data, buf->length );
-			else
-				jsstr = JS_NewStringCopyN(cx, (char*)buf->data, buf->length );
-			JL_CHK( jsstr );
-			*JL_RVAL = STRING_TO_JSVAL( jsstr );
-			return JS_TRUE;
-		}
-*/
 	}
 
+	// fallback:
 	{
 	JLStr str;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	JSString *jsstr;
-	jsstr = JL_NewUCString(cx, str.GetJsStrZOwnership(), str.Length()); // (TBD) allocator issue.
-	*JL_RVAL = STRING_TO_JSVAL( jsstr );
+	*JL_RVAL = STRING_TO_JSVAL( str.GetJSString(cx) );
 	}
 
 	return JS_TRUE;
