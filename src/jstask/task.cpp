@@ -126,7 +126,6 @@ bad:
 static JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 
 	jsval argv[3] = { JSVAL_NULL }; // argv[0] is rval and code
-	js::AutoArrayRooter tvr(cx, COUNTOF(argv), argv);
 
 	// no need to mutex this because this and the constructor are the only places that access pv->serializedCode.
 	//JL_CHK( UnserializeJsval(cx, &pv->serializedCode, &argv[0]) );

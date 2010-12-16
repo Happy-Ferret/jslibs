@@ -281,17 +281,17 @@ namespace jl {
 				JL_CHK( Write(cx, length) );
 
 				JSBool found;
-				js::AutoValueRooter avr(cx);
+				jsval tmp;
 				for ( jsint i = 0; i < jl::SafeCast<jsint>(length); ++i ) {
 
-					JL_CHK( JS_GetElement(cx, obj, i, avr.jsval_addr()) );
-					if ( avr.value().isUndefined() ) {
+					JL_CHK( JS_GetElement(cx, obj, i, &tmp) );
+					if ( JSVAL_IS_VOID(tmp) ) {
 
 						JL_CHK( JS_HasElement(cx, obj, i, &found) );
 						if ( !found )
-							avr.addr()->setMagic(JS_ARRAY_HOLE);
+							js::Valueify(tmp).setMagic(JS_ARRAY_HOLE);
 					}
-					JL_CHK( Write(cx, avr.jsval_value()) );
+					JL_CHK( Write(cx, tmp) );
 				}
 				return JS_TRUE;
 			}
@@ -320,8 +320,6 @@ namespace jl {
 			if ( !JSVAL_IS_VOID( serializeFctVal ) ) {
 
 				jsval argv[] = { JSVAL_NULL, _serializerObj };
-				js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
-
 				JL_S_ASSERT_FUNCTION( serializeFctVal );
 
 //				JSObject *objectProto;
@@ -399,11 +397,11 @@ namespace jl {
 
 			// fallback (Date, Number, String, ...)
 			{
-			js::AutoValueRooter avr(cx);
-			JL_CHK( JL_JsvalToPrimitive(cx, OBJECT_TO_JSVAL(obj), avr.jsval_addr()) );
+			jsval tmp;
+			JL_CHK( JL_JsvalToPrimitive(cx, OBJECT_TO_JSVAL(obj), &tmp) );
 			JL_CHK( Write(cx, JLSTObjectValue) );
 			JL_CHK( Write(cx, obj->getClass()->name) );
-			JL_CHK( Write(cx, avr.jsval_value()) );
+			JL_CHK( Write(cx, tmp) );
 			return JS_TRUE;
 			}
 
@@ -591,12 +589,12 @@ namespace jl {
 					JL_S_ASSERT_ALLOC( arr );
 					val = OBJECT_TO_JSVAL(arr);
 
-					js::AutoValueRooter avr(cx);
+					jsval tmp;
 					for ( jsuint i = 0; i < length; ++i ) {
 
-						JL_CHK( Read(cx, *avr.jsval_addr()) );
-						if ( !avr.value().isMagic(JS_ARRAY_HOLE) ) // if ( !JL_JSVAL_IS_ARRAY_HOLE(*avr.jsval_addr()) )
-							JL_CHK( JS_SetElement(cx, arr, i, avr.jsval_addr()) );
+						JL_CHK( Read(cx, tmp) );
+						if ( !js::Valueify(tmp).isMagic(JS_ARRAY_HOLE) ) // if ( !JL_JSVAL_IS_ARRAY_HOLE(*avr.jsval_addr()) )
+							JL_CHK( JS_SetElement(cx, arr, i, &tmp) );
 					}
 					break;
 				}
@@ -641,7 +639,6 @@ namespace jl {
 					newObj = JS_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
 					JL_CHK( newObj );
  					jsval argv[] = { JSVAL_NULL, _unserializerObj };
-					js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
 					JL_CHK( JL_CallFunctionId(cx, newObj, JLID(cx, _unserialize), COUNTOF(argv)-1, argv+1, argv) ); // rval not used
 					val = OBJECT_TO_JSVAL(newObj);
 					break;
@@ -664,12 +661,11 @@ namespace jl {
 					JL_CHK( newObj );
 
  					jsval argv[] = { JSVAL_NULL, _unserializerObj };
-					js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
+
 					JL_CHK( JL_CallFunctionId(cx, newObj, JLID(cx, _unserialize), COUNTOF(argv)-1, argv+1, argv) );
 					val = OBJECT_TO_JSVAL(newObj);
 */
  					jsval argv[] = { JSVAL_NULL, _unserializerObj };
-					js::AutoArrayRooter avr(cx, COUNTOF(argv), argv);
 					jsval fun;
 					JL_CHK( Read(cx, fun) );
 					JL_S_ASSERT_FUNCTION(fun);

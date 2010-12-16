@@ -471,8 +471,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 	jsval argv[1 + MAX_FUNCTION_ARG]; // argv[0] is rval
 //	JL_ASSERT(JSVAL_NULL == 0);
 	memset(argv, 0, sizeof(argv)); // set JSVAL_NULL
-	js::AutoArrayRooter ar(cx, COUNTOF(argv), argv);
-	
+	JL_ASSERT( JSVAL_IS_PRIMITIVE(*argv) );
 	for ( int r = 0; r < sArgc; r++ ) {
 
 		if ( SqliteToJsval(cx, sArgv[r], &argv[r+1]) != JS_TRUE ) {

@@ -152,7 +152,7 @@ LoadModule('jsstd');
 		
 			count += ((IdToObject(id) == undefined) ? 0 : 1);
 		}
-		QA.ASSERT( count, ids.length, 'IdToObject validity before GC' );
+		QA.ASSERT( count, ids.length, 'IdToObject validity before GC (may fail if gcZeal > 0)' );
 		
 		QA.GC();
 

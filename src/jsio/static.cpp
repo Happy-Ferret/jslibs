@@ -214,7 +214,10 @@ DEFINE_FUNCTION( Poll ) {
 
 	props = (jsval*)jl_malloca(sizeof(jsval) * propsCount);
 	JL_S_ASSERT_ALLOC( props );
+
 	memset(props, 0, sizeof(jsval) * propsCount); // needed because JS_PUSH_TEMP_ROOT
+	JL_ASSERT( JSVAL_IS_PRIMITIVE(*props) );
+
 	{
 		js::AutoArrayRooter tvr(cx, propsCount, props);
 		for ( i = 0; i < propsCount; ++i ) {

@@ -328,11 +328,10 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 	upe->timeout = timeout;
 	upe->cancel = JLEventCreate(false);
 	JL_ASSERT( JLEventOk(upe->cancel) );
-	SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2));
 
-	if ( JL_ARG_ISDEF(2) ) {
+	if ( JL_ARG_ISDEF(2) && JL_IsFunction(cx, JL_ARG(2)) ) {
 
-		JL_S_ASSERT_FUNCTION( JL_ARG(2) );
+		SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2));
 		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2)) ); // GC protection only
 		upe->callbackFunction = JL_ARG(2);
 	} else {
@@ -368,8 +367,8 @@ CONFIGURE_STATIC
 		#endif // DEBUG
 
 		FUNCTION_ARGC( Stringify, 1 )
-		FUNCTION( ProcessEvents )
-		FUNCTION( TimeoutEvents )
+		FUNCTION_ARGC( ProcessEvents, 4 ) // (just a guess)
+		FUNCTION_ARGC( TimeoutEvents, 2 )
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC

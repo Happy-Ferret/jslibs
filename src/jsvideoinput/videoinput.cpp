@@ -370,11 +370,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( list ) {
 
-	js::AutoObjectRooter tvr(cx); // (TBD) remove this workaround. cf. bz495422 || bz397177
-
 	int numDevices = videoInput::listDevices(true);
 	JSObject *list = JS_NewArrayObject(cx, numDevices, NULL);
-	tvr.setObject(list);
+
 	jsval value;
 	int i;
 	for ( i = 0; i < numDevices; i++ ) {
@@ -383,7 +381,7 @@ DEFINE_PROPERTY( list ) {
 		JL_CHK( JS_SetElement(cx, list, i, &value ) );
 	}
 
-	*vp = OBJECT_TO_JSVAL( tvr.object() );
+	*vp = OBJECT_TO_JSVAL( list );
 	return JS_TRUE;
 bad:
 	return JS_FALSE;

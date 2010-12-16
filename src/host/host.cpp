@@ -133,9 +133,9 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 			//	goto standard_way;
 
 			jsval unused;
-			js::AutoValueRooter tvr(cx); // needed to protect the string.
-			JL_CHK( JL_NativeToJsval(cx, message, length, tvr.jsval_addr()) ); // beware out of memory case !
-			JL_CHK( JS_CallFunctionValue(cx, globalObject, fct, 1, tvr.jsval_addr(), &unused) );
+			jsval tmp;
+			JL_CHK( JL_NativeToJsval(cx, message, length, &tmp) ); // beware out of memory case !
+			JL_CHK( JS_CallFunctionValue(cx, globalObject, fct, 1, &tmp, &unused) );
 		}
 	}
 
@@ -288,6 +288,12 @@ static JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(1);
+	if (unlikely( JL_ARGC < 1 )) {
+
+		*JL_RVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
 	char libFileName[PATH_MAX];
@@ -731,7 +737,7 @@ JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnl
 	//  When returning from the outermost API call, prevent uncaught exceptions from being converted to error reports
 	//  we can use JS_ReportPendingException to report it manually
 
-	js::AutoObjectRooter scriptObjRoot(cx);
+	JSObject *scriptObjRoot;
 
 	JSObject *globalObject = JL_GetGlobalObject(cx);
 	JL_CHKM( globalObject != NULL, "Global object not found." );
@@ -751,7 +757,7 @@ JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnl
 	JSScript *script;
 	script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "inline", 1);
 	JL_CHK( script );
-	scriptObjRoot.setObject(JS_NewScriptObject(cx, script));
+	scriptObjRoot = JS_NewScriptObject(cx, script);
 
 	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
@@ -779,7 +785,7 @@ bad:
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) { // (TBD) support xdr files
 
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
-	js::AutoObjectRooter scriptObjRoot(cx);
+	JSObject *scriptObjRoot;
 	JSObject *globalObject = JL_GetGlobalObject(cx);
 	JL_CHKM( globalObject != NULL, "Global object not found." );
 	JL_CHK( CreateScriptArguments(cx, argc, argv) );
@@ -788,7 +794,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	script = JL_LoadScript(cx, globalObject, scriptFileName, true, false); // use xdr if available, but don't save it.
 	JL_CHK( script );
 
-	scriptObjRoot.setObject(JS_NewScriptObject(cx, script));
+	scriptObjRoot = JS_NewScriptObject(cx, script);
 
 	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
@@ -817,7 +823,7 @@ JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32 xdrScriptL
 
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
 //	JL_CHKM( JS_EvaluateScript(cx, JL_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
-	js::AutoObjectRooter scriptObjRoot(cx);
+	JSObject *scriptObjRoot;
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 	JL_CHK( xdr );
 	JS_XDRMemSetData(xdr, xdrScript, xdrScriptLength);
@@ -825,7 +831,7 @@ JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32 xdrScriptL
 	JL_CHK( JS_XDRScript(xdr, &script) );
 	JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
 	JS_XDRDestroy(xdr);
-	scriptObjRoot.setObject(JS_NewScriptObject(cx, script));
+	scriptObjRoot = JS_NewScriptObject(cx, script);
 //	JL_CHK( SetConfigurationReadonlyValue(cx, JLID_NAME(cx, bootstrapScript), OBJECT_TO_JSVAL(bootstrapScriptObject)) ); // bootstrap script cannot be hidden
 	jsval tmp;
 	JL_CHK( JS_ExecuteScript(cx, JL_GetGlobalObject(cx), script, &tmp) );

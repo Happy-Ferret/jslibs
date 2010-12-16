@@ -245,8 +245,6 @@ static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp,
 		};
 		JL_CHK( JL_NativeToJsval(cx, filename, &argv[1]) );
 		
-		js::AutoArrayRooter tvr(cx, COUNTOF(argv), argv);
-
 		// defer script's hooks assignment
 		JSDebugHooks prevHooks;
 		prevHooks = *JS_GetGlobalDebugHooks(rt); // save hooks

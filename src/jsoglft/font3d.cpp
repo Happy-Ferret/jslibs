@@ -44,7 +44,6 @@ class ColorTess : public OGLFT::ColorTess {
 
 		JSContext *cx = JL_GetFirstContext(_rt);
 		jsval arg[2] = { JSVAL_NULL, JSVAL_NULL }; // memset(arg, 0, sizeof(arg));
-		js::AutoArrayRooter tvr(cx, COUNTOF(arg), arg);
 		JL_CHK( JL_CValVectorToJsval(cx, p, 3, &arg[1], false) );
 		JL_CHK( JS_CallFunctionValue(cx, _obj, _function, COUNTOF(arg)-1, arg+1, arg) );
 		uint32 length;

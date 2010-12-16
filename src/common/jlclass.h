@@ -268,11 +268,9 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define BEGIN_STATIC_PROPERTY_SPEC static JSPropertySpec static_ps[] = {
 #define END_STATIC_PROPERTY_SPEC {NULL, 0, 0, NULL, NULL}}; cs.static_ps = static_ps;
 
-	// JS_FN(name,fastcall,minargs,nargs,flags) vs JS_FN(name,fastcall,nargs,flags) (see. http://hg.mozilla.org/tracemonkey/diff/9e185457c656/js/src/jsapi.h)
 #define FUNCTION(name) JS_FN( #name, _##name, 0, 0 ),
 #define FUNCTION_ARGC(name, nargs) JS_FN( #name, _##name, nargs, 0 ),
 #define FUNCTION_ALIAS(alias, name) JS_FN( #alias, _##name, 0, 0 ),
-
 
 #define PROPERTY(name) { #name, -1, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
 #define PROPERTY_READ(name) { #name, -1, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name, NULL }, // (TBD) rename into PROPERTY_GETTER

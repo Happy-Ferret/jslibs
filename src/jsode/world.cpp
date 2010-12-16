@@ -137,7 +137,6 @@ static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 
 
 			jsval argv[9];
-			js::AutoArrayRooter tvr(cx, COUNTOF(argv), argv);
 			argv[0] = JSVAL_NULL; // rval
 
 			// geom.contact = function(thisGeom, otherGeom, contactVelocity, contactX, contactY, contactZ, side1, side2) { }

@@ -83,7 +83,6 @@ private:
 
 		jsval argv[3] = { INT_TO_JSVAL(level), INT_TO_JSVAL(area) };
 		JL_NativeToJsval(_cx, message.c_str(), &argv[2]);
-		js::AutoArrayRooter tvr(_cx, COUNTOF(argv), argv);
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JL_IsExceptionPending(cx)
 	}
 

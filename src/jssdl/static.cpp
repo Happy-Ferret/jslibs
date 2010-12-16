@@ -86,7 +86,6 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 					JSVAL_NULL, // unicode char
 //					INT_TO_JSVAL(ev->key.keysym.scancode), // The scancode is hardware dependent, and should not be used by general applications.
 				};
-				js::AutoArrayRooter trv(cx, COUNTOF(argv), argv); // protects the new string against the GC
 
 				if ( (ev->key.keysym.unicode & 0xFF80) == 0 ) {
 

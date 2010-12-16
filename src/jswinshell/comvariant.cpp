@@ -96,6 +96,7 @@ public:
 		uintN argc = pDispParams->cArgs;
 		jsval *argv = (jsval*)alloca((argc+1) * sizeof(jsval));
 		memset(argv, 0, (argc+1) * sizeof(jsval));
+		JL_ASSERT( JSVAL_IS_PRIMITIVE(*argv) );
 		
 		JSContext *cx = NULL;
 		JS_ContextIterator(_rt, &cx);
@@ -315,7 +316,6 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 	size_t srclen;
 	const jschar *src;
 	src = JS_GetStringCharsAndLength(jsstr, &srclen);
-
 	V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)src, srclen );
 
 	return JS_TRUE;

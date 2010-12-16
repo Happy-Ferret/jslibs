@@ -206,6 +206,22 @@
 			<File
 				RelativePath=".\noise.cpp"
 				>
+				<FileConfiguration
+					Name="DBG|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						DisableSpecificWarnings="4244"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="OPT|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						DisableSpecificWarnings="4244"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\static.cpp"

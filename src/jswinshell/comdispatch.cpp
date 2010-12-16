@@ -202,9 +202,10 @@ DEFINE_SET_PROPERTY() {
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( disp );
 
-	const jschar *name;
 	JL_ASSERT( JSID_IS_STRING( id ) );
-	name = JS_GetStringCharsZ(cx, JSID_TO_STRING(id));
+	const jschar *name;
+	JSString *idStr = JSID_TO_STRING(id);
+	name = JS_GetStringCharsZ(cx, idStr);
 
 	DISPID dispid;
 	hr = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
@@ -363,11 +364,11 @@ DEFINE_ITERATOR_OBJECT() {
 		JL_CHK( WinThrowError(cx, hr) );
 
 	{
-		js::AutoValueRooter tvr(cx);
-		JSBool st = NewComEnum(cx, pEnum, tvr.jsval_addr());
+		jsval tmp;
+		JSBool st = NewComEnum(cx, pEnum, &tmp);
 		JL_CHK(st);
 		pEnum->Release();
-		return JSVAL_TO_OBJECT(tvr.jsval_value());
+		return JSVAL_TO_OBJECT(tmp);
 	}
 bad:
 	if ( pEnum )

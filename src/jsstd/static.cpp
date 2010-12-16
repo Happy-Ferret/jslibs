@@ -71,7 +71,6 @@ static jschar wstrstr(const jschar *src, const jschar *srcEnd, const jschar *sub
 	}
 }
 */
-
 DEFINE_FUNCTION( Expand ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -83,7 +82,7 @@ DEFINE_FUNCTION( Expand ) {
 	} Chunk;
 
 	jl::Stack<Chunk, jl::StaticAlloc<>> stack;
-	js::AutoValueRooter value(cx);
+	jsval value;
 
 	JLStr srcStr;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
@@ -91,11 +90,14 @@ DEFINE_FUNCTION( Expand ) {
 	JSObject *mapObj = NULL;
 	jsval *mapFct = NULL;
 	
-	if ( JL_IsFunction(cx, JL_ARG(2)) )
-		mapFct = &JL_ARG(2);
-	else
-	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(2)) )
-		mapObj = JSVAL_TO_OBJECT(JL_ARG(2));
+	if ( JL_ARG_ISDEF(2) ) {
+	
+		if ( JL_IsFunction(cx, JL_ARG(2)) )
+			mapFct = &JL_ARG(2);
+		else
+		if ( !JSVAL_IS_PRIMITIVE(JL_ARG(2)) )
+			mapObj = JSVAL_TO_OBJECT(JL_ARG(2));
+	}
 
 	ssize_t total;
 
@@ -143,32 +145,32 @@ DEFINE_FUNCTION( Expand ) {
 				
 				if ( mapObj ) {
 
-					JL_CHK( JS_GetUCProperty(cx, mapObj, key, keyEnd - key, value.jsval_addr()) );
+					JL_CHK( JS_GetUCProperty(cx, mapObj, key, keyEnd - key, &value) );
 				} else
 				if ( mapFct ) {
 
-					JL_CHK( JL_NativeToJsval(cx, key, keyEnd - key, value.jsval_addr()) );
-					JL_CHK( JS_CallFunctionValue(cx, obj, *mapFct, 1, value.jsval_addr(), value.jsval_addr()) );
+					JL_CHK( JL_NativeToJsval(cx, key, keyEnd - key, &value) );
+					JL_CHK( JS_CallFunctionValue(cx, obj, *mapFct, 1, &value, &value) );
 				} else {
 
 					continue;
 				}
 
-				if ( value.value().isNullOrUndefined() )
+				if ( js::Valueify(value).isNullOrUndefined() )
 					continue;
 
 				++stack;
 
-				if ( !value.value().isString() ) { // 'convert to string' and 'root new string' if necessary.
+				if ( !JSVAL_IS_STRING(value) ) { // 'convert to string' and 'root new string' if necessary.
 
-					stack->root = JS_ValueToString(cx, value.jsval_value());
+					stack->root = JS_ValueToString(cx, value);
 					JL_CHK( stack->root );
 					JL_CHK( JS_AddStringRoot(cx, &stack->root) );
 					stack->chars = JS_GetStringCharsAndLength(stack->root, &stack->count);
 			} else {
 
 					stack->root = NULL;
-					stack->chars = JS_GetStringCharsAndLength(value.value().toString(), &stack->count);
+					stack->chars = JS_GetStringCharsAndLength(JSVAL_TO_STRING(value), &stack->count);
 				}
 
 				total += stack->count;
@@ -939,6 +941,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Exec ) {
 
 	JLStr str;
+	JSObject *scriptObjRoot;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_RANGE(1, 2);
 
@@ -955,15 +958,12 @@ DEFINE_FUNCTION( Exec ) {
 	JS_SetOptions(cx, oldopts);
 	JL_CHK( script );
 
-	{
-	js::AutoObjectRooter scriptObjRoot(cx);
-	scriptObjRoot.setObject(JS_NewScriptObject(cx, script));
+	scriptObjRoot = JS_NewScriptObject(cx, script);
 	
 	JSBool ok;
 	ok = JS_ExecuteScript(cx, obj, script, JL_RVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
 	JS_DestroyScript(cx, script);
 	JL_CHK( ok );
-	}
 
 	return JS_TRUE;
 	JL_BAD;

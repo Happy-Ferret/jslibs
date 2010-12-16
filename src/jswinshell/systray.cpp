@@ -678,7 +678,6 @@ DEFINE_FUNCTION( Events ) {
 	upe->systrayPrivate = pv;
 	upe->systrayObj = obj;
 
-
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(obj)) ); // GC protection
 
 	return JS_TRUE;

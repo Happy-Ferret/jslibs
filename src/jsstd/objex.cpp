@@ -71,7 +71,6 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsid id
 	args[2] = aux;
 	args[3] = INT_TO_JSVAL(slotIndex);
 	{
-	js::AutoArrayRooter tvr(cx, COUNTOF(args), args);
 	// at the moment, no GC protection is needed for argv and rval.
 	JSBool st;
 	st = JS_CallFunctionValue( cx, obj, slot, COUNTOF(args), args, vp );

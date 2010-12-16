@@ -302,7 +302,6 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *c
 
 		double fval;
 		jsval argv[3]; // argv[0] is the rval
-		js::AutoArrayRooter tvr(cx, COUNTOF(argv), argv);
 		for ( i = 0; i < length; ++i ) {
 
 			fval = double(i) / double(length-1);
@@ -2461,7 +2460,6 @@ DEFINE_FUNCTION( ForEachPixel ) {
 	JL_CHK( cArrayObj );
 	callArgv[1] = OBJECT_TO_JSVAL(cArrayObj);
 	{
-		js::AutoArrayRooter tvr(cx, COUNTOF(callArgv), callArgv);
 
 		for ( y = 0; y < height; y++ ) { // faster than (for 0 to (width*height))
 			for ( x = 0; x < width; x++ ) {

@@ -37,15 +37,15 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 	JL_CHK( JS_GetProperty(cx, obj, "onImage", &onImageFct) );
 	if ( JL_IsFunction(cx, onImageFct) ) {
 
-		js::AutoValueRooter nameVal(cx), image(cx);
-		JL_CHK( JL_NativeToJsval(cx, name, nameVal.jsval_addr()) );
-		JL_CHK( JS_CallFunctionValue(cx, obj, onImageFct, 1, nameVal.jsval_addr(), image.jsval_addr()) );
+		jsval nameVal, image;
+		JL_CHK( JL_NativeToJsval(cx, name, &nameVal) );
+		JL_CHK( JS_CallFunctionValue(cx, obj, onImageFct, 1, &nameVal, &image) );
 
-		if ( JSVAL_IS_OBJECT( image.jsval_value() ) ) {
+		if ( JSVAL_IS_OBJECT( image ) ) {
 
 			JLStr buffer;
 
-			JSObject *imageObj = JSVAL_TO_OBJECT( image.jsval_value() );
+			JSObject *imageObj = JSVAL_TO_OBJECT( image );
 			int sWidth, sHeight, sChannels;
 			JL_CHK( JL_GetProperty(cx, imageObj, "width", &sWidth) );
 			JL_CHK( JL_GetProperty(cx, imageObj, "height", &sHeight) );
@@ -56,7 +56,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 //			const char *sBuffer;
 //			size_t bufferLength;
 //			JL_CHK( JL_JsvalToStringAndLength(cx, image.jsval_addr(), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-			JL_CHK( JL_JsvalToNative(cx, *image.jsval_addr(), &buffer) );
+			JL_CHK( JL_JsvalToNative(cx, image, &buffer) );
 
 			JL_S_ASSERT( buffer.Length() == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 			*pixbuf = gdk_pixbuf_new_from_data((const guchar *)buffer.GetConstStr(), GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);

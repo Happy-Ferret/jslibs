@@ -46,9 +46,10 @@ extern bool _unsafeMode;
 class JLStr;
 static INLINE JSBool JL_JSArrayToBuffer( JSContext *cx, JSObject *arrObj, JLStr *str );
 
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // helper macros to avoid a function call to the jsapi
-
 
 static ALWAYS_INLINE JSRuntime*
 JL_GetRuntime(JSContext *cx) {
@@ -227,13 +228,13 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 #define JL_ARGV (JS_ARGV(cx,vp))
 
 // returns the ARGument n
-#define JL_ARG( n ) (JS_ARGV(cx,vp)[(n)-1])
+#define JL_ARG( n ) (JL_ASSERT(n <= argc), JS_ARGV(cx,vp)[(n)-1])
 
 // returns the ARGument n or undefined if it does not exist
-#define JL_SARG( n ) ( argc >= (n) ? JS_ARGV(cx,vp)[(n)-1] : JSVAL_VOID )
+#define JL_SARG( n ) ( JL_ARGC >= (n) ? JL_ARG(n) : JSVAL_VOID )
 
-// returns true if the ARGument n is DEFined
-#define JL_ARG_ISDEF( n ) ( argc >= (n) && !JSVAL_IS_VOID(JS_ARGV(cx,vp)[(n)-1]) )
+// returns true if the ARGument n IS DEFined
+#define JL_ARG_ISDEF( n ) ( JL_ARGC >= (n) && !JSVAL_IS_VOID(JL_ARG(n)) )
 
 // is the current obj (this)
 //#define JL_OBJ (argc=argc, JS_THIS_OBJECT(cx, vp))
@@ -267,6 +268,7 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 		if ( js::Valueify(JL_THIS_CLASS)->ext.equality ) \
 			obj->flags |= JSObject::HAS_EQUALITY; \
 	}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -305,6 +307,7 @@ enum {
 #undef JLID_SPEC
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // Context private
 
@@ -324,6 +327,7 @@ JL_SetContextPrivate( const JSContext *cx, JLContextPrivate *ContextPrivate ) {
 	JL_ASSERT( JS_GetContextPrivate((JSContext*)cx) == cx->data );
 	cx->runtime->data = reinterpret_cast<void*>(ContextPrivate);
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -347,6 +351,7 @@ JL_SetHostPrivate( const JSContext *cx, HostPrivate *hostPrivate ) {
 //	JS_SetRuntimePrivate(JL_GetRuntime(cx), hostPrivate);
 	cx->runtime->data = (void*)hostPrivate;
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -767,6 +772,7 @@ typedef JSBool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
 inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
 inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 inline NIMatrix44Get Matrix44GetInterface( JSContext *cx, JSObject *obj );
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1831,7 +1837,7 @@ template <class T>
 static INLINE JSBool
 JL_CValVectorToJsval( JSContext *cx, const T *vector, jsuint length, jsval *val, bool useValArray = false ) {
 
-	js::AutoValueRooter avr(cx);
+	jsval tmp;
 	JSObject *arrayObj;
 	if ( useValArray ) {
 
@@ -1848,9 +1854,9 @@ JL_CValVectorToJsval( JSContext *cx, const T *vector, jsuint length, jsval *val,
 
 	for ( jsuint i = 0; i < length; ++i ) {
 
-		JL_CHK( JL_NativeToJsval(cx, vector[i], avr.jsval_addr()) );
+		JL_CHK( JL_NativeToJsval(cx, vector[i], &tmp) );
 		//JL_CHK( JS_SetPropertyById(cx, arrayObj, INT_TO_JSID(i), avr.jsval_addr()) );
-		JL_CHK( JS_SetElement(cx, arrayObj, i, avr.jsval_addr()) );
+		JL_CHK( JS_SetElement(cx, arrayObj, i, &tmp) );
 	}
 //	JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
 	return JS_TRUE;
@@ -1887,12 +1893,12 @@ template <class T>
 static ALWAYS_INLINE JSBool
 JL_SetProperty( JSContext *cx, JSObject *obj, const char *propertyName, const T &cval, bool publicData = true ) {
 
-	js::AutoValueRooter avr(cx);
-	JL_CHK( JL_NativeToJsval(cx, cval, avr.jsval_addr()) );
+	jsval tmp;
+	JL_CHK( JL_NativeToJsval(cx, cval, &tmp) );
 	if ( publicData )
-		JL_CHKM( JS_SetProperty(cx, obj, propertyName, avr.jsval_addr()), "Unable to set the property %s.", propertyName );
+		JL_CHKM( JS_SetProperty(cx, obj, propertyName, &tmp), "Unable to set the property %s.", propertyName );
 	else
-		JL_CHKM( JS_DefineProperty(cx, obj, propertyName, avr.jsval_value(), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "Unable to set the property %s." ); // Doc. http://developer.mozilla.org/en/docs/JS_DefineUCProperty
+		JL_CHKM( JS_DefineProperty(cx, obj, propertyName, tmp, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "Unable to set the property %s." ); // Doc. http://developer.mozilla.org/en/docs/JS_DefineUCProperty
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1901,12 +1907,12 @@ template <class T>
 static ALWAYS_INLINE JSBool
 JL_SetProperty( JSContext *cx, JSObject *obj, jsid id, const T &cval, bool publicData = true ) {
 
-	js::AutoValueRooter avr(cx);
-	JL_CHK( JL_NativeToJsval(cx, cval, avr.jsval_addr()) );
+	jsval tmp;
+	JL_CHK( JL_NativeToJsval(cx, cval, &tmp) );
 	if ( publicData )
-		JL_CHKM( JS_SetPropertyById(cx, obj, id, avr.jsval_addr()), "Unable to set the property." );
+		JL_CHKM( JS_SetPropertyById(cx, obj, id, &tmp), "Unable to set the property." );
 	else
-		JL_CHKM( JS_DefinePropertyById(cx, obj, id, avr.jsval_value(), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "Unable to set the property." ); // Doc. http://developer.mozilla.org/en/docs/JS_DefineUCProperty
+		JL_CHKM( JS_DefinePropertyById(cx, obj, id, tmp, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "Unable to set the property." ); // Doc. http://developer.mozilla.org/en/docs/JS_DefineUCProperty
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2214,6 +2220,7 @@ ALWAYS_INLINE JSBool SetHostObjectValue(JSContext *cx, const jschar *name, jsval
 }
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // Blob functions
 
@@ -2424,8 +2431,8 @@ JL_InheritFrom( JSContext *cx, JSObject *obj, const JSClass *clasp ) {
 static ALWAYS_INLINE JSBool
 JL_CallFunctionId(JSContext *cx, JSObject *obj, jsid id, uintN argc, jsval *argv, jsval *rval) {
 
-	js::AutoValueRooter tvr(cx);
-	return JS_GetMethodById(cx, obj, id, NULL, tvr.jsval_addr()) && JS_CallFunctionValue(cx, obj, tvr.jsval_value(), argc, argv, rval);
+	jsval tmp;
+	return JS_GetMethodById(cx, obj, id, NULL, &tmp) && JS_CallFunctionValue(cx, obj, tmp, argc, argv, rval);
 // (TBD) choose the best
 //	jsval val;
 //	return JL_JsidToJsval(cx, id, &val) && JS_CallFunctionValue(cx, obj, val, argc, argv, rval);
@@ -2941,16 +2948,16 @@ StreamReadNativeInterface( JSContext *cx, JSObject *obj ) {
 INLINE JSBool
 JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *amount ) {
 
-	js::AutoValueRooter tvr(cx);
-	JL_CHK( JL_NativeToJsval(cx, *amount, tvr.jsval_addr()) );
-	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, Read), 1, tvr.jsval_addr(), tvr.jsval_addr()) );
-	if ( tvr.value().isUndefined() ) { // (TBD)! with sockets, undefined mean 'closed', that is not supported.
+	jsval tmp;
+	JL_CHK( JL_NativeToJsval(cx, *amount, &tmp) );
+	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, Read), 1, &tmp, &tmp) );
+	if ( JSVAL_IS_VOID(tmp) ) { // (TBD)! with sockets, undefined mean 'closed', that is not supported.
 
 		*amount = 0;
 	} else {
 
 		JLStr str;
-		JL_CHK( JL_JsvalToNative(cx, *tvr.jsval_addr(), &str) );
+		JL_CHK( JL_JsvalToNative(cx, tmp, &str) );
 		JL_ASSERT( str.Length() <= *amount );
 		*amount = str.Length();
 		memcpy(buffer, str.GetConstStr(), *amount);
@@ -3001,8 +3008,8 @@ BufferGetNativeInterface( JSContext *cx, JSObject *obj ) {
 ALWAYS_INLINE JSBool
 JSBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
-	js::AutoValueRooter tvr(cx);
-	return JL_CallFunctionId(cx, obj, JLID(cx, Get), 0, NULL, tvr.jsval_addr()) && JL_JsvalToNative(cx, *tvr.jsval_addr(), str);
+	jsval tmp;
+	return JL_CallFunctionId(cx, obj, JLID(cx, Get), 0, NULL, &tmp) && JL_JsvalToNative(cx, tmp, str);
 }
 
 
@@ -3017,6 +3024,7 @@ BufferGetInterface( JSContext *cx, JSObject *obj ) {
 		return JSBufferGet;
 	return NULL;
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////////

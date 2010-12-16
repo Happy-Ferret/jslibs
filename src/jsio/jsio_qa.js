@@ -293,7 +293,7 @@ LoadModule('jsdebug');
 /// TCP get [m]
 
 	do {
-		var res, host, hostList = ['proxy', 'www.google.com', 'localhost']; // try to find a web server on port 80
+		var res, host, hostList = ['www.google.com', 'localhost', 'proxy']; // try to find a web server on port 80
 		do {
 
 			host = hostList.shift();

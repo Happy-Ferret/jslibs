@@ -1,17 +1,10 @@
-LoadModule('jsstd');
-
-
-
-
-//throw 0;
-
 
 LoadModule('jsstd'); Exec('../common/tools.js');
 // var QA = FakeQAApi;
 // RunLocalQAFile();
 //RunJsircbot(false); throw 0;
 //RunQATests('-perf perftest.js -exclude jstask');
-RunQATests('-nogcB -nogcD -exclude jstask jsstd');
+RunQATests('-rep 30 -gczeal 2 -exclude jstask expand');
 
 
 Halt();

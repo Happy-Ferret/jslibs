@@ -268,7 +268,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( list ) {
 
-	js::AutoObjectRooter tvr(cx, JS_NewObject(cx, NULL, NULL, NULL)); // (TBD) remove this workaround. cf. bz495422 || bz397177
+	JSObject *listObj = JS_NewObject(cx, NULL, NULL, NULL);
 	
 	jsval value;
 	int i;
@@ -276,11 +276,11 @@ DEFINE_PROPERTY( list ) {
 	for ( i=0; prng_is_valid(i) == CRYPT_OK; i++ ) {
 
 		value = JSVAL_ONE;
-		JS_SetProperty( cx, tvr.object(), prng_descriptor[i].name, &value );
+		JS_SetProperty( cx, listObj, prng_descriptor[i].name, &value );
 	}
 	LTC_MUTEX_UNLOCK(&ltc_prng_mutex);
 
-	*vp = OBJECT_TO_JSVAL(tvr.object());
+	*vp = OBJECT_TO_JSVAL(listObj);
 	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 

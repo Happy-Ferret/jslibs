@@ -353,7 +353,8 @@ DEFINE_FUNCTION( CreateComObject ) {
 	JL_S_ASSERT_ARG( 1 );
 	JL_S_ASSERT_STRING( JL_ARG(1) );
 
-	LPOLESTR name = (LPOLESTR)JS_GetStringCharsZ(cx, JS_ValueToString(cx, JL_ARG(1)));
+	JSString *idStr = JS_ValueToString(cx, JL_ARG(1));
+	LPOLESTR name = (LPOLESTR)JS_GetStringCharsZ(cx, idStr);
 
 	CLSID clsid;
 	hr = name[0] == L'{' ? CLSIDFromString(name, &clsid) : CLSIDFromProgID(name, &clsid);
@@ -821,7 +822,8 @@ DEFINE_FUNCTION( DirectoryChangesEvents ) {
 	upe->pe.cancelWait = DirectoryChangesCancelWait;
 	upe->pe.endWait = DirectoryChangesEndWait;
 
-	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2) ) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2) ) );
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(1) ) );
 
 	upe->cancelEvent = CreateEvent(NULL, TRUE, FALSE, NULL);

@@ -20,8 +20,13 @@ int main(int argc, char* argv[]) {
 	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class);
 	JS_InitStandardClasses(cx, globalObject);
 
-	jschar str[] = L"ABCD";
-	JSString *jsstr = JS_NewUCString(cx, str, 2);
+//	jschar str[] = L"ABCD";
+//	JSString *jsstr = JS_NewUCString(cx, str, 2);
+
+	jsval v = {0};
+	JSVAL_IS_NUMBER(v);
+//	JS_TypeOfValue(cx, v);
+
 
 
 

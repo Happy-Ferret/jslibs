@@ -391,7 +391,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( list ) {
 
-	js::AutoObjectRooter tvr(cx, JS_NewObject(cx, NULL, NULL, NULL)); // (TBD) remove this workaround. cf. bz495422 || bz397177
+	JSObject *list = JS_NewObject(cx, NULL, NULL, NULL);
 	jsval value;
 	int i;
 	LTC_MUTEX_LOCK(&ltc_hash_mutex);
@@ -399,7 +399,7 @@ DEFINE_PROPERTY( list ) {
 
 		JSObject *desc = JS_NewObject(cx, NULL, NULL, NULL);
 		value = OBJECT_TO_JSVAL(desc);
-		JS_SetProperty( cx, tvr.object(), hash_descriptor[i].name, &value );
+		JS_SetProperty( cx, list, hash_descriptor[i].name, &value );
 
 		value = INT_TO_JSVAL( hash_descriptor[i].hashsize );
 		JS_SetProperty( cx, desc, "hashSize", &value );
@@ -408,7 +408,7 @@ DEFINE_PROPERTY( list ) {
 	}
 	LTC_MUTEX_UNLOCK(&ltc_hash_mutex);
 
-	*vp = OBJECT_TO_JSVAL(tvr.object());
+	*vp = OBJECT_TO_JSVAL(list);
 	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 

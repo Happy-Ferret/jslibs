@@ -1,27 +1,21 @@
-if ( 10 ) {
+if ( 0 ) {
 
 	LoadModule('jsstd');
 	LoadModule('jsio');
-
-
 	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments)', '123', '-c']);
 	var res = process.stdout.Read();
 	Print( res ==  "_host.stdout(arguments),123,-c");
-
-
 	throw 0;
 }
 
 LoadModule('jsstd');  LoadModule('jsio');
 //RunJsircbot(false); throw 0;
 // var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
- Exec('../common/tools.js');
+Exec('../common/tools.js');
 //Exec('../../qaexp.js');  throw 0;
 //var QA = FakeQAApi;  RunLocalQAFile();
 //RunSavedQAFile('../../exitissue');
-RunQATests('-exclude jstask');
-
-
+RunQATests('-exclude jstask jsio');
 
 throw 0;
 
