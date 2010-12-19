@@ -462,30 +462,28 @@ DEFINE_PROPERTY( memoryUsed ) {
 
 void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArgv ) {
 
+	jsval argv[1 + MAX_FUNCTION_ARG] = {0}; // argv[0] is rval
+	//	memset(argv, 0, sizeof(argv)); // set JSVAL_NULL
+	JL_ASSERT( JSVAL_IS_PRIMITIVE(argv[0]) && JSVAL_IS_PRIMITIVE(argv[1 + MAX_FUNCTION_ARG -1]) );
+
 	FunctionPrivate *fpv = (FunctionPrivate*)sqlite3_user_data(sCx);
 	JSContext *cx = fpv->dbpv->tmpcx;
 	JL_S_ASSERT(cx != NULL, "Invalid context.");
 
-	{ //scope
-
-	jsval argv[1 + MAX_FUNCTION_ARG]; // argv[0] is rval
-//	JL_ASSERT(JSVAL_NULL == 0);
-	memset(argv, 0, sizeof(argv)); // set JSVAL_NULL
-	JL_ASSERT( JSVAL_IS_PRIMITIVE(*argv) );
 	for ( int r = 0; r < sArgc; r++ ) {
 
 		if ( SqliteToJsval(cx, sArgv[r], &argv[r+1]) != JS_TRUE ) {
 
 			//sqlite3_result_error(sCx, "Invalid argument type", -1 ); // (TBD) enhance error report
 			sqlite3_result_error_code(sCx, SQLITE_MISMATCH); // (TBD) check this
-			goto bad_unroot;
+			goto bad;
 		}
 	}
 
 	if ( JS_CallFunctionValue(cx, fpv->obj, fpv->fval, sArgc, argv+1, argv) != JS_TRUE ) {
 
 		sqlite3_result_error(sCx, "Function call error", -1 ); // (TBD) better error message
-		goto bad_unroot;
+		goto bad;
 	}
 
 	// (TBD) how to use sqlite3_result_value
@@ -505,7 +503,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			} else {
 
 				jsdouble jd;
-				JL_CHKB( JL_JsvalToNative(cx, argv[0], &jd), bad_unroot );
+				JL_CHK( JL_JsvalToNative(cx, argv[0], &jd) );
 				if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
 					sqlite3_result_int(sCx, (int)jd);
 				else
@@ -548,10 +546,6 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			//sqlite3_result_error(sCx, "Unsupported data type", -1); // (TBD) better error message
 			sqlite3_result_error_code(sCx, SQLITE_MISMATCH); // (TBD) check this
 	}
-
-	} //scope
-
-bad_unroot:
 
 bad:
 	return;

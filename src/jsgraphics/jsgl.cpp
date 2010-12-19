@@ -43,8 +43,8 @@ DECLARE_CLASS(Ogl)
 #include "matrix44.h"
 #include "vector3.h"
 
-
-JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rval ) {
+/* 
+JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rval ) { // (TBD) jsval** = Conservative Stack Scanning issue ?
 	
 	size_t i;
 	if ( JSVAL_IS_PRIMITIVE(**argv) || !JL_IsArray(cx, **argv) ) {
@@ -68,7 +68,7 @@ JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rv
 	JL_BAD;
 }
 
-JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, double *rval ) {
+JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, double *rval ) { // (TBD) jsval** = Conservative Stack Scanning issue ?
 	
 	size_t i;
 	if ( JSVAL_IS_PRIMITIVE(**argv) || !JL_IsArray(cx, **argv) ) {
@@ -91,7 +91,7 @@ JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, doub
 	return JS_TRUE;
 	JL_BAD;
 }
-
+*/
 
 
 

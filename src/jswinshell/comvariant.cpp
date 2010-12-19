@@ -251,7 +251,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 		V_VT(variant) = VT_BSTR;
 		size_t srclen;
 		const jschar *src;
-		src = JS_GetStringCharsAndLength(jsstr, &srclen);
+		src = JS_GetStringCharsAndLength(cx, jsstr, &srclen);
 		V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)src, srclen);
 		return JS_TRUE;
 	}
@@ -315,7 +315,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 	size_t srclen;
 	const jschar *src;
-	src = JS_GetStringCharsAndLength(jsstr, &srclen);
+	src = JS_GetStringCharsAndLength(cx, jsstr, &srclen);
 	V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)src, srclen );
 
 	return JS_TRUE;

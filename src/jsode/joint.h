@@ -30,7 +30,7 @@ void FinalizeJoint(JSContext *cx, JSObject *obj);
 
 JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj );
 
-ALWAYS_INLINE JSBool JointToJSObject( JSContext *cx, ode::dJointID jointId, JSObject **obj ) {
+ALWAYS_INLINE JSBool JointToJSObject( JSContext *cx, ode::dJointID jointId, JSObject **obj ) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
 
 	*obj = (JSObject*)ode::dJointGetData(jointId);
 	if ( *obj != NULL )

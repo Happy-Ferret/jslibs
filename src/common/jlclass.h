@@ -269,6 +269,10 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define END_STATIC_PROPERTY_SPEC {NULL, 0, 0, NULL, NULL}}; cs.static_ps = static_ps;
 
 #define FUNCTION(name) JS_FN( #name, _##name, 0, 0 ),
+/* Doc. argv[argc] through argv[nargs - 1], if argc < nargs. Here nargs is the number of arguments the function ordinarily expects.
+   This is the same as the function's length property. It is specified when the function is created,
+	via either JSFunctionSpec.nargs or the nargs parameter to JS_FS, JS_DefineFunction, or JS_NewFunction.
+	If present, these locations initially contain JSVAL_VOID. */
 #define FUNCTION_ARGC(name, nargs) JS_FN( #name, _##name, nargs, 0 ),
 #define FUNCTION_ALIAS(alias, name) JS_FN( #alias, _##name, 0, 0 ),
 

@@ -4350,6 +4350,7 @@ DEFINE_FUNCTION( GetLevelRange ) {
 	double vector[2]; // = { min, max };
 	vector[0] = min;
 	vector[1] = max;
+
 	return JL_CValVectorToJsval(cx, vector, 2, JL_RVAL);
 	JL_BAD;
 }

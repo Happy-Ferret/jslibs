@@ -105,7 +105,7 @@ protected:
 		val = STRING_TO_JSVAL(jsstr);
 		if ( jsstr == NULL )
 			throw JsException(_cx, "cannot convert the value to a string");
-		return JLStr(jsstr);
+		return JLStr(_cx, jsstr);
 	}
 
 	inline void CopyJsvalToString( jsval val, char *str, size_t maxLength ) {
@@ -123,7 +123,7 @@ protected:
 		if ( len > maxLength - 1 )
 			 len = maxLength - 1;
 		{
-		JLStr tmp(jsstr);
+		JLStr tmp(_cx, jsstr);
 		memcpy(str, tmp.GetConstStr(), tmp.Length());
 		}
 		str[len] = '\0';

@@ -167,7 +167,7 @@ namespace jl {
 
 			size_t length;
 			const jschar *chars;
-			chars = JS_GetStringCharsAndLength(jsstr, &length); // doc. not null-terminated.
+			chars = JS_GetStringCharsAndLength(cx, jsstr, &length); // doc. not null-terminated.
 			return Write(cx, SerializerConstBufferInfo(chars, length));
 		}
 

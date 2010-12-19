@@ -71,5 +71,25 @@ JL_Realloc( T*&ptr, size_t count = 1 ) {
 }
 
 
+
+
+
+/*
+#define JL_AutoFreea(ptr, size)
+
+class JL_AutoMallocaClass {
+	void *_ptr;
+	size_t _size;
+public:
+	JL_AutoMallocaClass(void *ptr, size_t size) : _ptr(ptr), _size(size) {}
+	~JL_AutoMallocaClass() { jl_freea(_ptr, _size); }
+	void *Ptr() const { return _ptr; }
+};
+
+#define JL_AutoMalloca(size) JL_AutoMallocaClass(jl_malloca(size), size);
+*/
+
+
+
 #endif // _JLALLOC_H_
 

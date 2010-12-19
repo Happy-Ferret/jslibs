@@ -150,7 +150,10 @@ JL_GetReservedSlot( JSContext *cx, JSObject *obj, uint32 slot, jsval *vp ) {
 	#ifdef DEBUG
 	jsval tmp;
 	JS_GetReservedSlot(cx, obj, slot, &tmp);
-	JS_ASSERT( JS_SameValue(cx, *vp, tmp) );
+	JSBool same;
+	if ( !JS_SameValue(cx, *vp, tmp, &same) )
+		return JS_FALSE;
+	JL_ASSERT( same );
 	#endif // DEBUG
 
 	return JS_TRUE;
@@ -1077,10 +1080,10 @@ public:
 		++_inner->count;
 	}
 
-	ALWAYS_INLINE JLStr(JSString *jsstr) {
+	ALWAYS_INLINE JLStr(JSContext *cx, JSString *jsstr) {
 
 		size_t length;
-		const jschar *str = JS_GetStringCharsAndLength(jsstr, &length); // doc. not null-terminated. // see also JS_GetStringCharsZ
+		const jschar *str = JS_GetStringCharsAndLength(cx, jsstr, &length); // doc. not null-terminated. // see also JS_GetStringCharsZ
 		NewInner(str, NULL, false, false, length);
 	}
 
@@ -1244,7 +1247,7 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 
 	if (likely( JSVAL_IS_STRING(val) )) { // for string literals
 
-		*str = JLStr(JSVAL_TO_STRING(val));
+		*str = JLStr(cx, JSVAL_TO_STRING(val));
 		return JS_TRUE;
 	}
 	if (likely( !JSVAL_IS_PRIMITIVE(val) )) { // for NIBufferGet support
@@ -1280,7 +1283,7 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 	if ( jsstr == NULL )
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "string" );
 	val = STRING_TO_JSVAL(jsstr); // GC protection
-	*str = JLStr(jsstr);
+	*str = JLStr(cx, jsstr);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2242,7 +2245,6 @@ JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
 	}
 
 	const ClassProtoCache *classProtoCache = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Blob");
-
 	if (likely( classProtoCache->clasp != NULL )) { // we have Blob class, jslang is present.
 
 		// A blob/string object can be created without using any jslang/blob.h dependances
@@ -2448,7 +2450,7 @@ JL_CallFunctionVA( JSContext *cx, JSObject *obj, const jsval &functionValue, jsv
 	for ( uintN i = 1; i <= argc; i++ )
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
-	js::AutoArrayRooter tvr(cx, argc+1, argv);
+	js::AutoArrayRooter tvr(cx, argc+1, argv); // (TBD) check if it is needed as conservative GC scans the stacks and meed alloca memory
 	argv[0] = JSVAL_NULL; // the rval
 	JL_S_ASSERT_FUNCTION( functionValue );
 	JSBool st;
@@ -2495,7 +2497,8 @@ JL_Eval( JSContext *cx, JSString *source, jsval *rval ) {
 	int scriptLineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, frame));
 	size_t length;
 	const jschar *chars;
-	chars = JS_GetStringCharsAndLength(source, &length);
+	chars = JS_GetStringCharsAndLength(cx, source, &length);
+	JL_CHK( chars );
 	return JS_EvaluateUCScript(cx, JS_GetScopeChain(cx), chars, length, scriptFilename, scriptLineno, rval);
 	JL_BAD;
 }
@@ -2561,6 +2564,11 @@ JL_JsvalToPrimitive( JSContext *cx, const jsval &val, jsval *rval ) { // prev JL
 //	/be
 static INLINE JSScript*
 JL_LoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFile, bool saveCompFile) {
+
+	char *scriptBuffer = NULL;
+	size_t scriptFileSize;
+	jschar *scriptText = NULL;
+	size_t scriptTextLength;
 
 	JSScript *script = NULL;
 	void *data = NULL;
@@ -2663,16 +2671,15 @@ JL_LoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFi
 
 #else //JL_UC
 
+
 	int scriptFile;
 	scriptFile = open(fileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
 	JL_CHKM( scriptFile >= 0, "Unable to open file \"%s\" for reading.", fileName );
 
-	size_t scriptFileSize;
 	scriptFileSize = lseek(scriptFile, 0, SEEK_END);
 	JL_S_ASSERT( scriptFileSize <= UINT_MAX, "Compiled file too big." ); // see read()
 	lseek(scriptFile, 0, SEEK_SET); // see tell(scriptFile);
-	char *scriptBuffer;
-	scriptBuffer = (char*)alloca(scriptFileSize);
+	scriptBuffer = (char*)jl_malloca(scriptFileSize);
 	int res;
 	res = read(scriptFile, (void*)scriptBuffer, (unsigned int)scriptFileSize);
 	close(scriptFile);
@@ -2706,8 +2713,8 @@ JL_LoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFi
 	} else
 	if ( enc == UTF8 ) { // (TBD) check if JS_DecodeBytes does the right things
 
-		jschar *scriptText = (jschar*)alloca(scriptFileSize * 2);
-		size_t scriptTextLength = scriptFileSize * 2;
+		scriptText = (jschar*)jl_malloca(scriptFileSize * 2);
+		scriptTextLength = scriptFileSize * 2;
 		JL_CHKM( UTF8ToUTF16LE((unsigned char*)scriptText, &scriptTextLength, (unsigned char*)scriptBuffer, &scriptFileSize) >= 0, "Unable do decode UTF8 data." );
 		if ( scriptText[0] == '#' && scriptText[1] == '!' ) { // shebang support
 
@@ -2745,10 +2752,24 @@ JL_LoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFi
 	goto good;
 
 good:
+
+	if ( scriptBuffer )
+		jl_freea(scriptBuffer, scriptFileSize);
+
+	if ( scriptText )
+		jl_freea(scriptText, scriptTextLength);
+
 	JS_SetOptions(cx, prevOpts);
 	return script;
 
 bad:
+
+	if ( scriptBuffer )
+		jl_freea(scriptBuffer, scriptFileSize);
+
+	if ( scriptText )
+		jl_freea(scriptText, scriptTextLength);
+
 	JS_SetOptions(cx, prevOpts);
 	if ( data )
 		jl_free(data);
@@ -3058,15 +3079,6 @@ JSMatrix44Get( JSContext *cx, JSObject *obj, float **m ) {
 	JL_UNUSED( m );
 	JL_UNUSED( obj );
 	return JS_FALSE;
-
-	//JS_PUSH_SINGLE_TEMP_ROOT(cx, rval, &tvr);
-	//&tvr.u.value
-	//...
-
-	//JL_CHKM( JS_CallFunctionName(cx, obj, "Get", 0, NULL, &rval), "Get() function not found."); // do not use toString() !?
-	//JL_CHK( JL_JsvalToStringAndLength(cx, rval, buffer, size) );
-	//return JS_TRUE;
-	//JL_BAD;
 }
 
 

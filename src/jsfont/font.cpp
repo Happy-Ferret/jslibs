@@ -217,7 +217,7 @@ DEFINE_FUNCTION( DrawChar ) {
 
 	size_t strlen;
 	const jschar *str;
-	str = JS_GetStringCharsAndLength(jsstr, &strlen);
+	str = JS_GetStringCharsAndLength(cx, jsstr, &strlen);
 	JL_S_ASSERT( strlen == 1, "Invalid char" );
 
 	FTCHK( FT_Load_Char(pv->face, str[0], FT_LOAD_RENDER) );
@@ -283,7 +283,9 @@ DEFINE_FUNCTION( DrawString ) {
 	//strlen = JL_GetStringLength(jsstr);
 	size_t strlen;
 	const jschar *str;
-	str = JS_GetStringCharsAndLength(jsstr, &strlen);
+	str = JS_GetStringCharsAndLength(cx, jsstr, &strlen);
+
+
 
 	bool keepTrailingSpace;
 	keepTrailingSpace = false;

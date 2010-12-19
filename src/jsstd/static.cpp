@@ -166,11 +166,11 @@ DEFINE_FUNCTION( Expand ) {
 					stack->root = JS_ValueToString(cx, value);
 					JL_CHK( stack->root );
 					JL_CHK( JS_AddStringRoot(cx, &stack->root) );
-					stack->chars = JS_GetStringCharsAndLength(stack->root, &stack->count);
+					stack->chars = JS_GetStringCharsAndLength(cx, stack->root, &stack->count);
 			} else {
 
 					stack->root = NULL;
-					stack->chars = JS_GetStringCharsAndLength(JSVAL_TO_STRING(value), &stack->count);
+					stack->chars = JS_GetStringCharsAndLength(cx, JSVAL_TO_STRING(value), &stack->count);
 				}
 
 				total += stack->count;
@@ -274,7 +274,10 @@ DEFINE_FUNCTION( SwitchCase ) {
 	for ( i = 0; i < caseArrayLength; ++i ) {
 	
 		JL_CHK( JS_GetElement(cx, caseArray, i, JL_RVAL) );
-		if ( JS_SameValue(cx, JL_ARG(1), *JL_RVAL) )
+		
+		JSBool same;
+		JL_CHK( JS_SameValue(cx, JL_ARG(1), *JL_RVAL, &same) );
+		if ( same )
 			return JS_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(3)), i, JL_RVAL);
 	}
 
@@ -298,7 +301,7 @@ DEFINE_FUNCTION( InternString ) {
 
 	size_t length;
 	const jschar *chars;
-	chars = JS_GetStringCharsAndLength(jsstr, &length);
+	chars = JS_GetStringCharsAndLength(cx, jsstr, &length);
 	JL_CHK( chars );
 	JL_CHK( JS_InternUCStringN(cx, chars, length) );
 	*JL_RVAL = JSVAL_VOID;
@@ -1095,7 +1098,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 //	src = JS_GetStringChars(jsstr);
 	size_t srclen;
 	const jschar *src;
-	src = JS_GetStringCharsAndLength(jsstr, &srclen);
+	src = JS_GetStringCharsAndLength(cx, jsstr, &srclen);
 
 	JSOperationCallback prev;
 	prev = JS_SetOperationCallback(scx, SandboxMaxOperationCallback);

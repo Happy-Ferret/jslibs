@@ -648,7 +648,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 			  if ( JSVAL_IS_STRING( *vp ) ) {
 
 				  size_t length;
-				  const jschar *s = JS_GetStringCharsAndLength(JSVAL_TO_STRING(*vp), &length);
+				  const jschar *s = JS_GetStringCharsAndLength(cx, JSVAL_TO_STRING(*vp), &length);
 				  if ( length < 1 )
 					  return JS_ReportError( cx, "this conversion is not implemented yet !" ), JS_FALSE;
             *pVal = (char)s[0];

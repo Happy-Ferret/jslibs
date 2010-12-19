@@ -73,7 +73,7 @@ void FinalizeGeom(JSContext *cx, JSObject *obj) {
 }
 
 
-JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) {
+JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
 
 	JL_S_ASSERT( ode::dGeomGetData(geomId) == NULL, "Invalid case (object not finalized)." );
 	JL_S_ASSERT( geomId != NULL, "Invalid ode object." );

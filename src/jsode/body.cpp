@@ -51,7 +51,7 @@ static JSBool ReadMatrix( JSContext *cx, JSObject *obj, float **pm) { // Doc: __
 }
 
 
-JSBool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj) {
+JSBool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
 
 	if (unlikely( bodyId == (ode::dBodyID)0 )) { // bodyId may be null if body is world.env
 

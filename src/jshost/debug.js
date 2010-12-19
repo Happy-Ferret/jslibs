@@ -1,17 +1,13 @@
 LoadModule('jsstd'); 
 LoadModule('jsio'); 
 
-//Print( Stringify(new Uint16Array([100,100,100])) );
-//	var b = new Blob('abc');
-//	Stringify({ __proto__:b});
-//throw 0;
-
 LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();
 //RunJsircbot(false); throw 0;
-RunQATests('-rep 1 -gcZeal 0 -nogcB -nogcD -exclude jstask|blob'); //  Serialization|ProcessEvents
-//  -loopForever -flags f -nogcB -nogcD 
+RunQATests('-rep 1 -flags f -loop -gcZeal 0 -q -exclude jstask|jssqlite');
+//  -loopForever -flags f -gcZeal 0 -nogcB
+ //  Serialization|ProcessEvents
 //Exec('../../perfset.js'); throw 0; // -perf perfset.js 
 
 

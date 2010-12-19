@@ -31,7 +31,7 @@ void FinalizeJoint(JSContext *cx, JSObject *obj) {
 }
 
 
-JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) {
+JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
 
 	JL_S_ASSERT( ode::dJointGetData(jointId) == NULL, "Invalid case (object not finalized)." );
 	JL_S_ASSERT( jointId != NULL, "Invalid ode object." );

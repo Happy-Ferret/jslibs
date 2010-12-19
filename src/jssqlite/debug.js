@@ -1,3 +1,4 @@
+/*
 LoadModule('jsstd');
 LoadModule('jssqlite');
 
@@ -13,6 +14,7 @@ for ( var i = 0; i < 30; i++ ) {
 }
 
 throw 0;
+*/
 
 LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;

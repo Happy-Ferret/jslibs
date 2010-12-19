@@ -174,7 +174,7 @@ DEFINE_FUNCTION( DumpHeap )
             if (!str)
                 return JS_FALSE;
             JS_ARGV(cx, vp)[0] = STRING_TO_JSVAL(str);
-				fileName = JLStr(str);
+				fileName = JLStr(cx, str);
 //            fileName = JL_GetStringBytesZ(cx, str);
 //				if ( fileName == NULL )
 //					fileName = "";
@@ -337,7 +337,7 @@ DEFINE_FUNCTION( TraceGC )
 			if (!str)
 				 return JS_FALSE;
 			argv[0] = STRING_TO_JSVAL(str);
-			fileName = JLStr(str);
+			fileName = JLStr(cx, str);
 		}
 
 		if (!fileName.IsSet())
@@ -1058,7 +1058,7 @@ DEFINE_FUNCTION( EvalInStackFrame ) {
 
 	size_t strlen;
 	const jschar *str;
-	str = JS_GetStringCharsAndLength(jsstr, &strlen);
+	str = JS_GetStringCharsAndLength(cx, jsstr, &strlen);
 
 	JL_CHK( JS_EvaluateUCInStackFrame(cx, fp, str, (uintN)strlen, JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), JL_RVAL) );
 

@@ -1,3 +1,14 @@
+LoadModule('jsstd'); 
+LoadModule('jsiconv'); 
+
+	var conv = new Iconv('UTF-8', 'ISO-8859-1', true, false); // source is not wide, dest is wide
+	var res = conv('été');
+	//QA.ASSERT( res.length, 3, 'UC string length' );
+	Print( res.length, '\n' );
+
+
+throw 0;
+
 
 LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;

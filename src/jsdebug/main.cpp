@@ -109,7 +109,7 @@ done_scriptList:
 	JS_GetPropertyById(cx, moduleObject, mpv->JLID_onNewScript, &jsHookFct); // try to use ids
 	if ( JL_IsFunction(cx, jsHookFct) ) {
 
-		jsval argv[5] = { JSVAL_NULL, JSVAL_NULL, INT_TO_JSVAL( lineno ), OBJECT_TO_JSVAL( JS_NewScriptObject(cx, script) ), OBJECT_TO_JSVAL( JS_GetFunctionObject(fun) ) };
+		jsval argv[] = { JSVAL_NULL, JSVAL_NULL, INT_TO_JSVAL( lineno ), OBJECT_TO_JSVAL( JS_NewScriptObject(cx, script) ), OBJECT_TO_JSVAL( JS_GetFunctionObject(fun) ) };
 		JL_CHK( JL_NativeToJsval(cx, filename, &argv[1]) );
 
 		JSBool status;

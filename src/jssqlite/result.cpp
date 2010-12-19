@@ -156,9 +156,6 @@ next:
 //				if ( JL_GetClass(JSVAL_TO_OBJECT(val)) == JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Blob")->clasp ) { // beware: with SQLite, blob != text
 				if ( JL_JsvalIsBlob(cx, val) ) {
 
-//					size_t length;
-//					const char *data;
-//					JL_CHK( JL_JsvalToStringAndLength(cx, &val, &data, &length) );
 					JLStr data;
 					JL_CHK( JL_JsvalToNative(cx, val, &data) );
 					if ( sqlite3_bind_blob(pStmt, param, data.GetConstStr(), data.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
@@ -169,11 +166,6 @@ next:
 			case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
 			case JSTYPE_STRING: {
 
-				//JSString *jsstr = JS_ValueToString(cx, val);
-				// (TBD) GC protect (root) jsstr
-//				const char *str;
-//				size_t strLen;
-//				JL_CHK( JL_JsvalToStringAndLength(cx, &val, &str, &strLen) );
 				JLStr str;
 				JL_CHK( JL_JsvalToNative(cx, val, &str) );
 
