@@ -2,6 +2,21 @@
 LoadModule('jsio');
 LoadModule('jsdebug');
 
+/// Basic File Read/Write [tr]
+
+	var filename = QA.RandomString(10);
+
+	var f1 = new File(filename).Open('w');
+	f1.Write('1234');
+	f1.Close();
+
+	var f2 = new File(filename).Open('r');
+	f2.Read(4);
+	f2.Close();
+
+	f1.Delete();
+
+
 /// File Read [tr]
 
 		var filename = QA.RandomString(10);

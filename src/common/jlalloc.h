@@ -28,7 +28,6 @@ typedef size_t (*jl_msize_t)( void* );
 typedef void (*jl_free_t)( void* );
 
 typedef struct {
-
 	jl_malloc_t malloc;
 	jl_calloc_t calloc;
 	jl_memalign_t memalign;
@@ -54,6 +53,7 @@ extern jl_free_t jl_free;
 		jl_free(ptr); \
 	}
 
+/*
 template <typename T>
 static ALWAYS_INLINE bool
 JL_Alloc( T*&ptr, size_t count = 1 ) {
@@ -61,7 +61,9 @@ JL_Alloc( T*&ptr, size_t count = 1 ) {
 	ptr = (T*)jl_malloc(sizeof(T)*count);
 	return ptr != NULL;
 }
+*/
 
+/*
 template <typename T>
 static ALWAYS_INLINE bool
 JL_Realloc( T*&ptr, size_t count = 1 ) {
@@ -69,9 +71,7 @@ JL_Realloc( T*&ptr, size_t count = 1 ) {
 	ptr = (T*)jl_realloc(ptr, sizeof(T)*count);
 	return ptr != NULL;
 }
-
-
-
+*/
 
 
 /*

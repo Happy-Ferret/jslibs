@@ -13,6 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "jsstd.h"
+#include "jslibsModule.h"
+
 
 #include "jsxdrapi.h"
 #include "jscntxt.h"
@@ -472,17 +475,17 @@ struct ObjId {
 	unsigned int id;
 };
 
-ObjId *objIdList = NULL;
-unsigned int lastObjectId = 0;
-unsigned int objectIdAllocated = 0;
+//unsigned int lastObjectId = 0;
+//unsigned int objectIdAllocated = 0;
 
-JSGCCallback prevObjectIdGCCallback = NULL;
+//JSGCCallback prevObjectIdGCCallback = NULL;
 
 JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 
+	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
 	if ( status == JSGC_MARK_END ) {
 
-		for ( ObjId *it = objIdList, *end = objIdList + objectIdAllocated; it < end; ++it ) {
+		for ( ObjId *it = mpv->objIdList, *end = mpv->objIdList + mpv->objectIdAllocated; it < end; ++it ) {
 
 			if ( it->obj && JS_IsAboutToBeFinalized(cx, it->obj) ) {
 
@@ -491,7 +494,7 @@ JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 			}
 		}
 	}
-	return prevObjectIdGCCallback ? prevObjectIdGCCallback(cx, status) : JS_TRUE;
+	return mpv->prevObjectIdGCCallback ? mpv->prevObjectIdGCCallback(cx, status) : JS_TRUE;
 }
 
 
@@ -502,9 +505,11 @@ DEFINE_FUNCTION( ObjectToId ) {
 	JSObject *obj;
 	obj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
+	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
+
 	ObjId *freeSlot;
 	freeSlot = NULL;
-	for ( ObjId *it = objIdList, *end = objIdList + objectIdAllocated; it < end; ++it ) {
+	for ( ObjId *it = mpv->objIdList, *end = mpv->objIdList + mpv->objectIdAllocated; it < end; ++it ) {
 
 		if ( it->obj == obj )
 			return JL_NativeToJsval(cx, it->id, JL_RVAL);
@@ -514,25 +519,25 @@ DEFINE_FUNCTION( ObjectToId ) {
 
 	if ( !freeSlot ) {
 
-		unsigned int prevAlloced = objectIdAllocated;
+		unsigned int prevAlloced = mpv->objectIdAllocated;
 
-		if ( !objIdList ) {
+		if ( !mpv->objIdList ) {
 
-			prevObjectIdGCCallback = JS_SetGCCallback(cx, ObjectIdGCCallback);
-			objectIdAllocated = 32;
+			mpv->prevObjectIdGCCallback = JS_SetGCCallback(cx, ObjectIdGCCallback);
+			mpv->objectIdAllocated = 32;
 		} else {
 
-			objectIdAllocated *= 2;
+			mpv->objectIdAllocated *= 2;
 		}
-		objIdList = (ObjId*)JS_realloc(cx, objIdList, sizeof(ObjId) * objectIdAllocated); // (TBD) free objIdList at the end !
-		freeSlot = objIdList + prevAlloced;
-		memset(freeSlot, 0, (objectIdAllocated - prevAlloced) * sizeof(ObjId)); // init only new slots
+		mpv->objIdList = (ObjId*)jl_realloc(mpv->objIdList, sizeof(ObjId) * mpv->objectIdAllocated); // (TBD) free mpv->objIdList at the end !
+		freeSlot = mpv->objIdList + prevAlloced;
+		memset(freeSlot, 0, (mpv->objectIdAllocated - prevAlloced) * sizeof(ObjId)); // init only new slots
 	}
 
-	freeSlot->id = ++lastObjectId;
+	freeSlot->id = ++mpv->lastObjectId;
 	freeSlot->obj = obj;
 
-	return JL_NativeToJsval(cx, lastObjectId, JL_RVAL);
+	return JL_NativeToJsval(cx, mpv->lastObjectId, JL_RVAL);
 	JL_BAD;
 }
 
@@ -564,9 +569,11 @@ DEFINE_FUNCTION( IdToObject ) {
 	unsigned int id;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &id) );
 
-	if ( id > 0 && id <= lastObjectId ) {
+	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
 
-		for ( ObjId *it = objIdList, *end = objIdList + objectIdAllocated; it < end; ++it ) {
+	if ( id > 0 && id <= mpv->lastObjectId ) {
+
+		for ( ObjId *it = mpv->objIdList, *end = mpv->objIdList + mpv->objectIdAllocated; it < end; ++it ) {
 
 			if ( it->id == id ) {
 
@@ -863,10 +870,10 @@ DEFINE_FUNCTION( StringRepeat ) {
 	newLen = len * count;
 
 	jschar *newBuf;
-	JL_Alloc(newBuf, newLen +1);
+	newBuf = static_cast<jschar*>(jl_malloc(sizeof(jschar) * (newLen +1)));
 	JL_S_ASSERT_ALLOC( newBuf );
-	JL_NullTerminate(newBuf, newLen);
-
+	newBuf[newLen] = 0;
+	
 	const jschar *buf;
 	buf = str.GetConstJsStr();
 
@@ -1314,32 +1321,34 @@ $TOC_MEMBER $INAME
   Set to $TRUE, this property desactivates the garbage collector.
 **/
 
-JSGCCallback prevJSGCCallback = NULL; // (TBD) restore the previous callback at the end (on REMOVE_CLASS ?)
+//JSGCCallback prevJSGCCallback = NULL; // (TBD) restore the previous callback at the end (on REMOVE_CLASS ?)
 
 JSBool VetoingGCCallback(JSContext *cx, JSGCStatus status) {
 
+	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
 	// doc. JSGC_BEGIN: Start of GC. The callback may prevent GC from starting by returning JS_FALSE.
 	//      But even if the callback returns JS_TRUE, the garbage collector may determine that GC is not necessary,
 	//      in which case the other three callbacks are skipped.
 	if ( status == JSGC_BEGIN )
 		return JS_FALSE;
-	return prevJSGCCallback ? prevJSGCCallback(cx, status) : JS_TRUE;
+	return mpv->prevJSGCCallback ? mpv->prevJSGCCallback(cx, status) : JS_TRUE;
 }
 
 DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
 
 	// <shaver>	you could install a vetoing callback!
 	// <crowder>	oh, true
+	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
 	bool disableGC;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &disableGC) );
 	if ( disableGC ) {
 
 		JSGCCallback tmp = JS_SetGCCallback(cx, VetoingGCCallback);
 		if ( tmp != VetoingGCCallback )
-			prevJSGCCallback = tmp;
+			mpv->prevJSGCCallback = tmp;
 	} else {
 
-		JSGCCallback tmp = JS_SetGCCallback(cx, prevJSGCCallback);
+		JSGCCallback tmp = JS_SetGCCallback(cx, mpv->prevJSGCCallback);
 		if ( tmp != VetoingGCCallback )
 			JS_SetGCCallback(cx, tmp);
 	}
@@ -1404,19 +1413,26 @@ DEFINE_FUNCTION( Test ) {
 
 	JS_XDRDestroy(xdr1);
 */
+/*
 	JSObject *arr = JS_NewArrayObject(cx, 0, NULL);
-
 	jsval val;
 	val = JSVAL_ONE;
-
 	double t = AccurateTimeCounter();
-	
 	for ( int i = 0; i < 100000; ++i )
 		JL_Push(cx, arr, &val); 
-
 	t = AccurateTimeCounter() - t;
-	
 	printf( "%f\n", t );
+*/
+/*
+	jschar *str = (jschar*)jl_malloc(2 * sizeof(jschar));
+	str[1] = 0;
+	*JL_RVAL = STRING_TO_JSVAL( JS_NewUCString(cx, str, 1) );
+*/	
+	
+	for ( int i = 0; i < 100; i++ ) {
+		char *data = (char*)jl_calloc(1, 10 * sizeof(char));
+		JL_NewBlob(cx, data, 10, JL_RVAL);
+	}
 
 	return JS_TRUE;
 }

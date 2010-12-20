@@ -12,7 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-extern bool _odeFinalization;
 
 DECLARE_CLASS( JointGroup );
 DECLARE_CLASS( Joint );

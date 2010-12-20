@@ -221,6 +221,43 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 //	printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticDepth, script );
 //}
 
+
+// Helps to detect memory leaks (alloc/free balance)
+#define DBG_ALLOC 1
+
+#ifdef DBG_ALLOC
+
+static int allocCount = 0;
+static int freeCount = 0;
+
+EXTERN_C void* jl_malloc_count( size_t size ) {
+	allocCount++;
+	return malloc(size);
+}
+EXTERN_C void* jl_calloc_count( size_t num, size_t size ) {
+	allocCount++;
+	return calloc(num, size);
+}
+EXTERN_C void* jl_memalign_count( size_t alignment, size_t size ) {
+	allocCount++;
+	return memalign(alignment, size);
+}
+EXTERN_C void* jl_realloc_count( void *ptr, size_t size ) {
+	if ( !ptr )
+		allocCount++;
+	return realloc(ptr, size);
+}
+EXTERN_C size_t jl_msize_count( void *ptr ) {
+	return msize(ptr);
+}
+EXTERN_C void jl_free_count( void *ptr ) {
+	if ( ptr )
+		freeCount++;
+	free(ptr);
+}
+
+#endif // DBG_ALLOC
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
@@ -326,6 +363,15 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		jl_realloc = nedrealloc;
 		jl_msize = nedblksize_msize;
 		jl_free = nedfree_handlenull;
+
+	#ifdef DBG_ALLOC
+		jl_malloc = jl_malloc_count;
+		jl_calloc = jl_calloc_count;
+		jl_memalign = jl_memalign_count;
+		jl_realloc = jl_realloc_count;
+		jl_msize = jl_msize_count;
+		jl_free = jl_free_count;
+	#endif // DBG_ALLOC
 		
 		InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 		
@@ -342,6 +388,17 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		jl_realloc = realloc;
 		jl_msize = msize;
 		jl_free = free;
+
+	#ifdef DBG_ALLOC
+		jl_malloc = jl_malloc_count;
+		jl_calloc = jl_calloc_count;
+		jl_memalign = jl_memalign_count;
+		jl_realloc = jl_realloc_count;
+		jl_msize = jl_msize_count;
+		jl_free = jl_free_count;
+		JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
+	#endif // DBG_ALLOC
+
 	}
 
 	cx = CreateHost(maxMem, maxAlloc, (uint32)(maybeGCInterval * 1000));
@@ -488,7 +545,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	JS_SetGCCallback(cx, NULL);
-	DestroyHost(cx);
+	DestroyHost(cx, disabledFree);
 	JS_ShutDown();
 	cx = NULL;
 
@@ -508,6 +565,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 #endif
 //	flush(stdout);
 //	flush(stderr);
+
+	#ifdef DBG_ALLOC
+	printf("alloc:%d  free:%d (diff:%d)\n", allocCount, freeCount, allocCount - freeCount);
+	#endif // DBG_ALLOC
+
 	return exitValue;
 bad:
 
@@ -516,7 +578,7 @@ bad:
 		if ( useJslibsMemoryManager )
 			disabledFree = true;
 		JS_SetGCCallback(cx, NULL);
-		DestroyHost(cx);
+		DestroyHost(cx, true);
 	}
 	JS_ShutDown();
 	return EXIT_FAILURE;

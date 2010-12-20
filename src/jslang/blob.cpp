@@ -225,6 +225,8 @@ inline JSBool JL_JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
 
 DEFINE_FINALIZE() {
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
+		return;
 	void *pv = JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
@@ -282,12 +284,14 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JL_NativeToJsval(cx, length, &tmp) );
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, tmp) );
 	} else {
-
+/*
 		dBuffer = JS_malloc(cx, 1);
 		JL_CHK( dBuffer );
 		((char*)dBuffer)[0] = '\0';
 		JL_SetPrivate(cx, obj, dBuffer);
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(0) ) );
+*/
+		JL_SetPrivate(cx, obj, NULL);
 	}
 
 //	JL_CHK( ReserveBufferGetInterface(cx, obj) );

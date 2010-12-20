@@ -2,9 +2,14 @@ if ( 0 ) {
 
 	LoadModule('jsstd');
 	LoadModule('jsio');
+
+/*	
 	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments)', '123', '-c']);
 	var res = process.stdout.Read();
 	Print( res ==  "_host.stdout(arguments),123,-c");
+*/
+	Print( new File('debug.js').content, '\n' );
+
 	throw 0;
 }
 
@@ -15,9 +20,11 @@ Exec('../common/tools.js');
 //Exec('../../qaexp.js');  throw 0;
 //var QA = FakeQAApi;  RunLocalQAFile();
 //RunSavedQAFile('../../exitissue');
-RunQATests('-exclude jstask jsio');
+RunQATests('-exclude jstask -rep 1 Basic.File');
 
-throw 0;
+
+
+
 
 LoadModule('jsstd'); Exec('../common/tools.js');
 RunQATests('-rep 4 udp');

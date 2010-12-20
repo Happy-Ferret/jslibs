@@ -37,7 +37,7 @@ DEFINE_FINALIZE() {
 
 		if ( PR_CloseDir(dd) != PR_SUCCESS ) // what to do on error ??
 			JS_ReportError( cx, "a directory descriptor cannot be closed while Finalize" );
-		JL_SetPrivate( cx, obj, NULL );
+//		JL_SetPrivate( cx, obj, NULL );
 	}
 }
 

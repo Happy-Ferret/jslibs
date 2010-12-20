@@ -1,3 +1,6 @@
+LoadModule('jsstd');
+LoadModule('jssqlite');
+
 /*
 LoadModule('jsstd');
 LoadModule('jssqlite');

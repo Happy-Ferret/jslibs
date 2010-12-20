@@ -143,7 +143,7 @@ DEFINE_FINALIZE() {
 	// All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
 	if ( sqlite3_close(pv->db) != SQLITE_OK )
 		JS_ReportError( cx, "%s (%d)", sqlite3_errmsg(pv->db), sqlite3_extended_errcode(pv->db) );
-	JL_SetPrivate( cx, obj, NULL );
+//	JL_SetPrivate( cx, obj, NULL );
 
 	JS_free(cx, pv);
 }

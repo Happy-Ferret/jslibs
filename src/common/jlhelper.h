@@ -920,7 +920,7 @@ class JLStr {
 		NT = 2
 	};
 
-	struct Own {
+	struct Inner {
 		size_t len;
 		jschar *jsstr;
 		char *str;
@@ -931,7 +931,7 @@ class JLStr {
 
 	ALWAYS_INLINE void NewInner(const jschar *jsstr, const char *str, bool nullTerminated, bool hasOwnership, size_t length = SIZE_MAX) {
 
-		JL_Alloc(_inner);
+		_inner = static_cast<Inner*>(jl_malloc(sizeof(Inner)));
 		JL_ASSERT(_inner);
 		_inner->count = 1;
 		_inner->len = length;
@@ -963,11 +963,11 @@ class JLStr {
 
 			if ( _inner->jsstrFlags & OWN ) {
 
-				JL_Realloc(_inner->jsstr, length + 1);
+				_inner->jsstr = static_cast<jschar*>(jl_realloc(_inner->jsstr, sizeof(jschar) * (length +1)));
 				JL_ASSERT( _inner->jsstr );
 			} else {
 
-				JL_Alloc(tmp, length + 1);
+				tmp = static_cast<jschar*>(jl_malloc(sizeof(jschar) * (length +1)));
 				JL_ASSERT( tmp );
 				memcpy(tmp, _inner->jsstr, length * 2);
 				_inner->jsstr = tmp;
@@ -989,7 +989,7 @@ class JLStr {
 					*--tmp = (unsigned char)*--src;
 			} else {
 
-				JL_Alloc(tmp, length + 1);
+				tmp = static_cast<jschar*>(jl_malloc(sizeof(jschar) * (length +1)));
 				JL_ASSERT( tmp );
 				tmp[length] = 0;
 				_inner->jsstr = tmp;
@@ -1012,11 +1012,12 @@ class JLStr {
 
 			if ( _inner->strFlags & OWN ) {
 
-				JL_Realloc(_inner->str, length + 1);
+				_inner->str = static_cast<char*>(jl_realloc(_inner->str, sizeof(char) * (length +1)));
 				JL_ASSERT( _inner->str );
 			} else {
 
-				JL_Alloc(tmp, length + 1);
+				//JL_Alloc(tmp, length + 1);
+				tmp = static_cast<char*>(jl_malloc(sizeof(char) * (length +1)));
 				JL_ASSERT( tmp );
 				memcpy(tmp, _inner->str, length);
 				_inner->str = tmp;
@@ -1038,7 +1039,7 @@ class JLStr {
 				_inner->str[length] = 0;
 			} else {
 
-				JL_Alloc(tmp, length + 1);
+				tmp = static_cast<char*>(jl_malloc(sizeof(char) * (length +1)));
 				JL_ASSERT( tmp );
 				tmp[length] = 0;
 				_inner->str = tmp;
@@ -1956,7 +1957,7 @@ JL_JSArrayToBuffer( JSContext *cx, JSObject *arrObj, JLStr *str ) {
 	JL_CHK( JS_GetArrayLength(cx, arrObj, &length) );
 
 	jschar *buf;
-	JL_CHK( JL_Alloc(buf, length + 1) );
+	buf = static_cast<jschar*>(jl_malloc(sizeof(jschar) * (length +1)));
 	buf[length] = 0;
 
 	jsval elt;
@@ -2450,7 +2451,7 @@ JL_CallFunctionVA( JSContext *cx, JSObject *obj, const jsval &functionValue, jsv
 	for ( uintN i = 1; i <= argc; i++ )
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
-	js::AutoArrayRooter tvr(cx, argc+1, argv); // (TBD) check if it is needed as conservative GC scans the stacks and meed alloca memory
+//	js::AutoArrayRooter tvr(cx, argc+1, argv); // (TBD) check if it is needed as conservative GC scans the stacks and meed alloca memory
 	argv[0] = JSVAL_NULL; // the rval
 	JL_S_ASSERT_FUNCTION( functionValue );
 	JSBool st;
@@ -2472,7 +2473,7 @@ JL_CallFunctionNameVA( JSContext *cx, JSObject *obj, const char* functionName, j
 	for ( uintN i = 1; i <= argc; i++ )
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
-	js::AutoArrayRooter tvr(cx, argc+1, argv);
+//	js::AutoArrayRooter tvr(cx, argc+1, argv);
 	argv[0] = JSVAL_NULL; // the rval
 	JSBool st = JS_CallFunctionName(cx, obj, functionName, argc, argv+1, argv); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
 	JL_CHK( st );

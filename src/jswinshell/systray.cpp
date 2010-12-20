@@ -433,8 +433,11 @@ DEFINE_FINALIZE() {
 	CloseHandle(pv->event);
 	DeleteCriticalSection(&pv->cs);
 	
-	while ( !jl::QueueIsEmpty(&pv->msgQueue) )
-		jl_free(jl::QueuePop(&pv->msgQueue));
+	if ( !JL_GetHostPrivate(cx)->canSkipCleanup ) { // do not cleanup in unsafe mode ?
+
+		while ( !jl::QueueIsEmpty(&pv->msgQueue) )
+			jl_free(jl::QueuePop(&pv->msgQueue));
+	}
 
 	FreePopupMenuRoots(cx, obj);
 

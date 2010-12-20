@@ -12,7 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-extern bool _odeFinalization;
 
 #define SLOT_GEOM_SURFACEPARAMETER 0
 #define SLOT_GEOM_CONTACT_FUNCTION 1

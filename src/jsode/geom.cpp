@@ -66,10 +66,7 @@ void FinalizeGeom(JSContext *cx, JSObject *obj) {
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	if ( !geomId )
 		return;
-//	if ( !ode::dGeomGetBody(geomId) || _odeFinalization ) // geom is lost
-//		ode::dGeomDestroy(geomId);
-//	else
-		ode::dGeomSetData(geomId, NULL);
+	ode::dGeomSetData(geomId, NULL);
 }
 
 

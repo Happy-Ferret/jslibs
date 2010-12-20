@@ -238,6 +238,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\jsstd.h"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>

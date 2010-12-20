@@ -26,7 +26,7 @@ void FinalizeJoint(JSContext *cx, JSObject *obj) {
 	JS_free(cx, ode::dJointGetFeedback(jointId)); // NULL is supported
 	ode::dJointSetFeedback(jointId, NULL);
 	ode::dJointSetData(jointId, NULL);
-	if ( ode::dJointGetNumBodies(jointId) == 0 /*|| _odeFinalization*/ ) // joint is lost (limbo).
+	if ( ode::dJointGetNumBodies(jointId) == 0 ) // joint is lost (limbo).
 		ode::dJointDestroy(jointId);
 }
 

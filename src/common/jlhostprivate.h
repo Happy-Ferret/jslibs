@@ -50,6 +50,7 @@ struct HostPrivate {
 	jl::Queue registredNativeClasses;
 	JSClass *stringObjectClass;
 	jl_allocators_t alloc;
+	bool canSkipCleanup; // allows modules to skip the memory cleanup phase.
 	int camelCase;
 	jsid ids[LAST_JSID];
 	ClassProtoCache classProtoCache[1<<MAX_CLASS_PROTO_CACHE_BIT]; // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.

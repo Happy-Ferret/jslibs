@@ -261,7 +261,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	JL_CHK( InitJslibsModule(cx, id)  );
 
 	ModulePrivate *mpv;
-	mpv = (ModulePrivate*)jl_malloc( sizeof(ModulePrivate) );
+	mpv = (ModulePrivate*)jl_malloc(sizeof(ModulePrivate));
 	JL_S_ASSERT_ALLOC( mpv );
 	JL_CHKM( JL_SetModulePrivate(cx, _moduleId, mpv), "Module id already in use." );
 	
@@ -296,20 +296,24 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	JL_BAD;
 }
 
+
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 	JS_SetNewScriptHookProc(JL_GetRuntime(cx), NULL, NULL);
 	JS_SetDestroyScriptHookProc(JL_GetRuntime(cx), NULL, NULL);
 
-	jl::Queue *scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;
-	for ( jl::QueueCell *it = jl::QueueBegin(scriptFileList); it; it = jl::QueueNext(it) ) {
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
+		return JS_TRUE;
 
-		jl::Queue *scriptList = (jl::Queue*)jl::QueueGetData(it);
+	jl::Queue *scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;
+
+	while ( !jl::QueueIsEmpty(scriptFileList) ) {
+
+		jl::Queue *scriptList = (jl::Queue*)jl::QueuePop(scriptFileList);
 		jl::QueueDestruct(scriptList);
 	}
 
 	jl_free(JL_GetModulePrivate(cx, _moduleId));
 
 	return JS_TRUE;
-//	JL_BAD;
 }

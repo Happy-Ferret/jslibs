@@ -31,7 +31,7 @@ DEFINE_FINALIZE() {
 		return;
 	ode::dGeomSetData(geomId, NULL);
 	ode::dTriMeshDataID triMeshDataID = ode::dGeomTriMeshGetData(geomId);
-	if ( !ode::dGeomGetBody(geomId) /*|| _odeFinalization*/ ) // geom is lost
+	if ( !ode::dGeomGetBody(geomId) ) // geom is lost
 		ode::dGeomDestroy(geomId);
 	ode::dGeomTriMeshDataDestroy(triMeshDataID);
 }

@@ -12,13 +12,20 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#include "jslibsModule.h"
+#include "jlhelper.h" // see InitJslibsModule()
+#include "jlalloc.h"
+
+
 // (TBD) Should we create a new module for so few symbols ?
 
-#include "jslibsModule.h"
-#include "jlhelper.h"
 
 // by default, we run in unsafe mode.
 DLLLOCAL bool _unsafeMode = true;
+
+// set moduleId as uninitialized.
+DLLLOCAL uint32_t _moduleId = 0;
+
 
 // initialize with default allocators
 jl_malloc_t jl_malloc = malloc;
@@ -28,40 +35,35 @@ jl_realloc_t jl_realloc = realloc;
 jl_msize_t jl_msize = msize;
 jl_free_t jl_free = free;
 
+
+// external libraries are using these symbols
 EXTERN_C void* jl_malloc_fct( size_t size ) { return jl_malloc(size); }
 EXTERN_C void* jl_calloc_fct( size_t num, size_t size ) { return jl_calloc(num, size); }
-EXTERN_C void* jl_mamalign_fct( size_t alignment, size_t size ) { return jl_memalign(alignment, size); }
+EXTERN_C void* jl_memalign_fct( size_t alignment, size_t size ) { return jl_memalign(alignment, size); }
 EXTERN_C void* jl_realloc_fct( void *ptr, size_t size ) { return jl_realloc(ptr, size); }
 EXTERN_C size_t jl_msize_fct( void *ptr ) { return jl_msize(ptr); }
 EXTERN_C void jl_free_fct( void *ptr ) { jl_free(ptr); }
-
-DLLLOCAL uint32_t _moduleId = 0;
 
 
 JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
 
 	// printf("id=%u / &_moduleId=%p / _moduleId=%u\n", &_moduleId, _moduleId, id);
-
 	HostPrivate *pv = JL_GetHostPrivate(cx);
-
 	_unsafeMode = pv ? pv->unsafeMode : _unsafeMode;
-
 	JL_S_ASSERT( !pv || pv->hostPrivateVersion == 0 || pv->hostPrivateVersion == JL_HOST_PRIVATE_VERSION, "Incompatible host.");
-
 	JL_ASSERT( _moduleId == 0 || _moduleId == id );
 	if ( _moduleId == 0 )
 		_moduleId = id;
-
 	jl_malloc = pv && pv->alloc.malloc ? pv->alloc.malloc : jl_malloc; // ie. if we have a host and if the host has custom allocators.
 	jl_calloc = pv && pv->alloc.calloc ? pv->alloc.calloc : jl_calloc;
 	jl_memalign = pv && pv->alloc.memalign ? pv->alloc.memalign : jl_memalign;
 	jl_realloc = pv && pv->alloc.realloc ? pv->alloc.realloc : jl_realloc;
 	jl_msize = pv && pv->alloc.msize ? pv->alloc.msize : jl_msize;
 	jl_free = pv && pv->alloc.free ? pv->alloc.free : jl_free;
-
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 /* not needed
 #if !defined NO_DllMain && defined XP_WIN && defined _LIB

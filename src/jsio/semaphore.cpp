@@ -46,7 +46,7 @@ DEFINE_FINALIZE() {
 		status = PR_DeleteSemaphore(pv->name);
 
 	JS_free(cx, pv);
-	JL_SetPrivate(cx, JL_OBJ, NULL);
+//	JL_SetPrivate(cx, JL_OBJ, NULL);
 }
 
 

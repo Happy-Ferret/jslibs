@@ -103,7 +103,7 @@ namespace jl {
 			if ( offset + length > _length ) {
 
 				_length = _length * (exact ? 1 : 2) + length;
-				JL_Realloc(_start, _length); // _start = (uint8_t*)jl_realloc(_start, _length); // if ( _start == NULL ) jl_alloc(_length)
+				_start = static_cast<uint8_t*>(jl_realloc(_start, sizeof(uint8_t) * _length));
 				if ( _start == NULL )
 					return false;
 				_pos = _start + offset;

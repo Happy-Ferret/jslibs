@@ -42,7 +42,7 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id)  );
 
@@ -71,9 +71,13 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	JL_BAD;
 }
 
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+JSBool ModuleRelease(JSContext *cx) {
 
 	JsioPrivate *mpv = (JsioPrivate*)JL_GetModulePrivate(cx, _moduleId);
+
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
+		return JS_TRUE;
+
 	if ( mpv->peCancel != NULL )
 		PR_DestroyPollableEvent(mpv->peCancel);
 
@@ -83,7 +87,7 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 //	JL_BAD;
 }
 
-EXTERN_C DLLEXPORT void ModuleFree() {
+void ModuleFree() {
 
 	PR_AtomicDecrement(&instanceCount);
 	if ( instanceCount == 0 && PR_Initialized() ) {

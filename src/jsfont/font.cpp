@@ -54,7 +54,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	if ( pv == NULL )
 		return;
 	FT_Done_Face(pv->face);
-	JL_SetPrivate(cx, obj, NULL);
+//	JL_SetPrivate(cx, obj, NULL);
 	jl_free(pv);
 }
 

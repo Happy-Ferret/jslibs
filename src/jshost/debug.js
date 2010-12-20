@@ -1,13 +1,10 @@
-LoadModule('jsstd'); 
-LoadModule('jsio'); 
-
 LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();
 //RunJsircbot(false); throw 0;
-RunQATests('-rep 1 -flags f -loop -gcZeal 0 -q -exclude jstask|jssqlite');
-//  -loopForever -flags f -gcZeal 0 -nogcB
- //  Serialization|ProcessEvents
+RunQATests('-rep 1 -q -nogcB -exclude jstask|jssqlite');
+//  -loopForever -flags f -gcZeal 0 -nogcB -loop -gcZeal 0 
+//  Serialization|ProcessEvents
 //Exec('../../perfset.js'); throw 0; // -perf perfset.js 
 
 

@@ -300,7 +300,8 @@ function LaunchTests(itemList, cfg) {
 
 	CollectGarbage();
 
-	testIndex = 0;
+	var testIndex = 0;
+	var testCount = 0;
 
 	for (;;) {
 
@@ -324,6 +325,7 @@ function LaunchTests(itemList, cfg) {
 				var t0 = TimeCounter();
 				for ( var i = cfg.repeatEachTest; i && !endSignal ; --i ) {
 
+					++testCount;
 					void cx.item.func(qaapi);
 					if ( exportFile ) {
 
@@ -349,6 +351,9 @@ function LaunchTests(itemList, cfg) {
 			cfg.quiet || Print('\n');
 
 		}
+
+		if ( cfg.stopAfterNTests && (testCount >= cfg.stopAfterNTests) )
+			break;
 
 		if ( cfg.stopAfterNIssues && (globalIssueCount >= cfg.stopAfterNIssues) )
 			break;
@@ -576,6 +581,7 @@ function Main() {
 		nogcBetweenTests:false, 
 		nogcDuringTests:false, 
 		stopAfterNIssues:0, 
+		stopAfterNTests:0, 
 		logFilename:'', 
 		sleepBetweenTests:0,
 		quiet:false, 

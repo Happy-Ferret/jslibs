@@ -26,8 +26,6 @@ DECLARE_CLASS( Vector )
 
 #include "jslibsModule.cpp"
 
-bool _odeFinalization = false;
-
 
 #ifdef XP_WIN
 // The following avoid the need for ODE to be linked with User32.lib ( MessageBox* symbol is used in ../ode/src/ode/src/error.cpp )
@@ -42,7 +40,8 @@ void messageHandler(int errnum, const char *msg, va_list ap) {
 
 	char text[1024];
 	int len = vsprintf(text, msg, ap);
-//	vprintf(msg, ap);
+	//vprintf(msg, ap);
+	write(2, text, len); // (TBD) enhance this !
 
 	// ThrowOdeException(cx, ...
 
@@ -128,13 +127,20 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
-	_odeFinalization = true;
 	return JS_TRUE;
 }
 
 EXTERN_C DLLEXPORT void ModuleFree() {
 
+	ode::dSetErrorHandler(0);
+	ode::dSetDebugHandler(0);
+	ode::dSetMessageHandler(0);
+
 	ode::dCloseODE();
+
+	ode::dSetAllocHandler(0);
+	ode::dSetReallocHandler(0);
+	ode::dSetFreeHandler(0);
 }
 
 // User guide: http://www.ode.org/ode-latest-userguide.html

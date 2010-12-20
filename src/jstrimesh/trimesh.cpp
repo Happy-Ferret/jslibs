@@ -38,6 +38,9 @@ BEGIN_CLASS( Trimesh ) // Start the definition of the class. It defines some sym
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
+		return;
+
 	Surface *pv = (Surface*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;

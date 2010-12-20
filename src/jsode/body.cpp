@@ -89,11 +89,8 @@ DEFINE_FINALIZE() {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	if ( !bodyId )
 		return;
-//	if ( _odeFinalization )
-//		ode::dBodyDestroy(bodyId);
-//	else
-		ode::dBodySetMovedCallback(bodyId, NULL);
-		ode::dBodySetData(bodyId, NULL);
+	ode::dBodySetMovedCallback(bodyId, NULL);
+	ode::dBodySetData(bodyId, NULL);
 }
 
 /**doc

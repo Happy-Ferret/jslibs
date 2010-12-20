@@ -28,15 +28,30 @@ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Space )
 
-
-/* This class cannot have a Finalize ( see readme.txt )
+/* WARNING: a previous comment says: This class cannot have a Finalize ( see readme.txt )
+Everything that may be GC SHOULD not have a Finalize:
+- Body, Joint, Space, Geom
+But these functions should have a Destroy function
+*/
 DEFINE_FINALIZE() {
 
-	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(cx,obj);
-	if ( spaceId != NULL )
-		ode::dSpaceDestroy(spaceId);
-}
+//	if ( obj == JL_THIS_PROTOTYPE )
+//		return;
+	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(cx, obj);
+	if ( spaceId == NULL )
+		return;
+/*
+	int numGeom = ode::dSpaceGetNumGeoms(spaceId);
+	for ( int i = 0; i < numGeom; ++i ) {
+		
+		ode::dGeomID geomId = dSpaceGetGeom(spaceId, i);
+		ode::dSpaceRemove(spaceId, geomId);
+	}
 */
+//	ode::dSpaceClean(spaceId);
+//	ode::dSpaceDestroy(spaceId);
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -54,19 +69,50 @@ DEFINE_CONSTRUCTOR() {
 		parentSpace = 0;
 //	ode::dSpaceID spaceId = ode::dSimpleSpaceCreate(parentSpace);
 	ode::dSpaceID spaceId = ode::dHashSpaceCreate(parentSpace);
+	ode::dSpaceSetCleanup(spaceId, 0);
 	JL_SetPrivate(cx, obj, spaceId); // dSimpleSpaceCreate / dHashSpaceCreate / dQuadTreeSpaceCreate
-	// ode::dHashSpaceSetLevels(spaceId,
+//	ode::dHashSpaceSetLevels(spaceId,
 	// (TBD) use this
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
+/**doc
+=== Methods ===
+**/
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME()
+**/
+DEFINE_FUNCTION( Destroy ) {
+	
+	JL_DEFINE_FUNCTION_OBJ;
+
+	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(spaceId);
+	if ( spaceId != NULL ) {
+
+		ode::dSpaceClean(spaceId);
+		ode::dSpaceDestroy(spaceId);
+	}
+	JL_SetPrivate(cx, obj, NULL);
+
+	*JL_RVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
-//	HAS_FINALIZE
+	HAS_FINALIZE
 	HAS_PRIVATE
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( Destroy )
+	END_FUNCTION_SPEC
 
 END_CLASS

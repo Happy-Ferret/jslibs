@@ -30,14 +30,8 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 		case SQLITE_FLOAT:
 			JL_CHK( JL_NativeToJsval(cx, sqlite3_value_double(value), rval) );
 			break;
-		case SQLITE_BLOB: {
-				int length = sqlite3_value_bytes(value);
-				uint8_t *data = (uint8_t*)JS_malloc(cx, length +1);
-				JL_CHK( data );
-				data[length] = 0;
-				memcpy(data, sqlite3_value_blob(value), length);
-				JL_CHK( JL_NewBlobCopyN(cx, data, length, rval) );
-			}
+		case SQLITE_BLOB:
+			JL_CHK( JL_NewBlobCopyN(cx, sqlite3_value_blob(value), sqlite3_value_bytes(value), rval) );
 			break;
 		case SQLITE_NULL:
 			*rval = JSVAL_NULL;
@@ -445,7 +439,6 @@ DEFINE_FUNCTION( Row ) {
 	JL_S_ASSERT_RESOURCE( pStmt );
 
 	JL_CHK( DoStep(cx, obj, JL_RVAL) ); // if something goes wrong in Result_step ( error report has already been set )
-
 	if ( *JL_RVAL == JSVAL_FALSE ) { // the statement has finished executing successfully
 
 		*JL_RVAL = JSVAL_VOID; // return undefined

@@ -395,13 +395,16 @@ DEFINE_FINALIZE() {
 //	if ( obj == JL_THIS_PROTOTYPE )
 //		return;
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
+		return;
+
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	if ( !tex )
 		return;
 
 	TextureFreeBuffers(cx, tex);
 	JS_free(cx, tex);
-	JL_SetPrivate(cx, obj, NULL);
+//	JL_SetPrivate(cx, obj, NULL);
 }
 
 /**doc

@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "jsstd.h"
 
 #include "jslibsModule.cpp"
 
@@ -37,6 +38,17 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	JL_CHK( InitJslibsModule(cx, id)  );
 
+	ModulePrivate *mpv;
+	mpv = (ModulePrivate*)jl_malloc(sizeof(ModulePrivate));
+	JL_S_ASSERT_ALLOC( mpv );
+	JL_CHKM( JL_SetModulePrivate(cx, _moduleId, mpv), "Module id already in use." );
+
+	mpv->objIdList = NULL;
+	mpv->lastObjectId = 0;
+	mpv->objectIdAllocated = 0;
+	mpv->prevObjectIdGCCallback = NULL;
+	mpv->prevJSGCCallback = NULL;
+
 	INIT_STATIC();
 	INIT_CLASS( Map );
 	INIT_CLASS( OperationLimit ); // exception
@@ -47,4 +59,21 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	return JS_TRUE;
 	JL_BAD;
+}
+
+
+EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
+		return JS_TRUE;
+
+	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
+
+	if ( mpv->objIdList )
+		jl_free(mpv->objIdList);
+
+	// (TBD) need to restore mpv->prevObjectIdGCCallback ?
+
+	jl_free(mpv);
+	return JS_TRUE;
 }

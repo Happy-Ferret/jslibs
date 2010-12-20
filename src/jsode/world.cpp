@@ -255,6 +255,9 @@ DEFINE_FINALIZE() {
 		// ode::dJointSetData(jointIt, NULL);
 	}
 
+	ode::dSpaceClean(pv->spaceId);
+	ode::dSpaceDestroy(pv->spaceId);
+
 	ode::dWorldDestroy(pv->worldId);
 	JS_free(cx, pv);
 }
@@ -285,6 +288,8 @@ DEFINE_CONSTRUCTOR() {
 	JSObject *spaceObject = JS_ConstructObject(cx, JL_CLASS(Space), JL_PROTOTYPE(cx, Space), NULL); // no arguments = create a topmost space object
 	JL_CHK( spaceObject );
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_WORLD_SPACE, OBJECT_TO_JSVAL(spaceObject)) );
+	pv->spaceId = (ode::dSpaceID)JL_GetPrivate(cx, spaceObject);
+
 
 	JSObject *surfaceParameters = JS_ConstructObject(cx, JL_CLASS(SurfaceParameters), JL_PROTOTYPE(cx, SurfaceParameters), NULL);
 	JL_CHK( surfaceParameters );

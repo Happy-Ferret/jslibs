@@ -604,12 +604,14 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 }
 
 
-JSBool DestroyHost( JSContext *cx ) {
+JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 	JSRuntime *rt = JL_GetRuntime(cx);
 
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	JL_S_ASSERT( pv, "Invalid host context private." );
+
+	pv->canSkipCleanup = skipCleanup;
 
 	if ( JLThreadOk(pv->watchDogThread) ) {
 
@@ -863,6 +865,7 @@ static jl_memalign_t base_memalign;
 static jl_realloc_t base_realloc;
 static jl_msize_t base_msize;
 static jl_free_t base_free;
+
 
 // block-to-free chain
 static void *head;

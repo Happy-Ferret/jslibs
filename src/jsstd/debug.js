@@ -1,11 +1,22 @@
+if ( 1 ) {
+
+	LoadModule('jsstd');
+	LoadModule('jsio');
+	LoadModule('jsdebug');
+
+//	Test();
+
+	throw 0;
+}
+
 
 LoadModule('jsstd'); Exec('../common/tools.js');
 // var QA = FakeQAApi;
 // RunLocalQAFile();
 //RunJsircbot(false); throw 0;
 //RunQATests('-perf perftest.js -exclude jstask');
-RunQATests('-rep 30 -gczeal 2 -exclude jstask expand');
-
+RunQATests('-rep 1 -gczeal 0 -exclude jstask');
+// 17 26 35
 
 Halt();
 

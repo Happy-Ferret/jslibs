@@ -303,7 +303,7 @@ bad:
 	JLMutexRelease(pv->mutex); // ++
 
 	if ( cx )
-		DestroyHost(cx);
+		DestroyHost(cx, true);
 	JLThreadExit(0);
 	return 0;
 }

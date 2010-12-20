@@ -69,7 +69,7 @@ public:
 
 		JS_RemoveValueRoot(_cx, &_arg);
 		JS_RemoveValueRoot(_cx, &_rval);
-		DestroyHost(_cx);
+		DestroyHost(_cx, true);
 	}
 
 	JsVst( audioMasterCallback audioMaster ) : AudioEffectX(audioMaster, 0, 0), JSApiHelper(_cx) {

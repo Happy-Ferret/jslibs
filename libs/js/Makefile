@@ -12,6 +12,8 @@ else
 	_CFLAGS += -m32
 endif
 
+# _CFLAGS += -DJS_GC_ZEAL=1
+
 TARGET_FILES=$(INT_DIR)dist/bin/*.{so,dll}
 
 ./src/configure:

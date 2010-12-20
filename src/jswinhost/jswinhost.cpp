@@ -227,7 +227,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 
 	JS_SetGCCallback(cx, NULL);
-	DestroyHost(cx);
+	DestroyHost(cx, disabledFree);
 	cx = NULL;
 	JS_ShutDown();
 
@@ -240,7 +240,7 @@ bad:
 
 		disabledFree = true;
 		JS_SetGCCallback(cx, NULL);
-		DestroyHost(cx);
+		DestroyHost(cx, disabledFree);
 	}
 	JS_ShutDown();
 
