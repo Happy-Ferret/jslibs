@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "jlhelper.cpp"
 
 #include "static.h"
 //#include "sound.h"

@@ -2,7 +2,7 @@ LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();
 //RunJsircbot(false); throw 0;
-RunQATests('-rep 1 -q -nogcB -exclude jstask|jssqlite');
+RunQATests('-rep 1 -q -nogcB -exclude jstask');
 //  -loopForever -flags f -gcZeal 0 -nogcB -loop -gcZeal 0 
 //  Serialization|ProcessEvents
 //Exec('../../perfset.js'); throw 0; // -perf perfset.js 
@@ -12,7 +12,7 @@ function makeLogger(obj) {
 
 	var proxy = Proxy.create({
 		get: function(rcvf, name) {
-			Print('get '+' '+name+' '+''+'\n');
+			Print('get '+' '+name+' '+''+'\n');(
 			return obj[name];
 		},
 		set: function(rcvf, name, val) {

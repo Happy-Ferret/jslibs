@@ -80,16 +80,49 @@
 #endif
 
 
+// from jstypes.h
+#if defined(_MSC_VER) && defined(_M_IX86)
+# define FASTCALL __fastcall
+#elif defined(__GNUC__) && defined(__i386__) && ((__GNUC__ >= 4) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4))
+# define FASTCALL __attribute__((fastcall))
+#else
+# define FASTCALL
+#endif
+
+
+// from jstypes.h
+#if defined __cplusplus
+# define INLINE inline
+#elif defined _MSC_VER
+# define INLINE __inline
+#elif defined __GNUC__
+# define INLINE __inline__
+#else
+# define INLINE inline
+#endif
+
+
+// from jstypes.h
+#ifndef ALWAYS_INLINE
+# if defined DEBUG
+#  define ALWAYS_INLINE INLINE
+# elif defined _MSC_VER
+#  define ALWAYS_INLINE __forceinline
+# elif defined __GNUC__
+#  define ALWAYS_INLINE __attribute__((always_inline)) INLINE
+# else
+#  define ALWAYS_INLINE JS_INLINE
+# endif
+#endif
+
 // trick. When an inline function is not static, then the compiler must assume that there may be calls from other source files; since a global symbol can be defined only once in any program,
 //        the function must not be defined in the other source files, so the calls therein cannot be integrated. Therefore, a non-static inline function is always compiled on its own in the usual fashion.
+
 
 #if defined(_MSC_VER)
 
 	#define DLLEXPORT __declspec(dllexport)
 	#define DLLLOCAL
-	#define FASTCALL __fastcall
-	#define ALWAYS_INLINE __forceinline
-	#define INLINE inline
 
 #elif defined(__GNUC__)
 
@@ -111,26 +144,10 @@
 	#define DLLEXPORT __attribute__ ((visibility("default")))
 	#define DLLLOCAL __attribute__ ((visibility("hidden")))
 
-	#if defined(__i386__) && ((__GNUC__ >= 4) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4))
-		#define FASTCALL __attribute__((fastcall))
-	#else
-		#define FASTCALL
-	#endif
-
-	#ifdef DEBUG
-		#define ALWAYS_INLINE __inline__
-		#define INLINE __inline__
-	#else
-		#define ALWAYS_INLINE __attribute__((always_inline)) __inline__
-		#define INLINE __inline__
-	#endif
-
 #else
 
 	#define DLLEXPORT
-	#define FASTCALL
 	#define DLLLOCAL
-	#define ALWAYS_INLINE
 
 #endif
 
@@ -149,7 +166,7 @@
 	#pragma warning(error : 4002) // too many actual parameters for macro 'XXX'
 
 	// Using STRICT to Improve Type Checking (http://msdn.microsoft.com/en-us/library/aa280394%28v=VS.60%29.aspx)
-	#define STRICT
+	#define STRICT 1
 
 	// see WinDef.h
 	#define NOMINMAX
@@ -369,12 +386,16 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
 
+#define JL_HASFLAGS(value, flags) \
+	(((value) & (flags)) == (flags))
+
 
 //template<class T>
 //static inline void JL_UNUSED(T) {};
 //#define JL_UNUSED(x) x __attribute__((unused))
 //#define JL_UNUSED(x) ((x) = (x))
-#define JL_UNUSED(x) ((void)(x))
+#define JL_UNUSED(x) \
+	((void)(x))
 
 #define JL_STATIC_ASSERT(cond) \
 	extern void jl_static_assert(int arg[(cond) ? 1 : -1])
@@ -573,7 +594,8 @@ namespace jl {
 //	return *(uint32_t*)cstr;
 //}
 
-static ALWAYS_INLINE uint32_t JL_CAST_CSTR_TO_UINT32( const char *cstr ) {
+static ALWAYS_INLINE uint32_t
+JL_CAST_CSTR_TO_UINT32( const char *cstr ) {
 
 	JL_ASSERT( cstr != NULL && !(cstr[0] && cstr[1] && cstr[2] && cstr[3] && cstr[4]) );
 	return
@@ -585,7 +607,8 @@ static ALWAYS_INLINE uint32_t JL_CAST_CSTR_TO_UINT32( const char *cstr ) {
 }
 
 
-static INLINE unsigned long int_sqrt(unsigned long x) {
+static INLINE unsigned long
+FASTCALL int_sqrt(unsigned long x) {
 
     register unsigned long op, res, one;
 
@@ -608,7 +631,8 @@ static INLINE unsigned long int_sqrt(unsigned long x) {
 }
 
 
-static INLINE int int_pow(int base, int exp) {
+static INLINE int
+FASTCALL int_pow(int base, int exp) {
 
 	int result = 1;
     while (exp) {
@@ -661,7 +685,8 @@ static ALWAYS_INLINE uint32_t JL_SvnRevToInt(const char *r) { // supports 9 digi
 //}
 
 
-INLINE void fpipe( FILE **read, FILE **write ) {
+INLINE void
+fpipe( FILE **read, FILE **write ) {
 
 	int readfd, writefd;
 #if defined(XP_WIN)
@@ -833,7 +858,8 @@ static ALWAYS_INLINE void Network64ToHost64( void *pval ) {
 }
 
 
-static INLINE char* IntegerToString(int val, int base) {
+static INLINE char*
+FASTCALL IntegerToString(int val, int base) {
 
 	bool neg;
 	static char buf[64]; // (TBD) overflow warning !
@@ -865,7 +891,8 @@ static ALWAYS_INLINE void SleepMilliseconds(uint32_t ms) {
 }
 
 
-static INLINE double AccurateTimeCounter() {
+static INLINE double
+FASTCALL AccurateTimeCounter() {
 
 #if defined(XP_WIN)
 	static volatile LONGLONG initTime = 0; // initTime helps in avoiding precision waste.

@@ -11,3 +11,17 @@ LoadModule('jsode');
   var floor = new GeomPlane(world.space);
   floor.body = world.env;
   var a = floor.body;
+
+
+/// memory leak test [rmtf]
+
+	var w = new World();
+	var j1 = new JointFixed(w);
+	j1.body1 = new Body(w);
+	j1.body2 = w.env;
+	var g = new GeomBox(w.space);
+	g.body = j1.body1;
+
+	new GeomBox(w.space);
+	new GeomBox(w.space);
+	new GeomBox(w.space);

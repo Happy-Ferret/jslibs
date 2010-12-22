@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+
 #include <cstring>
 
 #include "../host/host.h"
@@ -40,7 +41,7 @@ private:
 	jsval _arg, _rval;
 
 	void ManageException() {
-	
+
 		if ( JL_IsExceptionPending(_cx) ) {
 
 			jsval fval, rval, ex;
@@ -56,7 +57,7 @@ private:
 			}
 
 			if ( JL_IsExceptionPending(_cx) ) {
-				
+
 				JS_ReportPendingException(_cx);
 				JS_ClearPendingException(_cx);
 			}
@@ -98,7 +99,7 @@ public:
 
 
 
-//		const char *pdir = (const char*)this->getDirectory(); // FSSpec on MAC, else char* 
+//		const char *pdir = (const char*)this->getDirectory(); // FSSpec on MAC, else char*
 //		char scriptFileName[PATH_MAX +1];
 //		strcpy( scriptFileName, pdir );
 //		strcat( scriptFileName, "vst.js" );
@@ -106,13 +107,13 @@ public:
 
 	// P->H
 	void SetNumPrograms( VstInt32 numPrograms ) {
-	
+
 		cEffect.numPrograms = numPrograms;
 	}
 
 	// P->H
 	void SetNumParams( VstInt32 numParams ) {
-	
+
 		cEffect.numParams = numParams;
 	}
 
@@ -124,7 +125,7 @@ private:
 		try {
 
 			jsval fval = GetProperty(vstPlugin, "dispatcher");
-			
+
 			// for DEBUG only ?
 			if ( JsvalIsFunction(fval) ) {
 
@@ -222,7 +223,7 @@ private:
 
 				_rval = FunctionCall0(vstPlugin, fval);
 				if ( JSVAL_IS_INT(_rval) ) {
-					
+
 					int cat = JSVAL_TO_INT(_rval);
 					if ( cat < 0 || cat >= kPlugCategMaxCount )
 						return kPlugCategUnknown;
@@ -248,7 +249,7 @@ private:
 		return AudioEffectX::getProductString(text);
 	}
 
-	// H->P Fill text with a string identifying the vendor.  text 	A string up to 64 chars 
+	// H->P Fill text with a string identifying the vendor.  text 	A string up to 64 chars
 	// (TBD) move to a class variable
 	bool getVendorString(char* text) {
 
@@ -276,7 +277,7 @@ private:
 	}
 
 
-	// H->P Fill text with a string identifying the effect. 
+	// H->P Fill text with a string identifying the effect.
 	// (TBD) move to a class variable
 	bool getEffectName(char* name) {
 
@@ -289,23 +290,23 @@ private:
 	}
 
 
-	// H->P 
+	// H->P
 	void processReplacing(float** inputs, float** outputs, VstInt32 sampleFrames) {
 /*
 		float *in1 = inputs[0];
 		float *in2 = inputs[1];
-		float *out1 = outputs[0]; 
-		float *out2 = outputs[1]; 
-		while (--sampleFrames >= 0) { 
+		float *out1 = outputs[0];
+		float *out2 = outputs[1];
+		while (--sampleFrames >= 0) {
 
-			(*out1++) = (*in1++); 
-			(*out2++) = (*in2++); 
-		} 
+			(*out1++) = (*in1++);
+			(*out2++) = (*in2++);
+		}
 */
 	}
 
 
-	// H->P 
+	// H->P
 	VstInt32 processEvents(VstEvents* events) {
 
 		try {
@@ -357,7 +358,7 @@ private:
 
 	// H->P Called when a parameter changed.
 	void setParameter(VstInt32 index, float value) {
-		
+
 		try {
 			jsval fval = GetProperty(vstPlugin, "setParameter");
 			if ( JsvalIsFunction(fval) )
@@ -389,9 +390,9 @@ private:
 		return AudioEffectX::string2parameter(index, text);
 	}
 
-	// H->P 
+	// H->P
 	float getParameter(VstInt32 index) {
-		
+
 		try {
 			jsval fval = GetProperty(vstPlugin, "getParameter");
 			if ( JsvalIsFunction(fval) )
@@ -410,12 +411,12 @@ private:
 
 				JSObject *obj = JS_NewObject(_cx, NULL, NULL, NULL);
 				FunctionCall1(vstPlugin, fval, OBJECT_TO_JSVAL(obj));
-				
+
 				p->flags = 0;
 
 				CopyJsvalToString(AssertDefined(GetProperty(obj, "label")), p->label, kVstMaxLabelLen);
 				CopyJsvalToString(AssertDefined(GetProperty(obj, "shortLabel")), p->shortLabel, kVstMaxShortLabelLen);
-// (TBD) finish !			
+// (TBD) finish !
 			}
 
 		} catch( JsException ) { ManageException(); }
@@ -433,7 +434,7 @@ private:
 		return AudioEffectX::getParameterLabel(index, label);
 	}
 
-	// H->P Stuff text with a string representation ("0.5", "-3", "PLATE", etc...) of the value of parameter index. Limited to kVstMaxParamStrLen. 
+	// H->P Stuff text with a string representation ("0.5", "-3", "PLATE", etc...) of the value of parameter index. Limited to kVstMaxParamStrLen.
 	void getParameterDisplay(VstInt32 index, char *text) {
 
 		try {
@@ -444,7 +445,7 @@ private:
 		return AudioEffectX::getParameterDisplay(index, text);
 	}
 
-	// H->P Stuff text with the name ("Time", "Gain", "RoomType", etc...) of parameter index. Limited to kVstMaxParamStrLen. 
+	// H->P Stuff text with the name ("Time", "Gain", "RoomType", etc...) of parameter index. Limited to kVstMaxParamStrLen.
 	void getParameterName(VstInt32 index, char* text) {
 
 		try {
@@ -456,9 +457,9 @@ private:
 	}
 
 
-	// H->P Return the index to the current program. 
+	// H->P Return the index to the current program.
 	VstInt32 getProgram() {
-		
+
 		try {
 			jsval fval = GetProperty(vstPlugin, "getProgram");
 			if ( JsvalIsFunction(fval) )
@@ -479,7 +480,7 @@ private:
 	}
 
 	bool beginSetProgram() {
-	
+
 		try {
 			jsval fval = GetProperty(vstPlugin, "beginSetProgram");
 			if ( JsvalIsFunction(fval) )
@@ -489,7 +490,7 @@ private:
 	}
 
 	bool endSetProgram() {
-	
+
 		try {
 			jsval fval = GetProperty(vstPlugin, "endSetProgram");
 			if ( JsvalIsFunction(fval) )
@@ -501,7 +502,7 @@ private:
 
 	// H->P Stuff the name field of the current program with name. Limited to kVstMaxProgNameLen. The program name is displayed in the rack, and can be edited by the user.
 	void setProgramName(char *name) {
-	
+
 		try {
 			jsval fval = GetProperty(vstPlugin, "setProgramName");
 			if ( JsvalIsFunction(fval) )
@@ -559,7 +560,7 @@ private:
 
 	// H->P For 'soft-bypass' (this could be automated (in Audio Thread) that why you could NOT call iochanged (if needed) in this function, do it in fxidle).
 	bool setBypass(bool onOff) {
-		
+
 		try {
 			jsval fval = GetProperty(vstPlugin, "setBypass");
 			if ( JsvalIsFunction(fval) )
@@ -594,7 +595,7 @@ private:
 
 	// Plugin Return true if the #MidiProgramNames, #MidiKeyNames or #MidiControllerNames had changed on this MIDI channel.
 	bool hasMidiProgramsChanged(VstInt32 channel) {
-		
+
 		try {
 			jsval fval = GetProperty(vstPlugin, "hasMidiProgramsChanged");
 			if ( JsvalIsFunction(fval) )
@@ -635,7 +636,7 @@ private:
 
 
 	VstInt32 getCurrentMidiProgram(VstInt32 channel, MidiProgramName* currentProgram)  {
-		
+
 		try {
 			jsval fval = GetProperty(vstPlugin, "getCurrentMidiProgram");
 			if ( JsvalIsFunction(fval) ) {
@@ -657,7 +658,7 @@ private:
 	// return: number of used categoryIndexes. if 0 is returned, no MidiProgramCategories supported.
 	VstInt32 getMidiProgramCategory(VstInt32 channel, MidiProgramCategory* category) {
 
-// [ ['name'], 
+// [ ['name'],
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getMidiProgramCategory");
@@ -666,7 +667,7 @@ private:
 //				JSObject *jsMpn = JS_NewObject(_cx, NULL, NULL, NULL);
 
 				_rval = FunctionCall2(vstPlugin, fval, JL_JsvalToNative(channel), 	JL_JsvalToNative(category->thisCategoryIndex) );
-				
+
 				category->flags = 0;
 
 				if ( JSVAL_IS_VOID(_rval) ) {
@@ -679,7 +680,7 @@ private:
 ???
 
 // http://asseca.com/vst-24-specs/efGetMidiProgramCategory.html
-				return 1; 
+				return 1;
 			}
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::getMidiProgramCategory(channel, category);
@@ -718,7 +719,7 @@ private:
 
 
 	void setBlockSize(VstInt32 blockSize) {
-	
+
 		try {
 			jsval fval = GetProperty(vstPlugin, "setBlockSize");
 			if ( JsvalIsFunction(fval) )
@@ -771,12 +772,12 @@ private:
 
 	bool getSpeakerArrangement(VstSpeakerArrangement** pluginInput, VstSpeakerArrangement** pluginOutput) {
 
-		return AudioEffectX::getSpeakerArrangement(pluginInput, pluginOutput);	
+		return AudioEffectX::getSpeakerArrangement(pluginInput, pluginOutput);
 	}
-	
+
 	bool setSpeakerArrangement(VstSpeakerArrangement* pluginInput, VstSpeakerArrangement* pluginOutput) {
 
-		return AudioEffectX::setSpeakerArrangement(pluginInput, pluginOutput);	
+		return AudioEffectX::setSpeakerArrangement(pluginInput, pluginOutput);
 	}
 };
 
@@ -805,7 +806,7 @@ DEFINE_PROPERTY( directory ) {
 	JL_S_ASSERT_RESOURCE( vstPlugin );
 	void *dirName = vstPlugin->getDirectory();
 	if ( dirName != NULL ) {
-		
+
 		*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, (char*)dirName));
 	} else {
 
@@ -1191,7 +1192,7 @@ CONFIGURE_CLASS
 		CONST_INTEGER_SINGLE( kPlugCategRoomFx )			 // Delays and Reverbs
 		CONST_INTEGER_SINGLE( kPlugSurroundFx )			 // Dedicated surround processor
 		CONST_INTEGER_SINGLE( kPlugCategRestoration )	 // Denoiser, ...
-		CONST_INTEGER_SINGLE( kPlugCategOfflineProcess ) // Offline Process	
+		CONST_INTEGER_SINGLE( kPlugCategOfflineProcess ) // Offline Process
 		CONST_INTEGER_SINGLE( kPlugCategShell )			 // Plug-in is container of other plug-ins  @see effShellGetNextPlugin
 		CONST_INTEGER_SINGLE( kPlugCategGenerator )		 // ToneGenerator, ...
 
@@ -1212,20 +1213,20 @@ CONFIGURE_CLASS
 		CONST_INTEGER_SINGLE( kSpeakerArr40Music )			// L R Ls  Rs (Quadro)
 		CONST_INTEGER_SINGLE( kSpeakerArr41Cine )				// L R C   Lfe S (LCRS+Lfe)
 		CONST_INTEGER_SINGLE( kSpeakerArr41Music )			// L R Lfe Ls Rs (Quadro+Lfe)
-		CONST_INTEGER_SINGLE( kSpeakerArr50 )					// L R C Ls  Rs 
+		CONST_INTEGER_SINGLE( kSpeakerArr50 )					// L R C Ls  Rs
 		CONST_INTEGER_SINGLE( kSpeakerArr51 )					// L R C Lfe Ls Rs
 		CONST_INTEGER_SINGLE( kSpeakerArr60Cine )				// L R C   Ls  Rs Cs
-		CONST_INTEGER_SINGLE( kSpeakerArr60Music )			// L R Ls  Rs  Sl Sr 
+		CONST_INTEGER_SINGLE( kSpeakerArr60Music )			// L R Ls  Rs  Sl Sr
 		CONST_INTEGER_SINGLE( kSpeakerArr61Cine )				// L R C   Lfe Ls Rs Cs
-		CONST_INTEGER_SINGLE( kSpeakerArr61Music )			// L R Lfe Ls  Rs Sl Sr 
-		CONST_INTEGER_SINGLE( kSpeakerArr70Cine )				// L R C Ls  Rs Lc Rc 
+		CONST_INTEGER_SINGLE( kSpeakerArr61Music )			// L R Lfe Ls  Rs Sl Sr
+		CONST_INTEGER_SINGLE( kSpeakerArr70Cine )				// L R C Ls  Rs Lc Rc
 		CONST_INTEGER_SINGLE( kSpeakerArr70Music )			// L R C Ls  Rs Sl Sr
 		CONST_INTEGER_SINGLE( kSpeakerArr71Cine )				// L R C Lfe Ls Rs Lc Rc
 		CONST_INTEGER_SINGLE( kSpeakerArr71Music )			// L R C Lfe Ls Rs Sl Sr
 		CONST_INTEGER_SINGLE( kSpeakerArr80Cine )				// L R C Ls  Rs Lc Rc Cs
 		CONST_INTEGER_SINGLE( kSpeakerArr80Music )			// L R C Ls  Rs Cs Sl Sr
 		CONST_INTEGER_SINGLE( kSpeakerArr81Cine )				// L R C Lfe Ls Rs Lc Rc Cs
-		CONST_INTEGER_SINGLE( kSpeakerArr81Music )			// L R C Lfe Ls Rs Cs Sl Sr 
+		CONST_INTEGER_SINGLE( kSpeakerArr81Music )			// L R C Lfe Ls Rs Cs Sl Sr
 		CONST_INTEGER_SINGLE( kSpeakerArr102 )					// L R C Lfe Ls Rs Tfl Tfc Tfr Trl Trr Lfe2
 
 		// Flags used in #VstPinProperties / VstPinPropertiesFlags

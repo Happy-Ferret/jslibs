@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "jlhelper.cpp"
 
 #include "jslibsModule.cpp"
 
@@ -116,9 +117,9 @@ done_scriptList:
 		JSRuntime *rt;
 		rt = JL_GetRuntime(cx);
 		// avoid nested calls (NewScriptHook)
-		JS_SetNewScriptHook(rt, NULL, NULL); 
+		JS_SetNewScriptHook(rt, NULL, NULL);
 		status = JS_CallFunctionValue(cx, moduleObject, jsHookFct, COUNTOF(argv)-1, argv+1, argv);
-		JS_SetNewScriptHook(rt, NewScriptHook, callerdata); 
+		JS_SetNewScriptHook(rt, NewScriptHook, callerdata);
 	}
 
 bad:
@@ -264,7 +265,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	mpv = (ModulePrivate*)jl_malloc(sizeof(ModulePrivate));
 	JL_S_ASSERT_ALLOC( mpv );
 	JL_CHKM( JL_SetModulePrivate(cx, _moduleId, mpv), "Module id already in use." );
-	
+
 	mpv->JLID_onNewScript = JL_StringToJsid(cx, L"onNewScript"); // see NewScriptHook
 
 	jl::QueueInitialize(&mpv->scriptFileList);

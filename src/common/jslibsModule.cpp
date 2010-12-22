@@ -27,7 +27,7 @@ DLLLOCAL bool _unsafeMode = true;
 DLLLOCAL uint32_t _moduleId = 0;
 
 
-// initialize with default allocators
+// initialize with default allocators.
 jl_malloc_t jl_malloc = malloc;
 jl_calloc_t jl_calloc = calloc;
 jl_memalign_t jl_memalign = memalign;
@@ -36,7 +36,7 @@ jl_msize_t jl_msize = msize;
 jl_free_t jl_free = free;
 
 
-// external libraries are using these symbols
+// external libraries are using these symbols.
 EXTERN_C void* jl_malloc_fct( size_t size ) { return jl_malloc(size); }
 EXTERN_C void* jl_calloc_fct( size_t num, size_t size ) { return jl_calloc(num, size); }
 EXTERN_C void* jl_memalign_fct( size_t alignment, size_t size ) { return jl_memalign(alignment, size); }

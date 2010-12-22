@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "jlhelper.cpp"
 
 #include "jslang.h"
 
@@ -59,7 +60,7 @@ JSBool jslangModuleRelease(JSContext *cx) {
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
 
 	for ( size_t i = 0; i < COUNTOF(mpv->processEventThreadInfo); ++i ) {
-		
+
 		ProcessEventThreadInfo *ti = &mpv->processEventThreadInfo[i];
 		if ( ti->thread != 0 ) {
 
@@ -70,7 +71,7 @@ JSBool jslangModuleRelease(JSContext *cx) {
 		}
 	}
 	JLSemaphoreFree(&mpv->processEventSignalEventSem);
-	
+
 	jl_free(mpv);
 
 	return JS_TRUE;

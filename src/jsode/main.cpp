@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "jlhelper.cpp"
 
 #include "mass.h"
 #include "space.h"
@@ -82,18 +83,19 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 //	put_StackCommitSize
 
-	JL_CHK( InitJslibsModule(cx, id)  );
+	JL_CHK( InitJslibsModule(cx, id) );
 
 	ode::dSetAllocHandler(jl_malloc); // do not need an intermediate function because prototype match.
 	ode::dSetReallocHandler(odeReallocFunction);
 	ode::dSetFreeHandler(odeFreeFunction);
 
-	int status = ode::dInitODE2(/*ode::dAllocateFlagCollisionData*/0);
-	JL_S_ASSERT( status != 0, "Unable to initialize ODE." );
-
 	ode::dSetErrorHandler(messageHandler);
 	ode::dSetDebugHandler(messageHandler);
 	ode::dSetMessageHandler(messageHandler);
+
+	int status = ode::dInitODE2(/*ode::dAllocateFlagCollisionData*/0  /*| ode::dInitFlagManualThreadCleanup*/);
+	JL_S_ASSERT( status != 0, "Unable to initialize ODE." );
+
 
 //	INIT_CLASS( Vector );
 	INIT_CLASS( JointGroup );
@@ -132,11 +134,11 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
 EXTERN_C DLLEXPORT void ModuleFree() {
 
+	ode::dCloseODE();
+
 	ode::dSetErrorHandler(0);
 	ode::dSetDebugHandler(0);
 	ode::dSetMessageHandler(0);
-
-	ode::dCloseODE();
 
 	ode::dSetAllocHandler(0);
 	ode::dSetReallocHandler(0);

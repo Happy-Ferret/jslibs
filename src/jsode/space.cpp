@@ -22,34 +22,51 @@ check this:
 #include "stdafx.h"
 #include "space.h"
 
+
+
+JSBool ReconstructSpace(JSContext *cx, ode::dSpaceID spaceId, JSObject **obj) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
+
+	/*
+	if (unlikely( bodyId == (ode::dBodyID)0 )) { // bodyId may be null if body is world.env
+
+		*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
+		JL_CHK( *obj );
+	} else {
+
+		JL_S_ASSERT( ode::dBodyGetData(bodyId) == NULL, "Invalid case (object not finalized)." );
+		JL_S_ASSERT( bodyId != NULL, "Invalid ode object." );
+
+		*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
+		JL_CHK( *obj );
+//		BodyPrivate *bodypv = (BodyPrivate*)jl_malloc(sizeof(BodyPrivate));
+//		JL_S_ASSERT_ALLOC( bodypv );
+//		bodypv->obj = *obj;
+//		ode::dBodySetData(bodyId, bodypv);
+		ode::dBodySetData(bodyId, *obj);
+	}
+
+	JL_CHK( SetMatrix44GetInterface(cx, *obj, ReadMatrix) );
+	JL_SetPrivate(cx, *obj, bodyId);
+	*/
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 /**doc
 $CLASS_HEADER
 $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Space )
 
-/* WARNING: a previous comment says: This class cannot have a Finalize ( see readme.txt )
-Everything that may be GC SHOULD not have a Finalize:
-- Body, Joint, Space, Geom
-But these functions should have a Destroy function
-*/
+// Finalize should not destroy the item, but simply unwrap it.
 DEFINE_FINALIZE() {
 
-//	if ( obj == JL_THIS_PROTOTYPE )
-//		return;
 	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(cx, obj);
 	if ( spaceId == NULL )
 		return;
-/*
-	int numGeom = ode::dSpaceGetNumGeoms(spaceId);
-	for ( int i = 0; i < numGeom; ++i ) {
-		
-		ode::dGeomID geomId = dSpaceGetGeom(spaceId, i);
-		ode::dSpaceRemove(spaceId, geomId);
-	}
-*/
-//	ode::dSpaceClean(spaceId);
-//	ode::dSpaceDestroy(spaceId);
 }
 
 
@@ -67,12 +84,12 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), &parentSpace) );
 	else
 		parentSpace = 0;
-//	ode::dSpaceID spaceId = ode::dSimpleSpaceCreate(parentSpace);
-	ode::dSpaceID spaceId = ode::dHashSpaceCreate(parentSpace);
-	ode::dSpaceSetCleanup(spaceId, 0);
-	JL_SetPrivate(cx, obj, spaceId); // dSimpleSpaceCreate / dHashSpaceCreate / dQuadTreeSpaceCreate
-//	ode::dHashSpaceSetLevels(spaceId,
-	// (TBD) use this
+
+	ode::dSpaceID spaceId = ode::dHashSpaceCreate(parentSpace); // dSimpleSpaceCreate / dHashSpaceCreate / dQuadTreeSpaceCreate
+	ode::dSpaceSetCleanup(spaceId, 0); // manual cleanup
+	//ode::dHashSpaceSetLevels(spaceId, -3, 10);
+
+	JL_SetPrivate(cx, obj, spaceId);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -94,10 +111,13 @@ DEFINE_FUNCTION( Destroy ) {
 	JL_S_ASSERT_RESOURCE(spaceId);
 	if ( spaceId != NULL ) {
 
-		ode::dSpaceClean(spaceId);
-		ode::dSpaceDestroy(spaceId);
+		while ( dSpaceGetNumGeoms(spaceId) )
+			dSpaceRemove(spaceId, dSpaceGetGeom(spaceId, 0));
+
+//		ode::dSpaceClean(spaceId);
+//		ode::dSpaceDestroy(spaceId);
+//		JL_SetPrivate(cx, obj, NULL);
 	}
-	JL_SetPrivate(cx, obj, NULL);
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;

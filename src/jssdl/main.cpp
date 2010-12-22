@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "jlhelper.cpp"
 
 #include "queue.h"
 
@@ -78,7 +79,7 @@ JLCondHandler surfaceReadyCond;
 JLMutexHandler surfaceReadyLock;
 
 ALWAYS_INLINE void WaitSurfaceReady() {
-	
+
 	JLMutexAcquire(surfaceReadyLock);
 	while ( !surfaceReady )
 		JLCondWait(surfaceReadyCond, surfaceReadyLock);
@@ -94,7 +95,7 @@ ALWAYS_INLINE void SurfaceReady() {
 }
 
 ALWAYS_INLINE void InvalidateSurface() {
-	
+
 	JLMutexAcquire(surfaceReadyLock);
 	surfaceReady = false;
 	JLCondBroadcast(surfaceReadyCond);
@@ -111,7 +112,7 @@ static JLSemaphoreHandler internalEventSem;
 #define INTERNALEVENT_SET_VIDEO_MODE 1
 
 struct InternalEvent {
-	
+
 	int type;
 	union {
 		struct {
@@ -156,7 +157,7 @@ bool JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 	// create the OpenGL context for this thread if needed.
 	HGLRC hglrc = wglGetCurrentContext();
 	if ( hglrc == NULL ) {
-		
+
 		// Creating an OpenGL Context (http://www.opengl.org/wiki/Creating_an_OpenGL_Context)
 		JL_ASSERT( _hdc != NULL );
 		hglrc = wglCreateContext(_hdc);
@@ -183,14 +184,14 @@ void JLSwapBuffers(bool async) {
 	if ( !async ) {
 
 		if ( _maxFPS == JLINFINITE ) {
-					
+
 			JLMutexAcquire(surfaceLock);
 			SDL_GL_SwapBuffers();
 			JLMutexRelease(surfaceLock);
 		} else {
 
 			double t0 = AccurateTimeCounter();
-			
+
 			JLMutexAcquire(surfaceLock);
 			SDL_GL_SwapBuffers();
 			JLMutexRelease(surfaceLock);
@@ -232,12 +233,12 @@ int SwapBuffersThread( void *unused ) {
 		}
 
 		if ( _maxFPS == JLINFINITE ) {
-		
+
 			JLMutexAcquire(surfaceLock);
 			SDL_GL_SwapBuffers();
 			JLMutexRelease(surfaceLock);
 		} else {
-			
+
 			JLMutexAcquire(surfaceLock);
 			SDL_GL_SwapBuffers();
 			JLMutexRelease(surfaceLock);
@@ -269,7 +270,7 @@ int SwapBuffersThread( void *unused ) {
 int EventFilter( const SDL_Event *e ) {
 
 	if ( e->type == SDL_VIDEORESIZE ) {
-		
+
 		surfaceWidth = e->resize.w;
 		surfaceHeight = e->resize.h;
 	}
@@ -285,10 +286,10 @@ int VideoThread( void *unused ) {
 	SDL_SetEventFilter(EventFilter);
 
 	bool end = false;
-	
+
 	JLSemaphoreRelease(threadReadySem);
 	while ( !end ) {
-	
+
 		SDL_PumpEvents();
 
 		JLMutexAcquire(sdlEventsLock);
@@ -338,7 +339,7 @@ int VideoThread( void *unused ) {
 					SurfaceReady();
 					break;
 				}
-	
+
 				surfaceWidth = _surface->w;
 				surfaceHeight = _surface->h;
 
@@ -406,7 +407,7 @@ void StartVideo() {
 	videoThreadHandler = SDL_CreateThread(VideoThread, NULL); // http://www.libsdl.org/intro.en/usingthreads.html
 	JL_ASSERT( videoThreadHandler != NULL ); // return ThrowSdlError(cx);
 	JLSemaphoreAcquire(threadReadySem, JLINFINITE);
-	
+
 	JLSemaphoreFree(&threadReadySem);
 }
 
@@ -457,12 +458,12 @@ bool JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 }
 
 void JLSwapBuffers(bool async) {
-	
+
 	SDL_GL_SwapBuffers();
 }
 
 void StartVideo() {
-	
+
 	int status = SDL_Init(SDL_INIT_VIDEO);
 	JL_ASSERT( status != -1 );
 	_surface = NULL;
@@ -500,7 +501,10 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	desktopBitsPerPixel = vi->vfmt->BitsPerPixel; // bad: If this is called before SDL_SetVideoMode(), the 'vfmt' member of the returned structure will contain the pixel format of the "best" video mode.
 
 //	typedef void* (__cdecl *glGetProcAddress_t)(const char*);
-//	JL_CHK( SetNativePrivatePointer(cx, JL_GetGlobalObject(cx), "_glGetProcAddress", (glGetProcAddress_t)SDL_GL_GetProcAddress) );
+
+// // JL_CHK( SetNativePrivatePointer(cx, JL_GetGlobalObject(cx), "_glGetProcAddress", (glGetProcAddress_t)SDL_GL_GetProcAddress) );
+// JL_CHK( JL_GetProperty(cx, GetHostObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
+
 
 //	SDL_EnableUNICODE(1); // see unicodeKeyboardTranslation property
 

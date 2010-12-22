@@ -439,7 +439,7 @@ JL_ClassNameToClassProtoCacheSlot( const char *n ) {
 
 
 static INLINE bool
-JL_CacheClassProto( HostPrivate *hpv, const char *className, JSClass *clasp, JSObject *proto ) {
+FASTCALL JL_CacheClassProto( HostPrivate *hpv, const char *className, JSClass *clasp, JSObject *proto ) {
 
 	size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
 	size_t first = slotIndex;
@@ -915,6 +915,8 @@ JL_IsData( JSContext *cx, const jsval &val ) {
 
 class JLStr {
 
+	static jl::PreservAlloc<> mem;
+
 	enum {
 		OWN = 1,
 		NT = 2
@@ -929,39 +931,17 @@ class JLStr {
 		uint32_t count;
 	} *_inner;
 
-	ALWAYS_INLINE void NewInner(const jschar *jsstr, const char *str, bool nullTerminated, bool hasOwnership, size_t length = SIZE_MAX) {
-
-		_inner = static_cast<Inner*>(jl_malloc(sizeof(Inner)));
-		JL_ASSERT(_inner);
-		_inner->count = 1;
-		_inner->len = length;
-		_inner->jsstr = const_cast<jschar*>(jsstr);
-		_inner->str = const_cast<char*>(str);
-		_inner->jsstrFlags = jsstr ? (nullTerminated ? NT : 0) | (hasOwnership ? OWN : 0) : 0;
-		_inner->strFlags = str ? (nullTerminated ? NT : 0) | (hasOwnership ? OWN : 0) : 0;
-
-		JL_ASSERT( IsSet() );
-		JL_ASSERT_IF( length != SIZE_MAX && hasOwnership && jsstr, jl_msize((void*)jsstr) >= length + 2 );
-		JL_ASSERT_IF( length != SIZE_MAX && hasOwnership && str, jl_msize((void*)str) >= length + 1 );
-		JL_ASSERT_IF( nullTerminated && jsstr, ((uint8_t*)jsstr)[length] == 0 );
-		JL_ASSERT_IF( nullTerminated && str, ((uint8_t*)str)[length] == 0 );
-	}
-
-	ALWAYS_INLINE bool HasFlags( uint32_t currentFlags, uint32_t flags ) {
-	
-		return (currentFlags & flags) == flags;
-	}
 
 	void CreateOwnJsStrZ() {
 		
 		JL_ASSERT( IsSet() );
-		JL_ASSERT_IF( _inner->jsstr, !HasFlags(_inner->jsstrFlags, OWN|NT) );
+		JL_ASSERT_IF( _inner->jsstr, !JL_HASFLAGS(_inner->jsstrFlags, OWN|NT) );
 
 		jschar *tmp;
 		size_t length = Length();
 		if ( _inner->jsstr ) {
 
-			if ( _inner->jsstrFlags & OWN ) {
+			if ( JL_HASFLAGS(_inner->jsstrFlags, OWN) ) {
 
 				_inner->jsstr = static_cast<jschar*>(jl_realloc(_inner->jsstr, sizeof(jschar) * (length +1)));
 				JL_ASSERT( _inner->jsstr );
@@ -976,7 +956,7 @@ class JLStr {
 		} else {
 
 			JL_ASSERT( _inner->str );
-			if ( _inner->strFlags & OWN ) {
+			if ( JL_HASFLAGS(_inner->strFlags, OWN) ) {
 				
 				_inner->jsstr = (jschar*)jl_realloc(_inner->str, (length+1) * 2);
 				JL_ASSERT( _inner->jsstr );
@@ -1004,13 +984,13 @@ class JLStr {
 	void CreateOwnStrZ() {
 		
 		JL_ASSERT( IsSet() );
-		JL_ASSERT_IF( _inner->str, !HasFlags(_inner->strFlags, OWN|NT) );
+		JL_ASSERT_IF( _inner->str, !JL_HASFLAGS(_inner->strFlags, OWN|NT) );
 
 		char *tmp;
 		size_t length = Length();
 		if ( _inner->str ) {
 
-			if ( _inner->strFlags & OWN ) {
+			if ( JL_HASFLAGS(_inner->strFlags, OWN) ) {
 
 				_inner->str = static_cast<char*>(jl_realloc(_inner->str, sizeof(char) * (length +1)));
 				JL_ASSERT( _inner->str );
@@ -1026,7 +1006,7 @@ class JLStr {
 		} else {
 
 			JL_ASSERT( _inner->jsstr );
-			if ( _inner->jsstrFlags & OWN ) {
+			if ( JL_HASFLAGS(_inner->jsstrFlags, OWN) ) {
 
 				jschar *src = _inner->jsstr + length;
 				tmp = (char*)_inner->jsstr + length;
@@ -1051,16 +1031,40 @@ class JLStr {
 		_inner->strFlags = OWN|NT;
 	}
 
+	ALWAYS_INLINE void NewInner( const jschar *jsstr, const char *str, bool nullTerminated, bool hasOwnership, size_t length = SIZE_MAX ) {
+
+		JL_ASSERT( length != SIZE_MAX || nullTerminated );
+
+		// _inner = static_cast<Inner*>(jl_malloc(sizeof(Inner)));
+		_inner = static_cast<Inner*>(mem.Alloc(sizeof(Inner)));
+
+		JL_ASSERT( _inner );
+		_inner->count = 1;
+		_inner->len = length;
+		_inner->jsstr = const_cast<jschar*>(jsstr);
+		_inner->str = const_cast<char*>(str);
+		_inner->jsstrFlags = jsstr ? (nullTerminated ? NT : 0) | (hasOwnership ? OWN : 0) : 0;
+		_inner->strFlags = str ? (nullTerminated ? NT : 0) | (hasOwnership ? OWN : 0) : 0;
+
+		JL_ASSERT( IsSet() );
+		JL_ASSERT_IF( length != SIZE_MAX && hasOwnership && jsstr, jl_msize((void*)jsstr) >= length + 2 );
+		JL_ASSERT_IF( length != SIZE_MAX && hasOwnership && str, jl_msize((void*)str) >= length + 1 );
+		JL_ASSERT_IF( length != SIZE_MAX && nullTerminated && jsstr, ((uint8_t*)jsstr)[length] == 0 );
+		JL_ASSERT_IF( length != SIZE_MAX && nullTerminated && str, ((uint8_t*)str)[length] == 0 );
+	}
+
 public:
+
 	~JLStr() {
 
 		if ( !_inner || --_inner->count )
 			return;
-		if ( _inner->jsstrFlags & OWN )
+		if ( JL_HASFLAGS(_inner->jsstrFlags, OWN) )
 			jl_free(_inner->jsstr);
-		if ( _inner->strFlags & OWN )
+		if ( JL_HASFLAGS(_inner->strFlags, OWN) )
 			jl_free(_inner->str);
-		jl_free(_inner);
+		// jl_free(_inner);
+		mem.Free(_inner);
 	}
 	
 	ALWAYS_INLINE JLStr() : _inner(NULL) {
@@ -1162,7 +1166,7 @@ public:
 	ALWAYS_INLINE jschar *GetJsStrZOwnership() {
 
 		JL_ASSERT( IsSet() );
-		if ( !_inner->jsstr || !HasFlags(_inner->jsstrFlags, OWN|NT) )
+		if ( !_inner->jsstr || !JL_HASFLAGS(_inner->jsstrFlags, OWN|NT) )
 			CreateOwnJsStrZ();
 		jschar *tmp = _inner->jsstr;
 		_inner->jsstr = NULL;
@@ -1192,7 +1196,7 @@ public:
 	ALWAYS_INLINE char *GetStrZOwnership() {
 
 		JL_ASSERT( IsSet() );
-		if ( !_inner->str || HasFlags(_inner->strFlags, OWN|NT) )
+		if ( !_inner->str || JL_HASFLAGS(_inner->strFlags, OWN|NT) )
 			CreateOwnStrZ();
 		char *tmp = _inner->str;
 		_inner->str = NULL;
@@ -1202,7 +1206,7 @@ public:
 	ALWAYS_INLINE const char *GetConstStrZ() {
 
 		JL_ASSERT( IsSet() );
-		if ( !_inner->str || !HasFlags(_inner->strFlags, NT) )
+		if ( !_inner->str || !JL_HASFLAGS(_inner->strFlags, NT) )
 			CreateOwnStrZ();
 		return _inner->str;
 	}
@@ -1218,7 +1222,6 @@ private:
 	void* operator new(size_t);
 	void* operator new[](size_t);
 };
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1244,7 +1247,7 @@ JL_NullTerminate( void* &buf, size_t len ) {
 // JLStr
 
 static INLINE JSBool
-JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
+FASTCALL JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 
 	if (likely( JSVAL_IS_STRING(val) )) { // for string literals
 
@@ -1282,7 +1285,7 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 	// fallback
 	JSString *jsstr = JS_ValueToString(cx, val);
 	if ( jsstr == NULL )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_FAIL_TO_CONVERT_TO, "string" );
+		JL_REPORT_ERROR_NUM( cx, JLSMSG_FAIL_TO_CONVERT_TO, "string" );
 	val = STRING_TO_JSVAL(jsstr); // GC protection
 	*str = JLStr(cx, jsstr);
 	return JS_TRUE;
@@ -1393,7 +1396,7 @@ JL_NativeToJsval( JSContext *cx, const int32_t &num, jsval *vp ) {
 }
 
 static INLINE JSBool
-JL_JsvalToNative( JSContext *cx, const jsval &val, int32_t *num ) {
+FASTCALL JL_JsvalToNative( JSContext *cx, const jsval &val, int32_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -1444,7 +1447,7 @@ JL_NativeToJsval( JSContext *cx, const uint32_t &num, jsval *vp ) {
 }
 
 static INLINE JSBool
-JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
+FASTCALL JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -1496,7 +1499,7 @@ JL_NativeToJsval( JSContext *cx, const int64_t &num, jsval *vp ) {
 }
 
 static INLINE JSBool
-JL_JsvalToNative( JSContext *cx, const jsval &val, int64_t *num ) {
+FASTCALL JL_JsvalToNative( JSContext *cx, const jsval &val, int64_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -1547,7 +1550,7 @@ JL_NativeToJsval( JSContext *cx, const uint64_t &num, jsval *vp ) {
 }
 
 static INLINE JSBool
-JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
+FASTCALL JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -2078,7 +2081,7 @@ JL_JsidToJsval( JSContext *cx, jsid id, jsval *val ) {
 
 
 static INLINE JSBool
-JL_JsvalToMatrix44( JSContext *cx, jsval &val, float **m ) {
+FASTCALL JL_JsvalToMatrix44( JSContext *cx, jsval &val, float **m ) {
 
 	static float Matrix44IdentityValue[16] = {
 		 1.0f, 0.0f, 0.0f, 0.0f,
@@ -2155,7 +2158,8 @@ JL_JsvalToMatrix44( JSContext *cx, jsval &val, float **m ) {
 // Host info functions (_host global property)
 
 
-ALWAYS_INLINE JSBool RemoveHostObject(JSContext *cx) {
+ALWAYS_INLINE JSBool
+RemoveHostObject(JSContext *cx) {
 
 	JSObject *globalObject = JL_GetGlobalObject(cx);
 	JL_S_ASSERT( globalObject != NULL, "Unable to find the global object." );
@@ -2164,7 +2168,8 @@ ALWAYS_INLINE JSBool RemoveHostObject(JSContext *cx) {
 }
 
 
-inline JSObject *GetHostObject(JSContext *cx) {
+INLINE JSObject *
+GetHostObject(JSContext *cx) {
 
 	JSObject *cobj, *globalObject = JL_GetGlobalObject(cx);
 	JL_CHK( globalObject );
@@ -2232,7 +2237,7 @@ ALWAYS_INLINE JSBool SetHostObjectValue(JSContext *cx, const jschar *name, jsval
 // note: a Blob is either a JSString or a Blob object if the jslang module has been loaded.
 //       returned value is equivalent to: var ret = Blob(buffer);
 static INLINE JSBool
-JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
+FASTCALL JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
 
 	JL_ASSERT( jl_msize(buffer) >= length + 1 );
 	JL_ASSERT( ((uint8_t*)buffer)[length] == 0 );
@@ -2504,6 +2509,7 @@ JL_Eval( JSContext *cx, JSString *source, jsval *rval ) {
 	JL_BAD;
 }
 
+
 static INLINE JSBool
 JL_Push( JSContext *cx, JSObject *arr, jsval *value ) {
 
@@ -2755,10 +2761,10 @@ JL_LoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFi
 good:
 
 	if ( scriptBuffer )
-		jl_freea(scriptBuffer, scriptFileSize);
+		jl_freea(scriptBuffer);
 
 	if ( scriptText )
-		jl_freea(scriptText, scriptTextLength);
+		jl_freea(scriptText);
 
 	JS_SetOptions(cx, prevOpts);
 	return script;
@@ -2766,10 +2772,10 @@ good:
 bad:
 
 	if ( scriptBuffer )
-		jl_freea(scriptBuffer, scriptFileSize);
+		jl_freea(scriptBuffer);
 
 	if ( scriptText )
-		jl_freea(scriptText, scriptTextLength);
+		jl_freea(scriptText);
 
 	JS_SetOptions(cx, prevOpts);
 	if ( data )
@@ -2805,7 +2811,7 @@ JL_StackSize(const JSContext *cx, const JSStackFrame *fp) {
 
 
 static INLINE JSStackFrame*
-JL_StackFrameByIndex(JSContext *cx, int frameIndex) {
+FASTCALL JL_StackFrameByIndex(JSContext *cx, int frameIndex) {
 
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( frameIndex >= 0 ) {
@@ -3107,193 +3113,6 @@ struct ProcessEvent {
 };
 
 
-
-///////////////////////////////////////////////////////////////////////////////
-// memory management
-
-namespace jl {
-
-	class _NOVTABLE CppNoAlloc {
-		void* operator new(size_t);
-		void* operator new[](size_t);
-		void operator delete(void *, size_t);
-		void operator delete[](void *, size_t);
-	};
-
-
-	class _NOVTABLE CppAllocators {
-	public:
-		ALWAYS_INLINE void* operator new(size_t size) _NOTHROW {
-			return jl_malloc(size);
-		}
-		ALWAYS_INLINE void* operator new[](size_t size) _NOTHROW {
-			return jl_malloc(size);
-		}
-		ALWAYS_INLINE void operator delete(void *ptr, size_t size) {
-			jl_free(ptr);
-			JL_UNUSED(size);
-		}
-		ALWAYS_INLINE void operator delete[](void *ptr, size_t size) {
-			jl_free(ptr);
-			JL_UNUSED(size);
-		}
-	};
-
-
-	class _NOVTABLE DefaultAlloc {
-	public:
-		ALWAYS_INLINE void Free(void *ptr) {
-			jl_free(ptr);
-		}
-		ALWAYS_INLINE void* Alloc(size_t size) {
-			return jl_malloc(size);
-		}
-		ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
-			return jl_realloc(ptr, size);
-		}
-	};
-
-
-	template <const size_t PREALLOC = 0>
-	class _NOVTABLE PreservAlloc : private DefaultAlloc {
-
-		void *_last;
-		uint8_t *_prealloc;
-		uint8_t *_preallocEnd;
-
-	public:
-		ALWAYS_INLINE PreservAlloc() : _last(NULL), _prealloc(NULL) {
-		}
-
-		ALWAYS_INLINE ~PreservAlloc() {
-
-			while ( _last != NULL ) {
-
-				void *tmp = _last;
-				_last = *(void**)_last;
-				if ( PREALLOC == 0 || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
-					DefaultAlloc::Free(tmp);
-			}
-			if ( PREALLOC > 0 )
-				DefaultAlloc::Free(_prealloc);
-		}
-
-		ALWAYS_INLINE void Free(void *ptr) {
-
-			*(void**)ptr = _last;
-			_last = ptr;
-		}
-
-		ALWAYS_INLINE void* Alloc(size_t size) {
-
-			if ( size < sizeof(void*) )
-				size = sizeof(void*);
-
-			if ( PREALLOC > 0 && _prealloc == NULL ) {
-
-				_prealloc = (uint8_t*)DefaultAlloc::Alloc(PREALLOC * size);
-				_preallocEnd = _prealloc + PREALLOC * size;
-				for ( uint8_t *it = _prealloc; it != _preallocEnd; it += size ) {
-
-					*(void**)it = _last;
-					_last = it;
-				}
-			}
-
-			if ( _last != NULL ) {
-
-				void *tmp = _last;
-				_last = *(void**)_last;
-				return tmp;
-			}
-			return DefaultAlloc::Alloc(size);
-		}
-
-		ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
-
-			if ( size < sizeof(void*) )
-				size = sizeof(void*);
-			return DefaultAlloc::Realloc(ptr, size);
-		}
-	};
-
-
-	template <const size_t PREALLOC_SIZE = 1024>
-	class _NOVTABLE StaticAlloc : private DefaultAlloc {
-
-		void *_last;
-		uint8_t *_preallocEnd;
-
-		uint8_t _prealloc[PREALLOC_SIZE];
-#ifdef DEBUG
-		size_t _dbg_size;
-#endif
-
-	public:
-		ALWAYS_INLINE StaticAlloc() : _last(NULL), _preallocEnd(NULL) {
-
-#ifdef DEBUG
-			_dbg_size = 0;
-#endif
-		}
-
-		ALWAYS_INLINE ~StaticAlloc() {
-
-			while ( _last != NULL ) {
-
-				void *tmp = _last;
-				_last = *(void**)_last;
-				if ( _preallocEnd == NULL || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
-					DefaultAlloc::Free(tmp);
-			}
-		}
-
-		ALWAYS_INLINE void Free(void *ptr) {
-
-			*(void**)ptr = _last;
-			_last = ptr;
-		}
-
-		ALWAYS_INLINE void* Alloc(size_t size) {
-
-#ifdef DEBUG
-			JL_ASSERT( size != 0 );
-			if ( _dbg_size == 0 )
-				_dbg_size = size;
-			JL_ASSERT( size == _dbg_size );
-#endif
-
-			if ( size < sizeof(void*) )
-				size = sizeof(void*);
-
-			if ( _preallocEnd == NULL ) {
-
-				_preallocEnd = _prealloc + (sizeof(_prealloc)/size)*size;
-				for ( uint8_t *it = _prealloc; it < _preallocEnd; it += size ) {
-
-					*(void**)it = _last;
-					_last = it;
-				}
-			}
-			if ( _last != NULL ) {
-
-				void *tmp = _last;
-				_last = *(void**)_last;
-				return tmp;
-			}
-
-			return DefaultAlloc::Alloc(size);
-		}
-
-		ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
-
-			if ( size < sizeof(void*) )
-				size = sizeof(void*);
-
-			return DefaultAlloc::Realloc(ptr, size);
-		}
-	};
-}
 
 
 

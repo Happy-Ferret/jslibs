@@ -1,17 +1,3 @@
-LoadModule('jsstd'); 
-LoadModule('jsio'); 
-LoadModule('jsode'); 
-
-
-var w = new World();
-//var space = new Space();
-var geom = new GeomPlane(w.space);
-geom.Destroy();
-//space.Destroy();
-
-
-
-throw 0;
 
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 

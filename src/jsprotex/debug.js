@@ -125,13 +125,15 @@ var z = 0;
 RandSeed(1);
 PerlinNoiseReinit();
 
-//Exec('liveconsole.js');
+Exec('liveconsole.js');
 
 function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
 
 	// live coding test
-//	live.Poll();
-//	live.Function(texture);
+	live.Poll();
+	live.Function(texture);
+
+return;
 
 	// perlin noise
 	texture.Set(0);

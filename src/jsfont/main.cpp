@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "jlhelper.cpp"
 
 DECLARE_CLASS( Font )
 
@@ -40,7 +41,7 @@ $MODULE_FOOTER
 **/
 
 void* JsfontAlloc( FT_Memory memory, long size ) {
-	
+
 	return jl_malloc(size);
 }
 
@@ -75,8 +76,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	mpv->GetFTSymbols = GetFTSymbols;
 
-//	JL_CHK( SetNativePrivatePointer(cx, JL_GetGlobalObject(cx), "_jsfontModulePrivate", mpv) );
-	JL_CHK( JL_SetProperty(cx, JL_GetGlobalObject(cx), "_jsfontModulePrivate", (void*)mpv, false) );
+	JL_CHK( JL_SetProperty(cx, GetHostObject(cx), "_jsfontModulePrivate", (void*)mpv, false) );
 
 	INIT_CLASS(Font);
 

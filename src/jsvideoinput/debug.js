@@ -6,7 +6,7 @@ LoadModule('jsimage');
 
 LoadModule('jsvideoinput');
 
-Print( VideoInput.list.join('\n') ); throw 0;
+//Print( VideoInput.list.join('\n') ); throw 0;
 
 LoadModule('jssdl');
 LoadModule('jsgraphics');
@@ -18,7 +18,7 @@ Exec('..\\common\\tools.js');
 	//	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 //		GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 		GlSetAttribute( GL_DEPTH_SIZE, 16 );
-		GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+//		GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 		SetVideoMode( 640, 480, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 
 		Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
@@ -85,7 +85,14 @@ var t1 = TimeCounter();
 //	var level = texture.GetGlobalLevel();
 //	texture.ClampLevels(level-0.2, level+0.2);
 
-//	texture.Convolution([-1,-1,-1, -1,8,-1, -1,-1,-1]);
+const kernelGaussian = [0,3,10,3,0, 3,16,26,16,3, 10,26,26,26,10, 3,16,26,16,3, 0,3,10,3,0 ];
+const kernelGaussian2 = [2,4,5,4,2, 4,9,12,9,4, 5,12,15,12,5, 4,9,12,9,4, 2,4,5,4,2]; // G(r) = pow(E,-r*r/(2*o*o))/sqrt(2*PI*o);
+const kernelEmboss = [-1,0,0, 0,0,0 ,0,0,1];
+const kernelLaplacian = [-1,-1,-1, -1,8,-1, -1,-1,-1];
+
+	texture.Desaturate();
+	 
+	 texture.NormalizeLevels();
 	
 /*
 	tmp1.Set(texture);

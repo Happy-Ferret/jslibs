@@ -53,10 +53,14 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_OBJECT(JL_ARG(1));
 
 	ode::dSpaceID space;
-	if ( JL_ARG_ISDEF(2) ) // place it in a space ?
+	if ( JL_ARG_ISDEF(2) ) { // place it in a space ?
+
 		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(2), &space) );
-	else
+		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_GEOM_SPACEOBJECT, JL_ARG(2)) );
+	} else {
+
 		space = 0;
+	}
 
 	trimeshVal = JL_ARG(1);
 	JL_S_ASSERT( JL_JsvalIsTrimesh(cx, trimeshVal), "Invalid Trimesh object." );
@@ -110,7 +114,7 @@ CONFIGURE_CLASS
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(3)
+	HAS_RESERVED_SLOTS(4)
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( triangleCount )

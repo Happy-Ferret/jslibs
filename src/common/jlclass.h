@@ -141,6 +141,10 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JSObject *proto;
 	proto = JS_InitClass(cx, obj, parent_proto, &cs->clasp, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
+	
+	JL_S_ASSERT( proto != NULL, "Unable to create the %s class", cs->clasp.name );
+
+	JL_ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(cx, proto) == NULL );
 
 	JL_CHKM( JL_CacheClassProto(hpv, cs->clasp.name, &cs->clasp, proto), "Unable to cache %s class prototype", cs->clasp.name );
 

@@ -13,8 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "jlhelper.cpp"
 #include "jsstd.h"
-
 #include "jslibsModule.cpp"
 
 DECLARE_STATIC()

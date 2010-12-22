@@ -236,12 +236,12 @@ DEFINE_FUNCTION( Poll ) {
 
 		*JL_RVAL = INT_TO_JSVAL( result );
 	}
-	jl_freea(props, sizeof(jsval) * propsCount);
-	jl_freea(pollDesc, sizeof(PRPollDesc) * propsCount);
+	jl_freea(props);
+	jl_freea(pollDesc);
 	return JS_TRUE;
 bad:
-	jl_freea(props, sizeof(jsval) * propsCount);
-	jl_freea(pollDesc, sizeof(PRPollDesc) * propsCount);
+	jl_freea(props);
+	jl_freea(pollDesc);
 bad1:
 	return JS_FALSE;
 }

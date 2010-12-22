@@ -5800,12 +5800,15 @@ DEFINE_INIT() {
 
 	JL_CHK( SetMatrix44GetInterface(cx, obj, MatrixGet) );
 
+
 #ifdef XP_WIN
 	glGetProcAddress = windowsGLGetProcAddress;
 #else
-	JL_CHK( GetPrivateNativeFunction(cx, JL_GetGlobalObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
+	//	JL_CHK( GetPrivateNativeFunction(cx, JL_GetGlobalObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
+	JL_CHK( JL_GetProperty(cx, GetHostObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
 #endif
 	JL_S_ASSERT( glGetProcAddress != NULL, "OpenGL extensions unavailable." );
+
 
 	return JS_TRUE;
 	JL_BAD;

@@ -72,6 +72,8 @@ inline void* PoolPop( Pool *pool ) {
 	return pool->list[--pool->length];
 }
 
+
+
 }
 
 #endif // _JL_POOL_H_

@@ -255,7 +255,18 @@ DEFINE_FINALIZE() {
 		// ode::dJointSetData(jointIt, NULL);
 	}
 
-	ode::dSpaceClean(pv->spaceId);
+
+	//	ode::dSpaceClean(pv->spaceId);
+	while ( ode::dSpaceGetNumGeoms(pv->spaceId) ) {
+
+		ode::dGeomID geomId = ode::dSpaceGetGeom(pv->spaceId, 0);
+
+		JSObject *geomObj = (JSObject*)ode::dGeomGetData(geomId);
+		if ( geomObj != NULL )
+			JS_SetPrivate(cx, geomObj, NULL);
+//		ode::dSpaceRemove(pv->spaceId, geomId);
+		ode::dGeomDestroy(geomId);
+	}
 	ode::dSpaceDestroy(pv->spaceId);
 
 	ode::dWorldDestroy(pv->worldId);

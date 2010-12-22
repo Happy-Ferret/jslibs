@@ -41,10 +41,14 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_ARG_RANGE(0, 1);
 	ode::dSpaceID space;
-	if ( JL_ARG_ISDEF(1) ) // place it in a space ?
+	if ( JL_ARG_ISDEF(1) ) { // place it in a space ?
+
 		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), &space) );
-	else
+		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_GEOM_SPACEOBJECT, JL_ARG(1)) );
+	} else {
+
 		space = 0;
+	}
 
 // planes: An array of planes in the form: normal X, normal Y, normal Z,Distance
 // points: An array of points X,Y,Z
@@ -73,7 +77,7 @@ CONFIGURE_CLASS
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(2)
+	HAS_RESERVED_SLOTS(3)
 
 	BEGIN_PROPERTY_SPEC
 	END_PROPERTY_SPEC

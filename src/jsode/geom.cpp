@@ -25,6 +25,7 @@ check:
 #include "stdafx.h"
 #include "body.h"
 #include "geom.h"
+#include "space.h"
 
 JSBool ReadMatrix(JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
@@ -349,6 +350,44 @@ DEFINE_PROPERTY( tansformation ) {
 
 /**doc
 $TOC_MEMBER $INAME
+  Is the current position of the geometry.
+**/
+DEFINE_PROPERTY( space ) {
+
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	JL_S_ASSERT_RESOURCE(geom);
+/*
+	ode::dSpaceID space = ode::dGeomGetSpace(geom);
+	ode::dGeomSetData((ode::dGeomID)space, obj);
+*/
+	
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_GEOM_SPACEOBJECT, vp) );
+	if ( JSVAL_IS_VOID( *vp ) )
+		return JS_TRUE;
+
+//	JL_S_ASSERT_OBJECT( *vp );
+//	JSObject *spaceObj = JSVAL_TO_OBJECT( *vp );
+//	JL_S_ASSERT_CLASS( spaceObj, JL_CLASS(Space) );
+//	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(cx, spaceObj);
+
+	ode::dSpaceID spaceId;
+	JL_CHK( JL_JsvalToSpaceID(cx, *vp, &spaceId) );
+	JL_ASSERT( spaceId == ode::dGeomGetSpace(geom) );
+
+	if ( spaceId == NULL ) {
+	
+		*vp = JSVAL_VOID;
+		return JL_SetReservedSlot(cx, obj, SLOT_GEOM_SPACEOBJECT, *vp);
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
  $TYPE vec3 *position*
   Is the current position of the geometry.
 **/
@@ -375,8 +414,6 @@ DEFINE_PROPERTY( positionSetter ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
-
 
 /**doc
 $TOC_MEMBER $INAME
@@ -515,6 +552,7 @@ CONFIGURE_CLASS
 		PROPERTY( position )
 		PROPERTY_READ( aabb )
 		PROPERTY_READ( boundarySphere )
+		PROPERTY_READ( space )
 //		PROPERTY( offsetPosition )
 	END_PROPERTY_SPEC
 

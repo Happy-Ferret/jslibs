@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "jlhelper.cpp"
 
 //#include "fastcgi.h"
 #include "fcgi.h"
@@ -25,7 +26,7 @@
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 //	_unsafeMode = JL_GetHostPrivate(cx)->unsafeMode;
-	
+
 	JL_CHK( InitJslibsModule(cx, id)  );
 
 //	INIT_CLASS( FastCGI );
