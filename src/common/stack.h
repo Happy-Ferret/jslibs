@@ -182,7 +182,7 @@ inline void StackFree( void **stack ) {
 
 
 
-template <class T, class A = DefaultAlloc>
+template <class T, class A = DefaultAlloc<T>>
 class _NOVTABLE Stack : private A {
 
 	class Item {

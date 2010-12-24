@@ -141,22 +141,20 @@ namespace jl {
 	};
 
 
+	template <typename T>
 	class _NOVTABLE DefaultAlloc {
 	public:
 		ALWAYS_INLINE void Free(void *ptr) {
 			jl_free(ptr);
 		}
-		ALWAYS_INLINE void* Alloc(size_t size) {
-			return jl_malloc(size);
-		}
-		ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
-			return jl_realloc(ptr, size);
+		ALWAYS_INLINE void* Alloc() {
+			return jl_malloc(sizeof(T));
 		}
 	};
 
 
 	template <typename T, const size_t PREALLOC = 0>
-	class _NOVTABLE PreservAlloc : private DefaultAlloc {
+	class _NOVTABLE PreservAlloc {
 
 		void *_last;
 		uint8_t *_prealloc;
@@ -173,10 +171,10 @@ namespace jl {
 				void *tmp = _last;
 				_last = *(void**)_last;
 				if ( PREALLOC == 0 || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
-					DefaultAlloc::Free(tmp);
+					jl_free(tmp);
 			}
 			if ( PREALLOC > 0 )
-				DefaultAlloc::Free(_prealloc);
+				jl_free(_prealloc);
 		}
 
 		ALWAYS_INLINE void Free(T *ptr) {
@@ -193,7 +191,7 @@ namespace jl {
 
 			if ( PREALLOC > 0 && _prealloc == NULL ) {
 
-				_prealloc = (uint8_t*)DefaultAlloc::Alloc(PREALLOC * size);
+				_prealloc = (uint8_t*)jl_malloc(PREALLOC * size);
 				_preallocEnd = _prealloc + PREALLOC * size;
 				for ( uint8_t *it = _prealloc; it != _preallocEnd; it += size ) {
 
@@ -208,7 +206,7 @@ namespace jl {
 				_last = *(void**)_last;
 				return (T*)tmp;
 			}
-			return (T*)DefaultAlloc::Alloc(size);
+			return (T*)jl_malloc(size);
 		}
 
 		//ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
@@ -221,7 +219,7 @@ namespace jl {
 
 
 	template <typename T, const size_t PREALLOC_SIZE = 1024>
-	class _NOVTABLE StaticAlloc : private DefaultAlloc {
+	class _NOVTABLE StaticAlloc {
 
 		void *_last;
 		uint8_t *_preallocEnd;
@@ -238,7 +236,7 @@ namespace jl {
 				void *tmp = _last;
 				_last = *(void**)_last;
 				if ( _preallocEnd == NULL || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
-					DefaultAlloc::Free(tmp);
+					jl_free(tmp);
 			}
 		}
 
@@ -270,7 +268,7 @@ namespace jl {
 				return tmp;
 			}
 
-			return DefaultAlloc::Alloc(size);
+			return jl_malloc(size);
 		}
 
 		//ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
