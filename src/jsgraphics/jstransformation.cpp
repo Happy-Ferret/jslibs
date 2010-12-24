@@ -120,11 +120,13 @@ DEFINE_CONSTRUCTOR() {
 				Matrix44Load(pv->mat, m);
 			pv->isIdentity = false;
 		} else
+/*
 		if ( JSVAL_IS_NULL(JL_ARG(1)) ) {
 
 			Matrix44Identity(pv->mat);
 			pv->isIdentity = true;
 		} else
+*/
 		if ( JL_ARGC == 16 ) {
 			
 			float *tmp = (float*)&pv->mat->raw;

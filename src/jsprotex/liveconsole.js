@@ -170,7 +170,7 @@ function RemoteCall( remoteMessage ) {
 
 var live = new function() {
 
-	var server = new SimpleHTTPServer(8008, '127.0.0.1');
+//	var server = new SimpleHTTPServer(8008, '127.0.0.1');
 
 	var initExpr = /\/\*init (?:([^]*?))?\*\//;
 	var uiExpr = /\/\*ui (?:([^]*?))?\*\//;
@@ -284,11 +284,13 @@ var live = new function() {
 }
 
 
-/* test part
+// test part
+
 while ( !endSignal ) {
 
+// /*ui slider({min:10, max:20, step:1}); button({ name:'go'});  hr */
 	live.Poll();
 	live.Function('test');
 	Sleep(10);
 }
-*/
+

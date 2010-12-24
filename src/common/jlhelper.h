@@ -438,8 +438,8 @@ JL_ClassNameToClassProtoCacheSlot( const char *n ) {
 }
 
 
-static INLINE bool
-FASTCALL JL_CacheClassProto( HostPrivate *hpv, const char *className, JSClass *clasp, JSObject *proto ) {
+static INLINE bool FASTCALL
+JL_CacheClassProto( HostPrivate *hpv, const char *className, JSClass *clasp, JSObject *proto ) {
 
 	size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
 	size_t first = slotIndex;
@@ -915,8 +915,6 @@ JL_IsData( JSContext *cx, const jsval &val ) {
 
 class JLStr {
 
-	static jl::PreservAlloc<> mem;
-
 	enum {
 		OWN = 1,
 		NT = 2
@@ -931,6 +929,7 @@ class JLStr {
 		uint32_t count;
 	} *_inner;
 
+	static jl::PreservAlloc<JLStr::Inner> mem;
 
 	void CreateOwnJsStrZ() {
 		
@@ -1036,7 +1035,7 @@ class JLStr {
 		JL_ASSERT( length != SIZE_MAX || nullTerminated );
 
 		// _inner = static_cast<Inner*>(jl_malloc(sizeof(Inner)));
-		_inner = static_cast<Inner*>(mem.Alloc(sizeof(Inner)));
+		_inner = mem.Alloc();
 
 		JL_ASSERT( _inner );
 		_inner->count = 1;
@@ -1246,8 +1245,8 @@ JL_NullTerminate( void* &buf, size_t len ) {
 
 // JLStr
 
-static INLINE JSBool
-FASTCALL JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
+static INLINE JSBool FASTCALL
+JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 
 	if (likely( JSVAL_IS_STRING(val) )) { // for string literals
 
@@ -1395,8 +1394,8 @@ JL_NativeToJsval( JSContext *cx, const int32_t &num, jsval *vp ) {
 	return JS_TRUE;
 }
 
-static INLINE JSBool
-FASTCALL JL_JsvalToNative( JSContext *cx, const jsval &val, int32_t *num ) {
+static INLINE JSBool FASTCALL
+JL_JsvalToNative( JSContext *cx, const jsval &val, int32_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -1446,8 +1445,8 @@ JL_NativeToJsval( JSContext *cx, const uint32_t &num, jsval *vp ) {
 	return JS_TRUE;
 }
 
-static INLINE JSBool
-FASTCALL JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
+static INLINE JSBool FASTCALL
+JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -1498,8 +1497,8 @@ JL_NativeToJsval( JSContext *cx, const int64_t &num, jsval *vp ) {
 	JL_BAD;
 }
 
-static INLINE JSBool
-FASTCALL JL_JsvalToNative( JSContext *cx, const jsval &val, int64_t *num ) {
+static INLINE JSBool FASTCALL
+JL_JsvalToNative( JSContext *cx, const jsval &val, int64_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -1549,8 +1548,8 @@ JL_NativeToJsval( JSContext *cx, const uint64_t &num, jsval *vp ) {
 	JL_BAD;
 }
 
-static INLINE JSBool
-FASTCALL JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
+static INLINE JSBool FASTCALL
+JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
@@ -2080,8 +2079,8 @@ JL_JsidToJsval( JSContext *cx, jsid id, jsval *val ) {
 }
 
 
-static INLINE JSBool
-FASTCALL JL_JsvalToMatrix44( JSContext *cx, jsval &val, float **m ) {
+static INLINE JSBool FASTCALL
+JL_JsvalToMatrix44( JSContext *cx, jsval &val, float **m ) {
 
 	static float Matrix44IdentityValue[16] = {
 		 1.0f, 0.0f, 0.0f, 0.0f,
@@ -2236,8 +2235,8 @@ ALWAYS_INLINE JSBool SetHostObjectValue(JSContext *cx, const jschar *name, jsval
 
 // note: a Blob is either a JSString or a Blob object if the jslang module has been loaded.
 //       returned value is equivalent to: var ret = Blob(buffer);
-static INLINE JSBool
-FASTCALL JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
+static INLINE JSBool FASTCALL
+JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
 
 	JL_ASSERT( jl_msize(buffer) >= length + 1 );
 	JL_ASSERT( ((uint8_t*)buffer)[length] == 0 );
@@ -2810,8 +2809,8 @@ JL_StackSize(const JSContext *cx, const JSStackFrame *fp) {
 }
 
 
-static INLINE JSStackFrame*
-FASTCALL JL_StackFrameByIndex(JSContext *cx, int frameIndex) {
+static INLINE JSStackFrame* FASTCALL
+JL_StackFrameByIndex(JSContext *cx, int frameIndex) {
 
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( frameIndex >= 0 ) {
@@ -2838,7 +2837,7 @@ FASTCALL JL_StackFrameByIndex(JSContext *cx, int frameIndex) {
 
 
 static INLINE JSBool
-JL_GetScriptLocation( JSContext *cx, char *location, size_t locationLen ) {
+JL_DebugPrintScriptLocation( JSContext *cx ) {
 
 	JSStackFrame *fp = NULL;
 	do {
@@ -2856,10 +2855,7 @@ JL_GetScriptLocation( JSContext *cx, char *location, size_t locationLen ) {
 	filename = JS_GetScriptFilename(cx, script);
 	if ( filename == NULL || *filename == '\0' )
 		filename = "<no_filename>";
-	strcpy(location, filename);
-	strcat(location, ":");
-	ltoa(lineno, location + strlen(location), 10);
-
+	printf("%s:%d\n", filename, lineno);\
 	return JS_TRUE;
 	JL_BAD;
 }

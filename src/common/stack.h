@@ -237,7 +237,7 @@ public:
 
 	ALWAYS_INLINE Stack& operator++() { // ++s
 
-		Item *newItem = ::new(Alloc(itemSize)) Item;
+		Item *newItem = ::new(Alloc()) Item;
 		newItem->prev = _top;
 		_top = newItem;
 		return *this;

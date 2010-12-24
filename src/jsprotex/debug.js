@@ -8,6 +8,7 @@ LoadModule('jsprotex');
 LoadModule('jsimage');
 LoadModule('jsdebug');
 
+
 //Halt(); //////////////////////////////////////////////////////////////////////
 
 
@@ -109,7 +110,7 @@ function NoiseChannel( tex, channel ) {
 ////
 
 
-var size = 128;
+var size = 64;
 var texture = new Texture(size, size, 3);
 
 //	var myImage = DecodeJpegImage( new File('301_0185.jpg').Open('r') );
@@ -135,10 +136,21 @@ function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------
 
 return;
 
+	// disco effect
+	tmp = new Texture(size, size, 4);
+	tmp.Set(0);
+	tmp.AddGradiantQuad('#ff0000ff', GREEN, BLUE, BLACK);
+	var tr = new Transformation(null);
+	tr.Scale(5);
+	tr.Rotate(IntervalNow()/5, 1,1,1);
+	tmp.ApplyColorMatrix(tr);
+	texture.SetChannel(0, tmp, 0).SetChannel(1, tmp, 1).SetChannel(2, tmp, 2);
+return;
+
+
 	// perlin noise
 	texture.Set(0);
 	texture.AddGradiantQuad(RED, GREEN, BLUE, WHITE);
-
 return;
 
 	texture.AddPerlin2([z/20,0,0], [10,0,0], [0,10,0], 2);
@@ -183,17 +195,6 @@ return;
 	texture.NormalizeLevels();
 return;
 
-
-	// disco effect
-	tmp = new Texture(size, size, 4);
-	tmp.Set(0);
-	tmp.AddGradiantQuad('#ff0000ff', GREEN, BLUE, BLACK);
-	var tr = new Transformation(null);
-	tr.Scale(5);
-	tr.Rotate(IntervalNow()/5, 1,1,1);
-	tmp.ApplyColorMatrix(tr);
-	texture.SetChannel(0, tmp, 0).SetChannel(1, tmp, 1).SetChannel(2, tmp, 2);
-return;
 
 
 	// ???

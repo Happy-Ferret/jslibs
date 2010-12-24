@@ -484,8 +484,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Sleep ) {
 
-	uint32 timeout;
-	JL_CHK( JS_ValueToECMAUint32( cx, JL_ARG(1), &timeout ) );
+	PRUint32 timeout;
+	if ( JL_ARG_ISDEF(1) )
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
+	else
+		timeout = 0;
 	PR_Sleep( PR_MillisecondsToInterval(timeout) );
 
 	*JL_RVAL = JSVAL_VOID;

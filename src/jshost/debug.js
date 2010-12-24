@@ -1,3 +1,4 @@
+
 LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();
@@ -8,11 +9,13 @@ RunQATests('-rep 1 -q -nogcB -exclude jstask');
 //Exec('../../perfset.js'); throw 0; // -perf perfset.js 
 
 
+
+
 function makeLogger(obj) {
 
 	var proxy = Proxy.create({
 		get: function(rcvf, name) {
-			Print('get '+' '+name+' '+''+'\n');(
+			Print('get '+' '+name+' '+''+'\n');
 			return obj[name];
 		},
 		set: function(rcvf, name, val) {

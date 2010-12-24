@@ -439,7 +439,7 @@ JL_AssertFailure( const char *message, const char *location ) {
 #else // DEBUG
 
 #define JL_ASSERT(expr) ((void)0)
-#define JL_ASSERT_IF(cond,expr) ((void) 0)
+#define JL_ASSERT_IF(cond, expr) ((void) 0)
 
 #endif // DEBUG
 
@@ -486,7 +486,8 @@ JL_STATIC_ASSERT( DBL_MANT_DIG < 64 );
 //JL_STATIC_ASSERT( MAX_INTDOUBLE+1. == MAX_INTDOUBLE+2. );
 
 
-static ALWAYS_INLINE int DOUBLE_IS_NEGZERO(const double &d) {
+static ALWAYS_INLINE int
+DOUBLE_IS_NEGZERO(const double &d) {
 #ifdef WIN32
 	return (d == 0 && (_fpclass(d) & _FPCLASS_NZ));
 #elif defined(SOLARIS)
@@ -496,7 +497,8 @@ static ALWAYS_INLINE int DOUBLE_IS_NEGZERO(const double &d) {
 #endif
 }
 
-static ALWAYS_INLINE bool DOUBLE_IS_NEG(const double &d) {
+static ALWAYS_INLINE
+bool DOUBLE_IS_NEG(const double &d) {
 #ifdef WIN32
 	return DOUBLE_IS_NEGZERO(d) || d < 0;
 #elif defined(SOLARIS)
@@ -506,7 +508,8 @@ static ALWAYS_INLINE bool DOUBLE_IS_NEG(const double &d) {
 #endif
 }
 
-static ALWAYS_INLINE bool JL_DOUBLE_IS_INTEGER(const double &d) {
+static ALWAYS_INLINE bool
+JL_DOUBLE_IS_INTEGER(const double &d) {
 
 	//	return d == double(int64_t(d));
 	return floor(d) == d;
@@ -514,12 +517,14 @@ static ALWAYS_INLINE bool JL_DOUBLE_IS_INTEGER(const double &d) {
 
 
 template<class T>
-static ALWAYS_INLINE T JL_MIN(T a, T b) {
+static ALWAYS_INLINE T
+JL_MIN(T a, T b) {
 	return (a) < (b) ? (a) : (b);
 }
 
 template<class T>
-static ALWAYS_INLINE T JL_MAX(T a, T b) {
+static ALWAYS_INLINE T
+JL_MAX(T a, T b) {
 	return (a) > (b) ? (a) : (b);
 }
 
@@ -607,8 +612,8 @@ JL_CAST_CSTR_TO_UINT32( const char *cstr ) {
 }
 
 
-static INLINE unsigned long
-FASTCALL int_sqrt(unsigned long x) {
+static INLINE unsigned long FASTCALL
+int_sqrt(unsigned long x) {
 
     register unsigned long op, res, one;
 
@@ -631,8 +636,8 @@ FASTCALL int_sqrt(unsigned long x) {
 }
 
 
-static INLINE int
-FASTCALL int_pow(int base, int exp) {
+static INLINE int FASTCALL
+int_pow(int base, int exp) {
 
 	int result = 1;
     while (exp) {
@@ -646,7 +651,8 @@ FASTCALL int_pow(int base, int exp) {
 }
 
 
-static ALWAYS_INLINE uint32_t JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
+static ALWAYS_INLINE uint32_t
+JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
 
 	if ( r == NULL || r[0] == '\0' || r[10] == '\0' || r[11] == '\0' || r[12] == '\0' || r[13] == '\0' )
 		return 0;
@@ -775,6 +781,7 @@ static INLINE void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, c
 #endif //XP_UNIX
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // Platform tools
 
@@ -784,26 +791,30 @@ static INLINE void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, c
 // 32 bits swap: #define SWAP_BYTE(x) ((x<<24) | (x>>24) | ((x&0xFF00)<<8) | ((x&0xFF0000)>>8))
 //#define JL_BYTESWAP(ptr,a,b) { register char tmp = ((int8_t*)ptr)[a]; ((int8_t*)ptr)[a] = ((int8_t*)ptr)[b]; ((int8_t*)ptr)[b] = tmp; }
 
-static ALWAYS_INLINE void JL_BYTESWAP(void *ptr, size_t a, size_t b) {
+static ALWAYS_INLINE void
+JL_BYTESWAP(void *ptr, size_t a, size_t b) {
 
 	register char tmp = ((int8_t*)ptr)[a];
 	((int8_t*)ptr)[a] = ((int8_t*)ptr)[b];
 	((int8_t*)ptr)[b] = tmp;
 }
 
-static ALWAYS_INLINE void Host16ToNetwork16( void *pval ) {
+static ALWAYS_INLINE void
+Host16ToNetwork16( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
 		JL_BYTESWAP( pval, 0, 1 );
 }
 
-static ALWAYS_INLINE void Host24ToNetwork24( void *pval ) {
+static ALWAYS_INLINE void
+Host24ToNetwork24( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
 		JL_BYTESWAP( pval, 0, 2 );
 }
 
-static ALWAYS_INLINE void Host32ToNetwork32( void *pval ) {
+static ALWAYS_INLINE void
+Host32ToNetwork32( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
 
@@ -812,7 +823,8 @@ static ALWAYS_INLINE void Host32ToNetwork32( void *pval ) {
 	}
 }
 
-static ALWAYS_INLINE void Host64ToNetwork64( void *pval ) {
+static ALWAYS_INLINE void
+Host64ToNetwork64( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
 
@@ -824,20 +836,23 @@ static ALWAYS_INLINE void Host64ToNetwork64( void *pval ) {
 }
 
 
-static ALWAYS_INLINE void Network16ToHost16( void *pval ) {
+static ALWAYS_INLINE void
+Network16ToHost16( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
 		JL_BYTESWAP( pval, 0, 1 );
 }
 
-static ALWAYS_INLINE void Network24ToHost24( void *pval ) {
+static ALWAYS_INLINE void
+Network24ToHost24( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
 		JL_BYTESWAP( pval, 0, 2 );
 }
 
 
-static ALWAYS_INLINE void Network32ToHost32( void *pval ) {
+static ALWAYS_INLINE void
+Network32ToHost32( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
 
@@ -846,7 +861,8 @@ static ALWAYS_INLINE void Network32ToHost32( void *pval ) {
 	}
 }
 
-static ALWAYS_INLINE void Network64ToHost64( void *pval ) {
+static ALWAYS_INLINE void
+Network64ToHost64( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
 
@@ -858,8 +874,8 @@ static ALWAYS_INLINE void Network64ToHost64( void *pval ) {
 }
 
 
-static INLINE char*
-FASTCALL IntegerToString(int val, int base) {
+static INLINE char* FASTCALL
+IntegerToString(int val, int base) {
 
 	bool neg;
 	static char buf[64]; // (TBD) overflow warning !
@@ -891,8 +907,8 @@ static ALWAYS_INLINE void SleepMilliseconds(uint32_t ms) {
 }
 
 
-static INLINE double
-FASTCALL AccurateTimeCounter() {
+static INLINE double FASTCALL
+AccurateTimeCounter() {
 
 #if defined(XP_WIN)
 	static volatile LONGLONG initTime = 0; // initTime helps in avoiding precision waste.
@@ -930,20 +946,28 @@ FASTCALL AccurateTimeCounter() {
 
 
 
-static ALWAYS_INLINE int JLProcessId() {
+/*
+static __declspec(naked) __declspec(noinline) size_t JLGetEIP() {
 
-#if defined(XP_WIN)
-	return getpid();
-#elif defined(XP_UNIX)
-	return getpid();
-#endif // XP_UNIX
-	return -1; // (TBD)
+	__asm pop eax;
+	__asm jmp eax;
 }
+*/
 
+/*
+static size_t JLIP() {
+#if defined(XP_WIN)
+	return (size_t)_ReturnAddress();
+#elif defined(XP_UNIX)
+	return (size_t)__builtin_return_address(0);
+#endif
+}
+*/
 
 #define JL_PAGESIZE 4096
 
-static ALWAYS_INLINE size_t JLPageSize() {
+static ALWAYS_INLINE size_t
+JLPageSize() {
 
 	static size_t pageSize = 0;
 	if ( pageSize )
@@ -963,7 +987,20 @@ static ALWAYS_INLINE size_t JLPageSize() {
 }
 
 
-static ALWAYS_INLINE uint32_t JLSessionId() {
+static ALWAYS_INLINE int
+JLProcessId() {
+
+#if defined(XP_WIN)
+	return getpid();
+#elif defined(XP_UNIX)
+	return getpid();
+#endif // XP_UNIX
+	return -1; // (TBD)
+}
+
+
+static ALWAYS_INLINE uint32_t
+JLSessionId() {
 
 	uint32_t r = 0x12345678;
 	r ^= (uint32_t)AccurateTimeCounter();
@@ -978,25 +1015,8 @@ static ALWAYS_INLINE uint32_t JLSessionId() {
 }
 
 
-/*
-static __declspec(naked) __declspec(noinline) size_t JLGetEIP() {
-
-	__asm pop eax;
-	__asm jmp eax;
-}
-*/
-
-/*
-static size_t JLIP() {
-#if defined(XP_WIN)
-	return (size_t)_ReturnAddress();
-#elif defined(XP_UNIX)
-	return (size_t)__builtin_return_address(0);
-#endif
-}
-*/
-
-static ALWAYS_INLINE size_t JLRemainingStackSize() {
+static ALWAYS_INLINE size_t
+JLRemainingStackSize() {
 #if defined(XP_WIN)
 
 	#pragma warning(push)
@@ -1025,7 +1045,8 @@ enum JLEncodingType {
 	ASCII
 };
 
-static INLINE JLEncodingType JLDetectEncoding(char **buf, size_t *size) {
+static INLINE JLEncodingType
+JLDetectEncoding(char **buf, size_t *size) {
 
 	if ( *size < 2 )
 		return ASCII;
@@ -1187,7 +1208,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 ///////////////////////////////////////////////////////////////////////////////
 // system errors
 //
-	static INLINE void JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
+	static INLINE void FASTCALL JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 
 	#if defined(XP_WIN)
 		DWORD errorCode = ::GetLastError();
@@ -1317,7 +1338,7 @@ static ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 #endif
 
 
-	static INLINE JLSemaphoreHandler JLSemaphoreCreate( int initCount ) {
+	static ALWAYS_INLINE JLSemaphoreHandler JLSemaphoreCreate( int initCount ) {
 
 	#if defined(XP_WIN)
 		return CreateSemaphore(NULL, initCount, LONG_MAX, NULL);
@@ -1545,7 +1566,7 @@ static ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
 	return cv != (JLCondHandler)0;
 }
 
-static INLINE JLCondHandler JLCondCreate() {
+static ALWAYS_INLINE JLCondHandler JLCondCreate() {
 
 	JLCondHandler cv = (JLCondHandler)malloc(sizeof(*cv));
 	if ( cv == NULL )
@@ -1559,7 +1580,7 @@ static INLINE JLCondHandler JLCondCreate() {
 	return cv;
 }
 
-static INLINE void JLCondFree( JLCondHandler *cv ) {
+static ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 
 	JL_ASSERT( cv != NULL && JLCondOk(*cv) );
 	BOOL st = CloseHandle((*cv)->events[1]);

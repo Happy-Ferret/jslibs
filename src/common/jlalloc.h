@@ -43,32 +43,8 @@ extern jl_realloc_t jl_realloc;
 extern jl_msize_t jl_msize;
 extern jl_free_t jl_free;
 
-
-#define JL_MALLOCA_THRESHOLD 8192
-
-ALWAYS_INLINE void *
-jl_malloca_private(void *mem, size_t size) {
-	
-	if (likely( mem != NULL )) {
-
-		*(size_t*)mem = size;
-		return ((size_t*)mem)+1;
-	} else {
-
-		return NULL;
-	}
-}
-
-#define jl_malloca(size) \
-	jl_malloca_private(unlikely( (size)+sizeof(size_t) > JL_MALLOCA_THRESHOLD ) ? jl_malloc((size)+sizeof(size_t)) : alloca((size)+sizeof(size_t)), (size)+sizeof(size_t))
-
-ALWAYS_INLINE void
-jl_freea(void *mem) {
-	
-	if (unlikely( mem && *(((size_t*)mem)-1) > JL_MALLOCA_THRESHOLD ))
-		jl_free(((size_t*)mem)-1);
-}
-
+///////////////////////////////////////////////////////////////////////////////
+// alloc wrappers
 
 /*
 template <typename T>
@@ -78,9 +54,7 @@ JL_Alloc( T*&ptr, size_t count = 1 ) {
 	ptr = (T*)jl_malloc(sizeof(T)*count);
 	return ptr != NULL;
 }
-*/
 
-/*
 template <typename T>
 static ALWAYS_INLINE bool
 JL_Realloc( T*&ptr, size_t count = 1 ) {
@@ -90,6 +64,34 @@ JL_Realloc( T*&ptr, size_t count = 1 ) {
 }
 */
 
+
+///////////////////////////////////////////////////////////////////////////////
+// malloca
+
+#define JL_MALLOCA_THRESHOLD 8192
+
+ALWAYS_INLINE void *
+jl_malloca_private(void *mem, size_t heapMem) {
+	
+	if (likely( mem != NULL )) {
+
+		*(size_t*)mem = heapMem;
+		return (size_t*)mem+1;
+	} else {
+
+		return NULL;
+	}
+}
+
+#define jl_malloca(size) \
+	( ( (size)+sizeof(size_t) > JL_MALLOCA_THRESHOLD ) ? jl_malloca_private(jl_malloc((size)+sizeof(size_t)), 1) : jl_malloca_private(alloca((size)+sizeof(size_t)), 0) )
+
+ALWAYS_INLINE void
+jl_freea(void *mem) {
+	
+	if (unlikely( mem && *((size_t*)mem-1) ))
+		jl_free((size_t*)mem-1);
+}
 
 /*
 #define JL_AutoFreea(ptr, size)
@@ -105,8 +107,6 @@ public:
 
 #define JL_AutoMalloca(size) JL_AutoMallocaClass(jl_malloca(size), size);
 */
-
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -155,7 +155,7 @@ namespace jl {
 	};
 
 
-	template <const size_t PREALLOC = 0>
+	template <typename T, const size_t PREALLOC = 0>
 	class _NOVTABLE PreservAlloc : private DefaultAlloc {
 
 		void *_last;
@@ -179,14 +179,15 @@ namespace jl {
 				DefaultAlloc::Free(_prealloc);
 		}
 
-		ALWAYS_INLINE void Free(void *ptr) {
+		ALWAYS_INLINE void Free(T *ptr) {
 
 			*(void**)ptr = _last;
 			_last = ptr;
 		}
 
-		ALWAYS_INLINE void* Alloc(size_t size) {
-
+		ALWAYS_INLINE T* Alloc() {
+			
+			size_t size = sizeof(T);
 			if ( size < sizeof(void*) )
 				size = sizeof(void*);
 
@@ -205,37 +206,29 @@ namespace jl {
 
 				void *tmp = _last;
 				_last = *(void**)_last;
-				return tmp;
+				return (T*)tmp;
 			}
-			return DefaultAlloc::Alloc(size);
+			return (T*)DefaultAlloc::Alloc(size);
 		}
 
-		ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
+		//ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
 
-			if ( size < sizeof(void*) )
-				size = sizeof(void*);
-			return DefaultAlloc::Realloc(ptr, size);
-		}
+		//	if ( size < sizeof(void*) )
+		//		size = sizeof(void*);
+		//	return DefaultAlloc::Realloc(ptr, size);
+		//}
 	};
 
 
-	template <const size_t PREALLOC_SIZE = 1024>
+	template <typename T, const size_t PREALLOC_SIZE = 1024>
 	class _NOVTABLE StaticAlloc : private DefaultAlloc {
 
 		void *_last;
 		uint8_t *_preallocEnd;
-
 		uint8_t _prealloc[PREALLOC_SIZE];
-#ifdef DEBUG
-		size_t _dbg_size;
-#endif
 
 	public:
 		ALWAYS_INLINE StaticAlloc() : _last(NULL), _preallocEnd(NULL) {
-
-#ifdef DEBUG
-			_dbg_size = 0;
-#endif
 		}
 
 		ALWAYS_INLINE ~StaticAlloc() {
@@ -255,15 +248,9 @@ namespace jl {
 			_last = ptr;
 		}
 
-		ALWAYS_INLINE void* Alloc(size_t size) {
+		ALWAYS_INLINE void* Alloc() {
 
-#ifdef DEBUG
-			JL_ASSERT( size != 0 );
-			if ( _dbg_size == 0 )
-				_dbg_size = size;
-			JL_ASSERT( size == _dbg_size );
-#endif
-
+			size_t size = sizeof(T);
 			if ( size < sizeof(void*) )
 				size = sizeof(void*);
 
@@ -286,13 +273,13 @@ namespace jl {
 			return DefaultAlloc::Alloc(size);
 		}
 
-		ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
+		//ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
 
-			if ( size < sizeof(void*) )
-				size = sizeof(void*);
+		//	if ( size < sizeof(void*) )
+		//		size = sizeof(void*);
 
-			return DefaultAlloc::Realloc(ptr, size);
-		}
+		//	return DefaultAlloc::Realloc(ptr, size);
+		//}
 	};
 }
 

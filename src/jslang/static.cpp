@@ -348,9 +348,6 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 //#include "../jslang/blobPub.h"
 DEFINE_FUNCTION( jslang_test ) {
 
-
-//	JL_GetScriptLocation(cx);
-
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }

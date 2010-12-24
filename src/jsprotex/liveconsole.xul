@@ -350,7 +350,7 @@ function RemoteCall( remoteMessage ) {
 				
 				},
 				slider:function({min, max, step, w, vert, name}) {
-					
+
 					min = min || -1;
 					max = max || 1;
 					step = step || 0.1;
@@ -387,12 +387,12 @@ function RemoteCall( remoteMessage ) {
 
 						if ( ev.button != 2 )
 							return;
-						controlerList[opt.name] = (opt.max-opt.min)/2 + opt.min;
+						controlerList[name] = (max-min)/2 + min;
 						ev.preventDefault();
 						ev.stopPropagation();
 					}, false);
 
-					DefineAccess(opt.name,
+					DefineAccess(name,
 						function() parseInt(widget.getAttribute('value'))/ratio,
 						function(val) {
 							
