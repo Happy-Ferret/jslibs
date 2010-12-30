@@ -84,7 +84,7 @@ DEFINE_FUNCTION( Expand ) {
 		JSString *root;
 	} Chunk;
 
-	jl::Stack<Chunk, jl::StaticAllocSmall> stack;
+	jl::Stack<Chunk, jl::StaticAllocMedium> stack;
 	jsval value;
 
 	JLStr srcStr;
