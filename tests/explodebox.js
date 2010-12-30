@@ -91,7 +91,7 @@ function Ball(pos) {
 	body.mass.value = 100;
 	body.position = pos;
 	
-//	geom.contact = function(thisGeom, otherGeom) otherGeom.name != 'floor'; // don't hit the floor
+	geom.contact = function(thisGeom, otherGeom) otherGeom.name != 'floor'; // don't hit the floor
 	
 	this.body = body;
 	this.geom = geom;
@@ -186,14 +186,15 @@ var scene = [];
 
 scene.push( new Floor() );
 
-var ball = new Ball([0, 0, 2]);
-ball.body.linearVel = [0, 0, 10];
+var ball = new Ball([0, 0, -10]);
+ball.body.linearVel = [0, 0, 50];
 scene.push( ball );
 
+/*
 var ball = new Ball([0, 1, 40]);
 ball.body.linearVel = [0, 0, -10];
 scene.push( ball );
-
+*/
 
 
 var side = 10;
@@ -201,8 +202,8 @@ var gap = 0.001;
 for ( var i = -side; i < side; ++i )
 	for ( var j = -side; j < side; ++j ) {
 		
-//		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
-//		scene.push( new Box([i*(1+gap), j*(1+gap), 1.5]) );
+		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
+		scene.push( new Box([i*(1+gap), j*(1+gap), 1.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 2.5]) );
 //		scene.push( new Box([i*(1+gap), j*(1+gap), 3.5]) );
 	}
