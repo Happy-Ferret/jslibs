@@ -75,7 +75,7 @@ public:
 
 
 template <class T>
-class AllocatorWrapper : public Allocator<T> {
+class AllocatorWrapperSmall : public Allocator<T, 10> {
 };
 
 
@@ -101,7 +101,7 @@ public:
 
 int main(int argc, char* argv[]) {
 
-	Stack<int, Allocator<10>> s;
+	Stack<int, AllocatorWrapperSmall> s;
 	s.Push(123);
 
 	return EXIT_SUCCESS;

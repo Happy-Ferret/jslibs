@@ -182,7 +182,7 @@ inline void StackFree( void **stack ) {
 
 
 
-template <class T>
+template <class T, template<class> class A = DefaultAlloc>
 class _NOVTABLE Stack {
 
 	class Item {
@@ -191,7 +191,7 @@ class _NOVTABLE Stack {
 		Item *prev;
 	};
 
-	StaticAlloc<Item> allocator;
+	A<Item> allocator;
 
 	Item* _top;
 

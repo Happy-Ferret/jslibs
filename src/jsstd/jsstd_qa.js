@@ -758,7 +758,7 @@ LoadModule('jsstd');
 /// expand bug1 [tr]
 
 	var source = 'gl_LightSource[$(xxx)';
-	QA.ASSERT_STR( Expand(source, { xxx:1 }), 'gl_LightSource[$(1)' );
+	QA.ASSERT_STR( Expand(source, { xxx:1 }), 'gl_LightSource[1' );
 		
 		
 /// Big expand [tr]

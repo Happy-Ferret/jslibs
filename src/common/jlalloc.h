@@ -208,14 +208,20 @@ namespace jl {
 			}
 			return (T*)jl_malloc(size);
 		}
-
-		//ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
-
-		//	if ( size < sizeof(void*) )
-		//		size = sizeof(void*);
-		//	return DefaultAlloc::Realloc(ptr, size);
-		//}
 	};
+
+	template <typename T>
+	class _NOVTABLE PreservAllocNone : public PreservAlloc<T, 0> {};
+
+	template <typename T>
+	class _NOVTABLE PreservAllocSmall : public PreservAlloc<T, 256> {};
+
+	template <typename T>
+	class _NOVTABLE PreservAllocMedium : public PreservAlloc<T, 4096> {};
+
+	template <typename T>
+	class _NOVTABLE PreservAllocBig : public PreservAlloc<T, 65536> {};
+
 
 
 	template <typename T, const size_t PREALLOC_SIZE = 1024>
@@ -270,15 +276,18 @@ namespace jl {
 
 			return (T*)jl_malloc(size);
 		}
-
-		//ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {
-
-		//	if ( size < sizeof(void*) )
-		//		size = sizeof(void*);
-
-		//	return DefaultAlloc::Realloc(ptr, size);
-		//}
 	};
+
+	template <typename T>
+	class _NOVTABLE StaticAllocSmall : public StaticAlloc<T, 256> {};
+
+	template <typename T>
+	class _NOVTABLE StaticAllocMedium : public StaticAlloc<T, 4096> {};
+
+	template <typename T>
+	class _NOVTABLE StaticAllocBig : public StaticAlloc<T, 65536> {};
+
+
 }
 
 

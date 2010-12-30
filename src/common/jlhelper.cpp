@@ -16,4 +16,4 @@
 
 #include "jlhelper.h"
 
-jl::PreservAlloc<JLStr::Inner> JLStr::mem;
+jl::PreservAllocNone<JLStr::Inner> JLStr::mem;

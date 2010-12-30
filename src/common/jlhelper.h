@@ -929,7 +929,7 @@ class JLStr {
 		uint32_t count;
 	} *_inner;
 
-	static jl::PreservAlloc<JLStr::Inner> mem;
+	static jl::PreservAllocNone<JLStr::Inner> mem;
 
 	void CreateOwnJsStrZ() {
 		
