@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../libs/ode/src/include"
+				AdditionalIncludeDirectories="../../libs/ode/win32_config;../../libs/ode/src/include"
 				PreprocessorDefinitions="SSE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -113,7 +113,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="false"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="../../libs/ode/src/include"
+				AdditionalIncludeDirectories="../../libs/ode/win32_config;../../libs/ode/src/include"
 				PreprocessorDefinitions="SSE"
 				BufferSecurityCheck="false"
 				UsePrecompiledHeader="2"
