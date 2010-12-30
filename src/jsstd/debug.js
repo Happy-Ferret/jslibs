@@ -4,7 +4,10 @@ if ( 1 ) {
 	LoadModule('jsio');
 	LoadModule('jsdebug');
 
-//	Test();
+	var source = 'aaa$(xxx)';
+	Print( Expand(source, { xxx:1 }) );
+
+Halt();
 
 	throw 0;
 }

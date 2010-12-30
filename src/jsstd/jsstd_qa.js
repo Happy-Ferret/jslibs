@@ -754,6 +754,11 @@ LoadModule('jsstd');
 		var o = { title:'My HTML Page', titi:1234, toString:function() { return Expand( this.text, this ) } };
 		o.text = '<html><title>$(title)</title>\n'
 		QA.ASSERT_STR( o, '<html><title>My HTML Page</title>\n', 'expand string using this object' );
+
+/// expand bug1 [tr]
+
+	var source = 'gl_LightSource[$(xxx)';
+	QA.ASSERT_STR( Expand(source, { xxx:1 }), 'gl_LightSource[$(1)' );
 		
 		
 /// Big expand [tr]

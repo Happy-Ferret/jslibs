@@ -240,13 +240,13 @@ namespace jl {
 			}
 		}
 
-		ALWAYS_INLINE void Free(void *ptr) {
+		ALWAYS_INLINE void Free(T *ptr) {
 
 			*(void**)ptr = _last;
 			_last = ptr;
 		}
 
-		ALWAYS_INLINE void* Alloc() {
+		ALWAYS_INLINE T* Alloc() {
 
 			size_t size = sizeof(T);
 			if ( size < sizeof(void*) )
@@ -265,10 +265,10 @@ namespace jl {
 
 				void *tmp = _last;
 				_last = *(void**)_last;
-				return tmp;
+				return (T*)tmp;
 			}
 
-			return jl_malloc(size);
+			return (T*)jl_malloc(size);
 		}
 
 		//ALWAYS_INLINE void* Realloc(void *ptr, size_t size) {

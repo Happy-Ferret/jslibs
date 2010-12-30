@@ -63,31 +63,46 @@ js::Class jl_BlobClass = {
 	}
 };
 
+
+template <class T, int S = 10>
+class Allocator {
+public:
+	T* Alloc() {
+		
+		return (T*)malloc(sizeof(T)*S);
+	}
+};
+
+
+template <class T>
+class AllocatorWrapper : public Allocator<T> {
+};
+
+
+
+template <class T, template<class> class A>
+class Stack {
+public:
+	struct Item {
+		T data;
+		Item *next;
+	};
+
+	A<Item> allocator;
+
+	void Push(T data) {
+
+		Item *item = allocator.Alloc();
+		item->data = data;
+	}
+};
+
+
+
 int main(int argc, char* argv[]) {
 
-	JSRuntime *rt = JS_NewRuntime(0);
-	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
-	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);
-	JSContext *cx = JS_NewContext(rt, 8192L);
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_JIT);
-
-	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class);
-	JS_InitStandardClasses(cx, globalObject);
-
-	JS_InitClass(cx, globalObject, NULL, js::Jsvalify(&jl_BlobClass), constructor, 0, NULL, NULL, NULL, NULL);
-
-	jsval rval;
-	
-	char *script = 
-		"for ( var i = 0; i < 3; i++ )"
-		"  [ 0 for ( it in Blob() ) ];";
-
-	if ( !JS_EvaluateScript(cx, globalObject, script, strlen(script), "<inline>", 0, &rval) )
-		return EXIT_FAILURE;
-
-	JS_DestroyContext(cx);
-	JS_DestroyRuntime(rt);
-	JS_ShutDown();
+	Stack<int, Allocator<10>> s;
+	s.Push(123);
 
 	return EXIT_SUCCESS;
 }

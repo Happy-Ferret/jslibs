@@ -182,14 +182,16 @@ inline void StackFree( void **stack ) {
 
 
 
-template <class T, class A = DefaultAlloc<T>>
-class _NOVTABLE Stack : private A {
+template <class T>
+class _NOVTABLE Stack {
 
 	class Item {
 	public:
 		T data;
 		Item *prev;
 	};
+
+	StaticAlloc<Item> allocator;
 
 	Item* _top;
 
@@ -200,7 +202,7 @@ private: // forbidden access
 	Stack & operator=( const Stack & );
 
 public:
-	typedef Stack<T,A> ThisType;
+	typedef Stack<T> ThisType;
 	typedef T ValueType;
 	enum { itemSize = sizeof(Item) };
 
@@ -237,7 +239,7 @@ public:
 
 	ALWAYS_INLINE Stack& operator++() { // ++s
 
-		Item *newItem = ::new(Alloc()) Item;
+		Item *newItem = ::new(allocator.Alloc()) Item;
 		newItem->prev = _top;
 		_top = newItem;
 		return *this;
@@ -249,7 +251,7 @@ public:
 		Item* oldItem = _top;
 		_top = _top->prev;
 		oldItem->~Item();
-		Free(oldItem);
+		allocator.Free(oldItem);
 		return *this;
 	}
 
@@ -273,7 +275,7 @@ public:
 
 			ALWAYS_INLINE bool operator()( const T &value ) {
 
-				Item *newItem = ::new(_dst.Alloc(itemSize)) Item;
+				Item *newItem = ::new(allocator.Alloc(itemSize)) Item;
 				newItem->data = value;
 				*_itemPtr = newItem;
 				_itemPtr = &newItem->prev;
@@ -322,7 +324,7 @@ public:
 			Item* tmp = _top;
 			_top = _top->prev;
 			tmp->~Item();
-			Free(tmp);
+			allocator.Free(tmp);
 			return true;
 		}
 		for ( Item *prev, *item = _top; prev = item->prev; item = prev ) {
@@ -331,7 +333,7 @@ public:
 
 				item->prev = prev->prev;
 				prev->~Item();
-				Free(prev);
+				allocator.Free(prev);
 				return true;
 			}
 		}
