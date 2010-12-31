@@ -40,8 +40,7 @@
 configure: .\src\win32\config.msvc
 
 clean:
-	-cd .\src\win32 && $(MAKE) -f Makefile.msvc distclean
-	-del .\src\win32\config.msvc
+	-if exist .\src\win32\Makefile cd .\src\win32 && $(MAKE) -f Makefile.msvc distclean
 	-del "$(TARGET_DIR)\$(TARGET_FILE)"
 
 all: configure
