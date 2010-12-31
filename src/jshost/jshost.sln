@@ -16,10 +16,12 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jslang", "..\jslang\jslang.vcproj", "{F432DBF2-5EF1-4EE9-A98D-03CD47287C11}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fileToCRes", "..\tools\fileToCRes.vcproj", "{7993EFA2-8340-46DB-9781-936E28989A6D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{85EC7E4D-7386-41F5-BFC7-15E6FF3DAC2A} = {85EC7E4D-7386-41F5-BFC7-15E6FF3DAC2A}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "resources", "resources.vcproj", "{D3BA293E-8AAC-4EE9-8171-56FE198FB40B}"
 	ProjectSection(ProjectDependencies) = postProject
-		{85EC7E4D-7386-41F5-BFC7-15E6FF3DAC2A} = {85EC7E4D-7386-41F5-BFC7-15E6FF3DAC2A}
 		{7993EFA2-8340-46DB-9781-936E28989A6D} = {7993EFA2-8340-46DB-9781-936E28989A6D}
 	EndProjectSection
 EndProject
