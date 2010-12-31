@@ -35,6 +35,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glib", "..\..\libs\glib\gli
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gobject", "..\..\libs\glib\gobject.vcproj", "{F172EFFC-E30F-4593-809E-DB2024B1E753}"
+	ProjectSection(ProjectDependencies) = postProject
+		{12BCA020-EABF-429E-876A-A476BC9C10C0} = {12BCA020-EABF-429E-876A-A476BC9C10C0}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cairo", "..\..\libs\cairo\cairo.vcproj", "{1C4819C2-9052-44C9-9C5A-CBA5CA765EB0}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -47,7 +50,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\..\libs\zlib\zli
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pango", "..\..\libs\pango\pango.vcproj", "{36BA3E56-75C7-44E9-8F38-6141B1D01BF8}"
 	ProjectSection(ProjectDependencies) = postProject
-		{12BCA020-EABF-429E-876A-A476BC9C10C0} = {12BCA020-EABF-429E-876A-A476BC9C10C0}
 		{4214047C-F5C1-40B3-8369-5DCED8C32770} = {4214047C-F5C1-40B3-8369-5DCED8C32770}
 		{78B079BD-9FC7-4B9E-B4A6-96DA0F00248B} = {78B079BD-9FC7-4B9E-B4A6-96DA0F00248B}
 		{A52236DE-C5FF-4E14-8FBA-BCEE34291408} = {A52236DE-C5FF-4E14-8FBA-BCEE34291408}
