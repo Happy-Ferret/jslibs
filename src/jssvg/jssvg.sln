@@ -25,6 +25,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librsvg", "..\..\libs\librs
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gdk-pixbuf", "..\..\libs\gdk-pixbuf\gdk-pixbuf.vcproj", "{CEFA1472-D84C-4774-9DC0-58725FF8C86B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F172EFFC-E30F-4593-809E-DB2024B1E753} = {F172EFFC-E30F-4593-809E-DB2024B1E753}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glib", "..\..\libs\glib\glib.vcproj", "{12BCA020-EABF-429E-876A-A476BC9C10C0}"
 	ProjectSection(ProjectDependencies) = postProject
