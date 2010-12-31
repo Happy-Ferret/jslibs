@@ -101,12 +101,13 @@ var s = <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2
 </svg>
 
 
-var s = <svg width="128" height="128">
+/*
+var s = <svg width="512" height="512">
 	<rect x="0" y="0" width="128" height="128" fill="red" />
 	<rect x="0" y="0" width="64" height="64" fill="green" />
 	<rect x="0" y="0" width="32" height="32" fill="blue" />
 </svg>;
-
+*/
 
 var svg = new SVG();
 svg.onImage = function(href) {
@@ -126,10 +127,10 @@ svg.SetVisible('#test', false);
 var svgimage;
 
 //svg.Translate(64,0);
-svg.Rotate(Math.PI/4);
+//svg.Rotate(Math.PI/4);
 
 Time( function renderImage()
-svgimage = svg.RenderImage(64, 64, 3, true)
+svgimage = svg.RenderImage(undefined, undefined, 3, true)
 )
 
 
@@ -137,7 +138,15 @@ svgimage = svg.RenderImage(64, 64, 3, true)
 //Print( svgText.length );
 //var svgimage = svg.Write(svgText);
 
+/*
 Time( function encodePNG()
 new File('test.png').content = EncodePngImage( svgimage )
 )
+*/
+
+LoadModule('jssdl');
+LoadModule('jsgraphics');
+Exec('../common/tools.js');
+DisplayImage( svgimage );
+
 

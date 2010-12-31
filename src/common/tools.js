@@ -315,6 +315,55 @@ function DisplayTexture( texture ) {
 }
 
 
+
+var textureId;
+function DisplayImage( image ) {
+
+	SetVideoMode( image.width,image.height, 32, OPENGL | RESIZABLE );
+	Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
+	Ogl.Viewport(0,0,image.width,image.height);
+
+	if ( !textureId )
+		textureId = Ogl.GenTexture();
+	Ogl.BindTexture(Ogl.TEXTURE_2D, textureId);
+
+	Ogl.DefineTextureImage(Ogl.TEXTURE_2D, undefined, image);
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.NEAREST);
+	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.NEAREST);
+
+	Ogl.MatrixMode(Ogl.PROJECTION);
+	Ogl.LoadIdentity();
+	Ogl.MatrixMode(Ogl.MODELVIEW);
+	Ogl.LoadIdentity();
+
+	Ogl.Enable(Ogl.TEXTURE_2D);
+	Ogl.Disable(Ogl.DEPTH_TEST);
+
+	Ogl.Clear(Ogl.COLOR_BUFFER_BIT);
+
+	Ogl.Begin(Ogl.QUADS);
+	Ogl.TexCoord(0, 0); Ogl.Vertex(-1,1);
+	Ogl.TexCoord(1, 0); Ogl.Vertex(1,1);
+	Ogl.TexCoord(1, 1); Ogl.Vertex(1,-1);
+	Ogl.TexCoord(0, 1); Ogl.Vertex(-1,-1);
+	Ogl.End();
+	
+	GlSwapBuffers();
+	
+	var end = false;
+	var listeners = {
+	
+		onKeyDown:function(sym, mod, chr) {
+		
+			end = true;
+		}
+	}
+	
+	while ( !end )
+		ProcessEvents(SDLEvents(listeners));
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
