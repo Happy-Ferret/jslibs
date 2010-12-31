@@ -46,4 +46,4 @@ clean:
 all: configure
 	cd .\src\win32 && $(MAKE) -f Makefile.msvc libxmla
 	-mkdir "$(TARGET_DIR)"
-	copy .\src\win32\bin.msvc\libxml2_a.lib "$(TARGET_DIR)\$(TARGET_FILE)"
+	copy /Y .\src\win32\bin.msvc\libxml2_a.lib "$(TARGET_DIR)\$(TARGET_FILE)"
