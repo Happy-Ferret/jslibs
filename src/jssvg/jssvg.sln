@@ -26,6 +26,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gdk-pixbuf", "..\..\libs\gdk-pixbuf\gdk-pixbuf.vcproj", "{CEFA1472-D84C-4774-9DC0-58725FF8C86B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glib", "..\..\libs\glib\glib.vcproj", "{12BCA020-EABF-429E-876A-A476BC9C10C0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3B962275-ED9F-4274-8F6D-166FDBEA2BF1} = {3B962275-ED9F-4274-8F6D-166FDBEA2BF1}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gobject", "..\..\libs\glib\gobject.vcproj", "{F172EFFC-E30F-4593-809E-DB2024B1E753}"
 EndProject
