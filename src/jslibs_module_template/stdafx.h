@@ -6,5 +6,4 @@
 #pragma once
 
 #include "jlhelper.h"
-//#include "jlapideclare.h"
 #include "jlclass.h"

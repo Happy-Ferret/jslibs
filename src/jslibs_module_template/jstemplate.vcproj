@@ -225,10 +225,6 @@
 			RelativePath=".\debug.js"
 			>
 		</File>
-		<File
-			RelativePath=".\readme.txt"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
