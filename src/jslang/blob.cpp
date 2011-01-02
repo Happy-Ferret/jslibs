@@ -251,17 +251,13 @@ DEFINE_CONSTRUCTOR() {
 		return JS_TRUE;
 	}
 
-
-//	js::NewProxyObject(cx, 
-
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	// supports this form (w/o new operator) : result.param1 = Blob('Hello World');
 
-
 	// see. "planning to remove non-fast natives" (http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/91ee3f1f5642e05b?pli=1)
 
-	if ( JL_ARGC != 0 ) {
+	if ( JL_ARGC != 0 && JL_ARG(1) != JL_GetEmptyStringValue(cx) ) {
 
 		
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
@@ -284,14 +280,14 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JL_NativeToJsval(cx, length, &tmp) );
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, tmp) );
 	} else {
-/*
+
 		dBuffer = JS_malloc(cx, 1);
 		JL_CHK( dBuffer );
 		((char*)dBuffer)[0] = '\0';
 		JL_SetPrivate(cx, obj, dBuffer);
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(0) ) );
-*/
-		JL_SetPrivate(cx, obj, NULL);
+
+//		JL_SetPrivate(cx, obj, NULL); // |Blob()| is an invalidated object ???
 	}
 
 //	JL_CHK( ReserveBufferGetInterface(cx, obj) );
