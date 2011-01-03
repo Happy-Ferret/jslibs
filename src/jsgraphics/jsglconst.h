@@ -1105,4 +1105,9 @@ GL_CONST( PRIMARY_COLOR_ARB )
 GL_CONST( PREVIOUS_ARB )
 #endif
 
+
+#ifdef GL_ARB_occlusion_query
+// see #ifdef GL_VERSION_1_5
+#endif
+
 #undef GL_CONST

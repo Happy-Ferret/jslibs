@@ -128,26 +128,24 @@ static glGetProcAddress_t glGetProcAddress = NULL;
 // Directly after the Begin/End-pair, the error is returned, because that's the first valid call to glGetError after the error occured.
 #if defined(DEBUG)
 
-static bool _inBeginEnd = false;
+static bool _inBeginOrEnd = false;
 
 #define OGL_CHK \
 JL_MACRO_BEGIN \
-	if ( !_unsafeMode && !_inBeginEnd /*&& false*/ ) { \
+	if ( !_unsafeMode && !_inBeginOrEnd /*&& false*/ ) { \
 		GLenum err = glGetError(); \
 		if ( err != GL_NO_ERROR ) \
 			JL_REPORT_WARNING("OpenGL error %d", err); \
 	} \
 JL_MACRO_END
 
-//#undef OGL_CHK
-//#define OGL_CHK
-
-
 #else // DBUG
 
 #define OGL_CHK
 
 #endif // DBUG
+
+
 
 #define DECLARE_OPENGL_EXTENSION( NAME, PROTOTYPE ) static PROTOTYPE NAME = NULL;
 
@@ -159,9 +157,12 @@ JL_MACRO_END
 
 #define JL_INIT_OPENGL_EXTENSION( NAME, PROTOTYPE ) \
 JL_MACRO_BEGIN \
-	INIT_OPENGL_EXTENSION(NAME, PROTOTYPE); \
-	JL_S_ASSERT( NAME != NULL, "OpenGL extension %s is unavailable.", #NAME ); \
+	INIT_OPENGL_EXTENSION( NAME, PROTOTYPE ); \
+	if ( NAME == NULL ) \
+		return ThrowOglError(cx, GL_INVALID_OPERATION); \
 JL_MACRO_END
+
+//JL_S_ASSERT( NAME != NULL, "OpenGL extension %s is unavailable.", #NAME ); \
 
 
 DECLARE_OPENGL_EXTENSION( glBlendColor, PFNGLBLENDCOLORPROC);
@@ -256,6 +257,16 @@ DECLARE_OPENGL_EXTENSION( glVertexAttrib4dARB, PFNGLVERTEXATTRIB4DARBPROC );
 DECLARE_OPENGL_EXTENSION( glStencilOpSeparate, PFNGLSTENCILOPSEPARATEPROC );
 DECLARE_OPENGL_EXTENSION( glStencilFuncSeparate, PFNGLSTENCILFUNCSEPARATEPROC );
 DECLARE_OPENGL_EXTENSION( glActiveStencilFaceEXT, PFNGLACTIVESTENCILFACEEXTPROC );
+
+DECLARE_OPENGL_EXTENSION( glGenQueriesARB, PFNGLGENQUERIESARBPROC );
+DECLARE_OPENGL_EXTENSION( glDeleteQueriesARB, PFNGLDELETEQUERIESARBPROC );
+DECLARE_OPENGL_EXTENSION( glIsQueryARB, PFNGLISQUERYARBPROC );
+DECLARE_OPENGL_EXTENSION( glBeginQueryARB, PFNGLBEGINQUERYARBPROC );
+DECLARE_OPENGL_EXTENSION( glEndQueryARB, PFNGLENDQUERYARBPROC );
+DECLARE_OPENGL_EXTENSION( glGetQueryivARB, PFNGLGETQUERYIVARBPROC );
+DECLARE_OPENGL_EXTENSION( glGetQueryObjectivARB, PFNGLGETQUERYOBJECTIVARBPROC );
+DECLARE_OPENGL_EXTENSION( glGetQueryObjectuivARB, PFNGLGETQUERYOBJECTUIVARBPROC );
+
 
 
 
@@ -807,7 +818,7 @@ DEFINE_FUNCTION( GetInteger ) {
 
 		JL_S_ASSERT_INT( JL_ARG(2) );
 		int count = JSVAL_TO_INT( JL_ARG(2) );
-		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK(arrayObj);
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
@@ -849,7 +860,7 @@ DEFINE_FUNCTION( GetDouble ) {
 
 		JL_S_ASSERT_INT( JL_ARG(2) );
 		int count = JSVAL_TO_INT( JL_ARG(2) );
-		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK(arrayObj);
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
@@ -1080,7 +1091,6 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Flush ) {
 
 	glFlush();  OGL_CHK;
-
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1096,9 +1106,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Finish ) {
 
 	glFinish();  OGL_CHK;
-
 	*JL_RVAL = JSVAL_VOID;
-	;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1122,8 +1130,7 @@ DEFINE_FUNCTION( Fog ) {
 	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
 
 		glFogi(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)));  OGL_CHK;
-
-		;
+		
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
@@ -1133,7 +1140,6 @@ DEFINE_FUNCTION( Fog ) {
 		
 		glFogf( JSVAL_TO_INT(JL_ARG(1)), param );  OGL_CHK;
 		
-		;
 		return JS_TRUE;
 	}
 	if ( JL_IsArray(cx, JL_ARG(2)) ) {
@@ -1144,7 +1150,6 @@ DEFINE_FUNCTION( Fog ) {
 
 		glFogfv( JSVAL_TO_INT(JL_ARG(1)), params );  OGL_CHK;
 
-		;
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -1171,7 +1176,6 @@ DEFINE_FUNCTION( Hint ) {
 	glHint( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)) );  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
-	;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2865,9 +2869,11 @@ DEFINE_FUNCTION( Begin ) {
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_ARG(1));
+
 #ifdef DEBUG
-	_inBeginEnd = true;
+	_inBeginOrEnd = true; // see OGL_CHK
 #endif // DEBUG
+
 	glBegin(JSVAL_TO_INT( JL_ARG(1) ));  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -2886,8 +2892,9 @@ DEFINE_FUNCTION( End ) {
 
 	JL_S_ASSERT_ARG(0);
 	glEnd();  OGL_CHK;
+
 #ifdef DEBUG
-	_inBeginEnd = false;
+	_inBeginOrEnd = false; // see OGL_CHK
 #endif // DEBUG
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -3307,7 +3314,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( BlendEquation ) {
 
-	INIT_OPENGL_EXTENSION( glBlendEquation, PFNGLBLENDEQUATIONPROC );
+	JL_INIT_OPENGL_EXTENSION( glBlendEquation, PFNGLBLENDEQUATIONPROC );
+
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_INT(JL_ARG(1));
 
@@ -3335,7 +3343,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( StencilFuncSeparate ) {
 
-	INIT_OPENGL_EXTENSION( glStencilFuncSeparate, PFNGLSTENCILFUNCSEPARATEPROC ); // Opengl 2.0+
+	JL_INIT_OPENGL_EXTENSION( glStencilFuncSeparate, PFNGLSTENCILFUNCSEPARATEPROC ); // Opengl 2.0+
 
 	JL_S_ASSERT_ARG(4);
 	JL_S_ASSERT_INT(JL_ARG(1));
@@ -3370,7 +3378,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( StencilOpSeparate ) {
 
-	INIT_OPENGL_EXTENSION( glStencilOpSeparate, PFNGLSTENCILOPSEPARATEPROC ); // Opengl 2.0+
+	JL_INIT_OPENGL_EXTENSION( glStencilOpSeparate, PFNGLSTENCILOPSEPARATEPROC ); // Opengl 2.0+
 
 	JL_S_ASSERT_ARG(4);
 	JL_S_ASSERT_INT(JL_ARG(1));
@@ -3395,7 +3403,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ActiveStencilFaceEXT ) {
 
-	INIT_OPENGL_EXTENSION( glActiveStencilFaceEXT, PFNGLACTIVESTENCILFACEEXTPROC ); // Opengl 2.0+
+	JL_INIT_OPENGL_EXTENSION( glActiveStencilFaceEXT, PFNGLACTIVESTENCILFACEEXTPROC ); // Opengl 2.0+
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_ARG(1));
@@ -3880,9 +3888,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( CreateProgramObjectARB ) {
 
 	JL_INIT_OPENGL_EXTENSION( glCreateProgramObjectARB, PFNGLCREATEPROGRAMOBJECTARBPROC );
+
 	GLhandleARB programHandle = glCreateProgramObjectARB();  OGL_CHK;
 	*JL_RVAL = INT_TO_JSVAL(programHandle);
-	
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4673,10 +4681,176 @@ DEFINE_FUNCTION( CreatePbuffer ) {
 
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME()
+  Create a new query object.
+  $H OpenGL API
+   glGenQueriesARB
+**/
+DEFINE_FUNCTION( GenQueries ) {
+
+	JL_INIT_OPENGL_EXTENSION( glGenQueriesARB, PFNGLGENQUERIESARBPROC );
+
+	JL_S_ASSERT_ARG(0);
+	GLuint query;
+	glGenQueriesARB(1, &query);  OGL_CHK;
+	
+	*JL_RVAL = INT_TO_JSVAL(query);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( query )
+  Deletes the given query object.
+  $H arguments
+   $ARG $INT query object id
+  $H OpenGL API
+   glDeleteQueriesARB
+**/
+DEFINE_FUNCTION( DeleteQueries ) {
+
+	JL_INIT_OPENGL_EXTENSION( glDeleteQueriesARB, PFNGLDELETEQUERIESARBPROC );
+
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_INT(JL_ARG(1));
+	GLuint query = JSVAL_TO_INT( JL_ARG(1) );
+	glDeleteQueriesARB(1, &query);  OGL_CHK;
+	
+	*JL_RVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, query )
+  Delimit the boundaries of a query object.
+  $H arguments
+   $ARG $INT target Specifies the target type of query object established between BeginQuery and the subsequent EndQuery. The symbolic constant must be SAMPLES_PASSED.
+   $ARG $INT query Specifies the name of a query object.
+  $H OpenGL API
+   glBeginQueryARB
+**/
+DEFINE_FUNCTION( BeginQuery ) {
+
+	JL_INIT_OPENGL_EXTENSION( glBeginQueryARB, PFNGLBEGINQUERYARBPROC );
+
+	JL_S_ASSERT_ARG(2);
+	JL_S_ASSERT_INT(JL_ARG(1));
+	JL_S_ASSERT_INT(JL_ARG(2));
+
+	glBeginQueryARB(JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ));  OGL_CHK;
+
+	*JL_RVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( target )
+  Delimit the boundaries of a query object.
+  $H arguments
+   $ARG $INT target Specifies the target type of query object to be concluded. The symbolic constant must be SAMPLES_PASSED.
+  $H OpenGL API
+   glEndQueryARB
+**/
+DEFINE_FUNCTION( EndQuery ) {
+
+	JL_INIT_OPENGL_EXTENSION( glEndQueryARB, PFNGLENDQUERYARBPROC );
+
+	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_INT(JL_ARG(1));
+
+	glEndQueryARB(JSVAL_TO_INT( JL_ARG(1) ));  OGL_CHK;
+
+	*JL_RVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( target, pname )
+  Return parameters of a query object target
+  $H arguments
+   $ARG $INT target Specifies a query object target. Must be SAMPLES_PASSED.
+	$ARG $INT pname Specifies the symbolic name of a query object target parameter. Accepted values are GL_CURRENT_QUERY or GL_QUERY_COUNTER_BITS.
+  $H OpenGL API
+   glGetQueryivARB
+**/
+DEFINE_FUNCTION( GetQuery ) {
+
+	JL_INIT_OPENGL_EXTENSION( glGetQueryivARB, PFNGLGETQUERYIVARBPROC );
+
+	JL_S_ASSERT_ARG(2);
+	JL_S_ASSERT_INT(JL_ARG(1));
+	JL_S_ASSERT_INT(JL_ARG(2));
+
+	// http://www.opengl.org/sdk/docs/man/xhtml/glGetQueryiv.xml
+
+	GLint params;
+	glGetQueryivARB(JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), &params );  OGL_CHK;
+
+	*JL_RVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( id, pname )
+  Return parameters of a query object target
+  $H arguments
+   $ARG $INT id Specifies the name of a query object.
+	$ARG $INT pname Specifies the symbolic name of a query object parameter. Accepted values are QUERY_RESULT or QUERY_RESULT_AVAILABLE.
+  $H OpenGL API
+   glGetQueryObjectARB, glGetQueryObjectuivARB
+**/
+DEFINE_FUNCTION( GetQueryObject ) {
+
+	JL_INIT_OPENGL_EXTENSION( glGetQueryObjectivARB, PFNGLGETQUERYOBJECTIVARBPROC );
+	JL_INIT_OPENGL_EXTENSION( glGetQueryObjectuivARB, PFNGLGETQUERYOBJECTUIVARBPROC );
+
+	JL_S_ASSERT_ARG(2);
+	JL_S_ASSERT_INT( JL_ARG(1) );
+	JL_S_ASSERT_INT( JL_ARG(2) );
+
+	// gl doc. http://www.opengl.org/sdk/docs/man/xhtml/glGetQueryObject.xml
+	// ext. doc. http://oss.sgi.com/projects/ogl-sample/registry/ARB/occlusion_query.txt
+
+	GLenum pname = JSVAL_TO_INT( JL_ARG(2) );
+
+	if ( pname == GL_QUERY_RESULT_AVAILABLE_ARB ) {
+
+		GLint param;
+		glGetQueryObjectivARB(JSVAL_TO_INT( JL_ARG(1) ), pname, &param);  OGL_CHK;
+		*JL_RVAL = INT_TO_JSVAL(param);
+	} else { // GL_QUERY_RESULT_ARB
+
+		GLuint param;
+		glGetQueryObjectuivARB(JSVAL_TO_INT( JL_ARG(1) ), pname, &param);  OGL_CHK;
+		JL_CHK( JL_NativeToJsval(cx, param, JL_RVAL) );
+	}
+
+	return JS_TRUE;
+	JL_BAD;	
+}
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // non-OpenGL API
-
-
 
 
 /**doc
@@ -5120,7 +5294,6 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glMapBuffer
 **/
-
 bool TextureBufferAlloc(TextureBuffer *tb, unsigned int size) {
 
 	INIT_OPENGL_EXTENSION( glBufferData, PFNGLBUFFERDATAPROC );
@@ -6006,6 +6179,13 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC(ActiveTexture, 1) // texture
 		FUNCTION_ARGC(ClientActiveTexture, 1) // texture
 		FUNCTION_ARGC(MultiTexCoord, 4) // target, s, t, r
+
+		FUNCTION_ARGC(GenQueries, 0)
+		FUNCTION_ARGC(DeleteQueries, 1) // query id
+		FUNCTION_ARGC(BeginQuery, 2) // target, query id
+		FUNCTION_ARGC(EndQuery, 1) // query id
+		FUNCTION_ARGC(GetQuery, 2) // target, pname
+		FUNCTION_ARGC(GetQueryObject, 3) // id, pname, length
 
 
 // Helper functions
