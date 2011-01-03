@@ -87,8 +87,8 @@ function Ball(pos) {
 	var geom = new GeomSphere(world.space);
 	var body = new Body(world);
 	geom.body = body;
-	geom.radius = 3;
-	body.mass.value = 100;
+	geom.radius = 4;
+	body.mass.value = 200;
 	body.position = pos;
 	
 	geom.contact = function(thisGeom, otherGeom) otherGeom.name != 'floor'; // don't hit the floor
@@ -186,8 +186,8 @@ var scene = [];
 
 scene.push( new Floor() );
 
-var ball = new Ball([0, 0, -10]);
-ball.body.linearVel = [0, 0, 50];
+var ball = new Ball([0, 0, -50]);
+ball.body.linearVel = [0, 0, 100];
 scene.push( ball );
 
 /*
@@ -197,15 +197,19 @@ scene.push( ball );
 */
 
 
-var side = 10;
-var gap = 0.001;
+var side = 5;
+var gap = 1;
 for ( var i = -side; i < side; ++i )
 	for ( var j = -side; j < side; ++j ) {
 		
 		scene.push( new Box([i*(1+gap), j*(1+gap), 0.5]) );
 		scene.push( new Box([i*(1+gap), j*(1+gap), 1.5]) );
-//		scene.push( new Box([i*(1+gap), j*(1+gap), 2.5]) );
-//		scene.push( new Box([i*(1+gap), j*(1+gap), 3.5]) );
+		scene.push( new Box([i*(1+gap), j*(1+gap), 2.5]) );
+		scene.push( new Box([i*(1+gap), j*(1+gap), 3.5]) );
+		scene.push( new Box([i*(1+gap), j*(1+gap), 4.5]) );
+		scene.push( new Box([i*(1+gap), j*(1+gap), 5.5]) );
+		scene.push( new Box([i*(1+gap), j*(1+gap), 6.5]) );
+		scene.push( new Box([i*(1+gap), j*(1+gap), 7.5]) );
 	}
 
 
@@ -357,10 +361,11 @@ ui.Draw = function(frame) {
 			Ogl.Scale(0.01);
 			Ogl.Color(1,0,0);
 		});
-	} else {
+	}
+//	else {
 		
 		vmove++;
-	}
+//	}
 	
 	Ogl.Finish();
 	
