@@ -505,7 +505,7 @@ DEFINE_FUNCTION( Mode ) {
 		unsigned int size[2];
 //		IntArrayToVector(cx, 2, argv, size);
 		size_t length;
-		JL_CHK( JL_JsvalToCValVector(cx, argv[0], size, 2, &length) );
+		JL_CHK( JL_JsvalToNativeVector(cx, argv[0], size, 2, &length) );
 		JL_S_ASSERT( length == 2, "Invalid array size." );
 		JL_CHK( JS_ValueToInt32(cx, argv[1], &bits) );
 		JL_CHK( JS_ValueToBoolean(cx, argv[2], &fullscreen) );
@@ -553,7 +553,7 @@ DEFINE_PROPERTY( absoluteClipCursor ) {
 		int v[4];
 //		IntArrayToVector(cx, 4, vp, v);
 		size_t length;
-		JL_CHK( JL_JsvalToCValVector(cx, *vp, v, 4, &length) );
+		JL_CHK( JL_JsvalToNativeVector(cx, *vp, v, 4, &length) );
 		JL_S_ASSERT( length == 4, "Invalid array size." );
 
 		JSBool clip;
@@ -650,7 +650,7 @@ DEFINE_PROPERTY( rectSetter ) {
 	unsigned int length;
 
 //	J_JSVAL_TO_INT_VECTOR(*vp, v, length);
-	JL_CHK( JL_JsvalToCValVector(cx, *vp, v, 4, &length) );
+	JL_CHK( JL_JsvalToNativeVector(cx, *vp, v, 4, &length) );
 	JL_S_ASSERT( length == 4, "Invalid array size." );
 
 	SetWindowPos(hWnd, 0, v[0], v[1], v[2] - v[0], v[3] - v[1], SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
@@ -666,7 +666,7 @@ DEFINE_PROPERTY( cursorAbsolutePositionSetter ) {
 
 //	IntArrayToVector(cx, 2, vp, vec);
 	size_t length;
-	JL_CHK( JL_JsvalToCValVector(cx, *vp, vec, 2, &length) );
+	JL_CHK( JL_JsvalToNativeVector(cx, *vp, vec, 2, &length) );
 	JL_S_ASSERT( length == 2, "Invalid array size." );
 
 	BOOL sysStatus = SetCursorPos(vec[0], vec[1]); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
@@ -694,7 +694,7 @@ DEFINE_PROPERTY( cursorPositionSetter ) {
 	int vec[2];
 //	IntArrayToVector(cx, 2, vp, vec);
 	size_t length;
-	JL_CHK( JL_JsvalToCValVector(cx, *vp, vec, 2, &length) );
+	JL_CHK( JL_JsvalToNativeVector(cx, *vp, vec, 2, &length) );
 	JL_S_ASSERT( length == 2, "Invalid array size." );
 
 	POINT pt = { vec[0], vec[1] };

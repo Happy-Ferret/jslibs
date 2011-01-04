@@ -435,7 +435,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	float pos[3];
 	size_t len;
-	JL_CHK( JL_JsvalToCValVector(cx, *vp, pos, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, *vp, pos, 3, &len) );
 	alSource3f(pv->sid, AL_POSITION, pos[0], pos[1], pos[2]);
 	return JS_TRUE;
 	JL_BAD;
@@ -472,7 +472,7 @@ DEFINE_PROPERTY( position ) {
 	alGetSource3f(pv->sid, AL_POSITION, &pos[0], &pos[1], &pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_CValVectorToJsval(cx, pos, 3, vp) );
+	JL_CHK( JL_NativeVectorToJsval(cx, pos, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -485,7 +485,7 @@ DEFINE_PROPERTY_SETTER( velocity ) {
 	JL_S_ASSERT_RESOURCE( pv );
 	float pos[3];
 	size_t len;
-	JL_CHK( JL_JsvalToCValVector(cx, *vp, pos, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, *vp, pos, 3, &len) );
 	alSource3f(pv->sid, AL_VELOCITY, pos[0], pos[1], pos[2]);
 	return JS_TRUE;
 	JL_BAD;
@@ -519,7 +519,7 @@ DEFINE_PROPERTY( velocity ) {
 	alGetSource3f(pv->sid, AL_VELOCITY, &pos[0], &pos[1], &pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_CValVectorToJsval(cx, pos, 3, vp) );
+	JL_CHK( JL_NativeVectorToJsval(cx, pos, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

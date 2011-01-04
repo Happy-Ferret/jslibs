@@ -60,7 +60,7 @@ JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rv
 		return JS_TRUE;
 	}
 	jsuint len;
-	JL_CHK( JL_JsvalToCValVector(cx, **argv, rval, count, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, **argv, rval, count, &len) );
 	JL_S_ASSERT( len == count, "Not enough elements." );
 	++*argv;
 	--*argc;
@@ -84,7 +84,7 @@ JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, doub
 		return JS_TRUE;
 	}
 	jsuint len;
-	JL_CHK( JL_JsvalToCValVector(cx, **argv, rval, count, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, **argv, rval, count, &len) );
 	JL_S_ASSERT( len == count, "Not enough elements." );
 	++*argv;
 	--*argc;
@@ -117,6 +117,8 @@ JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, doub
 
 #include "oglError.h"
 
+#define MAX_PARAMS 16
+
 // http://www.opengl.org/registry/api/glext.h
 
 typedef void* (__cdecl *glGetProcAddress_t)(const char*);
@@ -132,7 +134,7 @@ static bool _inBeginOrEnd = false;
 
 #define OGL_CHK \
 JL_MACRO_BEGIN \
-	if ( !_unsafeMode && !_inBeginOrEnd /*&& false*/ ) { \
+	if ( !_unsafeMode && !_inBeginOrEnd ) { \
 		GLenum err = glGetError(); \
 		if ( err != GL_NO_ERROR ) \
 			JL_REPORT_WARNING("OpenGL error %d", err); \
@@ -714,7 +716,7 @@ DEFINE_FUNCTION( Get ) {
 		{
 			GLdouble params[2];
 			glGetDoublev(pname, params);  OGL_CHK;
-			return JL_CValVectorToJsval(cx, params, COUNTOF(params), JL_RVAL);
+			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), JL_RVAL);
 		}
 
 		case GL_CURRENT_NORMAL:
@@ -722,7 +724,7 @@ DEFINE_FUNCTION( Get ) {
 		{
 			GLdouble params[3];
 			glGetDoublev(pname, params);  OGL_CHK;
-			return JL_CValVectorToJsval(cx, params, COUNTOF(params), JL_RVAL);
+			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), JL_RVAL);
 		}
 
 		case GL_ACCUM_CLEAR_VALUE:
@@ -741,7 +743,7 @@ DEFINE_FUNCTION( Get ) {
 		{
 			GLdouble params[4];
 			glGetDoublev(pname, params);  OGL_CHK;
-			return JL_CValVectorToJsval(cx, params, COUNTOF(params), JL_RVAL);
+			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), JL_RVAL);
 		}
 
 		case GL_COLOR_MATRIX:
@@ -755,7 +757,7 @@ DEFINE_FUNCTION( Get ) {
 		{
 			GLdouble params[16];
 			glGetDoublev(pname, params);  OGL_CHK;
-			return JL_CValVectorToJsval(cx, params, COUNTOF(params), JL_RVAL);
+			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), JL_RVAL);
 		}
 
 		case GL_COMPRESSED_TEXTURE_FORMATS: // enum
@@ -764,7 +766,7 @@ DEFINE_FUNCTION( Get ) {
 			glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &count);
 			GLint *params = (GLint*)alloca(count * sizeof(GLenum));
 			glGetIntegerv(pname, params);
-			return JL_CValVectorToJsval(cx, params, count, JL_RVAL);
+			return JL_NativeVectorToJsval(cx, params, count, JL_RVAL);
 		}
 	}
 
@@ -797,12 +799,14 @@ DEFINE_FUNCTION( GetBoolean ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT | $ARRAY $INAME( pname [, count] )
+ $INT | $ARRAY $INAME( pname [, count | array] )
   $H arguments
    $ARG GLenum pname
    $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else it returns a single value.
   $H return value
    A value or an array of values of a selected parameter.
+   If given, the _array_ argument is filled and then returned by the function.
+   Important: _array_ length must match the number of arguments expected for the given _pname_.
   $H OpenGL API
    glGetIntegerv
 **/
@@ -811,15 +815,26 @@ DEFINE_FUNCTION( GetInteger ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_INT(JL_ARG(1));
 
-	GLint params[16]; // (TBD) check if it is the max amount of data that glGetIntegerv may returns.
+	GLint params[MAX_PARAMS]; // (TBD) check if it is the max amount of data that glGetIntegerv may returns.
 	glGetIntegerv(JSVAL_TO_INT( JL_ARG(1) ), params);  OGL_CHK;
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_INT( JL_ARG(2) );
-		int count = JSVAL_TO_INT( JL_ARG(2) );
-		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
-		JL_CHK(arrayObj);
+		jsuint count;
+		JSObject *arrayObj;
+
+		if ( JSVAL_IS_INT(JL_ARG(2)) ) {
+
+			count = JSVAL_TO_INT( JL_ARG(2) );
+			arrayObj = JS_NewArrayObject(cx, count, NULL);
+			JL_CHK(arrayObj);
+		} else {
+
+			JL_S_ASSERT_ARRAY( JL_ARG(2) );
+			arrayObj = JSVAL_TO_OBJECT(JL_ARG(2));
+			JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
+		}
+
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
@@ -831,7 +846,7 @@ DEFINE_FUNCTION( GetInteger ) {
 
 		*JL_RVAL = INT_TO_JSVAL( params[0] );
 	}
-	;
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -839,12 +854,14 @@ DEFINE_FUNCTION( GetInteger ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $REAL | $ARRAY $INAME( pname [, count] )
+ $REAL | $ARRAY $INAME( pname [, count | array] )
   $H arguments
    $ARG GLenum pname
    $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
   $H return value
    A single value or an Array of values of the selected parameter.
+   If given, the _array_ argument is filled and then returned by the function.
+   Important: _array_ length must match the number of arguments expected for the given _pname_.
   $H OpenGL API
    glGetDoublev
 **/
@@ -853,15 +870,26 @@ DEFINE_FUNCTION( GetDouble ) {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_INT(JL_ARG(1));
 
-	GLdouble params[16]; // (TBD) check if it is the max amount of data that glGetDoublev may returns.
+	GLdouble params[MAX_PARAMS]; // (TBD) check if it is the max amount of data that glGetDoublev may returns.
 	glGetDoublev(JSVAL_TO_INT(JL_ARG(1)), params);  OGL_CHK;
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_INT( JL_ARG(2) );
-		int count = JSVAL_TO_INT( JL_ARG(2) );
-		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
-		JL_CHK(arrayObj);
+		jsuint count;
+		JSObject *arrayObj;
+
+		if ( JSVAL_IS_INT(JL_ARG(2)) ) {
+
+			count = JSVAL_TO_INT( JL_ARG(2) );
+			arrayObj = JS_NewArrayObject(cx, count, NULL);
+			JL_CHK(arrayObj);
+		} else {
+
+			JL_S_ASSERT_ARRAY( JL_ARG(2) );
+			arrayObj = JSVAL_TO_OBJECT(JL_ARG(2));
+			JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
+		}
+
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
@@ -873,7 +901,7 @@ DEFINE_FUNCTION( GetDouble ) {
 
 		JL_CHK( JL_NativeToJsval(cx, params[0], JL_RVAL) );
 	}
-	;
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -883,12 +911,11 @@ DEFINE_FUNCTION( GetDouble ) {
 $TOC_MEMBER $INAME
   $STR$INAME( name )
   $H arguments
-   $ARG GLenum name
+   $ARG GLenum name Specifies a symbolic constant, one of VENDOR, RENDERER, VERSION, SHADING_LANGUAGE_VERSION, or EXTENSIONS.
   $H return value
    A string describing the current GL connection.
   $H OpenGL API
-   glGetDoublev
-
+   glGetString
 **/
 DEFINE_FUNCTION( GetString ) {
 
@@ -909,12 +936,10 @@ DEFINE_FUNCTION( DrawBuffer ) {
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_ARG(1));
-	GLenum mode = JSVAL_TO_INT(JL_ARG(1));
-	
-	glDrawBuffer(mode);  OGL_CHK;
-	
+
+	glDrawBuffer(JSVAL_TO_INT(JL_ARG(1)));  OGL_CHK;
+
 	*JL_RVAL = JSVAL_VOID;
-	;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -930,12 +955,10 @@ DEFINE_FUNCTION( ReadBuffer ) {
 
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_ARG(1));
-	GLenum mode = JSVAL_TO_INT(JL_ARG(1));
 	
-	glReadBuffer(mode);  OGL_CHK;
+	glReadBuffer(JSVAL_TO_INT(JL_ARG(1)));  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -954,14 +977,13 @@ DEFINE_FUNCTION( Accum ) {
 
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_ARG(1));
-	GLenum op = JSVAL_TO_INT(JL_ARG(1));
+
 	float value;
-	JL_JsvalToNative(cx, JL_ARG(2), &value);
-	
-	glAccum(op, value);  OGL_CHK;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &value) );
+
+	glAccum(JSVAL_TO_INT(JL_ARG(1)), value);  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -984,7 +1006,7 @@ DEFINE_FUNCTION( StencilFunc ) {
 	JL_S_ASSERT_ARG(3);
 	JL_S_ASSERT_INT(JL_ARG(1));
 	JL_S_ASSERT_INT(JL_ARG(2));
-	JL_S_ASSERT_NUMBER(JL_ARG(3));
+//	JL_S_ASSERT_NUMBER(JL_ARG(3));
 
 	GLuint mask;
 	if ( JL_ARG(3) == INT_TO_JSVAL(-1) )
@@ -995,7 +1017,6 @@ DEFINE_FUNCTION( StencilFunc ) {
 	glStencilFunc(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), mask);  OGL_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1021,7 +1042,6 @@ DEFINE_FUNCTION( StencilOp ) {
 	glStencilOp(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)));  OGL_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1051,7 +1071,6 @@ DEFINE_FUNCTION( StencilMask ) {
 	glStencilMask( mask );  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
-	;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1076,7 +1095,6 @@ DEFINE_FUNCTION( AlphaFunc ) {
 	glAlphaFunc( JSVAL_TO_INT(JL_ARG(1)), ref );  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1091,6 +1109,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Flush ) {
 
 	glFlush();  OGL_CHK;
+
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1106,6 +1125,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Finish ) {
 
 	glFinish();  OGL_CHK;
+
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1144,9 +1164,9 @@ DEFINE_FUNCTION( Fog ) {
 	}
 	if ( JL_IsArray(cx, JL_ARG(2)) ) {
 
-		GLfloat params[16];
+		GLfloat params[MAX_PARAMS];
 		uint32 length;
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
 
 		glFogfv( JSVAL_TO_INT(JL_ARG(1)), params );  OGL_CHK;
 
@@ -1224,7 +1244,7 @@ DEFINE_FUNCTION( Vertex ) {
 
 	GLdouble pos[4];
 	uint32 len;
-	JL_JsvalToCValVector(cx, JL_ARG(1), pos, COUNTOF(pos), &len);
+	JL_JsvalToNativeVector(cx, JL_ARG(1), pos, COUNTOF(pos), &len);
 	if ( len == 2 ) {
 		glVertex2dv(pos);  OGL_CHK;
 	} else if ( len == 3 ) {
@@ -1252,7 +1272,9 @@ DEFINE_FUNCTION( EdgeFlag ) {
 
 	bool flag;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &flag) );
+	
 	glEdgeFlag(flag);
+	
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -1306,7 +1328,7 @@ DEFINE_FUNCTION( Color ) {
 
 		GLdouble color[4];
 		uint32 len;
-		JL_JsvalToCValVector(cx, JL_ARG(1), color, 4, &len);
+		JL_JsvalToNativeVector(cx, JL_ARG(1), color, 4, &len);
 		if ( len == 3 ) {
 			glColor3dv(color);  OGL_CHK;
 		} else if ( len == 4 ) {
@@ -1411,21 +1433,26 @@ DEFINE_FUNCTION( TexParameter ) {
 	if ( JSVAL_IS_INT(JL_ARG(3)) ) {
 
 		glTexParameteri( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), JSVAL_TO_INT( JL_ARG(3) ) );  OGL_CHK;
+
 		return JS_TRUE;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
 		float param;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &param) );
+
 		glTexParameterf( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), param );  OGL_CHK;
+
 		return JS_TRUE;
 	}
 	if ( JL_IsArray(cx, JL_ARG(3)) ) {
 
-		GLfloat params[16];
+		GLfloat params[MAX_PARAMS];
 		uint32 length;
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+
 		glTexParameterfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
+
 		return JS_TRUE;
 	}
 
@@ -1455,22 +1482,27 @@ DEFINE_FUNCTION( TexEnv ) {
 	if ( argc == 3 && JSVAL_IS_INT(JL_ARG(3)) ) {
 
 		glTexEnvi( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), JSVAL_TO_INT( JL_ARG(3) ) );  OGL_CHK;
+
 		return JS_TRUE;
 	}
 	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
 		float param;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &param) );
+
 		glTexEnvf( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), param );  OGL_CHK;
+
 		return JS_TRUE;
 	}
 
-	GLfloat params[16];
+	GLfloat params[MAX_PARAMS];
 	if ( argc == 3 && JL_IsArray(cx, JL_ARG(3)) ) {
 
 		uint32 length;
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+
 		glTexEnvfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
+
 		return JS_TRUE;
 	}
 
@@ -1478,7 +1510,9 @@ DEFINE_FUNCTION( TexEnv ) {
 	JL_ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
 		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
+
 	glTexEnvfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1504,22 +1538,27 @@ DEFINE_FUNCTION( TexGen ) {
 	if ( argc == 3 && JSVAL_IS_INT(JL_ARG(3)) ) {
 
 		glTexGeni( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), JSVAL_TO_INT( JL_ARG(3) ) );  OGL_CHK;
+
 		return JS_TRUE;
 	}
 	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
 		double param;
 		JL_JsvalToNative(cx, JL_ARG(3), &param);
+
 		glTexGend( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), param );  OGL_CHK;
+
 		return JS_TRUE;
 	}
 
-	GLdouble params[16];
+	GLdouble params[MAX_PARAMS];
 	if ( argc == 3 && JL_IsArray(cx, JL_ARG(3)) ) {
 
 		uint32 length;
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+
 		glTexGendv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
+
 		return JS_TRUE;
 	}
 
@@ -1527,7 +1566,9 @@ DEFINE_FUNCTION( TexGen ) {
 	JL_ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
 		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
+
 	glTexGendv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1564,7 +1605,7 @@ DEFINE_FUNCTION( TexImage2D ) {
 	JL_S_ASSERT_INT(JL_ARG(7));
 	JL_S_ASSERT_INT(JL_ARG(8));
 
-	if ( JL_ARG_ISDEF(9) && !JSVAL_IS_NULL(JL_ARG(9)) )
+	if ( JL_ARG_ISDEF(9) && !JSVAL_IS_NULL(JL_ARG(9)) ) // same as !JSVAL_IS_PRIMITIVE
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(9), &data) );
 
 	glTexImage2D( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)), JSVAL_TO_INT(JL_ARG(6)), JSVAL_TO_INT(JL_ARG(7)), JSVAL_TO_INT(JL_ARG(8)), (GLvoid*)data.GetConstStr() );  OGL_CHK;
@@ -1642,9 +1683,9 @@ DEFINE_FUNCTION( LightModel ) {
 
 	if ( JL_IsArray(cx, JL_ARG(2)) ) {
 
-		GLfloat params[16];
+		GLfloat params[MAX_PARAMS];
 		uint32 length;
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
 		glLightModelfv( JSVAL_TO_INT(JL_ARG(1)), params );  OGL_CHK;
 		return JS_TRUE;
 	}
@@ -1686,11 +1727,11 @@ DEFINE_FUNCTION( Light ) {
 		return JS_TRUE;
 	}
 
-	GLfloat params[16];
+	GLfloat params[MAX_PARAMS];
 	if ( argc == 3 && JL_IsArray(cx, JL_ARG(3)) ) {
 
 		uint32 length;
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 		glLightfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
 		return JS_TRUE;
 	}
@@ -1712,7 +1753,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG GLenum light: Specifies a light source.
    $ARG GLenum pname: Specifies a light source parameter for light.
-   $ARG $INT count: is the number of expected values. If _count_ is defined, the function will returns an array of values, else a single value.
+   $ARG $INT count: is the number of expected values. If _count_ is omitted, the function will automatically determine the right value for _count_.
   $H return value
    A single value or an Array of values of the selected parameter.
   $H OpenGL API
@@ -1724,9 +1765,10 @@ DEFINE_FUNCTION( GetLight ) {
 	JL_S_ASSERT_INT(JL_ARG(1));
 	JL_S_ASSERT_INT(JL_ARG(2));
 
-	GLfloat params[16]; // max ?  4 ?
+	GLfloat params[MAX_PARAMS];
 	GLenum pname;
 	pname = JSVAL_TO_INT(JL_ARG(2));
+
 	glGetLightfv(JSVAL_TO_INT(JL_ARG(1)), pname, params);  OGL_CHK;
 
 	int count;
@@ -1818,6 +1860,14 @@ DEFINE_FUNCTION( Material ) {
 	JL_S_ASSERT_INT(JL_ARG(1));
 	JL_S_ASSERT_INT(JL_ARG(2));
 
+	// GL_AMBIENT: 4 int
+	// GL_DIFFUSE: 4 int
+	// GL_SPECULAR: 4 int
+	// GL_EMISSION: 4 int
+	// GL_SHININESS: 1 int
+	// GL_AMBIENT_AND_DIFFUSE: ?
+	// GL_COLOR_INDEXES: 3 int -OR- 3 float
+
 	*JL_RVAL = JSVAL_VOID;
 	if ( argc == 3 && JSVAL_IS_INT(JL_ARG(3)) ) {
 
@@ -1834,11 +1884,11 @@ DEFINE_FUNCTION( Material ) {
 		return JS_TRUE;
 	}
 
-	GLfloat params[16]; // alloca ?
+	GLfloat params[MAX_PARAMS]; // alloca ?
 	if ( argc == 3 && JL_IsArray(cx, JL_ARG(3)) ) {
 
 		uint32 length;
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 		glMaterialfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
 		;
 		return JS_TRUE;
@@ -2043,8 +2093,8 @@ DEFINE_FUNCTION( DepthRange ) {
 
 	JL_S_ASSERT_ARG(2);
 	double zNear, zFar;
-	JL_JsvalToNative(cx, JL_ARG(1), &zNear);
-	JL_JsvalToNative(cx, JL_ARG(2), &zFar);
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &zNear) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &zFar) );
 	
 	glDepthRange(zNear, zFar);  OGL_CHK;
 	
@@ -2268,11 +2318,13 @@ DEFINE_FUNCTION( Clear ) {
 $TOC_MEMBER $INAME
  $VOID $INAME( red, green, blue, alpha )
  $VOID $INAME( all )
+  enable and disable writing of frame buffer color components.
   $H arguments
    $ARG boolean red
    $ARG boolean green
    $ARG boolean blue
-   $ARG boolean alpha
+   $ARG boolean alpha Specify whether red, green, blue, and alpha can or cannot be written into the frame buffer. The initial values are all TRUE, indicating that the color components can be written.
+	$ARG boolean all If true then all components can be written, and false mean the opposite.
   $H OpenGL API
    glColorMask
 **/
@@ -2321,8 +2373,9 @@ DEFINE_FUNCTION( ClipPlane ) {
 	JL_S_ASSERT_ARRAY(JL_ARG(2));
 	GLdouble equation[4];
 	uint32 len;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), equation, COUNTOF(equation), &len ) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), equation, COUNTOF(equation), &len ) );
 	JL_S_ASSERT( len == 4, "Invalid plane equation.");
+
 	glClipPlane(JSVAL_TO_INT(JL_ARG(1)), equation);  OGL_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
@@ -3223,7 +3276,7 @@ DEFINE_FUNCTION( PixelMap ) {
 	jsuint mapsize;
 	JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(JL_ARG(2)), &mapsize) );
 	GLfloat *values = (GLfloat*)alloca(mapsize*sizeof(*values));
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), values, mapsize, &mapsize ) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), values, mapsize, &mapsize ) );
 	glPixelMapfv(JSVAL_TO_INT(JL_ARG(1)), mapsize, values);  OGL_CHK;
 
 	;
@@ -3531,7 +3584,7 @@ DEFINE_FUNCTION( GetRenderbufferParameter ) {
 	JL_S_ASSERT_INT(JL_ARG(1));
 	JL_S_ASSERT_INT(JL_ARG(2));
 
-	GLint params[16]; // (TBD) check if it is the max amount of data that glGetRenderbufferParameterivEXT may returns.
+	GLint params[MAX_PARAMS]; // (TBD) check if it is the max amount of data that glGetRenderbufferParameterivEXT may returns.
 	
 	glGetRenderbufferParameterivEXT(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
 
@@ -3541,7 +3594,7 @@ DEFINE_FUNCTION( GetRenderbufferParameter ) {
 		int count;
 		count = JSVAL_TO_INT(JL_ARG(3));
 		JL_S_ASSERT( count <= COUNTOF(params), "Too many params" );
-		JL_CHK( JL_CValVectorToJsval(cx, params, count, JL_RVAL, false) );
+		JL_CHK( JL_NativeVectorToJsval(cx, params, count, JL_RVAL, false) );
 	} else {
 
 		*JL_RVAL = INT_TO_JSVAL( params[0] );
@@ -3787,7 +3840,7 @@ DEFINE_FUNCTION( GetFramebufferAttachmentParameter ) {
 	JL_S_ASSERT_INT(JL_ARG(2));
 	JL_S_ASSERT_INT(JL_ARG(3));
 
-	GLint params[16]; // (TBD) check if it is the max amount of data that glGetRenderbufferParameterivEXT may returns.
+	GLint params[MAX_PARAMS]; // (TBD) check if it is the max amount of data that glGetRenderbufferParameterivEXT may returns.
 	
 	glGetFramebufferAttachmentParameterivEXT(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), params);  OGL_CHK;
 
@@ -3797,7 +3850,7 @@ DEFINE_FUNCTION( GetFramebufferAttachmentParameter ) {
 		int count;
 		count = JSVAL_TO_INT( JL_ARG(4) );
 		JL_S_ASSERT( count <= COUNTOF(params), "Too many params" );
-		JL_CHK( JL_CValVectorToJsval(cx, params, count, JL_RVAL, false) );
+		JL_CHK( JL_NativeVectorToJsval(cx, params, count, JL_RVAL, false) );
 	} else {
 
 		*JL_RVAL = INT_TO_JSVAL( params[0] );
@@ -4293,7 +4346,7 @@ DEFINE_FUNCTION( GetObjectParameterARB ) {
 	JL_S_ASSERT_INT(JL_ARG(1));
 	JL_S_ASSERT_INT(JL_ARG(2));
 
-	GLint params[16]; // (TBD) check if it is the max amount of data that glGetLightfv may returns.
+	GLint params[MAX_PARAMS]; // (TBD) check if it is the max amount of data that glGetLightfv may returns.
 	glGetObjectParameterivARB(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params);  OGL_CHK;
 
 	if ( JL_ARG_ISDEF(3) ) {
@@ -4551,9 +4604,9 @@ DEFINE_FUNCTION( PointParameter ) {
 	}
 	if ( JL_IsArray(cx, JL_ARG(2)) ) {
 
-		GLfloat params[16];
+		GLfloat params[MAX_PARAMS];
 		uint32 length;
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
 		glPointParameterfv( JSVAL_TO_INT(JL_ARG(1)), params );  OGL_CHK;
 		;
 		return JS_TRUE;
@@ -4881,7 +4934,7 @@ DEFINE_FUNCTION( UnProject ) {
 
 	gluUnProject((GLdouble) x, (GLdouble) realy, 0.0, mvmatrix, projmatrix, viewport, w+0, w+1, w+2);
 
-	JL_CHK( JL_CValVectorToJsval(cx, w, 3, JL_RVAL, false) );
+	JL_CHK( JL_NativeVectorToJsval(cx, w, 3, JL_RVAL, false) );
 
 	return JS_TRUE;
 	JL_BAD;

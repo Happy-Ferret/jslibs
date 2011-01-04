@@ -44,10 +44,10 @@ class ColorTess : public OGLFT::ColorTess {
 
 		JSContext *cx = JL_GetFirstContext(_rt);
 		jsval arg[2] = { JSVAL_NULL, JSVAL_NULL }; // memset(arg, 0, sizeof(arg));
-		JL_CHK( JL_CValVectorToJsval(cx, p, 3, &arg[1], false) );
+		JL_CHK( JL_NativeVectorToJsval(cx, p, 3, &arg[1], false) );
 		JL_CHK( JS_CallFunctionValue(cx, _obj, _function, COUNTOF(arg)-1, arg+1, arg) );
 		uint32 length;
-		JL_CHK( JL_JsvalToCValVector(cx, *arg, _colorTmp, COUNTOF(_colorTmp), &length) );
+		JL_CHK( JL_JsvalToNativeVector(cx, *arg, _colorTmp, COUNTOF(_colorTmp), &length) );
 		return _colorTmp;
 	bad:
 		JS_ReportPendingException(cx);
@@ -382,7 +382,7 @@ DEFINE_FUNCTION( SetColor ) {
 
 	GLfloat color[4];
 	uint32 len;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), color, COUNTOF(color), &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), color, COUNTOF(color), &len) );
 //	JL_S_ASSERT( len >= 3, "Invalid color." );
 	if ( len < 4 )
 		color[3] = 1.f;
@@ -424,7 +424,7 @@ DEFINE_FUNCTION( SetBackgroundColor ) {
 
 	GLfloat color[4];
 	uint32 len;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), color, COUNTOF(color), &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), color, COUNTOF(color), &len) );
 //	JL_S_ASSERT( len >= 3, "Invalid color." );
 	if ( len < 4 )
 		color[3] = 1.f;

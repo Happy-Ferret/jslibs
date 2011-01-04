@@ -309,7 +309,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 		JL_S_ASSERT_ARRAY( JL_ARG(4) );
 		double trVector[6];
 		size_t currentLength;
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(4), trVector, COUNTOF(trVector), &currentLength ) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(4), trVector, COUNTOF(trVector), &currentLength ) );
 		JL_S_ASSERT( currentLength == 6, "Invalid transformation matrix size." );
 		cairo_matrix_t tmp = *(cairo_matrix_t*)&trVector;
 		cairo_matrix_multiply(&tr, &tmp, &tr);

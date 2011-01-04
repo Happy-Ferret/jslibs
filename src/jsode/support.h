@@ -13,9 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-#define JL_JsvalToODERealVector JL_JsvalToCValVector
+#define JL_JsvalToODERealVector JL_JsvalToNativeVector
 
-#define ODERealVectorToJsval JL_CValVectorToJsval
+#define ODERealVectorToJsval JL_NativeVectorToJsval
 
 ALWAYS_INLINE JSBool JL_JsvalToODEReal( JSContext *cx, const jsval val, ode::dReal *real ) {
 

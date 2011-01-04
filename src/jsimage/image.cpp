@@ -90,7 +90,7 @@ DEFINE_FUNCTION( Trim ) {
 	int vect[4];
 	//IntArrayToVector(cx, 4, &argv[0], vect);
 	uint32 length;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), vect, 4, &length) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), vect, 4, &length) );
 	JL_S_ASSERT( length == 4, "Invalid array size." );
 
 	int x;

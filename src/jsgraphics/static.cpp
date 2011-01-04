@@ -48,7 +48,7 @@ DEFINE_FUNCTION( Vec3 ) {
 		if ( JL_IsArray(cx, JL_ARG(1)) ) {
 
 			uint32 len;
-			JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
+			JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
 			JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 		} else {
 
@@ -62,7 +62,7 @@ DEFINE_FUNCTION( Vec3 ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &v.y) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v.z) );
 	}
-	return JL_CValVectorToJsval(cx, v.raw, 3, JL_RVAL);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL);
 	JL_REPORT_ERROR( "Invalid vector3." );
 	JL_BAD;
 }
@@ -83,16 +83,16 @@ DEFINE_FUNCTION( Vec3Length ) {
 	if ( argc == 1 )	{
 
 		uint32 len;
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
 		JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 	} else
 	if ( argc == 2 ) {
 
 		Vector3 v2;
 		uint32 len;
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
 		JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), v2.raw, 3, &len) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len) );
 		JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 		Vector3SubVector3(&v, &v, &v2);
 	} else
@@ -127,13 +127,13 @@ DEFINE_FUNCTION( Vec3Normalize ) {
 	
 	Vector3 v;
 	uint32 len;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 
 	Vector3Normalize(&v, &v);
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	return JL_CValVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -147,15 +147,15 @@ DEFINE_FUNCTION( Vec3Add ) {
 	
 	Vector3 v, v2;
 	uint32 len, len2;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len2 );
 
 	Vector3AddVector3(&v, &v, &v2);
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(3) ? 3 : 1);
-	return JL_CValVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -169,15 +169,15 @@ DEFINE_FUNCTION( Vec3Sub ) {
 	
 	Vector3 v, v2;
 	uint32 len, len2;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len2 );
 
 	Vector3SubVector3(&v, &v, &v2);
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(3) ? 3 : 1);
-	return JL_CValVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -191,15 +191,15 @@ DEFINE_FUNCTION( Vec3Cross ) {
 	
 	Vector3 v, v2;
 	uint32 len, len2;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len2 );
 
 	Vector3Cross(&v, &v, &v2);
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(3) ? 3 : 1);
-	return JL_CValVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -213,8 +213,8 @@ DEFINE_FUNCTION( Vec3Dot ) {
 	
 	Vector3 v, v2;
 	uint32 len, len2;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v.raw, 3, &len) );
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
 	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len2 );
 
@@ -270,11 +270,11 @@ DEFINE_FUNCTION( FrustumSphere ) {
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_CHK( JL_CValVectorToJsval(cx, p1.raw, 3, &JL_ARG(2), true) );
+		JL_CHK( JL_NativeVectorToJsval(cx, p1.raw, 3, &JL_ARG(2), true) );
 		*JL_RVAL = JL_ARG(2);
 	} else {
 
-		JL_CHK( JL_CValVectorToJsval(cx, p1.raw, 3, JL_RVAL) );
+		JL_CHK( JL_NativeVectorToJsval(cx, p1.raw, 3, JL_RVAL) );
 	}
 
 	jsval tmpVal;
@@ -299,7 +299,7 @@ DEFINE_FUNCTION( BoxToCircumscribedSphere ) {
 	float aabb[6];
 
 	uint32 len;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), aabb, 6, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), aabb, 6, &len) );
 	JL_S_ASSERT( len == 6, "Invalid vector length (%d).", len );
 
 	Vector3 v1, v2, center;
@@ -312,7 +312,7 @@ DEFINE_FUNCTION( BoxToCircumscribedSphere ) {
 	Vector3AddVector3(&center, &center, &v2);
 	
 	*JL_RVAL = JL_ARG(1);
-	JL_CHK( JL_CValVectorToJsval(cx, center.raw, 3, JL_RVAL, true) );
+	JL_CHK( JL_NativeVectorToJsval(cx, center.raw, 3, JL_RVAL, true) );
 	jsval tmpVal;
 	JL_CHK(JL_NativeToJsval(cx, radius, &tmpVal) );
 	JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT(*JL_RVAL), 3, &tmpVal) );
@@ -334,7 +334,7 @@ DEFINE_FUNCTION( QuaternionToEuler ) {
 	Vector4 quat;
 	Vector3 euler;
 	uint32 len;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), quat.raw, 4, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), quat.raw, 4, &len) );
 	JL_S_ASSERT( len == 4, "Invalid quaternion." );
 
 /*
@@ -380,7 +380,7 @@ DEFINE_FUNCTION( QuaternionToEuler ) {
 	euler.z = atan2f(-(2*(q1q2-q0q3)),(q0q0+q1q1-q2q2-q3q3));
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( JL_CValVectorToJsval(cx, euler.raw, 3, JL_RVAL, true) );
+	JL_CHK( JL_NativeVectorToJsval(cx, euler.raw, 3, JL_RVAL, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -397,7 +397,7 @@ DEFINE_FUNCTION( EulerToQuaternion ) {
 	Vector3 euler;
 	Vector4 quat;
 	uint32 len;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), euler.raw, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), euler.raw, 3, &len) );
 	JL_S_ASSERT( len == 3, "Invalid euler rotation." );
 	
 	float cosx,cosy,cosz,sinx,siny,sinz,cc,cs,sc,ss;
@@ -434,7 +434,7 @@ DEFINE_FUNCTION( EulerToQuaternion ) {
 */
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( JL_CValVectorToJsval(cx, quat.raw, 4, JL_RVAL, true) );
+	JL_CHK( JL_NativeVectorToJsval(cx, quat.raw, 4, JL_RVAL, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -450,7 +450,7 @@ DEFINE_FUNCTION( QuaternionToAxisAngle ) {
 
 	Vector4 quat;
 	uint32 len;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), quat.raw, 4, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), quat.raw, 4, &len) );
 	JL_S_ASSERT( len == 4, "Invalid quaternion." );
 
 	float halfAngle, sn;
@@ -467,7 +467,7 @@ DEFINE_FUNCTION( QuaternionToAxisAngle ) {
 	}
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( JL_CValVectorToJsval(cx, quat.raw, 4, JL_RVAL, true) );
+	JL_CHK( JL_NativeVectorToJsval(cx, quat.raw, 4, JL_RVAL, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -482,7 +482,7 @@ DEFINE_FUNCTION( AxisAngleToQuaternion ) {
 
 	Vector4 axisAngle;
 	uint32 len;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), axisAngle.raw, 4, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), axisAngle.raw, 4, &len) );
 	JL_S_ASSERT( len == 4, "Invalid quaternion." );
 
 	float halfAngle, cs, sn;
@@ -494,7 +494,7 @@ DEFINE_FUNCTION( AxisAngleToQuaternion ) {
 	axisAngle.w = cs;
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( JL_CValVectorToJsval(cx, axisAngle.raw, 4, JL_RVAL, true) );
+	JL_CHK( JL_NativeVectorToJsval(cx, axisAngle.raw, 4, JL_RVAL, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -515,7 +515,7 @@ DEFINE_FUNCTION( GetMatrix ) {
 	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
 	JL_S_ASSERT( fct, "Invalid Matrix44 interface." );
 	JL_CHK( fct(cx, matrixObj, &m) );
-	JL_CHK( JL_CValVectorToJsval(cx, m, 16, JL_RVAL, false) );
+	JL_CHK( JL_NativeVectorToJsval(cx, m, 16, JL_RVAL, false) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -532,9 +532,9 @@ DEFINE_FUNCTION( PlaneFromPoints ) {
 	float plane[4], v0[3], v1[3], v2[3];
 
 	jsuint len1, len2, len3;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), v0, 3, &len1) );
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), v1, 3, &len2) );
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(3), v2, 3, &len3) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v0, 3, &len1) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v1, 3, &len2) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), v2, 3, &len3) );
 	JL_S_ASSERT( len1 == 3, "Invalid point (arg1)." );
 	JL_S_ASSERT( len2 == 3, "Invalid point (arg2)." );
 	JL_S_ASSERT( len3 == 3, "Invalid point (arg3)." );
@@ -558,7 +558,7 @@ DEFINE_FUNCTION( PlaneFromPoints ) {
 
 	plane[3] = -(plane[0] * v0[0] + plane[1] * v0[1] + plane[2] * v0[2]);
 
-	return JL_CValVectorToJsval(cx, plane, 4, JL_RVAL, false);
+	return JL_NativeVectorToJsval(cx, plane, 4, JL_RVAL, false);
 	JL_BAD;
 }
 
@@ -578,8 +578,8 @@ DEFINE_FUNCTION( ShadowMatrix ) {
 	double shadowMat[4][4], plane[4], lightpos[4];
 
 	uint32 len, len1;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), plane, 4, &len) );
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), lightpos, 4, &len1) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), plane, 4, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), lightpos, 4, &len1) );
 	JL_S_ASSERT( len == 4, "Invalid plane." );
 	JL_S_ASSERT( len1 == 4, "Invalid light position." );
 
@@ -611,10 +611,10 @@ DEFINE_FUNCTION( ShadowMatrix ) {
 
 		JL_S_ASSERT_ARRAY(JL_ARG(3));
 		*JL_RVAL = JL_ARG(3);
-		return JL_CValVectorToJsval(cx, (double*)shadowMat, 16, JL_RVAL, true);
+		return JL_NativeVectorToJsval(cx, (double*)shadowMat, 16, JL_RVAL, true);
 	} else {
 
-		return JL_CValVectorToJsval(cx, (double*)shadowMat, 16, JL_RVAL, false);
+		return JL_NativeVectorToJsval(cx, (double*)shadowMat, 16, JL_RVAL, false);
 	}
 	JL_BAD;
 }

@@ -35,7 +35,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 
 	float pos[3];
 	uint32 len;
-	JL_CHK( JL_JsvalToCValVector(cx, *vp, pos, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, *vp, pos, 3, &len) );
 
 	alListener3f(AL_POSITION, pos[0], pos[1], pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -51,7 +51,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 	alGetListener3f(AL_POSITION, &pos[0], &pos[1], &pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_CValVectorToJsval(cx, pos, 3, vp) );
+	JL_CHK( JL_NativeVectorToJsval(cx, pos, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

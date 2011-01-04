@@ -1841,7 +1841,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, void **ptr ) {
 // if useValArray is true, val must be a valid array that is used to store the values.
 template <class T>
 static INLINE JSBool
-JL_CValVectorToJsval( JSContext *cx, const T *vector, jsuint length, jsval *val, bool useValArray = false ) {
+JL_NativeVectorToJsval( JSContext *cx, const T *vector, jsuint length, jsval *val, bool useValArray = false ) {
 
 	jsval tmp;
 	JSObject *arrayObj;
@@ -1872,7 +1872,7 @@ JL_CValVectorToJsval( JSContext *cx, const T *vector, jsuint length, jsval *val,
 
 template <class T>
 static INLINE JSBool
-JL_JsvalToCValVector( JSContext *cx, jsval &val, T *vector, jsuint maxLength, jsuint *actualLength ) {
+JL_JsvalToNativeVector( JSContext *cx, jsval &val, T *vector, jsuint maxLength, jsuint *actualLength ) {
 
 	JL_S_ASSERT_OBJECT(val);
 	JSObject *arrayObj;
@@ -2122,27 +2122,27 @@ JL_JsvalToMatrix44( JSContext *cx, jsval &val, float **m ) {
 		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 0, &element) );
 		if ( JL_IsArray(cx, element) ) { // support for [ [1,1,1,1], [2,2,2,2], [3,3,3,3], [4,4,4,4] ] matrix
 
-			JL_CHK( JL_JsvalToCValVector(cx, element, (*m)+0, 4, &length ) );
+			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+0, 4, &length ) );
 			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
 
 			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 1, &element) );
 			JL_S_ASSERT_ARRAY( element );
-			JL_CHK( JL_JsvalToCValVector(cx, element, (*m)+4, 4, &length ) );
+			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+4, 4, &length ) );
 			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
 
 			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 2, &element) );
 			JL_S_ASSERT_ARRAY( element );
-			JL_CHK( JL_JsvalToCValVector(cx, element, (*m)+8, 4, &length ) );
+			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+8, 4, &length ) );
 			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
 
 			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 3, &element) );
 			JL_S_ASSERT_ARRAY( element );
-			JL_CHK( JL_JsvalToCValVector(cx, element, (*m)+12, 4, &length ) );
+			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+12, 4, &length ) );
 			JL_S_ASSERT( length == 4, "Too few (%d) elements in the array.", length );
 			return JS_TRUE;
 		}
 
-		JL_CHK( JL_JsvalToCValVector(cx, val, *m, 16, &length ) );  // support for [ 1,1,1,1, 2,2,2,2, 3,3,3,3, 4,4,4,4 ] matrix
+		JL_CHK( JL_JsvalToNativeVector(cx, val, *m, 16, &length ) );  // support for [ 1,1,1,1, 2,2,2,2, 3,3,3,3, 4,4,4,4 ] matrix
 		JL_S_ASSERT( length == 16, "Too few (%d) elements in the array.", length );
 		return JS_TRUE;
 	}

@@ -23,7 +23,11 @@ var vertexShaderSource = <><![CDATA[
 var fragmentShaderSource = <><![CDATA[
 	void main(void) {
 
-		gl_FragColor = vec4(gl_FragCoord.x / 1000, 0, 0, 1);
+//		gl_FragColor = vec4(gl_FragCoord.x / 512, 0, 0, 1);
+		
+		vec2 pos = gl_SamplePosition; // gl_FragCoord.xy; //
+		
+		gl_FragColor = vec4(cos(pos.x*10), sin(pos.y*10), 0, 1);
 	}
 ]]></>.toString();
 
@@ -84,11 +88,11 @@ function SurfaceReady() {
 
 	Ogl.Color(1,1,1);
 	
-	Ogl.Translate(0, 0, -5);
+	Ogl.Translate(0, 0, -2);
 
 	Ogl.Rotate(r, 0, 1, 0);
 
-	r += 0.1
+	r += 0.03;
 	
 	Ogl.Begin(Ogl.QUADS);
 	Ogl.TexCoord(0, 0); Ogl.Vertex(-1, 1);

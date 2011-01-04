@@ -252,7 +252,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLe
 	if ( JL_IsArray(cx, value) ) {
 
 		uint32 length;
-		JL_CHK( JL_JsvalToCValVector(cx, value, level, levelMaxLength, &length) );
+		JL_CHK( JL_JsvalToNativeVector(cx, value, level, levelMaxLength, &length) );
 		JL_S_ASSERT( length >= levelMaxLength, "Array too small." );
 		return JS_TRUE;
 	}
@@ -322,7 +322,7 @@ inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *c
 		PTYPE *curveArray;
 		curveArray = (PTYPE*)alloca(curveArrayLength * sizeof(PTYPE));
 		uint32 tmp;
-		JL_CHK( JL_JsvalToCValVector(cx, value, curveArray, curveArrayLength, &tmp) );
+		JL_CHK( JL_JsvalToNativeVector(cx, value, curveArray, curveArrayLength, &tmp) );
 		for ( i = 0; i < length; ++i )
 			curve[i] = curveArray[i * curveArrayLength / length]; // no interpolation
 		return JS_TRUE;
@@ -2227,7 +2227,7 @@ DEFINE_FUNCTION( Convolution ) {
 	JL_S_ASSERT_ALLOC( kernel );
 	//JL_CHK( FloatArrayToVector(cx, count, &JL_ARG(1), kernel) );
 	uint32 length;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), kernel, count, &length) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), kernel, count, &length) );
 
 	int size;
 	size = (int)sqrtf(float(count));
@@ -2789,7 +2789,7 @@ DEFINE_FUNCTION( Light ) {
 	Vector3 lightPos;
 //	JL_CHK( FloatArrayToVector(cx, 3, &JL_ARG(2), lightPos.raw ) );
 	uint32 length;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), lightPos.raw, 3, &length) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), lightPos.raw, 3, &length) );
 	JL_S_ASSERT( length == 3, "Invalid array size." );
 
 	PTYPE ambient[3];
@@ -4082,13 +4082,13 @@ DEFINE_FUNCTION( AddPerlin2 ) {
 	double x,y,z, offset[3], dirX[3], dirY[3], alpha;
 
 	uint32 len;
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), offset, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), offset, 3, &len) );
 	JL_S_ASSERT( len == 3, "Invalid 3D vector." );
 
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(2), dirX, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), dirX, 3, &len) );
 	JL_S_ASSERT( len == 3, "Invalid 3D vector." );
 
-	JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(3), dirY, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), dirY, 3, &len) );
 	JL_S_ASSERT( len == 3, "Invalid 3D vector." );
 
 	if ( JL_ARG_ISDEF(4) )
@@ -4250,7 +4250,7 @@ DEFINE_FUNCTION( GetPixelAt ) {
 	PTYPE *pos;
 	pos = PosByMode(tex, sx, sy, borderMode);
 	if (likely( pos != NULL ))
-		return JL_CValVectorToJsval(cx, pos, tex->channels, JL_RVAL);
+		return JL_NativeVectorToJsval(cx, pos, tex->channels, JL_RVAL);
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -4354,7 +4354,7 @@ DEFINE_FUNCTION( GetLevelRange ) {
 	vector[0] = min;
 	vector[1] = max;
 
-	return JL_CValVectorToJsval(cx, vector, 2, JL_RVAL);
+	return JL_NativeVectorToJsval(cx, vector, 2, JL_RVAL);
 	JL_BAD;
 }
 
@@ -4430,7 +4430,7 @@ DEFINE_FUNCTION( GetBorderLevelRange ) {
 	vector[0] = min;
 	vector[1] = max;
 
-	return JL_CValVectorToJsval(cx, vector, 2, JL_RVAL);
+	return JL_NativeVectorToJsval(cx, vector, 2, JL_RVAL);
 	JL_BAD;
 }
 

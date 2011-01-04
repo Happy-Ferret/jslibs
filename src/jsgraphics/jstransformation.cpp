@@ -132,7 +132,7 @@ DEFINE_CONSTRUCTOR() {
 			float *tmp = (float*)&pv->mat->raw;
 			for ( int i = 0; i < 16; ++i )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], (tmp++)) );
-			// see JL_CHK( JL_JsvalToCValVector(cx, *JL_ARGV, tmp, 16, &len) );
+			// see JL_CHK( JL_JsvalToNativeVector(cx, *JL_ARGV, tmp, 16, &len) );
 			pv->isIdentity = false;
 		} else
 			JL_REPORT_ERROR("Invalid matrix44");
@@ -179,7 +179,7 @@ DEFINE_FUNCTION( Load ) {
 		float *tmp = (float*)&pv->mat->raw;
 		for ( int i = 0; i < 16; ++i )
 			JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], (tmp++)) );
-		// see JL_CHK( JL_JsvalToCValVector(cx, *JL_ARGV, tmp, 16, &len) );
+		// see JL_CHK( JL_JsvalToNativeVector(cx, *JL_ARGV, tmp, 16, &len) );
 		pv->isIdentity = false;
 	} else
 		JL_REPORT_ERROR("Invalid matrix44");
@@ -845,7 +845,7 @@ DEFINE_FUNCTION( TransformVector ) {
 	if ( length == 3 ) {
 
 		Vector3 src, dst;
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), src.raw, 3, &length ) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), src.raw, 3, &length ) );
 
 		Matrix44MultVector3(pv->mat, &dst, &src);
 
@@ -861,7 +861,7 @@ DEFINE_FUNCTION( TransformVector ) {
 	if ( length == 4 ) {
 
 		Vector4 src, dst;
-		JL_CHK( JL_JsvalToCValVector(cx, JL_ARG(1), src.raw, 4, &length ) );
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), src.raw, 4, &length ) );
 
 		Matrix44MultVector4(pv->mat, &dst, &src);
 
@@ -903,7 +903,7 @@ DEFINE_PROPERTY_SETTER( translation ) {
 
 	float pos[3];
 	uint32 len;
-	JL_CHK( JL_JsvalToCValVector(cx, *vp, pos, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, *vp, pos, 3, &len) );
 	Matrix44SetTranslation(pv->mat, pos[0], pos[1], pos[2]);
 	pv->isIdentity = false;
 	return JS_TRUE;
@@ -917,7 +917,7 @@ DEFINE_PROPERTY_GETTER( translation ) {
 
 	float pos[3];
 	Matrix44GetTranslation(pv->mat, &pos[0], &pos[1], &pos[2]);
-	JL_CHK( JL_CValVectorToJsval(cx, pos, 3, vp) );
+	JL_CHK( JL_NativeVectorToJsval(cx, pos, 3, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
