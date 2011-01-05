@@ -42,9 +42,9 @@ BEGIN_STATIC
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME( str , object|function )
-  Return an expanded string using key/value stored in _obj_ or returned by the function.
+  Return an expanded string using key/value stored in _obj_ or the falue computed by a function.
   $H note
-   $UNDEF values are ignored in the resulting string.
+   $UNDEF or null values are ignored in the resulting string.
   $H example 1
   {{{
   Expand('$(h) $(xxx) $(w)', { h:'Hello', w:'World' }); // returns "Hello  World"
@@ -54,26 +54,6 @@ $TOC_MEMBER $INAME
   Expand('$(foo)-$(bar)', function(id) '<'+id+'>' ); // returns "<foo>-<bar>"
   }}}
 **/
-
-#define EXPAND_SOURCE_ARG 1
-#define EXPAND_SOURCE_ARG_FUNCTION 2
-//#define EXPAND_SOURCE_SCOPE 3
-
-/*
-static jschar wstrstr(const jschar *src, const jschar *srcEnd, const jschar *sub, const jschar *subEnd) {
-
-	size_t subLen = subEnd - sub;
-	for (;;) {
-
-		const jschar *pos = wmemchr(src, sub[0], srcEnd - src);
-		if ( pos == NULL || srcEnd - pos < subLen )
-			return NULL;
-		if ( wmemcmp(pos, sub, subLen) == 0 )
-			return pos;
-		src = pos;
-	}
-}
-*/
 DEFINE_FUNCTION( Expand ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -1495,3 +1475,24 @@ CONFIGURE_STATIC
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// trash
+
+/*
+static jschar wstrstr(const jschar *src, const jschar *srcEnd, const jschar *sub, const jschar *subEnd) {
+
+	size_t subLen = subEnd - sub;
+	for (;;) {
+
+		const jschar *pos = wmemchr(src, sub[0], srcEnd - src);
+		if ( pos == NULL || srcEnd - pos < subLen )
+			return NULL;
+		if ( wmemcmp(pos, sub, subLen) == 0 )
+			return pos;
+		src = pos;
+	}
+}
+*/

@@ -1037,8 +1037,6 @@ var listeners = {
 		Ogl.Viewport(0, 0, w, h);
 	},
 	onMouseMotion: function(x,y,dx,dy,button) {
-	},
-	onMouseMotion: function(x,y,dx,dy,button) {
 		
 		if ( button & BUTTON_LMASK ) {
 
@@ -1050,7 +1048,7 @@ var listeners = {
 		ay += dy;
 	}
 
-};
+}
 
 Init();
 

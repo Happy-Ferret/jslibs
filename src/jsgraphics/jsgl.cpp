@@ -33,6 +33,8 @@ DECLARE_CLASS(Ogl)
 #include "../jsprotex/textureBuffer.h"
 //TextureJSClass
 
+#include <jstypedarray.h>
+
 #include "../jslang/handlePub.h"
 
 #include "../jstrimesh/trimeshPub.h"
@@ -4075,18 +4077,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetUniformLocationARB ) {
 
+	JL_INIT_OPENGL_EXTENSION( glGetUniformLocationARB, PFNGLGETUNIFORMLOCATIONARBPROC );
+
 	JLStr name;
 
-	JL_INIT_OPENGL_EXTENSION( glGetUniformLocationARB, PFNGLGETUNIFORMLOCATIONARBPROC );
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_ARG(1));
-	JL_S_ASSERT_STRING(JL_ARG(2));
+
 	GLhandleARB programHandle;
 	programHandle = JSVAL_TO_INT( JL_ARG(1) );
 
-	JL_JsvalToNative(cx, JL_ARG(2), &name);
-	int uniformLocation;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &name) );
+	GLint uniformLocation;
+
 	uniformLocation = glGetUniformLocationARB(programHandle, name);  OGL_CHK;
+
 	*JL_RVAL = INT_TO_JSVAL(uniformLocation);
 	
 	return JS_TRUE;
@@ -4619,6 +4624,7 @@ DEFINE_FUNCTION( PointParameter ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( texture )
+  Select server-side active texture unit.
   $H arguments
    $ARG GLenum texture
   $H OpenGL API
@@ -4690,7 +4696,7 @@ DEFINE_FUNCTION( MultiTexCoord ) {
 	if ( JL_ARGC == 2 ) {
 
 		glMultiTexCoord1d(target, s);  OGL_CHK;
-		;
+
 		return JS_TRUE;
 	}
 	double t;
@@ -4698,7 +4704,7 @@ DEFINE_FUNCTION( MultiTexCoord ) {
 	if ( JL_ARGC == 3 ) {
 
 		glMultiTexCoord2d(target, s, t);  OGL_CHK;
-		;
+
 		return JS_TRUE;
 	}
 	double r;
@@ -4706,7 +4712,7 @@ DEFINE_FUNCTION( MultiTexCoord ) {
 	if ( JL_ARGC == 4 ) {
 
 		glMultiTexCoord3d(target, s, t, r);  OGL_CHK;
-		;
+
 		return JS_TRUE;
 	}
 	JL_REPORT_ERROR("Invalid argument.");
@@ -4748,6 +4754,7 @@ DEFINE_FUNCTION( GenQueries ) {
 
 	JL_S_ASSERT_ARG(0);
 	GLuint query;
+
 	glGenQueriesARB(1, &query);  OGL_CHK;
 	
 	*JL_RVAL = INT_TO_JSVAL(query);
@@ -4772,6 +4779,7 @@ DEFINE_FUNCTION( DeleteQueries ) {
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_INT(JL_ARG(1));
 	GLuint query = JSVAL_TO_INT( JL_ARG(1) );
+
 	glDeleteQueriesARB(1, &query);  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -5418,6 +5426,7 @@ DEFINE_FUNCTION( CreateTextureBuffer ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( target, internalformat | $UNDEF, texture )
+ $VOID $INAME( target, internalformat | $UNDEF, typedArray, width, height, channels )
   $H arguments
    $ARG GLenum target
    $ARG $INT internalformat: is the internal PixelFormat. If undefined, the function will use the format of _texture_.
@@ -5428,10 +5437,18 @@ $TOC_MEMBER $INAME
    glPixelStorei, glTexImage2D
 **/
 // (TBD) manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
+
+/*
+JSBool TextureHelper(JSObject *obj, int *width, int *height, int *channels, const void *data) {
+
+	return JS_TRUE;
+}
+*/
+
 DEFINE_FUNCTION( DefineTextureImage ) {
 
 	JLStr dataStr;
-	JL_S_ASSERT_ARG(3);
+	JL_S_ASSERT_ARG_MIN(3);
 	JL_S_ASSERT_INT(JL_ARG(1));
 //	JL_S_ASSERT_INT(JL_ARG(2)); // may be undefined
 	JL_S_ASSERT_OBJECT(JL_ARG(3));
@@ -5453,6 +5470,44 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 		height = tex->height;
 		channels = tex->channels;
 		type = GL_FLOAT;
+	} else if ( js_IsTypedArray(tObj) ) {
+
+		js::TypedArray *arr = js::TypedArray::fromJSObject(tObj);
+		switch ( arr->type ) {
+			case js::TypedArray::TYPE_INT8:
+				type = GL_BYTE;
+				break;
+			case js::TypedArray::TYPE_UINT8:
+				type = GL_UNSIGNED_BYTE;
+				break;
+			case js::TypedArray::TYPE_INT16:
+				type = GL_SHORT;
+				break;
+			case js::TypedArray::TYPE_UINT16:
+				type = GL_UNSIGNED_SHORT;
+				break;
+			case js::TypedArray::TYPE_INT32:
+				type = GL_INT;
+				break;
+			case js::TypedArray::TYPE_UINT32:
+				type = GL_UNSIGNED_INT;
+				break;
+			case js::TypedArray::TYPE_FLOAT32:
+				type = GL_FLOAT;
+				break;
+			case js::TypedArray::TYPE_FLOAT64:
+				type = GL_DOUBLE;
+				break;
+			default:
+				JL_REPORT_ERROR("Invalid texture data type.");
+		}
+
+		JL_S_ASSERT_ARG(6);
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &width) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &height) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &channels) );
+		JL_S_ASSERT( width*height*channels == arr->length, "Invalid texture size." );
+		data = arr->data;
 	} else {
 
 		JL_CHKM( JL_GetProperty(cx, tObj, "width", &width), "Invalid texture object." );
@@ -5489,13 +5544,13 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 				format = GL_RGBA;
 				break;
 			default:
-				JL_REPORT_ERROR("Invalid texture format.");
+				JL_REPORT_ERROR("Invalid texture format."); // miss GL_COLOR_INDEX, GL_STENCIL_INDEX, GL_DEPTH_COMPONENT, GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA
 		}
 	}
 
 	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );  OGL_CHK;
+
 	glTexImage2D( JSVAL_TO_INT(JL_ARG(1)), 0, format, width, height, 0, format, type, data );  OGL_CHK;
-//	GLenum err = glGetError();
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;

@@ -1297,20 +1297,17 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 static ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const jschar* cval, size_t length, jsval *vp ) {
 
-	if (unlikely( cval == NULL )) {
-
-		*vp = JSVAL_VOID;
-		return JS_TRUE;
-	}
 	if (unlikely( length == 0 )) {
 
-		*vp = JL_GetEmptyStringValue(cx);
+		if (unlikely( cval == NULL ))
+			*vp = JSVAL_VOID;
+		else
+			*vp = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
+	JL_ASSERT( cval != NULL );
 	JSString *jsstr = JS_NewUCStringCopyN(cx, cval, length);
 	JL_CHK( jsstr );
-//	if (unlikely( jsstr == NULL ))
-//		JL_REPORT_ERROR_NUM(cx, JLSMSG_FAIL_TO_CREATE, "string");
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
@@ -1334,9 +1331,6 @@ JL_NativeToJsval( JSContext *cx, const char* cval, jsval *vp ) {
 	}
 	JSString *jsstr = JS_NewStringCopyZ(cx, cval);
 	JL_CHK( jsstr );
-
-//	if (unlikely( jsstr == NULL ))
-//		JL_REPORT_ERROR( "Unable to create the string." );
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
@@ -1345,21 +1339,17 @@ JL_NativeToJsval( JSContext *cx, const char* cval, jsval *vp ) {
 static ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const char* cval, size_t length, jsval *vp ) {
 
-	if (unlikely( cval == NULL )) {
-
-		*vp = JSVAL_VOID;
-		return JS_TRUE;
-	}
 	if (unlikely( length == 0 )) {
 
-		*vp = JL_GetEmptyStringValue(cx);
+		if (unlikely( cval == NULL ))
+			*vp = JSVAL_VOID;
+		else
+			*vp = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
+	JL_ASSERT( cval != NULL );
 	JSString *jsstr = JS_NewStringCopyN(cx, cval, length);
 	JL_CHK( jsstr );
-
-//	if (unlikely( jsstr == NULL ))
-//		JL_REPORT_ERROR( "Unable to create the string." );
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
