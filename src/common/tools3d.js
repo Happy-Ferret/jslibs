@@ -137,44 +137,44 @@ var ShaderProgramProto = {
 
 	AddShader:function( source, type ) {
 		
-		if ( type == Ogl.FRAGMENT_SHADER_ARB ) {
+		if ( type == Ogl.FRAGMENT_SHADER ) {
 			Assert( Ogl.HasExtensionName('GL_ARB_fragment_shader') );
 			this._hasFragmentShader = true;
-		} else if ( type == Ogl.VERTEX_SHADER_ARB ) {
+		} else if ( type == Ogl.VERTEX_SHADER ) {
 			Assert( Ogl.HasExtensionName('GL_ARB_vertex_shader') );
 		}
 
 		if ( !this.program ) {
 			
 			Assert( Ogl.HasExtensionName('GL_ARB_shading_language_100', 'GL_ARB_shader_objects') );
-			this.program = Ogl.CreateProgramObjectARB();
+			this.program = Ogl.CreateProgramObject();
 		}
 		
-		var shader = Ogl.CreateShaderObjectARB(type);
-		Ogl.ShaderSourceARB(shader, source);
-		Ogl.CompileShaderARB(shader);
-		if ( !Ogl.GetObjectParameterARB(shader, Ogl.OBJECT_COMPILE_STATUS_ARB) ) {
+		var shader = Ogl.CreateShaderObject(type);
+		Ogl.ShaderSource(shader, source);
+		Ogl.CompileShader(shader);
+		if ( !Ogl.GetObjectParameter(shader, Ogl.OBJECT_COMPILE_STATUS) ) {
 
-			Print( 'CompileShaderARB log:\n', Ogl.GetInfoLogARB(shader), '\n' );
+			Print( 'CompileShader log:\n', Ogl.GetInfoLog(shader), '\n' );
 			throw 0;
 		}
-		Ogl.AttachObjectARB(this.program, shader);
-		Ogl.DeleteObjectARB(shader);
-		if ( !Ogl.GetObjectParameterARB(shader, Ogl.OBJECT_DELETE_STATUS_ARB) ) {
+		Ogl.AttachObject(this.program, shader);
+		Ogl.DeleteObject(shader);
+		if ( !Ogl.GetObjectParameter(shader, Ogl.OBJECT_DELETE_STATUS) ) {
 
-			Print( 'DeleteObjectARB log:\n', Ogl.GetInfoLogARB(this.program), '\n' );
+			Print( 'DeleteObject log:\n', Ogl.GetInfoLog(this.program), '\n' );
 			throw 0;
 		}
 	},
 	
 	AddFragmentShader:function( source ) {
 
-		this.AddShader(source, Ogl.FRAGMENT_SHADER_ARB);
+		this.AddShader(source, Ogl.FRAGMENT_SHADER);
 	},
 
 	AddVertexShader:function( source ) {
 
-		this.AddShader(source, Ogl.VERTEX_SHADER_ARB);
+		this.AddShader(source, Ogl.VERTEX_SHADER);
 	},
 	
 	Link:function() {
@@ -182,10 +182,10 @@ var ShaderProgramProto = {
 		if ( !this._hasFragmentShader && Ogl.HasExtensionName('GL_ARB_fragment_shader') )
 			this.AddFragmentShader('void main(void) {gl_FragColor=gl_Color;}');
 
-		Ogl.LinkProgramARB(this.program);
-		if ( !Ogl.GetObjectParameterARB(this.program, Ogl.OBJECT_LINK_STATUS_ARB) ) {
+		Ogl.LinkProgram(this.program);
+		if ( !Ogl.GetObjectParameter(this.program, Ogl.OBJECT_LINK_STATUS) ) {
 
-			Print( 'LinkProgramARB log:\n', Ogl.GetInfoLogARB(this.program), '\n' );
+			Print( 'LinkProgram log:\n', Ogl.GetInfoLog(this.program), '\n' );
 			throw 0;
 		}
 	},
@@ -196,26 +196,26 @@ var ShaderProgramProto = {
 	
 		var loc = this._uniformLocationCache[name];
 		if ( !loc )
-			this._uniformLocationCache[name] = loc = Ogl.GetUniformLocationARB(this.program, name);
-		Ogl.UniformARB(loc, value);
+			this._uniformLocationCache[name] = loc = Ogl.GetUniformLocation(this.program, name);
+		Ogl.Uniform(loc, value);
 	},
 	
 	SetUniformMatrix:function( name, value ) {
 	
 		var loc = this._uniformLocationCache[name];
 		if ( !loc )
-			this._uniformLocationCache[name] = loc = Ogl.GetUniformLocationARB(this.program, name);
-		Ogl.UniformMatrixARB(loc, value);
+			this._uniformLocationCache[name] = loc = Ogl.GetUniformLocation(this.program, name);
+		Ogl.UniformMatrix(loc, value);
 	},
 
 	On:function() {
 	
-		Ogl.UseProgramObjectARB(this.program);
+		Ogl.UseProgramObject(this.program);
 	},
 	
 	Off:function() {
 	
-		Ogl.UseProgramObjectARB(0);
+		Ogl.UseProgramObject(0);
 	}
 }
 
@@ -499,20 +499,20 @@ function UI(currentWidth, currentHeight) {
 		if ( useSeparateStencil ) {
 
 			Ogl.Disable(Ogl.CULL_FACE);
-			Ogl.StencilOpSeparate(Ogl.BACK, Ogl.KEEP, Ogl.INCR_WRAP_EXT, Ogl.KEEP);
-			Ogl.StencilOpSeparate(Ogl.FRONT, Ogl.KEEP, Ogl.DECR_WRAP_EXT, Ogl.KEEP);
+			Ogl.StencilOpSeparate(Ogl.BACK, Ogl.KEEP, Ogl.INCR_WRAP, Ogl.KEEP);
+			Ogl.StencilOpSeparate(Ogl.FRONT, Ogl.KEEP, Ogl.DECR_WRAP, Ogl.KEEP);
 				renderCallback(3); // render occluders shape only
 			Ogl.Enable(Ogl.CULL_FACE);
 		} else if ( useTwoSideStencil ) {
 
 			Ogl.Disable(Ogl.CULL_FACE);
-			Ogl.Enable(Ogl.STENCIL_TEST_TWO_SIDE_EXT);
+			Ogl.Enable(Ogl.STENCIL_TEST_TWO_SIDE);
 			Ogl.ActiveStencilFaceEXT(Ogl.BACK);
-			Ogl.StencilOp(Ogl.KEEP, Ogl.INCR_WRAP_EXT, Ogl.KEEP);
+			Ogl.StencilOp(Ogl.KEEP, Ogl.INCR_WRAP, Ogl.KEEP);
 			Ogl.ActiveStencilFaceEXT(Ogl.FRONT);
-			Ogl.StencilOp(Ogl.KEEP, Ogl.DECR_WRAP_EXT, Ogl.KEEP);
+			Ogl.StencilOp(Ogl.KEEP, Ogl.DECR_WRAP, Ogl.KEEP);
 				renderCallback(3); // render occluders shape only
-			Ogl.Disable(Ogl.STENCIL_TEST_TWO_SIDE_EXT);
+			Ogl.Disable(Ogl.STENCIL_TEST_TWO_SIDE);
 			Ogl.Enable(Ogl.CULL_FACE);
 		} else {
 

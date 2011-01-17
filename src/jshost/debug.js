@@ -1,6 +1,5 @@
 LoadModule('jsstd');
 
-
 LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();

@@ -45,6 +45,23 @@ BEGIN_STATIC
 === Static functions ==
 **/
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME( value )
+  This function converts any value into a floating point value.
+**/
+DEFINE_FUNCTION( real ) {
+
+	JL_S_ASSERT_ARG(1);
+	jsdouble val;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &val) );
+	*JL_RVAL = DOUBLE_TO_JSVAL(val);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME( value )
@@ -362,6 +379,8 @@ CONFIGURE_STATIC
 		#ifdef DEBUG
 		FUNCTION( jslang_test )
 		#endif // DEBUG
+
+		FUNCTION_ARGC( real, 1 )
 
 		FUNCTION_ARGC( Stringify, 1 )
 		FUNCTION_ARGC( ProcessEvents, 4 ) // (just a guess)

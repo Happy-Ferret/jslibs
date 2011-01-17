@@ -1048,8 +1048,8 @@ class JLStr {
 		JL_ASSERT( IsSet() );
 		JL_ASSERT_IF( length != SIZE_MAX && hasOwnership && jsstr, jl_msize((void*)jsstr) >= length + 2 );
 		JL_ASSERT_IF( length != SIZE_MAX && hasOwnership && str, jl_msize((void*)str) >= length + 1 );
-		JL_ASSERT_IF( length != SIZE_MAX && nullTerminated && jsstr, ((uint8_t*)jsstr)[length] == 0 );
-		JL_ASSERT_IF( length != SIZE_MAX && nullTerminated && str, ((uint8_t*)str)[length] == 0 );
+		JL_ASSERT_IF( length != SIZE_MAX && nullTerminated && jsstr, jsstr[length] == 0 );
+		JL_ASSERT_IF( length != SIZE_MAX && nullTerminated && str, str[length] == 0 );
 	}
 
 public:

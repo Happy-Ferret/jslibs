@@ -14,7 +14,11 @@
 
 DECLARE_CLASS( OglError )
 
+#define GLERR_EXTENSION_NOT_FOUND 0x0001
+
 JSBool ThrowOglError( JSContext *cx, GLenum err );
+
+JSBool ThrowOglCustomError( JSContext *cx, int err );
 
 inline JSBool CheckThrowCurrentOglError( JSContext *cx ) {
 

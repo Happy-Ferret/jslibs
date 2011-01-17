@@ -15,6 +15,22 @@ LoadModule('jsstd'); Exec('../../tests/fragmentShaderTest.js'); throw 0;
 
 
 
+// OpenGl doc: http://www.opengl.org/sdk/docs/man/
+
+GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+GlSetAttribute( GL_DEPTH_SIZE, 16 );
+GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+
+GlSetAttribute( GL_MULTISAMPLEBUFFERS, 1 );
+GlSetAttribute( GL_MULTISAMPLESAMPLES, 1 );
+
+SetVideoMode( 64, 64, 32, OPENGL );
+
+Print( Ogl.GetDouble(Ogl.LINE_WIDTH_RANGE, 100).length, '\n' );
+
+
+
 Halt(); //////////////////////////////////////////////////////////////////////////
 
 
@@ -42,25 +58,6 @@ Print( e, '\n' );
 Halt();
 
 
-// OpenGl doc: http://www.opengl.org/sdk/docs/man/
-
-GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-GlSetAttribute( GL_DOUBLEBUFFER, 1 );
-GlSetAttribute( GL_DEPTH_SIZE, 16 );
-GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
-
-GlSetAttribute( GL_MULTISAMPLEBUFFERS, 1 );
-GlSetAttribute( GL_MULTISAMPLESAMPLES, 1 );
-
-SetVideoMode( 640, 480, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
-
-Print( Ogl.vendor, '\n' );
-Print( Ogl.renderer, '\n' );
-Print( Ogl.version, '\n' );
-Print( Ogl.extensions.split(' ').join('\n'), '\n' );
-
-Print( Ogl.HasExtension('glFramebufferTextureEXT'), '\n' );
-Trace('max texture size', Ogl.GetInteger(Ogl.MAX_TEXTURE_SIZE, 1) );
 
 
 //Halt(); //////////////////////////////////////////////////////////////////////
@@ -619,7 +616,7 @@ function HWConvolution( width, height, matrix ) {
 		ReadBuffer(BACK);
 		CopyTexImage2D(TEXTURE_2D, 0, RGBA, 0, 0,width, height, 0);
 		
-		BindFramebuffer(FRAMEBUFFER_EXT, 0);
+		BindFramebuffer(FRAMEBUFFER, 0);
 		DeleteRenderbuffer(renderbuffer);
 		return tId;
 	}

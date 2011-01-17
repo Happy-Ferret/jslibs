@@ -127,6 +127,32 @@ typedef void* (__cdecl *glGetProcAddress_t)(const char*);
 static glGetProcAddress_t glGetProcAddress = NULL;
 
 
+const char *OpenGLErrorToConst(GLenum errorCode) {
+
+	switch (errorCode) {
+		case GL_NO_ERROR:
+			return "GL_NO_ERROR";
+		case GL_INVALID_ENUM:
+			return "GL_INVALID_ENUM";
+		case GL_INVALID_VALUE:
+			return "GL_INVALID_VALUE";
+		case GL_INVALID_OPERATION:
+			return "GL_INVALID_OPERATION";
+		case GL_STACK_OVERFLOW:
+			return "GL_STACK_OVERFLOW";
+		case GL_STACK_UNDERFLOW:
+			return "GL_STACK_UNDERFLOW";
+		case GL_OUT_OF_MEMORY:
+			return "GL_OUT_OF_MEMORY";
+#ifdef GL_ARB_framebuffer_object
+		case GL_INVALID_FRAMEBUFFER_OPERATION:
+			return "GL_INVALID_FRAMEBUFFER_OPERATION";
+#endif // GL_ARB_framebuffer_object
+	}
+	return "???";
+}
+
+
 // The specification states that any command that is not valid is completely ignored and the proper error bit is set.
 // Calling glGetError in a Begin/End-pair is not valid, and so the command is ignored the GL_INVALID_OPERATION error bit is set.
 // Directly after the Begin/End-pair, the error is returned, because that's the first valid call to glGetError after the error occured.
@@ -139,7 +165,7 @@ JL_MACRO_BEGIN \
 	if ( !_unsafeMode && !_inBeginOrEnd ) { \
 		GLenum err = glGetError(); \
 		if ( err != GL_NO_ERROR ) \
-			JL_REPORT_WARNING("OpenGL error %d", err); \
+			JL_REPORT_WARNING("OpenGL error %s (%d)", OpenGLErrorToConst(err), err); \
 	} \
 JL_MACRO_END
 
@@ -216,6 +242,10 @@ DECLARE_OPENGL_EXTENSION( glAttachObjectARB, PFNGLATTACHOBJECTARBPROC );
 DECLARE_OPENGL_EXTENSION( glLinkProgramARB, PFNGLLINKPROGRAMARBPROC );
 DECLARE_OPENGL_EXTENSION( glUseProgramObjectARB, PFNGLUSEPROGRAMOBJECTARBPROC );
 DECLARE_OPENGL_EXTENSION( glGetUniformLocationARB, PFNGLGETUNIFORMLOCATIONARBPROC );
+
+DECLARE_OPENGL_EXTENSION( glGetProgramiv, PFNGLGETPROGRAMIVPROC );
+
+DECLARE_OPENGL_EXTENSION( glGetActiveUniformARB, PFNGLGETACTIVEUNIFORMARBPROC );
 
 DECLARE_OPENGL_EXTENSION( glUniform1fARB, PFNGLUNIFORM1FARBPROC );
 DECLARE_OPENGL_EXTENSION( glUniform2fARB, PFNGLUNIFORM2FARBPROC );
@@ -818,6 +848,12 @@ DEFINE_FUNCTION( GetInteger ) {
 	JL_S_ASSERT_INT(JL_ARG(1));
 
 	GLint params[MAX_PARAMS]; // (TBD) check if it is the max amount of data that glGetIntegerv may returns.
+	
+	if ( JL_IS_SAFE ) {
+
+		memset(params, 0xAA, sizeof(params));
+	}
+
 	glGetIntegerv(JSVAL_TO_INT( JL_ARG(1) ), params);  OGL_CHK;
 
 	if ( JL_ARG_ISDEF(2) ) {
@@ -837,13 +873,24 @@ DEFINE_FUNCTION( GetInteger ) {
 			JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 		}
 
+		if ( JL_IS_SAFE ) {
+
+			int argset = sizeof(params);
+			while ( --argset >= 0 && ((unsigned char*)params)[argset] == 0xAA );
+			argset = argset / sizeof(*params) + 1;
+			if ( argset != count )
+				JL_REPORT_WARNING( "Invalid returned argument count (%d).", argset );
+		}
+
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
+		count = JL_MIN(count, COUNTOF(params));
 		while (count--) {
 
 			tmpValue = INT_TO_JSVAL( params[count] );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
+
 	} else {
 
 		*JL_RVAL = INT_TO_JSVAL( params[0] );
@@ -873,6 +920,12 @@ DEFINE_FUNCTION( GetDouble ) {
 	JL_S_ASSERT_INT(JL_ARG(1));
 
 	GLdouble params[MAX_PARAMS]; // (TBD) check if it is the max amount of data that glGetDoublev may returns.
+
+	if ( JL_IS_SAFE ) {
+
+		memset(params, 0xAA, sizeof(params));
+	}
+
 	glGetDoublev(JSVAL_TO_INT(JL_ARG(1)), params);  OGL_CHK;
 
 	if ( JL_ARG_ISDEF(2) ) {
@@ -892,8 +945,18 @@ DEFINE_FUNCTION( GetDouble ) {
 			JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 		}
 
+		if ( JL_IS_SAFE ) {
+
+			int argset = sizeof(params);
+			while ( --argset >= 0 && ((unsigned char*)params)[argset] == 0xAA );
+			argset = argset / sizeof(*params) + 1;
+			if ( argset != count )
+				JL_REPORT_WARNING( "Invalid value request count (expect %d).", argset );
+		}
+
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
+		count = JL_MIN(count, COUNTOF(params));
 		while (count--) {
 
 			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
@@ -1777,7 +1840,7 @@ DEFINE_FUNCTION( GetLight ) {
 	if ( JL_ARG_ISDEF(3) ) {
 		
 		JL_S_ASSERT_INT(JL_ARG(3));
-		count = JSVAL_TO_INT(JL_ARG(3));
+		count = JL_MIN(JSVAL_TO_INT(JL_ARG(3)), (int)COUNTOF(params));
 	} else {
 
 		switch ( pname ) {
@@ -3317,6 +3380,7 @@ DEFINE_FUNCTION( HasExtensionProc ) {
 			return JS_TRUE;
 		}
 	}
+
 	*JL_RVAL = JSVAL_TRUE;
 	return JS_TRUE;
 	JL_BAD;
@@ -3594,8 +3658,7 @@ DEFINE_FUNCTION( GetRenderbufferParameter ) {
 		
 		JL_S_ASSERT_INT(JL_ARG(3));
 		int count;
-		count = JSVAL_TO_INT(JL_ARG(3));
-		JL_S_ASSERT( count <= COUNTOF(params), "Too many params" );
+		count = JL_MIN(JSVAL_TO_INT(JL_ARG(3)), (int)COUNTOF(params));
 		JL_CHK( JL_NativeVectorToJsval(cx, params, count, JL_RVAL, false) );
 	} else {
 
@@ -3850,8 +3913,7 @@ DEFINE_FUNCTION( GetFramebufferAttachmentParameter ) {
 		
 		JL_S_ASSERT_INT( JL_ARG(4) );
 		int count;
-		count = JSVAL_TO_INT( JL_ARG(4) );
-		JL_S_ASSERT( count <= COUNTOF(params), "Too many params" );
+		count = JL_MIN(JSVAL_TO_INT(JL_ARG(4)), (int)COUNTOF(params));
 		JL_CHK( JL_NativeVectorToJsval(cx, params, count, JL_RVAL, false) );
 	} else {
 
@@ -3872,7 +3934,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glCreateShaderObjectARB
 **/
-DEFINE_FUNCTION( CreateShaderObjectARB ) {
+DEFINE_FUNCTION( CreateShaderObject ) {
 
 	JL_INIT_OPENGL_EXTENSION( glCreateShaderObjectARB, PFNGLCREATESHADEROBJECTARBPROC );
 	JL_S_ASSERT_ARG(1);
@@ -3893,7 +3955,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glDeleteObjectARB
 **/
-DEFINE_FUNCTION( DeleteObjectARB ) {
+DEFINE_FUNCTION( DeleteObject ) {
 
 	JL_INIT_OPENGL_EXTENSION( glDeleteObjectARB, PFNGLDELETEOBJECTARBPROC );
 	JL_S_ASSERT_ARG(1);
@@ -3914,7 +3976,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glGetInfoLogARB
 **/
-DEFINE_FUNCTION( GetInfoLogARB ) {
+DEFINE_FUNCTION( GetInfoLog ) {
 
 	JL_INIT_OPENGL_EXTENSION( glGetInfoLogARB, PFNGLGETINFOLOGARBPROC );
 	JL_S_ASSERT_ARG(1);
@@ -3940,7 +4002,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glCreateProgramObjectARB
 **/
-DEFINE_FUNCTION( CreateProgramObjectARB ) {
+DEFINE_FUNCTION( CreateProgramObject ) {
 
 	JL_INIT_OPENGL_EXTENSION( glCreateProgramObjectARB, PFNGLCREATEPROGRAMOBJECTARBPROC );
 
@@ -3957,7 +4019,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glShaderSourceARB
 **/
-DEFINE_FUNCTION( ShaderSourceARB ) {
+DEFINE_FUNCTION( ShaderSource ) {
 
 	JLStr source;
 	JL_INIT_OPENGL_EXTENSION( glShaderSourceARB, PFNGLSHADERSOURCEARBPROC );
@@ -3987,7 +4049,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glCompileShaderARB
 **/
-DEFINE_FUNCTION( CompileShaderARB ) {
+DEFINE_FUNCTION( CompileShader ) {
 
 	JL_INIT_OPENGL_EXTENSION( glCompileShaderARB, PFNGLCOMPILESHADERARBPROC );
 	JL_S_ASSERT_ARG(1);
@@ -4008,15 +4070,18 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glCompileShaderARB
 **/
-DEFINE_FUNCTION( AttachObjectARB ) {
+DEFINE_FUNCTION( AttachObject ) {
 
 	JL_INIT_OPENGL_EXTENSION( glAttachObjectARB, PFNGLATTACHOBJECTARBPROC );
 	JL_S_ASSERT_ARG(2);
-	JL_S_ASSERT_INT(JL_ARG(1));
+//	JL_S_ASSERT_INT(JL_ARG(1));
 	GLhandleARB programHandle;
-	programHandle = JSVAL_TO_INT( JL_ARG(1) );
+//	programHandle = JSVAL_TO_INT( JL_ARG(1) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &programHandle) );
+
 	GLhandleARB shaderHandle;
 	shaderHandle = JSVAL_TO_INT( JL_ARG(2) );
+
 	glAttachObjectARB(programHandle, shaderHandle);  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -4031,13 +4096,15 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glLinkProgramARB
 **/
-DEFINE_FUNCTION( LinkProgramARB ) {
+DEFINE_FUNCTION( LinkProgram ) {
 
 	JL_INIT_OPENGL_EXTENSION( glLinkProgramARB, PFNGLLINKPROGRAMARBPROC );
 	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT_INT(JL_ARG(1));
+//	JL_S_ASSERT_INT(JL_ARG(1));
 	GLhandleARB programHandle;
-	programHandle = JSVAL_TO_INT( JL_ARG(1) );
+//	programHandle = JSVAL_TO_INT( JL_ARG(1) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &programHandle) );
+
 	glLinkProgramARB(programHandle);  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -4053,13 +4120,16 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glUseProgramObjectARB
 **/
-DEFINE_FUNCTION( UseProgramObjectARB ) {
+DEFINE_FUNCTION( UseProgramObject ) {
 
 	JL_INIT_OPENGL_EXTENSION( glUseProgramObjectARB, PFNGLUSEPROGRAMOBJECTARBPROC );
 	JL_S_ASSERT_ARG(1);
-	JL_S_ASSERT_INT(JL_ARG(1));
+//	JL_S_ASSERT_INT(JL_ARG(1));
+
 	GLhandleARB programHandle;
-	programHandle = JSVAL_TO_INT( JL_ARG(1) );
+//	programHandle = JSVAL_TO_INT( JL_ARG(1) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &programHandle) );
+
 	glUseProgramObjectARB(programHandle);  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -4075,17 +4145,18 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glGetUniformLocationARB
 **/
-DEFINE_FUNCTION( GetUniformLocationARB ) {
+DEFINE_FUNCTION( GetUniformLocation ) {
 
 	JL_INIT_OPENGL_EXTENSION( glGetUniformLocationARB, PFNGLGETUNIFORMLOCATIONARBPROC );
 
 	JLStr name;
 
 	JL_S_ASSERT_ARG(2);
-	JL_S_ASSERT_INT(JL_ARG(1));
+	//JL_S_ASSERT_INT(JL_ARG(1));
 
 	GLhandleARB programHandle;
-	programHandle = JSVAL_TO_INT( JL_ARG(1) );
+	//programHandle = JSVAL_TO_INT( JL_ARG(1) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &programHandle) );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &name) );
 	GLint uniformLocation;
@@ -4099,6 +4170,9 @@ DEFINE_FUNCTION( GetUniformLocationARB ) {
 }
 
 
+
+
+
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME( uniformLocation, value )
@@ -4106,7 +4180,9 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glUniform1fARB, glUniform1iARB
 **/
-DEFINE_FUNCTION( UniformARB ) {
+DEFINE_FUNCTION( Uniform ) {
+
+	JL_INIT_OPENGL_EXTENSION( glGetActiveUniformARB, PFNGLGETACTIVEUNIFORMARBPROC );
 
 	JL_INIT_OPENGL_EXTENSION( glUniform1fARB, PFNGLUNIFORM1FARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform2fARB, PFNGLUNIFORM2FARBPROC );
@@ -4118,7 +4194,7 @@ DEFINE_FUNCTION( UniformARB ) {
 	JL_INIT_OPENGL_EXTENSION( glUniform3fvARB, PFNGLUNIFORM3FVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform4fvARB, PFNGLUNIFORM4FVARBPROC );
 
-	JL_INIT_OPENGL_EXTENSION( glGetUniformfvARB, PFNGLGETUNIFORMFVARBPROC );
+//	JL_INIT_OPENGL_EXTENSION( glGetUniformfvARB, PFNGLGETUNIFORMFVARBPROC );
 
 	JL_INIT_OPENGL_EXTENSION( glUniform1iARB, PFNGLUNIFORM1IARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform2iARB, PFNGLUNIFORM2IARBPROC );
@@ -4130,19 +4206,143 @@ DEFINE_FUNCTION( UniformARB ) {
 	JL_INIT_OPENGL_EXTENSION( glUniform3ivARB, PFNGLUNIFORM3IVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform4ivARB, PFNGLUNIFORM4IVARBPROC );
 
-	JL_INIT_OPENGL_EXTENSION( glGetUniformivARB, PFNGLGETUNIFORMIVARBPROC );
+//	JL_INIT_OPENGL_EXTENSION( glGetUniformivARB, PFNGLGETUNIFORMIVARBPROC );
 
 	JL_INIT_OPENGL_EXTENSION( glUniformMatrix2fvARB, PFNGLUNIFORMMATRIX2FVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniformMatrix3fvARB, PFNGLUNIFORMMATRIX3FVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniformMatrix4fvARB, PFNGLUNIFORMMATRIX4FVARBPROC );
 
-
 	JL_S_ASSERT_ARG_RANGE(2, 5);
 	JL_S_ASSERT_INT(JL_ARG(1));
+
+	*JL_RVAL = JSVAL_VOID;
+
 	int uniformLocation;
 	uniformLocation = JSVAL_TO_INT(JL_ARG(1));
-	*JL_RVAL = JSVAL_VOID;
-	
+/*
+	// OpenGL 2.0 only ?, see glGetActiveUniformARB and glGetActiveUniform
+
+	GLint program;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &program);  OGL_CHK;
+	GLsizei length;
+	GLint size;
+	GLenum type;
+#ifdef DEBUG
+	GLcharARB name[128];
+	glGetActiveUniformARB(program, uniformLocation <-- incorrect! , sizeof(name), &length, &size, &type, name);  OGL_CHK;
+#else
+	glGetActiveUniformARB(program, uniformLocation <-- incorrect! , 0, &length, &size, &type, NULL);  OGL_CHK;
+#endif // DEBUG
+
+	bool isFloat;
+	switch (type) {
+		case GL_FLOAT:
+		case GL_FLOAT_VEC2:
+		case GL_FLOAT_VEC3:
+		case GL_FLOAT_VEC4:
+		case GL_FLOAT_MAT2:
+		case GL_FLOAT_MAT3:
+		case GL_FLOAT_MAT4:
+		case GL_FLOAT_MAT2x3:
+		case GL_FLOAT_MAT2x4:
+		case GL_FLOAT_MAT3x2:
+		case GL_FLOAT_MAT3x4:
+		case GL_FLOAT_MAT4x2:
+		case GL_FLOAT_MAT4x3:
+			isFloat = true;
+			break;
+		default:
+			isFloat = false;
+	}
+
+	// type:
+	//   GL_FLOAT, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_INT, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, 
+	//   GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_FLOAT_MAT2, GL_FLOAT_MAT3, GL_FLOAT_MAT4, GL_FLOAT_MAT2x3,
+	//   GL_FLOAT_MAT2x4, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_SAMPLER_1D, GL_SAMPLER_2D, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_1D_SHADOW, or GL_SAMPLER_2D_SHADOW
+	//   GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4x2, and GL_FLOAT_MAT4x3 (OpenGL 2.1)
+*/
+
+	jsval staticArgs[4];
+	jsval *args;
+	int count;
+	if ( JL_ARGC == 2 && JL_IsArray(cx, JL_ARG(2)) ) {
+
+		JSObject *arr = JSVAL_TO_OBJECT(JL_ARG(2));
+		jsuint tmp;
+		JL_CHK( JS_GetArrayLength(cx, arr, &tmp) );
+		count = tmp;
+		while ( tmp-- )
+			JL_CHK( JS_GetElement(cx, arr, tmp, &staticArgs[tmp]) );
+		args = staticArgs;
+	} else {
+		
+		count = JL_ARGC-1;
+		args = JL_ARGV;
+	}
+
+	JL_S_ASSERT( count >= 1 && count <= 4, "Too many values." );
+
+
+	if ( JSVAL_IS_DOUBLE(args[0]) ) {
+
+		float v1, v2, v3, v4;
+		JL_CHK( JL_JsvalToNative(cx, args[0], &v1) );
+		if ( count > 1 ) {
+
+			JL_CHK( JL_JsvalToNative(cx, args[1], &v2) );
+			if ( count > 2 ) {
+			
+				JL_CHK( JL_JsvalToNative(cx, args[2], &v3) );
+				if ( count > 3 ) {
+				
+					JL_CHK( JL_JsvalToNative(cx, args[3], &v4) );
+					glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_CHK;
+					return JS_TRUE;
+				}
+				glUniform3fARB(uniformLocation, v1, v2, v3);  OGL_CHK;
+				return JS_TRUE;
+			}
+			glUniform2fARB(uniformLocation, v1, v2);  OGL_CHK;
+			return JS_TRUE;
+		}
+		glUniform1fARB(uniformLocation, v1);  OGL_CHK;
+		return JS_TRUE;
+	} else {
+
+		int v1, v2, v3, v4;
+		JL_CHK( JL_JsvalToNative(cx, args[0], &v1) );
+		if ( count > 1 ) {
+		
+			JL_CHK( JL_JsvalToNative(cx, args[1], &v2) );
+			if ( count > 2 ) {
+			
+				JL_CHK( JL_JsvalToNative(cx, args[2], &v3) );
+				if ( count > 3 ) {
+				
+					JL_CHK( JL_JsvalToNative(cx, args[3], &v4) );
+					glUniform4iARB(uniformLocation, v1, v2, v3, v4);
+					if ( glGetError() == GL_INVALID_OPERATION )
+						glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_CHK;
+					return JS_TRUE;
+				}
+				glUniform3iARB(uniformLocation, v1, v2, v3);
+				if ( glGetError() == GL_INVALID_OPERATION )
+					glUniform3fARB(uniformLocation, v1, v2, v3);  OGL_CHK;
+				return JS_TRUE;
+			}
+			glUniform2iARB(uniformLocation, v1, v2);
+			if ( glGetError() == GL_INVALID_OPERATION )
+				glUniform2fARB(uniformLocation, v1, v2);  OGL_CHK;
+			return JS_TRUE;
+		}
+		glUniform1iARB(uniformLocation, v1);
+		if ( glGetError() == GL_INVALID_OPERATION )
+			glUniform1fARB(uniformLocation, v1);  OGL_CHK;
+		return JS_TRUE;
+	}
+
+
+/*
 	jsval arg2;
 	arg2 = JL_ARG(2);
 
@@ -4187,6 +4387,8 @@ DEFINE_FUNCTION( UniformARB ) {
 		return JS_TRUE;
 	}
 	
+
+
 	if ( JL_IsArray(cx, arg2) ) {
 
 		JSObject *arrayObj;
@@ -4195,6 +4397,8 @@ DEFINE_FUNCTION( UniformARB ) {
 		JL_CHK( JS_GetArrayLength(cx, arrayObj, &currentLength) );
 // (TBD)		
 	}
+*/
+
 
 	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
@@ -4209,7 +4413,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glUniformMatrix4fvARB
 **/
-DEFINE_FUNCTION( UniformMatrixARB ) {
+DEFINE_FUNCTION( UniformMatrix ) {
 
 	JL_INIT_OPENGL_EXTENSION( glUniformMatrix4fvARB, PFNGLUNIFORMMATRIX4FVARBPROC );
 
@@ -4235,7 +4439,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glUniform1fARB, glUniform2fARB, glUniform3fARB, glUniform4fARB
 **/
-DEFINE_FUNCTION( UniformFloatARB ) {
+DEFINE_FUNCTION( UniformFloat ) {
 
 	JL_INIT_OPENGL_EXTENSION( glUniform1fARB, PFNGLUNIFORM1FARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform2fARB, PFNGLUNIFORM2FARBPROC );
@@ -4288,7 +4492,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glUniform1iARB, glUniform2iARB, glUniform3iARB, glUniform4iARB
 **/
-DEFINE_FUNCTION( UniformIntegerARB ) {
+DEFINE_FUNCTION( UniformInteger ) {
 
 	JL_INIT_OPENGL_EXTENSION( glUniform1iARB, PFNGLUNIFORM1IARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform2iARB, PFNGLUNIFORM2IARBPROC );
@@ -4337,12 +4541,12 @@ DEFINE_FUNCTION( UniformIntegerARB ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( obj, pname )
+ $INT $INAME( obj, pname [, count] )
   (TBD)
  $H OpenGL API
   glGetObjectParameterfvARB, glGetObjectParameterivARB
 **/
-DEFINE_FUNCTION( GetObjectParameterARB ) {
+DEFINE_FUNCTION( GetObjectParameter ) {
 
 	JL_INIT_OPENGL_EXTENSION( glGetObjectParameterfvARB, PFNGLGETOBJECTPARAMETERFVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glGetObjectParameterivARB, PFNGLGETOBJECTPARAMETERIVARBPROC );
@@ -4352,6 +4556,7 @@ DEFINE_FUNCTION( GetObjectParameterARB ) {
 	JL_S_ASSERT_INT(JL_ARG(2));
 
 	GLint params[MAX_PARAMS]; // (TBD) check if it is the max amount of data that glGetLightfv may returns.
+
 	glGetObjectParameterivARB(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params);  OGL_CHK;
 
 	if ( JL_ARG_ISDEF(3) ) {
@@ -4362,6 +4567,7 @@ DEFINE_FUNCTION( GetObjectParameterARB ) {
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
+		count = JL_MIN(count, (int)COUNTOF(params));
 		while (count--) {
 
 			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
@@ -4384,7 +4590,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glBindAttribLocationARB
 **/
-DEFINE_FUNCTION( BindAttribLocationARB ) {
+DEFINE_FUNCTION( BindAttribLocation ) {
 
 	JLStr name;
 
@@ -4410,7 +4616,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glGetAttribLocationARB
 **/
-DEFINE_FUNCTION( GetAttribLocationARB ) {
+DEFINE_FUNCTION( GetAttribLocation ) {
 
 	JLStr name;
 
@@ -4418,7 +4624,6 @@ DEFINE_FUNCTION( GetAttribLocationARB ) {
 
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_ARG(1));
-
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &name) );
 	int location;
 	location = glGetAttribLocationARB(JSVAL_TO_INT(JL_ARG(1)), name);  OGL_CHK;
@@ -4436,7 +4641,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glVertexAttrib1dARB
 **/
-DEFINE_FUNCTION( VertexAttribARB ) {
+DEFINE_FUNCTION( VertexAttrib ) {
 
 	JL_INIT_OPENGL_EXTENSION( glVertexAttrib1sARB, PFNGLVERTEXATTRIB1SARBPROC );
 
@@ -5636,20 +5841,22 @@ DEFINE_FUNCTION( DrawDisk ) {
 
 /**doc
 $TOC_MEMBER $INAME
-$INAME( radius, slices, stacks );
+$INAME( radius, slices, stacks, smooth );
 **/
 DEFINE_FUNCTION( DrawSphere ) {
 
-	JL_S_ASSERT_ARG(3);
+	JL_S_ASSERT_ARG(4);
 	double radius;
 	int slices, stacks;
+	bool smooth;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &radius) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &slices) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &stacks) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &smooth) );
 
 	GLUquadric *q = gluNewQuadric();
 	gluQuadricTexture(q, GL_FALSE);
-	gluQuadricNormals(q, GLU_SMOOTH); // GLU_FLAT / GLU_SMOOTH
+	gluQuadricNormals(q, smooth ? GLU_SMOOTH : GLU_FLAT);
 	gluSphere(q, radius, slices, stacks);  OGL_CHK;
 	gluDeleteQuadric(q);
 
@@ -5667,13 +5874,14 @@ DEFINE_FUNCTION( DrawDisk ) {
 	JL_S_ASSERT_ARG(3);
 	double radius;
 	int slices, loops;
+	
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &radius) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &slices) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &loops) );
 
 	GLUquadric *q = gluNewQuadric();
 	gluQuadricTexture(q, GL_FALSE);
-	gluQuadricNormals(q, GLU_SMOOTH); // GLU_FLAT / GLU_SMOOTH
+	gluQuadricNormals(q, GLU_FLAT); // GLU_FLAT / GLU_SMOOTH
 	gluDisk(q, 0, radius, slices, loops);  OGL_CHK;
 	gluDeleteQuadric(q);
 
@@ -5684,22 +5892,24 @@ DEFINE_FUNCTION( DrawDisk ) {
 
 /**doc
 $TOC_MEMBER $INAME
-$INAME( baseRadius, topRadius, height, slices, stacks );
+$INAME( baseRadius, topRadius, height, slices, stacks, smooth );
 **/
 DEFINE_FUNCTION( DrawCylinder ) {
 
-	JL_S_ASSERT_ARG(5);
+	JL_S_ASSERT_ARG(6);
 	double baseRadius, topRadius, height;
 	int slices, stacks;
+	bool smooth;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &baseRadius) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &topRadius) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &height) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &slices) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &stacks) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &smooth) );
 
 	GLUquadric *q = gluNewQuadric();
 	gluQuadricTexture(q, GL_FALSE); // GL_TRUE
-	gluQuadricNormals(q, GLU_SMOOTH); // GLU_NONE / GLU_FLAT / GLU_SMOOTH
+	gluQuadricNormals(q, smooth ? GLU_SMOOTH : GLU_FLAT);  // GLU_NONE / GLU_FLAT / GLU_SMOOTH
 	gluQuadricOrientation(q, GLU_OUTSIDE); //  GLU_INSIDE
 	gluQuadricDrawStyle(q, GLU_FILL); // GLU_FILL / GLU_LINE / GLU_SILHOUETTE / GLU_POINT
 	gluCylinder(q, baseRadius, topRadius, height, slices, stacks);  OGL_CHK;
@@ -5828,43 +6038,37 @@ DEFINE_FUNCTION( DrawBox ) {
 	glNormal3f(0.0f, 1.0f, 0.0f); glVertex3f( -lengthX, lengthY, lengthZ);  OGL_CHK;
 */
 
-
-
 	// right
+
 	glNormal3f(1.0f, 0.0f, 0.0f);  OGL_CHK;
 	glTexCoord2f(0.0f, 1.0f); glVertex3f( lengthX, lengthY, lengthZ);  OGL_CHK;
 	glTexCoord2f(0.0f, 0.0f); glVertex3f( lengthX,-lengthY, lengthZ);  OGL_CHK;
 	glTexCoord2f(1.0f, 0.0f); glVertex3f( lengthX,-lengthY,-lengthZ);  OGL_CHK;
 	glTexCoord2f(1.0f, 1.0f); glVertex3f( lengthX, lengthY,-lengthZ);  OGL_CHK;
-
 	// bottom
 	glNormal3f(0.0f, 0.0f, -1.0f);  OGL_CHK;
 	glTexCoord2f(0.0f, 1.0f); glVertex3f( lengthX, lengthY,-lengthZ);  OGL_CHK;
 	glTexCoord2f(0.0f, 0.0f); glVertex3f( lengthX,-lengthY,-lengthZ);  OGL_CHK;
 	glTexCoord2f(1.0f, 0.0f); glVertex3f(-lengthX,-lengthY,-lengthZ);  OGL_CHK;
 	glTexCoord2f(1.0f, 1.0f); glVertex3f(-lengthX, lengthY,-lengthZ);  OGL_CHK;
-
 	// left
 	glNormal3f(-1.0f, 0.0f, 0.0f);  OGL_CHK;
 	glTexCoord2f(0.0f, 1.0f); glVertex3f(-lengthX, lengthY,-lengthZ);  OGL_CHK;
 	glTexCoord2f(0.0f, 0.0f); glVertex3f(-lengthX,-lengthY,-lengthZ);  OGL_CHK;
 	glTexCoord2f(1.0f, 0.0f); glVertex3f(-lengthX,-lengthY, lengthZ);  OGL_CHK;
 	glTexCoord2f(1.0f, 1.0f); glVertex3f(-lengthX, lengthY, lengthZ);  OGL_CHK;
-
 	// top
 	glNormal3f(0.0f, 0.0f, 1.0f);  OGL_CHK;
 	glTexCoord2f(0.0f, 1.0f); glVertex3f(-lengthX, lengthY, lengthZ);  OGL_CHK;
 	glTexCoord2f(0.0f, 0.0f); glVertex3f(-lengthX,-lengthY, lengthZ);  OGL_CHK;
 	glTexCoord2f(1.0f, 0.0f); glVertex3f( lengthX,-lengthY, lengthZ);  OGL_CHK;
 	glTexCoord2f(1.0f, 1.0f); glVertex3f( lengthX, lengthY, lengthZ);  OGL_CHK;
-
 	// back
 	glNormal3f(0.0f, 1.0f, 0.0f);  OGL_CHK;
 	glTexCoord2f(0.0f, 1.0f); glVertex3f(-lengthX, lengthY,-lengthZ);  OGL_CHK;
 	glTexCoord2f(0.0f, 0.0f); glVertex3f(-lengthX, lengthY, lengthZ);  OGL_CHK;
 	glTexCoord2f(1.0f, 0.0f); glVertex3f( lengthX, lengthY, lengthZ);  OGL_CHK;
 	glTexCoord2f(1.0f, 1.0f); glVertex3f( lengthX, lengthY,-lengthZ);  OGL_CHK;
-
 	// right
 	glNormal3f(1.0f, -1.0f, 0.0f);  OGL_CHK;
 	glTexCoord2f(0.0f, 1.0f); glVertex3f(-lengthX,-lengthY, lengthZ);  OGL_CHK;
@@ -6049,7 +6253,7 @@ DEFINE_PROPERTY( error ) {
 
 
 
-static int MatrixGet(JSContext *cx, JSObject *obj, float **m) {
+static JSBool MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 
 	GLint matrixMode;
 	glGetIntegerv(GL_MATRIX_MODE, &matrixMode);  OGL_CHK;
@@ -6072,15 +6276,38 @@ bad:
 }
 
 
-void *windowsGLGetProcAddress(const char *procName) {
+static void *windowsGLGetProcAddress(const char *procName) {
 	
 	return wglGetProcAddress(procName);
 }
 
+
 DEFINE_INIT() {
+
+#ifdef DEBUG
+
+	// check GL const duplicates
+	JLConstIntegerSpec *it2, *it1 = sc->cis;
+
+	int count;
+	for ( it1 = sc->cis; it1->name != NULL; ++it1 ) {
+
+		count = 0;
+		for ( it2 = sc->cis; it2->name != NULL; ++it2 ) {
+
+//			if ( strcmp(it1->name, it2->name) == 0 && it1->ival != it2->ival ) // detect duplicate name with different value !
+			if ( it1->ival == it2->ival && strcmp(it1->name, it2->name) == 0 ) // detect duplicate name with same value.
+				count++;
+		}
+		if ( count > 1 )
+			fprintf(stderr, "Duplicate %dx GL_CONST( %s )\n", count, it1->name );
+	}
+
+#endif // DEBUG
 
 	JL_CHK( SetMatrix44GetInterface(cx, obj, MatrixGet) );
 
+	JL_ASSERT( glGetProcAddress == NULL );
 
 #ifdef XP_WIN
 	glGetProcAddress = windowsGLGetProcAddress;
@@ -6088,8 +6315,8 @@ DEFINE_INIT() {
 	//	JL_CHK( GetPrivateNativeFunction(cx, JL_GetGlobalObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
 	JL_CHK( JL_GetProperty(cx, GetHostObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
 #endif
-	JL_S_ASSERT( glGetProcAddress != NULL, "OpenGL extensions unavailable." );
 
+	JL_ASSERT( glGetProcAddress != NULL );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -6265,21 +6492,21 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC(FramebufferRenderbuffer, 4) // target, attachment, renderbuffertarget, renderbuffer
 		FUNCTION_ARGC(GetFramebufferAttachmentParameter, 4) // target, attachment, pname [, count]
 
-		FUNCTION_ARGC(CreateShaderObjectARB, 1)
-		FUNCTION_ARGC(DeleteObjectARB, 1)
-		FUNCTION_ARGC(GetInfoLogARB, 1)
-		FUNCTION_ARGC(CreateProgramObjectARB, 0)
-		FUNCTION_ARGC(ShaderSourceARB, 2)
-		FUNCTION_ARGC(CompileShaderARB, 1)
-		FUNCTION_ARGC(AttachObjectARB, 2)
-		FUNCTION_ARGC(LinkProgramARB, 1)
-		FUNCTION_ARGC(UseProgramObjectARB, 1)
-		FUNCTION_ARGC(GetUniformLocationARB, 2)
-		FUNCTION_ARGC(UniformARB, 5)
-		FUNCTION_ARGC(UniformMatrixARB, 2)
-		FUNCTION_ARGC(UniformFloatARB, 5)
-		FUNCTION_ARGC(UniformIntegerARB, 5)
-		FUNCTION_ARGC(GetObjectParameterARB, 2)
+		FUNCTION_ARGC(CreateShaderObject, 1)
+		FUNCTION_ARGC(DeleteObject, 1)
+		FUNCTION_ARGC(GetInfoLog, 1)
+		FUNCTION_ARGC(CreateProgramObject, 0)
+		FUNCTION_ARGC(ShaderSource, 2)
+		FUNCTION_ARGC(CompileShader, 1)
+		FUNCTION_ARGC(AttachObject, 2)
+		FUNCTION_ARGC(LinkProgram, 1)
+		FUNCTION_ARGC(UseProgramObject, 1)
+		FUNCTION_ARGC(GetUniformLocation, 2)
+		FUNCTION_ARGC(Uniform, 5)
+		FUNCTION_ARGC(UniformMatrix, 2)
+		FUNCTION_ARGC(UniformFloat, 5)
+		FUNCTION_ARGC(UniformInteger, 5)
+		FUNCTION_ARGC(GetObjectParameter, 2)
 		FUNCTION_ARGC(GenBuffer, 0)
 		FUNCTION_ARGC(BindBuffer, 2) // target, buffer
 
@@ -6310,8 +6537,8 @@ CONFIGURE_CLASS
 
 		FUNCTION_ARGC(DrawPoint, 1)
 		FUNCTION_ARGC(DrawDisk, 2)
-		FUNCTION_ARGC(DrawSphere, 3)
-		FUNCTION_ARGC(DrawCylinder, 5)
+		FUNCTION_ARGC(DrawSphere, 4)
+		FUNCTION_ARGC(DrawCylinder, 6)
 		FUNCTION_ARGC(DrawBox, 3)
 		FUNCTION_ARGC(FullQuad, 0)
 

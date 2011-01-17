@@ -33,7 +33,7 @@ struct JLClassSpec {
 	JSFunctionSpec *static_fs;
 	JSConstDoubleSpec *cds;
 	JLConstIntegerSpec *cis;
-	JSBool (*init)(JSContext *cx, JSObject *obj);
+	JSBool (*init)(JSContext *cx, JLClassSpec *sc, JSObject *proto, JSObject *obj);
 	JLRevisionType revision;
 };
 
@@ -108,7 +108,7 @@ inline JSBool JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 		JL_CHK( JS_DefineConstDoubles(cx, obj, cs->cds) );
 
 	if ( cs->init )
-		JL_CHK( cs->init(cx, obj) );
+		JL_CHK( cs->init(cx, cs, NULL, obj) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -171,7 +171,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( cs->init )
-		JL_CHK( cs->init(cx, staticDest) );
+		JL_CHK( cs->init(cx, cs, proto, staticDest) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -338,7 +338,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define DEFINE_WRAPPED_OBJECT() static JSObject* WrappedObject(JSContext *cx, JSObject *obj)
 
 #define HAS_INIT cs.init = Init;
-#define DEFINE_INIT() static JSBool Init(JSContext *cx, JSObject *obj)
+#define DEFINE_INIT() static JSBool Init(JSContext *cx, JLClassSpec *sc, JSObject *proto, JSObject *obj)
 
 #define HAS_ADD_PROPERTY cs.clasp.addProperty = AddProperty;
 #define DEFINE_ADD_PROPERTY() static JSBool AddProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
