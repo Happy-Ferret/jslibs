@@ -100,7 +100,7 @@ function Ball(pos) {
 	this.Compile = function() {
 
 		shapeCL = Ogl.NewList(true);
-		Ogl.DrawSphere(geom.radius, 16, 8);  // Ogl.DrawSphere(geom.radius, 4, 2); // diamond
+		Ogl.DrawSphere(geom.radius, 16, 8, true);  // Ogl.DrawSphere(geom.radius, 4, 2); // diamond
 		Ogl.EndList();
 		
 		objectCL = Ogl.NewList(true);
@@ -108,7 +108,7 @@ function Ball(pos) {
 		Ogl.Material(Ogl.FRONT, Ogl.EMISSION, 0, 0, 0, 1);
 		Ogl.Material(Ogl.FRONT, Ogl.AMBIENT, 0, 0, 0, 1);
 		Ogl.Material(Ogl.FRONT, Ogl.SPECULAR, 0.1, 0.1, 0.1, 1);
-		Ogl.DrawSphere(geom.radius, 32, 16);
+		Ogl.DrawSphere(geom.radius, 32, 16, true);
 		Ogl.EndList();
 	}
 	

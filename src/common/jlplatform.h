@@ -121,6 +121,18 @@
 # endif
 #endif
 
+// from jstypes.h
+#ifndef NEVER_INLINE
+# if defined _MSC_VER
+#  define NEVER_INLINE __declspec(noinline)
+# elif defined __GNUC__
+#  define NEVER_INLINE __attribute__((noinline))
+# else
+#  define NEVER_INLINE
+# endif
+#endif
+
+
 // trick. When an inline function is not static, then the compiler must assume that there may be calls from other source files; since a global symbol can be defined only once in any program,
 //        the function must not be defined in the other source files, so the calls therein cannot be integrated. Therefore, a non-static inline function is always compiled on its own in the usual fashion.
 

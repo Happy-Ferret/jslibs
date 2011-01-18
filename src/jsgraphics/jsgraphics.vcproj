@@ -111,15 +111,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;SSE"
 				BufferSecurityCheck="false"
 				EnableEnhancedInstructionSet="1"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
 				DebugInformationFormat="3"
 			/>
 			<Tool

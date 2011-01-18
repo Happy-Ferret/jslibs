@@ -275,6 +275,16 @@ DECLARE_OPENGL_EXTENSION( glUniformMatrix2fvARB, PFNGLUNIFORMMATRIX2FVARBPROC );
 DECLARE_OPENGL_EXTENSION( glUniformMatrix3fvARB, PFNGLUNIFORMMATRIX3FVARBPROC );
 DECLARE_OPENGL_EXTENSION( glUniformMatrix4fvARB, PFNGLUNIFORMMATRIX4FVARBPROC );
 
+
+// GL_ARB_uniform_buffer_object
+DECLARE_OPENGL_EXTENSION( glGetUniformBlockIndex, PFNGLGETUNIFORMBLOCKINDEXPROC );
+DECLARE_OPENGL_EXTENSION( glUniformBlockBinding, PFNGLUNIFORMBLOCKBINDINGPROC );
+DECLARE_OPENGL_EXTENSION( glGetActiveUniformsiv, PFNGLGETACTIVEUNIFORMSIVPROC );
+DECLARE_OPENGL_EXTENSION( glGetUniformIndices, PFNGLGETUNIFORMINDICESPROC );
+
+
+
+
 DECLARE_OPENGL_EXTENSION( glGetObjectParameterfvARB, PFNGLGETOBJECTPARAMETERFVARBPROC );
 DECLARE_OPENGL_EXTENSION( glGetObjectParameterivARB, PFNGLGETOBJECTPARAMETERIVARBPROC );
 
@@ -3950,7 +3960,7 @@ DEFINE_FUNCTION( CreateShaderObject ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( shaderHandle )
+ $INT $INAME( shader )
   (TBD)
  $H OpenGL API
    glDeleteObjectARB
@@ -3971,7 +3981,7 @@ DEFINE_FUNCTION( DeleteObject ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( shaderHandle )
+ $INT $INAME( shader )
   (TBD)
  $H OpenGL API
    glGetInfoLogARB
@@ -4014,7 +4024,7 @@ DEFINE_FUNCTION( CreateProgramObject ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( shaderHandle, source )
+ $INT $INAME( shader, source )
   (TBD)
  $H OpenGL API
    glShaderSourceARB
@@ -4044,7 +4054,7 @@ DEFINE_FUNCTION( ShaderSource ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( shaderHandle )
+ $INT $INAME( shader )
   (TBD)
  $H OpenGL API
    glCompileShaderARB
@@ -4065,7 +4075,7 @@ DEFINE_FUNCTION( CompileShader ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( programHandle, shaderHandle )
+ $INT $INAME( program, shaderHandle )
   (TBD)
  $H OpenGL API
    glCompileShaderARB
@@ -4091,7 +4101,7 @@ DEFINE_FUNCTION( AttachObject ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( programHandle )
+ $INT $INAME( program )
   (TBD)
  $H OpenGL API
    glLinkProgramARB
@@ -4099,6 +4109,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( LinkProgram ) {
 
 	JL_INIT_OPENGL_EXTENSION( glLinkProgramARB, PFNGLLINKPROGRAMARBPROC );
+//	JL_INIT_OPENGL_EXTENSION( glUseProgramObjectARB, PFNGLUSEPROGRAMOBJECTARBPROC );
+//	JL_INIT_OPENGL_EXTENSION( glGetProgramiv, PFNGLGETPROGRAMIVPROC );
+
 	JL_S_ASSERT_ARG(1);
 //	JL_S_ASSERT_INT(JL_ARG(1));
 	GLhandleARB programHandle;
@@ -4140,7 +4153,75 @@ DEFINE_FUNCTION( UseProgramObject ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( programHandle, name )
+ $INT $INAME( program )
+  (TBD)
+ $H OpenGL API
+   glGetActiveUniformARB, glGetUniformLocationARB, glGetProgramiv
+**/
+DEFINE_FUNCTION( GetUniformInfo ) {
+
+	JL_INIT_OPENGL_EXTENSION( glGetActiveUniformARB, PFNGLGETACTIVEUNIFORMARBPROC );
+	JL_INIT_OPENGL_EXTENSION( glGetUniformLocationARB, PFNGLGETUNIFORMLOCATIONARBPROC );
+	JL_INIT_OPENGL_EXTENSION( glGetProgramiv, PFNGLGETPROGRAMIVPROC );
+
+	JL_S_ASSERT_ARG(1);
+	GLhandleARB program;
+	GLint activeUniform;
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &program) );
+	glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &activeUniform);  OGL_CHK;
+
+	JSObject *info = JS_NewObject(cx, NULL, NULL, NULL);
+	JL_CHK( info );
+	*JL_RVAL = OBJECT_TO_JSVAL(info);
+
+	jsval tmp;
+	GLcharARB name[256];
+	GLsizei length;
+	GLint size;
+	GLenum type;
+	GLint location;
+
+	{
+		jsid indexId = JL_StringToJsid(cx, L"index");
+		jsid locationId = JL_StringToJsid(cx, L"location");
+		jsid sizeId = JL_StringToJsid(cx, L"size");
+		jsid typeId = JL_StringToJsid(cx, L"type");
+
+		for ( int i = 0; i < activeUniform; ++i ) {
+
+			glGetActiveUniformARB(program, i, sizeof(name), &length, &size, &type, name);  OGL_CHK;
+			JL_ASSERT( length < sizeof(name) );
+
+			location = glGetUniformLocationARB(program, name);
+			if ( location == -1 )
+				continue;
+
+			JSObject *obj = JS_NewObject(cx, NULL, NULL, NULL);
+			JL_CHK( obj );
+
+			tmp = OBJECT_TO_JSVAL(obj);
+			JL_CHK( JS_SetProperty(cx, info, name, &tmp) );
+			
+			tmp = INT_TO_JSVAL(i);
+			JL_CHK( JS_SetPropertyById(cx, obj, indexId, &tmp) );
+			tmp = INT_TO_JSVAL(location);
+			JL_CHK( JS_SetPropertyById(cx, obj, locationId, &tmp) );
+			tmp = INT_TO_JSVAL(size);
+			JL_CHK( JS_SetPropertyById(cx, obj, sizeId, &tmp) );
+			tmp = INT_TO_JSVAL(type);
+			JL_CHK( JS_SetPropertyById(cx, obj, typeId, &tmp) );
+		}
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( program, name )
   (TBD)
  $H OpenGL API
    glGetUniformLocationARB
@@ -4171,8 +4252,6 @@ DEFINE_FUNCTION( GetUniformLocation ) {
 
 
 
-
-
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME( uniformLocation, value )
@@ -4181,8 +4260,6 @@ $TOC_MEMBER $INAME
   glUniform1fARB, glUniform1iARB
 **/
 DEFINE_FUNCTION( Uniform ) {
-
-	JL_INIT_OPENGL_EXTENSION( glGetActiveUniformARB, PFNGLGETACTIVEUNIFORMARBPROC );
 
 	JL_INIT_OPENGL_EXTENSION( glUniform1fARB, PFNGLUNIFORM1FARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform2fARB, PFNGLUNIFORM2FARBPROC );
@@ -4212,6 +4289,13 @@ DEFINE_FUNCTION( Uniform ) {
 	JL_INIT_OPENGL_EXTENSION( glUniformMatrix3fvARB, PFNGLUNIFORMMATRIX3FVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniformMatrix4fvARB, PFNGLUNIFORMMATRIX4FVARBPROC );
 
+//GL_ARB_uniform_buffer_object extension || OpenGL >= 3.1 ?
+//	JL_INIT_OPENGL_EXTENSION( glGetUniformBlockIndex, PFNGLGETUNIFORMBLOCKINDEXPROC );
+//	JL_INIT_OPENGL_EXTENSION( glUniformBlockBinding, PFNGLUNIFORMBLOCKBINDINGPROC );
+//	JL_INIT_OPENGL_EXTENSION( glGetActiveUniformsiv, PFNGLGETACTIVEUNIFORMSIVPROC );
+
+
+
 	JL_S_ASSERT_ARG_RANGE(2, 5);
 	JL_S_ASSERT_INT(JL_ARG(1));
 
@@ -4219,6 +4303,12 @@ DEFINE_FUNCTION( Uniform ) {
 
 	int uniformLocation;
 	uniformLocation = JSVAL_TO_INT(JL_ARG(1));
+
+
+
+
+
+
 /*
 	// OpenGL 2.0 only ?, see glGetActiveUniformARB and glGetActiveUniform
 
@@ -4261,6 +4351,8 @@ DEFINE_FUNCTION( Uniform ) {
 	//   GL_FLOAT_MAT2x4, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_SAMPLER_1D, GL_SAMPLER_2D, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_1D_SHADOW, or GL_SAMPLER_2D_SHADOW
 	//   GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4x2, and GL_FLOAT_MAT4x3 (OpenGL 2.1)
 */
+
+
 
 	jsval staticArgs[4];
 	jsval *args;
@@ -4320,24 +4412,24 @@ DEFINE_FUNCTION( Uniform ) {
 				if ( count > 3 ) {
 				
 					JL_CHK( JL_JsvalToNative(cx, args[3], &v4) );
-					glUniform4iARB(uniformLocation, v1, v2, v3, v4);
+					glUniform4iARB(uniformLocation, v1, v2, v3, v4);  OGL_CHK;
 					if ( glGetError() == GL_INVALID_OPERATION )
-						glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_CHK;
+						glUniform4fARB(uniformLocation, (float)v1, (float)v2, (float)v3, (float)v4);  OGL_CHK;
 					return JS_TRUE;
 				}
-				glUniform3iARB(uniformLocation, v1, v2, v3);
+				glUniform3iARB(uniformLocation, v1, v2, v3);  OGL_CHK;
 				if ( glGetError() == GL_INVALID_OPERATION )
-					glUniform3fARB(uniformLocation, v1, v2, v3);  OGL_CHK;
+					glUniform3fARB(uniformLocation, (float)v1, (float)v2, (float)v3);  OGL_CHK;
 				return JS_TRUE;
 			}
-			glUniform2iARB(uniformLocation, v1, v2);
+			glUniform2iARB(uniformLocation, v1, v2);  OGL_CHK;
 			if ( glGetError() == GL_INVALID_OPERATION )
-				glUniform2fARB(uniformLocation, v1, v2);  OGL_CHK;
+				glUniform2fARB(uniformLocation, (float)v1, (float)v2);  OGL_CHK;
 			return JS_TRUE;
 		}
-		glUniform1iARB(uniformLocation, v1);
+		glUniform1iARB(uniformLocation, v1);  OGL_CHK;
 		if ( glGetError() == GL_INVALID_OPERATION )
-			glUniform1fARB(uniformLocation, v1);  OGL_CHK;
+			glUniform1fARB(uniformLocation, (float)v1);  OGL_CHK;
 		return JS_TRUE;
 	}
 
@@ -4399,16 +4491,16 @@ DEFINE_FUNCTION( Uniform ) {
 	}
 */
 
-
 	JL_REPORT_ERROR("Invalid argument.");
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
+
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( uniformLocation, v1 [, v2 [, v3 [, v4]]] )
+ $INT $INAME( uniformLocation, matrix44 )
   (TBD)
  $H OpenGL API
   glUniformMatrix4fvARB
@@ -4430,6 +4522,49 @@ DEFINE_FUNCTION( UniformMatrix ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME( uniformLocation, vec )
+  (TBD)
+ $H OpenGL API
+  glUniform1fARB, glUniform2fARB, glUniform3fARB, glUniform4fARB
+**/
+DEFINE_FUNCTION( UniformVector ) {
+
+	JL_INIT_OPENGL_EXTENSION( glUniform1fvARB, PFNGLUNIFORM1FVARBPROC );
+	JL_INIT_OPENGL_EXTENSION( glUniform2fvARB, PFNGLUNIFORM2FVARBPROC );
+	JL_INIT_OPENGL_EXTENSION( glUniform3fvARB, PFNGLUNIFORM3FVARBPROC );
+	JL_INIT_OPENGL_EXTENSION( glUniform4fvARB, PFNGLUNIFORM4FVARBPROC );
+
+	JL_S_ASSERT_ARG_RANGE(2, 5);
+	JL_S_ASSERT_INT(JL_ARG(1));
+	int uniformLocation;
+	uniformLocation = JSVAL_TO_INT(JL_ARG(1));
+	*JL_RVAL = JSVAL_VOID;
+
+	// doc. in glUniform*fvARB, count should be 1 if the targeted uniform variable is not an array, and 1 or more if it is an array.
+
+	if ( JL_ARGC == 2 ) {
+
+		JL_S_ASSERT_ARRAY(JL_ARG(2));
+
+		GLfloat value[4]; // max for *4fv
+		JSObject *arr = JSVAL_TO_OBJECT(JL_ARG(2));
+		jsuint length;
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), value, COUNTOF(value), &length) );
+		JL_S_ASSERT( length >= 0 && length <= 4, "Unsupported vector length." );
+		JL_ASSERT( length >= 0 && length <= 4 );
+		(length == 3 ? glUniform3fvARB : length == 4 ? glUniform4fvARB : length == 2 ? glUniform2fvARB : length == 1 ? glUniform1fvARB : NULL)(uniformLocation, 1, value);  OGL_CHK;
+		return JS_TRUE;
+	}
+
+	JL_REPORT_ERROR("Invalid argument.");
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 
 /**doc
@@ -6504,6 +6639,7 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC(GetUniformLocation, 2)
 		FUNCTION_ARGC(Uniform, 5)
 		FUNCTION_ARGC(UniformMatrix, 2)
+		FUNCTION_ARGC(UniformVector, 1)
 		FUNCTION_ARGC(UniformFloat, 5)
 		FUNCTION_ARGC(UniformInteger, 5)
 		FUNCTION_ARGC(GetObjectParameter, 2)
@@ -6524,6 +6660,8 @@ CONFIGURE_CLASS
 
 
 // Helper functions
+
+		FUNCTION_ARGC(GetUniformInfo, 1) // (non-OpenGL API)
 
 		FUNCTION_ARGC(UnProject, 2) // (non-OpenGL API)
 

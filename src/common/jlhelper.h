@@ -1245,14 +1245,10 @@ JL_NullTerminate( void* &buf, size_t len ) {
 
 // JLStr
 
-static INLINE JSBool FASTCALL
-JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 
-	if (likely( JSVAL_IS_STRING(val) )) { // for string literals
+static NEVER_INLINE JSBool FASTCALL
+JL__JsvalToNative_unlikelyPart( JSContext *cx, jsval &val, JLStr *str ) {
 
-		*str = JLStr(cx, JSVAL_TO_STRING(val));
-		return JS_TRUE;
-	}
 	if (likely( !JSVAL_IS_PRIMITIVE(val) )) { // for NIBufferGet support
 
 		JSObject *obj = JSVAL_TO_OBJECT(val);
@@ -1289,6 +1285,17 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 	*str = JLStr(cx, jsstr);
 	return JS_TRUE;
 	JL_BAD;
+}
+
+static ALWAYS_INLINE JSBool FASTCALL
+JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
+
+	if (likely( JSVAL_IS_STRING(val) )) { // for string literals
+
+		*str = JLStr(cx, JSVAL_TO_STRING(val));
+		return JS_TRUE;
+	}
+	return JL__JsvalToNative_unlikelyPart(cx, val, str);
 }
 
 
@@ -1538,14 +1545,9 @@ JL_NativeToJsval( JSContext *cx, const uint64_t &num, jsval *vp ) {
 	JL_BAD;
 }
 
-static INLINE JSBool FASTCALL
-JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
 
-	if (likely( JSVAL_IS_INT(val) )) {
-
-		*num = JSVAL_TO_INT(val);
-		return JS_TRUE;
-	}
+static NEVER_INLINE JSBool FASTCALL
+JL__JsvalToNative_unlikelyPart( JSContext *cx, const jsval &val, uint64_t *num ) {
 
 	jsdouble d;
 	if (likely( JSVAL_IS_DOUBLE(val) ))
@@ -1566,6 +1568,17 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
 
 	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
 	JL_BAD;
+}
+
+static ALWAYS_INLINE JSBool FASTCALL
+JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
+
+	if (likely( JSVAL_IS_INT(val) )) {
+
+		*num = JSVAL_TO_INT(val);
+		return JS_TRUE;
+	}
+	return JL__JsvalToNative_unlikelyPart(cx, val, num);
 }
 
 
