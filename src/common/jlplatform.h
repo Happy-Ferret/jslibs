@@ -297,7 +297,6 @@
 	#define _SSIZE_T_DEFINED
 	#endif
 
-
 	#define PATH_MAX MAX_PATH
 	#define DLL_EXT ".dll"
 	#define PATH_SEPARATOR_STRING "\\"
@@ -381,6 +380,12 @@
 
 #endif // Windows/MacosX/Linux platform
 
+typedef float float32_t;
+typedef double float64_t;
+
+//JL_STATIC_ASSERT( sizeof(float32_t) == 32/8 );
+//JL_STATIC_ASSERT( sizeof(float64_t) == 64/8 );
+
 
 // #define SIZE_T_MIN (static_cast<size_t>(0))
 // #define SIZE_T_MAX (static_cast<size_t>(-1))
@@ -417,6 +422,7 @@
 
 #define JL_STATIC_ASSERT(cond) \
 	extern void jl_static_assert(int arg[(cond) ? 1 : -1])
+
 
 /*
 #if defined(WIN32)

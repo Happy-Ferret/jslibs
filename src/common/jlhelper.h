@@ -1287,7 +1287,7 @@ JL__JsvalToNative_unlikelyPart( JSContext *cx, jsval &val, JLStr *str ) {
 	JL_BAD;
 }
 
-static ALWAYS_INLINE JSBool FASTCALL
+static ALWAYS_INLINE JSBool
 JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 
 	if (likely( JSVAL_IS_STRING(val) )) { // for string literals
@@ -1861,11 +1861,10 @@ JL_NativeVectorToJsval( JSContext *cx, const T *vector, jsuint length, jsval *va
 		*val = OBJECT_TO_JSVAL(arrayObj);
 	}
 
-	for ( jsuint i = 0; i < length; ++i ) {
+	while ( length-- ) {
 
-		JL_CHK( JL_NativeToJsval(cx, vector[i], &tmp) );
-		//JL_CHK( JS_SetPropertyById(cx, arrayObj, INT_TO_JSID(i), avr.jsval_addr()) );
-		JL_CHK( JS_SetElement(cx, arrayObj, i, &tmp) );
+		JL_CHK( JL_NativeToJsval(cx, vector[length], &tmp) ); //JL_CHK( JS_SetPropertyById(cx, arrayObj, INT_TO_JSID(i), avr.jsval_addr()) );
+		JL_CHK( JS_SetElement(cx, arrayObj, length, &tmp) );
 	}
 //	JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
 	return JS_TRUE;
@@ -1874,7 +1873,7 @@ JL_NativeVectorToJsval( JSContext *cx, const T *vector, jsuint length, jsval *va
 
 
 template <class T>
-static INLINE JSBool
+static ALWAYS_INLINE JSBool
 JL_JsvalToNativeVector( JSContext *cx, jsval &val, T *vector, jsuint maxLength, jsuint *actualLength ) {
 
 	JL_S_ASSERT_OBJECT(val);
@@ -1882,11 +1881,10 @@ JL_JsvalToNativeVector( JSContext *cx, jsval &val, T *vector, jsuint maxLength, 
 	arrayObj = JSVAL_TO_OBJECT(val);
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, actualLength) );
 	maxLength = JL_MIN( *actualLength, maxLength );
-	for ( jsuint i = 0; i < maxLength; ++i ) {
+	while ( maxLength-- ) {
 
-		JL_CHK( JS_GetElement(cx, arrayObj, i, &val) );
-		//JL_CHK( JS_GetPropertyById(cx, arrayObj, INT_TO_JSID(i), &val) );
-		JL_CHK( JL_JsvalToNative(cx, val, &vector[i]) );
+		JL_CHK( JS_GetElement(cx, arrayObj, maxLength, &val) ); //JL_CHK( JS_GetPropertyById(cx, arrayObj, INT_TO_JSID(i), &val) );
+		JL_CHK( JL_JsvalToNative(cx, val, &vector[maxLength]) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -2113,6 +2111,7 @@ JL_JsvalToMatrix44( JSContext *cx, jsval &val, float **m ) {
 		js::TypedArray *ta = js::TypedArray::fromJSObject(matrixObj);
 		if ( ta->valid() && ta->type == js::TypedArray::TYPE_FLOAT32 && ta->length == 16 ) {
 
+			JL_ASSERT( ta->byteLength / ta->length == sizeof(float32_t) );
 			memcpy(*m, ta->data, (/*TYPE_FLOAT32:*/32 / 8) * 16);
 			return JS_TRUE;
 		}

@@ -129,7 +129,10 @@ var program = new Program( vertexShaderSource, fragmentShaderSource );
 //	var uniformInfo = Ogl.GetUniformInfo(program);
 //	Print(uneval(uniformInfo)); throw 0;
 
-//Ogl.UniformVector(Ogl.GetUniformLocation(program, 'outerColor1'), [1,0,1]);
+Ogl.UniformFloatVector(Ogl.GetUniformLocation(program, 'outerColor1'), [1,0,1], [21,20,21], [31,30,31]);
+
+Halt();
+
 
 program.uniform.outerColor1 = [1,0,1];
 program.uniform.outerColor1 = [0,1,0];

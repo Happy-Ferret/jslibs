@@ -4294,8 +4294,6 @@ DEFINE_FUNCTION( Uniform ) {
 //	JL_INIT_OPENGL_EXTENSION( glUniformBlockBinding, PFNGLUNIFORMBLOCKBINDINGPROC );
 //	JL_INIT_OPENGL_EXTENSION( glGetActiveUniformsiv, PFNGLGETACTIVEUNIFORMSIVPROC );
 
-
-
 	JL_S_ASSERT_ARG_RANGE(2, 5);
 	JL_S_ASSERT_INT(JL_ARG(1));
 
@@ -4511,7 +4509,7 @@ DEFINE_FUNCTION( UniformMatrix ) {
 
 	JL_S_ASSERT_ARG(2);
 	JL_S_ASSERT_INT(JL_ARG(1));
-	int uniformLocation;
+	GLint uniformLocation;
 	uniformLocation = JSVAL_TO_INT(JL_ARG(1));
 	*JL_RVAL = JSVAL_VOID;
 
@@ -4526,43 +4524,77 @@ DEFINE_FUNCTION( UniformMatrix ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( uniformLocation, vec )
+ $INT $INAME( uniformLocation, vec [,vec2 [, vecN]] )
   (TBD)
+ $H example
+{{{
+  $INAME( loc, [10,-1,5]);
+  $INAME( loc1, [1,1,1,0]);
+}}}
  $H OpenGL API
   glUniform1fARB, glUniform2fARB, glUniform3fARB, glUniform4fARB
 **/
-DEFINE_FUNCTION( UniformVector ) {
+DEFINE_FUNCTION( UniformFloatVector ) {
+
+	GLfloat *value = NULL;
 
 	JL_INIT_OPENGL_EXTENSION( glUniform1fvARB, PFNGLUNIFORM1FVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform2fvARB, PFNGLUNIFORM2FVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform3fvARB, PFNGLUNIFORM3FVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform4fvARB, PFNGLUNIFORM4FVARBPROC );
 
-	JL_S_ASSERT_ARG_RANGE(2, 5);
+	JL_S_ASSERT_ARG_MIN(2);
 	JL_S_ASSERT_INT(JL_ARG(1));
-	int uniformLocation;
+
+	GLint uniformLocation;
 	uniformLocation = JSVAL_TO_INT(JL_ARG(1));
 	*JL_RVAL = JSVAL_VOID;
 
 	// doc. in glUniform*fvARB, count should be 1 if the targeted uniform variable is not an array, and 1 or more if it is an array.
 
+	jsuint len;
+
 	if ( JL_ARGC == 2 ) {
 
 		JL_S_ASSERT_ARRAY(JL_ARG(2));
-
-		GLfloat value[4]; // max for *4fv
+		GLfloat val[4]; // max for *4fv
 		JSObject *arr = JSVAL_TO_OBJECT(JL_ARG(2));
-		jsuint length;
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), value, COUNTOF(value), &length) );
-		JL_S_ASSERT( length >= 0 && length <= 4, "Unsupported vector length." );
-		JL_ASSERT( length >= 0 && length <= 4 );
-		(length == 3 ? glUniform3fvARB : length == 4 ? glUniform4fvARB : length == 2 ? glUniform2fvARB : length == 1 ? glUniform1fvARB : NULL)(uniformLocation, 1, value);  OGL_CHK;
+		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), val, COUNTOF(val), &len) );
+		JL_S_ASSERT( len >= 0 && len <= 4, "Unsupported vector length." );
+		JL_ASSERT( len >= 0 && len <= 4 );
+		(len == 3 ? glUniform3fvARB : len == 4 ? glUniform4fvARB : len == 2 ? glUniform2fvARB : len == 1 ? glUniform1fvARB : NULL)(uniformLocation, 1, val);  OGL_CHK;
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR("Invalid argument.");
+
+	JL_ASSERT( JL_ARGC > 2 );
+
+	jsuint firstLen = 0;
+	jsval *tmpVal = JL_ARGV + 1;
+	int count = JL_ARGC - 1;
+	value = (GLfloat*)jl_malloca(sizeof(GLfloat) * 4 * count); // allocate the max
+	GLfloat *tmpVec = value;
+
+	for ( int i = 0; i < count; --i ) {
+
+		JL_CHK( JL_JsvalToNativeVector(cx, *tmpVal, tmpVec, 4, &len) );
+		if ( firstLen == 0 )
+			firstLen = len;
+		JL_ASSERT( len >= 0 && len <= 4 );
+		JL_S_ASSERT( len >= 0 && len <= 4, "Unsupported vector length." );
+		JL_S_ASSERT( len == firstLen, "Invalid variable vector length." );
+		tmpVec += len;
+		tmpVal += 1;
+	}
+
+	(len == 3 ? glUniform3fvARB : len == 4 ? glUniform4fvARB : len == 2 ? glUniform2fvARB : len == 1 ? glUniform1fvARB : NULL)(uniformLocation, count, value);  OGL_CHK;
+	jl_freea(value);
+
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	if (value)
+		jl_freea(value);
+	return JS_FALSE;
 }
 
 
@@ -4583,7 +4615,7 @@ DEFINE_FUNCTION( UniformFloat ) {
 
 	JL_S_ASSERT_ARG_RANGE(2, 5);
 	JL_S_ASSERT_INT(JL_ARG(1));
-	int uniformLocation;
+	GLint uniformLocation;
 	uniformLocation = JSVAL_TO_INT(JL_ARG(1));
 	*JL_RVAL = JSVAL_VOID;
 	jsval arg2;
@@ -4636,7 +4668,7 @@ DEFINE_FUNCTION( UniformInteger ) {
 
 	JL_S_ASSERT_ARG_RANGE(2, 5);
 	JL_S_ASSERT_INT(JL_ARG(1));
-	int uniformLocation;
+	GLint uniformLocation;
 	uniformLocation = JSVAL_TO_INT(JL_ARG(1));
 	*JL_RVAL = JSVAL_VOID;
 	jsval arg2;
@@ -6639,7 +6671,7 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC(GetUniformLocation, 2)
 		FUNCTION_ARGC(Uniform, 5)
 		FUNCTION_ARGC(UniformMatrix, 2)
-		FUNCTION_ARGC(UniformVector, 1)
+		FUNCTION_ARGC(UniformFloatVector, 3)
 		FUNCTION_ARGC(UniformFloat, 5)
 		FUNCTION_ARGC(UniformInteger, 5)
 		FUNCTION_ARGC(GetObjectParameter, 2)
