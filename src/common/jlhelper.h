@@ -551,7 +551,7 @@ enum JLErrNum {
 // Reports a fatal errors, script must stop as soon as possible.
 #define JL_REPORT_ERROR( errorMessage, ... ) \
 	JL_MACRO_BEGIN \
-		JS_ReportError( cx, (errorMessage IFDEBUG(" (@" JL_CODE_LOCATION ")")), ##__VA_ARGS__ ); \
+		JS_ReportError(cx, (errorMessage IFDEBUG(" (@" JL_CODE_LOCATION ")")), ##__VA_ARGS__); \
 		goto bad; \
 	JL_MACRO_END
 
@@ -693,7 +693,7 @@ enum JLErrNum {
 
 // jsType: JSTYPE_VOID, JSTYPE_OBJECT, JSTYPE_FUNCTION, JSTYPE_STRING, JSTYPE_NUMBER, JSTYPE_BOOLEAN, JSTYPE_NULL, JSTYPE_XML, JSTYPE_LIMIT
 #define JL_S_ASSERT_TYPE(value, jsType) \
-	JL_S_ASSERT_ERROR_NUM( JS_TypeOfValue(cx, (value)) == (jsType), JLSMSG_EXPECT_TYPE, (#jsType)+7 );
+	JL_S_ASSERT_ERROR_NUM( JS_TypeOfValue(cx, (value)) == (jsType), JLSMSG_EXPECT_TYPE, (#jsType)+7 ); // +7 for JSTYPE_* substring
 
 
 #define JS_S_ASSERT_CONVERT(condition, typeName) \
@@ -843,6 +843,7 @@ JL_IsArray( JSContext *cx, JSObject *obj ) {
 	return !!JS_IsArrayObject(cx, obj); // Object::isArray() is not public
 }
 
+
 static ALWAYS_INLINE bool
 JL_IsArray( JSContext *cx, const jsval &val ) {
 
@@ -857,6 +858,7 @@ JL_IsScript( const JSContext *cx, const JSObject *obj ) {
 	JL_UNUSED(cx);
 	return JL_GetClass(obj) == js::Jsvalify(&js_ScriptClass);
 }
+
 
 static ALWAYS_INLINE bool
 JL_IsFunction( const JSContext *cx, const JSObject *obj ) {
@@ -894,7 +896,7 @@ JL_IsStringObject( const JSContext *cx, const JSObject *obj ) {
 }
 
 
-static ALWAYS_INLINE bool
+static INLINE bool FASTCALL
 JL_IsData( JSContext *cx, const jsval &val ) {
 
 	if ( JSVAL_IS_STRING(val) )
@@ -929,7 +931,7 @@ class JLStr {
 		uint32_t count;
 	} *_inner;
 
-	static jl::PreservAllocNone<JLStr::Inner> mem;
+	static jl::PreservAllocNone<JLStr::Inner> mem; // require #include "jlhelper.cpp"
 
 	void CreateOwnJsStrZ() {
 		
@@ -1247,7 +1249,7 @@ JL_NullTerminate( void* &buf, size_t len ) {
 
 
 static NEVER_INLINE JSBool FASTCALL
-JL__JsvalToNative_unlikelyPart( JSContext *cx, jsval &val, JLStr *str ) {
+JL__JsvalToNative_unlikelyCase( JSContext *cx, jsval &val, JLStr *str ) {
 
 	if (likely( !JSVAL_IS_PRIMITIVE(val) )) { // for NIBufferGet support
 
@@ -1295,7 +1297,7 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
 		*str = JLStr(cx, JSVAL_TO_STRING(val));
 		return JS_TRUE;
 	}
-	return JL__JsvalToNative_unlikelyPart(cx, val, str);
+	return JL__JsvalToNative_unlikelyCase(cx, val, str);
 }
 
 
@@ -1547,7 +1549,7 @@ JL_NativeToJsval( JSContext *cx, const uint64_t &num, jsval *vp ) {
 
 
 static NEVER_INLINE JSBool FASTCALL
-JL__JsvalToNative_unlikelyPart( JSContext *cx, const jsval &val, uint64_t *num ) {
+JL__JsvalToNative_unlikelyCase( JSContext *cx, const jsval &val, uint64_t *num ) {
 
 	jsdouble d;
 	if (likely( JSVAL_IS_DOUBLE(val) ))
@@ -1578,7 +1580,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
 		*num = JSVAL_TO_INT(val);
 		return JS_TRUE;
 	}
-	return JL__JsvalToNative_unlikelyPart(cx, val, num);
+	return JL__JsvalToNative_unlikelyCase(cx, val, num);
 }
 
 

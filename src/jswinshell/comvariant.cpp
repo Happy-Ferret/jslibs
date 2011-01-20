@@ -227,7 +227,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 			return JS_TRUE;
 		}
 
-		if ( js_DateIsValid(cx, obj) ) {
+		if ( js_DateIsValid(cx, obj) ) { // see new date API https://bugzilla.mozilla.org/show_bug.cgi?id=625870
 
 			SYSTEMTIME time;
 			time.wDayOfWeek = 0; // unused by SystemTimeToVariantTime
@@ -364,7 +364,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			if ( st != TRUE )
 				JL_CHK( WinThrowError(cx, GetLastError()) );
 			JSObject *tmpObj;
-			tmpObj = js_NewDateObject(cx, time.wYear, time.wMonth-1, time.wDay, time.wHour, time.wMinute, time.wSecond);
+			tmpObj = js_NewDateObject(cx, time.wYear, time.wMonth-1, time.wDay, time.wHour, time.wMinute, time.wSecond); // see new date API https://bugzilla.mozilla.org/show_bug.cgi?id=625870
 			JL_CHK( tmpObj );
 			*rval = OBJECT_TO_JSVAL(tmpObj);
 			}

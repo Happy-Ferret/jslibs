@@ -122,7 +122,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="3"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				StringPooling="true"
 				ExceptionHandling="1"
 				BufferSecurityCheck="false"
 				UsePrecompiledHeader="0"

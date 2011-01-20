@@ -23,6 +23,11 @@
 		ExceptionHandling="0"
 		RuntimeTypeInfo="false"
 		RuntimeLibrary="3"
+		Optimization="0"
+		StringPooling="true"
+		BasicRuntimeChecks="3"
+		SmallerTypeCheck="true"
+		BufferSecurityCheck="true"
 	/>
 	
 				<!-- tmp VCLinkerTool

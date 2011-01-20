@@ -20,7 +20,6 @@
 		Name="VCCLCompilerTool"
 		PreprocessorDefinitions="WIN32;NDEBUG;_USRDLL;_SECURE_SCL_THROWS=0;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0"
 		AdditionalIncludeDirectories="..\common;..\..\libs\js\$(PlatformName)_$(ConfigurationName)\dist\include"
-		UsePrecompiledHeader="0"
 		ExceptionHandling="0"
 		RuntimeTypeInfo="false"
 		RuntimeLibrary="2"
@@ -29,6 +28,10 @@
 		EnableIntrinsicFunctions="true"
 		FavorSizeOrSpeed="1"
 		OmitFramePointers="true"		
+		StringPooling="true"
+		BasicRuntimeChecks="0"
+		SmallerTypeCheck="false"
+		BufferSecurityCheck="false"
 	/>
 
 				<!-- tmp VCLinkerTool

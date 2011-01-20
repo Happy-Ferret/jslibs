@@ -970,13 +970,13 @@ AccurateTimeCounter() {
 
 
 
-/*
+#if defined(XP_WIN)
 static __declspec(naked) __declspec(noinline) size_t JLGetEIP() {
 
 	__asm pop eax;
 	__asm jmp eax;
 }
-*/
+#endif
 
 /*
 static size_t JLIP() {

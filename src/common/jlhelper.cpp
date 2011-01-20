@@ -12,8 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "stdafx.h"
-
 #include "jlhelper.h"
 
 jl::PreservAllocNone<JLStr::Inner> JLStr::mem;

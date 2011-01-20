@@ -712,7 +712,7 @@ DEFINE_PROPERTY( systemIsBigEndian ) {
 	return JS_TRUE;
 }
 
-JSBool Init(JSContext *cx, JSObject *obj) {
+DEFINE_INIT() {
 
 	JL_S_ASSERT( sizeof(int8_t) == 1 && sizeof(int16_t) == 2 && sizeof(int32_t) == 4 && sizeof(int64_t) == 8, "The system has no suitable type for using Pack class." );
 	return JS_TRUE;
