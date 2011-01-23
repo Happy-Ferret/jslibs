@@ -27,7 +27,7 @@ EXTERN_C void* jl_realloc_fct( void*, size_t );
 EXTERN_C size_t jl_msize_fct( void* );
 EXTERN_C void jl_free_fct( void* );
 */
-extern bool _unsafeMode;
+extern int _unsafeMode;
 
 extern uint32_t _moduleId;
 

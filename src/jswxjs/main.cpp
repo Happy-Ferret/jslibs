@@ -18,7 +18,7 @@ JLClassSpec *jlStaticSpec; // see DECLARE_STATIC() macro.
 
 #define MAX_WXJS_MODULES 32
 
-bool _unsafeMode = false;
+int _unsafeMode = false;
 
 
 #define wxString char*

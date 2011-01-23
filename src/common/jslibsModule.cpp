@@ -21,7 +21,7 @@
 
 
 // by default, we run in unsafe mode.
-DLLLOCAL bool _unsafeMode = true;
+DLLLOCAL int _unsafeMode = true;
 
 // set moduleId as uninitialized.
 DLLLOCAL uint32_t _moduleId = 0;

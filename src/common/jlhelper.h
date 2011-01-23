@@ -41,7 +41,7 @@
 
 #include <sys/stat.h> // see JL_LoadScript()
 
-extern bool _unsafeMode;
+extern int _unsafeMode;
 
 class JLStr;
 static INLINE JSBool JL_JSArrayToBuffer( JSContext *cx, JSObject *arrObj, JLStr *str );
@@ -548,6 +548,7 @@ enum JLErrNum {
 	JLErrLimit
 };
 
+
 // Reports a fatal errors, script must stop as soon as possible.
 #define JL_REPORT_ERROR( errorMessage, ... ) \
 	JL_MACRO_BEGIN \
@@ -556,14 +557,22 @@ enum JLErrNum {
 	JL_MACRO_END
 
 
+// less costly than a macro or an ALWAYS_INLINE
+static NEVER_INLINE void FASTCALL
+JL_ReportErrorNum( JSContext *cx, uintN num, const char *arg1 = NULL, const char *arg2 = NULL ) {
+
+	HostPrivate *hpv;
+	hpv = JL_GetHostPrivate(cx);
+	if ( hpv != NULL && hpv->errorCallback != NULL )
+		JS_ReportErrorNumber(cx, hpv->errorCallback, NULL, num, arg1, arg2);
+	else
+		JS_ReportError(cx, "undefined message %d", num);
+}
+
 // Report a jslibs error. see jlerrors.msg
 #define JL_REPORT_ERROR_NUM( cx, num, ... ) \
 	JL_MACRO_BEGIN \
-		HostPrivate *hpv = JL_GetHostPrivate(cx); \
-		if ( hpv != NULL && hpv->errorCallback != NULL ) \
-			JS_ReportErrorNumber(cx, hpv->errorCallback, NULL, (num), ##__VA_ARGS__); \
-		else \
-			JS_ReportError(cx, "undefined message %d", (num)); \
+		JL_ReportErrorNum(cx, num, ##__VA_ARGS__ ); \
 		goto bad; \
 	JL_MACRO_END
 
@@ -581,7 +590,8 @@ enum JLErrNum {
 #define JL_REPORT_WARNING_NUM( cx, num, ... ) \
 	JL_MACRO_BEGIN \
 		if (unlikely( !_unsafeMode )) { \
-			HostPrivate *hpv = JL_GetHostPrivate(cx); \
+			HostPrivate *hpv; \
+			hpv = JL_GetHostPrivate(cx); \
 			if ( hpv != NULL && hpv->errorCallback != NULL ) { \
 				if ( !JS_ReportErrorFlagsAndNumber(cx, JSREPORT_WARNING, hpv->errorCallback, NULL, (num), ##__VA_ARGS__) ) \
 					goto bad; \
@@ -660,7 +670,7 @@ enum JLErrNum {
 #define JL_S_ASSERT_ALLOC(pointer) \
 	JL_MACRO_BEGIN \
 		JL_SAFE_BEGIN \
-			if ( (pointer) == NULL ) { \
+			if (unlikely( (pointer) == NULL )) { \
 				JS_ReportOutOfMemory(cx); \
 				goto bad; \
 			} \
@@ -693,7 +703,7 @@ enum JLErrNum {
 
 // jsType: JSTYPE_VOID, JSTYPE_OBJECT, JSTYPE_FUNCTION, JSTYPE_STRING, JSTYPE_NUMBER, JSTYPE_BOOLEAN, JSTYPE_NULL, JSTYPE_XML, JSTYPE_LIMIT
 #define JL_S_ASSERT_TYPE(value, jsType) \
-	JL_S_ASSERT_ERROR_NUM( JS_TypeOfValue(cx, (value)) == (jsType), JLSMSG_EXPECT_TYPE, (#jsType)+7 ); // +7 for JSTYPE_* substring
+	JL_S_ASSERT_ERROR_NUM( JS_TypeOfValue(cx, (value)) == (jsType), JLSMSG_EXPECT_TYPE, (#jsType)+7 ); // +7 for "JSTYPE_" substring
 
 
 #define JS_S_ASSERT_CONVERT(condition, typeName) \

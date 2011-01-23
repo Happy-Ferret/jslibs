@@ -19,7 +19,7 @@
 #include "fcgi.h"
 #include "static.h"
 
-//bool _unsafeMode = false;
+//int _unsafeMode = false;
 #include "jslibsModule.cpp"
 
 

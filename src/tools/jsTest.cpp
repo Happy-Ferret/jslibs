@@ -16,37 +16,27 @@ JSClass global_class = {
 };
 
 
-#define FBLOCK_DEF(...) { struct { void operator()( ##__VA_ARGS__ ) {
+#define FBLOCK_DEF(...) { struct { __declspec(noinline) void operator()( ##__VA_ARGS__ ) {
 #define FBLOCK_CALL(...) } } inner; inner( ##__VA_ARGS__ ); }
 
 
-static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, jsval v ) {
+static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc, jsval v ) {
+
 
 	size_t a = JLGetEIP();
+
 
 	JL_S_ASSERT_STRING(v);
 
 
 bad:
 
-	a = JLGetEIP() - a;
+	a = JLGetEIP() - a - 8;
 	printf("code length: %d\n", a);
 }
 
 
-
-
 int main(int argc, char* argv[]) {
-
-int i = 1;
-
-FBLOCK_DEF( int i, int j )
-	
-	printf("test%d\n", i);
-
-FBLOCK_CALL( i, 5 )
-
-
 
 	_unsafeMode = false;
 
@@ -65,7 +55,7 @@ FBLOCK_CALL( i, 5 )
 
 	jsval val = STRING_TO_JSVAL(jsstr);
 
-	Test(cx, globalObject, val);
+	Test(cx, globalObject, 0, val);
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);

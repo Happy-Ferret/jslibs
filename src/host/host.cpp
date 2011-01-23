@@ -35,7 +35,7 @@ JSBool jslangModuleInit(JSContext *cx, JSObject *obj);
 JSBool jslangModuleRelease(JSContext *cx);
 void jslangModuleFree();
 
-//bool _unsafeMode = true;
+//int _unsafeMode = true;
 
 JSErrorFormatString JLerrorFormatString[JLErrLimit] = {
 #define MSG_DEF(name, number, count, exception, format) { format, count, exception },
@@ -521,8 +521,7 @@ bad:
 
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
 
-	_unsafeMode = unsafeMode;
-
+	_unsafeMode = unsafeMode; // should we use unsafeMode ? 1 : 0 ???
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 
