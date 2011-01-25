@@ -290,7 +290,7 @@ struct UserProcessEvent {
 
 JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-static void TimeoutStartWait( volatile ProcessEvent *pe ) {
+void TimeoutStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -304,7 +304,7 @@ static void TimeoutStartWait( volatile ProcessEvent *pe ) {
 	}
 }
 
-static bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
+bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -312,7 +312,7 @@ static bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 

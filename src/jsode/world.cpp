@@ -32,7 +32,7 @@ struct ColideContextPrivate {
 	ode::dWorldID worldId;
 };
 
-static void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
+void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 	
 	// Doc: http://opende.sourceforge.net/wiki/index.php/Manual_%28Joint_Types_and_Functions%29
 	ode::dContact contact;

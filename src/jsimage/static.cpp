@@ -244,7 +244,7 @@ typedef struct {
 } PngReadUserStruct;
 
 
-static void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) {
+void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) {
 
 	PngReadUserStruct *desc = (PngReadUserStruct*)png_get_io_ptr(png_ptr);
 //	desc->read(desc->cx, desc->obj, (char*)data, &length);

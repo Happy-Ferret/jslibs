@@ -269,14 +269,14 @@ struct UserProcessEvent {
 
 JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-static void IOStartWait( volatile ProcessEvent *pe ) {
+void IOStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	upe->pollResult = PR_Poll(upe->pollDesc, 1 + upe->fdCount, PR_INTERVAL_NO_TIMEOUT); // 1 is the PollableEvent
 }
 
-static bool IOCancelWait( volatile ProcessEvent *pe ) {
+bool IOCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -289,7 +289,7 @@ static bool IOCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+JSBool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 

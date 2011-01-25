@@ -20,7 +20,7 @@
 
 
 
-static const char *ConstString( int errorCode ) {
+const char *ConstString( int errorCode ) {
 
 	switch ( errorCode ) {
 		case PR_OUT_OF_MEMORY_ERROR: return "PR_OUT_OF_MEMORY_ERROR";

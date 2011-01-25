@@ -54,7 +54,7 @@ typedef struct {
 
 
 
-static size_t read_func( void *ptr, size_t size, size_t nmemb, void *privateData ) {
+size_t read_func( void *ptr, size_t size, size_t nmemb, void *privateData ) {
 
 	Private *pv = (Private*)privateData;
 
@@ -66,7 +66,7 @@ static size_t read_func( void *ptr, size_t size, size_t nmemb, void *privateData
 	return amount;
 }
 
-static int seek_func(void *datasource, ogg_int64_t offset, int whence) {
+int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 
 //	return -1;
 
@@ -119,7 +119,7 @@ static int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 
 
 
-static long tell_func(void *datasource) {
+long tell_func(void *datasource) {
 
 	Private *pv = (Private*)datasource;
 	jsval tmpVal;

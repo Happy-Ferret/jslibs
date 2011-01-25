@@ -48,7 +48,7 @@ extern jl_free_t jl_free;
 
 /*
 template <typename T>
-static ALWAYS_INLINE bool
+ALWAYS_INLINE bool
 JL_Alloc( T*&ptr, size_t count = 1 ) {
 
 	ptr = (T*)jl_malloc(sizeof(T)*count);
@@ -56,7 +56,7 @@ JL_Alloc( T*&ptr, size_t count = 1 ) {
 }
 
 template <typename T>
-static ALWAYS_INLINE bool
+ALWAYS_INLINE bool
 JL_Realloc( T*&ptr, size_t count = 1 ) {
 
 	ptr = (T*)jl_realloc(ptr, sizeof(T)*count);
@@ -132,11 +132,11 @@ namespace jl {
 		}
 		ALWAYS_INLINE void operator delete(void *ptr, size_t size) {
 			jl_free(ptr);
-			JL_UNUSED(size);
+			JL_USE(size);
 		}
 		ALWAYS_INLINE void operator delete[](void *ptr, size_t size) {
 			jl_free(ptr);
-			JL_UNUSED(size);
+			JL_USE(size);
 		}
 	};
 

@@ -35,7 +35,7 @@ struct HandlePrivate {
 };
 
 
-static ALWAYS_INLINE JSClass*
+ALWAYS_INLINE JSClass*
 JL_HandleJSClass( JSContext *cx ) {
 
 	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
@@ -45,7 +45,7 @@ JL_HandleJSClass( JSContext *cx ) {
 }
 
 
-static INLINE JSBool
+INLINE JSBool
 HandleCreate( JSContext *cx, HANDLE_TYPE handleType, size_t userDataSize, void** userData, HandleFinalizeCallback_t finalizeCallback, jsval *handleVal ) {
 
 	JL_ASSERT( handleType != HANDLE_INVALID );
@@ -72,7 +72,7 @@ HandleCreate( JSContext *cx, HANDLE_TYPE handleType, size_t userDataSize, void**
 }
 
 
-static INLINE JSBool
+INLINE JSBool
 HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
 	
 	JL_S_ASSERT_OBJECT( handleVal );
@@ -93,7 +93,7 @@ HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
 }
 
 
-static INLINE HANDLE_TYPE
+INLINE HANDLE_TYPE
 GetHandleType( JSContext *cx, jsval handleVal ) {
 
 	JL_S_ASSERT_OBJECT( handleVal );
@@ -110,7 +110,7 @@ bad:
 }
 
 
-static ALWAYS_INLINE bool
+ALWAYS_INLINE bool
 IsHandleType( JSContext *cx, jsval handleVal, HANDLE_TYPE handleType ) {
 
 	if ( !JL_IsClass(handleVal, JL_HandleJSClass(cx)) )
@@ -121,7 +121,7 @@ IsHandleType( JSContext *cx, jsval handleVal, HANDLE_TYPE handleType ) {
 }
 
 
-static INLINE void*
+INLINE void*
 GetHandlePrivate( JSContext *cx, const jsval &handleVal ) {
 
 	JL_S_ASSERT_OBJECT( handleVal );
@@ -136,7 +136,7 @@ bad:
 }
 
 
-static INLINE JSBool
+INLINE JSBool
 SetHandleSlot( JSContext *cx, jsval handleVal, uint32 slotIndex, jsval value ) {
 
 	JL_ASSERT( slotIndex < HANDLE_PUBLIC_SLOT_COUNT );
@@ -147,7 +147,7 @@ SetHandleSlot( JSContext *cx, jsval handleVal, uint32 slotIndex, jsval value ) {
 }
 
 
-static INLINE JSBool
+INLINE JSBool
 GetHandleSlot( JSContext *cx, jsval handleVal, uint32 slotIndex, jsval *value ) {
 
 	JL_ASSERT( slotIndex < HANDLE_PUBLIC_SLOT_COUNT );

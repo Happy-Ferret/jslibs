@@ -39,7 +39,7 @@ ALWAYS_INLINE float RAD_TO_DEG( const float rad ) {
 jl::Pool matrixPool; // (TBD) manage thread safety / use modulePrivate
 
 
-static int GetMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
+int GetMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	if ( !pv )

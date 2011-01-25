@@ -6420,7 +6420,7 @@ DEFINE_PROPERTY( error ) {
 
 
 
-static JSBool MatrixGet(JSContext *cx, JSObject *obj, float **m) {
+JSBool MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 
 	GLint matrixMode;
 	glGetIntegerv(GL_MATRIX_MODE, &matrixMode);  OGL_CHK;
@@ -6443,7 +6443,7 @@ bad:
 }
 
 
-static void *windowsGLGetProcAddress(const char *procName) {
+void *windowsGLGetProcAddress(const char *procName) {
 	
 	return wglGetProcAddress(procName);
 }

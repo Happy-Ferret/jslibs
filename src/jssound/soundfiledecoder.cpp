@@ -51,7 +51,7 @@ typedef struct {
 } Private;
 
 
-static sf_count_t SfGetFilelen(void *user_data) {
+sf_count_t SfGetFilelen(void *user_data) {
 
 	Private *pv = (Private*)user_data;
 
@@ -72,7 +72,7 @@ static sf_count_t SfGetFilelen(void *user_data) {
 }
 
 
-static sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
+sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 
 	Private *pv = (Private*)user_data;
 
@@ -119,7 +119,7 @@ static sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 	return -1;
 }
 
-static sf_count_t SfTell(void *user_data) {
+sf_count_t SfTell(void *user_data) {
 
 	Private *pv = (Private*)user_data;
 	jsval tmpVal;
@@ -133,7 +133,7 @@ static sf_count_t SfTell(void *user_data) {
 	return position;
 }
 
-static sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
+sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
 
 	Private *pv = (Private*)user_data;
 

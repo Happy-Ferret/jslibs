@@ -28,6 +28,7 @@
 		BasicRuntimeChecks="3"
 		SmallerTypeCheck="true"
 		BufferSecurityCheck="true"
+		EnableEnhancedInstructionSet="1"
 	/>
 	
 				<!-- tmp VCLinkerTool

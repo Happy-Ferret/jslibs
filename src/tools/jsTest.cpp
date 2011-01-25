@@ -9,36 +9,47 @@
 #include <string.h>
 
 
-
 JSClass global_class = {
 	 "global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
     JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
 };
 
 
-#define FBLOCK_DEF(...) { struct { __declspec(noinline) void operator()( ##__VA_ARGS__ ) {
-#define FBLOCK_CALL(...) } } inner; inner( ##__VA_ARGS__ ); }
+#include <stdlib.h>
 
 
-static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc, jsval v ) {
+static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc, jsval &v ) {
+
+	float f = rand();
+	uint64_t ival = f;
+
+	JLStr str;
+
+	size_t err = JLGetEIP(); size_t a = JLGetEIP(); ////////////////////////////////////////
+
+	JL_S_ASSERT_INT(v);
 
 
-	size_t a = JLGetEIP();
+	//JL_NativeToJsval(cx, L"ABCDE", 5, &v);
+
+//	JL_CHK( JL_JsvalToNative(cx, v, &str) );
+
+	// JL_CHK( JL_NativeToJsval(cx, ival, &v) );
 
 
-	JL_S_ASSERT_STRING(v);
+	bad: ///////////////////////////////////////////////////////////////////////////////////
+	a = JLGetEIP() - a - (a-err);
 
 
-bad:
-
-	a = JLGetEIP() - a - 8;
 	printf("code length: %d\n", a);
+
+	printf("tmp-%d-%f\n", ival, f);
 }
 
 
 int main(int argc, char* argv[]) {
 
-	_unsafeMode = false;
+	_unsafeMode = true;
 
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
@@ -53,7 +64,9 @@ int main(int argc, char* argv[]) {
 	JSString *jsstr = JS_NewUCStringCopyN(cx, str, 4);
 
 
-	jsval val = STRING_TO_JSVAL(jsstr);
+	jsval val;
+	val = STRING_TO_JSVAL(jsstr);
+	val = DOUBLE_TO_JSVAL(1.234);
 
 	Test(cx, globalObject, 0, val);
 

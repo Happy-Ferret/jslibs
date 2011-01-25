@@ -44,7 +44,7 @@ JSErrorFormatString JLerrorFormatString[JLErrLimit] = {
 };
 
 
-static const JSErrorFormatString *GetErrorMessage(void *userRef, const char *locale, const uintN errorNumber) {
+const JSErrorFormatString *GetErrorMessage(void *userRef, const char *locale, const uintN errorNumber) {
 
 	uintN err = errorNumber - 1000;
 	if ( err > 0 && err < JLErrLimit )
@@ -57,7 +57,7 @@ static const JSErrorFormatString *GetErrorMessage(void *userRef, const char *loc
 //	if ( !(condition) ) { consoleStdErr( cx, errorMessage, sizeof(errorMessage)-1 ); return -1; }
 
 
-static JSBool JSDefaultStdinFunction(JSContext *cx, uintN argc, jsval *vp) {
+JSBool JSDefaultStdinFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	if (unlikely( pv == NULL || pv->hostStdIn == NULL )) {
@@ -83,7 +83,7 @@ static JSBool JSDefaultStdinFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 
 // Print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
-static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
+JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 	*JL_RVAL = JSVAL_VOID;
 	HostPrivate *pv = JL_GetHostPrivate(cx);
@@ -101,7 +101,7 @@ static JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 
-static JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
+JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 	*JL_RVAL = JSVAL_VOID;
 	HostPrivate *pv = JL_GetHostPrivate(cx);
@@ -150,7 +150,7 @@ bad:
 
 
 // function copied from ../js/src/js.c
-static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
+void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	if (likely( pv != NULL && JSREPORT_IS_WARNING(report->flags) && pv->unsafeMode )) // no warnings in unsafe mode.
@@ -257,7 +257,7 @@ static void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *rep
 }
 
 
-static JSBool OperationCallback(JSContext *cx) {
+JSBool OperationCallback(JSContext *cx) {
 
 	JS_MaybeGC(cx);
 	return JS_TRUE;
@@ -282,7 +282,7 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 }
 
 
-static JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
+JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 
 	JLStr str;
 
@@ -378,7 +378,7 @@ bad:
 }
 
 /* (TBD)
-static JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 	jsdouble dVal;
@@ -399,12 +399,12 @@ static JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 }
 */
 
-static JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STANDARD_CLASSES
+JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STANDARD_CLASSES
 
 	return JS_EnumerateStandardClasses(cx, obj);
 }
 
-static JSBool global_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **objp) { // see LAZY_STANDARD_CLASSES
+JSBool global_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **objp) { // see LAZY_STANDARD_CLASSES
 
 	if ( (flags & JSRESOLVE_ASSIGNING) == 0 ) {
 
@@ -887,14 +887,16 @@ static JLSemaphoreHandler memoryFreeThreadSem;
 
 
 // alloc functions
-static void* JslibsMalloc( size_t size ) {
+RESTRICT_DECL void*
+JslibsMalloc( size_t size ) {
 
 	if (likely( size >= sizeof(void*) ))
 		return base_malloc(size);
 	return base_malloc(sizeof(void*));
 }
 
-static void* JslibsCalloc( size_t num, size_t size ) {
+RESTRICT_DECL void* 
+JslibsCalloc( size_t num, size_t size ) {
 
 	size *= num;
 	if (likely( size >= sizeof(void*) ))
@@ -902,26 +904,30 @@ static void* JslibsCalloc( size_t num, size_t size ) {
 	return base_calloc(sizeof(void*), 1);
 }
 
-static void* JslibsMemalign( size_t alignment, size_t size ) {
+RESTRICT_DECL void* 
+JslibsMemalign( size_t alignment, size_t size ) {
 
 	if (likely( size >= sizeof(void*) ))
 		return base_memalign(alignment, size);
 	return base_memalign(alignment, sizeof(void*));
 }
 
-static void* JslibsRealloc( void *ptr, size_t size ) {
+void*
+JslibsRealloc( void *ptr, size_t size ) {
 
 	if (likely( size >= sizeof(void*) ))
 		return base_realloc(ptr, size);
 	return base_realloc(ptr, sizeof(void*));
 }
 
-static size_t JslibsMsize( void *ptr ) {
+size_t 
+JslibsMsize( void *ptr ) {
 
 	return base_msize(ptr);
 }
 
-static void JslibsFree( void *ptr ) {
+void 
+JslibsFree( void *ptr ) {
 	
 	if (unlikely( ptr == NULL )) // issue wuth nedmalloc free(NULL)
 		return;
@@ -938,7 +944,8 @@ static void JslibsFree( void *ptr ) {
 }
 
 
-ALWAYS_INLINE void FreeHead() {
+ALWAYS_INLINE void FASTCALL
+FreeHead() {
 
 	headLength = 0;
 
@@ -956,7 +963,8 @@ ALWAYS_INLINE void FreeHead() {
 }
 
 // the thread proc
-static JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
+JLThreadFuncDecl
+MemoryFreeThreadProc( void *threadArg ) {
 
 	for (;;) {
 
@@ -978,6 +986,7 @@ static JLThreadFuncDecl MemoryFreeThreadProc( void *threadArg ) {
 
 // GC callback that triggers the thread
 static JSGCCallback prevGCCallback;
+
 JSBool NewGCCallback(JSContext *cx, JSGCStatus status) {
 
 	if ( status == JSGC_FINALIZE_END ) {

@@ -36,7 +36,7 @@ struct BufferPrivate {
 };
 
 
-static JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
+JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
 	return ReadRawDataAmount(cx, obj, amount, buf);
 }

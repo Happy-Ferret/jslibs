@@ -61,15 +61,15 @@ JLMutexHandler gEndSignalLock;
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
-	JL_UNUSED(obj);
-	JL_UNUSED(id);
+	JL_USE(obj);
+	JL_USE(id);
 	return JL_NativeToJsval(cx, bool(gEndSignalState), vp);
 }
 
 JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
-	JL_UNUSED(obj);
-	JL_UNUSED(id);
+	JL_USE(obj);
+	JL_USE(id);
 
 	bool tmp;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tmp) );
@@ -91,7 +91,7 @@ BOOL WINAPI Interrupt(DWORD CtrlType) {
 //	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT) // CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
 //		return FALSE;
 
-	JL_UNUSED(CtrlType);
+	JL_USE(CtrlType);
 	JLMutexAcquire(gEndSignalLock);
 	gEndSignalState = true;
 	JLCondBroadcast(gEndSignalCond);
@@ -121,7 +121,7 @@ struct UserProcessEvent {
 
 JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-static void EndSignalStartWait( volatile ProcessEvent *pe ) {
+void EndSignalStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -131,7 +131,7 @@ static void EndSignalStartWait( volatile ProcessEvent *pe ) {
 	JLMutexRelease(gEndSignalLock);
 }
 
-static bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
+bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -143,9 +143,9 @@ static bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-	JL_UNUSED(obj);
+	JL_USE(obj);
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	*hasEvent = gEndSignalState;
@@ -159,7 +159,7 @@ static JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSCon
 	JL_BAD;
 }
 
-static JSBool EndSignalEvents(JSContext *cx, uintN argc, jsval *vp) {
+JSBool EndSignalEvents(JSContext *cx, uintN argc, jsval *vp) {
 
 	JL_S_ASSERT_ARG_RANGE( 0, 1 );
 
@@ -191,7 +191,7 @@ static int stderr_fileno = -1;
 
 int HostStdin( void *privateData, char *buffer, size_t bufferLength ) {
 
-	JL_UNUSED(privateData);
+	JL_USE(privateData);
 	if (unlikely( stdin_fileno == -1 ))
 		stdin_fileno = fileno(stdin);
 	return read(stdin_fileno, (void*)buffer, bufferLength);
@@ -199,7 +199,7 @@ int HostStdin( void *privateData, char *buffer, size_t bufferLength ) {
 
 int HostStdout( void *privateData, const char *buffer, size_t length ) {
 
-	JL_UNUSED(privateData);
+	JL_USE(privateData);
 	if (unlikely( stdout_fileno == -1 ))
 		stdout_fileno = fileno(stdout);
 	return write(stdout_fileno, buffer, length);
@@ -207,7 +207,7 @@ int HostStdout( void *privateData, const char *buffer, size_t length ) {
 
 int HostStderr( void *privateData, const char *buffer, size_t length ) {
 
-	JL_UNUSED(privateData);
+	JL_USE(privateData);
 	if (unlikely( stderr_fileno == -1 ))
 		stderr_fileno = fileno(stderr);
 	return write(stderr_fileno, buffer, length);

@@ -15,7 +15,7 @@
 #define SLOT_FUNCTION_ALLOC 0
 
 
-static ALWAYS_INLINE JSClass* JL_ImageJSClass( const JSContext *cx ) {
+ALWAYS_INLINE JSClass* JL_ImageJSClass( const JSContext *cx ) {
 
 	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	if (unlikely( clasp == NULL ))

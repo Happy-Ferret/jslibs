@@ -26,12 +26,14 @@
 		Optimization="3"
 		InlineFunctionExpansion="2"
 		EnableIntrinsicFunctions="true"
+		EnableFunctionLevelLinking="true"
 		FavorSizeOrSpeed="1"
 		OmitFramePointers="true"		
 		StringPooling="true"
 		BasicRuntimeChecks="0"
 		SmallerTypeCheck="false"
 		BufferSecurityCheck="false"
+		EnableEnhancedInstructionSet="1"
 	/>
 
 				<!-- tmp VCLinkerTool
@@ -43,6 +45,8 @@
 
 	<Tool
 		Name="VCLinkerTool"
+		OptimizeReferences="2"
+		EnableCOMDATFolding="2"
 		LinkTimeCodeGeneration="1"
 		GenerateDebugInformation="true"
 		IgnoreAllDefaultLibraries="false"

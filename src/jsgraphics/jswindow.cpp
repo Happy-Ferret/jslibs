@@ -57,7 +57,7 @@ BEGIN_CLASS( Window )
 //		return JS_TRUE;
 //	}
 
-static LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 	CxObj *cxobj = (CxObj*)GetWindowLong(hWnd, GWL_USERDATA);
 	if ( cxobj == NULL )
@@ -352,7 +352,7 @@ DEFINE_FUNCTION( Close ) {
 
 
 /*
-static JSBool Exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool Exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	PostQuitMessage(0);
 	return JS_TRUE;
@@ -399,7 +399,7 @@ DEFINE_FUNCTION( CreateOpenGLBitmap ) {
 /*
 // The Effects of Double Buffering on Animation Frame Rates
 //		http://www.futuretech.blinkenlights.nl/dbuffer.html
-static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	glFlush();
 	glFinish();
@@ -480,7 +480,7 @@ DEFINE_FUNCTION( CreateOpenGLContext ) {
 
 // The Effects of Double Buffering on Animation Frame Rates
 //		http://www.futuretech.blinkenlights.nl/dbuffer.html
-static JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 //	glFlush();
 //	glFinish();

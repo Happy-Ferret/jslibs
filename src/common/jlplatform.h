@@ -77,11 +77,11 @@
 
 
 #if defined(__GNUC__) && (__GNUC__ > 2)
-	#define likely(expr)	__builtin_expect((expr), !0)
-	#define unlikely(expr)	__builtin_expect((expr), 0)
+	#define likely(expr) __builtin_expect((expr), 1)
+	#define unlikely(expr) __builtin_expect((expr), 0)
 #else
-	#define likely(expr)	(!!(expr))
-	#define unlikely(expr)	(!!(expr))
+	#define likely(expr) (expr)
+	#define unlikely(expr) (expr)
 	// see __assume keyword for MSVC
 #endif
 
@@ -106,6 +106,7 @@
 #else
 # define INLINE inline
 #endif
+// note: The compiler treats the inline expansion options and keywords as suggestions.
 
 
 // from jstypes.h
@@ -121,6 +122,7 @@
 # endif
 #endif
 
+
 // from jstypes.h
 #ifndef NEVER_INLINE
 # if defined _MSC_VER
@@ -131,6 +133,36 @@
 #  define NEVER_INLINE
 # endif
 #endif
+
+
+// msdn doc. the __restrict keyword indicates that a symbol is not aliased in the current scope
+// see also. http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
+#ifndef RESTRICT
+# if defined _MSC_VER
+#  define RESTRICT __restrict
+# else
+#  define RESTRICT __restrict__
+# endif
+#endif
+
+
+#ifndef RESTRICT_DECL
+# if defined _MSC_VER
+#  define RESTRICT_DECL __declspec(restrict)
+# else
+#  define RESTRICT_DECL
+# endif
+#endif
+
+// msdn doc. noalias means that a function call does not modify or reference visible global state and only modifies the memory pointed to directly by pointer parameters (first-level indirections).
+#ifndef NOALIAS
+# if defined _MSC_VER
+#  define NOALIAS __declspec(noalias)
+# else
+#  define NOALIAS
+# endif
+#endif
+
 
 
 // trick. When an inline function is not static, then the compiler must assume that there may be calls from other source files; since a global symbol can be defined only once in any program,
@@ -409,15 +441,19 @@ typedef double float64_t;
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
 
+#define UNLIKELY_SPLIT_BEGIN(...) { struct { INLINE JSBool FASTCALL operator()( ##__VA_ARGS__ ) {
+#define UNLIKELY_SPLIT_END(...) } } inner; if ( inner( ##__VA_ARGS__ ) ) return JS_TRUE; else goto bad; JL_BAD; }
+
+
 #define JL_HASFLAGS(value, flags) \
 	(((value) & (flags)) == (flags))
 
 
 //template<class T>
-//static inline void JL_UNUSED(T) {};
-//#define JL_UNUSED(x) x __attribute__((unused))
-//#define JL_UNUSED(x) ((x) = (x))
-#define JL_UNUSED(x) \
+//static inline void JL_USE(T) {};
+//#define JL_USE(x) x __attribute__((unused))
+//#define JL_USE(x) ((x) = (x))
+#define JL_USE(x) \
 	((void)(x))
 
 #define JL_STATIC_ASSERT(cond) \
@@ -435,7 +471,7 @@ typedef double float64_t;
 */
 
 // see JS_Assert in jsutil.cpp
-static ALWAYS_INLINE void
+ALWAYS_INLINE void
 JL_AssertFailure( const char *message, const char *location ) {
 	
 	fprintf(stderr, "Assertion failure: %s @%s\n", message, location);
@@ -462,8 +498,10 @@ JL_AssertFailure( const char *message, const char *location ) {
 
 #else // DEBUG
 
-#define JL_ASSERT(expr) ((void)0)
-#define JL_ASSERT_IF(cond, expr) ((void) 0)
+// #define JL_ASSERT(expr) ((void)0)
+// #define JL_ASSERT_IF(cond, expr) ((void) 0)
+#define JL_ASSERT(expr) (__assume(expr))
+#define JL_ASSERT_IF(cond, expr) (__assume(expr))
 
 #endif // DEBUG
 
@@ -510,7 +548,7 @@ JL_STATIC_ASSERT( DBL_MANT_DIG < 64 );
 //JL_STATIC_ASSERT( MAX_INTDOUBLE+1. == MAX_INTDOUBLE+2. );
 
 
-static ALWAYS_INLINE int
+ALWAYS_INLINE NOALIAS int
 DOUBLE_IS_NEGZERO(const double &d) {
 #ifdef WIN32
 	return (d == 0 && (_fpclass(d) & _FPCLASS_NZ));
@@ -521,8 +559,8 @@ DOUBLE_IS_NEGZERO(const double &d) {
 #endif
 }
 
-static ALWAYS_INLINE
-bool DOUBLE_IS_NEG(const double &d) {
+ALWAYS_INLINE NOALIAS bool
+DOUBLE_IS_NEG(const double &d) {
 #ifdef WIN32
 	return DOUBLE_IS_NEGZERO(d) || d < 0;
 #elif defined(SOLARIS)
@@ -532,7 +570,7 @@ bool DOUBLE_IS_NEG(const double &d) {
 #endif
 }
 
-static ALWAYS_INLINE bool
+ALWAYS_INLINE NOALIAS bool
 JL_DOUBLE_IS_INTEGER(const double &d) {
 
 	//	return d == double(int64_t(d));
@@ -541,13 +579,13 @@ JL_DOUBLE_IS_INTEGER(const double &d) {
 
 
 template<class T>
-static ALWAYS_INLINE T
+ALWAYS_INLINE T
 JL_MIN(T a, T b) {
 	return (a) < (b) ? (a) : (b);
 }
 
 template<class T>
-static ALWAYS_INLINE T
+ALWAYS_INLINE T
 JL_MAX(T a, T b) {
 	return (a) > (b) ? (a) : (b);
 }
@@ -599,13 +637,13 @@ namespace jl {
 //     code.
 
 // rise a "division by zero" if x is not a 5-char string.
-//#define JL_CAST_CSTR_TO_UINT32(x) ( jl_unused(0/(sizeof(x) == 5 && x[3] == 0 ? 1 : 0)), (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
+//#define JL_CAST_CSTR_TO_UINT32(x) ( JL_USE(0/(sizeof(x) == 5 && x[3] == 0 ? 1 : 0)), (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
 //#define JL_CAST_CSTR_TO_UINT32(x) ( (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
 //	return (cstr[0]<<24) | (cstr[1]<<16) | (cstr[2]<<8) | (cstr[3]);
 //	return *(uint32_t*)cstr;
 
 
-//static ALWAYS_INLINE uint32_t JL_CAST_CSTR_TO_UINT32( const char cstr[5] ) {
+//ALWAYS_INLINE uint32_t JL_CAST_CSTR_TO_UINT32( const char cstr[5] ) {
 //
 ////	JL_ASSERT(strlen(cstr) == 4);
 //	if ( cstr[0] == '\0' )
@@ -623,7 +661,7 @@ namespace jl {
 //	return *(uint32_t*)cstr;
 //}
 
-static ALWAYS_INLINE uint32_t
+ALWAYS_INLINE NOALIAS uint32_t
 JL_CAST_CSTR_TO_UINT32( const char *cstr ) {
 
 	JL_ASSERT( cstr != NULL && !(cstr[0] && cstr[1] && cstr[2] && cstr[3] && cstr[4]) );
@@ -636,7 +674,7 @@ JL_CAST_CSTR_TO_UINT32( const char *cstr ) {
 }
 
 
-static INLINE unsigned long FASTCALL
+INLINE unsigned long FASTCALL
 int_sqrt(unsigned long x) {
 
     register unsigned long op, res, one;
@@ -660,7 +698,7 @@ int_sqrt(unsigned long x) {
 }
 
 
-static INLINE int FASTCALL
+INLINE int FASTCALL
 int_pow(int base, int exp) {
 
 	int result = 1;
@@ -675,7 +713,7 @@ int_pow(int base, int exp) {
 }
 
 
-static ALWAYS_INLINE uint32_t
+ALWAYS_INLINE NOALIAS uint32_t
 JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
 
 	if ( r == NULL || r[0] == '\0' || r[10] == '\0' || r[11] == '\0' || r[12] == '\0' || r[13] == '\0' )
@@ -715,7 +753,7 @@ JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and e
 //}
 
 
-INLINE void
+INLINE void FASTCALL
 fpipe( FILE **read, FILE **write ) {
 
 	int readfd, writefd;
@@ -739,7 +777,7 @@ fpipe( FILE **read, FILE **write ) {
 
 #ifdef XP_UNIX
 #include <stdlib.h>
-static INLINE void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath ) {
+INLINE void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath ) {
 
 	if ( modulePath[0] == PATH_SEPARATOR ) { //  /jshost
 
@@ -815,7 +853,7 @@ static INLINE void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, c
 // 32 bits swap: #define SWAP_BYTE(x) ((x<<24) | (x>>24) | ((x&0xFF00)<<8) | ((x&0xFF0000)>>8))
 //#define JL_BYTESWAP(ptr,a,b) { register char tmp = ((int8_t*)ptr)[a]; ((int8_t*)ptr)[a] = ((int8_t*)ptr)[b]; ((int8_t*)ptr)[b] = tmp; }
 
-static ALWAYS_INLINE void
+ALWAYS_INLINE NOALIAS void
 JL_BYTESWAP(void *ptr, size_t a, size_t b) {
 
 	register char tmp = ((int8_t*)ptr)[a];
@@ -823,21 +861,21 @@ JL_BYTESWAP(void *ptr, size_t a, size_t b) {
 	((int8_t*)ptr)[b] = tmp;
 }
 
-static ALWAYS_INLINE void
+ALWAYS_INLINE NOALIAS void
 Host16ToNetwork16( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
 		JL_BYTESWAP( pval, 0, 1 );
 }
 
-static ALWAYS_INLINE void
+ALWAYS_INLINE NOALIAS void
 Host24ToNetwork24( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
 		JL_BYTESWAP( pval, 0, 2 );
 }
 
-static ALWAYS_INLINE void
+ALWAYS_INLINE NOALIAS void
 Host32ToNetwork32( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
@@ -847,7 +885,7 @@ Host32ToNetwork32( void *pval ) {
 	}
 }
 
-static ALWAYS_INLINE void
+ALWAYS_INLINE NOALIAS void
 Host64ToNetwork64( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
@@ -860,14 +898,14 @@ Host64ToNetwork64( void *pval ) {
 }
 
 
-static ALWAYS_INLINE void
+ALWAYS_INLINE NOALIAS void
 Network16ToHost16( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
 		JL_BYTESWAP( pval, 0, 1 );
 }
 
-static ALWAYS_INLINE void
+ALWAYS_INLINE NOALIAS void
 Network24ToHost24( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
@@ -875,7 +913,7 @@ Network24ToHost24( void *pval ) {
 }
 
 
-static ALWAYS_INLINE void
+ALWAYS_INLINE NOALIAS void
 Network32ToHost32( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
@@ -885,7 +923,7 @@ Network32ToHost32( void *pval ) {
 	}
 }
 
-static ALWAYS_INLINE void
+ALWAYS_INLINE NOALIAS void
 Network64ToHost64( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
@@ -898,7 +936,7 @@ Network64ToHost64( void *pval ) {
 }
 
 
-static INLINE char* FASTCALL
+INLINE char* FASTCALL
 IntegerToString(int val, int base) {
 
 	bool neg;
@@ -921,7 +959,7 @@ IntegerToString(int val, int base) {
 }
 
 
-static ALWAYS_INLINE void SleepMilliseconds(uint32_t ms) {
+ALWAYS_INLINE void SleepMilliseconds(uint32_t ms) {
 
 #if defined(XP_WIN)
 	Sleep(ms); // winbase.h
@@ -931,7 +969,7 @@ static ALWAYS_INLINE void SleepMilliseconds(uint32_t ms) {
 }
 
 
-static INLINE double FASTCALL
+INLINE double FASTCALL
 AccurateTimeCounter() {
 
 #if defined(XP_WIN)
@@ -945,7 +983,7 @@ AccurateTimeCounter() {
 	if ( initTime == 0 )
 		initTime = performanceCount.QuadPart;
 	::SetThreadAffinityMask(::GetCurrentThread(), oldmask);
-	JL_UNUSED( result );
+	JL_USE( result );
 	return (double)1000 * (performanceCount.QuadPart-initTime) / (double)frequency.QuadPart;
 #elif defined(XP_UNIX)
 	static long initTime = 0; // initTime helps in avoiding precision waste.
@@ -979,7 +1017,7 @@ static __declspec(naked) __declspec(noinline) size_t JLGetEIP() {
 #endif
 
 /*
-static size_t JLIP() {
+size_t JLIP() {
 #if defined(XP_WIN)
 	return (size_t)_ReturnAddress();
 #elif defined(XP_UNIX)
@@ -990,7 +1028,7 @@ static size_t JLIP() {
 
 #define JL_PAGESIZE 4096
 
-static ALWAYS_INLINE size_t
+ALWAYS_INLINE size_t
 JLPageSize() {
 
 	static size_t pageSize = 0;
@@ -1011,7 +1049,7 @@ JLPageSize() {
 }
 
 
-static ALWAYS_INLINE int
+ALWAYS_INLINE int
 JLProcessId() {
 
 #if defined(XP_WIN)
@@ -1023,7 +1061,7 @@ JLProcessId() {
 }
 
 
-static ALWAYS_INLINE uint32_t
+ALWAYS_INLINE uint32_t
 JLSessionId() {
 
 	uint32_t r = 0x12345678;
@@ -1039,7 +1077,7 @@ JLSessionId() {
 }
 
 
-static ALWAYS_INLINE size_t
+ALWAYS_INLINE size_t
 JLRemainingStackSize() {
 #if defined(XP_WIN)
 
@@ -1069,7 +1107,7 @@ enum JLEncodingType {
 	ASCII
 };
 
-static INLINE JLEncodingType
+INLINE JLEncodingType NOALIAS FASTCALL
 JLDetectEncoding(char **buf, size_t *size) {
 
 	if ( *size < 2 )
@@ -1111,9 +1149,9 @@ JLDetectEncoding(char **buf, size_t *size) {
 
 // source: libxml2 - encoding.c - MIT License
 // changes: outlen and inlen from integer to size_t, and the last redurned value
-static INLINE int
+INLINE int NOALIAS FASTCALL
 UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
-            const unsigned char* in, size_t *inlen)
+              const unsigned char* in, size_t *inlen)
 {
     unsigned short* out = (unsigned short*) outb;
     const unsigned char* processed = in;
@@ -1232,35 +1270,37 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 ///////////////////////////////////////////////////////////////////////////////
 // system errors
 //
-	static INLINE void FASTCALL JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 
-	#if defined(XP_WIN)
-		DWORD errorCode = ::GetLastError();
-		LPVOID lpMsgBuf;
-		DWORD result = ::FormatMessage(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
-			NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL );
-		if ( result != 0 ) {
+static INLINE void NOALIAS FASTCALL
+JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 
-			strncpy(message, (char*)lpMsgBuf, maxLength-1);
-			LocalFree(lpMsgBuf);
-			message[maxLength-1] = '\0';
-		} else {
+ #if defined(XP_WIN)
+	DWORD errorCode = ::GetLastError();
+	LPVOID lpMsgBuf;
+	DWORD result = ::FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
+		NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL );
+	if ( result != 0 ) {
 
-			*message = '\0';
-		}
-	#elif defined(XP_UNIX)
-		const char *msgBuf = strerror(errno);
-		if ( msgBuf != NULL ) {
+		strncpy(message, (char*)lpMsgBuf, maxLength-1);
+		LocalFree(lpMsgBuf);
+		message[maxLength-1] = '\0';
+	} else {
 
-			strncpy(message, msgBuf, maxLength-1);
-			message[maxLength-1] = '\0';
-		} else {
-
-			*message = '\0';
-		}
-	#endif
+		*message = '\0';
 	}
+ #elif defined(XP_UNIX)
+	const char *msgBuf = strerror(errno);
+	if ( msgBuf != NULL ) {
+
+		strncpy(message, msgBuf, maxLength-1);
+		message[maxLength-1] = '\0';
+	} else {
+
+		*message = '\0';
+	}
+ #endif
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1279,7 +1319,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 //         http://msdn.microsoft.com/en-us/library/ms683590%28VS.85%29.aspx
 // Linux: http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
 
-static ALWAYS_INLINE int JLAtomicExchange(volatile long *ptr, long val) {
+ALWAYS_INLINE int JLAtomicExchange(volatile long *ptr, long val) {
 #if defined(XP_WIN)
 	return InterlockedExchange(ptr, val);
 #elif defined(XP_UNIX) // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ... //  #if defined(HAVE_GCC_ATOMIC32)
@@ -1287,7 +1327,7 @@ static ALWAYS_INLINE int JLAtomicExchange(volatile long *ptr, long val) {
 #endif
 }
 
-static ALWAYS_INLINE long JLAtomicIncrement(volatile long *ptr) {
+ALWAYS_INLINE long JLAtomicIncrement(volatile long *ptr) {
 #if defined(XP_WIN)
 	return InterlockedIncrement(ptr);
 #elif defined(XP_UNIX)
@@ -1295,7 +1335,7 @@ static ALWAYS_INLINE long JLAtomicIncrement(volatile long *ptr) {
 #endif
 }
 
-static ALWAYS_INLINE long JLAtomicDecrement(volatile long *ptr) {
+ALWAYS_INLINE long JLAtomicDecrement(volatile long *ptr) {
 #if defined(XP_WIN)
 	return InterlockedDecrement(ptr);
 #elif defined(XP_UNIX)
@@ -1303,7 +1343,7 @@ static ALWAYS_INLINE long JLAtomicDecrement(volatile long *ptr) {
 #endif
 }
 
-static ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
+ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 #if defined(XP_WIN)
 	return InterlockedExchangeAdd(ptr, val) + val;
 #elif defined(XP_UNIX)
@@ -1362,7 +1402,7 @@ static ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 #endif
 
 
-	static ALWAYS_INLINE JLSemaphoreHandler JLSemaphoreCreate( int initCount ) {
+	ALWAYS_INLINE JLSemaphoreHandler JLSemaphoreCreate( int initCount ) {
 
 	#if defined(XP_WIN)
 		return CreateSemaphore(NULL, initCount, LONG_MAX, NULL);
@@ -1375,7 +1415,7 @@ static ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	#endif
 	}
 
-	static ALWAYS_INLINE bool JLSemaphoreOk( JLSemaphoreHandler semaphore ) {
+	ALWAYS_INLINE bool JLSemaphoreOk( JLSemaphoreHandler semaphore ) {
 
 		return semaphore != (JLSemaphoreHandler)0;
 	}
@@ -1397,7 +1437,7 @@ static ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 
 	// msTimeout = JLINFINITE : no timeout
 	// returns true on a sucessfuly semaphore locked.
-	static INLINE int JLSemaphoreAcquire( JLSemaphoreHandler semaphore, int msTimeout ) {
+	INLINE int JLSemaphoreAcquire( JLSemaphoreHandler semaphore, int msTimeout ) {
 
 		JL_ASSERT( JLSemaphoreOk(semaphore) );
 	#if defined(XP_WIN)
@@ -1442,14 +1482,14 @@ static ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 			if ( st == -1 && errno == ETIMEDOUT )
 				return JLTIMEOUT;
 			JL_ASSERT( st == 0 );
-			JL_UNUSED( st );
+			JL_USE( st );
 			return JLOK;
 		}
 		return JLERROR;
 	#endif
 	}
 
-	static ALWAYS_INLINE void JLSemaphoreRelease( JLSemaphoreHandler semaphore ) {
+	ALWAYS_INLINE void JLSemaphoreRelease( JLSemaphoreHandler semaphore ) {
 
 		JL_ASSERT( JLSemaphoreOk(semaphore) );
 	#if defined(XP_WIN)
@@ -1459,10 +1499,10 @@ static ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 		int st = sem_post(semaphore);
 		JL_ASSERT( st == 0 );
 	#endif
-		JL_UNUSED( st );
+		JL_USE( st );
 	}
 
-	static ALWAYS_INLINE void JLSemaphoreFree( JLSemaphoreHandler *pSemaphore ) {
+	ALWAYS_INLINE void JLSemaphoreFree( JLSemaphoreHandler *pSemaphore ) {
 
 		JL_ASSERT( pSemaphore != NULL && JLSemaphoreOk(*pSemaphore) );
 	#if defined(XP_WIN)
@@ -1474,7 +1514,7 @@ static ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 		free(*pSemaphore);
 	#endif
 		*pSemaphore = (JLSemaphoreHandler)0;
-		JL_UNUSED(st);
+		JL_USE(st);
 	}
 
 
@@ -1503,12 +1543,12 @@ static ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 
 	#define JLMutexInvalidHandler ((JLMutexHandler)0)
 
-	static ALWAYS_INLINE bool JLMutexOk( JLMutexHandler mutex ) {
+	ALWAYS_INLINE bool JLMutexOk( JLMutexHandler mutex ) {
 
 		return mutex != (JLMutexHandler)0;
 	}
 
-	static ALWAYS_INLINE JLMutexHandler JLMutexCreate() {
+	ALWAYS_INLINE JLMutexHandler JLMutexCreate() {
 
 		JLMutexHandler mutex = (JLMutexHandler)malloc(sizeof(*mutex));
 		if ( mutex == NULL )
@@ -1521,12 +1561,12 @@ static ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_init(&mutex->mx, NULL);
 		JL_ASSERT( st == 0 );
-		JL_UNUSED( st );
+		JL_USE( st );
 	#endif
 		return mutex;
 	}
 
-	static ALWAYS_INLINE void JLMutexFree( JLMutexHandler *pMutex ) {
+	ALWAYS_INLINE void JLMutexFree( JLMutexHandler *pMutex ) {
 
 		JL_ASSERT( *pMutex != NULL && JLMutexOk(*pMutex) );
 	#if defined(XP_WIN)
@@ -1535,13 +1575,13 @@ static ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_destroy(&(*pMutex)->mx);
 		JL_ASSERT( st == 0 );
-		JL_UNUSED( st );
+		JL_USE( st );
 	#endif
 		free(*pMutex);
 		*pMutex = (JLMutexHandler)0;
 	}
 
-	static ALWAYS_INLINE void JLMutexAcquire( JLMutexHandler mutex ) {
+	ALWAYS_INLINE void JLMutexAcquire( JLMutexHandler mutex ) {
 
 		JL_ASSERT( JLMutexOk(mutex) );
 	#if defined(XP_WIN)
@@ -1550,11 +1590,11 @@ static ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_lock(&mutex->mx); // doc. shall not return an error code of [EINTR].
 		JL_ASSERT( st == 0 );
-		JL_UNUSED( st );
+		JL_USE( st );
 	#endif
 	}
 
-	static ALWAYS_INLINE void JLMutexRelease( JLMutexHandler mutex ) {
+	ALWAYS_INLINE void JLMutexRelease( JLMutexHandler mutex ) {
 
 		JL_ASSERT( JLMutexOk(mutex) );
 	#if defined(XP_WIN)
@@ -1563,7 +1603,7 @@ static ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_unlock(&mutex->mx);
 		JL_ASSERT( st == 0 );
-		JL_UNUSED( st );
+		JL_USE( st );
 	#endif
 	}
 
@@ -1585,12 +1625,12 @@ typedef struct __JLCondHandler {
 } *JLCondHandler;
 
 
-static ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
+ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
 
 	return cv != (JLCondHandler)0;
 }
 
-static ALWAYS_INLINE JLCondHandler JLCondCreate() {
+ALWAYS_INLINE JLCondHandler JLCondCreate() {
 
 	JLCondHandler cv = (JLCondHandler)malloc(sizeof(*cv));
 	if ( cv == NULL )
@@ -1604,20 +1644,20 @@ static ALWAYS_INLINE JLCondHandler JLCondCreate() {
 	return cv;
 }
 
-static ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
+ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 
 	JL_ASSERT( cv != NULL && JLCondOk(*cv) );
 	BOOL st = CloseHandle((*cv)->events[1]);
 	JL_ASSERT( st != FALSE );
 	st = CloseHandle((*cv)->events[0]);
 	JL_ASSERT( st != FALSE );
-	JL_UNUSED( st );
+	JL_USE( st );
 //	DeleteCriticalSection(&(*cv)->waiters_count_lock);
 	free(*cv);
 	*cv = NULL;
 }
 
-static INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
+INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
 
 	JL_ASSERT( JLCondOk(cv) );
 //	EnterCriticalSection(&cv->waiters_count_lock);
@@ -1634,13 +1674,13 @@ static INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) 
 
 		BOOL st = ResetEvent(cv->events[1]);
 		JL_ASSERT( st != FALSE );
-		JL_UNUSED(st);
+		JL_USE(st);
 	}
 	JLMutexAcquire(external_mutex);
 	return JLOK;
 }
 
-static ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
+ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
 
 	JL_ASSERT( JLCondOk(cv) );
 //	EnterCriticalSection(&cv->waiters_count_lock);
@@ -1650,11 +1690,11 @@ static ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
 
 		BOOL st = SetEvent(cv->events[1]);
 		JL_ASSERT( st != FALSE );
-		JL_UNUSED(st);
+		JL_USE(st);
 	}
 }
 
-static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
+ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 	JL_ASSERT( JLCondOk(cv) );
 //	EnterCriticalSection(&cv->waiters_count_lock);
@@ -1664,7 +1704,7 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 		BOOL st = SetEvent(cv->events[0]);
 		JL_ASSERT( st != FALSE );
-		JL_UNUSED(st);
+		JL_USE(st);
 	}
 }
 
@@ -1717,7 +1757,7 @@ ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 	JL_ASSERT( JLCondOk(*cv) );
 	BOOL st = CloseHandle((*cv)->sema_);
 	JL_ASSERT( st );
-	JL_UNUSED( st );
+	JL_USE( st );
 	DeleteCriticalSection(&(*cv)->waiters_count_lock_);
 //	DeleteCriticalSection(&(*cv)->global_lock);
 	free(*cv);
@@ -1822,12 +1862,12 @@ typedef struct __JLCondHandler {
 	pthread_cond_t cond;
 } *JLCondHandler;
 
-static ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
+ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
 
 	return cv != (JLCondHandler)0;
 }
 
-static ALWAYS_INLINE JLCondHandler JLCondCreate() {
+ALWAYS_INLINE JLCondHandler JLCondCreate() {
 
 	JLCondHandler cv = (JLCondHandler)malloc(sizeof(*cv));
 //	cv->cond = PTHREAD_COND_INITIALIZER;
@@ -1835,7 +1875,7 @@ static ALWAYS_INLINE JLCondHandler JLCondCreate() {
 	return cv;
 }
 
-static ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
+ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 
 	JL_ASSERT( cv != NULL && JLCondOk(*cv) );
 	pthread_cond_destroy(&(*cv)->cond);
@@ -1843,20 +1883,20 @@ static ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 	*cv = NULL;
 }
 
-static ALWAYS_INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
+ALWAYS_INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
 
 	JL_ASSERT( JLCondOk(cv) );
 	pthread_cond_wait(&cv->cond, &external_mutex->mx); // doc. shall not return an error code of [EINTR].
 	return JLOK;
 }
 
-static ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
+ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
 
 	JL_ASSERT( JLCondOk(cv) );
 	pthread_cond_broadcast(&cv->cond);
 }
 
-static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
+ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 	JL_ASSERT( JLCondOk(cv) );
 	pthread_cond_signal(&cv->cond);
@@ -1883,12 +1923,12 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		bool autoReset;
 	} *JLEventHandler;
 
-	static ALWAYS_INLINE bool JLEventOk( JLEventHandler ev ) {
+	ALWAYS_INLINE bool JLEventOk( JLEventHandler ev ) {
 
 		return ev != (JLEventHandler)0;
 	}
 
-	static ALWAYS_INLINE JLEventHandler JLEventCreate( bool autoReset ) {
+	ALWAYS_INLINE JLEventHandler JLEventCreate( bool autoReset ) {
 
 		JLEventHandler ev = (JLEventHandler)malloc(sizeof(*ev));
 		if ( ev == NULL )
@@ -1908,7 +1948,7 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		return ev;
 	}
 
-	static ALWAYS_INLINE void JLEventFree( JLEventHandler *ev ) {
+	ALWAYS_INLINE void JLEventFree( JLEventHandler *ev ) {
 
 		JL_ASSERT( ev != NULL && JLEventOk(*ev) );
 	#if defined(XP_WIN)
@@ -1923,10 +1963,10 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#endif
 		free(*ev);
 		*ev = NULL;
-		JL_UNUSED(st);
+		JL_USE(st);
 	}
 
-	static INLINE void JLEventTrigger( JLEventHandler ev ) {
+	INLINE void JLEventTrigger( JLEventHandler ev ) {
 
 		JL_ASSERT( JLEventOk(ev) );
 	#if defined(XP_WIN)
@@ -1936,7 +1976,7 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 			BOOL st = SetEvent(ev->hEvent);
 			JL_ASSERT( st != FALSE );
-			JL_UNUSED(st);
+			JL_USE(st);
 		}
 		LeaveCriticalSection(&ev->cs);
 
@@ -1950,7 +1990,7 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#endif
 	}
 
-	static ALWAYS_INLINE void JLEventReset( JLEventHandler ev ) {
+	ALWAYS_INLINE void JLEventReset( JLEventHandler ev ) {
 
 		JL_ASSERT( JLEventOk(ev) );
 	#if defined(XP_WIN)
@@ -1958,7 +1998,7 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		EnterCriticalSection(&ev->cs);
 		BOOL st = ResetEvent(ev->hEvent);
 		JL_ASSERT( st != FALSE );
-		JL_UNUSED(st);
+		JL_USE(st);
 		LeaveCriticalSection(&ev->cs);
 
 	#elif defined(XP_UNIX)
@@ -1969,7 +2009,7 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	}
 
 	// msTimeout = JLINFINITE : no timeout
-	static INLINE int JLEventWait( JLEventHandler ev, int msTimeout ) {
+	INLINE int JLEventWait( JLEventHandler ev, int msTimeout ) {
 
 		JL_ASSERT( JLEventOk(ev) );
 	#if defined(XP_WIN)
@@ -1987,7 +2027,7 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 			BOOL st = ResetEvent(ev->hEvent);
 			JL_ASSERT( st == TRUE );
-			JL_UNUSED(st);
+			JL_USE(st);
 		}
 		LeaveCriticalSection(&ev->cs);
 		if ( status == WAIT_TIMEOUT )
@@ -2028,7 +2068,7 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			if ( st == -1 && errno == ETIMEDOUT )
 				return JLTIMEOUT;
 			JL_ASSERT( st == 0 );
-			JL_UNUSED(st);
+			JL_USE(st);
 			return JLOK;
 		}
 		return JLERROR;
@@ -2063,13 +2103,13 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#endif
 
 
-	static ALWAYS_INLINE bool JLThreadOk( JLThreadHandler thread ) {
+	ALWAYS_INLINE bool JLThreadOk( JLThreadHandler thread ) {
 
 		return thread != (JLThreadHandler)0;
 	}
 
 
-	static ALWAYS_INLINE JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv ) {
+	ALWAYS_INLINE JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv ) {
 
 	#if defined(XP_WIN)
 		return CreateThread(NULL, 0, threadRoutine, pv, 0, NULL); // (TBD) need THREAD_TERMINATE ?
@@ -2091,7 +2131,7 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	}
 
 
-	static ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) {  // (TBD) how to manage errors ?
+	ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) {  // (TBD) how to manage errors ?
 
 		JL_ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
@@ -2106,19 +2146,19 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	}
 
 
-	static ALWAYS_INLINE void JLThreadFree( JLThreadHandler *pThread ) {
+	ALWAYS_INLINE void JLThreadFree( JLThreadHandler *pThread ) {
 
 		JL_ASSERT( pThread != NULL && JLThreadOk(*pThread) );
 	#if defined(XP_WIN)
 		BOOL st = CloseHandle(*pThread);
 		JL_ASSERT( st != FALSE );
-		JL_UNUSED(st);
+		JL_USE(st);
 	#elif defined(XP_UNIX)
 		if ( JLThreadIsActive( *pThread ) ) {
 
 			int st = pthread_detach(**pThread);
 			JL_ASSERT( st == 0 );
-			JL_UNUSED(st);
+			JL_USE(st);
 		}
 		free(*pThread);
 	#endif
@@ -2126,7 +2166,7 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	}
 
 
-	static ALWAYS_INLINE void JLThreadExit( unsigned int exitValue ) {
+	ALWAYS_INLINE void JLThreadExit( unsigned int exitValue ) {
 
 	#if defined(XP_WIN)
 		ExitThread(exitValue);
@@ -2136,7 +2176,7 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	}
 
 
-	static ALWAYS_INLINE void JLThreadCancel( JLThreadHandler thread ) {
+	ALWAYS_INLINE void JLThreadCancel( JLThreadHandler thread ) {
 
 		JL_ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
@@ -2146,11 +2186,11 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		int st = pthread_cancel(*thread);
 		JL_ASSERT( st == 0 );
 	#endif
-		JL_UNUSED(st);
+		JL_USE(st);
 	}
 
 
-	static ALWAYS_INLINE void JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
+	ALWAYS_INLINE void JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
 
 		JL_ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
@@ -2168,11 +2208,11 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		st = pthread_setschedparam(*thread, policy, &param);
 		JL_ASSERT( st == 0 );
 	#endif
-		JL_UNUSED(st);
+		JL_USE(st);
 	}
 
 
-	static ALWAYS_INLINE void JLThreadWait( JLThreadHandler thread, unsigned int *exitValue ) {
+	ALWAYS_INLINE void JLThreadWait( JLThreadHandler thread, unsigned int *exitValue ) {
 
 		JL_ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
@@ -2184,7 +2224,7 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		int st = pthread_join(*thread, (void**)exitValue); // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED. pthread_join shall not return an error code of [EINTR].
 		JL_ASSERT( st == 0 );
 	#endif
-		JL_UNUSED(st);
+		JL_USE(st);
 	}
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2199,7 +2239,7 @@ static ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 #define JLTLSInvalidKey 0
 
-static ALWAYS_INLINE JLTLSKey JLTLSAllocKey() {
+ALWAYS_INLINE JLTLSKey JLTLSAllocKey() {
 	JLTLSKey key;
 #if defined(XP_WIN)
 	key = TlsAlloc();
@@ -2207,14 +2247,14 @@ static ALWAYS_INLINE JLTLSKey JLTLSAllocKey() {
 	key++;
 #elif defined(XP_UNIX)
 	int st = pthread_key_create(&key, NULL);
-	JL_UNUSED( st );
+	JL_USE( st );
 	JL_ASSERT( st == 0 );
 #endif
 	return key;
 }
 
 
-static ALWAYS_INLINE void JLTLSFreeKey( JLTLSKey key ) {
+ALWAYS_INLINE void JLTLSFreeKey( JLTLSKey key ) {
 #if defined(XP_WIN)
 	JL_ASSERT( key != 0 );
 	key--;
@@ -2225,11 +2265,11 @@ static ALWAYS_INLINE void JLTLSFreeKey( JLTLSKey key ) {
 	int st = pthread_key_delete(key);
 	JL_ASSERT( st == 0 );
 #endif
-	JL_UNUSED(st);
+	JL_USE(st);
 }
 
 
-static ALWAYS_INLINE void JLTLSSet( JLTLSKey key, void *value ) {
+ALWAYS_INLINE void JLTLSSet( JLTLSKey key, void *value ) {
 #if defined(XP_WIN)
 	JL_ASSERT( key != 0 );
 	key--;
@@ -2240,11 +2280,11 @@ static ALWAYS_INLINE void JLTLSSet( JLTLSKey key, void *value ) {
 	int st = pthread_setspecific(key, value);
 	JL_ASSERT( st == 0 );
 #endif
-	JL_UNUSED(st);
+	JL_USE(st);
 }
 
 
-static ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
+ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 #if defined(XP_WIN)
 	JL_ASSERT( key != 0 );
 	key--;
@@ -2269,17 +2309,17 @@ static ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	typedef void* JLLibraryHandler;
 #endif
 
-	static ALWAYS_INLINE bool JLDynamicLibraryOk( JLLibraryHandler libraryHandler ) {
+	ALWAYS_INLINE bool JLDynamicLibraryOk( JLLibraryHandler libraryHandler ) {
 
 		return libraryHandler != (JLLibraryHandler)0;
 	}
 
-	static ALWAYS_INLINE uintptr_t JLDynamicLibraryId( JLLibraryHandler libraryHandler ) {
+	ALWAYS_INLINE uintptr_t JLDynamicLibraryId( JLLibraryHandler libraryHandler ) {
 
 		return (uint32_t)( ((uintptr_t)libraryHandler >> ALIGNOF(void*)) & 0xffffffff ); // shift useless and keep 32bits.
 	}
 
-	static ALWAYS_INLINE JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
+	ALWAYS_INLINE JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
 
 	#if defined(XP_WIN)
 		// GetErrorMode() only exists on Vista and higher,
@@ -2297,7 +2337,7 @@ static ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	#endif
 	}
 
-	static ALWAYS_INLINE void JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
+	ALWAYS_INLINE void JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
 
 	#if defined(XP_WIN)
 		BOOL st = FreeLibrary(*libraryHandler);
@@ -2308,10 +2348,10 @@ static ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		JL_ASSERT( st == 0 );
 	#endif
 		*libraryHandler = (JLLibraryHandler)0;
-		JL_UNUSED(st);
+		JL_USE(st);
 	}
 
-	static INLINE void JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
+	INLINE void JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
 
 	#if defined(XP_WIN)
 		DWORD errorCode = ::GetLastError();
@@ -2336,7 +2376,7 @@ static ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	#endif
 	}
 
-	static ALWAYS_INLINE void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
+	ALWAYS_INLINE void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
 
 	#if defined(XP_WIN)
 		return (void*)GetProcAddress(libraryHandler, symbolName);

@@ -23,7 +23,7 @@
 #include "jsproxy.h"
 
 
-static inline jsdouble
+ALWAYS_INLINE jsdouble
 js__DoubleToInteger(jsdouble d) // from jsnum.h
 {
     if (d == 0)
@@ -69,7 +69,7 @@ struct ManualCmp { // from jsstr.cpp
 
 
 template <class InnerMatch> // from jsstr.cpp
-static ssize_t
+ssize_t
 UnrolledMatch(const char *text, size_t textlen, const char *pat, size_t patlen)
 {
     JL_ASSERT(patlen > 0 && textlen > 0);
@@ -115,7 +115,7 @@ UnrolledMatch(const char *text, size_t textlen, const char *pat, size_t patlen)
 }
 
 
-static ALWAYS_INLINE ssize_t
+ALWAYS_INLINE ssize_t
 Match(const char *text, size_t textlen, const char *pat, size_t patlen) {
 
 	return 
@@ -140,14 +140,14 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( Blob )
 
 // invalid blob: see Blob::Free()
-static ALWAYS_INLINE bool
+ALWAYS_INLINE bool
 IsBlobValid( JSContext *cx, JSObject *blobObject ) {
 
 	return JL_HasPrivate(cx, blobObject) && JL_GetPrivate(cx, blobObject) != NULL;
 }
 
 
-static ALWAYS_INLINE JSBool
+ALWAYS_INLINE JSBool
 BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {
 
 	jsval lengthVal;
@@ -155,7 +155,7 @@ BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {
 }
 
 
-static ALWAYS_INLINE JSBool
+ALWAYS_INLINE JSBool
 BlobBuffer( JSContext *cx, const JSObject *blobObject, const char **buffer ) {
 
 	*buffer = (char*)JL_GetPrivate(cx, blobObject);
@@ -1026,7 +1026,7 @@ not_eq:
 
 
 
-static JSBool next_for(JSContext *cx, uintN argc, jsval *vp) {
+JSBool next_for(JSContext *cx, uintN argc, jsval *vp) {
 
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	jsval tmp;
@@ -1052,7 +1052,7 @@ static JSBool next_for(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 
-static JSBool next_foreach(JSContext *cx, uintN argc, jsval *vp) {
+JSBool next_foreach(JSContext *cx, uintN argc, jsval *vp) {
 
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	jsval tmp;
@@ -1303,7 +1303,10 @@ DEFINE_FUNCTION( _unserialize ) {
 		dBuffer = JS_malloc(cx, buf.Length() +1);
 		JL_CHK( dBuffer );
 		memcpy(dBuffer, buf.Data(), buf.Length());
-		JL_NullTerminate(dBuffer, buf.Length());
+		
+		//JL_NullTerminate(dBuffer, buf.Length());
+		((char*)dBuffer)[buf.Length()] = '\0';
+
 
 		JL_SetPrivate(cx, obj, dBuffer);
 

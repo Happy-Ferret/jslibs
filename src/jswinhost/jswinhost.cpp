@@ -82,7 +82,7 @@ int consoleStdErr( JSContext *cx, const char *data, int length ) {
 */
 
 /*
-static JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
@@ -92,7 +92,7 @@ static JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	return JS_TRUE;
 }
 
-static JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
 
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);

@@ -21,7 +21,7 @@
 
 //#include "vector.h"
 
-static JSBool ReadMatrix( JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
+JSBool BodyReadMatrix( JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -71,7 +71,7 @@ JSBool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj) { // 
 		ode::dBodySetData(bodyId, *obj);
 	}
 
-	JL_CHK( SetMatrix44GetInterface(cx, *obj, ReadMatrix) );
+	JL_CHK( SetMatrix44GetInterface(cx, *obj, BodyReadMatrix) );
 	JL_SetPrivate(cx, *obj, bodyId);
 	return JS_TRUE;
 	JL_BAD;
@@ -115,7 +115,7 @@ DEFINE_CONSTRUCTOR() {
 
 	ode::dBodyID bodyId = ode::dBodyCreate(worldId);
 	JL_S_ASSERT( bodyId != NULL, "unable to create the body." );
-	JL_CHK( SetMatrix44GetInterface(cx, obj, ReadMatrix) );
+	JL_CHK( SetMatrix44GetInterface(cx, obj, BodyReadMatrix) );
 	JL_SetPrivate(cx, obj, bodyId);
 	ode::dBodySetData(bodyId, obj);
 	return JS_TRUE;

@@ -1261,7 +1261,7 @@ struct SurfaceReadyProcessEvent {
 
 JL_STATIC_ASSERT( offsetof(SurfaceReadyProcessEvent, pe) == 0 );
 
-static void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
+void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
 
 	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
 
@@ -1272,7 +1272,7 @@ static void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
 	JLMutexRelease(surfaceReadyLock);
 }
 
-static bool SurfaceReadyCancelWait( volatile ProcessEvent *pe ) {
+bool SurfaceReadyCancelWait( volatile ProcessEvent *pe ) {
 
 	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
 
@@ -1284,7 +1284,7 @@ static bool SurfaceReadyCancelWait( volatile ProcessEvent *pe ) {
 }
 
 
-static JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 //	JLMutexAcquire(surfaceReadyLock);
 //	surfaceIdle = false;
@@ -1355,7 +1355,7 @@ struct UserProcessEvent {
 
 JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-static void SDLStartWait( volatile ProcessEvent *pe ) {
+void SDLStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 	int status = 0;
@@ -1367,7 +1367,7 @@ static void SDLStartWait( volatile ProcessEvent *pe ) {
 	// JL_ASSERT( upe->cancel || status == 1 ); // (TBD) understand this case
 }
 
-static bool SDLCancelWait( volatile ProcessEvent *pe ) {
+bool SDLCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -1379,7 +1379,7 @@ static bool SDLCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 

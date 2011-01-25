@@ -43,7 +43,7 @@ struct Blob : CppAllocators {
 */
 
 
-static ALWAYS_INLINE JSClass* JL_BlobJSClass( const JSContext *cx ) {
+ALWAYS_INLINE JSClass* JL_BlobJSClass( const JSContext *cx ) {
 
 	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	if (unlikely( clasp == NULL ))
@@ -52,7 +52,7 @@ static ALWAYS_INLINE JSClass* JL_BlobJSClass( const JSContext *cx ) {
 }
 
 
-static ALWAYS_INLINE bool JL_JsvalIsBlob( const JSContext *cx, const jsval &val ) {
+ALWAYS_INLINE bool JL_JsvalIsBlob( const JSContext *cx, const jsval &val ) {
 
 	return JL_IsClass(val, JL_BlobJSClass(cx) );
 }

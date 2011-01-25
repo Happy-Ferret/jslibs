@@ -87,7 +87,7 @@ BEGIN_STATIC
 **/
 
 /*
-static void
+void
 DumpScope(JSContext *cx, JSObject *obj)
 {
     uintN i;
@@ -676,7 +676,7 @@ DEFINE_FUNCTION( GetObjectPrivate ) {
 
 
 /*
-static JSScript *
+JSScript *
 ValueToScript(JSContext *cx, jsval v)
 {
     JSScript *script;
@@ -694,7 +694,7 @@ ValueToScript(JSContext *cx, jsval v)
     return script;
 }
 
-static JSBool
+JSBool
 GetTrapArgs(JSContext *cx, uintN argc, jsval *argv, JSScript **scriptp,
             int32 *ip)
 {
@@ -724,7 +724,7 @@ GetTrapArgs(JSContext *cx, uintN argc, jsval *argv, JSScript **scriptp,
     return JS_TRUE;
 }
 
-static JSTrapStatus
+JSTrapStatus
 TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval,
             void *closure)
 {

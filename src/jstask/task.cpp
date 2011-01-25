@@ -123,7 +123,7 @@ bad:
 }
 
 
-static JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
+JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 
 	jsval argv[3] = { JSVAL_NULL }; // argv[0] is rval and code
 
@@ -218,7 +218,7 @@ bad:
 }
 
 
-static int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
+int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
 
 	Buffer *eb = (Buffer*)privateData;
 	memcpy(BufferNewChunk(eb, length), buffer, length);
@@ -227,7 +227,7 @@ static int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t l
 }
 
 
-static JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
+JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 
 	Buffer errBuffer;
 	BufferInitialize(&errBuffer, bufferTypeRealloc, bufferGrowTypeDouble, NULL, NULL, NULL, NULL);
@@ -612,7 +612,7 @@ struct UserProcessEvent {
 
 JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-static void TaskStartWait( volatile ProcessEvent *pe ) {
+void TaskStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -621,7 +621,7 @@ static void TaskStartWait( volatile ProcessEvent *pe ) {
 	JLEventReset(upe->pv->responseEvent);
 }
 
-static bool TaskCancelWait( volatile ProcessEvent *pe ) {
+bool TaskCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -630,7 +630,7 @@ static bool TaskCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 

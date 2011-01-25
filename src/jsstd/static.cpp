@@ -1482,7 +1482,7 @@ END_STATIC
 // trash
 
 /*
-static jschar wstrstr(const jschar *src, const jschar *srcEnd, const jschar *sub, const jschar *subEnd) {
+jschar wstrstr(const jschar *src, const jschar *srcEnd, const jschar *sub, const jschar *subEnd) {
 
 	size_t subLen = subEnd - sub;
 	for (;;) {

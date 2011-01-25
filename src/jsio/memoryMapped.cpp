@@ -27,7 +27,7 @@ struct MemoryMappedPrivate {
 	void *addr;
 };
 
-static JSBool BufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
+JSBool MemoryMappedBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
 	*str = JLStr(((const char*)pv->addr) + pv->offset, pv->size, false);
@@ -112,7 +112,7 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowIoError(cx);
 	JL_SetPrivate(cx, obj, pv);
 
-	JL_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
+	JL_CHK( SetBufferGetInterface(cx, obj, MemoryMappedBufferGet) );
 
 	return JS_TRUE;
 	JL_BAD;

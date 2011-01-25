@@ -180,7 +180,7 @@ BOOL FindOutPositionOfIconDirectly(const HWND a_hWndOwner, const int a_iButtonID
 	return bIconFound;
 }
 
-static HBITMAP MenuItemBitmapFromIcon(HICON hIcon) {
+HBITMAP MenuItemBitmapFromIcon(HICON hIcon) {
 
 	HDC aHDC = GetDC(NULL);
 	HDC aCHDC = CreateCompatibleDC(aHDC);
@@ -265,7 +265,7 @@ BOOL FreeMenu( HMENU menu ) {
 }
 
 
-static LRESULT CALLBACK SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 //	char dbg[65535];  sprintf(dbg, "message:%x wParam:%x\n", message, wParam);  OutputDebugString(dbg);
 
@@ -617,7 +617,7 @@ struct UserProcessEvent {
 
 JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-static void SystrayStartWait( volatile ProcessEvent *pe ) {
+void SystrayStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -627,7 +627,7 @@ static void SystrayStartWait( volatile ProcessEvent *pe ) {
 
 }
 
-static bool SystrayCancelWait( volatile ProcessEvent *pe ) {
+bool SystrayCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -635,7 +635,7 @@ static bool SystrayCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 

@@ -760,7 +760,7 @@ struct UserProcessEvent {
 
 JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-static void DirectoryChangesStartWait( volatile ProcessEvent *pe ) {
+void DirectoryChangesStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 	
@@ -769,7 +769,7 @@ static void DirectoryChangesStartWait( volatile ProcessEvent *pe ) {
 	JL_ASSERT( status != WAIT_FAILED );
 }
 
-static bool DirectoryChangesCancelWait( volatile ProcessEvent *pe ) {
+bool DirectoryChangesCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -779,7 +779,7 @@ static bool DirectoryChangesCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 	
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 

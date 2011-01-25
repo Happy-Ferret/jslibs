@@ -54,7 +54,7 @@ JSBool Unlock( JSContext *cx, ClassPrivate *pv ) {
 }
 
 
-static JSBool BufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
+JSBool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -202,7 +202,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_CHKB( PR_PostSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
 	JL_SetPrivate(cx, obj, pv);
-	JL_CHK( SetBufferGetInterface(cx, obj, BufferGet) );
+	JL_CHK( SetBufferGetInterface(cx, obj, SharedMemoryBufferGet) );
 
 	return JS_TRUE;
 

@@ -29,7 +29,7 @@ DEFINE_FINALIZE() {
 }
 
 
-static JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
+JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 

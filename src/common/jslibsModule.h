@@ -42,6 +42,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id);
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx);
 EXTERN_C DLLEXPORT void ModuleFree();
 
-static JSBool InitJslibsModule( JSContext *cx );
+JSBool InitJslibsModule( JSContext *cx );
 
 #endif // _JSLIBSMODULE_H_

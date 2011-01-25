@@ -90,10 +90,10 @@ void AddExcludedFile( void **excludedFiles, char *filename ) {
 }
 
 
-static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakReason breakOrigin);
+JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakReason breakOrigin);
 
 
-static JSTrapStatus InterruptCounterHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+JSTrapStatus InterruptCounterHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
 	if ( --pv->interruptCounter != 0 )
@@ -102,7 +102,7 @@ static JSTrapStatus InterruptCounterHandler(JSContext *cx, JSScript *script, jsb
 }
 
 
-static JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, jsval closure) {
+JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, jsval closure) {
 
 	return BreakHandler(cx, JSVAL_TO_OBJECT(closure), JL_CurrentStackFrame(cx), FROM_BREAKPOINT);
 }
@@ -118,13 +118,13 @@ JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *
 }
 
 
-static JSTrapStatus ThrowHookHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+JSTrapStatus ThrowHookHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	return BreakHandler(cx, (JSObject*)closure, JL_CurrentStackFrame(cx), FROM_THROW);
 }
 
 
-static void* ExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool *ok, void *closure) {
+void* ExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool *ok, void *closure) {
 
 //	if ( JS_IsNativeFrame(cx, fp) )
 //		return NULL;
@@ -133,7 +133,7 @@ static void* ExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, 
 	return NULL; // hookData for the "after" stage.
 }
 
-static void* FirstExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool *ok, void *closure) {
+void* FirstExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool *ok, void *closure) {
 
 	BreakHandler(cx, (JSObject*)closure, fp, FROM_EXECUTE); // (TBD) manage return value !
 	JS_SetExecuteHook(JL_GetRuntime(cx), NULL, NULL);
@@ -142,13 +142,13 @@ static void* FirstExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool bef
 	return NULL;
 }
 
-static JSTrapStatus DebuggerKeyword(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+JSTrapStatus DebuggerKeyword(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	return BreakHandler(cx, (JSObject*)closure, JL_CurrentStackFrame(cx), FROM_DEBUGGER);
 }
 
 
-static JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
@@ -159,7 +159,7 @@ static JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval 
 }
 
 
-static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
@@ -171,7 +171,7 @@ static JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, js
 }
 
 
-static JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	// (TBD) manage return value with JS_GetFrameReturnValue()
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
@@ -182,7 +182,7 @@ static JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsv
 }
 
 
-static JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
+JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) <= pv->lineno )
@@ -195,7 +195,7 @@ static JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc,
 }
 
 
-static JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakReason breakOrigin) {
+JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakReason breakOrigin) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
