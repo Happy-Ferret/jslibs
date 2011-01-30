@@ -278,6 +278,8 @@ $TOC_MEMBER $INAME
 **/
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 DEFINE_FUNCTION( InternString ) {
+	
+	JL_USE(argc);
 
 	JSString *jsstr = JS_ValueToString(cx, vp[2]);
 	JL_CHK( jsstr );
@@ -625,6 +627,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsPrimitive ) {
 
+	JL_USE(cx);
+
 	*JL_RVAL = JSVAL_IS_PRIMITIVE(JL_ARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
@@ -637,6 +641,8 @@ $TOC_MEMBER $INAME
   Returns $TRUE if the value is a function.
 **/
 DEFINE_FUNCTION( IsFunction ) {
+
+	JL_USE(cx);
 
 	*JL_RVAL = VALUE_IS_FUNCTION(cx, JL_ARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
@@ -737,6 +743,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CollectGarbage ) {
 
+	JL_USE(argc);
+
 	size_t gcBytesDiff = cx->runtime->gcBytes;
 	JS_GC( cx );
 	gcBytesDiff = cx->runtime->gcBytes - gcBytesDiff;
@@ -751,6 +759,8 @@ $TOC_MEMBER $INAME
   This offers the JavaScript engine an opportunity to perform garbage collection if needed.
 **/
 DEFINE_FUNCTION( MaybeCollectGarbage ) {
+
+	JL_USE(argc);
 
 	size_t gcBytesDiff = cx->runtime->gcBytes;
 	JS_MaybeGC( cx );
@@ -801,6 +811,8 @@ $TOC_MEMBER $INAME
   }}}
 **/
 DEFINE_FUNCTION( TimeCounter ) {
+
+	JL_USE(argc);
 
 	return JL_NativeToJsval(cx, AccurateTimeCounter(), JL_RVAL);
 }
@@ -1211,6 +1223,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Halt ) {
 
+	JL_USE(vp);
+	JL_USE(argc);
+
 	JL_REPORT_ERROR_NUM(cx, JLSMSG_PROGRAM_STOPPED);
 bad:	
 	return JS_FALSE;
@@ -1232,6 +1247,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( currentFilename ) {
 	
+	JL_USE(id);
+	JL_USE(obj);
+
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( fp == NULL ) {
 
@@ -1259,6 +1277,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( currentLineNumber ) {
 	
+	JL_USE(id);
+	JL_USE(obj);
+
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( fp == NULL ) {
 
@@ -1289,6 +1310,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( isConstructing ) {
 
+	JL_USE(id);
+	JL_USE(obj);
+
 	*vp = BOOLEAN_TO_JSVAL( JS_IsConstructing(cx, vp) );
 	return JS_TRUE;
 }
@@ -1316,6 +1340,9 @@ JSBool VetoingGCCallback(JSContext *cx, JSGCStatus status) {
 
 DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
 
+	JL_USE(id);
+	JL_USE(obj);
+
 	// <shaver>	you could install a vetoing callback!
 	// <crowder>	oh, true
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
@@ -1339,11 +1366,35 @@ DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
 
 DEFINE_PROPERTY_GETTER( disableGarbageCollection ) {
 
+	JL_USE(id);
+	JL_USE(obj);
+
 	JSGCCallback cb = JS_SetGCCallback(cx, NULL);
 	JS_SetGCCallback(cx, cb);
 	*vp = cb == VetoingGCCallback ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 }
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME
+**/
+DEFINE_PROPERTY( CPUID ) {
+
+	JL_USE(id);
+	JL_USE(obj);
+
+	if ( !JSVAL_IS_VOID(*vp) )
+		return JS_TRUE;
+
+	JLCpuInfo_t info;
+	JLCpuInfo(info);
+	return JL_NativeToJsval(cx, info, sizeof(info), vp);
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1469,6 +1520,7 @@ CONFIGURE_STATIC
 		PROPERTY_READ( isConstructing )
 		PROPERTY( disableGarbageCollection )
 //		PROPERTY( processPriority )
+		PROPERTY_READ( CPUID )
 #ifdef _DEBUG
 //		PROPERTY( testProp )
 #endif // _DEBUG

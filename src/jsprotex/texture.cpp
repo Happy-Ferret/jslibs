@@ -90,7 +90,7 @@ double PerlinNoise2(double x, double y, double z);
 #define PUNZNORM(p) ( (PUNNORM(p) + PTYPE(1) ) / PTYPE(2))
 
 
-inline JSBool TextureInit( JSContext *cx, TextureStruct *tex, unsigned int width, unsigned int height, unsigned int channels ) {
+ALWAYS_INLINE JSBool TextureInit( JSContext *cx, TextureStruct *tex, unsigned int width, unsigned int height, unsigned int channels ) {
 
 	tex->cbufferSize = width * height * channels * sizeof(PTYPE);
 	tex->cbuffer = (PTYPE*)JS_malloc(cx, tex->cbufferSize);
@@ -101,7 +101,7 @@ inline JSBool TextureInit( JSContext *cx, TextureStruct *tex, unsigned int width
 	return JS_TRUE;
 }
 
-inline JSBool TextureResizeBackBuffer( JSContext *cx, TextureStruct *tex, size_t newSize ) {
+ALWAYS_INLINE JSBool TextureResizeBackBuffer( JSContext *cx, TextureStruct *tex, size_t newSize ) {
 	
 	if ( tex->cbackBuffer != NULL && tex->cbackBufferSize == newSize )
 		return JS_TRUE;
@@ -113,12 +113,12 @@ inline JSBool TextureResizeBackBuffer( JSContext *cx, TextureStruct *tex, size_t
 	return JS_TRUE;
 }
 
-inline JSBool TextureSetupBackBuffer( JSContext *cx, TextureStruct *tex ) {
+ALWAYS_INLINE JSBool TextureSetupBackBuffer( JSContext *cx, TextureStruct *tex ) {
 
 	return TextureResizeBackBuffer(cx, tex, tex->cbufferSize);
 }
 
-inline void TextureSwapBuffers( TextureStruct *tex ) {
+ALWAYS_INLINE void TextureSwapBuffers( TextureStruct *tex ) {
 
 	PTYPE *tmpBuffer = tex->cbuffer;
 	tex->cbuffer = tex->cbackBuffer;
@@ -129,7 +129,7 @@ inline void TextureSwapBuffers( TextureStruct *tex ) {
 	tex->cbackBufferSize = tmpBufferSize;
 }
 
-inline void TextureFreeBuffers( JSContext* cx, TextureStruct *tex ) {
+ALWAYS_INLINE void TextureFreeBuffers( JSContext* cx, TextureStruct *tex ) {
 
 	if ( tex->cbackBuffer != NULL ) {
 
@@ -144,28 +144,28 @@ inline void TextureFreeBuffers( JSContext* cx, TextureStruct *tex ) {
 	}
 }
 
-inline bool TextureSameFormat( TextureStruct *t1, TextureStruct *t2 ) {
+ALWAYS_INLINE bool TextureSameFormat( TextureStruct *t1, TextureStruct *t2 ) {
 
 	return t1->width == t2->width && t1->height == t2->height && t1->channels == t2->channels;
 }
 
-inline bool IsTexture( JSContext *cx, jsval val ) {
+ALWAYS_INLINE bool IsTexture( JSContext *cx, jsval val ) {
 
 	return JL_IsClass(val, JL_CLASS(Texture));
 }
 
 
-JSBool ValueToTexture( JSContext* cx, jsval value, TextureStruct **tex ) {
+ALWAYS_INLINE JSBool ValueToTexture( JSContext* cx, jsval value, TextureStruct **tex ) {
 
 	JL_S_ASSERT( IsTexture(cx, value), "Invalid texture." );
-	*tex = (TextureStruct *)JL_GetPrivate(cx, JSVAL_TO_OBJECT( value ));
+	*tex = (TextureStruct*)JL_GetPrivate(cx, JSVAL_TO_OBJECT( value ));
 	JL_S_ASSERT_RESOURCE(tex);
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-inline float Length2D( float a, float b ) {
+ALWAYS_INLINE float Length2D( float a, float b ) {
 
 	return sqrtf(a*a + b*b);
 }
@@ -227,7 +227,7 @@ ALWAYS_INLINE PTYPE* PosByMode( const TextureStruct *tex, int x, int y, BorderMo
 }
 
 
-JSBool JL_JsvalToBorderMode( JSContext* cx, jsval val, BorderMode *mode ) {
+ALWAYS_INLINE JSBool JL_JsvalToBorderMode( JSContext* cx, jsval val, BorderMode *mode ) {
 	
 	if ( val != JSVAL_VOID )
 		return JL_JsvalToNative(cx, val, (int*)mode);
@@ -236,7 +236,7 @@ JSBool JL_JsvalToBorderMode( JSContext* cx, jsval val, BorderMode *mode ) {
 }
 
 // levels: number | array | string ('#8800AAFF')
-inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, PTYPE *level ) {
+JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, PTYPE *level ) {
 	
 	unsigned int i;
 
@@ -294,7 +294,7 @@ inline JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLe
 
 
 // curve: number | function | array | blob
-inline JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) { // length is the curve resolution
+JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) { // length is the curve resolution
 	
 	size_t i;
 

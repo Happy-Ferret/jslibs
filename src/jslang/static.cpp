@@ -365,8 +365,15 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 //#include "../jslang/blobPub.h"
 DEFINE_FUNCTION( jslang_test ) {
 
+	float nvec[10];
+
+	jsuint realLen;
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), nvec, COUNTOF(nvec), &realLen ) );
+
+
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 #endif // DEBUG
 

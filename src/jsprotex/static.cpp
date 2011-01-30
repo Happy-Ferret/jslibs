@@ -91,7 +91,7 @@ DEFINE_FUNCTION( PerlinNoise ) {
 
 	JL_S_ASSERT_ARG_RANGE(4,6);
 	int n;
-	double a, b, x, y, z;
+	float a, b, x, y, z;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &a) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &b) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &n) );

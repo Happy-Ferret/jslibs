@@ -3,9 +3,10 @@ if ( 1 ) {
 	LoadModule('jsstd');
 	LoadModule('jsio');
 	LoadModule('jsdebug');
-
-	var source = 'aaa$(xxx)';
-	Print( Expand(source, { xxx:1 }) );
+	LoadModule('jscrypt');
+	
+	var md5 = new Hash('md5');
+	Print( HexEncode(md5(CPUID)), '\n' );
 
 Halt();
 

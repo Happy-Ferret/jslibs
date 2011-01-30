@@ -116,12 +116,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				UseUnicodeResponseFiles="false"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="_WINDOWS;WIN32;NDEBUG;_CONSOLE"
 				UsePrecompiledHeader="2"
-				WarningLevel="4"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

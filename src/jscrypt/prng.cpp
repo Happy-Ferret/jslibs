@@ -212,7 +212,7 @@ DEFINE_PROPERTY( stateGetter ) {
 	unsigned long stateLength;
 	stateLength = size;
 	int err;
-	err = pv->prng.pexport((unsigned char *)stateData, &stateLength, &pv->state);
+	err = pv->prng.pexport((unsigned char*)stateData, &stateLength, &pv->state);
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	JL_S_ASSERT( stateLength == size, "Invalid export size." );
@@ -301,9 +301,6 @@ CONFIGURE_CLASS
 		PROPERTY_READ( name )
 		PROPERTY( state )
 	END_PROPERTY_SPEC
-
-	BEGIN_STATIC_FUNCTION_SPEC
-	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( list )

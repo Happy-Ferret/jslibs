@@ -129,6 +129,20 @@ JL_SetPrivate( const JSContext *cx, JSObject *obj, void *data ) {
 	obj->setPrivate(data);
 }
 
+/*
+ALWAYS_INLINE JSBool
+JL_GetElement(JSContext *cx, JSObject *obj, jsint index, jsval *vp) {
+
+    return JS_GetPropertyById(cx, obj, INT_TO_JSID(index), vp);
+}
+
+ALWAYS_INLINE JSBool
+JL_SetElement(JSContext *cx, JSObject *obj, jsint index, jsval *vp) {
+    
+	return JS_SetPropertyById(cx, obj, INT_TO_JSID(index), vp);
+}
+*/
+
 ALWAYS_INLINE JSBool
 JL_GetReservedSlot( JSContext *cx, JSObject *obj, uint32 slot, jsval *vp ) {
 
@@ -192,6 +206,7 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 }
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // Safe Mode tools
 
@@ -248,11 +263,18 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 
 // define obj variable for native functions
 #define JL_DEFINE_FUNCTION_OBJ \
-	JSObject *obj = JS_THIS_OBJECT(cx, vp); \
-	JL_ASSERT( obj );
+	JSObject *obj; \
+	{ \
+		obj = JS_THIS_OBJECT(cx, vp); \
+		JL_ASSERT( obj ); \
+	}
 
 #define JL_DEFINE_CALL_FUNCTION_OBJ \
-	JSObject *obj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp))
+	JSObject *obj; \
+	{ \
+		obj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)); \
+		JL_ASSERT( obj ); \
+	}
 
 // initialise 'this' object (obj) for constructors
 // see. JS_NewObjectForConstructor(cx, vp) if JL_THIS_CLASS or JL_THIS_PROTOTYPE cannot be used
@@ -349,7 +371,7 @@ ALWAYS_INLINE void
 JL_SetHostPrivate( const JSContext *cx, HostPrivate *hostPrivate ) {
 
 //	JS_SetRuntimePrivate(JL_GetRuntime(cx), hostPrivate);
-	cx->runtime->data = (void*)hostPrivate;
+	cx->runtime->data = static_cast<void*>(hostPrivate);
 }
 
 
@@ -360,6 +382,7 @@ JL_SetHostPrivate( const JSContext *cx, HostPrivate *hostPrivate ) {
 ALWAYS_INLINE uint8_t
 JL_ModulePrivateHash( const uint32_t moduleId ) {
 
+	JL_ASSERT( moduleId != 0 );
 //	return ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3] << 1;
 	uint32_t a = moduleId ^ moduleId >> 16;
 	return (a ^ a >> 8) & 0xFF;
@@ -368,6 +391,7 @@ JL_ModulePrivateHash( const uint32_t moduleId ) {
 ALWAYS_INLINE bool
 JL_SetModulePrivate( const JSContext *cx, const uint32_t moduleId, void *modulePrivate ) {
 
+	JL_ASSERT( modulePrivate );
 	JL_ASSERT( moduleId != 0 );
 	uint8_t id = JL_ModulePrivateHash(moduleId);
 	HostPrivate::ModulePrivate *mpv = JL_GetHostPrivate(cx)->modulePrivate;
@@ -404,7 +428,9 @@ JL_GetModulePrivate( const JSContext *cx, uint32_t moduleId ) {
 ALWAYS_INLINE NOALIAS uint32_t
 JL_ClassNameToClassProtoCacheSlot( const char *n ) {
 
-	JL_ASSERT( n != NULL && strlen(n) <= 24 );
+	JL_ASSERT( n != NULL );
+	JL_ASSERT( strlen(n) <= 24 );
+
 	register uint32_t h = 0;
 	if ( n[ 0] ) { h ^= n[ 0]<<0;
 	if ( n[ 1] ) { h ^= n[ 1]<<4;
@@ -436,7 +462,7 @@ JL_ClassNameToClassProtoCacheSlot( const char *n ) {
 
 
 INLINE bool FASTCALL
-JL_CacheClassProto( HostPrivate *hpv, const char *className, JSClass * RESTRICT clasp, JSObject * RESTRICT proto ) {
+JL_CacheClassProto( HostPrivate * RESTRICT hpv, const char * RESTRICT className, JSClass * RESTRICT clasp, JSObject * RESTRICT proto ) {
 
 	size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
 	size_t first = slotIndex;
@@ -489,6 +515,7 @@ ALWAYS_INLINE JSObject*
 JL_NewJslibsObject( JSContext *cx, const char *className ) {
 
 	ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
+	JL_ASSERT( cpc );
 	return JS_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
 }
 
@@ -556,8 +583,9 @@ enum JLErrNum {
 
 // less costly than a macro or an ALWAYS_INLINE
 INLINE NEVER_INLINE void FASTCALL
-JL_ReportErrorNum( JSContext *cx, uintN num, const char *arg1 = NULL, const char *arg2 = NULL ) {
+JL_ReportErrorNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg1 = NULL, const char * RESTRICT arg2 = NULL ) {
 
+	JL_ASSERT_IF( arg1 != NULL && arg2 != NULL, arg1 != arg2 );
 	HostPrivate *hpv;
 	hpv = JL_GetHostPrivate(cx);
 	if ( hpv != NULL && hpv->errorCallback != NULL )
@@ -606,6 +634,7 @@ JL_ReportErrorNum( JSContext *cx, uintN num, const char *arg1 = NULL, const char
 		if (unlikely( !(status) )) { \
 			goto bad; \
 		} \
+		ASSUME(status); \
 	JL_MACRO_END
 
 
@@ -618,6 +647,7 @@ JL_ReportErrorNum( JSContext *cx, uintN num, const char *arg1 = NULL, const char
 				JS_ReportError(cx, (errorMessage IFDEBUG(" (@" JL_CODE_LOCATION ")")), ##__VA_ARGS__); \
 			goto bad; \
 		} \
+		ASSUME(status); \
 	JL_MACRO_END
 
 
@@ -628,6 +658,7 @@ JL_ReportErrorNum( JSContext *cx, uintN num, const char *arg1 = NULL, const char
 	/*	IFDEBUG( fprintf(stderr, "DEBUG: JL_CHKB(,%s) failed" IFDEBUG(" (@" JL_CODE_LOCATION ")") "\n", #errorLabel ) ); */ \
 			goto errorLabel; \
 		} \
+		ASSUME(status); \
 	JL_MACRO_END
 
 
@@ -639,6 +670,7 @@ JL_ReportErrorNum( JSContext *cx, uintN num, const char *arg1 = NULL, const char
 				JS_ReportError(cx, (errorMessage IFDEBUG(" (@" JL_CODE_LOCATION ")")), ##__VA_ARGS__); \
 			goto errorLabel; \
 		} \
+		ASSUME(status); \
 	JL_MACRO_END
 
 
@@ -652,6 +684,7 @@ JL_ReportErrorNum( JSContext *cx, uintN num, const char *arg1 = NULL, const char
 				goto bad; \
 			} \
 		JL_SAFE_END \
+		ASSUME(condition); \
 	JL_MACRO_END
 
 
@@ -661,6 +694,7 @@ JL_ReportErrorNum( JSContext *cx, uintN num, const char *arg1 = NULL, const char
 			if (unlikely( !(condition) )) \
 				JL_REPORT_ERROR_NUM( cx, (errorNum),  ##__VA_ARGS__ ); \
 		JL_SAFE_END \
+		ASSUME(condition); \
 	JL_MACRO_END
 
 
@@ -672,6 +706,7 @@ JL_ReportErrorNum( JSContext *cx, uintN num, const char *arg1 = NULL, const char
 				goto bad; \
 			} \
 		JL_SAFE_END \
+		ASSUME(pointer); \
 	JL_MACRO_END
 
 
@@ -737,6 +772,10 @@ JL_ReportErrorNum( JSContext *cx, uintN num, const char *arg1 = NULL, const char
 
 #define JL_S_ASSERT_ARRAY(value) \
 	JL_S_ASSERT_ERROR_NUM( JL_IsArray(cx, (value)), JLSMSG_EXPECT_TYPE, "array" );
+
+
+#define JL_S_ASSERT_VECTOR(value) \
+	JL_S_ASSERT_ERROR_NUM( JL_IsVector(cx, (value)), JLSMSG_EXPECT_TYPE, "vector" );
 
 
 #define JL_S_ASSERT_FUNCTION(value) \
@@ -858,6 +897,20 @@ JL_IsArray( JSContext *cx, const jsval &val ) {
 
 
 ALWAYS_INLINE bool
+JL_IsVector( JSContext *cx, JSObject *obj ) {
+
+	return JS_IsArrayObject(cx, obj) || js_IsTypedArray(obj); // Object::isArray() is not public
+}
+
+
+ALWAYS_INLINE bool
+JL_IsVector( JSContext *cx, const jsval &val ) {
+
+	return !JSVAL_IS_PRIMITIVE(val) && ( JS_IsArrayObject(cx, JSVAL_TO_OBJECT(val)) || js_IsTypedArray(JSVAL_TO_OBJECT(val)) ); // Object::isArray() is not public
+}
+
+
+ALWAYS_INLINE bool
 JL_IsScript( const JSContext *cx, const JSObject *obj ) {
 
 	JL_USE(cx);
@@ -902,7 +955,7 @@ JL_IsStringObject( const JSContext *cx, const JSObject *obj ) {
 
 
 INLINE bool FASTCALL
-JL_IsDataObject( JSContext *cx, JSObject *obj ) {
+JL_IsDataObject( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
 	return BufferGetInterface(cx, obj) != NULL || JL_IsArray(cx, obj) || (js_IsTypedArray(obj) && js::TypedArray::fromJSObject(obj)->valid()) || js_IsArrayBuffer(obj) || JL_IsStringObject(cx, obj);
 }
@@ -968,7 +1021,7 @@ class JLStr {
 				_inner->str = NULL;
 				_inner->jsstr[length] = 0;
 
-				char *src = (char*)_inner->jsstr + length;
+				const char *src = (char*)_inner->jsstr + length;
 				tmp = _inner->jsstr + length;
 				for ( size_t i = length; i > 0; --i )
 					*--tmp = (unsigned char)*--src;
@@ -978,7 +1031,7 @@ class JLStr {
 				JL_ASSERT( tmp );
 				tmp[length] = 0;
 				_inner->jsstr = tmp;
-				char *src = _inner->str;
+				const char *src = _inner->str;
 				for ( size_t i = length; i > 0; --i )
 					*(tmp++) = (unsigned char)*(src++);
 			}
@@ -1013,7 +1066,7 @@ class JLStr {
 			JL_ASSERT( _inner->jsstr );
 			if ( JL_HASFLAGS(_inner->jsstrFlags, OWN) ) {
 
-				jschar *src = _inner->jsstr + length;
+				const jschar *src = _inner->jsstr + length;
 				tmp = (char*)_inner->jsstr + length;
 				for ( size_t i = length; i > 0; --i )
 					*--tmp = (char)*--src;
@@ -1028,7 +1081,7 @@ class JLStr {
 				JL_ASSERT( tmp );
 				tmp[length] = 0;
 				_inner->str = tmp;
-				jschar *src = _inner->jsstr;
+				const jschar *src = _inner->jsstr;
 				for ( size_t i = length; i > 0; --i )
 					*(tmp++) = (char)*(src++);
 			}
@@ -1036,14 +1089,14 @@ class JLStr {
 		_inner->strFlags = OWN|NT;
 	}
 
-	ALWAYS_INLINE void NewInner( const jschar *jsstr, const char *str, bool nullTerminated, bool hasOwnership, size_t length = SIZE_MAX ) {
+	ALWAYS_INLINE void NewInner( const jschar * RESTRICT jsstr, const char * RESTRICT str, bool nullTerminated, bool hasOwnership, size_t length = SIZE_MAX ) {
 
-		JL_ASSERT( length != SIZE_MAX || nullTerminated );
+		JL_ASSERT_IF( length == SIZE_MAX, nullTerminated );
+		JL_ASSERT( jsstr == NULL || str == NULL );
 
-		// _inner = static_cast<Inner*>(jl_malloc(sizeof(Inner)));
 		_inner = mem.Alloc();
-
 		JL_ASSERT( _inner );
+
 		_inner->count = 1;
 		_inner->len = length;
 		_inner->jsstr = const_cast<jschar*>(jsstr);
@@ -1060,7 +1113,7 @@ class JLStr {
 
 public:
 
-	~JLStr() {
+	ALWAYS_INLINE ~JLStr() {
 
 		if ( !_inner || --_inner->count )
 			return;
@@ -1068,7 +1121,6 @@ public:
 			jl_free(_inner->jsstr);
 		if ( JL_HASFLAGS(_inner->strFlags, OWN) )
 			jl_free(_inner->str);
-		// jl_free(_inner);
 		mem.Free(_inner);
 	}
 	
@@ -1090,7 +1142,7 @@ public:
 		++_inner->count;
 	}
 
-	ALWAYS_INLINE JLStr(JSContext *cx, JSString *jsstr) {
+	ALWAYS_INLINE JLStr(JSContext * RESTRICT cx, JSString * RESTRICT jsstr) {
 
 		size_t length;
 		const jschar *str = JS_GetStringCharsAndLength(cx, jsstr, &length); // doc. not null-terminated. // see also JS_GetStringCharsZ
@@ -1135,7 +1187,7 @@ public:
 	ALWAYS_INLINE bool HasJsStr() const {
 
 		JL_ASSERT( _inner );
-		return !!_inner->jsstr;
+		return _inner->jsstr != NULL;
 	}
 
 	ALWAYS_INLINE size_t Length() {
@@ -1147,6 +1199,7 @@ public:
 			return _inner->len = strlen(_inner->str);
 		if ( _inner->jsstr )
 			return _inner->len = wcslen(_inner->jsstr);
+		JL_ASSERT( _inner->len != SIZE_MAX );
 		return 0;
 	}
 
@@ -1254,8 +1307,8 @@ JL_NullTerminate( void* &buf, size_t len ) {
 // JLStr
 
 
-INLINE JSBool FASTCALL // code too big to be forced inline
-JL_JsvalToNative( JSContext *cx, jsval &val, JLStr *str ) {
+INLINE NEVER_INLINE JSBool FASTCALL // code too big to be forced inline
+JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLStr * RESTRICT str ) {
 
 	if (likely( JSVAL_IS_STRING(val) )) { // for string literals
 
@@ -1876,10 +1929,12 @@ JL_JsvalToNative( const JSContext *cx, const jsval &val, void **ptr ) {
 
 // if useValArray is true, val must be a valid array that is used to store the values.
 template <class T>
-INLINE JSBool FASTCALL
-JL_NativeVectorToJsval( JSContext *cx, const T *vector, jsuint length, jsval *val, bool useValArray = false ) {
+ALWAYS_INLINE JSBool FASTCALL
+JL_NativeVectorToJsval( JSContext * RESTRICT cx, const T * RESTRICT vector, jsuint length, jsval * RESTRICT val, bool useValArray = false ) {
 
-	jsval tmp;
+	JL_ASSERT( vector );
+	JL_ASSERT( val );
+
 	JSObject *arrayObj;
 	if ( useValArray ) {
 
@@ -1894,10 +1949,11 @@ JL_NativeVectorToJsval( JSContext *cx, const T *vector, jsuint length, jsval *va
 		*val = OBJECT_TO_JSVAL(arrayObj);
 	}
 
+	jsval tmp;
 	while ( length-- ) {
 
-		JL_CHK( JL_NativeToJsval(cx, vector[length], &tmp) ); //JL_CHK( JS_SetPropertyById(cx, arrayObj, INT_TO_JSID(i), avr.jsval_addr()) );
-		JL_CHK( JS_SetElement(cx, arrayObj, length, &tmp) );
+		JL_CHK( JL_NativeToJsval(cx, vector[length], &tmp) ); //
+		JL_CHK( JS_SetElement(cx, arrayObj, length, &tmp) ); //JL_CHK( JS_SetPropertyById(cx, arrayObj, INT_TO_JSID(length), &tmp) ); // see jsapi.cpp
 	}
 //	JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
 	return JS_TRUE;
@@ -1905,13 +1961,55 @@ JL_NativeVectorToJsval( JSContext *cx, const T *vector, jsuint length, jsval *va
 }
 
 
+ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const int8_t & ) { return js::TypedArray::TYPE_INT8; }
+ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const uint8_t & ) { return js::TypedArray::TYPE_UINT8; }
+ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const int16_t & ) { return js::TypedArray::TYPE_INT16; }
+ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const uint16_t & ) { return js::TypedArray::TYPE_UINT16; }
+ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const int32_t & ) { return js::TypedArray::TYPE_INT32; }
+ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const uint32_t & ) { return js::TypedArray::TYPE_UINT32; }
+ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const float32_t & ) { return js::TypedArray::TYPE_FLOAT32; }
+ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const float64_t & ) { return js::TypedArray::TYPE_FLOAT64; }
+
+ALWAYS_INLINE const char * JLNativeTypeToString( const int8_t & ) { return "Int8Array"; }
+ALWAYS_INLINE const char * JLNativeTypeToString( const uint8_t & ) { return "Uint8Array"; }
+ALWAYS_INLINE const char * JLNativeTypeToString( const int16_t & ) { return "Int16Array"; }
+ALWAYS_INLINE const char * JLNativeTypeToString( const uint16_t & ) { return "Uint16Array"; }
+ALWAYS_INLINE const char * JLNativeTypeToString( const int32_t & ) { return "Int32Array"; }
+ALWAYS_INLINE const char * JLNativeTypeToString( const uint32_t & ) { return "Uint32Array"; }
+ALWAYS_INLINE const char * JLNativeTypeToString( const float32_t & ) { return "Float32Array"; }
+ALWAYS_INLINE const char * JLNativeTypeToString( const float64_t & ) { return "Float64Array"; }
+
+
 template <class T>
-ALWAYS_INLINE JSBool
+INLINE JSBool FASTCALL
 JL_JsvalToNativeVector( JSContext *cx, jsval &val, T *vector, jsuint maxLength, jsuint *actualLength ) {
 
 	JL_S_ASSERT_OBJECT(val);
+
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(val);
+
+	if (unlikely( js_IsTypedArray(arrayObj) )) {
+
+		js::TypedArray *ta = js::TypedArray::fromJSObject(arrayObj);
+
+		if ( !ta->valid() )
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_RESOURCE);
+
+		if ( ta->type != JLNativeTypeToTypedArrayType(*vector) )
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, JLNativeTypeToString(*vector));
+
+//		JL_S_ASSERT( JLNativeTypeToTypedArrayType(*vector) == ta->type, "Unexpected TypedArray type." );
+//		JL_ASSERT( ta->byteLength / ta->length == sizeof(T) );
+
+		*actualLength = ta->length;
+		maxLength = JL_MIN( *actualLength, maxLength );
+		for ( jsuint i = 0; i < maxLength; ++i )
+			vector[i] = ((T*)ta->data)[i];
+		return JS_TRUE;
+	}
+
+
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, actualLength) );
 	maxLength = JL_MIN( *actualLength, maxLength );
 	while ( maxLength-- ) {
@@ -1986,7 +2084,7 @@ JL_GetProperty( JSContext *cx, JSObject *obj, jsid id, T *cval ) {
 // jsval convertion functions
 
 INLINE JSBool FASTCALL
-JL_JSArrayToBuffer( JSContext *cx, JSObject *arrObj, JLStr *str ) {
+JL_JSArrayToBuffer( JSContext * RESTRICT cx, JSObject * RESTRICT arrObj, JLStr * RESTRICT str ) {
 
 	JL_ASSERT( JS_IsArrayObject(cx, arrObj) );
 	jsuint length;
@@ -2113,8 +2211,8 @@ JL_JsidToJsval( JSContext *cx, jsid id, jsval *val ) {
 }
 
 
-INLINE JSBool FASTCALL
-JL_JsvalToMatrix44( JSContext *cx, jsval &val, float **m ) {
+INLINE NEVER_INLINE JSBool FASTCALL
+JL_JsvalToMatrix44( JSContext * RESTRICT cx, jsval &val, float ** RESTRICT m ) {
 
 	static float Matrix44IdentityValue[16] = {
 		 1.0f, 0.0f, 0.0f, 0.0f,
@@ -2270,8 +2368,8 @@ ALWAYS_INLINE JSBool SetHostObjectValue(JSContext *cx, const jschar *name, jsval
 
 // note: a Blob is either a JSString or a Blob object if the jslang module has been loaded.
 //       returned value is equivalent to: var ret = Blob(buffer);
-INLINE JSBool FASTCALL
-JL_NewBlob( JSContext *cx, void* buffer, size_t length, jsval *vp ) {
+INLINE NEVER_INLINE JSBool FASTCALL
+JL_NewBlob( JSContext * RESTRICT cx, void* RESTRICT buffer, size_t length, jsval * RESTRICT vp ) {
 
 	JL_ASSERT( jl_msize(buffer) >= length + 1 );
 	JL_ASSERT( ((uint8_t*)buffer)[length] == 0 );
@@ -2322,7 +2420,7 @@ bad:
 
 
 ALWAYS_INLINE JSBool
-JL_NewBlobCopyN( JSContext *cx, const void *data, size_t amount, jsval *vp ) {
+JL_NewBlobCopyN( JSContext * RESTRICT cx, const void * RESTRICT data, size_t amount, jsval * RESTRICT vp ) {
 
 	if (unlikely( amount == 0 || data == NULL )) { // Empty Blob must acts like an empty string: !'' == true
 
@@ -2482,7 +2580,7 @@ JL_CallFunctionId(JSContext *cx, JSObject *obj, jsid id, uintN argc, jsval *argv
 
 
 INLINE JSBool FASTCALL
-JL_CallFunctionVA( JSContext *cx, JSObject *obj, const jsval &functionValue, jsval *rval, uintN argc, ... ) {
+JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, const jsval &functionValue, jsval *rval, uintN argc, ... ) {
 
 	va_list ap;
 	jsval *argv = (jsval*)alloca((argc+1)*sizeof(jsval));
@@ -2504,7 +2602,7 @@ JL_CallFunctionVA( JSContext *cx, JSObject *obj, const jsval &functionValue, jsv
 
 
 INLINE JSBool FASTCALL
-JL_CallFunctionNameVA( JSContext *cx, JSObject *obj, const char* functionName, jsval *rval, uintN argc, ... ) {
+JL_CallFunctionNameVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char* functionName, jsval *rval, uintN argc, ... ) {
 
 	va_list ap;
 	jsval *argv = (jsval*)alloca((argc+1)*sizeof(jsval));
@@ -2524,7 +2622,7 @@ JL_CallFunctionNameVA( JSContext *cx, JSObject *obj, const char* functionName, j
 
 
 INLINE JSBool FASTCALL
-JL_Eval( JSContext *cx, JSString *source, jsval *rval ) {
+JL_Eval( JSContext * RESTRICT cx, JSString * RESTRICT source, jsval *rval ) {
 
 	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
 	JL_CHK( frame );
@@ -2544,8 +2642,8 @@ JL_Eval( JSContext *cx, JSString *source, jsval *rval ) {
 }
 
 
-INLINE JSBool FASTCALL
-JL_Push( JSContext *cx, JSObject *arr, jsval *value ) {
+ALWAYS_INLINE JSBool FASTCALL
+JL_Push( JSContext * RESTRICT cx, JSObject * RESTRICT arr, jsval * RESTRICT value ) {
 
 	jsuint length;
 	JL_CHK( JS_GetArrayLength(cx, arr, &length) );
@@ -2556,8 +2654,8 @@ JL_Push( JSContext *cx, JSObject *arr, jsval *value ) {
 }
 
 
-INLINE JSBool FASTCALL
-JL_Pop( JSContext *cx, JSObject *arr, jsval *vp ) {
+ALWAYS_INLINE JSBool FASTCALL
+JL_Pop( JSContext * RESTRICT cx, JSObject * RESTRICT arr, jsval * RESTRICT vp ) {
 
 	jsuint length;
 	JL_CHK( JS_GetArrayLength(cx, arr, &length) );
@@ -2570,7 +2668,7 @@ JL_Pop( JSContext *cx, JSObject *arr, jsval *vp ) {
 
 
 INLINE JSBool FASTCALL
-JL_JsvalToPrimitive( JSContext *cx, const jsval &val, jsval *rval ) { // prev JL_ValueOf
+JL_JsvalToPrimitive( JSContext * RESTRICT cx, const jsval &val, jsval * RESTRICT rval ) { // prev JL_ValueOf
 
 	if ( JSVAL_IS_PRIMITIVE(val) ) {
 
@@ -2603,8 +2701,8 @@ JL_JsvalToPrimitive( JSContext *cx, const jsval &val, jsval *rval ) { // prev JL
 //	on your script object.
 //
 //	/be
-INLINE JSScript* FASTCALL
-JL_LoadScript(JSContext *cx, JSObject *obj, const char *fileName, bool useCompFile, bool saveCompFile) {
+INLINE NEVER_INLINE JSScript* FASTCALL
+JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RESTRICT fileName, bool useCompFile, bool saveCompFile) {
 
 	char *scriptBuffer = NULL;
 	size_t scriptFileSize;
@@ -2834,7 +2932,7 @@ JL_CurrentStackFrame(JSContext *cx) {
 
 
 ALWAYS_INLINE uint32_t
-JL_StackSize(const JSContext *cx, const JSStackFrame *fp) {
+JL_StackSize(const JSContext * RESTRICT cx, const JSStackFrame * RESTRICT fp) {
 
 	JL_USE(cx);
 	uint32_t length = 0;
@@ -2871,7 +2969,7 @@ JL_StackFrameByIndex(JSContext *cx, int frameIndex) {
 }
 
 
-INLINE JSBool FASTCALL
+INLINE NEVER_INLINE JSBool FASTCALL
 JL_DebugPrintScriptLocation( JSContext *cx ) {
 
 	JSStackFrame *fp = NULL;
@@ -2896,8 +2994,8 @@ JL_DebugPrintScriptLocation( JSContext *cx ) {
 }
 
 
-INLINE JSBool FASTCALL
-JL_ExceptionSetScriptLocation( JSContext *cx, JSObject *obj ) {
+INLINE NEVER_INLINE JSBool FASTCALL
+JL_ExceptionSetScriptLocation( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
 	 // see PopulateReportBlame()
     //JSStackFrame *fp;
@@ -3005,7 +3103,7 @@ StreamReadNativeInterface( JSContext *cx, JSObject *obj ) {
 
 
 INLINE JSBool
-JSStreamRead( JSContext *cx, JSObject *obj, char *buffer, size_t *amount ) {
+JSStreamRead( JSContext * RESTRICT cx, JSObject * RESTRICT obj, char * RESTRICT buffer, size_t * RESTRICT amount ) {
 
 	jsval tmp;
 	JL_CHK( JL_NativeToJsval(cx, *amount, &tmp) );
@@ -3064,7 +3162,7 @@ BufferGetNativeInterface( JSContext *cx, JSObject *obj ) {
 }
 
 
-ALWAYS_INLINE JSBool
+INLINE JSBool
 JSBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
 	jsval tmp;
@@ -3110,7 +3208,7 @@ Matrix44GetNativeInterface( JSContext *cx, JSObject *obj ) {
 }
 
 
-ALWAYS_INLINE JSBool
+INLINE JSBool
 JSMatrix44Get( JSContext *cx, JSObject *obj, float **m ) {
 
 	JL_USE( cx );

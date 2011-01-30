@@ -124,6 +124,7 @@
 
 
 // from jstypes.h
+// using  INLINE NEVER_INLINE void foo() {...}  is permitted.
 #ifndef NEVER_INLINE
 # if defined _MSC_VER
 #  define NEVER_INLINE __declspec(noinline)
@@ -135,12 +136,22 @@
 #endif
 
 
-// msdn doc. the __restrict keyword indicates that a symbol is not aliased in the current scope
+#ifndef ASSUME
+# if defined _MSC_VER
+#  define ASSUME(expr) __assume(expr)
+# else
+#  define ASSUME(expr) ((void)0)
+# endif
+#endif
+
+// restrict says that the pointer is the only thing that accesses the underlying object. 
 // see also. http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
 #ifndef RESTRICT
 # if defined _MSC_VER
+// msdn doc. the __restrict keyword indicates that a symbol is not aliased in the current scope
 #  define RESTRICT __restrict
 # else
+// or. restrict is basically a promise to the compiler that for the scope of the pointer, the target of the pointer will only be accessed through that pointer (and pointers copied from it).
 #  define RESTRICT __restrict__
 # endif
 #endif
@@ -153,6 +164,7 @@
 #  define RESTRICT_DECL
 # endif
 #endif
+
 
 // msdn doc. noalias means that a function call does not modify or reference visible global state and only modifies the memory pointed to directly by pointer parameters (first-level indirections).
 #ifndef NOALIAS
@@ -221,7 +233,7 @@
 	// see WinDef.h
 	#define NOMINMAX
 
-//warning: must be defined on cmd line !
+//warning: must be defined on the commend line !
 //	#if !defined(DEBUG)
 //		// Don's use secure standard library from VC++
 //		#define _SECURE_SCL_THROWS 0
@@ -498,10 +510,9 @@ JL_AssertFailure( const char *message, const char *location ) {
 
 #else // DEBUG
 
-// #define JL_ASSERT(expr) ((void)0)
-// #define JL_ASSERT_IF(cond, expr) ((void) 0)
-#define JL_ASSERT(expr) (__assume(expr))
-#define JL_ASSERT_IF(cond, expr) (__assume(expr))
+// beware. Use __assume in an ASSERT only when the assert is not recoverable.
+#define JL_ASSERT(expr) (ASSUME(expr))
+#define JL_ASSERT_IF(cond, expr) ((void)0)
 
 #endif // DEBUG
 
@@ -664,7 +675,8 @@ namespace jl {
 ALWAYS_INLINE NOALIAS uint32_t
 JL_CAST_CSTR_TO_UINT32( const char *cstr ) {
 
-	JL_ASSERT( cstr != NULL && !(cstr[0] && cstr[1] && cstr[2] && cstr[3] && cstr[4]) );
+	JL_ASSERT( cstr != NULL );
+	JL_ASSERT( !(cstr[0] && cstr[1] && cstr[2] && cstr[3] && cstr[4]) );
 	return
 		!cstr[0] ? 0 :
 		!cstr[1] ? cstr[0] :
@@ -936,7 +948,7 @@ Network64ToHost64( void *pval ) {
 }
 
 
-INLINE char* FASTCALL
+INLINE const char* FASTCALL
 IntegerToString(int val, int base) {
 
 	bool neg;
@@ -992,8 +1004,9 @@ AccurateTimeCounter() {
 	if ( initTime == 0 )
 		initTime = tv.tv_sec;
 	return (double)(tv.tv_sec-initTime) * (double)1000 + tv.tv_usec / (double)1000;
-#endif
+#else
 	return -1; // (TBD) see. js_IntervalNow() or JS_Now() ? no, it could be expensive and is not suitable for calls when a GC lock is held.
+#endif
 }
 // see also:
 //__int64 GetTime() {
@@ -1009,7 +1022,7 @@ AccurateTimeCounter() {
 
 
 #if defined(XP_WIN)
-static __declspec(naked) __declspec(noinline) size_t JLGetEIP() {
+INLINE __declspec(naked) __declspec(noinline) size_t JLGetEIP() {
 
 	__asm pop eax;
 	__asm jmp eax;
@@ -1046,6 +1059,44 @@ JLPageSize() {
 	#error Unable to detect system page size
 #endif
 	return pageSize;
+}
+
+typedef char JLCpuInfo_t[128];
+
+ALWAYS_INLINE void
+JLCpuInfo( JLCpuInfo_t info ) {
+
+#if defined(XP_WIN)
+
+	// see. http://msdn.microsoft.com/en-us/library/hskdteyh(v=vs.80).aspx
+	// see. http://faydoc.tripod.com/cpu/cpuid.htm
+
+	IFDEBUG( char *tmp = (char*)info; )
+
+	__cpuid((int*)info, 0);
+	info += 16;
+	__cpuid((int*)info, 1);
+	info[7] = 0; // CPUInfo[1] &= 0x00ffffff; // remove "Initial APIC ID"
+	info += 16;
+	__cpuid((int*)info, 2);
+	info += 16;
+	__cpuid((int*)info, 0x80000001);
+	info += 16;
+	__cpuid((int*)info, 0x80000002);
+	info += 16;
+	__cpuid((int*)info, 0x80000003);
+	info += 16;
+	__cpuid((int*)info, 0x80000004);
+	info += 16;
+	__cpuid((int*)info, 0x80000006);
+
+	IFDEBUG( JL_ASSERT( (info+16) - (char*)tmp == sizeof(JLCpuInfo_t) ) );
+
+#elif defined(XP_UNIX)
+
+#else
+
+#endif // XP_UNIX
 }
 
 

@@ -86,7 +86,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT( pv->descriptor->test() == CRYPT_OK, "%s hash test failed.", hashName );
 
 	int err;
-	if ( (err = pv->descriptor->init(&pv->state)) != CRYPT_OK )
+	err = pv->descriptor->init(&pv->state);
+	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	pv->inputLength = 0;
 
@@ -103,9 +104,9 @@ DEFINE_CONSTRUCTOR() {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME()
-  Initialize the hash state.
+  Resets the hash state.
 **/
-DEFINE_FUNCTION( Init ) {
+DEFINE_FUNCTION( Reset ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
@@ -258,10 +259,10 @@ DEFINE_CALL() {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	err = pv->descriptor->init(&pv->state);
-	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err);
-	pv->inputLength = 0;
+//	err = pv->descriptor->init(&pv->state);
+//	if (err != CRYPT_OK)
+//		return ThrowCryptError(cx, err);
+//	pv->inputLength = 0;
 
 	out[outLength] = '\0';
 	JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
@@ -421,7 +422,7 @@ CONFIGURE_CLASS
 	HAS_CALL
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Init )
+		FUNCTION( Reset )
 		FUNCTION( Process )
 		FUNCTION( Done )
 	END_FUNCTION_SPEC

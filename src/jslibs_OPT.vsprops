@@ -18,6 +18,7 @@
 
 	<Tool
 		Name="VCCLCompilerTool"
+		AdditionalOptions="/MP"
 		PreprocessorDefinitions="WIN32;NDEBUG;_USRDLL;_SECURE_SCL_THROWS=0;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0"
 		AdditionalIncludeDirectories="..\common;..\..\libs\js\$(PlatformName)_$(ConfigurationName)\dist\include"
 		ExceptionHandling="0"
@@ -34,6 +35,8 @@
 		SmallerTypeCheck="false"
 		BufferSecurityCheck="false"
 		EnableEnhancedInstructionSet="1"
+		WarningLevel="4"
+		DebugInformationFormat="3"
 	/>
 
 				<!-- tmp VCLinkerTool
@@ -45,6 +48,10 @@
 
 	<Tool
 		Name="VCLinkerTool"
+		SubSystem="2"
+		RandomizedBaseAddress="1"
+		DataExecutionPrevention="0"
+		TargetMachine="1"
 		OptimizeReferences="2"
 		EnableCOMDATFolding="2"
 		LinkTimeCodeGeneration="1"

@@ -18,6 +18,8 @@ BEGIN_CLASS( OperationLimit )
 
 DEFINE_HAS_INSTANCE() {
 
+	JL_USE(obj);
+
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }

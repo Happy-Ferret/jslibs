@@ -17,6 +17,46 @@ JSClass global_class = {
 
 #include <stdlib.h>
 
+NEVER_INLINE int test() {
+
+
+
+
+	printf("xxx\n");
+	return 6;
+}
+
+
+//#include <intrin.h>
+
+ALWAYS_INLINE uint32_t
+my_JLCPUID() {
+
+	// see. http://msdn.microsoft.com/en-us/library/hskdteyh(v=vs.90).aspx
+	// and. http://faydoc.tripod.com/cpu/cpuid.htm
+
+	int id = 0;
+	int CPUInfo[4] = {-1};
+
+	__cpuid(CPUInfo, 0);
+	id ^= CPUInfo[0] ^ CPUInfo[1] ^ CPUInfo[2] ^ CPUInfo[3];
+
+	__cpuid(CPUInfo, 1);
+	id ^= CPUInfo[0];
+	id ^= CPUInfo[1] & 0x00ffffff; // remove "Initial APIC ID"
+	id ^= CPUInfo[2];
+	id ^= CPUInfo[3];
+
+	__cpuid(CPUInfo, 0x80000000);
+	 if ( 0x80000001 <= CPUInfo[0] ) {
+
+		 __cpuid(CPUInfo, 0x80000001);
+		 id ^= CPUInfo[0] ^ CPUInfo[1] ^ CPUInfo[2] ^ CPUInfo[3];
+	 }
+
+	 return (uint32_t)id;
+}
+
 
 static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc, jsval &v ) {
 
@@ -25,20 +65,40 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 
 	JLStr str;
 
+	float arr[] = { 9,8,7,6,5,4 };
+
+	v = OBJECT_TO_JSVAL(JS_NewArrayObject(cx, 0, NULL));
+
+
 	size_t err = JLGetEIP(); size_t a = JLGetEIP(); ////////////////////////////////////////
 
-	JL_S_ASSERT_INT(v);
 
 
+
+	float nvec[10];
+	jsuint realLen;
+	JL_CHK( JL_JsvalToNativeVector(cx, v, nvec, COUNTOF(nvec), &realLen ) );
+
+
+//	JL_S_ASSERT_INT(v);
 	//JL_NativeToJsval(cx, L"ABCDE", 5, &v);
-
 //	JL_CHK( JL_JsvalToNative(cx, v, &str) );
-
 	// JL_CHK( JL_NativeToJsval(cx, ival, &v) );
+
+//	JL_NativeVectorToJsval(cx, arr, 6, &v);
+
+//	JL_JsvalToPrimitive(cx, v, &v);
+
+//	JL_Push(cx, obj, &v);
 
 
 	bad: ///////////////////////////////////////////////////////////////////////////////////
 	a = JLGetEIP() - a - (a-err);
+
+	
+	uint32_t id = my_JLCPUID();
+	printf("cpuid = %u\n", id);
+
 
 
 	printf("code length: %d\n", a);

@@ -286,8 +286,6 @@ namespace jl {
 
 	template <typename T>
 	class _NOVTABLE StaticAllocBig : public StaticAlloc<T, 65536> {};
-
-
 }
 
 

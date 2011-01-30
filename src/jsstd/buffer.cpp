@@ -75,6 +75,8 @@ inline JSBool ShiftJsval( JSContext *cx, jl::Queue *queue, jsval *value ) {
 
 inline JSBool PeekJsval( JSContext *cx, jl::QueueCell *cell, jsval *value ) {
 
+	JL_USE(cx);
+
 	*value = *(jsval*)QueueGetData(cell);  // no need to JS_RemoveRoot *pItem, see Tracer callback
 	return JS_TRUE;
 }
@@ -626,6 +628,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Clear ) {
 
+	JL_USE(argc);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
 
@@ -930,6 +934,8 @@ $TOC_MEMBER $INAME
 // Note:  String( { toString:function() { return [1,2,3]} } );  throws the following error: "can't convert Object to string"
 DEFINE_FUNCTION( toString ) {
 
+	JL_USE(argc);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_THIS_CLASS();
 
@@ -1043,6 +1049,9 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
+	JL_USE(vp);
+	JL_USE(obj);
+
 	JL_S_ASSERT( !JSID_IS_INT(id), "Operation not allowed." );
 	return JS_TRUE;
 	JL_BAD;
@@ -1061,6 +1070,8 @@ $TOC_MEMBER $INAME
   Is the current length of the buffer.
 **/
 DEFINE_PROPERTY( length ) {
+
+	JL_USE(id);
 
 	JL_S_ASSERT_THIS_CLASS();
 	BufferPrivate *pv;

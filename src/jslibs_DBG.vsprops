@@ -18,6 +18,7 @@
 
 	<Tool
 		Name="VCCLCompilerTool"
+		MinimalRebuild="true"
 		PreprocessorDefinitions="WIN32;_DEBUG;_USRDLL;DEBUG;JS_HASHMETER;JS_GC_ZEAL"
 		AdditionalIncludeDirectories="..\common;..\..\libs\js\$(PlatformName)_$(ConfigurationName)\dist\include"
 		ExceptionHandling="0"
@@ -29,6 +30,9 @@
 		SmallerTypeCheck="true"
 		BufferSecurityCheck="true"
 		EnableEnhancedInstructionSet="1"
+		WarningLevel="4"
+		DebugInformationFormat="4"
+		
 	/>
 	
 				<!-- tmp VCLinkerTool
@@ -40,6 +44,10 @@
 
 	<Tool
 		Name="VCLinkerTool"
+		SubSystem="2"
+		RandomizedBaseAddress="1"
+		DataExecutionPrevention="0"
+		TargetMachine="1"
 		GenerateDebugInformation="true"
 		IgnoreAllDefaultLibraries="false"
 		IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib"

@@ -1,5 +1,15 @@
 LoadModule('jsstd');
 
+var arr = new Float32Array(3);
+
+arr[0] = 123;
+arr[1] = 456;
+arr[2] = 789;
+
+jslang_test(arr);
+
+Halt();
+
 LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();

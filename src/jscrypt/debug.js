@@ -1,8 +1,20 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-rep 4 jscrypt');
+//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-rep 4 jscrypt');
 
 LoadModule('jsstd');
 LoadModule('jscrypt');
+
+
+var md5 = new Hash('md5');
+Print( HexEncode(md5('qwe')), '\n' );
+
+var md5 = new Hash('md5');
+Print( HexEncode(md5('qw')), '\n' );
+md5.Process('e');
+Print( HexEncode(md5.Done()), '\n' );
+
+Halt();
+
 
 var rnd = new Prng('yarrow');
 rnd(1);
