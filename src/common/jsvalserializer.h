@@ -64,6 +64,7 @@ namespace jl {
 
 		SerializerObjectOwnProperties();
 		SerializerObjectOwnProperties( const SerializerObjectOwnProperties & );
+		SerializerObjectOwnProperties & operator=( const SerializerObjectOwnProperties & );
 	public:
 		SerializerObjectOwnProperties( JSObject *&obj ) : _obj(obj) {}
 
@@ -79,6 +80,7 @@ namespace jl {
 
 		SerializerObjectReservedSlots();
 		SerializerObjectReservedSlots( const SerializerObjectReservedSlots & );
+		SerializerObjectReservedSlots & operator=( const SerializerObjectReservedSlots & );
 	public:
 		SerializerObjectReservedSlots( JSObject *&obj ) : _obj(obj) {}
 
@@ -119,7 +121,7 @@ namespace jl {
 		~Serializer() {
 
 			if ( _start != NULL )
-				jl_free(_start);
+				jl_free(_start); // jl_free(NULL) is legal, but here is an optimization.
 		}
 
 		Serializer( jsval serializerObj )
@@ -411,6 +413,7 @@ namespace jl {
 		template <class T>
 		JSBool Write( JSContext *cx, const T &value ) {
 
+			JL_USE(cx);
 			JL_CHK( PrepareBytes(sizeof(T)) );
 			*(T*)_pos = value;
 			_pos += sizeof(T);
@@ -716,6 +719,7 @@ namespace jl {
 		template <class T>
 		JSBool Read( JSContext *cx, T &value ) {
 
+			JL_USE(cx);
 			if ( !AssertData(sizeof(T)) )
 				return JS_FALSE;
 			value = *(T*)_pos;

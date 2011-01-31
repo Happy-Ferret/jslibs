@@ -215,6 +215,8 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 		return JSTRAP_CONTINUE;
 
 	jsval exception;
+	IFDEBUG( exception = JSVAL_VOID ); // avoid "potentially uninitialized local variable" warning
+
 	JSBool hasException;
 	hasException = JL_IsExceptionPending(cx);
 	if ( hasException ) {
@@ -222,7 +224,7 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 		JL_CHK( JS_GetPendingException(cx, &exception) );
 		JS_ClearPendingException(cx);
 	}
-
+	
 	JSRuntime *rt;
 	rt = JL_GetRuntime(cx);
 	uintN lineno;

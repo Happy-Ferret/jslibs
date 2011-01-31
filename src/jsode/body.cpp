@@ -637,6 +637,7 @@ DEFINE_PROPERTY( finiteRotationAxisSetter ) {
 		vec[0] = 0;
 		vec[1] = 0;
 		vec[2] = 0;
+		len = 3;
 	} else {
 		
 		JL_CHK( JL_JsvalToODERealVector(cx, *vp, vec, 3, &len) );
@@ -926,7 +927,11 @@ DEFINE_PROPERTY( vectorGetter ) {
 	//}
 
 	const ode::dReal *vector;
+	IFDEBUG( vector = NULL ); // avoid "potentially uninitialized local variable" warning
+	
 	int dim;
+	IFDEBUG( dim = 0 ); // avoid "potentially uninitialized local variable" warning
+
 	switch ( JSID_TO_INT(id) ) {
 		case position:
 			vector = ode::dBodyGetPosition(bodyID);

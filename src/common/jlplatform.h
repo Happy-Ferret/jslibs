@@ -96,6 +96,10 @@
 #endif
 
 
+// trick:
+//   When an inline function is not static, then the compiler must assume that there may be calls from other source files; since a global symbol can be defined only once in any program,
+//   the function must not be defined in the other source files, so the calls therein cannot be integrated. Therefore, a non-static inline function is always compiled on its own in the usual fashion.
+
 // from jstypes.h
 #if defined __cplusplus
 # define INLINE inline
@@ -176,11 +180,6 @@
 #endif
 
 
-
-// trick. When an inline function is not static, then the compiler must assume that there may be calls from other source files; since a global symbol can be defined only once in any program,
-//        the function must not be defined in the other source files, so the calls therein cannot be integrated. Therefore, a non-static inline function is always compiled on its own in the usual fashion.
-
-
 #if defined(_MSC_VER)
 
 	#define DLLEXPORT __declspec(dllexport)
@@ -215,9 +214,16 @@
 
 
 #if defined(_MSC_VER)
+
 	// disable warnings:
-	#pragma warning(disable : 4127)  // no "conditional expression is constant" complaints
+	#pragma warning(disable : 4127) // no "conditional expression is constant" complaints
 	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
+	#pragma warning(disable : 4201) // nonstandard extension used : nameless struct/union
+	#pragma warning(disable : 4102) // unreferenced label
+	#pragma warning(disable : 4702) // unreachable code
+	#ifndef DEBUG
+		#pragma warning(disable : 4701) // potentially uninitialized local variable 'XXX' used
+	#endif
 
 	// force warning to error:
 	#pragma warning(error : 4715) // not all control paths return a value
@@ -226,6 +232,9 @@
 	#pragma warning(error : 4700) // warning C4700: uninitialized local variable 'XXX' used
 	#pragma warning(error : 4533) // warning C4533: initialization of 'xxx' is skipped by 'goto YYY'
 	#pragma warning(error : 4002) // too many actual parameters for macro 'XXX'
+	#ifdef DEBUG
+		#pragma warning(error : 4701) // potentially uninitialized local variable 'XXX' used
+	#endif
 
 	// Using STRICT to Improve Type Checking (http://msdn.microsoft.com/en-us/library/aa280394%28v=VS.60%29.aspx)
 	#define STRICT 1
@@ -601,6 +610,12 @@ JL_MAX(T a, T b) {
 	return (a) > (b) ? (a) : (b);
 }
 
+template<class T>
+ALWAYS_INLINE T
+JL_INRANGE(T v, T vmin, T vmax) {
+	return unsigned(v – vmin) <= unsigned(vmax – vmin);
+}
+
 
 namespace jl {
 
@@ -722,6 +737,32 @@ int_pow(int base, int exp) {
         base *= base;
     }
     return result;
+}
+
+
+ALWAYS_INLINE int
+JL_CountSetBits(int32_t v) {
+
+	v = v - ((v >> 1) & 0x55555555);
+	v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+	return ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
+}
+
+
+ALWAYS_INLINE int
+JL_Parity(uint32_t v) {
+
+    v ^= v >> 1;
+    v ^= v >> 2;
+    v = (v & 0x11111111U) * 0x11111111U;
+    return (v >> 28) & 1;
+}
+
+
+ALWAYS_INLINE uint8_t
+JL_ReverseBits(uint8_t b) {
+
+	return (((b * 0x0802LU & 0x22110LU) | (b * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16) & 0xFF;
 }
 
 
@@ -858,7 +899,6 @@ INLINE void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, char *mo
 
 ///////////////////////////////////////////////////////////////////////////////
 // Platform tools
-
 
 // cf. _swab() -or- _rotl();
 // 16 bits: #define SWAP_BYTES(X) ((X & 0xff) << 8) | (X >> 8)
@@ -1061,42 +1101,48 @@ JLPageSize() {
 	return pageSize;
 }
 
+
+ALWAYS_INLINE void
+cpuid( int info[4], int type ) {
+
+#if defined(XP_WIN)
+	__cpuid(info, type);
+#elif defined(XP_UNIX)
+	asm("cpuid":"=a" (info[0]), "=b" (info[1]), "=c" (info[2]), "=d" (info[3]) : "a" (type));
+#else
+	#error (TBD)
+#endif
+}
+
+
 typedef char JLCpuInfo_t[128];
 
 ALWAYS_INLINE void
 JLCpuInfo( JLCpuInfo_t info ) {
-
-#if defined(XP_WIN)
 
 	// see. http://msdn.microsoft.com/en-us/library/hskdteyh(v=vs.80).aspx
 	// see. http://faydoc.tripod.com/cpu/cpuid.htm
 
 	IFDEBUG( char *tmp = (char*)info; )
 
-	__cpuid((int*)info, 0);
+	cpuid((int*)info, 0);
 	info += 16;
-	__cpuid((int*)info, 1);
+	cpuid((int*)info, 1);
 	info[7] = 0; // CPUInfo[1] &= 0x00ffffff; // remove "Initial APIC ID"
 	info += 16;
-	__cpuid((int*)info, 2);
+	cpuid((int*)info, 2);
 	info += 16;
-	__cpuid((int*)info, 0x80000001);
+	cpuid((int*)info, 0x80000001);
 	info += 16;
-	__cpuid((int*)info, 0x80000002);
+	cpuid((int*)info, 0x80000002);
 	info += 16;
-	__cpuid((int*)info, 0x80000003);
+	cpuid((int*)info, 0x80000003);
 	info += 16;
-	__cpuid((int*)info, 0x80000004);
+	cpuid((int*)info, 0x80000004);
 	info += 16;
-	__cpuid((int*)info, 0x80000006);
+	cpuid((int*)info, 0x80000006);
 
 	IFDEBUG( JL_ASSERT( (info+16) - (char*)tmp == sizeof(JLCpuInfo_t) ) );
-
-#elif defined(XP_UNIX)
-
-#else
-
-#endif // XP_UNIX
 }
 
 

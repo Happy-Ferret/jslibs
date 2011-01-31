@@ -27,7 +27,7 @@ DEFINE_FINALIZE() {
 
 	void *data = JL_GetPrivate(cx, obj);
 	if ( data != NULL )
-		jl_free(data);
+		jl_free(data); // jl_free(NULL) is legal
 }
 
 DEFINE_FUNCTION( Alloc ) {

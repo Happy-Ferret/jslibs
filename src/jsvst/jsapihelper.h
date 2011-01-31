@@ -165,7 +165,7 @@ protected:
 
 	inline bool jsvalIsReal( jsval val ) {
 
-		return !!JSVAL_IS_DOUBLE(val);
+		return JSVAL_IS_DOUBLE(val) != 0;
 	}
 
 	inline int AssertRange( int value, int min, int max ) {

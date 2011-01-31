@@ -474,7 +474,8 @@ DEFINE_FUNCTION( RegistryGet ) {
 	if ( !strncmp(path, "HKDD", 4) ) {
 		rootHKey = HKEY_DYN_DATA;
 		path += 4;
-	}
+	} else
+		JL_REPORT_ERROR("Invalid root key.");
 
 	if ( path[0] == '\\' )
 		path++;

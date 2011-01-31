@@ -885,7 +885,7 @@ JL_IsObjectObject( JSContext *cx, const JSObject *obj ) {
 ALWAYS_INLINE bool
 JL_IsArray( JSContext *cx, JSObject *obj ) {
 
-	return !!JS_IsArrayObject(cx, obj); // Object::isArray() is not public
+	return JS_IsArrayObject(cx, obj) != 0; // Object::isArray() is not public
 }
 
 
@@ -957,7 +957,7 @@ JL_IsStringObject( const JSContext *cx, const JSObject *obj ) {
 INLINE bool FASTCALL
 JL_IsDataObject( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
-	return BufferGetInterface(cx, obj) != NULL || JL_IsArray(cx, obj) || (js_IsTypedArray(obj) && js::TypedArray::fromJSObject(obj)->valid()) || js_IsArrayBuffer(obj) || JL_IsStringObject(cx, obj);
+	return BufferGetInterface(cx, obj) != NULL || JL_IsArray(cx, obj) || (js_IsTypedArray(obj) /*&& js::TypedArray::fromJSObject(obj)->valid()*/) /*|| js_IsArrayBuffer(obj)*/ || JL_IsStringObject(cx, obj);
 }
 
 
@@ -1982,6 +1982,25 @@ ALWAYS_INLINE const char * JLNativeTypeToString( const float64_t & ) { return "F
 
 template <class T>
 INLINE JSBool FASTCALL
+JL_TypedArrayToNativeVector( JSContext *cx, JSObject *obj, T *vector, jsuint maxLength, jsuint *actualLength ) {
+
+	JL_ASSERT( js_IsTypedArray(obj) );
+	js::TypedArray *ta = js::TypedArray::fromJSObject(obj);
+	if ( !ta->valid() )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_RESOURCE);
+	if ( ta->type != JLNativeTypeToTypedArrayType(*vector) )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, JLNativeTypeToString(*vector));
+	*actualLength = ta->length;
+	maxLength = JL_MIN( *actualLength, maxLength );
+	for ( jsuint i = 0; i < maxLength; ++i )
+		vector[i] = ((T*)ta->data)[i];
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+template <class T>
+ALWAYS_INLINE JSBool FASTCALL
 JL_JsvalToNativeVector( JSContext *cx, jsval &val, T *vector, jsuint maxLength, jsuint *actualLength ) {
 
 	JL_S_ASSERT_OBJECT(val);
@@ -1989,26 +2008,8 @@ JL_JsvalToNativeVector( JSContext *cx, jsval &val, T *vector, jsuint maxLength, 
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(val);
 
-	if (unlikely( js_IsTypedArray(arrayObj) )) {
-
-		js::TypedArray *ta = js::TypedArray::fromJSObject(arrayObj);
-
-		if ( !ta->valid() )
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_RESOURCE);
-
-		if ( ta->type != JLNativeTypeToTypedArrayType(*vector) )
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, JLNativeTypeToString(*vector));
-
-//		JL_S_ASSERT( JLNativeTypeToTypedArrayType(*vector) == ta->type, "Unexpected TypedArray type." );
-//		JL_ASSERT( ta->byteLength / ta->length == sizeof(T) );
-
-		*actualLength = ta->length;
-		maxLength = JL_MIN( *actualLength, maxLength );
-		for ( jsuint i = 0; i < maxLength; ++i )
-			vector[i] = ((T*)ta->data)[i];
-		return JS_TRUE;
-	}
-
+	if (unlikely( js_IsTypedArray(arrayObj) ))
+		return JL_TypedArrayToNativeVector(cx, arrayObj, vector, maxLength, actualLength);
 
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, actualLength) );
 	maxLength = JL_MIN( *actualLength, maxLength );
@@ -2910,8 +2911,7 @@ bad:
 		jl_freea(scriptText);
 
 	JS_SetOptions(cx, prevOpts);
-	if ( data )
-		jl_free(data);
+	jl_free(data); // jl_free(NULL) is legal
 	return NULL; // report a warning ?
 }
 

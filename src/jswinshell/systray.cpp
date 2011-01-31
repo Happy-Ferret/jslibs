@@ -728,6 +728,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 		jsval cmdid = JSVAL_VOID;
 		jsval label = JSVAL_VOID;
 		HMENU popupMenu;
+		IFDEBUG( popupMenu = NULL ); // avoid "potentially uninitialized local variable" warning
 
 		jsval item;
 		JL_CHK( JS_GetElement(cx, menuObj, i, &item) );

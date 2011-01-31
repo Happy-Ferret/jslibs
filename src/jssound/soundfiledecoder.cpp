@@ -291,6 +291,9 @@ DEFINE_FUNCTION( Read ) {
 
 			if ( JL_MaybeRealloc(amount, totalSize) )
 				buf = (char*)jl_realloc(buf, totalSize +1);
+		} else {
+
+			JL_REPORT_ERROR("Invalid frame count.");
 		}
 
 	} else {

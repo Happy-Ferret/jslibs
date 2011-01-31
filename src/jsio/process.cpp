@@ -104,6 +104,7 @@ DEFINE_CONSTRUCTOR() {
 
 	PRFileDesc *stdin_child, *stdout_child, *stderr_child;
 	PRFileDesc *stdin_parent, *stdout_parent, *stderr_parent;
+	IFDEBUG( stdin_child = stdout_child = stderr_child = stdin_parent = stdout_parent = stderr_parent = 0 ); // avoid "potentially uninitialized local variable" warning
 
 	if ( stdioRedirect ) {
 

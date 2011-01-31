@@ -62,12 +62,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	DatabasePrivate *pv = NULL;
+
 	JLStr fileName;
 
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-
-	DatabasePrivate *pv = NULL;
 
 	//	int isThreadSafe = sqlite3_threadsafe();
 	
@@ -98,7 +98,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
 bad:
-	jl_free(pv);
+	jl_free(pv); // jl_free(NULL) is legal
 	return JS_FALSE;
 }
 

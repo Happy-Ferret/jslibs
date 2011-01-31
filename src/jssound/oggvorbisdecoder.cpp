@@ -73,7 +73,8 @@ int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 	Private *pv = (Private*)datasource;
 
 	jsval tmpVal;
-	int position, available;
+	int64_t position;
+	int available;
 
 	switch (whence) {
 		case SEEK_SET:
@@ -296,6 +297,9 @@ DEFINE_FUNCTION( Read ) {
 
 			if ( JL_MaybeRealloc(amount, totalSize) )
 				buf = (char*)jl_realloc(buf, totalSize +1);
+		} else {
+
+			JL_REPORT_ERROR("Invalid frame count.");
 		}
 
 	} else {
@@ -459,8 +463,7 @@ DEFINE_PROPERTY( frames ) {
 		return JS_TRUE;
 	}
 //	size_t frames = pcmTotal / pv->ofInfo->channels; // (TBD) ???
-	*vp = INT_TO_JSVAL( pcmTotal );
-	return JS_TRUE;
+	return JL_NativeToJsval(cx, pcmTotal, vp); // *vp = INT_TO_JSVAL( pcmTotal );
 	JL_BAD;
 }
 

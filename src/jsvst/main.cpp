@@ -1117,6 +1117,9 @@ DEFINE_FUNCTION( sendVstEventToHost ) {
 		events.events[1] = NULL;
 		events.events[0] = (VstEvent*)pv;
 		res = vstPlugin->sendVstEventsToHost(&events);
+	} else {
+
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_INSTANCE, "MidiEvent");
 	}
 
 	*JL_RVAL = res ? JSVAL_TRUE : JSVAL_FALSE;

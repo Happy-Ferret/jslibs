@@ -423,7 +423,9 @@ DEFINE_PROPERTY( feedbackVectorSetter ) {
 	ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
 	JL_S_ASSERT( feedback != NULL, "Feedback is disabled." );
 	uint32 length;
-	switch(JSID_TO_INT(id)) {
+	IFDEBUG( length = 0; ) // avoid "potentially uninitialized local variable" warning
+
+	switch ( JSID_TO_INT(id) ) {
 		case body1Force:
 			JL_CHK( JL_JsvalToODERealVector(cx, *vp, feedback->f1, 3, &length) );
 			break;

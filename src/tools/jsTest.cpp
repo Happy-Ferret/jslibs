@@ -57,53 +57,71 @@ my_JLCPUID() {
 	 return (uint32_t)id;
 }
 
+static __declspec(noinline) int GenInt() {
+	
+	return 123;
+}
 
-static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc, jsval &v ) {
+static __declspec(noinline) void SetBool( bool b ) {
 
-	float f = rand();
-	uint64_t ival = f;
+	volatile bool c = b;
+}
+
+
+static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc, jsval &val ) {
+
+	float f32 = rand()*10;
+
+	uint64_t i64 = f32;
+	
+	volatile int i32;
+
 
 	JLStr str;
 
 	float arr[] = { 9,8,7,6,5,4 };
 
-	v = OBJECT_TO_JSVAL(JS_NewArrayObject(cx, 0, NULL));
-
+	val = OBJECT_TO_JSVAL(JS_NewArrayObject(cx, 0, NULL));
 
 	size_t err = JLGetEIP(); size_t a = JLGetEIP(); ////////////////////////////////////////
 
 
+	SetBool( GenInt() != 0 );
+
+	i32 = 0;
+
+	i32 = JL_ReverseBits(i32);
+
+	for ( int i = 0; i < 8; ++i ) {
+
+		printf( i32 & 128 ? "1" : "0" );
+			i32 = i32 << 1;
+	}
+	printf( "\n" );
+
+	uint32_t v, r1, r2;
 
 
+/*
 	float nvec[10];
 	jsuint realLen;
 	JL_CHK( JL_JsvalToNativeVector(cx, v, nvec, COUNTOF(nvec), &realLen ) );
-
-
+*/
 //	JL_S_ASSERT_INT(v);
 	//JL_NativeToJsval(cx, L"ABCDE", 5, &v);
 //	JL_CHK( JL_JsvalToNative(cx, v, &str) );
 	// JL_CHK( JL_NativeToJsval(cx, ival, &v) );
-
 //	JL_NativeVectorToJsval(cx, arr, 6, &v);
-
 //	JL_JsvalToPrimitive(cx, v, &v);
-
 //	JL_Push(cx, obj, &v);
 
 
 	bad: ///////////////////////////////////////////////////////////////////////////////////
 	a = JLGetEIP() - a - (a-err);
 
-	
-	uint32_t id = my_JLCPUID();
-	printf("cpuid = %u\n", id);
-
-
-
 	printf("code length: %d\n", a);
 
-	printf("tmp-%d-%f\n", ival, f);
+	printf("tmp-%d-%f\n", i32, f32);
 }
 
 

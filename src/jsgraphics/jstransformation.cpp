@@ -196,6 +196,8 @@ $TOC_MEMBER $INAME
   Reset the current transformation (set to identity).
 **/
 DEFINE_FUNCTION( Clear ) {
+	
+	JL_USE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
@@ -216,6 +218,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ClearRotation ) {
 
+	JL_USE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -234,6 +237,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ClearTranslation ) {
 
+	JL_USE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -897,6 +901,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( translation ) {
 
+	JL_USE(id);
 	JL_S_ASSERT_ARRAY( *vp );
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -912,6 +917,7 @@ DEFINE_PROPERTY_SETTER( translation ) {
 
 DEFINE_PROPERTY_GETTER( translation ) {
 
+	JL_USE(id);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 
@@ -994,6 +1000,10 @@ DEFINE_SET_PROPERTY() {
 
 DEFINE_INIT() {
 
+	JL_USE(obj);
+	JL_USE(proto);
+	JL_USE(sc);
+	JL_USE(cx);
 	jl::PoolInitialize( &matrixPool, 8192 );
 	return JS_TRUE;
 }
@@ -1032,6 +1042,7 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC( ClearRotation, 0 )
 		FUNCTION_ARGC( ClearTranslation, 0 )
 		FUNCTION_ARGC( RotationFromQuaternion, 4 ) // w,x,y,z
+		FUNCTION_ARGC( TaitBryanRotation, 3 ) // roll, pitch, yaw
 		FUNCTION_ARGC( RotateToVector, 3 ) // x,y,z
 		FUNCTION_ARGC( Rotate, 4 ) // angle, x, y, z
 		FUNCTION_ARGC( RotateX, 1 ) // angle

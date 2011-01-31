@@ -1423,12 +1423,20 @@ DEFINE_PROPERTY( processPrioritySetter ) {
 
 JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
+	JL_USE(vp);
+	JL_USE(id);
+	JL_USE(obj);
+	JL_USE(cx);
+
 	return JS_TRUE;
 //	JL_BAD;
 }
 
 
 DEFINE_FUNCTION( Test ) {
+
+	JL_USE(argc);
+
 /*
 	JSXDRState *xdr1 = JS_XDRNewMem(cx, JSXDR_ENCODE);
 	JS_XDRValue(xdr1, &JL_ARG(1));

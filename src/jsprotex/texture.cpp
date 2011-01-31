@@ -841,8 +841,11 @@ DEFINE_FUNCTION( Aliasing ) {
 		useCurve = true;
 		curve = (float*)alloca( count * sizeof(float) );
 		JL_CHK( InitCurveData( cx, JL_ARG(2), count, curve ) );
-	} else
+	} else {
+
+		IFDEBUG( curve = NULL ); // avoid "potentially uninitialized local variable" warning
 		useCurve = false;
+	}
 
 	int tsize;
 	tsize = tex->width * tex->height * tex->channels;

@@ -72,7 +72,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			}
 
 			val = JSVAL_VOID;
-			JL_REPORT_WARNING("Unavailable %d-th anonymous parameter.", anonParamIndex);
+			JL_REPORT_WARNING("Unavailable %d-th anonymous SQL parameter.", anonParamIndex);
 			goto next;
 		}
 
@@ -80,7 +80,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 
 //			JL_CHK( JL_GetVariableValue(cx, name+1, &val) );
 //			goto next;
-			JL_REPORT_ERROR("Unsupported parameter prefix (%s).", name);
+			JL_REPORT_ERROR("Unsupported SQL parameter prefix (%s).", name);
 		}
 
 		if ( name[0] == '@' ) {
@@ -88,28 +88,28 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			if ( argObj != NULL )  {
 
 				JL_CHK( JS_GetProperty(cx, argObj, name+1, &val) );
-				goto next;
 			} else {
 			
 				val = JSVAL_VOID;
-				JL_REPORT_WARNING("Undefined %s parameter.", name);
-				goto next;
+				JL_REPORT_WARNING("Undefined %s SQL parameter.", name);
 			}
+			goto next;
 		}
 		if ( name[0] == ':' ) {
 
 			if ( curObj != NULL ) {
 
 				JL_CHK( JS_GetProperty(cx, curObj, name+1, &val) );
-				goto next;
 			} else {
 			
 				val = JSVAL_VOID;
-				JL_REPORT_WARNING("Undefined %s parameter.", name);
-				goto next;
+				JL_REPORT_WARNING("Undefined %s SQL parameter.", name);
 			}
+			goto next;
 		}
-next:
+
+		JL_REPORT_ERROR("Unsupported SQL Parameter");
+	next:
 
 		int ret;
 		// sqlite3_bind_value( pStmt, param,
@@ -168,7 +168,7 @@ next:
 				}
 				break;
 			default:
-				JL_REPORT_ERROR("Unsupported data type"); // (TBD) better error message
+				JL_REPORT_ERROR("Unsupported SQL parameter data type"); // (TBD) better error message
 		}
 	}
 	return JS_TRUE;

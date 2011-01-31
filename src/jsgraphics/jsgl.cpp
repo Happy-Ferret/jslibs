@@ -885,7 +885,7 @@ DEFINE_FUNCTION( GetInteger ) {
 
 		if ( JL_IS_SAFE ) {
 
-			int argset = sizeof(params);
+			jsuint argset = sizeof(params);
 			while ( --argset >= 0 && ((unsigned char*)params)[argset] == 0xAA );
 			argset = argset / sizeof(*params) + 1;
 			if ( argset != count )
@@ -957,7 +957,7 @@ DEFINE_FUNCTION( GetDouble ) {
 
 		if ( JL_IS_SAFE ) {
 
-			int argset = sizeof(params);
+			jsuint argset = sizeof(params);
 			while ( --argset >= 0 && ((unsigned char*)params)[argset] == 0xAA );
 			argset = argset / sizeof(*params) + 1;
 			if ( argset != count )
@@ -1183,6 +1183,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Flush ) {
 
+	JL_USE(argc);
+	JL_USE(cx);
 	glFlush();  OGL_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
@@ -1199,6 +1201,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Finish ) {
 
+	JL_USE(argc);
+	JL_USE(cx);
 	glFinish();  OGL_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
@@ -2146,7 +2150,7 @@ DEFINE_FUNCTION( DepthMask ) {
 	JL_S_ASSERT_ARG(1);
 	JL_S_ASSERT_BOOLEAN(JL_ARG(1));
 	
-	glDepthMask( JSVAL_TO_BOOLEAN( JL_ARG(1) ) );  OGL_CHK;
+	glDepthMask( JSVAL_TO_BOOLEAN( JL_ARG(1) ) != 0 );  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -2425,7 +2429,7 @@ DEFINE_FUNCTION( ColorMask ) {
 	JL_S_ASSERT_BOOLEAN(JL_ARG(3));
 	JL_S_ASSERT_BOOLEAN(JL_ARG(4));
 
-	glColorMask(JSVAL_TO_BOOLEAN(JL_ARG(1)), JSVAL_TO_BOOLEAN(JL_ARG(2)), JSVAL_TO_BOOLEAN(JL_ARG(3)), JSVAL_TO_BOOLEAN(JL_ARG(4)) );  OGL_CHK;
+	glColorMask( JSVAL_TO_BOOLEAN(JL_ARG(1)) != 0, JSVAL_TO_BOOLEAN(JL_ARG(2)) != 0, JSVAL_TO_BOOLEAN(JL_ARG(3)) != 0, JSVAL_TO_BOOLEAN(JL_ARG(4)) != 0 );  OGL_CHK;
 
 	return JS_TRUE;
 	JL_BAD;
@@ -4014,6 +4018,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CreateProgramObject ) {
 
+	JL_USE(argc);
 	JL_INIT_OPENGL_EXTENSION( glCreateProgramObjectARB, PFNGLCREATEPROGRAMOBJECTARBPROC );
 
 	GLhandleARB programHandle = glCreateProgramObjectARB();  OGL_CHK;
@@ -4558,7 +4563,7 @@ DEFINE_FUNCTION( UniformFloatVector ) {
 
 		JL_S_ASSERT_ARRAY(JL_ARG(2));
 		GLfloat val[4]; // max for *4fv
-		JSObject *arr = JSVAL_TO_OBJECT(JL_ARG(2));
+//		JSObject *arr = JSVAL_TO_OBJECT(JL_ARG(2));
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), val, COUNTOF(val), &len) );
 		JL_S_ASSERT( len >= 0 && len <= 4, "Unsupported vector length." );
 		JL_ASSERT( len >= 0 && len <= 4 );
@@ -4575,6 +4580,10 @@ DEFINE_FUNCTION( UniformFloatVector ) {
 	value = (GLfloat*)jl_malloca(sizeof(GLfloat) * 4 * count); // allocate the max
 	GLfloat *tmpVec = value;
 
+	JL_ASSERT( count >= 1 );
+
+	IFDEBUG( len = 0 ); // avoid "potentially uninitialized local variable" warning
+
 	for ( int i = 0; i < count; --i ) {
 
 		JL_CHK( JL_JsvalToNativeVector(cx, *tmpVal, tmpVec, 4, &len) );
@@ -4586,6 +4595,8 @@ DEFINE_FUNCTION( UniformFloatVector ) {
 		tmpVec += len;
 		tmpVal += 1;
 	}
+
+	JL_ASSERT( len );
 
 	(len == 3 ? glUniform3fvARB : len == 4 ? glUniform4fvARB : len == 2 ? glUniform2fvARB : len == 1 ? glUniform1fvARB : NULL)(uniformLocation, count, value);  OGL_CHK;
 	jl_freea(value);
@@ -5363,7 +5374,7 @@ DEFINE_FUNCTION( DrawImage ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &dataStr) );
 		data = dataStr.GetConstStr();
 
-		JL_S_ASSERT( dataStr.Length() == width * height * channels * 1, "Invalid image format." );
+		JL_S_ASSERT( (int)dataStr.Length() == width * height * channels * 1, "Invalid image format." );
 		JL_S_ASSERT_RESOURCE(data);
 		type = GL_UNSIGNED_BYTE;
 	}
@@ -5373,6 +5384,8 @@ DEFINE_FUNCTION( DrawImage ) {
 		JL_S_ASSERT_INT(JL_ARG(2));
 		format = JSVAL_TO_INT(JL_ARG(2));
 	} else { // guess
+
+		//JL_ASSERT( format == GL_LUMINANCE || format == GL_LUMINANCE_ALPHA || format == GL_RGB || format == GL_RGBA );
 
 		switch ( channels ) {
 			case 1:
@@ -5387,6 +5400,8 @@ DEFINE_FUNCTION( DrawImage ) {
 			case 4:
 				format = GL_RGBA;
 				break;
+			default:
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_INTERNAL_ERROR, "Invalid channel count");
 		}
 	}
 
@@ -5543,6 +5558,8 @@ struct OpenGlTrimeshInfo {
 };
 
 void FinalizeTrimesh(void *pv) {
+	
+	JL_USE(pv);
 
 /* (TBD)!
 
@@ -5781,6 +5798,8 @@ void TextureBufferFinalize(void* data) {
 
 DEFINE_FUNCTION( CreateTextureBuffer ) {
 
+	JL_USE(argc);
+
 	JL_INIT_OPENGL_EXTENSION( glGenBuffers, PFNGLGENBUFFERSPROC );
 //	JL_INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
 
@@ -5878,7 +5897,7 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &width) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &height) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &channels) );
-		JL_S_ASSERT( width*height*channels == arr->length, "Invalid texture size." );
+		JL_S_ASSERT( width*height*channels == (int)arr->length, "Invalid texture size." );
 		data = arr->data;
 	} else {
 
@@ -5889,7 +5908,7 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &dataStr) );
 		data = dataStr.GetConstStr();
 
-		JL_S_ASSERT( dataStr.Length() == width * height * channels * 1, "Invalid image format." );
+		JL_S_ASSERT( (int)dataStr.Length() == width * height * channels * 1, "Invalid image format." );
 		JL_S_ASSERT_RESOURCE(data);
 		type = GL_UNSIGNED_BYTE;
 	}
@@ -6256,6 +6275,9 @@ $TOC_MEMBER $INAME()
 **/
 DEFINE_FUNCTION( FullQuad ) {
 
+	JL_USE(argc);
+	JL_USE(cx);
+
 	glPushMatrix();
 	glLoadIdentity();
 	glMatrixMode(GL_PROJECTION);
@@ -6379,6 +6401,9 @@ $TOC_MEMBER $INAME()
 **/
 DEFINE_FUNCTION( KeepTranslation ) {
 
+	JL_USE(argc);
+	JL_USE(cx);
+
 	GLfloat m[16];
 	glGetFloatv(GL_MODELVIEW_MATRIX, m);  OGL_CHK;
 
@@ -6412,6 +6437,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( error ) {
 
+	JL_USE(id);
+	JL_USE(obj);
+	JL_USE(cx);
+
 	// When an error occurs, the error flag is set to the appropriate error code value. No other errors are recorded
 	// until glGetError is called, the error code is returned, and the flag is reset to GL_NO_ERROR.
 	*vp = INT_TO_JSVAL(glGetError());
@@ -6421,6 +6450,9 @@ DEFINE_PROPERTY( error ) {
 
 
 JSBool MatrixGet(JSContext *cx, JSObject *obj, float **m) {
+
+	JL_USE(obj);
+	JL_USE(cx);
 
 	GLint matrixMode;
 	glGetIntegerv(GL_MATRIX_MODE, &matrixMode);  OGL_CHK;
@@ -6450,6 +6482,9 @@ void *windowsGLGetProcAddress(const char *procName) {
 
 
 DEFINE_INIT() {
+
+	JL_USE(proto);
+	JL_USE(sc);
 
 #ifdef DEBUG
 

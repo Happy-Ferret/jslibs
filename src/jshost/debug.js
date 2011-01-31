@@ -1,23 +1,11 @@
-LoadModule('jsstd');
-
-var arr = new Float32Array(3);
-
-arr[0] = 123;
-arr[1] = 456;
-arr[2] = 789;
-
-jslang_test(arr);
-
-Halt();
-
 LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();
 //RunJsircbot(false); throw 0;
-RunQATests('-rep 1 -q -nogcB -exclude jstask');
+//RunQATests('-rep 1 -q -nogcB -exclude jstask -perf perfset.js ');
 //  -loopForever -flags f -gcZeal 0 -nogcB -loop -gcZeal 0 
 //  Serialization|ProcessEvents
-//Exec('../../perfset.js'); throw 0; // -perf perfset.js 
+Exec('../../perfset.js'); throw 0; // -perf perfset.js 
 
 
 

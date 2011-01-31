@@ -162,13 +162,14 @@ DEFINE_PROPERTY_SETTER( surface ) {
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		set = false;
+		IFDEBUG( value = 0 ); // avoid "potentially uninitialized local variable" warning
 	} else {
 
 		set = true;
 		JL_CHK( JL_JsvalToODEReal(cx, *vp, &value) );
 	}
 
-	switch(JSID_TO_INT(id)) {
+	switch ( JSID_TO_INT(id) ) {
 		case mu:
 			if ( set )
 				surface->mu = value;
