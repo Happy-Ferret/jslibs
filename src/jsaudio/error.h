@@ -13,7 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 DECLARE_CLASS( OalError )
-JSBool ThrowOalError( JSContext *cx, ALenum err );
+
+NEVER_INLINE JSBool FASTCALL
+ThrowOalError( JSContext *cx, ALenum err );
 
 inline JSBool CheckThrowCurrentOalError( JSContext *cx ) {
 

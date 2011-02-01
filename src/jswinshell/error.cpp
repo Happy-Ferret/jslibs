@@ -182,7 +182,8 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-JSBool WinNewError( JSContext *cx, DWORD errorCode, jsval *rval ) {
+NEVER_INLINE JSBool FASTCALL
+WinNewError( JSContext *cx, DWORD errorCode, jsval *rval ) {
 
 	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_PROTOTYPE(cx, WinError), NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
 	
@@ -194,7 +195,8 @@ JSBool WinNewError( JSContext *cx, DWORD errorCode, jsval *rval ) {
 	JL_BAD;
 }
 
-JSBool WinThrowError( JSContext *cx, DWORD errorCode ) {
+NEVER_INLINE JSBool FASTCALL
+WinThrowError( JSContext *cx, DWORD errorCode ) {
 
 //	JL_SAFE(	JS_ReportWarning( cx, "WinError exception" ) );
 	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_PROTOTYPE(cx, WinError), NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception

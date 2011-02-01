@@ -521,8 +521,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 bad_ex:
 	ThrowIoError(cx);
 bad:
-	if ( buffer )
-		JS_free(cx, buffer);
+	JS_free(cx, buffer); // JS_free NULL pointer is legal.
 	return JS_FALSE;
 }
 

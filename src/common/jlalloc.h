@@ -47,7 +47,7 @@ extern jl_free_t jl_free;
 // alloc wrappers
 
 /*
-template <typename T>
+template <class T>
 ALWAYS_INLINE bool
 JL_Alloc( T*&ptr, size_t count = 1 ) {
 
@@ -55,7 +55,7 @@ JL_Alloc( T*&ptr, size_t count = 1 ) {
 	return ptr != NULL;
 }
 
-template <typename T>
+template <class T>
 ALWAYS_INLINE bool
 JL_Realloc( T*&ptr, size_t count = 1 ) {
 
@@ -141,7 +141,7 @@ namespace jl {
 	};
 
 
-	template <typename T>
+	template <class T>
 	class _NOVTABLE DefaultAlloc {
 	public:
 		ALWAYS_INLINE void Free(void *ptr) {
@@ -153,7 +153,7 @@ namespace jl {
 	};
 
 
-	template <typename T, const size_t PREALLOC = 0>
+	template <class T, const size_t PREALLOC = 0>
 	class _NOVTABLE PreservAlloc {
 
 		void *_last;
@@ -210,21 +210,21 @@ namespace jl {
 		}
 	};
 
-	template <typename T>
+	template <class T>
 	class _NOVTABLE PreservAllocNone : public PreservAlloc<T, 0> {};
 
-	template <typename T>
+	template <class T>
 	class _NOVTABLE PreservAllocSmall : public PreservAlloc<T, 256> {};
 
-	template <typename T>
+	template <class T>
 	class _NOVTABLE PreservAllocMedium : public PreservAlloc<T, 4096> {};
 
-	template <typename T>
+	template <class T>
 	class _NOVTABLE PreservAllocBig : public PreservAlloc<T, 65536> {};
 
 
 
-	template <typename T, const size_t PREALLOC_SIZE = 1024>
+	template <class T, const size_t PREALLOC_SIZE = 1024>
 	class _NOVTABLE StaticAlloc {
 
 		void *_last;
@@ -278,13 +278,13 @@ namespace jl {
 		}
 	};
 
-	template <typename T>
+	template <class T>
 	class _NOVTABLE StaticAllocSmall : public StaticAlloc<T, 256> {};
 
-	template <typename T>
+	template <class T>
 	class _NOVTABLE StaticAllocMedium : public StaticAlloc<T, 4096> {};
 
-	template <typename T>
+	template <class T>
 	class _NOVTABLE StaticAllocBig : public StaticAlloc<T, 65536> {};
 }
 

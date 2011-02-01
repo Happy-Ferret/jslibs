@@ -45,12 +45,10 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
-		
 	int status = iconv_close(pv->cd); // if ( status == -1 ) error is in errno.
+	JS_free(cx, pv);
 	if ( status == -1 )
 		JL_REPORT_WARNING("iconv_close failure in Iconv finalize (%d).", errno);
-
-	JS_free(cx, pv);
 bad:
 	return;
 }
@@ -313,8 +311,7 @@ DEFINE_CALL() {
 	return JS_TRUE;
 
 bad:
-	if ( outBuf != NULL )
-		JS_free(cx, outBuf);
+	JS_free(cx, outBuf); // JS_free NULL pointer is legal.
 	return JS_FALSE;
 }
 

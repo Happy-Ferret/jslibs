@@ -13,9 +13,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 DECLARE_CLASS( SdlError )
-JSBool ThrowSdlError( JSContext *cx );
 
-ALWAYS_INLINE bool HasSDLError() {
+NEVER_INLINE JSBool FASTCALL
+ThrowSdlError( JSContext *cx );
+
+ALWAYS_INLINE bool 
+HasSDLError() {
 
 	const char *errStr = SDL_GetError();
 	JL_ASSERT( errStr != NULL );

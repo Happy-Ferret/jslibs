@@ -47,6 +47,8 @@ class JLStr;
 INLINE JSBool FASTCALL JL_JSArrayToBuffer( JSContext *cx, JSObject *arrObj, JLStr *str );
 
 
+JSClass *JL_GetStandardClassByKey(JSContext *cx, JSProtoKey key);
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // helper macros to avoid a function call to the jsapi
@@ -536,6 +538,7 @@ JL_NullJsid() { // is (double)0
 ALWAYS_INLINE jsid
 JL_GetPrivateJsid( JSContext * RESTRICT cx, int index, const jschar * RESTRICT name ) {
 
+	JL_ASSERT( JL_GetHostPrivate(cx) != NULL );
 	jsid id = JL_GetHostPrivate(cx)->ids[index];
 	if (likely( id != JL_NullJsid() ))
 		return id;
@@ -581,7 +584,7 @@ enum JLErrNum {
 	JL_MACRO_END
 
 
-// less costly than a macro or an ALWAYS_INLINE
+// Less costly than a macro or an ALWAYS_INLINE (unlikely case)
 INLINE NEVER_INLINE void FASTCALL
 JL_ReportErrorNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg1 = NULL, const char * RESTRICT arg2 = NULL ) {
 
@@ -594,7 +597,7 @@ JL_ReportErrorNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg
 		JS_ReportError(cx, "undefined message %d", num);
 }
 
-// Report a jslibs error. see jlerrors.msg
+// Unconditionally reports a jslibs error. see jlerrors.msg
 #define JL_REPORT_ERROR_NUM( cx, num, ... ) \
 	JL_MACRO_BEGIN \
 		JL_ReportErrorNum(cx, num, ##__VA_ARGS__ ); \
@@ -612,17 +615,32 @@ JL_ReportErrorNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg
 	JL_MACRO_END
 
 
+
+// Less costly than a macro or an ALWAYS_INLINE (unlikely case)
+INLINE NEVER_INLINE JSBool FASTCALL
+JL_ReportWarningNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg1 = NULL, const char * RESTRICT arg2 = NULL ) {
+
+	JL_ASSERT_IF( arg1 != NULL && arg2 != NULL, arg1 != arg2 );
+	HostPrivate *hpv;
+	hpv = JL_GetHostPrivate(cx);
+	if ( hpv != NULL && hpv->errorCallback != NULL ) {
+		
+		if ( !JS_ReportErrorFlagsAndNumber(cx, JSREPORT_WARNING, hpv->errorCallback, NULL, num, arg1, arg2) )
+			return JS_FALSE;
+	} else {
+		
+		if ( !JS_ReportWarning(cx, "undefined message %d", num) )
+			return JS_FALSE;
+	}
+	return JS_TRUE;
+}
+
+
 #define JL_REPORT_WARNING_NUM( cx, num, ... ) \
 	JL_MACRO_BEGIN \
 		if (unlikely( !_unsafeMode )) { \
-			HostPrivate *hpv; \
-			hpv = JL_GetHostPrivate(cx); \
-			if ( hpv != NULL && hpv->errorCallback != NULL ) { \
-				if ( !JS_ReportErrorFlagsAndNumber(cx, JSREPORT_WARNING, hpv->errorCallback, NULL, (num), ##__VA_ARGS__) ) \
-					goto bad; \
-			} else { \
-				if ( !JS_ReportWarning(cx, "undefined message %d", (num)) ) \
-					goto bad; \
+			if ( !JL_ReportWarningNum(cx, num, ##__VA_ARGS__ ) ) { \
+				goto bad; \
 			} \
 		} \
 	JL_MACRO_END
@@ -711,22 +729,19 @@ JL_ReportErrorNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg
 
 
 #define JL_S_ASSERT_ARG_MIN(minCount) \
-	JL_S_ASSERT_ERROR_NUM( (argc) >= (minCount), JLSMSG_TOO_FEW_ARGUMENTS, #minCount );
+	JL_S_ASSERT_ERROR_NUM( (argc) >= (minCount), JLSMSG_TOO_FEW_ARGUMENTS, (#minCount) );
 
 
 #define JL_S_ASSERT_ARG_MAX(maxCount) \
-	JL_S_ASSERT_ERROR_NUM( (argc) <= (maxCount), JLSMSG_TOO_MANY_ARGUMENTS, #maxCount );
+	JL_S_ASSERT_ERROR_NUM( (argc) <= (maxCount), JLSMSG_TOO_MANY_ARGUMENTS, (#maxCount) );
 
 
 #define JL_S_ASSERT_ARG_RANGE(minCount, maxCount) \
-	JL_MACRO_BEGIN \
-		JL_S_ASSERT_ARG_MIN(minCount); \
-		JL_S_ASSERT_ARG_MAX(maxCount); \
-	JL_MACRO_END
+	JL_S_ASSERT_ERROR_NUM( JL_INRANGE((argc), (minCount), (maxCount)), JLSMSG_INVALID_ARGUMENT_COUNT, #minCount ## ".." ## #maxCount );
 
 
 #define JL_S_ASSERT_ARG(count) \
-	JL_S_ASSERT_ARG_RANGE(count, count);
+	JL_S_ASSERT_ERROR_NUM( (argc) == (count), JLSMSG_INVALID_ARGUMENT_COUNT, #count );
 
 
 #define JL_S_ASSERT_DEFINED(value) \
@@ -743,19 +758,19 @@ JL_ReportErrorNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg
 
 
 #define JL_S_ASSERT_BOOLEAN(value) \
-	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_BOOLEAN(value) || (!JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClassByKey(cx, JSProto_Boolean)), JLSMSG_EXPECT_TYPE, "boolean" );
-
-
-#define JL_S_ASSERT_LOSSLESS_INT(value) \
-	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && JSVAL_TO_DOUBLE(value) < MAX_INT_TO_DOUBLE && JSVAL_TO_DOUBLE(value) > -MAX_INT_TO_DOUBLE), JLSMSG_EXPECT_TYPE, "smaller integer" );
+	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_BOOLEAN(value) || NOIL(JL_IsBooleanObject)(cx, (value)), JLSMSG_EXPECT_TYPE, "boolean" );
 
 
 #define JL_S_ASSERT_NUMBER(value) \
-	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_NUMBER(value) || (!JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClassByKey(cx, JSProto_Number)), JLSMSG_EXPECT_TYPE, "number" );
+	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_NUMBER(value) || NOIL(JL_IsNumberObject)(cx, (value)), JLSMSG_EXPECT_TYPE, "number" );
 
 
 #define JL_S_ASSERT_INT(value) \
 	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_INT(value), JLSMSG_EXPECT_TYPE, "integer" );
+
+
+#define JL_S_ASSERT_LOSSLESS_INT(value) \
+	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && JSVAL_TO_DOUBLE(value) < MAX_INT_TO_DOUBLE && JSVAL_TO_DOUBLE(value) > -MAX_INT_TO_DOUBLE), JLSMSG_EXPECT_TYPE, "smaller integer" );
 
 
 #define JL_S_ASSERT_STRING(value) \
@@ -852,8 +867,14 @@ ALWAYS_INLINE bool
 JL_IsReal( const JSContext *cx, const jsval &val ) {
 
 	JL_USE(cx);
-	return JSVAL_IS_INT(val)
-	    || ( JSVAL_IS_DOUBLE(val) && JSVAL_TO_DOUBLE(val) > -MAX_INT_TO_DOUBLE && JSVAL_TO_DOUBLE(val) < MAX_INT_TO_DOUBLE );
+	if ( JSVAL_IS_INT(val) )
+		return true;
+	if ( JSVAL_IS_DOUBLE(val) ) {
+
+		double tmp = JSVAL_TO_DOUBLE(val);
+		return tmp >= -MAX_INT_TO_DOUBLE && tmp <= MAX_INT_TO_DOUBLE;
+	}
+	return false;
 }
 
 
@@ -883,9 +904,23 @@ JL_IsObjectObject( JSContext *cx, const JSObject *obj ) {
 
 
 ALWAYS_INLINE bool
+JL_IsBooleanObject( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+
+	return !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClassByKey(cx, JSProto_Boolean);
+}
+
+
+ALWAYS_INLINE bool
+JL_IsNumberObject( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+
+	return !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClassByKey(cx, JSProto_Number);
+}
+
+
+ALWAYS_INLINE bool
 JL_IsArray( JSContext *cx, JSObject *obj ) {
 
-	return JS_IsArrayObject(cx, obj) != 0; // Object::isArray() is not public
+	return JS_IsArrayObject(cx, obj) == JS_TRUE; // Object::isArray() is not public
 }
 
 
@@ -927,6 +962,14 @@ JL_IsFunction( const JSContext *cx, const JSObject *obj ) {
 
 
 ALWAYS_INLINE bool
+JL_IsFunction( const JSContext *cx, const jsval &val ) {
+
+	JL_USE(cx);
+	return VALUE_IS_FUNCTION(cx, val);
+}
+
+
+ALWAYS_INLINE bool
 JL_IsXML( const JSContext *cx, const JSObject *obj ) {
 
 	JL_USE(cx);
@@ -934,16 +977,8 @@ JL_IsXML( const JSContext *cx, const JSObject *obj ) {
 	extern JS_FRIEND_DATA(js::Class) js_XMLClass;
 	return JL_GetClass(obj) == js::Jsvalify(&js_XMLClass);
 #else
-	return false
+	return false;
 #endif // JS_HAS_XML_SUPPORT
-}
-
-
-ALWAYS_INLINE bool
-JL_IsFunction( const JSContext *cx, const jsval &val ) {
-
-	JL_USE(cx);
-	return VALUE_IS_FUNCTION(cx, val);
 }
 
 
@@ -954,7 +989,7 @@ JL_IsStringObject( const JSContext *cx, const JSObject *obj ) {
 }
 
 
-INLINE bool FASTCALL
+INLINE NEVER_INLINE bool
 JL_IsDataObject( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
 	return BufferGetInterface(cx, obj) != NULL || JL_IsArray(cx, obj) || (js_IsTypedArray(obj) /*&& js::TypedArray::fromJSObject(obj)->valid()*/) /*|| js_IsArrayBuffer(obj)*/ || JL_IsStringObject(cx, obj);
@@ -1286,7 +1321,7 @@ private:
 // convertion functions
 
 /*
-template <typename T>
+template <class T>
 ALWAYS_INLINE void
 JL_NullTerminate( T* &buf, size_t len ) {
 
@@ -1359,10 +1394,14 @@ ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, JLStr &cval, jsval *vp ) {
 
 	JSString *str = cval.GetJSString(cx);
-	if (unlikely( !str ))
+	if (likely( str )) {
+
+		*vp = STRING_TO_JSVAL(str);
+		return JS_TRUE;
+	} else {
+
 		return JS_FALSE;
-	*vp = STRING_TO_JSVAL(str);
-	return JS_TRUE;
+	}
 }
 
 
@@ -1558,12 +1597,12 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const int64_t &num, jsval *vp ) {
 
-	if ( num >= int64_t(JSVAL_INT_MIN) && num <= int64_t(JSVAL_INT_MAX) ) {
+	if (likely( num >= int64_t(JSVAL_INT_MIN) && num <= int64_t(JSVAL_INT_MAX) )) {
 
 		*vp = INT_TO_JSVAL(jsint(num));
 	} else {
 
-		if ( num < int64_t(-MAX_INT_TO_DOUBLE) || num > int64_t(MAX_INT_TO_DOUBLE) )
+		if (unlikely( num < int64_t(-MAX_INT_TO_DOUBLE) || num > int64_t(MAX_INT_TO_DOUBLE) ))
 			JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
 		*vp = DOUBLE_TO_JSVAL(jsdouble(num));
 	}	
@@ -1621,7 +1660,7 @@ JL_NativeToJsval( JSContext *cx, const uint64_t &num, jsval *vp ) {
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const uint64_t &num, jsval *vp )
 	
 	JL_SAFE_BEGIN
-	if ( num > MAX_INT_TO_DOUBLE )
+	if (unlikely( num > MAX_INT_TO_DOUBLE ))
 		JL_REPORT_WARNING_NUM(cx, JLSMSG_VALUE_LOSSOFDATA);
 	JL_SAFE_END
 	*vp = DOUBLE_TO_JSVAL(jsdouble(num));
@@ -1629,6 +1668,7 @@ JL_NativeToJsval( JSContext *cx, const uint64_t &num, jsval *vp ) {
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, num, vp);
+
 }
 
 
@@ -1649,7 +1689,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) ); // NULL gives 0
 
-	if (likely( d < MAX_INT_TO_DOUBLE )) { // or d <= jsdouble(_UI64_MAX)
+	if (likely( d >= jsdouble(0) && d <= MAX_INT_TO_DOUBLE )) { // or d <= jsdouble(_UI64_MAX)
 
 		JL_SAFE_BEGIN
 		if ( !JL_DOUBLE_IS_INTEGER(d) )
@@ -1813,7 +1853,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, double *num ) {
 		*num = JSVAL_TO_DOUBLE(val);
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_INT(val) ) {
+	if (likely( JSVAL_IS_INT(val) )) {
 
 		*num = double(JSVAL_TO_INT(val));
 		return JS_TRUE;
@@ -1840,13 +1880,13 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, float *num ) {
 		*num = float(JSVAL_TO_DOUBLE(val));
 		return JS_TRUE;
 	}
-	if ( JSVAL_IS_INT(val) ) {
+	if (likely( JSVAL_IS_INT(val) )) {
 
 		*num = float(JSVAL_TO_INT(val));
 		return JS_TRUE;
 	}
 	jsdouble tmp;
-	if ( !JS_ValueToNumber(cx, val, &tmp) )
+	if (unlikely( !JS_ValueToNumber(cx, val, &tmp) ))
 		return JS_FALSE;
 	*num = float(tmp);
 	return JS_TRUE;
@@ -1866,21 +1906,14 @@ JL_NativeToJsval( JSContext *cx, const bool &b, jsval *vp ) {
 ALWAYS_INLINE JSBool
 JL_JsvalToNative( JSContext *cx, const jsval &val, bool *b ) {
 
-	//if (likely( JSVAL_IS_BOOLEAN(val) )) {
-	//	*b = (JSVAL_TO_BOOLEAN(val) == JS_TRUE);
-	//	return JS_TRUE;
-	if ( js::Valueify(val).isTrue() ) {
+	if (likely( JSVAL_IS_BOOLEAN(val) )) {
 
-		*b = true;
+		*b = (JSVAL_TO_BOOLEAN(val) == JS_TRUE);
 		return JS_TRUE;
 	}
-	if ( js::Valueify(val).isFalse() ) {
 
-		*b = false;
-		return JS_TRUE;
-	}
 	JSBool tmp;
-	if ( !JS_ValueToBoolean(cx, val, &tmp) )
+	if (unlikely( !JS_ValueToBoolean(cx, val, &tmp) ))
 		return JS_FALSE;
 	*b = (tmp == JS_TRUE);
 	return JS_TRUE;
@@ -1982,7 +2015,7 @@ ALWAYS_INLINE const char * JLNativeTypeToString( const float64_t & ) { return "F
 
 template <class T>
 INLINE JSBool FASTCALL
-JL_TypedArrayToNativeVector( JSContext *cx, JSObject *obj, T *vector, jsuint maxLength, jsuint *actualLength ) {
+JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T * RESTRICT vector, jsuint maxLength, jsuint * RESTRICT actualLength ) {
 
 	JL_ASSERT( js_IsTypedArray(obj) );
 	js::TypedArray *ta = js::TypedArray::fromJSObject(obj);
@@ -2180,7 +2213,7 @@ JL_JsvalToJsid( JSContext *cx, jsval *val, jsid *id ) {
 }
 
 
-ALWAYS_INLINE JSBool
+INLINE JSBool FASTCALL
 JL_JsidToJsval( JSContext *cx, jsid id, jsval *val ) {
 
 	if ( JSID_IS_INT( id ) ) {
@@ -2414,8 +2447,7 @@ JL_NewBlob( JSContext * RESTRICT cx, void* RESTRICT buffer, size_t length, jsval
 	return JS_TRUE;
 
 bad:
-	if ( buffer )
-		JS_free(cx, buffer); // JS_NewString does not free the buffer on error.
+	JS_free(cx, buffer); // JS_NewString does not free the buffer on error.
 	return JS_FALSE;
 }
 
@@ -2469,7 +2501,7 @@ JL_GetClassProtoKey(const JSClass *clasp) {
     JSProtoKey key = JSCLASS_CACHED_PROTO_KEY(clasp);
     if (key != JSProto_Null)
         return key;
-    if (clasp->flags & JSCLASS_IS_ANONYMOUS)
+    if (clasp->flags & JSCLASS_IS_ANONYMOUS) // and JSCLASS_IS_GLOBAL ?
         return JSProto_Object;
     return JSProto_Null;
 }
@@ -2482,6 +2514,8 @@ JL_GetObjectProtoKey( JSContext *cx, JSObject *obj ) {
 	JSObject *proto;
 	const JSObject *objProto = JS_GetPrototype(cx, obj);
 	JSProtoKey protoKey = JL_GetClassProtoKey(JL_GetClass(obj));
+	if ( protoKey == JSProto_Null )
+		return JSProto_Null;
 	if ( !js_GetClassPrototype(cx, global, protoKey, &proto) )
 		return JSProto_Null;
 	if ( objProto == proto )
@@ -2522,7 +2556,7 @@ JL_MaybeRealloc( size_t requested, size_t received ) {
 }
 
 
-ALWAYS_INLINE JSBool
+INLINE NEVER_INLINE JSBool FASTCALL
 JL_ThrowOSError(JSContext *cx) {
 
 	char errMsg[1024];
@@ -3047,7 +3081,7 @@ ReserveNativeInterface( JSContext *cx, JSObject *obj, const jsid &id ) {
 }
 
 
-template <typename T>
+template <class T>
 ALWAYS_INLINE JSBool
 SetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id, const T nativeFct ) {
 
@@ -3065,7 +3099,7 @@ SetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id, const T native
 }
 
 
-template <typename T>
+template <class T>
 ALWAYS_INLINE const T
 GetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id ) {
 

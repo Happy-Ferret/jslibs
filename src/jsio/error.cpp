@@ -270,7 +270,8 @@ END_CLASS
 
 
 
-JSBool ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
+NEVER_INLINE JSBool FASTCALL
+ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 
 	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(IoError), JL_PROTOTYPE(cx, IoError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
@@ -282,7 +283,8 @@ JSBool ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) 
 }
 
 
-JSBool ThrowIoError( JSContext *cx ) {
+NEVER_INLINE JSBool FASTCALL
+ThrowIoError( JSContext *cx ) {
 
 	return ThrowIoErrorArg(cx, PR_GetError(), PR_GetOSError());
 }

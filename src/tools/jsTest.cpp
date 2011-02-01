@@ -19,9 +19,6 @@ JSClass global_class = {
 
 NEVER_INLINE int test() {
 
-
-
-
 	printf("xxx\n");
 	return 6;
 }
@@ -59,7 +56,7 @@ my_JLCPUID() {
 
 static __declspec(noinline) int GenInt() {
 	
-	return 123;
+	return 2;
 }
 
 static __declspec(noinline) void SetBool( bool b ) {
@@ -74,7 +71,7 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 
 	uint64_t i64 = f32;
 	
-	volatile int i32;
+	volatile int i32 = 1;
 
 
 	JLStr str;
@@ -83,26 +80,15 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 
 	val = OBJECT_TO_JSVAL(JS_NewArrayObject(cx, 0, NULL));
 
+	argc = GenInt();
+
+	bool b = f32 > 1;
+
 	size_t err = JLGetEIP(); size_t a = JLGetEIP(); ////////////////////////////////////////
 
+	b = JL_IsData(cx, val);
 
-	SetBool( GenInt() != 0 );
-
-	i32 = 0;
-
-	i32 = JL_ReverseBits(i32);
-
-	for ( int i = 0; i < 8; ++i ) {
-
-		printf( i32 & 128 ? "1" : "0" );
-			i32 = i32 << 1;
-	}
-	printf( "\n" );
-
-	uint32_t v, r1, r2;
-
-
-/*
+	/*
 	float nvec[10];
 	jsuint realLen;
 	JL_CHK( JL_JsvalToNativeVector(cx, v, nvec, COUNTOF(nvec), &realLen ) );
@@ -121,13 +107,13 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 
 	printf("code length: %d\n", a);
 
-	printf("tmp-%d-%f\n", i32, f32);
+	printf("tmp-%d-%f-i\n", i32, f32, b);
 }
 
 
 int main(int argc, char* argv[]) {
 
-	_unsafeMode = true;
+	_unsafeMode = false;
 
 	JSRuntime *rt = JS_NewRuntime(0);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
@@ -146,7 +132,7 @@ int main(int argc, char* argv[]) {
 	val = STRING_TO_JSVAL(jsstr);
 	val = DOUBLE_TO_JSVAL(1.234);
 
-	Test(cx, globalObject, 0, val);
+	Test(cx, globalObject, 20, val);
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);

@@ -152,7 +152,8 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-JSBool ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
+NEVER_INLINE JSBool FASTCALL
+ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
 
 	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(ZError), JL_PROTOTYPE(cx, ZError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );

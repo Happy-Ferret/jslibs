@@ -45,6 +45,7 @@ MSG_DEF(JLSMSG_OS_ERROR,               1016, 1, JSEXN_INTERNALERR, "OS: {0}")
 MSG_DEF(JLSMSG_VALUE_LOSSOFDATA,       1017, 0, JSEXN_ERR, "loss of data or precision")
 MSG_DEF(JLSMSG_FAIL_TO_CREATE,         1018, 1, JSEXN_INTERNALERR, "unable to create the {0}")
 MSG_DEF(JLSMSG_INTERNAL_ERROR,         1019, 1, JSEXN_INTERNALERR, "internal error ({0})")
+MSG_DEF(JLSMSG_INVALID_ARGUMENT_COUNT, 1020, 1, JSEXN_RANGEERR, "invalid argument count (need {0})")
 
 
 

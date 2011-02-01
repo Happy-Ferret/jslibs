@@ -126,6 +126,16 @@
 # endif
 #endif
 
+#if defined DEBUG
+#define DISABLE_INLINE
+#define ENABLE_INLINE
+#elif defined _MSC_VER
+#define DISABLE_INLINE #pragma auto_inline(off)
+#define ENABLE_INLINE #pragma auto_inline(on)
+#elif defined __GNUC__
+#define DISABLE_INLINE
+#define ENABLE_INLINE
+#endif
 
 // from jstypes.h
 // using  INLINE NEVER_INLINE void foo() {...}  is permitted.
@@ -137,6 +147,13 @@
 # else
 #  define NEVER_INLINE
 # endif
+#endif
+
+
+#if defined DEBUG
+#define NOIL(f) f
+#else
+template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 #endif
 
 
@@ -221,6 +238,7 @@
 	#pragma warning(disable : 4201) // nonstandard extension used : nameless struct/union
 	#pragma warning(disable : 4102) // unreferenced label
 	#pragma warning(disable : 4702) // unreachable code
+	#pragma warning(disable : 4227) // anachronism used : qualifiers on reference are ignored
 	#ifndef DEBUG
 		#pragma warning(disable : 4701) // potentially uninitialized local variable 'XXX' used
 	#endif
@@ -462,7 +480,7 @@ typedef double float64_t;
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
 
-#define UNLIKELY_SPLIT_BEGIN(...) { struct { INLINE JSBool FASTCALL operator()( ##__VA_ARGS__ ) {
+#define UNLIKELY_SPLIT_BEGIN(...) { struct { INLINE NEVER_INLINE JSBool FASTCALL operator()( ##__VA_ARGS__ ) {
 #define UNLIKELY_SPLIT_END(...) } } inner; if ( inner( ##__VA_ARGS__ ) ) return JS_TRUE; else goto bad; JL_BAD; }
 
 
@@ -610,10 +628,10 @@ JL_MAX(T a, T b) {
 	return (a) > (b) ? (a) : (b);
 }
 
-template<class T>
+template<class T, class U>
 ALWAYS_INLINE T
-JL_INRANGE(T v, T vmin, T vmax) {
-	return unsigned(v – vmin) <= unsigned(vmax – vmin);
+JL_INRANGE(T val, U vmin, U vmax) {
+	return unsigned(val - vmin) <= unsigned(vmax - vmin);
 }
 
 
@@ -1368,7 +1386,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 // system errors
 //
 
-static INLINE void NOALIAS FASTCALL
+INLINE NEVER_INLINE void NOALIAS FASTCALL
 JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 
  #if defined(XP_WIN)
@@ -2448,7 +2466,8 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		JL_USE(st);
 	}
 
-	INLINE void JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
+	INLINE NEVER_INLINE void FASTCALL
+	JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
 
 	#if defined(XP_WIN)
 		DWORD errorCode = ::GetLastError();

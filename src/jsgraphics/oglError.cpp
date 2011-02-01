@@ -205,7 +205,9 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-JSBool ThrowOglError( JSContext *cx, GLenum err ) {
+
+NEVER_INLINE JSBool FASTCALL
+ThrowOglError( JSContext *cx, GLenum err ) {
 
 	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(OglError), JL_PROTOTYPE(cx, OglError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );

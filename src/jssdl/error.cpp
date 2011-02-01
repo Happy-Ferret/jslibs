@@ -113,7 +113,8 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-JSBool ThrowSdlError( JSContext *cx ) {
+NEVER_INLINE JSBool FASTCALL
+ThrowSdlError( JSContext *cx ) {
 
 	JSObject *errorObj = JS_NewObjectWithGivenProto( cx, JL_CLASS(SdlError), JL_PROTOTYPE(cx, SdlError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( errorObj ) );

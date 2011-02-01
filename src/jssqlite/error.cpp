@@ -193,7 +193,8 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-JSBool SqliteThrowErrorStatus( JSContext *cx, sqlite3 *db, int status ) {
+NEVER_INLINE JSBool FASTCALL
+SqliteThrowErrorStatus( JSContext *cx, sqlite3 *db, int status ) {
 
 	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_PROTOTYPE(cx, SqliteError), NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
@@ -205,7 +206,8 @@ JSBool SqliteThrowErrorStatus( JSContext *cx, sqlite3 *db, int status ) {
 }
 
 
-JSBool SqliteThrowError( JSContext *cx, sqlite3 *db ) {
+NEVER_INLINE JSBool FASTCALL
+SqliteThrowError( JSContext *cx, sqlite3 *db ) {
 
 	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_PROTOTYPE(cx, SqliteError), NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );

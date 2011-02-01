@@ -167,7 +167,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	int st;
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
 
-	JL_S_ASSERT_ARG_RANGE( 1, COUNTOF(mpv->processEventThreadInfo) );
+	JL_S_ASSERT_ARG_RANGE( 1, (int)COUNTOF(mpv->processEventThreadInfo) );
 	ProcessEvent *peList[COUNTOF(mpv->processEventThreadInfo)]; // cache to avoid calling GetHandlePrivate() too often.
 
 	uintN i;
@@ -241,7 +241,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	for ( i = 0; i < argc; ++i ) {
 
 		ProcessEvent *pe = peList[i];
-		
+
 		JSExceptionState *exState = NULL;
 		if ( JL_IsExceptionPending(cx) ) {
 
@@ -249,9 +249,9 @@ DEFINE_FUNCTION( ProcessEvents ) {
 			JS_ClearPendingException(cx);
 		}
 
-		if ( pe->endWait(pe, &hasEvent, cx, JSVAL_TO_OBJECT(JL_ARGV[i])) != JS_TRUE ) // 
+		if ( pe->endWait(pe, &hasEvent, cx, JSVAL_TO_OBJECT(JL_ARGV[i])) != JS_TRUE ) //
 			ok = JS_FALSE;
-		
+
 		if ( exState )
 			JS_RestoreExceptionState(cx, exState);
 
@@ -280,7 +280,7 @@ $TOC_MEMBER $INAME
  Passively waits for a timeout through the ProcessEvents function.
 **/
 struct UserProcessEvent {
-	
+
 	ProcessEvent pe;
 	unsigned int timeout;
 	JLEventHandler cancel;
@@ -295,11 +295,11 @@ void TimeoutStartWait( volatile ProcessEvent *pe ) {
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	if ( upe->timeout > 0 ) {
-		
+
 		int st = JLEventWait(upe->cancel, upe->timeout);
 		upe->canceled = (st == JLOK);
 	} else {
-		
+
 		upe->canceled = false;
 	}
 }
@@ -352,7 +352,7 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2)) ); // GC protection only
 		upe->callbackFunction = JL_ARG(2);
 	} else {
-	
+
 		upe->callbackFunction = JSVAL_VOID;
 	}
 
@@ -365,14 +365,32 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 //#include "../jslang/blobPub.h"
 DEFINE_FUNCTION( jslang_test ) {
 
+/*
 	float nvec[10];
-
 	jsuint realLen;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), nvec, COUNTOF(nvec), &realLen) );
+*/
 
-	*JL_RVAL = JSVAL_VOID;
+	bool b;
+
+	jsval val = JL_ARG(1);
+	JSObject *obj = JS_THIS_OBJECT(cx,vp);
+
+	size_t __err = JLGetEIP(); size_t __pos = JLGetEIP(); ////////////////////////////////////////
+
+	//b = JL_JsidToJsval(cx, (jsid)vp, &val);
+	//b = JL_IsObjectObject(cx, obj);
+	//JL_NewBlobCopyN(cx, "123", 3, vp);
+	b = JL_GetObjectProtoKey(cx, obj ) != 0;
+
+	bad: ///////////////////////////////////////////////////////////////////////////////////
+	printf("code length: %d\n", JLGetEIP() - __pos - (__pos-__err));
+
+	*JL_RVAL = BOOLEAN_TO_JSVAL( b );
+
+//	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
-	JL_BAD;
+//	JL_BAD;
 }
 #endif // DEBUG
 

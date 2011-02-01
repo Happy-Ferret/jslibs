@@ -295,8 +295,7 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 
 bad:
-	if ( dBuffer )
-		JS_free(cx, dBuffer);
+	JS_free(cx, dBuffer); // JS_free NULL pointer is legal.
 	return JS_FALSE;
 }
 
@@ -425,8 +424,7 @@ DEFINE_FUNCTION( concat ) {
 	return JS_TRUE;
 
 bad:
-	if ( dst )
-		JS_free(cx, dst);
+	JS_free(cx, dst); // JS_free NULL pointer is legal.
 	return JS_FALSE;
 }
 

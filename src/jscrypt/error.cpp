@@ -173,7 +173,8 @@ END_CLASS
 
 
 
-JSBool ThrowCryptError( JSContext *cx, int errorCode ) {
+NEVER_INLINE JSBool FASTCALL
+ThrowCryptError( JSContext *cx, int errorCode ) {
 
 //	JS_ReportWarning( cx, "CryptError exception" );
 	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(CryptError), JL_PROTOTYPE(cx, CryptError), NULL );

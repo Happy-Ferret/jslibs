@@ -374,7 +374,7 @@ public:
 		s.ForEach( iter1 );
 		s.ForEach( iter2 );
 	*/
-	template <typename P>
+	template <class P>
 	ALWAYS_INLINE bool BackForEach( P &pre ) const {
 
 		for ( Item* item = _top; item; item = item->prev )

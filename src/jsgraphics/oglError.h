@@ -14,13 +14,20 @@
 
 DECLARE_CLASS( OglError )
 
+
 #define GLERR_EXTENSION_NOT_FOUND 0x0001
 
-JSBool ThrowOglError( JSContext *cx, GLenum err );
 
-JSBool ThrowOglCustomError( JSContext *cx, int err );
+NEVER_INLINE JSBool FASTCALL
+ThrowOglError( JSContext *cx, GLenum err );
 
-inline JSBool CheckThrowCurrentOglError( JSContext *cx ) {
+
+NEVER_INLINE JSBool FASTCALL
+ThrowOglCustomError( JSContext *cx, int err );
+
+
+ALWAYS_INLINE JSBool
+CheckThrowCurrentOglError( JSContext *cx ) {
 
 	GLenum err = glGetError();
 	if (unlikely( err != GL_NO_ERROR ))

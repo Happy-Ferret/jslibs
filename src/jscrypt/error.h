@@ -14,5 +14,6 @@
 
 DECLARE_CLASS( CryptError );
 
-JSBool ThrowCryptError( JSContext *cx, int errorCode );
+NEVER_INLINE JSBool FASTCALL
+ThrowCryptError( JSContext *cx, int errorCode );
 

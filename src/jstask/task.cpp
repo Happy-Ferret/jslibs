@@ -380,8 +380,7 @@ DEFINE_CONSTRUCTOR() {
 
 	return JS_TRUE;
 bad:
-	if ( pv )
-		JS_free(cx, pv);
+	JS_free(cx, pv); // JS_free NULL pointer is legal.
 	return JS_FALSE;
 }
 

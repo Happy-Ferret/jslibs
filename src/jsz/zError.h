@@ -13,4 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 DECLARE_CLASS( ZError )
-JSBool ThrowZError( JSContext *cx, int errorCode, const char *errorMessage );
+
+NEVER_INLINE JSBool FASTCALL
+ThrowZError( JSContext *cx, int errorCode, const char *errorMessage );
