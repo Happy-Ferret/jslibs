@@ -326,6 +326,9 @@ enum {
 	JLID_SPEC( _serialize ),
 	JLID_SPEC( _unserialize ),
 	JLID_SPEC( toXMLString ),
+	JLID_SPEC( _private1 ),
+	JLID_SPEC( _private2 ),
+	JLID_SPEC( _private3 ),
 	LAST_JSID // see HostPrivate::ids[]
 };
 #undef JLID_SPEC
@@ -837,6 +840,7 @@ inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
 inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
 inline NIMatrix44Get Matrix44GetInterface( JSContext *cx, JSObject *obj );
 
+ALWAYS_INLINE JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet pFct );
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1302,6 +1306,11 @@ public:
 		if ( !_inner->str || !JL_HASFLAGS(_inner->strFlags, NT) )
 			CreateOwnStrZ();
 		return _inner->str;
+	}
+
+	ALWAYS_INLINE const char *GetConstStrZOrNULL() {
+
+		return IsSet() ? GetConstStrZ() : NULL;
 	}
 
 	ALWAYS_INLINE operator const char *() {
@@ -1925,6 +1934,11 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, bool *b ) {
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, void *ptr, jsval *vp ) {
 
+	JL_USE(cx);
+	JL_ASSERT( JSVAL_TO_INT(INT_TO_JSVAL(_UI32_MAX)) == _UI32_MAX );
+	JL_ASSERT( JSVAL_TO_INT(INT_TO_JSVAL(0x7fffffffui32)) == 0x7fffffffui32 );
+	*vp = INT_TO_JSVAL((int)ptr);
+/*
 	if ( ((uint32)ptr & 1) == 1 ) { // cannot be stored with PRIVATE_TO_JSVAL()
 
 //		void **data;
@@ -1936,6 +1950,7 @@ JL_NativeToJsval( JSContext *cx, void *ptr, jsval *vp ) {
 		JL_USE(cx);
 		*vp = PRIVATE_TO_JSVAL(ptr);
 	}
+*/
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1949,9 +1964,14 @@ JL_JsvalToNative( const JSContext *cx, const jsval &val, void **ptr ) {
 //		*ptr = *(void**)GetHandlePrivate(cx, val);
 //		return JS_TRUE;
 //	} else {
-
+/*
 		*ptr = JSVAL_TO_PRIVATE(val);
+*/
 //	}
+
+	*ptr = (void*)JSVAL_TO_INT(val);
+
+
 	return JS_TRUE;
 }
 
@@ -2060,58 +2080,79 @@ JL_JsvalToNativeVector( JSContext *cx, jsval &val, T *vector, jsuint maxLength, 
 ///////////////////////////////////////////////////////////////////////////////
 // properties conversion helper
 
+// Some doc. http://developer.mozilla.org/en/docs/JS_DefineUCProperty
+
+// Set
 
 template <class T>
 ALWAYS_INLINE JSBool
-JL_SetProperty( JSContext *cx, JSObject *obj, const char *propertyName, const T &cval, bool publicData = true ) {
+JL_SetProperty( JSContext *cx, JSObject *obj, const char *name, const T &cval ) {
 
 	jsval tmp;
-	JL_CHK( JL_NativeToJsval(cx, cval, &tmp) );
-	if ( publicData )
-		JL_CHKM( JS_SetProperty(cx, obj, propertyName, &tmp), "Unable to set the property %s.", propertyName );
-	else
-		JL_CHKM( JS_DefineProperty(cx, obj, propertyName, tmp, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "Unable to set the property %s." ); // Doc. http://developer.mozilla.org/en/docs/JS_DefineUCProperty
-	return JS_TRUE;
-	JL_BAD;
+	return JL_NativeToJsval(cx, cval, &tmp) && JS_SetProperty(cx, obj, name, &tmp);
 }
 
 template <class T>
 ALWAYS_INLINE JSBool
-JL_SetProperty( JSContext *cx, JSObject *obj, jsid id, const T &cval, bool publicData = true ) {
+JL_SetProperty( JSContext *cx, JSObject *obj, jsid id, const T &cval ) {
 
 	jsval tmp;
-	JL_CHK( JL_NativeToJsval(cx, cval, &tmp) );
-	if ( publicData )
-		JL_CHKM( JS_SetPropertyById(cx, obj, id, &tmp), "Unable to set the property." );
-	else
-		JL_CHKM( JS_DefinePropertyById(cx, obj, id, tmp, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "Unable to set the property." ); // Doc. http://developer.mozilla.org/en/docs/JS_DefineUCProperty
-	return JS_TRUE;
-	JL_BAD;
+	return JL_NativeToJsval(cx, cval, &tmp) && JS_SetPropertyById(cx, obj, id, &tmp);
 }
 
+// Define
+
+template <class T>
+ALWAYS_INLINE JSBool
+JL_DefineProperty( JSContext *cx, JSObject *obj, const char *name, const T &cval, bool visible = true, bool modifiable = true ) {
+
+	jsval tmp;
+	return JL_NativeToJsval(cx, cval, &tmp) && JS_DefineProperty(cx, obj, name, tmp, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
+}
+
+template <class T>
+ALWAYS_INLINE JSBool
+JL_DefineProperty( JSContext *cx, JSObject *obj, jsid id, const T &cval, bool visible = true, bool modifiable = true ) {
+
+	jsval tmp;
+	return JL_NativeToJsval(cx, cval, &tmp) && JS_DefinePropertyById(cx, obj, id, tmp, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
+}
+
+// Get
 
 template <class T>
 ALWAYS_INLINE JSBool
 JL_GetProperty( JSContext *cx, JSObject *obj, const char *propertyName, T *cval ) {
 
-	jsval v;
-	JL_CHKM( JS_GetProperty(cx, obj, propertyName, &v), "Unable to read the property %s.", propertyName );
-	JL_CHK( JL_JsvalToNative(cx, v, cval) );
-	return JS_TRUE;
-	JL_BAD;
+	jsval tmp;
+	return JS_GetProperty(cx, obj, propertyName, &tmp) && JL_JsvalToNative(cx, tmp, cval);
 }
 
 template <class T>
 ALWAYS_INLINE JSBool
 JL_GetProperty( JSContext *cx, JSObject *obj, jsid id, T *cval ) {
 
-	jsval v;
-	JL_CHKM( JS_GetPropertyById(cx, obj, id, &v), "Unable to read the property." );
-	JL_CHK( JL_JsvalToNative(cx, v, cval) );
-	return JS_TRUE;
-	JL_BAD;
+	jsval tmp;
+	return JS_GetPropertyById(cx, obj, id, &tmp) && JL_JsvalToNative(cx, tmp, cval);
 }
 
+// Lookup
+
+template <class T>
+ALWAYS_INLINE JSBool
+JL_LookupProperty( JSContext *cx, JSObject *obj, const char *propertyName, T *cval ) {
+
+	jsval tmp;
+	return JS_LookupProperty(cx, obj, propertyName, &tmp) && JL_JsvalToNative(cx, tmp, cval);
+}
+
+template <class T>
+ALWAYS_INLINE JSBool
+JL_LookupProperty( JSContext *cx, JSObject *obj, jsid id, T *cval ) {
+
+	jsval tmp;
+	return JS_LookupPropertyById(cx, obj, id, &tmp) && JL_JsvalToNative(cx, tmp, cval);
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2384,7 +2425,7 @@ ALWAYS_INLINE JSBool SetHostObjectValue(JSContext *cx, jsid id, jsval value, boo
 
 	JSObject *cobj = GetHostObject(cx);
 	if ( cobj )
-		return JS_DefinePropertyById(cx, cobj, id, value, NULL, NULL, JSPROP_ENUMERATE | (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
+		return JS_DefinePropertyById(cx, cobj, id, value, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
 	return JS_TRUE;
 }
 
@@ -2398,6 +2439,7 @@ ALWAYS_INLINE JSBool SetHostObjectValue(JSContext *cx, const jschar *name, jsval
 
 ///////////////////////////////////////////////////////////////////////////////
 // Blob functions
+
 
 
 // note: a Blob is either a JSString or a Blob object if the jslang module has been loaded.
@@ -2419,27 +2461,25 @@ JL_NewBlob( JSContext * RESTRICT cx, void* RESTRICT buffer, size_t length, jsval
 	const ClassProtoCache *classProtoCache = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Blob");
 	if (likely( classProtoCache->clasp != NULL )) { // we have Blob class, jslang is present.
 
-		// A blob/string object can be created without using any jslang/blob.h dependances
 		JSObject *blob;
-//		JSObject *blobProto = JL_PROTOTYPE(cx, Blob);
-		blob = JS_ConstructObject(cx, classProtoCache->clasp, classProtoCache->proto, NULL); // need to be constructed else Buffer NativeInterface will not be set !
+		blob = JS_NewObject(cx, classProtoCache->clasp, classProtoCache->proto, NULL); // see JS_ConstructObject if SetBufferGetInterface(nativeInterfaceBufferGet) unavailable.
 		JL_CHK( blob );
 		*vp = OBJECT_TO_JSVAL(blob);
-		JL_S_ASSERT( length <= JSVAL_INT_MAX, "Blob too long." );
-		JL_CHK( JL_SetReservedSlot(cx, blob, 0, INT_TO_JSVAL( (jsint)length )) ); // 0 for SLOT_BLOB_LENGTH !!!
+
+		JL_CHK( JL_SetReservedSlot(cx, blob, 0, INT_TO_JSVAL( (int32)length )) ); // slot 0 is SLOT_BLOB_LENGTH.
+
+		NIBufferGet nativeInterfaceBufferGet;
+		JL_CHK( JL_LookupProperty(cx, classProtoCache->proto, JLID(cx, _private1), (void**)&nativeInterfaceBufferGet) );
+		JL_ASSERT( nativeInterfaceBufferGet );
+		JL_CHK( SetBufferGetInterface(cx, blob, nativeInterfaceBufferGet) );
+
 		JL_SetPrivate(cx, blob, buffer); // blob data
 		return JS_TRUE;
 	}
 
-//	JSString *jsstr;
-	// JS_NewString takes ownership of bytes on success, avoiding a copy; but on error (signified by null return), it leaves bytes owned by the caller.
-	// So the caller must free bytes in the error case, if it has no use for them.
-
-//	jsstr = JL_NewString(cx, (char*)buffer, length);
-//	JL_CHK( jsstr );
 	buffer = NULL; // see bad:
-//	*vp = STRING_TO_JSVAL(jsstr); // protect from GC.
 	*vp = STRING_TO_JSVAL( JLStr((char*)buffer, length, true).GetJSString(cx) );
+
 	// now we want a string object, not a string literal.
 	JSObject *strObj;
 	JL_CHK( JS_ValueToObject(cx, *vp, &strObj) ); // see. OBJ_DEFAULT_VALUE(cx, obj, JSTYPE_OBJECT, &v)

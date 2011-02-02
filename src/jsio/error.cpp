@@ -281,10 +281,3 @@ ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 	return JS_FALSE;
 	JL_BAD;
 }
-
-
-NEVER_INLINE JSBool FASTCALL
-ThrowIoError( JSContext *cx ) {
-
-	return ThrowIoErrorArg(cx, PR_GetError(), PR_GetOSError());
-}

@@ -223,12 +223,12 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 
 
 // Helps to detect memory leaks (alloc/free balance)
-// #define DBG_ALLOC 1
+//#define DBG_ALLOC 1
 
 #ifdef DBG_ALLOC
 
-static int allocCount = 0;
-static int freeCount = 0;
+static volatile int allocCount = 0;
+static volatile int freeCount = 0;
 
 EXTERN_C void* jl_malloc_count( size_t size ) {
 	allocCount++;
@@ -582,7 +582,7 @@ bad:
 #ifdef DBG_ALLOC
 struct DBG_ALLOC_dummyClass {
 	~DBG_ALLOC_dummyClass() { // we must count at exit, see "dynamic atexit destructor"
-		printf("alloc:%d  free:%d (diff:%d)\n", allocCount, freeCount, allocCount - freeCount);
+		fprintf(stderr, "alloc:%d  free:%d (diff:%d)\n", allocCount, freeCount, allocCount - freeCount);
 	}
 } DBG_ALLOC_dummy;
 #endif // DBG_ALLOC

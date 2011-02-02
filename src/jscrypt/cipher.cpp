@@ -157,6 +157,8 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( argc >= 4 && !JSVAL_IS_VOID( JL_ARG(4) ) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &IV) ); // warning: GC on the returned buffer !
+	else
+		IV = JLStr("", true);
 
 	if ( argc >= 5 && !JSVAL_IS_VOID( JL_ARG(5) ) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &optarg) ); // warning: GC on the returned buffer !
@@ -262,9 +264,8 @@ DEFINE_CONSTRUCTOR() {
 bad:
 	if ( pv ) {
 		
+		jl_free(pv->symmetric_XXX); // free a NULL pointer is legal.
 		jl_free(pv);
-		if ( pv->symmetric_XXX )
-			jl_free(pv->symmetric_XXX);
 	}
 	return JS_FALSE;
 }
@@ -334,6 +335,9 @@ DEFINE_FUNCTION( Encrypt ) {
 
 	ct[pt.Length()] = '\0';
 	JL_CHK( JL_NewBlob( cx, ct, pt.Length(), JL_RVAL ) );
+//	JL_CHK( JL_NativeToJsval(cx, ct, pt.Length(), JL_RVAL ) );
+//	JS_free(cx, ct);
+
 
 	return JS_TRUE;
 	JL_BAD;

@@ -124,3 +124,11 @@ LoadModule('jscrypt');
   var rsa = new AsymmetricCipher('rsa', 'md5', fortuna );
   rsa.CreateKeys( 1024 );
   QA.ASSERT( rsa.keySize, 1024, 'rsa key size' );
+
+
+/// crash 1
+
+	var cr = new Cipher("CFB", "cast5", "my  key of  16B ", "xxxxxxx");
+	var encryptedText = cr.Encrypt("secret text");
+	var cr = new Cipher("CFB", "cast5", "my  key of  16B ", IV);
+	var IV;

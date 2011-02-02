@@ -171,8 +171,8 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 	if (unlikely( !IsBlobValid(cx, obj) ))
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
 	
-	const char *buf;
 	size_t len;
+	const char *buf;
 	JL_CHK( BlobLength(cx, obj, &len) );
 	JL_CHK( BlobBuffer(cx, obj, &buf) );
 
@@ -239,13 +239,15 @@ $TOC_MEMBER $INAME
  $INAME( [data] )
   Creates an object that can contain binary data.
   $H note
-  When called in a non-constructor context, Object behaves identically. (TBD) update
+  When called without the new operator, the behavior is the same. ge. {{{ var test = Blob('Hello World'); }}}
 **/
 DEFINE_CONSTRUCTOR() {
 
-	void *dBuffer = NULL; // keep on top (see bad:)
+	char *dBuffer = NULL; // keep on top (see bad:)
 
-	if ( !JS_IsConstructing(cx, vp) && ( JL_ARGC == 0 || JL_ARG(1) == JL_GetEmptyStringValue(cx) ) ) {
+	bool genEmpty = JL_ARGC == 0 || JL_ARG(1) == JL_GetEmptyStringValue(cx);
+
+	if ( genEmpty && !JS_IsConstructing(cx, vp) ) {
 
 		*JL_RVAL = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
@@ -253,44 +255,28 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	// supports this form (w/o new operator) : result.param1 = Blob('Hello World');
+	if ( !genEmpty ) {
 
-	// see. "planning to remove non-fast natives" (http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/91ee3f1f5642e05b?pli=1)
-
-	if ( JL_ARGC != 0 && JL_ARG(1) != JL_GetEmptyStringValue(cx) ) {
-
-		
-//		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sBuffer, &length) ); // warning: GC on the returned buffer !
 		JLStr str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) ); // warning: GC on the returned buffer !
-
 		size_t length = str.Length();
-		const char *sBuffer = str.GetConstStr();
-
-//		JL_S_ASSERT( length >= JSVAL_INT_MIN && length <= JSVAL_INT_MAX, "Blob too long." );
-
-		dBuffer = JS_malloc(cx, length +1);
+		dBuffer = (char*)JS_malloc(cx, length +1);
 		JL_CHK( dBuffer );
-		((char*)dBuffer)[length] = '\0';
-		memcpy(dBuffer, sBuffer, length);
+		dBuffer[length] = '\0';
+		memcpy(dBuffer, str.GetConstStr(), length);
 		JL_SetPrivate(cx, obj, dBuffer);
-
-//		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(jl::SafeCast<int>(length))) );
 		jsval tmp;
 		JL_CHK( JL_NativeToJsval(cx, length, &tmp) );
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, tmp) );
 	} else {
 
-		dBuffer = JS_malloc(cx, 1);
+		dBuffer = (char*)JS_malloc(cx, 1);
 		JL_CHK( dBuffer );
-		((char*)dBuffer)[0] = '\0';
+		dBuffer[0] = '\0';
 		JL_SetPrivate(cx, obj, dBuffer);
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(0) ) );
-
-//		JL_SetPrivate(cx, obj, NULL); // |Blob()| is an invalidated object ???
 	}
 
-//	JL_CHK( ReserveBufferGetInterface(cx, obj) );
 	JL_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 	return JS_TRUE;
 
@@ -1322,6 +1308,11 @@ DEFINE_FUNCTION( _unserialize ) {
 }
 
 
+DEFINE_INIT() {
+
+	return JL_DefineProperty(cx, proto, JLID(cx, _private1), (void*)NativeInterfaceBufferGet, false, false);
+}
+
 
 /**doc
 === Note ===
@@ -1336,6 +1327,7 @@ DEFINE_FUNCTION( _unserialize ) {
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
+	HAS_INIT
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(2)
 	HAS_CONSTRUCTOR

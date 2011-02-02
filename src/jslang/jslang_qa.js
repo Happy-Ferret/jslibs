@@ -121,8 +121,16 @@ LoadModule('jsstd');
 			QA.GC();
 		}
 		
+		// QA.ASSERT_STR(data[0] == StringRepeat('a', length), true, "test validity");
+		// QA.ASSERT_STR(data[data.length-1] == StringRepeat('a', length), true, "test validity");
+
 		var mem = (privateMemoryUsage - mem0) / length / times;
 		QA.ASSERT( mem > 1 && mem < 1.02, true, 'Blob memory usage ('+mem+') (test not available on all platforms)' );
+
+
+/// Blob with and without construction [mrtf]
+
+		QA.ASSERT_STR( Blob('abcde') == new Blob('abcde'), true );
 
 
 /// Blob toSource and Uneval [mrtf]

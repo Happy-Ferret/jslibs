@@ -4,6 +4,20 @@
 LoadModule('jsstd');
 LoadModule('jscrypt');
 
+var b = new Blob();
+
+Print( b._private1 );
+Halt();
+
+var cr = new Cipher("CFB", "cast5", "my  key of  16B ");
+var encryptedText = cr.Encrypt("secret text");
+var encryptedText = cr.Encrypt("secret text");
+
+//QA.ASSERT_STR(cr.Decrypt(encryptedText), data, "crypy/decript with Cast5 cipher using CFB mode");}))(qaapi);
+
+
+Halt();
+
 
 var md5 = new Hash('md5');
 Print( HexEncode(md5('qwe')), '\n' );

@@ -8,8 +8,6 @@ LoadModule('jsstd'); Exec('../common/tools.js');
 Exec('../../perfset.js'); throw 0; // -perf perfset.js 
 
 
-
-
 Print(uneval( jslang_test(new ArrayBuffer('1')) ), '\n');
 Halt();
 

@@ -40,23 +40,30 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-void* JsfontAlloc( FT_Memory memory, long size ) {
+
+void*
+JsfontAlloc( FT_Memory memory, long size ) {
 
 	return jl_malloc(size);
 }
 
-void JsfontFree( FT_Memory memory, void* block ) {
+
+void
+JsfontFree( FT_Memory memory, void* block ) {
 
 	jl_free(block);
 }
 
-void* JsfontRealloc( FT_Memory  memory, long cur_size, long new_size, void* block ) {
+
+void*
+JsfontRealloc( FT_Memory  memory, long cur_size, long new_size, void* block ) {
 
 	return jl_realloc(block, new_size);
 }
 
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+EXTERN_C DLLEXPORT JSBool
+ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JsfontModulePrivate *mpv = (JsfontModulePrivate*)ModulePrivateAlloc(sizeof(JsfontModulePrivate));
 
@@ -76,7 +83,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	mpv->GetFTSymbols = GetFTSymbols;
 
-	JL_CHK( JL_SetProperty(cx, GetHostObject(cx), "_jsfontModulePrivate", (void*)mpv, false) );
+	JL_CHK( JL_DefineProperty(cx, GetHostObject(cx), "_jsfontModulePrivate", (void*)mpv, false, false) );
 
 	INIT_CLASS(Font);
 
@@ -84,12 +91,16 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	JL_BAD;
 }
 
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+
+EXTERN_C DLLEXPORT JSBool
+ModuleRelease(JSContext *cx) {
 
 	return JS_TRUE;
 }
 
-EXTERN_C DLLEXPORT void ModuleFree() {
+
+EXTERN_C DLLEXPORT void
+ModuleFree() {
 
 	JsfontModulePrivate *mpv = (JsfontModulePrivate*)ModulePrivateGet();
 
