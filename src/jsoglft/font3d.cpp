@@ -76,6 +76,9 @@ BEGIN_CLASS( Font3D ) // Start the definition of the class. It defines some symb
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( pv == NULL )
 		return;

@@ -118,7 +118,7 @@ UnrolledMatch(const char *text, size_t textlen, const char *pat, size_t patlen)
 ALWAYS_INLINE ssize_t
 Match(const char *text, size_t textlen, const char *pat, size_t patlen) {
 
-	return 
+	return
 #if !defined(__linux__)
 		patlen > 128 ? UnrolledMatch<MemCmp>(text, textlen, pat, patlen) :
 #endif
@@ -158,19 +158,19 @@ BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {
 ALWAYS_INLINE JSBool
 BlobBuffer( JSContext *cx, const JSObject *blobObject, const char **buffer ) {
 
-	*buffer = (char*)JL_GetPrivate(cx, blobObject);
+	*buffer = (const char*)JL_GetPrivate(cx, blobObject);
 	JL_ASSERT( *buffer != NULL );
 	return JS_TRUE;
 }
 
-
-JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
+/* MOVED: see Blob_NativeInterfaceBufferGet in jlhelper.h
+JSBool Blob_NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
 	JL_ASSERT( JL_GetClass(obj) == JL_CLASS(Blob) );
-		
+
 	if (unlikely( !IsBlobValid(cx, obj) ))
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
-	
+
 	size_t len;
 	const char *buf;
 	JL_CHK( BlobLength(cx, obj, &len) );
@@ -180,7 +180,7 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
+*/
 
 /*
 inline JSBool JL_JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
@@ -227,10 +227,10 @@ DEFINE_FINALIZE() {
 
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
 		return;
+
 	void *pv = JL_GetPrivate(cx, obj);
-	if ( !pv )
-		return;
-	JS_free(cx, pv);
+	if ( pv )
+		JS_free(cx, pv);
 }
 
 
@@ -277,7 +277,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(0) ) );
 	}
 
-	JL_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
+	JL_CHK( SetBufferGetInterface(cx, obj, Blob_NativeInterfaceBufferGet) );
 	return JS_TRUE;
 
 bad:
@@ -366,13 +366,13 @@ DEFINE_FUNCTION( concat ) {
 
 	uintN arg;
 	for ( arg = 1; arg <= JL_ARGC; arg++ ) {
-	
+
 		if ( JL_JsvalIsBlob(cx, JL_ARG(arg)) ) {
 
 			size_t tmp;
 			JL_CHK( BlobLength(cx, JSVAL_TO_OBJECT( JL_ARG(arg) ), &tmp) );
 			dstLen += tmp;
-		
+
 		} else {
 
 			JSString *jsstr = JS_ValueToString(cx, JL_ARG(arg));
@@ -394,7 +394,7 @@ DEFINE_FUNCTION( concat ) {
 	}
 
 	for ( arg = 1; arg <= JL_ARGC; arg++ ) {
-		
+
 //		const char *buffer;
 //		size_t length;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(arg), &buffer, &length) );
@@ -449,20 +449,20 @@ DEFINE_FUNCTION( substr ) {
 	begin = js__DoubleToInteger(begin);
 
 	if ( begin < 0 ) {
-		
+
 		begin += length;
 		if ( begin < 0 )
 			begin = 0;
 	} else if ( begin > ssize_t(length) ) {
-		
+
 		begin = length;
 	}
 
 	if ( !JL_ARG_ISDEF(2) ) { // -or- if ( JL_ARGC == 1 ) {
-		
+
 		end = length;
 	} else {
-		
+
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &end) );
 		end = js__DoubleToInteger(end);
 
@@ -483,12 +483,12 @@ DEFINE_FUNCTION( substr ) {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE Blob $INAME( indexA, [ indexB ] )
-  Extracts characters from indexA up to but not including indexB. In particular: 
+  Extracts characters from indexA up to but not including indexB. In particular:
    * If indexA equals indexB, substring returns an empty string.
    * If indexB is omitted, substring extracts characters to the end of the blob.
    * If either argument is less than 0 or is NaN, it is treated as if it were 0.
-   * If either argument is greater than stringName.length, it is treated as if it were stringName.length. 
-   If indexA is larger than indexB, then the effect of substring is as if the two arguments were swapped; for example, str.substring(1, 0) == str.substring(0, 1). 
+   * If either argument is greater than stringName.length, it is treated as if it were stringName.length.
+   If indexA is larger than indexB, then the effect of substring is as if the two arguments were swapped; for example, str.substring(1, 0) == str.substring(0, 1).
   $H arguments
    $ARG $INT indexA: An integer between 0 and one less than the length of the blob.
    $ARG $INT indexB: (optional) An integer between 0 and the length of the blob.
@@ -518,7 +518,7 @@ DEFINE_FUNCTION( substring ) {
 	begin = js__DoubleToInteger(begin);
 
 	if ( !JL_ARG_ISDEF(2) ) {
-		
+
 		end = length;
 	} else {
 
@@ -565,7 +565,7 @@ DEFINE_FUNCTION( indexOf ) {
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	if (unlikely( !IsBlobValid(cx, obj) ))
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
-	
+
 	if (JL_ARGC == 0)
 		return JL_NativeToJsval(cx, -1, JL_RVAL);
 
@@ -576,7 +576,7 @@ DEFINE_FUNCTION( indexOf ) {
 	JL_CHK( BlobLength(cx, obj, &textlen) );
 
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &pat, &patlen) );
-	
+
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	patlen = str.Length();
 	pat = str.GetConstStr();
@@ -612,7 +612,7 @@ DEFINE_FUNCTION( indexOf ) {
 	ssize_t match = Match(text, textlen, pat, patlen);
 	if ( match == -1 )
 		*JL_RVAL = INT_TO_JSVAL(-1);
-	else 
+	else
 		JL_CHK( JL_NativeToJsval(cx, start + match, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
@@ -655,13 +655,13 @@ DEFINE_FUNCTION( lastIndexOf ) {
 
 	i = textlen - patlen; // Start searching here
 	if (i < 0) {
-		 
+
 		*JL_RVAL = INT_TO_JSVAL(-1);
 		return JS_TRUE;
 	}
 
 	if (JL_ARGC > 1) {
-		
+
 		double d;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &d) );
 		if (!isnan(d)) {
@@ -777,7 +777,7 @@ DEFINE_FUNCTION( split ) {
 
 		if ( sepLen )
 			pos = Match(blob, blobLen, sep, sepLen);
-		else 
+		else
 			pos = blobLen > 1 ? 1 : -1;
 
 		if ( pos == -1 ) {
@@ -787,11 +787,11 @@ DEFINE_FUNCTION( split ) {
 			JL_CHK( JS_SetElement(cx, arr, arrLen++, &chunk) );
 			break;
 		}
-		
+
 		//JL_CHK( JL_StringAndLengthToJsval(cx, &chunk, blob, pos) );
 		JL_CHK( JL_NativeToJsval(cx, blob, pos, &chunk) );
 		JL_CHK( JS_SetElement(cx, arr, arrLen++, &chunk) );
-		
+
 		blob += pos + sepLen;
 		blobLen -= pos + sepLen;
 	}
@@ -990,7 +990,7 @@ DEFINE_EQUALITY_OP() {
 
 	if ( !IsBlobValid(cx, obj) || !IsBlobValid(cx, &js::Valueify(v)->toObject()) )
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
-	
+
 	const char *buf1, *buf2;
 	size_t len1, len2;
 	JL_CHK( BlobLength(cx, obj, &len1) );
@@ -1181,13 +1181,13 @@ DEFINE_OPS_LOOKUP_PROPERTY() {
 }
 
 const jschar *ToString(JSContext *cx, jsval val) {
-	
+
 	JSString *str = JS_ValueToString(cx, val);
 	return JS_GetStringCharsZ(cx, str);
 }
 
 const jschar *ToString(JSContext *cx, jsid id) {
-	
+
 	jsval val;
 	JS_IdToValue(cx, id, &val);
 	return ToString(cx, val);
@@ -1259,7 +1259,7 @@ DEFINE_FUNCTION( _serialize ) {
 		JL_CHK( ser->Write(cx, jl::SerializerConstBufferInfo(buf, length)) );
 		JL_CHK( ser->Write(cx, jl::SerializerObjectOwnProperties(JL_OBJ)) );
 	} else {
-		
+
 		JL_CHK( ser->Write(cx, false) ); // invalid
 	}
 	return JS_TRUE;
@@ -1279,7 +1279,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	JL_CHK( unser->Read(cx, validity) );
 
 	if ( validity ) {
-		
+
 		jl::SerializerConstBufferInfo buf;
 		JL_CHK( unser->Read(cx, buf) );
 
@@ -1287,7 +1287,7 @@ DEFINE_FUNCTION( _unserialize ) {
 		dBuffer = JS_malloc(cx, buf.Length() +1);
 		JL_CHK( dBuffer );
 		memcpy(dBuffer, buf.Data(), buf.Length());
-		
+
 		//JL_NullTerminate(dBuffer, buf.Length());
 		((char*)dBuffer)[buf.Length()] = '\0';
 
@@ -1310,7 +1310,7 @@ DEFINE_FUNCTION( _unserialize ) {
 
 DEFINE_INIT() {
 
-	return JL_DefineProperty(cx, proto, JLID(cx, _private1), (void*)NativeInterfaceBufferGet, false, false);
+//	return JL_DefineProperty(cx, proto, JLID(cx, _private1), (void*)Blob_NativeInterfaceBufferGet, false, false);
 }
 
 

@@ -32,9 +32,11 @@ struct JLApi {
 struct HostPrivate {
 
 	bool unsafeMode;
-	unsigned int hostPrivateVersion; // used to ensure compatibility between host and modules. see JL_HOST_PRIVATE_VERSION macro.
+	bool canSkipCleanup; // allows modules to skip the memory cleanup phase.
+	char camelCase;
+	uint32_t hostPrivateVersion; // used to ensure compatibility between host and modules. see JL_HOST_PRIVATE_VERSION macro.
 	void *privateData;
-	volatile unsigned int maybeGCInterval;
+	volatile uint32_t maybeGCInterval;
 	JLSemaphoreHandler watchDogSemEnd;
 	JLThreadHandler watchDogThread;
 	int (*hostStdIn)( void *privateData, char *buffer, size_t bufferSize );
@@ -47,11 +49,9 @@ struct HostPrivate {
 		void *privateData;
 	} modulePrivate[1<<8]; // does not support more than 256 modules.
 	jl::Queue moduleList;
-	jl::Queue registredNativeClasses;
-	JSClass *stringObjectClass;
+//	jl::Queue registredNativeClasses;
+//	JSClass *stringObjectClass;
 	jl_allocators_t alloc;
-	bool canSkipCleanup; // allows modules to skip the memory cleanup phase.
-	int camelCase;
 	jsid ids[LAST_JSID];
 	ClassProtoCache classProtoCache[1<<MAX_CLASS_PROTO_CACHE_BIT]; // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
 	JLApi *jlapi;

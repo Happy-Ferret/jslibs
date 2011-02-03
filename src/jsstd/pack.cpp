@@ -306,6 +306,9 @@ BEGIN_CLASS( Pack )
 
 DEFINE_FINALIZE() {
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
+
 	JL_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, JSVAL_VOID); // (TBD) check if it is legal
 }
 

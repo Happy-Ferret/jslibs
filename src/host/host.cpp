@@ -557,9 +557,9 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 
 	JL_CHK( JS_DefinePropertyById( cx, globalObject, ATOM_TO_JSID(JL_GetRuntime(cx)->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) ); // by default, undefined is only JSPROP_PERMANENT
 
-	// creates a reference to the String object JSClass
-	pv->stringObjectClass = JL_GetStandardClassByKey(cx, JSProto_String);
-	JL_CHKM( pv->stringObjectClass, "Unable to find the String class." );
+//	// creates a reference to the String object JSClass
+//	pv->stringObjectClass = JL_GetStandardClassByKey(cx, JSProto_String);
+//	JL_CHKM( pv->stringObjectClass, "Unable to find the String class." );
 
 // make GetErrorMessage available from any module
 //	void **pGetErrorMessage;
@@ -672,8 +672,8 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 
 
-	while ( !jl::QueueIsEmpty(&pv->registredNativeClasses) )
-		jl::QueueShift(&pv->registredNativeClasses);
+//	while ( !jl::QueueIsEmpty(&pv->registredNativeClasses) )
+//		jl::QueueShift(&pv->registredNativeClasses);
 
 	jl_free(pv);
 	return JS_TRUE;

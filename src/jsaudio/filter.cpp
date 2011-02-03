@@ -37,6 +37,10 @@ DEFINE_FINALIZE() {
 
 			alDeleteFilters(1, &pv->filter);
 		}
+
+		if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+			return;
+
 		JS_free(cx, pv);
 	}
 }

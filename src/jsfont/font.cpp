@@ -50,6 +50,9 @@ BEGIN_CLASS( Font ) // Start the definition of the class. It defines some symbol
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
+
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
 	if ( pv == NULL )
 		return;

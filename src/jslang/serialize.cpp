@@ -24,6 +24,9 @@ BEGIN_CLASS( Serializer )
 
 DEFINE_FINALIZE() {
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
+
 	jl::Serializer *ser;
 	ser = static_cast<jl::Serializer*>(JL_GetPrivate(cx, obj));
 	if ( !ser )
@@ -107,6 +110,9 @@ $SVN_REVISION $Revision: 3321 $
 BEGIN_CLASS( Unserializer )
 
 DEFINE_FINALIZE() {
+
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
 
 	jl::Unserializer *unser;
 	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(cx, obj));

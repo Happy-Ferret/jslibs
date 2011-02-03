@@ -52,6 +52,9 @@ struct Private {
 
 DEFINE_FINALIZE() {
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;

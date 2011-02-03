@@ -105,6 +105,9 @@ bad:
 
 DEFINE_FINALIZE() {
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
+
 	DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
 	if ( pv == NULL )
 		return;

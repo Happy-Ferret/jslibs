@@ -279,7 +279,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	bool unsafeMode = false;
 	bool compileOnly = false;
 	float maybeGCInterval = 10; // seconds
-	int camelCase = 0; // 0:default, 1:lower, 2:upper
+	char camelCase = 0; // 0:default, 1:lower, 2:upper
 	bool useFileBootstrapScript = false;
 	const char *inlineScript = NULL;
 	const char *scriptName = NULL;
@@ -320,7 +320,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 			case 'l': // camelCase
 				argumentVector++;
 				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-				camelCase = atoi( *argumentVector );
+				camelCase = char(atoi( *argumentVector ));
 				break;
 			case 'b': // bootstrap
 				useFileBootstrapScript = true;

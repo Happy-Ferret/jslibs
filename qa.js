@@ -397,7 +397,7 @@ function PerfTest(itemList, cfg) {
 	disableGarbageCollection = true;
 	Sleep(100);
 
-	TimeCounter(); TimeCounter(); TimeCounter(); TimeCounter();
+	TimeCounter();
 	var t = TimeCounter();
 	var timeError = TimeCounter() - t;
 
@@ -528,7 +528,7 @@ function PerfTest(itemList, cfg) {
 		Tests(qaapi);
 		t = TimeCounter() - t - err;
 
-		var times = Math.floor( (parseInt(arguments[1])||1000) / t ); // 2s
+		var times = Math.floor( (parseInt(arguments[1])||2000) / t )+1; // 2s
 		
 		prev_stdout('loop: '+times+'x'+t.toFixed(4)+'ms\n');
 		

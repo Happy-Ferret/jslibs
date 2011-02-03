@@ -40,40 +40,68 @@ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Cipher )
 
-DEFINE_FINALIZE() {
+ALWAYS_INLINE void
+FinalizeCipher( JSContext *cx, JSObject *obj, bool wipe ) {
 
 	CipherPrivate *pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
-	if ( !pv )
-		return;
+	if ( pv ) {
 
-	int err;
-	switch ( pv->mode ) {
-		case mode_ecb:
-			err = ecb_done( (symmetric_ECB *)pv->symmetric_XXX );
-			break;
-		case mode_cfb:
-			err = cfb_done( (symmetric_CFB *)pv->symmetric_XXX );
-			break;
-		case mode_ofb:
-			err = ofb_done( (symmetric_OFB *)pv->symmetric_XXX );
-			break;
-		case mode_cbc:
-			err = cbc_done( (symmetric_CBC *)pv->symmetric_XXX );
-			break;
-		case mode_ctr:
-			err = ctr_done( (symmetric_CTR *)pv->symmetric_XXX );
-			break;
-		case mode_lrw:
-			err = lrw_done( (symmetric_LRW *)pv->symmetric_XXX );
-			break;
-		case mode_f8:
-			err = f8_done( (symmetric_F8 *)pv->symmetric_XXX );
-			break;
+		size_t size;
+		IFDEBUG( size = 0 );
+		int err;
+		switch ( pv->mode ) {
+			case mode_ecb:
+				size = sizeof(symmetric_ECB);
+				err = ecb_done( (symmetric_ECB *)pv->symmetric_XXX );
+				break;
+			case mode_cfb:
+				size = sizeof(symmetric_CFB);
+				err = cfb_done( (symmetric_CFB *)pv->symmetric_XXX );
+				break;
+			case mode_ofb:
+				size = sizeof(symmetric_OFB);
+				err = ofb_done( (symmetric_OFB *)pv->symmetric_XXX );
+				break;
+			case mode_cbc:
+				size = sizeof(symmetric_CBC);
+				err = cbc_done( (symmetric_CBC *)pv->symmetric_XXX );
+				break;
+			case mode_ctr:
+				size = sizeof(symmetric_CTR);
+				err = ctr_done( (symmetric_CTR *)pv->symmetric_XXX );
+				break;
+			case mode_lrw:
+				size = sizeof(symmetric_LRW);
+				err = lrw_done( (symmetric_LRW *)pv->symmetric_XXX );
+				break;
+			case mode_f8:
+				size = sizeof(symmetric_F8);
+				err = f8_done( (symmetric_F8 *)pv->symmetric_XXX );
+				break;
+			default:
+				JL_ASSERT(false);
+		}
+	//	if (err != CRYPT_OK)
+	//		return ThrowCryptError(cx, err);
+		if ( wipe ) {
+
+			zeromem(pv->symmetric_XXX, size);
+			JS_free(cx, pv->symmetric_XXX);
+			zeromem(pv, sizeof(CipherPrivate));
+			JS_free(cx, pv);
+		} else {
+		
+			JS_free(cx, pv->symmetric_XXX);
+			JS_free(cx, pv);
+		}
 	}
-//	if (err != CRYPT_OK)
-//		return ThrowCryptError(cx, err);
-	JS_free(cx, pv->symmetric_XXX);
-	JS_free(cx, pv);
+}
+
+DEFINE_FINALIZE() {
+
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
+	FinalizeCipher(cx, obj, false);
 }
 
 /**doc
@@ -273,6 +301,26 @@ bad:
 /**doc
 === Methods ===
 **/
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME()
+  Cleanup and free internal data.
+  $H note
+   This object may contain sensitive data.
+**/
+DEFINE_FUNCTION( Wipe ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	FinalizeCipher(cx, obj, true);
+	JL_SetPrivate(cx, obj, NULL);
+	*JL_RVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -668,6 +716,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
+		FUNCTION( Wipe )
 		FUNCTION( Encrypt )
 		FUNCTION( Decrypt )
 	END_FUNCTION_SPEC

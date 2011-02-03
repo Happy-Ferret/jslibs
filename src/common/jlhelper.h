@@ -39,14 +39,13 @@
 #pragma warning( pop )
 #endif // _MSC_VER
 
-#include <sys/stat.h> // see JL_LoadScript()
+#include <sys/stat.h> // used by JL_LoadScript()
+
 
 extern int _unsafeMode;
 
 class JLStr;
 INLINE JSBool FASTCALL JL_JSArrayToBuffer( JSContext *cx, JSObject *arrObj, JLStr *str );
-
-
 JSClass *JL_GetStandardClassByKey(JSContext *cx, JSProtoKey key);
 
 
@@ -54,31 +53,37 @@ JSClass *JL_GetStandardClassByKey(JSContext *cx, JSProtoKey key);
 // helper macros to avoid a function call to the jsapi
 
 ALWAYS_INLINE JSRuntime*
-JL_GetRuntime(JSContext *cx) {
+JL_GetRuntime( const JSContext *cx ) {
 
 	return cx->runtime;
 }
 
 ALWAYS_INLINE void*
-JL_GetRuntimePrivate( JSRuntime *rt ) {
+JL_GetRuntimePrivate( const JSRuntime *rt ) {
     
 	return rt->data;
 }
 
+ALWAYS_INLINE void
+JL_SetRuntimePrivate( JSRuntime *rt, void *data ) {
+    
+	rt->data = data;
+}
+
 ALWAYS_INLINE JSObject *
-JL_GetGlobalObject( JSContext *cx ) {
+JL_GetGlobalObject( const JSContext *cx ) {
 
     return cx->globalObject;
 }
 
 ALWAYS_INLINE JSBool
-JL_IsExceptionPending( JSContext *cx ) {
+JL_IsExceptionPending( const JSContext *cx ) {
 	
 	return cx->throwing;
 }
 
 ALWAYS_INLINE JSBool
-JL_NewNumberValue( JSContext *cx, jsdouble d, jsval *rval ) {
+JL_NewNumberValue( const JSContext *cx, jsdouble d, jsval *rval ) {
     
 	JL_USE(cx);
 	d = JS_CANONICALIZE_NAN(d);
@@ -87,9 +92,9 @@ JL_NewNumberValue( JSContext *cx, jsdouble d, jsval *rval ) {
 }
 
 ALWAYS_INLINE jsval
-JL_GetNaNValue( JSContext *cx ) {
+JL_GetNaNValue( const JSContext *cx ) {
     
-	return js::Jsvalify(cx->runtime->NaNValue);
+	return js::Jsvalify(JL_GetRuntime(cx)->NaNValue);
 }
 
 ALWAYS_INLINE JSClass*
@@ -107,7 +112,7 @@ JL_GetStringLength( const JSString *jsstr ) {
 ALWAYS_INLINE jsval
 JL_GetEmptyStringValue( const JSContext *cx ) { // see JS_GetEmptyStringValue()
 
-	return STRING_TO_JSVAL(cx->runtime->emptyString);
+	return STRING_TO_JSVAL(JL_GetRuntime(cx)->emptyString);
 }
 
 ALWAYS_INLINE bool
@@ -345,14 +350,14 @@ ALWAYS_INLINE JLContextPrivate*
 JL_GetContextPrivate( const JSContext *cx ) {
 
 	JL_ASSERT( JS_GetContextPrivate((JSContext*)cx) == cx->data );
-	return reinterpret_cast<JLContextPrivate*>(cx->data);
+	return static_cast<JLContextPrivate*>(cx->data);
 }
 
 ALWAYS_INLINE void
 JL_SetContextPrivate( const JSContext *cx, JLContextPrivate *ContextPrivate ) {
 
 	JL_ASSERT( JS_GetContextPrivate((JSContext*)cx) == cx->data );
-	cx->runtime->data = reinterpret_cast<void*>(ContextPrivate);
+	JL_GetRuntime(cx)->data = static_cast<void*>(ContextPrivate);
 }
 
 
@@ -366,17 +371,13 @@ JL_SetContextPrivate( const JSContext *cx, JLContextPrivate *ContextPrivate ) {
 ALWAYS_INLINE HostPrivate*
 JL_GetHostPrivate( const JSContext *cx ) {
 
-//	return (HostPrivate*)JL_GetRuntimePrivate(JL_GetRuntime(cx));
-//	return reinterpret_cast<HostPrivate*>(cx->runtime->data);
-	JL_ASSERT( JL_GetRuntimePrivate(JL_GetRuntime(const_cast<JSContext*>(cx))) == cx->runtime->data );
-	return (HostPrivate*)cx->runtime->data;
+	return static_cast<HostPrivate*>(JL_GetRuntimePrivate(JL_GetRuntime(cx)));
 }
 
 ALWAYS_INLINE void
 JL_SetHostPrivate( const JSContext *cx, HostPrivate *hostPrivate ) {
 
-//	JS_SetRuntimePrivate(JL_GetRuntime(cx), hostPrivate);
-	cx->runtime->data = static_cast<void*>(hostPrivate);
+	JL_SetRuntimePrivate(JL_GetRuntime(cx), static_cast<void*>(hostPrivate));
 }
 
 
@@ -618,7 +619,6 @@ JL_ReportErrorNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg
 	JL_MACRO_END
 
 
-
 // Less costly than a macro or an ALWAYS_INLINE (unlikely case)
 INLINE NEVER_INLINE JSBool FASTCALL
 JL_ReportWarningNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg1 = NULL, const char * RESTRICT arg2 = NULL ) {
@@ -849,21 +849,21 @@ ALWAYS_INLINE JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBuff
 ALWAYS_INLINE bool
 JL_IsNaN( const JSContext *cx, const jsval &val ) {
 
-	return js::Valueify(val) == cx->runtime->NaNValue;
+	return js::Valueify(val) == JL_GetRuntime(cx)->NaNValue;
 }
 
 
 ALWAYS_INLINE bool
 JL_IsPInfinity( const JSContext *cx, const jsval &val ) {
 
-	return js::Valueify(val) == cx->runtime->positiveInfinityValue;
+	return js::Valueify(val) == JL_GetRuntime(cx)->positiveInfinityValue;
 }
 
 
 ALWAYS_INLINE bool
 JL_IsNInfinity( const JSContext *cx, const jsval &val ) {
 
-	return js::Valueify(val) == cx->runtime->negativeInfinityValue;
+	return js::Valueify(val) == JL_GetRuntime(cx)->negativeInfinityValue;
 }
 
 
@@ -987,9 +987,10 @@ JL_IsXML( const JSContext *cx, const JSObject *obj ) {
 
 
 ALWAYS_INLINE bool
-JL_IsStringObject( const JSContext *cx, const JSObject *obj ) {
+JL_IsStringObject( JSContext *cx, const JSObject *obj ) {
 
-	return JL_GetClass(obj) == JL_GetHostPrivate(cx)->stringObjectClass;
+//	return JL_GetClass(obj) == JL_GetHostPrivate(cx)->stringObjectClass;
+	return JL_GetClass(obj) == JL_GetStandardClassByKey(cx, JSProto_String);
 }
 
 
@@ -1568,10 +1569,12 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
 	if (likely( JSVAL_IS_INT(val) )) {
 
 		jsint tmp = JSVAL_TO_INT(val);
-		if (unlikely( tmp < 0 ))
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
-		*num = uint32_t(tmp);
-		return JS_TRUE;
+		if (likely( tmp >= 0 )) {
+
+			*num = uint32_t(tmp);
+			return JS_TRUE;
+		}
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
 	}
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint32_t *num )
@@ -2440,6 +2443,20 @@ ALWAYS_INLINE JSBool SetHostObjectValue(JSContext *cx, const jschar *name, jsval
 ///////////////////////////////////////////////////////////////////////////////
 // Blob functions
 
+INLINE NEVER_INLINE JSBool Blob_NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
+
+	const char *buf;
+	buf = (char*)JL_GetPrivate(cx, obj);
+	if ( !buf )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, "Blob");
+	jsval lenVal;
+	size_t len;
+	JL_CHK( JL_GetReservedSlot(cx, obj, 0, &lenVal) );
+	JL_CHK( JL_JsvalToNative(cx, lenVal, &len) );
+	*str = JLStr(buf, len, true);
+	return JS_TRUE;
+	JL_BAD;
+}
 
 
 // note: a Blob is either a JSString or a Blob object if the jslang module has been loaded.
@@ -2468,10 +2485,12 @@ JL_NewBlob( JSContext * RESTRICT cx, void* RESTRICT buffer, size_t length, jsval
 
 		JL_CHK( JL_SetReservedSlot(cx, blob, 0, INT_TO_JSVAL( (int32)length )) ); // slot 0 is SLOT_BLOB_LENGTH.
 
-		NIBufferGet nativeInterfaceBufferGet;
-		JL_CHK( JL_LookupProperty(cx, classProtoCache->proto, JLID(cx, _private1), (void**)&nativeInterfaceBufferGet) );
-		JL_ASSERT( nativeInterfaceBufferGet );
-		JL_CHK( SetBufferGetInterface(cx, blob, nativeInterfaceBufferGet) );
+//		NIBufferGet nativeInterfaceBufferGet;
+//		JL_CHK( JL_LookupProperty(cx, classProtoCache->proto, JLID(cx, _private1), (void**)&nativeInterfaceBufferGet) );
+//		JL_ASSERT( nativeInterfaceBufferGet );
+//		JL_CHK( SetBufferGetInterface(cx, blob, nativeInterfaceBufferGet) );
+
+		JL_CHK( SetBufferGetInterface(cx, blob, Blob_NativeInterfaceBufferGet) );
 
 		JL_SetPrivate(cx, blob, buffer); // blob data
 		return JS_TRUE;
@@ -2529,9 +2548,7 @@ ALWAYS_INLINE JSClass*
 JL_GetStandardClassByKey(JSContext *cx, JSProtoKey key) {
 
 	JSObject *ctor;
-	if ( JS_GetClassObject(cx, JL_GetGlobalObject(cx), key, &ctor) && ctor )
-		return js::Jsvalify(FUN_CLASP(GET_FUNCTION_PRIVATE(cx, ctor)));
-	return NULL;
+	return JS_GetClassObject(cx, JL_GetGlobalObject(cx), key, &ctor) && ctor ? js::Jsvalify(FUN_CLASP(GET_FUNCTION_PRIVATE(cx, ctor))) : NULL;
 }
 
 
@@ -2610,7 +2627,7 @@ bad:
 ALWAYS_INLINE bool
 JL_EngineEnding(const JSContext *cx) {
 
-	return cx->runtime->state == JSRTS_LANDING || cx->runtime->state == JSRTS_DOWN; // could be replaced by a flag in HostPrivate that keep the state of the engine.
+	return JL_GetRuntime(cx)->state == JSRTS_LANDING || JL_GetRuntime(cx)->state == JSRTS_DOWN; // could be replaced by a flag in HostPrivate that keep the state of the engine.
 }
 
 

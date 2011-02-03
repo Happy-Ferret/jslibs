@@ -26,11 +26,14 @@ BEGIN_CLASS( Prng )
 
 DEFINE_FINALIZE() {
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
+
 	PrngPrivate *pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
 	if ( !pv )
 		return;
 
-	pv->prng.done(&pv->state);
+//	pv->prng.done(&pv->state); // (TBD) check if mendatory
 	JS_free(cx, pv);
 }
 

@@ -333,6 +333,10 @@ DEFINE_FINALIZE() {
 	JL_CHK( JS_SetDebugErrorHook(rt, NULL, NULL) );
 	JL_CHK( JS_SetThrowHook(rt, NULL,NULL) );
 	JL_CHK( JS_SetExecuteHook(rt, NULL, NULL) );
+
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
+
 	if ( pv->excludedFiles )
 		CleanExcludedFileList(&pv->excludedFiles);
 	JS_free(cx, pv);

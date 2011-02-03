@@ -32,6 +32,9 @@ BEGIN_CLASS( Hash )
 
 DEFINE_FINALIZE() {
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
+
 	HashPrivate *pv = (HashPrivate *)JL_GetPrivate( cx, obj );
 	if ( !pv )
 		return;

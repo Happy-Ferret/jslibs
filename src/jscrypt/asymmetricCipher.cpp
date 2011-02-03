@@ -68,33 +68,44 @@ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( AsymmetricCipher )
 
+ALWAYS_INLINE void
+FinalizeAsymmetricCipher( JSContext *cx, JSObject *obj, bool wipe ) {
+
+	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate*)JL_GetPrivate(cx, obj);
+	if ( pv ) {
+
+		if ( pv->hasKey ) {
+
+			switch ( pv->cipher ) {
+				case rsa:
+					rsa_free( &pv->key.rsaKey );
+					break;
+				case ecc:
+					ecc_free( &pv->key.eccKey );
+					break;
+				case dsa:
+					dsa_free( &pv->key.dsaKey );
+					break;
+			#ifdef MKAT
+				case katja:
+					katja_free( &pv->key.katjaKey );
+					break;
+			#endif
+			}
+		}
+
+		if ( wipe )
+			zeromem(pv, sizeof(AsymmetricCipherPrivate));
+		JS_free(cx, pv);
+	}
+}
+
 
 DEFINE_FINALIZE() {
 
-	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate *)JL_GetPrivate(cx, obj);
-	if ( pv == NULL )
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
 		return;
-	if ( pv->hasKey ) {
-
-		switch ( pv->cipher ) {
-			case rsa:
-				rsa_free( &pv->key.rsaKey );
-				break;
-			case ecc:
-				ecc_free( &pv->key.eccKey );
-				break;
-			case dsa:
-				dsa_free( &pv->key.dsaKey );
-				break;
-#ifdef MKAT
-			case katja:
-				katja_free( &pv->key.katjaKey );
-				break;
-#endif
-		}
-	}
-	zeromem(pv, sizeof(AsymmetricCipherPrivate)); // safe clean
-	JS_free(cx, pv);
+	FinalizeAsymmetricCipher(cx, obj, false);
 }
 
 /**doc
@@ -194,6 +205,26 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 /**doc
 === Methods ===
 **/
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME()
+  Cleanup and free internal data.
+  $H note
+   This object may contain sensitive data.
+**/
+DEFINE_FUNCTION( Wipe ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	FinalizeAsymmetricCipher(cx, obj, true);
+	JL_SetPrivate(cx, obj, NULL);
+	*JL_RVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -812,7 +843,7 @@ DEFINE_PROPERTY( keyGetter ) {
 		return ThrowCryptError(cx, err);
 
 	JL_CHK( JL_NewBlobCopyN(cx, key, keyLength, vp) );
-	zeromem(key, sizeof(key)); // safe clean
+	zeromem(key, sizeof(key)); // wipe
 
 	return JS_TRUE;
 	JL_BAD;
@@ -828,10 +859,15 @@ enum {
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
+
+	HAS_PRIVATE
+	HAS_RESERVED_SLOTS( 1 )
+
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
+		FUNCTION( Wipe )
 		FUNCTION( CreateKeys )
 		FUNCTION( Encrypt )
 		FUNCTION( Decrypt )
@@ -864,9 +900,6 @@ CONFIGURE_CLASS
 		CONST_INTEGER(DSA_MAX_KEYSIZE, LTC_MDSA_MAX_GROUP * 4) // see CreateKeys(): groupSize = keySize / 4;
 		#endif
 	END_CONST_INTEGER_SPEC
-
-	HAS_PRIVATE
-	HAS_RESERVED_SLOTS( 1 )
 
 END_CLASS
 

@@ -214,6 +214,9 @@ BEGIN_CLASS( Result )
 
 DEFINE_FINALIZE() {
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
+
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	if ( pStmt != NULL ) {
 

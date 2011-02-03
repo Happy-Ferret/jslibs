@@ -122,19 +122,22 @@ DEFINE_FINALIZE() {
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	if ( pv ) {
 
-		while ( !QueueIsEmpty(pv->queue) ) {
-
-			jsval *pItem = (jsval*)QueuePop(pv->queue);
-			JS_free(cx, pItem);
-		}
-		QueueDestruct(pv->queue);
-
 		if ( alcGetCurrentContext() ) {
 
 //			alAuxiliaryEffectSloti(pv->effectSlot, AL_EFFECTSLOT_EFFECT, AL_EFFECT_NULL);
 			alDeleteAuxiliaryEffectSlots(1, &pv->effectSlot);
 			alDeleteSources(1, &pv->sid);
 		}
+
+		if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+			return;
+
+		while ( !QueueIsEmpty(pv->queue) ) {
+
+			jsval *pItem = (jsval*)QueuePop(pv->queue);
+			JS_free(cx, pItem);
+		}
+		QueueDestruct(pv->queue);
 	}
 }
 

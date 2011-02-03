@@ -36,6 +36,10 @@ DEFINE_FINALIZE() {
 
 			alDeleteEffects(1, &pv->effect);
 		}
+
+		if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+			return;
+
 		JS_free(cx, pv);
 	}
 }

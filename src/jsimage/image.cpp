@@ -25,6 +25,9 @@ BEGIN_CLASS( Image )
 
 DEFINE_FINALIZE() {
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
+
 	void *data = JL_GetPrivate(cx, obj);
 	if ( data != NULL )
 		jl_free(data); // jl_free(NULL) is legal

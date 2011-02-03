@@ -78,16 +78,17 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 
 	float arr[] = { 9,8,7,6,5,4 };
 
-	val = OBJECT_TO_JSVAL(JS_NewArrayObject(cx, 0, NULL));
+//	val = OBJECT_TO_JSVAL(JS_NewArrayObject(cx, 0, NULL));
 
 	argc = GenInt();
 
 	bool b = f32 > 1;
+	size_t st;
 
 	size_t err = JLGetEIP(); size_t a = JLGetEIP(); ////////////////////////////////////////
 
-	b = JL_IsData(cx, val);
-
+	
+//	b = JL_IsData(cx, val);
 	/*
 	float nvec[10];
 	jsuint realLen;
@@ -101,12 +102,21 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 //	JL_JsvalToPrimitive(cx, v, &v);
 //	JL_Push(cx, obj, &v);
 
+	//b = JL_IsStringObject(cx, obj);
+	b = JL_HasPrivate(cx, obj);
+
+
 
 	bad: ///////////////////////////////////////////////////////////////////////////////////
 	a = JLGetEIP() - a - (a-err);
 
+	JL_JsvalToNative(cx, val, &st);
+
+
+
 	printf("code length: %d\n", a);
 
+	i32 = st;
 	printf("tmp-%d-%f-i\n", i32, f32, b);
 }
 
@@ -131,6 +141,7 @@ int main(int argc, char* argv[]) {
 	jsval val;
 	val = STRING_TO_JSVAL(jsstr);
 	val = DOUBLE_TO_JSVAL(1.234);
+	val = INT_TO_JSVAL(123);
 
 	Test(cx, globalObject, 20, val);
 

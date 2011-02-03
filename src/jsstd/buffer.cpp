@@ -495,6 +495,9 @@ BEGIN_CLASS( Buffer )
 
 DEFINE_FINALIZE() {
 
+	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		return;
+
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;

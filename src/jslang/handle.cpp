@@ -25,11 +25,12 @@ BEGIN_CLASS( Handle )
 DEFINE_FINALIZE() { // see HandleClose()
 
 	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, obj);
-	if ( !pv )
-		return;
-	if ( pv->finalizeCallback ) // callback function is present
-		pv->finalizeCallback((char*)pv + sizeof(HandlePrivate)); // (TBD) test it !
-	jl_free(pv);
+	if ( pv ) {
+
+		if ( pv->finalizeCallback ) // callback function is present
+			pv->finalizeCallback((char*)pv + sizeof(HandlePrivate)); // (TBD) test it !
+		jl_free(pv);
+	}
 }
 
 

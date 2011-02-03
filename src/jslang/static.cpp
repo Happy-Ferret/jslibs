@@ -381,7 +381,10 @@ DEFINE_FUNCTION( jslang_test ) {
 	//b = JL_JsidToJsval(cx, (jsid)vp, &val);
 	//b = JL_IsObjectObject(cx, obj);
 	//JL_NewBlobCopyN(cx, "123", 3, vp);
-	b = JL_GetObjectProtoKey(cx, obj ) != 0;
+	//b = JL_GetObjectProtoKey(cx, obj ) != 0;
+
+	_asm int 3;
+	JL_IsStringObject(cx, obj);
 
 	bad: ///////////////////////////////////////////////////////////////////////////////////
 	printf("code length: %d\n", JLGetEIP() - __pos - (__pos-__err));
