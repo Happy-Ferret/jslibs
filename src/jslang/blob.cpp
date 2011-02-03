@@ -1308,10 +1308,12 @@ DEFINE_FUNCTION( _unserialize ) {
 }
 
 
+/*
 DEFINE_INIT() {
 
 //	return JL_DefineProperty(cx, proto, JLID(cx, _private1), (void*)Blob_NativeInterfaceBufferGet, false, false);
 }
+*/
 
 
 /**doc
@@ -1327,7 +1329,7 @@ DEFINE_INIT() {
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
-	HAS_INIT
+//	HAS_INIT
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(2)
 	HAS_CONSTRUCTOR
