@@ -144,11 +144,12 @@ DEFINE_FUNCTION( DecodeOggVorbis ) {
 	} while (bytes > 0);
 
 	// convert data chunks into a single memory buffer.
-	char *buf = (char*)JS_malloc(cx, totalSize +1);
+	char *buf = (char*)jl_malloc(totalSize +1);
 	JL_CHK( buf );
 
 	buf[totalSize] = '\0';
 	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
+	JL_updateMallocCounter(cx, totalSize);
 	JSObject *bstrObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &bstrObj) );
 	JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
@@ -349,7 +350,7 @@ DEFINE_FUNCTION( DecodeSound ) {
 
 
 	// convert data chunks into a single memory buffer.
-	char *buf = (char*)JS_malloc(cx, totalSize);
+	char *buf = (char*)jl_malloc(totalSize);
 	JL_CHK( buf );
 
 //	JSObject *bstrObj = JL_NewBlob(cx, buf, totalSize);
@@ -358,6 +359,7 @@ DEFINE_FUNCTION( DecodeSound ) {
 
 	buf[totalSize] = '\0';
 	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
+	JL_updateMallocCounter(cx, totalSize);
 	JSObject *bstrObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &bstrObj) );
 	JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");

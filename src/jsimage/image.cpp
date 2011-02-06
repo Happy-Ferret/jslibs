@@ -48,6 +48,7 @@ DEFINE_FUNCTION( Alloc ) {
 	size = JSVAL_TO_INT(JL_ARG(1));
 	data = jl_malloc(size);
 	JL_S_ASSERT_ALLOC( data );
+	JL_updateMallocCounter(cx, size);
 	JL_SetPrivate(cx, obj, data);
 
 	*JL_RVAL = JSVAL_VOID;

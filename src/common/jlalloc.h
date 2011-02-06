@@ -89,7 +89,7 @@ jl_malloca_private(void *mem, size_t heapMem) {
 ALWAYS_INLINE void
 jl_freea(void *mem) {
 	
-	if (unlikely( mem && *((size_t*)mem-1) ))
+	if ( mem && *((size_t*)mem-1) )
 		jl_free((size_t*)mem-1);
 }
 
@@ -114,7 +114,7 @@ public:
 
 namespace jl {
 
-	class _NOVTABLE CppNoAlloc {
+	class NOVTABLE CppNoAlloc {
 		void* operator new(size_t);
 		void* operator new[](size_t);
 		void operator delete(void *, size_t);
@@ -122,12 +122,12 @@ namespace jl {
 	};
 
 
-	class _NOVTABLE CppAllocators {
+	class NOVTABLE CppAllocators {
 	public:
-		ALWAYS_INLINE void* operator new(size_t size) _NOTHROW {
+		ALWAYS_INLINE void* operator new(size_t size) NOTHROW {
 			return jl_malloc(size);
 		}
-		ALWAYS_INLINE void* operator new[](size_t size) _NOTHROW {
+		ALWAYS_INLINE void* operator new[](size_t size) NOTHROW {
 			return jl_malloc(size);
 		}
 		ALWAYS_INLINE void operator delete(void *ptr, size_t size) {
@@ -142,7 +142,7 @@ namespace jl {
 
 
 	template <class T>
-	class _NOVTABLE DefaultAlloc {
+	class NOVTABLE DefaultAlloc {
 	public:
 		ALWAYS_INLINE void Free(void *ptr) {
 			jl_free(ptr);
@@ -154,7 +154,7 @@ namespace jl {
 
 
 	template <class T, const size_t PREALLOC = 0>
-	class _NOVTABLE PreservAlloc {
+	class NOVTABLE PreservAlloc {
 
 		void *_last;
 		uint8_t *_prealloc;
@@ -211,21 +211,21 @@ namespace jl {
 	};
 
 	template <class T>
-	class _NOVTABLE PreservAllocNone : public PreservAlloc<T, 0> {};
+	class NOVTABLE PreservAllocNone : public PreservAlloc<T, 0> {};
 
 	template <class T>
-	class _NOVTABLE PreservAllocSmall : public PreservAlloc<T, 256> {};
+	class NOVTABLE PreservAllocSmall : public PreservAlloc<T, 256> {};
 
 	template <class T>
-	class _NOVTABLE PreservAllocMedium : public PreservAlloc<T, 4096> {};
+	class NOVTABLE PreservAllocMedium : public PreservAlloc<T, 4096> {};
 
 	template <class T>
-	class _NOVTABLE PreservAllocBig : public PreservAlloc<T, 65536> {};
+	class NOVTABLE PreservAllocBig : public PreservAlloc<T, 65536> {};
 
 
 
 	template <class T, const size_t PREALLOC_SIZE = 1024>
-	class _NOVTABLE StaticAlloc {
+	class NOVTABLE StaticAlloc {
 
 		void *_last;
 		uint8_t *_preallocEnd;
@@ -279,13 +279,13 @@ namespace jl {
 	};
 
 	template <class T>
-	class _NOVTABLE StaticAllocSmall : public StaticAlloc<T, 256> {};
+	class NOVTABLE StaticAllocSmall : public StaticAlloc<T, 256> {};
 
 	template <class T>
-	class _NOVTABLE StaticAllocMedium : public StaticAlloc<T, 4096> {};
+	class NOVTABLE StaticAllocMedium : public StaticAlloc<T, 4096> {};
 
 	template <class T>
-	class _NOVTABLE StaticAllocBig : public StaticAlloc<T, 65536> {};
+	class NOVTABLE StaticAllocBig : public StaticAlloc<T, 65536> {};
 }
 
 

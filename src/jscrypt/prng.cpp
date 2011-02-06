@@ -33,7 +33,7 @@ DEFINE_FINALIZE() {
 	if ( !pv )
 		return;
 
-//	pv->prng.done(&pv->state); // (TBD) check if mendatory
+	pv->prng.done(&pv->state);
 	JS_free(cx, pv);
 }
 

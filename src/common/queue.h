@@ -242,7 +242,7 @@ inline QueueCell *SearchFirstData( Queue *queue, void *data ) {
 
 
 template <class T, class A = DefaultAlloc>
-class _NOVTABLE Queue1 : private A {
+class NOVTABLE Queue1 : private A {
 
 public:
 	struct QueueItem /*: A*/ {

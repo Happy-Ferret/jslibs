@@ -94,6 +94,7 @@ DEFINE_CONSTRUCTOR() {
 	JsfontPrivate *pv;
 	pv = (JsfontPrivate*)jl_malloc(sizeof(JsfontPrivate));
 	JL_S_ASSERT_ALLOC( pv );
+	JL_updateMallocCounter(cx, sizeof(JsfontPrivate));
 
 	FTCHK( FT_New_Face( mpv->ftLibrary, filePathName, faceIndex, &pv->face ) );
 	// from memory: FT_New_Memory_Face

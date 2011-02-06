@@ -240,6 +240,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Read ) {
 
+	char *buf = NULL;
+	char *buffer = NULL;
+
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
@@ -248,7 +251,6 @@ DEFINE_FUNCTION( Read ) {
 	JL_S_ASSERT( pv->bits != 8 || pv->bits == 16, "Unsupported bits count." );
 	JL_S_ASSERT( pv->ofInfo->channels == 1 || pv->ofInfo->channels == 2, "Unsupported channel count." );
 
-	char *buf;
 	size_t totalSize = 0;
 
 	pv->cx = cx;
@@ -275,7 +277,7 @@ DEFINE_FUNCTION( Read ) {
 
 				// (TBD) update the channels, rate, ... according to: ov_info(&pv->ofDescriptor, bitStream);
 				if ( JL_IsExceptionPending(cx) )
-					return JS_FALSE; // (TBD) free memory
+					return JS_FALSE;
 
 				if ( bytes == OV_HOLE )
 					continue; // ignore corrupted/dropped/lost parts
@@ -316,7 +318,7 @@ DEFINE_FUNCTION( Read ) {
 		long bytes;
 		do {
 
-			char *buffer = (char*)JS_malloc(cx, bufferSize);
+			buffer = (char*)jl_malloc(bufferSize);
 			JL_CHK( buffer );
 			jl::StackPush(&stack, buffer);
 
@@ -332,7 +334,7 @@ DEFINE_FUNCTION( Read ) {
 			JL_S_ASSERT( bitStream == prevBitstream, "Invalid ogg bitstream."); // bitstream has changed
 
 			if ( JL_IsExceptionPending(cx) )
-				return JS_FALSE; // (TBD) free memory
+				return JS_FALSE;
 
 			if ( bytes == OV_HOLE)
 				continue; // ignore corrupted/dropped/lost parts
@@ -351,7 +353,7 @@ DEFINE_FUNCTION( Read ) {
 		} while (bytes > 0); // 0 indicates EOF
 
 		// convert data chunks into a single memory buffer.
-		buf = (char*)JS_malloc(cx, totalSize +1);
+		buf = (char*)jl_malloc(totalSize +1);
 		JL_CHK( buf );
 
 		// because the stack is LIFO, we have to start from the end.
@@ -375,6 +377,7 @@ DEFINE_FUNCTION( Read ) {
 
 	buf[totalSize] = 0;
 	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
+	JL_updateMallocCounter(cx, totalSize);
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
 	JL_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
@@ -386,7 +389,10 @@ DEFINE_FUNCTION( Read ) {
 	JL_CHK(JL_SetProperty(cx, blobObj, "frames", totalSize / (pv->ofInfo->channels * pv->bits / 8) ) );
 
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	jl_free(buf);
+	jl_free(buffer);
+	return JS_FALSE;
 }
 
 /**doc

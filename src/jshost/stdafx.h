@@ -15,26 +15,10 @@
 #pragma once
 
 #include "jlplatform.h"
+#include "jlhelper.h"
+#include "../host/host.h"
 
-#include <fcntl.h>
-#ifdef XP_WIN
-	#include <io.h>
-#endif // XP_WIN
-
-#ifdef XP_UNIX
-	#include <unistd.h>
-	#include <dlfcn.h>
-#endif // XP_UNIX
-
-//#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
 #include <time.h>
-#include <errno.h>
 #include <signal.h>
-
-#include "jlhelper.h"
-
-#include "../host/host.h"

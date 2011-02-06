@@ -33,8 +33,8 @@ LoadModule('jsiconv');
 
 /// identity [rmt]
 
-	ui = new Iconv('UTF-8', 'ISO-8859-1');
-	iu = new Iconv('ISO-8859-1', 'UTF-8');
+	var ui = new Iconv('UTF-8', 'ISO-8859-1');
+	var iu = new Iconv('ISO-8859-1', 'UTF-8');
 	
 	for ( var cc = 0; cc < 256; ++cc ) {
 		

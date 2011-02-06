@@ -70,6 +70,12 @@ JL_SetRuntimePrivate( JSRuntime *rt, void *data ) {
 	rt->data = data;
 }
 
+ALWAYS_INLINE void
+JL_updateMallocCounter( const JSContext *cx, size_t nbytes ) {
+
+	return JL_GetRuntime(cx)->updateMallocCounter(nbytes); // JS_updateMallocCounter(cx, nbytes);
+}
+
 ALWAYS_INLINE JSObject *
 JL_GetGlobalObject( const JSContext *cx ) {
 
@@ -1276,7 +1282,7 @@ public:
 		JL_ASSERT( IsSet() );
 		if ( Length() == 0 )
 			return JSVAL_TO_STRING( JL_GetEmptyStringValue(cx) );
-		return JS_NewUCString(cx, GetJsStrZOwnership(), Length()); // (TBD) allocator issue.
+		return JS_NewUCString(cx, GetJsStrZOwnership(), Length()); // (TBD) manage allocator issue in GetJsStrZOwnership() ?
 	}
 
 	ALWAYS_INLINE const char *GetConstStr() {
@@ -2443,22 +2449,6 @@ ALWAYS_INLINE JSBool SetHostObjectValue(JSContext *cx, const jschar *name, jsval
 ///////////////////////////////////////////////////////////////////////////////
 // Blob functions
 
-INLINE NEVER_INLINE JSBool Blob_NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
-
-	const char *buf;
-	buf = (char*)JL_GetPrivate(cx, obj);
-	if ( !buf )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, "Blob");
-	jsval lenVal;
-	size_t len;
-	JL_CHK( JL_GetReservedSlot(cx, obj, 0, &lenVal) );
-	JL_CHK( JL_JsvalToNative(cx, lenVal, &len) );
-	*str = JLStr(buf, len, true);
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
 // note: a Blob is either a JSString or a Blob object if the jslang module has been loaded.
 //       returned value is equivalent to: var ret = Blob(buffer);
 INLINE NEVER_INLINE JSBool FASTCALL
@@ -2479,25 +2469,16 @@ JL_NewBlob( JSContext * RESTRICT cx, void* RESTRICT buffer, size_t length, jsval
 	if (likely( classProtoCache->clasp != NULL )) { // we have Blob class, jslang is present.
 
 		JSObject *blob;
-		blob = JS_NewObject(cx, classProtoCache->clasp, classProtoCache->proto, NULL); // see JS_ConstructObject if SetBufferGetInterface(nativeInterfaceBufferGet) unavailable.
+		blob = JS_ConstructObject(cx, classProtoCache->clasp, classProtoCache->proto, NULL);
 		JL_CHK( blob );
 		*vp = OBJECT_TO_JSVAL(blob);
-
 		JL_CHK( JL_SetReservedSlot(cx, blob, 0, INT_TO_JSVAL( (int32)length )) ); // slot 0 is SLOT_BLOB_LENGTH.
-
-//		NIBufferGet nativeInterfaceBufferGet;
-//		JL_CHK( JL_LookupProperty(cx, classProtoCache->proto, JLID(cx, _private1), (void**)&nativeInterfaceBufferGet) );
-//		JL_ASSERT( nativeInterfaceBufferGet );
-//		JL_CHK( SetBufferGetInterface(cx, blob, nativeInterfaceBufferGet) );
-
-		JL_CHK( SetBufferGetInterface(cx, blob, Blob_NativeInterfaceBufferGet) );
-
 		JL_SetPrivate(cx, blob, buffer); // blob data
 		return JS_TRUE;
 	}
 
-	buffer = NULL; // see bad:
 	*vp = STRING_TO_JSVAL( JLStr((char*)buffer, length, true).GetJSString(cx) );
+	buffer = NULL; // see bad:
 
 	// now we want a string object, not a string literal.
 	JSObject *strObj;
@@ -2512,24 +2493,21 @@ bad:
 
 
 ALWAYS_INLINE JSBool
-JL_NewBlobCopyN( JSContext * RESTRICT cx, const void * RESTRICT data, size_t amount, jsval * RESTRICT vp ) {
+JL_NewBlobCopyN( JSContext * RESTRICT cx, const void * RESTRICT buffer, size_t length, jsval * RESTRICT vp ) {
 
-	if (unlikely( amount == 0 || data == NULL )) { // Empty Blob must acts like an empty string: !'' == true
+	if (unlikely( length == 0 || buffer == NULL )) { // Empty Blob must acts like an empty string: !'' == true
 
 		*vp = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
-	// possible optimization: if Blob class is not abailable, copy data into JSString's jschar to avoid js_InflateString.
-	uint8_t *blobBuf = (uint8_t*)JS_malloc(cx, amount +1);
+	// possible optimization: if Blob class is not abailable, copy buffer into JSString's jschar to avoid js_InflateString.
+	char *blobBuf = (char*)JS_malloc(cx, length +1);
 	JL_CHK( blobBuf );
-	blobBuf[amount] = 0;
-	memcpy( blobBuf, data, amount );
-	if ( !JL_NewBlob(cx, blobBuf, amount, vp) ) {
-
-		JS_free(cx, blobBuf);
-		return JS_FALSE;
-	}
-	return JS_TRUE;
+	memcpy( blobBuf, buffer, length );
+	blobBuf[length] = '\0';
+	if ( JL_NewBlob(cx, blobBuf, length, vp) )
+		return JS_TRUE;
+	JS_free(cx, blobBuf);
 	JL_BAD;
 }
 
@@ -2540,7 +2518,7 @@ JL_NewBlobCopyN( JSContext * RESTRICT cx, const void * RESTRICT data, size_t amo
 
 // see JSAtomState struct in jsatom.h
 #define JL_ATOMJSID(CX, NAME) \
-	ATOM_TO_JSID((CX)->runtime->atomState.NAME##Atom)
+	ATOM_TO_JSID(JL_GetRuntime(CX)->atomState.NAME##Atom)
 
 
 // eg. JS_NewObject(cx, JL_GetStandardClassByKey(cx, JSProto_Date), NULL, NULL);
@@ -2822,7 +2800,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 		JL_CHKM( file != -1, "Unable to open file \"%s\" for reading.", compiledFileName );
 
 		size_t compFileSize = compFileStat.st_size; // filelength(file); ?
-		data = jl_malloc(compFileSize); // (TBD) free on error
+		data = jl_malloc(compFileSize);
 		JL_S_ASSERT_ALLOC( data );
 		int readCount = read( file, data, jl::SafeCast<unsigned int>(compFileSize) ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
 		JL_CHKM( readCount >= 0 && (size_t)readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
@@ -2963,7 +2941,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 		goto good;
 
 	int file;
-	file = open(compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, srcFileStat.st_mode); // (TBD) check the mode
+	file = open(compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, srcFileStat.st_mode);
 	if ( file == -1 ) // if the file cannot be write, this is not an error ( eg. read-only drive )
 		goto good;
 
@@ -2995,12 +2973,8 @@ good:
 
 bad:
 
-	if ( scriptBuffer )
-		jl_freea(scriptBuffer);
-
-	if ( scriptText )
-		jl_freea(scriptText);
-
+	jl_freea(scriptBuffer); // jl_freea(NULL) is legal
+	jl_freea(scriptText);
 	JS_SetOptions(cx, prevOpts);
 	jl_free(data); // jl_free(NULL) is legal
 	return NULL; // report a warning ?
@@ -3148,7 +3122,6 @@ SetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id, const T native
 		JL_CHK( JS_DefinePropertyById(cx, obj, id, JSVAL_TRUE, NULL, (JSPropertyOp)nativeFct, JSPROP_READONLY | JSPROP_PERMANENT) ); // hacking the setter of a read-only property seems safe.
 	} else {
 
-		JL_CHK( JS_DeletePropertyById(cx, obj, id) ); // (TBD) need to delete before reserve ?
 		JL_CHK( ReserveNativeInterface(cx, obj, id) );
 	}
 	return JS_TRUE;
@@ -3199,7 +3172,7 @@ JSStreamRead( JSContext * RESTRICT cx, JSObject * RESTRICT obj, char * RESTRICT 
 	jsval tmp;
 	JL_CHK( JL_NativeToJsval(cx, *amount, &tmp) );
 	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, Read), 1, &tmp, &tmp) );
-	if ( JSVAL_IS_VOID(tmp) ) { // (TBD)! with sockets, undefined mean 'closed', that is not supported.
+	if ( JSVAL_IS_VOID(tmp) ) { // (TBD)! with sockets, undefined mean 'closed', that is not supported by streams !!
 
 		*amount = 0;
 	} else {

@@ -71,7 +71,6 @@ DEFINE_FUNCTION( ExtractIcon ) {
 	*phIcon = hIcon;
 	JL_SetPrivate(cx, icon, phIcon);
 	*JL_RVAL = OBJECT_TO_JSVAL(icon);
-	
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -41,7 +41,7 @@ struct AsymmetricCipherPrivate {
 	AsymmetricKey key;
 	bool hasKey;
 	ltc_pkcs_1_paddings padding;
-	ltc_hash_descriptor *hashDescriptor;
+	int hashIndex;
 };
 
 
@@ -125,8 +125,10 @@ $TOC_MEMBER $INAME
     * 1_OAEP (for PKCS#1 v2.0 encryption padding)
     If omitted, the default value is 1_OAEP.
     Only RSA use this argument.
+    $H note
+    When performing v1.5 encryption, the hash and lparam parameters are totally ignored.
 **/
-DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] )
+DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersion] )
 
 	JLStr asymmetricCipherName, hashName;
 
@@ -157,11 +159,14 @@ DEFINE_CONSTRUCTOR() { // ( cipherName, hashName [, prngObject] [, PKCSVersion] 
 
 	pv->cipher = asymmetricCipher;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &hashName) );
-	int hashIndex;
-	hashIndex = find_hash(hashName);
-	JL_S_ASSERT( hashIndex != -1, "hash %s is not available.", hashName );
-	pv->hashDescriptor = &hash_descriptor[hashIndex];
+	if ( JL_ARG_ISDEF(2) ) {
+
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &hashName) );
+		pv->hashIndex = find_hash(hashName);
+	} else {
+
+		pv->hashIndex = -1;
+	}
 
 	if ( argc >= 3 ) {
 
@@ -344,9 +349,6 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 	int prngIndex;
 	JL_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
 
-	int hashIndex;
-	hashIndex = find_hash(pv->hashDescriptor->name);
-
 //	const char *in;
 //	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength( cx, &JL_ARG(1), &in, &inLength ) );
@@ -368,16 +370,17 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			JLStr lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
-			err = rsa_encrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
+			// doc. When performing v1.5 encryption, the hash and lparam parameters are totally ignored and can be set to NULL or zero (respectively).
+			err = rsa_encrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, pv->hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
 			break;
 		}
 		case ecc: {
-			err = ecc_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, hashIndex, &pv->key.eccKey );
+			err = ecc_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.eccKey );
 			break;
 		}
 		case dsa: {
 			// if inlen > hash_descriptor[hash].hashsize => ERROR
-			err = dsa_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, hashIndex, &pv->key.dsaKey );
+			err = dsa_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.dsaKey );
 			break;
 		}
 #ifdef MKAT
@@ -385,7 +388,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 			JLStr lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
-			err = katja_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, hashIndex, &pv->key.katjaKey );
+			err = katja_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, pv->hashIndex, &pv->key.katjaKey );
 			break;
 		}
 #endif
@@ -444,14 +447,12 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 	switch ( pv->cipher ) {
 		case rsa: {
 
-			int hashIndex = find_hash(pv->hashDescriptor->name);
-
 			JLStr lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 
 			int stat = 0; // default: failed
-			err = rsa_decrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), hashIndex, pv->padding, &stat, &pv->key.rsaKey );
+			err = rsa_decrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), pv->hashIndex, pv->padding, &stat, &pv->key.rsaKey );
 			// doc: if all went well pt == pt2, l2 == 16, res == 1
 			if ( err == CRYPT_OK && stat != 1 ) {
 
@@ -471,14 +472,12 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 #ifdef MKAT
 		case katja: {
 
-			int hashIndex = find_hash(pv->hashDescriptor->name);
-
 			JLStr lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 
 			int stat = 0; // default: failed
-			err = katja_decrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), hashIndex, &stat, &pv->key.katjaKey );
+			err = katja_decrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), pv->hashIndex, &stat, &pv->key.katjaKey );
 			// doc: if all went well pt == pt2, l2 == 16, res == 1
 			if ( err == CRYPT_OK && stat != 1 ) {
 
@@ -543,14 +542,14 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 	err = -1; // default
 	switch ( pv->cipher ) {
 		case rsa: {
-			int hashIndex = find_hash(pv->hashDescriptor->name);
+
 			// A good saltLength default value is between 8 and 16 octets. Strictly, it must be small than modulus len - hLen - 2 where modulus len is the size of the RSA modulus (in octets), and hLen is the length of the message digest produced by the chosen hash.
 			// int saltLength = 16; // OR saltLength = mp_unsigned_bin_size((mp_int*)(pv->key.rsaKey.N)) - hash_descriptor[hashIndex].hashsize - 2  -1;
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &saltLength) );
 
-			err = rsa_sign_hash_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, hashIndex, saltLength, &pv->key.rsaKey );
+			err = rsa_sign_hash_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, pv->hashIndex, saltLength, &pv->key.rsaKey );
 			break;
 		}
 		case ecc: {
@@ -620,9 +619,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 			if ( argc >= 3 && !JSVAL_IS_VOID( JL_ARG(3) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &saltLength) );
 
-			int hashIndex = find_hash(pv->hashDescriptor->name);
-
-			rsa_verify_hash_ex( (const unsigned char *)sign.GetConstStr(), (unsigned long)sign.Length(), (const unsigned char *)data.GetConstStr(), (unsigned long)data.Length(), LTC_LTC_PKCS_1_PSS, hashIndex, saltLength, &stat, &pv->key.rsaKey );
+			rsa_verify_hash_ex( (const unsigned char *)sign.GetConstStr(), (unsigned long)sign.Length(), (const unsigned char *)data.GetConstStr(), (unsigned long)data.Length(), LTC_LTC_PKCS_1_PSS, pv->hashIndex, saltLength, &stat, &pv->key.rsaKey );
 			break;
 		}
 		case ecc: {
@@ -668,17 +665,22 @@ DEFINE_PROPERTY( blockLength ) {
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pv );
 	JL_S_ASSERT( pv->hasKey, "No key found." );
+	int err;
+	err = hash_is_valid(pv->hashIndex);
+	if ( err != CRYPT_OK )
+		return ThrowCryptError(cx, err);
+	ltc_hash_descriptor *hashDescriptor = &hash_descriptor[pv->hashIndex];
 	int blockLength;
 	switch ( pv->cipher ) {
 		case rsa:
-			// blockLength = mp_unsigned_bin_size((mp_int*)(pv->key.rsaKey.N)) - 2 * pv->hashDescriptor->hashsize - 2;
-			blockLength = ltc_mp.unsigned_size(pv->key.rsaKey.N) - 2 * pv->hashDescriptor->hashsize - 2;
+			// blockLength = mp_unsigned_bin_size((mp_int*)(pv->key.rsaKey.N)) - 2 * hashDescriptor->hashsize - 2;
+			blockLength = ltc_mp.unsigned_size(pv->key.rsaKey.N) - 2 * hashDescriptor->hashsize - 2; // (TBD) not the same rule if hash is not given (LTC_LTC_PKCS_1_V1_5 case)
 			break;
 		case ecc:
-			blockLength = pv->hashDescriptor->hashsize;
+			blockLength = hashDescriptor->hashsize;
 			break;
 		case dsa:
-			blockLength = pv->hashDescriptor->hashsize;
+			blockLength = hashDescriptor->hashsize;
 			break;
 #ifdef MKAT
 		case katja: { // (TBD)
@@ -689,7 +691,7 @@ DEFINE_PROPERTY( blockLength ) {
 			modulus_bitlen = ((modulus_bitlen << 1) / 3);
 			modulus_bitlen -= (modulus_bitlen & 7) + 8;
 			modulus_len = (modulus_bitlen >> 3) + (modulus_bitlen & 7 ? 1 : 0);
-			hLen = pv->hashDescriptor->hashsize;
+			hLen = hashDescriptor->hashsize;
 			blockLength = modulus_bitlen - 2*hLen - 2;
 			//bool tmp = (2*hLen >= (modulus_len - 2));
 			break;

@@ -22,14 +22,14 @@
 #define J__STRINGIFY(x) #x
 #define J__TOSTRING(x) J__STRINGIFY(x)
 
-#define JL_MACRO_BEGIN  do {
+
+// from jstypes.h
+#define JL_MACRO_BEGIN do {
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-# define JL_MACRO_END \
-    } __pragma(warning(push)) __pragma(warning(disable:4127)) \
-    while (0) __pragma(warning(pop))
+	#define JL_MACRO_END } __pragma(warning(push)) __pragma(warning(disable:4127)) while (0) __pragma(warning(pop))
 #else
-# define JL_MACRO_END   } while (0)
+	#define JL_MACRO_END   } while (0)
 #endif
 
 
@@ -45,15 +45,32 @@
 #define JL_CODE_LOCATION __FILE__ ":" J__TOSTRING(__LINE__)
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
 
-
-#if defined(__cplusplus)
-	#define EXTERN_C extern "C"
-#else
-	#define EXTERN_C
-#endif // __cplusplus
+#if defined(_MSC_VER)
+	// disable warnings:
+	#pragma warning(disable : 4127) // no "conditional expression is constant" complaints
+	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
+	#pragma warning(disable : 4201) // nonstandard extension used : nameless struct/union
+	#pragma warning(disable : 4102) // unreferenced label
+	#pragma warning(disable : 4702) // unreachable code
+	#pragma warning(disable : 4227) // anachronism used : qualifiers on reference are ignored
+	#ifndef DEBUG
+		#pragma warning(disable : 4701) // potentially uninitialized local variable 'XXX' used
+	#endif
+	// force warning to error:
+	#pragma warning(error : 4715) // not all control paths return a value
+	#pragma warning(error : 4018) // warning C4018: '<' : signed/unsigned mismatch
+	#pragma warning(error : 4309) // warning C4309: 'initializing' : truncation of constant value
+	#pragma warning(error : 4700) // warning C4700: uninitialized local variable 'XXX' used
+	#pragma warning(error : 4533) // warning C4533: initialization of 'xxx' is skipped by 'goto YYY'
+	#pragma warning(error : 4002) // too many actual parameters for macro 'XXX'
+	#ifdef DEBUG
+		#pragma warning(error : 4701) // potentially uninitialized local variable 'XXX' used
+	#endif
+#endif // _MSC_VER
 
 
 #if defined(_DEBUG)
@@ -69,11 +86,19 @@
 	#define IFDEBUG(expr)
 #endif // DEBUG
 
+
 #ifdef DEBUG
 	#define IS_DEBUG true
 #else
 	#define IS_DEBUG false
 #endif // DEBUG
+
+
+#if defined(__cplusplus)
+	#define EXTERN_C extern "C"
+#else
+	#define EXTERN_C
+#endif // __cplusplus
 
 
 #if defined(__GNUC__) && (__GNUC__ > 2)
@@ -82,7 +107,6 @@
 #else
 	#define likely(expr) (expr)
 	#define unlikely(expr) (expr)
-	// see __assume keyword for MSVC
 #endif
 
 
@@ -126,16 +150,6 @@
 # endif
 #endif
 
-#if defined DEBUG
-#define DISABLE_INLINE
-#define ENABLE_INLINE
-#elif defined _MSC_VER
-#define DISABLE_INLINE #pragma auto_inline(off)
-#define ENABLE_INLINE #pragma auto_inline(on)
-#elif defined __GNUC__
-#define DISABLE_INLINE
-#define ENABLE_INLINE
-#endif
 
 // from jstypes.h
 // using  INLINE NEVER_INLINE void foo() {...}  is permitted.
@@ -159,11 +173,12 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 
 #ifndef ASSUME
 # if defined _MSC_VER
-#  define ASSUME(expr) __assume(expr)
+#  define ASSUME(expr) (__assume(expr))
 # else
 #  define ASSUME(expr) ((void)0)
 # endif
 #endif
+
 
 // restrict says that the pointer is the only thing that accesses the underlying object. 
 // see also. http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
@@ -189,7 +204,7 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 
 // msdn doc. noalias means that a function call does not modify or reference visible global state and only modifies the memory pointed to directly by pointer parameters (first-level indirections).
 #ifndef NOALIAS
-# if defined _MSC_VER
+# if defined _MSC_VER && _MSC_VER >= 1400
 #  define NOALIAS __declspec(noalias)
 # else
 #  define NOALIAS
@@ -198,12 +213,9 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 
 
 #if defined(_MSC_VER)
-
 	#define DLLEXPORT __declspec(dllexport)
 	#define DLLLOCAL
-
 #elif defined(__GNUC__)
-
 	// # pragma GCC diagnostic ignored "-Wformat"  /* Ignore Warning about printf format /
 	// # pragma GCC diagnostic ignored "-Wunused-parameter"  / Ignore Warning about unused function parameter */
 	#pragma GCC diagnostic error "-Wdiv-by-zero"
@@ -221,93 +233,44 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 
 	#define DLLEXPORT __attribute__ ((visibility("default")))
 	#define DLLLOCAL __attribute__ ((visibility("hidden")))
-
 #else
-
 	#define DLLEXPORT
 	#define DLLLOCAL
-
 #endif
 
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && _MSC_VER >= 1100
+#define NOVTABLE __declspec(novtable)
+#else
+#define NOVTABLE
+#endif
 
-	// disable warnings:
-	#pragma warning(disable : 4127) // no "conditional expression is constant" complaints
-	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
-	#pragma warning(disable : 4201) // nonstandard extension used : nameless struct/union
-	#pragma warning(disable : 4102) // unreferenced label
-	#pragma warning(disable : 4702) // unreachable code
-	#pragma warning(disable : 4227) // anachronism used : qualifiers on reference are ignored
-	#ifndef DEBUG
-		#pragma warning(disable : 4701) // potentially uninitialized local variable 'XXX' used
-	#endif
-
-	// force warning to error:
-	#pragma warning(error : 4715) // not all control paths return a value
-	#pragma warning(error : 4018) // warning C4018: '<' : signed/unsigned mismatch
-	#pragma warning(error : 4309) // warning C4309: 'initializing' : truncation of constant value
-	#pragma warning(error : 4700) // warning C4700: uninitialized local variable 'XXX' used
-	#pragma warning(error : 4533) // warning C4533: initialization of 'xxx' is skipped by 'goto YYY'
-	#pragma warning(error : 4002) // too many actual parameters for macro 'XXX'
-	#ifdef DEBUG
-		#pragma warning(error : 4701) // potentially uninitialized local variable 'XXX' used
-	#endif
-
-	// Using STRICT to Improve Type Checking (http://msdn.microsoft.com/en-us/library/aa280394%28v=VS.60%29.aspx)
-	#define STRICT 1
-
-	// see WinDef.h
-	#define NOMINMAX
-
-//warning: must be defined on the commend line !
-//	#if !defined(DEBUG)
-//		// Don's use secure standard library from VC++
-//		#define _SECURE_SCL_THROWS 0
-//		#define _SECURE_SCL 0
-//		#define _HAS_ITERATOR_DEBUGGING 0
-//	#endif // #DEBUG
+#define NOTHROW throw()
 
 
-//	#define _CRT_SECURE_NO_DEPRECATE
-//	#define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES 1
+///////////////////////////////////////////////////////////////////////////////
 
-	#define _NOTHROW throw()
-	#define _NOVTABLE __declspec(novtable)
-
-	#include <intrin.h>
-	#pragma intrinsic(_ReturnAddress)
-
-#else // _MSC_VER
-
-	#define _NOTHROW
-	#define _NOVTABLE
-
-#endif // _MSC_VER
-
-
-
-#include <limits>
-
-#include <math.h>
-#include <float.h>
-#include <limits.h>
 #include <sys/types.h>
-#include <malloc.h>
-#include <stdlib.h>
-#include <errno.h>
-
-#include <fcntl.h> // _O_RDONLY, _O_WRONLY
-#include <stdio.h>
+#include <float.h>
+#include <wchar.h>
+//#include <limits>
+#include <limits.h>
 #include <cstddef>
 //#include <varargs.h>
 #include <stdarg.h>
-#include <string.h>
+#include <errno.h>
+#include <malloc.h>
+#include <fcntl.h> // _O_RDONLY, _O_WRONLY
+#include <stdlib.h>
+#include <stdio.h>
+#include <cstring>
+#include <math.h>
 
-
-#if CHAR_BIT != 8
-#error "unsupported char size"
+#if defined(_MSC_VER)
+#include <intrin.h> // __cpuid()
+#include <io.h> // _open_osfhandle()
 #endif
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -319,7 +282,6 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 	// the following code make issue with jstl.h (js\src\jstl.h(244) : error C2039: '_malloc_dbg' : is not a member of 'JSContext')
 	#ifdef _DEBUG
 	# define _CRTDBG_MAP_ALLOC
-	# include <stdlib.h>
 	# include <crtdbg.h>
 	#endif // _DEBUG
 #endif // REPORT_MEMORY_LEAKS
@@ -342,6 +304,13 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 
 	#undef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN   // Exclude rarely-used stuff from Windows headers
+
+	// Using STRICT to Improve Type Checking (http://msdn.microsoft.com/en-us/library/aa280394%28v=VS.60%29.aspx)
+	#define STRICT 1
+
+	// see WinDef.h
+	#define NOMINMAX
+
 	#include <windows.h>
 
 //	#include <direct.h> // function declarations for directory handling/creation
@@ -358,6 +327,10 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 	typedef UINT64 uint64_t;
 
 	typedef __int64 LLONG;
+
+	typedef float float32_t;
+	typedef double float64_t;
+
 
 	#ifndef _SSIZE_T_DEFINED
 	#ifdef  _WIN64
@@ -402,6 +375,9 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 
 	#define LLONG long long
 
+	typedef float float32_t;
+	typedef double float64_t;
+
 	#define DLL_EXT ".dylib"
 	#define PATH_SEPARATOR_STRING "/"
 	#define PATH_SEPARATOR '/'
@@ -416,6 +392,7 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 
 	#include <unistd.h>
 	#include <sys/time.h>
+	#include <time.h>
 	#include <dlfcn.h>
 	#include <stdint.h>
 
@@ -428,6 +405,9 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 	#endif // O_SEQUENTIAL
 
 	#define LLONG long long
+
+	typedef float float32_t;
+	typedef double float64_t;
 
 	#define DLL_EXT ".so"
 	#define PATH_SEPARATOR_STRING "/"
@@ -451,34 +431,18 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 
 #endif // Windows/MacosX/Linux platform
 
-typedef float float32_t;
-typedef double float64_t;
-
-//JL_STATIC_ASSERT( sizeof(float32_t) == 32/8 );
-//JL_STATIC_ASSERT( sizeof(float64_t) == 64/8 );
-
-
-// #define SIZE_T_MIN (static_cast<size_t>(0))
-// #define SIZE_T_MAX (static_cast<size_t>(-1))
-//	see SIZE_MAX
-
-#define SSIZE_T_MAX (static_cast<ssize_t>(SIZE_T_MAX / 2))
-#define SSIZE_T_MIN (static_cast<ssize_t>(-SSIZE_T_MAX - 1L))
-
-
-#if defined(XP_WIN)
-#include <io.h> // _open_osfhandle()
-#endif
-
-// MS specific ?
-//#ifndef O_BINARY
-//	#define O_BINARY 0
-//#endif
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
+
+
+#define JL_STATIC_ASSERT(cond) \
+	extern void jl_static_assert(int arg[(cond) ? 1 : -1])
+
+
+#define SSIZE_T_MAX ((ssize_t)(SIZE_MAX / 2))
+#define SSIZE_T_MIN ((ssize_t)(-SSIZE_T_MAX - (ssize_t)1))
+
 
 #define UNLIKELY_SPLIT_BEGIN(...) { struct { INLINE NEVER_INLINE JSBool FASTCALL operator()( ##__VA_ARGS__ ) {
 #define UNLIKELY_SPLIT_END(...) } } inner; if ( inner( ##__VA_ARGS__ ) ) return JS_TRUE; else goto bad; JL_BAD; }
@@ -495,21 +459,8 @@ typedef double float64_t;
 #define JL_USE(x) \
 	((void)(x))
 
-#define JL_STATIC_ASSERT(cond) \
-	extern void jl_static_assert(int arg[(cond) ? 1 : -1])
 
-
-/*
-#if defined(WIN32)
-#define JL_BREAK_HALT JL_MACRO_BEGIN   __debugbreak(); abort();   JL_MACRO_END
-#elif defined(XP_OS2) || (defined(__GNUC__) && defined(__i386))
-#define JL_BREAK_HALT JL_MACRO_BEGIN   asm("int $3"); abort();   JL_MACRO_END
-#else
-#define JL_BREAK_HALT JL_MACRO_BEGIN   abort();   JL_MACRO_END
-#endif // platforms
-*/
-
-// see JS_Assert in jsutil.cpp
+// from jsutil.cpp
 ALWAYS_INLINE void
 JL_AssertFailure( const char *message, const char *location ) {
 	
@@ -528,20 +479,16 @@ JL_AssertFailure( const char *message, const char *location ) {
 
 
 #ifdef DEBUG
-
 #define JL_ASSERT(expr) \
     ( (expr) ? (void)0 : JL_AssertFailure(#expr, JL_CODE_LOCATION) )
-
 #define JL_ASSERT_IF(cond, expr) \
     ( (!(cond) || (expr)) ? (void)0 : JL_AssertFailure(#expr, JL_CODE_LOCATION) )
-
 #else // DEBUG
-
 // beware. Use __assume in an ASSERT only when the assert is not recoverable.
 #define JL_ASSERT(expr) (ASSUME(expr))
 #define JL_ASSERT_IF(cond, expr) ((void)0)
-
 #endif // DEBUG
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Platform tools
@@ -560,9 +507,9 @@ struct DummyAlignStruct {
 
 
 enum {
-    JLBigEndian = 0x00010203ul,
-    JLLittleEndian = 0x03020100ul,
-    JLMiddleEndian = 0x01000302ul // or PDP endian
+	JLBigEndian = 0x00010203ul,
+	JLLittleEndian = 0x03020100ul,
+	JLMiddleEndian = 0x01000302ul // or PDP endian
 };
 
 static const union {
@@ -582,8 +529,8 @@ JL_STATIC_ASSERT( DBL_MANT_DIG < 64 );
 	((double)(((uint64_t)1<<DBL_MANT_DIG)-1))
 
 // (TBD) fix needed on Linux
-//JL_STATIC_ASSERT( MAX_INTDOUBLE != MAX_INTDOUBLE+1 );
-//JL_STATIC_ASSERT( MAX_INTDOUBLE+1. == MAX_INTDOUBLE+2. );
+JL_STATIC_ASSERT( MAX_INT_TO_DOUBLE != MAX_INT_TO_DOUBLE+(double)1 );
+JL_STATIC_ASSERT( MAX_INT_TO_DOUBLE+(double)1 == MAX_INT_TO_DOUBLE+(double)2 );
 
 
 ALWAYS_INLINE NOALIAS int
@@ -608,11 +555,10 @@ DOUBLE_IS_NEG(const double &d) {
 #endif
 }
 
-ALWAYS_INLINE NOALIAS bool
-JL_DOUBLE_IS_INTEGER(const double &d) {
+ALWAYS_INLINE bool
+JL_DOUBLE_IS_INTEGER(double d) {
 
-	//	return d == double(int64_t(d));
-	return floor(d) == d;
+	return d == floor(d);
 }
 
 
@@ -639,7 +585,8 @@ namespace jl {
 
 	// eg. if ( IsSafeCast<int>(size_t(12345)) ) ...
 	template <class D, class S>
-	bool IsSafeCast(S src) {
+	ALWAYS_INLINE bool
+	IsSafeCast(S src) {
 
 		D dsrc = static_cast<D>(src);
 		return static_cast<S>(dsrc) == src && (src < 0) == (dsrc < 0); // compare converted value and sign.
@@ -647,7 +594,8 @@ namespace jl {
 
 	// eg. int i; if ( IsSafeCast(size_t(12345), i) ) ...
 	template <class D, class S>
-	bool IsSafeCast(S src, D) {
+	ALWAYS_INLINE bool
+	IsSafeCast(S src, D) {
 
 		D dsrc = static_cast<D>(src);
 		return static_cast<S>(dsrc) == src && (src < 0) == (dsrc < 0); // compare converted value and sign.
@@ -655,7 +603,8 @@ namespace jl {
 
 	// eg. int i = SafeCast<int>(size_t(12345));
 	template <class D, class S>
-	D SafeCast(S src) {
+	ALWAYS_INLINE D
+	SafeCast(S src) {
 
 		JL_ASSERT( (IsSafeCast<D>(src)) );
 		return static_cast<D>(src);
@@ -663,7 +612,8 @@ namespace jl {
 
 	// eg. int i; i = SafeCast(size_t(12345), i);
 	template <class D, class S>
-	D SafeCast(S src, D) {
+	ALWAYS_INLINE D
+	SafeCast(S src, D) {
 
 		JL_ASSERT( (IsSafeCast<D>(src)) );
 		return static_cast<D>(src);
@@ -840,6 +790,8 @@ fpipe( FILE **read, FILE **write ) {
 	pipe(fd); // (TBD) check return value
 	readfd = fd[0];
 	writefd = fd[1];
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 	*read = fdopen(readfd, "r");
 	*write = fdopen(writefd, "w");
@@ -847,7 +799,6 @@ fpipe( FILE **read, FILE **write ) {
 
 
 #ifdef XP_UNIX
-#include <stdlib.h>
 INLINE void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath ) {
 
 	if ( modulePath[0] == PATH_SEPARATOR ) { //  /jshost
@@ -1007,10 +958,10 @@ Network64ToHost64( void *pval ) {
 
 
 INLINE const char* FASTCALL
-IntegerToString(int val, int base) {
+IntegerToString(int32_t val, int base) {
 
 	bool neg;
-	static char buf[64]; // (TBD) overflow warning !
+	static char buf[34]; // sign + binary of max int32 + '\0' = 33 and 34 for uint32
 	buf[63] = '\0';
 	if ( val < 0 ) {
 
@@ -1035,7 +986,9 @@ ALWAYS_INLINE void SleepMilliseconds(uint32_t ms) {
 	Sleep(ms); // winbase.h
 #elif defined(XP_UNIX)
 	usleep(ms * 1000); // unistd.h
-#endif // XP_UNIX
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
 }
 
 
@@ -1056,14 +1009,15 @@ AccurateTimeCounter() {
 	JL_USE( result );
 	return (double)1000 * (performanceCount.QuadPart-initTime) / (double)frequency.QuadPart;
 #elif defined(XP_UNIX)
-	static long initTime = 0; // initTime helps in avoiding precision waste.
+	static volatile long initTime = 0; // initTime helps in avoiding precision waste.
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	if ( initTime == 0 )
 		initTime = tv.tv_sec;
 	return (double)(tv.tv_sec-initTime) * (double)1000 + tv.tv_usec / (double)1000;
 #else
-	return -1; // (TBD) see. js_IntervalNow() or JS_Now() ? no, it could be expensive and is not suitable for calls when a GC lock is held.
+	#error NOT IMPLEMENTED YET
+	// (TBD) or see js_IntervalNow() or JS_Now() ? no, it could be expensive and is not suitable for calls when a GC lock is held.
 #endif
 }
 // see also:
@@ -1128,7 +1082,7 @@ cpuid( int info[4], int type ) {
 #elif defined(XP_UNIX)
 	asm("cpuid":"=a" (info[0]), "=b" (info[1]), "=c" (info[2]), "=d" (info[3]) : "a" (type));
 #else
-	#error (TBD)
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 }
 
@@ -1171,8 +1125,9 @@ JLProcessId() {
 	return getpid();
 #elif defined(XP_UNIX)
 	return getpid();
-#endif // XP_UNIX
-	return -1; // (TBD)
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
 }
 
 
@@ -1205,8 +1160,9 @@ JLRemainingStackSize() {
 	__asm mov [currentSP], esp;
 	return currentSP - (BYTE*)tib->StackLimit;
 #elif defined(XP_UNIX)
-
-	return (size_t)-1;
+	#error NOT IMPLEMENTED YET	// (TBD)
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 }
 
@@ -1371,14 +1327,13 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 ///////////////////////////////////////////////////////////////////////////////
 
 #if defined(XP_WIN)
-#include <malloc.h> // malloc()
 #elif defined(XP_UNIX)
-#include <stdlib.h> // malloc()
-#include <time.h>
-#include <pthread.h>
-#include <sched.h>
-#include <semaphore.h>
-#include <error.h>
+	#include <pthread.h>
+	#include <sched.h>
+	#include <semaphore.h>
+	#include <error.h>
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
 
@@ -1414,6 +1369,8 @@ JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 
 		*message = '\0';
 	}
+ #else
+	#error NOT IMPLEMENTED YET	// (TBD)
  #endif
 }
 
@@ -1439,6 +1396,8 @@ ALWAYS_INLINE int JLAtomicExchange(volatile long *ptr, long val) {
 	return InterlockedExchange(ptr, val);
 #elif defined(XP_UNIX) // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ... //  #if defined(HAVE_GCC_ATOMIC32)
 	return __sync_lock_test_and_set(ptr, val);
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 }
 
@@ -1447,6 +1406,8 @@ ALWAYS_INLINE long JLAtomicIncrement(volatile long *ptr) {
 	return InterlockedIncrement(ptr);
 #elif defined(XP_UNIX)
 	return __sync_add_and_fetch(ptr, 1);
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 }
 
@@ -1455,6 +1416,8 @@ ALWAYS_INLINE long JLAtomicDecrement(volatile long *ptr) {
 	return InterlockedDecrement(ptr);
 #elif defined(XP_UNIX)
 	return __sync_sub_and_fetch(ptr, 1);
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 }
 
@@ -1463,6 +1426,8 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	return InterlockedExchangeAdd(ptr, val) + val;
 #elif defined(XP_UNIX)
 	return __sync_add_and_fetch(ptr, val);
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 }
 
@@ -1480,7 +1445,10 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 		pthread_mutex_t mutex;
 		pthread_cond_t cond;
 	} *JLCondHandler;
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
+
 
 	#if defined(XP_WIN)
 	ALWAYS_INLINE JLCondHandler JLCreateCond() {
@@ -1498,6 +1466,8 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 		pthread_cond_init(&cond->cond, NULL);
 		return cond;
 	}
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 
 	ALWAYS_INLINE JLCondWait( JLCondHandler cond, int timeout ) {
@@ -1514,6 +1484,8 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	typedef HANDLE JLSemaphoreHandler;
 #elif defined(XP_UNIX)
 	typedef sem_t* JLSemaphoreHandler;
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
 
@@ -1527,6 +1499,8 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 			return NULL;
 		sem_init(sem, 0, initCount);
 		return sem;
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 
@@ -1546,6 +1520,8 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 		int value;
 		sem_getvalue(semaphore, &value);
 		return value;
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 */
@@ -1601,6 +1577,8 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 			return JLOK;
 		}
 		return JLERROR;
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 
@@ -1613,8 +1591,9 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	#elif defined(XP_UNIX)
 		int st = sem_post(semaphore);
 		JL_ASSERT( st == 0 );
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
-		JL_USE( st );
 	}
 
 	ALWAYS_INLINE void JLSemaphoreFree( JLSemaphoreHandler *pSemaphore ) {
@@ -1627,9 +1606,10 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 		int st = sem_destroy(*pSemaphore);
 		JL_ASSERT( st == 0 );
 		free(*pSemaphore);
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 		*pSemaphore = (JLSemaphoreHandler)0;
-		JL_USE(st);
 	}
 
 
@@ -1653,6 +1633,8 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 		// HANDLE mx;
 	#elif defined(XP_UNIX)
 		pthread_mutex_t mx;
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	} *JLMutexHandler;
 
@@ -1676,7 +1658,8 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_init(&mutex->mx, NULL);
 		JL_ASSERT( st == 0 );
-		JL_USE( st );
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 		return mutex;
 	}
@@ -1690,7 +1673,8 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_destroy(&(*pMutex)->mx);
 		JL_ASSERT( st == 0 );
-		JL_USE( st );
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 		free(*pMutex);
 		*pMutex = (JLMutexHandler)0;
@@ -1705,7 +1689,8 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_lock(&mutex->mx); // doc. shall not return an error code of [EINTR].
 		JL_ASSERT( st == 0 );
-		JL_USE( st );
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 
@@ -1718,7 +1703,8 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_unlock(&mutex->mx);
 		JL_ASSERT( st == 0 );
-		JL_USE( st );
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 
@@ -2017,6 +2003,8 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	pthread_cond_signal(&cv->cond);
 }
 
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
 
@@ -2034,6 +2022,8 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		pthread_mutex_t mutex;
 		pthread_cond_t cond;
 		bool triggered;
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 		bool autoReset;
 	} *JLEventHandler;
@@ -2058,6 +2048,8 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		pthread_mutex_init(&ev->mutex, 0);
 		pthread_cond_init(&ev->cond, 0);
 		ev->triggered = false;
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 		ev->autoReset = autoReset;
 		return ev;
@@ -2075,17 +2067,17 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		JL_ASSERT( st == 0 );
 		st = pthread_mutex_destroy(&(*ev)->mutex);
 		JL_ASSERT( st == 0 );
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 		free(*ev);
 		*ev = NULL;
-		JL_USE(st);
 	}
 
 	INLINE void JLEventTrigger( JLEventHandler ev ) {
 
 		JL_ASSERT( JLEventOk(ev) );
 	#if defined(XP_WIN)
-
 		EnterCriticalSection(&ev->cs);
 		if ( ev->waitingThreadCount != 0 || !ev->autoReset ) {
 
@@ -2094,7 +2086,6 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			JL_USE(st);
 		}
 		LeaveCriticalSection(&ev->cs);
-
 	#elif defined(XP_UNIX)
 		pthread_mutex_lock(&ev->mutex);
 		ev->triggered = true;
@@ -2102,6 +2093,8 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		if ( ev->autoReset )
 			ev->triggered = false;
 		pthread_mutex_unlock(&ev->mutex);
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 
@@ -2109,17 +2102,17 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 		JL_ASSERT( JLEventOk(ev) );
 	#if defined(XP_WIN)
-
 		EnterCriticalSection(&ev->cs);
 		BOOL st = ResetEvent(ev->hEvent);
 		JL_ASSERT( st != FALSE );
 		JL_USE(st);
 		LeaveCriticalSection(&ev->cs);
-
 	#elif defined(XP_UNIX)
 		pthread_mutex_lock(&ev->mutex);
 		ev->triggered = false;
 		pthread_mutex_unlock(&ev->mutex);
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 
@@ -2187,6 +2180,8 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			return JLOK;
 		}
 		return JLERROR;
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 
@@ -2215,6 +2210,8 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		typedef int JLThreadPriorityType;
 		#define JLThreadFuncDecl void*
 		typedef void*(*JLThreadRoutine)(void *);
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 
 
@@ -2242,6 +2239,8 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			return thread;
 		free(thread);
 		return NULL;
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 
@@ -2257,6 +2256,8 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		int policy;
 		struct sched_param param;
 		return pthread_getschedparam(*thread, &policy, &param) != ESRCH; // errno.h
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 
@@ -2276,6 +2277,8 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			JL_USE(st);
 		}
 		free(*pThread);
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 		*pThread = (JLThreadHandler)0;
 	}
@@ -2287,6 +2290,8 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		ExitThread(exitValue);
 	#elif defined(XP_UNIX)
 		pthread_exit((void*)exitValue);
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 
@@ -2300,8 +2305,9 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#elif defined(XP_UNIX)
 		int st = pthread_cancel(*thread);
 		JL_ASSERT( st == 0 );
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
-		JL_USE(st);
 	}
 
 
@@ -2322,8 +2328,9 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		param.sched_priority = min + (max - min) * priority / 128;
 		st = pthread_setschedparam(*thread, policy, &param);
 		JL_ASSERT( st == 0 );
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
-		JL_USE(st);
 	}
 
 
@@ -2338,8 +2345,9 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#elif defined(XP_UNIX)
 		int st = pthread_join(*thread, (void**)exitValue); // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED. pthread_join shall not return an error code of [EINTR].
 		JL_ASSERT( st == 0 );
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
-		JL_USE(st);
 	}
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2350,6 +2358,8 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	typedef DWORD JLTLSKey;
 #elif defined(XP_UNIX)
 	typedef pthread_key_t JLTLSKey;
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
 #define JLTLSInvalidKey 0
@@ -2364,6 +2374,8 @@ ALWAYS_INLINE JLTLSKey JLTLSAllocKey() {
 	int st = pthread_key_create(&key, NULL);
 	JL_USE( st );
 	JL_ASSERT( st == 0 );
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 	return key;
 }
@@ -2379,8 +2391,9 @@ ALWAYS_INLINE void JLTLSFreeKey( JLTLSKey key ) {
 #elif defined(XP_UNIX)
 	int st = pthread_key_delete(key);
 	JL_ASSERT( st == 0 );
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
-	JL_USE(st);
 }
 
 
@@ -2394,8 +2407,9 @@ ALWAYS_INLINE void JLTLSSet( JLTLSKey key, void *value ) {
 #elif defined(XP_UNIX)
 	int st = pthread_setspecific(key, value);
 	JL_ASSERT( st == 0 );
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
-	JL_USE(st);
 }
 
 
@@ -2410,7 +2424,10 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	return value;
 #elif defined(XP_UNIX)
 	return pthread_getspecific(key);
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
+
 }
 
 
@@ -2422,6 +2439,8 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	typedef HMODULE JLLibraryHandler;
 #elif defined(XP_UNIX)
 	typedef void* JLLibraryHandler;
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
 	ALWAYS_INLINE bool JLDynamicLibraryOk( JLLibraryHandler libraryHandler ) {
@@ -2449,6 +2468,8 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	#elif defined(XP_UNIX)
 		dlerror(); // Resets the error indicator.
 		return dlopen(filename, RTLD_LAZY | RTLD_LOCAL); // RTLD_NOW / RTLD_GLOBAL
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 
@@ -2461,9 +2482,10 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		dlerror(); // Resets the error indicator.
 		int st = dlclose(*libraryHandler);
 		JL_ASSERT( st == 0 );
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 		*libraryHandler = (JLLibraryHandler)0;
-		JL_USE(st);
 	}
 
 	INLINE NEVER_INLINE void FASTCALL
@@ -2489,6 +2511,8 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 			message[maxLength-1] = '\0';
 		} else
 			*message = '\0';
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 
@@ -2499,6 +2523,8 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	#elif defined(XP_UNIX)
 		dlerror(); // Resets the error indicator.
 		return dlsym(libraryHandler, symbolName);
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
 

@@ -396,6 +396,7 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = new Private();
 	JL_S_ASSERT_ALLOC( pv );
+	JL_updateMallocCounter(cx, sizeof(Private));
 	JL_SetPrivate(cx, obj, pv);
 
 	InitializeCriticalSection(&pv->cs);

@@ -15,13 +15,16 @@
 #include "stdafx.h"
 
 // set stack to 2MB:
-#ifdef XP_WIN
+#if defined(XP_WIN)
 	#pragma comment (linker, "/STACK:0x400000")
-#else
+#elif defined(XP_UNIX)
 	#pragma stacksize 4194304
 	//char stack[0x200000] __attribute__ ((section ("STACK"))) = { 0 };
 	//init_sp(stack + sizeof (stack));
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
+
 
 #include "jslibsModule.cpp"
 
@@ -84,7 +87,7 @@ JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 }
 
 
-#ifdef XP_WIN
+#if defined(XP_WIN)
 BOOL WINAPI Interrupt(DWORD CtrlType) {
 
 // see. http://msdn2.microsoft.com/en-us/library/ms683242.aspx
@@ -99,7 +102,7 @@ BOOL WINAPI Interrupt(DWORD CtrlType) {
 
 	return TRUE;
 }
-#else
+#elif defined(XP_UNIX)
 void Interrupt(int CtrlType) {
 
 	JLMutexAcquire(gEndSignalLock);
@@ -108,7 +111,9 @@ void Interrupt(int CtrlType) {
 	JLMutexRelease(gEndSignalLock);
 
 }
-#endif // XP_WIN
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
 
 
 struct UserProcessEvent {
@@ -436,14 +441,16 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	gEndSignalCond = JLCondCreate();
 	gEndSignalLock = JLMutexCreate();
 
-#ifdef XP_WIN
+#if defined(XP_WIN)
 	BOOL status;
 	status = SetConsoleCtrlHandler(Interrupt, TRUE);
 	HOST_MAIN_ASSERT( status == TRUE, "Unable to set the Ctrl-C handler." );
-#else
+#elif defined(XP_UNIX)
 	signal(SIGINT, Interrupt);
 	signal(SIGTERM, Interrupt);
-#endif // XP_WIN
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
 
 	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
 	JL_CHK( JS_DefineFunction(cx, globalObject, "EndSignalEvents", (JSNative)EndSignalEvents, 0, JSPROP_SHARED | JSPROP_PERMANENT) );
@@ -455,18 +462,20 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	char hostFullPath[PATH_MAX +1];
 
-#ifdef XP_WIN
+#if defined(XP_WIN)
 // get hostpath and hostname
 	HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
 	DWORD len = GetModuleFileName(hInstance, hostFullPath, sizeof(hostFullPath));
 	HOST_MAIN_ASSERT( len != 0, "Unable to GetModuleFileName." );
-#else // XP_WIN
+#elif defined(XP_UNIX)
 	JLGetAbsoluteModulePath(hostFullPath, sizeof(hostFullPath), argv[0]);
 	HOST_MAIN_ASSERT( hostFullPath[0] != '\0', "Unable to get module FileName." );
 //	int len = readlink("/proc/self/exe", moduleFileName, sizeof(moduleFileName)); // doc: readlink does not append a NUL character to buf.
 //	moduleFileName[len] = '\0';
 //	strcpy(hostFullPath, argv[0]);
-#endif // XP_WIN
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
 
 	char *hostName;
 	const char *hostPath;
@@ -550,13 +559,16 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	cx = NULL;
 
 
-#ifdef XP_WIN
+#if defined(XP_WIN)
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);
 //	RT_HOST_MAIN_ASSERT( status == TRUE, "Unable to remove console crtl handler" );
-#else
+#elif defined(XP_UNIX)
 	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
-#endif // XP_WIN
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
+
 
 #if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
 	if ( debug ) {

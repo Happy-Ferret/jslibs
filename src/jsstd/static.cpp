@@ -878,6 +878,7 @@ DEFINE_FUNCTION( StringRepeat ) {
 	}
 
 	JSString *jsstr;
+	JL_updateMallocCounter(cx, newLen);
 	jsstr = JL_NewUCString(cx, newBuf, newLen);
 	JL_CHK( jsstr );
 	*JL_RVAL = STRING_TO_JSVAL( jsstr );
@@ -1469,6 +1470,7 @@ DEFINE_FUNCTION( Test ) {
 */	
 	
 	for ( int i = 0; i < 100; i++ ) {
+
 		char *data = (char*)jl_calloc(1, 10 * sizeof(char));
 		JL_NewBlob(cx, data, 10, JL_RVAL);
 	}

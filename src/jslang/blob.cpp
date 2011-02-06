@@ -22,6 +22,8 @@
 
 #include "jsproxy.h"
 
+static const char emptyBlobBuffer[] = "";
+
 
 ALWAYS_INLINE jsdouble
 js__DoubleToInteger(jsdouble d) // from jsnum.h
@@ -139,6 +141,15 @@ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Blob )
 
+ALWAYS_INLINE void
+FreeBlobBuffer( JSContext *cx, JSObject *blobObject ) {
+
+	void *pv = JL_GetPrivate(cx, blobObject);
+	if ( pv && pv != emptyBlobBuffer )
+		JS_free(cx, pv);
+}
+
+
 // invalid blob: see Blob::Free()
 ALWAYS_INLINE bool
 IsBlobValid( JSContext *cx, JSObject *blobObject ) {
@@ -163,13 +174,13 @@ BlobBuffer( JSContext *cx, const JSObject *blobObject, const char **buffer ) {
 	return JS_TRUE;
 }
 
-/* MOVED: see Blob_NativeInterfaceBufferGet in jlhelper.h
+
 JSBool Blob_NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
 	JL_ASSERT( JL_GetClass(obj) == JL_CLASS(Blob) );
 
 	if (unlikely( !IsBlobValid(cx, obj) ))
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, JL_CLASS(Blob)->name);
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALIDATED_OBJECT, "Blob");
 
 	size_t len;
 	const char *buf;
@@ -180,7 +191,7 @@ JSBool Blob_NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str )
 	return JS_TRUE;
 	JL_BAD;
 }
-*/
+
 
 /*
 inline JSBool JL_JsvalToBlob( JSContext *cx, jsval val, JSObject **obj ) {
@@ -227,10 +238,7 @@ DEFINE_FINALIZE() {
 
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
 		return;
-
-	void *pv = JL_GetPrivate(cx, obj);
-	if ( pv )
-		JS_free(cx, pv);
+	FreeBlobBuffer(cx, obj);
 }
 
 
@@ -249,13 +257,13 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( genEmpty && !JS_IsConstructing(cx, vp) ) {
 
-		*JL_RVAL = JL_GetEmptyStringValue(cx);
+		*JL_RVAL = JL_GetEmptyStringValue(cx); // Blob() === Blob('') === '' 
 		return JS_TRUE;
 	}
 
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	if ( !genEmpty ) {
+	if ( !genEmpty ) { // new Blob('xxx')
 
 		JLStr str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) ); // warning: GC on the returned buffer !
@@ -268,13 +276,10 @@ DEFINE_CONSTRUCTOR() {
 		jsval tmp;
 		JL_CHK( JL_NativeToJsval(cx, length, &tmp) );
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, tmp) );
-	} else {
+	} else { // new Blob() -or- new Blob('')
 
-		dBuffer = (char*)JS_malloc(cx, 1);
-		JL_CHK( dBuffer );
-		dBuffer[0] = '\0';
-		JL_SetPrivate(cx, obj, dBuffer);
-		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, INT_TO_JSVAL(0) ) );
+		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, JSVAL_ZERO) );
+		JL_SetPrivate(cx, obj, (void*)emptyBlobBuffer);
 	}
 
 	JL_CHK( SetBufferGetInterface(cx, obj, Blob_NativeInterfaceBufferGet) );
@@ -311,22 +316,21 @@ DEFINE_FUNCTION( Free ) {
 
 	*JL_RVAL = JSVAL_VOID;
 
-	void *pv;
-	pv = JL_GetPrivate(cx, obj);
-
 	if ( JL_ARG_ISDEF(1) ) {
 
 		bool wipe;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &wipe ) );
 		if ( wipe ) {
 
+			void *pv;
+			pv = JL_GetPrivate(cx, obj);
 			size_t length;
 			JL_CHK( BlobLength(cx, obj, &length) );
 			memset(pv, 0, length);
 		}
 	}
 
-	JS_free(cx, pv);
+	FreeBlobBuffer(cx, obj);
 	JL_SetPrivate(cx, obj, NULL); // InvalidateBlob(cx, obj)
 	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_BLOB_JSSTRING, JSVAL_VOID) );
 
@@ -349,6 +353,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( concat ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+
 	char *dst = NULL;
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	if (unlikely( !IsBlobValid(cx, obj) ))
@@ -1079,7 +1084,7 @@ DEFINE_ITERATOR_OBJECT() {
 	jsval v;
 	v = OBJECT_TO_JSVAL(obj);
 	JL_CHK( JS_SetPropertyById(cx, itObj, INT_TO_JSID(0), &v) );
-	v = INT_TO_JSVAL(0);
+	v = JSVAL_ZERO;
 	JL_CHK( JS_SetPropertyById(cx, itObj, INT_TO_JSID(1), &v) );
 	return itObj;
 bad:

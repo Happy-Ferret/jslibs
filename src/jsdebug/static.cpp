@@ -476,18 +476,20 @@ DEFINE_PROPERTY( currentMemoryUsage ) {
 
 	uint32 bytes;
 
-#ifdef XP_WIN
+#if defined(XP_WIN)
 	// SIZE_T is compatible with uint32
 	HANDLE hProcess = GetCurrentProcess(); // doc: (HANDLE)-1, that is interpreted as the current process handle
 	PROCESS_MEMORY_COUNTERS_EX pmc;
 	GetProcessMemoryInfo( hProcess, (PPROCESS_MEMORY_COUNTERS)&pmc, sizeof(pmc) ); // MEM_PRIVATE
 //	bytes = pmc.PrivateUsage; // doc: The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE, data that is not mapped, and executable pages that have been written to.
 	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
-#else
+#elif defined(XP_UNIX)
 	LinuxProcInfo pinfo;
 	GetProcInfo(getpid(), &pinfo);
 	bytes = pinfo.vsize;
-#endif // XP_WIN
+#else
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+#endif
 
 	JL_CHK( JL_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
@@ -501,7 +503,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( peakMemoryUsage ) {
 
-#ifdef XP_WIN
+#if defined(XP_WIN)
 
 	uint32 bytes;
 /*
@@ -522,9 +524,10 @@ DEFINE_PROPERTY( peakMemoryUsage ) {
 	JL_CHK( JL_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 	JL_BAD;
-#endif // XP_WIN
-
+#else
 	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+#endif
+
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -537,7 +540,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( privateMemoryUsage ) {
 
-#ifdef XP_WIN
+#if defined(XP_WIN)
 	uint32 bytes;
 	// SIZE_T is compatible with uint32
 	HANDLE hProcess = GetCurrentProcess(); // doc: (HANDLE)-1, that is interpreted as the current process handle
@@ -551,9 +554,10 @@ DEFINE_PROPERTY( privateMemoryUsage ) {
 	JL_CHK( JL_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
 	JL_BAD;
-#endif // XP_WIN
-
+#else
 	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+#endif
+
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -1543,7 +1547,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( processTime ) {
 
-#ifdef XP_WIN
+#if defined(XP_WIN)
 
 	__int64 creationTime, exitTime, kernelTime, userTime;
 	BOOL status = GetThreadTimes(GetCurrentThread(), (FILETIME *)&creationTime, (FILETIME *)&exitTime, (FILETIME *)&kernelTime, (FILETIME *)&userTime);
@@ -1557,9 +1561,10 @@ DEFINE_PROPERTY( processTime ) {
 	return JL_NativeToJsval(cx, (kernelTime + userTime) / (double)10000 , vp);
 	JL_BAD;
 
-#endif // XP_WIN
-
+#else
 	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+#endif
+
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -1572,7 +1577,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( cpuLoad ) {
 
-#ifdef XP_WIN
+#if defined(XP_WIN)
 
   static PDH_STATUS status;
   static PDH_FMT_COUNTERVALUE value;
@@ -1616,9 +1621,11 @@ DEFINE_PROPERTY( cpuLoad ) {
 
 	return JL_NativeToJsval(cx, value.doubleValue, vp);
 	JL_BAD;
-#endif // XP_WIN
 
+#else
 	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+#endif
+
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 }
@@ -1632,10 +1639,10 @@ DEFINE_FUNCTION( DebugOutput ) {
 	OutputDebugString(str);
 	*JL_RVAL = JSVAL_TRUE;
 	return JS_TRUE;
-
-#endif // XP_WIN
-
+#else
 	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+#endif
+
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;

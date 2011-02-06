@@ -87,6 +87,7 @@ DEFINE_CONSTRUCTOR() {
 		vi->setIdealFramerate(deviceId, fps); // vi->VDList[deviceId]->requestedFrameTime;
 	}
 
+	
 	if ( JL_ARG_ISDEF(2) && JL_ARG_ISDEF(3) ) {
 		
 		int width, height;
@@ -184,7 +185,6 @@ DEFINE_FUNCTION( Events ) {
 	upe->obj = JL_OBJ;
 
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(upe->obj)) ); // GC protection
-
 
 	return JS_TRUE;
 	JL_BAD;

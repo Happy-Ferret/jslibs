@@ -67,7 +67,8 @@ static __declspec(noinline) void SetBool( bool b ) {
 
 static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc, jsval &val ) {
 
-	float f32 = rand()*10;
+	float f32 = rand();
+	double f64 = f32;
 
 	uint64_t i64 = f32;
 	
@@ -103,7 +104,9 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 //	JL_Push(cx, obj, &v);
 
 	//b = JL_IsStringObject(cx, obj);
-	b = JL_HasPrivate(cx, obj);
+	//b = JL_HasPrivate(cx, obj);
+
+	b = JL_DOUBLE_IS_INTEGER(1000.000);
 
 
 
@@ -117,7 +120,7 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 	printf("code length: %d\n", a);
 
 	i32 = st;
-	printf("tmp-%d-%f-i\n", i32, f32, b);
+	printf("tmp-%d-%f-%i\n", i32, f32, b);
 }
 
 

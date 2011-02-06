@@ -93,7 +93,7 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 				return -1;
 			JL_JsvalToNative(pv->cx, tmpVal, &position); // (TBD) manage error
 
-			position += offset;
+			position += int(offset);
 			JL_NativeToJsval(pv->cx, position, &tmpVal); // (TBD) manage error
 			JS_SetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
 			return 0;
@@ -137,7 +137,7 @@ sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
 
 	Private *pv = (Private*)user_data;
 
-	size_t amount = count;
+	size_t amount = size_t(count);
 //	if ( pv->streamRead( pv->cx, pv->obj, (char*)ptr, &amount ) != JS_TRUE )
 //		return -1; // (TBD) find a better error
 	if ( StreamReadInterface( pv->cx, pv->streamObject)( pv->cx, pv->streamObject, (char*)ptr, &amount ) != JS_TRUE )
@@ -263,6 +263,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Read ) {
 
+	char *buf = NULL;
+	char *buffer = NULL;
+
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
@@ -270,7 +273,6 @@ DEFINE_FUNCTION( Read ) {
 
 	JL_S_ASSERT( pv->sfInfo.channels == 1 || pv->sfInfo.channels == 2, "Unsupported channel count." );
 
-	char *buf;
 	long totalSize = 0;
 
 	pv->cx = cx;
@@ -288,9 +290,9 @@ DEFINE_FUNCTION( Read ) {
 			sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
 
 			if ( JL_IsExceptionPending(cx) )
-				return JS_FALSE; // (TBD) free memory
+				return JS_FALSE;
 
-			totalSize = items * sizeof(short);
+			totalSize = size_t(items) * sizeof(short);
 
 			if ( JL_MaybeRealloc(amount, totalSize) )
 				buf = (char*)jl_realloc(buf, totalSize +1);
@@ -309,7 +311,7 @@ DEFINE_FUNCTION( Read ) {
 		sf_count_t items;
 		do {
 
-			char *buffer = (char*)JS_malloc(cx, bufferSize);
+			buffer = (char*)jl_malloc(bufferSize);
 			JL_CHK( buffer );
 			jl::StackPush(&stack, buffer);
 
@@ -321,7 +323,7 @@ DEFINE_FUNCTION( Read ) {
 			items = sf_read_short(pv->sfDescriptor, (short*)data, maxlen/sizeof(short)); // bits per sample
 
 			if ( JL_IsExceptionPending(cx) )
-				return JS_FALSE; // (TBD) free memory
+				return JS_FALSE;
 
 			JL_S_ASSERT( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
 
@@ -330,14 +332,14 @@ DEFINE_FUNCTION( Read ) {
 				*len = 0;
 			} else {
 
-				*len = items * sizeof(short);
-				totalSize += items * sizeof(short);
+				*len = int(items) * sizeof(short);
+				totalSize += int(items) * sizeof(short);
 			}
 
 		} while (items > 0);
 
 		// convert data chunks into a single memory buffer.
-		buf = (char*)JS_malloc(cx, totalSize +1);
+		buf = (char*)jl_malloc(totalSize +1);
 		JL_CHK( buf );
 
 		// because the stack is LIFO, we have to start from the end.
@@ -361,6 +363,7 @@ DEFINE_FUNCTION( Read ) {
 
 	buf[totalSize] = 0;
 	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
+	JL_updateMallocCounter(cx, totalSize);
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
 	JL_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
@@ -372,7 +375,10 @@ DEFINE_FUNCTION( Read ) {
 	JL_CHK(JL_SetProperty(cx, blobObj, "frames", totalSize / (pv->sfInfo.channels * pv->bits / 8) ) );
 
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	jl_free(buf);
+	jl_free(buffer);
+	return JS_FALSE;
 }
 
 
@@ -448,7 +454,7 @@ DEFINE_PROPERTY( frames ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
-	*vp = INT_TO_JSVAL( pv->sfInfo.frames );
+	*vp = INT_TO_JSVAL( size_t(pv->sfInfo.frames) );
 	return JS_TRUE;
 	JL_BAD;
 }

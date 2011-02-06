@@ -339,6 +339,7 @@ DEFINE_FUNCTION( IOEvents ) {
 	JL_S_ASSERT_ALLOC( upe->pollDesc );
 	upe->descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
 	JL_S_ASSERT_ALLOC( upe->descVal );
+	JL_updateMallocCounter(cx, (sizeof(PRPollDesc) + sizeof(jsval)) * fdCount); // approximately
 
 	JsioPrivate *mpv;
 	mpv = (JsioPrivate*)JL_GetModulePrivate(cx, _moduleId);

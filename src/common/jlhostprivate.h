@@ -36,7 +36,7 @@ struct HostPrivate {
 	char camelCase;
 	uint32_t hostPrivateVersion; // used to ensure compatibility between host and modules. see JL_HOST_PRIVATE_VERSION macro.
 	void *privateData;
-	volatile uint32_t maybeGCInterval;
+	uint32_t maybeGCInterval;
 	JLSemaphoreHandler watchDogSemEnd;
 	JLThreadHandler watchDogThread;
 	int (*hostStdIn)( void *privateData, char *buffer, size_t bufferSize );
