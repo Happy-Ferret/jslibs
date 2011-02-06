@@ -8,6 +8,10 @@ MFLAGS=-MD
 
 #  -Ox -Ob2 -Ot -GL
 
+# doc. http://msdn.microsoft.com/en-us/library/9s7c9wdw(v=vs.80).aspx
+MFLAGS = $(MFLAGS) /MP /nologo /Ox /Ob2 /Oi /Ot /Oy /GL /GF /FD /GS- /Gy /arch:SSE /GR- /Zi
+
+
 clean::
 	cd .\src && $(MAKE) -f Makefile.msvc NO_NLS=1 MFLAGS="$(MFLAGS)" distclean
 	-del .\src\config.h

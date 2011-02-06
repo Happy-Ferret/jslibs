@@ -2,8 +2,16 @@
 
 include makefile.msvc
 
+!IF "$(BUILD)" == "Debug"
+CFLAGS=-MDd
+!ENDIF
+
+!IF "$(BUILD)" == "Release"
+CFLAGS=-MD
+!ENDIF
+
 # doc. http://msdn.microsoft.com/en-us/library/9s7c9wdw(v=vs.80).aspx
-CFLAGS = /MP /nologo /W0 /Ox /Ob2 /Oi /Ot /Oy /GL /GF /FD /MD /GS- /Gy /arch:SSE /GR- /Zi
+CFLAGS = $(CFLAGS) /MP /nologo /W0 /Ox /Ob2 /Oi /Ot /Oy /GL /GF /FD /GS- /Gy /arch:SSE /GR- /Zi
 CFLAGS = $(CFLAGS) /I. /DWIN32 /DLTM_DESC /DXMALLOC=jl_malloc_fct /DXCALLOC=jl_calloc_fct /DXREALLOC=jl_realloc_fct /DXFREE=jl_free_fct
 LIBNAME = $(dest)
 
