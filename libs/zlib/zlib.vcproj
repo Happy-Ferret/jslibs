@@ -399,6 +399,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				EnableEnhancedInstructionSet="1"
 				RuntimeTypeInfo="false"
 				PrecompiledHeaderFile=".\Win32_LIB_Debug/zlib.pch"
 				AssemblerListingLocation=".\Win32_LIB_Debug/"
