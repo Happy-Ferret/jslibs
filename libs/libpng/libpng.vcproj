@@ -435,11 +435,14 @@
 				AdditionalIncludeDirectories="src;..\zlib\src"
 				PreprocessorDefinitions="PNG_NO_MMX_CODE;WIN32;NDEBUG;_CRT_SECURE_NO_WARNINGS;PNG_USER_MEM_SUPPORTED"
 				StringPooling="true"
+				ExceptionHandling="0"
 				RuntimeLibrary="2"
+				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="true"
+				EnableEnhancedInstructionSet="1"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="png.h"
-				WarningLevel="3"
+				WarningLevel="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -498,11 +501,10 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="src;..\zlib\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG;PNG_NO_MMX_CODE;PNG_DEBUG=1;_CRT_SECURE_NO_WARNINGS;PNG_USER_MEM_SUPPORTED"
-				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="png.h"
-				WarningLevel="3"
+				WarningLevel="0"
 				DebugInformationFormat="4"
 				CompileAs="0"
 			/>
