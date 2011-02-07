@@ -5,22 +5,23 @@
 	Name="jslibs common properties"
 	OutputDirectory="$(SolutionDir)..\..\$(PlatformName)_$(ConfigurationName)"
 	IntermediateDirectory="$(PlatformName)_$(ConfigurationName)"
+	UseOfMFC="0"
+	ATLMinimizesCRunTimeLibraryUsage="false"
+	CharacterSet="2"
 	>
 
-				<!-- tmp VCCLCompilerTool
-					Debug Single-threaded (libcd.lib)           | N/A
-					Debug Multithreaded (libcmtd.lib)           | RuntimeLibrary="1"
-					Debug Multithreaded using DLL (msvcrtd.lib) | RuntimeLibrary="3"
-
-					PreprocessorDefinitions="DEBUG JS_THREADSAFE JS_DUMP_PROPTREE_STATS"
-					AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
-				-->
+<!-- VCCLCompilerTool
+Debug Single-threaded (libcd.lib)           | N/A
+Debug Multithreaded (libcmtd.lib)           | RuntimeLibrary="1"
+Debug Multithreaded using DLL (msvcrtd.lib) | RuntimeLibrary="3"
+-->
 
 	<Tool
 		Name="VCCLCompilerTool"
-		MinimalRebuild="true"
+		SuppressStartupBanner="true"
 		PreprocessorDefinitions="WIN32;_DEBUG;_USRDLL;DEBUG;JS_HASHMETER;JS_GC_ZEAL"
 		AdditionalIncludeDirectories="..\common;..\..\libs\js\$(PlatformName)_$(ConfigurationName)\dist\include"
+		MinimalRebuild="true"
 		ExceptionHandling="0"
 		RuntimeTypeInfo="false"
 		RuntimeLibrary="3"
@@ -32,20 +33,18 @@
 		EnableEnhancedInstructionSet="1"
 		WarningLevel="4"
 		DebugInformationFormat="4"
-		
 	/>
 	
-				<!-- tmp VCLinkerTool
-
-					Debug Single-threaded (libcd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcmtd.lib, msvcrtd.lib"
-					Debug Multithreaded (libcmtd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, msvcrtd.lib"
-					Debug Multithreaded using DLL (msvcrtd.lib) | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib"
-				-->
+<!-- VCLinkerTool
+Debug Single-threaded (libcd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcmtd.lib, msvcrtd.lib"
+Debug Multithreaded (libcmtd.lib)           | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, msvcrtd.lib"
+Debug Multithreaded using DLL (msvcrtd.lib) | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib"
+-->
 
 	<Tool
 		Name="VCLinkerTool"
 		SubSystem="2"
-		RandomizedBaseAddress="1"
+		RandomizedBaseAddress="0"
 		DataExecutionPrevention="0"
 		TargetMachine="1"
 		GenerateDebugInformation="true"

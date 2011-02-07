@@ -16,12 +16,10 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			OutputDirectory=".\src\objs\release"
 			IntermediateDirectory=".\src\objs\release"
 			ConfigurationType="4"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -40,21 +38,13 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="src\include"
 				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;FT2_BUILD_LIBRARY"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
 				DisableLanguageExtensions="true"
 				PrecompiledHeaderFile=".\src\objs\release/freetype.pch"
 				AssemblerListingLocation=".\src\objs\release/"
 				ObjectFile=".\src\objs\release/"
 				ProgramDataBaseFileName=".\src\objs\release/"
-				WarningLevel="0"
-				DebugInformationFormat="0"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -89,167 +79,11 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release Multithreaded|Win32"
-			OutputDirectory=".\src\objs\release_mt"
-			IntermediateDirectory=".\src\objs\release_mt"
-			ConfigurationType="4"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="0"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="src\include"
-				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;FT2_BUILD_LIBRARY"
-				StringPooling="true"
-				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="true"
-				DisableLanguageExtensions="true"
-				PrecompiledHeaderFile=".\src\objs\release_mt/freetype.pch"
-				AssemblerListingLocation=".\src\objs\release_mt/"
-				ObjectFile=".\src\objs\release_mt/"
-				ProgramDataBaseFileName=".\src\objs\release_mt/"
-				WarningLevel="0"
-				DebugInformationFormat="0"
-				CompileAs="0"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
-				Culture="1033"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="src\objs\freetype236MT.lib"
-				SuppressStartupBanner="true"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release Singlethreaded|Win32"
-			OutputDirectory=".\src\objs\release_st"
-			IntermediateDirectory=".\src\objs\release_st"
-			ConfigurationType="4"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="0"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="3"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="src\include"
-				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;FT2_BUILD_LIBRARY"
-				StringPooling="true"
-				ExceptionHandling="0"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
-				EnableFunctionLevelLinking="true"
-				EnableEnhancedInstructionSet="1"
-				DisableLanguageExtensions="true"
-				PrecompiledHeaderFile=".\src\objs\release_st/freetype.pch"
-				AssemblerListingLocation=".\src\objs\release_st/"
-				ObjectFile=".\src\objs\release_st/"
-				ProgramDataBaseFileName=".\src\objs\release_st/"
-				WarningLevel="0"
-				DebugInformationFormat="0"
-				CompileAs="0"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
-				Culture="1033"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="src\objs\freetype236ST.lib"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
 			Name="Debug|Win32"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			OutputDirectory=".\src\objs\debug"
 			IntermediateDirectory=".\src\objs\debug"
 			ConfigurationType="4"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -268,19 +102,13 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories="src\include"
 				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;FT_DEBUG_LEVEL_ERROR;FT_DEBUG_LEVEL_TRACE;FT2_BUILD_LIBRARY"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
 				DisableLanguageExtensions="true"
 				PrecompiledHeaderFile=".\src\objs\debug/freetype.pch"
 				AssemblerListingLocation=".\src\objs\debug/"
 				ObjectFile=".\src\objs\debug/"
 				ProgramDataBaseFileName=".\src\objs\debug/"
-				WarningLevel="0"
-				DebugInformationFormat="3"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -296,152 +124,6 @@
 			<Tool
 				Name="VCLibrarianTool"
 				OutputFile="src\objs\freetype236_D.lib"
-				SuppressStartupBanner="true"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Debug Singlethreaded|Win32"
-			OutputDirectory=".\src\objs\debug_st"
-			IntermediateDirectory=".\src\objs\debug_st"
-			ConfigurationType="4"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="0"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="src\include"
-				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;FT_DEBUG_LEVEL_ERROR;FT_DEBUG_LEVEL_TRACE;FT2_BUILD_LIBRARY"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				EnableEnhancedInstructionSet="1"
-				DisableLanguageExtensions="true"
-				PrecompiledHeaderFile=".\src\objs\debug_st/freetype.pch"
-				AssemblerListingLocation=".\src\objs\debug_st/"
-				ObjectFile=".\src\objs\debug_st/"
-				ProgramDataBaseFileName=".\src\objs\debug_st/"
-				WarningLevel="0"
-				DebugInformationFormat="3"
-				CompileAs="0"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1033"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="src\objs\freetype236ST_D.lib"
-				SuppressStartupBanner="true"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Debug Multithreaded|Win32"
-			OutputDirectory=".\src\objs\debug_mt"
-			IntermediateDirectory=".\src\objs\debug_mt"
-			ConfigurationType="4"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="0"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="src\include"
-				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;FT_DEBUG_LEVEL_ERROR;FT_DEBUG_LEVEL_TRACE;FT2_BUILD_LIBRARY;_CRT_SECURE_NO_DEPRECATE"
-				GeneratePreprocessedFile="0"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
-				DisableLanguageExtensions="true"
-				PrecompiledHeaderFile=".\src\objs\debug_mt/freetype.pch"
-				AssemblerListingLocation=".\src\objs\debug_mt/"
-				ObjectFile=".\src\objs\debug_mt/"
-				ProgramDataBaseFileName=".\src\objs\debug_mt/"
-				WarningLevel="0"
-				DebugInformationFormat="3"
-				CompileAs="0"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1033"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="src\objs\freetype236MT_D.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool

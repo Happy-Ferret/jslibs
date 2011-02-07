@@ -18,10 +18,10 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -41,17 +41,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories=".\src;.\src\src;..\freetype\src\include;..\libxml2\src\include"
 				PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_LIB;HAVE_CONFIG_H;KDEWIN32_EXPORT=extern"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				EnableEnhancedInstructionSet="1"
-				UsePrecompiledHeader="0"
-				WarningLevel="0"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -83,11 +74,10 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="0"
-			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -107,24 +97,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="3"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories=".\src;.\src\src;..\freetype\src\include;..\libxml2\src\include"
 				PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_LIB;HAVE_CONFIG_H;KDEWIN32_EXPORT=extern"
-				StringPooling="true"
-				ExceptionHandling="0"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
-				EnableFunctionLevelLinking="true"
-				EnableEnhancedInstructionSet="1"
-				UsePrecompiledHeader="0"
-				WarningLevel="0"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

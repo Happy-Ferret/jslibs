@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="libs common properties"
+	UseOfMFC="0"
+	ATLMinimizesCRunTimeLibraryUsage="false"
+	CharacterSet="2"
+	WholeProgramOptimization="0"
+	>
+
+<!--
+use with:
+			InheritedPropertySheets="..\libs_DBG.vsprops"
+-->
+
+	<Tool
+		Name="VCCLCompilerTool"
+		SuppressStartupBanner="true"
+		MinimalRebuild="true"
+		ExceptionHandling="0"
+		RuntimeTypeInfo="false"
+		RuntimeLibrary="3"
+		Optimization="0"
+		StringPooling="false"
+		BasicRuntimeChecks="3"
+		SmallerTypeCheck="true"
+		BufferSecurityCheck="true"
+		EnableEnhancedInstructionSet="1"
+		WarningLevel="0"
+		DebugInformationFormat="4"
+		UsePrecompiledHeader="0"
+		ProgramDataBaseFileName="$(OutDir)\$(ProjectName).pdb"
+	/>
+
+</VisualStudioPropertySheet>

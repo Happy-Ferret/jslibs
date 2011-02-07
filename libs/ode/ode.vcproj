@@ -17,180 +17,11 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="DebugSingleDLL|Win32"
-			OutputDirectory="src\lib\DebugSingleDLL"
-			IntermediateDirectory="obj\DebugSingleDLL"
-			ConfigurationType="2"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../win32_config;win32_config;src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
-				PreprocessorDefinitions="_DEBUG;dSINGLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_DLL;dSINGLE"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(OutDir)\$(ProjectName).pdb"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;dSINGLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_DLL;dSINGLE"
-				AdditionalIncludeDirectories="src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="user32.lib"
-				OutputFile="$(OutDir)\ode_singled.dll"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories=""
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
-				SubSystem="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				ImportLibrary="src\lib\DebugSingleDLL\ode_singled.lib"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="ReleaseSingleDLL|Win32"
-			OutputDirectory="src\lib\ReleaseSingleDLL"
-			IntermediateDirectory="obj\ReleaseSingleDLL"
-			ConfigurationType="2"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../../../win32_config;win32_config;src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
-				PreprocessorDefinitions="dSINGLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_DLL;dSINGLE"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(OutDir)\$(ProjectName).pdb"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="0"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="dSINGLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_DLL;dSINGLE"
-				AdditionalIncludeDirectories="src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="user32.lib"
-				OutputFile="$(OutDir)\ode_single.dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories=""
-				GenerateDebugInformation="false"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				ImportLibrary="src\lib\ReleaseSingleDLL\ode_single.lib"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
 			Name="DebugSingleLib|Win32"
 			OutputDirectory="src\lib\DebugSingleLib"
 			IntermediateDirectory="obj\DebugSingleLib"
 			ConfigurationType="4"
-			CharacterSet="2"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -209,19 +40,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories="../../../win32_config;win32_config;src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
 				PreprocessorDefinitions="_DEBUG;dSINGLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_LIB;dSINGLE"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				EnableFunctionLevelLinking="true"
-				EnableEnhancedInstructionSet="1"
-				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(OutDir)\$(ProjectName).pdb"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -259,7 +79,7 @@
 			OutputDirectory="src\lib\ReleaseSingleLib"
 			IntermediateDirectory="obj\ReleaseSingleLib"
 			ConfigurationType="4"
-			CharacterSet="2"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -278,24 +98,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="3"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="../../../win32_config;win32_config;src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
 				PreprocessorDefinitions="dSINGLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_LIB;dSINGLE"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
-				EnableFunctionLevelLinking="true"
-				EnableEnhancedInstructionSet="1"
-				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(OutDir)\$(ProjectName).pdb"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -329,180 +133,11 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="DebugDoubleDLL|Win32"
-			OutputDirectory="src\lib\DebugDoubleDLL"
-			IntermediateDirectory="obj\DebugDoubleDLL"
-			ConfigurationType="2"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../win32_config;win32_config;src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
-				PreprocessorDefinitions="_DEBUG;dDOUBLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_DLL;dDOUBLE"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(OutDir)\$(ProjectName).pdb"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;dDOUBLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_DLL;dDOUBLE"
-				AdditionalIncludeDirectories="src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="user32.lib"
-				OutputFile="$(OutDir)\ode_doubled.dll"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories=""
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
-				SubSystem="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				ImportLibrary="src\lib\DebugDoubleDLL\ode_doubled.lib"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="ReleaseDoubleDLL|Win32"
-			OutputDirectory="src\lib\ReleaseDoubleDLL"
-			IntermediateDirectory="obj\ReleaseDoubleDLL"
-			ConfigurationType="2"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../../../win32_config;win32_config;src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
-				PreprocessorDefinitions="dDOUBLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_DLL;dDOUBLE"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(OutDir)\$(ProjectName).pdb"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="0"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="dDOUBLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_DLL;dDOUBLE"
-				AdditionalIncludeDirectories="src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="user32.lib"
-				OutputFile="$(OutDir)\ode_double.dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories=""
-				GenerateDebugInformation="false"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				ImportLibrary="src\lib\ReleaseDoubleDLL\ode_double.lib"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
 			Name="DebugDoubleLib|Win32"
 			OutputDirectory="src\lib\DebugDoubleLib"
 			IntermediateDirectory="obj\DebugDoubleLib"
 			ConfigurationType="4"
-			CharacterSet="2"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -521,18 +156,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories="../../../win32_config;win32_config;src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
 				PreprocessorDefinitions="_DEBUG;dDOUBLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_LIB;dDOUBLE"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(OutDir)\$(ProjectName).pdb"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -570,7 +195,7 @@
 			OutputDirectory="src\lib\ReleaseDoubleLib"
 			IntermediateDirectory="obj\ReleaseDoubleLib"
 			ConfigurationType="4"
-			CharacterSet="2"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -589,22 +214,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="3"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="../../../win32_config;win32_config;src/include;src/ode/src;src/ode/src/joints;src/OPCODE;src/GIMPACT/include;src/ou/include"
 				PreprocessorDefinitions="dDOUBLE;WIN32;_CRT_SECURE_NO_DEPRECATE;ODE_LIB;dDOUBLE"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(OutDir)\$(ProjectName).pdb"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

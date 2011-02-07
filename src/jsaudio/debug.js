@@ -6,7 +6,7 @@ LoadModule('jsio');
 LoadModule('jsaudio');
 LoadModule('jssound');
 
-
+Oal.Open();
 
 //var dec = new SoundFileDecoder( new File('41_30secOgg-q0.wav').Open('r') );
 //var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').Open('r') );
@@ -27,6 +27,7 @@ var src = Oal.GenSource();
 Oal.SourceQueueBuffers(src, b);
 Oal.PlaySource(src);
 
+Sleep(2000);
 
 throw 0; ///////////
 

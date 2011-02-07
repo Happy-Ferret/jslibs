@@ -19,9 +19,7 @@
 			OutputDirectory=".\Release"
 			IntermediateDirectory=".\Release"
 			ConfigurationType="4"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -47,20 +45,14 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/w"
-				Optimization="2"
-				InlineFunctionExpansion="2"
-				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="..\zlib\src"
 				PreprocessorDefinitions="WIN32;_LIB;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;HAVE_ZLIB"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
+				ExceptionHandling="1"
+				RuntimeTypeInfo="true"
 				PrecompiledHeaderFile=".\Release/gloox.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -100,9 +92,7 @@
 			OutputDirectory=".\Debug"
 			IntermediateDirectory=".\Debug"
 			ConfigurationType="4"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -128,20 +118,14 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/w"
-				Optimization="0"
 				AdditionalIncludeDirectories="..\zlib\src"
 				PreprocessorDefinitions="WIN32;_LIB;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;HAVE_ZLIB"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				ExceptionHandling="1"
 				RuntimeTypeInfo="true"
 				PrecompiledHeaderFile=".\Debug/gloox.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

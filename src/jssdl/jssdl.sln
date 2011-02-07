@@ -11,27 +11,17 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		DBG|Win32 = DBG|Win32
-		Debug|Win32 = Debug|Win32
 		OPT|Win32 = OPT|Win32
-		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{D05B67BB-0E91-4742-B17D-2E690F058827}.DBG|Win32.ActiveCfg = DBG|Win32
 		{D05B67BB-0E91-4742-B17D-2E690F058827}.DBG|Win32.Build.0 = DBG|Win32
-		{D05B67BB-0E91-4742-B17D-2E690F058827}.Debug|Win32.ActiveCfg = DBG|Win32
-		{D05B67BB-0E91-4742-B17D-2E690F058827}.Debug|Win32.Build.0 = DBG|Win32
 		{D05B67BB-0E91-4742-B17D-2E690F058827}.OPT|Win32.ActiveCfg = OPT|Win32
 		{D05B67BB-0E91-4742-B17D-2E690F058827}.OPT|Win32.Build.0 = OPT|Win32
-		{D05B67BB-0E91-4742-B17D-2E690F058827}.Release|Win32.ActiveCfg = OPT|Win32
-		{D05B67BB-0E91-4742-B17D-2E690F058827}.Release|Win32.Build.0 = OPT|Win32
 		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.DBG|Win32.ActiveCfg = Debug|Win32
 		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.DBG|Win32.Build.0 = Debug|Win32
-		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Debug|Win32.ActiveCfg = Debug|Win32
-		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Debug|Win32.Build.0 = Debug|Win32
 		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.OPT|Win32.ActiveCfg = Release|Win32
 		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.OPT|Win32.Build.0 = Release|Win32
-		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Release|Win32.ActiveCfg = Release|Win32
-		{81CE8DAF-EBB2-4761-8E45-B71ABCCA8C68}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

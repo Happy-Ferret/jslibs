@@ -17,12 +17,10 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			OutputDirectory=".\Debug"
 			IntermediateDirectory=".\Debug"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC70.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -47,22 +45,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories="src\include;src"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_DEBUG;_WINDOWS;_WIN32_WINNT=0x0400;DECLSPEC=;malloc=jl_malloc_fct;calloc=jl_calloc_fct;realloc=jl_realloc_fct;free=jl_free_fct"
-				RuntimeLibrary="3"
-				BufferSecurityCheck="false"
-				EnableEnhancedInstructionSet="1"
-				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\Debug/SDL.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="4"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -97,12 +85,10 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			OutputDirectory=".\Release"
 			IntermediateDirectory=".\Release"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC70.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -127,24 +113,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories="src\include;src"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;NDEBUG;_WINDOWS;_WIN32_WINNT=0x0400;DECLSPEC=;malloc=jl_malloc_fct;calloc=jl_calloc_fct;realloc=jl_realloc_fct;free=jl_free_fct"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
-				EnableFunctionLevelLinking="true"
-				EnableEnhancedInstructionSet="1"
-				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\Release/SDL.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				Detect64BitPortabilityProblems="false"
-				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

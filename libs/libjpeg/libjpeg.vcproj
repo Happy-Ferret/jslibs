@@ -17,6 +17,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
@@ -41,9 +42,6 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;malloc=jl_malloc_fct;calloc=jl_calloc_fct;realloc=jl_realloc_fct;free=jl_free_fct"
-				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
-				WarningLevel="0"
 				ForcedIncludeFiles="$(ProjectDir)stdafx.h"
 			/>
 			<Tool
@@ -76,6 +74,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
@@ -98,21 +97,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="3"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;malloc=jl_malloc_fct;calloc=jl_calloc_fct;realloc=jl_realloc_fct;free=jl_free_fct"
-				StringPooling="true"
-				ExceptionHandling="0"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
-				EnableFunctionLevelLinking="true"
-				EnableEnhancedInstructionSet="1"
-				WarningLevel="0"
 				ForcedIncludeFiles="windows.h"
 			/>
 			<Tool

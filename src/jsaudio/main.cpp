@@ -50,7 +50,11 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	JL_CHK( InitJslibsModule(cx, id)  );
 
-/*
+/* * *
+	soubok  02/09/2008 00:12:41           
+	- jsaudio: move OpenAL initialization code from main.cpp to Open() and Close() API functions. Testing EFX.
+	- jsaudio/source.cpp: Replace position and velocity setters by Position() and Velocity() API function.
+
 	//JL_S_ASSERT( context == NULL, "Invalid initialization context." );
 
 	ALCcontext *context;

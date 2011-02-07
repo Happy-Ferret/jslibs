@@ -17,6 +17,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
@@ -38,15 +39,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				UseUnicodeResponseFiles="false"
-				Optimization="0"
 				AdditionalIncludeDirectories="libffi_msvc"
 				PreprocessorDefinitions="_WINDOWS;WIN32;_DEBUG"
-				ExceptionHandling="0"
-				BufferSecurityCheck="false"
-				RuntimeTypeInfo="false"
-				WarningLevel="4"
-				DebugInformationFormat="4"
 				CompileAs="1"
 			/>
 			<Tool
@@ -79,6 +73,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
@@ -100,16 +95,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				UseUnicodeResponseFiles="false"
-				FavorSizeOrSpeed="1"
-				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="libffi_msvc"
 				PreprocessorDefinitions="_WINDOWS;WIN32;NDEBUG"
-				ExceptionHandling="0"
-				BasicRuntimeChecks="0"
-				BufferSecurityCheck="false"
-				RuntimeTypeInfo="false"
-				WarningLevel="4"
 				CompileAs="1"
 			/>
 			<Tool

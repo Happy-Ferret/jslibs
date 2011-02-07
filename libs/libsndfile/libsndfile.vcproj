@@ -17,11 +17,10 @@
 	<Configurations>
 		<Configuration
 			Name="Unicode Release|Win32"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="2"
-			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -42,12 +41,6 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories=".\win32;.\src\Win32;.\src\include;.\src\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;inline=__inline"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
-				WarningLevel="1"
-				CompileAs="0"
 				DisableSpecificWarnings="4996"
 			/>
 			<Tool
@@ -80,11 +73,10 @@
 		</Configuration>
 		<Configuration
 			Name="Unicode Debug|Win32"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="2"
-			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -103,17 +95,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories=".\win32;.\src\Win32;.\src\include;.\src\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;inline=__inline"
-				StringPooling="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
-				WarningLevel="1"
-				DebugInformationFormat="4"
-				CompileAs="0"
 				DisableSpecificWarnings="4996"
 			/>
 			<Tool
@@ -146,11 +129,10 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="2"
-			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -169,19 +151,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories=".\win32;.\src\Win32;.\src\include;.\src\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;inline=__inline;malloc=jl_malloc_fct;calloc=jl_calloc_fct;realloc=jl_realloc_fct;free=jl_free_fct"
-				StringPooling="true"
-				MinimalRebuild="true"
-				ExceptionHandling="0"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				EnableEnhancedInstructionSet="1"
-				UsePrecompiledHeader="0"
-				WarningLevel="1"
-				DebugInformationFormat="4"
-				CompileAs="0"
 				DisableSpecificWarnings="4996"
 			/>
 			<Tool
@@ -214,11 +185,10 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="2"
-			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -237,23 +207,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="3"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories=".\win32;.\src\Win32;.\src\include;.\src\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;inline=__inline;malloc=jl_malloc_fct;calloc=jl_calloc_fct;realloc=jl_realloc_fct;free=jl_free_fct"
-				StringPooling="true"
-				ExceptionHandling="0"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
-				EnableFunctionLevelLinking="true"
-				EnableEnhancedInstructionSet="1"
-				UsePrecompiledHeader="0"
-				WarningLevel="1"
-				CompileAs="0"
 				DisableSpecificWarnings="4996"
 			/>
 			<Tool

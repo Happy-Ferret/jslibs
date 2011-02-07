@@ -1,3 +1,14 @@
+# doc. http://msdn.microsoft.com/en-us/library/9s7c9wdw(v=vs.80).aspx
+CFLAGS = 
+!IF "$(BUILD)"=="DBG"
+CFLAGS = $(CFLAGS) /MDd /GF /Zi /Gm /arch:SSE /GR-
+!ELSE
+CFLAGS = $(CFLAGS) /MD /MP /Ox /Ob2 /Oi /Ot /Oy /GL /GF /FD /GS- /Gy /arch:SSE /GR- /Zi
+!ENDIF
+CFLAGS = $(CFLAGS) /Fd"..\..\libxml2_$(BUILD)_vc90.pdb"
+
+# ARFLAGS = /LTCG
+
 .\src\win32\config.msvc:
 	cd .\src\win32 && cscript configure.js cruntime="$(MFLAGS) $(CFLAGS)" \
     trio=no \

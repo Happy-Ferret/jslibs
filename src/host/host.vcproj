@@ -20,7 +20,6 @@
 			Name="DBG|Win32"
 			ConfigurationType="4"
 			InheritedPropertySheets="..\jslibs_DBG.vsprops"
-			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -81,7 +80,6 @@
 			Name="OPT|Win32"
 			ConfigurationType="4"
 			InheritedPropertySheets="..\jslibs_OPT.vsprops"
-			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
 			<Tool

@@ -17,7 +17,8 @@ DECLARE_CLASS( OalError )
 NEVER_INLINE JSBool FASTCALL
 ThrowOalError( JSContext *cx, ALenum err );
 
-inline JSBool CheckThrowCurrentOalError( JSContext *cx ) {
+ALWAYS_INLINE JSBool 
+CheckThrowCurrentOalError( JSContext *cx ) {
 
 	ALenum err = alGetError();
 	if (unlikely( err != AL_NO_ERROR ))

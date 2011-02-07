@@ -16,13 +16,10 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			OutputDirectory=".\Static_Release"
 			IntermediateDirectory=".\Static_Release"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -41,26 +38,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="3"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="src\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;malloc=jl_malloc_fct;calloc=jl_calloc_fct;realloc=jl_realloc_fct;free=jl_free_fct"
-				StringPooling="true"
-				ExceptionHandling="0"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
-				EnableFunctionLevelLinking="true"
-				EnableEnhancedInstructionSet="1"
 				PrecompiledHeaderFile=".\Static_Release/ogg_static.pch"
 				AssemblerListingLocation=".\Static_Release/"
 				ObjectFile=".\Static_Release/"
 				ProgramDataBaseFileName=".\Static_Release/"
-				WarningLevel="1"
-				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -98,13 +81,10 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			OutputDirectory=".\Static_Debug"
 			IntermediateDirectory=".\Static_Debug"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -123,21 +103,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories="src\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;malloc=jl_malloc_fct;calloc=jl_calloc_fct;realloc=jl_realloc_fct;free=jl_free_fct"
-				MinimalRebuild="true"
-				ExceptionHandling="0"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				EnableEnhancedInstructionSet="1"
 				PrecompiledHeaderFile=".\Static_Debug/ogg_static.pch"
 				AssemblerListingLocation=".\Static_Debug/"
 				ObjectFile=".\Static_Debug/"
 				ProgramDataBaseFileName=".\Static_Debug/"
-				WarningLevel="1"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

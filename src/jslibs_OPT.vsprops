@@ -5,19 +5,21 @@
 	Name="jslibs common properties"
 	OutputDirectory="$(SolutionDir)..\..\$(PlatformName)_$(ConfigurationName)"
 	IntermediateDirectory="$(PlatformName)_$(ConfigurationName)"
+	UseOfMFC="0"
+	ATLMinimizesCRunTimeLibraryUsage="false"
+	WholeProgramOptimization="1"
+	CharacterSet="2"
 	>
 
-				<!-- tmp VCCLCompilerTool
-					Single-threaded (libc.lib)                  | N/A
-					Multithreaded (libcmt.lib)                  | RuntimeLibrary="0"
-					Multithreaded using DLL (msvcrt.lib)        | RuntimeLibrary="2"
-
-					PreprocessorDefinitions="JS_THREADSAFE"
-					AdditionalIncludeDirectories="..\js\src;..\nspr\include\nspr"
-				-->
+<!-- VCCLCompilerTool
+Single-threaded (libc.lib)           | N/A
+Multithreaded (libcmt.lib)           | RuntimeLibrary="0"
+Multithreaded using DLL (msvcrt.lib) | RuntimeLibrary="2"
+-->
 
 	<Tool
 		Name="VCCLCompilerTool"
+		SuppressStartupBanner="true"
 		AdditionalOptions="/MP"
 		PreprocessorDefinitions="WIN32;NDEBUG;_USRDLL;_SECURE_SCL_THROWS=0;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0"
 		AdditionalIncludeDirectories="..\common;..\..\libs\js\$(PlatformName)_$(ConfigurationName)\dist\include"
@@ -25,6 +27,7 @@
 		RuntimeTypeInfo="false"
 		RuntimeLibrary="2"
 		Optimization="3"
+		WholeProgramOptimization="true"
 		InlineFunctionExpansion="2"
 		EnableIntrinsicFunctions="true"
 		EnableFunctionLevelLinking="true"
@@ -39,17 +42,16 @@
 		DebugInformationFormat="3"
 	/>
 
-				<!-- tmp VCLinkerTool
-
-					Single-threaded (libc.lib)                  | IgnoreDefaultLibraryNames="libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
-					Multithreaded (libcmt.lib)                  | IgnoreDefaultLibraryNames="libc.lib, msvcrt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
-					Multithreaded using DLL (msvcrt.lib)        | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
-				-->
+<!-- VCLinkerTool
+Single-threaded (libc.lib)           | IgnoreDefaultLibraryNames="libcmt.lib, msvcrt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
+Multithreaded (libcmt.lib)           | IgnoreDefaultLibraryNames="libc.lib, msvcrt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
+Multithreaded using DLL (msvcrt.lib) | IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
+-->
 
 	<Tool
 		Name="VCLinkerTool"
 		SubSystem="2"
-		RandomizedBaseAddress="1"
+		RandomizedBaseAddress="0"
 		DataExecutionPrevention="0"
 		TargetMachine="1"
 		OptimizeReferences="2"

@@ -1,17 +1,19 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsstd');
-LoadModule('jsio');
-LoadModule('jsimage');
-LoadModule('jssvg');
-LoadModule('jsprotex');
-
 function Time( fct ) {
 
-	var t0 = new Date().valueOf();
+	var t0 = +new Date();
 	fct();
-	Print( fct.name + ' time: ', new Date().valueOf() - t0, 'ms\n' );
+	Print( fct.name + ' time: ', +new Date() - t0, 'ms\n' );
 }
+
+Time( function() {
+	LoadModule('jsstd');
+	LoadModule('jsio');
+	LoadModule('jsimage');
+	LoadModule('jssvg');
+	LoadModule('jsprotex');
+});
 
 
 
