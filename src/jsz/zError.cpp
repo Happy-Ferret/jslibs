@@ -13,11 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "../common/jsvalserializer.h"
 
-#include "zError.h"
-
-#include <zlib.h>
 
 /**doc fileIndex:bottom **/
 
@@ -51,15 +47,21 @@ BEGIN_CLASS( ZError )
 
 DEFINE_PROPERTY( code ) {
 
+	JL_USE(id);
+
 	return JL_GetReservedSlot( cx, obj, 0, vp );
 }
 
 DEFINE_PROPERTY( text ) {
 
+	JL_USE(id);
+
 	return JL_GetReservedSlot( cx, obj, 1, vp );
 }
 
 DEFINE_PROPERTY( const ) {
+
+	JL_USE(id);
 
 	JL_GetReservedSlot( cx, obj, 0, vp );
 	if ( JSVAL_IS_VOID(*vp) )
@@ -73,11 +75,15 @@ DEFINE_PROPERTY( const ) {
 
 DEFINE_FUNCTION( toString ) {
 
+	JL_USE(argc);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	return _text(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
 DEFINE_HAS_INSTANCE() { // see issue#52
+
+	JL_USE(obj);
 
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;

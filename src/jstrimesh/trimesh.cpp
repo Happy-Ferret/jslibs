@@ -13,9 +13,10 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "trimesh.h"
 
 #include "trimeshPub.h"
+
+DECLARE_CLASS( Trimesh )
 
 /*
     * glVertexPointer():  specify pointer to vertex coords array

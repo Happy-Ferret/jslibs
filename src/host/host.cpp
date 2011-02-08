@@ -46,6 +46,9 @@ JSErrorFormatString JLerrorFormatString[JLErrLimit] = {
 
 const JSErrorFormatString *GetErrorMessage(void *userRef, const char *locale, const uintN errorNumber) {
 
+	JL_USE(userRef);
+	JL_USE(locale);
+
 	uintN err = errorNumber - 1000;
 	if ( err > 0 && err < JLErrLimit )
 		return &JLerrorFormatString[err];
@@ -58,6 +61,8 @@ const JSErrorFormatString *GetErrorMessage(void *userRef, const char *locale, co
 
 
 JSBool JSDefaultStdinFunction(JSContext *cx, uintN argc, jsval *vp) {
+
+	JL_USE(argc);
 
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	if (unlikely( pv == NULL || pv->hostStdIn == NULL )) {
@@ -965,6 +970,8 @@ FreeHead() {
 // the thread proc
 JLThreadFuncDecl
 MemoryFreeThreadProc( void *threadArg ) {
+
+	JL_USE(threadArg);
 
 	for (;;) {
 

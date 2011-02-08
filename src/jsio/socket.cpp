@@ -14,8 +14,9 @@
 
 #include "stdafx.h"
 
-#include "descriptor.h"
-#include "file.h"
+DECLARE_CLASS( Descriptor )
+DECLARE_CLASS( File )
+
 
 #define MAX_IP_STRING 39 // IPv4 & IPv6
 
@@ -144,7 +145,7 @@ DEFINE_FUNCTION( Bind ) {
 	JL_S_ASSERT_RESOURCE( fd );
 
 	PRNetAddr addr;
-	unsigned int port;
+	PRUint16 port;
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &port) );
@@ -296,7 +297,7 @@ DEFINE_FUNCTION( Connect ) {
 	fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( fd );
 
-	unsigned int port;
+	PRUint16 port;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &port) );
 	JL_S_ASSERT( port <= 65535, "Invalid port number." );
 
@@ -375,7 +376,7 @@ DEFINE_FUNCTION( SendTo ) {
 		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
 	JL_S_ASSERT_RESOURCE( fd );
 
-	unsigned int port;
+	PRUint16 port;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &port) );
 	JL_S_ASSERT( port < 65536, "Invalid port number." );
 

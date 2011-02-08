@@ -14,8 +14,6 @@
 
 #include "stdafx.h"
 
-#include "descriptor.h"
-#include "pipe.h"
 
 /**doc
 $CLASS_HEADER

@@ -14,19 +14,17 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
-
-DECLARE_CLASS( Font )
+#include "jslibsModule.cpp"
 
 #include "jlmoduleprivate.h"
 DEFINE_MODULE_PRIVATE
-
-#include "jsfont.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_MODULE_H
 
-#include "jslibsModule.cpp"
+
+DECLARE_CLASS( Font )
 
 
 /**doc t:header

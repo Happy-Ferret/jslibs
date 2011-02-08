@@ -14,9 +14,10 @@
 
 #include "stdafx.h"
 
-#include "descriptor.h"
-#include "pipe.h"
-#include "process.h"
+
+DECLARE_CLASS( Descriptor )
+DECLARE_CLASS( Pipe )
+DECLARE_CLASS( Process )
 
 #define SLOT_PROCESS_STDIN 0
 #define SLOT_PROCESS_STDOUT 1

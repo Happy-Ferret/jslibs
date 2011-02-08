@@ -14,10 +14,12 @@
 
 #include "stdafx.h"
 
+// see. dxWorld, dxBody, dxJointNode, dxJoint, ...
 namespace ode {
 	#include <../ode/src/objects.h>
 	#include <../ode/src/joints/joint.h>
 }
+
 
 #include "world.h"
 #include "space.h"

@@ -14,13 +14,14 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
+//int _unsafeMode = false;
+#include "jslibsModule.cpp"
+
 
 //#include "fastcgi.h"
 #include "fcgi.h"
 #include "static.h"
 
-//int _unsafeMode = false;
-#include "jslibsModule.cpp"
 
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {

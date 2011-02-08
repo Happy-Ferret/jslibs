@@ -15,18 +15,19 @@
 #pragma once
 
 #include "jlhelper.h"
+#include "jlclass.h"
 
 #include "stdlib.h"
 
-#include "jlhelper.h"
-#include "jlclass.h"
-//#include "jlconvert.h"
+
+#include "../common/jsvalserializer.h"
+
+#include "queue.h"
 
 
 // OpenAL from src
 //#include <AL/al.h>
 //#include <AL/alc.h>
-
 
 // OpenAL from sdk
 #include <al.h>
@@ -37,6 +38,10 @@
 // once ?
 #pragma comment(lib, "../../libs/openal/sdk/libs/Win32/OpenAL32.lib")
 #pragma comment(lib, "../../libs/openal/sdk/libs/Win32/EFX-Util.lib")
+
+#include "oalefxapi.h"
+
+#include "error.h"
 
 
 //#define LOAD_OPENAL_EXTENSION( name, proto ) \

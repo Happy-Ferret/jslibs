@@ -13,11 +13,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "../jslang/handlePub.h"
 
-#include "static.h"
 #include "error.h"
 
-#include "../jslang/handlePub.h"
+DECLARE_STATIC()
+
 
 extern int volatile _maxFPS;
 

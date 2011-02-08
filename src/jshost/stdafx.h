@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include "jlplatform.h"
 #include "jlhelper.h"
 #include "../host/host.h"
 

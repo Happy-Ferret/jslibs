@@ -22,7 +22,6 @@
 			IntermediateDirectory="$(platformName)_$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="..\jslibs_DBG.vsprops"
-			CharacterSet="2"
 			BuildLogFile="$(IntDir)\$(ProjectName)_BuildLog.htm"
 			>
 			<Tool
@@ -42,19 +41,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
-				EnableIntrinsicFunctions="true"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
-				MinimalRebuild="true"
-				ExceptionHandling="1"
-				BasicRuntimeChecks="3"
-				SmallerTypeCheck="true"
-				EnableEnhancedInstructionSet="0"
 				UsePrecompiledHeader="0"
 				ProgramDataBaseFileName="$(IntDir)\$(ProjectName)_vc80.pdb"
-				WarningLevel="3"
-				DebugInformationFormat="3"
-				DisableSpecificWarnings="4800"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -67,12 +56,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkIncremental="2"
-				GenerateDebugInformation="true"
 				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -103,7 +87,6 @@
 			IntermediateDirectory="$(platformName)_$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="..\jslibs_OPT.vsprops"
-			CharacterSet="2"
 			WholeProgramOptimization="1"
 			BuildLogFile="$(IntDir)\$(ProjectName)_BuildLog.htm"
 			>
@@ -124,19 +107,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="3"
-				EnableIntrinsicFunctions="true"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
-				StringPooling="true"
-				ExceptionHandling="1"
-				BufferSecurityCheck="false"
-				EnableFunctionLevelLinking="true"
-				EnableEnhancedInstructionSet="1"
 				UsePrecompiledHeader="0"
 				ProgramDataBaseFileName="$(IntDir)\$(ProjectName)_vc80.pdb"
-				WarningLevel="3"
-				DebugInformationFormat="3"
-				DisableSpecificWarnings="4800"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -149,14 +122,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
 				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="0"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"

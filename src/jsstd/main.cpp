@@ -14,8 +14,8 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
-#include "jsstd.h"
 #include "jslibsModule.cpp"
+#include "jsstd.h"
 
 DECLARE_STATIC()
 DECLARE_CLASS( Map )

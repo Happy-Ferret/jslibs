@@ -105,6 +105,9 @@ JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
+	JL_USE(hPrevInstance);
+	JL_USE(nCmdShow);
+
 	HANDLE heap = GetProcessHeap();
 	ULONG enable = 2;
 	HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable));
@@ -127,7 +130,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	HOST_MAIN_ASSERT( err == 0, "Buffer overflow." );
 	// normalize the mutex name
 	char *pos;
-	while ( pos = strchr(mutexName, '\\') )
+	while ( (pos = strchr(mutexName, '\\')) )
 		*pos = '/';
 	SetLastError(0);
 	HANDLE instanceCheckMutex = CreateMutex(NULL, TRUE, mutexName); // see Global\\ and Local\\ prefixes for mutex name.
@@ -167,7 +170,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
 #endif // JS_HAS_JSLIBS_RegisterCustomAllocators
 
-	cx = CreateHost(-1, -1, 0);
+	cx = CreateHost((uint32)-1, (uint32)-1, 0);
 	JL_CHK( cx != NULL );
 
 	MemoryManagerEnableGCEvent(cx);

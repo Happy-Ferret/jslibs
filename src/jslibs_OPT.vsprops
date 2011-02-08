@@ -40,6 +40,7 @@ Multithreaded using DLL (msvcrt.lib) | RuntimeLibrary="2"
 		EnableEnhancedInstructionSet="1"
 		WarningLevel="4"
 		DebugInformationFormat="3"
+		UsePrecompiledHeader="2"
 	/>
 
 <!-- VCLinkerTool
@@ -50,6 +51,7 @@ Multithreaded using DLL (msvcrt.lib) | IgnoreDefaultLibraryNames="libc.lib, libc
 
 	<Tool
 		Name="VCLinkerTool"
+		LinkIncremental="1"
 		SubSystem="2"
 		RandomizedBaseAddress="0"
 		DataExecutionPrevention="0"
@@ -62,6 +64,11 @@ Multithreaded using DLL (msvcrt.lib) | IgnoreDefaultLibraryNames="libc.lib, libc
 		IgnoreDefaultLibraryNames="libc.lib, libcmt.lib, libcd.lib, libcmtd.lib, msvcrtd.lib"
 		AdditionalDependencies="..\..\libs\js\$(PlatformName)_$(ConfigurationName)\mozjs.lib kernel32.lib $(NoInherit) $(StopEvaluating)"
 		ImportLibrary="$(IntDir)\$(TargetName).lib"
+	/>
+	
+	<Tool
+		Name="VCLibrarianTool"
+		AdditionalOptions="/LTCG"
 	/>
 	
 	<Tool

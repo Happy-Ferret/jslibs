@@ -14,15 +14,14 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
+#include "jslibsModule.cpp"
 
 DECLARE_CLASS(Ogl)
 
-#include "jstransformation.h"
 
 DECLARE_STATIC()
 DECLARE_CLASS( OglError )
 
-#include "jslibsModule.cpp"
 
 /**doc t:header
 $MODULE_HEADER

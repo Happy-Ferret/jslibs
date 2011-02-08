@@ -14,13 +14,6 @@
 
 #include "stdafx.h"
 
-#include "queue.h"
-
-#include "error.h"
-
-#include "oalefxapi.h"
-
-
 struct Private {
 	ALuint effectSlot;
 };

@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jlhelper.cpp"
+#include "jslibsModule.cpp"
 
 #include "mass.h"
 #include "space.h"
@@ -25,7 +25,6 @@
 
 DECLARE_CLASS( Vector )
 
-#include "jslibsModule.cpp"
 
 
 #ifdef XP_WIN

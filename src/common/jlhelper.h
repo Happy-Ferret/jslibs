@@ -1485,20 +1485,121 @@ JL_NativeToJsval( JSContext *cx, const char* cval, size_t length, jsval *vp ) {
 }
 
 
-// int8 / uint8
+// int8
 
 //JSBool JL_NativeToJsval( JSContext *cx, const int8_t &num, jsval *vp );
 JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, int8_t *num );
-//JSBool JL_NativeToJsval( JSContext *cx, const uint8_t &num, jsval *vp );
-JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num );
 
 
-// int16 / uint16
+// uint8
+
+ALWAYS_INLINE JSBool
+JL_NativeToJsval( JSContext *cx, const uint8_t &num, jsval *vp ) {
+
+	JL_USE(cx);
+	*vp = INT_TO_JSVAL(num);
+	return JS_TRUE;
+}
+
+
+ALWAYS_INLINE JSBool
+JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
+
+	if (likely( JSVAL_IS_INT(val) )) {
+
+		jsint tmp = JSVAL_TO_INT(val);
+		if (likely( tmp >= 0 && tmp <= _UI8_MAX )) {
+
+			*num = uint8_t(tmp);
+			return JS_TRUE;
+		}
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+	}
+
+	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint8_t *num )
+
+	jsdouble d;
+	if (likely( JSVAL_IS_DOUBLE(val) ))
+		d = JSVAL_TO_DOUBLE(val);
+	else
+		JL_CHK( JS_ValueToNumber(cx, val, &d) );
+
+	if (likely( d >= jsdouble(0) && d <= jsdouble(_UI8_MAX) )) {
+
+		JL_SAFE_BEGIN
+		if ( !JL_DOUBLE_IS_INTEGER(d) )
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_VALUE_LOSSOFDATA);
+		JL_SAFE_END
+
+		*num = uint8_t(d);
+		return JS_TRUE;
+	}
+
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+	JL_BAD;
+
+	UNLIKELY_SPLIT_END(cx, val, num)
+
+}
+
+
+// int16
 
 //JSBool JL_NativeToJsval( JSContext *cx, const int16_t &num, jsval *vp );
 JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, int16_t *num );
-//JSBool JL_NativeToJsval( JSContext *cx, const uint16_t &num, jsval *vp );
-JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, uint16_t *num );
+
+
+// uint16
+
+
+ALWAYS_INLINE JSBool
+JL_NativeToJsval( JSContext *cx, const uint16_t &num, jsval *vp ) {
+
+	JL_USE(cx);
+	*vp = INT_TO_JSVAL(num);
+	return JS_TRUE;
+}
+
+
+ALWAYS_INLINE JSBool
+JL_JsvalToNative( JSContext *cx, const jsval &val, uint16_t *num ) {
+
+	if (likely( JSVAL_IS_INT(val) )) {
+
+		jsint tmp = JSVAL_TO_INT(val);
+		if (likely( tmp >= 0 && tmp <= _UI16_MAX )) {
+
+			*num = uint16_t(tmp);
+			return JS_TRUE;
+		}
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+	}
+
+	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint16_t *num )
+
+	jsdouble d;
+	if (likely( JSVAL_IS_DOUBLE(val) ))
+		d = JSVAL_TO_DOUBLE(val);
+	else
+		JL_CHK( JS_ValueToNumber(cx, val, &d) );
+
+	if (likely( d >= jsdouble(0) && d <= jsdouble(_UI16_MAX) )) {
+
+		JL_SAFE_BEGIN
+		if ( !JL_DOUBLE_IS_INTEGER(d) )
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_VALUE_LOSSOFDATA);
+		JL_SAFE_END
+
+		*num = uint16_t(d);
+		return JS_TRUE;
+	}
+
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+	JL_BAD;
+
+	UNLIKELY_SPLIT_END(cx, val, num)
+
+}
 
 
 // int32

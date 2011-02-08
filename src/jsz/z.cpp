@@ -14,13 +14,6 @@
 
 #include "stdafx.h"
 
-#include <zlib.h>
-
-#include "zError.h"
-#include "z.h"
-
-using namespace jl;
-#include <buffer.h>
 
 // current method
 enum Method {
@@ -94,11 +87,14 @@ $TOC_MEMBER $INAME
 
 voidpf jsz_alloc(voidpf opaque, uInt items, uInt size) {
 
+	JL_USE(opaque);
+
 	return jl_malloc(items*size);
 }
 
 void jsz_free(voidpf opaque, voidpf address) {
 
+	JL_USE(opaque);
 	jl_free(address);
 }
 
@@ -235,8 +231,8 @@ DEFINE_CALL() {
 	pv->stream.avail_in = (uInt)inputData.LengthOrZero();
 	pv->stream.next_in = (Bytef*)inputData.GetStrConstOrNull();
 
-	Buffer resultBuffer;
-	BufferInitialize(&resultBuffer, bufferTypeAuto, bufferGrowTypeAuto, cx, wrapped_JS_malloc, wrapped_JS_realloc, wrapped_JS_free);
+	jl::Buffer resultBuffer;
+	BufferInitialize(&resultBuffer, jl::bufferTypeAuto, jl::bufferGrowTypeAuto, cx, wrapped_JS_malloc, wrapped_JS_realloc, wrapped_JS_free);
 
 	// first length is a guess.
 	size_t length;
@@ -306,6 +302,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( idle ) {
 
+	JL_USE(id);
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.state == Z_NULL, vp) );
@@ -322,6 +320,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( adler32 ) {
 
+	JL_USE(id);
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.adler, vp) );
@@ -337,6 +337,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( lengthIn ) {
 
+	JL_USE(id);
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.total_in, vp) );
@@ -351,6 +353,8 @@ $TOC_MEMBER $INAME
   Contains the current total amount of output data.
 **/
 DEFINE_PROPERTY( lengthOut ) {
+
+	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);

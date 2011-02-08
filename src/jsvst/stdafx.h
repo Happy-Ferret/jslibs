@@ -5,7 +5,8 @@
 
 #pragma once
 
-#include "jlplatform.h"
+#include "jlhelper.h"
+#include "jlclass.h"
 
 #include <fcntl.h>
 #ifdef XP_WIN
@@ -28,7 +29,6 @@
 // #include <limits.h> // included by jlplatform.h
 #include <signal.h>
 
-#include "jlhelper.h"
 
 #include "../host/host.h"
 

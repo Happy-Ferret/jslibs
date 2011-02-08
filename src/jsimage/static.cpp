@@ -14,11 +14,6 @@
 
 #include "stdafx.h"
 
-#include "../jslang/blobPub.h"
-
-//#include "jlnativeinterface.h"
-#include "static.h"
-
 
 #ifndef INT32
 	#define XMD_H // avoid: jslibs\libjpeg\src\jmorecfg.h(161) : error C2371: 'INT32' : redefinition; different basic types /n Microsoft Platform SDK\Include\basetsd.h(62) : see declaration of 'INT32'
@@ -30,8 +25,6 @@ EXTERN_C {
 	#include <jpeglib.h>
 	#include <jerror.h>
 }
-
-
 
 #include <png.h>
 

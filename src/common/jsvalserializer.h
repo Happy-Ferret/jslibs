@@ -12,9 +12,11 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#pragma once
+
 namespace jl {
 
-	enum JLSerializeType : char {
+	typedef enum JLSerializeType {
 
 		JLSTRawJsval,
 		JLSTHole,
@@ -32,7 +34,7 @@ namespace jl {
 		JLSTObjectValue,
 		JLSTSerializableNativeObject,
 		JLSTSerializableScriptObject
-	};
+	} JLSerializeType;
 
 
 	class SerializerConstBufferInfo {
@@ -163,6 +165,13 @@ namespace jl {
 			_pos += length;
 			return JS_TRUE;
 			JL_BAD;
+		}
+
+		ALWAYS_INLINE JSBool
+		Write( JSContext *cx, const JLSerializeType type ) {
+			
+			JL_ASSERT( type >= 0 && type <= 255 );
+			return Write(cx, (const unsigned char)type);
 		}
 
 		JSBool Write( JSContext *cx, JSString *jsstr ) {

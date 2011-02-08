@@ -14,9 +14,6 @@
 
 #include "stdafx.h"
 
-#include <stddef.h>
-#include <iconv.h>
-#include <errno.h>
 
 #if defined(JL_ICONV_PROTO_ARG_NOT_CONST)
 #define JL_ICONV_PROTO_ARG
@@ -325,6 +322,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( invalidChar ) {
 
+	JL_USE(id);
+
 	JLStr chr;
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
@@ -343,6 +342,8 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 
 DEFINE_PROPERTY_GETTER( invalidChar ) {
 
+	JL_USE(id);
+
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );	
@@ -353,6 +354,8 @@ DEFINE_PROPERTY_GETTER( invalidChar ) {
 }
 
 DEFINE_PROPERTY( hasIncompleteSequence ) {
+
+	JL_USE(id);
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);

@@ -20,7 +20,6 @@
 			Name="DBG|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\jslibs_DBG.vsprops"
-			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -39,14 +38,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories="..\..\libs\libtomcrypt\src\src\headers,..\..\libs\libtommath\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;LTC_NO_PROTOTYPES;LTM_DESC;MKAT"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -60,12 +53,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="..\..\libs\libtomcrypt\Debug\tomcrypt.lib ..\..\libs\libtommath\Debug\tommath.lib advapi32.lib"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				LinkTimeCodeGeneration="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -93,7 +80,6 @@
 			Name="OPT|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\jslibs_OPT.vsprops"
-			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -113,14 +99,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				InlineFunctionExpansion="2"
-				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="..\..\libs\libtomcrypt\src\src\headers,..\..\libs\libtommath\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;LTC_NO_PROTOTYPES;LTM_DESC;MKAT"
-				BufferSecurityCheck="false"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -134,13 +114,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="..\..\libs\libtomcrypt\Release\tomcrypt.lib ..\..\libs\libtommath\Release\tommath.lib advapi32.lib"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"

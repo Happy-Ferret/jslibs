@@ -13,20 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jstypedarray.h"
-
 #include "../jslang/handlePub.h"
-
-#include "../common/jsvalserializer.h"
-
-#include <cstring>
-
 #include "jslang.h"
-
-#include "static.h"
-
-#include "stack.h"
-#include "buffer.h"
 
 using namespace jl;
 
@@ -314,6 +302,8 @@ bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
 
 JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
+	JL_USE(obj);
+
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	JLEventFree(&upe->cancel);
@@ -373,7 +363,7 @@ DEFINE_FUNCTION( jslang_test ) {
 
 	bool b;
 
-	jsval val = JL_ARG(1);
+//	jsval val = JL_ARG(1);
 	JSObject *obj = JS_THIS_OBJECT(cx,vp);
 
 	size_t __err = JLGetEIP(); size_t __pos = JLGetEIP(); ////////////////////////////////////////

@@ -14,16 +14,9 @@
 
 #include "stdafx.h"
 #include "error.h"
-
-#include "../jslang/handlePub.h"
-
-#include "icon.h"
-#include <stdlib.h>
-
-#include <Commdlg.h>
-#include <shlobj.h>
-
 #include "com.h"
+
+DECLARE_CLASS( Icon )
 
 
 /**doc fileIndex:topmost **/
@@ -219,7 +212,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 		JLStr str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 		strcpy( filter, str );
-		for ( char *tmp = filter; tmp = strchr( tmp, '|' ); tmp++ )
+		for ( char *tmp = filter; (tmp = strchr(tmp, '|')); tmp++ )
 			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings.
 		filter[str.Length() + 1] = '\0'; // The last string in the buffer must be terminated by two NULL characters.
 		ofn.lpstrFilter = filter;
@@ -304,7 +297,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( MessageBeep ) {
 
-	UINT type = -1;
+	UINT type = (UINT)-1;
 	if ( argc >= 1 )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &type) );
 	MessageBeep(type);

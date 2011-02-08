@@ -18,10 +18,6 @@
 */
 
 #include "stdafx.h"
-#include "jstransformation.h"
-
-#define _USE_MATH_DEFINES
-#include <math.h>
 
 
 ALWAYS_INLINE float DEG_TO_RAD( const float angle ) {

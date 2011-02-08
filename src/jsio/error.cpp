@@ -14,11 +14,8 @@
 
 #include "stdafx.h"
 
-#include "../common/jsvalserializer.h"
 
 /**doc fileIndex:bottom **/
-
-
 
 const char *ConstString( int errorCode ) {
 

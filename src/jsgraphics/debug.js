@@ -11,7 +11,7 @@ LoadModule('jssdl');
 LoadModule('jsgraphics');
 //LoadModule('jsstd'); Exec('../../tests/explodebox.js'); throw 0;
 //LoadModule('jsstd'); Exec('../../tests/arabesques.js'); throw 0;
-//LoadModule('jsstd'); Exec('../../tests/fragmentShaderTest.js'); throw 0;
+LoadModule('jsstd'); Exec('../../tests/fragmentShaderTest.js'); throw 0;
 
 
 

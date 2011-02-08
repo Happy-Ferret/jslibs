@@ -13,12 +13,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "../jslang/blobPub.h"
 
 #include "error.h"
 #include "result.h"
 #include "database.h"
 
-#include "../jslang/blobPub.h"
 
 JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 

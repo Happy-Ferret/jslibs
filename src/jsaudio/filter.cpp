@@ -13,8 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "oalefxapi.h"
-#include "error.h"
+
 
 struct Private {
 	ALuint filter;

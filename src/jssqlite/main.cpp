@@ -14,14 +14,12 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
+#include "jslibsModule.cpp"
 
 #include "error.h"
 #include "database.h"
 #include "result.h"
 
-#include "queue.h"
-
-#include "jslibsModule.cpp"
 
 void* xMalloc(int s) {
 	return jl_malloc(s);

@@ -43,7 +43,7 @@ if [ "$1" == "" ]; then
 		echo building $slnFile ...	
 		(echo;echo;echo) >> $LOGFILE
 		cd $(dirname $slnFile)
-		vcbuild.exe //M$(($NUMBER_OF_PROCESSORS * 2)) //nohtmllog //nologo //useenv $VCBUILD_OPT $(basename $slnFile) "$BUILD|WIN32" >> $LOGFILE 2>&1
+		vcbuild.exe //M1 //nohtmllog //nologo //useenv $VCBUILD_OPT $(basename $slnFile) "$BUILD|WIN32" >> $LOGFILE 2>&1
 		[ $? != 0 ] && echo ... failed.
 	done
 else
@@ -52,7 +52,7 @@ else
 	echo building $slnFile ...	
 	(echo;echo;echo) >> $LOGFILE
 	cd $(dirname $slnFile)
-	vcbuild.exe //M$(($NUMBER_OF_PROCESSORS * 2)) //nohtmllog //nologo //useenv $VCBUILD_OPT $(basename $slnFile) "$BUILD|WIN32" >> $LOGFILE 2>&1
+	vcbuild.exe //M1 //nohtmllog //nologo //useenv $VCBUILD_OPT $(basename $slnFile) "$BUILD|WIN32" >> $LOGFILE 2>&1
 	[ $? != 0 ] && echo ... failed.
 
 fi

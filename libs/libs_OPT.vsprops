@@ -35,6 +35,7 @@ use with:
 		WarningLevel="0"
 		DebugInformationFormat="3"
 		UsePrecompiledHeader="0"
+		ProgramDataBaseFileName="$(OutDir)\$(ProjectName).pdb"
 		AdditionalOptions="/MP"
 	/>
 

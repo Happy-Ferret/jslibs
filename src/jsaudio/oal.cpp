@@ -13,8 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "error.h"
-#include "oalefxapi.h"
 
 
 /**doc

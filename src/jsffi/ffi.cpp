@@ -14,12 +14,6 @@
 
 #include "stdafx.h"
 
-#ifdef WIN32
- #define DLL_EXT ".dll"
-#else
- #define DLL_EXT ".so"
-#endif
-
 #include <stdlib.h>
 #include <ffi.h>
 

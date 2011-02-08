@@ -5,11 +5,10 @@
 
 #pragma once
 
-#include <math.h>
-
 #include "jlhelper.h"
 #include "jlclass.h"
-//#include "jlconvert.h"
+
+#include <math.h>
 
 #include "vector3.h"
 

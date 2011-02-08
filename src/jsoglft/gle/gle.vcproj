@@ -41,6 +41,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="GL"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -96,6 +97,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="GL"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

@@ -20,7 +20,6 @@
 			Name="DBG|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\jslibs_DBG.vsprops"
-			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -39,16 +38,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories="..\..\libs\js\src;..\..\libs\vst\src"
 				PreprocessorDefinitions="WIN32;_DEBUG"
-				MinimalRebuild="true"
 				ExceptionHandling="1"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -61,14 +53,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile="jsvst.def"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				EntryPointSymbol=""
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -96,7 +81,6 @@
 			Name="OPT|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\jslibs_OPT.vsprops"
-			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -119,10 +103,6 @@
 				AdditionalIncludeDirectories="..\..\libs\js\src;..\..\libs\vst\src"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				ExceptionHandling="1"
-				RuntimeLibrary="2"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -135,16 +115,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile="jsvst.def"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				EntryPointSymbol=""
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"

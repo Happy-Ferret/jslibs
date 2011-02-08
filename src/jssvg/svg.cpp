@@ -58,7 +58,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 //			JL_CHK( JL_JsvalToStringAndLength(cx, image.jsval_addr(), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
 			JL_CHK( JL_JsvalToNative(cx, image, &buffer) );
 
-			JL_S_ASSERT( buffer.Length() == sWidth * sHeight * sChannels * 1, "Invalid image format." );
+			JL_S_ASSERT( (int)buffer.Length() == sWidth * sHeight * sChannels * 1, "Invalid image format." );
 			*pixbuf = gdk_pixbuf_new_from_data((const guchar *)buffer.GetConstStr(), GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);
 			JL_S_ASSERT( *pixbuf == NULL, "Unable to create the pixbuf." );
 		}
@@ -71,6 +71,8 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 
 // see jslibs/libs/librsvg/win32_config/rsvg-image.c at rsvg_pixbuf_new_from_href function.
 extern "C" GdkPixbuf *rsvg_pixbuf_new_from_href(const char *href, const char *base_uri, GError ** error) {
+
+	JL_USE(error);
 
 	JSContext *cx = ((CxObj*)base_uri)->cx;
 	JSObject *obj = ((CxObj*)base_uri)->obj;
@@ -113,6 +115,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_S_ASSERT_ARG(0);
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 

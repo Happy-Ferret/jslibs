@@ -14,27 +14,16 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
-
-#include "jlplatform.h"
-
-#include <malloc.h>
-
+#include "jslibsModule.cpp"
 
 #include "jlmoduleprivate.h"
 DEFINE_MODULE_PRIVATE
 
-#include "jsoglft.h"
-
-#include "jslibsModule.cpp"
-
-#include "../jsfont/jsfont.h"
 FT_DEFINE_SYMBOLS;
 
-#include "oglft/OGLFT.h"
 
-
-DECLARE_STATIC()
 DECLARE_CLASS( Font3D )
+DECLARE_STATIC()
 
 namespace OGLFT {
 

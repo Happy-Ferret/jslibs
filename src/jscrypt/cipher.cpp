@@ -312,6 +312,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Wipe ) {
 
+	JL_USE(argc);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	FinalizeCipher(cx, obj, true);
@@ -465,6 +467,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( blockLength ) {
 
+	JL_USE(id);
+
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
@@ -502,6 +506,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( name ) {
 
+	JL_USE(id);
+
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
@@ -521,6 +527,8 @@ $TOC_MEMBER $INAME
   Set or get the current initialization vector of the cipher.
 **/
 DEFINE_PROPERTY( IVSetter ) {
+
+	JL_USE(id);
 
 	JLStr IV;
 
@@ -595,6 +603,8 @@ DEFINE_PROPERTY( IVSetter ) {
 }
 
 DEFINE_PROPERTY( IVGetter ) {
+
+	JL_USE(id);
 
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	CipherPrivate *pv;

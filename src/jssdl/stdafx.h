@@ -7,8 +7,10 @@
 
 #include "jlhelper.h"
 #include "jlclass.h"
+#include "../common/jsvalserializer.h"
 
-//#define DECLSPEC
+#include "queue.h"
+
 
 #define malloc jl_malloc_fct
 #define calloc jl_calloc_fct

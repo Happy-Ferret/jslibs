@@ -13,25 +13,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-
-#ifndef XP_WIN
-#include <sys/statvfs.h>
-#endif
-
-#include "jsio.h"
 #include "jslibsModule.h"
-
-#include "static.h"
-
-#include "descriptor.h"
-#include "pipe.h"
-
-#include <pprio.h> // nspr/include/nspr/private
-
 #include "../jslang/handlePub.h"
 
 
-
+DECLARE_CLASS( Descriptor )
+DECLARE_CLASS( Pipe )
 DECLARE_CLASS( File )
 
 /**doc fileIndex:topmost **/
@@ -465,17 +452,17 @@ DEFINE_FUNCTION( IntervalNow ) {
 	return JL_NewNumberValue(cx, interval, JL_RVAL);
 }
 
-
-/**doc
-$TOC_MEMBER $INAME
- $INT $INAME()
-  Returns the microseconds value of NSPR's free-running interval timer.
-**/
-DEFINE_FUNCTION( UIntervalNow ) {
-
-	PRUint32 interval = PR_IntervalToMicroseconds( PR_IntervalNow() );
-	return JL_NewNumberValue(cx, interval, JL_RVAL);
-}
+//
+///**doc
+//$TOC_MEMBER $INAME
+// $INT $INAME()
+//  Returns the microseconds value of NSPR's free-running interval timer.
+//**/
+//DEFINE_FUNCTION( UIntervalNow ) {
+//
+//	PRUint32 interval = PR_IntervalToMicroseconds( PR_IntervalNow() );
+//	return JL_NewNumberValue(cx, interval, JL_RVAL);
+//}
 
 
 /**doc
@@ -907,7 +894,8 @@ DEFINE_FUNCTION( ConfigureSerialPort ) {
 	fd = (PRFileDesc *)JL_GetPrivate(cx, fileObj);
 	JL_S_ASSERT( fd != NULL, "File is closed." );
 
-	unsigned int baudRate, byteSize, parity, stopBits;
+	DWORD baudRate;
+	BYTE byteSize, parity, stopBits;
 
 
 #ifdef XP_WIN

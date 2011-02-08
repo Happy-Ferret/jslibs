@@ -9,11 +9,11 @@
 
 #include "jlhelper.h"
 #include "jlclass.h"
-
-#include <sqlite3.h>
-
-#include <cstring>
+#include "../common/jsvalserializer.h"
 
 #include "stack.h"
+#include "queue.h"
+
+#include <sqlite3.h>
 
 #endif // stdafx_h___

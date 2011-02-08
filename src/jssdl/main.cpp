@@ -14,16 +14,16 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
-
-#include "queue.h"
-
-#include "static.h"
-#include "error.h"
-#include "sdl.h"
-
 #include "jslibsModule.cpp"
 
+#include "error.h"
+
+#include "sdl.h"
+
+DECLARE_STATIC()
+DECLARE_CLASS( SdlError )
 DECLARE_CLASS( Cursor )
+
 
 /**doc t:header
 $MODULE_HEADER

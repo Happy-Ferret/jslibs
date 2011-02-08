@@ -19,7 +19,6 @@
 			Name="DBG|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\jslibs_DBG.vsprops"
-			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -41,11 +40,6 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="../../libs/ode/win32_config;../../libs/ode/src/include"
 				PreprocessorDefinitions="SSE"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -58,11 +52,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -90,7 +79,6 @@
 			Name="OPT|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\jslibs_OPT.vsprops"
-			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -110,15 +98,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="false"
-				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../libs/ode/win32_config;../../libs/ode/src/include"
 				PreprocessorDefinitions="SSE"
-				BufferSecurityCheck="false"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -131,13 +112,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"

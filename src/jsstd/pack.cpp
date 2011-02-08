@@ -14,12 +14,12 @@
 
 #include "stdafx.h"
 
-
-DECLARE_CLASS( Buffer )
-#define SLOT_PACK_BUFFEROBJECT 0
 #include "buffer.h"
 
-#include "limits.h"
+#define SLOT_PACK_BUFFEROBJECT 0
+
+DECLARE_CLASS( Buffer )
+
 
 inline JSBool JL_JsvalToSInt8( JSContext *cx, jsval val, int8_t *result, bool *outOfRange ) {
 

@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 
-
 #include <stdlib.h>
 #include <setjmp.h>
 

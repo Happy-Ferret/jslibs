@@ -20,7 +20,6 @@
 			Name="DBG|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\jslibs_DBG.vsprops"
-			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -39,15 +38,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;_DEBUG;SSE"
-				GeneratePreprocessedFile="0"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -61,9 +53,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="user32.lib gdi32.lib opengl32.lib glu32.lib"
-				GenerateDebugInformation="true"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -91,7 +80,6 @@
 			Name="OPT|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\jslibs_OPT.vsprops"
-			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -113,10 +101,6 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;SSE"
-				BufferSecurityCheck="false"
-				EnableEnhancedInstructionSet="1"
-				UsePrecompiledHeader="0"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -130,11 +114,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="user32.lib gdi32.lib opengl32.lib glu32.lib"
-				GenerateDebugInformation="true"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -178,14 +157,6 @@
 			<File
 				RelativePath=".\main.cpp"
 				>
-				<FileConfiguration
-					Name="DBG|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\oglError.cpp"
@@ -200,6 +171,14 @@
 				>
 				<FileConfiguration
 					Name="DBG|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="OPT|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"

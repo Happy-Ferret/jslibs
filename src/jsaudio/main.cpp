@@ -14,9 +14,6 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
-
-#include "error.h"
-
 #include "jslibsModule.cpp"
 
 DECLARE_CLASS(Oal)

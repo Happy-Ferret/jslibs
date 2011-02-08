@@ -13,9 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jlhelper.cpp"
-
+#include "jlhelper.cpp" // (TBD) create a lib
 #include "jslang.h"
+
 
 DECLARE_CLASS( Handle )
 DECLARE_CLASS( Blob )

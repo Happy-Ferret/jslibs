@@ -14,18 +14,12 @@
 
 #include "stdafx.h"
 
-#include "static.h"
-
-#include <cstring>
-
-//#include "../jslang/blobPub.h"
-#include "stack.h"
-
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
 
 #include	<sndfile.h>
 
+DECLARE_STATIC()
 
 // doc. For seek_func(), you *MUST* return -1 if the stream is unseekable
 
@@ -51,7 +45,7 @@ size_t readStream( void *ptr, size_t size, size_t nmemb, void *pv ) {
 //	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &amount ) != JS_TRUE )
 //		return -1; // (TBD) check for a better error
 	if ( StreamReadInterface(info->cx, info->obj)(info->cx, info->obj, (char*)ptr, &amount) != JS_TRUE )
-		return -1; // (TBD) check for a better error
+		return (size_t)-1; // (TBD) check for a better error
 
 	return amount;
 }

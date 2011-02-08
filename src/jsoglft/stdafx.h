@@ -7,3 +7,9 @@
 
 #include "jlhelper.h"
 #include "jlclass.h"
+
+#include "jsoglft.h"
+
+#include "../jsfont/jsfont.h"
+
+#include "oglft/OGLFT.h"

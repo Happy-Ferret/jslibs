@@ -182,6 +182,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Done ) {
 
+	JL_USE(argc);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 
@@ -285,6 +287,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( name ) {
 
+	JL_USE(id);
+
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
@@ -304,6 +308,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( blockSize ) {
 
+	JL_USE(id);
+
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
@@ -320,6 +326,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( length ) {
 
+	JL_USE(id);
+
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
@@ -335,6 +343,8 @@ $TOC_MEMBER $INAME
   Length of the processed data.
 **/
 DEFINE_PROPERTY( inputLength ) {
+
+	JL_USE(id);
 
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	HashPrivate *pv;

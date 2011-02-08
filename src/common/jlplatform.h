@@ -67,6 +67,7 @@
 	#pragma warning(error : 4700) // warning C4700: uninitialized local variable 'XXX' used
 	#pragma warning(error : 4533) // warning C4533: initialization of 'xxx' is skipped by 'goto YYY'
 	#pragma warning(error : 4002) // too many actual parameters for macro 'XXX'
+	#pragma warning(error : 4239) // nonstandard extension used
 	#ifdef DEBUG
 		#pragma warning(error : 4701) // potentially uninitialized local variable 'XXX' used
 	#endif

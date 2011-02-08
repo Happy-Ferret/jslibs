@@ -13,20 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "../common/jsvalserializer.h"
 
-#ifdef _MACOSX // MacosX platform specific
-	#include <AGL/agl.h>
-	#include <OpenGL/gl.h>
-#endif
-
-//#define GL_GLEXT_PROTOTYPES
-
-#include <gl/gl.h>
-#include "glext.h"
-
-
-#include "oglError.h"
 
 /**doc fileIndex:bottom **/
 

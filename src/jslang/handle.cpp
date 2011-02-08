@@ -15,8 +15,6 @@
 #include "stdafx.h"
 #include "handlePub.h"
 
-#include "../common/jsvalserializer.h"
-
 // the aim of *globalKey* is to ensure that a pointer in the process's virtual memory space can be serialized and unserializes safely.
 static uint32_t globalKey = 0;
 
@@ -35,6 +33,8 @@ DEFINE_FINALIZE() { // see HandleClose()
 
 
 DEFINE_FUNCTION( toString ) {
+
+	JL_USE( argc );
 
 	JL_DEFINE_FUNCTION_OBJ;
 	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, JL_OBJ);
@@ -71,11 +71,18 @@ DEFINE_FUNCTION( toString ) {
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 
+	JL_USE(obj);
+
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
 
 DEFINE_INIT() {
+
+	JL_USE(cx);
+	JL_USE(sc);
+	JL_USE(proto);
+	JL_USE(obj);
 
 	JL_SAFE( globalKey = JLSessionId() );
 	return JS_TRUE;

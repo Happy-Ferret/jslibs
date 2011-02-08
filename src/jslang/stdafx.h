@@ -7,3 +7,11 @@
 
 #include "jlhelper.h"
 #include "jlclass.h"
+
+#include "jstypedarray.h"
+
+#include "../common/jsvalserializer.h"
+#include <cstring>
+
+#include "stack.h"
+#include "buffer.h"

@@ -5,7 +5,7 @@ include makefile.msvc
 # doc. http://msdn.microsoft.com/en-us/library/9s7c9wdw(v=vs.80).aspx
 CFLAGS = 
 !IF "$(debug)"=="1"
-CFLAGS = $(CFLAGS) /MDd /Od /GF /Gm /RTC1 /RTCc /arch:SSE /GR- /W4 /ZI
+CFLAGS = $(CFLAGS) /MDd /Od /GF /Gm /RTC1 /arch:SSE /GR- /W4 /ZI
 !ELSE
 CFLAGS = $(CFLAGS) /MD /MP /W0 /Ox /Ob2 /Oi /Ot /Oy /GL /GF /FD /GS- /Gy /arch:SSE /GR- /Zi
 !ENDIF

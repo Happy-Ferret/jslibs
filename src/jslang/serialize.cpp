@@ -14,8 +14,6 @@
 
 #include "stdafx.h"
 
-#include "../common/jsvalserializer.h"
-
 /**doc
 $CLASS_HEADER
 $SVN_REVISION $Revision: 3321 $
@@ -35,6 +33,8 @@ DEFINE_FINALIZE() {
 }
 
 DEFINE_CONSTRUCTOR() {
+
+	JL_USE(argc);
 
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	jl::Serializer *ser;

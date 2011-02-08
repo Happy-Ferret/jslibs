@@ -20,13 +20,13 @@
 //
 
 #include "stdafx.h"
-
 #include "../jslang/blobPub.h"
 
-DECLARE_CLASS( Buffer )
 #include "buffer.h"
 
 #define SLOT_SOURCE 0
+
+DECLARE_CLASS( Buffer )
 
 
 struct BufferPrivate {

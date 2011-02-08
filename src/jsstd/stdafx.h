@@ -9,8 +9,5 @@
 #include "jlclass.h"
 
 #include <stack.h>
-//#include <buffer.h>
 #include <queue.h>
 
-#include <string.h>
-#include <cstring>

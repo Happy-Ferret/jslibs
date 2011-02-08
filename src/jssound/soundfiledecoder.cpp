@@ -13,9 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include <cstring>
 
-#include "stack.h"
 
 #define malloc jl_malloc_fct
 #define calloc jl_calloc_fct
@@ -220,6 +218,9 @@ DEFINE_CONSTRUCTOR() {
 
 		// require the whole file to be read
 		int result = sf_command(pv->sfDescriptor, SFC_SET_SCALE_FLOAT_INT_READ, NULL, SF_TRUE); // Doc. Set/clear the scale factor when integer (short/int) data is read from a file containing floating point data. (http://www.mega-nerd.com/libsndfile/api.html#note2)
+
+		JL_USE(result);
+
 	}
 
 	pv->cx = NULL; // see definition
@@ -394,6 +395,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( inputStream ) {
 
+	JL_USE(id);
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
@@ -409,6 +412,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( bits ) {
 
+	JL_USE(id);
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL( pv->bits );
@@ -422,6 +427,8 @@ $TOC_MEMBER $INAME
   Is the number of frames per seconds of the sound.
 **/
 DEFINE_PROPERTY( rate ) {
+
+	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -437,6 +444,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( channels ) {
 
+	JL_USE(id);
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL( pv->sfInfo.channels );
@@ -451,6 +460,8 @@ $TOC_MEMBER $INAME
   To compute the duration of the sound, use (frames/rate)
 **/
 DEFINE_PROPERTY( frames ) {
+
+	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -471,6 +482,7 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+		PROPERTY_READ(inputStream)
 		PROPERTY_READ(bits)
 		PROPERTY_READ(rate)
 		PROPERTY_READ(channels)

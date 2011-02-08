@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 
-#include <jscntxt.h>
 
 #define ADD_SLOT 0
 #define DEL_SLOT 1

@@ -13,11 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include <string.h>
 
-//#include <jsxdrapi.h>
-
-#include "sharedMemory.h"
 
 #define SEMAPHORE_EXTENSION "_sem"
 

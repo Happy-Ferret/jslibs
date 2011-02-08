@@ -14,10 +14,11 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
-
-#include "trimesh.h"
-
 #include "jslibsModule.cpp"
+
+DECLARE_CLASS( Trimesh )
+
+
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 

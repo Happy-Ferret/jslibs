@@ -18,10 +18,10 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			InheritedPropertySheets="..\libs_DBG.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -42,6 +42,8 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="src;."
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE=0;SQLITE_OMIT_AUTOINIT=1;SQLITE_OMIT_DEPRECATED=1;SQLITE_OMIT_PROGRESS_CALLBACK=1"
+				BasicRuntimeChecks="3"
+				SmallerTypeCheck="false"
 				CompileAs="1"
 			/>
 			<Tool
@@ -74,10 +76,10 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			InheritedPropertySheets="..\libs_OPT.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			WholeProgramOptimization="1"
 			>
 			<Tool

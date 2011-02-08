@@ -33,6 +33,7 @@ Debug Multithreaded using DLL (msvcrtd.lib) | RuntimeLibrary="3"
 		EnableEnhancedInstructionSet="1"
 		WarningLevel="4"
 		DebugInformationFormat="4"
+		UsePrecompiledHeader="2"
 	/>
 	
 <!-- VCLinkerTool
@@ -43,6 +44,7 @@ Debug Multithreaded using DLL (msvcrtd.lib) | IgnoreDefaultLibraryNames="libc.li
 
 	<Tool
 		Name="VCLinkerTool"
+		LinkIncremental="2"
 		SubSystem="2"
 		RandomizedBaseAddress="0"
 		DataExecutionPrevention="0"

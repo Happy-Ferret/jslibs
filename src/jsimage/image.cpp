@@ -13,12 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-
-//DECLARE_CLASS(Image)
-
 #include "image.h"
-
-#include <stdlib.h>
 
 
 BEGIN_CLASS( Image )

@@ -14,10 +14,10 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
+#include "jslibsModule.cpp"
+
 
 DECLARE_STATIC()
-
-#include "jslibsModule.cpp"
 
 
 /**doc t:header

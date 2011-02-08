@@ -13,24 +13,18 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-
-#include <cstring>
+#include "jslibsModule.cpp"
 
 #include "../host/host.h"
-#include "jlclass.h"
 #include "jsapihelper.h"
 
 #include <public.sdk/source/vst2.x/audioeffectx.h>
-
 #include "audiomaster.h"
 #include "midievent.h"
 
 DECLARE_CLASS( MidiEvent );
 DECLARE_CLASS( AudioMaster );
 DECLARE_CLASS( VSTPlugin );
-
-
-#include "jslibsModule.cpp"
 
 
 class JsVst : public AudioEffectX, private JSApiHelper {
@@ -75,7 +69,7 @@ public:
 
 	JsVst( audioMasterCallback audioMaster ) : AudioEffectX(audioMaster, 0, 0), JSApiHelper(_cx) {
 
-		_cx = CreateHost(-1, -1, 0);
+		_cx = CreateHost((uint32)-1, (uint32)-1, 0);
 		InitHost(_cx, true, NULL, NULL, NULL, NULL);
 		JS_SetOptions(_cx, JSOPTION_DONT_REPORT_UNCAUGHT);
 
@@ -94,6 +88,9 @@ public:
 		JL_SetPrivate(_cx, vstPlugin, this);
 
 		JSBool status = ExecuteScriptFileName(_cx, "vstPlugin.js", false, 0, NULL, &_rval);
+		
+		JL_USE(status);
+
 //		if ( !status )
 //			MessageBox(NULL, "script compilation error", "Error", 0);
 
@@ -1145,6 +1142,7 @@ CONFIGURE_CLASS
 
 		PROPERTY_READ( hostLanguage )
 		PROPERTY_READ( directory )
+		PROPERTY_READ( canProcessReplacing )
 
 		PROPERTY_WRITE( numPrograms )
 		PROPERTY_WRITE( numParams )
@@ -1169,6 +1167,7 @@ CONFIGURE_CLASS
 		PROPERTY_READ( smpteFrameRate )
 		PROPERTY_READ( samplesToNextClock )
 		PROPERTY_WRITE( initialDelay )
+
 	END_PROPERTY_SPEC
 
 	BEGIN_FUNCTION_SPEC

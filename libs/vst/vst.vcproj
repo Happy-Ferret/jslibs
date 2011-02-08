@@ -21,7 +21,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="2"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -40,16 +40,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories="src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS=1"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -62,7 +54,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				ModuleDefinitionFile=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -85,8 +76,8 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
-			CharacterSet="2"
 			WholeProgramOptimization="1"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -107,11 +98,6 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS=1"
-				RuntimeLibrary="2"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -124,7 +110,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				ModuleDefinitionFile=""
 			/>
 			<Tool
 				Name="VCALinkTool"

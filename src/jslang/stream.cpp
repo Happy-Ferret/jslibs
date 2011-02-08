@@ -13,9 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include <cstring>
-
-#include "blobPub.h"
+//#include "blobPub.h"
 
 #define SLOT_STREAM_SOURCE 0
 #define SLOT_STREAM_POSITION 1
@@ -150,6 +148,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( positionGetter ) {
 
+	JL_USE(id);
+
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	size_t position;
 	JL_CHK( PositionGet(cx, obj, &position) );
@@ -158,6 +158,8 @@ DEFINE_PROPERTY( positionGetter ) {
 }
 
 DEFINE_PROPERTY( positionSetter ) {
+
+	JL_USE(id);
 
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	size_t position;
@@ -174,6 +176,8 @@ $TOC_MEMBER $INAME
   The remaining data from the stream pointer position to the end of the stream.
 **/
 DEFINE_PROPERTY( available ) {
+
+	JL_USE(id);
 
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) ); // use vp as a tmp variable
@@ -199,6 +203,8 @@ $TOC_MEMBER $INAME
   The object used to create the steam.
 **/
 DEFINE_PROPERTY( source ) {
+
+	JL_USE(id);
 
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );

@@ -13,16 +13,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-
 #include "../jslang/blobPub.h"
 
 #include "error.h"
 #include "result.h"
 #include "database.h"
 
-#include "stack.h"
-
-#include <stdlib.h>
 
 // (TBD) add User-defined Collation Sequences ( http://www.sqlite.org/datatype3.html )
 

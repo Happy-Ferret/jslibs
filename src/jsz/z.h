@@ -11,3 +11,7 @@
  * for the specific language governing rights and limitations under the
  * License.
  * ***** END LICENSE BLOCK ***** */
+
+
+NEVER_INLINE JSBool FASTCALL
+ThrowZError( JSContext *cx, int errorCode, const char *errorMessage );

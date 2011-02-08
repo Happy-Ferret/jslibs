@@ -14,17 +14,17 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
+#include "jslibsModule.cpp"
 
 #include "com.h"
 
-DECLARE_STATIC()
-
 #include "error.h"
-#include "icon.h"
-#include "systray.h"
-#include "console.h"
 
-#include "jslibsModule.cpp"
+DECLARE_STATIC()
+DECLARE_CLASS( Icon )
+DECLARE_CLASS( Systray )
+DECLARE_CLASS( Console )
+
 
 
 /**doc t:header
@@ -59,6 +59,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+
+	JL_USE(cx);
 
 	return JS_TRUE;
 }

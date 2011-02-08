@@ -14,10 +14,7 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
-
 #include "jslibsModule.cpp"
-
-#include "jsdebug.h"
 
 
 DECLARE_STATIC()

@@ -13,13 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-
 #include "jlmoduleprivate.h"
-#include "jsoglft.h"
-
-#include "../jsfont/jsfont.h"
-
-#include "oglft/OGLFT.h"
 
 
 /**doc fileIndex:topmost **/
@@ -53,7 +47,7 @@ DEFINE_FUNCTION( Draw3DText ) {
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &text) );
 
-	JsoglftPrivate *mpv = (JsoglftPrivate*)ModulePrivateGet();
+//	JsoglftPrivate *mpv = (JsoglftPrivate*)ModulePrivateGet();
 
 	float size;
 	if ( JL_ARG_ISDEF(3) )

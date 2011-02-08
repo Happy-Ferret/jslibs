@@ -2,7 +2,7 @@
 # doc. http://msdn.microsoft.com/en-us/library/9s7c9wdw(v=vs.80).aspx
 MFLAGS =
 !IF "$(BUILD)" == "Debug"
-MFLAGS = $(MFLAGS) /MDd /Od /GF /Gm /RTC1 /RTCc /arch:SSE /GR- /W3 /ZI /TP /Yd
+MFLAGS = $(MFLAGS) /MDd /GF /arch:SSE /GR-
 !ENDIF
 !IF "$(BUILD)" == "Release"
 MFLAGS = $(MFLAGS) /MD /MP /Ox /Ob2 /Oi /Ot /Oy /GL /GF /FD /GS- /Gy /arch:SSE /GR- /Zi

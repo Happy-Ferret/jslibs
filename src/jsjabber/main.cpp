@@ -14,11 +14,10 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
-
-#include "static.h"
-#include "jabber.h"
-
 #include "jslibsModule.cpp"
+
+DECLARE_CLASS( Jabber )
+DECLARE_STATIC()
 
 /**doc t:header
 $MODULE_HEADER

@@ -13,13 +13,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "jslibsModule.h"
 
 #include <jsdbgapi.h>
 #include <jsscope.h>
 
-#include "jsdebug.h"
 
-#include "jslibsModule.h"
 
 #ifdef VALGRIND
 #include "/usr/include/valgrind/valgrind.h"

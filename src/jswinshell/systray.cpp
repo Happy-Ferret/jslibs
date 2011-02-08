@@ -14,19 +14,10 @@
 
 #include "stdafx.h"
 #include "error.h"
-#include "systray.h"
-#include <stdlib.h>
 
-#include <jsobj.h>
 
-#include "../jslang/handlePub.h"
+DECLARE_CLASS( Icon )
 
-#include "queue.h"
-#include "stack.h"
-
-#include "icon.h"
-
-#include <commctrl.h>
 
 #define SYSTRAY_WINDOW_CLASS_NAME "jslibs_systray"
 #define SYSTRAY_ID 13 // doc: Values from 0 to 12 are reserved and should not be used.
@@ -132,7 +123,7 @@ BOOL FindOutPositionOfIconDirectly(const HWND a_hWndOwner, const int a_iButtonID
 	HWND hWndTray = GetTrayNotifyWnd();
    if (hWndTray == NULL)
 		return FALSE;
-	DWORD dwTrayProcessID = -1;
+	DWORD dwTrayProcessID = (DWORD)-1;
 	GetWindowThreadProcessId(hWndTray, &dwTrayProcessID);
 	if(dwTrayProcessID <= 0)
 		return FALSE;
@@ -149,7 +140,7 @@ BOOL FindOutPositionOfIconDirectly(const HWND a_hWndOwner, const int a_iButtonID
 	BOOL bIconFound = FALSE;
 	for(int iButton=0; iButton<iButtonsCount; iButton++) {
 
-		DWORD dwBytesRead = -1;
+		DWORD dwBytesRead = (DWORD)-1;
 		TBBUTTON buttonData;
 		SendMessage(hWndTray, TB_GETBUTTON, iButton, (LPARAM)lpData);
 		ReadProcessMemory(hTrayProc, lpData, &buttonData, sizeof(TBBUTTON), &dwBytesRead);
@@ -255,6 +246,7 @@ BOOL FreeMenu( HMENU menu ) {
 		mii.fType = MFT_RADIOCHECK; // doc: Displays selected menu items using a radio-button mark instead of a check mark if the hbmpChecked member is NULL.
 		mii.fMask = MIIM_CHECKMARKS | MIIM_SUBMENU;
 		BOOL st = GetMenuItemInfo(menu, 0, TRUE, &mii);
+		JL_USE(st);
 		if ( mii.hbmpChecked != NULL )
 			DeleteObject(mii.hbmpChecked);
 		if ( mii.hSubMenu != NULL )
@@ -427,6 +419,8 @@ DEFINE_FINALIZE() {
 	if ( pv->nid.hWnd != NULL ) { // pv->nid.hWnd may have already been closed.
 
 		LRESULT res = SendMessage( pv->nid.hWnd, WM_CLOSE, 0, 0 ); // PostMessage
+
+		JL_USE(res);
 	}
 
 	WaitForSingleObject(pv->thread, INFINITE);
@@ -495,7 +489,7 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 			JL_CHK( JS_GetProperty(cx, obj, "onchar", &functionVal) );
 			if ( JL_IsFunction(cx, functionVal) ) {
 
-				char c = wParam;
+				char c = jl::SafeCast<char>(wParam);
 				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
 			}
 			break;
@@ -1016,6 +1010,9 @@ DEFINE_FUNCTION( PopupBalloon ) {
 			JLStr infoStr;
 			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &infoStr) );
 			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoStr.Length());
+
+			JL_USE(len);
+
 			memcpy( pv->nid.szInfo, infoStr.GetConstStr(), infoStr.Length() );
 			pv->nid.szInfo[infoStr.Length()] = '\0';
 		}
@@ -1272,7 +1269,9 @@ DEFINE_TRACER() {
 			}
 		};
 
-		pv->popupMenuRoots.BackForEach( Tmp(trc) );
+		//pv->popupMenuRoots.BackForEach( Tmp(trc) );
+		Tmp tmp(trc);
+		pv->popupMenuRoots.BackForEach( tmp );
 	}
 }
 

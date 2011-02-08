@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 #include "asymmetricCipher.h"
-
 #include "prng.h"
 #include "hash.h"
 
@@ -220,6 +219,8 @@ $TOC_MEMBER $INAME
    This object may contain sensitive data.
 **/
 DEFINE_FUNCTION( Wipe ) {
+
+	JL_USE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
@@ -660,6 +661,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( blockLength ) {
 
+	JL_USE(id);
+
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
@@ -711,6 +714,8 @@ $TOC_MEMBER $INAME
   is the size of the current private key.
 **/
 DEFINE_PROPERTY( keySize ) {
+
+	JL_USE(id);
 
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	AsymmetricCipherPrivate *pv;

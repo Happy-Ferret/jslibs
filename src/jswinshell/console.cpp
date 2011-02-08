@@ -13,11 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "console.h"
-
 #include "error.h"
 
-#include "stdlib.h"
 
 /**doc
 $CLASS_HEADER

@@ -14,6 +14,7 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
+#include "jslibsModule.cpp"
 
 #include "misc.h"
 #include "asymmetricCipher.h"
@@ -21,7 +22,6 @@
 #include "hash.h"
 #include "cipher.h"
 
-#include "jslibsModule.cpp"
 
 
 /**doc t:header

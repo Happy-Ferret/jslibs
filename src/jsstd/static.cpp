@@ -13,17 +13,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jsstd.h"
 #include "jslibsModule.h"
-
-
-#include "jsxdrapi.h"
-#include "jscntxt.h"
-//#include "jsnum.h"
-#include <jsdbgapi.h>
+#include "jsstd.h"
 
 DECLARE_CLASS( OperationLimit )
 DECLARE_CLASS( Sandbox )
+
 
 /**doc fileIndex:topmost **/
 

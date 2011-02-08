@@ -20,7 +20,6 @@
 			Name="DBG|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\jslibs_DBG.vsprops"
-			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -39,16 +38,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories="..\..\libs\freetype\src\include;.\gle"
 				PreprocessorDefinitions="WIN32;_DEBUG"
-				MinimalRebuild="true"
 				ExceptionHandling="1"
-				BasicRuntimeChecks="3"
-				SmallerTypeCheck="true"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				DebugInformationFormat="4"
+				WarningLevel="1"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -62,12 +55,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opengl32.lib glu32.lib"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				ImportLibrary="$(IntDir)\$(TargetName).lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -95,7 +82,6 @@
 			Name="OPT|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\jslibs_OPT.vsprops"
-			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -115,18 +101,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="..\..\libs\freetype\src\include;.\gle"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				ExceptionHandling="1"
-				BasicRuntimeChecks="0"
-				BufferSecurityCheck="false"
-				EnableEnhancedInstructionSet="1"
-				UsePrecompiledHeader="2"
-				WarningLevel="3"
-				DebugInformationFormat="3"
+				WarningLevel="1"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -140,14 +118,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opengl32.lib glu32.lib"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				ImportLibrary="$(IntDir)\$(TargetName).lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"

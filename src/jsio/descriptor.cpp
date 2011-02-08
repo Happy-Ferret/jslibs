@@ -14,27 +14,10 @@
 
 #include "stdafx.h"
 
-#include <pprio.h> // nspr/include/nspr/private
-#include <string.h>
-#include <cstring>
 
-#include "descriptor.h"
-#include "file.h"
-#include "socket.h"
-
-#include "buffer.h"
-using namespace jl;
-
-/*
-template <class T>
-class Terminate {
-	Terminate(T predicate) {
-	}
-	~Terminate() {
-		predicate();
-	}
-};
-*/
+DECLARE_CLASS( Descriptor )
+DECLARE_CLASS( File )
+DECLARE_CLASS( Socket )
 
 
 JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
@@ -221,8 +204,8 @@ void* JSBufferRealloc(void * opaqueAllocatorContext, void* address, size_t size)
 
 JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
-	Buffer buf;
-	BufferInitialize(&buf, bufferTypeChunk, bufferGrowTypeNoGuess, cx, JSBufferAlloc, JSBufferRealloc, JSBufferFree);
+	jl::Buffer buf;
+	BufferInitialize(&buf, jl::bufferTypeChunk, jl::bufferGrowTypeNoGuess, cx, JSBufferAlloc, JSBufferRealloc, JSBufferFree);
 	PRInt32 currentReadLength = 1024;
 	for (;;) {
 

@@ -7,3 +7,8 @@
 
 #include "jlhelper.h"
 #include "jlclass.h"
+
+#include "jsfont.h"
+
+#include <math.h>
+

@@ -14,11 +14,8 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
-
-#include "static.h"
-//#include "sound.h"
-
 #include "jslibsModule.cpp"
+
 
 /**doc t:header
 $MODULE_HEADER
@@ -31,6 +28,8 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
+DECLARE_STATIC()
+//DECLARE_CLASS(Sound)
 DECLARE_CLASS(SoundFileDecoder)
 DECLARE_CLASS(OggVorbisDecoder)
 
@@ -41,7 +40,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	INIT_STATIC();
 //	INIT_CLASS( Sound );
-
 	INIT_CLASS( SoundFileDecoder );
 	INIT_CLASS( OggVorbisDecoder );
 

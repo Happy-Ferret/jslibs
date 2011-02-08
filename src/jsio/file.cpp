@@ -14,10 +14,6 @@
 
 #include "stdafx.h"
 
-#include <pprio.h> // nspr/include/nspr/private
-
-#include "descriptor.h"
-#include "file.h"
 
 #define DEFAULT_ACCESS_RIGHTS (PR_IRWXU | PR_IRWXG) // read write permission for owner & group
 

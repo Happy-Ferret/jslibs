@@ -13,8 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include <jsdate.h>
-
 #include "com.h"
 
 
@@ -37,6 +35,9 @@ JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 	jsval dbg_funNameVal;
 	JS_GetPropertyById(cx, JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)), JLID(cx, name), &dbg_funNameVal);
 	const jschar *dbg_name = JS_GetStringCharsZ(cx, JSVAL_TO_STRING( dbg_funNameVal ));
+	
+	JL_USE(dbg_name);
+
 #endif
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JL_OBJ);

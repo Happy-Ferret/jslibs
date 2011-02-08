@@ -14,9 +14,6 @@
 
 #include "stdafx.h"
 
-#include "../jsfont/jsfont.h"
-
-#include "oglft/OGLFT.h"
 
 #define OGLFT_SLOT_FONT 0
 

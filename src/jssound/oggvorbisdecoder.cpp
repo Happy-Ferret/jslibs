@@ -13,9 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include <cstring>
-
-#include "stack.h"
 
 
 #define malloc jl_malloc_fct
@@ -62,7 +59,7 @@ size_t read_func( void *ptr, size_t size, size_t nmemb, void *privateData ) {
 //	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &amount ) != JS_TRUE )
 //		return -1; // (TBD) check for a better error
 	if ( StreamReadInterface(pv->cx, pv->streamObject)(pv->cx, pv->streamObject, (char*)ptr, &amount) != JS_TRUE )
-		return -1; // (TBD) check for a better error
+		return (size_t)-1; // (TBD) check for a better error
 	return amount;
 }
 
@@ -406,6 +403,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( inputStream ) {
 
+	JL_USE(id);
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
@@ -419,6 +418,8 @@ $TOC_MEMBER $INAME
   Is the number of bits per frame and per channel.
 **/
 DEFINE_PROPERTY( bits ) {
+
+	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -434,6 +435,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( rate ) {
 
+	JL_USE(id);
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	*vp = INT_TO_JSVAL( pv->ofInfo->rate );
@@ -447,6 +450,8 @@ $TOC_MEMBER $INAME
   Is the number of channels of the sound. 1 is mono, 2 is stereo.
 **/
 DEFINE_PROPERTY( channels ) {
+
+	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -462,6 +467,8 @@ $TOC_MEMBER $INAME
   To compute the duration of the sound, use (frames/rate)
 **/
 DEFINE_PROPERTY( frames ) {
+
+	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);

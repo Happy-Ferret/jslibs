@@ -13,14 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-
-#include "../common/jsvalserializer.h"
-
-#include <cstring>
-
 #include "blobPub.h"
-
-#include "jsproxy.h"
+//#include "jsproxy.h"
 
 static const char emptyBlobBuffer[] = "";
 
@@ -906,6 +900,8 @@ DEFINE_FUNCTION( charCodeAt ) {
 
 DEFINE_FUNCTION( toSource ) {
 
+	JL_USE(argc);
+
 	// (TBD) try something faster !!
 	JL_DEFINE_FUNCTION_OBJ;
 
@@ -932,6 +928,8 @@ $TOC_MEMBER $INAME
   is the length of the current Blob.
 **/
 DEFINE_PROPERTY( length ) {
+
+	JL_USE(id);
 
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS)
 	if (unlikely( !IsBlobValid(cx, obj) ))
@@ -982,6 +980,9 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
+	JL_USE(obj);
+	JL_USE(vp);
+
 	if ( JSID_IS_INT(id) )
 		JL_REPORT_WARNING_NUM(cx, JLSMSG_IMMUTABLE_OBJECT, JL_THIS_CLASS->name); // see also JSMSG_READ_ONLY
 	return JS_TRUE;
@@ -1017,6 +1018,8 @@ not_eq:
 
 JSBool next_for(JSContext *cx, uintN argc, jsval *vp) {
 
+	JL_USE(argc);
+
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	jsval tmp;
 	JL_CHK( JS_GetPropertyById(cx, JS_THIS_OBJECT(cx, vp), INT_TO_JSID(0), &tmp) );
@@ -1042,6 +1045,8 @@ JSBool next_for(JSContext *cx, uintN argc, jsval *vp) {
 
 
 JSBool next_foreach(JSContext *cx, uintN argc, jsval *vp) {
+
+	JL_USE(argc);
 
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	jsval tmp;
@@ -1136,11 +1141,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( toString ) { // and valueOf ?
 
+	JL_USE(argc);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-
 	JL_CHK( GetBlobString(cx, obj, JL_RVAL) );
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1199,18 +1204,19 @@ const jschar *ToString(JSContext *cx, jsid id) {
 }
 */
 
-
+/*
 DEFINE_FUNCTION( valueOf ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_CHK( GetBlobString(cx, obj, vp) );
+	JL_CHK( GetBlobString(cx, obj, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
+*/
+
 
 /*
-
 DEFINE_OPS_GET_PROPERTY() {
 
 //	if ( id == ATOM_TO_JSID(cx->runtime->atomState.constructorAtom) ) {
@@ -1302,7 +1308,11 @@ DEFINE_FUNCTION( _unserialize ) {
 		JL_CHK( JL_NativeToJsval(cx, buf.Length(), JL_RVAL) );
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, *JL_RVAL) );
 
-		JL_CHK( unser->Read(cx, jl::SerializerObjectOwnProperties(obj)) );
+		//JL_CHK( unser->Read(cx, jl::SerializerObjectOwnProperties(obj)) );
+		
+		jl::SerializerObjectOwnProperties tmp(obj);
+		JL_CHK( unser->Read(cx, tmp) );
+
 	} else {
 
 		JL_SetPrivate(cx, obj, NULL);

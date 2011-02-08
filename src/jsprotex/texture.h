@@ -15,8 +15,6 @@
 #ifndef _TEXTURE_H_
 #define _TEXTURE_H_
 
-#include "jlhelper.h"
-#include "membuffer.h"
 
 #define PTYPE float
 
@@ -27,7 +25,6 @@
 // 2 : LA
 // 3 : RGB
 // 4 : RGBA
-
 
 
 struct TextureStruct {

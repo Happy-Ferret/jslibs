@@ -13,9 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include <string.h>
-
-#include "semaphore.h"
 
 
 /**doc

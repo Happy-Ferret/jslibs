@@ -14,21 +14,20 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
-
-#include "jsio.h"
-
-#include "descriptor.h"
-#include "pipe.h"
-#include "file.h"
-#include "memoryMapped.h"
-#include "socket.h"
-#include "directory.h"
-#include "sharedMemory.h"
-#include "semaphore.h"
-#include "process.h"
-#include "static.h"
-
 #include "jslibsModule.cpp"
+
+
+DECLARE_CLASS( Descriptor )
+DECLARE_CLASS( Pipe )
+DECLARE_CLASS( File )
+DECLARE_CLASS( MemoryMapped )
+DECLARE_CLASS( Socket )
+DECLARE_CLASS( Directory )
+DECLARE_CLASS( SharedMemory )
+DECLARE_CLASS( Semaphore )
+DECLARE_CLASS( Process )
+DECLARE_STATIC()
+
 
 static PRInt32 instanceCount = 0;
 

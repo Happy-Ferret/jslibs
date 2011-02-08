@@ -14,17 +14,12 @@
 
 #include "stdafx.h"
 
-//DECLARE_CLASS( Texture )
-
 #include "texture.h"
 
 #include "../jslang/blobPub.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
-#include <cstring>
-#include <string.h>
-
 
 #include <stdlib.h>
 #include <limits.h>
@@ -34,9 +29,7 @@
 #include "vector4.h"
 #include "matrix44.h"
 #include "matrix55.h"
-//#include "jlconvert.h"
 
-#include "membuffer.h"
 
 DECLARE_CLASS( Texture )
 

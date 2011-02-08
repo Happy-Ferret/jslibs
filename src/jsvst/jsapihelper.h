@@ -27,6 +27,7 @@ public:
 class JSApiHelper {
 private:
 	JSContext *&_cx;
+	JSApiHelper & operator =(const JSApiHelper &);
 
 public:
 	JSApiHelper( JSContext *&cx ) : _cx(cx) {}

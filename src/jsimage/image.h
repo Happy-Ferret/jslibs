@@ -12,8 +12,10 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#define SLOT_FUNCTION_ALLOC 0
+#pragma once
 
+
+#define SLOT_FUNCTION_ALLOC 0
 
 ALWAYS_INLINE JSClass* JL_ImageJSClass( const JSContext *cx ) {
 

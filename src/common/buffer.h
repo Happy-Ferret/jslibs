@@ -117,6 +117,9 @@ inline size_t NextChunkSize( const Buffer *buffer, size_t lastChunk, size_t requ
 
 inline BufferType GuessType( const Buffer *buffer, size_t lastChunk, size_t requiredLength ) {
 
+	JL_USE(buffer);
+	JL_USE(lastChunk);
+
 	BufferChunk *chunk = &buffer->chunkList[buffer->chunkPos];
 	if ( chunk->pos + requiredLength - chunk->size < BUFFER_TYPE_AUTO_THRESHOLD )
 		return bufferTypeRealloc;
@@ -218,6 +221,8 @@ inline void BufferConfirm( Buffer *buffer, size_t amount ) {
 
 
 inline size_t BufferGetRecommendedLength( const Buffer *buffer ) {
+
+	JL_USE(buffer);
 
 	return 4096;
 }

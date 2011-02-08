@@ -13,7 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jabber.h"
 
 #pragma warning( push )
 #pragma warning(disable : 4800) // warning C4800: '???' : forcing value to bool 'true' or 'false' (performance warning)
@@ -40,6 +39,8 @@
 #pragma warning( pop )
 
 using namespace gloox;
+
+DECLARE_CLASS( Jabber )
 
 
 JSBool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
@@ -145,6 +146,8 @@ private:
 	}
 
 	void handleMessage( Stanza *stanza, MessageSession *session ) {
+
+		JL_USE(session);
 
 		jsval fval, rval;
 		if ( !JS_GetProperty(_cx, _obj, "onMessage", &fval) || JSVAL_IS_VOID( fval ) )
@@ -604,6 +607,7 @@ CONFIGURE_CLASS
 		PROPERTY( status )
 		PROPERTY_READ( connectionTotalIn )
 		PROPERTY_READ( connectionTotalOut )
+		PROPERTY_READ( socket )
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

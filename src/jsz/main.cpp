@@ -14,12 +14,11 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
+#include "jslibsModule.cpp"
 
-#include "zError.h"
-
+DECLARE_CLASS( ZError )
 DECLARE_CLASS( Z )
 
-#include "jslibsModule.cpp"
 
 /**doc t:header
 $MODULE_HEADER

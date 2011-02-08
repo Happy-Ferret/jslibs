@@ -20,3 +20,12 @@ struct JsioPrivate {
 
 	PRFileDesc *peCancel;
 };
+
+#define SLOT_JSIO_DESCRIPTOR_IMPORTED 0
+
+void FinalizeDescriptor(JSContext *cx, JSObject *obj);
+
+JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount );
+
+#define SLOT_JSIO_DIR_NAME 0
+#define SLOT_JSIO_FILE_NAME 1

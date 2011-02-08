@@ -13,9 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "icon.h"
 
-#include "stdlib.h"
 
 /**doc
 $CLASS_HEADER
@@ -71,6 +69,9 @@ DEFINE_CONSTRUCTOR() {
 	if ( JSVAL_IS_OBJECT(iconVal) && !JSVAL_IS_NULL( iconVal ) ) {
 
 		HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
+		
+		JL_USE(hInst);
+
 		JSObject *imgObj = JSVAL_TO_OBJECT(iconVal);
 
 //		JL_S_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JL_IsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));

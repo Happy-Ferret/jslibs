@@ -13,11 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include <jsdate.h>
-
-#include "../jslang/blobPub.h"
-
 #include "com.h"
+
 
 // see http://www.codeproject.com/KB/COM/TEventHandler.aspx
 //IConnectionPoint
@@ -105,6 +102,9 @@ public:
 		js::AutoArrayRooter tvr(cx, argc+1, argv);
 
 		JSBool status = JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), _funcVal, argc, argv+1, argv);
+
+		JL_USE(status); // (TBD) error check
+
 //		if ( !status )
 
 		// pVarResult: location where the result is to be stored, or NULL if the caller expects no result.
@@ -231,12 +231,12 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 			SYSTEMTIME time;
 			time.wDayOfWeek = 0; // unused by SystemTimeToVariantTime
-			time.wYear = js_DateGetYear(cx, obj);
-			time.wMonth = js_DateGetMonth(cx, obj)+1;
-			time.wDay = js_DateGetDate(cx, obj);
-			time.wHour = js_DateGetHours(cx, obj);
-			time.wMinute = js_DateGetMinutes(cx, obj);
-			time.wSecond = js_DateGetSeconds(cx, obj);
+			time.wYear = (WORD)js_DateGetYear(cx, obj);
+			time.wMonth = (WORD)js_DateGetMonth(cx, obj) + 1;
+			time.wDay = (WORD)js_DateGetDate(cx, obj);
+			time.wHour = (WORD)js_DateGetHours(cx, obj);
+			time.wMinute = (WORD)js_DateGetMinutes(cx, obj);
+			time.wSecond = (WORD)js_DateGetSeconds(cx, obj);
 			time.wMilliseconds = ((unsigned long)js_DateGetMsecSinceEpoch(cx, obj)) % 1000;
 
 			V_VT(variant) = VT_DATE;
@@ -269,7 +269,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 		if ( i >= SHRT_MIN && i <= SHRT_MAX ) {
 			
 			V_VT(variant) = VT_I2;
-			V_I2(variant) = i;
+			V_I2(variant) = (SHORT)i;
 			return JS_TRUE;
 		}
 		V_VT(variant) = VT_I4;
@@ -512,6 +512,9 @@ DEFINE_FINALIZE() {
 		return;
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, obj);
 	HRESULT hr = VariantClear(variant);
+
+	JL_USE(hr); // (TBD) error check
+
 	JS_free(cx, variant);
 }
 

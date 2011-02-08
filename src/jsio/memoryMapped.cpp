@@ -14,9 +14,9 @@
 
 #include "stdafx.h"
 
-#include "file.h"
 
-#include <prio.h>
+DECLARE_CLASS( File )
+
 
 #define MEMORYMAPPED_SLOT_FILE 0
 

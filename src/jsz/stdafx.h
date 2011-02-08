@@ -7,5 +7,11 @@
 
 #include "jlhelper.h"
 #include "jlclass.h"
+#include "../common/jsvalserializer.h"
 
 #include <stdlib.h>
+
+#include <buffer.h>
+
+#include <zlib.h>
+#include "z.h"

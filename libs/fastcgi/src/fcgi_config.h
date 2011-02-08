@@ -23,7 +23,7 @@
 #define HAVE_LIBNSL 1
 
 /* Define if you have the `socket' library (-lsocket). */
-#define HAVE_LIBSOCKET 1
+/* #undef HAVE_LIBSOCKET */
 
 /* Define if you have the <limits.h> header file. */
 #define HAVE_LIMITS_H 1
@@ -47,7 +47,7 @@
 /* #undef HAVE_SOCKLEN */
 
 /* Define if you have the <stdint.h> header file. */
-/* #undef HAVE_STDINT_H */
+#define HAVE_STDINT_H 1
 
 /* Define if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
@@ -96,7 +96,7 @@
 #define STDC_HEADERS 1
 
 /* Define if cross-process locking is required by accept() */
-#define USE_LOCKING 1
+/* #undef USE_LOCKING */
 
 /* Version number of package */
 #define VERSION "2.4.1-SNAP-0311112127"

@@ -125,7 +125,7 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 
 
 int main(int argc, char* argv[]) {
-
+/*
 	_unsafeMode = false;
 
 	JSRuntime *rt = JS_NewRuntime(0);
@@ -154,4 +154,7 @@ int main(int argc, char* argv[]) {
 
 bad:
 	return EXIT_SUCCESS;
+*/
+
+
 }

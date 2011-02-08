@@ -14,8 +14,6 @@
 
 #include "stdafx.h"
 
-#include <jsxdrapi.h>
-
 
 /**doc
 $CLASS_HEADER

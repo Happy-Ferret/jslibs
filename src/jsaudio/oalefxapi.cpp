@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 
-#include "oalefxapi.h"
 
 // Imported EFX functions
 

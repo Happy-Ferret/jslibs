@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 
-#include "static.h"
+DECLARE_STATIC()
 
 
 /**doc fileIndex:topmost **/

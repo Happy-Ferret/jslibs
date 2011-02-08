@@ -12,7 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-DECLARE_CLASS( SdlError )
 
 NEVER_INLINE JSBool FASTCALL
 ThrowSdlError( JSContext *cx );

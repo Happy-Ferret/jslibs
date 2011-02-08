@@ -19,31 +19,30 @@ Manage GL extensions:
 */
 
 #include "stdafx.h"
-//#include "jsobj.h"
+
+#include "../jsprotex/texture.h"
+#include "../jsprotex/textureBuffer.h"
+#include "../jstrimesh/trimeshPub.h"
+#include "../jslang/handlePub.h"
+
+#include <gl/glu.h> // gluPerspective, gluUnProject, GLUquadric, ...
+//#include "wglew.h" // ??
+
+#define MAX_PARAMS 16
+
+
+typedef void* (__cdecl *glGetProcAddress_t)(const char*);
+static glGetProcAddress_t glGetProcAddress = NULL;
+
+
+//doc.
+//  OpenGL matrices are 16-value arrays with base vectors laid out contiguously in memory. 
+//  The translation components occupy the 13th, 14th, and 15th elements of the 16-element matrix, 
+//  where indices are numbered from 1 to 16 as described in section 2.11.2 of the OpenGL 2.1 Specification.
+
 
 DECLARE_CLASS(Ogl)
 
-//#include "jlnativeinterface.h"
-
-//#include "jstransformation.h"
-
-#include "../jsimage/image.h"
-#include "../jslang/blob.h"
-#include "../jsprotex/texture.h"
-#include "../jsprotex/textureBuffer.h"
-//TextureJSClass
-
-#include <jstypedarray.h>
-
-#include "../jslang/handlePub.h"
-
-#include "../jstrimesh/trimeshPub.h"
-
-#define _USE_MATH_DEFINES
-#include "math.h"
-
-#include "matrix44.h"
-#include "vector3.h"
 
 /* 
 JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rval ) { // (TBD) jsval** = Conservative Stack Scanning issue ?
@@ -95,36 +94,6 @@ JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, doub
 }
 */
 
-
-
-
-/* doc.
-  OpenGL matrices are 16-value arrays with base vectors laid out contiguously in memory. 
-  The translation components occupy the 13th, 14th, and 15th elements of the 16-element matrix, 
-  where indices are numbered from 1 to 16 as described in section 2.11.2 of the OpenGL 2.1 Specification.
-*/
-#ifdef _MACOSX // MacosX platform specific
-	#include <AGL/agl.h>
-	#include <OpenGL/gl.h>
-#endif
-
-//#define GL_GLEXT_PROTOTYPES
-
-#include <gl/gl.h>
-#include "glext.h" // download at http://www.opengl.org/registry/api/glext.h (http://www.opengl.org/registry/#headers)
-
-#include <gl/glu.h>
-
-#include "wglew.h"
-
-#include "oglError.h"
-
-#define MAX_PARAMS 16
-
-// http://www.opengl.org/registry/api/glext.h
-
-typedef void* (__cdecl *glGetProcAddress_t)(const char*);
-static glGetProcAddress_t glGetProcAddress = NULL;
 
 
 const char *OpenGLErrorToConst(GLenum errorCode) {
@@ -6668,6 +6637,7 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC(PixelZoom, 2) // x,y
 		FUNCTION_ARGC(PixelMap, 2) // map,<array>
 
+		FUNCTION_ARGC(CreateTextureBuffer, 0)
 		FUNCTION_ARGC(DefineTextureImage, 3) // target, format, image (non-OpenGL API)
 
 
@@ -6711,6 +6681,9 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC(UniformFloat, 5)
 		FUNCTION_ARGC(UniformInteger, 5)
 		FUNCTION_ARGC(GetObjectParameter, 2)
+		FUNCTION_ARGC(BindAttribLocation, 3)
+		FUNCTION_ARGC(GetAttribLocation, 2)
+		FUNCTION_ARGC(VertexAttrib, 2)
 		FUNCTION_ARGC(GenBuffer, 0)
 		FUNCTION_ARGC(BindBuffer, 2) // target, buffer
 

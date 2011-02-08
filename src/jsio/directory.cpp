@@ -14,10 +14,6 @@
 
 #include "stdafx.h"
 
-#include <string.h>
-
-#include "directory.h"
-
 
 #define _SKIP_FILE 32
 #define _SKIP_DIRECTORY 64

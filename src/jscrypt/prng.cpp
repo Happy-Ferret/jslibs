@@ -201,6 +201,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY( stateGetter ) {
 
+	JL_USE(id);
+
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
@@ -228,6 +230,8 @@ DEFINE_PROPERTY( stateGetter ) {
 
 DEFINE_PROPERTY( stateSetter ) {
 
+	JL_USE(id);
+
 	JLStr state;
 
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
@@ -253,6 +257,8 @@ $TOC_MEMBER $INAME
   is the name of the current prng.
 **/
 DEFINE_PROPERTY( name ) {
+
+	JL_USE(id);
 
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PrngPrivate *pv;
