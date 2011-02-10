@@ -17,9 +17,6 @@
 
 #include <jlplatform.h>
 
-#include <sys/types.h>
-#include <malloc.h>
-
 typedef void* (*jl_malloc_t)( size_t );
 typedef void* (*jl_calloc_t)( size_t, size_t );
 typedef void* (*jl_memalign_t)( size_t, size_t );
@@ -42,6 +39,20 @@ extern jl_memalign_t jl_memalign;
 extern jl_realloc_t jl_realloc;
 extern jl_msize_t jl_msize;
 extern jl_free_t jl_free;
+
+ALWAYS_INLINE char *
+JL_strdup(const char * src) {
+
+	size_t size;
+	char *dst;
+	size = strlen(src) + 1;
+	dst = (char*)jl_malloc(size);
+	if ( dst == NULL )
+		return NULL;
+	memcpy(dst, src, size);
+	return dst;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // alloc wrappers
@@ -68,10 +79,11 @@ JL_Realloc( T*&ptr, size_t count = 1 ) {
 ///////////////////////////////////////////////////////////////////////////////
 // malloca
 
-#define JL_MALLOCA_THRESHOLD 8192
+// note: MSVC _ALLOCA_S_THRESHOLD is 1024
+#define JL_MALLOCA_THRESHOLD 2048
 
 ALWAYS_INLINE void *
-jl_malloca_private(void *mem, size_t heapMem) {
+jl__malloca_internal(void *mem, size_t heapMem) {
 	
 	if (likely( mem != NULL )) {
 
@@ -84,7 +96,7 @@ jl_malloca_private(void *mem, size_t heapMem) {
 }
 
 #define jl_malloca(size) \
-	( ( (size)+sizeof(size_t) > JL_MALLOCA_THRESHOLD ) ? jl_malloca_private(jl_malloc((size)+sizeof(size_t)), 1) : jl_malloca_private(alloca((size)+sizeof(size_t)), 0) )
+	( ( (size)+sizeof(size_t) > JL_MALLOCA_THRESHOLD ) ? jl__malloca_internal(jl_malloc((size)+sizeof(size_t)), 1) : jl__malloca_internal(alloca((size)+sizeof(size_t)), 0) )
 
 ALWAYS_INLINE void
 jl_freea(void *mem) {

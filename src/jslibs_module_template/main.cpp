@@ -14,8 +14,8 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
-
 #include "jslibsModule.cpp"
+
 
 DECLARE_STATIC()
 DECLARE_CLASS( Template )
@@ -23,13 +23,12 @@ DECLARE_CLASS( Template )
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	JL_CHK( InitJslibsModule(cx, id)  );
+	JL_CHK( InitJslibsModule(cx, id) );
 
 	//ModulePrivate *mpv;
 	//mpv = (ModulePrivate*)jl_malloc( sizeof(ModulePrivate) );
 	//JL_S_ASSERT_ALLOC(mpv);
-	//JL_CHKM( SetModulePrivate(cx, _moduleId, mpv), "Module id already in use." );
-
+	//JL_CHKM( JL_SetModulePrivate(cx, _moduleId, mpv), "Module id already in use." );
 
 	INIT_STATIC();
 	INIT_CLASS( Template );
@@ -41,11 +40,10 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	
 	JL_USE(cx);
+	//jl_free(JL_GetModulePrivate(cx, _moduleId));
 
-//	jl_free(GetModulePrivate(cx, _moduleId));
-
-	return JS_FALSE;
+	return JS_TRUE;
 }
 
-EXTERN_C DLLEXPORT void ModuleFree() {
-}
+//EXTERN_C DLLEXPORT void ModuleFree() {
+//}

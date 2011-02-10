@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\..\libs\libtomcrypt\src\src\headers,..\..\libs\libtommath\src"
-				PreprocessorDefinitions="WIN32;_DEBUG;LTC_NO_PROTOTYPES;LTM_DESC;MKAT"
+				PreprocessorDefinitions="WIN32;_DEBUG;LTC_NO_PROTOTYPES;LTM_DESC;MKAT;LTC_MULTI2"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -52,7 +52,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\libs\libtomcrypt\Debug\tomcrypt.lib ..\..\libs\libtommath\Debug\tommath.lib advapi32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -100,7 +99,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\..\libs\libtomcrypt\src\src\headers,..\..\libs\libtommath\src"
-				PreprocessorDefinitions="WIN32;NDEBUG;LTC_NO_PROTOTYPES;LTM_DESC;MKAT"
+				PreprocessorDefinitions="WIN32;NDEBUG;LTC_NO_PROTOTYPES;LTM_DESC;MKAT;LTC_MULTI2"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -113,7 +112,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\libs\libtomcrypt\Release\tomcrypt.lib ..\..\libs\libtommath\Release\tommath.lib advapi32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"

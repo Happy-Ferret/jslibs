@@ -16,6 +16,10 @@
 #include "jlhelper.cpp"
 #include "jslibsModule.cpp"
 
+#if defined(_MSC_VER)
+#pragma comment(lib, "advapi32.lib") // rng_get_bytes.obj (function _rng_win32) needs __imp__CryptReleaseContext@8, __imp__CryptGenRandom@12, __imp__CryptAcquireContextA@20
+#endif
+
 #include "misc.h"
 #include "asymmetricCipher.h"
 #include "prng.h"
@@ -57,7 +61,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 		&anubis_desc,
 		&kseed_desc,
 		&kasumi_desc,
-//		&multi2_desc,
+		&multi2_desc,
 	};
 
 	const struct ltc_hash_descriptor * hashList[] = {

@@ -2901,7 +2901,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 		JL_CHKM( file != -1, "Unable to open file \"%s\" for reading.", compiledFileName );
 
 		size_t compFileSize = compFileStat.st_size; // filelength(file); ?
-		data = jl_malloc(compFileSize);
+		data = jl_malloca(compFileSize);
 		JL_S_ASSERT_ALLOC( data );
 		int readCount = read( file, data, jl::SafeCast<unsigned int>(compFileSize) ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
 		JL_CHKM( readCount >= 0 && (size_t)readCount == compFileSize, "Unable to read the file \"%s\" ", compiledFileName );
@@ -2929,14 +2929,14 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 			// (TBD) manage BIG_ENDIAN here ?
 			JS_XDRMemSetData(xdr, NULL, 0);
 			JS_XDRDestroy(xdr);
-			jl_free(data);
+			jl_freea(data);
 			data = NULL;
 			if ( JS_GetScriptVersion(cx, script) < JS_GetVersion(cx) )
 				JL_REPORT_WARNING("Trying to xdr-decode an old script (%s).", compiledFileName);
 			goto good;
 		} else {
 
-			jl_free(data);
+			jl_freea(data);
 			data = NULL;
 //			if ( JL_IsExceptionPending(cx) )
 //				JS_ClearPendingException(cx);
@@ -3077,7 +3077,7 @@ bad:
 	jl_freea(scriptBuffer); // jl_freea(NULL) is legal
 	jl_freea(scriptText);
 	JS_SetOptions(cx, prevOpts);
-	jl_free(data); // jl_free(NULL) is legal
+	jl_freea(data); // jl_free(NULL) is legal
 	return NULL; // report a warning ?
 }
 

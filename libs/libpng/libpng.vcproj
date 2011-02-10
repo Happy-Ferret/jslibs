@@ -17,10 +17,10 @@
 	<Configurations>
 		<Configuration
 			Name="LIB Release|Win32"
-			InheritedPropertySheets="..\libs_OPT.vsprops"
 			OutputDirectory=".\Win32_LIB_Release"
 			IntermediateDirectory=".\Win32_LIB_Release"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -75,10 +75,10 @@
 		</Configuration>
 		<Configuration
 			Name="LIB Debug|Win32"
-			InheritedPropertySheets="..\libs_DBG.vsprops"
 			OutputDirectory=".\Win32_LIB_Debug"
 			IntermediateDirectory=".\Win32_LIB_Debug"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -133,10 +133,10 @@
 		</Configuration>
 		<Configuration
 			Name="LIB ASM Release|Win32"
-			InheritedPropertySheets="..\libs_OPT.vsprops"
 			OutputDirectory=".\Win32_LIB_ASM_Release"
 			IntermediateDirectory=".\Win32_LIB_ASM_Release"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -191,10 +191,10 @@
 		</Configuration>
 		<Configuration
 			Name="LIB ASM Debug|Win32"
-			InheritedPropertySheets="..\libs_DBG.vsprops"
 			OutputDirectory=".\Win32_LIB_ASM_Debug"
 			IntermediateDirectory=".\Win32_LIB_ASM_Debug"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -259,6 +259,38 @@
 				RelativePath="src\png.c"
 				>
 				<FileConfiguration
+					Name="LIB Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="LIB Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="LIB ASM Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="LIB ASM Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="DLL Release|Win32"
 					>
 					<Tool
@@ -292,38 +324,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="DLL VB|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB ASM Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB ASM Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -335,6 +335,38 @@
 				RelativePath="src\pngerror.c"
 				>
 				<FileConfiguration
+					Name="LIB Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="LIB Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="LIB ASM Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="LIB ASM Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="DLL Release|Win32"
 					>
 					<Tool
@@ -368,38 +400,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="DLL VB|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB ASM Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB ASM Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -444,50 +444,6 @@
 				>
 			</File>
 			<File
-				RelativePath="src\scripts\pngw32.def"
-				>
-				<FileConfiguration
-					Name="DLL VB|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB ASM Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB ASM Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="src\pngwio.c"
 				>
 			</File>
@@ -517,101 +473,6 @@
 				>
 			</File>
 		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
-			>
-			<File
-				RelativePath="src\scripts\pngw32.rc"
-				>
-				<FileConfiguration
-					Name="LIB Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB ASM Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="LIB ASM Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
-		</Filter>
-		<File
-			RelativePath=".\PRJ0041.mak"
-			>
-			<FileConfiguration
-				Name="DLL Release|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Create dummy include files to prevent &quot;Cannot find missing dependency...&quot; warnings."
-					CommandLine="nmake -f PRJ0041.mak IntDir=$(IntDir)&#x0D;&#x0A;"
-					Outputs="$(IntDir)\alloc.h;$(IntDir)\fp.h;$(IntDir)\m68881.h;$(IntDir)\mem.h;$(IntDir)\pngusr.h;$(IntDir)\strings.h;$(IntDir)\unistd.h;$(IntDir)\unixio.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="DLL Debug|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Create dummy include files to prevent &quot;Cannot find missing dependency...&quot; warnings."
-					CommandLine="nmake -f PRJ0041.mak IntDir=$(IntDir)&#x0D;&#x0A;"
-					Outputs="$(IntDir)\alloc.h;$(IntDir)\fp.h;$(IntDir)\m68881.h;$(IntDir)\mem.h;$(IntDir)\pngusr.h;$(IntDir)\strings.h;$(IntDir)\unistd.h;$(IntDir)\unixio.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="DLL ASM Release|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Create dummy include files to prevent &quot;Cannot find missing dependency...&quot; warnings."
-					CommandLine="nmake -f PRJ0041.mak IntDir=$(IntDir)&#x0D;&#x0A;"
-					Outputs="$(IntDir)\alloc.h;$(IntDir)\fp.h;$(IntDir)\m68881.h;$(IntDir)\mem.h;$(IntDir)\pngusr.h;$(IntDir)\strings.h;$(IntDir)\unistd.h;$(IntDir)\unixio.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="DLL ASM Debug|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Create dummy include files to prevent &quot;Cannot find missing dependency...&quot; warnings."
-					CommandLine="nmake -f PRJ0041.mak IntDir=$(IntDir)&#x0D;&#x0A;"
-					Outputs="$(IntDir)\alloc.h;$(IntDir)\fp.h;$(IntDir)\m68881.h;$(IntDir)\mem.h;$(IntDir)\pngusr.h;$(IntDir)\strings.h;$(IntDir)\unistd.h;$(IntDir)\unixio.h"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="DLL VB|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Create dummy include files to prevent &quot;Cannot find missing dependency...&quot; warnings."
-					CommandLine="nmake -f PRJ0041.mak IntDir=$(IntDir)&#x0D;&#x0A;"
-					Outputs="$(IntDir)\alloc.h;$(IntDir)\fp.h;$(IntDir)\m68881.h;$(IntDir)\mem.h;$(IntDir)\pngusr.h;$(IntDir)\strings.h;$(IntDir)\unistd.h;$(IntDir)\unixio.h"
-				/>
-			</FileConfiguration>
-		</File>
 		<File
 			RelativePath="README.txt"
 			>

@@ -167,6 +167,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\common\jlalloc.h"
+				>
+			</File>
+			<File
 				RelativePath="..\common\jlclass.h"
 				>
 			</File>

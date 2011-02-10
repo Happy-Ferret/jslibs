@@ -16,6 +16,10 @@
 #include "jlhelper.cpp"
 #include "jslibsModule.cpp"
 
+#if defined(_MSC_VER)
+#pragma comment(lib, "..\\..\\libs\\libiconv\\Release\\iconv.lib")
+#endif
+
 DECLARE_CLASS( Iconv )
 
 /**doc t:header

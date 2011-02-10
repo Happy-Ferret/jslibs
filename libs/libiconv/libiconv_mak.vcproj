@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="libtommath"
-	ProjectGUID="{986623D2-6B30-4F35-B08E-89FA00E9582D}"
-	RootNamespace="libtommath"
+	Name="libiconv_mak"
+	ProjectGUID="{96358E1B-274B-4F4D-BDCF-BD8F652E033E}"
+	RootNamespace="libiconv"
 	Keyword="MakeFileProj"
 	TargetFrameworkVersion="131072"
 	>
@@ -24,10 +24,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd src &amp;&amp; nmake /f ../libtommath.mak build dest=../$(IntDir)/$(TargetFileName) debug=1"
-				ReBuildCommandLine="cd src &amp;&amp; nmake /f ../libtommath.mak rebuild dest=../$(IntDir)/$(TargetFileName) debug=1"
-				CleanCommandLine="cd src &amp;&amp; nmake /f ../libtommath.mak clean dest=../$(IntDir)/$(TargetFileName) debug=1"
-				Output="$(ProjectDir)\tommath.lib"
+				BuildCommandLine="nmake -nologo -f makefile.mak OUTDIR=&quot;$(OutDir)&quot; BUILD=$(ConfigurationName) all"
+				ReBuildCommandLine="nmake -nologo -f makefile.mak OUTDIR=&quot;$(OutDir)&quot; BUILD=$(ConfigurationName) clean all"
+				CleanCommandLine="nmake -nologo -f makefile.mak OUTDIR=&quot;$(OutDir)&quot; BUILD=$(ConfigurationName) clean"
+				Output="iconv.lib"
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -44,10 +44,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd src &amp;&amp; nmake /f ../libtommath.mak build dest=../$(IntDir)/$(TargetFileName) debug=0"
-				ReBuildCommandLine="cd src &amp;&amp; nmake /f ../libtommath.mak rebuild dest=../$(IntDir)/$(TargetFileName) debug=0"
-				CleanCommandLine="cd src &amp;&amp; nmake /f ../libtommath.mak clean dest=../$(IntDir)/$(TargetFileName) debug=0"
-				Output="$(ProjectDir)\tommath.lib"
+				BuildCommandLine="nmake -nologo -f makefile.mak OUTDIR=&quot;$(OutDir)&quot; BUILD=$(ConfigurationName) all"
+				ReBuildCommandLine="nmake -nologo -f makefile.mak OUTDIR=&quot;$(OutDir)&quot; BUILD=$(ConfigurationName) clean all"
+				CleanCommandLine="nmake -nologo -f makefile.mak OUTDIR=&quot;$(OutDir)&quot; BUILD=$(ConfigurationName) clean"
+				Output="iconv.lib"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -60,11 +60,5 @@
 	<References>
 	</References>
 	<Files>
-		<File
-			RelativePath=".\readme.txt"
-			>
-		</File>
 	</Files>
-	<Globals>
-	</Globals>
 </VisualStudioProject>

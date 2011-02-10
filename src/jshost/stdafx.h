@@ -15,9 +15,9 @@
 #pragma once
 
 #include "jlhelper.h"
-#include "../host/host.h"
 
 #include <sys/stat.h>
-#include <string.h>
 #include <time.h>
 #include <signal.h>
+
+#include "../host/host.h"

@@ -37,13 +37,14 @@ volatile bool disabledFree = false;
 #define NO_MALLINFO 1
 #include "../../libs/nedmalloc/nedmalloc.h"
 
-void nedfree_handlenull(void *mem) {
+
+NOALIAS void nedfree_handlenull(void *mem) NOTHROW {
 
 	if ( mem != NULL && !disabledFree )
 		nedfree(mem);
 }
 
-size_t nedblksize_msize(void *mem) {
+NOALIAS size_t nedblksize_msize(void *mem) NOTHROW {
 
 	return nedblksize(0, mem);
 }

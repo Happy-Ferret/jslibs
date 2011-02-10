@@ -15,9 +15,6 @@
 #pragma once
 
 #include "jlhelper.h"
-
-#include <jsprf.h>
-
 #include "jlclass.h"
 
-#include <string.h>
+#include <jsprf.h> // JS_smprintf in ErrorReporter

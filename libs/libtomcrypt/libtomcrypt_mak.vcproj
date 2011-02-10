@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="libtomcrypt"
+	Name="libtomcrypt_mak"
 	ProjectGUID="{A313FEE1-C052-491B-80A4-07559D95AF84}"
 	RootNamespace="libtomcrypt"
 	Keyword="MakeFileProj"

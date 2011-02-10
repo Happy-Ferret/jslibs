@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-// JL_HOST_PRIVATE_VERSION is supposed to change each time the structure is changed.
+// note: JL_HOST_PRIVATE_VERSION is supposed to change each time the structure is changed.
 #define JL_HOST_PRIVATE_VERSION (JL_SvnRevToInt("$Revision$"))
 
 #define MAX_CLASS_PROTO_CACHE_BIT 9

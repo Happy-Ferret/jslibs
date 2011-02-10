@@ -18,8 +18,6 @@
 	<Configurations>
 		<Configuration
 			Name="DBG|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\jslibs_DBG.vsprops"
 			>
@@ -54,7 +52,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\libs\libiconv\Debug\iconv.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -115,7 +112,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\libs\libiconv\Release\iconv.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"

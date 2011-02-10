@@ -21,6 +21,10 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( Template ) // Start the definition of the class. It defines some symbols: _name, _class, _prototype
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
+
+//	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // skip cleanups if possible.
+//		return JS_TRUE;
+
 }
 
 DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Template() ) or activated ( a = Template() ). To distinguish the cases, use JS_IsConstructing() or use the JL_S_ASSERT_CONSTRUCTING() macro.
@@ -32,18 +36,12 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 	JL_BAD;
 }
 
-//DEFINE_FUNCTION( Call ) {
-//	return JS_TRUE;
-//}
+/*
+DEFINE_PROPERTY( prop ) {
 
-//DEFINE_PROPERTY( prop ) {
-//	return JS_TRUE;
-//}
-
-//DEFINE_FUNCTION( Func ) {
-//	return JS_TRUE;
-//}
-
+	return JS_TRUE;
+}
+*/
 
 /*
 DEFINE_FUNCTION( _serialize ) {
@@ -78,24 +76,23 @@ DEFINE_FUNCTION( _unserialize ) {
 
 */
 
-CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
-
+CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
-//	HAS_RESERVED_SLOTS(1)
+	//HAS_RESERVED_SLOTS(1)
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
 	BEGIN_PROPERTY_SPEC
-//		PROPERTY(prop)
+		//PROPERTY(prop)
 	END_PROPERTY_SPEC
 
 	BEGIN_FUNCTION_SPEC
-//		FUNCTION(Func)
-//		FUNCTION_ARGC(_serialize, 1)
-//		FUNCTION_ARGC(_unserialize, 1)
+		//FUNCTION(Func)
+		//FUNCTION_ARGC(_serialize, 1)
+		//FUNCTION_ARGC(_unserialize, 1)
 	END_FUNCTION_SPEC
 
 END_CLASS

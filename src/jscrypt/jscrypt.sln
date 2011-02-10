@@ -3,15 +3,23 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jscrypt", "jscrypt.vcproj", "{A3794FD9-62E8-4B2C-8C9F-AF1A1DD97CB7}"
 	ProjectSection(ProjectDependencies) = postProject
+		{04DE6DD0-21E3-4117-8B21-1973BD96CBB3} = {04DE6DD0-21E3-4117-8B21-1973BD96CBB3}
 		{A313FEE1-C052-491B-80A4-07559D95AF84} = {A313FEE1-C052-491B-80A4-07559D95AF84}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtomcrypt", "..\..\libs\libtomcrypt\libtomcrypt.vcproj", "{A313FEE1-C052-491B-80A4-07559D95AF84}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtomcrypt_mak", "..\..\libs\libtomcrypt\libtomcrypt_mak.vcproj", "{A313FEE1-C052-491B-80A4-07559D95AF84}"
 	ProjectSection(ProjectDependencies) = postProject
 		{986623D2-6B30-4F35-B08E-89FA00E9582D} = {986623D2-6B30-4F35-B08E-89FA00E9582D}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtommath", "..\..\libs\libtommath\libtommath.vcproj", "{986623D2-6B30-4F35-B08E-89FA00E9582D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtommath_mak", "..\..\libs\libtommath\libtommath_mak.vcproj", "{986623D2-6B30-4F35-B08E-89FA00E9582D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtomcrypt_msvc", "..\..\libs\libtomcrypt\libtomcrypt_msvc.vcproj", "{04DE6DD0-21E3-4117-8B21-1973BD96CBB3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{76C8F2F1-DF8F-476B-BA3C-EF0E16CADFF0} = {76C8F2F1-DF8F-476B-BA3C-EF0E16CADFF0}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtommath_msvc", "..\..\libs\libtommath\libtommath_msvc.vcproj", "{76C8F2F1-DF8F-476B-BA3C-EF0E16CADFF0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +39,14 @@ Global
 		{986623D2-6B30-4F35-B08E-89FA00E9582D}.DBG|Win32.Build.0 = Debug|Win32
 		{986623D2-6B30-4F35-B08E-89FA00E9582D}.OPT|Win32.ActiveCfg = Release|Win32
 		{986623D2-6B30-4F35-B08E-89FA00E9582D}.OPT|Win32.Build.0 = Release|Win32
+		{04DE6DD0-21E3-4117-8B21-1973BD96CBB3}.DBG|Win32.ActiveCfg = Debug|Win32
+		{04DE6DD0-21E3-4117-8B21-1973BD96CBB3}.DBG|Win32.Build.0 = Debug|Win32
+		{04DE6DD0-21E3-4117-8B21-1973BD96CBB3}.OPT|Win32.ActiveCfg = Release|Win32
+		{04DE6DD0-21E3-4117-8B21-1973BD96CBB3}.OPT|Win32.Build.0 = Release|Win32
+		{76C8F2F1-DF8F-476B-BA3C-EF0E16CADFF0}.DBG|Win32.ActiveCfg = Debug|Win32
+		{76C8F2F1-DF8F-476B-BA3C-EF0E16CADFF0}.DBG|Win32.Build.0 = Debug|Win32
+		{76C8F2F1-DF8F-476B-BA3C-EF0E16CADFF0}.OPT|Win32.ActiveCfg = Release|Win32
+		{76C8F2F1-DF8F-476B-BA3C-EF0E16CADFF0}.OPT|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
