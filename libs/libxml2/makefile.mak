@@ -9,6 +9,8 @@ CFLAGS = $(CFLAGS) /Fd"..\..\libxml2_$(BUILD)_vc90.pdb"
 
 # ARFLAGS = /LTCG
 
+!MESSAGE CFLAGS=$(CFLAGS)
+
 .\src\win32\config.msvc:
 	cd .\src\win32 && cscript configure.js cruntime="$(MFLAGS) $(CFLAGS)" \
     trio=no \

@@ -22,8 +22,8 @@ LoadModule('jscrypt');
 		}
 		
 	
-		QA.ASSERT( count(Cipher.list), 21, 'length of Cipher.list' );
-		QA.ASSERT( Cipher.list.toSource().length, 1609, 'length of Cipher.list.toString' );
+		QA.ASSERT( count(Cipher.list), 22, 'length of Cipher.list' );
+		QA.ASSERT( Cipher.list.toSource().length, 1686, 'length of Cipher.list.toString' );
 		
 		QA.ASSERT( count(Hash.list), 15, 'length of Cipher.list' );
 		QA.ASSERT( Hash.list.toSource().length, 535, 'length of Hash.list.toString' );

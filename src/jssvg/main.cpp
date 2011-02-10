@@ -27,14 +27,11 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id)  );
-
 	rsvg_init();
 	INIT_CLASS( SVG );
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -43,3 +40,15 @@ EXTERN_C DLLEXPORT void ModuleFree() {
 
 	rsvg_term();
 }
+
+
+#if defined(_WINDLL)
+
+EXTERN_C BOOL WINAPI pango_DllMain(HINSTANCE, DWORD, LPVOID);
+
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+
+	return pango_DllMain(hinstDLL, fdwReason, lpvReserved);
+}
+
+#endif // XP_WIN

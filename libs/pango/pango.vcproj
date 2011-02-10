@@ -18,10 +18,10 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			InheritedPropertySheets="..\libs_DBG.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\libs_DBG.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="src;src\pango;..\glib\src;..\glib\src\glib;..\glib\src\gmodule;..\freetype\src\include;..\cairo\src\src;&quot;..\fontconfig-msvc\src&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;PANGO_MODULE_PREFIX=_pango_basic_ft2;PANGO_ENABLE_ENGINE;PANGO_ENABLE_BACKEND;GLIB_STATIC_COMPILATION"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;PANGO_MODULE_PREFIX=_pango_basic_ft2;PANGO_ENABLE_ENGINE;PANGO_ENABLE_BACKEND;GLIB_STATIC_COMPILATION;DllMain=pango_DllMain"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -75,10 +75,10 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			InheritedPropertySheets="..\libs_OPT.vsprops"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\libs_OPT.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -99,7 +99,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="src;src\pango;..\glib\src;..\glib\src\glib;..\glib\src\gmodule;..\freetype\src\include;..\cairo\src\src;&quot;..\fontconfig-msvc\src&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;PANGO_MODULE_PREFIX=_pango_basic_ft2;PANGO_ENABLE_ENGINE;PANGO_ENABLE_BACKEND;GLIB_STATIC_COMPILATION"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;PANGO_MODULE_PREFIX=_pango_basic_ft2;PANGO_ENABLE_ENGINE;PANGO_ENABLE_BACKEND;GLIB_STATIC_COMPILATION;DllMain=pango_DllMain"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

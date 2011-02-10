@@ -85,14 +85,13 @@ $TOC_MEMBER $INAME
 **/
 
 
-voidpf jsz_alloc(voidpf opaque, uInt items, uInt size) {
+NOALIAS voidpf jsz_alloc(voidpf opaque, uInt items, uInt size) NOTHROW {
 
 	JL_USE(opaque);
-
 	return jl_malloc(items*size);
 }
 
-void jsz_free(voidpf opaque, voidpf address) {
+void jsz_free(voidpf opaque, voidpf address) NOTHROW {
 
 	JL_USE(opaque);
 	jl_free(address);

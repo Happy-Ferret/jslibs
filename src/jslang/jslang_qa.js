@@ -111,20 +111,30 @@ LoadModule('jsstd');
 
 		var length = 1024*1024;
 		var times = 3;
-		QA.GC();
-		var data = [];
-	
-		var mem0 = privateMemoryUsage;
-		for ( var i = 0; i < times; ++i ) {
-		
-			data.push( Blob(StringRepeat('a', length)) );
+
+		function GenMem() {
+
 			QA.GC();
+			var data = [];
+		
+			for ( var i = 0; i < times; ++i ) {
+			
+				data.push( Blob(StringRepeat('a', length)) );
+				QA.GC();
+			}
+			Blob(StringRepeat('a', length));
+			QA.GC();
+			return data;
 		}
+		
+		var mem = privateMemoryUsage;
+		GenMem();
 		
 		// QA.ASSERT_STR(data[0] == StringRepeat('a', length), true, "test validity");
 		// QA.ASSERT_STR(data[data.length-1] == StringRepeat('a', length), true, "test validity");
 
-		var mem = (privateMemoryUsage - mem0) / length / times;
+		mem = (privateMemoryUsage-mem) / (length*times);
+		
 		QA.ASSERT( mem > 1 && mem < 1.02, true, 'Blob memory usage ('+mem+') (test not available on all platforms)' );
 
 

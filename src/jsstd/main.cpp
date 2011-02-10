@@ -17,6 +17,7 @@
 #include "jslibsModule.cpp"
 #include "jsstd.h"
 
+
 DECLARE_STATIC()
 DECLARE_CLASS( Map )
 DECLARE_CLASS( Buffer )

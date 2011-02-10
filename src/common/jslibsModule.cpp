@@ -48,13 +48,16 @@ EXTERN_C void jl_free_fct( void *ptr ) { jl_free(ptr); }
 JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
 
 	// printf("id=%u / &_moduleId=%p / _moduleId=%u\n", &_moduleId, _moduleId, id);
+	BOOL st = DisableThreadLibraryCalls(JLGetCurrentModule());
+	JL_ASSERT(st);
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	_unsafeMode = pv ? pv->unsafeMode : _unsafeMode;
-	JL_S_ASSERT( !pv || pv->hostPrivateVersion == 0 || pv->hostPrivateVersion == JL_HOST_PRIVATE_VERSION, "Incompatible host.");
+	if ( !(!pv || pv->hostPrivateVersion == 0 || pv->hostPrivateVersion == JL_HOST_PRIVATE_VERSION) )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INTERNAL_ERROR, "Incompatible host");
 	JL_ASSERT( _moduleId == 0 || _moduleId == id );
 	if ( _moduleId == 0 )
 		_moduleId = id;
-	jl_malloc = pv && pv->alloc.malloc ? pv->alloc.malloc : jl_malloc; // ie. if we have a host and if the host has custom allocators.
+	jl_malloc = pv && pv->alloc.malloc ? pv->alloc.malloc : jl_malloc; // ie. if we have a host and if the host has custom allocators, else keep the current one.
 	jl_calloc = pv && pv->alloc.calloc ? pv->alloc.calloc : jl_calloc;
 	jl_memalign = pv && pv->alloc.memalign ? pv->alloc.memalign : jl_memalign;
 	jl_realloc = pv && pv->alloc.realloc ? pv->alloc.realloc : jl_realloc;
@@ -65,27 +68,30 @@ JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
 }
 
 
-/* not needed
-#if !defined NO_DllMain && defined XP_WIN && defined _LIB
+/* see InitJslibsModule()
+#if defined _WINDLL && !defined JL_NO_DLL_MAIN
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 
+	JL_USE(lpvReserved);
+	//DisableThreadLibraryCalls() doc: http://msdn.microsoft.com/en-us/library/ms682579(v=vs.85).aspx
+	//beware:
+	//  Do not call this function from a DLL that is linked to the static C run-time library (CRT).
+	//  The static CRT requires DLL_THREAD_ATTACH and DLL_THREAD_DETATCH notifications to function properly.
 	if ( fdwReason == DLL_PROCESS_ATTACH )
 		DisableThreadLibraryCalls(hinstDLL);
 	return TRUE;
 }
-#endif // XP_WIN
+#endif
 */
 
-/* MS doc:
 
-	To illustrate this, consider the following example:
-
-	   - .EXE is linked with MSVCRT.LIB
-	   - DLL A is linked with LIBCMT.LIB
-	   - DLL B is linked with CRTDLL.LIB
-
-	If the .EXE creates a CRT file handle using _create() or _open(), this file handle may only be passed to _lseek(), _read(), _write(), _close(), etc. in the .EXE file. Do not pass this CRT file handle to either DLL. Do not pass a CRT file handle obtained from either DLL to the other DLL or to the .EXE.
-	If DLL A allocates a block of memory with malloc(), only DLL A may call free(), _expand(), or realloc() to operate on that block. You cannot call malloc() from DLL A and try to free that block from the .EXE or from DLL B.
-	NOTE: If all three modules were linked with CRTDLL.LIB or all three were linked with MSVCRT.LIb, these restrictions would not apply.
-	 (source: http://support.microsoft.com/kb/94248)
-*/
+//MS doc:
+//  To illustrate this, consider the following example:
+//  - .EXE is linked with MSVCRT.LIB
+//  - DLL A is linked with LIBCMT.LIB
+//  - DLL B is linked with CRTDLL.LIB
+//
+//  If the .EXE creates a CRT file handle using _create() or _open(), this file handle may only be passed to _lseek(), _read(), _write(), _close(), etc. in the .EXE file. Do not pass this CRT file handle to either DLL. Do not pass a CRT file handle obtained from either DLL to the other DLL or to the .EXE.
+//  If DLL A allocates a block of memory with malloc(), only DLL A may call free(), _expand(), or realloc() to operate on that block. You cannot call malloc() from DLL A and try to free that block from the .EXE or from DLL B.
+//  NOTE: If all three modules were linked with CRTDLL.LIB or all three were linked with MSVCRT.LIb, these restrictions would not apply.
+//   (source: http://support.microsoft.com/kb/94248)

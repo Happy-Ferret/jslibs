@@ -873,7 +873,7 @@ DEFINE_FUNCTION( StringRepeat ) {
 	}
 
 	JSString *jsstr;
-	JL_updateMallocCounter(cx, newLen);
+	JL_updateMallocCounter(cx, sizeof(jschar) * newLen);
 	jsstr = JL_NewUCString(cx, newBuf, newLen);
 	JL_CHK( jsstr );
 	*JL_RVAL = STRING_TO_JSVAL( jsstr );

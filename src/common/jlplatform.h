@@ -1119,6 +1119,25 @@ JLCpuInfo( JLCpuInfo_t info ) {
 }
 
 
+#if defined(XP_WIN)
+ALWAYS_INLINE HMODULE
+JLGetCurrentModule() {
+
+	// see also:
+	//   http://blogs.msdn.com/b/oldnewthing/archive/2004/10/25/247180.aspx
+	//   http://www.codeguru.com/Cpp/W-P/dll/tips/article.php/c3635/
+	HMODULE handle;
+	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, "", &handle); // requires XP or 2003
+	return handle;
+	// or:
+	// static int dummy;
+	//	MEMORY_BASIC_INFORMATION mbi;
+	//	VirtualQuery( &dummy, &mbi, sizeof(mbi) );
+	//	return reinterpret_cast<HMODULE>(mbi.AllocationBase);
+}
+#endif
+
+
 ALWAYS_INLINE int
 JLProcessId() {
 

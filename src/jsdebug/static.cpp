@@ -540,25 +540,37 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( privateMemoryUsage ) {
 
 #if defined(XP_WIN)
-	uint32 bytes;
+
+	// see also. http://www.codeproject.com/KB/cpp/XPWSPrivate.aspx (Calculate Memory (Working Set - Private) Programmatically in Windows XP/2000)
+
 	// SIZE_T is compatible with uint32
 	HANDLE hProcess = GetCurrentProcess(); // doc: (HANDLE)-1, that is interpreted as the current process handle
 	PROCESS_MEMORY_COUNTERS_EX pmc;
-	BOOL status = GetProcessMemoryInfo( hProcess, (PPROCESS_MEMORY_COUNTERS)&pmc, sizeof(pmc) ); // MEM_PRIVATE
-	JL_CHKM( status, "GetProcessMemoryInfo error." );
-// doc. If the function fails, the return value is zero. To get extended error information, call GetLastError.
+	pmc.cb = sizeof(pmc);
+	BOOL status = GetProcessMemoryInfo( hProcess, (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc) ); // MEM_PRIVATE
+	if ( !status ) {
+		
+		char message[1024];
+		JLLastSysetmErrorMessage(message, sizeof(message));
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, message);
+	}
 
-//	bytes = pmc.PrivateUsage; // doc: The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE, data that is not mapped, and executable pages that have been written to.
-	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
-	JL_CHK( JL_NewNumberValue(cx, bytes, vp) );
-	return JS_TRUE;
+	//	pmc.PrivateUsage:
+	// doc: The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE,
+	//      data that is not mapped, and executable pages that have been written to.
+	
+	// pmc.WorkingSetSize:
+	//   same value as "windows task manager" "mem usage"
+
+	return JL_NewNumberValue(cx, pmc.PrivateUsage, vp);
 	JL_BAD;
 #else
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
-#endif
 
+	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
+
+#endif
 }
 
 
@@ -625,7 +637,7 @@ DEFINE_PROPERTY( gcZeal ) {
 
 #ifdef JS_GC_ZEAL
 
-	int zeal;
+	uint8 zeal;
 	JL_CHKM( JL_JsvalToNative(cx, *vp, &zeal), "Invalid value." );
 	JS_SetGCZeal(cx, zeal);
 	return JL_StoreProperty(cx, obj, id, vp, false);

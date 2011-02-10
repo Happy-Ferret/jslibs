@@ -7,6 +7,9 @@ if ( 1 ) {
 	
 	var md5 = new Hash('md5');
 	Print( HexEncode(md5(CPUID)), '\n' );
+	
+	ProcessEvents(TimeoutEvents(100), TimeoutEvents(100), TimeoutEvents(100), TimeoutEvents(100));
+	
 
 Halt();
 

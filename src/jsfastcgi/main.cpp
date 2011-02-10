@@ -14,9 +14,7 @@
 
 #include "stdafx.h"
 #include "jlhelper.cpp"
-//int _unsafeMode = false;
 #include "jslibsModule.cpp"
-
 
 //#include "fastcgi.h"
 #include "fcgi.h"
@@ -36,12 +34,3 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	return JS_TRUE;
 	JL_BAD;
 }
-
-#ifdef XP_WIN
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-
-	if ( fdwReason == DLL_PROCESS_ATTACH )
-		DisableThreadLibraryCalls(hinstDLL);
-	return TRUE;
-}
-#endif // XP_WIN

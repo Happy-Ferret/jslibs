@@ -21,19 +21,19 @@
 #include "result.h"
 
 
-void* xMalloc(int s) {
+NOALIAS void* xMalloc(int s) NOTHROW {
 	return jl_malloc(s);
 }
-void xFree(void *p) {
+void xFree(void *p) NOTHROW {
 	return jl_free(p);
 }
-void* xRealloc(void *p, int s) {
+NOALIAS void* xRealloc(void *p, int s) NOTHROW {
 	return jl_realloc(p, s);
 }
-int xSize(void* p) {
+int xSize(void* p) NOTHROW {
 	return (int)jl_msize(p);
 }
-int xRoundup(int s) {
+int xRoundup(int s) NOTHROW {
 	return s;
 }
 int xInit(void*) {
@@ -43,7 +43,6 @@ void xShutdown(void*) {
 }
 
 static sqlite3_mem_methods mem = { xMalloc, xFree, xRealloc, xSize, xRoundup, xInit, xShutdown, NULL };
-
 
 /**doc t:header
 $MODULE_HEADER
@@ -67,9 +66,10 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	for ( sqlite3_stmt *pStmt = sqlite3_next_stmt(db, NULL); pStmt; pStmt = sqlite3_next_stmt(db, pStmt) )
 		sqlite3_finalize(pStmt); // pStmt is 0xfeefee at the 2nd loop
 */
-
+ 
 	JL_CHK( InitJslibsModule(cx, id)  );
 
+	//JL_CHKM( sqlite3_config(SQLITE_CONFIG_SINGLETHREAD) == SQLITE_OK, "Unable to set the threading mode to Single-thread." ); // see SQLITE_THREADSAFE=0 define
 	//JL_CHKM( sqlite3_config(SQLITE_CONFIG_SINGLETHREAD) == SQLITE_OK, "Unable to set the threading mode to Single-thread." ); // see SQLITE_THREADSAFE=0 define
 	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) == SQLITE_OK, "Unable to disable memory stats." );
 	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MALLOC, &mem) == SQLITE_OK, "Unable to initialize memory manager." );

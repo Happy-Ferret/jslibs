@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jssvg", "jssvg.vcproj", "{0CCF430F-3FE7-40DC-9D67-A1302E20621E}"
@@ -8,7 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jssvg", "jssvg.vcproj", "{0
 		{F172EFFC-E30F-4593-809E-DB2024B1E753} = {F172EFFC-E30F-4593-809E-DB2024B1E753}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxml2", "..\..\libs\libxml2\libxml2.vcproj", "{3B962275-ED9F-4274-8F6D-166FDBEA2BF1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxml2_mak", "..\..\libs\libxml2\libxml2_mak.vcproj", "{3B962275-ED9F-4274-8F6D-166FDBEA2BF1}"
 	ProjectSection(ProjectDependencies) = postProject
 		{B9898A5A-A1D6-4DBB-87F6-609F97BD7848} = {B9898A5A-A1D6-4DBB-87F6-609F97BD7848}
 	EndProjectSection

@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="libxml2"
+	Name="libxml2_mak"
 	ProjectGUID="{3B962275-ED9F-4274-8F6D-166FDBEA2BF1}"
 	RootNamespace="libxml2"
 	Keyword="Win32Proj"

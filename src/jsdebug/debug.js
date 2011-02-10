@@ -1,7 +1,54 @@
 if ( 1 ) {
 	LoadModule('jsdebug');
 	LoadModule('jsstd');
+
+
+	var m = privateMemoryUsage;
+
+	!function() {
+		StringRepeat('a', 0);
+	}();
+
+	var err = privateMemoryUsage - m
 	
+	m = privateMemoryUsage;
+
+	!function() {
+		StringRepeat('a', 3000000);
+	}();
+	m = privateMemoryUsage - m;
+	
+	Print(m-err, '\n');
+
+
+/*
+		var length = 1024*1024;
+		var times = 3;
+
+		function GenMem() {
+
+			CollectGarbage();
+			var data = [];
+		
+			for ( var i = 0; i < times; ++i ) {
+			
+				data.push( Blob(StringRepeat('a', length)) );
+				CollectGarbage();
+			}
+			Blob(StringRepeat('a', length));
+			CollectGarbage();
+			return data;
+		}
+		
+		var mem = privateMemoryUsage;
+		GenMem();
+		
+		mem = (privateMemoryUsage-mem) / (length*times);
+		
+		Print( mem, '\n' ); // 1.009
+*/
+
+
 	
 	throw 0;
 }

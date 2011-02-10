@@ -247,12 +247,14 @@ void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) {
 //		png_error(png_ptr, "Trying to read after EOF."); // png_warning()
 }
 
-png_voidp malloc_wrapper(png_structp png_ptr, png_size_t size) {
+NOALIAS png_voidp
+malloc_wrapper(png_structp png_ptr, png_size_t size) NOTHROW {
 
 	return jl_malloc(size);
 }
 
-void free_wrapper(png_structp png_ptr, png_voidp ptr) {
+void
+free_wrapper(png_structp png_ptr, png_voidp ptr) NOTHROW {
 	
 	jl_free(ptr);
 }
