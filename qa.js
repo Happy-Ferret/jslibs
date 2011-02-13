@@ -385,7 +385,7 @@ function LaunchTests(itemList, cfg) {
 function PerfTest(itemList, cfg) {
 
 	var i;
-	var qaapi = { __noSuchMethod__:function() {}, RandomData:function() 'qa_tmp_123456789', RandomString:function() 'qa_tmp_abcdefghij' };
+	var qaapi = { cx:{item:{file:cfg.perfTest}}, __noSuchMethod__:function() {}, RandomData:function() 'qa_tmp_123456789', RandomString:function() 'qa_tmp_abcdefghij' };
 
 	var stdout = _host.stdout;
 	var stderr = _host.stderr;
@@ -407,8 +407,8 @@ function PerfTest(itemList, cfg) {
 		
 		var tmp = 0.1;
 		function dummy() { return i / 11.1 }
-		for ( var i = 0; i < 10000; ++i )
-			tmp += Expand('$(A)$', {A:dummy(i)});
+		for ( var i = 0; i < 1000; ++i )
+			tmp += Expand('$(A)$(B)', {A:dummy(i), B:StringRepeat('x',1)});
 		return tmp;
 	}
 	
@@ -418,8 +418,8 @@ function PerfTest(itemList, cfg) {
 	var perfRefTime = TimeCounter() - t - timeError;
 
 	stdout('ref time: '+perfRefTime+'\n');
-
 	stdout('total items: '+itemList.length+'\n');
+
 
 	var fastItems = [];
 	for each ( var item in itemList ) {
@@ -427,13 +427,14 @@ function PerfTest(itemList, cfg) {
 		try {
 
 			var bestTime = Infinity; 
-			for ( i = 0; i < 9; ++i ) {
+			for ( i = 0; i < 3; ++i ) {
 			
+				Sleep(2);
 				t = TimeCounter();
 				void item.func(qaapi);
 				t = TimeCounter() - t - timeError;
 				
-				if ( t > perfRefTime * 1.5 ) {
+				if ( t > perfRefTime * 1.0 ) {
 					
 					bestTime = Infinity;
 					break;
@@ -455,46 +456,50 @@ function PerfTest(itemList, cfg) {
 	var timeConstantItems = [];
 	for each ( var item in fastItems ) {
 
-		var t0, diffTime = 0.0, totalTime = 0.0;
-		for ( i = 0; i < 11; ++i ) {
-		
-			t = TimeCounter();
-			void item.func(qaapi);
-			t = TimeCounter() - t - timeError;
-			
-			totalTime += t;
+		try {
 
-			if ( t0 != undefined )
-				diffTime += Math.abs(t0 - t);
+			var t0, diffTime = 0.0, totalTime = 0.0;
+			for ( i = 0; i < 11; ++i ) {
 			
-			t0 = t;
-		}
-		
-		var div = diffTime / totalTime;
-		
-		if ( div < 0.25 || item.init )
-			timeConstantItems.push(item);
+				Sleep(2);
+				t = TimeCounter();
+				void item.func(qaapi);
+				t = TimeCounter() - t - timeError;
+				
+				totalTime += t;
+
+				if ( t0 != undefined )
+					diffTime += Math.abs(t0 - t);
+				
+				t0 = t;
+			}
+			
+			var div = diffTime / totalTime;
+			
+			if ( div < 0.3 || item.init )
+				timeConstantItems.push(item);
+				
+		} catch(ex) {}
+			
 	}
-	
-	stdout('time-constant items: '+timeConstantItems.length+'\n');
+	var itemList = timeConstantItems;
+
 
 	
+	stdout('time-constant items: '+itemList.length+'\n');
+
 	_host.stdout = stdout;
 	_host.stderr = stderr;
 
+	var initSrc = [ '!'+item.func.toSource()+'();' for each ( item in itemList ) if ( item.init ) ];
+	var initCount = initSrc.length;
 
-	var initSrc = [ '('+item.func.toSource()+')(qaapi);' for each ( item in timeConstantItems ) if ( item.init ) ];
-	var initSrcCount = initSrc.length;
-	initSrc = initSrc.join('');
-	
-	var testSrc = [ '('+item.func.toSource()+')(qaapi);' for each ( item in timeConstantItems ) if ( !item.init ) ];
-	testSrcCount = testSrc.length;
-	testSrc = testSrc.join('\n');
+	stdout( 'saving '+(itemList.length-initCount)+' items\n' );
 
-	stdout( 'saving '+testSrcCount+' items\n' );
+	var testSrcList = [ item.func for each ( item in itemList ) if ( !item.init ) ];
 
-	var exportFile = new File(cfg.perfTest).Open('w');
-	exportFile.Write(Expand(<><![CDATA[// AUTO-generated code. See jslibs/qa.js
+
+	var perfTestFunction = function(qaapi, testList) {
 	
 		LoadModule("jsstd");
 		LoadModule("jsdebug");
@@ -502,57 +507,29 @@ function PerfTest(itemList, cfg) {
 		var prev_stderr = _host.stderr;
 		delete _host.stdout;
 		delete _host.stderr;
-
-		$(INIT)
-		
-		function Tests() {
-		
-			$(TEST)
-		}
-
-		var qaapi = $(QAAPI);
-
+			
 		SetPerfTestMode();
-		
-		TimeCounter();
-		var t = TimeCounter();
-		var err = TimeCounter() - t;
-	
-		for ( var i = 0; i < 5; ++i )
-			Tests(qaapi);
-		
 		CollectGarbage();
 		disableGarbageCollection = true;
 
 		var t = TimeCounter();
-		Tests(qaapi);
+		var err = TimeCounter() - t;
+
+		var t = TimeCounter();
+		var len = testList.length;
+		for ( var i = 0; i < len; ++i )
+			testList[i](qaapi);
 		t = TimeCounter() - t - err;
 
-		var times = Math.floor( (parseInt(arguments[1])||2000) / t )+1; // 2s
-		
-		prev_stdout('loop: '+times+'x'+t.toFixed(4)+'ms\n');
-		
-		var bestTime = Infinity;
-		for ( var i = 0; i < times; ++i ) {
-		
-			var t = TimeCounter();
-			Tests(qaapi);
-			t = TimeCounter() - t - err;
-			if ( t < bestTime )
-				bestTime = t;
-		}
-		
 		_host.stdout = prev_stdout;
 		_host.stderr = prev_stderr;
-		Print($(COUNT)+' tests in '+ bestTime.toFixed(4) +' ms\n');
+		Print(len+' tests in '+ t.toFixed(4) +' ms\n');
+	}
 
-	]]></>,{
-		QAAPI:qaapi.toSource(),
-		INIT:initSrc,
-		TEST:testSrc,
-		COUNT:testSrcCount
-	}));
-
+	var exportFile = new File(cfg.perfTest).Open('w');
+	exportFile.Write( initSrc.join('\n')+'\n' );
+	exportFile.Write( '('+perfTestFunction.toSource()+')' );
+	exportFile.Write( '('+qaapi.toSource()+','+testSrcList.toSource()+')' );
 	exportFile.Close();
 }
 

@@ -96,9 +96,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;INSECURE=1"
-				StringPooling="false"
-				EnableFunctionLevelLinking="false"
-				EnableEnhancedInstructionSet="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
