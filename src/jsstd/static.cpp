@@ -1060,7 +1060,10 @@ DEFINE_FUNCTION( SandboxEval ) {
 	JS_SetOptions(scx, JS_GetOptions(cx) | JSOPTION_JIT | JSOPTION_METHODJIT | JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT); // new options are based on host's options. cf. moz bz#490616
 
 	JSObject *globalObject;
-	globalObject = JS_NewGlobalObject(scx, JL_CLASS(Sandbox));
+
+//	globalObject = JS_NewGlobalObject(scx, JL_CLASS(Sandbox));
+	globalObject = JS_NewCompartmentAndGlobalObject(scx, JL_CLASS(Sandbox), NULL);
+
 	//	globalObject = JS_NewCompartmentAndGlobalObject(cx, JL_CLASS(Sandbox), NULL);
 	JL_CHK( globalObject );
 	*JL_RVAL = OBJECT_TO_JSVAL(globalObject); // GC protection
@@ -1125,8 +1128,12 @@ DEFINE_FUNCTION( SandboxEval ) {
 		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, reason);
 	}
 
+//	JSCrossCompartmentCall *call = JS_EnterCrossCompartmentCall(cx, globalObject);
+
 	JSBool ok;
 	ok = JS_EvaluateUCScript(scx, globalObject, src, (uintN)srclen, filename, lineno, JL_RVAL);
+
+//	JS_LeaveCrossCompartmentCall(call);
 
 	JLSemaphoreRelease(pv.semEnd);
 
@@ -1241,7 +1248,7 @@ $TOC_MEMBER $INAME
   $H note
    The current filename is also available using: `StackFrameInfo(stackSize-1).filename` (see jsdebug module)
 **/
-DEFINE_PROPERTY( currentFilename ) {
+DEFINE_PROPERTY_GETTER( currentFilename ) {
 	
 	JL_USE(id);
 	JL_USE(obj);
@@ -1271,7 +1278,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME $READONLY
   Is the line number of the script being executed.
 **/
-DEFINE_PROPERTY( currentLineNumber ) {
+DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 	
 	JL_USE(id);
 	JL_USE(obj);
@@ -1304,7 +1311,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME
   if $TRUE if the current function is being called as a constructor.
 **/
-DEFINE_PROPERTY( isConstructing ) {
+DEFINE_PROPERTY_GETTER( isConstructing ) {
 
 	JL_USE(id);
 	JL_USE(obj);
@@ -1378,7 +1385,7 @@ DEFINE_PROPERTY_GETTER( disableGarbageCollection ) {
 $TOC_MEMBER $INAME
  $INT $INAME
 **/
-DEFINE_PROPERTY( CPUID ) {
+DEFINE_PROPERTY_GETTER( CPUID ) {
 
 	JL_USE(id);
 	JL_USE(obj);

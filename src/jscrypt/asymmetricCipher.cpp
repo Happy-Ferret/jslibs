@@ -659,7 +659,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   is the maximum length of data that can be processed at once.
 **/
-DEFINE_PROPERTY( blockLength ) {
+DEFINE_PROPERTY_GETTER( blockLength ) {
 
 	JL_USE(id);
 
@@ -713,7 +713,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   is the size of the current private key.
 **/
-DEFINE_PROPERTY( keySize ) {
+DEFINE_PROPERTY_GETTER( keySize ) {
 
 	JL_USE(id);
 
@@ -757,7 +757,7 @@ $TOC_MEMBER $INAME
   The public key.
 **/
 
-DEFINE_PROPERTY( keySetter ) {
+DEFINE_PROPERTY_SETTER( key ) {
 
 	JLStr key;
 
@@ -811,7 +811,7 @@ DEFINE_PROPERTY( keySetter ) {
 }
 
 
-DEFINE_PROPERTY( keyGetter ) {
+DEFINE_PROPERTY_GETTER( key ) {
 
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	AsymmetricCipherPrivate *pv;

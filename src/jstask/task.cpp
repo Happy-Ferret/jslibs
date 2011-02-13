@@ -26,6 +26,12 @@
 
 using namespace jl;
 
+struct Chunk {
+	void *data;
+	size_t length;
+};
+
+
 struct TaskPrivate : CppAllocators {
 
 	JLMutexHandler mutex;
@@ -33,7 +39,9 @@ struct TaskPrivate : CppAllocators {
 	bool end;
 
 //	Serialized serializedCode;
-	jl::Serializer serializedCode;
+//	jl::Serializer serializedCode;
+//	void *serializedCode;
+	Chunk serializedCode;
 
 	JLSemaphoreHandler requestSem;
 	jl::Queue requestList;
@@ -87,8 +95,7 @@ BEGIN_CLASS( Task )
 
 DEFINE_FINALIZE() {
 
-//	TaskPrivate *pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
-	TaskPrivate *pv = new TaskPrivate;
+	TaskPrivate *pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	if ( !pv )
 		return;
 
@@ -109,15 +116,14 @@ DEFINE_FINALIZE() {
 
 	while ( !QueueIsEmpty(&pv->requestList) ) {
 
-		Serialized ser = (Serialized)QueueShift(&pv->requestList);
-		SerializerFree(&ser);
+		void *ser = (void*)QueueShift(&pv->requestList);
+		jl_free(ser);
 	}
 
-	JS_free(cx, pv);
+	delete pv;
 	return;
-
 bad:
-	JS_free(cx, pv);
+	delete pv;
 	// (TBD) report a warning.
 	return;
 }
@@ -131,10 +137,12 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 	//JL_CHK( UnserializeJsval(cx, &pv->serializedCode, &argv[0]) );
 	//SerializerFree(&pv->serializedCode);
 
-	jl::Unserializer(cx, pv->serializedCode) >> argv[0];
-	pv->serializedCode.Free();
 
-(
+	jl::Unserializer(JSVAL_VOID, pv->serializedCode.data, pv->serializedCode.length).Read(cx, argv[0]);
+	
+	jl_free(pv->serializedCode.data);
+
+
 	JSFunction *fun;
 	fun = JS_ValueToFunction(cx, argv[0]);
 	JSObject *funObj;
@@ -148,7 +156,7 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 
 	for (;;) {
 
-		JL_CHK( JLSemaphoreAcquire(pv->requestSem, -1) ); // -1 // wait for a request
+		JL_CHK( JLSemaphoreAcquire(pv->requestSem, JLINFINITE) ); // -1 // wait for a request
 
 		JLMutexAcquire(pv->mutex); // --
 		if ( pv->end ) { // manage the end of the thread
@@ -328,7 +336,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_FUNCTION( JL_ARG(1) );
 
-	pv = (TaskPrivate*)JS_malloc(cx, sizeof(TaskPrivate));
+//	pv = (TaskPrivate*)JS_malloc(cx, sizeof(TaskPrivate));
+	pv = new TaskPrivate;
 	JL_CHK( pv );
 
 	JLThreadPriorityType priority;
@@ -456,7 +465,7 @@ DEFINE_FUNCTION( Response ) {
 
 	JLMutexRelease(pv->mutex); // ++
 
-	JL_CHK( JLSemaphoreAcquire(pv->responseSem, -1) ); // -1 // wait for a response
+	JL_CHK( JLSemaphoreAcquire(pv->responseSem, JLINFINITE) ); // -1 // wait for a response
 
 	JLMutexAcquire(pv->mutex); // --
 

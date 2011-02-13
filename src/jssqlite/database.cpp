@@ -397,7 +397,7 @@ $TOC_MEMBER $INAME
   $H details
    [http://www.sqlite.org/capi3ref.html#sqlite3_last_insert_rowid sqlite documentation]
 **/
-DEFINE_PROPERTY( lastInsertRowid ) {
+DEFINE_PROPERTY_GETTER( lastInsertRowid ) {
 
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
@@ -416,7 +416,7 @@ $TOC_MEMBER $INAME
   $H details
    [http://www.sqlite.org/capi3ref.html#sqlite3_changes sqlite documentation]
 **/
-DEFINE_PROPERTY( changes ) {
+DEFINE_PROPERTY_GETTER( changes ) {
 
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
@@ -440,7 +440,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Hold the current version of the database engine.
 **/
-DEFINE_PROPERTY( version ) {
+DEFINE_PROPERTY_GETTER( version ) {
 
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, sqlite3_libversion()));
   return JL_StoreProperty(cx, obj, id, vp, true);
@@ -451,7 +451,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the amount of memory currently checked out.
 **/
-DEFINE_PROPERTY( memoryUsed ) {
+DEFINE_PROPERTY_GETTER( memoryUsed ) {
 
 	//	int val, tmp;
 //	sqlite3_status(SQLITE_STATUS_MEMORY_USED, &val, &tmp, false);

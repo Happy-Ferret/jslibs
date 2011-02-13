@@ -96,7 +96,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   TBD
 **/
-DEFINE_PROPERTY( triangleCount ) {
+DEFINE_PROPERTY_GETTER( triangleCount ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geomId );

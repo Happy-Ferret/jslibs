@@ -442,7 +442,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
   Is the height (i.e., line spacing) at the current character size.
 **/
-DEFINE_PROPERTY( height ) {
+DEFINE_PROPERTY_GETTER( height ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -491,7 +491,7 @@ $TOC_MEMBER $INAME
    This value is only applicable for OUTLINE, FILLED and SOLID styles.
    Changing this value invalidates any cached display lists for glyphs in this face.
 **/
-DEFINE_PROPERTY( tessellationSteps ) {
+DEFINE_PROPERTY_SETTER( tessellationSteps ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -529,7 +529,7 @@ f3d.colorCallback = function( pos ) {
 f3d.Draw('Marley');
 }}}
 **/
-DEFINE_PROPERTY( colorCallback ) {
+DEFINE_PROPERTY_SETTER( colorCallback ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );

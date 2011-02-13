@@ -494,7 +494,7 @@ DEFINE_FUNCTION( ClearBreakpoints ) {
 $TOC_MEMBER $INAME
  $INT | $UNDEF $INAME
 **/
-DEFINE_PROPERTY( interruptCounterLimit ) {
+DEFINE_PROPERTY_SETTER( interruptCounterLimit ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -533,7 +533,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME
   Sets whether the debugger breaks on errors.
 **/
-DEFINE_PROPERTY( breakOnError ) {
+DEFINE_PROPERTY_SETTER( breakOnError ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -558,7 +558,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME
   Sets whether the debugger breaks on exceptions (throw).
 **/
-DEFINE_PROPERTY( breakOnException ) {
+DEFINE_PROPERTY_SETTER( breakOnException ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -583,7 +583,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME
   Sets whether the debugger breaks when encounters the 'debugger' keyword.
 **/
-DEFINE_PROPERTY( breakOnDebuggerKeyword ) {
+DEFINE_PROPERTY_SETTER( breakOnDebuggerKeyword ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -608,7 +608,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME
   Sets whether the debugger breaks when a script is about to be executed.
 **/
-DEFINE_PROPERTY( breakOnExecute ) {
+DEFINE_PROPERTY_SETTER( breakOnExecute ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -633,7 +633,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME
   Sets whether the debugger breaks on the first script execution.
 **/
-DEFINE_PROPERTY( breakOnFirstExecute ) {
+DEFINE_PROPERTY_SETTER( breakOnFirstExecute ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -658,7 +658,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME
   Is the list of filename where the debugger never breaks.
 **/
-DEFINE_PROPERTY( excludedFileList ) {
+DEFINE_PROPERTY_SETTER( excludedFileList ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);

@@ -258,7 +258,7 @@ $TOC_MEMBER $INAME
  $TYPE Pipe $INAME()
   Is the stdin pipe to the running process.
 **/
-DEFINE_PROPERTY( stdin ) {
+DEFINE_PROPERTY_GETTER( stdin ) {
 
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, vp) );
@@ -271,7 +271,7 @@ $TOC_MEMBER $INAME
  $TYPE Pipe $INAME()
   Is the stdout pipe to the running process.
 **/
-DEFINE_PROPERTY( stdout ) {
+DEFINE_PROPERTY_GETTER( stdout ) {
 
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, vp) );
@@ -284,7 +284,7 @@ $TOC_MEMBER $INAME
  $TYPE Pipe $INAME()
   Is the stderr pipe to the running process.
 **/
-DEFINE_PROPERTY( stderr ) {
+DEFINE_PROPERTY_GETTER( stderr ) {
 
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, vp) );

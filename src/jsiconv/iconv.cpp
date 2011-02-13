@@ -353,7 +353,7 @@ DEFINE_PROPERTY_GETTER( invalidChar ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( hasIncompleteSequence ) {
+DEFINE_PROPERTY_GETTER( hasIncompleteSequence ) {
 
 	JL_USE(id);
 
@@ -392,7 +392,7 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 }
 
 #ifndef JL_NOT_HAS_ICONVLIST
-DEFINE_PROPERTY( list ) {
+DEFINE_PROPERTY_GETTER( list ) {
 
 	JSObject *list = JS_NewArrayObject(cx, 0, NULL);
 	JL_CHK( list );
@@ -408,7 +408,7 @@ DEFINE_PROPERTY( list ) {
 #endif // JL_NOT_HAS_ICONVLIST
 
 
-DEFINE_PROPERTY( version ) {
+DEFINE_PROPERTY_GETTER( version ) {
 
 	char versionStr[16];
 #ifdef _LIBICONV_VERSION
@@ -423,7 +423,7 @@ DEFINE_PROPERTY( version ) {
 }
 
 
-DEFINE_PROPERTY( jsUC ) {
+DEFINE_PROPERTY_GETTER( jsUC ) {
 
 	switch ( JLHostEndian ) {
 		case JLBigEndian:

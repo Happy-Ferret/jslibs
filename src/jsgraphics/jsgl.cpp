@@ -4157,10 +4157,10 @@ DEFINE_FUNCTION( GetUniformInfo ) {
 	GLint location;
 
 	{
-		jsid indexId = JL_StringToJsid(cx, L"index");
-		jsid locationId = JL_StringToJsid(cx, L"location");
-		jsid sizeId = JL_StringToJsid(cx, L"size");
-		jsid typeId = JL_StringToJsid(cx, L"type");
+		jsid indexId = JL_StringToJsid(cx, L("index"));
+		jsid locationId = JL_StringToJsid(cx, L("location"));
+		jsid sizeId = JL_StringToJsid(cx, L("size"));
+		jsid typeId = JL_StringToJsid(cx, L("type"));
 
 		for ( int i = 0; i < activeUniform; ++i ) {
 
@@ -6405,7 +6405,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGetError
 **/
-DEFINE_PROPERTY( error ) {
+DEFINE_PROPERTY_GETTER( error ) {
 
 	JL_USE(id);
 	JL_USE(obj);
@@ -6728,7 +6728,7 @@ CONFIGURE_CLASS
 
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_READ(error)
+		PROPERTY_READ( error )
 	END_STATIC_PROPERTY_SPEC
 
 END_CLASS

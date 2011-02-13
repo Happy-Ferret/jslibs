@@ -465,7 +465,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   Is the block length of the current cipher.
 **/
-DEFINE_PROPERTY( blockLength ) {
+DEFINE_PROPERTY_GETTER( blockLength ) {
 
 	JL_USE(id);
 
@@ -504,7 +504,7 @@ $TOC_MEMBER $INAME
  $STR $INAME $READONLY
   Is the name of the current cipher.
 **/
-DEFINE_PROPERTY( name ) {
+DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_USE(id);
 
@@ -526,7 +526,7 @@ $TOC_MEMBER $INAME
  $STR $INAME
   Set or get the current initialization vector of the cipher.
 **/
-DEFINE_PROPERTY( IVSetter ) {
+DEFINE_PROPERTY_SETTER( IV ) {
 
 	JL_USE(id);
 
@@ -602,7 +602,7 @@ DEFINE_PROPERTY( IVSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( IVGetter ) {
+DEFINE_PROPERTY_GETTER( IV ) {
 
 	JL_USE(id);
 
@@ -691,7 +691,7 @@ $TOC_MEMBER $INAME
  $OBJ $INAME $READONLY
   Contains the list of all available ciphers and their feature. The list is a javascript object that map cipher names (key) with another object (value) that contain information.
 **/
-DEFINE_PROPERTY( list ) {
+DEFINE_PROPERTY_GETTER( list ) {
 
 	JSObject *list = JS_NewObject(cx, NULL, NULL, NULL);
 	int i;

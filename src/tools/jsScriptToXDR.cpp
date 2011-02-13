@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
 	remove(argv[2]);
 	
 	JSClass global_class = {
-		 "global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+		 "global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
 		 JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
 	};
 
@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
 	JS_SetOptions(cx, JS_GetOptions(cx));
 	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
 	JS_SetErrorReporter(cx, my_ErrorReporter);
-	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class);
+	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
 	//JSScript *script = JS_CompileFile(cx, JL_GetGlobalObject(cx), argv[1]);

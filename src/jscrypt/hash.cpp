@@ -285,7 +285,7 @@ $TOC_MEMBER $INAME
  $STR $INAME $READONLY
   Name of the current hash.
 **/
-DEFINE_PROPERTY( name ) {
+DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_USE(id);
 
@@ -306,7 +306,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   Input block size in octets.
 **/
-DEFINE_PROPERTY( blockSize ) {
+DEFINE_PROPERTY_GETTER( blockSize ) {
 
 	JL_USE(id);
 
@@ -324,7 +324,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   Size of the digest in octets.
 **/
-DEFINE_PROPERTY( length ) {
+DEFINE_PROPERTY_GETTER( length ) {
 
 	JL_USE(id);
 
@@ -342,7 +342,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   Length of the processed data.
 **/
-DEFINE_PROPERTY( inputLength ) {
+DEFINE_PROPERTY_GETTER( inputLength ) {
 
 	JL_USE(id);
 
@@ -403,7 +403,7 @@ $TOC_MEMBER $INAME
   Print('hash list: ' + Hash.list.toSource() );
   }}}
 **/
-DEFINE_PROPERTY( list ) {
+DEFINE_PROPERTY_GETTER( list ) {
 
 	JSObject *list = JS_NewObject(cx, NULL, NULL, NULL);
 	jsval value;

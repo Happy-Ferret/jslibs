@@ -146,7 +146,7 @@ $TOC_MEMBER $INAME
  $INT $INAME
   Get or set the stream pointer position.
 **/
-DEFINE_PROPERTY( positionGetter ) {
+DEFINE_PROPERTY_GETTER( position ) {
 
 	JL_USE(id);
 
@@ -157,7 +157,7 @@ DEFINE_PROPERTY( positionGetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( positionSetter ) {
+DEFINE_PROPERTY_SETTER( position ) {
 
 	JL_USE(id);
 
@@ -175,7 +175,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   The remaining data from the stream pointer position to the end of the stream.
 **/
-DEFINE_PROPERTY( available ) {
+DEFINE_PROPERTY_GETTER( available ) {
 
 	JL_USE(id);
 
@@ -202,7 +202,7 @@ $TOC_MEMBER $INAME
  $OBJ $INAME
   The object used to create the steam.
 **/
-DEFINE_PROPERTY( source ) {
+DEFINE_PROPERTY_GETTER( source ) {
 
 	JL_USE(id);
 

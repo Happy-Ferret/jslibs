@@ -67,7 +67,7 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME
   Is the x, y, z size of the box.
 **/
-DEFINE_PROPERTY( lengthsSetter ) {
+DEFINE_PROPERTY_SETTER( lengths ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -82,7 +82,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( lengthsGetter ) {
+DEFINE_PROPERTY_GETTER( lengths ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );

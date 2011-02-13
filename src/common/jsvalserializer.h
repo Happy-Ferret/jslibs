@@ -461,7 +461,7 @@ namespace jl {
 		Unserializer( jsval unserializerObj, void *dataOwnership, size_t length )
 		: _unserializerObj(unserializerObj), _start((uint8_t*)dataOwnership), _pos(_start), _length(length) {
 		}
-
+/*
 		JSBool Read( JSContext *cx, const char *&buf ) {
 
 			size_t length;
@@ -472,7 +472,7 @@ namespace jl {
 			return JS_TRUE;
 			JL_BAD;
 		}
-
+*/
 		JSBool Read( JSContext *cx, JSString *&jsstr ) {
 
 			SerializerConstBufferInfo buf;

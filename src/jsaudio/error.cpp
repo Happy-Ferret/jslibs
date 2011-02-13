@@ -27,7 +27,7 @@ $TOC_MEMBER $INAME
  $INT $INAME
   OpenAL error number.
 **/
-DEFINE_PROPERTY( code ) {
+DEFINE_PROPERTY_GETTER( code ) {
 
 	return JL_GetReservedSlot( cx, obj, 0, vp );
 }
@@ -38,7 +38,7 @@ $TOC_MEMBER $INAME
  $STR $INAME
   OpenAL error literal.
 **/
-DEFINE_PROPERTY( text ) {
+DEFINE_PROPERTY_GETTER( text ) {
 
 	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
 	if ( JSVAL_IS_VOID(*vp) )
@@ -80,7 +80,7 @@ $TOC_MEMBER $INAME
  $STR $INAME
   Const name of the OpenAL error.
 **/
-DEFINE_PROPERTY( const ) {
+DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
 	if ( JSVAL_IS_VOID(*vp) )
@@ -125,7 +125,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( toString ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	return _text(cx, obj, JSID_EMPTY, JL_RVAL);
+	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
 

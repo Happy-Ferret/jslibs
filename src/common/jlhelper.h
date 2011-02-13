@@ -83,9 +83,9 @@ JL_GetGlobalObject( const JSContext *cx ) {
 }
 
 ALWAYS_INLINE JSBool
-JL_IsExceptionPending( const JSContext *cx ) {
+JL_IsExceptionPending( JSContext *cx ) {
 	
-	return cx->throwing;
+	return cx->isExceptionPending();
 }
 
 ALWAYS_INLINE JSBool
@@ -1039,13 +1039,13 @@ class JLStr {
 	void CreateOwnJsStrZ() {
 		
 		JL_ASSERT( IsSet() );
-		JL_ASSERT_IF( _inner->jsstr, !JL_HASFLAGS(_inner->jsstrFlags, OWN|NT) );
+		JL_ASSERT_IF( _inner->jsstr, !JL_HasFlags(_inner->jsstrFlags, OWN|NT) );
 
 		jschar *tmp;
 		size_t length = Length();
 		if ( _inner->jsstr ) {
 
-			if ( JL_HASFLAGS(_inner->jsstrFlags, OWN) ) {
+			if ( JL_HasFlags(_inner->jsstrFlags, OWN) ) {
 
 				_inner->jsstr = static_cast<jschar*>(jl_realloc(_inner->jsstr, sizeof(jschar) * (length +1)));
 				JL_ASSERT( _inner->jsstr );
@@ -1060,7 +1060,7 @@ class JLStr {
 		} else {
 
 			JL_ASSERT( _inner->str );
-			if ( JL_HASFLAGS(_inner->strFlags, OWN) ) {
+			if ( JL_HasFlags(_inner->strFlags, OWN) ) {
 				
 				_inner->jsstr = (jschar*)jl_realloc(_inner->str, (length+1) * 2);
 				JL_ASSERT( _inner->jsstr );
@@ -1088,13 +1088,13 @@ class JLStr {
 	void CreateOwnStrZ() {
 		
 		JL_ASSERT( IsSet() );
-		JL_ASSERT_IF( _inner->str, !JL_HASFLAGS(_inner->strFlags, OWN|NT) );
+		JL_ASSERT_IF( _inner->str, !JL_HasFlags(_inner->strFlags, OWN|NT) );
 
 		char *tmp;
 		size_t length = Length();
 		if ( _inner->str ) {
 
-			if ( JL_HASFLAGS(_inner->strFlags, OWN) ) {
+			if ( JL_HasFlags(_inner->strFlags, OWN) ) {
 
 				_inner->str = static_cast<char*>(jl_realloc(_inner->str, sizeof(char) * (length +1)));
 				JL_ASSERT( _inner->str );
@@ -1110,7 +1110,7 @@ class JLStr {
 		} else {
 
 			JL_ASSERT( _inner->jsstr );
-			if ( JL_HASFLAGS(_inner->jsstrFlags, OWN) ) {
+			if ( JL_HasFlags(_inner->jsstrFlags, OWN) ) {
 
 				const jschar *src = _inner->jsstr + length;
 				tmp = (char*)_inner->jsstr + length;
@@ -1163,9 +1163,9 @@ public:
 
 		if ( !_inner || --_inner->count )
 			return;
-		if ( JL_HASFLAGS(_inner->jsstrFlags, OWN) )
+		if ( JL_HasFlags(_inner->jsstrFlags, OWN) )
 			jl_free(_inner->jsstr);
-		if ( JL_HASFLAGS(_inner->strFlags, OWN) )
+		if ( JL_HasFlags(_inner->strFlags, OWN) )
 			jl_free(_inner->str);
 		mem.Free(_inner);
 	}
@@ -1270,7 +1270,7 @@ public:
 	ALWAYS_INLINE jschar *GetJsStrZOwnership() {
 
 		JL_ASSERT( IsSet() );
-		if ( !_inner->jsstr || !JL_HASFLAGS(_inner->jsstrFlags, OWN|NT) )
+		if ( !_inner->jsstr || !JL_HasFlags(_inner->jsstrFlags, OWN|NT) )
 			CreateOwnJsStrZ();
 		jschar *tmp = _inner->jsstr;
 		_inner->jsstr = NULL;
@@ -1300,7 +1300,7 @@ public:
 	ALWAYS_INLINE char *GetStrZOwnership() {
 
 		JL_ASSERT( IsSet() );
-		if ( !_inner->str || JL_HASFLAGS(_inner->strFlags, OWN|NT) )
+		if ( !_inner->str || JL_HasFlags(_inner->strFlags, OWN|NT) )
 			CreateOwnStrZ();
 		char *tmp = _inner->str;
 		_inner->str = NULL;
@@ -1310,7 +1310,7 @@ public:
 	ALWAYS_INLINE const char *GetConstStrZ() {
 
 		JL_ASSERT( IsSet() );
-		if ( !_inner->str || !JL_HASFLAGS(_inner->strFlags, NT) )
+		if ( !_inner->str || !JL_HasFlags(_inner->strFlags, NT) )
 			CreateOwnStrZ();
 		return _inner->str;
 	}
@@ -1387,7 +1387,7 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLStr * RESTRICT str ) {
 					*str = JLStr((const char*)buf->data, buf->length, false);
 			} else {
 
-				*str = JLStr(L"", 0, true);
+				*str = JLStr(L(""), 0, true);
 			}
 			return JS_TRUE;
 		}
@@ -1396,7 +1396,8 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLStr * RESTRICT str ) {
 			return JL_JSArrayToBuffer(cx, obj, str);
 	}
 	// fallback
-	JSString *jsstr = JS_ValueToString(cx, val);
+	JSString *jsstr;
+	jsstr = JS_ValueToString(cx, val);
 	if ( jsstr == NULL )
 		JL_REPORT_ERROR_NUM( cx, JLSMSG_FAIL_TO_CONVERT_TO, "string" );
 	val = STRING_TO_JSVAL(jsstr); // GC protection
@@ -2803,7 +2804,8 @@ JL_Eval( JSContext * RESTRICT cx, JSString * RESTRICT source, jsval *rval ) {
 	const char *scriptFilename;
 	scriptFilename = JS_GetScriptFilename(cx, script);
 	JL_CHK( scriptFilename );
-	int scriptLineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, frame));
+	int scriptLineno;
+	scriptLineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, frame));
 	size_t length;
 	const jschar *chars;
 	chars = JS_GetStringCharsAndLength(cx, source, &length);
@@ -3220,7 +3222,7 @@ SetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id, const T native
 	JL_ASSERT( id != JL_NullJsid() );
 	if ( nativeFct != NULL ) {
 
-		JL_CHK( JS_DefinePropertyById(cx, obj, id, JSVAL_TRUE, NULL, (JSPropertyOp)nativeFct, JSPROP_READONLY | JSPROP_PERMANENT) ); // hacking the setter of a read-only property seems safe.
+		JL_CHK( JS_DefinePropertyById(cx, obj, id, JSVAL_TRUE, NULL, (JSStrictPropertyOp)nativeFct, JSPROP_READONLY | JSPROP_PERMANENT) ); // hacking the setter of a read-only property seems safe.
 	} else {
 
 		JL_CHK( ReserveNativeInterface(cx, obj, id) );
@@ -3237,7 +3239,7 @@ GetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id ) {
 	JL_ASSERT( id != JL_NullJsid() );
 	JSPropertyDescriptor desc;
 	if ( JS_GetPropertyDescriptorById(cx, obj, id, JSRESOLVE_QUALIFIED, &desc) )
-		return desc.obj == obj && desc.setter != JS_PropertyStub ? (const T)desc.setter : NULL; // is JS_PropertyStub when eg. Stringify({_NI_BufferGet:function() {} })
+		return desc.obj == obj && desc.setter != JS_StrictPropertyStub ? (const T)desc.setter : NULL; // is JS_PropertyStub when eg. Stringify({_NI_BufferGet:function() {} })
 	return NULL;
 }
 

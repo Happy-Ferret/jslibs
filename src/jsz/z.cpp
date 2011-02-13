@@ -299,7 +299,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
   Is $TRUE if the redy to process new data.
 **/
-DEFINE_PROPERTY( idle ) {
+DEFINE_PROPERTY_GETTER( idle ) {
 
 	JL_USE(id);
 
@@ -317,7 +317,7 @@ $TOC_MEMBER $INAME
   Contains the adler32 checksum of the data.
   [http://en.wikipedia.org/wiki/Adler_checksum more].
 **/
-DEFINE_PROPERTY( adler32 ) {
+DEFINE_PROPERTY_GETTER( adler32 ) {
 
 	JL_USE(id);
 
@@ -334,7 +334,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Contains the current total amount of input data.
 **/
-DEFINE_PROPERTY( lengthIn ) {
+DEFINE_PROPERTY_GETTER( lengthIn ) {
 
 	JL_USE(id);
 
@@ -351,7 +351,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Contains the current total amount of output data.
 **/
-DEFINE_PROPERTY( lengthOut ) {
+DEFINE_PROPERTY_GETTER( lengthOut ) {
 
 	JL_USE(id);
 
@@ -400,10 +400,10 @@ CONFIGURE_CLASS
 	HAS_CALL
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ(idle)
-		PROPERTY_READ(adler32)
-		PROPERTY_READ(lengthIn)
-		PROPERTY_READ(lengthOut)
+		PROPERTY_READ( idle )
+		PROPERTY_READ( adler32 )
+		PROPERTY_READ( lengthIn )
+		PROPERTY_READ( lengthOut )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

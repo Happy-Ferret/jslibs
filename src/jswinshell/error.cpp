@@ -30,7 +30,7 @@ DEFINE_CONSTRUCTOR() {
 }
 */
 
-DEFINE_PROPERTY( code ) {
+DEFINE_PROPERTY_GETTER( code ) {
 
 	jsval hi, lo;
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
@@ -55,7 +55,7 @@ const char *ErrorToConstName( DWORD err ) {
 	}
 }
 
-DEFINE_PROPERTY( const ) {
+DEFINE_PROPERTY_GETTER( const ) {
 
 	jsval hi, lo;
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
@@ -69,7 +69,7 @@ DEFINE_PROPERTY( const ) {
 }
 
 
-DEFINE_PROPERTY( text ) {
+DEFINE_PROPERTY_GETTER( text ) {
 
 	jsval hi, lo;
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
@@ -99,7 +99,7 @@ DEFINE_PROPERTY( text ) {
 DEFINE_FUNCTION( toString ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	return _text(cx, obj, JSID_EMPTY, JL_RVAL);
+	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
 

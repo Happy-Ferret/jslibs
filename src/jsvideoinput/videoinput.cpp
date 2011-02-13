@@ -275,7 +275,7 @@ DEFINE_FUNCTION( Close ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
 **/
-DEFINE_PROPERTY( hasNewFrame ) {
+DEFINE_PROPERTY_GETTER( hasNewFrame ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
@@ -290,7 +290,7 @@ DEFINE_PROPERTY( hasNewFrame ) {
 $TOC_MEMBER $INAME
  $INT $INAME $READONLY
 **/
-DEFINE_PROPERTY( width ) {
+DEFINE_PROPERTY_GETTER( width ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
@@ -305,7 +305,7 @@ DEFINE_PROPERTY( width ) {
 $TOC_MEMBER $INAME
  $INT $INAME $READONLY
 **/
-DEFINE_PROPERTY( height ) {
+DEFINE_PROPERTY_GETTER( height ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
@@ -320,7 +320,7 @@ DEFINE_PROPERTY( height ) {
 $TOC_MEMBER $INAME
  $INT $INAME $READONLY
 **/
-DEFINE_PROPERTY( channels ) {
+DEFINE_PROPERTY_GETTER( channels ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
@@ -338,7 +338,7 @@ DEFINE_PROPERTY( channels ) {
 $TOC_MEMBER $INAME
  $STR $INAME $READONLY
 **/
-DEFINE_PROPERTY( name ) {
+DEFINE_PROPERTY_GETTER( name ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
@@ -354,7 +354,7 @@ DEFINE_PROPERTY( name ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
 **/
-DEFINE_PROPERTY( hasDevice ) {
+DEFINE_PROPERTY_GETTER( hasDevice ) {
 
 	int numDevices = videoInput::listDevices(true);
 	JL_CHK(JL_NativeToJsval(cx, numDevices > 0, vp) ); 
@@ -368,7 +368,7 @@ $TOC_MEMBER $INAME
  $ARR $INAME $READONLY
   Contains the list of all available video devices for input.
 **/
-DEFINE_PROPERTY( list ) {
+DEFINE_PROPERTY_GETTER( list ) {
 
 	int numDevices = videoInput::listDevices(true);
 	JSObject *list = JS_NewArrayObject(cx, numDevices, NULL);
@@ -392,7 +392,7 @@ $TOC_MEMBER $INAME
  $STR $INAME $READONLY
   Hold the current version of NSPR.
 **/
-DEFINE_PROPERTY( version ) {
+DEFINE_PROPERTY_GETTER( version ) {
 
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, J__TOSTRING(VI_VERSION)));
 	return JL_StoreProperty(cx, obj, id, vp, true);
@@ -415,11 +415,11 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ(hasNewFrame)
-		PROPERTY_READ(width)
-		PROPERTY_READ(height)
-		PROPERTY_READ(channels)
-		PROPERTY_READ(name)
+		PROPERTY_READ( hasNewFrame )
+		PROPERTY_READ( width )
+		PROPERTY_READ( height )
+		PROPERTY_READ( channels )
+		PROPERTY_READ( name )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

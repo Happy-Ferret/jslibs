@@ -564,7 +564,7 @@ $TOC_MEMBER $INAME
  $INT | $ARRAY $INAME $WRITEONLY
   Sets the dpi of the resulting image. If the argument is an Array (like [ dpiX, dpiY ]) X and Y dpi can be set aside.
 **/
-DEFINE_PROPERTY(dpi) {
+DEFINE_PROPERTY_SETTER( dpi ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -600,7 +600,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the default width of the SVG.
 **/
-DEFINE_PROPERTY(width) {
+DEFINE_PROPERTY_GETTER( width ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -618,7 +618,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the default height of the SVG.
 **/
-DEFINE_PROPERTY(height) {
+DEFINE_PROPERTY_GETTER( height ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -636,7 +636,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the title of the SVG.
 **/
-DEFINE_PROPERTY(title) {
+DEFINE_PROPERTY_GETTER( title ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -656,7 +656,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the metadata string of the SVG.
 **/
-DEFINE_PROPERTY(metadata) {
+DEFINE_PROPERTY_GETTER( metadata ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -676,7 +676,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the description string of the SVG.
 **/
-DEFINE_PROPERTY(description) {
+DEFINE_PROPERTY_GETTER( description ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -746,14 +746,14 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-//		PROPERTY_WRITE_STORE(xmlData)
-//		PROPERTY_READ(images)
-		PROPERTY_WRITE(dpi)
-		PROPERTY_READ(width)
-		PROPERTY_READ(height)
-		PROPERTY_READ(title)
-		PROPERTY_READ(metadata)
-		PROPERTY_READ(description)
+//		PROPERTY_WRITE_STORE( xmlData )
+//		PROPERTY_READ( images )
+		PROPERTY_WRITE( dpi )
+		PROPERTY_READ( width )
+		PROPERTY_READ( height )
+		PROPERTY_READ( title )
+		PROPERTY_READ( metadata )
+		PROPERTY_READ( description )
 	END_PROPERTY_SPEC
 
 END_CLASS

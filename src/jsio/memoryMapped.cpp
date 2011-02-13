@@ -127,7 +127,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   is the file descriptor used to construct this object.
 **/
-DEFINE_PROPERTY( file ) {
+DEFINE_PROPERTY_GETTER( file ) {
 
 	JL_CHK( JL_GetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, vp) );
 	return JS_TRUE;

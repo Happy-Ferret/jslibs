@@ -350,7 +350,7 @@ DEFINE_FUNCTION( DefineIndexBuffer ) {
 }
 
 
-DEFINE_PROPERTY( vertexCount ) {
+DEFINE_PROPERTY_GETTER( vertexCount ) {
 
 	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -359,7 +359,7 @@ DEFINE_PROPERTY( vertexCount ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( indexCount ) {
+DEFINE_PROPERTY_GETTER( indexCount ) {
 
 	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -369,7 +369,7 @@ DEFINE_PROPERTY( indexCount ) {
 }
 
 
-DEFINE_PROPERTY( hasNormal ) {
+DEFINE_PROPERTY_GETTER( hasNormal ) {
 
 	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -378,7 +378,7 @@ DEFINE_PROPERTY( hasNormal ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( hasTextureCoordinateBuffer ) {
+DEFINE_PROPERTY_GETTER( hasTextureCoordinateBuffer ) {
 
 	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -387,7 +387,7 @@ DEFINE_PROPERTY( hasTextureCoordinateBuffer ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( hasColor ) {
+DEFINE_PROPERTY_GETTER( hasColor ) {
 
 	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -414,11 +414,11 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ(vertexCount)
-		PROPERTY_READ(indexCount)
-		PROPERTY_READ(hasNormal)
-		PROPERTY_READ(hasTextureCoordinateBuffer)
-		PROPERTY_READ(hasColor)
+		PROPERTY_READ( vertexCount )
+		PROPERTY_READ( indexCount )
+		PROPERTY_READ( hasNormal )
+		PROPERTY_READ( hasTextureCoordinateBuffer )
+		PROPERTY_READ( hasColor )
 	END_PROPERTY_SPEC
 
 END_CLASS

@@ -137,7 +137,7 @@ JLThreadFuncDecl ProcessEventThread( void *data ) {
 	int st;
 	for (;;) {
 
-		st = JLSemaphoreAcquire(ti->startSem, -1);
+		st = JLSemaphoreAcquire(ti->startSem, JLINFINITE);
 		JL_ASSERT(st);
 		if ( ti->isEnd )
 			break;
@@ -216,7 +216,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 	for ( i = 0; i < argc; ++i ) {
 
-		st = JLSemaphoreAcquire(mpv->processEventSignalEventSem, -1);
+		st = JLSemaphoreAcquire(mpv->processEventSignalEventSem, JLINFINITE);
 		JL_ASSERT( st );
 	}
 

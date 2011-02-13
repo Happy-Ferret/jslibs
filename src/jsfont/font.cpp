@@ -475,7 +475,7 @@ $TOC_MEMBER $INAME
   $H note
    The ascender is the portion of a letter in a Latin-derived alphabet that extends above the mean line of a font. That is, the part of the letter that is taller than the font's x-height.
 **/
-DEFINE_PROPERTY( ascender ) {
+DEFINE_PROPERTY_GETTER( ascender ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -491,7 +491,7 @@ $TOC_MEMBER $INAME
   $H note
    The descender is the portion of a letter in a Latin alphabet that extends below the baseline of a font. For example, in the letter y, the descender would be the "tail," or that portion of the diagonal line which lies below the v created by the two lines converging.
 **/
-DEFINE_PROPERTY( descender ) {
+DEFINE_PROPERTY_GETTER( descender ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -505,7 +505,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   is the maximum width (in pixel) of the current face.
 **/
-DEFINE_PROPERTY( width ) {
+DEFINE_PROPERTY_GETTER( width ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -520,7 +520,7 @@ $TOC_MEMBER $INAME
  $INT $INAME
   is the size (in pixel) of the current face.
 **/
-DEFINE_PROPERTY( size ) {
+DEFINE_PROPERTY_SETTER( size ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -544,7 +544,7 @@ $TOC_MEMBER $INAME
   $H supported encodings
    see constants section below.
 **/
-DEFINE_PROPERTY( encoding ) {
+DEFINE_PROPERTY_SETTER( encoding ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -562,7 +562,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   is the postscript name of the face.
 **/
-DEFINE_PROPERTY( poscriptName ) {
+DEFINE_PROPERTY_GETTER( poscriptName ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -734,18 +734,18 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ(poscriptName)
-		PROPERTY_WRITE(size)
-		PROPERTY(useKerning)
-		PROPERTY(horizontalPadding)
-		PROPERTY(verticalPadding)
-		PROPERTY(letterSpacing)
-		PROPERTY(italic)
-		PROPERTY(bold)
-		PROPERTY_WRITE(encoding)
-		PROPERTY_READ(ascender)
-		PROPERTY_READ(descender)
-		PROPERTY_READ(width)
+		PROPERTY_READ( poscriptName )
+		PROPERTY_WRITE( size )
+		PROPERTY( useKerning )
+		PROPERTY( horizontalPadding )
+		PROPERTY( verticalPadding )
+		PROPERTY( letterSpacing )
+		PROPERTY( italic )
+		PROPERTY( bold )
+		PROPERTY_WRITE( encoding )
+		PROPERTY_READ( ascender )
+		PROPERTY_READ( descender )
+		PROPERTY_READ( width )
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

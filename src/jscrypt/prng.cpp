@@ -199,7 +199,7 @@ $TOC_MEMBER $INAME
  $DATA $INAME
   is the current state of the prng.
 **/
-DEFINE_PROPERTY( stateGetter ) {
+DEFINE_PROPERTY_GETTER( state ) {
 
 	JL_USE(id);
 
@@ -228,7 +228,7 @@ DEFINE_PROPERTY( stateGetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( stateSetter ) {
+DEFINE_PROPERTY_SETTER( state ) {
 
 	JL_USE(id);
 
@@ -256,7 +256,7 @@ $TOC_MEMBER $INAME
  $STR $INAME $READONLY
   is the name of the current prng.
 **/
-DEFINE_PROPERTY( name ) {
+DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_USE(id);
 
@@ -275,7 +275,7 @@ $TOC_MEMBER $INAME
  $OBJ $INAME $READONLY
   Contains the list of all available prng and their feature. The list is a javascript object that map cipher names (key) with another object (value) that contain information.
 **/
-DEFINE_PROPERTY( list ) {
+DEFINE_PROPERTY_GETTER( list ) {
 
 	JSObject *listObj = JS_NewObject(cx, NULL, NULL, NULL);
 	

@@ -222,7 +222,7 @@ DEFINE_FUNCTION( GetVideoModeList ) {
 
 	if ( JL_ARG_ISDEF(1) ) {
 
-		unsigned int bpp;
+		Uint8 bpp;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bpp) );
 		format.BitsPerPixel = bpp;
 		format.BytesPerPixel = bpp / 8; // (TBD) need to set both ?
@@ -383,7 +383,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the current video surface width.
 **/
-DEFINE_PROPERTY( videoWidth ) {
+DEFINE_PROPERTY_GETTER( videoWidth ) {
 
 //	const SDL_VideoInfo *info = SDL_GetVideoInfo();
 //	const SDL_Surface *surface = SDL_GetVideoSurface();
@@ -396,7 +396,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the current video surface height.
 **/
-DEFINE_PROPERTY( videoHeight ) {
+DEFINE_PROPERTY_GETTER( videoHeight ) {
 
 //	const SDL_Surface *surface = SDL_GetVideoSurface();
 	*vp = _surface != NULL ? INT_TO_JSVAL( surfaceHeight ) : JSVAL_VOID;
@@ -408,7 +408,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the number of bits per pixel of the current video surface.
 **/
-DEFINE_PROPERTY( videoBitsPerPixel ) {
+DEFINE_PROPERTY_GETTER( videoBitsPerPixel ) {
 
 //	const SDL_Surface *surface = SDL_GetVideoSurface();
 	*vp = _surface != NULL ? INT_TO_JSVAL( _surface->format->BitsPerPixel ) : JSVAL_VOID;
@@ -420,7 +420,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the current desktop surface width.
 **/
-DEFINE_PROPERTY( desktopWidth ) {
+DEFINE_PROPERTY_GETTER( desktopWidth ) {
 
 	*vp = INT_TO_JSVAL( desktopWidth );
 	return JS_TRUE;
@@ -431,7 +431,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the current desktop surface height.
 **/
-DEFINE_PROPERTY( desktopHeight ) {
+DEFINE_PROPERTY_GETTER( desktopHeight ) {
 
 	*vp = INT_TO_JSVAL( desktopHeight );
 	return JS_TRUE;
@@ -442,7 +442,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the number of bits per pixel of the desktop surface.
 **/
-DEFINE_PROPERTY( desktopBitsPerPixel ) {
+DEFINE_PROPERTY_GETTER( desktopBitsPerPixel ) {
 
 	*vp = *vp = INT_TO_JSVAL( desktopBitsPerPixel );
 	return JS_TRUE;
@@ -454,7 +454,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the current video flags.
 **/
-DEFINE_PROPERTY( videoFlags ) {
+DEFINE_PROPERTY_GETTER( videoFlags ) {
 
 //	const SDL_Surface *surface = SDL_GetVideoSurface();
 	if ( _surface != NULL ) {
@@ -474,7 +474,7 @@ $TOC_MEMBER $INAME
  $TYPE ImageObject $INAME $WRITEONLY
   Sets the window manager icon for the display window.
 **/
-DEFINE_PROPERTY( icon ) {
+DEFINE_PROPERTY_SETTER( icon ) {
 
 	JLStr buffer;
 	jsval image = *vp;
@@ -500,7 +500,7 @@ DEFINE_PROPERTY( icon ) {
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &image, &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
 	JL_CHK( JL_JsvalToNative(cx, image, &buffer) );
 
-	JL_S_ASSERT( buffer.Length() == sWidth * sHeight * sChannels * 1, "Invalid image format." );
+	JL_S_ASSERT( buffer.Length() == (size_t)(sWidth * sHeight * sChannels * 1), "Invalid image format." );
 
 	Uint32 rmask, gmask, bmask, amask;
 
@@ -795,7 +795,7 @@ $TOC_MEMBER $INAME
  $STR $INAME $READONLY
   Is the name of the video driver or undefined  if it has not been initialized.
 **/
-DEFINE_PROPERTY( videoDriverName ) {
+DEFINE_PROPERTY_GETTER( videoDriverName ) {
 
 	char name[1024];
 	char *status = SDL_VideoDriverName(name, sizeof(name));
@@ -874,7 +874,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( WarpMouse ) {
 
 	JL_S_ASSERT_ARG_MIN(2);
-	unsigned int x, y;
+	Uint16 x, y;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &y) );
 	SDL_WarpMouse(x, y);
@@ -891,7 +891,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   is the current mouse cursor X position.
 **/
-DEFINE_PROPERTY( mouseX ) {
+DEFINE_PROPERTY_GETTER( mouseX ) {
 
 	int x;
 	SDL_GetMouseState(&x, NULL); // query only button state
@@ -904,7 +904,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   is the current mouse cursor Y position.
 **/
-DEFINE_PROPERTY( mouseY ) {
+DEFINE_PROPERTY_GETTER( mouseY ) {
 
 	int y;
 	SDL_GetMouseState(NULL, &y); // query only button state
@@ -933,7 +933,7 @@ $TOC_MEMBER $INAME
   var hasButtonDown = ( ( $INAME & ( BUTTON_LMASK | BUTTON_MMASK | BUTTON_RMASK ) ) != 0 );
   }}}
 **/
-DEFINE_PROPERTY( buttonState ) {
+DEFINE_PROPERTY_GETTER( buttonState ) {
 
 	*vp = INT_TO_JSVAL( SDL_GetMouseState(NULL, NULL) ); // query only button state
 	return JS_TRUE;
@@ -957,7 +957,7 @@ $TOC_MEMBER $INAME
    $CONST KMOD_CAPS
    $CONST KMOD_MODE
 **/
-DEFINE_PROPERTY( modifierState ) {
+DEFINE_PROPERTY_GETTER( modifierState ) {
 
 	*vp = INT_TO_JSVAL( SDL_GetModState() );
 	return JS_TRUE;
@@ -1089,7 +1089,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   Is the current state of the application. If true, the user is able to see your application, otherwise it has been iconified or disabled.
 **/
-DEFINE_PROPERTY( appStateActive ) {
+DEFINE_PROPERTY_GETTER( appStateActive ) {
 
 	JL_CHK(JL_NativeToJsval(cx, (SDL_GetAppState() & SDL_APPACTIVE) != 0, vp) );
 	return JS_TRUE;
@@ -1101,7 +1101,7 @@ DEFINE_PROPERTY( appStateActive ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
 **/
-DEFINE_PROPERTY( hasRDTSC ) {
+DEFINE_PROPERTY_GETTER( hasRDTSC ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_HasRDTSC() == SDL_TRUE, vp) );
 	return JS_TRUE;
@@ -1112,7 +1112,7 @@ DEFINE_PROPERTY( hasRDTSC ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
 **/
-DEFINE_PROPERTY( hasMMX ) {
+DEFINE_PROPERTY_GETTER( hasMMX ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_HasMMX() == SDL_TRUE, vp) );
 	return JS_TRUE;
@@ -1123,7 +1123,7 @@ DEFINE_PROPERTY( hasMMX ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
 **/
-DEFINE_PROPERTY( hasMMXExt ) {
+DEFINE_PROPERTY_GETTER( hasMMXExt ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_HasMMXExt() == SDL_TRUE, vp) );
 	return JS_TRUE;
@@ -1134,7 +1134,7 @@ DEFINE_PROPERTY( hasMMXExt ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
 **/
-DEFINE_PROPERTY( has3DNow ) {
+DEFINE_PROPERTY_GETTER( has3DNow ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_Has3DNow() == SDL_TRUE, vp) );
 	return JS_TRUE;
@@ -1145,7 +1145,7 @@ DEFINE_PROPERTY( has3DNow ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
 **/
-DEFINE_PROPERTY( has3DNowExt ) {
+DEFINE_PROPERTY_GETTER( has3DNowExt ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_Has3DNowExt() == SDL_TRUE, vp) );
 	return JS_TRUE;
@@ -1156,7 +1156,7 @@ DEFINE_PROPERTY( has3DNowExt ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
 **/
-DEFINE_PROPERTY( hasSSE ) {
+DEFINE_PROPERTY_GETTER( hasSSE ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_HasSSE() == SDL_TRUE, vp) );
 	return JS_TRUE;
@@ -1167,7 +1167,7 @@ DEFINE_PROPERTY( hasSSE ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
 **/
-DEFINE_PROPERTY( hasSSE2 ) {
+DEFINE_PROPERTY_GETTER( hasSSE2 ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_HasSSE2() == SDL_TRUE, vp) );
 	return JS_TRUE;
@@ -1178,7 +1178,7 @@ DEFINE_PROPERTY( hasSSE2 ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
 **/
-DEFINE_PROPERTY( hasAltiVec ) {
+DEFINE_PROPERTY_GETTER( hasAltiVec ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_HasAltiVec() == SDL_TRUE, vp) );
 	return JS_TRUE;
@@ -1204,7 +1204,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Hold the current version of SDL.
 **/
-DEFINE_PROPERTY( version ) {
+DEFINE_PROPERTY_GETTER( version ) {
 
 	*vp = INT_TO_JSVAL( SDL_COMPILEDVERSION );
 	return JL_StoreProperty(cx, obj, id, vp, true);
@@ -1490,6 +1490,7 @@ CONFIGURE_STATIC
 		PROPERTY_READ( mouseY )
 		PROPERTY_READ( buttonState )
 		PROPERTY_READ( modifierState )
+		PROPERTY_READ( appStateActive )
 
 		PROPERTY_READ(hasRDTSC)
 		PROPERTY_READ(hasMMX)

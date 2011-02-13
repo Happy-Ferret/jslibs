@@ -471,7 +471,7 @@ $TOC_MEMBER $INAME
  $INAME
   TBD
 **/
-DEFINE_PROPERTY( currentMemoryUsage ) {
+DEFINE_PROPERTY_GETTER( currentMemoryUsage ) {
 
 	uint32 bytes;
 
@@ -500,7 +500,7 @@ $TOC_MEMBER $INAME
  $INAME
   TBD
 **/
-DEFINE_PROPERTY( peakMemoryUsage ) {
+DEFINE_PROPERTY_GETTER( peakMemoryUsage ) {
 
 #if defined(XP_WIN)
 
@@ -537,7 +537,7 @@ $TOC_MEMBER $INAME
  $INAME
   TBD
 **/
-DEFINE_PROPERTY( privateMemoryUsage ) {
+DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 
 #if defined(XP_WIN)
 
@@ -585,7 +585,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Number of times when GC was invoked.
 **/
-DEFINE_PROPERTY( gcNumber ) {
+DEFINE_PROPERTY_GETTER( gcNumber ) {
 
 	return JL_NewNumberValue(cx, JS_GetGCParameter(JL_GetRuntime(cx), JSGC_NUMBER), vp);
 }
@@ -612,7 +612,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   It is the total amount of memory that the GC uses now and right after the last GC.
 **/
-DEFINE_PROPERTY( gcBytes ) {
+DEFINE_PROPERTY_GETTER( gcBytes ) {
 
 	return JL_NewNumberValue(cx, JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES), vp);
 }
@@ -633,7 +633,7 @@ $TOC_MEMBER $INAME
  $H note
   This function in only available in DEBUG mode.
 **/
-DEFINE_PROPERTY( gcZeal ) {
+DEFINE_PROPERTY_SETTER( gcZeal ) {
 
 #ifdef JS_GC_ZEAL
 
@@ -854,7 +854,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME $READONLY
   Is the list of all detected and active scripts.
 **/
-DEFINE_PROPERTY( scriptFilenameList ) {
+DEFINE_PROPERTY_GETTER( scriptFilenameList ) {
 
 	JSObject *arr = JS_NewArrayObject(cx, 0, NULL);
 	JL_CHK(arr);
@@ -923,7 +923,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME $READONLY
   Is the number of stack frames. 0 is the older stack frame index. The current stack frame index is (stackSize-1).
 **/
-DEFINE_PROPERTY( stackSize ) {
+DEFINE_PROPERTY_GETTER( stackSize ) {
 
 	return JL_NativeToJsval(cx, JL_StackSize(cx, JL_CurrentStackFrame(cx)), vp);
 }
@@ -1556,7 +1556,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the amount of CPU time (milliseconds) that the process has executed.
 **/
-DEFINE_PROPERTY( processTime ) {
+DEFINE_PROPERTY_GETTER( processTime ) {
 
 #if defined(XP_WIN)
 
@@ -1586,7 +1586,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the current CPU usage in percent.
 **/
-DEFINE_PROPERTY( cpuLoad ) {
+DEFINE_PROPERTY_GETTER( cpuLoad ) {
 
 #if defined(XP_WIN)
 
@@ -1762,8 +1762,12 @@ DEFINE_FUNCTION( SetPerfTestMode ) {
 
 	JL_CHK( SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS) );
 	JL_CHK( SetProcessPriorityBoost(GetCurrentProcess(), TRUE) );
-	JL_CHK( SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL) );
-	JL_CHK( SetThreadPriorityBoost(GetCurrentThread(), TRUE) );
+
+	// beware:
+	//   do neot set time critical because this will set time critical for this thread only !
+	//   other threads in jslibs will suffer of this (see PREACTION(m) call in internal_realloc() of nedmalloc).
+	//	JL_CHK( SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL) );
+	//	JL_CHK( SetThreadPriorityBoost(GetCurrentThread(), TRUE) );
 
 	SYSTEM_INFO sysinfo;
 	GetSystemInfo( &sysinfo );
@@ -1771,11 +1775,13 @@ DEFINE_FUNCTION( SetPerfTestMode ) {
 
 		DWORD processAffinityMask, systemAffinityMask;
 		JL_CHK( GetProcessAffinityMask(GetCurrentProcess(), &processAffinityMask, &systemAffinityMask) );
-		JL_CHK( systemAffinityMask != 0 );
+		DWORD affinity = processAffinityMask & systemAffinityMask;
+		JL_CHK( affinity != 0 );
 
 		int i;
-		for ( i = 0; !(systemAffinityMask & 1); ++i )
-			systemAffinityMask >>= 1;
+		for ( i = 0; affinity >> i; ++i );
+		--i;
+
 		JL_CHK( SetProcessAffinityMask(GetCurrentProcess(), 1 << i) ); // warning: Do not call SetProcessAffinityMask in a DLL that may be called by processes other than your own.
 		JL_CHK( SetThreadAffinityMask(GetCurrentThread(), 1 << i) );
 	}

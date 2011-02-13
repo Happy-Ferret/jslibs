@@ -70,7 +70,7 @@ JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 	return JL_NativeToJsval(cx, bool(gEndSignalState), vp);
 }
 
-JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
+JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp) {
 
 	JL_USE(obj);
 	JL_USE(id);
@@ -513,6 +513,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	int exitValue;
 	jsval rval;
+
+	JL_ASSERT( !JL_IsExceptionPending(cx) );
 
 	JSBool executeStatus;
 	if ( inlineScript == NULL )

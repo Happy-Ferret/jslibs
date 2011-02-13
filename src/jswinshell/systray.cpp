@@ -1167,7 +1167,7 @@ $TOC_MEMBER $INAME
  $TYPE Icon | $TYPE null $INAME $WRITEONLY
   This is the Icon to be used as systray icon.
 **/
-DEFINE_PROPERTY( icon ) {
+DEFINE_PROPERTY_SETTER( icon ) {
 
 	HICON hIcon;
 	if ( JSVAL_IS_OBJECT(*vp) && !JSVAL_IS_NULL( *vp ) ) {
@@ -1203,7 +1203,7 @@ $TOC_MEMBER $INAME
   $H beware
    you cannot use this property to get the current visibility of the icon.
 **/
-DEFINE_PROPERTY( visible ) {
+DEFINE_PROPERTY_SETTER( visible ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
@@ -1221,7 +1221,7 @@ $TOC_MEMBER $INAME
  $STR $INAME
   Get of set the tooltip text of the systray icon.
 **/
-DEFINE_PROPERTY( textSetter ) {
+DEFINE_PROPERTY_SETTER( text ) {
 
 	JLStr tipText;
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
@@ -1238,7 +1238,7 @@ DEFINE_PROPERTY( textSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( textGetter ) {
+DEFINE_PROPERTY_GETTER( text ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);

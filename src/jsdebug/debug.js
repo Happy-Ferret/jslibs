@@ -2,7 +2,6 @@ if ( 1 ) {
 	LoadModule('jsdebug');
 	LoadModule('jsstd');
 
-
 	var m = privateMemoryUsage;
 
 	!function() {

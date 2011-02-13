@@ -982,7 +982,7 @@ $TOC_MEMBER $INAME
  $STR $INAME $READONLY
   Is the host name with the domain name (if any).
 **/
-DEFINE_PROPERTY( hostName ) {
+DEFINE_PROPERTY_GETTER( hostName ) {
 
 	char tmp[SYS_INFO_BUFFER_LENGTH];
 	/* doc:
@@ -1008,7 +1008,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   Is the amount of physical RAM in the system in bytes.
 **/
-DEFINE_PROPERTY( physicalMemorySize ) {
+DEFINE_PROPERTY_GETTER( physicalMemorySize ) {
 
 	PRUint64 mem = PR_GetPhysicalMemorySize();
 	JL_CHK( JL_NewNumberValue(cx, (jsdouble)mem, vp) );
@@ -1034,7 +1034,7 @@ $TOC_MEMBER $INAME
    * on coLinux: {{{ ({architecture:"x86", name:"Linux", release:"2.6.22.18-co-0.7.3"}) }}}
    * on WinXP: {{{ ({architecture:"x86", name:"Windows_NT", release:"5.1"}) }}}
 **/
-DEFINE_PROPERTY( systemInfo ) {
+DEFINE_PROPERTY_GETTER( systemInfo ) {
 
 	char tmp[SYS_INFO_BUFFER_LENGTH];
 
@@ -1091,7 +1091,7 @@ $TOC_MEMBER $INAME
    * ` 1`: high
    * ` 2`: urgent
 **/
-DEFINE_PROPERTY( processPriorityGetter ) {
+DEFINE_PROPERTY_GETTER( processPriority ) {
 
 	PRThreadPriority priority = PR_GetThreadPriority(PR_GetCurrentThread());
 	int priorityValue;
@@ -1116,7 +1116,7 @@ DEFINE_PROPERTY( processPriorityGetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( processPrioritySetter ) {
+DEFINE_PROPERTY_SETTER( processPriority ) {
 
 	int priorityValue;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &priorityValue) );
@@ -1150,7 +1150,7 @@ $TOC_MEMBER $INAME
  $STR $INAME
   Is the number of processors (CPUs available in an SMP system).
 **/
-DEFINE_PROPERTY( numberOfProcessors ) {
+DEFINE_PROPERTY_GETTER( numberOfProcessors ) {
 
 	PRInt32 count = PR_GetNumberOfProcessors();
 	if ( count < 0 )
@@ -1210,7 +1210,7 @@ $TOC_MEMBER $INAME
   var isRootDir = (currentDirectory == directorySeparator);
   }}}
 **/
-DEFINE_PROPERTY( directorySeparator ) {
+DEFINE_PROPERTY_GETTER( directorySeparator ) {
 
 	jschar sep = PR_GetDirectorySeparator();
 	JSString *str = JS_InternUCStringN(cx, &sep, 1);
@@ -1229,7 +1229,7 @@ $TOC_MEMBER $INAME
   Print( GetEnv('PATH').split($INAME) )
   }}}
 **/
-DEFINE_PROPERTY( pathSeparator ) {
+DEFINE_PROPERTY_GETTER( pathSeparator ) {
 
 	jschar sep = PR_GetPathSeparator();
 	JSString *str = JS_InternUCStringN(cx, &sep, 1);
@@ -1244,7 +1244,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Hold the current version of NSPR.
 **/
-DEFINE_PROPERTY( version ) {
+DEFINE_PROPERTY_GETTER( version ) {
 
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, PR_VERSION));
 	return JL_StoreProperty(cx, obj, id, vp, true);

@@ -122,7 +122,7 @@ DEFINE_FUNCTION( AxisDelta ) {
 $TOC_MEMBER $INAME
  $TYPE vec3 $INAME
 **/
-DEFINE_PROPERTY( anchorSetter ) {
+DEFINE_PROPERTY_SETTER( anchor ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
@@ -136,7 +136,7 @@ DEFINE_PROPERTY( anchorSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( anchorGetter ) {
+DEFINE_PROPERTY_GETTER( anchor ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -152,7 +152,7 @@ DEFINE_PROPERTY( anchorGetter ) {
 $TOC_MEMBER $INAME
  $TYPE vec3 $INAME $READONLY
 **/
-DEFINE_PROPERTY( anchor2 ) {
+DEFINE_PROPERTY_GETTER( anchor2 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -169,7 +169,7 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME
   TBD
 **/
-DEFINE_PROPERTY( axisSetter ) {
+DEFINE_PROPERTY_SETTER( axis ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
@@ -182,7 +182,7 @@ DEFINE_PROPERTY( axisSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( axisGetter ) {
+DEFINE_PROPERTY_GETTER( axis ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -198,7 +198,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
   TBD
 **/
-DEFINE_PROPERTY( position ) {
+DEFINE_PROPERTY_GETTER( position ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -212,7 +212,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
   TBD
 **/
-DEFINE_PROPERTY( positionRate ) {
+DEFINE_PROPERTY_GETTER( positionRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -228,7 +228,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
   TBD
 **/
-DEFINE_PROPERTY( angle ) {
+DEFINE_PROPERTY_GETTER( angle ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -242,7 +242,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
   TBD
 **/
-DEFINE_PROPERTY( angleRate ) {
+DEFINE_PROPERTY_GETTER( angleRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);

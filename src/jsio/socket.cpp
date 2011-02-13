@@ -622,7 +622,7 @@ $TOC_MEMBER $INAME
 // After PR_Connect on a nonblocking socket fails with PR_IN_PROGRESS_ERROR,
 // you may wait for the connection to complete by calling PR_Poll on the socket with the in_flags PR_POLL_WRITE | PR_POLL_EXCEPT.
 // When PR_Poll returns, call PR_GetConnectStatus on the socket to determine whether the nonblocking connect has succeeded or failed.
-DEFINE_PROPERTY( connectContinue ) {
+DEFINE_PROPERTY_GETTER( connectContinue ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
@@ -672,7 +672,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Check if the socket connection is closed.
 **/
-DEFINE_PROPERTY( connectionClosed ) {
+DEFINE_PROPERTY_GETTER( connectionClosed ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
@@ -765,7 +765,7 @@ enum {
 	multicastLoopback = PR_SockOpt_McastLoopback
 };
 
-DEFINE_PROPERTY( OptionSetter ) {
+DEFINE_PROPERTY_SETTER( Option ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
@@ -839,7 +839,7 @@ DEFINE_PROPERTY( OptionSetter ) {
 }
 
 
-DEFINE_PROPERTY( OptionGetter ) {
+DEFINE_PROPERTY_GETTER( Option ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
@@ -898,7 +898,7 @@ $TOC_MEMBER $INAME
   Get name of the connected peer.
   Return the network address for the connected peer socket or $UNDEF if the socket is not connected
 **/
-DEFINE_PROPERTY( peerName ) {
+DEFINE_PROPERTY_GETTER( peerName ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
@@ -926,7 +926,7 @@ $TOC_MEMBER $INAME
   Get port of the connected peer.
   Return the port for the connected peer socket or $UNDEF if the socket is not connected.
 **/
-DEFINE_PROPERTY( peerPort ) {
+DEFINE_PROPERTY_GETTER( peerPort ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
@@ -951,7 +951,7 @@ $TOC_MEMBER $INAME
   Get socket name.
   Return the network address for this socket.
 **/
-DEFINE_PROPERTY( sockName ) {
+DEFINE_PROPERTY_GETTER( sockName ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );
@@ -972,7 +972,7 @@ $TOC_MEMBER $INAME
   Get socket port.
   Return the port for this socket.
 **/
-DEFINE_PROPERTY( sockPort ) {
+DEFINE_PROPERTY_GETTER( sockPort ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( fd );

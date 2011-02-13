@@ -263,7 +263,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	JL_S_ASSERT_ALLOC( mpv );
 	JL_CHKM( JL_SetModulePrivate(cx, _moduleId, mpv), "Module id already in use." );
 
-	mpv->JLID_onNewScript = JL_StringToJsid(cx, L"onNewScript"); // see NewScriptHook
+	mpv->JLID_onNewScript = JL_StringToJsid(cx, L("onNewScript")); // see NewScriptHook
 
 	jl::QueueInitialize(&mpv->scriptFileList);
 

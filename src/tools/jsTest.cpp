@@ -10,7 +10,7 @@
 
 
 JSClass global_class = {
-	 "global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	 "global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
     JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
 };
 
@@ -96,7 +96,7 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 	JL_CHK( JL_JsvalToNativeVector(cx, v, nvec, COUNTOF(nvec), &realLen ) );
 */
 //	JL_S_ASSERT_INT(v);
-	//JL_NativeToJsval(cx, L"ABCDE", 5, &v);
+	//JL_NativeToJsval(cx, L("ABCDE"), 5, &v);
 //	JL_CHK( JL_JsvalToNative(cx, v, &str) );
 	// JL_CHK( JL_NativeToJsval(cx, ival, &v) );
 //	JL_NativeVectorToJsval(cx, arr, 6, &v);
@@ -125,6 +125,9 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 
 
 int main(int argc, char* argv[]) {
+
+	jschar *test = L("TEST");
+
 /*
 	_unsafeMode = false;
 
@@ -137,7 +140,7 @@ int main(int argc, char* argv[]) {
 	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class);
 	JS_InitStandardClasses(cx, globalObject);
 
-	jschar str[] = L"ABCD";
+	jschar str[] = L("ABCD");
 	JSString *jsstr = JS_NewUCStringCopyN(cx, str, 4);
 
 

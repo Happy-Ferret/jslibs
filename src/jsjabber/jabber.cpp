@@ -438,7 +438,7 @@ $TOC_MEMBER $INAME
  $VAL $INAME
   The socket ID of the connection or $UNDEF if no connection is established.
 **/
-DEFINE_PROPERTY( socket ) {
+DEFINE_PROPERTY_GETTER( socket ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -542,7 +542,7 @@ $TOC_MEMBER $INAME
  $ENUM $INAME $READONLY
   is the total number of bytes received.
 **/
-DEFINE_PROPERTY( connectionTotalIn ) {
+DEFINE_PROPERTY_GETTER( connectionTotalIn ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -559,7 +559,7 @@ $TOC_MEMBER $INAME
  $ENUM $INAME $READONLY
   is the total number of bytes sent.
 **/
-DEFINE_PROPERTY( connectionTotalOut ) {
+DEFINE_PROPERTY_GETTER( connectionTotalOut ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );

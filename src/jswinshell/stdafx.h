@@ -5,6 +5,12 @@
 
 #pragma once
 
+#include <windows.h>
+#include <shellapi.h>
+#include <commctrl.h>
+#include <Commdlg.h>
+#include <shlobj.h>
+
 #include "jlhelper.h"
 #include "jlclass.h"
 #include "../common/jsvalserializer.h"
@@ -15,8 +21,3 @@
 
 #include "queue.h"
 #include "stack.h"
-
-#include <shellapi.h>
-#include <commctrl.h>
-#include <Commdlg.h>
-#include <shlobj.h>

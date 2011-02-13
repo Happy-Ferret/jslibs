@@ -132,7 +132,7 @@ $TOC_MEMBER $INAME
  $STR $INAME
   Get or set the title of the console window.
 **/
-DEFINE_PROPERTY( titleSetter ) {
+DEFINE_PROPERTY_SETTER( title ) {
 
 	JLStr str;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &str) );
@@ -141,7 +141,7 @@ DEFINE_PROPERTY( titleSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( titleGetter ) {
+DEFINE_PROPERTY_GETTER( title ) {
 
 	char buffer[2048];
 	DWORD res = GetConsoleTitle(buffer, sizeof(buffer));

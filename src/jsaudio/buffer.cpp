@@ -119,7 +119,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   is the frquency (in Hz) of the sound hold by the buffer.
 **/
-DEFINE_PROPERTY( frequency ) {
+DEFINE_PROPERTY_GETTER( frequency ) {
 
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bid );
@@ -138,7 +138,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   is the size (in bytes) of the sound hold by the buffer.
 **/
-DEFINE_PROPERTY( size ) {
+DEFINE_PROPERTY_GETTER( size ) {
 
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bid );
@@ -158,7 +158,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   is the resolution (in bits) of the sound hold by the buffer.
 **/
-DEFINE_PROPERTY( bits ) {
+DEFINE_PROPERTY_GETTER( bits ) {
 
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bid );
@@ -177,7 +177,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   is the number of channels of the sound hold by the buffer.
 **/
-DEFINE_PROPERTY( channels ) {
+DEFINE_PROPERTY_GETTER( channels ) {
 
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bid );

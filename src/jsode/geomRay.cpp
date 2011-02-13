@@ -66,7 +66,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME
   TBD
 **/
-DEFINE_PROPERTY( lengthSetter ) {
+DEFINE_PROPERTY_SETTER( length ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -77,7 +77,7 @@ DEFINE_PROPERTY( lengthSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( lengthGetter ) {
+DEFINE_PROPERTY_GETTER( length ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -92,7 +92,7 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME
   TBD
 **/
-DEFINE_PROPERTY( startSetter ) {
+DEFINE_PROPERTY_SETTER( start ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -107,7 +107,7 @@ DEFINE_PROPERTY( startSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( startGetter ) {
+DEFINE_PROPERTY_GETTER( start ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -124,7 +124,7 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME
   TBD
 **/
-DEFINE_PROPERTY( directionSetter ) {
+DEFINE_PROPERTY_SETTER( direction ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -139,7 +139,7 @@ DEFINE_PROPERTY( directionSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( directionGetter ) {
+DEFINE_PROPERTY_GETTER( direction ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -155,7 +155,7 @@ DEFINE_PROPERTY( directionGetter ) {
 $TOC_MEMBER $INAME
  $REAL $INAME
 **/
-DEFINE_PROPERTY( firstContactSetter ) {
+DEFINE_PROPERTY_SETTER( firstContact ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -168,7 +168,7 @@ DEFINE_PROPERTY( firstContactSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( firstContactGetter ) {
+DEFINE_PROPERTY_GETTER( firstContact ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -183,7 +183,7 @@ DEFINE_PROPERTY( firstContactGetter ) {
 $TOC_MEMBER $INAME
  $REAL $INAME
 **/
-DEFINE_PROPERTY( backfaceCullSetter ) {
+DEFINE_PROPERTY_SETTER( backfaceCull ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -196,7 +196,7 @@ DEFINE_PROPERTY( backfaceCullSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( backfaceCullGetter ) {
+DEFINE_PROPERTY_GETTER( backfaceCull ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -213,7 +213,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME
   TBD
 **/
-DEFINE_PROPERTY( closestHitSetter ) {
+DEFINE_PROPERTY_SETTER( closestHit ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -224,7 +224,7 @@ DEFINE_PROPERTY( closestHitSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( closestHitGetter ) {
+DEFINE_PROPERTY_GETTER( closestHit ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );

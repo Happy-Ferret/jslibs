@@ -273,13 +273,11 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 
 	JSContext *cx = (JSContext*)threadArg;
 	HostPrivate *pv = JL_GetHostPrivate(cx);
-//	JSPackedBool *gcRunning = &cx->runtime->gcRunning;
-//	JLReleaseSemaphore(pv->watchDogSem); // signals that the thread has started
+	//JSPackedBool *gcRunning = &cx->runtime->gcRunning;
 	for (;;) {
 
-		//SleepMilliseconds(pv->maybeGCInterval); // use a timed semaphore instead (see SandboxEval)
-		if ( JLSemaphoreAcquire(pv->watchDogSemEnd, pv->maybeGCInterval) != JLTIMEOUT ) // used as a breakable Sleep.
-			JLThreadExit(0);
+		if ( JLSemaphoreAcquire(pv->watchDogSemEnd, pv->maybeGCInterval) != JLTIMEOUT ) // used as a breakable Sleep instead of SleepMilliseconds (see SandboxEval).
+			break;
 		JS_TriggerOperationCallback(cx);
 	}
 	JLThreadExit(0);
@@ -437,7 +435,7 @@ JSBool global_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObje
 // doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
 static JSClass global_class = { // global variable, but this is not an issue even is several runtimes share the same JSClass.
 	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,  // | JSCLASS_HAS_PRIVATE
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
 	global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // see LAZY_STANDARD_CLASSES
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };
@@ -489,7 +487,7 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_JIT | JSOPTION_METHODJIT | JSOPTION_PROFILING | JSOPTION_ANONFUNFIX);
 
 	JSObject *globalObject;
-	globalObject = JS_NewGlobalObject(cx, &global_class);
+	globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
 	JL_CHK( globalObject ); // "unable to create the global object." );
 
 	//	JS_SetGlobalObject(cx, globalObject); // not needed. Doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
@@ -511,7 +509,9 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 	if ( maybeGCInterval ) {
 
 		pv->maybeGCInterval = maybeGCInterval;
-		JS_SetOperationCallback(cx, OperationCallback);
+		JSOperationCallback prevOperationCallback;
+		prevOperationCallback = JS_SetOperationCallback(cx, OperationCallback);
+		JL_ASSERT( prevOperationCallback == NULL );
 		pv->watchDogSemEnd = JLSemaphoreCreate(0);
 		pv->watchDogThread = JLThreadStart(WatchDogThreadProc, cx);
 		//	JLThreadPriority(pv->watchDogThread, JL_THREAD_PRIORITY_LOW);
@@ -764,7 +764,7 @@ JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnl
 	JL_CHK( script );
 	
 	{
-	js::Anchor<JSObject*> scriptObjRoot(JS_NewScriptObject(cx, script));
+	JS::Anchor<JSObject*> scriptObjRoot(JS_NewScriptObject(cx, script));
 
 	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
@@ -801,7 +801,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	JL_CHK( script );
 
 	{
-	js::Anchor<JSObject*> scriptObjRoot(JS_NewScriptObject(cx, script));
+	JS::Anchor<JSObject*> scriptObjRoot(JS_NewScriptObject(cx, script));
 
 	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
@@ -833,7 +833,8 @@ JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32 xdrScriptL
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 	JL_CHK( xdr );
 	JS_XDRMemSetData(xdr, xdrScript, xdrScriptLength);
-	JSScript *script = NULL;
+	JSScript *script;
+	script = NULL;
 	JL_CHK( JS_XDRScript(xdr, &script) );
 	JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
 	JS_XDRDestroy(xdr);

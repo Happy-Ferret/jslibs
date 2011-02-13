@@ -536,7 +536,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   Hold the number of columns of the current [Result]
 **/
-DEFINE_PROPERTY( columnCount ) {
+DEFINE_PROPERTY_GETTER( columnCount ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pStmt );
@@ -558,7 +558,7 @@ $TOC_MEMBER $INAME
   Print( res.columnNames.toSource(), '\n' ); // prints: ["a", "c"]
   }}}
 **/
-DEFINE_PROPERTY( columnNames ) {
+DEFINE_PROPERTY_GETTER( columnNames ) {
 
 //	jsid jid;
 //	JL_CHK( JS_ValueToId(cx, id, &jid) );
@@ -599,7 +599,7 @@ $TOC_MEMBER $INAME
   Print( res.columnIndexes.toSource(), '\n' ); // prints: ({a:0, c:1})
   }}}
 **/
-DEFINE_PROPERTY( columnIndexes ) {
+DEFINE_PROPERTY_GETTER( columnIndexes ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( pStmt );
@@ -625,7 +625,7 @@ $TOC_MEMBER $INAME
  $OBJ $INAME $READONLY
   Retrieve a saved copy of the original SQL text used to create result.
 **/
-DEFINE_PROPERTY( sql ) {
+DEFINE_PROPERTY_GETTER( sql ) {
 
 //	if ( *vp != JSVAL_VOID )
 //		return JS_TRUE;

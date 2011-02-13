@@ -224,7 +224,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Check if the directory exists.
 **/
-DEFINE_PROPERTY( exist ) {
+DEFINE_PROPERTY_GETTER( exist ) {
 
 	JLStr str;
 
@@ -257,7 +257,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Returns the name of the directory.
 **/
-DEFINE_PROPERTY( name ) {
+DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, vp ) );
 	return JL_StoreProperty(cx, obj, id, vp, false);

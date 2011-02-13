@@ -518,7 +518,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME
   (TBD)
 **/
-DEFINE_PROPERTY( disabledSetter ) {
+DEFINE_PROPERTY_SETTER( disabled ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -532,7 +532,7 @@ DEFINE_PROPERTY( disabledSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( disabledGetter ) {
+DEFINE_PROPERTY_GETTER( disabled ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -547,7 +547,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME
   (TBD)
 **/
-DEFINE_PROPERTY( gravityModeSetter ) {
+DEFINE_PROPERTY_SETTER( gravityMode ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -558,7 +558,7 @@ DEFINE_PROPERTY( gravityModeSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( gravityModeGetter ) {
+DEFINE_PROPERTY_GETTER( gravityMode ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -574,7 +574,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME
   (TBD)
 **/
-DEFINE_PROPERTY( gyroscopicModeSetter ) {
+DEFINE_PROPERTY_SETTER( gyroscopicMode ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -585,7 +585,7 @@ DEFINE_PROPERTY( gyroscopicModeSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( gyroscopicModeGetter ) {
+DEFINE_PROPERTY_GETTER( gyroscopicMode ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -600,7 +600,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME
   (TBD)
 **/
-DEFINE_PROPERTY( finiteRotationModeSetter ) {
+DEFINE_PROPERTY_SETTER( finiteRotationMode ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -611,7 +611,7 @@ DEFINE_PROPERTY( finiteRotationModeSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( finiteRotationModeGetter ) {
+DEFINE_PROPERTY_GETTER( finiteRotationMode ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -626,7 +626,7 @@ $TOC_MEMBER $INAME
  $TYPE real $INAME
   (TBD)
 **/
-DEFINE_PROPERTY( finiteRotationAxisSetter ) {
+DEFINE_PROPERTY_SETTER( finiteRotationAxis ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -648,7 +648,7 @@ DEFINE_PROPERTY( finiteRotationAxisSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( finiteRotationAxisGetter ) {
+DEFINE_PROPERTY_GETTER( finiteRotationAxis ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -664,7 +664,7 @@ $TOC_MEMBER $INAME
  $TYPE real $INAME
   (TBD)
 **/
-DEFINE_PROPERTY( maxAngularSpeedGetter ) {
+DEFINE_PROPERTY_GETTER( maxAngularSpeed ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -673,7 +673,7 @@ DEFINE_PROPERTY( maxAngularSpeedGetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( maxAngularSpeedSetter ) {
+DEFINE_PROPERTY_SETTER( maxAngularSpeed ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -689,7 +689,7 @@ $TOC_MEMBER $INAME
  $TYPE real $INAME
   (TBD)
 **/
-DEFINE_PROPERTY( linearDampingGetter ) {
+DEFINE_PROPERTY_GETTER( linearDamping ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -698,7 +698,7 @@ DEFINE_PROPERTY( linearDampingGetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( linearDampingSetter ) {
+DEFINE_PROPERTY_SETTER( linearDamping ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -715,7 +715,7 @@ $TOC_MEMBER $INAME
  $TYPE real $INAME
   (TBD)
 **/
-DEFINE_PROPERTY( linearDampingThresholdGetter ) {
+DEFINE_PROPERTY_GETTER( linearDampingThreshold ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -724,7 +724,7 @@ DEFINE_PROPERTY( linearDampingThresholdGetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( linearDampingThresholdSetter ) {
+DEFINE_PROPERTY_SETTER( linearDampingThreshold ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -742,7 +742,7 @@ $TOC_MEMBER $INAME
  $TYPE real $INAME
   (TBD)
 **/
-DEFINE_PROPERTY( angularDampingGetter ) {
+DEFINE_PROPERTY_GETTER( angularDamping ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -751,7 +751,7 @@ DEFINE_PROPERTY( angularDampingGetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( angularDampingSetter ) {
+DEFINE_PROPERTY_SETTER( angularDamping ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -768,7 +768,7 @@ $TOC_MEMBER $INAME
  $TYPE real $INAME
   (TBD)
 **/
-DEFINE_PROPERTY( angularDampingThresholdGetter ) {
+DEFINE_PROPERTY_GETTER( angularDampingThreshold ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -777,7 +777,7 @@ DEFINE_PROPERTY( angularDampingThresholdGetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( angularDampingThresholdSetter ) {
+DEFINE_PROPERTY_SETTER( angularDampingThreshold ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );
@@ -917,7 +917,7 @@ $TOC_MEMBER $INAME
 **/
 enum { position, quaternion, linearVel, angularVel, force, torque };
 
-DEFINE_PROPERTY( vectorGetter ) {
+DEFINE_PROPERTY_GETTER( vector ) {
 
 	ode::dBodyID bodyID = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyID );
@@ -965,7 +965,7 @@ DEFINE_PROPERTY( vectorGetter ) {
 }
 
 
-DEFINE_PROPERTY( vectorSetter ) {
+DEFINE_PROPERTY_SETTER( vector ) {
 
 	ode::dBodyID bodyID = (ode::dBodyID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( bodyID );
@@ -1013,7 +1013,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the mass object (jsode::Mass) of the body.
 **/
-DEFINE_PROPERTY( mass ) {
+DEFINE_PROPERTY_GETTER( mass ) {
 
 	JSObject *massObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(Mass), JL_PROTOTYPE(cx, Mass), NULL);
 	JL_S_ASSERT(massObject != NULL, "Unable to create the Mass object.");
@@ -1081,7 +1081,7 @@ void moveCallback(ode::dBodyID bodyId) {
 	// no way to access the JSContext
 }
 
-DEFINE_PROPERTY( onMove ) {
+DEFINE_PROPERTY_SETTER( onMove ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( bodyId );

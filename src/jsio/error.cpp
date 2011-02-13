@@ -131,7 +131,7 @@ DEFINE_CONSTRUCTOR() {
 $TOC_MEMBER $INAME
  $INT $INAME $READONLY
 */
-DEFINE_PROPERTY( code ) {
+DEFINE_PROPERTY_GETTER( code ) {
 
 	return JL_GetReservedSlot( cx, obj, 0, vp );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
 }
@@ -141,7 +141,7 @@ DEFINE_PROPERTY( code ) {
 $TOC_MEMBER $INAME
  $STRING $INAME $READONLY
 */
-DEFINE_PROPERTY( const ) {
+DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_CHK( JL_GetReservedSlot(cx, obj, 0, vp) );
 	if ( JSVAL_IS_VOID(*vp) )
@@ -159,7 +159,7 @@ DEFINE_PROPERTY( const ) {
 $TOC_MEMBER $INAME
  $INT $INAME $READONLY
 */
-DEFINE_PROPERTY( os ) {
+DEFINE_PROPERTY_GETTER( os ) {
 
 	return JL_GetReservedSlot( cx, obj, 1, vp );  // (TBD) use the obj.name proprety directly instead of slot 1 ?
 }
@@ -170,7 +170,7 @@ DEFINE_PROPERTY( os ) {
 $TOC_MEMBER $INAME
  $STR $INAME $READONLY
 */
-DEFINE_PROPERTY( text ) {
+DEFINE_PROPERTY_GETTER( text ) {
 
 	JL_CHK( JL_GetReservedSlot(cx, obj, 0, vp) );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
 	if ( JSVAL_IS_VOID(*vp) )
@@ -187,7 +187,7 @@ DEFINE_PROPERTY( text ) {
 DEFINE_FUNCTION( toString ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	return _text(cx, obj, JSID_EMPTY, JL_RVAL);
+	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
 DEFINE_HAS_INSTANCE() { // see issue#52

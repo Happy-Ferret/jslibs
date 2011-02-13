@@ -23,14 +23,14 @@
 BEGIN_CLASS( OglError )
 
 
-DEFINE_PROPERTY( code ) {
+DEFINE_PROPERTY_GETTER( code ) {
 	
 	JL_USE(id);
 	return JL_GetReservedSlot( cx, obj, 0, vp );
 }
 
 
-DEFINE_PROPERTY( text ) {
+DEFINE_PROPERTY_GETTER( text ) {
 
 	JL_USE(id);
 	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
@@ -72,7 +72,7 @@ DEFINE_PROPERTY( text ) {
 }
 
 
-DEFINE_PROPERTY( const ) {
+DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_USE(id);
 	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
@@ -117,7 +117,7 @@ DEFINE_FUNCTION( toString ) {
 	JL_USE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
 
-	return _text(cx, obj, JSID_EMPTY, JL_RVAL);
+	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
 

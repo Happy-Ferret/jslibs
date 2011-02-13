@@ -193,7 +193,7 @@ $TOC_MEMBER $INAME
   Is the status of the geometry.
 **/
 
-DEFINE_PROPERTY( disabledSetter ) {
+DEFINE_PROPERTY_SETTER( disabled ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
@@ -223,7 +223,7 @@ $TOC_MEMBER $INAME
   Is the status of the geometry.
 **/
 
-DEFINE_PROPERTY( temporalCoherenceSetter ) {
+DEFINE_PROPERTY_SETTER( temporalCoherence ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geomId);
@@ -235,7 +235,7 @@ DEFINE_PROPERTY( temporalCoherenceSetter ) {
 }
 
 
-DEFINE_PROPERTY( temporalCoherenceGetter ) {
+DEFINE_PROPERTY_GETTER( temporalCoherence ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geomId );
@@ -250,7 +250,7 @@ $TOC_MEMBER $INAME
  $TYPE body *body*
   Bind the current geometry to the given body object.
 **/
-DEFINE_PROPERTY( bodySetter ) {
+DEFINE_PROPERTY_SETTER( body ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -261,7 +261,7 @@ DEFINE_PROPERTY( bodySetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( bodyGetter ) {
+DEFINE_PROPERTY_GETTER( body ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geomId );
@@ -280,7 +280,7 @@ $TOC_MEMBER $INAME
 **/
 
 // setting undefined means clear the offset
-DEFINE_PROPERTY( offset ) {
+DEFINE_PROPERTY_SETTER( offset ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
@@ -319,7 +319,7 @@ $TOC_MEMBER $INAME
  *tansformation*
   Sets the position and rotation of the geometry to its center of mass.
 **/
-DEFINE_PROPERTY( tansformation ) {
+DEFINE_PROPERTY_SETTER( tansformation ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
@@ -352,7 +352,7 @@ DEFINE_PROPERTY( tansformation ) {
 $TOC_MEMBER $INAME
   Is the current position of the geometry.
 **/
-DEFINE_PROPERTY( space ) {
+DEFINE_PROPERTY_GETTER( space ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
@@ -391,7 +391,7 @@ $TOC_MEMBER $INAME
  $TYPE vec3 *position*
   Is the current position of the geometry.
 **/
-DEFINE_PROPERTY( positionGetter ) {
+DEFINE_PROPERTY_GETTER( position ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
@@ -402,7 +402,7 @@ DEFINE_PROPERTY( positionGetter ) {
 }
 
 
-DEFINE_PROPERTY( positionSetter ) {
+DEFINE_PROPERTY_SETTER( position ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
@@ -420,7 +420,7 @@ $TOC_MEMBER $INAME
  $TYPE vec6 $INAME
   Is the axis-aligned bounding box [minx, miny, minz,  maxx, maxy, maxz].
 **/
-DEFINE_PROPERTY( aabb ) {
+DEFINE_PROPERTY_GETTER( aabb ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geom);
@@ -446,7 +446,7 @@ $TOC_MEMBER $INAME
  $TYPE vec4 $INAME
   Is the bounding sphere [x,y,z, radius]
 **/
-DEFINE_PROPERTY( boundarySphere ) {
+DEFINE_PROPERTY_GETTER( boundarySphere ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(geomId);
@@ -511,7 +511,7 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
   $LF
   _againstGeom_ is the geometry against with this geometry is colliding (the other Geom).
 **/
-DEFINE_PROPERTY( contactSetter ) {
+DEFINE_PROPERTY_SETTER( contact ) {
 	
 //	JL_S_ASSERT( JL_IsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
 	if ( !JSVAL_IS_VOID(*vp) )
@@ -520,7 +520,7 @@ DEFINE_PROPERTY( contactSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( contactGetter ) {
+DEFINE_PROPERTY_GETTER( contact ) {
 
 	return JL_GetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, vp);
 }

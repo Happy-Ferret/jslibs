@@ -207,7 +207,7 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME
   TBD
 **/
-DEFINE_PROPERTY( eulerModeSetter ) {
+DEFINE_PROPERTY_SETTER( eulerMode ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
@@ -218,7 +218,7 @@ DEFINE_PROPERTY( eulerModeSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( eulerModeGetter ) {
+DEFINE_PROPERTY_GETTER( eulerMode ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -233,7 +233,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
   In euler mode this is the corresponding euler angle rate of axis 1.
 **/
-DEFINE_PROPERTY( angle0Rate ) {
+DEFINE_PROPERTY_GETTER( angle0Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -246,7 +246,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
   In euler mode this is the corresponding euler angle rate of axis 2.
 **/
-DEFINE_PROPERTY( angle1Rate ) {
+DEFINE_PROPERTY_GETTER( angle1Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -259,7 +259,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
   In euler mode this is the corresponding euler angle rate of axis 3.
 **/
-DEFINE_PROPERTY( angle2Rate ) {
+DEFINE_PROPERTY_GETTER( angle2Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);

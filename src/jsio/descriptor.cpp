@@ -449,7 +449,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Determine the amount of data in bytes available for reading on the descriptor.
 **/
-DEFINE_PROPERTY( available ) {
+DEFINE_PROPERTY_GETTER( available ) {
 
 	JL_S_ASSERT_THIS_INSTANCE();
 	PRFileDesc *fd;
@@ -484,7 +484,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   see constants below.
 **/
-DEFINE_PROPERTY( type ) {
+DEFINE_PROPERTY_GETTER( type ) {
 
 	JL_S_ASSERT_THIS_INSTANCE();
 	PRFileDesc *fd;
@@ -503,7 +503,7 @@ $TOC_MEMBER $INAME
   $H beware
    Do not confuse with disconnected.$LF eg. A socket descriptor can be open but disconnected.
 **/
-DEFINE_PROPERTY( closed ) {
+DEFINE_PROPERTY_GETTER( closed ) {
 
 	JL_S_ASSERT_THIS_INSTANCE();
 	PRFileDesc *fd;

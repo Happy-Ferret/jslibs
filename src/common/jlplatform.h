@@ -410,6 +410,7 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 	typedef float float32_t;
 	typedef double float64_t;
 
+
 	#define DLL_EXT ".so"
 	#define PATH_SEPARATOR_STRING "/"
 	#define PATH_SEPARATOR '/'
@@ -433,6 +434,14 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 #endif // Windows/MacosX/Linux platform
 
 
+#ifdef WIN32
+#define L(CSTRING) (L##CSTRING)
+#else
+#define L(CSTRING) ((uint16_t*)L##CSTRING)
+#endif
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
 
@@ -445,12 +454,20 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 #define SSIZE_T_MIN ((ssize_t)(-SSIZE_T_MAX - (ssize_t)1))
 
 
+#ifdef _MSC_VER
 #define UNLIKELY_SPLIT_BEGIN(...) { struct { INLINE NEVER_INLINE JSBool FASTCALL operator()( ##__VA_ARGS__ ) {
 #define UNLIKELY_SPLIT_END(...) } } inner; if ( inner( ##__VA_ARGS__ ) ) return JS_TRUE; else goto bad; JL_BAD; }
+#else
+#define UNLIKELY_SPLIT_BEGIN(...)
+#define UNLIKELY_SPLIT_END(...)
+#endif
 
-
-#define JL_HASFLAGS(value, flags) \
-	(((value) & (flags)) == (flags))
+template<class T, class U>
+ALWAYS_INLINE bool
+JL_HasFlags(T value, U flags) {
+	
+	return (value & flags) == flags;
+}
 
 
 //template<class T>
@@ -1179,8 +1196,11 @@ JLRemainingStackSize() {
 	volatile BYTE *currentSP;
 	__asm mov [currentSP], esp;
 	return currentSP - (BYTE*)tib->StackLimit;
+
 #elif defined(XP_UNIX)
-	#error NOT IMPLEMENTED YET	// (TBD)
+
+	return (size_t)-1;
+
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif

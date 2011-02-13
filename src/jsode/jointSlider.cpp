@@ -96,7 +96,7 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME
   TBD
 **/
-DEFINE_PROPERTY( axisSetter ) {
+DEFINE_PROPERTY_SETTER( axis ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
@@ -110,7 +110,7 @@ DEFINE_PROPERTY( axisSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( axisGetter ) {
+DEFINE_PROPERTY_GETTER( axis ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -126,7 +126,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
   TBD
 **/
-DEFINE_PROPERTY( position ) {
+DEFINE_PROPERTY_GETTER( position ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -140,7 +140,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
   TBD
 **/
-DEFINE_PROPERTY( positionRate ) {
+DEFINE_PROPERTY_GETTER( positionRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);

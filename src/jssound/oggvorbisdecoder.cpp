@@ -401,7 +401,7 @@ $TOC_MEMBER $INAME
  object $INAME $READONLY
   Is the stream object where encoded audio data are read from.
 **/
-DEFINE_PROPERTY( inputStream ) {
+DEFINE_PROPERTY_GETTER( inputStream ) {
 
 	JL_USE(id);
 
@@ -417,7 +417,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   Is the number of bits per frame and per channel.
 **/
-DEFINE_PROPERTY( bits ) {
+DEFINE_PROPERTY_GETTER( bits ) {
 
 	JL_USE(id);
 
@@ -433,7 +433,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   Is the number of frames per seconds of the sound.
 **/
-DEFINE_PROPERTY( rate ) {
+DEFINE_PROPERTY_GETTER( rate ) {
 
 	JL_USE(id);
 
@@ -449,7 +449,7 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   Is the number of channels of the sound. 1 is mono, 2 is stereo.
 **/
-DEFINE_PROPERTY( channels ) {
+DEFINE_PROPERTY_GETTER( channels ) {
 
 	JL_USE(id);
 
@@ -466,7 +466,7 @@ $TOC_MEMBER $INAME
   Is the length (in frames) of the sound.
   To compute the duration of the sound, use (frames/rate)
 **/
-DEFINE_PROPERTY( frames ) {
+DEFINE_PROPERTY_GETTER( frames ) {
 
 	JL_USE(id);
 
@@ -492,15 +492,15 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION(Read)
+		FUNCTION( Read )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ(inputStream)
-		PROPERTY_READ(bits)
-		PROPERTY_READ(rate)
-		PROPERTY_READ(channels)
-		PROPERTY_READ(frames)
+		PROPERTY_READ( inputStream )
+		PROPERTY_READ( bits )
+		PROPERTY_READ( rate )
+		PROPERTY_READ( channels )
+		PROPERTY_READ( frames )
 	END_PROPERTY_SPEC
 
 	HAS_PRIVATE

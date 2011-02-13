@@ -837,7 +837,7 @@ $TOC_MEMBER $INAME
  $STR $INAME
   Places or retrieves text data from the clipboard.
 **/
-DEFINE_PROPERTY( clipboardGetter ) {
+DEFINE_PROPERTY_GETTER( clipboard ) {
 
 	BOOL res = OpenClipboard(NULL);
 	JL_S_ASSERT( res != 0, "Unable to open the clipboard." );
@@ -860,7 +860,7 @@ DEFINE_PROPERTY( clipboardGetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( clipboardSetter ) {
+DEFINE_PROPERTY_SETTER( clipboard ) {
 
 	BOOL res = OpenClipboard(NULL);
 	JL_S_ASSERT( res != 0, "Unable to open the clipboard." );
@@ -895,7 +895,7 @@ $TOC_MEMBER $INAME
  $INT $INAME
   current Windows ANSI code page identifier for the operating system.
 **/
-DEFINE_PROPERTY( systemCodepage ) {
+DEFINE_PROPERTY_GETTER( systemCodepage ) {
 
 	*vp = INT_TO_JSVAL(GetACP());
 	return JS_TRUE;
@@ -906,7 +906,7 @@ $TOC_MEMBER $INAME
  $INT $INAME
   current Windows ANSI code page identifier for the console.
 **/
-DEFINE_PROPERTY( consoleCodepage ) {
+DEFINE_PROPERTY_GETTER( consoleCodepage ) {
 
 	*vp = INT_TO_JSVAL(GetOEMCP());
 	return JS_TRUE;
@@ -988,7 +988,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME
   is the elapsed time since the last input event (in milliseconds).
 **/
-DEFINE_PROPERTY( lastInputTime ) {
+DEFINE_PROPERTY_GETTER( lastInputTime ) {
 
 	LASTINPUTINFO lastInputInfo = {0};
 	lastInputInfo.cbSize = sizeof(LASTINPUTINFO);

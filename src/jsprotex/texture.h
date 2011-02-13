@@ -35,8 +35,7 @@ struct TextureStruct {
 	PTYPE *cbackBuffer;
 	size_t cbackBufferSize;
 
-	unsigned int width, height;
-	unsigned char channels;
+	unsigned int width, height, channels;
 };
 
 

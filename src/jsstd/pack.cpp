@@ -684,7 +684,7 @@ $TOC_MEMBER $INAME
  $TYPE Buffer *buffer*
   Is the current Buffer object.
 **/
-DEFINE_PROPERTY( buffer ) {
+DEFINE_PROPERTY_GETTER( buffer ) {
 
 	JL_USE(id);
 
@@ -704,7 +704,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the size (in Byte) of a system int.
 **/
-DEFINE_PROPERTY( systemIntSize ) {
+DEFINE_PROPERTY_GETTER( systemIntSize ) {
 
 	JL_USE(id);
 	JL_USE(obj);
@@ -719,7 +719,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is $TRUE if the system endian is BigEndian else is $FALSE.
 **/
-DEFINE_PROPERTY( systemIsBigEndian ) {
+DEFINE_PROPERTY_GETTER( systemIsBigEndian ) {
 
 	JL_USE(id);
 	JL_USE(obj);
@@ -756,13 +756,13 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY(useNetworkEndian)
-		PROPERTY_READ(buffer)
+		PROPERTY( useNetworkEndian )
+		PROPERTY_READ( buffer )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_READ(systemIntSize)
-		PROPERTY_READ(systemIsBigEndian)
+		PROPERTY_READ( systemIntSize )
+		PROPERTY_READ( systemIsBigEndian )
 	END_STATIC_PROPERTY_SPEC
 
 //	HAS_PRIVATE

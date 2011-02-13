@@ -64,7 +64,7 @@ DEFINE_CONSTRUCTOR() {
 $TOC_MEMBER $INAME
  $REAL $INAME
 **/
-DEFINE_PROPERTY( radiusSetter ) {
+DEFINE_PROPERTY_SETTER( radius ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );
@@ -75,7 +75,7 @@ DEFINE_PROPERTY( radiusSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( radiusGetter ) {
+DEFINE_PROPERTY_GETTER( radius ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( geom );

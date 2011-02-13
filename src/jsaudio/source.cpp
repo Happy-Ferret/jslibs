@@ -324,7 +324,7 @@ DEFINE_FUNCTION( valueOf ) {
 === Properties ===
 **/
 
-DEFINE_PROPERTY( effectSlot ) {
+DEFINE_PROPERTY_SETTER( effectSlot ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -343,7 +343,7 @@ DEFINE_PROPERTY( effectSlot ) {
 }
 
 
-DEFINE_PROPERTY( directFilter ) {
+DEFINE_PROPERTY_SETTER( directFilter ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -460,7 +460,7 @@ DEFINE_FUNCTION( Position ) {
 }
 
 
-DEFINE_PROPERTY( position ) {
+DEFINE_PROPERTY_GETTER( position ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -507,7 +507,7 @@ DEFINE_FUNCTION( Velocity ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( velocity ) {
+DEFINE_PROPERTY_GETTER( velocity ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -524,7 +524,7 @@ DEFINE_PROPERTY( velocity ) {
 
 
 
-DEFINE_PROPERTY( remainingTime ) {
+DEFINE_PROPERTY_GETTER( remainingTime ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );

@@ -306,7 +306,7 @@ $TOC_MEMBER $INAME
  $H note
   max position is 2^53
 **/
-DEFINE_PROPERTY( positionSetter ) {
+DEFINE_PROPERTY_SETTER( position ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT( fd != NULL, "File is closed." );
@@ -323,7 +323,7 @@ DEFINE_PROPERTY( positionSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( positionGetter ) {
+DEFINE_PROPERTY_GETTER( position ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT( fd != NULL, "File is closed." );
@@ -344,7 +344,7 @@ $TOC_MEMBER $INAME
   Get or set the content of the file. If the file does not exist or is not readable, content is _undefined_.
   Setting content with _undefined_ deletes the file.
 **/
-DEFINE_PROPERTY( contentGetter ) {
+DEFINE_PROPERTY_GETTER( content ) {
 
 	JLStr fileName;
 	JL_S_ASSERT( (PRFileDesc*)JL_GetPrivate(cx, obj) == NULL, "Cannot get content of an open file.");
@@ -425,7 +425,7 @@ bad:
 }
 
 
-DEFINE_PROPERTY( contentSetter ) {
+DEFINE_PROPERTY_SETTER( content ) {
 
 	JLStr fileName, buf;
 	JL_S_ASSERT( (PRFileDesc *)JL_GetPrivate( cx, obj ) == NULL, "Cannot set content of an open file.");
@@ -472,13 +472,13 @@ $TOC_MEMBER $INAME
  $STR $INAME
   Contains the name of the file. Changing this value will rename or move the file.
 **/
-DEFINE_PROPERTY( nameGetter ) {
+DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, vp );
 	return JS_TRUE;
 }
 
-DEFINE_PROPERTY( nameSetter ) {
+DEFINE_PROPERTY_SETTER( name ) {
 
 	JLStr fromFileName, toFileName;
 	JL_S_ASSERT_DEFINED( *vp );
@@ -505,7 +505,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
   is true if the file exists.
 **/
-DEFINE_PROPERTY( exist ) {
+DEFINE_PROPERTY_GETTER( exist ) {
 
 	JLStr fileName;
 	jsval jsvalFileName;
@@ -522,7 +522,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
   is true if the file is writable.
 **/
-DEFINE_PROPERTY( hasWriteAccess ) {
+DEFINE_PROPERTY_GETTER( hasWriteAccess ) {
 	
 	JLStr fileName;
 	jsval jsvalFileName;
@@ -539,7 +539,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
   is true if the file is readable.
 **/
-DEFINE_PROPERTY( hasReadAccess ) {
+DEFINE_PROPERTY_GETTER( hasReadAccess ) {
 
 	JLStr fileName;
 	jsval jsvalFileName;
@@ -573,7 +573,7 @@ $TOC_MEMBER $INAME
    Print( new Date( f.info.modifyTime ) );
    }}}
 **/
-DEFINE_PROPERTY( info ) {
+DEFINE_PROPERTY_GETTER( info ) {
 
 	PRFileInfo fileInfo;
 	PRStatus status;

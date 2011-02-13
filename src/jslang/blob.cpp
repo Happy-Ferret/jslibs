@@ -927,7 +927,7 @@ $TOC_MEMBER $INAME
  $INT $INAME
   is the length of the current Blob.
 **/
-DEFINE_PROPERTY( length ) {
+DEFINE_PROPERTY_GETTER( length ) {
 
 	JL_USE(id);
 
@@ -980,6 +980,7 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
+	JL_USE(strict);
 	JL_USE(obj);
 	JL_USE(vp);
 

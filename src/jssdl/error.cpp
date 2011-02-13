@@ -32,7 +32,7 @@ $TOC_MEMBER $INAME
  $INAME $READONLY
   Is the text of the error.
 **/
-DEFINE_PROPERTY( text ) {
+DEFINE_PROPERTY_GETTER( text ) {
 
 	return JL_GetReservedSlot( cx, obj, 0, vp );
 }
@@ -40,7 +40,7 @@ DEFINE_PROPERTY( text ) {
 DEFINE_FUNCTION( toString ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	return _text(cx, obj, JSID_EMPTY, JL_RVAL);
+	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
 DEFINE_HAS_INSTANCE() { // see issue#52

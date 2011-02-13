@@ -571,7 +571,7 @@ DEFINE_FUNCTION( ClearChannel ) {
 	} else
 	if ( argc >= 1 ) {
 
-		int channel;
+		unsigned int channel;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &channel) );
 		JL_S_ASSERT( channel < tex->channels, "Invalid channel." );
 
@@ -4442,7 +4442,7 @@ $TOC_MEMBER $INAME
   $LF
   See Normalize() function.
 **/
-DEFINE_PROPERTY( vmax ) {
+DEFINE_PROPERTY_GETTER( vmax ) {
 	
 	JL_CHK( JL_NewNumberValue(cx, PMAX, vp) );
 	return JL_StoreProperty(cx, obj, id, vp, true);
@@ -4455,7 +4455,7 @@ $TOC_MEMBER $INAME
  $INT $INAME
   Width of the texture in pixel.
 **/
-DEFINE_PROPERTY( width ) {
+DEFINE_PROPERTY_GETTER( width ) {
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
@@ -4469,7 +4469,7 @@ $TOC_MEMBER $INAME
  $INT $INAME
   Height of the texture in pixel.
 **/
-DEFINE_PROPERTY( height ) {
+DEFINE_PROPERTY_GETTER( height ) {
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
@@ -4483,7 +4483,7 @@ $TOC_MEMBER $INAME
  $INT $INAME
   Number of channels of the texture.
 **/
-DEFINE_PROPERTY( channels ) {
+DEFINE_PROPERTY_GETTER( channels ) {
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(tex);
@@ -4654,10 +4654,10 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ(vmax)
-		PROPERTY_READ(width)
-		PROPERTY_READ(height)
-		PROPERTY_READ(channels)
+		PROPERTY_READ( vmax )
+		PROPERTY_READ( width )
+		PROPERTY_READ( height )
+		PROPERTY_READ( channels )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC

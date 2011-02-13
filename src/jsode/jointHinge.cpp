@@ -97,7 +97,7 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME
   TBD
 **/
-DEFINE_PROPERTY( anchorSetter ) {
+DEFINE_PROPERTY_SETTER( anchor ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
@@ -111,7 +111,7 @@ DEFINE_PROPERTY( anchorSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( anchorGetter ) {
+DEFINE_PROPERTY_GETTER( anchor ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -127,7 +127,7 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME $READONLY
   TBD
 **/
-DEFINE_PROPERTY( anchor2 ) { // read only
+DEFINE_PROPERTY_GETTER( anchor2 ) { // read only
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -143,7 +143,7 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME
   Get or set the axis of the joint.
 **/
-DEFINE_PROPERTY( axisSetter ) {
+DEFINE_PROPERTY_SETTER( axis ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
@@ -157,7 +157,7 @@ DEFINE_PROPERTY( axisSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( axisGetter ) {
+DEFINE_PROPERTY_GETTER( axis ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -174,7 +174,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
   Get the current angle.
 **/
-DEFINE_PROPERTY( angle ) {
+DEFINE_PROPERTY_GETTER( angle ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -188,7 +188,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME $READONLY
   Get the current rotation speed.
 **/
-DEFINE_PROPERTY( angleRate ) {
+DEFINE_PROPERTY_GETTER( angleRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);

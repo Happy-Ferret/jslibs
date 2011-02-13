@@ -424,7 +424,7 @@ void NativeData_Finalize(JSContext *cx, JSObject *obj);
 
 JSClass NativeData = {
   "NativeData", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1), // slot[0]: ref. to the root object
-  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
   JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, NativeData_Finalize
 };
 
@@ -601,7 +601,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 }
 
 // eg. arg.PU32[0] = 12345;
-JSBool NativeType_setter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
+JSBool NativeType_setter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp) {
 
   // TODO: manage null & undefined
 
@@ -880,7 +880,7 @@ JSBool NativeData_getter_String(JSContext *cx, JSObject *obj, jsid id, jsval *vp
 // usage: arg.String = 'qwerty';
 // the string CAN contain null char inside.
 // One more char is allocated for a null terminator BUT the interpretation of this char is NOT amndatory, this ending null char can keep unused.
-JSBool NativeData_setter_String(JSContext *cx, JSObject *obj, jsid id, jsval *vp) { // note: *vp is converted into a js string
+JSBool NativeData_setter_String(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp) { // note: *vp is converted into a js string
 
   if ( JS_TypeOfValue( cx, *vp ) != JSTYPE_STRING )
     *vp = STRING_TO_JSVAL( JS_ValueToString( cx, *vp ) ); // convert any vp type to JS string
@@ -1051,7 +1051,7 @@ JSFunctionSpec NativeProc_FunctionSpec[] = {
 
 JSClass NativeProc = {
   "NativeProc", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(2),
-  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
   JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
   0,0, NativeProc_Call
 };
@@ -1190,7 +1190,7 @@ JSFunctionSpec NativeModule_FunctionSpec[] = {
 
 JSClass NativeModule = {
   "NativeModule", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
-  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub /*NativeModule_Getter*/, JS_PropertyStub,
+  JS_PropertyStub, JS_PropertyStub, JS_PropertyStub /*NativeModule_Getter*/, JS_StrictPropertyStub,
   JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, /*JS_FinalizeStub*/ NativeModule_Finalize
 };
 

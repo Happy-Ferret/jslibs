@@ -328,7 +328,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME
   (TBD)
 **/
-DEFINE_PROPERTY( disabledSetter ) {
+DEFINE_PROPERTY_SETTER( disabled ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( jointId );
@@ -342,7 +342,7 @@ DEFINE_PROPERTY( disabledSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( disabledGetter ) {
+DEFINE_PROPERTY_GETTER( disabled ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( jointId );
@@ -360,7 +360,7 @@ $TOC_MEMBER $INAME
   $LF
   Using feedback will allows body1Force, body1Torque, body2Force and body2Torque to be used.
 **/
-DEFINE_PROPERTY( useFeedbackSetter ) {
+DEFINE_PROPERTY_SETTER( useFeedback ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT_RESOURCE( jointId );
@@ -387,7 +387,7 @@ DEFINE_PROPERTY( useFeedbackSetter ) {
 }
 
 
-DEFINE_PROPERTY( useFeedbackGetter ) {
+DEFINE_PROPERTY_GETTER( useFeedback ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( jointId );
@@ -416,7 +416,7 @@ $TOC_MEMBER $INAME
 **/
 enum { body1Force, body1Torque, body2Force, body2Torque };
 
-DEFINE_PROPERTY( feedbackVectorSetter ) {
+DEFINE_PROPERTY_SETTER( feedbackVector ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( jointId );
@@ -445,7 +445,7 @@ DEFINE_PROPERTY( feedbackVectorSetter ) {
 }
 
 
-DEFINE_PROPERTY( feedbackVectorGetter ) {
+DEFINE_PROPERTY_GETTER( feedbackVector ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( jointId );
@@ -539,7 +539,7 @@ enum {
 };
 
 
-DEFINE_PROPERTY( jointParamSetter ) {
+DEFINE_PROPERTY_SETTER( jointParam ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -550,7 +550,7 @@ DEFINE_PROPERTY( jointParamSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( jointParamGetter ) {
+DEFINE_PROPERTY_GETTER( jointParam ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -560,7 +560,7 @@ DEFINE_PROPERTY( jointParamGetter ) {
 }
 
 
-DEFINE_PROPERTY( jointParam1Setter ) {
+DEFINE_PROPERTY_SETTER( jointParam1 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -571,7 +571,7 @@ DEFINE_PROPERTY( jointParam1Setter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( jointParam1Getter ) {
+DEFINE_PROPERTY_GETTER( jointParam1 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -581,7 +581,7 @@ DEFINE_PROPERTY( jointParam1Getter ) {
 }
 
 
-DEFINE_PROPERTY( jointParam2Setter ) {
+DEFINE_PROPERTY_SETTER( jointParam2 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -592,7 +592,7 @@ DEFINE_PROPERTY( jointParam2Setter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( jointParam2Getter ) {
+DEFINE_PROPERTY_GETTER( jointParam2 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);

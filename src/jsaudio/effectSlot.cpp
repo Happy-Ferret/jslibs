@@ -69,7 +69,7 @@ DEFINE_FUNCTION( valueOf ) {
 === Properties ===
 **/
 
-DEFINE_PROPERTY( effect ) {
+DEFINE_PROPERTY_SETTER( effect ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );

@@ -160,7 +160,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME
   TBD dBodyGetMass, dBodySetMass
 **/
-DEFINE_PROPERTY( valueSetter ) {
+DEFINE_PROPERTY_SETTER( value ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
@@ -174,7 +174,7 @@ DEFINE_PROPERTY( valueSetter ) {
 }
 
 
-DEFINE_PROPERTY( valueGetter ) {
+DEFINE_PROPERTY_GETTER( value ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
@@ -191,7 +191,7 @@ $TOC_MEMBER $INAME
   TBD dBodyGetMass, dBodySetMass
   get/set a _vec3_
 **/
-DEFINE_PROPERTY( centerSetter ) {
+DEFINE_PROPERTY_SETTER( center ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
@@ -208,7 +208,7 @@ DEFINE_PROPERTY( centerSetter ) {
 }
 
 
-DEFINE_PROPERTY( centerGetter ) {
+DEFINE_PROPERTY_GETTER( center ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;

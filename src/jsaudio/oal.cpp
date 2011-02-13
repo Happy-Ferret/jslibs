@@ -119,7 +119,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
   is true if EFX extension is available.
 **/
-DEFINE_PROPERTY( hasEfx ) {
+DEFINE_PROPERTY_GETTER( hasEfx ) {
 
 	ALCcontext *pContext = alcGetCurrentContext();
 	ALCdevice *pDevice = alcGetContextsDevice(pContext);
@@ -133,7 +133,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
   is the number of aux sends per source.
 **/
-DEFINE_PROPERTY( maxAuxiliarySends ) {
+DEFINE_PROPERTY_GETTER( maxAuxiliarySends ) {
 
 	ALCcontext *pContext = alcGetCurrentContext();
 	ALCdevice *pDevice = alcGetContextsDevice(pContext);

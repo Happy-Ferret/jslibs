@@ -352,7 +352,7 @@ $TOC_MEMBER $INAME
  $STR $INAME
   Read or write the whole content of the shared memory. Setting _undefined_ as value clears the memory area.
 **/
-DEFINE_PROPERTY( contentSetter ) {
+DEFINE_PROPERTY_SETTER( content ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -388,7 +388,7 @@ DEFINE_PROPERTY( contentSetter ) {
 }
 
 
-DEFINE_PROPERTY( contentGetter ) {
+DEFINE_PROPERTY_GETTER( content ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );

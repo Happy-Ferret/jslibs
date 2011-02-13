@@ -787,7 +787,7 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( VSTPlugin )
 
 
-DEFINE_PROPERTY( hostLanguage ) {
+DEFINE_PROPERTY_GETTER( hostLanguage ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -797,7 +797,7 @@ DEFINE_PROPERTY( hostLanguage ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( directory ) {
+DEFINE_PROPERTY_GETTER( directory ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -814,7 +814,7 @@ DEFINE_PROPERTY( directory ) {
 }
 
 
-DEFINE_PROPERTY( canProcessReplacing ) {
+DEFINE_PROPERTY_GETTER( canProcessReplacing ) {
 
 	if ( JSVAL_IS_VOID(*vp) ) {
 
@@ -831,7 +831,7 @@ DEFINE_PROPERTY( canProcessReplacing ) {
 DEFINE_PROPERTY( canDoubleReplacing ) { }
 */
 
-DEFINE_PROPERTY( numPrograms ) {
+DEFINE_PROPERTY_SETTER( numPrograms ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -841,7 +841,7 @@ DEFINE_PROPERTY( numPrograms ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( numParams ) {
+DEFINE_PROPERTY_SETTER( numParams ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -851,7 +851,7 @@ DEFINE_PROPERTY( numParams ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( numInputs ) {
+DEFINE_PROPERTY_SETTER( numInputs ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -861,7 +861,7 @@ DEFINE_PROPERTY( numInputs ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( numOutputs ) {
+DEFINE_PROPERTY_SETTER( numOutputs ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -871,7 +871,7 @@ DEFINE_PROPERTY( numOutputs ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( samplePos ) {
+DEFINE_PROPERTY_GETTER( samplePos ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -884,7 +884,7 @@ DEFINE_PROPERTY( samplePos ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( sampleRate ) {
+DEFINE_PROPERTY_GETTER( sampleRate ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -897,7 +897,7 @@ DEFINE_PROPERTY( sampleRate ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( nanoSeconds ) {
+DEFINE_PROPERTY_GETTER( nanoSeconds ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -910,7 +910,7 @@ DEFINE_PROPERTY( nanoSeconds ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( ppqPos ) {
+DEFINE_PROPERTY_GETTER( ppqPos ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -923,7 +923,7 @@ DEFINE_PROPERTY( ppqPos ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( tempo ) {
+DEFINE_PROPERTY_GETTER( tempo ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -936,7 +936,7 @@ DEFINE_PROPERTY( tempo ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( barStartPos ) {
+DEFINE_PROPERTY_GETTER( barStartPos ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -949,7 +949,7 @@ DEFINE_PROPERTY( barStartPos ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( cycleStartPos ) {
+DEFINE_PROPERTY_GETTER( cycleStartPos ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -962,7 +962,7 @@ DEFINE_PROPERTY( cycleStartPos ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( cycleEndPos ) {
+DEFINE_PROPERTY_GETTER( cycleEndPos ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -975,7 +975,7 @@ DEFINE_PROPERTY( cycleEndPos ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( timeSigNumerator ) {
+DEFINE_PROPERTY_GETTER( timeSigNumerator ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -988,7 +988,7 @@ DEFINE_PROPERTY( timeSigNumerator ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( timeSigDenominator ) {
+DEFINE_PROPERTY_GETTER( timeSigDenominator ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -1001,7 +1001,7 @@ DEFINE_PROPERTY( timeSigDenominator ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( smpteOffset ) {
+DEFINE_PROPERTY_GETTER( smpteOffset ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -1014,7 +1014,7 @@ DEFINE_PROPERTY( smpteOffset ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( smpteFrameRate ) {
+DEFINE_PROPERTY_GETTER( smpteFrameRate ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -1027,7 +1027,7 @@ DEFINE_PROPERTY( smpteFrameRate ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( samplesToNextClock ) {
+DEFINE_PROPERTY_GETTER( samplesToNextClock ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -1042,7 +1042,7 @@ DEFINE_PROPERTY( samplesToNextClock ) {
 
 
 
-DEFINE_PROPERTY( inputLatency ) {
+DEFINE_PROPERTY_SETTER( inputLatency ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -1051,7 +1051,7 @@ DEFINE_PROPERTY( inputLatency ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( outputLatency ) {
+DEFINE_PROPERTY_SETTER( outputLatency ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );
@@ -1061,7 +1061,7 @@ DEFINE_PROPERTY( outputLatency ) {
 }
 
 
-DEFINE_PROPERTY( initialDelay ) {
+DEFINE_PROPERTY_SETTER( initialDelay ) {
 
 	JL_S_ASSERT_INT( *vp );
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
@@ -1072,7 +1072,7 @@ DEFINE_PROPERTY( initialDelay ) {
 }
 
 
-DEFINE_PROPERTY( uniqueID ) {
+DEFINE_PROPERTY_SETTER( uniqueID ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( vstPlugin );

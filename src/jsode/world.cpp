@@ -555,7 +555,7 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME
   Gets or sets the gravity vector for a given world.
 **/
-DEFINE_PROPERTY( gravityGetter ) {
+DEFINE_PROPERTY_GETTER( gravity ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -567,7 +567,7 @@ DEFINE_PROPERTY( gravityGetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( gravitySetter ) {
+DEFINE_PROPERTY_SETTER( gravity ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -601,7 +601,7 @@ $TOC_MEMBER quickStepNumIterations
 
 enum { ERP, CFM, quickStepNumIterations, quickStepW, contactSurfaceLayer, contactMaxCorrectingVel, linearDamping, linearDampingThreshold, angularDamping, angularDampingThreshold, maxAngularSpeed };
 
-DEFINE_PROPERTY( realSetter ) {
+DEFINE_PROPERTY_SETTER( real ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -647,7 +647,7 @@ DEFINE_PROPERTY( realSetter ) {
 }
 
 
-DEFINE_PROPERTY( realGetter ) {
+DEFINE_PROPERTY_GETTER( real ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
@@ -698,7 +698,7 @@ $TOC_MEMBER $INAME
  $TYPE Body $INAME $READONLY
   Returns the default surface parameters of the world.
 **/
-DEFINE_PROPERTY( defaultSurfaceParameters ) {
+DEFINE_PROPERTY_GETTER( defaultSurfaceParameters ) {
 
 	return JL_GetReservedSlot(cx, obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, vp);
 }
@@ -709,7 +709,7 @@ $TOC_MEMBER $INAME
  $TYPE Body $INAME $READONLY
   Returns the default space of the world.
 **/
-DEFINE_PROPERTY( space ) {
+DEFINE_PROPERTY_GETTER( space ) {
 
 	return JL_GetReservedSlot(cx, obj, SLOT_WORLD_SPACE, vp);
 }
@@ -720,7 +720,7 @@ $TOC_MEMBER $INAME
  $TYPE Body $INAME $READONLY
   Returns the environment object that is the fixed body of this world (like the ground).
 **/
-DEFINE_PROPERTY( env ) {
+DEFINE_PROPERTY_GETTER( env ) {
 
 	JSObject *staticBody = JS_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
 	JL_CHK(staticBody);

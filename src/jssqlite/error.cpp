@@ -43,7 +43,7 @@ DEFINE_CONSTRUCTOR() {
 $TOC_MEMBER $INAME
  $INT $INAME $READONLY
 **/
-DEFINE_PROPERTY( code ) {
+DEFINE_PROPERTY_GETTER( code ) {
 
 	return JL_GetReservedSlot( cx, obj, SLOT_SQLITE_ERROR_CODE, vp );
 }
@@ -90,7 +90,7 @@ const char *SqliteConstString( int errorCode ) {
 	return "UNKNOWN_ERROR";
 }
 
-DEFINE_PROPERTY( const ) {
+DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_GetReservedSlot( cx, obj, SLOT_SQLITE_ERROR_CODE, vp );
 	if ( JSVAL_IS_VOID(*vp) )
@@ -105,7 +105,7 @@ DEFINE_PROPERTY( const ) {
 $TOC_MEMBER $INAME
  $STR $INAME $READONLY
 **/
-DEFINE_PROPERTY( text ) {
+DEFINE_PROPERTY_GETTER( text ) {
 
 	return JL_GetReservedSlot( cx, obj, SLOT_SQLITE_ERROR_TEXT, vp );
 }
@@ -113,7 +113,7 @@ DEFINE_PROPERTY( text ) {
 DEFINE_FUNCTION( toString ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	return _text(cx, obj, JSID_EMPTY, JL_RVAL);
+	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
 DEFINE_HAS_INSTANCE() { // see issue#52

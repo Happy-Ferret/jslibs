@@ -68,7 +68,7 @@ DEFINE_CONSTRUCTOR() {
 $TOC_MEMBER $INAME
  $TYPE vec3 $INAME
 **/
-DEFINE_PROPERTY( anchorSetter ) {
+DEFINE_PROPERTY_SETTER( anchor ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
@@ -82,7 +82,7 @@ DEFINE_PROPERTY( anchorSetter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( anchorGetter ) {
+DEFINE_PROPERTY_GETTER( anchor ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
@@ -98,7 +98,7 @@ DEFINE_PROPERTY( anchorGetter ) {
 $TOC_MEMBER $INAME
  $TYPE vec3 $INAME
 **/
-DEFINE_PROPERTY( anchor2Setter ) {
+DEFINE_PROPERTY_SETTER( anchor2 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
@@ -112,7 +112,7 @@ DEFINE_PROPERTY( anchor2Setter ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY( anchor2Getter ) {
+DEFINE_PROPERTY_GETTER( anchor2 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(jointId);
