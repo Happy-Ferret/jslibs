@@ -17,7 +17,6 @@
 #include "jsstd.h"
 
 DECLARE_CLASS( OperationLimit )
-DECLARE_CLASS( Sandbox )
 
 
 /**doc fileIndex:topmost **/
@@ -1004,69 +1003,201 @@ $TOC_MEMBER $INAME
   }}}
 **/
 
+
+// source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
+static JSBool
+sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **objp) {
+
+	JSBool resolved;
+	if ( (flags & JSRESOLVE_ASSIGNING) == 0 ) {
+
+		if ( !JS_ResolveStandardClass(cx, obj, id, &resolved) )
+			return JS_FALSE;
+
+		if ( resolved ) {
+
+			*objp = obj;
+			return JS_TRUE;
+		}
+	}
+	*objp = NULL;
+	return JS_TRUE;
+}
+
+
+static JSClass sandbox_class = {
+    "Sandbox",
+    JSCLASS_NEW_RESOLVE | JSCLASS_GLOBAL_FLAGS,
+    JS_PropertyStub,   JS_PropertyStub,
+    JS_PropertyStub,   JS_StrictPropertyStub,
+    JS_EnumerateStub, (JSResolveOp)sandbox_resolve,
+    JS_ConvertStub,    NULL,
+    JSCLASS_NO_OPTIONAL_MEMBERS
+};
+
+
 struct SandboxContextPrivate {
 
 	JLSemaphoreHandler semEnd;
 	unsigned int maxExecutionTime;
-	JSContext *cx;
+	volatile bool expired;
 	jsval queryFunctionValue;
+	JSOperationCallback prevOperationCallback;
 };
+
 
 JSBool SandboxMaxOperationCallback(JSContext *cx) {
 
-	JSObject *branchLimitExceptionObj = JS_NewObjectWithGivenProto(cx, JL_CLASS(OperationLimit), JL_PROTOTYPE(cx, OperationLimit), NULL);
-	JL_CHK( branchLimitExceptionObj );
-	JS_SetPendingException(cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ));
-	JL_BAD;
+	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
+	if ( pv->expired && !JL_IsExceptionPending(cx) ) {
+
+		JSOperationCallback tmp = JS_SetOperationCallback(cx, NULL);
+		ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), JL_CLASS(OperationLimit)->name);
+		JL_ASSERT( cpc );
+		JSCrossCompartmentCall *ccc;
+		ccc = JS_EnterCrossCompartmentCall(cx, cpc->proto);
+		JL_CHK( ccc );
+		JSObject *branchLimitExceptionObj = JS_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
+		JS_SetPendingException(cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ));
+		JS_LeaveCrossCompartmentCall(ccc);
+		JL_CHK( branchLimitExceptionObj );
+		JS_SetOperationCallback(cx, tmp);
+		JL_BAD;
+	}
+	return pv->prevOperationCallback(cx);
 }
+
 
 JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
 
-	JSContext *scx = (JSContext*)threadArg;
-	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(scx);
-
-	//	SleepMilliseconds(pv->maxExecutionTime);
-	JLSemaphoreAcquire(pv->semEnd, pv->maxExecutionTime); // used as a breakable Sleep. This avoids to Cancel the thread
-
-	JS_TriggerOperationCallback(scx);
+	JSContext *cx = (JSContext*)threadArg;
+	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
+	int st = JLSemaphoreAcquire(pv->semEnd, pv->maxExecutionTime); // used as a breakable Sleep. This avoids to Cancel the thread
+	if ( st == JLTIMEOUT ) {
+		
+		pv->expired = true;
+		JS_TriggerOperationCallback(cx);
+	}
 	JLThreadExit(0);
 	return 0;
 }
 
-JSBool SandboxQueryFunction(JSContext *scx, uintN argc, jsval *vp) {
 
-	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(scx);
-	JSContext *cx = pv->cx; // needed to send errors in the right context.
+JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
+
+	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
 	if ( JSVAL_IS_VOID( pv->queryFunctionValue ) ) {
 
 		*JL_RVAL = JSVAL_VOID;
 	} else {
 
-		JL_CHK( JS_CallFunctionValue(scx, JS_THIS_OBJECT(scx, vp), pv->queryFunctionValue, JL_ARGC, JL_ARGV, JL_RVAL) );
-		JL_CHKM( JSVAL_IS_PRIMITIVE(*JL_RVAL), "Only primitive value can be returned." );
+		JSObject *obj = JS_THIS_OBJECT(cx, vp);
+		JL_ASSERT( obj != NULL );
+		JL_CHK( JS_CallFunctionValue(cx, obj, pv->queryFunctionValue, JL_ARGC, JL_ARGV, JL_RVAL) );
+		if ( !JSVAL_IS_PRIMITIVE(*JL_RVAL) )
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "primitive returne value");
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
 
-DEFINE_FUNCTION( SandboxEval ) {
 
-	JSContext *scx = NULL;
+DEFINE_FUNCTION( SandboxEval ) {
 
 	JL_S_ASSERT_ARG_RANGE(1, 3);
 
-	scx = JS_NewContext(JL_GetRuntime(cx), 8192L); // see host/host.cpp
-	JL_CHK( scx );
-	JS_SetOptions(scx, JS_GetOptions(cx) | JSOPTION_JIT | JSOPTION_METHODJIT | JSOPTION_DONT_REPORT_UNCAUGHT | JSOPTION_COMPILE_N_GO | JSOPTION_RELIMIT); // new options are based on host's options. cf. moz bz#490616
+	SandboxContextPrivate pv;
 
-	JSObject *globalObject;
+	JSString *jsstr;
+	jsstr = JS_ValueToString(cx, JL_ARG(1));
+	JL_CHK( jsstr );
+	size_t srclen;
+	const jschar *src;
+	src = JS_GetStringCharsAndLength(cx, jsstr, &srclen);
 
-//	globalObject = JS_NewGlobalObject(scx, JL_CLASS(Sandbox));
-	globalObject = JS_NewCompartmentAndGlobalObject(scx, JL_CLASS(Sandbox), NULL);
+	if ( JL_ARG_ISDEF(2) ) {
 
-	//	globalObject = JS_NewCompartmentAndGlobalObject(cx, JL_CLASS(Sandbox), NULL);
-	JL_CHK( globalObject );
-	*JL_RVAL = OBJECT_TO_JSVAL(globalObject); // GC protection
+		JL_S_ASSERT_FUNCTION( JL_ARG(2) );
+		pv.queryFunctionValue = JL_ARG(2);
+	} else {
+
+		pv.queryFunctionValue = JSVAL_VOID;
+	}
+
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &pv.maxExecutionTime) );
+	else
+		pv.maxExecutionTime = 1000; // default value
+
+
+	JSStackFrame *fp;
+	fp = JS_GetScriptedCaller(cx, NULL);
+	JL_CHK( fp );
+	JSScript *script;
+	script = JS_GetFrameScript(cx, fp);
+	JL_CHK( script );
+	const char *filename;
+	filename = JS_GetScriptFilename(cx, script);
+	jsbytecode *pc;
+	pc = JS_GetFramePC(cx, fp);
+	uintN lineno;
+	lineno = JS_PCToLineNumber(cx, script, pc);
+
+	pv.expired = false;
+	pv.semEnd = JLSemaphoreCreate(0);
+	JLThreadHandler sandboxWatchDogThread;
+	sandboxWatchDogThread = JLThreadStart(SandboxWatchDogThreadProc, cx);
+	if ( !JLThreadOk(sandboxWatchDogThread) ) {
+
+		char reason[1024];
+		JLLastSysetmErrorMessage(reason, sizeof(reason));
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, reason);
+	}
+
+	void *prevCxPrivate = JS_GetContextPrivate(cx);
+	JS_SetContextPrivate(cx, &pv);
+
+	JSObject *globalObj;
+	globalObj = JS_NewCompartmentAndGlobalObject(cx, &sandbox_class, NULL);
+
+	JSCrossCompartmentCall *ccc;
+	ccc = JS_EnterCrossCompartmentCall(cx, globalObj);
+	JL_CHK( ccc );
+
+	if ( pv.queryFunctionValue != JSVAL_VOID ) {
+
+		JL_CHK( JS_WrapValue(cx, &pv.queryFunctionValue) );
+		JL_CHK( JS_DefineFunction(cx, globalObj, "Query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
+	}
+
+	pv.prevOperationCallback = JS_SetOperationCallback(cx, SandboxMaxOperationCallback);
+
+	JSBool ok;
+	ok = JS_EvaluateUCScript(cx, globalObj, src, srclen, filename, lineno, vp);
+
+	JSOperationCallback tmp;
+	tmp = JS_SetOperationCallback(cx, pv.prevOperationCallback);
+	JL_ASSERT( tmp == SandboxMaxOperationCallback );
+
+	JS_LeaveCrossCompartmentCall(ccc);
+
+	JLSemaphoreRelease(pv.semEnd);
+	JLThreadWait(sandboxWatchDogThread, NULL);
+	JLThreadFree(&sandboxWatchDogThread);
+	JLSemaphoreFree(&pv.semEnd);
+
+	JS_SetContextPrivate(cx, prevCxPrivate);
+
+	// JL_CHK( JS_DeleteProperty(scx, globalObject, "Query") ); // (TBD) needed ?
+
+	if ( ok )
+		return JS_WrapValue(cx, vp);
+	if ( !JL_IsExceptionPending(cx) )
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INTERNAL_ERROR, "exception is expected");
+	JL_BAD;
+}
+
+/*
 
 	SandboxContextPrivate pv;
 	pv.cx = cx;
@@ -1101,7 +1232,6 @@ DEFINE_FUNCTION( SandboxEval ) {
 	JSOperationCallback prev;
 	prev = JS_SetOperationCallback(scx, SandboxMaxOperationCallback);
 
-	JS_SetGlobalObject(scx, globalObject);
 	JSStackFrame *fp;
 	fp = JS_GetScriptedCaller(cx, NULL);
 	JL_CHK( fp );
@@ -1157,12 +1287,8 @@ DEFINE_FUNCTION( SandboxEval ) {
 
 	JS_DestroyContextNoGC(scx);
 	return ok;
+*/
 
-bad:
-	if ( scx )
-		JS_DestroyContextNoGC(scx);
-	return JS_FALSE;
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

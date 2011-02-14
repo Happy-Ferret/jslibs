@@ -1124,7 +1124,7 @@ enum {
 	WINDOWS						= CSIDL_WINDOWS ,
 };
 
-DEFINE_PROPERTY( folderPath ) {
+DEFINE_PROPERTY_GETTER( folderPath ) {
 
 	TCHAR path[MAX_PATH];
 	if ( SUCCEEDED( SHGetFolderPath(NULL, JSID_TO_INT(id), NULL, 0, path) ) ) // |CSIDL_FLAG_CREATE

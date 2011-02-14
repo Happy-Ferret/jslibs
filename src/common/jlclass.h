@@ -239,6 +239,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 #define JL_CLASS(CLASSNAME) (&(CLASSNAME::jlClassSpec->clasp))
 #define JL_THIS_CLASS (&(jlClassSpec->clasp))
+#define JL_THIS_CLASS_NAME (jlClassSpec->clasp.name)
 #define JL_THIS_REVISION (jlClassSpec->revision)
 
 #define JL_PROTOTYPE(cx, CLASSNAME) (JL_GetCachedClassProto(JL_GetHostPrivate(cx), CLASSNAME::jlClassSpec->clasp.name)->proto)
@@ -285,7 +286,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define PROPERTY_READ(name) { #name, -1, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name##Getter, NULL }, // (TBD) rename into PROPERTY_GETTER
 #define PROPERTY_WRITE(name) { #name, -1, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name##Setter }, // (TBD) rename into PROPERTY_SETTER
 #define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
-#define PROPERTY_SWITCH_READ(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##function, NULL },
+#define PROPERTY_SWITCH_READ(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##function##Getter, NULL },
 #define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, _##getter, _##setter },
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
 

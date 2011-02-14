@@ -104,6 +104,13 @@ done_scriptList:
 	JSObject *moduleObject = (JSObject*)callerdata;
 	JL_ASSERT( moduleObject != NULL );
 	jsval jsHookFct;
+
+	{
+//	JSAutoEnterCompartment ac;
+//	if ( !ac.enter(cx, moduleObject) )
+//		goto bad;
+
+
 	JS_GetPropertyById(cx, moduleObject, mpv->JLID_onNewScript, &jsHookFct); // try to use ids
 	if ( JL_IsFunction(cx, jsHookFct) ) {
 
@@ -117,6 +124,7 @@ done_scriptList:
 		JS_SetNewScriptHook(rt, NULL, NULL);
 		status = JS_CallFunctionValue(cx, moduleObject, jsHookFct, COUNTOF(argv)-1, argv+1, argv);
 		JS_SetNewScriptHook(rt, NewScriptHook, callerdata);
+	}
 	}
 
 bad:

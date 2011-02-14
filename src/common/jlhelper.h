@@ -596,7 +596,7 @@ enum JLErrNum {
 
 // Less costly than a macro or an ALWAYS_INLINE (unlikely case)
 INLINE NEVER_INLINE void FASTCALL
-JL_ReportErrorNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg1 = NULL, const char * RESTRICT arg2 = NULL ) {
+JL__ReportErrorNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg1 = NULL, const char * RESTRICT arg2 = NULL ) {
 
 	JL_ASSERT_IF( arg1 != NULL && arg2 != NULL, arg1 != arg2 );
 	HostPrivate *hpv;
@@ -610,7 +610,7 @@ JL_ReportErrorNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg
 // Unconditionally reports a jslibs error. see jlerrors.msg
 #define JL_REPORT_ERROR_NUM( cx, num, ... ) \
 	JL_MACRO_BEGIN \
-		JL_ReportErrorNum(cx, num, ##__VA_ARGS__ ); \
+		JL__ReportErrorNum(cx, num, ##__VA_ARGS__ ); \
 		goto bad; \
 	JL_MACRO_END
 
@@ -627,7 +627,7 @@ JL_ReportErrorNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg
 
 // Less costly than a macro or an ALWAYS_INLINE (unlikely case)
 INLINE NEVER_INLINE JSBool FASTCALL
-JL_ReportWarningNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg1 = NULL, const char * RESTRICT arg2 = NULL ) {
+JL__ReportWarningNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT arg1 = NULL, const char * RESTRICT arg2 = NULL ) {
 
 	JL_ASSERT_IF( arg1 != NULL && arg2 != NULL, arg1 != arg2 );
 	HostPrivate *hpv;
@@ -648,7 +648,7 @@ JL_ReportWarningNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT a
 #define JL_REPORT_WARNING_NUM( cx, num, ... ) \
 	JL_MACRO_BEGIN \
 		if (unlikely( !_unsafeMode )) { \
-			if ( !JL_ReportWarningNum(cx, num, ##__VA_ARGS__ ) ) { \
+			if ( !JL__ReportWarningNum(cx, num, ##__VA_ARGS__ ) ) { \
 				goto bad; \
 			} \
 		} \
@@ -2914,16 +2914,18 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 		JS_XDRMemSetData(xdr, data, jl::SafeCast<uint32>(compFileSize));
 
 		// we want silent failures.
-		JSErrorReporter prevErrorReporter = JS_SetErrorReporter(cx, NULL);
-		JSDebugErrorHook debugErrorHook = cx->debugHooks->debugErrorHook;
-		void *debugErrorHookData = cx->debugHooks->debugErrorHookData;
-		JS_SetDebugErrorHook(JL_GetRuntime(cx), NULL, NULL);
+//		JSErrorReporter prevErrorReporter = JS_SetErrorReporter(cx, NULL);
+//		JSDebugErrorHook debugErrorHook = cx->debugHooks->debugErrorHook;
+//		void *debugErrorHookData = cx->debugHooks->debugErrorHookData;
+//		JS_SetDebugErrorHook(JL_GetRuntime(cx), NULL, NULL);
+
 		JSBool status = JS_XDRScript(xdr, &script);
-		JS_SetDebugErrorHook(JL_GetRuntime(cx), debugErrorHook, debugErrorHookData);
-		if (cx->lastMessage)
-			JS_free(cx, cx->lastMessage);
-		cx->lastMessage = NULL;
-		JS_SetErrorReporter(cx, prevErrorReporter);
+
+//		JS_SetDebugErrorHook(JL_GetRuntime(cx), debugErrorHook, debugErrorHookData);
+//		if (cx->lastMessage)
+//			JS_free(cx, cx->lastMessage);
+//		cx->lastMessage = NULL;
+//		JS_SetErrorReporter(cx, prevErrorReporter);
 
 		if ( status == JS_TRUE ) {
 
@@ -2937,6 +2939,13 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 				JL_REPORT_WARNING("Trying to xdr-decode an old script (%s).", compiledFileName);
 			goto good;
 		} else {
+
+			JS_ClearPendingException(cx);
+
+//			JL_REPORT_WARNING_NUM(cx, JLSMSG_INTERNAL_ERROR, "bad script XDR magic number");
+
+//			if ( JS_IsExceptionPending(cx) )
+//				JS_ReportPendingException(cx);
 
 			jl_freea(data);
 			data = NULL;

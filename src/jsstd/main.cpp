@@ -23,7 +23,6 @@ DECLARE_CLASS( Map )
 DECLARE_CLASS( Buffer )
 DECLARE_CLASS( Pack )
 DECLARE_CLASS( OperationLimit )
-DECLARE_CLASS( Sandbox )
 DECLARE_CLASS( ObjEx )
 
 /**doc t:header
@@ -53,7 +52,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	INIT_STATIC();
 	INIT_CLASS( Map );
 	INIT_CLASS( OperationLimit ); // exception
-	INIT_CLASS( Sandbox );
 	INIT_CLASS( Buffer );
 	INIT_CLASS( Pack );
 	INIT_CLASS( ObjEx );

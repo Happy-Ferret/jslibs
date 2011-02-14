@@ -264,7 +264,9 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 JSBool OperationCallback(JSContext *cx) {
 
+	JSOperationCallback tmp = JS_SetOperationCallback(cx, NULL);
 	JS_MaybeGC(cx);
+	JS_SetOperationCallback(cx, tmp);
 	return JS_TRUE;
 }
 
@@ -526,6 +528,8 @@ bad:
 
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
 
+	JL_ASSERT( !JS_CStringsAreUTF8() );
+
 	_unsafeMode = unsafeMode; // should we use unsafeMode ? 1 : 0 ???
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
@@ -560,7 +564,8 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	//JL_CHK( globalObject->defineProperty(cx, ATOM_TO_JSID(JL_GetRuntime(cx)->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) ); // by default, undefined is only JSPROP_PERMANENT
 	
 
-	JL_CHK( JS_DefinePropertyById( cx, globalObject, ATOM_TO_JSID(JL_GetRuntime(cx)->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) ); // by default, undefined is only JSPROP_PERMANENT
+	// doc. Starting in JavaScript 1.8.5 (Firefox 4), undefined is non-writable, as per the ECMAScript 5 specification.
+	// JL_CHK( JS_DefinePropertyById( cx, globalObject, ATOM_TO_JSID(JL_GetRuntime(cx)->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) ); // by default, undefined is only JSPROP_PERMANENT
 
 //	// creates a reference to the String object JSClass
 //	pv->stringObjectClass = JL_GetStandardClassByKey(cx, JSProto_String);

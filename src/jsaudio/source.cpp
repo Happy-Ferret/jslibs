@@ -715,9 +715,9 @@ CONFIGURE_CLASS
 
 		PROPERTY_READ( remainingTime )
 
-		PROPERTY_SWITCH_READ( buffersQueued, sourceIntIndGetter )
-		PROPERTY_SWITCH_READ( buffersProcessed, sourceIntIndGetter )
-		PROPERTY_SWITCH_READ( state, sourceIntIndGetter )
+		PROPERTY_SWITCH_READ( buffersQueued, sourceIntInd )
+		PROPERTY_SWITCH_READ( buffersProcessed, sourceIntInd )
+		PROPERTY_SWITCH_READ( state, sourceIntInd )
 		PROPERTY_SWITCH( looping, sourceBoolInd )
 		PROPERTY_SWITCH( sourceRelative, sourceBoolInd )
 		PROPERTY_SWITCH( gain, sourceFloatInd )

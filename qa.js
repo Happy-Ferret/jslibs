@@ -58,7 +58,7 @@ function QAAPI(cx) {
 			cx.ReportIssue( 'Exception not detected', testName );
 		} catch(ex) {
 	
-			if ( (ex != exType) && !(ex instanceof exType) )
+			if ( (ex != exType) && !(ex instanceof exType) && ( typeof(exType) == 'string' && ''+ex != ''+exType ) )
 				cx.ReportIssue('Invalid exception ('+ex.constructor.name+' != '+exType.name+')', testName );
 		}
 	}

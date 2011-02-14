@@ -2,11 +2,15 @@ LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();
 //RunJsircbot(false); throw 0;
-RunQATests('-rep 4 -nogcB -exclude sandbox|jstask');
+//RunQATests('-rep 4 -nogcB -exclude jstask jssqlite');
 //  -loopForever -flags f -gcZeal 0 -nogcB -loop -gcZeal 0 
 //  Serialization|ProcessEvents
 //RunQATests('-perf perfset.js -exclude jstask');
-//Exec('../../perfset.js'); throw 0; // -perf perfset.js 
+//Exec('../../perfset.js'); throw 0; // -perf perfset.js
+
+
+LoadModule('jsstd'); Exec('../jsprotex/test.js'); throw 0;
+
 
 
 Print(uneval( jslang_test(new ArrayBuffer('1')) ), '\n');
