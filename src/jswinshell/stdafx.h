@@ -5,12 +5,6 @@
 
 #pragma once
 
-#include <windows.h>
-#include <shellapi.h>
-#include <commctrl.h>
-#include <Commdlg.h>
-#include <shlobj.h>
-
 #include "jlhelper.h"
 #include "jlclass.h"
 #include "../common/jsvalserializer.h"
@@ -21,3 +15,10 @@
 
 #include "queue.h"
 #include "stack.h"
+
+// WIN32_LEAN_AND_MEAN removes the following headers files from windows.h:
+#include <shellapi.h>
+#include <wincrypt.h>
+#include <commdlg.h>
+
+#include <shlobj.h> // CSIDL_*, SHGetFolderPath, TB_BUTTONCOUNT, ...

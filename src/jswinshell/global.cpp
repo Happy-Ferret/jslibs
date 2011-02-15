@@ -212,7 +212,7 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 		JLStr str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 		strcpy( filter, str );
-		for ( char *tmp = filter; (tmp = strchr(tmp, '|')); tmp++ )
+		for ( char *tmp = filter; (tmp = strchr(tmp, '|')) != 0; tmp++ )
 			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings.
 		filter[str.Length() + 1] = '\0'; // The last string in the buffer must be terminated by two NULL characters.
 		ofn.lpstrFilter = filter;

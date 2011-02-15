@@ -57,7 +57,9 @@ JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 
 JSBool jslangModuleRelease(JSContext *cx) {
 
-	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
+	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivateOrNULL(cx, jslangModuleId);
+	if ( !mpv )
+		return JS_FALSE;
 
 	for ( size_t i = 0; i < COUNTOF(mpv->processEventThreadInfo); ++i ) {
 
@@ -75,7 +77,6 @@ JSBool jslangModuleRelease(JSContext *cx) {
 	jl_free(mpv);
 
 	return JS_TRUE;
-//	JL_BAD;
 }
 
 

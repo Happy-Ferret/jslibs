@@ -26,10 +26,58 @@
 
 using namespace jl;
 
-struct Chunk {
+
+typedef struct SerializedData {
 	void *data;
 	size_t length;
-};
+} SerializedData;
+
+
+ALWAYS_INLINE void SerializerCreate( SerializedData **ser ) {
+
+	*ser = (SerializedData*)jl_malloc(sizeof(SerializedData));
+	(*ser)->length = 0;
+}
+
+ALWAYS_INLINE void SerializerFree( SerializedData **ser ) {
+	
+	jl_free(*ser);
+	*ser = NULL;
+}
+
+ALWAYS_INLINE JSBool SerializeJsval( JSContext *cx, SerializedData *ser, jsval *val ) {
+
+	jl::Serializer serializer(JSVAL_VOID);
+	JL_CHK( serializer.Write(cx, *val) );
+	JL_CHK( serializer.GetBufferOwnership(&ser->data, &ser->length) );
+
+	// (TBD) big strange crash when we return JS_FALSE here.
+	// stacktrace:
+	// 	ntdll.dll!7c90100b() 	
+	// 	[Frames below may be incorrect and/or missing, no symbols loaded for ntdll.dll]	
+	//	>	jstask.dll!JLMutexAcquire(__JSMUtexHandler * mutex=0x7c840c5b)  Line 1733 + 0xc bytes	C++
+	//	 	ffffffff()	
+	return JS_TRUE;
+	JL_BAD;
+}
+
+ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, const SerializedData *ser, jsval *rval ) {
+
+	jl::Unserializer unserializer(JSVAL_VOID, ser->data, ser->length);
+	JL_CHK( unserializer.Read(cx, *rval) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+ALWAYS_INLINE bool IsSerializable( jsval val ) {
+	return true;
+}
+
+ALWAYS_INLINE bool SerializerIsEmpty( const SerializedData *ser ) {
+	
+	return ser->length == 0;
+}
+
 
 
 struct TaskPrivate : CppAllocators {
@@ -38,10 +86,7 @@ struct TaskPrivate : CppAllocators {
 	JLThreadHandler threadHandle;
 	bool end;
 
-//	Serialized serializedCode;
-//	jl::Serializer serializedCode;
-//	void *serializedCode;
-	Chunk serializedCode;
+	SerializedData * serializedCode;
 
 	JLSemaphoreHandler requestSem;
 	jl::Queue requestList;
@@ -116,12 +161,13 @@ DEFINE_FINALIZE() {
 
 	while ( !QueueIsEmpty(&pv->requestList) ) {
 
-		void *ser = (void*)QueueShift(&pv->requestList);
-		jl_free(ser);
+		SerializedData * ser = (SerializedData *)QueueShift(&pv->requestList);
+		SerializerFree(&ser);
 	}
 
 	delete pv;
 	return;
+
 bad:
 	delete pv;
 	// (TBD) report a warning.
@@ -134,14 +180,8 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 	jsval argv[3] = { JSVAL_NULL }; // argv[0] is rval and code
 
 	// no need to mutex this because this and the constructor are the only places that access pv->serializedCode.
-	//JL_CHK( UnserializeJsval(cx, &pv->serializedCode, &argv[0]) );
-	//SerializerFree(&pv->serializedCode);
-
-
-	jl::Unserializer(JSVAL_VOID, pv->serializedCode.data, pv->serializedCode.length).Read(cx, argv[0]);
-	
-	jl_free(pv->serializedCode.data);
-
+	JL_CHK( UnserializeJsval(cx, pv->serializedCode, &argv[0]) );
+	SerializerFree(&pv->serializedCode);
 
 	JSFunction *fun;
 	fun = JS_ValueToFunction(cx, argv[0]);
@@ -165,12 +205,12 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 			break;
 		}
 
-		Serialized serializedRequest = (Serialized)QueueShift(&pv->requestList);
+		SerializedData * serializedRequest = (SerializedData *)QueueShift(&pv->requestList);
 		pv->pendingRequestCount--;
 		pv->processingRequestCount++; // = 1;
 		JLMutexRelease(pv->mutex); // ++
 
-		JL_CHK( UnserializeJsval(cx, &serializedRequest, &argv[1]) );
+		JL_CHK( UnserializeJsval(cx, serializedRequest, &argv[1]) );
 		SerializerFree(&serializedRequest);
 		argv[2] = INT_TO_JSVAL(index++);
 		JSBool status = JS_CallFunction(cx, globalObj, fun, COUNTOF(argv)-1, argv+1, argv);
@@ -191,9 +231,9 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 				ex = JSVAL_VOID; // unknown exception
 			}
 
-			Serialized serializedException;
+			SerializedData * serializedException;
 			SerializerCreate(&serializedException);
-			JL_CHK( SerializeJsval(cx, &serializedException, &ex) );
+			JL_CHK( SerializeJsval(cx, serializedException, &ex) );
 
 			JLMutexAcquire(pv->mutex); // --
 			QueuePush(&pv->exceptionList, serializedException);
@@ -205,9 +245,9 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 			JS_ClearPendingException(cx);
 		} else {
 
-			Serialized serializedResponse;
+			SerializedData * serializedResponse;
 			SerializerCreate(&serializedResponse);
-			JL_CHK( SerializeJsval(cx, &serializedResponse, &argv[0]) ); // (TBD) need a better exception management
+			JL_CHK( SerializeJsval(cx, serializedResponse, &argv[0]) ); // (TBD) need a better exception management
 
 			JLMutexAcquire(pv->mutex); // --
 			QueuePush(&pv->responseList, serializedResponse);
@@ -237,10 +277,12 @@ int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length )
 
 JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 
+	TaskPrivate *pv = NULL;
+
 	Buffer errBuffer;
 	BufferInitialize(&errBuffer, bufferTypeRealloc, bufferGrowTypeDouble, NULL, NULL, NULL, NULL);
 
-	JSContext *cx = CreateHost(-1, -1, 0);
+	JSContext *cx = CreateHost((uint32)-1, (uint32)-1, 0);
 	JL_CHK( cx != NULL );
 
 	HostPrivate *hpv;
@@ -254,11 +296,10 @@ JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 	hpv->alloc.msize = jl_msize;
 	hpv->alloc.free = jl_free;
 
-	JL_CHK( InitHost(cx, _unsafeMode, NULL, TaskStdErrHostOutput, &errBuffer) );
+	JL_CHK( InitHost(cx, _unsafeMode != 0, NULL, NULL, TaskStdErrHostOutput, &errBuffer) );
 
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
 
-	TaskPrivate *pv;
 	pv = (TaskPrivate*)threadArg;
 
 	JSBool status;
@@ -277,13 +318,15 @@ JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 			}
 		} else {
 
-			JL_CHK( StringAndLengthToJsval(cx, &ex, BufferGetData(&errBuffer), BufferGetLength(&errBuffer)) );
+			//JL_CHK( StringAndLengthToJsval(cx, &ex, BufferGetData(&errBuffer), BufferGetLength(&errBuffer)) );
+			JL_CHK( JL_NativeToJsval(cx, BufferGetData(&errBuffer), BufferGetLength(&errBuffer), &ex) );
+
 			//ex = JSVAL_VOID; // unknown exception
 		}
 
-		Serialized serializedException;
+		SerializedData * serializedException;
 		SerializerCreate(&serializedException);
-		JL_CHK( SerializeJsval(cx, &serializedException, &ex) );
+		JL_CHK( SerializeJsval(cx, serializedException, &ex) );
 
 		JLMutexAcquire(pv->mutex); // --
 		pv->end = true;
@@ -296,16 +339,16 @@ JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 bad:
 	BufferFinalize(&errBuffer);
 
-	// These queues must be destroyed before cx because Serialized *ser hold a reference to the context that created the value.
+	// These queues must be destroyed before cx because SerializedData * *ser hold a reference to the context that created the value.
 	JLMutexAcquire(pv->mutex); // --
 	while ( !QueueIsEmpty(&pv->exceptionList) ) {
 
-		Serialized ser = (Serialized)QueueShift(&pv->exceptionList);
+		SerializedData * ser = (SerializedData *)QueueShift(&pv->exceptionList);
 		SerializerFree(&ser);
 	}
 	while ( !QueueIsEmpty(&pv->responseList) ) {
 
-		Serialized ser = (Serialized)QueueShift(&pv->responseList);
+		SerializedData * ser = (SerializedData *)QueueShift(&pv->responseList);
 		SerializerFree(&ser);
 	}
 	JLMutexRelease(pv->mutex); // ++
@@ -336,7 +379,6 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_S_ASSERT_FUNCTION( JL_ARG(1) );
 
-//	pv = (TaskPrivate*)JS_malloc(cx, sizeof(TaskPrivate));
 	pv = new TaskPrivate;
 	JL_CHK( pv );
 
@@ -380,16 +422,15 @@ DEFINE_CONSTRUCTOR() {
 
 	QueueInitialize(&pv->exceptionList);
 
-//	SerializerCreate(&pv->serializedCode);
-//	JL_CHK( SerializeJsval(cx, &pv->serializedCode, &JL_ARG(1)));
-	pv->serializedCode << JL_ARG(1);
+	SerializerCreate(&pv->serializedCode);
+	JL_CHK( SerializeJsval(cx, pv->serializedCode, &JL_ARG(1)));
 
 	pv->threadHandle = JLThreadStart(TaskThreadProc, pv);
 	JL_CHKM( JLThreadOk(pv->threadHandle), "Unable to create the thread." );
 
 	return JS_TRUE;
 bad:
-	JS_free(cx, pv); // JS_free NULL pointer is legal.
+	delete pv;
 	return JS_FALSE;
 }
 
@@ -402,18 +443,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Request ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 	JL_S_ASSERT_CLASS( JL_OBJ, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_RESOURCE(pv);
 
-	Serialized serializedRequest;
+	SerializedData * serializedRequest;
 	SerializerCreate(&serializedRequest);
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( SerializeJsval(cx, &serializedRequest, &JL_ARG(1)) ); // leak ???
+		JL_CHK( SerializeJsval(cx, serializedRequest, &JL_ARG(1)) ); // leak ???
 	else {
 		jsval arg = JSVAL_VOID;
-		JL_CHK( SerializeJsval(cx, &serializedRequest, &arg) );
+		JL_CHK( SerializeJsval(cx, serializedRequest, &arg) );
 	}
 	JLMutexAcquire(pv->mutex); // --
 	QueuePush(&pv->requestList, serializedRequest);
@@ -434,6 +477,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Response ) {
 
+	JL_DEFINE_FUNCTION_OBJ;
+
 	JL_S_ASSERT_CLASS( JL_OBJ, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
@@ -445,11 +490,11 @@ DEFINE_FUNCTION( Response ) {
 
 	if ( QueueIsEmpty(&pv->responseList) && !QueueIsEmpty(&pv->exceptionList) ) {
 
-		Serialized serializedException = (Serialized)QueueShift(&pv->exceptionList);
+		SerializedData * serializedException = (SerializedData *)QueueShift(&pv->exceptionList);
 		JLMutexRelease(pv->mutex); // ++
 
 		jsval exception;
-		JL_CHK( UnserializeJsval(cx, &serializedException, &exception) );
+		JL_CHK( UnserializeJsval(cx, serializedException, &exception) );
 		JS_SetPendingException(cx, exception);
 		
 		return JS_FALSE;
@@ -476,22 +521,22 @@ DEFINE_FUNCTION( Response ) {
 		return JS_TRUE;
 	}
 
-	Serialized serializedResponse;
-	serializedResponse = (Serialized)QueueShift(&pv->responseList);
+	SerializedData * serializedResponse;
+	serializedResponse = (SerializedData *)QueueShift(&pv->responseList);
 	pv->pendingResponseCount--;
 
-	if ( SerializerIsEmpty( &serializedResponse ) ) { // an exception is signaled
+	if ( SerializerIsEmpty( serializedResponse ) ) { // an exception is signaled
 
-		Serialized serializedException = (Serialized)QueueShift(&pv->exceptionList);
+		SerializedData * serializedException = (SerializedData *)QueueShift(&pv->exceptionList);
 		JLMutexRelease(pv->mutex); // ++
 		jsval exception;
-		JL_CHK( UnserializeJsval(cx, &serializedException, &exception) ); // (TBD) throw a TaskException ?
+		JL_CHK( UnserializeJsval(cx, serializedException, &exception) ); // (TBD) throw a TaskException ?
 		JS_SetPendingException(cx, exception);
 		SerializerFree(&serializedException);
 		return JS_FALSE;
 	} else {
 
-		JL_CHK( UnserializeJsval(cx, &serializedResponse, JL_RVAL) );
+		JL_CHK( UnserializeJsval(cx, serializedResponse, JL_RVAL) );
 		SerializerFree(&serializedResponse);
 	}
 	JLMutexRelease(pv->mutex); // ++
@@ -506,14 +551,14 @@ $TOC_MEMBER $INAME
  $INT $INAME
   Is the number of requests that haven't be processed by the task yet. The request being processed is not included in this count.
 **/
-DEFINE_PROPERTY( pendingRequestCount ) {
+DEFINE_PROPERTY_GETTER( pendingRequestCount ) {
 
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JLMutexAcquire(pv->mutex); // --
-	JL_CHK( JL_NativeToJsval(cx, pv->pendingRequestCount, vp) );
+	JL_CHK( JL_NativeToJsval(cx, (size_t)pv->pendingRequestCount, vp) );
 //	JL_CHK( JL_NativeToJsval(cx, pv->end ? 0 : pv->pendingRequestCount, vp) );
 	JLMutexRelease(pv->mutex); // ++
 	return JS_TRUE;
@@ -526,14 +571,14 @@ $TOC_MEMBER $INAME
  $INT $INAME
   Is the number of requests that are currently processed by the task.
 **/
-DEFINE_PROPERTY( processingRequestCount ) {
+DEFINE_PROPERTY_GETTER( processingRequestCount ) {
 
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JLMutexAcquire(pv->mutex); // --
-	JL_CHK( JL_NativeToJsval(cx, pv->processingRequestCount, vp) );
+	JL_CHK( JL_NativeToJsval(cx, (size_t)pv->processingRequestCount, vp) );
 	JLMutexRelease(pv->mutex); // ++
 	return JS_TRUE;
 	JL_BAD;
@@ -545,14 +590,14 @@ $TOC_MEMBER $INAME
  $INT $INAME
   Is the number of available responses that has already been processed by the task.
 **/
-DEFINE_PROPERTY( pendingResponseCount ) {
+DEFINE_PROPERTY_GETTER( pendingResponseCount ) {
 
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE(pv);
 	JLMutexAcquire(pv->mutex); // --
-	JL_CHK( JL_NativeToJsval(cx, pv->pendingResponseCount, vp) );
+	JL_CHK( JL_NativeToJsval(cx, (size_t)pv->pendingResponseCount, vp) );
 //	JL_CHK( JL_NativeToJsval(cx, pv->pendingResponseCount ? pv->pendingResponseCount : QueueIsEmpty(&pv->exceptionList) ? 0 : 1 , vp) );
 	JLMutexRelease(pv->mutex); // ++
 	return JS_TRUE;
@@ -565,7 +610,7 @@ $TOC_MEMBER $INAME
  $INT $INAME
   Is the current state of the task. true if there is no request being processed, if request and response queues are empty and if there is no pending error.
 **/
-DEFINE_PROPERTY( idle ) {
+DEFINE_PROPERTY_GETTER( idle ) {
 
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	TaskPrivate *pv;
@@ -659,7 +704,9 @@ JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS
 
 
 DEFINE_FUNCTION( Events ) {
-	
+
+	JL_DEFINE_FUNCTION_OBJ;
+
 	JL_S_ASSERT_ARG(0);
 	JL_S_ASSERT_CLASS( JL_OBJ, JL_THIS_CLASS );
 

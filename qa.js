@@ -55,11 +55,18 @@ function QAAPI(cx) {
 		try {
 		
 			fct();
-			cx.ReportIssue( 'Exception not detected', testName );
+			cx.ReportIssue( 'Exception not detected (expect '+exType.toString()+')', testName );
 		} catch(ex) {
-	
-			if ( (ex != exType) && !(ex instanceof exType) && ( typeof(exType) == 'string' && ''+ex != ''+exType ) )
-				cx.ReportIssue('Invalid exception ('+ex.constructor.name+' != '+exType.name+')', testName );
+			
+			if ( typeof(exType) == 'string' ) {
+			
+				if ( ex.constructor.name != exType )
+					cx.ReportIssue('Invalid exception name ('+ex.constructor.name+' != '+exType+')', testName );
+			} else {
+
+				if ( ex != exType && !(ex instanceof exType) )
+					cx.ReportIssue('Invalid exception ('+ex.constructor.name+' != '+exType.name+')', testName );
+			}
 		}
 	}
 
@@ -482,7 +489,7 @@ function PerfTest(itemList, cfg) {
 		} catch(ex) {}
 			
 	}
-	var itemList = timeConstantItems;
+	itemList = timeConstantItems;
 
 
 	

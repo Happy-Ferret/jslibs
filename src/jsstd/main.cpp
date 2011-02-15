@@ -74,5 +74,6 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	// (TBD) need to restore mpv->prevObjectIdGCCallback ?
 
 	jl_free(mpv);
+
 	return JS_TRUE;
 }

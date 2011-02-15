@@ -2,7 +2,7 @@ LoadModule('jsstd'); Exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();
 //RunJsircbot(false); throw 0;
-//RunQATests('-rep 4 -nogcB -exclude jstask jssqlite');
+RunQATests('-rep 3 -q -nogcB -exclude jstask');
 //  -loopForever -flags f -gcZeal 0 -nogcB -loop -gcZeal 0 
 //  Serialization|ProcessEvents
 //RunQATests('-perf perfset.js -exclude jstask');

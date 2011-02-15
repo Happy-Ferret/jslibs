@@ -54,7 +54,8 @@ static unsigned char embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
 ;
 
-#define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { fprintf(stderr, errorMessage ); goto bad; }
+#define HOST_MAIN_ASSERT( condition, errorMessage ) \
+	if ( !(condition) ) { fprintf(stderr, errorMessage "\n" ); goto bad; }
 
 
 
@@ -74,6 +75,7 @@ JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsv
 
 	JL_USE(obj);
 	JL_USE(id);
+	JL_USE(strict);
 
 	bool tmp;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tmp) );

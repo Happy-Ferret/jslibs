@@ -368,7 +368,13 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 
 //	CHKHEAP();
 
-	JL_CHKBM( moduleInit(cx, JL_OBJ, uid), bad_dl_close, "Unable to initialize the module." );
+	if ( !moduleInit(cx, JL_OBJ, uid) ) {
+
+		char filename[PATH_MAX];
+		JLDynamicLibraryName((void*)moduleInit, filename, sizeof(filename));
+		JS_ReportError(cx, "Unable to initialize the module \"%s\".", filename);
+		goto bad_dl_close;
+	}
 
 //	CHKHEAP();
 
@@ -435,10 +441,11 @@ JSBool global_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObje
 
 // global object
 // doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
-static JSClass global_class = { // global variable, but this is not an issue even is several runtimes share the same JSClass.
-	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,  // | JSCLASS_HAS_PRIVATE
+// note: global_class is a global variable, but this is not an issue even is several runtimes share the same JSClass.
+static JSClass global_class = {
+	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
-	global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // see LAZY_STANDARD_CLASSES
+	global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // global_resolve: see LAZY_STANDARD_CLASSES
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };
 
@@ -446,64 +453,54 @@ static JSClass global_class = { // global variable, but this is not an issue eve
 // default: CreateHost(-1, -1, 0);
 JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 
-//	JS_SetCStringsAreUTF8(); // don't use !
-	JSRuntime *rt = JS_NewRuntime(0); // maxMem specifies the number of allocated bytes after which garbage collection is run.
-//	JL_CHKM( rt != NULL, "unable to create the runtime." );
+	JSRuntime *rt = JS_NewRuntime(0);
 	JL_CHK( rt );
 
-//call of  'js_malloc'  acts on  'runtime->gcMallocBytes'
-//do gc IF rt->gcMallocBytes >= rt->gcMaxMallocBytes
-
+	// doc: maxMem specifies the number of allocated bytes after which garbage collection is run.
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); // maximum nominal heap before last ditch GC
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); // # of JS_malloc bytes before last ditch GC
 //	JS_SetGCParameter(rt, JSGC_TRIGGER_FACTOR, 3);
 
+	uint32 stackpoolLifespan = JS_GetGCParameter(rt, JSGC_STACKPOOL_LIFESPAN);
+	JL_ASSERT( stackpoolLifespan == 30000 ); // check if default has chaged.
+	JS_SetGCParameter(rt, JSGC_STACKPOOL_LIFESPAN, 15000);
+
+	JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_GLOBAL);
+
 	JSContext *cx;
-	cx = JS_NewContext(rt, 8192L); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
+	cx = JS_NewContext(rt, 8192); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 	JL_CHK( cx ); //, "unable to create the context." );
 
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
-//	JS_SetNativeStackQuota(cx, 0); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
-
 	JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA); // good place to manage stack limit ( that is 32MB by default ). Btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
+
+	uint32 maxCodeCacheBytes = JS_GetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES);
+	JL_ASSERT( maxCodeCacheBytes == 16 * 1024 * 1024 ); // check if default has chaged.
+	JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024 * 2);
+
+	//JS_SetNativeStackQuota(cx, DEFAULT_MAX_STACK_SIZE); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
+
 	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
+
 	JS_SetErrorReporter(cx, ErrorReporter);
 
-	// JSOPTION_VAROBJFIX:
-	//  Not quite: with JSOPTION_VAROBJFIX, both explicitly declared global
-	//  variables (var x) and implicit ones (x = 42 where no x exists yet in the
-	//  scope chain) both go in the last object on the parent-linked scope
-	//  chain.  Without that option, explicit globals go in the first object on
-	//  the scope chain, while implicit globals go on the last.
-	//  ---
-	//  One way to use JSOPTION_VAROBJFIX would be to temporarily
-	//  JS_SetParent(cx, libobj, NULL) and JS_SetParent(cx, libobj, global)
-	//  around all JS_Evaluate*Script* and JS_Compile* API calls.)
-	// JSOPTION_RELIMIT:
-	//  Throw exception on any regular expression which backtracks more than n^3 times, where n is length of the input string
-	// JSOPTION_JIT: "I think it's possible we'll remove even this little bit of API, and just have the JIT always-on. -j"
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
+	// JS_SetOptions doc: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_SetOptions
 	JL_ASSERT( JS_GetOptions(cx) == 0 );
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_JIT | JSOPTION_METHODJIT | JSOPTION_PROFILING | JSOPTION_ANONFUNFIX);
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_ANONFUNFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_JIT | JSOPTION_METHODJIT | /*JSOPTION_METHODJIT_ALWAYS |*/ JSOPTION_PROFILING);
 
 	JSObject *globalObject;
 	globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
 	JL_CHK( globalObject ); // "unable to create the global object." );
 
-	//	JS_SetGlobalObject(cx, globalObject); // not needed. Doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
-
-// Standard classes
-	//	jsStatus = JS_InitStandardClasses(cx, globalObject); // use NULL instead of globalObject ?
-	//	RT_HOST_MAIN_ASSERT( jsStatus == JS_TRUE, "unable to initialize standard classes." );
-
-	JS_SetGlobalObject(cx, globalObject); // see LAZY_STANDARD_CLASSES
+	//	Doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
+	JS_SetGlobalObject(cx, globalObject); // no call to JS_InitStandardClasses(), then JS_SetGlobalObject() is required (see also LAZY_STANDARD_CLASSES).
 
 	HostPrivate *pv;
 	pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc, because WatchDogThreadProc points on it !!!
 	JL_S_ASSERT_ALLOC( pv );
-//	memset(pv, 0, sizeof(HostPrivate)); // mandatory ! or use calloc
 	pv->hostPrivateVersion = JL_HOST_PRIVATE_VERSION;
 	JL_SetHostPrivate(cx, pv);
 
@@ -530,13 +527,12 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 
 	JL_ASSERT( !JS_CStringsAreUTF8() );
 
-	_unsafeMode = unsafeMode; // should we use unsafeMode ? 1 : 0 ???
+	_unsafeMode = unsafeMode;
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 
 		pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc, because WatchDogThreadProc points on it !!!
 		JL_S_ASSERT_ALLOC( pv );
-//		memset(pv, 0, sizeof(HostPrivate)); // mandatory ! or use calloc
 		pv->hostPrivateVersion = JL_HOST_PRIVATE_VERSION;
 		JL_SetHostPrivate(cx, pv);
 	}
@@ -555,29 +551,8 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	JSObject *globalObject;
 	globalObject = JL_GetGlobalObject(cx);
 	JL_CHKM( globalObject != NULL, "Global object not found." );
-
-	//	JSBool found;
-	//	uintN attrs;
-	//	JL_CHK( JS_GetPropertyAttributes(cx, globalObject, "undefined", &attrs, &found) );
-	//	JL_CHK( JS_SetPropertyAttributes(cx, globalObject, "undefined", attrs | JSPROP_READONLY, &found) );
 	
-	//JL_CHK( globalObject->defineProperty(cx, ATOM_TO_JSID(JL_GetRuntime(cx)->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) ); // by default, undefined is only JSPROP_PERMANENT
-	
-
-	// doc. Starting in JavaScript 1.8.5 (Firefox 4), undefined is non-writable, as per the ECMAScript 5 specification.
-	// JL_CHK( JS_DefinePropertyById( cx, globalObject, ATOM_TO_JSID(JL_GetRuntime(cx)->atomState.typeAtoms[JSTYPE_VOID]), JSVAL_VOID, NULL, NULL, JSPROP_PERMANENT | JSPROP_READONLY) ); // by default, undefined is only JSPROP_PERMANENT
-
-//	// creates a reference to the String object JSClass
-//	pv->stringObjectClass = JL_GetStandardClassByKey(cx, JSProto_String);
-//	JL_CHKM( pv->stringObjectClass, "Unable to find the String class." );
-
-// make GetErrorMessage available from any module
-//	void **pGetErrorMessage;
-//	pGetErrorMessage = (void**)jl_malloc(sizeof(void*)); // free is done in DestroyHost()
-//	*pGetErrorMessage = (void*)&GetErrorMessage; // this indirection is needed for alignement purpose. see PRIVATE_TO_JSVAL and C function alignement.
-//	JL_CHK( SetConfigurationPrivateValue(cx, JLID_NAME(_getErrorMessage), PRIVATE_TO_JSVAL(pGetErrorMessage)) );
 	JS_SetLocaleCallbacks(cx, &pv->localeCallbacks);
-
 	pv->errorCallback = GetErrorMessage;
 	pv->localeCallbacks.localeGetErrorMessage = pv->errorCallback;
 
@@ -585,25 +560,22 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	pv->hostStdOut = stdOut;
 	pv->hostStdIn = stdIn;
 
-// global functions & properties
+	// global functions & properties
 	JL_CHKM( JS_DefinePropertyById( cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(JL_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "unable to define a property." );
 	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == 1 ? JLNormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), "unable to define a property." );
-	// jslibs is not ready to support UnloadModule()
-	//	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == 1 ? _NormalizeFunctionName(NAME_GLOBAL_FUNCTION_UNLOAD_MODULE) : NAME_GLOBAL_FUNCTION_UNLOAD_MODULE, UnloadModule, 0, 0 ), "unable to define a property." );
 
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, unsafeMode), unsafeMode ? JSVAL_TRUE : JSVAL_FALSE, false) );
 
-// support this: var prevStderr = _host.stderr; _host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
+	// note: we have to support: var prevStderr = _host.stderr; _host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
 	jsval value;
-
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStdinFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStdinFunction, 1, 0, NULL, "stdin"))); // doc: If you do not assign a name to the function, it is assigned the name "anonymous".
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdin), value) );
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStdoutFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStdoutFunction, 1, 0, NULL, "stdout")));
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdout), value) );
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStderrFunction, 1, 0, NULL, NULL))); // If you do not assign a name to the function, it is assigned the name "anonymous".
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStderrFunction, 1, 0, NULL, "stderr")));
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, stderr), value) );
 
-// init static modules
+	// init static modules
 	JL_CHKM( jslangModuleInit(cx, globalObject), "Unable to initialize jslang." );
 
 	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, _revision), INT_TO_JSVAL(JL_SvnRevToInt(SVN_REVISION_STR)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
@@ -631,16 +603,25 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 		JLSemaphoreFree(&pv->watchDogSemEnd);
 	}
 
-	jslangModuleRelease(cx);
-
 	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) ) {
 
 		JLLibraryHandler module = (JLLibraryHandler)jl::QueueGetData(it);
 		ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_RELEASE);
-		if ( moduleRelease != NULL )
-			moduleRelease(cx);
+		if ( moduleRelease != NULL ) {
+		
+			if ( !moduleRelease(cx) ) {
+
+				char filename[PATH_MAX];
+				JLDynamicLibraryName((void*)moduleRelease, filename, sizeof(filename));
+				JL_CHK( JS_ReportWarning(cx, "Fail to release module \"%s\".", filename) );
+			}
+		}
 	}
 
+	if ( !jslangModuleRelease(cx) ) {
+		
+		JL_CHK( JS_ReportWarning(cx, "Fail to release static module jslang.") );
+	}
 
 	//	don't try to break linked objects with JS_GC(cx) !
 
@@ -651,7 +632,7 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 	JL_CHKM( RemoveHostObject(cx), "Unable to remove the host object." );
 
-	JS_SetGlobalObject(cx, JSVAL_TO_OBJECT(JSVAL_NULL)); // remove the global object (TBD) check if it is good or needed to do this.
+//	JS_SetGlobalObject(cx, JSVAL_TO_OBJECT(JSVAL_NULL)); // remove the global object (TBD) check if it is good or needed to do this.
 
 // cleanup
 
@@ -663,11 +644,7 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 	JS_DestroyRuntime(rt);
 	cx = NULL;
 
-
 	// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
-	//	ModuleFreeAll();
-
-	jslangModuleFree();
 
 	while ( !jl::QueueIsEmpty(&pv->moduleList) ) {
 
@@ -680,10 +657,7 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 //#endif
 	}
 
-
-
-//	while ( !jl::QueueIsEmpty(&pv->registredNativeClasses) )
-//		jl::QueueShift(&pv->registredNativeClasses);
+	jslangModuleFree();
 
 	jl_free(pv);
 	return JS_TRUE;

@@ -1,10 +1,10 @@
-//LoadModule('jsstd'); Exec('../jsprotex/test.js'); throw 0;
-
-if ( 10 ) {
+if ( 0 ) {
 
 	LoadModule('jsstd');
 	LoadModule('jsio');
 //	LoadModule('jsdebug');
+
+	SandboxEval('!function f(){f();}()');
 
 
 	Print( uneval(SandboxEval('1+Math.sin(0.3)')) ); // Math.sin
@@ -16,6 +16,7 @@ if ( 10 ) {
 	Print( uneval(res));
 
 	SandboxEval('for (var i = 1; i < 1000000000; ++i) Math.sin(1);');
+
 
 
 //	var x = 7;
@@ -32,8 +33,8 @@ LoadModule('jsstd'); Exec('../common/tools.js');
 // var QA = FakeQAApi;
 // RunLocalQAFile();
 //RunJsircbot(false); throw 0;
-//RunQATests('-perf perftest.js -exclude jstask');
-RunQATests('-rep 1 -exclude jstask jsstd');
+//RunQATests('-perf perftest.js -v -exclude jstask');
+RunQATests('-rep 1 -exclude jstask sandbox');
 // 17 26 35
 
 Halt();

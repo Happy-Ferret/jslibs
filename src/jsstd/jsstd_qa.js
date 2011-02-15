@@ -930,7 +930,7 @@ LoadModule('jsstd');
 		QA.ASSERT( res, 124, 'SandboxEval result using Query function' );
 		
 		var obj = {};
-		QA.ASSERT_EXCEPTION( function() {  SandboxEval('Query()', function(val) obj)  }, Error, 'Query returns a non-primitive value');
+		QA.ASSERT_EXCEPTION( function() {  SandboxEval('Query()', function(val) obj)  }, 'TypeError', 'Query returns a non-primitive value');
 
 
 /// Disabled GC [r]
@@ -968,6 +968,11 @@ LoadModule('jsstd');
 /// Sandbox watchdog [rmt]
 	
 	QA.ASSERT_EXCEPTION( function() { SandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 250) }, OperationLimit, 'OperationLimit detection' );
+
+
+/// Sandbox stack overflow [rmt]
+
+	QA.ASSERT_EXCEPTION( function() { SandboxEval('(function f(){f();})();') }, 'InternalError', 'Stack overflow detection' );
 
 
 /// Exec function [f]

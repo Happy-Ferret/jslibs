@@ -3,14 +3,15 @@
 LoadModule('jstask');
 LoadModule('jsstd');
 
-	var t = new Task(function(){
-	
-		LoadModule('jsstd');
 
-		return new Blob();
-	});
-	t.Request();
-	t.Response();
+var t = new Task(function(test){
+
+	return Blob("123");
+});
+
+t.Request('test');
+
+Print( uneval(t.Response()) );
 
 
 Halt();

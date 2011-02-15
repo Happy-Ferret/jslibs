@@ -355,6 +355,8 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 //#include "../jslang/blobPub.h"
 DEFINE_FUNCTION( jslang_test ) {
 
+	JL_USE(argc);
+
 /*
 	float nvec[10];
 	jsuint realLen;

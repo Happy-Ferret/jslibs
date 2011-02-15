@@ -291,16 +291,22 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 	#define XP_WIN // used by SpiderMonkey and jslibs
 	#endif
 
+//#include <windows.h>
+
+// doc: _WIN32_WINNT_WS03 = 0x0502 = Windows Server 2003 with SP1, Windows XP with SP2.
+// note: SpiderMionkey compilation option: --with-windows-version=502
+
 	#ifndef WINVER         // Allow use of features specific to Windows 95 and Windows NT 4 or later.
-	#define WINVER 0x0501  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
+	#define WINVER _WIN32_WINNT_WS03  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
 	#endif
 
+
 	#ifndef _WIN32_WINNT         // Allow use of features specific to Windows NT 4 or later.
-	#define _WIN32_WINNT 0x0501  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
+	#define _WIN32_WINNT _WIN32_WINNT_WS03  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
 	#endif
 
 	#ifndef _WIN32_WINDOWS        // Allow use of features specific to Windows 98 or later.
-	#define _WIN32_WINDOWS 0x0501 // Change this to the appropriate value to target Windows Me or later. 0x501 = XP SP1.
+	#define _WIN32_WINDOWS _WIN32_WINNT_WS03 // Change this to the appropriate value to target Windows Me or later. 0x501 = XP SP1.
 	#endif
 
 	#undef WIN32_LEAN_AND_MEAN
@@ -2567,5 +2573,39 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
+
+	ALWAYS_INLINE void JLDynamicLibraryName( void *addr, char *fileName, int maxFileNameLength ) {
+
+		// DWORD st = GetModuleFileName(libraryHandler, (LPCH)fileName, (DWORD)fileNameSize); JL_ASSERT( st != ERROR_INSUFFICIENT_BUFFER );
+		JL_ASSERT( maxFileNameLength > 0 );
+	#if defined(XP_WIN)
+		HMODULE libraryHandler;
+		if ( !GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)addr, &libraryHandler) ) { // requires XP or 2003
+			
+			fileName[0] = '\0';
+			return;
+		}
+		//alternative:
+		//	MEMORY_BASIC_INFORMATION mem;
+		//	if ( !VirtualQuery(addr, &mem, sizeof(mem)) || mem.AllocationBase == NULL ) {
+		//
+		//		fileName[0] = '\0';
+		//		return;
+		//	}
+		//	HMODULE libraryHandler = (HMODULE)mem.AllocationBase;
+		GetModuleFileName(libraryHandler, (LPCH)fileName, maxFileNameLength);
+	#elif defined(XP_UNIX)
+		Dl_info info;
+		if ( !dladdr(pAddr, &info) || !info.dli_fbase || !info.dli_fname ) {
+
+			fileName[0] = '\0';
+			return;
+		}
+		strcpy_s(fileName, Dl_info.dli_fname, maxFileNameLength);
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
+	#endif
+	}
+
 
 #endif // _JLPLATFORM_H_

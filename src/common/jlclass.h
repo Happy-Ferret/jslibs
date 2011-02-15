@@ -77,7 +77,7 @@ ALWAYS_INLINE JSBool JL_DefineClassProperties(JSContext *cx, JSObject *obj, JSPr
 
 ALWAYS_INLINE char *JLNormalizeFunctionName( const char *name ) {
 
-	char *buf = JL_strdup(name); // (TBD) free ? DO FREE WITH STANDARD free() FUNCTION !!!!
+	char *buf = JL_strdup(name); // (TBD) if needed, do free with js_free() function.
 	buf[0] = (char)tolower(buf[0]);
 	return buf;
 }

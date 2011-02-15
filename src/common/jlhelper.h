@@ -419,14 +419,42 @@ JL_SetModulePrivate( const JSContext *cx, const uint32_t moduleId, void *moduleP
 }
 
 ALWAYS_INLINE void*
+JL_GetModulePrivateOrNULL( const JSContext *cx, uint32_t moduleId ) {
+
+	JL_ASSERT( moduleId != 0 );
+	uint8_t id = JL_ModulePrivateHash(moduleId);
+	HostPrivate::ModulePrivate *mpv = JL_GetHostPrivate(cx)->modulePrivate;
+	uint8_t id0 = id;
+
+	while ( mpv[id].moduleId != moduleId ) {
+
+		++id; // uses unsigned char overflow
+		if ( id == id0 )
+			return NULL;
+	}
+	return mpv[id].privateData;
+}
+
+
+ALWAYS_INLINE void*
 JL_GetModulePrivate( const JSContext *cx, uint32_t moduleId ) {
 
 	JL_ASSERT( moduleId != 0 );
 	uint8_t id = JL_ModulePrivateHash(moduleId);
 	HostPrivate::ModulePrivate *mpv = JL_GetHostPrivate(cx)->modulePrivate;
+
+#ifdef DEBUG
+	uint8_t maxid = id;
+#endif // DEBUG
+
 	while ( mpv[id].moduleId != moduleId ) {
 
 		++id; // uses unsigned char overflow
+
+#ifdef DEBUG
+		JL_ASSERT( id != maxid );
+#endif // DEBUG
+
 	}
 	return mpv[id].privateData;
 }
@@ -2796,16 +2824,21 @@ JL_CallFunctionNameVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, const c
 INLINE JSBool FASTCALL
 JL_Eval( JSContext * RESTRICT cx, JSString * RESTRICT source, jsval *rval ) {
 
-	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
-	JL_CHK( frame );
-	JSScript *script;
-	script = JS_GetFrameScript(cx, frame);
-	JL_CHK( script );
 	const char *scriptFilename;
-	scriptFilename = JS_GetScriptFilename(cx, script);
-	JL_CHK( scriptFilename );
 	int scriptLineno;
-	scriptLineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, frame));
+	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
+	if ( frame ) {
+
+		JSScript *script;
+		script = JS_GetFrameScript(cx, frame);
+		JL_CHK( script );
+		scriptFilename = JS_GetScriptFilename(cx, script);
+		JL_CHK( scriptFilename );
+		scriptLineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, frame));
+	} else {
+		scriptFilename = "<no_file>";
+		scriptLineno = 1;
+	}
 	size_t length;
 	const jschar *chars;
 	chars = JS_GetStringCharsAndLength(cx, source, &length);

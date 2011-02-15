@@ -160,6 +160,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 DEFINE_PROPERTY_SETTER( position ) {
 
 	JL_USE(id);
+	JL_USE(strict);
 
 	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	size_t position;

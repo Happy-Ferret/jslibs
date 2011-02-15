@@ -1170,6 +1170,8 @@ DEFINE_FUNCTION( SandboxEval ) {
 		JL_CHK( JS_DefineFunction(cx, globalObj, "Query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
 	}
 
+	// JS_SetNativeStackQuota(cx, 50000); // (TBD) seems to be optional ?
+
 	pv.prevOperationCallback = JS_SetOperationCallback(cx, SandboxMaxOperationCallback);
 
 	JSBool ok;
