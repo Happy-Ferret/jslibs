@@ -517,6 +517,13 @@ JL_AssertFailure( const char *message, const char *location ) {
 ///////////////////////////////////////////////////////////////////////////////
 // Platform tools
 
+template <class T>
+struct Wrap {
+	T _item;
+	ALWAYS_INLINE explicit Wrap( T item ) : _item(item) {}
+	ALWAYS_INLINE operator T() { return _item; }
+};
+
 template<class T>
 struct DummyAlignStruct {
   unsigned char first;

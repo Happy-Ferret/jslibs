@@ -165,15 +165,19 @@ namespace jl {
 	};
 
 
-	template <class T, const size_t PREALLOC = 0>
+	template <class T, const size_t PREALLOC = 0, const bool SYNC = false>
 	class NOVTABLE PreservAlloc {
 
 		void *_last;
 		uint8_t *_prealloc;
 		uint8_t *_preallocEnd;
+		JLMutexHandler _mx;
 
 	public:
 		ALWAYS_INLINE PreservAlloc() : _last(NULL), _prealloc(NULL) {
+			
+			if ( SYNC )
+				_mx = JLMutexCreate();
 		}
 
 		ALWAYS_INLINE ~PreservAlloc() {
@@ -187,12 +191,18 @@ namespace jl {
 			}
 			if ( PREALLOC > 0 )
 				jl_free(_prealloc);
+			if ( SYNC )
+				JLMutexFree(&_mx);
 		}
 
 		ALWAYS_INLINE void Free(T *ptr) {
 
+			if ( SYNC )
+				JLMutexAcquire(_mx);
 			*(void**)ptr = _last;
 			_last = ptr;
+			if ( SYNC )
+				JLMutexRelease(_mx);
 		}
 
 		ALWAYS_INLINE T* Alloc() {
@@ -200,6 +210,9 @@ namespace jl {
 			size_t size = sizeof(T);
 			if ( size < sizeof(void*) )
 				size = sizeof(void*);
+
+			if ( SYNC )
+				JLMutexAcquire(_mx);
 
 			if ( PREALLOC > 0 && _prealloc == NULL ) {
 
@@ -217,13 +230,23 @@ namespace jl {
 				void *tmp = _last;
 				_last = *(void**)_last;
 				return (T*)tmp;
+				if ( SYNC )
+					JLMutexRelease(_mx);
+			} else {
+			
+				if ( SYNC )
+					JLMutexRelease(_mx);
+				return (T*)jl_malloc(size);
 			}
-			return (T*)jl_malloc(size);
 		}
 	};
 
 	template <class T>
 	class NOVTABLE PreservAllocNone : public PreservAlloc<T, 0> {};
+
+	template <class T>
+	class NOVTABLE PreservAllocNone_threadsafe : public PreservAlloc<T, 0, true> {};
+
 
 	template <class T>
 	class NOVTABLE PreservAllocSmall : public PreservAlloc<T, 256> {};

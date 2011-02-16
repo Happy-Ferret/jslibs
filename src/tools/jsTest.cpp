@@ -124,11 +124,10 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 }
 
 
+
+
 int main(int argc, char* argv[]) {
 
-	jschar *test = L("TEST");
-
-/*
 	_unsafeMode = false;
 
 	JSRuntime *rt = JS_NewRuntime(0);
@@ -137,19 +136,23 @@ int main(int argc, char* argv[]) {
 	JSContext *cx = JS_NewContext(rt, 8192L);
 
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_JIT);
-	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class);
+	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
-	jschar str[] = L("ABCD");
-	JSString *jsstr = JS_NewUCStringCopyN(cx, str, 4);
+//	jschar str[] = L("ABCD");
+//	JSString *jsstr = JS_NewUCString(cx, str, 2);
+
 
 
 	jsval val;
-	val = STRING_TO_JSVAL(jsstr);
-	val = DOUBLE_TO_JSVAL(1.234);
-	val = INT_TO_JSVAL(123);
 
-	Test(cx, globalObject, 20, val);
+	jschar str[] = L("ABCD");
+	jschar *str1 = str;
+
+	JL_NativeToJsval(cx, OwnerlessJsstr(str), 4, &val);
+
+
+
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
@@ -157,7 +160,5 @@ int main(int argc, char* argv[]) {
 
 bad:
 	return EXIT_SUCCESS;
-*/
-
 
 }

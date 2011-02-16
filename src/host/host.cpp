@@ -13,41 +13,23 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-// #include <jsreflect.h>
-
-#define SVN_REVISION_STR "$Revision$"
-
-#include "jslibsModule.h"
-
-#include "host.h"
 
 #include "jlapiexport.h"
+#include "jslibsModule.h"
 
-/*
-static JLMutexHandler globalModuleSlotLock;
-struct {
-	JLLibraryHandler module;
-	int instances;
-} globalModuleSlot[1<<8]; // does not support more than 256 modules.
-*/
+#define SVN_REVISION_STR "$Revision$"
+#include "host.h"
+#include "../jslang/jslang.h"
 
-JSBool jslangModuleInit(JSContext *cx, JSObject *obj);
-JSBool jslangModuleRelease(JSContext *cx);
-void jslangModuleFree();
-
-//int _unsafeMode = true;
 
 JSErrorFormatString JLerrorFormatString[JLErrLimit] = {
 #define MSG_DEF(name, number, count, exception, format) { format, count, exception },
-	#include "jlerrors.msg"
+#include "jlerrors.msg"
 #undef MSG_DEF
 };
 
 
-const JSErrorFormatString *GetErrorMessage(void *userRef, const char *locale, const uintN errorNumber) {
-
-	JL_USE(userRef);
-	JL_USE(locale);
+const JSErrorFormatString *GetErrorMessage(void *, const char *, const uintN errorNumber) {
 
 	uintN err = errorNumber - 1000;
 	if ( err > 0 && err < JLErrLimit )
@@ -56,13 +38,7 @@ const JSErrorFormatString *GetErrorMessage(void *userRef, const char *locale, co
 }
 
 
-//#define RT_HOST_MAIN_ASSERT( condition, errorMessage )
-//	if ( !(condition) ) { consoleStdErr( cx, errorMessage, sizeof(errorMessage)-1 ); return -1; }
-
-
-JSBool JSDefaultStdinFunction(JSContext *cx, uintN argc, jsval *vp) {
-
-	JL_USE(argc);
+JSBool JSDefaultStdinFunction(JSContext *cx, uintN, jsval *vp) {
 
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	if (unlikely( pv == NULL || pv->hostStdIn == NULL )) {
@@ -87,7 +63,7 @@ JSBool JSDefaultStdinFunction(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 
-// Print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
+// route: Print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
 JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 	*JL_RVAL = JSVAL_VOID;
@@ -124,7 +100,7 @@ JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 
-void stdErrRouter(JSContext *cx, const char *message, size_t length) {
+void ErrorReporter_stdErrRouter(JSContext *cx, const char *message, size_t length) {
 
 	JSObject *globalObject = JL_GetGlobalObject(cx);
 	if (likely( globalObject != NULL )) {
@@ -132,23 +108,12 @@ void stdErrRouter(JSContext *cx, const char *message, size_t length) {
 		jsval fct;
 		if (likely( GetHostObjectValue(cx, JLID(cx, stderr), &fct) == JS_TRUE && JL_IsFunction(cx, fct) )) {
 			
-			// possible optimization, but not very useful since errors occurs rarely.
-			//JSFunction *fun = GET_FUNCTION_PRIVATE(cx, JSVAL_TO_OBJECT(fct));
-			//if ( FUN_FAST_NATIVE(fun) == (JSFastNative)JSDefaultStderrFunction )
-			//	goto standard_way;
-
 			jsval unused;
 			jsval tmp;
 			JL_CHK( JL_NativeToJsval(cx, message, length, &tmp) ); // beware out of memory case !
 			JL_CHK( JS_CallFunctionValue(cx, globalObject, fct, 1, &tmp, &unused) );
 		}
 	}
-
-	//HostPrivate *pv;
-	//pv = JL_GetHostPrivate(cx);
-	//if (unlikely( pv == NULL || pv->hostStdErr == NULL ))
-	//	return;
-	//pv->hostStdErr(pv->privateData, message, length); // else, use the default.
 bad:
 	return;
 }
@@ -161,7 +126,7 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 	if (likely( pv != NULL && JSREPORT_IS_WARNING(report->flags) && pv->unsafeMode )) // no warnings in unsafe mode.
 		return;
 
-	// trap JSMSG_OUT_OF_MEMORY error to avoid calling stdErrRouter() that may allocate memory that will lead to nested call.
+	// trap JSMSG_OUT_OF_MEMORY error to avoid calling ErrorReporter_stdErrRouter() that may allocate memory that will lead to nested call.
 	if ( report->errorNumber == JSMSG_OUT_OF_MEMORY ) { // (TBD) do something better
 		
 		fprintf(stderr, "%s (%s:%d)\n", message, report->filename, report->lineno );
@@ -177,8 +142,8 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
     if (!report) {
         //fprintf(gErrFile, "%s\n", message);
-		 stdErrRouter( cx, message, strlen(message) );
-		 stdErrRouter( cx, "\n", 1 );
+		 ErrorReporter_stdErrRouter( cx, message, strlen(message) );
+		 ErrorReporter_stdErrRouter( cx, "\n", 1 );
         return;
     }
 
@@ -203,9 +168,9 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
         ctmp++;
         if (prefix)
             //fputs(prefix, gErrFile);
-				stdErrRouter( cx, prefix, strlen(prefix) );
+				ErrorReporter_stdErrRouter( cx, prefix, strlen(prefix) );
         //fwrite(message, 1, ctmp - message, gErrFile);
-		  stdErrRouter( cx, message, ctmp - message );
+		  ErrorReporter_stdErrRouter( cx, message, ctmp - message );
 
         message = ctmp;
     }
@@ -213,13 +178,13 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
     /* If there were no filename or lineno, the prefix might be empty */
     if (prefix)
         //fputs(prefix, gErrFile);
-		  stdErrRouter( cx, prefix, strlen(prefix) );
+		  ErrorReporter_stdErrRouter( cx, prefix, strlen(prefix) );
     //fputs(message, gErrFile);
-	 stdErrRouter( cx, message, strlen(message) );
+	 ErrorReporter_stdErrRouter( cx, message, strlen(message) );
 
     if (!report->linebuf) {
         //fputc('\n', gErrFile);
-		 stdErrRouter( cx, "\n", 1 );
+		 ErrorReporter_stdErrRouter( cx, "\n", 1 );
         goto out;
     }
 
@@ -231,23 +196,23 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
             report->linebuf,
             (n > 0 && report->linebuf[n-1] == '\n') ? "" : "\n",
             prefix);
-	 stdErrRouter( cx, msg, strlen(msg) );
+	 ErrorReporter_stdErrRouter( cx, msg, strlen(msg) );
 	JS_smprintf_free(msg);
     n = report->tokenptr - report->linebuf;
     for (i = j = 0; i < n; i++) {
         if (report->linebuf[i] == '\t') {
             for (k = (j + 8) & ~7; j < k; j++) {
                 //fputc('.', gErrFile);
-					stdErrRouter( cx, ".", 1 );
+					ErrorReporter_stdErrRouter( cx, ".", 1 );
             }
             continue;
         }
         //fputc('.', gErrFile);
-		  stdErrRouter( cx, ".", 1 );
+		  ErrorReporter_stdErrRouter( cx, ".", 1 );
         j++;
     }
     //fputs("^\n", gErrFile);
-	 stdErrRouter( cx, "^\n", 2 );
+	 ErrorReporter_stdErrRouter( cx, "^\n", 2 );
  out:
 /*
 	 if (!JSREPORT_IS_WARNING(report->flags)) {
@@ -388,27 +353,6 @@ bad:
 	return JS_FALSE;
 }
 
-/* (TBD)
-JSBool UnloadModule(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-
-	JL_S_ASSERT_ARG_MIN(1);
-	jsdouble dVal;
-	JL_CHK( JS_ValueToNumber(cx, argv[0], &dVal) );
-	ModuleId id = (ModuleId)dVal;
-
-	if ( ModuleIsUnloadable(id) ) {
-
-		bool st = ModuleUnload(id, cx);
-		JL_S_ASSERT( st == true, "Unable to unload the module" );
-		*rval = JSVAL_TRUE;
-	} else {
-
-		*rval = JSVAL_FALSE;
-	}
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
 
 JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STANDARD_CLASSES
 

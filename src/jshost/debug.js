@@ -1,4 +1,9 @@
 LoadModule('jsstd'); Exec('../common/tools.js');
+
+Print('hello world\n');
+throw 0;
+
+
 //var QA = FakeQAApi;
 //RunLocalQAFile();
 //RunJsircbot(false); throw 0;
@@ -7,10 +12,6 @@ RunQATests('-rep 3 -q -nogcB -exclude jstask');
 //  Serialization|ProcessEvents
 //RunQATests('-perf perfset.js -exclude jstask');
 //Exec('../../perfset.js'); throw 0; // -perf perfset.js
-
-
-LoadModule('jsstd'); Exec('../jsprotex/test.js'); throw 0;
-
 
 
 Print(uneval( jslang_test(new ArrayBuffer('1')) ), '\n');

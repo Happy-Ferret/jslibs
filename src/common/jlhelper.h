@@ -1062,7 +1062,7 @@ class JLStr {
 		uint32_t count;
 	} *_inner;
 
-	static jl::PreservAllocNone<JLStr::Inner> mem; // require #include "jlhelper.cpp"
+	static jl::PreservAllocNone_threadsafe<JLStr::Inner> mem; // require #include "jlhelper.cpp"
 
 	void CreateOwnJsStrZ() {
 		
@@ -1453,7 +1453,7 @@ JL_NativeToJsval( JSContext *cx, JLStr &cval, jsval *vp ) {
 // jschar
 
 ALWAYS_INLINE JSBool
-JL_NativeToJsval( JSContext *cx, const jschar* cval, size_t length, jsval *vp ) {
+JL_NativeToJsval( JSContext *cx, const jschar * cval, size_t length, jsval *vp ) {
 
 	if (unlikely( length == 0 )) {
 
@@ -1464,7 +1464,33 @@ JL_NativeToJsval( JSContext *cx, const jschar* cval, size_t length, jsval *vp ) 
 		return JS_TRUE;
 	}
 	JL_ASSERT( cval != NULL );
-	JSString *jsstr = JS_NewUCStringCopyN(cx, cval, length);
+	JSString *jsstr;
+	jsstr = JS_NewUCStringCopyN(cx, cval, length);
+	JL_CHK( jsstr );
+	*vp = STRING_TO_JSVAL(jsstr);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+typedef Wrap<jschar*> OwnerlessJsstr;
+
+ALWAYS_INLINE JSBool
+JL_NativeToJsval( JSContext *cx, OwnerlessJsstr cval, size_t length, jsval *vp ) {
+
+	if (unlikely( length == 0 )) {
+
+		if (unlikely( cval == NULL ))
+			*vp = JSVAL_VOID;
+		else
+			*vp = JL_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
+	JL_ASSERT( cval != NULL );
+	JL_ASSERT( msize(cval) > length );
+	JL_ASSERT( cval[length] == 0 );
+	JSString *jsstr;
+	jsstr = JS_NewUCString(cx, cval, length);
 	JL_CHK( jsstr );
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
@@ -1487,12 +1513,13 @@ JL_NativeToJsval( JSContext *cx, const char* cval, jsval *vp ) {
 		*vp = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
-	JSString *jsstr = JS_NewStringCopyZ(cx, cval);
+	JSString *jsstr = JS_NewStringCopyZ(cx, cval); // copy is mandatory
 	JL_CHK( jsstr );
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const char* cval, size_t length, jsval *vp ) {
@@ -1506,7 +1533,7 @@ JL_NativeToJsval( JSContext *cx, const char* cval, size_t length, jsval *vp ) {
 		return JS_TRUE;
 	}
 	JL_ASSERT( cval != NULL );
-	JSString *jsstr = JS_NewStringCopyN(cx, cval, length);
+	JSString *jsstr = JS_NewStringCopyN(cx, cval, length); // copy is mandatory
 	JL_CHK( jsstr );
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;

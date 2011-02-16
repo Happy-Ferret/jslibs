@@ -32,3 +32,8 @@ struct ModulePrivate {
 	ProcessEventThreadInfo processEventThreadInfo[PROCESSEVENT_MAX_ITEM];
 	JLSemaphoreHandler processEventSignalEventSem;
 };
+
+
+JSBool jslangModuleInit(JSContext *cx, JSObject *obj);
+JSBool jslangModuleRelease(JSContext *cx);
+void jslangModuleFree();
