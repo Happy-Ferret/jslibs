@@ -1,5 +1,8 @@
-@@ -47,8 +47,34 @@
+@@ -46,14 +46,40 @@
+ 
+ #include "jstypes.h"
  #include <stdlib.h>
+ #include <string.h>
  
  JS_BEGIN_EXTERN_C
  
@@ -33,8 +36,14 @@
   * JS_Assert is present even in release builds, for the benefit of applications
   * that build DEBUG and link against a non-DEBUG SpiderMonkey library.
   */
-@@ -296,5 +320,10 @@
- #endif /* !defined(DEBUG) */
+ extern JS_PUBLIC_API(void)
+ JS_Assert(const char *s, const char *file, JSIntn ln);
+ 
+@@ -462,8 +488,13 @@
+     }
+ }
+ 
+ } /* namespace js */
  
  #endif /* defined(__cplusplus) */
  
