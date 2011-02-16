@@ -42,11 +42,15 @@ cd $TOP/libs/nspr && make all copy >> $LOGFILE 2>&1
 if [ "$1" == "" ]; then
 	for slnFile in $(ls $TOP/src/*/*.sln); do
 
-		echo building $slnFile ...	
-		(echo;echo;echo) >> $LOGFILE
-		cd $(dirname $slnFile)
-		vcbuild.exe //M$NUMBER_OF_PROCESSORS //nohtmllog //nologo //useenv $VCBUILD_OPT $(basename $slnFile) "$BUILD|WIN32" >> $LOGFILE 2>&1
-		[ $? != 0 ] && echo ... failed.
+		if [[ "$EXCLUDE" == *"$(basename $slnFile)"* ]]; then
+			echo "    skip $(basename $slnFile)"
+		else
+			echo "building $(basename $slnFile) ..."
+			(echo;echo;echo) >> $LOGFILE
+			cd $(dirname $slnFile)
+			vcbuild.exe //M$NUMBER_OF_PROCESSORS //nohtmllog //nologo //useenv $VCBUILD_OPT $(basename $slnFile) "$BUILD|WIN32" >> $LOGFILE 2>&1
+			[ $? != 0 ] && echo ... failed.
+		fi
 	done
 else
 
