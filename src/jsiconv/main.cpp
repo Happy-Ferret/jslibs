@@ -13,8 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jlhelper.cpp"
-#include "jslibsModule.cpp"
+#include <jlhelper.cpp>
+#include <jslibsModule.cpp>
 
 #if defined(_MSC_VER)
 #pragma comment(lib, "..\\..\\libs\\libiconv\\Release\\iconv.lib")

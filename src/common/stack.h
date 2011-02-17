@@ -12,10 +12,12 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#pragma once
+
 #ifndef _STACK_H_
 #define _STACK_H_
 
-#include "jlalloc.h"
+#include <jlalloc.h>
 
 // very simple stack functions
 

@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 #include <rsvg-private.h>
-#include "rsvg-structure.h"
+#include <rsvg-structure.h>
 
 //#include <libxml/xpath.h>
 //#include <libxml/parser.h>

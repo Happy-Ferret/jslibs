@@ -770,7 +770,7 @@ namespace jl {
 
 /* Template
 
-#include "../common/jsvalserializer.h"
+#include <jsvalserializer.h>
 
 DEFINE_FUNCTION( _serialize ) {
 

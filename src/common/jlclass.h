@@ -12,10 +12,14 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#pragma once
+
 #ifndef _JSCLASS_H_
 #define _JSCLASS_H_
 
-typedef uint32_t JLRevisionType;
+#define JL_NO_TINYID (-1) // see JL_DefineClassProperties()
+
+typedef int32 JLRevisionType;
 
 struct JLConstIntegerSpec {
     int ival;
@@ -62,11 +66,12 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 }
 
 // because it is difficult to override properties by tinyId (JSPropertyOp) see. bz#526979
+// note. PROPERTY_SWITCH uses enum values as tinyId
 ALWAYS_INLINE JSBool JL_DefineClassProperties(JSContext *cx, JSObject *obj, JSPropertySpec *ps) {
 
-	for (; ps->name; ps++) {
+	for ( ; ps->name; ++ps ) {
 
-		if ( ps->tinyid < 0 )
+		if ( ps->tinyid == JL_NO_TINYID )
 			JL_CHK( JS_DefineProperty(cx, obj, ps->name, JSVAL_VOID, ps->getter, ps->setter, ps->flags) );
 		else
 			JL_CHK( JS_DefinePropertyWithTinyId(cx, obj, ps->name, ps->tinyid, JSVAL_VOID, ps->getter, ps->setter, ps->flags) );
@@ -84,7 +89,7 @@ ALWAYS_INLINE char *JLNormalizeFunctionName( const char *name ) {
 
 ALWAYS_INLINE void JLNormalizeFunctionSpecNames( JSFunctionSpec *functionSpec ) {
 
-	for ( JSFunctionSpec *it = functionSpec; it && it->name; it++ )
+	for ( JSFunctionSpec *it = functionSpec; it && it->name; ++it )
 		it->name = JLNormalizeFunctionName(it->name);
 }
 
@@ -102,11 +107,14 @@ inline JSBool JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 		JL_CHK( JL_DefineClassProperties(cx, obj, cs->static_ps) );
 
 	if ( cs->cis != NULL )
-		for ( JLConstIntegerSpec *it = cs->cis ; it->name; ++it )
-			JL_CHK( JS_DefineProperty(cx, obj, it->name, INT_TO_JSVAL(jl::SafeCast<int>(it->ival)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+		for ( JLConstIntegerSpec *it = cs->cis; it->name; ++it )
+			JL_CHK( JS_DefineProperty(cx, obj, it->name, INT_TO_JSVAL(jl::SafeCast<int32>(it->ival)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( cs->cds != NULL )
 		JL_CHK( JS_DefineConstDoubles(cx, obj, cs->cds) );
+
+	if ( cs->revision != 0 )
+		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( cs->init )
 		JL_CHK( cs->init(cx, cs, NULL, obj) );
@@ -133,12 +141,15 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	if ( cs->parentProtoName != NULL ) {
 
 		parent_proto = JL_GetCachedClassProto(hpv, cs->parentProtoName)->proto;
-		JL_S_ASSERT( parent_proto != NULL, "%s prototype not found", cs->parentProtoName );
-//		JL_ASSERT( parent_proto != NULL ); // "parent class has no prototype"
+		if ( parent_proto == NULL )
+			JL_REPORT_ERROR( "%s prototype not found", cs->parentProtoName );
 	} else {
 
 		parent_proto = NULL;
 	}
+
+	uint32 protoFrozen = cs->clasp.flags & JSCLASS_FREEZE_PROTO;
+	cs->clasp.flags &= ~JSCLASS_FREEZE_PROTO;
 
 	JSObject *proto;
 	proto = JS_InitClass(cx, obj, parent_proto, &cs->clasp, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
@@ -159,8 +170,8 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 		JL_CHK( JL_DefineClassProperties(cx, staticDest, cs->static_ps) );
 
 	if ( cs->cis != NULL )
-		for ( JLConstIntegerSpec *it = cs->cis ; it->name; ++it )
-			JL_CHK( JS_DefineProperty(cx, staticDest, it->name, INT_TO_JSVAL(it->ival), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+		for ( JLConstIntegerSpec *it = cs->cis; it->name; ++it )
+			JL_CHK( JS_DefineProperty(cx, staticDest, it->name, INT_TO_JSVAL(jl::SafeCast<int32>(it->ival)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( cs->cds != NULL )
 		JL_CHK( JS_DefineConstDoubles(cx, staticDest, cs->cds) );
@@ -169,7 +180,12 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_CHK( JS_SetPropertyAttributes(cx, obj, cs->clasp.name, JSPROP_READONLY | JSPROP_PERMANENT, &found) );
 	JL_ASSERT( found ); // "Unable to set class flags."
 
-	JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	//	if ( !(cs->clasp.flags & JSCLASS_FREEZE_PROTO) )
+	if ( cs->revision != 0 )
+		JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+
+	if ( protoFrozen )
+		JL_CHK( JS_FreezeObject(cx, proto) );
 
 	if ( cs->init )
 		JL_CHK( cs->init(cx, cs, proto, staticDest) );
@@ -282,15 +298,17 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define FUNCTION_ARGC(name, nargs) JS_FN( #name, _##name, nargs, 0 ),
 #define FUNCTION_ALIAS(alias, name) JS_FN( #alias, _##name, 0, 0 ),
 
-#define PROPERTY(name) { #name, -1, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
-#define PROPERTY_READ(name) { #name, -1, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name##Getter, NULL }, // (TBD) rename into PROPERTY_GETTER
-#define PROPERTY_WRITE(name) { #name, -1, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name##Setter }, // (TBD) rename into PROPERTY_SETTER
+#define PROPERTY(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
+#define PROPERTY_READ(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name##Getter, NULL }, // (TBD) rename into PROPERTY_GETTER
+#define PROPERTY_WRITE(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name##Setter }, // (TBD) rename into PROPERTY_SETTER
 #define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
 #define PROPERTY_SWITCH_READ(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##function##Getter, NULL },
 #define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, _##getter, _##setter },
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
 
 // configuration
+#define FREEZE_PROTO cs.clasp.flags |= JSCLASS_FREEZE_PROTO;
+#define FREEZE_CONSTRUCTOR cs.clasp.flags |= JSCLASS_FREEZE_CTOR;
 #define HAS_PRIVATE cs.clasp.flags |= JSCLASS_HAS_PRIVATE;
 #define HAS_RESERVED_SLOTS(COUNT) cs.clasp.flags |= JSCLASS_HAS_RESERVED_SLOTS(COUNT);
 #define CONSTRUCT_PROTOTYPE cs.clasp.flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
@@ -382,3 +400,59 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define DEFINE_PROPERTY_SETTER(name) static JSBool _##name##Setter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp)
 
 #endif // _JSCLASS_H_
+
+/*
+
+// flags:
+//JSCLASS_HAS_PRIVATE           
+//JSCLASS_NEW_ENUMERATE         
+//JSCLASS_NEW_RESOLVE           
+//JSCLASS_NEW_RESOLVE_GETS_START
+//JSCLASS_CONSTRUCT_PROTOTYPE
+//JSCLASS_DOCUMENT_OBSERVER  
+//JSCLASS_HAS_RESERVED_SLOTS(n)
+//JSCLASS_RESERVED_SLOTS(clasp)
+//JSCLASS_HIGH_FLAGS_SHIFT     
+//JSCLASS_IS_ANONYMOUS         
+//JSCLASS_IS_GLOBAL            
+//JSCLASS_MARK_IS_TRACE 
+//JSCLASS_FREEZE_PROTO 
+//JSCLASS_FREEZE_CTOR  
+
+static js::Class OperationLimit_class = {
+    "ClassName",
+	 0, // see flags.
+	 js::PropertyStub, js::PropertyStub, js::PropertyStub, js::StrictPropertyStub,
+	 js::EnumerateStub, js::ResolveStub, js::ConvertStub, js::FinalizeStub,
+    NULL, // JSClassInternal     reserved0;
+    NULL, // JSCheckAccessOp     checkAccess;
+    NULL, // JSNative            call;
+    NULL, // JSNative            construct;
+    NULL, // JSXDRObjectOp       xdrObject;
+    NULL, // JSHasInstanceOp     hasInstance;
+    NULL, // JSMarkOp            mark;
+    {
+        NULL, // EqualityOp    equality;
+        NULL, // JSObjectOp    outerObject;
+        NULL, // JSObjectOp    innerObject;
+        NULL, // JSIteratorOp  iteratorObject;
+        NULL, // void         *unused;
+    },
+    {
+        NULL, // js::LookupPropOp        lookupProperty;
+        NULL, // js::DefinePropOp        defineProperty;
+        NULL, // js::PropertyIdOp        getProperty;
+        NULL, // js::StrictPropertyIdOp  setProperty;
+        NULL, // js::AttributesOp        getAttributes;
+        NULL, // js::AttributesOp        setAttributes;
+        NULL, // js::DeleteIdOp          deleteProperty;
+        NULL, // js::NewEnumerateOp      enumerate;
+        NULL, // js::TypeOfOp            typeOf;
+        NULL, // js::TraceOp             trace;
+        NULL, // js::FixOp               fix;
+        NULL, // js::ObjectOp            thisObject;
+        NULL, // js::FinalizeOp          clear;
+    },
+};
+*/
+

@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 #include "blobPub.h"
-//#include "jsproxy.h"
 
 static const char emptyBlobBuffer[] = "";
 

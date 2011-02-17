@@ -12,10 +12,12 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#pragma once
+
 #ifndef _QUEUE_H_
 #define _QUEUE_H_
 
-#include "jlalloc.h"
+#include <jlalloc.h>
 
 namespace jl {
 

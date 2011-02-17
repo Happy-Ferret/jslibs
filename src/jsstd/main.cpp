@@ -13,8 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jlhelper.cpp"
-#include "jslibsModule.cpp"
+#include <jlhelper.cpp>
+#include <jslibsModule.cpp>
 #include "jsstd.h"
 
 
@@ -22,7 +22,6 @@ DECLARE_STATIC()
 DECLARE_CLASS( Map )
 DECLARE_CLASS( Buffer )
 DECLARE_CLASS( Pack )
-DECLARE_CLASS( OperationLimit )
 DECLARE_CLASS( ObjEx )
 
 /**doc t:header
@@ -51,7 +50,6 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	INIT_STATIC();
 	INIT_CLASS( Map );
-	INIT_CLASS( OperationLimit ); // exception
 	INIT_CLASS( Buffer );
 	INIT_CLASS( Pack );
 	INIT_CLASS( ObjEx );

@@ -1,8 +1,8 @@
 #define XP_WIN
 
-#include "../common/jlhelper.h"
-#include "../common/jlhelper.cpp"
-#include "../common/jslibsModule.cpp"
+#include <../common/jlhelper.h>
+#include <../common/jlhelper.cpp>
+#include <../common/jslibsModule.cpp>
 
 #include <jsapi.h>
 #include <jsvalue.h>
@@ -143,13 +143,17 @@ int main(int argc, char* argv[]) {
 //	JSString *jsstr = JS_NewUCString(cx, str, 2);
 
 
+	long i = 0;
+
+	_InterlockedIncrement (&i);
+
 
 	jsval val;
 
 	jschar str[] = L("ABCD");
 	jschar *str1 = str;
 
-	JL_NativeToJsval(cx, OwnerlessJsstr(str), 4, &val);
+	JL_NativeToJsval(cx, OwnerlessJsstr(str), i, &val);
 
 
 

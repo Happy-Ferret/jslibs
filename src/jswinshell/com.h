@@ -14,10 +14,11 @@
 
 #include "stdafx.h"
 
-#include "error.h"
-
 #include <Objbase.h>
 #include <ocidl.h>
+
+#include "error.h"
+
 
 DECLARE_CLASS( ComEnum )
 DECLARE_CLASS( ComVariant )

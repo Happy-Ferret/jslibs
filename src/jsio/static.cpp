@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jslibsModule.h"
+#include <jslibsModule.h>
 #include "../jslang/handlePub.h"
 
 

@@ -13,7 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "template.h"
 
 BEGIN_CLASS( Audio )
 

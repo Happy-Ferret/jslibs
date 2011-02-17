@@ -13,10 +13,10 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jlhelper.cpp"
-#include "jslibsModule.cpp"
+#include <jlhelper.cpp>
+#include <jslibsModule.cpp>
 
-#include "jlmoduleprivate.h"
+#include <jlmoduleprivate.h>
 DEFINE_MODULE_PRIVATE
 
 FT_DEFINE_SYMBOLS;

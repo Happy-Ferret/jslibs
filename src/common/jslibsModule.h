@@ -12,6 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#pragma once
+
 #ifndef _JSLIBSMODULE_H_
 #define _JSLIBSMODULE_H_
 

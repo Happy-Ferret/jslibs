@@ -12,6 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#pragma once
+
 #ifndef _VECTOR4_H_
 #define _VECTOR4_H_
 

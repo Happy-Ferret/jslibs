@@ -13,9 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-// #include "jlhelper.cpp" // fix mutual access to jl::PreservAllocNone<JLStr::Inner> JLStr::mem;
+// #include <jlhelper.cpp> // fix mutual access to jl::PreservAllocNone<JLStr::Inner> JLStr::mem;
 
-#include "jslibsModule.cpp"
+#include <jslibsModule.cpp>
 
 DECLARE_CLASS( Task )
 

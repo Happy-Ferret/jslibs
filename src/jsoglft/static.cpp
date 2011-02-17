@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jlmoduleprivate.h"
+#include <jlmoduleprivate.h>
 
 
 /**doc fileIndex:topmost **/

@@ -1,28 +1,22 @@
+
 if ( 0 ) {
 
 	LoadModule('jsstd');
 	LoadModule('jsio');
-//	LoadModule('jsdebug');
+
+		SandboxEval('for (var i = 0; i < 100000; ++i);', undefined, 0);
 
 	SandboxEval('!function f(){f();}()');
-
-
+	
 	Print( uneval(SandboxEval('1+Math.sin(0.3)')) ); // Math.sin
-
+	
 	Print( SandboxEval('Math.sin')(123) );
-//	Print( SandboxEval('sdfgsdFG()') );
-
-	var res = Function("var v = 567; return SandboxEval('Query()', function(val) v)")();
-	Print( uneval(res));
+	
+	Print( SandboxEval('sdfgsdFG()') );
+	
+	var res = Function("var v = 567; return SandboxEval('Query()', function(val) v)")(); Print( uneval(res));
 
 	SandboxEval('for (var i = 1; i < 1000000000; ++i) Math.sin(1);');
-
-
-
-//	var x = 7;
-//	eval("'use strict'; var x = 42");
-//	Print(x)
-
 
 	Print( 'Done.\n' );
 	throw 0;
@@ -34,7 +28,7 @@ LoadModule('jsstd'); Exec('../common/tools.js');
 // RunLocalQAFile();
 //RunJsircbot(false); throw 0;
 //RunQATests('-perf perftest.js -v -exclude jstask');
-RunQATests('-rep 1 -exclude jstask sandbox');
+RunQATests('-rep 1 -exclude jstask OperationLimit');
 // 17 26 35
 
 Halt();

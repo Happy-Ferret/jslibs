@@ -13,8 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jlhelper.cpp"
-#include "jslibsModule.cpp"
+#include <jlhelper.cpp>
+#include <jslibsModule.cpp>
 
 #if defined(_MSC_VER)
 #pragma comment(lib, "advapi32.lib") // rng_get_bytes.obj (function _rng_win32) needs __imp__CryptReleaseContext@8, __imp__CryptGenRandom@12, __imp__CryptAcquireContextA@20

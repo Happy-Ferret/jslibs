@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 
-#include "buffer.h"
+#include "buffer.h" // beware: this is not ../common/buffer.h !
 
 #define SLOT_PACK_BUFFEROBJECT 0
 

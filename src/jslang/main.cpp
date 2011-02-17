@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jlhelper.cpp" // (TBD) create a lib
+#include <jlhelper.cpp> // (TBD) create a lib
 #include "jslang.h"
 
 

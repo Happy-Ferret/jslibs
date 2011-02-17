@@ -26,7 +26,7 @@
 #endif
 
 
-#include "jslibsModule.cpp"
+#include <jslibsModule.cpp>
 
 #include "../jslang/handlePub.h"
 

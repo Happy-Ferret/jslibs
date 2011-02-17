@@ -12,10 +12,12 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#pragma once
+
 #ifndef _JL_POOL_H_
 #define _JL_POOL_H_
 
-#include "jlalloc.h"
+#include <jlalloc.h>
 
 namespace jl {
 

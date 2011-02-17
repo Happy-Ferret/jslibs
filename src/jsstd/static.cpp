@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jslibsModule.h"
+#include <jslibsModule.h>
 #include "jsstd.h"
 
 DECLARE_CLASS( OperationLimit )
@@ -1004,6 +1004,24 @@ $TOC_MEMBER $INAME
 **/
 
 
+BEGIN_CLASS( OperationLimit )
+
+DEFINE_HAS_INSTANCE() {
+
+	JL_USE(obj);
+
+	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
+	return JS_TRUE;
+}
+
+CONFIGURE_CLASS
+
+	HAS_HAS_INSTANCE // see issue#52
+
+END_CLASS
+
+
+
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 static JSBool
 sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **objp) {
@@ -1527,27 +1545,6 @@ DEFINE_PROPERTY_GETTER( CPUID ) {
 }
 
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-/*
-DEFINE_PROPERTY( processPriorityGetter ) {
-
-	return JS_TRUE;
-}
-
-
-DEFINE_PROPERTY( processPrioritySetter ) {
-
-	HANDLE hProcess = OpenProcess(PROCESS_DUP_HANDLE, TRUE, GetCurrentProcessId());
-	SetPriorityClass(hProcess, BELOW_NORMAL_PRIORITY_CLASS);
-
-	DWORD dwError = GetLastError();
-   CloseHandle(hProcess);
-
-	return JS_TRUE;
-}
-*/
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef _DEBUG
@@ -1611,44 +1608,47 @@ DEFINE_FUNCTION( Test ) {
 #endif // _DEBUG
 
 
+DEFINE_INIT() {
+
+	INIT_CLASS( OperationLimit );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
-	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( Expand )
-		FUNCTION_ARGC( SwitchCase, 4 )
-		FUNCTION( InternString )
-		FUNCTION( DeepFreezeObject )
-		FUNCTION( CountProperties )
-		FUNCTION( ClearObject )
-		FUNCTION( SetScope )
-//		FUNCTION( GetCurrentScope )
-//		FUNCTION( HideProperties )
-//		FUNCTION_ARGC( SetPropertyEnumerate, 3 )
-//		FUNCTION_ARGC( SetPropertyReadonly, 3 )
+	HAS_INIT
 
-		FUNCTION( Exec )
-		FUNCTION( SandboxEval )
-		FUNCTION( IsStatementValid )
-		FUNCTION( StringRepeat )
-		FUNCTION( Print )
-		FUNCTION( Sleep )
-		FUNCTION( TimeCounter )
-		FUNCTION( CollectGarbage )
-		FUNCTION( MaybeCollectGarbage )
-		FUNCTION( ObjectToId )
-		FUNCTION( IdToObject )
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION_ARGC( Expand, 2 )
+		FUNCTION_ARGC( SwitchCase, 4 )
+		FUNCTION_ARGC( InternString, 1 )
+		FUNCTION_ARGC( DeepFreezeObject, 1 )
+		FUNCTION_ARGC( CountProperties, 1 )
+		FUNCTION_ARGC( ClearObject, 1 )
+		FUNCTION_ARGC( SetScope, 2 )
+		FUNCTION_ARGC( Exec, 2 )
+		FUNCTION_ARGC( SandboxEval, 3 )
+		FUNCTION_ARGC( IsStatementValid, 1 )
+		FUNCTION_ARGC( StringRepeat, 2 )
+		FUNCTION_ARGC( Print, 1 ) // ...
+		FUNCTION_ARGC( Sleep, 1 )
+		FUNCTION_ARGC( TimeCounter, 0 )
+		FUNCTION_ARGC( CollectGarbage, 0 )
+		FUNCTION_ARGC( MaybeCollectGarbage, 0 )
+		FUNCTION_ARGC( ObjectToId, 1 )
+		FUNCTION_ARGC( IdToObject, 1 )
 		FUNCTION_ARGC( IsBoolean, 1 )
 		FUNCTION_ARGC( IsNumber, 1 )
 		FUNCTION_ARGC( IsPrimitive, 1 )
 		FUNCTION_ARGC( IsFunction, 1 )
 		FUNCTION_ARGC( IsGenerator, 1 )
-//		FUNCTION_ARGC( IsVoid, 1 ) // value === undefined is better
-		FUNCTION( Warning )
-		FUNCTION( Assert )
-		FUNCTION( Halt )
-//		FUNCTION( StrSet )
+		FUNCTION_ARGC( Warning, 1 )
+		FUNCTION_ARGC( Assert, 2 )
+		FUNCTION_ARGC( Halt, 0 )
 #ifdef _DEBUG
 		FUNCTION( Test )
 #endif // _DEBUG
@@ -1659,7 +1659,6 @@ CONFIGURE_STATIC
 		PROPERTY_READ( currentLineNumber )
 		PROPERTY_READ( isConstructing )
 		PROPERTY( disableGarbageCollection )
-//		PROPERTY( processPriority )
 		PROPERTY_READ( CPUID )
 #ifdef _DEBUG
 //		PROPERTY( testProp )

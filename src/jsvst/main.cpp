@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jslibsModule.cpp"
+#include <jslibsModule.cpp>
 
 #include "../host/host.h"
 #include "jsapihelper.h"

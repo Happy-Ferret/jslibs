@@ -13,8 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jlhelper.cpp"
-#include "jslibsModule.cpp"
+#include <jlhelper.cpp>
+#include <jslibsModule.cpp>
 
 DECLARE_CLASS( Jabber )
 DECLARE_STATIC()

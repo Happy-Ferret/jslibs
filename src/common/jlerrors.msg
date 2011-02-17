@@ -12,18 +12,17 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-/* exnType:
-	JSEXN_NONE = -1,
-	JSEXN_ERR,
-	JSEXN_INTERNALERR,
-	JSEXN_EVALERR,
-	JSEXN_RANGEERR,
-	JSEXN_REFERENCEERR,
-	JSEXN_SYNTAXERR,
-	JSEXN_TYPEERR,
-	JSEXN_URIERR,
-	JSEXN_LIMIT
-*/
+// exnType:
+//  JSEXN_NONE = -1
+//  JSEXN_ERR
+//  JSEXN_INTERNALERR
+//  JSEXN_EVALERR      // regarding the eval function.
+//  JSEXN_RANGEERR     // when a number is not within the correct range allowed.
+//  JSEXN_REFERENCEERR // when a non-existent variable is referenced. A ReferenceError is thrown when trying to dereference a variable that has not been declared.
+//  JSEXN_SYNTAXERR    // when trying to interpret syntactically invalid code. A SyntaxError is thrown when the JavaScript engine encounters tokens or token order that does not conform to the syntax of the language when parsing code.
+//  JSEXN_TYPEERR      // when a value is not of the expected type.
+//  JSEXN_URIERR       // when a malformed URI is encountered.
+
 
 MSG_DEF(JLSMSG_NOT_AN_ERROR,           1000, 0, JSEXN_NONE, "<Error #0 is reserved>")
 MSG_DEF(JLSMSG_OUT_OF_RANGE,           1001, 0, JSEXN_RANGEERR, "index out of range")
@@ -45,6 +44,7 @@ MSG_DEF(JLSMSG_OS_ERROR,               1016, 1, JSEXN_INTERNALERR, "OS: {0}")
 MSG_DEF(JLSMSG_VALUE_LOSSOFDATA,       1017, 0, JSEXN_ERR, "loss of data or precision")
 MSG_DEF(JLSMSG_FAIL_TO_CREATE,         1018, 1, JSEXN_INTERNALERR, "unable to create the {0}")
 MSG_DEF(JLSMSG_INTERNAL_ERROR,         1019, 1, JSEXN_INTERNALERR, "internal error ({0})")
+MSG_DEF(JLSMSG_RUNTIME_ERROR,          1021, 1, JSEXN_ERR, "runtime error ({0})")
 MSG_DEF(JLSMSG_INVALID_ARGUMENT_COUNT, 1020, 1, JSEXN_RANGEERR, "invalid argument count (need {0})")
 
 

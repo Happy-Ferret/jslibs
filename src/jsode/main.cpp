@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "jslibsModule.cpp"
+#include <jslibsModule.cpp>
 
 #include "mass.h"
 #include "space.h"

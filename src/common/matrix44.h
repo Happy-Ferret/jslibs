@@ -41,6 +41,8 @@ Note that post-multiplying with column-major matrices produces the same result a
 
 //#undef SSE
 
+#pragma once
+
 #ifndef _MATRIX44_H_
 #define _MATRIX44_H_
 

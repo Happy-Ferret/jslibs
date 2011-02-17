@@ -15,7 +15,7 @@
 #ifndef _BLOBAPI_H_
 #define _BLOBAPI_H_
 
-#include "jlhelper.h"
+#include <jlhelper.h>
 
 /* the new Blob
 namespace jl {

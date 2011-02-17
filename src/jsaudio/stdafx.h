@@ -14,15 +14,15 @@
 
 #pragma once
 
-#include "jlhelper.h"
-#include "jlclass.h"
+#include <jlhelper.h>
+#include <jlclass.h>
 
 #include "stdlib.h"
 
 
-#include "../common/jsvalserializer.h"
+#include <jsvalserializer.h>
 
-#include "queue.h"
+#include <queue.h>
 
 
 // OpenAL from src

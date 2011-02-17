@@ -12,6 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "jlhelper.h"
+#include <jlhelper.h>
 
 jl::PreservAllocNone_threadsafe<JLStr::Inner> JLStr::mem;

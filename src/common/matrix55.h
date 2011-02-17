@@ -12,6 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#pragma once
+
 #ifndef _MATRIX55_H_
 #define _MATRIX55H_
 

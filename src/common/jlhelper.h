@@ -12,6 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#pragma once
+
 #ifndef _JSHELPER_H_
 #define _JSHELPER_H_
 
@@ -372,7 +374,7 @@ JL_SetContextPrivate( const JSContext *cx, JLContextPrivate *ContextPrivate ) {
 // Host private
 
 // Using a separate file allow a better versioning of the HostPrivate structure (see JL_HOST_PRIVATE_VERSION).
-#include <jlhostprivate.h>
+#include "jlhostprivate.h"
 
 ALWAYS_INLINE HostPrivate*
 JL_GetHostPrivate( const JSContext *cx ) {
@@ -1062,7 +1064,7 @@ class JLStr {
 		uint32_t count;
 	} *_inner;
 
-	static jl::PreservAllocNone_threadsafe<JLStr::Inner> mem; // require #include "jlhelper.cpp"
+	static jl::PreservAllocNone_threadsafe<JLStr::Inner> mem; // require #include <jlhelper.cpp>
 
 	void CreateOwnJsStrZ() {
 		

@@ -14,8 +14,8 @@
 
 #include "stdafx.h"
 
-#include "jlapiexport.h"
-#include "jslibsModule.h"
+#include <jlapiexport.h>
+#include <jslibsModule.h>
 
 #define SVN_REVISION_STR "$Revision$"
 #include "host.h"
@@ -799,8 +799,8 @@ static jl_free_t base_free;
 static void *head;
 
 // thread stats
-static volatile long headLength;
-static volatile long load;
+static volatile int32_t headLength;
+static volatile int load;
 
 // thread handler
 static JLThreadHandler memoryFreeThread;

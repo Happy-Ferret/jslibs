@@ -17,7 +17,7 @@
 // set stack to 2MB:
 #pragma comment (linker, "/STACK:0x200000")
 
-#include "jslibsModule.cpp"
+#include <jslibsModule.cpp>
 
 #define NO_NED_NAMESPACE
 #define NO_MALLINFO 1

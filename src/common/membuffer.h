@@ -12,10 +12,11 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#pragma once
+
 #ifndef _MEMBUFFER_H_
 #define _MEMBUFFER_H_
 
-//#include "stdafx.h"
 #include "../jslang/handlePub.h"
 
 

@@ -12,6 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#pragma once
+
 #ifndef _JLPLATFORM_H_
 #define _JLPLATFORM_H_
 
@@ -1454,9 +1456,9 @@ ALWAYS_INLINE int JLAtomicExchange(volatile long *ptr, long val) {
 #endif
 }
 
-ALWAYS_INLINE long JLAtomicIncrement(volatile long *ptr) {
+ALWAYS_INLINE long JLAtomicIncrement(volatile int32_t *ptr) {
 #if defined(XP_WIN)
-	return InterlockedIncrement(ptr);
+	return _InterlockedIncrement((volatile LONG*)ptr); // Increments the value of the specified 32-bit variable as an atomic operation.
 #elif defined(XP_UNIX)
 	return __sync_add_and_fetch(ptr, 1);
 #else
@@ -1464,9 +1466,9 @@ ALWAYS_INLINE long JLAtomicIncrement(volatile long *ptr) {
 #endif
 }
 
-ALWAYS_INLINE long JLAtomicDecrement(volatile long *ptr) {
+ALWAYS_INLINE long JLAtomicDecrement(volatile int32_t *ptr) {
 #if defined(XP_WIN)
-	return InterlockedDecrement(ptr);
+	return _InterlockedDecrement((volatile LONG*)ptr);
 #elif defined(XP_UNIX)
 	return __sync_sub_and_fetch(ptr, 1);
 #else
@@ -1474,9 +1476,9 @@ ALWAYS_INLINE long JLAtomicDecrement(volatile long *ptr) {
 #endif
 }
 
-ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
+ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 #if defined(XP_WIN)
-	return InterlockedExchangeAdd(ptr, val) + val;
+	return _InterlockedExchangeAdd((volatile LONG*)ptr, val) + val; // Performs an atomic addition of two 32-bit values and returns the initial value of the Addend parameter.
 #elif defined(XP_UNIX)
 	return __sync_add_and_fetch(ptr, val);
 #else
@@ -1484,50 +1486,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 #endif
 }
 
-/*
-///////////////////////////////////////////////////////////////////////////////
-// condvar
-//
-#if defined(XP_WIN)
-	typedef struct {
-		HANDLE mutex;
-		HANDLE event;
-	} *JLCondHandler;
-#elif defined(XP_UNIX)
-	typedef struct {
-		pthread_mutex_t mutex;
-		pthread_cond_t cond;
-	} *JLCondHandler;
-#else
-	#error NOT IMPLEMENTED YET	// (TBD)
-#endif
 
-
-	#if defined(XP_WIN)
-	ALWAYS_INLINE JLCondHandler JLCreateCond() {
-
-		JLCondHandler cond = (JLCondHandler)malloc(sizeof(*cond));
-		cond->mutex = CreateMutex(NULL, FALSE, NULL); // lpMutexAttributes, bInitialOwner, lpName
-		cond->event = CreateEvent(NULL, TRUE, FALSE, NULL); // lpEventAttributes, bManualReset, bInitialState, lpName
-		return cond;
-	}
-	#elif defined(XP_UNIX)
-	ALWAYS_INLINE JLCondHandler JLCreateCond() {
-
-		JLCondHandler cond = (JLCondHandler)malloc(sizeof(*cond));
-		pthread_mutex_init(cond->mutex, NULL);
-		pthread_cond_init(&cond->cond, NULL);
-		return cond;
-	}
-	#else
-		#error NOT IMPLEMENTED YET	// (TBD)
-	#endif
-
-	ALWAYS_INLINE JLCondWait( JLCondHandler cond, int timeout ) {
-	}
-*/
-
-// Pthreads-w32: http://sourceware.org/pthreads-win32/
 
 ///////////////////////////////////////////////////////////////////////////////
 // semaphores
@@ -1679,23 +1638,20 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 //  each successful lock request that it has outstanding on the mutex.
 //  PTHREAD_MUTEX_RECURSIVE
 
+#if defined(XP_WIN)
+	typedef CRITICAL_SECTION* JLMutexHandler; // doc. critical section objects provide a slightly faster, more efficient mechanism for mutual-exclusion synchronization.
+#elif defined(XP_UNIX)
+	typedef pthread_mutex_t* JLSemaphoreHandler;
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
 
-	typedef struct __JSMUtexHandler {
-	#if defined(XP_WIN)
-		CRITICAL_SECTION cs;
-		// HANDLE mx;
-	#elif defined(XP_UNIX)
-		pthread_mutex_t mx;
-	#else
-		#error NOT IMPLEMENTED YET	// (TBD)
-	#endif
-	} *JLMutexHandler;
 
 	#define JLMutexInvalidHandler ((JLMutexHandler)0)
 
 	ALWAYS_INLINE bool JLMutexOk( JLMutexHandler mutex ) {
 
-		return mutex != (JLMutexHandler)0;
+		return mutex != JLMutexInvalidHandler;
 	}
 
 	ALWAYS_INLINE JLMutexHandler JLMutexCreate() {
@@ -1704,12 +1660,9 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 		if ( mutex == NULL )
 			return NULL;
 	#if defined(XP_WIN)
-		InitializeCriticalSection(&mutex->cs);
-//		mutex->mx = CreateMutex(NULL, FALSE, NULL);
-//		if ( mutex->mx == NULL )
-//			return NULL;
+		InitializeCriticalSection(mutex);
 	#elif defined(XP_UNIX)
-		int st = pthread_mutex_init(&mutex->mx, NULL);
+		int st = pthread_mutex_init(mutex, NULL);
 		JL_ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
@@ -1721,26 +1674,24 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 
 		JL_ASSERT( *pMutex != NULL && JLMutexOk(*pMutex) );
 	#if defined(XP_WIN)
-		DeleteCriticalSection(&(*pMutex)->cs);
-//		CloseHandle((*mutex)->mx);
+		DeleteCriticalSection(*pMutex);
 	#elif defined(XP_UNIX)
-		int st = pthread_mutex_destroy(&(*pMutex)->mx);
+		int st = pthread_mutex_destroy(*pMutex);
 		JL_ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 		free(*pMutex);
-		*pMutex = (JLMutexHandler)0;
+		*pMutex = JLMutexInvalidHandler;
 	}
 
 	ALWAYS_INLINE void JLMutexAcquire( JLMutexHandler mutex ) {
 
 		JL_ASSERT( JLMutexOk(mutex) );
 	#if defined(XP_WIN)
-		EnterCriticalSection(&mutex->cs);
-//		WaitForSingleObject(mutex->mx, INFINITE);
+		EnterCriticalSection(mutex);
 	#elif defined(XP_UNIX)
-		int st = pthread_mutex_lock(&mutex->mx); // doc. shall not return an error code of [EINTR].
+		int st = pthread_mutex_lock(mutex); // doc. shall not return an error code of [EINTR].
 		JL_ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
@@ -1751,10 +1702,9 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 
 		JL_ASSERT( JLMutexOk(mutex) );
 	#if defined(XP_WIN)
-		LeaveCriticalSection(&mutex->cs);
-//		ReleaseMutex(mutex->mx);
+		LeaveCriticalSection(mutex);
 	#elif defined(XP_UNIX)
-		int st = pthread_mutex_unlock(&mutex->mx);
+		int st = pthread_mutex_unlock(mutex);
 		JL_ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
@@ -1762,11 +1712,13 @@ ALWAYS_INLINE int JLAtomicAdd(volatile long *ptr, long val) {
 	}
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // Condition Variables
 //
 // see http://www.cs.wustl.edu/~schmidt/win32-cv-1.html (Strategies for Implementing POSIX Condition Variables on Win32)
 
+#define JLCondInvalideHandler ((JLCondHandler)0)
 
 #if defined(XP_WIN)
 
@@ -1781,7 +1733,7 @@ typedef struct __JLCondHandler {
 
 ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
 
-	return cv != (JLCondHandler)0;
+	return cv != JLCondInvalideHandler;
 }
 
 ALWAYS_INLINE JLCondHandler JLCondCreate() {
@@ -1862,154 +1814,6 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	}
 }
 
-
-
-/*
-typedef struct {
-	int waiters_count_;
-	// Number of waiting threads.
-
-//	CRITICAL_SECTION global_lock;
-	CRITICAL_SECTION waiters_count_lock_;
-	// Serialize access to <waiters_count_>.
-
-	HANDLE sema_;
-	// Semaphore used to queue up threads waiting for the condition to
-	// become signaled.
-
-	HANDLE waiters_done_;
-	// An auto-reset event used by the broadcast/signal thread to wait
-	// for all the waiting thread(s) to wake up and be released from the
-	// semaphore.
-
-	size_t was_broadcast_;
-	// Keeps track of whether we were broadcasting or signaling.  This
-	// allows us to optimize the code if we're just signaling.
-} *JLCondHandler;
-
-
-ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
-
-	return cv != (JLCondHandler)0;
-}
-
-ALWAYS_INLINE JLCondHandler JLCondCreate() {
-
-	JLCondHandler cv = (JLCondHandler)malloc(sizeof(*cv));
-	cv->waiters_count_ = 0;
-	cv->was_broadcast_ = 0;
-	cv->sema_ = CreateSemaphore(NULL, 0, 0x7fffffff, NULL);
-	InitializeCriticalSection (&cv->waiters_count_lock_);
-//	InitializeCriticalSection (&cv->global_lock);
-	cv->waiters_done_ = CreateEvent (NULL, FALSE, FALSE, NULL);
-	return cv;
-}
-
-
-ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
-
-	JL_ASSERT( JLCondOk(*cv) );
-	BOOL st = CloseHandle((*cv)->sema_);
-	JL_ASSERT( st );
-	JL_USE( st );
-	DeleteCriticalSection(&(*cv)->waiters_count_lock_);
-//	DeleteCriticalSection(&(*cv)->global_lock);
-	free(*cv);
-	*cv = NULL;
-}
-
-
-ALWAYS_INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
-
-//  EnterCriticalSection (&cv->global_lock);
-
-  EnterCriticalSection (&cv->waiters_count_lock_);
-  cv->waiters_count_++;
-  LeaveCriticalSection (&cv->waiters_count_lock_);
-
-  SignalObjectAndWait(external_mutex->mx, cv->sema_, INFINITE, FALSE);
-
-  // Reacquire lock to avoid race conditions.
-  EnterCriticalSection (&cv->waiters_count_lock_);
-
-  // We're no longer waiting...
-  cv->waiters_count_--;
-
-  // Check to see if we're the last waiter after <pthread_cond_broadcast>.
-  int last_waiter = cv->was_broadcast_ && cv->waiters_count_ == 0;
-
-  LeaveCriticalSection (&cv->waiters_count_lock_);
-
-  // If we're the last waiter thread during this particular broadcast
-  // then let all the other threads proceed.
-  if (last_waiter)
-    // This call atomically signals the <waiters_done_> event and waits until
-    // it can acquire the <external_mutex>.  This is required to ensure fairness.
-	 SignalObjectAndWait (cv->waiters_done_, external_mutex->mx, INFINITE, FALSE);
-  else
-    // Always regain the external mutex since that's the guarantee we
-    // give to our callers.
-	 WaitForSingleObject(external_mutex->mx, INFINITE);
-
-//  LeaveCriticalSection (&cv->global_lock);
-
-  return JLOK;
-}
-
-
-ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
-
-//  EnterCriticalSection (&cv->global_lock);
-
-  EnterCriticalSection (&cv->waiters_count_lock_);
-  int have_waiters = cv->waiters_count_ > 0;
-  LeaveCriticalSection (&cv->waiters_count_lock_);
-
-  // If there aren't any waiters, then this is a no-op.
-  if (have_waiters)
-    ReleaseSemaphore (cv->sema_, 1, 0);
-
-//  LeaveCriticalSection (&cv->global_lock);
-}
-
-
-ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
-
-//  EnterCriticalSection (&cv->global_lock);
-
-  // This is needed to ensure that <waiters_count_> and <was_broadcast_> are
-  // consistent relative to each other.
-  EnterCriticalSection (&cv->waiters_count_lock_);
-  int have_waiters = 0;
-
-  if (cv->waiters_count_ > 0) {
-    // We are broadcasting, even if there is just one waiter...
-    // Record that we are broadcasting, which helps optimize
-    // <pthread_cond_wait> for the non-broadcast case.
-    cv->was_broadcast_ = 1;
-    have_waiters = 1;
-  }
-
-  if (have_waiters) {
-    // Wake up all the waiters atomically.
-    ReleaseSemaphore (cv->sema_, cv->waiters_count_, 0);
-
-    LeaveCriticalSection (&cv->waiters_count_lock_);
-
-    // Wait for all the awakened threads to acquire the counting
-    // semaphore.
-    WaitForSingleObject (cv->waiters_done_, INFINITE);
-    // This assignment is okay, even without the <waiters_count_lock_> held
-    // because no other waiter threads can wake up to access it.
-    cv->was_broadcast_ = 0;
-  }
-  else
-    LeaveCriticalSection (&cv->waiters_count_lock_);
-
-//  LeaveCriticalSection (&cv->global_lock);
-}
-*/
-
 #elif defined(XP_UNIX)
 
 typedef struct __JLCondHandler {
@@ -2018,7 +1822,7 @@ typedef struct __JLCondHandler {
 
 ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
 
-	return cv != (JLCondHandler)0;
+	return cv != JLCondInvalideHandler;
 }
 
 ALWAYS_INLINE JLCondHandler JLCondCreate() {
@@ -2059,6 +1863,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2267,10 +2072,12 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 
+	#define JLThreadInvalidHandler ((JLThreadHandler)0)
+
 
 	ALWAYS_INLINE bool JLThreadOk( JLThreadHandler thread ) {
 
-		return thread != (JLThreadHandler)0;
+		return thread != JLThreadInvalidHandler;
 	}
 
 
@@ -2296,7 +2103,6 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
-
 
 	ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) {  // (TBD) how to manage errors ?
 
@@ -2333,7 +2139,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
-		*pThread = (JLThreadHandler)0;
+		*pThread = JLThreadInvalidHandler;
 	}
 
 
@@ -2402,6 +2208,8 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // thread-local storage
@@ -2614,5 +2422,202 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	#endif
 	}
 
-
 #endif // _JLPLATFORM_H_
+
+
+
+/*
+///////////////////////////////////////////////////////////////////////////////
+// condvar
+//
+#if defined(XP_WIN)
+	typedef struct {
+		HANDLE mutex;
+		HANDLE event;
+	} *JLCondHandler;
+#elif defined(XP_UNIX)
+	typedef struct {
+		pthread_mutex_t mutex;
+		pthread_cond_t cond;
+	} *JLCondHandler;
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
+
+
+	#if defined(XP_WIN)
+	ALWAYS_INLINE JLCondHandler JLCreateCond() {
+
+		JLCondHandler cond = (JLCondHandler)malloc(sizeof(*cond));
+		cond->mutex = CreateMutex(NULL, FALSE, NULL); // lpMutexAttributes, bInitialOwner, lpName
+		cond->event = CreateEvent(NULL, TRUE, FALSE, NULL); // lpEventAttributes, bManualReset, bInitialState, lpName
+		return cond;
+	}
+	#elif defined(XP_UNIX)
+	ALWAYS_INLINE JLCondHandler JLCreateCond() {
+
+		JLCondHandler cond = (JLCondHandler)malloc(sizeof(*cond));
+		pthread_mutex_init(cond->mutex, NULL);
+		pthread_cond_init(&cond->cond, NULL);
+		return cond;
+	}
+	#else
+		#error NOT IMPLEMENTED YET	// (TBD)
+	#endif
+
+	ALWAYS_INLINE JLCondWait( JLCondHandler cond, int timeout ) {
+	}
+*/
+
+// Pthreads-w32: http://sourceware.org/pthreads-win32/
+
+
+
+
+
+/*
+typedef struct {
+	int waiters_count_;
+	// Number of waiting threads.
+
+//	CRITICAL_SECTION global_lock;
+	CRITICAL_SECTION waiters_count_lock_;
+	// Serialize access to <waiters_count_>.
+
+	HANDLE sema_;
+	// Semaphore used to queue up threads waiting for the condition to
+	// become signaled.
+
+	HANDLE waiters_done_;
+	// An auto-reset event used by the broadcast/signal thread to wait
+	// for all the waiting thread(s) to wake up and be released from the
+	// semaphore.
+
+	size_t was_broadcast_;
+	// Keeps track of whether we were broadcasting or signaling.  This
+	// allows us to optimize the code if we're just signaling.
+} *JLCondHandler;
+
+
+ALWAYS_INLINE bool JLCondOk( JLCondHandler cv ) {
+
+	return cv != JLCondHandler;
+}
+
+ALWAYS_INLINE JLCondHandler JLCondCreate() {
+
+	JLCondHandler cv = (JLCondHandler)malloc(sizeof(*cv));
+	cv->waiters_count_ = 0;
+	cv->was_broadcast_ = 0;
+	cv->sema_ = CreateSemaphore(NULL, 0, 0x7fffffff, NULL);
+	InitializeCriticalSection (&cv->waiters_count_lock_);
+//	InitializeCriticalSection (&cv->global_lock);
+	cv->waiters_done_ = CreateEvent (NULL, FALSE, FALSE, NULL);
+	return cv;
+}
+
+
+ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
+
+	JL_ASSERT( JLCondOk(*cv) );
+	BOOL st = CloseHandle((*cv)->sema_);
+	JL_ASSERT( st );
+	JL_USE( st );
+	DeleteCriticalSection(&(*cv)->waiters_count_lock_);
+//	DeleteCriticalSection(&(*cv)->global_lock);
+	free(*cv);
+	*cv = NULL;
+}
+
+
+ALWAYS_INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
+
+//  EnterCriticalSection (&cv->global_lock);
+
+  EnterCriticalSection (&cv->waiters_count_lock_);
+  cv->waiters_count_++;
+  LeaveCriticalSection (&cv->waiters_count_lock_);
+
+  SignalObjectAndWait(external_mutex->mx, cv->sema_, INFINITE, FALSE);
+
+  // Reacquire lock to avoid race conditions.
+  EnterCriticalSection (&cv->waiters_count_lock_);
+
+  // We're no longer waiting...
+  cv->waiters_count_--;
+
+  // Check to see if we're the last waiter after <pthread_cond_broadcast>.
+  int last_waiter = cv->was_broadcast_ && cv->waiters_count_ == 0;
+
+  LeaveCriticalSection (&cv->waiters_count_lock_);
+
+  // If we're the last waiter thread during this particular broadcast
+  // then let all the other threads proceed.
+  if (last_waiter)
+    // This call atomically signals the <waiters_done_> event and waits until
+    // it can acquire the <external_mutex>.  This is required to ensure fairness.
+	 SignalObjectAndWait (cv->waiters_done_, external_mutex->mx, INFINITE, FALSE);
+  else
+    // Always regain the external mutex since that's the guarantee we
+    // give to our callers.
+	 WaitForSingleObject(external_mutex->mx, INFINITE);
+
+//  LeaveCriticalSection (&cv->global_lock);
+
+  return JLOK;
+}
+
+
+ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
+
+//  EnterCriticalSection (&cv->global_lock);
+
+  EnterCriticalSection (&cv->waiters_count_lock_);
+  int have_waiters = cv->waiters_count_ > 0;
+  LeaveCriticalSection (&cv->waiters_count_lock_);
+
+  // If there aren't any waiters, then this is a no-op.
+  if (have_waiters)
+    ReleaseSemaphore (cv->sema_, 1, 0);
+
+//  LeaveCriticalSection (&cv->global_lock);
+}
+
+
+ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
+
+//  EnterCriticalSection (&cv->global_lock);
+
+  // This is needed to ensure that <waiters_count_> and <was_broadcast_> are
+  // consistent relative to each other.
+  EnterCriticalSection (&cv->waiters_count_lock_);
+  int have_waiters = 0;
+
+  if (cv->waiters_count_ > 0) {
+    // We are broadcasting, even if there is just one waiter...
+    // Record that we are broadcasting, which helps optimize
+    // <pthread_cond_wait> for the non-broadcast case.
+    cv->was_broadcast_ = 1;
+    have_waiters = 1;
+  }
+
+  if (have_waiters) {
+    // Wake up all the waiters atomically.
+    ReleaseSemaphore (cv->sema_, cv->waiters_count_, 0);
+
+    LeaveCriticalSection (&cv->waiters_count_lock_);
+
+    // Wait for all the awakened threads to acquire the counting
+    // semaphore.
+    WaitForSingleObject (cv->waiters_done_, INFINITE);
+    // This assignment is okay, even without the <waiters_count_lock_> held
+    // because no other waiter threads can wake up to access it.
+    cv->was_broadcast_ = 0;
+  }
+  else
+    LeaveCriticalSection (&cv->waiters_count_lock_);
+
+//  LeaveCriticalSection (&cv->global_lock);
+}
+*/
+

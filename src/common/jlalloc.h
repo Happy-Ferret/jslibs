@@ -12,10 +12,12 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#pragma once
+
 #ifndef _JLALLOC_H_
 #define _JLALLOC_H_
 
-#include <jlplatform.h>
+#include "jlplatform.h"
 
 typedef void* (*jl_malloc_t)( size_t );
 typedef void* (*jl_calloc_t)( size_t, size_t );

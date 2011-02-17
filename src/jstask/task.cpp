@@ -13,14 +13,11 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include <buffer.h>
+#include <jsvalserializer.h>
 
 #include "../host/host.h"
-
-#include "../common/jsvalserializer.h"
-
 #include "../jslang/handlePub.h"
-
-#include "buffer.h"
 
 #include <errno.h>
 

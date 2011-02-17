@@ -161,10 +161,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\operationLimitException.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\pack.cpp"
 				>
 			</File>

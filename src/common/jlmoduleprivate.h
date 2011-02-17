@@ -12,16 +12,18 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#pragma once
+
 #ifndef _JLMODULEPRIVATE_H_
 #define _JLMODULEPRIVATE_H_
 
 #include "jlplatform.h"
 
-extern volatile long _modulePrivateCount;
+extern volatile int32_t _modulePrivateCount;
 extern JLTLSKey _modulePrivateKey;
 
 #define DEFINE_MODULE_PRIVATE \
-	volatile long _modulePrivateCount = 0; \
+	volatile int32_t _modulePrivateCount = 0; \
 	JLTLSKey _modulePrivateKey = JLTLSInvalidKey;
 
 ALWAYS_INLINE void* ModulePrivateAlloc(size_t size) {

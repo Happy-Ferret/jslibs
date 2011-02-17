@@ -22,7 +22,7 @@
 #include "stdafx.h"
 #include "../jslang/blobPub.h"
 
-#include "buffer.h"
+#include "buffer.h" // beware: this is not ../common/buffer.h !
 
 #define SLOT_SOURCE 0
 

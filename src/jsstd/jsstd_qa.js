@@ -970,6 +970,18 @@ LoadModule('jsstd');
 	QA.ASSERT_EXCEPTION( function() { SandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 250) }, OperationLimit, 'OperationLimit detection' );
 
 
+/// OperationLimit is not extensible [fmtr d]
+
+	try {
+		
+		SandboxEval('for (var i = 0; i < 100000; ++i);', undefined, 0);
+		QA.FAILED('OperationLimit exception not thrown');
+	} catch (ex) {
+
+		QA.ASSERT_EXCEPTION( function() { 'use strict'; ex.__proto__.test = 1 }, TypeError, 'OperationLimit extensibility' );
+	}
+
+
 /// Sandbox stack overflow [rmt]
 
 	QA.ASSERT_EXCEPTION( function() { SandboxEval('(function f(){f();})();') }, 'InternalError', 'Stack overflow detection' );

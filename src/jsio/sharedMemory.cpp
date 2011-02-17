@@ -17,7 +17,6 @@
 
 #define SEMAPHORE_EXTENSION "_sem"
 
-
 struct ClassPrivate {
 	char name[PATH_MAX +1];
 	PRSharedMemory *shm;

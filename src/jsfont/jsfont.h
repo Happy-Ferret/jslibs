@@ -15,7 +15,7 @@
 #ifndef _JSFONT_H_
 #define _JSFONT_H_
 
-#include "jlhelper.h"
+#include <jlhelper.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

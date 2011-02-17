@@ -16,7 +16,7 @@
 
 static const JSCodeSpec jsCodeSpec[] = {
 	#define OPDEF(op,val,name,token,length,nuses,ndefs,prec,format) {length,nuses,ndefs,prec,format},
-	#include "jsopcode.tbl"
+	#include <jsopcode.tbl>
 	#undef OPDEF
 };
 

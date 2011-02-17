@@ -14,6 +14,7 @@
 
 #include "stdafx.h"
 
+
 DECLARE_CLASS( Descriptor )
 DECLARE_CLASS( File )
 
