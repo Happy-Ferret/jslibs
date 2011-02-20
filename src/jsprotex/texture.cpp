@@ -281,7 +281,7 @@ JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, P
 		}
 	}
 
-	JL_REPORT_ERROR("Invalid level data.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "number, Array or string");
 	JL_BAD;
 }
 
@@ -354,10 +354,8 @@ JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) 
 	//for ( int i = 0; i < length; i++ )
 	//	curve[i] = PMAX;
 	//return JS_TRUE;
-	JL_REPORT_ERROR("Invalid curve data.");
-
-bad:
-	return JS_FALSE;
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "function, number, or data");
+	JL_BAD;
 }
 
 /**doc
@@ -488,7 +486,7 @@ DEFINE_CONSTRUCTOR() {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR( "Invalid arguments" );
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_TYPE_ERROR, "invalid argument type");
 	JL_BAD;
 }
 
@@ -1600,7 +1598,7 @@ DEFINE_FUNCTION( Add ) {
 		return JS_TRUE;
 	}
 	
-	JL_REPORT_ERROR("Unsupported argument.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_TYPE_ERROR, "invalid argument type");
 	JL_BAD;
 }
 
@@ -1686,7 +1684,7 @@ DEFINE_FUNCTION( Mult ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR("Unsupported argument.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_TYPE_ERROR, "invalid argument type");
 	JL_BAD;
 }
 
@@ -2136,11 +2134,11 @@ DEFINE_FUNCTION( Resize ) {
 						pos4 = 0;
 						break;
 					default:
-						pos1 = 0;
-						pos2 = 0;
-						pos3 = 0;
-						pos4 = 0;
-						JL_REPORT_ERROR( "Invalid border mode." );
+//						pos1 = 0;
+//						pos2 = 0;
+//						pos3 = 0;
+//						pos4 = 0;
+						JL_REPORT_ERROR_NUM( cx, JLSMSG_LOGIC_ERROR, "invalid border mode" );
 				}
 
 				ratio1 = (1.f - prx) * (1.f - pry);
@@ -2314,7 +2312,7 @@ DEFINE_FUNCTION( Convolution ) {
 						}
 					break;
 				default:
-					JL_REPORT_ERROR( "Invalid border mode." );
+					JL_REPORT_ERROR_NUM( cx, JLSMSG_LOGIC_ERROR, "invalid border mode" );
 			}
 
 			pos = (x + y * width) * channels;
@@ -3074,7 +3072,7 @@ DEFINE_FUNCTION( Copy ) {
 					continue; // skip
 				break;
 			default:
-				JL_REPORT_ERROR( "Invalid border mode." );
+				JL_REPORT_ERROR_NUM( cx, JLSMSG_LOGIC_ERROR, "invalid border mode" );
 			}
 
 			posDst = ( x + y * texWidth ) * channels;
@@ -3153,7 +3151,7 @@ DEFINE_FUNCTION( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 				}
 				break;
 			default:
-				JL_REPORT_ERROR( "Invalid border mode." );
+				JL_REPORT_ERROR_NUM( cx, JLSMSG_LOGIC_ERROR, "invalid border mode" );
 			}
 
 			posDst = ( dx + dy * texWidth ) * channels;
@@ -3370,7 +3368,7 @@ DEFINE_FUNCTION( Import ) { // (Blob)image, (int)x, (int)y
 						continue; // skip
 				break;
 			default:
-				JL_REPORT_ERROR( "Invalid border mode." );
+				JL_REPORT_ERROR_NUM( cx, JLSMSG_LOGIC_ERROR, "invalid border mode" );
 			}
 
 			posDst = ( dx + dy * dWidth ) * dChannels;

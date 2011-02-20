@@ -141,7 +141,9 @@ JLThreadFuncDecl ProcessEventThread( void *data ) {
 		JL_ASSERT(st);
 		if ( ti->isEnd )
 			break;
+		JL_ASSERT( ti != NULL );
 		JL_ASSERT( ti->peSlot != NULL );
+		JL_ASSERT( ti->peSlot->startWait != NULL );
 		ti->peSlot->startWait(ti->peSlot);
 		ti->peSlot = NULL;
 		JLSemaphoreRelease(ti->signalEventSem);
@@ -161,11 +163,12 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	uintN i;
 	for ( i = 0; i < argc; ++i ) {
 
-		JL_S_ASSERT( IsHandleType(cx, JL_ARGV[i], JL_CAST_CSTR_TO_UINT32("pev")), "Invalid event handle." );
+		JL_S_ASSERT_ERROR_NUM( IsHandle(cx, JL_ARGV[i]), JLSMSG_EXPECT_TYPE, "process event Handle" );
+		JSObject *pevObj = JSVAL_TO_OBJECT(JL_ARGV[i]);
+		JL_S_ASSERT_ERROR_NUM( IsHandleType(cx, pevObj, JL_CAST_CSTR_TO_UINT32("pev")), JLSMSG_LOGIC_ERROR, "invalid handle type" );
 		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, JL_ARGV[i]);
-		//JL_S_ASSERT_RESOURCE( pe );
-		if ( pe == NULL )
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_RESOURCE);
+		JL_S_ASSERT_ERROR_NUM( pe != NULL, JLSMSG_RUNTIME_ERROR, "invalid event handle" );
+
 		JL_ASSERT( pe->startWait );
 		JL_ASSERT( pe->cancelWait );
 		JL_ASSERT( pe->endWait );

@@ -301,7 +301,7 @@ DEFINE_FUNCTION( Read ) {
 				buf = (char*)jl_realloc(buf, totalSize +1);
 		} else {
 
-			JL_REPORT_ERROR("Invalid frame count.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "0 to 2^32");
 		}
 
 	} else {

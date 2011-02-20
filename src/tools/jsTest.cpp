@@ -88,6 +88,9 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 
 	size_t err = JLGetEIP(); size_t a = JLGetEIP(); ////////////////////////////////////////
 
+
+	b = double(9007199254740992) == double(9007199254740993);
+
 	
 //	b = JL_IsData(cx, val);
 	/*
@@ -127,6 +130,14 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 
 
 int main(int argc, char* argv[]) {
+
+
+	bool b = double(-9007199254740992) == double(-9007199254740993);
+	bool c = double(-9007199254740991) == double(-9007199254740992);
+
+	printf("%d, %d\n", b, c);
+
+
 
 	_unsafeMode = false;
 

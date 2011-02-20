@@ -112,6 +112,20 @@ bad:
 
 
 ALWAYS_INLINE bool
+IsHandle( JSContext *cx, jsval handleVal ) {
+
+	return JL_IsClass(handleVal, JL_HandleJSClass(cx));
+}
+
+ALWAYS_INLINE bool
+IsHandleType( JSContext *cx, JSObject *handleObj, HANDLE_TYPE handleType ) {
+
+	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);
+	return pv != NULL && pv->handleType == handleType;
+}
+
+
+ALWAYS_INLINE bool
 IsHandleType( JSContext *cx, jsval handleVal, HANDLE_TYPE handleType ) {
 
 	if ( !JL_IsClass(handleVal, JL_HandleJSClass(cx)) )

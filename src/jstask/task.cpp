@@ -395,7 +395,7 @@ DEFINE_CONSTRUCTOR() {
 				priority = JL_THREAD_PRIORITY_HIGH;
 				break;
 			default:
-				JL_REPORT_ERROR("Invalid thread priority.");
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_RANGE_ERROR, "invalid thread priority (-1, 0, 1)");
 		}
 	}
 

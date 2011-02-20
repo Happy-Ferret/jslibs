@@ -554,12 +554,16 @@ static const union {
 	(JLHostEndianType.value)
 
 
-// since 9007199254740992 == 9007199254740993, we must subtract 1.
+// 2^53 = 9007199254740992
+// since double(9007199254740992) == double(9007199254740993), and double(-9007199254740992) == double(-9007199254740993)  we must subtract 1.
 // see also std::numeric_limits<double>::digits
 JL_STATIC_ASSERT( DBL_MANT_DIG < 64 );
 
 #define MAX_INT_TO_DOUBLE \
-	((double)(((uint64_t)1<<DBL_MANT_DIG)-1))
+	((double)((((uint64_t)1)<<DBL_MANT_DIG)-1))
+
+#define MIN_INT_TO_DOUBLE \
+	(-MAX_INT_TO_DOUBLE)
 
 // (TBD) fix needed on Linux
 JL_STATIC_ASSERT( MAX_INT_TO_DOUBLE != MAX_INT_TO_DOUBLE+(double)1 );

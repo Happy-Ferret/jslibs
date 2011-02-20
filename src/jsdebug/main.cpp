@@ -260,9 +260,6 @@ void SourceHandler(const char *filename, uintN lineno, jschar *str, size_t lengt
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-//	if ( instanceCount++ > 0 )
-//		JL_REPORT_ERROR( "Loading this module twice is not allowed." );
-
 	JL_CHK( InitJslibsModule(cx, id)  );
 
 	ModulePrivate *mpv;

@@ -131,7 +131,7 @@ DEFINE_CONSTRUCTOR() {
 			// see JL_CHK( JL_JsvalToNativeVector(cx, *JL_ARGV, tmp, 16, &len) );
 			pv->isIdentity = false;
 		} else
-			JL_REPORT_ERROR("Invalid matrix44");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid matrix44");
 	}
 	// else uninitialized matrix
 
@@ -165,11 +165,13 @@ DEFINE_FUNCTION( Load ) {
 			Matrix44Load(pv->mat, m);
 		pv->isIdentity = false;
 	} else
-	if ( JSVAL_IS_NULL(JL_ARG(1)) ) {
+/*
+		if ( JSVAL_IS_NULL(JL_ARG(1)) ) {
 
 		Matrix44Identity(pv->mat);
 		pv->isIdentity = true;
 	} else
+*/
 	if ( JL_ARGC == 16 ) {
 		
 		float *tmp = (float*)&pv->mat->raw;
@@ -178,7 +180,7 @@ DEFINE_FUNCTION( Load ) {
 		// see JL_CHK( JL_JsvalToNativeVector(cx, *JL_ARGV, tmp, 16, &len) );
 		pv->isIdentity = false;
 	} else
-		JL_REPORT_ERROR("Invalid matrix44");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid matrix44");
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
@@ -876,10 +878,8 @@ DEFINE_FUNCTION( TransformVector ) {
 
 		JL_CHK( JL_NativeToJsval(cx, dst.w, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 3, &tmpValue) );
-	} else {
-
-		JL_REPORT_ERROR( "Unsupported vector length (%d).", length );
-	}
+	} else
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "Invalid vector length");
 
 	*JL_RVAL = JL_ARG(1);
 	return JS_TRUE;

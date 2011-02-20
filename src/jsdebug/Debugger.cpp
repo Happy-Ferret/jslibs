@@ -413,8 +413,12 @@ DEFINE_FUNCTION( ToggleBreakpoint ) {
 	JSScript *script;
 	jsbytecode *pc;
 	JL_CHK( GetScriptLocation(cx, &JL_ARG(2), lineno, &script, &pc) );
-	if ( script == NULL )
-		JL_REPORT_ERROR("Invalid location.");
+	if ( script == NULL ) {
+		
+		JL_REPORT_WARNING_NUM(cx, JLSMSG_RUNTIME_ERROR, "Invalid location.");
+		*JL_RVAL = JSVAL_ZERO;
+		return JS_TRUE;
+	}
 
 	JSTrapHandler prevHandler;
 	jsval prevClosure;
@@ -449,8 +453,12 @@ DEFINE_FUNCTION( HasBreakpoint ) {
 	JSScript *script;
 	jsbytecode *pc;
 	JL_CHK( GetScriptLocation(cx, &JL_ARG(1), lineno, &script, &pc) );
-	if ( script == NULL )
-		JL_REPORT_ERROR("Invalid location.");
+	if ( script == NULL ) {
+
+		JL_REPORT_WARNING_NUM(cx, JLSMSG_RUNTIME_ERROR, "Invalid location.");
+		*JL_RVAL = JSVAL_FALSE;
+		return JS_TRUE;
+	}
 
 	JSTrapHandler prevHandler;
 	jsval prevClosure;

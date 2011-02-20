@@ -178,10 +178,10 @@ DEFINE_CONSTRUCTOR() {
 			pv->face = new OGLFT::TranslucentTexture(ftface, size);
 			break;
 		default:
-			JL_REPORT_ERROR("Invalid 3D font style");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_RANGE_ERROR, "invalid 3D font style");
 	}
 
-	JL_S_ASSERT( pv->face->isValid(), "Failed to create the font." );
+	JL_S_ASSERT_ERROR_NUM(pv->face->isValid(), JLSMSG_RUNTIME_ERROR, "failed to create the font" );
 
 	pv->ftface = ftface;
 	pv->size = (int)size;
@@ -495,9 +495,7 @@ DEFINE_PROPERTY_SETTER( tessellationSteps ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-
-	if ( pv->style != OUTLINE && pv->style != FILLED && pv->style != SOLID )
-		JL_REPORT_ERROR("Operation not supported on this style of object.");
+	JL_S_ASSERT_ERROR_NUM( pv->style == FILLED || pv->style == SOLID || pv->style == OUTLINE, JLSMSG_LOGIC_ERROR, "operation not supported with this style of object");
 
 	OGLFT::Polygonal *poly;
 //	poly = dynamic_cast<OGLFT::Polygonal*>(pv->face);
@@ -506,7 +504,8 @@ DEFINE_PROPERTY_SETTER( tessellationSteps ) {
 
 	int tess;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tess) );
-	JL_S_ASSERT( tess > 0, "Invalid tessellation steps value." );
+	JL_S_ASSERT_ERROR_NUM( tess > 0, JLSMSG_VALUE_OUTOFRANGE, "1 to 2^32" );
+
 	poly->setTessellationSteps(tess);
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -533,9 +532,7 @@ DEFINE_PROPERTY_SETTER( colorCallback ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_RESOURCE( pv );
-
-	if ( pv->style != OUTLINE && pv->style != FILLED && pv->style != SOLID )
-		JL_REPORT_ERROR("Operation not supported on this style of object.");
+	JL_S_ASSERT_ERROR_NUM( pv->style == FILLED || pv->style == SOLID || pv->style == OUTLINE, JLSMSG_LOGIC_ERROR, "operation not supported with this style of object");
 
 	OGLFT::Polygonal *poly;
 //	poly = dynamic_cast<OGLFT::Polygonal*>(pv->face);

@@ -467,7 +467,7 @@ DEFINE_FUNCTION( RegistryGet ) {
 		rootHKey = HKEY_DYN_DATA;
 		path += 4;
 	} else
-		JL_REPORT_ERROR("Invalid root key.");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid root key");
 
 	if ( path[0] == '\\' )
 		path++;

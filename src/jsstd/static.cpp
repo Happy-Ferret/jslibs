@@ -1113,7 +1113,7 @@ JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
 		JL_ASSERT( obj != NULL );
 		JL_CHK( JS_CallFunctionValue(cx, obj, pv->queryFunctionValue, JL_ARGC, JL_ARGV, JL_RVAL) );
 		if ( !JSVAL_IS_PRIMITIVE(*JL_RVAL) )
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "primitive returne value");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "primitive return value");
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -1213,7 +1213,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 	if ( ok )
 		return JS_WrapValue(cx, vp);
 	if ( !JL_IsExceptionPending(cx) )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_INTERNAL_ERROR, "exception is expected");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_RUNTIME_ERROR, "exception is expected");
 	JL_BAD;
 }
 

@@ -28,7 +28,7 @@ LoadModule('jsstd'); Exec('../common/tools.js');
 // RunLocalQAFile();
 //RunJsircbot(false); throw 0;
 //RunQATests('-perf perftest.js -v -exclude jstask');
-RunQATests('-rep 1 -exclude jstask OperationLimit');
+RunQATests('-rep 1 -exclude jstask jsstd');
 // 17 26 35
 
 Halt();

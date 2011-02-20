@@ -56,9 +56,10 @@ DEFINE_FUNCTION( Vec3 ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &v.x) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &v.y) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v.z) );
-	}
+	} else
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid vector3");
+
 	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL);
-	JL_REPORT_ERROR( "Invalid vector3." );
 	JL_BAD;
 }
 
@@ -96,9 +97,10 @@ DEFINE_FUNCTION( Vec3Length ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &v.x) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &v.y) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v.z) );
-	}
+	} else
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "unsupported operation");
+
 	return JL_NativeToJsval(cx, Vector3Length(&v), JL_RVAL);
-	JL_REPORT_ERROR( "Unsupported vector type." );
 	JL_BAD;
 }
 

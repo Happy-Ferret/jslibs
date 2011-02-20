@@ -141,15 +141,14 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	if ( cs->parentProtoName != NULL ) {
 
 		parent_proto = JL_GetCachedClassProto(hpv, cs->parentProtoName)->proto;
-		if ( parent_proto == NULL )
-			JL_REPORT_ERROR( "%s prototype not found", cs->parentProtoName );
+		JL_S_ASSERT( parent_proto != NULL, "%s prototype not found.", cs->parentProtoName );
 	} else {
 
 		parent_proto = NULL;
 	}
 
-	uint32 protoFrozen = cs->clasp.flags & JSCLASS_FREEZE_PROTO;
-	cs->clasp.flags &= ~JSCLASS_FREEZE_PROTO;
+//	uint32 protoFrozen = cs->clasp.flags & JSCLASS_FREEZE_PROTO;
+//	cs->clasp.flags &= ~JSCLASS_FREEZE_PROTO;
 
 	JSObject *proto;
 	proto = JS_InitClass(cx, obj, parent_proto, &cs->clasp, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
@@ -180,12 +179,11 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_CHK( JS_SetPropertyAttributes(cx, obj, cs->clasp.name, JSPROP_READONLY | JSPROP_PERMANENT, &found) );
 	JL_ASSERT( found ); // "Unable to set class flags."
 
-	//	if ( !(cs->clasp.flags & JSCLASS_FREEZE_PROTO) )
-	if ( cs->revision != 0 )
+//if ( cs->revision != 0 )
+	if ( !(cs->clasp.flags & JSCLASS_FREEZE_PROTO) )
 		JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-
-	if ( protoFrozen )
-		JL_CHK( JS_FreezeObject(cx, proto) );
+//	if ( protoFrozen )
+//		JL_CHK( JS_FreezeObject(cx, proto) );
 
 	if ( cs->init )
 		JL_CHK( cs->init(cx, cs, proto, staticDest) );
@@ -307,8 +305,8 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
 
 // configuration
-#define FREEZE_PROTO cs.clasp.flags |= JSCLASS_FREEZE_PROTO;
-#define FREEZE_CONSTRUCTOR cs.clasp.flags |= JSCLASS_FREEZE_CTOR;
+#define FROZEN_PROTOTYPE cs.clasp.flags |= JSCLASS_FREEZE_PROTO;
+#define FROZEN_CONSTRUCTOR cs.clasp.flags |= JSCLASS_FREEZE_CTOR;
 #define HAS_PRIVATE cs.clasp.flags |= JSCLASS_HAS_PRIVATE;
 #define HAS_RESERVED_SLOTS(COUNT) cs.clasp.flags |= JSCLASS_HAS_RESERVED_SLOTS(COUNT);
 #define CONSTRUCT_PROTOTYPE cs.clasp.flags |= JSCLASS_CONSTRUCT_PROTOTYPE;

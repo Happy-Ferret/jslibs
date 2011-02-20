@@ -566,7 +566,7 @@ DEFINE_FUNCTION( Import ) {
 	PRFileDesc *fd;
 	JSObject *descriptorObject;
 
-	switch (type) {
+	switch ( type ) {
 		case PR_DESC_FILE:
 			fd = PR_ImportFile(osfd);
 			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_PROTOTYPE(cx, File), NULL); // (TBD) check if proto is needed !
@@ -584,7 +584,7 @@ DEFINE_FUNCTION( Import ) {
 			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_PROTOTYPE(cx, File), NULL); // (TBD) check if proto is needed !
 			break;
 		default:
-			JL_REPORT_ERROR("Invalid descriptor type.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid descriptor type");
 	}
 	if ( fd == NULL )
 		return ThrowIoError(cx);

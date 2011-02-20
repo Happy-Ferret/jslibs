@@ -58,7 +58,7 @@ DEFINE_CONSTRUCTOR() {
 	else if ( descType == PR_DESC_SOCKET_UDP )
 		fd = PR_NewUDPSocket();
 	else
-		JL_REPORT_ERROR( "Invalid socket type." );
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid socket type");
 
 	if ( fd == NULL )
 		return ThrowIoError(cx);
@@ -97,7 +97,7 @@ DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 		else if (JL_ARG(1) == JSVAL_TRUE )
 			how = PR_SHUTDOWN_SEND;
 		else
-			JL_REPORT_ERROR("Invalid Shutdown case.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid shutdown operation");
 	else
 		how = PR_SHUTDOWN_BOTH; // default
 
@@ -761,7 +761,7 @@ enum {
 	recvBufferSize = PR_SockOpt_RecvBufferSize,
 	sendBufferSize = PR_SockOpt_SendBufferSize,
 	maxSegment = PR_SockOpt_MaxSegment,
-   nonblocking = PR_SockOpt_Nonblocking,
+	nonblocking = PR_SockOpt_Nonblocking,
 	broadcast = PR_SockOpt_Broadcast,
 	multicastLoopback = PR_SockOpt_McastLoopback
 };

@@ -24,28 +24,31 @@
 //  JSEXN_URIERR       // when a malformed URI is encountered.
 
 
-MSG_DEF(JLSMSG_NOT_AN_ERROR,           1000, 0, JSEXN_NONE, "<Error #0 is reserved>")
-MSG_DEF(JLSMSG_OUT_OF_RANGE,           1001, 0, JSEXN_RANGEERR, "index out of range")
-MSG_DEF(JLSMSG_TOO_FEW_ARGUMENTS,      1002, 1, JSEXN_RANGEERR, "not enough arguments (min is {0})")
-MSG_DEF(JLSMSG_TOO_MANY_ARGUMENTS,     1003, 1, JSEXN_RANGEERR, "too many arguments (max is {0})")
-MSG_DEF(JLSMSG_NEED_DEFINED,           1004, 0, JSEXN_TYPEERR, "value must be defined")
-MSG_DEF(JLSMSG_EXPECT_TYPE,            1005, 1, JSEXN_TYPEERR, "{0} is expected")
-MSG_DEF(JLSMSG_FAIL_TO_CONVERT_TO,     1006, 1, JSEXN_INTERNALERR, "fail to convert to {0}")
-MSG_DEF(JLSMSG_INVALID_INSTANCE,       1007, 1, JSEXN_TYPEERR, "{0} instance is expected")
-MSG_DEF(JLSMSG_NEED_CONSTRUCT,         1008, 0, JSEXN_TYPEERR, "object must be constructed")
-MSG_DEF(JLSMSG_INVALID_RESOURCE,       1009, 0, JSEXN_INTERNALERR, "object state is invalid")
-MSG_DEF(JLSMSG_INVALID_INHERITANCE,    1010, 1, JSEXN_TYPEERR, "object must be a {0}")
-MSG_DEF(JLSMSG_INVALIDATED_OBJECT,     1011, 1, JSEXN_INTERNALERR, "{0} object invalidated")
-MSG_DEF(JLSMSG_IMMUTABLE_OBJECT,       1012, 1, JSEXN_TYPEERR, "{0} is immutable")
-MSG_DEF(JLSMSG_VALUE_OUTOFRANGE,       1013, 0, JSEXN_RANGEERR, "value out of range")
-MSG_DEF(JLSMSG_PROGRAM_STOPPED,        1014, 0, JSEXN_NONE, "the program has been stopped")
-MSG_DEF(JLSMSG_NOT_IMPLEMENTED,        1015, 0, JSEXN_ERR, "not implemented")
-MSG_DEF(JLSMSG_OS_ERROR,               1016, 1, JSEXN_INTERNALERR, "OS: {0}")
-MSG_DEF(JLSMSG_VALUE_LOSSOFDATA,       1017, 0, JSEXN_ERR, "loss of data or precision")
-MSG_DEF(JLSMSG_FAIL_TO_CREATE,         1018, 1, JSEXN_INTERNALERR, "unable to create the {0}")
-MSG_DEF(JLSMSG_INTERNAL_ERROR,         1019, 1, JSEXN_INTERNALERR, "internal error ({0})")
-MSG_DEF(JLSMSG_RUNTIME_ERROR,          1021, 1, JSEXN_ERR, "runtime error ({0})")
-MSG_DEF(JLSMSG_INVALID_ARGUMENT_COUNT, 1020, 1, JSEXN_RANGEERR, "invalid argument count (need {0})")
+// more generic errors/warnings
+JLMSG_DEF( JLSMSG_PROGRAM_STOPPED,        JSEXN_NONE, "the program has been stopped", 0)
+JLMSG_DEF( JLSMSG_NEED_CONSTRUCT,         JSEXN_TYPEERR, "object must be constructed", 0)
+JLMSG_DEF( JLSMSG_NOT_IMPLEMENTED,        JSEXN_INTERNALERR, "not implemented", 0)
+JLMSG_DEF( JLSMSG_OS_ERROR,               JSEXN_INTERNALERR, "OS: {0}", 1)
+JLMSG_DEF( JLSMSG_RUNTIME_ERROR,          JSEXN_INTERNALERR, "runtime error: {0}", 1)
+JLMSG_DEF( JLSMSG_LOGIC_ERROR,            JSEXN_ERR, "logic error: {0}", 1)
+JLMSG_DEF( JLSMSG_RANGE_ERROR,            JSEXN_RANGEERR, "{0}", 1)
+JLMSG_DEF( JLSMSG_TYPE_ERROR,             JSEXN_TYPEERR, "{0}", 1)
+JLMSG_DEF( JLSMSG_INVALID_RESOURCE,       JSEXN_INTERNALERR, "object state is invalid", 0)
+
+// specialized errors/warnings
+JLMSG_DEF( JLSMSG_TOO_FEW_ARGUMENTS,      JSEXN_RANGEERR, "not enough arguments (min is {0})", 1)
+JLMSG_DEF( JLSMSG_TOO_MANY_ARGUMENTS,     JSEXN_RANGEERR, "too many arguments (max is {0})", 1)
+JLMSG_DEF( JLSMSG_INVALID_ARGUMENT_COUNT, JSEXN_RANGEERR, "invalid argument count (need {0})", 1)
+
+JLMSG_DEF( JLSMSG_VALUE_OUTOFRANGE,       JSEXN_RANGEERR, "value out of range {0}", 1)
+JLMSG_DEF( JLSMSG_LOSS_OF_PRECISION,      JSEXN_ERR, "loss of data or precision", 0)
+JLMSG_DEF( JLSMSG_EXPECT_TYPE,            JSEXN_TYPEERR, "{0} is expected", 1)
+JLMSG_DEF( JLSMSG_INVALID_INSTANCE,       JSEXN_TYPEERR, "{0} instance is expected", 1)
+JLMSG_DEF( JLSMSG_FAIL_TO_CONVERT_TO,     JSEXN_INTERNALERR, "fail to convert to {0}", 1)
+JLMSG_DEF( JLSMSG_NEED_DEFINED,           JSEXN_TYPEERR, "value must be defined", 0)
+JLMSG_DEF( JLSMSG_INVALID_INHERITANCE,    JSEXN_TYPEERR, "object must be a {0}", 1)
+JLMSG_DEF( JLSMSG_INVALIDATED_OBJECT,     JSEXN_INTERNALERR, "{0} object invalidated", 1)
+JLMSG_DEF( JLSMSG_IMMUTABLE_OBJECT,       JSEXN_TYPEERR, "{0} is read-only", 1)
 
 
 

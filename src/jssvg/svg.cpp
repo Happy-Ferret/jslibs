@@ -341,7 +341,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 			surfaceFormat = CAIRO_FORMAT_ARGB32; // Pre-multiplied alpha is used. (That is, 50% transparent red is 0x80800000, not 0x80ff0000.)
 			break;
 		default:
-			JL_REPORT_ERROR("Unsupported output image format.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "unsupported output image format");
 	}
 
 	cairo_surface_t *surface = cairo_image_surface_create(surfaceFormat, imageWidth, imageHeight);
@@ -589,9 +589,9 @@ DEFINE_PROPERTY_SETTER( dpi ) {
 		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(*vp), 1, &tmp) );
 		JL_CHK( JL_JsvalToNative(cx, tmp, &dpiY) );
 		rsvg_handle_set_dpi_x_y(handle, dpiX, dpiY);
-	} else
-		JL_REPORT_ERROR("Invalid case.");
-	return JS_TRUE;
+	}
+	
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "undefined, number or Array");
 	JL_BAD;
 }
 

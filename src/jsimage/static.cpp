@@ -421,7 +421,7 @@ DEFINE_FUNCTION( EncodePngImage ) {
 			color_type = PNG_COLOR_TYPE_RGB_ALPHA;
 			break;
 		default:
-			JL_REPORT_ERROR("Format not supported.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "color format not supported");
 	}
 
 	png_set_IHDR(desc.png, desc.info, sWidth, sHeight, 8, color_type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);

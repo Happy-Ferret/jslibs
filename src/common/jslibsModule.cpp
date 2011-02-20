@@ -52,8 +52,7 @@ JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
 	JL_ASSERT(st);
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	_unsafeMode = pv ? pv->unsafeMode : _unsafeMode;
-	if ( !(!pv || pv->hostPrivateVersion == 0 || pv->hostPrivateVersion == JL_HOST_PRIVATE_VERSION) )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_INTERNAL_ERROR, "Incompatible host");
+	JL_S_ASSERT_ERROR_NUM( !pv || pv->hostPrivateVersion == 0 || pv->hostPrivateVersion == JL_HOST_PRIVATE_VERSION, JLSMSG_RUNTIME_ERROR, "Incompatible host" );
 	JL_ASSERT( _moduleId == 0 || _moduleId == id );
 	if ( _moduleId == 0 )
 		_moduleId = id;

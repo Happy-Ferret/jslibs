@@ -249,8 +249,8 @@ DEFINE_SET_PROPERTY() {
 	if ( FAILED(hr) ) {
 
 		switch ( hr ) {
-			case DISP_E_BADPARAMCOUNT:
-				JL_REPORT_WARNING("Not a setter or read-only property.");
+			case DISP_E_BADPARAMCOUNT: // doc. An error return value that indicates that the number of elements provided to the method is different from the number of arguments accepted by the method.
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "read-only property"); // (TBD) be more specific
 				return JS_TRUE;
 			//case DISP_E_PARAMNOTFOUND:
 			//	JL_REPORT_WARNING("Invalid argument %d.", argErr);

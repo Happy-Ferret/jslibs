@@ -104,7 +104,7 @@ DEFINE_CONSTRUCTOR() {
 		if ( errno == EINVAL )
 			JL_REPORT_ERROR( "The conversion from %s to %s is not supported.", fromcode, tocode );
 		else
-			JL_REPORT_ERROR( "Unknown iconv error." );
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_RUNTIME_ERROR, "unknown iconv error" );
 	}
 
 	pv->invalidChar = '?';
@@ -298,7 +298,7 @@ DEFINE_CALL() {
 	if ( pv->wTo ) { // destination is wide.
 	
 		if ( length % 2 != 0 )
-			JL_REPORT_WARNING("Invalid string length."); // (TBD) or report an error ?
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid string length"); // (TBD) or report an error ?
 		((jschar*)outBuf)[length / 2] = 0;
 		jsEncStr = JL_NewUCString(cx, (jschar*)outBuf, length / 2);
 	} else {

@@ -102,7 +102,7 @@ JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // 
 			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomTrimesh), JL_PROTOTYPE(cx, GeomTrimesh), NULL);
 			break;
 		default:
-			JL_REPORT_ERROR("Unable to reconstruct the geom.");
+			JL_ASSERT(false);
 	}
 	JL_CHK( *obj );
 
@@ -174,7 +174,7 @@ DEFINE_FUNCTION( PointDepth ) {
 			depth = ode::dGeomPlanePointDepth(geomId, point[0], point[1], point[2]);
 			break;
 		default:
-			JL_REPORT_ERROR("Not support for this geometry.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
 	}
 
 	JL_CHK( JL_NativeToJsval(cx, depth, JL_RVAL) );
@@ -278,8 +278,6 @@ $TOC_MEMBER $INAME
   $LF
   Use $UNDEF value to reset the geometry offset.
 **/
-
-// setting undefined means clear the offset
 DEFINE_PROPERTY_SETTER( offset ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
@@ -290,7 +288,9 @@ DEFINE_PROPERTY_SETTER( offset ) {
 		return JS_TRUE;
 	}
 
-	if ( JSVAL_IS_OBJECT(*vp) && !JSVAL_IS_NULL(*vp) ) {
+	if ( !JSVAL_IS_PRIMITIVE(*vp) ) {
+
+// (TBD)! use jsval to matrix44 helper
 
 		JSObject *srcObj = JSVAL_TO_OBJECT(*vp);
 		float tmp[16], *m = tmp;
@@ -310,7 +310,7 @@ DEFINE_PROPERTY_SETTER( offset ) {
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
 		return JS_TRUE;
 	}
-	JL_REPORT_ERROR("Invalid source.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "Matrix44 or undefined");
 	JL_BAD;
 }
 
@@ -325,6 +325,8 @@ DEFINE_PROPERTY_SETTER( tansformation ) {
 	JL_S_ASSERT_RESOURCE(geom);
 
 	if ( !JSVAL_IS_PRIMITIVE(*vp) ) {
+
+// (TBD)! use jsval to matrix44 helper
 
 		JSObject *srcObj = JSVAL_TO_OBJECT(*vp);
 		float tmp[16], *m = tmp;
@@ -344,7 +346,7 @@ DEFINE_PROPERTY_SETTER( tansformation ) {
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
 		return JL_StoreProperty(cx, obj, id, vp, false);
 	}
-	JL_REPORT_ERROR("Invalid source.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "Matrix44");
 	JL_BAD;
 }
 

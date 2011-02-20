@@ -252,8 +252,8 @@ inline JSBool JL_JsvalToSInt64( JSContext *cx, jsval val, int64_t *result, bool 
 		*result = (int64_t)v;
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
 
-		double d = JSVAL_TO_DOUBLE(val);
-		*outOfRange = d < -MAX_INT_TO_DOUBLE || d > MAX_INT_TO_DOUBLE || d != (double)(int64_t)d;
+		jsdouble d = JSVAL_TO_DOUBLE(val);
+		*outOfRange = d < MIN_INT_TO_DOUBLE || d > jsdouble(MAX_INT_TO_DOUBLE) || d != jsdouble(int64_t(d));
 		*result = (int64_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
@@ -279,8 +279,8 @@ inline JSBool JL_JsvalToUInt64( JSContext *cx, jsval val, uint64_t *result, bool
 		*result = (uint64_t)v;
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
 
-		double d = JSVAL_TO_DOUBLE(val);
-		*outOfRange = d < 0 || d > MAX_INT_TO_DOUBLE || d != (double)(int64_t)d;
+		jsdouble d = JSVAL_TO_DOUBLE(val);
+		*outOfRange = d < 0 || d > jsdouble(MAX_INT_TO_DOUBLE) || d != jsdouble(int64_t(d));
 		*result = (uint64_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
@@ -450,8 +450,8 @@ DEFINE_FUNCTION( ReadInt ) {
 			if (netConv)
 				Network64ToHost64(data);
 
-			if ( *(int64_t*)data > MAX_INT_TO_DOUBLE && *(int64_t*)data < -MAX_INT_TO_DOUBLE )
-				JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+			if ( *(int64_t*)data > int64_t(MAX_INT_TO_DOUBLE) && *(int64_t*)data < int64_t(MIN_INT_TO_DOUBLE) )
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "-2^53 to 2^53");
 
 			if ( isSigned ) {
 
@@ -465,7 +465,7 @@ DEFINE_FUNCTION( ReadInt ) {
 			break;
 		default:
 			JL_CHK( UnReadRawDataChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
-			JL_REPORT_ERROR("Unsupported data type.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_TYPE_ERROR, "unsupported data type");
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -554,11 +554,11 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 				Host64ToNetwork64(data);
 			break;
 		default:
-			JL_REPORT_ERROR("Unsupported data type.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_TYPE_ERROR, "unsupported data type");
 	}
 
 	if ( outOfRange )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "");
 
 	JL_CHK( WriteRawDataChunk(cx, bufferObject, size, (char*)data) );
 	
@@ -632,7 +632,7 @@ DEFINE_FUNCTION( ReadString ) {
 		size_t amount;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
 //		JL_S_ASSERT( (int)amount >= 0, "Invalid amount" );
-		JL_S_ASSERT_ERROR_NUM( (int)amount >= 0, JLSMSG_VALUE_OUTOFRANGE );
+		JL_S_ASSERT_ERROR_NUM( (int)amount >= 0, JLSMSG_VALUE_OUTOFRANGE, "0 to 2^32");
 		JL_CHK( ReadDataAmount(cx, bufferObject, amount, JL_RVAL) );
 	} else {
 

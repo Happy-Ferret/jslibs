@@ -858,7 +858,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 				uFlags |= MF_STRING;
 			} else {
 
-				JL_REPORT_ERROR("Menu label must be defined.");
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "menu label must be defined");
 			}
 		}
 
@@ -1182,7 +1182,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 		hIcon = NULL;
 	} else {
 
-		JL_REPORT_ERROR("Invalid icon.");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_TYPE_ERROR, "invalid icon");
 	}
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);

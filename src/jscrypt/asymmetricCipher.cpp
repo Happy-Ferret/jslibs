@@ -298,7 +298,7 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 		}
 #endif
 		default:
-			JL_REPORT_ERROR("Invalid case.");
+			JL_ASSERT(false);
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
@@ -394,7 +394,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 		}
 #endif
 		default:
-			JL_REPORT_ERROR("Invalid case.");
+			JL_ASSERT(false);
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
@@ -489,7 +489,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 		}
 #endif
 		default:
-			JL_REPORT_ERROR("Invalid case.");
+			JL_ASSERT(false);
 	}
 
 	if (err != CRYPT_OK)
@@ -568,7 +568,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 		}
 #endif
 		default:
-			JL_REPORT_ERROR("Invalid case.");
+			JL_ASSERT(false);
 	}
 
 	if (err != CRYPT_OK)
@@ -638,7 +638,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 		}
 #endif
 		default:
-			JL_REPORT_ERROR("Invalid case.");
+			JL_ASSERT(false);
 	}
 
 	if (err != CRYPT_OK)
@@ -701,7 +701,8 @@ DEFINE_PROPERTY_GETTER( blockLength ) {
 		}
 #endif
 		default:
-			JL_REPORT_ERROR("Invalid case.");
+			IFDEBUG( blockLength = 0 );
+			JL_ASSERT(false);
 	}
 	*vp = INT_TO_JSVAL( blockLength );
 	return JS_TRUE;
@@ -740,7 +741,8 @@ DEFINE_PROPERTY_GETTER( keySize ) {
 			break;
 #endif
 		default:
-			JL_REPORT_ERROR("Invalid case.");
+			IFDEBUG( keySize = 0 );
+			JL_ASSERT(false);
 	}
 	*vp = INT_TO_JSVAL( keySize );
 	return JS_TRUE;
@@ -800,7 +802,7 @@ DEFINE_PROPERTY_SETTER( key ) {
 			break;
 #endif
 		default:
-			JL_REPORT_ERROR("Invalid case.");
+			JL_ASSERT(false);
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
@@ -844,7 +846,7 @@ DEFINE_PROPERTY_GETTER( key ) {
 			break;
 #endif
 		default:
-			JL_REPORT_ERROR("Invalid case.");
+			JL_ASSERT(false);
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);

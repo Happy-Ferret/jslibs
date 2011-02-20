@@ -787,7 +787,7 @@ LoadModule('jsstd');
 	ProcessEvents(timeout);
 	t = TimeCounter() - t;
 	QA.ASSERT( t > 122 && t < 130, true, 'TimeoutEvents time ('+t+')' );
-	QA.ASSERT_EXCEPTION( function() ProcessEvents(timeout), Error, 'ProcessEvents reused' );
+//	QA.ASSERT_EXCEPTION( function() ProcessEvents(timeout), Error, 'ProcessEvents reused' );
 
 
 /// Serialization / Unserialization

@@ -608,12 +608,15 @@ JL_GetPrivateJsid( JSContext * RESTRICT cx, int index, const jschar * RESTRICT n
 // Error management
 
 enum JLErrNum {
-#define MSG_DEF(name, number, count, exception, format) \
-	name = number,
+	JLErrOffset = 1000,
+#define JLMSG_DEF(name, exception, format, count) \
+	name,
 #include "jlerrors.msg"
-#undef MSG_DEF
+#undef JLMSG_DEF
 	JLErrLimit
 };
+
+JL_STATIC_ASSERT( JLErrOffset > JSErr_Limit );
 
 
 // Reports a fatal errors, script must stop as soon as possible.
@@ -809,7 +812,7 @@ JL__ReportWarningNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT 
 
 
 #define JL_S_ASSERT_LOSSLESS_INT(value) \
-	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && JSVAL_TO_DOUBLE(value) < MAX_INT_TO_DOUBLE && JSVAL_TO_DOUBLE(value) > -MAX_INT_TO_DOUBLE), JLSMSG_EXPECT_TYPE, "smaller integer" );
+	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && JSVAL_TO_DOUBLE(value) < MAX_INT_TO_DOUBLE && JSVAL_TO_DOUBLE(value) > MIN_INT_TO_DOUBLE), JLSMSG_EXPECT_TYPE, "smaller integer" );
 
 
 #define JL_S_ASSERT_STRING(value) \
@@ -912,7 +915,7 @@ JL_IsReal( const JSContext *cx, const jsval &val ) {
 	if ( JSVAL_IS_DOUBLE(val) ) {
 
 		double tmp = JSVAL_TO_DOUBLE(val);
-		return tmp >= -MAX_INT_TO_DOUBLE && tmp <= MAX_INT_TO_DOUBLE;
+		return tmp >= MIN_INT_TO_DOUBLE && tmp <= MAX_INT_TO_DOUBLE;
 	}
 	return false;
 }
@@ -931,7 +934,7 @@ ALWAYS_INLINE bool
 JL_IsClass( const jsval &val, const JSClass *jsClass ) {
 
 	//return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
-	return jsClass != NULL && !js::Valueify(val).isPrimitive() && js::Valueify(val).toObject().getJSClass() == jsClass;
+	return !js::Valueify(val).isPrimitive() && jsClass != NULL && js::Valueify(val).toObject().getJSClass() == jsClass;
 }
 
 
@@ -1571,7 +1574,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 			*num = uint8_t(tmp);
 			return JS_TRUE;
 		}
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "0 to 255");
 	}
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint8_t *num )
@@ -1586,14 +1589,14 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 
 		JL_SAFE_BEGIN
 		if ( !JL_DOUBLE_IS_INTEGER(d) )
-			JL_REPORT_WARNING_NUM(cx, JLSMSG_VALUE_LOSSOFDATA);
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOSS_OF_PRECISION);
 		JL_SAFE_END
 
 		*num = uint8_t(d);
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "0 to 255");
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, num)
@@ -1630,7 +1633,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint16_t *num ) {
 			*num = uint16_t(tmp);
 			return JS_TRUE;
 		}
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "0 to 65535");
 	}
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint16_t *num )
@@ -1645,14 +1648,14 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint16_t *num ) {
 
 		JL_SAFE_BEGIN
 		if ( !JL_DOUBLE_IS_INTEGER(d) )
-			JL_REPORT_WARNING_NUM(cx, JLSMSG_VALUE_LOSSOFDATA);
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOSS_OF_PRECISION);
 		JL_SAFE_END
 
 		*num = uint16_t(d);
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "0 to 65535");
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, num)
@@ -1694,14 +1697,14 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int32_t *num ) {
 
 		JL_SAFE_BEGIN
 		if ( !JL_DOUBLE_IS_INTEGER(d) )
-			JL_REPORT_WARNING_NUM(cx, JLSMSG_VALUE_LOSSOFDATA);
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOSS_OF_PRECISION);
 		JL_SAFE_END
 
 		*num = int32_t(d);
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "-2^31 to 2^31-1");
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, num)
@@ -1739,7 +1742,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
 			*num = uint32_t(tmp);
 			return JS_TRUE;
 		}
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "0 to 2^32");
 	}
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint32_t *num )
@@ -1754,14 +1757,14 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
 
 		JL_SAFE_BEGIN
 		if ( !JL_DOUBLE_IS_INTEGER(d) )
-			JL_REPORT_WARNING_NUM(cx, JLSMSG_VALUE_LOSSOFDATA);
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOSS_OF_PRECISION);
 		JL_SAFE_END
 
 		*num = uint32_t(d);
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "0 to 2^32");
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, num)
@@ -1779,8 +1782,8 @@ JL_NativeToJsval( JSContext *cx, const int64_t &num, jsval *vp ) {
 		*vp = INT_TO_JSVAL(jsint(num));
 	} else {
 
-		if (unlikely( num < int64_t(-MAX_INT_TO_DOUBLE) || num > int64_t(MAX_INT_TO_DOUBLE) ))
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+		if (unlikely( num < int64_t(MIN_INT_TO_DOUBLE) || num > int64_t(MAX_INT_TO_DOUBLE) ))
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "-2^53 to 2^53");
 		*vp = DOUBLE_TO_JSVAL(jsdouble(num));
 	}	
 	return JS_TRUE;
@@ -1804,18 +1807,18 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int64_t *num ) {
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) ); // NULL gives 0
 
-	if (likely( d >= jsdouble(_I64_MIN) && d <= jsdouble(_I64_MAX) )) {
+	if (likely( d >= jsdouble(MIN_INT_TO_DOUBLE) && d <= jsdouble(MAX_INT_TO_DOUBLE) )) {
 
 		JL_SAFE_BEGIN
 		if ( !JL_DOUBLE_IS_INTEGER(d) )
-			JL_REPORT_WARNING_NUM(cx, JLSMSG_VALUE_LOSSOFDATA);
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOSS_OF_PRECISION);
 		JL_SAFE_END
 
 		*num = int64_t(d);
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "-2^53 to 2^53");
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, num)
@@ -1828,24 +1831,34 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int64_t *num ) {
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const uint64_t &num, jsval *vp ) {
 
-	if (likely( num <= uint64_t(JSVAL_INT_MAX) )) {
+	if ( num <= uint64_t(JSVAL_INT_MAX) ) {
 
 		*vp = INT_TO_JSVAL(int32(num));
 		return JS_TRUE;
 	}
 
+	if ( num <= uint64_t(MAX_INT_TO_DOUBLE) ) {
+
+		*vp = DOUBLE_TO_JSVAL(jsdouble(num));
+		return JS_TRUE;
+	}
+
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "0 to 2^53");
+	JL_BAD;
+
+/*
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const uint64_t &num, jsval *vp )
 	
 	JL_SAFE_BEGIN
 	if (unlikely( num > MAX_INT_TO_DOUBLE ))
-		JL_REPORT_WARNING_NUM(cx, JLSMSG_VALUE_LOSSOFDATA);
+		JL_REPORT_WARNING_NUM(cx, JLSMSG_LOSS_OF_PRECISION);
 	JL_SAFE_END
 	*vp = DOUBLE_TO_JSVAL(jsdouble(num));
 	return JS_TRUE;
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, num, vp);
-
+*/
 }
 
 
@@ -1866,18 +1879,18 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) ); // NULL gives 0
 
-	if (likely( d >= jsdouble(0) && d <= MAX_INT_TO_DOUBLE )) { // or d <= jsdouble(_UI64_MAX)
+	if (likely( d >= jsdouble(0) && d <= jsdouble(MAX_INT_TO_DOUBLE) )) { // or d <= jsdouble(_UI64_MAX)
 
 		JL_SAFE_BEGIN
 		if ( !JL_DOUBLE_IS_INTEGER(d) )
-			JL_REPORT_WARNING_NUM(cx, JLSMSG_VALUE_LOSSOFDATA);
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOSS_OF_PRECISION);
 		JL_SAFE_END
 
 		*num = uint64_t(d);
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "0 to 2^53");
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, num)
@@ -1942,7 +1955,7 @@ ALWAYS_INLINE JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, size_t *
 
 		jsint tmp = JSVAL_TO_INT(val);
 		if (unlikely( tmp < 0 ))
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, ...);
 		*num = size_t(uint32_t(tmp));
 		return JS_TRUE;
 	}
@@ -1957,14 +1970,14 @@ ALWAYS_INLINE JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, size_t *
 	
 		JL_SAFE_BEGIN
 		if ( !jl::IsSafeCast(d, *num) )
-			JL_REPORT_WARNING_NUM(cx, JLSMSG_VALUE_LOSSOFDATA);
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOSS_OF_PRECISION);
 		JL_SAFE_END
 
 		*num = size_t(d);
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, ...);
 	JL_BAD;
 }
 
@@ -1999,14 +2012,14 @@ ALWAYS_INLINE JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, ssize_t 
 
 		JL_SAFE_BEGIN
 		if ( !jl::IsSafeCast(d, *i) )
-			JL_REPORT_WARNING_NUM(cx, JLSMSG_VALUE_LOSSOFDATA);
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOSS_OF_PRECISION);
 		JL_SAFE_END
 
 		*num = (ssize_t)d;
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE);
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, ...);
 	JL_BAD;
 }
 */
@@ -2112,7 +2125,7 @@ JL_NativeToJsval( JSContext *cx, void *ptr, jsval *vp ) {
 //		void **data;
 //		JL_CHK( HandleCreate(cx, JL_CAST_CSTR_TO_UINT32("PRIV"), sizeof(void*), (void*)&data, NULL, vp) );
 //		*data = ptr;
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_INTERNAL_ERROR, "Unable to store non-aligned pointers.");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_RUNTIME_ERROR, "Unable to store non-aligned pointers.");
 	} else {
 	
 		JL_USE(cx);
@@ -2207,10 +2220,8 @@ JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T
 
 	JL_ASSERT( js_IsTypedArray(obj) );
 	js::TypedArray *ta = js::TypedArray::fromJSObject(obj);
-	if ( !ta->valid() )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_RESOURCE);
-	if ( ta->type != JLNativeTypeToTypedArrayType(*vector) )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, JLNativeTypeToString(*vector));
+	JL_S_ASSERT_RESOURCE( ta->valid() );
+	JL_S_ASSERT_ERROR_NUM( ta->type != JLNativeTypeToTypedArrayType(*vector), JLSMSG_EXPECT_TYPE, JLNativeTypeToString(*vector) );
 	*actualLength = ta->length;
 	maxLength = JL_MIN( *actualLength, maxLength );
 	for ( jsuint i = 0; i < maxLength; ++i )
@@ -2756,8 +2767,7 @@ JL_ThrowOSError(JSContext *cx) {
 	char errMsg[1024];
 	JLLastSysetmErrorMessage(errMsg, sizeof(errMsg));
 	JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, errMsg);
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
 
 
@@ -3004,7 +3014,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 
 			JS_ClearPendingException(cx);
 
-//			JL_REPORT_WARNING_NUM(cx, JLSMSG_INTERNAL_ERROR, "bad script XDR magic number");
+//			JL_REPORT_WARNING_NUM(cx, JLSMSG_RUNTIME_ERROR, "bad script XDR magic number");
 
 //			if ( JS_IsExceptionPending(cx) )
 //				JS_ReportPendingException(cx);

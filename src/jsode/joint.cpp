@@ -65,7 +65,7 @@ JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) 
 			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(JointPlane), JL_PROTOTYPE(cx, JointPlane), NULL);
 			break;
 		default:
-			JL_REPORT_ERROR("Unable to reconstruct the joint.");
+			JL_ASSERT(false);
 	}
 
 	ode::dJointSetData(jointId, *obj);

@@ -22,18 +22,17 @@
 #include "../jslang/jslang.h"
 
 
-JSErrorFormatString JLerrorFormatString[JLErrLimit] = {
-#define MSG_DEF(name, number, count, exception, format) { format, count, exception },
+JSErrorFormatString jlErrorFormatString[] = {
+#define JLMSG_DEF(name, exception, format, count) { format, count, exception },
 #include "jlerrors.msg"
-#undef MSG_DEF
+#undef JLMSG_DEF
 };
 
 
 const JSErrorFormatString *GetErrorMessage(void *, const char *, const uintN errorNumber) {
 
-	uintN err = errorNumber - 1000;
-	if ( err > 0 && err < JLErrLimit )
-		return &JLerrorFormatString[err];
+	if ( errorNumber > JLErrOffset && errorNumber < JLErrLimit )
+		return &jlErrorFormatString[errorNumber-JLErrOffset-1];
 	return NULL;
 }
 
@@ -308,12 +307,13 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 	JLLibraryHandler module;
 	module = JLDynamicLibraryOpen(libFileName);
 	if ( !JLDynamicLibraryOk(module) ) {
-		JL_SAFE_BEGIN
 
-			char errorBuffer[256];
-			JLDynamicLibraryLastErrorMessage( errorBuffer, sizeof(errorBuffer) );
-			JL_REPORT_WARNING( "Unable to load the module \"%s\". %s", libFileName, errorBuffer );
+		JL_SAFE_BEGIN
+		char errorBuffer[256];
+		JLDynamicLibraryLastErrorMessage( errorBuffer, sizeof(errorBuffer) );
+		JL_REPORT_WARNING( "Unable to load the module \"%s\". %s", libFileName, errorBuffer );
 		JL_SAFE_END
+
 		*JL_RVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}

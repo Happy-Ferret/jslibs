@@ -37,11 +37,11 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 			*rval = JSVAL_NULL;
 			break;
 		case SQLITE_TEXT:
-			*rval = STRING_TO_JSVAL(JS_NewStringCopyN(cx,(const char *)sqlite3_value_text(value), sqlite3_value_bytes(value)));
+			*rval = STRING_TO_JSVAL(JS_NewStringCopyN(cx, (const char *)sqlite3_value_text(value), sqlite3_value_bytes(value)));
 			//*rval = STRING_TO_JSVAL(JS_NewUCStringCopyZ(cx, (const jschar*)sqlite3_value_text16(value)));
 			break;
 		default:
-			JL_REPORT_ERROR( "Unable to convert data." );
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_TYPE_ERROR, "unsupported database data type" );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -72,7 +72,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			}
 
 			val = JSVAL_VOID;
-			JL_REPORT_WARNING("Unavailable %d-th anonymous SQL parameter.", anonParamIndex);
+			JL_REPORT_ERROR("Unavailable %d-th anonymous SQL parameter.", anonParamIndex);
 			goto next;
 		}
 
@@ -91,7 +91,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			} else {
 			
 				val = JSVAL_VOID;
-				JL_REPORT_WARNING("Undefined %s SQL parameter.", name);
+				JL_REPORT_ERROR("Undefined %s SQL parameter.", name);
 			}
 			goto next;
 		}
@@ -103,7 +103,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			} else {
 			
 				val = JSVAL_VOID;
-				JL_REPORT_WARNING("Undefined %s SQL parameter.", name);
+				JL_REPORT_ERROR("Undefined %s SQL parameter.", name);
 			}
 			goto next;
 		}
@@ -115,6 +115,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 		// sqlite3_bind_value( pStmt, param,
 		// (TBD) how to use this
 		switch ( JS_TypeOfValue(cx, val) ) {
+
 			case JSTYPE_VOID:
 			case JSTYPE_NULL: // http://www.sqlite.org/nulls.html
 				if ( sqlite3_bind_null(pStmt, param) != SQLITE_OK )
@@ -168,7 +169,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 				}
 				break;
 			default:
-				JL_REPORT_ERROR("Unsupported SQL parameter data type"); // (TBD) better error message
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_TYPE_ERROR, "unsupported SQL parameter data type"); // (TBD) better error message
 		}
 	}
 	return JS_TRUE;

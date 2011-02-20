@@ -101,7 +101,6 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	ALCcontext *context = alcGetCurrentContext();
 	if ( context == NULL )
 		return JS_TRUE; // already closed
-//		JL_REPORT_ERROR("Unable to get the current context.");
 
 	// cf. alutExit
 	ALCdevice *device;

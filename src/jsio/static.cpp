@@ -564,7 +564,7 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 	if ( size <= 0 ) {
 
 		JS_free(cx, buf);
-		JL_REPORT_ERROR( "PR_GetRandomNoise is not implemented on this platform." );
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
 	}
 
 	buf[size] = 0;
@@ -839,12 +839,12 @@ DEFINE_FUNCTION( AvailableSpace ) {
 	ULARGE_INTEGER freeBytesAvailable;
 	BOOL res = ::GetDiskFreeSpaceEx(path, &freeBytesAvailable, NULL, NULL);
 	if ( res == 0 )
-		JL_REPORT_ERROR("Unable to get the available space of %s.", path);
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, "Unable to get the available space");
 	available = (jsdouble)freeBytesAvailable.QuadPart;
 #else // now for XP_UNIX an MacOS ?
 	struct statvfs fsd;
 	if ( statvfs(path, &fsd) < 0 )
-		JL_REPORT_ERROR("Unable to get the available space of %s.", path);
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, "Unable to get the available space");
 	available = (jsdouble)fsd.f_bsize * (jsdouble)fsd.f_bavail;
 #endif // XP_WIN
 
@@ -1109,7 +1109,8 @@ DEFINE_PROPERTY_GETTER( processPriority ) {
 			priorityValue = 2;
 			break;
 		default:
-			JL_REPORT_ERROR( "Invalid thread priority." );
+			IFDEBUG( priorityValue = 0 );
+			JL_ASSERT(false);
 	}
 	*vp = INT_TO_JSVAL( priorityValue );
 	return JS_TRUE;
@@ -1121,7 +1122,7 @@ DEFINE_PROPERTY_SETTER( processPriority ) {
 	int priorityValue;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &priorityValue) );
 	PRThreadPriority priority;
-	switch (priorityValue) {
+	switch ( priorityValue ) {
 		case -1:
 			priority = PR_PRIORITY_LOW;
 			break;
@@ -1135,7 +1136,8 @@ DEFINE_PROPERTY_SETTER( processPriority ) {
 			priority = PR_PRIORITY_URGENT;
 			break;
 		default:
-			JL_REPORT_ERROR( "Invalid thread priority." );
+			priority = PR_PRIORITY_NORMAL;
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_RANGE_ERROR, "invalid thread priority");
 	}
 	PRThread *thread;
 	thread = PR_GetCurrentThread();
@@ -1148,13 +1150,16 @@ DEFINE_PROPERTY_SETTER( processPriority ) {
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME
-  Is the number of processors (CPUs available in an SMP system).
+  Is the number of processors (CPUs available in a symmetric multiprocessing system).
 **/
 DEFINE_PROPERTY_GETTER( numberOfProcessors ) {
 
 	PRInt32 count = PR_GetNumberOfProcessors();
-	if ( count < 0 )
-		JL_REPORT_ERROR( "Unable to get the number of processors." );
+	if ( count < 0 ) {
+
+		JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+		count = 1;
+	}
 	JL_CHK( JL_NativeToJsval(cx, count, vp) );
 	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;

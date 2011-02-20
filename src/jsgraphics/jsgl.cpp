@@ -314,6 +314,8 @@ DEFINE_FUNCTION( IsEnabled ) {
 }
 
 
+
+
 DEFINE_FUNCTION( Get ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
@@ -781,7 +783,8 @@ DEFINE_FUNCTION( Get ) {
 		}
 	}
 
-	JL_REPORT_ERROR("Unknown pname");
+	//	JL_REPORT_ERROR("Unknown pname");
+	ThrowOglError(cx, GL_INVALID_ENUM);
 	JL_BAD;
 }
 
@@ -1221,8 +1224,8 @@ DEFINE_FUNCTION( Fog ) {
 
 		return JS_TRUE;
 	}
-	JL_REPORT_ERROR("Invalid argument.");
-	return JS_TRUE;
+
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "number or Array");
 	JL_BAD;
 }
 
@@ -1301,7 +1304,7 @@ DEFINE_FUNCTION( Vertex ) {
 	} else if ( len == 4 ) {
 		glVertex4dv(pos);  OGL_CHK;
 	} else {
-		JL_REPORT_ERROR("Unexpected array length.");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_RANGE_ERROR, "Unexpected array length.");
 	}
 
 	return JS_TRUE;
@@ -1383,7 +1386,7 @@ DEFINE_FUNCTION( Color ) {
 		} else if ( len == 4 ) {
 			glColor4dv(color);  OGL_CHK;
 		} else {
-			JL_REPORT_ERROR("Unexpected array length.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_RANGE_ERROR, "Unexpected array length.");
 		}
 	}
 	return JS_TRUE;
@@ -1505,7 +1508,7 @@ DEFINE_FUNCTION( TexParameter ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "number or Array");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1739,7 +1742,7 @@ DEFINE_FUNCTION( LightModel ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "number or Array");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1845,7 +1848,7 @@ DEFINE_FUNCTION( GetLight ) {
 				count = 1;
 				break;
 			default:
-				JL_REPORT_ERROR("Unknown parameter count.");
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_RANGE_ERROR, "Unknown parameter count");
 		}
 	}
 
@@ -2932,7 +2935,8 @@ DEFINE_FUNCTION( CallList ) {
 //		jl_free(lists); // alloca
 		return JS_TRUE;
 	}
-	JL_REPORT_ERROR("Invalid argument");
+
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "intnger or Array");
 	JL_BAD;
 }
 
@@ -4969,7 +4973,8 @@ DEFINE_FUNCTION( PointParameter ) {
 		;
 		return JS_TRUE;
 	}
-	JL_REPORT_ERROR("Invalid argument.");
+	
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "number or Array");
 	JL_BAD;
 }
 
@@ -5068,7 +5073,7 @@ DEFINE_FUNCTION( MultiTexCoord ) {
 
 		return JS_TRUE;
 	}
-	JL_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT_COUNT, "2 to 4");
 	JL_BAD;
 }
 
@@ -5371,7 +5376,7 @@ DEFINE_FUNCTION( DrawImage ) {
 				format = GL_RGBA;
 				break;
 			default:
-				JL_REPORT_ERROR_NUM(cx, JLSMSG_INTERNAL_ERROR, "Invalid channel count");
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "Invalid channel count");
 		}
 	}
 

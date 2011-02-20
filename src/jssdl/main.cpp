@@ -482,7 +482,7 @@ void EndVideo() {
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	if ( SDL_WasInit(0) != 0 )
-		JL_REPORT_ERROR("SDL module already in use.");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "SDL module already in use.");
 
 	JL_CHK( InitJslibsModule(cx, id) );
 

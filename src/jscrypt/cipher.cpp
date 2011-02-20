@@ -277,10 +277,11 @@ DEFINE_CONSTRUCTOR() {
 			break;
 		}
 		default:
-			JL_REPORT_ERROR("Invalid mode %u", mode);
+			IFDEBUG( err = 0 );
+			JL_ASSERT(false);
 	}
 
-	if (err != CRYPT_OK) {
+	if ( err != CRYPT_OK ) {
 		
 		ThrowCryptError(cx, err);
 		goto bad;
@@ -377,10 +378,11 @@ DEFINE_FUNCTION( Encrypt ) {
 			err = f8_encrypt( (const unsigned char *)pt.GetConstStr(), (unsigned char *)ct, (unsigned long)pt.Length(), (symmetric_F8 *)pv->symmetric_XXX );
 			break;
 		default:
-			JL_REPORT_ERROR("Invalid mode %u", pv->mode);
+			IFDEBUG( err = 0 );
+			JL_ASSERT(false);
 	}
 
-	if (err != CRYPT_OK)
+	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 
 	ct[pt.Length()] = '\0';
@@ -443,7 +445,8 @@ DEFINE_FUNCTION( Decrypt ) {
 			err = f8_decrypt( (const unsigned char *)ct.GetConstStr(), (unsigned char *)pt, (unsigned long)ct.Length(), (symmetric_F8 *)pv->symmetric_XXX );
 			break;
 		default:
-			JL_REPORT_ERROR("Invalid mode %u", pv->mode);
+			IFDEBUG( err = 0 );
+			JL_ASSERT(false);
 	}
 
 	if (err != CRYPT_OK)
@@ -545,7 +548,8 @@ DEFINE_PROPERTY_SETTER( IV ) {
 	int err;
 	switch ( pv->mode ) {
 		case mode_ecb:
-			JL_REPORT_ERROR("No IV in ECB mode");
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOGIC_ERROR, "No IV in ECB mode");
+			break;
 		case mode_cfb: {
 			symmetric_CFB *tmp = (symmetric_CFB *)pv->symmetric_XXX;
 			JL_S_ASSERT( IV.Length() == (size_t)tmp->blocklen, "This cipher require a IV length of %d", tmp->blocklen );
@@ -595,7 +599,7 @@ DEFINE_PROPERTY_SETTER( IV ) {
 			break;
 		}
 		default:
-			JL_REPORT_ERROR("Invalid mode %u", pv->mode);
+			JL_ASSERT(false);
 	}
 
 	return JS_TRUE;
@@ -619,7 +623,8 @@ DEFINE_PROPERTY_GETTER( IV ) {
 	switch ( pv->mode ) {
 
 		case mode_ecb:
-			JL_REPORT_ERROR("No IV in ECB mode");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "No IV in ECB mode");
+			break;
 		case mode_cfb: {
 			symmetric_CFB *tmp = (symmetric_CFB *)pv->symmetric_XXX;
 			IVLength = tmp->blocklen;
@@ -669,9 +674,12 @@ DEFINE_PROPERTY_GETTER( IV ) {
 			break;
 		}
 		default:
-			JL_REPORT_ERROR("Invalid mode %u", pv->mode);
+			IFDEBUG( IVLength = 0 );
+			IFDEBUG( err = 0 );
+			JL_ASSERT(false);
 	}
-	if (err != CRYPT_OK)
+
+	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 
 	IV[IVLength] = '\0';
