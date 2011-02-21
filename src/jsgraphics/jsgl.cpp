@@ -26,10 +26,9 @@ Manage GL extensions:
 #include "../jslang/handlePub.h"
 
 #include <gl/glu.h> // gluPerspective, gluUnProject, GLUquadric, ...
-//#include "wglew.h" // ??
+//#include "wglew.h" // needed ?
 
 #define MAX_PARAMS 16
-
 
 typedef void* (__cdecl *glGetProcAddress_t)(const char*);
 static glGetProcAddress_t glGetProcAddress = NULL;
@@ -42,7 +41,6 @@ static glGetProcAddress_t glGetProcAddress = NULL;
 
 
 DECLARE_CLASS(Ogl)
-
 
 /* 
 JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rval ) { // (TBD) jsval** = Conservative Stack Scanning issue ?
@@ -93,33 +91,6 @@ JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, doub
 	JL_BAD;
 }
 */
-
-
-
-const char *OpenGLErrorToConst(GLenum errorCode) {
-
-	switch (errorCode) {
-		case GL_NO_ERROR:
-			return "GL_NO_ERROR";
-		case GL_INVALID_ENUM:
-			return "GL_INVALID_ENUM";
-		case GL_INVALID_VALUE:
-			return "GL_INVALID_VALUE";
-		case GL_INVALID_OPERATION:
-			return "GL_INVALID_OPERATION";
-		case GL_STACK_OVERFLOW:
-			return "GL_STACK_OVERFLOW";
-		case GL_STACK_UNDERFLOW:
-			return "GL_STACK_UNDERFLOW";
-		case GL_OUT_OF_MEMORY:
-			return "GL_OUT_OF_MEMORY";
-#ifdef GL_ARB_framebuffer_object
-		case GL_INVALID_FRAMEBUFFER_OPERATION:
-			return "GL_INVALID_FRAMEBUFFER_OPERATION";
-#endif // GL_ARB_framebuffer_object
-	}
-	return "???";
-}
 
 
 // The specification states that any command that is not valid is completely ignored and the proper error bit is set.
@@ -783,7 +754,6 @@ DEFINE_FUNCTION( Get ) {
 		}
 	}
 
-	//	JL_REPORT_ERROR("Unknown pname");
 	ThrowOglError(cx, GL_INVALID_ENUM);
 	JL_BAD;
 }
@@ -862,7 +832,7 @@ DEFINE_FUNCTION( GetInteger ) {
 			while ( --argset >= 0 && ((unsigned char*)params)[argset] == 0xAA );
 			argset = argset / sizeof(*params) + 1;
 			if ( argset != count )
-				JL_REPORT_WARNING( "Invalid returned argument count (%d).", argset );
+				JL_REPORT_WARNING( "Invalid value request count (expect %d).", argset );
 		}
 
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
@@ -4468,7 +4438,7 @@ DEFINE_FUNCTION( Uniform ) {
 	}
 */
 
-	JL_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "value");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4631,7 +4601,7 @@ DEFINE_FUNCTION( UniformFloat ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "value");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4685,7 +4655,7 @@ DEFINE_FUNCTION( UniformInteger ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "value");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -5442,7 +5412,7 @@ DEFINE_FUNCTION( ReadImage ) {
 				channels = 1;
 				break;
 			default:
-				JL_REPORT_ERROR("Unsupported format.");
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "format");
 		}
 	} else {
 
@@ -5865,7 +5835,7 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 				type = GL_DOUBLE;
 				break;
 			default:
-				JL_REPORT_ERROR("Invalid texture data type.");
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "TypedArray.type");
 		}
 
 		JL_S_ASSERT_ARG(6);
@@ -5887,8 +5857,6 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 		JL_S_ASSERT_RESOURCE(data);
 		type = GL_UNSIGNED_BYTE;
 	}
-// else
-//		JL_REPORT_ERROR("Invalid texture type.");
 
 	if ( JL_ARG_ISDEF(2) ) {
 
@@ -5910,7 +5878,7 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 				format = GL_RGBA;
 				break;
 			default:
-				JL_REPORT_ERROR("Invalid texture format."); // miss GL_COLOR_INDEX, GL_STENCIL_INDEX, GL_DEPTH_COMPONENT, GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "channels"); // JL_REPORT_ERROR("Invalid texture format."); // miss GL_COLOR_INDEX, GL_STENCIL_INDEX, GL_DEPTH_COMPONENT, GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA
 		}
 	}
 
@@ -6445,8 +6413,9 @@ JSBool MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 			glGetFloatv(GL_COLOR_MATRIX, *m);  OGL_CHK;
 			return true;
 	}
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid matrix mode");
 bad:
-	return false; // JL_REPORT_ERROR( "Unsupported matrix mode." );
+	return false;
 }
 
 

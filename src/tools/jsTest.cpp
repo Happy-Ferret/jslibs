@@ -126,17 +126,12 @@ static __declspec(noinline) void Test( JSContext *cx, JSObject *obj, uintN argc,
 	printf("tmp-%d-%f-%i\n", i32, f32, b);
 }
 
+//#define JLERR_UNEXPECTED( cond, msg ) if (unlikely( _unsafeMode )) { if ( cond ) JS_ReportErrorFlagsAndNumber( }
+
 
 
 
 int main(int argc, char* argv[]) {
-
-
-	bool b = double(-9007199254740992) == double(-9007199254740993);
-	bool c = double(-9007199254740991) == double(-9007199254740992);
-
-	printf("%d, %d\n", b, c);
-
 
 
 	_unsafeMode = false;
@@ -150,23 +145,9 @@ int main(int argc, char* argv[]) {
 	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
-//	jschar str[] = L("ABCD");
-//	JSString *jsstr = JS_NewUCString(cx, str, 2);
+	JLERRIF_UNEXPECTED( !cx, "Unable to create the class" );
 
-
-	long i = 0;
-
-	_InterlockedIncrement (&i);
-
-
-	jsval val;
-
-	jschar str[] = L("ABCD");
-	jschar *str1 = str;
-
-	JL_NativeToJsval(cx, OwnerlessJsstr(str), i, &val);
-
-
+	//JLASSERT_UNEXPECTED_RUNTIME( proto != NULL, "Unable to create the class", cs->clasp.name );
 
 
 	JS_DestroyContext(cx);

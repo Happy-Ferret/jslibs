@@ -72,7 +72,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			}
 
 			val = JSVAL_VOID;
-			JL_REPORT_ERROR("Unavailable %d-th anonymous SQL parameter.", anonParamIndex);
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid anonymous SQL parameter"); //JL_REPORT_ERROR("Unavailable %d-th anonymous SQL parameter.", anonParamIndex);
 			goto next;
 		}
 
@@ -80,7 +80,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 
 //			JL_CHK( JL_GetVariableValue(cx, name+1, &val) );
 //			goto next;
-			JL_REPORT_ERROR("Unsupported SQL parameter prefix (%s).", name);
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "Unsupported SQL parameter prefix $"); //JL_REPORT_ERROR("Unsupported SQL parameter prefix (%s).", name);
 		}
 
 		if ( name[0] == '@' ) {
@@ -91,7 +91,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			} else {
 			
 				val = JSVAL_VOID;
-				JL_REPORT_ERROR("Undefined %s SQL parameter.", name);
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "Undefined SQL parameter"); //JL_REPORT_ERROR("Undefined %s SQL parameter.", name);
 			}
 			goto next;
 		}
@@ -103,12 +103,12 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			} else {
 			
 				val = JSVAL_VOID;
-				JL_REPORT_ERROR("Undefined %s SQL parameter.", name);
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "Undefined SQL parameter"); //JL_REPORT_ERROR("Undefined %s SQL parameter.", name);
 			}
 			goto next;
 		}
 
-		JL_REPORT_ERROR("Unsupported SQL Parameter");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "SQL Parameter not supported"); // JL_REPORT_ERROR("Unsupported SQL Parameter");
 	next:
 
 		int ret;

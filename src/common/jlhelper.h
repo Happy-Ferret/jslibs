@@ -758,6 +758,16 @@ JL__ReportWarningNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT 
 	JL_MACRO_END
 
 
+
+/*
+#define JLERRIF_UNEXPECTED( condition, message ) \
+	if ( unlikely(JL_IS_SAFE) && unlikely(condition) ) { \
+		} \
+	}
+*/
+
+
+
 #define JL_S_ASSERT_ALLOC(pointer) \
 	JL_MACRO_BEGIN \
 		JL_SAFE_BEGIN \
@@ -2534,7 +2544,7 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, jsval &val, float ** RESTRICT m ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR("Unable to read matrix44.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "matrix44");
 	JL_BAD;
 }
 
@@ -3008,7 +3018,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 			jl_freea(data);
 			data = NULL;
 			if ( JS_GetScriptVersion(cx, script) < JS_GetVersion(cx) )
-				JL_REPORT_WARNING("Trying to xdr-decode an old script (%s).", compiledFileName);
+				JL_REPORT_WARNING_NUM(cx, JLSMSG_LOGIC_ERROR, "xdr version too old"); //JL_REPORT_WARNING("Trying to xdr-decode an old script (%s).", compiledFileName);
 			goto good;
 		} else {
 

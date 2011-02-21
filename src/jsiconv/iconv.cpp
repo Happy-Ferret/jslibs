@@ -48,7 +48,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	int status = iconv_close(pv->cd); // if ( status == -1 ) error is in errno.
 	JS_free(cx, pv);
 	if ( status == -1 )
-		JL_REPORT_WARNING("iconv_close failure in Iconv finalize (%d).", errno);
+		JL_REPORT_WARNING_NUM(cx, JLSMSG_LIB_ERROR, "iconv_close"); // failure in Iconv finalize (%d).", errno);
 bad:
 	return;
 }
@@ -102,9 +102,9 @@ DEFINE_CONSTRUCTOR() {
 	if ( (size_t)pv->cd == (size_t)-1 ) {
 		
 		if ( errno == EINVAL )
-			JL_REPORT_ERROR( "The conversion from %s to %s is not supported.", fromcode, tocode );
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_OPERATION); //, "The conversion from %s to %s is not supported.", fromcode, tocode );
 		else
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_RUNTIME_ERROR, "unknown iconv error" );
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, IntegerToString(errno, 10) ); //JL_REPORT_ERROR_NUM(cx, JLSMSG_RUNTIME_ERROR, "unknown iconv error" );
 	}
 
 	pv->invalidChar = '?';

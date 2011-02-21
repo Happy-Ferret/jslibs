@@ -62,7 +62,7 @@ DEFINE_CONSTRUCTOR() {
 			format = bits == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8;
 			break;
 		default:
-			JL_REPORT_ERROR("Too may channels");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "sound.channels");
 	}
 
 	ALuint bid; // The OpenAL sound buffer ID

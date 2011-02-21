@@ -56,7 +56,7 @@ DEFINE_FUNCTION( Open ) {
 	// If no device name is specified, we will attempt to use DS3D.
 	ALCdevice *device = alcOpenDevice (deviceName.GetStrConstOrNull());
 	if (device == NULL)
-		JL_REPORT_ERROR("ALUT_ERROR_OPEN_DEVICE");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, "ALUT_ERROR_OPEN_DEVICE");
 
 //	ALint attribs[4] = { 0 };
 //	attribs[0] = ALC_MAX_AUXILIARY_SENDS;
@@ -65,13 +65,13 @@ DEFINE_FUNCTION( Open ) {
 	ALCcontext *context = alcCreateContext (device, NULL);
 	if (context == NULL) {
 		alcCloseDevice (device);
-		JL_REPORT_ERROR("ALUT_ERROR_CREATE_CONTEXT");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, "ALUT_ERROR_CREATE_CONTEXT");
 	}
 	if (!alcMakeContextCurrent(context)) {
 
 		alcDestroyContext (context);
 		alcCloseDevice (device);
-		JL_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, "ALUT_ERROR_MAKE_CONTEXT_CURRENT");
 	}
 
 	InitEfxApi();
@@ -97,17 +97,17 @@ DEFINE_FUNCTION( Close ) {
 	JL_S_ASSERT( context != NULL, "OpenAL already closed." );
 	ALCdevice *device;
 	if (!alcMakeContextCurrent (NULL))
-		JL_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, "ALUT_ERROR_MAKE_CONTEXT_CURRENT");
 	device = alcGetContextsDevice (context);
 	if (alcGetError (device) != ALC_NO_ERROR )
-		JL_REPORT_ERROR("ALUT_ERROR_ALC_ERROR_ON_ENTRY");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, "ALUT_ERROR_ALC_ERROR_ON_ENTRY");
 	alcDestroyContext (context);
 	if (alcGetError (device) != ALC_NO_ERROR)
-		JL_REPORT_ERROR("ALUT_ERROR_DESTROY_CONTEXT");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, "ALUT_ERROR_DESTROY_CONTEXT");
 	if (!alcMakeContextCurrent(NULL))
-		JL_REPORT_ERROR("ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, "ALUT_ERROR_MAKE_CONTEXT_CURRENT");
 	if (!alcCloseDevice (device))
-		JL_REPORT_ERROR("ALUT_ERROR_CLOSE_DEVICE");
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, "ALUT_ERROR_CLOSE_DEVICE");
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -467,7 +467,7 @@ DEFINE_FUNCTION( Listener ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "params");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -572,7 +572,7 @@ DEFINE_FUNCTION( Source ) {
 		alSourcefv( sid, JSVAL_TO_INT(JL_ARG(2)), params );
 		return JS_TRUE;
 	}
-	JL_REPORT_ERROR("Invalid argument.");
+	JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "params");
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -726,9 +726,6 @@ DEFINE_FUNCTION( SourceQueueBuffers ) {
 	alSourceQueueBuffers( sid, 1, &buffer );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
-
-//	JL_REPORT_ERROR("Invalid argument.");
-//	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -765,9 +762,6 @@ DEFINE_FUNCTION( SourceUnqueueBuffers ) {
 	alSourceUnqueueBuffers( sid, 1, &buffer );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
-
-//	JL_REPORT_ERROR("Invalid argument.");
-//	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -816,7 +810,7 @@ DEFINE_FUNCTION( Buffer ) {
 			format = bits == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8;
 			break;
 		default:
-			JL_REPORT_ERROR("Too may channels");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "sound.channels");
 	}
 
 	// Upload sound data to buffer

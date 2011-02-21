@@ -1538,7 +1538,7 @@ DEFINE_FUNCTION( AssertJit ) {
 #ifdef JS_METHODJIT
     if (JS_GetOptions(cx) & JSOPTION_METHODJIT) {
         if (!cx->fp()->script()->getJIT(cx->fp()->isConstructing())) {
-			JL_REPORT_ERROR( "unexpected failure to JIT" );
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_RUNTIME_ERROR, "JIT" );
             return JS_FALSE;
         }
     }

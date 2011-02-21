@@ -178,7 +178,7 @@ DEFINE_CONSTRUCTOR() {
 	else if ( strcasecmp( modeName, "F8" ) == 0 )
 		mode = mode_f8;
 	else
-		JL_REPORT_ERROR("Invalid mode %s", modeName);
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "modeName"); //JL_REPORT_ERROR("Invalid mode %s", modeName);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &cipherName) ); // warning: GC on the returned buffer !
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &key) ); // warning: GC on the returned buffer !

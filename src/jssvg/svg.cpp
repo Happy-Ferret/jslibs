@@ -184,10 +184,10 @@ DEFINE_FUNCTION( Write ) {
 	if ( !status ) {
 
 		xmlErrorPtr xmlErr = xmlGetLastError();
-		if ( xmlErr != NULL ) { // XML error
-			JL_REPORT_ERROR("SVG error: %s. %s", error->message, xmlErr->message);
-		} else
-			JL_REPORT_ERROR("SVG error: %s", error->message);
+		if ( xmlErr != NULL ) // XML error
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, xmlErr->message); //("SVG error: %s. %s", error->message, xmlErr->message);
+		else
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, error->message); // JL_REPORT_ERROR("SVG error: %s", error->message);
 	}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -270,7 +270,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 	GError *error = NULL;
 	status = rsvg_handle_close(handle, &error);
 	if ( !status )
-		JL_REPORT_ERROR( "SVG error: %s", error->message );
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, error->message);
 
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);

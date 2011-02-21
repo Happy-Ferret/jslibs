@@ -150,7 +150,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 		asymmetricCipher = katja;
 #endif
 	else
-		JL_REPORT_ERROR("Invalid asymmetric cipher %s.", asymmetricCipherName);
+		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "cipher"); // JL_REPORT_ERROR("Invalid asymmetric cipher %s.", asymmetricCipherName);
 
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JS_malloc(cx, sizeof(AsymmetricCipherPrivate));
@@ -190,7 +190,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 			if ( strcasecmp(paddingName, "1_V1_5") == 0 ) {
 				pv->padding = LTC_LTC_PKCS_1_V1_5;
 			} else
-				JL_REPORT_ERROR("Invalid padding version.");
+				JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "PKCSVersion"); //JL_REPORT_ERROR("Invalid padding version.");
 		} else {
 
 			pv->padding = LTC_LTC_PKCS_1_OAEP; // default
@@ -314,7 +314,7 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 		int stat;
 		err = dsa_verify_key(&pv->key.dsaKey, &stat);
 		if ( err != CRYPT_OK || stat != 1 ) // If the result is stat = 1 the DSA key is valid (as far as valid mathematics are concerned).
-			JL_REPORT_ERROR("Invalid key.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, "dsa_verify_key");
 	}
 
 	pv->hasKey = true;
@@ -563,7 +563,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 		}
 #ifdef MKAT
 		case katja: {
-			JL_REPORT_ERROR("Invalid operation.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_OPERATION);
 			break;
 		}
 #endif
@@ -633,7 +633,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 		}
 #ifdef MKAT
 		case katja: {
-			JL_REPORT_ERROR("Invalid operation.");
+			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_OPERATION);
 			break;
 		}
 #endif

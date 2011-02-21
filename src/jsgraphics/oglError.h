@@ -17,6 +17,9 @@ DECLARE_CLASS( OglError )
 
 #define GLERR_EXTENSION_NOT_FOUND 0x0001
 
+const char *
+OpenGLErrorToConst(GLenum errorCode);
+
 
 NEVER_INLINE JSBool FASTCALL
 ThrowOglError( JSContext *cx, GLenum err );

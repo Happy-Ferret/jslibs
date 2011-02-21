@@ -718,7 +718,7 @@ namespace jl {
 					break;
 				}
 				default:
-					JL_REPORT_ERROR("Invalid serialized type.");
+					JL_REPORT_ERROR_NUM(cx, JLSMSG_RUNTIME_ERROR, "Invalid serialized type.");
 			}
 
 			return JS_TRUE;

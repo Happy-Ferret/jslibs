@@ -15,10 +15,41 @@
 #include "stdafx.h"
 
 
+const char *
+OpenGLErrorToConst(GLenum errorCode) {
+
+	switch (errorCode) {
+		case GL_NO_ERROR:
+			return "GL_NO_ERROR";
+		case GL_INVALID_ENUM:
+			return "GL_INVALID_ENUM";
+		case GL_INVALID_VALUE:
+			return "GL_INVALID_VALUE";
+		case GL_INVALID_OPERATION:
+			return "GL_INVALID_OPERATION";
+		case GL_STACK_OVERFLOW:
+			return "GL_STACK_OVERFLOW";
+		case GL_STACK_UNDERFLOW:
+			return "GL_STACK_UNDERFLOW";
+		case GL_OUT_OF_MEMORY:
+			return "GL_OUT_OF_MEMORY";
+// GL_EXT_histogram / GL_ARB_imaging_DEPRECATED
+		case GL_TABLE_TOO_LARGE:
+			return "GL_TABLE_TOO_LARGE";
+#if defined(GL_ARB_framebuffer_object) || defined(GL_EXT_framebuffer_object)
+		case GL_INVALID_FRAMEBUFFER_OPERATION:
+			return "GL_INVALID_FRAMEBUFFER_OPERATION";
+#endif
+	}
+	return "???";
+}
+
+
 /**doc fileIndex:bottom **/
 
 /**doc
 **/
+
 
 BEGIN_CLASS( OglError )
 
@@ -41,33 +72,34 @@ DEFINE_PROPERTY_GETTER( text ) {
 	char *errStr;
 	switch (errorCode) {
 		case GL_NO_ERROR:
-			errStr = "No Error.";
+			errStr = "no error";
 			break;
 		case GL_INVALID_ENUM:
-			errStr = ".";
+			errStr = "invalid enumerant";
 			break;
 		case GL_INVALID_VALUE:
-			errStr = ".";
+			errStr = "invalid value";
 			break;
 		case GL_INVALID_OPERATION:
-			errStr = ".";
+			errStr = "invalid operation";
 			break;
 		case GL_STACK_OVERFLOW:
-			errStr = ".";
+			errStr = "stack overflow";
 			break;
 		case GL_STACK_UNDERFLOW:
-			errStr = ".";
+			errStr = "stack underflow";
 			break;
 		case GL_OUT_OF_MEMORY:
-			errStr = ".";
+			errStr = "out of memory";
+			break;
+		case GL_TABLE_TOO_LARGE:
+			errStr = "table too large";
 			break;
 		default:
-			errStr = "Unknown error.";
+			errStr = "unknown";
 			break;
 	}
-	JSString *str = JS_NewStringCopyZ( cx, errStr );
-	*vp = STRING_TO_JSVAL( str );
-	return JS_TRUE;
+	return JL_NativeToJsval(cx, errStr, vp);
 	JL_BAD;
 }
 
@@ -78,36 +110,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
 	int errorCode;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &errorCode) );
-	char *errStr;
-	switch (errorCode) {
-		case GL_NO_ERROR:
-			errStr = "GL_NO_ERROR";
-			break;
-		case GL_INVALID_ENUM:
-			errStr = "GL_INVALID_ENUM";
-			break;
-		case GL_INVALID_VALUE:
-			errStr = "GL_INVALID_VALUE";
-			break;
-		case GL_INVALID_OPERATION:
-			errStr = "GL_INVALID_OPERATION";
-			break;
-		case GL_STACK_OVERFLOW:
-			errStr = "GL_STACK_OVERFLOW";
-			break;
-		case GL_STACK_UNDERFLOW:
-			errStr = "GL_STACK_UNDERFLOW";
-			break;
-		case GL_OUT_OF_MEMORY:
-			errStr = "GL_OUT_OF_MEMORY";
-			break;
-		default:
-			errStr = "???";
-			break;
-	}
-	JSString *str = JS_NewStringCopyZ( cx, errStr );
-	*vp = STRING_TO_JSVAL( str );
-	return JS_TRUE;
+	return JL_NativeToJsval(cx, OpenGLErrorToConst(errorCode), vp);
 	JL_BAD;
 }
 
@@ -116,7 +119,6 @@ DEFINE_FUNCTION( toString ) {
 
 	JL_USE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
-
 	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 

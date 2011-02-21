@@ -994,7 +994,7 @@ Network64ToHost64( void *pval ) {
 }
 
 
-INLINE const char* FASTCALL
+INLINE NEVER_INLINE const char* FASTCALL
 IntegerToString(int32_t val, int base) {
 
 	bool neg;
