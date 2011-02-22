@@ -195,7 +195,7 @@ JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc, jsval 
 JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakReason breakOrigin) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 
 	JSScript *script;
@@ -505,7 +505,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( interruptCounterLimit ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 	if ( JSVAL_IS_VOID(*vp) ) {
 
@@ -544,7 +544,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( breakOnError ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
@@ -569,7 +569,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( breakOnException ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
@@ -594,7 +594,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( breakOnDebuggerKeyword ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
@@ -619,7 +619,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( breakOnExecute ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
@@ -644,7 +644,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( breakOnFirstExecute ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
@@ -669,7 +669,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( excludedFileList ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JL_S_ASSERT_ARRAY( *vp );
 

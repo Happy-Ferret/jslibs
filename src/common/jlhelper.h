@@ -52,6 +52,20 @@ JSClass *JL_GetStandardClassByKey(JSContext *cx, JSProtoKey key);
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// Native Interface function prototypes
+
+typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, size_t *amount );
+typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, JLStr *str );
+typedef JSBool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
+
+inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
+inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
+inline NIMatrix44Get Matrix44GetInterface( JSContext *cx, JSObject *obj );
+
+ALWAYS_INLINE JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet pFct );
+
+
+///////////////////////////////////////////////////////////////////////////////
 // helper macros to avoid a function call to the jsapi
 
 ALWAYS_INLINE JSRuntime*
@@ -109,6 +123,12 @@ ALWAYS_INLINE JSClass*
 JL_GetClass( const JSObject *obj ) {
 
 	return obj->getJSClass();
+}
+
+ALWAYS_INLINE const char *
+JL_GetClassName( const JSObject *obj ) {
+
+	return obj->getJSClass()->name;
 }
 
 ALWAYS_INLINE size_t
@@ -221,26 +241,201 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+// Type check functions
+
+ALWAYS_INLINE bool
+JL_IsBooleanObject( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+
+	return !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClassByKey(cx, JSProto_Boolean);
+}
+
+ALWAYS_INLINE bool
+JL_IsBoolean( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+
+	return JSVAL_IS_BOOLEAN(value) || JL_IsBooleanObject(cx, value);
+}
+
+ALWAYS_INLINE bool
+JL_IsInteger( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+
+	JL_USE(cx);
+	return JSVAL_IS_INT(value) || JSVAL_IS_DOUBLE(value) && !JL_DOUBLE_IS_INTEGER(JSVAL_TO_DOUBLE(value));
+}
+
+ALWAYS_INLINE bool
+JL_IsNumberObject( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+
+	return !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClassByKey(cx, JSProto_Number);
+}
+
+ALWAYS_INLINE bool
+JL_IsNumber( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+
+	return JSVAL_IS_NUMBER(value) || JL_IsNumberObject(cx, value);
+}
+
+ALWAYS_INLINE bool
+JL_IsInteger53( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+
+	JL_USE(cx);
+	return JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && JSVAL_TO_DOUBLE(value) < MAX_INT_TO_DOUBLE && JSVAL_TO_DOUBLE(value) > MIN_INT_TO_DOUBLE);
+}
+
+ALWAYS_INLINE bool
+JL_IsNaN( const JSContext *cx, const jsval &val ) {
+
+	return js::Valueify(val) == JL_GetRuntime(cx)->NaNValue;
+}
+
+ALWAYS_INLINE bool
+JL_IsPInfinity( const JSContext *cx, const jsval &val ) {
+
+	return js::Valueify(val) == JL_GetRuntime(cx)->positiveInfinityValue;
+}
+
+ALWAYS_INLINE bool
+JL_IsNInfinity( const JSContext *cx, const jsval &val ) {
+
+	return js::Valueify(val) == JL_GetRuntime(cx)->negativeInfinityValue;
+}
+
+ALWAYS_INLINE bool
+JL_IsReal( const JSContext *cx, const jsval &val ) {
+
+	JL_USE(cx);
+	if ( JSVAL_IS_INT(val) )
+		return true;
+	if ( JSVAL_IS_DOUBLE(val) ) {
+
+		double tmp = JSVAL_TO_DOUBLE(val);
+		return tmp >= MIN_INT_TO_DOUBLE && tmp <= MAX_INT_TO_DOUBLE;
+	}
+	return false;
+}
+
+ALWAYS_INLINE bool
+JL_IsNegative( JSContext *cx, const jsval &val ) {
+
+	return ( JSVAL_IS_INT(val) && JSVAL_TO_INT(val) < 0 )
+	    || ( JSVAL_IS_DOUBLE(val) && DOUBLE_IS_NEG(JSVAL_TO_DOUBLE(val)) ) // js::Valueify(val).toDouble()
+	    || JL_IsNInfinity(cx, val);
+}
+
+ALWAYS_INLINE bool
+JL_IsClass( const jsval &val, const JSClass *jsClass ) {
+
+	//return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
+	return !js::Valueify(val).isPrimitive() && jsClass != NULL && js::Valueify(val).toObject().getJSClass() == jsClass;
+}
+
+ALWAYS_INLINE bool
+JL_IsObjectObject( JSContext *cx, const JSObject *obj ) {
+
+	JSObject *oproto;
+	return js_GetClassPrototype(cx, NULL, JSProto_Object, &oproto) && JL_GetClass(obj) == JL_GetClass(oproto) && obj->getProto() == oproto;
+}
+
+ALWAYS_INLINE bool
+JL_IsArray( JSContext *cx, JSObject *obj ) {
+
+	return JS_IsArrayObject(cx, obj) == JS_TRUE; // Object::isArray() is not public
+}
+
+ALWAYS_INLINE bool
+JL_IsArray( JSContext *cx, const jsval &val ) {
+
+	return !JSVAL_IS_PRIMITIVE(val) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(val)); // Object::isArray() is not public
+}
+
+ALWAYS_INLINE bool
+JL_IsVector( JSContext *cx, JSObject *obj ) {
+
+	return JS_IsArrayObject(cx, obj) || js_IsTypedArray(obj); // Object::isArray() is not public
+}
+
+ALWAYS_INLINE bool
+JL_IsVector( JSContext *cx, const jsval &val ) {
+
+	return !JSVAL_IS_PRIMITIVE(val) && ( JS_IsArrayObject(cx, JSVAL_TO_OBJECT(val)) || js_IsTypedArray(JSVAL_TO_OBJECT(val)) ); // Object::isArray() is not public
+}
+
+ALWAYS_INLINE bool
+JL_IsScript( const JSContext *cx, const JSObject *obj ) {
+
+	JL_USE(cx);
+	return JL_GetClass(obj) == js::Jsvalify(&js_ScriptClass);
+}
+
+ALWAYS_INLINE bool
+JL_IsFunction( const JSContext *cx, const JSObject *obj ) {
+
+	JL_USE(cx);
+	return obj->isFunction();
+}
+
+ALWAYS_INLINE bool
+JL_IsFunction( const JSContext *cx, const jsval &val ) {
+
+	JL_USE(cx);
+	return VALUE_IS_FUNCTION(cx, val);
+}
+
+ALWAYS_INLINE bool
+JL_IsXML( const JSContext *cx, const JSObject *obj ) {
+
+	JL_USE(cx);
+	#if JS_HAS_XML_SUPPORT
+		extern JS_FRIEND_DATA(js::Class) js_XMLClass;
+		return JL_GetClass(obj) == js::Jsvalify(&js_XMLClass);
+	#else
+		return false;
+	#endif // JS_HAS_XML_SUPPORT
+}
+
+
+ALWAYS_INLINE bool
+JL_IsStringObject( JSContext *cx, const JSObject *obj ) {
+
+	return JL_GetClass(obj) == JL_GetStandardClassByKey(cx, JSProto_String);
+}
+
+
+INLINE NEVER_INLINE bool
+JL_IsDataObject( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
+
+	return BufferGetInterface(cx, obj) != NULL || JL_IsArray(cx, obj) || (js_IsTypedArray(obj) /*&& js::TypedArray::fromJSObject(obj)->valid()*/) /*|| js_IsArrayBuffer(obj)*/ || JL_IsStringObject(cx, obj);
+}
+
+
+ALWAYS_INLINE bool
+JL_IsData( JSContext *cx, const jsval &val ) {
+
+	return JSVAL_IS_STRING(val) || ( !JSVAL_IS_PRIMITIVE(val) && JL_IsDataObject(cx, JSVAL_TO_OBJECT(val)) );
+}
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Safe Mode tools
 
-#define JL_IS_SAFE (!_unsafeMode)
+#define JL_IS_SAFE (unlikely(!_unsafeMode))
+#define JL_IS_UNSAFE (likely(_unsafeMode))
 
-#define JL_SAFE_BEGIN if (unlikely( JL_IS_SAFE )) {
+#define JL_SAFE_BEGIN if (JL_IS_SAFE) {
 #define JL_SAFE_END }
 
-#define JL_UNSAFE_BEGIN if (likely( !JL_IS_SAFE )) {
+#define JL_UNSAFE_BEGIN if (JL_IS_UNSAFE) {
 #define JL_UNSAFE_END }
 
 #define JL_SAFE(code) \
 	JL_MACRO_BEGIN \
-		if (unlikely( JL_IS_SAFE )) {code;} \
+		if (JL_IS_SAFE) {code;} \
 	JL_MACRO_END
 
 #define JL_UNSAFE(code) \
 	JL_MACRO_BEGIN \
-		if (likely( !JL_IS_SAFE )) {code;} \
+		if (JL_IS_UNSAFE) {code;} \
 	JL_MACRO_END
 
 
@@ -258,7 +453,7 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 #define JL_ARGV (JS_ARGV(cx,vp))
 
 // returns the ARGument n
-#define JL_ARG( n ) (JL_ASSERT(n <= argc), JS_ARGV(cx,vp)[(n)-1])
+#define JL_ARG( n ) (JL_ASSERT(n <= argc), JL_ARGV[(n)-1])
 
 // returns the ARGument n or undefined if it does not exist
 #define JL_SARG( n ) ( JL_ARGC >= (n) ? JL_ARG(n) : JSVAL_VOID )
@@ -267,7 +462,6 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 #define JL_ARG_ISDEF( n ) ( JL_ARGC >= (n) && !JSVAL_IS_VOID(JL_ARG(n)) )
 
 // is the current obj (this)
-//#define JL_OBJ (argc=argc, JS_THIS_OBJECT(cx, vp))
 #define JL_OBJ (obj)
 
 // is the current obj (this) as a jsval
@@ -593,13 +787,13 @@ JL_GetPrivateJsid( JSContext * RESTRICT cx, int index, const jschar * RESTRICT n
 
 
 #ifdef DEBUG
-#define JLID_NAME(cx, name) (JL_USE(cx), JL_USE(JLID_##name), L ## #name)
+#define JLID_NAME(cx, name) (JL_USE(cx), JL_USE(JLID_##name), L(#name))
 #else
 #define JLID_NAME(cx, name) (#name)
 #endif // DEBUG
 
 
-#define JLID(cx, name) JL_GetPrivateJsid(cx, JLID_##name, L ## #name)
+#define JLID(cx, name) JL_GetPrivateJsid(cx, JLID_##name, L(#name))
 // example of use: jsid cfg = JLID(cx, _host); char *name = JLID_NAME(_host);
 
 
@@ -761,7 +955,7 @@ JL__ReportWarningNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT 
 
 /*
 #define JLERRIF_UNEXPECTED( condition, message ) \
-	if ( unlikely(JL_IS_SAFE) && unlikely(condition) ) { \
+	if ( JL_IS_SAFE && unlikely(condition) ) { \
 		} \
 	}
 */
@@ -780,20 +974,9 @@ JL__ReportWarningNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT 
 	JL_MACRO_END
 
 
-#define JL_S_ASSERT_ARG_MIN(minCount) \
-	JL_S_ASSERT_ERROR_NUM( (argc) >= (minCount), JLSMSG_TOO_FEW_ARGUMENTS, (#minCount) );
 
 
-#define JL_S_ASSERT_ARG_MAX(maxCount) \
-	JL_S_ASSERT_ERROR_NUM( (argc) <= (maxCount), JLSMSG_TOO_MANY_ARGUMENTS, (#maxCount) );
 
-
-#define JL_S_ASSERT_ARG_RANGE(minCount, maxCount) \
-	JL_S_ASSERT_ERROR_NUM( JL_INRANGE((argc), (minCount), (maxCount)), JLSMSG_INVALID_ARGUMENT_COUNT, #minCount ## ".." ## #maxCount );
-
-
-#define JL_S_ASSERT_ARG(count) \
-	JL_S_ASSERT_ERROR_NUM( (argc) == (count), JLSMSG_INVALID_ARGUMENT_COUNT, #count );
 
 
 #define JL_S_ASSERT_DEFINED(value) \
@@ -801,12 +984,12 @@ JL__ReportWarningNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT 
 
 
 // jsType: JSTYPE_VOID, JSTYPE_OBJECT, JSTYPE_FUNCTION, JSTYPE_STRING, JSTYPE_NUMBER, JSTYPE_BOOLEAN, JSTYPE_NULL, JSTYPE_XML, JSTYPE_LIMIT
-#define JL_S_ASSERT_TYPE(value, jsType) \
-	JL_S_ASSERT_ERROR_NUM( JS_TypeOfValue(cx, (value)) == (jsType), JLSMSG_EXPECT_TYPE, (#jsType)+7 ); // +7 for "JSTYPE_" substring
+//#define JL_S_ASSERT_TYPE(value, jsType) \
+//	JL_S_ASSERT_ERROR_NUM( JS_TypeOfValue(cx, (value)) == (jsType), JLSMSG_EXPECT_TYPE, (#jsType)+7 ); // +7 for "JSTYPE_" substring
 
 
-#define JS_S_ASSERT_CONVERT(condition, typeName) \
-	JL_S_ASSERT_ERROR_NUM( (condition), JLSMSG_FAIL_TO_CONVERT_TO, typeName );
+//#define JS_S_ASSERT_CONVERT(condition, typeName) \
+//	JL_S_ASSERT_ERROR_NUM( (condition), JLSMSG_FAIL_TO_CONVERT_TO, typeName );
 
 
 #define JL_S_ASSERT_BOOLEAN(value) \
@@ -821,8 +1004,8 @@ JL__ReportWarningNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT 
 	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_INT(value), JLSMSG_EXPECT_TYPE, "integer" );
 
 
-#define JL_S_ASSERT_LOSSLESS_INT(value) \
-	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && JSVAL_TO_DOUBLE(value) < MAX_INT_TO_DOUBLE && JSVAL_TO_DOUBLE(value) > MIN_INT_TO_DOUBLE), JLSMSG_EXPECT_TYPE, "smaller integer" );
+//#define JL_S_ASSERT_LOSSLESS_INT(value) \
+//	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && JSVAL_TO_DOUBLE(value) < MAX_INT_TO_DOUBLE && JSVAL_TO_DOUBLE(value) > MIN_INT_TO_DOUBLE), JLSMSG_EXPECT_TYPE, "smaller integer" );
 
 
 #define JL_S_ASSERT_STRING(value) \
@@ -833,8 +1016,8 @@ JL__ReportWarningNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT 
 	JL_S_ASSERT_ERROR_NUM( !JSVAL_IS_PRIMITIVE(value), JLSMSG_EXPECT_TYPE, "object" );
 
 
-#define JL_S_ASSERT_OBJECT_OR_NULL(value) \
-	JL_S_ASSERT_ERROR_NUM( !JSVAL_IS_OBJECT(value), JLSMSG_EXPECT_TYPE, "object" );
+//#define JL_S_ASSERT_OBJECT_OR_NULL(value) \
+//	JL_S_ASSERT_ERROR_NUM( !JSVAL_IS_OBJECT(value), JLSMSG_EXPECT_TYPE, "object" );
 
 
 #define JL_S_ASSERT_ARRAY(value) \
@@ -845,216 +1028,92 @@ JL__ReportWarningNum( JSContext * RESTRICT cx, uintN num, const char * RESTRICT 
 	JL_S_ASSERT_ERROR_NUM( JL_IsVector(cx, (value)), JLSMSG_EXPECT_TYPE, "vector" );
 
 
-#define JL_S_ASSERT_FUNCTION(value) \
-	JL_S_ASSERT_ERROR_NUM( JL_IsFunction(cx, (value)), JLSMSG_EXPECT_TYPE, "function" );
+//#define JL_S_ASSERT_FUNCTION(value) \
+//	JL_S_ASSERT_ERROR_NUM( JL_IsFunction(cx, (value)), JLSMSG_EXPECT_TYPE, "function" );
 
+
+
+// val
+
+#define JL_S_ASSERT_IS_INTEGER53(val) \
+	JL_S_ASSERT_ERROR_NUM( NOIL(JL_IsInteger53)(cx, val), JLSMSG_EXPECT_TYPE, "integer < 2^53" )
+
+#define JL_S_ASSERT_IS_FUNCTION(val) \
+	JL_S_ASSERT_ERROR_NUM( !JL_IsFunction(cx, val), JLSMSG_EXPECT_TYPE, "function" )
+
+// arg
+
+#define JL_S_ASSERT_ARG_MIN(minCount) \
+	JL_S_ASSERT_ERROR_NUM( (argc) >= (minCount), JLSMSG_TOO_FEW_ARGUMENTS, #minCount )
+
+#define JL_S_ASSERT_ARG_MAX(maxCount) \
+	JL_S_ASSERT_ERROR_NUM( (argc) <= (maxCount), JLSMSG_TOO_MANY_ARGUMENTS, #maxCount )
+
+#define JL_S_ASSERT_ARG_RANGE(minCount, maxCount) \
+	JL_S_ASSERT_ERROR_NUM( JL_INRANGE((argc), (minCount), (maxCount)), JLSMSG_INVALID_ARGUMENT_COUNT, #minCount ## ".." ## #maxCount )
+
+#define JL_S_ASSERT_ARG_COUNT(count) \
+	JL_S_ASSERT_ERROR_NUM( (argc) == (count), JLSMSG_INVALID_ARGUMENT_COUNT, #count )
+
+#define JL_S_ASSERT_ARG_IS_BOOLEAN(arg) \
+	JL_S_ASSERT_ERROR_NUM( NOIL(JL_IsBoolean)(cx, JL_ARG(arg)), JLSMSG_WRONG_ARGUMENT_TYPE, #arg, "boolean" )
+
+#define JL_S_ASSERT_ARG_IS_INTEGER(arg) \
+	JL_S_ASSERT_ERROR_NUM( NOIL(JL_IsInteger)(cx, JL_ARG(arg)), JLSMSG_WRONG_ARGUMENT_TYPE, #arg, "integer" )
+
+#define JL_S_ASSERT_ARG_IS_INTEGER53(arg) \
+	JL_S_ASSERT_ERROR_NUM( NOIL(JL_IsInteger53)(cx, JL_ARG(arg)), JLSMSG_WRONG_ARGUMENT_TYPE, #arg, "integer < 2^53" )
+
+#define JL_S_ASSERT_ARG_IS_NUMBER(arg) \
+	JL_S_ASSERT_ERROR_NUM( NOIL(JL_IsNumber)(cx, JL_ARG(arg)), JLSMSG_WRONG_ARGUMENT_TYPE, #arg, "number" )
+
+#define JL_S_ASSERT_ARG_IS_STRING(arg) \
+	JL_S_ASSERT_ERROR_NUM( NOIL(JL_IsData)(cx, JL_ARG(arg)), JLSMSG_WRONG_ARGUMENT_TYPE, #arg, "string or blob" )
+
+#define JL_S_ASSERT_ARG_IS_OBJECT(arg) \
+	JL_S_ASSERT_ERROR_NUM( !JSVAL_IS_PRIMITIVE(JL_ARG(arg)), JLSMSG_WRONG_ARGUMENT_TYPE, #arg, "object" )
+
+#define JL_S_ASSERT_ARG_IS_OBJECT_OR_NULL(arg) \
+	JL_S_ASSERT_ERROR_NUM( JSVAL_IS_OBJECT(JL_ARG(arg)), JLSMSG_WRONG_ARGUMENT_TYPE, #arg, "object or null" )
+
+#define JL_S_ASSERT_ARG_IS_ARRAY(arg) \
+	JL_S_ASSERT_ERROR_NUM( !NOIL(JL_IsArray)(cx, JL_ARG(arg)), JLSMSG_WRONG_ARGUMENT_TYPE, #arg, "array" )
+
+#define JL_S_ASSERT_ARG_IS_VECTOR(arg) \
+	JL_S_ASSERT_ERROR_NUM( !NOIL(JL_IsVector)(cx, JL_ARG(arg)), JLSMSG_WRONG_ARGUMENT_TYPE, #arg, "vector" )
+
+#define JL_S_ASSERT_ARG_IS_FUNCTION(arg) \
+	JL_S_ASSERT_ERROR_NUM( !JL_IsFunction(cx, JL_ARG(arg)), JLSMSG_WRONG_ARGUMENT_TYPE, #arg, "function" )
+
+#define JL_S_ASSERT_ARG_IS_CLASS(arg, jsClass) \
+	JL_S_ASSERT_ERROR_NUM( !NOIL(JL_IsClass)(cx, JL_ARG(arg)), JLSMSG_WRONG_ARGUMENT_TYPE, #arg, (jsClass)->name )
+
+// obj
+
+#define JL_S_ASSERT_CONSTRUCTING() \
+	JL_S_ASSERT_ERROR_NUM( JS_IsConstructing(cx, vp), JLSMSG_NEED_CONSTRUCT )
 
 #define JL_S_ASSERT_CLASS(jsObject, jsClass) \
 	JL_S_ASSERT_ERROR_NUM( (jsObject) != NULL && JL_GetClass(jsObject) == (jsClass), JLSMSG_EXPECT_TYPE, (jsClass)->name );
 
-
 #define JL_S_ASSERT_THIS_CLASS() \
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS)
-
+	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS )
 
 #define JL_S_ASSERT_INHERITANCE(jsObject, jsClass) \
-	JL_S_ASSERT_ERROR_NUM( JL_InheritFrom(cx, (jsObject), (jsClass)), JLSMSG_INVALID_INHERITANCE, (jsClass)->name );
-
+	JL_S_ASSERT_ERROR_NUM( JL_InheritFrom(cx, (jsObject), (jsClass)), JLSMSG_INVALID_INHERITANCE, (jsClass)->name )
 
 #define JL_S_ASSERT_THIS_INSTANCE() \
-	JL_S_ASSERT_ERROR_NUM( JL_InheritFrom(cx, (obj), JL_THIS_CLASS) && (obj) != JL_THIS_PROTOTYPE, JLSMSG_INVALID_INHERITANCE, JL_THIS_CLASS->name );
-
-
-#define JL_S_ASSERT_CONSTRUCTING() \
-	JL_S_ASSERT_ERROR_NUM( JS_IsConstructing(cx, vp), JLSMSG_NEED_CONSTRUCT );
-
-
-#define JL_S_ASSERT_RESOURCE(resourcePointer) \
-	JL_S_ASSERT_ERROR_NUM( (resourcePointer) != NULL, JLSMSG_INVALID_RESOURCE );
-
+	JL_S_ASSERT_ERROR_NUM( JL_InheritFrom(cx, obj, JL_THIS_CLASS) && obj != JL_THIS_PROTOTYPE, JLSMSG_INVALID_INHERITANCE, JL_THIS_CLASS->name )
 
 #define JL_S_ASSERT_VALID(condition, name) \
-	JL_S_ASSERT_ERROR_NUM( condition, JLSMSG_INVALIDATED_OBJECT, name );
+	JL_S_ASSERT_ERROR_NUM( condition, JLSMSG_INVALIDATED_OBJECT, name )
 
 
+#define JL_S_ASSERT_THIS_OBJECT_STATE( condition ) \
+	JL_S_ASSERT_ERROR_NUM( condition, JLSMSG_INVALID_OBJECT_STATE, JL_THIS_CLASS_NAME )
 
-///////////////////////////////////////////////////////////////////////////////
-// Native Interface function prototypes
-
-typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, size_t *amount );
-typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, JLStr *str );
-typedef JSBool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
-
-inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
-inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
-inline NIMatrix44Get Matrix44GetInterface( JSContext *cx, JSObject *obj );
-
-ALWAYS_INLINE JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet pFct );
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Type check functions
-
-ALWAYS_INLINE bool
-JL_IsNaN( const JSContext *cx, const jsval &val ) {
-
-	return js::Valueify(val) == JL_GetRuntime(cx)->NaNValue;
-}
-
-
-ALWAYS_INLINE bool
-JL_IsPInfinity( const JSContext *cx, const jsval &val ) {
-
-	return js::Valueify(val) == JL_GetRuntime(cx)->positiveInfinityValue;
-}
-
-
-ALWAYS_INLINE bool
-JL_IsNInfinity( const JSContext *cx, const jsval &val ) {
-
-	return js::Valueify(val) == JL_GetRuntime(cx)->negativeInfinityValue;
-}
-
-
-ALWAYS_INLINE bool
-JL_IsReal( const JSContext *cx, const jsval &val ) {
-
-	JL_USE(cx);
-	if ( JSVAL_IS_INT(val) )
-		return true;
-	if ( JSVAL_IS_DOUBLE(val) ) {
-
-		double tmp = JSVAL_TO_DOUBLE(val);
-		return tmp >= MIN_INT_TO_DOUBLE && tmp <= MAX_INT_TO_DOUBLE;
-	}
-	return false;
-}
-
-
-ALWAYS_INLINE bool
-JL_IsNegative( JSContext *cx, const jsval &val ) {
-
-	return ( JSVAL_IS_INT(val) && JSVAL_TO_INT(val) < 0 )
-	    || ( JSVAL_IS_DOUBLE(val) && DOUBLE_IS_NEG(JSVAL_TO_DOUBLE(val)) ) // js::Valueify(val).toDouble()
-	    || JL_IsNInfinity(cx, val);
-}
-
-
-ALWAYS_INLINE bool
-JL_IsClass( const jsval &val, const JSClass *jsClass ) {
-
-	//return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
-	return !js::Valueify(val).isPrimitive() && jsClass != NULL && js::Valueify(val).toObject().getJSClass() == jsClass;
-}
-
-
-ALWAYS_INLINE bool
-JL_IsObjectObject( JSContext *cx, const JSObject *obj ) {
-
-	JSObject *oproto;
-	return js_GetClassPrototype(cx, NULL, JSProto_Object, &oproto) && JL_GetClass(obj) == JL_GetClass(oproto) && obj->getProto() == oproto;
-}
-
-
-ALWAYS_INLINE bool
-JL_IsBooleanObject( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
-
-	return !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClassByKey(cx, JSProto_Boolean);
-}
-
-
-ALWAYS_INLINE bool
-JL_IsNumberObject( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
-
-	return !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClassByKey(cx, JSProto_Number);
-}
-
-
-ALWAYS_INLINE bool
-JL_IsArray( JSContext *cx, JSObject *obj ) {
-
-	return JS_IsArrayObject(cx, obj) == JS_TRUE; // Object::isArray() is not public
-}
-
-
-ALWAYS_INLINE bool
-JL_IsArray( JSContext *cx, const jsval &val ) {
-
-	return !JSVAL_IS_PRIMITIVE(val) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(val)); // Object::isArray() is not public
-}
-
-
-ALWAYS_INLINE bool
-JL_IsVector( JSContext *cx, JSObject *obj ) {
-
-	return JS_IsArrayObject(cx, obj) || js_IsTypedArray(obj); // Object::isArray() is not public
-}
-
-
-ALWAYS_INLINE bool
-JL_IsVector( JSContext *cx, const jsval &val ) {
-
-	return !JSVAL_IS_PRIMITIVE(val) && ( JS_IsArrayObject(cx, JSVAL_TO_OBJECT(val)) || js_IsTypedArray(JSVAL_TO_OBJECT(val)) ); // Object::isArray() is not public
-}
-
-
-ALWAYS_INLINE bool
-JL_IsScript( const JSContext *cx, const JSObject *obj ) {
-
-	JL_USE(cx);
-	return JL_GetClass(obj) == js::Jsvalify(&js_ScriptClass);
-}
-
-
-ALWAYS_INLINE bool
-JL_IsFunction( const JSContext *cx, const JSObject *obj ) {
-
-	JL_USE(cx);
-	return obj->isFunction();
-}
-
-
-ALWAYS_INLINE bool
-JL_IsFunction( const JSContext *cx, const jsval &val ) {
-
-	JL_USE(cx);
-	return VALUE_IS_FUNCTION(cx, val);
-}
-
-
-ALWAYS_INLINE bool
-JL_IsXML( const JSContext *cx, const JSObject *obj ) {
-
-	JL_USE(cx);
-#if JS_HAS_XML_SUPPORT
-	extern JS_FRIEND_DATA(js::Class) js_XMLClass;
-	return JL_GetClass(obj) == js::Jsvalify(&js_XMLClass);
-#else
-	return false;
-#endif // JS_HAS_XML_SUPPORT
-}
-
-
-ALWAYS_INLINE bool
-JL_IsStringObject( JSContext *cx, const JSObject *obj ) {
-
-//	return JL_GetClass(obj) == JL_GetHostPrivate(cx)->stringObjectClass;
-	return JL_GetClass(obj) == JL_GetStandardClassByKey(cx, JSProto_String);
-}
-
-
-INLINE NEVER_INLINE bool
-JL_IsDataObject( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
-
-	return BufferGetInterface(cx, obj) != NULL || JL_IsArray(cx, obj) || (js_IsTypedArray(obj) /*&& js::TypedArray::fromJSObject(obj)->valid()*/) /*|| js_IsArrayBuffer(obj)*/ || JL_IsStringObject(cx, obj);
-}
-
-
-ALWAYS_INLINE bool
-JL_IsData( JSContext *cx, const jsval &val ) {
-
-	return JSVAL_IS_STRING(val) || ( !JSVAL_IS_PRIMITIVE(val) && JL_IsDataObject(cx, JSVAL_TO_OBJECT(val)) );
-}
+#define JL_S_ASSERT_OBJECT_STATE( condition, name ) \
+	JL_S_ASSERT_ERROR_NUM( condition, JLSMSG_INVALID_OBJECT_STATE, (name) )
 
 
 
@@ -2230,7 +2289,9 @@ JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T
 
 	JL_ASSERT( js_IsTypedArray(obj) );
 	js::TypedArray *ta = js::TypedArray::fromJSObject(obj);
-	JL_S_ASSERT_RESOURCE( ta->valid() );
+	//JL_S_ASSERT_THIS_OBJECT_STATE( ta->valid() );
+	JL_S_ASSERT_OBJECT_STATE( ta->valid(), "TypedArray" );
+	
 	JL_S_ASSERT_ERROR_NUM( ta->type != JLNativeTypeToTypedArrayType(*vector), JLSMSG_EXPECT_TYPE, JLNativeTypeToString(*vector) );
 	*actualLength = ta->length;
 	maxLength = JL_MIN( *actualLength, maxLength );
@@ -2839,7 +2900,8 @@ JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, const jsval
 	va_end(ap);
 //	js::AutoArrayRooter tvr(cx, argc+1, argv); // (TBD) check if it is needed as conservative GC scans the stacks and meed alloca memory
 	argv[0] = JSVAL_NULL; // the rval
-	JL_S_ASSERT_FUNCTION( functionValue );
+	if ( JL_IS_SAFE )
+		JL_CHK( JL_IsFunction(cx, functionValue) );
 	JSBool st;
 	st = JS_CallFunctionValue(cx, obj, functionValue, argc, argv+1, argv); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
 	JL_CHK( st );

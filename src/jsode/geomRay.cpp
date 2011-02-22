@@ -68,7 +68,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( length ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	jsdouble radius;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &radius) );
 	ode::dGeomRaySetLength(geom, (ode::dReal)radius);
@@ -79,7 +79,7 @@ DEFINE_PROPERTY_SETTER( length ) {
 DEFINE_PROPERTY_GETTER( length ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	JL_CHK( JL_NativeToJsval(cx, ode::dGeomRayGetLength(geom), vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -94,7 +94,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( start ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 //	FloatArrayToVector(cx, 3, vp, start);
@@ -109,7 +109,7 @@ DEFINE_PROPERTY_SETTER( start ) {
 DEFINE_PROPERTY_GETTER( start ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 	JL_CHK( ODERealVectorToJsval(cx, start, 3, vp) );
@@ -126,7 +126,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( direction ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 //	FloatArrayToVector(cx, 3, vp, dir);
@@ -141,7 +141,7 @@ DEFINE_PROPERTY_SETTER( direction ) {
 DEFINE_PROPERTY_GETTER( direction ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 	JL_CHK( ODERealVectorToJsval(cx, dir, 3, vp) );
@@ -157,7 +157,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( firstContact ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	JL_S_ASSERT_INT( *vp );
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
@@ -170,7 +170,7 @@ DEFINE_PROPERTY_SETTER( firstContact ) {
 DEFINE_PROPERTY_GETTER( firstContact ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
 	JL_CHK( JL_NativeToJsval(cx, firstContact, vp) );
@@ -185,7 +185,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( backfaceCull ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	JL_S_ASSERT_INT( *vp );
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
@@ -198,7 +198,7 @@ DEFINE_PROPERTY_SETTER( backfaceCull ) {
 DEFINE_PROPERTY_GETTER( backfaceCull ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
 	JL_CHK( JL_NativeToJsval(cx, backfaceCull, vp) );
@@ -215,7 +215,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( closestHit ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	int closestHit;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &closestHit) );
 	ode::dGeomRaySetClosestHit(geom, closestHit);
@@ -226,7 +226,7 @@ DEFINE_PROPERTY_SETTER( closestHit ) {
 DEFINE_PROPERTY_GETTER( closestHit ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	int closestHit;
 	closestHit = ode::dGeomRayGetClosestHit(geom);
 	JL_CHK( JL_NativeToJsval(cx, closestHit, vp) );

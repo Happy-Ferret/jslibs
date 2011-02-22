@@ -264,17 +264,17 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( dBuffer );
 		dBuffer[length] = '\0';
 		memcpy(dBuffer, str.GetConstStr(), length);
-		JL_SetPrivate(cx, obj, dBuffer);
+		JL_SetPrivate(cx, JL_OBJ, dBuffer);
 		jsval tmp;
 		JL_CHK( JL_NativeToJsval(cx, length, &tmp) );
-		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, tmp) );
+		JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_BLOB_LENGTH, tmp) );
 	} else { // new Blob() -or- new Blob('')
 
-		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_BLOB_LENGTH, JSVAL_ZERO) );
-		JL_SetPrivate(cx, obj, (void*)emptyBlobBuffer);
+		JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_BLOB_LENGTH, JSVAL_ZERO) );
+		JL_SetPrivate(cx, JL_OBJ, (void*)emptyBlobBuffer);
 	}
 
-	JL_CHK( SetBufferGetInterface(cx, obj, Blob_NativeInterfaceBufferGet) );
+	JL_CHK( SetBufferGetInterface(cx, JL_OBJ, Blob_NativeInterfaceBufferGet) );
 	return JS_TRUE;
 
 bad:
@@ -301,8 +301,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Free ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_VALID( IsBlobValid(cx, obj), "Blob");
+	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_S_ASSERT_VALID( IsBlobValid(cx, JL_OBJ), "Blob");
 
 	*JL_RVAL = JSVAL_VOID;
 
@@ -313,20 +313,20 @@ DEFINE_FUNCTION( Free ) {
 		if ( wipe ) {
 
 			void *pv;
-			pv = JL_GetPrivate(cx, obj);
+			pv = JL_GetPrivate(cx, JL_OBJ);
 			size_t length;
-			JL_CHK( BlobLength(cx, obj, &length) );
+			JL_CHK( BlobLength(cx, JL_OBJ, &length) );
 			memset(pv, 0, length);
 		}
 	}
 
-	FreeBlobBuffer(cx, obj);
-	JL_SetPrivate(cx, obj, NULL); // InvalidateBlob(cx, obj)
+	FreeBlobBuffer(cx, JL_OBJ);
+	JL_SetPrivate(cx, JL_OBJ, NULL); // InvalidateBlob(cx, JL_OBJ)
 	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_BLOB_JSSTRING, JSVAL_VOID) );
 
 	// removes all of obj's own properties, except the special __proto__ and __parent__ properties, in a single operation.
 	// Properties belonging to objects on obj's prototype chain are not affected.
-	JS_ClearScope(cx, obj);
+	JS_ClearScope(cx, JL_OBJ);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -345,15 +345,15 @@ DEFINE_FUNCTION( concat ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	char *dst = NULL;
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_VALID( IsBlobValid(cx, obj), "Blob");
+	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_S_ASSERT_VALID( IsBlobValid(cx, JL_OBJ), "Blob");
 
 	// note: var a = new String(123);  a.concat() !== a
 
 	size_t thisLength;
 	const char *thisBuffer;
-	JL_CHK( BlobBuffer(cx, obj, &thisBuffer) );
-	JL_CHK( BlobLength(cx, obj, &thisLength) );
+	JL_CHK( BlobBuffer(cx, JL_OBJ, &thisBuffer) );
+	JL_CHK( BlobLength(cx, JL_OBJ, &thisLength) );
 
 	size_t dstLen;
 	dstLen = thisLength;
@@ -423,15 +423,15 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( substr ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_VALID( IsBlobValid(cx, obj), "Blob");
+	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_S_ASSERT_VALID( IsBlobValid(cx, JL_OBJ), "Blob");
 
 	const char *buffer;
-	JL_CHK( BlobBuffer(cx, obj, &buffer) );
+	JL_CHK( BlobBuffer(cx, JL_OBJ, &buffer) );
 
 	double length;
 	size_t tmp;
-	JL_CHK( BlobLength(cx, obj, &tmp) );
+	JL_CHK( BlobLength(cx, JL_OBJ, &tmp) );
 	length = tmp;
 
 	if ( JL_ARGC == 0 )
@@ -491,15 +491,15 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( substring ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_VALID( IsBlobValid(cx, obj), "Blob");
+	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_S_ASSERT_VALID( IsBlobValid(cx, JL_OBJ), "Blob");
 
 	const char *buffer;
-	JL_CHK( BlobBuffer(cx, obj, &buffer) );
+	JL_CHK( BlobBuffer(cx, JL_OBJ, &buffer) );
 
 	double length;
 	size_t tmp;
-	JL_CHK( BlobLength(cx, obj, &tmp) );
+	JL_CHK( BlobLength(cx, JL_OBJ, &tmp) );
 	length = tmp;
 
 	if ( JL_ARGC == 0 )
@@ -554,8 +554,8 @@ DEFINE_FUNCTION( indexOf ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_VALID( IsBlobValid(cx, obj), "Blob");
+	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_S_ASSERT_VALID( IsBlobValid(cx, JL_OBJ), "Blob");
 
 	if (JL_ARGC == 0)
 		return JL_NativeToJsval(cx, -1, JL_RVAL);
@@ -563,8 +563,8 @@ DEFINE_FUNCTION( indexOf ) {
 	const char *text, *pat;
 	size_t textlen, patlen;
 
-	JL_CHK( BlobBuffer(cx, obj, &text) );
-	JL_CHK( BlobLength(cx, obj, &textlen) );
+	JL_CHK( BlobBuffer(cx, JL_OBJ, &text) );
+	JL_CHK( BlobLength(cx, JL_OBJ, &textlen) );
 
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &pat, &patlen) );
 
@@ -625,8 +625,8 @@ DEFINE_FUNCTION( lastIndexOf ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_VALID( IsBlobValid(cx, obj), "Blob");
+	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_S_ASSERT_VALID( IsBlobValid(cx, JL_OBJ), "Blob");
 
 	if (JL_ARGC == 0)
 		return JL_NativeToJsval(cx, -1, JL_RVAL);
@@ -635,8 +635,8 @@ DEFINE_FUNCTION( lastIndexOf ) {
 	ssize_t i;
 	size_t textlen, patlen;
 
-	JL_CHK( BlobBuffer(cx, obj, &text) );
-	JL_CHK( BlobLength(cx, obj, &textlen) );
+	JL_CHK( BlobBuffer(cx, JL_OBJ, &text) );
+	JL_CHK( BlobLength(cx, JL_OBJ, &textlen) );
 
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &pat, &patlen) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
@@ -707,13 +707,13 @@ DEFINE_FUNCTION( split ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_VALID( IsBlobValid(cx, obj), "Blob");
+	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_S_ASSERT_VALID( IsBlobValid(cx, JL_OBJ), "Blob");
 
 	size_t blobLen;
 	const char *blob;
-	JL_CHK( BlobLength(cx, obj, &blobLen) );
-	JL_CHK( BlobBuffer(cx, obj, &blob) );
+	JL_CHK( BlobLength(cx, JL_OBJ, &blobLen) );
+	JL_CHK( BlobBuffer(cx, JL_OBJ, &blob) );
 
 	JSObject *arr;
 	arr = JS_NewArrayObject(cx, 0, NULL);
@@ -803,8 +803,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( charAt ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_VALID( IsBlobValid(cx, obj), "Blob");
+	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_S_ASSERT_VALID( IsBlobValid(cx, JL_OBJ), "Blob");
 
     jsdouble d;
 
@@ -818,7 +818,7 @@ DEFINE_FUNCTION( charAt ) {
     }
 
 	size_t length;
-	JL_CHK( BlobLength(cx, obj, &length) );
+	JL_CHK( BlobLength(cx, JL_OBJ, &length) );
 
 	if ( d < 0 || length <= d ) {
 
@@ -827,7 +827,7 @@ DEFINE_FUNCTION( charAt ) {
 	}
 
 	const char *buffer;
-	JL_CHK( BlobBuffer(cx, obj, &buffer) );
+	JL_CHK( BlobBuffer(cx, JL_OBJ, &buffer) );
 
 	jschar chr;
 	chr = buffer[size_t(d)];
@@ -852,8 +852,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( charCodeAt ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_VALID( IsBlobValid(cx, obj), "Blob");
+	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_S_ASSERT_VALID( IsBlobValid(cx, JL_OBJ), "Blob");
 
     jsdouble d;
 
@@ -867,7 +867,7 @@ DEFINE_FUNCTION( charCodeAt ) {
     }
 
 	size_t length;
-	JL_CHK( BlobLength(cx, obj, &length) );
+	JL_CHK( BlobLength(cx, JL_OBJ, &length) );
 
 	if ( d < 0 || length <= d ) {
 
@@ -876,7 +876,7 @@ DEFINE_FUNCTION( charCodeAt ) {
 	}
 
 	const char *buffer;
-	JL_CHK( BlobBuffer(cx, obj, &buffer) );
+	JL_CHK( BlobBuffer(cx, JL_OBJ, &buffer) );
 
 	*JL_RVAL = INT_TO_JSVAL( buffer[size_t(d)] );
 
@@ -893,12 +893,12 @@ DEFINE_FUNCTION( toSource ) {
 	// (TBD) try something faster !!
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_VALID( IsBlobValid(cx, obj), "Blob");
+	JL_S_ASSERT_VALID( IsBlobValid(cx, JL_OBJ), "Blob");
 
-	if ( obj == JL_PROTOTYPE(cx, Blob) )
+	if ( JL_OBJ == JL_PROTOTYPE(cx, Blob) )
 		*JL_RVAL = JL_GetEmptyStringValue(cx);
 	else
-		*JL_RVAL = STRING_TO_JSVAL( JS_ValueToString(cx, OBJECT_TO_JSVAL( obj )) );
+		*JL_RVAL = STRING_TO_JSVAL( JS_ValueToString(cx, OBJECT_TO_JSVAL( JL_OBJ )) );
 	*JL_RVAL = STRING_TO_JSVAL( JS_ValueToSource(cx, *JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
@@ -1124,12 +1124,11 @@ DEFINE_FUNCTION( toString ) { // and valueOf ?
 	JL_USE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_CHK( GetBlobString(cx, obj, JL_RVAL) );
+	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_CHK( GetBlobString(cx, JL_OBJ, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
-
 
 
 /*
@@ -1234,7 +1233,7 @@ DEFINE_OPS_GET_PROPERTY() {
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	JL_S_ASSERT( jl::JsvalIsSerializer(cx, JL_ARG(1)), "Invalid serializer object." );
 	jl::Serializer *ser;
 	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
@@ -1260,7 +1259,7 @@ DEFINE_FUNCTION( _serialize ) {
 DEFINE_FUNCTION( _unserialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	JL_S_ASSERT( jl::JsvalIsUnserializer(cx, JL_ARG(1)), "Invalid unserializer object." );
 	jl::Unserializer *unser;
 	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));

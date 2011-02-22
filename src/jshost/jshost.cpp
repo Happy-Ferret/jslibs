@@ -180,7 +180,7 @@ JSBool EndSignalEvents(JSContext *cx, uintN argc, jsval *vp) {
 
 	if ( JL_ARG_ISDEF(1) ) {
 
-		JL_S_ASSERT_FUNCTION( JL_ARG(1) );
+		JL_S_ASSERT_ARG_IS_FUNCTION(1);
 		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(1)) ); // GC protection only
 		upe->callbackFunction = JL_ARG(1);
 	} else {

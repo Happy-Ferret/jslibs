@@ -142,6 +142,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 			hasPrevInstance = false;
 			break;
 		default: {
+
 			char message[1024];
 			JLLastSysetmErrorMessage(message, sizeof(message));
 			HOST_MAIN_ASSERT( false,  message );

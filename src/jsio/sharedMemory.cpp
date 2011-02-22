@@ -14,6 +14,7 @@
 
 #include "stdafx.h"
 
+DECLARE_CLASS(SharedMemory)
 
 #define SEMAPHORE_EXTENSION "_sem"
 
@@ -52,7 +53,7 @@ JSBool Unlock( JSContext *cx, ClassPrivate *pv ) {
 JSBool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(SharedMemory) );
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
 //	*buf = (char *)pv->mem + sizeof(MemHeader);
@@ -67,7 +68,7 @@ JSBool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_OBJECT_STATE(pv, JL_CLASS_NAME(SharedMemory));
 
 	JL_CHKB( PR_WaitSemaphore( pv->accessSem ) == PR_SUCCESS, bad_ioerror );
 
@@ -224,7 +225,7 @@ DEFINE_FUNCTION( Write ) {
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	size_t offset;
 	offset = 0;
@@ -264,7 +265,7 @@ DEFINE_FUNCTION( Read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	size_t offset;
 	offset = 0;
@@ -309,7 +310,7 @@ DEFINE_FUNCTION( Clear ) {
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh;
@@ -333,7 +334,7 @@ DEFINE_FUNCTION( Close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( CloseSharedMemory(cx, obj) );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -354,7 +355,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( content ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
@@ -390,7 +391,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 DEFINE_PROPERTY_GETTER( content ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( Lock(cx, pv) );
 
@@ -426,7 +427,7 @@ TypeError: can't XDR class Array
 DEFINE_PROPERTY( xdrSetter ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh = (MemHeader*)pv->mem;
@@ -455,7 +456,7 @@ DEFINE_PROPERTY( xdrSetter ) {
 DEFINE_PROPERTY( xdrGetter ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh = (MemHeader*)pv->mem;

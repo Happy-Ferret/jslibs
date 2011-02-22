@@ -74,7 +74,7 @@ DEFINE_FUNCTION( Set ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dJointSetFixed(jointId);
 
 	*JL_RVAL = JSVAL_VOID;

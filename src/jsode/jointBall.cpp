@@ -71,7 +71,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( anchor ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
@@ -85,7 +85,7 @@ DEFINE_PROPERTY_SETTER( anchor ) {
 DEFINE_PROPERTY_GETTER( anchor ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetBallAnchor(jointId,vector);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
@@ -101,7 +101,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( anchor2 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
@@ -115,7 +115,7 @@ DEFINE_PROPERTY_SETTER( anchor2 ) {
 DEFINE_PROPERTY_GETTER( anchor2 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetBallAnchor2(jointId,vector);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
@@ -132,7 +132,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( anchor2 ) { // read only
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetBallAnchor2(jointId,vector);
 	//FloatVectorToArray(cx, 3, vector, vp);

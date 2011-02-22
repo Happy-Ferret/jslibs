@@ -72,7 +72,7 @@ DEFINE_FUNCTION( Open ) {
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
-	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
+	JL_S_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
@@ -166,7 +166,8 @@ DEFINE_FUNCTION( Make ) {
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
-	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
+	JL_S_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
+	
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
@@ -195,7 +196,7 @@ DEFINE_FUNCTION( Remove ) {
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
-	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
+	JL_S_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
@@ -230,7 +231,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
-	JL_S_ASSERT_DEFINED( jsvalDirectoryName );
+	JL_S_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );

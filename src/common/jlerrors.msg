@@ -41,6 +41,12 @@ JLMSG_DEF( JLSMSG_INVALID_ARGUMENT,       JSEXN_INTERNALERR, "invalid argument (
 JLMSG_DEF( JLSMSG_INVALID_OPERATION,      JSEXN_INTERNALERR, "invalid operation", 0 )
 JLMSG_DEF( JLSMSG_VALUE_OUTOFRANGE,       JSEXN_RANGEERR, "value out of range {0}", 1 )
 
+JLMSG_DEF( JLSMSG_WRONG_ARGUMENT_TYPE,    JSEXN_RANGEERR, "{1} is expected as argument {0}", 2 )
+JLMSG_DEF( JLSMSG_INVALID_OBJECT_STATE,   JSEXN_INTERNALERR, "invalid {0} object state", 1 )
+
+JLMSG_DEF( JLSMSG_MISSING_IMPLEMENTATION, JSEXN_INTERNALERR, "{0} must implement {1}", 2 )
+
+
 // specialized errors/warnings
 JLMSG_DEF( JLSMSG_TOO_FEW_ARGUMENTS,      JSEXN_RANGEERR, "not enough arguments (min is {0})", 1 )
 JLMSG_DEF( JLSMSG_TOO_MANY_ARGUMENTS,     JSEXN_RANGEERR, "too many arguments (max is {0})", 1 )
@@ -52,7 +58,7 @@ JLMSG_DEF( JLSMSG_INVALID_INSTANCE,       JSEXN_TYPEERR, "{0} instance is expect
 JLMSG_DEF( JLSMSG_FAIL_TO_CONVERT_TO,     JSEXN_INTERNALERR, "fail to convert to {0}", 1 )
 JLMSG_DEF( JLSMSG_INVALID_INHERITANCE,    JSEXN_TYPEERR, "object must be a {0}", 1 )
 
-JLMSG_DEF( JLSMSG_NEED_DEFINED,           JSEXN_TYPEERR, "value must be defined", 0 )
+JLMSG_DEF( JLSMSG_NEED_DEFINED,           JSEXN_TYPEERR, "value cannot be undefined", 0 )
 JLMSG_DEF( JLSMSG_IMMUTABLE_OBJECT,       JSEXN_TYPEERR, "{0} is read-only", 1 )
 
 

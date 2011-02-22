@@ -243,7 +243,7 @@ DEFINE_FUNCTION( Read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JL_S_ASSERT( pv->bits != 8 || pv->bits == 16, "Unsupported bits count." );
 	JL_S_ASSERT( pv->ofInfo->channels == 1 || pv->ofInfo->channels == 2, "Unsupported channel count." );
@@ -406,7 +406,7 @@ DEFINE_PROPERTY_GETTER( inputStream ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -422,7 +422,7 @@ DEFINE_PROPERTY_GETTER( bits ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->bits );
 	return JS_TRUE;
 	JL_BAD;
@@ -438,7 +438,7 @@ DEFINE_PROPERTY_GETTER( rate ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->ofInfo->rate );
 	return JS_TRUE;
 	JL_BAD;
@@ -454,7 +454,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->ofInfo->channels );
 	return JS_TRUE;
 	JL_BAD;
@@ -471,7 +471,7 @@ DEFINE_PROPERTY_GETTER( frames ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	ogg_int64_t pcmTotal = ov_pcm_total(&pv->ofDescriptor, -1);
 	if ( pcmTotal == OV_EINVAL ) { // if the stream is not seekable (we can't know the length) or only partially open.
 

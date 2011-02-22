@@ -22,12 +22,11 @@ DECLARE_CLASS( Socket )
 
 JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
-	JL_S_ASSERT( JL_InheritFrom(cx, obj, JL_CLASS(Descriptor)), "Invalid descriptor object." );
-//	JL_S_ASSERT_CLASS(obj, classDescriptor);
+	JL_S_ASSERT_INHERITANCE(obj, JL_CLASS(Descriptor));
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc*)JL_GetPrivate(cx, obj); // (PRFileDesc *)pv;
-	JL_S_ASSERT_RESOURCE(fd);
+	JL_S_ASSERT_OBJECT_STATE(fd, JL_CLASS_NAME(Descriptor));
 
 	PRInt32 res;
 /* (TBD) not sure a Poll is realy needed here
@@ -289,7 +288,7 @@ DEFINE_FUNCTION( Read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 
 	if (likely( JL_ARGC == 0 )) {
 
@@ -326,10 +325,10 @@ DEFINE_FUNCTION( Write ) {
 
 	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG( 1 );
+	JL_S_ASSERT_ARG_COUNT( 1 );
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 	size_t sentAmount;
 
 //	size_t len;
@@ -429,7 +428,7 @@ DEFINE_FUNCTION( Sync ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 	JL_CHKB( PR_Sync(fd) == PR_SUCCESS, bad_ioerror );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -454,7 +453,7 @@ DEFINE_PROPERTY_GETTER( available ) {
 	JL_S_ASSERT_THIS_INSTANCE();
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRInt64 available;
 	available = PR_Available64( fd ); // For a normal file, these are the bytes beyond the current file pointer.
@@ -489,7 +488,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 	JL_S_ASSERT_THIS_INSTANCE();
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 	*vp = INT_TO_JSVAL( (jsint)PR_GetDescType(fd) );
 	return JS_TRUE;
 	JL_BAD;

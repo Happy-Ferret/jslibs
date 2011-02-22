@@ -66,7 +66,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT( JL_JsvalIsTrimesh(cx, trimeshVal), "Invalid Trimesh object." );
 	JSObject *trimesh = JSVAL_TO_OBJECT(trimeshVal);
 	Surface *srf = GetTrimeshSurface(cx, trimesh);
-	JL_S_ASSERT_RESOURCE( srf );
+	JL_S_ASSERT_OBJECT_STATE( srf, JL_GetClassName(trimesh) );
 	JL_S_ASSERT( srf->vertex && srf->vertexCount && srf->index && srf->indexCount, "No enough data." );
 
 	ode::dTriMeshDataID triMeshDataID = ode::dGeomTriMeshDataCreate();
@@ -99,7 +99,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( triangleCount ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geomId );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geomId );
 	int count = ode::dGeomTriMeshGetTriangleCount(geomId);
 	JL_CHK( JL_NativeToJsval(cx, count, vp) );
 	return JS_TRUE;

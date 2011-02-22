@@ -127,7 +127,7 @@ DEFINE_FUNCTION( Trim ) {
 
 	char *data;
 	data = (char*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( data );
+	JL_S_ASSERT_THIS_OBJECT_STATE( data );
 
 	char *tmpDataPtr;
 	tmpDataPtr = data;

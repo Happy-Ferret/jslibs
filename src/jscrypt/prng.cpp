@@ -111,7 +111,7 @@ DEFINE_CALL() {
 
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned int readCount;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &readCount) );
@@ -145,7 +145,7 @@ DEFINE_FUNCTION( AddEntropy ) {
 
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &entropy) );
 
@@ -175,7 +175,7 @@ DEFINE_FUNCTION( AutoEntropy ) {
 
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned int bits;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bits) );
@@ -206,7 +206,7 @@ DEFINE_PROPERTY_GETTER( state ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned long size;
 	size = pv->prng.export_size;
@@ -237,7 +237,7 @@ DEFINE_PROPERTY_SETTER( state ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
 
@@ -263,7 +263,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx,pv->prng.name) );
 	return JS_TRUE;

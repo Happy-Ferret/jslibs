@@ -83,7 +83,8 @@ HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
 	handleObj = JSVAL_TO_OBJECT(handleVal);
 	HandlePrivate *pv;
 	pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_OBJECT_STATE( pv, JL_GetClassName(handleObj) );
+
 	if ( pv->finalizeCallback )
 		pv->finalizeCallback((char*)pv + sizeof(HandlePrivate));
 	jl_free(pv);

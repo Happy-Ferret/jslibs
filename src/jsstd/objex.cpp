@@ -131,7 +131,7 @@ DEFINE_CONSTRUCTOR() {
 	for ( uintN i = 0; i < JL_ARGC && i < 4; i++ )
 		if ( JL_ARG_ISDEF(i+1) ) {
 
-			JL_S_ASSERT_FUNCTION(JL_ARG(i+1));
+			JL_S_ASSERT_ARG_IS_FUNCTION(i+1);
 			JL_CHK( JL_SetReservedSlot( cx, obj, i, JL_ARG(i+1) ) );
 		}
 	if ( JL_ARGC >= 5 ) // AUX object

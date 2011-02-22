@@ -117,7 +117,7 @@ DEFINE_FUNCTION( Reset ) {
 
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	int err;
 	err = pv->descriptor->init(&pv->state); // Initialize the hash state
@@ -146,7 +146,7 @@ DEFINE_FUNCTION( Process ) {
 
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	int err;
 //	const char *in;
@@ -189,7 +189,7 @@ DEFINE_FUNCTION( Done ) {
 
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned long outLength;
 	outLength = pv->descriptor->hashsize;
@@ -236,7 +236,7 @@ DEFINE_CALL() {
 
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	int err;
 
@@ -292,7 +292,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	JSString *jsstr;
 	jsstr = JS_NewStringCopyZ(cx, pv->descriptor->name );
 	JL_CHK( jsstr );
@@ -313,7 +313,7 @@ DEFINE_PROPERTY_GETTER( blockSize ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL( pv->descriptor->blocksize );
 	return JS_TRUE;
 	JL_BAD;
@@ -331,7 +331,7 @@ DEFINE_PROPERTY_GETTER( length ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL( pv->descriptor->hashsize );
 	return JS_TRUE;
 	JL_BAD;
@@ -349,7 +349,7 @@ DEFINE_PROPERTY_GETTER( inputLength ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	return JL_NativeToJsval(cx, pv->inputLength, vp);
 	JL_BAD;
 }	

@@ -304,7 +304,7 @@ bad:
 
 DEFINE_FUNCTION( IOEvents ) {
 
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	JL_S_ASSERT_ARRAY(JL_ARG(1));
 
 
@@ -376,7 +376,7 @@ DEFINE_FUNCTION( IsReadable ) {
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( cx, descriptorObj );
-//	JL_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
+	//beware: fd == NULL is supported !
 
 	PRIntervalTime prTimeout;
 	if ( JL_ARG_ISDEF(2) ) {
@@ -415,7 +415,7 @@ DEFINE_FUNCTION( IsWritable ) {
 	JL_S_ASSERT_INHERITANCE(descriptorObj, JL_CLASS(Descriptor));
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( cx, descriptorObj );
-//	JL_S_ASSERT_RESOURCE( fd ); // fd == NULL is supported !
+	//beware: fd == NULL is supported !
 
 	PRIntervalTime prTimeout;
 	if ( JL_ARG_ISDEF(2) ) {

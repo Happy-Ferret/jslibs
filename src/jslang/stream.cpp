@@ -20,33 +20,33 @@
 
 DECLARE_CLASS( Stream );
 
-inline JSBool PositionSet( JSContext *cx, JSObject *obj, size_t position ) {
+inline JSBool PositionSet( JSContext *cx, JSObject *streamObj, size_t position ) {
 
 	jsval tmp;
 	JL_CHK( JL_NativeToJsval(cx, position, &tmp) );
-	return JL_SetReservedSlot(cx, obj, SLOT_STREAM_POSITION, tmp);
+	return JL_SetReservedSlot(cx, streamObj, SLOT_STREAM_POSITION, tmp);
 	JL_BAD;
 }
 
 
-inline JSBool PositionGet( JSContext *cx, JSObject *obj, size_t *position ) {
+inline JSBool PositionGet( JSContext *cx, JSObject *streamObj, size_t *position ) {
 
 	jsval tmp;
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_POSITION, &tmp) );
+	JL_CHK( JL_GetReservedSlot(cx, streamObj, SLOT_STREAM_POSITION, &tmp) );
 	JL_CHK( JL_JsvalToNative(cx, tmp, position) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
+JSBool StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount ) {
 
-	JL_S_ASSERT_CLASS(obj, JL_CLASS(Stream));
+	JL_S_ASSERT_CLASS(streamObj, JL_CLASS(Stream));
 
 	size_t position;
-	JL_CHK( PositionGet(cx, obj, &position) );
+	JL_CHK( PositionGet(cx, streamObj, &position) );
 	jsval source;
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, &source) );
+	JL_CHK( JL_GetReservedSlot(cx, streamObj, SLOT_STREAM_SOURCE, &source) );
 
 	{
 	JLStr str;
@@ -64,7 +64,7 @@ JSBool StreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
 	memcpy( buf, str.GetConstStr() + position, *amount );
 	position += *amount;
-	PositionSet(cx, obj, position);
+	PositionSet(cx, streamObj, position);
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -97,11 +97,11 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT( !JSVAL_IS_VOID(JL_ARG(1)) && !JSVAL_IS_NULL(JL_ARG(1)), "Invalid stream source." );
 
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, JL_ARG(1)) );
-	JL_CHK( PositionSet(cx, obj, 0) );
+	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_STREAM_SOURCE, JL_ARG(1)) );
+	JL_CHK( PositionSet(cx, JL_OBJ, 0) );
 
-	JL_CHK( ReserveStreamReadInterface(cx, obj) );
-	JL_CHK( SetStreamReadInterface(cx, obj, StreamRead) );
+	JL_CHK( ReserveStreamReadInterface(cx, JL_OBJ) );
+	JL_CHK( SetStreamReadInterface(cx, JL_OBJ, StreamRead) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -116,7 +116,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_S_ASSERT_THIS_CLASS();
 	JL_S_ASSERT_ARG_MIN( 1 );
 
 	int amount;
@@ -128,7 +128,7 @@ DEFINE_FUNCTION( Read ) {
 
 	size_t readAmount;
 	readAmount = amount;
-	JL_CHK( StreamRead(cx, obj, buffer, &readAmount ) );
+	JL_CHK( StreamRead(cx, JL_OBJ, buffer, &readAmount ) );
 
 	if ( JL_MaybeRealloc(amount, readAmount) )
 		buffer = (char*)JS_realloc(cx, buffer, readAmount +1);

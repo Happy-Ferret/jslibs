@@ -88,7 +88,7 @@ DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 
 	JL_DEFINE_FUNCTION_OBJ;
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRShutdownHow how;
 	if ( JL_ARG_ISDEF(1) )
@@ -143,7 +143,7 @@ DEFINE_FUNCTION( Bind ) {
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRNetAddr addr;
 	PRUint16 port;
@@ -209,7 +209,7 @@ DEFINE_FUNCTION( Listen ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 	PRIntn backlog;
 	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &backlog) );
@@ -236,7 +236,7 @@ DEFINE_FUNCTION( Accept ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRIntervalTime timeout;
 	if ( JL_ARG_ISDEF(1) ) {
@@ -296,7 +296,7 @@ DEFINE_FUNCTION( Connect ) {
 	JL_S_ASSERT_ARG_MIN( 2 );
 	PRFileDesc *fd;
 	fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRUint16 port;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &port) );
@@ -375,7 +375,7 @@ DEFINE_FUNCTION( SendTo ) {
 		fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
 	else
 		fd = PR_NewUDPSocket(); // allow to use SendTo as static function
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRUint16 port;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &port) );
@@ -457,7 +457,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 	if ( JL_GetClass(obj) == JL_THIS_CLASS ) {
 
 		fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
-		JL_S_ASSERT_RESOURCE( fd );
+		JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 	} else {
 
 		fd = PR_NewUDPSocket(); // allow to use RecvFrom as static function
@@ -552,7 +552,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 	PRFileDesc *socketFd;
 	socketFd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( socketFd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( socketFd );
 
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	JSObject *fileObj;
@@ -560,7 +560,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	JL_S_ASSERT_CLASS( fileObj, JL_CLASS(File) );
 	PRFileDesc *fileFd;
 	fileFd = (PRFileDesc*)JL_GetPrivate( cx, fileObj );
-	JL_S_ASSERT_RESOURCE( fileFd );
+	JL_S_ASSERT_OBJECT_STATE( fileFd, JL_CLASS_NAME(File) );
 
 	PRTransmitFileFlags flag;
 	flag = PR_TRANSMITFILE_KEEP_OPEN;
@@ -626,7 +626,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( connectContinue ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRPollDesc desc;
 	desc.fd = fd;
@@ -676,7 +676,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( connectionClosed ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 
 	//If PR_Poll() reports that the socket is readable (i.e., PR_POLL_READ is set in out_flags),
 	//and PR_Available() returns 0, this means that the socket connection is closed.
@@ -769,7 +769,7 @@ enum {
 DEFINE_PROPERTY_SETTER( Option ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRSocketOptionData sod;
 	sod.option = (PRSockOption)JSID_TO_INT( id );
@@ -843,7 +843,7 @@ DEFINE_PROPERTY_SETTER( Option ) {
 DEFINE_PROPERTY_GETTER( Option ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRSocketOptionData sod;
 	sod.option = (PRSockOption)JSID_TO_INT( id );
@@ -902,7 +902,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( peerName ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 	PRNetAddr peerAddr;
 	if ( PR_GetPeerName(fd, &peerAddr) != PR_SUCCESS ) {
 		
@@ -930,7 +930,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( peerPort ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 	PRNetAddr peerAddr;
 	if ( PR_GetPeerName(fd, &peerAddr) != PR_SUCCESS ) {
 
@@ -955,7 +955,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( sockName ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 	PRNetAddr sockAddr;
 	if ( PR_GetSockName( fd, &sockAddr ) != PR_SUCCESS )
 		return ThrowIoError(cx);
@@ -976,7 +976,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( sockPort ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( fd );
+	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
 	PRNetAddr sockAddr;
 	if ( PR_GetSockName( fd, &sockAddr ) != PR_SUCCESS )
 		return ThrowIoError(cx);
@@ -1069,7 +1069,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetHostsByAddr ) {
 
 	JLStr addr;
-	JL_S_ASSERT_ARG( 1 );
+	JL_S_ASSERT_ARG_COUNT( 1 );
 
 	//const char *addr; // MAX_IP_STRING
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &addr) );

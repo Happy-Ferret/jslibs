@@ -38,9 +38,9 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	jl::Serializer *ser;
-	ser = new jl::Serializer(OBJECT_TO_JSVAL(obj));
+	ser = new jl::Serializer(OBJECT_TO_JSVAL(JL_OBJ));
 	JL_S_ASSERT_ALLOC(ser);
-	JL_SetPrivate(cx, obj, ser);
+	JL_SetPrivate(cx, JL_OBJ, ser);
 	ser->Write(cx, JL_THIS_REVISION);
 	return JS_TRUE;
 	JL_BAD;
@@ -54,11 +54,11 @@ DEFINE_FUNCTION( Write ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	*JL_RVAL = JSVAL_VOID;
 	jl::Serializer *ser;
-	ser = static_cast<jl::Serializer*>(JL_GetPrivate(cx, obj));
-	JL_S_ASSERT_RESOURCE(ser);
+	ser = static_cast<jl::Serializer*>(JL_GetPrivate(cx, JL_OBJ));
+	JL_S_ASSERT_THIS_OBJECT_STATE(ser);
 	JL_CHKM( ser->Write(cx, JL_ARG(1)), "Serializer write error.");
 	return JS_TRUE;
 	JL_BAD;
@@ -72,15 +72,15 @@ DEFINE_FUNCTION( Done ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG(0);
+	JL_S_ASSERT_ARG_COUNT(0);
 	jl::Serializer* ser;
-	ser = (jl::Serializer*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(ser);
+	ser = (jl::Serializer*)JL_GetPrivate(cx, JL_OBJ);
+	JL_S_ASSERT_THIS_OBJECT_STATE(ser);
 	void *data;
 	size_t length;
 	JL_CHKM( ser->GetBufferOwnership(&data, &length), "Serializer buffer error.");
 	delete ser;
-	JL_SetPrivate(cx, obj, NULL);
+	JL_SetPrivate(cx, JL_OBJ, NULL);
 	JL_updateMallocCounter(cx, length);
 	return JL_NewBlob(cx, data, length, vp);
 	JL_BAD;
@@ -126,13 +126,13 @@ DEFINE_CONSTRUCTOR() {
 
 	JLStr str;
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	JL_S_ASSERT_STRING(JL_ARG(1));
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	jl::Unserializer *unser;
-	unser = new jl::Unserializer(OBJECT_TO_JSVAL(obj), str.GetStrZOwnership(), str.Length());
+	unser = new jl::Unserializer(OBJECT_TO_JSVAL(JL_OBJ), str.GetStrZOwnership(), str.Length());
 	JL_S_ASSERT_ALLOC(unser);
-	JL_SetPrivate(cx, obj, unser);
+	JL_SetPrivate(cx, JL_OBJ, unser);
 	JLRevisionType rev;
 	JL_CHK( unser->Read(cx, rev) );
 	JL_S_ASSERT( rev == JL_THIS_REVISION, "Invalid serialized data version." );
@@ -148,11 +148,11 @@ DEFINE_FUNCTION( Read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG(0);
+	JL_S_ASSERT_ARG_COUNT(0);
 
 	jl::Unserializer *unser;
-	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(cx, obj));
-	JL_S_ASSERT_RESOURCE(unser);
+	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(cx, JL_OBJ));
+	JL_S_ASSERT_THIS_OBJECT_STATE(unser);
 	JL_CHKM( unser->Read(cx, *JL_RVAL), "Unserializer read error.");
 	return JS_TRUE;
 	JL_BAD;

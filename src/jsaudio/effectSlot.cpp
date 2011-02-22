@@ -58,7 +58,7 @@ DEFINE_FUNCTION( valueOf ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->effectSlot, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
@@ -72,7 +72,7 @@ DEFINE_FUNCTION( valueOf ) {
 DEFINE_PROPERTY_SETTER( effect ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	ALuint effect;
 	if ( !JSVAL_IS_VOID(*vp) )
@@ -91,7 +91,7 @@ DEFINE_PROPERTY_SETTER( effect ) {
 DEFINE_PROPERTY_SETTER( effectGain ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	float gain;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &gain) );
 	alAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, gain );
@@ -103,7 +103,7 @@ DEFINE_PROPERTY_SETTER( effectGain ) {
 DEFINE_PROPERTY_GETTER( effectGain ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	float gain;
 	alGetAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, &gain );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -116,7 +116,7 @@ DEFINE_PROPERTY_GETTER( effectGain ) {
 DEFINE_PROPERTY_SETTER( effectSendAuto ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	bool sendAuto;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &sendAuto) );
 	alAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, sendAuto ? AL_TRUE : AL_FALSE );
@@ -128,7 +128,7 @@ DEFINE_PROPERTY_SETTER( effectSendAuto ) {
 DEFINE_PROPERTY_GETTER( effectSendAuto ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	int sendAuto;
 	alGetAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, &sendAuto );
 	JL_CHK( CheckThrowCurrentOalError(cx) );

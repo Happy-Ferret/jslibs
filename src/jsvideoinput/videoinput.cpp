@@ -165,7 +165,7 @@ bad:
 DEFINE_FUNCTION( Events ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG(0);
+	JL_S_ASSERT_ARG_COUNT(0);
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );

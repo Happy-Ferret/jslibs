@@ -79,7 +79,7 @@ DEFINE_FUNCTION( SetAxis ) {
 
 	JL_S_ASSERT_ARG_MIN( 3 );
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	*JL_RVAL = JSVAL_VOID;
 
 	int anum, rel;

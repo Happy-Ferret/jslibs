@@ -41,7 +41,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( real ) {
 
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	jsdouble val;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &val) );
 	*JL_RVAL = DOUBLE_TO_JSVAL(val);
@@ -57,7 +57,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Stringify ) {
 
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 
 	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 
@@ -328,7 +328,7 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 	unsigned int timeout;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
 	if ( JL_ARG_ISDEF(2) )
-		JL_S_ASSERT_FUNCTION( JL_ARG(2) );
+		JL_S_ASSERT_ARG_IS_FUNCTION(2);
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );

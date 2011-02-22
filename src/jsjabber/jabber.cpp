@@ -297,7 +297,7 @@ DEFINE_FUNCTION( Connect ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_S_ASSERT_ARG_MIN(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &serverName) );
 	pv->client->setServer( serverName.GetConstStr() );
@@ -338,7 +338,7 @@ DEFINE_FUNCTION( Disconnect ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	pv->handlers->_cx = cx;
 	pv->client->disconnect();
@@ -362,7 +362,7 @@ DEFINE_FUNCTION( Process ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	pv->handlers->_cx = cx;
 	ConnectionError cErr = pv->client->recv();
@@ -392,7 +392,7 @@ DEFINE_FUNCTION( SendMessage ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_S_ASSERT_ARG_MIN(2);
 
@@ -419,7 +419,7 @@ DEFINE_FUNCTION( SendMessage ) {
 DEFINE_FUNCTION( RosterItem ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_S_ASSERT_ARG_MIN(1);
 
 	return JS_TRUE;
@@ -441,7 +441,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( socket ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() ); // (TBD) TM
 	if ( !connection ) {
 
@@ -468,7 +468,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( status ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->client->status().c_str(), vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -478,9 +478,8 @@ DEFINE_PROPERTY_GETTER( status ) {
 DEFINE_PROPERTY_SETTER( status ) {
 
 	JLStr status;
-
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_JsvalToNative(cx, *vp, &status) );
 	pv->client->setPresence(pv->client->presence(), pv->client->priority(), status.GetConstStr());
 	return JS_TRUE;
@@ -496,7 +495,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( presence ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	Presence presence = pv->client->presence();
 	JL_CHK( JL_NativeToJsval(cx, presence, vp) );
 	return JS_TRUE;
@@ -506,7 +505,7 @@ DEFINE_PROPERTY_GETTER( presence ) {
 DEFINE_PROPERTY_SETTER( presence ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	int presence;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &presence) );
 	pv->client->setPresence((Presence)presence, pv->client->priority(), pv->client->status());
@@ -518,7 +517,7 @@ DEFINE_PROPERTY_SETTER( presence ) {
 DEFINE_PROPERTY( roster ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 //	JSObject *rosterObj = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
 	Roster *roster = pv->client->rosterManager()->roster();
@@ -545,7 +544,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( connectionTotalIn ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	int totalIn, totalOut;
 	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);
 	JL_CHK( JL_NativeToJsval(cx, totalIn, vp) );
@@ -562,7 +561,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( connectionTotalOut ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	int totalIn, totalOut;
 	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);
 	JL_CHK( JL_NativeToJsval(cx, totalOut, vp) );

@@ -41,7 +41,7 @@ JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 #endif
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( disp );
+	JL_S_ASSERT_THIS_OBJECT_STATE( disp );
 
 	JSObject *funObj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp));
 	jsval dispidVal;
@@ -110,7 +110,7 @@ DEFINE_GET_PROPERTY() {
 	DISPPARAMS params;
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( disp );
+	JL_S_ASSERT_THIS_OBJECT_STATE( disp );
 
 	result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
 	VariantInit(result);
@@ -201,7 +201,7 @@ DEFINE_SET_PROPERTY() {
 	HRESULT hr;
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( disp );
+	JL_S_ASSERT_THIS_OBJECT_STATE( disp );
 
 	JL_ASSERT( JSID_IS_STRING( id ) );
 	const jschar *name;
@@ -269,11 +269,11 @@ DEFINE_FUNCTION( FunctionList ) {
 
 	ITypeInfo *pTypeinfo = NULL;
 
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	JL_S_ASSERT_OBJECT(JL_ARG(1));
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
-	JL_S_ASSERT_RESOURCE( disp );
+	JL_S_ASSERT_OBJECT_STATE( disp, JL_THIS_CLASS_NAME );
 
 //	JSObject *memberList = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
 	JSObject *memberList = JS_NewObject(cx, NULL, NULL, NULL);
@@ -338,7 +338,7 @@ DEFINE_ITERATOR_OBJECT() {
 	JL_S_ASSERT( !keysonly, "Only for each..in loop is supported." );
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( disp );
+	JL_S_ASSERT_THIS_OBJECT_STATE( disp );
 
 	VariantInit(&result);
 	hr = disp->Invoke(DISPID_NEWENUM, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD | DISPATCH_PROPERTYGET, &params, &result, &ex, &argErr);

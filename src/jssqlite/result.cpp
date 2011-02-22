@@ -250,13 +250,13 @@ DEFINE_FUNCTION( Close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pStmt );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
 
 	jsval v;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
 	DatabasePrivate *dbpv;
 	dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(v));
-	JL_S_ASSERT_RESOURCE(dbpv);
+	JL_S_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(JSVAL_TO_OBJECT(v)) );
 
 	if ( sqlite3_finalize(pStmt) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, dbpv->db) );
@@ -275,13 +275,13 @@ DEFINE_FUNCTION( Close ) {
 JSBool JssqliteStep( JSContext *cx, JSObject *obj, int *status ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pStmt );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
 
 	jsval dbVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &dbVal) );
 	DatabasePrivate *dbpv;
 	dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(dbVal));
-	JL_S_ASSERT_RESOURCE(dbpv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(dbpv);
 
 	sqlite3 *db;
 	db = dbpv->db;
@@ -332,13 +332,13 @@ JSBool DoStep(JSContext *cx, JSObject *obj, jsval *rval) {
 
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pStmt );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
 
 	jsval dbVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &dbVal) );
 	DatabasePrivate *dbpv;
 	dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(dbVal));
-	JL_S_ASSERT_RESOURCE(dbpv);
+	JL_S_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(JSVAL_TO_OBJECT(dbVal)));
 
 	sqlite3 *db;
 	db = dbpv->db;
@@ -419,7 +419,7 @@ DEFINE_FUNCTION( Col ) {
 
 	sqlite3_stmt *pStmt;
 	pStmt = (sqlite3_stmt*)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pStmt );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
 	int col;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &col) );
 	JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, col), JL_RVAL) );
@@ -440,7 +440,7 @@ DEFINE_FUNCTION( Row ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pStmt );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
 
 	JL_CHK( DoStep(cx, obj, JL_RVAL) ); // if something goes wrong in Result_step ( error report has already been set )
 	if ( *JL_RVAL == JSVAL_FALSE ) { // the statement has finished executing successfully
@@ -486,7 +486,7 @@ DEFINE_FUNCTION( next ) { // for details, see Row() function thet is the base of
 	JL_DEFINE_FUNCTION_OBJ;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pStmt );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
 	JL_CHK( DoStep(cx, obj, JL_RVAL) );
 
 	if ( *JL_RVAL == JSVAL_FALSE ) // means SQLITE_DONE
@@ -519,7 +519,7 @@ DEFINE_FUNCTION( Reset ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pStmt );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
 	if ( sqlite3_reset(pStmt) != SQLITE_OK )
 		return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 	*JL_RVAL = JSVAL_VOID;
@@ -540,7 +540,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( columnCount ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pStmt );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
 	*vp = INT_TO_JSVAL(sqlite3_column_count(pStmt));
 	return JS_TRUE;
 	JL_BAD;
@@ -569,7 +569,7 @@ DEFINE_PROPERTY_GETTER( columnNames ) {
 		return JS_TRUE;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pStmt );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
 	JSObject *columnNames;
 	columnNames = JS_NewArrayObject(cx, 0, NULL);
 	*vp = OBJECT_TO_JSVAL( columnNames );
@@ -603,7 +603,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( columnIndexes ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pStmt );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
 	JSObject *columnIndexes;
 	columnIndexes = JS_NewObject( cx, NULL, NULL, NULL );
 	*vp = OBJECT_TO_JSVAL( columnIndexes );
@@ -632,7 +632,7 @@ DEFINE_PROPERTY_GETTER( sql ) {
 //		return JS_TRUE;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pStmt );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
 	JL_CHK( JL_NativeToJsval(cx, sqlite3_sql(pStmt), vp) );
 
 	return JL_StoreProperty(cx, obj, id, vp, false);

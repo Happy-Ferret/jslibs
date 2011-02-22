@@ -331,14 +331,14 @@ namespace jl {
 			if ( !JSVAL_IS_VOID( serializeFctVal ) ) {
 
 				jsval argv[] = { JSVAL_NULL, _serializerObj };
-				JL_S_ASSERT_FUNCTION( serializeFctVal );
+				JL_S_ASSERT_ERROR_NUM( JL_IsFunction(cx, serializeFctVal), JLSMSG_MISSING_IMPLEMENTATION, JL_GetClassName(obj), "_serialize" );
 
 //				JSObject *objectProto;
 //				JL_CHK( js_GetClassPrototype(cx, NULL, JSProto_Object, &objectProto) );
 				if ( JL_GetClass(obj) != JL_GetStandardClassByKey(cx, JSProto_Object) ) { // native serializable object
 
 					JL_CHK( Write(cx, JLSTSerializableNativeObject) );
-					JL_CHK( Write(cx, JL_GetClass(obj)->name) );
+					JL_CHK( Write(cx, JL_GetClassName(obj)) );
 					JL_CHK( JS_CallFunctionValue(cx, obj, serializeFctVal, COUNTOF(argv)-1, argv+1, argv) ); // rval not used
 					return JS_TRUE;
 				}
@@ -374,7 +374,7 @@ namespace jl {
 */
 				jsval unserializeFctVal;
 				JL_CHK( JS_GetMethodById(cx, obj, JLID(cx, _unserialize), NULL, &unserializeFctVal) );
-				JL_S_ASSERT_FUNCTION( unserializeFctVal );
+				JL_S_ASSERT_ERROR_NUM( JL_IsFunction(cx, unserializeFctVal), JLSMSG_MISSING_IMPLEMENTATION, JL_GetClassName(obj), "_unserialize" );
 				JL_CHK( Write(cx, unserializeFctVal) );
 				JL_CHK( JS_CallFunctionValue(cx, obj, serializeFctVal, COUNTOF(argv)-1, argv+1, argv) ); // rval not used
 				return JS_TRUE;
@@ -680,7 +680,7 @@ namespace jl {
  					jsval argv[] = { JSVAL_NULL, _unserializerObj };
 					jsval fun;
 					JL_CHK( Read(cx, fun) );
-					JL_S_ASSERT_FUNCTION(fun);
+					JL_S_ASSERT_ERROR_NUM( JL_IsFunction(cx, fun), JLSMSG_INVALID_OBJECT_STATE, "Unserializer" );
 					JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fun, COUNTOF(argv)-1, argv+1, argv) );
 					val = *argv;
 					break;
@@ -775,7 +775,7 @@ namespace jl {
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	JL_S_ASSERT( jl::JsvalIsSerializer(cx, JL_ARG(1)), "Invalid serializer object." );
 	jl::Serializer *ser;
 	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
@@ -790,7 +790,7 @@ DEFINE_FUNCTION( _serialize ) {
 DEFINE_FUNCTION( _unserialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	JL_S_ASSERT( jl::JsvalIsUnserializer(cx, JL_ARG(1)), "Invalid unserializer object." );
 	jl::Unserializer *unser;
 	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));

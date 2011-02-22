@@ -111,7 +111,7 @@ DEFINE_FUNCTION( SetSize ) {
 	JL_S_ASSERT_ARG_MIN(2);
 
 	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(face);
+	JL_S_ASSERT_THIS_OBJECT_STATE(face);
 
 	FT_UInt width, height;
 
@@ -151,7 +151,7 @@ DEFINE_FUNCTION( GetCharOutline ) {
 
 	FT_Face face;
 	face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(face);
+	JL_S_ASSERT_THIS_OBJECT_STATE(face);
 
 	FT_Outline_Funcs funcs;
 	funcs.move_to = MoveToFunc;
@@ -199,7 +199,7 @@ DEFINE_FUNCTION( DrawChar ) {
 
 	JsfontPrivate *pv;
 	pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_S_ASSERT( pv->face->size->metrics.height > 0, "Invalid font size." );
 
@@ -266,7 +266,7 @@ DEFINE_FUNCTION( DrawString ) {
 
 	JsfontPrivate *pv;
 	pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_S_ASSERT( pv->face->size->metrics.height > 0, "Invalid font size." );
 
@@ -478,7 +478,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( ascender ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL(pv->face->size->metrics.ascender >> 6);
 	return JS_TRUE;
 	JL_BAD;
@@ -494,7 +494,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( descender ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL(pv->face->size->metrics.descender >> 6);
 	return JS_TRUE;
 	JL_BAD;
@@ -508,7 +508,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( width ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL(pv->face->size->metrics.max_advance >> 6);
 	return JS_TRUE;
 	JL_BAD;
@@ -523,7 +523,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( size ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	int size;
 	size = 0;
@@ -547,7 +547,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( encoding ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned int encoding;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &encoding) );
@@ -565,7 +565,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( poscriptName ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_NativeToJsval(cx, FT_Get_Postscript_Name(pv->face), vp) );
 	return JS_TRUE;

@@ -68,7 +68,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( radius ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 		ode::dReal radius, length;
 	ode::dGeomCylinderGetParams(geom, &radius, &length);
 	jsdouble value;
@@ -81,7 +81,7 @@ DEFINE_PROPERTY_SETTER( radius ) {
 DEFINE_PROPERTY_GETTER( radius ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dReal radius, length;
 	ode::dGeomCylinderGetParams(geom, &radius, &length);
 	JL_CHK( ODERealToJsval(cx, radius, vp) );
@@ -97,7 +97,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( length ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dReal radius, length;
 	ode::dGeomCylinderGetParams(geom, &radius, &length);
 	jsdouble value;
@@ -110,7 +110,7 @@ DEFINE_PROPERTY_SETTER( length ) {
 DEFINE_PROPERTY_GETTER( length ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( geom );
+	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dReal radius, length;
 	ode::dGeomCylinderGetParams(geom, &radius, &length);
 	JL_CHK( ODERealToJsval(cx, length, vp) ); // see JL_NewNumberValue and JS_NewDouble

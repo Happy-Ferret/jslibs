@@ -340,7 +340,7 @@ DEFINE_FUNCTION( Encrypt ) {
 
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 //	const char *pt;
 //	size_t ptLength;
@@ -410,7 +410,7 @@ DEFINE_FUNCTION( Decrypt ) {
 
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 //	const char *ct;
 //	size_t ctLength;
@@ -475,7 +475,7 @@ DEFINE_PROPERTY_GETTER( blockLength ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL( pv->descriptor->block_length );
 	return JS_TRUE;
 	JL_BAD;
@@ -491,7 +491,7 @@ DEFINE_PROPERTY( keySize ) {
 	JL_S_ASSERT_CLASS( obj, _class );
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	int size = 0;
 	int err = pv->descriptor->keysize(&size);
 	if (err != CRYPT_OK)
@@ -514,7 +514,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	JSString *jsstr;
 	jsstr = JS_NewStringCopyZ(cx, pv->descriptor->name);
 	JL_CHK( jsstr );
@@ -538,7 +538,7 @@ DEFINE_PROPERTY_SETTER( IV ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 //	const char *IV;
 //	size_t IVLength;
@@ -613,7 +613,7 @@ DEFINE_PROPERTY_GETTER( IV ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	char *IV;
 	IV = NULL;
@@ -623,8 +623,9 @@ DEFINE_PROPERTY_GETTER( IV ) {
 	switch ( pv->mode ) {
 
 		case mode_ecb:
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "No IV in ECB mode");
-			break;
+			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOGIC_ERROR, "No IV in ECB mode");
+			*vp = JSVAL_VOID;
+			return JS_TRUE;
 		case mode_cfb: {
 			symmetric_CFB *tmp = (symmetric_CFB *)pv->symmetric_XXX;
 			IVLength = tmp->blocklen;

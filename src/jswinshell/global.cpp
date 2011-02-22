@@ -342,7 +342,7 @@ DEFINE_FUNCTION( CreateComObject ) {
 
 	HRESULT hr;
 
-	JL_S_ASSERT_ARG( 1 );
+	JL_S_ASSERT_ARG_COUNT( 1 );
 	JL_S_ASSERT_STRING( JL_ARG(1) );
 
 	JSString *idStr = JS_ValueToString(cx, JL_ARG(1));
@@ -656,7 +656,7 @@ DEFINE_FUNCTION( DirectoryChangesLookup ) {
 	JL_S_ASSERT_ARG_RANGE(1,2);
 	JL_S_ASSERT( IsHandleType(cx, JL_ARG(1), JLHID("dmon")), "Unexpected argument type." );
 	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_ARG(1));
-	JL_S_ASSERT_RESOURCE( dc );
+	JL_S_ASSERT_OBJECT_STATE( dc, "dmon Handle");
 
 	bool wait;
 	if ( JL_ARG_ISDEF(2) )
@@ -804,10 +804,10 @@ DEFINE_FUNCTION( DirectoryChangesEvents ) {
 	JL_S_ASSERT( IsHandleType(cx, JL_ARG(1), JLHID("dmon")), "Unexpected argument type." );
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_S_ASSERT_FUNCTION( JL_ARG(2) );
+		JL_S_ASSERT_ARG_IS_FUNCTION(2);
 
 	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_ARG(1));
-	JL_S_ASSERT_RESOURCE( dc );
+	JL_S_ASSERT_OBJECT_STATE( dc, "dmon Handle" );
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
@@ -847,7 +847,9 @@ DEFINE_PROPERTY_GETTER( clipboard ) {
 	} else {
 
 		HANDLE hglb = GetClipboardData(CF_TEXT);
-		JL_S_ASSERT_RESOURCE( hglb );
+		if ( !hglb )
+			return JL_ThrowOSError(cx);
+
 		LPTSTR lptstr = (LPTSTR)GlobalLock(hglb);
 		JL_S_ASSERT( lptstr != NULL, "Unable to lock memory." );
 		JSString *str = JS_NewStringCopyZ(cx, lptstr);

@@ -130,7 +130,7 @@ DEFINE_CALL() {
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	size_t status;
 
@@ -327,7 +327,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 	JLStr chr;
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 //	const char *chr;
 //	size_t length;
@@ -346,7 +346,7 @@ DEFINE_PROPERTY_GETTER( invalidChar ) {
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );	
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );	
 //	JL_CHK( JL_StringAndLengthToJsval(cx, vp, &pv->invalidChar, 1) );
 	JL_CHK( JL_NativeToJsval(cx, &pv->invalidChar, 1, vp) );
 	return JS_TRUE;
@@ -359,7 +359,7 @@ DEFINE_PROPERTY_GETTER( hasIncompleteSequence ) {
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );	
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );	
 	JL_CHK(JL_NativeToJsval(cx, pv->remainderLen != 0, vp) );
 	return JS_TRUE;
 	JL_BAD;

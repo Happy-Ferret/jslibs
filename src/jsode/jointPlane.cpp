@@ -77,7 +77,7 @@ DEFINE_FUNCTION( AlignToZAxis ) {
 
 	// fc. http://opende.sourceforge.net/wiki/index.php/Manual_(Joint_Types_and_Functions)#Plane_2D
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 
 	ode::dBodyID bodyId = ode::dJointGetBody(jointId, 0);
 
@@ -111,7 +111,7 @@ DEFINE_FUNCTION( AlignToZAxis ) {
 DEFINE_PROPERTY( x ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 
 	ode::dJointSetPlane2DXParam( jointId, 
 

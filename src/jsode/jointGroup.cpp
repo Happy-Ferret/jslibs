@@ -32,7 +32,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG(0);
+	JL_S_ASSERT_ARG_COUNT(0);
 	ode::dJointGroupID groupId = ode::dJointGroupCreate(0);
 	JL_SetPrivate(cx, obj, groupId);
 	return JS_TRUE;
@@ -51,7 +51,7 @@ DEFINE_FUNCTION( Destroy ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
 	ode::dJointGroupID groupId = (ode::dJointGroupID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(groupId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(groupId);
 	ode::dJointGroupDestroy(groupId);
 	JL_SetPrivate(cx, obj, NULL);
 
@@ -69,7 +69,7 @@ DEFINE_FUNCTION( Empty ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	ode::dJointGroupID groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(groupId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(groupId);
 	ode::dJointGroupEmpty(groupId);
 
 	*JL_RVAL = JSVAL_VOID;

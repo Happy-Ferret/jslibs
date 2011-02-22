@@ -781,7 +781,7 @@ DEFINE_FUNCTION( SetCursor ) {
 	JSObject *cursorObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_S_ASSERT_CLASS( cursorObj, JL_CLASS(Cursor) );
 	SDL_Cursor *cursor = (SDL_Cursor *)JL_GetPrivate(cx, cursorObj);
-	JL_S_ASSERT_RESOURCE( cursor );
+	JL_S_ASSERT_OBJECT_STATE( cursor, JL_CLASS_NAME(Cursor) );
 	SDL_SetCursor(cursor);
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -1420,7 +1420,7 @@ JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSO
 
 DEFINE_FUNCTION( SDLEvents ) {
 
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
 	UserProcessEvent *upe;

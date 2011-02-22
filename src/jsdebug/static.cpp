@@ -548,12 +548,8 @@ DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 	PROCESS_MEMORY_COUNTERS_EX pmc;
 	pmc.cb = sizeof(pmc);
 	BOOL status = GetProcessMemoryInfo( hProcess, (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc) ); // MEM_PRIVATE
-	if ( !status ) {
-		
-		char message[1024];
-		JLLastSysetmErrorMessage(message, sizeof(message));
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, message);
-	}
+	if ( !status )
+		return JL_ThrowOSError(cx);
 
 	//	pmc.PrivateUsage:
 	// doc: The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE,
@@ -1427,7 +1423,7 @@ $TOC_MEMBER $INAME
 /*
 DEFINE_FUNCTION( ScriptByLocation ) {
 
-	JL_S_ASSERT_ARG(2);
+	JL_S_ASSERT_ARG_COUNT(2);
 
 	const char *filename;
 	unsigned int lineno;
@@ -1468,7 +1464,7 @@ DEFINE_FUNCTION( DisassembleScript ) {
 	JLStr filename;
 	unsigned int lineno;
 
-	JL_S_ASSERT_ARG(2);
+	JL_S_ASSERT_ARG_COUNT(2);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &filename) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
@@ -1563,12 +1559,8 @@ DEFINE_PROPERTY_GETTER( processTime ) {
 	__int64 creationTime, exitTime, kernelTime, userTime;
 	BOOL status = GetThreadTimes(GetCurrentThread(), (FILETIME *)&creationTime, (FILETIME *)&exitTime, (FILETIME *)&kernelTime, (FILETIME *)&userTime);
 //	BOOL status = GetProcessTimes(GetCurrentProcess(), (FILETIME *)&creationTime, (FILETIME *)&exitTime, (FILETIME *)&kernelTime, (FILETIME *)&userTime);
-	if ( !status ) {
-
-		char message[1024];
-		JLLastSysetmErrorMessage(message, sizeof(message));
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, message);
-	}
+	if ( !status )
+		return JL_ThrowOSError(cx);
 	return JL_NativeToJsval(cx, (kernelTime + userTime) / (double)10000 , vp);
 	JL_BAD;
 
@@ -1602,33 +1594,20 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 	if ( runonce ) {
 
 		status = PdhOpenQuery(NULL, 0, &query);
-		if( status != ERROR_SUCCESS ) {
-
-			SetLastError(status);
-			JLLastSysetmErrorMessage(errorMessage, sizeof(errorMessage));
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, errorMessage);
-		}
-
-		PdhAddCounter(query, TEXT("\\Processor(_Total)\\% Processor Time"), 0, &counter); // A total of ALL CPU's in the system
+		if ( status != ERROR_SUCCESS )
+			return JL_ThrowOSError(cx);
+			PdhAddCounter(query, TEXT("\\Processor(_Total)\\% Processor Time"), 0, &counter); // A total of ALL CPU's in the system
 		PdhCollectQueryData(query); // No error checking here
 		runonce = false;
 	}
 
 	status = PdhCollectQueryData(query);
-	if ( status != ERROR_SUCCESS ) {
-
-		SetLastError(status);
-		JLLastSysetmErrorMessage(errorMessage, sizeof(errorMessage));
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, errorMessage);
-	}
+	if ( status != ERROR_SUCCESS )
+		return JL_ThrowOSError(cx);
 
 	status = PdhGetFormattedCounterValue(counter, PDH_FMT_DOUBLE | PDH_FMT_NOCAP100, &ret, &value);
-	if ( status != ERROR_SUCCESS ) {
-
-		SetLastError(status);
-		JLLastSysetmErrorMessage(errorMessage, sizeof(errorMessage));
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, errorMessage);
-	}
+	if ( status != ERROR_SUCCESS )
+		return JL_ThrowOSError(cx);
 
 	return JL_NativeToJsval(cx, value.doubleValue, vp);
 	JL_BAD;

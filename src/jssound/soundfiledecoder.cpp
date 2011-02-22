@@ -270,7 +270,7 @@ DEFINE_FUNCTION( Read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JL_S_ASSERT( pv->sfInfo.channels == 1 || pv->sfInfo.channels == 2, "Unsupported channel count." );
 
@@ -398,7 +398,7 @@ DEFINE_PROPERTY_GETTER( inputStream ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -415,7 +415,7 @@ DEFINE_PROPERTY_GETTER( bits ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->bits );
 	return JS_TRUE;
 	JL_BAD;
@@ -431,7 +431,7 @@ DEFINE_PROPERTY_GETTER( rate ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->sfInfo.samplerate );
 	return JS_TRUE;
 	JL_BAD;
@@ -447,7 +447,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->sfInfo.channels );
 	return JS_TRUE;
 	JL_BAD;
@@ -464,7 +464,7 @@ DEFINE_PROPERTY_GETTER( frames ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( size_t(pv->sfInfo.frames) );
 	return JS_TRUE;
 	JL_BAD;

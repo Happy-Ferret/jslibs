@@ -198,7 +198,7 @@ DEFINE_FUNCTION( Wait ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(process);
+	JL_S_ASSERT_THIS_OBJECT_STATE(process);
 	PRInt32 exitValue;
 	JL_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
 	JL_SetPrivate(cx, obj, NULL);
@@ -219,7 +219,7 @@ DEFINE_FUNCTION( Detach ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(process);
+	JL_S_ASSERT_THIS_OBJECT_STATE(process);
 	JL_CHK( PR_DetachProcess(process) == PR_SUCCESS );
 	JL_SetPrivate(cx, obj, NULL); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
 	*JL_RVAL = JSVAL_VOID;
@@ -239,7 +239,7 @@ DEFINE_FUNCTION( Kill ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(process);
+	JL_S_ASSERT_THIS_OBJECT_STATE(process);
 	JL_CHK( PR_KillProcess(process) == PR_SUCCESS );
 	JL_SetPrivate(cx, obj, NULL); // Invalidates the current process pointer.
 	*JL_RVAL = JSVAL_VOID;

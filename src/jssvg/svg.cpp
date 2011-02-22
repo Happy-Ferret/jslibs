@@ -115,7 +115,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_ARG(0);
+	JL_S_ASSERT_ARG_COUNT(0);
 	JL_S_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
@@ -154,7 +154,7 @@ DEFINE_FUNCTION( Write ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
 //	const char *data;
@@ -262,7 +262,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
 	gboolean status;
@@ -415,7 +415,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 DEFINE_FUNCTION( GetImage ) { // using pixbuf
 
 	RsvgHandle *handle = (RsvgHandle*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(handle);
+	JL_S_ASSERT_THIS_OBJECT_STATE(handle);
 
 	GdkPixbuf *pb = rsvg_handle_get_pixbuf(handle);
 
@@ -461,7 +461,7 @@ DEFINE_FUNCTION( SetVisible ) {
 	JL_S_ASSERT_ARG_MIN(2);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &id) );
@@ -498,7 +498,7 @@ DEFINE_FUNCTION( Scale ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(2);
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	double sx, sy;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sx) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &sy) );
@@ -521,7 +521,7 @@ DEFINE_FUNCTION( Rotate ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(1);
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	double angle;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &angle) );
 	cairo_matrix_rotate(&pv->transformation, angle);
@@ -543,7 +543,7 @@ DEFINE_FUNCTION( Translate ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN(2);
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	double tx, ty;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &tx) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &ty) );
@@ -567,7 +567,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( dpi ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
 	if ( JSVAL_IS_VOID(*vp) ) {
@@ -603,7 +603,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( width ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
 	RsvgDimensionData dim;
@@ -621,7 +621,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( height ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
 	RsvgDimensionData dim;
@@ -639,7 +639,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( title ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
 	const char *title = rsvg_handle_get_title(handle);
@@ -659,7 +659,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( metadata ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
 	const char *metadata = rsvg_handle_get_metadata(handle);
@@ -679,7 +679,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( description ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
 	const char *description = rsvg_handle_get_desc(handle);
@@ -700,7 +700,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY(images) {
 
 	RsvgHandle *handle = (RsvgHandle*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(handle);
+	JL_S_ASSERT_THIS_OBJECT_STATE(handle);
 
 	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, SLOT_IMAGES_OBJECT, vp) );
 	if ( JSVAL_IS_VOID( *vp ) ) {

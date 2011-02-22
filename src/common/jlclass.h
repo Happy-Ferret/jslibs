@@ -253,6 +253,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 //jorendorff>	Then just compare with == to see if you're finalizing that object.
 
 #define JL_CLASS(CLASSNAME) (&(CLASSNAME::jlClassSpec->clasp))
+#define JL_CLASS_NAME(CLASSNAME) (JL_CLASS(CLASSNAME)->name)
 #define JL_THIS_CLASS (&(jlClassSpec->clasp))
 #define JL_THIS_CLASS_NAME (jlClassSpec->clasp.name)
 #define JL_THIS_REVISION (jlClassSpec->revision)

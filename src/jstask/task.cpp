@@ -374,7 +374,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_FUNCTION( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_FUNCTION(1);
 
 	pv = new TaskPrivate;
 	JL_CHK( pv );
@@ -445,7 +445,7 @@ DEFINE_FUNCTION( Request ) {
 	JL_S_ASSERT_CLASS( JL_OBJ, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 	SerializedData * serializedRequest;
 	SerializerCreate(&serializedRequest);
@@ -479,7 +479,7 @@ DEFINE_FUNCTION( Response ) {
 	JL_S_ASSERT_CLASS( JL_OBJ, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 	bool hasNoResponse;
 	JLMutexAcquire(pv->mutex); // --
@@ -553,7 +553,7 @@ DEFINE_PROPERTY_GETTER( pendingRequestCount ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	JLMutexAcquire(pv->mutex); // --
 	JL_CHK( JL_NativeToJsval(cx, (size_t)pv->pendingRequestCount, vp) );
 //	JL_CHK( JL_NativeToJsval(cx, pv->end ? 0 : pv->pendingRequestCount, vp) );
@@ -573,7 +573,7 @@ DEFINE_PROPERTY_GETTER( processingRequestCount ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	JLMutexAcquire(pv->mutex); // --
 	JL_CHK( JL_NativeToJsval(cx, (size_t)pv->processingRequestCount, vp) );
 	JLMutexRelease(pv->mutex); // ++
@@ -592,7 +592,7 @@ DEFINE_PROPERTY_GETTER( pendingResponseCount ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	JLMutexAcquire(pv->mutex); // --
 	JL_CHK( JL_NativeToJsval(cx, (size_t)pv->pendingResponseCount, vp) );
 //	JL_CHK( JL_NativeToJsval(cx, pv->pendingResponseCount ? pv->pendingResponseCount : QueueIsEmpty(&pv->exceptionList) ? 0 : 1 , vp) );
@@ -612,7 +612,7 @@ DEFINE_PROPERTY_GETTER( idle ) {
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	JLMutexAcquire(pv->mutex); // --
 	JL_CHK(JL_NativeToJsval(cx, pv->pendingRequestCount + pv->processingRequestCount + pv->pendingResponseCount == 0 || pv->end, vp) );
 	JLMutexRelease(pv->mutex); // ++
@@ -704,12 +704,12 @@ DEFINE_FUNCTION( Events ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
-	JL_S_ASSERT_ARG(0);
+	JL_S_ASSERT_ARG_COUNT(0);
 	JL_S_ASSERT_CLASS( JL_OBJ, JL_THIS_CLASS );
 
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );

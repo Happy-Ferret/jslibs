@@ -165,7 +165,7 @@ DEFINE_FUNCTION( Close ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_SetPrivate(cx, obj, NULL);
 
 	sqlite3_interrupt(pv->db);
@@ -256,7 +256,7 @@ DEFINE_FUNCTION( Query ) {
 
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 //	const char *sqlQuery;
 //	size_t sqlQueryLength;
@@ -332,7 +332,7 @@ DEFINE_FUNCTION( Exec ) {
 
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 //	const char *sqlQuery;
 //	J_JSVAL_TO_STRING( argv[0], sqlQuery );
@@ -404,7 +404,7 @@ DEFINE_PROPERTY_GETTER( lastInsertRowid ) {
 
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	sqlite3_int64 lastId;
 	lastId = sqlite3_last_insert_rowid(pv->db);
 	return JL_NativeToJsval(cx, lastId, vp);
@@ -423,7 +423,7 @@ DEFINE_PROPERTY_GETTER( changes ) {
 
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 	// This function returns the number of database rows that were changed (or inserted or deleted) by the most recently completed INSERT, UPDATE, or DELETE statement.
 	// Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted. Auxiliary changes caused by triggers are not counted. Use the sqlite3_total_changes() function to find the total number of changes including changes caused by triggers.
@@ -572,7 +572,7 @@ DEFINE_SET_PROPERTY() {
 		JL_S_ASSERT_THIS_CLASS();
 
 		DatabasePrivate *dbpv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
-		JL_S_ASSERT_RESOURCE(dbpv);
+		JL_S_ASSERT_THIS_OBJECT_STATE(dbpv);
 
 		FunctionPrivate *fpv = (FunctionPrivate*)jl_malloc(sizeof(FunctionPrivate));
 		JL_S_ASSERT_ALLOC(fpv);

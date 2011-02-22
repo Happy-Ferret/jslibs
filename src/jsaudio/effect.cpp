@@ -78,7 +78,7 @@ DEFINE_FUNCTION( valueOf ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_NativeToJsval(cx, pv->effect, JL_RVAL) );
 	return JS_TRUE;
@@ -112,7 +112,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( type ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	int effectType;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &effectType) );
 
@@ -126,7 +126,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 DEFINE_PROPERTY_GETTER( type ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	int effectType;
 
 	alGetEffecti(pv->effect, AL_EFFECT_TYPE, &effectType);
@@ -143,7 +143,7 @@ DEFINE_FUNCTION( Test ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -155,7 +155,7 @@ DEFINE_FUNCTION( Test ) {
 DEFINE_PROPERTY_SETTER( effectFloat ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	float f;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &f) );
@@ -168,7 +168,7 @@ DEFINE_PROPERTY_SETTER( effectFloat ) {
 DEFINE_PROPERTY_GETTER( effectFloat ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	float f;
 	alGetEffectf(pv->effect, param, &f);
@@ -181,7 +181,7 @@ DEFINE_PROPERTY_GETTER( effectFloat ) {
 DEFINE_PROPERTY_SETTER( effectInt ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	int i;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &i) );
@@ -194,7 +194,7 @@ DEFINE_PROPERTY_SETTER( effectInt ) {
 DEFINE_PROPERTY_GETTER( effectInt ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	int i;
 	alGetEffecti(pv->effect, param, &i);
@@ -207,7 +207,7 @@ DEFINE_PROPERTY_GETTER( effectInt ) {
 DEFINE_PROPERTY_SETTER( effectBool ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
@@ -220,7 +220,7 @@ DEFINE_PROPERTY_SETTER( effectBool ) {
 DEFINE_PROPERTY_GETTER( effectBool ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	int i;
 	alGetEffecti(pv->effect, param, &i);

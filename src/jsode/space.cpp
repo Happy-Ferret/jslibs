@@ -108,7 +108,7 @@ DEFINE_FUNCTION( Destroy ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(spaceId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(spaceId);
 	if ( spaceId != NULL ) {
 
 		while ( dSpaceGetNumGeoms(spaceId) )

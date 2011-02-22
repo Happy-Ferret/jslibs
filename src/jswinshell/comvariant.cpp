@@ -199,7 +199,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 		if ( JL_GetClass(obj) == JL_CLASS(ComDispatch) ) {
 			
 			IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
-			JL_S_ASSERT_RESOURCE(disp);
+			JL_S_ASSERT_OBJECT_STATE(disp, JL_CLASS_NAME(ComDispatch));
 			disp->AddRef();
 			V_VT(variant) = VT_DISPATCH;
 			V_DISPATCH(variant) = disp;
@@ -209,7 +209,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 		if ( JL_GetClass(obj) == JL_CLASS(ComVariant) ) {
 			
 			VARIANT *v = (VARIANT*)JL_GetPrivate(cx, obj);
-			JL_S_ASSERT_RESOURCE(v);
+			JL_S_ASSERT_OBJECT_STATE(v, JL_CLASS_NAME(ComVariant));
 			HRESULT hr = VariantCopy(variant, v); // Frees the destination variant and makes a copy of the source variant.
 			if ( FAILED(hr) )
 				JL_CHK( WinThrowError(cx, hr) );
@@ -526,7 +526,7 @@ DEFINE_FUNCTION( toDispatch ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( variant );
+	JL_S_ASSERT_THIS_OBJECT_STATE( variant );
 
 	if ( V_VT(variant) != VT_DISPATCH ) {
 
@@ -563,7 +563,7 @@ DEFINE_FUNCTION( toString ) {
 
 	HRESULT hr;
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( variant );
+	JL_S_ASSERT_THIS_OBJECT_STATE( variant );
 
 	VARIANT tmpVariant;
 	VariantInit(&tmpVariant);
@@ -590,7 +590,7 @@ DEFINE_FUNCTION( toTypeName ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( variant );
+	JL_S_ASSERT_THIS_OBJECT_STATE( variant );
 
 	char str[64];
 	*str = '\0';

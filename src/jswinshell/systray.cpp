@@ -580,7 +580,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 	MSGInfo *trayMsg;
 	while ( !jl::QueueIsEmpty(&pv->msgQueue) ) {
@@ -661,10 +661,10 @@ JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 
 DEFINE_FUNCTION( Events ) {
 	
-	JL_S_ASSERT_ARG(0);
+	JL_S_ASSERT_ARG_COUNT(0);
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
@@ -693,7 +693,7 @@ DEFINE_FUNCTION( Focus ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	SetForegroundWindow(pv->nid.hWnd);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -815,7 +815,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 					JSObject *iconObj = JSVAL_TO_OBJECT(value);
 					JL_S_ASSERT_CLASS( iconObj, JL_CLASS(Icon) );
 					HICON *phIcon = (HICON*)JL_GetPrivate(cx, iconObj);
-					JL_S_ASSERT_RESOURCE(phIcon);
+					JL_S_ASSERT_OBJECT_STATE(phIcon, JL_CLASS_NAME(Icon));
 					hBMP = MenuItemBitmapFromIcon(*phIcon);
 					JL_S_ASSERT(hBMP != NULL, "Unable to create the menu item icon.");
 					continue;
@@ -844,7 +844,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 
 			uFlags |= MF_BITMAP;
 			HICON *phIcon = (HICON*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(label));
-			JL_S_ASSERT_RESOURCE(phIcon);
+			JL_S_ASSERT_OBJECT_STATE(phIcon, JL_CLASS_NAME(Icon));
 			hBMP = MenuItemBitmapFromIcon(*phIcon);
 			JL_S_ASSERT(hBMP != NULL, "Unable to create the menu item icon.");
 			lpNewItem = (LPCTSTR)phIcon;
@@ -953,13 +953,14 @@ DEFINE_FUNCTION( PopupMenu ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_S_ASSERT_ARG_COUNT(1);
 
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
 	HMENU hMenu = GetMenu(pv->nid.hWnd);
-	JL_S_ASSERT_RESOURCE(hMenu);
+	JL_S_ASSERT_THIS_OBJECT_STATE( hMenu );
+
 	DestroyMenu(hMenu);
 	FreePopupMenuRoots(cx, obj);
 	JL_CHK( MakeMenu(cx, obj, JSVAL_TO_OBJECT( JL_ARG(1) ), &hMenu) );
@@ -983,7 +984,7 @@ DEFINE_FUNCTION( PopupBalloon ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	BOOL status;
 
 	if ( JL_ARG_ISDEF(1) ) {
@@ -1056,9 +1057,9 @@ DEFINE_FUNCTION( PopupBalloon ) {
 DEFINE_FUNCTION( CallDefault ) {
 
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(nid);
+	JL_S_ASSERT_THIS_OBJECT_STATE(nid);
 	HMENU hMenu = GetMenu(nid->hWnd);
-	JL_S_ASSERT_RESOURCE(hMenu);
+	JL_S_ASSERT_THIS_OBJECT_STATE(hMenu);
 !!! menu is empty !!!
 	jsid id = GetMenuDefaultItem( hMenu, FALSE, GMDI_USEDISABLED ); // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/resources/menus/menureference/menufunctions/getmenudefaultitem.asp
 	DWORD err = GetLastError();
@@ -1096,7 +1097,7 @@ DEFINE_FUNCTION( Position ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 	RECT r;
 	BOOL res = FindOutPositionOfIconDirectly( pv->nid.hWnd, pv->nid.uID, &r );
@@ -1175,7 +1176,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 		JSObject *iconObj = JSVAL_TO_OBJECT(*vp);
 		JL_S_ASSERT_CLASS( iconObj, JL_CLASS(Icon) );
 		HICON *phIcon = (HICON*)JL_GetPrivate(cx, iconObj);
-		JL_S_ASSERT_RESOURCE( phIcon );
+		JL_S_ASSERT_OBJECT_STATE( phIcon, JL_CLASS_NAME(Icon) );
 		hIcon = *phIcon;
 	} else if ( JSVAL_IS_NULL( *vp ) || JSVAL_IS_VOID( *vp ) ) {
 
@@ -1186,7 +1187,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 	}
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 	pv->nid.hIcon = hIcon;
 	pv->nid.uFlags |= NIF_ICON;
@@ -1206,7 +1207,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( visible ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JSBool state;
 	JL_CHK( JS_ValueToBoolean(cx, *vp, &state ) );
@@ -1225,7 +1226,7 @@ DEFINE_PROPERTY_SETTER( text ) {
 
 	JLStr tipText;
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tipText) );
 	size_t len = JL_MIN(sizeof(pv->nid.szTip)-1, tipText.Length());
 	memcpy(pv->nid.szTip, tipText.GetConstStr(), tipText.Length());
@@ -1241,7 +1242,7 @@ DEFINE_PROPERTY_SETTER( text ) {
 DEFINE_PROPERTY_GETTER( text ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	if ( pv->nid.uFlags & NIF_TIP )
 		*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, pv->nid.szTip) );
 	return JS_TRUE;

@@ -122,7 +122,7 @@ DEFINE_FUNCTION( Wait ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	PRStatus status;
 	status = PR_WaitSemaphore( pv->semaphore );
@@ -144,7 +144,7 @@ DEFINE_FUNCTION( Post ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE( pv );
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
 	PRStatus status;
 	status = PR_PostSemaphore( pv->semaphore );

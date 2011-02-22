@@ -76,7 +76,7 @@ DEFINE_FUNCTION( AddForce ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dReal real;
 	JL_CHK( JL_JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddSliderForce(jointId, real);
@@ -99,7 +99,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( axis ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
@@ -113,7 +113,7 @@ DEFINE_PROPERTY_SETTER( axis ) {
 DEFINE_PROPERTY_GETTER( axis ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetSliderAxis(jointId,vector);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
@@ -129,7 +129,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( position ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetSliderPosition(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -143,7 +143,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( positionRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetSliderPositionRate(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;

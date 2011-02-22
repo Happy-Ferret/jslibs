@@ -307,7 +307,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DeepFreezeObject ) {
 
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	//JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &obj) );
 	*JL_RVAL = JSVAL_VOID;
@@ -324,7 +324,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CountProperties ) {
 
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 
 	JSIdArray *arr;
@@ -357,7 +357,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ClearObject ) {
 
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	JS_ClearScope(cx, JSVAL_TO_OBJECT( JL_ARG(1) ));
 	
@@ -423,7 +423,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SetScope ) {
 
-	JL_S_ASSERT_ARG(2);
+	JL_S_ASSERT_ARG_COUNT(2);
 	JSObject *o, *p;
 	JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &o) ); // o = JSVAL_TO_OBJECT(JL_ARG(1));
 	JL_CHK( JS_ValueToObject(cx, JL_ARG(2), &p) ); // p = JSVAL_TO_OBJECT(JL_ARG(2));
@@ -476,7 +476,7 @@ JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 
 DEFINE_FUNCTION( ObjectToId ) {
 
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	JL_S_ASSERT_OBJECT( JL_ARG(1) );
 	JSObject *obj;
 	obj = JSVAL_TO_OBJECT( JL_ARG(1) );
@@ -539,7 +539,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IdToObject ) {
 
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	JL_S_ASSERT_NUMBER( JL_ARG(1) );
 
 	unsigned int id;
@@ -675,7 +675,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Warning ) {
 
 	JLStr str;
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 //	const char *message;
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
@@ -771,7 +771,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Sleep ) {
 
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 	unsigned int time;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &time) );
 	SleepMilliseconds(time);
@@ -827,7 +827,7 @@ DEFINE_FUNCTION( StringRepeat ) {
 
 	JLStr str;
 
-	JL_S_ASSERT_ARG(2);
+	JL_S_ASSERT_ARG_COUNT(2);
 
 	size_t count;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &count) );
@@ -1070,7 +1070,7 @@ JSBool SandboxMaxOperationCallback(JSContext *cx) {
 	if ( pv->expired && !JL_IsExceptionPending(cx) ) {
 
 		JSOperationCallback tmp = JS_SetOperationCallback(cx, NULL);
-		ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), JL_CLASS(OperationLimit)->name);
+		ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), JL_CLASS_NAME(OperationLimit));
 		JL_ASSERT( cpc );
 		JSCrossCompartmentCall *ccc;
 		ccc = JS_EnterCrossCompartmentCall(cx, cpc->proto);
@@ -1135,7 +1135,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_FUNCTION( JL_ARG(2) );
+		JL_S_ASSERT_ARG_IS_FUNCTION(2);
 		pv.queryFunctionValue = JL_ARG(2);
 	} else {
 
@@ -1165,12 +1165,8 @@ DEFINE_FUNCTION( SandboxEval ) {
 	pv.semEnd = JLSemaphoreCreate(0);
 	JLThreadHandler sandboxWatchDogThread;
 	sandboxWatchDogThread = JLThreadStart(SandboxWatchDogThreadProc, cx);
-	if ( !JLThreadOk(sandboxWatchDogThread) ) {
-
-		char reason[1024];
-		JLLastSysetmErrorMessage(reason, sizeof(reason));
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, reason);
-	}
+	if ( !JLThreadOk(sandboxWatchDogThread) )
+		return JL_ThrowOSError(cx);
 
 	void *prevCxPrivate = JS_GetContextPrivate(cx);
 	JS_SetContextPrivate(cx, &pv);
@@ -1224,7 +1220,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_FUNCTION( JL_ARG(2) );
+		JL_S_ASSERT_ARG_IS_FUNCTION(2);
 		pv.queryFunctionValue = JL_ARG(2);
 		JL_CHK( JS_DefineFunction(scx, globalObject, "Query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
 	} else {
@@ -1271,12 +1267,8 @@ DEFINE_FUNCTION( SandboxEval ) {
 
 	JLThreadHandler sandboxWatchDogThread;
 	sandboxWatchDogThread = JLThreadStart(SandboxWatchDogThreadProc, scx);
-	if ( !JLThreadOk(sandboxWatchDogThread) ) {
-
-		char reason[1024];
-		JLLastSysetmErrorMessage(reason, sizeof(reason));
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, reason);
-	}
+	if ( !JLThreadOk(sandboxWatchDogThread) )
+		return JL_ThrowOSError(cx);
 
 //	JSCrossCompartmentCall *call = JS_EnterCrossCompartmentCall(cx, globalObject);
 
@@ -1352,7 +1344,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 
 	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG(1);
+	JL_S_ASSERT_ARG_COUNT(1);
 
 	//const char *buffer;
 	//size_t length;

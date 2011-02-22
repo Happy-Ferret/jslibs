@@ -71,7 +71,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( anchor ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
@@ -85,7 +85,7 @@ DEFINE_PROPERTY_SETTER( anchor ) {
 DEFINE_PROPERTY_GETTER( anchor ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetUniversalAnchor(jointId,vector);
 	//ODERealVectorToArray(cx, 3, vector, vp);
@@ -102,7 +102,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( anchor2 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetUniversalAnchor2(jointId,vector);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
@@ -119,7 +119,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( axis1 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	uint32 length;
 	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
@@ -132,7 +132,7 @@ DEFINE_PROPERTY_SETTER( axis1 ) {
 DEFINE_PROPERTY_GETTER( axis1 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetUniversalAxis1(jointId,vector);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
@@ -149,7 +149,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( axis2 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	uint32 length;
 	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
@@ -162,7 +162,7 @@ DEFINE_PROPERTY_SETTER( axis2 ) {
 DEFINE_PROPERTY_GETTER( axis2 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetUniversalAxis2(jointId,vector);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
@@ -179,7 +179,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( angle1 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	return JL_NativeToJsval(cx, ode::dJointGetUniversalAngle1(jointId), vp);
 	JL_BAD;
 }
@@ -191,7 +191,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( angle2 ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	return JL_NativeToJsval(cx, ode::dJointGetUniversalAngle2(jointId), vp);
 	JL_BAD;
 }
@@ -203,7 +203,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( angle1Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	return JL_NativeToJsval(cx, ode::dJointGetUniversalAngle1Rate(jointId), vp);
 	JL_BAD;
 }
@@ -215,7 +215,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( angle2Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(jointId);
+	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
 	return JL_NativeToJsval(cx, ode::dJointGetUniversalAngle2Rate(jointId), vp);
 	JL_BAD;
 }

@@ -186,7 +186,7 @@ DEFINE_CALL() {
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
 
 // prepare input data
@@ -304,7 +304,7 @@ DEFINE_PROPERTY_GETTER( idle ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.state == Z_NULL, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -322,7 +322,7 @@ DEFINE_PROPERTY_GETTER( adler32 ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.adler, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -339,7 +339,7 @@ DEFINE_PROPERTY_GETTER( lengthIn ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.total_in, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -356,7 +356,7 @@ DEFINE_PROPERTY_GETTER( lengthOut ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_RESOURCE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.total_out, vp) );
 	return JS_TRUE;
 	JL_BAD;
