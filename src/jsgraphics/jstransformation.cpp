@@ -19,6 +19,8 @@
 
 #include "stdafx.h"
 
+#include "jstransformation.h"
+
 
 ALWAYS_INLINE float DEG_TO_RAD( const float angle ) {
 

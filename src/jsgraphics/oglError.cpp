@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#include <gl/gl.h>
+#include "glext.h"
 
 const char *
 OpenGLErrorToConst(GLenum errorCode) {

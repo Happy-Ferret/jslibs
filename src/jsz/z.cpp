@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 
-
 // current method
 enum Method {
 	INFLATE,

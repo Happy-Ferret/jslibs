@@ -38,14 +38,16 @@ public:
 	void *pv; // private data for the user of this structure
 };
 
-void MemBufferFinalizeCallback( void* data ) {
+INLINE void
+MemBufferFinalizeCallback( void* data ) {
 
 	MemBuffer *membuf = (MemBuffer*)data;
 	if ( membuf->MemBufferFree ) // if the mem have to be freed.
 		membuf->MemBufferFree(membuf);
 }
 
-JSBool MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, void* mem, size_t size, MemBufferFree_t free, MemBufferResize_t resize ) {
+INLINE JSBool
+MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, void* mem, size_t size, MemBufferFree_t free, MemBufferResize_t resize ) {
 
 	MemBuffer *membuf;
 	JL_CHK( HandleCreate(cx, JLHID(MEMB), sizeof(MemBuffer), (void**)&membuf, MemBufferFinalizeCallback, memBufferVal) );
@@ -58,7 +60,8 @@ JSBool MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, v
 	JL_BAD;
 }
 
-JSBool MemoryBufferObjectGet( JSContext *cx, jsval memBufferVal, MemBuffer **membuffer ) {
+INLINE JSBool
+MemoryBufferObjectGet( JSContext *cx, jsval memBufferVal, MemBuffer **membuffer ) {
 
 	JL_S_ASSERT( IsHandleType(cx, memBufferVal, JL_CAST_CSTR_TO_UINT32("MEMB")), "Invalid memory object." );
 	*membuffer = (MemBuffer*)GetHandlePrivate(cx, memBufferVal);

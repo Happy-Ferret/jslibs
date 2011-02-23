@@ -193,10 +193,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\static.h"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>

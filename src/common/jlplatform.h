@@ -268,6 +268,8 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 #include <stdlib.h>
 #include <stdio.h>
 #include <cstring>
+
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 #if defined(_MSC_VER)

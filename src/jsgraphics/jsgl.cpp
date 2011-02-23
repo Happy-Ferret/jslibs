@@ -20,6 +20,14 @@ Manage GL extensions:
 
 #include "stdafx.h"
 
+#include "jstransformation.h"
+
+#include <gl/gl.h>
+#include "glext.h" // download at http://www.opengl.org/registry/api/glext.h (http://www.opengl.org/registry/#headers)
+
+#include "oglError.h"
+
+
 #include "../jsprotex/texture.h"
 #include "../jsprotex/textureBuffer.h"
 #include "../jstrimesh/trimeshPub.h"

@@ -16,6 +16,9 @@
 #include <jlhelper.cpp>
 #include <jslibsModule.cpp>
 
+#include <zlib.h>
+#include "z.h"
+
 DECLARE_CLASS( ZError )
 DECLARE_CLASS( Z )
 

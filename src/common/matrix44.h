@@ -205,39 +205,39 @@ inline void Matrix44Mult( Matrix44 *rm, const Matrix44 *m, const Matrix44 *mx ) 
 	// see. http://homepages.cae.wisc.edu/~sedlacek/Doxygen/html/class_matrix_s_s_e.html
 	// see. http://www.google.com/codesearch/p?hl=en&sa=N&cd=70&ct=rc#45SLCQu26VI/zooengine 24/Basic/ZooMatrix.cpp&q=_mm_add_ps _mm_mul_ps _mm_shuffle_ps
 
-	#define RM rm->
-	#define M1 m->
-	#define M2 mx->
+	#define M44RM rm->
+	#define M44M1 m->
+	#define M44M2 mx->
 
-	register __m128 l1 = M1 m1;
-	register __m128 l2 = M1 m2; 
-	register __m128 l3 = M1 m3; 
-	register __m128 l4 = M1 m4; 
+	register __m128 l1 = M44M1 m1;
+	register __m128 l2 = M44M1 m2; 
+	register __m128 l3 = M44M1 m3; 
+	register __m128 l4 = M44M1 m4; 
 	register __m128 tmp;
 	
 	tmp = mx->m1;
-	RM m1 = _mm_add_ps(_mm_add_ps(_mm_add_ps(
+	M44RM m1 = _mm_add_ps(_mm_add_ps(_mm_add_ps(
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(0,0,0,0)), l1),
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(1,1,1,1)), l2)),
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(2,2,2,2)), l3)),
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(3,3,3,3)), l4));
 
 	tmp = mx->m2;
-	RM m2 = _mm_add_ps(_mm_add_ps(_mm_add_ps(
+	M44RM m2 = _mm_add_ps(_mm_add_ps(_mm_add_ps(
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(0,0,0,0)), l1),
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(1,1,1,1)), l2)),
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(2,2,2,2)), l3)),
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(3,3,3,3)), l4));
 
 	tmp = mx->m3;
-	RM m3 = _mm_add_ps(_mm_add_ps(_mm_add_ps(
+	M44RM m3 = _mm_add_ps(_mm_add_ps(_mm_add_ps(
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(0,0,0,0)), l1),
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(1,1,1,1)), l2)),
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(2,2,2,2)), l3)),
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(3,3,3,3)), l4));
 
 	tmp = mx->m4;
-	RM m4 = _mm_add_ps(_mm_add_ps(_mm_add_ps(
+	M44RM m4 = _mm_add_ps(_mm_add_ps(_mm_add_ps(
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(0,0,0,0)), l1),
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(1,1,1,1)), l2)),
 		_mm_mul_ps(_mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(2,2,2,2)), l3)),

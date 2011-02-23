@@ -102,9 +102,8 @@ inline void Matrix55Mult( Matrix55 *rm, const Matrix55 *m, const Matrix55 *mx ) 
 }
 
 
-inline void Matrix55MultVector5( Matrix55 *m, Vector5 *dst, Vector5 *src ) {
-
-}
+//inline void Matrix55MultVector5( Matrix55 *m, Vector5 *dst, Vector5 *src ) {
+//}
 
 
 #endif // _MATRIX55_H_

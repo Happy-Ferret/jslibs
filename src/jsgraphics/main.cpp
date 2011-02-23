@@ -16,11 +16,10 @@
 #include <jlhelper.cpp>
 #include <jslibsModule.cpp>
 
-DECLARE_CLASS(Ogl)
-
-
 DECLARE_STATIC()
+DECLARE_CLASS( Transformation )
 DECLARE_CLASS( OglError )
+DECLARE_CLASS( Ogl )
 
 
 /**doc t:header

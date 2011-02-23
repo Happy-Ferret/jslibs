@@ -33,12 +33,6 @@ source: http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula
 //#include <ivec.h>
 
 
-#define X 0
-#define Y 1
-#define Z 2
-#define W 3
-
-
 typedef union { // __declspec(align(4)) 
     __m128 m128;
     struct { float x, y, z, pad; };
@@ -184,8 +178,8 @@ inline void Vector3Normalize( Vector3 *rv, Vector3 *v ) {
 
 	register __m128 m128 = v->m128;
 	register __m128 a = _mm_mul_ps(m128, m128);
-	register __m128 f = _mm_rsqrt_ss(_mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(X,X,X,X)), _mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(Y,Y,Y,Y)), _mm_shuffle_ps(a, a, _MM_SHUFFLE(Z,Z,Z,Z)))));
-	rv->m128 = _mm_mul_ps(m128, _mm_shuffle_ps(f, f, _MM_SHUFFLE(X,X,X,X)));
+	register __m128 f = _mm_rsqrt_ss(_mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(0,0,0,0)), _mm_add_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(1,1,1,1)), _mm_shuffle_ps(a, a, _MM_SHUFFLE(2,2,2,2)))));
+	rv->m128 = _mm_mul_ps(m128, _mm_shuffle_ps(f, f, _MM_SHUFFLE(0,0,0,0)));
 
 /*
 	__m128 vec = v->m128;
@@ -291,7 +285,7 @@ inline float Vector3Dot(const Vector3 *v0, const Vector3 *v1) { // Dot Product
 inline void Vector3Cross(Vector3 *rv, const Vector3 *v0, const Vector3 *v1) { // Cross Product
 
 #ifdef SSE
-	rv->m128 = _mm_sub_ps(_mm_mul_ps(_mm_shuffle_ps(v0->m128, v0->m128, _MM_SHUFFLE(W, X, Z, Y)), _mm_shuffle_ps(v1->m128, v1->m128, _MM_SHUFFLE(W, Y, X, Z))), _mm_mul_ps(_mm_shuffle_ps(v0->m128, v0->m128, _MM_SHUFFLE(W, Y, X, Z)), _mm_shuffle_ps(v1->m128, v1->m128, _MM_SHUFFLE(W, X, Z, Y))));
+	rv->m128 = _mm_sub_ps(_mm_mul_ps(_mm_shuffle_ps(v0->m128, v0->m128, _MM_SHUFFLE(3, 0, 2, 1)), _mm_shuffle_ps(v1->m128, v1->m128, _MM_SHUFFLE(3, 1, 0, 2))), _mm_mul_ps(_mm_shuffle_ps(v0->m128, v0->m128, _MM_SHUFFLE(3, 1, 0, 2)), _mm_shuffle_ps(v1->m128, v1->m128, _MM_SHUFFLE(3, 0, 2, 1))));
 #else // SSE
 	rv->x = v0->y * v1->z - v0->z * v1->y;
 	rv->y = v0->z * v1->x - v0->x * v1->z;

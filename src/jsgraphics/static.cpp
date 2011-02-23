@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#include "jstransformation.h"
+
 
 /**doc fileIndex:topmost **/
 
