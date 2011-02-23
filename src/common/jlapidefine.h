@@ -1,4 +1,6 @@
+
 #pragma once
+
 #define DEF(RET, NAME, ARGS) RET(*NAME)ARGS;
 struct JLApi {
 #include "jlapi.tbl"

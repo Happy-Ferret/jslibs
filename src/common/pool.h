@@ -12,10 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
-#ifndef _JL_POOL_H_
-#define _JL_POOL_H_
+#pragma once
 
 #include <jlalloc.h>
 
@@ -74,8 +72,4 @@ inline void* PoolPop( Pool *pool ) {
 	return pool->list[--pool->length];
 }
 
-
-
 }
-
-#endif // _JL_POOL_H_

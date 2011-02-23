@@ -12,10 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
-#ifndef _VECTOR4_H_
-#define _VECTOR4_H_
+#pragma once
 
 #include <stdlib.h>
 
@@ -161,7 +159,3 @@ inline void Vector4Normalize( Vector4 *v ) {
 
 }
 
-
-
-
-#endif // _VECTOR4_H_

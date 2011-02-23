@@ -12,6 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
 #pragma once
 
 #include <jlhelper.h>

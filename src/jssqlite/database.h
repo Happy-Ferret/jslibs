@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
+#pragma once
+
 DECLARE_CLASS( Database )
 
 #define MAX_FUNCTION_ARG 64

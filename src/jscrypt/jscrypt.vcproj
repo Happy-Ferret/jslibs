@@ -199,30 +199,6 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\asymmetricCipher.h"
-				>
-			</File>
-			<File
-				RelativePath=".\cipher.h"
-				>
-			</File>
-			<File
-				RelativePath=".\error.h"
-				>
-			</File>
-			<File
-				RelativePath=".\hash.h"
-				>
-			</File>
-			<File
-				RelativePath=".\misc.h"
-				>
-			</File>
-			<File
-				RelativePath=".\prng.h"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>

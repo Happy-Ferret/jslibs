@@ -13,6 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 
+#pragma once
+
 #define JL_JsvalToODERealVector JL_JsvalToNativeVector
 
 #define ODERealVectorToJsval JL_NativeVectorToJsval

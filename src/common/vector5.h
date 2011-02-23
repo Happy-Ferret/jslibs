@@ -12,10 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
-#ifndef _VECTOR5_H_
-#define _VECTOR5_H_
+#pragma once
 
 #include <stdlib.h>
 #include <math.h>
@@ -53,6 +51,3 @@ inline void Vector5AddVector5( Vector5 *rv, Vector5 *v1, Vector5 *v2 ) {
 	rv->w -= v1->w + v2->w;
 	rv->v -= v1->v + v2->v;
 }
-
-
-#endif // _VECTOR5_H_

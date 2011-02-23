@@ -12,10 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
-#ifndef _MATRIX55_H_
-#define _MATRIX55H_
+#pragma once
 
 #include <stdlib.h>
 #include <math.h>
@@ -104,6 +102,3 @@ inline void Matrix55Mult( Matrix55 *rm, const Matrix55 *m, const Matrix55 *mx ) 
 
 //inline void Matrix55MultVector5( Matrix55 *m, Vector5 *dst, Vector5 *src ) {
 //}
-
-
-#endif // _MATRIX55_H_

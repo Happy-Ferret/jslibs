@@ -13,9 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "asymmetricCipher.h"
-#include "prng.h"
-#include "hash.h"
+
+DECLARE_CLASS( Prng )
+
 
 enum AsymmetricCipherType {
 	rsa,

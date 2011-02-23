@@ -12,10 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
-#ifndef _STACK_H_
-#define _STACK_H_
+#pragma once
 
 #include <jlalloc.h>
 
@@ -391,5 +389,3 @@ public:
 
 }
 
-
-#endif // _STACK_H_

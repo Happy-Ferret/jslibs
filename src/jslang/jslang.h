@@ -12,6 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
 #pragma once
 
 static const uint32_t jslangModuleId = JL_CAST_CSTR_TO_UINT32("lang");

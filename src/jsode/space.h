@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
+#pragma once
+
 DECLARE_CLASS( Space );
 
 ALWAYS_INLINE bool JL_JsvalIsSpace( const jsval val ) {

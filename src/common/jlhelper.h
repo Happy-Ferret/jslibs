@@ -12,10 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
-#ifndef _JSHELPER_H_
-#define _JSHELPER_H_
+#pragma once
 
 #include "jlplatform.h"
 
@@ -3857,6 +3855,3 @@ JSBool JLSerialize( JSContext *cx, jsval *val ) {
 	JL_BAD;
 }
 */
-
-
-#endif // _JSHELPER_H_

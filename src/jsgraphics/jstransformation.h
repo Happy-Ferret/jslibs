@@ -12,6 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
 #pragma once
 
 #include "vector3.h"

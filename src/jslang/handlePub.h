@@ -12,8 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _HANDLEAPI_H_
-#define _HANDLEAPI_H_
+
+#pragma once
 
 #include "stdafx.h"
 
@@ -189,5 +189,3 @@ bool c = IsIdType(cx, *JL_RVAL, 'TEST');
 bool d = (data == GetHandlePrivate(cx, *JL_RVAL));
 
 */
-
-#endif // _HANDLEAPI_H_

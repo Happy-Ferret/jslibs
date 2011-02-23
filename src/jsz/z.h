@@ -13,5 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 
+#pragma once
+
 NEVER_INLINE JSBool FASTCALL
 ThrowZError( JSContext *cx, int errorCode, const char *errorMessage );

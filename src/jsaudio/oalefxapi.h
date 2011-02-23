@@ -13,6 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 
+#pragma once
+
 // EFX Extension function pointer variables
 
 // Effect objects

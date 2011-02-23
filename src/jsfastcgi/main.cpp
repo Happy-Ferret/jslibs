@@ -16,10 +16,9 @@
 #include <jlhelper.cpp>
 #include <jslibsModule.cpp>
 
-//#include "fastcgi.h"
-#include "fcgi.h"
-#include "static.h"
+DECLARE_STATIC();
 
+//#include "fastcgi.h"
 
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {

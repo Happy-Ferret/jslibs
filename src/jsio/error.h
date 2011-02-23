@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
+#pragma once
+
 DECLARE_CLASS( IoError )
 
 NEVER_INLINE JSBool FASTCALL

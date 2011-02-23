@@ -12,10 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
-#ifndef _JSLIBSMODULE_H_
-#define _JSLIBSMODULE_H_
+#pragma once
 
 #include "jlplatform.h"
 //#include <sys/types.h>
@@ -29,7 +27,7 @@ EXTERN_C void* jl_realloc_fct( void*, size_t );
 EXTERN_C size_t jl_msize_fct( void* );
 EXTERN_C void jl_free_fct( void* );
 */
-extern int _unsafeMode;
+//extern int _unsafeMode;
 
 extern uint32_t _moduleId;
 
@@ -45,5 +43,3 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx);
 EXTERN_C DLLEXPORT void ModuleFree();
 
 JSBool InitJslibsModule( JSContext *cx );
-
-#endif // _JSLIBSMODULE_H_

@@ -12,10 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
-#ifndef _JSCLASS_H_
-#define _JSCLASS_H_
+#pragma once
 
 #define JL_NO_TINYID (-1) // see JL_DefineClassProperties()
 
@@ -399,7 +397,6 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define DEFINE_PROPERTY_GETTER(name) static JSBool _##name##Getter(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
 #define DEFINE_PROPERTY_SETTER(name) static JSBool _##name##Setter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp)
 
-#endif // _JSCLASS_H_
 
 /*
 

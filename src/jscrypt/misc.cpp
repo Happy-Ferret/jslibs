@@ -13,7 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "misc.h"
 
 
 /**doc fileIndex:topmost **/

@@ -12,8 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _TRIMESH_PUB_H_
-#define _TRIMESH_PUB_H_
+
+#pragma once
 
 #define SURFACE_REAL_TYPE float
 #define SURFACE_INDEX_TYPE int
@@ -50,6 +50,3 @@ Surface *GetTrimeshSurface( JSContext *cx, JSObject *obj ) {
 
 	return (Surface*)JL_GetPrivate(cx, obj);
 }
-
-
-#endif // _TRIMESH_PUB_H_

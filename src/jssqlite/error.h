@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
+#pragma once
+
 DECLARE_CLASS( SqliteError )
 
 #define SLOT_SQLITE_ERROR_CODE 0

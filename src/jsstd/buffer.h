@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
+#pragma once
+
 JSBool WriteRawDataChunk( JSContext *cx, JSObject *obj, size_t amount, const char *str );
 JSBool ReadRawDataAmount( JSContext *cx, JSObject *obj, size_t *amount, char *str );
 JSBool ReadDataAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval );

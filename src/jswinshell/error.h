@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
+#pragma once
+
 DECLARE_CLASS( WinError );
 
 #define SLOT_WIN_ERROR_CODE_HI 0

@@ -26,9 +26,17 @@
 
 #include <tomcrypt.h>
 
-//#undef XMALLOC
-//#undef XCALLOC
-//#undef XREALLOC
-//#undef XFREE
 
-#include "error.h"
+#define RSA_SIGN_DEFAULT_SALT_LENGTH 16
+#define ASYMMETRIC_CIPHER_PRNG_SLOT 0
+
+struct PrngPrivate {
+
+	ltc_prng_descriptor prng;
+	prng_state state;
+};
+
+
+NEVER_INLINE JSBool FASTCALL
+ThrowCryptError( JSContext *cx, int errorCode );
+

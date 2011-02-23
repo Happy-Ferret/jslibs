@@ -12,9 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _TEXTURE_H_
-#define _TEXTURE_H_
 
+#pragma once
 
 #define PTYPE float
 
@@ -46,5 +45,3 @@ ALWAYS_INLINE JSClass* JL_TextureJSClass( const JSContext *cx ) {
 		clasp = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Texture")->clasp;
 	return clasp;
 }
-
-#endif // _TEXTURE_H_

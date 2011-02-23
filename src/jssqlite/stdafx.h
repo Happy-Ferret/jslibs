@@ -12,10 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
-#ifndef stdafx_h___
-#define stdafx_h___
+#pragma once
 
 #include <jlhelper.h>
 #include <jlclass.h>
@@ -25,5 +23,3 @@
 #include <queue.h>
 
 #include <sqlite3.h>
-
-#endif // stdafx_h___

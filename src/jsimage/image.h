@@ -12,8 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
+#pragma once
 
 #define SLOT_FUNCTION_ALLOC 0
 

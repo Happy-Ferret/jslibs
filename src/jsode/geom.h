@@ -13,6 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 
+#pragma once
+
 #define SLOT_GEOM_SURFACEPARAMETER 0
 #define SLOT_GEOM_CONTACT_FUNCTION 1
 #define SLOT_GEOM_SPACEOBJECT 2

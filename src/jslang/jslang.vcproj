@@ -183,10 +183,6 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\blob.h"
-				>
-			</File>
-			<File
 				RelativePath=".\blobPub.h"
 				>
 			</File>
@@ -199,19 +195,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\static.h"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\stream.h"
-				>
-			</File>
-			<File
-				RelativePath=".\streamapi.h"
 				>
 			</File>
 		</Filter>

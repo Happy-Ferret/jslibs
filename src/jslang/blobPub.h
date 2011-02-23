@@ -12,8 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _BLOBAPI_H_
-#define _BLOBAPI_H_
+
+#pragma once
 
 #include <jlhelper.h>
 
@@ -128,6 +128,3 @@ inline JSBool BlobGetBufferAndLength( JSContext *cx, JSObject *bStringObject, vo
 }
 
 */
-
-
-#endif

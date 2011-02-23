@@ -13,6 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 
+#pragma once
+
 NEVER_INLINE JSBool FASTCALL
 ThrowSdlError( JSContext *cx );
 

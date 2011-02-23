@@ -12,20 +12,15 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
 #pragma once
 
-#ifndef _VECTOR3_H_
-#define _VECTOR3_H_
-
-/*
-source: http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula2/code/nebula2/inc/mathlib/_vector3_sse.h?view=markup
-*/
-
-
+// source: http://nebuladevice.svn.sourceforge.net/viewvc/nebuladevice/trunk/nebula2/code/nebula2/inc/mathlib/_vector3_sse.h?view=markup (MIT License)
 
 #include <stdlib.h>
 
 #include "vector4.h"
+
 
 #ifdef SSE
 
@@ -294,8 +289,6 @@ inline void Vector3Cross(Vector3 *rv, const Vector3 *v0, const Vector3 *v1) { //
 
 }
 
-
-#endif // _VECTOR3_H_
 
 /*
 

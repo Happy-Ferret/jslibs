@@ -13,8 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-#ifndef _HOST_H_
-#define _HOST_H_
+#pragma once
 
 #define NAME_MODULE_INIT "ModuleInit"
 #define NAME_MODULE_RELEASE "ModuleRelease"
@@ -39,5 +38,3 @@ bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memal
 JSBool MemoryManagerEnableGCEvent( JSContext *cx );
 JSBool MemoryManagerDisableGCEvent( JSContext *cx );
 bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free );
-
-#endif // _HOST_H_

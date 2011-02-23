@@ -12,13 +12,10 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
 #pragma once
 
-#ifndef _MEMBUFFER_H_
-#define _MEMBUFFER_H_
-
 #include "../jslang/handlePub.h"
-
 
 struct MemBuffer;
 
@@ -60,6 +57,7 @@ MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, void* me
 	JL_BAD;
 }
 
+
 INLINE JSBool
 MemoryBufferObjectGet( JSContext *cx, jsval memBufferVal, MemBuffer **membuffer ) {
 
@@ -92,5 +90,3 @@ JSBool MemoryBufferObjectFree( JSContext *cx, jsval memBufferVal ) {
 	JL_BAD;
 }
 */
-
-#endif // _MEMBUFFER_H_

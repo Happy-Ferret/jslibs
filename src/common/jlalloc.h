@@ -12,10 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
-#ifndef _JLALLOC_H_
-#define _JLALLOC_H_
+#pragma once
 
 #include "jlplatform.h"
 
@@ -324,6 +322,3 @@ namespace jl {
 	template <class T>
 	class NOVTABLE StaticAllocBig : public StaticAlloc<T, 65536> {};
 }
-
-
-#endif // _JLALLOC_H_

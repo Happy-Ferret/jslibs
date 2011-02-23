@@ -12,6 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
+#pragma once
+
 DECLARE_CLASS( Vector )
 
 typedef void (*VectorSet_t)(void *userData, int index, float value);

@@ -12,8 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _JSFONT_H_
-#define _JSFONT_H_
+
+#pragma once
 
 #include <jlhelper.h>
 
@@ -145,6 +145,3 @@ ALWAYS_INLINE JsfontPrivate* GetJsfontPrivate(JSContext *cx, JSObject *fontObj) 
 	JL_ASSERT( pv );
 	return pv;
 }
-
-
-#endif // _JSFONT_H_

@@ -13,6 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 
+#pragma once
+
 class JsException {
 public:
 	JsException( JSContext *cx, const char *text, bool force = false ) {

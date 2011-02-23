@@ -13,6 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 
+#pragma once
+
 DECLARE_CLASS( Body )
 
 struct BodyPrivate {

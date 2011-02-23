@@ -12,10 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
-#ifndef _QUEUE_H_
-#define _QUEUE_H_
+#pragma once
 
 #include <jlalloc.h>
 
@@ -431,5 +429,3 @@ public:
 
 }
 
-
-#endif // _QUEUE_H_

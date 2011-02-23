@@ -12,11 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+
 #pragma once
-
-#ifndef _JLPLATFORM_H_
-#define _JLPLATFORM_H_
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
@@ -2428,8 +2425,6 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 	}
-
-#endif // _JLPLATFORM_H_
 
 
 

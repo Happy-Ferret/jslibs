@@ -13,6 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 
+#pragma once
+
 DECLARE_CLASS( JointGroup );
 DECLARE_CLASS( Joint );
 DECLARE_CLASS( JointBall );

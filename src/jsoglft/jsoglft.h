@@ -12,8 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _JSOGLFT_H_
-#define _JSOGLFT_H_
+
+#pragma once
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -22,5 +22,3 @@ struct JsoglftPrivate {
 
 	FT_Library ftLibrary;
 };
-
-#endif // _JSOGLFT_H_

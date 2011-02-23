@@ -12,10 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
-#ifndef _BUFFER_H_
-#define _BUFFER_H_
+#pragma once
 
 #include <jlalloc.h>
 
@@ -467,10 +465,7 @@ public:
 };
 
 
-
-
 }
-#endif // _BUFFER_H_
 
 
 /* QA test:

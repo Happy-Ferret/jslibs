@@ -14,4 +14,8 @@
 
 #include <jlhelper.h>
 
+// by default, we run in unsafe mode.
+DLLLOCAL int _unsafeMode = true;
+
 jl::PreservAllocNone_threadsafe<JLStr::Inner> JLStr::mem;
+

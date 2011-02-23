@@ -12,10 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#pragma once
 
-#ifndef _JLMODULEPRIVATE_H_
-#define _JLMODULEPRIVATE_H_
+#pragma once
 
 #include "jlplatform.h"
 
@@ -56,5 +54,3 @@ ALWAYS_INLINE void* ModulePrivateGet() {
 	JL_ASSERT( modulePrivate != NULL ); // already disallocated
 	return modulePrivate;
 }
-
-#endif // _JLMODULEPRIVATE_H_

@@ -20,12 +20,12 @@
 #pragma comment(lib, "advapi32.lib") // rng_get_bytes.obj (function _rng_win32) needs __imp__CryptReleaseContext@8, __imp__CryptGenRandom@12, __imp__CryptAcquireContextA@20
 #endif
 
-#include "misc.h"
-#include "asymmetricCipher.h"
-#include "prng.h"
-#include "hash.h"
-#include "cipher.h"
-
+DECLARE_CLASS( CryptError )
+DECLARE_CLASS( Prng )
+DECLARE_CLASS( Hash )
+DECLARE_CLASS( Cipher )
+DECLARE_CLASS( AsymmetricCipher )
+DECLARE_STATIC()
 
 
 /**doc t:header

@@ -13,7 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "cipher.h"
 
 enum CryptMode {
 	mode_ecb,
