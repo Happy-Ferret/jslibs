@@ -152,13 +152,13 @@ DEFINE_PROPERTY_GETTER( direction ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $REAL $INAME
+ $INT $INAME
 **/
 DEFINE_PROPERTY_SETTER( firstContact ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &firstContact) );
@@ -186,7 +186,7 @@ DEFINE_PROPERTY_SETTER( backfaceCull ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &backfaceCull) );

@@ -36,7 +36,7 @@
 int _puts(JSContext *cx, const char *str) {
 
 	jsval stdoutFunction;
-	if ( GetHostObjectValue(cx, JLID(cx, stdout), &stdoutFunction) && JL_IsFunction(cx, stdoutFunction) ) {
+	if ( GetHostObjectValue(cx, JLID(cx, stdout), &stdoutFunction) && JL_ValueIsFunction(cx, stdoutFunction) ) {
 
 		int len = (int)strlen(str);
 		JSString *jsstr = JS_NewStringCopyN(cx, str, len);
@@ -255,7 +255,7 @@ DEFINE_FUNCTION( DumpHeap )
 
 DEFINE_FUNCTION( DumpHeap ) {
 
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -487,7 +487,7 @@ DEFINE_PROPERTY_GETTER( currentMemoryUsage ) {
 	GetProcInfo(getpid(), &pinfo);
 	bytes = pinfo.vsize;
 #else
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
 #endif
 
 	JL_CHK( JL_NewNumberValue(cx, bytes, vp) );
@@ -524,7 +524,7 @@ DEFINE_PROPERTY_GETTER( peakMemoryUsage ) {
 	return JS_TRUE;
 	JL_BAD;
 #else
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
 #endif
 
 	*vp = JSVAL_VOID;
@@ -562,7 +562,7 @@ DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 	JL_BAD;
 #else
 
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 
@@ -640,7 +640,7 @@ DEFINE_PROPERTY_SETTER( gcZeal ) {
 
 #else // JS_GC_ZEAL
 
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 
@@ -670,7 +670,7 @@ DEFINE_FUNCTION( GetObjectPrivate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_ARG( 1 ) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 
 	if ( !(JL_GetClass(obj)->flags & JSCLASS_HAS_PRIVATE) ) {
 
@@ -1044,7 +1044,7 @@ DEFINE_FUNCTION( EvalInStackFrame ) {
 
 	JL_S_ASSERT_ARG_MIN( 2 );
 
-	JL_S_ASSERT_STRING( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_STRING(1);
 
 	unsigned int frameIndex;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &frameIndex) );
@@ -1167,7 +1167,7 @@ DEFINE_FUNCTION( DefinitionLocation ) {
 	JSScript *script;
 	script = NULL;
 
-	if ( JL_IsFunction(cx, JL_ARG(1)) ) {
+	if ( JL_ValueIsFunction(cx, JL_ARG(1)) ) {
 
 		JSFunction *fun;
 		fun = JS_ValueToFunction(cx, JL_ARG(1));
@@ -1222,7 +1222,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( PropertiesList ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( JL_ARG(1) );
@@ -1279,7 +1279,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( PropertiesInfo ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( JL_ARG(1) );
@@ -1513,7 +1513,7 @@ DEFINE_FUNCTION( DisassembleScript ) {
 
 #else // DEBUG
 
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 
@@ -1534,7 +1534,7 @@ DEFINE_FUNCTION( AssertJit ) {
 #ifdef JS_METHODJIT
     if (JS_GetOptions(cx) & JSOPTION_METHODJIT) {
         if (!cx->fp()->script()->getJIT(cx->fp()->isConstructing())) {
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_RUNTIME_ERROR, "JIT" );
+			JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "JIT" );
             return JS_FALSE;
         }
     }
@@ -1565,7 +1565,7 @@ DEFINE_PROPERTY_GETTER( processTime ) {
 	JL_BAD;
 
 #else
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
 #endif
 
 	*vp = JSVAL_VOID;
@@ -1613,7 +1613,7 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 	JL_BAD;
 
 #else
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
 #endif
 
 	*vp = JSVAL_VOID;
@@ -1630,7 +1630,7 @@ DEFINE_FUNCTION( DebugOutput ) {
 	*JL_RVAL = JSVAL_TRUE;
 	return JS_TRUE;
 #else
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
 #endif
 
 	*JL_RVAL = JSVAL_VOID;
@@ -1727,7 +1727,7 @@ DEFINE_FUNCTION( DebugBreak ) {
 	return JS_TRUE;
 #endif // DEBUG
 
-	JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
 	return JS_TRUE;
 	JL_BAD;
 }

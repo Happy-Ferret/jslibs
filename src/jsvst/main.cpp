@@ -820,7 +820,7 @@ DEFINE_PROPERTY_GETTER( canProcessReplacing ) {
 
 		JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 		JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
-		JL_S_ASSERT_BOOLEAN( *vp );
+		JL_S_ASSERT_IS_BOOLEAN(*vp, "");
 		vstPlugin->canProcessReplacing( JSVAL_TO_BOOLEAN(*vp) == JS_TRUE ? true : false );
 	}
 	return JS_TRUE;
@@ -835,7 +835,7 @@ DEFINE_PROPERTY_SETTER( numPrograms ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	vstPlugin->SetNumPrograms( JSVAL_TO_INT(*vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -845,7 +845,7 @@ DEFINE_PROPERTY_SETTER( numParams ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	vstPlugin->SetNumParams( JSVAL_TO_INT(*vp) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -855,7 +855,7 @@ DEFINE_PROPERTY_SETTER( numInputs ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	vstPlugin->setNumInputs( JSVAL_TO_INT(*vp) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -865,7 +865,7 @@ DEFINE_PROPERTY_SETTER( numOutputs ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	vstPlugin->setNumOutputs( JSVAL_TO_INT(*vp) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -1063,7 +1063,7 @@ DEFINE_PROPERTY_SETTER( outputLatency ) {
 
 DEFINE_PROPERTY_SETTER( initialDelay ) {
 
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	vstPlugin->setInitialDelay( JSVAL_TO_INT( *vp ) );
@@ -1076,7 +1076,7 @@ DEFINE_PROPERTY_SETTER( uniqueID ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
-	JL_S_ASSERT_STRING( *vp );
+	JL_S_ASSERT_IS_STRING(*vp, "");
 	JSString *jsstr = JS_ValueToString(cx, *vp);
 	{
 	JLStr str(cx, jsstr);
@@ -1095,7 +1095,7 @@ DEFINE_FUNCTION( sendVstEventToHost ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
@@ -1116,7 +1116,7 @@ DEFINE_FUNCTION( sendVstEventToHost ) {
 		res = vstPlugin->sendVstEventsToHost(&events);
 	} else {
 
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_INSTANCE, "MidiEvent");
+		JL_REPORT_ERROR_NUM( JLSMSG_INVALID_INSTANCE, "MidiEvent");
 	}
 
 	*JL_RVAL = res ? JSVAL_TRUE : JSVAL_FALSE;

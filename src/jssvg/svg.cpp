@@ -35,7 +35,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 	*pixbuf = NULL;
 	jsval onImageFct;
 	JL_CHK( JS_GetProperty(cx, obj, "onImage", &onImageFct) );
-	if ( JL_IsFunction(cx, onImageFct) ) {
+	if ( JL_ValueIsFunction(cx, onImageFct) ) {
 
 		jsval nameVal, image;
 		JL_CHK( JL_NativeToJsval(cx, name, &nameVal) );
@@ -185,9 +185,9 @@ DEFINE_FUNCTION( Write ) {
 
 		xmlErrorPtr xmlErr = xmlGetLastError();
 		if ( xmlErr != NULL ) // XML error
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, xmlErr->message); //("SVG error: %s. %s", error->message, xmlErr->message);
+			JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, xmlErr->message); //("SVG error: %s. %s", error->message, xmlErr->message);
 		else
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, error->message); // JL_REPORT_ERROR("SVG error: %s", error->message);
+			JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, error->message); // JL_REPORT_ERROR("SVG error: %s", error->message);
 	}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -270,7 +270,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 	GError *error = NULL;
 	status = rsvg_handle_close(handle, &error);
 	if ( !status )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, error->message);
+		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, error->message);
 
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
@@ -312,7 +312,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 /*
 	if ( JL_ARG_ISDEF(4) ) {
 
-		JL_S_ASSERT_ARRAY( JL_ARG(4) );
+		JL_S_ASSERT_ARG_IS_ARRAY(4);
 		double trVector[6];
 		size_t currentLength;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(4), trVector, COUNTOF(trVector), &currentLength ) );
@@ -341,7 +341,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 			surfaceFormat = CAIRO_FORMAT_ARGB32; // Pre-multiplied alpha is used. (That is, 50% transparent red is 0x80800000, not 0x80ff0000.)
 			break;
 		default:
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "unsupported output image format");
+			JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "unsupported output image format");
 	}
 
 	cairo_surface_t *surface = cairo_image_surface_create(surfaceFormat, imageWidth, imageHeight);
@@ -580,7 +580,7 @@ DEFINE_PROPERTY_SETTER( dpi ) {
 		JL_CHK( JL_JsvalToNative(cx, *vp, &dpi) );
 		rsvg_handle_set_dpi(handle, dpi);
 	} else
-	if ( JL_IsArray(cx, *vp) ) {
+	if ( JL_ValueIsArray(cx, *vp) ) {
 
 		size_t dpiX, dpiY;
 		jsval tmp;
@@ -591,7 +591,7 @@ DEFINE_PROPERTY_SETTER( dpi ) {
 		rsvg_handle_set_dpi_x_y(handle, dpiX, dpiY);
 	}
 	
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "undefined, number or Array");
+	JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "undefined, number or Array");
 	JL_BAD;
 }
 

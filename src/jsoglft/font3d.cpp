@@ -130,7 +130,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_S_ASSERT_ARG_RANGE( 2, 3 );
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *fontObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_S_ASSERT_CLASS( fontObj, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Font")->clasp );
 
@@ -178,7 +178,7 @@ DEFINE_CONSTRUCTOR() {
 			pv->face = new OGLFT::TranslucentTexture(ftface, size);
 			break;
 		default:
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_RANGE_ERROR, "invalid 3D font style");
+			JL_REPORT_ERROR_NUM( JLSMSG_RANGE_ERROR, "invalid 3D font style");
 	}
 
 	JL_S_ASSERT_ERROR_NUM(pv->face->isValid(), JLSMSG_RUNTIME_ERROR, "failed to create the font" );
@@ -378,7 +378,7 @@ DEFINE_FUNCTION( SetColor ) {
 		return JS_TRUE;
 	}
 
-	JL_S_ASSERT_ARRAY( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_ARRAY(1);
 
 	GLfloat color[4];
 	uint32 len;
@@ -420,7 +420,7 @@ DEFINE_FUNCTION( SetBackgroundColor ) {
 		return JS_TRUE;
 	}
 
-	JL_S_ASSERT_ARRAY( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_ARRAY(1);
 
 	GLfloat color[4];
 	uint32 len;
@@ -549,7 +549,7 @@ DEFINE_PROPERTY_SETTER( colorCallback ) {
 		}
 	} else {
 
-		JL_S_ASSERT_IS_FUNCTION( *vp );
+		JL_S_ASSERT_IS_FUNCTION(*vp, "");
 		OGLFT::ColorTess *colorTess = new ColorTess(JL_GetRuntime(cx), obj, *vp);
 		poly->setColorTess(colorTess);
 	}
@@ -568,7 +568,7 @@ DEFINE_FUNCTION( SetCharacterDisplayLists ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 
-	JL_S_ASSERT_ARRAY(JL_ARG(1));
+	JL_S_ASSERT_ARG_IS_ARRAY(1);
 	JSObject *arrObj = JSVAL_TO_OBJECT(JL_ARG(1));
 	jsuint length;
 	JL_CHK( JS_GetArrayLength(cx, arrObj, &length) );

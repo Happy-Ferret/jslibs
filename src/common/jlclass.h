@@ -124,7 +124,7 @@ inline JSBool JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JL_CHK(obj);
-	JL_S_ASSERT( cs->clasp.name && cs->clasp.name[0], "Invalid class name." );
+	JL_ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
 
 	if ( JL_GetHostPrivate(cx)->camelCase == 1 ) {
 
@@ -139,7 +139,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	if ( cs->parentProtoName != NULL ) {
 
 		parent_proto = JL_GetCachedClassProto(hpv, cs->parentProtoName)->proto;
-		JL_S_ASSERT( parent_proto != NULL, "%s prototype not found.", cs->parentProtoName );
+		JL_S_ASSERT_ERROR_NUM( parent_proto != NULL, JLSMSG_RUNTIME_ERROR2, "prototype not found", cs->parentProtoName );
 	} else {
 
 		parent_proto = NULL;
@@ -151,7 +151,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JSObject *proto;
 	proto = JS_InitClass(cx, obj, parent_proto, &cs->clasp, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
 	
-	JL_S_ASSERT( proto != NULL, "Unable to create the %s class", cs->clasp.name );
+	JL_S_ASSERT_ERROR_NUM( proto != NULL, JLSMSG_RUNTIME_ERROR2, "unable to create the class", cs->clasp.name );
 	//JLASSERT_UNEXPECTED_RUNTIME( proto != NULL, "Unable to create the class", cs->clasp.name );
 
 	JL_ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(cx, proto) == NULL );

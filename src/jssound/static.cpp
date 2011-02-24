@@ -78,7 +78,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( DecodeOggVorbis ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *streamObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 //	NIStreamRead streamReader;
@@ -284,7 +284,7 @@ DEFINE_FUNCTION( DecodeSound ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
 
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *streamObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 //	NIStreamRead streamReader;
@@ -394,7 +394,7 @@ DEFINE_FUNCTION( SplitChannels ) {
 
 	JLStr bufStr;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 
 	unsigned int rate, channelCount, bits, frames;
 	JSObject *srcBlobObj = JSVAL_TO_OBJECT(JL_ARG(1));

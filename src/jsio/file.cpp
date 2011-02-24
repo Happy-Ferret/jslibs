@@ -162,7 +162,7 @@ DEFINE_FUNCTION( Seek ) {
 	PRInt64 offset;
 	if ( JL_ARG_ISDEF(1) ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER53(1);
+		JL_S_ASSERT_ARG_IS_INTEGER_NUMBER(1);
 		jsdouble doubleOffset;
 		JL_CHK( JL_JsvalToNative( cx, JL_ARG(1), &doubleOffset ) );
 		offset = (PRInt64)doubleOffset;
@@ -310,7 +310,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_S_ASSERT( fd != NULL, "File is closed." );
-	JL_S_ASSERT_IS_INTEGER53(*vp);
+	JL_S_ASSERT_IS_INTEGER_NUMBER(*vp, "");
 	PRInt64 offset;
 	jsdouble doubleOffset;
 	JL_CHK( JL_JsvalToNative( cx, *vp, &doubleOffset ) );
@@ -481,7 +481,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 DEFINE_PROPERTY_SETTER( name ) {
 
 	JLStr fromFileName, toFileName;
-	JL_S_ASSERT_DEFINED( *vp );
+	JL_S_ASSERT_VALUE_VALID( !JSVAL_IS_VOID(*vp), "!undefined", "" );
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );

@@ -133,7 +133,7 @@ DEFINE_CONSTRUCTOR() {
 			// see JL_CHK( JL_JsvalToNativeVector(cx, *JL_ARGV, tmp, 16, &len) );
 			pv->isIdentity = false;
 		} else
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid matrix44");
+			JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid matrix44");
 	}
 	// else uninitialized matrix
 
@@ -182,7 +182,7 @@ DEFINE_FUNCTION( Load ) {
 		// see JL_CHK( JL_JsvalToNativeVector(cx, *JL_ARGV, tmp, 16, &len) );
 		pv->isIdentity = false;
 	} else
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid matrix44");
+		JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid matrix44");
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
@@ -837,7 +837,7 @@ DEFINE_FUNCTION( TransformVector ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARRAY( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_ARRAY(1);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -881,7 +881,7 @@ DEFINE_FUNCTION( TransformVector ) {
 		JL_CHK( JL_NativeToJsval(cx, dst.w, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 3, &tmpValue) );
 	} else
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "Invalid vector length");
+		JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "Invalid vector length");
 
 	*JL_RVAL = JL_ARG(1);
 	return JS_TRUE;
@@ -900,7 +900,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( translation ) {
 
 	JL_USE(id);
-	JL_S_ASSERT_ARRAY( *vp );
+	JL_S_ASSERT_IS_ARRAY( *vp, "" );
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -978,7 +978,7 @@ DEFINE_SET_PROPERTY() {
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_NUMBER(*vp);
+	JL_S_ASSERT_IS_NUMBER(*vp, "");
 	JL_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
 
 //	pv->mat->raw[slot] = JSVAL_IS_DOUBLE(*vp) ? JSVAL_TO_DOUBLE(*vp) : JSVAL_TO_INT(*vp);

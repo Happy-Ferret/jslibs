@@ -250,7 +250,7 @@ DEFINE_SET_PROPERTY() {
 
 		switch ( hr ) {
 			case DISP_E_BADPARAMCOUNT: // doc. An error return value that indicates that the number of elements provided to the method is different from the number of arguments accepted by the method.
-				JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "read-only property"); // (TBD) be more specific
+				JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "read-only property"); // (TBD) be more specific
 				return JS_TRUE;
 			//case DISP_E_PARAMNOTFOUND:
 			//	JL_REPORT_WARNING("Invalid argument %d.", argErr);
@@ -270,7 +270,7 @@ DEFINE_FUNCTION( FunctionList ) {
 	ITypeInfo *pTypeinfo = NULL;
 
 	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_OBJECT(JL_ARG(1));
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
 	JL_S_ASSERT_OBJECT_STATE( disp, JL_THIS_CLASS_NAME );

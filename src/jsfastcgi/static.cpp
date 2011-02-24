@@ -51,7 +51,7 @@ DEFINE_FUNCTION( Accept ) {
 	if (!_initDone) {
 	
 		int status = FCGX_Init(); // (TBD) do it only once
-		JL_S_ASSERT( status == 0, "Unable to initialize FCGX." );
+		JL_S_ASSERT_ERROR_NUM( status == 0, JLSMSG_INIT_FAIL, "FCGX" );
 		FCGX_InitRequest(&_request, 0, FCGI_FAIL_ACCEPT_ON_INTR); // doc: fail_on_intr is ignored in the Win lib.
 		status = atexit(&onExit);
 		JL_S_ASSERT( status == 0, "Unable to setup fcgi exit.");

@@ -29,7 +29,7 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID
 
 	jsval bodyVal;
 	JL_CHK( JL_GetReservedSlot(cx, massObject, MASS_SLOT_BODY, &bodyVal) );
-	JL_S_ASSERT_OBJECT(bodyVal);
+	JL_S_ASSERT_THIS_OBJECT_STATE( JSVAL_IS_OBJECT(bodyVal) );
 	JSObject *bodyObject;
 	bodyObject = JSVAL_TO_OBJECT(bodyVal);
 	JL_S_ASSERT_CLASS(bodyObject, JL_CLASS(Body));

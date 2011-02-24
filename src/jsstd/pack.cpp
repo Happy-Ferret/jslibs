@@ -326,7 +326,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_S_ASSERT_ARG_RANGE(1,2);
 
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(1) ), JL_CLASS(Buffer) );
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, JL_ARG(1)) );
 
@@ -360,7 +360,7 @@ DEFINE_FUNCTION( ReadInt ) {
 
 	jsval bufferVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
-	JL_S_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), "Buffer" );
+	JL_S_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
 
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
@@ -452,7 +452,7 @@ DEFINE_FUNCTION( ReadInt ) {
 				Network64ToHost64(data);
 
 			if ( *(int64_t*)data > int64_t(MAX_INT_TO_DOUBLE) && *(int64_t*)data < int64_t(MIN_INT_TO_DOUBLE) )
-				JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "-2^53 to 2^53");
+				JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, "-2^53 to 2^53");
 
 			if ( isSigned ) {
 
@@ -466,7 +466,7 @@ DEFINE_FUNCTION( ReadInt ) {
 			break;
 		default:
 			JL_CHK( UnReadRawDataChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_TYPE_ERROR, "unsupported data type");
+			JL_REPORT_ERROR_NUM( JLSMSG_TYPE_ERROR, "unsupported data type");
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -487,7 +487,7 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 
 	jsval bufferVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
-	JL_S_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), "Buffer" );
+	JL_S_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
 
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
@@ -556,11 +556,11 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 				Host64ToNetwork64(data);
 			break;
 		default:
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_TYPE_ERROR, "unsupported data type");
+			JL_REPORT_ERROR_NUM( JLSMSG_TYPE_ERROR, "unsupported data type");
 	}
 
 	if ( outOfRange )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "");
+		JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, "");
 
 	JL_CHK( WriteRawDataChunk(cx, bufferObject, size, (char*)data) );
 	
@@ -583,7 +583,7 @@ DEFINE_FUNCTION( ReadReal ) {
 
 	jsval bufferVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
-	JL_S_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), "Buffer" );
+	JL_S_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
@@ -625,7 +625,7 @@ DEFINE_FUNCTION( ReadString ) {
 
 	jsval bufferVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
-	JL_S_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), "Buffer" );
+	JL_S_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 

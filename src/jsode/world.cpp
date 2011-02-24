@@ -363,7 +363,7 @@ DEFINE_FUNCTION( Collide ) {
 	if ( JL_ARG_ISDEF(2) ) {
 
 		// doc. dSpaceCollide2 ... It can also test a single non-space geom against a space ...
-		JL_S_ASSERT_OBJECT( JL_ARG(2) );
+		JL_S_ASSERT_ARG_IS_OBJECT(2);
 		if ( JL_JsvalIsSpace(JL_ARG(2)) ) {
 
 			JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(2), (ode::dSpaceID*)&sg2Id) );
@@ -380,7 +380,7 @@ DEFINE_FUNCTION( Collide ) {
 
 	if ( JL_ARG_ISDEF(1) ) {
 
-		JL_S_ASSERT_OBJECT( JL_ARG(1) );
+		JL_S_ASSERT_ARG_IS_OBJECT(1);
 		if ( sg2Id == NULL ) {
 
 			JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Space));

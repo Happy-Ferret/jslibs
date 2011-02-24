@@ -48,7 +48,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	int status = iconv_close(pv->cd); // if ( status == -1 ) error is in errno.
 	JS_free(cx, pv);
 	if ( status == -1 )
-		JL_REPORT_WARNING_NUM(cx, JLSMSG_LIB_ERROR, "iconv_close"); // failure in Iconv finalize (%d).", errno);
+		JL_REPORT_WARNING_NUM( JLSMSG_LIB_ERROR, "iconv_close"); // failure in Iconv finalize (%d).", errno);
 bad:
 	return;
 }
@@ -102,9 +102,9 @@ DEFINE_CONSTRUCTOR() {
 	if ( (size_t)pv->cd == (size_t)-1 ) {
 		
 		if ( errno == EINVAL )
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_OPERATION); //, "The conversion from %s to %s is not supported.", fromcode, tocode );
+			JL_REPORT_ERROR_NUM( JLSMSG_INVALID_OPERATION ); //, "The conversion from %s to %s is not supported.", fromcode, tocode );
 		else
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, IntegerToString(errno, 10) ); //JL_REPORT_ERROR_NUM(cx, JLSMSG_RUNTIME_ERROR, "unknown iconv error" );
+			JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, IntegerToString(errno, 10) ); //JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "unknown iconv error" );
 	}
 
 	pv->invalidChar = '?';
@@ -298,7 +298,7 @@ DEFINE_CALL() {
 	if ( pv->wTo ) { // destination is wide.
 	
 		if ( length % 2 != 0 )
-			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid string length"); // (TBD) or report an error ?
+			JL_REPORT_WARNING_NUM( JLSMSG_LOGIC_ERROR, "invalid string length"); // (TBD) or report an error ?
 		((jschar*)outBuf)[length / 2] = 0;
 		jsEncStr = JL_NewUCString(cx, (jschar*)outBuf, length / 2);
 	} else {
@@ -334,7 +334,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 //	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &chr, &length) );
 	JL_CHK( JL_JsvalToNative(cx, *vp, &chr) );
 	if ( chr.Length() != 1 )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "one-char string");
+		JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "one-char string");
 	pv->invalidChar = chr.GetConstStr()[0];
 	return JS_TRUE;
 	JL_BAD;

@@ -553,7 +553,6 @@ LoadModule('jsstd');
 		var buf = new Buffer(Stream('456'));
 		buf.Write('123');
 
-
 		QA.ASSERT( buf.length, 3, 'length' );
 		QA.ASSERT_STR( buf.Read(6), '123456', 'read' );
 

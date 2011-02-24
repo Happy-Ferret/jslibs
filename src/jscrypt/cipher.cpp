@@ -177,7 +177,7 @@ DEFINE_CONSTRUCTOR() {
 	else if ( strcasecmp( modeName, "F8" ) == 0 )
 		mode = mode_f8;
 	else
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "modeName"); //JL_REPORT_ERROR("Invalid mode %s", modeName);
+		JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "modeName"); //JL_REPORT_ERROR("Invalid mode %s", modeName);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &cipherName) ); // warning: GC on the returned buffer !
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &key) ); // warning: GC on the returned buffer !
@@ -203,12 +203,13 @@ DEFINE_CONSTRUCTOR() {
 
 	int cipherIndex;
 	cipherIndex = find_cipher(cipherName);
-	JL_S_ASSERT( cipherIndex != -1, "cipher %s is not available", cipherName );
+	JL_S_ASSERT_ERROR_NUM( cipherIndex != -1, JLSMSG_RUNTIME_ERROR2, "cipher not available", cipherName );
+
 	ltc_cipher_descriptor *cipher;
 	cipher = &cipher_descriptor[cipherIndex];
 
 	pv->descriptor = cipher;
-	JL_S_ASSERT( cipher->test() == CRYPT_OK, "%s cipher test failed.", cipherName );
+	JL_S_ASSERT_ERROR_NUM( cipher->test() == CRYPT_OK, JLSMSG_RUNTIME_ERROR2, "cipher test failed", cipherName );
 
 	int err;
 	switch ( mode ) {
@@ -217,7 +218,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_S_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_S_ASSERT( key.Length() >= (size_t)cipher->min_key_length && key.Length() <= (size_t)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
 //			JL_S_ASSERT( IV == NULL, "Initialization vector is invalid for this mode." );
-			JL_S_ASSERT( !optarg.IsSet(), "invalid 'arg' argument for this mode." );
+			JL_S_ASSERT_WARNING_NUM( !optarg.IsSet(), JLSMSG_LOGIC_ERROR2, "'arg' is useless in this mode", modeName );
 			err = ecb_start( cipherIndex, (const unsigned char *)key.GetConstStr(), (int)key.Length(), numRounds, (symmetric_ECB *)pv->symmetric_XXX );
 			break;
 		}
@@ -226,7 +227,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_S_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_S_ASSERT( key.Length() >= (size_t)cipher->min_key_length && key.Length() <= (size_t)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
 //			JL_S_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_S_ASSERT( !optarg.IsSet(), "invalid 'arg' argument for this mode." );
+			JL_S_ASSERT_WARNING_NUM( !optarg.IsSet(), JLSMSG_LOGIC_ERROR2, "'arg' is useless in this mode", modeName );
 			err = cfb_start( cipherIndex, (const unsigned char *)IV.GetConstStrZ(), (const unsigned char *)key.GetConstStr(), (int)key.Length(), numRounds, (symmetric_CFB *)pv->symmetric_XXX );
 			break;
 		}
@@ -235,7 +236,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_S_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_S_ASSERT( key.Length() >= (size_t)cipher->min_key_length && key.Length() <= (size_t)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
 //			JL_S_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_S_ASSERT( !optarg.IsSet(), "invalid 'arg' argument for this mode." );
+			JL_S_ASSERT_WARNING_NUM( !optarg.IsSet(), JLSMSG_LOGIC_ERROR2, "'arg' is useless in this mode", modeName );
 			err = ofb_start( cipherIndex, (const unsigned char *)IV.GetConstStrZ(), (const unsigned char *)key.GetConstStr(), (int)key.Length(), numRounds, (symmetric_OFB *)pv->symmetric_XXX );
 			break;
 		}
@@ -244,7 +245,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_S_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_S_ASSERT( key.Length() >= (size_t)cipher->min_key_length && key.Length() <= (size_t)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
 //			JL_S_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_S_ASSERT( !optarg.IsSet(), "invalid 'arg' argument for this mode." );
+			JL_S_ASSERT_WARNING_NUM( !optarg.IsSet(), JLSMSG_LOGIC_ERROR2, "'arg' is useless in this mode", modeName );
 			err = cbc_start( cipherIndex, (const unsigned char *)IV.GetConstStrZ(), (const unsigned char *)key.GetConstStr(), (int)key.Length(), numRounds, (symmetric_CBC *)pv->symmetric_XXX );
 			break;
 		}
@@ -253,7 +254,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_S_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_S_ASSERT( key.Length() >= (size_t)cipher->min_key_length && key.Length() <= (size_t)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
 //			JL_S_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_S_ASSERT( !optarg.IsSet(), "invalid 'arg' argument for this mode." );
+			JL_S_ASSERT_WARNING_NUM( !optarg.IsSet(), JLSMSG_LOGIC_ERROR2, "'arg' is useless in this mode", modeName );
 			err = ctr_start( cipherIndex, (const unsigned char *)IV.GetConstStrZ(), (const unsigned char *)key.GetConstStr(), (int)key.Length(), numRounds, CTR_COUNTER_LITTLE_ENDIAN, (symmetric_CTR *)pv->symmetric_XXX );
 			break;
 		}
@@ -271,7 +272,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_S_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_S_ASSERT( key.Length() >= (size_t)cipher->min_key_length && key.Length() <= (size_t)cipher->max_key_length, "Invalid key length (need [%d,%d]  bytes)", cipher->min_key_length, cipher->max_key_length );
 //			JL_S_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_S_ASSERT( optarg.LengthOrZero() > 0, "This mode need the salt argument" );
+			JL_S_ASSERT_ERROR_NUM( optarg.LengthOrZero() > 0, JLSMSG_LOGIC_ERROR, "'arg' argument is required (salt)" );
 			err = f8_start( cipherIndex, (const unsigned char *)IV.GetConstStrZ(), (const unsigned char *)key.GetConstStr(), (int)key.Length(), (const unsigned char *)optarg.GetStrConstOrNull(), (int)optarg.LengthOrZero(), numRounds, (symmetric_F8 *)pv->symmetric_XXX );
 			break;
 		}
@@ -547,7 +548,7 @@ DEFINE_PROPERTY_SETTER( IV ) {
 	int err;
 	switch ( pv->mode ) {
 		case mode_ecb:
-			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOGIC_ERROR, "No IV in ECB mode");
+			JL_REPORT_WARNING_NUM( JLSMSG_LOGIC_ERROR, "No IV in ECB mode");
 			break;
 		case mode_cfb: {
 			symmetric_CFB *tmp = (symmetric_CFB *)pv->symmetric_XXX;
@@ -622,7 +623,7 @@ DEFINE_PROPERTY_GETTER( IV ) {
 	switch ( pv->mode ) {
 
 		case mode_ecb:
-			JL_REPORT_WARNING_NUM(cx, JLSMSG_LOGIC_ERROR, "No IV in ECB mode");
+			JL_REPORT_WARNING_NUM( JLSMSG_LOGIC_ERROR, "No IV in ECB mode");
 			*vp = JSVAL_VOID;
 			return JS_TRUE;
 		case mode_cfb: {

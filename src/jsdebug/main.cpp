@@ -110,7 +110,7 @@ done_scriptList:
 	ccc = JS_EnterCrossCompartmentCall(cx, moduleObject);
 
 	JS_GetPropertyById(cx, moduleObject, mpv->JLID_onNewScript, &jsHookFct); // try to use ids
-	if ( JL_IsFunction(cx, jsHookFct) ) {
+	if ( JL_ValueIsFunction(cx, jsHookFct) ) {
 
 		jsval argv[] = { JSVAL_NULL, JSVAL_NULL, INT_TO_JSVAL( lineno ), OBJECT_TO_JSVAL( JS_NewScriptObject(cx, script) ), OBJECT_TO_JSVAL( JS_GetFunctionObject(fun) ) };
 		JL_CHK( JL_NativeToJsval(cx, filename, &argv[1]) );
@@ -224,7 +224,7 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 
 JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc ) {
 
-	if ( JL_IsFunction(cx, *val) ) {
+	if ( JL_ValueIsFunction(cx, *val) ) {
 
 		*script = JS_GetFunctionScript(cx, JS_ValueToFunction(cx, *val));
 		if ( *script == NULL )

@@ -78,7 +78,7 @@ DEFINE_CONSTRUCTOR() {
 
 	int hashIndex;
 	hashIndex = find_hash(hashName);
-	JL_S_ASSERT( hashIndex != -1, "hash %s is not available", hashName );
+	JL_S_ASSERT_ERROR_NUM( hashIndex != -1, JLSMSG_RUNTIME_ERROR2, "hash not available", hashName );
 
 	HashPrivate *pv;
 	pv = (HashPrivate*)JS_malloc(cx, sizeof(HashPrivate));
@@ -86,7 +86,7 @@ DEFINE_CONSTRUCTOR() {
 
 	pv->descriptor = &hash_descriptor[hashIndex];
 
-	JL_S_ASSERT( pv->descriptor->test() == CRYPT_OK, "%s hash test failed.", hashName );
+	JL_S_ASSERT_ERROR_NUM( pv->descriptor->test() == CRYPT_OK, JLSMSG_RUNTIME_ERROR2, "hash test failed", hashName );
 
 	int err;
 	err = pv->descriptor->init(&pv->state);
@@ -142,7 +142,7 @@ DEFINE_FUNCTION( Process ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_STRING( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_STRING(1);
 
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
@@ -232,7 +232,7 @@ DEFINE_CALL() {
 	JL_DEFINE_CALL_FUNCTION_OBJ;
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_STRING( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_STRING(1);
 
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate( cx, obj );
@@ -378,7 +378,7 @@ DEFINE_FUNCTION( CipherHash ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &cipherName) );
 	int cipherIndex;
 	cipherIndex = find_cipher(cipherName);
-	JL_S_ASSERT( cipherIndex >= 0, "Cipher not found: %s", cipherName );
+	JL_S_ASSERT_ERROR_NUM( cipherIndex >= 0, JLSMSG_RUNTIME_ERROR2, "cipher not found", cipherName );
 	int err;
 	if ((err = chc_register(cipherIndex)) != CRYPT_OK)
 		return ThrowCryptError(cx, err);

@@ -76,7 +76,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	memory->realloc = JsfontRealloc;
 	FT_Error status;
 	status = FT_New_Library(memory, &mpv->ftLibrary);
-	JL_S_ASSERT( status == 0, "Unable to initialize FreeType2 library." );
+	JL_S_ASSERT_ERROR_NUM( status == 0, JLSMSG_INIT_FAIL, "FreeType2" );
 	FT_Add_Default_Modules(mpv->ftLibrary);
 
 	mpv->GetFTSymbols = GetFTSymbols;

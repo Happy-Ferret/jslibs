@@ -66,7 +66,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 	switch (ev->type) {
 		case SDL_ACTIVEEVENT:
 			JL_CHK( JS_GetProperty(cx, listenerObj, "onActive", &fVal) );
-			if ( JL_IsFunction(cx, fVal) ) {
+			if ( JL_ValueIsFunction(cx, fVal) ) {
 
 				jsval argv[] = {
 					ev->active.gain == 1 ? JSVAL_TRUE : JSVAL_FALSE
@@ -79,7 +79,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 		case SDL_KEYDOWN:
 		case SDL_KEYUP:
 			JL_CHK( JS_GetProperty(cx, listenerObj, ev->type == SDL_KEYDOWN ? "onKeyDown" : "onKeyUp", &fVal) );
-			if ( JL_IsFunction(cx, fVal) ) {
+			if ( JL_ValueIsFunction(cx, fVal) ) {
 
 				jsval argv[] = {
 					INT_TO_JSVAL(ev->key.keysym.sym),
@@ -105,7 +105,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 
 		case SDL_MOUSEMOTION:
 			JL_CHK( JS_GetProperty(cx, listenerObj, "onMouseMotion", &fVal) );
-			if ( JL_IsFunction(cx, fVal) ) {
+			if ( JL_ValueIsFunction(cx, fVal) ) {
 
 				if ( ev->motion.x == (Uint16)-1 ) { // || ev->motion.y == (Uint16)-1
 					
@@ -131,7 +131,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
 			JL_CHK( JS_GetProperty(cx, listenerObj, ev->type == SDL_MOUSEBUTTONDOWN ? "onMouseButtonDown" : "onMouseButtonUp", &fVal) );
-			if ( JL_IsFunction(cx, fVal) ) {
+			if ( JL_ValueIsFunction(cx, fVal) ) {
 
 				SDLMod modState = SDL_GetModState();
 				Uint8 buttonState = SDL_GetMouseState(NULL, NULL); // query only button state
@@ -150,7 +150,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 
 		case SDL_QUIT:
 			JL_CHK( JS_GetProperty(cx, listenerObj, "onQuit", &fVal) );
-			if ( JL_IsFunction(cx, fVal) ) {
+			if ( JL_ValueIsFunction(cx, fVal) ) {
 
 				// no argv GC protection needed.
 				JL_CHK( JS_CallFunctionValue(cx, thisObj, fVal, 0, NULL, rval) );
@@ -161,7 +161,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 		case SDL_VIDEORESIZE:
 			// ... and you must respond to the event by re-calling SDL_SetVideoMode() with the requested size (or another size that suits the application).
 			JL_CHK( JS_GetProperty(cx, listenerObj, "onVideoResize", &fVal) );
-			if ( JL_IsFunction(cx, fVal) ) {
+			if ( JL_ValueIsFunction(cx, fVal) ) {
 
 //				SDL_Surface *surface = SDL_GetVideoSurface();
 //				const SDL_VideoInfo *video = SDL_GetVideoInfo();
@@ -177,7 +177,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 
 		case SDL_VIDEOEXPOSE:
 			JL_CHK( JS_GetProperty(cx, listenerObj, "onVideoExpose", &fVal) );
-			if ( JL_IsFunction(cx, fVal) ) {
+			if ( JL_ValueIsFunction(cx, fVal) ) {
 
 				// no argv GC protection needed.
 				JL_CHK( JS_CallFunctionValue(cx, thisObj, fVal, 0, NULL, rval) );
@@ -485,7 +485,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 		return JS_TRUE;
 	}
 
-	JL_S_ASSERT_OBJECT(image);
+	JL_S_ASSERT_IS_OBJECT(image, "");
 
 	JSObject *imageObj = JSVAL_TO_OBJECT( image );
 	int sWidth, sHeight, sChannels;
@@ -777,7 +777,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( SetCursor ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *cursorObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_S_ASSERT_CLASS( cursorObj, JL_CLASS(Cursor) );
 	SDL_Cursor *cursor = (SDL_Cursor *)JL_GetPrivate(cx, cursorObj);
@@ -852,7 +852,7 @@ DEFINE_FUNCTION( PollEvent ) {
 	if ( JL_ARG_ISDEF(1) ) {
 		
 		bool fired;
-		JL_S_ASSERT_OBJECT( JL_ARG(1) );
+		JL_S_ASSERT_ARG_IS_OBJECT(1);
 		JL_CHK( FireListener(cx, obj, JSVAL_TO_OBJECT(JL_ARG(1)), &ev, JL_RVAL, &fired) );
 	}
 
@@ -974,7 +974,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetKeyState ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_INTEGER(1);
 	int key;
 	key = JSVAL_TO_INT( JL_ARG(1) );
 	JL_S_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, "Invalid key." );
@@ -994,7 +994,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetKeyName ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_INTEGER(1);
 	int key;
 	key = JSVAL_TO_INT( JL_ARG(1) );
 	JL_S_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, "Invalid key." );
@@ -1321,7 +1321,7 @@ DEFINE_FUNCTION( SurfaceReadyEvents ) {
 
 	upe->cancel = false;
 
-	if ( JL_ARG_ISDEF(1) && JL_IsFunction(cx, JL_ARG(1)) ) {
+	if ( JL_ARG_ISDEF(1) && JL_ValueIsFunction(cx, JL_ARG(1)) ) {
 
 		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(1)) ); // GC protection.
 		upe->callbackFctVal = JL_ARG(1);
@@ -1421,7 +1421,7 @@ JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSO
 DEFINE_FUNCTION( SDLEvents ) {
 
 	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );

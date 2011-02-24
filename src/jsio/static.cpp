@@ -56,23 +56,23 @@ JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 	pollDesc->in_flags = 0;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "writable", &tmp ) );
-	if ( JL_IsFunction(cx, tmp) )
+	if ( JL_ValueIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_WRITE;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "readable", &tmp ) );
-	if ( JL_IsFunction(cx, tmp) )
+	if ( JL_ValueIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_READ;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &tmp ) );
-	if ( JL_IsFunction(cx, tmp) )
+	if ( JL_ValueIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_HUP;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "exception", &tmp ) );
-	if ( JL_IsFunction(cx, tmp) )
+	if ( JL_ValueIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_EXCEPT;
 
 	JL_CHK( JS_GetProperty( cx, fdObj, "error", &tmp ) );
-	if ( JL_IsFunction(cx, tmp) )
+	if ( JL_ValueIsFunction(cx, tmp) )
 		pollDesc->in_flags |= PR_POLL_ERR;
 
 	return JS_TRUE;
@@ -101,35 +101,35 @@ JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int i
 	if ( outFlag & PR_POLL_ERR ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "error", &descVal ) );
-		if ( JL_IsFunction(cx, descVal) )
+		if ( JL_ValueIsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_EXCEPT ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "exception", &descVal ) );
-		if ( JL_IsFunction(cx, descVal) )
+		if ( JL_ValueIsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_HUP ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &descVal ) );
-		if ( JL_IsFunction(cx, descVal) )
+		if ( JL_ValueIsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_READ ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "readable", &descVal ) );
-		if ( JL_IsFunction(cx, descVal) )
+		if ( JL_ValueIsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_WRITE ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "writable", &descVal ) );
-		if ( JL_IsFunction(cx, descVal) )
+		if ( JL_ValueIsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
@@ -170,7 +170,7 @@ DEFINE_FUNCTION( Poll ) {
 	jsval *props = NULL;
 
 	JL_S_ASSERT_ARG_RANGE( 1, 2 );
-	JL_S_ASSERT_ARRAY( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_ARRAY(1);
 	JSObject *fdArrayObj;
 	fdArrayObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
@@ -305,7 +305,7 @@ bad:
 DEFINE_FUNCTION( IOEvents ) {
 
 	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARRAY(JL_ARG(1));
+	JL_S_ASSERT_ARG_IS_ARRAY(1);
 
 
 
@@ -553,7 +553,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetRandomNoise ) {
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_INT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_INTEGER(1);
 	PRSize rndSize;
 	rndSize = JSVAL_TO_INT( JL_ARG(1) );
 	uint8_t *buf;
@@ -564,7 +564,7 @@ DEFINE_FUNCTION( GetRandomNoise ) {
 	if ( size <= 0 ) {
 
 		JS_free(cx, buf);
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+		JL_REPORT_ERROR_NUM( JLSMSG_NOT_IMPLEMENTED);
 	}
 
 	buf[size] = 0;
@@ -839,12 +839,12 @@ DEFINE_FUNCTION( AvailableSpace ) {
 	ULARGE_INTEGER freeBytesAvailable;
 	BOOL res = ::GetDiskFreeSpaceEx(path, &freeBytesAvailable, NULL, NULL);
 	if ( res == 0 )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, "Unable to get the available space");
+		JL_REPORT_ERROR_NUM( JLSMSG_OS_ERROR, "Unable to get the available space");
 	available = (jsdouble)freeBytesAvailable.QuadPart;
 #else // now for XP_UNIX an MacOS ?
 	struct statvfs fsd;
 	if ( statvfs(path, &fsd) < 0 )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_OS_ERROR, "Unable to get the available space");
+		JL_REPORT_ERROR_NUM( JLSMSG_OS_ERROR, "Unable to get the available space");
 	available = (jsdouble)fsd.f_bsize * (jsdouble)fsd.f_bavail;
 #endif // XP_WIN
 
@@ -885,7 +885,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ConfigureSerialPort ) {
 
 	JL_S_ASSERT_ARG_RANGE(1,2);
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *fileObj;
 	fileObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_S_ASSERT_INHERITANCE( fileObj, JL_CLASS(File) );
@@ -1137,7 +1137,7 @@ DEFINE_PROPERTY_SETTER( processPriority ) {
 			break;
 		default:
 			priority = PR_PRIORITY_NORMAL;
-			JL_REPORT_WARNING_NUM(cx, JLSMSG_RANGE_ERROR, "invalid thread priority");
+			JL_REPORT_WARNING_NUM( JLSMSG_RANGE_ERROR, "invalid thread priority");
 	}
 	PRThread *thread;
 	thread = PR_GetCurrentThread();
@@ -1157,7 +1157,7 @@ DEFINE_PROPERTY_GETTER( numberOfProcessors ) {
 	PRInt32 count = PR_GetNumberOfProcessors();
 	if ( count < 0 ) {
 
-		JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+		JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
 		count = 1;
 	}
 	JL_CHK( JL_NativeToJsval(cx, count, vp) );

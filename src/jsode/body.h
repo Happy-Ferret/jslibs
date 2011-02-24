@@ -27,7 +27,9 @@ JSBool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj);
 
 ALWAYS_INLINE JSBool JL_JsvalToBody( JSContext *cx, jsval val, ode::dBodyID *bodyId ) {
 	
-	JL_S_ASSERT_OBJECT(val);
+	//JL_S_ASSERT_OBJECT_STATE( JSVAL_IS_OBJECT(val), JL_CLASS_NAME(Body) );
+	JL_S_ASSERT_IS_OBJECT(val, JL_CLASS_NAME(Body));
+
 	JSObject *obj = JSVAL_TO_OBJECT(val);
 	JL_S_ASSERT_CLASS(obj, JL_CLASS(Body));
 	*bodyId = (ode::dBodyID)JL_GetPrivate(cx,obj); // may be null if body is world.env

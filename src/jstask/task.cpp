@@ -395,7 +395,7 @@ DEFINE_CONSTRUCTOR() {
 				priority = JL_THREAD_PRIORITY_HIGH;
 				break;
 			default:
-				JL_REPORT_ERROR_NUM(cx, JLSMSG_RANGE_ERROR, "invalid thread priority (-1, 0, 1)");
+				JL_REPORT_ERROR_NUM( JLSMSG_RANGE_ERROR, "invalid thread priority (-1, 0, 1)");
 		}
 	}
 
@@ -692,7 +692,7 @@ JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS
 	argv[1] = OBJECT_TO_JSVAL(upe->obj); // already rooted
 
 	JL_CHK( JS_GetProperty(cx, upe->obj, "onResponse", &fct) );
-	if ( JL_IsFunction(cx, fct) )
+	if ( JL_ValueIsFunction(cx, fct) )
 		JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, COUNTOF(argv)-1, argv+1, argv) );
 
 	return JS_TRUE;

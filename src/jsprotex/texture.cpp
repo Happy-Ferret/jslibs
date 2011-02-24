@@ -242,7 +242,7 @@ JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, P
 		return JS_TRUE;
 	}
 
-	if ( JL_IsArray(cx, value) ) {
+	if ( JL_ValueIsArray(cx, value) ) {
 
 		uint32 length;
 		JL_CHK( JL_JsvalToNativeVector(cx, value, level, levelMaxLength, &length) );
@@ -281,7 +281,7 @@ JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, P
 		}
 	}
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "number, Array or string");
+	JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "number, Array or string");
 	JL_BAD;
 }
 
@@ -291,7 +291,7 @@ JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) 
 	
 	size_t i;
 
-	if ( JL_IsFunction(cx, value) ) {
+	if ( JL_ValueIsFunction(cx, value) ) {
 
 		double fval;
 		jsval argv[3]; // argv[0] is the rval
@@ -307,7 +307,7 @@ JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) 
 		return JS_TRUE;
 	}
 
-	if ( JL_IsArray(cx, value) ) {
+	if ( JL_ValueIsArray(cx, value) ) {
 
 		jsuint curveArrayLength;
 		JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(value), &curveArrayLength) );
@@ -354,7 +354,7 @@ JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) 
 	//for ( int i = 0; i < length; i++ )
 	//	curve[i] = PMAX;
 	//return JS_TRUE;
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "function, number, or data");
+	JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "function, number, or data");
 	JL_BAD;
 }
 
@@ -486,7 +486,7 @@ DEFINE_CONSTRUCTOR() {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_TYPE_ERROR, "invalid argument type");
+	JL_REPORT_ERROR_NUM( JLSMSG_TYPE_ERROR, "invalid argument type");
 	JL_BAD;
 }
 
@@ -538,7 +538,7 @@ DEFINE_FUNCTION( Swap ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
 	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *texObj;
 	texObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_S_ASSERT_CLASS( texObj, JL_THIS_CLASS );
@@ -1417,7 +1417,7 @@ DEFINE_FUNCTION( Desaturate ) {
 //				break;
 			default:
 				val = 0;
-				JL_REPORT_WARNING_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+				JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
 		}
 		*dPos = val;
 		dPos++;
@@ -1580,7 +1580,7 @@ DEFINE_FUNCTION( Add ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_IsArray(cx, *arg1) ) {
+	if ( JL_ValueIsArray(cx, *arg1) ) {
 
 		PTYPE *pos, level, pixel[PMAXCHANNELS];
 		JL_CHK( InitLevelData(cx, *arg1, channels, pixel) );
@@ -1598,7 +1598,7 @@ DEFINE_FUNCTION( Add ) {
 		return JS_TRUE;
 	}
 	
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_TYPE_ERROR, "invalid argument type");
+	JL_REPORT_ERROR_NUM( JLSMSG_TYPE_ERROR, "invalid argument type");
 	JL_BAD;
 }
 
@@ -1666,7 +1666,7 @@ DEFINE_FUNCTION( Mult ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_IsArray(cx, *arg1) ) {
+	if ( JL_ValueIsArray(cx, *arg1) ) {
 
 		PTYPE *pos, level, pixel[PMAXCHANNELS];
 		JL_CHK( InitLevelData(cx, *arg1, channels, pixel) );
@@ -1684,7 +1684,7 @@ DEFINE_FUNCTION( Mult ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_TYPE_ERROR, "invalid argument type");
+	JL_REPORT_ERROR_NUM( JLSMSG_TYPE_ERROR, "invalid argument type");
 	JL_BAD;
 }
 
@@ -2138,7 +2138,7 @@ DEFINE_FUNCTION( Resize ) {
 //						pos2 = 0;
 //						pos3 = 0;
 //						pos4 = 0;
-						JL_REPORT_ERROR_NUM( cx, JLSMSG_LOGIC_ERROR, "invalid border mode" );
+						JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid border mode" );
 				}
 
 				ratio1 = (1.f - prx) * (1.f - pry);
@@ -2312,7 +2312,7 @@ DEFINE_FUNCTION( Convolution ) {
 						}
 					break;
 				default:
-					JL_REPORT_ERROR_NUM( cx, JLSMSG_LOGIC_ERROR, "invalid border mode" );
+					JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid border mode" );
 			}
 
 			pos = (x + y * width) * channels;
@@ -3072,7 +3072,7 @@ DEFINE_FUNCTION( Copy ) {
 					continue; // skip
 				break;
 			default:
-				JL_REPORT_ERROR_NUM( cx, JLSMSG_LOGIC_ERROR, "invalid border mode" );
+				JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid border mode" );
 			}
 
 			posDst = ( x + y * texWidth ) * channels;
@@ -3151,7 +3151,7 @@ DEFINE_FUNCTION( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 				}
 				break;
 			default:
-				JL_REPORT_ERROR_NUM( cx, JLSMSG_LOGIC_ERROR, "invalid border mode" );
+				JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid border mode" );
 			}
 
 			posDst = ( dx + dy * texWidth ) * channels;
@@ -3300,7 +3300,7 @@ DEFINE_FUNCTION( Import ) { // (Blob)image, (int)x, (int)y
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(tex);
 
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *bstr;
 	bstr = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_S_ASSERT_CLASS( bstr, JL_BlobJSClass(cx) ); // (TBD) String object should also work.
@@ -3368,7 +3368,7 @@ DEFINE_FUNCTION( Import ) { // (Blob)image, (int)x, (int)y
 						continue; // skip
 				break;
 			default:
-				JL_REPORT_ERROR_NUM( cx, JLSMSG_LOGIC_ERROR, "invalid border mode" );
+				JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid border mode" );
 			}
 
 			posDst = ( dx + dy * dWidth ) * dChannels;
@@ -4227,8 +4227,8 @@ DEFINE_FUNCTION( GetPixelAt ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_RANGE( 2, 3 );
-	JL_S_ASSERT_INT(JL_ARG(1));
-	JL_S_ASSERT_INT(JL_ARG(2));
+	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_S_ASSERT_ARG_IS_INTEGER(2);
 
 	int sx, sy;
 	sx = JSVAL_TO_INT(JL_ARG(1));

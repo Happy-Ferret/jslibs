@@ -31,9 +31,15 @@ JLMSG_DEF( JLSMSG_NOT_IMPLEMENTED,        JSEXN_INTERNALERR, "not implemented", 
 JLMSG_DEF( JLSMSG_OS_ERROR,               JSEXN_INTERNALERR, "operating system: {0}", 1 )
 JLMSG_DEF( JLSMSG_LIB_ERROR,              JSEXN_INTERNALERR, "external library: {0}", 1 )
 JLMSG_DEF( JLSMSG_RUNTIME_ERROR,          JSEXN_INTERNALERR, "runtime error: {0}", 1 )
+JLMSG_DEF( JLSMSG_RUNTIME_ERROR2,         JSEXN_INTERNALERR, "runtime error: {0} ({1})", 2 )
 JLMSG_DEF( JLSMSG_LOGIC_ERROR,            JSEXN_ERR, "logic error: {0}", 1 )
+JLMSG_DEF( JLSMSG_LOGIC_ERROR2,           JSEXN_ERR, "logic error: {0} ({1})", 2 )
 JLMSG_DEF( JLSMSG_RANGE_ERROR,            JSEXN_RANGEERR, "{0}", 1 )
+JLMSG_DEF( JLSMSG_RANGE_ERROR2,           JSEXN_RANGEERR, "{0} ({1})", 2 )
 JLMSG_DEF( JLSMSG_TYPE_ERROR,             JSEXN_TYPEERR, "{0}", 1 )
+JLMSG_DEF( JLSMSG_TYPE_ERROR2,            JSEXN_TYPEERR, "{0} ({1})", 2 )
+
+JLMSG_DEF( JLSMSG_INIT_FAIL,              JSEXN_INTERNALERR, "unable to initialize {0}", 1 )
 
 JLMSG_DEF( JLSMSG_INVALIDATED_OBJECT,     JSEXN_INTERNALERR, "{0} object invalidated", 1 )
 JLMSG_DEF( JLSMSG_INVALID_RESOURCE,       JSEXN_INTERNALERR, "invalid object state", 0 )
@@ -41,7 +47,9 @@ JLMSG_DEF( JLSMSG_INVALID_ARGUMENT,       JSEXN_INTERNALERR, "invalid argument (
 JLMSG_DEF( JLSMSG_INVALID_OPERATION,      JSEXN_INTERNALERR, "invalid operation", 0 )
 JLMSG_DEF( JLSMSG_VALUE_OUTOFRANGE,       JSEXN_RANGEERR, "value out of range {0}", 1 )
 
-JLMSG_DEF( JLSMSG_WRONG_ARGUMENT_TYPE,    JSEXN_RANGEERR, "{1} is expected as argument {0}", 2 )
+JLMSG_DEF( JLSMSG_WRONG_VALUE_TYPE,       JSEXN_TYPEERR, "{0} is expected {1}", 2 )
+JLMSG_DEF( JLSMSG_WRONG_ARGUMENT_TYPE,    JSEXN_TYPEERR, "{1} is expected as argument {0}", 2 )
+
 JLMSG_DEF( JLSMSG_INVALID_OBJECT_STATE,   JSEXN_INTERNALERR, "invalid {0} object state", 1 )
 
 JLMSG_DEF( JLSMSG_MISSING_IMPLEMENTATION, JSEXN_INTERNALERR, "{0} must implement {1}", 2 )

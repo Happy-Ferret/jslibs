@@ -176,7 +176,7 @@ DEFINE_FUNCTION( QueueBuffers ) {
 
 	ALuint bid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bid) );
-	JL_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
+	JL_S_ASSERT_ERROR_NUM( alIsBuffer(bid), JLSMSG_LOGIC_ERROR, "invalid buffer" );
 
 	alSourceQueueBuffers(pv->sid, 1, &bid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -212,7 +212,8 @@ DEFINE_FUNCTION( UnqueueBuffers ) {
 	JL_SAFE(
 		ALuint tmp;
 		JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &tmp) );
-		JL_S_ASSERT( bid == tmp, "Internal error in UnqueueBuffers()." );
+		if ( bid != tmp )
+			JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "in UnqueueBuffers()" ); // JL_S_ASSERT( bid == tmp, "Internal error in UnqueueBuffers()." );
 	);
 	pv->totalTime -= BufferSecTime(bid);
 	return JS_TRUE;
@@ -282,7 +283,7 @@ DEFINE_FUNCTION( Rewind ) {
 DEFINE_FUNCTION( Effect ) {
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_INT(JL_ARG(1));
+	JL_S_ASSERT_ARG_IS_INTEGER(1);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
@@ -371,7 +372,7 @@ DEFINE_PROPERTY_SETTER( buffer ) {
 		bid = AL_NONE;
 	else
 		JL_CHK( JL_JsvalToNative(cx, *vp, &bid) ); // calls OalBuffer valueOf function
-	JL_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
+	JL_S_ASSERT_ERROR_NUM( alIsBuffer(bid), JLSMSG_LOGIC_ERROR, "invalid buffer" );
 
 	alSourcei(pv->sid, AL_BUFFER, bid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -396,7 +397,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 
 		ALint tmp;
 		JL_CHK( JL_JsvalToNative(cx, *vp, &tmp) ); // calls OalBuffer valueOf function
-		JL_S_ASSERT( alIsBuffer(tmp), "Invalid buffer." );
+		JL_S_ASSERT_ERROR_NUM( alIsBuffer(tmp), JLSMSG_LOGIC_ERROR, "invalid buffer" );
 		if ( tmp == bid )
 			goto out;
 	}
@@ -407,7 +408,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 		jsval *val = (jsval*)QueueGetData(it);
 		ALint tmp;
 		JL_CHK( JL_JsvalToNative(cx, *val, &tmp) ); // calls OalBuffer valueOf function
-		JL_S_ASSERT( alIsBuffer(tmp), "Invalid buffer." );
+		JL_S_ASSERT_ERROR_NUM( alIsBuffer(tmp), JLSMSG_LOGIC_ERROR, "invalid buffer" );
 		if ( tmp == bid ) {
 
 			*vp = *val;
@@ -415,7 +416,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 		}
 	}
 
-	JL_S_ASSERT( alIsBuffer(bid), "Invalid buffer." );
+	JL_S_ASSERT_ERROR_NUM( alIsBuffer(bid), JLSMSG_LOGIC_ERROR, "invalid buffer" );
 	JL_CHK( JL_NativeToJsval(cx, bid, vp) );
 
 out:

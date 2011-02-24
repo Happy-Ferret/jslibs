@@ -50,7 +50,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_S_ASSERT_ARG_RANGE(1, 3);
-	JL_S_ASSERT_OBJECT(JL_ARG(1));
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 
 	ode::dSpaceID space;
 	if ( JL_ARG_ISDEF(2) ) { // place it in a space ?

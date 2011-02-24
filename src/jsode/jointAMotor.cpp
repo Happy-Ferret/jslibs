@@ -44,7 +44,7 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointGroupID groupId;
 	if ( JL_ARG_ISDEF(2) ) {
 
-	JL_S_ASSERT_OBJECT( JL_ARG(2) );
+	JL_S_ASSERT_ARG_IS_OBJECT(2);
 	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
 		groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(2)));
 	} else {

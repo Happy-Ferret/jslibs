@@ -104,7 +104,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( type ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	int filterType;
 	if ( JSVAL_IS_VOID(*vp) )
 		filterType = AL_FILTER_NULL;
@@ -119,7 +119,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 DEFINE_PROPERTY_GETTER( type ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	int filterType;
 	alGetFilteri(pv->filter, AL_FILTER_TYPE, &filterType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );

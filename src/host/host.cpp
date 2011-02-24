@@ -105,7 +105,7 @@ void ErrorReporter_stdErrRouter(JSContext *cx, const char *message, size_t lengt
 	if (likely( globalObject != NULL )) {
 
 		jsval fct;
-		if (likely( GetHostObjectValue(cx, JLID(cx, stderr), &fct) == JS_TRUE && JL_IsFunction(cx, fct) )) {
+		if (likely( GetHostObjectValue(cx, JLID(cx, stderr), &fct) == JS_TRUE && JL_ValueIsFunction(cx, fct) )) {
 			
 			jsval unused;
 			jsval tmp;
@@ -301,9 +301,8 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 */
 	HostPrivate *pv;
 	pv = JL_GetHostPrivate(cx);
-	JL_S_ASSERT( pv, "Invalid host context private." );
-
-	JL_S_ASSERT( libFileName != NULL && *libFileName != '\0', "Invalid module filename." );
+	JL_S_ASSERT_ERROR_NUM( pv, JLSMSG_RUNTIME_ERROR, "invalid host context private" );
+	JL_S_ASSERT_ERROR_NUM( libFileName != NULL && *libFileName != '\0', JLSMSG_LOGIC_ERROR, "invalid module filename" );
 	JLLibraryHandler module;
 	module = JLDynamicLibraryOpen(libFileName);
 	if ( !JLDynamicLibraryOk(module) ) {
@@ -311,7 +310,7 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 		JL_SAFE_BEGIN
 		char errorBuffer[256];
 		JLDynamicLibraryLastErrorMessage( errorBuffer, sizeof(errorBuffer) );
-		JL_REPORT_WARNING( "Unable to load the module \"%s\". %s", libFileName, errorBuffer );
+		JL_REPORT_WARNING_NUM( JLSMSG_RUNTIME_ERROR2, errorBuffer, libFileName); // \"%s\". %s", libFileName, errorBuffer );
 		JL_SAFE_END
 
 		*JL_RVAL = JSVAL_FALSE;
@@ -337,7 +336,8 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 
 		char filename[PATH_MAX];
 		JLDynamicLibraryName((void*)moduleInit, filename, sizeof(filename));
-		JS_ReportError(cx, "Unable to initialize the module \"%s\".", filename);
+		//JS_ReportError(cx, "Unable to initialize the module \"%s\".", filename);
+		JL_REPORT_ERROR_NUM( JLSMSG_INIT_FAIL, filename );
 		goto bad_dl_close;
 	}
 
@@ -520,7 +520,8 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, stderr), value) );
 
 	// init static modules
-	JL_CHKM( jslangModuleInit(cx, globalObject), "Unable to initialize jslang." );
+	if ( !jslangModuleInit(cx, globalObject) )
+		JL_REPORT_ERROR_NUM( JLSMSG_INIT_FAIL, "jslang" );
 
 	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, _revision), INT_TO_JSVAL(JL_SvnRevToInt(SVN_REVISION_STR)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
@@ -534,7 +535,7 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 	JSRuntime *rt = JL_GetRuntime(cx);
 
 	HostPrivate *pv = JL_GetHostPrivate(cx);
-	JL_S_ASSERT( pv, "Invalid host context private." );
+	JL_S_ASSERT_ERROR_NUM( pv, JLSMSG_RUNTIME_ERROR, "invalid host context private" );
 
 	pv->canSkipCleanup = skipCleanup;
 

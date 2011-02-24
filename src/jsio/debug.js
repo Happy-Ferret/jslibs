@@ -20,7 +20,7 @@ Exec('../common/tools.js');
 //Exec('../../qaexp.js');  throw 0;
 //var QA = FakeQAApi;  RunLocalQAFile();
 //RunSavedQAFile('../../exitissue');
-RunQATests('-exclude jstask -rep 1 Basic.File');
+RunQATests('-exclude jstask -rep 1 read.pipe');
 
 
 

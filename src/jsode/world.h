@@ -29,7 +29,7 @@ struct WorldPrivate {
 
 ALWAYS_INLINE JSBool JL_JsvalToWorldID( JSContext *cx, jsval val, ode::dWorldID *worldId ) {
 
-	JL_S_ASSERT_OBJECT(val);
+	JL_S_ASSERT_IS_OBJECT(val, JL_CLASS_NAME(World));
 	JSObject *worldObject = JSVAL_TO_OBJECT(val);
 	JL_S_ASSERT_CLASS(worldObject, JL_CLASS(World));
 	*worldId = ((WorldPrivate*)JL_GetPrivate(cx, worldObject))->worldId;

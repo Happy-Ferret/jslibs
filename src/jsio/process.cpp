@@ -59,7 +59,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT( !JL_ARG_ISDEF(2) || JL_IsArray(cx, JL_ARG(2)), "Invalid 2nd argument" );
+	JL_S_ASSERT( !JL_ARG_ISDEF(2) || JL_ValueIsArray(cx, JL_ARG(2)), "Invalid 2nd argument" );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &path) );
 

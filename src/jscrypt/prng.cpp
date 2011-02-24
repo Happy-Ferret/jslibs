@@ -61,7 +61,7 @@ DEFINE_CONSTRUCTOR() {
 
 	int prngIndex;
 	prngIndex = find_prng(prngName);
-	JL_S_ASSERT( prngIndex != -1, "prng %s is not available", prngName );
+	JL_S_ASSERT_ERROR_NUM( prngIndex != -1, JLSMSG_RUNTIME_ERROR2, "prng not available", prngName );
 
 	PrngPrivate *pv;
 	pv = (PrngPrivate*)JS_malloc(cx, sizeof(PrngPrivate));
@@ -69,7 +69,7 @@ DEFINE_CONSTRUCTOR() {
 
 	pv->prng = prng_descriptor[prngIndex];
 
-	JL_S_ASSERT( pv->prng.test() == CRYPT_OK, "%s prng test failed.", prngName );
+	JL_S_ASSERT_ERROR_NUM( pv->prng.test() == CRYPT_OK, JLSMSG_RUNTIME_ERROR2, "prng test failed", prngName );
 
 	int err;
 	err = pv->prng.start( &pv->state );
@@ -120,7 +120,7 @@ DEFINE_CALL() {
 	JL_CHK( pr );
 	unsigned long hasRead;
 	hasRead = pv->prng.read( (unsigned char*)pr, readCount, &pv->state );
-	JL_S_ASSERT( hasRead == readCount, "unable to read prng." );
+	JL_S_ASSERT_ERROR_NUM( hasRead == readCount, JLSMSG_RUNTIME_ERROR, "unable to create prng data" );
 
 	pr[readCount] = '\0';
 	JL_CHK( JL_NewBlob( cx, pr, hasRead, JL_RVAL ) );
@@ -219,7 +219,7 @@ DEFINE_PROPERTY_GETTER( state ) {
 	err = pv->prng.pexport((unsigned char*)stateData, &stateLength, &pv->state);
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
-	JL_S_ASSERT( stateLength == size, "Invalid export size." );
+	JL_S_ASSERT_ERROR_NUM( stateLength == size, JLSMSG_RUNTIME_ERROR, "invalid state size" );
 
 	stateData[size] = '\0';
 	JL_CHK( JL_NewBlob(cx, stateData, size, vp) );
@@ -240,7 +240,8 @@ DEFINE_PROPERTY_SETTER( state ) {
 
 	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
 
-	JL_S_ASSERT( state.Length() == (size_t)pv->prng.export_size, "Invalid import size." );
+	JL_S_ASSERT_ERROR_NUM( state.Length() == (size_t)pv->prng.export_size, JLSMSG_LOGIC_ERROR, "invalid state size" );
+
 	int err;
 	err = pv->prng.pimport((const unsigned char *)state.GetConstStr(), (unsigned long)state.Length(), &pv->state);
 	if ( err != CRYPT_OK )

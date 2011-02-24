@@ -177,7 +177,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
@@ -301,7 +301,7 @@ DEFINE_FUNCTION( Read ) {
 				buf = (char*)jl_realloc(buf, totalSize +1);
 		} else {
 
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_VALUE_OUTOFRANGE, "0 to 2^32");
+			JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, "0 to 2^32");
 		}
 
 	} else {

@@ -69,7 +69,7 @@ DEFINE_PROPERTY_SETTER( deltaFrames ) {
 
 	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	pv->deltaFrames = JSVAL_TO_INT( *vp );
 	return JS_TRUE;
 	JL_BAD;
@@ -89,7 +89,7 @@ DEFINE_PROPERTY_SETTER( realtime ) {
 
 	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_BOOLEAN( *vp );
+	JL_S_ASSERT_ARG_IS_BOOLEAN(*vp, "");
 	pv->flags = JSVAL_TO_BOOLEAN( *vp ) == JS_TRUE ? pv->flags & kVstMidiEventIsRealtime : pv->flags | ~kVstMidiEventIsRealtime;
 	return JS_TRUE;
 	JL_BAD;
@@ -109,7 +109,7 @@ DEFINE_PROPERTY_SETTER( noteLength ) {
 
 	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	pv->noteLength = JSVAL_TO_INT( *vp );
 	return JS_TRUE;
 	JL_BAD;
@@ -129,7 +129,7 @@ DEFINE_PROPERTY_SETTER( noteOffset ) {
 
 	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	pv->noteOffset = JSVAL_TO_INT( *vp );
 	return JS_TRUE;
 	JL_BAD;
@@ -149,7 +149,7 @@ DEFINE_PROPERTY_SETTER( detune ) {
 
 	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	int value = JSVAL_TO_INT( *vp );
 	if ( value > 63 )
 		value = 63;
@@ -175,7 +175,7 @@ DEFINE_PROPERTY_SETTER( noteOffVelocity ) {
 
 	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	int value = JSVAL_TO_INT( *vp );
 	if ( value > 127 )
 		value = 127;
@@ -211,7 +211,7 @@ DEFINE_PROPERTY_SETTER( status ) {
 
 	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	unsigned int value = JSVAL_TO_INT( *vp );
 	JL_S_ASSERT( value >= 0x8 && value <= 0xF, "Invalid status value.");
 	pv->midiData[0] = (pv->midiData[0] & 0x0F) | ((value & 0x0F) << 4);
@@ -233,7 +233,7 @@ DEFINE_PROPERTY_SETTER( channel ) {
 
 	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	unsigned int value = JSVAL_TO_INT( *vp );
 	JL_S_ASSERT( value >= 0 && value <= 15, "Invalid channel value.");
 	pv->midiData[0] = (pv->midiData[0] & 0xF0) | (value & 0x0F);
@@ -258,7 +258,7 @@ DEFINE_PROPERTY_SETTER( noteOn ) {
 
 	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	unsigned int value = JSVAL_TO_INT( *vp );
 	JL_S_ASSERT( value >= 0 && value <= 15, "Invalid channel value.");
 	pv->midiData[0] = (pv->midiData[0] & 0xF0) | (value & 0x0F);
@@ -283,7 +283,7 @@ DEFINE_PROPERTY_SETTER( value1 ) {
 
 	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	int value = JSVAL_TO_INT( *vp );
 	pv->midiData[1] = value;
 	return JS_TRUE;
@@ -304,7 +304,7 @@ DEFINE_PROPERTY_SETTER( value2 ) {
 
 	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_INT( *vp );
+	JL_S_ASSERT_IS_INTEGER(*vp, "");
 	int value = JSVAL_TO_INT( *vp );
 	pv->midiData[2] = value;
 	return JS_TRUE;

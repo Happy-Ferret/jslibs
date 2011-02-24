@@ -60,7 +60,7 @@ DEFINE_FINALIZE() {
 			status = inflateEnd(&pv->stream);
 
 		if ( status != Z_OK )
-			JL_REPORT_WARNING_NUM(cx, JLSMSG_LIB_ERROR, "deflateEnd/inflateEnd"); //"Unable to finalize zlib stream (%s).", pv->stream.msg );
+			JL_REPORT_WARNING_NUM( JLSMSG_LIB_ERROR, "deflateEnd/inflateEnd"); //"Unable to finalize zlib stream (%s).", pv->stream.msg );
 	}
 	JS_free(cx, pv);
 bad:

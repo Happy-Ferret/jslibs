@@ -42,7 +42,7 @@ DEFINE_FUNCTION( Vec3 ) {
 	Vector3 v;
 	if ( argc == 1 ) {
 
-		if ( JL_IsArray(cx, JL_ARG(1)) ) {
+		if ( JL_ValueIsArray(cx, JL_ARG(1)) ) {
 
 			uint32 len;
 			JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
@@ -59,7 +59,7 @@ DEFINE_FUNCTION( Vec3 ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &v.y) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v.z) );
 	} else
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid vector3");
+		JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid vector3");
 
 	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL);
 	JL_BAD;
@@ -100,7 +100,7 @@ DEFINE_FUNCTION( Vec3Length ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &v.y) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v.z) );
 	} else
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "unsupported operation");
+		JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "unsupported operation");
 
 	return JL_NativeToJsval(cx, Vector3Length(&v), JL_RVAL);
 	JL_BAD;
@@ -293,7 +293,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( BoxToCircumscribedSphere ) {
 	
 	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARRAY(JL_ARG(1));
+	JL_S_ASSERT_ARG_IS_ARRAY(1);
 
 	float aabb[6];
 
@@ -509,7 +509,7 @@ DEFINE_FUNCTION( GetMatrix ) {
 	JL_S_ASSERT_ARG_COUNT(1);
 	float tmp[16], *m = tmp;
 
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *matrixObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
 	JL_S_ASSERT( fct, "Invalid Matrix44 interface." );
@@ -608,7 +608,7 @@ DEFINE_FUNCTION( ShadowMatrix ) {
 
 	if ( JL_ARGC == 3 ) {
 
-		JL_S_ASSERT_ARRAY(JL_ARG(3));
+		JL_S_ASSERT_ARG_IS_ARRAY(3);
 		*JL_RVAL = JL_ARG(3);
 		return JL_NativeVectorToJsval(cx, (double*)shadowMat, 16, JL_RVAL, true);
 	} else {

@@ -272,7 +272,7 @@ DEFINE_FUNCTION( Query ) {
 		JL_CHK( SqliteThrowError(cx, pv->db) );
 
 	if ( *szTail != '\0' )
-		JL_REPORT_WARNING_NUM(cx, JLSMSG_LOGIC_ERROR, "too many SQL statements" ); // for the moment, do not support multiple statements
+		JL_REPORT_WARNING_NUM( JLSMSG_LOGIC_ERROR, "too many SQL statements" ); // for the moment, do not support multiple statements
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 //		JL_REPORT_ERROR( "Invalid SQL string." );
 
@@ -371,7 +371,7 @@ DEFINE_FUNCTION( Exec ) {
 			*JL_RVAL = JSVAL_VOID;
 			break;
 		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "this routine was called inappropriately" );
+			JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "this routine was called inappropriately" );
 		default:
 			JL_CHK( SqliteThrowError(cx, pv->db) );
 	}
@@ -567,7 +567,7 @@ bad:
 **/
 DEFINE_SET_PROPERTY() {
 
-	if ( JL_IsFunction(cx, *vp) && JSID_IS_STRING(id) ) {
+	if ( JL_ValueIsFunction(cx, *vp) && JSID_IS_STRING(id) ) {
 		
 		JL_S_ASSERT_THIS_CLASS();
 

@@ -140,7 +140,7 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 	src->pub.bytes_in_buffer = 0; // forces fill_input_buffer on first read
 	src->pub.next_input_byte = NULL; // until buffer loaded
 
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	src->obj = JSVAL_TO_OBJECT( JL_ARG(1) ); // required by NIStreamRead
 	src->cx = cx; // required by NIStreamRead
 
@@ -281,7 +281,7 @@ DEFINE_FUNCTION( DecodePngImage ) {
 //	JL_CHK( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &desc.read) );
 //	JL_S_ASSERT( desc.read != NULL, "Unable to GetNativeResource." );
 
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	desc.obj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	desc.cx = cx;
 
@@ -370,7 +370,7 @@ DEFINE_FUNCTION( EncodePngImage ) {
 	int compressionLevel;
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_INT( JL_ARG(2) );
+		JL_S_ASSERT_ARG_IS_INTEGER(2);
 		compressionLevel = JSVAL_TO_INT( JL_ARG(2) );
 		JL_S_ASSERT( compressionLevel >= 0 && compressionLevel <= 9, "Invalid compression level." );
 	} else {
@@ -378,7 +378,7 @@ DEFINE_FUNCTION( EncodePngImage ) {
 		compressionLevel = Z_DEFAULT_COMPRESSION;
 	}
 
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *image;
 	image = JSVAL_TO_OBJECT( JL_ARG(1) );
 	int sWidth, sHeight, sChannels;
@@ -421,7 +421,7 @@ DEFINE_FUNCTION( EncodePngImage ) {
 			color_type = PNG_COLOR_TYPE_RGB_ALPHA;
 			break;
 		default:
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "color format not supported");
+			JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "color format not supported");
 	}
 
 	png_set_IHDR(desc.png, desc.info, sWidth, sHeight, 8, color_type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);

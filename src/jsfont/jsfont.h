@@ -28,7 +28,7 @@
 JL_MACRO_BEGIN \
 	FT_Error apiError = (apiCall); \
 	if ( apiError != FT_Err_Ok ) { \
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_LIB_ERROR, IntegerToString(apiError, 10)); \
+		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, IntegerToString(apiError, 10)); \
 	} \
 JL_MACRO_END
 

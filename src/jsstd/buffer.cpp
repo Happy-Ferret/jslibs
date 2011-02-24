@@ -186,7 +186,7 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 	if ( JSVAL_IS_VOID( srcVal ) ) // no source for refill
 		return JS_TRUE;
 
-	JL_S_ASSERT_OBJECT(srcVal);
+	JL_S_ASSERT_IS_OBJECT(srcVal, "source");
 
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( srcVal );
@@ -590,7 +590,7 @@ DEFINE_CONSTRUCTOR() {
 		}
 */
 
-		JL_S_ASSERT_OBJECT( JL_ARG(1) );
+		JL_S_ASSERT_ARG_IS_OBJECT(1);
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_SOURCE, JL_ARG(1)) );
 	}
 	return JS_TRUE;

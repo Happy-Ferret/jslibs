@@ -197,7 +197,6 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
-
 	JSScript *script;
 	script = JS_GetFrameScript(cx, fp);
 	const char *filename;
@@ -208,7 +207,7 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 	jsval fval;
 	if ( JS_GetProperty(cx, obj, "onBreak", &fval) == JS_FALSE )
 		return JSTRAP_ERROR;
-	if ( !JL_IsFunction(cx, fval) ) // nothing to do
+	if ( !JL_ValueIsFunction(cx, fval) ) // nothing to do
 		return JSTRAP_CONTINUE;
 
 	jsval exception;
@@ -273,7 +272,7 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 
 		JL_CHK( status );
 
-		JL_S_ASSERT_INT( argv[0] );
+		JL_S_ASSERT_IS_INTEGER(argv[0], "onBreak return");
 
 		if ( hasException ) // restore the exception
 			JS_SetPendingException(cx, exception); // (TBD) should return JSTRAP_ERROR ???
@@ -415,7 +414,7 @@ DEFINE_FUNCTION( ToggleBreakpoint ) {
 	JL_CHK( GetScriptLocation(cx, &JL_ARG(2), lineno, &script, &pc) );
 	if ( script == NULL ) {
 		
-		JL_REPORT_WARNING_NUM(cx, JLSMSG_RUNTIME_ERROR, "Invalid location.");
+		JL_REPORT_WARNING_NUM( JLSMSG_RUNTIME_ERROR, "Invalid location.");
 		*JL_RVAL = JSVAL_ZERO;
 		return JS_TRUE;
 	}
@@ -455,7 +454,7 @@ DEFINE_FUNCTION( HasBreakpoint ) {
 	JL_CHK( GetScriptLocation(cx, &JL_ARG(1), lineno, &script, &pc) );
 	if ( script == NULL ) {
 
-		JL_REPORT_WARNING_NUM(cx, JLSMSG_RUNTIME_ERROR, "Invalid location.");
+		JL_REPORT_WARNING_NUM( JLSMSG_RUNTIME_ERROR, "Invalid location.");
 		*JL_RVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}
@@ -512,7 +511,7 @@ DEFINE_PROPERTY_SETTER( interruptCounterLimit ) {
 		pv->interruptCounterLimit = 0;
 	} else {
 
-		JL_S_ASSERT_INT(*vp);
+		JL_S_ASSERT_IS_INTEGER(*vp, "");
 		JL_CHK( JL_JsvalToNative(cx, *vp, &pv->interruptCounterLimit) );
 	}
 
@@ -671,7 +670,7 @@ DEFINE_PROPERTY_SETTER( excludedFileList ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_S_ASSERT_ARRAY( *vp );
+	JL_S_ASSERT_IS_ARRAY( *vp, "" );
 
 	JSObject *arrayObject;
 	arrayObject = JSVAL_TO_OBJECT( *vp );

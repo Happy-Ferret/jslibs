@@ -58,7 +58,7 @@ DEFINE_CONSTRUCTOR() {
 	else if ( descType == PR_DESC_SOCKET_UDP )
 		fd = PR_NewUDPSocket();
 	else
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid socket type");
+		JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid socket type");
 
 	if ( fd == NULL )
 		return ThrowIoError(cx);
@@ -97,7 +97,7 @@ DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 		else if (JL_ARG(1) == JSVAL_TRUE )
 			how = PR_SHUTDOWN_SEND;
 		else
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid shutdown operation");
+			JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid shutdown operation");
 	else
 		how = PR_SHUTDOWN_BOTH; // default
 
@@ -554,7 +554,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	socketFd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_THIS_OBJECT_STATE( socketFd );
 
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *fileObj;
 	fileObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_S_ASSERT_CLASS( fileObj, JL_CLASS(File) );

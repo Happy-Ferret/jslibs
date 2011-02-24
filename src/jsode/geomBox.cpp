@@ -70,7 +70,7 @@ DEFINE_PROPERTY_SETTER( lengths ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
-	JL_S_ASSERT_ARRAY( *vp );
+	JL_S_ASSERT_IS_ARRAY(*vp, "");
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;

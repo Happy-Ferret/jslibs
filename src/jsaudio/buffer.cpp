@@ -42,7 +42,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 
 	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
@@ -62,7 +62,7 @@ DEFINE_CONSTRUCTOR() {
 			format = bits == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8;
 			break;
 		default:
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_INVALID_ARGUMENT, "sound.channels");
+			JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "sound.channels");
 	}
 
 	ALuint bid; // The OpenAL sound buffer ID

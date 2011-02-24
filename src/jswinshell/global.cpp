@@ -343,7 +343,7 @@ DEFINE_FUNCTION( CreateComObject ) {
 	HRESULT hr;
 
 	JL_S_ASSERT_ARG_COUNT( 1 );
-	JL_S_ASSERT_STRING( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_STRING(1);
 
 	JSString *idStr = JS_ValueToString(cx, JL_ARG(1));
 	LPOLESTR name = (LPOLESTR)JS_GetStringCharsZ(cx, idStr);
@@ -467,7 +467,7 @@ DEFINE_FUNCTION( RegistryGet ) {
 		rootHKey = HKEY_DYN_DATA;
 		path += 4;
 	} else
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid root key");
+		JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid root key");
 
 	if ( path[0] == '\\' )
 		path++;

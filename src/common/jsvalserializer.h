@@ -308,7 +308,7 @@ namespace jl {
 				return JS_TRUE;
 			}
 			
-			if ( JL_IsFunction(cx, obj) ) {
+			if ( JL_ObjectIsFunction(cx, obj) ) {
 /*
 				JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
 				JL_CHK( JS_XDRValue(xdr, const_cast<jsval*>(&val)) ); // JSXDR_ENCODE, de-const can be done
@@ -332,7 +332,7 @@ namespace jl {
 			if ( !JSVAL_IS_VOID( serializeFctVal ) ) {
 
 				jsval argv[] = { JSVAL_NULL, _serializerObj };
-				JL_S_ASSERT_ERROR_NUM( JL_IsFunction(cx, serializeFctVal), JLSMSG_MISSING_IMPLEMENTATION, JL_GetClassName(obj), "_serialize" );
+				JL_S_ASSERT_ERROR_NUM( JL_ValueIsFunction(cx, serializeFctVal), JLSMSG_MISSING_IMPLEMENTATION, JL_GetClassName(obj), "_serialize" );
 
 //				JSObject *objectProto;
 //				JL_CHK( js_GetClassPrototype(cx, NULL, JSProto_Object, &objectProto) );
@@ -375,7 +375,7 @@ namespace jl {
 */
 				jsval unserializeFctVal;
 				JL_CHK( JS_GetMethodById(cx, obj, JLID(cx, _unserialize), NULL, &unserializeFctVal) );
-				JL_S_ASSERT_ERROR_NUM( JL_IsFunction(cx, unserializeFctVal), JLSMSG_MISSING_IMPLEMENTATION, JL_GetClassName(obj), "_unserialize" );
+				JL_S_ASSERT_ERROR_NUM( JL_ValueIsFunction(cx, unserializeFctVal), JLSMSG_MISSING_IMPLEMENTATION, JL_GetClassName(obj), "_unserialize" );
 				JL_CHK( Write(cx, unserializeFctVal) );
 				JL_CHK( JS_CallFunctionValue(cx, obj, serializeFctVal, COUNTOF(argv)-1, argv+1, argv) ); // rval not used
 				return JS_TRUE;
@@ -681,7 +681,7 @@ namespace jl {
  					jsval argv[] = { JSVAL_NULL, _unserializerObj };
 					jsval fun;
 					JL_CHK( Read(cx, fun) );
-					JL_S_ASSERT_ERROR_NUM( JL_IsFunction(cx, fun), JLSMSG_INVALID_OBJECT_STATE, "Unserializer" );
+					JL_S_ASSERT_ERROR_NUM( JL_ValueIsFunction(cx, fun), JLSMSG_INVALID_OBJECT_STATE, "Unserializer" );
 					JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fun, COUNTOF(argv)-1, argv+1, argv) );
 					val = *argv;
 					break;
@@ -719,7 +719,7 @@ namespace jl {
 					break;
 				}
 				default:
-					JL_REPORT_ERROR_NUM(cx, JLSMSG_RUNTIME_ERROR, "Invalid serialized type.");
+					JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "Invalid serialized type.");
 			}
 
 			return JS_TRUE;

@@ -127,7 +127,7 @@ DEFINE_CONSTRUCTOR() {
 	JLStr str;
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_STRING(JL_ARG(1));
+	JL_S_ASSERT_ARG_IS_STRING(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	jl::Unserializer *unser;
 	unser = new jl::Unserializer(OBJECT_TO_JSVAL(JL_OBJ), str.GetStrZOwnership(), str.Length());

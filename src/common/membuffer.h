@@ -61,7 +61,7 @@ MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, void* me
 INLINE JSBool
 MemoryBufferObjectGet( JSContext *cx, jsval memBufferVal, MemBuffer **membuffer ) {
 
-	JL_S_ASSERT( IsHandleType(cx, memBufferVal, JL_CAST_CSTR_TO_UINT32("MEMB")), "Invalid memory object." );
+	JL_S_ASSERT_ERROR_NUM( IsHandleType(cx, memBufferVal, JL_CAST_CSTR_TO_UINT32("MEMB")), JLSMSG_EXPECT_TYPE, "memb handler" );
 	*membuffer = (MemBuffer*)GetHandlePrivate(cx, memBufferVal);
 	return JS_TRUE;
 	JL_BAD;
@@ -72,7 +72,7 @@ MemoryBufferObjectGet( JSContext *cx, jsval memBufferVal, MemBuffer **membuffer 
 /*  everything can be done with the previous function (MemoryBufferObjectGet).
 JSBool MemoryBufferObjectResize( JSContext *cx, jsval memBufferVal, size_t newSize ) {
 
-	JL_S_ASSERT( IsIdType(cx, memBufferVal, 'MEMB'), "Invalid memory object." );
+	JL_S_ASSERT_ERROR_NUM( IsHandleType(cx, memBufferVal, JL_CAST_CSTR_TO_UINT32("MEMB")), JLSMSG_EXPECT_TYPE, "memb handler" );
 	MemBuffer *membuf = (MemBuffer*)GetIdPrivate(cx, memBufferVal);
 	bool st = membuf->MemBufferRealloc(membuf, newSize);
 	JL_S_ASSERT( st, "Unable to reallocate the buffer." );
@@ -82,7 +82,7 @@ JSBool MemoryBufferObjectResize( JSContext *cx, jsval memBufferVal, size_t newSi
 
 JSBool MemoryBufferObjectFree( JSContext *cx, jsval memBufferVal ) {
 
-	JL_S_ASSERT( IsIdType(cx, memBufferVal, 'MEMB'), "Invalid memory object." );
+	JL_S_ASSERT_ERROR_NUM( IsHandleType(cx, memBufferVal, JL_CAST_CSTR_TO_UINT32("MEMB")), JLSMSG_EXPECT_TYPE, "memb handler" );
 	MemBuffer *membuf = (MemBuffer*)GetIdPrivate(cx, memBufferVal);
 	bool st = membuf->MemBufferFree(membuf);
 	JL_S_ASSERT( st, "Unable to free the buffer." );

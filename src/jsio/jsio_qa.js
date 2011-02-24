@@ -529,24 +529,14 @@ LoadModule('jsdebug');
 	
 		switch (systemInfo.name) {
 			case 'Windows_NT':
-/* previous implementation
 				var cmdPath = GetEnv('ComSpec');
 				QA.ASSERT( cmdPath.indexOf('cmd') != -1, true, 'cmd.exe path' );
-
-				var res = CreateProcess(cmdPath, ['/c', 'cd']);
-				QA.ASSERT_TYPE( res, Array, 'CreateProcess returns an array' );
-				QA.ASSERT( res.length, 2, 'CreateProcess array length' );
-				QA.ASSERT_TYPE( res[0], Descriptor, 'process stdin type' );
-				QA.ASSERT_TYPE( res[1], Descriptor, 'process stdout type' );
-				QA.ASSERT( res[1].Read(10).length, 10, 'reading Process stdout' );
-*/
-				var cmdPath = GetEnv('ComSpec');
-				QA.ASSERT( cmdPath.indexOf('cmd') != -1, true, 'cmd.exe path' );
-				var process = new Process(cmdPath, ['/c', 'cd']);
+				var process = new Process(cmdPath, ['/c', 'date', '/T']);
 				QA.ASSERT_TYPE( process.stdin, Descriptor, 'process stdin type' );
 				QA.ASSERT_TYPE( process.stdout, Descriptor, 'process stdout type' );
 				QA.ASSERT_TYPE( process.stderr, Descriptor, 'process stderr type' );
-				QA.ASSERT( process.stdout.Read(10).length, 10, 'reading Process stdout' );
+				var data = process.stdout.Read(10);
+				QA.ASSERT( data.length, 10, 'reading Process stdout' );
 				break;
 			default:
 				QA.FAILED('(TBD) no test available for this system.');

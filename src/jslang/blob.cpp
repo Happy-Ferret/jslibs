@@ -734,7 +734,7 @@ DEFINE_FUNCTION( split ) {
 		return JS_TRUE;
 	}
 
-	JL_S_ASSERT_STRING( JL_ARG(1) ); // regexp is not supported
+	JL_S_ASSERT_ARG_IS_STRING(1); // regexp is not supported
 
 	size_t max;
 	if ( JL_ARG_ISDEF(2) )
@@ -970,7 +970,7 @@ DEFINE_SET_PROPERTY() {
 	JL_USE(vp);
 
 	if ( JSID_IS_INT(id) )
-		JL_REPORT_WARNING_NUM(cx, JLSMSG_IMMUTABLE_OBJECT, JL_THIS_CLASS->name); // see also JSMSG_READ_ONLY
+		JL_REPORT_WARNING_NUM( JLSMSG_IMMUTABLE_OBJECT, JL_THIS_CLASS->name); // see also JSMSG_READ_ONLY
 	return JS_TRUE;
 	JL_BAD;
 }

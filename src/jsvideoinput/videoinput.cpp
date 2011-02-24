@@ -60,7 +60,7 @@ DEFINE_CONSTRUCTOR() {
 		
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &deviceId) );
 		if ( deviceId < 0 || deviceId >= numDevices )
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_RANGE_ERROR, "invalid device ID");
+			JL_REPORT_ERROR_NUM( JLSMSG_RANGE_ERROR, "invalid device ID");
 	} else {
 	
 		JLStr requiredDeviceName;
@@ -75,7 +75,7 @@ DEFINE_CONSTRUCTOR() {
 			}
 		}
 		if ( deviceId == -1 )
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid device name");
+			JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid device name");
 	}
 
 	JL_CHK( JL_SetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, INT_TO_JSVAL(deviceId)) );
@@ -153,7 +153,7 @@ JSBool VIEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSOb
 		argv[1] = OBJECT_TO_JSVAL(upe->obj);
 
 		JL_CHK( JS_GetProperty(cx, upe->obj, "onImage", &fct) );
-		if ( JL_IsFunction(cx, fct) )
+		if ( JL_ValueIsFunction(cx, fct) )
 			JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, COUNTOF(argv)-1, argv+1, argv) );
 	}
 

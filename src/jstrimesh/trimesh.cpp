@@ -176,7 +176,7 @@ DEFINE_FUNCTION( DefineVertexBuffer ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARRAY( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_ARRAY(1);
 	Surface *pv;
 	pv  = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
@@ -214,7 +214,7 @@ DEFINE_FUNCTION( DefineNormalBuffer ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARRAY( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_ARRAY(1);
 	Surface *pv;
 	pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
@@ -249,7 +249,7 @@ DEFINE_FUNCTION( DefineTextureCoordinateBuffer ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARRAY( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_ARRAY(1);
 	Surface *pv;
 	pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
@@ -284,7 +284,7 @@ DEFINE_FUNCTION( DefineColorBuffer ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARRAY( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_ARRAY(1);
 	Surface *pv;
 	pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
@@ -319,7 +319,7 @@ DEFINE_FUNCTION( DefineIndexBuffer ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARRAY( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_ARRAY(1);
 	Surface *pv;
 	pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_THIS_OBJECT_STATE(pv);

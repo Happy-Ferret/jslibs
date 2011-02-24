@@ -103,17 +103,17 @@ DEFINE_FUNCTION( Trim ) {
 
 	jsval tmp;
 	JS_GetProperty(cx, obj, "width", &tmp);
-	JL_S_ASSERT_INT( tmp );
+	JL_S_ASSERT_IS_INTEGER(tmp, "width");
 	int width;
 	width = JSVAL_TO_INT(tmp);
 
 	JS_GetProperty(cx, obj, "height", &tmp);
-	JL_S_ASSERT_INT( tmp );
+	JL_S_ASSERT_IS_INTEGER(tmp, "height");
 	int height;
 	height = JSVAL_TO_INT(tmp);
 
 	JS_GetProperty(cx, obj, "channels", &tmp);
-	JL_S_ASSERT_INT( tmp );
+	JL_S_ASSERT_IS_INTEGER(tmp, "channels");
 	int channels;
 	channels = JSVAL_TO_INT(tmp);
 	// assume that we have 1 Byte/channel

@@ -112,7 +112,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( type ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	int effectType;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &effectType) );
 
@@ -126,7 +126,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 DEFINE_PROPERTY_GETTER( type ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
 	int effectType;
 
 	alGetEffecti(pv->effect, AL_EFFECT_TYPE, &effectType);

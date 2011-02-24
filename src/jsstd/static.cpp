@@ -69,7 +69,7 @@ DEFINE_FUNCTION( Expand ) {
 	
 	if ( JL_ARG_ISDEF(2) ) {
 	
-		if ( JL_IsFunction(cx, JL_ARG(2)) )
+		if ( JL_ValueIsFunction(cx, JL_ARG(2)) )
 			mapFct = &JL_ARG(2);
 		else
 		if ( !JSVAL_IS_PRIMITIVE(JL_ARG(2)) )
@@ -239,8 +239,8 @@ DEFINE_FUNCTION( SwitchCase ) {
 
 	JL_S_ASSERT_ARG_RANGE( 3, 4 );
 
-	JL_S_ASSERT_ARRAY( JL_ARG(2) );
-	JL_S_ASSERT_ARRAY( JL_ARG(3) );
+	JL_S_ASSERT_ARG_IS_ARRAY(2);
+	JL_S_ASSERT_ARG_IS_ARRAY(3);
 
 	JSObject *caseArray;
 	jsuint caseArrayLength;
@@ -308,7 +308,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( DeepFreezeObject ) {
 
 	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	//JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &obj) );
 	*JL_RVAL = JSVAL_VOID;
 	return JS_DeepFreezeObject(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
@@ -325,7 +325,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( CountProperties ) {
 
 	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 
 	JSIdArray *arr;
 	arr = JS_Enumerate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
@@ -358,7 +358,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ClearObject ) {
 
 	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	JS_ClearScope(cx, JSVAL_TO_OBJECT( JL_ARG(1) ));
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -477,7 +477,7 @@ JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 DEFINE_FUNCTION( ObjectToId ) {
 
 	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_OBJECT( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *obj;
 	obj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
@@ -540,7 +540,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( IdToObject ) {
 
 	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_NUMBER( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_INTEGER_NUMBER(1);
 
 	unsigned int id;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &id) );
@@ -912,7 +912,7 @@ DEFINE_FUNCTION( Print ) {
 	jsval fval;
 	JL_CHK( GetHostObjectValue(cx, JLID(cx, stdout), &fval) );
 	*JL_RVAL = JSVAL_VOID;
-	if (likely( JL_IsFunction(cx, fval) ))
+	if (likely( JL_ValueIsFunction(cx, fval) ))
 		return JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fval, JL_ARGC, JL_ARGV, &fval);
 	return JS_TRUE;
 	JL_BAD;
@@ -1113,7 +1113,7 @@ JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
 		JL_ASSERT( obj != NULL );
 		JL_CHK( JS_CallFunctionValue(cx, obj, pv->queryFunctionValue, JL_ARGC, JL_ARGV, JL_RVAL) );
 		if ( !JSVAL_IS_PRIMITIVE(*JL_RVAL) )
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "primitive return value");
+			JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "primitive return value");
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -1209,7 +1209,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 	if ( ok )
 		return JS_WrapValue(cx, vp);
 	if ( !JL_IsExceptionPending(cx) )
-		JL_REPORT_ERROR_NUM(cx, JLSMSG_RUNTIME_ERROR, "exception is expected");
+		JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "exception is expected");
 	JL_BAD;
 }
 
@@ -1367,7 +1367,7 @@ DEFINE_FUNCTION( Halt ) {
 	JL_USE(vp);
 	JL_USE(argc);
 
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_PROGRAM_STOPPED);
+	JL_REPORT_ERROR_NUM( JLSMSG_PROGRAM_STOPPED);
 bad:	
 	return JS_FALSE;
 }

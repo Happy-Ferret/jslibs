@@ -1,9 +1,8 @@
 LoadModule('jsstd'); Exec('../common/tools.js');
-
 //var QA = FakeQAApi;
 //RunLocalQAFile();
 //RunJsircbot(false); throw 0;
-RunQATests('-rep 1 -nogcBetweenTests -exclude jstask|TCP.get');
+RunQATests('-rep 1 -nogcBetweenTests -exclude jstask');
 //  -loopForever -flags f -gcZeal 0 -nogcB -loop -gcZeal 0 
 //  Serialization|ProcessEvents
 //RunQATests('-perf perfset.js -exclude jstask');

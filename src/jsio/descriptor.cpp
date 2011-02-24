@@ -583,7 +583,7 @@ DEFINE_FUNCTION( Import ) {
 			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_PROTOTYPE(cx, File), NULL); // (TBD) check if proto is needed !
 			break;
 		default:
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_LOGIC_ERROR, "invalid descriptor type");
+			JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid descriptor type");
 	}
 	if ( fd == NULL )
 		return ThrowIoError(cx);

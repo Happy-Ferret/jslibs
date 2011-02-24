@@ -339,7 +339,7 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 	upe->cancel = JLEventCreate(false);
 	JL_ASSERT( JLEventOk(upe->cancel) );
 
-	if ( JL_ARG_ISDEF(2) && JL_IsFunction(cx, JL_ARG(2)) ) {
+	if ( JL_ARG_ISDEF(2) && JL_ValueIsFunction(cx, JL_ARG(2)) ) {
 
 		SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2));
 		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2)) ); // GC protection only
@@ -368,6 +368,8 @@ DEFINE_FUNCTION( jslang_test ) {
 
 	bool b;
 
+	JS_ReportOutOfMemory(cx);
+	JS_ReportOutOfMemory(cx);
 //	jsval val = JL_ARG(1);
 	JSObject *obj = JS_THIS_OBJECT(cx,vp);
 

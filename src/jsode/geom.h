@@ -63,7 +63,7 @@ ALWAYS_INLINE JSBool GeomToJsval( JSContext *cx, ode::dGeomID geomId, jsval *val
 
 ALWAYS_INLINE JSBool JL_JsvalToGeom( JSContext *cx, const jsval val, ode::dGeomID *geom ) {
 
-	JL_S_ASSERT_OBJECT( val );
+	JL_S_ASSERT_IS_OBJECT(val, JL_CLASS_NAME(Geom));
 	JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(val), JL_CLASS(Geom));
 	*geom = (ode::dGeomID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(val));
 	JL_S_ASSERT_OBJECT_STATE( *geom, JL_CLASS_NAME(Geom) );

@@ -154,7 +154,7 @@ DEFINE_FUNCTION( PointDepth ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, JL_OBJ);
 	JL_S_ASSERT_THIS_OBJECT_STATE( geomId );
-	JL_S_ASSERT_ARRAY( JL_ARG(1) );
+	JL_S_ASSERT_ARG_IS_ARRAY(1);
 	ode::dReal depth, point[3];
 	uint32 len;
 	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), point, 3, &len) );
@@ -174,7 +174,7 @@ DEFINE_FUNCTION( PointDepth ) {
 			depth = ode::dGeomPlanePointDepth(geomId, point[0], point[1], point[2]);
 			break;
 		default:
-			JL_REPORT_ERROR_NUM(cx, JLSMSG_NOT_IMPLEMENTED);
+			JL_REPORT_ERROR_NUM( JLSMSG_NOT_IMPLEMENTED);
 	}
 
 	JL_CHK( JL_NativeToJsval(cx, depth, JL_RVAL) );
@@ -310,7 +310,7 @@ DEFINE_PROPERTY_SETTER( offset ) {
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
 		return JS_TRUE;
 	}
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "Matrix44 or undefined");
+	JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "Matrix44 or undefined");
 	JL_BAD;
 }
 
@@ -346,7 +346,7 @@ DEFINE_PROPERTY_SETTER( tansformation ) {
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
 		return JL_StoreProperty(cx, obj, id, vp, false);
 	}
-	JL_REPORT_ERROR_NUM(cx, JLSMSG_EXPECT_TYPE, "Matrix44");
+	JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "Matrix44");
 	JL_BAD;
 }
 
@@ -517,7 +517,7 @@ DEFINE_PROPERTY_SETTER( contact ) {
 	
 //	JL_S_ASSERT( JL_IsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
 	if ( !JSVAL_IS_VOID(*vp) )
-		JL_S_ASSERT_IS_FUNCTION(*vp);
+		JL_S_ASSERT_IS_FUNCTION(*vp, "");
 	return JL_SetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, *vp);
 	JL_BAD;
 }

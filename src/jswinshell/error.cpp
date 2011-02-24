@@ -35,11 +35,8 @@ DEFINE_PROPERTY_GETTER( code ) {
 	jsval hi, lo;
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
-	JL_S_ASSERT_INT(hi);
-	JL_S_ASSERT_INT(lo);
-
+	JL_S_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 	JL_CHK( JL_NewNumberValue(cx, (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)), vp) );
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -60,8 +57,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	jsval hi, lo;
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
-	JL_S_ASSERT_INT(hi);
-	JL_S_ASSERT_INT(lo);
+	JL_S_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, ErrorToConstName( (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)) )) );
 	return JS_TRUE;
@@ -74,8 +70,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 	jsval hi, lo;
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
-	JL_S_ASSERT_INT(hi);
-	JL_S_ASSERT_INT(lo);
+	JL_S_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 	DWORD err = (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi));
 
 	LPVOID lpvMessageBuffer;

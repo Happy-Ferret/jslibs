@@ -145,7 +145,9 @@ int main(int argc, char* argv[]) {
 	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
-	JLERRIF_UNEXPECTED( !cx, "Unable to create the class" );
+//	JLERRIF_UNEXPECTED( !cx, "Unable to create the class" );
+
+	
 
 	//JLASSERT_UNEXPECTED_RUNTIME( proto != NULL, "Unable to create the class", cs->clasp.name );
 
