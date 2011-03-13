@@ -21,7 +21,7 @@
 #include "host.h"
 #include "../jslang/jslang.h"
 
-
+/*
 JSErrorFormatString jlErrorFormatString[] = {
 #define JLMSG_DEF(name, exception, format, count) { format, count, exception },
 #include "jlerrors.msg"
@@ -35,6 +35,126 @@ const JSErrorFormatString *GetErrorMessage(void *, const char *, const uintN err
 		return &jlErrorFormatString[errorNumber-JLErrOffset-1];
 	return NULL;
 }
+*/
+
+
+
+struct {
+
+	JSExnType exn;
+	char *msg;
+} E_msg[] = {
+		{ JSEXN_NONE, 0 },
+	#define DEF( NAME, TEXT, EXN ) \
+		{ EXN, TEXT },
+	#include "jlerrors.msg"
+	#undef DEF
+};
+
+
+static const JSErrorFormatString *
+ErrorCallback(void *userRef, const char *, const uintN) {
+
+	return (JSErrorFormatString*)userRef;
+}
+
+
+static JSBool
+Report( JSContext *cx, bool isWarning, ... ) {
+
+   va_list vl;
+	va_start(vl, isWarning);
+
+	int id;
+	JSExnType exn = JSEXN_NONE;
+
+	char message[1024];
+	char *buf = message;
+	const char *str, *strEnd, *pos;
+
+	while ( (id = va_arg(vl, int)) != E__INVALID ) {
+
+		ASSERT( id > E__INVALID );
+		ASSERT( id < E__LIMIT );
+
+		if ( exn == JSEXN_NONE && E_msg[id].exn != JSEXN_NONE )
+			exn = E_msg[id].exn;
+
+		str = E_msg[id].msg;
+
+		if ( buf != message ) {
+
+			memcpy(buf, " ", 1);
+			buf += 1;
+		}
+
+		strEnd = str + strlen(str);
+		pos = str;
+
+		for (;;) {
+			
+			const char *newPos = strchr(pos, '%');
+			if ( !newPos ) {
+
+				memcpy(buf, pos, strEnd-pos);
+				buf += strEnd-pos;
+				break;
+			} else {
+
+				memcpy(buf, pos, newPos-pos);
+				buf += newPos-pos;
+			}
+			pos = newPos;
+
+			switch ( *++pos ) {
+				case 'd':
+					++pos;
+					ltoa(va_arg(vl, long), buf, 10);
+					buf += strlen(buf);
+					break;
+				case 'x':
+					++pos;
+					memcpy(buf, "0x", 2);
+					buf += 2;
+					ltoa(va_arg(vl, long), buf, 16);
+					buf += strlen(buf);
+					break;
+				case 's': {
+					++pos;
+					const char * tmp = va_arg(vl, char *);
+					int len = strlen(tmp);
+					if ( len > 128 ) {
+						
+						memcpy(buf, tmp, 128);
+						buf += 128;
+						memcpy(buf, "...", 3);
+						buf += 3;
+					} else {
+
+						memcpy(buf, tmp, len);
+						buf += len;
+					}
+					break;
+				}
+				default:
+					*(buf++) = '%';
+					break;
+			}
+		}
+	}
+	memcpy(buf, ".", 1);
+	buf += 1;
+	*buf = '\0';
+
+	va_end(vl);
+
+	JSErrorFormatString format = { message, 0, (int16)exn };
+	return JS_ReportErrorFlagsAndNumber(cx, isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, ErrorCallback, (void*)&format, 0);
+
+bad:
+	va_end(vl);
+	return JS_FALSE;
+}
 
 
 JSBool JSDefaultStdinFunction(JSContext *cx, uintN, jsval *vp) {
@@ -47,7 +167,6 @@ JSBool JSDefaultStdinFunction(JSContext *cx, uintN, jsval *vp) {
 	}
 	char buffer[8192];
 	int status = pv->hostStdIn(pv->privateData, buffer, COUNTOF(buffer));
-	JL_CHKM( status != -1, "stdin read error." );
 	if ( status > 0 ) {
 	
 		JSString *jsstr = JS_NewStringCopyN(cx, buffer, status);
@@ -55,6 +174,7 @@ JSBool JSDefaultStdinFunction(JSContext *cx, uintN, jsval *vp) {
 		*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	} else {
 
+		JL_WARN( E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdin"), E_READ );
 		*JL_RVAL = JL_GetEmptyStringValue(cx);
 	}
 	return JS_TRUE;
@@ -74,7 +194,8 @@ JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 		JLStr str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
-		JL_CHKM( pv->hostStdOut(pv->privateData, str.GetConstStr(), str.Length()) != -1, "stdout write error." );
+		int status = pv->hostStdOut(pv->privateData, str.GetConstStr(), str.Length());
+		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -92,59 +213,114 @@ JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 		JLStr str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
-		JL_CHKM( pv->hostStdErr(pv->privateData, str.GetConstStr(), str.Length()) != -1, "stderr write error." );
+		int status = pv->hostStdErr(pv->privateData, str.GetConstStr(), str.Length());
+		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
 	}
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
-void ErrorReporter_stdErrRouter(JSContext *cx, const char *message, size_t length) {
+void ErrorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report) {
+
+	JL_USE(cx);
+	if ( !report )
+		fprintf(stderr, "%s\n", message);
+	else
+		fprintf(stderr, "%s (%s:%d)\n", message, report->filename, report->lineno);
+}
+
+
+void StderrWrite(JSContext *cx, const char *message, size_t length) {
 
 	JSObject *globalObject = JL_GetGlobalObject(cx);
-	if (likely( globalObject != NULL )) {
+	ASSERT( globalObject );
 
-		jsval fct;
-		if (likely( GetHostObjectValue(cx, JLID(cx, stderr), &fct) == JS_TRUE && JL_ValueIsFunction(cx, fct) )) {
-			
-			jsval unused;
-			jsval tmp;
-			JL_CHK( JL_NativeToJsval(cx, message, length, &tmp) ); // beware out of memory case !
-			JL_CHK( JS_CallFunctionValue(cx, globalObject, fct, 1, &tmp, &unused) );
-		}
-	}
-bad:
+	jsval fct;
+	if (unlikely( GetHostObjectValue(cx, JLID(cx, stderr), &fct) != JS_TRUE || !JL_ValueIsFunction(cx, fct) ))
+		return;
+		
+	JSExceptionState *exs = JS_SaveExceptionState(cx);
+	JS_ClearPendingException(cx);
+	JSErrorReporter prevErrorReporter = JS_SetErrorReporter(cx, JL_IS_SAFE ? ErrorReporterBasic : NULL);
+
+	jsval rval, text;
+	JL_CHKB( JL_NativeToJsval(cx, message, length, &text), bad1 ); // beware out of memory case !
+	JL_CHKB( JS_CallFunctionValue(cx, globalObject, fct, 1, &text, &rval), bad1 );
+
+	JS_SetErrorReporter(cx, prevErrorReporter);
+	JS_RestoreExceptionState(cx, exs);
+	return;
+
+bad1:
+	JS_SetErrorReporter(cx, prevErrorReporter);
+	JS_DropExceptionState(cx, exs);
 	return;
 }
 
 
-// function copied from ../js/src/js.c
 void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
-	HostPrivate *pv = JL_GetHostPrivate(cx);
-	if (likely( pv != NULL && JSREPORT_IS_WARNING(report->flags) && pv->unsafeMode )) // no warnings in unsafe mode.
-		return;
-
 	// trap JSMSG_OUT_OF_MEMORY error to avoid calling ErrorReporter_stdErrRouter() that may allocate memory that will lead to nested call.
-	if ( report->errorNumber == JSMSG_OUT_OF_MEMORY ) { // (TBD) do something better
+	if (unlikely( report && report->errorNumber == JSMSG_OUT_OF_MEMORY )) { // (TBD) do something better
 		
-		fprintf(stderr, "%s (%s:%d)\n", message, report->filename, report->lineno );
+		fprintf(stderr, "%s (%s:%d)\n", message, report->filename, report->lineno);
 		return;
 	}
 
-	char *msg;
+	bool reportWarnings = JL_IS_SAFE; // no warnings in unsafe mode.
 
+	char buffer[1024];
+	char *buf = buffer;
+
+	#if defined(fprintf) || defined(fputs) || defined(fwrite) || defined(fputc)
+		#error CANNOT DEFINE MACROS fprintf, fputs, fwrite, fputc
+	#endif
+
+
+	#define fprintf(FILE, FORMAT, ...) \
+	JL_MACRO_BEGIN \
+		snprintf(buf, sizeof(buffer)-(buf-buffer), FORMAT, ##__VA_ARGS__); \
+		buf += strlen(buf); \
+		ASSERT( !*buf ); \
+	JL_MACRO_END
+
+	#define fputs(STR, FILE) \
+	JL_MACRO_BEGIN \
+		size_t len = JL_MIN(strlen(STR), sizeof(buffer)-(buf-buffer)); \
+		memcpy(buf, STR, len); \
+		buf += len; \
+	JL_MACRO_END
+
+	#define fwrite(STR, SIZE, COUNT, FILE) \
+	JL_MACRO_BEGIN \
+		size_t len = JL_MIN(size_t((SIZE)*(COUNT)), sizeof(buffer)-(buf-buffer)); \
+		memcpy(buf, (STR), len); \
+		buf += len; \
+	JL_MACRO_END
+
+	#define fputc(CHR, FILE) \
+	JL_MACRO_BEGIN \
+		buf[0] = (CHR); \
+		buf += 1; \
+	JL_MACRO_END
+	
+
+// copy-paste from /js/src/js.cpp (my_ErrorReporter)
+//	 ---8<---
 
     int i, j, k, n;
     char *prefix, *tmp;
     const char *ctmp;
 
     if (!report) {
-        //fprintf(gErrFile, "%s\n", message);
-		 ErrorReporter_stdErrRouter( cx, message, strlen(message) );
-		 ErrorReporter_stdErrRouter( cx, "\n", 1 );
+        fprintf(gErrFile, "%s\n", message);
         return;
     }
+
+    /* Conditionally ignore reported warnings. */
+    if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings)
+        return;
 
     prefix = NULL;
     if (report->filename)
@@ -166,64 +342,60 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
     while ((ctmp = strchr(message, '\n')) != 0) {
         ctmp++;
         if (prefix)
-            //fputs(prefix, gErrFile);
-				ErrorReporter_stdErrRouter( cx, prefix, strlen(prefix) );
-        //fwrite(message, 1, ctmp - message, gErrFile);
-		  ErrorReporter_stdErrRouter( cx, message, ctmp - message );
-
+            fputs(prefix, gErrFile);
+        fwrite(message, 1, ctmp - message, gErrFile);
         message = ctmp;
     }
 
     /* If there were no filename or lineno, the prefix might be empty */
     if (prefix)
-        //fputs(prefix, gErrFile);
-		  ErrorReporter_stdErrRouter( cx, prefix, strlen(prefix) );
-    //fputs(message, gErrFile);
-	 ErrorReporter_stdErrRouter( cx, message, strlen(message) );
+        fputs(prefix, gErrFile);
+    fputs(message, gErrFile);
 
     if (!report->linebuf) {
-        //fputc('\n', gErrFile);
-		 ErrorReporter_stdErrRouter( cx, "\n", 1 );
+        fputc('\n', gErrFile);
         goto out;
     }
 
     /* report->linebuf usually ends with a newline. */
-    n = (int)strlen(report->linebuf);
-    //fprintf(gErrFile, ":\n%s%s%s%s",
-	 msg = JS_smprintf(":\n%s%s%s%s",
+    n = strlen(report->linebuf);
+    fprintf(gErrFile, ":\n%s%s%s%s",
             prefix,
             report->linebuf,
             (n > 0 && report->linebuf[n-1] == '\n') ? "" : "\n",
             prefix);
-	 ErrorReporter_stdErrRouter( cx, msg, strlen(msg) );
-	JS_smprintf_free(msg);
     n = report->tokenptr - report->linebuf;
     for (i = j = 0; i < n; i++) {
         if (report->linebuf[i] == '\t') {
             for (k = (j + 8) & ~7; j < k; j++) {
-                //fputc('.', gErrFile);
-					ErrorReporter_stdErrRouter( cx, ".", 1 );
+                fputc('.', gErrFile);
             }
             continue;
         }
-        //fputc('.', gErrFile);
-		  ErrorReporter_stdErrRouter( cx, ".", 1 );
+        fputc('.', gErrFile);
         j++;
     }
-    //fputs("^\n", gErrFile);
-	 ErrorReporter_stdErrRouter( cx, "^\n", 2 );
+    fputs("^\n", gErrFile);
  out:
-/*
-	 if (!JSREPORT_IS_WARNING(report->flags)) {
-        if (report->errorNumber == JSMSG_OUT_OF_MEMORY) {
-            gExitCode = EXITCODE_OUT_OF_MEMORY;
-        } else {
-            gExitCode = EXITCODE_RUNTIME_ERROR;
-        }
-    }
-*/
+    //if (!JSREPORT_IS_WARNING(report->flags)) {
+    //    if (report->errorNumber == JSMSG_OUT_OF_MEMORY) {
+    //        gExitCode = EXITCODE_OUT_OF_MEMORY;
+    //    } else {
+    //        gExitCode = EXITCODE_RUNTIME_ERROR;
+    //    }
+    //}
     JS_free(cx, prefix);
+
+//	 ---8<---
+
+	#undef fprintf
+	#undef fputs
+	#undef fwrite
+	#undef fputc
+	 
+	StderrWrite(cx, buffer, buf-buffer);
 }
+
 
 
 JSBool OperationCallback(JSContext *cx) {
@@ -254,9 +426,12 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 
 	JLStr str;
+	JLLibraryHandler module = JLDynamicLibraryNullHandler;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
+
+
 	if (unlikely( JL_ARGC < 1 )) {
 
 		*JL_RVAL = JSVAL_VOID;
@@ -291,7 +466,7 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 					JL_CHK( JS_DefineProperty(cx, obj, ns, OBJECT_TO_JSVAL(nsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // doc. On success, JS_DefineProperty returns JS_TRUE. If the property already exists or cannot be created, JS_DefineProperty returns JS_FALSE.
 				} else {
 
-					JL_S_ASSERT_OBJECT( existingNsVal );
+					JL_ASSERT_OBJECT( existingNsVal );
 					nsObj = JSVAL_TO_OBJECT( existingNsVal );
 				}
 				obj = nsObj;
@@ -301,16 +476,16 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 */
 	HostPrivate *pv;
 	pv = JL_GetHostPrivate(cx);
-	JL_S_ASSERT_ERROR_NUM( pv, JLSMSG_RUNTIME_ERROR, "invalid host context private" );
-	JL_S_ASSERT_ERROR_NUM( libFileName != NULL && *libFileName != '\0', JLSMSG_LOGIC_ERROR, "invalid module filename" );
-	JLLibraryHandler module;
+	JL_ASSERT( pv, E_HOST, E_STATE, E_COMMENT("context private") );
+	JL_ASSERT( libFileName != NULL && *libFileName != '\0', E_ARG, E_NUM(1), E_DEFINED );
+
 	module = JLDynamicLibraryOpen(libFileName);
 	if ( !JLDynamicLibraryOk(module) ) {
 
 		JL_SAFE_BEGIN
 		char errorBuffer[256];
 		JLDynamicLibraryLastErrorMessage( errorBuffer, sizeof(errorBuffer) );
-		JL_REPORT_WARNING_NUM( JLSMSG_RUNTIME_ERROR2, errorBuffer, libFileName); // \"%s\". %s", libFileName, errorBuffer );
+		JL_WARN( E_OS, E_OPERATION, E_DETAILS, E_STR(errorBuffer) );
 		JL_SAFE_END
 
 		*JL_RVAL = JSVAL_FALSE;
@@ -328,7 +503,7 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 	uid = JLDynamicLibraryId(module); // module unique ID
 	ModuleInitFunction moduleInit;
 	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
-	JL_CHKBM( moduleInit, bad_dl_close, "Invalid module." );
+	JL_ASSERT( moduleInit, E_MODULE, E_NAME(libFileName), E_INIT ); // "Invalid module."
 
 //	CHKHEAP();
 
@@ -336,9 +511,8 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 
 		char filename[PATH_MAX];
 		JLDynamicLibraryName((void*)moduleInit, filename, sizeof(filename));
-		//JS_ReportError(cx, "Unable to initialize the module \"%s\".", filename);
-		JL_REPORT_ERROR_NUM( JLSMSG_INIT_FAIL, filename );
-		goto bad_dl_close;
+		JL_ERR( E_MODULE, E_NAME(filename), E_INIT );
+		goto bad;
 	}
 
 //	CHKHEAP();
@@ -347,9 +521,9 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 	JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID
 	return JS_TRUE;
 
-bad_dl_close:
-	JLDynamicLibraryClose(&module);
 bad:
+	if ( JLDynamicLibraryOk(module) )
+		JLDynamicLibraryClose(&module);
 	return JS_FALSE;
 }
 
@@ -406,7 +580,7 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 //	JS_SetGCParameter(rt, JSGC_TRIGGER_FACTOR, 3);
 
 	uint32 stackpoolLifespan = JS_GetGCParameter(rt, JSGC_STACKPOOL_LIFESPAN);
-	JL_ASSERT( stackpoolLifespan == 30000 ); // check if default has chaged.
+	ASSERT( stackpoolLifespan == 30000 ); // check if default has chaged.
 	JS_SetGCParameter(rt, JSGC_STACKPOOL_LIFESPAN, 15000);
 
 	JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_GLOBAL);
@@ -421,7 +595,7 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 	JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA); // good place to manage stack limit ( that is 32MB by default ). Btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
 
 	uint32 maxCodeCacheBytes = JS_GetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES);
-	JL_ASSERT( maxCodeCacheBytes == 16 * 1024 * 1024 ); // check if default has chaged.
+	ASSERT( maxCodeCacheBytes == 16 * 1024 * 1024 ); // check if default has chaged.
 	JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024 * 2);
 
 	//JS_SetNativeStackQuota(cx, DEFAULT_MAX_STACK_SIZE); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
@@ -432,7 +606,7 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
 	// JS_SetOptions doc: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_SetOptions
-	JL_ASSERT( JS_GetOptions(cx) == 0 );
+	ASSERT( JS_GetOptions(cx) == 0 );
 	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_ANONFUNFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_JIT | JSOPTION_METHODJIT | /*JSOPTION_METHODJIT_ALWAYS |*/ JSOPTION_PROFILING);
 
 	JSObject *globalObject;
@@ -444,7 +618,7 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 
 	HostPrivate *pv;
 	pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc, because WatchDogThreadProc points on it !!!
-	JL_S_ASSERT_ALLOC( pv );
+	JL_ASSERT_ALLOC( pv );
 	pv->hostPrivateVersion = JL_HOST_PRIVATE_VERSION;
 	JL_SetHostPrivate(cx, pv);
 
@@ -454,11 +628,11 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 		pv->maybeGCInterval = maybeGCInterval;
 		JSOperationCallback prevOperationCallback;
 		prevOperationCallback = JS_SetOperationCallback(cx, OperationCallback);
-		JL_ASSERT( prevOperationCallback == NULL );
+		ASSERT( prevOperationCallback == NULL );
 		pv->watchDogSemEnd = JLSemaphoreCreate(0);
 		pv->watchDogThread = JLThreadStart(WatchDogThreadProc, cx);
 		//	JLThreadPriority(pv->watchDogThread, JL_THREAD_PRIORITY_LOW);
-		JL_CHKM( JLSemaphoreOk(pv->watchDogSemEnd) && JLThreadOk(pv->watchDogThread), "Unable to create the GC thread." );
+		JL_ASSERT( JLSemaphoreOk(pv->watchDogSemEnd) && JLThreadOk(pv->watchDogThread), E_HOST, E_CREATE ); // "Unable to create the GC thread."
 	}
 	return cx;
 
@@ -469,14 +643,14 @@ bad:
 
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
 
-	JL_ASSERT( !JS_CStringsAreUTF8() );
+	ASSERT( !JS_CStringsAreUTF8() );
 
 	_unsafeMode = unsafeMode;
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 
 		pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc, because WatchDogThreadProc points on it !!!
-		JL_S_ASSERT_ALLOC( pv );
+		JL_ASSERT_ALLOC( pv );
 		pv->hostPrivateVersion = JL_HOST_PRIVATE_VERSION;
 		JL_SetHostPrivate(cx, pv);
 	}
@@ -494,36 +668,46 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 
 	JSObject *globalObject;
 	globalObject = JL_GetGlobalObject(cx);
-	JL_CHKM( globalObject != NULL, "Global object not found." );
+	ASSERT( globalObject != NULL ); // "Global object not found."
 	
-	JS_SetLocaleCallbacks(cx, &pv->localeCallbacks);
-	pv->errorCallback = GetErrorMessage;
-	pv->localeCallbacks.localeGetErrorMessage = pv->errorCallback;
+//	JS_SetLocaleCallbacks(cx, &pv->localeCallbacks);
+//	pv->errorCallback = GetErrorMessage;
+//	pv->localeCallbacks.localeGetErrorMessage = pv->errorCallback;
+
+	pv->report = Report;
 
 	pv->hostStdErr = stdErr;
 	pv->hostStdOut = stdOut;
 	pv->hostStdIn = stdIn;
 
 	// global functions & properties
-	JL_CHKM( JS_DefinePropertyById( cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(JL_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), "unable to define a property." );
-	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == 1 ? JLNormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), "unable to define a property." );
+	JL_CHKM( JS_DefinePropertyById( cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(JL_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), E_PROP, E_CREATE ); // "unable to define a property."
+	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == 1 ? JLNormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), E_PROP, E_CREATE ); // "unable to define a property."
 
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, unsafeMode), unsafeMode ? JSVAL_TRUE : JSVAL_FALSE, false) );
 
 	// note: we have to support: var prevStderr = _host.stderr; _host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
 	jsval value;
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStdinFunction, 1, 0, NULL, "stdin"))); // doc: If you do not assign a name to the function, it is assigned the name "anonymous".
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdinFunction, 1, 0, NULL, JLID(cx, stdin)))); // doc: If you do not assign a name to the function, it is assigned the name "anonymous".
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdin), value) );
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStdoutFunction, 1, 0, NULL, "stdout")));
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdoutFunction, 1, 0, NULL, JLID(cx, stdout))));
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdout), value) );
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunction(cx, JSDefaultStderrFunction, 1, 0, NULL, "stderr")));
+	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStderrFunction, 1, 0, NULL, JLID(cx, stderr))));
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, stderr), value) );
+
+	JL_CHK( JL_NativeToJsval(cx, JL_SvnRevToInt(SVN_REVISION_STR), &value) );
+	JL_CHK( SetHostObjectValue(cx, L("revision"), value) );
+	JL_CHK( JL_NativeToJsval(cx, JL_BUILD, &value) ); // __DATE__YEAR, __DATE__MONTH+1, __DATE__DAY
+	JL_CHK( SetHostObjectValue(cx, L("build"), value) );
+	JL_CHK( JL_NativeToJsval(cx, (int)JS_GetVersion(cx), &value) ); // JS_GetImplementationVersion()
+	JL_CHK( SetHostObjectValue(cx, L("jsVersion"), value) );
+	
 
 	// init static modules
 	if ( !jslangModuleInit(cx, globalObject) )
-		JL_REPORT_ERROR_NUM( JLSMSG_INIT_FAIL, "jslang" );
+		JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );
 
-	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, _revision), INT_TO_JSVAL(JL_SvnRevToInt(SVN_REVISION_STR)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+//	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, _revision), INT_TO_JSVAL(JL_SvnRevToInt(SVN_REVISION_STR)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // see _host.revision
 
 	return JS_TRUE;
 	JL_BAD;
@@ -535,7 +719,7 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 	JSRuntime *rt = JL_GetRuntime(cx);
 
 	HostPrivate *pv = JL_GetHostPrivate(cx);
-	JL_S_ASSERT_ERROR_NUM( pv, JLSMSG_RUNTIME_ERROR, "invalid host context private" );
+	JL_ASSERT( pv, E_HOST, E_STATE, E_COMMENT("context private") );
 
 	pv->canSkipCleanup = skipCleanup;
 
@@ -558,14 +742,14 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 				char filename[PATH_MAX];
 				JLDynamicLibraryName((void*)moduleRelease, filename, sizeof(filename));
-				JL_CHK( JS_ReportWarning(cx, "Fail to release module \"%s\".", filename) );
+				JL_WARN( E_MODULE, E_NAME(filename), E_FIN ); // "Fail to release module \"%s\".", filename
 			}
 		}
 	}
 
 	if ( !jslangModuleRelease(cx) ) {
 		
-		JL_CHK( JS_ReportWarning(cx, "Fail to release static module jslang.") );
+		JL_WARN( E_MODULE, E_NAME("jslang"), E_FIN ); // "Fail to release static module jslang."
 	}
 
 	//	don't try to break linked objects with JS_GC(cx) !
@@ -575,7 +759,7 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 //	if ( tmp != JSVAL_VOID && JSVAL_TO_PRIVATE(tmp) )
 //		jl_free( JSVAL_TO_PRIVATE(tmp) );
 
-	JL_CHKM( RemoveHostObject(cx), "Unable to remove the host object." );
+	JL_CHKM( RemoveHostObject(cx), E_HOST, E_INTERNAL ); // "Unable to remove the host object."
 
 //	JS_SetGlobalObject(cx, JSVAL_TO_OBJECT(JSVAL_NULL)); // remove the global object (TBD) check if it is good or needed to do this.
 
@@ -629,8 +813,8 @@ void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
 JSBool RemoveScriptArguments( JSContext *cx ) {
 
 	JSObject *globalObject = JL_GetGlobalObject(cx);
-	JL_CHKM( globalObject != NULL, "Global object not found." );
-	JL_CHKM( JS_DeletePropertyById(cx, globalObject, JLID(cx, arguments)), "Unable to cleanup script arguments." );
+	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
+	JL_CHKM( JS_DeletePropertyById(cx, globalObject, JLID(cx, arguments)), E_HOST, E_INTERNAL ); // "Unable to cleanup script arguments."
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -638,20 +822,18 @@ JSBool RemoveScriptArguments( JSContext *cx ) {
 JSBool CreateScriptArguments( JSContext *cx, int argc, const char * const * argv ) {
 
 	JSObject *globalObject = JL_GetGlobalObject(cx);
-	JL_CHKM( globalObject != NULL, "Global object not found." );
+	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
 
 	JSObject *argsObj;
 	argsObj = JS_NewArrayObject(cx, argc, NULL); // JL_IsArray(cx, OBJECT_TO_JSVAL(argsObj));
-	
-	JL_CHKM( argsObj != NULL, "Unable to create script arguments." );
-
-	JL_CHKM( JS_DefinePropertyById(cx, globalObject, JLID(cx, arguments), OBJECT_TO_JSVAL(argsObj), NULL, NULL, /*JSPROP_READONLY | JSPROP_PERMANENT*/ 0), "Unable to store script arguments." );
+	JL_ASSERT_ALLOC( argsObj ); // JL_CHKM( argsObj != NULL, E_HOST, E_INTERNAL ); // "Unable to create script arguments."
+	JL_CHKM( JS_DefinePropertyById(cx, globalObject, JLID(cx, arguments), OBJECT_TO_JSVAL(argsObj), NULL, NULL, /*JSPROP_READONLY | JSPROP_PERMANENT*/ 0), E_HOST, E_INTERNAL ); // "Unable to store script arguments."
 
 	for ( int index = 0; index < argc; index++ ) {
 
 		JSString *str = JS_NewStringCopyZ(cx, argv[index]);
-		JL_CHKM( str != NULL, "Unable to store the argument." );
-		JL_CHKM( JS_DefineElement(cx, argsObj, index, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE), "Unable to define the argument." );
+		JL_ASSERT( str != NULL, E_HOST, E_INTERNAL ); // "Unable to store the argument."
+		JL_CHKM( JS_DefineElement(cx, argsObj, index, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE), E_HOST, E_INTERNAL ); // "Unable to define the argument."
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -668,7 +850,7 @@ JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnl
 	//  we can use JS_ReportPendingException to report it manually
 
 	JSObject *globalObject = JL_GetGlobalObject(cx);
-	JL_CHKM( globalObject != NULL, "Global object not found." );
+	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
 
 	JL_CHK( CreateScriptArguments(cx, argc, argv) );
 
@@ -717,7 +899,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
 	JSObject *globalObject = JL_GetGlobalObject(cx);
-	JL_CHKM( globalObject != NULL, "Global object not found." );
+	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
 	JL_CHK( CreateScriptArguments(cx, argc, argv) );
 
 	JSScript *script;
@@ -862,6 +1044,8 @@ JslibsFree( void *ptr ) {
 	if (unlikely( ptr == NULL )) // issue wuth nedmalloc free(NULL)
 		return;
 
+	ASSERT( ptr > (void*)0x1000 );
+
 	if (unlikely( base_msize(ptr) >= BIG_ALLOC || load >= MAX_LOAD )) { // if blocks is big OR too many things to free, the thread can not keep pace.
 
 		base_free(ptr);
@@ -885,7 +1069,7 @@ FreeHead() {
 
 	while ( it ) {
 
-		JL_ASSERT( it != *(void**)it );
+		ASSERT( it != *(void**)it );
 		next = *(void**)it;
 		base_free(it);
 		it = next;

@@ -93,7 +93,7 @@ public:
 		uintN argc = pDispParams->cArgs;
 		jsval *argv = (jsval*)alloca((argc+1) * sizeof(jsval));
 		memset(argv, 0, (argc+1) * sizeof(jsval));
-		JL_ASSERT( JSVAL_IS_PRIMITIVE(*argv) );
+		ASSERT( JSVAL_IS_PRIMITIVE(*argv) );
 		
 		JSContext *cx = NULL;
 		JS_ContextIterator(_rt, &cx);
@@ -120,7 +120,7 @@ public:
 		JSContext *cx = NULL;
 		JS_ContextIterator(_rt, &cx);
 		JS_ASSERT( cx != NULL );
-		JL_ASSERT( JSVAL_IS_GCTHING(funcVal) );
+		ASSERT( JSVAL_IS_GCTHING(funcVal) );
 //		JS_AddRoot(cx, &_funcVal);
 		AddRef();
 	}
@@ -149,7 +149,8 @@ JSBool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
 	rgsabound[0].cElements = buf.Length();
 	rgsabound[0].lLbound = 0;
 	variant->parray = SafeArrayCreate(VT_UI1, 1, rgsabound);
-	JL_S_ASSERT( variant->parray != NULL, "Failed to create the array." );
+	JL_ASSERT_ALLOC( variant->parray );
+
 	void *pArrayData = NULL;
 	HRESULT hr = SafeArrayAccessData(variant->parray, &pArrayData);
 	if ( FAILED(hr) )
@@ -164,7 +165,8 @@ JSBool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
 
 JSBool VariantToBlob( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
-	JL_S_ASSERT( variant->vt == (VT_ARRAY | VT_UI1), "Invalid variant type." );
+	JL_ASSERT( variant->vt == (VT_ARRAY | VT_UI1), E_VALUE, E_INVALID ); // "Invalid variant type."
+
 	void * pArrayData;
 	HRESULT hr = SafeArrayAccessData(variant->parray, &pArrayData);
 	if ( FAILED(hr) )
@@ -199,7 +201,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 		if ( JL_GetClass(obj) == JL_CLASS(ComDispatch) ) {
 			
 			IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
-			JL_S_ASSERT_OBJECT_STATE(disp, JL_CLASS_NAME(ComDispatch));
+			JL_ASSERT_OBJECT_STATE(disp, JL_CLASS_NAME(ComDispatch));
 			disp->AddRef();
 			V_VT(variant) = VT_DISPATCH;
 			V_DISPATCH(variant) = disp;
@@ -209,7 +211,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 		if ( JL_GetClass(obj) == JL_CLASS(ComVariant) ) {
 			
 			VARIANT *v = (VARIANT*)JL_GetPrivate(cx, obj);
-			JL_S_ASSERT_OBJECT_STATE(v, JL_CLASS_NAME(ComVariant));
+			JL_ASSERT_OBJECT_STATE(v, JL_CLASS_NAME(ComVariant));
 			HRESULT hr = VariantCopy(variant, v); // Frees the destination variant and makes a copy of the source variant.
 			if ( FAILED(hr) )
 				JL_CHK( WinThrowError(cx, hr) );
@@ -229,7 +231,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 		if ( JS_ObjectIsDate(cx, obj) ) { // see bug 625870
 
-			JL_ASSERT( js_DateIsValid(cx, obj) );
+			ASSERT( js_DateIsValid(cx, obj) );
 			SYSTEMTIME time;
 			time.wDayOfWeek = 0; // unused by SystemTimeToVariantTime
 			time.wYear = (WORD)js_DateGetYear(cx, obj);
@@ -310,7 +312,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 	// last resort
 	JSString *jsstr = JS_ValueToString(cx, *value); // see JS_ConvertValue
-	JL_S_ASSERT( jsstr, "Unable to convert to string." );
+	JL_ASSERT( jsstr, E_VALUE, E_CONVERT, E_TY_STRING );
 
 	V_VT(variant) = VT_BSTR;
 
@@ -333,7 +335,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 	if ( isArray && V_VT(variant) == VT_UI1 )
 		return VariantToBlob(cx, variant, rval);
 
-	JL_S_ASSERT( !isArray, "Unable to convert the variant." );
+	JL_ASSERT( !isArray, E_OPERATION, E_NOTSUPPORTED ); // "Unable to convert the variant."
 
 	switch ( V_VT(variant) ) {
 
@@ -526,7 +528,7 @@ DEFINE_FUNCTION( toDispatch ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( variant );
+	JL_ASSERT_THIS_OBJECT_STATE( variant );
 
 	if ( V_VT(variant) != VT_DISPATCH ) {
 
@@ -563,7 +565,7 @@ DEFINE_FUNCTION( toString ) {
 
 	HRESULT hr;
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( variant );
+	JL_ASSERT_THIS_OBJECT_STATE( variant );
 
 	VARIANT tmpVariant;
 	VariantInit(&tmpVariant);
@@ -590,7 +592,7 @@ DEFINE_FUNCTION( toTypeName ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( variant );
+	JL_ASSERT_THIS_OBJECT_STATE( variant );
 
 	char str[64];
 	*str = '\0';

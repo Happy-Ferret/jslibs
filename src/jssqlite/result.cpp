@@ -41,7 +41,7 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 			//*rval = STRING_TO_JSVAL(JS_NewUCStringCopyZ(cx, (const jschar*)sqlite3_value_text16(value)));
 			break;
 		default:
-			JL_REPORT_ERROR_NUM( JLSMSG_TYPE_ERROR, "unsupported database data type" );
+			JL_ERR( E_DATATYPE, E_NOTSUPPORTED );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -72,7 +72,8 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			}
 
 			val = JSVAL_VOID;
-			JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid anonymous SQL parameter"); //JL_REPORT_ERROR("Unavailable %d-th anonymous SQL parameter.", anonParamIndex);
+			JL_ERR( E_PARAM, E_NUM(anonParamIndex), E_DEFINED );
+			//JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid anonymous SQL parameter"); //JL_REPORT_ERROR("Unavailable %d-th anonymous SQL parameter.", anonParamIndex);
 			goto next;
 		}
 
@@ -80,7 +81,8 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 
 //			JL_CHK( JL_GetVariableValue(cx, name+1, &val) );
 //			goto next;
-			JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "Unsupported SQL parameter prefix $"); //JL_REPORT_ERROR("Unsupported SQL parameter prefix (%s).", name);
+			//JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "Unsupported SQL parameter prefix $"); //JL_REPORT_ERROR("Unsupported SQL parameter prefix (%s).", name);
+			JL_ERR( E_PARAM, E_STR("$"), E_NOTSUPPORTED );
 		}
 
 		if ( name[0] == '@' ) {
@@ -91,7 +93,8 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			} else {
 			
 				val = JSVAL_VOID;
-				JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "Undefined SQL parameter"); //JL_REPORT_ERROR("Undefined %s SQL parameter.", name);
+				//JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "Undefined SQL parameter"); //JL_REPORT_ERROR("Undefined %s SQL parameter.", name);
+				JL_ERR( E_PARAM, E_NAME(name), E_DEFINED );
 			}
 			goto next;
 		}
@@ -103,14 +106,16 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			} else {
 			
 				val = JSVAL_VOID;
-				JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "Undefined SQL parameter"); //JL_REPORT_ERROR("Undefined %s SQL parameter.", name);
+				//JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "Undefined SQL parameter"); //JL_REPORT_ERROR("Undefined %s SQL parameter.", name);
+				JL_ERR( E_PARAM, E_NAME(name), E_DEFINED );
 			}
 			goto next;
 		}
 
-		JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "SQL Parameter not supported"); // JL_REPORT_ERROR("Unsupported SQL Parameter");
-	next:
+		//JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "SQL Parameter not supported"); // JL_REPORT_ERROR("Unsupported SQL Parameter");
+		JL_ERR( E_PARAM, E_NOTSUPPORTED );
 
+	next:
 		int ret;
 		// sqlite3_bind_value( pStmt, param,
 		// (TBD) how to use this
@@ -169,7 +174,8 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 				}
 				break;
 			default:
-				JL_REPORT_ERROR_NUM( JLSMSG_TYPE_ERROR, "unsupported SQL parameter data type"); // (TBD) better error message
+				//JL_REPORT_ERROR_NUM( JLSMSG_TYPE_ERROR, "unsupported SQL parameter data type"); // (TBD) better error message
+				JL_ERR( E_PARAMTYPE, E_NOTSUPPORTED );
 		}
 	}
 	return JS_TRUE;
@@ -250,13 +256,13 @@ DEFINE_FUNCTION( Close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
+	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 
 	jsval v;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
 	DatabasePrivate *dbpv;
 	dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(v));
-	JL_S_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(JSVAL_TO_OBJECT(v)) );
+	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(JSVAL_TO_OBJECT(v)) );
 
 	if ( sqlite3_finalize(pStmt) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, dbpv->db) );
@@ -275,17 +281,17 @@ DEFINE_FUNCTION( Close ) {
 JSBool JssqliteStep( JSContext *cx, JSObject *obj, int *status ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
+	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 
 	jsval dbVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &dbVal) );
 	DatabasePrivate *dbpv;
 	dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(dbVal));
-	JL_S_ASSERT_THIS_OBJECT_STATE(dbpv);
+	JL_ASSERT_THIS_OBJECT_STATE(dbpv);
 
 	sqlite3 *db;
 	db = dbpv->db;
-	JL_ASSERT( db == sqlite3_db_handle(pStmt) );
+	ASSERT( db == sqlite3_db_handle(pStmt) );
 
 	// check if bindings are up to date
 	jsval bindingUpToDate;
@@ -332,17 +338,17 @@ JSBool DoStep(JSContext *cx, JSObject *obj, jsval *rval) {
 
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
+	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 
 	jsval dbVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &dbVal) );
 	DatabasePrivate *dbpv;
 	dbpv = (DatabasePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(dbVal));
-	JL_S_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(JSVAL_TO_OBJECT(dbVal)));
+	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(JSVAL_TO_OBJECT(dbVal)));
 
 	sqlite3 *db;
 	db = dbpv->db;
-	JL_ASSERT( db == sqlite3_db_handle(pStmt) );
+	ASSERT( db == sqlite3_db_handle(pStmt) );
 
 	// check if bindings are up to date
 	jsval bindingUpToDate;
@@ -415,11 +421,11 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Col ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	sqlite3_stmt *pStmt;
 	pStmt = (sqlite3_stmt*)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
+	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 	int col;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &col) );
 	JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, col), JL_RVAL) );
@@ -440,7 +446,7 @@ DEFINE_FUNCTION( Row ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
+	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 
 	JL_CHK( DoStep(cx, obj, JL_RVAL) ); // if something goes wrong in Result_step ( error report has already been set )
 	if ( *JL_RVAL == JSVAL_FALSE ) { // the statement has finished executing successfully
@@ -486,7 +492,7 @@ DEFINE_FUNCTION( next ) { // for details, see Row() function thet is the base of
 	JL_DEFINE_FUNCTION_OBJ;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
+	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 	JL_CHK( DoStep(cx, obj, JL_RVAL) );
 
 	if ( *JL_RVAL == JSVAL_FALSE ) // means SQLITE_DONE
@@ -519,7 +525,7 @@ DEFINE_FUNCTION( Reset ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
+	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 	if ( sqlite3_reset(pStmt) != SQLITE_OK )
 		return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 	*JL_RVAL = JSVAL_VOID;
@@ -540,7 +546,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( columnCount ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
+	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 	*vp = INT_TO_JSVAL(sqlite3_column_count(pStmt));
 	return JS_TRUE;
 	JL_BAD;
@@ -569,7 +575,7 @@ DEFINE_PROPERTY_GETTER( columnNames ) {
 		return JS_TRUE;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
+	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 	JSObject *columnNames;
 	columnNames = JS_NewArrayObject(cx, 0, NULL);
 	*vp = OBJECT_TO_JSVAL( columnNames );
@@ -603,7 +609,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( columnIndexes ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
+	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 	JSObject *columnIndexes;
 	columnIndexes = JS_NewObject( cx, NULL, NULL, NULL );
 	*vp = OBJECT_TO_JSVAL( columnIndexes );
@@ -632,7 +638,7 @@ DEFINE_PROPERTY_GETTER( sql ) {
 //		return JS_TRUE;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pStmt );
+	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 	JL_CHK( JL_NativeToJsval(cx, sqlite3_sql(pStmt), vp) );
 
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -658,7 +664,7 @@ DEFINE_EQUALITY_OP() {
 
 DEFINE_ITERATOR_OBJECT() {
 
-	JL_S_ASSERT( !keysonly, "Only for each..in loop is supported." );
+	JL_CHKM( !keysonly, E_NAME("for...in"), E_NOTSUPPORTED );
 	return obj;
 bad:
 	return NULL;

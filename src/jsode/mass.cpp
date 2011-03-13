@@ -29,10 +29,10 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID
 
 	jsval bodyVal;
 	JL_CHK( JL_GetReservedSlot(cx, massObject, MASS_SLOT_BODY, &bodyVal) );
-	JL_S_ASSERT_THIS_OBJECT_STATE( JSVAL_IS_OBJECT(bodyVal) );
+	JL_ASSERT_THIS_OBJECT_STATE( JSVAL_IS_OBJECT(bodyVal) );
 	JSObject *bodyObject;
 	bodyObject = JSVAL_TO_OBJECT(bodyVal);
-	JL_S_ASSERT_CLASS(bodyObject, JL_CLASS(Body));
+	JL_ASSERT_CLASS(bodyObject, JL_CLASS(Body));
 	*pBodyID = (ode::dBodyID)JL_GetPrivate(cx, bodyObject);
 	ode::dBodyGetMass(*pBodyID, pMass);
 	return JS_TRUE;
@@ -56,13 +56,13 @@ DEFINE_FUNCTION( Translate ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 	real translation[3];
 //	JL_CHK( FloatArrayToVector(cx, 3, &argv[0], translation) );
 	uint32 length;
 	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), translation, 3, &length) );
-	JL_S_ASSERT( length >= 3, "Invalid array size." );
+	JL_ASSERT( length >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
 	ode::dMassTranslate(&mass, translation[0], translation[1], translation[2]);
 	ode::dBodySetMass(bodyID, &mass);
 
@@ -82,7 +82,7 @@ DEFINE_FUNCTION( Adjust ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 	jsdouble newMass;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &newMass) );
@@ -126,7 +126,7 @@ DEFINE_FUNCTION( SetBoxTotal ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	ode::dMass mass;
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_ASSERT_ARGC_MIN(2);
 // get mass object
 	ode::dBodyID bodyID;
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
@@ -138,7 +138,7 @@ DEFINE_FUNCTION( SetBoxTotal ) {
 	//	JL_CHK( FloatArrayToVector(cx, 3, &argv[1], dimensions) );
 	uint32 length;
 	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(2), dimensions, 3, &length) );
-	JL_S_ASSERT( length >= 3, "Invalid array size." );
+	JL_ASSERT( length >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NARRAY(3) );
 
 // apply the formulae
 	ode::dMassSetBoxTotal(&mass, (ode::dReal)totalMass, dimensions[0], dimensions[0], dimensions[0]);
@@ -201,7 +201,8 @@ DEFINE_PROPERTY_SETTER( center ) {
 	//JL_CHK( FloatArrayToVector(cx, 3, vp, mass.c) );
 	uint32 length;
 	JL_CHK( JL_JsvalToODERealVector(cx, *vp, mass.c, 3, &length) );
-	JL_S_ASSERT( length >= 3, "Invalid array size." );
+	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
+
 	ode::dBodySetMass(bodyID, &mass);
 	return JS_TRUE;
 	JL_BAD;

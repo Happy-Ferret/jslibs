@@ -255,7 +255,7 @@ DEFINE_FUNCTION( DumpHeap )
 
 DEFINE_FUNCTION( DumpHeap ) {
 
-	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
+	JL_WARN( E_THISOPERATION, E_NOTSUPPORTED );
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -634,13 +634,13 @@ DEFINE_PROPERTY_SETTER( gcZeal ) {
 #ifdef JS_GC_ZEAL
 
 	uint8 zeal;
-	JL_CHKM( JL_JsvalToNative(cx, *vp, &zeal), "Invalid value." );
+	JL_CHKM( JL_JsvalToNative(cx, *vp, &zeal), E_VALUE, E_INVALID );
 	JS_SetGCZeal(cx, zeal);
 	return JL_StoreProperty(cx, obj, id, vp, false);
 
 #else // JS_GC_ZEAL
 
-	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
+	JL_WARN( E_THISOPERATION, E_NOTSUPPORTED );
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 
@@ -660,6 +660,25 @@ DEFINE_FUNCTION( DisableJIT ) {
 }
 
 
+// undocumented
+DEFINE_FUNCTION( ObjectGCId ) {
+
+	JL_ASSERT_ARG_COUNT(1);
+	if ( JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
+		
+		*JL_RVAL = JSVAL_ZERO;
+	} else {
+
+		jsid id;
+		JL_CHK( JS_GetObjectId(cx, JSVAL_TO_OBJECT(JL_ARG(1)), &id) );
+		JL_CHK( JL_NativeToJsval(cx, JSID_BITS(id), JL_RVAL) );
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -669,8 +688,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetObjectPrivate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	if ( !(JL_GetClass(obj)->flags & JSCLASS_HAS_PRIVATE) ) {
 
@@ -766,7 +785,7 @@ DEFINE_FUNCTION( Trap )
     JSScript *script;
     int32 i;
 
-	 JL_S_ASSERT_ARG_MIN( 1 );
+	 JL_ASSERT_ARGC_MIN( 1 );
 
     argc--;
     str = JS_ValueToString(cx, argv[argc]);
@@ -807,7 +826,7 @@ DEFINE_FUNCTION( LineToPC )
     uintN lineno;
     jsbytecode *pc;
 
-	 JL_S_ASSERT_ARG_MIN(1);
+	 JL_ASSERT_ARGC_MIN(1);
 
 	 script = JS_GetScriptedCaller(cx, NULL)->script;
     if (!GetTrapArgs(cx, argc, argv, &script, &i))
@@ -895,7 +914,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetActualLineno ) {
 
-	JL_S_ASSERT_ARG_MIN( 2 );
+	JL_ASSERT_ARGC_MIN( 2 );
 
 	uintN lineno;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
@@ -947,7 +966,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( StackFrameInfo ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	unsigned int frameIndex;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &frameIndex) );
@@ -1042,9 +1061,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( EvalInStackFrame ) {
 
-	JL_S_ASSERT_ARG_MIN( 2 );
+	JL_ASSERT_ARGC_MIN( 2 );
 
-	JL_S_ASSERT_ARG_IS_STRING(1);
+	JL_ASSERT_ARG_IS_STRING(1);
 
 	unsigned int frameIndex;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &frameIndex) );
@@ -1162,7 +1181,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DefinitionLocation ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	JSScript *script;
 	script = NULL;
@@ -1221,8 +1240,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PropertiesList ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( JL_ARG(1) );
@@ -1278,8 +1297,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PropertiesInfo ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( JL_ARG(1) );
@@ -1388,9 +1407,9 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 
 
 
-JL_STATIC_ASSERT(JSTRY_CATCH == 0);
-JL_STATIC_ASSERT(JSTRY_FINALLY == 1);
-JL_STATIC_ASSERT(JSTRY_ITER == 2);
+S_ASSERT(JSTRY_CATCH == 0);
+S_ASSERT(JSTRY_FINALLY == 1);
+S_ASSERT(JSTRY_ITER == 2);
 
 static const char* const TryNoteNames[] = { "catch", "finally", "iter" };
 
@@ -1423,7 +1442,7 @@ $TOC_MEMBER $INAME
 /*
 DEFINE_FUNCTION( ScriptByLocation ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_COUNT(2);
 
 	const char *filename;
 	unsigned int lineno;
@@ -1464,7 +1483,7 @@ DEFINE_FUNCTION( DisassembleScript ) {
 	JLStr filename;
 	unsigned int lineno;
 
-	JL_S_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_COUNT(2);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &filename) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
@@ -1497,7 +1516,7 @@ DEFINE_FUNCTION( DisassembleScript ) {
 
 	char *data;
 	data = (char*)jl_malloc(length + 1);
-	JL_S_ASSERT_ALLOC( data );
+	JL_ASSERT_ALLOC( data );
 	fread(data, 1, length, rf);
 	data[length] = '\0';
 	fclose(rf);
@@ -1505,7 +1524,7 @@ DEFINE_FUNCTION( DisassembleScript ) {
 	JSString *jsstr;
 	jsstr = JS_NewStringCopyN(cx, data, length);
 	jl_free(data);
-	JL_S_ASSERT_ALLOC( jsstr );
+	JL_ASSERT_ALLOC( jsstr );
 
 	*JL_RVAL = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
@@ -1513,7 +1532,7 @@ DEFINE_FUNCTION( DisassembleScript ) {
 
 #else // DEBUG
 
-	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
+	JL_WARN( E_THISOPERATION, E_NOTSUPPORTED );
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 
@@ -1532,16 +1551,17 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AssertJit ) {
 
 #ifdef JS_METHODJIT
-    if (JS_GetOptions(cx) & JSOPTION_METHODJIT) {
-        if (!cx->fp()->script()->getJIT(cx->fp()->isConstructing())) {
-			JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "JIT" );
-            return JS_FALSE;
-        }
-    }
+	if (JS_GetOptions(cx) & JSOPTION_METHODJIT) {
+
+		if ( !cx->fp()->script()->getJIT(cx->fp()->isConstructing()) ) {
+
+			JL_ERR( E_STR("JIT"), E_DISABLED );
+		}
+	}
 #endif
 
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
+	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -1589,7 +1609,7 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
   static DWORD ret;
   static bool runonce = true;
 
-  char errorMessage[1024];
+//  char errorMessage[1024];
 
 	if ( runonce ) {
 
@@ -1623,14 +1643,18 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 
 DEFINE_FUNCTION( DebugOutput ) {
 
+	JL_ASSERT_ARG_COUNT(1);
+
 #if defined(_MSC_VER) && defined(DEBUG)
+	{
 	JLStr str;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	OutputDebugString(str);
+	}
 	*JL_RVAL = JSVAL_TRUE;
 	return JS_TRUE;
 #else
-	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
+	JL_WARN( E_THISOPERATION, E_NOTSUPPORTED );
 #endif
 
 	*JL_RVAL = JSVAL_VOID;
@@ -1716,20 +1740,9 @@ DEFINE_FUNCTION( VALGRIND_COUNT_LEAKS ) {
 
 DEFINE_FUNCTION( DebugBreak ) {
 
+	JL_Break();
 	*JL_RVAL = JSVAL_VOID;
-
-#ifdef DEBUG
-#if defined(WIN32)
-	DebugBreak();
-#elif defined(XP_OS2) || (defined(__GNUC__) && defined(__i386))
-	asm("int $3");
-#endif
 	return JS_TRUE;
-#endif // DEBUG
-
-	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
-	return JS_TRUE;
-	JL_BAD;
 }
 
 
@@ -1793,9 +1806,12 @@ DEFINE_FUNCTION( TestDebug ) {
 
 DEFINE_FUNCTION( Test2Debug ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	jsval arg = JSVAL_ONE;
-	return JS_CallFunctionValue(cx, JL_OBJ, JL_ARG(1), 1, &arg, JL_RVAL );
+	*JL_RVAL = JSVAL_VOID;
+	return JS_TRUE;
+
+//	JL_DEFINE_FUNCTION_OBJ;
+//	jsval arg = JSVAL_ONE;
+//	return JS_CallFunctionValue(cx, JL_OBJ, JL_ARG(1), 1, &arg, JL_RVAL );
 }
 
 #endif // DEBUG
@@ -1829,6 +1845,7 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( PropertiesInfo, 1 )
 		FUNCTION_ARGC( DebugOutput, 1 )
 		FUNCTION( DisableJIT )
+		FUNCTION( ObjectGCId )
 	#ifdef VALGRIND
 		FUNCTION( CreateLeak )
 		FUNCTION( VALGRIND_COUNT_ERRORS )

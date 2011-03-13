@@ -52,7 +52,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	- jsaudio: move OpenAL initialization code from main.cpp to Open() and Close() API functions. Testing EFX.
 	- jsaudio/source.cpp: Replace position and velocity setters by Position() and Velocity() API function.
 
-	//JL_S_ASSERT( context == NULL, "Invalid initialization context." );
+	//JL_ASSERT( context == NULL, "Invalid initialization context." );
 
 	ALCcontext *context;
 	ALCdevice *device;
@@ -105,15 +105,15 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 	// cf. alutExit
 	ALCdevice *device;
 	if (!alcMakeContextCurrent (NULL))
-		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, "ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_MAKE_CONTEXT_CURRENT") );
 	device = alcGetContextsDevice (context);
 	if (alcGetError (device) != ALC_NO_ERROR )
-		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, "ALUT_ERROR_ALC_ERROR_ON_ENTRY");
+		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_ALC_ERROR_ON_ENTRY") );
 	alcDestroyContext (context);
 	if (alcGetError (device) != ALC_NO_ERROR)
-		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, "ALUT_ERROR_DESTROY_CONTEXT");
+		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_DESTROY_CONTEXT") );
 	if (!alcCloseDevice (device))
-		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, "ALUT_ERROR_CLOSE_DEVICE");
+		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_CLOSE_DEVICE") );
 
 	return JS_TRUE;
 	JL_BAD;

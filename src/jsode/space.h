@@ -24,9 +24,9 @@ ALWAYS_INLINE bool JL_JsvalIsSpace( const jsval val ) {
 
 ALWAYS_INLINE JSBool JL_JsvalToSpaceID( JSContext *cx, jsval val, ode::dSpaceID *spaceId ) {
 
-	JL_S_ASSERT_IS_OBJECT(val, JL_CLASS_NAME(Space));
+	JL_ASSERT_IS_OBJECT(val, JL_CLASS_NAME(Space));
 	JSObject *obj = JSVAL_TO_OBJECT(val);
-	JL_S_ASSERT_CLASS(obj, JL_CLASS(Space));
+	JL_ASSERT_CLASS(obj, JL_CLASS(Space));
 	*spaceId = (ode::dSpaceID)JL_GetPrivate(cx, obj);
 	return JS_TRUE;
 	JL_BAD;

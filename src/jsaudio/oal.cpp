@@ -40,7 +40,7 @@ DEFINE_FUNCTION( Open ) {
 
 	// Initialize the OpenAL library (cf. alutInit)
 	JLStr deviceName;
-	JL_S_ASSERT_WARNING_NUM( alcGetCurrentContext() == NULL, JLSMSG_LOGIC_ERROR, "OpenAL already open" );
+	JL_ASSERT_WARN( alcGetCurrentContext() == NULL, E_LIB, E_STR("OpenAL"), E_OPEN );
 
 	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &deviceName) );
@@ -53,8 +53,7 @@ DEFINE_FUNCTION( Open ) {
 	//   "MMSYSTEM"
 	// If no device name is specified, we will attempt to use DS3D.
 	ALCdevice *device = alcOpenDevice (deviceName.GetStrConstOrNull());
-	if ( device == NULL )
-		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, "ALUT_ERROR_OPEN_DEVICE");
+	JL_CHKM( device != NULL, E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_OPEN_DEVICE") );
 
 //	ALint attribs[4] = { 0 };
 //	attribs[0] = ALC_MAX_AUXILIARY_SENDS;
@@ -63,13 +62,13 @@ DEFINE_FUNCTION( Open ) {
 	ALCcontext *context = alcCreateContext (device, NULL);
 	if ( context == NULL ) {
 		alcCloseDevice (device);
-		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, "ALUT_ERROR_CREATE_CONTEXT");
+		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_CREATE_CONTEXT") );
 	}
 	if ( !alcMakeContextCurrent(context) ) {
 
 		alcDestroyContext (context);
 		alcCloseDevice (device);
-		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, "ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_MAKE_CONTEXT_CURRENT") );
 	}
 
 	InitEfxApi();
@@ -92,20 +91,21 @@ DEFINE_FUNCTION( Close ) {
 	ResetEfxApi();
 	// cf. alutExit
 	ALCcontext *context = alcGetCurrentContext();
-	JL_S_ASSERT_WARNING_NUM( context != NULL, JLSMSG_LOGIC_ERROR, "OpenAL already closed" );
+	JL_ASSERT_WARN( context != NULL, E_LIB, E_STR("OpenAL"), E_CLOSED );
+
 	ALCdevice *device;
 	if (!alcMakeContextCurrent (NULL))
-		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, "ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_MAKE_CONTEXT_CURRENT") );
 	device = alcGetContextsDevice (context);
 	if (alcGetError (device) != ALC_NO_ERROR )
-		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, "ALUT_ERROR_ALC_ERROR_ON_ENTRY");
+		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_ALC_ERROR_ON_ENTRY") );
 	alcDestroyContext (context);
 	if (alcGetError (device) != ALC_NO_ERROR)
-		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, "ALUT_ERROR_DESTROY_CONTEXT");
+		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_DESTROY_CONTEXT") );
 	if (!alcMakeContextCurrent(NULL))
-		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, "ALUT_ERROR_MAKE_CONTEXT_CURRENT");
+		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_MAKE_CONTEXT_CURRENT") );
 	if (!alcCloseDevice (device))
-		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, "ALUT_ERROR_CLOSE_DEVICE");
+		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_CLOSE_DEVICE") );
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -154,8 +154,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DopplerFactor ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	float value;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 	alDopplerFactor( value );
@@ -177,8 +177,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DopplerVelocity ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	float value;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 	alDopplerVelocity( value );
@@ -200,8 +200,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SpeedOfSound ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	float value;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 	alSpeedOfSound( value );
@@ -222,8 +222,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DistanceModel ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	unsigned int distanceModel;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &distanceModel) );
 	alDistanceModel( distanceModel );
@@ -244,8 +244,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Enable ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	alEnable( JSVAL_TO_INT(JL_ARG(1)) );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -264,8 +264,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Disable ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	alDisable( JSVAL_TO_INT(JL_ARG(1)) );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -284,8 +284,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsEnabled ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	*JL_RVAL = BOOLEAN_TO_JSVAL( alIsEnabled( JSVAL_TO_INT(JL_ARG(1)) ) );
 
 	return JS_TRUE;
@@ -305,8 +305,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetString ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	const ALchar* str = alGetString(JSVAL_TO_INT(JL_ARG(1)));
 	if ( str == NULL ) {
 
@@ -334,8 +334,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetBoolean ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	ALboolean params;
 	alGetBooleanv(JSVAL_TO_INT(JL_ARG(1)), &params);
 	*JL_RVAL = BOOLEAN_TO_JSVAL(params);
@@ -359,15 +359,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetInteger ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	ALint params[16];
 	alGetIntegerv(JSVAL_TO_INT( JL_ARG(1) ), params);
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER(2);
+		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JSVAL_TO_INT( JL_ARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
@@ -400,15 +400,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetDouble ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	ALdouble params[16];
 	alGetDoublev(JSVAL_TO_INT(JL_ARG(1)), params);
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER(2);
+		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JSVAL_TO_INT( JL_ARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
@@ -439,8 +439,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Listener ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	*JL_RVAL = JSVAL_VOID;
 	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
@@ -465,8 +465,7 @@ DEFINE_FUNCTION( Listener ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "params");
-	return JS_TRUE;
+	JL_ERR( E_ARG, E_NUM(2), E_INVALID );
 	JL_BAD;
 }
 
@@ -485,21 +484,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetListenerReal ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	ALfloat params[16];
 	alGetListenerfv(JSVAL_TO_INT(JL_ARG(1)), params);
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER(2);
+		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JSVAL_TO_INT( JL_ARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
-		while (count--) {
+		while ( count-- ) {
 			
 			JL_CHK(JL_NativeToJsval(cx, params[count], &tmpValue) );
 			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
@@ -542,11 +541,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Source ) {
 
-	JL_S_ASSERT_ARG_MIN(3);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARGC_MIN(3);
+	JL_ASSERT_ARG_IS_NUMBER(1);
 
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
@@ -572,8 +571,8 @@ DEFINE_FUNCTION( Source ) {
 		alSourcefv( sid, JSVAL_TO_INT(JL_ARG(2)), params );
 		return JS_TRUE;
 	}
-	JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "params");
-	return JS_TRUE;
+
+	JL_ERR( E_ARG, E_NUM(3), E_INVALID );
 	JL_BAD;
 }
 
@@ -592,9 +591,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetSourceReal ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARGC_MIN(2);
+	JL_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
@@ -607,7 +606,7 @@ DEFINE_FUNCTION( GetSourceReal ) {
 
 	if ( JL_ARG_ISDEF(3) ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER(3);
+		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count = JSVAL_TO_INT( JL_ARG(3) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
@@ -633,9 +632,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetSourceInteger ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARGC_MIN(2);
+	JL_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
@@ -649,7 +648,7 @@ DEFINE_FUNCTION( GetSourceInteger ) {
 
 	if ( JL_ARG_ISDEF(3) ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER(3);
+		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count = JSVAL_TO_INT( JL_ARG(3) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
@@ -680,8 +679,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DeleteSource ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_NUMBER(1);
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alDeleteSources(1, &sid);
@@ -705,8 +704,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SourceQueueBuffers ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARGC_MIN(2);
+	JL_ASSERT_ARG_IS_NUMBER(1);
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	*JL_RVAL = JSVAL_VOID;
@@ -742,8 +741,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SourceUnqueueBuffers ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARGC_MIN(2);
+	JL_ASSERT_ARG_IS_NUMBER(1);
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	*JL_RVAL = JSVAL_VOID;
@@ -780,8 +779,8 @@ DEFINE_FUNCTION( Buffer ) {
 
 	JLStr buffer;
 
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
@@ -810,7 +809,7 @@ DEFINE_FUNCTION( Buffer ) {
 			format = bits == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8;
 			break;
 		default:
-			JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "sound.channels");
+			JL_ERR( E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(1, 2) );
 	}
 
 	// Upload sound data to buffer
@@ -838,15 +837,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetBufferReal ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	ALfloat params[16];
 	alGetBufferfv(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params);
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER(2);
+		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JSVAL_TO_INT( JL_ARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
@@ -880,15 +879,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetBufferInteger ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	ALint params[16];
 	alGetBufferiv(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params);
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER(2);
+		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JSVAL_TO_INT( JL_ARG(2) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrayObj );
@@ -923,8 +922,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DeleteBuffer ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_NUMBER(1);
 	ALuint bufferId;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bufferId ) );
 //	alBufferData(bufferId, 0, NULL, 0, 0);
@@ -945,8 +944,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PlaySource ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_NUMBER(1);
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourcePlay(sid);
@@ -966,8 +965,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( StopSource ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_NUMBER(1);
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourceStop(sid);
@@ -987,8 +986,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PauseSource ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_NUMBER(1);
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourcePause(sid);
@@ -1008,8 +1007,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( RewindSource ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_NUMBER(1);
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourceRewind(sid);
@@ -1067,8 +1066,8 @@ DEFINE_FUNCTION( PlaySound ) {
 
 	JLStr buffer;
 
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
 

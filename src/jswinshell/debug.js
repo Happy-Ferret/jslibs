@@ -7,6 +7,13 @@ LoadModule('jssvg');
 
 //LoadModule('jsdebug'); gcZeal = 2;
 
+//var f = new File('C:\\MSDOS.SYS').Open('r');
+var f = new File(MYDOCUMENTS).Open('');
+
+Print(GUIDToString(f.id).quote());
+
+Halt();
+
 
 var iconRed = new SVG();
 iconRed.Write(<svg><circle cx="8" cy="8" r="5" fill="orange"/></svg>);

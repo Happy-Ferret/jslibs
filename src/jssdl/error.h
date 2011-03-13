@@ -22,6 +22,6 @@ ALWAYS_INLINE bool
 HasSDLError() {
 
 	const char *errStr = SDL_GetError();
-	JL_ASSERT( errStr != NULL );
+	ASSERT( errStr != NULL );
 	return *errStr != '\0';
 }

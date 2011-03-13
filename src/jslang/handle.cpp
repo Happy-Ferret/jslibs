@@ -35,8 +35,9 @@ DEFINE_FINALIZE() { // see HandleClose()
 DEFINE_FUNCTION( toString ) {
 
 	JL_USE( argc );
-
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_CLASS();
+
 	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JSString *handleStr;
 	char str[] = "[Handle ????]";
@@ -92,8 +93,9 @@ DEFINE_INIT() {
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT( jl::JsvalIsSerializer(cx, JL_ARG(1)), "Invalid serializer object." );
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_TYPE( jl::JsvalIsSerializer(cx, JL_ARG(1)), 1, "Serializer" );
+
 	jl::Serializer *ser;
 	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
 
@@ -107,14 +109,15 @@ DEFINE_FUNCTION( _serialize ) {
 DEFINE_FUNCTION( _unserialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT( jl::JsvalIsUnserializer(cx, JL_ARG(1)), "Invalid unserializer object." );
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_TYPE( jl::JsvalIsUnserializer(cx, JL_ARG(1)), 1, "Unserializer" );
+
 	jl::Unserializer *unser;
 	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
 
 	uint32_t gKey;
 	unser->Read(cx, gKey);
-	JL_S_ASSERT( gKey == globalKey, "Invalid session." );
+	JL_CHKM( gKey == globalKey, E_THISOPERATION, E_INVALID );
 
 	return JS_TRUE;
 	JL_BAD;

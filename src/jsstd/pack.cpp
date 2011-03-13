@@ -321,13 +321,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_RANGE(1,2);
+	JL_ASSERT_ARGC_RANGE(1,2);
 
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
-	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(1) ), JL_CLASS(Buffer) );
+	JL_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(1) ), JL_CLASS(Buffer) );
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, JL_ARG(1)) );
 
 	bool useNetworkEndian;
@@ -355,12 +355,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ReadInt ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_RANGE(1, 3);
+	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	jsval bufferVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
-	JL_S_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
 
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
@@ -452,7 +452,7 @@ DEFINE_FUNCTION( ReadInt ) {
 				Network64ToHost64(data);
 
 			if ( *(int64_t*)data > int64_t(MAX_INT_TO_DOUBLE) && *(int64_t*)data < int64_t(MIN_INT_TO_DOUBLE) )
-				JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, "-2^53 to 2^53");
+				JL_ERR( E_VALUE, E_INTERVAL_STR("-2^53", "2^53") );
 
 			if ( isSigned ) {
 
@@ -466,7 +466,7 @@ DEFINE_FUNCTION( ReadInt ) {
 			break;
 		default:
 			JL_CHK( UnReadRawDataChunk(cx, bufferObject, (char*)data, amount) ); // incompatible with NIStreamRead
-			JL_REPORT_ERROR_NUM( JLSMSG_TYPE_ERROR, "unsupported data type");
+			JL_ERR( E_DATATYPE, E_NOTSUPPORTED );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -482,12 +482,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_RANGE(1, 4);
+	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_ARGC_RANGE(1, 4);
 
 	jsval bufferVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
-	JL_S_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
 
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
@@ -556,11 +556,11 @@ DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 				Host64ToNetwork64(data);
 			break;
 		default:
-			JL_REPORT_ERROR_NUM( JLSMSG_TYPE_ERROR, "unsupported data type");
+			JL_ERR( E_DATATYPE, E_NOTSUPPORTED );
 	}
 
 	if ( outOfRange )
-		JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, "");
+		JL_ERR( E_DATASIZE, E_INVALID );
 
 	JL_CHK( WriteRawDataChunk(cx, bufferObject, size, (char*)data) );
 	
@@ -578,12 +578,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ReadReal ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_ARG_COUNT(1);
 
 	jsval bufferVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
-	JL_S_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
@@ -621,11 +621,11 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ReadString ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_CLASS();
 
 	jsval bufferVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
-	JL_S_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
 
@@ -633,8 +633,7 @@ DEFINE_FUNCTION( ReadString ) {
 
 		size_t amount;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
-//		JL_S_ASSERT( (int)amount >= 0, "Invalid amount" );
-		JL_S_ASSERT_ERROR_NUM( (int)amount >= 0, JLSMSG_VALUE_OUTOFRANGE, "0 to 2^32");
+		JL_ASSERT( (int)amount >= 0, E_ARG, E_NUM(1), E_MIN, E_NUM(0) );
 		JL_CHK( ReadDataAmount(cx, bufferObject, amount, JL_RVAL) );
 	} else {
 
@@ -663,7 +662,7 @@ DEFINE_PROPERTY_SETTER( useNetworkEndian ) {
 
 	JL_USE(id);
 
-	JL_S_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_CLASS();
 	bool useNetworkEndian;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &useNetworkEndian) );
 	JL_SetPrivate(cx, obj, (void*)(size_t)(useNetworkEndian ? 2 : 0));
@@ -675,7 +674,7 @@ DEFINE_PROPERTY_GETTER( useNetworkEndian ) {
 
 	JL_USE(id);
 
-	JL_S_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_CLASS();
 	return JL_NativeToJsval(cx, (size_t)JL_GetPrivate(cx, obj) != 0, vp);
 	JL_BAD;
 }
@@ -690,7 +689,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 
 	JL_USE(id);
 
-	JL_S_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_CLASS();
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, vp ) );
 	return JS_TRUE;
 	JL_BAD;
@@ -736,8 +735,7 @@ DEFINE_INIT() {
 	JL_USE(obj);
 	JL_USE(proto);
 	JL_USE(sc);
-
-	JL_S_ASSERT( sizeof(int8_t) == 1 && sizeof(int16_t) == 2 && sizeof(int32_t) == 4 && sizeof(int64_t) == 8, "The system has no suitable type for using Pack class." );
+	JL_ASSERT( sizeof(int8_t) == 1 && sizeof(int16_t) == 2 && sizeof(int32_t) == 4 && sizeof(int64_t) == 8, E_CLASS, E_NAME(JL_THIS_CLASS_NAME), E_INIT, E_COMMENT("system native types") );
 	return JS_TRUE;
 	JL_BAD;
 }

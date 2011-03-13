@@ -38,7 +38,11 @@ size_t nedblksize_msize(void *mem) {
 
 
 // to be used in the main() function only
-#define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { goto bad; }
+#define HOST_MAIN_ASSERT( condition, errorMessage ) \
+	JL_MACRO_BEGIN \
+		if ( !(condition) ) { goto bad; } \
+	JL_MACRO_END
+
 //#define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { fprintf(stderr, errorMessage ); goto bad; }
 
 static unsigned char embeddedBootstrapScript[] =
@@ -49,12 +53,12 @@ static unsigned char embeddedBootstrapScript[] =
 int consoleStdOut( JSContext *cx, const char *data, int length ) {
 
 	JSObject *obj = GetHostObject(cx);
-	JL_S_ASSERT( obj != NULL, "Unable to get GetHostObject" );
+	JL_ASSERT( obj != NULL, "Unable to get GetHostObject" );
 	jsval functionVal;
 	JS_GetProperty(cx, obj, "stdout", &functionVal);
 	if ( !JSVAL_IS_VOID( functionVal ) ) {
 
-		JL_S_ASSERT_FUNCTION( functionVal );
+		JL_ASSERT_FUNCTION( functionVal );
 		JSString *str = JS_NewStringCopyN(cx, data, length);
 		JL_CHK( str ); 
 		jsval rval, arg = STRING_TO_JSVAL(str);
@@ -66,12 +70,12 @@ int consoleStdOut( JSContext *cx, const char *data, int length ) {
 int consoleStdErr( JSContext *cx, const char *data, int length ) {
 
 	JSObject *obj = GetHostObject(cx);
-	JL_S_ASSERT( obj != NULL, "Unable to get GetHostObject" );
+	JL_ASSERT( obj != NULL, "Unable to get GetHostObject" );
 	jsval functionVal;
 	JS_GetProperty(cx, obj, "stderr", &functionVal);
 	if ( !JSVAL_IS_VOID( functionVal ) ) {
 
-		JL_S_ASSERT_FUNCTION( functionVal );
+		JL_ASSERT_FUNCTION( functionVal );
 		JSString *str = JS_NewStringCopyN(cx, data, length);
 		JL_CHK( str ); 
 		jsval rval, arg = STRING_TO_JSVAL(str);
@@ -86,7 +90,7 @@ JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
-	JL_S_ASSERT( str != NULL, "Unable to convert argument to string.");
+	JL_ASSERT( str != NULL, "Unable to convert argument to string.");
 	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
 	consoleStdErr( cx, JL_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
@@ -96,12 +100,24 @@ JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
-	JL_S_ASSERT( str != NULL, "Unable to convert argument to string.");
+	JL_ASSERT( str != NULL, "Unable to convert argument to string.");
 	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
 	consoleStdOut( cx, JL_GetStringBytes(str), JS_GetStringLength(str) );
 	return JS_TRUE;
 }
 */
+
+
+int HostStderr( void *privateData, const char *buffer, size_t length ) {
+
+	JL_USE(privateData);
+	char *tmp = (char*)jl_malloca(length+1);
+	memcpy(tmp, buffer, length);
+	tmp[length] = '\0';
+	OutputDebugString(tmp);
+	return 1;
+}
+
 
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
@@ -130,7 +146,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	HOST_MAIN_ASSERT( err == 0, "Buffer overflow." );
 	// normalize the mutex name
 	char *pos;
-	while ( (pos = strchr(mutexName, '\\')) )
+	while ( (pos = strchr(mutexName, '\\')) != 0 )
 		*pos = '/';
 	SetLastError(0);
 	HANDLE instanceCheckMutex = CreateMutex(NULL, TRUE, mutexName); // see Global\\ and Local\\ prefixes for mutex name.
@@ -187,7 +203,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	hpv->alloc.free = jl_free;
 
 
-	JL_CHK( InitHost(cx, true, NULL, NULL, NULL, NULL) );
+	JL_CHK( InitHost(cx, true, NULL, NULL, HostStderr, NULL) ); // DbgOutString ?
 	CHAR moduleFileName[PATH_MAX];
 	strcpy(moduleFileName, moduleName);
 	char *name = strrchr( moduleFileName, '\\' );
@@ -197,13 +213,13 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 
 	err = strncpy_s(scriptName, sizeof(scriptName), moduleName, moduleNameLen );
-	JL_S_ASSERT( err == 0, "Buffer overflow." );
+	JL_ASSERT( err == 0, E_LIB, E_INTERNAL );
 //	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
 	char *dotPos = strrchr(scriptName, '.');
 	JL_CHK( dotPos );
 	*dotPos = '\0';
 	err = strcat_s( scriptName, sizeof(scriptName), ".js" );
-	JL_S_ASSERT( err == 0, "Buffer overflow." );
+	JL_ASSERT( err == 0, E_LIB, E_INTERNAL );
 
 
 	JSObject *globalObject = JL_GetGlobalObject(cx);

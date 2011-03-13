@@ -53,7 +53,7 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		if ( JL_IsClass(obj1surf, classSurfaceParameters) ) {
 			
 			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(obj1surf));
-			JL_S_ASSERT_OBJECT_STATE( surf, classSurfaceParameters->name );
+			JL_ASSERT_OBJECT_STATE( surf, classSurfaceParameters->name );
 			contact[i].surface = *surf;
 		} else {
 
@@ -64,7 +64,7 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		if ( JL_IsClass(obj2surf, classSurfaceParameters) ) {
 
 			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(obj1surf));
-			JL_S_ASSERT_OBJECT_STATE( surf, classSurfaceParametres->name );
+			JL_ASSERT_OBJECT_STATE( surf, classSurfaceParametres->name );
 
 		}
 */
@@ -285,7 +285,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 
@@ -326,7 +326,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Destroy ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dJointGroupDestroy(pv->contactGroupId);
 	ode::dWorldDestroy(pv->worldId);
 	JL_SetPrivate(cx, obj, NULL);
@@ -344,10 +344,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Collide ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_RANGE(0,2);
-	JL_S_ASSERT_CLASS(obj, JL_CLASS(World));
+	JL_ASSERT_ARGC_RANGE(0,2);
+	JL_ASSERT_CLASS(obj, JL_CLASS(World));
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = JSVAL_VOID;
 
 	ode::dJointGroupEmpty(pv->contactGroupId); // contactGroupId will be reused at the next step!
@@ -363,13 +363,13 @@ DEFINE_FUNCTION( Collide ) {
 	if ( JL_ARG_ISDEF(2) ) {
 
 		// doc. dSpaceCollide2 ... It can also test a single non-space geom against a space ...
-		JL_S_ASSERT_ARG_IS_OBJECT(2);
+		JL_ASSERT_ARG_IS_OBJECT(2);
 		if ( JL_JsvalIsSpace(JL_ARG(2)) ) {
 
 			JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(2), (ode::dSpaceID*)&sg2Id) );
 		} else {
 
-			JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(2)), JL_CLASS(Geom));
+			JL_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(2)), JL_CLASS(Geom));
 			JL_CHK( JL_JsvalToGeom(cx, JL_ARG(2), (ode::dGeomID*)&sg2Id) );
 		}
 	} else {
@@ -380,10 +380,10 @@ DEFINE_FUNCTION( Collide ) {
 
 	if ( JL_ARG_ISDEF(1) ) {
 
-		JL_S_ASSERT_ARG_IS_OBJECT(1);
+		JL_ASSERT_ARG_IS_OBJECT(1);
 		if ( sg2Id == NULL ) {
 
-			JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Space));
+			JL_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Space));
 			JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), (ode::dSpaceID*)&sg1Id) );
 		} else {
 
@@ -392,7 +392,7 @@ DEFINE_FUNCTION( Collide ) {
 				JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), (ode::dSpaceID*)&sg1Id) );
 			} else {
 
-				JL_S_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Geom));
+				JL_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Geom));
 				JL_CHK( JL_JsvalToGeom(cx, JL_ARG(1), (ode::dGeomID*)&sg1Id) );
 			}
 		}
@@ -405,9 +405,9 @@ DEFINE_FUNCTION( Collide ) {
 
 	jsval defaultSurfaceParametersVal;
 	JL_GetReservedSlot(cx, obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, &defaultSurfaceParametersVal);
-	//	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), JL_CLASS(SurfaceParameters) ); // (TBD) simplify RT_ASSERT
+	//	JL_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), JL_CLASS(SurfaceParameters) ); // (TBD) simplify RT_ASSERT
 	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersVal)); // beware: local variable !
-	JL_S_ASSERT_OBJECT_STATE( defaultSurfaceParameters, JL_CLASS_NAME(SurfaceParameters) );
+	JL_ASSERT_OBJECT_STATE( defaultSurfaceParameters, JL_CLASS_NAME(SurfaceParameters) );
 
 	ColideContextPrivate ccp;
 	ccp.cx = cx; // the context will only be used while the worls step.
@@ -435,10 +435,10 @@ DEFINE_FUNCTION( Step ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_CLASS(JL_OBJ, JL_CLASS(World));
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_CLASS(JL_OBJ, JL_CLASS(World));
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ode::dReal stepSize;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &stepSize) );
 	if ( ode::dWorldGetQuickStepNumIterations(pv->worldId) == 0 )
@@ -463,12 +463,12 @@ DEFINE_FUNCTION( ScaleImpulse ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_ARGC_MIN(1);
 	ode::dVector3 force;
 	uint32 len;
 	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), force, COUNTOF(force), &len) );
-	JL_S_ASSERT( len >= 3, "Invalid array size." );
+	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
 
 	float stepSize;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &stepSize) );
@@ -501,7 +501,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( autoDisableLinearThreshold ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dReal threshold;
 	JL_CHK( JL_JsvalToODEReal(cx, *vp, &threshold) );
 	ode::dWorldSetAutoDisableLinearThreshold(pv->worldId, threshold);
@@ -512,7 +512,7 @@ DEFINE_PROPERTY_SETTER( autoDisableLinearThreshold ) {
 DEFINE_PROPERTY_GETTER( autoDisableLinearThreshold ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dReal threshold;
 	threshold = ode::dWorldGetAutoDisableLinearThreshold(pv->worldId);
 	JL_CHK( ODERealToJsval(cx, threshold, vp) );
@@ -529,7 +529,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( autoDisableAngularThreshold ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dReal threshold;
 	JL_CHK( JL_JsvalToODEReal(cx, *vp, &threshold) );
 	ode::dWorldSetAutoDisableAngularThreshold(pv->worldId, threshold);
@@ -540,7 +540,7 @@ DEFINE_PROPERTY_SETTER( autoDisableAngularThreshold ) {
 DEFINE_PROPERTY_GETTER( autoDisableAngularThreshold ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	ode::dReal threshold;
 	threshold = ode::dWorldGetAutoDisableAngularThreshold(pv->worldId);
@@ -558,7 +558,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( gravity ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dVector3 gravity;
 	ode::dWorldGetGravity(pv->worldId, gravity);
 	//ODERealVectorToArray(cx, 3, gravity, vp);
@@ -570,12 +570,12 @@ DEFINE_PROPERTY_GETTER( gravity ) {
 DEFINE_PROPERTY_SETTER( gravity ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dVector3 gravity;
 	//FloatArrayToVector(cx, 3, vp, gravity);
 	uint32 length;
 	JL_CHK( JL_JsvalToODERealVector(cx, *vp, gravity, 3, &length) );
-	JL_S_ASSERT( length >= 3, "Invalid array size." );
+	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
 	ode::dWorldSetGravity( pv->worldId, gravity[0], gravity[1], gravity[2] );
 	return JS_TRUE;
 	JL_BAD;
@@ -604,7 +604,7 @@ enum { ERP, CFM, quickStepNumIterations, quickStepW, contactSurfaceLayer, contac
 DEFINE_PROPERTY_SETTER( real ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float value;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
 	switch ( JSID_TO_INT(id) ) {
@@ -650,7 +650,7 @@ DEFINE_PROPERTY_SETTER( real ) {
 DEFINE_PROPERTY_GETTER( real ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float value;
 	switch ( JSID_TO_INT(id) ) {
 		case ERP:

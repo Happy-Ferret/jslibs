@@ -66,8 +66,9 @@
 	#pragma warning(error : 4700) // warning C4700: uninitialized local variable 'XXX' used
 	#pragma warning(error : 4533) // warning C4533: initialization of 'xxx' is skipped by 'goto YYY'
 	#pragma warning(error : 4002) // too many actual parameters for macro 'XXX'
-	#pragma warning(error : 4003) // not enough actual parameters for macro 'xxx'
+	#pragma warning(error : 4003) // not enough actual parameters for macro 'XXX'
 	#pragma warning(error : 4239) // nonstandard extension used
+	#pragma warning(error : 4005) // 'XXX' : macro redefinition
 	#ifdef DEBUG
 		#pragma warning(error : 4701) // potentially uninitialized local variable 'XXX' used
 	#endif
@@ -374,6 +375,9 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 		return _aligned_malloc(size, alignment);
 	}
 
+	#define snprintf sprintf_s
+
+
 #elif defined(_MACOSX) // MacosX platform
 
 	#ifndef XP_UNIX
@@ -454,8 +458,8 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 // Miscellaneous
 
 
-#define JL_STATIC_ASSERT(cond) \
-	extern void jl_static_assert(int arg[(cond) ? 1 : -1])
+#define S_ASSERT(cond) \
+	extern void STATIC_ASSERT_DUMMY(int arg[(cond) ? 1 : -1])
 
 
 #define SSIZE_T_MAX ((ssize_t)(SIZE_MAX / 2))
@@ -485,6 +489,19 @@ JL_HasFlags(T value, U flags) {
 #define JL_USE(x) \
 	((void)(x))
 
+ALWAYS_INLINE void
+JL_Break() {
+#if defined(WIN32)
+	*((int *) NULL) = 0;
+	exit(3);
+#elif defined(__APPLE__)
+	*((int *) NULL) = 0;  /* To continue from here in GDB: "return" then "continue". */
+	raise(SIGABRT);  /* In case above statement gets nixed by the optimizer. */
+#else
+	raise(SIGABRT);  /* To continue from here in GDB: "signal 0". */
+#endif
+}
+
 
 // from jsutil.cpp
 ALWAYS_INLINE void
@@ -492,27 +509,19 @@ JL_AssertFailure( const char *message, const char *location ) {
 	
 	fprintf(stderr, "Assertion failure: %s @%s\n", message, location);
 	fflush(stderr);
-#if defined(WIN32)
-    *((int *) NULL) = 0;
-    exit(3);
-#elif defined(__APPLE__)
-    *((int *) NULL) = 0;  /* To continue from here in GDB: "return" then "continue". */
-    raise(SIGABRT);  /* In case above statement gets nixed by the optimizer. */
-#else
-    raise(SIGABRT);  /* To continue from here in GDB: "signal 0". */
-#endif
+	JL_Break();
 }
 
 
 #ifdef DEBUG
-#define JL_ASSERT(expr) \
+#define ASSERT(expr) \
     ( (expr) ? (void)0 : JL_AssertFailure(#expr, JL_CODE_LOCATION) )
-#define JL_ASSERT_IF(cond, expr) \
+#define ASSERT_IF(cond, expr) \
     ( (!(cond) || (expr)) ? (void)0 : JL_AssertFailure(#expr, JL_CODE_LOCATION) )
 #else // DEBUG
 // beware. Use __assume in an ASSERT only when the assert is not recoverable.
-#define JL_ASSERT(expr) (ASSUME(expr))
-#define JL_ASSERT_IF(cond, expr) ((void)0)
+#define ASSERT(expr) (ASSUME(expr))
+#define ASSERT_IF(cond, expr) ((void)0)
 #endif // DEBUG
 
 
@@ -557,7 +566,7 @@ static const union {
 // 2^53 = 9007199254740992
 // since double(9007199254740992) == double(9007199254740993), and double(-9007199254740992) == double(-9007199254740993)  we must subtract 1.
 // see also std::numeric_limits<double>::digits
-JL_STATIC_ASSERT( DBL_MANT_DIG < 64 );
+S_ASSERT( DBL_MANT_DIG < 64 );
 
 #define MAX_INT_TO_DOUBLE \
 	((double)((((uint64_t)1)<<DBL_MANT_DIG)-1))
@@ -566,8 +575,8 @@ JL_STATIC_ASSERT( DBL_MANT_DIG < 64 );
 	(-MAX_INT_TO_DOUBLE)
 
 // (TBD) fix needed on Linux
-JL_STATIC_ASSERT( MAX_INT_TO_DOUBLE != MAX_INT_TO_DOUBLE+(double)1 );
-JL_STATIC_ASSERT( MAX_INT_TO_DOUBLE+(double)1 == MAX_INT_TO_DOUBLE+(double)2 );
+S_ASSERT( MAX_INT_TO_DOUBLE != MAX_INT_TO_DOUBLE+(double)1 );
+S_ASSERT( MAX_INT_TO_DOUBLE+(double)1 == MAX_INT_TO_DOUBLE+(double)2 );
 
 
 ALWAYS_INLINE NOALIAS int
@@ -643,7 +652,7 @@ namespace jl {
 	ALWAYS_INLINE D
 	SafeCast(S src) {
 
-		JL_ASSERT( (IsSafeCast<D>(src)) );
+		ASSERT( (IsSafeCast<D>(src)) );
 		return static_cast<D>(src);
 	}
 
@@ -652,7 +661,7 @@ namespace jl {
 	ALWAYS_INLINE D
 	SafeCast(S src, D) {
 
-		JL_ASSERT( (IsSafeCast<D>(src)) );
+		ASSERT( (IsSafeCast<D>(src)) );
 		return static_cast<D>(src);
 	}
 
@@ -676,7 +685,7 @@ namespace jl {
 
 //ALWAYS_INLINE uint32_t JL_CAST_CSTR_TO_UINT32( const char cstr[5] ) {
 //
-////	JL_ASSERT(strlen(cstr) == 4);
+////	ASSERT(strlen(cstr) == 4);
 //	if ( cstr[0] == '\0' )
 //		return 0;
 //	else
@@ -695,8 +704,8 @@ namespace jl {
 ALWAYS_INLINE NOALIAS uint32_t
 JL_CAST_CSTR_TO_UINT32( const char *cstr ) {
 
-	JL_ASSERT( cstr != NULL );
-	JL_ASSERT( !(cstr[0] && cstr[1] && cstr[2] && cstr[3] && cstr[4]) );
+	ASSERT( cstr != NULL );
+	ASSERT( !(cstr[0] && cstr[1] && cstr[2] && cstr[3] && cstr[4]) );
 	return
 		!cstr[0] ? 0 :
 		!cstr[1] ? cstr[0] :
@@ -999,7 +1008,7 @@ IntegerToString(int32_t val, int base) {
 
 	bool neg;
 	static char buf[34]; // sign + binary of max int32 + '\0' = 33 and 34 for uint32
-	buf[63] = '\0';
+	buf[sizeof(buf)-1] = '\0';
 	if ( val < 0 ) {
 
 		val = -val;
@@ -1008,7 +1017,7 @@ IntegerToString(int32_t val, int base) {
 
 		neg = false;
 	}
-	int i = 62;
+	int i = sizeof(buf)-1;
 	for(; val && i ; --i, val /= base)
 		buf[i] = "0123456789abcdefghijklmnopqrstuvwxyz"[val % base];
 	if ( neg )
@@ -1016,8 +1025,49 @@ IntegerToString(int32_t val, int base) {
 	return &buf[i+1];
 }
 
+#define JL_ITOA10_MAX_DIGITS 12 // 12 = sign + base-10 max int32_t + '\0'
 
-ALWAYS_INLINE void SleepMilliseconds(uint32_t ms) {
+INLINE NEVER_INLINE char* FASTCALL
+JL_itoa10(uint32_t val, char *buf ) {
+
+	char *tmp = buf + JL_ITOA10_MAX_DIGITS;
+	*--tmp = '\0';
+	do {
+		*--tmp = '0' + val % 10;
+		val /= 10;
+	} while ( val );
+	return tmp;
+}
+
+INLINE NEVER_INLINE char* FASTCALL
+JL_itoa10(int32_t val, char *buf ) {
+
+	char *tmp = buf + JL_ITOA10_MAX_DIGITS;
+	*--tmp = '\0';
+	if ( val >= 0 ) {
+		
+		do {
+			*--tmp = '0' + val % 10;
+			val /= 10;
+		} while ( val );
+	} else {
+
+		do {
+			*--tmp = '0' - val % 10;
+			val /= 10;
+		} while ( val );
+		*--tmp = '-';
+	}
+	return tmp;
+}
+
+#define JL_itoa10_alloca(val) \
+	JL_itoa10(val, (char*)alloca(JL_ITOA10_MAX_DIGITS))
+
+
+
+ALWAYS_INLINE void
+SleepMilliseconds(uint32_t ms) {
 
 #if defined(XP_WIN)
 	Sleep(ms); // winbase.h
@@ -1036,10 +1086,10 @@ AccurateTimeCounter() {
 	static volatile LONGLONG initTime = 0; // initTime helps in avoiding precision waste.
 	LARGE_INTEGER frequency, performanceCount;
 	BOOL result = ::QueryPerformanceFrequency(&frequency);
-	JL_ASSERT( result );
+	ASSERT( result );
 	DWORD_PTR oldmask = ::SetThreadAffinityMask(::GetCurrentThread(), 0); // manage bug in BIOS or HAL
 	result = ::QueryPerformanceCounter(&performanceCount);
-	JL_ASSERT( result );
+	ASSERT( result );
 	if ( initTime == 0 )
 		initTime = performanceCount.QuadPart;
 	::SetThreadAffinityMask(::GetCurrentThread(), oldmask);
@@ -1151,7 +1201,7 @@ JLCpuInfo( JLCpuInfo_t info ) {
 	info += 16;
 	cpuid((int*)info, 0x80000006);
 
-	IFDEBUG( JL_ASSERT( (info+16) - (char*)tmp == sizeof(JLCpuInfo_t) ) );
+	IFDEBUG( ASSERT( (info+16) - (char*)tmp == sizeof(JLCpuInfo_t) ) );
 }
 
 
@@ -1546,10 +1596,10 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	// returns true on a sucessfuly semaphore locked.
 	INLINE int JLSemaphoreAcquire( JLSemaphoreHandler semaphore, int msTimeout ) {
 
-		JL_ASSERT( JLSemaphoreOk(semaphore) );
+		ASSERT( JLSemaphoreOk(semaphore) );
 	#if defined(XP_WIN)
 		DWORD status = WaitForSingleObject(semaphore, msTimeout == JLINFINITE ? INFINITE : msTimeout);
-		JL_ASSERT( status != WAIT_FAILED );
+		ASSERT( status != WAIT_FAILED );
 		if ( status == WAIT_TIMEOUT )
 			return JLTIMEOUT;
 		return JLOK;
@@ -1560,7 +1610,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 			// st = sem_wait(semaphore);
 			while ((st = sem_wait(semaphore)) == -1 && errno == EINTR)
 				continue; // Restart if interrupted by handler
-			JL_ASSERT( st == 0 );
+			ASSERT( st == 0 );
 			return JLOK;
 		} else {
 
@@ -1588,7 +1638,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 				continue; // Restart if interrupted by handler
 			if ( st == -1 && errno == ETIMEDOUT )
 				return JLTIMEOUT;
-			JL_ASSERT( st == 0 );
+			ASSERT( st == 0 );
 			JL_USE( st );
 			return JLOK;
 		}
@@ -1600,13 +1650,13 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 
 	ALWAYS_INLINE void JLSemaphoreRelease( JLSemaphoreHandler semaphore ) {
 
-		JL_ASSERT( JLSemaphoreOk(semaphore) );
+		ASSERT( JLSemaphoreOk(semaphore) );
 	#if defined(XP_WIN)
 		BOOL st = ReleaseSemaphore(semaphore, 1, NULL);
-		JL_ASSERT( st != FALSE );
+		ASSERT( st != FALSE );
 	#elif defined(XP_UNIX)
 		int st = sem_post(semaphore);
-		JL_ASSERT( st == 0 );
+		ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -1614,13 +1664,13 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 
 	ALWAYS_INLINE void JLSemaphoreFree( JLSemaphoreHandler *pSemaphore ) {
 
-		JL_ASSERT( pSemaphore != NULL && JLSemaphoreOk(*pSemaphore) );
+		ASSERT( pSemaphore != NULL && JLSemaphoreOk(*pSemaphore) );
 	#if defined(XP_WIN)
 		BOOL st = CloseHandle(*pSemaphore);
-		JL_ASSERT( st != FALSE );
+		ASSERT( st != FALSE );
 	#elif defined(XP_UNIX)
 		int st = sem_destroy(*pSemaphore);
-		JL_ASSERT( st == 0 );
+		ASSERT( st == 0 );
 		free(*pSemaphore);
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
@@ -1667,7 +1717,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 		InitializeCriticalSection(mutex);
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_init(mutex, NULL);
-		JL_ASSERT( st == 0 );
+		ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -1676,12 +1726,12 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 
 	ALWAYS_INLINE void JLMutexFree( JLMutexHandler *pMutex ) {
 
-		JL_ASSERT( *pMutex != NULL && JLMutexOk(*pMutex) );
+		ASSERT( *pMutex != NULL && JLMutexOk(*pMutex) );
 	#if defined(XP_WIN)
 		DeleteCriticalSection(*pMutex);
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_destroy(*pMutex);
-		JL_ASSERT( st == 0 );
+		ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -1691,12 +1741,12 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 
 	ALWAYS_INLINE void JLMutexAcquire( JLMutexHandler mutex ) {
 
-		JL_ASSERT( JLMutexOk(mutex) );
+		ASSERT( JLMutexOk(mutex) );
 	#if defined(XP_WIN)
 		EnterCriticalSection(mutex);
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_lock(mutex); // doc. shall not return an error code of [EINTR].
-		JL_ASSERT( st == 0 );
+		ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -1704,12 +1754,12 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 
 	ALWAYS_INLINE void JLMutexRelease( JLMutexHandler mutex ) {
 
-		JL_ASSERT( JLMutexOk(mutex) );
+		ASSERT( JLMutexOk(mutex) );
 	#if defined(XP_WIN)
 		LeaveCriticalSection(mutex);
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_unlock(mutex);
-		JL_ASSERT( st == 0 );
+		ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -1748,19 +1798,19 @@ ALWAYS_INLINE JLCondHandler JLCondCreate() {
 	cv->waiters_count = 0;
 //	InitializeCriticalSection(&cv->waiters_count_lock);
 	cv->events[0] = CreateEvent(NULL, FALSE, FALSE, NULL);
-	JL_ASSERT( cv->events[0] != NULL );
+	ASSERT( cv->events[0] != NULL );
 	cv->events[1] = CreateEvent(NULL, TRUE, FALSE, NULL);
-	JL_ASSERT( cv->events[1] != NULL );
+	ASSERT( cv->events[1] != NULL );
 	return cv;
 }
 
 ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 
-	JL_ASSERT( cv != NULL && JLCondOk(*cv) );
+	ASSERT( cv != NULL && JLCondOk(*cv) );
 	BOOL st = CloseHandle((*cv)->events[1]);
-	JL_ASSERT( st != FALSE );
+	ASSERT( st != FALSE );
 	st = CloseHandle((*cv)->events[0]);
-	JL_ASSERT( st != FALSE );
+	ASSERT( st != FALSE );
 	JL_USE( st );
 //	DeleteCriticalSection(&(*cv)->waiters_count_lock);
 	free(*cv);
@@ -1769,13 +1819,13 @@ ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 
 INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
 
-	JL_ASSERT( JLCondOk(cv) );
+	ASSERT( JLCondOk(cv) );
 //	EnterCriticalSection(&cv->waiters_count_lock);
 	cv->waiters_count++;
 //	LeaveCriticalSection(&cv->waiters_count_lock);
 	JLMutexRelease(external_mutex);
 	int result = WaitForMultipleObjects(2, cv->events, FALSE, INFINITE);
-	JL_ASSERT( result != WAIT_FAILED );
+	ASSERT( result != WAIT_FAILED );
 //	EnterCriticalSection(&cv->waiters_count_lock);
 	cv->waiters_count--;
 	int last_waiter = result == WAIT_OBJECT_0 + 1 && cv->waiters_count == 0;
@@ -1783,7 +1833,7 @@ INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
 	if ( last_waiter ) {
 
 		BOOL st = ResetEvent(cv->events[1]);
-		JL_ASSERT( st != FALSE );
+		ASSERT( st != FALSE );
 		JL_USE(st);
 	}
 	JLMutexAcquire(external_mutex);
@@ -1792,28 +1842,28 @@ INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
 
 ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
 
-	JL_ASSERT( JLCondOk(cv) );
+	ASSERT( JLCondOk(cv) );
 //	EnterCriticalSection(&cv->waiters_count_lock);
 	int have_waiters = cv->waiters_count > 0;
 //	LeaveCriticalSection(&cv->waiters_count_lock);
 	if ( have_waiters ) {
 
 		BOOL st = SetEvent(cv->events[1]);
-		JL_ASSERT( st != FALSE );
+		ASSERT( st != FALSE );
 		JL_USE(st);
 	}
 }
 
 ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
-	JL_ASSERT( JLCondOk(cv) );
+	ASSERT( JLCondOk(cv) );
 //	EnterCriticalSection(&cv->waiters_count_lock);
 	int have_waiters = cv->waiters_count > 0;
 //	LeaveCriticalSection(&cv->waiters_count_lock);
 	if ( have_waiters ) {
 
 		BOOL st = SetEvent(cv->events[0]);
-		JL_ASSERT( st != FALSE );
+		ASSERT( st != FALSE );
 		JL_USE(st);
 	}
 }
@@ -1839,7 +1889,7 @@ ALWAYS_INLINE JLCondHandler JLCondCreate() {
 
 ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 
-	JL_ASSERT( cv != NULL && JLCondOk(*cv) );
+	ASSERT( cv != NULL && JLCondOk(*cv) );
 	pthread_cond_destroy(&(*cv)->cond);
 	free(*cv);
 	*cv = NULL;
@@ -1847,20 +1897,20 @@ ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 
 ALWAYS_INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
 
-	JL_ASSERT( JLCondOk(cv) );
+	ASSERT( JLCondOk(cv) );
 	pthread_cond_wait(&cv->cond, &external_mutex->mx); // doc. shall not return an error code of [EINTR].
 	return JLOK;
 }
 
 ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
 
-	JL_ASSERT( JLCondOk(cv) );
+	ASSERT( JLCondOk(cv) );
 	pthread_cond_broadcast(&cv->cond);
 }
 
 ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
-	JL_ASSERT( JLCondOk(cv) );
+	ASSERT( JLCondOk(cv) );
 	pthread_cond_signal(&cv->cond);
 }
 
@@ -1919,16 +1969,16 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 	ALWAYS_INLINE void JLEventFree( JLEventHandler *ev ) {
 
-		JL_ASSERT( ev != NULL && JLEventOk(*ev) );
+		ASSERT( ev != NULL && JLEventOk(*ev) );
 	#if defined(XP_WIN)
 		DeleteCriticalSection(&(*ev)->cs);
 		BOOL st = CloseHandle((*ev)->hEvent);
-		JL_ASSERT( st != FALSE );
+		ASSERT( st != FALSE );
 	#elif defined(XP_UNIX)
 		int st = pthread_cond_destroy(&(*ev)->cond);
-		JL_ASSERT( st == 0 );
+		ASSERT( st == 0 );
 		st = pthread_mutex_destroy(&(*ev)->mutex);
-		JL_ASSERT( st == 0 );
+		ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -1938,13 +1988,13 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 	INLINE void JLEventTrigger( JLEventHandler ev ) {
 
-		JL_ASSERT( JLEventOk(ev) );
+		ASSERT( JLEventOk(ev) );
 	#if defined(XP_WIN)
 		EnterCriticalSection(&ev->cs);
 		if ( ev->waitingThreadCount != 0 || !ev->autoReset ) {
 
 			BOOL st = SetEvent(ev->hEvent);
-			JL_ASSERT( st != FALSE );
+			ASSERT( st != FALSE );
 			JL_USE(st);
 		}
 		LeaveCriticalSection(&ev->cs);
@@ -1962,11 +2012,11 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 	ALWAYS_INLINE void JLEventReset( JLEventHandler ev ) {
 
-		JL_ASSERT( JLEventOk(ev) );
+		ASSERT( JLEventOk(ev) );
 	#if defined(XP_WIN)
 		EnterCriticalSection(&ev->cs);
 		BOOL st = ResetEvent(ev->hEvent);
-		JL_ASSERT( st != FALSE );
+		ASSERT( st != FALSE );
 		JL_USE(st);
 		LeaveCriticalSection(&ev->cs);
 	#elif defined(XP_UNIX)
@@ -1981,7 +2031,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	// msTimeout = JLINFINITE : no timeout
 	INLINE int JLEventWait( JLEventHandler ev, int msTimeout ) {
 
-		JL_ASSERT( JLEventOk(ev) );
+		ASSERT( JLEventOk(ev) );
 	#if defined(XP_WIN)
 
 		EnterCriticalSection(&ev->cs);
@@ -1989,14 +2039,14 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		LeaveCriticalSection(&ev->cs);
 
 		DWORD status = WaitForSingleObject(ev->hEvent, msTimeout == JLINFINITE ? INFINITE : msTimeout);
-		JL_ASSERT( status != WAIT_FAILED );
+		ASSERT( status != WAIT_FAILED );
 
 		EnterCriticalSection(&ev->cs);
 		ev->waitingThreadCount--;
 		if ( ev->waitingThreadCount == 0 && ev->autoReset ) {
 
 			BOOL st = ResetEvent(ev->hEvent);
-			JL_ASSERT( st == TRUE );
+			ASSERT( st == TRUE );
 			JL_USE(st);
 		}
 		LeaveCriticalSection(&ev->cs);
@@ -2037,7 +2087,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			pthread_mutex_unlock(&ev->mutex);
 			if ( st == -1 && errno == ETIMEDOUT )
 				return JLTIMEOUT;
-			JL_ASSERT( st == 0 );
+			ASSERT( st == 0 );
 			JL_USE(st);
 			return JLOK;
 		}
@@ -2110,10 +2160,10 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 	ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) {  // (TBD) how to manage errors ?
 
-		JL_ASSERT( JLThreadOk(thread) );
+		ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
 		DWORD status = WaitForSingleObject(thread, 0);
-		JL_ASSERT( status != WAIT_FAILED );
+		ASSERT( status != WAIT_FAILED );
 		return status == WAIT_TIMEOUT; // else != WAIT_OBJECT_0 ?
 	#elif defined(XP_UNIX)
 		int policy;
@@ -2127,16 +2177,16 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 	ALWAYS_INLINE void JLThreadFree( JLThreadHandler *pThread ) {
 
-		JL_ASSERT( pThread != NULL && JLThreadOk(*pThread) );
+		ASSERT( pThread != NULL && JLThreadOk(*pThread) );
 	#if defined(XP_WIN)
 		BOOL st = CloseHandle(*pThread);
-		JL_ASSERT( st != FALSE );
+		ASSERT( st != FALSE );
 		JL_USE(st);
 	#elif defined(XP_UNIX)
 		if ( JLThreadIsActive( *pThread ) ) {
 
 			int st = pthread_detach(**pThread);
-			JL_ASSERT( st == 0 );
+			ASSERT( st == 0 );
 			JL_USE(st);
 		}
 		free(*pThread);
@@ -2161,13 +2211,13 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 	ALWAYS_INLINE void JLThreadCancel( JLThreadHandler thread ) {
 
-		JL_ASSERT( JLThreadOk(thread) );
+		ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
 		BOOL st = TerminateThread(thread, 0); // doc. The handle must have the THREAD_TERMINATE access right. ... Use the GetExitCodeThread function to retrieve a thread's exit value.
-		JL_ASSERT( st != 0 );
+		ASSERT( st != 0 );
 	#elif defined(XP_UNIX)
 		int st = pthread_cancel(*thread);
-		JL_ASSERT( st == 0 );
+		ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -2176,21 +2226,21 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 	ALWAYS_INLINE void JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
 
-		JL_ASSERT( JLThreadOk(thread) );
+		ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
 		BOOL st = SetThreadPriority(thread, priority);
-		JL_ASSERT( st != FALSE );
+		ASSERT( st != FALSE );
 	#elif defined(XP_UNIX)
 		int st;
 		int policy;
 		struct sched_param param;
 		st = pthread_getschedparam(*thread, &policy, &param);
-		JL_ASSERT( st == 0 );
+		ASSERT( st == 0 );
 		int max = sched_get_priority_max(policy);
 		int min = sched_get_priority_min(policy);
 		param.sched_priority = min + (max - min) * priority / 128;
 		st = pthread_setschedparam(*thread, policy, &param);
-		JL_ASSERT( st == 0 );
+		ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -2199,15 +2249,15 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 	ALWAYS_INLINE void JLThreadWait( JLThreadHandler thread, unsigned int *exitValue ) {
 
-		JL_ASSERT( JLThreadOk(thread) );
+		ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
 		BOOL st = WaitForSingleObject(thread, INFINITE);
-		JL_ASSERT( st == WAIT_OBJECT_0 );
+		ASSERT( st == WAIT_OBJECT_0 );
 		if ( exitValue )
 			GetExitCodeThread(thread, (DWORD*)exitValue);
 	#elif defined(XP_UNIX)
 		int st = pthread_join(*thread, (void**)exitValue); // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED. pthread_join shall not return an error code of [EINTR].
-		JL_ASSERT( st == 0 );
+		ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -2233,12 +2283,12 @@ ALWAYS_INLINE JLTLSKey JLTLSAllocKey() {
 	JLTLSKey key;
 #if defined(XP_WIN)
 	key = TlsAlloc();
-	JL_ASSERT( key != TLS_OUT_OF_INDEXES );
+	ASSERT( key != TLS_OUT_OF_INDEXES );
 	key++;
 #elif defined(XP_UNIX)
 	int st = pthread_key_create(&key, NULL);
 	JL_USE( st );
-	JL_ASSERT( st == 0 );
+	ASSERT( st == 0 );
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
@@ -2248,14 +2298,14 @@ ALWAYS_INLINE JLTLSKey JLTLSAllocKey() {
 
 ALWAYS_INLINE void JLTLSFreeKey( JLTLSKey key ) {
 #if defined(XP_WIN)
-	JL_ASSERT( key != 0 );
+	ASSERT( key != 0 );
 	key--;
-	JL_ASSERT( key >= 0 && key < TLS_MINIMUM_AVAILABLE );
+	ASSERT( key >= 0 && key < TLS_MINIMUM_AVAILABLE );
 	BOOL st = TlsFree(key);
-	JL_ASSERT( st != FALSE );
+	ASSERT( st != FALSE );
 #elif defined(XP_UNIX)
 	int st = pthread_key_delete(key);
-	JL_ASSERT( st == 0 );
+	ASSERT( st == 0 );
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
@@ -2264,14 +2314,14 @@ ALWAYS_INLINE void JLTLSFreeKey( JLTLSKey key ) {
 
 ALWAYS_INLINE void JLTLSSet( JLTLSKey key, void *value ) {
 #if defined(XP_WIN)
-	JL_ASSERT( key != 0 );
+	ASSERT( key != 0 );
 	key--;
-	JL_ASSERT( key >= 0 && key < TLS_MINIMUM_AVAILABLE );
+	ASSERT( key >= 0 && key < TLS_MINIMUM_AVAILABLE );
 	BOOL st = TlsSetValue(key, value);
-	JL_ASSERT( st != FALSE );
+	ASSERT( st != FALSE );
 #elif defined(XP_UNIX)
 	int st = pthread_setspecific(key, value);
-	JL_ASSERT( st == 0 );
+	ASSERT( st == 0 );
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
@@ -2280,12 +2330,12 @@ ALWAYS_INLINE void JLTLSSet( JLTLSKey key, void *value ) {
 
 ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 #if defined(XP_WIN)
-	JL_ASSERT( key != 0 );
+	ASSERT( key != 0 );
 	key--;
 	void *value;
-	JL_ASSERT( key >= 0 && key < TLS_MINIMUM_AVAILABLE );
+	ASSERT( key >= 0 && key < TLS_MINIMUM_AVAILABLE );
 	value = TlsGetValue(key);
-	JL_ASSERT( value != 0 || GetLastError() == ERROR_SUCCESS  );
+	ASSERT( value != 0 || GetLastError() == ERROR_SUCCESS  );
 	return value;
 #elif defined(XP_UNIX)
 	return pthread_getspecific(key);
@@ -2308,9 +2358,11 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
+	#define JLDynamicLibraryNullHandler ((JLLibraryHandler)0)
+
 	ALWAYS_INLINE bool JLDynamicLibraryOk( JLLibraryHandler libraryHandler ) {
 
-		return libraryHandler != (JLLibraryHandler)0;
+		return libraryHandler != JLDynamicLibraryNullHandler;
 	}
 
 	ALWAYS_INLINE uintptr_t JLDynamicLibraryId( JLLibraryHandler libraryHandler ) {
@@ -2326,13 +2378,13 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		// see also SetThreadErrorMode()
 //		UINT oldErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
 //		SetErrorMode( oldErrorMode | SEM_FAILCRITICALERRORS ); // avoid error popups
-		HMODULE hModule = LoadLibrary(filename);
+		HMODULE hModule = LoadLibrary(filename); // If the function fails, the return value is NULL. 
 		// Restore previous error mode.
 //		SetErrorMode(oldErrorMode);
 		return hModule;
 	#elif defined(XP_UNIX)
 		dlerror(); // Resets the error indicator.
-		return dlopen(filename, RTLD_LAZY | RTLD_LOCAL); // RTLD_NOW / RTLD_GLOBAL
+		return dlopen(filename, RTLD_LAZY | RTLD_LOCAL); // shall return NULL on error. // see. RTLD_NOW / RTLD_GLOBAL
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -2342,11 +2394,11 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 
 	#if defined(XP_WIN)
 		BOOL st = FreeLibrary(*libraryHandler);
-		JL_ASSERT( st != FALSE );
+		ASSERT( st != FALSE );
 	#elif defined(XP_UNIX)
 		dlerror(); // Resets the error indicator.
 		int st = dlclose(*libraryHandler);
-		JL_ASSERT( st == 0 );
+		ASSERT( st == 0 );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -2395,8 +2447,8 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 
 	ALWAYS_INLINE void JLDynamicLibraryName( void *addr, char *fileName, int maxFileNameLength ) {
 
-		// DWORD st = GetModuleFileName(libraryHandler, (LPCH)fileName, (DWORD)fileNameSize); JL_ASSERT( st != ERROR_INSUFFICIENT_BUFFER );
-		JL_ASSERT( maxFileNameLength > 0 );
+		// DWORD st = GetModuleFileName(libraryHandler, (LPCH)fileName, (DWORD)fileNameSize); ASSERT( st != ERROR_INSUFFICIENT_BUFFER );
+		ASSERT( maxFileNameLength > 0 );
 	#if defined(XP_WIN)
 		HMODULE libraryHandler;
 		if ( !GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)addr, &libraryHandler) ) { // requires XP or 2003
@@ -2521,9 +2573,9 @@ ALWAYS_INLINE JLCondHandler JLCondCreate() {
 
 ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 
-	JL_ASSERT( JLCondOk(*cv) );
+	ASSERT( JLCondOk(*cv) );
 	BOOL st = CloseHandle((*cv)->sema_);
-	JL_ASSERT( st );
+	ASSERT( st );
 	JL_USE( st );
 	DeleteCriticalSection(&(*cv)->waiters_count_lock_);
 //	DeleteCriticalSection(&(*cv)->global_lock);

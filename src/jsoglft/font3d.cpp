@@ -84,7 +84,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 
 	if ( pv->style == OUTLINE || pv->style == FILLED || pv->style == SOLID ) {
 
-		JL_ASSERT( pv->face != NULL );
+		ASSERT( pv->face != NULL );
 		OGLFT::Polygonal *poly;
 //		poly = dynamic_cast<OGLFT::Polygonal*>(pv->face);
 //		poly = (OGLFT::Polygonal*)pv->face;
@@ -126,16 +126,16 @@ f3d.Draw('Hello World');
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_RANGE( 2, 3 );
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_RANGE( 2, 3 );
+	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *fontObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-	JL_S_ASSERT_CLASS( fontObj, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Font")->clasp );
+	JL_ASSERT_CLASS( fontObj, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Font")->clasp );
 
 	FT_Face ftface = GetJsfontPrivate(cx, fontObj)->face;
-	JL_S_ASSERT_OBJECT_STATE( ftface, JL_GetClassName(fontObj) );
+	JL_ASSERT_OBJECT_STATE( ftface, JL_GetClassName(fontObj) );
 
 	float currentSize = (float)ftface->size->metrics.y_scale / (float)ftface->units_per_EM;
 	float size;
@@ -145,7 +145,7 @@ DEFINE_CONSTRUCTOR() {
 		size = currentSize;
 
 	Private *pv = (Private*)jl_calloc(1,sizeof(Private));
-	JL_S_ASSERT_ALLOC(pv);
+	JL_ASSERT_ALLOC(pv);
 	JL_SetPrivate(cx, obj, pv);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &pv->style) );
@@ -178,10 +178,10 @@ DEFINE_CONSTRUCTOR() {
 			pv->face = new OGLFT::TranslucentTexture(ftface, size);
 			break;
 		default:
-			JL_REPORT_ERROR_NUM( JLSMSG_RANGE_ERROR, "invalid 3D font style");
+			JL_ERR( E_ARG, E_NUM(2), E_INVALID );
 	}
 
-	JL_S_ASSERT_ERROR_NUM(pv->face->isValid(), JLSMSG_RUNTIME_ERROR, "failed to create the font" );
+	JL_ASSERT( pv->face->isValid(), E_LIB, E_OPERATION, E_STR("font"), E_CREATE );
 
 	pv->ftface = ftface;
 	pv->size = (int)size;
@@ -211,9 +211,9 @@ DEFINE_FUNCTION( Measure ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_RANGE( 1, 2 );
+	JL_ASSERT_ARGC_RANGE( 1, 2 );
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	bool absolute;
 	if ( JL_ARG_ISDEF(2) )
@@ -256,9 +256,9 @@ DEFINE_FUNCTION( Width ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT( 1 );
+	JL_ASSERT_ARG_COUNT( 1 );
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
@@ -295,9 +295,9 @@ DEFINE_FUNCTION( Draw ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_RANGE( 1, 3 );
+	JL_ASSERT_ARGC_RANGE( 1, 3 );
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 //	const char *str;
 //	size_t length;
@@ -341,9 +341,9 @@ DEFINE_FUNCTION( Compile ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT( 1 );
+	JL_ASSERT_ARG_COUNT( 1 );
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	GLuint list = pv->face->compile(str);
 	*JL_RVAL = INT_TO_JSVAL(list);
@@ -366,9 +366,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( SetColor ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_RANGE( 0, 1 );
+	JL_ASSERT_ARGC_RANGE( 0, 1 );
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*JL_RVAL = JSVAL_VOID;
 	if ( JL_ARGC == 0 ) {
 
@@ -378,12 +378,12 @@ DEFINE_FUNCTION( SetColor ) {
 		return JS_TRUE;
 	}
 
-	JL_S_ASSERT_ARG_IS_ARRAY(1);
+	JL_ASSERT_ARG_IS_ARRAY(1);
 
 	GLfloat color[4];
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), color, COUNTOF(color), &len) );
-//	JL_S_ASSERT( len >= 3, "Invalid color." );
+//	JL_ASSERT( len >= 3, "Invalid color." );
 	if ( len < 4 )
 		color[3] = 1.f;
 	if ( len == 1 )
@@ -407,9 +407,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( SetBackgroundColor ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_RANGE( 0, 1 );
+	JL_ASSERT_ARGC_RANGE( 0, 1 );
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*JL_RVAL = JSVAL_VOID;
 
 	if ( JL_ARGC == 0 ) {
@@ -420,12 +420,12 @@ DEFINE_FUNCTION( SetBackgroundColor ) {
 		return JS_TRUE;
 	}
 
-	JL_S_ASSERT_ARG_IS_ARRAY(1);
+	JL_ASSERT_ARG_IS_ARRAY(1);
 
 	GLfloat color[4];
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), color, COUNTOF(color), &len) );
-//	JL_S_ASSERT( len >= 3, "Invalid color." );
+//	JL_ASSERT( len >= 3, "Invalid color." );
 	if ( len < 4 )
 		color[3] = 1.f;
 	if ( len == 1 )
@@ -445,7 +445,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( height ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->face->height(), vp) );
 	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
@@ -462,7 +462,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( advance ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK(JL_NativeToJsval(cx, pv->face->advance(), vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -471,7 +471,7 @@ DEFINE_PROPERTY_GETTER( advance ) {
 DEFINE_PROPERTY_SETTER( advance ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	bool advance;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &advance) );
 	pv->face->setAdvance(advance);
@@ -494,8 +494,9 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( tessellationSteps ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_S_ASSERT_ERROR_NUM( pv->style == FILLED || pv->style == SOLID || pv->style == OUTLINE, JLSMSG_LOGIC_ERROR, "operation not supported with this style of object");
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+
+	JL_ASSERT( pv->style == FILLED || pv->style == SOLID || pv->style == OUTLINE, E_THISOPERATION, E_NOTSUPPORTED ); // "operation not supported with this style of object"
 
 	OGLFT::Polygonal *poly;
 //	poly = dynamic_cast<OGLFT::Polygonal*>(pv->face);
@@ -504,7 +505,7 @@ DEFINE_PROPERTY_SETTER( tessellationSteps ) {
 
 	int tess;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tess) );
-	JL_S_ASSERT_ERROR_NUM( tess > 0, JLSMSG_VALUE_OUTOFRANGE, "1 to 2^32" );
+	JL_ASSERT( tess >= 1, E_VALUE, E_MIN, E_NUM(1) ); 
 
 	poly->setTessellationSteps(tess);
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -531,8 +532,8 @@ f3d.Draw('Marley');
 DEFINE_PROPERTY_SETTER( colorCallback ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_S_ASSERT_ERROR_NUM( pv->style == FILLED || pv->style == SOLID || pv->style == OUTLINE, JLSMSG_LOGIC_ERROR, "operation not supported with this style of object");
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT( pv->style == FILLED || pv->style == SOLID || pv->style == OUTLINE, E_THISOPERATION, E_NOTSUPPORTED );
 
 	OGLFT::Polygonal *poly;
 //	poly = dynamic_cast<OGLFT::Polygonal*>(pv->face);
@@ -549,7 +550,7 @@ DEFINE_PROPERTY_SETTER( colorCallback ) {
 		}
 	} else {
 
-		JL_S_ASSERT_IS_FUNCTION(*vp, "");
+		JL_ASSERT_IS_FUNCTION(*vp, "");
 		OGLFT::ColorTess *colorTess = new ColorTess(JL_GetRuntime(cx), obj, *vp);
 		poly->setColorTess(colorTess);
 	}
@@ -564,18 +565,18 @@ DEFINE_FUNCTION( SetCharacterDisplayLists ) {
 
 	OGLFT::DisplayLists lists;
 
-	JL_S_ASSERT_ARG_COUNT( 1 );
+	JL_ASSERT_ARG_COUNT( 1 );
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	JL_S_ASSERT_ARG_IS_ARRAY(1);
+	JL_ASSERT_ARG_IS_ARRAY(1);
 	JSObject *arrObj = JSVAL_TO_OBJECT(JL_ARG(1));
 	jsuint length;
 	JL_CHK( JS_GetArrayLength(cx, arrObj, &length) );
 	for ( jsuint i = 0; i < length; i++ ) {
 
 		JL_CHK( JS_GetElement(cx, arrObj, i, JL_RVAL) );
-		JL_S_ASSERT_INT( *JL_RVAL );
+		JL_ASSERT_INT( *JL_RVAL );
 		lists.push_back(JSVAL_TO_INT( *JL_RVAL ));
 	}
 	pv->face->setCharacterDisplayLists(lists);

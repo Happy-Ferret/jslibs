@@ -48,10 +48,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_RANGE(1,4);
+	JL_ASSERT_ARGC_RANGE(1,4);
 
 	int deviceId;
 	int numDevices = videoInput::listDevices(true);
@@ -59,8 +59,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( !JSVAL_IS_STRING(JL_ARG(1)) ) {
 		
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &deviceId) );
-		if ( deviceId < 0 || deviceId >= numDevices )
-			JL_REPORT_ERROR_NUM( JLSMSG_RANGE_ERROR, "invalid device ID");
+		JL_ASSERT_ARG_VAL_RANGE( deviceId, 0, numDevices-1, 1 );
 	} else {
 	
 		JLStr requiredDeviceName;
@@ -74,8 +73,8 @@ DEFINE_CONSTRUCTOR() {
 				break;
 			}
 		}
-		if ( deviceId == -1 )
-			JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid device name");
+
+		JL_CHKM( deviceId != -1, E_ARG, E_NUM(1), E_NOTFOUND );
 	}
 
 	JL_CHK( JL_SetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, INT_TO_JSVAL(deviceId)) );
@@ -120,7 +119,7 @@ struct UserProcessEvent {
 	JSObject *obj;
 };
 
-JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
 void VIStartWait( volatile ProcessEvent *pe ) {
 
@@ -128,7 +127,7 @@ void VIStartWait( volatile ProcessEvent *pe ) {
 
 	HANDLE events[] = { upe->imageEvent, upe->cancelEvent };
 	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
-	JL_ASSERT( status != WAIT_FAILED );
+	ASSERT( status != WAIT_FAILED );
 }
 
 bool VICancelWait( volatile ProcessEvent *pe ) {
@@ -165,7 +164,7 @@ bad:
 DEFINE_FUNCTION( Events ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
@@ -177,7 +176,8 @@ DEFINE_FUNCTION( Events ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
-	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
+	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
+
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 
 	upe->imageEvent = vi->ImageEvent(deviceId);
@@ -199,10 +199,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetImage ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_RANGE( 0,1 );
+	JL_ASSERT_ARGC_RANGE( 0,1 );
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
-	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
+	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 
 	int width = vi->getWidth(deviceId);
@@ -237,7 +237,7 @@ DEFINE_FUNCTION( GetImage ) {
 	JL_CHK( JL_NewBlob(cx, data, dataSize, JL_RVAL) );
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
-	JL_S_ASSERT( blobObj, "Unable to create Blob object." );
+	JL_ASSERT( blobObj, E_STR("Blob"), E_CREATE );
 	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
 
 	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(dataSize / (width * height)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
@@ -260,9 +260,11 @@ DEFINE_FUNCTION( Close ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
-	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
-	if ( deviceIdVal == JSVAL_VOID ) // the device is already closed
+	if ( deviceIdVal == JSVAL_VOID ) { // the device is already closed
+		
+		JL_WARN( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED);
 		return JS_TRUE;
+	}
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	vi->stopDevice(deviceId);
 	JL_CHK( JL_SetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, JSVAL_VOID) );
@@ -279,7 +281,7 @@ DEFINE_PROPERTY_GETTER( hasNewFrame ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
-	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
+	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK(JL_NativeToJsval(cx, vi->isFrameNew(deviceId), vp) ); 
 	return JS_TRUE;
@@ -294,7 +296,7 @@ DEFINE_PROPERTY_GETTER( width ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
-	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
+	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( JL_NativeToJsval(cx, vi->getWidth(deviceId), vp) ); 
 	return JS_TRUE;
@@ -309,7 +311,7 @@ DEFINE_PROPERTY_GETTER( height ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
-	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
+	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( JL_NativeToJsval(cx, vi->getHeight(deviceId), vp) ); 
 	return JS_TRUE;
@@ -324,7 +326,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
-	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
+	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	int width = vi->getWidth(deviceId);
 	int height = vi->getHeight(deviceId);
@@ -342,7 +344,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
-	JL_S_ASSERT( deviceIdVal != JSVAL_VOID, "Device closed.");
+	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( JL_NativeToJsval(cx, videoInput::getDeviceName(deviceId), vp) );
 	return JS_TRUE;
@@ -409,9 +411,9 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION(Events)
-		FUNCTION(GetImage)
-		FUNCTION(Close)
+		FUNCTION( Events )
+		FUNCTION( GetImage )
+		FUNCTION( Close )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -424,8 +426,8 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( version )
-		PROPERTY_READ(list)
-		PROPERTY_READ(hasDevice)
+		PROPERTY_READ( list )
+		PROPERTY_READ( hasDevice )
 	END_STATIC_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC

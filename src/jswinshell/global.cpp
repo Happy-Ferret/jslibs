@@ -43,12 +43,13 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ExtractIcon ) {
 
 	JLStr fileName;
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 	UINT iconIndex = 0;
 	if ( argc >= 2 )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &iconIndex) );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
-	JL_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
+	if ( hInst == NULL )
+		return JL_ThrowOSError(cx);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
 	if ( hIcon == NULL ) {
@@ -60,7 +61,7 @@ DEFINE_FUNCTION( ExtractIcon ) {
 	}
 	JSObject *icon = JS_NewObjectWithGivenProto(cx, JL_CLASS(Icon), JL_PROTOTYPE(cx, Icon), NULL);
 	HICON *phIcon = (HICON*)jl_malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
-	JL_S_ASSERT_ALLOC( phIcon );
+	JL_ASSERT_ALLOC( phIcon );
 	*phIcon = hIcon;
 	JL_SetPrivate(cx, icon, phIcon);
 	*JL_RVAL = OBJECT_TO_JSVAL(icon);
@@ -121,7 +122,7 @@ DEFINE_FUNCTION( MessageBox ) {
 
 	JLStr caption, text;
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 
 	UINT type = 0;
 	if ( argc >= 3 )
@@ -133,7 +134,8 @@ DEFINE_FUNCTION( MessageBox ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &text) );
 
 	int res = MessageBox(NULL, text.GetConstStr(), caption.GetStrConstOrNull(), type);
-	JL_S_ASSERT( res != 0, "MessageBox call Failed." );
+	if ( res == 0 )
+		return JL_ThrowOSError(cx);
 	*JL_RVAL = INT_TO_JSVAL( res );
 	return JS_TRUE;
 	JL_BAD;
@@ -158,7 +160,7 @@ DEFINE_FUNCTION( CreateProcess ) {
 
 	JLStr applicationName, commandLine, environment, currentDirectory;
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 
 	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &applicationName) ); // warning: GC on the returned buffer !
@@ -231,14 +233,14 @@ DEFINE_FUNCTION( FileOpenDialog ) {
 	ofn.nMaxFile = sizeof(fileName);
 	ofn.Flags = OFN_NOCHANGEDIR | OFN_LONGNAMES | OFN_HIDEREADONLY;
 	BOOL res = GetOpenFileName(&ofn); // doc: http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/userinput/commondialogboxlibrary/commondialogboxreference/commondialogboxstructures/openfilename.asp
-	DWORD err = CommDlgExtendedError();
+	
+	if ( res == 0 ) {
+	
+		DWORD err = CommDlgExtendedError();
+		JL_ERR( E_OS, E_OPERATION, E_ERRNO(err) );
+	}
 
-	JL_S_ASSERT( res == TRUE || err == 0, "Unable to GetOpenFileName." );
-
-	if ( res == FALSE && err == 0 )
-		*JL_RVAL = JSVAL_VOID;
-	else
-		*JL_RVAL = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, fileName) );
+	*JL_RVAL = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, fileName) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -252,13 +254,13 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ExpandEnvironmentStrings ) {
 
 	JLStr src;
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &src) );
 	TCHAR dst[MAX_PATH];
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
-	JL_S_ASSERT( res != 0, "Unable to ExpandEnvironmentStrings." );
+	if ( res == 0 )
+		return JL_ThrowOSError(cx);
 	*JL_RVAL = STRING_TO_JSVAL( JS_NewStringCopyN(cx, dst, res) );
-	
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -271,7 +273,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Sleep ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 	unsigned int timeout;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
 	Sleep(timeout);
@@ -317,7 +319,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Beep ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_ASSERT_ARGC_MIN(2);
 	unsigned int freq, duration;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &freq) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &duration) );
@@ -342,8 +344,8 @@ DEFINE_FUNCTION( CreateComObject ) {
 
 	HRESULT hr;
 
-	JL_S_ASSERT_ARG_COUNT( 1 );
-	JL_S_ASSERT_ARG_IS_STRING(1);
+	JL_ASSERT_ARG_COUNT( 1 );
+	JL_ASSERT_ARG_IS_STRING(1);
 
 	JSString *idStr = JS_ValueToString(cx, JL_ARG(1));
 	LPOLESTR name = (LPOLESTR)JS_GetStringCharsZ(cx, idStr);
@@ -404,7 +406,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( RegistryGet ) {
 
 	JLStr pathStr, valueName;
-	JL_S_ASSERT_ARG_RANGE(1,2);
+	JL_ASSERT_ARGC_RANGE(1,2);
 	
 	const char *path;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pathStr) );
@@ -467,7 +469,7 @@ DEFINE_FUNCTION( RegistryGet ) {
 		rootHKey = HKEY_DYN_DATA;
 		path += 4;
 	} else
-		JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid root key");
+		JL_ERR( E_ARG, E_NUM(1), E_INVALID, E_COMMENT("root key") );
 
 	if ( path[0] == '\\' )
 		path++;
@@ -606,7 +608,7 @@ void FinalizeDirectoryHandle(void *data) {
 DEFINE_FUNCTION( DirectoryChangesInit ) {
 
 	JLStr pathName;
-	JL_S_ASSERT_ARG_RANGE(2,3);
+	JL_ASSERT_ARGC_RANGE(2,3);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pathName) );
 
@@ -653,10 +655,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DirectoryChangesLookup ) {
 
-	JL_S_ASSERT_ARG_RANGE(1,2);
-	JL_S_ASSERT( IsHandleType(cx, JL_ARG(1), JLHID("dmon")), "Unexpected argument type." );
+	JL_ASSERT_ARGC_RANGE(1,2);
+	JL_ASSERT_ARG_TYPE( IsHandleType(cx, JL_ARG(1), JLHID("dmon")), 1, "(dmon) Handle" );
+
 	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_ARG(1));
-	JL_S_ASSERT_OBJECT_STATE( dc, "dmon Handle");
+	JL_ASSERT( dc, E_ARG, E_NUM(1), E_STATE );
 
 	bool wait;
 	if ( JL_ARG_ISDEF(2) )
@@ -751,7 +754,7 @@ struct UserProcessEvent {
 	HANDLE cancelEvent;
 };
 
-JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
 void DirectoryChangesStartWait( volatile ProcessEvent *pe ) {
 
@@ -759,7 +762,7 @@ void DirectoryChangesStartWait( volatile ProcessEvent *pe ) {
 	
 	const HANDLE events[2] = { upe->cancelEvent, upe->dc->hDirectory };
 	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
-	JL_ASSERT( status != WAIT_FAILED );
+	ASSERT( status != WAIT_FAILED );
 }
 
 bool DirectoryChangesCancelWait( volatile ProcessEvent *pe ) {
@@ -767,7 +770,7 @@ bool DirectoryChangesCancelWait( volatile ProcessEvent *pe ) {
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	BOOL status = SetEvent(upe->cancelEvent);
-	JL_ASSERT( status );
+	ASSERT( status );
 
 	return true;
 }
@@ -777,7 +780,7 @@ JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSCon
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	BOOL status = CloseHandle(upe->cancelEvent);
-	JL_ASSERT( status );
+	ASSERT( status );
 
 	DWORD st = WaitForSingleObject(upe->dc->hDirectory, 0);
 	*hasEvent = (st == WAIT_OBJECT_0);
@@ -799,15 +802,14 @@ JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSCon
 
 DEFINE_FUNCTION( DirectoryChangesEvents ) {
 	
-	JL_S_ASSERT_ARG_RANGE(1,2);
-
-	JL_S_ASSERT( IsHandleType(cx, JL_ARG(1), JLHID("dmon")), "Unexpected argument type." );
+	JL_ASSERT_ARGC_RANGE(1,2);
+	JL_ASSERT_ARG_TYPE( IsHandleType(cx, JL_ARG(1), JLHID("dmon")), 1, "(dmon) Handle" );
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_S_ASSERT_ARG_IS_FUNCTION(2);
+		JL_ASSERT_ARG_IS_FUNCTION(2);
 
 	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_ARG(1));
-	JL_S_ASSERT_OBJECT_STATE( dc, "dmon Handle" );
+	JL_ASSERT( dc, E_ARG, E_NUM(1), E_STATE );
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
@@ -827,6 +829,35 @@ DEFINE_FUNCTION( DirectoryChangesEvents ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME( $STR )
+  Converts a globally unique identifier (GUID) into a string of printable characters.
+  $H example:
+{{{
+}}}
+**/
+DEFINE_FUNCTION( GUIDToString ) {
+
+	JLStr str;
+
+	JL_ASSERT_ARG_COUNT(1);
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+
+	JL_ASSERT( str.Length() == sizeof(GUID), E_ARG, E_NUM(1), E_LENGTH, E_NUM(sizeof(GUID)) );
+
+	GUID guid;
+	CopyMemory(&guid, str.GetConstStr(), sizeof(GUID));
+	WCHAR szGuid[39];
+	int len = StringFromGUID2(guid, szGuid, 39);
+	ASSERT( len = 39 );
+	ASSERT( szGuid[38] == 0 );
+
+	JL_CHK( JL_NativeToJsval(cx, szGuid, 38, JL_RVAL) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
 
 /**doc
 === Static properties ===
@@ -840,7 +871,9 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( clipboard ) {
 
 	BOOL res = OpenClipboard(NULL);
-	JL_S_ASSERT( res != 0, "Unable to open the clipboard." );
+	if ( res == 0 )
+		return JL_ThrowOSError(cx);
+
 	if ( IsClipboardFormatAvailable(CF_TEXT) == 0 ) {
 
 		*vp = JSVAL_NULL;
@@ -851,9 +884,10 @@ DEFINE_PROPERTY_GETTER( clipboard ) {
 			return JL_ThrowOSError(cx);
 
 		LPTSTR lptstr = (LPTSTR)GlobalLock(hglb);
-		JL_S_ASSERT( lptstr != NULL, "Unable to lock memory." );
+		if ( lptstr == NULL )
+			return JL_ThrowOSError(cx);
 		JSString *str = JS_NewStringCopyZ(cx, lptstr);
-		JL_S_ASSERT( str != NULL, "Unable to create the string.");
+		JL_ASSERT_ALLOC( str );
 		*vp = STRING_TO_JSVAL(str);
 		GlobalUnlock(hglb);
 		CloseClipboard();
@@ -865,26 +899,35 @@ DEFINE_PROPERTY_GETTER( clipboard ) {
 DEFINE_PROPERTY_SETTER( clipboard ) {
 
 	BOOL res = OpenClipboard(NULL);
-	JL_S_ASSERT( res != 0, "Unable to open the clipboard." );
-	EmptyClipboard(); // doc: If the application specifies a NULL window handle when opening the clipboard, EmptyClipboard succeeds but sets the clipboard owner to NULL. Note that this causes SetClipboardData to fail.
-	CloseClipboard();
+	if ( res == 0 )
+		return JL_ThrowOSError(cx);
+	res = EmptyClipboard(); // doc: If the application specifies a NULL window handle when opening the clipboard, EmptyClipboard succeeds but sets the clipboard owner to NULL. Note that this causes SetClipboardData to fail.
+	if ( res == 0 )
+		return JL_ThrowOSError(cx);
+	res = CloseClipboard();
+	if ( res == 0 )
+		return JL_ThrowOSError(cx);
+
 
 	if ( !JSVAL_IS_VOID( *vp ) ) {
 
 		JLStr str;
 
 		res = OpenClipboard(NULL);
-		JL_S_ASSERT( res != 0, "Unable to open the clipboard." );
+		if ( res == 0 )
+			return JL_ThrowOSError(cx);
 		JL_CHK( JL_JsvalToNative(cx, *vp, &str) );
 		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, str.Length() + 1);
-		JL_S_ASSERT_ALLOC( hglbCopy );
+		JL_ASSERT_ALLOC( hglbCopy );
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
-		JL_S_ASSERT( lptstrCopy != NULL, "Unable to lock memory." );
+		if ( lptstrCopy == NULL )
+			return JL_ThrowOSError(cx);
 		memcpy(lptstrCopy, str.GetConstStr(), str.Length() + 1);
 		lptstrCopy[str.Length()] = 0;
 		GlobalUnlock(hglbCopy);
 		HANDLE h = SetClipboardData(CF_TEXT, hglbCopy);
-		JL_S_ASSERT( h != NULL, "Unable to SetClipboardData." );
+		if ( h == NULL )
+			return JL_ThrowOSError(cx);
 		CloseClipboard();
 	}
 	return JS_TRUE;
@@ -1167,6 +1210,8 @@ CONFIGURE_STATIC
 		FUNCTION( DirectoryChangesInit )
 		FUNCTION( DirectoryChangesLookup )
 		FUNCTION( DirectoryChangesEvents )
+
+		FUNCTION_ARGC( GUIDToString, 1 )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

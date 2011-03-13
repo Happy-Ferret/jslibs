@@ -36,16 +36,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_RANGE(1,2);
+	JL_ASSERT_ARGC_RANGE(1,2);
 
 	ode::dJointGroupID groupId;
 	if ( JL_ARG_ISDEF(2) ) {
 
-	JL_S_ASSERT_ARG_IS_OBJECT(2);
-	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
+	JL_ASSERT_ARG_IS_OBJECT(2);
+	JL_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
 		groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(2)));
 	} else {
 
@@ -75,10 +75,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AddTorque0 ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dReal real;
 	JL_CHK( JL_JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddAMotorTorques(jointId, real,0,0);
@@ -96,10 +96,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AddTorque1 ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dReal real;
 	JL_CHK( JL_JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddAMotorTorques(jointId, 0,real,0);
@@ -117,10 +117,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AddTorque2 ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dReal real;
 	JL_CHK( JL_JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddAMotorTorques(jointId, 0,0,real);
@@ -141,10 +141,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( SetAxis ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN( 3 );
+	JL_ASSERT_ARGC_MIN( 3 );
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	*JL_RVAL = JSVAL_VOID;
 
 	int anum, rel;
@@ -158,7 +158,7 @@ DEFINE_FUNCTION( SetAxis ) {
 	ode::dVector3 vector;
 	uint32 length;
 	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(3), vector, 3, &length) );
-	JL_S_ASSERT( length >= 3, "Invalid array size." );
+	JL_ASSERT( length >= 3, E_ARG, E_NUM(3), E_TYPE, E_TY_NARRAY(3) );
 
 	if ( anum+1 > ode::dJointGetAMotorNumAxes(jointId) )
 		ode::dJointSetAMotorNumAxes(jointId, anum+1);
@@ -178,9 +178,9 @@ DEFINE_FUNCTION( SetAngle ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
-	JL_S_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_COUNT(2);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	
 	int anum;
 	ode::dReal angle;
@@ -210,7 +210,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( eulerMode ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	bool eulerMode;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &eulerMode) );
 	ode::dJointSetAMotorMode(jointId, eulerMode ?  ode::dAMotorEuler :  ode::dAMotorUser);
@@ -221,7 +221,7 @@ DEFINE_PROPERTY_SETTER( eulerMode ) {
 DEFINE_PROPERTY_GETTER( eulerMode ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	bool eulerMode = ode::dJointGetAMotorMode(jointId) == ode::dAMotorEuler;
 	JL_CHK(JL_NativeToJsval(cx, eulerMode, vp) );
 	return JS_TRUE;
@@ -236,7 +236,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( angle0Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	return JL_NativeToJsval(cx, ode::dJointGetAMotorAngleRate(jointId, 0), vp);
 	JL_BAD;
 }
@@ -249,7 +249,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( angle1Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	return JL_NativeToJsval(cx, ode::dJointGetAMotorAngleRate(jointId, 1), vp);
 	JL_BAD;
 }
@@ -262,7 +262,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( angle2Rate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	return JL_NativeToJsval(cx, ode::dJointGetAMotorAngleRate(jointId, 2), vp);
 	JL_BAD;
 }

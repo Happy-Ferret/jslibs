@@ -67,14 +67,15 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 		sqlite3_finalize(pStmt); // pStmt is 0xfeefee at the 2nd loop
 */
  
-	JL_CHK( InitJslibsModule(cx, id)  );
+	JL_CHK( InitJslibsModule(cx, id) );
 
 	//JL_CHKM( sqlite3_config(SQLITE_CONFIG_SINGLETHREAD) == SQLITE_OK, "Unable to set the threading mode to Single-thread." ); // see SQLITE_THREADSAFE=0 define
 	//JL_CHKM( sqlite3_config(SQLITE_CONFIG_SINGLETHREAD) == SQLITE_OK, "Unable to set the threading mode to Single-thread." ); // see SQLITE_THREADSAFE=0 define
-	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) == SQLITE_OK, "Unable to disable memory stats." );
-	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MALLOC, &mem) == SQLITE_OK, "Unable to initialize memory manager." );
-	JL_CHKM( sqlite3_enable_shared_cache(true) == SQLITE_OK, "Unable to enable shared cache." );
-	JL_CHKM( sqlite3_initialize() == SQLITE_OK, "Unable to initialize sqlite." );
+
+	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) == SQLITE_OK, E_MODULE, E_INIT ); // "Unable to disable memory stats."
+	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MALLOC, &mem) == SQLITE_OK, E_MODULE, E_INIT ); // "Unable to initialize memory manager."
+	JL_CHKM( sqlite3_enable_shared_cache(true) == SQLITE_OK, E_MODULE, E_INIT ); // "Unable to enable shared cache."
+	JL_CHKM( sqlite3_initialize() == SQLITE_OK, E_MODULE, E_INIT ); // "Unable to initialize sqlite."
 
 	INIT_CLASS( SqliteError );
 	INIT_CLASS( Result );

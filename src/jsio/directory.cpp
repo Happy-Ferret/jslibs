@@ -31,10 +31,14 @@ DEFINE_FINALIZE() {
 	PRDir *dd = (PRDir *)JL_GetPrivate( cx, obj );
 	if ( dd != NULL ) {
 
-		if ( PR_CloseDir(dd) != PR_SUCCESS ) // what to do on error ??
-			JS_ReportError( cx, "a directory descriptor cannot be closed while Finalize" );
-//		JL_SetPrivate( cx, obj, NULL );
+		if ( PR_CloseDir(dd) != PR_SUCCESS ) {
+
+			JL_WARN( E_NAME(JL_THIS_CLASS_NAME), E_FIN ); // "a directory descriptor cannot be closed while Finalize"
+		}
 	}
+
+bad:
+	return;
 }
 
 /**doc
@@ -46,10 +50,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 	JL_CHK( JL_SetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, JL_ARG(1) ) );
 	return JS_TRUE;
 	JL_BAD;
@@ -72,7 +76,7 @@ DEFINE_FUNCTION( Open ) {
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
-	JL_S_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
+	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
@@ -97,14 +101,19 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_CLASS();
+
+	*JL_RVAL = JSVAL_VOID;
 
 	PRDir *dd = (PRDir *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT( dd != NULL, "directory is closed" );
+	JL_ASSERT_WARN( dd, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED );
+	if ( !dd )
+		return JS_TRUE;
+
 	if ( PR_CloseDir(dd) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	JL_SetPrivate( cx, obj, NULL );
 
-	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -122,9 +131,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_CLASS();
 
 	PRDir *dd = (PRDir *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT( dd != NULL, "directory is closed" );
+	JL_ASSERT( dd != NULL, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED );
 
 	PRDirFlags flags;
 	flags = PR_SKIP_NONE;
@@ -166,7 +176,7 @@ DEFINE_FUNCTION( Make ) {
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
-	JL_S_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
+	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 	
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
@@ -196,7 +206,7 @@ DEFINE_FUNCTION( Remove ) {
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
-	JL_S_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
+	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
@@ -231,7 +241,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
-	JL_S_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
+	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
@@ -292,11 +302,12 @@ DEFINE_FUNCTION( List ) {
 
 	JLStr directoryName;
 	PRDir *dd = NULL;
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &directoryName, &directoryNameLength) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &directoryName) );
 
-	JL_S_ASSERT( directoryName.Length() < PATH_MAX, "Path too long" );
+	JL_ASSERT( directoryName.Length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
+
 	dd = PR_OpenDir(directoryName.GetConstStr());
 	JL_CHKB( dd, bad_throw);
 

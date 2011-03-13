@@ -46,7 +46,7 @@ DEFINE_FUNCTION( Vec3 ) {
 
 			uint32 len;
 			JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
-			JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+			JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
 		} else {
 
 			JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &v.x) );
@@ -59,7 +59,7 @@ DEFINE_FUNCTION( Vec3 ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &v.y) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v.z) );
 	} else
-		JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid vector3");
+		JL_ERR( E_INVALID, E_STR("vector3") );
 
 	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL);
 	JL_BAD;
@@ -82,16 +82,16 @@ DEFINE_FUNCTION( Vec3Length ) {
 
 		uint32 len;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
-		JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+		JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
 	} else
 	if ( argc == 2 ) {
 
 		Vector3 v2;
 		uint32 len;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
-		JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+		JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len) );
-		JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+		JL_CHKM( len >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NARRAY(3) );
 		Vector3SubVector3(&v, &v, &v2);
 	} else
 	if ( argc == 3 ) {
@@ -100,7 +100,7 @@ DEFINE_FUNCTION( Vec3Length ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &v.y) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v.z) );
 	} else
-		JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "unsupported operation");
+		JL_ERR( E_INVALID, E_STR("vector3") );
 
 	return JL_NativeToJsval(cx, Vector3Length(&v), JL_RVAL);
 	JL_BAD;
@@ -127,7 +127,7 @@ DEFINE_FUNCTION( Vec3Normalize ) {
 	Vector3 v;
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
-	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
+	JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
 
 	Vector3Normalize(&v, &v);
 
@@ -145,11 +145,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Vec3Add ) {
 	
 	Vector3 v, v2;
-	uint32 len, len2;
+	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
-	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
-	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len2 );
+	JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
+
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len) );
+	JL_CHKM( len >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NARRAY(3) );
 
 	Vector3AddVector3(&v, &v, &v2);
 
@@ -167,11 +168,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Vec3Sub ) {
 	
 	Vector3 v, v2;
-	uint32 len, len2;
+	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
-	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
-	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len2 );
+	JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
+
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len) );
+	JL_CHKM( len >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NARRAY(3) );
 
 	Vector3SubVector3(&v, &v, &v2);
 
@@ -189,11 +191,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Vec3Cross ) {
 	
 	Vector3 v, v2;
-	uint32 len, len2;
+	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
-	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
-	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len2 );
+	JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
+
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len) );
+	JL_CHKM( len >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NARRAY(3) );
 
 	Vector3Cross(&v, &v, &v2);
 
@@ -211,11 +214,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Vec3Dot ) {
 	
 	Vector3 v, v2;
-	uint32 len, len2;
+	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
-	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len );
-	JL_S_ASSERT( len >= 3, "Unsupported vector length (%d).", len2 );
+	JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
+
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len) );
+	JL_CHKM( len >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NARRAY(3) );
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(3) ? 3 : 1);
 	return JL_NativeToJsval(cx, Vector3Dot(&v, &v2), JL_RVAL);
@@ -231,7 +235,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( FrustumSphere ) {
 	
-	JL_S_ASSERT_ARG_RANGE(1,2);
+	JL_ASSERT_ARGC_RANGE(1,2);
 
 	Matrix44 tmpMat, *m = &tmpMat;
 	JL_CHK( GetMatrixHelper(cx, JL_ARG(1), (float**)&m) );
@@ -292,14 +296,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( BoxToCircumscribedSphere ) {
 	
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_ARRAY(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_ARRAY(1);
 
 	float aabb[6];
 
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), aabb, 6, &len) );
-	JL_S_ASSERT( len == 6, "Invalid vector length (%d).", len );
+
+	JL_CHKM( len == 6, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(6) );
 
 	Vector3 v1, v2, center;
 	Vector3LoadPtr(&v1, &aabb[0]);
@@ -334,7 +339,7 @@ DEFINE_FUNCTION( QuaternionToEuler ) {
 	Vector3 euler;
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), quat.raw, 4, &len) );
-	JL_S_ASSERT( len == 4, "Invalid quaternion." );
+	JL_CHKM( len == 4, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(4), E_COMMENT("quaternion") );
 
 /*
 	float sqw, sqx, sqy, sqz;
@@ -397,7 +402,7 @@ DEFINE_FUNCTION( EulerToQuaternion ) {
 	Vector4 quat;
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), euler.raw, 3, &len) );
-	JL_S_ASSERT( len == 3, "Invalid euler rotation." );
+	JL_CHKM( len == 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3), E_COMMENT("euler rotation") );
 	
 	float cosx,cosy,cosz,sinx,siny,sinz,cc,cs,sc,ss;
 
@@ -450,7 +455,7 @@ DEFINE_FUNCTION( QuaternionToAxisAngle ) {
 	Vector4 quat;
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), quat.raw, 4, &len) );
-	JL_S_ASSERT( len == 4, "Invalid quaternion." );
+	JL_CHKM( len == 4, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(4), E_COMMENT("quaternion") );
 
 	float halfAngle, sn;
 	halfAngle = acosf(quat.w);
@@ -482,7 +487,7 @@ DEFINE_FUNCTION( AxisAngleToQuaternion ) {
 	Vector4 axisAngle;
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), axisAngle.raw, 4, &len) );
-	JL_S_ASSERT( len == 4, "Invalid quaternion." );
+	JL_CHKM( len == 4, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(4), E_COMMENT("quaternion") );
 
 	float halfAngle, cs, sn;
 	halfAngle = axisAngle.w / 2.f;
@@ -506,13 +511,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetMatrix ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	float tmp[16], *m = tmp;
 
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *matrixObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
-	JL_S_ASSERT( fct, "Invalid Matrix44 interface." );
+	JL_CHKM( fct, E_ARG, E_NUM(1), E_SEP, E_INTERFACE, E_STR("Matrix44Get"), E_NOTSUPPORTED );
+
 	JL_CHK( fct(cx, matrixObj, &m) );
 	JL_CHK( JL_NativeVectorToJsval(cx, m, 16, JL_RVAL, false) );
 	return JS_TRUE;
@@ -534,10 +540,10 @@ DEFINE_FUNCTION( PlaneFromPoints ) {
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v0, 3, &len1) );
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v1, 3, &len2) );
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), v2, 3, &len3) );
-	JL_S_ASSERT( len1 == 3, "Invalid point (arg1)." );
-	JL_S_ASSERT( len2 == 3, "Invalid point (arg2)." );
-	JL_S_ASSERT( len3 == 3, "Invalid point (arg3)." );
 
+	JL_CHKM( len1 == 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
+	JL_CHKM( len2 == 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NARRAY(3) );
+	JL_CHKM( len3 == 3, E_ARG, E_NUM(3), E_TYPE, E_TY_NARRAY(3) );
 
 	float vec0[3], vec1[3];
 
@@ -572,15 +578,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ShadowMatrix ) {
 
-	JL_S_ASSERT_ARG_RANGE(2,3);
+	JL_ASSERT_ARGC_RANGE(2,3);
 
 	double shadowMat[4][4], plane[4], lightpos[4];
 
 	uint32 len, len1;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), plane, 4, &len) );
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), lightpos, 4, &len1) );
-	JL_S_ASSERT( len == 4, "Invalid plane." );
-	JL_S_ASSERT( len1 == 4, "Invalid light position." );
+	
+	JL_CHKM( len == 4, E_ARG, E_NUM(1), E_LENGTH, E_NUM(4) );
+	JL_CHKM( len1 == 4, E_ARG, E_NUM(2), E_LENGTH, E_NUM(4) );
 
 	/* Find dot product between light position vector and ground plane normal. */
 	double dot;
@@ -608,7 +615,7 @@ DEFINE_FUNCTION( ShadowMatrix ) {
 
 	if ( JL_ARGC == 3 ) {
 
-		JL_S_ASSERT_ARG_IS_ARRAY(3);
+		JL_ASSERT_ARG_IS_ARRAY(3);
 		*JL_RVAL = JL_ARG(3);
 		return JL_NativeVectorToJsval(cx, (double*)shadowMat, 16, JL_RVAL, true);
 	} else {

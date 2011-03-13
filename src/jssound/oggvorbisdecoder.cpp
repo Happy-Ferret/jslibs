@@ -173,11 +173,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
@@ -188,10 +188,10 @@ DEFINE_CONSTRUCTOR() {
 
 	pv->cx = cx;
 	int result = ov_open_callbacks(pv, &pv->ofDescriptor, NULL, 0, ovCallbacks);
-	JL_S_ASSERT(result == 0, "Invalid ogg vorbis descriptor.");
+	JL_CHKM( result == 0, E_ARG, E_NUM(1), E_INVALID, E_COMMENT("ogg vorbis descriptor") );
 
 	pv->ofInfo = ov_info(&pv->ofDescriptor, -1);
-	JL_S_ASSERT(pv->ofInfo != NULL, "Invalid ogg vorbis info.");
+	JL_CHKM( pv->ofInfo != NULL, E_ARG, E_NUM(1), E_INVALID, E_COMMENT("ogg vorbis info") );
 
 	pv->bits = 16;
 
@@ -243,10 +243,10 @@ DEFINE_FUNCTION( Read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_S_ASSERT( pv->bits != 8 || pv->bits == 16, "Unsupported bits count." );
-	JL_S_ASSERT( pv->ofInfo->channels == 1 || pv->ofInfo->channels == 2, "Unsupported channel count." );
+	JL_CHKM( pv->ofInfo->channels == 1 || pv->ofInfo->channels == 2, E_NUM(pv->ofInfo->channels), E_STR("channels"), E_FORMAT );
+	JL_CHKM( pv->bits == 8 || pv->bits == 16, E_NUM(pv->bits), E_STR("bit"), E_FORMAT );
 
 	size_t totalSize = 0;
 
@@ -260,7 +260,7 @@ DEFINE_FUNCTION( Read ) {
 
 			size_t amount = frames * pv->ofInfo->channels * pv->bits/8; // amount in bytes
 			buf = (char*)jl_malloc(amount +1);
-			JL_S_ASSERT_ALLOC(buf);
+			JL_ASSERT_ALLOC(buf);
 
 	//		sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
 
@@ -270,7 +270,7 @@ DEFINE_FUNCTION( Read ) {
 
 				int prevBitstream = bitStream;
 				bytes = ov_read(&pv->ofDescriptor, buf + totalSize, amount - totalSize, 0, pv->bits / 8, 1, &bitStream);
-				JL_S_ASSERT( bitStream == prevBitstream, "Invalid ogg bitstream."); // bitstream has changed
+				JL_CHKM( bitStream == prevBitstream, E_ARG, E_NUM(1), E_FORMAT, E_COMMENT("ogg vorbis bitstream") ); // bitstream has changed
 
 				// (TBD) update the channels, rate, ... according to: ov_info(&pv->ofDescriptor, bitStream);
 				if ( JL_IsExceptionPending(cx) )
@@ -301,7 +301,7 @@ DEFINE_FUNCTION( Read ) {
 				buf = (char*)jl_realloc(buf, totalSize +1);
 		} else {
 
-			JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, "0 to 2^32");
+			JL_ERR( E_ARG, E_NUM(1), E_MIN, E_NUM(1) );
 		}
 
 	} else {
@@ -328,7 +328,7 @@ DEFINE_FUNCTION( Read ) {
 
 			int prevBitstream = bitStream;
 			bytes = ov_read(&pv->ofDescriptor, data, maxlen, 0, pv->bits / 8, 1, &bitStream);
-			JL_S_ASSERT( bitStream == prevBitstream, "Invalid ogg bitstream."); // bitstream has changed
+			JL_CHKM( bitStream == prevBitstream, E_ARG, E_NUM(1), E_FORMAT, E_COMMENT("ogg vorbis bitstream") ); // bitstream has changed
 
 			if ( JL_IsExceptionPending(cx) )
 				return JS_FALSE;
@@ -336,7 +336,7 @@ DEFINE_FUNCTION( Read ) {
 			if ( bytes == OV_HOLE)
 				continue; // ignore corrupted/dropped/lost parts
 
-//(TBD)			JL_S_ASSERT( sf_error(pv->ofDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
+//(TBD)			JL_ASSERT( sf_error(pv->ofDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
 
 			if ( bytes <= 0 ) { // < 0 is an error
 
@@ -377,7 +377,7 @@ DEFINE_FUNCTION( Read ) {
 	JL_updateMallocCounter(cx, totalSize);
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
-	JL_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
+	JL_CHKM( blobObj != NULL, E_STR("Blob"), E_CREATE );
 	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
 
 	JL_CHK(JL_SetProperty(cx, blobObj, "bits", pv->bits) ); // bits per sample
@@ -406,7 +406,7 @@ DEFINE_PROPERTY_GETTER( inputStream ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -422,7 +422,7 @@ DEFINE_PROPERTY_GETTER( bits ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->bits );
 	return JS_TRUE;
 	JL_BAD;
@@ -438,7 +438,7 @@ DEFINE_PROPERTY_GETTER( rate ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->ofInfo->rate );
 	return JS_TRUE;
 	JL_BAD;
@@ -454,7 +454,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->ofInfo->channels );
 	return JS_TRUE;
 	JL_BAD;
@@ -471,7 +471,7 @@ DEFINE_PROPERTY_GETTER( frames ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ogg_int64_t pcmTotal = ov_pcm_total(&pv->ofDescriptor, -1);
 	if ( pcmTotal == OV_EINVAL ) { // if the stream is not seekable (we can't know the length) or only partially open.
 

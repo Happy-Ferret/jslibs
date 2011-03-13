@@ -27,10 +27,11 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	JL_CHK( InitJslibsModule(cx, id)  );
 
-	JL_S_ASSERT(vi == NULL, "Invalid case: videoInput already initialized'");
+	JL_ASSERT( vi == NULL, E_LIB, E_STR("videoinput"), E_INIT ); // "Invalid case: videoInput already initialized'"
+
 	videoInput::setVerbose(false);
 	vi = new videoInput();
-	JL_S_ASSERT(vi != NULL, "Unable to create a videoInput object.");
+	JL_ASSERT_ALLOC( vi );
 
 	INIT_CLASS( VideoInput );
 

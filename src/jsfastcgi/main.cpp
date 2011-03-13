@@ -16,7 +16,7 @@
 #include <jlhelper.cpp>
 #include <jslibsModule.cpp>
 
-DECLARE_STATIC();
+DECLARE_STATIC()
 
 //#include "fastcgi.h"
 

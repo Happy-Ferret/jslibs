@@ -25,12 +25,12 @@
 
 
 #define FTCHK( apiCall ) \
-JL_MACRO_BEGIN \
-	FT_Error apiError = (apiCall); \
-	if ( apiError != FT_Err_Ok ) { \
-		JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, IntegerToString(apiError, 10)); \
-	} \
-JL_MACRO_END
+	JL_MACRO_BEGIN \
+		FT_Error apiError = (apiCall); \
+		if ( apiError != FT_Err_Ok ) { \
+			JL_ERR( E_LIB, E_STR("freetype2"), E_OPERATION, E_ERRNO(apiError) ); \
+		} \
+	JL_MACRO_END
 
 
 struct FTSymbols {
@@ -142,6 +142,6 @@ struct JsfontPrivate {
 ALWAYS_INLINE JsfontPrivate* GetJsfontPrivate(JSContext *cx, JSObject *fontObj) {
 	
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, fontObj);
-	JL_ASSERT( pv );
+	ASSERT( pv );
 	return pv;
 }

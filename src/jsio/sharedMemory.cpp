@@ -53,7 +53,7 @@ JSBool Unlock( JSContext *cx, ClassPrivate *pv ) {
 JSBool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(SharedMemory) );
+	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(SharedMemory) );
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
 //	*buf = (char *)pv->mem + sizeof(MemHeader);
@@ -68,7 +68,7 @@ JSBool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_OBJECT_STATE(pv, JL_CLASS_NAME(SharedMemory));
+	JL_ASSERT_OBJECT_STATE(pv, JL_CLASS_NAME(SharedMemory));
 
 	JL_CHKB( PR_WaitSemaphore( pv->accessSem ) == PR_SUCCESS, bad_ioerror );
 
@@ -133,10 +133,10 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JLStr name;
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_MIN( 2 );
+	JL_ASSERT_ARGC_MIN( 2 );
 
 	size_t size;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &size) );
@@ -221,11 +221,11 @@ DEFINE_FUNCTION( Write ) {
 
 	JLStr data;
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	size_t offset;
 	offset = 0;
@@ -236,8 +236,8 @@ DEFINE_FUNCTION( Write ) {
 //	size_t dataLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &dataLength) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
-	
-	JL_S_ASSERT( sizeof(MemHeader) + offset + data.Length() <= pv->size, "SharedMemory too small to hold the given data." );
+
+	JL_ASSERT( sizeof(MemHeader) + offset + data.Length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader) - offset) ); // JL_ASSERT( sizeof(MemHeader) + offset + data.Length() <= pv->size, "SharedMemory too small to hold the given data." );
 
 	JL_CHK( Lock(cx, pv) );
 
@@ -263,9 +263,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_CLASS();
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	size_t offset;
 	offset = 0;
@@ -306,11 +307,11 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Clear ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh;
@@ -333,8 +334,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_CLASS();
+
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( CloseSharedMemory(cx, obj) );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -355,7 +358,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( content ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
@@ -372,7 +375,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 //		JL_CHK( JL_JsvalToStringAndLength(cx, vp, &data, &dataLength) );
 		JL_CHK( JL_JsvalToNative(cx, *vp, &data) );
 
-		JL_S_ASSERT( sizeof(MemHeader) + data.Length() <= pv->size, "SharedMemory too small to hold the given data." );
+		JL_ASSERT( sizeof(MemHeader) + data.Length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader)) ); //JL_ASSERT( sizeof(MemHeader) + data.Length() <= pv->size, "SharedMemory too small to hold the given data." );
 
 		JL_CHK( Lock(cx, pv) );
 
@@ -391,7 +394,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 DEFINE_PROPERTY_GETTER( content ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( Lock(cx, pv) );
 
@@ -427,19 +430,19 @@ TypeError: can't XDR class Array
 DEFINE_PROPERTY( xdrSetter ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh = (MemHeader*)pv->mem;
 
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
-	JL_S_ASSERT( xdr, "Unable to create XDR encoder." );
+	JL_ASSERT( xdr, "Unable to create XDR encoder." );
 
 	JL_CHK( JS_XDRValue( xdr, vp ) );
 
 	uint32 length;
 	void *buffer = JS_XDRMemGetData( xdr, &length );
-	JL_S_ASSERT( buffer, "Unable to create XDR data." );
+	JL_ASSERT( buffer, "Unable to create XDR data." );
 
 	memmove( (char*)pv->mem + sizeof(MemHeader), buffer, length );
 
@@ -456,13 +459,13 @@ DEFINE_PROPERTY( xdrSetter ) {
 DEFINE_PROPERTY( xdrGetter ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh = (MemHeader*)pv->mem;
 
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
-	JL_S_ASSERT( xdr, "Unable to create XDR decoder." );
+	JL_ASSERT( xdr, "Unable to create XDR decoder." );
 
 	JS_XDRMemSetData( xdr, (char*)pv->mem + sizeof(MemHeader), mh->currentDataLength );
 

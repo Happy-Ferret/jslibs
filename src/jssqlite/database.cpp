@@ -62,7 +62,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JLStr fileName;
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	//	int isThreadSafe = sqlite3_threadsafe();
@@ -140,11 +140,13 @@ DEFINE_FINALIZE() {
 
 	// close the database
 	// All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
-	if ( sqlite3_close(pv->db) != SQLITE_OK )
-		JS_ReportError( cx, "%s (%d)", sqlite3_errmsg(pv->db), sqlite3_extended_errcode(pv->db) );
+	
+	JL_ASSERT_WARN( sqlite3_close(pv->db) == SQLITE_OK, E_NAME(JL_THIS_CLASS_NAME), E_FIN, E_DETAILS, E_STR(sqlite3_errmsg(pv->db)), E_ERRNO(sqlite3_extended_errcode(pv->db)) );
 //	JL_SetPrivate( cx, obj, NULL );
 
+bad:
 	JS_free(cx, pv);
+	return;
 }
 
 
@@ -165,7 +167,7 @@ DEFINE_FUNCTION( Close ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_SetPrivate(cx, obj, NULL);
 
 	sqlite3_interrupt(pv->db);
@@ -252,11 +254,11 @@ DEFINE_FUNCTION( Query ) {
 
 	JLStr sql;
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 //	const char *sqlQuery;
 //	size_t sqlQueryLength;
@@ -271,8 +273,8 @@ DEFINE_FUNCTION( Query ) {
 	if ( sqlite3_prepare_v2(pv->db, sql.GetConstStr(), sql.Length(), &pStmt, &szTail) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, pv->db) );
 
-	if ( *szTail != '\0' )
-		JL_REPORT_WARNING_NUM( JLSMSG_LOGIC_ERROR, "too many SQL statements" ); // for the moment, do not support multiple statements
+	JL_ASSERT_WARN( *szTail == '\0', E_STR("too many SQL statements") ); // (TBD) for the moment, do not support multiple statements
+
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 //		JL_REPORT_ERROR( "Invalid SQL string." );
 
@@ -328,11 +330,11 @@ DEFINE_FUNCTION( Exec ) {
 	sqlite3_stmt *pStmt = NULL;
 	// see sqlite3_exec()
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 //	const char *sqlQuery;
 //	J_JSVAL_TO_STRING( argv[0], sqlQuery );
@@ -344,8 +346,8 @@ DEFINE_FUNCTION( Exec ) {
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 	if ( sqlite3_prepare_v2( pv->db, sql.GetConstStr(), sql.Length(), &pStmt, &szTail ) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, pv->db) );
-	JL_ASSERT( pStmt != NULL );
-	JL_S_ASSERT( *szTail == '\0', "Too many SQL statements." ); // for the moment, do not support multiple statements
+	ASSERT( pStmt != NULL );
+	JL_ASSERT_WARN( *szTail == '\0', E_STR("too many SQL statements") ); // for the moment, do not support multiple statements
 
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 //		JL_REPORT_ERROR( "Invalid SQL string." );
@@ -371,7 +373,7 @@ DEFINE_FUNCTION( Exec ) {
 			*JL_RVAL = JSVAL_VOID;
 			break;
 		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
-			JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "this routine was called inappropriately" );
+			JL_ERR( E_LIB, E_OPERATION, E_SEP, E_CALL, E_INVALID ); // "this routine was called inappropriately"
 		default:
 			JL_CHK( SqliteThrowError(cx, pv->db) );
 	}
@@ -404,7 +406,7 @@ DEFINE_PROPERTY_GETTER( lastInsertRowid ) {
 
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	sqlite3_int64 lastId;
 	lastId = sqlite3_last_insert_rowid(pv->db);
 	return JL_NativeToJsval(cx, lastId, vp);
@@ -423,7 +425,7 @@ DEFINE_PROPERTY_GETTER( changes ) {
 
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	// This function returns the number of database rows that were changed (or inserted or deleted) by the most recently completed INSERT, UPDATE, or DELETE statement.
 	// Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted. Auxiliary changes caused by triggers are not counted. Use the sqlite3_total_changes() function to find the total number of changes including changes caused by triggers.
@@ -466,11 +468,12 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 
 	jsval argv[1 + MAX_FUNCTION_ARG] = {0}; // argv[0] is rval
 	//	memset(argv, 0, sizeof(argv)); // set JSVAL_NULL
-	JL_ASSERT( JSVAL_IS_PRIMITIVE(argv[0]) && JSVAL_IS_PRIMITIVE(argv[1 + MAX_FUNCTION_ARG -1]) );
+	ASSERT( JSVAL_IS_PRIMITIVE(argv[0]) && JSVAL_IS_PRIMITIVE(argv[1 + MAX_FUNCTION_ARG -1]) );
 
 	FunctionPrivate *fpv = (FunctionPrivate*)sqlite3_user_data(sCx);
 	JSContext *cx = fpv->dbpv->tmpcx;
-	JL_S_ASSERT(cx != NULL, "Invalid context.");
+	
+	ASSERT( cx != NULL );
 
 	for ( int r = 0; r < sArgc; r++ ) {
 
@@ -569,13 +572,13 @@ DEFINE_SET_PROPERTY() {
 
 	if ( JL_ValueIsFunction(cx, *vp) && JSID_IS_STRING(id) ) {
 		
-		JL_S_ASSERT_THIS_CLASS();
+		JL_ASSERT_THIS_CLASS();
 
 		DatabasePrivate *dbpv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
-		JL_S_ASSERT_THIS_OBJECT_STATE(dbpv);
+		JL_ASSERT_THIS_OBJECT_STATE(dbpv);
 
 		FunctionPrivate *fpv = (FunctionPrivate*)jl_malloc(sizeof(FunctionPrivate));
-		JL_S_ASSERT_ALLOC(fpv);
+		JL_ASSERT_ALLOC(fpv);
 		fpv->fval = *vp;
 		fpv->obj = obj;
 		fpv->dbpv = dbpv;

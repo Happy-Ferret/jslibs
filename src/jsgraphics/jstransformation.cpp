@@ -96,8 +96,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_ARG_RANGE(0,16);
-//	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_ARGC_RANGE(0,16);
+//	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	TransformationPrivate *pv = (TransformationPrivate *)JS_malloc(cx, sizeof(TransformationPrivate));
@@ -105,15 +105,15 @@ DEFINE_CONSTRUCTOR() {
 	JL_SetPrivate(cx, JL_OBJ, pv);
 
 	pv->mat = PoolIsEmpty(&matrixPool) ? Matrix44Alloc() : (Matrix44*)jl::PoolPop(&matrixPool);
-	JL_S_ASSERT_ALLOC(pv->mat);
+	JL_ASSERT_ALLOC(pv->mat);
 
 	if ( JL_ARGC >= 1 ) {
 			
 		if ( JSVAL_IS_OBJECT(JL_ARG(1)) ) {
 
-			JL_S_ASSERT_ARG_COUNT(1);
+			JL_ASSERT_ARG_COUNT(1);
 			Matrix44 *m = pv->mat;
-			JL_CHKM( GetMatrixHelper(cx, JL_ARG(1), (float**)&m), "Unable to access Matrix44 interface." );
+			JL_CHK( GetMatrixHelper(cx, JL_ARG(1), (float**)&m) );
 			if ( m != pv->mat ) // check if the pointer has been modified
 				Matrix44Load(pv->mat, m);
 			pv->isIdentity = false;
@@ -132,8 +132,10 @@ DEFINE_CONSTRUCTOR() {
 				JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], (tmp++)) );
 			// see JL_CHK( JL_JsvalToNativeVector(cx, *JL_ARGV, tmp, 16, &len) );
 			pv->isIdentity = false;
-		} else
-			JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid matrix44");
+		} else {
+
+			JL_ERR( E_ARGC, E_EQUALS, E_NUM(16) );
+		}
 	}
 	// else uninitialized matrix
 
@@ -155,14 +157,15 @@ DEFINE_FUNCTION( Load ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_ARG_MAX(16);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_ARGC_MAX(16);
 
 	if ( JSVAL_IS_OBJECT(JL_ARG(1)) ) {
 
-		JL_S_ASSERT_ARG_COUNT(1);
+		JL_ASSERT_ARG_COUNT(1);
 		Matrix44 *m = pv->mat;
-		JL_CHKM( GetMatrixHelper(cx, JL_ARG(1), (float**)&m), "Unable to access Matrix44 interface." );
+		JL_CHK( GetMatrixHelper(cx, JL_ARG(1), (float**)&m) );
+
 		if ( m != pv->mat ) // check if the pointer has been modified
 			Matrix44Load(pv->mat, m);
 		pv->isIdentity = false;
@@ -181,9 +184,11 @@ DEFINE_FUNCTION( Load ) {
 			JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], (tmp++)) );
 		// see JL_CHK( JL_JsvalToNativeVector(cx, *JL_ARGV, tmp, 16, &len) );
 		pv->isIdentity = false;
-	} else
-		JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid matrix44");
+	} else {
 
+		JL_ERR( E_ARGC, E_EQUALS, E_NUM(16) );
+	}
+	
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
@@ -201,7 +206,7 @@ DEFINE_FUNCTION( Clear ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44Identity(pv->mat);
 	pv->isIdentity = true;
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -221,7 +226,7 @@ DEFINE_FUNCTION( ClearRotation ) {
 	JL_USE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44ClearRotation(pv->mat);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
@@ -240,7 +245,7 @@ DEFINE_FUNCTION( ClearTranslation ) {
 	JL_USE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44ClearTranslation(pv->mat);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
@@ -261,9 +266,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( LoadRotation ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	Matrix44 tmp, *m = &tmp;
 	JL_CHK( GetMatrixHelper(cx, JL_ARG(1), (float**)&m) );
@@ -300,9 +305,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( LoadTranslation ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	Matrix44 tmp, *m = &tmp;
 	JL_CHK( GetMatrixHelper(cx, JL_ARG(1), (float**)&m) );
@@ -332,9 +337,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Translate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARG_COUNT(3);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float x, y, z;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
@@ -372,9 +377,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Scale ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_RANGE(1,3);
+	JL_ASSERT_ARGC_RANGE(1,3);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float x, y, z;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
@@ -422,9 +427,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( RotationFromQuaternion ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARG_COUNT(4);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float w, x, y, z;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &w) );
@@ -475,9 +480,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( TaitBryanRotation ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARG_COUNT(3);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float roll, pitch, yaw;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &roll) );
@@ -506,9 +511,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Rotate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARG_COUNT(4);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
@@ -550,9 +555,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( RotateX ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
@@ -587,9 +592,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( RotateY ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
@@ -624,9 +629,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( RotateZ ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
 	float angle;
@@ -677,9 +682,9 @@ DEFINE_FUNCTION( LookAt ) {
 */
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_RANGE(6,9);
+	JL_ASSERT_ARGC_RANGE(6,9);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz;
 
@@ -732,9 +737,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( RotateToVector ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARG_COUNT(3);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float x, y, z;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
@@ -774,9 +779,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Invert ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	if ( !pv->isIdentity )
 		Matrix44Invert(pv->mat);
@@ -797,9 +802,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Product ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_RANGE(1,2);
+	JL_ASSERT_ARGC_RANGE(1,2);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	Matrix44 tmp, *m = &tmp;
 	JL_CHK( GetMatrixHelper(cx, JL_ARG(1), (float**)&m) );
@@ -836,17 +841,17 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( TransformVector ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_ARRAY(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_ARRAY(1);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	uint32 length;
 //	J_JSVAL_TO_ARRAY_LENGTH( JL_ARG(1), length );
 	JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(JL_ARG(1)), &length) );
 
 	jsval tmpValue;
-	if ( length == 3 ) {
+	if ( length >= 3 ) {
 
 		Vector3 src, dst;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), src.raw, 3, &length ) );
@@ -880,8 +885,10 @@ DEFINE_FUNCTION( TransformVector ) {
 
 		JL_CHK( JL_NativeToJsval(cx, dst.w, &tmpValue) );
 		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 3, &tmpValue) );
-	} else
-		JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "Invalid vector length");
+	} else {
+
+		JL_ERR( E_ARG, E_NUM(1), E_LENGTH, E_INTERVAL_NUM(3, 4) ); // "Invalid vector length"
+	}
 
 	*JL_RVAL = JL_ARG(1);
 	return JS_TRUE;
@@ -900,9 +907,9 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( translation ) {
 
 	JL_USE(id);
-	JL_S_ASSERT_IS_ARRAY( *vp, "" );
+	JL_ASSERT_IS_ARRAY( *vp, "" );
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float pos[3];
 	uint32 len;
@@ -917,7 +924,7 @@ DEFINE_PROPERTY_GETTER( translation ) {
 
 	JL_USE(id);
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float pos[3];
 	Matrix44GetTranslation(pv->mat, &pos[0], &pos[1], &pos[2]);
@@ -935,7 +942,7 @@ DEFINE_NEW_RESOLVE() {
 	if (!JSVAL_IS_INT(id) || (flags & JSRESOLVE_ASSIGNING))
 		return JS_TRUE;
 	jsint slot = JSVAL_TO_INT( id );
-	JL_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
+	JL_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
 	JS_DefineProperty(cx, obj, (char*)slot, JSVAL_VOID, NULL, NULL, JSPROP_INDEX | JSPROP_SHARED );
 	*objp = obj;
 	return JS_TRUE;
@@ -962,8 +969,8 @@ DEFINE_GET_PROPERTY() {
 		return JS_TRUE;
 	jsint slot = JSID_IS_INT( id );
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_RANGE( slot, 0, 15, "[index]" );
 	JL_CHK( JL_NativeToJsval(cx, pv->mat->raw[slot], vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -977,9 +984,9 @@ DEFINE_SET_PROPERTY() {
 	jsint slot = JSID_IS_INT( id );
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_IS_NUMBER(*vp, "");
-	JL_S_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_IS_NUMBER(*vp, "");
+	JL_ASSERT_RANGE( slot, 0, 15, "[index]" );
 
 //	pv->mat->raw[slot] = JSVAL_IS_DOUBLE(*vp) ? JSVAL_TO_DOUBLE(*vp) : JSVAL_TO_INT(*vp);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &pv->mat->raw[slot]) );

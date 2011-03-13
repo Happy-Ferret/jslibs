@@ -41,7 +41,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( real ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	jsdouble val;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &val) );
 	*JL_RVAL = DOUBLE_TO_JSVAL(val);
@@ -57,7 +57,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Stringify ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 
 	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 
@@ -138,12 +138,12 @@ JLThreadFuncDecl ProcessEventThread( void *data ) {
 	for (;;) {
 
 		st = JLSemaphoreAcquire(ti->startSem, JLINFINITE);
-		JL_ASSERT(st);
+		ASSERT(st);
 		if ( ti->isEnd )
 			break;
-		JL_ASSERT( ti != NULL );
-		JL_ASSERT( ti->peSlot != NULL );
-		JL_ASSERT( ti->peSlot->startWait != NULL );
+		ASSERT( ti != NULL );
+		ASSERT( ti->peSlot != NULL );
+		ASSERT( ti->peSlot->startWait != NULL );
 		ti->peSlot->startWait(ti->peSlot);
 		ti->peSlot = NULL;
 		JLSemaphoreRelease(ti->signalEventSem);
@@ -157,21 +157,21 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	int st;
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
 
-	JL_S_ASSERT_ARG_RANGE( 1, (int)COUNTOF(mpv->processEventThreadInfo) );
+	JL_ASSERT_ARGC_RANGE( 1, (int)COUNTOF(mpv->processEventThreadInfo) );
 	ProcessEvent *peList[COUNTOF(mpv->processEventThreadInfo)]; // cache to avoid calling GetHandlePrivate() too often.
 
 	uintN i;
 	for ( i = 0; i < argc; ++i ) {
 
-		JL_S_ASSERT_ERROR_NUM( IsHandle(cx, JL_ARGV[i]), JLSMSG_EXPECT_TYPE, "process event Handle" );
+		JL_ASSERT_ARG_TYPE( IsHandle(cx, JL_ARGV[i]), i+1, "(pev) Handle" );
 		JSObject *pevObj = JSVAL_TO_OBJECT(JL_ARGV[i]);
-		JL_S_ASSERT_ERROR_NUM( IsHandleType(cx, pevObj, JL_CAST_CSTR_TO_UINT32("pev")), JLSMSG_LOGIC_ERROR, "invalid handle type" );
+		JL_ASSERT_ARG_TYPE( IsHandleType(cx, pevObj, JL_CAST_CSTR_TO_UINT32("pev")), i+1, "(pev) Handle" );
 		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, JL_ARGV[i]);
-		JL_S_ASSERT_ERROR_NUM( pe != NULL, JLSMSG_RUNTIME_ERROR, "invalid event handle" );
+		JL_ASSERT(  pe != NULL, E_ARG, E_NUM(i+1), E_STATE ); //JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_ANINVALID, E_NAME("pev Handle") );
 
-		JL_ASSERT( pe->startWait );
-		JL_ASSERT( pe->cancelWait );
-		JL_ASSERT( pe->endWait );
+		ASSERT( pe->startWait );
+		ASSERT( pe->cancelWait );
+		ASSERT( pe->endWait );
 		peList[i] = pe;
 	}
 
@@ -181,15 +181,15 @@ DEFINE_FUNCTION( ProcessEvents ) {
 		if ( ti->thread == 0 ) { // create the thread stuff, see jl_cmalloc in jslangModuleInit()
 
 			ti->startSem = JLSemaphoreCreate(0);
-			JL_ASSERT( JLSemaphoreOk(ti->startSem) );
+			ASSERT( JLSemaphoreOk(ti->startSem) );
 			ti->thread = JLThreadStart(ProcessEventThread, ti);
-			JL_ASSERT( JLThreadOk(ti->thread) );
+			ASSERT( JLThreadOk(ti->thread) );
 			JLThreadPriority(ti->thread, JL_THREAD_PRIORITY_HIGHEST);
 			ti->signalEventSem = mpv->processEventSignalEventSem;
 			ti->isEnd = false;
 		}
-		JL_ASSERT( ti->peSlot == NULL );
-		JL_ASSERT( ti->isEnd == false );
+		ASSERT( ti->peSlot == NULL );
+		ASSERT( ti->isEnd == false );
 
 		ti->peSlot = peList[i];
 		JLSemaphoreRelease(ti->startSem);
@@ -220,10 +220,10 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	for ( i = 0; i < argc; ++i ) {
 
 		st = JLSemaphoreAcquire(mpv->processEventSignalEventSem, JLINFINITE);
-		JL_ASSERT( st );
+		ASSERT( st );
 	}
 
-	JL_ASSERT( argc <= JSVAL_INT_BITS ); // bits
+	ASSERT( argc <= JSVAL_INT_BITS ); // bits
 	unsigned int events;
 	events = 0;
 	bool hasEvent;
@@ -253,8 +253,8 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 #ifdef DEBUG
 	for ( i = 0; i < argc; ++i )
-		JL_ASSERT( mpv->processEventThreadInfo[i].peSlot == NULL );
-	JL_ASSERT( JLSemaphoreAcquire(mpv->processEventSignalEventSem, 0) == JLTIMEOUT ); // else invalid state
+		ASSERT( mpv->processEventThreadInfo[i].peSlot == NULL );
+	ASSERT( JLSemaphoreAcquire(mpv->processEventSignalEventSem, 0) == JLTIMEOUT ); // else invalid state
 #endif // DEBUG
 
 	*JL_RVAL = INT_TO_JSVAL(events);
@@ -279,7 +279,7 @@ struct UserProcessEvent {
 	jsval callbackFunction;
 };
 
-JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
 void TimeoutStartWait( volatile ProcessEvent *pe ) {
 
@@ -323,12 +323,12 @@ JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 
 DEFINE_FUNCTION( TimeoutEvents ) {
 
-	JL_S_ASSERT_ARG_RANGE( 1, 2 );
+	JL_ASSERT_ARGC_RANGE( 1, 2 );
 
 	unsigned int timeout;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
 	if ( JL_ARG_ISDEF(2) )
-		JL_S_ASSERT_ARG_IS_FUNCTION(2);
+		JL_ASSERT_ARG_IS_FUNCTION(2);
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
@@ -337,7 +337,7 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 	upe->pe.endWait = TimeoutEndWait;
 	upe->timeout = timeout;
 	upe->cancel = JLEventCreate(false);
-	JL_ASSERT( JLEventOk(upe->cancel) );
+	ASSERT( JLEventOk(upe->cancel) );
 
 	if ( JL_ARG_ISDEF(2) && JL_ValueIsFunction(cx, JL_ARG(2)) ) {
 
@@ -355,42 +355,12 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 
 
 #ifdef DEBUG
-//#include "../jslang/blobPub.h"
-DEFINE_FUNCTION( jslang_test ) {
+
+DEFINE_FUNCTION( jslangTest ) {
 
 	JL_USE(argc);
-
-/*
-	float nvec[10];
-	jsuint realLen;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), nvec, COUNTOF(nvec), &realLen) );
-*/
-
-	bool b;
-
-	JS_ReportOutOfMemory(cx);
-	JS_ReportOutOfMemory(cx);
-//	jsval val = JL_ARG(1);
-	JSObject *obj = JS_THIS_OBJECT(cx,vp);
-
-	size_t __err = JLGetEIP(); size_t __pos = JLGetEIP(); ////////////////////////////////////////
-
-	//b = JL_JsidToJsval(cx, (jsid)vp, &val);
-	//b = JL_IsObjectObject(cx, obj);
-	//JL_NewBlobCopyN(cx, "123", 3, vp);
-	//b = JL_GetObjectProtoKey(cx, obj ) != 0;
-
-	_asm int 3;
-	JL_IsStringObject(cx, obj);
-
-	bad: ///////////////////////////////////////////////////////////////////////////////////
-	printf("code length: %d\n", JLGetEIP() - __pos - (__pos-__err));
-
-	*JL_RVAL = BOOLEAN_TO_JSVAL( b );
-
-//	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
-//	JL_BAD;
+	JL_BAD;
 }
 #endif // DEBUG
 
@@ -401,7 +371,7 @@ CONFIGURE_STATIC
 	BEGIN_STATIC_FUNCTION_SPEC
 
 		#ifdef DEBUG
-		FUNCTION( jslang_test )
+		FUNCTION( jslangTest )
 		#endif // DEBUG
 
 		FUNCTION_ARGC( real, 1 )

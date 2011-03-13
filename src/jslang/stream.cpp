@@ -41,7 +41,7 @@ inline JSBool PositionGet( JSContext *cx, JSObject *streamObj, size_t *position 
 
 JSBool StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount ) {
 
-	JL_S_ASSERT_CLASS(streamObj, JL_CLASS(Stream));
+	JL_ASSERT_CLASS(streamObj, JL_CLASS(Stream));
 
 	size_t position;
 	JL_CHK( PositionGet(cx, streamObj, &position) );
@@ -90,17 +90,15 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-	// JL_S_ASSERT_CONSTRUCTING(); // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
-	JL_S_ASSERT_THIS_CLASS();
-
-	JL_S_ASSERT_ARG_MIN( 1 );
-
-	JL_S_ASSERT( !JSVAL_IS_VOID(JL_ARG(1)) && !JSVAL_IS_NULL(JL_ARG(1)), "Invalid stream source." );
+	// JL_ASSERT_CONSTRUCTING(); // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
+	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_ARGC_MIN( 1 );
+//	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_STREAM_SOURCE, JL_ARG(1)) );
 	JL_CHK( PositionSet(cx, JL_OBJ, 0) );
 
-	JL_CHK( ReserveStreamReadInterface(cx, JL_OBJ) );
+	// JL_CHK( ReserveStreamReadInterface(cx, JL_OBJ) );
 	JL_CHK( SetStreamReadInterface(cx, JL_OBJ, StreamRead) );
 
 	return JS_TRUE;
@@ -116,8 +114,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	int amount;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
@@ -150,7 +148,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 
 	JL_USE(id);
 
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	size_t position;
 	JL_CHK( PositionGet(cx, obj, &position) );
 	return JL_NativeToJsval(cx, position, vp);
@@ -162,10 +160,11 @@ DEFINE_PROPERTY_SETTER( position ) {
 	JL_USE(id);
 	JL_USE(strict);
 
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	size_t position;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &position) );
-	JL_S_ASSERT( position >= 0, "Invalid stream position." );
+	JL_ASSERT( position >= 0, E_VALUE, E_MIN, E_NUM(0) );
+
 	JL_CHK( PositionSet(cx, obj, position) );
 	return JS_TRUE;
 	JL_BAD;
@@ -180,7 +179,7 @@ DEFINE_PROPERTY_GETTER( available ) {
 
 	JL_USE(id);
 
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) ); // use vp as a tmp variable
 	JSObject *srcObj;
 	if ( JSVAL_IS_OBJECT( *vp ) )
@@ -207,7 +206,7 @@ DEFINE_PROPERTY_GETTER( source ) {
 
 	JL_USE(id);
 
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
 	return JS_TRUE;
 	JL_BAD;

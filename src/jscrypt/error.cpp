@@ -120,8 +120,9 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ERROR_NUM( jl::JsvalIsSerializer(cx, JL_ARG(1)), JLSMSG_RUNTIME_ERROR, "invalid serializer object" );
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_TYPE( jl::JsvalIsSerializer(cx, JL_ARG(1)), 1, "Serializer" );
+
 	jl::Serializer *ser;
 	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
 
@@ -140,8 +141,9 @@ DEFINE_FUNCTION( _serialize ) {
 DEFINE_FUNCTION( _unserialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ERROR_NUM( jl::JsvalIsSerializer(cx, JL_ARG(1)), JLSMSG_RUNTIME_ERROR, "invalid unserializer object" );
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_TYPE( jl::JsvalIsUnserializer(cx, JL_ARG(1)), 1, "Unserializer" );
+
 	jl::Unserializer *unser;
 	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
 

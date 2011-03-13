@@ -134,7 +134,7 @@ LoadModule('jsiconv');
 
 	var conv = new Iconv('UTF-8', Iconv.jsUC, false, true);
 	QA.ASSERT_STR( conv.invalidChar, '?', 'default invalidChar' );
-	QA.ASSERT_EXCEPTION( function() { conv.invalidChar = '???' }, TypeError, 'invalid invalidChar' );
+	QA.ASSERT_EXCEPTION( function() { conv.invalidChar = '???' }, RangeError, 'invalid invalidChar' );
 	conv.invalidChar = '.';
 	QA.ASSERT_STR( conv.invalidChar, '.', 'new invalidChar' );
 

@@ -41,7 +41,7 @@ JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 #endif
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( disp );
+	JL_ASSERT_THIS_OBJECT_STATE( disp );
 
 	JSObject *funObj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp));
 	jsval dispidVal;
@@ -110,7 +110,7 @@ DEFINE_GET_PROPERTY() {
 	DISPPARAMS params;
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( disp );
+	JL_ASSERT_THIS_OBJECT_STATE( disp );
 
 	result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
 	VariantInit(result);
@@ -201,9 +201,9 @@ DEFINE_SET_PROPERTY() {
 	HRESULT hr;
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( disp );
+	JL_ASSERT_THIS_OBJECT_STATE( disp );
 
-	JL_ASSERT( JSID_IS_STRING( id ) );
+	ASSERT( JSID_IS_STRING( id ) );
 	const jschar *name;
 	JSString *idStr = JSID_TO_STRING(id);
 	name = JS_GetStringCharsZ(cx, idStr);
@@ -250,7 +250,7 @@ DEFINE_SET_PROPERTY() {
 
 		switch ( hr ) {
 			case DISP_E_BADPARAMCOUNT: // doc. An error return value that indicates that the number of elements provided to the method is different from the number of arguments accepted by the method.
-				JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "read-only property"); // (TBD) be more specific
+				JL_ERR( E_NAME(name), E_WRITE ); //JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "read-only property"); // (TBD) be more specific
 				return JS_TRUE;
 			//case DISP_E_PARAMNOTFOUND:
 			//	JL_REPORT_WARNING("Invalid argument %d.", argErr);
@@ -269,11 +269,11 @@ DEFINE_FUNCTION( FunctionList ) {
 
 	ITypeInfo *pTypeinfo = NULL;
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
-	JL_S_ASSERT_OBJECT_STATE( disp, JL_THIS_CLASS_NAME );
+	JL_ASSERT_OBJECT_STATE( disp, JL_THIS_CLASS_NAME );
 
 //	JSObject *memberList = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
 	JSObject *memberList = JS_NewObject(cx, NULL, NULL, NULL);
@@ -335,10 +335,10 @@ DEFINE_ITERATOR_OBJECT() {
 	UINT argErr = 0;
 	VARIANT result;
 
-	JL_S_ASSERT( !keysonly, "Only for each..in loop is supported." );
+	JL_CHKM( !keysonly, E_NAME("for...in"), E_NOTSUPPORTED ); // JL_ASSERT( !keysonly, "Only for each..in loop is supported." );
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( disp );
+	JL_ASSERT_THIS_OBJECT_STATE( disp );
 
 	VariantInit(&result);
 	hr = disp->Invoke(DISPID_NEWENUM, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD | DISPATCH_PROPERTYGET, &params, &result, &ex, &argErr);
@@ -355,7 +355,8 @@ DEFINE_ITERATOR_OBJECT() {
 	else
 	if ( V_VT(&result) == VT_DISPATCH )
 		punk = V_ISBYREF(&result) ? *V_DISPATCHREF(&result) : V_DISPATCH(&result);
-	JL_S_ASSERT( punk != NULL, "Invalid enum." );
+	
+	JL_ASSERT( punk != NULL, E_THISOBJ, E_STATE ); // JL_ASSERT( punk != NULL, "Invalid enum." );
 
 	hr = punk->QueryInterface(IID_IEnumVARIANT, (void**)&pEnum);
 

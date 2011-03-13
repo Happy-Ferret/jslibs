@@ -54,13 +54,14 @@ DEFINE_FINALIZE() {
 	if ( pv->stream.state != Z_NULL ) {
 
 		int status;
-		if ( pv->method == DEFLATE )
-			status = deflateEnd(&pv->stream);
-		else
-			status = inflateEnd(&pv->stream);
+		if ( pv->method == DEFLATE ) {
 
-		if ( status != Z_OK )
-			JL_REPORT_WARNING_NUM( JLSMSG_LIB_ERROR, "deflateEnd/inflateEnd"); //"Unable to finalize zlib stream (%s).", pv->stream.msg );
+			status = deflateEnd(&pv->stream);
+		} else {
+
+			status = inflateEnd(&pv->stream);
+		}
+		JL_ASSERT_WARN( status == Z_OK, E_OBJ, E_STR(JL_THIS_CLASS_NAME), E_FIN, E_COMMENT(pv->stream.msg) ); // "Unable to finalize zlib stream (%s).", pv->stream.msg );
 	}
 	JS_free(cx, pv);
 bad:
@@ -98,10 +99,10 @@ void jsz_free(voidpf opaque, voidpf address) NOTHROW {
 
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 
 	Private *pv;
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
@@ -119,9 +120,9 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT( pv->method == DEFLATE, "The second argument is overmuch for this method.");
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pv->level) );
-		JL_S_ASSERT( pv->level >= Z_NO_COMPRESSION && pv->level <= Z_BEST_COMPRESSION, "Invalid compression level." );
+		JL_ASSERT_ARG_VAL_RANGE( pv->level, Z_NO_COMPRESSION, Z_BEST_COMPRESSION, 1 );
+		JL_ASSERT_WARN( pv->method == DEFLATE, E_ARG, E_NUM(2), E_IGNORED ); // "The second argument is overmuch for this method."
 	} else {
 
 		pv->level = Z_DEFAULT_COMPRESSION; // default value
@@ -181,11 +182,11 @@ DEFINE_CALL() {
 	JL_DEFINE_CALL_FUNCTION_OBJ;
 
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 
 // prepare input data
@@ -225,7 +226,7 @@ DEFINE_CALL() {
 		//	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) ); (TBD) ???
 	}
 
-	JL_ASSERT( inputData.LengthOrZero() <= UINT_MAX );
+	ASSERT( inputData.LengthOrZero() <= UINT_MAX );
 	pv->stream.avail_in = (uInt)inputData.LengthOrZero();
 	pv->stream.next_in = (Bytef*)inputData.GetStrConstOrNull();
 
@@ -241,7 +242,7 @@ DEFINE_CALL() {
 
 //		length = JL_MAX( length, BufferGetOptimalLength(&resultBuffer) );
 
-		JL_ASSERT( length <= (uInt)-1 );
+		ASSERT( length <= (uInt)-1 );
 		pv->stream.avail_out = (uInt)length;
 		pv->stream.next_out = (Bytef*)BufferNewChunk(&resultBuffer, pv->stream.avail_out);
 
@@ -276,7 +277,7 @@ DEFINE_CALL() {
 		status = pv->method == DEFLATE ? deflateEnd(&pv->stream) : inflateEnd(&pv->stream); // free(stream) is done the Finalize
 		if ( status != Z_OK )
 			JL_CHK( ThrowZError(cx, status, pv->stream.msg) );
-		JL_S_ASSERT( pv->stream.state == Z_NULL, "Invalid state." );
+		JL_ASSERT( pv->stream.state == Z_NULL, E_THISOBJ, E_STATE );
 	}
 
 	return JS_TRUE;
@@ -303,7 +304,7 @@ DEFINE_PROPERTY_GETTER( idle ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.state == Z_NULL, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -321,7 +322,7 @@ DEFINE_PROPERTY_GETTER( adler32 ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.adler, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -338,7 +339,7 @@ DEFINE_PROPERTY_GETTER( lengthIn ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.total_in, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -355,7 +356,7 @@ DEFINE_PROPERTY_GETTER( lengthOut ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.total_out, vp) );
 	return JS_TRUE;
 	JL_BAD;

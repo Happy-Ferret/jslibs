@@ -46,11 +46,11 @@ DEFINE_CONSTRUCTOR() {
 
 	jsval trimeshVal;
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_RANGE(1, 3);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_RANGE(1, 3);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	ode::dSpaceID space;
 	if ( JL_ARG_ISDEF(2) ) { // place it in a space ?
@@ -63,11 +63,13 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	trimeshVal = JL_ARG(1);
-	JL_S_ASSERT( JL_JsvalIsTrimesh(cx, trimeshVal), "Invalid Trimesh object." );
+	JL_ASSERT( JL_JsvalIsTrimesh(cx, trimeshVal), E_ARG, E_NUM(1), E_TYPE, E_STR("Trimesh") );
+
 	JSObject *trimesh = JSVAL_TO_OBJECT(trimeshVal);
 	Surface *srf = GetTrimeshSurface(cx, trimesh);
-	JL_S_ASSERT_OBJECT_STATE( srf, JL_GetClassName(trimesh) );
-	JL_S_ASSERT( srf->vertex && srf->vertexCount && srf->index && srf->indexCount, "No enough data." );
+	JL_ASSERT_OBJECT_STATE( srf, JL_GetClassName(trimesh) );
+
+	JL_ASSERT( srf->vertex && srf->vertexCount && srf->index && srf->indexCount, E_ARG, E_NUM(1), E_SEP, E_DATASIZE, E_INVALID );
 
 	ode::dTriMeshDataID triMeshDataID = ode::dGeomTriMeshDataCreate();
 	ode::dGeomTriMeshDataBuildSingle(triMeshDataID, srf->vertex, 3 * sizeof(SURFACE_REAL_TYPE), srf->vertexCount, srf->index, srf->indexCount, 3 * sizeof(SURFACE_INDEX_TYPE));
@@ -99,7 +101,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( triangleCount ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( geomId );
+	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	int count = ode::dGeomTriMeshGetTriangleCount(geomId);
 	JL_CHK( JL_NativeToJsval(cx, count, vp) );
 	return JS_TRUE;

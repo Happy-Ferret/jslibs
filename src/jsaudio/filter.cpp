@@ -51,7 +51,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
@@ -79,7 +79,7 @@ DEFINE_FUNCTION( valueOf ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->filter, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
@@ -104,7 +104,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( type ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int filterType;
 	if ( JSVAL_IS_VOID(*vp) )
 		filterType = AL_FILTER_NULL;
@@ -119,7 +119,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 DEFINE_PROPERTY_GETTER( type ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int filterType;
 	alGetFilteri(pv->filter, AL_FILTER_TYPE, &filterType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -138,7 +138,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 DEFINE_PROPERTY_SETTER( filterFloat ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	float f;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &f) );
@@ -151,7 +151,7 @@ DEFINE_PROPERTY_SETTER( filterFloat ) {
 DEFINE_PROPERTY_GETTER( filterFloat ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	float f;
 	alGetFilterf(pv->filter, param, &f);

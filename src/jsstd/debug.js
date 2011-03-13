@@ -1,7 +1,33 @@
+LoadModule('jsstd'); 
+
 if ( 0 ) {
 
 	LoadModule('jsstd');
-	LoadModule('jsio');
+//	LoadModule('jsio');
+	
+	jsstdTest();
+
+
+//	var res = Function("var v = 567; return SandboxEval('Query()', function(val) v)")();
+//	Print(res);
+//	//QA.ASSERT( res, 567, 'SandboxEval result using Function( Query function )' );
+
+Halt();
+
+
+	var obj = { x:1 };
+	var res = SandboxEval('Query()', function(val) obj);
+	Print( res.x );
+	Halt();
+
+	
+	var buf = new Buffer();
+	var pack = new Pack(buf);
+
+	pack.WriteInt(9007199254740992, 8, true);
+	
+	
+	
 
 		SandboxEval('for (var i = 0; i < 100000; ++i);', undefined, 0);
 

@@ -59,10 +59,10 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JLStr name;
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	PRUintn count;
 	count = 0;
@@ -75,7 +75,8 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &mode) );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
-	JL_S_ASSERT( name.Length() < PATH_MAX, "Semaphore name too long." );
+	JL_ASSERT( name.Length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
+
 
 	bool isCreation;
 	isCreation = true;
@@ -120,9 +121,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Wait ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_CLASS();
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	PRStatus status;
 	status = PR_WaitSemaphore( pv->semaphore );
@@ -142,9 +144,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Post ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_CLASS();
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	PRStatus status;
 	status = PR_PostSemaphore( pv->semaphore );

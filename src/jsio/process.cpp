@@ -55,11 +55,11 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JLStr path;
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT( !JL_ARG_ISDEF(2) || JL_ValueIsArray(cx, JL_ARG(2)), "Invalid 2nd argument" );
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT( !JL_ARG_ISDEF(2) || JL_ValueIsArray(cx, JL_ARG(2)), E_ARG, E_NUM(2), E_TYPE, E_TY_ARRAY );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &path) );
 
@@ -75,7 +75,7 @@ DEFINE_CONSTRUCTOR() {
 		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(JL_ARG(2)) ); // make a kind of auto-ptr for this
 		processArgc = idArray->length +1; // +1 is argv[0]
 		processArgv = (const char**)alloca(sizeof(const char**) * (processArgc +1)); // +1 because the NULL list terminator.
-		JL_S_ASSERT_ALLOC( processArgv );
+		JL_ASSERT_ALLOC( processArgv );
 
 		for ( int i=0; i<processArgc -1; i++ ) { // -1 because argv[0]
 
@@ -91,7 +91,7 @@ DEFINE_CONSTRUCTOR() {
 
 		processArgc = 0 +1; // +1 is argv[0]
 		processArgv = (const char**)alloca(sizeof(const char**) * (processArgc +1)); // +1 is NULL
-		JL_S_ASSERT_ALLOC( processArgv );
+		JL_ASSERT_ALLOC( processArgv );
 	}
 
 	processArgv[0] = path.GetConstStrZ();
@@ -195,10 +195,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Wait ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(process);
+	JL_ASSERT_THIS_OBJECT_STATE(process);
 	PRInt32 exitValue;
 	JL_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
 	JL_SetPrivate(cx, obj, NULL);
@@ -216,10 +216,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Detach ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(process);
+	JL_ASSERT_THIS_OBJECT_STATE(process);
 	JL_CHK( PR_DetachProcess(process) == PR_SUCCESS );
 	JL_SetPrivate(cx, obj, NULL); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
 	*JL_RVAL = JSVAL_VOID;
@@ -236,10 +236,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Kill ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(process);
+	JL_ASSERT_THIS_OBJECT_STATE(process);
 	JL_CHK( PR_KillProcess(process) == PR_SUCCESS );
 	JL_SetPrivate(cx, obj, NULL); // Invalidates the current process pointer.
 	*JL_RVAL = JSVAL_VOID;
@@ -260,7 +260,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( stdin ) {
 
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -273,7 +273,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( stdout ) {
 
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -286,7 +286,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( stderr ) {
 
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, vp) );
 	return JS_TRUE;
 	JL_BAD;

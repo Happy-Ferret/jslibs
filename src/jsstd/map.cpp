@@ -59,7 +59,8 @@ DEFINE_CONSTRUCTOR() {
 		JSObject *srcObj;
 		JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &srcObj) );
 		JSObject *it = JS_NewPropertyIterator(cx, srcObj);
-		JL_S_ASSERT( it != NULL, "Unable to iterate the object." );
+		JL_ASSERT( it != NULL, E_ARG, E_NUM(1), E_OPERATION, E_COMMENT("iterator") );
+
 		JL_ARG(1) = OBJECT_TO_JSVAL(it); // protect against GC
 		for (;;) {
 

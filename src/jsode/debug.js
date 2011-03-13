@@ -1,3 +1,12 @@
+LoadModule('jsstd');
+LoadModule('jsode');
+
+var j = new JointGroup();
+
+j.Destroy();
+
+Halt();
+
 
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
@@ -8,6 +17,7 @@ LoadModule('jsode');
 
 LoadModule('jsstd');
 Exec('../common/tools.js');
+
 
 var w = new World();
 w.gravity = [0,0,-9.809];

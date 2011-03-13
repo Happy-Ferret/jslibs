@@ -39,6 +39,8 @@ $TOC_MEMBER $INAME
   Constructs a new B/W Cursor object. using a RGB or RGBA image.
   Only the red component is used for B/W (<128: black, >= 128: white)
   The Alpha component is used to set transparents pixels (alpha == 0) an inverted pixels (alpha == 255).
+  $H beware
+   cursor width must be a multiple of 8.
   $H arguments
    $ARG ImageObject image
 **/
@@ -46,14 +48,14 @@ DEFINE_CONSTRUCTOR() {
 
 	JLStr buffer;
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 	
 	JSObject *imageObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-	int sWidth, sHeight, sChannels;
+	unsigned int sWidth, sHeight, sChannels;
 	JL_CHK( JL_GetProperty(cx, imageObj, "width", &sWidth) );
 	JL_CHK( JL_GetProperty(cx, imageObj, "height", &sHeight) );
 	JL_CHK( JL_GetProperty(cx, imageObj, "channels", &sChannels) );
@@ -65,10 +67,9 @@ DEFINE_CONSTRUCTOR() {
 	bufferLength = buffer.Length();
 	sBuffer = (const unsigned char*)buffer.GetConstStr();
 
-	JL_S_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, "Invalid image format." );
-
-	JL_S_ASSERT( sWidth % 8 == 0, "The cursor width must be a multiple of 8.");
-	JL_S_ASSERT( sChannels == 3 || sChannels == 4, "Invalid image format (need RGB or RGBA).");
+	JL_ASSERT( sWidth % 8 == 0, E_ARG, E_NUM(1), E_FORMAT ); // "The cursor width must be a multiple of 8."
+	JL_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, E_ARG, E_NUM(1), E_FORMAT );
+	JL_ASSERT( sChannels == 3 || sChannels == 4, E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(3, 4) );
 
 	int length = sWidth * sHeight;
 

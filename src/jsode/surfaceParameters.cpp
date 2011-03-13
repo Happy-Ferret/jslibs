@@ -37,7 +37,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	ode::dSurfaceParameters *pv = (ode::dSurfaceParameters*)JS_malloc(cx, sizeof(ode::dSurfaceParameters));
@@ -96,7 +96,7 @@ enum { mu, mu2, fDir1, bounce, bounceVel, softERP, softCFM, motion1, motion2, mo
 DEFINE_PROPERTY_GETTER( surface ) {
 
 	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(surface); // (TBD) check if NULL is meaningful for joints !
+	JL_ASSERT_THIS_OBJECT_STATE(surface); // (TBD) check if NULL is meaningful for joints !
 	
 	*vp = JSVAL_VOID;
 	switch ( JSID_TO_INT(id) ) {
@@ -155,7 +155,7 @@ DEFINE_PROPERTY_GETTER( surface ) {
 DEFINE_PROPERTY_SETTER( surface ) {
 
 	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(surface); // (TBD) check if NULL is meaningful for joints !
+	JL_ASSERT_THIS_OBJECT_STATE(surface); // (TBD) check if NULL is meaningful for joints !
 
 	ode::dReal value;
 	bool set;

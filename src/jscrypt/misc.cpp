@@ -38,8 +38,8 @@ DEFINE_FUNCTION( Base64Encode ) {
 	JLStr in;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_IS_STRING(1);
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_STRING(1);
 
 //	const char *in;
 //	size_t inLength;
@@ -61,7 +61,7 @@ DEFINE_FUNCTION( Base64Encode ) {
 	JSString *jssOutData;
 	//jssOutData = JL_NewString( cx, out, outLength );
 	jssOutData = JLStr(out, outLength, true).GetJSString(cx);
-	JL_S_ASSERT_ALLOC( jssOutData ); // "unable to create the base64 string."
+	JL_ASSERT_ALLOC( jssOutData ); // "unable to create the base64 string."
 	*JL_RVAL = STRING_TO_JSVAL(jssOutData);
 
 	return JS_TRUE;
@@ -77,8 +77,8 @@ DEFINE_FUNCTION( Base64Decode ) {
 
 	JLStr in;
 
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_IS_STRING(1);
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_STRING(1);
 //	const char *in;
 //	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
@@ -114,9 +114,9 @@ DEFINE_FUNCTION( HexEncode ) {
 
 	JLStr data;
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
-	JL_S_ASSERT_ARG_IS_STRING(1);
+	JL_ASSERT_ARG_IS_STRING(1);
 
 	const char *in;
 	size_t inLength;
@@ -143,7 +143,7 @@ DEFINE_FUNCTION( HexEncode ) {
 	JSString *jssOutData;
 	//jssOutData = JL_NewString( cx, out, outLength );
 	jssOutData = JLStr(out, outLength, true).GetJSString(cx);
-	JL_S_ASSERT_ALLOC( jssOutData ); // "unable to create the hex string."
+	JL_ASSERT_ALLOC( jssOutData ); // "unable to create the hex string."
 	*JL_RVAL = STRING_TO_JSVAL(jssOutData);
 
 	return JS_TRUE;
@@ -172,8 +172,8 @@ DEFINE_FUNCTION( HexDecode ) {
 
 	JLStr data;
 
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_IS_STRING(1);
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_STRING(1);
 
 	const char *in;
 	size_t inLength;

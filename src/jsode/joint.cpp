@@ -33,8 +33,7 @@ void FinalizeJoint(JSContext *cx, JSObject *obj) {
 
 JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
 
-	JL_S_ASSERT( ode::dJointGetData(jointId) == NULL, "Invalid case (object not finalized)." );
-	JL_S_ASSERT( jointId != NULL, "Invalid ode object." );
+	JL_ASSERT( jointId != NULL && ode::dJointGetData(jointId) == NULL, E_MODULE, E_INTERNAL, E_SEP, E_STR(JL_CLASS_NAME(Joint)), E_STATE );
 
 	switch( ode::dJointGetType(jointId) ) {
 		case ode::dJointTypeBall:
@@ -65,7 +64,7 @@ JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) 
 			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(JointPlane), JL_PROTOTYPE(cx, JointPlane), NULL);
 			break;
 		default:
-			JL_ASSERT(false);
+			ASSERT(false);
 	}
 
 	ode::dJointSetData(jointId, *obj);
@@ -118,9 +117,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Destroy ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
+
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( jointId );
+	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	JS_free(cx, ode::dJointGetFeedback(jointId)); // NULL is supported
 	JL_SetPrivate(cx, obj, NULL);
 	ode::dJointDestroy(jointId);
@@ -134,9 +134,9 @@ DEFINE_FUNCTION( Destroy ) {
 DEFINE_FUNCTION( GetBody ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( jointId );
+	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 	int index;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &index) );
 	if ( index < 0 || index >= ode::dJointGetNumBodies(jointId) ) {
@@ -162,25 +162,25 @@ DEFINE_FUNCTION( GetBody ) {
 /*
 DEFINE_FUNCTION( Attach ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
-	JL_S_ASSERT( IsInstanceOf(cx, obj, thisClass), RT_ERROR_INVALID_CLASS );
+	JL_ASSERT_ARGC_MIN(2);
+	JL_ASSERT( IsInstanceOf(cx, obj, thisClass), RT_ERROR_INVALID_CLASS );
 
 	ode::dJointID jointID = (ode::dJointID)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT( jointID != NULL, RT_ERROR_NOT_INITIALIZED );
+	JL_ASSERT( jointID != NULL, RT_ERROR_NOT_INITIALIZED );
 
 	JSObject *body1Object, *body2Object;
 
 	JS_ValueToObject(cx, argv[0], &body1Object);
-	JL_S_ASSERT_CLASS(body1Object, &classBody);
+	JL_ASSERT_CLASS(body1Object, &classBody);
 	JL_SetReservedSlot(cx, obj, JOINT_SLOT_BODY1, argv[0]);
 	ode::dBodyID bodyID1 = (ode::dBodyID)JL_GetPrivate(cx, body1Object);
-//	JL_S_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
+//	JL_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
 
 	JS_ValueToObject(cx, argv[1], &body2Object);
-	JL_S_ASSERT_CLASS(body2Object, &classBody);
+	JL_ASSERT_CLASS(body2Object, &classBody);
 	JL_SetReservedSlot(cx, obj, JOINT_SLOT_BODY2, argv[1]);
 	ode::dBodyID bodyID2 = (ode::dBodyID)JL_GetPrivate(cx, body2Object);
-//	JL_S_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
+//	JL_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
 
 	ode::dJointAttach(jointID, bodyID1, bodyID2);
 	return JS_TRUE;
@@ -269,8 +269,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( body1 ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
+
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( jointId );
+	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	ode::dBodyID bodyId;
 	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
 	ode::dJointAttach(jointId, bodyId, ode::dJointGetBody(jointId, 1));
@@ -280,8 +282,10 @@ DEFINE_PROPERTY_SETTER( body1 ) {
 
 DEFINE_PROPERTY_GETTER( body1 ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
+
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( jointId );
+	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	ode::dBodyID bodyId = ode::dJointGetBody(jointId, 0);
 	if ( bodyId )
 		BodyToJsval(cx, bodyId, vp);
@@ -299,8 +303,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( body2 ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
+
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( jointId );
+	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	ode::dBodyID bodyId;
 	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
 	ode::dJointAttach(jointId, ode::dJointGetBody(jointId, 0), bodyId);
@@ -310,8 +316,10 @@ DEFINE_PROPERTY_SETTER( body2 ) {
 
 DEFINE_PROPERTY_GETTER( body2 ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
+
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( jointId );
+	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	ode::dBodyID bodyId = ode::dJointGetBody(jointId, 1);
 	if ( bodyId )
 		BodyToJsval(cx, bodyId, vp);
@@ -330,8 +338,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( disabled ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
+
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( jointId );
+	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	bool disabled;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &disabled) );
 	if ( disabled )
@@ -344,8 +354,10 @@ DEFINE_PROPERTY_SETTER( disabled ) {
 
 DEFINE_PROPERTY_GETTER( disabled ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
+
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( jointId );
+	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dJointIsEnabled(jointId) == 0, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -363,7 +375,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( useFeedback ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( jointId );
+	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 	ode::dJointFeedback *currentFeedback = ode::dJointGetFeedback(jointId);
@@ -389,8 +401,10 @@ DEFINE_PROPERTY_SETTER( useFeedback ) {
 
 DEFINE_PROPERTY_GETTER( useFeedback ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
+
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( jointId );
+	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetFeedback(jointId) != NULL, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -418,10 +432,12 @@ enum { body1Force, body1Torque, body2Force, body2Torque };
 
 DEFINE_PROPERTY_SETTER( feedbackVector ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
+
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( jointId );
+	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
-	JL_S_ASSERT( feedback != NULL, "Feedback is disabled." );
+	JL_ASSERT( feedback != NULL, E_STR("feedback"), E_DISABLED );
 	uint32 length;
 	IFDEBUG( length = 0; ) // avoid "potentially uninitialized local variable" warning
 
@@ -439,7 +455,7 @@ DEFINE_PROPERTY_SETTER( feedbackVector ) {
 			JL_CHK( JL_JsvalToODERealVector(cx, *vp, feedback->t2, 3, &length) );
 			break;
 	}
-	JL_S_ASSERT( length >= 3, "Invalid array size." );
+	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -447,10 +463,12 @@ DEFINE_PROPERTY_SETTER( feedbackVector ) {
 
 DEFINE_PROPERTY_GETTER( feedbackVector ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
+
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( jointId );
+	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
-	JL_S_ASSERT( feedback != NULL, "Feedback is disabled." );
+	JL_ASSERT( feedback != NULL, E_STR("feedback"), E_DISABLED );
 	switch(JSID_TO_INT(id)) {
 		case body1Force:
 			JL_CHK( ODERealVectorToJsval(cx, feedback->f1, 3, vp) );
@@ -541,8 +559,9 @@ enum {
 
 DEFINE_PROPERTY_SETTER( jointParam ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dReal value;
 	JL_CHK( JL_JsvalToODEReal(cx, *vp, &value) );
 	JointSetParam(jointId, JSID_TO_INT(id), value);
@@ -552,8 +571,9 @@ DEFINE_PROPERTY_SETTER( jointParam ) {
 
 DEFINE_PROPERTY_GETTER( jointParam ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSID_TO_INT(id)), vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -562,8 +582,9 @@ DEFINE_PROPERTY_GETTER( jointParam ) {
 
 DEFINE_PROPERTY_SETTER( jointParam1 ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dReal real;
 	JL_CHK( JL_JsvalToODEReal(cx, *vp, &real) );
 	JointSetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup2, real);
@@ -573,8 +594,9 @@ DEFINE_PROPERTY_SETTER( jointParam1 ) {
 
 DEFINE_PROPERTY_GETTER( jointParam1 ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup2), vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -583,8 +605,9 @@ DEFINE_PROPERTY_GETTER( jointParam1 ) {
 
 DEFINE_PROPERTY_SETTER( jointParam2 ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dReal real;
 	JL_CHK( JL_JsvalToODEReal(cx, *vp, &real) );
 	JointSetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup3, real);
@@ -594,8 +617,9 @@ DEFINE_PROPERTY_SETTER( jointParam2 ) {
 
 DEFINE_PROPERTY_GETTER( jointParam2 ) {
 
+	JL_ASSERT_INHERITANCE(obj, JL_THIS_CLASS);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup3), vp) );
 	return JS_TRUE;
 	JL_BAD;

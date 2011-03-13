@@ -103,19 +103,19 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	for ( size_t i = 0; i < COUNTOF(cipherList); i++ ) {
 
 		regStatus = register_cipher(cipherList[i]);
-		JL_S_ASSERT_ERROR_NUM( regStatus != -1, JLSMSG_INIT_FAIL, cipherList[i]->name );
+		JL_CHKM( regStatus != -1, E_STR("cipher"), E_COMMENT(cipherList[i]->name), E_INIT );
 	}
 
 	for ( size_t i = 0; i < COUNTOF(hashList); i++ ) {
 
 		regStatus = register_hash(hashList[i]);
-		JL_S_ASSERT_ERROR_NUM( regStatus != -1, JLSMSG_INIT_FAIL, hashList[i]->name );
+		JL_CHKM( regStatus != -1, E_STR("hash"), E_COMMENT(hashList[i]->name), E_INIT );
 	}
 
 	for ( size_t i = 0; i < COUNTOF(prngList); i++ ) {
 
 		regStatus = register_prng(prngList[i]);
-		JL_S_ASSERT_ERROR_NUM( regStatus != -1, JLSMSG_INIT_FAIL, prngList[i]->name );
+		JL_CHKM( regStatus != -1, E_STR("PRNG"), E_COMMENT(prngList[i]->name), E_INIT );
 	}
 
 	INIT_STATIC();

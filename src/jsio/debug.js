@@ -1,17 +1,28 @@
-if ( 0 ) {
+if ( 10 ) {
 
 	LoadModule('jsstd');
 	LoadModule('jsio');
+	LoadModule('jswinshell');
+	
+	var tmp = Descriptor.Close;
+	tmp();
+	
+	Halt();
 
 /*	
 	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments)', '123', '-c']);
 	var res = process.stdout.Read();
 	Print( res ==  "_host.stdout(arguments),123,-c");
 */
-	Print( new File('debug.js').content, '\n' );
+
+	var f = new File('c:/MSDOS.SYS').Open('r');
+	
+	Print( f.id.quote() );
 
 	throw 0;
 }
+
+
 
 LoadModule('jsstd');  LoadModule('jsio');
 //RunJsircbot(false); throw 0;
@@ -20,7 +31,7 @@ Exec('../common/tools.js');
 //Exec('../../qaexp.js');  throw 0;
 //var QA = FakeQAApi;  RunLocalQAFile();
 //RunSavedQAFile('../../exitissue');
-RunQATests('-exclude jstask -rep 1 read.pipe');
+RunQATests('-exclude jstask -rep 1 jsio');
 
 
 

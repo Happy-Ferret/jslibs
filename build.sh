@@ -91,4 +91,8 @@ fi
 
 endTime=$((`date +%s`))
 
+editbin.exe //REBASE $DEST_DIR/*.dll >> $LOGFILE
+
+editbin.exe //REBASE $DEST_DIR/*.dll >> $LOGFILE
+
 echo Build done in $(($endTime-$startTime))s.

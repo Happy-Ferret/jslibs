@@ -50,8 +50,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Expand ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-
 	typedef struct {
 		const jschar *chars;
 		size_t count;
@@ -59,9 +57,14 @@ DEFINE_FUNCTION( Expand ) {
 	} Chunk;
 
 	jl::Stack<Chunk, jl::StaticAllocMedium> stack;
-	jsval value;
 
 	JLStr srcStr;
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_ARGC_RANGE(1, 2);
+
+	jsval value;
+
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
 
 	JSObject *mapObj = NULL;
@@ -202,7 +205,7 @@ $TOC_MEMBER $INAME
 ** /
 DEFINE_FUNCTION( SwitchCase ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	if ( argc <= 2 ) {
 		
@@ -237,10 +240,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SwitchCase ) {
 
-	JL_S_ASSERT_ARG_RANGE( 3, 4 );
+	JL_ASSERT_ARGC_RANGE( 3, 4 );
 
-	JL_S_ASSERT_ARG_IS_ARRAY(2);
-	JL_S_ASSERT_ARG_IS_ARRAY(3);
+	JL_ASSERT_ARG_IS_ARRAY(2);
+	JL_ASSERT_ARG_IS_ARRAY(3);
 
 	JSObject *caseArray;
 	jsuint caseArrayLength;
@@ -307,8 +310,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DeepFreezeObject ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 	//JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &obj) );
 	*JL_RVAL = JSVAL_VOID;
 	return JS_DeepFreezeObject(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
@@ -324,8 +327,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CountProperties ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JSIdArray *arr;
 	arr = JS_Enumerate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
@@ -357,8 +360,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ClearObject ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 	JS_ClearScope(cx, JSVAL_TO_OBJECT( JL_ARG(1) ));
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -423,7 +426,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SetScope ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_COUNT(2);
 	JSObject *o, *p;
 	JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &o) ); // o = JSVAL_TO_OBJECT(JL_ARG(1));
 	JL_CHK( JS_ValueToObject(cx, JL_ARG(2), &p) ); // p = JSVAL_TO_OBJECT(JL_ARG(2));
@@ -476,8 +479,8 @@ JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 
 DEFINE_FUNCTION( ObjectToId ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *obj;
 	obj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
@@ -539,8 +542,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IdToObject ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER_NUMBER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER_NUMBER(1);
 
 	unsigned int id;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &id) );
@@ -573,6 +576,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsBoolean ) {
 
+	JL_ASSERT_ARG_COUNT(1);
+
 	if ( JSVAL_IS_BOOLEAN(JL_ARG(1)) ) {
 
 		*JL_RVAL = JSVAL_TRUE;
@@ -587,7 +592,9 @@ DEFINE_FUNCTION( IsBoolean ) {
 
 	*JL_RVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Boolean) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -597,6 +604,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsNumber ) {
 
+	JL_ASSERT_ARG_COUNT(1);
 	if ( JSVAL_IS_NUMBER(JL_ARG(1)) ) {
 
 		*JL_RVAL = JSVAL_TRUE;
@@ -611,6 +619,7 @@ DEFINE_FUNCTION( IsNumber ) {
 
 	*JL_RVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Number) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -622,9 +631,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( IsPrimitive ) {
 
 	JL_USE(cx);
-
+	JL_ASSERT_ARG_COUNT(1);
 	*JL_RVAL = JSVAL_IS_PRIMITIVE(JL_ARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -637,9 +647,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( IsFunction ) {
 
 	JL_USE(cx);
-
+	JL_ASSERT_ARG_COUNT(1);
 	*JL_RVAL = VALUE_IS_FUNCTION(cx, JL_ARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -651,6 +662,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsGenerator ) {
 
+	JL_ASSERT_ARG_COUNT(1);
 	if ( !JSVAL_IS_OBJECT(JL_ARG(1)) ) {
 
 		*JL_RVAL = JSVAL_FALSE;
@@ -675,7 +687,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Warning ) {
 
 	JLStr str;
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 //	const char *message;
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
@@ -706,7 +718,7 @@ DEFINE_FUNCTION( Assert ) {
 	if ( !JL_IS_SAFE )
 		return JS_TRUE;
 
-	JL_S_ASSERT_ARG_RANGE(1,2);
+	JL_ASSERT_ARGC_RANGE(1,2);
 
 	// see. js_DecompileValueGenerator  (http://infomonkey.cdleary.com/questions/144/how-to-get-the-script-text-code-at-runtime)
 
@@ -771,7 +783,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Sleep ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	unsigned int time;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &time) );
 	SleepMilliseconds(time);
@@ -827,7 +839,7 @@ DEFINE_FUNCTION( StringRepeat ) {
 
 	JLStr str;
 
-	JL_S_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_COUNT(2);
 
 	size_t count;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &count) );
@@ -857,7 +869,7 @@ DEFINE_FUNCTION( StringRepeat ) {
 
 	jschar *newBuf;
 	newBuf = static_cast<jschar*>(jl_malloc(sizeof(jschar) * (newLen +1)));
-	JL_S_ASSERT_ALLOC( newBuf );
+	JL_ASSERT_ALLOC( newBuf );
 	newBuf[newLen] = 0;
 	
 	const jschar *buf;
@@ -940,7 +952,7 @@ DEFINE_FUNCTION( Exec ) {
 	JLStr str;
 	JSObject *scriptObjRoot;
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_RANGE(1, 2);
+	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	bool useAndSaveCompiledScripts;
 	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || JL_ARG(2) == JSVAL_TRUE;
@@ -1071,7 +1083,7 @@ JSBool SandboxMaxOperationCallback(JSContext *cx) {
 
 		JSOperationCallback tmp = JS_SetOperationCallback(cx, NULL);
 		ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), JL_CLASS_NAME(OperationLimit));
-		JL_ASSERT( cpc );
+		ASSERT( cpc );
 		JSCrossCompartmentCall *ccc;
 		ccc = JS_EnterCrossCompartmentCall(cx, cpc->proto);
 		JL_CHK( ccc );
@@ -1110,10 +1122,9 @@ JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
 	} else {
 
 		JSObject *obj = JS_THIS_OBJECT(cx, vp);
-		JL_ASSERT( obj != NULL );
+		ASSERT( obj != NULL );
 		JL_CHK( JS_CallFunctionValue(cx, obj, pv->queryFunctionValue, JL_ARGC, JL_ARGV, JL_RVAL) );
-		if ( !JSVAL_IS_PRIMITIVE(*JL_RVAL) )
-			JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "primitive return value");
+		JL_CHKM( JSVAL_IS_PRIMITIVE(*JL_RVAL), E_RETURNVALUE, E_TYPE, E_TY_PRIMITIVE );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -1122,7 +1133,7 @@ JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 DEFINE_FUNCTION( SandboxEval ) {
 
-	JL_S_ASSERT_ARG_RANGE(1, 3);
+	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	SandboxContextPrivate pv;
 
@@ -1135,7 +1146,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_ARG_IS_FUNCTION(2);
+		JL_ASSERT_ARG_IS_FUNCTION(2);
 		pv.queryFunctionValue = JL_ARG(2);
 	} else {
 
@@ -1193,7 +1204,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 
 	JSOperationCallback tmp;
 	tmp = JS_SetOperationCallback(cx, pv.prevOperationCallback);
-	JL_ASSERT( tmp == SandboxMaxOperationCallback );
+	ASSERT( tmp == SandboxMaxOperationCallback );
 
 	JS_LeaveCrossCompartmentCall(ccc);
 
@@ -1208,8 +1219,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 
 	if ( ok )
 		return JS_WrapValue(cx, vp);
-	if ( !JL_IsExceptionPending(cx) )
-		JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "exception is expected");
+	ASSERT( JL_IsExceptionPending(cx) ); // JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "exception is expected");
 	JL_BAD;
 }
 
@@ -1220,7 +1230,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_ARG_IS_FUNCTION(2);
+		JL_ASSERT_ARG_IS_FUNCTION(2);
 		pv.queryFunctionValue = JL_ARG(2);
 		JL_CHK( JS_DefineFunction(scx, globalObject, "Query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
 	} else {
@@ -1284,7 +1294,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 	JLSemaphoreFree(&pv.semEnd);
 
 	prev = JS_SetOperationCallback(scx, prev);
-	JL_S_ASSERT( prev == SandboxMaxOperationCallback, "Invalid SandboxMaxOperationCallback handler." );
+	JL_ASSERT( prev == SandboxMaxOperationCallback, "Invalid SandboxMaxOperationCallback handler." );
 
 	JL_CHK( JS_DeleteProperty(scx, globalObject, "Query") );
 
@@ -1344,7 +1354,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 
 	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 
 	//const char *buffer;
 	//size_t length;
@@ -1367,7 +1377,7 @@ DEFINE_FUNCTION( Halt ) {
 	JL_USE(vp);
 	JL_USE(argc);
 
-	JL_REPORT_ERROR_NUM( JLSMSG_PROGRAM_STOPPED);
+	JL_ERR(E_STR("the program has been stopped"));
 bad:	
 	return JS_FALSE;
 }
@@ -1448,16 +1458,16 @@ DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME
   if $TRUE if the current function is being called as a constructor.
-**/
+** /
 DEFINE_PROPERTY_GETTER( isConstructing ) {
 
 	JL_USE(id);
 	JL_USE(obj);
 
-	*vp = BOOLEAN_TO_JSVAL( JS_IsConstructing(cx, vp) );
+	*vp = BOOLEAN_TO_JSVAL( JS_IsConstructing(cx, vp) ); // JS_IsConstructing must be called in a function
 	return JS_TRUE;
 }
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -1552,10 +1562,7 @@ JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 //	JL_BAD;
 }
 
-
-DEFINE_FUNCTION( Test ) {
-
-	JL_USE(argc);
+DEFINE_FUNCTION( jsstdTest ) {
 
 /*
 	JSXDRState *xdr1 = JS_XDRNewMem(cx, JSXDR_ENCODE);
@@ -1587,14 +1594,9 @@ DEFINE_FUNCTION( Test ) {
 	str[1] = 0;
 	*JL_RVAL = STRING_TO_JSVAL( JS_NewUCString(cx, str, 1) );
 */	
-	
-	for ( int i = 0; i < 100; i++ ) {
-
-		char *data = (char*)jl_calloc(1, 10 * sizeof(char));
-		JL_NewBlob(cx, data, 10, JL_RVAL);
-	}
 
 	return JS_TRUE;
+	JL_BAD;
 }
 
 #endif // _DEBUG
@@ -1642,18 +1644,18 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( Assert, 2 )
 		FUNCTION_ARGC( Halt, 0 )
 #ifdef _DEBUG
-		FUNCTION( Test )
+		FUNCTION( jsstdTest )
 #endif // _DEBUG
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_READ( currentFilename )
 		PROPERTY_READ( currentLineNumber )
-		PROPERTY_READ( isConstructing )
+//		PROPERTY_READ( isConstructing )
 		PROPERTY( disableGarbageCollection )
 		PROPERTY_READ( CPUID )
 #ifdef _DEBUG
-//		PROPERTY( testProp )
+//		PROPERTY( jsstdPropTest )
 #endif // _DEBUG
 	END_STATIC_PROPERTY_SPEC
 

@@ -29,11 +29,11 @@ struct WorldPrivate {
 
 ALWAYS_INLINE JSBool JL_JsvalToWorldID( JSContext *cx, jsval val, ode::dWorldID *worldId ) {
 
-	JL_S_ASSERT_IS_OBJECT(val, JL_CLASS_NAME(World));
+	JL_ASSERT_IS_OBJECT(val, JL_CLASS_NAME(World));
 	JSObject *worldObject = JSVAL_TO_OBJECT(val);
-	JL_S_ASSERT_CLASS(worldObject, JL_CLASS(World));
+	JL_ASSERT_CLASS(worldObject, JL_CLASS(World));
 	*worldId = ((WorldPrivate*)JL_GetPrivate(cx, worldObject))->worldId;
-	JL_CHKM( *worldId, "Invalid world object." );
+	JL_ASSERT( *worldId, E_OBJ, E_STR(JL_CLASS_NAME(World)), E_INVALID ); // "Invalid world object."
 	return JS_TRUE;
 	JL_BAD;
 }

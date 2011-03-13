@@ -212,7 +212,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetVideoModeList ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_ASSERT_ARGC_MIN(2);
 
 	const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo(); // If called before SDL_SetVideoMode(), 'vfmt' is the pixel format of the "best" video mode.
 	SDL_PixelFormat format;
@@ -324,7 +324,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SetVideoMode ) {
 
-	JL_S_ASSERT_ARG_RANGE(0,4);
+	JL_ASSERT_ARGC_RANGE(0,4);
 
 	int width, height, bpp;
 	Uint32 flags;
@@ -485,7 +485,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 		return JS_TRUE;
 	}
 
-	JL_S_ASSERT_IS_OBJECT(image, "");
+	JL_ASSERT_IS_OBJECT(image, "");
 
 	JSObject *imageObj = JSVAL_TO_OBJECT( image );
 	int sWidth, sHeight, sChannels;
@@ -493,14 +493,13 @@ DEFINE_PROPERTY_SETTER( icon ) {
 	JL_CHK( JL_GetProperty(cx, imageObj, "height", &sHeight) );
 	JL_CHK( JL_GetProperty(cx, imageObj, "channels", &sChannels) );
 
-	JL_S_ASSERT( sChannels == 3 || sChannels == 4, "Unsupported image format." );
-
 	//const char *sBuffer;
 	//size_t bufferLength;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &image, &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
 	JL_CHK( JL_JsvalToNative(cx, image, &buffer) );
 
-	JL_S_ASSERT( buffer.Length() == (size_t)(sWidth * sHeight * sChannels * 1), "Invalid image format." );
+	JL_ASSERT( buffer.Length() == (size_t)(sWidth * sHeight * sChannels * 1), E_ARG, E_NUM(1), E_FORMAT );
+	JL_ASSERT( sChannels == 3 || sChannels == 4, E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(3, 4) );
 
 	Uint32 rmask, gmask, bmask, amask;
 
@@ -593,7 +592,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SetGamma ) {
 
-	JL_S_ASSERT_ARG_MIN(3);
+	JL_ASSERT_ARGC_MIN(3);
 	float r,g,b;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &r) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &g) );
@@ -615,7 +614,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GlSwapBuffers ) {
 
-	JL_S_ASSERT_ARG_RANGE(0,1);
+	JL_ASSERT_ARGC_RANGE(0,1);
 	bool async;
 	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &async) );
@@ -646,7 +645,7 @@ DEFINE_FUNCTION( GlSetAttribute ) {
 
 	int attr;
 	int value;
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_ASSERT_ARGC_MIN(2);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &attr) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &value) );
 	if ( SDL_GL_SetAttribute((SDL_GLattr)attr, value) == -1 )
@@ -671,7 +670,7 @@ DEFINE_FUNCTION( GlGetAttribute ) {
 
 	int attr;
 	int value;
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_ASSERT_ARGC_MIN(2);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &attr) );
 	if ( SDL_GL_GetAttribute((SDL_GLattr)attr, &value) == -1 )
 		return ThrowSdlError(cx);
@@ -776,12 +775,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SetCursor ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *cursorObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-	JL_S_ASSERT_CLASS( cursorObj, JL_CLASS(Cursor) );
+	JL_ASSERT_CLASS( cursorObj, JL_CLASS(Cursor) );
 	SDL_Cursor *cursor = (SDL_Cursor *)JL_GetPrivate(cx, cursorObj);
-	JL_S_ASSERT_OBJECT_STATE( cursor, JL_CLASS_NAME(Cursor) );
+	JL_ASSERT_OBJECT_STATE( cursor, JL_CLASS_NAME(Cursor) );
 	SDL_SetCursor(cursor);
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -852,7 +851,7 @@ DEFINE_FUNCTION( PollEvent ) {
 	if ( JL_ARG_ISDEF(1) ) {
 		
 		bool fired;
-		JL_S_ASSERT_ARG_IS_OBJECT(1);
+		JL_ASSERT_ARG_IS_OBJECT(1);
 		JL_CHK( FireListener(cx, obj, JSVAL_TO_OBJECT(JL_ARG(1)), &ev, JL_RVAL, &fired) );
 	}
 
@@ -873,7 +872,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( WarpMouse ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_ASSERT_ARGC_MIN(2);
 	Uint16 x, y;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &y) );
@@ -973,13 +972,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetKeyState ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	int key;
 	key = JSVAL_TO_INT( JL_ARG(1) );
-	JL_S_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, "Invalid key." );
+	JL_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, E_ARG, E_NUM(1), E_INVALID );
 	Uint8 *keystate = SDL_GetKeyState(NULL);
-	JL_ASSERT( keystate != NULL );
+	ASSERT( keystate != NULL );
 	return JL_NativeToJsval(cx, keystate[key] != 0, JL_RVAL);
 	JL_BAD;
 }
@@ -993,11 +992,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetKeyName ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	int key;
 	key = JSVAL_TO_INT( JL_ARG(1) );
-	JL_S_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, "Invalid key." );
+	JL_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, E_ARG, E_NUM(1), E_INVALID );
 	char *keyName = SDL_GetKeyName((SDLKey)key);
 	JSString *jsStr = JS_NewStringCopyZ(cx, keyName);
 	*JL_RVAL = STRING_TO_JSVAL(jsStr);
@@ -1260,7 +1259,7 @@ struct SurfaceReadyProcessEvent {
 	jsval callbackFctVal;
 };
 
-JL_STATIC_ASSERT( offsetof(SurfaceReadyProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(SurfaceReadyProcessEvent, pe) == 0 );
 
 void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
 
@@ -1311,7 +1310,7 @@ JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext
 
 DEFINE_FUNCTION( SurfaceReadyEvents ) {
 
-	JL_S_ASSERT_ARG_RANGE(0,1);
+	JL_ASSERT_ARGC_RANGE(0,1);
 
 	SurfaceReadyProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(SurfaceReadyProcessEvent), (void**)&upe, NULL, JL_RVAL) );
@@ -1354,7 +1353,7 @@ struct UserProcessEvent {
 	JSObject *listenersObj;
 };
 
-JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
 void SDLStartWait( volatile ProcessEvent *pe ) {
 
@@ -1364,8 +1363,8 @@ void SDLStartWait( volatile ProcessEvent *pe ) {
 	while ( !upe->cancel && (status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS)) == 0 ) // no cancel and no SDL event
 		JLCondWait(sdlEventsCond, sdlEventsLock);
 	JLMutexRelease(sdlEventsLock);
-	JL_ASSERT( status != -1 );
-	// JL_ASSERT( upe->cancel || status == 1 ); // (TBD) understand this case
+	ASSERT( status != -1 );
+	// ASSERT( upe->cancel || status == 1 ); // (TBD) understand this case
 }
 
 bool SDLCancelWait( volatile ProcessEvent *pe ) {
@@ -1420,8 +1419,8 @@ JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSO
 
 DEFINE_FUNCTION( SDLEvents ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );

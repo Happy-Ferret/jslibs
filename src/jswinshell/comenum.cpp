@@ -40,7 +40,7 @@ DEFINE_FUNCTION( next ) {
 	VARIANT *result = NULL;
 
 	IEnumVARIANT *ienumv = (IEnumVARIANT*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(ienumv);
+	JL_ASSERT_THIS_OBJECT_STATE(ienumv);
 
 	result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
 	VariantInit(result);

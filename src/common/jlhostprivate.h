@@ -42,8 +42,9 @@ struct HostPrivate {
 	int (*hostStdIn)( void *privateData, char *buffer, size_t bufferSize );
 	int (*hostStdOut)( void *privateData, const char *buffer, size_t length );
 	int (*hostStdErr)( void *privateData, const char *buffer, size_t length );
-	JSErrorCallback errorCallback;
-	JSLocaleCallbacks localeCallbacks;
+//	JSErrorCallback errorCallback;
+//	JSLocaleCallbacks localeCallbacks;
+	JSBool (*report)( JSContext *cx, bool isWarning, ... );
 	struct ModulePrivate {
 		uint32_t moduleId;
 		void *privateData;
@@ -57,4 +58,4 @@ struct HostPrivate {
 	JLApi *jlapi;
 };
 
-JL_STATIC_ASSERT( offsetof(HostPrivate, unsafeMode) == 0 ); // check this because JL_S_ASSERT macro must be usable before hostPrivateVersion is tested.
+S_ASSERT( offsetof(HostPrivate, unsafeMode) == 0 ); // check this because JL_ASSERT macro must be usable before hostPrivateVersion is tested.

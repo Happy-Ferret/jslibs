@@ -41,7 +41,7 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 
 //	printf( "add - %s:%d-%d - %s - %d - %p\n", filename, lineno, lineno+JS_GetScriptLineExtent(cx, script), fun ? JS_GetFunctionName(fun):"", script->staticLevel, script );
 
-	JL_ASSERT( filename != NULL );
+	ASSERT( filename != NULL );
 
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
 
@@ -102,7 +102,7 @@ done_scriptList:
 //		((JSNewScriptHook)jl::QueueGetData(it))(cx, filename, lineno, script, fun, callerdata);
 
 	JSObject *moduleObject = (JSObject*)callerdata;
-	JL_ASSERT( moduleObject != NULL );
+	ASSERT( moduleObject != NULL );
 	jsval jsHookFct;
 
 
@@ -145,7 +145,7 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 	if ( JL_IsFunction(cx, jsHookFct) ) {
 
 		jsval argv[4];
-		JL_ASSERT( JSVAL_NULL == 0 );
+		ASSERT( JSVAL_NULL == 0 );
 		memset(argv, 0, sizeof(argv)); // { JSVAL_NULL }
 
 		JSTempValueRooter tvr;
@@ -264,8 +264,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	ModulePrivate *mpv;
 	mpv = (ModulePrivate*)jl_malloc(sizeof(ModulePrivate));
-	JL_S_ASSERT_ALLOC( mpv );
-	JL_CHKM( JL_SetModulePrivate(cx, _moduleId, mpv), "Module id already in use." );
+	JL_ASSERT_ALLOC( mpv );
+	JL_CHKM( JL_SetModulePrivate(cx, _moduleId, mpv), E_MODULE, E_INIT ); // "Module id already in use."
 
 	mpv->JLID_onNewScript = JL_StringToJsid(cx, L("onNewScript")); // see NewScriptHook
 

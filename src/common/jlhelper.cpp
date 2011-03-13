@@ -18,4 +18,3 @@
 DLLLOCAL int _unsafeMode = true;
 
 jl::PreservAllocNone_threadsafe<JLStr::Inner> JLStr::mem;
-

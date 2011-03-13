@@ -48,13 +48,13 @@ BEGIN_STATIC
 
 DEFINE_FUNCTION( Accept ) {
 
-	if (!_initDone) {
+	if ( !_initDone ) {
 	
 		int status = FCGX_Init(); // (TBD) do it only once
-		JL_S_ASSERT_ERROR_NUM( status == 0, JLSMSG_INIT_FAIL, "FCGX" );
+		JL_ASSERT( status == 0, E_LIB, "fastcgi", E_INIT );
 		FCGX_InitRequest(&_request, 0, FCGI_FAIL_ACCEPT_ON_INTR); // doc: fail_on_intr is ignored in the Win lib.
 		status = atexit(&onExit);
-		JL_S_ASSERT( status == 0, "Unable to setup fcgi exit.");
+		JL_ASSERT( status == 0, E_LIB, "fastcgi/atexit", E_INIT );
 		_initDone = true;
 	}
 
@@ -90,7 +90,7 @@ DEFINE_FUNCTION( GetParam ) {
 		for ( char** ptr = _request.envp; *ptr; ptr++ ) {
 
 			char *separator = strchr( *ptr, '=' );
-			JL_S_ASSERT( separator != NULL, "Unable to find the value." );
+			JL_ASSERT( separator != NULL, E_PARAM, E_INVALID );
 			*separator = '\0';
 			JSString *value = JS_NewStringCopyZ(cx, separator + 1);
 			JS_DefineProperty(cx, argsObj, *ptr, STRING_TO_JSVAL(value), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT);
@@ -104,7 +104,7 @@ DEFINE_FUNCTION( GetParam ) {
 
 DEFINE_FUNCTION( Read ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 	size_t len;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &len) );
 	char* str;
@@ -136,7 +136,7 @@ DEFINE_FUNCTION( Write ) {
 	if ( result >= 0 && (size_t)result < str.Length() ) { // returns unwritten data
 
 		JSString *jsstr = JS_NewDependentString(cx, JSVAL_TO_STRING(JL_ARG(1)), result, str.Length() - result);
-		JL_S_ASSERT( jsstr != NULL, "Unable to create the NewDependentString." );
+		JL_ASSERT_ALLOC( jsstr );
 		*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	} else
 		*JL_RVAL = JL_GetEmptyStringValue(cx);
@@ -147,7 +147,7 @@ DEFINE_FUNCTION( Write ) {
 DEFINE_FUNCTION( Flush ) {
 
 	int result = FCGX_FFlush(_request.out);
-	JL_S_ASSERT( result != -1, "Unable to flush the output stream." );
+	JL_ASSERT( result != -1, E_LIB, E_INTERNAL ); // "fcgi flush"
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -159,7 +159,7 @@ DEFINE_FUNCTION( Log ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	int result;
 	result = FCGX_PutStr(str.GetConstStr(), (int)str.Length(), _request.err);
-	JL_S_ASSERT( result != -1, "Unable to write to the log." );
+	JL_ASSERT( result != -1, E_LIB, E_INTERNAL ); // "fcgi log write"
 	FCGX_FFlush(_request.err);
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -177,7 +177,7 @@ DEFINE_FUNCTION( URLEncode ) {
 
 	JLStr srcStr;
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 	static unsigned char hex[] = "0123456789ABCDEF";
 	const char *src;
 	size_t srcLen;
@@ -218,7 +218,7 @@ DEFINE_FUNCTION( URLDecode ) {
 
 	JLStr srcStr;
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 	const char *src;
 	size_t srcLen;
 
@@ -324,11 +324,11 @@ BEGIN_STATIC
 
 DEFINE_FUNCTION( ParseHeader ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	JSObject *record;
 	if ( argc >= 2 ) {
-		JL_S_ASSERT_OBJECT(argv[1]);
+		JL_ASSERT_OBJECT(argv[1]);
 		record = JSVAL_TO_OBJECT(argv[1]);
 	} else
 		record = JS_NewObject(cx, NULL, NULL, NULL);
@@ -348,11 +348,11 @@ DEFINE_FUNCTION( ParseHeader ) {
 
 DEFINE_FUNCTION( ParseBeginRequestBody ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	JSObject *record;
 	if ( argc >= 2 ) {
-		JL_S_ASSERT_OBJECT(argv[1]);
+		JL_ASSERT_OBJECT(argv[1]);
 		record = JSVAL_TO_OBJECT(argv[1]);
 	} else
 		record = JS_NewObject(cx, NULL, NULL, NULL);
@@ -371,11 +371,11 @@ DEFINE_FUNCTION( ParseBeginRequestBody ) {
 
 //DEFINE_FUNCTION( ParseEndRequest ) {
 //
-//	JL_S_ASSERT_ARG_MIN( 1 );
+//	JL_ASSERT_ARGC_MIN( 1 );
 //
 //	JSObject *record;
 //	if ( argc >= 2 ) {
-//		JL_S_ASSERT_OBJECT(argv[1]);
+//		JL_ASSERT_OBJECT(argv[1]);
 //		record = JSVAL_TO_OBJECT(argv[1]);
 //	} else
 //		record = JS_NewObject(cx, NULL, NULL, NULL);
@@ -396,7 +396,7 @@ DEFINE_FUNCTION( ParseBeginRequestBody ) {
 
 DEFINE_FUNCTION( ParsePairs ) { // arguments: data [, paramObject ]
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	char *tmp;
 	int length;
@@ -407,7 +407,7 @@ DEFINE_FUNCTION( ParsePairs ) { // arguments: data [, paramObject ]
 	char buf[128];
 	JSObject *params;
 	if ( argc >= 2 ) {
-		JL_S_ASSERT_OBJECT(argv[1]);
+		JL_ASSERT_OBJECT(argv[1]);
 		params = JSVAL_TO_OBJECT(argv[1]);
 	} else
 		params = JS_NewObject(cx, NULL, NULL, NULL);
@@ -457,22 +457,22 @@ DEFINE_FUNCTION( ParsePairs ) { // arguments: data [, paramObject ]
 
 DEFINE_FUNCTION( MakeHeader ) { // type, requestId, contentLength
 	
-	JL_S_ASSERT_ARG_MIN( 3 );
+	JL_ASSERT_ARGC_MIN( 3 );
 
 	FCGI_Header *record = (FCGI_Header*) JS_malloc(cx, sizeof(FCGI_Header));
 	JL_CHK( record );
 
 	record->version = 1;
 
-	JL_S_ASSERT_INT(argv[0]);
+	JL_ASSERT_INT(argv[0]);
 	record->type = JSVAL_TO_INT(argv[0]);
 
-	JL_S_ASSERT_INT(argv[1]);
+	JL_ASSERT_INT(argv[1]);
 	unsigned short requestId = JSVAL_TO_INT(argv[1]);
 	record->requestIdB0 = requestId & 0xFF;
 	record->requestIdB1 = (requestId >> 8) & 0xFF;
 
-	JL_S_ASSERT_INT(argv[2]);
+	JL_ASSERT_INT(argv[2]);
 	unsigned short contentLength = JSVAL_TO_INT(argv[2]);
 	record->contentLengthB0 = contentLength & 0xFF;
 	record->contentLengthB1 = (contentLength >> 8) & 0xFF;
@@ -490,7 +490,7 @@ DEFINE_FUNCTION( MakeHeader ) { // type, requestId, contentLength
 
 DEFINE_FUNCTION( MakeEndRequestBody ) {
 
-	JL_S_ASSERT_ARG_MIN( 2 );
+	JL_ASSERT_ARGC_MIN( 2 );
 
 	FCGI_EndRequestBody *body = (FCGI_EndRequestBody*) JS_malloc(cx, sizeof(FCGI_EndRequestBody));
 	JL_CHK( body );
@@ -502,7 +502,7 @@ DEFINE_FUNCTION( MakeEndRequestBody ) {
 	body->appStatusB2 = (appStatus >> 16) & 0xFF;
 	body->appStatusB3 = (appStatus >> 24) & 0xFF;
 
-	JL_S_ASSERT_NUMBER(argv[1]);
+	JL_ASSERT_NUMBER(argv[1]);
 	body->protocolStatus = JSVAL_TO_INT(argv[1]);
 
 	JSString *jsstr = JL_NewString(cx, (char*)body, sizeof(FCGI_EndRequestRecord));
@@ -516,8 +516,8 @@ DEFINE_FUNCTION( MakeEndRequestBody ) {
 
 DEFINE_FUNCTION( MakePairs ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_OBJECT( argv[0] );
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_OBJECT( argv[0] );
 
 	int bufferPos = 0;
 	int bufferLength = 256;
@@ -599,7 +599,7 @@ DEFINE_FUNCTION( ParseRecord ) {
 
 	// http://www.fastcgi.com/devkit/doc/fcgi-spec.html
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	char *tmp;
 	J_JSVAL_TO_STRING( argv[0], tmp );

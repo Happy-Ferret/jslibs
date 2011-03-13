@@ -56,7 +56,7 @@ JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rv
 	size_t i;
 	if ( JSVAL_IS_PRIMITIVE(**argv) || !JL_IsArray(cx, **argv) ) {
 
-		JL_S_ASSERT( *argc >= count, "Not enough arguments." );
+		JL_ASSERT( *argc >= count, "Not enough arguments." );
 		for ( i = 0; i < count; ++i ) {
 
 			JL_CHK( JL_JsvalToNative(cx, **argv, rval) );
@@ -68,7 +68,7 @@ JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rv
 	}
 	jsuint len;
 	JL_CHK( JL_JsvalToNativeVector(cx, **argv, rval, count, &len) );
-	JL_S_ASSERT( len == count, "Not enough elements." );
+	JL_ASSERT( len == count, "Not enough elements." );
 	++*argv;
 	--*argc;
 	return JS_TRUE;
@@ -80,7 +80,7 @@ JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, doub
 	size_t i;
 	if ( JSVAL_IS_PRIMITIVE(**argv) || !JL_IsArray(cx, **argv) ) {
 
-		JL_S_ASSERT( *argc >= count, "Not enough arguments." );
+		JL_ASSERT( *argc >= count, "Not enough arguments." );
 		for ( i = 0; i < count; ++i ) {
 
 			JL_CHK( JL_JsvalToNative(cx, **argv, rval) );
@@ -92,7 +92,7 @@ JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, doub
 	}
 	jsuint len;
 	JL_CHK( JL_JsvalToNativeVector(cx, **argv, rval, count, &len) );
-	JL_S_ASSERT( len == count, "Not enough elements." );
+	JL_ASSERT( len == count, "Not enough elements." );
 	++*argv;
 	--*argc;
 	return JS_TRUE;
@@ -113,7 +113,7 @@ JL_MACRO_BEGIN \
 	if ( !_unsafeMode && !_inBeginOrEnd ) { \
 		GLenum err = glGetError(); \
 		if ( err != GL_NO_ERROR ) \
-			JL_REPORT_WARNING("OpenGL error %s (%d)", OpenGLErrorToConst(err), err); \
+			JL_WARN( E_LIB, E_STR("OpenGL"), E_OPERATION, E_DETAILS, E_STR(OpenGLErrorToConst(err)), E_COMMENT(err) ); \
 	} \
 JL_MACRO_END
 
@@ -140,7 +140,7 @@ JL_MACRO_BEGIN \
 		return ThrowOglError(cx, GL_INVALID_OPERATION); \
 JL_MACRO_END
 
-//JL_S_ASSERT( NAME != NULL, "OpenGL extension %s is unavailable.", #NAME ); \
+//JL_ASSERT( NAME != NULL, "OpenGL extension %s is unavailable.", #NAME ); \
 
 
 DECLARE_OPENGL_EXTENSION( glBlendColor, PFNGLBLENDCOLORPROC);
@@ -285,8 +285,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsEnabled ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	*JL_RVAL = glIsEnabled(JSVAL_TO_INT(JL_ARG(1))) ? JSVAL_TRUE : JSVAL_FALSE;  OGL_CHK;
 	return JS_TRUE;
 	JL_BAD;
@@ -297,8 +297,8 @@ DEFINE_FUNCTION( IsEnabled ) {
 
 DEFINE_FUNCTION( Get ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	int pname = JSVAL_TO_INT( JL_ARG(1) );
 
@@ -780,8 +780,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetBoolean ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLboolean params;
 	glGetBooleanv(JSVAL_TO_INT(JL_ARG(1)), &params);  OGL_CHK;
 	*JL_RVAL = BOOLEAN_TO_JSVAL(params);
@@ -805,8 +805,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetInteger ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	GLint params[MAX_PARAMS]; // (TBD) check if it is the max amount of data that glGetIntegerv may returns.
 	
@@ -829,7 +829,7 @@ DEFINE_FUNCTION( GetInteger ) {
 			JL_CHK(arrayObj);
 		} else {
 
-			JL_S_ASSERT_ARG_IS_ARRAY(2);
+			JL_ASSERT_ARG_IS_ARRAY(2);
 			arrayObj = JSVAL_TO_OBJECT(JL_ARG(2));
 			JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 		}
@@ -839,8 +839,7 @@ DEFINE_FUNCTION( GetInteger ) {
 			jsuint argset = sizeof(params);
 			while ( --argset >= 0 && ((unsigned char*)params)[argset] == 0xAA );
 			argset = argset / sizeof(*params) + 1;
-			if ( argset != count )
-				JL_REPORT_WARNING( "Invalid value request count (expect %d).", argset );
+			JL_ASSERT_WARN( argset == count, E_ARG, E_NUM(2), E_EQUALS, E_NUM(argset) );
 		}
 
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
@@ -877,8 +876,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetDouble ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	GLdouble params[MAX_PARAMS]; // (TBD) check if it is the max amount of data that glGetDoublev may returns.
 
@@ -901,7 +900,7 @@ DEFINE_FUNCTION( GetDouble ) {
 			JL_CHK(arrayObj);
 		} else {
 
-			JL_S_ASSERT_ARG_IS_ARRAY(2);
+			JL_ASSERT_ARG_IS_ARRAY(2);
 			arrayObj = JSVAL_TO_OBJECT(JL_ARG(2));
 			JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 		}
@@ -911,8 +910,7 @@ DEFINE_FUNCTION( GetDouble ) {
 			jsuint argset = sizeof(params);
 			while ( --argset >= 0 && ((unsigned char*)params)[argset] == 0xAA );
 			argset = argset / sizeof(*params) + 1;
-			if ( argset != count )
-				JL_REPORT_WARNING( "Invalid value request count (expect %d).", argset );
+			JL_ASSERT_WARN( argset == count, E_ARG, E_NUM(2), E_EQUALS, E_NUM(argset) );
 		}
 
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
@@ -945,8 +943,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetString ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	return JL_NativeToJsval(cx, (char*)glGetString(JSVAL_TO_INT(JL_ARG(1))), JL_RVAL);  OGL_CHK;
 	JL_BAD;
 }
@@ -960,8 +958,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DrawBuffer ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	glDrawBuffer(JSVAL_TO_INT(JL_ARG(1)));  OGL_CHK;
 
@@ -979,8 +977,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ReadBuffer ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	
 	glReadBuffer(JSVAL_TO_INT(JL_ARG(1)));  OGL_CHK;
 	
@@ -1001,8 +999,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Accum ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	float value;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &value) );
@@ -1029,10 +1027,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( StencilFunc ) {
 
-	JL_S_ASSERT_ARG_COUNT(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_NUMBER(3);
+	JL_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_NUMBER(3);
 
 	GLuint mask;
 	if ( JL_ARG(3) == INT_TO_JSVAL(-1) )
@@ -1060,10 +1058,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( StencilOp ) {
 
-	JL_S_ASSERT_ARG_COUNT(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
 
 	glStencilOp(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)));  OGL_CHK;
 
@@ -1085,8 +1083,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( StencilMask ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_NUMBER(1);
 
 	GLuint mask;
 	if ( JL_ARG(1) == INT_TO_JSVAL(-1) )
@@ -1113,8 +1111,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( AlphaFunc ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	float ref;
 	JL_JsvalToNative(cx, JL_ARG(2), &ref);
 
@@ -1173,8 +1171,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Fog ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	*JL_RVAL = JSVAL_VOID;
 	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
@@ -1203,7 +1201,7 @@ DEFINE_FUNCTION( Fog ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "number or Array");
+	JL_ERR( E_ARG, E_NUM(2), E_TYPE, E_TY_NUMBER, E_OR, E_TY_ARRAY );
 	JL_BAD;
 }
 
@@ -1219,9 +1217,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Hint ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	glHint( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)) );  OGL_CHK;
 	
@@ -1249,7 +1247,7 @@ DEFINE_FUNCTION( Vertex ) {
 
 	if ( argc > 1 || JSVAL_IS_NUMBER(JL_ARG(1)) ) {
 		
-		JL_S_ASSERT_ARG_RANGE(2,4);
+		JL_ASSERT_ARGC_RANGE(2,4);
 
 		double x, y, z, w;
 		JL_JsvalToNative(cx, JL_ARG(1), &x);
@@ -1270,11 +1268,11 @@ DEFINE_FUNCTION( Vertex ) {
 		return JS_TRUE;
 	}
 	
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 
 	GLdouble pos[4];
 	uint32 len;
-	JL_JsvalToNativeVector(cx, JL_ARG(1), pos, COUNTOF(pos), &len);
+	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), pos, COUNTOF(pos), &len) );
 	if ( len == 2 ) {
 		glVertex2dv(pos);  OGL_CHK;
 	} else if ( len == 3 ) {
@@ -1282,7 +1280,7 @@ DEFINE_FUNCTION( Vertex ) {
 	} else if ( len == 4 ) {
 		glVertex4dv(pos);  OGL_CHK;
 	} else {
-		JL_REPORT_ERROR_NUM( JLSMSG_RANGE_ERROR, "Unexpected array length.");
+		JL_ERR( E_ARG, E_NUM(1), E_LENGTH, E_INTERVAL_NUM(2, 4) );
 	}
 
 	return JS_TRUE;
@@ -1326,12 +1324,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Color ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 	*JL_RVAL = JSVAL_VOID;
 
 	if ( argc > 1 || JSVAL_IS_NUMBER(JL_ARG(1)) ) {
 
-		JL_S_ASSERT_ARG_MAX(4);
+		JL_ASSERT_ARGC_MAX(4);
 
 		double r, g, b, a;
 		JL_JsvalToNative(cx, JL_ARG(1), &r);
@@ -1354,7 +1352,7 @@ DEFINE_FUNCTION( Color ) {
 		;
 	} else {
 
-		JL_S_ASSERT_ARG_COUNT(1);
+		JL_ASSERT_ARG_COUNT(1);
 
 		GLdouble color[4];
 		uint32 len;
@@ -1364,7 +1362,7 @@ DEFINE_FUNCTION( Color ) {
 		} else if ( len == 4 ) {
 			glColor4dv(color);  OGL_CHK;
 		} else {
-			JL_REPORT_ERROR_NUM( JLSMSG_RANGE_ERROR, "Unexpected array length.");
+			JL_ERR( E_ARG, E_NUM(1), E_LENGTH, E_INTERVAL_NUM(3, 4) );
 		}
 	}
 	return JS_TRUE;
@@ -1384,7 +1382,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Normal ) {
 
-	JL_S_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARG_COUNT(3);
 	double nx, ny, nz;
 	JL_JsvalToNative(cx, JL_ARG(1), &nx);
 	JL_JsvalToNative(cx, JL_ARG(2), &ny);
@@ -1411,7 +1409,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( TexCoord ) {
 
-	JL_S_ASSERT_ARG_RANGE(1,3);
+	JL_ASSERT_ARGC_RANGE(1,3);
 	*JL_RVAL = JSVAL_VOID;
 	double s;
 	JL_JsvalToNative(cx, JL_ARG(1), &s);
@@ -1454,10 +1452,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( TexParameter ) {
 
-	JL_S_ASSERT_ARG_COUNT(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_NUMBER(3);
+	JL_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_NUMBER(3);
 
 	*JL_RVAL = JSVAL_VOID;
 	if ( JSVAL_IS_INT(JL_ARG(3)) ) {
@@ -1486,7 +1484,8 @@ DEFINE_FUNCTION( TexParameter ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "number or Array");
+	JL_ERR( E_ARG, E_NUM(3), E_TYPE, E_TY_NUMBER, E_OR, E_TY_ARRAY );
+	
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1504,9 +1503,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( TexEnv ) {
 
-	JL_S_ASSERT_ARG_MIN(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARGC_MIN(3);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	*JL_RVAL = JSVAL_VOID;
 	if ( argc == 3 && JSVAL_IS_INT(JL_ARG(3)) ) {
@@ -1536,8 +1535,8 @@ DEFINE_FUNCTION( TexEnv ) {
 		return JS_TRUE;
 	}
 
-	JL_S_ASSERT_ARG_MIN( 3 ); // at least
-	JL_ASSERT( argc-2 < COUNTOF(params) );
+	JL_ASSERT_ARGC_MIN( 3 ); // at least
+	ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
 		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
 
@@ -1560,9 +1559,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( TexGen ) {
 
-	JL_S_ASSERT_ARG_MIN(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARGC_MIN(3);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	*JL_RVAL = JSVAL_VOID;
 	if ( argc == 3 && JSVAL_IS_INT(JL_ARG(3)) ) {
@@ -1592,8 +1591,8 @@ DEFINE_FUNCTION( TexGen ) {
 		return JS_TRUE;
 	}
 
-	JL_S_ASSERT_ARG_MIN( 3 ); // at least
-	JL_ASSERT( argc-2 < COUNTOF(params) );
+	JL_ASSERT_ARGC_MIN( 3 ); // at least
+	ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
 		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
 
@@ -1625,15 +1624,15 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( TexImage2D ) {
 
 	JLStr data;
-	JL_S_ASSERT_ARG_RANGE(8, 9);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(4);
-	JL_S_ASSERT_ARG_IS_INTEGER(5);
-	JL_S_ASSERT_ARG_IS_INTEGER(6);
-	JL_S_ASSERT_ARG_IS_INTEGER(7);
-	JL_S_ASSERT_ARG_IS_INTEGER(8);
+	JL_ASSERT_ARGC_RANGE(8, 9);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_IS_INTEGER(4);
+	JL_ASSERT_ARG_IS_INTEGER(5);
+	JL_ASSERT_ARG_IS_INTEGER(6);
+	JL_ASSERT_ARG_IS_INTEGER(7);
+	JL_ASSERT_ARG_IS_INTEGER(8);
 
 	if ( JL_ARG_ISDEF(9) && !JSVAL_IS_NULL(JL_ARG(9)) ) // same as !JSVAL_IS_PRIMITIVE
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(9), &data) );
@@ -1664,15 +1663,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CopyTexSubImage2D ) {
 
-	JL_S_ASSERT_ARG_COUNT(8);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(4);
-	JL_S_ASSERT_ARG_IS_INTEGER(5);
-	JL_S_ASSERT_ARG_IS_INTEGER(6);
-	JL_S_ASSERT_ARG_IS_INTEGER(7);
-	JL_S_ASSERT_ARG_IS_INTEGER(8);
+	JL_ASSERT_ARG_COUNT(8);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_IS_INTEGER(4);
+	JL_ASSERT_ARG_IS_INTEGER(5);
+	JL_ASSERT_ARG_IS_INTEGER(6);
+	JL_ASSERT_ARG_IS_INTEGER(7);
+	JL_ASSERT_ARG_IS_INTEGER(8);
 
 	glCopyTexSubImage2D( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)), JSVAL_TO_INT(JL_ARG(6)), JSVAL_TO_INT(JL_ARG(7)), JSVAL_TO_INT(JL_ARG(8)) );  OGL_CHK;
 	
@@ -1693,8 +1692,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( LightModel ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	*JL_RVAL = JSVAL_VOID;
 	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
@@ -1720,7 +1719,7 @@ DEFINE_FUNCTION( LightModel ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "number or Array");
+	JL_ERR( E_ARG, E_NUM(2), E_TYPE, E_TY_NUMBER, E_OR, E_TY_ARRAY );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1738,9 +1737,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Light ) {
 
-	JL_S_ASSERT_ARG_MIN(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARGC_MIN(3);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	*JL_RVAL = JSVAL_VOID;
 	if ( argc == 3 && JSVAL_IS_INT(JL_ARG(3)) ) {
@@ -1766,8 +1765,8 @@ DEFINE_FUNCTION( Light ) {
 		return JS_TRUE;
 	}
 
-	JL_S_ASSERT_ARG_MIN( 3 ); // at least
-	JL_ASSERT( argc-2 < COUNTOF(params) );
+	JL_ASSERT_ARGC_MIN( 3 ); // at least
+	ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
 		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
 	glLightfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
@@ -1791,9 +1790,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetLight ) {
 
-	JL_S_ASSERT_ARG_RANGE(2,3);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARGC_RANGE(2,3);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	GLfloat params[MAX_PARAMS];
 	GLenum pname;
@@ -1804,7 +1803,7 @@ DEFINE_FUNCTION( GetLight ) {
 	int count;
 	if ( JL_ARG_ISDEF(3) ) {
 		
-		JL_S_ASSERT_ARG_IS_INTEGER(3);
+		JL_ASSERT_ARG_IS_INTEGER(3);
 		count = JL_MIN(JSVAL_TO_INT(JL_ARG(3)), (int)COUNTOF(params));
 	} else {
 
@@ -1826,7 +1825,7 @@ DEFINE_FUNCTION( GetLight ) {
 				count = 1;
 				break;
 			default:
-				JL_REPORT_ERROR_NUM( JLSMSG_RANGE_ERROR, "Unknown parameter count");
+				JL_ERR( E_ARG, E_NUM(1), E_NOTSUPPORTED ); // "Unknown parameter count"
 		}
 	}
 
@@ -1862,9 +1861,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ColorMaterial ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	glColorMaterial(JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ));  OGL_CHK;
 
@@ -1886,9 +1885,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Material ) {
 
-	JL_S_ASSERT_ARG_MIN( 3 );
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARGC_MIN( 3 );
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	// GL_AMBIENT: 4 int
 	// GL_DIFFUSE: 4 int
@@ -1924,8 +1923,8 @@ DEFINE_FUNCTION( Material ) {
 		return JS_TRUE;
 	}
 
-	JL_S_ASSERT_ARG_MIN( 3 ); // at least
-	JL_ASSERT( argc-2 < COUNTOF(params) );
+	JL_ASSERT_ARGC_MIN( 3 ); // at least
+	ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
 		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
 	glMaterialfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_CHK;
@@ -1945,10 +1944,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Enable ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 	for ( uintN i = 0; i < JL_ARGC; ++i ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER(i+1);
+		JL_ASSERT_ARG_IS_INTEGER(i+1);
 		glEnable( JSVAL_TO_INT(JL_ARGV[i]) );  OGL_CHK;
 	}
 	*JL_RVAL = JSVAL_VOID;
@@ -1967,10 +1966,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Disable ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 	for ( uintN i = 0; i < JL_ARGC; ++i ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER(i+1);
+		JL_ASSERT_ARG_IS_INTEGER(i+1);
 		glDisable( JSVAL_TO_INT(JL_ARGV[i]) );  OGL_CHK;
 	}
 	*JL_RVAL = JSVAL_VOID;
@@ -1989,7 +1988,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PointSize ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	float size;
 	JL_JsvalToNative(cx, JL_ARG(1), &size);
 	
@@ -2011,7 +2010,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( LineWidth ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	float width;
 	JL_JsvalToNative(cx, JL_ARG(1), &width);
 	
@@ -2033,8 +2032,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ShadeModel ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	glShadeModel(JSVAL_TO_INT( JL_ARG(1) ));  OGL_CHK;
 	
@@ -2055,9 +2054,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( BlendFunc ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	glBlendFunc(JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ));  OGL_CHK;
 
@@ -2077,8 +2076,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DepthFunc ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	
 	glDepthFunc( JSVAL_TO_INT( JL_ARG(1) ) );  OGL_CHK;
 	
@@ -2098,8 +2097,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DepthMask ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_BOOLEAN(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_BOOLEAN(1);
 	
 	glDepthMask( JSVAL_TO_BOOLEAN( JL_ARG(1) ) != 0 );  OGL_CHK;
 	
@@ -2121,7 +2120,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DepthRange ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_COUNT(2);
 	double zNear, zFar;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &zNear) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &zFar) );
@@ -2147,7 +2146,7 @@ DEFINE_FUNCTION( PolygonOffset ) {
 
 //	JL_INIT_OPENGL_EXTENSION( glPolygonOffsetEXT, PFNGLPOLYGONOFFSETEXTPROC );
 
-	JL_S_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_COUNT(2);
 
 	GLfloat factor, units;
 
@@ -2172,8 +2171,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CullFace ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	
 	glCullFace(JSVAL_TO_INT( JL_ARG(1) ));  OGL_CHK;
 	
@@ -2193,8 +2192,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( FrontFace ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	glFrontFace(JSVAL_TO_INT( JL_ARG(1) ));  OGL_CHK;
 	
@@ -2216,8 +2215,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ClearStencil ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	GLuint s;
 	if ( JL_ARG(1) == INT_TO_JSVAL(-1) )
@@ -2243,8 +2242,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ClearDepth ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_NUMBER(1);
 
 	double depth;
 	JL_JsvalToNative(cx, JL_ARG(1), &depth);
@@ -2270,11 +2269,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ClearColor ) {
 
-	JL_S_ASSERT_ARG_COUNT(4);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(2);
-	JL_S_ASSERT_ARG_IS_NUMBER(3);
-	JL_S_ASSERT_ARG_IS_NUMBER(4);
+	JL_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARG_IS_NUMBER(2);
+	JL_ASSERT_ARG_IS_NUMBER(3);
+	JL_ASSERT_ARG_IS_NUMBER(4);
 
 	float r, g, b, a;
 	JL_JsvalToNative(cx, JL_ARG(1), &r);
@@ -2303,11 +2302,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ClearAccum ) {
 
-	JL_S_ASSERT_ARG_COUNT(4);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(2);
-	JL_S_ASSERT_ARG_IS_NUMBER(3);
-	JL_S_ASSERT_ARG_IS_NUMBER(4);
+	JL_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARG_IS_NUMBER(2);
+	JL_ASSERT_ARG_IS_NUMBER(3);
+	JL_ASSERT_ARG_IS_NUMBER(4);
 
 	float r, g, b, a;
 	JL_JsvalToNative(cx, JL_ARG(1), &r);
@@ -2333,8 +2332,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Clear ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	glClear(JSVAL_TO_INT(JL_ARG(1)));  OGL_CHK;
 	
@@ -2363,7 +2362,7 @@ DEFINE_FUNCTION( ColorMask ) {
 	*JL_RVAL = JSVAL_VOID;
 	if ( JL_ARGC == 1 ) {
 
-		JL_S_ASSERT_ARG_IS_BOOLEAN(1);
+		JL_ASSERT_ARG_IS_BOOLEAN(1);
 		if ( JL_ARG(1) == JSVAL_FALSE ) {
 
 			glColorMask(0,0,0,0);  OGL_CHK;
@@ -2374,11 +2373,11 @@ DEFINE_FUNCTION( ColorMask ) {
 		return JS_TRUE;
 	}
 
-	JL_S_ASSERT_ARG_COUNT(4);
-	JL_S_ASSERT_ARG_IS_BOOLEAN(1);
-	JL_S_ASSERT_ARG_IS_BOOLEAN(2);
-	JL_S_ASSERT_ARG_IS_BOOLEAN(3);
-	JL_S_ASSERT_ARG_IS_BOOLEAN(4);
+	JL_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARG_IS_BOOLEAN(1);
+	JL_ASSERT_ARG_IS_BOOLEAN(2);
+	JL_ASSERT_ARG_IS_BOOLEAN(3);
+	JL_ASSERT_ARG_IS_BOOLEAN(4);
 
 	glColorMask( JSVAL_TO_BOOLEAN(JL_ARG(1)) != 0, JSVAL_TO_BOOLEAN(JL_ARG(2)) != 0, JSVAL_TO_BOOLEAN(JL_ARG(3)) != 0, JSVAL_TO_BOOLEAN(JL_ARG(4)) != 0 );  OGL_CHK;
 
@@ -2398,16 +2397,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ClipPlane ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_ARRAY(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_ARRAY(2);
 	GLdouble equation[4];
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), equation, COUNTOF(equation), &len ) );
-	JL_S_ASSERT( len == 4, "Invalid plane equation.");
-
+	JL_CHKM( len == 4, E_ARG, E_NUM(2), E_LENGTH, E_NUM(4) );
 	glClipPlane(JSVAL_TO_INT(JL_ARG(1)), equation);  OGL_CHK;
-
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -2427,11 +2424,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Viewport ) {
 
-	JL_S_ASSERT_ARG_COUNT(4);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(4);
+	JL_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_IS_INTEGER(4);
 
 	glViewport(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)));  OGL_CHK;
 	
@@ -2456,13 +2453,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Frustum ) {
 
-	JL_S_ASSERT_ARG_COUNT(6);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(2);
-	JL_S_ASSERT_ARG_IS_NUMBER(3);
-	JL_S_ASSERT_ARG_IS_NUMBER(4);
-	JL_S_ASSERT_ARG_IS_NUMBER(5);
-	JL_S_ASSERT_ARG_IS_NUMBER(6);
+	JL_ASSERT_ARG_COUNT(6);
+	JL_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARG_IS_NUMBER(2);
+	JL_ASSERT_ARG_IS_NUMBER(3);
+	JL_ASSERT_ARG_IS_NUMBER(4);
+	JL_ASSERT_ARG_IS_NUMBER(5);
+	JL_ASSERT_ARG_IS_NUMBER(6);
 
 	jsdouble left, right, bottom, top, zNear, zFar;
 	JL_JsvalToNative(cx, JL_ARG(1), &left);
@@ -2495,13 +2492,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Ortho ) {
 
-	JL_S_ASSERT_ARG_COUNT(6);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(2);
-	JL_S_ASSERT_ARG_IS_NUMBER(3);
-	JL_S_ASSERT_ARG_IS_NUMBER(4);
-	JL_S_ASSERT_ARG_IS_NUMBER(5);
-	JL_S_ASSERT_ARG_IS_NUMBER(6);
+	JL_ASSERT_ARG_COUNT(6);
+	JL_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARG_IS_NUMBER(2);
+	JL_ASSERT_ARG_IS_NUMBER(3);
+	JL_ASSERT_ARG_IS_NUMBER(4);
+	JL_ASSERT_ARG_IS_NUMBER(5);
+	JL_ASSERT_ARG_IS_NUMBER(6);
 
 	jsdouble left, right, bottom, top, zNear, zFar;
 	JL_JsvalToNative(cx, JL_ARG(1), &left);
@@ -2535,11 +2532,11 @@ DEFINE_FUNCTION( Perspective ) {
 
 	//cf. gluPerspective(fovy, float(viewport[2]) / float(viewport[3]), zNear, zFar);
 
-	JL_S_ASSERT_ARG_COUNT(4);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
-	//JL_S_ASSERT_NUMBER(JL_ARG(2)); // may be undefined
-	JL_S_ASSERT_ARG_IS_NUMBER(3);
-	JL_S_ASSERT_ARG_IS_NUMBER(4);
+	JL_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARG_IS_NUMBER(1);
+	//JL_ASSERT_NUMBER(JL_ARG(2)); // may be undefined
+	JL_ASSERT_ARG_IS_NUMBER(3);
+	JL_ASSERT_ARG_IS_NUMBER(4);
 
 
 	double fovy, zNear, zFar, aspect;
@@ -2602,8 +2599,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( MatrixMode ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	
 	glMatrixMode(JSVAL_TO_INT( JL_ARG(1) ));  OGL_CHK;
 	
@@ -2621,7 +2618,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( LoadIdentity ) {
 
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 
 	glLoadIdentity();  OGL_CHK;
 
@@ -2639,7 +2636,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PushMatrix ) {
 
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 
 	glPushMatrix();  OGL_CHK;
 
@@ -2657,7 +2654,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PopMatrix ) {
 
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 
 	glPopMatrix();  OGL_CHK;
 
@@ -2677,7 +2674,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( LoadMatrix ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	float tmp[16], *m = tmp;
 
 	JL_CHK( JL_JsvalToMatrix44(cx, JL_ARG(1), &m) );
@@ -2699,7 +2696,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( MultMatrix ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	float tmp[16], *m = tmp;
 
 	JL_CHK( JL_JsvalToMatrix44(cx, JL_ARG(1), &m) );
@@ -2725,7 +2722,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Rotate ) {
 
-	JL_S_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARG_COUNT(4);
 	jsdouble angle, x, y, z;
 	JL_JsvalToNative(cx, JL_ARG(1), &angle);
 	JL_JsvalToNative(cx, JL_ARG(2), &x);
@@ -2752,7 +2749,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Translate ) {
 
-	JL_S_ASSERT_ARG_RANGE(2,3);
+	JL_ASSERT_ARGC_RANGE(2,3);
 	double x, y, z;
 	JL_JsvalToNative(cx, JL_ARG(1), &x);
 	JL_JsvalToNative(cx, JL_ARG(2), &y);
@@ -2782,7 +2779,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Scale ) {
 
-	JL_S_ASSERT_ARG_RANGE(1,3);
+	JL_ASSERT_ARGC_RANGE(1,3);
 	*JL_RVAL = JSVAL_VOID;
 	double x, y, z;
 	JL_JsvalToNative(cx, JL_ARG(1), &x);
@@ -2819,7 +2816,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( NewList ) {
 
-	JL_S_ASSERT_ARG_RANGE(0,1);
+	JL_ASSERT_ARGC_RANGE(0,1);
 	bool compileOnly;
 	if ( JL_ARG_ISDEF(1) )
 		JL_JsvalToNative(cx, JL_ARG(1), &compileOnly);
@@ -2847,8 +2844,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DeleteList ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	glDeleteLists(JSVAL_TO_INT(JL_ARG(1)), 1);  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -2865,7 +2862,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( EndList ) {
 
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 	glEndList();  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -2885,7 +2882,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CallList ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	*JL_RVAL = JSVAL_VOID;
 
 	if ( JSVAL_IS_INT( JL_ARG(1) ) ) {
@@ -2914,7 +2911,7 @@ DEFINE_FUNCTION( CallList ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "intnger or Array");
+	JL_ERR( E_ARG, E_NUM(1), E_TYPE, E_TY_INTEGER, E_OR, E_TY_ARRAY );
 	JL_BAD;
 }
 
@@ -2930,9 +2927,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PolygonMode ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 	glPolygonMode(JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ));  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -2951,8 +2948,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Begin ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 #ifdef DEBUG
 	_inBeginOrEnd = true; // see OGL_CHK
@@ -2974,7 +2971,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( End ) {
 
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 	glEnd();  OGL_CHK;
 
 #ifdef DEBUG
@@ -2997,8 +2994,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PushAttrib ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_NUMBER(1);
 	GLbitfield mask;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &mask) );
 	glPushAttrib(mask);  OGL_CHK;
@@ -3017,7 +3014,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PopAttrib ) {
 
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 	glPopAttrib();  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -3035,7 +3032,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GenTexture ) {
 
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 	GLuint texture;
 	glGenTextures(1, &texture);  OGL_CHK;
 	
@@ -3056,9 +3053,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( BindTexture ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-//	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+//	JL_ASSERT_ARG_IS_INTEGER(2);
 	int texture;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &texture) );
 	glBindTexture( JSVAL_TO_INT( JL_ARG(1) ), texture);  OGL_CHK;
@@ -3080,8 +3077,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DeleteTexture ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLuint texture = JSVAL_TO_INT( JL_ARG(1) );
 	glDeleteTextures(1, &texture);  OGL_CHK;
 	
@@ -3110,19 +3107,19 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CopyTexImage2D ) {
 
-	JL_S_ASSERT_ARG_MIN(6);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(4);
-	JL_S_ASSERT_ARG_IS_INTEGER(5);
-	JL_S_ASSERT_ARG_IS_INTEGER(6);
-	JL_S_ASSERT_ARG_IS_INTEGER(7);
+	JL_ASSERT_ARGC_MIN(6);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_IS_INTEGER(4);
+	JL_ASSERT_ARG_IS_INTEGER(5);
+	JL_ASSERT_ARG_IS_INTEGER(6);
+	JL_ASSERT_ARG_IS_INTEGER(7);
 
 	GLint border;
 	if ( JL_ARG_ISDEF(8) ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER(8);
+		JL_ASSERT_ARG_IS_INTEGER(8);
 		border = JSVAL_TO_INT(JL_ARG(8));
 	} else {
 
@@ -3141,13 +3138,13 @@ DEFINE_FUNCTION( CopyTexImage2D ) {
 /*
 DEFINE_FUNCTION( TexSubImage2D ) {
 
-	JL_S_ASSERT_ARG_MIN(7);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(4);
-	JL_S_ASSERT_ARG_IS_INTEGER(5);
-	JL_S_ASSERT_ARG_IS_INTEGER(6);
+	JL_ASSERT_ARGC_MIN(7);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_IS_INTEGER(4);
+	JL_ASSERT_ARG_IS_INTEGER(5);
+	JL_ASSERT_ARG_IS_INTEGER(6);
 
 	GLint level = JSVAL_TO_INT(JL_ARG(1));
 	GLenum internalFormat = JSVAL_TO_INT(JL_ARG(2));
@@ -3182,7 +3179,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PixelTransfer ) {
 
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	GLenum pname = JSVAL_TO_INT( JL_ARG(1) );
 
@@ -3191,7 +3188,7 @@ DEFINE_FUNCTION( PixelTransfer ) {
 		glPixelTransferi(pname, JSVAL_TO_INT( JL_ARG(2) ));  OGL_CHK;
 	} else {
 
-		JL_S_ASSERT_ARG_IS_NUMBER(2);
+		JL_ASSERT_ARG_IS_NUMBER(2);
 		float param;
 		JL_JsvalToNative(cx, JL_ARG(2), &param);
 		glPixelTransferf(pname, param);  OGL_CHK;
@@ -3211,7 +3208,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PixelStore ) {
 
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	GLenum pname = JSVAL_TO_INT( JL_ARG(1) );
 
@@ -3220,7 +3217,7 @@ DEFINE_FUNCTION( PixelStore ) {
 		glPixelStorei(pname, JSVAL_TO_INT( JL_ARG(2) ));  OGL_CHK;
 	} else {
 
-		JL_S_ASSERT_ARG_IS_NUMBER(2);
+		JL_ASSERT_ARG_IS_NUMBER(2);
 		float param;
 		JL_JsvalToNative(cx, JL_ARG(2), &param);
 		glPixelStoref(pname, param);  OGL_CHK;
@@ -3240,7 +3237,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( RasterPos ) {
 
-	JL_S_ASSERT_ARG_RANGE(2,4);
+	JL_ASSERT_ARGC_RANGE(2,4);
 
 	double x, y, z, w;
 
@@ -3278,7 +3275,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PixelZoom ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_COUNT(2);
 	float x, y;
 
 	*JL_RVAL = JSVAL_VOID;
@@ -3300,9 +3297,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PixelMap ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_COUNT(2);
 	*JL_RVAL = JSVAL_VOID;
-	JL_S_ASSERT_ARG_IS_ARRAY(2);
+	JL_ASSERT_ARG_IS_ARRAY(2);
 
 	jsuint mapsize;
 	JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(JL_ARG(2)), &mapsize) );
@@ -3332,8 +3329,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( HasExtensionProc ) {
 	
 	JLStr procName;
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT( glGetProcAddress != NULL, "OpenGL extensions unavailable." );
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT( glGetProcAddress != NULL, E_OS, E_INIT, E_STR("OpenGL"), E_COMMENT("extensions") );
 
 	void *procAddr;
 	for ( uintN i = 0; i < JL_ARGC; ++i ) {
@@ -3363,10 +3360,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( HasExtensionName ) {
 	
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 
 	const char *extensions = (const char *)glGetString(GL_EXTENSIONS);
-	JL_ASSERT( extensions != NULL );
+	ASSERT( extensions != NULL );
 
 	for ( uintN i = 0; i < JL_ARGC; ++i ) {
 
@@ -3401,8 +3398,8 @@ DEFINE_FUNCTION( BlendEquation ) {
 
 	JL_INIT_OPENGL_EXTENSION( glBlendEquation, PFNGLBLENDEQUATIONPROC );
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	glBlendEquation(JSVAL_TO_INT(JL_ARG(1)));
 
@@ -3430,11 +3427,11 @@ DEFINE_FUNCTION( StencilFuncSeparate ) {
 
 	JL_INIT_OPENGL_EXTENSION( glStencilFuncSeparate, PFNGLSTENCILFUNCSEPARATEPROC ); // Opengl 2.0+
 
-	JL_S_ASSERT_ARG_COUNT(4);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
-	JL_S_ASSERT_ARG_IS_NUMBER(4);
+	JL_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_IS_NUMBER(4);
 
 	GLuint mask;
 	if ( JL_ARG(4) == INT_TO_JSVAL(-1) )
@@ -3465,11 +3462,11 @@ DEFINE_FUNCTION( StencilOpSeparate ) {
 
 	JL_INIT_OPENGL_EXTENSION( glStencilOpSeparate, PFNGLSTENCILOPSEPARATEPROC ); // Opengl 2.0+
 
-	JL_S_ASSERT_ARG_COUNT(4);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(4);
+	JL_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_IS_INTEGER(4);
 	glStencilOpSeparate(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)));  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -3490,8 +3487,8 @@ DEFINE_FUNCTION( ActiveStencilFaceEXT ) {
 
 	JL_INIT_OPENGL_EXTENSION( glActiveStencilFaceEXT, PFNGLACTIVESTENCILFACEEXTPROC ); // Opengl 2.0+
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	glActiveStencilFaceEXT(JSVAL_TO_INT( JL_ARG(1) ));  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -3513,9 +3510,9 @@ DEFINE_FUNCTION( BindRenderbuffer ) {
 
 	JL_INIT_OPENGL_EXTENSION( glBindRenderbufferEXT, PFNGLBINDRENDERBUFFEREXTPROC );
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 	
 	glBindRenderbufferEXT(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)) );  OGL_CHK;
 	
@@ -3535,7 +3532,7 @@ DEFINE_FUNCTION( GenRenderbuffer ) {
 
 	JL_INIT_OPENGL_EXTENSION( glGenRenderbuffersEXT, PFNGLGENRENDERBUFFERSEXTPROC);
 	
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 	GLuint buffer;
 	
 	glGenRenderbuffersEXT(1, &buffer);  OGL_CHK;
@@ -3559,8 +3556,8 @@ DEFINE_FUNCTION( DeleteRenderbuffer ) {
 
 	JL_INIT_OPENGL_EXTENSION( glDeleteRenderbuffersEXT, PFNGLDELETERENDERBUFFERSEXTPROC );
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLuint buffer = JSVAL_TO_INT(JL_ARG(1));
 	glDeleteRenderbuffersEXT(1, &buffer);  OGL_CHK;
 
@@ -3585,11 +3582,11 @@ DEFINE_FUNCTION( RenderbufferStorage ) {
 
 	JL_INIT_OPENGL_EXTENSION( glRenderbufferStorageEXT, PFNGLRENDERBUFFERSTORAGEEXTPROC );
 
-	JL_S_ASSERT_ARG_COUNT(4);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(4);
+	JL_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_IS_INTEGER(4);
 	glRenderbufferStorageEXT(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)) );  OGL_CHK;
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -3612,9 +3609,9 @@ DEFINE_FUNCTION( GetRenderbufferParameter ) {
 
 	JL_INIT_OPENGL_EXTENSION( glGetRenderbufferParameterivEXT, PFNGLGETRENDERBUFFERPARAMETERIVEXTPROC );
 
-	JL_S_ASSERT_ARG_RANGE(2,3);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARGC_RANGE(2,3);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	GLint params[MAX_PARAMS]; // (TBD) check if it is the max amount of data that glGetRenderbufferParameterivEXT may returns.
 	
@@ -3622,7 +3619,7 @@ DEFINE_FUNCTION( GetRenderbufferParameter ) {
 
 	if ( JL_ARG_ISDEF(3) ) {
 		
-		JL_S_ASSERT_ARG_IS_INTEGER(3);
+		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count;
 		count = JL_MIN(JSVAL_TO_INT(JL_ARG(3)), (int)COUNTOF(params));
 		JL_CHK( JL_NativeVectorToJsval(cx, params, count, JL_RVAL, false) );
@@ -3649,9 +3646,9 @@ DEFINE_FUNCTION( BindFramebuffer ) {
 
 	JL_INIT_OPENGL_EXTENSION( glBindFramebufferEXT, PFNGLBINDFRAMEBUFFEREXTPROC );
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 	glBindFramebufferEXT( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)) );  OGL_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
@@ -3670,7 +3667,7 @@ DEFINE_FUNCTION( GenFramebuffer ) {
 
 	JL_INIT_OPENGL_EXTENSION( glGenFramebuffersEXT, PFNGLGENFRAMEBUFFERSEXTPROC );
 
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 	GLuint buffer;
 	glGenFramebuffersEXT(1, &buffer);  OGL_CHK;
 	*JL_RVAL = INT_TO_JSVAL(buffer);
@@ -3692,8 +3689,8 @@ DEFINE_FUNCTION( DeleteFramebuffer ) {
 
 	JL_INIT_OPENGL_EXTENSION( glDeleteFramebuffersEXT, PFNGLDELETEFRAMEBUFFERSEXTPROC );
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLuint buffer = JSVAL_TO_INT(JL_ARG(1));
 	glDeleteFramebuffersEXT(1, &buffer);  OGL_CHK;
 
@@ -3715,8 +3712,8 @@ DEFINE_FUNCTION( CheckFramebufferStatus ) {
 
 	JL_INIT_OPENGL_EXTENSION( glCheckFramebufferStatusEXT, PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC );
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	*JL_RVAL = INT_TO_JSVAL( glCheckFramebufferStatusEXT(JSVAL_TO_INT(JL_ARG(1))) );  OGL_CHK;
 
 	return JS_TRUE;
@@ -3740,12 +3737,12 @@ DEFINE_FUNCTION( FramebufferTexture1D ) {
 
 	JL_INIT_OPENGL_EXTENSION( glFramebufferTexture1DEXT, PFNGLFRAMEBUFFERTEXTURE1DEXTPROC );
 
-	JL_S_ASSERT_ARG_COUNT(5);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(4);
-	JL_S_ASSERT_ARG_IS_INTEGER(5);
+	JL_ASSERT_ARG_COUNT(5);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_IS_INTEGER(4);
+	JL_ASSERT_ARG_IS_INTEGER(5);
 
 	glFramebufferTexture1DEXT( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)) );  OGL_CHK;
 	
@@ -3771,12 +3768,12 @@ DEFINE_FUNCTION( FramebufferTexture2D ) {
 
 	JL_INIT_OPENGL_EXTENSION( glFramebufferTexture2DEXT, PFNGLFRAMEBUFFERTEXTURE2DEXTPROC );
 
-	JL_S_ASSERT_ARG_COUNT(5);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(4);
-	JL_S_ASSERT_ARG_IS_INTEGER(5);
+	JL_ASSERT_ARG_COUNT(5);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_IS_INTEGER(4);
+	JL_ASSERT_ARG_IS_INTEGER(5);
 
 	glFramebufferTexture2DEXT( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)) );  OGL_CHK;
 	
@@ -3803,13 +3800,13 @@ DEFINE_FUNCTION( FramebufferTexture3D ) {
 
 	JL_INIT_OPENGL_EXTENSION( glFramebufferTexture3DEXT, PFNGLFRAMEBUFFERTEXTURE3DEXTPROC );
 
-	JL_S_ASSERT_ARG_COUNT(5);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(4);
-	JL_S_ASSERT_ARG_IS_INTEGER(5);
-	JL_S_ASSERT_ARG_IS_INTEGER(6);
+	JL_ASSERT_ARG_COUNT(5);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_IS_INTEGER(4);
+	JL_ASSERT_ARG_IS_INTEGER(5);
+	JL_ASSERT_ARG_IS_INTEGER(6);
 
 	glFramebufferTexture3DEXT( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)), JSVAL_TO_INT(JL_ARG(6)) );  OGL_CHK;
 	
@@ -3835,11 +3832,11 @@ DEFINE_FUNCTION( FramebufferRenderbuffer ) {
 
 	JL_INIT_OPENGL_EXTENSION( glFramebufferRenderbufferEXT, PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC );
 
-	JL_S_ASSERT_ARG_COUNT(5);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(4);
+	JL_ASSERT_ARG_COUNT(5);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_IS_INTEGER(4);
 
 	glFramebufferRenderbufferEXT( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)) );  OGL_CHK;
 	
@@ -3866,10 +3863,10 @@ DEFINE_FUNCTION( GetFramebufferAttachmentParameter ) {
 
 	JL_INIT_OPENGL_EXTENSION( glGetFramebufferAttachmentParameterivEXT, PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVEXTPROC  );
 
-	JL_S_ASSERT_ARG_RANGE(3,4);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARGC_RANGE(3,4);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
 
 	GLint params[MAX_PARAMS]; // (TBD) check if it is the max amount of data that glGetRenderbufferParameterivEXT may returns.
 	
@@ -3877,7 +3874,7 @@ DEFINE_FUNCTION( GetFramebufferAttachmentParameter ) {
 
 	if ( JL_ARG_ISDEF(4) ) {
 		
-		JL_S_ASSERT_ARG_IS_INTEGER(4);
+		JL_ASSERT_ARG_IS_INTEGER(4);
 		int count;
 		count = JL_MIN(JSVAL_TO_INT(JL_ARG(4)), (int)COUNTOF(params));
 		JL_CHK( JL_NativeVectorToJsval(cx, params, count, JL_RVAL, false) );
@@ -3903,8 +3900,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( CreateShaderObject ) {
 
 	JL_INIT_OPENGL_EXTENSION( glCreateShaderObjectARB, PFNGLCREATESHADEROBJECTARBPROC );
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLenum shaderType;
 	shaderType = JSVAL_TO_INT( JL_ARG(1) );
 	GLhandleARB handle = glCreateShaderObjectARB(shaderType);  OGL_CHK;
@@ -3924,8 +3921,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( DeleteObject ) {
 
 	JL_INIT_OPENGL_EXTENSION( glDeleteObjectARB, PFNGLDELETEOBJECTARBPROC );
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLhandleARB shaderHandle;
 	shaderHandle = JSVAL_TO_INT( JL_ARG(1) );
 	glDeleteObjectARB(shaderHandle);  OGL_CHK;
@@ -3945,8 +3942,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetInfoLog ) {
 
 	JL_INIT_OPENGL_EXTENSION( glGetInfoLogARB, PFNGLGETINFOLOGARBPROC );
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLhandleARB shaderHandle;
 	shaderHandle = JSVAL_TO_INT( JL_ARG(1) );
 	GLsizei length;
@@ -3990,9 +3987,9 @@ DEFINE_FUNCTION( ShaderSource ) {
 
 	JLStr source;
 	JL_INIT_OPENGL_EXTENSION( glShaderSourceARB, PFNGLSHADERSOURCEARBPROC );
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_STRING(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_STRING(2);
 	GLhandleARB shaderHandle;
 	shaderHandle = JSVAL_TO_INT( JL_ARG(1) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &source) );
@@ -4019,8 +4016,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( CompileShader ) {
 
 	JL_INIT_OPENGL_EXTENSION( glCompileShaderARB, PFNGLCOMPILESHADERARBPROC );
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLhandleARB shaderHandle;
 	shaderHandle = JSVAL_TO_INT( JL_ARG(1) );
 	glCompileShaderARB(shaderHandle);  OGL_CHK;
@@ -4040,8 +4037,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AttachObject ) {
 
 	JL_INIT_OPENGL_EXTENSION( glAttachObjectARB, PFNGLATTACHOBJECTARBPROC );
-	JL_S_ASSERT_ARG_COUNT(2);
-//	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(2);
+//	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLhandleARB programHandle;
 //	programHandle = JSVAL_TO_INT( JL_ARG(1) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &programHandle) );
@@ -4069,8 +4066,8 @@ DEFINE_FUNCTION( LinkProgram ) {
 //	JL_INIT_OPENGL_EXTENSION( glUseProgramObjectARB, PFNGLUSEPROGRAMOBJECTARBPROC );
 //	JL_INIT_OPENGL_EXTENSION( glGetProgramiv, PFNGLGETPROGRAMIVPROC );
 
-	JL_S_ASSERT_ARG_COUNT(1);
-//	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+//	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLhandleARB programHandle;
 //	programHandle = JSVAL_TO_INT( JL_ARG(1) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &programHandle) );
@@ -4093,8 +4090,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( UseProgramObject ) {
 
 	JL_INIT_OPENGL_EXTENSION( glUseProgramObjectARB, PFNGLUSEPROGRAMOBJECTARBPROC );
-	JL_S_ASSERT_ARG_COUNT(1);
-//	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+//	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	GLhandleARB programHandle;
 //	programHandle = JSVAL_TO_INT( JL_ARG(1) );
@@ -4121,7 +4118,7 @@ DEFINE_FUNCTION( GetUniformInfo ) {
 	JL_INIT_OPENGL_EXTENSION( glGetUniformLocationARB, PFNGLGETUNIFORMLOCATIONARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glGetProgramiv, PFNGLGETPROGRAMIVPROC );
 
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	GLhandleARB program;
 	GLint activeUniform;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &program) );
@@ -4147,7 +4144,7 @@ DEFINE_FUNCTION( GetUniformInfo ) {
 		for ( int i = 0; i < activeUniform; ++i ) {
 
 			glGetActiveUniformARB(program, i, sizeof(name), &length, &size, &type, name);  OGL_CHK;
-			JL_ASSERT( length < sizeof(name) );
+			ASSERT( length < sizeof(name) );
 
 			location = glGetUniformLocationARB(program, name);
 			if ( location == -1 )
@@ -4189,8 +4186,8 @@ DEFINE_FUNCTION( GetUniformLocation ) {
 
 	JLStr name;
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	//JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(2);
+	//JL_ASSERT_ARG_IS_INTEGER(1);
 
 	GLhandleARB programHandle;
 	//programHandle = JSVAL_TO_INT( JL_ARG(1) );
@@ -4251,8 +4248,8 @@ DEFINE_FUNCTION( Uniform ) {
 //	JL_INIT_OPENGL_EXTENSION( glUniformBlockBinding, PFNGLUNIFORMBLOCKBINDINGPROC );
 //	JL_INIT_OPENGL_EXTENSION( glGetActiveUniformsiv, PFNGLGETACTIVEUNIFORMSIVPROC );
 
-	JL_S_ASSERT_ARG_RANGE(2, 5);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_RANGE(2, 5);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	*JL_RVAL = JSVAL_VOID;
 
@@ -4327,8 +4324,7 @@ DEFINE_FUNCTION( Uniform ) {
 		args = JL_ARGV;
 	}
 
-	JL_S_ASSERT( count >= 1 && count <= 4, "Too many values." );
-
+	JL_CHKM( count >= 1 && count <= 4, E_ARGC, E_RANGE, E_INTERVAL_NUM(1, 4) );
 
 	if ( JSVAL_IS_DOUBLE(args[0]) ) {
 
@@ -4446,7 +4442,8 @@ DEFINE_FUNCTION( Uniform ) {
 	}
 */
 
-	JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "value");
+	JL_ERR( E_VALUE, E_INVALID );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4464,8 +4461,8 @@ DEFINE_FUNCTION( UniformMatrix ) {
 
 	JL_INIT_OPENGL_EXTENSION( glUniformMatrix4fvARB, PFNGLUNIFORMMATRIX4FVARBPROC );
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLint uniformLocation;
 	uniformLocation = JSVAL_TO_INT(JL_ARG(1));
 	*JL_RVAL = JSVAL_VOID;
@@ -4500,8 +4497,8 @@ DEFINE_FUNCTION( UniformFloatVector ) {
 	JL_INIT_OPENGL_EXTENSION( glUniform3fvARB, PFNGLUNIFORM3FVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform4fvARB, PFNGLUNIFORM4FVARBPROC );
 
-	JL_S_ASSERT_ARG_MIN(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_MIN(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	GLint uniformLocation;
 	uniformLocation = JSVAL_TO_INT(JL_ARG(1));
@@ -4513,18 +4510,19 @@ DEFINE_FUNCTION( UniformFloatVector ) {
 
 	if ( JL_ARGC == 2 ) {
 
-		JL_S_ASSERT_ARG_IS_ARRAY(2);
+		JL_ASSERT_ARG_IS_ARRAY(2);
 		GLfloat val[4]; // max for *4fv
 //		JSObject *arr = JSVAL_TO_OBJECT(JL_ARG(2));
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), val, COUNTOF(val), &len) );
-		JL_S_ASSERT( len >= 0 && len <= 4, "Unsupported vector length." );
-		JL_ASSERT( len >= 0 && len <= 4 );
+		JL_ASSERT_RANGE(len, 0, 4, "vec.length" );
+
+		ASSERT( len >= 0 && len <= 4 );
 		(len == 3 ? glUniform3fvARB : len == 4 ? glUniform4fvARB : len == 2 ? glUniform2fvARB : len == 1 ? glUniform1fvARB : NULL)(uniformLocation, 1, val);  OGL_CHK;
 		return JS_TRUE;
 	}
 
 
-	JL_ASSERT( JL_ARGC > 2 );
+	ASSERT( JL_ARGC > 2 );
 
 	jsuint firstLen = 0;
 	jsval *tmpVal = JL_ARGV + 1;
@@ -4532,7 +4530,7 @@ DEFINE_FUNCTION( UniformFloatVector ) {
 	value = (GLfloat*)jl_malloca(sizeof(GLfloat) * 4 * count); // allocate the max
 	GLfloat *tmpVec = value;
 
-	JL_ASSERT( count >= 1 );
+	ASSERT( count >= 1 );
 
 	IFDEBUG( len = 0 ); // avoid "potentially uninitialized local variable" warning
 
@@ -4541,14 +4539,16 @@ DEFINE_FUNCTION( UniformFloatVector ) {
 		JL_CHK( JL_JsvalToNativeVector(cx, *tmpVal, tmpVec, 4, &len) );
 		if ( firstLen == 0 )
 			firstLen = len;
-		JL_ASSERT( len >= 0 && len <= 4 );
-		JL_S_ASSERT( len >= 0 && len <= 4, "Unsupported vector length." );
-		JL_S_ASSERT( len == firstLen, "Invalid variable vector length." );
+		ASSERT( len >= 0 && len <= 4 );
+
+		JL_CHKM( len >= 0 && len <= 4, E_ARRAYLENGTH, E_RANGE, E_INTERVAL_NUM(0, 4) );
+		//JL_ASSERT( len == firstLen, "Invalid variable vector length." );
+
 		tmpVec += len;
 		tmpVal += 1;
 	}
 
-	JL_ASSERT( len );
+	ASSERT( len );
 
 	(len == 3 ? glUniform3fvARB : len == 4 ? glUniform4fvARB : len == 2 ? glUniform2fvARB : len == 1 ? glUniform1fvARB : NULL)(uniformLocation, count, value);  OGL_CHK;
 	jl_freea(value);
@@ -4576,8 +4576,8 @@ DEFINE_FUNCTION( UniformFloat ) {
 	JL_INIT_OPENGL_EXTENSION( glUniform3fARB, PFNGLUNIFORM3FARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform4fARB, PFNGLUNIFORM4FARBPROC );
 
-	JL_S_ASSERT_ARG_RANGE(2, 5);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_RANGE(2, 5);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLint uniformLocation;
 	uniformLocation = JSVAL_TO_INT(JL_ARG(1));
 	*JL_RVAL = JSVAL_VOID;
@@ -4609,7 +4609,7 @@ DEFINE_FUNCTION( UniformFloat ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "value");
+	JL_ERR( E_ARG, E_INTERVAL_NUM(2, 5), E_TYPE, E_TY_NUMBER );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4629,8 +4629,8 @@ DEFINE_FUNCTION( UniformInteger ) {
 	JL_INIT_OPENGL_EXTENSION( glUniform3iARB, PFNGLUNIFORM3IARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform4iARB, PFNGLUNIFORM4IARBPROC );
 
-	JL_S_ASSERT_ARG_RANGE(2, 5);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_RANGE(2, 5);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLint uniformLocation;
 	uniformLocation = JSVAL_TO_INT(JL_ARG(1));
 	*JL_RVAL = JSVAL_VOID;
@@ -4663,7 +4663,7 @@ DEFINE_FUNCTION( UniformInteger ) {
 		return JS_TRUE;
 	}
 
-	JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "value");
+	JL_ERR( E_ARG, E_INTERVAL_NUM(2, 5), E_TYPE, E_TY_NUMBER );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4681,9 +4681,9 @@ DEFINE_FUNCTION( GetObjectParameter ) {
 	JL_INIT_OPENGL_EXTENSION( glGetObjectParameterfvARB, PFNGLGETOBJECTPARAMETERFVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glGetObjectParameterivARB, PFNGLGETOBJECTPARAMETERIVARBPROC );
 
-	JL_S_ASSERT_ARG_RANGE(2,3);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARGC_RANGE(2,3);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	GLint params[MAX_PARAMS]; // (TBD) check if it is the max amount of data that glGetLightfv may returns.
 
@@ -4691,7 +4691,7 @@ DEFINE_FUNCTION( GetObjectParameter ) {
 
 	if ( JL_ARG_ISDEF(3) ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER(3);
+		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count = JSVAL_TO_INT( JL_ARG(3) );
 		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
@@ -4726,9 +4726,9 @@ DEFINE_FUNCTION( BindAttribLocation ) {
 
 	JL_INIT_OPENGL_EXTENSION( glBindAttribLocationARB, PFNGLBINDATTRIBLOCATIONARBPROC );
 
-	JL_S_ASSERT_ARG_COUNT(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &name) );
 	glBindAttribLocationARB(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), name);  OGL_CHK;
@@ -4752,8 +4752,8 @@ DEFINE_FUNCTION( GetAttribLocation ) {
 
 	JL_INIT_OPENGL_EXTENSION( glGetAttribLocationARB, PFNGLGETATTRIBLOCATIONARBPROC );
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &name) );
 	int location;
 	location = glGetAttribLocationARB(JSVAL_TO_INT(JL_ARG(1)), name);  OGL_CHK;
@@ -4780,8 +4780,8 @@ DEFINE_FUNCTION( VertexAttrib ) {
 	JL_INIT_OPENGL_EXTENSION( glVertexAttrib3dARB, PFNGLVERTEXATTRIB3DARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glVertexAttrib4dARB, PFNGLVERTEXATTRIB4DARBPROC );
 
-	JL_S_ASSERT_ARG_RANGE(2, 5);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARGC_RANGE(2, 5);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	int index;
 	index = JSVAL_TO_INT(JL_ARG(1));
 
@@ -4839,7 +4839,7 @@ DEFINE_FUNCTION( GenBuffer ) {
 	
 	JL_INIT_OPENGL_EXTENSION( glGenBuffers, PFNGLGENBUFFERSPROC );
 	
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 	GLuint buffer;
 
 	glGenBuffers(1, &buffer);  OGL_CHK;
@@ -4864,9 +4864,9 @@ DEFINE_FUNCTION( BindBuffer ) {
 
 	JL_INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 	
 	glBindBuffer(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)));  OGL_CHK;
 
@@ -4892,9 +4892,9 @@ DEFINE_FUNCTION( BufferData ) {
 
 	// see http://www.songho.ca/opengl/gl_pbo.html
 
-	JL_S_ASSERT_ARG_MIN(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARGC_MIN(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 	GLenum target = JSVAL_TO_INT(JL_ARG(1));
 	GLenum buffer = JSVAL_TO_INT(JL_ARG(2));
 	
@@ -4922,8 +4922,8 @@ DEFINE_FUNCTION( PointParameter ) {
 	JL_INIT_OPENGL_EXTENSION( glPointParameterf, PFNGLPOINTPARAMETERFPROC );
 	JL_INIT_OPENGL_EXTENSION( glPointParameterfv, PFNGLPOINTPARAMETERFVPROC );
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	*JL_RVAL = JSVAL_VOID;
 	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
@@ -4952,7 +4952,7 @@ DEFINE_FUNCTION( PointParameter ) {
 		return JS_TRUE;
 	}
 	
-	JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "number or Array");
+	JL_ERR( E_ARG, E_NUM(2), E_TYPE, E_TY_NUMBER, E_OR, E_TY_ARRAY );
 	JL_BAD;
 }
 
@@ -4970,8 +4970,8 @@ DEFINE_FUNCTION( ActiveTexture ) {
 
 	JL_INIT_OPENGL_EXTENSION( glActiveTexture, PFNGLACTIVETEXTUREPROC );
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	
 	glActiveTexture(JSVAL_TO_INT(JL_ARG(1)));  OGL_CHK;
 	
@@ -4993,8 +4993,8 @@ DEFINE_FUNCTION( ClientActiveTexture ) {
 
 	JL_INIT_OPENGL_EXTENSION( glClientActiveTexture, PFNGLCLIENTACTIVETEXTUREPROC );
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	glClientActiveTexture(JSVAL_TO_INT(JL_ARG(1)));  OGL_CHK;
 	
@@ -5021,14 +5021,14 @@ DEFINE_FUNCTION( MultiTexCoord ) {
 	JL_INIT_OPENGL_EXTENSION( glMultiTexCoord2d, PFNGLMULTITEXCOORD2DPROC );
 	JL_INIT_OPENGL_EXTENSION( glMultiTexCoord3d, PFNGLMULTITEXCOORD3DPROC );
 
-	JL_S_ASSERT_ARG_RANGE(2,4);
+	JL_ASSERT_ARGC_RANGE(2,4);
 	*JL_RVAL = JSVAL_VOID;
 
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLenum target = JSVAL_TO_INT(JL_ARG(1));
 
 	double s;
-	JL_JsvalToNative(cx, JL_ARG(2), &s);
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &s) );
 	if ( JL_ARGC == 2 ) {
 
 		glMultiTexCoord1d(target, s);  OGL_CHK;
@@ -5036,7 +5036,7 @@ DEFINE_FUNCTION( MultiTexCoord ) {
 		return JS_TRUE;
 	}
 	double t;
-	JL_JsvalToNative(cx, JL_ARG(3), &t);
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &t) );
 	if ( JL_ARGC == 3 ) {
 
 		glMultiTexCoord2d(target, s, t);  OGL_CHK;
@@ -5044,14 +5044,15 @@ DEFINE_FUNCTION( MultiTexCoord ) {
 		return JS_TRUE;
 	}
 	double r;
-	JL_JsvalToNative(cx, JL_ARG(4), &r);
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &r) );
 	if ( JL_ARGC == 4 ) {
 
 		glMultiTexCoord3d(target, s, t, r);  OGL_CHK;
 
 		return JS_TRUE;
 	}
-	JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT_COUNT, "2 to 4");
+
+	ASSERT(false);
 	JL_BAD;
 }
 
@@ -5088,7 +5089,7 @@ DEFINE_FUNCTION( GenQueries ) {
 
 	JL_INIT_OPENGL_EXTENSION( glGenQueriesARB, PFNGLGENQUERIESARBPROC );
 
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 	GLuint query;
 
 	glGenQueriesARB(1, &query);  OGL_CHK;
@@ -5112,8 +5113,8 @@ DEFINE_FUNCTION( DeleteQueries ) {
 
 	JL_INIT_OPENGL_EXTENSION( glDeleteQueriesARB, PFNGLDELETEQUERIESARBPROC );
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLuint query = JSVAL_TO_INT( JL_ARG(1) );
 
 	glDeleteQueriesARB(1, &query);  OGL_CHK;
@@ -5139,9 +5140,9 @@ DEFINE_FUNCTION( BeginQuery ) {
 
 	JL_INIT_OPENGL_EXTENSION( glBeginQueryARB, PFNGLBEGINQUERYARBPROC );
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	glBeginQueryARB(JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ));  OGL_CHK;
 
@@ -5164,8 +5165,8 @@ DEFINE_FUNCTION( EndQuery ) {
 
 	JL_INIT_OPENGL_EXTENSION( glEndQueryARB, PFNGLENDQUERYARBPROC );
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	glEndQueryARB(JSVAL_TO_INT( JL_ARG(1) ));  OGL_CHK;
 
@@ -5189,9 +5190,9 @@ DEFINE_FUNCTION( GetQuery ) {
 
 	JL_INIT_OPENGL_EXTENSION( glGetQueryivARB, PFNGLGETQUERYIVARBPROC );
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	// http://www.opengl.org/sdk/docs/man/xhtml/glGetQueryiv.xml
 
@@ -5219,9 +5220,9 @@ DEFINE_FUNCTION( GetQueryObject ) {
 	JL_INIT_OPENGL_EXTENSION( glGetQueryObjectivARB, PFNGLGETQUERYOBJECTIVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glGetQueryObjectuivARB, PFNGLGETQUERYOBJECTUIVARBPROC );
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	// gl doc. http://www.opengl.org/sdk/docs/man/xhtml/glGetQueryObject.xml
 	// ext. doc. http://oss.sgi.com/projects/ogl-sample/registry/ARB/occlusion_query.txt
@@ -5258,9 +5259,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( UnProject ) {
 
-	JL_S_ASSERT_ARG_COUNT(2);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-	JL_S_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	int x, y;
 	x = JSVAL_TO_INT( JL_ARG(1) );
@@ -5297,21 +5298,21 @@ DEFINE_FUNCTION( DrawImage ) {
 
 	JLStr dataStr;
 
-	JL_S_ASSERT_ARG_RANGE(1,2);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_RANGE(1,2);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	GLsizei width, height;
 	GLenum format, type;
 	int channels;
 	const GLvoid *data;
 	
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *tObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 	if ( JL_GetClass(tObj) == JL_TextureJSClass(cx) ) {
 
 		TextureStruct *tex = (TextureStruct*)JL_GetPrivate(cx, tObj);
-		JL_S_ASSERT_OBJECT_STATE(tex, JL_GetClassName(tObj));
+		JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(tObj));
 
 		data = tex->cbuffer;
 		width = tex->width;
@@ -5327,19 +5328,20 @@ DEFINE_FUNCTION( DrawImage ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &dataStr) );
 		data = dataStr.GetConstStr();
 
-		JL_S_ASSERT( (int)dataStr.Length() == width * height * channels * 1, "Invalid image format." );
-		JL_S_ASSERT_OBJECT_STATE(data, JL_GetClassName(tObj));
+		JL_ASSERT( (int)dataStr.Length() == width * height * channels * 1, E_ARG, E_NUM(1), E_FORMAT );
+
+		JL_ASSERT_OBJECT_STATE(data, JL_GetClassName(tObj));
 
 		type = GL_UNSIGNED_BYTE;
 	}
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER(2);
+		JL_ASSERT_ARG_IS_INTEGER(2);
 		format = JSVAL_TO_INT(JL_ARG(2));
 	} else { // guess
 
-		//JL_ASSERT( format == GL_LUMINANCE || format == GL_LUMINANCE_ALPHA || format == GL_RGB || format == GL_RGBA );
+		//ASSERT( format == GL_LUMINANCE || format == GL_LUMINANCE_ALPHA || format == GL_RGB || format == GL_RGBA );
 
 		switch ( channels ) {
 			case 1:
@@ -5355,7 +5357,7 @@ DEFINE_FUNCTION( DrawImage ) {
 				format = GL_RGBA;
 				break;
 			default:
-				JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "Invalid channel count");
+				JL_ERR( E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(1, 4) );
 		}
 	}
 
@@ -5381,7 +5383,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ReadImage ) {
 
-	JL_S_ASSERT_ARG_RANGE(0,2);
+	JL_ASSERT_ARGC_RANGE(0,2);
 
 	GLint viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);  OGL_CHK;
@@ -5421,7 +5423,7 @@ DEFINE_FUNCTION( ReadImage ) {
 				channels = 1;
 				break;
 			default:
-				JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "format");
+				JL_ERR( E_ARG, E_NUM(2), E_NOTSUPPORTED );
 		}
 	} else {
 
@@ -5431,7 +5433,7 @@ DEFINE_FUNCTION( ReadImage ) {
 
 	int lineLength = width * channels;
 	int length = lineLength * height;
-	JL_S_ASSERT( length > 0, "Invalid image size." );
+	ASSERT( length > 0 ); //, "Invalid image size." );
 	GLvoid *data = JS_malloc(cx, length +1);
 	JL_CHK( data );
 
@@ -5472,12 +5474,12 @@ DEFINE_FUNCTION( ReadImage ) {
 	JL_CHK( JL_NewBlob(cx, data, length, JL_RVAL) );
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
-	JL_S_ASSERT( blobObj, "Unable to create Blob object." );
+	ASSERT( blobObj ); //, "Unable to create Blob object." );
 	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
 
-	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty( cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty( cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	JS_DefineProperty( cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -5541,12 +5543,14 @@ DEFINE_FUNCTION( LoadTrimesh ) {
 	JL_INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
 	JL_INIT_OPENGL_EXTENSION( glBufferData, PFNGLBUFFERDATAPROC );
 
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *trimeshObj = JSVAL_TO_OBJECT(JL_ARG(1));
-	JL_S_ASSERT( JL_JsvalIsTrimesh(cx, JL_ARG(1)), "Invalid Trimesh object" );
+	
+	JL_ASSERT( JL_JsvalIsTrimesh(cx, JL_ARG(1)), E_ARG, E_NUM(1), E_TYPE, E_STR("Trimesh") );
+
 	Surface *srf = GetTrimeshSurface(cx, trimeshObj);
-	JL_S_ASSERT_OBJECT_STATE(srf, JL_GetClassName(trimeshObj));
+	JL_ASSERT_OBJECT_STATE(srf, JL_GetClassName(trimeshObj));
 
 	OpenGlTrimeshInfo *info;
 	JL_CHK( HandleCreate(cx, TRIMESH_ID_NAME, sizeof(OpenGlTrimeshInfo), (void**)&info, FinalizeTrimesh, JL_RVAL) );
@@ -5613,10 +5617,9 @@ DEFINE_FUNCTION( DrawTrimesh ) {
 
 	JL_INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
-
-	JL_S_ASSERT( IsHandleType(cx, JL_ARG(1), TRIMESH_ID_NAME), "Invalid Id." );
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT( IsHandleType(cx, JL_ARG(1), TRIMESH_ID_NAME), E_ARG, E_NUM(1), E_TYPE, E_STR("GlTr Handle") );
 
 	OpenGlTrimeshInfo *info = (OpenGlTrimeshInfo*)GetHandlePrivate(cx, JL_ARG(1));
 
@@ -5793,10 +5796,10 @@ JSBool TextureHelper(JSObject *obj, int *width, int *height, int *channels, cons
 DEFINE_FUNCTION( DefineTextureImage ) {
 
 	JLStr dataStr;
-	JL_S_ASSERT_ARG_MIN(3);
-	JL_S_ASSERT_ARG_IS_INTEGER(1);
-//	JL_S_ASSERT_ARG_IS_INTEGER(2); // may be undefined
-	JL_S_ASSERT_ARG_IS_OBJECT(3);
+	JL_ASSERT_ARGC_MIN(3);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+//	JL_ASSERT_ARG_IS_INTEGER(2); // may be undefined
+	JL_ASSERT_ARG_IS_OBJECT(3);
 
 	GLsizei width, height;
 	GLenum format, type;
@@ -5808,7 +5811,7 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 	if ( JL_GetClass(tObj) == JL_TextureJSClass(cx) ) {
 
 		TextureStruct *tex = (TextureStruct*)JL_GetPrivate(cx, tObj);
-		JL_S_ASSERT_OBJECT_STATE(tex, JL_GetClassName(tObj));
+		JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(tObj));
 
 		data = tex->cbuffer;
 		width = tex->width;
@@ -5844,32 +5847,33 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 				type = GL_DOUBLE;
 				break;
 			default:
-				JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "TypedArray.type");
+				JL_ERR( E_ARG, E_NUM(3), E_NOTSUPPORTED, E_COMMENT("TypedArray.type") );
 		}
 
-		JL_S_ASSERT_ARG_COUNT(6);
+		JL_ASSERT_ARG_COUNT(6);
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &width) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &height) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &channels) );
-		JL_S_ASSERT( width*height*channels == (int)arr->length, "Invalid texture size." );
+
+		JL_ASSERT( width*height*channels == (int)arr->length, E_DATASIZE, E_INVALID );
+
 		data = arr->data;
 	} else {
 
-		JL_CHKM( JL_GetProperty(cx, tObj, "width", &width), "Invalid texture object." );
-		JL_CHKM( JL_GetProperty(cx, tObj, "height", &height), "Invalid texture object." );
-		JL_CHKM( JL_GetProperty(cx, tObj, "channels", &channels), "Invalid texture object." );
-		
+		JL_CHKM( JL_GetProperty(cx, tObj, "width", &width) && JL_GetProperty(cx, tObj, "height", &height) && JL_GetProperty(cx, tObj, "channels", &channels), E_ARG, E_NUM(3), E_INVALID ); // "Invalid texture object."
+
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &dataStr) );
 		data = dataStr.GetConstStr();
 
-		JL_S_ASSERT( (int)dataStr.Length() == width * height * channels * 1, "Invalid image format." );
-		JL_S_ASSERT_OBJECT_STATE(data, JL_GetClassName(tObj));
+		JL_ASSERT( (int)dataStr.Length() == width * height * channels * 1, E_DATASIZE, E_INVALID );
+
+		JL_ASSERT_OBJECT_STATE(data, JL_GetClassName(tObj));
 		type = GL_UNSIGNED_BYTE;
 	}
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_ARG_IS_INTEGER(2);
+		JL_ASSERT_ARG_IS_INTEGER(2);
 		format = JSVAL_TO_INT(JL_ARG(2));
 	} else { // guess
 
@@ -5887,7 +5891,8 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 				format = GL_RGBA;
 				break;
 			default:
-				JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "channels"); // JL_REPORT_ERROR("Invalid texture format."); // miss GL_COLOR_INDEX, GL_STENCIL_INDEX, GL_DEPTH_COMPONENT, GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA
+				JL_ERR( E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(1, 4) );
+				// JL_REPORT_ERROR("Invalid texture format."); // miss GL_COLOR_INDEX, GL_STENCIL_INDEX, GL_DEPTH_COMPONENT, GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA
 		}
 	}
 
@@ -5912,7 +5917,7 @@ DEFINE_FUNCTION( PixelWidthFactor ) {
 	// see. http://www.songho.ca/opengl/gl_projectionmatrix.html
 	// see. engine_core.h
 
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 	GLint viewport[4];
 	GLfloat m[16];
 	glGetIntegerv(GL_VIEWPORT, viewport);  OGL_CHK;
@@ -5933,7 +5938,7 @@ $TOC_MEMBER $INAME( size )
 **/
 DEFINE_FUNCTION( DrawPoint ) {
 
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_COUNT(1);
 	float size;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &size) );
 	glPointSize(size);  OGL_CHK; // get max with GL_POINT_SIZE_RANGE
@@ -5955,7 +5960,7 @@ DEFINE_FUNCTION( DrawDisk ) {
 
 	float s, c, angle, radius;
 	int vertexCount;
-	JL_S_ASSERT_ARG_RANGE(1,2);
+	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &radius) );
 	if ( JL_ARG_ISDEF(2) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &vertexCount) );
@@ -5983,7 +5988,7 @@ $INAME( radius, slices, stacks, smooth );
 **/
 DEFINE_FUNCTION( DrawSphere ) {
 
-	JL_S_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARG_COUNT(4);
 	double radius;
 	int slices, stacks;
 	bool smooth;
@@ -6009,7 +6014,7 @@ $INAME( radius, slices, loops );
 **/
 DEFINE_FUNCTION( DrawDisk ) {
 
-	JL_S_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARG_COUNT(3);
 	double radius;
 	int slices, loops;
 	
@@ -6034,7 +6039,7 @@ $INAME( baseRadius, topRadius, height, slices, stacks, smooth );
 **/
 DEFINE_FUNCTION( DrawCylinder ) {
 
-	JL_S_ASSERT_ARG_COUNT(6);
+	JL_ASSERT_ARG_COUNT(6);
 	double baseRadius, topRadius, height;
 	int slices, stacks;
 	bool smooth;
@@ -6065,7 +6070,7 @@ $INAME( lengthX, lengthY, lengthZ );
 **/
 DEFINE_FUNCTION( DrawBox ) {
 
-	JL_S_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARG_COUNT(3);
 	float lengthX, lengthY, lengthZ;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &lengthX) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lengthY) );
@@ -6260,16 +6265,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( LookAt ) {
 
-	JL_S_ASSERT_ARG_COUNT(9);
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(2);
-	JL_S_ASSERT_ARG_IS_NUMBER(3);
-	JL_S_ASSERT_ARG_IS_NUMBER(4);
-	JL_S_ASSERT_ARG_IS_NUMBER(5);
-	JL_S_ASSERT_ARG_IS_NUMBER(6);
-	JL_S_ASSERT_ARG_IS_NUMBER(7);
-	JL_S_ASSERT_ARG_IS_NUMBER(8);
-	JL_S_ASSERT_ARG_IS_NUMBER(9);
+	JL_ASSERT_ARG_COUNT(9);
+	JL_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARG_IS_NUMBER(2);
+	JL_ASSERT_ARG_IS_NUMBER(3);
+	JL_ASSERT_ARG_IS_NUMBER(4);
+	JL_ASSERT_ARG_IS_NUMBER(5);
+	JL_ASSERT_ARG_IS_NUMBER(6);
+	JL_ASSERT_ARG_IS_NUMBER(7);
+	JL_ASSERT_ARG_IS_NUMBER(8);
+	JL_ASSERT_ARG_IS_NUMBER(9);
 
 	double eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz;
 	JL_JsvalToNative(cx, JL_ARG(1), &eyex);
@@ -6297,11 +6302,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( AimAt ) {
 
-	JL_S_ASSERT_ARG_RANGE(3,6);
+	JL_ASSERT_ARGC_RANGE(3,6);
 
-	JL_S_ASSERT_ARG_IS_NUMBER(1);
-	JL_S_ASSERT_ARG_IS_NUMBER(2);
-	JL_S_ASSERT_ARG_IS_NUMBER(3);
+	JL_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARG_IS_NUMBER(2);
+	JL_ASSERT_ARG_IS_NUMBER(3);
 
 	float px, py, pz, ux, uy, uz;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &px) );
@@ -6310,9 +6315,9 @@ DEFINE_FUNCTION( AimAt ) {
 
 	if ( JL_ARGC == 6 ) {
 
-		JL_S_ASSERT_ARG_IS_NUMBER(4);
-		JL_S_ASSERT_ARG_IS_NUMBER(5);
-		JL_S_ASSERT_ARG_IS_NUMBER(6);
+		JL_ASSERT_ARG_IS_NUMBER(4);
+		JL_ASSERT_ARG_IS_NUMBER(5);
+		JL_ASSERT_ARG_IS_NUMBER(6);
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &ux) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &uy) );
@@ -6422,7 +6427,7 @@ JSBool MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 			glGetFloatv(GL_COLOR_MATRIX, *m);  OGL_CHK;
 			return true;
 	}
-	JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid matrix mode");
+	JL_ERR( E_STR("matrix mode"), E_NOTSUPPORTED ); 
 bad:
 	return false;
 }
@@ -6462,7 +6467,7 @@ DEFINE_INIT() {
 
 	JL_CHK( SetMatrix44GetInterface(cx, obj, MatrixGet) );
 
-	JL_ASSERT( glGetProcAddress == NULL );
+	ASSERT( glGetProcAddress == NULL );
 
 #ifdef XP_WIN
 	glGetProcAddress = windowsGLGetProcAddress;
@@ -6471,7 +6476,7 @@ DEFINE_INIT() {
 	JL_CHK( JL_GetProperty(cx, GetHostObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
 #endif
 
-	JL_ASSERT( glGetProcAddress != NULL );
+	ASSERT( glGetProcAddress != NULL );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -6496,7 +6501,7 @@ DEFINE_FUNCTION( Test ) {
 
 /*
 	jsval id = JL_ARG(1);
-	JL_S_ASSERT( IsHandleType(cx, id, 'TBUF'), "Invalid buffer." );
+	JL_ASSERT( IsHandleType(cx, id, 'TBUF'), "Invalid buffer." );
 	TextureBuffer *tb = (TextureBuffer*)GetHandlePrivate(cx, id);
 	tb->TextureBufferAlloc(tb, sizeof(float) * 3 * 32 * 32); // RGB 32x32
 	//tb->TextureBufferFree(tb);

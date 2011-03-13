@@ -38,11 +38,11 @@ DEFINE_CONSTRUCTOR() {
 
 	JLStr buffer;
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
@@ -62,7 +62,7 @@ DEFINE_CONSTRUCTOR() {
 			format = bits == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8;
 			break;
 		default:
-			JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "sound.channels");
+			JL_ERR( E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(1, 2) );
 	}
 
 	ALuint bid; // The OpenAL sound buffer ID
@@ -88,7 +88,7 @@ DEFINE_FUNCTION( Free ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	ALuint bid = (ALuint) JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( bid );
+	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	alBufferData(bid, AL_FORMAT_MONO8, NULL, 0, 0);
 	return JS_TRUE;
 	JL_BAD;
@@ -103,7 +103,7 @@ DEFINE_FUNCTION( valueOf ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	ALuint bid = (ALuint) JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( bid );
+	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	JL_CHK( JL_NativeToJsval(cx, bid, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
@@ -122,7 +122,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( frequency ) {
 
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( bid );
+	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	ALint frequency;
 
 	alGetBufferi(bid, AL_FREQUENCY, &frequency);
@@ -141,7 +141,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( size ) {
 
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( bid );
+	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	ALint size;
 
 	alGetBufferi(bid, AL_SIZE, &size);
@@ -161,7 +161,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( bits ) {
 
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( bid );
+	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	ALint bits;
 
 	alGetBufferi(bid, AL_BITS, &bits);
@@ -180,7 +180,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( channels ) {
 
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( bid );
+	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	ALint channels;
 
 	alGetBufferi(bid, AL_CHANNELS, &channels);

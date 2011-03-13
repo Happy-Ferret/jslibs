@@ -22,11 +22,11 @@ DECLARE_CLASS( Socket )
 
 JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
-	JL_S_ASSERT_INHERITANCE(obj, JL_CLASS(Descriptor));
+	JL_ASSERT_INHERITANCE(obj, JL_CLASS(Descriptor));
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc*)JL_GetPrivate(cx, obj); // (PRFileDesc *)pv;
-	JL_S_ASSERT_OBJECT_STATE(fd, JL_CLASS_NAME(Descriptor));
+	JL_ASSERT_OBJECT_STATE(fd, JL_CLASS_NAME(Descriptor));
 
 	PRInt32 res;
 /* (TBD) not sure a Poll is realy needed here
@@ -77,8 +77,10 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 	status = PR_Close(fd); // what to do on error ??
 	if ( status != PR_SUCCESS ) {
 
-		if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
-			JS_ReportWarning(cx, "A descriptor cannot be closed while Finalize.");
+		if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) { // if non-blocking descriptor, this is a non-fatal error
+
+			JL_WARN( E_NAME(JL_CLASS_NAME(Descriptor)), E_FIN ); // "A descriptor cannot be closed while Finalize."
+		}
 	}
 	JL_SetPrivate(cx, obj, NULL);
 
@@ -104,15 +106,16 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
+
+	*JL_RVAL = JSVAL_VOID;
 
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
 
-	JL_S_ASSERT( fd != NULL, "The descriptor is already closed." ); // see PublicApiRules (http://code.google.com/p/jslibs/wiki/PublicApiRules)
-//	if ( !fd ) { // (TBD) apply jslibsAPIRules
-//
-//		JL_REPORT_WARNING( "The descriptor is closed." );
-//		return JS_TRUE;
-//	}
+	JL_ASSERT_WARN( fd, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED ); // see PublicApiRules (http://code.google.com/p/jslibs/wiki/PublicApiRules)
+	if ( !fd )
+		return JS_TRUE;
 
 	PRStatus status;
 	status = PR_Close(fd);
@@ -124,7 +127,7 @@ DEFINE_FUNCTION( Close ) {
 	JL_SetPrivate(cx, obj, NULL);
 	JL_CHK( SetStreamReadInterface(cx, obj, NULL) );
 	//	JS_ClearScope( cx, obj ); // (TBD) check if this can help to clear readable, writable, exception ?
-	*JL_RVAL = JSVAL_VOID;
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -287,8 +290,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
+	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 	if (likely( JL_ARGC == 0 )) {
 
@@ -325,10 +330,11 @@ DEFINE_FUNCTION( Write ) {
 
 	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT( 1 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARG_COUNT( 1 );
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
+	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	size_t sentAmount;
 
 //	size_t len;
@@ -337,7 +343,8 @@ DEFINE_FUNCTION( Write ) {
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
-	JL_S_ASSERT( str.Length() <= PR_INT32_MAX, "Too many data." );
+	ASSERT( str.Length() <= PR_INT32_MAX );
+
 	PRInt32 res;
 	res = PR_Write( fd, str.GetConstStr(), (PRInt32)str.Length() );
 	if (unlikely( res == -1 )) {
@@ -426,9 +433,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Sync ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
+	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	JL_CHKB( PR_Sync(fd) == PR_SUCCESS, bad_ioerror );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -450,10 +458,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( available ) {
 
-	JL_S_ASSERT_THIS_INSTANCE();
 	PRFileDesc *fd;
+	JL_ASSERT_THIS_INSTANCE();
 	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
+	JL_ASSERT_THIS_OBJECT_STATE( fd ); //	JL_ASSERT_THIS_INSTANCE();
 
 	PRInt64 available;
 	available = PR_Available64( fd ); // For a normal file, these are the bytes beyond the current file pointer.
@@ -485,10 +493,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( type ) {
 
-	JL_S_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( fd );
+	JL_ASSERT_THIS_OBJECT_STATE( fd ); //	JL_ASSERT_THIS_INSTANCE();
 	*vp = INT_TO_JSVAL( (jsint)PR_GetDescType(fd) );
 	return JS_TRUE;
 	JL_BAD;
@@ -504,7 +512,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( closed ) {
 
-	JL_S_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	*vp = BOOLEAN_TO_JSVAL( fd == NULL );
@@ -535,7 +543,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Import ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_ASSERT_ARGC_MIN(2);
 	//int stdfd;
 	//JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &stdfd) );
 
@@ -578,12 +586,16 @@ DEFINE_FUNCTION( Import ) {
 			fd = PR_ImportUDPSocket(osfd);
 			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_PROTOTYPE(cx, Socket), NULL); // (TBD) check if proto is needed !
 			break;
+		case PR_DESC_LAYERED:
+			JL_ERR(E_THISOPERATION, E_NOTSUPPORTED);
+			break;
 		case PR_DESC_PIPE:
 			fd = PR_ImportPipe(osfd);
 			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_PROTOTYPE(cx, File), NULL); // (TBD) check if proto is needed !
 			break;
 		default:
-			JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid descriptor type");
+			ASSERT(false);
+			IFDEBUG( goto bad );
 	}
 	if ( fd == NULL )
 		return ThrowIoError(cx);
@@ -628,6 +640,7 @@ CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_HAS_INSTANCE // see issue#52
+	HAS_PRIVATE // unused. Just avoid Print(Descriptor.available); to crash
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Close )

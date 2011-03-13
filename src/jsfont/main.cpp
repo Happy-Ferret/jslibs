@@ -69,14 +69,16 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	FT_Memory memory; // http://www.freetype.org/freetype2/docs/design/design-4.html
 	memory = (FT_Memory)jl_malloc(sizeof(*memory));
-	JL_S_ASSERT_ALLOC( memory );
+	JL_ASSERT_ALLOC( memory );
 	memory->user = NULL;
 	memory->alloc = JsfontAlloc;
 	memory->free = JsfontFree;
 	memory->realloc = JsfontRealloc;
 	FT_Error status;
 	status = FT_New_Library(memory, &mpv->ftLibrary);
-	JL_S_ASSERT_ERROR_NUM( status == 0, JLSMSG_INIT_FAIL, "FreeType2" );
+
+	JL_ASSERT( status == 0, E_LIB, "freetype2", E_INIT, E_ERRNO(status) );
+
 	FT_Add_Default_Modules(mpv->ftLibrary);
 
 	mpv->GetFTSymbols = GetFTSymbols;

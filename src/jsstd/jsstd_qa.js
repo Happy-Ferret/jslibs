@@ -824,8 +824,8 @@ LoadModule('jsstd');
 			
 		} catch(ex) {
 			
-			QA.ASSERT( ex.constructor, Error, 'Exec exception' );
-			QA.ASSERT( ex.message.substr(0,21), 'Unable to load Script', 'error message' );
+			QA.ASSERT( ex.constructor, ReferenceError, 'Exec exception' );
+			QA.ASSERT( ex.message.indexOf('xdr cannot be found') != -1, true, 'error message' );
 		}
 
 
@@ -930,6 +930,9 @@ LoadModule('jsstd');
 		
 		var obj = {};
 		QA.ASSERT_EXCEPTION( function() {  SandboxEval('Query()', function(val) obj)  }, 'TypeError', 'Query returns a non-primitive value');
+
+//		var obj = { abc: 321 };
+//		QA.ASSERT( SandboxEval('Query()', function(val) obj).abc, 321, 'Query return value');
 
 
 /// Disabled GC [r]

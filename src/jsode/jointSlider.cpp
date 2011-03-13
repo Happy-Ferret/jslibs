@@ -35,16 +35,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_RANGE(1,2);
+	JL_ASSERT_ARGC_RANGE(1,2);
 
 	ode::dJointGroupID groupId;
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_S_ASSERT_ARG_IS_OBJECT(2);
-		JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
+		JL_ASSERT_ARG_IS_OBJECT(2);
+		JL_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
 		groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(2)));
 	} else {
 
@@ -74,9 +74,9 @@ DEFINE_FUNCTION( AddForce ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dReal real;
 	JL_CHK( JL_JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddSliderForce(jointId, real);
@@ -99,12 +99,12 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( axis ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
 	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
-	JL_S_ASSERT( length >= 3, "Invalid array size." );
+	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
 	ode::dJointSetSliderAxis( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 	JL_BAD;
@@ -113,7 +113,7 @@ DEFINE_PROPERTY_SETTER( axis ) {
 DEFINE_PROPERTY_GETTER( axis ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetSliderAxis(jointId,vector);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
@@ -129,7 +129,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( position ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetSliderPosition(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -143,7 +143,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( positionRate ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId);
+	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetSliderPositionRate(jointId), vp) );
 	return JS_TRUE;
 	JL_BAD;

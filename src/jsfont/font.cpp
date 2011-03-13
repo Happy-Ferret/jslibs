@@ -66,10 +66,10 @@ DEFINE_CONSTRUCTOR() {
 
 	JLStr filePathName;
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 
 //	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, _moduleId);
 
@@ -86,13 +86,13 @@ DEFINE_CONSTRUCTOR() {
 
 	JsfontPrivate *pv;
 	pv = (JsfontPrivate*)jl_malloc(sizeof(JsfontPrivate));
-	JL_S_ASSERT_ALLOC( pv );
+	JL_ASSERT_ALLOC( pv );
 	JL_updateMallocCounter(cx, sizeof(JsfontPrivate));
 
 	FTCHK( FT_New_Face( mpv->ftLibrary, filePathName, faceIndex, &pv->face ) );
 	// from memory: FT_New_Memory_Face
 	// see. FT_Open_Face
-	JL_S_ASSERT_ALLOC(pv->face);
+	JL_ASSERT_ALLOC(pv->face);
 
 	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
@@ -108,10 +108,10 @@ DEFINE_CONSTRUCTOR() {
 /*
 DEFINE_FUNCTION( SetSize ) {
 
-	JL_S_ASSERT_ARG_MIN(2);
+	JL_ASSERT_ARGC_MIN(2);
 
 	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(face);
+	JL_ASSERT_THIS_OBJECT_STATE(face);
 
 	FT_UInt width, height;
 
@@ -120,7 +120,7 @@ DEFINE_FUNCTION( SetSize ) {
 
 	FT_Error status;
 	status = FT_Set_Pixel_Sizes(face, width, height);
-	JL_S_ASSERT( status == 0, "Unable to FT_Set_Pixel_Sizes." );
+	JL_ASSERT( status == 0, "Unable to FT_Set_Pixel_Sizes." );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -147,11 +147,11 @@ int CubicToFunc( const FT_Vector* control1, const FT_Vector* control2, const FT_
 
 DEFINE_FUNCTION( GetCharOutline ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 
 	FT_Face face;
 	face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(face);
+	JL_ASSERT_THIS_OBJECT_STATE(face);
 
 	FT_Outline_Funcs funcs;
 	funcs.move_to = MoveToFunc;
@@ -163,11 +163,11 @@ DEFINE_FUNCTION( GetCharOutline ) {
 
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, JL_ARG(1));
-	JL_S_ASSERT( jsstr != NULL, "Invalid string." );
-	JL_S_ASSERT( JL_GetStringLength(jsstr) == 1, "Invalid char" );
+	JL_ASSERT( jsstr != NULL, "Invalid string." );
+	JL_ASSERT( JL_GetStringLength(jsstr) == 1, "Invalid char" );
 	jschar *str;
 	str = JS_GetStringChars(jsstr);
-	JL_S_ASSERT( str != NULL, "Invalid string." );
+	JL_ASSERT( str != NULL, "Invalid string." );
 
 	FT_UInt glyphIndex = FT_Get_Char_Index( face, str[0] );
 	FT_Error error = FT_Load_Glyph( face, glyphIndex, FT_LOAD_DEFAULT );
@@ -195,27 +195,27 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( DrawChar ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 
 	JsfontPrivate *pv;
 	pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	JL_S_ASSERT( pv->face->size->metrics.height > 0, "Invalid font size." );
+	ASSERT( pv->face->size->metrics.height > 0 ); // JL_ASSERT_ERROR_NUM( pv->face->size->metrics.height > 0, JLSMSG_VALUE_OUTOFRANGE, "height > 0" );
 
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, JL_ARG(1));
-	JL_S_ASSERT( jsstr != NULL, "Invalid string." );
-
-//	JL_S_ASSERT( JL_GetStringLength(jsstr) == 1, "Invalid char" );
+	JL_ASSERT( jsstr, E_ARG, E_NUM(1), E_TYPE, E_TY_CHAR );
+	
+//	JL_ASSERT( JL_GetStringLength(jsstr) == 1, "Invalid char" );
 //	jschar *str;
 //	str = JS_GetStringChars(jsstr);
-//	JL_S_ASSERT( str != NULL, "Invalid string." );
+//	JL_ASSERT( str != NULL, "Invalid string." );
 
 	size_t strlen;
 	const jschar *str;
 	str = JS_GetStringCharsAndLength(cx, jsstr, &strlen);
-	JL_S_ASSERT( strlen == 1, "Invalid char" );
+	JL_ASSERT( strlen == 1, E_ARG, E_NUM(1), E_TYPE, E_TY_CHAR );
 
 	FTCHK( FT_Load_Char(pv->face, str[0], FT_LOAD_RENDER) );
 
@@ -262,22 +262,24 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( DrawString ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 
 	JsfontPrivate *pv;
 	pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	JL_S_ASSERT( pv->face->size->metrics.height > 0, "Invalid font size." );
+	ASSERT( pv->face->size->metrics.height > 0 ); // JL_ASSERT_ERROR_NUM( pv->face->size->metrics.height > 0, JLSMSG_VALUE_OUTOFRANGE, "height > 0" );
 
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, JL_ARG(1));
-	JL_S_ASSERT( jsstr != NULL, "Invalid string." );
+	JL_ASSERT( jsstr, E_ARG, E_NUM(1), E_TYPE, E_TY_STRING );
+
 	//jschar *str;
 	//str = JS_GetStringChars(jsstr);
-	//JL_S_ASSERT( str != NULL, "Invalid string." );
+	//JL_ASSERT( str != NULL, "Invalid string." );
 	//size_t strlen;
 	//strlen = JL_GetStringLength(jsstr);
+
 	size_t strlen;
 	const jschar *str;
 	str = JS_GetStringCharsAndLength(cx, jsstr, &strlen);
@@ -344,7 +346,7 @@ DEFINE_FUNCTION( DrawString ) {
 	if ( strlen > sizeof(glyphs_static)/sizeof(*glyphs_static) ) {
 
 		glyphs = (Glyph*)jl_malloc(sizeof(Glyph) * strlen);
-		JL_S_ASSERT_ALLOC( glyphs );
+		JL_ASSERT_ALLOC( glyphs );
 	} else {
 
 		glyphs = glyphs_static;
@@ -478,7 +480,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( ascender ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL(pv->face->size->metrics.ascender >> 6);
 	return JS_TRUE;
 	JL_BAD;
@@ -494,7 +496,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( descender ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL(pv->face->size->metrics.descender >> 6);
 	return JS_TRUE;
 	JL_BAD;
@@ -508,7 +510,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( width ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL(pv->face->size->metrics.max_advance >> 6);
 	return JS_TRUE;
 	JL_BAD;
@@ -523,14 +525,14 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( size ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	int size;
-	size = 0;
+	FT_UInt size;
 	if ( !JSVAL_IS_VOID( *vp ) )
 		JL_CHK( JL_JsvalToNative(cx, *vp, &size) );
+	else
+		size = 0;
 
-	JL_S_ASSERT( size >= 0, "Invalid font size." );
 	FTCHK( FT_Set_Pixel_Sizes(pv->face, size, size) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -547,7 +549,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( encoding ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned int encoding;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &encoding) );
@@ -565,7 +567,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( poscriptName ) {
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_NativeToJsval(cx, FT_Get_Postscript_Name(pv->face), vp) );
 	return JS_TRUE;

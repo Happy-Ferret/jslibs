@@ -48,7 +48,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	HRESULT hr;
 	hr = CoInitialize(NULL);
-	JL_S_ASSERT_ERROR_NUM( SUCCEEDED(hr), JLSMSG_INIT_FAIL, "COM sub system" );
+	JL_ASSERT( SUCCEEDED(hr), E_NAME("COM"), E_INIT );
 
 	INIT_CLASS( ComVariant );
 	INIT_CLASS( ComEnum );

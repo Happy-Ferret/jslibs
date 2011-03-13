@@ -26,6 +26,21 @@ DECLARE_CLASS( Icon )
 #define MSG_POPUP_MENU (WM_USER + 2)
 
 
+BOOL FASTCALL
+Shell_NotifyIconA_retry(DWORD dwMessage, PNOTIFYICONDATAA lpData) {
+
+	BOOL status;
+	IFDEBUG( status = FALSE );
+	for ( int retry = 4; retry; --retry ) {
+		
+		status = Shell_NotifyIcon(dwMessage, lpData);
+		if ( status == TRUE )
+			break;
+		Sleep(10);
+	};
+	return status;
+}
+
 struct Private {
 	
 	NOTIFYICONDATA nid;
@@ -49,14 +64,14 @@ typedef struct MSGInfo {
 } MSGInfo;
 
 
-//JL_STATIC_ASSERT(sizeof(jsval) <= sizeof(/*jl::QueueCell::data aka.*/void*));
+//S_ASSERT(sizeof(jsval) <= sizeof(/*jl::QueueCell::data aka.*/void*));
 
 void AddPopupMenuRoot(JSContext *cx, JSObject *obj, jsval value) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 //	jsid id;
 //	JL_JsvalToJsid(cx, &value, &id);
-//	JS_STATIC_ASSERT( sizeof(id) <= sizeof(void*) );
+//	JS_S_ASSERT( sizeof(id) <= sizeof(void*) );
 	//jl::QueuePush(&pv->popupMenuRoots, *(void**)&id);
 	*++pv->popupMenuRoots = value;
 }
@@ -199,7 +214,7 @@ HBITMAP MenuItemBitmapFromIcon(HICON hIcon) {
 void ForwardMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 	MSGInfo *msg = (MSGInfo*)jl_malloc(sizeof(MSGInfo));
-	JL_ASSERT( msg != NULL );
+	ASSERT( msg != NULL );
 	// BOOL swapButtons = GetSystemMetrics(SM_SWAPBUTTON); // (TBD) use it
 
 	msg->hwnd = hWnd;
@@ -228,7 +243,7 @@ void ForwardMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	}
 
 	Private *pv = (Private*)GetWindowLongPtr(hWnd, GWL_USERDATA);
-	JL_ASSERT( pv != NULL );
+	ASSERT( pv != NULL );
 
 	EnterCriticalSection(&pv->cs);
 	jl::QueuePush(&pv->msgQueue, msg);
@@ -326,11 +341,11 @@ DWORD WINAPI SystrayThread( LPVOID lpParam ) {
 	Private *pv = (Private*)lpParam;
 
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
-	JL_ASSERT( hInst != NULL ); // JL_S_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
+	ASSERT( hInst != NULL ); // JL_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 
 	WNDCLASS wc = { 0, SystrayWndProc, 0, 0, hInst, NULL, NULL, NULL, NULL, SYSTRAY_WINDOW_CLASS_NAME };
 	ATOM rc = RegisterClass(&wc);	// (TBD) do UnregisterClass at the end ?
-	JL_ASSERT( rc != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS ); // JL_S_ASSERT( rc != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS, "Unable to RegisterClass." );
+	ASSERT( rc != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS ); // JL_ASSERT( rc != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS, "Unable to RegisterClass." );
 
 	memset(&pv->nid, 0, sizeof(NOTIFYICONDATA)); // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/shellcc/platform/shell/reference/structures/notifyicondata.asp
 	pv->nid.cbSize = sizeof(NOTIFYICONDATA);
@@ -342,8 +357,8 @@ DWORD WINAPI SystrayThread( LPVOID lpParam ) {
 	pv->nid.hWnd = CreateWindow(SYSTRAY_WINDOW_CLASS_NAME, NULL, WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, HWND_MESSAGE, CreatePopupMenu(), hInst, NULL); // (TBD) use HWND_MESSAGE ?
 	SetWindowLongPtr(pv->nid.hWnd, GWL_USERDATA, (LONG)pv); // make pv available for SystrayWndProc
 
-	BOOL status = Shell_NotifyIcon(NIM_ADD, &pv->nid);
-	JL_ASSERT( status ); // JL_S_ASSERT( status == TRUE, "Unable to setup systray icon." );
+	BOOL status = Shell_NotifyIconA_retry(NIM_ADD, &pv->nid);
+	ASSERT( status );
 
 	PulseEvent(pv->event); // first pulse
 
@@ -357,8 +372,8 @@ DWORD WINAPI SystrayThread( LPVOID lpParam ) {
 		DispatchMessage(&msg);
 	}
 
-	status = Shell_NotifyIcon(NIM_DELETE, &pv->nid);
-	JL_ASSERT( status ); // JL_S_ASSERT( status == TRUE, "Unable to delete notification icon.");
+	status = Shell_NotifyIconA_retry(NIM_DELETE, &pv->nid);
+	ASSERT( status ); // JL_ASSERT( status == TRUE, "Unable to delete notification icon.");
 
 	pv->nid.hWnd = NULL; // see finalizer
 
@@ -381,13 +396,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	//Private *pv = (Private*)jl_malloc(sizeof(Private));
 
 	Private *pv = new Private();
-	JL_S_ASSERT_ALLOC( pv );
+	JL_ASSERT_ALLOC( pv );
 	JL_updateMallocCounter(cx, sizeof(Private));
 	JL_SetPrivate(cx, obj, pv);
 
@@ -509,7 +524,7 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 			if ( JL_ValueIsFunction(cx, functionVal) ) {
 
 				jsval key;
-				JL_STATIC_ASSERT( sizeof(jsid) == sizeof(wParam) );
+				S_ASSERT( sizeof(jsid) == sizeof(wParam) );
 				JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) );
 				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
 				FreePopupMenuRoots(cx, obj);
@@ -526,7 +541,7 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 					if ( JL_ValueIsFunction(cx, functionVal) ) {
 
 						jsval key;
-						JL_STATIC_ASSERT( sizeof(jsid) == sizeof(wParam) );
+						S_ASSERT( sizeof(jsid) == sizeof(wParam) );
 						JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) );
 						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
 					}
@@ -580,7 +595,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	MSGInfo *trayMsg;
 	while ( !jl::QueueIsEmpty(&pv->msgQueue) ) {
@@ -610,7 +625,7 @@ struct UserProcessEvent {
 	JSObject *systrayObj;
 };
 
-JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
 void SystrayStartWait( volatile ProcessEvent *pe ) {
 
@@ -618,7 +633,7 @@ void SystrayStartWait( volatile ProcessEvent *pe ) {
 
 	HANDLE events[] = { upe->systrayPrivate->event, upe->cancelEvent };
 	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
-	JL_ASSERT( status != WAIT_FAILED );
+	ASSERT( status != WAIT_FAILED );
 
 }
 
@@ -661,10 +676,10 @@ JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 
 DEFINE_FUNCTION( Events ) {
 	
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 	JL_DEFINE_FUNCTION_OBJ;
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
@@ -693,7 +708,7 @@ DEFINE_FUNCTION( Focus ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	SetForegroundWindow(pv->nid.hWnd);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -811,19 +826,19 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 				if ( strcmp(keyStr, "icon") == 0 ) {
 
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
-					JL_S_ASSERT_IS_OBJECT(value, keyStr);
+					JL_ASSERT_IS_OBJECT(value, keyStr);
 					JSObject *iconObj = JSVAL_TO_OBJECT(value);
-					JL_S_ASSERT_CLASS( iconObj, JL_CLASS(Icon) );
+					JL_ASSERT_CLASS( iconObj, JL_CLASS(Icon) );
 					HICON *phIcon = (HICON*)JL_GetPrivate(cx, iconObj);
-					JL_S_ASSERT_OBJECT_STATE(phIcon, JL_CLASS_NAME(Icon));
+					JL_ASSERT_OBJECT_STATE(phIcon, JL_CLASS_NAME(Icon));
 					hBMP = MenuItemBitmapFromIcon(*phIcon);
-					JL_S_ASSERT(hBMP != NULL, "Unable to create the menu item icon.");
+					JL_ASSERT( hBMP != NULL, E_STR("icon"), E_CREATE );
 					continue;
 				}
 				if ( strcmp(keyStr, "popup") == 0 ) {
 
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
-					JL_S_ASSERT_IS_OBJECT(value, keyStr);
+					JL_ASSERT_IS_OBJECT(value, keyStr);
 					uFlags |= MF_POPUP;
 					JL_CHK( MakeMenu(cx, systrayObj, JSVAL_TO_OBJECT(value), &popupMenu) );
 					continue;
@@ -844,9 +859,9 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 
 			uFlags |= MF_BITMAP;
 			HICON *phIcon = (HICON*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(label));
-			JL_S_ASSERT_OBJECT_STATE(phIcon, JL_CLASS_NAME(Icon));
+			JL_ASSERT_OBJECT_STATE(phIcon, JL_CLASS_NAME(Icon));
 			hBMP = MenuItemBitmapFromIcon(*phIcon);
-			JL_S_ASSERT(hBMP != NULL, "Unable to create the menu item icon.");
+			JL_ASSERT( hBMP != NULL, E_STR("icon"), E_CREATE );
 			lpNewItem = (LPCTSTR)phIcon;
 		} else {
 
@@ -858,7 +873,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 				uFlags |= MF_STRING;
 			} else {
 
-				JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "menu label must be defined");
+				JL_ERR( E_PROP, E_NAME("label"), E_DEFINED );
 			}
 		}
 
@@ -877,11 +892,11 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 //			uIDNewItem = (UINT_PTR)cmdid;
 			AddPopupMenuRoot(cx, systrayObj, item);
 
-//			JL_STATIC_ASSERT( sizeof(jsval) == sizeof(UINT_PTR) );
+//			S_ASSERT( sizeof(jsval) == sizeof(UINT_PTR) );
 
 			jsid id;
 			JL_CHK( JL_JsvalToJsid(cx, &item, &id) );
-			JL_STATIC_ASSERT(sizeof(id) <= sizeof(UINT_PTR));
+			S_ASSERT(sizeof(id) <= sizeof(UINT_PTR));
 			uIDNewItem = *(UINT_PTR*)&id;
 		}
 
@@ -896,7 +911,8 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 		if ( hBMP != NULL ) {
 
 			BOOL res = SetMenuItemBitmaps(*hMenu, i, MF_BYPOSITION, hBMP, hBMP ); // doc: When the menu is destroyed, these bitmaps are not destroyed; it is up to the application to destroy them.
-			JL_S_ASSERT( res != FALSE, "Unable to SetMenuItemBitmaps." );
+			if ( res == 0 )
+				return JL_ThrowOSError(cx);
 		}
 	}
 
@@ -953,13 +969,13 @@ DEFINE_FUNCTION( PopupMenu ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_ARG_COUNT(1);
 
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	HMENU hMenu = GetMenu(pv->nid.hWnd);
-	JL_S_ASSERT_THIS_OBJECT_STATE( hMenu );
+	JL_ASSERT_THIS_OBJECT_STATE( hMenu );
 
 	DestroyMenu(hMenu);
 	FreePopupMenuRoots(cx, obj);
@@ -984,12 +1000,12 @@ DEFINE_FUNCTION( PopupBalloon ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	BOOL status;
 
 	if ( JL_ARG_ISDEF(1) ) {
 	
-		JL_S_ASSERT_ARG_IS_OBJECT(1);
+		JL_ASSERT_ARG_IS_OBJECT(1);
 		JSObject *infoObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 		pv->nid.dwInfoFlags = NIIF_NONE;
@@ -1037,15 +1053,14 @@ DEFINE_FUNCTION( PopupBalloon ) {
 //		pv->nid.uTimeout = 10000;
 
 		pv->nid.uFlags |= NIF_INFO;
-		status = Shell_NotifyIcon(NIM_MODIFY, &pv->nid);
+		status = Shell_NotifyIconA_retry(NIM_MODIFY, &pv->nid);
 	} else {
 
 		pv->nid.szInfo[0] = '\0';
 		pv->nid.uFlags |= NIF_INFO;
-		status = Shell_NotifyIcon(NIM_MODIFY, &pv->nid);
+		status = Shell_NotifyIconA_retry(NIM_MODIFY, &pv->nid);
 	}
-	if ( status == FALSE )
-		return WinThrowError(cx, GetLastError());
+	JL_ASSERT( status == TRUE, E_THISOBJ, E_INTERNAL );
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1057,9 +1072,9 @@ DEFINE_FUNCTION( PopupBalloon ) {
 DEFINE_FUNCTION( CallDefault ) {
 
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(nid);
+	JL_ASSERT_THIS_OBJECT_STATE(nid);
 	HMENU hMenu = GetMenu(nid->hWnd);
-	JL_S_ASSERT_THIS_OBJECT_STATE(hMenu);
+	JL_ASSERT_THIS_OBJECT_STATE(hMenu);
 !!! menu is empty !!!
 	jsid id = GetMenuDefaultItem( hMenu, FALSE, GMDI_USEDISABLED ); // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/resources/menus/menureference/menufunctions/getmenudefaultitem.asp
 	DWORD err = GetLastError();
@@ -1097,11 +1112,13 @@ DEFINE_FUNCTION( Position ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	RECT r;
 	BOOL res = FindOutPositionOfIconDirectly( pv->nid.hWnd, pv->nid.uID, &r );
-	JL_S_ASSERT( res == TRUE, "Unable to FindOutPositionOfIconDirectly." );
+	if ( res != TRUE )
+		return JL_ThrowOSError(cx);
+
 	jsval v[] = { INT_TO_JSVAL(r.left), INT_TO_JSVAL(r.top) };
 
 	JSObject *point;
@@ -1132,10 +1149,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Rect ) {
 
 	HWND hWndTrayWnd = GetTrayNotifyWnd();
-	JL_S_ASSERT( hWndTrayWnd != NULL, "Unable to GetTrayNotifyWnd." );
+	if ( !hWndTrayWnd )
+		return JL_ThrowOSError(cx);
 	RECT rect;
 	BOOL st = GetWindowRect(hWndTrayWnd, &rect);
-	JL_S_ASSERT( st == TRUE, "Unable to GetWindowRect." );
+	if ( !st )
+		return JL_ThrowOSError(cx);
 	jsval v[] = { INT_TO_JSVAL(rect.left), INT_TO_JSVAL(rect.top), INT_TO_JSVAL(rect.right-rect.left), INT_TO_JSVAL(rect.bottom-rect.top) };
 
 	JSObject *point;
@@ -1174,25 +1193,27 @@ DEFINE_PROPERTY_SETTER( icon ) {
 	if ( JSVAL_IS_OBJECT(*vp) && !JSVAL_IS_NULL( *vp ) ) {
 
 		JSObject *iconObj = JSVAL_TO_OBJECT(*vp);
-		JL_S_ASSERT_CLASS( iconObj, JL_CLASS(Icon) );
+		JL_ASSERT_CLASS( iconObj, JL_CLASS(Icon) );
 		HICON *phIcon = (HICON*)JL_GetPrivate(cx, iconObj);
-		JL_S_ASSERT_OBJECT_STATE( phIcon, JL_CLASS_NAME(Icon) );
+		JL_ASSERT_OBJECT_STATE( phIcon, JL_CLASS_NAME(Icon) );
 		hIcon = *phIcon;
 	} else if ( JSVAL_IS_NULL( *vp ) || JSVAL_IS_VOID( *vp ) ) {
 
 		hIcon = NULL;
 	} else {
 
-		JL_REPORT_ERROR_NUM( JLSMSG_TYPE_ERROR, "invalid icon");
+		JL_ERR( E_STR("icon"), E_INVALID );
 	}
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	pv->nid.hIcon = hIcon;
 	pv->nid.uFlags |= NIF_ICON;
-	BOOL status = Shell_NotifyIcon(NIM_MODIFY, &pv->nid);
-	JL_S_ASSERT( status == TRUE, "Unable to setup systray icon." );
+
+	BOOL status = Shell_NotifyIconA_retry(NIM_MODIFY, &pv->nid);
+	JL_ASSERT( status == TRUE, E_THISOBJ, E_INTERNAL );
+
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
@@ -1207,12 +1228,14 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( visible ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JSBool state;
 	JL_CHK( JS_ValueToBoolean(cx, *vp, &state ) );
-	BOOL status = Shell_NotifyIcon( state == JS_TRUE ? NIM_ADD : NIM_DELETE, &pv->nid);
-	JL_S_ASSERT( status == TRUE || GetLastError() == NO_ERROR, "Unable to setup systray icon." );
+	
+	BOOL status = Shell_NotifyIconA_retry( state == JS_TRUE ? NIM_ADD : NIM_DELETE, &pv->nid);
+	JL_ASSERT( status == TRUE, E_THISOBJ, E_INTERNAL );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1226,15 +1249,17 @@ DEFINE_PROPERTY_SETTER( text ) {
 
 	JLStr tipText;
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tipText) );
 	size_t len = JL_MIN(sizeof(pv->nid.szTip)-1, tipText.Length());
 	memcpy(pv->nid.szTip, tipText.GetConstStr(), tipText.Length());
 	pv->nid.szTip[len] = '\0';
 
 	pv->nid.uFlags |= NIF_TIP;
-	BOOL status = Shell_NotifyIcon(NIM_MODIFY, &pv->nid);
-	JL_S_ASSERT( status == TRUE, "Unable to setup systray icon." );
+
+	BOOL status = Shell_NotifyIconA_retry(NIM_MODIFY, &pv->nid);
+	JL_ASSERT( status == TRUE, E_THISOBJ, E_INTERNAL );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1242,7 +1267,7 @@ DEFINE_PROPERTY_SETTER( text ) {
 DEFINE_PROPERTY_GETTER( text ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	if ( pv->nid.uFlags & NIF_TIP )
 		*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, pv->nid.szTip) );
 	return JS_TRUE;

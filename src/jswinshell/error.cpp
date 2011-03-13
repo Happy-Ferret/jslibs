@@ -35,7 +35,7 @@ DEFINE_PROPERTY_GETTER( code ) {
 	jsval hi, lo;
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
-	JL_S_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
+	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 	JL_CHK( JL_NewNumberValue(cx, (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)), vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -57,7 +57,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	jsval hi, lo;
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
-	JL_S_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
+	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, ErrorToConstName( (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)) )) );
 	return JS_TRUE;
@@ -70,7 +70,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 	jsval hi, lo;
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
 	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
-	JL_S_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
+	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 	DWORD err = (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi));
 
 	LPVOID lpvMessageBuffer;
@@ -109,8 +109,9 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT( jl::JsvalIsSerializer(cx, JL_ARG(1)), "Invalid serializer object." );
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_TYPE( jl::JsvalIsSerializer(cx, JL_ARG(1)), 1, "Serializer" );
+
 	jl::Serializer *ser;
 	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
 
@@ -131,8 +132,9 @@ DEFINE_FUNCTION( _serialize ) {
 DEFINE_FUNCTION( _unserialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_COUNT(1);
-	JL_S_ASSERT( jl::JsvalIsUnserializer(cx, JL_ARG(1)), "Invalid unserializer object." );
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_TYPE( jl::JsvalIsUnserializer(cx, JL_ARG(1)), 1, "Unserializer" );
+
 	jl::Unserializer *unser;
 	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
 
@@ -193,7 +195,7 @@ WinThrowError( JSContext *cx, DWORD errorCode ) {
 
 //	JL_SAFE(	JS_ReportWarning( cx, "WinError exception" ) );
 	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_PROTOTYPE(cx, WinError), NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
-//	JL_S_ASSERT( error != NULL, "Unable to create WinError object." );
+//	JL_ASSERT( error != NULL, "Unable to create WinError object." );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 
 	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(HIWORD(errorCode)) ) );

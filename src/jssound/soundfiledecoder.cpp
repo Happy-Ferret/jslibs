@@ -184,11 +184,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_MIN(1);
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
@@ -210,8 +210,10 @@ DEFINE_CONSTRUCTOR() {
 		return JS_FALSE;
 
 	// (TBD) manage sf_error_str()
-	JL_S_ASSERT( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
-	JL_S_ASSERT( pv->sfDescriptor != NULL, "Invalid stream." ); // (TBD) needed ?
+
+	JL_ASSERT( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, E_LIB, E_STR("sndfile"), E_OPERATION, E_ERRNO(sf_error(pv->sfDescriptor)) );
+	JL_ASSERT( pv->sfDescriptor != NULL, E_ARG, E_NUM(1), E_INVALID ); // "Invalid stream."
+
 
 	int subFormat = pv->sfInfo.format & SF_FORMAT_SUBMASK;
 	if ( subFormat == SF_FORMAT_FLOAT || subFormat == SF_FORMAT_DOUBLE ) {
@@ -270,9 +272,11 @@ DEFINE_FUNCTION( Read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_S_ASSERT( pv->sfInfo.channels == 1 || pv->sfInfo.channels == 2, "Unsupported channel count." );
+	JL_CHKM( pv->sfInfo.channels == 1 || pv->sfInfo.channels == 2, E_NUM(pv->sfInfo.channels), E_STR("channels"), E_FORMAT );
+//	JL_CHKM( pv->sfInfo.format & SF_FORMAT_PCM_16 || pv->sfInfo.bits & SF_FORMAT_PCM_S8, E_NUM(???), E_STR("bit"), E_FORMAT );
+
 
 	long totalSize = 0;
 
@@ -286,7 +290,7 @@ DEFINE_FUNCTION( Read ) {
 
 			size_t amount = frames * pv->sfInfo.channels * pv->bits/8; // amount in bytes
 			buf = (char*)jl_malloc(amount +1);
-			JL_S_ASSERT_ALLOC(buf);
+			JL_ASSERT_ALLOC(buf);
 
 			sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
 
@@ -299,7 +303,7 @@ DEFINE_FUNCTION( Read ) {
 				buf = (char*)jl_realloc(buf, totalSize +1);
 		} else {
 
-			JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, "0 to 2^32");
+			JL_ERR( E_ARG, E_NUM(1), E_MIN, E_NUM(1) );
 		}
 
 	} else {
@@ -326,7 +330,7 @@ DEFINE_FUNCTION( Read ) {
 			if ( JL_IsExceptionPending(cx) )
 				return JS_FALSE;
 
-			JL_S_ASSERT( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
+			JL_ASSERT( sf_error(pv->sfDescriptor) == SF_ERR_NO_ERROR, E_LIB, E_STR("sndfile"), E_OPERATION, E_ERRNO(sf_error(pv->sfDescriptor)) );
 
 			if ( items <= 0 ) { // 0 indicates EOF
 
@@ -367,7 +371,7 @@ DEFINE_FUNCTION( Read ) {
 	JL_updateMallocCounter(cx, totalSize);
 	JSObject *blobObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
-	JL_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
+	JL_CHKM( blobObj != NULL, E_STR("Blob"), E_CREATE );
 	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
 
 	JL_CHK(JL_SetProperty(cx, blobObj, "bits", pv->bits) ); // bits per sample
@@ -398,7 +402,7 @@ DEFINE_PROPERTY_GETTER( inputStream ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -415,7 +419,7 @@ DEFINE_PROPERTY_GETTER( bits ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->bits );
 	return JS_TRUE;
 	JL_BAD;
@@ -431,7 +435,7 @@ DEFINE_PROPERTY_GETTER( rate ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->sfInfo.samplerate );
 	return JS_TRUE;
 	JL_BAD;
@@ -447,7 +451,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->sfInfo.channels );
 	return JS_TRUE;
 	JL_BAD;
@@ -464,7 +468,7 @@ DEFINE_PROPERTY_GETTER( frames ) {
 	JL_USE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( size_t(pv->sfInfo.frames) );
 	return JS_TRUE;
 	JL_BAD;

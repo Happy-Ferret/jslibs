@@ -53,7 +53,7 @@ JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	}
 	PR_AtomicIncrement(&instanceCount);
 
-	JL_CHK( JL_SetModulePrivate(cx, _moduleId, jl_calloc(sizeof(JsioPrivate), 1)) );
+	JL_CHKM( JL_SetModulePrivate(cx, _moduleId, jl_calloc(sizeof(JsioPrivate), 1)), E_MODULE, E_INIT );
 
 	INIT_CLASS( IoError );
 	INIT_CLASS( Descriptor );

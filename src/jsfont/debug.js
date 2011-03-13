@@ -14,8 +14,12 @@ f.letterSpacing = 5;
 
 //f.GetCharOutline('o'); Halt();
 
-var bump = new Texture(f.DrawString('Hello World', true));
+//var bump = new Texture(f.DrawString('Hello World', true));
 
+
+f.DrawChar({__proto__:null});
+
+Halt();
 
 bump.OppositeLevels();
 bump.Add(1);

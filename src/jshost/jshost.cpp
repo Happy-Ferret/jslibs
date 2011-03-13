@@ -54,10 +54,13 @@ static unsigned char embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
 ;
 
-#define HOST_MAIN_ASSERT( condition, errorMessage ) \
-	if ( !(condition) ) { fprintf(stderr, errorMessage "\n" ); goto bad; }
-
-
+#define HOST_MAIN_ASSERT( CONDITION, ERROR_MESSAGE ) \
+	JL_MACRO_BEGIN \
+		if ( !(CONDITION) ) { \
+			fprintf(stderr, ERROR_MESSAGE "\n"); \
+			goto bad; \
+		} \
+	JL_MACRO_END
 
 volatile bool gEndSignalState = false;
 JLCondHandler gEndSignalCond;
@@ -127,7 +130,7 @@ struct UserProcessEvent {
 	jsval callbackFunction;
 };
 
-JL_STATIC_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
 void EndSignalStartWait( volatile ProcessEvent *pe ) {
 
@@ -169,7 +172,7 @@ JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *c
 
 JSBool EndSignalEvents(JSContext *cx, uintN argc, jsval *vp) {
 
-	JL_S_ASSERT_ARG_RANGE( 0, 1 );
+	JL_ASSERT_ARGC_RANGE( 0, 1 );
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
@@ -180,7 +183,7 @@ JSBool EndSignalEvents(JSContext *cx, uintN argc, jsval *vp) {
 
 	if ( JL_ARG_ISDEF(1) ) {
 
-		JL_S_ASSERT_ARG_IS_FUNCTION(1);
+		JL_ASSERT_ARG_IS_FUNCTION(1);
 		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(1)) ); // GC protection only
 		upe->callbackFunction = JL_ARG(1);
 	} else {
@@ -338,9 +341,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
 				inlineScript = *(argumentVector+1);
 				break;
-			case 'v': // version
-				fprintf( stderr, "Version r%d - Build %.4d-%.2d-%.2d / %s\n", JL_SvnRevToInt("$Revision$"), __DATE__YEAR, __DATE__MONTH+1, __DATE__DAY, JS_GetImplementationVersion() );
-				return EXIT_SUCCESS;
 			case '?': // help
 			case 'h': //
 				fprintf( stderr, "Help: http://code.google.com/p/jslibs/wiki/jshost#Command_line_options\n" );
@@ -417,7 +417,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 #endif // DEBUG	
 
 
-	HOST_MAIN_ASSERT( cx != NULL, "Unable to create a javascript execution context." );
+	HOST_MAIN_ASSERT( cx != NULL, "Unable to initialize JavaScript engine." );
 
 	if ( useJslibsMemoryManager )
 		MemoryManagerEnableGCEvent(cx);
@@ -436,7 +436,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT | JSOPTION_RELIMIT | (warningsToErrors ? JSOPTION_WERROR : 0) ); // default, may be disabled in InitHost()
 
-	HOST_MAIN_ASSERT( InitHost(cx, unsafeMode, HostStdin, HostStdout, HostStderr, NULL), "Unable to initialize the host." );
+	JL_CHKM( InitHost(cx, unsafeMode, HostStdin, HostStdout, HostStderr, NULL), E_HOST, E_INIT ); // "Unable to initialize the host."
 
 	JSObject *globalObject;
 	globalObject = JL_GetGlobalObject(cx);
@@ -445,9 +445,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	gEndSignalLock = JLMutexCreate();
 
 #if defined(XP_WIN)
-	BOOL status;
-	status = SetConsoleCtrlHandler(Interrupt, TRUE);
-	HOST_MAIN_ASSERT( status == TRUE, "Unable to set the Ctrl-C handler." );
+	JL_CHKM( SetConsoleCtrlHandler(Interrupt, TRUE) != 0, E_HOST, E_INTERNAL ); // "Unable to set the Ctrl-C handler."
 #elif defined(XP_UNIX)
 	signal(SIGINT, Interrupt);
 	signal(SIGTERM, Interrupt);
@@ -461,18 +459,17 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 // script name
 	if ( inlineScript == NULL )
 		scriptName = *argumentVector;
-	HOST_MAIN_ASSERT( inlineScript != NULL || scriptName != NULL, "No script specified." );
+	JL_CHKM( inlineScript != NULL || scriptName != NULL, E_SCRIPT, E_DEFINED ); // "No script specified."
 
 	char hostFullPath[PATH_MAX +1];
 
 #if defined(XP_WIN)
 // get hostpath and hostname
 	HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
-	DWORD len = GetModuleFileName(hInstance, hostFullPath, sizeof(hostFullPath));
-	HOST_MAIN_ASSERT( len != 0, "Unable to GetModuleFileName." );
+	JL_CHKM( GetModuleFileName(hInstance, hostFullPath, sizeof(hostFullPath)) != 0, E_HOST, E_INTERNAL ); // "Unable to GetModuleFileName."
 #elif defined(XP_UNIX)
 	JLGetAbsoluteModulePath(hostFullPath, sizeof(hostFullPath), argv[0]);
-	HOST_MAIN_ASSERT( hostFullPath[0] != '\0', "Unable to get module FileName." );
+	JL_CHKM( hostFullPath[0] != '\0', E_HOST, E_INTERNAL ); // "Unable to get module FileName."
 //	int len = readlink("/proc/self/exe", moduleFileName, sizeof(moduleFileName)); // doc: readlink does not append a NUL character to buf.
 //	moduleFileName[len] = '\0';
 //	strcpy(hostFullPath, argv[0]);
@@ -516,7 +513,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	int exitValue;
 	jsval rval;
 
-	JL_ASSERT( !JL_IsExceptionPending(cx) );
+	ASSERT( !JL_IsExceptionPending(cx) );
 
 	JSBool executeStatus;
 	if ( inlineScript == NULL )
@@ -640,8 +637,6 @@ The main features are:
    Default is UpperCamelCase for jslibs version < 1.0 and lowerCamelCase for jslibs version >= 1.0
  * `-b`
   Run the bootstrap file (<executable filename>.js, eg. jshost.exe.js on windows and jshost.js on Linux)
- * `-v`
-  Displays the current version or revision.
  * `-h` `-h`
   Help.
 
@@ -702,7 +697,11 @@ $H beware
   Is $TRUE if a break signal (ctrl-c, ...) has been sent to jshost. This event can be reset.
 
 === Host object ===
- jshost create a global `_host` object to provide other modules some useful informations like `stdout` access and `unsafeMode` flag.
+ jshost create a global `_host` object to provide other modules some useful informations like `stdin/stdout/stderr` access and `unsafeMode` flag.
+ The `_host` also contains the `revision`, `build` and `jsVersion` properties.
+
+==== Example ====
+ host version information can be obtained using: `jshost -i "_host.stdout(_host.build+' r'+_host.revision)"`
 
 == Remarks ==
 

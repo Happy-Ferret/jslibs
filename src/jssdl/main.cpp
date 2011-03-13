@@ -130,8 +130,8 @@ bool JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 		WaitSurfaceReady();
 		InvalidateSurface();
 
-		JL_ASSERT( wglGetCurrentContext() );
-		JL_ASSERT( wglGetCurrentDC() );
+		ASSERT( wglGetCurrentContext() );
+		ASSERT( wglGetCurrentDC() );
 	}
 
 	InternalEvent *iev = (InternalEvent*)jl_malloc(sizeof(InternalEvent));
@@ -159,11 +159,11 @@ bool JLSetVideoMode(int width, int height, int bpp, Uint32 flags) {
 	if ( hglrc == NULL ) {
 
 		// Creating an OpenGL Context (http://www.opengl.org/wiki/Creating_an_OpenGL_Context)
-		JL_ASSERT( _hdc != NULL );
+		ASSERT( _hdc != NULL );
 		hglrc = wglCreateContext(_hdc);
-		JL_ASSERT( hglrc != NULL );
+		ASSERT( hglrc != NULL );
 		BOOL st = wglMakeCurrent(_hdc, hglrc);
-		JL_ASSERT( st == TRUE );
+		ASSERT( st == TRUE );
 	}
 
 	return true;
@@ -178,8 +178,8 @@ void JLSwapBuffers(bool async) {
 	WaitSurfaceReady();
 	InvalidateSurface();
 
-	JL_ASSERT( wglGetCurrentContext() );
-	JL_ASSERT( wglGetCurrentDC() );
+	ASSERT( wglGetCurrentContext() );
+	ASSERT( wglGetCurrentDC() );
 
 	if ( !async ) {
 
@@ -225,11 +225,11 @@ int SwapBuffersThread( void *unused ) {
 
 		if ( hglrc == NULL ) {
 
-			JL_ASSERT( _hdc );
+			ASSERT( _hdc );
 			hglrc = wglCreateContext(_hdc);
-			JL_ASSERT( hglrc != NULL );
+			ASSERT( hglrc != NULL );
 			BOOL st = wglMakeCurrent(_hdc, hglrc);
-			JL_ASSERT( st != NULL );
+			ASSERT( st != NULL );
 		}
 
 		if ( _maxFPS == JLINFINITE ) {
@@ -282,7 +282,7 @@ int VideoThread( void *unused ) {
 
 	int status;
 	status = SDL_InitSubSystem(SDL_INIT_VIDEO); // (TBD) SDL_INIT_EVENTTHREAD on Linux ?
-	JL_ASSERT( status != -1 );
+	ASSERT( status != -1 );
 	SDL_SetEventFilter(EventFilter);
 
 	bool end = false;
@@ -297,30 +297,30 @@ int VideoThread( void *unused ) {
 		if ( status == 1 ) // we have at least one SDL event, see SDLEndWait()
 			JLCondBroadcast(sdlEventsCond);
 		JLMutexRelease(sdlEventsLock);
-		JL_ASSERT( status != -1 );
+		ASSERT( status != -1 );
 
 /*
 		if ( videoResize ) {
 
 			videoResize = false;
 
-			JL_ASSERT( _surface != NULL );
+			ASSERT( _surface != NULL );
 			JLMutexAcquire(surfaceLock);
 			_surface = SDL_SetVideoMode(surfaceWidth, surfaceHeight, _surface->format->BitsPerPixel, _surface->flags);
 			JLMutexRelease(surfaceLock);
-			JL_ASSERT( _surface != NULL );
+			ASSERT( _surface != NULL );
 			surfaceWidth = _surface->w;
 			surfaceHeight = _surface->h;
 		}
 */
 
 		int st = JLSemaphoreAcquire(internalEventSem, 5); // see SDL_WaitEvent()
-		JL_ASSERT( st != JLERROR );
+		ASSERT( st != JLERROR );
 		if ( st == JLTIMEOUT ) // no internal event
 			continue;
 
 		JLMutexAcquire(internalEventQueueMutex);
-		JL_ASSERT( !jl::QueueIsEmpty(&internalEventQueue) );
+		ASSERT( !jl::QueueIsEmpty(&internalEventQueue) );
 		InternalEvent *iev = (InternalEvent*)jl::QueueShift(&internalEventQueue);
 		JLMutexRelease(internalEventQueueMutex);
 
@@ -333,7 +333,7 @@ int VideoThread( void *unused ) {
 
 				if ( _surface == NULL ) {
 
-					JL_ASSERT( _error == NULL );
+					ASSERT( _error == NULL );
 					_error = SDL_GetError(); // store the error
 					SDL_ClearError();
 					SurfaceReady();
@@ -343,11 +343,11 @@ int VideoThread( void *unused ) {
 				surfaceWidth = _surface->w;
 				surfaceHeight = _surface->h;
 
-				JL_ASSERT( _hdc == NULL || _hdc == wglGetCurrentDC() ); // assert hdc has not changed
+				ASSERT( _hdc == NULL || _hdc == wglGetCurrentDC() ); // assert hdc has not changed
 				if ( _hdc == NULL ) {
 
 					_hdc = wglGetCurrentDC();
-					JL_ASSERT( _hdc );
+					ASSERT( _hdc );
 
 #ifdef XP_WIN
 					RECT rect;
@@ -357,7 +357,7 @@ int VideoThread( void *unused ) {
 #endif // XP_WIN
 
 				}
-				JL_ASSERT( wglGetCurrentContext() );
+				ASSERT( wglGetCurrentContext() );
 				SurfaceReady();
 				break;
 			}
@@ -365,7 +365,7 @@ int VideoThread( void *unused ) {
 				end = true;
 				break;
 			default:
-				JL_ASSERT( false ); // invalid case
+				ASSERT( false ); // invalid case
 		}
 		jl_free(iev);
 	}
@@ -401,11 +401,11 @@ void StartVideo() {
 	swapBufferEndThread = false;
 	swapBuffersSem = JLSemaphoreCreate(0);
 	swapBuffersThreadHandler = SDL_CreateThread(SwapBuffersThread, NULL); // http://www.libsdl.org/intro.en/usingthreads.html
-	JL_ASSERT( swapBuffersThreadHandler != NULL ); // return ThrowSdlError(cx);
+	ASSERT( swapBuffersThreadHandler != NULL ); // return ThrowSdlError(cx);
 	JLSemaphoreAcquire(threadReadySem, JLINFINITE);
 
 	videoThreadHandler = SDL_CreateThread(VideoThread, NULL); // http://www.libsdl.org/intro.en/usingthreads.html
-	JL_ASSERT( videoThreadHandler != NULL ); // return ThrowSdlError(cx);
+	ASSERT( videoThreadHandler != NULL ); // return ThrowSdlError(cx);
 	JLSemaphoreAcquire(threadReadySem, JLINFINITE);
 
 	JLSemaphoreFree(&threadReadySem);
@@ -465,7 +465,7 @@ void JLSwapBuffers(bool async) {
 void StartVideo() {
 
 	int status = SDL_Init(SDL_INIT_VIDEO);
-	JL_ASSERT( status != -1 );
+	ASSERT( status != -1 );
 	_surface = NULL;
 	_maxFPS = JLINFINITE;
 }
@@ -481,8 +481,7 @@ void EndVideo() {
 
 EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	if ( SDL_WasInit(0) != 0 )
-		JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "SDL module already in use.");
+	JL_CHKM( SDL_WasInit(0) == 0, E_MODULE, E_NAME("jssdl"), E_INIT );
 
 	JL_CHK( InitJslibsModule(cx, id) );
 

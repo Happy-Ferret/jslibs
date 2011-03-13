@@ -29,10 +29,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARG_COUNT(0);
 	ode::dJointGroupID groupId = ode::dJointGroupCreate(0);
 	JL_SetPrivate(cx, obj, groupId);
 	return JS_TRUE;
@@ -50,8 +50,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Destroy ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_CLASS();
 	ode::dJointGroupID groupId = (ode::dJointGroupID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(groupId);
+	JL_ASSERT_THIS_OBJECT_STATE(groupId);
 	ode::dJointGroupDestroy(groupId);
 	JL_SetPrivate(cx, obj, NULL);
 
@@ -67,9 +68,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Empty ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_CLASS();
 
 	ode::dJointGroupID groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(groupId);
+	JL_ASSERT_THIS_OBJECT_STATE(groupId);
 	ode::dJointGroupEmpty(groupId);
 
 	*JL_RVAL = JSVAL_VOID;

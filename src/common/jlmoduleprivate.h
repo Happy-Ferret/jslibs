@@ -30,10 +30,10 @@ ALWAYS_INLINE void* ModulePrivateAlloc(size_t size) {
 		_modulePrivateKey = JLTLSAllocKey();
 	while ( _modulePrivateKey == JLTLSInvalidKey ) // (TBD) replace this UGLY hack with a mutex (however this case is extremely rare).
 		SleepMilliseconds(1);
-	JL_ASSERT( _modulePrivateKey != JLTLSInvalidKey );
-	JL_ASSERT( JLTLSGet(_modulePrivateKey) == NULL ); // already allocated
+	ASSERT( _modulePrivateKey != JLTLSInvalidKey );
+	ASSERT( JLTLSGet(_modulePrivateKey) == NULL ); // already allocated
 	void *modulePrivate = malloc(size);
-	JL_ASSERT( modulePrivate ); // not enough memory
+	ASSERT( modulePrivate ); // not enough memory
 	JLTLSSet(_modulePrivateKey, modulePrivate);
 	return modulePrivate;
 }
@@ -41,7 +41,7 @@ ALWAYS_INLINE void* ModulePrivateAlloc(size_t size) {
 ALWAYS_INLINE void ModulePrivateFree() {
 
 	void *modulePrivate = JLTLSGet(_modulePrivateKey);
-	JL_ASSERT( modulePrivate != NULL ); // already disallocated
+	ASSERT( modulePrivate != NULL ); // already disallocated
 	JLTLSSet(_modulePrivateKey, NULL);
 	free(modulePrivate);
 	if ( JLAtomicDecrement(&_modulePrivateCount) == 0 )
@@ -51,6 +51,6 @@ ALWAYS_INLINE void ModulePrivateFree() {
 ALWAYS_INLINE void* ModulePrivateGet() {
 
 	void *modulePrivate = JLTLSGet(_modulePrivateKey);
-	JL_ASSERT( modulePrivate != NULL ); // already disallocated
+	ASSERT( modulePrivate != NULL ); // already disallocated
 	return modulePrivate;
 }

@@ -36,11 +36,11 @@ $TOC_MEMBER $INAME
 
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	jsval iconVal;
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 
 	iconVal = JL_ARG(1);
 
@@ -74,8 +74,8 @@ DEFINE_CONSTRUCTOR() {
 
 		JSObject *imgObj = JSVAL_TO_OBJECT(iconVal);
 
-//		JL_S_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JL_IsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));
-		JL_S_ASSERT( JL_IsData(cx, iconVal), "Invalid image object." );
+//		JL_ASSERT_CLASS_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JL_IsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));
+		JL_ASSERT( JL_IsData(cx, iconVal), E_ARG, E_NUM(1), E_TYPE, E_TY_DATA );
 
 		unsigned int width, height, channels, x, y;
 		JL_CHK( JL_GetProperty(cx, imgObj, "width", &width) );
@@ -113,7 +113,7 @@ DEFINE_CONSTRUCTOR() {
 		hIcon = CreateIconIndirect( &ii );
 		DeleteObject(colorBMP);
 		DeleteObject(maskBMP); 
-		JL_S_ASSERT( hIcon != NULL, "Unable to create the icon." );
+		JL_ASSERT( hIcon != NULL, E_STR("icon"), E_CREATE );
 	}
 	
 	// FYI. How do I get the dimensions of a cursor or icon? (http://blogs.msdn.com/b/oldnewthing/archive/2010/10/20/10078140.aspx)

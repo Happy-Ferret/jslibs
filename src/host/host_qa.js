@@ -2,6 +2,21 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
+/// call all possible functions reachable in the scope [rmtf]
+
+
+
+
+
+
+/// host version info [rmtf]
+
+	QA.ASSERT( _host.build > 48000, true, 'build version validity );
+	QA.ASSERT( _host.revision > 3400, true, 'revision version validity );
+	QA.ASSERT( _host.jsVersion >= 185, 'javascript version validity );
+	
+	
+	
 /// bug bz#522024 [rmtf]
 
 		var list = [];
@@ -22,10 +37,12 @@ LoadModule('jsio');
 		Run();
 
 
+
 /// JSOPTION_ANONFUNFIX option [frm]
 	
 	113 == function(x, y) {return x+y} (100, 13);
 
+	
 	
 /// GC test [r]
 		
@@ -37,6 +54,7 @@ LoadModule('jsio');
 		QA.GC();
 		//		QA.ASSERT( gcMallocBytes < 100, true, 'After GC');
 		
+
 
 /// stdout standard output redirection [ftrm]
 
@@ -50,6 +68,18 @@ LoadModule('jsio');
 		QA.ASSERT( buffer.indexOf('this_is_a_test') != -1, true, 'stdout redirection result' ); 
 
 
+
+/// error in stderr [ftrm]
+
+	var prev = _host.stderr;
+	try { 
+		_host.stderr = function() { fvoasudyfvoasuid() }
+		wuiyoiryuoeyu();
+	} catch(ex) {}
+	_host.stderr = prev;
+
+
+
 /// LoadModule function [ftrm]
 		
 		var id = LoadModule('jsstd');
@@ -61,6 +91,7 @@ LoadModule('jsio');
 		QA.ASSERT( LoadModule(''), false, 'loading inexisting module' );
 		QA.ASSERT( LoadModule(NaN), false, 'loading inexisting module' );
 		//QA.ASSERT_EXCEPTION(function() LoadModule(), RangeError, 'call LoadModule() without arguments');
+
 
 
 /// String memory usage (disabled GC) [tr d]
@@ -86,6 +117,7 @@ LoadModule('jsio');
 		QA.ASSERT( mem > 3 && mem < 3.02, true, 'string memory usage ('+mem+')' );
 
 
+
 /// undefined is read-only [ftrm]
 
 	QA.ASSERT( undefined in global, true, 'undefined is in global object' );
@@ -96,6 +128,7 @@ LoadModule('jsio');
 	QA.ASSERT( undefined, (void 0), 'undefined is (void 0)' );
 	undefined = 123;
 	QA.ASSERT( undefined, (void 0), 'undefined is (void 0)' );
+
 
 
 /// global object [f]
@@ -111,11 +144,13 @@ LoadModule('jsio');
 	QA.ASSERT_TYPE( global.arguments, Array, 'arguments type' );
 
 
+
 /// global _host object [f]
 
 	QA.ASSERT( typeof global._host, 'object', '_host is object' );
 	QA.ASSERT_HAS_PROPERTIES( global._host, 'unsafeMode,stdout,stderr' );
 
+	
 	
 /// jit enabled [t]
 	
@@ -127,10 +162,12 @@ LoadModule('jsio');
 	QA.ASSERT( t < 30 , true, 'run time' );
 
 
+
 /// blob revision number [f]
 	
 	QA.ASSERT( '_revision' in Blob, true, 'Blob revision');
 	QA.ASSERT( Blob._revision > 3000, true, 'Blob revision number' );
+
 
 
 /// error messages []
@@ -153,7 +190,7 @@ LoadModule('jsio');
 	QA.ASSERT_STR( buffer.length == 0, true, 'stderr redirection result' ); 
 	
 	if ( !_host.unsafeMode )
-		QA.ASSERT_STR( ex.message.indexOf('not enough arguments') != -1, true, 'LoadModule() error' ); 
+		QA.ASSERT_STR( ex.message.indexOf('number of arguments') != -1, true, 'LoadModule() error' ); 
 
 
 
@@ -169,6 +206,7 @@ LoadModule('jsio');
 	QA.ASSERT_STR( buffer.length == 0, true, 'stderr redirection result' );
 
 
+
 /// mute error messages [rmtf]
 
 	var prev = _host.stderr;
@@ -179,6 +217,8 @@ LoadModule('jsio');
 	} catch (ex) {}
 
 	_host.stderr = prev;
+
+
 
 /// NativeInterface hacking
 

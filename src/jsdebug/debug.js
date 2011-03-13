@@ -1,6 +1,11 @@
 if ( 1 ) {
 	LoadModule('jsdebug');
 	LoadModule('jsstd');
+	
+		
+	Print( PropertiesList([]) );
+	
+	Halt();
 
 	var m = privateMemoryUsage;
 

@@ -48,14 +48,14 @@ JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **pr
 
 	jsval prngVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
-	JL_S_ASSERT_OBJECT_STATE( JSVAL_IS_OBJECT(prngVal), JL_CLASS_NAME(Prng) );
-	JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(prngVal), JL_CLASS(Prng) );
+	JL_ASSERT_OBJECT_STATE( JSVAL_IS_OBJECT(prngVal), JL_CLASS_NAME(Prng) );
+	JL_ASSERT_CLASS( JSVAL_TO_OBJECT(prngVal), JL_CLASS(Prng) );
 	PrngPrivate *prngPrivate;
 	prngPrivate = (PrngPrivate *)JL_GetPrivate(cx, JSVAL_TO_OBJECT(prngVal));
-	JL_S_ASSERT_OBJECT_STATE( prngPrivate, JL_CLASS_NAME(Prng) );
+	JL_ASSERT_OBJECT_STATE( prngPrivate, JL_CLASS_NAME(Prng) );
 	*prngState = &prngPrivate->state;
 	*prngIndex = find_prng(prngPrivate->prng.name);
-	JL_S_ASSERT_ERROR_NUM( *prngIndex != -1, JLSMSG_RUNTIME_ERROR2, "prng not available", prngPrivate->prng.name );
+	JL_ASSERT( *prngIndex != -1, E_STR("PRNG"), E_NAME(prngPrivate->prng.name), E_NOTFOUND );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -131,10 +131,10 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 
 	JLStr asymmetricCipherName, hashName;
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_MIN( 3 );
+	JL_ASSERT_ARGC_MIN( 3 );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &asymmetricCipherName) );
 
@@ -150,7 +150,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 		asymmetricCipher = katja;
 #endif
 	else
-		JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "cipher"); // JL_REPORT_ERROR("Invalid asymmetric cipher %s.", asymmetricCipherName);
+		JL_ERR( E_ARG, E_NUM(1), E_INVALID, E_SEP, E_NAME(asymmetricCipherName), E_NOTSUPPORTED );
 
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JS_malloc(cx, sizeof(AsymmetricCipherPrivate));
@@ -169,8 +169,8 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 
 	if ( argc >= 3 ) {
 
-		JL_S_ASSERT_ARG_IS_OBJECT(3);
-		JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT(JL_ARG(3)), JL_CLASS(Prng) );
+		JL_ASSERT_ARG_IS_OBJECT(3);
+		JL_ASSERT_CLASS( JSVAL_TO_OBJECT(JL_ARG(3)), JL_CLASS(Prng) );
 		JL_CHK( JL_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JL_ARG(3)) );
 	} else {
 
@@ -190,14 +190,14 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 			if ( strcasecmp(paddingName, "1_V1_5") == 0 ) {
 				pv->padding = LTC_LTC_PKCS_1_V1_5;
 			} else
-				JL_REPORT_ERROR_NUM( JLSMSG_INVALID_ARGUMENT, "PKCSVersion"); //JL_REPORT_ERROR("Invalid padding version.");
+				JL_ERR( E_ARG, E_NUM(4), E_INVALID, E_SEP, E_NAME(paddingName), E_NOTSUPPORTED );
 		} else {
 
 			pv->padding = LTC_LTC_PKCS_1_OAEP; // default
 		}
 	} else {
 
-		JL_S_ASSERT_ARG_MAX( 3 );
+		JL_ASSERT_ARGC_MAX( 3 );
 	}
 
 	pv->hasKey = false;
@@ -223,7 +223,7 @@ DEFINE_FUNCTION( Wipe ) {
 	JL_USE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	FinalizeAsymmetricCipher(cx, obj, true);
 	JL_SetPrivate(cx, obj, NULL);
 	*JL_RVAL = JSVAL_VOID;
@@ -249,12 +249,12 @@ ac.CreateKeys( AsymmetricCipher.RSA_MIN_KEYSIZE );
 DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	prng_state *prngState;
 	int prngIndex;
@@ -298,7 +298,7 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 		}
 #endif
 		default:
-			JL_ASSERT(false);
+			ASSERT(false);
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
@@ -313,8 +313,8 @@ DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 
 		int stat;
 		err = dsa_verify_key(&pv->key.dsaKey, &stat);
-		if ( err != CRYPT_OK || stat != 1 ) // If the result is stat = 1 the DSA key is valid (as far as valid mathematics are concerned).
-			JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, "dsa_verify_key");
+		// JL_CHKM( err == CRYPT_OK && stat == 1, E_LIB, E_STR("libtomcrypt"), E_INTERNAL, E_COMMENT("dsa_verify_key") ); // If the result is stat = 1 the DSA key is valid (as far as valid mathematics are concerned).
+		JL_ASSERT( err == CRYPT_OK && stat == 1, E_LIB, E_STR("libtomcrypt"), E_INTERNAL, E_SEP, E_STR("DSA"), E_STR("test"), E_FAILURE );
 	}
 
 	pv->hasKey = true;
@@ -338,13 +338,13 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 	JLStr in;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_CLASS();
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_S_ASSERT_ERROR_NUM( pv->hasKey, JLSMSG_LOGIC_ERROR, "key not defined" );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
 	prng_state *prngState;
 	int prngIndex;
@@ -394,7 +394,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 		}
 #endif
 		default:
-			JL_ASSERT(false);
+			ASSERT(false);
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
@@ -427,13 +427,12 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 	JLStr in;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_ARGC_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_S_ASSERT_ERROR_NUM( pv->hasKey, JLSMSG_LOGIC_ERROR, "key not defined" );
-
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
 //	const char *in;
 //	size_t inLength;
@@ -490,7 +489,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 		}
 #endif
 		default:
-			JL_ASSERT(false);
+			ASSERT(false);
 	}
 
 	if (err != CRYPT_OK)
@@ -518,14 +517,13 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 	JLStr in;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
-
-	JL_S_ASSERT_ERROR_NUM( pv->hasKey, JLSMSG_LOGIC_ERROR, "key not defined" );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
 	prng_state *prngState;
 	int prngIndex;
@@ -564,12 +562,12 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 		}
 #ifdef MKAT
 		case katja: {
-			JL_REPORT_ERROR_NUM( JLSMSG_INVALID_OPERATION);
+			JL_ERR( E_THISOPERATION, E_NOTIMPL );
 			break;
 		}
 #endif
 		default:
-			JL_ASSERT(false);
+			ASSERT(false);
 	}
 
 	if (err != CRYPT_OK)
@@ -594,13 +592,13 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 	JLStr data, sign;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
-	JL_S_ASSERT_ARG_MIN( 2 );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_ARGC_MIN( 2 );
 
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_S_ASSERT_ERROR_NUM( pv->hasKey, JLSMSG_LOGIC_ERROR, "key not defined" );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
 //	const char *data;
 //	size_t dataLength;
@@ -634,12 +632,12 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 		}
 #ifdef MKAT
 		case katja: {
-			JL_REPORT_ERROR_NUM( JLSMSG_INVALID_OPERATION);
+			JL_ERR( E_THISOPERATION, E_NOTIMPL );
 			break;
 		}
 #endif
 		default:
-			JL_ASSERT(false);
+			ASSERT(false);
 	}
 
 	if (err != CRYPT_OK)
@@ -664,11 +662,11 @@ DEFINE_PROPERTY_GETTER( blockLength ) {
 
 	JL_USE(id);
 
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_S_ASSERT_ERROR_NUM( pv->hasKey, JLSMSG_LOGIC_ERROR, "key not defined" );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
 	int err;
 	err = hash_is_valid(pv->hashIndex);
@@ -704,7 +702,7 @@ DEFINE_PROPERTY_GETTER( blockLength ) {
 #endif
 		default:
 			IFDEBUG( blockLength = 0 );
-			JL_ASSERT(false);
+			ASSERT(false);
 	}
 	*vp = INT_TO_JSVAL( blockLength );
 	return JS_TRUE;
@@ -720,11 +718,11 @@ DEFINE_PROPERTY_GETTER( keySize ) {
 
 	JL_USE(id);
 
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_S_ASSERT_ERROR_NUM( pv->hasKey, JLSMSG_LOGIC_ERROR, "key not defined" );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
 	int keySize;
 	switch ( pv->cipher ) {
@@ -745,7 +743,7 @@ DEFINE_PROPERTY_GETTER( keySize ) {
 #endif
 		default:
 			IFDEBUG( keySize = 0 );
-			JL_ASSERT(false);
+			ASSERT(false);
 	}
 	*vp = INT_TO_JSVAL( keySize );
 	return JS_TRUE;
@@ -766,10 +764,10 @@ DEFINE_PROPERTY_SETTER( key ) {
 
 	JLStr key;
 
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	int type;
 	type = JSID_TO_INT(id);
@@ -784,15 +782,15 @@ DEFINE_PROPERTY_SETTER( key ) {
 	switch ( pv->cipher ) {
 		case rsa:
 			err = rsa_import( (const unsigned char *)key.GetConstStr(), (unsigned long)key.Length(), &pv->key.rsaKey );
-			JL_S_ASSERT_ERROR_NUM( pv->key.rsaKey.type == type, JLSMSG_LOGIC_ERROR, "invalid key type" );
+			JL_ASSERT( pv->key.rsaKey.type == type, E_VALUE, E_TYPE, E_NAME("RSA key") );
 			break;
 		case ecc:
 			err = ecc_import( (const unsigned char *)key.GetConstStr(), (unsigned long)key.Length(), &pv->key.eccKey );
-			JL_S_ASSERT_ERROR_NUM( pv->key.eccKey.type == type, JLSMSG_LOGIC_ERROR, "invalid key type" );
+			JL_ASSERT( pv->key.eccKey.type == type, E_VALUE, E_TYPE, E_NAME("ECC key") );
 			break;
 		case dsa:
 			err = dsa_import( (const unsigned char *)key.GetConstStr(), (unsigned long)key.Length(), &pv->key.dsaKey );
-			JL_S_ASSERT_ERROR_NUM( pv->key.dsaKey.type == type, JLSMSG_LOGIC_ERROR, "invalid key type" );
+			JL_ASSERT( pv->key.dsaKey.type == type, E_VALUE, E_TYPE, E_NAME("DSA key") );
 			//int stat = 0;
 			//dsa_verify_key(&pv->key.dsaKey, &stat);
 			//if (stat != 1) // If the result is stat = 1 the DSA key is valid (as far as valid mathematics are concerned).
@@ -801,11 +799,11 @@ DEFINE_PROPERTY_SETTER( key ) {
 #ifdef MKAT
 		case katja:
 			err = katja_import( (const unsigned char *)key.GetConstStr(), (unsigned long)key.Length(), &pv->key.katjaKey );
-			JL_S_ASSERT_ERROR_NUM( pv->key.katjaKey.type == type, JLSMSG_LOGIC_ERROR, "invalid key type" );
+			JL_ASSERT( pv->key.katjaKey.type == type, E_VALUE, E_TYPE, E_NAME("KATJA key") );
 			break;
 #endif
 		default:
-			JL_ASSERT(false);
+			ASSERT(false);
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
@@ -818,11 +816,11 @@ DEFINE_PROPERTY_SETTER( key ) {
 
 DEFINE_PROPERTY_GETTER( key ) {
 
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_S_ASSERT_ERROR_NUM( pv->hasKey, JLSMSG_LOGIC_ERROR, "key not defined" );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
 	int type;
 	type = JSID_TO_INT(id);
@@ -849,7 +847,7 @@ DEFINE_PROPERTY_GETTER( key ) {
 			break;
 #endif
 		default:
-			JL_ASSERT(false);
+			ASSERT(false);
 	}
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);

@@ -88,12 +88,12 @@ JSBool WriteDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !( !JSVAL_IS_PRIMITIVE(chunk) && JL_IsStringObject(cx, JSVAL_TO_OBJECT(chunk)) ) ) {
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
-		JL_S_ASSERT( jsstr != NULL, "Unable to convert the chunk into a string." );
+		JL_ASSERT( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
 		chunk = STRING_TO_JSVAL(jsstr);
 	}
 	// here, chunk is an immutable data container ( string, JSString, Blob, ... ) excluding BufferGetInterface.
@@ -115,7 +115,7 @@ JSBool WriteDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 JSBool WriteRawDataChunk( JSContext *cx, JSObject *obj, size_t amount, const char *str ) {
 
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 	jsval bstr;
 	JL_CHK( JL_NewBlobCopyN(cx, str, amount, &bstr) );
 	JL_CHK( PushJsval(cx, pv->queue, bstr) );
@@ -130,12 +130,12 @@ JSBool UnReadDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	JLStr str;
 
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !(!JSVAL_IS_PRIMITIVE(chunk) && JL_IsStringObject(cx, JSVAL_TO_OBJECT(chunk))) ) {
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
-		JL_S_ASSERT( jsstr != NULL, "Unable to convert the chunk into a string." );
+		JL_ASSERT( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
 		chunk = STRING_TO_JSVAL(jsstr);
 	}
 	// here, chunk is an immutable data container ( string, JSString, Blob, ... ) excluding BufferGetInterface.
@@ -158,7 +158,7 @@ JSBool UnReadDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // amount = total needed amount
 
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	jsval rval, fctVal;
 	unsigned int bufferLengthBeforeRefillRequest;
 	JL_CHK( JS_GetProperty(cx, obj, "onunderflow", &fctVal) );
@@ -178,7 +178,7 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 
 	char *buf;
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	jsval srcVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_SOURCE, &srcVal) );
@@ -186,14 +186,14 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 	if ( JSVAL_IS_VOID( srcVal ) ) // no source for refill
 		return JS_TRUE;
 
-	JL_S_ASSERT_IS_OBJECT(srcVal, "source");
+	JL_ASSERT_IS_OBJECT(srcVal, "source");
 
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( srcVal );
 
 	NIStreamRead nisr;
 	nisr = StreamReadInterface(cx, srcObj); // get native or non-native StreamRead function
-	JL_S_ASSERT( nisr != NULL, "Invalid source object" );
+	JL_ASSERT( nisr != NULL, E_OBJ, E_NAME("source"), E_INVALID );
 
 	size_t len, prevBufferLength;
 
@@ -239,7 +239,7 @@ JSBool ReadChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 	JLStr str;
 
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	if ( pv->length == 0 ) { // if buffer is empty, try to refill it.
 
@@ -268,7 +268,7 @@ JSBool ReadRawDataAmount( JSContext *cx, JSObject *obj, size_t *amount, char *st
 
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	if ( pv->length < *amount )
 		JL_CHK( BufferRefill(cx, obj, *amount) );
@@ -323,7 +323,7 @@ JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t *amount ) { // amo
 		return JS_TRUE;
 
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	if ( pv->length < *amount )
 		JL_CHK( BufferRefill(cx, obj, *amount) );
@@ -420,7 +420,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t ne
 
 	// (TBD) optimise this function for needleLength == 1 (eg. '\0' in a string)
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	size_t chunkLength, i, j, pos;
 	const char *chunk;
@@ -428,7 +428,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t ne
 
 	char *buf, staticBuffer[128];
 	buf = needleLength <= sizeof(staticBuffer) ? staticBuffer : (char*)jl_malloc(needleLength); // the "ring buffer"
-	JL_S_ASSERT_ALLOC( buf );
+	JL_ASSERT_ALLOC( buf );
 
 	for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
 
@@ -467,15 +467,15 @@ end:
 
 JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 
-	JL_S_ASSERT_CLASS( destBuffer, JL_CLASS(Buffer) );
+	JL_ASSERT_CLASS( destBuffer, JL_CLASS(Buffer) );
 	BufferPrivate *dpv;
 	dpv = (BufferPrivate*)JL_GetPrivate(cx, destBuffer);
-	JL_S_ASSERT_OBJECT_STATE( dpv, JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( dpv, JL_CLASS_NAME(Buffer) );
 
-	JL_S_ASSERT_CLASS( srcBuffer, JL_CLASS(Buffer) );
+	JL_ASSERT_CLASS( srcBuffer, JL_CLASS(Buffer) );
 	BufferPrivate *spv;
 	spv = (BufferPrivate*)JL_GetPrivate(cx, srcBuffer);
-	JL_S_ASSERT_OBJECT_STATE( spv, JL_CLASS_NAME(Buffer) );
+	JL_ASSERT_OBJECT_STATE( spv, JL_CLASS_NAME(Buffer) );
 
 	for ( jl::QueueCell *it = jl::QueueBegin(spv->queue); it; it = jl::QueueNext(it) )
 		JL_CHK( PushJsval(cx, dpv->queue, *(jsval*)QueueGetData(it)) );
@@ -559,7 +559,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
@@ -569,7 +569,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( pv );
 	JL_SetPrivate(cx, obj, pv);
 	pv->queue = jl::QueueConstruct();
-	JL_S_ASSERT_ALLOC(pv->queue);
+	JL_ASSERT_ALLOC(pv->queue);
 	pv->length = 0;
 
 	if ( JL_ARG_ISDEF(1) ) {
@@ -590,7 +590,7 @@ DEFINE_CONSTRUCTOR() {
 		}
 */
 
-		JL_S_ASSERT_ARG_IS_OBJECT(1);
+		JL_ASSERT_ARG_IS_OBJECT(1);
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_SOURCE, JL_ARG(1)) );
 	}
 	return JS_TRUE;
@@ -634,11 +634,11 @@ DEFINE_FUNCTION( Clear ) {
 	JL_USE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
 
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	while ( !QueueIsEmpty(pv->queue) )
 		JL_CHK( ShiftJsval(cx, pv->queue, NULL) );
 	pv->length = 0;
@@ -660,11 +660,11 @@ DEFINE_FUNCTION( Write ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_S_ASSERT_ARG_RANGE(1, 2);
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_ARGC_RANGE(1, 2);
 	
 	*JL_RVAL = JSVAL_VOID;
 	jsval arg1;
@@ -676,7 +676,7 @@ DEFINE_FUNCTION( Write ) {
 
 	if ( JL_IsClass(arg1, JL_THIS_CLASS) ) {
 		
-		JL_S_ASSERT_ARG_COUNT(1);
+		JL_ASSERT_ARG_COUNT(1);
 		return AddBuffer(cx, obj, JSVAL_TO_OBJECT(arg1));
 	}
 
@@ -721,8 +721,8 @@ DEFINE_FUNCTION( Match ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_ARG_RANGE(1, 2);
+	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_ARGC_RANGE(1, 2);
 
 //	const char *str;
 	size_t len;
@@ -732,7 +732,7 @@ DEFINE_FUNCTION( Match ) {
 
 	char *src;
 	src = (char *)jl_malloc(len);
-	JL_S_ASSERT_ALLOC( src );
+	JL_ASSERT_ALLOC( src );
 
 	size_t amount;
 	amount = len;
@@ -780,11 +780,11 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_CLASS();
 
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	if ( JL_ARGC == 1 && JSVAL_IS_VOID( JL_ARG(1) ) ) // read the next chunk (of an unknown length) (read something as fast as possible)
 		return ReadChunk(cx, obj, JL_RVAL);
@@ -795,7 +795,7 @@ DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 	else
 		amount = pv->length;
 
-	JL_S_ASSERT( (int)amount >= 0, "Invalid amount" );
+	JL_ASSERT( (int)amount >= 0, E_ARG, E_NUM(1), E_MIN, E_NUM(0) );
 	JL_CHK( ReadDataAmount(cx, obj, amount, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
@@ -810,15 +810,15 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Skip ) { // Skip( amount )
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_CLASS();
 
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_ARG_COUNT(1);
 	size_t amount;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
-	JL_S_ASSERT( (int)amount >= 0, "Invalid amount" );
+	JL_ASSERT( (int)amount >= 0, E_ARG, E_NUM(1), E_MIN, E_NUM(0) );
 	size_t tmp;
 	tmp = amount;
 	JL_CHK( BufferSkipAmount(cx, obj, &tmp) );
@@ -838,8 +838,8 @@ DEFINE_FUNCTION( ReadUntil ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_THIS_CLASS();
-	JL_S_ASSERT_ARG_RANGE(1, 2);
+	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_ARGC_RANGE(1, 2);
 
 //	const char *boundary;
 //	size_t boundaryLength;
@@ -883,8 +883,8 @@ DEFINE_FUNCTION( IndexOf ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_ASSERT_ARG_COUNT(1);
 
 //	const char *boundary;
 //	size_t boundaryLength;
@@ -916,8 +916,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Unread ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
-	JL_S_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_ASSERT_ARG_COUNT(1);
 
 	JL_CHK( UnReadDataChunk(cx, JL_OBJ, JL_ARG(1)) );
 	*JL_RVAL = JL_ARG(1);
@@ -940,11 +940,11 @@ DEFINE_FUNCTION( toString ) {
 	JL_USE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_CLASS();
 
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	if ( pv->length == 0 ) {
 
@@ -989,7 +989,7 @@ DEFINE_FUNCTION( toString ) {
 	//size_t amount = pv->length;
 	//JL_CHK( ReadRawAmount(cx, obj, &amount, bstrBuf) );
 	//JSObject *bstrObj = NewBlob(cx, bstrBuf, pv->length);
-	//JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob." );
+	//JL_ASSERT( bstrObj != NULL, "Unable to create the Blob." );
 	//*JL_RVAL = OBJECT_TO_JSVAL(bstrObj);
 
 	return JS_TRUE;
@@ -1005,7 +1005,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_GET_PROPERTY() {
 
-	JL_S_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_CLASS();
 	if ( !JSID_IS_INT(id) )
 		return JS_TRUE;
 
@@ -1014,7 +1014,7 @@ DEFINE_GET_PROPERTY() {
 
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	if ( slot >= 0 && (size_t)slot < pv->length ) {
 
@@ -1055,7 +1055,8 @@ DEFINE_SET_PROPERTY() {
 	JL_USE(vp);
 	JL_USE(obj);
 
-	JL_S_ASSERT( !JSID_IS_INT(id), "Operation not allowed." );
+	JL_ASSERT( !JSID_IS_INT(id), E_THISOBJ, E_OPERATION );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1076,10 +1077,10 @@ DEFINE_PROPERTY_GETTER( length ) {
 
 	JL_USE(id);
 
-	JL_S_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_CLASS();
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	return JL_NativeToJsval(cx, pv->length, vp);
 	JL_BAD;
 }

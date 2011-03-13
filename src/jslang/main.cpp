@@ -22,7 +22,7 @@ DECLARE_CLASS( Blob )
 DECLARE_CLASS( Stream )
 DECLARE_CLASS( Serializer )
 DECLARE_CLASS( Unserializer )
-DECLARE_STATIC();
+DECLARE_STATIC()
 
 /**doc t:header
 $MODULE_HEADER
@@ -39,7 +39,7 @@ $MODULE_FOOTER
 JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 
 	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);
-	JL_CHK( JL_SetModulePrivate(cx, jslangModuleId, mpv) );
+	JL_CHKM( JL_SetModulePrivate(cx, jslangModuleId, mpv), E_MODULE, E_INIT );
 
 	mpv->processEventSignalEventSem = JLSemaphoreCreate(0);
 

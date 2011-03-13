@@ -195,7 +195,7 @@ JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc, jsval 
 JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakReason breakOrigin) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JSScript *script;
 	script = JS_GetFrameScript(cx, fp);
@@ -272,7 +272,7 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 
 		JL_CHK( status );
 
-		JL_S_ASSERT_IS_INTEGER(argv[0], "onBreak return");
+		JL_ASSERT_IS_INTEGER(argv[0], "onBreak return");
 
 		if ( hasException ) // restore the exception
 			JS_SetPendingException(cx, exception); // (TBD) should return JSTRAP_ERROR ???
@@ -368,7 +368,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	DebuggerPrivate *pv;
@@ -401,7 +401,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ToggleBreakpoint ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN( 3 );
+	JL_ASSERT_ARGC_MIN( 3 );
 
 	bool polarity;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &polarity) );
@@ -413,8 +413,8 @@ DEFINE_FUNCTION( ToggleBreakpoint ) {
 	jsbytecode *pc;
 	JL_CHK( GetScriptLocation(cx, &JL_ARG(2), lineno, &script, &pc) );
 	if ( script == NULL ) {
-		
-		JL_REPORT_WARNING_NUM( JLSMSG_RUNTIME_ERROR, "Invalid location.");
+
+		JL_ERR( E_ARG, E_NUM(2), E_SEP, E_LOCATION, E_INVALID );
 		*JL_RVAL = JSVAL_ZERO;
 		return JS_TRUE;
 	}
@@ -444,7 +444,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( HasBreakpoint ) {
 
-	JL_S_ASSERT_ARG_MIN( 2 );
+	JL_ASSERT_ARGC_MIN( 2 );
 
 	uintN lineno;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
@@ -454,7 +454,7 @@ DEFINE_FUNCTION( HasBreakpoint ) {
 	JL_CHK( GetScriptLocation(cx, &JL_ARG(1), lineno, &script, &pc) );
 	if ( script == NULL ) {
 
-		JL_REPORT_WARNING_NUM( JLSMSG_RUNTIME_ERROR, "Invalid location.");
+		JL_ERR( E_ARG, E_NUM(1), E_SEP, E_LOCATION, E_INVALID );
 		*JL_RVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}
@@ -504,14 +504,14 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( interruptCounterLimit ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	if ( JSVAL_IS_VOID(*vp) ) {
 
 		pv->interruptCounterLimit = 0;
 	} else {
 
-		JL_S_ASSERT_IS_INTEGER(*vp, "");
+		JL_ASSERT_IS_INTEGER(*vp, "");
 		JL_CHK( JL_JsvalToNative(cx, *vp, &pv->interruptCounterLimit) );
 	}
 
@@ -543,7 +543,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( breakOnError ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
@@ -568,7 +568,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( breakOnException ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
@@ -593,7 +593,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( breakOnDebuggerKeyword ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
@@ -618,7 +618,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( breakOnExecute ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
@@ -643,7 +643,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( breakOnFirstExecute ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 
@@ -668,9 +668,9 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( excludedFileList ) {
 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_S_ASSERT_IS_ARRAY( *vp, "" );
+	JL_ASSERT_IS_ARRAY( *vp, "" );
 
 	JSObject *arrayObject;
 	arrayObject = JSVAL_TO_OBJECT( *vp );

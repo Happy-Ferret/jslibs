@@ -52,24 +52,24 @@ DEFINE_CONSTRUCTOR() {
 
 	JLStr prngName;
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &prngName) );
 
 	int prngIndex;
 	prngIndex = find_prng(prngName);
-	JL_S_ASSERT_ERROR_NUM( prngIndex != -1, JLSMSG_RUNTIME_ERROR2, "prng not available", prngName );
+	JL_ASSERT( prngIndex != -1, E_STR("PRNG"), E_NAME(prngName), E_NOTFOUND );
+
 
 	PrngPrivate *pv;
 	pv = (PrngPrivate*)JS_malloc(cx, sizeof(PrngPrivate));
 	JL_CHK( pv );
 
 	pv->prng = prng_descriptor[prngIndex];
-
-	JL_S_ASSERT_ERROR_NUM( pv->prng.test() == CRYPT_OK, JLSMSG_RUNTIME_ERROR2, "prng test failed", prngName );
+	JL_ASSERT( pv->prng.test() == CRYPT_OK, E_LIB, E_STR("libtomcrypt"), E_INTERNAL, E_SEP, E_STR(prngName), E_STR("test"), E_FAILURE );
 
 	int err;
 	err = pv->prng.start( &pv->state );
@@ -104,13 +104,13 @@ $TOC_MEMBER $INAME
 DEFINE_CALL() {
 
 	JL_DEFINE_CALL_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned int readCount;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &readCount) );
@@ -120,8 +120,7 @@ DEFINE_CALL() {
 	JL_CHK( pr );
 	unsigned long hasRead;
 	hasRead = pv->prng.read( (unsigned char*)pr, readCount, &pv->state );
-	JL_S_ASSERT_ERROR_NUM( hasRead == readCount, JLSMSG_RUNTIME_ERROR, "unable to create prng data" );
-
+	JL_CHKM( hasRead == readCount, E_DATA, E_CREATE );
 	pr[readCount] = '\0';
 	JL_CHK( JL_NewBlob( cx, pr, hasRead, JL_RVAL ) );
 
@@ -139,12 +138,12 @@ DEFINE_FUNCTION( AddEntropy ) {
 	JLStr entropy;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &entropy) );
 
@@ -169,12 +168,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AutoEntropy ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned int bits;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bits) );
@@ -202,10 +201,10 @@ DEFINE_PROPERTY_GETTER( state ) {
 
 	JL_USE(id);
 
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned long size;
 	size = pv->prng.export_size;
@@ -219,7 +218,8 @@ DEFINE_PROPERTY_GETTER( state ) {
 	err = pv->prng.pexport((unsigned char*)stateData, &stateLength, &pv->state);
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
-	JL_S_ASSERT_ERROR_NUM( stateLength == size, JLSMSG_RUNTIME_ERROR, "invalid state size" );
+	
+	JL_CHKM( stateLength == size, E_LIB, E_INTERNAL, E_SEP, E_STR("state"), E_LENGTH, E_NUM(size) );
 
 	stateData[size] = '\0';
 	JL_CHK( JL_NewBlob(cx, stateData, size, vp) );
@@ -227,20 +227,19 @@ DEFINE_PROPERTY_GETTER( state ) {
 	JL_BAD;
 }
 
+
 DEFINE_PROPERTY_SETTER( state ) {
 
 	JL_USE(id);
 
 	JLStr state;
 
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
-
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
-
-	JL_S_ASSERT_ERROR_NUM( state.Length() == (size_t)pv->prng.export_size, JLSMSG_LOGIC_ERROR, "invalid state size" );
+	JL_CHKM( state.Length() == (size_t)pv->prng.export_size, E_VALUE, E_LENGTH, E_NUM(pv->prng.export_size) );
 
 	int err;
 	err = pv->prng.pimport((const unsigned char *)state.GetConstStr(), (unsigned long)state.Length(), &pv->state);
@@ -260,10 +259,10 @@ DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_USE(id);
 
-	JL_S_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx,pv->prng.name) );
 	return JS_TRUE;

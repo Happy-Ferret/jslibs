@@ -35,16 +35,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_RANGE(1,2);
+	JL_ASSERT_ARGC_RANGE(1,2);
 
 	ode::dJointGroupID groupId;
 	if ( JL_ARG_ISDEF(2) ) {
 		
-		JL_S_ASSERT_ARG_IS_OBJECT(2);
-		JL_S_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
+		JL_ASSERT_ARG_IS_OBJECT(2);
+		JL_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
 		groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(2)));
 	} else {
 
@@ -77,9 +77,9 @@ DEFINE_FUNCTION( SetAxis ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
 
-	JL_S_ASSERT_ARG_MIN( 3 );
+	JL_ASSERT_ARGC_MIN( 3 );
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
+	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	*JL_RVAL = JSVAL_VOID;
 
 	int anum, rel;
@@ -94,7 +94,7 @@ DEFINE_FUNCTION( SetAxis ) {
 	ode::dVector3 vector;
 	uint32 length;
 	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(3), vector, 3, &length) );
-	JL_S_ASSERT( length >= 3, "Invalid array size." );
+	JL_ASSERT( length >= 3, E_ARG, E_NUM(3), E_TYPE, E_TY_NARRAY(3) );
 
 	if ( anum+1 > ode::dJointGetLMotorNumAxes(jointId) )
 		ode::dJointSetLMotorNumAxes(jointId, anum+1);

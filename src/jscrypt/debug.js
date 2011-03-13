@@ -1,20 +1,10 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-rep 4 jscrypt');
+//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-rep 4 jscrypt');
 
 LoadModule('jsstd');
 LoadModule('jscrypt');
 
-var b = new Blob();
-
-Print( b._private1 );
-Halt();
-
-var cr = new Cipher("CFB", "cast5", "my  key of  16B ");
-var encryptedText = cr.Encrypt("secret text");
-var encryptedText = cr.Encrypt("secret text");
-
-//QA.ASSERT_STR(cr.Decrypt(encryptedText), data, "crypy/decript with Cast5 cipher using CFB mode");}))(qaapi);
-
+var cr = new Cipher("ECB", "cast5", "my");
 
 Halt();
 

@@ -34,10 +34,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_RANGE(0, 1);
+	JL_ASSERT_ARGC_RANGE(0, 1);
 	ode::dSpaceID space;
 	if ( JL_ARG_ISDEF(1) ) { // place it in a space ?
 
@@ -68,12 +68,12 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( params ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
-	JL_S_ASSERT_IS_ARRAY( *vp, "" );
+	JL_ASSERT_THIS_OBJECT_STATE( geom );
+	JL_ASSERT_IS_ARRAY( *vp, "" );
 	ode::dVector4 params;
 	uint32 length;
 	JL_CHK( JL_JsvalToODERealVector(cx, *vp, params, 4, &length) );
-	JL_S_ASSERT( length >= 4, "Invalid array size." );
+	JL_ASSERT( length >= 4, E_VALUE, E_TYPE, E_TY_NARRAY(4) );
 	ode::dGeomPlaneSetParams(geom, params[0], params[1], params[2], params[3]);
 	return JS_TRUE;
 	JL_BAD;
@@ -82,7 +82,7 @@ DEFINE_PROPERTY_SETTER( params ) {
 DEFINE_PROPERTY_GETTER( params ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
+	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dVector4 result;
 	ode::dGeomPlaneGetParams(geom, result);
 	JL_CHK( ODERealVectorToJsval(cx, result, COUNTOF(result), vp) );
@@ -97,13 +97,13 @@ DEFINE_PROPERTY_GETTER( params ) {
 DEFINE_PROPERTY( lengthsSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
-	//JL_S_ASSERT_NUMBER( *vp );
+	JL_ASSERT_THIS_OBJECT_STATE( geom );
+	//JL_ASSERT_NUMBER( *vp );
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	size_t length;
 	JL_CHK( JL_JsvalToNativeVector(cx, *vp, vector, 3, &length) );
-	JL_S_ASSERT( length >= 3, "Invalid array size." );
+	JL_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomPlaneSetLengths(geom, vector[0], vector[1], vector[2]);
 	return JS_TRUE;
 	JL_BAD;
@@ -112,7 +112,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 DEFINE_PROPERTY( lengthsGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
+	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dVector3 result;
 	ode::dGeomPlaneGetLengths(geom, result);
 	//FloatVectorToArray(cx, 3, result, vp);

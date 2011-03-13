@@ -592,7 +592,6 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
       break;
 
     default:
-
       JS_ReportError( cx, "NativeType_getter: no conversion found ( index: %d, ffiType: %d )", index, ffiType->type );
       return JS_FALSE;
     }

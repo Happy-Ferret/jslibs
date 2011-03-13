@@ -33,13 +33,13 @@ JSBool ReconstructSpace(JSContext *cx, ode::dSpaceID spaceId, JSObject **obj) { 
 		JL_CHK( *obj );
 	} else {
 
-		JL_S_ASSERT( ode::dBodyGetData(bodyId) == NULL, "Invalid case (object not finalized)." );
-		JL_S_ASSERT( bodyId != NULL, "Invalid ode object." );
+		JL_ASSERT( ode::dBodyGetData(bodyId) == NULL, "Invalid case (object not finalized)." );
+		JL_ASSERT( bodyId != NULL, "Invalid ode object." );
 
 		*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
 		JL_CHK( *obj );
 //		BodyPrivate *bodypv = (BodyPrivate*)jl_malloc(sizeof(BodyPrivate));
-//		JL_S_ASSERT_ALLOC( bodypv );
+//		JL_ASSERT_ALLOC( bodypv );
 //		bodypv->obj = *obj;
 //		ode::dBodySetData(bodyId, bodypv);
 		ode::dBodySetData(bodyId, *obj);
@@ -76,7 +76,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	ode::dSpaceID parentSpace;
@@ -106,9 +106,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Destroy ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_CLASS();
 
 	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(spaceId);
+	JL_ASSERT_THIS_OBJECT_STATE(spaceId);
 	if ( spaceId != NULL ) {
 
 		while ( dSpaceGetNumGeoms(spaceId) )

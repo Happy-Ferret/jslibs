@@ -77,13 +77,13 @@ $TOC_MEMBER $INAME
 
 DEFINE_FUNCTION( DecodeOggVorbis ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *streamObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 //	NIStreamRead streamReader;
 //	JL_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
-//	JL_S_ASSERT( streamReader != NULL, "Invalid stream." );
+//	JL_ASSERT( streamReader != NULL, "Invalid stream." );
 
 	StreamReadInfo pv; // = { cx, StreamObj };
 	pv.cx = cx;
@@ -97,8 +97,8 @@ DEFINE_FUNCTION( DecodeOggVorbis ) {
 	vorbis_info *info = ov_info(&descriptor, -1);
 	int bits = 16;
 
-	JL_S_ASSERT( bits != 8 || bits == 16, "Unsupported bits count." );
-	JL_S_ASSERT( info->channels == 1 || info->channels == 2, "Unsupported channel count." );
+	JL_CHKM( bits == 8 || bits == 16, E_NUM(bits), E_STR("bit"), E_FORMAT );
+	JL_CHKM( info->channels == 1 || info->channels == 2, E_NUM(info->channels), E_STR("channels"), E_FORMAT );
 
 	int bitStream;
 	void *stack;
@@ -111,7 +111,7 @@ DEFINE_FUNCTION( DecodeOggVorbis ) {
 	do {
 
 		char *buffer = (char*)jl_malloc(bufferSize);
-		JL_S_ASSERT_ALLOC(buffer);
+		JL_ASSERT_ALLOC(buffer);
 
 		jl::StackPush(&stack, buffer);
 
@@ -146,7 +146,7 @@ DEFINE_FUNCTION( DecodeOggVorbis ) {
 	JL_updateMallocCounter(cx, totalSize);
 	JSObject *bstrObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &bstrObj) );
-	JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
+	JL_CHKM( bstrObj != NULL, E_STR("Blob"), E_CREATE );
 	*JL_RVAL = OBJECT_TO_JSVAL(bstrObj);
 
 	JL_CHK(JL_SetProperty(cx, bstrObj, "bits", bits) ); // bits per sample
@@ -282,14 +282,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DecodeSound ) {
 
-	JL_S_ASSERT_ARG_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *streamObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 //	NIStreamRead streamReader;
 //	JL_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
-//	JL_S_ASSERT( streamReader != NULL, "Invalid stream." );
+//	JL_ASSERT( streamReader != NULL, "Invalid stream." );
 
 	StreamReadInfo pv;// = { cx, streamObj };
 	pv.cx = cx;
@@ -299,13 +299,13 @@ DEFINE_FUNCTION( DecodeSound ) {
 
 	SNDFILE *descriptor = sf_open_virtual(&sfCallbacks, SFM_READ, &info, &pv);
 
-	JL_S_ASSERT( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
-	JL_S_ASSERT( descriptor != NULL, "Invalid stream." );
+	JL_ASSERT( sf_error(descriptor) == SF_ERR_NO_ERROR, E_LIB, E_STR("sndfile"), E_OPERATION, E_ERRNO(sf_error(descriptor)) );
+	JL_ASSERT( descriptor != NULL, E_ARG, E_NUM(1), E_INVALID ); // "Invalid stream."
 
 	if ( JL_IsExceptionPending(cx) )
 		return JS_FALSE;
 
-	JL_S_ASSERT( info.channels == 1 || info.channels == 2, "Unsupported channel count." );
+	JL_CHKM( info.channels == 1 || info.channels == 2, E_NUM(info.channels), E_STR("channels"), E_FORMAT );
 
 	sf_command(descriptor, SFC_SET_SCALE_FLOAT_INT_READ, NULL, SF_TRUE); // Doc. Set/clear the scale factor when integer (short/int) data is read from a file containing floating point data.
 
@@ -319,7 +319,7 @@ DEFINE_FUNCTION( DecodeSound ) {
 	do {
 
 		char *buffer = (char*)jl_malloc(bufferSize);
-		JL_S_ASSERT_ALLOC(buffer);
+		JL_ASSERT_ALLOC(buffer);
 		jl::StackPush(&stack, buffer);
 
 		char *data = buffer+sizeof(int);
@@ -328,7 +328,7 @@ DEFINE_FUNCTION( DecodeSound ) {
 
 		items = sf_read_short(descriptor, (short*)data, maxlen/sizeof(short)); // bits per sample
 
-		JL_S_ASSERT( sf_error(descriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(descriptor) );
+		JL_ASSERT( sf_error(descriptor) == SF_ERR_NO_ERROR, E_LIB, E_STR("sndfile"), E_OPERATION, E_ERRNO(sf_error(descriptor)) );
 
 		if ( items <= 0 ) { // 0 indicates EOF
 
@@ -348,7 +348,7 @@ DEFINE_FUNCTION( DecodeSound ) {
 	JL_CHK( buf );
 
 //	JSObject *bstrObj = JL_NewBlob(cx, buf, totalSize);
-//	JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
+//	JL_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
 //	*JL_RVAL = OBJECT_TO_JSVAL(bstrObj);
 
 	buf[totalSize] = '\0';
@@ -356,7 +356,8 @@ DEFINE_FUNCTION( DecodeSound ) {
 	JL_updateMallocCounter(cx, totalSize);
 	JSObject *bstrObj;
 	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &bstrObj) );
-	JL_S_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
+	JL_CHKM( bstrObj != NULL, E_STR("Blob"), E_CREATE );
+
 	*JL_RVAL = OBJECT_TO_JSVAL(bstrObj);
 
 	JL_CHK(JL_SetProperty(cx, bstrObj, "bits", 16) ); // bits per sample
@@ -393,8 +394,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( SplitChannels ) {
 
 	JLStr bufStr;
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	unsigned int rate, channelCount, bits, frames;
 	JSObject *srcBlobObj = JSVAL_TO_OBJECT(JL_ARG(1));
@@ -403,7 +404,7 @@ DEFINE_FUNCTION( SplitChannels ) {
 	JL_CHK(JL_GetProperty(cx, srcBlobObj, "bits", &bits) );
 	JL_CHK(JL_GetProperty(cx, srcBlobObj, "frames", &frames) );
 
-	JL_S_ASSERT( bits == 8 || bits == 16, "Invalid channel sound resolution." );
+	JL_ASSERT( bits == 8 || bits == 16, E_ARG, E_NUM(1), E_FORMAT, E_COMMENT_BEGIN, E_NUM(bits), E_STR("bit"), E_COMMENT_END );
 
 	const char *srcBuf;
 	size_t srcBufLength;
@@ -436,7 +437,7 @@ DEFINE_FUNCTION( SplitChannels ) {
 		JL_CHK( JL_NewBlob(cx, buf, totalSize, &blobVal) );
 		JSObject *blobObj;
 		JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
-		JL_S_ASSERT( blobObj != NULL, "Unable to create the Blob object.");
+		JL_CHKM( blobObj != NULL, E_STR("Blob"), E_CREATE );
 		blobVal = OBJECT_TO_JSVAL(blobObj);
 		JL_CHK( JS_SetElement(cx, destArray, c, &blobVal) );
 

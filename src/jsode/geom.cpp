@@ -73,8 +73,7 @@ void FinalizeGeom(JSContext *cx, JSObject *obj) {
 
 JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
 
-	JL_S_ASSERT( ode::dGeomGetData(geomId) == NULL, "Invalid case (object not finalized)." );
-	JL_S_ASSERT( geomId != NULL, "Invalid ode object." );
+	JL_ASSERT( geomId != NULL && ode::dGeomGetData(geomId) == NULL, E_MODULE, E_INTERNAL, E_SEP, E_STR(JL_CLASS_NAME(Geom)), E_STATE );
 
 	switch( ode::dGeomGetClass(geomId) ) {
 		case ode::dSphereClass:
@@ -102,7 +101,7 @@ JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // 
 			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomTrimesh), JL_PROTOTYPE(cx, GeomTrimesh), NULL);
 			break;
 		default:
-			JL_ASSERT(false);
+			ASSERT(false);
 	}
 	JL_CHK( *obj );
 
@@ -133,7 +132,7 @@ DEFINE_FUNCTION( Destroy ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( geomId );
+	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	ode::dGeomDestroy(geomId);
 	JL_SetPrivate(cx, obj, NULL);
 	SetMatrix44GetInterface(cx, obj, NULL);
@@ -153,12 +152,12 @@ DEFINE_FUNCTION( PointDepth ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( geomId );
-	JL_S_ASSERT_ARG_IS_ARRAY(1);
+	JL_ASSERT_THIS_OBJECT_STATE( geomId );
+	JL_ASSERT_ARG_IS_ARRAY(1);
 	ode::dReal depth, point[3];
 	uint32 len;
 	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), point, 3, &len) );
-	JL_S_ASSERT( len >= 3, "Invalid array size." );
+	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
 
 	switch( ode::dGeomGetClass(geomId) ) {
 		case ode::dSphereClass:
@@ -170,11 +169,19 @@ DEFINE_FUNCTION( PointDepth ) {
 		case ode::dCapsuleClass:
 			depth = ode::dGeomCapsulePointDepth(geomId, point[0], point[1], point[2]);
 			break;
+		case ode::dCylinderClass:
+			depth = ode::dGeomCCylinderPointDepth(geomId, point[0], point[1], point[2]);
+			break;
 		case ode::dPlaneClass:
 			depth = ode::dGeomPlanePointDepth(geomId, point[0], point[1], point[2]);
 			break;
+//		case ode::dTriMeshClass:
+//			depth = ode::dGeomTrimeshPointDepth(geomId, point[0], point[1], point[2]);
+//			break;
 		default:
-			JL_REPORT_ERROR_NUM( JLSMSG_NOT_IMPLEMENTED);
+			*JL_RVAL = JSVAL_VOID;
+			JL_ERR( E_STR(JL_THIS_CLASS_NAME), E_NOTSUPPORTED );
+			return JS_TRUE;
 	}
 
 	JL_CHK( JL_NativeToJsval(cx, depth, JL_RVAL) );
@@ -196,7 +203,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( disabled ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(geom);
+	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	bool disabled;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &disabled) );
 	if ( disabled )
@@ -211,7 +218,7 @@ DEFINE_PROPERTY_SETTER( disabled ) {
 DEFINE_PROPERTY( disabledGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
+	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	*vp = ode::dGeomIsEnabled(geom) != 1 ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -226,7 +233,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( temporalCoherence ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(geomId);
+	JL_ASSERT_THIS_OBJECT_STATE(geomId);
 	bool enableState;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &enableState) );
 	ode::dGeomTriMeshEnableTC(geomId, ode::dGeomGetClass(geomId), enableState ? 1 : 0 );
@@ -238,7 +245,7 @@ DEFINE_PROPERTY_SETTER( temporalCoherence ) {
 DEFINE_PROPERTY_GETTER( temporalCoherence ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( geomId );
+	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	*vp = ode::dGeomTriMeshIsTCEnabled(geomId, ode::dGeomGetClass(geomId)) == 1 ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -253,7 +260,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( body ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( geom );
+	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dBodyID bodyId;
 	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
 	ode::dGeomSetBody(geom, bodyId);
@@ -264,7 +271,7 @@ DEFINE_PROPERTY_SETTER( body ) {
 DEFINE_PROPERTY_GETTER( body ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( geomId );
+	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	JL_CHK( BodyToJsval(cx, ode::dGeomGetBody(geomId), vp) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -281,7 +288,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( offset ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(geom);
+	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		ode::dGeomClearOffset(geom);
@@ -296,21 +303,24 @@ DEFINE_PROPERTY_SETTER( offset ) {
 		float tmp[16], *m = tmp;
 
 		NIMatrix44Get matrixGet = Matrix44GetInterface(cx, srcObj);
-		JL_S_ASSERT( matrixGet != NULL, "Invalid matrix interface." );
+		JL_CHKM( matrixGet != NULL, E_VALUE, E_SEP, E_INTERFACE, E_STR("Matrix44Get"), E_NOTSUPPORTED );
+		
 		matrixGet(cx, srcObj, &m);
 
 //		NIMatrix44Get GetMatrix;
 //		JL_CHK( GetMatrix44GetInterface(cx, srcObj, &GetMatrix) );
-//		JL_S_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
+//		JL_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
 //		ReadMatrix( cx, srcObj, (float**)&m);
 
-		JL_S_ASSERT( *m != NULL, "Invalid matrix." );
+		JL_ASSERT( *m != NULL, E_VALUE, E_INVALID );
+
 		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
 		ode::dGeomSetOffsetRotation(geom, m3);
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
 		return JS_TRUE;
 	}
-	JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "Matrix44 or undefined");
+
+	JL_ERR( E_VALUE, E_TYPE, E_STR("matrix44"), E_OR, E_TY_UNDEFINED );
 	JL_BAD;
 }
 
@@ -322,7 +332,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( tansformation ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(geom);
+	JL_ASSERT_THIS_OBJECT_STATE(geom);
 
 	if ( !JSVAL_IS_PRIMITIVE(*vp) ) {
 
@@ -332,21 +342,23 @@ DEFINE_PROPERTY_SETTER( tansformation ) {
 		float tmp[16], *m = tmp;
 
 		NIMatrix44Get matrixGet = Matrix44GetInterface(cx, srcObj);
-		JL_S_ASSERT( matrixGet != NULL, "Invalid matrix interface." );
+		JL_CHKM( matrixGet != NULL, E_VALUE, E_SEP, E_INTERFACE, E_STR("Matrix44Get"), E_NOTSUPPORTED );
+
 		matrixGet(cx, srcObj, &m);
 /*
 		NIMatrix44Read ReadMatrix;
 		JL_CHK( GetMatrix44ReadInterface(cx, srcObj, &ReadMatrix) );
-		JL_S_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
+		JL_ASSERT( ReadMatrix != NULL, "Invalid matrix interface." );
 		ReadMatrix( cx, srcObj, (float**)&m);
-		JL_S_ASSERT( *m != NULL, "Invalid matrix." );
+		JL_ASSERT( *m != NULL, "Invalid matrix." );
 */
 		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
 		ode::dGeomSetOffsetRotation(geom, m3);
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
 		return JL_StoreProperty(cx, obj, id, vp, false);
 	}
-	JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "Matrix44");
+
+	JL_ERR( E_VALUE, E_TYPE, E_STR("matrix44") );
 	JL_BAD;
 }
 
@@ -357,7 +369,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( space ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(geom);
+	JL_ASSERT_THIS_OBJECT_STATE(geom);
 /*
 	ode::dSpaceID space = ode::dGeomGetSpace(geom);
 	ode::dGeomSetData((ode::dGeomID)space, obj);
@@ -367,14 +379,14 @@ DEFINE_PROPERTY_GETTER( space ) {
 	if ( JSVAL_IS_VOID( *vp ) )
 		return JS_TRUE;
 
-//	JL_S_ASSERT_OBJECT( *vp );
+//	JL_ASSERT_OBJECT( *vp );
 //	JSObject *spaceObj = JSVAL_TO_OBJECT( *vp );
-//	JL_S_ASSERT_CLASS( spaceObj, JL_CLASS(Space) );
+//	JL_ASSERT_CLASS( spaceObj, JL_CLASS(Space) );
 //	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(cx, spaceObj);
 
 	ode::dSpaceID spaceId;
 	JL_CHK( JL_JsvalToSpaceID(cx, *vp, &spaceId) );
-	JL_ASSERT( spaceId == ode::dGeomGetSpace(geom) );
+	ASSERT( spaceId == ode::dGeomGetSpace(geom) );
 
 	if ( spaceId == NULL ) {
 	
@@ -396,7 +408,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( position ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(geom);
+	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	const ode::dReal *vector = ode::dGeomGetPosition(geom);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 	return JS_TRUE;
@@ -407,11 +419,11 @@ DEFINE_PROPERTY_GETTER( position ) {
 DEFINE_PROPERTY_SETTER( position ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(geom);
+	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	ode::dVector3 vector;
 	uint32 length;
 	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
-	JL_S_ASSERT( length >= 3, "Invalid array size." );
+	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
 	ode::dGeomSetPosition( geom, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 	JL_BAD;
@@ -425,7 +437,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( aabb ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(geom);
+	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	ode::dReal aabb[6];
 	ode::dGeomGetAABB(geom, aabb);
 
@@ -451,7 +463,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( boundarySphere ) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(geomId);
+	JL_ASSERT_THIS_OBJECT_STATE(geomId);
 	ode::dReal aabb[6];
 	ode::dGeomGetAABB(geomId, aabb);
 
@@ -479,7 +491,7 @@ DEFINE_PROPERTY_GETTER( boundarySphere ) {
 DEFINE_PROPERTY( offsetPositionGetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(geom);
+	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	const ode::dReal *vector = ode::dGeomGetOffsetPosition(geom); // (TBD) dGeomGetOffsetRotation
 	//ODERealVectorToArray(cx, 3, vector, vp);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
@@ -492,12 +504,12 @@ DEFINE_PROPERTY( offsetPositionGetter ) {
 DEFINE_PROPERTY( offsetPositionSetter ) {
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(geom);
+	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	size_t length;
 	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
-	JL_S_ASSERT( length >= 3, "Invalid array size." );
+	JL_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomSetOffsetPosition( geom, vector[0], vector[1], vector[2] ); // (TBD) dGeomSetOffsetWorldRotation
 	return JS_TRUE;
 	JL_BAD;
@@ -515,9 +527,9 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 **/
 DEFINE_PROPERTY_SETTER( contact ) {
 	
-//	JL_S_ASSERT( JL_IsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
+//	JL_ASSERT( JL_IsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
 	if ( !JSVAL_IS_VOID(*vp) )
-		JL_S_ASSERT_IS_FUNCTION(*vp, "");
+		JL_ASSERT_IS_FUNCTION(*vp, "");
 	return JL_SetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, *vp);
 	JL_BAD;
 }

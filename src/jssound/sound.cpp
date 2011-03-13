@@ -20,11 +20,11 @@ BEGIN_CLASS( Sound ) // Start the definition of the class. It defines some symbo
 //DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 //}
 
-DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Template() ) or activated ( a = Template() ). To distinguish the cases, use JS_IsConstructing() or use the JL_S_ASSERT_CONSTRUCTING() macro.
+DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Template() ) or activated ( a = Template() ). To distinguish the cases, use JS_IsConstructing() or use the JL_ASSERT_CONSTRUCTING() macro.
 
 	JL_USE(argc);
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	return JS_TRUE;

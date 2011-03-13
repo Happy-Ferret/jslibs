@@ -23,73 +23,93 @@
 //  JSEXN_TYPEERR      // when a value is not of the expected type.
 //  JSEXN_URIERR       // when a malformed URI is encountered.
 
+DEF( ERRNO_1,        "(error number: %d)", JSEXN_NONE )
+DEF( NUM_1,          "%d", JSEXN_NONE )
+DEF( STR_1,          "%s", JSEXN_NONE )
+DEF( NAME_1,         "'%s'", JSEXN_NONE )
+DEF( COMMENT_1,      "(%s)", JSEXN_NONE )
+DEF( COMMENT_2,      "(%s %s)", JSEXN_NONE )
+DEF( COMMENT_BEGIN,  "(", JSEXN_NONE )
+DEF( COMMENT_END,    ")", JSEXN_NONE )
+DEF( INTERVAL_NUM_2, "%d to %d", JSEXN_NONE )
+DEF( INTERVAL_STR_2, "%s to %s", JSEXN_NONE )
+DEF( DETAILS,        ":", JSEXN_NONE )
+DEF( SEP,            ",", JSEXN_NONE )
+DEF( OR,             "or", JSEXN_NONE )
 
-// more generic errors/warnings
-JLMSG_DEF( JLSMSG_PROGRAM_STOPPED,        JSEXN_NONE, "the program has been stopped", 0 )
-JLMSG_DEF( JLSMSG_NEED_CONSTRUCT,         JSEXN_TYPEERR, "object must be constructed", 0 )
-JLMSG_DEF( JLSMSG_NOT_IMPLEMENTED,        JSEXN_INTERNALERR, "not implemented", 0 )
-JLMSG_DEF( JLSMSG_OS_ERROR,               JSEXN_INTERNALERR, "operating system: {0}", 1 )
-JLMSG_DEF( JLSMSG_LIB_ERROR,              JSEXN_INTERNALERR, "external library: {0}", 1 )
-JLMSG_DEF( JLSMSG_RUNTIME_ERROR,          JSEXN_INTERNALERR, "runtime error: {0}", 1 )
-JLMSG_DEF( JLSMSG_RUNTIME_ERROR2,         JSEXN_INTERNALERR, "runtime error: {0} ({1})", 2 )
-JLMSG_DEF( JLSMSG_LOGIC_ERROR,            JSEXN_ERR, "logic error: {0}", 1 )
-JLMSG_DEF( JLSMSG_LOGIC_ERROR2,           JSEXN_ERR, "logic error: {0} ({1})", 2 )
-JLMSG_DEF( JLSMSG_RANGE_ERROR,            JSEXN_RANGEERR, "{0}", 1 )
-JLMSG_DEF( JLSMSG_RANGE_ERROR2,           JSEXN_RANGEERR, "{0} ({1})", 2 )
-JLMSG_DEF( JLSMSG_TYPE_ERROR,             JSEXN_TYPEERR, "{0}", 1 )
-JLMSG_DEF( JLSMSG_TYPE_ERROR2,            JSEXN_TYPEERR, "{0} ({1})", 2 )
+DEF( DATA,           "data", JSEXN_NONE )
+DEF( DATATYPE,       "data type", JSEXN_TYPEERR )
+DEF( DATASIZE,       "data size", JSEXN_RANGEERR )
+DEF( ARGC,           "number of arguments", JSEXN_RANGEERR )
+DEF( ARG,            "argument", JSEXN_NONE )
+DEF( PARAM,          "parameter", JSEXN_NONE )
+DEF( PARAMTYPE,      "type of the parameter", JSEXN_NONE )
+DEF( VALUE,          "value", JSEXN_NONE )
+DEF( VALUELENGTH,    "value length", JSEXN_NONE )
+DEF( ARRAYLENGTH,    "length of the array", JSEXN_RANGEERR )
+DEF( ARGVALUE,       "value of argument", JSEXN_NONE )
+DEF( RETURNVALUE,    "return value", JSEXN_NONE )
+DEF( THISOBJ,        "current object", JSEXN_NONE )
+DEF( OBJ,            "object", JSEXN_NONE )
+DEF( CLASS,          "class", JSEXN_NONE )
+DEF( PROP,           "property", JSEXN_NONE )
+DEF( API,            "API", JSEXN_NONE )
+DEF( FUNC,           "function", JSEXN_NONE )
+DEF( CALL,           "function call", JSEXN_NONE )
+DEF( FILE,           "file", JSEXN_NONE )
+DEF( MODULE,         "module", JSEXN_NONE )
+DEF( LOCATION,       "location", JSEXN_NONE )
+DEF( SCRIPT,         "script", JSEXN_NONE )
+DEF( HOST,           "jslibs host", JSEXN_NONE )
+DEF( JSLIBS,         "jslibs", JSEXN_NONE )
+DEF( INTERFACE,      "interface", JSEXN_NONE )
+DEF( THISOPERATION,  "this operation", JSEXN_NONE )
+DEF( LIB,            "library", JSEXN_NONE )
+DEF( OS,             "operating system", JSEXN_INTERNALERR )
 
-JLMSG_DEF( JLSMSG_INIT_FAIL,              JSEXN_INTERNALERR, "unable to initialize {0}", 1 )
+//
+DEF( RANGE,          "must be between", JSEXN_RANGEERR )
+DEF( MIN,            "must be >=", JSEXN_RANGEERR )
+DEF( MAX,            "must be <=", JSEXN_RANGEERR )
+DEF( EQUALS,         "must be equal to", JSEXN_RANGEERR )
+DEF( LENGTH,         "must have a length of", JSEXN_RANGEERR )
+DEF( PRECISION,      "has lost precision", JSEXN_RANGEERR )
+DEF( TYPE,           "type must be", JSEXN_TYPEERR )
+DEF( INSTANCE,       "must be an instance of", JSEXN_TYPEERR )
+DEF( INHERIT,        "must inherit from", JSEXN_TYPEERR )
+DEF( CONVERT,        "fails to convert to", JSEXN_TYPEERR )
+DEF( DEFINED,        "must be defined", JSEXN_TYPEERR )
+DEF( NOTFOUND,       "cannot be found", JSEXN_REFERENCEERR )
+DEF( NOTSUPPORTED,   "not supported", JSEXN_INTERNALERR )
+DEF( CONSTRUCT,      "must be constructed", JSEXN_TYPEERR )
+DEF( CREATE,         "cannot be created", JSEXN_INTERNALERR )
+DEF( INIT,           "fails to initialize", JSEXN_INTERNALERR )
+DEF( FIN,            "fails to finalize", JSEXN_INTERNALERR )
+DEF( INVALID,        "is invalid", JSEXN_ERR )
+DEF( FORMAT,         "has an unsupported format", JSEXN_ERR )
+DEF( VERSION,        "has an invalid version", JSEXN_ERR )
+DEF( ACCESS,         "is not accessible", JSEXN_TYPEERR )
+DEF( READ,           "cannot be read", JSEXN_TYPEERR )
+DEF( WRITE,          "cannot be write", JSEXN_TYPEERR )
+DEF( FAILURE,        "failed", JSEXN_ERR )
+DEF( OPEN,           "is open", JSEXN_TYPEERR )
+DEF( CLOSED,         "is closed", JSEXN_TYPEERR )
+DEF( DISABLED,       "is disabled", JSEXN_TYPEERR )
+DEF( OPERATION,      "fails to perform the operation", JSEXN_ERR )
+DEF( STATE,          "state is invalid", JSEXN_ERR )
+DEF( COMPILE,        "cannot be compiled", JSEXN_ERR )
+DEF( INTERNAL,       "encountered an internal failure", JSEXN_INTERNALERR )
+DEF( IGNORED,        "will be ignored", JSEXN_TYPEERR )
+DEF( REQUIRED,       "is required", JSEXN_TYPEERR )
 
-JLMSG_DEF( JLSMSG_INVALIDATED_OBJECT,     JSEXN_INTERNALERR, "{0} object invalidated", 1 )
-JLMSG_DEF( JLSMSG_INVALID_RESOURCE,       JSEXN_INTERNALERR, "invalid object state", 0 )
-JLMSG_DEF( JLSMSG_INVALID_ARGUMENT,       JSEXN_INTERNALERR, "invalid argument ({0})", 1 )
-JLMSG_DEF( JLSMSG_INVALID_OPERATION,      JSEXN_INTERNALERR, "invalid operation", 0 )
-JLMSG_DEF( JLSMSG_VALUE_OUTOFRANGE,       JSEXN_RANGEERR, "value out of range {0}", 1 )
-
-JLMSG_DEF( JLSMSG_WRONG_VALUE_TYPE,       JSEXN_TYPEERR, "{0} is expected {1}", 2 )
-JLMSG_DEF( JLSMSG_WRONG_ARGUMENT_TYPE,    JSEXN_TYPEERR, "{1} is expected as argument {0}", 2 )
-
-JLMSG_DEF( JLSMSG_INVALID_OBJECT_STATE,   JSEXN_INTERNALERR, "invalid {0} object state", 1 )
-
-JLMSG_DEF( JLSMSG_MISSING_IMPLEMENTATION, JSEXN_INTERNALERR, "{0} must implement {1}", 2 )
-
-
-// specialized errors/warnings
-JLMSG_DEF( JLSMSG_TOO_FEW_ARGUMENTS,      JSEXN_RANGEERR, "not enough arguments (min is {0})", 1 )
-JLMSG_DEF( JLSMSG_TOO_MANY_ARGUMENTS,     JSEXN_RANGEERR, "too many arguments (max is {0})", 1 )
-JLMSG_DEF( JLSMSG_INVALID_ARGUMENT_COUNT, JSEXN_RANGEERR, "invalid argument count (need {0})", 1 )
-
-JLMSG_DEF( JLSMSG_LOSS_OF_PRECISION,      JSEXN_ERR, "loss of precision", 0 )
-JLMSG_DEF( JLSMSG_EXPECT_TYPE,            JSEXN_TYPEERR, "{0} is expected", 1 )
-JLMSG_DEF( JLSMSG_INVALID_INSTANCE,       JSEXN_TYPEERR, "{0} instance is expected", 1 )
-JLMSG_DEF( JLSMSG_FAIL_TO_CONVERT_TO,     JSEXN_INTERNALERR, "fail to convert to {0}", 1 )
-JLMSG_DEF( JLSMSG_INVALID_INHERITANCE,    JSEXN_TYPEERR, "object must be a {0}", 1 )
-
-JLMSG_DEF( JLSMSG_NEED_DEFINED,           JSEXN_TYPEERR, "value cannot be undefined", 0 )
-JLMSG_DEF( JLSMSG_IMMUTABLE_OBJECT,       JSEXN_TYPEERR, "{0} is read-only", 1 )
-
-
-
-/* errors to manage:
-
-- Internal error: <what>.
-- Missing <something> (an identified thing is missing to continue properly)
-- Failed to <do something> ( the underlying native or spidermonkey API failed )
-- Unable to <do something>, <why> ( logical error, misuse of jslibs API, Object cannot be constructed )
-- Invalid operation: <what> ( API misuse )
-
-- Invalid or uninitialized object (Method called on the wrong object.)
-- Invalid argument count. ( misuse of jslibs API )
-- Invalid argument value. ( misuse of jslibs API )
-- Invalid data type <type> ( invalid type, Array expected )
-- conversion failed / failed to convert to <type> ( Unable to convert to boolean )
-- Value out of range: <info?>
-- Limit reach: <what>
-
-- Object cannot be constructed.
-- Construction form is required.
-
-- Not implemented yet.
-- Available in Debug mode only.
-*/
+//
+DEF( TY_UNDEFINED,   "undefined", JSEXN_TYPEERR )
+DEF( TY_PRIMITIVE,   "a non-object", JSEXN_TYPEERR )
+DEF( TY_STRING,      "a string", JSEXN_TYPEERR )
+DEF( TY_DATA,        "data", JSEXN_TYPEERR )
+DEF( TY_CHAR,        "a 1-char string", JSEXN_TYPEERR )
+DEF( TY_INTEGER,     "an integer", JSEXN_TYPEERR )
+DEF( TY_NUMBER,      "a number", JSEXN_TYPEERR )
+DEF( TY_ARRAY,       "an array", JSEXN_TYPEERR )
+DEF( TY_NARRAY_1,    "a %d-element array or vector", JSEXN_TYPEERR )
+DEF( TY_FUNC,        "a function", JSEXN_TYPEERR )

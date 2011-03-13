@@ -31,8 +31,8 @@ DEFINE_FINALIZE() {
 DEFINE_FUNCTION( Alloc ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_CLASS(obj, JL_THIS_CLASS);
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_ARGC_MIN(1);
 
 	void *data;
 	data = JL_GetPrivate(cx, obj);
@@ -42,7 +42,7 @@ DEFINE_FUNCTION( Alloc ) {
 	unsigned int size;
 	size = JSVAL_TO_INT(JL_ARG(1));
 	data = jl_malloc(size);
-	JL_S_ASSERT_ALLOC( data );
+	JL_ASSERT_ALLOC( data );
 	JL_updateMallocCounter(cx, size);
 	JL_SetPrivate(cx, obj, data);
 
@@ -54,12 +54,12 @@ DEFINE_FUNCTION( Alloc ) {
 
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JSFunction *allocFunction;
 	allocFunction = JS_NewFunction(cx, _Alloc, 0, 0, NULL, "Alloc");
-	JL_S_ASSERT( allocFunction != NULL, "Unable to create allocation function." );
+	JL_ASSERT_ALLOC( allocFunction ); // "Unable to create allocation function."
 	JSObject *functionObject;
 	functionObject = JS_GetFunctionObject(allocFunction);
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_FUNCTION_ALLOC, OBJECT_TO_JSVAL(functionObject)) );
@@ -85,12 +85,12 @@ DEFINE_FUNCTION( Free ) {
 DEFINE_FUNCTION( Trim ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 	int vect[4];
 	//IntArrayToVector(cx, 4, &argv[0], vect);
 	uint32 length;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), vect, 4, &length) );
-	JL_S_ASSERT( length == 4, "Invalid array size." );
+	JL_ASSERT( length == 4, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(4) );
 
 	int x;
 	x = vect[0];
@@ -103,22 +103,23 @@ DEFINE_FUNCTION( Trim ) {
 
 	jsval tmp;
 	JS_GetProperty(cx, obj, "width", &tmp);
-	JL_S_ASSERT_IS_INTEGER(tmp, "width");
+	JL_ASSERT_IS_INTEGER(tmp, "width");
 	int width;
 	width = JSVAL_TO_INT(tmp);
 
 	JS_GetProperty(cx, obj, "height", &tmp);
-	JL_S_ASSERT_IS_INTEGER(tmp, "height");
+	JL_ASSERT_IS_INTEGER(tmp, "height");
 	int height;
 	height = JSVAL_TO_INT(tmp);
 
 	JS_GetProperty(cx, obj, "channels", &tmp);
-	JL_S_ASSERT_IS_INTEGER(tmp, "channels");
+	JL_ASSERT_IS_INTEGER(tmp, "channels");
 	int channels;
 	channels = JSVAL_TO_INT(tmp);
 	// assume that we have 1 Byte/channel
 
-	JL_S_ASSERT( !(x<0 || x1<0 || x>width || x1>width || y<0 || y1<0 || y>height || y1>height), "Invalid size." );
+	//JL_ASSERT( !(x<0 || x1<0 || x>width || x1>width || y<0 || y1<0 || y>height || y1>height), "Invalid size." );
+	JL_ASSERT( !(x<0 || x1<0 || x>width || x1>width || y<0 || y1<0 || y>height || y1>height), E_ARG, E_NUM(1), E_INVALID );
 
 	JSBool reuseBuffer;
 	reuseBuffer = false; // default
@@ -127,7 +128,7 @@ DEFINE_FUNCTION( Trim ) {
 
 	char *data;
 	data = (char*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( data );
+	JL_ASSERT_THIS_OBJECT_STATE( data );
 
 	char *tmpDataPtr;
 	tmpDataPtr = data;
@@ -137,7 +138,7 @@ DEFINE_FUNCTION( Trim ) {
 		newData = data;
 	else {
 		newData = (char*)jl_malloc( channels * (x1-x) * (y1-y) );
-		JL_S_ASSERT_ALLOC( newData );
+		JL_ASSERT_ALLOC( newData );
 		JL_SetPrivate(cx, obj, newData);
 	}
 
@@ -167,7 +168,7 @@ DEFINE_FUNCTION( Trim ) {
 
 DEFINE_FUNCTION( Gamma ) {
 
-	JL_S_ASSERT_ARG_MIN(1);
+	JL_ASSERT_ARGC_MIN(1);
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;

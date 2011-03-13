@@ -50,7 +50,8 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 	JSPropertyOp getter;
 	JSStrictPropertyOp setter;
 	JL_CHK( JS_GetPropertyAttrsGetterAndSetterById(cx, obj, id, &attrs, &found, &getter, &setter) );
-	JL_CHKM( found, "Property not found." );
+	JL_CHKM( found, E_PROP, E_NOTFOUND );
+
 	if ( (attrs & JSPROP_SHARED) == 0 ) // Has already been stored somewhere. The slot will be updated after JSPropertyOp returns.
 		return JS_TRUE;
 	attrs &= ~JSPROP_SHARED; // stored mean not shared.
@@ -124,7 +125,7 @@ inline JSBool JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JL_CHK(obj);
-	JL_ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
+	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
 
 	if ( JL_GetHostPrivate(cx)->camelCase == 1 ) {
 
@@ -139,7 +140,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	if ( cs->parentProtoName != NULL ) {
 
 		parent_proto = JL_GetCachedClassProto(hpv, cs->parentProtoName)->proto;
-		JL_S_ASSERT_ERROR_NUM( parent_proto != NULL, JLSMSG_RUNTIME_ERROR2, "prototype not found", cs->parentProtoName );
+		JL_CHKM( parent_proto != NULL, E_STR(cs->parentProtoName), E_STR("prototype"), E_NOTFOUND );
 	} else {
 
 		parent_proto = NULL;
@@ -151,12 +152,9 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JSObject *proto;
 	proto = JS_InitClass(cx, obj, parent_proto, &cs->clasp, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
 	
-	JL_S_ASSERT_ERROR_NUM( proto != NULL, JLSMSG_RUNTIME_ERROR2, "unable to create the class", cs->clasp.name );
-	//JLASSERT_UNEXPECTED_RUNTIME( proto != NULL, "Unable to create the class", cs->clasp.name );
-
-	JL_ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(cx, proto) == NULL );
-
-	JL_CHKM( JL_CacheClassProto(hpv, cs->clasp.name, &cs->clasp, proto), "Unable to cache %s class prototype", cs->clasp.name );
+	JL_ASSERT( proto != NULL, E_CLASS, E_NAME(cs->clasp.name), E_CREATE );
+	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(cx, proto) == NULL );
+	JL_CHKM( JL_CacheClassProto(hpv, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
 	JSObject *staticDest;
 	staticDest = cs->constructor ? JS_GetConstructor(cx, proto) : proto;
@@ -176,7 +174,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JSBool found;
 	JL_CHK( JS_SetPropertyAttributes(cx, obj, cs->clasp.name, JSPROP_READONLY | JSPROP_PERMANENT, &found) );
-	JL_ASSERT( found ); // "Unable to set class flags."
+	ASSERT( found ); // "Unable to set class flags."
 
 //if ( cs->revision != 0 )
 	if ( !(cs->clasp.flags & JSCLASS_FREEZE_PROTO) )

@@ -790,7 +790,7 @@ BEGIN_CLASS( VSTPlugin )
 DEFINE_PROPERTY_GETTER( hostLanguage ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstInt32 lang = vstPlugin->getHostLanguage();
 	*vp = INT_TO_JSVAL(lang);
 	return JS_TRUE;
@@ -800,7 +800,7 @@ DEFINE_PROPERTY_GETTER( hostLanguage ) {
 DEFINE_PROPERTY_GETTER( directory ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	void *dirName = vstPlugin->getDirectory();
 	if ( dirName != NULL ) {
 
@@ -819,8 +819,8 @@ DEFINE_PROPERTY_GETTER( canProcessReplacing ) {
 	if ( JSVAL_IS_VOID(*vp) ) {
 
 		JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-		JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
-		JL_S_ASSERT_IS_BOOLEAN(*vp, "");
+		JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+		JL_ASSERT_IS_BOOLEAN(*vp, "");
 		vstPlugin->canProcessReplacing( JSVAL_TO_BOOLEAN(*vp) == JS_TRUE ? true : false );
 	}
 	return JS_TRUE;
@@ -834,8 +834,8 @@ DEFINE_PROPERTY( canDoubleReplacing ) { }
 DEFINE_PROPERTY_SETTER( numPrograms ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
-	JL_S_ASSERT_IS_INTEGER(*vp, "");
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_IS_INTEGER(*vp, "");
 	vstPlugin->SetNumPrograms( JSVAL_TO_INT(*vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -844,8 +844,8 @@ DEFINE_PROPERTY_SETTER( numPrograms ) {
 DEFINE_PROPERTY_SETTER( numParams ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
-	JL_S_ASSERT_IS_INTEGER(*vp, "");
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_IS_INTEGER(*vp, "");
 	vstPlugin->SetNumParams( JSVAL_TO_INT(*vp) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -854,8 +854,8 @@ DEFINE_PROPERTY_SETTER( numParams ) {
 DEFINE_PROPERTY_SETTER( numInputs ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
-	JL_S_ASSERT_IS_INTEGER(*vp, "");
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_IS_INTEGER(*vp, "");
 	vstPlugin->setNumInputs( JSVAL_TO_INT(*vp) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -864,8 +864,8 @@ DEFINE_PROPERTY_SETTER( numInputs ) {
 DEFINE_PROPERTY_SETTER( numOutputs ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
-	JL_S_ASSERT_IS_INTEGER(*vp, "");
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_IS_INTEGER(*vp, "");
 	vstPlugin->setNumOutputs( JSVAL_TO_INT(*vp) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -874,7 +874,7 @@ DEFINE_PROPERTY_SETTER( numOutputs ) {
 DEFINE_PROPERTY_GETTER( samplePos ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(0); // samplePos always valid
 	if ( info != NULL )
 		JL_CHK( JL_NewNumberValue(cx, info->samplePos, vp ) );
@@ -887,7 +887,7 @@ DEFINE_PROPERTY_GETTER( samplePos ) {
 DEFINE_PROPERTY_GETTER( sampleRate ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(0); // sampleRate always valid
 	if ( info != NULL )
 		JL_CHK( JL_NewNumberValue(cx, info->sampleRate, vp ) );
@@ -900,7 +900,7 @@ DEFINE_PROPERTY_GETTER( sampleRate ) {
 DEFINE_PROPERTY_GETTER( nanoSeconds ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstNanosValid);
 	if ( info != NULL || (info->flags & kVstNanosValid) )
 		JL_CHK( JL_NewNumberValue(cx, info->nanoSeconds, vp ) );
@@ -913,7 +913,7 @@ DEFINE_PROPERTY_GETTER( nanoSeconds ) {
 DEFINE_PROPERTY_GETTER( ppqPos ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstPpqPosValid);
 	if ( info != NULL || (info->flags & kVstPpqPosValid) )
 		JL_CHK( JL_NewNumberValue(cx, info->ppqPos, vp ) );
@@ -926,7 +926,7 @@ DEFINE_PROPERTY_GETTER( ppqPos ) {
 DEFINE_PROPERTY_GETTER( tempo ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstTempoValid);
 	if ( info != NULL || (info->flags & kVstTempoValid) )
 		JL_CHK( JL_NewNumberValue(cx, info->tempo, vp ) );
@@ -939,7 +939,7 @@ DEFINE_PROPERTY_GETTER( tempo ) {
 DEFINE_PROPERTY_GETTER( barStartPos ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstBarsValid);
 	if ( info != NULL || (info->flags & kVstBarsValid) )
 		JL_CHK( JL_NewNumberValue(cx, info->barStartPos, vp ) );
@@ -952,7 +952,7 @@ DEFINE_PROPERTY_GETTER( barStartPos ) {
 DEFINE_PROPERTY_GETTER( cycleStartPos ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstCyclePosValid);
 	if ( info != NULL || (info->flags & kVstCyclePosValid) )
 		JL_CHK( JL_NewNumberValue(cx, info->cycleStartPos, vp ) );
@@ -965,7 +965,7 @@ DEFINE_PROPERTY_GETTER( cycleStartPos ) {
 DEFINE_PROPERTY_GETTER( cycleEndPos ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstCyclePosValid);
 	if ( info != NULL || (info->flags & kVstCyclePosValid) )
 		JL_CHK( JL_NewNumberValue(cx, info->cycleEndPos, vp ) );
@@ -978,7 +978,7 @@ DEFINE_PROPERTY_GETTER( cycleEndPos ) {
 DEFINE_PROPERTY_GETTER( timeSigNumerator ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstTimeSigValid);
 	if ( info != NULL || (info->flags & kVstTimeSigValid) )
 		*vp = INT_TO_JSVAL(info->timeSigNumerator);
@@ -991,7 +991,7 @@ DEFINE_PROPERTY_GETTER( timeSigNumerator ) {
 DEFINE_PROPERTY_GETTER( timeSigDenominator ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstTimeSigValid);
 	if ( info != NULL || (info->flags & kVstTimeSigValid) )
 		*vp = INT_TO_JSVAL(info->timeSigDenominator);
@@ -1004,7 +1004,7 @@ DEFINE_PROPERTY_GETTER( timeSigDenominator ) {
 DEFINE_PROPERTY_GETTER( smpteOffset ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstSmpteValid);
 	if ( info != NULL || (info->flags & kVstSmpteValid) )
 		*vp = INT_TO_JSVAL(info->smpteOffset);
@@ -1017,7 +1017,7 @@ DEFINE_PROPERTY_GETTER( smpteOffset ) {
 DEFINE_PROPERTY_GETTER( smpteFrameRate ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstSmpteValid);
 	if ( info != NULL || (info->flags & kVstSmpteValid) )
 		*vp = INT_TO_JSVAL(info->smpteFrameRate);
@@ -1030,7 +1030,7 @@ DEFINE_PROPERTY_GETTER( smpteFrameRate ) {
 DEFINE_PROPERTY_GETTER( samplesToNextClock ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstTimeInfo* info = vstPlugin->getTimeInfo(kVstClockValid);
 	if ( info != NULL || (info->flags & kVstClockValid) )
 		*vp = INT_TO_JSVAL(info->samplesToNextClock);
@@ -1045,7 +1045,7 @@ DEFINE_PROPERTY_GETTER( samplesToNextClock ) {
 DEFINE_PROPERTY_SETTER( inputLatency ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	*vp = INT_TO_JSVAL( vstPlugin->getInputLatency() );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -1054,7 +1054,7 @@ DEFINE_PROPERTY_SETTER( inputLatency ) {
 DEFINE_PROPERTY_SETTER( outputLatency ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	*vp = INT_TO_JSVAL( vstPlugin->getOutputLatency() );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -1063,9 +1063,9 @@ DEFINE_PROPERTY_SETTER( outputLatency ) {
 
 DEFINE_PROPERTY_SETTER( initialDelay ) {
 
-	JL_S_ASSERT_IS_INTEGER(*vp, "");
+	JL_ASSERT_IS_INTEGER(*vp, "");
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	vstPlugin->setInitialDelay( JSVAL_TO_INT( *vp ) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
@@ -1075,12 +1075,12 @@ DEFINE_PROPERTY_SETTER( initialDelay ) {
 DEFINE_PROPERTY_SETTER( uniqueID ) {
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
-	JL_S_ASSERT_IS_STRING(*vp, "");
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_IS_STRING(*vp, "");
 	JSString *jsstr = JS_ValueToString(cx, *vp);
 	{
 	JLStr str(cx, jsstr);
-	JL_S_ASSERT( str.Length() == 4, "Invalid ID length" );
+	JL_ASSERT( str.Length() == 4, E_VALUELENGTH, E_EQUALS, E_NUM(1) );
 	JL_CHK( str.IsSet() );
 	VstInt32 vstid = CCONST( str.GetConstStr()[0], str.GetConstStr()[1], str.GetConstStr()[2], str.GetConstStr()[3] );
 	vstPlugin->setUniqueID( vstid );
@@ -1094,11 +1094,11 @@ DEFINE_PROPERTY_SETTER( uniqueID ) {
 DEFINE_FUNCTION( sendVstEventToHost ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(cx, JL_OBJ);
-	JL_S_ASSERT_THIS_OBJECT_STATE( vstPlugin );
+	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 
 	JSObject *eventObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
@@ -1107,7 +1107,7 @@ DEFINE_FUNCTION( sendVstEventToHost ) {
 	if ( JS_InstanceOf(cx, eventObj, JL_CLASS(MidiEvent), NULL) == JS_TRUE ) {
 
 		VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, eventObj);
-		JL_S_ASSERT_OBJECT_STATE(pv, JL_CLASS_NAME(MidiEvent));
+		JL_ASSERT_OBJECT_STATE(pv, JL_CLASS_NAME(MidiEvent));
 
 		VstEvents events; // has already 2 allocated events ?
 		events.numEvents = 1;
@@ -1116,7 +1116,7 @@ DEFINE_FUNCTION( sendVstEventToHost ) {
 		res = vstPlugin->sendVstEventsToHost(&events);
 	} else {
 
-		JL_REPORT_ERROR_NUM( JLSMSG_INVALID_INSTANCE, "MidiEvent");
+		JL_ERR( E_THISOBJ, E_STATE ); // "MidiEvent"
 	}
 
 	*JL_RVAL = res ? JSVAL_TRUE : JSVAL_FALSE;

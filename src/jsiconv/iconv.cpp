@@ -47,8 +47,8 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 		return;
 	int status = iconv_close(pv->cd); // if ( status == -1 ) error is in errno.
 	JS_free(cx, pv);
-	if ( status == -1 )
-		JL_REPORT_WARNING_NUM( JLSMSG_LIB_ERROR, "iconv_close"); // failure in Iconv finalize (%d).", errno);
+	JL_ASSERT_WARN( status != -1, E_LIB, E_STR("iconv"), E_FIN, E_ERRNO(errno) );
+
 bad:
 	return;
 }
@@ -74,10 +74,10 @@ DEFINE_CONSTRUCTOR() {
 
 	JLStr tocode, fromcode;
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_RANGE(2, 4);
+	JL_ASSERT_ARGC_RANGE(2, 4);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &tocode) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &fromcode) );
@@ -102,9 +102,10 @@ DEFINE_CONSTRUCTOR() {
 	if ( (size_t)pv->cd == (size_t)-1 ) {
 		
 		if ( errno == EINVAL )
-			JL_REPORT_ERROR_NUM( JLSMSG_INVALID_OPERATION ); //, "The conversion from %s to %s is not supported.", fromcode, tocode );
+			//JL_REPORT_ERROR_NUM( JLSMSG_INVALID_OPERATION ); //, "The conversion from %s to %s is not supported.", fromcode, tocode );
+			JL_ERR( E_LIB, E_STR("iconv"), E_OPERATION, E_SEP, E_STR(fromcode), E_CONVERT, E_STR(tocode) );
 		else
-			JL_REPORT_ERROR_NUM( JLSMSG_LIB_ERROR, IntegerToString(errno, 10) ); //JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "unknown iconv error" );
+			JL_ERR( E_LIB, E_STR("iconv"), E_OPERATION, E_ERRNO(errno) );
 	}
 
 	pv->invalidChar = '?';
@@ -126,11 +127,11 @@ DEFINE_CALL() {
 
 	char *outBuf = NULL; // keep on top
 
-	JL_S_ASSERT_CLASS(obj, JL_CLASS(Iconv));
+	JL_ASSERT_CLASS(obj, JL_CLASS(Iconv));
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	size_t status;
 
@@ -265,7 +266,7 @@ DEFINE_CALL() {
 
 				case EINVAL: { // An incomplete multibyte sequence has been encountered in the input.
 
-					JL_S_ASSERT(inLeft < sizeof(pv->remainderBuf), "Unable to manage incomplete multibyte sequence.");
+					JL_CHKM( inLeft < sizeof(pv->remainderBuf), E_LIB, E_STR("iconv"), E_OPERATION, E_COMMENT("incomplete multibyte sequence"));
 					memcpy(pv->remainderBuf + pv->remainderLen, inPtr, inLeft); // save
 					pv->remainderLen = inLeft;
 					inPtr += inLeft;
@@ -297,8 +298,10 @@ DEFINE_CALL() {
 	JSString *jsEncStr;
 	if ( pv->wTo ) { // destination is wide.
 	
-		if ( length % 2 != 0 )
-			JL_REPORT_WARNING_NUM( JLSMSG_LOGIC_ERROR, "invalid string length"); // (TBD) or report an error ?
+//		if ( length % 2 != 0 )
+//			JL_REPORT_WARNING_NUM( JLSMSG_LOGIC_ERROR, "invalid string length"); // (TBD) or report an error ?
+		JL_ASSERT_WARN( length % 2 == 0, E_STR("invalid string length") );
+
 		((jschar*)outBuf)[length / 2] = 0;
 		jsEncStr = JL_NewUCString(cx, (jschar*)outBuf, length / 2);
 	} else {
@@ -327,14 +330,15 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 	JLStr chr;
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 //	const char *chr;
 //	size_t length;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &chr, &length) );
 	JL_CHK( JL_JsvalToNative(cx, *vp, &chr) );
-	if ( chr.Length() != 1 )
-		JL_REPORT_ERROR_NUM( JLSMSG_EXPECT_TYPE, "one-char string");
+
+	JL_ASSERT( chr.Length() == 1, E_VALUE, E_LENGTH, E_NUM(1) );
+
 	pv->invalidChar = chr.GetConstStr()[0];
 	return JS_TRUE;
 	JL_BAD;
@@ -346,7 +350,7 @@ DEFINE_PROPERTY_GETTER( invalidChar ) {
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );	
+	JL_ASSERT_THIS_OBJECT_STATE( pv );	
 //	JL_CHK( JL_StringAndLengthToJsval(cx, vp, &pv->invalidChar, 1) );
 	JL_CHK( JL_NativeToJsval(cx, &pv->invalidChar, 1, vp) );
 	return JS_TRUE;
@@ -359,7 +363,7 @@ DEFINE_PROPERTY_GETTER( hasIncompleteSequence ) {
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE( pv );	
+	JL_ASSERT_THIS_OBJECT_STATE( pv );	
 	JL_CHK(JL_NativeToJsval(cx, pv->remainderLen != 0, vp) );
 	return JS_TRUE;
 	JL_BAD;

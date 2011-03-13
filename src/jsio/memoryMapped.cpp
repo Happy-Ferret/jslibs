@@ -60,20 +60,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_S_ASSERT_CONSTRUCTING();
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_S_ASSERT_ARG_MIN( 1 );
-	JL_S_ASSERT_ARG_IS_OBJECT(1);
+	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JSObject *fdObj;
 	fdObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-	JL_S_ASSERT_CLASS( fdObj, JL_CLASS(File) );
+	JL_ASSERT_CLASS( fdObj, JL_CLASS(File) );
 	JL_CHK( JL_SetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, JL_ARG(1)) ); // avoid the file to be GCed while being used by MemoryMapped
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc*)JL_GetPrivate(cx, fdObj);
-	JL_S_ASSERT_OBJECT_STATE( fd, JL_CLASS_NAME(File) );
+	JL_ASSERT_OBJECT_STATE( fd, JL_CLASS_NAME(File) );
 
 	MemoryMappedPrivate *pv;
 	pv = (MemoryMappedPrivate*)JS_malloc(cx, sizeof(MemoryMappedPrivate));
@@ -142,7 +142,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( offset ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &pv->offset) );
 	return JS_TRUE;
 	JL_BAD;
@@ -151,7 +151,7 @@ DEFINE_PROPERTY_SETTER( offset ) {
 DEFINE_PROPERTY_GETTER( offset ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
-	JL_S_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->offset, vp) );
 	return JS_TRUE;
 	JL_BAD;

@@ -32,11 +32,13 @@ inline JSBool GetMatrixHelper( JSContext *cx, jsval &val, float **m ) {
 
 		JSObject *matrixObj = JSVAL_TO_OBJECT(val);
 		if ( JL_GetClass(matrixObj) == JL_CLASS(Transformation) ) {
-			
+
 			TransformationPrivate *pv = (TransformationPrivate *)JL_GetPrivate(cx, matrixObj);
+			JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Transformation) );
 			*m = pv->mat->raw;
 			return JS_TRUE;
 		}
 	}
 	return JL_JsvalToMatrix44(cx, val, m);
+	JL_BAD;
 }
