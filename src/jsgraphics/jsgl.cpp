@@ -113,7 +113,7 @@ JL_MACRO_BEGIN \
 	if ( !_unsafeMode && !_inBeginOrEnd ) { \
 		GLenum err = glGetError(); \
 		if ( err != GL_NO_ERROR ) \
-			JL_WARN( E_LIB, E_STR("OpenGL"), E_OPERATION, E_DETAILS, E_STR(OpenGLErrorToConst(err)), E_COMMENT(err) ); \
+			JL_WARN( E_LIB, E_STR("OpenGL"), E_OPERATION, E_DETAILS, E_STR(OpenGLErrorToConst(err)), E_STR("("), E_NUM(err), E_STR(")") ); \
 	} \
 JL_MACRO_END
 
