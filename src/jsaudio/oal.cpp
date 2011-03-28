@@ -1392,8 +1392,9 @@ $H example 1
  LoadModule('jsaudio');
 
  var decoder = new OggVorbisDecoder(new File('41_30secOgg-q0.ogg').Open(File.RDONLY));
- var sourceId = Oal.GenSource();
 
+ Oal.Open();
+ var sourceId = Oal.GenSource();
  var pcm;
  while ( pcm = decoder.Read(10000) ) {
 
