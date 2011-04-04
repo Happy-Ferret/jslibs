@@ -64,7 +64,7 @@ function QAAPI(cx) {
 					cx.ReportIssue('Invalid exception name ('+ex.constructor.name+' != '+exType+')', testName );
 			} else {
 
-				if ( ex != exType && !(ex instanceof exType) )
+				if ( ex != exType && ex.constructor != exType )
 					cx.ReportIssue('Invalid exception ('+ex.constructor.name+' != '+exType.name+')', testName );
 			}
 		}
