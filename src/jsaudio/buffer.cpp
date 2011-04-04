@@ -102,6 +102,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( valueOf ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	ALuint bid = (ALuint) JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	JL_CHK( JL_NativeToJsval(cx, bid, JL_RVAL) );
@@ -121,6 +123,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( frequency ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	ALint frequency;
@@ -139,6 +143,8 @@ $TOC_MEMBER $INAME
   is the size (in bytes) of the sound hold by the buffer.
 **/
 DEFINE_PROPERTY_GETTER( size ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
@@ -160,6 +166,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( bits ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	ALint bits;
@@ -178,6 +186,8 @@ $TOC_MEMBER $INAME
   is the number of channels of the sound hold by the buffer.
 **/
 DEFINE_PROPERTY_GETTER( channels ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );

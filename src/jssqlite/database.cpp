@@ -164,9 +164,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Close ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
+	DatabasePrivate *pv = NULL;
 
-	DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
+	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_SetPrivate(cx, obj, NULL);
 
@@ -254,7 +257,8 @@ DEFINE_FUNCTION( Query ) {
 
 	JLStr sql;
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(1);
 
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
@@ -325,11 +329,11 @@ DEFINE_FUNCTION( Exec ) {
 
 	JLStr sql;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	
 	sqlite3_stmt *pStmt = NULL;
 	// see sqlite3_exec()
 
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	DatabasePrivate *pv;
@@ -404,6 +408,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( lastInsertRowid ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -422,6 +428,8 @@ $TOC_MEMBER $INAME
    [http://www.sqlite.org/capi3ref.html#sqlite3_changes sqlite documentation]
 **/
 DEFINE_PROPERTY_GETTER( changes ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
@@ -572,7 +580,7 @@ DEFINE_SET_PROPERTY() {
 
 	if ( JL_ValueIsFunction(cx, *vp) && JSID_IS_STRING(id) ) {
 		
-		JL_ASSERT_THIS_CLASS();
+		JL_ASSERT_THIS_INSTANCE();
 
 		DatabasePrivate *dbpv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
 		JL_ASSERT_THIS_OBJECT_STATE(dbpv);

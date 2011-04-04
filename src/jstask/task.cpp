@@ -440,8 +440,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Request ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
-	JL_ASSERT_CLASS( JL_OBJ, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+	
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -474,8 +474,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Response ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
-	JL_ASSERT_CLASS( JL_OBJ, JL_THIS_CLASS );
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -549,7 +549,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( pendingRequestCount ) {
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -569,7 +570,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( processingRequestCount ) {
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -588,7 +590,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( pendingResponseCount ) {
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -608,7 +611,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( idle ) {
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -704,7 +708,7 @@ DEFINE_FUNCTION( Events ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_ASSERT_ARG_COUNT(0);
-	JL_ASSERT_CLASS( JL_OBJ, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);

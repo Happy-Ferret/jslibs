@@ -348,6 +348,12 @@ int VideoThread( void *unused ) {
 
 					_hdc = wglGetCurrentDC();
 					ASSERT( _hdc );
+//					if ( !_hdc ) { // Doc. If the calling thread has a current OpenGL rendering context, the function returns a handle to the device context associated with that rendering context by means of the wglMakeCurrent function. Otherwise, the return value is NULL.
+//						
+//						end = true;
+//						break;
+//					}
+
 
 #ifdef XP_WIN
 					RECT rect;

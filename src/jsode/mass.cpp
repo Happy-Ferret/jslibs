@@ -32,8 +32,9 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID
 	JL_ASSERT_THIS_OBJECT_STATE( JSVAL_IS_OBJECT(bodyVal) );
 	JSObject *bodyObject;
 	bodyObject = JSVAL_TO_OBJECT(bodyVal);
-	JL_ASSERT_CLASS(bodyObject, JL_CLASS(Body));
+	JL_ASSERT_INSTANCE(bodyObject, JL_CLASS(Body));
 	*pBodyID = (ode::dBodyID)JL_GetPrivate(cx, bodyObject);
+	ASSERT(*pBodyID);
 	ode::dBodyGetMass(*pBodyID, pMass);
 	return JS_TRUE;
 	JL_BAD;
@@ -164,6 +165,7 @@ DEFINE_PROPERTY_SETTER( value ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
+
 	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	jsdouble massValue;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &massValue) );
@@ -178,6 +180,7 @@ DEFINE_PROPERTY_GETTER( value ) {
 
 	ode::dBodyID bodyID;
 	ode::dMass mass;
+
 	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	JL_CHK( JL_NativeToJsval(cx, mass.mass, vp) );
 	return JS_TRUE;

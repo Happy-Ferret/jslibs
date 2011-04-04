@@ -156,11 +156,10 @@ DEFINE_FUNCTION( Aux ) {
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 	JL_ASSERT_ARG_IS_OBJECT(1);
-	JL_ASSERT_CLASS( JSVAL_TO_OBJECT(JL_ARG(1)), JL_THIS_CLASS);
+	JL_ASSERT( JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_THIS_CLASS, E_ARG, E_NUM(1), E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) );
 
 	JSObject *object;
-	object = JSVAL_TO_OBJECT(JL_ARG(1));
-	JL_ASSERT_CLASS( object, JL_THIS_CLASS );
+	object = JSVAL_TO_OBJECT(JL_ARG(1));  // beware, obj1 has no proto ! (see JS_SetPrototype(cx, obj, NULL) in the constructor)
 	JL_CHK( JL_GetReservedSlot( cx, object, AUX_SLOT, JL_RVAL ) );
 	if ( JL_ARG_ISDEF(2) )
 	  JL_CHK( JL_SetReservedSlot( cx, object, AUX_SLOT, JL_ARG(2) ) );

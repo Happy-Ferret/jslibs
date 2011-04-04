@@ -316,7 +316,8 @@ DEFINE_FUNCTION( Wipe ) {
 	JL_USE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	FinalizeCipher(cx, obj, true);
 	JL_SetPrivate(cx, obj, NULL);
 	*JL_RVAL = JSVAL_VOID;
@@ -335,7 +336,7 @@ DEFINE_FUNCTION( Encrypt ) {
 	JLStr pt;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	CipherPrivate *pv;
@@ -405,7 +406,7 @@ DEFINE_FUNCTION( Decrypt ) {
 	JLStr ct;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	CipherPrivate *pv;
@@ -472,7 +473,8 @@ DEFINE_PROPERTY_GETTER( blockLength ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -488,7 +490,7 @@ $TOC_MEMBER $INAME
 ** /
 DEFINE_PROPERTY( keySize ) {
 
-	JL_ASSERT_CLASS( obj, _class );
+	JL_ASSERT_INSTANCE( obj, _class );
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -511,7 +513,8 @@ DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -535,7 +538,8 @@ DEFINE_PROPERTY_SETTER( IV ) {
 
 	JLStr IV;
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -610,7 +614,8 @@ DEFINE_PROPERTY_GETTER( IV ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );

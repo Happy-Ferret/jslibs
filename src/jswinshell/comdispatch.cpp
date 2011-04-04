@@ -30,6 +30,7 @@ DEFINE_FINALIZE() {
 JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 #ifdef DEBUG
 	jsval dbg_funNameVal;
@@ -102,6 +103,8 @@ JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 DEFINE_GET_PROPERTY() {
 
 	VARIANT *result = NULL; // bad:
+	
+	JL_ASSERT_THIS_INSTANCE();
 
 	HRESULT hr;
 
@@ -192,6 +195,8 @@ bad:
 
 
 DEFINE_SET_PROPERTY() {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 //	JSBool found;
 //	JS_AlreadyHasOwnPropertyById(cx, obj, id, &found);
@@ -327,13 +332,13 @@ bad:
 DEFINE_ITERATOR_OBJECT() {
 
 	IEnumVARIANT *pEnum = NULL;
-
 	HRESULT hr;
-
 	DISPPARAMS params = {0};
 	EXCEPINFO ex = {0};
 	UINT argErr = 0;
 	VARIANT result;
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	JL_CHKM( !keysonly, E_NAME("for...in"), E_NOTSUPPORTED ); // JL_ASSERT( !keysonly, "Only for each..in loop is supported." );
 
@@ -372,6 +377,7 @@ DEFINE_ITERATOR_OBJECT() {
 		pEnum->Release();
 		return JSVAL_TO_OBJECT(tmp);
 	}
+
 bad:
 	if ( pEnum )
 		pEnum->Release();

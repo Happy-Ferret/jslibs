@@ -39,6 +39,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Vec3 ) {
 	
+	JL_ASSERT_ARGC_RANGE(1, 3);
+
 	Vector3 v;
 	if ( argc == 1 ) {
 
@@ -77,6 +79,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Vec3Length ) {
 	
+	JL_ASSERT_ARGC_RANGE(1, 3);
+
 	Vector3 v;
 	if ( argc == 1 )	{
 
@@ -124,6 +128,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Vec3Normalize ) {
 	
+	JL_ASSERT_ARGC_RANGE(1, 2);
+
 	Vector3 v;
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
@@ -144,6 +150,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Vec3Add ) {
 	
+	JL_ASSERT_ARGC_RANGE(1, 3);
+
 	Vector3 v, v2;
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
@@ -167,6 +175,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Vec3Sub ) {
 	
+	JL_ASSERT_ARGC_RANGE(1, 3);
+
 	Vector3 v, v2;
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
@@ -190,6 +200,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Vec3Cross ) {
 	
+	JL_ASSERT_ARGC_RANGE(1, 3);
+
 	Vector3 v, v2;
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
@@ -213,6 +225,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Vec3Dot ) {
 	
+	JL_ASSERT_ARGC_RANGE(1, 3);
+
 	Vector3 v, v2;
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
@@ -235,7 +249,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( FrustumSphere ) {
 	
-	JL_ASSERT_ARGC_RANGE(1,2);
+	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	Matrix44 tmpMat, *m = &tmpMat;
 	JL_CHK( GetMatrixHelper(cx, JL_ARG(1), (float**)&m) );
@@ -335,6 +349,9 @@ DEFINE_FUNCTION( QuaternionToEuler ) {
 
 	// see http://www.google.com/codesearch/p?hl=en#kpcXlMp9-Eg/cs7491/projects/proj002/cs7491.zip|pBok6PPJvB8/cs7491/MatrixLib/Quaternion.cpp&q=EulerToQuaternion%20lang:c++&l=185&t=1
 	// eg. http://www.euclideanspace.com/maths/geometry/rotations/conversions/eulerToQuaternion/steps/index.htm
+
+	JL_ASSERT_ARGC_RANGE(1, 2);
+
 	Vector4 quat;
 	Vector3 euler;
 	uint32 len;
@@ -398,6 +415,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( EulerToQuaternion ) {
 
+	JL_ASSERT_ARGC_RANGE(1, 2);
+
 	Vector3 euler;
 	Vector4 quat;
 	uint32 len;
@@ -452,6 +471,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( QuaternionToAxisAngle ) {
 
+	JL_ASSERT_ARGC_RANGE(1, 2);
+
 	Vector4 quat;
 	uint32 len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), quat.raw, 4, &len) );
@@ -483,6 +504,8 @@ $TOC_MEMBER $INAME
   _src_ has the following form: [ x, y, z, angle ]
 **/
 DEFINE_FUNCTION( AxisAngleToQuaternion ) {
+
+	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	Vector4 axisAngle;
 	uint32 len;
@@ -534,6 +557,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PlaneFromPoints ) {
 
+	JL_ASSERT_ARGC_MIN(3);
+
 	float plane[4], v0[3], v1[3], v2[3];
 
 	jsuint len1, len2, len3;
@@ -578,7 +603,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ShadowMatrix ) {
 
-	JL_ASSERT_ARGC_RANGE(2,3);
+	JL_ASSERT_ARGC_RANGE(2, 3);
 
 	double shadowMat[4][4], plane[4], lightpos[4];
 

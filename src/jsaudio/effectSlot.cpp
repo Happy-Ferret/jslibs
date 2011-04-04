@@ -57,6 +57,8 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION( valueOf ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->effectSlot, JL_RVAL) );
@@ -70,6 +72,8 @@ DEFINE_FUNCTION( valueOf ) {
 **/
 
 DEFINE_PROPERTY_SETTER( effect ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -90,6 +94,8 @@ DEFINE_PROPERTY_SETTER( effect ) {
 
 DEFINE_PROPERTY_SETTER( effectGain ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float gain;
@@ -101,6 +107,8 @@ DEFINE_PROPERTY_SETTER( effectGain ) {
 }
 
 DEFINE_PROPERTY_GETTER( effectGain ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -115,6 +123,8 @@ DEFINE_PROPERTY_GETTER( effectGain ) {
 
 DEFINE_PROPERTY_SETTER( effectSendAuto ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	bool sendAuto;
@@ -126,6 +136,8 @@ DEFINE_PROPERTY_SETTER( effectSendAuto ) {
 }
 
 DEFINE_PROPERTY_GETTER( effectSendAuto ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );

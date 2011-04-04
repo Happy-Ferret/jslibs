@@ -327,7 +327,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC_RANGE(1,2);
 
 	JL_ASSERT_ARG_IS_OBJECT(1);
-	JL_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(1) ), JL_CLASS(Buffer) );
+	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT( JL_ARG(1) ), JL_CLASS(Buffer) );
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, JL_ARG(1)) );
 
 	bool useNetworkEndian;
@@ -355,7 +355,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ReadInt ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	jsval bufferVal;
@@ -482,7 +482,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1, 4);
 
 	jsval bufferVal;
@@ -578,7 +578,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ReadReal ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(1);
 
 	jsval bufferVal;
@@ -621,7 +621,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ReadString ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 
 	jsval bufferVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
@@ -662,7 +662,7 @@ DEFINE_PROPERTY_SETTER( useNetworkEndian ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	bool useNetworkEndian;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &useNetworkEndian) );
 	JL_SetPrivate(cx, obj, (void*)(size_t)(useNetworkEndian ? 2 : 0));
@@ -674,7 +674,7 @@ DEFINE_PROPERTY_GETTER( useNetworkEndian ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	return JL_NativeToJsval(cx, (size_t)JL_GetPrivate(cx, obj) != 0, vp);
 	JL_BAD;
 }
@@ -689,7 +689,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, vp ) );
 	return JS_TRUE;
 	JL_BAD;

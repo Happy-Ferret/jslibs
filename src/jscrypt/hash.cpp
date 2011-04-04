@@ -112,7 +112,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Reset ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MAX( 0 );
 
 	HashPrivate *pv;
@@ -140,7 +140,7 @@ DEFINE_FUNCTION( Process ) {
 
 	JLStr in;
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
@@ -185,7 +185,7 @@ DEFINE_FUNCTION( Done ) {
 	JL_USE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
@@ -194,7 +194,7 @@ DEFINE_FUNCTION( Done ) {
 	unsigned long outLength;
 	outLength = pv->descriptor->hashsize;
 	char *out;
-	out = (char *)JS_malloc( cx, outLength +1);
+	out = (char*)JS_malloc(cx, outLength +1);
 	JL_CHK( out );
 	int err;
 	err = pv->descriptor->done(&pv->state, (unsigned char*)out); // Terminate the hash to get the digest
@@ -202,7 +202,7 @@ DEFINE_FUNCTION( Done ) {
 		return ThrowCryptError(cx, err);
 
 	out[outLength] = '\0';
-	JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
+	JL_CHK( JL_NewBlob(cx, out, outLength, JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -230,7 +230,7 @@ DEFINE_CALL() {
 	JLStr in;
 
 	JL_DEFINE_CALL_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
@@ -289,7 +289,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -310,7 +310,7 @@ DEFINE_PROPERTY_GETTER( blockSize ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -328,7 +328,7 @@ DEFINE_PROPERTY_GETTER( length ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -346,7 +346,7 @@ DEFINE_PROPERTY_GETTER( inputLength ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -372,7 +372,7 @@ DEFINE_FUNCTION( CipherHash ) {
 	JLStr cipherName;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &cipherName) );

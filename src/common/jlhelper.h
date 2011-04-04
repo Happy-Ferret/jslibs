@@ -12,9 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-
 #pragma once
-
 
 
 #include "jlplatform.h"
@@ -165,12 +163,12 @@ JL_SetPrivate( const JSContext *cx, JSObject *obj, void *data ) {
 }
 
 ALWAYS_INLINE JSObject *
-JL_GetPrototype(JSContext *cx, JSObject *obj)
-{
-    JSObject *proto = obj->getProto();
-    return proto && proto->map ? proto : NULL;
-}
+JL_GetPrototype(JSContext *cx, JSObject *obj) {
 
+	JL_USE(cx);
+	JSObject *proto = obj->getProto();
+	return proto && proto->map ? proto : NULL; // Beware: ref to dead object (we may be called from obj's finalizer).
+}
 
 /*
 ALWAYS_INLINE JSBool
@@ -223,12 +221,13 @@ JL_SetReservedSlot(JSContext *cx, JSObject *obj, uintN slot, const jsval &v) {
 	#endif // DEBUG
 
 //	return JS_SetReservedSlot(cx, obj, index, v);
-    if (!obj->isNative())
-        return JS_TRUE;
+	if (!obj->isNative())
+		return JS_TRUE;
 	if ( slot >= obj->numSlots() )
 		return JS_SetReservedSlot(cx, obj, slot, v);
 	obj->setSlot(slot, js::Valueify(v));
-    return JS_TRUE;
+	GC_POKE(cx, JS_NULL);
+	return JS_TRUE;
 }
 
 ALWAYS_INLINE JSString *
@@ -1012,28 +1011,26 @@ enum E_TXTID {
 #define JL_ASSERT_CONSTRUCTING() \
 	JL_ASSERT( (JL_ARGC, JS_IsConstructing(cx, vp)), E_THISOBJ, E_CONSTRUCT )
 
-#define JL_ASSERT_CALL() \
-	JL_ASSERT( JL_THIS_CLASS->flags & JSCLASS_HAS_PRIVATE == JL_HasPrivate(cx, JL_OBJ) );
 
-#define JL_ASSERT_CLASS(jsObject, jsClass) \
-	JL_ASSERT( (jsObject) != NULL && JL_GetClass(jsObject) == (jsClass), E_THISOBJ, E_INSTANCE, E_NAME((jsClass)->name) );
-
-#define JL_ASSERT_THIS_CLASS() \
-	JL_ASSERT_CLASS( JL_OBJ, JL_THIS_CLASS )
-
-#define JL_ASSERT_INHERITANCE(jsObject, jsClass) \
-	JL_ASSERT( NOIL(JL_InheritFrom)(cx, JL_GetPrototype(cx, jsObject), (jsClass)), E_THISOBJ, E_INHERIT, E_NAME((jsClass)->name) )
+#define JL_ASSERT_INSTANCE( jsObject, jsClass ) \
+	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, jsObject)) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) ); \
 
 #define JL_ASSERT_THIS_INSTANCE() \
-	JL_ASSERT( NOIL(JL_InheritFrom)(cx, JL_GetPrototype(cx, JL_OBJ), JL_THIS_CLASS), E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) )
+	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, JL_OBJ)) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) ); \
 
 
-#define JL_ASSERT_THIS_OBJECT_STATE( condition ) \
-	JL_ASSERT( condition, E_THISOBJ, E_STATE )
+#define JL_ASSERT_INHERITANCE( jsObject, jsClass ) \
+	JL_ASSERT( NOIL(JL_InheritFrom)(cx, JL_GetPrototype(cx, jsObject), (jsClass)), E_OBJ, E_INHERIT, E_NAME((jsClass)->name) )
+
+#define JL_ASSERT_THIS_INHERITANCE() \
+	JL_ASSERT( NOIL(JL_InheritFrom)(cx, JL_GetPrototype(cx, JL_OBJ), JL_THIS_CLASS), E_THISOBJ, E_INHERIT, E_NAME(JL_THIS_CLASS_NAME) )
+
 
 #define JL_ASSERT_OBJECT_STATE( condition, name ) \
 	JL_ASSERT( condition, E_OBJ, E_NAME(name), E_STATE )
 
+#define JL_ASSERT_THIS_OBJECT_STATE( condition ) \
+	JL_ASSERT( condition, E_THISOBJ, E_NAME(JL_THIS_CLASS_NAME), E_STATE )
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1855,7 +1852,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
 		return JS_TRUE;
 	}
 
-	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_STR("0", "2^53") );
+	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_STR("0", "2^53") ); // 0x20000000000000
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, num)
@@ -2080,45 +2077,74 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, bool *b ) {
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, void *ptr, jsval *vp ) {
 
-	JL_USE(cx);
-	ASSERT( JSVAL_TO_INT(INT_TO_JSVAL(_UI32_MAX)) == _UI32_MAX );
-	ASSERT( JSVAL_TO_INT(INT_TO_JSVAL(0x7fffffffui32)) == 0x7fffffffui32 );
-	*vp = INT_TO_JSVAL((int)ptr);
-/*
-	if ( ((uint32)ptr & 1) == 1 ) { // cannot be stored with PRIVATE_TO_JSVAL()
-
-//		void **data;
-//		JL_CHK( HandleCreate(cx, JL_CAST_CSTR_TO_UINT32("PRIV"), sizeof(void*), (void*)&data, NULL, vp) );
-//		*data = ptr;
-		JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "Unable to store non-aligned pointers.");
+	if ( ((uint32)ptr & 1) == 0 ) {
+	
+		*vp = PRIVATE_TO_JSVAL(ptr);
 	} else {
 
-		JL_USE(cx);
-		*vp = PRIVATE_TO_JSVAL(ptr);
+		JSObject *obj = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
+		JL_CHK( obj );
+		*vp = OBJECT_TO_JSVAL(obj);
+		jsval tmp;
+
+		if ( 8 * sizeof(ptrdiff_t) == 32 ) {
+
+			tmp = INT_TO_JSVAL( reinterpret_cast<int32>(ptr) );
+			JL_CHK( JS_SetPropertyById(cx, obj, INT_TO_JSID(0), &tmp) );
+		} else
+		if ( 8 * sizeof(ptrdiff_t) == 64 ) {
+
+			#pragma warning(push)
+			#pragma warning(disable:4293)
+			tmp = INT_TO_JSVAL( reinterpret_cast<ptrdiff_t>(ptr) & 0xFFFFFFFF );
+			JL_CHK( JS_SetPropertyById(cx, obj, INT_TO_JSID(0), &tmp) );
+			tmp = INT_TO_JSVAL( reinterpret_cast<ptrdiff_t>(ptr) >> 32 );
+			JL_CHK( JS_SetPropertyById(cx, obj, INT_TO_JSID(1), &tmp) );
+			#pragma warning(pop)
+		} else {
+
+			ASSERT(false);
+		}
 	}
-*/
 	return JS_TRUE;
 	JL_BAD;
 }
 
 ALWAYS_INLINE JSBool
-JL_JsvalToNative( const JSContext *cx, const jsval &val, void **ptr ) {
+JL_JsvalToNative( JSContext *cx, const jsval &val, void **ptr ) {
 
-	JL_USE(cx);
-//	if ( IsHandleType(cx, val, JL_CAST_CSTR_TO_UINT32("PRIV") ) {
-//
-//		*ptr = *(void**)GetHandlePrivate(cx, val);
-//		return JS_TRUE;
-//	} else {
-/*
+	if ( JSVAL_IS_OBJECT(val) ) {
+
+		jsval tmp;
+		JSObject *obj = JSVAL_TO_OBJECT(val);
+
+		if ( 8 * sizeof(ptrdiff_t) == 32 ) {
+
+			JL_CHK( JS_GetPropertyById(cx, obj, INT_TO_JSID(0), &tmp) );
+			*ptr = reinterpret_cast<void*>( JSVAL_TO_INT(tmp) );
+		} else
+		if ( 8 * sizeof(ptrdiff_t) == 64 ) {
+
+			#pragma warning(push)
+			#pragma warning(disable:4293)
+			uint32_t h, l;
+			JL_CHK( JS_GetPropertyById(cx, obj, INT_TO_JSID(0), &tmp) );
+			l = static_cast<uint32_t>(JSVAL_TO_INT(tmp));
+			JL_CHK( JS_GetPropertyById(cx, obj, INT_TO_JSID(1), &tmp) );
+			h = static_cast<uint32_t>(JSVAL_TO_INT(tmp));
+			*ptr = reinterpret_cast<void*>( (h << 32) | l );
+			#pragma warning(pop)
+		} else {
+
+			ASSERT(false);
+		}
+	} else {
+		
+		JL_CHKM( JSVAL_IS_DOUBLE(val), E_JSLIBS, E_INTERNAL );
 		*ptr = JSVAL_TO_PRIVATE(val);
-*/
-//	}
-
-	*ptr = (void*)JSVAL_TO_INT(val);
-
-
+	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -2730,6 +2756,26 @@ JL_CreateErrorException( JSContext *cx, JSExnType exn, JSObject **obj ) {
 	return JS_TRUE;
 }
 
+/*
+static void
+ErrorReporter_ToString(JSContext *cx, const char *message, JSErrorReport *report) {
+
+	JL_USE(cx);
+	if ( !report )
+		fprintf(stderr, "%s\n", message);
+	else
+		fprintf(stderr, "%s (%s:%d)\n", message, report->filename, report->lineno);
+}
+
+ALWAYS_INLINE JSBool
+JL_ReportExceptionToString( JSContext *cx, JSObject *obj, JLStr  ) {
+	
+	JSErrorReporter prevEr = JS_SetErrorReporter(cx, ErrorReporter_ToString);
+	JS_ReportPendingException(cx);
+	JS_SetErrorReporter(cx, prevEr);
+	return JS_TRUE;
+}
+*/
 
 ALWAYS_INLINE bool
 JL_MaybeRealloc( size_t requested, size_t received ) {

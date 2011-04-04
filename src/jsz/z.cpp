@@ -182,7 +182,7 @@ DEFINE_CALL() {
 	JL_DEFINE_CALL_FUNCTION_OBJ;
 
 	// (TBD) check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
-	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);

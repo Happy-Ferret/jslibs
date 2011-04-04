@@ -151,8 +151,8 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JSObject *proto;
 	proto = JS_InitClass(cx, obj, parent_proto, &cs->clasp, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
-	
-	JL_ASSERT( proto != NULL, E_CLASS, E_NAME(cs->clasp.name), E_CREATE );
+
+	JL_ASSERT( proto != NULL, E_CLASS, E_NAME(cs->clasp.name), E_CREATE ); //RTE
 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(cx, proto) == NULL );
 	JL_CHKM( JL_CacheClassProto(hpv, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 

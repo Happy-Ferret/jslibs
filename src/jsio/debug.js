@@ -4,8 +4,9 @@ if ( 10 ) {
 	LoadModule('jsio');
 	LoadModule('jswinshell');
 	
-	var tmp = Descriptor.Close;
-	tmp();
+	var f = new File('test.txt');
+	f.Close();
+	
 	
 	Halt();
 

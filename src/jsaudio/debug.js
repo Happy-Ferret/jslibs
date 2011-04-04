@@ -6,6 +6,10 @@ LoadModule('jsio');
 LoadModule('jsaudio');
 LoadModule('jssound');
 
+Oal.maxAuxiliarySends;
+Halt();
+
+
 Oal.Open();
 
 //var dec = new SoundFileDecoder( new File('41_30secOgg-q0.wav').Open('r') );

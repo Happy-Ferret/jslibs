@@ -467,12 +467,12 @@ end:
 
 JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 
-	JL_ASSERT_CLASS( destBuffer, JL_CLASS(Buffer) );
+	JL_ASSERT_INSTANCE( destBuffer, JL_CLASS(Buffer) );
 	BufferPrivate *dpv;
 	dpv = (BufferPrivate*)JL_GetPrivate(cx, destBuffer);
 	JL_ASSERT_OBJECT_STATE( dpv, JL_CLASS_NAME(Buffer) );
 
-	JL_ASSERT_CLASS( srcBuffer, JL_CLASS(Buffer) );
+	JL_ASSERT_INSTANCE( srcBuffer, JL_CLASS(Buffer) );
 	BufferPrivate *spv;
 	spv = (BufferPrivate*)JL_GetPrivate(cx, srcBuffer);
 	JL_ASSERT_OBJECT_STATE( spv, JL_CLASS_NAME(Buffer) );
@@ -634,7 +634,7 @@ DEFINE_FUNCTION( Clear ) {
 	JL_USE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_ASSERT_THIS_INSTANCE();
 
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, JL_OBJ);
@@ -660,7 +660,7 @@ DEFINE_FUNCTION( Write ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
-	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -721,7 +721,7 @@ DEFINE_FUNCTION( Match ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
-	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 //	const char *str;
@@ -780,7 +780,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
@@ -810,7 +810,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Skip ) { // Skip( amount )
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
@@ -838,7 +838,7 @@ DEFINE_FUNCTION( ReadUntil ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 //	const char *boundary;
@@ -883,7 +883,7 @@ DEFINE_FUNCTION( IndexOf ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(1);
 
 //	const char *boundary;
@@ -916,7 +916,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Unread ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(1);
 
 	JL_CHK( UnReadDataChunk(cx, JL_OBJ, JL_ARG(1)) );
@@ -940,7 +940,7 @@ DEFINE_FUNCTION( toString ) {
 	JL_USE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
@@ -1005,7 +1005,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_GET_PROPERTY() {
 
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	if ( !JSID_IS_INT(id) )
 		return JS_TRUE;
 
@@ -1077,7 +1077,7 @@ DEFINE_PROPERTY_GETTER( length ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );

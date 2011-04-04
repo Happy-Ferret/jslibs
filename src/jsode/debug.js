@@ -1,6 +1,17 @@
 LoadModule('jsstd');
 LoadModule('jsode');
 
+World.prototype.env.mass.value;
+
+var g = new GeomSphere();
+g.Destroy();
+
+//Geom.Destroy();
+
+throw 0;
+
+
+
 var j = new JointGroup();
 
 j.Destroy();

@@ -345,7 +345,7 @@ DEFINE_FUNCTION( Collide ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE(0,2);
-	JL_ASSERT_CLASS(obj, JL_CLASS(World));
+	JL_ASSERT_INSTANCE(obj, JL_CLASS(World));
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = JSVAL_VOID;
@@ -369,7 +369,7 @@ DEFINE_FUNCTION( Collide ) {
 			JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(2), (ode::dSpaceID*)&sg2Id) );
 		} else {
 
-			JL_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(2)), JL_CLASS(Geom));
+			JL_ASSERT_INSTANCE(JSVAL_TO_OBJECT(JL_ARG(2)), JL_CLASS(Geom));
 			JL_CHK( JL_JsvalToGeom(cx, JL_ARG(2), (ode::dGeomID*)&sg2Id) );
 		}
 	} else {
@@ -383,7 +383,7 @@ DEFINE_FUNCTION( Collide ) {
 		JL_ASSERT_ARG_IS_OBJECT(1);
 		if ( sg2Id == NULL ) {
 
-			JL_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Space));
+			JL_ASSERT_INSTANCE(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Space));
 			JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), (ode::dSpaceID*)&sg1Id) );
 		} else {
 
@@ -392,7 +392,7 @@ DEFINE_FUNCTION( Collide ) {
 				JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), (ode::dSpaceID*)&sg1Id) );
 			} else {
 
-				JL_ASSERT_CLASS(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Geom));
+				JL_ASSERT_INSTANCE(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Geom));
 				JL_CHK( JL_JsvalToGeom(cx, JL_ARG(1), (ode::dGeomID*)&sg1Id) );
 			}
 		}
@@ -405,7 +405,7 @@ DEFINE_FUNCTION( Collide ) {
 
 	jsval defaultSurfaceParametersVal;
 	JL_GetReservedSlot(cx, obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, &defaultSurfaceParametersVal);
-	//	JL_ASSERT_CLASS( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), JL_CLASS(SurfaceParameters) ); // (TBD) simplify RT_ASSERT
+	//	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), JL_CLASS(SurfaceParameters) ); // (TBD) simplify RT_ASSERT
 	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersVal)); // beware: local variable !
 	JL_ASSERT_OBJECT_STATE( defaultSurfaceParameters, JL_CLASS_NAME(SurfaceParameters) );
 
@@ -436,7 +436,7 @@ DEFINE_FUNCTION( Step ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_ASSERT_ARGC_MIN(1);
-	JL_ASSERT_CLASS(JL_OBJ, JL_CLASS(World));
+	JL_ASSERT_INSTANCE(JL_OBJ, JL_CLASS(World));
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ode::dReal stepSize;
@@ -461,6 +461,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ScaleImpulse ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -722,6 +723,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( env ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	JSObject *staticBody = JS_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
 	JL_CHK(staticBody);
 	JL_SetPrivate(cx, staticBody, (ode::dBodyID)0);

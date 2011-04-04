@@ -78,6 +78,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( valueOf ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->filter, JL_RVAL) );
@@ -103,6 +105,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( type ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int filterType;
@@ -117,6 +121,8 @@ DEFINE_PROPERTY_SETTER( type ) {
 }
 
 DEFINE_PROPERTY_GETTER( type ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -137,6 +143,8 @@ DEFINE_PROPERTY_GETTER( type ) {
 
 DEFINE_PROPERTY_SETTER( filterFloat ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
@@ -149,6 +157,8 @@ DEFINE_PROPERTY_SETTER( filterFloat ) {
 }
 
 DEFINE_PROPERTY_GETTER( filterFloat ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );

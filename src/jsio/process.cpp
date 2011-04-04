@@ -195,7 +195,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Wait ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(process);
@@ -216,7 +217,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Detach ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(process);
@@ -236,7 +238,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Kill ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(process);
@@ -260,7 +263,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( stdin ) {
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -273,7 +277,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( stdout ) {
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -286,7 +291,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( stderr ) {
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, vp) );
 	return JS_TRUE;
 	JL_BAD;

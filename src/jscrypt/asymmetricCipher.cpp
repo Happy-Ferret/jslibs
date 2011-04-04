@@ -49,7 +49,7 @@ JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **pr
 	jsval prngVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
 	JL_ASSERT_OBJECT_STATE( JSVAL_IS_OBJECT(prngVal), JL_CLASS_NAME(Prng) );
-	JL_ASSERT_CLASS( JSVAL_TO_OBJECT(prngVal), JL_CLASS(Prng) );
+	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(prngVal), JL_CLASS(Prng) );
 	PrngPrivate *prngPrivate;
 	prngPrivate = (PrngPrivate *)JL_GetPrivate(cx, JSVAL_TO_OBJECT(prngVal));
 	JL_ASSERT_OBJECT_STATE( prngPrivate, JL_CLASS_NAME(Prng) );
@@ -170,7 +170,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 	if ( argc >= 3 ) {
 
 		JL_ASSERT_ARG_IS_OBJECT(3);
-		JL_ASSERT_CLASS( JSVAL_TO_OBJECT(JL_ARG(3)), JL_CLASS(Prng) );
+		JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(JL_ARG(3)), JL_CLASS(Prng) );
 		JL_CHK( JL_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JL_ARG(3)) );
 	} else {
 
@@ -223,7 +223,7 @@ DEFINE_FUNCTION( Wipe ) {
 	JL_USE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	FinalizeAsymmetricCipher(cx, obj, true);
 	JL_SetPrivate(cx, obj, NULL);
 	*JL_RVAL = JSVAL_VOID;
@@ -249,7 +249,7 @@ ac.CreateKeys( AsymmetricCipher.RSA_MIN_KEYSIZE );
 DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	AsymmetricCipherPrivate *pv;
@@ -338,7 +338,7 @@ DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
 	JLStr in;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
@@ -427,7 +427,7 @@ DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
 	JLStr in;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
@@ -517,7 +517,7 @@ DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
 	JLStr in;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	AsymmetricCipherPrivate *pv;
@@ -592,7 +592,7 @@ DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
 	JLStr data, sign;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 2 );
 
 	AsymmetricCipherPrivate *pv;
@@ -662,7 +662,7 @@ DEFINE_PROPERTY_GETTER( blockLength ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -718,7 +718,7 @@ DEFINE_PROPERTY_GETTER( keySize ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -764,7 +764,7 @@ DEFINE_PROPERTY_SETTER( key ) {
 
 	JLStr key;
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -816,7 +816,7 @@ DEFINE_PROPERTY_SETTER( key ) {
 
 DEFINE_PROPERTY_GETTER( key ) {
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );

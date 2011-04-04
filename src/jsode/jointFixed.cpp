@@ -43,7 +43,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(2) ) {
 	
 		JL_ASSERT_ARG_IS_OBJECT(2);
-		JL_ASSERT_CLASS( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
+		JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
 		groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(2)));
 	} else {
 
@@ -72,7 +72,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Set ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dJointSetFixed(jointId);

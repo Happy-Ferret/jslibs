@@ -1,4 +1,3 @@
-
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
 LoadModule('jsstd');
@@ -9,11 +8,17 @@ LoadModule('jsprotex');
 LoadModule('jstrimesh');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
-//LoadModule('jsstd'); Exec('../../tests/explodebox.js'); throw 0;
+
+try {
+
 LoadModule('jsstd'); Exec('../../tests/arabesques.js'); throw 0;
+LoadModule('jsstd'); Exec('../../tests/explodebox.js'); throw 0;
 LoadModule('jsstd'); Exec('../../tests/fragmentShaderTest.js'); throw 0;
 
+} catch(ex) {
 
+	Print( uneval(ex) );
+}
 
 // OpenGl doc: http://www.opengl.org/sdk/docs/man/
 
@@ -27,7 +32,7 @@ GlSetAttribute( GL_MULTISAMPLESAMPLES, 1 );
 
 SetVideoMode( 64, 64, 32, OPENGL );
 
-Print( Ogl.GetDouble(Ogl.LINE_WIDTH_RANGE, 100).length, '\n' );
+Print( 'LINE_WIDTH_RANGE: ', Ogl.GetDouble(Ogl.LINE_WIDTH_RANGE, 2).toString(), '\n' );
 
 
 

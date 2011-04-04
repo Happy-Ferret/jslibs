@@ -132,7 +132,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC_RANGE( 2, 3 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *fontObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-	JL_ASSERT_CLASS( fontObj, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Font")->clasp );
+	JL_ASSERT_INSTANCE( fontObj, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Font")->clasp );
 
 	FT_Face ftface = GetJsfontPrivate(cx, fontObj)->face;
 	JL_ASSERT_OBJECT_STATE( ftface, JL_GetClassName(fontObj) );
@@ -211,7 +211,9 @@ DEFINE_FUNCTION( Measure ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE( 1, 2 );
+
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
@@ -256,7 +258,9 @@ DEFINE_FUNCTION( Width ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT( 1 );
+
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
@@ -295,7 +299,9 @@ DEFINE_FUNCTION( Draw ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE( 1, 3 );
+
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
@@ -341,7 +347,9 @@ DEFINE_FUNCTION( Compile ) {
 	JLStr str;
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT( 1 );
+
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
@@ -366,7 +374,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( SetColor ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE( 0, 1 );
+
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*JL_RVAL = JSVAL_VOID;
@@ -407,7 +417,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( SetBackgroundColor ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE( 0, 1 );
+
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*JL_RVAL = JSVAL_VOID;
@@ -444,6 +456,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( height ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->face->height(), vp) );
@@ -461,6 +475,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( advance ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK(JL_NativeToJsval(cx, pv->face->advance(), vp) );
@@ -469,6 +485,8 @@ DEFINE_PROPERTY_GETTER( advance ) {
 }
 
 DEFINE_PROPERTY_SETTER( advance ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -492,6 +510,8 @@ $TOC_MEMBER $INAME
    Changing this value invalidates any cached display lists for glyphs in this face.
 **/
 DEFINE_PROPERTY_SETTER( tessellationSteps ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -530,6 +550,8 @@ f3d.Draw('Marley');
 }}}
 **/
 DEFINE_PROPERTY_SETTER( colorCallback ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );

@@ -42,8 +42,6 @@ struct HostPrivate {
 	int (*hostStdIn)( void *privateData, char *buffer, size_t bufferSize );
 	int (*hostStdOut)( void *privateData, const char *buffer, size_t length );
 	int (*hostStdErr)( void *privateData, const char *buffer, size_t length );
-//	JSErrorCallback errorCallback;
-//	JSLocaleCallbacks localeCallbacks;
 	JSBool (*report)( JSContext *cx, bool isWarning, ... );
 	struct ModulePrivate {
 		uint32_t moduleId;

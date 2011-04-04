@@ -144,7 +144,8 @@ ALWAYS_INLINE bool TextureSameFormat( TextureStruct *t1, TextureStruct *t2 ) {
 
 ALWAYS_INLINE bool IsTexture( JSContext *cx, jsval val ) {
 
-	return JL_IsClass(val, JL_CLASS(Texture));
+	//return JL_IsClass(val, JL_CLASS(Texture));
+	return !js::Valueify(val).isPrimitive() && js::Valueify(val).toObject().getProto()->getJSClass() == JL_CLASS(Texture);
 }
 
 
@@ -373,6 +374,8 @@ BEGIN_CLASS( Texture )
 
 JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( tex );
 //	*buf = (char*)tex->cbuffer;
@@ -505,7 +508,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Free ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS(JL_OBJ, JL_THIS_CLASS);
+	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex;
 	tex = (TextureStruct*)JL_GetPrivate(cx, JL_OBJ);
@@ -538,12 +541,13 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Swap ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 	JL_ASSERT_ARG_IS_OBJECT(1);
+
 	JSObject *texObj;
 	texObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-	JL_ASSERT_CLASS( texObj, JL_THIS_CLASS );
+	JL_ASSERT_INSTANCE( texObj, JL_THIS_CLASS );
 	void *tmp;
 	tmp = JL_GetPrivate(cx, obj);
 	JL_SetPrivate(cx, obj, JL_GetPrivate(cx, texObj));
@@ -562,6 +566,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ClearChannel ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 
@@ -617,7 +623,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( SetChannel ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 3 );
+
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -671,6 +679,8 @@ DEFINE_FUNCTION( ToHLS ) { // (TBD) test it
 	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 	int channels;
@@ -747,6 +757,8 @@ DEFINE_FUNCTION( ToRGB ) { // (TBD) test it
 	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 	int channels;
@@ -820,7 +832,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Aliasing ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
+
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -884,6 +898,7 @@ DEFINE_FUNCTION( Colorize ) {
 	// color exchange algo. : http://www.koders.com/c/fidB39DAC5A8DB8B6073D78FB23363C5E0541208B02.aspx
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(2,3);
 
 	TextureStruct *tex;
@@ -954,6 +969,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ExtractColor ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 
@@ -1005,6 +1022,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( NormalizeLevels ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 
@@ -1044,6 +1063,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ClampLevels ) { // (TBD) check if this algo is right
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 2 );
 
 	TextureStruct *tex;
@@ -1083,6 +1103,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( CutLevels ) { // (TBD) check if this algo is right
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	JL_ASSERT_ARGC_MIN( 2 );
 
 	TextureStruct *tex;
@@ -1175,6 +1197,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( InvertLevels ) { // level = 1 / level
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 	unsigned int i, size;
@@ -1195,6 +1219,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( OppositeLevels ) { // level = -level
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 	int tsize;
@@ -1215,6 +1241,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( PowLevels ) { //
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 
@@ -1245,6 +1273,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( MirrorLevels ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	TextureStruct *tex;
@@ -1293,6 +1322,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( WrapLevels ) { // real modulo
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	TextureStruct *tex;
@@ -1327,6 +1357,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AddNoise ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -1370,7 +1401,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Desaturate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MAX(1);
 
 	TextureStruct *tex;
@@ -1452,8 +1483,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Set ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
+
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -1529,8 +1561,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Add ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
-	JL_ASSERT_ARGC_RANGE( 1,2 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_RANGE(1, 2);
+	
 	TextureStruct *tex;
 	tex = (TextureStruct*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -1618,8 +1651,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Mult ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
+
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -1717,8 +1751,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Blend ) { // texture1, blenderTexture|blenderColor
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 2 );
+
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -1788,7 +1823,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Rotate90 ) { // (TBD) test it
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	TextureStruct *tex;
@@ -1862,7 +1897,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Flip ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 2 );
 
 	TextureStruct *tex;
@@ -1910,7 +1945,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( RotoZoom ) { // source: FxGen
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 5 );
 
 	TextureStruct *tex;
@@ -2048,8 +2083,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Resize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 2 );
+
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -2208,6 +2244,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Convolution ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	// (TBD) accumulate precalculated pixels ? ( like BoxBlur )
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -2344,7 +2381,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Dilate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1,3);
 
 	int iterations, radius;
@@ -2439,8 +2476,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ForEachPixel ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
-	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_FUNCTION(1);
 
 	jsval functionValue;
@@ -2519,7 +2556,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( BoxBlur ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(2,3);
 
 	TextureStruct *tex;
@@ -2616,6 +2653,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( NormalizeVectors ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -2660,6 +2698,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Normals ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -2765,8 +2804,8 @@ DEFINE_FUNCTION( Light ) {
 	// Simple Lighting: http://www.gamasutra.com/features/19990416/intel_simd_04.htm
 
 	JL_DEFINE_FUNCTION_OBJ;
-
-	JL_ASSERT_ARGC_MIN( 5 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(5);
 
 	TextureStruct *normals, *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
@@ -2880,7 +2919,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( NR ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT( 2 );
 
 	TextureStruct *tex, *t1, *t2;
@@ -2953,8 +2992,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Trim ) { // (TBD) test this new version that use memcpy
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 4 );
+
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -3030,7 +3070,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Copy ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 3 );
 
 	TextureStruct *srcTex, *tex;
@@ -3108,7 +3148,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 4 );
 
 	TextureStruct *tex1, *tex;
@@ -3207,6 +3247,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Export ) { // (int)x, (int)y, (int)width, (int)height. Returns a Blob
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, JL_OBJ);
@@ -3301,7 +3342,7 @@ DEFINE_FUNCTION( Import ) { // (Blob)image, (int)x, (int)y
 	JLStr bufferStr;
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1,4);
 
 	TextureStruct *tex;
@@ -3311,7 +3352,7 @@ DEFINE_FUNCTION( Import ) { // (Blob)image, (int)x, (int)y
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *bstr;
 	bstr = JSVAL_TO_OBJECT( JL_ARG(1) );
-	JL_ASSERT_CLASS( bstr, JL_BlobJSClass(cx) ); // (TBD) String object should also work.
+	JL_ASSERT_INSTANCE( bstr, JL_BlobJSClass(cx) ); // (TBD) String object should also work.
 
 	int px, py;
 	if ( JL_ARG_ISDEF(2) && JL_ARG_ISDEF(3) ) {
@@ -3403,8 +3444,8 @@ DEFINE_FUNCTION( Shift ) {
 	// (TBD) I think it is possible to do the Shift operation without using a second buffer.
 
 	JL_DEFINE_FUNCTION_OBJ;
-
-	JL_ASSERT_ARGC_RANGE( 2, 3 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_RANGE(2, 3);
 
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
@@ -3453,8 +3494,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Displace ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
-	JL_ASSERT_ARGC_RANGE( 2,3 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_RANGE(2, 3);
 
 	TextureStruct *tex1, *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
@@ -3533,10 +3574,11 @@ DEFINE_FUNCTION( Cells ) { // source: FxGen
 	};
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN( 2 );
 
 	// http://petewarden.com/notes/archives/2005/05/testing.html
 
-	JL_ASSERT_ARGC_MIN( 2 );
 
 	int density;
 	PTYPE regularity;
@@ -3656,8 +3698,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AddGradiantQuad ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
-	JL_ASSERT_ARGC_MIN( 4 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(4);
 
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
@@ -3718,8 +3760,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AddGradiantLinear ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
-	JL_ASSERT_ARGC_MIN( 2 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(2);
 
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
@@ -3777,8 +3819,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AddGradiantRadial ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
-	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(1);
 
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
@@ -3934,8 +3976,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AddCracks ) { // source: FxGen
 
 	JL_DEFINE_FUNCTION_OBJ;
-
-	JL_ASSERT_ARGC_MIN( 2 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(2);
 
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
@@ -4034,6 +4076,7 @@ DEFINE_FUNCTION( ApplyColorMatrix ) {
 	// Fun with the colormatrix: http://hirntier.blogspot.com/2008/09/fun-with-colormatrix.html
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -4078,6 +4121,7 @@ texture.AddPerlin2([0,0,0], [1,0,0], [0,1,0]);
 DEFINE_FUNCTION( AddPerlin2 ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -4143,8 +4187,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( SetRectangle ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
-	JL_ASSERT_ARGC_MIN( 5 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(5);
 
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
@@ -4191,8 +4235,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( SetPixel ) { // x, y, levels
 
 	JL_DEFINE_FUNCTION_OBJ;
-
-	JL_ASSERT_ARGC_RANGE( 3, 4 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_RANGE(3, 4);
 
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
@@ -4237,7 +4281,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetPixelAt ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_RANGE( 2, 3 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_RANGE(2, 3);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 	JL_ASSERT_ARG_IS_INTEGER(2);
 
@@ -4271,6 +4316,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetGlobalLevel ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -4315,6 +4361,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetLevelRange ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -4373,6 +4420,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetBorderLevelRange ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -4466,6 +4514,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( width ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 	return JL_NativeToJsval(cx, tex->width, vp);
@@ -4480,6 +4530,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( height ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 	return JL_NativeToJsval(cx, tex->height, vp);
@@ -4493,6 +4545,8 @@ $TOC_MEMBER $INAME
   Number of channels of the texture.
 **/
 DEFINE_PROPERTY_GETTER( channels ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);

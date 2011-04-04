@@ -127,7 +127,7 @@ DEFINE_CALL() {
 
 	char *outBuf = NULL; // keep on top
 
-	JL_ASSERT_CLASS(obj, JL_CLASS(Iconv));
+	JL_ASSERT_INSTANCE(obj, JL_CLASS(Iconv));
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);

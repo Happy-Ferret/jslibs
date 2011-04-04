@@ -137,7 +137,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Destroy ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId ); // (TBD) manage world-connected ( when bodyId == 0 )
 //	JL_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, JSVAL_VOID);
@@ -165,7 +165,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( IsConnectedTo ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( thisBodyID );
@@ -186,7 +186,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetGeom ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
@@ -212,7 +212,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetJoint ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 
@@ -245,7 +245,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AddForce ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( thisBodyID );
@@ -277,7 +277,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AddTorque ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( thisBodyID );
@@ -300,6 +300,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( SetDampingDefaults ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
@@ -318,7 +319,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetRelativeVelocity ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 
@@ -357,6 +358,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GetRelPointVel ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
@@ -381,6 +383,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Vector3ToWorld ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( cx, JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
@@ -411,6 +414,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( kinematic ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	bool kinematic;
@@ -425,6 +429,7 @@ DEFINE_PROPERTY_SETTER( kinematic ) {
 
 DEFINE_PROPERTY_GETTER( kinematic ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dBodyIsKinematic(bodyId) != 0, vp) );
@@ -440,6 +445,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( autoDisable ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	bool autoDisable;
@@ -451,6 +457,7 @@ DEFINE_PROPERTY_SETTER( autoDisable ) {
 
 DEFINE_PROPERTY_GETTER( autoDisable ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dBodyGetAutoDisableFlag(bodyId) != 0, vp) );
@@ -466,6 +473,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( autoDisableLinearThreshold ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dReal threshold;
@@ -477,6 +485,7 @@ DEFINE_PROPERTY_SETTER( autoDisableLinearThreshold ) {
 
 DEFINE_PROPERTY_GETTER( autoDisableLinearThreshold ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dReal threshold;
@@ -494,6 +503,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( autoDisableAngularThreshold ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dReal threshold;
@@ -505,6 +515,7 @@ DEFINE_PROPERTY_SETTER( autoDisableAngularThreshold ) {
 
 DEFINE_PROPERTY_GETTER( autoDisableAngularThreshold ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dReal threshold;
@@ -522,6 +533,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( disabled ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	bool disabled;
@@ -536,6 +548,7 @@ DEFINE_PROPERTY_SETTER( disabled ) {
 
 DEFINE_PROPERTY_GETTER( disabled ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dBodyIsEnabled(bodyId) == 0, vp) );
@@ -551,6 +564,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( gravityMode ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	bool gravityMode;
@@ -562,6 +576,7 @@ DEFINE_PROPERTY_SETTER( gravityMode ) {
 
 DEFINE_PROPERTY_GETTER( gravityMode ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dBodyGetGravityMode(bodyId) != 0, vp) );
@@ -578,6 +593,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( gyroscopicMode ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	bool gravityMode;
@@ -589,6 +605,7 @@ DEFINE_PROPERTY_SETTER( gyroscopicMode ) {
 
 DEFINE_PROPERTY_GETTER( gyroscopicMode ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dBodyGetGyroscopicMode(bodyId) != 0, vp) );
@@ -604,6 +621,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( finiteRotationMode ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	bool mode;
@@ -615,6 +633,7 @@ DEFINE_PROPERTY_SETTER( finiteRotationMode ) {
 
 DEFINE_PROPERTY_GETTER( finiteRotationMode ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dBodyGetFiniteRotationMode(bodyId) != 0, vp) );
@@ -630,6 +649,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( finiteRotationAxis ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dReal vec[3];
@@ -652,6 +672,7 @@ DEFINE_PROPERTY_SETTER( finiteRotationAxis ) {
 
 DEFINE_PROPERTY_GETTER( finiteRotationAxis ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dVector3 vec;
@@ -668,6 +689,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( maxAngularSpeed ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dBodyGetMaxAngularSpeed(bodyId), vp) );
@@ -677,6 +699,7 @@ DEFINE_PROPERTY_GETTER( maxAngularSpeed ) {
 
 DEFINE_PROPERTY_SETTER( maxAngularSpeed ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dReal maxAngularSpeed;
@@ -693,6 +716,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( linearDamping ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dBodyGetLinearDamping(bodyId), vp) );
@@ -702,6 +726,7 @@ DEFINE_PROPERTY_GETTER( linearDamping ) {
 
 DEFINE_PROPERTY_SETTER( linearDamping ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dReal scale;
@@ -719,6 +744,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( linearDampingThreshold ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dBodyGetLinearDampingThreshold(bodyId), vp) );
@@ -728,6 +754,7 @@ DEFINE_PROPERTY_GETTER( linearDampingThreshold ) {
 
 DEFINE_PROPERTY_SETTER( linearDampingThreshold ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dReal threshold;
@@ -746,6 +773,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( angularDamping ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dBodyGetAngularDamping(bodyId), vp) );
@@ -755,6 +783,7 @@ DEFINE_PROPERTY_GETTER( angularDamping ) {
 
 DEFINE_PROPERTY_SETTER( angularDamping ) {
 
+	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dReal scale;
@@ -1017,6 +1046,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( mass ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+	
 	JSObject *massObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(Mass), JL_PROTOTYPE(cx, Mass), NULL);
 	//JL_ASSERT(massObject != NULL, "Unable to create the Mass object.");
 	JL_ASSERT_ALLOC( massObject );
@@ -1056,7 +1087,7 @@ DEFINE_FUNCTION( AreConnected ) {
 //	JL_ASSERT( bodyID != NULL, RT_ERROR_NOT_INITIALIZED );
 //	JSObject *massObject;
 //	JS_ValueToObject(cx, *vp, &massObject);
-//	JL_ASSERT_CLASS(massObject, &mass_class);
+//	JL_ASSERT_INSTANCE(massObject, &mass_class);
 //	ode::dMass *mass = (ode::dMass*)JL_GetPrivate(cx, massObject);
 //	JL_ASSERT(mass != NULL, RT_ERROR_NOT_INITIALIZED);
 //

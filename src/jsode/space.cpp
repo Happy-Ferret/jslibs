@@ -106,7 +106,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Destroy ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 
 	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(spaceId);

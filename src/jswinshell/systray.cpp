@@ -468,11 +468,14 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	Finalize(cx, obj);
 	JL_SetPrivate(cx, obj, NULL);
 	
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -594,6 +597,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( ProcessEvents ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -676,8 +681,10 @@ JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 
 DEFINE_FUNCTION( Events ) {
 	
-	JL_ASSERT_ARG_COUNT(0);
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARG_COUNT(0);
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -706,6 +713,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Focus ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -828,7 +836,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					JL_ASSERT_IS_OBJECT(value, keyStr);
 					JSObject *iconObj = JSVAL_TO_OBJECT(value);
-					JL_ASSERT_CLASS( iconObj, JL_CLASS(Icon) );
+					JL_ASSERT_INSTANCE( iconObj, JL_CLASS(Icon) );
 					HICON *phIcon = (HICON*)JL_GetPrivate(cx, iconObj);
 					JL_ASSERT_OBJECT_STATE(phIcon, JL_CLASS_NAME(Icon));
 					hBMP = MenuItemBitmapFromIcon(*phIcon);
@@ -967,6 +975,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( PopupMenu ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -998,6 +1007,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( PopupBalloon ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -1110,6 +1120,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Position ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -1189,11 +1200,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( icon ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	HICON hIcon;
 	if ( JSVAL_IS_OBJECT(*vp) && !JSVAL_IS_NULL( *vp ) ) {
 
 		JSObject *iconObj = JSVAL_TO_OBJECT(*vp);
-		JL_ASSERT_CLASS( iconObj, JL_CLASS(Icon) );
+		JL_ASSERT_INSTANCE( iconObj, JL_CLASS(Icon) );
 		HICON *phIcon = (HICON*)JL_GetPrivate(cx, iconObj);
 		JL_ASSERT_OBJECT_STATE( phIcon, JL_CLASS_NAME(Icon) );
 		hIcon = *phIcon;
@@ -1227,6 +1240,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( visible ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -1248,6 +1263,9 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( text ) {
 
 	JLStr tipText;
+
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tipText) );
@@ -1265,6 +1283,8 @@ DEFINE_PROPERTY_SETTER( text ) {
 }
 
 DEFINE_PROPERTY_GETTER( text ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);

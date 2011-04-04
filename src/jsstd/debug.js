@@ -1,5 +1,58 @@
 LoadModule('jsstd'); 
 
+Print(OperationLimit(), '\n');
+Print(TypeError(), '\n');
+
+throw 0;
+
+Exec('../common/tools.js'); RunQATests('-rep 1 -nogcBetweenTests jsstd'); throw 0;
+
+
+		
+
+/*
+		function newDataNode(parent) new ObjEx(undefined,undefined,newDataNode.get,undefined,{listenerList:[],parent:parent});
+
+		newDataNode.get = function( name, value, aux ) (name in this) ? value : (this[name] = newDataNode(this));
+
+		function addDataListener( path, listener ) {
+
+			ObjEx.Aux( path ).listenerList.push(listener);
+		}
+
+		function setData( path, data ) {
+
+			var aux = ObjEx.Aux(path);
+			for each ( let listener in aux.listenerList )
+				listener('set', data);
+			aux.data = data;
+			return data;
+		}
+
+		function getData( path ) {
+
+			var aux = ObjEx.Aux(path);
+			return 'data' in aux ? aux.data : undefined;
+		}
+
+		function hasData( path ) {
+
+			return 'data' in ObjEx.Aux(path);
+		}
+
+		
+		var test = newDataNode();
+		setData( test.aaa.bbb.ccc.ddd.eee, 1234 );
+		
+		
+//		QA.ASSERT( getData(test.aaa.bbb.ccc.ddd.eee), 1234, 'check data in the tree' );
+//		QA.ASSERT( getData(test.aaa.bbb.ccc.ddd), undefined, 'check data in the tree' );
+*/
+
+throw 0;
+
+
+
 if ( 0 ) {
 
 	LoadModule('jsstd');

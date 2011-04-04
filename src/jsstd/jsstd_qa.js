@@ -27,6 +27,7 @@ LoadModule('jsstd');
 		QA.ASSERT( IsBoolean( new Number(123) ), false, 'not a boolean object' );
 		QA.ASSERT( IsBoolean( new Boolean(123) ), true, 'boolean object' );
 
+
 /// IsNumber function [ftrm]
 
 		QA.ASSERT( IsNumber( 123 ), true, 'number value' );
@@ -34,9 +35,16 @@ LoadModule('jsstd');
 		QA.ASSERT( IsNumber( new Boolean(123) ), false, 'number object' );
 		QA.ASSERT( IsNumber( new Number(123) ), true, 'not a number object' );
 
+
 /// Print returns undefined [ftrm]
 		QA.ASSERT( Print(), undefined, 'Print return value' );
 
+
+/// ObjEx simple access (crash test) [ftrm]
+
+		ObjEx.Aux(new ObjEx());
+		
+		
 /// ObjEx callback functions [ftrm]
 		
 		var aux = {};
@@ -777,7 +785,7 @@ LoadModule('jsstd');
 
 /// Exec error [ftrm]
 
-		QA.ASSERT_EXCEPTION( function() Exec('e654ser65t'), Error, 'Exec unknown file' );
+		QA.ASSERT_EXCEPTION( function() Exec('e654ser65t'), ReferenceError, 'Exec unknown file' );
 
 		
 /// Exec basic test [ftrm]

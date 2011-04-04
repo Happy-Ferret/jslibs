@@ -255,6 +255,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 
@@ -336,7 +338,6 @@ JSBool JssqliteStep( JSContext *cx, JSObject *obj, int *status ) {
 
 JSBool DoStep(JSContext *cx, JSObject *obj, jsval *rval) {
 
-
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 
@@ -407,7 +408,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Step ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	return DoStep(cx, obj, JL_RVAL);
+	JL_BAD;
 }
 
 
@@ -421,7 +425,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Col ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(1);
 
 	sqlite3_stmt *pStmt;
 	pStmt = (sqlite3_stmt*)JL_GetPrivate( cx, obj );
@@ -445,6 +450,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Row ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 
@@ -490,6 +497,7 @@ DEFINE_FUNCTION( Row ) {
 DEFINE_FUNCTION( next ) { // for details, see Row() function thet is the base of this function.
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
@@ -523,6 +531,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Reset ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
@@ -544,6 +553,8 @@ $TOC_MEMBER $INAME
   Hold the number of columns of the current [Result]
 **/
 DEFINE_PROPERTY_GETTER( columnCount ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
@@ -573,6 +584,8 @@ DEFINE_PROPERTY_GETTER( columnNames ) {
 	
 	if ( *vp != JSVAL_VOID )
 		return JS_TRUE;
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
@@ -608,6 +621,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( columnIndexes ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 	JSObject *columnIndexes;
@@ -636,6 +651,8 @@ DEFINE_PROPERTY_GETTER( sql ) {
 
 //	if ( *vp != JSVAL_VOID )
 //		return JS_TRUE;
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );

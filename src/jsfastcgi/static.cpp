@@ -84,6 +84,12 @@ DEFINE_FUNCTION( GetParam ) {
 			*JL_RVAL = JSVAL_VOID;
 	} else {
 		
+		if ( !_request.envp ) {
+		
+			*JL_RVAL = JL_GetEmptyStringValue(cx);
+			return JS_TRUE;
+		}
+
 		// (TDB) use FCGX_ParamArray instead ?
 		JSObject *argsObj = JS_NewObject(cx, NULL, NULL, NULL);
 		JL_CHK(argsObj);
@@ -105,6 +111,7 @@ DEFINE_FUNCTION( GetParam ) {
 DEFINE_FUNCTION( Read ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
+
 	size_t len;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &len) );
 	char* str;
@@ -130,6 +137,9 @@ DEFINE_FUNCTION( Read ) {
 DEFINE_FUNCTION( Write ) {
 
 	JLStr str;
+
+	JL_ASSERT_ARGC_MIN( 1 );
+
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	int result;
 	result = FCGX_PutStr(str.GetConstStr(), (int)str.Length(), _request.out);
@@ -146,6 +156,8 @@ DEFINE_FUNCTION( Write ) {
 
 DEFINE_FUNCTION( Flush ) {
 
+	JL_ASSERT( _request.out != NULL, E_LIB, E_STR("fastcgi"), E_INTERNAL );
+
 	int result = FCGX_FFlush(_request.out);
 	JL_ASSERT( result != -1, E_LIB, E_INTERNAL ); // "fcgi flush"
 	*JL_RVAL = JSVAL_VOID;
@@ -156,6 +168,9 @@ DEFINE_FUNCTION( Flush ) {
 DEFINE_FUNCTION( Log ) {
 
 	JLStr str;
+
+	JL_ASSERT_ARG_COUNT(1);
+
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	int result;
 	result = FCGX_PutStr(str.GetConstStr(), (int)str.Length(), _request.err);

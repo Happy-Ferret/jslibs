@@ -39,7 +39,7 @@ $TOC_MEMBER $INAME
  $STR $INAME( value )
   This function converts any value into a floating point value.
 **/
-DEFINE_FUNCTION( real ) {
+DEFINE_FUNCTION( Real ) {
 
 	JL_ASSERT_ARG_COUNT(1);
 	jsdouble val;
@@ -323,7 +323,7 @@ JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 
 DEFINE_FUNCTION( TimeoutEvents ) {
 
-	JL_ASSERT_ARGC_RANGE( 1, 2 );
+	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	unsigned int timeout;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
@@ -359,9 +359,11 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 DEFINE_FUNCTION( jslangTest ) {
 
 	JL_USE(argc);
+
 	return JS_TRUE;
 	JL_BAD;
 }
+
 #endif // DEBUG
 
 
@@ -374,7 +376,7 @@ CONFIGURE_STATIC
 		FUNCTION( jslangTest )
 		#endif // DEBUG
 
-		FUNCTION_ARGC( real, 1 )
+		FUNCTION_ARGC( Real, 1 )
 
 		FUNCTION_ARGC( Stringify, 1 )
 		FUNCTION_ARGC( ProcessEvents, 4 ) // (just a guess)

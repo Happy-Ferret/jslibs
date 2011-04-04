@@ -417,7 +417,7 @@ DEFINE_FUNCTION( CreateOpenGLContext ) {
 //	JL_ASSERT( JS_IsConstructing(cx) && JL_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
 //	JL_ASSERT_ARGC_MIN(1);
 //	JL_ASSERT_OBJECT(argv[0]);
-//	JL_ASSERT_CLASS(JSVAL_TO_OBJECT(argv[0]), &classWindow);
+//	JL_ASSERT_INSTANCE(JSVAL_TO_OBJECT(argv[0]), &classWindow);
 
 	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( hWnd );

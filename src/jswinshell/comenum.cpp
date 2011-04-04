@@ -33,11 +33,10 @@ DEFINE_FINALIZE() {
 
 DEFINE_FUNCTION( next ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-
-	HRESULT hr;
-
 	VARIANT *result = NULL;
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	IEnumVARIANT *ienumv = (IEnumVARIANT*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(ienumv);
@@ -45,6 +44,7 @@ DEFINE_FUNCTION( next ) {
 	result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
 	VariantInit(result);
 	
+	HRESULT hr;
 	hr = ienumv->Next(1, result, NULL);
 
 	if ( hr != S_OK ) // The number of elements returned is less than 1.

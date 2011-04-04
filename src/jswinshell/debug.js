@@ -5,6 +5,10 @@ LoadModule('jsstd');
 LoadModule('jswinshell');
 LoadModule('jssvg');
 
+
+throw 0;
+
+
 //LoadModule('jsdebug'); gcZeal = 2;
 
 //var f = new File('C:\\MSDOS.SYS').Open('r');

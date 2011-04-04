@@ -104,9 +104,8 @@ $TOC_MEMBER $INAME
 DEFINE_CALL() {
 
 	JL_DEFINE_CALL_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
 
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
@@ -138,7 +137,7 @@ DEFINE_FUNCTION( AddEntropy ) {
 	JLStr entropy;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PrngPrivate *pv;
@@ -168,7 +167,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( AutoEntropy ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PrngPrivate *pv;
@@ -201,7 +200,8 @@ DEFINE_PROPERTY_GETTER( state ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -231,10 +231,10 @@ DEFINE_PROPERTY_GETTER( state ) {
 DEFINE_PROPERTY_SETTER( state ) {
 
 	JL_USE(id);
-
 	JLStr state;
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -259,7 +259,8 @@ DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS( obj, JL_THIS_CLASS );
+	JL_ASSERT_THIS_INSTANCE();
+
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );

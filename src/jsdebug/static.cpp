@@ -1746,6 +1746,40 @@ DEFINE_FUNCTION( DebugBreak ) {
 }
 
 
+DEFINE_FUNCTION( CrashGuard ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARG_IS_FUNCTION(1);
+
+#if defined XP_WIN
+	EXCEPTION_POINTERS * eps = 0;
+	__try {
+
+		JS_CallFunctionValue(cx, JL_OBJ, JL_ARG(1), 0, NULL, JL_RVAL);
+		*JL_RVAL = JSVAL_TRUE;
+
+//	} __except (eps = GetExceptionInformation(), ((GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION) ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)) {
+	} __except (eps = GetExceptionInformation(), EXCEPTION_EXECUTE_HANDLER) {
+		
+		*JL_RVAL = JSVAL_FALSE;
+	}
+#elif defined XP_UNIX
+
+	JS_CallFunctionValue(cx, JL_OBJ, JL_ARG(1), 0, NULL, JL_RVAL);
+	*JL_RVAL = JSVAL_TRUE;
+
+#else
+
+	#error NOT IMPLEMENTED YET	// (TBD)
+
+#endif
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 DEFINE_FUNCTION( SetPerfTestMode ) {
 
 	*JL_RVAL = JSVAL_VOID;
@@ -1856,6 +1890,7 @@ CONFIGURE_STATIC
 
 		FUNCTION( DumpHeap )
 		FUNCTION( DebugBreak )
+		FUNCTION( CrashGuard )
 		FUNCTION( SetPerfTestMode )
 
 	// for internal tests

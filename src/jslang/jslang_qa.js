@@ -270,7 +270,9 @@ LoadModule('jsstd');
 		e.replace();
 		QA.ASSERT( e instanceof Blob, true )
 		QA.ASSERT( e instanceof String, false )
-		e.match;
+
+		QA.ASSERT_EXCEPTION( function() { e.match }, TypeError, 'invalid blob object' );
+		
 		QA.ASSERT( e instanceof Blob, true )
 		QA.ASSERT( e instanceof String, false )
 
@@ -750,6 +752,11 @@ LoadModule('jsstd');
 
 	QA.ASSERT_STR( Stringify([100,101,102]), 'def', 'JSArray to string' );
 
+
+/// Handle constructor [ft]
+
+	Handle != '';
+	
 
 /// Handle object [ft]
 

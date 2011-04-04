@@ -504,11 +504,13 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 	ModuleInitFunction moduleInit;
 	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
 	JL_ASSERT( moduleInit, E_MODULE, E_NAME(libFileName), E_INIT ); // "Invalid module."
-
+	
 //	CHKHEAP();
 
 	if ( !moduleInit(cx, JL_OBJ, uid) ) {
 
+		if ( JL_IsExceptionPending(cx) )
+			goto bad;
 		char filename[PATH_MAX];
 		JLDynamicLibraryName((void*)moduleInit, filename, sizeof(filename));
 		JL_ERR( E_MODULE, E_NAME(filename), E_INIT );
@@ -670,10 +672,6 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	globalObject = JL_GetGlobalObject(cx);
 	ASSERT( globalObject != NULL ); // "Global object not found."
 	
-//	JS_SetLocaleCallbacks(cx, &pv->localeCallbacks);
-//	pv->errorCallback = GetErrorMessage;
-//	pv->localeCallbacks.localeGetErrorMessage = pv->errorCallback;
-
 	pv->report = Report;
 
 	pv->hostStdErr = stdErr;
@@ -740,6 +738,7 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 		
 			if ( !moduleRelease(cx) ) {
 
+				//if ( !JL_IsExceptionPending(cx) ) { // (TBD)
 				char filename[PATH_MAX];
 				JLDynamicLibraryName((void*)moduleRelease, filename, sizeof(filename));
 				JL_WARN( E_MODULE, E_NAME(filename), E_FIN ); // "Fail to release module \"%s\".", filename

@@ -151,6 +151,7 @@ DEFINE_FUNCTION( Write ) {
 	JLStr data;
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -260,6 +261,8 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 	JLStr id;
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
@@ -462,6 +465,7 @@ DEFINE_FUNCTION( SetVisible ) {
 	JLStr id;
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(2);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
@@ -500,7 +504,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Scale ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(2);
+
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	double sx, sy;
@@ -523,7 +529,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Rotate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
+
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	double angle;
@@ -545,7 +553,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Translate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(2);
+
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	double tx, ty;
@@ -569,6 +579,8 @@ $TOC_MEMBER $INAME
   Sets the dpi of the resulting image. If the argument is an Array (like [ dpiX, dpiY ]) X and Y dpi can be set aside.
 **/
 DEFINE_PROPERTY_SETTER( dpi ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -606,6 +618,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( width ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
@@ -624,6 +638,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( height ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
@@ -641,6 +657,8 @@ $TOC_MEMBER $INAME
   Is the title of the SVG.
 **/
 DEFINE_PROPERTY_GETTER( title ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -662,6 +680,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( metadata ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
@@ -681,6 +701,8 @@ $TOC_MEMBER $INAME
   Is the description string of the SVG.
 **/
 DEFINE_PROPERTY_GETTER( description ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);

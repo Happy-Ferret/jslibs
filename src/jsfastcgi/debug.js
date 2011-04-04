@@ -3,6 +3,10 @@
 LoadModule('jsstd');
 LoadModule('jsfastcgi');
 
+GetParam();
+//Write();
+Log();
+
 Print( URLDecode( 'a+a+a+a' ), '\n' );
 
 

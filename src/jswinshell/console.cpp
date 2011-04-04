@@ -22,17 +22,19 @@ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Console )
 
+
+/**doc
+=== Static Functions ===
+**/
+
 /**doc
 $TOC_MEMBER $INAME
- $INAME()
+ $VOID $INAME()
   Creates a new Console object.
   $H beware
    Only one console per process is allowed. The construction fails if the calling process already has a console.
 **/
-DEFINE_CONSTRUCTOR() {
-
-	JL_ASSERT_CONSTRUCTING();
-	JL_DEFINE_CONSTRUCTOR_OBJ;
+DEFINE_FUNCTION( Open ) {
 
 	BOOL status = AllocConsole();
 	if ( status == FALSE )
@@ -42,15 +44,6 @@ DEFINE_CONSTRUCTOR() {
 	JL_BAD;
 }
 
-DEFINE_FINALIZE() {
-
-//	BOOL res = FreeConsole();
-}
-
-
-/**doc
-=== Methods ===
-**/
 
 /**doc
 $TOC_MEMBER $INAME
@@ -84,7 +77,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Write ) {
 
 	JLStr str;
-	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_COUNT(1);
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	if ( hStdout == NULL )
 		return WinThrowError(cx, GetLastError());
@@ -109,7 +102,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Read ) {
 
-	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_COUNT(1);
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	if ( hStdin == NULL )
 		return WinThrowError(cx, GetLastError());
@@ -123,8 +116,9 @@ DEFINE_FUNCTION( Read ) {
 	JL_BAD;
 }
 
+
 /**doc
-=== Properties ===
+=== Static Properties ===
 **/
 
 /**doc
@@ -156,18 +150,17 @@ DEFINE_PROPERTY_GETTER( title ) {
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
-	HAS_CONSTRUCTOR
-	HAS_FINALIZE
 
-	BEGIN_FUNCTION_SPEC
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION( Open )
+		FUNCTION( Close )
 		FUNCTION( Write )
 		FUNCTION( Read )
-		FUNCTION( Close )
-	END_FUNCTION_SPEC
+	END_STATIC_FUNCTION_SPEC
 
-	BEGIN_PROPERTY_SPEC
+	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY( title )
-	END_PROPERTY_SPEC
+	END_STATIC_PROPERTY_SPEC
 
 //	HAS_PRIVATE
 

@@ -270,6 +270,7 @@ DEFINE_FUNCTION( Read ) {
 	char *buffer = NULL;
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -400,6 +401,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( inputStream ) {
 
 	JL_USE(id);
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -417,6 +419,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( bits ) {
 
 	JL_USE(id);
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -433,6 +436,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( rate ) {
 
 	JL_USE(id);
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -449,6 +453,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( channels ) {
 
 	JL_USE(id);
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -466,6 +471,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( frames ) {
 
 	JL_USE(id);
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);

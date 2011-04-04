@@ -1,11 +1,80 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
+/// call all possible functions reachable in the scope [rmtfd]
 
-/// call all possible functions reachable in the scope [rmtf]
+	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', '_host.stdin' ];
+
+	LoadModule('jscrypt');
+	LoadModule('jsdebug'); excludeList.push('DebugBreak', 'DumpHeap');
+	LoadModule('jsfont');
+	LoadModule('jsiconv');
+	LoadModule('jsimage');
+	LoadModule('jsio');
+	LoadModule('jsjabber');
+	LoadModule('jsode');
+	LoadModule('jsoglft');
+	LoadModule('jsprotex');
+	LoadModule('jssound');
+	LoadModule('jssqlite');
+	LoadModule('jsstd'); excludeList.push('Halt');
+	LoadModule('jssvg');
+	LoadModule('jstrimesh');
+	LoadModule('jsvideoinput');
+	LoadModule('jswinshell'); excludeList.push('FileOpenDialog', 'Console.Close');
+	LoadModule('jsz');
+//	LoadModule('jssdl'); excludeList.push('SetVideoMode');
+//	LoadModule('jstask');
+//	LoadModule('jsffi');
+//	LoadModule('jsfastcgi');
+//	LoadModule('jsaudio');
+	//LoadModule('jsgraphics');
+
+	var done = {__proto__:null};
+	for each ( var item in excludeList )
+		done[ObjectGCId(eval(item))] = true;
 
 
+	function fct(obj, left) {
 
+		if ( endSignal )
+			Halt();
+		if ( IsPrimitive(obj) )
+			return;
+		done[ObjectGCId(obj)] = true;
+		var list = Object.getOwnPropertyNames(obj);
+		for each ( var name in list ) {
+			
+			if ( name == 'arguments' )
+				continue;
+
+//			Print( left+'.'+name, '\n' );
+
+			var nextObj;
+			try {
+				nextObj = obj[name];
+			} catch(ex) {
+				continue;
+			}
+			
+			if ( done[ObjectGCId(nextObj)] )
+				continue;
+
+			try {
+				obj[name]();
+			} catch(ex) {
+			}
+
+			try {
+				nextObj();
+			} catch(ex) {
+			}
+
+			fct(nextObj, left+'.'+name);
+		}
+	}
+
+	fct(global, '');
 
 
 

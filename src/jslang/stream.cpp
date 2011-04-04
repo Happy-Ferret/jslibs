@@ -41,7 +41,7 @@ inline JSBool PositionGet( JSContext *cx, JSObject *streamObj, size_t *position 
 
 JSBool StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount ) {
 
-	JL_ASSERT_CLASS(streamObj, JL_CLASS(Stream));
+	JL_ASSERT_INSTANCE(streamObj, JL_CLASS(Stream));
 
 	size_t position;
 	JL_CHK( PositionGet(cx, streamObj, &position) );
@@ -91,7 +91,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	// JL_ASSERT_CONSTRUCTING(); // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 //	JL_ASSERT_ARG_IS_OBJECT(1);
 
@@ -114,7 +114,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_CLASS();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	int amount;
@@ -148,7 +148,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	size_t position;
 	JL_CHK( PositionGet(cx, obj, &position) );
 	return JL_NativeToJsval(cx, position, vp);
@@ -160,7 +160,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	JL_USE(id);
 	JL_USE(strict);
 
-	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	size_t position;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &position) );
 	JL_ASSERT( position >= 0, E_VALUE, E_MIN, E_NUM(0) );
@@ -179,7 +179,7 @@ DEFINE_PROPERTY_GETTER( available ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) ); // use vp as a tmp variable
 	JSObject *srcObj;
 	if ( JSVAL_IS_OBJECT( *vp ) )
@@ -206,7 +206,7 @@ DEFINE_PROPERTY_GETTER( source ) {
 
 	JL_USE(id);
 
-	JL_ASSERT_CLASS(obj, JL_THIS_CLASS);
+	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
 	return JS_TRUE;
 	JL_BAD;

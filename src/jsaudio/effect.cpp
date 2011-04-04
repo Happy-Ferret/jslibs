@@ -77,6 +77,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( valueOf ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
@@ -111,6 +113,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( type ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int effectType;
@@ -124,6 +128,8 @@ DEFINE_PROPERTY_SETTER( type ) {
 }
 
 DEFINE_PROPERTY_GETTER( type ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -154,6 +160,8 @@ DEFINE_FUNCTION( Test ) {
 
 DEFINE_PROPERTY_SETTER( effectFloat ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
@@ -166,6 +174,8 @@ DEFINE_PROPERTY_SETTER( effectFloat ) {
 }
 
 DEFINE_PROPERTY_GETTER( effectFloat ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -180,6 +190,8 @@ DEFINE_PROPERTY_GETTER( effectFloat ) {
 
 DEFINE_PROPERTY_SETTER( effectInt ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
@@ -192,6 +204,8 @@ DEFINE_PROPERTY_SETTER( effectInt ) {
 }
 
 DEFINE_PROPERTY_GETTER( effectInt ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -206,6 +220,8 @@ DEFINE_PROPERTY_GETTER( effectInt ) {
 
 DEFINE_PROPERTY_SETTER( effectBool ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
@@ -218,6 +234,8 @@ DEFINE_PROPERTY_SETTER( effectBool ) {
 }
 
 DEFINE_PROPERTY_GETTER( effectBool ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );

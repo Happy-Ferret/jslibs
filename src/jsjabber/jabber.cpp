@@ -296,6 +296,8 @@ DEFINE_FUNCTION( Connect ) {
 	JLStr serverName;
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT_ARGC_MIN(1);
@@ -337,6 +339,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Disconnect ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
@@ -361,6 +365,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Process ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
@@ -391,6 +397,8 @@ DEFINE_FUNCTION( SendMessage ) {
 	JLStr to, body;
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
@@ -440,6 +448,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( socket ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() ); // (TBD) TM
@@ -467,6 +477,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( status ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->client->status().c_str(), vp) );
@@ -478,6 +490,9 @@ DEFINE_PROPERTY_GETTER( status ) {
 DEFINE_PROPERTY_SETTER( status ) {
 
 	JLStr status;
+	
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_JsvalToNative(cx, *vp, &status) );
@@ -494,6 +509,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( presence ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	Presence presence = pv->client->presence();
@@ -503,6 +520,8 @@ DEFINE_PROPERTY_GETTER( presence ) {
 }
 
 DEFINE_PROPERTY_SETTER( presence ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -543,6 +562,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( connectionTotalIn ) {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int totalIn, totalOut;
@@ -559,6 +580,8 @@ $TOC_MEMBER $INAME
   is the total number of bytes sent.
 **/
 DEFINE_PROPERTY_GETTER( connectionTotalOut ) {
+
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );

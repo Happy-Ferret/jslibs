@@ -156,6 +156,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Load ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_ARGC_MAX(16);
@@ -203,8 +205,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Clear ) {
 	
 	JL_USE(argc);
-
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44Identity(pv->mat);
@@ -225,6 +228,8 @@ DEFINE_FUNCTION( ClearRotation ) {
 
 	JL_USE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44ClearRotation(pv->mat);
@@ -244,6 +249,8 @@ DEFINE_FUNCTION( ClearTranslation ) {
 
 	JL_USE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44ClearTranslation(pv->mat);
@@ -266,7 +273,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( LoadRotation ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(1);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -305,7 +314,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( LoadTranslation ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(1);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -337,7 +348,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Translate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(3);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -377,7 +390,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Scale ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_RANGE(1,3);
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_RANGE(1, 3);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -427,7 +442,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( RotationFromQuaternion ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(4);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -480,7 +497,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( TaitBryanRotation ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(3);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -511,7 +530,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Rotate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(4);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -555,7 +576,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( RotateX ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(1);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -592,7 +615,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( RotateY ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(1);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -629,7 +654,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( RotateZ ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(1);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -682,7 +709,9 @@ DEFINE_FUNCTION( LookAt ) {
 */
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_RANGE(6,9);
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_RANGE(6, 9);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -737,7 +766,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( RotateToVector ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(3);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -779,7 +810,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Invert ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(0);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -802,7 +835,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Product ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_RANGE(1,2);
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_RANGE(1, 2);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -841,8 +876,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( TransformVector ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARG_COUNT(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -907,7 +944,9 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( translation ) {
 
 	JL_USE(id);
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_IS_ARRAY( *vp, "" );
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -923,6 +962,8 @@ DEFINE_PROPERTY_SETTER( translation ) {
 DEFINE_PROPERTY_GETTER( translation ) {
 
 	JL_USE(id);
+	JL_ASSERT_THIS_INSTANCE();
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -965,6 +1006,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_GET_PROPERTY() {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	if ( !JSID_IS_INT(id) )
 		return JS_TRUE;
 	jsint slot = JSID_IS_INT( id );
@@ -979,10 +1022,11 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
+	JL_ASSERT_THIS_INSTANCE();
+
 	if ( !JSID_IS_INT(id) )
 		return JS_TRUE;
 	jsint slot = JSID_IS_INT( id );
-
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_IS_NUMBER(*vp, "");

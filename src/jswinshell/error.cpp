@@ -45,8 +45,9 @@ DEFINE_PROPERTY_GETTER( code ) {
 const char *ErrorToConstName( DWORD err ) {
 
 	switch ( err ) {
-
+		#define DEF( NAME ) case NAME: return #NAME;
 		#include "errorNamesCase.h"
+		#undef DEF
 		default:
 			return NULL;
 	}
@@ -201,7 +202,7 @@ WinThrowError( JSContext *cx, DWORD errorCode ) {
 	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(HIWORD(errorCode)) ) );
 	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(LOWORD(errorCode)) ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
-	return JS_TRUE;
+	return JS_FALSE;
 	JL_BAD;
 }
 

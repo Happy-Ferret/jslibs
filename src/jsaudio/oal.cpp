@@ -120,9 +120,11 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( hasEfx ) {
 
 	ALCcontext *pContext = alcGetCurrentContext();
+	JL_ASSERT( pContext != NULL, E_LIB, E_STR("OpenAL"), E_INTERNAL );
 	ALCdevice *pDevice = alcGetContextsDevice(pContext);
 	*vp = alcIsExtensionPresent(pDevice, (ALCchar*)ALC_EXT_EFX_NAME) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -134,6 +136,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( maxAuxiliarySends ) {
 
 	ALCcontext *pContext = alcGetCurrentContext();
+	JL_ASSERT( pContext != NULL, E_LIB, E_STR("OpenAL"), E_INTERNAL );
 	ALCdevice *pDevice = alcGetContextsDevice(pContext);
 	ALCint numSends;
 	alcGetIntegerv(pDevice, ALC_MAX_AUXILIARY_SENDS, 1, &numSends);

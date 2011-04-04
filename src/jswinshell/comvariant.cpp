@@ -527,6 +527,8 @@ DEFINE_FUNCTION( toDispatch ) {
 	HRESULT hr;
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( variant );
 
@@ -553,15 +555,14 @@ DEFINE_FUNCTION( toDispatch ) {
 
 	JL_CHK( NewComDispatch(cx, pdisp, JL_RVAL) );
 	return JS_TRUE;
-
-bad:
-	return JS_TRUE;
+	JL_BAD;
 }
 
 
 DEFINE_FUNCTION( toString ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	HRESULT hr;
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
@@ -590,6 +591,7 @@ DEFINE_FUNCTION( toString ) {
 DEFINE_FUNCTION( toTypeName ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( variant );
