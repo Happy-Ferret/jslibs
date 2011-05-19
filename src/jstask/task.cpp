@@ -37,7 +37,7 @@ ALWAYS_INLINE void SerializerCreate( SerializedData **ser ) {
 }
 
 ALWAYS_INLINE void SerializerFree( SerializedData **ser ) {
-	
+
 	jl_free(*ser);
 	*ser = NULL;
 }
@@ -50,10 +50,10 @@ ALWAYS_INLINE JSBool SerializeJsval( JSContext *cx, SerializedData *ser, jsval *
 
 	// (TBD) big strange crash when we return JS_FALSE here.
 	// stacktrace:
-	// 	ntdll.dll!7c90100b() 	
-	// 	[Frames below may be incorrect and/or missing, no symbols loaded for ntdll.dll]	
+	// 	ntdll.dll!7c90100b()
+	// 	[Frames below may be incorrect and/or missing, no symbols loaded for ntdll.dll]
 	//	>	jstask.dll!JLMutexAcquire(__JSMUtexHandler * mutex=0x7c840c5b)  Line 1733 + 0xc bytes	C++
-	//	 	ffffffff()	
+	//	 	ffffffff()
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -71,7 +71,7 @@ ALWAYS_INLINE bool IsSerializable( jsval val ) {
 }
 
 ALWAYS_INLINE bool SerializerIsEmpty( const SerializedData *ser ) {
-	
+
 	return ser->length == 0;
 }
 
@@ -124,7 +124,7 @@ $SVN_REVISION $Revision$
   eg.
   {{{
   function MyTask( req, idx ) {
-   
+
    if ( idx == 0 ) {
     LoadModule('jsio');
    }
@@ -186,6 +186,7 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 	funObj = JS_GetFunctionObject(fun);
 	JSObject *globalObj;
 	globalObj = JL_GetGlobalObject(cx);
+	ASSERT( funObj != NULL );
 	JL_CHK( JS_SetParent(cx, funObj, globalObj) ); // re-scope the function
 
 	size_t index;
@@ -441,7 +442,7 @@ DEFINE_FUNCTION( Request ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	
+
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -492,7 +493,7 @@ DEFINE_FUNCTION( Response ) {
 		jsval exception;
 		JL_CHK( UnserializeJsval(cx, serializedException, &exception) );
 		JS_SetPendingException(cx, exception);
-		
+
 		return JS_FALSE;
 	}
 
@@ -635,7 +636,7 @@ LoadModule('jstask');
 LoadModule('jsstd');
 
 var t = new Task(function(data) {
-	
+
 	LoadModule('jsstd');
 	Sleep(100);
 	return data+1;
@@ -655,7 +656,7 @@ while ( !endSignal )
 }}}
 **/
 struct UserProcessEvent {
-	
+
 	ProcessEvent pe;
 
 	bool canceled;

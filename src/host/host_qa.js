@@ -1,12 +1,16 @@
 LoadModule('jsstd');
 LoadModule('jsio');
 
-/// call all possible functions reachable in the scope [rmtfd]
+/// call all possible functions reachable in the scope [rmtf]
 
 	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', '_host.stdin' ];
 
-	LoadModule('jscrypt');
+	LoadModule('jswinshell'); excludeList.push('FileOpenDialog', 'Console.Close');
+	LoadModule('jssdl'); excludeList.push('SetVideoMode', 'Iconify');
+	LoadModule('jsstd'); excludeList.push('Halt');
 	LoadModule('jsdebug'); excludeList.push('DebugBreak', 'DumpHeap');
+
+	LoadModule('jscrypt');
 	LoadModule('jsfont');
 	LoadModule('jsiconv');
 	LoadModule('jsimage');
@@ -17,38 +21,37 @@ LoadModule('jsio');
 	LoadModule('jsprotex');
 	LoadModule('jssound');
 	LoadModule('jssqlite');
-	LoadModule('jsstd'); excludeList.push('Halt');
 	LoadModule('jssvg');
 	LoadModule('jstrimesh');
 	LoadModule('jsvideoinput');
-	LoadModule('jswinshell'); excludeList.push('FileOpenDialog', 'Console.Close');
 	LoadModule('jsz');
-//	LoadModule('jssdl'); excludeList.push('SetVideoMode');
+	
 //	LoadModule('jstask');
 //	LoadModule('jsffi');
 //	LoadModule('jsfastcgi');
 //	LoadModule('jsaudio');
-	//LoadModule('jsgraphics');
+// LoadModule('jsgraphics');
 
+	var count = 0;
 	var done = {__proto__:null};
 	for each ( var item in excludeList )
 		done[ObjectGCId(eval(item))] = true;
-
-
+	
 	function fct(obj, left) {
 
 		if ( endSignal )
 			Halt();
 		if ( IsPrimitive(obj) )
 			return;
+
 		done[ObjectGCId(obj)] = true;
 		var list = Object.getOwnPropertyNames(obj);
 		for each ( var name in list ) {
-			
+
 			if ( name == 'arguments' )
 				continue;
 
-//			Print( left+'.'+name, '\n' );
+//			Print( left+'.'+name+'\n' );
 
 			var nextObj;
 			try {
@@ -61,21 +64,25 @@ LoadModule('jsio');
 				continue;
 
 			try {
-				obj[name]();
+				if ( String.prototype.indexOf.call(nextObj, '[native code]') == -1 )
+					continue;
 			} catch(ex) {
+				continue;
 			}
 
 			try {
+				obj[name]();
+			} catch(ex) {}
+
+			try {
 				nextObj();
-			} catch(ex) {
-			}
+			} catch(ex) {}
 
 			fct(nextObj, left+'.'+name);
 		}
 	}
 
 	fct(global, '');
-
 
 
 /// host version info [rmtf]

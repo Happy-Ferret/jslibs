@@ -9,6 +9,10 @@ LoadModule('jstrimesh');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
 
+Ogl.GetString(Ogl.VENDOR)
+
+Halt();
+
 try {
 
 LoadModule('jsstd'); Exec('../../tests/arabesques.js'); throw 0;

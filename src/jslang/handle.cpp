@@ -69,6 +69,15 @@ DEFINE_FUNCTION( toString ) {
 	JL_BAD;
 }
 
+/*
+DEFINE_FUNCTION( valueOf ) {
+
+	*JL_RVAL = INT_TO_JSVAL(213);
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
+
 
 DEFINE_HAS_INSTANCE() { // see issue#52
 

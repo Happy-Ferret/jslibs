@@ -110,7 +110,7 @@ static bool _inBeginOrEnd = false;
 
 #define OGL_ERR_CHK \
 	JL_MACRO_BEGIN \
-		if ( !_unsafeMode && !_inBeginOrEnd ) { \
+		if ( JL_IS_SAFE && !_inBeginOrEnd ) { \
 			GLenum err = glGetError(); \
 			if ( err != GL_NO_ERROR ) \
 				JL_WARN( E_LIB, E_STR("OpenGL"), E_OPERATION, E_DETAILS, E_STR(OpenGLErrorToConst(err)), E_STR("("), E_NUM(err), E_STR(")") ); \
@@ -119,7 +119,9 @@ static bool _inBeginOrEnd = false;
 
 #define OGL_CX_CHK \
 	JL_MACRO_BEGIN \
-		if ( !_unsafeMode ) { \
+		if ( JL_IS_SAFE ) { \
+			if ( glGetError() == GL_INVALID_OPERATION ) \
+				JL_ERR( E_LIB, E_STR("OpenGL"), E_NOTINIT ); \
 		} \
 	JL_MACRO_END
 
@@ -1682,9 +1684,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( TexImage2D ) {
 
+	JLStr data;
+
 	OGL_CX_CHK;
 
-	JLStr data;
 	JL_ASSERT_ARGC_RANGE(8, 9);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 	JL_ASSERT_ARG_IS_INTEGER(2);
@@ -3503,9 +3506,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( HasExtensionProc ) {
 
-	OGL_CX_CHK;
-
 	JLStr procName;
+	OGL_CX_CHK;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT( glGetProcAddress != NULL, E_OS, E_INIT, E_STR("OpenGL"), E_COMMENT("extensions") );
 
@@ -4208,9 +4210,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ShaderSource ) {
 
-	OGL_CX_CHK;
-
 	JLStr source;
+	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glShaderSourceARB, PFNGLSHADERSOURCEARBPROC );
 	JL_ASSERT_ARG_COUNT(2);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -4417,11 +4418,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetUniformLocation ) {
 
-	OGL_CX_CHK;
-
-	JL_INIT_OPENGL_EXTENSION( glGetUniformLocationARB, PFNGLGETUNIFORMLOCATIONARBPROC );
-
 	JLStr name;
+
+	OGL_CX_CHK;
+	JL_INIT_OPENGL_EXTENSION( glGetUniformLocationARB, PFNGLGETUNIFORMLOCATIONARBPROC );
 
 	JL_ASSERT_ARG_COUNT(2);
 	//JL_ASSERT_ARG_IS_INTEGER(1);
@@ -4731,10 +4731,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( UniformFloatVector ) {
 
-	OGL_CX_CHK;
-
 	GLfloat *value = NULL;
-
+	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glUniform1fvARB, PFNGLUNIFORM1FVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform2fvARB, PFNGLUNIFORM2FVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform3fvARB, PFNGLUNIFORM3FVARBPROC );
@@ -4971,10 +4969,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( BindAttribLocation ) {
 
-	OGL_CX_CHK;
-
 	JLStr name;
-
+	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glBindAttribLocationARB, PFNGLBINDATTRIBLOCATIONARBPROC );
 
 	JL_ASSERT_ARG_COUNT(3);
@@ -4999,10 +4995,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetAttribLocation ) {
 
-	OGL_CX_CHK;
-
 	JLStr name;
-
+	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glGetAttribLocationARB, PFNGLGETATTRIBLOCATIONARBPROC );
 
 	JL_ASSERT_ARG_COUNT(2);
@@ -5581,10 +5575,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DrawImage ) {
 
-	OGL_CX_CHK;
-
 	JLStr dataStr;
-
+	OGL_CX_CHK;
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
@@ -6090,9 +6082,8 @@ JSBool TextureHelper(JSObject *obj, int *width, int *height, int *channels, cons
 
 DEFINE_FUNCTION( DefineTextureImage ) {
 
-	OGL_CX_CHK;
-
 	JLStr dataStr;
+	OGL_CX_CHK;
 	JL_ASSERT_ARGC_MIN(3);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 //	JL_ASSERT_ARG_IS_INTEGER(2); // may be undefined
@@ -6565,7 +6556,7 @@ DEFINE_FUNCTION( FullQuad ) {
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
-//	JL_BAD;
+	JL_BAD;
 }
 
 
@@ -6723,6 +6714,7 @@ DEFINE_PROPERTY_GETTER( error ) {
 	// until glGetError is called, the error code is returned, and the flag is reset to GL_NO_ERROR.
 	*vp = INT_TO_JSVAL(glGetError());
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -6840,7 +6832,7 @@ DEFINE_FUNCTION( Test ) {
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
-//	JL_BAD;
+	JL_BAD;
 }
 #endif // DEBUG
 
