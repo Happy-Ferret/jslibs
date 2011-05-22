@@ -224,8 +224,8 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	}
 
 	ASSERT( argc <= JSVAL_INT_BITS ); // bits
-	unsigned int events;
-	events = 0;
+	unsigned int eventsMask;
+	eventsMask = 0;
 	bool hasEvent;
 	JSBool ok;
 	ok = JS_TRUE;
@@ -247,7 +247,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 			JS_RestoreExceptionState(cx, exState);
 
 		if ( hasEvent )
-			events |= 1 << i;
+			eventsMask |= 1 << i;
 		JL_CHK( HandleClose(cx, JL_ARGV[i]) );
 	}
 
@@ -257,7 +257,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	ASSERT( JLSemaphoreAcquire(mpv->processEventSignalEventSem, 0) == JLTIMEOUT ); // else invalid state
 #endif // DEBUG
 
-	*JL_RVAL = INT_TO_JSVAL(events);
+	*JL_RVAL = INT_TO_JSVAL(eventsMask);
 	return ok;
 	JL_BAD;
 }

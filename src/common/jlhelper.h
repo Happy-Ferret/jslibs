@@ -822,7 +822,7 @@ enum E_TXTID {
 };
 
 // simple helpers
-#define E_ERRNO( num )                E_ERRNO_1, num 
+#define E_ERRNO( num )                E_ERRNO_1, num
 #define E_STR( str )                  E_STR_1, str
 #define E_NAME( str )                 E_NAME_1, str
 #define E_NUM( num )                  E_NUM_1, num
@@ -1560,7 +1560,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 			*num = uint8_t(tmp);
 			return JS_TRUE;
 		}
-	
+
 		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, 255) );
 	}
 
@@ -1590,11 +1590,45 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 // int16
 
 //JSBool JL_NativeToJsval( JSContext *cx, const int16_t &num, jsval *vp );
-JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, int16_t *num );
+
+ALWAYS_INLINE JSBool
+JL_JsvalToNative( JSContext *cx, const jsval &val, int16_t *num ) {
+
+	if (likely( JSVAL_IS_INT(val) )) {
+
+		jsint tmp = JSVAL_TO_INT(val);
+		if (likely( tmp >= _I16_MIN && tmp <= _I16_MAX )) {
+
+			*num = int16_t(tmp);
+			return JS_TRUE;
+		}
+		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(_I16_MIN, _I16_MAX) );
+	}
+
+	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, int16_t *num )
+
+	jsdouble d;
+	if (likely( JSVAL_IS_DOUBLE(val) ))
+		d = JSVAL_TO_DOUBLE(val);
+	else
+		JL_CHK( JS_ValueToNumber(cx, val, &d) );
+
+	if (likely( d >= jsdouble(_I16_MIN) && d <= jsdouble(_I16_MAX) )) {
+
+		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
+		*num = int16_t(d);
+		return JS_TRUE;
+	}
+
+	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(_I16_MIN, _I16_MAX) );
+	JL_BAD;
+
+	UNLIKELY_SPLIT_END(cx, val, num)
+
+}
 
 
 // uint16
-
 
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const uint16_t &num, jsval *vp ) {
@@ -2078,7 +2112,7 @@ ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, void *ptr, jsval *vp ) {
 
 	if ( ((uint32)ptr & 1) == 0 ) {
-	
+
 		*vp = PRIVATE_TO_JSVAL(ptr);
 	} else {
 
@@ -2139,7 +2173,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, void **ptr ) {
 			ASSERT(false);
 		}
 	} else {
-		
+
 		JL_CHKM( JSVAL_IS_DOUBLE(val), E_JSLIBS, E_INTERNAL );
 		*ptr = JSVAL_TO_PRIVATE(val);
 	}
@@ -2769,7 +2803,7 @@ ErrorReporter_ToString(JSContext *cx, const char *message, JSErrorReport *report
 
 ALWAYS_INLINE JSBool
 JL_ReportExceptionToString( JSContext *cx, JSObject *obj, JLStr  ) {
-	
+
 	JSErrorReporter prevEr = JS_SetErrorReporter(cx, ErrorReporter_ToString);
 	JS_ReportPendingException(cx);
 	JS_SetErrorReporter(cx, prevEr);
@@ -3096,7 +3130,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 	int res;
 	res = read(scriptFile, (void*)scriptBuffer, (unsigned int)scriptFileSize);
 	close(scriptFile);
-	
+
 	//JL_CHKM( res >= 0, "Unable to read file \"%s\".", fileName );
 	JL_CHKM( res >= 0, E_FILE, E_NAME(fileName), E_READ );
 

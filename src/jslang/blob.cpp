@@ -951,13 +951,12 @@ DEFINE_GET_PROPERTY() {
 		return JS_TRUE;
 
 	jschar chr;
-	chr = buffer[slot];
+	chr = buffer[slot] & 0xff;
 	JSString *str1;
 	str1 = JS_NewUCStringCopyN(cx, &chr, 1);
 	JL_CHK( str1 );
-
 	*vp = STRING_TO_JSVAL(str1);
-
+	// *vp = INT_TO_JSVAL( buffer[slot] & 0xff );
 	return JS_TRUE;
 	JL_BAD;
 }
