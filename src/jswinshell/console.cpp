@@ -269,7 +269,6 @@ DEFINE_FUNCTION( FillConsoleOutput ) {
 }
 
 
-
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME( scrollY )
@@ -789,6 +788,51 @@ DEFINE_FUNCTION( SetCursorPosition ) {
 
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME
+**/
+DEFINE_PROPERTY_GETTER( cursorSize ) {
+
+	BOOL res;
+	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_CURSOR_INFO cursorInfo;
+	res = GetConsoleCursorInfo(hStdout, &cursorInfo);
+	if ( res == 0 )
+		return WinThrowError(cx, GetLastError());
+	*vp = cursorInfo.bVisible == TRUE ? INT_TO_JSVAL(cursorInfo.dwSize) : 0;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_SETTER( cursorSize ) {
+
+	BOOL res;
+	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_CURSOR_INFO cursorInfo;
+	res = GetConsoleCursorInfo(hStdout, &cursorInfo);
+	if ( res == 0 )
+		return WinThrowError(cx, GetLastError());
+	DWORD size;
+	JL_CHK( JL_JsvalToNative(cx, *vp, &size) );
+	if ( size == 0 ) {
+
+		cursorInfo.bVisible = FALSE;
+	} else {
+
+		cursorInfo.bVisible = TRUE;
+		cursorInfo.dwSize = size;
+	}
+	res = SetConsoleCursorInfo(hStdout, &cursorInfo);
+	if ( res == 0 )
+		return WinThrowError(cx, GetLastError());
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
@@ -818,6 +862,7 @@ CONFIGURE_CLASS
 		PROPERTY( textAttribute )
 		PROPERTY( cursorPositionX )
 		PROPERTY( cursorPositionY )
+		PROPERTY( cursorSize )
 	END_STATIC_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC
