@@ -230,21 +230,23 @@ window.setTimeout = function(fct, delay) {
 	timeoutList.push(arguments);
 }
 
-window.document = {};
-window.document.getElementById = function(id) {
+window.document = new function() {
 
-	if ( id == "text_clipboard" ) {
-		
-		return {
-			get value(){
-		    
-				return new File('clipboard').content || '';
-			},
-			set value(val){
-		    
-				new File('clipboard').content = val || undefined;
-			}
-    	}
+	this.getElementById = function(id) {
+
+		if ( id == "text_clipboard" ) {
+			
+			return {
+				get value() {
+			    
+					return new File('clipboard').content || '';
+				},
+				set value(val) {
+			    
+					new File('clipboard').content = val || undefined;
+				}
+    		}
+		}
 	}
 }
 
@@ -268,6 +270,6 @@ while ( endSignal != 2 ) {
 	var to = timeoutList.shift();
 	if ( !to )
 		break;
-	ProcessEvents(Console.Events(), EndSignalEvents(endHandler), TimeoutEvents(to[1]));
+	var mask = ProcessEvents(Console.Events(), EndSignalEvents(endHandler), TimeoutEvents(to[1]));
 	to[0]();
 }
