@@ -9,13 +9,16 @@ var noop = function() {}
 // Term
 function Term(fa, ga, ha) {
 
+	this.ha = ha;
+
 	Console.cursorSize = 100;
 	Console.width = fa;
 	Console.height = ga;
+	this.defaultTextAttribute = Console.textAttribute;
 	
 	this.SendKeys = function(ta) {
 	
-		ha(ta);
+		this.ha(ta);
 	}
 
 	Console.onMouseDown = function(x, y, button, alt, ctrl, shift) {
@@ -95,7 +98,7 @@ function Term(fa, ga, ha) {
 		Console.FOREGROUND_GREEN | Console.FOREGROUND_INTENSITY, 
 		Console.FOREGROUND_RED | Console.FOREGROUND_GREEN | Console.FOREGROUND_INTENSITY, 
 		Console.FOREGROUND_BLUE | Console.FOREGROUND_INTENSITY, 
-		Console.FOREGROUND_BLUE, Console.FOREGROUND_RED | Console.FOREGROUND_INTENSITY, 
+		Console.FOREGROUND_BLUE | Console.FOREGROUND_RED | Console.FOREGROUND_INTENSITY, 
 		Console.FOREGROUND_GREEN | Console.FOREGROUND_BLUE | Console.FOREGROUND_INTENSITY, 
 		Console.FOREGROUND_RED | Console.FOREGROUND_GREEN | Console.FOREGROUND_BLUE | Console.FOREGROUND_INTENSITY
 	];
@@ -119,6 +122,9 @@ Term.prototype.write = function (ta) {
         switch (this.state) {
         case ya:
             switch (c) {
+				case 27: // <ESC>
+					this.state = za;
+					break;
             default:
                 if (c < 32)
 	                break;
@@ -126,75 +132,76 @@ Term.prototype.write = function (ta) {
             case 9:
             case 10:
             case 13:
-				Console.Write(ta.charAt(i));
-				break;
-            case 27: // <ESC>
-                this.state = za;
-                break;
+					Console.Write(ta.charAt(i));
             }
             break;
         case za:
-            if (c == 91) { // [
-                this.esc_params = new Array();
-                this.cur_param = 0;
-                this.state = Aa;
-            } else {
-                this.state = ya;
-            }
-            break;
+				if (c == 91) { // [
+				
+					this.esc_params = [];
+					this.cur_param = 0;
+					this.state = Aa;
+				} else {
+				
+					this.state = ya;
+				}
+				break;
         case Aa:
             if (c >= 48 && c <= 57) { // 0-9
-            
-                this.cur_param = this.cur_param * 10 + c - 48;
+					
+					//esc_params
+					this.cur_param = this.cur_param * 10 + c - 48;
             } else {
-            
-                this.esc_params[this.esc_params.length] = this.cur_param;
-                this.cur_param = 0;
-                if (c == 59) // ;
-					break;
-                this.state = ya;
-                switch (c) {
-                case 65: // Cursor Up		<ESC>[{COUNT}A
-					Console.cursorPositionY -= this.esc_params[0];
-                    break;
-                case 66: // Cursor Down		<ESC>[{COUNT}B
-					Console.cursorPositionY += this.esc_params[0];
-                    break;
-                case 67: // Cursor Forward		<ESC>[{COUNT}C
-					Console.cursorPositionX += this.esc_params[0];
-                    break;
-                case 68: // Cursor Backward		<ESC>[{COUNT}D
-					Console.cursorPositionX -= this.esc_params[0];
-                    break;
-                case 102: // Force Cursor Position	<ESC>[{ROW};{COLUMN}f
-                case 72: // Cursor Home 		<ESC>[{ROW};{COLUMN}H
-					Console.cursorPositionX = (this.esc_params[1] || 1) - 1;
-					Console.cursorPositionY = (this.esc_params[0] || 1) - 1;
-                    break;
-                case 74: // Erase Down		<ESC>[J
-					Console.FillConsoleOutput(0, Console.cursorPositionY+1, Console.width, Console.height - Console.cursorPositionY-1, ' ', Console.textAttribute);
-                case 75: // Erase End of Line	<ESC>[K
-					Console.FillConsoleOutput(Console.cursorPositionX, Console.cursorPositionY, Console.width - Console.cursorPositionX, 1, ' ', Console.textAttribute);
-                    break;
-                case 109: // Set Attribute Mode	<ESC>[{attr1};...;{attrn}m
-					for ( var i = 0; i < this.esc_params.length; ++i ) {
 
-						n = this.esc_params[i];
-						if (n >= 30 && n <= 37) {
-							Console.textAttribute = (Console.textAttribute & ~15) | (this.color[n - 30]);
-						} else if (n >= 40 && n <= 47) {
-							Console.textAttribute = (Console.textAttribute & ~ (15 << 4)) | (this.color[n - 40] << 4);
-						} else if (n == 0) {
-							Console.textAttribute = 15; // default
-						}
+					this.esc_params[this.esc_params.length] = this.cur_param;
+					this.cur_param = 0;
+					if (c == 59) // ;
+						break;
+					this.state = ya;
+					switch (c) {
+						case 65: // Cursor Up		<ESC>[{COUNT}A
+							Console.cursorPositionY -= this.esc_params[0];
+							break;
+						case 66: // Cursor Down		<ESC>[{COUNT}B
+							Console.cursorPositionY += this.esc_params[0];
+							break;
+						case 67: // Cursor Forward		<ESC>[{COUNT}C
+							Console.cursorPositionX += this.esc_params[0];
+							break;
+						case 68: // Cursor Backward		<ESC>[{COUNT}D
+							Console.cursorPositionX -= this.esc_params[0];
+							break;
+						case 102: // Force Cursor Position	<ESC>[{ROW};{COLUMN}f
+						case 72: // Cursor Home 		<ESC>[{ROW};{COLUMN}H
+							
+							Console.cursorPositionX = (this.esc_params[1] || 1) - 1;
+							Console.cursorPositionY = (this.esc_params[0] || 1) - 1;
+							break;
+						case 74: // Erase Down		<ESC>[J
+							Console.FillConsoleOutput(0, Console.cursorPositionY+1, Console.width, Console.height - Console.cursorPositionY-1, ' ', Console.textAttribute);
+						case 75: // Erase End of Line	<ESC>[K
+							Console.FillConsoleOutput(Console.cursorPositionX, Console.cursorPositionY, Console.width - Console.cursorPositionX, 1, ' ', Console.textAttribute);
+							break;
+						case 109: // Set Attribute Mode	<ESC>[{attr1};...;{attrn}m
+							for ( var i = 0; i < this.esc_params.length; ++i ) {
+
+								n = this.esc_params[i];
+								if (n >= 30 && n <= 37) {
+									Console.textAttribute = (Console.textAttribute & ~15) | (this.color[n - 30]);
+								} else if (n >= 40 && n <= 47) {
+									Console.textAttribute = (Console.textAttribute & ~(15 << 4)) | (this.color[n - 40] << 4);
+								} else if (n == 0) {
+									Console.textAttribute = this.defaultTextAttribute; // default
+								} else {
+								}
+							}
+							break;
+						case 110: // n
+							this.ha("\x1b[" + (Console.cursorPositionY + 1) + ";" + (Console.cursorPositionX + 1) + "R");
+							break;
 					}
-                    break;
-                case 110: // n
-					ha("\x1b[" + (Console.cursorPositionY + 1) + ";" + (Console.cursorPositionX + 1) + "R");
-                    break;
-                }
-            }
-            break;
+				}
+				break;
         }
     }
 }
@@ -252,7 +259,7 @@ window.document = new function() {
 
 // main
 
-Exec('cpux86-ta_src.js');
+Exec('cpux86-ta.js');
 Exec('jslinux.js');
 start();
 
@@ -270,6 +277,6 @@ while ( endSignal != 2 ) {
 	var to = timeoutList.shift();
 	if ( !to )
 		break;
-	var mask = ProcessEvents(Console.Events(), EndSignalEvents(endHandler), TimeoutEvents(to[1]));
+	var mask = ProcessEvents(Console.Events(), EndSignalEvents(endHandler), TimeoutEvents(to[1]/10));
 	to[0]();
 }
