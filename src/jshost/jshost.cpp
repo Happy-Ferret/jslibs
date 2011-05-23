@@ -62,7 +62,7 @@ static unsigned char embeddedBootstrapScript[] =
 		} \
 	JL_MACRO_END
 
-volatile bool gEndSignalState = false;
+volatile int gEndSignalState = 0;
 JLCondHandler gEndSignalCond;
 JLMutexHandler gEndSignalLock;
 
@@ -71,7 +71,9 @@ JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
 	JL_USE(obj);
 	JL_USE(id);
-	return JL_NativeToJsval(cx, bool(gEndSignalState), vp);
+	//return JL_NativeToJsval(cx, (int)gEndSignalState, vp);
+	*vp = INT_TO_JSVAL(gEndSignalState);
+	return JS_TRUE;
 }
 
 JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp) {
@@ -80,7 +82,7 @@ JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsv
 	JL_USE(id);
 	JL_USE(strict);
 
-	bool tmp;
+	int tmp;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tmp) );
 
 	JLMutexAcquire(gEndSignalLock);
@@ -100,9 +102,9 @@ BOOL WINAPI Interrupt(DWORD CtrlType) {
 //	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT) // CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
 //		return FALSE;
 
-	JL_USE(CtrlType);
+	//JL_USE(CtrlType);
 	JLMutexAcquire(gEndSignalLock);
-	gEndSignalState = true;
+	gEndSignalState = (CtrlType == CTRL_C_EVENT ? 1 : 2);
 	JLCondBroadcast(gEndSignalCond);
 	JLMutexRelease(gEndSignalLock);
 
@@ -112,7 +114,7 @@ BOOL WINAPI Interrupt(DWORD CtrlType) {
 void Interrupt(int CtrlType) {
 
 	JLMutexAcquire(gEndSignalLock);
-	gEndSignalState = true;
+	gEndSignalState = 1;
 	JLCondBroadcast(gEndSignalCond);
 	JLMutexRelease(gEndSignalLock);
 
@@ -137,7 +139,7 @@ void EndSignalStartWait( volatile ProcessEvent *pe ) {
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	JLMutexAcquire(gEndSignalLock);
-	while ( !gEndSignalState && !upe->cancel )
+	while ( gEndSignalState == 0 && !upe->cancel )
 		JLCondWait(gEndSignalCond, gEndSignalLock);
 	JLMutexRelease(gEndSignalLock);
 }
@@ -159,7 +161,7 @@ JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *c
 	JL_USE(obj);
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	*hasEvent = gEndSignalState;
+	*hasEvent = gEndSignalState != 0;
 	if ( !*hasEvent )
 		return JS_TRUE;
 	jsval rval;

@@ -850,7 +850,7 @@ DEFINE_FUNCTION( GUIDToString ) {
 	CopyMemory(&guid, str.GetConstStr(), sizeof(GUID));
 	WCHAR szGuid[39];
 	int len = StringFromGUID2(guid, szGuid, 39);
-	ASSERT( len = 39 );
+	ASSERT( len == 39 );
 	ASSERT( szGuid[38] == 0 );
 
 	JL_CHK( JL_NativeToJsval(cx, szGuid, 38, JL_RVAL) );

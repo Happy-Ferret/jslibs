@@ -950,7 +950,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Exec ) {
 
 	JLStr str;
-	JSObject *scriptObjRoot;
+//	JSObject *scriptObjRoot;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -962,16 +962,16 @@ DEFINE_FUNCTION( Exec ) {
 
 	uint32 oldopts;
 	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); // JSOPTION_COMPILE_N_GO is properly removed in JLLoadScript if needed.
-	JSScript *script;
+	JSObject *script;
 	script = JL_LoadScript(cx, obj, str, useAndSaveCompiledScripts, useAndSaveCompiledScripts);
 	JS_SetOptions(cx, oldopts);
 	JL_CHK( script );
 
-	scriptObjRoot = JS_NewScriptObject(cx, script);
+//	scriptObjRoot = JS_NewScriptObject(cx, script);
 	
 	JSBool ok;
 	ok = JS_ExecuteScript(cx, obj, script, JL_RVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
-	JS_DestroyScript(cx, script);
+//	JS_DestroyScript(cx, script);
 	JL_CHK( ok );
 
 	return JS_TRUE;

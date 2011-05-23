@@ -4755,7 +4755,7 @@ DEFINE_FUNCTION( UniformFloatVector ) {
 		GLfloat val[4]; // max for *4fv
 //		JSObject *arr = JSVAL_TO_OBJECT(JL_ARG(2));
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), val, COUNTOF(val), &len) );
-		JL_ASSERT_RANGE(len, 0, 4, "vec.length" );
+		JL_ASSERT_RANGE(len, (jsuint)0, (jsuint)4, "vec.length" );
 
 		ASSERT( len >= 0 && len <= 4 );
 		(len == 3 ? glUniform3fvARB : len == 4 ? glUniform4fvARB : len == 2 ? glUniform2fvARB : len == 1 ? glUniform1fvARB : NULL)(uniformLocation, 1, val);  OGL_ERR_CHK;

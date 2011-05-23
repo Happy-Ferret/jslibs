@@ -449,7 +449,7 @@ JSBool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 
 		if ( numberOfEventsRead > 0 ) {
 
-			jsval fct, argv[7];
+			jsval fct, argv[8];
 			switch ( inputRecord.EventType ) {
 				case KEY_EVENT: {
 
@@ -477,46 +477,45 @@ JSBool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 	
 						eventName = inputRecord.Event.MouseEvent.dwButtonState == 0 ? "onMouseUp" : "onMouseDown";
 					} else {
-					switch ( inputRecord.Event.MouseEvent.dwEventFlags ) {
+						switch ( inputRecord.Event.MouseEvent.dwEventFlags ) {
 						case MOUSE_MOVED:
 							eventName = "onMouseMove";
 							break;
 						case DOUBLE_CLICK:
-							eventName = "onMouseMove";
+							eventName = "onDblClick";
 							break;
 						case MOUSE_WHEELED:
-							eventName = "onMouseMove";
-							break;
-						default:
+							eventName = "onMouseWheel";
 							break;
 						}
 					}
-
 					JL_CHK( JS_GetProperty(cx, upe->obj, eventName, &fct) );
 					if ( JL_ValueIsFunction(cx, fct) ) {
 
 						argv[1] = INT_TO_JSVAL(inputRecord.Event.MouseEvent.dwMousePosition.X);
 						argv[2] = INT_TO_JSVAL(inputRecord.Event.MouseEvent.dwMousePosition.Y);
-						argv[3] = INT_TO_JSVAL(inputRecord.Event.MouseEvent.dwButtonState);
-						argv[4] = BOOLEAN_TO_JSVAL(inputRecord.Event.MouseEvent.dwControlKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED));
-						argv[5] = BOOLEAN_TO_JSVAL(inputRecord.Event.MouseEvent.dwControlKeyState & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED));
-						argv[6] = BOOLEAN_TO_JSVAL(inputRecord.Event.MouseEvent.dwControlKeyState & SHIFT_PRESSED);
-
-						JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, 6, argv+1, argv) );
+						argv[3] = INT_TO_JSVAL(inputRecord.Event.MouseEvent.dwButtonState & 0x0000FFFF);
+						argv[4] = INT_TO_JSVAL((signed int)inputRecord.Event.MouseEvent.dwButtonState >> 16);
+						argv[5] = BOOLEAN_TO_JSVAL(inputRecord.Event.MouseEvent.dwControlKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED));
+						argv[6] = BOOLEAN_TO_JSVAL(inputRecord.Event.MouseEvent.dwControlKeyState & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED));
+						argv[7] = BOOLEAN_TO_JSVAL(inputRecord.Event.MouseEvent.dwControlKeyState & SHIFT_PRESSED);
+						JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, 7, argv+1, argv) );
 					}
 					break;
 				}
+
 				case WINDOW_BUFFER_SIZE_EVENT: {
 
 					JL_CHK( JS_GetProperty(cx, upe->obj, "onSize", &fct) );
 					if ( JL_ValueIsFunction(cx, fct) ) {
 
-						argv[1] = INT_TO_JSVAL(inputRecord.Event.KeyEvent.wVirtualKeyCode);
-						argv[2] = INT_TO_JSVAL(inputRecord.Event.KeyEvent.wVirtualScanCode);
+						argv[1] = INT_TO_JSVAL(inputRecord.Event.WindowBufferSizeEvent.dwSize.X);
+						argv[2] = INT_TO_JSVAL(inputRecord.Event.WindowBufferSizeEvent.dwSize.Y);
 						JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, 2, argv+1, argv) );
 					}
 					break;
 				}
+
 				case FOCUS_EVENT: {
 
 					JL_CHK( JS_GetProperty(cx, upe->obj, "onFocus", &fct) );
@@ -601,7 +600,11 @@ DEFINE_PROPERTY_SETTER( width ) {
 	res = GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	csbiInfo.srWindow.Right = csbiInfo.srWindow.Left + JSVAL_TO_INT(*vp) - 1;
+	JL_CHK( JL_JsvalToNative(cx, *vp, &csbiInfo.srWindow.Right) );
+	csbiInfo.srWindow.Right += csbiInfo.srWindow.Left - 1;
+
+	// GetLargestConsoleWindowSize
+
 	res = SetConsoleWindowInfo(hStdout, TRUE, &csbiInfo.srWindow);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
@@ -636,7 +639,8 @@ DEFINE_PROPERTY_SETTER( height ) {
 	res = GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	csbiInfo.srWindow.Bottom = csbiInfo.srWindow.Top + JSVAL_TO_INT(*vp) - 1;
+	JL_CHK( JL_JsvalToNative(cx, *vp, &csbiInfo.srWindow.Bottom) );
+	csbiInfo.srWindow.Bottom += csbiInfo.srWindow.Top - 1;
 	res = SetConsoleWindowInfo(hStdout, TRUE, &csbiInfo.srWindow);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
@@ -713,8 +717,9 @@ DEFINE_PROPERTY_SETTER( cursorPositionX ) {
 	res = GetConsoleScreenBufferInfo(hStdout, &consoleScreenBufferInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	JL_CHK( JL_JsvalToNative(cx, *vp, &consoleScreenBufferInfo.dwCursorPosition.X) );
-	consoleScreenBufferInfo.dwCursorPosition.X += consoleScreenBufferInfo.srWindow.Left;
+	SHORT x;
+	JL_CHK( JL_JsvalToNative(cx, *vp, &x) );
+	consoleScreenBufferInfo.dwCursorPosition.X = consoleScreenBufferInfo.srWindow.Left + JL_INRANGE(x, 0, consoleScreenBufferInfo.srWindow.Right - consoleScreenBufferInfo.srWindow.Left);
 	res = SetConsoleCursorPosition(hStdout, consoleScreenBufferInfo.dwCursorPosition);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
@@ -747,8 +752,9 @@ DEFINE_PROPERTY_SETTER( cursorPositionY ) {
 	res = GetConsoleScreenBufferInfo(hStdout, &consoleScreenBufferInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	JL_CHK( JL_JsvalToNative(cx, *vp, &consoleScreenBufferInfo.dwCursorPosition.Y) );
-	consoleScreenBufferInfo.dwCursorPosition.Y += consoleScreenBufferInfo.srWindow.Top;
+	SHORT y;
+	JL_CHK( JL_JsvalToNative(cx, *vp, &y) );
+	consoleScreenBufferInfo.dwCursorPosition.Y = consoleScreenBufferInfo.srWindow.Top + JL_INRANGE(y, 0, consoleScreenBufferInfo.srWindow.Bottom - consoleScreenBufferInfo.srWindow.Top);
 	res = SetConsoleCursorPosition(hStdout, consoleScreenBufferInfo.dwCursorPosition);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
@@ -801,7 +807,7 @@ DEFINE_PROPERTY_GETTER( cursorSize ) {
 	res = GetConsoleCursorInfo(hStdout, &cursorInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	*vp = cursorInfo.bVisible == TRUE ? INT_TO_JSVAL(cursorInfo.dwSize) : 0;
+	*vp = INT_TO_JSVAL( cursorInfo.bVisible == TRUE ? cursorInfo.dwSize : 0 );
 	return JS_TRUE;
 	JL_BAD;
 }

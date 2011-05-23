@@ -157,7 +157,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	int st;
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
 
-	JL_ASSERT_ARGC_RANGE( 1, (int)COUNTOF(mpv->processEventThreadInfo) );
+	JL_ASSERT_ARGC_RANGE( 1, COUNTOF(mpv->processEventThreadInfo) );
 	ProcessEvent *peList[COUNTOF(mpv->processEventThreadInfo)]; // cache to avoid calling GetHandlePrivate() too often.
 
 	uintN i;

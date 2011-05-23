@@ -216,7 +216,7 @@ DEFINE_CONSTRUCTOR() {
 		case mode_ecb: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_ECB));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IV == NULL, "Initialization vector is invalid for this mode." );
 			JL_ASSERT_WARN( !optarg.IsSet(), E_ARG, E_NUM(5), E_IGNORED );
 			err = ecb_start( cipherIndex, (const unsigned char *)key.GetConstStr(), (int)key.Length(), numRounds, (symmetric_ECB *)pv->symmetric_XXX );
@@ -225,7 +225,7 @@ DEFINE_CONSTRUCTOR() {
 		case mode_cfb: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_CFB));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			JL_ASSERT_WARN( !optarg.IsSet(), E_ARG, E_NUM(5), E_IGNORED );
 			err = cfb_start( cipherIndex, (const unsigned char *)IV.GetConstStrZ(), (const unsigned char *)key.GetConstStr(), (int)key.Length(), numRounds, (symmetric_CFB *)pv->symmetric_XXX );
@@ -234,7 +234,7 @@ DEFINE_CONSTRUCTOR() {
 		case mode_ofb: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_OFB));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			JL_ASSERT_WARN( !optarg.IsSet(), E_ARG, E_NUM(5), E_IGNORED );
 			err = ofb_start( cipherIndex, (const unsigned char *)IV.GetConstStrZ(), (const unsigned char *)key.GetConstStr(), (int)key.Length(), numRounds, (symmetric_OFB *)pv->symmetric_XXX );
@@ -243,7 +243,7 @@ DEFINE_CONSTRUCTOR() {
 		case mode_cbc: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_CBC));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			JL_ASSERT_WARN( !optarg.IsSet(), E_ARG, E_NUM(5), E_IGNORED );
 			err = cbc_start( cipherIndex, (const unsigned char *)IV.GetConstStrZ(), (const unsigned char *)key.GetConstStr(), (int)key.Length(), numRounds, (symmetric_CBC *)pv->symmetric_XXX );
@@ -252,7 +252,7 @@ DEFINE_CONSTRUCTOR() {
 		case mode_ctr: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_CTR));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			JL_ASSERT_WARN( !optarg.IsSet(), E_ARG, E_NUM(5), E_IGNORED );
 			err = ctr_start( cipherIndex, (const unsigned char *)IV.GetConstStrZ(), (const unsigned char *)key.GetConstStr(), (int)key.Length(), numRounds, CTR_COUNTER_LITTLE_ENDIAN, (symmetric_CTR *)pv->symmetric_XXX );
@@ -261,7 +261,7 @@ DEFINE_CONSTRUCTOR() {
 		case mode_lrw: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_LRW));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			JL_ASSERT( optarg.IsSet() && optarg.Length() == key.Length(), E_ARG, E_NUM(5), E_SEP, E_STR("tweak"), E_LENGTH, E_NUM((int)key.Length()) );
 			err = lrw_start( cipherIndex, (const unsigned char *)IV.GetConstStrZ(), (const unsigned char *)key.GetConstStr(), (int)key.Length(), (const unsigned char *)optarg.GetConstStrZ(), numRounds, (symmetric_LRW *)pv->symmetric_XXX );
@@ -270,7 +270,7 @@ DEFINE_CONSTRUCTOR() {
 		case mode_f8: {
 			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_F8));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 			JL_ASSERT( optarg.LengthOrZero(), E_ARG, E_NUM(5), E_COMMENT("salt"), E_REQUIRED );
 			err = f8_start( cipherIndex, (const unsigned char *)IV.GetConstStrZ(), (const unsigned char *)key.GetConstStr(), (int)key.Length(), (const unsigned char *)optarg.GetStrConstOrNull(), (int)optarg.LengthOrZero(), numRounds, (symmetric_F8 *)pv->symmetric_XXX );
