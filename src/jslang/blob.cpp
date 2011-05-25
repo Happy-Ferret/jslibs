@@ -345,8 +345,9 @@ DEFINE_FUNCTION( ReloacateToArray ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
 
-	JL_CHK( js::ArrayBuffer::create(cx, 0, NULL, js::Valueify(JL_RVAL)) );
-	js::ArrayBuffer *buffer = js::ArrayBuffer::fromJSObject(JSVAL_TO_OBJECT(*JL_RVAL));
+	JSObject *bufObj = js::ArrayBuffer::create(cx, 0);
+	JL_CHK( bufObj );
+	js::ArrayBuffer *buffer = js::ArrayBuffer::fromJSObject(bufObj);
 
 	ASSERT(buffer->byteLength == 0);
 	ASSERT(buffer->data == NULL); //	buffer->freeStorage(cx);
