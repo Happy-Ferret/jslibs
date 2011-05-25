@@ -1,5 +1,10 @@
 LoadModule('jsstd');
 
+/// Blob char value [ftrm]
+
+	var b = Blob('\xff');
+	QA.ASSERT( b.charAt(0).charCodeAt(0), 255, 'blob access by char' );
+
 /// ReadOnlyGlobalClasses [ftrm]
 
 		var bstr = Blob;

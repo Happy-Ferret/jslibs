@@ -869,7 +869,7 @@ DEFINE_FUNCTION( charAt ) {
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &buffer) );
 
 	jschar chr;
-	chr = buffer[size_t(d)];
+	chr = buffer[size_t(d)] & 0xff;
 
 	JSString *str;
 	str = JS_NewUCStringCopyN(cx, &chr, 1);
@@ -1088,7 +1088,7 @@ JSBool next_foreach(JSContext *cx, uintN argc, jsval *vp) {
 	JL_CHK( BlobBuffer(cx, blobObj, &buf) );
 
 	jschar chr;
-	chr = buf[pos];
+	chr = buf[pos] & 0xff;
 	JSString *str;
 	str = JS_NewUCStringCopyN(cx, &chr, 1);
 	JL_CHK( str );

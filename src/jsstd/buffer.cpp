@@ -1034,7 +1034,7 @@ DEFINE_GET_PROPERTY() {
 
 				//JL_CHK( JL_JsvalToNative(cx, *pNewStr, &chunk) ); // items in the queue are GC protected.
 
-				const jschar chr = str.GetConstStr()[slot - offset];
+				const jschar chr = str.GetConstStr()[slot - offset] & 0xff;
 				JSString *str1 = JS_NewUCStringCopyN(cx, &chr, 1);
 				JL_CHK( str1 );
 				*vp = STRING_TO_JSVAL(str1);
