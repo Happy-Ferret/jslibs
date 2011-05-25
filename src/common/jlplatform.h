@@ -620,22 +620,20 @@ JL_MAX(T a, T b) {
 	return (a) > (b) ? (a) : (b);
 }
 
-/*
 template<class T, class U>
 ALWAYS_INLINE T
-JL_INRANGE(T val, U vmin, U vmax) {
-	return unsigned(val - vmin) <= unsigned(vmax - vmin);
-}
-*/
-
-template<class T, class U>
-ALWAYS_INLINE T
-JL_INRANGE(T val, U vmin, U vmax) {
+JL_MINMAX(T val, U vmin, U vmax) {
 	if ( val >= vmax )
 		return (T)vmax;
 	if ( val <= vmin )
 		return (T)vmin;
 	return val;
+}
+
+template<class T, class U>
+ALWAYS_INLINE bool
+JL_INRANGE(T val, U vmin, U vmax) {
+	return val >= vmin && val <= vmax; // (TBD) test perf. with: return unsigned(val - vmin) <= unsigned(vmax - vmin);
 }
 
 

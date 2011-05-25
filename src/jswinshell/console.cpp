@@ -719,7 +719,7 @@ DEFINE_PROPERTY_SETTER( cursorPositionX ) {
 		return WinThrowError(cx, GetLastError());
 	SHORT x;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &x) );
-	consoleScreenBufferInfo.dwCursorPosition.X = consoleScreenBufferInfo.srWindow.Left + JL_INRANGE(x, 0, consoleScreenBufferInfo.srWindow.Right - consoleScreenBufferInfo.srWindow.Left);
+	consoleScreenBufferInfo.dwCursorPosition.X = consoleScreenBufferInfo.srWindow.Left + JL_MINMAX(x, 0, consoleScreenBufferInfo.srWindow.Right - consoleScreenBufferInfo.srWindow.Left);
 	res = SetConsoleCursorPosition(hStdout, consoleScreenBufferInfo.dwCursorPosition);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
@@ -754,7 +754,7 @@ DEFINE_PROPERTY_SETTER( cursorPositionY ) {
 		return WinThrowError(cx, GetLastError());
 	SHORT y;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &y) );
-	consoleScreenBufferInfo.dwCursorPosition.Y = consoleScreenBufferInfo.srWindow.Top + JL_INRANGE(y, 0, consoleScreenBufferInfo.srWindow.Bottom - consoleScreenBufferInfo.srWindow.Top);
+	consoleScreenBufferInfo.dwCursorPosition.Y = consoleScreenBufferInfo.srWindow.Top + JL_MINMAX(y, 0, consoleScreenBufferInfo.srWindow.Bottom - consoleScreenBufferInfo.srWindow.Top);
 	res = SetConsoleCursorPosition(hStdout, consoleScreenBufferInfo.dwCursorPosition);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
