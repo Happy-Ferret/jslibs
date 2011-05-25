@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "jstypedarray.h"
 #include "blobPub.h"
 
 static const char emptyBlobBuffer[] = "";
@@ -327,6 +328,43 @@ DEFINE_FUNCTION( Free ) {
 	// removes all of obj's own properties, except the special __proto__ and __parent__ properties, in a single operation.
 	// Properties belonging to objects on obj's prototype chain are not affected.
 	JS_ClearScope(cx, JL_OBJ);
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ ArrayBuffer $INAME()
+**/
+DEFINE_FUNCTION( ReloacateToArray ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
+
+	JL_CHK( js::ArrayBuffer::create(cx, 0, NULL, js::Valueify(JL_RVAL)) );
+	js::ArrayBuffer *buffer = js::ArrayBuffer::fromJSObject(JSVAL_TO_OBJECT(*JL_RVAL));
+
+	ASSERT(buffer->byteLength == 0);
+	ASSERT(buffer->data == NULL); //	buffer->freeStorage(cx);
+
+	size_t thisLength;
+	const char *thisBuffer;
+	JL_CHK( BlobBuffer(cx, JL_OBJ, &thisBuffer) );
+	JL_CHK( BlobLength(cx, JL_OBJ, &thisLength) );
+
+	buffer->data = (void*)thisBuffer;
+	buffer->byteLength = thisLength;
+
+	JL_SetPrivate(cx, JL_OBJ, NULL); // InvalidateBlob(cx, JL_OBJ)
+	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_BLOB_JSSTRING, JSVAL_VOID) );
+
+	JSObject *typedArray = js_CreateTypedArrayWithBuffer(cx, js::TypedArray::TYPE_UINT8, JSVAL_TO_OBJECT(*JL_RVAL), 0, buffer->byteLength);
+
+	*JL_RVAL = OBJECT_TO_JSVAL(typedArray);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1345,6 +1383,8 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 
 		FUNCTION(Free)
+		FUNCTION(ReloacateToArray)
+
 		FUNCTION(concat)
 		FUNCTION_ARGC(substr, 2)
 		FUNCTION_ARGC(substring, 2)
