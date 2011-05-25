@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) {
 
 	printf("Script name: %s\n", argc >= 4 ? argv[4] : "(NULL)" );
 	printf("Compiling file %s\n", argv[1]);
-	JSScript *script = JS_CompileFileHandle(cx, globalObject, argc >= 4 ? argv[4] : NULL, srcFile);
+	JSObject *script = JS_CompileFileHandle(cx, globalObject, argc >= 4 ? argv[4] : NULL, srcFile);
 	fclose(srcFile);
 	if ( !script ) {
 
@@ -203,7 +203,7 @@ int main(int argc, char* argv[]) {
 	if ( fileSize > 0 || !allowEmptyDest ) {
 
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
-		JS_XDRScript(xdr, &script);
+		JS_XDRScriptObject(xdr, &script);
 		uint32 length;
 		void *buf = JS_XDRMemGetData(xdr, &length);
 		write(file, buf, length);

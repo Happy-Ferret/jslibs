@@ -2,6 +2,16 @@
 LoadModule('jsio');
 LoadModule('jsdebug');
 
+/// Binary data test
+
+	var filename = QA.RandomString(10);
+	var file = new File(filename);
+	file.content = "\xBC\x00\x30\x01"
+	var data = file.content;
+	file.content = undefined;
+	QA.ASSERT_STR( data[0].quote(), '\xBC' );
+
+
 /// Basic File Read/Write [tr]
 
 	var filename = QA.RandomString(10);

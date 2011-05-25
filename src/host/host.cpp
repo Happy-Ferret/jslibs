@@ -864,12 +864,12 @@ JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnl
 	//principals->refcount = 1;
 	//principals->destroy = HostPrincipalsDestroy;
 
-	JSScript *script;
+	JSObject *script;
 	script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "inline", 1);
 	JL_CHK( script );
 	
 	{
-	JS::Anchor<JSObject*> scriptObjRoot(JS_NewScriptObject(cx, script));
+//	JS::Anchor<JSObject*> scriptObjRoot(JS_NewScriptObject(cx, script));
 
 	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
@@ -880,7 +880,7 @@ JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnl
 	else
 		*rval = JSVAL_VOID;
 
-	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633, which can cause crashes in almost any program that uses JS_DestroyScript.
+//	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633, which can cause crashes in almost any program that uses JS_DestroyScript.
 	}
 
 	JL_CHK( RemoveScriptArguments( cx ) );
@@ -901,12 +901,12 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
 	JL_CHK( CreateScriptArguments(cx, argc, argv) );
 
-	JSScript *script;
+	JSObject *script;
 	script = JL_LoadScript(cx, globalObject, scriptFileName, true, false); // use xdr if available, but don't save it.
 	JL_CHK( script );
 
 	{
-	JS::Anchor<JSObject*> scriptObjRoot(JS_NewScriptObject(cx, script));
+//	JS::Anchor<JSObject*> scriptObjRoot(JS_NewScriptObject(cx, script));
 
 	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
@@ -917,7 +917,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	else
 		*rval = JSVAL_VOID;
 
-	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633 (FIXED), which can cause crashes in almost any program that uses JS_DestroyScript.
+//	JS_DestroyScript(cx, script); // Warning: This API is subject to bug 438633 (FIXED), which can cause crashes in almost any program that uses JS_DestroyScript.
 	}
 
 	JL_CHK( RemoveScriptArguments(cx) );
@@ -934,20 +934,20 @@ JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32 xdrScriptL
 
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
 //	JL_CHKM( JS_EvaluateScript(cx, JL_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
-	JSObject *scriptObjRoot;
+//	JSObject *scriptObjRoot;
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 	JL_CHK( xdr );
 	JS_XDRMemSetData(xdr, xdrScript, xdrScriptLength);
-	JSScript *script;
+	JSObject *script;
 	script = NULL;
-	JL_CHK( JS_XDRScript(xdr, &script) );
+	JL_CHK( JS_XDRScriptObject(xdr, &script) );
 	JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
 	JS_XDRDestroy(xdr);
-	scriptObjRoot = JS_NewScriptObject(cx, script);
+//	scriptObjRoot = JS_NewScriptObject(cx, script);
 //	JL_CHK( SetConfigurationReadonlyValue(cx, JLID_NAME(cx, bootstrapScript), OBJECT_TO_JSVAL(bootstrapScriptObject)) ); // bootstrap script cannot be hidden
 	jsval tmp;
 	JL_CHK( JS_ExecuteScript(cx, JL_GetGlobalObject(cx), script, &tmp) );
-	JS_DestroyScript(cx, script);
+//	JS_DestroyScript(cx, script);
 	JS_SetOptions(cx, prevOpt);
 	return JS_TRUE;
 bad:

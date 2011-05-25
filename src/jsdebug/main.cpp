@@ -112,7 +112,11 @@ done_scriptList:
 	JS_GetPropertyById(cx, moduleObject, mpv->JLID_onNewScript, &jsHookFct); // try to use ids
 	if ( JL_ValueIsFunction(cx, jsHookFct) ) {
 
+#define JS_NewScriptObject(cx, script) (JSObject*)(script)
+		// see. http://code.google.com/r/wes-js185/source/browse/spidermonkey/probe-jsapi.incl#376
+		// see also. https://bugzilla.mozilla.org/show_bug.cgi?id=630209 
 		jsval argv[] = { JSVAL_NULL, JSVAL_NULL, INT_TO_JSVAL( lineno ), OBJECT_TO_JSVAL( JS_NewScriptObject(cx, script) ), OBJECT_TO_JSVAL( JS_GetFunctionObject(fun) ) };
+#undef JS_NewScriptObject
 		JL_CHK( JL_NativeToJsval(cx, filename, &argv[1]) );
 
 		JSBool status;

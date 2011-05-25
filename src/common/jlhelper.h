@@ -822,7 +822,7 @@ enum E_TXTID {
 };
 
 // simple helpers
-#define E_ERRNO( num )                E_ERRNO_1, num
+#define E_ERRNO( num )                E_ERRNO_1, num 
 #define E_STR( str )                  E_STR_1, str
 #define E_NAME( str )                 E_NAME_1, str
 #define E_NUM( num )                  E_NUM_1, num
@@ -946,7 +946,7 @@ enum E_TXTID {
 //
 
 #define JL_ASSERT_RANGE(val, valMin, valMax, context) \
-	JL_ASSERT( JL_INRANGE(val, valMin, valMax), E_VALUE, E_STR(context), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
+	JL_ASSERT( JL_INRANGE((int)val, (int)valMin, (int)valMax), E_VALUE, E_STR(context), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
 
 
 // arg
@@ -958,7 +958,7 @@ enum E_TXTID {
 	JL_ASSERT( JL_ARGC <= (maxCount), E_ARGC, E_MAX, E_NUM(maxCount) )
 
 #define JL_ASSERT_ARGC_RANGE(minCount, maxCount) \
-	JL_ASSERT( JL_INRANGE(JL_ARGC, (minCount), (maxCount)), E_ARGC, E_RANGE, E_INTERVAL_NUM(minCount, maxCount) )
+	JL_ASSERT( JL_INRANGE((int)JL_ARGC, (int)minCount, (int)maxCount), E_ARGC, E_RANGE, E_INTERVAL_NUM(uintN(minCount), uintN(maxCount)) )
 
 #define JL_ASSERT_ARG_COUNT(count) \
 	JL_ASSERT( JL_ARGC == (count), E_ARGC, E_EQUALS, E_NUM(count) )
@@ -998,7 +998,7 @@ enum E_TXTID {
 	JL_ASSERT( condition, E_ARG, E_NUM(argNum), E_TYPE, E_NAME(typeStr) )
 
 #define JL_ASSERT_ARG_VAL_RANGE(val, valMin, valMax, argNum) \
-	JL_ASSERT( JL_INRANGE(val, valMin, valMax), E_ARG, E_NUM(argNum), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
+	JL_ASSERT( JL_INRANGE((int)val, (int)valMin, (int)valMax), E_ARG, E_NUM(argNum), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
 
 //
 
@@ -1560,7 +1560,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 			*num = uint8_t(tmp);
 			return JS_TRUE;
 		}
-
+	
 		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, 255) );
 	}
 
@@ -1630,6 +1630,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int16_t *num ) {
 
 // uint16
 
+
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const uint16_t &num, jsval *vp ) {
 
@@ -1645,12 +1646,12 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint16_t *num ) {
 	if (likely( JSVAL_IS_INT(val) )) {
 
 		jsint tmp = JSVAL_TO_INT(val);
-		if (likely( tmp >= 0 && tmp <= _UI16_MAX )) {
+		if (likely( tmp <= _UI16_MAX )) {
 
 			*num = uint16_t(tmp);
 			return JS_TRUE;
 		}
-		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, 65535) );
+		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, _UI16_MAX) );
 	}
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint16_t *num )
@@ -1668,7 +1669,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint16_t *num ) {
 		return JS_TRUE;
 	}
 
-	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, 65535) );
+	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, _UI16_MAX) );
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, num)
@@ -2112,7 +2113,7 @@ ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, void *ptr, jsval *vp ) {
 
 	if ( ((uint32)ptr & 1) == 0 ) {
-
+	
 		*vp = PRIVATE_TO_JSVAL(ptr);
 	} else {
 
@@ -2173,7 +2174,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, void **ptr ) {
 			ASSERT(false);
 		}
 	} else {
-
+		
 		JL_CHKM( JSVAL_IS_DOUBLE(val), E_JSLIBS, E_INTERNAL );
 		*ptr = JSVAL_TO_PRIVATE(val);
 	}
@@ -2803,7 +2804,7 @@ ErrorReporter_ToString(JSContext *cx, const char *message, JSErrorReport *report
 
 ALWAYS_INLINE JSBool
 JL_ReportExceptionToString( JSContext *cx, JSObject *obj, JLStr  ) {
-
+	
 	JSErrorReporter prevEr = JS_SetErrorReporter(cx, ErrorReporter_ToString);
 	JS_ReportPendingException(cx);
 	JS_SetErrorReporter(cx, prevEr);
@@ -3000,7 +3001,7 @@ JL_JsvalToPrimitive( JSContext * RESTRICT cx, const jsval &val, jsval * RESTRICT
 //	on your script object.
 //
 //	/be
-INLINE NEVER_INLINE JSScript* FASTCALL
+INLINE NEVER_INLINE JSObject* FASTCALL
 JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RESTRICT fileName, bool useCompFile, bool saveCompFile) {
 
 	char *scriptBuffer = NULL;
@@ -3008,7 +3009,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 	jschar *scriptText = NULL;
 	size_t scriptTextLength;
 
-	JSScript *script = NULL;
+	JSObject *script = NULL;
 	void *data = NULL;
 	uint32 prevOpts = JS_GetOptions(cx);
 
@@ -3044,7 +3045,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 //		void *debugErrorHookData = cx->debugHooks->debugErrorHookData;
 //		JS_SetDebugErrorHook(JL_GetRuntime(cx), NULL, NULL);
 
-		JSBool status = JS_XDRScript(xdr, &script);
+		JSBool status = JS_XDRScriptObject(xdr, &script);
 
 //		JS_SetDebugErrorHook(JL_GetRuntime(cx), debugErrorHook, debugErrorHookData);
 //		if (cx->lastMessage)
@@ -3061,7 +3062,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 			jl_freea(data);
 			data = NULL;
 
-			JL_ASSERT_WARN( JS_GetScriptVersion(cx, script) >= JS_GetVersion(cx), E_NAME(compiledFileName), E_STR("XDR"), E_VERSION );
+			JL_ASSERT_WARN( JS_GetScriptVersion(cx, script->getScript()) >= JS_GetVersion(cx), E_NAME(compiledFileName), E_STR("XDR"), E_VERSION );
 			goto good;
 		} else {
 
@@ -3130,7 +3131,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 	int res;
 	res = read(scriptFile, (void*)scriptBuffer, (unsigned int)scriptFileSize);
 	close(scriptFile);
-
+	
 	//JL_CHKM( res >= 0, "Unable to read file \"%s\".", fileName );
 	JL_CHKM( res >= 0, E_FILE, E_NAME(fileName), E_READ );
 
@@ -3191,7 +3192,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 	JSXDRState *xdr;
 	xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
 	JL_CHK( xdr );
-	JL_CHK( JS_XDRScript(xdr, &script) );
+	JL_CHK( JS_XDRScriptObject(xdr, &script) );
 
 	uint32 length;
 	void *buf;
