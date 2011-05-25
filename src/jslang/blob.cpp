@@ -363,7 +363,7 @@ DEFINE_FUNCTION( ReloacateToArray ) {
 	JL_SetPrivate(cx, JL_OBJ, NULL); // InvalidateBlob(cx, JL_OBJ)
 	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_BLOB_JSSTRING, JSVAL_VOID) );
 
-	JSObject *typedArray = js_CreateTypedArrayWithBuffer(cx, js::TypedArray::TYPE_UINT8, JSVAL_TO_OBJECT(*JL_RVAL), 0, buffer->byteLength);
+	JSObject *typedArray = js_CreateTypedArrayWithBuffer(cx, js::TypedArray::TYPE_UINT8, bufObj, 0, buffer->byteLength);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(typedArray);
 
