@@ -4,6 +4,57 @@ LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jswinshell');
 
+
+function ParseUri(source) { // ParseUri 1.2; MIT License By Steven Levithan. http://blog.stevenlevithan.com/archives/ParseUri
+	var o = ParseUri.options, value = o.parser[o.strictMode ? "strict" : "loose"].exec(source);
+	for (var i = 0, uri = {}; i < 14; i++) uri[o.key[i]] = value[i] || "";
+	uri[o.q.name] = {};
+	uri[o.key[12]].replace(o.q.parser, function ($0, $1, $2) { if ($1) uri[o.q.name][$1] = $2 });
+	return uri;
+};
+
+ParseUri.options = { // ParseUri 1.2;
+	strictMode: false,
+	key: ["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","anchor"],
+	q: {
+		name: "queryKey",
+		parser: /(?:^|&)([^&=]*)=?([^&]*)/g
+	},
+	parser: {
+		strict: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,
+		loose: /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
+	}
+};
+
+function DownloadFile(host, port, uri) {
+
+	const CRLF = '\r\n';
+	var soc = new Socket();
+	soc.Connect(host, port);
+	soc.writable = true;
+	ProcessEvents(IOEvents([soc]), EndSignalEvents());
+	delete soc.writable;
+	soc.Write('GET '+(uri)+' HTTP/1.0'+CRLF+'Accept:*/*' + CRLF + 'Connection:close' + CRLF + 'User-Agent:jslibs'+CRLF+CRLF); // encodeURIComponent
+	soc.readable = true;
+	var tmp, data = new Blob();
+	for (;;) {
+	
+		ProcessEvents(IOEvents([soc]), EndSignalEvents());
+		tmp = soc.Read();
+		if ( !tmp )
+			break;
+		data = data.concat(tmp);
+	}
+	return data.substr(data.indexOf(CRLF+CRLF)+4);
+}
+
+function Wget(url) {
+
+	var urlChunks = ParseUri(url);
+	new File(urlChunks.file).content = DownloadFile(urlChunks.host, urlChunks.port || 80, urlChunks.path);
+}
+
+
 var noop = function() {}
 
 // Term
@@ -258,6 +309,9 @@ window.document = new function() {
 }
 
 // main
+
+//Wget('http://www.google.fr/images/logos/ps_logo2.png');
+
 
 Exec('cpux86-ta.js');
 Exec('jslinux.js');
