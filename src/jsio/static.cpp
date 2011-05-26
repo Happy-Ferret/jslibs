@@ -55,24 +55,35 @@ JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 	pollDesc->out_flags = 0;
 	pollDesc->in_flags = 0;
 
-	JL_CHK( JS_GetProperty( cx, fdObj, "writable", &tmp ) );
-	if ( JL_ValueIsFunction(cx, tmp) )
+	JSBool has;
+	//JL_CHK( JS_GetProperty( cx, fdObj, "writable", &tmp ) );
+	//if ( JL_ValueIsFunction(cx, tmp) )
+	JL_CHK( JS_HasProperty(cx, fdObj, "writable", &has) );
+	if ( has )
 		pollDesc->in_flags |= PR_POLL_WRITE;
 
-	JL_CHK( JS_GetProperty( cx, fdObj, "readable", &tmp ) );
-	if ( JL_ValueIsFunction(cx, tmp) )
+	//JL_CHK( JS_GetProperty( cx, fdObj, "readable", &tmp ) );
+	//if ( JL_ValueIsFunction(cx, tmp) )
+	JL_CHK( JS_HasProperty(cx, fdObj, "readable", &has) );
+	if ( has )
 		pollDesc->in_flags |= PR_POLL_READ;
 
-	JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &tmp ) );
-	if ( JL_ValueIsFunction(cx, tmp) )
+	//JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &tmp ) );
+	//if ( JL_ValueIsFunction(cx, tmp) )
+	JL_CHK( JS_HasProperty(cx, fdObj, "hangup", &has) );
+	if ( has )
 		pollDesc->in_flags |= PR_POLL_HUP;
 
-	JL_CHK( JS_GetProperty( cx, fdObj, "exception", &tmp ) );
-	if ( JL_ValueIsFunction(cx, tmp) )
+	//JL_CHK( JS_GetProperty( cx, fdObj, "exception", &tmp ) );
+	//if ( JL_ValueIsFunction(cx, tmp) )
+	JL_CHK( JS_HasProperty(cx, fdObj, "exception", &has) );
+	if ( has )
 		pollDesc->in_flags |= PR_POLL_EXCEPT;
 
-	JL_CHK( JS_GetProperty( cx, fdObj, "error", &tmp ) );
-	if ( JL_ValueIsFunction(cx, tmp) )
+	//JL_CHK( JS_GetProperty( cx, fdObj, "error", &tmp ) );
+	//if ( JL_ValueIsFunction(cx, tmp) )
+	JL_CHK( JS_HasProperty(cx, fdObj, "error", &has) );
+	if ( has )
 		pollDesc->in_flags |= PR_POLL_ERR;
 
 	return JS_TRUE;
