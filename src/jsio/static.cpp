@@ -1218,7 +1218,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( directorySeparator ) {
 
-	jschar sep = PR_GetDirectorySeparator();
+	jschar sep = (unsigned char)PR_GetDirectorySeparator();
 	JSString *str = JS_InternUCStringN(cx, &sep, 1);
 	JL_CHK( str );
 	*vp = STRING_TO_JSVAL( str );
@@ -1237,7 +1237,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( pathSeparator ) {
 
-	jschar sep = PR_GetPathSeparator();
+	jschar sep = (unsigned char)PR_GetPathSeparator();
 	JSString *str = JS_InternUCStringN(cx, &sep, 1);
 	JL_CHK( str );
 	*vp = STRING_TO_JSVAL( str );

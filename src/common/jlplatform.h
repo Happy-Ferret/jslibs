@@ -607,6 +607,11 @@ JL_DOUBLE_IS_INTEGER(double d) {
 	return d == floor(d);
 }
 
+template<class T>
+ALWAYS_INLINE T
+JL_IS_SIGNED(T a) {
+	return a > (T)-1;
+}
 
 template<class T>
 ALWAYS_INLINE T
