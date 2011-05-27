@@ -277,30 +277,36 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 		#error CANNOT DEFINE MACROS fprintf, fputs, fwrite, fputc
 	#endif
 
-
 	#define fprintf(FILE, FORMAT, ...) \
 	JL_MACRO_BEGIN \
-		snprintf(buf, sizeof(buffer)-(buf-buffer), FORMAT, ##__VA_ARGS__); \
-		buf += strlen(buf); \
-		ASSERT( !*buf ); \
+		size_t remaining = sizeof(buffer)-(buf-buffer); \
+		if ( remaining == 0 ) break; \
+		int count = snprintf(buf, remaining, FORMAT, ##__VA_ARGS__); \
+		buf += count < 0 ? remaining : count; \
 	JL_MACRO_END
 
 	#define fputs(STR, FILE) \
 	JL_MACRO_BEGIN \
-		size_t len = JL_MIN(strlen(STR), sizeof(buffer)-(buf-buffer)); \
+		size_t remaining = sizeof(buffer)-(buf-buffer); \
+		if ( remaining == 0 ) break; \
+		size_t len = JL_MIN(strlen(STR), remaining); \
 		memcpy(buf, STR, len); \
 		buf += len; \
 	JL_MACRO_END
 
 	#define fwrite(STR, SIZE, COUNT, FILE) \
 	JL_MACRO_BEGIN \
-		size_t len = JL_MIN(size_t((SIZE)*(COUNT)), sizeof(buffer)-(buf-buffer)); \
+		size_t remaining = sizeof(buffer)-(buf-buffer); \
+		if ( remaining == 0 ) break; \
+		size_t len = JL_MIN(size_t((SIZE)*(COUNT)), remaining); \
 		memcpy(buf, (STR), len); \
 		buf += len; \
 	JL_MACRO_END
 
 	#define fputc(CHR, FILE) \
 	JL_MACRO_BEGIN \
+		size_t remaining = sizeof(buffer)-(buf-buffer); \
+		if ( remaining == 0 ) break; \
 		buf[0] = (CHR); \
 		buf += 1; \
 	JL_MACRO_END

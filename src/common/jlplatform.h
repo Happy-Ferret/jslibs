@@ -375,7 +375,7 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 		return _aligned_malloc(size, alignment);
 	}
 
-	#define snprintf sprintf_s
+	#define snprintf _snprintf
 
 
 #elif defined(_MACOSX) // MacosX platform
