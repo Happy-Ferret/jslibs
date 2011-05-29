@@ -1133,7 +1133,7 @@ class JLStr {
 				const jschar *src = _inner->jsstr + length;
 				tmp = (char*)_inner->jsstr + length;
 				for ( size_t i = length; i > 0; --i )
-					*--tmp = (char)*--src;
+					*--tmp = (char)(*--src & 0xff);
 
 				_inner->str = (char*)jl_realloc(_inner->jsstr, length + 1);
 				ASSERT( _inner->str );
@@ -1147,7 +1147,7 @@ class JLStr {
 				_inner->str = tmp;
 				const jschar *src = _inner->jsstr;
 				for ( size_t i = length; i > 0; --i )
-					*(tmp++) = (char)*(src++);
+					*(tmp++) = (char)(*(src++) & 0xff);
 			}
 		}
 		_inner->strFlags = OWN|NT;
