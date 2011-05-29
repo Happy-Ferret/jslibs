@@ -376,26 +376,28 @@ DEFINE_FUNCTION( ReloacateToArray ) {
 $TOC_MEMBER $INAME
  $TYPE Blob $INAME( data [,data1 [,...]] )
   Combines the data of two or more blobs and returns a new blob.
+  concat can also be used as a static function: Blob.concat(a,b,c);
   $H details
    [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/concat Mozilla]
 **/
 DEFINE_FUNCTION( concat ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
+	JLStr str;
 
-	char *dst = NULL;
-	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
-
-	// note: var a = new String(123);  a.concat() !== a
-
-	size_t thisLength;
-	const char *thisBuffer;
-	JL_CHK( BlobBuffer(cx, JL_OBJ, &thisBuffer) );
-	JL_CHK( BlobLength(cx, JL_OBJ, &thisLength) );
+	char *dst;
+	IFDEBUG( dst = NULL );
 
 	size_t dstLen;
-	dstLen = thisLength;
+	dstLen = 0;
+
+	JL_DEFINE_FUNCTION_OBJ;
+
+	if ( JL_IsDataObject(cx, JL_OBJ) ) {
+
+		jsval tmpStrVal = OBJECT_TO_JSVAL(JL_OBJ);
+		JL_CHK( JL_JsvalToNative(cx, tmpStrVal, &str) );
+		dstLen = str.LengthOrZero();
+	}
 
 	uintN arg;
 	for ( arg = 1; arg <= JL_ARGC; arg++ ) {
@@ -405,7 +407,6 @@ DEFINE_FUNCTION( concat ) {
 			size_t tmp;
 			JL_CHK( BlobLength(cx, JSVAL_TO_OBJECT( JL_ARG(arg) ), &tmp) );
 			dstLen += tmp;
-
 		} else {
 
 			JSString *jsstr = JS_ValueToString(cx, JL_ARG(arg));
@@ -420,17 +421,13 @@ DEFINE_FUNCTION( concat ) {
 	char *tmp;
 	tmp = dst;
 
-	if ( thisLength > 0 ) {
+	if ( str.IsSet() ) {
 
-		memcpy(tmp, thisBuffer, thisLength);
-		tmp += thisLength;
+		memcpy(tmp, str.GetConstStr(), str.Length());
+		tmp += str.Length();
 	}
 
 	for ( arg = 1; arg <= JL_ARGC; arg++ ) {
-
-//		const char *buffer;
-//		size_t length;
-//		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(arg), &buffer, &length) );
 
 		JLStr str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(arg), &str) );
@@ -1382,7 +1379,6 @@ CONFIGURE_CLASS
 //	HAS_NEW_RESOLVE_GETS_START
 
 	BEGIN_FUNCTION_SPEC
-
 		FUNCTION(Free)
 		FUNCTION(ReloacateToArray)
 
@@ -1401,11 +1397,14 @@ CONFIGURE_CLASS
 
 		FUNCTION_ARGC(_serialize, 1)
 		FUNCTION_ARGC(_unserialize, 1)
-
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ(length)
 	END_PROPERTY_SPEC
+	
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION(concat)
+	END_STATIC_FUNCTION_SPEC
 
 END_CLASS
