@@ -24,7 +24,7 @@
 typedef void (*HandleFinalizeCallback_t)(void* data);
 
 #define HANDLE_TYPE uint32_t
-#define HANDLE_INVALID 0
+#define HANDLE_INVALID (0)
 
 // (TBD) better alignment: __attribute__ ((__vector_size__ (16), __may_alias__)); OR  __declspec(align(64))
 //       note that SSE data must be 128bits alligned !
@@ -56,17 +56,16 @@ HandleCreate( JSContext *cx, HANDLE_TYPE handleType, size_t userDataSize, void**
 	JSObject *handleObj;
 	handleObj = JS_NewObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto, NULL);
 	JL_CHK( handleObj );
+
 	*handleVal = OBJECT_TO_JSVAL(handleObj);
 	HandlePrivate *pv;
 	pv = (HandlePrivate*)jl_malloc(sizeof(HandlePrivate) + userDataSize);
 	JL_ASSERT_ALLOC( pv );
 	JL_updateMallocCounter(cx, sizeof(HandlePrivate) + userDataSize);
 	JL_SetPrivate(cx, handleObj, pv);
-
 	pv->handleType = handleType;
 	pv->finalizeCallback = finalizeCallback;
-	if (userData)
-		*userData = (char*)pv + sizeof(HandlePrivate);
+	*userData = (uint8_t*)pv + sizeof(HandlePrivate);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -83,7 +82,7 @@ HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
 	handleObj = JSVAL_TO_OBJECT(handleVal);
 	HandlePrivate *pv;
 	pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);
-	JL_ASSERT_OBJECT_STATE( pv, "Handle" );
+	JL_ASSERT_OBJECT_STATE(pv, "Handle");
 
 	if ( pv->finalizeCallback )
 		pv->finalizeCallback((char*)pv + sizeof(HandlePrivate));

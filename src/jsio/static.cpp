@@ -313,16 +313,14 @@ bad:
 	return JS_FALSE;
 }
 
+
 DEFINE_FUNCTION( IOEvents ) {
 
 	JL_ASSERT_ARG_COUNT(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
-
-
 	JSObject *fdArrayObj;
 	fdArrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
-
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
@@ -337,7 +335,7 @@ DEFINE_FUNCTION( IOEvents ) {
 	JL_ASSERT_ALLOC( upe->pollDesc );
 	upe->descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
 	JL_ASSERT_ALLOC( upe->descVal );
-	JL_updateMallocCounter(cx, (sizeof(PRPollDesc) + sizeof(jsval)) * fdCount); // approximately
+	JL_updateMallocCounter(cx, (sizeof(PRPollDesc) + sizeof(jsval)) * fdCount); // approximately (pollDesc + descVal)
 
 	JsioPrivate *mpv;
 	mpv = (JsioPrivate*)JL_GetModulePrivate(cx, _moduleId);
@@ -352,7 +350,9 @@ DEFINE_FUNCTION( IOEvents ) {
 	upe->pollDesc[0].in_flags = PR_POLL_READ;
 	upe->pollDesc[0].out_flags = 0;
 
-	upe->fdCount = fdCount;
+	upe->fdCount = fdCount; // count excluding peCancel
+
+	// (TBD) try to get the 'agruments' variable instead of using rootedValues ?
 
 	JSObject *rootedValues;
 	rootedValues = JS_NewArrayObject(cx, fdCount, NULL);

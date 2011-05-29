@@ -409,7 +409,7 @@ JL_IsStringObject( JSContext *cx, const JSObject *obj ) {
 }
 
 
-INLINE NEVER_INLINE bool
+ALWAYS_INLINE bool
 JL_IsDataObject( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
 	return BufferGetInterface(cx, obj) != NULL || JL_ObjectIsArray(cx, obj) || (js_IsTypedArray(obj) /*&& js::TypedArray::fromJSObject(obj)->valid()*/) /*|| js_IsArrayBuffer(obj)*/ || JL_IsStringObject(cx, obj);
@@ -419,7 +419,7 @@ JL_IsDataObject( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 ALWAYS_INLINE bool
 JL_IsData( JSContext *cx, const jsval &val ) {
 
-	return JSVAL_IS_STRING(val) || ( !JSVAL_IS_PRIMITIVE(val) && JL_IsDataObject(cx, JSVAL_TO_OBJECT(val)) );
+	return JSVAL_IS_STRING(val) || ( !JSVAL_IS_PRIMITIVE(val) && NOIL(JL_IsDataObject)(cx, JSVAL_TO_OBJECT(val)) );
 }
 
 

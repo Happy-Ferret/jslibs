@@ -69,6 +69,7 @@ JLMutexHandler gEndSignalLock;
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
+	JL_USE(cx);
 	JL_USE(obj);
 	JL_USE(id);
 	//return JL_NativeToJsval(cx, (int)gEndSignalState, vp);
@@ -410,6 +411,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	#endif // DBG_ALLOC
 
 	}
+
+//	setvbuf(stderr, pBuffer, mode, buffer_size);
 
 	cx = CreateHost(maxMem, maxAlloc, (uint32)(maybeGCInterval * 1000));
 
