@@ -7,7 +7,6 @@
 #define JS_HAS_SHARP_VARS       1       /* has #n=, #n# for object literals */
 #define JS_HAS_XDR              1       /* has XDR API and internal support */
 #define JS_HAS_TOSOURCE         1       /* has Object/Array toSource method */
-#define JS_HAS_DEBUGGER_KEYWORD 1       /* has hook for debugger keyword */
 #define JS_HAS_CATCH_GUARD      1       /* has exception handling catch guard */
 #define JS_HAS_SPARSE_ARRAYS    0       /* array methods preserve empty elems */
 #define JS_HAS_UNEVAL           1       /* has uneval() top-level function */
@@ -21,10 +20,6 @@
 #define JS_HAS_DESTRUCTURING    2       /* has [a,b] = ... or {p:a,q:b} = ... */
 #define JS_HAS_GENERATOR_EXPRS  1       /* has (expr for (lhs in iterable)) */
 #define JS_HAS_EXPR_CLOSURES    1       /* has function (formals) listexpr */
-
-/* Features that are present in all versions. */
-#define JS_HAS_RESERVED_JAVA_KEYWORDS   1
-#define JS_HAS_RESERVED_ECMA_KEYWORDS   1
 
 /* Support for JS_NewGlobalObject. */
 #define JS_HAS_NEW_GLOBAL_OBJECT        1
