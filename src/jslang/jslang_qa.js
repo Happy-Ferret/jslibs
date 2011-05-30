@@ -1,5 +1,10 @@
 LoadModule('jsstd');
 
+/// Handle prototype [ftrm]
+
+	QA.ASSERT( Handle._serialize, undefined, '_serialize access' );
+
+
 /// Blob.concat [ftrm]
 
 	var a = new Blob('a');
@@ -794,7 +799,7 @@ LoadModule('jsstd');
 
 /// Stringify Array [ftmr]
 
-	QA.ASSERT_STR( Stringify([100,101,102]), 'def', 'JSArray to string' );
+	QA.ASSERT_STR( Stringify([100,101,102]), '100,101,102', 'JS Array to string' );
 
 
 /// Handle constructor [ft]

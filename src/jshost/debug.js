@@ -1,64 +1,10 @@
-LoadModule('jsdebug');
-LoadModule('jsstd');
-//LoadModule('jsio');
-//LoadModule('jscrypt');
-//LoadModule('jsaudio');
-//LoadModule('jsimage');
-//LoadModule('jsfont');
-//LoadModule('jsiconv');
+LoadModule('jsstd');  LoadModule('jsio');
+//RunJsircbot(false); throw 0;
+// var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+//Exec('../common/tools.js'); var QA = FakeQAApi;  RunLocalQAFile();
+Exec('../common/tools.js'); RunQATests('-exclude jstask');
 
-LoadModule('jsode');
+// LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
 
 
-_host.stdin = function(){};
-
-var done = {__proto__:null};
-done[ObjectGCId(done)] = true;
-done[ObjectGCId(DebugBreak)] = true;
-done[ObjectGCId(Halt)] = true;
-done[ObjectGCId(DumpHeap)] = true;
-done[ObjectGCId(Object.__proto__.__proto__)] = true;
-
-done[ObjectGCId(Iterator)] = true;
-
-
-function fct(obj, left) {
-
-	if ( endSignal )
-		Halt();
-	if ( IsPrimitive(obj) )
-		return;
-	done[ObjectGCId(obj)] = true;
-	var list = Object.getOwnPropertyNames(obj);
-	for each ( var name in list ) {
-		
-		if ( name == 'arguments' )
-			continue;
-
-		var nextObj;
-		try {
-			nextObj = obj[name];
-		} catch(ex) {
-			continue;
-		}
-		
-		if ( done[ObjectGCId(nextObj)] )
-			continue;
-
-		try {
-			obj[name]();
-		} catch(ex) {
-		}
-
-		try {
-			nextObj();
-		} catch(ex) {
-		}
-
-		fct(nextObj);
-	}
-}
-
-fct(global);
-
-Print('\nDone.\n');
+Print( Handle._serialize, '\n' );
