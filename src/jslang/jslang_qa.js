@@ -1,5 +1,44 @@
 LoadModule('jsstd');
 
+/// Blob.concat [ftrm]
+
+	var a = new Blob('a');
+	var b = new Blob('b');
+	var c = new Blob('c');
+	var d = new Blob('d');
+	var all = Blob.concat(a,b,c,d);
+	QA.ASSERT( all, 'abcd', 'blob.concat' );
+
+
+/// Blob.concat.call [ftrm]
+
+	var x = new Blob('x');
+	var all = Blob.concat.call(x,a,b,c,d);
+	QA.ASSERT( all, 'xabcd', 'blob.concat' );
+
+	var all = x.concat(a,b,c,d);
+	QA.ASSERT( all, 'xabcd', 'blob.concat' );
+
+
+/// Blob.concat.apply array [ftrm]
+
+	var a = new Blob('a');
+	var b = new Blob('b');
+	var c = new Blob('c');
+	var d = new Blob('d');
+
+	var list = [a,b,c,d];
+	var all = Blob.concat.apply(null, list);
+	QA.ASSERT( all, 'abcd', 'concat array' );
+
+
+/// Blob.concat() [ftrm]
+
+	var x = new Blob('x');
+	var all = x.concat();
+	QA.ASSERT( all != x, true, 'behaves like: a = new String(123);  a.concat() !== a' );
+
+
 /// Blob char value [ftrm]
 
 	var b = Blob('\xff');

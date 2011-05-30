@@ -159,6 +159,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JSObject *staticDest;
 	staticDest = cs->constructor ? JS_GetConstructor(cx, proto) : proto;
 
+
 	if ( cs->ps != NULL )
 		JL_CHK( JL_DefineClassProperties(cx, proto, cs->ps) );
 
@@ -309,6 +310,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define HAS_RESERVED_SLOTS(COUNT) cs.clasp.flags |= JSCLASS_HAS_RESERVED_SLOTS(COUNT);
 #define CONSTRUCT_PROTOTYPE cs.clasp.flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
 #define IS_GLOBAL cs.clasp.flags |= JSCLASS_GLOBAL_FLAGS;
+#define IS_ANONYMOUS cs.clasp.flags |= JSCLASS_IS_ANONYMOUS;
 #define HAS_ALL_PROPERTIES_SHARED cs.clasp.flags |= JSCLASS_SHARE_ALL_PROPERTIES;
 #define REVISION(NUMBER) cs.revision = (NUMBER);
 

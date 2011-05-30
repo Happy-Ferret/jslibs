@@ -17,6 +17,7 @@
 #include <jslibsModule.cpp>
 
 
+DECLARE_CLASS( IoError )
 DECLARE_CLASS( Descriptor )
 DECLARE_CLASS( Pipe )
 DECLARE_CLASS( File )

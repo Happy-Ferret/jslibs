@@ -1410,8 +1410,9 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLStr * RESTRICT str ) {
 			return JS_TRUE;
 		}
 
-		if ( JS_IsArrayObject(cx, obj) )
-			return JL_JSArrayToBuffer(cx, obj, str);
+		// the following conversion can be replaced by: (new Uint8Array([1,2,3]))
+		//		if ( JS_IsArrayObject(cx, obj) )
+		//			return JL_JSArrayToBuffer(cx, obj, str);
 	}
 	// fallback
 	JSString *jsstr;
@@ -1561,7 +1562,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 			return JS_TRUE;
 		}
 	
-		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, 255) );
+		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, _UI8_MAX) );
 	}
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint8_t *num )
@@ -1579,7 +1580,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 		return JS_TRUE;
 	}
 
-	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, 255) );
+	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, _UI8_MAX) );
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, num)

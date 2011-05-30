@@ -9,7 +9,10 @@ LoadModule('jsdebug');
 	file.content = "\xBC\x00\x30\x01"
 	var data = file.content;
 	file.content = undefined;
-	QA.ASSERT_STR( data[0].quote(), '\xBC' );
+	QA.ASSERT_STR( data[0], '\xBC' );
+	QA.ASSERT_STR( data[1], '\x00' );
+	QA.ASSERT_STR( data[2], '\x30' );
+	QA.ASSERT_STR( data[3], '\x01' );
 
 
 /// Basic File Read/Write [tr]
