@@ -27,7 +27,7 @@ function QAAPI(cx) {
 		
 		var type = typeof(val);
 		if (type == 'object' )
-			return val.consructor.name;
+			return val.constructor.name;
 		return type;
 	}
 	
