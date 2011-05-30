@@ -106,6 +106,7 @@ DEFINE_FUNCTION( toString ) {
 	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
+/*
 DEFINE_HAS_INSTANCE() { // see issue#52
 
 	JL_USE(obj);
@@ -113,7 +114,7 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
-
+*/
 
 
 
@@ -163,7 +164,8 @@ CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
-	HAS_HAS_INSTANCE // see issue#52
+	//HAS_HAS_INSTANCE // see issue#52
+	IS_INCONSTRUCTIBLE
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( code )

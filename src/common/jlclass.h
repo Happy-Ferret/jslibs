@@ -122,6 +122,14 @@ inline JSBool JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_BAD;
 }
 
+
+INLINE JSBool InvalidConstructor(JSContext *cx, uintN, jsval *) {
+
+	JL_ERR( E_CLASS, E_NOTCONSTRUCT );
+	JL_BAD;
+}
+
+
 inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JL_CHK(obj);
@@ -149,8 +157,11 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 //	uint32 protoFrozen = cs->clasp.flags & JSCLASS_FREEZE_PROTO;
 //	cs->clasp.flags &= ~JSCLASS_FREEZE_PROTO;
 
+	JSNative constructor;
+	constructor = cs->constructor;
+
 	JSObject *proto;
-	proto = JS_InitClass(cx, obj, parent_proto, &cs->clasp, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
+	proto = JS_InitClass(cx, obj, parent_proto, &cs->clasp, constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
 
 	JL_ASSERT( proto != NULL, E_CLASS, E_NAME(cs->clasp.name), E_CREATE ); //RTE
 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(cx, proto) == NULL );
@@ -317,8 +328,15 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define HAS_PROTOTYPE(PROTOTYPENAME) \
 	cs.parentProtoName = #PROTOTYPENAME; \
 
-#define HAS_CONSTRUCTOR_ARGC(ARGC) cs.constructor = Constructor; cs.argc = (ARGC);
-#define HAS_CONSTRUCTOR cs.constructor = Constructor;
+#define HAS_CONSTRUCTOR_ARGC(ARGC) \
+	ASSERT(cs.constructor == NULL); cs.constructor = Constructor; cs.argc = (ARGC);
+
+#define HAS_CONSTRUCTOR \
+	ASSERT(cs.constructor == NULL); cs.constructor = Constructor;
+
+#define IS_INCONSTRUCTIBLE \
+	ASSERT(cs.constructor == NULL); cs.constructor = InvalidConstructor;
+
 #define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, uintN argc, jsval *vp)
 
 #define HAS_FINALIZE cs.clasp.finalize = Finalize;

@@ -26,12 +26,13 @@ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( AudioMaster )
 
-
+/*
 DEFINE_HAS_INSTANCE() {
 
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
+*/
 
 DEFINE_PROPERTY_GETTER( version ) {
 
@@ -46,7 +47,9 @@ CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
-	HAS_HAS_INSTANCE
+
+	//HAS_HAS_INSTANCE
+	IS_INCONSTRUCTIBLE
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_READ( version )

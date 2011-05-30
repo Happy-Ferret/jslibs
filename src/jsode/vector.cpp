@@ -74,18 +74,23 @@ DEFINE_PROPERTY( zGetter ) {
 	return JL_NativeToJsval(cx, pv->Get(pv->userData, 2), vp);
 }
 
+/*
 DEFINE_HAS_INSTANCE() {
 
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
+*/
 
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1)
-	HAS_HAS_INSTANCE
+
+	//HAS_HAS_INSTANCE
+	IS_INCONSTRUCTIBLE
+
 	HAS_FINALIZE
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( x )

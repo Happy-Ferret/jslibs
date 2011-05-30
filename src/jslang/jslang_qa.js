@@ -12,17 +12,22 @@ LoadModule('jsstd');
 	var c = new Blob('c');
 	var d = new Blob('d');
 	var all = Blob.concat(a,b,c,d);
-	QA.ASSERT( all, 'abcd', 'blob.concat' );
+	QA.ASSERT_STR( all, 'abcd', 'blob.concat' );
 
 
 /// Blob.concat.call [ftrm]
 
+	var a = new Blob('a');
+	var b = new Blob('b');
+	var c = new Blob('c');
+	var d = new Blob('d');
+
 	var x = new Blob('x');
 	var all = Blob.concat.call(x,a,b,c,d);
-	QA.ASSERT( all, 'xabcd', 'blob.concat' );
+	QA.ASSERT_STR( all, 'xabcd', 'blob.concat' );
 
 	var all = x.concat(a,b,c,d);
-	QA.ASSERT( all, 'xabcd', 'blob.concat' );
+	QA.ASSERT_STR( all, 'xabcd', 'blob.concat' );
 
 
 /// Blob.concat.apply array [ftrm]
@@ -31,10 +36,9 @@ LoadModule('jsstd');
 	var b = new Blob('b');
 	var c = new Blob('c');
 	var d = new Blob('d');
-
 	var list = [a,b,c,d];
 	var all = Blob.concat.apply(null, list);
-	QA.ASSERT( all, 'abcd', 'concat array' );
+	QA.ASSERT_STR( all, 'abcd', 'concat array' );
 
 
 /// Blob.concat() [ftrm]
@@ -809,13 +813,13 @@ LoadModule('jsstd');
 
 /// Handle object [ft]
 
-	var h = Handle;
-	QA.ASSERT_TYPE(h, Handle, 'handle object type');
-	QA.ASSERT_STR(h, '[Handle ????]', 'handle type string');
-	QA.ASSERT(h.constructor, Math.constructor, 'constructor test');
-	QA.ASSERT(h.prototype, Math.prototype, 'prototype test');
-	QA.ASSERT(Handle instanceof Object, true, 'instance test');
+	var h = TimeoutEvents(100);
 
+	QA.ASSERT(Handle instanceof Object, true, 'instance test');
+	QA.ASSERT_TYPE(h, Handle, 'handle object type');
+//	QA.ASSERT_STR(h, '[Handle ????]', 'handle type string');
+//	QA.ASSERT(h.constructor, Math.constructor, 'constructor test');
+//	QA.ASSERT(h.prototype, Math.prototype, 'prototype test');
 
 
 /// Test InheritFrom() [ft d]

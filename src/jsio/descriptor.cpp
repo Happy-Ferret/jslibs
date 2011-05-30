@@ -633,16 +633,21 @@ DEFINE_FUNCTION( Import ) {
 **/
 
 
+/*
 DEFINE_HAS_INSTANCE() { // see issue#52
 
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
+*/
 
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
-	HAS_HAS_INSTANCE // see issue#52
+	
+	//HAS_HAS_INSTANCE // see issue#52
+	IS_INCONSTRUCTIBLE
+
 	HAS_PRIVATE // unused. Just avoid Print(Descriptor.available); to crash
 
 	BEGIN_FUNCTION_SPEC
