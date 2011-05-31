@@ -265,25 +265,24 @@ window.document = new function() {
 
 function DownloadFile(host, port, uri) {
 
-	const CRLF = '\r\n';
 	var soc = new Socket();
 	soc.Connect(host, port);
-	soc.writable = true;
-	ProcessEvents(IOEvents([soc]), EndSignalEvents());
+	soc.writable = null;
+	ProcessEvents(Descriptor.Events([soc]), EndSignalEvents());
 	delete soc.writable;
-	soc.Write('GET '+(uri)+' HTTP/1.0'+CRLF+'Accept:*/*' + CRLF + 'Connection:close' + CRLF + 'User-Agent:jslibs'+CRLF+CRLF);
-	soc.readable = true;
+	soc.Write('GET '+uri+' HTTP/1.0\r\nAccept:*/*\r\n\r\n');
+	soc.readable = null;
 	var tmp, data = [];
 	for (;;) {
 	
-		ProcessEvents(IOEvents([soc]), EndSignalEvents());
+		ProcessEvents(Descriptor.Events([soc]), EndSignalEvents());
 		tmp = soc.Read();
 		if ( !tmp )
 			break;
 		data.push(tmp);
 	}
-	data = Blob.concat.apply(null, data);
-	return data.substr(data.indexOf(CRLF+CRLF)+4);
+	tmp = Blob.concat.apply(null, data);
+	return tmp.substr(tmp.indexOf('\r\n\r\n')+4);
 }
 
 
