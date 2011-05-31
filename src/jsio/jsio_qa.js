@@ -2,6 +2,13 @@
 LoadModule('jsio');
 LoadModule('jsdebug');
 
+/// Descriptor inheritance
+
+	QA.ASSERT( new Socket().Import, undefined, 'new Socket .Import unavailable' );
+	QA.ASSERT( Socket.Import, undefined, 'Socket.Import unavailable' );
+	QA.ASSERT( Descriptor.Import != undefined, true, 'Descriptor.Import available' );
+
+
 /// Binary data test
 
 	var filename = QA.RandomString(10);

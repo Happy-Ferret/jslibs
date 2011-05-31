@@ -453,7 +453,6 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 #endif
 
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
 
@@ -473,6 +472,15 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 #define UNLIKELY_SPLIT_BEGIN(...)
 #define UNLIKELY_SPLIT_END(...)
 #endif
+
+template<class T>
+ALWAYS_INLINE const T
+JL_CONSTIFY(T variable) {
+
+	return (const T)variable;
+}
+
+
 
 template<class T, class U>
 ALWAYS_INLINE bool
@@ -1305,7 +1313,7 @@ enum JLEncodingType {
 INLINE JLEncodingType NOALIAS FASTCALL
 JLDetectEncoding(char **buf, size_t *size) {
 
-	if ( *size < 2 )
+	if ( *size < 2 ) // avoid next section to crash
 		return ASCII;
 	if ( (*buf)[0] == '\xFF' && (*buf)[1] == '\xFE' ) {
 
@@ -1325,7 +1333,7 @@ JLDetectEncoding(char **buf, size_t *size) {
 		*size -= 3;
 		return UTF8;
 	}
-	// no BOM, then guess
+	// no BOM, then guess // (TBD) find a better heuristic
 	if ( (*buf)[0] > 0 && (*buf)[1] > 0 )
 		return ASCII;
 	if ( (*buf)[0] != 0 && (*buf)[1] == 0 )

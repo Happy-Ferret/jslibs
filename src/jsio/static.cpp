@@ -1311,7 +1311,7 @@ CONFIGURE_STATIC
 		#endif // DEBUG
 
 		FUNCTION( Poll ) // Do not turn it in FAST NATIVE because we need a stack frame for debuging
-		FUNCTION( IOEvents )
+//		FUNCTION( IOEvents ) // moved do Descriptor.Events()
 		FUNCTION( IsReadable )
 		FUNCTION( IsWritable )
 		FUNCTION( IntervalNow )

@@ -40,21 +40,21 @@ js__DoubleToInteger(jsdouble d) // from jsnum.h
 
 struct MemCmp { // from jsstr.cpp
     typedef size_t Extent;
-    static ALWAYS_INLINE Extent computeExtent(const char *, size_t patlen) {
-        return (patlen - 1) * sizeof(char);
+    static ALWAYS_INLINE Extent computeExtent(const uint8_t *, size_t patlen) {
+        return (patlen - 1) * sizeof(uint8_t);
     }
-    static ALWAYS_INLINE bool match(const char *p, const char *t, Extent extent) {
+    static ALWAYS_INLINE bool match(const uint8_t *p, const uint8_t *t, Extent extent) {
         return memcmp(p, t, extent) == 0;
     }
 };
 
 
 struct ManualCmp { // from jsstr.cpp
-    typedef const char *Extent;
-	 static ALWAYS_INLINE Extent computeExtent(const char *pat, size_t patlen) {
+    typedef const uint8_t *Extent;
+	 static ALWAYS_INLINE Extent computeExtent(const uint8_t *pat, size_t patlen) {
         return pat + patlen;
     }
-    static ALWAYS_INLINE bool match(const char *p, const char *t, Extent extent) {
+    static ALWAYS_INLINE bool match(const uint8_t *p, const uint8_t *t, Extent extent) {
         for (; p != extent; ++p, ++t) {
             if (*p != *t)
                 return false;
@@ -66,16 +66,16 @@ struct ManualCmp { // from jsstr.cpp
 
 template <class InnerMatch> // from jsstr.cpp
 ssize_t
-UnrolledMatch(const char *text, size_t textlen, const char *pat, size_t patlen)
+UnrolledMatch(const uint8_t *text, size_t textlen, const uint8_t *pat, size_t patlen)
 {
     ASSERT(patlen > 0 && textlen > 0);
-    const char *textend = text + textlen - (patlen - 1);
-    const char p0 = *pat;
-    const char *const patNext = pat + 1;
+    const uint8_t *textend = text + textlen - (patlen - 1);
+    const uint8_t p0 = *pat;
+    const uint8_t *const patNext = pat + 1;
     const typename InnerMatch::Extent extent = InnerMatch::computeExtent(pat, patlen);
     uint8_t fixup;
 
-    const char *t = text;
+    const uint8_t *t = text;
     switch ((textend - t) & 7) {
       case 0: if (*t++ == p0) { fixup = 8; goto match; }
       case 7: if (*t++ == p0) { fixup = 7; goto match; }
@@ -112,7 +112,7 @@ UnrolledMatch(const char *text, size_t textlen, const char *pat, size_t patlen)
 
 
 ALWAYS_INLINE ssize_t
-Match(const char *text, size_t textlen, const char *pat, size_t patlen) {
+Match(const uint8_t *text, size_t textlen, const uint8_t *pat, size_t patlen) {
 
 	return
 #if !defined(__linux__)
@@ -161,9 +161,9 @@ BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {
 
 
 ALWAYS_INLINE JSBool
-BlobBuffer( JSContext *cx, const JSObject *blobObject, const char **buffer ) {
+BlobBuffer( JSContext *cx, const JSObject *blobObject, const uint8_t **buffer ) {
 
-	*buffer = (const char*)JL_GetPrivate(cx, blobObject);
+	*buffer = (const uint8_t*)JL_GetPrivate(cx, blobObject);
 	ASSERT( *buffer != NULL );
 	return JS_TRUE;
 }
@@ -176,7 +176,7 @@ JSBool Blob_NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str )
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
 
 	size_t len;
-	const char *buf;
+	const uint8_t *buf;
 	JL_CHK( BlobLength(cx, obj, &len) );
 	JL_CHK( BlobBuffer(cx, obj, &buf) );
 
@@ -354,7 +354,7 @@ DEFINE_FUNCTION( ReloacateToArray ) {
 	ASSERT(buffer->data == NULL); //	buffer->freeStorage(cx);
 
 	size_t thisLength;
-	const char *thisBuffer;
+	const uint8_t *thisBuffer;
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &thisBuffer) );
 	JL_CHK( BlobLength(cx, JL_OBJ, &thisLength) );
 
@@ -385,7 +385,7 @@ DEFINE_FUNCTION( concat ) {
 
 	JLStr str;
 
-	char *dst;
+	uint8_t *dst;
 	IFDEBUG( dst = NULL );
 
 	size_t dstLen;
@@ -416,10 +416,10 @@ DEFINE_FUNCTION( concat ) {
 		}
 	}
 
-	dst = (char*)JS_malloc(cx, dstLen +1);
+	dst = (uint8_t *)JS_malloc(cx, dstLen +1);
 	JL_CHK( dst );
 
-	char *tmp;
+	uint8_t *tmp;
 	tmp = dst;
 
 	if ( str.IsSet() ) {
@@ -463,7 +463,7 @@ DEFINE_FUNCTION( substr ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
 
-	const char *buffer;
+	const uint8_t *buffer;
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &buffer) );
 
 	double length;
@@ -531,7 +531,7 @@ DEFINE_FUNCTION( substring ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
 
-	const char *buffer;
+	const uint8_t *buffer;
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &buffer) );
 
 	double length;
@@ -597,7 +597,7 @@ DEFINE_FUNCTION( indexOf ) {
 	if (JL_ARGC == 0)
 		return JL_NativeToJsval(cx, -1, JL_RVAL);
 
-	const char *text, *pat;
+	const uint8_t *text, *pat;
 	size_t textlen, patlen;
 
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &text) );
@@ -607,7 +607,7 @@ DEFINE_FUNCTION( indexOf ) {
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	patlen = str.Length();
-	pat = str.GetConstStr();
+	pat = (const uint8_t *)str.GetConstStr();
 
 
 	jsuint start;
@@ -668,7 +668,7 @@ DEFINE_FUNCTION( lastIndexOf ) {
 	if (JL_ARGC == 0)
 		return JL_NativeToJsval(cx, -1, JL_RVAL);
 
-	const char *text, *pat;
+	const uint8_t *text, *pat;
 	ssize_t i;
 	size_t textlen, patlen;
 
@@ -678,7 +678,7 @@ DEFINE_FUNCTION( lastIndexOf ) {
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &pat, &patlen) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	patlen = str.Length();
-	pat = str.GetConstStr();
+	pat = (const uint8_t *)str.GetConstStr();
 
 	i = textlen - patlen; // Start searching here
 	if (i < 0) {
@@ -704,16 +704,16 @@ DEFINE_FUNCTION( lastIndexOf ) {
 	if (patlen == 0)
 		return JL_NativeToJsval(cx, i, JL_RVAL);
 
-	const char *t = text + i;
-	const char *textend = text - 1;
-	const char p0 = *pat;
-	const char *patNext = pat + 1;
-	const char *patEnd = pat + patlen;
+	const uint8_t *t = text + i;
+	const uint8_t *textend = text - 1;
+	const uint8_t p0 = *pat;
+	const uint8_t *patNext = pat + 1;
+	const uint8_t *patEnd = pat + patlen;
 
 	for (; t != textend; --t) {
 		if (*t == p0) {
-			const char *t1 = t + 1;
-			for (const char *p1 = patNext; p1 != patEnd; ++p1, ++t1) {
+			const uint8_t *t1 = t + 1;
+			for (const uint8_t *p1 = patNext; p1 != patEnd; ++p1, ++t1) {
 				if (*t1 != *p1)
 					goto break_continue;
 			}
@@ -748,7 +748,7 @@ DEFINE_FUNCTION( split ) {
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
 
 	size_t blobLen;
-	const char *blob;
+	const uint8_t *blob;
 	JL_CHK( BlobLength(cx, JL_OBJ, &blobLen) );
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &blob) );
 
@@ -779,12 +779,12 @@ DEFINE_FUNCTION( split ) {
 	else
 		max = SIZE_MAX;
 
-	const char *sep;
+	const uint8_t *sep;
 	size_t sepLen;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sep, &sepLen) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	sepLen = str.Length();
-	sep = str.GetConstStr();
+	sep = (const uint8_t *)str.GetConstStr();
 
 	ssize_t pos;
 
@@ -863,11 +863,11 @@ DEFINE_FUNCTION( charAt ) {
 		return JS_TRUE;
 	}
 
-	const char *buffer;
+	const uint8_t *buffer;
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &buffer) );
 
 	jschar chr;
-	chr = buffer[size_t(d)] & 0xff;
+	chr = buffer[size_t(d)];
 
 	JSString *str;
 	str = JS_NewUCStringCopyN(cx, &chr, 1);
@@ -912,7 +912,7 @@ DEFINE_FUNCTION( charCodeAt ) {
 		return JS_TRUE;
 	}
 
-	const char *buffer;
+	const uint8_t *buffer;
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &buffer) );
 
 	*JL_RVAL = INT_TO_JSVAL( buffer[size_t(d)] );
@@ -979,7 +979,7 @@ DEFINE_GET_PROPERTY() {
 		return JS_TRUE;
 
 	size_t length;
-	const char *buffer;
+	const uint8_t *buffer;
 	JL_CHK( BlobLength(cx, obj, &length) );
 	JL_CHK( BlobBuffer(cx, obj, &buffer) );
 
@@ -988,7 +988,7 @@ DEFINE_GET_PROPERTY() {
 		return JS_TRUE;
 
 	jschar chr;
-	chr = buffer[slot] & 0xff;
+	chr = buffer[slot];
 	JSString *str1;
 	str1 = JS_NewUCStringCopyN(cx, &chr, 1);
 	JL_CHK( str1 );
@@ -1019,7 +1019,7 @@ DEFINE_EQUALITY_OP() {
 	//JL_ASSERT_VALID( IsBlobValid(cx, obj) && IsBlobValid(cx, &js::Valueify(v)->toObject()), "Blob");
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) && IsBlobValid(cx, &js::Valueify(v)->toObject()) );
 
-	const char *buf1, *buf2;
+	const uint8_t *buf1, *buf2;
 	size_t len1, len2;
 	JL_CHK( BlobLength(cx, obj, &len1) );
 	JL_CHK( BlobLength(cx, js::Valueify(v)->toObjectOrNull(), &len2) );
@@ -1082,11 +1082,11 @@ JSBool next_foreach(JSContext *cx, uintN argc, jsval *vp) {
 	if ( pos >= len )
 		return JS_ThrowStopIteration(cx);
 
-	const char *buf;
+	const uint8_t *buf;
 	JL_CHK( BlobBuffer(cx, blobObj, &buf) );
 
 	jschar chr;
-	chr = buf[pos] & 0xff;
+	chr = buf[pos];
 	JSString *str;
 	str = JS_NewUCStringCopyN(cx, &chr, 1);
 	JL_CHK( str );
@@ -1135,10 +1135,10 @@ JSBool GetBlobString( JSContext *cx, JSObject *obj, jsval *str ) {
 
 		} else {
 
-			const char *buffer;
+			const uint8_t *buffer;
 			JL_CHK( BlobBuffer(cx, obj, &buffer) );
 			JSString *jsstr;
-			jsstr = JS_NewStringCopyN(cx, buffer, length);
+			jsstr = JS_NewStringCopyN(cx, (const char *)buffer, length);
 			JL_CHK( jsstr );
 			*str = STRING_TO_JSVAL(jsstr);
 		}
@@ -1280,7 +1280,7 @@ DEFINE_FUNCTION( _serialize ) {
 	if ( IsBlobValid(cx, JL_OBJ) ) {
 
 		size_t length;
-		const char *buf;
+		const uint8_t *buf;
 		JL_CHK( BlobLength(cx, JL_OBJ, &length) );
 		JL_CHK( BlobBuffer(cx, JL_OBJ, &buf) );
 		JL_CHK( ser->Write(cx, true) ); // valid

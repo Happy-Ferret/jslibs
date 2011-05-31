@@ -1,4 +1,23 @@
-if ( 10 ) {
+LoadModule('jsstd');
+Exec('test.js');
+
+
+
+
+LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
+
+
+
+	LoadModule('jsstd');
+	LoadModule('jsio');
+
+Print(OperationLimit, '\n');
+Print(TypeError, '\n');
+
+throw 0;
+	
+
+if ( 0 ) {
 
 	LoadModule('jsstd');
 	LoadModule('jsio');

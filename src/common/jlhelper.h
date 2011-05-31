@@ -1213,6 +1213,7 @@ public:
 		NewInner(str, NULL, false, false, length);
 	}
 
+
 	ALWAYS_INLINE JLStr(const jschar *str, size_t length, bool nullTerminated) {
 
 		NewInner(str, NULL, nullTerminated, false, length);
@@ -1222,6 +1223,7 @@ public:
 
 		NewInner(str, NULL, nullTerminated, true, length);
 	}
+
 
 	ALWAYS_INLINE JLStr(const char *str, bool nullTerminated) {
 
@@ -1242,6 +1244,34 @@ public:
 
 		NewInner(NULL, str, nullTerminated, true, length);
 	}
+
+
+	ALWAYS_INLINE JLStr(const uint8_t *str, bool nullTerminated) {
+
+		NewInner(NULL, (char*)str, nullTerminated, false);
+	}
+
+	ALWAYS_INLINE JLStr(const uint8_t *str, size_t length, bool nullTerminated) {
+
+		NewInner(NULL, (char*)str, nullTerminated, false, length);
+	}
+
+	ALWAYS_INLINE JLStr(uint8_t *str, bool nullTerminated) { // give ownership of str to JLStr
+
+		NewInner(NULL, (char*)str, nullTerminated, true);
+	}
+
+	ALWAYS_INLINE JLStr(uint8_t *str, size_t length, bool nullTerminated) { // give ownership of str to JLStr
+
+		NewInner(NULL, (char*)str, nullTerminated, true, length);
+	}
+
+
+	ALWAYS_INLINE JLStr(void *str, size_t length, bool nullTerminated, bool hasOwnership) { // give ownership of str to JLStr
+
+		NewInner(NULL, (char*)str, nullTerminated, hasOwnership, length);
+	}
+
 
 	ALWAYS_INLINE bool IsSet() const {
 
@@ -1530,6 +1560,14 @@ JL_NativeToJsval( JSContext *cx, const char* cval, size_t length, jsval *vp ) {
 	*vp = STRING_TO_JSVAL(jsstr);
 	return JS_TRUE;
 	JL_BAD;
+}
+
+// blob
+
+ALWAYS_INLINE JSBool
+JL_NativeToJsval( JSContext *cx, const unsigned char* cval, size_t length, jsval *vp ) {
+
+	return JL_NativeToJsval(cx, (const char *)cval, length, vp);
 }
 
 
@@ -2674,7 +2712,7 @@ JL_NewBlob( JSContext * RESTRICT cx, void* RESTRICT buffer, size_t length, jsval
 		return JS_TRUE;
 	}
 
-	*vp = STRING_TO_JSVAL( JLStr((char*)buffer, length, true).GetJSString(cx) );
+	*vp = STRING_TO_JSVAL( JLStr((uint8_t *)buffer, length, true).GetJSString(cx) );
 	buffer = NULL; // see bad:
 
 	// now we want a string object, not a string literal.
@@ -2698,7 +2736,7 @@ JL_NewBlobCopyN( JSContext * RESTRICT cx, const void * RESTRICT buffer, size_t l
 		return JS_TRUE;
 	}
 	// possible optimization: if Blob class is not abailable, copy buffer into JSString's jschar to avoid js_InflateString.
-	char *blobBuf = (char*)JS_malloc(cx, length +1);
+	char *blobBuf = (char *)JS_malloc(cx, length +1);
 	JL_CHK( blobBuf );
 	memcpy( blobBuf, buffer, length );
 	blobBuf[length] = '\0';

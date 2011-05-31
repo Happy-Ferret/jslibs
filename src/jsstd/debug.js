@@ -1,9 +1,5 @@
 LoadModule('jsstd'); 
 
-Print(OperationLimit(), '\n');
-Print(TypeError(), '\n');
-
-throw 0;
 
 Exec('../common/tools.js'); RunQATests('-rep 1 -nogcBetweenTests jsstd'); throw 0;
 

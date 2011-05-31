@@ -380,7 +380,7 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 	JL_ASSERT_THIS_OBJECT_STATE( tex );
 //	*buf = (char*)tex->cbuffer;
 //	*size = tex->width * tex->height * tex->channels * sizeof(PTYPE);
-	*str = JLStr((const char *)tex->cbuffer,  tex->width * tex->height * tex->channels * sizeof(PTYPE), false);
+	*str = JLStr((const uint8_t *)tex->cbuffer,  tex->width * tex->height * tex->channels * sizeof(PTYPE), false);
 	return JS_TRUE;
 	JL_BAD;
 }
