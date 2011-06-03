@@ -709,13 +709,13 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_SET( excludedFileList )
-		PROPERTY_SET( interruptCounterLimit )
-		PROPERTY_SET( breakOnError )
-		PROPERTY_SET( breakOnException )
-		PROPERTY_SET( breakOnDebuggerKeyword )
-		PROPERTY_SET( breakOnExecute )
-		PROPERTY_SET( breakOnFirstExecute )
+		PROPERTY_SETTER( excludedFileList )
+		PROPERTY_SETTER( interruptCounterLimit )
+		PROPERTY_SETTER( breakOnError )
+		PROPERTY_SETTER( breakOnException )
+		PROPERTY_SETTER( breakOnDebuggerKeyword )
+		PROPERTY_SETTER( breakOnExecute )
+		PROPERTY_SETTER( breakOnFirstExecute )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

@@ -1901,18 +1901,18 @@ CONFIGURE_STATIC
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_GET( scriptFilenameList )
-		PROPERTY_GET( stackSize )
-		PROPERTY_SET( gcZeal )
+		PROPERTY_GETTER( scriptFilenameList )
+		PROPERTY_GETTER( stackSize )
+		PROPERTY_SETTER( gcZeal )
 
-		PROPERTY_GET( gcNumber )
-//		PROPERTY_GET( gcMallocBytes )
-		PROPERTY_GET( gcBytes )
-		PROPERTY_GET( currentMemoryUsage )
-		PROPERTY_GET( peakMemoryUsage )
-		PROPERTY_GET( privateMemoryUsage )
-		PROPERTY_GET( processTime )
-		PROPERTY_GET( cpuLoad )
+		PROPERTY_GETTER( gcNumber )
+//		PROPERTY_GETTER( gcMallocBytes )
+		PROPERTY_GETTER( gcBytes )
+		PROPERTY_GETTER( currentMemoryUsage )
+		PROPERTY_GETTER( peakMemoryUsage )
+		PROPERTY_GETTER( privateMemoryUsage )
+		PROPERTY_GETTER( processTime )
+		PROPERTY_GETTER( cpuLoad )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

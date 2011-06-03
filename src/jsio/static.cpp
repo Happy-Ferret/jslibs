@@ -1329,15 +1329,15 @@ CONFIGURE_STATIC
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_GET( hostName )
-		PROPERTY_GET( physicalMemorySize )
-		PROPERTY_GET( systemInfo )
+		PROPERTY_GETTER( hostName )
+		PROPERTY_GETTER( physicalMemorySize )
+		PROPERTY_GETTER( systemInfo )
 		PROPERTY( processPriority )
-		PROPERTY_GET( numberOfProcessors )
+		PROPERTY_GETTER( numberOfProcessors )
 		PROPERTY( currentDirectory )
-		PROPERTY_GET( directorySeparator )
-		PROPERTY_GET( pathSeparator )
-		PROPERTY_GET( version )
+		PROPERTY_GETTER( directorySeparator )
+		PROPERTY_GETTER( pathSeparator )
+		PROPERTY_GETTER( version )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

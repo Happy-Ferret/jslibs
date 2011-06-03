@@ -307,10 +307,10 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define FUNCTION_ALIAS(alias, name) JS_FN( #alias, _##name, 0, 0 ),
 
 #define PROPERTY(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
-#define PROPERTY_GET(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name##Getter, NULL }, // (TBD) rename into PROPERTY_GETTER
-#define PROPERTY_SET(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name##Setter }, // (TBD) rename into PROPERTY_SETTER
-#define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter }, // Used to define multiple properties with only one pari of getter/setter functions ( an enum has to be defiend ... less than 256 items ! )
-#define PROPERTY_SWITCH_GET(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##function##Getter, NULL },
+#define PROPERTY_GETTER(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name##Getter, NULL },
+#define PROPERTY_SETTER(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name##Setter },
+#define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter }, // Used to define multiple properties with only one pair of getter/setter functions (an enum has to be defiend with less than 256 items !)
+#define PROPERTY_SWITCH_GETTER(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##function##Getter, NULL },
 #define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, _##getter, _##setter },
 #define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
 

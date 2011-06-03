@@ -752,20 +752,20 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 
-		PROPERTY_GET( position )
-		PROPERTY_GET( velocity )
+		PROPERTY_GETTER( position )
+		PROPERTY_GETTER( velocity )
 
 //		PROPERTY_WRITE_STORE( buffer )
 		PROPERTY( buffer )
 
-		PROPERTY_SET( effectSlot )
-		PROPERTY_SET( directFilter )
+		PROPERTY_SETTER( effectSlot )
+		PROPERTY_SETTER( directFilter )
 
-		PROPERTY_GET( remainingTime )
+		PROPERTY_GETTER( remainingTime )
 
-		PROPERTY_SWITCH_GET( buffersQueued, sourceIntInd )
-		PROPERTY_SWITCH_GET( buffersProcessed, sourceIntInd )
-		PROPERTY_SWITCH_GET( state, sourceIntInd )
+		PROPERTY_SWITCH_GETTER( buffersQueued, sourceIntInd )
+		PROPERTY_SWITCH_GETTER( buffersProcessed, sourceIntInd )
+		PROPERTY_SWITCH_GETTER( state, sourceIntInd )
 		PROPERTY_SWITCH( looping, sourceBoolInd )
 		PROPERTY_SWITCH( sourceRelative, sourceBoolInd )
 		PROPERTY_SWITCH( gain, sourceFloatInd )

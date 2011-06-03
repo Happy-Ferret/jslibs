@@ -624,12 +624,12 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-//		PROPERTY_GET( roster )
+//		PROPERTY_GETTER( roster )
 		PROPERTY( presence )
 		PROPERTY( status )
-		PROPERTY_GET( connectionTotalIn )
-		PROPERTY_GET( connectionTotalOut )
-		PROPERTY_GET( socket )
+		PROPERTY_GETTER( connectionTotalIn )
+		PROPERTY_GETTER( connectionTotalOut )
+		PROPERTY_GETTER( socket )
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

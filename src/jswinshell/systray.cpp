@@ -1366,9 +1366,9 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_SET(icon) // _STORE  is needed to keep the reference to the image ( aboid GC )
+		PROPERTY_SETTER(icon) // _STORE  is needed to keep the reference to the image ( aboid GC )
 		PROPERTY(text)
-		PROPERTY_SET(visible)
+		PROPERTY_SETTER(visible)
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC

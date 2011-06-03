@@ -629,10 +629,10 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_GET( height )
+		PROPERTY_GETTER( height )
 		PROPERTY( advance )
-		PROPERTY_SET( tessellationSteps )
-		PROPERTY_SET( colorCallback )
+		PROPERTY_SETTER( tessellationSteps )
+		PROPERTY_SETTER( colorCallback )
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

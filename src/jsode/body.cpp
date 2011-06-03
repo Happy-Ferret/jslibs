@@ -1176,10 +1176,10 @@ CONFIGURE_CLASS
 		PROPERTY( angularDamping )
 		PROPERTY( angularDampingThreshold )
 
-//		PROPERTY_GET( jointsForce )
-//		PROPERTY_GET( jointsTorque )
+//		PROPERTY_GETTER( jointsForce )
+//		PROPERTY_GETTER( jointsTorque )
 
-//		PROPERTY_GET( isMoving )
+//		PROPERTY_GETTER( isMoving )
 
 		PROPERTY_SWITCH( position  , vector )
 		PROPERTY_SWITCH( quaternion, vector )
@@ -1187,11 +1187,11 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( angularVel, vector )
 		PROPERTY_SWITCH( force     , vector )
 		PROPERTY_SWITCH( torque    , vector )
-		PROPERTY_GET( mass ) // mass is only a wrapper to dBodyGetMass and dBodySetMass
+		PROPERTY_GETTER( mass ) // mass is only a wrapper to dBodyGetMass and dBodySetMass
 
 //		PROPERTY_READ_STORE( position )
 
-		PROPERTY_SET( onMove )
+		PROPERTY_SETTER( onMove )
 
 	END_PROPERTY_SPEC
 

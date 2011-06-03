@@ -748,10 +748,10 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_GET(pendingRequestCount)
-		PROPERTY_GET(processingRequestCount)
-		PROPERTY_GET(pendingResponseCount)
-		PROPERTY_GET(idle)
+		PROPERTY_GETTER(pendingRequestCount)
+		PROPERTY_GETTER(processingRequestCount)
+		PROPERTY_GETTER(pendingResponseCount)
+		PROPERTY_GETTER(idle)
 	END_PROPERTY_SPEC
 
 END_CLASS

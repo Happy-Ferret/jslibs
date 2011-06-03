@@ -1690,11 +1690,11 @@ CONFIGURE_STATIC
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_GET( currentFilename )
-		PROPERTY_GET( currentLineNumber )
-//		PROPERTY_GET( isConstructing )
+		PROPERTY_GETTER( currentFilename )
+		PROPERTY_GETTER( currentLineNumber )
+//		PROPERTY_GETTER( isConstructing )
 		PROPERTY( disableGarbageCollection )
-		PROPERTY_GET( CPUID )
+		PROPERTY_GETTER( CPUID )
 #ifdef _DEBUG
 //		PROPERTY( jsstdPropTest )
 #endif // _DEBUG
