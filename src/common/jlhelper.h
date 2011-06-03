@@ -2948,12 +2948,11 @@ JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, const jsval
 	for ( uintN i = 1; i <= argc; i++ )
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
-//	js::AutoArrayRooter tvr(cx, argc+1, argv); // (TBD) check if it is needed as conservative GC scans the stacks and meed alloca memory
 	argv[0] = JSVAL_NULL; // the rval
 	if ( JL_IS_SAFE )
 		JL_CHK( JL_ValueIsFunction(cx, functionValue) );
 	JSBool st;
-	st = JS_CallFunctionValue(cx, obj, functionValue, argc, argv+1, argv); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
+	st = JS_CallFunctionValue(cx, obj, functionValue, argc, argv+1, argv);
 	JL_CHK( st );
 	if ( rval != NULL )
 		*rval = argv[0];
@@ -2971,9 +2970,8 @@ JL_CallFunctionNameVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, const c
 	for ( uintN i = 1; i <= argc; i++ )
 		argv[i] = va_arg(ap, jsval);
 	va_end(ap);
-//	js::AutoArrayRooter tvr(cx, argc+1, argv);
 	argv[0] = JSVAL_NULL; // the rval
-	JSBool st = JS_CallFunctionName(cx, obj, functionName, argc, argv+1, argv); // NULL is NOT supported for &rvalTmp ( last arg of JS_CallFunctionValue )
+	JSBool st = JS_CallFunctionName(cx, obj, functionName, argc, argv+1, argv);
 	JL_CHK( st );
 	if ( rval != NULL )
 		*rval = argv[0];

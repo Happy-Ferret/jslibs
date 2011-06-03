@@ -431,8 +431,7 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 
 	static ALWAYS_INLINE size_t msize( void *ptr ) {
 
-		if ( ptr != NULL ) // (TBD) check if it is needed
-			return malloc_usable_size(ptr);
+		return malloc_usable_size(ptr); // NULL-check of ptr seems not needed
 		return 0;
 	}
 
