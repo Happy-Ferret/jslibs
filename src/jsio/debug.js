@@ -4,6 +4,19 @@
 
 
 
+
+LoadModule('jsstd'); LoadModule('jsio');
+
+
+var f = new Socket();
+f.Connect('apod.nasa.gov', 80);
+f.Write('GET /apod/image/1105/cenAjets_many_1280.jpg HTTP/1.0\r\nAccept:*/*\r\n\r\n');
+var image = Stringify(f);
+
+Print( image.length, 'bytes\n' );
+
+
+
 throw 0;
 	
 

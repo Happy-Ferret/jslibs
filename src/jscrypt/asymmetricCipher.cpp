@@ -686,7 +686,7 @@ DEFINE_PROPERTY_GETTER( blockLength ) {
 			blockLength = hashDescriptor->hashsize;
 			break;
 #ifdef MKAT
-		case katja: { // (TBD)
+		case katja: {
 
 			// see katja_encrypt_key() and pkcs_1_oaep_encode() for details:
 			unsigned long modulus_bitlen, modulus_len, hLen;

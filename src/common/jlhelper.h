@@ -2222,35 +2222,6 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, void **ptr ) {
 }
 
 
-
-///////////////////////////////////////////////////////////////////////////////
-// reserved slot convertion functions
-
-template <class T>
-ALWAYS_INLINE JSBool FASTCALL
-JL_NativeToReservedSlot( JSContext * RESTRICT cx, JSObject * RESTRICT obj, uintN slot, T &value ) {
-
-	jsval tmp;
-	JL_CHK( JL_NativeToJsval(cx, value, &tmp) );
-	JL_CHK( JL_SetReservedSlot(cx, obj, slot, tmp) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-template <class T>
-ALWAYS_INLINE JSBool FASTCALL
-JL_ReservedSlotToNative( JSContext * RESTRICT cx, JSObject * RESTRICT obj, uintN slot, T * RESTRICT value ) {
-
-	jsval tmp;
-	JL_CHK( JL_GetReservedSlot(cx, obj, slot, &tmp) );
-	JL_CHK( JL_JsvalToNative(cx, tmp, value) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // vector convertion functions
 
@@ -2343,6 +2314,34 @@ JL_JsvalToNativeVector( JSContext *cx, jsval &val, T *vector, jsuint maxLength, 
 		JL_CHK( JS_GetElement(cx, arrayObj, maxLength, &val) ); //JL_CHK( JS_GetPropertyById(cx, arrayObj, INT_TO_JSID(i), &val) );
 		JL_CHK( JL_JsvalToNative(cx, val, &vector[maxLength]) );
 	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// reserved slot convertion functions
+
+template <class T>
+ALWAYS_INLINE JSBool FASTCALL
+JL_NativeToReservedSlot( JSContext * RESTRICT cx, JSObject * RESTRICT obj, uintN slot, T &value ) {
+
+	jsval tmp;
+	JL_CHK( JL_NativeToJsval(cx, value, &tmp) );
+	JL_CHK( JL_SetReservedSlot(cx, obj, slot, tmp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+template <class T>
+ALWAYS_INLINE JSBool FASTCALL
+JL_ReservedSlotToNative( JSContext * RESTRICT cx, JSObject * RESTRICT obj, uintN slot, T * RESTRICT value ) {
+
+	jsval tmp;
+	JL_CHK( JL_GetReservedSlot(cx, obj, slot, &tmp) );
+	JL_CHK( JL_JsvalToNative(cx, tmp, value) );
 	return JS_TRUE;
 	JL_BAD;
 }

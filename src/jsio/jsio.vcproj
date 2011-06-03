@@ -221,51 +221,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\descriptor.h"
-				>
-			</File>
-			<File
-				RelativePath=".\directory.h"
-				>
-			</File>
-			<File
 				RelativePath=".\error.h"
 				>
 			</File>
 			<File
-				RelativePath=".\file.h"
-				>
-			</File>
-			<File
 				RelativePath=".\jsio.h"
-				>
-			</File>
-			<File
-				RelativePath=".\memoryMapped.h"
-				>
-			</File>
-			<File
-				RelativePath=".\pipe.h"
-				>
-			</File>
-			<File
-				RelativePath=".\process.h"
-				>
-			</File>
-			<File
-				RelativePath=".\semaphore.h"
-				>
-			</File>
-			<File
-				RelativePath=".\sharedMemory.h"
-				>
-			</File>
-			<File
-				RelativePath=".\socket.h"
-				>
-			</File>
-			<File
-				RelativePath=".\static.h"
 				>
 			</File>
 			<File

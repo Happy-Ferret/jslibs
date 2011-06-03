@@ -29,48 +29,46 @@ JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int i
 JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
 	JL_ASSERT_INHERITANCE(obj, JL_CLASS(Descriptor));
+	JL_ASSERT( *amount <= PR_INT32_MAX );
 
+	PRInt32 res;
 	PRFileDesc *fd;
 	fd = (PRFileDesc*)JL_GetPrivate(cx, obj); // (PRFileDesc *)pv;
 	JL_ASSERT_OBJECT_STATE(fd, JL_CLASS_NAME(Descriptor));
 
-	PRInt32 res;
-/* (TBD) not sure a Poll is realy needed here
+
 	PRPollDesc desc;
 	desc.fd = fd;
 	desc.in_flags = PR_POLL_READ;
 	desc.out_flags = 0;
-	res = PR_Poll( &desc, 1, PR_SecondsToInterval(10) ); // wait 10 seconds for data
+
+	// PR_Poll works with non-blocking sockets.  In fact, PR_Poll is intended to be used with non-blocking sockets.
+	// PR_Poll blocks until the events you're interested in have occurred. 
+	// The fact that the socket is in non-blocking mode affects PR_Recv, PR_Send, etc., but doesn't affect PR_Poll. 
+
+	res = PR_Poll(&desc, 1, PR_MillisecondsToInterval(5000)); // wait x seconds for data
 	if ( res == -1 ) // if PR_Poll is not compatible with the file descriptor, just ignore the error ?
 		return ThrowIoError(cx);
-
 	if ( res == 0 ) { // timeout, no data
 
 		*amount = 0;
 		return JS_TRUE; // no data, but it is not an error.
 	}
-*/
 
-	JL_ASSERT( *amount <= PR_INT32_MAX );
-
+	// PR_Read doc:
+	// * a positive number indicates the number of bytes actually read in.
+	// * 0 means end of file is reached or the network connection is closed.
+	// * -1 indicates a failure. The reason for the failure is obtained by calling PR_GetError().
 	res = PR_Read(fd, buf, (PRInt32)*amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
-	if ( res == -1 ) {
-
-		PRErrorCode errorCode = PR_GetError();
-		if ( errorCode != PR_WOULD_BLOCK_ERROR )// if non-blocking descriptor, this is a non-fatal error
-			return ThrowIoError(cx); // real error
-		*amount = 0;
-		return JS_TRUE; // no data yet, but it is not an error.
-	}
-
-	//if ( res == 0 ) { // end of file is reached or the network connection is closed.
-	//	// (TBD) something else to do ?
-	//}
+	// impossible to have PR_Poll() followed by PR_GetError() == PR_WOULD_BLOCK_ERROR
+	if ( res == -1 )
+		return ThrowIoError(cx);
 
 	*amount = res;
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 
 void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
@@ -508,12 +506,6 @@ DEFINE_PROPERTY_GETTER( available ) {
 	}
 
 	return JL_NativeToJsval(cx, available, vp);
-/*
-	if ( available <= JSVAL_INT_MAX )
-		*vp = INT_TO_JSVAL( (jsint)available );
-	else
-		JL_CHK( JL_NewNumberValue(cx, (jsdouble)available, vp) );
-*/
 	JL_BAD;
 }
 

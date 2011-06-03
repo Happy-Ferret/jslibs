@@ -262,9 +262,9 @@ bad1:
 void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 	// trap JSMSG_OUT_OF_MEMORY error to avoid calling ErrorReporter_stdErrRouter() that may allocate memory that will lead to nested call.
-	if (unlikely( report && report->errorNumber == JSMSG_OUT_OF_MEMORY )) { // (TBD) do something better
+	if (unlikely( report && report->errorNumber == JSMSG_OUT_OF_MEMORY )) {
 		
-		fprintf(stderr, "%s (%s:%d)\n", message, report->filename, report->lineno);
+		ErrorReporterBasic(cx, message, report);
 		return;
 	}
 
@@ -447,7 +447,7 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
 	char libFileName[PATH_MAX];
-	strncpy( libFileName, str.GetConstStr(), str.Length() ); // (TBD) check
+	strncpy( libFileName, str.GetConstStr(), str.Length() );
 	libFileName[str.Length()] = '\0';
 	strcat( libFileName, DLL_EXT );
 // MAC OSX: 	'@executable_path' ??
@@ -766,8 +766,6 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 	JL_CHKM( RemoveHostObject(cx), E_HOST, E_INTERNAL ); // "Unable to remove the host object."
 
-//	JS_SetGlobalObject(cx, JSVAL_TO_OBJECT(JSVAL_NULL)); // remove the global object (TBD) check if it is good or needed to do this.
-
 // cleanup
 
 	// doc:
@@ -900,7 +898,7 @@ bad:
 
 
 
-JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) { // (TBD) support xdr files
+JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
 
 	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
 	JSObject *globalObject = JL_GetGlobalObject(cx);
