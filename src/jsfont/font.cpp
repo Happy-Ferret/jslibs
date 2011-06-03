@@ -736,18 +736,18 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ( poscriptName )
-		PROPERTY_WRITE( size )
+		PROPERTY_GET( poscriptName )
+		PROPERTY_SET( size )
 		PROPERTY( useKerning )
 		PROPERTY( horizontalPadding )
 		PROPERTY( verticalPadding )
 		PROPERTY( letterSpacing )
 		PROPERTY( italic )
 		PROPERTY( bold )
-		PROPERTY_WRITE( encoding )
-		PROPERTY_READ( ascender )
-		PROPERTY_READ( descender )
-		PROPERTY_READ( width )
+		PROPERTY_SET( encoding )
+		PROPERTY_GET( ascender )
+		PROPERTY_GET( descender )
+		PROPERTY_GET( width )
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

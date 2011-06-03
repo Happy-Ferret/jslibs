@@ -783,11 +783,11 @@ CONFIGURE_CLASS
 		PROPERTY( name )
 		PROPERTY( content )
 		PROPERTY( position )
-		PROPERTY_READ( exist )
-		PROPERTY_READ( hasWriteAccess )
-		PROPERTY_READ( hasReadAccess )
-		PROPERTY_READ( info )
-		PROPERTY_READ( id )
+		PROPERTY_GET( exist )
+		PROPERTY_GET( hasWriteAccess )
+		PROPERTY_GET( hasReadAccess )
+		PROPERTY_GET( info )
+		PROPERTY_GET( id )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

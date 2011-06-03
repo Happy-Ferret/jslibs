@@ -1194,12 +1194,12 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( nonblocking, Option )
 		PROPERTY_SWITCH( broadcast, Option )
 		PROPERTY_SWITCH( multicastLoopback, Option )
-		PROPERTY_READ( peerName )
-		PROPERTY_READ( peerPort )
-		PROPERTY_READ( sockName )
-		PROPERTY_READ( sockPort )
-		PROPERTY_READ( connectContinue )
-		PROPERTY_READ( connectionClosed )
+		PROPERTY_GET( peerName )
+		PROPERTY_GET( peerPort )
+		PROPERTY_GET( sockName )
+		PROPERTY_GET( sockPort )
+		PROPERTY_GET( connectContinue )
+		PROPERTY_GET( connectionClosed )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC

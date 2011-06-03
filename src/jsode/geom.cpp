@@ -574,14 +574,14 @@ CONFIGURE_CLASS
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( contact )
 		PROPERTY( body ) // store it to keep a reference (GC protection)
-		PROPERTY_WRITE( tansformation )
-		PROPERTY_WRITE( offset )
+		PROPERTY_SET( tansformation )
+		PROPERTY_SET( offset )
 		PROPERTY( disabled )
 		PROPERTY( temporalCoherence )
 		PROPERTY( position )
-		PROPERTY_READ( aabb )
-		PROPERTY_READ( boundarySphere )
-		PROPERTY_READ( space )
+		PROPERTY_GET( aabb )
+		PROPERTY_GET( boundarySphere )
+		PROPERTY_GET( space )
 //		PROPERTY( offsetPosition )
 	END_PROPERTY_SPEC
 

@@ -269,12 +269,12 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( anchor )
-		PROPERTY_READ( anchor2 )
+		PROPERTY_GET( anchor2 )
 		PROPERTY( axis )
-		PROPERTY_READ( position )
-		PROPERTY_READ( positionRate )
-		PROPERTY_READ( angle )
-		PROPERTY_READ( angleRate )
+		PROPERTY_GET( position )
+		PROPERTY_GET( positionRate )
+		PROPERTY_GET( angle )
+		PROPERTY_GET( angleRate )
 	END_PROPERTY_SPEC
 
 END_CLASS

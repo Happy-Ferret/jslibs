@@ -411,11 +411,11 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ( vertexCount )
-		PROPERTY_READ( indexCount )
-		PROPERTY_READ( hasNormal )
-		PROPERTY_READ( hasTextureCoordinateBuffer )
-		PROPERTY_READ( hasColor )
+		PROPERTY_GET( vertexCount )
+		PROPERTY_GET( indexCount )
+		PROPERTY_GET( hasNormal )
+		PROPERTY_GET( hasTextureCoordinateBuffer )
+		PROPERTY_GET( hasColor )
 	END_PROPERTY_SPEC
 
 END_CLASS

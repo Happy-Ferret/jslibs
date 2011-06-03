@@ -417,17 +417,17 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-		PROPERTY_READ( hasNewFrame )
-		PROPERTY_READ( width )
-		PROPERTY_READ( height )
-		PROPERTY_READ( channels )
-		PROPERTY_READ( name )
+		PROPERTY_GET( hasNewFrame )
+		PROPERTY_GET( width )
+		PROPERTY_GET( height )
+		PROPERTY_GET( channels )
+		PROPERTY_GET( name )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_READ( version )
-		PROPERTY_READ( list )
-		PROPERTY_READ( hasDevice )
+		PROPERTY_GET( version )
+		PROPERTY_GET( list )
+		PROPERTY_GET( hasDevice )
 	END_STATIC_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC

@@ -773,13 +773,13 @@ CONFIGURE_CLASS
 
 	BEGIN_PROPERTY_SPEC
 //		PROPERTY_WRITE_STORE( xmlData )
-//		PROPERTY_READ( images )
-		PROPERTY_WRITE( dpi )
-		PROPERTY_READ( width )
-		PROPERTY_READ( height )
-		PROPERTY_READ( title )
-		PROPERTY_READ( metadata )
-		PROPERTY_READ( description )
+//		PROPERTY_GET( images )
+		PROPERTY_SET( dpi )
+		PROPERTY_GET( width )
+		PROPERTY_GET( height )
+		PROPERTY_GET( title )
+		PROPERTY_GET( metadata )
+		PROPERTY_GET( description )
 	END_PROPERTY_SPEC
 
 END_CLASS
