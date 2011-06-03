@@ -1,5 +1,25 @@
 LoadModule('jsstd');
 
+/// Exec error
+
+	var filename = 'jsqa_' + QA.RandomString(8);
+	new File(filename).content = '\n\n\n\nfunction();\n';
+	
+//	var errorMsg = '';
+//	var tmp = _host.stderr;
+//	_host.stderr = function(txt) {
+//		
+//		errorMsg += txt;
+//	}
+	
+	QA.ASSERT_EXCEPTION(function() { Exec(filename, false) }, SyntaxError, 'Exec handle compilation errors');
+
+	new File(filename).content = undefined;
+	
+//	_host.stderr = tmp;
+//	QA.ASSERT( errorMsg.indexOf('function()') != -1, true, 'correct error message' );
+	
+
 /// Count object properties [rmtf]
 
 	QA.ASSERT( CountProperties({}), 0, 'test with 0 properties' );

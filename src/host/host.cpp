@@ -908,7 +908,7 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	JL_CHK( CreateScriptArguments(cx, argc, argv) );
 
 	JSObject *script;
-	script = JL_LoadScript(cx, globalObject, scriptFileName, true, false); // use xdr if available, but don't save it.
+	script = JL_LoadScript(cx, globalObject, scriptFileName, ENC_UNKNOWN, true, false); // use xdr if available, but don't save it.
 	JL_CHK( script );
 
 	{

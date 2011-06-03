@@ -1246,7 +1246,7 @@ DEFINE_FUNCTION( PropertiesList ) {
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
-	if ( !srcObj->isNative() ) { // (TBD) remove this workaround to bz#522101
+	if ( !srcObj->isNative() ) { // (TBD) remove this workaround to bz#522101 / bz#488924
 
 		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
@@ -1303,7 +1303,7 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
-	if ( !srcObj->isNative() ) { // (TBD) remove this workaround to bz#522101
+	if ( !srcObj->isNative() ) { // (TBD) remove this workaround to bz#522101 / bz#488924
 
 		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
@@ -1337,7 +1337,7 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 	while ( srcObj ) {
 
 		jssp = NULL;
-		//about bz#522101
+		//about bz#522101 / bz#488924
 		//<jorendorff>	I was going to say, something like if (OBJ_IS_DENSE_ARRAY(cx, obj)) { if (!js_MakeArraySlow(cx, obj)) return NULL; }
 		JS_PropertyIterator(srcObj, &jssp);
 

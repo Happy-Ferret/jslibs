@@ -34,24 +34,13 @@ DEFINE_FINALIZE() {
 	FinalizeDescriptor(cx, obj); // defined in descriptor.cpp
 }
 
-
-//DEFINE_CONSTRUCTOR() {
-//
-//	JL_DEFINE_CONSTRUCTOR_OBJ;
-//	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-//	return JS_TRUE;
-//}
-
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
-	HAS_PROTOTYPE( Descriptor )
-
-	//HAS_CONSTRUCTOR
-
-	HAS_FINALIZE
-
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS( 1 ) // SLOT_JSIO_DESCRIPTOR_IMPORTED
+	HAS_PROTOTYPE( Descriptor )
+	IS_INCONSTRUCTIBLE
+	HAS_FINALIZE
 
 END_CLASS

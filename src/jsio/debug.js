@@ -1,18 +1,8 @@
-LoadModule('jsstd');
-Exec('test.js');
+//LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
+//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask -rep 1 jsio');
 
 
 
-
-LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
-
-
-
-	LoadModule('jsstd');
-	LoadModule('jsio');
-
-Print(OperationLimit, '\n');
-Print(TypeError, '\n');
 
 throw 0;
 	
@@ -47,11 +37,10 @@ if ( 0 ) {
 LoadModule('jsstd');  LoadModule('jsio');
 //RunJsircbot(false); throw 0;
 // var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-Exec('../common/tools.js');
 //Exec('../../qaexp.js');  throw 0;
 //var QA = FakeQAApi;  RunLocalQAFile();
 //RunSavedQAFile('../../exitissue');
-RunQATests('-exclude jstask -rep 1 jsio');
+
 
 
 

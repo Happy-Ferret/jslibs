@@ -621,31 +621,39 @@ JL_IS_SIGNED(T a) {
 	return a > (T)-1;
 }
 
+#define JL_MIN(a,b) ((a) < (b) ? (a) : (b))
+#define JL_MAX(a,b) ((a) > (b) ? (a) : (b))
+#define JL_MINMAX(v,a,b) ((v) > (b) ? (b) : (v) < (a) ? (a) : (v))
+
+/*
 template<class T>
-ALWAYS_INLINE T
-JL_MIN(T a, T b) {
+ALWAYS_INLINE const T&
+JL_MIN(const T& a, const T& b) {
 	return (a) < (b) ? (a) : (b);
 }
 
+
 template<class T>
-ALWAYS_INLINE T
-JL_MAX(T a, T b) {
+ALWAYS_INLINE const T&
+JL_MAX(const T& a, const T& b) {
 	return (a) > (b) ? (a) : (b);
 }
 
 template<class T, class U>
-ALWAYS_INLINE T
-JL_MINMAX(T val, U vmin, U vmax) {
+ALWAYS_INLINE const T&
+JL_MINMAX(const T& val, const U &vmin, const U &vmax) {
 	if ( val >= vmax )
 		return (T)vmax;
 	if ( val <= vmin )
 		return (T)vmin;
 	return val;
 }
+*/
 
 template<class T, class U>
 ALWAYS_INLINE bool
 JL_INRANGE(T val, U vmin, U vmax) {
+
 	return val >= vmin && val <= vmax; // (TBD) test perf. with: return unsigned(val - vmin) <= unsigned(vmax - vmin);
 }
 
@@ -1301,47 +1309,95 @@ JLRemainingStackSize() {
 
 // see http://unicode.org/faq/utf_bom.html#BOM
 enum JLEncodingType {
-	unknown,
-	UTF32be,
-	UTF32le,
-	UTF16be,
-	UTF16le,
-	UTF8,
-	ASCII
+	ENC_UNKNOWN,
+	ENC_UTF32be,
+	ENC_UTF32le,
+	ENC_UTF16be,
+	ENC_UTF16le,
+	ENC_UTF8,
+	ENC_ASCII
 };
 
+
+INLINE bool
+JLIsASCII(const uint8_t *buf, size_t len) {
+
+	for ( const uint8_t *end = buf + len; buf != end; ++buf )
+		if ( (*buf & 0x80) || !(*buf & 0xF8) )
+			return false;
+	return true;
+}
+
+
+INLINE bool
+JLIsUTF8(const uint8_t *str, size_t len) {
+
+	int n;
+	for ( size_t i = 0; i < len; ++i ) {
+
+		if ( str[i] < 0x80 ) continue;
+		else if ( (str[i] & 0xE0) == 0xC0 ) n = 1;
+		else if ( (str[i] & 0xF0) == 0xE0 ) n = 2;
+		else if ( (str[i] & 0xF8) == 0xF0 ) n = 3;
+		else if ( (str[i] & 0xFC) == 0xF8 ) n = 4;
+		else if ( (str[i] & 0xFE) == 0xFC ) n = 5;
+		else return false;
+		for ( int j = 0; j < n; ++j ) {
+		
+			if ( (++i == len) || ((str[i] & 0xC0) != 0x80) )
+				return false;
+		}
+	}
+	return true;
+}
+
+
 INLINE JLEncodingType NOALIAS FASTCALL
-JLDetectEncoding(char **buf, size_t *size) {
+JLDetectEncoding(uint8_t **buf, size_t *size) {
 
-	if ( *size < 2 ) // avoid next section to crash
-		return ASCII;
-	if ( (*buf)[0] == '\xFF' && (*buf)[1] == '\xFE' ) {
-
-		*buf += 2;
-		*size -= 2;
-		return UTF16le;
-	}
-	if ( (*buf)[0] == '\xFE' && (*buf)[1] == '\xFF' ) {
-
-		*buf += 2;
-		*size -= 2;
-		return UTF16be;
-	}
-	if ( *size >= 3 && (*buf)[0] == '\xEF' && (*buf)[1] == '\xBB' && (*buf)[2] == '\xBF' ) {
+	if ( *size >= 3 && (*buf)[0] == 0xEF && (*buf)[1] == 0xBB && (*buf)[2] == 0xBF ) {
 
 		*buf += 3;
 		*size -= 3;
-		return UTF8;
+		return ENC_UTF8;
 	}
-	// no BOM, then guess // (TBD) find a better heuristic
+
+	if ( *size > 2 && (*buf)[0] == 0xFF && (*buf)[1] == 0xFE ) {
+
+		*buf += 2;
+		*size -= 2;
+		return ENC_UTF16le;
+	}
+
+	if ( *size > 2 && (*buf)[0] == 0xFE && (*buf)[1] == 0xFF ) {
+
+		*buf += 2;
+		*size -= 2;
+		return ENC_UTF16be;
+	}
+
+	size_t scanLen = JL_MIN(*size, 1024);
+	
+	if ( JLIsASCII(*buf, scanLen) )
+		return ENC_ASCII;
+
+	if ( JLIsUTF8(*buf, scanLen) )
+		return ENC_UTF8;
+
+/* no BOM, then guess // (TBD) find a better heuristic
 	if ( (*buf)[0] > 0 && (*buf)[1] > 0 )
 		return ASCII;
+
 	if ( (*buf)[0] != 0 && (*buf)[1] == 0 )
 		return UTF16le;
+
 	if ( (*buf)[0] == 0 && (*buf)[1] != 0 )
 		return UTF16be;
-	return unknown;
+*/
+
+	return ENC_UNKNOWN;
 }
+
 
 #ifdef _MSC_VER
 #pragma warning( push )
@@ -2161,7 +2217,10 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	ALWAYS_INLINE JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv ) {
 
 	#if defined(XP_WIN)
-		return CreateThread(NULL, 0, threadRoutine, pv, 0, NULL); // (TBD) need THREAD_TERMINATE ?
+		// The new thread handle is created with the THREAD_ALL_ACCESS access right.
+		// If a security descriptor is not provided when the thread is created, a default security descriptor is constructed for the new thread using the primary token of the process that is creating the thread.
+		// When a caller attempts to access the thread with the OpenThread function, the effective token of the caller is evaluated against this security descriptor to grant or deny access.
+		return CreateThread(NULL, 0, threadRoutine, pv, 0, NULL);
 	#elif defined(XP_UNIX)
 		pthread_t *thread = (pthread_t*)malloc(sizeof(pthread_t));
 		if ( thread == NULL )

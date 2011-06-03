@@ -362,6 +362,9 @@ DEFINE_FUNCTION( ClearObject ) {
 
 	JL_ASSERT_ARG_COUNT(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
+
+	// JS_ClearScope removes all of obj's own properties, except the special __proto__ and __parent__ properties,
+	// in a single operation. Properties belonging to objects on obj's prototype chain are not affected.
 	JS_ClearScope(cx, JSVAL_TO_OBJECT( JL_ARG(1) ));
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -963,7 +966,7 @@ DEFINE_FUNCTION( Exec ) {
 	uint32 oldopts;
 	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); // JSOPTION_COMPILE_N_GO is properly removed in JLLoadScript if needed.
 	JSObject *script;
-	script = JL_LoadScript(cx, obj, str, useAndSaveCompiledScripts, useAndSaveCompiledScripts);
+	script = JL_LoadScript(cx, obj, str, ENC_UNKNOWN, useAndSaveCompiledScripts, useAndSaveCompiledScripts);
 	JS_SetOptions(cx, oldopts);
 	JL_CHK( script );
 
@@ -1606,6 +1609,32 @@ DEFINE_FUNCTION( jsstdTest ) {
 	str[1] = 0;
 	*JL_RVAL = STRING_TO_JSVAL( JS_NewUCString(cx, str, 1) );
 */	
+
+
+/*
+	JLStr str;
+	JL_JsvalToNative(cx, JL_ARG(1), &str);
+	JSObject *scriptObj;
+
+	//	scriptObj = JS_CompileFile(cx, JS_GetGlobalObject(cx), str.GetConstStrZ());
+
+	//	scriptObj = JL_LoadScript(cx, JS_GetGlobalObject(cx), str, false, false);
+
+	size_t scriptFileSize;
+	int scriptFile;
+	scriptFile = open(str.GetConstStrZ(), O_RDONLY | O_BINARY | O_SEQUENTIAL);
+
+	scriptFileSize = lseek(scriptFile, 0, SEEK_END);
+	lseek(scriptFile, 0, SEEK_SET); // see tell(scriptFile);
+	char * scriptBuffer = (char*)jl_malloca(scriptFileSize);
+	int res;
+	res = read(scriptFile, (void*)scriptBuffer, (unsigned int)scriptFileSize);
+	close(scriptFile);
+
+	scriptObj = JS_CompileScript(cx, JS_GetGlobalObject(cx), scriptBuffer, scriptFileSize, str.GetConstStrZ(), 1);
+*/
+
+
 
 	return JS_TRUE;
 	JL_BAD;

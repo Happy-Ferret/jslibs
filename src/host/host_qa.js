@@ -87,9 +87,9 @@ LoadModule('jsio');
 
 /// host version info [rmtf]
 
-	QA.ASSERT( _host.build > 48000, true, 'build version validity );
-	QA.ASSERT( _host.revision > 3400, true, 'revision version validity );
-	QA.ASSERT( _host.jsVersion >= 185, 'javascript version validity );
+	QA.ASSERT( _host.build > 43000, true, 'build version validity' );
+	QA.ASSERT( _host.revision > 3400, true, 'revision version validity' );
+	QA.ASSERT( _host.jsVersion >= 185, true, 'javascript version validity' );
 	
 	
 	

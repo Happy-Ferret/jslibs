@@ -324,7 +324,7 @@ LoadModule('jsstd');
 		QA.ASSERT( e instanceof Blob, true )
 		QA.ASSERT( e instanceof String, false )
 
-		QA.ASSERT_EXCEPTION( function() { e.match }, TypeError, 'invalid blob object' );
+		QA.ASSERT_EXCEPTION( function() { e.match }, TypeError, 'invalid blob object (retry in safe mode ?)' );
 		
 		QA.ASSERT( e instanceof Blob, true )
 		QA.ASSERT( e instanceof String, false )

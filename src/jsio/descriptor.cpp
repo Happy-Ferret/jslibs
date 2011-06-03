@@ -17,6 +17,7 @@
 #include "../jslang/handlePub.h"
 
 DECLARE_CLASS( Descriptor )
+DECLARE_CLASS( Pipe )
 DECLARE_CLASS( File )
 DECLARE_CLASS( Socket )
 
@@ -49,7 +50,10 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 		return JS_TRUE; // no data, but it is not an error.
 	}
 */
-	res = PR_Read(fd, buf, *amount > PR_INT32_MAX ? PR_INT32_MAX : (PRInt32)*amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
+
+	JL_ASSERT( *amount <= PR_INT32_MAX );
+
+	res = PR_Read(fd, buf, (PRInt32)*amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
 	if ( res == -1 ) {
 
 		PRErrorCode errorCode = PR_GetError();
@@ -74,10 +78,12 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
 	if ( !fd ) // check if not already closed
 		return;
+
 	jsval imported;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
 	if ( imported == JSVAL_TRUE ) // Descriptor was inported, then do not close it
 		return;
+
 	PRStatus status;
 	status = PR_Close(fd); // what to do on error ??
 	if ( status != PR_SUCCESS ) {
@@ -154,19 +160,17 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, uint32_t amount, jsval *rval 
 		}
 		
 		buf[res] = 0;
-		JL_CHKB( JL_NewBlob(cx, buf, res, rval), bad_free );
+		JL_CHK( JL_NewBlob(cx, buf, res, rval) );
 		return JS_TRUE;
 	}
 
-	if ( res == 0 ) { // 0 means end of file is reached or the network connection is closed.
+	if ( res == 0 ) {
 
-		JS_free( cx, buf );
+		// 0 means end of file is reached or the network connection is closed.
 		// requesting 0 bytes and receiving 0 bytes does not indicate eof.
-		// BUT if amount is given by PR_Available and is 0 (see Read()), and the eof is reached, this function should return (void 0)
-//		if (likely( amount != 0 )) 
-			*rval = JSVAL_VOID;
-//		else
-//			*rval = JL_GetEmptyStringValue(cx);
+		// BUT if amount is given by PR_Available and is 0 (see Read()), and the eof is reached, this function should return JSVAL_VOID.
+		JS_free(cx, buf);
+		*rval = JSVAL_VOID;
 		return JS_TRUE;
 	}
 
@@ -177,9 +181,30 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, uint32_t amount, jsval *rval 
 			case PR_WOULD_BLOCK_ERROR:
 				*rval = JL_GetEmptyStringValue(cx); // mean no data available, but connection still established.
 				return JS_TRUE;
+
 			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
-//			case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
+				//Network dropped connection on reset.
+				//  The connection has been broken due to keep-alive activity detecting a failure while the operation was in progress.
+				//  It can also be returned by setsockopt if an attempt is made to set SO_KEEPALIVE on a connection that has already failed.
+				//Software caused connection abort.
+				//  An established connection was aborted by the software in your host computer, possibly due to a data transmission time-out or protocol error.
+				//Connection timed out.
+				//  A connection attempt failed because the connected party did not properly respond after a period of time,
+				//  or the established connection failed because the connected host has failed to respond.
+
+			//case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
+				//Cannot send after socket shutdown.
+				//  A request to send or receive data was disallowed because the socket had already been shut down in that direction with a previous shutdown call.
+				//  By calling shutdown a partial close of a socket is requested, which is a signal that sending or receiving, or both have been discontinued.
+
 			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
+				//Connection reset by peer.
+				//  An existing connection was forcibly closed by the remote host.
+				//  This normally results if the peer application on the remote host is suddenly stopped, the host is rebooted,
+				//  the host or remote network interface is disabled, or the remote host uses a hard close (see setsockopt for more information on the SO_LINGER option on the remote socket).
+				//  This error may also result if a connection was broken due to keep-alive activity detecting a failure while one or more operations are in progress.
+				//  Operations that were in progress fail with WSAENETRESET. Subsequent operations fail with WSAECONNRESET.
+
 				*rval = JSVAL_VOID;
 				return JS_TRUE;
 			default:
@@ -187,10 +212,11 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, uint32_t amount, jsval *rval 
 		}
 	}
 
-bad_free:
+bad:
 	JS_free(cx, buf);
-	JL_BAD;
+	return JS_FALSE;
 }
+
 
 
 void* JSBufferAlloc(void * opaqueAllocatorContext, size_t size) {
@@ -599,7 +625,7 @@ DEFINE_FUNCTION( Import ) {
 			break;
 		case PR_DESC_PIPE:
 			fd = PR_ImportPipe(osfd);
-			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_PROTOTYPE(cx, File), NULL); // (TBD) check if proto is needed !
+			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL); // (TBD) check if proto is needed !
 			break;
 		default:
 			ASSERT(false);

@@ -2224,6 +2224,34 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, void **ptr ) {
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// reserved slot convertion functions
+
+template <class T>
+ALWAYS_INLINE JSBool FASTCALL
+JL_NativeToReservedSlot( JSContext * RESTRICT cx, JSObject * RESTRICT obj, uintN slot, T &value ) {
+
+	jsval tmp;
+	JL_CHK( JL_NativeToJsval(cx, value, &tmp) );
+	JL_CHK( JL_SetReservedSlot(cx, obj, slot, tmp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+template <class T>
+ALWAYS_INLINE JSBool FASTCALL
+JL_ReservedSlotToNative( JSContext * RESTRICT cx, JSObject * RESTRICT obj, uintN slot, T * RESTRICT value ) {
+
+	jsval tmp;
+	JL_CHK( JL_GetReservedSlot(cx, obj, slot, &tmp) );
+	JL_CHK( JL_JsvalToNative(cx, tmp, value) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
 // vector convertion functions
 
 // if useValArray is true, val must be a valid array that is used to store the values.
@@ -3041,7 +3069,7 @@ JL_JsvalToPrimitive( JSContext * RESTRICT cx, const jsval &val, jsval * RESTRICT
 //
 //	/be
 INLINE NEVER_INLINE JSObject* FASTCALL
-JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RESTRICT fileName, bool useCompFile, bool saveCompFile) {
+JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RESTRICT fileName, JLEncodingType encoding, bool useCompFile, bool saveCompFile) {
 
 	char *scriptBuffer = NULL;
 	size_t scriptFileSize;
@@ -3178,45 +3206,55 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 	ASSERT( (size_t)res == scriptFileSize );
 	scriptFileSize = (size_t)res;
 
-	JLEncodingType enc;
-	enc = JLDetectEncoding(&scriptBuffer, &scriptFileSize);
-	if ( enc == ASCII ) {
+	if ( encoding == ENC_UNKNOWN )
+		encoding = JLDetectEncoding((uint8_t**)&scriptBuffer, &scriptFileSize);
 
-		char *scriptText = scriptBuffer;
-		size_t scriptTextLength = scriptFileSize;
-		if ( scriptText[0] == '#' && scriptText[1] == '!' ) { // shebang support
+	switch ( encoding ) {
+		default:
+			JL_WARN( E_SCRIPT, E_ENCODING, E_INVALID, E_NAME(fileName) );
+			// then use ASCII as default.
+		case ENC_ASCII: {
 
-			scriptText[0] = '/';
-			scriptText[1] = '/';
+			char *scriptText = scriptBuffer;
+			size_t scriptTextLength = scriptFileSize;
+			if ( scriptTextLength >= 2 && scriptText[0] == '#' && scriptText[1] == '!' ) { // shebang support
+
+				scriptText[0] = '/';
+				scriptText[1] = '/';
+			}
+			script = JS_CompileScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
+			break;
 		}
-		script = JS_CompileScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
-	} else
-	if ( enc == UTF16le ) { // (TBD) support big-endian
+		case ENC_UTF16le: { // (TBD) support big-endian
 
-		jschar *scriptText = (jschar*)scriptBuffer;
-		size_t scriptTextLength = scriptFileSize / 2;
-		if ( scriptText[0] == '#' && scriptText[1] == '!' ) { // shebang support
+			jschar *scriptText = (jschar*)scriptBuffer;
+			size_t scriptTextLength = scriptFileSize / 2;
+			if ( scriptTextLength >= 2 && scriptText[0] == L'#' && scriptText[1] == L'!' ) { // shebang support
 
-			scriptText[0] = '/';
-			scriptText[1] = '/';
+				scriptText[0] = L'/';
+				scriptText[1] = L'/';
+			}
+			script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
+			break;
 		}
-		script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
-	} else
-	if ( enc == UTF8 ) { // (TBD) check if JS_DecodeBytes does the right things
+		case ENC_UTF8: { // (TBD) check if JS_DecodeBytes does the right things
 
-		scriptText = (jschar*)jl_malloca(scriptFileSize * 2);
-		scriptTextLength = scriptFileSize * 2;
-		JL_CHKM( UTF8ToUTF16LE((unsigned char*)scriptText, &scriptTextLength, (unsigned char*)scriptBuffer, &scriptFileSize) >= 0, E_SCRIPT, E_INVALID, E_COMMENT("UTF8") ); // "Unable do decode UTF8 data."
+			scriptText = (jschar*)jl_malloca(scriptFileSize * 2);
+			scriptTextLength = scriptFileSize * 2;
+			JL_CHKM( UTF8ToUTF16LE((unsigned char*)scriptText, &scriptTextLength, (unsigned char*)scriptBuffer, &scriptFileSize) >= 0, E_SCRIPT, E_ENCODING, E_INVALID, E_COMMENT("UTF8") ); // "Unable do decode UTF8 data."
 
-		if ( scriptText[0] == '#' && scriptText[1] == '!' ) { // shebang support
+			if ( scriptTextLength >= 2 && scriptText[0] == L'#' && scriptText[1] == L'!' ) { // shebang support
 
-			scriptText[0] = '/';
-			scriptText[1] = '/';
+				scriptText[0] = L'/';
+				scriptText[1] = L'/';
+			}
+			script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
+			break;
 		}
-		script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
 	}
 
-	JL_CHKM( script, E_SCRIPT, E_NAME(fileName), E_COMPILE );
+	//JL_CHKM( script, E_SCRIPT, E_NAME(fileName), E_COMPILE ); // do not overwrite the default exception.
+	JL_CHK( script );
 
 #endif //JL_UC
 

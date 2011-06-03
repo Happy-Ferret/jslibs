@@ -244,8 +244,8 @@ bad1:
 	return JS_FALSE;
 }
 
-
-/**doc
+/*
+/ **doc
 $TOC_MEMBER $INAME
  $INT $INAME( _descriptorArray_ )
   Passively waits for a descriptor event through the ProcessEvents function.
@@ -253,7 +253,7 @@ $TOC_MEMBER $INAME
 {{{
 (TBD)
 }}}
-**/
+** /
 
 struct UserProcessEvent {
 
@@ -371,6 +371,7 @@ DEFINE_FUNCTION( IOEvents ) {
 	JL_BAD;
 }
 
+*/
 
 /**doc
 $TOC_MEMBER $INAME
@@ -411,6 +412,7 @@ DEFINE_FUNCTION( IsReadable ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
 
 /**doc
 $TOC_MEMBER $INAME
