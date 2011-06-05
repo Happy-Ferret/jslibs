@@ -120,7 +120,7 @@ static bool _inBeginOrEnd = false;
 #define OGL_CX_CHK \
 	JL_MACRO_BEGIN \
 		if ( JL_IS_SAFE ) { \
-			if ( glGetError() == GL_INVALID_OPERATION ) \
+			if ( !_inBeginOrEnd && glGetError() == GL_INVALID_OPERATION ) \
 				JL_ERR( E_LIB, E_STR("OpenGL"), E_NOTINIT ); \
 		} \
 	JL_MACRO_END
@@ -144,7 +144,7 @@ static bool _inBeginOrEnd = false;
 
 #define JL_INIT_OPENGL_EXTENSION( NAME, PROTOTYPE ) \
 	JL_MACRO_BEGIN \
-		INIT_OPENGL_EXTENSION( (NAME), PROTOTYPE ); \
+		INIT_OPENGL_EXTENSION( NAME, PROTOTYPE ); \
 		if ( (NAME) == NULL ) \
 			return ThrowOglError(cx, GL_INVALID_OPERATION); \
 	JL_MACRO_END
@@ -6812,8 +6812,6 @@ DEFINE_INIT() {
 #ifdef DEBUG
 DEFINE_FUNCTION( Test ) {
 
-	OGL_CX_CHK;
-
 /*
 	jsval id = JL_ARG(1);
 	JL_ASSERT( IsHandleType(cx, id, 'TBUF'), "Invalid buffer." );
@@ -6822,12 +6820,6 @@ DEFINE_FUNCTION( Test ) {
 	//tb->TextureBufferFree(tb);
 	for ( int i = 0; i < 3 * 32*32; i++ )
 		tb->data[i] = 0.5;
-*/
-
-/*
-	jsdouble d;
-	jsval val = JSVAL_NULL;
-	JL_CHK( JS_ValueToNumber(cx, val, &d) );
 */
 
 	*JL_RVAL = JSVAL_VOID;
