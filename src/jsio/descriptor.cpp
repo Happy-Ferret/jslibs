@@ -36,7 +36,6 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	fd = (PRFileDesc*)JL_GetPrivate(cx, obj); // (PRFileDesc *)pv;
 	JL_ASSERT_OBJECT_STATE(fd, JL_CLASS_NAME(Descriptor));
 
-
 	PRPollDesc desc;
 	desc.fd = fd;
 	desc.in_flags = PR_POLL_READ;
@@ -232,6 +231,7 @@ void* JSBufferRealloc(void * opaqueAllocatorContext, void* address, size_t size)
 	return JS_realloc((JSContext*)opaqueAllocatorContext, address, size);
 }
 
+
 JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 	jl::Buffer buf;
@@ -293,6 +293,34 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 bad:
 	BufferFinalize(&buf);
 	return JS_FALSE;
+
+
+/* simplified version but do not work for files because we expect to read the whole file.
+	uint8_t buffer[65536];
+	PRInt32 res = PR_Read(fd, buffer, sizeof(buffer));
+
+	if ( res == -1 ) { // -1 indicates a failure. The reason for the failure can be obtained by calling PR_GetError.
+		
+		switch ( PR_GetError() ) { // see Write() for details about errors
+			case PR_WOULD_BLOCK_ERROR: // The operation would have blocked (non-fatal error)
+				return JL_NewBlob(cx, NULL, 0, rval);
+			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
+			//case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
+			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
+				*rval = JSVAL_VOID;
+				return JS_TRUE;
+		}
+		return ThrowIoError(cx);
+	}
+
+	if ( res == 0 ) {
+
+		*rval = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	return JL_NewBlobCopyN(cx, buffer, res, rval);
+*/
 }
 
 
