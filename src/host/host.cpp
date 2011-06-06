@@ -587,7 +587,8 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); // # of JS_malloc bytes before last ditch GC
 //	JS_SetGCParameter(rt, JSGC_TRIGGER_FACTOR, 3);
 
-	uint32 stackpoolLifespan = JS_GetGCParameter(rt, JSGC_STACKPOOL_LIFESPAN);
+	uint32 stackpoolLifespan;
+	stackpoolLifespan = JS_GetGCParameter(rt, JSGC_STACKPOOL_LIFESPAN);
 	ASSERT( stackpoolLifespan == 30000 ); // check if default has chaged.
 	JS_SetGCParameter(rt, JSGC_STACKPOOL_LIFESPAN, 15000);
 
@@ -602,7 +603,8 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 
 	JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA); // good place to manage stack limit ( that is 32MB by default ). Btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
 
-	uint32 maxCodeCacheBytes = JS_GetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES);
+	uint32 maxCodeCacheBytes;
+	maxCodeCacheBytes = JS_GetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES);
 	ASSERT( maxCodeCacheBytes == 16 * 1024 * 1024 ); // check if default has chaged.
 	JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024 * 2);
 

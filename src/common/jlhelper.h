@@ -1288,7 +1288,7 @@ public:
 		if ( _inner->str )
 			return _inner->len = strlen(_inner->str);
 		if ( _inner->jsstr )
-			return _inner->len = wcslen(_inner->jsstr);
+			return _inner->len = wcslen((wchar_t *)_inner->jsstr);
 		ASSERT( _inner->len != SIZE_MAX );
 		return 0;
 	}
