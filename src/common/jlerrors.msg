@@ -104,6 +104,7 @@ DEF( COMPILE,        "cannot be compiled", JSEXN_ERR )
 DEF( INTERNAL,       "encountered an internal failure", JSEXN_INTERNALERR )
 DEF( IGNORED,        "will be ignored", JSEXN_TYPEERR )
 DEF( REQUIRED,       "is required", JSEXN_TYPEERR )
+DEF( NOTIMPLEMENTED, "is not implemented", JSEXN_INTERNALERR )
 
 //
 DEF( TY_UNDEFINED,   "undefined", JSEXN_TYPEERR )

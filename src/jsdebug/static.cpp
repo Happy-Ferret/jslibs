@@ -487,7 +487,9 @@ DEFINE_PROPERTY_GETTER( currentMemoryUsage ) {
 	GetProcInfo(getpid(), &pinfo);
 	bytes = pinfo.vsize;
 #else
-	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
+
+	JL_WARN( E_API, E_NOTIMPLEMENTED );
+
 #endif
 
 	JL_CHK( JL_NewNumberValue(cx, bytes, vp) );
@@ -524,7 +526,7 @@ DEFINE_PROPERTY_GETTER( peakMemoryUsage ) {
 	return JS_TRUE;
 	JL_BAD;
 #else
-	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
+	JL_WARN( E_API, E_NOTIMPLEMENTED );
 #endif
 
 	*vp = JSVAL_VOID;
@@ -562,7 +564,8 @@ DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 	JL_BAD;
 #else
 
-	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
+	JL_WARN( E_API, E_NOTIMPLEMENTED );
+
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
 
@@ -1585,7 +1588,9 @@ DEFINE_PROPERTY_GETTER( processTime ) {
 	JL_BAD;
 
 #else
-	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
+
+	JL_WARN( E_API, E_NOTIMPLEMENTED );
+
 #endif
 
 	*vp = JSVAL_VOID;
@@ -1633,7 +1638,9 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 	JL_BAD;
 
 #else
-	JL_REPORT_WARNING_NUM( JLSMSG_NOT_IMPLEMENTED);
+
+	JL_WARN( E_API, E_NOTIMPLEMENTED );
+
 #endif
 
 	*vp = JSVAL_VOID;
