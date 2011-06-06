@@ -1457,7 +1457,7 @@ ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, JLStr &cval, jsval *vp ) {
 
 	JSString *str = cval.GetJSString(cx);
-	if (likely( str )) {
+	if (likely( str != NULL )) {
 
 		*vp = STRING_TO_JSVAL(str);
 		return JS_TRUE;

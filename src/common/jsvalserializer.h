@@ -283,7 +283,8 @@ namespace jl {
 
 			// objects
 
-			JSObject *obj = JSVAL_TO_OBJECT(val);
+			JSObject *obj;
+			obj = JSVAL_TO_OBJECT(val);
 
 			if ( JS_IsArrayObject(cx, obj) ) {
 

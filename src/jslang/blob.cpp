@@ -346,9 +346,11 @@ DEFINE_FUNCTION( ReloacateToArray ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
 
-	JSObject *bufObj = js::ArrayBuffer::create(cx, 0);
+	JSObject *bufObj;
+	bufObj = js::ArrayBuffer::create(cx, 0);
 	JL_CHK( bufObj );
-	js::ArrayBuffer *buffer = js::ArrayBuffer::fromJSObject(bufObj);
+	js::ArrayBuffer *buffer;
+	buffer = js::ArrayBuffer::fromJSObject(bufObj);
 
 	ASSERT(buffer->byteLength == 0);
 	ASSERT(buffer->data == NULL); //	buffer->freeStorage(cx);
@@ -364,7 +366,8 @@ DEFINE_FUNCTION( ReloacateToArray ) {
 	JL_SetPrivate(cx, JL_OBJ, NULL); // InvalidateBlob(cx, JL_OBJ)
 	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_BLOB_JSSTRING, JSVAL_VOID) );
 
-	JSObject *typedArray = js_CreateTypedArrayWithBuffer(cx, js::TypedArray::TYPE_UINT8, bufObj, 0, buffer->byteLength);
+	JSObject *typedArray;
+	typedArray = js_CreateTypedArrayWithBuffer(cx, js::TypedArray::TYPE_UINT8, bufObj, 0, buffer->byteLength);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(typedArray);
 
@@ -637,7 +640,8 @@ DEFINE_FUNCTION( indexOf ) {
     if (textlen < patlen)
         return JL_NativeToJsval(cx, -1, JL_RVAL);
 
-	ssize_t match = Match(text, textlen, pat, patlen);
+	ssize_t match;
+	match = Match(text, textlen, pat, patlen);
 	if ( match == -1 )
 		*JL_RVAL = INT_TO_JSVAL(-1);
 	else
@@ -704,11 +708,16 @@ DEFINE_FUNCTION( lastIndexOf ) {
 	if (patlen == 0)
 		return JL_NativeToJsval(cx, i, JL_RVAL);
 
-	const uint8_t *t = text + i;
-	const uint8_t *textend = text - 1;
-	const uint8_t p0 = *pat;
-	const uint8_t *patNext = pat + 1;
-	const uint8_t *patEnd = pat + patlen;
+	const uint8_t *t;
+	t = text + i;
+	const uint8_t *textend;
+	textend = text - 1;
+	const uint8_t p0;
+	p0 = *pat;
+	const uint8_t *patNext;
+	patNext = pat + 1;
+	const uint8_t *patEnd;
+	patEnd = pat + patlen;
 
 	for (; t != textend; --t) {
 		if (*t == p0) {
@@ -983,7 +992,8 @@ DEFINE_GET_PROPERTY() {
 	JL_CHK( BlobLength(cx, obj, &length) );
 	JL_CHK( BlobBuffer(cx, obj, &buffer) );
 
-	jsint slot = JSID_TO_INT(id);
+	jsint slot;
+	slot = JSID_TO_INT(id);
 	if ( slot < 0 || size_t(slot) >= length )
 		return JS_TRUE;
 
