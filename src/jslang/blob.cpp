@@ -708,16 +708,13 @@ DEFINE_FUNCTION( lastIndexOf ) {
 	if (patlen == 0)
 		return JL_NativeToJsval(cx, i, JL_RVAL);
 
-	const uint8_t *t;
-	t = text + i;
-	const uint8_t *textend;
-	textend = text - 1;
-	const uint8_t p0;
-	p0 = *pat;
-	const uint8_t *patNext;
-	patNext = pat + 1;
-	const uint8_t *patEnd;
-	patEnd = pat + patlen;
+	{
+
+	const uint8_t *t = text + i;
+	const uint8_t *textend = text - 1;
+	const uint8_t p0 = *pat;
+	const uint8_t *patNext = pat + 1;
+	const uint8_t *patEnd = pat + patlen;
 
 	for (; t != textend; --t) {
 		if (*t == p0) {
@@ -729,6 +726,8 @@ DEFINE_FUNCTION( lastIndexOf ) {
 			return JL_NativeToJsval(cx, t - text, JL_RVAL);
 		}
 		break_continue:;
+	}
+	
 	}
 
 	*JL_RVAL = INT_TO_JSVAL(-1);
@@ -1024,7 +1023,7 @@ DEFINE_SET_PROPERTY() {
 
 DEFINE_EQUALITY_OP() {
 
-	JL_CHKB( JL_IsClass(*v, JL_THIS_CLASS), not_eq );
+	JL_CHKB( JL_IsClass(*v, JL_THIS_CLASS), noteq );
 
 	//JL_ASSERT_VALID( IsBlobValid(cx, obj) && IsBlobValid(cx, &js::Valueify(v)->toObject()), "Blob");
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) && IsBlobValid(cx, &js::Valueify(v)->toObject()) );
@@ -1036,11 +1035,11 @@ DEFINE_EQUALITY_OP() {
 	JL_CHKB( len1 == len2, not_eq );
 	JL_CHK( BlobBuffer(cx, obj, &buf1) );
 	JL_CHK( BlobBuffer(cx, js::Valueify(v)->toObjectOrNull(), &buf2) );
-	JL_CHKB( memcmp(buf1, buf2, len1) == 0, not_eq );
+	JL_CHKB( memcmp(buf1, buf2, len1) == 0, noteq );
 	*bp = JS_TRUE;
 	return JS_TRUE;
 
-not_eq:
+noteq:
 	*bp = JS_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -1052,14 +1051,17 @@ JSBool next_for(JSContext *cx, uintN argc, jsval *vp) {
 
 	JL_USE(argc);
 
-	JSObject *obj = JS_THIS_OBJECT(cx, vp);
+	JSObject *obj;
+	obj = JS_THIS_OBJECT(cx, vp);
 	jsval tmp;
 	JL_CHK( JS_GetPropertyById(cx, JS_THIS_OBJECT(cx, vp), INT_TO_JSID(0), &tmp) );
-	JSObject *blobObj = JSVAL_TO_OBJECT(tmp);
+	JSObject *blobObj;
+	blobObj = JSVAL_TO_OBJECT(tmp);
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, blobObj) );
 
 	JL_CHK( JS_GetPropertyById(cx, JS_THIS_OBJECT(cx, vp), INT_TO_JSID(1), &tmp) );
-	size_t pos = JSVAL_TO_INT(tmp);
+	size_t pos;
+	pos = JSVAL_TO_INT(tmp);
 	size_t len;
 	JL_CHK( BlobLength(cx, blobObj, &len) );
 	if ( pos >= len )
@@ -1082,11 +1084,13 @@ JSBool next_foreach(JSContext *cx, uintN argc, jsval *vp) {
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	jsval tmp;
 	JL_CHK( JS_GetPropertyById(cx, JS_THIS_OBJECT(cx, vp), INT_TO_JSID(0), &tmp) );
-	JSObject *blobObj = JSVAL_TO_OBJECT(tmp);
+	JSObject *blobObj;
+	blobObj = JSVAL_TO_OBJECT(tmp);
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, blobObj) );
 
 	JL_CHK( JS_GetPropertyById(cx, JS_THIS_OBJECT(cx, vp), INT_TO_JSID(1), &tmp) );
-	size_t pos = JSVAL_TO_INT(tmp);
+	size_t pos;
+	pos = JSVAL_TO_INT(tmp);
 	size_t len;
 	JL_CHK( BlobLength(cx, blobObj, &len) );
 	if ( pos >= len )
