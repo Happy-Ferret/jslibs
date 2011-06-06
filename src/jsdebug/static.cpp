@@ -524,13 +524,15 @@ DEFINE_PROPERTY_GETTER( peakMemoryUsage ) {
 	bytes = pmc.PeakWorkingSetSize; // same value as "windows task manager" "peak mem usage"
 	JL_CHK( JL_NewNumberValue(cx, bytes, vp) );
 	return JS_TRUE;
-	JL_BAD;
 #else
+
 	JL_WARN( E_API, E_NOTIMPLEMENTED );
+
 #endif
 
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -561,7 +563,6 @@ DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 	//   same value as "windows task manager" "mem usage"
 
 	return JL_NewNumberValue(cx, pmc.PrivateUsage, vp);
-	JL_BAD;
 #else
 
 	JL_WARN( E_API, E_NOTIMPLEMENTED );
@@ -570,6 +571,7 @@ DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 	return JS_TRUE;
 
 #endif
+	JL_BAD;
 }
 
 
@@ -1585,7 +1587,6 @@ DEFINE_PROPERTY_GETTER( processTime ) {
 	if ( !status )
 		return JL_ThrowOSError(cx);
 	return JL_NativeToJsval(cx, (kernelTime + userTime) / (double)10000 , vp);
-	JL_BAD;
 
 #else
 
@@ -1595,6 +1596,7 @@ DEFINE_PROPERTY_GETTER( processTime ) {
 
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
@@ -1635,7 +1637,6 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 		return JL_ThrowOSError(cx);
 
 	return JL_NativeToJsval(cx, value.doubleValue, vp);
-	JL_BAD;
 
 #else
 
@@ -1645,6 +1646,7 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 
 	*vp = JSVAL_VOID;
 	return JS_TRUE;
+	JL_BAD;
 }
 
 
