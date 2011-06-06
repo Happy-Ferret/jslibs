@@ -336,6 +336,19 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 	typedef UINT32 uint32_t;
 	typedef UINT64 uint64_t;
 
+	#define INT8_MIN     ((int8_t)_I8_MIN)
+	#define INT8_MAX     _I8_MAX
+	#define INT16_MIN    ((int16_t)_I16_MIN)
+	#define INT16_MAX    _I16_MAX
+	#define INT32_MIN    ((int32_t)_I32_MIN)
+	#define INT32_MAX    _I32_MAX
+	#define INT64_MIN    ((int64_t)_I64_MIN)
+	#define INT64_MAX    _I64_MAX
+	#define UINT8_MAX    _UI8_MAX
+	#define UINT16_MAX   _UI16_MAX
+	#define UINT32_MAX   _UI32_MAX
+	#define UINT64_MAX   _UI64_MAX
+
 	typedef __int64 LLONG;
 
 	typedef float float32_t;
@@ -407,7 +420,9 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 	#include <sys/time.h>
 	#include <time.h>
 	#include <dlfcn.h>
+	#define __STDC_LIMIT_MACROS
 	#include <stdint.h>
+	#include <signal.h>
 
 	#ifndef O_BINARY
 	#define O_BINARY 0
@@ -435,12 +450,13 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 		return 0;
 	}
 
-	static ALWAYS_INLINE void* memalign( size_t alignment, size_t size ) {
-
-		void *ptr;
-		posix_memalign(&ptr, alignment, size);
-		return ptr;
-	}
+	// GCC 4.4.5+ has memalign
+	//static ALWAYS_INLINE void* memalign( size_t alignment, size_t size ) {
+	//
+	//	void *ptr;
+	//	posix_memalign(&ptr, alignment, size);
+	//	return ptr;
+	//}
 
 #endif // Windows/MacosX/Linux platform
 
@@ -463,6 +479,8 @@ template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
 #define SSIZE_T_MAX ((ssize_t)(SIZE_MAX / 2))
 #define SSIZE_T_MIN ((ssize_t)(-SSIZE_T_MAX - (ssize_t)1))
 
+//	ptrdiff_t / PTRDIFF_MIN / PTRDIFF_MAX
+
 
 #ifdef _MSC_VER
 #define UNLIKELY_SPLIT_BEGIN(...) { struct { INLINE NEVER_INLINE JSBool FASTCALL operator()( ##__VA_ARGS__ ) {
@@ -480,10 +498,9 @@ JL_CONSTIFY(T variable) {
 }
 
 
-
-template<class T, class U>
+template<class T>
 ALWAYS_INLINE bool
-JL_HasFlags(T value, U flags) {
+JL_HasFlags(T value, size_t flags) {
 	
 	return (value & flags) == flags;
 }
@@ -581,9 +598,10 @@ S_ASSERT( DBL_MANT_DIG < 64 );
 #define MIN_INT_TO_DOUBLE \
 	(-MAX_INT_TO_DOUBLE)
 
-// (TBD) fix needed on Linux
-S_ASSERT( MAX_INT_TO_DOUBLE != MAX_INT_TO_DOUBLE+(double)1 );
-S_ASSERT( MAX_INT_TO_DOUBLE+(double)1 == MAX_INT_TO_DOUBLE+(double)2 );
+// failed on linux because + Standard 2003, 5.19 "Constant expressions", paragraph 1.
+// ... Floating literals (2.13.3) can appear only if they are cast to integral or enumeration types.
+//S_ASSERT( MAX_INT_TO_DOUBLE != MAX_INT_TO_DOUBLE+(double)1 );
+//S_ASSERT( MAX_INT_TO_DOUBLE+(double)1 == MAX_INT_TO_DOUBLE+(double)2 );
 
 
 ALWAYS_INLINE NOALIAS int
@@ -789,7 +807,7 @@ JL_CountSetBits(int32_t v) {
 
 	v = v - ((v >> 1) & 0x55555555);
 	v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-	return ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
+	return (((v + (v >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
 }
 
 
@@ -1055,10 +1073,37 @@ IntegerToString(int32_t val, int base) {
 	return &buf[i+1];
 }
 
+
+INLINE NEVER_INLINE char* FASTCALL
+JL_itoa(ssize_t val, char *buf, int base) {
+
+	char *p = buf;
+	ssize_t prev;
+	do {
+
+		prev = val;
+		val /= base;
+		*p++ = ("zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz"+35)[prev - val * base];
+	} while ( val );
+	if ( prev < 0 )
+		*p++ = '-';
+	*p-- = '\0';
+	char *p1 = buf;
+	char chr;
+	while ( p1 < p ) {
+
+		chr = *p;
+		*p-- = *p1;
+		*p1++ = chr;
+	}
+	return buf;
+}
+
+
 #define JL_ITOA10_MAX_DIGITS 12 // 12 = sign + base-10 max int32_t + '\0'
 
 INLINE NEVER_INLINE char* FASTCALL
-JL_itoa10(uint32_t val, char *buf ) {
+JL_itoa10(uint32_t val, char *buf) {
 
 	char *tmp = buf + JL_ITOA10_MAX_DIGITS;
 	*--tmp = '\0';
@@ -1070,7 +1115,7 @@ JL_itoa10(uint32_t val, char *buf ) {
 }
 
 INLINE NEVER_INLINE char* FASTCALL
-JL_itoa10(int32_t val, char *buf ) {
+JL_itoa10(int32_t val, char *buf) {
 
 	char *tmp = buf + JL_ITOA10_MAX_DIGITS;
 	*--tmp = '\0';
@@ -1108,6 +1153,8 @@ SleepMilliseconds(uint32_t ms) {
 #endif
 }
 
+
+// Accurate FPS Limiting / High-precision 'Sleeps': see. http://www.geisswerks.com/ryan/FAQS/timing.html
 
 INLINE double FASTCALL
 AccurateTimeCounter() {
@@ -1773,7 +1820,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 #if defined(XP_WIN)
 	typedef CRITICAL_SECTION* JLMutexHandler; // doc. critical section objects provide a slightly faster, more efficient mechanism for mutual-exclusion synchronization.
 #elif defined(XP_UNIX)
-	typedef pthread_mutex_t* JLSemaphoreHandler;
+	typedef pthread_mutex_t* JLMutexHandler;
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
@@ -1976,7 +2023,7 @@ ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 ALWAYS_INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
 
 	ASSERT( JLCondOk(cv) );
-	pthread_cond_wait(&cv->cond, &external_mutex->mx); // doc. shall not return an error code of [EINTR].
+	pthread_cond_wait(&cv->cond, external_mutex); // doc. shall not return an error code of [EINTR].
 	return JLOK;
 }
 
@@ -2526,7 +2573,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	#endif
 	}
 
-	ALWAYS_INLINE void JLDynamicLibraryName( void *addr, char *fileName, int maxFileNameLength ) {
+	ALWAYS_INLINE void JLDynamicLibraryName( void *addr, char *fileName, size_t maxFileNameLength ) {
 
 		// DWORD st = GetModuleFileName(libraryHandler, (LPCH)fileName, (DWORD)fileNameSize); ASSERT( st != ERROR_INSUFFICIENT_BUFFER );
 		ASSERT( maxFileNameLength > 0 );
@@ -2548,12 +2595,14 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		GetModuleFileName(libraryHandler, (LPCH)fileName, maxFileNameLength);
 	#elif defined(XP_UNIX)
 		Dl_info info;
-		if ( !dladdr(pAddr, &info) || !info.dli_fbase || !info.dli_fname ) {
+		if ( !dladdr(addr, &info) || !info.dli_fbase || !info.dli_fname ) {
 
 			fileName[0] = '\0';
 			return;
 		}
-		strcpy_s(fileName, Dl_info.dli_fname, maxFileNameLength);
+		int len = JL_MIN(strlen(info.dli_fname), maxFileNameLength-1);
+		memcpy(fileName, info.dli_fname, len);
+		fileName[len] = '\0';
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif

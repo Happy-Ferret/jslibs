@@ -267,7 +267,7 @@ ALWAYS_INLINE bool
 JL_IsInteger( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
 	JL_USE(cx);
-	return JSVAL_IS_INT(value) || JSVAL_IS_DOUBLE(value) && !JL_DOUBLE_IS_INTEGER(JSVAL_TO_DOUBLE(value));
+	return JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && !JL_DOUBLE_IS_INTEGER(JSVAL_TO_DOUBLE(value)));
 }
 
 ALWAYS_INLINE bool
@@ -875,7 +875,7 @@ enum E_TXTID {
 #define JL_CHKM( CONDITION, ... ) \
 	JL_MACRO_BEGIN \
 		if (unlikely( !(CONDITION) )) { \
-			JL_ERR( ##__VA_ARGS__ ); \
+			JL_ERR( __VA_ARGS__ ); \
 		} \
 		ASSUME(CONDITION); \
 	JL_MACRO_END
@@ -885,7 +885,7 @@ enum E_TXTID {
 	JL_MACRO_BEGIN \
 		if ( JL_IS_SAFE ) { \
 			if (unlikely( !(CONDITION) )) { \
-				JL_ERR( ##__VA_ARGS__ ); \
+				JL_ERR( __VA_ARGS__ ); \
 			} \
 		} \
 		ASSUME(CONDITION); \
@@ -896,7 +896,7 @@ enum E_TXTID {
 	JL_MACRO_BEGIN \
 		if ( JL_IS_SAFE ) { \
 			if (unlikely( !(CONDITION) )) { \
-				JL_WARN( ##__VA_ARGS__ ); \
+				JL_WARN( __VA_ARGS__ ); \
 			} \
 		} \
 	JL_MACRO_END
@@ -1000,10 +1000,6 @@ enum E_TXTID {
 #define JL_ASSERT_ARG_VAL_RANGE(val, valMin, valMax, argNum) \
 	JL_ASSERT( JL_INRANGE((int)val, (int)valMin, (int)valMax), E_ARG, E_NUM(argNum), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
 
-//
-
-//#define JL_ASSERT_VALID(condition, name) \
-//	JL_ASSERT( condition, E_NAME(name), E_INVALID )
 
 
 // obj
@@ -1594,13 +1590,13 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 	if (likely( JSVAL_IS_INT(val) )) {
 
 		jsint tmp = JSVAL_TO_INT(val);
-		if (likely( tmp >= 0 && tmp <= _UI8_MAX )) {
+		if (likely( tmp >= 0 && tmp <= UINT8_MAX )) {
 
 			*num = uint8_t(tmp);
 			return JS_TRUE;
 		}
 	
-		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, _UI8_MAX) );
+		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, UINT8_MAX) );
 	}
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint8_t *num )
@@ -1611,14 +1607,14 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) );
 
-	if (likely( d >= jsdouble(0) && d <= jsdouble(_UI8_MAX) )) {
+	if (likely( d >= jsdouble(0) && d <= jsdouble(UINT8_MAX) )) {
 
 		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
 		*num = uint8_t(d);
 		return JS_TRUE;
 	}
 
-	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, _UI8_MAX) );
+	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, UINT8_MAX) );
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, num)
@@ -1636,12 +1632,12 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int16_t *num ) {
 	if (likely( JSVAL_IS_INT(val) )) {
 
 		jsint tmp = JSVAL_TO_INT(val);
-		if (likely( tmp >= _I16_MIN && tmp <= _I16_MAX )) {
+		if (likely( tmp >= INT16_MIN && tmp <= INT16_MAX )) {
 
 			*num = int16_t(tmp);
 			return JS_TRUE;
 		}
-		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(_I16_MIN, _I16_MAX) );
+		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(INT16_MIN, INT16_MAX) );
 	}
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, int16_t *num )
@@ -1652,14 +1648,14 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int16_t *num ) {
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) );
 
-	if (likely( d >= jsdouble(_I16_MIN) && d <= jsdouble(_I16_MAX) )) {
+	if (likely( d >= jsdouble(INT16_MIN) && d <= jsdouble(INT16_MAX) )) {
 
 		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
 		*num = int16_t(d);
 		return JS_TRUE;
 	}
 
-	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(_I16_MIN, _I16_MAX) );
+	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(INT16_MIN, INT16_MAX) );
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, num)
@@ -1685,12 +1681,12 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint16_t *num ) {
 	if (likely( JSVAL_IS_INT(val) )) {
 
 		jsint tmp = JSVAL_TO_INT(val);
-		if (likely( tmp <= _UI16_MAX )) {
+		if (likely( tmp <= UINT16_MAX )) {
 
 			*num = uint16_t(tmp);
 			return JS_TRUE;
 		}
-		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, _UI16_MAX) );
+		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, UINT16_MAX) );
 	}
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint16_t *num )
@@ -1701,14 +1697,14 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint16_t *num ) {
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) );
 
-	if (likely( d >= jsdouble(0) && d <= jsdouble(_UI16_MAX) )) {
+	if (likely( d >= jsdouble(0) && d <= jsdouble(UINT16_MAX) )) {
 
 		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
 		*num = uint16_t(d);
 		return JS_TRUE;
 	}
 
-	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, _UI16_MAX) );
+	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, UINT16_MAX) );
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, num)
@@ -1718,7 +1714,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint16_t *num ) {
 
 // int32
 
-S_ASSERT( _I32_MIN == JSVAL_INT_MIN && _I32_MAX == JSVAL_INT_MAX );
+S_ASSERT( INT32_MIN == JSVAL_INT_MIN && INT32_MAX == JSVAL_INT_MAX );
 
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const int32_t &num, jsval *vp ) {
@@ -1746,7 +1742,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int32_t *num ) {
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) ); // NULL gives 0
 
-	if (likely( d >= jsdouble(_I32_MIN) && d <= jsdouble(_I32_MAX) )) {
+	if (likely( d >= jsdouble(INT32_MIN) && d <= jsdouble(INT32_MAX) )) {
 
 		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
 		*num = int32_t(d);
@@ -1763,7 +1759,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int32_t *num ) {
 
 // uint32
 
-S_ASSERT( _UI32_MAX >= JSVAL_INT_MAX );
+S_ASSERT( UINT32_MAX >= JSVAL_INT_MAX );
 
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const uint32_t &num, jsval *vp ) {
@@ -1802,7 +1798,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) );
 
-	if (likely( d >= jsdouble(0) && d <= jsdouble(_UI32_MAX) )) {
+	if (likely( d >= jsdouble(0) && d <= jsdouble(UINT32_MAX) )) {
 
 		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
 		*num = uint32_t(d);
@@ -1919,7 +1915,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) ); // NULL gives 0
 
-	if (likely( d >= jsdouble(0) && d <= jsdouble(MAX_INT_TO_DOUBLE) )) { // or d <= jsdouble(_UI64_MAX)
+	if (likely( d >= jsdouble(0) && d <= jsdouble(MAX_INT_TO_DOUBLE) )) { // or d <= jsdouble(UINT64_MAX)
 
 		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
 		*num = uint64_t(d);
@@ -3510,7 +3506,7 @@ ALWAYS_INLINE NIStreamRead
 StreamReadInterface( JSContext *cx, JSObject *obj ) {
 
 	NIStreamRead fct = StreamReadNativeInterface(cx, obj);
-	if (likely( fct ))
+	if (likely( fct != NULL ))
 		return fct;
 	JSBool found;
 	if ( JS_HasPropertyById(cx, obj, JLID(cx, Read), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, Read), &res) != JS_TRUE || !JL_IsFunction(cx, res)
@@ -3556,7 +3552,7 @@ ALWAYS_INLINE NIBufferGet
 BufferGetInterface( JSContext *cx, JSObject *obj ) {
 
 	NIBufferGet fct = BufferGetNativeInterface(cx, obj);
-	if (likely( fct ))
+	if (likely( fct != NULL ))
 		return fct;
 	JSBool found;
 	if ( JS_HasPropertyById(cx, obj, JLID(cx, Get), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, Get), &res) != JS_TRUE || !JL_IsFunction(cx, res)
@@ -3604,7 +3600,7 @@ ALWAYS_INLINE NIMatrix44Get
 Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
 
 	NIMatrix44Get fct = Matrix44GetNativeInterface(cx, obj);
-	if (likely( fct ))
+	if (likely( fct != NULL ))
 		return fct;
 	JSBool found;
 	if ( JS_HasPropertyById(cx, obj, JLID(cx, GetMatrix44), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, GetMatrix44), &res) != JS_TRUE || !JL_IsFunction(cx, res)

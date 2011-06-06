@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include <jlalloc.h>
+#include "jlalloc.h"
 
 namespace jl {
 
@@ -241,7 +241,7 @@ inline QueueCell *SearchFirstData( Queue *queue, void *data ) {
 */
 
 
-template <class T, class A = DefaultAlloc>
+template <class T, class A>
 class NOVTABLE Queue1 : private A {
 
 public:

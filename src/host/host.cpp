@@ -42,7 +42,7 @@ const JSErrorFormatString *GetErrorMessage(void *, const char *, const uintN err
 struct {
 
 	JSExnType exn;
-	char *msg;
+	const char *msg;
 } E_msg[] = {
 		{ JSEXN_NONE, 0 },
 	#define DEF( NAME, TEXT, EXN ) \
@@ -109,14 +109,14 @@ Report( JSContext *cx, bool isWarning, ... ) {
 			switch ( *++pos ) {
 				case 'd':
 					++pos;
-					ltoa(va_arg(vl, long), buf, 10);
+					JL_itoa(va_arg(vl, long), buf, 10);
 					buf += strlen(buf);
 					break;
 				case 'x':
 					++pos;
 					memcpy(buf, "0x", 2);
 					buf += 2;
-					ltoa(va_arg(vl, long), buf, 16);
+					JL_itoa(va_arg(vl, long), buf, 16);
 					buf += strlen(buf);
 					break;
 				case 's': {
@@ -151,9 +151,9 @@ Report( JSContext *cx, bool isWarning, ... ) {
 	JSErrorFormatString format = { message, 0, (int16)exn };
 	return JS_ReportErrorFlagsAndNumber(cx, isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, ErrorCallback, (void*)&format, 0);
 
-bad:
-	va_end(vl);
-	return JS_FALSE;
+//bad:
+//	va_end(vl);
+//	return JS_FALSE;
 }
 
 
