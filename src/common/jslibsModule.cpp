@@ -45,8 +45,12 @@ EXTERN_C void jl_free_fct( void *ptr ) { jl_free(ptr); }
 JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
 
 	// printf("id=%u / &_moduleId=%p / _moduleId=%u\n", &_moduleId, _moduleId, id);
+	
+#ifdef XP_WIN
 	BOOL st = DisableThreadLibraryCalls(JLGetCurrentModule());
 	ASSERT(st);
+#endif // XP_WIN
+
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	_unsafeMode = pv ? pv->unsafeMode : _unsafeMode;
 	JL_ASSERT( !pv || pv->hostPrivateVersion == 0 || pv->hostPrivateVersion == JL_HOST_PRIVATE_VERSION, E_HOST, E_VERSION );

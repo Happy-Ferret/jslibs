@@ -1032,7 +1032,7 @@ DEFINE_EQUALITY_OP() {
 	size_t len1, len2;
 	JL_CHK( BlobLength(cx, obj, &len1) );
 	JL_CHK( BlobLength(cx, js::Valueify(v)->toObjectOrNull(), &len2) );
-	JL_CHKB( len1 == len2, not_eq );
+	JL_CHKB( len1 == len2, noteq );
 	JL_CHK( BlobBuffer(cx, obj, &buf1) );
 	JL_CHK( BlobBuffer(cx, js::Valueify(v)->toObjectOrNull(), &buf2) );
 	JL_CHKB( memcmp(buf1, buf2, len1) == 0, noteq );
