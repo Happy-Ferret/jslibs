@@ -71,7 +71,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 // see jslibs/libs/librsvg/win32_config/rsvg-image.c at rsvg_pixbuf_new_from_href function.
 extern "C" GdkPixbuf *rsvg_pixbuf_new_from_href(const char *href, const char *base_uri, GError ** error) {
 
-	JL_USE(error);
+	JL_INGORE(error);
 
 	JSContext *cx = ((CxObj*)base_uri)->cx;
 	JSObject *obj = ((CxObj*)base_uri)->obj;

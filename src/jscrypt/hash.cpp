@@ -182,7 +182,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Done ) {
 
-	JL_USE(argc);
+	JL_INGORE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -287,7 +287,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( name ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
@@ -308,7 +308,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( blockSize ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
@@ -326,7 +326,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( length ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
@@ -344,7 +344,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( inputLength ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;

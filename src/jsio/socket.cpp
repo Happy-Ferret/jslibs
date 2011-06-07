@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#include "jsio.h"
+
 
 DECLARE_CLASS( Descriptor )
 DECLARE_CLASS( File )
@@ -230,18 +232,21 @@ DEFINE_FUNCTION( Listen ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $TYPE Socket $INAME( [ timeout ] )
+ $TYPE Socket $INAME()
   Accept a connection on a socket.
-  This function returns a connected jsio::Socket. _timeout_ is the time limit (in milliseconds) for completion of the accept operation. By default, there is no timeout.
+  This function returns a connected jsio::Socket.
+  Use _timeout_ property to manage time limit for completion of this operation.
 **/
 DEFINE_FUNCTION( Accept ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARG_COUNT(0);
 
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
+/*
 	PRIntervalTime timeout;
 	if ( JL_ARG_ISDEF(1) ) {
 
@@ -252,6 +257,10 @@ DEFINE_FUNCTION( Accept ) {
 
 		timeout = PR_INTERVAL_NO_TIMEOUT;
 	}
+*/
+
+	PRIntervalTime timeout;
+	JL_CHK( GetTimeoutInterval(cx, obj, &timeout) );
 
 	PRFileDesc *newFd;
 	newFd = PR_Accept(fd, NULL, timeout);
@@ -275,8 +284,9 @@ DEFINE_FUNCTION( Accept ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $BOOL $INAME( host, port [, timeout] )
+ $BOOL $INAME( host, port )
   Initiate a connection on a socket.
+  Use _timeout_ property to manage time limit for completion of this operation.
   $H return value
    $FALSE if the connection times out $TRUE, otherwise $TRUE.
 **/
@@ -299,8 +309,8 @@ DEFINE_FUNCTION( Connect ) {
 	JLStr host;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARG_COUNT(2);
 
-	JL_ASSERT_ARGC_MIN( 2 );
 	PRFileDesc *fd;
 	fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
@@ -308,6 +318,7 @@ DEFINE_FUNCTION( Connect ) {
 	PRUint16 port;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &port) );
 
+/*
 	PRIntervalTime connectTimeout;
 	if ( JL_ARG_ISDEF(3) ) {
 
@@ -316,6 +327,7 @@ DEFINE_FUNCTION( Connect ) {
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
+*/
 
 //	const char *host;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &host) );
@@ -341,7 +353,10 @@ DEFINE_FUNCTION( Connect ) {
 			return ThrowIoError(cx);
 	}
 
-	if ( PR_Connect(fd, &addr, connectTimeout) != PR_SUCCESS ) { // Doc: timeout is ignored in nonblocking mode ( cf. PR_INTERVAL_NO_WAIT )
+	PRIntervalTime timeout;
+	JL_CHK( GetTimeoutInterval(cx, obj, &timeout) );
+
+	if ( PR_Connect(fd, &addr, timeout) != PR_SUCCESS ) { // Doc: timeout is ignored in nonblocking mode ( cf. PR_INTERVAL_NO_WAIT )
 
 		switch ( PR_GetError() ) {
 			case PR_CONNECT_TIMEOUT_ERROR:
@@ -547,8 +562,9 @@ bad:
 
 /**doc
 $TOC_MEMBER $INAME
- $INT $INAME( fileDescriptor [, close [, headers [, timeout]]] )
+ $INT $INAME( fileDescriptor [, close [, headers]] )
   Sends a complete file pointed by _fileDescriptor_ across a socket.
+  Use _timeout_ property to manage time limit for completion of this operation.
   $LF
   _headers_ is a string that contains the headers to send across the socket prior to sending the file.
   $LF
@@ -565,8 +581,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	JLStr headers;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-
-	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARGC_RANGE(1,3);
 
 	PRFileDesc *socketFd;
 	socketFd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
@@ -590,6 +605,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 			flag = PR_TRANSMITFILE_CLOSE_SOCKET;
 	}
 
+/*
 	PRIntervalTime connectTimeout;
 	if ( JL_ARG_ISDEF(4) ) {
 
@@ -598,6 +614,7 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
+*/
 
 //	const char *headers;
 //	headers = NULL;
@@ -609,8 +626,11 @@ DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 		ASSERT( headers.Length() <= PR_INT32_MAX );
 	}
 
+	PRIntervalTime timeout;
+	JL_CHK( GetTimeoutInterval(cx, JL_OBJ, &timeout) );
+
 	PRInt32 bytes;
-	bytes = PR_TransmitFile( socketFd, fileFd, headers.GetStrConstOrNull(), (PRInt32)headers.LengthOrZero(), flag, connectTimeout );
+	bytes = PR_TransmitFile(socketFd, fileFd, headers.GetStrConstOrNull(), (PRInt32)headers.LengthOrZero(), flag, timeout);
 	if ( bytes == -1 )
 		return ThrowIoError(cx);
 
@@ -1169,7 +1189,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS( 1 ) // SLOT_JSIO_DESCRIPTOR_IMPORTED
+	HAS_RESERVED_SLOTS( 2 ) // SLOT_JSIO_DESCRIPTOR_IMPORTED, SLOT_JSIO_DESCRIPTOR_TIMEOUT
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Shutdown )

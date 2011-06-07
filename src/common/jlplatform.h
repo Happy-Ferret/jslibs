@@ -507,10 +507,10 @@ JL_HasFlags(T value, size_t flags) {
 
 
 //template<class T>
-//static inline void JL_USE(T) {};
-//#define JL_USE(x) x __attribute__((unused))
-//#define JL_USE(x) ((x) = (x))
-#define JL_USE(x) \
+//static inline void JL_INGORE(T) {};
+//#define JL_INGORE(x) x __attribute__((unused))
+//#define JL_INGORE(x) ((x) = (x))
+#define JL_INGORE(x) \
 	((void)(x))
 
 ALWAYS_INLINE void
@@ -725,7 +725,7 @@ namespace jl {
 //     code.
 
 // rise a "division by zero" if x is not a 5-char string.
-//#define JL_CAST_CSTR_TO_UINT32(x) ( JL_USE(0/(sizeof(x) == 5 && x[3] == 0 ? 1 : 0)), (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
+//#define JL_CAST_CSTR_TO_UINT32(x) ( JL_INGORE(0/(sizeof(x) == 5 && x[3] == 0 ? 1 : 0)), (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
 //#define JL_CAST_CSTR_TO_UINT32(x) ( (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
 //	return (cstr[0]<<24) | (cstr[1]<<16) | (cstr[2]<<8) | (cstr[3]);
 //	return *(uint32_t*)cstr;
@@ -1170,7 +1170,7 @@ AccurateTimeCounter() {
 	if ( initTime == 0 )
 		initTime = performanceCount.QuadPart;
 	::SetThreadAffinityMask(::GetCurrentThread(), oldmask);
-	JL_USE( result );
+	JL_INGORE( result );
 	return (double)1000 * (performanceCount.QuadPart-initTime) / (double)frequency.QuadPart;
 #elif defined(XP_UNIX)
 	static volatile long initTime = 0; // initTime helps in avoiding precision waste.
@@ -1764,7 +1764,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 			if ( st == -1 && errno == ETIMEDOUT )
 				return JLTIMEOUT;
 			ASSERT( st == 0 );
-			JL_USE( st );
+			JL_INGORE( st );
 			return JLOK;
 		}
 		return JLERROR;
@@ -1936,7 +1936,7 @@ ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 	ASSERT( st != FALSE );
 	st = CloseHandle((*cv)->events[0]);
 	ASSERT( st != FALSE );
-	JL_USE( st );
+	JL_INGORE( st );
 //	DeleteCriticalSection(&(*cv)->waiters_count_lock);
 	free(*cv);
 	*cv = NULL;
@@ -1959,7 +1959,7 @@ INLINE int JLCondWait( JLCondHandler cv, JLMutexHandler external_mutex ) {
 
 		BOOL st = ResetEvent(cv->events[1]);
 		ASSERT( st != FALSE );
-		JL_USE(st);
+		JL_INGORE(st);
 	}
 	JLMutexAcquire(external_mutex);
 	return JLOK;
@@ -1975,7 +1975,7 @@ ALWAYS_INLINE void JLCondBroadcast( JLCondHandler cv ) {
 
 		BOOL st = SetEvent(cv->events[1]);
 		ASSERT( st != FALSE );
-		JL_USE(st);
+		JL_INGORE(st);
 	}
 }
 
@@ -1989,7 +1989,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 		BOOL st = SetEvent(cv->events[0]);
 		ASSERT( st != FALSE );
-		JL_USE(st);
+		JL_INGORE(st);
 	}
 }
 
@@ -2120,7 +2120,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 			BOOL st = SetEvent(ev->hEvent);
 			ASSERT( st != FALSE );
-			JL_USE(st);
+			JL_INGORE(st);
 		}
 		LeaveCriticalSection(&ev->cs);
 	#elif defined(XP_UNIX)
@@ -2142,7 +2142,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		EnterCriticalSection(&ev->cs);
 		BOOL st = ResetEvent(ev->hEvent);
 		ASSERT( st != FALSE );
-		JL_USE(st);
+		JL_INGORE(st);
 		LeaveCriticalSection(&ev->cs);
 	#elif defined(XP_UNIX)
 		pthread_mutex_lock(&ev->mutex);
@@ -2172,7 +2172,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 			BOOL st = ResetEvent(ev->hEvent);
 			ASSERT( st == TRUE );
-			JL_USE(st);
+			JL_INGORE(st);
 		}
 		LeaveCriticalSection(&ev->cs);
 		if ( status == WAIT_TIMEOUT )
@@ -2213,7 +2213,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			if ( st == -1 && errno == ETIMEDOUT )
 				return JLTIMEOUT;
 			ASSERT( st == 0 );
-			JL_USE(st);
+			JL_INGORE(st);
 			return JLOK;
 		}
 		return JLERROR;
@@ -2309,13 +2309,13 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#if defined(XP_WIN)
 		BOOL st = CloseHandle(*pThread);
 		ASSERT( st != FALSE );
-		JL_USE(st);
+		JL_INGORE(st);
 	#elif defined(XP_UNIX)
 		if ( JLThreadIsActive( *pThread ) ) {
 
 			int st = pthread_detach(**pThread);
 			ASSERT( st == 0 );
-			JL_USE(st);
+			JL_INGORE(st);
 		}
 		free(*pThread);
 	#else
@@ -2415,7 +2415,7 @@ ALWAYS_INLINE JLTLSKey JLTLSAllocKey() {
 	key++;
 #elif defined(XP_UNIX)
 	int st = pthread_key_create(&key, NULL);
-	JL_USE( st );
+	JL_INGORE( st );
 	ASSERT( st == 0 );
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -2706,7 +2706,7 @@ ALWAYS_INLINE void JLCondFree( JLCondHandler *cv ) {
 	ASSERT( JLCondOk(*cv) );
 	BOOL st = CloseHandle((*cv)->sema_);
 	ASSERT( st );
-	JL_USE( st );
+	JL_INGORE( st );
 	DeleteCriticalSection(&(*cv)->waiters_count_lock_);
 //	DeleteCriticalSection(&(*cv)->global_lock);
 	free(*cv);

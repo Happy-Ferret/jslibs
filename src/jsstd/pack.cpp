@@ -660,7 +660,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( useNetworkEndian ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	bool useNetworkEndian;
@@ -672,7 +672,7 @@ DEFINE_PROPERTY_SETTER( useNetworkEndian ) {
 
 DEFINE_PROPERTY_GETTER( useNetworkEndian ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	return JL_NativeToJsval(cx, (size_t)JL_GetPrivate(cx, obj) != 0, vp);
@@ -687,7 +687,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( buffer ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, vp ) );
@@ -707,9 +707,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( systemIntSize ) {
 
-	JL_USE(id);
-	JL_USE(obj);
-	JL_USE(cx);
+	JL_INGORE(id);
+	JL_INGORE(obj);
+	JL_INGORE(cx);
 
 	*vp = INT_TO_JSVAL( sizeof(size_t) );
 	return JS_TRUE;
@@ -722,9 +722,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( systemIsBigEndian ) {
 
-	JL_USE(id);
-	JL_USE(obj);
-	JL_USE(cx);
+	JL_INGORE(id);
+	JL_INGORE(obj);
+	JL_INGORE(cx);
 
 	*vp = BOOLEAN_TO_JSVAL( JLHostEndian == JLBigEndian );
 	return JS_TRUE;
@@ -732,9 +732,9 @@ DEFINE_PROPERTY_GETTER( systemIsBigEndian ) {
 
 DEFINE_INIT() {
 
-	JL_USE(obj);
-	JL_USE(proto);
-	JL_USE(sc);
+	JL_INGORE(obj);
+	JL_INGORE(proto);
+	JL_INGORE(sc);
 	JL_ASSERT( sizeof(int8_t) == 1 && sizeof(int16_t) == 2 && sizeof(int32_t) == 4 && sizeof(int64_t) == 8, E_CLASS, E_NAME(JL_THIS_CLASS_NAME), E_INIT, E_COMMENT("system native types") );
 	return JS_TRUE;
 	JL_BAD;

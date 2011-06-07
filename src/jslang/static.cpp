@@ -16,6 +16,9 @@
 #include "../jslang/handlePub.h"
 #include "jslang.h"
 
+#include <jstypedarray.h>
+
+
 using namespace jl;
 
 DECLARE_CLASS(Handle)
@@ -305,7 +308,7 @@ bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
 
 JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-	JL_USE(obj);
+	JL_INGORE(obj);
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -354,11 +357,69 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 }
 
 
+/*
+DEFINE_FUNCTION( Serialize ) {
+
+    jsval v = argc > 0 ? JS_ARGV(cx, vp)[0] : JSVAL_VOID;
+    uint64 *datap;
+    size_t nbytes;
+    if (!JS_WriteStructuredClone(cx, v, &datap, &nbytes, NULL, NULL))
+        return false;
+
+	 JSObject *arrayobj = js_CreateTypedArray(cx, js::TypedArray::TYPE_UINT8, nbytes);
+    if (!arrayobj) {
+        JS_free(cx, datap);
+        return false;
+    }
+    js::TypedArray *array = js::TypedArray::fromJSObject(arrayobj);
+    JS_ASSERT((uintptr_t(array->data) & 7) == 0);
+    memcpy(array->data, datap, nbytes);
+    JS_free(cx, datap);
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(arrayobj));
+    return true;
+}
+
+
+DEFINE_FUNCTION( Deserialize ) {
+
+    jsval v = argc > 0 ? JS_ARGV(cx, vp)[0] : JSVAL_VOID;
+    JSObject *obj;
+    if (JSVAL_IS_PRIMITIVE(v) || !js_IsTypedArray((obj = JSVAL_TO_OBJECT(v)))) {
+
+        //JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSSMSG_INVALID_ARGS, "deserialize");
+		 JL_ERR( E_DATA, E_INVALID );
+        return false;
+    }
+    js::TypedArray *array = js::TypedArray::fromJSObject(obj);
+    if ((array->byteLength & 7) != 0) {
+
+        //JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSSMSG_INVALID_ARGS, "deserialize");
+		 JL_ERR( E_DATA, E_INVALID );
+        return false;
+    }
+    if ((uintptr_t(array->data) & 7) != 0) {
+
+        //JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSSMSG_BAD_ALIGNMENT);
+		 JL_ERR( E_DATA, E_INVALID );
+        return false;
+    }
+
+    if (!JS_ReadStructuredClone(cx, (uint64 *) array->data, array->byteLength, JS_STRUCTURED_CLONE_VERSION, &v, NULL, NULL)) {
+        
+		 return false;
+    }
+    JS_SET_RVAL(cx, vp, v);
+    return true;
+	 JL_BAD;
+}
+*/
+
+
 #ifdef DEBUG
 
 DEFINE_FUNCTION( jslangTest ) {
 
-	JL_USE(argc);
+	JL_INGORE(argc);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -381,6 +442,10 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( Stringify, 1 )
 		FUNCTION_ARGC( ProcessEvents, 4 ) // (just a guess)
 		FUNCTION_ARGC( TimeoutEvents, 2 )
+/*
+		FUNCTION_ARGC( Serialize, 1 )
+		FUNCTION_ARGC( Deserialize, 1 )
+*/
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC

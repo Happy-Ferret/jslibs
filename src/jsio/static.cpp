@@ -375,87 +375,6 @@ DEFINE_FUNCTION( IOEvents ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $BOOL $INAME( _descriptor_ )
-  Returns true if the _descriptor_ can be read without blocking.
-**/
-DEFINE_FUNCTION( IsReadable ) {
-
-	JL_ASSERT_ARGC_MIN( 1 );
-
-	JSObject *descriptorObj;
-	descriptorObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-	JL_ASSERT_INHERITANCE(descriptorObj, JL_CLASS(Descriptor));
-
-	PRFileDesc *fd;
-	fd = (PRFileDesc *)JL_GetPrivate( cx, descriptorObj );
-	//beware: fd == NULL is supported !
-
-	PRIntervalTime prTimeout;
-	if ( JL_ARG_ISDEF(2) ) {
-
-		PRUint32 timeout;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &timeout) );
-		prTimeout = PR_MillisecondsToInterval(timeout);
-	} else
-		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
-
-	PRPollDesc desc; // = { fd, PR_POLL_READ, 0 };
-	desc.fd = fd;
-	desc.in_flags = PR_POLL_READ;
-	desc.out_flags = 0;
-
-	PRInt32 result;
-	result = PR_Poll( &desc, 1, prTimeout );
-	if ( result == -1 ) // error
-		return ThrowIoError(cx);
-	*JL_RVAL = ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME( descriptor )
-  Returns $TRUE if the _descriptor_ can be write without blocking.
-**/
-DEFINE_FUNCTION( IsWritable ) {
-
-	JL_ASSERT_ARGC_MIN( 1 );
-
-	JSObject *descriptorObj;
-	descriptorObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-	JL_ASSERT_INHERITANCE(descriptorObj, JL_CLASS(Descriptor));
-	PRFileDesc *fd;
-	fd = (PRFileDesc *)JL_GetPrivate( cx, descriptorObj );
-	//beware: fd == NULL is supported !
-
-	PRIntervalTime prTimeout;
-	if ( JL_ARG_ISDEF(2) ) {
-
-		PRUint32 timeout;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &timeout) );
-		prTimeout = PR_MillisecondsToInterval(timeout);
-	} else
-		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
-
-	PRPollDesc desc; // = { fd, PR_POLL_WRITE, 0 };
-	desc.fd = fd;
-	desc.in_flags = PR_POLL_WRITE;
-	desc.out_flags = 0;
-
-	PRInt32 result;
-	result = PR_Poll( &desc, 1, prTimeout );
-	if ( result == -1 ) // error
-		return ThrowIoError(cx);
-	*JL_RVAL = ( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-/**doc
-$TOC_MEMBER $INAME
  $INT $INAME()
   Returns the milliseconds value of NSPR's free-running interval timer.
 **/
@@ -1272,8 +1191,35 @@ DEFINE_PROPERTY_GETTER( version ) {
 
 #ifdef DEBUG
 
+#include "jlalloc.h"
 
 DEFINE_FUNCTION( jsioTest ) {
+
+/*
+	JSObject *o = JS_NewObject(cx, NULL, NULL, NULL);
+
+
+	
+	jsid idStrOne;
+	JS_ValueToId(cx, STRING_TO_JSVAL( JS_NewStringCopyZ(cx, "1") ), &idStrOne);
+
+	jsid idIntOne;
+	JS_ValueToId(cx, INT_TO_JSVAL(1), &idIntOne);
+
+	
+
+	jsval tmp;
+
+	tmp = INT_TO_JSVAL(6);
+	JS_SetPropertyById(cx, o, idIntOne, &tmp);
+
+	tmp = INT_TO_JSVAL(5);
+	JS_SetPropertyById(cx, o, idStrOne, &tmp);
+
+
+	*JL_RVAL = OBJECT_TO_JSVAL(o);
+	return JS_TRUE;
+*/
 
 /*
 	jsval jsv[65535];
@@ -1298,7 +1244,7 @@ DEFINE_FUNCTION( jsioTest ) {
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
-//	JL_BAD;
+	JL_BAD;
 }
 #endif // DEBUG
 
@@ -1314,8 +1260,6 @@ CONFIGURE_STATIC
 
 		FUNCTION( Poll ) // Do not turn it in FAST NATIVE because we need a stack frame for debuging
 //		FUNCTION( IOEvents ) // moved do Descriptor.Events()
-		FUNCTION( IsReadable )
-		FUNCTION( IsWritable )
 		FUNCTION( IntervalNow )
 //		FUNCTION( UIntervalNow )
 		FUNCTION( Sleep )

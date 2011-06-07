@@ -45,7 +45,10 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	// PR_Poll blocks until the events you're interested in have occurred. 
 	// The fact that the socket is in non-blocking mode affects PR_Recv, PR_Send, etc., but doesn't affect PR_Poll. 
 
-	res = PR_Poll(&desc, 1, PR_MillisecondsToInterval(5000)); // wait x seconds for data
+	PRIntervalTime timeout;
+	JL_CHK( GetTimeoutInterval(cx, obj, &timeout) );
+
+	res = PR_Poll(&desc, 1, timeout);
 	if ( res == -1 ) // if PR_Poll is not compatible with the file descriptor, just ignore the error ?
 		return ThrowIoError(cx);
 	if ( res == 0 ) { // timeout, no data
@@ -96,6 +99,7 @@ bad:
 	return;
 }
 
+
 /**doc fileIndex:top
 $CLASS_HEADER
 $SVN_REVISION $Revision$
@@ -115,6 +119,7 @@ DEFINE_FUNCTION( Close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
+	JL_ASSERT_ARG_COUNT(0);
 
 	*JL_RVAL = JSVAL_VOID;
 
@@ -491,6 +496,7 @@ DEFINE_FUNCTION( Sync ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
+	JL_ASSERT_ARG_COUNT(0);
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
@@ -498,6 +504,7 @@ DEFINE_FUNCTION( Sync ) {
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
+
 bad_ioerror:
 	ThrowIoError(cx);
 	JL_BAD;
@@ -514,6 +521,8 @@ $TOC_MEMBER $INAME
   Determine the amount of data in bytes available for reading on the descriptor.
 **/
 DEFINE_PROPERTY_GETTER( available ) {
+
+	JL_INGORE(id);
 
 	PRFileDesc *fd;
 	JL_ASSERT_THIS_INHERITANCE();
@@ -544,6 +553,8 @@ $TOC_MEMBER $INAME
   see constants below.
 **/
 DEFINE_PROPERTY_GETTER( type ) {
+	
+	JL_INGORE(id);
 
 	JL_ASSERT_THIS_INHERITANCE();
 
@@ -564,6 +575,8 @@ $TOC_MEMBER $INAME
    Do not confuse with disconnected.$LF eg. A socket descriptor can be open but disconnected.
 **/
 DEFINE_PROPERTY_GETTER( closed ) {
+
+	JL_INGORE(id);
 
 	JL_ASSERT_THIS_INHERITANCE();
 
@@ -710,6 +723,8 @@ bool IOCancelWait( volatile ProcessEvent *pe ) {
 
 JSBool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
+	JL_INGORE(obj);
+
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	if ( upe->pollResult == -1 )
@@ -793,6 +808,129 @@ DEFINE_FUNCTION( Events ) {
 }
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+  Returns $TRUE if the descriptor can be read without blocking.
+  Use _timeout_ property to manage time limit for completion of this operation.
+  If _timeout_ property is $UNDEF, returns the result immediately.
+**/
+DEFINE_FUNCTION( IsReadable ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INHERITANCE();
+	JL_ASSERT_ARGC_RANGE(0, 1);
+
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ); //beware: fd == NULL is supported !
+	
+/*
+	PRIntervalTime prTimeout;
+	if ( JL_ARG_ISDEF(1) ) {
+
+		PRUint32 timeout;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
+		prTimeout = PR_MillisecondsToInterval(timeout);
+	} else {
+
+		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
+	}
+*/
+
+	PRPollDesc desc;
+	desc.fd = fd;
+	desc.in_flags = PR_POLL_READ;
+	desc.out_flags = 0;
+
+	PRIntervalTime timeout;
+	JL_CHK( GetTimeoutInterval(cx, JL_OBJ, &timeout) );
+	if ( timeout == PR_INTERVAL_NO_TIMEOUT )
+		timeout = PR_INTERVAL_NO_WAIT;
+
+	PRInt32 result;
+	result = PR_Poll(&desc, 1, timeout);
+	if ( result == -1 ) // error
+		return ThrowIoError(cx);
+	*JL_RVAL = ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+  Returns $TRUE if the descriptor can be write without blocking.
+  Use _timeout_ property to manage time limit for completion of this operation.
+  If _timeout_ property is $UNDEF, returns the result immediately.
+**/
+DEFINE_FUNCTION( IsWritable ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INHERITANCE();
+	JL_ASSERT_ARGC_RANGE(0, 1);
+
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ); //beware: fd == NULL is supported !
+
+/*
+	PRIntervalTime prTimeout;
+	if ( JL_ARG_ISDEF(1) ) {
+
+		PRUint32 timeout;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
+		prTimeout = PR_MillisecondsToInterval(timeout);
+	} else {
+
+		prTimeout = PR_INTERVAL_NO_WAIT; //PR_INTERVAL_NO_TIMEOUT;
+	}
+*/
+
+	PRPollDesc desc;
+	desc.fd = fd;
+	desc.in_flags = PR_POLL_WRITE;
+	desc.out_flags = 0;
+
+	PRIntervalTime timeout;
+	JL_CHK( GetTimeoutInterval(cx, JL_OBJ, &timeout) );
+	if ( timeout == PR_INTERVAL_NO_TIMEOUT )
+		timeout = PR_INTERVAL_NO_WAIT;
+
+	PRInt32 result;
+	result = PR_Poll(&desc, 1, timeout);
+	if ( result == -1 ) // error
+		return ThrowIoError(cx);
+	*JL_RVAL = ( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME
+  Set the timeout value (in milliseconds) for blocking operations. A value of $UNDEF mean no timeout.
+**/
+DEFINE_PROPERTY_SETTER( timeout ) {
+	
+	JL_INGORE(id);
+	JL_INGORE(strict);
+	JL_ASSERT_THIS_INHERITANCE();
+
+	int32 timeout;
+	JL_CHK( JL_JsvalToNative(cx, *vp, &timeout) );
+	JL_ASSERT( timeout >= 0, E_VALUE, E_MIN, E_NUM(0) );
+	*vp = INT_TO_JSVAL(timeout);
+	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, *vp) );
+	JL_CHK( JL_StoreProperty(cx, obj, id, vp, false) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+
 /**doc
 === Constants ===
  $CONST DESC_FILE
@@ -836,13 +974,15 @@ CONFIGURE_CLASS
 		FUNCTION( Read )
 		FUNCTION( Write )
 		FUNCTION( Sync )
+		FUNCTION( IsReadable )
+		FUNCTION( IsWritable )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_GETTER( available )
 		PROPERTY_GETTER( type )
 		PROPERTY_GETTER( closed )
-//		PROPERTY_GETTER( eof )
+		PROPERTY_SETTER( timeout )
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC

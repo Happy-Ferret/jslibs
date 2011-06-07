@@ -221,7 +221,7 @@ DEFINE_CONSTRUCTOR() {
 		// require the whole file to be read
 		int result = sf_command(pv->sfDescriptor, SFC_SET_SCALE_FLOAT_INT_READ, NULL, SF_TRUE); // Doc. Set/clear the scale factor when integer (short/int) data is read from a file containing floating point data. (http://www.mega-nerd.com/libsndfile/api.html#note2)
 
-		JL_USE(result);
+		JL_INGORE(result);
 
 	}
 
@@ -400,7 +400,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( inputStream ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -418,7 +418,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( bits ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -435,7 +435,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( rate ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -452,7 +452,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( channels ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -470,7 +470,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( frames ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);

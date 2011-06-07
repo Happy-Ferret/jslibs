@@ -22,7 +22,7 @@ BEGIN_CLASS( Sound ) // Start the definition of the class. It defines some symbo
 
 DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Template() ) or activated ( a = Template() ). To distinguish the cases, use JS_IsConstructing() or use the JL_ASSERT_CONSTRUCTING() macro.
 
-	JL_USE(argc);
+	JL_INGORE(argc);
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;

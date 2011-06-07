@@ -46,21 +46,21 @@ BEGIN_CLASS( ZError )
 
 DEFINE_PROPERTY_GETTER( code ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	return JL_GetReservedSlot( cx, obj, 0, vp );
 }
 
 DEFINE_PROPERTY_GETTER( text ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	return JL_GetReservedSlot( cx, obj, 1, vp );
 }
 
 DEFINE_PROPERTY_GETTER( const ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	JL_GetReservedSlot( cx, obj, 0, vp );
 	if ( JSVAL_IS_VOID(*vp) )
@@ -74,7 +74,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 DEFINE_FUNCTION( toString ) {
 
-	JL_USE(argc);
+	JL_INGORE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
@@ -83,7 +83,7 @@ DEFINE_FUNCTION( toString ) {
 /*
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	JL_USE(obj);
+	JL_INGORE(obj);
 
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;

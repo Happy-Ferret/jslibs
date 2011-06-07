@@ -425,7 +425,7 @@ namespace jl {
 		template <class T>
 		JSBool Write( JSContext *cx, const T &value ) {
 
-			JL_USE(cx);
+			JL_INGORE(cx);
 			JL_CHK( PrepareBytes(sizeof(T)) );
 			*(T*)_pos = value;
 			_pos += sizeof(T);
@@ -731,7 +731,7 @@ namespace jl {
 		template <class T>
 		JSBool Read( JSContext *cx, T &value ) {
 
-			JL_USE(cx);
+			JL_INGORE(cx);
 			if ( !AssertData(sizeof(T)) )
 				return JS_FALSE;
 			value = *(T*)_pos;

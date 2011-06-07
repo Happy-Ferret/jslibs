@@ -146,7 +146,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( position ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	size_t position;
@@ -157,8 +157,8 @@ DEFINE_PROPERTY_GETTER( position ) {
 
 DEFINE_PROPERTY_SETTER( position ) {
 
-	JL_USE(id);
-	JL_USE(strict);
+	JL_INGORE(id);
+	JL_INGORE(strict);
 
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	size_t position;
@@ -177,7 +177,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( available ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) ); // use vp as a tmp variable
@@ -204,7 +204,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( source ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );

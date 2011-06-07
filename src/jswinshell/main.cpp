@@ -61,7 +61,7 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 
-	JL_USE(cx);
+	JL_INGORE(cx);
 
 	return JS_TRUE;
 }

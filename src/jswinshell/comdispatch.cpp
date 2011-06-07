@@ -37,7 +37,7 @@ JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 	JS_GetPropertyById(cx, JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)), JLID(cx, name), &dbg_funNameVal);
 	const jschar *dbg_name = JS_GetStringCharsZ(cx, JSVAL_TO_STRING( dbg_funNameVal ));
 	
-	JL_USE(dbg_name);
+	JL_INGORE(dbg_name);
 
 #endif
 

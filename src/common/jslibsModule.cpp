@@ -73,7 +73,7 @@ JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
 #if defined _WINDLL && !defined JL_NO_DLL_MAIN
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 
-	JL_USE(lpvReserved);
+	JL_INGORE(lpvReserved);
 	//DisableThreadLibraryCalls() doc: http://msdn.microsoft.com/en-us/library/ms682579(v=vs.85).aspx
 	//beware:
 	//  Do not call this function from a DLL that is linked to the static C run-time library (CRT).

@@ -933,7 +933,7 @@ DEFINE_FUNCTION( charCodeAt ) {
 
 DEFINE_FUNCTION( toSource ) {
 
-	JL_USE(argc);
+	JL_INGORE(argc);
 
 	// (TBD) try something faster !!
 
@@ -961,7 +961,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( length ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS)
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
@@ -1010,9 +1010,9 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
-	JL_USE(strict);
-	JL_USE(obj);
-	JL_USE(vp);
+	JL_INGORE(strict);
+	JL_INGORE(obj);
+	JL_INGORE(vp);
 
 	JL_ASSERT_WARN( !JSID_IS_INT(id), E_THISOBJ, E_WRITE ); // JL_REPORT_WARNING_NUM( JLSMSG_IMMUTABLE_OBJECT, JL_THIS_CLASS->name); // see also JSMSG_READ_ONLY
 
@@ -1049,7 +1049,7 @@ noteq:
 
 JSBool next_for(JSContext *cx, uintN argc, jsval *vp) {
 
-	JL_USE(argc);
+	JL_INGORE(argc);
 
 	JSObject *obj;
 	obj = JS_THIS_OBJECT(cx, vp);
@@ -1079,7 +1079,7 @@ JSBool next_for(JSContext *cx, uintN argc, jsval *vp) {
 
 JSBool next_foreach(JSContext *cx, uintN argc, jsval *vp) {
 
-	JL_USE(argc);
+	JL_INGORE(argc);
 
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	jsval tmp;
@@ -1173,7 +1173,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( toString ) { // and valueOf ?
 
-	JL_USE(argc);
+	JL_INGORE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();

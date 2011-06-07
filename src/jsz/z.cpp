@@ -87,13 +87,13 @@ $TOC_MEMBER $INAME
 
 NOALIAS voidpf jsz_alloc(voidpf opaque, uInt items, uInt size) NOTHROW {
 
-	JL_USE(opaque);
+	JL_INGORE(opaque);
 	return jl_malloc(items*size);
 }
 
 void jsz_free(voidpf opaque, voidpf address) NOTHROW {
 
-	JL_USE(opaque);
+	JL_INGORE(opaque);
 	jl_free(address);
 }
 
@@ -301,7 +301,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( idle ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -319,7 +319,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( adler32 ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -336,7 +336,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( lengthIn ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -353,7 +353,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( lengthOut ) {
 
-	JL_USE(id);
+	JL_INGORE(id);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);

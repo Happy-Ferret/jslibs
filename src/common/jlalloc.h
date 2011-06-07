@@ -144,11 +144,11 @@ namespace jl {
 		}
 		ALWAYS_INLINE void operator delete(void *ptr, size_t size) {
 			jl_free(ptr);
-			JL_USE(size);
+			JL_INGORE(size);
 		}
 		ALWAYS_INLINE void operator delete[](void *ptr, size_t size) {
 			jl_free(ptr);
-			JL_USE(size);
+			JL_INGORE(size);
 		}
 	};
 
@@ -169,12 +169,13 @@ namespace jl {
 	class NOVTABLE PreservAlloc {
 
 		void *_last;
+		uint32_t _count;
 		uint8_t *_prealloc;
 		uint8_t *_preallocEnd;
 		JLMutexHandler _mx;
 
 	public:
-		ALWAYS_INLINE PreservAlloc() : _last(NULL), _prealloc(NULL) {
+		ALWAYS_INLINE PreservAlloc() : _last(NULL), _prealloc(NULL), _count(0) {
 			
 			if ( SYNC )
 				_mx = JLMutexCreate();
@@ -195,12 +196,32 @@ namespace jl {
 				JLMutexFree(&_mx);
 		}
 
+		ALWAYS_INLINE void Cleanup(size_t keepCount) {
+
+			if ( SYNC )
+				JLMutexAcquire(_mx);
+
+			while ( _last != NULL && _count > keepCount ) {
+
+				void *tmp = _last;
+				_last = *(void**)_last;
+				if ( PREALLOC == 0 || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
+					jl_free(tmp);
+				--_count;
+			}
+
+			if ( SYNC )
+				JLMutexRelease(_mx);
+		}
+
+
 		ALWAYS_INLINE void Free(T *ptr) {
 
 			if ( SYNC )
 				JLMutexAcquire(_mx);
 			*(void**)ptr = _last;
 			_last = ptr;
+			_count++;
 			if ( SYNC )
 				JLMutexRelease(_mx);
 		}
@@ -223,15 +244,17 @@ namespace jl {
 					*(void**)it = _last;
 					_last = it;
 				}
+				_count += PREALLOC;
 			}
 
 			if ( _last != NULL ) {
 
+				_count--;
 				void *tmp = _last;
 				_last = *(void**)_last;
-				return (T*)tmp;
 				if ( SYNC )
 					JLMutexRelease(_mx);
+				return (T*)tmp;
 			} else {
 			
 				if ( SYNC )
@@ -321,4 +344,5 @@ namespace jl {
 
 	template <class T>
 	class NOVTABLE StaticAllocBig : public StaticAlloc<T, 65536> {};
+
 }
