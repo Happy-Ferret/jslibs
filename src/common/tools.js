@@ -138,7 +138,7 @@ function Env3D() {
 		if ( t.length > 10000 )
 			t.shift();
 		var len = t.length;
-		if ( len < 2 || Vector3Length(t[len-1], t[len-2]) > 2 )
+		if ( len < 2 || Vec3Length(t[len-1], t[len-2]) > 2 )
 			t.push(pos);
 		else
 			t[len-1] = pos;
