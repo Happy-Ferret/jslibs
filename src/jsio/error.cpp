@@ -279,6 +279,5 @@ ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 	JL_CHK( JL_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) ) );
 	JL_CHK( JL_SetReservedSlot( cx, error, 1, INT_TO_JSVAL(osError) ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
-	return JS_FALSE;
 	JL_BAD;
 }

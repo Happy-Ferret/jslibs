@@ -1051,6 +1051,14 @@ Network64ToHost64( void *pval ) {
 }
 
 
+INLINE NEVER_INLINE ssize_t FASTCALL
+JL_atoi(const char *buf, int base) {
+
+	return strtol(buf, NULL, base);
+}
+
+
+
 INLINE NEVER_INLINE const char* FASTCALL
 IntegerToString(int32_t val, int base) {
 

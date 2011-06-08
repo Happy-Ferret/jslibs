@@ -22,13 +22,13 @@ struct JsioPrivate {
 	PRFileDesc *peCancel;
 };
 
-
-#define SLOT_JSIO_DIR_NAME 0
-
+// common for all descriptor
 #define SLOT_JSIO_DESCRIPTOR_IMPORTED 0
 #define SLOT_JSIO_DESCRIPTOR_TIMEOUT 1
-
+//
 #define SLOT_JSIO_FILE_NAME 2
+//
+#define SLOT_JSIO_DIR_NAME 0
 
 
 void FinalizeDescriptor(JSContext *cx, JSObject *obj);
@@ -38,11 +38,12 @@ JSBool NativeInterfaceStreamRead(JSContext *cx, JSObject *obj, char *buf, size_t
 
 
 ALWAYS_INLINE JSBool
-GetTimeoutInterval(JSContext *cx, JSObject *obj, PRIntervalTime *timeout) {
+GetTimeoutInterval(JSContext *cx, JSObject *obj, PRIntervalTime *timeout, PRIntervalTime defaultTimeout = PR_INTERVAL_NO_TIMEOUT) {
 
 	jsval timeoutValue;
 	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, &timeoutValue) );
-	*timeout = JSVAL_IS_VOID(timeoutValue) ? PR_INTERVAL_NO_TIMEOUT : PR_MillisecondsToInterval(JSVAL_TO_INT(timeoutValue));
+	ASSERT( JSVAL_IS_VOID(timeoutValue) || JSVAL_IS_INT(timeoutValue) );
+	*timeout = JSVAL_IS_VOID(timeoutValue) ? defaultTimeout : PR_MillisecondsToInterval(JSVAL_TO_INT(timeoutValue));
 	return JS_TRUE;
 	JL_BAD;
 }

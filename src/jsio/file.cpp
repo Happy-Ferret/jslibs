@@ -14,15 +14,21 @@
 
 #include "stdafx.h"
 
-#include <winioctl.h>
+#if defined XP_WIN
+	#include <winioctl.h>
+#endif
 
 
-#define DEFAULT_ACCESS_RIGHTS (PR_IRWXU | PR_IRWXG) // read write permission for owner & group
+#define DEFAULT_ACCESS_RIGHTS (PR_IRWXU | PR_IRWXG) // read, write, execute/search by owner & group ("770")
 
-PRIntn FileOpenFlagsFromString( const char *strFlags, size_t length ) {
+PRIntn FileOpenFlagsFromString( JLStr &str ) {
+
+	size_t length = str.LengthOrZero();
+	const char *strFlags = str.GetConstStr();
 
 	if ( length == 0 || length > 2 )
 		return 0;
+
 	if ( length == 2 && strFlags[1] != '+' )
 		return 0;
 
@@ -30,18 +36,36 @@ PRIntn FileOpenFlagsFromString( const char *strFlags, size_t length ) {
 	bool plus = length == 2 && strFlags[1] == '+';
 
 	PRIntn flags;
-	if ( c == 'r' )
+	if ( c == 'r' ) {
+
 		flags = plus ? PR_RDWR : PR_RDONLY;
-	else
-		if ( c == 'w' )
+	} else {
+
+		if ( c == 'w' ) {
+
 			flags = plus ? PR_CREATE_FILE | PR_TRUNCATE | PR_RDWR : PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY;
-		else
-			if ( c == 'a' )
+		} else {
+
+			if ( c == 'a' ) {
+
 				flags = plus ? PR_CREATE_FILE | PR_APPEND | PR_RDWR : PR_CREATE_FILE | PR_APPEND | PR_WRONLY;
-			else
+			} else {
+
 				flags = 0;
+			}
+		}
+	}
 	return flags;
 }
+
+
+PRIntn FileOpenModeFromString( JLStr &str ) {
+	
+	PRIntn mode = JL_atoi(str.GetConstStrZ(), 8);
+	ASSERT( mode < (PR_IRWXU | PR_IRWXG | PR_IRWXO) );
+	return mode;
+}
+
 
 /**doc
 $CLASS_HEADER Descriptor
@@ -64,9 +88,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_ASSERT_ARGC_MIN(1);
-	JL_CHK( JL_SetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, JL_ARG(1) ) );
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_JSIO_FILE_NAME, JL_ARG(1)) );
 	JL_SetPrivate(cx, obj, NULL); // (TBD) optional ?
-	ReserveStreamReadInterface(cx, obj);
+	JL_CHK( ReserveStreamReadInterface(cx, obj) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -83,6 +107,8 @@ $TOC_MEMBER $INAME
   _flags_ is either a combinaison of open mode constants (see below) or a string that contains fopen like flags (+, r, w, a).
   If _flags_ is omitted, the file is open with CREATE_FILE + RDWR mode (r+).
   $LF
+  _mode_ is an octal string (like '777') or a number that represents the mode.
+  $LF
   The functions returns the file object itself (this), this allows to write things like: `new File('foo.txt').Open('r').Read();`
 **/
 DEFINE_FUNCTION( Open ) {
@@ -91,9 +117,8 @@ DEFINE_FUNCTION( Open ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-
 	JL_ASSERT_ARGC_MAX(2);
-	JL_ASSERT( JL_GetPrivate( cx, obj ) == NULL, E_FILE, E_OPEN );
+	JL_ASSERT( JL_GetPrivate(cx, obj) == NULL, E_FILE, E_OPEN );
 
 	PRIntn flags;
 	if ( JL_ARG_ISDEF(1) ) {
@@ -103,14 +128,11 @@ DEFINE_FUNCTION( Open ) {
 			JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &flags) );
 		} else {
 
-//			const char *strFlags;
-//			size_t len;
-//			JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &strFlags, &len) );
-			JLStr str;
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-			flags = FileOpenFlagsFromString(str.GetConstStr(), str.Length());
+			JLStr strFlags;
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &strFlags) );
+			flags = FileOpenFlagsFromString(strFlags);
 		}
-	} else {
+	} else { // default
 
 		flags = PR_CREATE_FILE | PR_RDWR;
 	}
@@ -118,21 +140,32 @@ DEFINE_FUNCTION( Open ) {
 	PRIntn mode;
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &mode) );
-	} else { // default
+		if ( JSVAL_IS_NUMBER( JL_ARG(2) ) ) {
+
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &mode) );
+		} else {
+
+			JLStr strMode;
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &strMode) );
+			mode = FileOpenModeFromString(strMode);
+		}
+	}
+	else { // default
 
 		mode = DEFAULT_ACCESS_RIGHTS;
 	}
 
+
 	jsval jsvalFileName;
-	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 //	const char *fileName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &str) );
 
 	PRFileDesc *fd;
-	fd = PR_Open(str.GetConstStr(), flags, mode); // The mode parameter is currently applicable only on Unix platforms.
+	fd = PR_OpenFile(str.GetConstStr(), flags, mode); // PR_OpenFile has the same prototype as PR_Open but implements the specified file mode where possible.
+
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 	JL_SetPrivate( cx, obj, fd );
@@ -358,13 +391,15 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( content ) {
 
 	JLStr fileName;
-	JL_ASSERT( !JL_GetPrivate(cx, obj), E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
-
 	jsval jsvalFileName;
+	uint8_t *buf = NULL;
+
+	JL_ASSERT( !JL_GetPrivate(cx, obj), E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) ); // (TBD) add somthing like J_SCHK instead
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
 
+/*
 	PRStatus status;
 	status = PR_Access(fileName, PR_ACCESS_READ_OK); // We want to read the whole file, then first check if the file is readable
 	if (unlikely( status != PR_SUCCESS )) {
@@ -372,66 +407,76 @@ DEFINE_PROPERTY_GETTER( content ) {
 		*vp = JSVAL_VOID;
 		return JS_TRUE;
 	}
+*/
 
 	PRFileDesc *fd;
-	fd = PR_OpenFile(fileName, PR_RDONLY, 0); // The mode parameter is currently applicable only on Unix platforms.
+	fd = PR_Open(fileName, PR_RDONLY, 0);
 	if (unlikely( fd == NULL )) {
 
 		PRErrorCode err = PR_GetError();
-		if ( err == PR_FILE_NOT_FOUND_ERROR || err == PR_FILE_IS_BUSY_ERROR ) {
+		if ( err == PR_FILE_NOT_FOUND_ERROR ) {
 
 			*vp = JSVAL_VOID;
 			return JS_TRUE;
 		}
-		return ThrowIoErrorArg( cx, err, PR_GetOSError() );
+		return ThrowIoErrorArg(cx, err, PR_GetOSError());
 	}
 
-	PRInt32 available;
-	available = PR_Available(fd); // For a normal file, these are the bytes beyond the current file pointer.
+	PRInt64 available;
+	available = PR_Available64(fd); // For a normal file, these are the bytes beyond the current file pointer.
+
+	if ( available == 0 ) {
+
+		PR_Close(fd);
+		*vp = JL_GetEmptyStringValue(cx);
+		return JS_TRUE;
+	}
+
 	if (unlikely( available == -1 )) {
 		
 		PR_Close(fd);
 		return ThrowIoError(cx);
 	}
 
-	char *buf;
-	buf = (char*)JS_malloc(cx, available +1);
-	JL_CHKB(buf, bad_free);
+	if ( available > PR_INT32_MAX ) {
+		
+		PR_Close(fd);
+		JL_ERR( E_DATASIZE, E_MAX, E_STR("2^32") );
+	}
 
+	
+	buf = (uint8_t *)jl_malloc(available +1);
+	JL_CHK(buf);
+	
 	PRInt32 res;
-	res = PR_Read(fd, buf, available);
+	res = PR_Read(fd, buf, (PRInt32)available);
 	if (unlikely( res == -1 )) {
 
+		ThrowIoError(cx);
 		PR_Close(fd);
-		JS_free(cx, buf);
-		return ThrowIoError(cx);
+		goto bad_free;
 	}
 
 	if (unlikely( PR_Close(fd) != PR_SUCCESS )) {
 
-		JS_free(cx, buf);
-		return ThrowIoError(cx);
+		ThrowIoError(cx);
+		goto bad_free;
 	}
 
-	if (unlikely( res == 0 )) {
+	if (unlikely( JL_MaybeRealloc(available, res) )) { // should never occured
 
-		JS_free(cx, buf);
-		*vp = JL_GetEmptyStringValue(cx);
-		return JS_TRUE;
-	}
-
-	if (unlikely( JL_MaybeRealloc( available, res ) )) { // should never occured
-
-		buf = (char*)JS_realloc(cx, buf, res +1); // realloc the string using its real size
+		buf = (uint8_t *)JS_realloc(cx, buf, res +1); // realloc the string using its real size
 		JL_CHK(buf);
 	}
 
 	buf[res] = '\0';
-	JL_CHKB( JL_NewBlob( cx, buf, res, vp ), bad_free );
+	JL_CHKB( JL_NewBlob(cx, buf, res, vp), bad_free );
+	JL_updateMallocCounter(cx, res);
 	return JS_TRUE;
 
 bad_free:
-	JS_free(cx, buf);
+	jl_free(buf);
+
 bad:
 	return JS_FALSE;
 }
@@ -440,24 +485,29 @@ bad:
 DEFINE_PROPERTY_SETTER( content ) {
 
 	JLStr fileName, buf;
-	JL_ASSERT( !JL_GetPrivate(cx, obj), E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 	jsval jsvalFileName;
-	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+
+	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
+	JL_ASSERT( !JL_GetPrivate(cx, obj), E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
+
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		if ( PR_Delete(fileName) != PR_SUCCESS ) {
 
 			PRErrorCode err = PR_GetError();
-			if ( err == PR_FILE_NOT_FOUND_ERROR )
-				return JS_TRUE; // property will return  undefined
+			if ( err == PR_FILE_NOT_FOUND_ERROR ) {
+
+				return JS_TRUE; // property will return *undefined*
+			}
 			return ThrowIoErrorArg( cx, err, PR_GetOSError() );
 		}
 		return JS_TRUE;
 	}
+
 	PRFileDesc *fd;
-	fd = PR_OpenFile( fileName, PR_CREATE_FILE | PR_TRUNCATE | PR_WRONLY, DEFAULT_ACCESS_RIGHTS ); // The mode parameter is currently applicable only on Unix platforms.
+	fd = PR_OpenFile(fileName, PR_CREATE_FILE | PR_TRUNCATE | PR_SYNC | PR_WRONLY, DEFAULT_ACCESS_RIGHTS); // The mode parameter is currently applicable only on Unix platforms.
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 
@@ -465,14 +515,18 @@ DEFINE_PROPERTY_SETTER( content ) {
 	PRInt32 bytesSent;
 
 	ASSERT( buf.Length() <= PR_INT32_MAX );
-	bytesSent = PR_Write( fd, buf.GetConstStr(), (PRInt32)buf.Length() );
+	bytesSent = PR_Write(fd, buf.GetConstStr(), (PRInt32)buf.Length());
 	if ( bytesSent == -1 ) {
 		
 		PR_Close(fd);
 		return ThrowIoError(cx);
 	}
 
-	JL_ASSERT( bytesSent == (int)buf.Length(), E_FILE, E_NAME(fileName), E_WRITE );
+	//JL_ASSERT( bytesSent == (int)buf.Length(), E_FILE, E_NAME(fileName), E_WRITE );
+	if ( bytesSent != (int)buf.Length() ) {
+
+		JL_ERR( E_FILE, E_NAME(fileName), E_WRITE );
+	}
 
 	if ( PR_Close(fd) != PR_SUCCESS )
 		return ThrowIoError(cx);
@@ -488,8 +542,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( name ) {
 
-	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, vp );
-	return JS_TRUE;
+	return JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, vp );
 }
 
 DEFINE_PROPERTY_SETTER( name ) {
@@ -652,7 +705,7 @@ DEFINE_PROPERTY_GETTER( id ) {
 	JL_ASSERT_THIS_OBJECT_STATE( fileHandle && fileHandle != INVALID_HANDLE_VALUE );
 	FILE_OBJECTID_BUFFER buf;
 	DWORD cbOut;
-	if ( !DeviceIoControl(fileHandle, FSCTL_CREATE_OR_GET_OBJECT_ID, NULL, 0, &buf, sizeof(buf), &cbOut, NULL) )
+	if ( !DeviceIoControl(fileHandle, FSCTL_CREATE_OR_GET_OBJECT_ID, NULL, 0, &buf, sizeof(buf), &cbOut, NULL) ) // WinBase.h
 		return JL_ThrowOSError(cx);
 	return JL_NativeToJsval(cx, (const char *)&buf.ObjectId, sizeof(buf.ObjectId), vp);
 
@@ -668,7 +721,7 @@ DEFINE_PROPERTY_GETTER( id ) {
 
 #else
 
-	JL_WARN( E_API, E_NOTIMPLEMENTED );
+	JL_ERR( E_API, E_NOTIMPLEMENTED );
 
 #endif // XP_WIN
 
@@ -791,29 +844,29 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_CREATE( stdin , PR_StandardInput,  JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
-		PROPERTY_CREATE( stdout, PR_StandardOutput, JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
-		PROPERTY_CREATE( stderr, PR_StandardError,  JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
+		PROPERTY_CREATE( stdin  ,PR_StandardInput  ,JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
+		PROPERTY_CREATE( stdout ,PR_StandardOutput ,JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
+		PROPERTY_CREATE( stderr ,PR_StandardError  ,JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
 	END_STATIC_PROPERTY_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC
 // PR_Open flags
-		CONST_INTEGER( RDONLY		,PR_RDONLY )
-		CONST_INTEGER( WRONLY		,PR_WRONLY )
+		CONST_INTEGER( RDONLY      ,PR_RDONLY )
+		CONST_INTEGER( WRONLY      ,PR_WRONLY )
 		CONST_INTEGER( RDWR			,PR_RDWR )
-		CONST_INTEGER( CREATE_FILE	,PR_CREATE_FILE )
-		CONST_INTEGER( APPEND		,PR_APPEND )
-		CONST_INTEGER( TRUNCATE		,PR_TRUNCATE )
-		CONST_INTEGER( SYNC			,PR_SYNC )
-		CONST_INTEGER( EXCL			,PR_EXCL )
+		CONST_INTEGER( CREATE_FILE ,PR_CREATE_FILE )
+		CONST_INTEGER( APPEND      ,PR_APPEND )
+		CONST_INTEGER( TRUNCATE    ,PR_TRUNCATE )
+		CONST_INTEGER( SYNC        ,PR_SYNC )
+		CONST_INTEGER( EXCL        ,PR_EXCL )
 // PRSeekWhence enum
-		CONST_INTEGER( SEEK_SET			,PR_SEEK_SET )
-		CONST_INTEGER( SEEK_CUR			,PR_SEEK_CUR )
-		CONST_INTEGER( SEEK_END			,PR_SEEK_END )
+		CONST_INTEGER( SEEK_SET	,PR_SEEK_SET )
+		CONST_INTEGER( SEEK_CUR	,PR_SEEK_CUR )
+		CONST_INTEGER( SEEK_END	,PR_SEEK_END )
 // PRFileType enum
-		CONST_INTEGER( FILE_FILE			,PR_FILE_FILE )
-		CONST_INTEGER( FILE_DIRECTORY	,PR_FILE_DIRECTORY )
-		CONST_INTEGER( FILE_OTHER		,PR_FILE_OTHER )
+		CONST_INTEGER( FILE_FILE      ,PR_FILE_FILE )
+		CONST_INTEGER( FILE_DIRECTORY ,PR_FILE_DIRECTORY )
+		CONST_INTEGER( FILE_OTHER     ,PR_FILE_OTHER )
 	END_CONST_INTEGER_SPEC
 
 END_CLASS

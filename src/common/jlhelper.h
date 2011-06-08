@@ -2887,7 +2887,7 @@ JL_ReportExceptionToString( JSContext *cx, JSObject *obj, JLStr  ) {
 ALWAYS_INLINE bool
 JL_MaybeRealloc( size_t requested, size_t received ) {
 
-	return requested != 0 && (128 * received / requested < 96) && (requested - received > 64); // "128 *": instead using percent, we use per-128
+	return requested != 0 && (128 * received / requested < 96) && (requested - received > 128);
 }
 
 

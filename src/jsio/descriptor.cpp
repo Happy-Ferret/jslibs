@@ -844,9 +844,7 @@ DEFINE_FUNCTION( IsReadable ) {
 	desc.out_flags = 0;
 
 	PRIntervalTime timeout;
-	JL_CHK( GetTimeoutInterval(cx, JL_OBJ, &timeout) );
-	if ( timeout == PR_INTERVAL_NO_TIMEOUT )
-		timeout = PR_INTERVAL_NO_WAIT;
+	JL_CHK( GetTimeoutInterval(cx, JL_OBJ, &timeout, PR_INTERVAL_NO_WAIT) );
 
 	PRInt32 result;
 	result = PR_Poll(&desc, 1, timeout);
@@ -893,9 +891,7 @@ DEFINE_FUNCTION( IsWritable ) {
 	desc.out_flags = 0;
 
 	PRIntervalTime timeout;
-	JL_CHK( GetTimeoutInterval(cx, JL_OBJ, &timeout) );
-	if ( timeout == PR_INTERVAL_NO_TIMEOUT )
-		timeout = PR_INTERVAL_NO_WAIT;
+	JL_CHK( GetTimeoutInterval(cx, JL_OBJ, &timeout, PR_INTERVAL_NO_WAIT) );
 
 	PRInt32 result;
 	result = PR_Poll(&desc, 1, timeout);

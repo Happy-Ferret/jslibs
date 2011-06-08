@@ -2,6 +2,7 @@
 LoadModule('jsio');
 LoadModule('jsdebug');
 
+
 /// Descriptor inheritance
 
 	QA.ASSERT( new Socket().Import, undefined, 'new Socket .Import unavailable' );
@@ -234,8 +235,8 @@ LoadModule('jsdebug');
 			dlist.push(incomingClient);
 			incomingClient.readable = function(s) {
 
-				QA.ASSERT( IsReadable(s), true, 'socket is readable' );
-				QA.ASSERT( IsWritable(s), true, 'socket is writable' );
+				QA.ASSERT( s.IsReadable(), true, 'socket is readable' );
+				QA.ASSERT( s.IsWritable(), true, 'socket is writable' );
 				QA.ASSERT_STR( s.Read(), '1234', 'read data match' );
 				count++;
 			}
@@ -257,8 +258,8 @@ LoadModule('jsdebug');
 
 		Sleep(50);
 
-		QA.ASSERT( IsReadable(clientSocket), false, 'socket is readable' );
-		QA.ASSERT( IsWritable(clientSocket), true, 'socket is writable' );
+		QA.ASSERT( clientSocket.IsReadable(), false, 'socket is readable' );
+		QA.ASSERT( clientSocket.IsWritable(), true, 'socket is writable' );
 
 		dlist.push(clientSocket);
 
