@@ -24,4 +24,3 @@
 #include <buffer.h>
 
 #include <zlib.h>
-#include "z.h"

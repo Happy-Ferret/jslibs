@@ -21,6 +21,8 @@
 
 DECLARE_CLASS( ZError )
 DECLARE_CLASS( Z )
+DECLARE_CLASS( ZipFile )
+DECLARE_CLASS( ZipFileError )
 
 
 /**doc t:header
@@ -38,6 +40,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 
 	INIT_CLASS( ZError );
 	INIT_CLASS( Z );
+	INIT_CLASS( ZipFile );
+	INIT_CLASS( ZipFileError );
 
 	return JS_TRUE;
 	JL_BAD;

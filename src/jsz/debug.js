@@ -1,9 +1,45 @@
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-rep 1 -exclude jstask jsz');
+//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-rep 1 -exclude jstask jsz');
 
 
 LoadModule('jsstd');
 LoadModule('jsz');
+
+var f = new ZipFile('test.zip');
+f.Open(ZipFile.CREATE);
+f.Select('toto/xxx.txt');
+f.Write('content data');
+f.Select('toto/xxx.txt');
+f.Write('content data');
+f.Close();
+
+var g = new ZipFile('test.zip');
+g.Open(ZipFile.READ);
+for each ( var name in g )
+	Print( name, '\n' );
+g.Close();
+
+
+throw 0;
+
+var f = new ZipFile('test.zip');
+f.Open(ZipFile.CREATE);
+f.Select('toto/xxx.txt');
+f.Write('content data');
+f.Close();
+
+var g = new ZipFile('test.zip');
+g.Open(ZipFile.READ);
+g.Select('toto/xxx.txt');
+var data = g.Read();
+g.Close();
+
+Print( String(data).quote(), '\n' );
+
+
+
+
+Halt(); //////////////////////////////////////////////////////////////////////////
 
 		var data = 'clear data';
 		var deflatedData = new Z(Z.DEFLATE)(data, true);
