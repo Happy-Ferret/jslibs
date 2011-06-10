@@ -1,3 +1,4 @@
+
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 //LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-rep 1 -exclude jstask jsz');
 
@@ -5,22 +6,43 @@
 LoadModule('jsstd');
 LoadModule('jsz');
 
+
 var f = new ZipFile('test.zip');
-f.Open(ZipFile.CREATE);
-f.Select('toto/xxx.txt');
-f.Write('content data');
-f.Select('toto/xxx.txt');
-f.Write('content data');
+f.Open(ZipFile.CREATE, 0);
+f.filename = 'toto/xxx.txt';
+f.date = new Date(2008,6,4);
+f.Write('content');
+f.Write(' ');
+f.Write('data');
+f.comment = 'toto';
 f.Close();
+
 
 var g = new ZipFile('test.zip');
 g.Open(ZipFile.READ);
-for each ( var name in g )
-	Print( name, '\n' );
+for ( g.GoFirst(); !g.eol; g.GoNext() ) {
+
+	Print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.Read(), '\n' );
+}
 g.Close();
 
 
 throw 0;
+
+var g = new ZipFile('codemirror-0.65.zip');
+g.Open(ZipFile.READ);
+
+for ( g.GoFirst(); !g.eol; g.GoNext() ) {
+
+	Print( g.filename, '\n' );
+}
+
+g.Close();
+
+
+throw 0;
+
+
 
 var f = new ZipFile('test.zip');
 f.Open(ZipFile.CREATE);
@@ -36,6 +58,7 @@ g.Close();
 
 Print( String(data).quote(), '\n' );
 
+throw 0;
 
 
 

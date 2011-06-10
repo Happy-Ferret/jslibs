@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 #include "z.h"
-#include "z.h"
+
 
 // current method
 enum Method {
