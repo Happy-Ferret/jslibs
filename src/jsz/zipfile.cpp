@@ -45,16 +45,19 @@ struct Private {
 	zipFile zf;
 	unzFile uf;
 
+	uLong remainingLength;
+
 	int level; // compression level
 	bool eol; // end of list
 };
 
 
 
-JSBool PrepareReadCurrentFile( JSContext *cx, JSObject *obj, uLong *fileSize ) {
+JSBool PrepareReadCurrentFile( JSContext *cx, JSObject *obj ) {
 
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	ASSERT( pv && !pv->inZipOpened );
 
 	int status;
 
@@ -62,32 +65,27 @@ JSBool PrepareReadCurrentFile( JSContext *cx, JSObject *obj, uLong *fileSize ) {
 	status = unzGetCurrentFileInfo(pv->uf, &pfile_info, NULL, 0, NULL, 0, NULL, 0);
 	if ( status != UNZ_OK )
 		return ThrowZipFileError(cx, status);
-	bool needPassword = (pfile_info.flag & 1) == 1;
-	*fileSize = pfile_info.uncompressed_size;
 
-	if ( !pv->inZipOpened ) {
+	if ( pfile_info.flag & 1 ) { // has password
 
 		JLStr password;
+		jsval tmp;
+		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__CURRENTPASSWORD, &tmp) );
+		if ( !JSVAL_IS_VOID(tmp) )
+			JL_CHK( JL_JsvalToNative(cx, tmp, &password) );
+		if ( !password.IsSet() )
+			return ThrowZipFileError(cx, PASSWORDREQUIRED);
+		status = unzOpenCurrentFilePassword(pv->uf, password);
+	} else {
 
-		if ( needPassword ) {
-
-			jsval tmp;
-			JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__CURRENTPASSWORD, &tmp) );
-			if ( !JSVAL_IS_VOID(tmp) )
-				JL_CHK( JL_JsvalToNative(cx, tmp, &password) );
-			if ( !password.IsSet() )
-				return ThrowZipFileError(cx, PASSWORDREQUIRED);
-			status = unzOpenCurrentFilePassword(pv->uf, password);
-		} else {
-
-			status = unzOpenCurrentFile(pv->uf);
-		}
-
-		if ( status != UNZ_OK )
-			return ThrowZipFileError(cx, status);
-
-		pv->inZipOpened = true;
+		status = unzOpenCurrentFile(pv->uf);
 	}
+	if ( status != UNZ_OK )
+		return ThrowZipFileError(cx, status);
+
+	pv->inZipOpened = true;
+	pv->remainingLength = pfile_info.uncompressed_size;
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -100,8 +98,8 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	uLong fileSize;
-	JL_CHK( PrepareReadCurrentFile(cx, obj, &fileSize) );
+	if ( !pv->inZipOpened )
+		JL_CHK( PrepareReadCurrentFile(cx, obj) );
 
 	int rd;
 	rd = unzReadCurrentFile(pv->uf, buf, *amount);
@@ -110,10 +108,12 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 		if ( rd == UNZ_ERRNO )
 			JL_ERR( E_FILE, E_ACCESS );
 		else
-			JL_ERR( E_DATA, E_INVALID );
+			JL_ERR( E_DATA, E_INVALID, E_ERRNO(rd) );
 	}
 	
 	ASSERT( (uLong)rd <= *amount );
+
+	pv->remainingLength -= rd;
 
 	*amount = rd;
 	return JS_TRUE;
@@ -280,17 +280,15 @@ DEFINE_FUNCTION( Select ) {
 		}
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &inZipFilename) );
-		status = unzLocateFile(pv->uf, inZipFilename, 1);
+		status = unzLocateFile(pv->uf, inZipFilename, 1); // iCaseSenisivity = 1, comparision is case sensitivity (like strcmp)
 		if ( status == UNZ_END_OF_LIST_OF_FILE ) {
 
 			pv->eol = true;
 			return JS_TRUE;
 		}
 		
-		if ( status != UNZ_OK ) {
-			
+		if ( status != UNZ_OK )
 			return ThrowZipFileError(cx, status);
-		}
 
 		pv->eol = false;
 	} else
@@ -356,10 +354,10 @@ DEFINE_FUNCTION( GoNext ) {
 
 		pv->eol = true;
 		return JS_TRUE;
-	} else if ( status != UNZ_OK ) {
-
-		return ThrowZipFileError(cx, status);
 	}
+	
+	if ( status != UNZ_OK )
+		return ThrowZipFileError(cx, status);
 
 	pv->eol = false;
 
@@ -376,8 +374,8 @@ DEFINE_FUNCTION( Read ) {
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	uLong fileSize;
-	JL_CHK( PrepareReadCurrentFile(cx, obj, &fileSize) );
+	if ( !pv->inZipOpened )
+		JL_CHK( PrepareReadCurrentFile(cx, obj) );
 
 	uLong requestedLength;
 	if ( JL_ARG_ISDEF(1) ) {
@@ -386,7 +384,7 @@ DEFINE_FUNCTION( Read ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &requestedLength) );
 	} else {
 
-		requestedLength = fileSize;
+		requestedLength = pv->remainingLength;
 	}
 	
 	uint8_t *buffer;
@@ -399,16 +397,20 @@ DEFINE_FUNCTION( Read ) {
 		if ( rd == UNZ_ERRNO )
 			JL_ERR( E_FILE, E_ACCESS );
 		else
-			JL_ERR( E_DATA, E_INVALID );
+			JL_ERR( E_DATA, E_INVALID, E_ERRNO(rd) );
 	}
 	
 	ASSERT( (uLong)rd <= requestedLength );
 
-	if ( JL_MaybeRealloc(requestedLength, rd) )
-		buffer = (uint8_t*)jl_realloc(buffer, rd +1);
+//	if ( JL_MaybeRealloc(requestedLength, rd) )
+//		buffer = (uint8_t*)jl_realloc(buffer, rd +1);
 
 	buffer[rd] = '\0'; 
 	JL_CHK( JL_NewBlob(cx, buffer, rd, JL_RVAL) );
+
+	pv->remainingLength -= rd;
+
+	ASSERT( unzeof( pv->uf) == (pv->remainingLength == 0) );
 
 	return JS_TRUE;
 	JL_BAD;

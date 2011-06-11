@@ -22,11 +22,24 @@ Print( '---\n' );
 
 var g = new ZipFile('test.zip');
 g.Open(ZipFile.READ);
+
+Print( g.Read(), '\n' );
+
+throw 0;
+
 //g.Select('toto/xxx.txt');
 g.Select('Makefile');
 g.password = 'aze';
 Print( 'global comment:', g.comment, '\n' );
-Print( g.filename, ' / ', g.date, ' / ', g.Read(), '\n' );
+Print( g.filename, ' / ', g.date, ' / ', '\n' );
+Print( g.Read(30), '\n' );
+Print( g.Read(30), '\n' );
+Print( g.Read(30), '\n' );
+Print( g.Read(30), '\n' );
+Print( g.Read(), '\n' );
+
+
+//Print( Stringify(g) );
 g.Close();
 
 
