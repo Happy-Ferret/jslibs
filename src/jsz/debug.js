@@ -7,6 +7,24 @@ LoadModule('jsstd');
 LoadModule('jsz');
 
 
+
+var f = new ZipFile('test.zip');
+f.Open(ZipFile.CREATE);
+f.Select('toto/xxx.txt');
+f.date = new Date(2008,6,4);
+f.Write('content data');
+f.Close();
+
+var g = new ZipFile('test.zip');
+g.Open(ZipFile.READ);
+g.Select('toto/xxx.txt');
+Print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.Read(), '\n' );
+g.Close();
+
+
+throw 0;
+
+
 var g = new ZipFile('test.zip');
 g.Open(ZipFile.READ);
 g.password = 'aze';
@@ -16,9 +34,6 @@ Print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.Read(), '\n' );
 
 g.Select('toto/xxx.txt');
 Print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.Read(), '\n' );
-
-
-
 
 g.Close();
 

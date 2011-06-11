@@ -20,14 +20,20 @@
 #include <jsdate.h>
 
 #define SLOT_Z_ZIPFILE__FILENAME 0
-#define SLOT_Z_ZIPFILE__INZIPFILENAME 1
-#define SLOT_Z_ZIPFILE__GLOBALCOMMENT 2
-#define SLOT_Z_ZIPFILE__CURRENTPASSWORD 3
+#define SLOT_Z_ZIPFILE__GLOBALCOMMENT 1
+#define SLOT_Z_ZIPFILE__INZIPFILENAME 2
+#define SLOT_Z_ZIPFILE__CURRENTDATE 3
+#define SLOT_Z_ZIPFILE__CURRENTPASSWORD 4
 
 
 NEVER_INLINE JSBool FASTCALL
 ThrowZipFileError( JSContext *cx, int errorCode );
 
+
+/**doc
+$CLASS_HEADER
+$SVN_REVISION $Revision: 3471 $
+**/
 
 BEGIN_CLASS( ZipFile )
 
@@ -37,77 +43,9 @@ struct Private {
 	zipFile zf;
 	unzFile uf;
 
-	tm_zip date; // 
 	int level; // compression level
 	bool eol; // end of list
 };
-
-
-
-JSBool
-UnzCurrentFilenameToJsval( JSContext *cx, unzFile file, jsval *vp ) {
-
-	char buffer[PATH_MAX];
-	char *filename;
-
-	int status;
-	unz_file_info pfile_info;
-
-	status = unzGetCurrentFileInfo(file, &pfile_info, buffer, sizeof(buffer), NULL, 0, NULL, 0);
-	if ( status != UNZ_OK )
-		return ThrowZipFileError(cx, status);
-
-	if ( pfile_info.size_filename <= sizeof(buffer) ) {
-
-		filename = buffer;
-	} else {
-		
-		// this case shoul be quite rare.
-		filename = (char *)jl_malloca(pfile_info.size_filename);
-		unzGetCurrentFileInfo(file, &pfile_info, filename, pfile_info.size_filename, NULL, 0, NULL, 0);
-	}
-
-	JL_CHK( JL_NativeToJsval(cx, filename, pfile_info.size_filename, vp) );
-
-	if ( filename != buffer )
-		jl_freea(filename);
-
-	return JS_TRUE;
-	JL_BAD;
-}
-
-/*
-JSBool
-UnzGetGlobalComment( JSContext *cx, unzFile file, jsval *vp ) {
-
-	char buffer[1024];
-	char *comment;
-
-	int status;
-	unz_file_info pfile_info;
-
-	status = unzGetCurrentFileInfo(file, &pfile_info, buffer, sizeof(buffer), NULL, 0, NULL, 0);
-	if ( status != UNZ_OK )
-		return ThrowZipFileError(cx, status);
-
-	if ( pfile_info.size_file_comment <= sizeof(buffer) ) {
-
-		filename = buffer;
-	} else {
-
-		filename = (char *)jl_malloca(pfile_info.size_filename);
-		unzGetCurrentFileInfo(file, &pfile_info, filename, pfile_info.size_filename, NULL, 0, NULL, 0);
-	}
-
-	JL_CHK( JL_NativeToJsval(cx, filename, pfile_info.size_filename, vp) );
-
-	if ( filename != buffer )
-		jl_freea(filename);
-
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
 
 
 DEFINE_FINALIZE() {
@@ -454,22 +392,37 @@ DEFINE_FUNCTION( Write ) {
 
 	if ( !pv->inZipOpened ) {
 
-		//uLong crcForCrypting;
-		//crcForCrypting = 0; // (TBD)
-		//status = zipOpenNewFileInZip3(pv->zf, filenameInZip, NULL, NULL, NULL, NULL, NULL, NULL, pv->level == 0 ? 0 : Z_DEFLATED, pv->level, 0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, password.GetConstStrZOrNULL(), crcForCrypting);
-
 		JLStr inZipFilename;
-		JL_CHK( JL_ReservedSlotToNative(cx, obj, SLOT_Z_ZIPFILE__INZIPFILENAME, &inZipFilename) );
 
 		zip_fileinfo zipfi;
 		zipfi.dosDate = 0;
 		zipfi.external_fa = 0;
 		zipfi.internal_fa = 0;
-		zipfi.tmz_date = pv->date;
 
+		jsval tmp;
+		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__CURRENTDATE, &tmp) );
+		if ( JSVAL_IS_VOID(tmp) ) {
+
+			memset(&zipfi.tmz_date, 0, sizeof(zipfi.tmz_date));
+		} else {
+
+			ASSERT( JSVAL_IS_NULL(tmp) || !JSVAL_IS_PRIMITIVE(tmp) && JS_ObjectIsDate(cx, JSVAL_TO_OBJECT(tmp)) );
+
+			JSObject *dateObj;
+			dateObj = JSVAL_TO_OBJECT(tmp);
+			zipfi.tmz_date.tm_sec = js_DateGetSeconds(cx, dateObj);
+			zipfi.tmz_date.tm_min = js_DateGetMinutes(cx, dateObj);
+			zipfi.tmz_date.tm_hour = js_DateGetHours(cx, dateObj);
+			zipfi.tmz_date.tm_mday = js_DateGetDate(cx, dateObj);
+			zipfi.tmz_date.tm_mon = js_DateGetMonth(cx, dateObj) - 1;
+			zipfi.tmz_date.tm_year = js_DateGetYear(cx, dateObj);
+		}
+
+		JL_CHK( JL_ReservedSlotToNative(cx, obj, SLOT_Z_ZIPFILE__INZIPFILENAME, &inZipFilename) );
 		status = zipOpenNewFileInZip(pv->zf, inZipFilename, &zipfi, NULL, NULL, NULL, NULL, NULL, pv->level == 0 ? 0 : Z_DEFLATED, pv->level);
 		if ( status != ZIP_OK )
 			return ThrowZipFileError(cx, status);
+
 		pv->inZipOpened = true;
 	}
 
@@ -512,7 +465,35 @@ DEFINE_PROPERTY_GETTER( filename ) {
 	
 	if ( pv->uf ) {
 
-		JL_CHK( UnzCurrentFilenameToJsval(cx, pv->uf, vp) );
+		char buffer[PATH_MAX];
+		char *filename;
+
+		int status;
+		unz_file_info pfile_info;
+
+		status = unzGetCurrentFileInfo(pv->uf, &pfile_info, buffer, sizeof(buffer), NULL, 0, NULL, 0);
+		if ( status != UNZ_OK )
+			return ThrowZipFileError(cx, status);
+
+		if ( pfile_info.size_filename <= sizeof(buffer) ) {
+
+			filename = buffer;
+		} else {
+			
+			// this case shoul be quite rare.
+			filename = (char *)jl_malloca(pfile_info.size_filename);
+			JL_ASSERT_ALLOC( filename );
+			unzGetCurrentFileInfo(pv->uf, &pfile_info, filename, pfile_info.size_filename, NULL, 0, NULL, 0);
+		}
+
+		JSBool ok;
+		ok = JL_NativeToJsval(cx, filename, pfile_info.size_filename, vp);
+		
+		if ( filename != buffer )
+			jl_freea(filename);
+
+		JL_CHK( ok );
+
 	} else
 	if ( pv->zf ) {
 
@@ -532,19 +513,24 @@ DEFINE_PROPERTY_GETTER( date ) {
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
-	JL_ASSERT(pv->uf, E_FILE, E_READ);
 
-	unz_file_info pfile_info;
-	int status;
-	status = unzGetCurrentFileInfo(pv->uf, &pfile_info, NULL, 0, NULL, 0, NULL, 0);
-	if ( status != UNZ_OK )
-		return ThrowZipFileError(cx, status);
+	if ( pv->uf ) {
 
-	const tm_unz *d = &pfile_info.tmu_date;
-	JSObject *dateObj = JS_NewDateObject(cx, d->tm_year, d->tm_mon, d->tm_mday, d->tm_hour, d->tm_min, d->tm_sec);
-	JL_CHK( dateObj );
+		unz_file_info pfile_info;
+		int status;
+		status = unzGetCurrentFileInfo(pv->uf, &pfile_info, NULL, 0, NULL, 0, NULL, 0);
+		if ( status != UNZ_OK )
+			return ThrowZipFileError(cx, status);
 
-	*vp = OBJECT_TO_JSVAL( dateObj );
+		const tm_unz *d = &pfile_info.tmu_date;
+		JSObject *dateObj = JS_NewDateObject(cx, d->tm_year, d->tm_mon, d->tm_mday, d->tm_hour, d->tm_min, d->tm_sec);
+		JL_CHK( dateObj );
+		*vp = OBJECT_TO_JSVAL( dateObj );
+	} else
+	if ( pv->zf ) {
+
+		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__CURRENTDATE, vp) );
+	}
 
 	return JS_TRUE;
 	JL_BAD;
@@ -561,22 +547,8 @@ DEFINE_PROPERTY_SETTER( date ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
-	if ( JSVAL_IS_VOID(*vp) ) {
-
-		memset(&pv->date, 0, sizeof(pv->date));
-		return JS_TRUE;
-	}
-
-	JL_ASSERT( !JSVAL_IS_PRIMITIVE(*vp) && JS_ObjectIsDate(cx, JSVAL_TO_OBJECT(*vp)), E_VALUE, E_INVALID );
-	JSObject *dateObj = JSVAL_TO_OBJECT(*vp);
-
-	tm_zip *d = &pv->date;
-	d->tm_year = js_DateGetYear(cx, dateObj);
-	d->tm_mon = js_DateGetMonth(cx, dateObj) - 1;
-	d->tm_mday = js_DateGetDate(cx, dateObj);
-	d->tm_hour = js_DateGetHours(cx, dateObj);
-	d->tm_min = js_DateGetMinutes(cx, dateObj);
-	d->tm_sec = js_DateGetSeconds(cx, dateObj);
+	JL_ASSERT( JSVAL_IS_NULL(*vp) || !JSVAL_IS_PRIMITIVE(*vp) && JS_ObjectIsDate(cx, JSVAL_TO_OBJECT(*vp)), E_VALUE, E_INVALID );
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__CURRENTDATE, *vp) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -640,6 +612,7 @@ DEFINE_PROPERTY_SETTER( password ) {
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
+	JL_ASSERT( pv->uf, E_THISOPERATION, E_INVALID );
 
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__CURRENTPASSWORD, *vp) );
 	return JS_TRUE;
@@ -652,7 +625,7 @@ CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision: 3466 $"))
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(4)
+	HAS_RESERVED_SLOTS(5)
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
