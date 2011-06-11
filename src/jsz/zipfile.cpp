@@ -19,6 +19,8 @@
 
 #include <jsdate.h>
 
+#define PASSWORDREQUIRED -1000
+
 #define SLOT_Z_ZIPFILE__FILENAME 0
 #define SLOT_Z_ZIPFILE__GLOBALCOMMENT 1
 #define SLOT_Z_ZIPFILE__INZIPFILENAME 2
@@ -48,6 +50,77 @@ struct Private {
 };
 
 
+
+JSBool PrepareReadCurrentFile( JSContext *cx, JSObject *obj, uLong *fileSize ) {
+
+	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+
+	int status;
+
+	unz_file_info pfile_info;
+	status = unzGetCurrentFileInfo(pv->uf, &pfile_info, NULL, 0, NULL, 0, NULL, 0);
+	if ( status != UNZ_OK )
+		return ThrowZipFileError(cx, status);
+	bool needPassword = (pfile_info.flag & 1) == 1;
+	*fileSize = pfile_info.uncompressed_size;
+
+	if ( !pv->inZipOpened ) {
+
+		JLStr password;
+
+		if ( needPassword ) {
+
+			jsval tmp;
+			JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__CURRENTPASSWORD, &tmp) );
+			if ( !JSVAL_IS_VOID(tmp) )
+				JL_CHK( JL_JsvalToNative(cx, tmp, &password) );
+			if ( !password.IsSet() )
+				return ThrowZipFileError(cx, PASSWORDREQUIRED);
+			status = unzOpenCurrentFilePassword(pv->uf, password);
+		} else {
+
+			status = unzOpenCurrentFile(pv->uf);
+		}
+
+		if ( status != UNZ_OK )
+			return ThrowZipFileError(cx, status);
+
+		pv->inZipOpened = true;
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
+
+	JL_ASSERT_THIS_INSTANCE();
+	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+
+	uLong fileSize;
+	JL_CHK( PrepareReadCurrentFile(cx, obj, &fileSize) );
+
+	int rd;
+	rd = unzReadCurrentFile(pv->uf, buf, *amount);
+	if ( rd < 0 ) {
+
+		if ( rd == UNZ_ERRNO )
+			JL_ERR( E_FILE, E_ACCESS );
+		else
+			JL_ERR( E_DATA, E_INVALID );
+	}
+	
+	ASSERT( (uLong)rd <= *amount );
+
+	*amount = rd;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 DEFINE_FINALIZE() {
 
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -62,7 +135,6 @@ DEFINE_FINALIZE() {
 			ASSERT( !pv->zf );
 			unzClose(pv->uf);
 		}
-
 		jl_free(pv);
 	}
 }
@@ -82,6 +154,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT( pv->uf == NULL && pv->zf == NULL );
 	JL_ASSERT( !pv->inZipOpened );
 	JL_SetPrivate(cx, obj, pv);
+
+	//JL_CHK( ReserveStreamReadInterface(cx, obj) );
+	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -293,70 +368,32 @@ DEFINE_FUNCTION( GoNext ) {
 }
 
 
+
 DEFINE_FUNCTION( Read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE()
-
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
-	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	ASSERT( pv && !pv->uf == !!pv->zf );
-	JL_ASSERT_ARGC_RANGE(0, 1);
-	JL_ASSERT( pv->uf, E_FILE, E_READ );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	int status;
+	uLong fileSize;
+	JL_CHK( PrepareReadCurrentFile(cx, obj, &fileSize) );
 
-	unz_file_info pfile_info;
-	status = unzGetCurrentFileInfo(pv->uf, &pfile_info, NULL, 0, NULL, 0, NULL, 0);
-	if ( status != UNZ_OK )
-		return ThrowZipFileError(cx, status);
-	bool needPassword = (pfile_info.flag & 1) == 1;
-
-	if ( !pv->inZipOpened ) {
-
-		JLStr password;
-
-		if ( needPassword ) {
-
-			jsval tmp;
-			JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__CURRENTPASSWORD, &tmp) );
-			if ( !JSVAL_IS_VOID(tmp) )
-				JL_CHK( JL_JsvalToNative(cx, tmp, &password) );
-
-			if ( !password.IsSet() ) {
-				
-				*JL_RVAL = JSVAL_VOID;
-				return JS_TRUE;
-			}
-			status = unzOpenCurrentFilePassword(pv->uf, password);
-		} else {
-
-			status = unzOpenCurrentFile(pv->uf);
-		}
-
-		if ( status != UNZ_OK )
-			return ThrowZipFileError(cx, status);
-
-		pv->inZipOpened = true;
-	}
-
-	uLong length;
+	uLong requestedLength;
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_ASSERT_ARG_IS_NUMBER(1);
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &length) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &requestedLength) );
 	} else {
 
-		if ( status != UNZ_OK )
-			return ThrowZipFileError(cx, status);
-		length = pfile_info.uncompressed_size;
+		requestedLength = fileSize;
 	}
 	
 	uint8_t *buffer;
-	buffer = (uint8_t *)jl_malloc(length +1);
+	buffer = (uint8_t *)jl_malloc(requestedLength +1);
 	JL_ASSERT_ALLOC(buffer);
 	int rd;
-	rd = unzReadCurrentFile(pv->uf, buffer, length);
+	rd = unzReadCurrentFile(pv->uf, buffer, requestedLength);
 	if ( rd < 0 ) {
 
 		if ( rd == UNZ_ERRNO )
@@ -365,7 +402,10 @@ DEFINE_FUNCTION( Read ) {
 			JL_ERR( E_DATA, E_INVALID );
 	}
 	
-	ASSERT( (uLong)rd <= length );
+	ASSERT( (uLong)rd <= requestedLength );
+
+	if ( JL_MaybeRealloc(requestedLength, rd) )
+		buffer = (uint8_t*)jl_realloc(buffer, rd +1);
 
 	buffer[rd] = '\0'; 
 	JL_CHK( JL_NewBlob(cx, buffer, rd, JL_RVAL) );
@@ -465,7 +505,7 @@ DEFINE_PROPERTY_GETTER( filename ) {
 	
 	if ( pv->uf ) {
 
-		char buffer[PATH_MAX];
+		char buffer[256];
 		char *filename;
 
 		int status;
@@ -563,24 +603,30 @@ DEFINE_PROPERTY_GETTER( comment ) {
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
-	JL_ASSERT(pv->uf, E_FILE, E_READ);
 
-	int status;
+	if ( pv->uf ) {
 
-	unz_global_info pglobal_info;
-	status = unzGetGlobalInfo(pv->uf, &pglobal_info);
-	if ( status != UNZ_OK )
-		return ThrowZipFileError(cx, status);
+		int status;
 
-	char *comment = (char *)jl_malloc(pglobal_info.size_comment +1);
-	JL_ASSERT_ALLOC( comment );
+		unz_global_info pglobal_info;
+		status = unzGetGlobalInfo(pv->uf, &pglobal_info);
+		if ( status != UNZ_OK )
+			return ThrowZipFileError(cx, status);
 
-	int rd;
-	rd = unzGetGlobalComment(pv->uf, comment, pglobal_info.size_comment);
-	if ( rd < 0 )
-		JL_ERR( E_DATA, E_INVALID );
-	comment[rd] = '\0';
-	JL_CHK( JL_NewBlob(cx, comment, rd, JL_RVAL) );
+		char *comment = (char *)jl_malloc(pglobal_info.size_comment +1);
+		JL_ASSERT_ALLOC( comment );
+
+		int rd;
+		rd = unzGetGlobalComment(pv->uf, comment, pglobal_info.size_comment);
+		if ( rd < 0 )
+			JL_ERR( E_DATA, E_INVALID );
+		comment[rd] = '\0';
+		JL_CHK( JL_NewBlob(cx, comment, rd, JL_RVAL) );
+	} else 
+	if ( pv->zf ) {
+
+		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__GLOBALCOMMENT, vp) );
+	}
 	
 	return JS_TRUE;
 	JL_BAD;
@@ -676,6 +722,7 @@ const char *ZipFileErrorConstString( int errorCode ) {
 		case ZIP_BADZIPFILE: return "BADZIPFILE";
 		case ZIP_INTERNALERROR: return "INTERNALERROR";
 		case UNZ_CRCERROR: return "CRCERROR";
+		case PASSWORDREQUIRED: return "PASSWORDREQUIRED";
 	}
 	return "UNKNOWN_ERROR";
 }

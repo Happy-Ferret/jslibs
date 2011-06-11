@@ -7,18 +7,26 @@ LoadModule('jsstd');
 LoadModule('jsz');
 
 
-
+/*
 var f = new ZipFile('test.zip');
 f.Open(ZipFile.CREATE);
 f.Select('toto/xxx.txt');
 f.date = new Date(2008,6,4);
+f.comment = 'a comment';
+Print( 'global comment:', f.comment, '\n' );
+Print( 'date:', f.date, '\n' );
 f.Write('content data');
 f.Close();
+*/
+Print( '---\n' );
 
 var g = new ZipFile('test.zip');
 g.Open(ZipFile.READ);
-g.Select('toto/xxx.txt');
-Print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.Read(), '\n' );
+//g.Select('toto/xxx.txt');
+g.Select('Makefile');
+g.password = 'aze';
+Print( 'global comment:', g.comment, '\n' );
+Print( g.filename, ' / ', g.date, ' / ', g.Read(), '\n' );
 g.Close();
 
 
