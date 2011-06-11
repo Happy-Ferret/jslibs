@@ -7,9 +7,28 @@ LoadModule('jsstd');
 LoadModule('jsz');
 
 
+var g = new ZipFile('test.zip');
+g.Open(ZipFile.READ);
+g.password = 'aze';
+
+g.Select('toto/UpgradeLog.XML');
+Print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.Read(), '\n' );
+
+g.Select('toto/xxx.txt');
+Print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.Read(), '\n' );
+
+
+
+
+g.Close();
+
+
+throw 0;
+
+
 var f = new ZipFile('test.zip');
 f.Open(ZipFile.CREATE, 0);
-f.filename = 'toto/xxx.txt';
+f.Select('toto/xxx.txt');
 f.date = new Date(2008,6,4);
 f.Write('content');
 f.Write(' ');

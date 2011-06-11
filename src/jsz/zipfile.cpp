@@ -22,6 +22,7 @@
 #define SLOT_Z_ZIPFILE__FILENAME 0
 #define SLOT_Z_ZIPFILE__INZIPFILENAME 1
 #define SLOT_Z_ZIPFILE__GLOBALCOMMENT 2
+#define SLOT_Z_ZIPFILE__CURRENTPASSWORD 3
 
 
 NEVER_INLINE JSBool FASTCALL
@@ -240,22 +241,22 @@ DEFINE_FUNCTION( Close ) {
 }
 
 
-
-/*
 DEFINE_FUNCTION( Select ) {
 
 	JL_DEFINE_FUNCTION_OBJ
-
+	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_ARG_COUNT(1);
 
+	ASSERT( pv && !pv->uf == !!pv->zf );
+
+	*JL_RVAL = JSVAL_VOID;
 
 	int status;
 	if ( pv->uf ) {
 
 		JLStr inZipFilename;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &inZipFilename) );
 
 		if ( pv->inZipOpened ) {
 
@@ -265,11 +266,11 @@ DEFINE_FUNCTION( Select ) {
 			pv->inZipOpened = false;
 		}
 
-
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &inZipFilename) );
 		status = unzLocateFile(pv->uf, inZipFilename, 1);
 		if ( status == UNZ_END_OF_LIST_OF_FILE ) {
 
-			*JL_RVAL = JSVAL_FALSE;
+			pv->eol = true;
 			return JS_TRUE;
 		}
 		
@@ -278,17 +279,7 @@ DEFINE_FUNCTION( Select ) {
 			return ThrowZipFileError(cx, status);
 		}
 
-		//if ( password.IsSet() ) {
-
-		//	status = unzOpenCurrentFilePassword(pv->uf, password);
-		//} else {
-		//
-		//	status = unzOpenCurrentFile(pv->uf);
-		//}
-
-		if ( status != UNZ_OK )
-			return ThrowZipFileError(cx, status);
-
+		pv->eol = false;
 	} else
 	if ( pv->zf ) {
 
@@ -301,20 +292,11 @@ DEFINE_FUNCTION( Select ) {
 		}
 
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__INZIPFILENAME, JL_ARG(1)) );
-
-		//uLong crcForCrypting;
-		//crcForCrypting = 0; // (TBD)
-		//status = zipOpenNewFileInZip3(pv->zf, filenameInZip, NULL, NULL, NULL, NULL, NULL, NULL, pv->level == 0 ? 0 : Z_DEFLATED, pv->level, 0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, password.GetConstStrZOrNULL(), crcForCrypting);
-		//if ( status != UNZ_OK )
-		//	return ThrowZipFileError(cx, status);
-
 	}
 
-	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
-*/
 
 
 DEFINE_FUNCTION( GoFirst ) {
@@ -373,39 +355,6 @@ DEFINE_FUNCTION( GoNext ) {
 }
 
 
-/*
-DEFINE_FUNCTION( GoTo ) {
-
-	JL_DEFINE_FUNCTION_OBJ
-	JL_ASSERT_THIS_INSTANCE()
-
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
-	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_ASSERT_ARG_COUNT(1);
-	JL_ASSERT( pv->uf, E_FILE, E_READ );
-	ASSERT( !pv->uf == !!pv->zf );
-
-	int index;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &index) );
-
-	int status;
-	unz_file_pos file_pos;
-	status = unzGetFilePos(pv->uf, &file_pos);
-	if ( status != UNZ_OK )
-		return ThrowZipFileError(cx, status);
-	
-	file_pos.num_of_file = index;
-	status = unzGoToFilePos(pv->uf, &file_pos);
-	if ( status != UNZ_OK )
-		return ThrowZipFileError(cx, status);
-
-	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
-
 DEFINE_FUNCTION( Read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -419,11 +368,37 @@ DEFINE_FUNCTION( Read ) {
 
 	int status;
 
+	unz_file_info pfile_info;
+	status = unzGetCurrentFileInfo(pv->uf, &pfile_info, NULL, 0, NULL, 0, NULL, 0);
+	if ( status != UNZ_OK )
+		return ThrowZipFileError(cx, status);
+	bool needPassword = (pfile_info.flag & 1) == 1;
+
 	if ( !pv->inZipOpened ) {
 
-		status = unzOpenCurrentFile(pv->uf);
+		JLStr password;
+
+		if ( needPassword ) {
+
+			jsval tmp;
+			JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__CURRENTPASSWORD, &tmp) );
+			if ( !JSVAL_IS_VOID(tmp) )
+				JL_CHK( JL_JsvalToNative(cx, tmp, &password) );
+
+			if ( !password.IsSet() ) {
+				
+				*JL_RVAL = JSVAL_VOID;
+				return JS_TRUE;
+			}
+			status = unzOpenCurrentFilePassword(pv->uf, password);
+		} else {
+
+			status = unzOpenCurrentFile(pv->uf);
+		}
+
 		if ( status != UNZ_OK )
 			return ThrowZipFileError(cx, status);
+
 		pv->inZipOpened = true;
 	}
 
@@ -434,8 +409,6 @@ DEFINE_FUNCTION( Read ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &length) );
 	} else {
 
-		unz_file_info pfile_info;
-		status = unzGetCurrentFileInfo(pv->uf, &pfile_info, NULL, 0, NULL, 0, NULL, 0);
 		if ( status != UNZ_OK )
 			return ThrowZipFileError(cx, status);
 		length = pfile_info.uncompressed_size;
@@ -550,61 +523,6 @@ DEFINE_PROPERTY_GETTER( filename ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY_SETTER( filename ) {
-
-	JL_INGORE(id);
-	JL_INGORE(strict);
-
-	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
-	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	ASSERT( pv && !pv->uf == !!pv->zf );
-
-	int status;
-	if ( pv->uf ) {
-
-		JLStr inZipFilename;
-
-		if ( pv->inZipOpened ) {
-
-			status = unzCloseCurrentFile(pv->uf);
-			if ( status != UNZ_OK )
-				return ThrowZipFileError(cx, status);
-			pv->inZipOpened = false;
-		}
-
-		JL_CHK( JL_JsvalToNative(cx, *vp, &inZipFilename) );
-		status = unzLocateFile(pv->uf, inZipFilename, 1);
-		if ( status == UNZ_END_OF_LIST_OF_FILE ) {
-
-			pv->eol = true;
-			return JS_TRUE;
-		}
-		
-		if ( status != UNZ_OK ) {
-			
-			return ThrowZipFileError(cx, status);
-		}
-
-		pv->eol = false;
-	} else
-	if ( pv->zf ) {
-
-		if ( pv->inZipOpened ) {
-			
-			status = zipCloseFileInZip(pv->zf);
-			if ( status != ZIP_OK )
-				return ThrowZipFileError(cx, status);
-			pv->inZipOpened = false;
-		}
-
-		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__INZIPFILENAME, *vp) );
-	}
-
-	return JS_TRUE;
-	JL_BAD;
-}
-
 
 DEFINE_PROPERTY_GETTER( date ) {
 
@@ -713,13 +631,28 @@ DEFINE_PROPERTY_SETTER( comment ) {
 }
 
 
+DEFINE_PROPERTY_SETTER( password ) {
+
+	JL_INGORE(id);
+	JL_INGORE(strict);
+
+	JL_ASSERT_THIS_INSTANCE();
+	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	ASSERT( pv && !pv->uf == !!pv->zf );
+
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__CURRENTPASSWORD, *vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision: 3466 $"))
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(3)
+	HAS_RESERVED_SLOTS(4)
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
@@ -727,19 +660,18 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( Open )
 		FUNCTION( Close )
-//		FUNCTION( Select )
+		FUNCTION( Select )
 		FUNCTION( Write )
 		FUNCTION( Read )
 		FUNCTION( GoFirst )
 		FUNCTION( GoNext )
-//		FUNCTION( GoTo )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-//		PROPERTY( index )
-		PROPERTY( filename )
+		PROPERTY_GETTER( filename )
 		PROPERTY( date )
 		PROPERTY( comment )
+		PROPERTY_SETTER( password )
 		PROPERTY_GETTER( eol )
 	END_PROPERTY_SPEC
 
