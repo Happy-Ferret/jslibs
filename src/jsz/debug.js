@@ -7,36 +7,30 @@ LoadModule('jsstd');
 LoadModule('jsz');
 
 
-/*
 var f = new ZipFile('test.zip');
 f.Open(ZipFile.CREATE);
 f.Select('toto/xxx.txt');
 f.date = new Date(2008,6,4);
-f.comment = 'a comment';
-Print( 'global comment:', f.comment, '\n' );
+f.globalComment = 'a comment';
+Print( 'global comment:', f.globalComment, '\n' );
 Print( 'date:', f.date, '\n' );
+f.extra = 'extra field';
 f.Write('content data');
 f.Close();
-*/
+
 Print( '---\n' );
 
 var g = new ZipFile('test.zip');
 g.Open(ZipFile.READ);
-
-Print( g.Read(), '\n' );
-
-throw 0;
-
-//g.Select('toto/xxx.txt');
-g.Select('Makefile');
-g.password = 'aze';
-Print( 'global comment:', g.comment, '\n' );
+g.Select('toto/xxx.txt');
+Print( 'global comment:', g.globalComment, '\n' );
 Print( g.filename, ' / ', g.date, ' / ', '\n' );
 Print( g.Read(30), '\n' );
 Print( g.Read(30), '\n' );
 Print( g.Read(30), '\n' );
 Print( g.Read(30), '\n' );
 Print( g.Read(), '\n' );
+Print( 'current extra:', g.extra, '\n' );
 
 
 //Print( Stringify(g) );

@@ -26,6 +26,7 @@
 #define SLOT_Z_ZIPFILE__INZIPFILENAME 2
 #define SLOT_Z_ZIPFILE__CURRENTDATE 3
 #define SLOT_Z_ZIPFILE__CURRENTPASSWORD 4
+#define SLOT_Z_ZIPFILE__CURRENTEXTRAFIELD 5
 
 
 NEVER_INLINE JSBool FASTCALL
@@ -103,13 +104,8 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 
 	int rd;
 	rd = unzReadCurrentFile(pv->uf, buf, *amount);
-	if ( rd < 0 ) {
-
-		if ( rd == UNZ_ERRNO )
-			JL_ERR( E_FILE, E_ACCESS );
-		else
-			JL_ERR( E_DATA, E_INVALID, E_ERRNO(rd) );
-	}
+	if ( rd < 0 )
+		return ThrowZipFileError(cx, rd);
 	
 	ASSERT( (uLong)rd <= *amount );
 
@@ -392,13 +388,8 @@ DEFINE_FUNCTION( Read ) {
 	JL_ASSERT_ALLOC(buffer);
 	int rd;
 	rd = unzReadCurrentFile(pv->uf, buffer, requestedLength);
-	if ( rd < 0 ) {
-
-		if ( rd == UNZ_ERRNO )
-			JL_ERR( E_FILE, E_ACCESS );
-		else
-			JL_ERR( E_DATA, E_INVALID, E_ERRNO(rd) );
-	}
+	if ( rd < 0 )
+		return ThrowZipFileError(cx, rd);
 	
 	ASSERT( (uLong)rd <= requestedLength );
 
@@ -435,6 +426,7 @@ DEFINE_FUNCTION( Write ) {
 	if ( !pv->inZipOpened ) {
 
 		JLStr inZipFilename;
+		JLStr currentExtraField;
 
 		zip_fileinfo zipfi;
 		zipfi.dosDate = 0;
@@ -460,8 +452,12 @@ DEFINE_FUNCTION( Write ) {
 			zipfi.tmz_date.tm_year = js_DateGetYear(cx, dateObj);
 		}
 
+		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__CURRENTEXTRAFIELD, &tmp) );
+		if ( !JSVAL_IS_VOID(tmp) )
+			JL_CHK( JL_JsvalToNative(cx, tmp, &currentExtraField) );
+
 		JL_CHK( JL_ReservedSlotToNative(cx, obj, SLOT_Z_ZIPFILE__INZIPFILENAME, &inZipFilename) );
-		status = zipOpenNewFileInZip(pv->zf, inZipFilename, &zipfi, NULL, NULL, NULL, NULL, NULL, pv->level == 0 ? 0 : Z_DEFLATED, pv->level);
+		status = zipOpenNewFileInZip(pv->zf, inZipFilename, &zipfi, currentExtraField.GetConstStrZOrNULL(), currentExtraField.LengthOrZero(), NULL, NULL, NULL, pv->level == 0 ? 0 : Z_DEFLATED, pv->level);
 		if ( status != ZIP_OK )
 			return ThrowZipFileError(cx, status);
 
@@ -597,7 +593,64 @@ DEFINE_PROPERTY_SETTER( date ) {
 }
 
 
-DEFINE_PROPERTY_GETTER( comment ) {
+DEFINE_PROPERTY_GETTER( extra ) {
+
+	JL_INGORE(id);
+
+	JL_ASSERT_THIS_INSTANCE();
+	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	ASSERT( pv && !pv->uf == !!pv->zf );
+
+	if ( pv->uf ) {
+
+		int extraLength;
+		extraLength = unzGetLocalExtrafield(pv->uf, NULL, 0);
+		if ( extraLength < 0 )
+			return ThrowZipFileError(cx, extraLength);
+
+		char *buffer;
+		buffer = (char *)jl_malloc(extraLength +1);
+		JL_ASSERT_ALLOC( buffer );
+
+		int rd;
+		rd = unzGetLocalExtrafield(pv->uf, buffer, extraLength);
+		if ( rd < 0 )
+			return ThrowZipFileError(cx, rd);
+
+		buffer[rd] = '\0';
+		JL_CHK( JL_NewBlob(cx, buffer, rd, JL_RVAL) );
+
+	} else
+	if ( pv->zf ) {
+
+		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__CURRENTEXTRAFIELD, vp) );
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_SETTER( extra ) {
+
+	JL_INGORE(id);
+	JL_INGORE(strict);
+
+	JL_ASSERT_THIS_INSTANCE();
+	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	ASSERT( pv && !pv->uf == !!pv->zf );
+	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
+
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_Z_ZIPFILE__CURRENTEXTRAFIELD, *vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+
+DEFINE_PROPERTY_GETTER( globalComment ) {
 
 	JL_INGORE(id);
 
@@ -621,7 +674,8 @@ DEFINE_PROPERTY_GETTER( comment ) {
 		int rd;
 		rd = unzGetGlobalComment(pv->uf, comment, pglobal_info.size_comment);
 		if ( rd < 0 )
-			JL_ERR( E_DATA, E_INVALID );
+			return ThrowZipFileError(cx, rd);
+
 		comment[rd] = '\0';
 		JL_CHK( JL_NewBlob(cx, comment, rd, JL_RVAL) );
 	} else 
@@ -634,7 +688,7 @@ DEFINE_PROPERTY_GETTER( comment ) {
 	JL_BAD;
 }
 
-DEFINE_PROPERTY_SETTER( comment ) {
+DEFINE_PROPERTY_SETTER( globalComment ) {
 
 	JL_INGORE(id);
 	JL_INGORE(strict);
@@ -673,7 +727,7 @@ CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision: 3466 $"))
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(5)
+	HAS_RESERVED_SLOTS(6)
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
@@ -691,7 +745,8 @@ CONFIGURE_CLASS
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_GETTER( filename )
 		PROPERTY( date )
-		PROPERTY( comment )
+		PROPERTY( extra )
+		PROPERTY( globalComment )
 		PROPERTY_SETTER( password )
 		PROPERTY_GETTER( eol )
 	END_PROPERTY_SPEC
@@ -777,6 +832,7 @@ END_CLASS
 NEVER_INLINE JSBool FASTCALL
 ThrowZipFileError( JSContext *cx, int errorCode ) {
 
+	ASSERT( errorCode <= 0 );
 	JSObject *error = JS_NewObjectWithGivenProto(cx, JL_CLASS(ZipFileError), JL_PROTOTYPE(cx, ZipFileError), NULL);
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JL_CHK( JL_SetReservedSlot(cx, error, 0, INT_TO_JSVAL(errorCode)) );
