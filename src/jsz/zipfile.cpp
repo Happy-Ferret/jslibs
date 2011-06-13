@@ -668,11 +668,13 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 		if ( status != UNZ_OK )
 			return ThrowZipFileError(cx, status);
 
-		char *comment = (char *)jl_malloc(pglobal_info.size_comment +1);
+		uLong commentLength = pglobal_info.size_comment;
+		char *comment;
+		comment = (char *)jl_malloc(commentLength +1);
 		JL_ASSERT_ALLOC( comment );
 
 		int rd;
-		rd = unzGetGlobalComment(pv->uf, comment, pglobal_info.size_comment);
+		rd = unzGetGlobalComment(pv->uf, comment, commentLength);
 		if ( rd < 0 )
 			return ThrowZipFileError(cx, rd);
 

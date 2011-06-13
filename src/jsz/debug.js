@@ -7,6 +7,11 @@ LoadModule('jsstd');
 LoadModule('jsz');
 
 
+//a = new Uint8Array([100,101,102,100,101,102,100,101,102,100,101,102]);
+//Print( uneval(Array.concat( a )), '\n' );
+//throw 0;
+
+
 var f = new ZipFile('test.zip');
 f.Open(ZipFile.CREATE);
 f.Select('toto/xxx.txt');
