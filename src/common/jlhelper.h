@@ -2652,6 +2652,8 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, jsval &val, float ** RESTRICT m ) {
 }
 
 
+#define JL_ARG_GEN(N, type) TYPE arg##N; JL_CHK( JL_JsvalToNative(cx, JL_ARG(n), &arg##N) );
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Host info functions (_host global property)

@@ -3166,9 +3166,12 @@ DEFINE_FUNCTION( PushAttrib ) {
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
+
+//	JL_ARG_GEN(1, GLbitfield);
 	
 	GLbitfield mask;
 	JL_JsvalToNative(cx, JL_ARG(1), &mask);
+
 	glPushAttrib(mask);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
