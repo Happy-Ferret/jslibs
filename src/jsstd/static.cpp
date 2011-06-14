@@ -310,7 +310,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( DeepFreezeObject ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	//JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &obj) );
 	*JL_RVAL = JSVAL_VOID;
@@ -327,7 +327,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CountProperties ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JSIdArray *arr;
@@ -360,7 +360,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ClearObject ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	// JS_ClearScope removes all of obj's own properties, except the special __proto__ and __parent__ properties,
@@ -429,7 +429,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SetScope ) {
 
-	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARGC(2);
 	JSObject *o, *p;
 	JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &o) ); // o = JSVAL_TO_OBJECT(JL_ARG(1));
 	JL_CHK( JS_ValueToObject(cx, JL_ARG(2), &p) ); // p = JSVAL_TO_OBJECT(JL_ARG(2));
@@ -482,7 +482,7 @@ JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 
 DEFINE_FUNCTION( ObjectToId ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *obj;
 	obj = JSVAL_TO_OBJECT( JL_ARG(1) );
@@ -545,7 +545,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IdToObject ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_INTEGER_NUMBER(1);
 
 	unsigned int id;
@@ -579,7 +579,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsBoolean ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 	if ( JSVAL_IS_BOOLEAN(JL_ARG(1)) ) {
 
@@ -607,7 +607,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsNumber ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	if ( JSVAL_IS_NUMBER(JL_ARG(1)) ) {
 
 		*JL_RVAL = JSVAL_TRUE;
@@ -634,7 +634,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( IsPrimitive ) {
 
 	JL_INGORE(cx);
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	*JL_RVAL = JSVAL_IS_PRIMITIVE(JL_ARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -650,7 +650,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( IsFunction ) {
 
 	JL_INGORE(cx);
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	*JL_RVAL = VALUE_IS_FUNCTION(cx, JL_ARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
 	return JS_TRUE;
 	JL_BAD;
@@ -665,7 +665,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsGenerator ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	if ( !JSVAL_IS_OBJECT(JL_ARG(1)) ) {
 
 		*JL_RVAL = JSVAL_FALSE;
@@ -690,7 +690,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Warning ) {
 
 	JLStr str;
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 //	const char *message;
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
@@ -786,7 +786,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Sleep ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	unsigned int time;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &time) );
 	SleepMilliseconds(time);
@@ -842,7 +842,7 @@ DEFINE_FUNCTION( StringRepeat ) {
 
 	JLStr str;
 
-	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARGC(2);
 
 	size_t count;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &count) );
@@ -1369,7 +1369,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 
 	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 	//const char *buffer;
 	//size_t length;

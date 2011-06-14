@@ -111,7 +111,7 @@ DEFINE_CONSTRUCTOR() {
 			
 		if ( JSVAL_IS_OBJECT(JL_ARG(1)) ) {
 
-			JL_ASSERT_ARG_COUNT(1);
+			JL_ASSERT_ARGC(1);
 			Matrix44 *m = pv->mat;
 			JL_CHK( GetMatrixHelper(cx, JL_ARG(1), (float**)&m) );
 			if ( m != pv->mat ) // check if the pointer has been modified
@@ -164,7 +164,7 @@ DEFINE_FUNCTION( Load ) {
 
 	if ( JSVAL_IS_OBJECT(JL_ARG(1)) ) {
 
-		JL_ASSERT_ARG_COUNT(1);
+		JL_ASSERT_ARGC(1);
 		Matrix44 *m = pv->mat;
 		JL_CHK( GetMatrixHelper(cx, JL_ARG(1), (float**)&m) );
 
@@ -274,7 +274,7 @@ DEFINE_FUNCTION( LoadRotation ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -315,7 +315,7 @@ DEFINE_FUNCTION( LoadTranslation ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -349,7 +349,7 @@ DEFINE_FUNCTION( Translate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARGC(3);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -443,7 +443,7 @@ DEFINE_FUNCTION( RotationFromQuaternion ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARGC(4);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -498,7 +498,7 @@ DEFINE_FUNCTION( TaitBryanRotation ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARGC(3);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -531,7 +531,7 @@ DEFINE_FUNCTION( Rotate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(4);
+	JL_ASSERT_ARGC(4);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -577,7 +577,7 @@ DEFINE_FUNCTION( RotateX ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -616,7 +616,7 @@ DEFINE_FUNCTION( RotateY ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -655,7 +655,7 @@ DEFINE_FUNCTION( RotateZ ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -767,7 +767,7 @@ DEFINE_FUNCTION( RotateToVector ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARGC(3);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -811,7 +811,7 @@ DEFINE_FUNCTION( Invert ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARGC(0);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -877,7 +877,7 @@ DEFINE_FUNCTION( TransformVector ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_OBJ);

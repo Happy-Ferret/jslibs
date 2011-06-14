@@ -683,7 +683,7 @@ DEFINE_FUNCTION( Events ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARGC(0);
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -979,7 +979,7 @@ DEFINE_FUNCTION( PopupMenu ) {
 
 	Private *pv = (Private*)JS_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 	JL_ASSERT_ARG_IS_OBJECT(1);
 

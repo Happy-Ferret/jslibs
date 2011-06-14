@@ -5,5 +5,13 @@
 //LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
 
 
+LoadModule('jsstd');
 
-_host.stdout( Handle.toString() ); 
+//jslangTest();
+
+var obj = [1, '2', { abcd:1 }, /qwe/ ];
+
+var obj2 = Deserialize(Serialize(obj));
+
+Print(uneval(obj2));
+

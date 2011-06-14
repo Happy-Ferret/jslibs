@@ -676,7 +676,7 @@ DEFINE_FUNCTION( Write ) {
 
 	if ( JL_IsClass(arg1, JL_THIS_CLASS) ) {
 		
-		JL_ASSERT_ARG_COUNT(1);
+		JL_ASSERT_ARGC(1);
 		return AddBuffer(cx, obj, JSVAL_TO_OBJECT(arg1));
 	}
 
@@ -815,7 +815,7 @@ DEFINE_FUNCTION( Skip ) { // Skip( amount )
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	size_t amount;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
 	JL_ASSERT( (int)amount >= 0, E_ARG, E_NUM(1), E_MIN, E_NUM(0) );
@@ -884,7 +884,7 @@ DEFINE_FUNCTION( IndexOf ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 //	const char *boundary;
 //	size_t boundaryLength;
@@ -917,7 +917,7 @@ DEFINE_FUNCTION( Unread ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 	JL_CHK( UnReadDataChunk(cx, JL_OBJ, JL_ARG(1)) );
 	*JL_RVAL = JL_ARG(1);

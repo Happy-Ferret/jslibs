@@ -2,6 +2,9 @@ LoadModule('jsstd');
 
 //Exec('../common/tools.js'); RunQATests('-rep 1 -nogcBetweenTests Exec.error'); throw 0;
 
+jsstdTest();
+jsstdTest();
+jsstdTest();
 
 throw 0;
 

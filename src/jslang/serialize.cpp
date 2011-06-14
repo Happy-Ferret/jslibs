@@ -54,7 +54,7 @@ DEFINE_FUNCTION( Write ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	*JL_RVAL = JSVAL_VOID;
 	jl::Serializer *ser;
 	ser = static_cast<jl::Serializer*>(JL_GetPrivate(cx, JL_OBJ));
@@ -72,7 +72,7 @@ DEFINE_FUNCTION( Done ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARGC(0);
 	jl::Serializer* ser;
 	ser = (jl::Serializer*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(ser);
@@ -126,7 +126,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JLStr str;
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_STRING(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	jl::Unserializer *unser;
@@ -148,7 +148,7 @@ DEFINE_FUNCTION( Read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARGC(0);
 
 	jl::Unserializer *unser;
 	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(cx, JL_OBJ));

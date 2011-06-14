@@ -12,6 +12,40 @@ LoadModule('jsz');
 //throw 0;
 
 
+
+var f = new ZipFile('test.zip');
+f.Open(ZipFile.CREATE);
+f.level = 9;
+for ( var i = 0; i < 20; ++i ) {
+
+	f.Select('file'+i+'.txt');
+	f.Write('content data '+i+' '+StringRepeat('z',100));
+}
+f.Close();
+Print( '---\n' );
+
+
+var g = new ZipFile('test.zip');
+g.Open(ZipFile.READ);
+
+//g.GoTo(10);
+//g.Select('file9.txt');
+//g.GoTo(8); g.GoNext(); g.GoNext();
+
+for ( g.GoFirst(); !g.eol; g.GoNext() )  Print( ' '+g.filename, ' : ', g.Read(), ' (lvl='+g.level+' eol=', g.eol, ')\n' ); 
+
+
+//g.GoFirst();  Print( ' '+g.filename, ' : ', g.Read(), ' (eol=', g.eol, ')\n' );
+
+
+
+g.Close();
+
+
+
+
+throw 0;
+
 var f = new ZipFile('test.zip');
 f.Open(ZipFile.CREATE);
 f.Select('toto/xxx.txt');

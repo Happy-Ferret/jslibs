@@ -890,6 +890,9 @@ enum E_TXTID {
 				JL_ERR( __VA_ARGS__ ); \
 			} \
 		} \
+		else if ( IS_DEBUG && !JL_IS_SAFE ) { \
+			ASSERT( CONDITION ); \
+		} \
 		ASSUME(CONDITION); \
 	JL_MACRO_END
 
@@ -908,13 +911,16 @@ enum E_TXTID {
 
 #define JL_ASSERT_ALLOC( PTR ) \
 	JL_MACRO_BEGIN \
-		JL_SAFE_BEGIN \
+		if ( JL_IS_SAFE ) { \
 			if (unlikely( (PTR) == NULL )) { \
 				ASSERT( !JS_IsExceptionPending(cx) ); \
 				JS_ReportOutOfMemory(cx); \
 				goto bad; \
 			} \
-		JL_SAFE_END \
+		} \
+		else if ( IS_DEBUG && !JL_IS_SAFE ) { \
+			ASSERT( false ); \
+		} \
 		ASSUME(PTR); \
 	JL_MACRO_END
 
@@ -922,28 +928,28 @@ enum E_TXTID {
 // val
 
 #define JL_ASSERT_IS_BOOLEAN(val, context) \
-	JL_ASSERT( NOIL(JL_IsBoolean)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_NAME("boolean") )
+	JL_ASSERT( NOIL(JL_IsBoolean)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_BOOLEAN )
 
 #define JL_ASSERT_IS_INTEGER(val, context) \
-	JL_ASSERT( NOIL(JL_IsInteger)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_NAME("integer") )
+	JL_ASSERT( NOIL(JL_IsInteger)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_INTEGER )
 
 #define JL_ASSERT_IS_INTEGER_NUMBER(val, context) \
-	JL_ASSERT( NOIL(JL_IsInteger53)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_NAME("integer < 2^53") )
+	JL_ASSERT( NOIL(JL_IsInteger53)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_INTEGERDOUBLE )
 
 #define JL_ASSERT_IS_NUMBER(val, context) \
-	JL_ASSERT( NOIL(JL_IsNumber)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_NAME("number") )
+	JL_ASSERT( NOIL(JL_IsNumber)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_NUMBER )
 
 #define JL_ASSERT_IS_FUNCTION(val, context) \
-	JL_ASSERT( NOIL(JL_ValueIsFunction)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_NAME("function") )
+	JL_ASSERT( NOIL(JL_ValueIsFunction)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_FUNC )
 
 #define JL_ASSERT_IS_ARRAY(val, context) \
-	JL_ASSERT( NOIL(JL_ValueIsArray)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_NAME("array") )
+	JL_ASSERT( NOIL(JL_ValueIsArray)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_ARRAY )
 
 #define JL_ASSERT_IS_OBJECT(val, context) \
-	JL_ASSERT( !JSVAL_IS_PRIMITIVE(val), E_VALUE, E_STR(context), E_TYPE, E_NAME("object") )
+	JL_ASSERT( !JSVAL_IS_PRIMITIVE(val), E_VALUE, E_STR(context), E_TYPE, E_TY_OBJECT )
 
 #define JL_ASSERT_IS_STRING(val, context) \
-	JL_ASSERT( NOIL(JL_IsData)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_NAME("string/data") )
+	JL_ASSERT( NOIL(JL_IsData)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_STRINGDATA )
 
 //
 
@@ -962,7 +968,7 @@ enum E_TXTID {
 #define JL_ASSERT_ARGC_RANGE(minCount, maxCount) \
 	JL_ASSERT( JL_INRANGE((int)JL_ARGC, (int)minCount, (int)maxCount), E_ARGC, E_RANGE, E_INTERVAL_NUM(uintN(minCount), uintN(maxCount)) )
 
-#define JL_ASSERT_ARG_COUNT(count) \
+#define JL_ASSERT_ARGC(count) \
 	JL_ASSERT( JL_ARGC == (count), E_ARGC, E_EQUALS, E_NUM(count) )
 
 #define JL_ASSERT_ARG_IS_BOOLEAN(argNum) \
@@ -2084,12 +2090,17 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, double *num ) {
 		return JS_TRUE;
 	}
 
+	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, double *num )
+
 	if ( !JS_ValueToNumber(cx, val, num) )
 		return JS_FALSE;
 	ASSERT(isnan(cx->runtime->NaNValue.getDoubleRef()));
 	JL_CHKM( !isnan(*num), E_VALUE, E_TYPE, E_TY_NUMBER );
 	return JS_TRUE;
 	JL_BAD;
+
+	UNLIKELY_SPLIT_END(cx, val, num)
+
 }
 
 
@@ -2117,6 +2128,8 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, float *num ) {
 		return JS_TRUE;
 	}
 
+	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, float *num )
+
 	jsdouble tmp;
 	if ( !JS_ValueToNumber(cx, val, &tmp) )
 		return JS_FALSE;
@@ -2125,6 +2138,8 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, float *num ) {
 	*num = float(tmp);
 	return JS_TRUE;
 	JL_BAD;
+
+	UNLIKELY_SPLIT_END(cx, val, num)
 }
 
 

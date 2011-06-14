@@ -579,7 +579,7 @@ DEFINE_FUNCTION( ReadReal ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 	jsval bufferVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );

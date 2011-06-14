@@ -2920,7 +2920,7 @@ DEFINE_FUNCTION( NR ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT( 2 );
+	JL_ASSERT_ARGC( 2 );
 
 	TextureStruct *tex, *t1, *t2;
 	tex = (TextureStruct *)JL_GetPrivate(cx, obj);
@@ -4083,7 +4083,7 @@ DEFINE_FUNCTION( ApplyColorMatrix ) {
 
 	JL_ASSERT( tex->channels == 4, E_THISOBJ, E_FORMAT, E_COMMENT("channels") );
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	
 	Matrix44 colorMatrixTmp, *colorMatrix;
 	colorMatrix = &colorMatrixTmp;

@@ -341,7 +341,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ReloacateToArray ) {
 
-	JL_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARGC(0);
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
@@ -1285,7 +1285,7 @@ DEFINE_OPS_GET_PROPERTY() {
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsSerializer(cx, JL_ARG(1)), 1, "Serializer" );
 
 	jl::Serializer *ser;
@@ -1312,7 +1312,7 @@ DEFINE_FUNCTION( _serialize ) {
 DEFINE_FUNCTION( _unserialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsUnserializer(cx, JL_ARG(1)), 1, "Unserializer" );
 
 

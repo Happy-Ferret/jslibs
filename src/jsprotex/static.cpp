@@ -135,7 +135,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( PerlinNoise2 ) {
 
-	JL_ASSERT_ARG_COUNT(3);
+	JL_ASSERT_ARGC(3);
 	double x, y, z;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &y) );

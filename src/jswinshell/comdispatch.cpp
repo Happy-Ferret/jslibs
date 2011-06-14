@@ -274,7 +274,7 @@ DEFINE_FUNCTION( FunctionList ) {
 
 	ITypeInfo *pTypeinfo = NULL;
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));

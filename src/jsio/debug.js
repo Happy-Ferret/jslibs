@@ -1,11 +1,31 @@
 //LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
-//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask -rep 1 jsio');
-
-
-
-
+LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask -rep 1 jsio');
 
 LoadModule('jsstd'); LoadModule('jsio');
+
+
+var f1 = new File('');
+var f2 = new File('');
+
+f1.name = 'test';
+Print( f2.name );
+
+
+
+throw 0;
+
+var f1 = new File('');
+var f2 = new File('');
+
+f1.timeout = 123;
+Print(1, f2.timeout, '\n');
+Print(2, File.prototype.timeout, '\n');
+Print(3, f1.__proto__.__proto__.hasOwnProperty('timeout'), '\n');
+Print(4, File.prototype.hasOwnProperty('timeout'), '\n');
+Print(3, f1.__proto__.__proto__.timeout, '\n');
+
+
+throw 0;
 
 
 var f = new Socket();

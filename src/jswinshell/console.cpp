@@ -77,7 +77,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Write ) {
 
 	JLStr str;
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	if ( hStdout == NULL )
 		return WinThrowError(cx, GetLastError());
@@ -102,7 +102,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Read ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	if ( hStdin == NULL )
 		return WinThrowError(cx, GetLastError());
@@ -122,7 +122,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SetConsoleMode ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	DWORD mode;
 	JL_JsvalToNative(cx, JL_ARG(0), &mode);
 
@@ -212,7 +212,7 @@ DEFINE_FUNCTION( FillConsoleOutput ) {
 	JLStr str;
 	BOOL res;
 
-	JL_ASSERT_ARG_COUNT(6);
+	JL_ASSERT_ARGC(6);
 
 	COORD size;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &size.X) );
@@ -277,7 +277,7 @@ DEFINE_FUNCTION( ScrollY ) {
 
 	//see. http://msdn.microsoft.com/en-us/library/ms685113(v=vs.85).aspx
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	SHORT iRows;
@@ -538,7 +538,7 @@ bad:
 DEFINE_FUNCTION( Events ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARGC(0);
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
@@ -769,7 +769,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( SetCursorPosition ) {
 
-	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARGC(2);
 	COORD position;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &position.X) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &position.Y) );

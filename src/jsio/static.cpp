@@ -316,7 +316,7 @@ bad:
 
 DEFINE_FUNCTION( IOEvents ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
 	JSObject *fdArrayObj;

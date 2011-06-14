@@ -32,7 +32,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_ASSERT_ARG_COUNT(0);
+	JL_ASSERT_ARGC(0);
 	ode::dJointGroupID groupId = ode::dJointGroupCreate(0);
 	JL_SetPrivate(cx, obj, groupId);
 	return JS_TRUE;

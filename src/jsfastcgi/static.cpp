@@ -169,7 +169,7 @@ DEFINE_FUNCTION( Log ) {
 
 	JLStr str;
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	int result;

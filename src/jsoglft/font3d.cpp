@@ -259,7 +259,7 @@ DEFINE_FUNCTION( Width ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT( 1 );
+	JL_ASSERT_ARGC( 1 );
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -348,7 +348,7 @@ DEFINE_FUNCTION( Compile ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARG_COUNT( 1 );
+	JL_ASSERT_ARGC( 1 );
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -587,7 +587,7 @@ DEFINE_FUNCTION( SetCharacterDisplayLists ) {
 
 	OGLFT::DisplayLists lists;
 
-	JL_ASSERT_ARG_COUNT( 1 );
+	JL_ASSERT_ARGC( 1 );
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 

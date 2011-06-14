@@ -178,7 +178,7 @@ DEFINE_FUNCTION( SetAngle ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
-	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARGC(2);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	

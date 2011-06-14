@@ -44,7 +44,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Real ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	jsdouble val;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &val) );
 	*JL_RVAL = DOUBLE_TO_JSVAL(val);
@@ -60,7 +60,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Stringify ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 

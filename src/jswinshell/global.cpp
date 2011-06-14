@@ -344,7 +344,7 @@ DEFINE_FUNCTION( CreateComObject ) {
 
 	HRESULT hr;
 
-	JL_ASSERT_ARG_COUNT( 1 );
+	JL_ASSERT_ARGC( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
 	JSString *idStr = JS_ValueToString(cx, JL_ARG(1));
@@ -841,7 +841,7 @@ DEFINE_FUNCTION( GUIDToString ) {
 
 	JLStr str;
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
 	JL_ASSERT( str.Length() == sizeof(GUID), E_ARG, E_NUM(1), E_LENGTH, E_NUM(sizeof(GUID)) );

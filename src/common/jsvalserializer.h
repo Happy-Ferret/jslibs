@@ -778,7 +778,7 @@ namespace jl {
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT( jl::JsvalIsSerializer(cx, JL_ARG(1)), "Invalid serializer object." );
 	jl::Serializer *ser;
 	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
@@ -793,7 +793,7 @@ DEFINE_FUNCTION( _serialize ) {
 DEFINE_FUNCTION( _unserialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT( jl::JsvalIsUnserializer(cx, JL_ARG(1)), "Invalid unserializer object." );
 	jl::Unserializer *unser;
 	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));

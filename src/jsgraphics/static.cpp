@@ -310,7 +310,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( BoxToCircumscribedSphere ) {
 	
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
 	float aabb[6];
@@ -534,7 +534,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( GetMatrix ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	float tmp[16], *m = tmp;
 
 	JL_ASSERT_ARG_IS_OBJECT(1);

@@ -668,7 +668,7 @@ DEFINE_FUNCTION( DisableJIT ) {
 // undocumented
 DEFINE_FUNCTION( ObjectGCId ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	if ( JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 		
 		*JL_RVAL = JSVAL_ZERO;
@@ -1447,7 +1447,7 @@ $TOC_MEMBER $INAME
 /*
 DEFINE_FUNCTION( ScriptByLocation ) {
 
-	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARGC(2);
 
 	const char *filename;
 	unsigned int lineno;
@@ -1488,7 +1488,7 @@ DEFINE_FUNCTION( DisassembleScript ) {
 	JLStr filename;
 	unsigned int lineno;
 
-	JL_ASSERT_ARG_COUNT(2);
+	JL_ASSERT_ARGC(2);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &filename) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
@@ -1652,7 +1652,7 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 
 DEFINE_FUNCTION( DebugOutput ) {
 
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 
 #if defined(_MSC_VER) && defined(DEBUG)
 	{
@@ -1758,7 +1758,7 @@ DEFINE_FUNCTION( DebugBreak ) {
 DEFINE_FUNCTION( CrashGuard ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARG_COUNT(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_FUNCTION(1);
 
 #if defined XP_WIN
