@@ -6740,7 +6740,7 @@ JSBool MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 			glGetFloatv(GL_COLOR_MATRIX, *m);  OGL_ERR_CHK;
 			return true;
 	}
-	JL_ERR( E_STR("matrix mode"), E_NOTSUPPORTED );
+	JL_ERR( E_STR("this matrix mode"), E_NOTSUPPORTED );
 bad:
 	return false;
 }
