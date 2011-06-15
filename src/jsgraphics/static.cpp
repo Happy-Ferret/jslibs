@@ -137,8 +137,9 @@ DEFINE_FUNCTION( Vec3Normalize ) {
 
 	Vector3Normalize(&v, &v);
 
-	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
+	bool hasDest = JL_ARG_ISDEF(2);
+	*JL_RVAL = JL_ARG(hasDest ? 2 : 1);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, hasDest);
 	JL_BAD;
 }
 
@@ -162,8 +163,9 @@ DEFINE_FUNCTION( Vec3Add ) {
 
 	Vector3AddVector3(&v, &v, &v2);
 
-	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(3) ? 3 : 1);
-	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
+	bool hasDest = JL_ARG_ISDEF(3);
+	*JL_RVAL = JL_ARG(hasDest ? 3 : 1);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, hasDest);
 	JL_BAD;
 }
 
@@ -187,8 +189,9 @@ DEFINE_FUNCTION( Vec3Sub ) {
 
 	Vector3SubVector3(&v, &v, &v2);
 
-	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(3) ? 3 : 1);
-	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
+	bool hasDest = JL_ARG_ISDEF(3);
+	*JL_RVAL = JL_ARG(hasDest ? 3 : 1);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, hasDest);
 	JL_BAD;
 }
 
@@ -212,8 +215,9 @@ DEFINE_FUNCTION( Vec3Cross ) {
 
 	Vector3Cross(&v, &v, &v2);
 
-	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(3) ? 3 : 1);
-	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
+	bool hasDest = JL_ARG_ISDEF(3);
+	*JL_RVAL = JL_ARG(hasDest ? 3 : 1);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, hasDest);
 	JL_BAD;
 }
 
@@ -235,7 +239,6 @@ DEFINE_FUNCTION( Vec3Dot ) {
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len) );
 	JL_CHKM( len >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NARRAY(3) );
 
-	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(3) ? 3 : 1);
 	return JL_NativeToJsval(cx, Vector3Dot(&v, &v2), JL_RVAL);
 	JL_BAD;
 }

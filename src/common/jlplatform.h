@@ -69,6 +69,7 @@
 	#pragma warning(error : 4003) // not enough actual parameters for macro 'XXX'
 	#pragma warning(error : 4239) // nonstandard extension used
 	#pragma warning(error : 4005) // 'XXX' : macro redefinition
+	#pragma warning(error : 4717) // 'XXX' : recursive on all control paths, function will cause runtime stack overflow
 	#ifdef DEBUG
 		#pragma warning(error : 4701) // potentially uninitialized local variable 'XXX' used
 	#endif
@@ -531,7 +532,7 @@ JL_Break() {
 ALWAYS_INLINE void
 JL_AssertFailure( const char *message, const char *location ) {
 	
-	fprintf(stderr, "Assertion failure: %s @%s\n", message, location);
+	fprintf(stderr, "JL Assertion failure: %s @%s\n", message, location);
 	fflush(stderr);
 	JL_Break();
 }

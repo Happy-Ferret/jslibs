@@ -48,6 +48,30 @@ static glGetProcAddress_t glGetProcAddress = NULL;
 //  where indices are numbered from 1 to 16 as described in section 2.11.2 of the OpenGL 2.1 Specification.
 
 
+/*
+NEVER_INLINE double JsvalToDouble_Slow(JSContext * RESTRICT cx, const jsval &val) {
+
+	double doubleValue;
+	if ( JS_ValueToNumber(cx, val, &doubleValue) )
+		return doubleValue;
+	return 0;
+}
+
+ALWAYS_INLINE double JsvalToDouble(JSContext * RESTRICT cx, const jsval &val) {
+	
+	if ( JSVAL_IS_DOUBLE(val) )
+		return JSVAL_TO_DOUBLE(val);
+	if ( JSVAL_IS_INT(val) )
+		return JSVAL_TO_INT(val);
+	return JsvalToDouble_Slow(cx, val);
+}
+
+#define ARG_DOUBLE(NUM) \
+	JsvalToDouble(cx, JL_ARG(NUM))
+*/
+
+
+
 DECLARE_CLASS(Ogl)
 
 /*
@@ -1195,6 +1219,7 @@ DEFINE_FUNCTION( Finish ) {
 
 	JL_INGORE(argc);
 	JL_INGORE(cx);
+
 	glFinish();  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
@@ -3235,7 +3260,7 @@ DEFINE_FUNCTION( BindTexture ) {
 
 	JL_ASSERT_ARGC(2);
 	JL_ASSERT_ARG_IS_INTEGER(1);
-	JL_ASSERT_ARG_IS_INTEGER(2);
+//	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	int texture;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &texture) );
@@ -6837,6 +6862,9 @@ DEFINE_INIT() {
 
 #ifdef DEBUG
 DEFINE_FUNCTION( Test ) {
+	
+	JL_INGORE(argc);
+	JL_INGORE(cx);
 
 /*
 	jsval id = JL_ARG(1);

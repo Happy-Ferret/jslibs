@@ -4,12 +4,16 @@
 //LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask');
 //LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
 
-
 LoadModule('jsstd');
 
-//jslangTest();
 
-var obj = [1, '2', { abcd:1 }, /qwe/ ];
+
+
+throw 0;
+
+var b = Blob('123');
+
+var obj = b; //[1, '2', { abcd:1 }, /qwe/, b ];
 
 var obj2 = Deserialize(Serialize(obj));
 

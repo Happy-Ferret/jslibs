@@ -590,7 +590,7 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 	uint32 stackpoolLifespan;
 	stackpoolLifespan = JS_GetGCParameter(rt, JSGC_STACKPOOL_LIFESPAN);
 	ASSERT( stackpoolLifespan == 30000 ); // check if default has chaged.
-	JS_SetGCParameter(rt, JSGC_STACKPOOL_LIFESPAN, 15000);
+	JS_SetGCParameter(rt, JSGC_STACKPOOL_LIFESPAN, 20000);
 
 	JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_GLOBAL);
 
@@ -606,7 +606,7 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 	uint32 maxCodeCacheBytes;
 	maxCodeCacheBytes = JS_GetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES);
 	ASSERT( maxCodeCacheBytes == 16 * 1024 * 1024 ); // check if default has chaged.
-	JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024 * 2);
+	JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024 * 3/2);
 
 	//JS_SetNativeStackQuota(cx, DEFAULT_MAX_STACK_SIZE); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
 
@@ -972,7 +972,7 @@ bad:
 #define WAIT_HEAD_FILLING 50
 
 // memory chunks bigger than BIG_ALLOC are freed synchronously.
-#define BIG_ALLOC 4096
+#define BIG_ALLOC 8192
 
 
 static jl_malloc_t base_malloc;
@@ -1051,7 +1051,7 @@ JslibsFree( void *ptr ) {
 
 	ASSERT( ptr > (void*)0x1000 );
 
-	if (unlikely( base_msize(ptr) >= BIG_ALLOC || load >= MAX_LOAD )) { // if blocks is big OR too many things to free, the thread can not keep pace.
+	if (unlikely( load >= MAX_LOAD || base_msize(ptr) >= BIG_ALLOC )) { // if blocks is big OR too many things to free, the thread can not keep pace.
 
 		base_free(ptr);
 		return;

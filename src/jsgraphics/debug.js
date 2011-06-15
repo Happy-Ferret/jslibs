@@ -9,33 +9,6 @@ LoadModule('jstrimesh');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
 
-/*
-	try {
-		GlSetAttribute( GL_DOUBLEBUFFER, 1 );
-		GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-		GlSetAttribute( GL_DEPTH_SIZE, 32);
-		GlSetAttribute( GL_STENCIL_SIZE, 8 );
-		SetVideoMode(800, 600, undefined, OPENGL);
-		Print( 'OpenGL v', Ogl.GetString(Ogl.VERSION), '\n' );
-		Assert( Ogl.HasExtensionName('GL_ARB_fragment_shader') );
-		Assert( Ogl.HasExtensionName('GL_ARB_vertex_shader') );
-		Assert( Ogl.HasExtensionName('GL_ARB_shading_language_100', 'GL_ARB_shader_objects') );
-		this.program = Ogl.CreateProgramObject();
-
-	} catch(ex) {
-
-		Print(ex, '\n');
-	}
-
-	Print('ok\n');
-	throw 0;
-*/
-
-
-LoadModule('jsstd'); Exec('../../tests/explodebox.js'); throw 0;
-
-
-
 try {
 
 //LoadModule('jsstd'); Exec('../../tests/arabesques.js'); throw 0;

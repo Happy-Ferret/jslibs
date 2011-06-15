@@ -666,16 +666,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( IsGenerator ) {
 
 	JL_ASSERT_ARGC(1);
-	if ( !JSVAL_IS_OBJECT(JL_ARG(1)) ) {
-
-		*JL_RVAL = JSVAL_FALSE;
-		return JS_TRUE;
-	}
-
-	jsval prop;
-	JL_CHK( JS_GetPropertyById(cx, JSVAL_TO_OBJECT(JL_ARG(1)), JL_ATOMJSID(cx, iterator), &prop) );
-
-	*JL_RVAL = VALUE_IS_FUNCTION(cx, prop) ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_IsGenerator(cx, JL_ARG(1)) );
 	return JS_TRUE;
 	JL_BAD;
 }

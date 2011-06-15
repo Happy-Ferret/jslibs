@@ -358,12 +358,34 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 
 
 /*
+
+JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r, uint32 tag, uint32 data, void *closure) {
+
+	char test[100];
+	JL_CHK( JS_ReadBytes(r, test, data) );
+
+	return JSVAL_TO_OBJECT(JSVAL_NULL);
+bad:
+	return NULL;
+}
+
+JSBool WriteStructuredClone(JSContext *cx, JSStructuredCloneWriter *w, JSObject *obj, void *closure) {
+
+	JL_CHK( JS_WriteUint32Pair(w, JS_SCTAG_USER_MIN + 1, 7) );
+	JL_CHK( JS_WriteBytes(w, "123456", 7) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+const JSStructuredCloneCallbacks structuredClone = { ReadStructuredClone, WriteStructuredClone, NULL };
+
+
 DEFINE_FUNCTION( Serialize ) {
 
     jsval v = argc > 0 ? JS_ARGV(cx, vp)[0] : JSVAL_VOID;
     uint64 *datap;
     size_t nbytes;
-    if (!JS_WriteStructuredClone(cx, v, &datap, &nbytes, NULL, NULL))
+    if (!JS_WriteStructuredClone(cx, v, &datap, &nbytes, &structuredClone, JL_GetHostPrivate(cx)))
         return false;
 
 	 JSObject *arrayobj = js_CreateTypedArray(cx, js::TypedArray::TYPE_UINT8, nbytes);
@@ -404,7 +426,7 @@ DEFINE_FUNCTION( Deserialize ) {
         return false;
     }
 
-    if (!JS_ReadStructuredClone(cx, (uint64 *) array->data, array->byteLength, JS_STRUCTURED_CLONE_VERSION, &v, NULL, NULL)) {
+    if (!JS_ReadStructuredClone(cx, (uint64 *) array->data, array->byteLength, JS_STRUCTURED_CLONE_VERSION, &v, &structuredClone, JL_GetHostPrivate(cx))) {
         
 		 return false;
     }
@@ -412,6 +434,7 @@ DEFINE_FUNCTION( Deserialize ) {
     return true;
 	 JL_BAD;
 }
+
 */
 
 
@@ -419,7 +442,10 @@ DEFINE_FUNCTION( Deserialize ) {
 
 DEFINE_FUNCTION( jslangTest ) {
 
+
+	JL_INGORE(cx);
 	JL_INGORE(argc);
+	JL_INGORE(vp);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -442,10 +468,10 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( Stringify, 1 )
 		FUNCTION_ARGC( ProcessEvents, 4 ) // (just a guess)
 		FUNCTION_ARGC( TimeoutEvents, 2 )
-/*
-		FUNCTION_ARGC( Serialize, 1 )
-		FUNCTION_ARGC( Deserialize, 1 )
-*/
+
+//		FUNCTION_ARGC( Serialize, 1 )
+//		FUNCTION_ARGC( Deserialize, 1 )
+
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC

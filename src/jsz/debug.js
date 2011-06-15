@@ -16,7 +16,7 @@ LoadModule('jsz');
 var f = new ZipFile('test.zip');
 f.Open(ZipFile.CREATE);
 f.level = 9;
-for ( var i = 0; i < 20; ++i ) {
+for ( var i = 0; i < 10; ++i ) {
 
 	f.Select('file'+i+'.txt');
 	f.Write('content data '+i+' '+StringRepeat('z',100));
@@ -28,14 +28,20 @@ Print( '---\n' );
 var g = new ZipFile('test.zip');
 g.Open(ZipFile.READ);
 
-//g.GoTo(10);
-//g.Select('file9.txt');
+//
+g.Select('file9.txt');
+g.GoNext();
+g.GoTo(10);
+g.GoTo(100);
+
+
+
 //g.GoTo(8); g.GoNext(); g.GoNext();
 
-for ( g.GoFirst(); !g.eol; g.GoNext() )  Print( ' '+g.filename, ' : ', g.Read(), ' (lvl='+g.level+' eol=', g.eol, ')\n' ); 
+//Stringify(g);
 
-
-//g.GoFirst();  Print( ' '+g.filename, ' : ', g.Read(), ' (eol=', g.eol, ')\n' );
+//for ( g.GoFirst(); !g.eol; g.GoNext() )  Print( ' '+g.filename, ' : ', g.Read(), ' (lvl='+g.level+' eol=', g.eol, ')\n' ); 
+//Print( ' '+g.filename, ' : ', g.Read(), ' (eol=', g.eol, ')\n' );
 
 
 

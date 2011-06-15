@@ -344,6 +344,19 @@ JL_IsObjectObject( JSContext *cx, const JSObject *obj ) {
 }
 
 ALWAYS_INLINE bool
+JL_IsGenerator( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
+
+	JSObject *ctor = NULL;
+	return JS_GetClassObject(cx, JL_GetGlobalObject(cx), JSProto_Generator, &ctor) && JL_GetPrototype(cx, obj) == ctor;
+}
+
+ALWAYS_INLINE bool
+JL_IsGenerator( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+
+	return JSVAL_IS_OBJECT(value) && JL_IsGenerator(cx, JSVAL_TO_OBJECT(value));
+}
+
+ALWAYS_INLINE bool
 JL_ObjectIsArray( JSContext *cx, JSObject *obj ) {
 
 	return JS_IsArrayObject(cx, obj) == JS_TRUE; // Object::isArray() is not public
@@ -889,10 +902,7 @@ enum E_TXTID {
 			if (unlikely( !(CONDITION) )) { \
 				JL_ERR( __VA_ARGS__ ); \
 			} \
-		} \
-		else if ( IS_DEBUG && !JL_IS_SAFE ) { \
-			ASSERT( CONDITION ); \
-		} \
+		} /* else if ( IS_DEBUG ) { ASSERT( (CONDITION) ); } */ \
 		ASSUME(CONDITION); \
 	JL_MACRO_END
 
@@ -918,8 +928,8 @@ enum E_TXTID {
 				goto bad; \
 			} \
 		} \
-		else if ( IS_DEBUG && !JL_IS_SAFE ) { \
-			ASSERT( false ); \
+		else if ( IS_DEBUG ) { \
+			ASSERT( (PTR) ); \
 		} \
 		ASSUME(PTR); \
 	JL_MACRO_END
@@ -1061,7 +1071,7 @@ class JLStr {
 	void CreateOwnJsStrZ() {
 
 		ASSERT( IsSet() );
-		ASSERT_IF( _inner->jsstr, !JL_HasFlags(_inner->jsstrFlags, OWN|NT) );
+		ASSERT_IF( _inner->jsstr, !JL_HasFlags(_inner->jsstrFlags, OWN | NT) );
 
 		jschar *tmp;
 		size_t length = Length();
@@ -1104,13 +1114,13 @@ class JLStr {
 					*(tmp++) = (unsigned char)*(src++);
 			}
 		}
-		_inner->jsstrFlags = OWN|NT;
+		_inner->jsstrFlags = OWN | NT;
 	}
 
 	void CreateOwnStrZ() {
 
 		ASSERT( IsSet() );
-		ASSERT_IF( _inner->str, !JL_HasFlags(_inner->strFlags, OWN|NT) );
+		ASSERT_IF( _inner->str, !JL_HasFlags(_inner->strFlags, OWN | NT) );
 
 		char *tmp;
 		size_t length = Length();
@@ -1154,7 +1164,7 @@ class JLStr {
 					*(tmp++) = (char)(*(src++) & 0xff);
 			}
 		}
-		_inner->strFlags = OWN|NT;
+		_inner->strFlags = OWN | NT;
 	}
 
 	ALWAYS_INLINE void NewInner( const jschar * RESTRICT jsstr, const char * RESTRICT str, bool nullTerminated, bool hasOwnership, size_t length = SIZE_MAX ) {
@@ -1322,7 +1332,7 @@ public:
 	ALWAYS_INLINE jschar *GetJsStrZOwnership() {
 
 		ASSERT( IsSet() );
-		if ( !_inner->jsstr || !JL_HasFlags(_inner->jsstrFlags, OWN|NT) )
+		if ( !_inner->jsstr || !JL_HasFlags(_inner->jsstrFlags, OWN | NT) )
 			CreateOwnJsStrZ();
 		jschar *tmp = _inner->jsstr;
 		_inner->jsstr = NULL;
@@ -1352,7 +1362,7 @@ public:
 	ALWAYS_INLINE char *GetStrZOwnership() {
 
 		ASSERT( IsSet() );
-		if ( !_inner->str || JL_HasFlags(_inner->strFlags, OWN|NT) )
+		if ( !_inner->str || JL_HasFlags(_inner->strFlags, OWN | NT) )
 			CreateOwnStrZ();
 		char *tmp = _inner->str;
 		_inner->str = NULL;
@@ -1566,12 +1576,13 @@ JL_NativeToJsval( JSContext *cx, const char* cval, size_t length, jsval *vp ) {
 	JL_BAD;
 }
 
+
 // blob
 
 ALWAYS_INLINE JSBool
-JL_NativeToJsval( JSContext *cx, const unsigned char* cval, size_t length, jsval *vp ) {
+JL_NativeToJsval( JSContext *cx, const uint8_t *cval, size_t length, jsval *vp ) {
 
-	return JL_NativeToJsval(cx, (const char *)cval, length, vp);
+	return JL_NativeToJsval(cx, (const char *)cval, length, vp); // use c-strings one.
 }
 
 
@@ -1598,7 +1609,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 	if (likely( JSVAL_IS_INT(val) )) {
 
 		jsint tmp = JSVAL_TO_INT(val);
-		if (likely( tmp >= 0 && tmp <= UINT8_MAX )) {
+		if (likely( tmp <= UINT8_MAX && tmp >= 0 )) {
 
 			*num = uint8_t(tmp);
 			return JS_TRUE;
@@ -1640,7 +1651,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int16_t *num ) {
 	if (likely( JSVAL_IS_INT(val) )) {
 
 		jsint tmp = JSVAL_TO_INT(val);
-		if (likely( tmp >= INT16_MIN && tmp <= INT16_MAX )) {
+		if (likely( tmp <= INT16_MAX && tmp >= INT16_MIN )) {
 
 			*num = int16_t(tmp);
 			return JS_TRUE;
@@ -1826,7 +1837,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const int64_t &num, jsval *vp ) {
 
-	if (likely( num >= int64_t(JSVAL_INT_MIN) && num <= int64_t(JSVAL_INT_MAX) )) {
+	if (likely( num <= int64_t(JSVAL_INT_MAX) && num >= int64_t(JSVAL_INT_MIN) )) {
 
 		*vp = INT_TO_JSVAL(jsint(num));
 	} else {
@@ -2140,6 +2151,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, float *num ) {
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, num)
+
 }
 
 
@@ -2739,9 +2751,6 @@ ALWAYS_INLINE JSBool SetHostObjectValue(JSContext *cx, const jschar *name, jsval
 INLINE NEVER_INLINE JSBool FASTCALL
 JL_NewBlob( JSContext * RESTRICT cx, void* RESTRICT buffer, size_t length, jsval * RESTRICT vp ) {
 
-	ASSERT( jl_msize(buffer) >= length + 1 );
-	ASSERT( ((uint8_t*)buffer)[length] == 0 );
-
 	if (unlikely( length == 0 || buffer == NULL )) { // Empty Blob must acts like an empty string: !'' === true
 
 		if ( buffer )
@@ -2749,6 +2758,9 @@ JL_NewBlob( JSContext * RESTRICT cx, void* RESTRICT buffer, size_t length, jsval
 		*vp = JL_GetEmptyStringValue(cx);
 		return JS_TRUE;
 	}
+
+	ASSERT( jl_msize(buffer) >= length + 1 );
+	ASSERT( ((uint8_t*)buffer)[length] == 0 );
 
 	const ClassProtoCache *classProtoCache = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Blob");
 	if (likely( classProtoCache->clasp != NULL )) { // we have Blob class, jslang is present.

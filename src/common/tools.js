@@ -14,7 +14,7 @@ function Env3D() {
 	//	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 		GlSetAttribute( GL_DOUBLEBUFFER, 1 );
 		GlSetAttribute( GL_DEPTH_SIZE, 16 );
-		GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+//		GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 		if ( width && height )
 			SetVideoMode( width, height, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 		else
@@ -23,7 +23,7 @@ function Env3D() {
 		Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
 		Ogl.Viewport(0,0,videoWidth,videoHeight);
 		Ogl.MatrixMode(Ogl.PROJECTION);
-		Ogl.Perspective(60, undefined, 1, 100);
+		Ogl.Perspective(60, undefined, 1, 1000);
 		Ogl.MatrixMode(Ogl.MODELVIEW);
 		Ogl.ClearColor(0.2, 0.1, 0.4, 1);
 		Ogl.Enable(Ogl.DEPTH_TEST);
@@ -31,7 +31,7 @@ function Env3D() {
 		Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
 	}
 	
-	InitVideo(640, 480);
+	InitVideo(800, 600);
 	
 	
 	this.DrawGrid = function() {
@@ -176,7 +176,12 @@ function Env3D() {
 		var pos = kl.lastIndexOf(fct);
 		if ( pos != -1 )
 			kl.splice(pos, 1);
-	}	
+	}
+	
+	this.Exit = function() {
+		
+		throw 0;
+	}
 
 
 	var eventHandler = {
@@ -209,7 +214,7 @@ function Env3D() {
 					break;
 				case K_ESCAPE:
 					//Halt();
-					throw 0;
+					_this.Exit();
 					break;
 			}
 		},

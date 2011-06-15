@@ -396,8 +396,9 @@ DEFINE_FUNCTION( Vector3ToWorld ) {
 	ode::dBodyVectorToWorld(bodyId, v[0], v[1], v[2], result);
 
 //	ode::dBodyGetRelPointPos(bodyId, v.x, v.y, v.z, result);
-	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	return ODERealVectorToJsval(cx, result, 3, JL_RVAL, true);
+	bool hasDest = JL_ARG_ISDEF(2);
+	*JL_RVAL = JL_ARG( hasDest ? 2 : 1 );
+	return ODERealVectorToJsval(cx, result, 3, JL_RVAL, hasDest);
 	JL_BAD;
 }
 

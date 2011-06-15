@@ -14,6 +14,7 @@
 
 #include "stdafx.h"
 #include "z.h"
+#include <buffer.h>
 
 
 // current method

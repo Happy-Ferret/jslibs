@@ -2,12 +2,11 @@ LoadModule('jsstd');
 
 //Exec('../common/tools.js'); RunQATests('-rep 1 -nogcBetweenTests Exec.error'); throw 0;
 
-jsstdTest();
-jsstdTest();
-jsstdTest();
+LoadModule('jsstd'); Exec('../../tests/podtest.js'); throw 0;
+
+
 
 throw 0;
-
 
 
 //Exec('../common/tools.js'); RunQATests('-rep 1 -nogcBetweenTests jsstd'); throw 0;

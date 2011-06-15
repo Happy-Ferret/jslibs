@@ -11,6 +11,8 @@ var t = new Task(function(test){
 
 t.Request('test');
 
+ProcessEvents(t.Events(), EndSignalEvents());
+
 Print( uneval(t.Response()) );
 
 
