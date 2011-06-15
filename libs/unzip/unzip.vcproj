@@ -97,7 +97,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\zlib\src;src;."
+				AdditionalIncludeDirectories="..\..\libs\zlib\src;src;."
 				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE"
 				CompileAs="1"
 			/>
