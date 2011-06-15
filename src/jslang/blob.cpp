@@ -20,22 +20,43 @@ static const char emptyBlobBuffer[] = "";
 
 
 ALWAYS_INLINE jsdouble
-js__DoubleToInteger(jsdouble d) // from jsnum.h
+DoubleToInteger(jsdouble d) // from jsnum.h
 {
     if (d == 0)
         return d;
-
     if (!finite(d)) {
-
         if (isnan(d))
             return 0;
         return d;
     }
-
     JSBool neg = (d < 0);
     d = floor(neg ? -d : d);
     return neg ? -d : d;
 }
+
+
+ALWAYS_INLINE bool
+ValueToIntegerRange(JSContext *cx, const jsval &v, int32 *out) // from jsstr.cpp
+{
+	if (js::Valueify(v).isInt32()) {
+        *out = js::Valueify(v).toInt32();
+    } else {
+        double d;
+
+        if (!JS_ValueToNumber(cx, v, &d))
+            return false;
+
+        d = DoubleToInteger(d);
+        if (d > INT32_MAX)
+            *out = INT32_MAX;
+        else if (d < INT32_MIN)
+            *out = INT32_MIN;
+        else 
+            *out = int32(d);
+    }
+    return true;
+}
+
 
 
 struct MemCmp { // from jsstr.cpp
@@ -338,6 +359,7 @@ DEFINE_FUNCTION( Free ) {
 /**doc
 $TOC_MEMBER $INAME
  ArrayBuffer $INAME()
+  Copy the content of blob into a new Uint8Array. The blob it then invalidated.
 **/
 DEFINE_FUNCTION( ReloacateToArray ) {
 
@@ -459,7 +481,6 @@ $TOC_MEMBER $INAME
   $H details
    fc. [http://developer.mozilla.org/index.php?title=En/Core_JavaScript_1.5_Reference/Global_Objects/String/substr Mozilla]
 **/
-
 DEFINE_FUNCTION( substr ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -469,45 +490,46 @@ DEFINE_FUNCTION( substr ) {
 	const uint8_t *buffer;
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &buffer) );
 
-	double length;
-	size_t tmp;
-	JL_CHK( BlobLength(cx, JL_OBJ, &tmp) );
-	length = tmp;
+    int32 length, len, begin;
+    if (argc > 0) {
 
-	if ( JL_ARGC == 0 )
-		return JL_NewBlobCopyN(cx, buffer, size_t(length), JL_RVAL);
+		size_t tmp;
+		JL_CHK( BlobLength(cx, JL_OBJ, &tmp) );
+		ASSERT( tmp <= INT_MAX );
+        length = int32(tmp);
 
-	double begin, end;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &begin) );
-	begin = js__DoubleToInteger(begin);
+        if ( !ValueToIntegerRange(cx, JL_ARG(1), &begin) )
+            return false;
 
-	if ( begin < 0 ) {
+        if (begin >= length)
+			return JL_NewBlob(cx, NULL, 0, JL_RVAL);
 
-		begin += length;
-		if ( begin < 0 )
-			begin = 0;
-	} else if ( begin > ssize_t(length) ) {
+		if (begin < 0) {
+            begin += length; /* length + INT_MIN will always be less then 0 */
+            if (begin < 0)
+                begin = 0;
+        }
 
-		begin = length;
+        if ( !JL_ARG_ISDEF(2) ) {
+
+            len = length - begin;
+        } else {
+
+            if (!ValueToIntegerRange(cx,JL_ARG(2), &len))  
+                return false;
+
+            if (len <= 0)
+				return JL_NewBlob(cx, NULL, 0, JL_RVAL);
+
+			if (uint32(length) < uint32(begin + len))
+                len = length - begin;
+        }
+
+		return JL_NewBlobCopyN(cx, buffer + size_t(begin), size_t(len), JL_RVAL);
 	}
 
-	if ( !JL_ARG_ISDEF(2) ) { // -or- if ( JL_ARGC == 1 ) {
-
-		end = length;
-	} else {
-
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &end) );
-		end = js__DoubleToInteger(end);
-
-		if ( end < 0 )
-			end = 0;
-
-      end += begin;
-      if ( end > ssize_t(length) )
-          end = length;
-	}
-
-	return JL_NewBlobCopyN(cx, buffer + size_t(begin), size_t(end - begin), JL_RVAL);
+	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -537,44 +559,43 @@ DEFINE_FUNCTION( substring ) {
 	const uint8_t *buffer;
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &buffer) );
 
-	double length;
-	size_t tmp;
-	JL_CHK( BlobLength(cx, JL_OBJ, &tmp) );
-	length = tmp;
+    int32 length, begin, end;
+    if (argc > 0) {
 
-	if ( JL_ARGC == 0 )
-		return JL_NewBlobCopyN(cx, buffer, size_t(length), JL_RVAL);
+		size_t tmp;
+		JL_CHK( BlobLength(cx, JL_OBJ, &tmp) );
+		ASSERT( tmp <= INT_MAX );
+        end = length = int32(tmp);
 
-	double begin, end;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &begin) );
-	begin = js__DoubleToInteger(begin);
+        if (!ValueToIntegerRange(cx, JL_ARG(1), &begin))
+            return false;
 
-	if ( !JL_ARG_ISDEF(2) ) {
+        if (begin < 0)
+            begin = 0;
+        else if (begin > length)
+            begin = length;
 
-		end = length;
-	} else {
+        if ( JL_ARG_ISDEF(2) ) {
+            if (!ValueToIntegerRange(cx, JL_ARG(2), &end))
+                return false;
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &end) );
-		end = js__DoubleToInteger(end);
-	}
-
-    if (begin < 0)
-        begin = 0;
-    else if (begin > length)
-        begin = length;
-
-    if (end < 0)
-        end = 0;
-    else if (end > length)
-        end = length;
-    if (end < begin) {
-        /* ECMA emulates old JDK1.0 java.lang.String.substring. */
-        jsdouble tmp = begin;
-        begin = end;
-        end = tmp;
+            if (end > length) {
+                end = length;
+            } else {
+                if (end < 0)
+                    end = 0;
+                if (end < begin) {
+                    int32_t tmp = begin;
+                    begin = end;
+                    end = tmp;
+                }
+            }
+        }
+		return JL_NewBlobCopyN(cx, buffer + size_t(begin), size_t(end - begin), JL_RVAL);
     }
 
-	return JL_NewBlobCopyN(cx, buffer + size_t(begin), size_t(end - begin), JL_RVAL);
+	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -618,7 +639,7 @@ DEFINE_FUNCTION( indexOf ) {
 
 		double d;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &d) );
-		d = js__DoubleToInteger(d);
+		d = DoubleToInteger(d);
 		if (d <= 0) {
 			start = 0;
 		} else if (d > textlen) {
@@ -697,7 +718,7 @@ DEFINE_FUNCTION( lastIndexOf ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &d) );
 		if (!isnan(d)) {
 
-			d = js__DoubleToInteger(d);
+			d = DoubleToInteger(d);
 			if (d <= 0)
 				i = 0;
 			else if (d < i)
@@ -856,7 +877,7 @@ DEFINE_FUNCTION( charAt ) {
     if ( JL_ARG_ISDEF(1) ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &d) );
-        d = js__DoubleToInteger(d);
+        d = DoubleToInteger(d);
     } else {
 
 		d = 0.0;
@@ -905,7 +926,7 @@ DEFINE_FUNCTION( charCodeAt ) {
     if ( JL_ARG_ISDEF(1) ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &d) );
-        d = js__DoubleToInteger(d);
+        d = DoubleToInteger(d);
     } else {
 
 		d = 0.0;
