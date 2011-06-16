@@ -370,7 +370,7 @@ DEFINE_PROPERTY_GETTER( hasNormal ) {
 
 	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	*vp = pv->normal != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = BOOLEAN_TO_JSVAL( pv->normal != NULL );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -379,7 +379,7 @@ DEFINE_PROPERTY_GETTER( hasTextureCoordinateBuffer ) {
 
 	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	*vp = pv->normal != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = BOOLEAN_TO_JSVAL( pv->normal != NULL );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -388,7 +388,7 @@ DEFINE_PROPERTY_GETTER( hasColor ) {
 
 	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	*vp = pv->normal != NULL ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = BOOLEAN_TO_JSVAL( pv->normal != NULL );
 	return JS_TRUE;
 	JL_BAD;
 }

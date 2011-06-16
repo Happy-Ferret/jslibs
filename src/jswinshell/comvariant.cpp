@@ -456,7 +456,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 			break;
 
 		case VT_BOOL:
-			*rval = (isRef ? *V_BOOLREF(variant) : V_BOOL(variant)) ? JSVAL_TRUE : JSVAL_FALSE;
+			*rval = BOOLEAN_TO_JSVAL( isRef ? *V_BOOLREF(variant) : V_BOOL(variant) );
 			break;
 		case VT_I1:
 			*rval = INT_TO_JSVAL(isRef ? *V_I1REF(variant) : V_I1(variant));

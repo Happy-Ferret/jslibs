@@ -744,7 +744,7 @@ DEFINE_FUNCTION( Match ) {
 	if ( amount != len )
 		*JL_RVAL = JSVAL_FALSE;
 	else
-		*JL_RVAL = strncmp( str.GetConstStr(), src, len ) == 0 ? JSVAL_TRUE : JSVAL_FALSE;
+		*JL_RVAL = BOOLEAN_TO_JSVAL( strncmp( str.GetConstStr(), src, len ) == 0 );
 
 	bool consume;
 	if ( JL_ARG_ISDEF(2) )

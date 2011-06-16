@@ -344,20 +344,43 @@ JL_IsObjectObject( JSContext *cx, const JSObject *obj ) {
 }
 
 ALWAYS_INLINE bool
-JL_IsGenerator( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
+JL_IsGeneratorObject( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
-	JSObject *ctor = NULL;
-	return JS_GetClassObject(cx, JL_GetGlobalObject(cx), JSProto_Generator, &ctor) && JL_GetPrototype(cx, obj) == ctor;
+	JSObject *proto;
+	return JS_GetClassObject(cx, JL_GetGlobalObject(cx), JSProto_Generator, &proto) && JL_GetPrototype(cx, obj) == proto;
 }
 
 ALWAYS_INLINE bool
-JL_IsGenerator( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+JL_IsGeneratorObject( JSContext * RESTRICT cx, jsval &val ) {
 
-	return JSVAL_IS_OBJECT(value) && JL_IsGenerator(cx, JSVAL_TO_OBJECT(value));
+	return JSVAL_IS_OBJECT(val) && JL_IsGeneratorObject(cx, JSVAL_TO_OBJECT(val));
 }
 
 ALWAYS_INLINE bool
-JL_ObjectIsArray( JSContext *cx, JSObject *obj ) {
+JL_IsGeneratorFunction( JSContext * RESTRICT cx, jsval &val ) {
+
+	JL_INGORE(cx);
+	// copied from firefox-5.0b7.source\mozilla-beta\js\src
+    JSObject *funobj;
+	if (!js::IsFunctionObject(js::Valueify(val), &funobj)) {
+        
+        return true;
+    }
+
+    JSFunction *fun = GET_FUNCTION_PRIVATE(cx, funobj);
+
+    bool result = false;
+    if (fun->isInterpreted()) {
+        JSScript *script = fun->u.i.script;
+        JS_ASSERT(script->length != 0);
+        result = script->code[0] == JSOP_GENERATOR;
+    }
+
+    return result;
+}
+
+ALWAYS_INLINE bool
+JL_ObjectIsArray( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
 	return JS_IsArrayObject(cx, obj) == JS_TRUE; // Object::isArray() is not public
 }
@@ -791,6 +814,19 @@ JL_NullJsid() { // is (double)0
 	return tmp;
 }
 
+	// slow part of JL_GetPrivateJsid()
+	INLINE NEVER_INLINE jsid FASTCALL
+	JL__GetPrivateJsid_slow( JSContext * RESTRICT cx, int index, const jschar * RESTRICT name ) {
+
+		jsid id;
+		JSString *jsstr = JS_InternUCString(cx, name);
+		if (unlikely( jsstr == NULL ))
+			return JL_NullJsid();
+		if (unlikely( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &id) != JS_TRUE ))
+			return JL_NullJsid();
+		JL_GetHostPrivate(cx)->ids[index] = id;
+		return id;
+	}
 
 ALWAYS_INLINE jsid
 JL_GetPrivateJsid( JSContext * RESTRICT cx, int index, const jschar * RESTRICT name ) {
@@ -799,13 +835,7 @@ JL_GetPrivateJsid( JSContext * RESTRICT cx, int index, const jschar * RESTRICT n
 	jsid id = JL_GetHostPrivate(cx)->ids[index];
 	if (likely( id != JL_NullJsid() ))
 		return id;
-	JSString *jsstr = JS_InternUCString(cx, name);
-	if (unlikely( jsstr == NULL ))
-		return JL_NullJsid();
-	if (unlikely( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &id) != JS_TRUE ))
-		return JL_NullJsid();
-	JL_GetHostPrivate(cx)->ids[index] = id;
-	return id;
+	return JL__GetPrivateJsid_slow(cx, index, name);
 }
 
 
@@ -1787,12 +1817,17 @@ JL_NativeToJsval( JSContext *cx, const uint32_t &num, jsval *vp ) {
 	if (likely( num <= uint32_t(JSVAL_INT_MAX) )) {
 
 		*vp = INT_TO_JSVAL(num);
-	} else {
+		return JS_TRUE;
+	}
+
+	UNLIKELY_SPLIT_BEGIN( const uint32_t &num, jsval *vp )
 
 		ASSERT( jsdouble(num) <= MAX_INT_TO_DOUBLE );
 		*vp = DOUBLE_TO_JSVAL(jsdouble(num));
-	}
-	return JS_TRUE;
+		return JS_TRUE;
+
+	UNLIKELY_SPLIT_END(num, vp)
+
 }
 
 ALWAYS_INLINE JSBool
@@ -2161,7 +2196,7 @@ ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const bool &b, jsval *vp ) {
 
 	JL_INGORE(cx);
-	*vp = b ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = BOOLEAN_TO_JSVAL(b);
 	return JS_TRUE;
 }
 
@@ -2527,66 +2562,36 @@ JL_JsvalToFunction( JSContext *cx, const jsval &val ) {
 
 
 ALWAYS_INLINE JSBool
-JL_JsvalToJsid( JSContext *cx, jsval *val, jsid *id ) {
+JL_JsvalToJsid( JSContext * RESTRICT cx, jsval * RESTRICT val, jsid * RESTRICT id ) {
 
 	if ( JSVAL_IS_INT( *val ) ) {
 
 		*id = INT_TO_JSID( JSVAL_TO_INT( *val ) );
-		return JS_TRUE;
-	}
-
+	} else
 	if ( JSVAL_IS_OBJECT( *val ) ) {
 
 		*id = OBJECT_TO_JSID( JSVAL_TO_OBJECT( *val ) );
-		return JS_TRUE;
-	}
-
+	} else
 	if ( JSVAL_IS_STRING( *val ) ) {
 
 		*id = ATOM_TO_JSID(STRING_TO_ATOM(JSVAL_TO_STRING( *val )));
 		ASSERT( JSID_IS_STRING( *id ) );
-		return JS_TRUE;
-	}
-
+	} else
 	if ( JSVAL_IS_VOID( *val ) ) {
 
 		*id = JSID_VOID;
-		return JS_TRUE;
-	}
-
-	return JS_ValueToId(cx, *val, id);
+	} else
+		return JS_ValueToId(cx, *val, id);
+	return JS_TRUE;
 }
 
 
-INLINE JSBool FASTCALL
-JL_JsidToJsval( JSContext *cx, jsid id, jsval *val ) {
+ALWAYS_INLINE JSBool FASTCALL
+JL_JsidToJsval( JSContext * RESTRICT cx, jsid id, jsval * RESTRICT val ) {
 
-	if ( JSID_IS_INT( id ) ) {
-
-		*val = INT_TO_JSVAL( JSID_TO_INT( id ) );
-		return JS_TRUE;
-	}
-
-	if ( JSID_IS_OBJECT( id ) ) {
-
-		*val = OBJECT_TO_JSVAL( JSID_TO_OBJECT( id ) );
-		return JS_TRUE;
-	}
-
-	if ( JSID_IS_STRING( id ) ) {
-
-		*val = STRING_TO_JSVAL(ATOM_TO_STRING(JSID_TO_ATOM(id)));
-		ASSERT( JSVAL_IS_STRING(*val) );
-		return JS_TRUE;
-	}
-
-	if ( JSID_IS_VOID( id ) ) {
-
-		*val = JSVAL_VOID;
-		return JS_TRUE;
-	}
-
-	return JS_IdToValue(cx, id, val);
+	JL_INGORE(cx);
+	*val = js::IdToJsval(id); // see jsatom.h
+	return JS_TRUE;
 }
 
 

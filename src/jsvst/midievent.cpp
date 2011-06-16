@@ -80,7 +80,7 @@ DEFINE_PROPERTY_GETTER( realtime ) {
 
 	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	*vp = pv->flags & kVstMidiEventIsRealtime ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = BOOLEAN_TO_JSVAL( pv->flags & kVstMidiEventIsRealtime );
 	return JS_TRUE;
 	JL_BAD;
 }

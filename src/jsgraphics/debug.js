@@ -9,16 +9,27 @@ LoadModule('jstrimesh');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
 
+
+
+
+
+
+
 try {
 
 //LoadModule('jsstd'); Exec('../../tests/arabesques.js'); throw 0;
-LoadModule('jsstd'); Exec('../../tests/explodebox.js'); throw 0;
+//LoadModule('jsstd'); Exec('../../tests/explodebox.js'); throw 0;
 //LoadModule('jsstd'); Exec('../../tests/fragmentShaderTest.js'); throw 0;
+LoadModule('jsstd'); Exec('../../tests/podtest.js'); throw 0;
 
 } catch(ex) {
 
 	Print( uneval(ex) );
 }
+
+throw 0;
+
+
 
 // OpenGl doc: http://www.opengl.org/sdk/docs/man/
 

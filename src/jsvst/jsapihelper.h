@@ -99,7 +99,7 @@ protected:
 
 	inline jsval BoolToJsval( bool b ) {
 
-		return b ? JSVAL_TRUE : JSVAL_FALSE;
+		return BOOLEAN_TO_JSVAL( b );
 	}
 
 	inline JLStr JsvalToString( jsval &val ) { // beware: val is a reference !

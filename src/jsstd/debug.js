@@ -2,7 +2,13 @@ LoadModule('jsstd');
 
 //Exec('../common/tools.js'); RunQATests('-rep 1 -nogcBetweenTests Exec.error'); throw 0;
 
-LoadModule('jsstd'); Exec('../../tests/podtest.js'); throw 0;
+//LoadModule('jsstd'); Exec('../../tests/podtest.js'); throw 0;
+
+
+var g = new function() { yield };
+
+Print( IsGenerator(g), '\n' );
+Print( IsGenerator(g), '\n' );
 
 
 

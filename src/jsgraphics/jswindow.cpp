@@ -366,7 +366,8 @@ DEFINE_FUNCTION( WaitForMessage ) {
 	JS_ValueToInt32(cx, argv[0], &val);
 
 	DWORD status = MsgWaitForMultipleObjects(0, NULL, FALSE, val, QS_ALLEVENTS);
-	*rval = (status == WAIT_TIMEOUT) ? JSVAL_FALSE : JSVAL_TRUE;
+	//*rval = (status == WAIT_TIMEOUT) ? JSVAL_FALSE : JSVAL_TRUE;
+	*rval = BOOLEAN_TO_JSVAL( status != WAIT_TIMEOUT );
 	return JS_TRUE;
 }
 

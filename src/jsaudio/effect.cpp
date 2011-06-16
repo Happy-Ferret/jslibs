@@ -243,7 +243,7 @@ DEFINE_PROPERTY_GETTER( effectBool ) {
 	int i;
 	alGetEffecti(pv->effect, param, &i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	*vp = i == AL_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = BOOLEAN_TO_JSVAL(i == AL_TRUE);
 	return JS_TRUE;
 	JL_BAD;
 }

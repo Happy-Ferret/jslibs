@@ -690,7 +690,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	JL_CHKM( JS_DefinePropertyById( cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(JL_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), E_PROP, E_CREATE ); // "unable to define a property."
 	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == 1 ? JLNormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), E_PROP, E_CREATE ); // "unable to define a property."
 
-	JL_CHK( SetHostObjectValue(cx, JLID(cx, unsafeMode), unsafeMode ? JSVAL_TRUE : JSVAL_FALSE, false) );
+	JL_CHK( SetHostObjectValue(cx, JLID(cx, unsafeMode), BOOLEAN_TO_JSVAL(unsafeMode), false) );
 
 	// note: we have to support: var prevStderr = _host.stderr; _host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
 	jsval value;

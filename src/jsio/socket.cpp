@@ -891,13 +891,13 @@ DEFINE_PROPERTY_GETTER( Option ) {
 				*vp = JSVAL_ZERO;
 			break;
 		case PR_SockOpt_NoDelay:
-			*vp = sod.value.no_delay == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+			*vp = BOOLEAN_TO_JSVAL( sod.value.no_delay == PR_TRUE );
 			break;
 		case PR_SockOpt_Reuseaddr:
-			*vp = sod.value.reuse_addr == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+			*vp = BOOLEAN_TO_JSVAL( sod.value.reuse_addr == PR_TRUE );
 			break;
 		case PR_SockOpt_Keepalive:
-			*vp = sod.value.keep_alive == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+			*vp = BOOLEAN_TO_JSVAL( sod.value.keep_alive == PR_TRUE );
 			break;
 		case PR_SockOpt_RecvBufferSize:
 //			*vp = INT_TO_JSVAL(sod.value.recv_buffer_size);
@@ -912,13 +912,13 @@ DEFINE_PROPERTY_GETTER( Option ) {
 			JL_CHK( JL_NativeToJsval(cx, sod.value.max_segment, vp) );
 			break;
 		case PR_SockOpt_Nonblocking:
-			*vp = sod.value.non_blocking == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+			*vp = BOOLEAN_TO_JSVAL( sod.value.non_blocking == PR_TRUE );
 			break;
 		case PR_SockOpt_Broadcast:
-			*vp = sod.value.broadcast == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+			*vp = BOOLEAN_TO_JSVAL( sod.value.broadcast == PR_TRUE );
 			break;
 		case PR_SockOpt_McastLoopback:
-			*vp = sod.value.mcast_loopback == PR_TRUE ? JSVAL_TRUE : JSVAL_FALSE;
+			*vp = BOOLEAN_TO_JSVAL( sod.value.mcast_loopback == PR_TRUE );
 			break;
 		default:;
 	}

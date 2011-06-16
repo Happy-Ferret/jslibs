@@ -223,7 +223,7 @@ DEFINE_PROPERTY( disabledGetter ) {
 	JL_ASSERT_THIS_INHERITANCE();
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
-	*vp = ode::dGeomIsEnabled(geom) != 1 ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = BOOLEAN_TO_JSVAL( ode::dGeomIsEnabled(geom) != 1 );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -252,7 +252,7 @@ DEFINE_PROPERTY_GETTER( temporalCoherence ) {
 	JL_ASSERT_THIS_INHERITANCE();
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
-	*vp = ode::dGeomTriMeshIsTCEnabled(geomId, ode::dGeomGetClass(geomId)) == 1 ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = BOOLEAN_TO_JSVAL( ode::dGeomTriMeshIsTCEnabled(geomId, ode::dGeomGetClass(geomId)) == 1 );
 	return JS_TRUE;
 	JL_BAD;
 }

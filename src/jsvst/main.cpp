@@ -1119,7 +1119,7 @@ DEFINE_FUNCTION( sendVstEventToHost ) {
 		JL_ERR( E_THISOBJ, E_STATE ); // "MidiEvent"
 	}
 
-	*JL_RVAL = res ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = BOOLEAN_TO_JSVAL( res );
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -122,7 +122,7 @@ DEFINE_PROPERTY_GETTER( hasEfx ) {
 	ALCcontext *pContext = alcGetCurrentContext();
 	JL_ASSERT( pContext != NULL, E_LIB, E_STR("OpenAL"), E_INTERNAL );
 	ALCdevice *pDevice = alcGetContextsDevice(pContext);
-	*vp = alcIsExtensionPresent(pDevice, (ALCchar*)ALC_EXT_EFX_NAME) ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = BOOLEAN_TO_JSVAL( alcIsExtensionPresent(pDevice, (ALCchar*)ALC_EXT_EFX_NAME) );
 	return JS_TRUE;
 	JL_BAD;
 }

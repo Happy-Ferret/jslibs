@@ -107,7 +107,7 @@ JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int i
 
 	cbArgv[0] = descVal;
 	cbArgv[1] = INT_TO_JSVAL(index);
-	cbArgv[2] = (outFlag & PR_POLL_HUP) ? JSVAL_TRUE : JSVAL_FALSE;
+	cbArgv[2] = BOOLEAN_TO_JSVAL(outFlag & PR_POLL_HUP);
 
 	if ( outFlag & PR_POLL_ERR ) {
 

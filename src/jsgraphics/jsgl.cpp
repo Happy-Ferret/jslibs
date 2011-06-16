@@ -322,7 +322,7 @@ DEFINE_FUNCTION( IsEnabled ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
-	*JL_RVAL = glIsEnabled(JSVAL_TO_INT(JL_ARG(1))) ? JSVAL_TRUE : JSVAL_FALSE;  OGL_ERR_CHK;
+	*JL_RVAL = BOOLEAN_TO_JSVAL(  glIsEnabled(JSVAL_TO_INT(JL_ARG(1))) );  OGL_ERR_CHK;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -443,7 +443,7 @@ DEFINE_FUNCTION( Get ) {
 		{
 			GLboolean params[1];
 			glGetBooleanv(pname, params);  OGL_ERR_CHK;
-			*JL_RVAL = *params ? JSVAL_TRUE : JSVAL_FALSE;
+			*JL_RVAL = BOOLEAN_TO_JSVAL( *params );
 			return JS_TRUE;
 		}
 
@@ -452,10 +452,10 @@ DEFINE_FUNCTION( Get ) {
 			GLboolean params[4];
 			glGetBooleanv(pname, params);  OGL_ERR_CHK;
 			jsval ret[] = {
-					params[0] ? JSVAL_TRUE : JSVAL_FALSE,
-					params[1] ? JSVAL_TRUE : JSVAL_FALSE,
-					params[2] ? JSVAL_TRUE : JSVAL_FALSE,
-					params[3] ? JSVAL_TRUE : JSVAL_FALSE
+					BOOLEAN_TO_JSVAL( params[0] ),
+					BOOLEAN_TO_JSVAL( params[1] ),
+					BOOLEAN_TO_JSVAL( params[2] ),
+					BOOLEAN_TO_JSVAL( params[3] )
 			};
 			*JL_RVAL = OBJECT_TO_JSVAL(JS_NewArrayObject(cx, COUNTOF(ret), ret));
 			JL_CHK( *JL_RVAL != JSVAL_NULL );

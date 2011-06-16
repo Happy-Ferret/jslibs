@@ -1038,16 +1038,17 @@ DEFINE_FUNCTION( StackFrameInfo ) {
 	JL_CHK( JS_SetProperty(cx, frameInfo, "rval", &tmp) );
 
 	// JS_IsNativeFrame
-	tmp = fp->isFunctionFrame() ? JSVAL_FALSE : JSVAL_TRUE; // (TBD) check if isFunctionFrame() <=> !isNative
+	//tmp = fp->isFunctionFrame() ? JSVAL_FALSE : JSVAL_TRUE; // (TBD) check if isFunctionFrame() <=> !isNative
+	tmp = BOOLEAN_TO_JSVAL( !fp->isFunctionFrame() ); // (TBD) check if isFunctionFrame() <=> !isNative
 	JL_CHK( JS_SetProperty(cx, frameInfo, "isNative", &tmp) );
 
-	tmp = fp->isConstructing() ? JSVAL_TRUE : JSVAL_FALSE;
+	tmp = BOOLEAN_TO_JSVAL(fp->isConstructing());
 	JL_CHK( JS_SetProperty(cx, frameInfo, "isConstructing", &tmp) );
 
-	tmp = fp->isEvalFrame() ? JSVAL_TRUE : JSVAL_FALSE;
+	tmp = BOOLEAN_TO_JSVAL(fp->isEvalFrame());
 	JL_CHK( JS_SetProperty(cx, frameInfo, "isEval", &tmp) );
 
-	tmp = fp->isAssigning() ? JSVAL_TRUE : JSVAL_FALSE;
+	tmp = BOOLEAN_TO_JSVAL(fp->isAssigning());
 	JL_CHK( JS_SetProperty(cx, frameInfo, "isAssigning", &tmp) );
 
 //	JL_CHK( JS_DefineProperty(cx, frameInfo, "opnd", fp->regs->sp[-1], NULL, NULL, JSPROP_ENUMERATE) );
@@ -1363,30 +1364,30 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 			else
 				JL_CHK( JS_SetProperty(cx, descObj, "value", &tmp) );
 
-			tmp = ((js::Shape*)jssp)->hasGetterValue() ? JSVAL_TRUE : JSVAL_FALSE;
+			tmp = BOOLEAN_TO_JSVAL( ((js::Shape*)jssp)->hasGetterValue() );
 			JL_CHK( JS_SetProperty(cx, descObj, "getter", &tmp) );
 
-			tmp = ((js::Shape*)jssp)->hasSetterValue() ? JSVAL_TRUE : JSVAL_FALSE;
+			tmp = BOOLEAN_TO_JSVAL( ((js::Shape*)jssp)->hasSetterValue() );
 			JL_CHK( JS_SetProperty(cx, descObj, "setter", &tmp) );
 
-			tmp = desc.flags & JSPD_VARIABLE ? JSVAL_TRUE : JSVAL_FALSE; // doc. local variable in function
+			tmp = BOOLEAN_TO_JSVAL( desc.flags & JSPD_VARIABLE ); // doc. local variable in function
 			JL_CHK( JS_SetProperty(cx, descObj, "variable", &tmp) );
 
-			tmp = desc.flags & JSPD_ARGUMENT ? JSVAL_TRUE : JSVAL_FALSE; // doc. argument to function
+			tmp = BOOLEAN_TO_JSVAL( desc.flags & JSPD_ARGUMENT ); // doc. argument to function
 			JL_CHK( JS_SetProperty(cx, descObj, "argument", &tmp) );
 
-			tmp = desc.flags & JSPD_ENUMERATE ? JSVAL_TRUE : JSVAL_FALSE; // visible to for/in loop
+			tmp = BOOLEAN_TO_JSVAL( desc.flags & JSPD_ENUMERATE ); // visible to for/in loop
 			JL_CHK( JS_SetProperty(cx, descObj, "enumerate", &tmp) );
 //			JL_CHK( SetPropertyBool(cx, descObj, "enumerate", desc.flags & JSPD_ENUMERATE) );
 
-			tmp = desc.flags & JSPD_READONLY ? JSVAL_TRUE : JSVAL_FALSE;
+			tmp = BOOLEAN_TO_JSVAL( desc.flags & JSPD_READONLY );
 			JL_CHK( JS_SetProperty(cx, descObj, "readonly", &tmp) );
 
-			tmp = desc.flags & JSPD_PERMANENT ? JSVAL_TRUE : JSVAL_FALSE;
+			tmp = BOOLEAN_TO_JSVAL( desc.flags & JSPD_PERMANENT );
 			JL_CHK( JS_SetProperty(cx, descObj, "permanent", &tmp) );
 
 //			tmp = jssp->setter() != NULL || jssp->getter() != NULL ? JSVAL_TRUE : JSVAL_FALSE;
-			tmp = ((js::Shape*)jssp)->isNative() ? JSVAL_TRUE : JSVAL_FALSE;
+			tmp = BOOLEAN_TO_JSVAL(  ((js::Shape*)jssp)->isNative() );
 			JL_CHK( JS_SetProperty(cx, descObj, "native", &tmp) );
 
 			tmp = INT_TO_JSVAL(prototypeLevel);

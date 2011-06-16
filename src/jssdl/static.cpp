@@ -69,7 +69,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 			if ( JL_ValueIsFunction(cx, fVal) ) {
 
 				jsval argv[] = {
-					ev->active.gain == 1 ? JSVAL_TRUE : JSVAL_FALSE
+					BOOLEAN_TO_JSVAL( ev->active.gain == 1 )
 				};
 				JL_CHK( JS_CallFunctionValue(cx, thisObj, fVal, COUNTOF(argv), argv, rval) );
 				*fired = true;
@@ -1078,7 +1078,7 @@ DEFINE_PROPERTY_SETTER( unicodeKeyboardTranslation ) {
 DEFINE_PROPERTY_GETTER( unicodeKeyboardTranslation ) {
 
 	int enable = SDL_EnableUNICODE(-1);
-	*vp = enable == 1 ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = BOOLEAN_TO_JSVAL( enable == 1 );
 	return JS_TRUE;
 }
 

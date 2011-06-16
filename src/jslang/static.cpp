@@ -37,6 +37,130 @@ BEGIN_STATIC
 **/
 
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+  Returns $TRUE if the value is a boolean value or object.
+**/
+DEFINE_FUNCTION( IsBoolean ) {
+
+	JL_ASSERT_ARGC(1);
+
+	if ( JSVAL_IS_BOOLEAN(JL_ARG(1)) ) {
+
+		*JL_RVAL = JSVAL_TRUE;
+		return JS_TRUE;
+	}
+
+	if ( JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
+
+		*JL_RVAL = JSVAL_FALSE;
+		return JS_TRUE;
+	}
+
+	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Boolean) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+  Returns $TRUE if the value is a number value or object.
+**/
+DEFINE_FUNCTION( IsNumber ) {
+
+	JL_ASSERT_ARGC(1);
+
+	if ( JSVAL_IS_NUMBER(JL_ARG(1)) ) {
+
+		*JL_RVAL = JSVAL_TRUE;
+		return JS_TRUE;
+	}
+
+	if ( JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
+
+		*JL_RVAL = JSVAL_FALSE;
+		return JS_TRUE;
+	}
+
+	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Number) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+  Returns $TRUE if the value is a primitive ( null or not an object ).
+**/
+DEFINE_FUNCTION( IsPrimitive ) {
+
+	JL_INGORE(cx);
+	JL_ASSERT_ARGC(1);
+
+	*JL_RVAL = BOOLEAN_TO_JSVAL( JSVAL_IS_PRIMITIVE(JL_ARG(1)) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+  Returns $TRUE if the value is a function.
+**/
+DEFINE_FUNCTION( IsFunction ) {
+
+	JL_ASSERT_ARGC(1);
+	*JL_RVAL = BOOLEAN_TO_JSVAL( VALUE_IS_FUNCTION(cx, JL_ARG(1)) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+  Returns $TRUE if the value is a generator.
+**/
+DEFINE_FUNCTION( IsGeneratorFunction ) {
+
+	JL_ASSERT_ARGC(1);
+	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_IsGeneratorFunction(cx, JL_ARG(1)) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+  Returns $TRUE if the value is a generator.
+**/
+DEFINE_FUNCTION( IsGeneratorObject ) {
+
+	JL_ASSERT_ARGC(1);
+
+	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_IsGeneratorObject(cx, JL_ARG(1)) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME( value )
@@ -45,9 +169,11 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Real ) {
 
 	JL_ASSERT_ARGC(1);
+
 	jsdouble val;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &val) );
 	*JL_RVAL = DOUBLE_TO_JSVAL(val);
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -74,20 +200,13 @@ DEFINE_FUNCTION( Stringify ) {
 
 			size_t length;
 			do {
+
 				length = 4096;
 				JL_CHKB( read(cx, sobj, BufferNewChunk(&buf, length), &length), bad_freeBuffer );
 				BufferConfirm(&buf, length);
 			} while ( length != 0 );
 
-			size_t total;
-			total = BufferGetLength(&buf);
-			char *newBuffer;
-			newBuffer = (char*)JS_malloc(cx, total +1);
-			JL_CHK( newBuffer );
-			newBuffer[total] = '\0';
-			BufferCopyData(&buf, newBuffer, total);
-			*JL_RVAL = STRING_TO_JSVAL( JLStr(newBuffer, total, true).GetJSString(cx) );
-
+			*JL_RVAL = STRING_TO_JSVAL( JLStr(BufferGetDataOwnership(&buf), BufferGetLength(&buf), false).GetJSString(cx) );
 			BufferFinalize(&buf);
 			return JS_TRUE;
 
@@ -427,7 +546,7 @@ DEFINE_FUNCTION( Deserialize ) {
     }
 
     if (!JS_ReadStructuredClone(cx, (uint64 *) array->data, array->byteLength, JS_STRUCTURED_CLONE_VERSION, &v, &structuredClone, JL_GetHostPrivate(cx))) {
-        
+
 		 return false;
     }
     JS_SET_RVAL(cx, vp, v);
@@ -438,20 +557,38 @@ DEFINE_FUNCTION( Deserialize ) {
 */
 
 
-#ifdef DEBUG
+#define JSLANG_TEST DEBUG //|| true
+
+#ifdef JSLANG_TEST
+
 
 DEFINE_FUNCTION( jslangTest ) {
-
 
 	JL_INGORE(cx);
 	JL_INGORE(argc);
 	JL_INGORE(vp);
 
+	jsid id;
+	JS_ValueToId(cx, JL_ARG(1), &id);
+
+	jsval tmp;
+
+	size_t p = JLGetEIP();
+
+	JL_JsidToJsval(cx, id, &tmp); // JS_IdToValue
+
+	printf("%d\n", JLGetEIP()-p);
+
+	*JL_RVAL = tmp;
+
+
+
+
 	return JS_TRUE;
 	JL_BAD;
 }
 
-#endif // DEBUG
+#endif // JSLANG_TEST
 
 
 CONFIGURE_STATIC
@@ -459,9 +596,13 @@ CONFIGURE_STATIC
 //	REVISION(JL_SvnRevToInt("$Revision$")) // avoid to set a revision to the global context
 	BEGIN_STATIC_FUNCTION_SPEC
 
-		#ifdef DEBUG
-		FUNCTION( jslangTest )
-		#endif // DEBUG
+		FUNCTION_ARGC( IsBoolean, 1 )
+		FUNCTION_ARGC( IsNumber, 1 )
+		FUNCTION_ARGC( IsPrimitive, 1 )
+		FUNCTION_ARGC( IsFunction, 1 )
+		FUNCTION_ARGC( IsGeneratorFunction, 1 )
+		FUNCTION_ARGC( IsGeneratorObject, 1 )
+
 
 		FUNCTION_ARGC( Real, 1 )
 
@@ -471,6 +612,10 @@ CONFIGURE_STATIC
 
 //		FUNCTION_ARGC( Serialize, 1 )
 //		FUNCTION_ARGC( Deserialize, 1 )
+
+		#ifdef JSLANG_TEST
+		FUNCTION( jslangTest )
+		#endif // JSLANG_TEST
 
 	END_STATIC_FUNCTION_SPEC
 

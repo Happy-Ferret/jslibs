@@ -235,11 +235,11 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 			INT_TO_JSVAL( lineno ),
 			INT_TO_JSVAL( breakOrigin ),
 			INT_TO_JSVAL( stackFrameIndex ),
-			hasException ? JSVAL_TRUE : JSVAL_FALSE,
+			BOOLEAN_TO_JSVAL(hasException),
 			hasException ? exception : JSVAL_VOID,
 			//breakOrigin == FROM_STEP_OUT ? fp->regs->sp[-1] : JSVAL_VOID; // (TBD) try to get the functions's rval. ask in the mailing list.
 			JSVAL_NULL,
-			script && JS_GetFramePC(cx, fp) == script->code ? JSVAL_TRUE : JSVAL_FALSE // is entering function
+			BOOLEAN_TO_JSVAL(script && JS_GetFramePC(cx, fp) == script->code) // is entering function
 		};
 		JL_CHK( JL_NativeToJsval(cx, filename, &argv[1]) );
 		

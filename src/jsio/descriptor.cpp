@@ -850,7 +850,7 @@ DEFINE_FUNCTION( IsReadable ) {
 	result = PR_Poll(&desc, 1, timeout);
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
-	*JL_RVAL = ( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = BOOLEAN_TO_JSVAL( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -897,7 +897,7 @@ DEFINE_FUNCTION( IsWritable ) {
 	result = PR_Poll(&desc, 1, timeout);
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
-	*JL_RVAL = ( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 ) ? JSVAL_TRUE : JSVAL_FALSE;
+	*JL_RVAL = BOOLEAN_TO_JSVAL( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 );
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -126,28 +126,47 @@ inline BufferType GuessType( const Buffer *buffer, size_t lastChunk, size_t requ
 		return bufferTypeChunk;
 }
 
+inline void* DefaultBufferAlloc( void* opaqueAllocatorContext, size_t size ) {
+
+	JL_INGORE(opaqueAllocatorContext);
+	return jl_malloc(size);
+}
+
+inline void DefaultBufferFree( void* opaqueAllocatorContext, void* memory ) {
+
+	JL_INGORE(opaqueAllocatorContext);
+	jl_free(memory);
+}
+
+inline void* DefaultBufferRealloc( void* opaqueAllocatorContext, void* memory, size_t size ) {
+
+	JL_INGORE(opaqueAllocatorContext);
+	return jl_realloc(memory, size);
+}
+
+
 inline void* _BufferAlloc( Buffer *buf, size_t size ) {
 
-	return buf->bufferAlloc ? buf->bufferAlloc(buf->opaqueAllocatorContext, size) : jl_malloc(size);
+	return buf->bufferAlloc(buf->opaqueAllocatorContext, size);
 }
 
 inline void _BufferFree( Buffer *buf, void* memory ) {
 
-	return buf->bufferFree ? buf->bufferFree(buf->opaqueAllocatorContext, memory) : jl_free(memory);
+	buf->bufferFree(buf->opaqueAllocatorContext, memory);
 }
 
 inline void* _BufferRealloc( Buffer *buf, void* memory, size_t size ) {
 
-	return buf->bufferRealloc ? buf->bufferRealloc(buf->opaqueAllocatorContext, memory, size) : jl_realloc(memory, size);
+	return buf->bufferRealloc(buf->opaqueAllocatorContext, memory, size);
 }
 
 
 inline void BufferInitialize( Buffer *buffer, BufferType type, BufferGrowType growType, void* opaqueAllocatorContext, BufferAlloc bufferAlloc, BufferRealloc bufferRealloc, BufferFree bufferFree ) {
 
 	buffer->opaqueAllocatorContext = opaqueAllocatorContext;
-	buffer->bufferAlloc = bufferAlloc;
-	buffer->bufferFree = bufferFree;
-	buffer->bufferRealloc = bufferRealloc;
+	buffer->bufferAlloc = bufferAlloc ? bufferAlloc : DefaultBufferAlloc;
+	buffer->bufferFree = bufferFree ? bufferFree : DefaultBufferFree;
+	buffer->bufferRealloc = bufferRealloc ? bufferRealloc : DefaultBufferRealloc;
 
 	buffer->type = type;
 	buffer->growType = growType;

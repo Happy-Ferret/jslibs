@@ -571,106 +571,6 @@ DEFINE_FUNCTION( IdToObject ) {
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME()
-  Returns $TRUE if the value is a boolean value or object.
-**/
-DEFINE_FUNCTION( IsBoolean ) {
-
-	JL_ASSERT_ARGC(1);
-
-	if ( JSVAL_IS_BOOLEAN(JL_ARG(1)) ) {
-
-		*JL_RVAL = JSVAL_TRUE;
-		return JS_TRUE;
-	}
-
-	if ( JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
-
-		*JL_RVAL = JSVAL_FALSE;
-		return JS_TRUE;
-	}
-
-	*JL_RVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Boolean) ? JSVAL_TRUE : JSVAL_FALSE;
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME()
-  Returns $TRUE if the value is a number value or object.
-**/
-DEFINE_FUNCTION( IsNumber ) {
-
-	JL_ASSERT_ARGC(1);
-	if ( JSVAL_IS_NUMBER(JL_ARG(1)) ) {
-
-		*JL_RVAL = JSVAL_TRUE;
-		return JS_TRUE;
-	}
-
-	if ( JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
-
-		*JL_RVAL = JSVAL_FALSE;
-		return JS_TRUE;
-	}
-
-	*JL_RVAL = JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Number) ? JSVAL_TRUE : JSVAL_FALSE;
-	return JS_TRUE;
-	JL_BAD;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME()
-  Returns $TRUE if the value is a primitive ( null or not an object ).
-**/
-DEFINE_FUNCTION( IsPrimitive ) {
-
-	JL_INGORE(cx);
-	JL_ASSERT_ARGC(1);
-	*JL_RVAL = JSVAL_IS_PRIMITIVE(JL_ARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME()
-  Returns $TRUE if the value is a function.
-**/
-DEFINE_FUNCTION( IsFunction ) {
-
-	JL_INGORE(cx);
-	JL_ASSERT_ARGC(1);
-	*JL_RVAL = VALUE_IS_FUNCTION(cx, JL_ARG(1)) ? JSVAL_TRUE : JSVAL_FALSE;
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME()
-  Returns $TRUE if the value is a generator.
-**/
-DEFINE_FUNCTION( IsGenerator ) {
-
-	JL_ASSERT_ARGC(1);
-	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_IsGenerator(cx, JL_ARG(1)) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -1528,7 +1428,7 @@ DEFINE_PROPERTY_GETTER( disableGarbageCollection ) {
 
 	JSGCCallback cb = JS_SetGCCallback(cx, NULL);
 	JS_SetGCCallback(cx, cb);
-	*vp = cb == VetoingGCCallback ? JSVAL_TRUE : JSVAL_FALSE;
+	*vp = BOOLEAN_TO_JSVAL( cb == VetoingGCCallback );
 	return JS_TRUE;
 }
 
@@ -1668,11 +1568,6 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( MaybeCollectGarbage, 0 )
 		FUNCTION_ARGC( ObjectToId, 1 )
 		FUNCTION_ARGC( IdToObject, 1 )
-		FUNCTION_ARGC( IsBoolean, 1 )
-		FUNCTION_ARGC( IsNumber, 1 )
-		FUNCTION_ARGC( IsPrimitive, 1 )
-		FUNCTION_ARGC( IsFunction, 1 )
-		FUNCTION_ARGC( IsGenerator, 1 )
 		FUNCTION_ARGC( Warning, 1 )
 		FUNCTION_ARGC( Assert, 2 )
 		FUNCTION_ARGC( Halt, 0 )

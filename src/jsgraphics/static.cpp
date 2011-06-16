@@ -114,6 +114,9 @@ DEFINE_FUNCTION( Vec3Length ) {
 /**doc
 $TOC_MEMBER $INAME
  $ARRAY $INAME( vector [ , dest ] )
+   vector = vector / |vector|
+  $H note
+   If _dest_ is given, the result is stored in dest then _vector_ stay unchanged.
   $H example 1
   {{{
   var v = [6,7,8];
@@ -148,6 +151,8 @@ DEFINE_FUNCTION( Vec3Normalize ) {
 $TOC_MEMBER $INAME
  $ARRAY $INAME( vector, vector2 [ , dest ] )
   vector += vector2
+  $H note
+   If _dest_ is given, the result is stored in _dest_ then _vector_ and _vector2_ stay unchanged.
 **/
 DEFINE_FUNCTION( Vec3Add ) {
 	
@@ -174,6 +179,8 @@ DEFINE_FUNCTION( Vec3Add ) {
 $TOC_MEMBER $INAME
  $ARRAY $INAME( vector, vector2 [ , dest ] )
   vector -= vector2
+  $H note
+   If _dest_ is given, the result is stored in _dest_ then _vector_ and _vector2_ stay unchanged.
 **/
 DEFINE_FUNCTION( Vec3Sub ) {
 	
@@ -200,6 +207,8 @@ DEFINE_FUNCTION( Vec3Sub ) {
 $TOC_MEMBER $INAME
  $ARRAY $INAME( vector, vector2 [ , dest ] )
   vector *= vector2
+  $H note
+   If _dest_ is given, the result is stored in _dest_ then _vector_ and _vector2_ stay unchanged.
 **/
 DEFINE_FUNCTION( Vec3Cross ) {
 	
@@ -224,7 +233,7 @@ DEFINE_FUNCTION( Vec3Cross ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $REAL $INAME( vector, vector2 [ , dest ] )
+ $REAL $INAME( vector, vector2 )
   vector . vector2
 **/
 DEFINE_FUNCTION( Vec3Dot ) {
@@ -242,6 +251,8 @@ DEFINE_FUNCTION( Vec3Dot ) {
 	return JL_NativeToJsval(cx, Vector3Dot(&v, &v2), JL_RVAL);
 	JL_BAD;
 }
+
+
 
 
 
