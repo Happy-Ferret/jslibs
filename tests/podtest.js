@@ -100,25 +100,23 @@ function Pod() {
 	var taskList = [];
 
 	this.Step = function() {
+
+		var task = taskList.shift();
+		if ( !task )
+			return;
+			
+		if ( !IsGeneratorObject(task) ) {
+
+			task = task();	
+		}
 		
-		var task = taskList[0];
-		
-		if ( IsGenerator(task) ) {
+		if ( IsGeneratorObject(task) ) {
 		
 			try {
 
 				task.next();
-			} catch (ex if ex instanceof StopIteration) {
-
-				taskList.shift();
-			}
-			return;
-		}
-		
-		if ( IsFunction(task) ) {
-
-			task();
-			return;
+				taskList.push(task);
+			} catch (ex if ex instanceof StopIteration) {}
 		}
 	}
 	
@@ -127,21 +125,14 @@ function Pod() {
 		
 		return function() {
 			
-			taskList.push(task.apply(this, arguments));
+			var args = arguments;
+			taskList.push( function() task.apply(this, args) );
 		}
 	}
 	
 	this.CancelTask = function() {
 	
-		var task = taskList[0];
-		if ( !task )
-			return;
-
-		try {
-
-			task.send(true);
-		} catch (ex if ex instanceof StopIteration) { }
-		taskList.shift();
+		taskList = [];
 	}
 	
 	
@@ -151,34 +142,37 @@ function Pod() {
 	
 		m1.maxForce = force;
 	});
-	
+
 	this.PushRight = CreateTask(function(force) {
 	
 		m2.maxForce = force;
 	});
 	
-/*
-	this.PushRight = function(force) taskList.unshift(new function() {
-	
-		m2.maxForce = force;
-		yield;
-	});
-*/
 
+/*
 	this.Straight = function() taskList.unshift(new function() {
 	});
 
 	this.TurnUntil = function(direction, predicate) taskList.unshift(new function() {
 	});
 
-	this.Stop = function() taskList.unshift(new function() {
+*/
+
+	this.StopRotate = CreateTask(function() {
+	
+	
+	});
+
+
+
+	this.Stop = CreateTask(function() {
 	
 		var vel = center.linearVel;
 
 		var err = Vec3Dot( center.Vector3ToWorld([0,0,-1]), Vec3Normalize(vel) );
 
 		for (;;) {
-			
+
 			var front = center.Vector3ToWorld([0,0,1]);
 			var ok = -Vec3Dot( front, Vec3Normalize(vel) );
 			
@@ -187,14 +181,14 @@ function Pod() {
 			
 			var r1 = Vec3Dot( Vec3Sub(m1.body1.linearVel, vel), front );
 			var r2 = Vec3Dot( Vec3Sub(m2.body1.linearVel, vel), front );
-			
-			
 
-			Print( d1.toFixed(2), '  ', d2.toFixed(2), ' ok:', ok.toFixed(2) );
+
+			Print( ' d1:', d1.toFixed(2) );
+			Print( ' d2:', d2.toFixed(2) );
+			Print( ' ok:', ok.toFixed(2) );
 			Print( ' r1:', r1.toFixed(2) );
 			Print( ' r2:', r2.toFixed(2) );
-			Print( StringRepeat(' ', 20), '\r');
-
+			
 			var f1 = 0, f2 = 0;
 			
 			if ( ok < 0 && r1 < 1 && r2 < 1 ) {
@@ -209,28 +203,33 @@ function Pod() {
 			
 			}
 
-
 			var speed = Vec3Length(vel);
+			Print( ' speed:', speed.toFixed(2) );
+			
 			if ( speed < 0.1 && speed > -0.1 ) {
 
 				M1Force(0);
 				M2Force(0);
-				return;
+				break;
 			}
 
-
+			Print( ' f1:', f1.toFixed(2) );
+			Print( ' f2:', f2.toFixed(2) );
+			
 			M1Force(f1);
 			M2Force(f2);
 
-			if ( yield ) {
-
-				M1Force(0);
-				M2Force(0);
-				return;
-			}
-		}	
+			if ( yield )
+				break;
+			
+			Print( '\r');
+		}
 		
+		Print( StringRepeat(' ', 50), '\r');
+		M1Force(0);
+		M2Force(0);
 	});
+
 
 	this.UTurn = function() taskList.unshift(new function() {
 		
@@ -286,8 +285,8 @@ function Pod() {
 
 			yield;
 		}
-	
 	});
+	
 	
 	this.Aim = function(aim) taskList.unshift(new function() {
 		
@@ -353,9 +352,7 @@ var pod1 = new Pod();
 
 var pause = false;
 
-env3d.Exit = function() {}
-
-env3d.AddKeyListener(K_ESCAPE, function(polarity) { pod1.CancelTask(); });
+env3d.AddKeyListener(K_BACKSPACE, function(polarity) { pod1.CancelTask(); });
 
 env3d.AddKeyListener(K_SPACE, function(polarity) { if ( polarity ) pause = !pause });
 env3d.AddKeyListener(K_LEFT, function(polarity) { pod1.PushLeft(polarity ? 10 : 0) });
