@@ -2,6 +2,102 @@ LoadModule('jsstd');
 LoadModule('jsode');
 Exec('../common/tools.js');
 
+
+function ProcEnd(proc) {
+	
+	if ( proc.atExit )
+		while ( proc.atExit.length )
+			proc.atExit.pop()();
+}
+
+function StartAsyncProc( procedure ) {
+	
+//	Print( 'IsGeneratorFunction:', IsGeneratorFunction(procedure), '\n' );
+	
+	try {
+		void procedure.next()(function(result) {
+			try {
+				void procedure.send(arguments)(arguments.callee);
+			} catch(ex if ex == StopIteration) { ProcEnd(procedure) }
+		});
+	} catch(ex if ex == StopIteration) { ProcEnd(procedure) }
+}
+
+
+var taskList = [];
+
+function ScheduleProc(proc) {
+	
+	taskList.push(function() StartAsyncProc(proc));
+	return proc;
+}
+
+function WaitNext(callback) {
+
+	 taskList.push(callback);
+}
+
+function WaitProc(proc) {
+	
+	return function(callback) {
+		
+		if ( !proc.atExit )
+			proc.atExit = [];
+		proc.atExit.push(function() taskList.push(callback));
+	}
+}
+
+function Step() {
+
+	taskList.length && taskList.pop()();
+}
+
+
+/*
+// user code:
+
+function Proc1(name) {
+
+	for ( var i = 0; i < 10; ++ i ) {
+
+		Print(name);
+		yield WaitNext;
+	}
+	Print(name+'-');
+}
+
+
+function Proc2(name) {
+
+	for ( var i = 0; i < 10; ++ i ) {
+
+		Print(name);
+		
+		if ( i == 5 ) {
+
+			yield WaitProc(ScheduleProc(Proc1('y')));
+		}
+		yield WaitNext;
+	}
+	Print(name+'-');
+}
+
+
+ScheduleProc(Proc2('x'));
+
+
+var total = 2000;
+while ( !endSignal && total-- ) {
+
+	taskList.length && taskList.pop()();
+	Print('.');
+}
+
+throw 0;
+*/
+
+
+
 var w = new World();
 w.gravity = [0,0,-9.809];
 w.gravity = [0,0,0];
@@ -97,75 +193,33 @@ function Pod() {
 */		
 	}
 
-	var taskList = [];
-
-	this.Step = function() {
-
-		var task = taskList.shift();
-		if ( !task )
-			return;
-			
-		if ( !IsGeneratorObject(task) ) {
-
-			task = task();	
-		}
+	
+	
+	this.PushLeft = function(force) {
 		
-		if ( IsGeneratorObject(task) ) {
-		
-			try {
-
-				task.next();
-				taskList.push(task);
-			} catch (ex if ex instanceof StopIteration) {}
-		}
-	}
-	
-	
-	function CreateTask(task) {
-		
-		return function() {
-			
-			var args = arguments;
-			taskList.push( function() task.apply(this, args) );
-		}
-	}
-	
-	this.CancelTask = function() {
-	
-		taskList = [];
-	}
-	
-	
-	
-	
-	this.PushLeft = CreateTask(function(force) {
-	
 		m1.maxForce = force;
-	});
+		yield WaitNext;
+	}
 
-	this.PushRight = CreateTask(function(force) {
+	this.PushRight = function(force) {
 	
 		m2.maxForce = force;
-	});
+		yield WaitNext;
+	}
 	
 
-/*
 	this.Straight = function() taskList.unshift(new function() {
 	});
 
 	this.TurnUntil = function(direction, predicate) taskList.unshift(new function() {
 	});
 
-*/
 
-	this.StopRotate = CreateTask(function() {
-	
-	
-	});
+	this.StopRotate = function() {
+	};
 
 
-
-	this.Stop = CreateTask(function() {
+	this.Stop = function() {
 	
 		var vel = center.linearVel;
 
@@ -219,8 +273,7 @@ function Pod() {
 			M1Force(f1);
 			M2Force(f2);
 
-			if ( yield )
-				break;
+			yield WaitNext;
 			
 			Print( '\r');
 		}
@@ -228,7 +281,7 @@ function Pod() {
 		Print( StringRepeat(' ', 50), '\r');
 		M1Force(0);
 		M2Force(0);
-	});
+	};
 
 
 	this.UTurn = function() taskList.unshift(new function() {
@@ -283,7 +336,7 @@ function Pod() {
 			M1Force(f1);
 			M2Force(f2);
 
-			yield;
+			yield WaitNext;
 		}
 	});
 	
@@ -340,7 +393,9 @@ function Pod() {
 			yield;
 		}
 	});
-		
+
+
+	
 }
 
 var env3d = new Env3D();
@@ -355,15 +410,17 @@ var pause = false;
 env3d.AddKeyListener(K_BACKSPACE, function(polarity) { pod1.CancelTask(); });
 
 env3d.AddKeyListener(K_SPACE, function(polarity) { if ( polarity ) pause = !pause });
-env3d.AddKeyListener(K_LEFT, function(polarity) { pod1.PushLeft(polarity ? 10 : 0) });
-env3d.AddKeyListener(K_RIGHT, function(polarity) { pod1.PushRight(polarity ? 10 : 0) });
 
-env3d.AddKeyListener(K_DOWN, function(polarity) { if ( polarity ) pod1.Stop() });
-env3d.AddKeyListener(K_u, function(polarity) { pod1.UTurn() });
+env3d.AddKeyListener(K_LEFT, function(polarity) { ScheduleProc( pod1.PushLeft(polarity ? 10 : 0) ) });
+
+env3d.AddKeyListener(K_RIGHT, function(polarity) { ScheduleProc( pod1.PushRight(polarity ? 10 : 0) ) });
+
+env3d.AddKeyListener(K_DOWN, function(polarity) { if ( polarity ) ScheduleProc( pod1.Stop() ) });
+env3d.AddKeyListener(K_u, function(polarity) { ScheduleProc( pod1.UTurn() ) });
 
 while ( !endSignal ) {
 	
-	pod1.Step();
+	Step();
 	pause || w.Step(10);
 	pod1.Draw(env3d);
 	env3d.End();

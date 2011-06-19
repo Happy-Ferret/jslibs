@@ -6,6 +6,103 @@
 
 LoadModule('jsstd');
 
+/*
+var a = [];
+var t = TimeCounter();
+for ( var i = 0; i < 100000; ++i ) 
+	a.unshift(i);
+//while ( a.length ) a.shift();
+Print( TimeCounter() - t );
+throw 0;
+*/
+
+function ProcEnd(proc) {
+	
+	if ( proc.atExit )
+		while ( proc.atExit.length )
+			proc.atExit.pop()();
+}
+
+function StartAsyncProc( procedure ) {
+	
+	try {
+		void procedure.next()(function(result) {
+			try {
+				void procedure.send(arguments)(arguments.callee);
+			} catch(ex if ex == StopIteration) { ProcEnd(procedure) }
+		});
+	} catch(ex if ex == StopIteration) { ProcEnd(procedure) }
+}
+
+
+var taskList = [];
+
+function ScheduleProc(proc) {
+	
+	taskList.push(function() StartAsyncProc(proc));
+	return proc;
+}
+
+function WaitNext(callback) {
+
+	 taskList.push(callback);
+}
+
+function WaitProc(proc) {
+	
+	return function(callback) {
+		
+		if ( !proc.atExit )
+			proc.atExit = [];
+		proc.atExit.push(function() taskList.push(callback));
+	}
+}
+
+
+// user code:
+
+function Proc1(name) {
+
+	for ( var i = 0; i < 10; ++ i ) {
+
+		Print(name);
+		yield WaitNext;
+	}
+	Print(name+'-');
+}
+
+
+function Proc2(name) {
+
+	for ( var i = 0; i < 10; ++ i ) {
+
+		Print(name);
+		
+		if ( i == 5 ) {
+
+			yield WaitProc(ScheduleProc(Proc1('y')));
+		}
+		yield WaitNext;
+	}
+	Print(name+'-');
+}
+
+
+ScheduleProc(Proc2('x'));
+
+
+var total = 2000;
+while ( !endSignal && total-- ) {
+
+	taskList.length && taskList.pop()();
+	Print('.');
+}
+
+throw 0;
+
+
+
+
 var scheduler = new function() {
 
 	var taskList = [];
@@ -13,46 +110,54 @@ var scheduler = new function() {
 	
 	this.Step = function() {
 		
-		currentTask = taskList.shift();
-		if ( !currentTask )
+		if ( taskList.length == 0 )
 			return;
-		
+	
 		try {
-		
-			currentTask.next();
-			if ( currentTask )
-				taskList.push(currentTask);
+			
+			taskList[0].next();
+			taskList.push(taskList.shift());
 			
 		} catch (ex if ex instanceof StopIteration) {
+			
+			var current = taskList.shift();
+			current._atExit && current._atExit();
 		}
 	}
 	
-	this.Run = function(taskFct) {
+	this.Run = function(taskFct, sync) {
 		
-		return taskList.push(taskFct());
+		var task = taskFct();
+		if ( sync ) {
+
+			var current = taskList.shift();
+			task._atExit = function() taskList.push(current);
+		}
+		taskList.push(task);
 	}
-	
-	this.Wait = function(task) {
-	
-		// stop the current task until 'task' is finished
-	
-	}
-	
 }
 
+
+function Counter2(name) {
+	return function() {
+
+		for ( var i = 0; i < 10; ++ i ) {
+
+			Print(name);
+			yield;
+		}
+		Print(name+'-');
+	}
+}
 
 
 function Counter(name) {
 	return function() {
 
-		for (var i = 0; i < 10; ++i) {
-		
+		for ( var i = 0; i < 10; ++ i ) {
+
 			Print(name);
-			
-			var newTask = scheduler.Run( Counter('y') );
-			
-			scheduler.Wait(newTask);
-			
+			i == 5 && scheduler.Run( Counter2('y'), 1 );
 			yield;
 		}
 	}
@@ -61,10 +166,8 @@ function Counter(name) {
 
 scheduler.Run( Counter('x') );
 
-
-
-
-while ( !endSignal ) {
+var total = 2000;
+while ( !endSignal && total-- ) {
 
 	Print('.');
 	scheduler.Step();

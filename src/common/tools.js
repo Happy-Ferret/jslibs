@@ -23,7 +23,7 @@ function Env3D() {
 		Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
 		Ogl.Viewport(0,0,videoWidth,videoHeight);
 		Ogl.MatrixMode(Ogl.PROJECTION);
-		Ogl.Perspective(60, undefined, 1, 1000);
+		Ogl.Perspective(60, undefined, 1, 10000);
 		Ogl.MatrixMode(Ogl.MODELVIEW);
 		Ogl.ClearColor(0.2, 0.1, 0.4, 1);
 		Ogl.Enable(Ogl.DEPTH_TEST);
