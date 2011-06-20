@@ -1,3 +1,34 @@
+/// generator type test [ft]
+	
+	var g = function() {
+		yield;
+	}
+	
+	QA.ASSERT( typeof g == 'function', true );
+
+	QA.ASSERT( !IsGeneratorObject(g), true );
+	QA.ASSERT( IsGeneratorFunction(g), true );
+	
+	var g1 = g();
+
+	QA.ASSERT( typeof g1, 'object' );
+
+	QA.ASSERT( !(g2 instanceof Object), true );
+
+	QA.ASSERT(IsGeneratorObject(g1), true);
+	QA.ASSERT(IsGeneratorFunction(g1), true);
+	
+	var g2 = new g();
+
+	QA.ASSERT(typeof g2, 'object');
+
+	QA.ASSERT(g2 instanceof Object, true);
+
+	QA.ASSERT(IsGeneratorObject(g2), true);
+	QA.ASSERT(IsGeneratorFunction(g2), true);
+
+
+
 /// access all properties of the global object [ft]
 
 	for each ( item in global ) {

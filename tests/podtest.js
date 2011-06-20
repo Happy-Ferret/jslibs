@@ -3,28 +3,68 @@ LoadModule('jsode');
 Exec('../common/tools.js');
 
 
-function ProcEnd(proc) {
-	
-	if ( proc.atExit )
-		while ( proc.atExit.length )
-			proc.atExit.pop()();
+var currentTime = Date.now();
+var timeoutList = [];
+
+function AddTimeout( time, fct ) {
+
+	timeoutList.push([currentTime + time, fct]);
+	timeoutList.sort(function(a,b) a[0]-b[0]);
 }
 
-function StartAsyncProc( procedure ) {
-	
-//	Print( 'IsGeneratorFunction:', IsGeneratorFunction(procedure), '\n' );
-	
-	try {
-		void procedure.next()(function(result) {
-			try {
-				void procedure.send(arguments)(arguments.callee);
-			} catch(ex if ex == StopIteration) { ProcEnd(procedure) }
-		});
-	} catch(ex if ex == StopIteration) { ProcEnd(procedure) }
+function ProcessTimeout() {
+
+	var len = timeoutList.length;
+	for ( var i = 0; i < len; ++i )
+		if ( timeoutList[i][0] > currentTime )
+			break;
+	var exList = timeoutList.splice(0, i);
+	var len = exList.length;
+	for ( var i = 0; i < len; ++i )
+		exList[i][1]();
+	if ( timeoutList.length )
+		return timeoutList[0][0]-currentTime;
+	else
+		return Infinity;
 }
+
+
+function ProcWait(time) function(callback) AddTimeout(time, callback);
+
+
+
+function ProcEnd(proc) {
+	
+	var atExit = proc.atExit;
+	if ( atExit ) {
+	
+		var len = atExit.length;
+		while ( len-- )
+			atExit[len]();
+	}
+}
+
+
+function StartAsyncProc( proc ) {
+	
+	function inner(result) {
+		try {
+			proc.send(result)(inner);
+		} catch (ex if ex === StopIteration) { ProcEnd(proc) }
+	}
+	try {	
+		proc.next()(inner);
+	} catch (ex if ex === StopIteration) { ProcEnd(proc) }
+}
+
 
 
 var taskList = [];
+
+function Step() {
+	
+	taskList.length && taskList.pop()();
+}
 
 function ScheduleProc(proc) {
 	
@@ -37,64 +77,21 @@ function WaitNext(callback) {
 	 taskList.push(callback);
 }
 
-function WaitProc(proc) {
+function WaitProc(proc) function(callback) {
+		
+	if ( !proc.atExit )
+		proc.atExit = [];
+	proc.atExit.push(function() taskList.push(callback));
+}
+
+function KillProc(proc) {
 	
-	return function(callback) {
-		
-		if ( !proc.atExit )
-			proc.atExit = [];
-		proc.atExit.push(function() taskList.push(callback));
-	}
-}
-
-function Step() {
-
-	taskList.length && taskList.pop()();
+	proc.close();
+	ProcEnd(proc);
 }
 
 
-/*
-// user code:
 
-function Proc1(name) {
-
-	for ( var i = 0; i < 10; ++ i ) {
-
-		Print(name);
-		yield WaitNext;
-	}
-	Print(name+'-');
-}
-
-
-function Proc2(name) {
-
-	for ( var i = 0; i < 10; ++ i ) {
-
-		Print(name);
-		
-		if ( i == 5 ) {
-
-			yield WaitProc(ScheduleProc(Proc1('y')));
-		}
-		yield WaitNext;
-	}
-	Print(name+'-');
-}
-
-
-ScheduleProc(Proc2('x'));
-
-
-var total = 2000;
-while ( !endSignal && total-- ) {
-
-	taskList.length && taskList.pop()();
-	Print('.');
-}
-
-throw 0;
-*/
 
 
 
@@ -150,6 +147,13 @@ function Pod() {
 			ratio = 1;
 		m2.maxForce = ratio * 10;
 	}
+	
+	function MForce(m1ratio, m2ratio) {
+
+		M1Force(m1ratio);
+		M2Force(m2ratio);
+	}
+	
 	
 	this.Draw = function(env3d) {
 
@@ -208,18 +212,108 @@ function Pod() {
 	}
 	
 
-	this.Straight = function() taskList.unshift(new function() {
-	});
-
 	this.TurnUntil = function(direction, predicate) taskList.unshift(new function() {
 	});
+	
+	function GetRotationSpeed() {
+	
+		var front = center.Vector3ToWorld([0,0,1]);
+		var vel = center.linearVel;
+		return Vec3Dot( Vec3Sub(m1.body1.linearVel, vel), front );
+	}
 
+	function GetStraightRatio() {
+	
+		var vel = center.linearVel;
+		return Vec3Dot( center.Vector3ToWorld([0,0,1]), Vec3Normalize(vel) );
+	}
 
-	this.StopRotate = function() {
+	this.ReduceRotate = function(rot) {
+		
+		for (;;) {
+
+			var r1 = GetRotationSpeed();
+						
+			if ( Math.abs(r1) < rot ) {
+				
+				MForce(0,0);
+				return;
+			}
+			
+			if ( r1 > 0 ) {
+			
+				MForce(0,1);
+			} else {
+
+				MForce(1,0);
+			}
+			yield WaitNext;
+		}
 	};
+
+	
+	this.GoStraight = function() {
+
+		for (;;) {
+		
+			var newRot = GetRotationSpeed();
+
+//			Print( ' RotationAccel:', (newRot-rot).toFixed(10) );
+
+			var str = GetStraightRatio();
+			var rot = newRot;
+			
+			
+			Print( ' StraightRatio:', str.toFixed(2) );
+			Print( ' RotationSpeed:', rot.toFixed(2) );
+			Print( StringRepeat(' ', 30), '\r');
+			
+			if ( str < 0.99 || Math.abs(rot) > 0.5 ) {
+				
+				if ( rot > 0 ) {
+	
+					MForce(0,1);
+				} else {
+
+					MForce(1,0);
+				}
+			} else {
+				
+				MForce(0,0);
+			}
+			
+			
+			
+/*						
+			if ( err > 0.9 && Math.abs(GetRotationSpeed()) < 0.1 ) {
+
+				M1Force(0);
+				M2Force(0);
+				return;
+			}
+
+			yield WaitProc( ScheduleProc( pod1.ReduceRotate(1) ) );			
+ 
+			if ( err < 0 ) {
+			
+				M1Force(0);
+				M2Force(err);
+			} else {
+
+				M1Force(err);
+				M2Force(0);
+			}
+*/			
+			yield WaitNext;
+		}
+	
+	};
+	
 
 
 	this.Stop = function() {
+	
+		yield WaitProc( ScheduleProc( pod1.ReduceRotate(1) ) );
 	
 		var vel = center.linearVel;
 
@@ -275,13 +369,15 @@ function Pod() {
 
 			yield WaitNext;
 			
-			Print( '\r');
+			Print( StringRepeat(' ', 30), '\r');
 		}
 		
 		Print( StringRepeat(' ', 50), '\r');
 		M1Force(0);
 		M2Force(0);
 	};
+
+
 
 
 	this.UTurn = function() taskList.unshift(new function() {
@@ -409,7 +505,13 @@ var pause = false;
 
 env3d.AddKeyListener(K_BACKSPACE, function(polarity) { pod1.CancelTask(); });
 
-env3d.AddKeyListener(K_SPACE, function(polarity) { if ( polarity ) pause = !pause });
+env3d.AddKeyListener(K_PAUSE, function(polarity) { if ( polarity ) pause = !pause });
+
+env3d.AddKeyListener(K_SPACE, function(polarity) { 
+
+	ScheduleProc( pod1.GoStraight() )
+
+});
 
 env3d.AddKeyListener(K_LEFT, function(polarity) { ScheduleProc( pod1.PushLeft(polarity ? 10 : 0) ) });
 
@@ -418,11 +520,17 @@ env3d.AddKeyListener(K_RIGHT, function(polarity) { ScheduleProc( pod1.PushRight(
 env3d.AddKeyListener(K_DOWN, function(polarity) { if ( polarity ) ScheduleProc( pod1.Stop() ) });
 env3d.AddKeyListener(K_u, function(polarity) { ScheduleProc( pod1.UTurn() ) });
 
+
 while ( !endSignal ) {
 	
+	currentTime = Date.now();
 	Step();
 	pause || w.Step(10);
 	pod1.Draw(env3d);
 	env3d.End();
-	Sleep(7);
+	
+	var n = ProcessTimeout();
+	if ( n > 10 )
+		n = 10;
+	Sleep(n);
 }

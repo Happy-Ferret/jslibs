@@ -5,37 +5,63 @@
 //LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
 
 LoadModule('jsstd');
+LoadModule('jsdebug');
 
 /*
-var a = [];
-var t = TimeCounter();
-for ( var i = 0; i < 100000; ++i ) 
-	a.unshift(i);
-//while ( a.length ) a.shift();
-Print( TimeCounter() - t );
+var inside;
+function gen() {
+	
+	Print('*** ', this.a);
+	yield;
+}
+
+var g = gen.call( {a:1} );
+g.next();
+
+
+// In a generator, why the 'this' object is not the generator instance itself ?
+// 
+
 throw 0;
 */
 
+
+
+SetPerfTestMode();
+
+
 function ProcEnd(proc) {
 	
-	if ( proc.atExit )
-		while ( proc.atExit.length )
-			proc.atExit.pop()();
+	var atExit = proc.atExit;
+	if ( atExit ) {
+	
+		var len = atExit.length;
+		while ( len-- )
+			atExit[len]();
+	}
 }
 
-function StartAsyncProc( procedure ) {
+
+function StartAsyncProc( proc ) {
 	
-	try {
-		void procedure.next()(function(result) {
-			try {
-				void procedure.send(arguments)(arguments.callee);
-			} catch(ex if ex == StopIteration) { ProcEnd(procedure) }
-		});
-	} catch(ex if ex == StopIteration) { ProcEnd(procedure) }
+	function inner(result) {
+		try {
+			proc.send(result)(inner);
+		} catch (ex if ex === StopIteration) { ProcEnd(proc) }
+	}
+	try {	
+		proc.next()(inner);
+	} catch (ex if ex === StopIteration) { ProcEnd(proc) }
 }
+
 
 
 var taskList = [];
+
+function Step() {
+	
+	taskList.length && taskList.pop()();
+}
 
 function ScheduleProc(proc) {
 	
@@ -48,15 +74,20 @@ function WaitNext(callback) {
 	 taskList.push(callback);
 }
 
-function WaitProc(proc) {
-	
-	return function(callback) {
+function WaitProc(proc) function(callback) {
 		
-		if ( !proc.atExit )
-			proc.atExit = [];
-		proc.atExit.push(function() taskList.push(callback));
-	}
+	if ( !proc.atExit )
+		proc.atExit = [];
+	proc.atExit.push(function() taskList.push(callback));
 }
+
+function KillProc(proc) {
+	
+	proc.close();
+	ProcEnd(proc);
+}
+
+
 
 
 // user code:
@@ -65,38 +96,50 @@ function Proc1(name) {
 
 	for ( var i = 0; i < 10; ++ i ) {
 
-		Print(name);
+//		Print(name);
 		yield WaitNext;
 	}
-	Print(name+'-');
+//	Print(name+'-');
 }
 
 
 function Proc2(name) {
 
-	for ( var i = 0; i < 10; ++ i ) {
+	for ( var i = 0; true; ++ i ) {
 
-		Print(name);
+//		Print(name);
 		
-		if ( i == 5 ) {
+//		if ( i == 5 ) {
+//			yield WaitProc(ScheduleProc(Proc1('y')));
+//		}
+//		ScheduleProc(Proc1());
 
-			yield WaitProc(ScheduleProc(Proc1('y')));
-		}
-		yield WaitNext;
+		yield WaitProc(ScheduleProc(Proc1('y')));
+		
+//		yield WaitNext;
 	}
 	Print(name+'-');
 }
 
 
-ScheduleProc(Proc2('x'));
+
+var proc2 = ScheduleProc(Proc2('x'));
 
 
-var total = 2000;
-while ( !endSignal && total-- ) {
 
-	taskList.length && taskList.pop()();
-	Print('.');
+var t = Date.now();
+
+for ( var i = 0; i < 10000 && !endSignal; ++i ) {
+
+	Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); 
+	//Print('.');
 }
+
+var t = Date.now() - t;
+
+
+
+Print( 'time:'+(1000 * (i*16) / t)+'fps', '\n' );
 
 throw 0;
 
