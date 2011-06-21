@@ -1149,12 +1149,48 @@ JL_itoa10(int32_t val, char *buf) {
 	JL_itoa10(val, (char*)alloca(JL_ITOA10_MAX_DIGITS))
 
 
+/* just a test
+#if defined(XP_WIN)
+
+#pragma comment(lib, "Winmm.lib")
+#include "Mmsystem.h"
+
+ALWAYS_INLINE void CALLBACK 
+AccurateSleepCallback(UINT uiID, UINT uiMsg, DWORD dwUser, DWORD dw1, DWORD dw2) {
+
+	LeaveCriticalSection((CRITICAL_SECTION*)dwUser);
+	EnterCriticalSection((CRITICAL_SECTION*)dwUser);
+}
+
+ALWAYS_INLINE void
+AccurateSleep(uint32_t ms) {
+	
+	CRITICAL_SECTION cs;
+	InitializeCriticalSection(&cs);
+	timeSetEvent(0, 0, AccurateSleepCallback, (DWORD)&cs, TIME_ONESHOT);
+
+	timeSetEvent(ms, 0, AccurateSleepCallback, (DWORD)&cs, TIME_ONESHOT);
+
+	EnterCriticalSection(&cs);
+	LeaveCriticalSection(&cs);
+
+	DeleteCriticalSection(&cs);
+}
+
+#endif
+*/
+
 
 ALWAYS_INLINE void
 SleepMilliseconds(uint32_t ms) {
 
 #if defined(XP_WIN)
-	Sleep(ms); // winbase.h
+	
+//	if ( ms == 1 )
+//		AccurateSleep(ms);
+//	else
+		Sleep(ms); // winbase.h
+
 #elif defined(XP_UNIX)
 	usleep(ms * 1000); // unistd.h
 #else

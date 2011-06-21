@@ -1,5 +1,10 @@
 LoadModule('jsstd');
 
+Sleep(1000);
+
+throw 0;
+
+
 //Exec('../common/tools.js'); RunQATests('-rep 1 -nogcBetweenTests Exec.error'); throw 0;
 
 //LoadModule('jsstd'); Exec('../../tests/podtest.js'); throw 0;

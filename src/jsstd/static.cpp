@@ -1399,6 +1399,7 @@ DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
 
 	JL_INGORE(id);
 	JL_INGORE(obj);
+	JL_INGORE(strict);
 
 	// <shaver>	you could install a vetoing callback!
 	// <crowder>	oh, true
@@ -1536,6 +1537,9 @@ DEFINE_FUNCTION( jsstdTest ) {
 
 
 DEFINE_INIT() {
+
+	JL_INGORE(proto);
+	JL_INGORE(sc);
 
 	INIT_CLASS( OperationLimit );
 	return JS_TRUE;

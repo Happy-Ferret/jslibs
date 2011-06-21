@@ -1,12 +1,73 @@
 LoadModule('jsstd');
+LoadModule('jsio');
+LoadModule('jsimage');
 LoadModule('jsode');
+LoadModule('jsprotex');
+LoadModule('jstrimesh');
+LoadModule('jssdl');
+LoadModule('jsgraphics');
+
 Exec('../common/tools.js');
 
+
+
+var taskList = [];
+
+function _ProcEnd(proc) {
+	
+	var atExit = proc.atExit;
+	if ( atExit ) {
+	
+		var len = atExit.length;
+		for ( var i = 0; i < len; ++i )
+			taskList.push(atExit[i]);
+	}
+}
+
+function StartProc(proc) {
+	
+	taskList.push(function inner(result) {
+	
+		try {
+			proc.send(result)(inner);
+		} catch (ex if ex === StopIteration) {
+			_ProcEnd(proc);
+		}
+	});
+	return proc;
+}
+
+function PWaitProc(proc) function(callback) {
+		
+	if ( !proc.atExit )
+		proc.atExit = [];
+	proc.atExit.push(function() taskList.push(callback));
+}
+
+function PIdle(callback) {
+
+	 taskList.push(callback);
+}
+
+function PKill(proc) {
+	
+	if ( proc ) {
+		
+		proc.close();
+		_ProcEnd(proc);
+	} else {
+		
+		throw StopIteration;
+	}
+}
+
+
+// timer
 
 var currentTime = Date.now();
 var timeoutList = [];
 
-function AddTimeout( time, fct ) {
+function AddTimeout(time, fct) {
 
 	timeoutList.push([currentTime + time, fct]);
 	timeoutList.sort(function(a,b) a[0]-b[0]);
@@ -21,77 +82,97 @@ function ProcessTimeout() {
 	var exList = timeoutList.splice(0, i);
 	var len = exList.length;
 	for ( var i = 0; i < len; ++i )
-		exList[i][1]();
-	if ( timeoutList.length )
-		return timeoutList[0][0]-currentTime;
+		taskList.push(exList[i][1]);
+}
+
+function PSleep(time) function(callback) AddTimeout(time, callback);
+
+
+// event
+
+function PCreateEvent(manualReset, initialState) {
+
+	return [[], initialState, manualReset];
+}
+
+function PResetEvent(event) {
+	
+	event[1] = false;
+}
+
+function PFireEvent(event) {
+
+	var len = event[0].length;
+	for ( var i = 0; i < len; ++i )
+		taskList.push(event[0][i]);
+	event[0].length = 0;
+	event[1] = event[2];
+}
+
+function PWaitEvent(event) function(callback) {
+
+	if ( event[1] )
+		taskList.push(callback);
 	else
-		return Infinity;
+		event[0].push(callback);
 }
 
 
-function ProcWait(time) function(callback) AddTimeout(time, callback);
+// Semaphore
 
-
-
-function ProcEnd(proc) {
+function PCreateSemaphore(initialCount) {
 	
-	var atExit = proc.atExit;
-	if ( atExit ) {
+	return [[], initialCount];
+}
+
+function PReleaseSemaphore(semaphore) {
 	
-		var len = atExit.length;
-		while ( len-- )
-			atExit[len]();
+	if ( semaphore[0].length )
+		taskList.push(semaphore[0].shift());
+	else
+		++semaphore[1];
+}
+
+function PAcquireSemaphore(semaphore) function(callback) {
+
+	if ( semaphore[1] > 0 ) {
+	
+		--semaphore[1];
+		taskList.push(callback);
+	} else {
+	
+		semaphore[0].push(callback);
 	}
 }
 
 
-function StartAsyncProc( proc ) {
+// Step
+
+function Step(elapsed, maxWait) {
+
+	currentTime += elapsed;
+	ProcessTimeout();
 	
-	function inner(result) {
-		try {
-			proc.send(result)(inner);
-		} catch (ex if ex === StopIteration) { ProcEnd(proc) }
-	}
-	try {	
-		proc.next()(inner);
-	} catch (ex if ex === StopIteration) { ProcEnd(proc) }
-}
+	var wait;
+	if ( timeoutList.length )
+		wait = Math.min(timeoutList[0][0] - currentTime, maxWait);
+	else
+		wait = maxWait;
 
-
-
-var taskList = [];
-
-function Step() {
-	
-	taskList.length && taskList.pop()();
-}
-
-function ScheduleProc(proc) {
-	
-	taskList.push(function() StartAsyncProc(proc));
-	return proc;
-}
-
-function WaitNext(callback) {
-
-	 taskList.push(callback);
-}
-
-function WaitProc(proc) function(callback) {
+	var len = taskList.length;
+	if ( len ) {
 		
-	if ( !proc.atExit )
-		proc.atExit = [];
-	proc.atExit.push(function() taskList.push(callback));
-}
-
-function KillProc(proc) {
+		var tmp = taskList;
+		taskList = [];
+		for ( var i = 0; i < len; ++i )
+			tmp[i]();
+	}
 	
-	proc.close();
-	ProcEnd(proc);
+	Sleep(Math.floor(wait));
 }
 
 
-
+////////////////////////////////////
 
 
 
@@ -132,40 +213,36 @@ function Pod() {
 	
 	function M1Force(ratio) {
 		
-		if ( ratio < 0 )
-			ratio = 0;
-		else if ( ratio > 1 )
-			ratio = 1;
-		m1.maxForce = ratio * 10;
+		m1.maxForce = Math.max( Math.min(ratio, 1), 0 ) * 10;
 	}
 
 	function M2Force(ratio) {
-		
-		if ( ratio < 0 )
-			ratio = 0;
-		else if ( ratio > 1 )
-			ratio = 1;
-		m2.maxForce = ratio * 10;
+
+		m2.maxForce = Math.max( Math.min(ratio, 1), 0 ) * 10;
 	}
 	
 	function MForce(m1ratio, m2ratio) {
 
-		M1Force(m1ratio);
-		M2Force(m2ratio);
+		if ( m1ratio != undefined )
+			m1.maxForce = Math.max( Math.min(m1ratio, 1), 0 ) * 10;
+		
+		if ( m2ratio != undefined )
+			m2.maxForce = Math.max( Math.min(m2ratio, 1), 0 ) * 10;
 	}
 	
 	
 	this.Draw = function(env3d) {
 
-	//	env3d.AddTrail(1, m1.body1.position);
-	//	env3d.AddTrail(2, m2.body1.position);
-		env3d.AddTrail(1, center.position);
+	//	env3d.AddTrail(1, center.position);
+
+		env3d.AddTrail(1, m1.body1.position);
+		env3d.AddTrail(2, m2.body1.position);
 
 		env3d.Begin();
 		env3d.DrawGrid();
 		
 		env3d.DrawTrail(1);
-	//	env3d.DrawTrail(2);
+		env3d.DrawTrail(2);
 		
 		Ogl.PushMatrix();
 		Ogl.MultMatrix(m1.body1);
@@ -175,9 +252,29 @@ function Pod() {
 		Ogl.Color( 1,1,1, 1 ); Ogl.Vertex(0,0,-1); Ogl.Vertex(0,0,-1-m1.maxForce);
 		Ogl.End();
 		Ogl.LineWidth(1);
-
 		Ogl.PopMatrix();
 
+		Ogl.PushMatrix();
+		Ogl.MultMatrix(center);
+		Ogl.Scale(5);
+		Ogl.LineWidth(1);
+		Ogl.Begin(Ogl.LINES);
+		Ogl.Color( 1,1,1, 1 ); Ogl.Vertex(0,0,0); Ogl.Vertex(0,0,1);
+		Ogl.End();
+		Ogl.PopMatrix();
+		
+		Ogl.PushMatrix();
+//		Ogl.MultMatrix(center);
+		var pos = center.position;
+		Ogl.Translate(pos[0], pos[1], pos[2]);
+		Ogl.Scale(1);
+		Ogl.LineWidth(1);
+		Ogl.Begin(Ogl.LINES);
+		Ogl.Color( 1,0.2,0.2, 0.5 ); Ogl.Vertex(0,0,0); Ogl.Vertex(/*Vec3Normalize*/(center.linearVel));
+		Ogl.End();
+		Ogl.PopMatrix();
+		
+		
 		Ogl.PushMatrix();
 		Ogl.MultMatrix(m2.body1);
 		env3d.Draw3DArrow();
@@ -202,13 +299,13 @@ function Pod() {
 	this.PushLeft = function(force) {
 		
 		m1.maxForce = force;
-		yield WaitNext;
+		yield PIdle;
 	}
 
 	this.PushRight = function(force) {
 	
 		m2.maxForce = force;
-		yield WaitNext;
+		yield PIdle;
 	}
 	
 
@@ -217,9 +314,10 @@ function Pod() {
 	
 	function GetRotationSpeed() {
 	
-		var front = center.Vector3ToWorld([0,0,1]);
-		var vel = center.linearVel;
-		return Vec3Dot( Vec3Sub(m1.body1.linearVel, vel), front );
+		//var front = center.Vector3ToWorld([0,0,1]);
+		//var vel = center.linearVel;
+		//return Vec3Dot( Vec3Sub(m1.body1.linearVel, vel), front );
+		return center.angularVel[1];
 	}
 
 	function GetStraightRatio() {
@@ -227,7 +325,20 @@ function Pod() {
 		var vel = center.linearVel;
 		return Vec3Dot( center.Vector3ToWorld([0,0,1]), Vec3Normalize(vel) );
 	}
-
+	
+	function GetStraightRad() {
+	
+		var vel = center.linearVel;
+		var str = Vec3Dot( center.Vector3ToWorld([0,0,1]), Vec3Normalize(vel) );
+		var dir = Vec3Dot( center.Vector3ToWorld([1,0,0]), vel );
+		var radError = Math.PI/2 - Math.asin(str);
+		if ( dir < 0 )
+			radError = -radError;
+		return radError;
+	}
+	
+	
+/*
 	this.ReduceRotate = function(rot) {
 		
 		for (;;) {
@@ -247,26 +358,111 @@ function Pod() {
 
 				MForce(1,0);
 			}
-			yield WaitNext;
+			yield PIdle;
 		}
 	};
+*/
 
+	var maxRotationAccelSpeed;
+
+	var TestMaxRotationSpeed = function() {
 	
-	this.GoStraight = function() {
+		MForce(1,0);
+		yield PSleep(10);
+		var tmp = GetRotationSpeed();
+		yield PSleep(100);
+		maxRotationAccelSpeed = (GetRotationSpeed() - tmp)/100;
+		MForce(0,0);
+		
+//		Print('max rotation speed: ', maxRotationAccelSpeed, '\n');
+	}
+	
+	this.StopRotation = function() {
+	
+		if ( maxRotationAccelSpeed == undefined )
+			yield PWaitProc(StartProc(TestMaxRotationSpeed()));
+
+		var currentRotationSpeed = GetRotationSpeed();
+//		Print('rotation speed: ', currentRotationSpeed, '\n');
+		
+		var time = currentRotationSpeed / maxRotationAccelSpeed;
+
+		if ( time < 0 )
+			MForce(1,0);
+		else 
+			MForce(0,1);
+		
+		yield PSleep(Math.abs(time));
+		
+		MForce(0,0);
+	}
+	
+	
+	this.DisplayInfo = function() {
 
 		for (;;) {
-		
-			var newRot = GetRotationSpeed();
-
-//			Print( ' RotationAccel:', (newRot-rot).toFixed(10) );
-
+			
 			var str = GetStraightRatio();
-			var rot = newRot;
-			
-			
 			Print( ' StraightRatio:', str.toFixed(2) );
-			Print( ' RotationSpeed:', rot.toFixed(2) );
+
+			var radError = GetStraightRad();
+			Print( ' radError:', radError.toFixed(2) );
+			
+			Print( ' maxRotationAccelSpeed:', maxRotationAccelSpeed ? maxRotationAccelSpeed.toFixed(2) : '      ' );
+
+			Print( ' angularVel:', center.angularVel[1].toFixed(2) );
+			
+			var vel = center.linearVel;
+			Print( ' vel:', vel[0].toFixed(2), ',', vel[1].toFixed(2), ',', vel[2].toFixed(2) );
+			
 			Print( StringRepeat(' ', 30), '\r');
+			yield PSleep(Math.abs(50));
+		}
+	}
+	
+
+	this.GoStraight = function() {
+
+		if ( maxRotationAccelSpeed == undefined )
+			yield PWaitProc(StartProc(TestMaxRotationSpeed()));
+
+		yield PWaitProc(StartProc(this.StopRotation()));
+		
+	
+		for (;;) {
+
+			var radError = GetStraightRad();
+			var time = radError / maxRotationAccelSpeed;
+			
+			// d = 0.5 * a * t^2
+			// t = sqrt( d / 0.5 * a )
+			
+			time = Math.sqrt( Math.abs(radError * 2 * maxRotationAccelSpeed) );
+			
+			Print( '\n', time, '\n' );
+
+			if ( time < 0 )
+				MForce(1,0);
+			else 
+				MForce(0,1);
+				
+			yield PSleep(Math.abs(time));
+				
+			if ( time < 0 )
+				MForce(0,1);
+			else 
+				MForce(1,0);
+				
+			yield PSleep(Math.abs(time));
+			
+			MForce(0,0);
+			
+			return;
+	
+			
+			yield PIdle;
+
+		continue;
 			
 			if ( str < 0.99 || Math.abs(rot) > 0.5 ) {
 				
@@ -292,7 +488,7 @@ function Pod() {
 				return;
 			}
 
-			yield WaitProc( ScheduleProc( pod1.ReduceRotate(1) ) );			
+			yield WaitProc( StartProc( pod1.ReduceRotate(1) ) );			
  
 			if ( err < 0 ) {
 			
@@ -304,7 +500,7 @@ function Pod() {
 				M2Force(0);
 			}
 */			
-			yield WaitNext;
+			yield PIdle;
 		}
 	
 	};
@@ -313,7 +509,7 @@ function Pod() {
 
 	this.Stop = function() {
 	
-		yield WaitProc( ScheduleProc( pod1.ReduceRotate(1) ) );
+		yield WaitProc( StartProc( pod1.ReduceRotate(1) ) );
 	
 		var vel = center.linearVel;
 
@@ -367,7 +563,7 @@ function Pod() {
 			M1Force(f1);
 			M2Force(f2);
 
-			yield WaitNext;
+			yield PIdle;
 			
 			Print( StringRepeat(' ', 30), '\r');
 		}
@@ -432,7 +628,7 @@ function Pod() {
 			M1Force(f1);
 			M2Force(f2);
 
-			yield WaitNext;
+			yield PIdle;
 		}
 	});
 	
@@ -503,34 +699,36 @@ var pod1 = new Pod();
 
 var pause = false;
 
-env3d.AddKeyListener(K_BACKSPACE, function(polarity) { pod1.CancelTask(); });
+// env3d.AddKeyListener(K_BACKSPACE, function(polarity) { pod1.CancelTask(); });
 
 env3d.AddKeyListener(K_PAUSE, function(polarity) { if ( polarity ) pause = !pause });
 
 env3d.AddKeyListener(K_SPACE, function(polarity) { 
 
-	ScheduleProc( pod1.GoStraight() )
+	if ( !polarity )
+		return;
+	StartProc( pod1.GoStraight() )
+//	StartProc( pod1.StopRotation() )
 
 });
 
-env3d.AddKeyListener(K_LEFT, function(polarity) { ScheduleProc( pod1.PushLeft(polarity ? 10 : 0) ) });
+env3d.AddKeyListener(K_LEFT, function(polarity) { StartProc( pod1.PushLeft(polarity ? 10 : 0) ) });
 
-env3d.AddKeyListener(K_RIGHT, function(polarity) { ScheduleProc( pod1.PushRight(polarity ? 10 : 0) ) });
+env3d.AddKeyListener(K_RIGHT, function(polarity) { StartProc( pod1.PushRight(polarity ? 10 : 0) ) });
 
-env3d.AddKeyListener(K_DOWN, function(polarity) { if ( polarity ) ScheduleProc( pod1.Stop() ) });
-env3d.AddKeyListener(K_u, function(polarity) { ScheduleProc( pod1.UTurn() ) });
+env3d.AddKeyListener(K_DOWN, function(polarity) { if ( polarity ) StartProc( pod1.Stop() ) });
+env3d.AddKeyListener(K_u, function(polarity) { StartProc( pod1.UTurn() ) });
+
+
+StartProc( pod1.DisplayInfo() )
 
 
 while ( !endSignal ) {
 	
-	currentTime = Date.now();
-	Step();
 	pause || w.Step(10);
 	pod1.Draw(env3d);
 	env3d.End();
 	
-	var n = ProcessTimeout();
-	if ( n > 10 )
-		n = 10;
-	Sleep(n);
+	Step(10, 10);
+	
 }

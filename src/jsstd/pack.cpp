@@ -661,6 +661,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( useNetworkEndian ) {
 
 	JL_INGORE(id);
+	JL_INGORE(strict);
 
 	JL_ASSERT_THIS_INSTANCE();
 	bool useNetworkEndian;

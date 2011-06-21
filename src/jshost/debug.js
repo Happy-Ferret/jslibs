@@ -1,3 +1,4 @@
+"use strict";
 //RunJsircbot(false); throw 0;
 //var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 //Exec('../common/tools.js'); var QA = FakeQAApi;  RunLocalQAFile();
@@ -7,214 +8,262 @@
 LoadModule('jsstd');
 LoadModule('jsdebug');
 
-/*
-var inside;
-function gen() {
-	
-	Print('*** ', this.a);
-	yield;
-}
-
-var g = gen.call( {a:1} );
-g.next();
-
-
-// In a generator, why the 'this' object is not the generator instance itself ?
-// 
-
-throw 0;
-*/
-
-
-
 SetPerfTestMode();
 
-
-function ProcEnd(proc) {
-	
-	var atExit = proc.atExit;
-	if ( atExit ) {
-	
-		var len = atExit.length;
-		while ( len-- )
-			atExit[len]();
-	}
-}
-
-
-function StartAsyncProc( proc ) {
-	
-	function inner(result) {
-		try {
-			proc.send(result)(inner);
-		} catch (ex if ex === StopIteration) { ProcEnd(proc) }
-	}
-	try {	
-		proc.next()(inner);
-	} catch (ex if ex === StopIteration) { ProcEnd(proc) }
-}
 
 
 
 var taskList = [];
 
-function Step() {
+function _ProcEnd(proc) {
 	
-	taskList.length && taskList.pop()();
+	var atExit = proc.atExit;
+	if ( atExit ) {
+	
+		var len = atExit.length;
+		for ( var i = 0; i < len; ++i )
+			taskList.push(atExit[i]);
+	}
 }
 
-function ScheduleProc(proc) {
+function StartProc(proc) {
 	
-	taskList.push(function() StartAsyncProc(proc));
+	taskList.push(function inner(result) {
+	
+		try {
+			proc.send(result)(inner);
+		} catch (ex if ex === StopIteration) {
+			_ProcEnd(proc);
+		}
+	});
 	return proc;
 }
 
-function WaitNext(callback) {
-
-	 taskList.push(callback);
-}
-
-function WaitProc(proc) function(callback) {
+function PWaitProc(proc) function(callback) {
 		
 	if ( !proc.atExit )
 		proc.atExit = [];
 	proc.atExit.push(function() taskList.push(callback));
 }
 
-function KillProc(proc) {
+function PIdle(callback) {
+
+	 taskList.push(callback);
+}
+
+function PKill(proc) {
 	
-	proc.close();
-	ProcEnd(proc);
+	if ( proc ) {
+		
+		proc.close();
+		_ProcEnd(proc);
+	} else {
+		
+		throw StopIteration;
+	}
+}
+
+
+// timer
+
+var currentTime = Date.now();
+var timeoutList = [];
+
+function AddTimeout(time, fct) {
+
+	timeoutList.push([currentTime + time, fct]);
+	timeoutList.sort(function(a,b) a[0]-b[0]);
+}
+
+function ProcessTimeout() {
+
+	var len = timeoutList.length;
+	for ( var i = 0; i < len; ++i )
+		if ( timeoutList[i][0] > currentTime )
+			break;
+	var exList = timeoutList.splice(0, i);
+	var len = exList.length;
+	for ( var i = 0; i < len; ++i )
+		taskList.push(exList[i][1]);
+}
+
+function PSleep(time) function(callback) AddTimeout(time, callback);
+
+
+// event
+
+function PCreateEvent(manualReset, initialState) {
+
+	return [[], initialState, manualReset];
+}
+
+function PResetEvent(event) {
+	
+	event[1] = false;
+}
+
+function PFireEvent(event) {
+
+	var len = event[0].length;
+	for ( var i = 0; i < len; ++i )
+		taskList.push(event[0][i]);
+	event[0].length = 0;
+	event[1] = event[2];
+}
+
+function PWaitEvent(event) function(callback) {
+
+	if ( event[1] )
+		taskList.push(callback);
+	else
+		event[0].push(callback);
+}
+
+
+// Semaphore
+
+function PCreateSemaphore(initialCount) {
+	
+	return [[], initialCount];
+}
+
+function PReleaseSemaphore(semaphore) {
+	
+	if ( semaphore[0].length )
+		taskList.push(semaphore[0].shift());
+	else
+		++semaphore[1];
+}
+
+function PAcquireSemaphore(semaphore) function(callback) {
+
+	if ( semaphore[1] > 0 ) {
+	
+		--semaphore[1];
+		taskList.push(callback);
+	} else {
+	
+		semaphore[0].push(callback);
+	}
+}
+
+
+// Step
+
+function Step(maxWait) {
+
+	currentTime = Date.now();
+	ProcessTimeout();
+	
+	var wait;
+	if ( timeoutList.length )
+		wait = Math.min(timeoutList[0][0] - currentTime, maxWait);
+	else
+		wait = maxWait;
+
+	var len = taskList.length;
+	if ( len ) {
+		
+		var tmp = taskList;
+		taskList = [];
+		for ( var i = 0; i < len; ++i )
+			tmp[i]();
+	}
+	
+	Sleep(wait);
+}
+
+
+///////////////////////////////
+// user code
+
+
+
+function GetAResult(callback) {
+	
+	AddTimeout(10, function() callback('{res}'));
 }
 
 
 
+// yield PWaitProc(StartProc(Proc1('y')));
 
-// user code:
+var ev = PCreateEvent(true);
+
+var sem = PCreateSemaphore(3);
+
 
 function Proc1(name) {
 
-	for ( var i = 0; i < 10; ++ i ) {
-
-//		Print(name);
-		yield WaitNext;
-	}
-//	Print(name+'-');
-}
-
-
-function Proc2(name) {
-
-	for ( var i = 0; true; ++ i ) {
-
-//		Print(name);
+	try {
 		
-//		if ( i == 5 ) {
-//			yield WaitProc(ScheduleProc(Proc1('y')));
-//		}
-//		ScheduleProc(Proc1());
+		var i = 0;
 
-		yield WaitProc(ScheduleProc(Proc1('y')));
+		for (;;) {
+			
+//			if ( i++ == 5 )
+//				PKill();
+
+			Print(name);
+			
+			yield PWaitEvent(ev);
+			
+//			yield PAcquireSemaphore(sem);
+			
+//			var res = yield GetAResult;
+//			Print(res);
+		}
+	
+	} finally {
 		
-//		yield WaitNext;
+		Print('[end of '+name+']');
 	}
-	Print(name+'-');
 }
 
 
 
-var proc2 = ScheduleProc(Proc2('x'));
+
+var p = Proc1('y');
+
+StartProc(p);
+
+//AddTimeout(2000, function() PKill(p));
+
+//AddTimeout(1000, function() PFireEvent(ev));
+//AddTimeout(2000, function() PFireEvent(ev));
+
+AddTimeout(1000, function() PFireEvent(ev));
+
+//AddTimeout(2000, function() PReleaseSemaphore(sem));
+//AddTimeout(1000, function() PReleaseSemaphore(sem));
+//AddTimeout(3000, function() PReleaseSemaphore(sem));
+
+//Print(uneval(timeoutList)); throw 0;
 
 
 
-var t = Date.now();
+//var t = Date.now();
 
-for ( var i = 0; i < 10000 && !endSignal; ++i ) {
+//for ( var i = 0; i < 10000 && !endSignal; ++i ) {
+while ( !endSignal ) {
 
-	Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); Step(); 
-	//Print('.');
+	Step(5);
+//	Print('.');
 }
 
-var t = Date.now() - t;
+//var t = Date.now() - t;
+//Print( 'time:'+(1000 * (i*1) / t)+'fps', '\n' );
 
-
-
-Print( 'time:'+(1000 * (i*16) / t)+'fps', '\n' );
 
 throw 0;
 
 
 
 
-var scheduler = new function() {
-
-	var taskList = [];
-	var currentTask;
-	
-	this.Step = function() {
-		
-		if ( taskList.length == 0 )
-			return;
-	
-		try {
-			
-			taskList[0].next();
-			taskList.push(taskList.shift());
-			
-		} catch (ex if ex instanceof StopIteration) {
-			
-			var current = taskList.shift();
-			current._atExit && current._atExit();
-		}
-	}
-	
-	this.Run = function(taskFct, sync) {
-		
-		var task = taskFct();
-		if ( sync ) {
-
-			var current = taskList.shift();
-			task._atExit = function() taskList.push(current);
-		}
-		taskList.push(task);
-	}
-}
 
 
-function Counter2(name) {
-	return function() {
-
-		for ( var i = 0; i < 10; ++ i ) {
-
-			Print(name);
-			yield;
-		}
-		Print(name+'-');
-	}
-}
 
 
-function Counter(name) {
-	return function() {
-
-		for ( var i = 0; i < 10; ++ i ) {
-
-			Print(name);
-			i == 5 && scheduler.Run( Counter2('y'), 1 );
-			yield;
-		}
-	}
-}
-
-
-scheduler.Run( Counter('x') );
-
-var total = 2000;
-while ( !endSignal && total-- ) {
-
-	Print('.');
-	scheduler.Step();
-}
 
 throw 0;
 
