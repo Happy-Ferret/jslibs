@@ -166,7 +166,7 @@ DEFINE_PROPERTY_SETTER( surface ) {
 	} else {
 
 		set = true;
-		JL_CHK( JL_JsvalToODEReal(cx, *vp, &value) );
+		JL_CHK( JsvalToODEReal(cx, *vp, &value) );
 	}
 
 	switch ( JSID_TO_INT(id) ) {

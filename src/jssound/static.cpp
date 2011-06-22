@@ -439,7 +439,7 @@ DEFINE_FUNCTION( SplitChannels ) {
 		JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
 		JL_CHKM( blobObj != NULL, E_STR("Blob"), E_CREATE );
 		blobVal = OBJECT_TO_JSVAL(blobObj);
-		JL_CHK( JS_SetElement(cx, destArray, c, &blobVal) );
+		JL_CHK( JL_SetElement(cx, destArray, c, &blobVal) );
 
 		JL_CHK(JL_SetProperty(cx, blobObj, "bits", bits) );
 		JL_CHK(JL_SetProperty(cx, blobObj, "rate", rate) );

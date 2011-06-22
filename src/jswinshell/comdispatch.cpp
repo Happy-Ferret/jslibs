@@ -312,7 +312,7 @@ DEFINE_FUNCTION( FunctionList ) {
 		JSString *jsstr = JS_NewUCStringCopyZ(cx, (const jschar*)bstrName);
 
 		jsval tmp = STRING_TO_JSVAL(jsstr);
-		JL_CHK( JS_SetElement(cx, memberList, i, &tmp) );
+		JL_CHK( JL_SetElement(cx, memberList, i, &tmp) );
 //		JL_CHK( JS_DefineUCProperty(cx, memberList, (const jschar*)bstrName, SysStringLen(bstrName), INT_TO_JSVAL(pFuncDesc->invkind), NULL, NULL, JSPROP_ENUMERATE | JSPD_PERMANENT | JSPROP_READONLY) );
 
 		SysFreeString(bstrName);

@@ -82,7 +82,7 @@ DEFINE_CONSTRUCTOR() {
 			JLStr tmp;
 			jsval propVal;
 			JL_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal) );
-			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), JSVAL_TO_INT(propVal), &propVal) ); // (TBD) optimize
+			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), JSVAL_TO_INT(propVal), &propVal) ); // (TBD) optimize
 			JL_CHK( JL_JsvalToNative(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
 			processArgv[i+1] = tmp.GetStrZOwnership();
 		}

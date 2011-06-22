@@ -286,7 +286,7 @@ namespace jl {
 			JSObject *obj;
 			obj = JSVAL_TO_OBJECT(val);
 
-			if ( JS_IsArrayObject(cx, obj) ) {
+			if ( JL_ObjectIsArray(cx, obj) ) {
 
 				jsuint length;
 				JL_CHK( JS_GetArrayLength(cx, obj, &length) );
@@ -297,7 +297,7 @@ namespace jl {
 				jsval tmp;
 				for ( jsint i = 0; i < jl::SafeCast<jsint>(length); ++i ) {
 
-					JL_CHK( JS_GetElement(cx, obj, i, &tmp) );
+					JL_CHK( JL_GetElement(cx, obj, i, &tmp) );
 					if ( JSVAL_IS_VOID(tmp) ) {
 
 						JL_CHK( JS_HasElement(cx, obj, i, &found) );
@@ -609,7 +609,7 @@ namespace jl {
 
 						JL_CHK( Read(cx, tmp) );
 						if ( !js::Valueify(tmp).isMagic(JS_ARRAY_HOLE) ) // if ( !JL_JSVAL_IS_ARRAY_HOLE(*avr.jsval_addr()) )
-							JL_CHK( JS_SetElement(cx, arr, i, &tmp) );
+							JL_CHK( JL_SetElement(cx, arr, i, &tmp) );
 					}
 					break;
 				}

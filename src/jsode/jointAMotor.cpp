@@ -80,7 +80,7 @@ DEFINE_FUNCTION( AddTorque0 ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dReal real;
-	JL_CHK( JL_JsvalToODEReal(cx, JL_ARG(1), &real) );
+	JL_CHK( JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddAMotorTorques(jointId, real,0,0);
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -101,7 +101,7 @@ DEFINE_FUNCTION( AddTorque1 ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dReal real;
-	JL_CHK( JL_JsvalToODEReal(cx, JL_ARG(1), &real) );
+	JL_CHK( JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddAMotorTorques(jointId, 0,real,0);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -122,7 +122,7 @@ DEFINE_FUNCTION( AddTorque2 ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dReal real;
-	JL_CHK( JL_JsvalToODEReal(cx, JL_ARG(1), &real) );
+	JL_CHK( JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddAMotorTorques(jointId, 0,0,real);
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -157,8 +157,8 @@ DEFINE_FUNCTION( SetAxis ) {
 	JL_JsvalToNative(cx, JL_ARG(2), &rel);
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(3), vector, 3, &length) );
-	JL_ASSERT( length >= 3, E_ARG, E_NUM(3), E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, JL_ARG(3), vector, 3, &length) );
+	JL_ASSERT( length >= 3, E_ARG, E_NUM(3), E_TYPE, E_TY_NVECTOR(3) );
 
 	if ( anum+1 > ode::dJointGetAMotorNumAxes(jointId) )
 		ode::dJointSetAMotorNumAxes(jointId, anum+1);
@@ -185,7 +185,7 @@ DEFINE_FUNCTION( SetAngle ) {
 	int anum;
 	ode::dReal angle;
 	JL_JsvalToNative(cx, JL_ARG(1), &anum);
-	JL_CHK( JL_JsvalToODEReal(cx, JL_ARG(2), &angle) );
+	JL_CHK( JsvalToODEReal(cx, JL_ARG(2), &angle) );
 
 	if ( anum+1 > ode::dJointGetAMotorNumAxes(jointId) )
 		ode::dJointSetAMotorNumAxes(jointId, anum+1);

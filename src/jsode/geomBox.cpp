@@ -74,8 +74,8 @@ DEFINE_PROPERTY_SETTER( lengths ) {
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
-	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
-	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dGeomBoxSetLengths(geom, vector[0], vector[1], vector[2]);
 	return JS_TRUE;
 	JL_BAD;

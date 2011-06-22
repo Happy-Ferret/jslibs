@@ -600,9 +600,9 @@ DEFINE_PROPERTY_SETTER( dpi ) {
 
 		size_t dpiX, dpiY;
 		jsval tmp;
-		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(*vp), 0, &tmp) );
+		JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(*vp), 0, &tmp) );
 		JL_CHK( JL_JsvalToNative(cx, tmp, &dpiX) );
-		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(*vp), 1, &tmp) );
+		JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(*vp), 1, &tmp) );
 		JL_CHK( JL_JsvalToNative(cx, tmp, &dpiY) );
 		rsvg_handle_set_dpi_x_y(handle, dpiX, dpiY);
 	}

@@ -116,6 +116,9 @@ function QAAPI(cx) {
 		randomString += Math.random().toString(36).substr(2);
    
 	this.RandomString = function(length) { // [0-9A-Za-z]
+		
+		if ( length == undefined )
+			throw Error('RandomString() invalid argument');
 
 		var data = '';
 		while( data.length < length )

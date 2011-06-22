@@ -179,6 +179,7 @@ JSBool Exec(JSContext *cx, uintN argc, jsval *vp) {
 	return scriptObject ? JS_TRUE : JS_FALSE;
 }
 
+
 int main(int argc, char* argv[]) {
 
 	_unsafeMode = false;
@@ -190,6 +191,32 @@ int main(int argc, char* argv[]) {
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_JIT);
 	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
+
+	//JSClass *denseArrayClass = JS_GetClass(JS_NewArrayObject(cx, 0, NULL));
+
+
+	JSObject *arr = JS_NewArrayObject(cx, 5, NULL);
+	ASSERT(js_IsDensePrimitiveArray(arr));
+	jsval tmp = JSVAL_ONE;
+	JL_SetElement(cx, arr, 5, &tmp);
+	ASSERT(js_IsDensePrimitiveArray(arr));
+	JS_SetArrayLength(cx, arr, 7);
+	ASSERT(js_IsDensePrimitiveArray(arr));
+	JL_SetElement(cx, arr, 200, &tmp);
+	ASSERT(js_IsDensePrimitiveArray(arr));
+	jsuint len;
+	JS_GetArrayLength(cx, arr, &len);
+
+	arr = JS_NewArrayObject(cx, 10000, NULL);
+	ASSERT(js_IsDensePrimitiveArray(arr));
+	JL_SetElement(cx, arr, 9999, &tmp);
+	ASSERT(js_IsDensePrimitiveArray(arr));
+	JS_SetArrayLength(cx, arr, 5);
+	ASSERT(js_IsDensePrimitiveArray(arr));
+	JL_SetElement(cx, arr, 9998, &tmp);
+	ASSERT(js_IsDensePrimitiveArray(arr));
+
+
 
 	JL_CHK( JS_DefineFunction(cx, globalObject, "Exec", Exec, 0, 0) );
 

@@ -749,7 +749,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 		IFDEBUG( popupMenu = NULL ); // avoid "potentially uninitialized local variable" warning
 
 		jsval item;
-		JL_CHK( JS_GetElement(cx, menuObj, i, &item) );
+		JL_CHK( JL_GetElement(cx, menuObj, i, &item) );
 
 		JL_CHK( NormalizeMenuInfo(cx, menuObj, INT_TO_JSVAL(i), &item) );
 
@@ -1137,11 +1137,12 @@ DEFINE_FUNCTION( Position ) {
 
 		point = JSVAL_TO_OBJECT(JL_ARG(1)); // (TBD) check this
 
-		JS_SetElement(cx, point, 0, &v[0]);
-		JS_SetElement(cx, point, 1, &v[1]);
+		JL_CHK( JL_SetElement(cx, point, 0, &v[0]) );
+		JL_CHK( JL_SetElement(cx, point, 1, &v[1]) );
 	} else {
 
 		point = JS_NewArrayObject(cx, 2, v);
+		JL_CHK( point );
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(point);
 
@@ -1173,13 +1174,14 @@ DEFINE_FUNCTION( Rect ) {
 
 		point = JSVAL_TO_OBJECT(JL_ARG(1)); // (TBD) check this
 
-		JS_SetElement(cx, point, 0, &v[0]);
-		JS_SetElement(cx, point, 1, &v[1]);
-		JS_SetElement(cx, point, 2, &v[2]);
-		JS_SetElement(cx, point, 3, &v[3]);
+		JL_CHK( JL_SetElement(cx, point, 0, &v[0]) );
+		JL_CHK( JL_SetElement(cx, point, 1, &v[1]) );
+		JL_CHK( JL_SetElement(cx, point, 2, &v[2]) );
+		JL_CHK( JL_SetElement(cx, point, 3, &v[3]) );
 	} else {
 
 		point = JS_NewArrayObject(cx, 4, v);
+		JL_CHK( point );
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(point);
 

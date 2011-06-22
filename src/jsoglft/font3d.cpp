@@ -232,13 +232,13 @@ DEFINE_FUNCTION( Measure ) {
 		*JL_RVAL = OBJECT_TO_JSVAL(arrObj);
 		jsval tmp;
 		JL_CHK(JL_NativeToJsval(cx, bbox.x_min_, &tmp) );
-		JL_CHK( JS_SetElement(cx, arrObj, 0, &tmp) );
+		JL_CHK( JL_SetElement(cx, arrObj, 0, &tmp) );
 		JL_CHK(JL_NativeToJsval(cx, bbox.y_min_, &tmp) );
-		JL_CHK( JS_SetElement(cx, arrObj, 1, &tmp) );
+		JL_CHK( JL_SetElement(cx, arrObj, 1, &tmp) );
 		JL_CHK(JL_NativeToJsval(cx, bbox.x_max_, &tmp) );
-		JL_CHK( JS_SetElement(cx, arrObj, 2, &tmp) );
+		JL_CHK( JL_SetElement(cx, arrObj, 2, &tmp) );
 		JL_CHK(JL_NativeToJsval(cx, bbox.y_max_, &tmp) );
-		JL_CHK( JS_SetElement(cx, arrObj, 3, &tmp) );
+		JL_CHK( JL_SetElement(cx, arrObj, 3, &tmp) );
 	}
 
 	return JS_TRUE;
@@ -597,7 +597,7 @@ DEFINE_FUNCTION( SetCharacterDisplayLists ) {
 	JL_CHK( JS_GetArrayLength(cx, arrObj, &length) );
 	for ( jsuint i = 0; i < length; i++ ) {
 
-		JL_CHK( JS_GetElement(cx, arrObj, i, JL_RVAL) );
+		JL_CHK( JL_GetElement(cx, arrObj, i, JL_RVAL) );
 		JL_ASSERT_INT( *JL_RVAL );
 		lists.push_back(JSVAL_TO_INT( *JL_RVAL ));
 	}

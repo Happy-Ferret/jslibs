@@ -78,7 +78,7 @@ DEFINE_FUNCTION( AddForce ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dReal real;
-	JL_CHK( JL_JsvalToODEReal(cx, JL_ARG(1), &real) );
+	JL_CHK( JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddPistonForce(jointId, real);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -129,8 +129,8 @@ DEFINE_PROPERTY_SETTER( anchor ) {
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
 	uint32 length;
-	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
-	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dJointSetPistonAnchor( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 	JL_BAD;
@@ -175,8 +175,8 @@ DEFINE_PROPERTY_SETTER( axis ) {
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
-	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dJointSetPistonAxis( jointId, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 	JL_BAD;

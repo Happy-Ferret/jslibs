@@ -372,14 +372,14 @@ DEFINE_FUNCTION( GetInteger ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JSVAL_TO_INT( JL_ARG(2) );
-		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
 			tmpValue = INT_TO_JSVAL( params[count] );
-			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
@@ -413,14 +413,14 @@ DEFINE_FUNCTION( GetDouble ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JSVAL_TO_INT( JL_ARG(2) );
-		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
 			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
@@ -497,14 +497,14 @@ DEFINE_FUNCTION( GetListenerReal ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JSVAL_TO_INT( JL_ARG(2) );
-		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while ( count-- ) {
 			
-			JL_CHK(JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
@@ -611,14 +611,14 @@ DEFINE_FUNCTION( GetSourceReal ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count = JSVAL_TO_INT( JL_ARG(3) );
-		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK(JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
@@ -653,14 +653,14 @@ DEFINE_FUNCTION( GetSourceInteger ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count = JSVAL_TO_INT( JL_ARG(3) );
-		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
 			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
@@ -850,14 +850,14 @@ DEFINE_FUNCTION( GetBufferReal ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JSVAL_TO_INT( JL_ARG(2) );
-		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while ( count-- ) {
 
 			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
@@ -892,14 +892,14 @@ DEFINE_FUNCTION( GetBufferInteger ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JSVAL_TO_INT( JL_ARG(2) );
-		JSObject *arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
 		while (count--) {
 
 			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 

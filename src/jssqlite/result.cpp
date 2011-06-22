@@ -66,7 +66,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 
 			if ( argObj != NULL ) {
 
-				JL_CHK( JS_GetElement(cx, argObj, anonParamIndex, &val) ); // works with {0:2,1:2,2:2,length:3} and [2,2,2]
+				JL_CHK( JL_GetElement(cx, argObj, anonParamIndex, &val) ); // works with {0:2,1:2,2:2,length:3} and [2,2,2]
 				anonParamIndex++;
 				goto next;
 			}

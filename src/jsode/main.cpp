@@ -96,6 +96,20 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	int status = ode::dInitODE2(/*ode::dAllocateFlagCollisionData*/0  /*| ode::dInitFlagManualThreadCleanup*/);
 	JL_ASSERT( status != 0, E_LIB, E_STR("ODE"), E_INIT );
 
+
+	ASSERT( !finite(dInfinity) );
+	ASSERT( !finite(-dInfinity) );
+
+	ASSERT( !finite((jsdouble)dInfinity) );
+	ASSERT( !finite((jsdouble)-dInfinity) );
+
+	ASSERT( JSVAL_TO_DOUBLE(js::Jsvalify(cx->runtime->positiveInfinityValue)) == dInfinity );
+	ASSERT( JSVAL_TO_DOUBLE(js::Jsvalify(cx->runtime->negativeInfinityValue)) == -dInfinity );
+
+	ASSERT( js::Jsvalify(cx->runtime->positiveInfinityValue) == DOUBLE_TO_JSVAL(dInfinity) );
+	ASSERT( js::Jsvalify(cx->runtime->negativeInfinityValue) == DOUBLE_TO_JSVAL(-dInfinity) );
+
+
 //	INIT_CLASS( Vector );
 	INIT_CLASS( JointGroup );
 	INIT_CLASS( Space );

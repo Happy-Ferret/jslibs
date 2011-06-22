@@ -251,14 +251,13 @@ DEFINE_FUNCTION( AddForce ) {
 	JL_ASSERT_THIS_OBJECT_STATE( thisBodyID );
 	uint32 length;
 	ode::dVector3 forceVec;
-//	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), forceVec, 3, &length) );
-	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), forceVec, 3, &length) );
-	JL_ASSERT( length >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), forceVec, 3, &length) );
+	JL_ASSERT( length >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	if ( JL_ARG_ISDEF(2) ) {
 
 		ode::dVector3 posVec;
-		JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(2), posVec, 3, &length) );
-		JL_ASSERT( length >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NARRAY(3) );
+		JL_CHK( JsvalToODERealVector(cx, JL_ARG(2), posVec, 3, &length) );
+		JL_ASSERT( length >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NVECTOR(3) );
 		ode::dBodyAddForceAtPos(thisBodyID, forceVec[0], forceVec[1], forceVec[2], posVec[0], posVec[1], posVec[2] );
 		return JS_TRUE;
 	}
@@ -283,8 +282,8 @@ DEFINE_FUNCTION( AddTorque ) {
 	JL_ASSERT_THIS_OBJECT_STATE( thisBodyID );
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), vector, 3, &length) );
-	JL_ASSERT( length >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), vector, 3, &length) );
+	JL_ASSERT( length >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	ode::dBodyAddTorque(thisBodyID, vector[0], vector[1], vector[2] );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -316,7 +315,7 @@ DEFINE_FUNCTION( SetDampingDefaults ) {
 $TOC_MEMBER $INAME
  $TYPE real $INAME( point )
 **/
-DEFINE_FUNCTION( GetRelativeVelocity ) {
+DEFINE_FUNCTION( GetRelativeVelocityValue ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -325,8 +324,8 @@ DEFINE_FUNCTION( GetRelativeVelocity ) {
 
 	Vector3 pt;
 	uint32 len;
-	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), pt.raw, 3, &len) );
-	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), pt.raw, 3, &len) );
+	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 
 	Vector3 vel, pos;
 	Vector3LoadPtr(&vel, ode::dBodyGetLinearVel(bodyId));
@@ -353,7 +352,7 @@ DEFINE_FUNCTION( GetRelativeVelocity ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( point [ , dest ] )
+ $TYPE vec3 $INAME( point [ , dest ] )
 **/
 DEFINE_FUNCTION( GetRelPointVel ) {
 
@@ -365,13 +364,15 @@ DEFINE_FUNCTION( GetRelPointVel ) {
 
 	ode::dReal pt[3];
 	uint32 len;
-	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), pt, 3, &len) );
+	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), pt, 3, &len) );
 
 	ode::dVector3 result;
 	ode::dBodyGetRelPointVel(bodyId, pt[0], pt[1], pt[2], result);
 
-	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	return ODERealVectorToJsval(cx, result, 3, JL_RVAL, true);
+	bool hasDest = JL_ARG_ISDEF(2);
+	if ( hasDest )
+		*JL_RVAL = JL_ARG(2);
+	return ODERealVectorToJsval(cx, result, 3, JL_RVAL, hasDest);
 	JL_BAD;
 }
 
@@ -390,8 +391,8 @@ DEFINE_FUNCTION( Vector3ToWorld ) {
 
 	ode::dReal v[3];
 	uint32 len;
-	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), v, 3, &len) );
-	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), v, 3, &len) );
+	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	ode::dVector3 result;
 	ode::dBodyVectorToWorld(bodyId, v[0], v[1], v[2], result);
 
@@ -478,7 +479,7 @@ DEFINE_PROPERTY_SETTER( autoDisableLinearThreshold ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dReal threshold;
-	JL_CHK( JL_JsvalToODEReal(cx, *vp, &threshold) );
+	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
 	ode::dBodySetAutoDisableLinearThreshold(bodyId, threshold);
 	return JS_TRUE;
 	JL_BAD;
@@ -508,7 +509,7 @@ DEFINE_PROPERTY_SETTER( autoDisableAngularThreshold ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dReal threshold;
-	JL_CHK( JL_JsvalToODEReal(cx, *vp, &threshold) );
+	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
 	ode::dBodySetAutoDisableAngularThreshold(bodyId, threshold);
 	return JS_TRUE;
 	JL_BAD;
@@ -663,9 +664,9 @@ DEFINE_PROPERTY_SETTER( finiteRotationAxis ) {
 		len = 3;
 	} else {
 		
-		JL_CHK( JL_JsvalToODERealVector(cx, *vp, vec, 3, &len) );
+		JL_CHK( JsvalToODERealVector(cx, *vp, vec, 3, &len) );
 	}
-	JL_ASSERT( len >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
+	JL_ASSERT( len >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dBodySetFiniteRotationAxis(bodyId, vec[0], vec[1], vec[2]);
 	return JS_TRUE;
 	JL_BAD;
@@ -1001,40 +1002,38 @@ DEFINE_PROPERTY_SETTER( vector ) {
 
 	ode::dBodyID bodyID = (ode::dBodyID)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( bodyID );
-	ode::dVector3 vector;
-	ode::dVector4 quatern;
-	uint32 length;
+
+	ode::dReal vector[4];
+	jsuint length;
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, COUNTOF(vector), &length) );
+
 	switch ( JSID_TO_INT(id) ) {
 		case position:
-			JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
-			JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
+			JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 			ode::dBodySetPosition( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case quaternion:
-			JL_CHK( JL_JsvalToODERealVector(cx, *vp, quatern, 4, &length) );
-			JL_ASSERT( length >= 4, E_VALUE, E_TYPE, E_TY_NARRAY(4) );
-			ode::dBodySetQuaternion( bodyID, quatern );
+			JL_ASSERT( length >= 4, E_VALUE, E_TYPE, E_TY_NVECTOR(4) );
+			ode::dBodySetQuaternion( bodyID, vector );
 			break;
 		case linearVel:
-			JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
-			JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
+			JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 			ode::dBodySetLinearVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case angularVel:
-			JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
-			JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
+			JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 			ode::dBodySetAngularVel( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case force:
-			JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
-			JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
+			JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 			ode::dBodySetForce( bodyID, vector[0], vector[1], vector[2] );
 			break;
 		case torque:
-			JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
-			JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
+			JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 			ode::dBodySetTorque( bodyID, vector[0], vector[1], vector[2] );
 			break;
+		default:
+			ASSERT(false);
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -1152,7 +1151,7 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC( AddForce, 1 )
 		FUNCTION_ARGC( AddTorque, 1 )
 		FUNCTION_ARGC( SetDampingDefaults, 0 )
-		FUNCTION_ARGC( GetRelativeVelocity, 1 )
+		FUNCTION_ARGC( GetRelativeVelocityValue, 1 )
 		FUNCTION_ARGC( GetRelPointVel, 2 )
 		FUNCTION_ARGC( Vector3ToWorld, 2 )
 	END_FUNCTION_SPEC

@@ -279,8 +279,14 @@ DEFINE_FUNCTION( ProcessEvents ) {
 	int st;
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
 
-	JL_ASSERT_ARGC_RANGE( 1, COUNTOF(mpv->processEventThreadInfo) );
+	JL_ASSERT_ARGC_MAX( COUNTOF(mpv->processEventThreadInfo) );
 	ProcessEvent *peList[COUNTOF(mpv->processEventThreadInfo)]; // cache to avoid calling GetHandlePrivate() too often.
+
+	if ( JL_ARGC == 0 ) {
+		
+		*JL_RVAL = INT_TO_JSVAL(0);
+		return JS_TRUE;
+	}
 
 	uintN i;
 	for ( i = 0; i < argc; ++i ) {
@@ -567,22 +573,6 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_INGORE(cx);
 	JL_INGORE(argc);
 	JL_INGORE(vp);
-
-	jsid id;
-	JS_ValueToId(cx, JL_ARG(1), &id);
-
-	jsval tmp;
-
-	size_t p = JLGetEIP();
-
-	JL_JsidToJsval(cx, id, &tmp); // JS_IdToValue
-
-	printf("%d\n", JLGetEIP()-p);
-
-	*JL_RVAL = tmp;
-
-
-
 
 	return JS_TRUE;
 	JL_BAD;

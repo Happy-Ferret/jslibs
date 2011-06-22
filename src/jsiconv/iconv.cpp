@@ -389,7 +389,7 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 
 		// (TBD) check errors
 		JL_NativeToJsval(ipv->cx, names[namescount], &value); // iconv_canonicalize
-		JS_SetElement(ipv->cx, ipv->list, ipv->listLen, &value);
+		JL_SetElement(ipv->cx, ipv->list, ipv->listLen, &value);
 		ipv->listLen++;
 	}
 	return 0;

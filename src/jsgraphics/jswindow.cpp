@@ -591,7 +591,7 @@ DEFINE_PROPERTY( clientRect ) {
 	JSObject *arrayObj;
 	if ( !JsvalIsArray(cx, *vp) ) {
 
-		arrayObj = JS_NewArrayObject(cx, 0, NULL);
+		arrayObj = JS_NewArrayObject(cx, 4, NULL);
 		JL_CHK(arrayObj);
 		*vp = OBJECT_TO_JSVAL(arrayObj);
 	} else { // reusing the stored array is a good idea.
@@ -601,13 +601,13 @@ DEFINE_PROPERTY( clientRect ) {
 
 	jsval value;
 	value = INT_TO_JSVAL(r.left);
-	JL_CHK( JS_SetElement(cx, arrayObj, 0, &value) );
+	JL_CHK( JL_SetElement(cx, arrayObj, 0, &value) );
 	value = INT_TO_JSVAL(r.top);
-	JL_CHK( JS_SetElement(cx, arrayObj, 1, &value) );
+	JL_CHK( JL_SetElement(cx, arrayObj, 1, &value) );
 	value = INT_TO_JSVAL(r.right);
-	JL_CHK( JS_SetElement(cx, arrayObj, 2, &value) );
+	JL_CHK( JL_SetElement(cx, arrayObj, 2, &value) );
 	value = INT_TO_JSVAL(r.bottom);
-	JL_CHK( JS_SetElement(cx, arrayObj, 3, &value) );
+	JL_CHK( JL_SetElement(cx, arrayObj, 3, &value) );
 	return JS_TRUE;
 }
 
@@ -625,13 +625,13 @@ DEFINE_PROPERTY( rectGetter ) {
 		JSObject *arrayObj = JSVAL_TO_OBJECT(*vp);
 		jsval value;
 		value = INT_TO_JSVAL(r.left);
-		JL_CHK( JS_SetElement(cx, arrayObj, 0, &value) );
+		JL_CHK( JL_SetElement(cx, arrayObj, 0, &value) );
 		value = INT_TO_JSVAL(r.top);
-		JL_CHK( JS_SetElement(cx, arrayObj, 1, &value) );
+		JL_CHK( JL_SetElement(cx, arrayObj, 1, &value) );
 		value = INT_TO_JSVAL(r.right);
-		JL_CHK( JS_SetElement(cx, arrayObj, 2, &value) );
+		JL_CHK( JL_SetElement(cx, arrayObj, 2, &value) );
 		value = INT_TO_JSVAL(r.bottom);
-		JL_CHK( JS_SetElement(cx, arrayObj, 3, &value) );
+		JL_CHK( JL_SetElement(cx, arrayObj, 3, &value) );
 	} else {
 */
 	int vector[] = { r.left, r.top, r.right, r.bottom };

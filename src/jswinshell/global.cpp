@@ -501,7 +501,7 @@ DEFINE_FUNCTION( RegistryGet ) {
 				break;
 			jsval strName;
 			JL_CHK( JL_NativeToJsval(cx, name, nameLength, &strName) );
-			JL_CHK( JS_SetElement(cx, arrObj, index, &strName) );
+			JL_CHK( JL_SetElement(cx, arrObj, index, &strName) );
 			index++;
 		}
 		if ( error != ERROR_NO_MORE_ITEMS )
@@ -711,7 +711,7 @@ DEFINE_FUNCTION( DirectoryChangesLookup ) {
 		JSObject *elt = JS_NewArrayObject(cx, COUNTOF(eltContent), eltContent);
 		JL_CHK( elt );
 		tmp = OBJECT_TO_JSVAL( elt );
-		JL_CHK( JS_SetElement(cx, arrObj, index, &tmp) );
+		JL_CHK( JL_SetElement(cx, arrObj, index, &tmp) );
 		index++;
 
 		if ( pFileNotify->NextEntryOffset )

@@ -380,7 +380,7 @@ DEFINE_PROPERTY_GETTER( list ) {
 	for ( i = 0; i < numDevices; i++ ) {
 
 		JL_CHK( JL_NativeToJsval(cx, videoInput::getDeviceName(i), &value) );
-		JL_CHK( JS_SetElement(cx, list, i, &value ) );
+		JL_CHK( JL_SetElement(cx, list, i, &value ) );
 	}
 
 	*vp = OBJECT_TO_JSVAL( list );

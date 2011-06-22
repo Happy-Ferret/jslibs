@@ -798,8 +798,8 @@ DEFINE_FUNCTION( Events ) {
 	for ( jsuint i = 0; i < fdCount; ++i ) {
 
 		tmp = &upe->descVal[i];
-		JL_CHK( JS_GetElement(cx, fdArrayObj, i, tmp) );
-		JL_CHK( JS_SetElement(cx, rootedValues, i, tmp) );
+		JL_CHK( JL_GetElement(cx, fdArrayObj, i, tmp) );
+		JL_CHK( JL_SetElement(cx, rootedValues, i, tmp) );
 		JL_CHK( InitPollDesc(cx, *tmp, &upe->pollDesc[1 + i]) );
 	}
 

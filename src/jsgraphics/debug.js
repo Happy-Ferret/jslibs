@@ -9,12 +9,6 @@ LoadModule('jstrimesh');
 LoadModule('jssdl');
 LoadModule('jsgraphics');
 
-
-
-
-
-
-
 try {
 
 //LoadModule('jsstd'); Exec('../../tests/arabesques.js'); throw 0;

@@ -546,7 +546,7 @@ DEFINE_PROPERTY( roster ) {
 
 		jsval rosterItem;
 		JL_CHK( StringToJsval(cx, (*it).first.c_str(), &rosterItem ) );
-		JL_CHK( JS_SetElement(cx, rosterList, i, &rosterItem) );
+		JL_CHK( JL_SetElement(cx, rosterList, i, &rosterItem) );
 		i++;
 	}
 	return JS_TRUE;

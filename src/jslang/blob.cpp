@@ -795,8 +795,8 @@ DEFINE_FUNCTION( split ) {
 		//JL_CHK( JL_StringAndLengthToJsval(cx, &chunk, blob, blobLen) );
 		JL_CHK( JL_NativeToJsval(cx, blob, blobLen, &chunk) );
 
-		JL_CHK( JS_SetElement(cx, arr, 0, &chunk) );
-		JL_CHK( JS_SetArrayLength(cx, arr, 1) );
+		JL_CHK( JL_SetElement(cx, arr, 0, &chunk) );
+		// JL_CHK( JS_SetArrayLength(cx, arr, 1) ); // implicitly done.
 		return JS_TRUE;
 	}
 
@@ -826,7 +826,7 @@ DEFINE_FUNCTION( split ) {
 
 			//JL_CHK( JL_StringAndLengthToJsval(cx, &chunk, blob, blobLen) );
 			JL_CHK( JL_NativeToJsval(cx, blob, blobLen, &chunk) );
-			JL_CHK( JS_SetElement(cx, arr, arrLen++, &chunk) );
+			JL_CHK( JL_SetElement(cx, arr, arrLen++, &chunk) );
 			break;
 		}
 
@@ -839,20 +839,20 @@ DEFINE_FUNCTION( split ) {
 
 			//JL_CHK( JL_StringAndLengthToJsval(cx, &chunk, blob, blobLen) );
 			JL_CHK( JL_NativeToJsval(cx, blob, blobLen, &chunk) );
-			JL_CHK( JS_SetElement(cx, arr, arrLen++, &chunk) );
+			JL_CHK( JL_SetElement(cx, arr, arrLen++, &chunk) );
 			break;
 		}
 
 		//JL_CHK( JL_StringAndLengthToJsval(cx, &chunk, blob, pos) );
 		JL_CHK( JL_NativeToJsval(cx, blob, pos, &chunk) );
-		JL_CHK( JS_SetElement(cx, arr, arrLen++, &chunk) );
+		JL_CHK( JL_SetElement(cx, arr, arrLen++, &chunk) );
 
 		blob += pos + sepLen;
 		blobLen -= pos + sepLen;
 	}
 
 
-	JL_CHK( JS_SetArrayLength(cx, arr, arrLen) );
+	//JL_CHK( JS_SetArrayLength(cx, arr, arrLen) ); // implicitly done.
 
 	return JS_TRUE;
 	JL_BAD;

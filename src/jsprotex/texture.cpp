@@ -2510,7 +2510,7 @@ DEFINE_FUNCTION( ForEachPixel ) {
 				for ( c = 0; c < channels; c++ ) {
 
 					JL_CHK( JL_NativeToJsval(cx, tex->cbuffer[pos+c], &level) );
-					JL_CHK( JS_SetElement(cx, cArrayObj, c, &level) );
+					JL_CHK( JL_SetElement(cx, cArrayObj, c, &level) );
 				}
 
 				JL_CHK( JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(callArgv)-1, callArgv+1, callArgv) );
@@ -2519,7 +2519,7 @@ DEFINE_FUNCTION( ForEachPixel ) {
 
 					for ( c = 0; c < channels; c++ ) {
 
-						JL_CHK( JS_GetElement(cx, cArrayObj, c, &level) );
+						JL_CHK( JL_GetElement(cx, cArrayObj, c, &level) );
 						JL_CHK( JL_JsvalToNative(cx, level, &tex->cbackBuffer[pos+c]) );
 					}
 				}

@@ -889,7 +889,7 @@ DEFINE_FUNCTION( GetInteger ) {
 		while (count--) {
 
 			tmpValue = INT_TO_JSVAL( params[count] );
-			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 
 	} else {
@@ -962,7 +962,7 @@ DEFINE_FUNCTION( GetDouble ) {
 		while (count--) {
 
 			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
@@ -1943,7 +1943,7 @@ DEFINE_FUNCTION( GetLight ) {
 		while ( count-- ) {
 
 			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 
@@ -2927,11 +2927,14 @@ DEFINE_FUNCTION( Translate ) {
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC_RANGE(2,3);
+	JL_ASSERT_ARG_IS_NUMBER(1);
+	JL_ASSERT_ARG_IS_NUMBER(2);
+
 	double x, y, z;
 	JL_JsvalToNative(cx, JL_ARG(1), &x);
 	JL_JsvalToNative(cx, JL_ARG(2), &y);
 	if ( argc >= 3 )
-		JL_JsvalToNative(cx, JL_ARG(3), &z);
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &z) );
 	else
 		z = 0;
 
@@ -3086,9 +3089,9 @@ DEFINE_FUNCTION( CallList ) {
 
 		GLuint *lists = (GLuint*)alloca(length * sizeof(GLuint));
 		jsval value;
-		for (jsuint i=0; i<length; ++i) {
+		for ( jsuint i = 0; i < length; ++i ) {
 
-			JL_CHK( JS_GetElement(cx, jsArray, i, &value) );
+			JL_CHK( JL_GetElement(cx, jsArray, i, &value) );
 			lists[i] = JSVAL_TO_INT(value);
 		}
 
@@ -4605,8 +4608,10 @@ DEFINE_FUNCTION( Uniform ) {
 		jsuint tmp;
 		JL_CHK( JS_GetArrayLength(cx, arr, &tmp) );
 		count = tmp;
-		while ( tmp-- )
-			JL_CHK( JS_GetElement(cx, arr, tmp, &staticArgs[tmp]) );
+		while ( tmp-- ) {
+
+			JL_CHK( JL_GetElement(cx, arr, tmp, &staticArgs[tmp]) );
+		}
 		args = staticArgs;
 	} else {
 
@@ -4991,15 +4996,17 @@ DEFINE_FUNCTION( GetObjectParameter ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count = JSVAL_TO_INT( JL_ARG(3) );
+		jsval tmpValue;
+		count = JL_MIN(count, (int)COUNTOF(params));
+
 		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
-		jsval tmpValue;
-		count = JL_MIN(count, (int)COUNTOF(params));
+
 		while (count--) {
 
 			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JS_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
 		}
 	} else {
 

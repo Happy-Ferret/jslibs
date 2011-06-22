@@ -896,13 +896,13 @@ DEFINE_FUNCTION( TransformVector ) {
 		Matrix44MultVector3(pv->mat, &dst, &src);
 
 		JL_CHK( JL_NativeToJsval(cx, dst.x, &tmpValue) );
-		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 0, &tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 0, &tmpValue) );
 
 		JL_CHK( JL_NativeToJsval(cx, dst.y, &tmpValue) );
-		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 1, &tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 1, &tmpValue) );
 
 		JL_CHK( JL_NativeToJsval(cx, dst.z, &tmpValue) );
-		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 2, &tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 2, &tmpValue) );
 	} else
 	if ( length == 4 ) {
 
@@ -912,16 +912,16 @@ DEFINE_FUNCTION( TransformVector ) {
 		Matrix44MultVector4(pv->mat, &dst, &src);
 
 		JL_CHK( JL_NativeToJsval(cx, dst.x, &tmpValue) );
-		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 0, &tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 0, &tmpValue) );
 
 		JL_CHK( JL_NativeToJsval(cx, dst.y, &tmpValue) );
-		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 1, &tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 1, &tmpValue) );
 
 		JL_CHK( JL_NativeToJsval(cx, dst.z, &tmpValue) );
-		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 2, &tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 2, &tmpValue) );
 
 		JL_CHK( JL_NativeToJsval(cx, dst.w, &tmpValue) );
-		JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 3, &tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 3, &tmpValue) );
 	} else {
 
 		JL_ERR( E_ARG, E_NUM(1), E_LENGTH, E_INTERVAL_NUM(3, 4) ); // "Invalid vector length"

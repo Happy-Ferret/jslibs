@@ -6,7 +6,40 @@
 //LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
 
 LoadModule('jsstd');
+LoadModule('jsio');
 LoadModule('jsdebug');
+
+
+
+
+/*
+	var randomString = '';
+	for ( var i = 0; i < 1024; ++i )
+		randomString += Math.random().toString(36).substr(2);
+   
+	var RandomString = function(length) { // [0-9A-Za-z]
+		
+		var data = '';
+		while( data.length < length )
+			data += randomString.substring( Math.random()*randomString.length, Math.random()*randomString.length );
+		return data.substr(0, length);
+   }
+
+
+
+		var len = 0;
+		var b = new Buffer();
+		for ( var i = 0; i < 500; i++ ) {
+			
+			len += i;
+			b.Write(RandomString(i));
+		}
+
+		var s = Stringify(b);
+		
+throw 0;		
+*/
+
 
 SetPerfTestMode();
 

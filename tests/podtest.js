@@ -180,6 +180,10 @@ var w = new World();
 w.gravity = [0,0,-9.809];
 w.gravity = [0,0,0];
 
+
+w.linearDamping = 0.001;
+w.angularDamping = 0.001;
+
 function Pod() {
 	
 	var _this = this;
@@ -200,6 +204,7 @@ function Pod() {
 
 	var center = new Body(w);
 	center.position = [0,0,0];
+	
 
 	var j1 = new JointFixed(w);
 	j1.body1 = center;
@@ -332,7 +337,7 @@ function Pod() {
 		var str = Vec3Dot( center.Vector3ToWorld([0,0,1]), Vec3Normalize(vel) );
 		var dir = Vec3Dot( center.Vector3ToWorld([1,0,0]), vel );
 		var radError = Math.PI/2 - Math.asin(str);
-		if ( dir < 0 )
+		if ( dir > 0 )
 			radError = -radError;
 		return radError;
 	}
@@ -426,8 +431,34 @@ function Pod() {
 		if ( maxRotationAccelSpeed == undefined )
 			yield PWaitProc(StartProc(TestMaxRotationSpeed()));
 
-		yield PWaitProc(StartProc(this.StopRotation()));
-		
+	
+		for (;;) {
+
+			for (;;) {
+			
+				var radError = GetStraightRad();
+				
+				if ( Math.abs(radError) < 0.1 )
+					break;
+				
+				var pow = Math.abs(radError) / 2;
+				if ( radError > 0 )
+					MForce(0,pow);
+				else
+					MForce(pow,0);
+				
+				yield PIdle;
+			}
+
+			yield PWaitProc(StartProc(this.StopRotation()));
+			
+			
+			if ( Math.abs(GetStraightRad()) < 0.1 && GetRotationSpeed() < 0.1 )
+				return
+			
+		}
+	
+	return;	
 	
 		for (;;) {
 

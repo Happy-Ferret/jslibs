@@ -893,7 +893,7 @@ DEFINE_PROPERTY_GETTER( scriptFilenameList ) {
 
 		jsval filename;
 		JL_CHK( JL_NativeToJsval(cx, s->filename, &filename) );
-		JL_CHK( JS_SetElement(cx, arr, index, &filename) );
+		JL_CHK( JL_SetElement(cx, arr, index, &filename) );
 		++index;
 	}
 	return JS_TRUE;
@@ -1170,10 +1170,10 @@ DEFINE_FUNCTION( Locate ) {
 
 		tmp = JSVAL_VOID;
 	}
-	JL_CHK( JS_SetElement(cx, arrObj, 0, &tmp) );
+	JL_CHK( JL_SetElement(cx, arrObj, 0, &tmp) );
 
 	tmp = INT_TO_JSVAL(lineno);
-	JL_CHK( JS_SetElement(cx, arrObj, 1, &tmp) );
+	JL_CHK( JL_SetElement(cx, arrObj, 1, &tmp) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1280,7 +1280,7 @@ DEFINE_FUNCTION( PropertiesList ) {
 			if ( !JSID_IS_EMPTY(shape->id) ) {
 
 				JL_CHK( JS_IdToValue(cx, shape->id, &tmp) );
-				JL_CHK( JS_SetElement(cx, arrayObject, index, &tmp) );
+				JL_CHK( JL_SetElement(cx, arrayObject, index, &tmp) );
 			}
 			index++;
 		}
@@ -1353,7 +1353,7 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 
 			JSObject *descObj = JS_NewObject(cx, NULL, NULL, NULL);
 			tmp = OBJECT_TO_JSVAL(descObj);
-			JL_CHK( JS_SetElement(cx, arrayObject, index, &tmp) );
+			JL_CHK( JL_SetElement(cx, arrayObject, index, &tmp) );
 
 //			JL_CHK( JS_IdToValue(cx, jssp->id, &tmp) );
 			JL_CHK( JS_SetProperty(cx, descObj, "name", &desc.id) );
@@ -1734,13 +1734,13 @@ DEFINE_FUNCTION( VALGRIND_COUNT_LEAKS ) {
 	*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 	jsval tmp;
 	tmp = INT_TO_JSVAL(leaked);
-	JS_SetElement(cx, arrayObj, 0, &tmp);
+	JL_SetElement(cx, arrayObj, 0, &tmp);
 	tmp = INT_TO_JSVAL(dubious);
-	JS_SetElement(cx, arrayObj, 1, &tmp);
+	JL_SetElement(cx, arrayObj, 1, &tmp);
 	tmp = INT_TO_JSVAL(reachable);
-	JS_SetElement(cx, arrayObj, 2, &tmp);
+	JL_SetElement(cx, arrayObj, 2, &tmp);
 	tmp = INT_TO_JSVAL(suppressed);
-	JS_SetElement(cx, arrayObj, 3, &tmp);
+	JL_SetElement(cx, arrayObj, 3, &tmp);
 	return JS_TRUE;
 	JL_BAD;
 }

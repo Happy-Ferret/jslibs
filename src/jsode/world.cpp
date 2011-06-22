@@ -468,18 +468,18 @@ DEFINE_FUNCTION( ScaleImpulse ) {
 	JL_ASSERT_ARGC_MIN(1);
 	ode::dVector3 force;
 	uint32 len;
-	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), force, COUNTOF(force), &len) );
-	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), force, COUNTOF(force), &len) );
+	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 
 	float stepSize;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &stepSize) );
 	ode::dWorldImpulseToForce(pv->worldId, stepSize / 1000, force[0], force[1], force[2], force);
 	
 	JSObject *objArr = JSVAL_TO_OBJECT(JL_ARG(1));
-	for ( jsint i = 0; i < COUNTOF(force); i++ ) {
+	for ( jsint i = 0; i < 3; i++ ) {
 
 		JL_CHK( JL_NativeToJsval(cx, force[i], JL_RVAL) );
-		JL_CHK( JS_SetElement(cx, objArr, i, JL_RVAL) );
+		JL_CHK( JL_SetElement(cx, objArr, i, JL_RVAL) );
 	}
 
 	*JL_RVAL = JSVAL_VOID;
@@ -504,7 +504,7 @@ DEFINE_PROPERTY_SETTER( autoDisableLinearThreshold ) {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dReal threshold;
-	JL_CHK( JL_JsvalToODEReal(cx, *vp, &threshold) );
+	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
 	ode::dWorldSetAutoDisableLinearThreshold(pv->worldId, threshold);
 	return JS_TRUE;
 	JL_BAD;
@@ -532,7 +532,7 @@ DEFINE_PROPERTY_SETTER( autoDisableAngularThreshold ) {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dReal threshold;
-	JL_CHK( JL_JsvalToODEReal(cx, *vp, &threshold) );
+	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
 	ode::dWorldSetAutoDisableAngularThreshold(pv->worldId, threshold);
 	return JS_TRUE;
 	JL_BAD;
@@ -575,8 +575,8 @@ DEFINE_PROPERTY_SETTER( gravity ) {
 	ode::dVector3 gravity;
 	//FloatArrayToVector(cx, 3, vp, gravity);
 	uint32 length;
-	JL_CHK( JL_JsvalToODERealVector(cx, *vp, gravity, 3, &length) );
-	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, gravity, 3, &length) );
+	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dWorldSetGravity( pv->worldId, gravity[0], gravity[1], gravity[2] );
 	return JS_TRUE;
 	JL_BAD;

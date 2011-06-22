@@ -155,6 +155,7 @@ JL_GetPrivate( const JSContext *cx, const JSObject *obj ) {
 	return obj->getPrivate();
 }
 
+
 ALWAYS_INLINE void
 JL_SetPrivate( const JSContext *cx, JSObject *obj, void *data ) {
 
@@ -170,19 +171,18 @@ JL_GetPrototype(JSContext *cx, JSObject *obj) {
 	return proto && proto->map ? proto : NULL; // Beware: ref to dead object (we may be called from obj's finalizer).
 }
 
-/*
 ALWAYS_INLINE JSBool
-JL_GetElement(JSContext *cx, JSObject *obj, jsint index, jsval *vp) {
+JL_GetElement(JSContext *cx, JSObject *obj, jsuint index, jsval *vp) {
 
     return JS_GetPropertyById(cx, obj, INT_TO_JSID(index), vp);
 }
 
 ALWAYS_INLINE JSBool
-JL_SetElement(JSContext *cx, JSObject *obj, jsint index, jsval *vp) {
+JL_SetElement(JSContext *cx, JSObject *obj, jsuint index, jsval *vp) {
 
 	return JS_SetPropertyById(cx, obj, INT_TO_JSID(index), vp);
 }
-*/
+
 
 ALWAYS_INLINE JSBool
 JL_GetReservedSlot( JSContext *cx, JSObject *obj, uint32 slot, jsval *vp ) {
@@ -388,20 +388,20 @@ JL_ObjectIsArray( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 ALWAYS_INLINE bool
 JL_ValueIsArray( JSContext *cx, const jsval &val ) {
 
-	return !JSVAL_IS_PRIMITIVE(val) && JS_IsArrayObject(cx, JSVAL_TO_OBJECT(val)); // Object::isArray() is not public
+	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsArray(cx, JSVAL_TO_OBJECT(val)); // Object::isArray() is not public
 }
 
 
 ALWAYS_INLINE bool
 JL_IsVector( JSContext *cx, JSObject *obj ) {
 
-	return JS_IsArrayObject(cx, obj) || js_IsTypedArray(obj); // Object::isArray() is not public
+	return JL_ObjectIsArray(cx, obj) || js_IsTypedArray(obj); // Object::isArray() is not public
 }
 
 ALWAYS_INLINE bool
 JL_IsVector( JSContext *cx, const jsval &val ) {
 
-	return !JSVAL_IS_PRIMITIVE(val) && ( JS_IsArrayObject(cx, JSVAL_TO_OBJECT(val)) || js_IsTypedArray(JSVAL_TO_OBJECT(val)) ); // Object::isArray() is not public
+	return !JSVAL_IS_PRIMITIVE(val) && ( JL_ObjectIsArray(cx, JSVAL_TO_OBJECT(val)) || js_IsTypedArray(JSVAL_TO_OBJECT(val)) ); // Object::isArray() is not public
 }
 
 ALWAYS_INLINE bool
@@ -876,6 +876,7 @@ enum E_TXTID {
 #define E_INTERVAL_NUM( vMin, vMax )  E_INTERVAL_NUM_2, vMin, vMax
 #define E_INTERVAL_STR( sMin, sMax )  E_INTERVAL_STR_2, sMin, sMax
 #define E_TY_NARRAY( num )            E_TY_NARRAY_1, num
+#define E_TY_NVECTOR( num )           E_TY_NVECTOR_1, num
 
 
 #ifdef DEBUG
@@ -1213,8 +1214,12 @@ class JLStr {
 		_inner->strFlags = str ? (nullTerminated ? NT : 0) | (hasOwnership ? OWN : 0) : 0;
 
 		ASSERT( IsSet() );
-		ASSERT_IF( length != SIZE_MAX && hasOwnership && jsstr, jl_msize((void*)jsstr) >= length + 2 );
-		ASSERT_IF( length != SIZE_MAX && hasOwnership && str, jl_msize((void*)str) >= length + 1 );
+		ASSERT_IF( length != SIZE_MAX && hasOwnership && jsstr && !nullTerminated, jl_msize((void*)jsstr) >= length );
+		ASSERT_IF( length != SIZE_MAX && hasOwnership && str && !nullTerminated, jl_msize((void*)str) >= length );
+
+		ASSERT_IF( length != SIZE_MAX && hasOwnership && jsstr && nullTerminated, jl_msize((void*)jsstr) >= length + 2 );
+		ASSERT_IF( length != SIZE_MAX && hasOwnership && str && nullTerminated, jl_msize((void*)str) >= length + 1 );
+
 		ASSERT_IF( length != SIZE_MAX && nullTerminated && jsstr, jsstr[length] == 0 );
 		ASSERT_IF( length != SIZE_MAX && nullTerminated && str, str[length] == 0 );
 	}
@@ -1485,7 +1490,7 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLStr * RESTRICT str ) {
 		}
 
 		// the following conversion can be replaced by: (new Uint8Array([1,2,3]))
-		//		if ( JS_IsArrayObject(cx, obj) )
+		//		if ( JL_ObjectIsArray(cx, obj) )
 		//			return JL_JSArrayToBuffer(cx, obj, str);
 	}
 	// fallback
@@ -2305,26 +2310,25 @@ JL_NativeVectorToJsval( JSContext * RESTRICT cx, const T * RESTRICT vector, jsui
 	ASSERT( val );
 
 	JSObject *arrayObj;
-	if ( useValArray ) {
+	if (likely( useValArray )) {
 
 		JL_ASSERT_IS_OBJECT(*val, "vector");
 		arrayObj = JSVAL_TO_OBJECT(*val);
 		JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
 	} else {
 
-		// js_NewArrayObjectWithCapacity
 		arrayObj = JS_NewArrayObject(cx, length, NULL);
 		JL_CHK( arrayObj );
 		*val = OBJECT_TO_JSVAL(arrayObj);
 	}
 
 	jsval tmp;
-	while ( length-- ) {
+	for ( jsuint i = 0; i < length; ++i ) {
 
-		JL_CHK( JL_NativeToJsval(cx, vector[length], &tmp) ); //
-		JL_CHK( JS_SetElement(cx, arrayObj, length, &tmp) ); //JL_CHK( JS_SetPropertyById(cx, arrayObj, INT_TO_JSID(length), &tmp) ); // see jsapi.cpp
+		JL_CHK( JL_NativeToJsval(cx, vector[i], &tmp) );
+		JL_CHK( JL_SetElement(cx, arrayObj, i, &tmp) );
 	}
-//	JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2359,8 +2363,10 @@ JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T
 	JL_ASSERT( ta->type == JLNativeTypeToTypedArrayType(*vector), E_STR("TypedArray"), E_TYPE, E_NAME(JLNativeTypeToString(*vector)) );
 	*actualLength = ta->length;
 	maxLength = JL_MIN( *actualLength, maxLength );
-	for ( jsuint i = 0; i < maxLength; ++i )
+	for ( jsuint i = 0; i < maxLength; ++i ) {
+
 		vector[i] = ((T*)ta->data)[i];
+	}
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2368,7 +2374,7 @@ JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T
 
 template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-JL_JsvalToNativeVector( JSContext *cx, jsval &val, T *vector, jsuint maxLength, jsuint *actualLength ) {
+JL_JsvalToNativeVector( JSContext * RESTRICT cx, jsval & RESTRICT val, T * RESTRICT vector, jsuint maxLength, jsuint *actualLength ) {
 
 	JL_ASSERT_IS_OBJECT(val, "vector");
 
@@ -2380,10 +2386,11 @@ JL_JsvalToNativeVector( JSContext *cx, jsval &val, T *vector, jsuint maxLength, 
 
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, actualLength) );
 	maxLength = JL_MIN( *actualLength, maxLength );
-	while ( maxLength-- ) {
+	jsval tmp;
+	for ( jsuint i = 0; i < maxLength; ++i ) {  // while ( maxLength-- ) { // avoid reverse walk (L1 cache issue)
 
-		JL_CHK( JS_GetElement(cx, arrayObj, maxLength, &val) ); //JL_CHK( JS_GetPropertyById(cx, arrayObj, INT_TO_JSID(i), &val) );
-		JL_CHK( JL_JsvalToNative(cx, val, &vector[maxLength]) );
+		JL_CHK( JL_GetElement(cx, arrayObj, i, &tmp) );
+		JL_CHK( JL_JsvalToNative(cx, tmp, &vector[i]) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -2500,7 +2507,7 @@ JL_LookupProperty( JSContext *cx, JSObject *obj, jsid id, T *cval ) {
 INLINE JSBool FASTCALL
 JL_JSArrayToBuffer( JSContext * RESTRICT cx, JSObject * RESTRICT arrObj, JLStr * RESTRICT str ) {
 
-	ASSERT( JS_IsArrayObject(cx, arrObj) );
+	ASSERT( JL_ObjectIsArray(cx, arrObj) );
 	jsuint length;
 	JL_CHK( JS_GetArrayLength(cx, arrObj, &length) );
 
@@ -2512,7 +2519,7 @@ JL_JSArrayToBuffer( JSContext * RESTRICT cx, JSObject * RESTRICT arrObj, JLStr *
 	int32 num;
 	for ( jsuint i = 0; i < length; ++i ) {
 
-		JL_CHK( JS_GetElement(cx, arrObj, i, &elt) );
+		JL_CHK( JL_GetElement(cx, arrObj, i, &elt) );
 		JL_CHK( JL_JsvalToNative(cx, elt, &num) );
 		//JL_CHK( JS_ValueToInt32(cx, elt, &num) );
 		buf[i] = (jschar)num;
@@ -2632,35 +2639,35 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, jsval &val, float ** RESTRICT m ) {
 		}
 	}
 
-	if ( JS_IsArrayObject(cx, matrixObj) ) {
+	if ( JL_ObjectIsArray(cx, matrixObj) ) {
 
 		uint32 length;
 		jsval element;
-		JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 0, &element) );
+		JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(val), 0, &element) );
 		if ( JL_ValueIsArray(cx, element) ) { // support for [ [1,1,1,1], [2,2,2,2], [3,3,3,3], [4,4,4,4] ] matrix
 
 			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+0, 4, &length ) );
-			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[0]"), E_TYPE, E_TY_NARRAY(4) );
+			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[0]"), E_TYPE, E_TY_NVECTOR(4) );
 
-			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 1, &element) );
+			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(val), 1, &element) );
 			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+4, 4, &length ) );
 			JL_ASSERT_IS_ARRAY( element, "matrix44[1]" );
-			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[1]"), E_TYPE, E_TY_NARRAY(4) );
+			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[1]"), E_TYPE, E_TY_NVECTOR(4) );
 
-			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 2, &element) );
+			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(val), 2, &element) );
 			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+8, 4, &length ) );
 			JL_ASSERT_IS_ARRAY( element, "matrix44[2]" );
-			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[2]"), E_TYPE, E_TY_NARRAY(4) );
+			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[2]"), E_TYPE, E_TY_NVECTOR(4) );
 
-			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(val), 3, &element) );
+			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(val), 3, &element) );
 			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+12, 4, &length ) );
 			JL_ASSERT_IS_ARRAY( element, "matrix44[3]" );
-			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[3]"), E_TYPE, E_TY_NARRAY(4) );
+			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[3]"), E_TYPE, E_TY_NVECTOR(4) );
 			return JS_TRUE;
 		}
 
 		JL_CHK( JL_JsvalToNativeVector(cx, val, *m, 16, &length ) );  // support for [ 1,1,1,1, 2,2,2,2, 3,3,3,3, 4,4,4,4 ] matrix
-		JL_ASSERT( length == 16, E_VALUE, E_STR("matrix44"), E_TYPE, E_TY_NARRAY(16) );
+		JL_ASSERT( length == 16, E_VALUE, E_STR("matrix44"), E_TYPE, E_TY_NVECTOR(16) );
 		return JS_TRUE;
 	}
 
@@ -3051,8 +3058,8 @@ JL_Push( JSContext * RESTRICT cx, JSObject * RESTRICT arr, jsval * RESTRICT valu
 
 	jsuint length;
 	JL_CHK( JS_GetArrayLength(cx, arr, &length) );
-	JL_CHK( JS_SetPropertyById(cx, arr, INT_TO_JSID(length), value) ); //JL_CHK( JS_SetElement(cx, arrObj, length, value) );
-	JL_CHK( JS_SetArrayLength(cx, arr, length+1) );
+	JL_CHK( JL_SetElement(cx, arr, length, value) );
+	//JL_CHK( JS_SetArrayLength(cx, arr, length+1) ); // implicitly done.
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3064,8 +3071,8 @@ JL_Pop( JSContext * RESTRICT cx, JSObject * RESTRICT arr, jsval * RESTRICT vp ) 
 	jsuint length;
 	JL_CHK( JS_GetArrayLength(cx, arr, &length) );
 	--length;
-	JL_CHK( JS_GetPropertyById(cx, arr, INT_TO_JSID(length), vp) ); //JL_CHK( JS_GetElement(cx, arrObj, length, vp) );
-	JL_CHK( JS_SetArrayLength(cx, arr, length) );
+	JL_CHK( JS_GetPropertyById(cx, arr, INT_TO_JSID(length), vp) ); //JL_CHK( JL_GetElement(cx, arrObj, length, vp) );
+	JL_CHK( JS_SetArrayLength(cx, arr, length) ); // pop does reduce the array length
 	return JS_TRUE;
 	JL_BAD;
 }

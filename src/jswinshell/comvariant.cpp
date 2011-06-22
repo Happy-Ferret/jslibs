@@ -416,7 +416,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
 				jsval val;
 				JL_CHK( VariantToJsval(cx, pvar, &val) );
-				JL_CHK( JS_SetElement(cx, jsArr, i - lBound, &val) );
+				JL_CHK( JL_SetElement(cx, jsArr, i - lBound, &val) );
 			}
 
 			SafeArrayUnaccessData(psa);

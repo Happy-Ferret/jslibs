@@ -441,21 +441,31 @@ DEFINE_PROPERTY_SETTER( feedbackVector ) {
 	uint32 length;
 	IFDEBUG( length = 0; ) // avoid "potentially uninitialized local variable" warning
 
+	ode::dReal *vector;
 	switch ( JSID_TO_INT(id) ) {
 		case body1Force:
-			JL_CHK( JL_JsvalToODERealVector(cx, *vp, feedback->f1, 3, &length) );
+			//JL_CHK( JsvalToODERealVector(cx, *vp, feedback->f1, 3, &length) );
+			vector = feedback->f1;
 			break;
 		case body1Torque:
-			JL_CHK( JL_JsvalToODERealVector(cx, *vp, feedback->t1, 3, &length) );
+			//JL_CHK( JsvalToODERealVector(cx, *vp, feedback->t1, 3, &length) );
+			vector = feedback->t1;
 			break;
 		case body2Force:
-			JL_CHK( JL_JsvalToODERealVector(cx, *vp, feedback->f2, 3, &length) );
+			//JL_CHK( JsvalToODERealVector(cx, *vp, feedback->f2, 3, &length) );
+			vector = feedback->f1;
 			break;
 		case body2Torque:
-			JL_CHK( JL_JsvalToODERealVector(cx, *vp, feedback->t2, 3, &length) );
+			//JL_CHK( JsvalToODERealVector(cx, *vp, feedback->t2, 3, &length) );
+			vector = feedback->t2;
 			break;
+		default:
+			ASSERT(false);
+			IFDEBUG( vector = NULL );
 	}
-	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+
+	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -469,20 +479,31 @@ DEFINE_PROPERTY_GETTER( feedbackVector ) {
 	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
 	JL_ASSERT( feedback != NULL, E_STR("feedback"), E_DISABLED );
-	switch(JSID_TO_INT(id)) {
+
+	ode::dReal *vector;
+	switch ( JSID_TO_INT(id) ) {
 		case body1Force:
-			JL_CHK( ODERealVectorToJsval(cx, feedback->f1, 3, vp) );
+			//JL_CHK( ODERealVectorToJsval(cx, feedback->f1, 3, vp) );
+			vector = feedback->f1;
 			break;
 		case body1Torque:
-			JL_CHK( ODERealVectorToJsval(cx, feedback->t1, 3, vp) );
+			//JL_CHK( ODERealVectorToJsval(cx, feedback->t1, 3, vp) );
+			vector = feedback->t1;
 			break;
 		case body2Force:
-			JL_CHK( ODERealVectorToJsval(cx, feedback->f2, 3, vp) );
+			//JL_CHK( ODERealVectorToJsval(cx, feedback->f2, 3, vp) );
+			vector = feedback->f2;
 			break;
 		case body2Torque:
-			JL_CHK( ODERealVectorToJsval(cx, feedback->t2, 3, vp) );
+			//JL_CHK( ODERealVectorToJsval(cx, feedback->t2, 3, vp) );
+			vector = feedback->t2;
 			break;
+		default:
+			ASSERT(false);
+			IFDEBUG( vector = NULL );
 	}
+	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -563,7 +584,7 @@ DEFINE_PROPERTY_SETTER( jointParam ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dReal value;
-	JL_CHK( JL_JsvalToODEReal(cx, *vp, &value) );
+	JL_CHK( JsvalToODEReal(cx, *vp, &value) );
 	JointSetParam(jointId, JSID_TO_INT(id), value);
 	return JS_TRUE;
 	JL_BAD;
@@ -586,7 +607,7 @@ DEFINE_PROPERTY_SETTER( jointParam1 ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dReal real;
-	JL_CHK( JL_JsvalToODEReal(cx, *vp, &real) );
+	JL_CHK( JsvalToODEReal(cx, *vp, &real) );
 	JointSetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup2, real);
 	return JS_TRUE;
 	JL_BAD;
@@ -609,7 +630,7 @@ DEFINE_PROPERTY_SETTER( jointParam2 ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dReal real;
-	JL_CHK( JL_JsvalToODEReal(cx, *vp, &real) );
+	JL_CHK( JsvalToODEReal(cx, *vp, &real) );
 	JointSetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup3, real);
 	return JS_TRUE;
 	JL_BAD;

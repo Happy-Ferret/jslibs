@@ -32,6 +32,8 @@ LoadModule('jsio');
 //	LoadModule('jsaudio');
 // LoadModule('jsgraphics');
 
+	if ( _host.unsafeMode ) throw "Cannot run this test in unsafe mode (else crash)";
+
 	var count = 0;
 	var done = {__proto__:null};
 	for each ( var item in excludeList )
@@ -51,7 +53,7 @@ LoadModule('jsio');
 			if ( name == 'arguments' )
 				continue;
 
-//			Print( left+'.'+name+'\n' );
+//Print( left+'.'+name+'\n' );
 
 			var nextObj;
 			try {

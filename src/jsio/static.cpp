@@ -220,7 +220,7 @@ DEFINE_FUNCTION( Poll ) {
 		js::AutoArrayRooter tvr(cx, propsCount, props);
 		for ( i = 0; i < propsCount; ++i ) {
 
-			JL_CHK( JS_GetElement(cx, fdArrayObj, i, &props[i]) );
+			JL_CHK( JL_GetElement(cx, fdArrayObj, i, &props[i]) );
 			JL_CHK( InitPollDesc(cx, props[i], &pollDesc[i]) );
 		}
 
@@ -362,8 +362,8 @@ DEFINE_FUNCTION( IOEvents ) {
 	for ( jsuint i = 0; i < fdCount; ++i ) {
 
 		tmp = &upe->descVal[i];
-		JL_CHK( JS_GetElement(cx, fdArrayObj, i, tmp) );
-		JL_CHK( JS_SetElement(cx, rootedValues, i, tmp) );
+		JL_CHK( JL_GetElement(cx, fdArrayObj, i, tmp) );
+		JL_CHK( JL_SetElement(cx, rootedValues, i, tmp) );
 		JL_CHK( InitPollDesc(cx, *tmp, &upe->pollDesc[1 + i]) );
 	}
 
@@ -666,7 +666,7 @@ DEFINE_FUNCTION( CreateProcess ) {
 
 			jsval propVal;
 			JL_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal ));
-			JL_CHK( JS_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
+			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
 
 			const char *tmp;
 			JL_CHK( JL_JsvalToNative(cx, &propVal, &tmp) ); // warning: GC on the returned buffer !
@@ -1237,7 +1237,7 @@ DEFINE_FUNCTION( jsioTest ) {
 	JSObject *arr = JS_NewArrayObject(cx, 0, NULL);
 	jsval v = JSVAL_ONE;
 	for ( int i = 0; i < COUNTOF(jsv); i++ )
-		JS_SetElement(cx, arr, i, &v);
+		JL_SetElement(cx, arr, i, &v);
 
 	double t = AccurateTimeCounter() - t0;
 */

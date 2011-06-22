@@ -512,7 +512,7 @@ DEFINE_FUNCTION( RecvFrom ) {
 		JS_free(cx, buffer);
 			return ThrowIoError(cx);
 		tmp = JL_GetEmptyStringValue(cx);
-		JL_CHK( JS_SetElement(cx, arrayObject, 0, &tmp));
+		JL_CHK( JL_SetElement(cx, arrayObject, 0, &tmp));
 */
 	}
 
@@ -527,26 +527,26 @@ DEFINE_FUNCTION( RecvFrom ) {
 
 	jsval tmp;
 	JL_CHK( JL_NativeToJsval(cx, peerName, &tmp) );
-	JL_CHK( JS_SetElement(cx, arrayObject, 1, &tmp) );
+	JL_CHK( JL_SetElement(cx, arrayObject, 1, &tmp) );
 
 	PRUint16 port;
 	port = PR_NetAddrInetPort(&addr);
 
 	JL_CHK( JL_NativeToJsval(cx, port, &tmp) );
-	JL_CHK( JS_SetElement(cx, arrayObject, 2, &tmp) );
+	JL_CHK( JL_SetElement(cx, arrayObject, 2, &tmp) );
 
 	if (likely( res > 0 )) {
 
 		buffer[res] = '\0';
 		JL_CHK( JL_NewBlob( cx, buffer, res, &tmp ) );
-		JL_CHK( JS_SetElement(cx, arrayObject, 0, &tmp) );
+		JL_CHK( JL_SetElement(cx, arrayObject, 0, &tmp) );
 		return JS_TRUE;
 	} else
 	if ( res == 0 ) {
 
 		JS_free(cx, buffer);
 		tmp = JSVAL_VOID;
-		JL_CHK( JS_SetElement(cx, arrayObject, 0, &tmp) );
+		JL_CHK( JL_SetElement(cx, arrayObject, 0, &tmp) );
 	}
 
 	return JS_TRUE;

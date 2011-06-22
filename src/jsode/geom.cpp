@@ -158,8 +158,8 @@ DEFINE_FUNCTION( PointDepth ) {
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	ode::dReal depth, point[3];
 	uint32 len;
-	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(1), point, 3, &len) );
-	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), point, 3, &len) );
+	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 
 	switch( ode::dGeomGetClass(geomId) ) {
 		case ode::dSphereClass:
@@ -435,8 +435,8 @@ DEFINE_PROPERTY_SETTER( position ) {
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
-	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dGeomSetPosition( geom, vector[0], vector[1], vector[2] );
 	return JS_TRUE;
 	JL_BAD;
@@ -483,8 +483,8 @@ DEFINE_PROPERTY_GETTER( boundarySphere ) {
 	ode::dGeomGetAABB(geomId, aabb);
 
 	Vector3 v1, v2, center;
-	Vector3Set(&v1, aabb[0], aabb[2], aabb[4] );
-	Vector3Set(&v2, aabb[1], aabb[3], aabb[5] );
+	Vector3Set(&v1, aabb[0], aabb[2], aabb[4]);
+	Vector3Set(&v2, aabb[1], aabb[3], aabb[5]);
 
 	Vector3SubVector3(&center, &v1, &v2);
 	Vector3Div(&center, &center, 2);
@@ -494,7 +494,7 @@ DEFINE_PROPERTY_GETTER( boundarySphere ) {
 	JL_CHK( ODERealVectorToJsval(cx, center.raw, 3, vp) );
 	jsval tmpVal;
 	JL_CHK( JL_NativeToJsval(cx, radius, &tmpVal) );
-	JL_CHK( JS_SetElement(cx, JSVAL_TO_OBJECT(*vp), 3, &tmpVal) );
+	JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT(*vp), 3, &tmpVal) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -523,7 +523,7 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	size_t length;
-	JL_CHK( JL_JsvalToODERealVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomSetOffsetPosition( geom, vector[0], vector[1], vector[2] ); // (TBD) dGeomSetOffsetWorldRotation
 	return JS_TRUE;

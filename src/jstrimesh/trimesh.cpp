@@ -198,7 +198,7 @@ DEFINE_FUNCTION( DefineVertexBuffer ) {
 	jsval item;
 	for ( jsuint i = 0; i < count; i++ ) {
 
-		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
+		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 //		if ( sizeof(SURFACE_REAL_TYPE) == sizeof(float) )
 		JL_CHK( JL_JsvalToNative(cx, item, &pv->vertex[i]) );
 //		else
@@ -236,7 +236,7 @@ DEFINE_FUNCTION( DefineNormalBuffer ) {
 	jsval item;
 	for ( jsuint i = 0; i < count; i++ ) {
 
-		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
+		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 		JL_CHK( JL_JsvalToNative(cx, item, &pv->normal[i]) );
 	}
 	return JS_TRUE;
@@ -270,7 +270,7 @@ DEFINE_FUNCTION( DefineTextureCoordinateBuffer ) {
 	jsval item;
 	for ( jsuint i = 0; i < count; i++ ) {
 
-		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
+		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 		JL_CHK( JL_JsvalToNative(cx, item, &pv->textureCoordinate[i]) );
 	}
 	return JS_TRUE;
@@ -304,7 +304,7 @@ DEFINE_FUNCTION( DefineColorBuffer ) {
 	jsval item;
 	for ( jsuint i = 0; i < count; i++ ) {
 
-		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
+		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 		JL_CHK( JL_JsvalToNative(cx, item, &pv->color[i]) );
 	}
 	return JS_TRUE;
@@ -338,7 +338,7 @@ DEFINE_FUNCTION( DefineIndexBuffer ) {
 	jsval item;
 	for ( jsuint i = 0; i < count; i++ ) {
 
-		JL_CHK( JS_GetElement(cx, arrayObj, i, &item) );
+		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 		JL_CHK( JL_JsvalToNative(cx, item, &pv->index[i]) );
 	}
 	pv->indexCount = count;

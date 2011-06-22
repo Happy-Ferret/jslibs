@@ -1,6 +1,10 @@
 LoadModule('jsstd');
+LoadModule('jsstd');
+LoadModule('jsio');
+LoadModule('jsdebug');
 
-Sleep(1000);
+
+SwitchCase();
 
 throw 0;
 

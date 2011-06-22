@@ -241,7 +241,6 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( SwitchCase ) {
 
 	JL_ASSERT_ARGC_RANGE( 3, 4 );
-
 	JL_ASSERT_ARG_IS_ARRAY(2);
 	JL_ASSERT_ARG_IS_ARRAY(3);
 
@@ -253,12 +252,12 @@ DEFINE_FUNCTION( SwitchCase ) {
 	jsuint i;
 	for ( i = 0; i < caseArrayLength; ++i ) {
 	
-		JL_CHK( JS_GetElement(cx, caseArray, i, JL_RVAL) );
+		JL_CHK( JL_GetElement(cx, caseArray, i, JL_RVAL) );
 		
 		JSBool same;
 		JL_CHK( JS_SameValue(cx, JL_ARG(1), *JL_RVAL, &same) );
 		if ( same )
-			return JS_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(3)), i, JL_RVAL);
+			return JL_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(3)), i, JL_RVAL);
 	}
 
 	*JL_RVAL = argc >= 4 ? JL_ARG(4) : JSVAL_VOID;

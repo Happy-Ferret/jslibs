@@ -252,13 +252,13 @@ DEFINE_FUNCTION( GetVideoModeList ) {
 		JL_CHK(rectArray);
 
 		tmp = OBJECT_TO_JSVAL(rectArray);
-		JL_CHK( JS_SetElement(cx, modesArray, i, &tmp) );
+		JL_CHK( JL_SetElement(cx, modesArray, i, &tmp) );
 
 		tmp = INT_TO_JSVAL(modes[i]->w);
-		JL_CHK( JS_SetElement(cx, rectArray, 0, &tmp) );
+		JL_CHK( JL_SetElement(cx, rectArray, 0, &tmp) );
 
 		tmp = INT_TO_JSVAL(modes[i]->h);
-		JL_CHK( JS_SetElement(cx, rectArray, 1, &tmp) );
+		JL_CHK( JL_SetElement(cx, rectArray, 1, &tmp) );
 	}
 	return JS_TRUE;
 	JL_BAD;

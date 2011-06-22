@@ -93,8 +93,8 @@ DEFINE_FUNCTION( SetAxis ) {
 	
 	ode::dVector3 vector;
 	uint32 length;
-	JL_CHK( JL_JsvalToODERealVector(cx, JL_ARG(3), vector, 3, &length) );
-	JL_ASSERT( length >= 3, E_ARG, E_NUM(3), E_TYPE, E_TY_NARRAY(3) );
+	JL_CHK( JsvalToODERealVector(cx, JL_ARG(3), vector, 3, &length) );
+	JL_ASSERT( length >= 3, E_ARG, E_NUM(3), E_TYPE, E_TY_NVECTOR(3) );
 
 	if ( anum+1 > ode::dJointGetLMotorNumAxes(jointId) )
 		ode::dJointSetLMotorNumAxes(jointId, anum+1);
