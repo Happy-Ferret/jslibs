@@ -11,6 +11,146 @@ LoadModule('jsdebug');
 
 
 
+var taskList = [];
+
+// timer
+
+var currentTime = 0;
+var timeoutList = [];
+
+function AddTimeout(time, fct) {
+
+	timeoutList.push([currentTime + time, fct]);
+	timeoutList.sort(function(a,b) a[0]-b[0]);
+}
+
+function ProcessTimeout() {
+
+	var len = timeoutList.length;
+	for ( var i = 0; i < len; ++i )
+		if ( timeoutList[i][0] > currentTime )
+			break;
+	var exList = timeoutList.splice(0, i);
+	var len = exList.length;
+	for ( var i = 0; i < len; ++i )
+		taskList.push(exList[i][1]);
+}
+
+
+function PSleep(time) function(state, callback) {
+
+	++state.step;
+	AddTimeout(time, callback);
+}
+
+function PIdle() function(state, callback) {
+	
+	++state.step;
+	taskList.push(callback);
+}
+
+function PGoto(step) function(state, callback) {
+	
+	state.step = step;
+	taskList.push(callback);
+}
+
+function PEnd() function(state, callback) {
+};
+
+function ProcState() {
+	this.step = 0;
+	this.result = undefined;
+}
+
+function ProcCreate(fct) {
+	
+	var state = new ProcState();
+	taskList.push(function inner() {
+
+		state.result = fct(state)(state, inner);
+	});
+	return state;
+}
+
+
+function Step(elapsed, maxWait) {
+
+	currentTime += elapsed;
+	ProcessTimeout();
+	
+	var wait;
+	if ( timeoutList.length )
+		wait = Math.min(timeoutList[0][0] - currentTime, maxWait);
+	else
+		wait = maxWait;
+
+	var len = taskList.length;
+	if ( len ) {
+		
+		var tmp = taskList;
+		taskList = [];
+		for ( var i = 0; i < len; ++i )
+			tmp[i]();
+	}
+	
+	Sleep(Math.floor(wait));
+}
+
+
+// user code
+
+function test() {
+
+	function testProc1( state ) {
+
+		switch ( state.step ) {
+		case 0:
+			Print(state.step);
+			return PIdle();
+		case 1:
+			Print(state.step);
+			return PSleep(500);
+		case 2:
+			Print(state.step);
+			return PGoto(0);
+		}
+		return PEnd();
+	}
+	
+	var proc = ProcCreate(testProc1.bind(this));
+	
+	this.FreezeThaw = function() {
+	}
+}
+
+
+new test();
+
+while ( !endSignal ) {
+
+	Step(10, 10);
+}
+
+Print( uneval(timeoutList) );
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*
 	var randomString = '';
