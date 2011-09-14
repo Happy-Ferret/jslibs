@@ -1782,6 +1782,59 @@ DEFINE_FUNCTION( CopyTexSubImage2D ) {
 
 /**doc
 $TOC_MEMBER $INAME
+ $VOID $INAME( target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, data )
+  $H arguments
+   $ARG GLenum target
+   $ARG GLint level
+   $ARG GLint xoffset
+   $ARG GLint yoffset
+   $ARG GLsizei width
+   $ARG GLsizei height
+   $ARG GLenum format
+   $ARG GLenum type
+   $ARG Blob data
+  $H OpenGL API
+   glTexSubImage2D
+  $H OpenGL documentation
+**/
+DEFINE_FUNCTION( TexSubImage2D ) {
+
+	JLStr data;
+
+	OGL_CX_CHK;
+
+	JL_ASSERT_ARGC(9);
+	JL_ASSERT_ARG_IS_INTEGER(1);
+	JL_ASSERT_ARG_IS_INTEGER(2);
+	JL_ASSERT_ARG_IS_INTEGER(3);
+	JL_ASSERT_ARG_IS_INTEGER(4);
+	JL_ASSERT_ARG_IS_INTEGER(5);
+	JL_ASSERT_ARG_IS_INTEGER(6);
+	JL_ASSERT_ARG_IS_INTEGER(7);
+	JL_ASSERT_ARG_IS_INTEGER(8);
+
+	GLvoid *pixels;
+	jsval arg;
+	arg = JL_ARG(9);
+	if ( JSVAL_IS_INT(arg) ) {
+			
+		pixels = (GLvoid*)JSVAL_TO_INT(arg);
+	} else {
+
+		JL_CHK( JL_JsvalToNative(cx, arg, &data) );
+		pixels = (GLvoid*)data.GetConstStr();
+	}
+
+	glTexSubImage2D(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)), JSVAL_TO_INT(JL_ARG(6)), JSVAL_TO_INT(JL_ARG(7)), JSVAL_TO_INT(JL_ARG(8)), pixels);
+
+	*JL_RVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
  $VOID $INAME( pname, params )
   $H arguments
    $ARG GLenum pname
@@ -3350,43 +3403,7 @@ DEFINE_FUNCTION( CopyTexImage2D ) {
 }
 
 
-/*
-DEFINE_FUNCTION( TexSubImage2D ) {
 
-	OGL_CX_CHK;
-
-	JL_ASSERT_ARGC_MIN(7);
-	JL_ASSERT_ARG_IS_INTEGER(1);
-	JL_ASSERT_ARG_IS_INTEGER(2);
-	JL_ASSERT_ARG_IS_INTEGER(3);
-	JL_ASSERT_ARG_IS_INTEGER(4);
-	JL_ASSERT_ARG_IS_INTEGER(5);
-	JL_ASSERT_ARG_IS_INTEGER(6);
-
-	GLint level = JSVAL_TO_INT(JL_ARG(1));
-	GLenum internalFormat = JSVAL_TO_INT(JL_ARG(2));
-
-	GLint xoffset = JSVAL_TO_INT(JL_ARG(3));
-	GLint yoffset = JSVAL_TO_INT(JL_ARG(4));
-	GLint x = JSVAL_TO_INT(JL_ARG(5));
-	GLint y = JSVAL_TO_INT(JL_ARG(6));
-	GLint width = JSVAL_TO_INT(JL_ARG(7));
-	GLint height = JSVAL_TO_INT(JL_ARG(8));
-
-	GLint border;
-	if ( JL_ARG_ISDEF(7) )
-		border = JSVAL_TO_INT(JL_ARG(7));
-	else
-		border = 0;
-
-	glTexSubImage2D( GL_TEXTURE_2D, level, xoffset, yoffset, width, height, format,  border );  OGL_ERR_CHK;
-
-	*JL_RVAL = JSVAL_VOID;
-	;
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
 
 /**doc
 $TOC_MEMBER $INAME
@@ -3489,7 +3506,6 @@ DEFINE_FUNCTION( RasterPos ) {
  	return JS_TRUE;
 	JL_BAD;
 }
-
 
 
 /**doc
@@ -6932,6 +6948,7 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC(TexGen, 3) // coord, pname, params
 		FUNCTION_ARGC(TexImage2D, 9) // target, level, internalFormat, width, height, border, format, type, data
 		FUNCTION_ARGC(CopyTexSubImage2D, 8) // target, level, xoffset, yoffset, x, y, width, height
+		FUNCTION_ARGC(TexSubImage2D, 9) // target, level, xoffset, yoffset, width, height, format, type, data
 		FUNCTION_ARGC(LightModel, 2) // pname, param
 		FUNCTION_ARGC(Light, 3) // light, pname, param
 		FUNCTION_ARGC(GetLight, 3) // light, pname, count
