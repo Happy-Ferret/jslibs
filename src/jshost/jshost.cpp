@@ -340,9 +340,9 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				useFileBootstrapScript = true;
 				break;
 			case 'i': // inline script
-				// argumentVector++; // keep the script as argument[0]
+				argumentVector++; // keep the script as argument[0]
 				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-				inlineScript = *(argumentVector+1);
+				inlineScript = *(argumentVector);
 				break;
 			case '?': // help
 			case 'h': //
@@ -462,8 +462,9 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JL_CHK( JS_DefineFunction(cx, globalObject, "EndSignalEvents", (JSNative)EndSignalEvents, 0, JSPROP_SHARED | JSPROP_PERMANENT) );
 
 // script name
-	if ( inlineScript == NULL )
-		scriptName = *argumentVector;
+	//	if ( inlineScript == NULL )
+	scriptName = *argumentVector;
+
 	JL_CHKM( inlineScript != NULL || scriptName != NULL, E_SCRIPT, E_DEFINED ); // "No script specified."
 
 	char hostFullPath[PATH_MAX +1];
@@ -521,10 +522,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	ASSERT( !JL_IsExceptionPending(cx) );
 
 	JSBool executeStatus;
-	if ( inlineScript == NULL )
-		executeStatus = ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
-	else
+	if ( inlineScript != NULL )
 		executeStatus = ExecuteScriptText(cx, inlineScript, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
+
+	if ( inlineScript == NULL || executeStatus == JS_TRUE )
+		executeStatus = ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
 
 	if ( executeStatus == JS_TRUE ) {
 
