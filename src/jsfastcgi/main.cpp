@@ -21,7 +21,8 @@ DECLARE_STATIC()
 //#include "fastcgi.h"
 
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+JSBool
+ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 //	_unsafeMode = JL_GetHostPrivate(cx)->unsafeMode;
 

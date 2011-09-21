@@ -144,11 +144,11 @@ namespace jl {
 		}
 		ALWAYS_INLINE void operator delete(void *ptr, size_t size) {
 			jl_free(ptr);
-			JL_INGORE(size);
+			JL_IGNORE(size);
 		}
 		ALWAYS_INLINE void operator delete[](void *ptr, size_t size) {
 			jl_free(ptr);
-			JL_INGORE(size);
+			JL_IGNORE(size);
 		}
 	};
 

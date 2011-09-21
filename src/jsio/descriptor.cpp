@@ -522,7 +522,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( available ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	PRFileDesc *fd;
 	JL_ASSERT_THIS_INHERITANCE();
@@ -554,7 +554,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( type ) {
 	
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INHERITANCE();
 
@@ -576,7 +576,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( closed ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INHERITANCE();
 
@@ -723,7 +723,7 @@ bool IOCancelWait( volatile ProcessEvent *pe ) {
 
 JSBool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-	JL_INGORE(obj);
+	JL_IGNORE(obj);
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -910,8 +910,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( timeout ) {
 	
-	JL_INGORE(id);
-	JL_INGORE(strict);
+	JL_IGNORE(id);
+	JL_IGNORE(strict);
 	JL_ASSERT_THIS_INHERITANCE();
 
 	int32 timeout;

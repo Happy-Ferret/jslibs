@@ -110,7 +110,7 @@ JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 int HostStderr( void *privateData, const char *buffer, size_t length ) {
 
-	JL_INGORE(privateData);
+	JL_IGNORE(privateData);
 	char *tmp = (char*)jl_malloca(length+1);
 	memcpy(tmp, buffer, length);
 	tmp[length] = '\0';
@@ -121,8 +121,8 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
-	JL_INGORE(hPrevInstance);
-	JL_INGORE(nCmdShow);
+	JL_IGNORE(hPrevInstance);
+	JL_IGNORE(nCmdShow);
 
 	HANDLE heap = GetProcessHeap();
 	ULONG enable = 2;

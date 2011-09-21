@@ -220,7 +220,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Wipe ) {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -660,7 +660,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( blockLength ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	AsymmetricCipherPrivate *pv;
@@ -716,7 +716,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( keySize ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	AsymmetricCipherPrivate *pv;

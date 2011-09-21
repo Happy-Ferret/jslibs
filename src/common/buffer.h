@@ -116,8 +116,8 @@ inline size_t NextChunkSize( const Buffer *buffer, size_t lastChunk, size_t requ
 
 inline BufferType GuessType( const Buffer *buffer, size_t lastChunk, size_t requiredLength ) {
 
-	JL_INGORE(buffer);
-	JL_INGORE(lastChunk);
+	JL_IGNORE(buffer);
+	JL_IGNORE(lastChunk);
 
 	BufferChunk *chunk = &buffer->chunkList[buffer->chunkPos];
 	if ( chunk->pos + requiredLength - chunk->size < BUFFER_TYPE_AUTO_THRESHOLD )
@@ -128,19 +128,19 @@ inline BufferType GuessType( const Buffer *buffer, size_t lastChunk, size_t requ
 
 inline void* DefaultBufferAlloc( void* opaqueAllocatorContext, size_t size ) {
 
-	JL_INGORE(opaqueAllocatorContext);
+	JL_IGNORE(opaqueAllocatorContext);
 	return jl_malloc(size);
 }
 
 inline void DefaultBufferFree( void* opaqueAllocatorContext, void* memory ) {
 
-	JL_INGORE(opaqueAllocatorContext);
+	JL_IGNORE(opaqueAllocatorContext);
 	jl_free(memory);
 }
 
 inline void* DefaultBufferRealloc( void* opaqueAllocatorContext, void* memory, size_t size ) {
 
-	JL_INGORE(opaqueAllocatorContext);
+	JL_IGNORE(opaqueAllocatorContext);
 	return jl_realloc(memory, size);
 }
 
@@ -240,7 +240,7 @@ inline void BufferConfirm( Buffer *buffer, size_t amount ) {
 
 inline size_t BufferGetRecommendedLength( const Buffer *buffer ) {
 
-	JL_INGORE(buffer);
+	JL_IGNORE(buffer);
 
 	return 4096;
 }

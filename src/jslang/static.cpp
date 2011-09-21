@@ -104,7 +104,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( IsPrimitive ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	JL_ASSERT_ARGC(1);
 
 	*JL_RVAL = BOOLEAN_TO_JSVAL( JSVAL_IS_PRIMITIVE(JL_ARG(1)) );
@@ -433,7 +433,7 @@ bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
 
 JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-	JL_INGORE(obj);
+	JL_IGNORE(obj);
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -570,9 +570,9 @@ DEFINE_FUNCTION( Deserialize ) {
 
 DEFINE_FUNCTION( jslangTest ) {
 
-	JL_INGORE(cx);
-	JL_INGORE(argc);
-	JL_INGORE(vp);
+	JL_IGNORE(cx);
+	JL_IGNORE(argc);
+	JL_IGNORE(vp);
 
 	return JS_TRUE;
 	JL_BAD;

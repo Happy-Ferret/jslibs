@@ -34,7 +34,7 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	jl::Serializer *ser;

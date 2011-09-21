@@ -79,7 +79,8 @@ void odeFreeFunction (void *ptr, size_t size) {
 	jl_free(ptr);
 }
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+JSBool
+ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 //	put_StackCommitSize
 
@@ -140,12 +141,14 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	JL_BAD;
 }
 
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+JSBool
+ModuleRelease(JSContext *cx) {
 
 	return JS_TRUE;
 }
 
-EXTERN_C DLLEXPORT void ModuleFree() {
+void
+ModuleFree() {
 
 	ode::dCloseODE();
 

@@ -40,7 +40,8 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+JSBool
+ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	const struct ltc_cipher_descriptor * cipherList[] = {
 		&blowfish_desc,

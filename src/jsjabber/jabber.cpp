@@ -147,7 +147,7 @@ private:
 
 	void handleMessage( Stanza *stanza, MessageSession *session ) {
 
-		JL_INGORE(session);
+		JL_IGNORE(session);
 
 		jsval fval, rval;
 		if ( !JS_GetProperty(_cx, _obj, "onMessage", &fval) || JSVAL_IS_VOID( fval ) )

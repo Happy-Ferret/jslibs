@@ -35,7 +35,8 @@ namespace OGLFT {
 }
 
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+JSBool
+ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JsoglftPrivate *mpv = (JsoglftPrivate*)ModulePrivateAlloc(sizeof(JsoglftPrivate));
 
@@ -83,7 +84,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 }
 
 
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+JSBool
+ModuleRelease(JSContext *cx) {
 
 //	jl_free(GetModulePrivate(cx, _moduleId));
 
@@ -91,7 +93,8 @@ EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
 }
 
 
-EXTERN_C DLLEXPORT void ModuleFree() {
+void
+ModuleFree() {
 
 	ModulePrivateFree();
 }

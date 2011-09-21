@@ -45,7 +45,7 @@ LoadModule('jsstd');
 
 	var x = new Blob('x');
 	var all = x.concat();
-	QA.ASSERT( all != x, true, 'behaves like: a = new String(123);  a.concat() !== a' );
+	QA.ASSERT( all !== x, true, 'behaves like: a = new String(123);  a.concat() !== a' );
 
 
 /// Blob char value [ftrm]

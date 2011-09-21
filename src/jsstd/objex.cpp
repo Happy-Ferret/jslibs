@@ -95,7 +95,7 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
-	JL_INGORE(strict);
+	JL_IGNORE(strict);
 	return NotifyObject( SET_SLOT, cx, obj, id, vp );
 }
 

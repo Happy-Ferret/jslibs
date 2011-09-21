@@ -89,7 +89,7 @@ public:
 
 		JSBool status = ExecuteScriptFileName(_cx, "vstPlugin.js", false, 0, NULL, &_rval);
 		
-		JL_INGORE(status);
+		JL_IGNORE(status);
 
 //		if ( !status )
 //			MessageBox(NULL, "script compilation error", "Error", 0);

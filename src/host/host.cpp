@@ -223,7 +223,7 @@ JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 void ErrorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	if ( !report )
 		fprintf(stderr, "%s\n", message);
 	else
@@ -1085,7 +1085,7 @@ FreeHead() {
 JLThreadFuncDecl
 MemoryFreeThreadProc( void *threadArg ) {
 
-	JL_INGORE(threadArg);
+	JL_IGNORE(threadArg);
 
 	for (;;) {
 

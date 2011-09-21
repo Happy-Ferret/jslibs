@@ -39,9 +39,9 @@
 
 /// jshost arguments [ftm]
 
-	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments.toString())', '123', '-c']);
+	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments.toString())', '123', '-test']);
 	var res = process.stdout.Read();
-	QA.ASSERT_STR( res, "_host.stdout(arguments.toString()),123,-c", "jshost arguments" );
+	QA.ASSERT_STR( res, "123,-test", "jshost arguments" );
 
 
 /// jshost stderr [ftm]

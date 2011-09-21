@@ -79,7 +79,7 @@ DEFINE_FUNCTION( Expand ) {
 			mapObj = JSVAL_TO_OBJECT(JL_ARG(2));
 	}
 
-	ssize_t total;
+	ptrdiff_t total;
 
 	const jschar *src, *srcEnd;
 	src = srcStr.GetConstJsStr();
@@ -275,7 +275,7 @@ $TOC_MEMBER $INAME
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 DEFINE_FUNCTION( InternString ) {
 	
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	JSString *jsstr = JS_ValueToString(cx, vp[2]);
 	JL_CHK( jsstr );
@@ -642,7 +642,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( CollectGarbage ) {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	size_t gcBytesDiff = cx->runtime->gcBytes;
 	JS_GC( cx );
@@ -659,7 +659,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( MaybeCollectGarbage ) {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	size_t gcBytesDiff = cx->runtime->gcBytes;
 	JS_MaybeGC( cx );
@@ -711,7 +711,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( TimeCounter ) {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	return JL_NativeToJsval(cx, AccurateTimeCounter(), JL_RVAL);
 }
@@ -922,7 +922,7 @@ DEFINE_CONSTRUCTOR() {
 /*
 DEFINE_HAS_INSTANCE() {
 
-	JL_INGORE(obj);
+	JL_IGNORE(obj);
 
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
@@ -1279,8 +1279,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Halt ) {
 
-	JL_INGORE(vp);
-	JL_INGORE(argc);
+	JL_IGNORE(vp);
+	JL_IGNORE(argc);
 
 	JL_ERR(E_STR("the program has been stopped"));
 bad:	
@@ -1303,8 +1303,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( currentFilename ) {
 	
-	JL_INGORE(id);
-	JL_INGORE(obj);
+	JL_IGNORE(id);
+	JL_IGNORE(obj);
 
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( fp == NULL ) {
@@ -1333,8 +1333,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 	
-	JL_INGORE(id);
-	JL_INGORE(obj);
+	JL_IGNORE(id);
+	JL_IGNORE(obj);
 
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( fp == NULL ) {
@@ -1366,8 +1366,8 @@ $TOC_MEMBER $INAME
 ** /
 DEFINE_PROPERTY_GETTER( isConstructing ) {
 
-	JL_INGORE(id);
-	JL_INGORE(obj);
+	JL_IGNORE(id);
+	JL_IGNORE(obj);
 
 	*vp = BOOLEAN_TO_JSVAL( JS_IsConstructing(cx, vp) ); // JS_IsConstructing must be called in a function
 	return JS_TRUE;
@@ -1396,9 +1396,9 @@ JSBool VetoingGCCallback(JSContext *cx, JSGCStatus status) {
 
 DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
 
-	JL_INGORE(id);
-	JL_INGORE(obj);
-	JL_INGORE(strict);
+	JL_IGNORE(id);
+	JL_IGNORE(obj);
+	JL_IGNORE(strict);
 
 	// <shaver>	you could install a vetoing callback!
 	// <crowder>	oh, true
@@ -1423,8 +1423,8 @@ DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
 
 DEFINE_PROPERTY_GETTER( disableGarbageCollection ) {
 
-	JL_INGORE(id);
-	JL_INGORE(obj);
+	JL_IGNORE(id);
+	JL_IGNORE(obj);
 
 	JSGCCallback cb = JS_SetGCCallback(cx, NULL);
 	JS_SetGCCallback(cx, cb);
@@ -1441,8 +1441,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( CPUID ) {
 
-	JL_INGORE(id);
-	JL_INGORE(obj);
+	JL_IGNORE(id);
+	JL_IGNORE(obj);
 
 	if ( !JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
@@ -1459,10 +1459,10 @@ DEFINE_PROPERTY_GETTER( CPUID ) {
 
 JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	JL_INGORE(vp);
-	JL_INGORE(id);
-	JL_INGORE(obj);
-	JL_INGORE(cx);
+	JL_IGNORE(vp);
+	JL_IGNORE(id);
+	JL_IGNORE(obj);
+	JL_IGNORE(cx);
 
 	return JS_TRUE;
 //	JL_BAD;
@@ -1537,8 +1537,8 @@ DEFINE_FUNCTION( jsstdTest ) {
 
 DEFINE_INIT() {
 
-	JL_INGORE(proto);
-	JL_INGORE(sc);
+	JL_IGNORE(proto);
+	JL_IGNORE(sc);
 
 	INIT_CLASS( OperationLimit );
 	return JS_TRUE;

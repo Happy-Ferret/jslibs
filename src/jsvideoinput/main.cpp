@@ -23,7 +23,8 @@ videoInput *vi = NULL;
 
 DECLARE_CLASS( VideoInput )
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+JSBool 
+ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id)  );
 
@@ -40,7 +41,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 }
 
 
-EXTERN_C DLLEXPORT void ModuleFree() {
+void
+ModuleFree() {
 
 	delete vi;
 }

@@ -103,7 +103,7 @@ public:
 
 		JSBool status = JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), _funcVal, argc, argv+1, argv);
 
-		JL_INGORE(status); // (TBD) error check
+		JL_IGNORE(status); // (TBD) error check
 
 //		if ( !status )
 
@@ -516,7 +516,7 @@ DEFINE_FINALIZE() {
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, obj);
 	HRESULT hr = VariantClear(variant);
 
-	JL_INGORE(hr); // (TBD) error check
+	JL_IGNORE(hr); // (TBD) error check
 
 	JS_free(cx, variant);
 }

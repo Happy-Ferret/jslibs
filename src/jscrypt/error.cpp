@@ -23,7 +23,7 @@ BEGIN_CLASS( CryptError )
 
 DEFINE_PROPERTY_GETTER( code ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	return JL_GetReservedSlot( cx, obj, 0, vp );
 }
@@ -66,7 +66,7 @@ const char *ConstString( int errorCode ) {
 
 DEFINE_PROPERTY_GETTER( const ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
 	if ( JSVAL_IS_VOID(*vp) )
@@ -83,7 +83,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 DEFINE_PROPERTY_GETTER( text ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
 	if ( JSVAL_IS_VOID(*vp) )
@@ -100,7 +100,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 DEFINE_FUNCTION( toString ) {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
@@ -109,7 +109,7 @@ DEFINE_FUNCTION( toString ) {
 /*
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	JL_INGORE(obj);
+	JL_IGNORE(obj);
 
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;

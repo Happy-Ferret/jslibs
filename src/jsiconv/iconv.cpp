@@ -325,7 +325,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( invalidChar ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JLStr chr;
 	Private *pv;
@@ -346,7 +346,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 
 DEFINE_PROPERTY_GETTER( invalidChar ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
@@ -359,7 +359,7 @@ DEFINE_PROPERTY_GETTER( invalidChar ) {
 
 DEFINE_PROPERTY_GETTER( hasIncompleteSequence ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);

@@ -21,7 +21,8 @@ DECLARE_STATIC()
 DECLARE_CLASS( Template )
 
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+JSBool
+ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id) );
 
@@ -37,13 +38,15 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	JL_BAD;
 }
 
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+JSBool
+ModuleRelease(JSContext *cx) {
 	
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	//jl_free(JL_GetModulePrivate(cx, _moduleId));
 
 	return JS_TRUE;
 }
 
-//EXTERN_C DLLEXPORT void ModuleFree() {
+//void
+//ModuleFree() {
 //}

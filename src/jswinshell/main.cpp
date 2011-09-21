@@ -36,7 +36,8 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+JSBool
+ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id)  );
 
@@ -59,14 +60,16 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 }
 
 
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+JSBool
+ModuleRelease(JSContext *cx) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 
 	return JS_TRUE;
 }
 
-EXTERN_C DLLEXPORT void ModuleFree() {
+void
+ModuleFree() {
 
 	CoUninitialize();
 }

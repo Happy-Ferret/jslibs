@@ -34,7 +34,7 @@ DEFINE_FINALIZE() { // see HandleClose()
 
 DEFINE_FUNCTION( toString ) {
 
-	JL_INGORE( argc );
+	JL_IGNORE( argc );
 	JL_DEFINE_FUNCTION_OBJ;
 //	JL_ASSERT_THIS_INSTANCE();
 
@@ -82,7 +82,7 @@ DEFINE_FUNCTION( valueOf ) {
 /*
 DEFINE_HAS_INSTANCE() { // see issue#52
 
-	JL_INGORE(obj);
+	JL_IGNORE(obj);
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	return JS_TRUE;
 }
@@ -90,10 +90,10 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 
 DEFINE_INIT() {
 
-	JL_INGORE(cx);
-	JL_INGORE(sc);
-	JL_INGORE(proto);
-	JL_INGORE(obj);
+	JL_IGNORE(cx);
+	JL_IGNORE(sc);
+	JL_IGNORE(proto);
+	JL_IGNORE(obj);
 
 	JL_SAFE( globalKey = JLSessionId() );
 	return JS_TRUE;

@@ -86,7 +86,7 @@ struct ManualCmp { // from jsstr.cpp
 
 
 template <class InnerMatch> // from jsstr.cpp
-ssize_t
+ptrdiff_t
 UnrolledMatch(const uint8_t *text, size_t textlen, const uint8_t *pat, size_t patlen)
 {
     ASSERT(patlen > 0 && textlen > 0);
@@ -132,7 +132,7 @@ UnrolledMatch(const uint8_t *text, size_t textlen, const uint8_t *pat, size_t pa
 }
 
 
-ALWAYS_INLINE ssize_t
+ALWAYS_INLINE ptrdiff_t
 Match(const uint8_t *text, size_t textlen, const uint8_t *pat, size_t patlen) {
 
 	return
@@ -661,7 +661,7 @@ DEFINE_FUNCTION( indexOf ) {
     if (textlen < patlen)
         return JL_NativeToJsval(cx, -1, JL_RVAL);
 
-	ssize_t match;
+	ptrdiff_t match;
 	match = Match(text, textlen, pat, patlen);
 	if ( match == -1 )
 		*JL_RVAL = INT_TO_JSVAL(-1);
@@ -694,7 +694,7 @@ DEFINE_FUNCTION( lastIndexOf ) {
 		return JL_NativeToJsval(cx, -1, JL_RVAL);
 
 	const uint8_t *text, *pat;
-	ssize_t i;
+	ptrdiff_t i;
 	size_t textlen, patlen;
 
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &text) );
@@ -815,7 +815,7 @@ DEFINE_FUNCTION( split ) {
 	sepLen = str.Length();
 	sep = (const uint8_t *)str.GetConstStr();
 
-	ssize_t pos;
+	ptrdiff_t pos;
 
 	for (;;) {
 
@@ -954,7 +954,7 @@ DEFINE_FUNCTION( charCodeAt ) {
 
 DEFINE_FUNCTION( toSource ) {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	// (TBD) try something faster !!
 
@@ -982,7 +982,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( length ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS)
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
@@ -1031,9 +1031,9 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
-	JL_INGORE(strict);
-	JL_INGORE(obj);
-	JL_INGORE(vp);
+	JL_IGNORE(strict);
+	JL_IGNORE(obj);
+	JL_IGNORE(vp);
 
 	JL_ASSERT_WARN( !JSID_IS_INT(id), E_THISOBJ, E_WRITE ); // JL_REPORT_WARNING_NUM( JLSMSG_IMMUTABLE_OBJECT, JL_THIS_CLASS->name); // see also JSMSG_READ_ONLY
 
@@ -1070,7 +1070,7 @@ noteq:
 
 JSBool next_for(JSContext *cx, uintN argc, jsval *vp) {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	JSObject *obj;
 	obj = JS_THIS_OBJECT(cx, vp);
@@ -1100,7 +1100,7 @@ JSBool next_for(JSContext *cx, uintN argc, jsval *vp) {
 
 JSBool next_foreach(JSContext *cx, uintN argc, jsval *vp) {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	jsval tmp;
@@ -1194,7 +1194,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( toString ) { // and valueOf ?
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();

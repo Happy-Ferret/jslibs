@@ -53,7 +53,8 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+JSBool
+ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 /* crash case: see http://www.sqlite.org/cvstrac/tktview?tn=3251
 	sqlite3_initialize();
@@ -85,7 +86,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	JL_BAD;
 }
 
-EXTERN_C DLLEXPORT void ModuleFree() {
+void
+ModuleFree() {
 
 	sqlite3_shutdown();
 }

@@ -75,7 +75,7 @@ inline JSBool ShiftJsval( JSContext *cx, jl::Queue *queue, jsval *value ) {
 
 inline JSBool PeekJsval( JSContext *cx, jl::QueueCell *cell, jsval *value ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 
 	*value = *(jsval*)QueueGetData(cell);  // no need to JS_RemoveRoot *pItem, see Tracer callback
 	return JS_TRUE;
@@ -631,7 +631,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Clear ) {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -937,7 +937,7 @@ $TOC_MEMBER $INAME
 // Note:  String( { toString:function() { return [1,2,3]} } );  throws the following error: "can't convert Object to string"
 DEFINE_FUNCTION( toString ) {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1052,9 +1052,9 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
-	JL_INGORE(vp);
-	JL_INGORE(obj);
-	JL_INGORE(strict);
+	JL_IGNORE(vp);
+	JL_IGNORE(obj);
+	JL_IGNORE(strict);
 
 	JL_ASSERT( !JSID_IS_INT(id), E_THISOBJ, E_OPERATION );
 
@@ -1076,7 +1076,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( length ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	BufferPrivate *pv;

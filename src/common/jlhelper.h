@@ -105,7 +105,7 @@ JL_IsExceptionPending( JSContext *cx ) {
 ALWAYS_INLINE JSBool
 JL_NewNumberValue( const JSContext *cx, jsdouble d, jsval *rval ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	d = JS_CANONICALIZE_NAN(d);
 	js::Valueify(rval)->setNumber(d);
 	return JS_TRUE;
@@ -144,14 +144,14 @@ JL_GetEmptyStringValue( const JSContext *cx ) { // see JS_GetEmptyStringValue()
 ALWAYS_INLINE bool
 JL_HasPrivate( const JSContext *cx, const JSObject *obj ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	return obj->getClass()->flags & JSCLASS_HAS_PRIVATE;
 }
 
 ALWAYS_INLINE void*
 JL_GetPrivate( const JSContext *cx, const JSObject *obj ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	return obj->getPrivate();
 }
 
@@ -159,14 +159,14 @@ JL_GetPrivate( const JSContext *cx, const JSObject *obj ) {
 ALWAYS_INLINE void
 JL_SetPrivate( const JSContext *cx, JSObject *obj, void *data ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	obj->setPrivate(data);
 }
 
 ALWAYS_INLINE JSObject *
 JL_GetPrototype(JSContext *cx, JSObject *obj) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	JSObject *proto = obj->getProto();
 	return proto && proto->map ? proto : NULL; // Beware: ref to dead object (we may be called from obj's finalizer).
 }
@@ -188,7 +188,7 @@ ALWAYS_INLINE JSBool
 JL_GetReservedSlot( JSContext *cx, JSObject *obj, uint32 slot, jsval *vp ) {
 
 	// return JS_GetReservedSlot(cx, obj, slot, vp);
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 
 	#ifdef DEBUG
 	JS_TypeOfValue(cx, *vp); // used for assertSameCompartment(cx, v)
@@ -266,7 +266,7 @@ JL_IsBoolean( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 ALWAYS_INLINE bool
 JL_IsInteger( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	return JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && !JL_DOUBLE_IS_INTEGER(JSVAL_TO_DOUBLE(value)));
 }
 
@@ -285,7 +285,7 @@ JL_IsNumber( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 ALWAYS_INLINE bool
 JL_IsInteger53( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	return JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && JSVAL_TO_DOUBLE(value) < MAX_INT_TO_DOUBLE && JSVAL_TO_DOUBLE(value) > MIN_INT_TO_DOUBLE);
 }
 
@@ -310,7 +310,7 @@ JL_IsNInfinity( const JSContext *cx, const jsval &val ) {
 ALWAYS_INLINE bool
 JL_IsReal( const JSContext *cx, const jsval &val ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	if ( JSVAL_IS_INT(val) )
 		return true;
 	if ( JSVAL_IS_DOUBLE(val) ) {
@@ -359,7 +359,7 @@ JL_IsGeneratorObject( JSContext * RESTRICT cx, jsval &val ) {
 ALWAYS_INLINE bool
 JL_IsGeneratorFunction( JSContext * RESTRICT cx, jsval &val ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	// copied from firefox-5.0b7.source\mozilla-beta\js\src
     JSObject *funobj;
 	if (!js::IsFunctionObject(js::Valueify(val), &funobj)) {
@@ -407,28 +407,28 @@ JL_IsVector( JSContext *cx, const jsval &val ) {
 ALWAYS_INLINE bool
 JL_IsScript( const JSContext *cx, const JSObject *obj ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	return JL_GetClass(obj) == js::Jsvalify(&js_ScriptClass);
 }
 
 ALWAYS_INLINE bool
 JL_ObjectIsFunction( const JSContext *cx, const JSObject *obj ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	return obj->isFunction();
 }
 
 ALWAYS_INLINE bool
 JL_ValueIsFunction( const JSContext *cx, const jsval &val ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	return VALUE_IS_FUNCTION(cx, val);
 }
 
 ALWAYS_INLINE bool
 JL_IsXML( const JSContext *cx, const JSObject *obj ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	#if JS_HAS_XML_SUPPORT
 		extern JS_FRIEND_DATA(js::Class) js_XMLClass;
 		return JL_GetClass(obj) == js::Jsvalify(&js_XMLClass);
@@ -840,7 +840,7 @@ JL_GetPrivateJsid( JSContext * RESTRICT cx, int index, const jschar * RESTRICT n
 
 
 #ifdef DEBUG
-#define JLID_NAME(cx, name) (JL_INGORE(cx), JL_INGORE(JLID_##name), L(#name))
+#define JLID_NAME(cx, name) (JL_IGNORE(cx), JL_IGNORE(JLID_##name), L(#name))
 #else
 #define JLID_NAME(cx, name) (#name)
 #endif // DEBUG
@@ -1632,7 +1632,7 @@ JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, int8_t *num );
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const uint8_t &num, jsval *vp ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	*vp = INT_TO_JSVAL(num);
 	return JS_TRUE;
 }
@@ -1723,7 +1723,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int16_t *num ) {
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const uint16_t &num, jsval *vp ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	*vp = INT_TO_JSVAL(num);
 	return JS_TRUE;
 }
@@ -1773,7 +1773,7 @@ S_ASSERT( INT32_MIN == JSVAL_INT_MIN && INT32_MAX == JSVAL_INT_MAX );
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const int32_t &num, jsval *vp ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	*vp = INT_TO_JSVAL(num);
 	return JS_TRUE;
 }
@@ -1818,7 +1818,7 @@ S_ASSERT( UINT32_MAX >= JSVAL_INT_MAX );
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const uint32_t &num, jsval *vp ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	if (likely( num <= uint32_t(JSVAL_INT_MAX) )) {
 
 		*vp = INT_TO_JSVAL(num);
@@ -2032,7 +2032,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, unsigned long *num ) {
 
 ALWAYS_INLINE JSBool JL_NativeToJsval( JSContext *cx, const size_t &num, jsval *vp ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	if (likely( num <= JSVAL_INT_MAX ))
 		*vp = INT_TO_JSVAL(jsint(num));
 	else
@@ -2073,11 +2073,11 @@ ALWAYS_INLINE JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, size_t *
 }
 
 
-// ssize_t
+// ptrdiff_t
 
-ALWAYS_INLINE JSBool JL_NativeToJsval( JSContext *cx, const ssize_t &num, jsval *vp ) {
+ALWAYS_INLINE JSBool JL_NativeToJsval( JSContext *cx, const ptrdiff_t &num, jsval *vp ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	if (likely( num >= JSVAL_INT_MIN && size <= JSVAL_INT_MAX ))
 		*vp = INT_TO_JSVAL(jsint(num));
 	else
@@ -2085,11 +2085,11 @@ ALWAYS_INLINE JSBool JL_NativeToJsval( JSContext *cx, const ssize_t &num, jsval 
 	return JS_TRUE;
 }
 
-ALWAYS_INLINE JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, ssize_t *num ) {
+ALWAYS_INLINE JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, ptrdiff_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
-		*num = ssize_t(JSVAL_TO_INT(val));
+		*num = ptrdiff_t(JSVAL_TO_INT(val));
 		return JS_TRUE;
 	}
 
@@ -2099,14 +2099,14 @@ ALWAYS_INLINE JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, ssize_t 
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) );
 
-	if (likely( d >= jsdouble(SSIZE_T_MIN) && d <= jsdouble(SSIZE_T_MAX) )) {
+	if (likely( d >= jsdouble(PTRDIFF_MIN) && d <= jsdouble(PTRDIFF_MAX) )) {
 
 		JL_SAFE_BEGIN
 		if ( !jl::IsSafeCast(d, *i) )
 			JL_REPORT_WARNING_NUM( JLSMSG_LOSS_OF_PRECISION);
 		JL_SAFE_END
 
-		*num = (ssize_t)d;
+		*num = (ptrdiff_t)d;
 		return JS_TRUE;
 	}
 
@@ -2122,7 +2122,7 @@ ALWAYS_INLINE JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, ssize_t 
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const double &num, jsval *vp ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	*vp = DOUBLE_TO_JSVAL(num);
 	return JS_TRUE;
 }
@@ -2160,7 +2160,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, double *num ) {
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const float &num, jsval *vp ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	*vp = DOUBLE_TO_JSVAL(jsdouble(num));
 	return JS_TRUE;
 }
@@ -2200,7 +2200,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, float *num ) {
 ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, const bool &b, jsval *vp ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	*vp = BOOLEAN_TO_JSVAL(b);
 	return JS_TRUE;
 }
@@ -2556,14 +2556,14 @@ JL_StringToJsid( JSContext *cx, const jschar *cstr ) {
 ALWAYS_INLINE JSFunction*
 JL_ObjectToFunction( JSContext *cx, const JSObject *obj ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	return GET_FUNCTION_PRIVATE(cx, obj);
 }
 
 ALWAYS_INLINE JSFunction*
 JL_JsvalToFunction( JSContext *cx, const jsval &val ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	return GET_FUNCTION_PRIVATE(cx, JSVAL_TO_OBJECT(val));
 }
 
@@ -2596,7 +2596,7 @@ JL_JsvalToJsid( JSContext * RESTRICT cx, jsval * RESTRICT val, jsid * RESTRICT i
 ALWAYS_INLINE JSBool FASTCALL
 JL_JsidToJsval( JSContext * RESTRICT cx, jsid id, jsval * RESTRICT val ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	*val = js::IdToJsval(id); // see jsatom.h
 	return JS_TRUE;
 }
@@ -2908,7 +2908,7 @@ JL_CreateErrorException( JSContext *cx, JSExnType exn, JSObject **obj ) {
 static void
 ErrorReporter_ToString(JSContext *cx, const char *message, JSErrorReport *report) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	if ( !report )
 		fprintf(stderr, "%s\n", message);
 	else
@@ -2963,7 +2963,7 @@ JL_GetFirstContext(JSRuntime *rt) {
 ALWAYS_INLINE bool
 JL_InheritFrom( JSContext *cx, JSObject *obj, const JSClass *clasp ) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	while ( obj != NULL ) {
 
 		if ( JL_GetClass(obj) == clasp )
@@ -3364,7 +3364,7 @@ JL_CurrentStackFrame(JSContext *cx) {
 ALWAYS_INLINE uint32_t
 JL_StackSize(const JSContext * RESTRICT cx, const JSStackFrame * RESTRICT fp) {
 
-	JL_INGORE(cx);
+	JL_IGNORE(cx);
 	uint32_t length = 0;
 	for ( ; fp; fp = fp->prev() ) // for ( JSStackFrame *fp = JL_CurrentStackFrame(cx); fp; JS_FrameIterator(cx, &fp) )
 		++length;
@@ -3640,9 +3640,9 @@ Matrix44GetNativeInterface( JSContext *cx, JSObject *obj ) {
 INLINE JSBool
 JSMatrix44Get( JSContext *cx, JSObject *obj, float **m ) {
 
-	JL_INGORE( cx );
-	JL_INGORE( m );
-	JL_INGORE( obj );
+	JL_IGNORE( cx );
+	JL_IGNORE( m );
+	JL_IGNORE( obj );
 	return JS_FALSE;
 }
 

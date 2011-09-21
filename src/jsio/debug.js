@@ -1,7 +1,22 @@
 //LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
-LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask -rep 1 jsio');
+//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask -rep 1 jsio');
 
 LoadModule('jsstd'); LoadModule('jsio');
+
+
+
+//LoadModule('jsdebug'); gcZeal = 2;
+
+//var f = new File('C:\\MSDOS.SYS').Open('r');
+var f = new File("C:\\tmp\\vcredist.bmp").Open('r'); // MYDOCUMENTS
+
+Print(f.id.quote());
+
+Halt();
+
+
+
+throw 0;
 
 
 var f1 = new File('');

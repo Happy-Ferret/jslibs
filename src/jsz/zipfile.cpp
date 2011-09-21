@@ -166,6 +166,19 @@ DEFINE_FINALIZE() {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $INAME( filename )
+  Constructs a new inflater or deflater object.
+  $H example
+  {{{
+  var f = new ZipFile('test.zip');
+  f.Open(ZipFile.CREATE);
+  f.Select('file1.txt');
+  f.Write('data1');
+  f.Close();
+  }}}
+**/
 DEFINE_CONSTRUCTOR() {
 
 	JL_ASSERT_CONSTRUCTING();
@@ -189,6 +202,19 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
+/**doc
+=== Methods ===
+**/
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( mode )
+  Open a zip file for reading (ZipFile.READ) or writing (ZipFile.CREATE, ZipFile.CREATEAFTER, ZipFile.ADDINZIP).
+   * if mode is CREATE, a new file is created.
+   * if the file file exist and mode is CREATEAFTER, the zip will be created at the end of the file.
+   * if the file file exist and mode is ADDINZIP, files are added in existing zip (be sure you don't add file that doesn't exist).
+   If the zipfile cannot be opened, an error is rised.
+**/
 DEFINE_FUNCTION( Open ) {
 
 	int mode;
@@ -228,6 +254,11 @@ DEFINE_FUNCTION( Open ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME()
+  Close a zip file.
+**/
 DEFINE_FUNCTION( Close ) {
 
 	JL_DEFINE_FUNCTION_OBJ
@@ -263,6 +294,27 @@ DEFINE_FUNCTION( Close ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( filename )
+  Select a file in the zip file.
+  $H example 1
+  {{{
+  var f = new ZipFile('test.zip');
+  f.Open(ZipFile.READ);
+  f.Select('file1.txt');
+  Print( f.Read() );
+  f.Close();
+  }}}
+  $H example 2
+  {{{
+  var f = new ZipFile('test.zip');
+  f.Open(ZipFile.CREATE);
+  f.Select('file1.txt');
+  f.Write('content1');
+  f.Close();
+  }}}
+**/
 DEFINE_FUNCTION( Select ) {
 
 	JL_DEFINE_FUNCTION_OBJ
@@ -310,6 +362,20 @@ DEFINE_FUNCTION( Select ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME()
+  Go to the first file in the zip file.
+  $H example
+  {{{
+  var f = new ZipFile('test.zip');
+  f.Open(ZipFile.READ);
+  for ( f.GoFirst(); !f.eol; f.GoNext() ) {
+
+    Print( ' '+f.filename, ' : ', f.Read(), ' (lvl='+f.level+' eol=', f.eol, ')\n' );
+  }
+  }}}
+**/
 DEFINE_FUNCTION( GoFirst ) {
 
 	JL_DEFINE_FUNCTION_OBJ
@@ -336,6 +402,11 @@ DEFINE_FUNCTION( GoFirst ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME()
+  Go to the next file in the zip file.
+**/
 DEFINE_FUNCTION( GoNext ) {
 
 	JL_DEFINE_FUNCTION_OBJ
@@ -374,6 +445,11 @@ DEFINE_FUNCTION( GoNext ) {
 
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( index )
+  Go to index-th file in the zip file.
+**/
 DEFINE_FUNCTION( GoTo ) {
 
 	JL_DEFINE_FUNCTION_OBJ
@@ -396,7 +472,6 @@ DEFINE_FUNCTION( GoTo ) {
 		pv->inZipOpened = false;
 	}
 
-
 	int status;
 	status = unzGoToFirstFile(pv->uf);
 	for ( ; index; --index ) {
@@ -416,6 +491,14 @@ DEFINE_FUNCTION( GoTo ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( [amount] )
+  Read _amount_ of data from the current file in the zip file.
+  If _amount_ is omitted, the data is read from the current position to the end of the file.
+  If the returned data is an empty string, this mean that the end of the file is reached.
+  On error, a ZipFileError exception is rised.
+**/
 DEFINE_FUNCTION( Read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -468,13 +551,18 @@ DEFINE_FUNCTION( Read ) {
 
 	pv->remainingLength -= rd;
 
-	ASSERT( unzeof( pv->uf) == (pv->remainingLength == 0) );
+	ASSERT( unzeof(pv->uf) == (pv->remainingLength == 0) );
 
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( data )
+  Append _data_ to the current file in the zip file.
+**/
 DEFINE_FUNCTION( Write ) {
 
 	JLStr data;
@@ -556,9 +644,21 @@ DEFINE_FUNCTION( Write ) {
 }
 
 
+
+
+/**doc
+=== Properties ===
+**/
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $STRING $INAME
+  Get or set the global comment of the zip file.
+**/
 DEFINE_PROPERTY_GETTER( globalComment ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -595,8 +695,8 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 
 DEFINE_PROPERTY_SETTER( globalComment ) {
 
-	JL_INGORE(id);
-	JL_INGORE(strict);
+	JL_IGNORE(id);
+	JL_IGNORE(strict);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -610,9 +710,21 @@ DEFINE_PROPERTY_SETTER( globalComment ) {
 }
 
 
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME
+  Get the end-of-list status of zip file.
+  If this property is true, the end of the file list stored in the zip file is reached.
+  $H example
+  {{{
+  ...
+  for ( g.GoFirst(); !g.eol; g.GoNext() ) { ...
+  }}}
+**/
 DEFINE_PROPERTY_GETTER( eol ) {
 	
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -624,10 +736,14 @@ DEFINE_PROPERTY_GETTER( eol ) {
 	JL_BAD;
 }
 
-
+/**doc
+$TOC_MEMBER $INAME
+ $STRING $INAME
+  Get the name of the current file in the zip file (see Select()).
+**/
 DEFINE_PROPERTY_GETTER( filename ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE()
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -679,10 +795,15 @@ DEFINE_PROPERTY_GETTER( filename ) {
 	JL_BAD;
 }
 
-
+/**doc
+$TOC_MEMBER $INAME
+ $INT $INAME
+  Get or set the compression level of the current file in the zip file.
+  If the zip file is open for writing, the compression level must be set before the first byte of the file is written.
+**/
 DEFINE_PROPERTY_GETTER( level ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -725,8 +846,8 @@ DEFINE_PROPERTY_GETTER( level ) {
 
 DEFINE_PROPERTY_SETTER( level ) {
 
-	JL_INGORE(id);
-	JL_INGORE(strict);
+	JL_IGNORE(id);
+	JL_IGNORE(strict);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -742,9 +863,25 @@ DEFINE_PROPERTY_SETTER( level ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE Date $INAME
+  Get or set the date of the current file in the zip file.
+  If the zip file is open for writing, the date must be set before the first byte of the file is written.
+  The date is represented by a JavaScript Date object.
+  $H example
+  {{{
+  var f = new ZipFile('test.zip');
+  f.Open(ZipFile.CREATE);
+  f.Select('foo/bar/file1.txt');
+  f.date = new Date(2008,6,29);
+  f.Write('content1');
+  f.Close();
+  }}}
+**/
 DEFINE_PROPERTY_GETTER( date ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -780,8 +917,8 @@ DEFINE_PROPERTY_GETTER( date ) {
 
 DEFINE_PROPERTY_SETTER( date ) {
 
-	JL_INGORE(id);
-	JL_INGORE(strict);
+	JL_IGNORE(id);
+	JL_IGNORE(strict);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -797,9 +934,15 @@ DEFINE_PROPERTY_SETTER( date ) {
 }
 
 
+/**doc
+$TOC_MEMBER $INAME
+ $STRING $INAME
+  Get or set extra data to the current file in the zip file.
+  If the zip file is open for writing, the extra data must be set before the first byte of the file is written.
+**/
 DEFINE_PROPERTY_GETTER( extra ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -845,8 +988,8 @@ DEFINE_PROPERTY_GETTER( extra ) {
 
 DEFINE_PROPERTY_SETTER( extra ) {
 
-	JL_INGORE(id);
-	JL_INGORE(strict);
+	JL_IGNORE(id);
+	JL_IGNORE(strict);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -861,11 +1004,16 @@ DEFINE_PROPERTY_SETTER( extra ) {
 
 
 
-
+/**doc
+$TOC_MEMBER $INAME
+ $STRING $INAME
+  Set the password required by the current file in the zip file.
+  If the zip file is open for writing, the password must be set before the first byte of the file is written.
+**/
 DEFINE_PROPERTY_SETTER( password ) {
 
-	JL_INGORE(id);
-	JL_INGORE(strict);
+	JL_IGNORE(id);
+	JL_IGNORE(strict);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -884,9 +1032,9 @@ DEFINE_PROPERTY_SETTER( password ) {
 
 DEFINE_FUNCTION( zipfileTest ) {
 
-	JL_INGORE(vp);
-	JL_INGORE(cx);
-	JL_INGORE(argc);
+	JL_IGNORE(vp);
+	JL_IGNORE(cx);
+	JL_IGNORE(argc);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -895,6 +1043,18 @@ DEFINE_FUNCTION( zipfileTest ) {
 #endif // DEBUG
 
 
+/**doc
+=== Constants ===
+**/
+
+/**doc
+$TOC_MEMBER $INAME
+ Open mode
+ * READ
+ * CREATE
+ * CREATEAFTER
+ * ADDINZIP
+**/
 
 CONFIGURE_CLASS
 
@@ -941,7 +1101,10 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-
+/**doc
+$CLASS_HEADER
+$SVN_REVISION $Revision: 3471 $
+**/
 BEGIN_CLASS( ZipFileError )
 
 const char *ZipFileErrorConstString( int errorCode ) {
@@ -962,7 +1125,7 @@ const char *ZipFileErrorConstString( int errorCode ) {
 
 DEFINE_PROPERTY_GETTER( const ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	JL_GetReservedSlot(cx, obj, 0, vp);
 	if ( JSVAL_IS_VOID(*vp) )
@@ -975,14 +1138,14 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 DEFINE_PROPERTY_GETTER( code ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 
 	return JL_GetReservedSlot(cx, obj, 0, vp);
 }
 
 DEFINE_FUNCTION( toString ) {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	return _constGetter(cx, obj, JSID_EMPTY, JL_RVAL);

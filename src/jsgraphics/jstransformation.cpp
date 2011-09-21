@@ -204,7 +204,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( Clear ) {
 	
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -226,7 +226,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ClearRotation ) {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -247,7 +247,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ClearTranslation ) {
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -943,7 +943,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( translation ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_IS_ARRAY( *vp, "" );
 
@@ -961,7 +961,7 @@ DEFINE_PROPERTY_SETTER( translation ) {
 
 DEFINE_PROPERTY_GETTER( translation ) {
 
-	JL_INGORE(id);
+	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
@@ -1049,10 +1049,10 @@ DEFINE_SET_PROPERTY() {
 
 DEFINE_INIT() {
 
-	JL_INGORE(obj);
-	JL_INGORE(proto);
-	JL_INGORE(sc);
-	JL_INGORE(cx);
+	JL_IGNORE(obj);
+	JL_IGNORE(proto);
+	JL_IGNORE(sc);
+	JL_IGNORE(cx);
 	jl::PoolInitialize( &matrixPool, 8192 );
 	return JS_TRUE;
 }

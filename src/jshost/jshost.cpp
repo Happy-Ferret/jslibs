@@ -69,9 +69,9 @@ JLMutexHandler gEndSignalLock;
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
-	JL_INGORE(cx);
-	JL_INGORE(obj);
-	JL_INGORE(id);
+	JL_IGNORE(cx);
+	JL_IGNORE(obj);
+	JL_IGNORE(id);
 	//return JL_NativeToJsval(cx, (int)gEndSignalState, vp);
 	*vp = INT_TO_JSVAL(gEndSignalState);
 	return JS_TRUE;
@@ -79,9 +79,9 @@ JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
 JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp) {
 
-	JL_INGORE(obj);
-	JL_INGORE(id);
-	JL_INGORE(strict);
+	JL_IGNORE(obj);
+	JL_IGNORE(id);
+	JL_IGNORE(strict);
 
 	int tmp;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tmp) );
@@ -103,7 +103,7 @@ BOOL WINAPI Interrupt(DWORD CtrlType) {
 //	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT) // CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
 //		return FALSE;
 
-	//JL_INGORE(CtrlType);
+	//JL_IGNORE(CtrlType);
 	JLMutexAcquire(gEndSignalLock);
 	gEndSignalState = (CtrlType == CTRL_C_EVENT ? 1 : 2);
 	JLCondBroadcast(gEndSignalCond);
@@ -159,7 +159,7 @@ bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 
 JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-	JL_INGORE(obj);
+	JL_IGNORE(obj);
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	*hasEvent = gEndSignalState != 0;
@@ -205,7 +205,7 @@ static int stderr_fileno = -1;
 
 int HostStdin( void *privateData, char *buffer, size_t bufferLength ) {
 
-	JL_INGORE(privateData);
+	JL_IGNORE(privateData);
 	if (unlikely( stdin_fileno == -1 ))
 		stdin_fileno = fileno(stdin);
 	return read(stdin_fileno, (void*)buffer, bufferLength);
@@ -213,7 +213,7 @@ int HostStdin( void *privateData, char *buffer, size_t bufferLength ) {
 
 int HostStdout( void *privateData, const char *buffer, size_t length ) {
 
-	JL_INGORE(privateData);
+	JL_IGNORE(privateData);
 	if (unlikely( stdout_fileno == -1 ))
 		stdout_fileno = fileno(stdout);
 	return write(stdout_fileno, buffer, length);
@@ -221,7 +221,7 @@ int HostStdout( void *privateData, const char *buffer, size_t length ) {
 
 int HostStderr( void *privateData, const char *buffer, size_t length ) {
 
-	JL_INGORE(privateData);
+	JL_IGNORE(privateData);
 	if (unlikely( stderr_fileno == -1 ))
 		stderr_fileno = fileno(stderr);
 	return write(stderr_fileno, buffer, length);
@@ -465,7 +465,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	//	if ( inlineScript == NULL )
 	scriptName = *argumentVector;
 
-	JL_CHKM( inlineScript != NULL || scriptName != NULL, E_SCRIPT, E_DEFINED ); // "No script specified."
+	JL_CHKM( inlineScript != NULL || scriptName != NULL || sizeof(embeddedBootstrapScript)-1 > 0, E_SCRIPT, E_NOTFOUND ); // "No script specified."
 
 	char hostFullPath[PATH_MAX +1];
 
@@ -525,7 +525,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	if ( inlineScript != NULL )
 		executeStatus = ExecuteScriptText(cx, inlineScript, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
 
-	if ( inlineScript == NULL || executeStatus == JS_TRUE )
+	if ( (!inlineScript || inlineScript && executeStatus == JS_TRUE) && scriptName != NULL )
 		executeStatus = ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
 
 	if ( executeStatus == JS_TRUE ) {

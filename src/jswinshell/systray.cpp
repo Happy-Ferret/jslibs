@@ -261,7 +261,7 @@ BOOL FreeMenu( HMENU menu ) {
 		mii.fType = MFT_RADIOCHECK; // doc: Displays selected menu items using a radio-button mark instead of a check mark if the hbmpChecked member is NULL.
 		mii.fMask = MIIM_CHECKMARKS | MIIM_SUBMENU;
 		BOOL st = GetMenuItemInfo(menu, 0, TRUE, &mii);
-		JL_INGORE(st);
+		JL_IGNORE(st);
 		if ( mii.hbmpChecked != NULL )
 			DeleteObject(mii.hbmpChecked);
 		if ( mii.hSubMenu != NULL )
@@ -435,7 +435,7 @@ DEFINE_FINALIZE() {
 
 		LRESULT res = SendMessage( pv->nid.hWnd, WM_CLOSE, 0, 0 ); // PostMessage
 
-		JL_INGORE(res);
+		JL_IGNORE(res);
 	}
 
 	WaitForSingleObject(pv->thread, INFINITE);
@@ -1038,7 +1038,7 @@ DEFINE_FUNCTION( PopupBalloon ) {
 			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &infoStr) );
 			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoStr.Length());
 
-			JL_INGORE(len);
+			JL_IGNORE(len);
 
 			memcpy( pv->nid.szInfo, infoStr.GetConstStr(), infoStr.Length() );
 			pv->nid.szInfo[infoStr.Length()] = '\0';

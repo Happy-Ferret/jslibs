@@ -60,7 +60,7 @@ JsfontRealloc( FT_Memory  memory, long cur_size, long new_size, void* block ) {
 }
 
 
-EXTERN_C DLLEXPORT JSBool
+JSBool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JsfontModulePrivate *mpv = (JsfontModulePrivate*)ModulePrivateAlloc(sizeof(JsfontModulePrivate));
@@ -92,14 +92,14 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 }
 
 
-EXTERN_C DLLEXPORT JSBool
+JSBool
 ModuleRelease(JSContext *cx) {
 
 	return JS_TRUE;
 }
 
 
-EXTERN_C DLLEXPORT void
+void
 ModuleFree() {
 
 	JsfontModulePrivate *mpv = (JsfontModulePrivate*)ModulePrivateGet();

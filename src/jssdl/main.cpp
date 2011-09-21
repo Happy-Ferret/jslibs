@@ -485,7 +485,8 @@ void EndVideo() {
 
 
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+JSBool
+ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHKM( SDL_WasInit(0) == 0, E_MODULE, E_NAME("jssdl"), E_INIT );
 
@@ -520,7 +521,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	JL_BAD;
 }
 
-EXTERN_C DLLEXPORT void ModuleFree() {
+void
+ModuleFree() {
 
 	EndVideo();
 

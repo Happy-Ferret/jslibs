@@ -6,13 +6,13 @@ LoadModule('jswinshell');
 LoadModule('jssvg');
 
 
-throw 0;
+//throw 0;
 
 
 //LoadModule('jsdebug'); gcZeal = 2;
 
 //var f = new File('C:\\MSDOS.SYS').Open('r');
-var f = new File(MYDOCUMENTS).Open('');
+var f = new File("C:\\tmp");//.Open('r'); // MYDOCUMENTS
 
 Print(GUIDToString(f.id).quote());
 

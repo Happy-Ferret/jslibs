@@ -1196,8 +1196,8 @@ DEFINE_FUNCTION( Flush ) {
 
 	OGL_CX_CHK;
 
-	JL_INGORE(argc);
-	JL_INGORE(cx);
+	JL_IGNORE(argc);
+	JL_IGNORE(cx);
 
 	glFlush();  OGL_ERR_CHK;
 
@@ -1217,8 +1217,8 @@ DEFINE_FUNCTION( Finish ) {
 
 	OGL_CX_CHK;
 
-	JL_INGORE(argc);
-	JL_INGORE(cx);
+	JL_IGNORE(argc);
+	JL_IGNORE(cx);
 
 	glFinish();  OGL_ERR_CHK;
 
@@ -4262,7 +4262,7 @@ DEFINE_FUNCTION( CreateProgramObject ) {
 
 	OGL_CX_CHK;
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 	JL_INIT_OPENGL_EXTENSION( glCreateProgramObjectARB, PFNGLCREATEPROGRAMOBJECTARBPROC );
 
 	GLhandleARB programHandle = glCreateProgramObjectARB();  OGL_ERR_CHK;
@@ -5870,7 +5870,7 @@ struct OpenGlTrimeshInfo {
 
 void FinalizeTrimesh(void *pv) {
 
-	JL_INGORE(pv);
+	JL_IGNORE(pv);
 
 /* (TBD)!
 
@@ -6116,7 +6116,7 @@ DEFINE_FUNCTION( CreateTextureBuffer ) {
 
 	OGL_CX_CHK;
 
-	JL_INGORE(argc);
+	JL_IGNORE(argc);
 
 	JL_INIT_OPENGL_EXTENSION( glGenBuffers, PFNGLGENBUFFERSPROC );
 //	JL_INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
@@ -6610,8 +6610,8 @@ DEFINE_FUNCTION( FullQuad ) {
 
 	OGL_CX_CHK;
 
-	JL_INGORE(argc);
-	JL_INGORE(cx);
+	JL_IGNORE(argc);
+	JL_IGNORE(cx);
 
 	glPushMatrix();
 	glLoadIdentity();
@@ -6742,8 +6742,8 @@ DEFINE_FUNCTION( KeepTranslation ) {
 
 	OGL_CX_CHK;
 
-	JL_INGORE(argc);
-	JL_INGORE(cx);
+	JL_IGNORE(argc);
+	JL_IGNORE(cx);
 
 	GLfloat m[16];
 	glGetFloatv(GL_MODELVIEW_MATRIX, m);  OGL_ERR_CHK;
@@ -6780,9 +6780,9 @@ DEFINE_PROPERTY_GETTER( error ) {
 
 	OGL_CX_CHK;
 
-	JL_INGORE(id);
-	JL_INGORE(obj);
-	JL_INGORE(cx);
+	JL_IGNORE(id);
+	JL_IGNORE(obj);
+	JL_IGNORE(cx);
 
 	// When an error occurs, the error flag is set to the appropriate error code value. No other errors are recorded
 	// until glGetError is called, the error code is returned, and the flag is reset to GL_NO_ERROR.
@@ -6795,8 +6795,8 @@ DEFINE_PROPERTY_GETTER( error ) {
 
 JSBool MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 
-	JL_INGORE(obj);
-	JL_INGORE(cx);
+	JL_IGNORE(obj);
+	JL_IGNORE(cx);
 
 	GLint matrixMode;
 	glGetIntegerv(GL_MATRIX_MODE, &matrixMode);  OGL_ERR_CHK;
@@ -6828,8 +6828,8 @@ void *windowsGLGetProcAddress(const char *procName) {
 
 DEFINE_INIT() {
 
-	JL_INGORE(proto);
-	JL_INGORE(sc);
+	JL_IGNORE(proto);
+	JL_IGNORE(sc);
 
 #ifdef DEBUG
 
@@ -6886,8 +6886,8 @@ DEFINE_INIT() {
 #ifdef DEBUG
 DEFINE_FUNCTION( Test ) {
 	
-	JL_INGORE(argc);
-	JL_INGORE(cx);
+	JL_IGNORE(argc);
+	JL_IGNORE(cx);
 
 /*
 	jsval id = JL_ARG(1);

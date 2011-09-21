@@ -20,7 +20,8 @@
 
 
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+JSBool
+ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	if ( InitJslibsModule(cx, id)  != JS_TRUE )
 		return JS_FALSE;
@@ -29,7 +30,8 @@ EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) 
 	return JS_TRUE;
 }
 
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx) {
+JSBool
+ModuleRelease(JSContext *cx) {
 
 	Release_JSNI(cx);
 	Destroy_JSNI();

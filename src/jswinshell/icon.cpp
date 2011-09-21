@@ -70,7 +70,7 @@ DEFINE_CONSTRUCTOR() {
 
 		HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 		
-		JL_INGORE(hInst);
+		JL_IGNORE(hInst);
 
 		JSObject *imgObj = JSVAL_TO_OBJECT(iconVal);
 
