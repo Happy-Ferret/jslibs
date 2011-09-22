@@ -312,7 +312,7 @@ function LaunchTests(itemList, cfg) {
 
 	var testIndex = 0;
 	var testCount = 0;
-
+	
 	for (;;) {
 
 		if ( cfg.loopForever )
@@ -320,7 +320,7 @@ function LaunchTests(itemList, cfg) {
 
 		cx.item = itemList[testIndex];
 		
-		if ( cx.item.init || cfg.runOnlyTestIndex == undefined || cfg.runOnlyTestIndex == testIndex ) {
+		if ( cx.item.init || (testIndex >= cfg.beginIndex && testIndex <= cfg.endIndex) ) {
 
 			cfg.quiet || Print( ' - '+testIndex+' - '+cx.item.file+':'+cx.item.line+' - '+ cx.item.name );
 
@@ -568,12 +568,13 @@ function Main() {
 		nogcBetweenTests:false, 
 		nogcDuringTests:false, 
 		stopAfterNIssues:0, 
-		stopAfterNTests:0, 
+		stopAfterNTests:0,
+		beginIndex:0,
+		endIndex:+Infinity,
 		logFilename:'', 
 		sleepBetweenTests:0,
 		quiet:false, 
 		verbose:false, 
-		runOnlyTestIndex:undefined, 
 		exclude:undefined,
 		perfTest:''
 	};
