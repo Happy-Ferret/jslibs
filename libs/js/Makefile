@@ -15,20 +15,20 @@ endif
 
 TARGET_FILES=$(INT_DIR)dist/bin/*.{so,dll}
 
-./src/configure:
-	cd ./src/ && ( autoconf2.13 || autoconf-2.13 )
+./src/js/src/configure:
+	cd ./src/js/src/ && ( autoconf2.13 || autoconf-2.13 )
 
-$(INT_DIR)Makefile: ./src/configure
-	diff -q ./jsversion.h ./src/jsversion.h || cp ./jsversion.h ./src/
-	-patch -N src/jsutil.h jsutil.h.patch
-	-patch -N src/jsutil.cpp jsutil.cpp.patch
+$(INT_DIR)Makefile: ./src/js/src/configure
+	diff -q ./jsversion.h ./src/js/src/jsversion.h || cp ./jsversion.h ./src/js/src/
+	-patch -N ./src/js/src/jsutil.h jsutil.h.patch
+	-patch -N ./src/js/src/jsutil.cpp jsutil.cpp.patch
 	mkdir -p $(INT_DIR)
-	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" ../src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=502 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests --enable-methodjit
+	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" ../src/js/src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=502 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests
 	# --enable-ctypes (issue with MASM ml.exe)
 
 all:: $(INT_DIR)Makefile
 	$(MAKE) -C $(INT_DIR) $@
 
 clean::
-	rm ./src/configure
+	rm ./src/js/src/configure
 	-[ -d "./$(INT_DIR)" ] && rm -r ./$(INT_DIR)
