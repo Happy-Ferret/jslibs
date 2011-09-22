@@ -375,7 +375,7 @@ DEFINE_FUNCTION( ReloacateToArray ) {
 	buffer = js::ArrayBuffer::fromJSObject(bufObj);
 
 	ASSERT(buffer->byteLength == 0);
-	ASSERT(buffer->data == NULL); //	buffer->freeStorage(cx);
+	ASSERT(buffer->data == NULL); // -or- buffer->freeStorage(cx);
 
 	size_t thisLength;
 	const uint8_t *thisBuffer;
@@ -1137,10 +1137,9 @@ JSBool next_foreach(JSContext *cx, uintN argc, jsval *vp) {
 
 DEFINE_ITERATOR_OBJECT() {
 
-	JSObject *itObj = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
+	JSObject *itObj = JS_NewObjectWithGivenProto(cx, NULL, NULL, JS_GetParent(cx, obj));
 	JL_CHK( itObj );
 	JL_CHK( JS_DefineFunctionById(cx, itObj, JL_ATOMJSID(cx, next), keysonly ? next_for : next_foreach, 0, 0) );
-
 	jsval v;
 	v = OBJECT_TO_JSVAL(obj);
 	JL_CHK( JS_SetPropertyById(cx, itObj, INT_TO_JSID(0), &v) );

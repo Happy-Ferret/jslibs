@@ -155,13 +155,14 @@ function RecursiveDir(path, callback) {
 	})(path);
 }
 
+function Regexec(regexp) regexp.exec.bind(regexp);
 
 function CreateQaItemList(startDir, files, include, exclude, flags) {
 
-	var hidden = /\/\./;
-	var qaFile = new RegExp(files);
-	var newQaItem = /^\/\/\/\s*(.*?)\s*$/;
-	var parseFlags = function(str) (/\[(.*?)\]/(str)||[,''])[1];
+	var hidden = Regexec(/\/\./);
+	var qaFile = Regexec(new RegExp(files));
+	var newQaItem = Regexec(/^\/\/\/\s*(.*?)\s*$/);
+	var parseFlags = function(str) (/\[(.*?)\]/.exec(str)||[,''])[1];
 
 	var itemList = [];
 	var index = 0;
@@ -171,7 +172,7 @@ function CreateQaItemList(startDir, files, include, exclude, flags) {
 		if ( !hidden(file.name) && qaFile(file.name) ) {
 
 			var source = String(file.content);
-			source = source.replace(/\r\n|\r/g, '\n'); // cleanup
+			source = source.replace(Regexec(/\r\n|\r/g), '\n'); // cleanup
 			
 			var lines = source.split('\n');
 			
@@ -312,7 +313,7 @@ function LaunchTests(itemList, cfg) {
 
 	var testIndex = 0;
 	var testCount = 0;
-	
+
 	for (;;) {
 
 		if ( cfg.loopForever )
@@ -320,7 +321,7 @@ function LaunchTests(itemList, cfg) {
 
 		cx.item = itemList[testIndex];
 		
-		if ( cx.item.init || (testIndex >= cfg.beginIndex && testIndex <= cfg.endIndex) ) {
+		if ( cx.item.init || cfg.runOnlyTestIndex == undefined || cfg.runOnlyTestIndex == testIndex ) {
 
 			cfg.quiet || Print( ' - '+testIndex+' - '+cx.item.file+':'+cx.item.line+' - '+ cx.item.name );
 
@@ -568,13 +569,12 @@ function Main() {
 		nogcBetweenTests:false, 
 		nogcDuringTests:false, 
 		stopAfterNIssues:0, 
-		stopAfterNTests:0,
-		beginIndex:0,
-		endIndex:+Infinity,
+		stopAfterNTests:0, 
 		logFilename:'', 
 		sleepBetweenTests:0,
 		quiet:false, 
 		verbose:false, 
+		runOnlyTestIndex:undefined, 
 		exclude:undefined,
 		perfTest:''
 	};
@@ -591,8 +591,8 @@ function Main() {
 		return;
 	}
 
-	var itemInclude = new RegExp(cfg.args[0] || '.*', 'i');
-	var itemExclude = cfg.exclude ? new RegExp(cfg.exclude, 'i') : undefined;
+	var itemInclude = Regexec(new RegExp(cfg.args[0] || '.*', 'i'));
+	var itemExclude = cfg.exclude ? Regexec(new RegExp(cfg.exclude, 'i')) : undefined;
 
 
 	function MatchFlags(flags) {

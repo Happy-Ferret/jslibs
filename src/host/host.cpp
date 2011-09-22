@@ -693,22 +693,22 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, unsafeMode), BOOLEAN_TO_JSVAL(unsafeMode), false) );
 
 	// note: we have to support: var prevStderr = _host.stderr; _host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
-	jsval value;
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdinFunction, 1, 0, NULL, JLID(cx, stdin)))); // doc: If you do not assign a name to the function, it is assigned the name "anonymous".
-	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdin), value) );
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdoutFunction, 1, 0, NULL, JLID(cx, stdout))));
-	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdout), value) );
-	value = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStderrFunction, 1, 0, NULL, JLID(cx, stderr))));
-	JL_CHK( SetHostObjectValue(cx, JLID(cx, stderr), value) );
+	jsval tmp1, tmp2, tmp3;
 
-	JL_CHK( JL_NativeToJsval(cx, JL_SvnRevToInt(SVN_REVISION_STR), &value) );
-	JL_CHK( SetHostObjectValue(cx, L("revision"), value) );
-	JL_CHK( JL_NativeToJsval(cx, JL_BUILD, &value) ); // __DATE__YEAR, __DATE__MONTH+1, __DATE__DAY
-	JL_CHK( SetHostObjectValue(cx, L("build"), value) );
-	JL_CHK( JL_NativeToJsval(cx, (int)JS_GetVersion(cx), &value) ); // JS_GetImplementationVersion()
-	JL_CHK( SetHostObjectValue(cx, L("jsVersion"), value) );
+	tmp1 = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdinFunction, 1, 0, NULL, JLID(cx, stdin)))); // doc: If you do not assign a name to the function, it is assigned the name "anonymous".
+	tmp2 = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdoutFunction, 1, 0, NULL, JLID(cx, stdout))));
+	tmp3 = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStderrFunction, 1, 0, NULL, JLID(cx, stderr))));
+	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdin), tmp1) );
+	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdout), tmp2) );
+	JL_CHK( SetHostObjectValue(cx, JLID(cx, stderr), tmp3) );
+
+	JL_CHK( JL_NativeToJsval(cx, JL_SvnRevToInt(SVN_REVISION_STR), &tmp1) );
+	JL_CHK( JL_NativeToJsval(cx, JL_BUILD, &tmp2) ); // __DATE__YEAR, __DATE__MONTH+1, __DATE__DAY
+	JL_CHK( JL_NativeToJsval(cx, (int)JS_GetVersion(cx), &tmp3) ); // JS_GetImplementationVersion()
+	JL_CHK( SetHostObjectValue(cx, L("revision"), tmp1) );
+	JL_CHK( SetHostObjectValue(cx, L("build"), tmp2) );
+	JL_CHK( SetHostObjectValue(cx, L("jsVersion"), tmp3) );
 	
-
 	// init static modules
 	if ( !jslangModuleInit(cx, globalObject) )
 		JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );

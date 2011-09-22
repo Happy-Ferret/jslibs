@@ -948,6 +948,11 @@ LoadModule('jsstd');
 		QA.ASSERT( res == typeof LoadModule, false, 'forbidden LoadModule function access' );
 
 
+/// Sandbox basic Query [tfm]
+
+		SandboxEval('', function() 123);
+		SandboxEval('Query()', function() 123);
+
 /// Sandbox Query [tfm]
 
 		var res = Function("var v = 567; return SandboxEval('Query()', function(val) v)")();

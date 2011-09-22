@@ -363,7 +363,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define HAS_ENUMERATE cs.clasp.enumerate = Enumerate;
 #define DEFINE_ENUMERATE() static JSBool Enumerate(JSContext *cx, JSObject *obj)
 
-#define HAS_TRACER cs.clasp.flags |= JSCLASS_MARK_IS_TRACE; JSTraceOp tmp = Tracer; cs.clasp.mark = (JSMarkOp)tmp;
+#define HAS_TRACER cs.clasp.trace = Tracer;
 #define DEFINE_TRACER() static void Tracer(JSTracer *trc, JSObject *obj)
 
 #define HAS_HAS_INSTANCE cs.clasp.hasInstance = HasInstance;

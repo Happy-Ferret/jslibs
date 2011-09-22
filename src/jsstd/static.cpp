@@ -492,7 +492,7 @@ DEFINE_FUNCTION( ObjectToId ) {
 	freeSlot = NULL;
 	for ( ObjId *it = mpv->objIdList, *end = mpv->objIdList + mpv->objectIdAllocated; it < end; ++it ) {
 
-		if ( it->obj == obj )
+		if ( it->obj == obj ) // safer alternative (but slower): JS_StrictlyEqual()
 			return JL_NativeToJsval(cx, it->id, JL_RVAL);
 		if ( !freeSlot && it->id == 0 )
 			freeSlot = it;
@@ -1100,7 +1100,8 @@ DEFINE_FUNCTION( SandboxEval ) {
 		JL_CHK( JS_DefineFunction(cx, globalObj, "Query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
 	}
 
-	// JS_SetNativeStackQuota(cx, 50000); // (TBD) seems to be optional ?
+	//JS_SetNativeStackQuota(cx, 50000); // (TBD) seems to be optional ?
+	// JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA / 16); ?
 
 	pv.prevOperationCallback = JS_SetOperationCallback(cx, SandboxMaxOperationCallback);
 
@@ -1265,7 +1266,7 @@ DEFINE_FUNCTION( IsStatementValid ) {
 	//size_t length;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	JL_CHK( JL_NativeToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, str.GetConstStr(), str.Length()) == JS_TRUE, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, JS_BufferIsCompilableUnit(cx, JS_FALSE, obj, str.GetConstStr(), str.Length()) == JS_TRUE, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }

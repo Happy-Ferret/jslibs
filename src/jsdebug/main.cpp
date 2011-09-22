@@ -41,7 +41,9 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 
 //	printf( "add - %s:%d-%d - %s - %d - %p\n", filename, lineno, lineno+JS_GetScriptLineExtent(cx, script), fun ? JS_GetFunctionName(fun):"", script->staticLevel, script );
 
-	ASSERT( filename != NULL );
+	if ( filename == NULL ) // happens when js_InitFunctionClass. At the moment, no way to support this script...
+		return;
+	//ASSERT( filename != NULL );
 
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
 
@@ -277,7 +279,10 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	jl::QueueInitialize(&mpv->scriptFileList);
 
 	// record the caller's scripts (at least).
-	for ( JSStackFrame *fp = JL_CurrentStackFrame(cx); fp; fp = fp->prev() ) { // cf. JS_FrameIterator
+	//for ( JSStackFrame *fp = JL_CurrentStackFrame(cx); fp; fp = fp->prev() ) { // cf. JS_FrameIterator
+	JSStackFrame *fp;
+	fp = NULL;
+	while ( (fp = JS_FrameIterator(cx, &fp)) ) {
 
 		JSScript *script = JS_GetFrameScript(cx, fp);
 		if ( !script ) // !JS_IsNativeFrame ?

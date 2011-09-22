@@ -166,9 +166,11 @@ JL_SetPrivate( const JSContext *cx, JSObject *obj, void *data ) {
 ALWAYS_INLINE JSObject *
 JL_GetPrototype(JSContext *cx, JSObject *obj) {
 
-	JL_IGNORE(cx);
-	JSObject *proto = obj->getProto();
-	return proto && proto->map ? proto : NULL; // Beware: ref to dead object (we may be called from obj's finalizer).
+//	JL_IGNORE(cx);
+//	JSObject *proto = obj->getProto();
+//	return proto && proto->map ? proto : NULL; // Beware: ref to dead object (we may be called from obj's finalizer).
+//	return proto && !proto->isNewborn() ? proto : NULL;
+	return JS_GetPrototype(cx, obj);
 }
 
 ALWAYS_INLINE JSBool
@@ -194,7 +196,7 @@ JL_GetReservedSlot( JSContext *cx, JSObject *obj, uint32 slot, jsval *vp ) {
 	JS_TypeOfValue(cx, *vp); // used for assertSameCompartment(cx, v)
 	#endif // DEBUG
 
-	if (obj->isNative() && slot < obj->numSlots())
+	if ( JS_IsNative(obj) && slot < obj->numSlots() )
 		*vp = js::Jsvalify(obj->getSlot(slot));
 	else
 		js::Valueify(vp)->setUndefined();
@@ -221,7 +223,7 @@ JL_SetReservedSlot(JSContext *cx, JSObject *obj, uintN slot, const jsval &v) {
 	#endif // DEBUG
 
 //	return JS_SetReservedSlot(cx, obj, index, v);
-	if (!obj->isNative())
+	if ( !JS_IsNative(obj) )
 		return JS_TRUE;
 	if ( slot >= obj->numSlots() )
 		return JS_SetReservedSlot(cx, obj, slot, v);
@@ -2542,13 +2544,13 @@ JL_StringToJsid( JSContext *cx, const jschar *cstr ) {
 //	return tmp;
 #ifdef DEBUG
 	jsid id, tmp;
-	id = ATOM_TO_JSID(STRING_TO_ATOM(jsstr));
+	id = ATOM_TO_JSID(&jsstr->asAtom());
 	ASSERT( JSID_IS_STRING( id ) );
 	JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &tmp);
 	JS_ASSERT( id == tmp );
 	return id;
 #else
-	return ATOM_TO_JSID(STRING_TO_ATOM(jsstr));
+	return ATOM_TO_JSID(&jsstr->asAtom());
 #endif // DEBUG
 }
 
@@ -2581,7 +2583,7 @@ JL_JsvalToJsid( JSContext * RESTRICT cx, jsval * RESTRICT val, jsid * RESTRICT i
 	} else
 	if ( JSVAL_IS_STRING( *val ) ) {
 
-		*id = ATOM_TO_JSID(STRING_TO_ATOM(JSVAL_TO_STRING( *val )));
+		*id = ATOM_TO_JSID(&JSVAL_TO_STRING(*val)->asAtom());
 		ASSERT( JSID_IS_STRING( *id ) );
 	} else
 	if ( JSVAL_IS_VOID( *val ) ) {
@@ -3355,18 +3357,20 @@ JL_CurrentStackFrame(JSContext *cx) {
 
 	#ifdef DEBUG
 		JSStackFrame *fp = NULL;
-		ASSERT( JS_FrameIterator(cx, &fp) == js_GetTopStackFrame(cx) ); // Mozilla JS engine private API behavior has changed.
+		ASSERT( JS_FrameIterator(cx, &fp) == js::Jsvalify(js_GetTopStackFrame(cx)) ); // Mozilla JS engine private API behavior has changed.
 	#endif //DEBUG
-	return js_GetTopStackFrame(cx);
+	return Jsvalify(js_GetTopStackFrame(cx));
 }
 
 
 ALWAYS_INLINE uint32_t
-JL_StackSize(const JSContext * RESTRICT cx, const JSStackFrame * RESTRICT fp) {
+JL_StackSize(const JSContext * RESTRICT cx, JSStackFrame * RESTRICT fp) {
 
 	JL_IGNORE(cx);
 	uint32_t length = 0;
-	for ( ; fp; fp = fp->prev() ) // for ( JSStackFrame *fp = JL_CurrentStackFrame(cx); fp; JS_FrameIterator(cx, &fp) )
+	const js::StackFrame *tmp;
+	tmp = js::Valueify(fp);
+	for ( ; tmp; tmp = tmp->prev() ) // for ( JSStackFrame *fp = JL_CurrentStackFrame(cx); fp; JS_FrameIterator(cx, &fp) )
 		++length;
 	return length; // 0 is the first frame
 }
@@ -3375,10 +3379,10 @@ JL_StackSize(const JSContext * RESTRICT cx, const JSStackFrame * RESTRICT fp) {
 INLINE JSStackFrame* FASTCALL
 JL_StackFrameByIndex(JSContext *cx, int frameIndex) {
 
-	JSStackFrame *fp = JL_CurrentStackFrame(cx);
+	js::StackFrame *fp = js::Valueify(JL_CurrentStackFrame(cx));
 	if ( frameIndex >= 0 ) {
 
-		int currentFrameIndex = JL_StackSize(cx, fp)-1;
+		int currentFrameIndex = JL_StackSize(cx, js::Jsvalify(fp))-1;
 		if ( frameIndex > currentFrameIndex )
 			return NULL;
 		// now, select the right frame
@@ -3387,7 +3391,7 @@ JL_StackFrameByIndex(JSContext *cx, int frameIndex) {
 			fp = fp->prev(); //JS_FrameIterator(cx, &fp);
 			--currentFrameIndex;
 		}
-		return fp;
+		return js::Jsvalify(fp);
 	}
 
 	while ( fp && frameIndex < 0 ) {
@@ -3395,7 +3399,7 @@ JL_StackFrameByIndex(JSContext *cx, int frameIndex) {
 		fp = fp->prev(); //JS_FrameIterator(cx, &fp);
 		++frameIndex;
 	}
-	return fp;
+	return js::Jsvalify(fp);
 }
 
 

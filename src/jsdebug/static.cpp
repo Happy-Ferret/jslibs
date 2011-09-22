@@ -1022,10 +1022,10 @@ DEFINE_FUNCTION( StackFrameInfo ) {
 	JL_CHK( JS_GetFrameThis(cx, fp, &tmp) );
 	JL_CHK( JS_SetProperty(cx, frameInfo, "this", &tmp) );
 
-	if ( fp->hasArgs() ) {
+	if ( js::Valueify(fp)->hasArgs() ) {
 
 		JSObject *arguments;
-		arguments = JS_NewArrayObject(cx, fp->numFormalArgs(), js::Jsvalify(fp->formalArgs()));
+		arguments = JS_NewArrayObject(cx, js::Valueify(fp)->numFormalArgs(), js::Jsvalify(js::Valueify(fp)->formalArgs()));
 		JL_CHK( arguments );
 		tmp = OBJECT_TO_JSVAL(arguments);
 	} else {
@@ -1039,17 +1039,18 @@ DEFINE_FUNCTION( StackFrameInfo ) {
 
 	// JS_IsNativeFrame
 	//tmp = fp->isFunctionFrame() ? JSVAL_FALSE : JSVAL_TRUE; // (TBD) check if isFunctionFrame() <=> !isNative
-	tmp = BOOLEAN_TO_JSVAL( !fp->isFunctionFrame() ); // (TBD) check if isFunctionFrame() <=> !isNative
+	tmp = BOOLEAN_TO_JSVAL( !js::Valueify(fp)->isFunctionFrame() ); // (TBD) check if isFunctionFrame() <=> !isNative
 	JL_CHK( JS_SetProperty(cx, frameInfo, "isNative", &tmp) );
 
-	tmp = BOOLEAN_TO_JSVAL(fp->isConstructing());
+	tmp = BOOLEAN_TO_JSVAL(js::Valueify(fp)->isConstructing());
 	JL_CHK( JS_SetProperty(cx, frameInfo, "isConstructing", &tmp) );
 
-	tmp = BOOLEAN_TO_JSVAL(fp->isEvalFrame());
+	tmp = BOOLEAN_TO_JSVAL(js::Valueify(fp)->isEvalFrame());
 	JL_CHK( JS_SetProperty(cx, frameInfo, "isEval", &tmp) );
 
-	tmp = BOOLEAN_TO_JSVAL(fp->isAssigning());
-	JL_CHK( JS_SetProperty(cx, frameInfo, "isAssigning", &tmp) );
+// not available any more. see. https://bugzilla.mozilla.org/show_bug.cgi?id=458421
+//	tmp = BOOLEAN_TO_JSVAL(js::Valueify(fp)->isAssigning());
+//	JL_CHK( JS_SetProperty(cx, frameInfo, "isAssigning", &tmp) );
 
 //	JL_CHK( JS_DefineProperty(cx, frameInfo, "opnd", fp->regs->sp[-1], NULL, NULL, JSPROP_ENUMERATE) );
 //	char * s = JL_GetStringBytes(JS_ValueToString(cx, fp->regs->sp[-1]));
@@ -1252,7 +1253,7 @@ DEFINE_FUNCTION( PropertiesList ) {
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
-	if ( !srcObj->isNative() ) { // (TBD) remove this workaround to bz#522101 / bz#488924
+	if ( !JS_IsNative(srcObj) ) { // (TBD) remove this workaround to bz#522101 / bz#488924
 
 		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
@@ -1272,16 +1273,21 @@ DEFINE_FUNCTION( PropertiesList ) {
 	jsval tmp;
 	int index;
 	index = 0;
+	
+	JSScopeProperty *jssp;
 
 	while ( srcObj ) {
 
-		for ( const js::Shape *shape = srcObj->lastProperty(); shape; shape = shape->previous() ) {
-			
-			if ( !JSID_IS_EMPTY(shape->id) ) {
+		jssp = NULL;
+		//about bz#522101 / bz#488924
+		//<jorendorff>	I was going to say, something like if (OBJ_IS_DENSE_ARRAY(cx, obj)) { if (!js_MakeArraySlow(cx, obj)) return NULL; }
 
-				JL_CHK( JS_IdToValue(cx, shape->id, &tmp) );
-				JL_CHK( JL_SetElement(cx, arrayObject, index, &tmp) );
-			}
+		// see Bug 688571 - JS_PropertyIterator is broken
+		while ( JS_PropertyIterator(srcObj, &jssp) ) {
+
+			jsid id = ((js::Shape*)jssp)->propid;
+			JL_CHK( JS_IdToValue(cx, id, &tmp) );
+			JL_CHK( JL_SetElement(cx, arrayObject, index, &tmp) );
 			index++;
 		}
 
@@ -1309,7 +1315,7 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 	JSObject *srcObj;
 	srcObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
-	if ( !srcObj->isNative() ) { // (TBD) remove this workaround to bz#522101 / bz#488924
+	if ( !JS_IsNative(srcObj) ) { // (TBD) remove this workaround to bz#522101 / bz#488924
 
 		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
@@ -1345,9 +1351,9 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 		jssp = NULL;
 		//about bz#522101 / bz#488924
 		//<jorendorff>	I was going to say, something like if (OBJ_IS_DENSE_ARRAY(cx, obj)) { if (!js_MakeArraySlow(cx, obj)) return NULL; }
-		JS_PropertyIterator(srcObj, &jssp);
 
-		while ( jssp ) {
+		// see Bug 688571 - JS_PropertyIterator is broken
+		while ( JS_PropertyIterator(srcObj, &jssp) ) {
 
 			JL_CHK( JS_GetPropertyDesc(cx, srcObj, jssp, &desc) );
 
@@ -1397,7 +1403,6 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 			JL_CHK( JS_SetProperty(cx, descObj, "object", &tmp) );
 
 			index++;
-			JS_PropertyIterator(srcObj, &jssp);
 		}
 
 		if ( !followPrototypeChain )
@@ -1501,8 +1506,10 @@ DEFINE_FUNCTION( DisassembleScript ) {
 	JL_CHK( script );
 
 	int length;
-	FILE *rf, *wf;
-	fpipe(&rf, &wf);
+
+    void *mark = JS_ARENA_MARK(&cx->tempPool);
+	js::Sprinter sprinter;
+    INIT_SPRINTER(cx, &sprinter, &cx->tempPool, 0);
 
 	jsbytecode *pc, *end;
 	uintN len;
@@ -1510,31 +1517,18 @@ DEFINE_FUNCTION( DisassembleScript ) {
 	end = script->code + script->length;
 	while (pc < end) {
 
-		len = js_Disassemble1(cx, script, pc, pc - script->code, JS_TRUE, wf);
+		len = js_Disassemble1(cx, script, pc, pc - script->code, JS_TRUE, &sprinter);
 		if (!len)
 			return JS_FALSE;
 		pc += len;
 	}
 
-	length = ftell(wf);
-	fflush(wf);
-	fclose(wf);
-
-	char *data;
-	data = (char*)jl_malloc(length + 1);
-	JL_ASSERT_ALLOC( data );
-	fread(data, 1, length, rf);
-	data[length] = '\0';
-	fclose(rf);
-
-	JSString *jsstr;
-	jsstr = JS_NewStringCopyN(cx, data, length);
-	jl_free(data);
-	JL_ASSERT_ALLOC( jsstr );
-
-	*JL_RVAL = STRING_TO_JSVAL(jsstr);
+    JSString *str = JS_NewStringCopyZ(cx, sprinter.base);
+    JS_ARENA_RELEASE(&cx->tempPool, mark);
+    if (!str)
+        return JS_FALSE;
+    JS_SET_RVAL(cx, vp, STRING_TO_JSVAL(str));
 	return JS_TRUE;
-
 
 #else // DEBUG
 
@@ -1843,6 +1837,12 @@ DEFINE_FUNCTION( TestDebug ) {
 */
 //	if ( JL_IsRValOptional(cx, _TestDebug) )
 //		printf("OPTIONAL\n");
+
+	jsid id;
+	JSObject *obj = JS_NewObject(cx, NULL, NULL, NULL);
+	JS_ValueToId(cx, OBJECT_TO_JSVAL(obj), &id);
+	bool isobjid = JSID_IS_OBJECT(id);
+
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;

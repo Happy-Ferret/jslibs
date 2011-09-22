@@ -8,10 +8,11 @@ LoadModule('jsdebug');
 
 /// test OBJ_SCOPE in JS_PropertyIterator [rmtf]
 
+	PropertiesList([]); // see bug 688571 - JS_PropertyIterator is broken
+	PropertiesList({});
 	PropertiesList({ a:123 });
 	PropertiesList(new String());
 	PropertiesList(PropertiesList);
-	PropertiesList([]);
 
 
 /// gcMallocBytes test [d]
