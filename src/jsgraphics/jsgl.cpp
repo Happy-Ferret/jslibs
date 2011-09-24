@@ -4430,7 +4430,7 @@ DEFINE_FUNCTION( GetUniformInfo ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &program) );
 	glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &activeUniform);  OGL_ERR_CHK;
 
-	JSObject *info = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *info = JL_NewObj(cx);
 	JL_CHK( info );
 	*JL_RVAL = OBJECT_TO_JSVAL(info);
 
@@ -4456,7 +4456,7 @@ DEFINE_FUNCTION( GetUniformInfo ) {
 			if ( location == -1 )
 				continue;
 
-			JSObject *obj = JS_NewObject(cx, NULL, NULL, NULL);
+			JSObject *obj = JL_NewObj(cx);
 			JL_CHK( obj );
 
 			tmp = OBJECT_TO_JSVAL(obj);

@@ -45,7 +45,7 @@ DECLARE_CLASS( Jabber )
 
 JSBool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
 
-	JSObject *jidObj = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *jidObj = JL_NewObj(cx);
 	*rval = OBJECT_TO_JSVAL(jidObj);
 	JL_CHK( JL_SetProperty(cx, jidObj, "bare", jid->bare().c_str()) );
 	JL_CHK( JL_SetProperty(cx, jidObj, "full", jid->full().c_str()) );
@@ -99,7 +99,7 @@ private:
 			return false;
 		}
 
-		JSObject *infoObj = JS_NewObject(_cx, NULL, NULL, NULL);
+		JSObject *infoObj = JL_NewObj(_cx);
 		JL_SetProperty(_cx, _obj, "chain", info.chain);
 		JL_SetProperty(_cx, _obj, "issuer", info.issuer.c_str());
 		JL_SetProperty(_cx, _obj, "server", info.server.c_str());
@@ -538,7 +538,7 @@ DEFINE_PROPERTY( roster ) {
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-//	JSObject *rosterObj = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
+//	JSObject *rosterObj = JL_NewProtolessObj(cx);
 	Roster *roster = pv->client->rosterManager()->roster();
 	JSObject *rosterList = JS_NewArrayObject(cx, roster->size(), NULL);
 	int i = 0;

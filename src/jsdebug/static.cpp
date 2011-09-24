@@ -985,7 +985,7 @@ DEFINE_FUNCTION( StackFrameInfo ) {
 	}
 
 	JSObject *frameInfo;
-	frameInfo = JS_NewObject(cx, NULL, NULL, NULL);
+	frameInfo = JL_NewObj(cx);
 	JL_CHK( frameInfo );
 	*JL_RVAL = OBJECT_TO_JSVAL(frameInfo);
 	jsval tmp;
@@ -1328,7 +1328,7 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 		followPrototypeChain = false;
 
 //	JSObject *infoObject;
-//	infoObject = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
+//	infoObject = JL_NewProtolessObj(cx);
 //	*JL_RVAL = OBJECT_TO_JSVAL( infoObject );
 
 	JSObject *arrayObject;
@@ -1357,7 +1357,7 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 
 			JL_CHK( JS_GetPropertyDesc(cx, srcObj, jssp, &desc) );
 
-			JSObject *descObj = JS_NewObject(cx, NULL, NULL, NULL);
+			JSObject *descObj = JL_NewObj(cx);
 			tmp = OBJECT_TO_JSVAL(descObj);
 			JL_CHK( JL_SetElement(cx, arrayObject, index, &tmp) );
 
@@ -1839,7 +1839,7 @@ DEFINE_FUNCTION( TestDebug ) {
 //		printf("OPTIONAL\n");
 
 	jsid id;
-	JSObject *obj = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *obj = JL_NewObj(cx);
 	JS_ValueToId(cx, OBJECT_TO_JSVAL(obj), &id);
 	bool isobjid = JSID_IS_OBJECT(id);
 

@@ -1,4 +1,5 @@
-if ( 1 ) {
+if ( 0 ) {
+
 	LoadModule('jsdebug');
 	LoadModule('jsstd');
 	
@@ -57,15 +58,17 @@ if ( 1 ) {
 	throw 0;
 }
 
-
-
-
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
 LoadModule('jsstd');
 LoadModule('jsdebug');
 //LoadModule('jsio');
 //LoadModule('jssqlite');
+
+
+Print( uneval( PropertiesList({}) ));
+//TestDebug();
+
 
 throw 0;
 

@@ -406,13 +406,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( list ) {
 
-	JSObject *list = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *list = JL_NewObj(cx);
 	jsval value;
 	int i;
 	LTC_MUTEX_LOCK(&ltc_hash_mutex);
 	for ( i=0; hash_is_valid(i) == CRYPT_OK; i++ ) {
 
-		JSObject *desc = JS_NewObject(cx, NULL, NULL, NULL);
+		JSObject *desc = JL_NewObj(cx);
 		value = OBJECT_TO_JSVAL(desc);
 		JS_SetProperty( cx, list, hash_descriptor[i].name, &value );
 

@@ -574,6 +574,8 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_IGNORE(argc);
 	JL_IGNORE(vp);
 
+
+
 	return JS_TRUE;
 	JL_BAD;
 }

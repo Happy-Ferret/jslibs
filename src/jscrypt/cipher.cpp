@@ -707,13 +707,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( list ) {
 
-	JSObject *list = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *list = JL_NewObj(cx);
 	int i;
 	jsval tmp;
 	LTC_MUTEX_LOCK(&ltc_cipher_mutex);
 	for ( i = 0; cipher_is_valid(i) == CRYPT_OK; ++i ) {
 
-		JSObject *desc = JS_NewObject( cx, NULL, NULL, NULL );
+		JSObject *desc = JL_NewObj(cx);
 		tmp = OBJECT_TO_JSVAL( desc );
 		JS_SetProperty( cx, list, cipher_descriptor[i].name, &tmp );
 

@@ -48,6 +48,8 @@ struct HostPrivate {
 		void *privateData;
 	} modulePrivate[1<<8]; // does not support more than 256 modules.
 	jl::Queue moduleList;
+	JSClass *objectClass;
+	JSObject *objectProto;
 //	jl::Queue registredNativeClasses;
 //	JSClass *stringObjectClass;
 	jl_allocators_t alloc;

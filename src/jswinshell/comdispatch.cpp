@@ -280,8 +280,8 @@ DEFINE_FUNCTION( FunctionList ) {
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
 	JL_ASSERT_OBJECT_STATE( disp, JL_THIS_CLASS_NAME );
 
-//	JSObject *memberList = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
-	JSObject *memberList = JS_NewObject(cx, NULL, NULL, NULL);
+//	JSObject *memberList = JL_NewProtolessObj(cx);
+	JSObject *memberList = JL_NewObj(cx);
 	JL_CHK( memberList );
 	*JL_RVAL = OBJECT_TO_JSVAL(memberList);
 

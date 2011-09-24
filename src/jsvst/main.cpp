@@ -406,7 +406,7 @@ private:
 			jsval fval = GetProperty(vstPlugin, "getParameterProperties");
 			if ( JsvalIsFunction(fval) ) {
 
-				JSObject *obj = JS_NewObject(_cx, NULL, NULL, NULL);
+				JSObject *obj = JL_NewObj(_cx);
 				FunctionCall1(vstPlugin, fval, OBJECT_TO_JSVAL(obj));
 
 				p->flags = 0;
@@ -608,7 +608,7 @@ private:
 			jsval fval = GetProperty(vstPlugin, "getMidiProgramName");
 			if ( JsvalIsFunction(fval) ) {
 
-				JSObject *jsMpn = JS_NewObject(_cx, NULL, NULL, NULL);
+				JSObject *jsMpn = JL_NewObj(_cx);
 				_rval = FunctionCall3(vstPlugin, fval, IntToJsval(channel), IntToJsval(mpn->thisProgramIndex), OBJECT_TO_JSVAL(jsMpn));
 				if ( !JSVAL_IS_INT(_rval) )
 					throw JsException(_cx, "invalid return value (need integer)");
@@ -661,7 +661,7 @@ private:
 			jsval fval = GetProperty(vstPlugin, "getMidiProgramCategory");
 			if ( JsvalIsFunction(fval) ) {
 
-//				JSObject *jsMpn = JS_NewObject(_cx, NULL, NULL, NULL);
+//				JSObject *jsMpn = JL_NewObj(_cx);
 
 				_rval = FunctionCall2(vstPlugin, fval, JL_JsvalToNative(channel), 	JL_JsvalToNative(category->thisCategoryIndex) );
 
@@ -732,7 +732,7 @@ private:
 			jsval fval = GetProperty(vstPlugin, "getInputProperties");
 			if ( JsvalIsFunction(fval) ) {
 
-				JSObject *tmpObj = JS_NewObject(_cx, NULL, NULL, NULL);
+				JSObject *tmpObj = JL_NewObj(_cx);
 				_rval = FunctionCall2(vstPlugin, fval, IntToJsval(index), OBJECT_TO_JSVAL(tmpObj));
 				if ( !JSVAL_IS_BOOLEAN(_rval) )
 					throw JsException(_cx, "invalid return value (need boolean)");
@@ -752,7 +752,7 @@ private:
 			jsval fval = GetProperty(vstPlugin, "getOutputProperties");
 			if ( JsvalIsFunction(fval) ) {
 
-				JSObject *tmpObj = JS_NewObject(_cx, NULL, NULL, NULL);
+				JSObject *tmpObj = JL_NewObj(_cx);
 				_rval = FunctionCall2(vstPlugin, fval, IntToJsval(index), OBJECT_TO_JSVAL(tmpObj));
 				if ( !JSVAL_IS_BOOLEAN(_rval) )
 					throw JsException(_cx, "invalid return value (need boolean)");

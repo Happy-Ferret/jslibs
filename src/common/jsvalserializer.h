@@ -384,7 +384,7 @@ namespace jl {
 			}
 
 			// simple object
-			if ( JL_IsObjectObject(cx, obj) ) {
+			if ( obj != NULL && JL_IsObjectObject(cx, obj) ) {
 
 				JL_CHK( Write(cx, JLSTObject) );
 				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
@@ -615,7 +615,7 @@ namespace jl {
 				}
 				case JLSTObject: {
 
-					JSObject *obj = JS_NewObject(cx, NULL, NULL, NULL);
+					JSObject *obj = JL_NewObj(cx);
 					JL_CHK( obj );
 					val = OBJECT_TO_JSVAL(obj);
 					SerializerObjectOwnProperties sop(obj);
@@ -624,7 +624,7 @@ namespace jl {
 				}
 				case JLSTProtolessObject: {
 
-					JSObject *obj = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
+					JSObject *obj = JL_NewProtolessObj(cx);
 					JL_CHK( obj );
 					val = OBJECT_TO_JSVAL(obj);
 					SerializerObjectOwnProperties sop(obj);
@@ -692,8 +692,10 @@ namespace jl {
 
 					JSProtoKey errorProtoKey;
 					JL_CHK( Read(cx, errorProtoKey) );
-					JSObject *errorProto;
-					JL_CHK( js_GetClassPrototype(cx, NULL, errorProtoKey, &errorProto) );
+					//JSObject *errorProto;
+					//JL_CHK( js_GetClassPrototype(cx, NULL, errorProtoKey, &errorProto) );
+					JSObject *errorProto = JL_GetStandardClassProtoByKey(cx, errorProtoKey);
+					JL_CHK( errorProto );
 					JSObject *errorObj = JS_NewObjectWithGivenProto(cx, JL_GetClass(errorProto), errorProto, NULL);
 					val = OBJECT_TO_JSVAL(errorObj);
 					SerializerObjectOwnProperties sop(errorObj);

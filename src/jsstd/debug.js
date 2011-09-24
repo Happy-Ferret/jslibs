@@ -1,10 +1,15 @@
+LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask sandbox');
+
+
 LoadModule('jsstd');
-LoadModule('jsstd');
-LoadModule('jsio');
+//LoadModule('jsio');
 LoadModule('jsdebug');
 
+//SandboxEval('(function f(){f();})();');
 
-SwitchCase();
+//SandboxEval('', function() 123);
+//SandboxEval('Query()', function() 123);
+
 
 throw 0;
 

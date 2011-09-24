@@ -277,7 +277,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( list ) {
 
-	JSObject *listObj = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *listObj = JL_NewObj(cx);
 	
 	jsval value;
 	int i;

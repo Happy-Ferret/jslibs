@@ -669,7 +669,7 @@ DEFINE_PROPERTY_GETTER( info ) {
 		fileInfoObj = JSVAL_TO_OBJECT(*vp);
 	} else {
 
-		fileInfoObj = JS_NewObject( cx, NULL, NULL, NULL );
+		fileInfoObj = JL_NewObj(cx);
 		*vp = OBJECT_TO_JSVAL( fileInfoObj );
 	}
 

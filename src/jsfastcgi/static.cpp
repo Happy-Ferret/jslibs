@@ -91,7 +91,7 @@ DEFINE_FUNCTION( GetParam ) {
 		}
 
 		// (TDB) use FCGX_ParamArray instead ?
-		JSObject *argsObj = JS_NewObject(cx, NULL, NULL, NULL);
+		JSObject *argsObj = JL_NewObj(cx);
 		JL_CHK(argsObj);
 		for ( char** ptr = _request.envp; *ptr; ptr++ ) {
 
@@ -346,7 +346,7 @@ DEFINE_FUNCTION( ParseHeader ) {
 		JL_ASSERT_OBJECT(argv[1]);
 		record = JSVAL_TO_OBJECT(argv[1]);
 	} else
-		record = JS_NewObject(cx, NULL, NULL, NULL);
+		record = JL_NewObj(cx);
 	*rval = OBJECT_TO_JSVAL( record );
 
 	char *data;
@@ -370,7 +370,7 @@ DEFINE_FUNCTION( ParseBeginRequestBody ) {
 		JL_ASSERT_OBJECT(argv[1]);
 		record = JSVAL_TO_OBJECT(argv[1]);
 	} else
-		record = JS_NewObject(cx, NULL, NULL, NULL);
+		record = JL_NewObj(cx);
 	*rval = OBJECT_TO_JSVAL( record );
 
 	char *data;
@@ -393,7 +393,7 @@ DEFINE_FUNCTION( ParseBeginRequestBody ) {
 //		JL_ASSERT_OBJECT(argv[1]);
 //		record = JSVAL_TO_OBJECT(argv[1]);
 //	} else
-//		record = JS_NewObject(cx, NULL, NULL, NULL);
+//		record = JL_NewObj(cx);
 //	*rval = OBJECT_TO_JSVAL( record );
 //
 //	char *data;
@@ -425,7 +425,7 @@ DEFINE_FUNCTION( ParsePairs ) { // arguments: data [, paramObject ]
 		JL_ASSERT_OBJECT(argv[1]);
 		params = JSVAL_TO_OBJECT(argv[1]);
 	} else
-		params = JS_NewObject(cx, NULL, NULL, NULL);
+		params = JL_NewObj(cx);
 	*rval = OBJECT_TO_JSVAL( params );
 
 	while ( data < start + length ) {
@@ -625,7 +625,7 @@ DEFINE_FUNCTION( ParseRecord ) {
 	
 	FCGI_Header *header = (FCGI_Header *)data;
 
-	JSObject *record = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *record = JL_NewObj(cx);
 	*rval = OBJECT_TO_JSVAL( record );
 
 	JS_DefineProperty(cx, record, "version", INT_TO_JSVAL( header->version ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);

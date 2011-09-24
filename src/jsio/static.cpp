@@ -971,7 +971,7 @@ DEFINE_PROPERTY_GETTER( systemInfo ) {
 
 	char tmp[SYS_INFO_BUFFER_LENGTH];
 
-	JSObject *info = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *info = JL_NewObj(cx);
 	JL_CHK( info );
 	*vp = OBJECT_TO_JSVAL( info );
 
@@ -1196,7 +1196,7 @@ DEFINE_PROPERTY_GETTER( version ) {
 DEFINE_FUNCTION( jsioTest ) {
 
 /*
-	JSObject *o = JS_NewObject(cx, NULL, NULL, NULL);
+	JSObject *o = JL_NewObj(cx);
 
 
 	

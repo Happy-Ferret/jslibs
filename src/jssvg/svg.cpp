@@ -731,7 +731,7 @@ DEFINE_PROPERTY(images) {
 	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, SLOT_IMAGES_OBJECT, vp) );
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
-		*vp = OBJECT_TO_JSVAL( JS_NewObject(cx, NULL, NULL, NULL) );
+		*vp = OBJECT_TO_JSVAL( JL_NewObj(cx) );
 		JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_IMAGES_OBJECT, *vp) );
 	}
 	return JS_TRUE;

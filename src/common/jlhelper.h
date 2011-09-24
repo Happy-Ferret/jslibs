@@ -45,8 +45,6 @@
 extern int _unsafeMode;
 
 class JLStr;
-INLINE JSBool FASTCALL JL_JSArrayToBuffer( JSContext *cx, JSObject *arrObj, JLStr *str );
-JSClass *JL_GetStandardClassByKey(JSContext *cx, JSProtoKey key);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -171,6 +169,22 @@ JL_GetPrototype(JSContext *cx, JSObject *obj) {
 //	return proto && proto->map ? proto : NULL; // Beware: ref to dead object (we may be called from obj's finalizer).
 //	return proto && !proto->isNewborn() ? proto : NULL;
 	return JS_GetPrototype(cx, obj);
+}
+
+
+// eg. JS_NewObject(cx, JL_GetStandardClassByKey(cx, JSProto_Date), NULL, NULL);
+ALWAYS_INLINE JSClass*
+JL_GetStandardClassByKey(JSContext *cx, JSProtoKey protoKey) {
+
+	JSObject *ctor;
+	return JS_GetClassObject(cx, JL_GetGlobalObject(cx), protoKey, &ctor) && ctor ? js::Jsvalify(FUN_CLASP(GET_FUNCTION_PRIVATE(cx, ctor))) : NULL;
+}
+
+ALWAYS_INLINE JSObject*
+JL_GetStandardClassProtoByKey(JSContext *cx, JSProtoKey protoKey) {
+	
+	JSObject *proto;
+	return js_GetClassPrototype(cx, JL_GetGlobalObject(cx), protoKey, &proto, NULL) ? proto : NULL;
 }
 
 ALWAYS_INLINE JSBool
@@ -341,8 +355,11 @@ JL_IsClass( const jsval &val, const JSClass *jsClass ) {
 ALWAYS_INLINE bool
 JL_IsObjectObject( JSContext *cx, const JSObject *obj ) {
 
-	JSObject *oproto;
-	return js_GetClassPrototype(cx, NULL, JSProto_Object, &oproto) && JL_GetClass(obj) == JL_GetClass(oproto) && obj->getProto() == oproto;
+//	JSObject *oproto;
+//	return js_GetClassPrototype(cx, NULL, JSProto_Object, &oproto) && JL_GetClass(obj) == JL_GetClass(oproto) && obj->getProto() == oproto;
+	ASSERT( obj != NULL );
+	return obj->getProto() == JL_GetStandardClassProtoByKey(cx, JSProto_Object);
+	//return obj->getProto() == JL_GetHostPrivate(cx)->objectProto;
 }
 
 ALWAYS_INLINE bool
@@ -803,6 +820,18 @@ JL_NewJslibsObject( JSContext *cx, const char *className ) {
 	return JS_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
 }
 
+ALWAYS_INLINE JSObject*
+JL_NewObj( JSContext *cx ) {
+
+	HostPrivate *pv = JL_GetHostPrivate(cx);
+	return JS_NewObject(cx, pv->objectClass, pv->objectProto, JL_GetGlobalObject(cx));
+}
+
+ALWAYS_INLINE JSObject*
+JL_NewProtolessObj( JSContext *cx ) {
+
+	return JS_NewObjectWithGivenProto(cx, NULL, NULL, JL_GetGlobalObject(cx));
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2234,7 +2263,7 @@ JL_NativeToJsval( JSContext *cx, void *ptr, jsval *vp ) {
 		*vp = PRIVATE_TO_JSVAL(ptr);
 	} else {
 
-		JSObject *obj = JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL);
+		JSObject *obj = JL_NewProtolessObj(cx);
 		JL_CHK( obj );
 		*vp = OBJECT_TO_JSVAL(obj);
 		jsval tmp;
@@ -2708,7 +2737,7 @@ GetHostObject(JSContext *cx) {
 
 	if ( JSVAL_IS_VOID( hostObjectValue ) ) { // if configuration object do not exist, we build one
 
-		cobj = JS_NewObject(cx, NULL, NULL, NULL);
+		cobj = JS_NewObject(cx, NULL, NULL, NULL); // possible to use JL_NewObj ?
 		JL_CHK( cobj );
 		jsval val;
 		val = OBJECT_TO_JSVAL( cobj );
@@ -2830,15 +2859,6 @@ JL_NewBlobCopyN( JSContext * RESTRICT cx, const void * RESTRICT buffer, size_t l
 // see JSAtomState struct in jsatom.h
 #define JL_ATOMJSID(CX, NAME) \
 	ATOM_TO_JSID(JL_GetRuntime(CX)->atomState.NAME##Atom)
-
-
-// eg. JS_NewObject(cx, JL_GetStandardClassByKey(cx, JSProto_Date), NULL, NULL);
-ALWAYS_INLINE JSClass*
-JL_GetStandardClassByKey(JSContext *cx, JSProtoKey key) {
-
-	JSObject *ctor;
-	return JS_GetClassObject(cx, JL_GetGlobalObject(cx), key, &ctor) && ctor ? js::Jsvalify(FUN_CLASP(GET_FUNCTION_PRIVATE(cx, ctor))) : NULL;
-}
 
 
 ALWAYS_INLINE JSProtoKey

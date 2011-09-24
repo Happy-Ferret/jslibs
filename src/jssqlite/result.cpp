@@ -475,7 +475,7 @@ DEFINE_FUNCTION( Row ) {
 	columnCount = sqlite3_data_count(pStmt); // This routine returns 0 if pStmt is an SQL statement that does not return data (for example an UPDATE).
 
 	JSObject *row;
-	row = namedRows ? JS_NewObject(cx, NULL, NULL, NULL) : JS_NewArrayObject(cx, columnCount, NULL); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.
+	row = namedRows ? JL_NewObj(cx) : JS_NewArrayObject(cx, columnCount, NULL); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.
 	*JL_RVAL = OBJECT_TO_JSVAL(row); // now, row is protectef fom GC ??
 	jsval colJsValue;
 	for ( int col = 0; col < columnCount; ++col ) {
@@ -507,7 +507,7 @@ DEFINE_FUNCTION( next ) { // for details, see Row() function thet is the base of
 		return JS_ThrowStopIteration(cx);
 
 	JSObject *row;
-	row = JS_NewObject(cx, NULL, NULL, NULL);
+	row = JL_NewObj(cx);
 	*JL_RVAL = OBJECT_TO_JSVAL(row);
 	int columnCount;
 	columnCount = sqlite3_data_count(pStmt);
@@ -626,7 +626,7 @@ DEFINE_PROPERTY_GETTER( columnIndexes ) {
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 	JSObject *columnIndexes;
-	columnIndexes = JS_NewObject( cx, NULL, NULL, NULL );
+	columnIndexes = JL_NewObj(cx);
 	*vp = OBJECT_TO_JSVAL( columnIndexes );
 	int columnCount;
 	columnCount = sqlite3_column_count( pStmt );

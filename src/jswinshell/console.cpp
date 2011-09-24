@@ -345,7 +345,7 @@ DEFINE_FUNCTION( ReadConsoleInput ) {
 
 	jsval tmp;
 	JSObject *eventObject;
-	eventObject = JS_NewObject(cx, NULL, NULL, NULL);
+	eventObject = JL_NewObj(cx);
 	JL_ASSERT_ALLOC( eventObject );
 	*JL_RVAL = OBJECT_TO_JSVAL(eventObject);
 
