@@ -14,14 +14,9 @@ throw 0;
 */
 
 
-
 // LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-
 // LoadModule('jsstd'); Exec('../../tests/explodebox.js'); throw 0;
-
 LoadModule('jsstd'); Exec('../../tests/podtest.js'); throw 0;
-
-
 
 throw 0;
 

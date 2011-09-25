@@ -77,6 +77,8 @@ DEFINE_CONSTRUCTOR() {
 	unsigned char *cursorImage = (unsigned char *)jl_calloc(cursorDataLength, 1); // data + mask
 	unsigned char *cursorMask = cursorImage + sHeight*sWidth/8;
 //	memset(cursorImage, 0, cursorDataLength); see calloc
+
+	JL_updateMallocCounter(cx, cursorDataLength);
 	
 	// data  mask    resulting pixel on screen
 	//  0     1       White

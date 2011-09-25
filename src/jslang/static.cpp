@@ -559,8 +559,34 @@ DEFINE_FUNCTION( Deserialize ) {
     return true;
 	 JL_BAD;
 }
-
 */
+
+
+
+DEFINE_FUNCTION( _jsapiTests ) {
+
+	JL_IGNORE(cx);
+	JL_IGNORE(argc);
+	JL_IGNORE(vp);
+
+///////////////////////////////////////////////////////////////
+// check JL_JsvalToJsid -> JL_JsidToJsval
+//
+	JSObject *o = JL_NewObj(cx);
+	jsid t;
+	jsval s = OBJECT_TO_JSVAL(o);
+	JL_CHK( JL_JsvalToJsid(cx, &s, &t) );
+	jsval r;
+	JL_CHK( JL_JsidToJsval(cx, t, &r) );
+	ASSERT( JSVAL_TO_OBJECT(r) == o );
+
+
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 
 
 #define JSLANG_TEST DEBUG //|| true
@@ -574,7 +600,13 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_IGNORE(argc);
 	JL_IGNORE(vp);
 
-
+	JSObject *o = JL_NewObj(cx);
+	jsid t;
+	jsval s = OBJECT_TO_JSVAL(o);
+	JL_CHK( JL_JsvalToJsid(cx, &s, &t) );
+	jsval r;
+	JL_JsidToJsval(cx, t, &r);
+	ASSERT( JSVAL_TO_OBJECT(r) == o );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -604,6 +636,8 @@ CONFIGURE_STATIC
 
 //		FUNCTION_ARGC( Serialize, 1 )
 //		FUNCTION_ARGC( Deserialize, 1 )
+
+		FUNCTION( _jsapiTests )
 
 		#ifdef JSLANG_TEST
 		FUNCTION( jslangTest )

@@ -2919,7 +2919,7 @@ ALWAYS_INLINE JSBool
 JL_CreateErrorException( JSContext *cx, JSExnType exn, JSObject **obj ) {
 
 	JSObject *proto;
-	if ( !js_GetClassPrototype(cx, JS_GetGlobalObject(cx), JSProtoKey(JSProto_Error + exn), &proto) || !proto )
+	if ( !js_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProtoKey(JSProto_Error + exn), &proto) || !proto )
 		return JS_FALSE;
 
 	*obj = JS_NewObject(cx, JL_GetStandardClassByKey(cx, JSProtoKey(JSProto_Error + exn)), proto, NULL);

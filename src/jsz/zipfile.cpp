@@ -190,6 +190,7 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private *)jl_calloc(sizeof(Private), 1);
 	JL_ASSERT_ALLOC(pv);
+	JL_updateMallocCounter(cx, sizeof(Private));
 	JL_ASSERT( !pv->uf && !pv->zf );
 	JL_ASSERT( !pv->inZipOpened );
 	JL_SetPrivate(cx, obj, pv);
@@ -546,6 +547,7 @@ DEFINE_FUNCTION( Read ) {
 //	if ( JL_MaybeRealloc(requestedLength, rd) )
 //		buffer = (uint8_t*)jl_realloc(buffer, rd +1);
 
+	JL_updateMallocCounter(cx, rd);
 	buffer[rd] = '\0'; 
 	JL_CHK( JL_NewBlob(cx, buffer, rd, JL_RVAL) );
 
@@ -667,7 +669,6 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 
 	if ( pv->uf ) {
 
-
 		unz_global_info pglobal_info;
 		UNZ_CHK( unzGetGlobalInfo(pv->uf, &pglobal_info) );
 
@@ -681,6 +682,7 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 		if ( rd < 0 )
 			return ThrowZipFileError(cx, rd);
 
+		JL_updateMallocCounter(cx, rd);
 		comment[rd] = '\0';
 		JL_CHK( JL_NewBlob(cx, comment, rd, JL_RVAL) );
 	} else 
@@ -973,6 +975,7 @@ DEFINE_PROPERTY_GETTER( extra ) {
 		if ( rd < 0 )
 			return ThrowZipFileError(cx, rd);
 
+		JL_updateMallocCounter(cx, rd);
 		buffer[rd] = '\0';
 		JL_CHK( JL_NewBlob(cx, buffer, rd, JL_RVAL) );
 

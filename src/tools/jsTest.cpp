@@ -167,7 +167,7 @@ JSClass global_class = {
 JSBool Exec(JSContext *cx, uintN argc, jsval *vp) {
 
 	char *scriptText = "function();";
-	JSObject *scriptObject = JS_CompileScript(cx, JS_GetGlobalObject(cx), scriptText, strlen(scriptText), "<exec>", 1);
+	JSObject *scriptObject = JS_CompileScript(cx, JL_GetGlobalObject(cx), scriptText, strlen(scriptText), "<exec>", 1);
 
 	size_t e = JLGetEIP();
 	*JL_RVAL = BOOLEAN_TO_JSVAL(scriptObject != NULL);

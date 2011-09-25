@@ -4,12 +4,422 @@
 //Exec('../common/tools.js'); var QA = FakeQAApi;  RunLocalQAFile();
 //LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask');
 //LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
+//SetPerfTestMode();
+
 
 LoadModule('jsstd');
 LoadModule('jsio');
 LoadModule('jsdebug');
 
 
+_jsapiTests();
+
+
+throw 0;
+
+// doc. https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Proxy
+
+function Path() {
+	
+	function newProxy() {
+		
+		return Proxy.create(makeHandler({ __proto__:null }));
+	}
+	
+	function makeHandler(obj) {
+
+		return {
+			getOwnPropertyDescriptor: function(name) {
+
+				return Object.getOwnPropertyDescriptor(obj, name);
+			},
+			getPropertyDescriptor: function(name) {
+
+				return Object.getOwnPropertyDescriptor(obj, name);
+			},
+			defineProperty: function(name, desc) {
+			
+				Object.defineProperty(obj, name, desc);
+			},
+			delete: function(name) {
+				
+				return delete obj[name];
+			},
+			get: function(receiver, name) {
+				
+				var proxy;
+				if ( name in obj ) {
+					
+					proxy = obj[name];
+				} else {
+				
+					proxy = newProxy();
+					obj[name] = proxy;
+				}
+				return proxy;
+			},
+			enumerate: function() {
+				
+				return Object.keys(obj);
+			}
+		}
+	}
+	
+	return newProxy();
+}
+
+Path.map = new WeakMap();
+
+Path.set = function(path, data) {
+	
+	Path.map.set(path, data);
+};
+
+Path.has = function(path) {
+	
+	return Path.map.has(path);
+};
+
+Path.get = function(path) {
+	
+	return Path.map.get(path);
+};
+
+// test
+
+p = new Path;
+
+Path.set(p.aaa.x.bbb1, 111);
+Path.set(p.aaa.x['bbb2'], 222);
+
+Print( Path.get(p.aaa.x.bbb2), '\n' );
+
+for each ( var x in p.aaa.x ) {
+
+	Print( Path.get(x), '\n' );
+}
+
+Path.set(p.aaa.x.__proto__, 333 )
+Print( Path.get(p.aaa.x.__proto__), '\n' );
+
+p.z = p.aaa.x.__proto__;
+delete p.aaa.x.__proto__;
+
+Print( Path.get(p.aaa.x.__proto__), ' (moved)\n' );
+
+Print( Path.get(p.z), '\n' );
+
+Path.set(p.z.xxx, 444)
+
+p.z.y.x.w.xxx = 123;
+
+
+
+
+
+
+
+throw 0;
+
+
+var taskList = [];
+
+/*
+function _ProcEnd(proc) {
+	
+	var atExit = proc.atExit;
+	if ( atExit ) {
+	
+		var len = atExit.length;
+		for ( var i = 0; i < len; ++i )
+			taskList.push(atExit[i]);
+	}
+	proc.ended = true;
+}
+
+
+function StartProc(proc) {
+	
+	taskList.push(function inner(result) {
+	
+		try {
+			proc.send(result)(inner);
+		} catch (ex if ex === StopIteration) {
+			_ProcEnd(proc);
+		}
+	});
+	return proc;
+}
+
+
+function PWaitProc(proc) function(callback) {
+		
+	if ( !proc.atExit )
+		proc.atExit = [];
+	proc.atExit.push(function() taskList.push(callback));
+}
+
+function PIdle(callback) {
+
+	 taskList.push(callback);
+}
+
+function PKill(proc) {
+	
+	if ( proc ) {
+		
+		proc.close();
+		_ProcEnd(proc);
+	} else {
+		
+		throw StopIteration;
+	}
+}
+*/
+
+
+// timer
+
+var currentTime = Date.now();
+var timeoutList = [];
+
+function AddTimeout(time, fct) {
+
+	timeoutList.push([currentTime + time, fct]);
+	timeoutList.sort(function(a,b) a[0]-b[0]);
+}
+
+function ProcessTimeout() {
+
+	var len = timeoutList.length;
+	for ( var i = 0; i < len; ++i )
+		if ( timeoutList[i][0] > currentTime )
+			break;
+	var exList = timeoutList.splice(0, i);
+	var len = exList.length;
+	for ( var i = 0; i < len; ++i )
+		taskList.push(exList[i][1]);
+}
+
+function PSleep(time) function(callback) AddTimeout(time, callback);
+
+
+// event
+
+function PCreateEvent(manualReset, initialState) {
+
+	return [[], initialState, manualReset];
+}
+
+function PResetEvent(event) {
+	
+	event[1] = false;
+}
+
+function PFireEvent(event) {
+
+	var len = event[0].length;
+	for ( var i = 0; i < len; ++i )
+		taskList.push(event[0][i]);
+	event[0].length = 0;
+	event[1] = event[2];
+}
+
+function PWaitEvent(event) function(callback) {
+
+	if ( event[1] )
+		taskList.push(callback);
+	else
+		event[0].push(callback);
+}
+
+
+// Semaphore
+
+function PCreateSemaphore(initialCount) {
+	
+	return [[], initialCount];
+}
+
+function PReleaseSemaphore(semaphore) {
+	
+	if ( semaphore[0].length )
+		taskList.push(semaphore[0].shift());
+	else
+		++semaphore[1];
+}
+
+function PAcquireSemaphore(semaphore) function(callback) {
+
+	if ( semaphore[1] > 0 ) {
+	
+		--semaphore[1];
+		taskList.push(callback);
+	} else {
+	
+		semaphore[0].push(callback);
+	}
+}
+
+
+// Step
+
+function Step(elapsed, maxWait) {
+
+	currentTime += elapsed;
+	ProcessTimeout();
+	
+	var wait;
+	if ( timeoutList.length )
+		wait = Math.min(timeoutList[0][0] - currentTime, maxWait);
+	else
+		wait = maxWait;
+
+	var len = taskList.length;
+	if ( len ) {
+		
+		var tmp = taskList;
+		taskList = [];
+		for ( var i = 0; i < len; ++i )
+			tmp[i]();
+	}
+	
+	Sleep(Math.floor(wait));
+}
+
+///
+
+function Proc(fct, pProc) {
+	
+	var proc = this;
+	if ( pProc ) {
+	
+		proc.parent = pProc;
+		if ( pProc.childList )
+			pProc.childList.push(proc);
+		else
+			pProc.childList = [proc];
+	}
+	proc.gen = fct(proc);
+	taskList.push(function inner(result) {
+	
+		try {
+		
+			proc.gen.send(result)(inner);
+		} catch (ex if ex === StopIteration) {
+		
+			proc.Kill();
+		}
+	});
+}
+
+Proc.prototype.Kill = function() {
+	
+	Print('x');
+	
+	this.gen.close();
+	var atExit = this.atExit;
+	if ( atExit != undefined ) {
+	
+		var len = atExit.length;
+		for ( var i = 0; i < len; ++i )
+			taskList.push(atExit[i]);
+	}
+	var childList = this.childList;
+	if ( childList != undefined ) {
+		
+		var len = childList.length;
+		for ( var i = 0; i < len; ++i ) {
+		
+			var tmp = childList[i];
+			if ( tmp != undefined ) {
+				
+				tmp.Kill();
+			}
+		}
+	}
+	
+	var parent = this.parent;
+	if ( parent != undefined ) {
+		
+		var childList = parent.childList;
+		if ( childList != undefined )
+			childList[childList.indexOf(this)] = undefined;
+	}
+	
+	this.ended = true;
+}
+
+Proc.prototype.YWait = function(proc) function(callback) {
+	
+	var tmp = function() taskList.push(callback);
+	if ( proc.atExit )
+		proc.atExit.push(tmp);
+	else
+		proc.atExit = [tmp];
+}
+
+Proc.prototype.YSleep = function(time) function(callback) {
+	
+	if ( time != undefined )
+		AddTimeout(time, callback)
+	else
+		taskList.push(callback);
+}
+
+
+////////////////////////////////////
+// test
+
+function P2() function(proc) {
+
+	for (var i = 0; i< 20; ++i) {
+		
+		Print('b');
+		yield proc.YSleep();
+	}
+}
+
+
+function P1(arg) function(proc) {
+	
+	for (var i = 0;; ++i) {
+		
+		if ( i == 10 ) {
+		
+			var newProc = new Proc(P2(), proc);
+			//yield proc.YWait(newProc);
+		}
+			
+		Print(arg);
+		yield proc.YSleep();
+	}
+}
+
+
+var p = new Proc(P1('a'));
+
+
+for (var i = 0; !endSignal && i < 100; ++i ) {
+
+	if ( i == 15 ) {
+		
+		p.Kill();
+	}
+	
+	Step(5, 5);
+}
+
+throw 0;
+
+
+
+
+
+
+
+
+/* ************
 
 var taskList = [];
 
@@ -37,41 +447,55 @@ function ProcessTimeout() {
 }
 
 
-function PSleep(time) function(state, callback) {
+
+
+function Proc(fct) {
+	this.fct = fct;
+	this.step = 0;
+	this.result = undefined;
+}
+
+Proc.prototype.Thaw = function(stateData) {
+	
+	this.step = stateData[0];
+	this.result = stateData[1];
+}
+
+Proc.prototype.Freeze = function() {
+	
+	return [ this.step, this.result ];
+}
+
+Proc.prototype.Start = function() {
+	
+	var proc = this;
+	taskList.push(function inner() {
+
+		proc.result = proc.fct(proc)(proc, inner);
+	});
+}
+
+Proc.prototype.Sleep = function(time) function(state, callback) {
 
 	++state.step;
 	AddTimeout(time, callback);
 }
 
-function PIdle() function(state, callback) {
+Proc.prototype.Idle = function() function(state, callback) {
 	
 	++state.step;
 	taskList.push(callback);
 }
 
-function PGoto(step) function(state, callback) {
+Proc.prototype.Goto = function(step) function(state, callback) {
 	
 	state.step = step;
 	taskList.push(callback);
 }
 
-function PEnd() function(state, callback) {
+Proc.prototype.End = function() function(state, callback) {
 };
 
-function ProcState() {
-	this.step = 0;
-	this.result = undefined;
-}
-
-function ProcCreate(fct) {
-	
-	var state = new ProcState();
-	taskList.push(function inner() {
-
-		state.result = fct(state)(state, inner);
-	});
-	return state;
-}
 
 
 function Step(elapsed, maxWait) {
@@ -105,35 +529,64 @@ function test() {
 	function testProc1( state ) {
 
 		switch ( state.step ) {
-		case 0:
+			
+			case 0:
 			Print(state.step);
-			return PIdle();
-		case 1:
+			return state.Idle();
+			case 1:
 			Print(state.step);
-			return PSleep(500);
-		case 2:
+			return state.Sleep(500);
+			case 2:
 			Print(state.step);
-			return PGoto(0);
+			return state.Goto(0);
 		}
-		return PEnd();
+		return state.End();
 	}
 	
-	var proc = ProcCreate(testProc1.bind(this));
+	this.Init = function() {
 	
-	this.FreezeThaw = function() {
+		this.proc = new Proc(testProc1);
 	}
+
+	this.Start = function() {
+		
+		this.proc.Start();
+	}
+
+	this.Freeze = function() {
+		
+		return { proc:this.proc.Freeze() }
+	}
+	
+	this.Thaw = function(stateData) {
+		
+		this.proc.Thaw(stateData.proc);
+	}
+	
 }
 
 
-new test();
+
+var t = new test();
+t.Init();
+t.Start();
 
 while ( !endSignal ) {
-
+	
+	var data = JSON.stringify(t.Freeze());
+	t = new test();
+	t.Init();
+	t.Thaw(JSON.parse(data));
+	t.Start();
+	
+	
 	Step(10, 10);
 }
 
 Print( uneval(timeoutList) );
 
+
+************ */
 
 
 
@@ -141,50 +594,7 @@ Print( uneval(timeoutList) );
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-/*
-	var randomString = '';
-	for ( var i = 0; i < 1024; ++i )
-		randomString += Math.random().toString(36).substr(2);
-   
-	var RandomString = function(length) { // [0-9A-Za-z]
-		
-		var data = '';
-		while( data.length < length )
-			data += randomString.substring( Math.random()*randomString.length, Math.random()*randomString.length );
-		return data.substr(0, length);
-   }
-
-
-
-		var len = 0;
-		var b = new Buffer();
-		for ( var i = 0; i < 500; i++ ) {
-			
-			len += i;
-			b.Write(RandomString(i));
-		}
-
-		var s = Stringify(b);
-		
-throw 0;		
-*/
-
-
-SetPerfTestMode();
-
-
-
+/* ****************************************
 
 var taskList = [];
 
@@ -428,13 +838,7 @@ while ( !endSignal ) {
 //Print( 'time:'+(1000 * (i*1) / t)+'fps', '\n' );
 
 
-throw 0;
-
-
-
-
-
-
+************************* */
 
 
 

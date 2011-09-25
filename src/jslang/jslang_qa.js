@@ -1,6 +1,11 @@
 LoadModule('jsstd');
 
 /// Handle prototype [ftrm]
+	
+	_jsapiTests();
+
+
+/// Handle prototype [ftrm]
 
 	QA.ASSERT( Handle._serialize, undefined, '_serialize access' );
 

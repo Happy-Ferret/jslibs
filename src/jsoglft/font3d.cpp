@@ -144,8 +144,9 @@ DEFINE_CONSTRUCTOR() {
 	else
 		size = currentSize;
 
-	Private *pv = (Private*)jl_calloc(1,sizeof(Private));
+	Private *pv = (Private*)jl_calloc(1, sizeof(Private));
 	JL_ASSERT_ALLOC(pv);
+	JL_updateMallocCounter(cx, sizeof(Private));
 	JL_SetPrivate(cx, obj, pv);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &pv->style) );

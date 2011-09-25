@@ -1225,7 +1225,7 @@ DEFINE_NEW_RESOLVE() {
 
 	// search id in String's prototype.
 	JSObject *stringProto;
-	JL_CHK( JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_String, &stringProto) );
+	JL_CHK( JS_GetClassObject(cx, JL_GetGlobalObject(cx), JSProto_String, &stringProto) );
 
 	JL_CHK( stringProto->lookupProperty(cx, id, objp, &prop) );
 	if ( !prop )
@@ -1286,7 +1286,7 @@ DEFINE_OPS_GET_PROPERTY() {
 
 		GetBlobString(cx, obj, js::Jsvalify(vp));
 		JSObject *stringProto;
-		JS_GetClassObject(cx, JS_GetGlobalObject(cx), JSProto_String, &stringProto);
+		JS_GetClassObject(cx, JL_GetGlobalObject(cx), JSProto_String, &stringProto);
 
 		JS_LookupPropertyById(cx, stringProto, id, js::Jsvalify(vp));
 //		JS_DefineFunction(cx, obj, "toString", _valueOf, 0, 0);

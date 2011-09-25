@@ -1509,9 +1509,9 @@ DEFINE_FUNCTION( jsstdTest ) {
 	JL_JsvalToNative(cx, JL_ARG(1), &str);
 	JSObject *scriptObj;
 
-	//	scriptObj = JS_CompileFile(cx, JS_GetGlobalObject(cx), str.GetConstStrZ());
+	//	scriptObj = JS_CompileFile(cx, JL_GetGlobalObject(cx), str.GetConstStrZ());
 
-	//	scriptObj = JL_LoadScript(cx, JS_GetGlobalObject(cx), str, false, false);
+	//	scriptObj = JL_LoadScript(cx, JL_GetGlobalObject(cx), str, false, false);
 
 	size_t scriptFileSize;
 	int scriptFile;
@@ -1524,7 +1524,7 @@ DEFINE_FUNCTION( jsstdTest ) {
 	res = read(scriptFile, (void*)scriptBuffer, (unsigned int)scriptFileSize);
 	close(scriptFile);
 
-	scriptObj = JS_CompileScript(cx, JS_GetGlobalObject(cx), scriptBuffer, scriptFileSize, str.GetConstStrZ(), 1);
+	scriptObj = JS_CompileScript(cx, JL_GetGlobalObject(cx), scriptBuffer, scriptFileSize, str.GetConstStrZ(), 1);
 */
 
 

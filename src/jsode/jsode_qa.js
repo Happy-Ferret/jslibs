@@ -13,6 +13,20 @@ LoadModule('jsode');
   var a = floor.body;
 
 
+/// crash 3 [rmtf]
+
+	LoadModule('jsode');
+	var w = new World();
+	var geom = new GeomPlane(w.space);
+
+
+/// crash 4 [rmtf]
+
+	var space = new Space();
+	var geom = new GeomPlane(space);
+	space.Destroy();
+
+
 /// memory leak test [rmtf]
 
 	var w = new World();
