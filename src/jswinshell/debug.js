@@ -6,6 +6,123 @@ LoadModule('jswinshell');
 LoadModule('jssvg');
 
 
+
+LoadModule('jsstd');
+LoadModule('jswinshell');
+
+//jswinshelltest();
+
+
+try {
+	var fso = CreateComObject('Scripting.FileSystemObject');
+
+
+	var tmp = fso.GetFolder('c:\\');
+	for each ( var folder in tmp.SubFolders )
+		Print( folder.name.quote(), '\n' );
+
+
+} catch(ex if ex instanceof WinError) {
+
+	Print( ex.text, ' ', ex.const, ' (', ex.code, ')', '\n' );
+}
+
+
+throw 0;
+
+
+
+try {
+
+function Test() {
+	var xmlhttp = CreateComObject("Microsoft.XMLHTTP");
+	xmlhttp.open("GET", "http://www.google.com/", false);
+	xmlhttp.onreadystatechange = function() { Print(xmlhttp.readyState) }
+//	xmlhttp.send();
+
+//	Sleep(1000);
+	Print( xmlhttp.responseText );
+}
+
+Test();
+CollectGarbage();
+
+Halt();
+
+
+
+try {
+
+	var fso = CreateComObject('Scripting.FileSystemObject');
+	var file = fso.CreateTextFile("testfile.txt")
+
+	for(var i = 1; i < 255; i++)
+		file.Write = 5;
+
+
+} catch(ex if ex instanceof WinError) {
+
+	Print( ex.text, ' ', ex.const, ' (', ex.code, ')', '\n' );
+}
+
+
+
+Halt();
+
+
+var xml = '<doc><el attr="foo" attr1="bar">Info</el></doc>';
+var xmlReader = CreateComObject("Microsoft.XMLDOM");
+xmlReader.loadXML(xml);
+Print('Output: ' + xmlReader.childNodes[0].childNodes[0].attributes[1].nodeValue); // 'foo'
+Print('Output: ' + xmlReader.childNodes[0].childNodes[0].childNodes[0].nodeValue); // 'Info'
+Halt();
+
+
+//var fso = CreateComObject('MSWinsock.Winsock');
+
+//	var fso = new ComObject('Scripting.FileSystemObject');
+//	var file = fso.GetFile("foobar.txt");
+//	file.Write("Hello World");
+
+//	file.attributes();
+//	file.attributes = 2;
+
+//	file.Close();
+//	Print( o.CreateTextFile.dispid );
+//	var a = o.test;
+
+
+//var shell = new ComObject('WScript.Shell');
+//shell.popup('Bonjour, tout le monde!');
+
+//var typeLib = new ComObject('Scriptlet.TypeLib');
+//Print(typeLib.guid); // Should give you a new GUID for every typeLib instantiation
+
+/*
+var shell = new ComObject('WScript.Shell');
+var process = shell.exec('test.bat');
+stdoutput = process.stdOut.readAll();
+Print('out: ',stdoutput); // Should output the stdout of the dir command
+*/
+
+//var shell = new ComObject('WScript.Shell');
+//shell.Exec('calc.exe');
+
+
+
+	Print('\nDone.\n');
+
+} catch(ex if ex instanceof WinError) {
+	
+
+	Print( ex.text, '\n' );
+}
+
+
+Halt(); //////////////////////////////////////////////////////////////////////
+
+
+
 //throw 0;
 
 
@@ -280,108 +397,6 @@ while ( !endSignal )
 
 Halt(); //////////////////////////////////////////////////////////////////////
 
-
-
-
-LoadModule('jsstd');
-LoadModule('jswinshell');
-
-//jswinshelltest();
-
-try {
-
-	var fso = CreateComObject('Scripting.FileSystemObject');
-	var file = fso.CreateTextFile("testfile.txt")
-
-	for(var i = 1; i < 255; i++)
-		file.Write = 5;
-
-
-} catch(ex if ex instanceof WinError) {
-
-	Print( ex.text, ' ', ex.const, ' (', ex.code, ')', '\n' );
-}
-
-
-
-Halt();
-
-try {
-
-function Test() {
-	var xmlhttp = CreateComObject("Microsoft.XMLHTTP");
-	xmlhttp.open("GET", "http://www.google.com/", false);
-	xmlhttp.onreadystatechange = function() { Print(xmlhttp.readyState) }
-//	xmlhttp.send();
-
-//	Sleep(1000);
-	Print( xmlhttp.responseText );
-}
-
-Test();
-CollectGarbage();
-
-Halt();
-
-
-
-var fso = CreateComObject('Scripting.FileSystemObject');
-var tmp = fso.GetFolder('c:\\');
-for each ( var folder in tmp.SubFolders )
-	Print( folder.name, '\n' );
-Halt();
-
-
-var xml = '<doc><el attr="foo" attr1="bar">Info</el></doc>';
-var xmlReader = CreateComObject("Microsoft.XMLDOM");
-xmlReader.loadXML(xml);
-Print('Output: ' + xmlReader.childNodes[0].childNodes[0].attributes[1].nodeValue); // 'foo'
-Print('Output: ' + xmlReader.childNodes[0].childNodes[0].childNodes[0].nodeValue); // 'Info'
-Halt();
-
-
-//var fso = CreateComObject('MSWinsock.Winsock');
-
-//	var fso = new ComObject('Scripting.FileSystemObject');
-//	var file = fso.GetFile("foobar.txt");
-//	file.Write("Hello World");
-
-//	file.attributes();
-//	file.attributes = 2;
-
-//	file.Close();
-//	Print( o.CreateTextFile.dispid );
-//	var a = o.test;
-
-
-//var shell = new ComObject('WScript.Shell');
-//shell.popup('Bonjour, tout le monde!');
-
-//var typeLib = new ComObject('Scriptlet.TypeLib');
-//Print(typeLib.guid); // Should give you a new GUID for every typeLib instantiation
-
-/*
-var shell = new ComObject('WScript.Shell');
-var process = shell.exec('test.bat');
-stdoutput = process.stdOut.readAll();
-Print('out: ',stdoutput); // Should output the stdout of the dir command
-*/
-
-//var shell = new ComObject('WScript.Shell');
-//shell.Exec('calc.exe');
-
-
-
-	Print('\nDone.\n');
-
-} catch(ex if ex instanceof WinError) {
-	
-
-	Print( ex.text, '\n' );
-}
-
-
-Halt(); //////////////////////////////////////////////////////////////////////
 
 
 

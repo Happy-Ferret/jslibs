@@ -1,13 +1,11 @@
-@@ -46,14 +46,40 @@
- 
- #include "jstypes.h"
+@@ -49,8 +49,34 @@
  #include <stdlib.h>
  #include <string.h>
  
- JS_BEGIN_EXTERN_C
- 
 +#define JS_HAS_JSLIBS_RegisterCustomAllocators
 +
+ JS_BEGIN_EXTERN_C
+ 
 +extern JS_PUBLIC_API(void)
 +JSLIBS_RegisterCustomAllocators(
 +  void* (*)( size_t ),
@@ -32,18 +30,10 @@
 +
 +JS_BEGIN_EXTERN_C
 +
- /*
-  * JS_Assert is present even in release builds, for the benefit of applications
-  * that build DEBUG and link against a non-DEBUG SpiderMonkey library.
-  */
- extern JS_PUBLIC_API(void)
- JS_Assert(const char *s, const char *file, JSIntn ln);
- 
-@@ -462,8 +488,13 @@
-     }
- }
- 
- } /* namespace js */
+ #define JS_CRASH_UNLESS(__cond)                                                 \
+     JS_BEGIN_MACRO                                                              \
+         if (!(__cond)) {                                                        \
+@@ -674,4 +700,9 @@
  
  #endif /* defined(__cplusplus) */
  

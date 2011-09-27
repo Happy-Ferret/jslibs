@@ -194,7 +194,7 @@ int main(int argc, char* argv[]) {
 
 	//JSClass *denseArrayClass = JS_GetClass(JS_NewArrayObject(cx, 0, NULL));
 
-
+/*
 	JSObject *arr = JS_NewArrayObject(cx, 5, NULL);
 	ASSERT(js_IsDensePrimitiveArray(arr));
 	jsval tmp = JSVAL_ONE;
@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
 	ASSERT(js_IsDensePrimitiveArray(arr));
 	JL_SetElement(cx, arr, 9998, &tmp);
 	ASSERT(js_IsDensePrimitiveArray(arr));
-
+*/
 
 
 	JL_CHK( JS_DefineFunction(cx, globalObject, "Exec", Exec, 0, 0) );

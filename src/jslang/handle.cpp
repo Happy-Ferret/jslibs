@@ -38,7 +38,7 @@ DEFINE_FUNCTION( toString ) {
 	JL_DEFINE_FUNCTION_OBJ;
 //	JL_ASSERT_THIS_INSTANCE();
 
-	HandlePrivate *pv = JL_HasPrivate(cx, JL_OBJ) ? (HandlePrivate*)JL_GetPrivate(cx, JL_OBJ) : NULL;
+	HandlePrivate *pv = JL_HasPrivateSlot(cx, JL_OBJ) ? (HandlePrivate*)JL_GetPrivate(cx, JL_OBJ) : NULL;
 	JSString *handleStr;
 	char str[] = "[Handle ????]";
 	if ( pv != NULL ) { // this manage Print(Handle) issue

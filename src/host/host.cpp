@@ -601,7 +601,8 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
-	JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA); // good place to manage stack limit ( that is 32MB by default ). Btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
+// no more availavle in firefox 7
+//	JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA); // good place to manage stack limit ( that is 32MB by default ). Btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
 
 	uint32 maxCodeCacheBytes;
 	maxCodeCacheBytes = JS_GetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES);
@@ -614,10 +615,11 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 
 	JS_SetErrorReporter(cx, ErrorReporter);
 
+	// JSOPTION_ANONFUNFIX is no more availavle in firefox 7
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
 	// JS_SetOptions doc: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_SetOptions
 	ASSERT( JS_GetOptions(cx) == 0 );
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_ANONFUNFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_JIT | JSOPTION_METHODJIT | /*JSOPTION_METHODJIT_ALWAYS |*/ JSOPTION_PROFILING);
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | /*JSOPTION_ANONFUNFIX |*/ JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_JIT | JSOPTION_METHODJIT | /*JSOPTION_METHODJIT_ALWAYS |*/ JSOPTION_PROFILING);
 
 	JSObject *globalObject;
 	globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);

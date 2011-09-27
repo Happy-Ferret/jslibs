@@ -169,7 +169,7 @@ FreeBlobBuffer( JSContext *cx, JSObject *blobObject ) {
 ALWAYS_INLINE bool
 IsBlobValid( JSContext *cx, JSObject *blobObject ) {
 
-	return JL_HasPrivate(cx, blobObject) && JL_GetPrivate(cx, blobObject) != NULL;
+	return JL_HasPrivateSlot(cx, blobObject) && JL_GetPrivate(cx, blobObject) != NULL;
 }
 
 
@@ -368,6 +368,7 @@ DEFINE_FUNCTION( ReloacateToArray ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
 
+/*
 	JSObject *bufObj;
 	bufObj = js::ArrayBuffer::create(cx, 0);
 	JL_CHK( bufObj );
@@ -392,6 +393,25 @@ DEFINE_FUNCTION( ReloacateToArray ) {
 	typedArray = js_CreateTypedArrayWithBuffer(cx, js::TypedArray::TYPE_UINT8, bufObj, 0, buffer->byteLength);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(typedArray);
+*/
+
+
+	size_t thisLength;
+	const uint8_t *thisBuffer;
+	JL_CHK( BlobBuffer(cx, JL_OBJ, &thisBuffer) );
+	JL_CHK( BlobLength(cx, JL_OBJ, &thisLength) );
+
+	JSObject *typedArrayObj = js_CreateTypedArray(cx, js::TypedArray::TYPE_UINT8, 0);
+	js::TypedArray *typedArray = js::TypedArray::fromJSObject(typedArrayObj);
+	
+	typedArray->data = (void*)thisBuffer;
+	typedArray->byteLength = thisLength;
+	typedArray->length = thisLength;
+
+	JL_SetPrivate(cx, JL_OBJ, NULL); // InvalidateBlob(cx, JL_OBJ)
+	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_BLOB_JSSTRING, JSVAL_VOID) );
+
+	*JL_RVAL = OBJECT_TO_JSVAL(typedArrayObj);
 
 	return JS_TRUE;
 	JL_BAD;

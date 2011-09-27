@@ -140,7 +140,7 @@ JL_GetEmptyStringValue( const JSContext *cx ) { // see JS_GetEmptyStringValue()
 }
 
 ALWAYS_INLINE bool
-JL_HasPrivate( const JSContext *cx, const JSObject *obj ) {
+JL_HasPrivateSlot( const JSContext *cx, const JSObject *obj ) {
 
 	JL_IGNORE(cx);
 	return obj->getClass()->flags & JSCLASS_HAS_PRIVATE;
@@ -153,7 +153,6 @@ JL_GetPrivate( const JSContext *cx, const JSObject *obj ) {
 	return obj->getPrivate();
 }
 
-
 ALWAYS_INLINE void
 JL_SetPrivate( const JSContext *cx, JSObject *obj, void *data ) {
 
@@ -161,18 +160,14 @@ JL_SetPrivate( const JSContext *cx, JSObject *obj, void *data ) {
 	obj->setPrivate(data);
 }
 
+
 ALWAYS_INLINE JSObject *
 JL_GetPrototype(JSContext *cx, JSObject *obj) {
 
-//	JL_IGNORE(cx);
-//	JSObject *proto = obj->getProto();
-//	return proto && proto->map ? proto : NULL; // Beware: ref to dead object (we may be called from obj's finalizer).
-//	return proto && !proto->isNewborn() ? proto : NULL;
 	return JS_GetPrototype(cx, obj);
 }
 
 
-// eg. JS_NewObject(cx, JL_GetStandardClassByKey(cx, JSProto_Date), NULL, NULL);
 ALWAYS_INLINE JSClass*
 JL_GetStandardClassByKey(JSContext *cx, JSProtoKey protoKey) {
 
@@ -182,9 +177,10 @@ JL_GetStandardClassByKey(JSContext *cx, JSProtoKey protoKey) {
 
 ALWAYS_INLINE JSObject*
 JL_GetStandardClassProtoByKey(JSContext *cx, JSProtoKey protoKey) {
-	
+
 	JSObject *proto;
 	return js_GetClassPrototype(cx, JL_GetGlobalObject(cx), protoKey, &proto, NULL) ? proto : NULL;
+	// eg. JS_NewObject(cx, JL_GetStandardClassByKey(cx, JSProto_Date), JL_GetStandardClassProtoByKey(cx, JSProto_Date), NULL);
 }
 
 ALWAYS_INLINE JSBool
@@ -203,48 +199,15 @@ JL_SetElement(JSContext *cx, JSObject *obj, jsuint index, jsval *vp) {
 ALWAYS_INLINE JSBool
 JL_GetReservedSlot( JSContext *cx, JSObject *obj, uint32 slot, jsval *vp ) {
 
-	// return JS_GetReservedSlot(cx, obj, slot, vp);
-	JL_IGNORE(cx);
-
-	#ifdef DEBUG
-	JS_TypeOfValue(cx, *vp); // used for assertSameCompartment(cx, v)
-	#endif // DEBUG
-
-	if ( JS_IsNative(obj) && slot < obj->numSlots() )
-		*vp = js::Jsvalify(obj->getSlot(slot));
-	else
-		js::Valueify(vp)->setUndefined();
-
-	#ifdef DEBUG
-	jsval tmp;
-	JS_GetReservedSlot(cx, obj, slot, &tmp);
-	JSBool same;
-	if ( !JS_SameValue(cx, *vp, tmp, &same) )
-		return JS_FALSE;
-	ASSERT( same );
-	#endif // DEBUG
-
-	return JS_TRUE;
+	return JS_GetReservedSlot(cx, obj, slot, vp);
 }
 
 ALWAYS_INLINE JSBool
 JL_SetReservedSlot(JSContext *cx, JSObject *obj, uintN slot, const jsval &v) {
 
-//	return JS_SetReservedSlot(cx, obj, slot, v);
-
-	#ifdef DEBUG
-	JS_TypeOfValue(cx, v); // used for assertSameCompartment(cx, v)
-	#endif // DEBUG
-
-//	return JS_SetReservedSlot(cx, obj, index, v);
-	if ( !JS_IsNative(obj) )
-		return JS_TRUE;
-	if ( slot >= obj->numSlots() )
-		return JS_SetReservedSlot(cx, obj, slot, v);
-	obj->setSlot(slot, js::Valueify(v));
-	GC_POKE(cx, JS_NULL);
-	return JS_TRUE;
+	return JS_SetReservedSlot(cx, obj, slot, v);
 }
+
 
 ALWAYS_INLINE JSString *
 JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
@@ -262,6 +225,76 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 
 	return JS_NewUCString(cx, chars, length); // doc. https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_NewString
 }
+
+
+ALWAYS_INLINE jsid
+JL_NullJsid() { // is (double)0
+
+	jsid tmp = {0}; // memset(&tmp, 0, sizeof(tmp));
+	return tmp;
+}
+
+ALWAYS_INLINE jsid
+JL_StringToJsid( JSContext * RESTRICT cx, JSString * RESTRICT jsstr ) {
+
+	if ( !jsstr->isAtom() ) { // else use JS_StringHasBeenInterned()
+
+		//size_t length;
+		//const jschar *chars = JS_GetStringCharsAndLength(cx, jsstr, &length);
+		//jsstr = JS_InternUCStringN(cx, chars, length);
+		jsstr = JS_InternJSString(cx, jsstr);
+	}
+	if ( jsstr == NULL )
+		return JL_NullJsid();
+	jsid id = ATOM_TO_JSID(&jsstr->asAtom());
+	ASSERT( JSID_IS_STRING( id ) );
+	return id;
+}
+
+ALWAYS_INLINE jsid
+JL_StringToJsid( JSContext * RESTRICT cx, const jschar * RESTRICT cstr ) {
+
+	JSString *jsstr = JS_InternUCString(cx, cstr);
+	if ( jsstr == NULL )
+		return JL_NullJsid();
+	jsid id = JL_StringToJsid(cx, jsstr);
+	ASSERT( JSID_IS_STRING(id) );
+	return id;
+}
+
+/* undoable ?
+ALWAYS_INLINE JSBool
+JL_RemovePropertyById( JSContext *cx, JSObject *obj, jsid propertyId ) {
+
+	jsval ok;
+	if ( !JS_DeletePropertyById2(cx, obj, propertyId, &ok) )
+		return JS_FALSE;
+	if ( ok == JSVAL_FALSE ) {
+
+//		JSBool found;
+//		uintN attrs;
+//		JS_GetPropertyAttrsGetterAndSetterById(cx, obj, propertyId, &attrs, &found, NULL, NULL);
+//		attrs &= ~JSPD_PERMANENT;
+
+		if ( !JS_DefinePropertyById(cx, obj, propertyId, JSVAL_VOID, NULL, NULL, JSPROP_READONLY|JSPROP_ENUMERATE) )
+			return JS_FALSE;
+
+		if ( !JS_DeletePropertyById2(cx, obj, propertyId, &ok) )
+			return JS_FALSE;
+
+		ASSERT( true );
+	}
+
+#ifdef DEBUG
+	{
+//	JSBool found;
+//	ASSERT( JS_HasPropertyById(cx, obj, propertyName, &found) && !found );
+	}
+#endif
+
+	return JS_TRUE;
+}
+*/
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -382,7 +415,7 @@ JL_IsGeneratorFunction( JSContext * RESTRICT cx, jsval &val ) {
 	// copied from firefox-5.0b7.source\mozilla-beta\js\src
     JSObject *funobj;
 	if (!js::IsFunctionObject(js::Valueify(val), &funobj)) {
-        
+
         return true;
     }
 
@@ -811,15 +844,6 @@ JL_GetCachedClassProto( HostPrivate *hpv, const char *className ) {
 	}
 }
 
-
-ALWAYS_INLINE JSObject*
-JL_NewJslibsObject( JSContext *cx, const char *className ) {
-
-	ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
-	ASSERT( cpc );
-	return JS_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
-}
-
 ALWAYS_INLINE JSObject*
 JL_NewObj( JSContext *cx ) {
 
@@ -833,17 +857,16 @@ JL_NewProtolessObj( JSContext *cx ) {
 	return JS_NewObjectWithGivenProto(cx, NULL, NULL, JL_GetGlobalObject(cx));
 }
 
+ALWAYS_INLINE JSObject*
+JL_NewJslibsObject( JSContext *cx, const char *className ) {
+
+	ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
+	ASSERT( cpc );
+	return JS_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // IDs cache management
-
-
-ALWAYS_INLINE jsid
-JL_NullJsid() { // is (double)0
-
-	jsid tmp = {0}; // memset(&tmp, 0, sizeof(tmp));
-	return tmp;
-}
 
 	// slow part of JL_GetPrivateJsid()
 	INLINE NEVER_INLINE jsid FASTCALL
@@ -853,8 +876,9 @@ JL_NullJsid() { // is (double)0
 		JSString *jsstr = JS_InternUCString(cx, name);
 		if (unlikely( jsstr == NULL ))
 			return JL_NullJsid();
-		if (unlikely( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &id) != JS_TRUE ))
-			return JL_NullJsid();
+//		if (unlikely( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &id) != JS_TRUE ))
+//			return JL_NullJsid();
+		id = JL_StringToJsid(cx, jsstr);
 		JL_GetHostPrivate(cx)->ids[index] = id;
 		return id;
 	}
@@ -898,7 +922,7 @@ enum E_TXTID {
 };
 
 // simple helpers
-#define E_ERRNO( num )                E_ERRNO_1, num 
+#define E_ERRNO( num )                E_ERRNO_1, num
 #define E_STR( str )                  E_STR_1, str
 #define E_NAME( str )                 E_NAME_1, str
 #define E_NUM( num )                  E_NUM_1, num
@@ -1428,7 +1452,7 @@ public:
 	ALWAYS_INLINE char *GetStrZOwnership() {
 
 		ASSERT( IsSet() );
-		if ( !_inner->str || JL_HasFlags(_inner->strFlags, OWN | NT) )
+		if ( !_inner->str || !JL_HasFlags(_inner->strFlags, OWN | NT) )
 			CreateOwnStrZ();
 		char *tmp = _inner->str;
 		_inner->str = NULL;
@@ -1680,7 +1704,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 			*num = uint8_t(tmp);
 			return JS_TRUE;
 		}
-	
+
 		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(0, UINT8_MAX) );
 	}
 
@@ -2259,7 +2283,7 @@ ALWAYS_INLINE JSBool
 JL_NativeToJsval( JSContext *cx, void *ptr, jsval *vp ) {
 
 	if ( ((uint32)ptr & 1) == 0 ) {
-	
+
 		*vp = PRIVATE_TO_JSVAL(ptr);
 	} else {
 
@@ -2320,7 +2344,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, void **ptr ) {
 			ASSERT(false);
 		}
 	} else {
-		
+
 		JL_CHKM( JSVAL_IS_DOUBLE(val), E_JSLIBS, E_INTERNAL );
 		*ptr = JSVAL_TO_PRIVATE(val);
 	}
@@ -2561,29 +2585,6 @@ JL_JSArrayToBuffer( JSContext * RESTRICT cx, JSObject * RESTRICT arrObj, JLStr *
 }
 
 
-ALWAYS_INLINE jsid
-JL_StringToJsid( JSContext *cx, const jschar *cstr ) {
-
-	JSString *jsstr = JS_InternUCString(cx, cstr);
-	if ( jsstr == NULL )
-		return JL_NullJsid();
-//	jsid tmp;
-//	if ( !JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &tmp) )
-//		return JL_NullJsid();
-//	return tmp;
-#ifdef DEBUG
-	jsid id, tmp;
-	id = ATOM_TO_JSID(&jsstr->asAtom());
-	ASSERT( JSID_IS_STRING( id ) );
-	JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &tmp);
-	JS_ASSERT( id == tmp );
-	return id;
-#else
-	return ATOM_TO_JSID(&jsstr->asAtom());
-#endif // DEBUG
-}
-
-
 ALWAYS_INLINE JSFunction*
 JL_ObjectToFunction( JSContext *cx, const JSObject *obj ) {
 
@@ -2612,7 +2613,7 @@ JL_JsvalToJsid( JSContext * RESTRICT cx, jsval * RESTRICT val, jsid * RESTRICT i
 	} else
 	if ( JSVAL_IS_STRING( *val ) ) {
 
-		*id = ATOM_TO_JSID(&JSVAL_TO_STRING(*val)->asAtom());
+		*id = JL_StringToJsid(cx, JSVAL_TO_STRING( *val ));
 		ASSERT( JSID_IS_STRING( *id ) );
 	} else
 	if ( JSVAL_IS_VOID( *val ) ) {
@@ -2939,7 +2940,7 @@ ErrorReporter_ToString(JSContext *cx, const char *message, JSErrorReport *report
 
 ALWAYS_INLINE JSBool
 JL_ReportExceptionToString( JSContext *cx, JSObject *obj, JLStr  ) {
-	
+
 	JSErrorReporter prevEr = JS_SetErrorReporter(cx, ErrorReporter_ToString);
 	JS_ReportPendingException(cx);
 	JS_SetErrorReporter(cx, prevEr);
@@ -3264,7 +3265,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 	int res;
 	res = read(scriptFile, (void*)scriptBuffer, (unsigned int)scriptFileSize);
 	close(scriptFile);
-	
+
 	//JL_CHKM( res >= 0, "Unable to read file \"%s\".", fileName );
 	JL_CHKM( res >= 0, E_FILE, E_NAME(fileName), E_READ );
 

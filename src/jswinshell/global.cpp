@@ -835,6 +835,8 @@ $TOC_MEMBER $INAME
   Converts a globally unique identifier (GUID) into a string of printable characters.
   $H example:
 {{{
+var file = new File("C:\\tmp");
+Print(GUIDToString(f.id).quote());
 }}}
 **/
 DEFINE_FUNCTION( GUIDToString ) {

@@ -640,7 +640,7 @@ DEFINE_PROPERTY_SETTER( gcZeal ) {
 
 	uint8 zeal;
 	JL_CHKM( JL_JsvalToNative(cx, *vp, &zeal), E_VALUE, E_INVALID );
-	JS_SetGCZeal(cx, zeal);
+	JS_SetGCZeal(cx, zeal, JS_DEFAULT_ZEAL_FREQ, JS_FALSE);
 	return JL_StoreProperty(cx, obj, id, vp, false);
 
 #else // JS_GC_ZEAL

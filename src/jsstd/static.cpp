@@ -1121,7 +1121,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 
 	JS_SetContextPrivate(cx, prevCxPrivate);
 
-	// JL_CHK( JS_DeleteProperty(scx, globalObject, "Query") ); // (TBD) needed ?
+	// JL_CHK( JS_DeleteProperty(scx, globalObject, "Query") ); // (TBD) needed ? also check of the deletion is successful using JS_HasProperty...
 
 	if ( ok )
 		return JS_WrapValue(cx, vp);
@@ -1202,7 +1202,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 	prev = JS_SetOperationCallback(scx, prev);
 	JL_ASSERT( prev == SandboxMaxOperationCallback, "Invalid SandboxMaxOperationCallback handler." );
 
-	JL_CHK( JS_DeleteProperty(scx, globalObject, "Query") );
+	JL_CHK( JS_DeleteProperty(scx, globalObject, "Query") ); // (TBD) also check of the deletion is successful using JS_HasProperty...
 
 	if (!ok) {
 

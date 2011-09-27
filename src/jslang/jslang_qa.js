@@ -1,7 +1,7 @@
 LoadModule('jsstd');
 
 /// Handle prototype [ftrm]
-	
+
 	_jsapiTests();
 
 
@@ -855,6 +855,16 @@ LoadModule('jsstd');
 //	QA.ASSERT_EXCEPTION( function() ProcessEvents(timeout), Error, 'ProcessEvents reused' );
 
 
+/// Serialization / Unserialization crash 1
+
+	var s = new Serializer();
+	s.Write(1);
+	s.Write(2);
+	var u = new Unserializer( s.Done() );
+	QA.ASSERT( uneval(u.Read())+uneval(u.Read()), '12', 'unserialized data' );
+
+
+
 /// Serialization / Unserialization
 
 	function JsClass() {
@@ -927,10 +937,19 @@ LoadModule('jsstd');
 	
 	var s = new Serializer();
 	s.Write(myobj);
-	var s = new Unserializer(String(s.Done()));
-//	var str = uneval(myobj);
-//	var str1 = uneval(s.Read());
-//	QA.ASSERT_STR( str, str1, 'several serialized / unserialized objects' );
+	var s = new Unserializer(s.Done());
+
+	var str = uneval(myobj);
+	var str1 = uneval(s.Read());
+	QA.ASSERT_STR( str, str1, 'several serialized / unserialized objects' );
+
+
+/// Unserialization crash
+
+	var s = new Serializer();
+	s.Write(Blob('1'));
+	var s = new Unserializer(s.Done());
+	s.Read();
 
 
 /// Stringify TypedArray

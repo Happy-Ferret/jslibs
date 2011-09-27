@@ -2,20 +2,48 @@
 //RunJsircbot(false); throw 0;
 //var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 //Exec('../common/tools.js'); var QA = FakeQAApi;  RunLocalQAFile();
-//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask');
+//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask Serialization');
 //LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
 //SetPerfTestMode();
 
-
 LoadModule('jsstd');
 LoadModule('jsio');
-LoadModule('jsdebug');
+//LoadModule('jsdebug');
+
+//_jsapiTests();
 
 
-_jsapiTests();
+	var s = new Serializer();
+	s.Write(Blob('1'));
+	var s = new Unserializer(s.Done());
+	s.Read();
+
+
+
+/*
+var blob = Blob('abcdefghi');
+var array = blob.ReloacateToArray();
+
+Print( array.length, '\n' );
+
+	var tmp;
+
+function test() {
+
+	tmp = array[8];
+}
+
+for ( var i = 0; i < 1000; ++i )
+	test();
+
+Print( tmp, '\n' );
+
+*/
+
 
 
 throw 0;
+
 
 // doc. https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Proxy
 
@@ -883,12 +911,3 @@ g.Close();
 
 
 throw 0;
-
-var b = Blob('123');
-
-var obj = b; //[1, '2', { abcd:1 }, /qwe/, b ];
-
-var obj2 = Deserialize(Serialize(obj));
-
-Print(uneval(obj2));
-

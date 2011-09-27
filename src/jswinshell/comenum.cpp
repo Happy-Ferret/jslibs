@@ -33,6 +33,8 @@ DEFINE_FINALIZE() {
 
 DEFINE_FUNCTION( next ) {
 
+	JL_IGNORE(argc);
+
 	VARIANT *result = NULL;
 
 	JL_DEFINE_FUNCTION_OBJ;

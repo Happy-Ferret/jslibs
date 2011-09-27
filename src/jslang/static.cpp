@@ -482,15 +482,27 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 }
 
 
+
 /*
+var obj = {__proto__:null};
+Print(typeof obj.__proto__, '\n' ); // -> undefined
+var obj2 = Deserialize(Serialize(obj));
+Print(typeof obj2.__proto__, '\n' ); // -> object
+// cannot use StructuredClone since { __proto__:null } is not supported.
 
 JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r, uint32 tag, uint32 data, void *closure) {
 
-	char test[100];
-	JL_CHK( JS_ReadBytes(r, test, data) );
+	void *buffer = jl_malloc(data);
+	JL_CHK( JS_ReadBytes(r, buffer, data) );
 
-	return JSVAL_TO_OBJECT(JSVAL_NULL);
+	//JSObject *obj = JL_NewJslibsObject(cx, "Blob");
+	jsval blob;
+	JL_CHK( JL_NewBlob(cx, buffer, data-1, &blob) ); // -1 : the '\0' terminator is not a part of the data
+
+	return JSVAL_TO_OBJECT(blob);
+
 bad:
+	jl_free(buffer);
 	return NULL;
 }
 
@@ -513,7 +525,7 @@ DEFINE_FUNCTION( Serialize ) {
     if (!JS_WriteStructuredClone(cx, v, &datap, &nbytes, &structuredClone, JL_GetHostPrivate(cx)))
         return false;
 
-	 JSObject *arrayobj = js_CreateTypedArray(cx, js::TypedArray::TYPE_UINT8, nbytes);
+	JSObject *arrayobj = js_CreateTypedArray(cx, js::TypedArray::TYPE_UINT8, nbytes);
     if (!arrayobj) {
         JS_free(cx, datap);
         return false;
@@ -559,9 +571,11 @@ DEFINE_FUNCTION( Deserialize ) {
     return true;
 	 JL_BAD;
 }
+
 */
 
 
+#ifdef DEBUG
 
 DEFINE_FUNCTION( _jsapiTests ) {
 
@@ -569,22 +583,52 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	JL_IGNORE(argc);
 	JL_IGNORE(vp);
 
-///////////////////////////////////////////////////////////////
-// check JL_JsvalToJsid -> JL_JsidToJsval
-//
+	///////////////////////////////////////////////////////////////
+	// check JL_JsvalToJsid -> JL_JsidToJsval
+	//
 	JSObject *o = JL_NewObj(cx);
-	jsid t;
+	jsid id;
 	jsval s = OBJECT_TO_JSVAL(o);
-	JL_CHK( JL_JsvalToJsid(cx, &s, &t) );
+	JL_CHK( JL_JsvalToJsid(cx, &s, &id) );
+	ASSERT( JSID_IS_OBJECT(id) );
 	jsval r;
-	JL_CHK( JL_JsidToJsval(cx, t, &r) );
+	JL_CHK( JL_JsidToJsval(cx, id, &r) );
 	ASSERT( JSVAL_TO_OBJECT(r) == o );
 
+	JL_CHK( JS_ValueToId(cx, OBJECT_TO_JSVAL(o), &id) );
+	ASSERT( !JSID_IS_OBJECT(id) );
+
+	JSBool found;
+	JL_CHK( JS_DefineProperty(cx, o, "test", JSVAL_ONE, NULL, NULL, JSPROP_PERMANENT) );
+	JL_CHK( JS_HasProperty(cx, o, "test", &found) );
+	ASSERT( found );
+
+	JSString *jsstr = JS_NewUCStringCopyZ(cx, L"testtesttesttesttesttesttesttesttesttesttesttest");
+	jsid pid;
+	pid = JL_StringToJsid(cx, jsstr);
+
+
+/*
+	JL_CHK( JS_SetPropertyAttributes(cx, o, "test", 0, &found) );
+
+//	jsval ok;
+//	jsid pid;
+//	pid = JL_StringToJsid(cx, L"test");
+//	JS_DeletePropertyById2(cx, o, pid, &ok);
+
+//	JL_RemovePropertyById(cx, o, JL_StringToJsid(cx, L"test"));
+
+	JL_CHK( JS_HasProperty(cx, o, "test", &found) );
+	ASSERT( !found );
+*/
 
 
 	return JS_TRUE;
 	JL_BAD;
 }
+
+#endif // DEBUG
+
 
 
 
@@ -607,6 +651,8 @@ DEFINE_FUNCTION( jslangTest ) {
 	jsval r;
 	JL_JsidToJsval(cx, t, &r);
 	ASSERT( JSVAL_TO_OBJECT(r) == o );
+
+
 
 	return JS_TRUE;
 	JL_BAD;
@@ -637,7 +683,9 @@ CONFIGURE_STATIC
 //		FUNCTION_ARGC( Serialize, 1 )
 //		FUNCTION_ARGC( Deserialize, 1 )
 
+		#ifdef DEBUG
 		FUNCTION( _jsapiTests )
+		#endif // DEBUG
 
 		#ifdef JSLANG_TEST
 		FUNCTION( jslangTest )

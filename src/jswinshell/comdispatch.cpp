@@ -36,9 +36,7 @@ JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 	jsval dbg_funNameVal;
 	JS_GetPropertyById(cx, JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)), JLID(cx, name), &dbg_funNameVal);
 	const jschar *dbg_name = JS_GetStringCharsZ(cx, JSVAL_TO_STRING( dbg_funNameVal ));
-	
 	JL_IGNORE(dbg_name);
-
 #endif
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JL_OBJ);
@@ -46,7 +44,7 @@ JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 
 	JSObject *funObj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp));
 	jsval dispidVal;
-	JS_GetPropertyById(cx, funObj, JLID(cx, id), &dispidVal);
+	JL_CHK( JS_GetPropertyById(cx, funObj, JLID(cx, id), &dispidVal) );
 	DISPID dispid = JSVAL_TO_INT(dispidVal);
 
 	HRESULT hr;
@@ -82,13 +80,22 @@ JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 	}
 
 	if ( hr == DISP_E_MEMBERNOTFOUND ) { // see DEFINE_GET_PROPERTY
-		
+
 		// remove the function because it is not a DISPATCH_METHOD
 		jsval funNameVal;
 		jsid funNameId;
 		JL_CHK( JS_GetPropertyById(cx, funObj, JLID(cx, name), &funNameVal) );
-		JL_CHK( JL_JsvalToJsid(cx, &funNameVal, &funNameId) );
+		//JL_CHK( JL_JsvalToJsid(cx, &funNameVal, &funNameId) );
+		ASSERT( JSVAL_IS_STRING(funNameVal) );
+		funNameId = JL_StringToJsid(cx, JSVAL_TO_STRING( funNameVal ));
+		ASSERT( JSID_IS_STRING(funNameId) );
+		//JL_CHK( JL_RemovePropertyById(cx, JL_OBJ, funNameId) );
 		JL_CHK( JS_DeletePropertyById(cx, JL_OBJ, funNameId) );
+
+	#ifdef DEBUG
+		JSBool found;
+		ASSERT( JS_HasPropertyById(cx, obj, funNameId, &found) && !found );
+	#endif
 	} // ...
 
 	if ( FAILED(hr) )
@@ -164,7 +171,7 @@ DEFINE_GET_PROPERTY() {
 		jsval tmp;
 		JL_CHK( JS_IdToValue(cx, id, &tmp) );
 		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, name), tmp, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) );
-		JL_CHK( JS_DefinePropertyById(cx, obj, id, *vp, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) );
+		JL_CHK( JS_DefinePropertyById(cx, obj, id, *vp, NULL, NULL, /*JSPROP_PERMANENT|*/JSPROP_READONLY) ); // not JSPROP_PERMANENT else prop is undeletable, see DISP_E_MEMBERNOTFOUND case in FunctionInvoke() 
 		return JS_TRUE;
 	}
 
@@ -195,6 +202,9 @@ bad:
 
 
 DEFINE_SET_PROPERTY() {
+	
+	JL_IGNORE(strict);
+	JL_IGNORE(cx);
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -386,6 +396,8 @@ bad:
 
 
 DEFINE_EQUALITY_OP() {
+
+	JL_IGNORE(cx);
 
 	*bp = js::Valueify(v)->isObject() && &js::Valueify(v)->toObject() == obj;
 	return JS_TRUE;
