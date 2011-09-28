@@ -8,8 +8,8 @@ LoadModule('jsdebug');
 
 /// test OBJ_SCOPE in JS_PropertyIterator [rmtf]
 
-	PropertiesList([]); // see bug 688571 - JS_PropertyIterator is broken
-	PropertiesList({});
+//	PropertiesList([]); // see bug 688571 - JS_PropertyIterator is broken
+//	PropertiesList({}); // ... bug 688571
 	PropertiesList({ a:123 });
 	PropertiesList(new String());
 	PropertiesList(PropertiesList);

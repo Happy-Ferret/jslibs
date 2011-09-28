@@ -549,18 +549,30 @@ JSBool global_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObje
 		if ( !JS_ResolveStandardClass(cx, obj, id, &resolved) )
 			return JS_FALSE;
 
-		//if ( !resolved && JSID_IS_ATOM(id, CLASS_ATOM(cx, Reflect)) ) {
-
-		//	if ( !js_InitReflectClass(cx, obj) )
-		//		return JS_FALSE;
-		//	resolved = JS_TRUE;
-		//}
+		if ( !resolved && id == JLID(cx, Reflect) ) { // JSID_IS_ATOM(id, CLASS_ATOM(cx, Reflect))
+			
+			if ( !JS_InitReflect(cx, obj) )
+				return JS_FALSE;
+			resolved = JS_TRUE;
+		}
 
 		if ( resolved ) {
 			
 			*objp = obj;
 			return JS_TRUE;
 		}
+
+	#ifdef DEBUG
+		{
+		jsval idName;
+		JL_JsidToJsval(cx, id, &idName);
+		JSString *jsstr = JS_ValueToString(cx, idName);
+		const jschar *ch = JS_GetStringCharsZ(cx, jsstr);
+		ASSERT(ch);
+		//OutputDebugStringW(ch); OutputDebugStringW(L"\n");
+		}
+	#endif // DEBUG
+
 	}
 	return JS_TRUE;
 }

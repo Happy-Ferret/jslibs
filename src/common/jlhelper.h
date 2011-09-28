@@ -227,10 +227,11 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 }
 
 
+// useful for structure with jsid initialized to 0, (see HostPrivate ids)
 ALWAYS_INLINE jsid
 JL_NullJsid() { // is (double)0
 
-	jsid tmp = {0}; // memset(&tmp, 0, sizeof(tmp));
+	jsid tmp = {0}; // -or- memset(&tmp, 0, sizeof(tmp));
 	return tmp;
 }
 
@@ -634,9 +635,12 @@ enum {
 	JLID_SPEC( _private1 ),
 	JLID_SPEC( _private2 ),
 	JLID_SPEC( _private3 ),
+	JLID_SPEC( Reflect ),
 	LAST_JSID // see HostPrivate::ids[]
 };
 #undef JLID_SPEC
+// eg. JLID(cx, _unserialize) -> jsid
+//     JLID_NAME(cx, _unserialize) -> w_char
 
 
 
@@ -870,8 +874,9 @@ JL_NewJslibsObject( JSContext *cx, const char *className ) {
 
 	// slow part of JL_GetPrivateJsid()
 	INLINE NEVER_INLINE jsid FASTCALL
-	JL__GetPrivateJsid_slow( JSContext * RESTRICT cx, int index, const jschar * RESTRICT name ) {
+	JL__GetPrivateJsid_slow( JSContext * RESTRICT cx, HostPrivate * RESTRICT pv, int index, const jschar * RESTRICT name ) {
 
+		ASSERT( pv != NULL );
 		jsid id;
 		JSString *jsstr = JS_InternUCString(cx, name);
 		if (unlikely( jsstr == NULL ))
@@ -879,18 +884,19 @@ JL_NewJslibsObject( JSContext *cx, const char *className ) {
 //		if (unlikely( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &id) != JS_TRUE ))
 //			return JL_NullJsid();
 		id = JL_StringToJsid(cx, jsstr);
-		JL_GetHostPrivate(cx)->ids[index] = id;
+		pv->ids[index] = id;
 		return id;
 	}
 
 ALWAYS_INLINE jsid
 JL_GetPrivateJsid( JSContext * RESTRICT cx, int index, const jschar * RESTRICT name ) {
 
-	ASSERT( JL_GetHostPrivate(cx) != NULL );
-	jsid id = JL_GetHostPrivate(cx)->ids[index];
+	HostPrivate *pv = JL_GetHostPrivate(cx);
+	ASSERT( pv != NULL );
+	jsid id = pv->ids[index];
 	if (likely( id != JL_NullJsid() ))
 		return id;
-	return JL__GetPrivateJsid_slow(cx, index, name);
+	return JL__GetPrivateJsid_slow(cx, pv, index, name);
 }
 
 

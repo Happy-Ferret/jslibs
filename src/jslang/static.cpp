@@ -607,6 +607,9 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	jsid pid;
 	pid = JL_StringToJsid(cx, jsstr);
 
+	ASSERT( JS_GetParent(cx, JS_NewObject(cx, NULL, NULL, NULL)) != NULL );
+	ASSERT( JS_GetParent(cx, JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL)) != NULL );
+
 
 /*
 	JL_CHK( JS_SetPropertyAttributes(cx, o, "test", 0, &found) );

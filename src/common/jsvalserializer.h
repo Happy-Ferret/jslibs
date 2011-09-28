@@ -464,7 +464,7 @@ namespace jl {
 		Unserializer( jsval unserializerObj, void *dataOwnership, size_t length )
 		: _unserializerObj(unserializerObj), _start((uint8_t*)dataOwnership), _pos(_start), _length(length) {
 		}
-/*
+
 		JSBool Read( JSContext *cx, const char *&buf ) {
 
 			size_t length;
@@ -475,7 +475,7 @@ namespace jl {
 			return JS_TRUE;
 			JL_BAD;
 		}
-*/
+
 		JSBool Read( JSContext *cx, JSString *&jsstr ) {
 
 			SerializerConstBufferInfo buf;
@@ -648,6 +648,8 @@ namespace jl {
 
 					const char *className;
 					JL_CHK( Read(cx, className) );
+					ASSERT(strlen(className) > 0);
+					ASSERT(strlen(className) < 64);
 					ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
 					JL_CHKM( cpc != NULL, E_CLASS, E_NAME(className), E_NOTFOUND );
 					JSObject *newObj;
@@ -719,7 +721,8 @@ namespace jl {
 */
 					JSString *source;
 					JL_CHK( Read(cx, source) );
-					JL_CHK( JL_Eval(cx, source, &val) );
+					JL_CHK( JL_Eval(cx, source, &val) ); // beware, non-functionExpression behavior 
+					//JL_CHKM( !JSVAL_IS_VOID(val), 
 					break;
 				}
 				default:

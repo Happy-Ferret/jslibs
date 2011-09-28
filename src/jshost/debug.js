@@ -2,7 +2,7 @@
 //RunJsircbot(false); throw 0;
 //var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 //Exec('../common/tools.js'); var QA = FakeQAApi;  RunLocalQAFile();
-//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask Serialization');
+//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask');
 //LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
 //SetPerfTestMode();
 
@@ -12,12 +12,137 @@ LoadModule('jsio');
 
 //_jsapiTests();
 
+function testfct(x,y) {
+	
+	return x+y;
+}
 
 	var s = new Serializer();
-	s.Write(Blob('1'));
+	s.Write(testfct);
 	var s = new Unserializer(s.Done());
-	s.Read();
+	Print( s.Read(), '\n' );
 
+
+
+
+throw 0;
+
+//var tree = Reflect.parse('var i, j = {a:1, b:function(){}}, o = [/xx/gi, false, null,"", "x", undefined];;;;; o["abc"+1]; o[5]=i+3;', {loc:false});
+var tree = Reflect.parse('if ( a == 5 ) {for (var i = 0; i < -100; i++) { Print.call(this, 123) } } else { 1}', {loc:true});
+
+Print( 'tree:\n', uneval(tree), '\n' );
+
+function processList(list, separator) {
+	
+	var len = list.length;
+	var tmp = '';
+	for ( var i = 0; i < len; ++i )
+		tmp += separator + process(list[i]);
+	return tmp.substr(1);
+}
+
+function process(node) {
+
+	if ( node == null )
+		return '';
+
+	switch (node.type) {
+
+		case 'Literal':
+			if ( node.value === null )
+				return 'null';
+			switch (node.value.constructor.name) {
+				case 'String':
+					return '"' + node.value + '"';
+				case 'Number':
+					return node.value;
+				case 'Boolean':
+					return node.value;
+				case 'RegExp':
+					return node.value;
+			}
+			throw 'error';
+
+		case 'Identifier':
+			return node.name;
+
+		case 'ThisExpression':
+			return 'this';
+
+		case 'Property':
+			switch (node.kind) {
+				case 'init':
+					return process(node.key) + '=' + process(node.value);
+			}
+			throw 'error';
+
+		case 'ReturnStatement':
+			return 'return ' + process(node.argument);
+
+		case 'YieldExpression':
+			return 'yield' + (node.argument ? ' ' + process(node.argument) : '');
+
+		case 'BlockStatement':
+			return '{' + processList(node.body, ';') + '}';
+
+		case 'FunctionExpression':
+			return 'function' + (node.id ? ' '+process(node.id) : '') + '(' + processList(node.params, ',') + ')'+process(node.body);
+
+		case 'CallExpression':
+			return process(node.callee) + '(' + processList(node.arguments, ',') + ')';
+
+		case 'AssignmentExpression':
+			return process(node.left) + node.operator + process(node.right);
+
+		case 'UnaryExpression':
+			return node.prefix ? node.operator + process(node.argument) : process(node.argument) + node.operator;
+
+		case 'BinaryExpression':
+			return process(node.left) + node.operator + process(node.right);
+
+		case 'MemberExpression':
+			return process(node.object) + (node.computed ? '[' + process(node.property) + ']' : '.' + process(node.property));
+
+		case 'ExpressionStatement':
+			return process(node.expression);
+
+		case 'UpdateExpression':
+			return node.prefix ? node.operator + process(node.argument) : process(node.argument) + node.operator;
+
+		case 'IfStatement':
+			return 'if('+process(node.test)+')' + process(node.consequent) + ( node.alternate ? ' else ' + process(node.alternate) : '' );
+
+		case 'ForStatement':
+			return 'for(' + process(node.init) + ';' + process(node.test) + ';' + process(node.update) + ')' + process(node.body);
+
+		case 'ObjectExpression':
+			return '{' + processList(node.properties, ',') + '}';
+
+		case 'ArrayExpression':
+			return '[' + processList(node.elements, ',') + ']';
+
+		case 'SequenceExpression':
+			return  '(' + processList(node.expressions, ',') + ')';
+
+		case 'VariableDeclarator':
+			return node.id.name + (node.init ? '=' + process(node.init) : '');
+
+		case 'VariableDeclaration':
+			return node.kind + ' ' + processList(node.declarations, ',');
+		
+		case 'EmptyStatement':
+			return ';';
+
+		case 'Program':
+			return processList(node.body, ';');
+	}
+	throw 'error miss '+node.type+' : '+Object.keys(node);
+}
+
+Print( 'result:\n', process(tree), '\n' );
+
+
+//_jsapiTests();
 
 
 /*
