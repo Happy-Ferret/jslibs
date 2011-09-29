@@ -310,7 +310,8 @@ namespace jl {
 			}
 			
 			if ( JL_ObjectIsFunction(cx, obj) ) {
-/*
+
+/* JS_XDRValue fails because function chasp has no XDR encoding hook
 				JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
 				JL_CHK( JS_XDRValue(xdr, const_cast<jsval*>(&val)) ); // JSXDR_ENCODE, de-const can be done
 				uint32 length;

@@ -2,7 +2,7 @@
 //RunJsircbot(false); throw 0;
 //var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 //Exec('../common/tools.js'); var QA = FakeQAApi;  RunLocalQAFile();
-//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask');
+// LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask Unserialization');
 //LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
 //SetPerfTestMode();
 
@@ -12,15 +12,13 @@ LoadModule('jsio');
 
 //_jsapiTests();
 
-function testfct(x,y) {
-	
-	return x+y;
-}
+	var test = new URIError();
 
 	var s = new Serializer();
-	s.Write(testfct);
+	s.Write(test);
 	var s = new Unserializer(s.Done());
-	Print( s.Read(), '\n' );
+	Print( test.toSource(), '\n' );
+	Print( s.Read().toSource(), '\n' );
 
 
 
