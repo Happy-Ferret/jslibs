@@ -12,6 +12,8 @@ LoadModule('jsio');
 
 //_jsapiTests();
 
+jslangTest()
+
 	var test = new URIError();
 
 	var s = new Serializer();

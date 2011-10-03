@@ -42,8 +42,8 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	desc.out_flags = 0;
 
 	// PR_Poll works with non-blocking sockets.  In fact, PR_Poll is intended to be used with non-blocking sockets.
-	// PR_Poll blocks until the events you're interested in have occurred. 
-	// The fact that the socket is in non-blocking mode affects PR_Recv, PR_Send, etc., but doesn't affect PR_Poll. 
+	// PR_Poll blocks until the events you're interested in have occurred.
+	// The fact that the socket is in non-blocking mode affects PR_Recv, PR_Send, etc., but doesn't affect PR_Poll.
 
 	PRIntervalTime timeout;
 	JL_CHK( GetTimeoutInterval(cx, obj, &timeout) );
@@ -160,13 +160,13 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, uint32_t amount, jsval *rval 
 			buf = (uint8_t*)JS_realloc(cx, buf, res +1); // realloc the string using its real size
 			JL_CHK( buf );
 		}
-		
+
 		buf[res] = 0;
 		JL_CHK( JL_NewBlob(cx, buf, res, rval) );
 		return JS_TRUE;
 	}
 
-	if ( res == 0 ) {
+	if ( likely(res == 0) ) {
 
 		// 0 means end of file is reached or the network connection is closed.
 		// requesting 0 bytes and receiving 0 bytes does not indicate eof.
@@ -222,7 +222,7 @@ bad:
 
 
 void* JSBufferAlloc(void * opaqueAllocatorContext, size_t size) {
-	
+
 	return JS_malloc((JSContext*)opaqueAllocatorContext, size);
 }
 
@@ -254,20 +254,28 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 		if ( res == 0 ) { // 0 means end of file is reached or the network connection is closed.
 
 			if ( BufferGetLength(&buf) > 0 ) // we reach eof BUT we have read some data.
-				break; // no error, no data received, we cannot reach currentReadLength
+				break;
 
+			// no error, no data received, we cannot reach currentReadLength
 			BufferFinalize(&buf);
 			*rval = JSVAL_VOID;
 			return JS_TRUE;
 		} else
 		if ( res == -1 ) { // -1 indicates a failure. The reason for the failure can be obtained by calling PR_GetError.
-			
+
+			if ( BufferGetLength(&buf) > 0 ) // an error has occured, but we want to keep the current data, error will rise in the next call.
+				break;
+
 			switch ( PR_GetError() ) { // see Write() for details about errors
 				case PR_WOULD_BLOCK_ERROR: // The operation would have blocked (non-fatal error)
 					break;
 				case PR_CONNECT_ABORTED_ERROR: // Connection aborted
 //				case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
 				case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
+
+					if ( BufferGetLength(&buf) > 0 ) // even on connection failure, do not lost reveived data.
+						break; // for-loop
+
 					BufferFinalize(&buf);
 					*rval = JSVAL_VOID;
 					return JS_TRUE;
@@ -305,7 +313,7 @@ bad:
 	PRInt32 res = PR_Read(fd, buffer, sizeof(buffer));
 
 	if ( res == -1 ) { // -1 indicates a failure. The reason for the failure can be obtained by calling PR_GetError.
-		
+
 		switch ( PR_GetError() ) { // see Write() for details about errors
 			case PR_WOULD_BLOCK_ERROR: // The operation would have blocked (non-fatal error)
 				return JL_NewBlob(cx, NULL, 0, rval);
@@ -411,7 +419,7 @@ DEFINE_FUNCTION( Write ) {
 	res = PR_Write( fd, str.GetConstStr(), (PRInt32)str.Length() );
 	if (unlikely( res == -1 )) {
 
-		switch ( PR_GetError() ) { 
+		switch ( PR_GetError() ) {
 			case PR_WOULD_BLOCK_ERROR: // The operation would have blocked.
 				sentAmount = 0;
 				break;
@@ -422,12 +430,12 @@ DEFINE_FUNCTION( Write ) {
 				//A connection abort was caused internal to your host machine. The software caused
 				//a connection abort because there is no space on the socket’s queue and the socket
 				// cannot receive further connections.
-				//	
+				//
 				//WinSock description:
 				//Partly the same as Berkeley. The error can occur when the local network system aborts
 				//a connection. This would occur if WinSock aborts an established connection after data
 				//retransmission fails  (receiver never acknowledges data sent on a datastream socket).
-				//	
+				//
 				//TCP/IP scenario:
 				//A connection will timeout if the local system doesn’t receive an (ACK)nowledgement for
 				//data sent.  It would also timeout if a (FIN)ish TCP packet is not ACK’d
@@ -436,13 +444,13 @@ DEFINE_FUNCTION( Write ) {
 
 //			case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
 				// Cannot send after socket shutdown.
-				// A request to send or receive data was disallowed because the socket had already been shut down in that direction with a previous shutdown call. 
+				// A request to send or receive data was disallowed because the socket had already been shut down in that direction with a previous shutdown call.
 				// By calling shutdown a partial close of a socket is requested, which is a signal that sending or receiving, or both have been discontinued.
 				// source: msdn, Winsock Error Codes
 
 			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
 				// Connection reset by peer. An existing connection was forcibly closed by the remote host. This normally results if the peer application on the remote host is suddenly stopped,
-				// the host is rebooted, or the remote host uses a hard close (see setsockopt for more information on the SO_LINGER option on the remote socket.) This error may also result if 
+				// the host is rebooted, or the remote host uses a hard close (see setsockopt for more information on the SO_LINGER option on the remote socket.) This error may also result if
 				// a connection was broken due to keep-alive activity detecting a failure while one or more operations are in progress. Operations that were in progress fail with WSAENETRESET.
 				// Subsequent operations fail with WSAECONNRESET.
 				// source: msdn, Winsock Error Codes
@@ -553,7 +561,7 @@ $TOC_MEMBER $INAME
   see constants below.
 **/
 DEFINE_PROPERTY_GETTER( type ) {
-	
+
 	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INHERITANCE();
@@ -824,7 +832,7 @@ DEFINE_FUNCTION( IsReadable ) {
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ); //beware: fd == NULL is supported !
-	
+
 /*
 	PRIntervalTime prTimeout;
 	if ( JL_ARG_ISDEF(1) ) {
@@ -909,7 +917,7 @@ $TOC_MEMBER $INAME
   Set the timeout value (in milliseconds) for blocking operations. A value of $UNDEF mean no timeout.
 **/
 DEFINE_PROPERTY_SETTER( timeout ) {
-	
+
 	JL_IGNORE(id);
 	JL_IGNORE(strict);
 	JL_ASSERT_THIS_INHERITANCE();
@@ -959,7 +967,7 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
-	
+
 	//HAS_HAS_INSTANCE // see issue#52
 	IS_INCONSTRUCTIBLE
 

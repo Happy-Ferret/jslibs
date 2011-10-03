@@ -20,18 +20,18 @@
 #include "jlalloc.h"
 #include "queue.h"
 
+
 #ifdef XP_WIN
 #define JS_SYS_TYPES_H_DEFINES_EXACT_SIZE_TYPES
 #endif
+
 
 #ifdef _MSC_VER
 #pragma warning( push, 0 )
 #endif // _MSC_VER
 
 #include <jsapi.h>
-#include <jscntxt.h>
 #include <jsscope.h>
-#include <jsvalue.h>
 #include <jsxdrapi.h>
 #include <jstypedarray.h>
 
@@ -39,7 +39,8 @@
 #pragma warning( pop )
 #endif // _MSC_VER
 
-#include <sys/stat.h> // used by JL_LoadScript()
+
+#include <sys/stat.h> // stat() used by JL_LoadScript()
 
 
 extern int _unsafeMode;
@@ -67,36 +68,42 @@ ALWAYS_INLINE JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBuff
 ALWAYS_INLINE JSRuntime*
 JL_GetRuntime( const JSContext *cx ) {
 
+	//return JS_GetRuntime(cx);
 	return cx->runtime;
 }
 
 ALWAYS_INLINE void*
 JL_GetRuntimePrivate( const JSRuntime *rt ) {
 
+	//return JS_GetRuntimePrivate(rt);
 	return rt->data;
 }
 
 ALWAYS_INLINE void
 JL_SetRuntimePrivate( JSRuntime *rt, void *data ) {
 
+	//JS_SetRuntimePrivate(rt, data);
 	rt->data = data;
 }
 
 ALWAYS_INLINE void
 JL_updateMallocCounter( const JSContext *cx, size_t nbytes ) {
 
-	return JL_GetRuntime(cx)->updateMallocCounter(nbytes); // JS_updateMallocCounter(cx, nbytes);
+	//return JS_updateMallocCounter(cx, nbytes);
+	return JL_GetRuntime(cx)->updateMallocCounter(nbytes);
 }
 
 ALWAYS_INLINE JSObject *
 JL_GetGlobalObject( const JSContext *cx ) {
-
+	
+	//return JS_GetGlobalObject(cx);
     return cx->globalObject;
 }
 
 ALWAYS_INLINE JSBool
 JL_IsExceptionPending( JSContext *cx ) {
-
+	
+	//return JS_IsExceptionPending(cx);
 	return cx->isExceptionPending();
 }
 
@@ -112,30 +119,34 @@ JL_NewNumberValue( const JSContext *cx, jsdouble d, jsval *rval ) {
 ALWAYS_INLINE jsval
 JL_GetNaNValue( const JSContext *cx ) {
 
+	//return JS_GetNaNValue(cx);
 	return js::Jsvalify(JL_GetRuntime(cx)->NaNValue);
 }
 
 ALWAYS_INLINE JSClass*
 JL_GetClass( const JSObject *obj ) {
 
+	//return JS_GetClass(obj);
 	return obj->getJSClass();
 }
 
 ALWAYS_INLINE const char *
 JL_GetClassName( const JSObject *obj ) {
 
-	return obj->getJSClass()->name;
+	return JL_GetClass(obj)->name;
 }
 
 ALWAYS_INLINE size_t
 JL_GetStringLength( const JSString *jsstr ) {
-
+	
+	//return JS_GetStringLength(jsstr);
 	return jsstr->length();
 }
 
 ALWAYS_INLINE jsval
 JL_GetEmptyStringValue( const JSContext *cx ) { // see JS_GetEmptyStringValue()
 
+	//return JS_GetEmptyStringValue(cx);
 	return STRING_TO_JSVAL(JL_GetRuntime(cx)->emptyString);
 }
 
@@ -143,12 +154,13 @@ ALWAYS_INLINE bool
 JL_HasPrivateSlot( const JSContext *cx, const JSObject *obj ) {
 
 	JL_IGNORE(cx);
-	return obj->getClass()->flags & JSCLASS_HAS_PRIVATE;
+	return JL_GetClass(obj)->flags & JSCLASS_HAS_PRIVATE;
 }
 
 ALWAYS_INLINE void*
 JL_GetPrivate( const JSContext *cx, const JSObject *obj ) {
 
+	//return JS_GetPrivate(cx, obj);
 	JL_IGNORE(cx);
 	return obj->getPrivate();
 }
@@ -156,6 +168,7 @@ JL_GetPrivate( const JSContext *cx, const JSObject *obj ) {
 ALWAYS_INLINE void
 JL_SetPrivate( const JSContext *cx, JSObject *obj, void *data ) {
 
+	//JS_SetPrivate(cx, obj, data);
 	JL_IGNORE(cx);
 	obj->setPrivate(data);
 }
@@ -263,39 +276,6 @@ JL_StringToJsid( JSContext * RESTRICT cx, const jschar * RESTRICT cstr ) {
 	return id;
 }
 
-/* undoable ?
-ALWAYS_INLINE JSBool
-JL_RemovePropertyById( JSContext *cx, JSObject *obj, jsid propertyId ) {
-
-	jsval ok;
-	if ( !JS_DeletePropertyById2(cx, obj, propertyId, &ok) )
-		return JS_FALSE;
-	if ( ok == JSVAL_FALSE ) {
-
-//		JSBool found;
-//		uintN attrs;
-//		JS_GetPropertyAttrsGetterAndSetterById(cx, obj, propertyId, &attrs, &found, NULL, NULL);
-//		attrs &= ~JSPD_PERMANENT;
-
-		if ( !JS_DefinePropertyById(cx, obj, propertyId, JSVAL_VOID, NULL, NULL, JSPROP_READONLY|JSPROP_ENUMERATE) )
-			return JS_FALSE;
-
-		if ( !JS_DeletePropertyById2(cx, obj, propertyId, &ok) )
-			return JS_FALSE;
-
-		ASSERT( true );
-	}
-
-#ifdef DEBUG
-	{
-//	JSBool found;
-//	ASSERT( JS_HasPropertyById(cx, obj, propertyName, &found) && !found );
-	}
-#endif
-
-	return JS_TRUE;
-}
-*/
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2726,7 +2706,7 @@ RemoveHostObject(JSContext *cx) {
 
 	JSObject *globalObject = JL_GetGlobalObject(cx);
 	ASSERT( globalObject );
-	return JS_DeletePropertyById(cx, globalObject, JLID(cx, _host));
+	return JS_DeletePropertyById(cx, globalObject, JLID(cx, _host)); // beware: permanant properties cannot be removed.
 	JL_BAD;
 }
 

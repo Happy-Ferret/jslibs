@@ -838,7 +838,7 @@ JSBool RemoveScriptArguments( JSContext *cx ) {
 
 	JSObject *globalObject = JL_GetGlobalObject(cx);
 	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
-	JL_CHKM( JS_DeletePropertyById(cx, globalObject, JLID(cx, arguments)), E_HOST, E_INTERNAL ); // "Unable to cleanup script arguments."
+	JL_CHKM( JS_DeletePropertyById(cx, globalObject, JLID(cx, arguments)), E_HOST, E_INTERNAL ); // "Unable to cleanup script arguments." // beware: permanant properties cannot be removed.
 	return JS_TRUE;
 	JL_BAD;
 }

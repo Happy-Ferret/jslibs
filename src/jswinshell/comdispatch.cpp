@@ -90,7 +90,7 @@ JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 		funNameId = JL_StringToJsid(cx, JSVAL_TO_STRING( funNameVal ));
 		ASSERT( JSID_IS_STRING(funNameId) );
 		//JL_CHK( JL_RemovePropertyById(cx, JL_OBJ, funNameId) );
-		JL_CHK( JS_DeletePropertyById(cx, JL_OBJ, funNameId) );
+		JL_CHK( JS_DeletePropertyById(cx, JL_OBJ, funNameId) ); // beware: permanant properties cannot be removed.
 
 	#ifdef DEBUG
 		JSBool found;

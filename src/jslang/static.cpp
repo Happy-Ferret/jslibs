@@ -656,7 +656,6 @@ DEFINE_FUNCTION( jslangTest ) {
 	ASSERT( JSVAL_TO_OBJECT(r) == o );
 
 
-
 	return JS_TRUE;
 	JL_BAD;
 }

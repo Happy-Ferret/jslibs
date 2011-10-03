@@ -3,6 +3,65 @@ LoadModule('jsio');
 LoadModule('jsdebug');
 
 
+/// Socket shutdown(true) behavior [trm]
+
+	var rdv = new Socket(); rdv.Bind(9999, '127.0.0.1'); rdv.Listen(); rdv.readable = true;
+	var cl = new Socket(); cl.Connect('127.0.0.1', 9999);
+	ProcessEvents( Descriptor.Events([rdv]), TimeoutEvents(2000) );
+	var sv = rdv.Accept(); rdv.Close();
+
+
+	var data = StringRepeat('x', 100);
+	sv.Write(data);
+	sv.Shutdown(true);
+
+	QA.ASSERT_STR( cl.Read(), data, 'data' );
+	QA.ASSERT( cl.Read(), undefined, 'No more data' );
+
+
+
+/// Socket shutdown(false) behavior [trm]
+
+	var rdv = new Socket(); rdv.Bind(9999, '127.0.0.1'); rdv.Listen(); rdv.readable = true;
+	var cl = new Socket();
+	cl.nonblocking = true;
+	cl.Connect('127.0.0.1', 9999);
+	ProcessEvents( Descriptor.Events([rdv]), TimeoutEvents(2000) );
+	var sv = rdv.Accept(); rdv.Close();
+
+
+	var data = StringRepeat('x', 100);
+	sv.Write(data);
+	sv.Shutdown(false);
+
+	QA.ASSERT_STR( cl.Read(), data, 'data' );
+	QA.ASSERT( cl.Read(), '', 'no data' );
+
+
+
+/// basic Socket client/server [trm]
+
+	var rdv = new Socket(); rdv.Bind(9999, '127.0.0.1'); rdv.Listen(); rdv.readable = true;
+	var cl = new Socket(); cl.Connect('127.0.0.1', 9999);
+	ProcessEvents( Descriptor.Events([rdv]), TimeoutEvents(2000) );
+	var sv = rdv.Accept(); rdv.Close();
+
+
+	sv.Write(StringRepeat('x', 10000));
+	sv.Close();
+
+	var data = '';
+	var tmp;
+	while ( (tmp = cl.Read()) != undefined ) {
+		
+		data += tmp;
+	}
+
+	QA.ASSERT( data.length, 10000, 'read amount' );
+	QA.ASSERT( cl.Read(), undefined, 'read done' );
+
+
+
 /// Descriptor inheritance
 
 	QA.ASSERT( new Socket().Import, undefined, 'new Socket .Import unavailable' );
@@ -23,6 +82,7 @@ LoadModule('jsdebug');
 	QA.ASSERT_STR( data[3], '\x01' );
 
 
+
 /// Basic File Read/Write [tr]
 
 	var filename = QA.RandomString(10);
@@ -36,6 +96,7 @@ LoadModule('jsdebug');
 	f2.Close();
 
 	f1.Delete();
+
 
 
 /// File Read [tr]
@@ -81,6 +142,7 @@ LoadModule('jsdebug');
 		new File(filename).content = undefined;
 
 
+
 /// File busy [trfm]	
 
 		var filename = QA.RandomString(10);
@@ -89,6 +151,7 @@ LoadModule('jsdebug');
 		QA.ASSERT_EXCEPTION(function() { new File(filename).content = undefined }, IoError, 'Checking busy file error' );
 		f2.Close();
 		new File(filename).content = undefined;
+
 
 
 /// File copy [tr]
@@ -123,11 +186,13 @@ LoadModule('jsdebug');
 		file.Delete();
 
 
+
 /// File ancestor [ftrm]
 
 		var f = new File('');
 		QA.ASSERT( f instanceof File, true, 'File inheritance' );
 		QA.ASSERT( f instanceof Descriptor, true, 'Descriptor inheritance' );
+
 
 
 /// system info [ftmr]

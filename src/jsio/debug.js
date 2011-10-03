@@ -4,6 +4,41 @@
 LoadModule('jsstd'); LoadModule('jsio');
 
 
+/// Socket shutdown(false) behavior [trm]
+
+try {
+
+	var rdv = new Socket(); rdv.nonblocking = true; rdv.Bind(9999, '127.0.0.1'); rdv.Listen(); rdv.readable = true;
+	var cl = new Socket();
+//	cl.nonblocking = true;
+	cl.Connect('127.0.0.1', 9999);
+	ProcessEvents( Descriptor.Events([rdv]), TimeoutEvents(2000) );
+	var sv = rdv.Accept(); rdv.Close();
+	sv.nonblocking = true;
+	
+	sv.linger = 0;
+	
+	sv.Write(StringRepeat('x', 10000000));
+	sv.Close();
+
+	while ( cl.Read() != undefined );
+
+	Print( typeof cl.Read(), '\n' );
+
+
+
+
+} catch( ex if ex instanceof IoError ) {
+
+	Print( ex.fileName+':'+ex.lineNumber+' '+ex.text+'\n' );
+}
+
+
+
+throw 0;
+
+
+
 
 //LoadModule('jsdebug'); gcZeal = 2;
 
