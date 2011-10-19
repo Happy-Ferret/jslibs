@@ -10,7 +10,34 @@ LoadModule('jsstd');
 LoadModule('jsio');
 //LoadModule('jsdebug');
 
-//_jsapiTests();
+
+
+
+
+throw 0;
+
+
+Print( MyGen.isGenerator(), '\n' );
+Print( IsGeneratorFunction(MyGen), '\n' );
+
+
+
+Print( IsGeneratorFunction(gen), '\n' );
+
+Print( '\n' );
+
+Print( Object.isGenerator(MyGen), '\n' );
+Print( Object.isGenerator(gen), '\n' );
+
+Print( '\n' );
+
+Print( IsGeneratorObject(MyGen), '\n' );
+Print( IsGeneratorObject(gen), '\n' );
+
+
+throw 0;
+
+
 
 jslangTest()
 

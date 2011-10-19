@@ -129,12 +129,13 @@ DEFINE_FUNCTION( IsFunction ) {
 }
 
 
+/* use gen.isGenerator() instead
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
+/ **doc
 $TOC_MEMBER $INAME
  $BOOL $INAME()
-  Returns $TRUE if the value is a generator.
-**/
+  Returns $TRUE if the value is a generator function.
+** /
 DEFINE_FUNCTION( IsGeneratorFunction ) {
 
 	JL_ASSERT_ARGC(1);
@@ -142,20 +143,18 @@ DEFINE_FUNCTION( IsGeneratorFunction ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME()
-  Returns $TRUE if the value is a generator.
+  Returns $TRUE if the value is a generator instance.
 **/
 DEFINE_FUNCTION( IsGeneratorObject ) {
 
 	JL_ASSERT_ARGC(1);
-
 	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_IsGeneratorObject(cx, JL_ARG(1)) );
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -672,7 +671,7 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( IsNumber, 1 )
 		FUNCTION_ARGC( IsPrimitive, 1 )
 		FUNCTION_ARGC( IsFunction, 1 )
-		FUNCTION_ARGC( IsGeneratorFunction, 1 )
+//		FUNCTION_ARGC( IsGeneratorFunction, 1 )
 		FUNCTION_ARGC( IsGeneratorObject, 1 )
 
 

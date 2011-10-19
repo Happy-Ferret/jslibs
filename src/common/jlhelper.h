@@ -173,13 +173,17 @@ JL_SetPrivate( const JSContext *cx, JSObject *obj, void *data ) {
 	obj->setPrivate(data);
 }
 
-
 ALWAYS_INLINE JSObject *
 JL_GetPrototype(JSContext *cx, JSObject *obj) {
 
 	return JS_GetPrototype(cx, obj);
 }
 
+ALWAYS_INLINE JSBool
+JL_GetClassPrototype(JSContext *cx, JSObject *scopeobj, JSProtoKey protoKey, JSObject **protop) {
+
+	return js_GetClassPrototype(cx, scopeobj, protoKey, protop);
+}
 
 ALWAYS_INLINE JSClass*
 JL_GetStandardClassByKey(JSContext *cx, JSProtoKey protoKey) {
@@ -192,7 +196,7 @@ ALWAYS_INLINE JSObject*
 JL_GetStandardClassProtoByKey(JSContext *cx, JSProtoKey protoKey) {
 
 	JSObject *proto;
-	return js_GetClassPrototype(cx, JL_GetGlobalObject(cx), protoKey, &proto, NULL) ? proto : NULL;
+	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), protoKey, &proto) ? proto : NULL;
 	// eg. JS_NewObject(cx, JL_GetStandardClassByKey(cx, JSProto_Date), JL_GetStandardClassProtoByKey(cx, JSProto_Date), NULL);
 }
 
@@ -251,7 +255,7 @@ JL_NullJsid() { // is (double)0
 ALWAYS_INLINE jsid
 JL_StringToJsid( JSContext * RESTRICT cx, JSString * RESTRICT jsstr ) {
 
-	if ( !jsstr->isAtom() ) { // else use JS_StringHasBeenInterned()
+	if ( !JS_StringHasBeenInterned(cx, jsstr) ) {
 
 		//size_t length;
 		//const jschar *chars = JS_GetStringCharsAndLength(cx, jsstr, &length);
@@ -322,19 +326,19 @@ JL_IsInteger53( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 ALWAYS_INLINE bool
 JL_IsNaN( const JSContext *cx, const jsval &val ) {
 
-	return js::Valueify(val) == JL_GetRuntime(cx)->NaNValue;
+	return js::Valueify(val) == JL_GetRuntime(cx)->NaNValue; // == JS_GetNaNValue(cx)
 }
 
 ALWAYS_INLINE bool
 JL_IsPInfinity( const JSContext *cx, const jsval &val ) {
 
-	return js::Valueify(val) == JL_GetRuntime(cx)->positiveInfinityValue;
+	return js::Valueify(val) == JL_GetRuntime(cx)->positiveInfinityValue; // == JS_GetPositiveInfinityValue(cx)
 }
 
 ALWAYS_INLINE bool
 JL_IsNInfinity( const JSContext *cx, const jsval &val ) {
 
-	return js::Valueify(val) == JL_GetRuntime(cx)->negativeInfinityValue;
+	return js::Valueify(val) == JL_GetRuntime(cx)->negativeInfinityValue; // == JS_GetNegativeInfinityValue(cx)
 }
 
 ALWAYS_INLINE bool
@@ -362,7 +366,8 @@ JL_IsNegative( JSContext *cx, const jsval &val ) {
 ALWAYS_INLINE bool
 JL_IsClass( const jsval &val, const JSClass *jsClass ) {
 
-	//return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
+	// JSVAL_IS_PRIMITIVE(val)
+	// JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
 	return !js::Valueify(val).isPrimitive() && jsClass != NULL && js::Valueify(val).toObject().getJSClass() == jsClass;
 }
 
@@ -370,11 +375,12 @@ ALWAYS_INLINE bool
 JL_IsObjectObject( JSContext *cx, const JSObject *obj ) {
 
 //	JSObject *oproto;
-//	return js_GetClassPrototype(cx, NULL, JSProto_Object, &oproto) && JL_GetClass(obj) == JL_GetClass(oproto) && obj->getProto() == oproto;
+//	return JL_GetClassPrototype(cx, NULL, JSProto_Object, &oproto) && JL_GetClass(obj) == JL_GetClass(oproto) && obj->getProto() == oproto;
 	ASSERT( obj != NULL );
 	return obj->getProto() == JL_GetStandardClassProtoByKey(cx, JSProto_Object);
 	//return obj->getProto() == JL_GetHostPrivate(cx)->objectProto;
 }
+
 
 ALWAYS_INLINE bool
 JL_IsGeneratorObject( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
@@ -389,28 +395,45 @@ JL_IsGeneratorObject( JSContext * RESTRICT cx, jsval &val ) {
 	return JSVAL_IS_OBJECT(val) && JL_IsGeneratorObject(cx, JSVAL_TO_OBJECT(val));
 }
 
+
+ALWAYS_INLINE bool
+JL_IsFunction( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
+
+	JL_IGNORE(cx);
+	return obj->isFunction();
+}
+
+ALWAYS_INLINE bool
+JL_IsFunction( JSContext * RESTRICT cx, jsval &val ) {
+
+	return !JSVAL_IS_PRIMITIVE(val) && JL_IsFunction(cx, JSVAL_TO_OBJECT(val));
+}
+
+/*
+// copied from jsfun.h:fun_isGenerator()
 ALWAYS_INLINE bool
 JL_IsGeneratorFunction( JSContext * RESTRICT cx, jsval &val ) {
 
 	JL_IGNORE(cx);
-	// copied from firefox-5.0b7.source\mozilla-beta\js\src
     JSObject *funobj;
 	if (!js::IsFunctionObject(js::Valueify(val), &funobj)) {
-
-        return true;
+        
+        return false;
     }
 
     JSFunction *fun = GET_FUNCTION_PRIVATE(cx, funobj);
 
     bool result = false;
     if (fun->isInterpreted()) {
-        JSScript *script = fun->u.i.script;
+
+        JSScript *script = fun->script();
         JS_ASSERT(script->length != 0);
         result = script->code[0] == JSOP_GENERATOR;
     }
 
     return result;
 }
+*/
 
 ALWAYS_INLINE bool
 JL_ObjectIsArray( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
@@ -627,6 +650,7 @@ enum {
 ///////////////////////////////////////////////////////////////////////////////
 // Context private
 
+/* not used right now
 struct JLContextPrivate {
 };
 
@@ -643,7 +667,7 @@ JL_SetContextPrivate( const JSContext *cx, JLContextPrivate *ContextPrivate ) {
 	ASSERT( JS_GetContextPrivate((JSContext*)cx) == cx->data );
 	JL_GetRuntime(cx)->data = static_cast<void*>(ContextPrivate);
 }
-
+*/
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2186,7 +2210,8 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, double *num ) {
 
 	if ( !JS_ValueToNumber(cx, val, num) )
 		return JS_FALSE;
-	ASSERT(isnan(cx->runtime->NaNValue.getDoubleRef()));
+	ASSERT( isnan(cx->runtime->NaNValue.getDoubleRef()) );
+	//ASSERT( JSVAL_TO_DOUBLE(JS_GetNaNValue(cx)) == cx->runtime->NaNValue.getDoubleRef() );
 	JL_CHKM( !isnan(*num), E_VALUE, E_TYPE, E_TY_NUMBER );
 	return JS_TRUE;
 	JL_BAD;
@@ -2869,14 +2894,14 @@ JL_GetObjectProtoKey( JSContext *cx, JSObject *obj ) {
 	JSProtoKey protoKey = JL_GetClassProtoKey(JL_GetClass(obj));
 	if ( protoKey == JSProto_Null )
 		return JSProto_Null;
-	if ( !js_GetClassPrototype(cx, global, protoKey, &proto) )
+	if ( !JL_GetClassPrototype(cx, global, protoKey, &proto) )
 		return JSProto_Null;
 	if ( objProto == proto )
 		return protoKey;
 	S_ASSERT( sizeof(JSProto_Null) == sizeof(int) );
 	for ( int i = int(JSProto_Null)+1; i < int(JSProto_LIMIT); ++i ) {
 
-		if ( !js_GetClassPrototype(cx, global, JSProtoKey(i), &proto) )
+		if ( !JL_GetClassPrototype(cx, global, JSProtoKey(i), &proto) )
 			break;
 		if ( objProto == proto )
 			return JSProtoKey(i);
@@ -2893,7 +2918,7 @@ JL_GetErrorProtoKey( JSContext *cx, JSObject *obj ) {
 	JSObject *errorProto;
 	for ( int i = int(JSProto_Error); i <= int(JSProto_Error + JSEXN_LIMIT); ++i ) {
 
-		if ( !js_GetClassPrototype(cx, global, JSProtoKey(i), &errorProto) )
+		if ( !JL_GetClassPrototype(cx, global, JSProtoKey(i), &errorProto) )
 			break;
 		if ( objProto == errorProto )
 			return JSProtoKey(i);
@@ -2906,7 +2931,7 @@ ALWAYS_INLINE JSBool
 JL_CreateErrorException( JSContext *cx, JSExnType exn, JSObject **obj ) {
 
 	JSObject *proto;
-	if ( !js_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProtoKey(JSProto_Error + exn), &proto) || !proto )
+	if ( !JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProtoKey(JSProto_Error + exn), &proto) || !proto )
 		return JS_FALSE;
 
 	*obj = JS_NewObject(cx, JL_GetStandardClassByKey(cx, JSProtoKey(JSProto_Error + exn)), proto, NULL);
@@ -3040,7 +3065,7 @@ JL_Eval( JSContext * RESTRICT cx, JSString * RESTRICT source, jsval *rval ) {
 
 	const char *scriptFilename;
 	int scriptLineno;
-	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
+	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL); // in jsdbgapi.h
 	if ( frame ) {
 
 		JSScript *script;

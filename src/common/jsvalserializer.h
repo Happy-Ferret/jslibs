@@ -337,7 +337,7 @@ namespace jl {
 				JL_ASSERT( JL_ValueIsFunction(cx, serializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_serialize"), E_DEFINED );
 
 //				JSObject *objectProto;
-//				JL_CHK( js_GetClassPrototype(cx, NULL, JSProto_Object, &objectProto) );
+//				JL_CHK( JL_GetClassPrototype(cx, NULL, JSProto_Object, &objectProto) );
 				if ( JL_GetClass(obj) != JL_GetStandardClassByKey(cx, JSProto_Object) ) { // native serializable object
 
 					JL_CHK( Write(cx, JLSTSerializableNativeObject) );
@@ -696,7 +696,7 @@ namespace jl {
 					JSProtoKey errorProtoKey;
 					JL_CHK( Read(cx, errorProtoKey) );
 					//JSObject *errorProto;
-					//JL_CHK( js_GetClassPrototype(cx, NULL, errorProtoKey, &errorProto) );
+					//JL_CHK( JL_GetClassPrototype(cx, NULL, errorProtoKey, &errorProto) );
 					JSObject *errorProto = JL_GetStandardClassProtoByKey(cx, errorProtoKey);
 					JL_CHK( errorProto );
 					JSObject *errorObj = JS_NewObjectWithGivenProto(cx, JL_GetClass(errorProto), errorProto, NULL);
@@ -717,7 +717,7 @@ namespace jl {
 					JS_XDRDestroy(xdr);
 					JL_CHK( JS_SetParent(cx, JSVAL_TO_OBJECT(val), JL_GetGlobalObject(cx)) );
 					JSObject *funProto;
-					JL_CHK( js_GetClassPrototype(cx, NULL, JSProto_Function, &funProto) );
+					JL_CHK( JL_GetClassPrototype(cx, NULL, JSProto_Function, &funProto) );
 					JL_CHK( JS_SetPrototype(cx, JSVAL_TO_OBJECT(val), funProto) );
 */
 					JSString *source;
