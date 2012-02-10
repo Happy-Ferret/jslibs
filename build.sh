@@ -1,4 +1,9 @@
 export USERPROFILE=$PREV_USERPROFILE
+tmp=$PWD
+cd "$VCINSTALLDIR"
+cd vcpackages
+export PATH=$PATH:$PWD
+cd $tmp
 
 [ "$BUILD" == "" ] && BUILD=opt
 [ "$BUILD_METHOD" == "" ] && BUILD_METHOD=build
