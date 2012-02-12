@@ -29,7 +29,7 @@ EXTERN_C void *zipfile_malloc( size_t size ) {
 #include <zip.h>
 #include <unzip.h>
 
-#include <jsdate.h>
+//#include <jsdate.h>
 
 #define JLERR_PASSWORDREQUIRED -1000
 #define JLERR_ENDOFLIST -1001

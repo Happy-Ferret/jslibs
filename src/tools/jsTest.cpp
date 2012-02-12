@@ -1,11 +1,12 @@
 #define XP_WIN
 
+#include <wchar.h>
+
 #include <../common/jlhelper.h>
 #include <../common/jlhelper.cpp>
 #include <../common/jslibsModule.cpp>
 
 #include <jsapi.h>
-#include <jsvalue.h>
 #include <string.h>
 #include <jsprf.h>
 
@@ -164,19 +165,13 @@ JSClass global_class = {
     JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
 };
 
-JSBool Exec(JSContext *cx, uintN argc, jsval *vp) {
+JSBool Print(JSContext *cx, uintN argc, jsval *vp) {
+		
+	JSString *str = JS_ValueToString(cx, vp[2]);
 
-	char *scriptText = "function();";
-	JSObject *scriptObject = JS_CompileScript(cx, JL_GetGlobalObject(cx), scriptText, strlen(scriptText), "<exec>", 1);
+	_putws(JS_GetStringCharsZ(cx, str));
 
-	size_t e = JLGetEIP();
-	*JL_RVAL = BOOLEAN_TO_JSVAL(scriptObject != NULL);
-//	*JL_RVAL = scriptObject != NULL ? JSVAL_TRUE : JSVAL_FALSE;
-	e = JLGetEIP() - e;
-
-	printf("%d\n", e);
-
-	return scriptObject ? JS_TRUE : JS_FALSE;
+	return JS_TRUE;
 }
 
 
@@ -184,50 +179,64 @@ int main(int argc, char* argv[]) {
 
 	_unsafeMode = false;
 
-	JSRuntime *rt = JS_NewRuntime(0);
-	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
-	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);
-	JSContext *cx = JS_NewContext(rt, 8192L);
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_JIT);
+/*
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+//    JS_SetGCParameter(rt, JSGC_MAX_BYTES, 0xffffffff);
+//    JS_SetNativeStackQuota(rt, 500000);
+	JSContext *cx = JS_NewContext(rt, 8192);
+//    JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_COMPARTMENT);
 	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
-
-	//JSClass *denseArrayClass = JS_GetClass(JS_NewArrayObject(cx, 0, NULL));
-
-/*
-	JSObject *arr = JS_NewArrayObject(cx, 5, NULL);
-	ASSERT(js_IsDensePrimitiveArray(arr));
-	jsval tmp = JSVAL_ONE;
-	JL_SetElement(cx, arr, 5, &tmp);
-	ASSERT(js_IsDensePrimitiveArray(arr));
-	JS_SetArrayLength(cx, arr, 7);
-	ASSERT(js_IsDensePrimitiveArray(arr));
-	JL_SetElement(cx, arr, 200, &tmp);
-	ASSERT(js_IsDensePrimitiveArray(arr));
-	jsuint len;
-	JS_GetArrayLength(cx, arr, &len);
-
-	arr = JS_NewArrayObject(cx, 10000, NULL);
-	ASSERT(js_IsDensePrimitiveArray(arr));
-	JL_SetElement(cx, arr, 9999, &tmp);
-	ASSERT(js_IsDensePrimitiveArray(arr));
-	JS_SetArrayLength(cx, arr, 5);
-	ASSERT(js_IsDensePrimitiveArray(arr));
-	JL_SetElement(cx, arr, 9998, &tmp);
-	ASSERT(js_IsDensePrimitiveArray(arr));
 */
 
 
-	JL_CHK( JS_DefineFunction(cx, globalObject, "Exec", Exec, 0, 0) );
+	JSRuntime *rt = JS_NewRuntime(0); // JSGC_MAX_MALLOC_BYTES
+
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
+
+	int xx = JS_GetGCParameter(rt, JSGC_MAX_MALLOC_BYTES);
+	
+	xx = JS_GetGCParameter(rt, JSGC_MAX_BYTES);
+
+
+//	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+//	JS_SetOptions(cx, JSOPTION_VAROBJFIX | /*JSOPTION_ANONFUNFIX |*/ JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JS_InitStandardClasses(cx, globalObject);
+
+
+
+//	JL_CHK( JS_DefineFunction(cx, globalObject, "print", Print, 0, 0) );
 
 	JS_SetErrorReporter(cx, ErrorReporter);
 
-	char *scriptText = "\n\n\nExec();";
-	JSObject *scriptObject = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "<inline>", 1);
+	_putws(JS_GetStringCharsZ(cx, JS_ValueToString(cx, INT_TO_JSVAL(9))));
 
-	jsval rval;
-	JL_CHK( JS_ExecuteScript(cx, globalObject, scriptObject, &rval) );
+	_putws(L"ttest");
+/* in String.cpp, see:
+    for (uint32_t i = 0; i < INT_STATIC_LIMIT; i++) {
+        if (i < 10) {
+            intStaticTable[i] = unitStaticTable[i + '0'];
+        } else if (i < 100) {
+*/
 
+/*
+	If the runtime is created like this:
+		JSRuntime *rt = JS_NewRuntime(0);
+		JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
+	then JS_ValueToString(cx, INT_TO_JSVAL(X))) returns "0K" to "0T" for 0 <= X <= 9
+*/
+
+
+
+
+
+
+//	char *scriptText = "print(1);";
+//	JSScript *script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "<inline>", 1);
+//	jsval rval;
+//	JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);

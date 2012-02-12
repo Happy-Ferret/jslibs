@@ -32,7 +32,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( position ) {
 
 	float pos[3];
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, *vp, pos, 3, &len) );
 
 	alListener3f(AL_POSITION, pos[0], pos[1], pos[2]);

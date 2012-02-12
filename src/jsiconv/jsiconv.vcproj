@@ -52,6 +52,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="..\..\libs\libiconv\Debug\iconv.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -112,6 +113,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="..\..\libs\libiconv\Release\iconv.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"

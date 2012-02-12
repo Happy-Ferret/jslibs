@@ -128,7 +128,7 @@ DEFINE_PROPERTY_SETTER( anchor ) {
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dJointSetPistonAnchor( jointId, vector[0], vector[1], vector[2] );
@@ -174,7 +174,7 @@ DEFINE_PROPERTY_SETTER( axis ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dJointSetPistonAxis( jointId, vector[0], vector[1], vector[2] );

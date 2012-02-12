@@ -148,7 +148,7 @@ Report( JSContext *cx, bool isWarning, ... ) {
 
 	va_end(vl);
 
-	JSErrorFormatString format = { message, 0, (int16)exn };
+	JSErrorFormatString format = { message, 0, (int16_t)exn };
 	return JS_ReportErrorFlagsAndNumber(cx, isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, ErrorCallback, (void*)&format, 0);
 
 //bad:
@@ -237,7 +237,7 @@ void StderrWrite(JSContext *cx, const char *message, size_t length) {
 	ASSERT( globalObject );
 
 	jsval fct;
-	if (unlikely( GetHostObjectValue(cx, JLID(cx, stderr), &fct) != JS_TRUE || !JL_ValueIsFunction(cx, fct) ))
+	if (unlikely( GetHostObjectValue(cx, JLID(cx, stderr), &fct) != JS_TRUE || !JL_IsFunction(cx, fct) ))
 		return;
 		
 	JSExceptionState *exs = JS_SaveExceptionState(cx);
@@ -257,6 +257,16 @@ bad1:
 	JS_DropExceptionState(cx, exs);
 	return;
 }
+
+/* defined in jsfriendapi.h
+typedef enum JSErrNum {
+#define MSG_DEF(name, number, count, exception, format) \
+    name = number,
+#include "js.msg"
+#undef MSG_DEF
+    JSErr_Limit
+} JSErrNum;
+*/
 
 
 void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
@@ -589,22 +599,15 @@ static JSClass global_class = {
 
 
 // default: CreateHost(-1, -1, 0);
-JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
+JSContext* CreateHost(uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterval ) {
 
-	JSRuntime *rt = JS_NewRuntime(0);
+	JSRuntime *rt = JS_NewRuntime(maxAlloc); // JSGC_MAX_MALLOC_BYTES
 	JL_CHK( rt );
 
+	//JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); // Number of JS_malloc bytes before last ditch GC.
+
 	// doc: maxMem specifies the number of allocated bytes after which garbage collection is run.
-	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); // maximum nominal heap before last ditch GC
-	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); // # of JS_malloc bytes before last ditch GC
-//	JS_SetGCParameter(rt, JSGC_TRIGGER_FACTOR, 3);
-
-	uint32 stackpoolLifespan;
-	stackpoolLifespan = JS_GetGCParameter(rt, JSGC_STACKPOOL_LIFESPAN);
-	ASSERT( stackpoolLifespan == 30000 ); // check if default has chaged.
-	JS_SetGCParameter(rt, JSGC_STACKPOOL_LIFESPAN, 20000);
-
-	JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_GLOBAL);
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); // Maximum nominal heap before last ditch GC.
 
 	JSContext *cx;
 	cx = JS_NewContext(rt, 8192); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
@@ -616,22 +619,22 @@ JSContext* CreateHost(uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval ) {
 // no more availavle in firefox 7
 //	JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA); // good place to manage stack limit ( that is 32MB by default ). Btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
 
-	uint32 maxCodeCacheBytes;
+/* 2012.02.10 removed ?
+	uint32_t maxCodeCacheBytes;
 	maxCodeCacheBytes = JS_GetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES);
 	ASSERT( maxCodeCacheBytes == 16 * 1024 * 1024 ); // check if default has chaged.
 	JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024 * 3/2);
-
+*/
 	//JS_SetNativeStackQuota(cx, DEFAULT_MAX_STACK_SIZE); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
 
-	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
+	JS_SetVersion(cx, JSVERSION_LATEST);
 
 	JS_SetErrorReporter(cx, ErrorReporter);
 
-	// JSOPTION_ANONFUNFIX is no more availavle in firefox 7
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
 	// JS_SetOptions doc: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_SetOptions
 	ASSERT( JS_GetOptions(cx) == 0 );
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | /*JSOPTION_ANONFUNFIX |*/ JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_JIT | JSOPTION_METHODJIT | /*JSOPTION_METHODJIT_ALWAYS |*/ JSOPTION_PROFILING);
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE); // avoid JSOPTION_COMPILE_N_GO here
 
 	JSObject *globalObject;
 	globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
@@ -701,8 +704,13 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	pv->hostStdIn = stdIn;
 
 	// Object class & proto cache ( see JL_NewObj() )
-	pv->objectClass = JL_GetStandardClassByKey(cx, JSProto_Object);
-	pv->objectProto = JL_GetStandardClassProtoByKey(cx, JSProto_Object);
+	
+	//pv->objectClass = JL_GetStandardClassByKey(cx, JSProto_Object);
+	//pv->objectProto = JL_GetStandardClassProtoByKey(cx, JSProto_Object);
+	JSObject *newObject = JS_NewObject(cx, NULL, NULL, NULL);
+	pv->objectClass = JS_GetClass(newObject);
+	pv->objectProto = JS_GetPrototype(newObject);
+
 	ASSERT( pv->objectClass && pv->objectProto );
 
 	// global functions & properties
@@ -747,6 +755,9 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 	JL_ASSERT( pv, E_HOST, E_STATE, E_COMMENT("context private") );
 
 	pv->canSkipCleanup = skipCleanup;
+	
+	JL_ASSERT( pv->isEnding == false );
+	pv->isEnding = true;
 
 	if ( JLThreadOk(pv->watchDogThread) ) {
 
@@ -866,7 +877,7 @@ JSBool CreateScriptArguments( JSContext *cx, int argc, const char * const * argv
 
 JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
 
-	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); //  | JSOPTION_DONT_REPORT_UNCAUGHT
+	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); //  | JSOPTION_DONT_REPORT_UNCAUGHT
 	// JSOPTION_COMPILE_N_GO:
 	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
 	// JSOPTION_DONT_REPORT_UNCAUGHT:
@@ -889,7 +900,7 @@ JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnl
 	//principals->refcount = 1;
 	//principals->destroy = HostPrincipalsDestroy;
 
-	JSObject *script;
+	JSScript *script;
 	script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "inline", 1);
 	JL_CHK( script );
 	
@@ -921,12 +932,12 @@ bad:
 
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
 
-	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
+	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
 	JSObject *globalObject = JL_GetGlobalObject(cx);
 	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
 	JL_CHK( CreateScriptArguments(cx, argc, argv) );
 
-	JSObject *script;
+	JSScript *script;
 	script = JL_LoadScript(cx, globalObject, scriptFileName, ENC_UNKNOWN, true, false); // use xdr if available, but don't save it.
 	JL_CHK( script );
 
@@ -955,17 +966,17 @@ bad:
 }
 
 
-JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32 xdrScriptLength ) {
+JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32_t xdrScriptLength ) {
 
-	uint32 prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
+	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
 //	JL_CHKM( JS_EvaluateScript(cx, JL_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
 //	JSObject *scriptObjRoot;
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 	JL_CHK( xdr );
 	JS_XDRMemSetData(xdr, xdrScript, xdrScriptLength);
-	JSObject *script;
+	JSScript *script;
 	script = NULL;
-	JL_CHK( JS_XDRScriptObject(xdr, &script) );
+	JL_CHK( JS_XDRScript(xdr, &script) );
 	JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
 	JS_XDRDestroy(xdr);
 //	scriptObjRoot = JS_NewScriptObject(cx, script);

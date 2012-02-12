@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+//#include "jscntxt.h" // need AutoArrayRooter class
 #include <jslibsModule.h>
 #include "../jslang/handlePub.h"
 
@@ -112,35 +113,35 @@ JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int i
 	if ( outFlag & PR_POLL_ERR ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "error", &descVal ) );
-		if ( JL_ValueIsFunction(cx, descVal) )
+		if ( JL_IsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_EXCEPT ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "exception", &descVal ) );
-		if ( JL_ValueIsFunction(cx, descVal) )
+		if ( JL_IsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_HUP ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &descVal ) );
-		if ( JL_ValueIsFunction(cx, descVal) )
+		if ( JL_IsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_READ ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "readable", &descVal ) );
-		if ( JL_ValueIsFunction(cx, descVal) )
+		if ( JL_IsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_WRITE ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "writable", &descVal ) );
-		if ( JL_ValueIsFunction(cx, descVal) )
+		if ( JL_IsFunction(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 

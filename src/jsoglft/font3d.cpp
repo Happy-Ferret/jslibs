@@ -43,7 +43,7 @@ class ColorTess : public OGLFT::ColorTess {
 		jsval arg[2] = { JSVAL_NULL, JSVAL_NULL }; // memset(arg, 0, sizeof(arg));
 		JL_CHK( JL_NativeVectorToJsval(cx, p, 3, &arg[1], false) );
 		JL_CHK( JS_CallFunctionValue(cx, _obj, _function, COUNTOF(arg)-1, arg+1, arg) );
-		uint32 length;
+		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, *arg, _colorTmp, COUNTOF(_colorTmp), &length) );
 		return _colorTmp;
 	bad:
@@ -392,7 +392,7 @@ DEFINE_FUNCTION( SetColor ) {
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
 	GLfloat color[4];
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), color, COUNTOF(color), &len) );
 //	JL_ASSERT( len >= 3, "Invalid color." );
 	if ( len < 4 )
@@ -436,7 +436,7 @@ DEFINE_FUNCTION( SetBackgroundColor ) {
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
 	GLfloat color[4];
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), color, COUNTOF(color), &len) );
 //	JL_ASSERT( len >= 3, "Invalid color." );
 	if ( len < 4 )

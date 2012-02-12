@@ -38,7 +38,7 @@ struct TextureStruct {
 };
 
 
-ALWAYS_INLINE JSClass* JL_TextureJSClass( const JSContext *cx ) {
+ALWAYS_INLINE JSClass* JL_TextureJSClass( JSContext *cx ) {
 
 	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	if (unlikely( clasp == NULL ))

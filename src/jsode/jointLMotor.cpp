@@ -92,7 +92,7 @@ DEFINE_FUNCTION( SetAxis ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &rel) );
 	
 	ode::dVector3 vector;
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, JL_ARG(3), vector, 3, &length) );
 	JL_ASSERT( length >= 3, E_ARG, E_NUM(3), E_TYPE, E_TY_NVECTOR(3) );
 

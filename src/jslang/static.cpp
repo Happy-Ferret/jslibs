@@ -60,7 +60,9 @@ DEFINE_FUNCTION( IsBoolean ) {
 		return JS_TRUE;
 	}
 
-	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Boolean) );
+	//*JL_RVAL = BOOLEAN_TO_JSVAL( JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Boolean) );
+	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_IsBooleanObject(cx, JL_ARG(1)) );
+	
 
 	return JS_TRUE;
 	JL_BAD;
@@ -89,7 +91,8 @@ DEFINE_FUNCTION( IsNumber ) {
 		return JS_TRUE;
 	}
 
-	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Number) );
+	//*JL_RVAL = BOOLEAN_TO_JSVAL( JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Number) );
+	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_IsNumberObject(cx, JL_ARG(1)) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -123,7 +126,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( IsFunction ) {
 
 	JL_ASSERT_ARGC(1);
-	*JL_RVAL = BOOLEAN_TO_JSVAL( VALUE_IS_FUNCTION(cx, JL_ARG(1)) );
+	//*JL_RVAL = BOOLEAN_TO_JSVAL( VALUE_IS_FUNCTION(cx, JL_ARG(1)) );
+	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_IsFunction(cx, JL_ARG(1)) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -146,11 +150,12 @@ DEFINE_FUNCTION( IsGeneratorFunction ) {
 */
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
+/* <jimb>	Franck: Any object that has a 'next' method can act as an iterator.
+/ **doc
 $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a generator instance.
-**/
+** /
 DEFINE_FUNCTION( IsGeneratorObject ) {
 
 	JL_ASSERT_ARGC(1);
@@ -466,7 +471,7 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 	upe->cancel = JLEventCreate(false);
 	ASSERT( JLEventOk(upe->cancel) );
 
-	if ( JL_ARG_ISDEF(2) && JL_ValueIsFunction(cx, JL_ARG(2)) ) {
+	if ( JL_ARG_ISDEF(2) && JL_IsFunction(cx, JL_ARG(2)) ) {
 
 		SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2));
 		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2)) ); // GC protection only
@@ -489,7 +494,7 @@ var obj2 = Deserialize(Serialize(obj));
 Print(typeof obj2.__proto__, '\n' ); // -> object
 // cannot use StructuredClone since { __proto__:null } is not supported.
 
-JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r, uint32 tag, uint32 data, void *closure) {
+JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r, uint32_t tag, uint32_t data, void *closure) {
 
 	void *buffer = jl_malloc(data);
 	JL_CHK( JS_ReadBytes(r, buffer, data) );
@@ -606,8 +611,8 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	jsid pid;
 	pid = JL_StringToJsid(cx, jsstr);
 
-	ASSERT( JS_GetParent(cx, JS_NewObject(cx, NULL, NULL, NULL)) != NULL );
-	ASSERT( JS_GetParent(cx, JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL)) != NULL );
+	ASSERT( JS_GetParent(JS_NewObject(cx, NULL, NULL, NULL)) != NULL );
+	ASSERT( JS_GetParent(JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL)) != NULL );
 
 
 /*
@@ -672,7 +677,7 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( IsPrimitive, 1 )
 		FUNCTION_ARGC( IsFunction, 1 )
 //		FUNCTION_ARGC( IsGeneratorFunction, 1 )
-		FUNCTION_ARGC( IsGeneratorObject, 1 )
+//		FUNCTION_ARGC( IsGeneratorObject, 1 )
 
 
 		FUNCTION_ARGC( Real, 1 )

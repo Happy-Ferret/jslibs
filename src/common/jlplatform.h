@@ -1047,7 +1047,7 @@ INLINE NEVER_INLINE const char* FASTCALL
 IntegerToString(int32_t val, int base) {
 
 	bool neg;
-	static char buf[34]; // sign + binary of max int32 + '\0' = 33 and 34 for uint32
+	static char buf[34]; // sign + binary of max int32 + '\0' = 33 and 34 for uint32_t
 	buf[sizeof(buf)-1] = '\0';
 	if ( val < 0 ) {
 

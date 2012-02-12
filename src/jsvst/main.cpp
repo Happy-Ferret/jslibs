@@ -69,7 +69,7 @@ public:
 
 	JsVst( audioMasterCallback audioMaster ) : AudioEffectX(audioMaster, 0, 0), JSApiHelper(_cx) {
 
-		_cx = CreateHost((uint32)-1, (uint32)-1, 0);
+		_cx = CreateHost((uint32_t)-1, (uint32_t)-1, 0);
 		InitHost(_cx, true, NULL, NULL, NULL, NULL);
 		JS_SetOptions(_cx, JSOPTION_DONT_REPORT_UNCAUGHT);
 

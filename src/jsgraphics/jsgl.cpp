@@ -1263,7 +1263,7 @@ DEFINE_FUNCTION( Fog ) {
 	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {
 
 		GLfloat params[MAX_PARAMS];
-		uint32 length;
+		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
 
 		glFogfv( JSVAL_TO_INT(JL_ARG(1)), params );  OGL_ERR_CHK;
@@ -1345,7 +1345,7 @@ DEFINE_FUNCTION( Vertex ) {
 	JL_ASSERT_ARGC(1);
 
 	GLdouble pos[4];
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), pos, COUNTOF(pos), &len) );
 	if ( len == 2 ) {
 		glVertex2dv(pos);  OGL_ERR_CHK;
@@ -1435,7 +1435,7 @@ DEFINE_FUNCTION( Color ) {
 		JL_ASSERT_ARGC(1);
 
 		GLdouble color[4];
-		uint32 len;
+		uint32_t len;
 		JL_JsvalToNativeVector(cx, JL_ARG(1), color, 4, &len);
 		if ( len == 3 ) {
 			glColor3dv(color);  OGL_ERR_CHK;
@@ -1566,7 +1566,7 @@ DEFINE_FUNCTION( TexParameter ) {
 	if ( JL_ValueIsArray(cx, JL_ARG(3)) ) {
 
 		GLfloat params[MAX_PARAMS];
-		uint32 length;
+		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 
 		glTexParameterfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
@@ -1619,7 +1619,7 @@ DEFINE_FUNCTION( TexEnv ) {
 	GLfloat params[MAX_PARAMS];
 	if ( argc == 3 && JL_ValueIsArray(cx, JL_ARG(3)) ) {
 
-		uint32 length;
+		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 
 		glTexEnvfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
@@ -1677,7 +1677,7 @@ DEFINE_FUNCTION( TexGen ) {
 	GLdouble params[MAX_PARAMS];
 	if ( argc == 3 && JL_ValueIsArray(cx, JL_ARG(3)) ) {
 
-		uint32 length;
+		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 
 		glTexGendv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
@@ -1867,7 +1867,7 @@ DEFINE_FUNCTION( LightModel ) {
 	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {
 
 		GLfloat params[MAX_PARAMS];
-		uint32 length;
+		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
 		glLightModelfv( JSVAL_TO_INT(JL_ARG(1)), params );  OGL_ERR_CHK;
 		return JS_TRUE;
@@ -1915,7 +1915,7 @@ DEFINE_FUNCTION( Light ) {
 	GLfloat params[MAX_PARAMS];
 	if ( argc == 3 && JL_ValueIsArray(cx, JL_ARG(3)) ) {
 
-		uint32 length;
+		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 		glLightfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
 		return JS_TRUE;
@@ -2078,7 +2078,7 @@ DEFINE_FUNCTION( Material ) {
 	GLfloat params[MAX_PARAMS]; // alloca ?
 	if ( argc == 3 && JL_ValueIsArray(cx, JL_ARG(3)) ) {
 
-		uint32 length;
+		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 		glMaterialfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
 		;
@@ -2607,7 +2607,7 @@ DEFINE_FUNCTION( ClipPlane ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 	JL_ASSERT_ARG_IS_ARRAY(2);
 	GLdouble equation[4];
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), equation, COUNTOF(equation), &len ) );
 	JL_CHKM( len == 4, E_ARG, E_NUM(2), E_LENGTH, E_NUM(4) );
 	glClipPlane(JSVAL_TO_INT(JL_ARG(1)), equation);  OGL_ERR_CHK;
@@ -4747,7 +4747,7 @@ DEFINE_FUNCTION( Uniform ) {
 
 		JSObject *arrayObj;
 		arrayObj = JSVAL_TO_OBJECT(JL_ARG(2));
-		uint32 currentLength;
+		uint32_t currentLength;
 		JL_CHK( JS_GetArrayLength(cx, arrayObj, &currentLength) );
 // (TBD)
 	}
@@ -5276,7 +5276,7 @@ DEFINE_FUNCTION( PointParameter ) {
 	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {
 
 		GLfloat params[MAX_PARAMS];
-		uint32 length;
+		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
 		glPointParameterfv( JSVAL_TO_INT(JL_ARG(1)), params );  OGL_ERR_CHK;
 		;
@@ -6182,8 +6182,7 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 		type = GL_FLOAT;
 	} else if ( js_IsTypedArray(tObj) ) {
 
-		js::TypedArray *arr = js::TypedArray::fromJSObject(tObj);
-		switch ( arr->type ) {
+		switch ( JS_GetTypedArrayType(tObj) ) {
 			case js::TypedArray::TYPE_INT8:
 				type = GL_BYTE;
 				break;
@@ -6217,9 +6216,9 @@ DEFINE_FUNCTION( DefineTextureImage ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &height) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &channels) );
 
-		JL_ASSERT( width*height*channels == (int)arr->length, E_DATASIZE, E_INVALID );
+		JL_ASSERT( width*height*channels == (int)JS_GetTypedArrayByteLength(tObj), E_DATASIZE, E_INVALID );
 
-		data = arr->data;
+		data = JS_GetTypedArrayData(tObj);
 	} else {
 
 		JL_CHKM( JL_GetProperty(cx, tObj, "width", &width) && JL_GetProperty(cx, tObj, "height", &height) && JL_GetProperty(cx, tObj, "channels", &channels), E_ARG, E_NUM(3), E_INVALID ); // "Invalid texture object."

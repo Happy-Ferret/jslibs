@@ -32,6 +32,7 @@ struct JLApi {
 struct HostPrivate {
 
 	bool unsafeMode;
+	bool isEnding;
 	bool canSkipCleanup; // allows modules to skip the memory cleanup phase.
 	char camelCase;
 	uint32_t hostPrivateVersion; // used to ensure compatibility between host and modules. see JL_HOST_PRIVATE_VERSION macro.

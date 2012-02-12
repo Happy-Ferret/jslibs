@@ -440,7 +440,7 @@ DEFINE_PROPERTY( xdrSetter ) {
 
 	JL_CHK( JS_XDRValue( xdr, vp ) );
 
-	uint32 length;
+	uint32_t length;
 	void *buffer = JS_XDRMemGetData( xdr, &length );
 	JL_ASSERT( buffer, "Unable to create XDR data." );
 

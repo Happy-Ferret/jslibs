@@ -98,7 +98,7 @@ DEFINE_PROPERTY_SETTER( start ) {
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 //	FloatArrayToVector(cx, 3, vp, start);
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, *vp, start, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);
@@ -130,7 +130,7 @@ DEFINE_PROPERTY_SETTER( direction ) {
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 //	FloatArrayToVector(cx, 3, vp, dir);
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, *vp, dir, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);

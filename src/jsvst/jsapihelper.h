@@ -53,7 +53,7 @@ protected:
 
 	inline int 	JsvalToInt( jsval val ) {
 
-		int32 i;
+		int32_t i;
 		if ( !JS_ValueToInt32(_cx, val, &i) )
 			throw JsException(_cx, "cannot convert to an integer");
 		return i;
@@ -161,7 +161,7 @@ protected:
 		JSObject *stringPrototype;
 		if ( !JS_GetClassObject(_cx, JL_GetGlobalObject(_cx), JSProto_String, &stringPrototype) ) // (TBD) see GetStringClass(cx);
 			return false;
-		if ( JS_GetPrototype(_cx, JSVAL_TO_OBJECT(val)) == stringPrototype )
+		if ( JS_GetPrototype(JSVAL_TO_OBJECT(val)) == stringPrototype )
 			return true;
 		return false;
 	}

@@ -55,7 +55,7 @@ DEFINE_FUNCTION( Vec3 ) {
 			v.z = v.y = v.x;
 		} else {
 
-			uint32 len;
+			uint32_t len;
 			JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
 			JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 		}
@@ -87,7 +87,7 @@ DEFINE_FUNCTION( Vec3Length ) {
 	
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
-	uint32 len, len2;
+	uint32_t len, len2;
 	Vector3 v;
 	if ( argc == 1 )	{
 
@@ -144,7 +144,7 @@ DEFINE_FUNCTION( Vec3Normalize ) {
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	Vector3 v;
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
 
 	JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
@@ -170,7 +170,7 @@ DEFINE_FUNCTION( Vec3Add ) {
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	Vector3 v, v2;
-	uint32 len, len2;
+	uint32_t len, len2;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 
@@ -226,7 +226,7 @@ DEFINE_FUNCTION( Vec3Cross ) {
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	Vector3 v, v2;
-	uint32 len, len2;
+	uint32_t len, len2;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 
@@ -252,7 +252,7 @@ DEFINE_FUNCTION( Vec3Dot ) {
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	Vector3 v, v2;
-	uint32 len, len2;
+	uint32_t len, len2;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 
@@ -347,7 +347,7 @@ DEFINE_FUNCTION( BoxToCircumscribedSphere ) {
 
 	float aabb[6];
 
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), aabb, 6, &len) );
 	JL_CHKM( len == 6, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(6) );
 
@@ -385,7 +385,7 @@ DEFINE_FUNCTION( QuaternionToEuler ) {
 
 	Vector4 quat;
 	Vector3 euler;
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), quat.raw, 4, &len) );
 	JL_CHKM( len == 4, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(4), E_COMMENT("quaternion") );
 
@@ -450,7 +450,7 @@ DEFINE_FUNCTION( EulerToQuaternion ) {
 
 	Vector3 euler;
 	Vector4 quat;
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), euler.raw, 3, &len) );
 	JL_CHKM( len == 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3), E_COMMENT("euler rotation") );
 	
@@ -505,7 +505,7 @@ DEFINE_FUNCTION( QuaternionToAxisAngle ) {
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	Vector4 quat;
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), quat.raw, 4, &len) );
 	JL_CHKM( len == 4, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(4), E_COMMENT("quaternion") );
 
@@ -539,7 +539,7 @@ DEFINE_FUNCTION( AxisAngleToQuaternion ) {
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	Vector4 axisAngle;
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), axisAngle.raw, 4, &len) );
 	JL_CHKM( len == 4, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(4), E_COMMENT("quaternion") );
 
@@ -638,7 +638,7 @@ DEFINE_FUNCTION( ShadowMatrix ) {
 
 	double shadowMat[4][4], plane[4], lightpos[4];
 
-	uint32 len, len1;
+	uint32_t len, len1;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), plane, 4, &len) );
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), lightpos, 4, &len1) );
 	

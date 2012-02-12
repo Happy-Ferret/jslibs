@@ -34,11 +34,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( text ) {
 
+	JL_IGNORE(id);
 	return JL_GetReservedSlot( cx, obj, 0, vp );
 }
 
 DEFINE_FUNCTION( toString ) {
 
+	JL_IGNORE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
 	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
 }
@@ -51,6 +53,7 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 }
 */
 
+/*
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -60,9 +63,9 @@ DEFINE_FUNCTION( _serialize ) {
 	jl::Serializer *ser;
 	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
 
-	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JL_ATOMJSID(cx, fileName), JL_RVAL) );
+	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, fileName), JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JL_ATOMJSID(cx, lineNumber), JL_RVAL) );
+	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, 0, JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
@@ -82,15 +85,16 @@ DEFINE_FUNCTION( _unserialize ) {
 	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
 
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JS_SetPropertyById(cx, obj, JL_ATOMJSID(cx, fileName), JL_RVAL) );
+	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, fileName), JL_RVAL) );
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JS_SetPropertyById(cx, obj, JL_ATOMJSID(cx, lineNumber), JL_RVAL) );
+	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
 	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, 0, *JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
 }
+*/
 
 
 CONFIGURE_CLASS
@@ -106,8 +110,8 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(toString)
-		FUNCTION_ARGC(_serialize, 1)
-		FUNCTION_ARGC(_unserialize, 1)
+//		FUNCTION_ARGC(_serialize, 1)
+//		FUNCTION_ARGC(_unserialize, 1)
 	END_FUNCTION_SPEC
 
 	HAS_RESERVED_SLOTS(1)

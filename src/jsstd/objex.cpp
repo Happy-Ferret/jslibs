@@ -38,7 +38,7 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsid id
 //	if ( JSVAL_IS_VOID(*vp) && strcmp( JL_GetStringBytes(JS_ValueToString(cx,id)), "__iterator__" ) == 0 ) // we don't want to override the iterator
 //		return JS_TRUE;
 	
-	if ( id == JL_ATOMJSID(cx, iterator) )
+	if ( id == JLID(cx, iterator) )
 		return JS_TRUE;
 
 // (TBD) returns the current value too (cf.	JS_LookupProperty(cx, obj, )

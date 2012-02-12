@@ -99,7 +99,7 @@ DEFINE_INIT() {
 	return JS_TRUE;
 }
 
-
+/*
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -132,7 +132,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
+*/
 
 CONFIGURE_CLASS
 
@@ -149,10 +149,10 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 
 		FUNCTION( toString )
-
+/*
 		FUNCTION( _serialize )
 		FUNCTION( _unserialize )
-
+*/
 	END_FUNCTION_SPEC
 
 END_CLASS

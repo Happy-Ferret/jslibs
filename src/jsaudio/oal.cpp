@@ -461,7 +461,7 @@ DEFINE_FUNCTION( Listener ) {
 	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {
 
 		ALfloat params[16];
-		uint32 length;
+		uint32_t length;
 //		J_JSVAL_TO_REAL_VECTOR( JL_ARG(2), params, length );
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, 16, &length) );
 		alListenerfv( JSVAL_TO_INT(JL_ARG(1)), params );
@@ -569,7 +569,7 @@ DEFINE_FUNCTION( Source ) {
 	if ( JL_ValueIsArray(cx, JL_ARG(3)) ) {
 
 		ALfloat params[16];
-		uint32 length;
+		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 		alSourcefv( sid, JSVAL_TO_INT(JL_ARG(2)), params );
 		return JS_TRUE;
@@ -716,7 +716,7 @@ DEFINE_FUNCTION( SourceQueueBuffers ) {
 	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {
 
 		ALuint params[1024];
- 		uint32 length = COUNTOF(params);
+ 		uint32_t length = COUNTOF(params);
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length) );
 		alSourceQueueBuffers( sid, length, params );
 		JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -753,7 +753,7 @@ DEFINE_FUNCTION( SourceUnqueueBuffers ) {
 	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {
 
 		ALuint params[1024];
-		uint32 length;
+		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length) );
 		alSourceUnqueueBuffers( sid, length, params );
 		return JS_TRUE;

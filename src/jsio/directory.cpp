@@ -140,7 +140,7 @@ DEFINE_FUNCTION( Read ) {
 	flags = PR_SKIP_NONE;
 	if ( JL_ARG_ISDEF(1) ) {
 
-		int32 tmp;
+		int32_t tmp;
 		JS_ValueToInt32( cx, JL_ARG(1), &tmp );
 		flags = (PRDirFlags)tmp;
 	}
@@ -315,7 +315,7 @@ DEFINE_FUNCTION( List ) {
 	flags = PR_SKIP_DOT;
 	if ( JL_ARG_ISDEF( 2 ) ) {
 
-		int32 tmp;
+		int32_t tmp;
 		JL_CHK( JS_ValueToInt32( cx, JL_ARG(2), &tmp ) );
 		flags = (PRDirFlags)tmp;
 	}

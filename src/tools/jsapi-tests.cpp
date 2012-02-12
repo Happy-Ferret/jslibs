@@ -1,10 +1,10 @@
 #include "malloc.h"
 
 #include "jsapi.h"
-#include "jsscript.h"
-#include "jscntxt.h"
-#include "jsarena.h"
-#include "jsemit.h"
+//#include "jsscript.h"
+//#include "jscntxt.h"
+//#include "jsarena.h"
+//#include "jsemit.h"
 
 JS_BEGIN_EXTERN_C
 void* (*custom_malloc)( size_t ) = malloc;

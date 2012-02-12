@@ -143,9 +143,11 @@ ALWAYS_INLINE bool TextureSameFormat( TextureStruct *t1, TextureStruct *t2 ) {
 }
 
 ALWAYS_INLINE bool IsTexture( JSContext *cx, jsval val ) {
-
+	
+	JL_IGNORE(cx);
 	//return JL_IsClass(val, JL_CLASS(Texture));
-	return !js::Valueify(val).isPrimitive() && js::Valueify(val).toObject().getProto()->getJSClass() == JL_CLASS(Texture);
+	//return !js::Valueify(val).isPrimitive() && js::Valueify(val).toObject().getProto()->getJSClass() == JL_CLASS(Texture);
+	return val.isPrimitive() && JS_GetClass(JSVAL_TO_OBJECT(val)) == JL_CLASS(Texture);
 }
 
 
@@ -246,7 +248,7 @@ JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, P
 
 	if ( JL_ValueIsArray(cx, value) ) {
 
-		uint32 length;
+		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, value, level, levelMaxLength, &length) );
 		JL_ASSERT( length < levelMaxLength, E_ARRAYLENGTH, E_MAX, E_NUM(levelMaxLength) ); // JL_ASSERT( length >= levelMaxLength, "Array too small." );
 		return JS_TRUE;
@@ -293,7 +295,7 @@ JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) 
 	
 	size_t i;
 
-	if ( JL_ValueIsFunction(cx, value) ) {
+	if ( JL_IsFunction(cx, value) ) {
 
 		double fval;
 		jsval argv[3]; // argv[0] is the rval
@@ -316,7 +318,7 @@ JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) 
 		JL_ASSERT( curveArrayLength >= 1, E_ARRAYLENGTH, E_MIN, E_NUM(1) );
 		PTYPE *curveArray;
 		curveArray = (PTYPE*)alloca(curveArrayLength * sizeof(PTYPE));
-		uint32 tmp;
+		uint32_t tmp;
 		JL_CHK( JL_JsvalToNativeVector(cx, value, curveArray, curveArrayLength, &tmp) );
 		for ( i = 0; i < length; ++i )
 			curve[i] = curveArray[i * curveArrayLength / length]; // no interpolation
@@ -2263,7 +2265,7 @@ DEFINE_FUNCTION( Convolution ) {
 	kernel = (float*)alloca(sizeof(float) * count);
 	JL_ASSERT_ALLOC( kernel );
 	//JL_CHK( FloatArrayToVector(cx, count, &JL_ARG(1), kernel) );
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), kernel, count, &length) );
 
 	int size;
@@ -2826,7 +2828,7 @@ DEFINE_FUNCTION( Light ) {
 
 	Vector3 lightPos;
 //	JL_CHK( FloatArrayToVector(cx, 3, &JL_ARG(2), lightPos.raw ) );
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), lightPos.raw, 3, &length) );
 	JL_ASSERT( length == 3, E_ARG, E_NUM(2), E_SEP, E_ARRAYLENGTH, E_EQUALS, E_NUM(3) );
 
@@ -4130,7 +4132,7 @@ DEFINE_FUNCTION( AddPerlin2 ) {
 
 	double x,y,z, offset[3], dirX[3], dirY[3], alpha;
 
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), offset, 3, &len) );
 	JL_ASSERT( len == 3, E_ARG, E_NUM(1), E_SEP, E_ARRAYLENGTH, E_EQUALS, E_NUM(3) );
 

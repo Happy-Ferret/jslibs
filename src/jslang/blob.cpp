@@ -36,10 +36,10 @@ DoubleToInteger(jsdouble d) // from jsnum.h
 
 
 ALWAYS_INLINE bool
-ValueToIntegerRange(JSContext *cx, const jsval &v, int32 *out) // from jsstr.cpp
+ValueToIntegerRange(JSContext *cx, const jsval &v, int32_t *out) // from jsstr.cpp
 {
-	if (js::Valueify(v).isInt32()) {
-        *out = js::Valueify(v).toInt32();
+	if (v.isInt32()) {
+        *out = v.toInt32();
     } else {
         double d;
 
@@ -52,7 +52,7 @@ ValueToIntegerRange(JSContext *cx, const jsval &v, int32 *out) // from jsstr.cpp
         else if (d < INT32_MIN)
             *out = INT32_MIN;
         else 
-            *out = int32(d);
+            *out = int32_t(d);
     }
     return true;
 }
@@ -182,7 +182,7 @@ BlobLength( JSContext *cx, JSObject *blobObject, size_t *length ) {
 
 
 ALWAYS_INLINE JSBool
-BlobBuffer( JSContext *cx, const JSObject *blobObject, const uint8_t **buffer ) {
+BlobBuffer( JSContext *cx, JSObject *blobObject, const uint8_t **buffer ) {
 
 	*buffer = (const uint8_t*)JL_GetPrivate(cx, blobObject);
 	ASSERT( *buffer != NULL );
@@ -355,12 +355,12 @@ DEFINE_FUNCTION( Free ) {
 }
 
 
-
-/**doc
+/* INVALID: the buffer ownership cannot be exchanged like this. see https://bugzilla.mozilla.org/show_bug.cgi?id=691446 / http://infomonkey.cdleary.com/questions/273/give-buffer-ownership-to-a-typedarray
+/ **doc
 $TOC_MEMBER $INAME
  ArrayBuffer $INAME()
   Copy the content of blob into a new Uint8Array. The blob it then invalidated.
-**/
+** /
 DEFINE_FUNCTION( ReloacateToArray ) {
 
 	JL_ASSERT_ARGC(0);
@@ -368,7 +368,7 @@ DEFINE_FUNCTION( ReloacateToArray ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
 
-/*
+/ *
 	JSObject *bufObj;
 	bufObj = js::ArrayBuffer::create(cx, 0);
 	JL_CHK( bufObj );
@@ -393,7 +393,7 @@ DEFINE_FUNCTION( ReloacateToArray ) {
 	typedArray = js_CreateTypedArrayWithBuffer(cx, js::TypedArray::TYPE_UINT8, bufObj, 0, buffer->byteLength);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(typedArray);
-*/
+* /
 
 
 	size_t thisLength;
@@ -416,6 +416,7 @@ DEFINE_FUNCTION( ReloacateToArray ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+*/
 
 
 /**doc
@@ -510,13 +511,13 @@ DEFINE_FUNCTION( substr ) {
 	const uint8_t *buffer;
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &buffer) );
 
-    int32 length, len, begin;
+    int32_t length, len, begin;
     if (argc > 0) {
 
 		size_t tmp;
 		JL_CHK( BlobLength(cx, JL_OBJ, &tmp) );
 		ASSERT( tmp <= INT_MAX );
-        length = int32(tmp);
+        length = int32_t(tmp);
 
         if ( !ValueToIntegerRange(cx, JL_ARG(1), &begin) )
             return false;
@@ -541,7 +542,7 @@ DEFINE_FUNCTION( substr ) {
             if (len <= 0)
 				return JL_NewBlob(cx, NULL, 0, JL_RVAL);
 
-			if (uint32(length) < uint32(begin + len))
+			if (uint32_t(length) < uint32_t(begin + len))
                 len = length - begin;
         }
 
@@ -579,13 +580,13 @@ DEFINE_FUNCTION( substring ) {
 	const uint8_t *buffer;
 	JL_CHK( BlobBuffer(cx, JL_OBJ, &buffer) );
 
-    int32 length, begin, end;
+    int32_t length, begin, end;
     if (argc > 0) {
 
 		size_t tmp;
 		JL_CHK( BlobLength(cx, JL_OBJ, &tmp) );
 		ASSERT( tmp <= INT_MAX );
-        end = length = int32(tmp);
+        end = length = int32_t(tmp);
 
         if (!ValueToIntegerRange(cx, JL_ARG(1), &begin))
             return false;
@@ -1067,15 +1068,15 @@ DEFINE_EQUALITY_OP() {
 	JL_CHKB( JL_IsClass(*v, JL_THIS_CLASS), noteq );
 
 	//JL_ASSERT_VALID( IsBlobValid(cx, obj) && IsBlobValid(cx, &js::Valueify(v)->toObject()), "Blob");
-	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) && IsBlobValid(cx, &js::Valueify(v)->toObject()) );
+	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) && IsBlobValid(cx, &v->toObject()) );
 
 	const uint8_t *buf1, *buf2;
 	size_t len1, len2;
 	JL_CHK( BlobLength(cx, obj, &len1) );
-	JL_CHK( BlobLength(cx, js::Valueify(v)->toObjectOrNull(), &len2) );
+	JL_CHK( BlobLength(cx, v->toObjectOrNull(), &len2) );
 	JL_CHKB( len1 == len2, noteq );
 	JL_CHK( BlobBuffer(cx, obj, &buf1) );
-	JL_CHK( BlobBuffer(cx, js::Valueify(v)->toObjectOrNull(), &buf2) );
+	JL_CHK( BlobBuffer(cx, v->toObjectOrNull(), &buf2) );
 	JL_CHKB( memcmp(buf1, buf2, len1) == 0, noteq );
 	*bp = JS_TRUE;
 	return JS_TRUE;
@@ -1157,9 +1158,9 @@ JSBool next_foreach(JSContext *cx, uintN argc, jsval *vp) {
 
 DEFINE_ITERATOR_OBJECT() {
 
-	JSObject *itObj = JS_NewObjectWithGivenProto(cx, NULL, NULL, JS_GetParent(cx, obj));
+	JSObject *itObj = JS_NewObjectWithGivenProto(cx, NULL, NULL, JS_GetParent(obj));
 	JL_CHK( itObj );
-	JL_CHK( JS_DefineFunctionById(cx, itObj, JL_ATOMJSID(cx, next), keysonly ? next_for : next_foreach, 0, 0) );
+	JL_CHK( JS_DefineFunctionById(cx, itObj, JLID(cx, next), keysonly ? next_for : next_foreach, 0, 0) );
 	jsval v;
 	v = OBJECT_TO_JSVAL(obj);
 	JL_CHK( JS_SetPropertyById(cx, itObj, INT_TO_JSID(0), &v) );
@@ -1321,7 +1322,7 @@ DEFINE_OPS_GET_PROPERTY() {
 
 
 
-
+/*
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -1347,7 +1348,6 @@ DEFINE_FUNCTION( _serialize ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
 
 DEFINE_FUNCTION( _unserialize ) {
 
@@ -1394,7 +1394,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
+*/
 
 /*
 DEFINE_INIT() {
@@ -1435,7 +1435,8 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(Free)
-		FUNCTION(ReloacateToArray)
+
+//		FUNCTION(ReloacateToArray)
 
 		FUNCTION(concat)
 		FUNCTION_ARGC(substr, 2)
@@ -1449,9 +1450,10 @@ CONFIGURE_CLASS
 		FUNCTION(toString)
 		FUNCTION_ALIAS(valueOf, toString)
 		FUNCTION(toSource)
-
+/*
 		FUNCTION_ARGC(_serialize, 1)
 		FUNCTION_ARGC(_unserialize, 1)
+*/
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

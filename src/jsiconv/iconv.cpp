@@ -326,6 +326,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( invalidChar ) {
 
 	JL_IGNORE(id);
+	JL_IGNORE(strict);
 
 	JLStr chr;
 	Private *pv;

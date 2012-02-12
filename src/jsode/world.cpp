@@ -226,7 +226,7 @@ DEFINE_FINALIZE() {
 	
 		JSObject *bodyObj = (JSObject*)ode::dBodyGetData(bodyIt);
 		if ( bodyObj != NULL )
-			JS_SetPrivate(cx, bodyObj, NULL);
+			JS_SetPrivate(bodyObj, NULL);
 			// ode::dBodySetData(bodyIt, NULL);
 
 		// same rule for geoms
@@ -234,7 +234,7 @@ DEFINE_FINALIZE() {
 
 			JSObject *geomObj = (JSObject*)ode::dGeomGetData(geomIt);
 			if ( geomObj != NULL )
-				JS_SetPrivate(cx, geomObj, NULL);
+				JS_SetPrivate(geomObj, NULL);
 			// ode::dGeomSetData(geomIt, NULL);
 	  }
 
@@ -243,7 +243,7 @@ DEFINE_FINALIZE() {
 		
 			JSObject *jointObj = (JSObject*)ode::dJointGetData(jointIt->joint);
 			if ( jointObj != NULL )
-				JS_SetPrivate(cx, jointObj, NULL);
+				JS_SetPrivate(jointObj, NULL);
 			// ode::dJointSetData(jointIt, NULL);
 		}
 	}
@@ -253,7 +253,7 @@ DEFINE_FINALIZE() {
 	
 		JSObject *jointObj = (JSObject*)ode::dJointGetData(jointIt);
 		if ( jointObj != NULL )
-			JS_SetPrivate(cx, jointObj, NULL);
+			JS_SetPrivate(jointObj, NULL);
 		// ode::dJointSetData(jointIt, NULL);
 	}
 
@@ -265,7 +265,7 @@ DEFINE_FINALIZE() {
 
 		JSObject *geomObj = (JSObject*)ode::dGeomGetData(geomId);
 		if ( geomObj != NULL )
-			JS_SetPrivate(cx, geomObj, NULL);
+			JS_SetPrivate(geomObj, NULL);
 //		ode::dSpaceRemove(pv->spaceId, geomId);
 		ode::dGeomDestroy(geomId);
 	}
@@ -298,13 +298,13 @@ DEFINE_CONSTRUCTOR() {
 	pv->worldId = ode::dWorldCreate();
 	pv->contactGroupId = ode::dJointGroupCreate(0); // see nearCallback()
 
-	JSObject *spaceObject = JS_ConstructObject(cx, JL_CLASS(Space), JL_PROTOTYPE(cx, Space), NULL); // no arguments = create a topmost space object
+	JSObject *spaceObject = JS_ConstructObject(cx, JL_CLASS(Space), /*JL_PROTOTYPE(cx, Space),*/ NULL); // no arguments = create a topmost space object
 	JL_CHK( spaceObject );
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_WORLD_SPACE, OBJECT_TO_JSVAL(spaceObject)) );
 	pv->spaceId = (ode::dSpaceID)JL_GetPrivate(cx, spaceObject);
 
 
-	JSObject *surfaceParameters = JS_ConstructObject(cx, JL_CLASS(SurfaceParameters), JL_PROTOTYPE(cx, SurfaceParameters), NULL);
+	JSObject *surfaceParameters = JS_ConstructObject(cx, JL_CLASS(SurfaceParameters), /*JL_PROTOTYPE(cx, SurfaceParameters),*/ NULL);
 	JL_CHK( surfaceParameters );
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, OBJECT_TO_JSVAL(surfaceParameters)) );
 
@@ -467,7 +467,7 @@ DEFINE_FUNCTION( ScaleImpulse ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT_ARGC_MIN(1);
 	ode::dVector3 force;
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), force, COUNTOF(force), &len) );
 	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 
@@ -574,7 +574,7 @@ DEFINE_PROPERTY_SETTER( gravity ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dVector3 gravity;
 	//FloatArrayToVector(cx, 3, vp, gravity);
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, *vp, gravity, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dWorldSetGravity( pv->worldId, gravity[0], gravity[1], gravity[2] );

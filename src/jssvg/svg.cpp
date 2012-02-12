@@ -35,7 +35,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 	*pixbuf = NULL;
 	jsval onImageFct;
 	JL_CHK( JS_GetProperty(cx, obj, "onImage", &onImageFct) );
-	if ( JL_ValueIsFunction(cx, onImageFct) ) {
+	if ( JL_IsFunction(cx, onImageFct) ) {
 
 		jsval nameVal, image;
 		JL_CHK( JL_NativeToJsval(cx, name, &nameVal) );
@@ -580,6 +580,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( dpi ) {
 
+	JL_IGNORE(strict);
+	JL_IGNORE(id);
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -618,6 +621,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( width ) {
 
+	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -638,6 +642,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( height ) {
 
+	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -658,6 +663,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( title ) {
 
+	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -680,6 +686,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( metadata ) {
 
+	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -702,6 +709,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( description ) {
 
+	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);

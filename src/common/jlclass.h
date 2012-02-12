@@ -17,7 +17,7 @@
 
 #define JL_NO_TINYID (-1) // see JL_DefineClassProperties()
 
-typedef int32 JLRevisionType;
+typedef int32_t JLRevisionType;
 
 struct JLConstIntegerSpec {
     int ival;
@@ -107,7 +107,7 @@ inline JSBool JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	if ( cs->cis != NULL )
 		for ( JLConstIntegerSpec *it = cs->cis; it->name; ++it )
-			JL_CHK( JS_DefineProperty(cx, obj, it->name, INT_TO_JSVAL(jl::SafeCast<int32>(it->ival)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+			JL_CHK( JS_DefineProperty(cx, obj, it->name, INT_TO_JSVAL(jl::SafeCast<int32_t>(it->ival)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( cs->cds != NULL )
 		JL_CHK( JS_DefineConstDoubles(cx, obj, cs->cds) );
@@ -154,7 +154,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 		parent_proto = NULL;
 	}
 
-//	uint32 protoFrozen = cs->clasp.flags & JSCLASS_FREEZE_PROTO;
+//	uint32_t protoFrozen = cs->clasp.flags & JSCLASS_FREEZE_PROTO;
 //	cs->clasp.flags &= ~JSCLASS_FREEZE_PROTO;
 
 	JSNative constructor;
@@ -179,7 +179,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	if ( cs->cis != NULL )
 		for ( JLConstIntegerSpec *it = cs->cis; it->name; ++it )
-			JL_CHK( JS_DefineProperty(cx, staticDest, it->name, INT_TO_JSVAL(jl::SafeCast<int32>(it->ival)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+			JL_CHK( JS_DefineProperty(cx, staticDest, it->name, INT_TO_JSVAL(jl::SafeCast<int32_t>(it->ival)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( cs->cds != NULL )
 		JL_CHK( JS_DefineConstDoubles(cx, staticDest, cs->cds) );
@@ -369,7 +369,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define HAS_HAS_INSTANCE cs.clasp.hasInstance = HasInstance;
 #define DEFINE_HAS_INSTANCE() static JSBool HasInstance(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp)
 
-#define HAS_EQUALITY_OP js::Valueify(&cs.clasp)->ext.equality = js::Valueify(EqualityOp);/* cs.clasp.flags |= JSObject::HAS_EQUALITY;*/
+#define HAS_EQUALITY_OP js::Valueify(&cs.clasp)->ext.equality = EqualityOp;
 #define DEFINE_EQUALITY_OP() static JSBool EqualityOp(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp)
 
 #define HAS_WRAPPED_OBJECT js::Valueify(&cs.clasp)->ext.wrappedObject = WrappedObject;

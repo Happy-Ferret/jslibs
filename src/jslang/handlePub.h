@@ -152,7 +152,7 @@ bad:
 
 
 INLINE JSBool
-SetHandleSlot( JSContext *cx, jsval handleVal, uint32 slotIndex, jsval value ) {
+SetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval value ) {
 
 	ASSERT( slotIndex < HANDLE_PUBLIC_SLOT_COUNT );
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
@@ -163,7 +163,7 @@ SetHandleSlot( JSContext *cx, jsval handleVal, uint32 slotIndex, jsval value ) {
 
 
 INLINE JSBool
-GetHandleSlot( JSContext *cx, jsval handleVal, uint32 slotIndex, jsval *value ) {
+GetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval *value ) {
 
 	ASSERT( slotIndex < HANDLE_PUBLIC_SLOT_COUNT );
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");

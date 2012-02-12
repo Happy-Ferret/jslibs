@@ -20,8 +20,8 @@
 DECLARE_CLASS( Handle )
 DECLARE_CLASS( Blob )
 DECLARE_CLASS( Stream )
-DECLARE_CLASS( Serializer )
-DECLARE_CLASS( Unserializer )
+//DECLARE_CLASS( Serializer )
+//DECLARE_CLASS( Unserializer )
 DECLARE_STATIC()
 
 /**doc t:header
@@ -46,8 +46,8 @@ JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Handle );
 	INIT_CLASS( Blob );
 	INIT_CLASS( Stream );
-	INIT_CLASS( Serializer );
-	INIT_CLASS( Unserializer );
+//	INIT_CLASS( Serializer );
+//	INIT_CLASS( Unserializer );
 	INIT_STATIC();
 
 	return JS_TRUE;

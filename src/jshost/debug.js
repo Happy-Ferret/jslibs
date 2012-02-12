@@ -7,14 +7,10 @@
 //SetPerfTestMode();
 
 LoadModule('jsstd');
-LoadModule('jsio');
+//LoadModule('jsio');
 //LoadModule('jsdebug');
 
 
-
-
-
-throw 0;
 
 
 Print( MyGen.isGenerator(), '\n' );

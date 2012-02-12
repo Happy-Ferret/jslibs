@@ -61,7 +61,7 @@ DEFINE_FUNCTION( Translate ) {
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 	real translation[3];
 //	JL_CHK( FloatArrayToVector(cx, 3, &argv[0], translation) );
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), translation, 3, &length) );
 	JL_ASSERT( length >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	ode::dMassTranslate(&mass, translation[0], translation[1], translation[2]);
@@ -137,7 +137,7 @@ DEFINE_FUNCTION( SetBoxTotal ) {
 // arg 1
 	real dimensions[3];
 	//	JL_CHK( FloatArrayToVector(cx, 3, &argv[1], dimensions) );
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, JL_ARG(2), dimensions, 3, &length) );
 	JL_ASSERT( length >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NVECTOR(3) );
 
@@ -202,7 +202,7 @@ DEFINE_PROPERTY_SETTER( center ) {
 //	jsdouble massValue;
 //	jsdouble translation[3];
 	//JL_CHK( FloatArrayToVector(cx, 3, vp, mass.c) );
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, *vp, mass.c, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 

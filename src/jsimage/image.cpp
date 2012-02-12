@@ -70,6 +70,7 @@ DEFINE_CONSTRUCTOR() {
 
 DEFINE_FUNCTION( Free ) {
 
+	JL_IGNORE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
 	*JL_RVAL = JSVAL_VOID;
 
@@ -88,7 +89,7 @@ DEFINE_FUNCTION( Trim ) {
 	JL_ASSERT_ARGC_MIN(1);
 	int vect[4];
 	//IntArrayToVector(cx, 4, &argv[0], vect);
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), vect, 4, &length) );
 	JL_ASSERT( length == 4, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(4) );
 

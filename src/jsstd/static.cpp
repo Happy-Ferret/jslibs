@@ -72,7 +72,7 @@ DEFINE_FUNCTION( Expand ) {
 	
 	if ( JL_ARG_ISDEF(2) ) {
 	
-		if ( JL_ValueIsFunction(cx, JL_ARG(2)) )
+		if ( JL_IsFunction(cx, JL_ARG(2)) )
 			mapFct = &JL_ARG(2);
 		else
 		if ( !JSVAL_IS_PRIMITIVE(JL_ARG(2)) )
@@ -136,7 +136,7 @@ DEFINE_FUNCTION( Expand ) {
 					continue;
 				}
 
-				if ( js::Valueify(value).isNullOrUndefined() )
+				if ( value.isNullOrUndefined() )
 					continue;
 
 				++stack;
@@ -432,7 +432,7 @@ DEFINE_FUNCTION( SetScope ) {
 	JSObject *o, *p;
 	JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &o) ); // o = JSVAL_TO_OBJECT(JL_ARG(1));
 	JL_CHK( JS_ValueToObject(cx, JL_ARG(2), &p) ); // p = JSVAL_TO_OBJECT(JL_ARG(2));
-	*JL_RVAL = OBJECT_TO_JSVAL( JS_GetParent(cx, o) );
+	*JL_RVAL = OBJECT_TO_JSVAL( JS_GetParent(o) );
 	JL_CHK( JS_SetParent(cx, o, p) );
 	return JS_TRUE;
 	JL_BAD;
@@ -468,7 +468,7 @@ JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 
 		for ( ObjId *it = mpv->objIdList, *end = mpv->objIdList + mpv->objectIdAllocated; it < end; ++it ) {
 
-			if ( it->obj && JS_IsAboutToBeFinalized(cx, it->obj) ) {
+			if ( it->obj && JS_IsAboutToBeFinalized(it->obj) ) {
 
 				it->id = 0;
 				it->obj = NULL;
@@ -644,9 +644,9 @@ DEFINE_FUNCTION( CollectGarbage ) {
 
 	JL_IGNORE(argc);
 
-	size_t gcBytesDiff = cx->runtime->gcBytes;
+	size_t gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES);
 	JS_GC( cx );
-	gcBytesDiff = cx->runtime->gcBytes - gcBytesDiff;
+	gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES) - gcBytesDiff;
 	return JL_NativeToJsval(cx, gcBytesDiff, JL_RVAL);
 }
 
@@ -661,9 +661,9 @@ DEFINE_FUNCTION( MaybeCollectGarbage ) {
 
 	JL_IGNORE(argc);
 
-	size_t gcBytesDiff = cx->runtime->gcBytes;
+	size_t gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES);
 	JS_MaybeGC( cx );
-	gcBytesDiff = cx->runtime->gcBytes - gcBytesDiff;
+	gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES) - gcBytesDiff;
 	return JL_NativeToJsval(cx, gcBytesDiff, JL_RVAL);
 }
 
@@ -813,11 +813,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Print ) {
 
 	// Print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
-
 	jsval fval;
 	JL_CHK( GetHostObjectValue(cx, JLID(cx, stdout), &fval) );
 	*JL_RVAL = JSVAL_VOID;
-	if (likely( JL_ValueIsFunction(cx, fval) ))
+	if (likely( JL_IsFunction(cx, fval) ))
 		return JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fval, JL_ARGC, JL_ARGV, &fval);
 	return JS_TRUE;
 	JL_BAD;
@@ -853,9 +852,9 @@ DEFINE_FUNCTION( Exec ) {
 //	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &filename) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
-	uint32 oldopts;
+	uint32_t oldopts;
 	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); // JSOPTION_COMPILE_N_GO is properly removed in JLLoadScript if needed.
-	JSObject *script;
+	JSScript *script;
 	script = JL_LoadScript(cx, obj, str, ENC_UNKNOWN, useAndSaveCompiledScripts, useAndSaveCompiledScripts);
 	JS_SetOptions(cx, oldopts);
 	JL_CHK( script );
@@ -1475,7 +1474,7 @@ DEFINE_FUNCTION( jsstdTest ) {
 /*
 	JSXDRState *xdr1 = JS_XDRNewMem(cx, JSXDR_ENCODE);
 	JS_XDRValue(xdr1, &JL_ARG(1));
-	uint32 length;
+	uint32_t length;
 	void *buffer;
 	buffer = JS_XDRMemGetData(xdr1, &length);
 	

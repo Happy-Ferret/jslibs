@@ -249,7 +249,7 @@ DEFINE_FUNCTION( AddForce ) {
 	JL_ASSERT_ARGC_MIN(1);
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( thisBodyID );
-	uint32 length;
+	uint32_t length;
 	ode::dVector3 forceVec;
 	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), forceVec, 3, &length) );
 	JL_ASSERT( length >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
@@ -281,7 +281,7 @@ DEFINE_FUNCTION( AddTorque ) {
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( thisBodyID );
 	ode::dVector3 vector;
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), vector, 3, &length) );
 	JL_ASSERT( length >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	ode::dBodyAddTorque(thisBodyID, vector[0], vector[1], vector[2] );
@@ -323,7 +323,7 @@ DEFINE_FUNCTION( GetRelativeVelocityValue ) {
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 
 	Vector3 pt;
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), pt.raw, 3, &len) );
 	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 
@@ -363,7 +363,7 @@ DEFINE_FUNCTION( GetRelPointVel ) {
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 
 	ode::dReal pt[3];
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), pt, 3, &len) );
 
 	ode::dVector3 result;
@@ -390,7 +390,7 @@ DEFINE_FUNCTION( Vector3ToWorld ) {
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 
 	ode::dReal v[3];
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), v, 3, &len) );
 	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	ode::dVector3 result;
@@ -655,7 +655,7 @@ DEFINE_PROPERTY_SETTER( finiteRotationAxis ) {
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dReal vec[3];
-	uint32 len;
+	uint32_t len;
 	if ( *vp == JSVAL_VOID ) {
 
 		vec[0] = 0;

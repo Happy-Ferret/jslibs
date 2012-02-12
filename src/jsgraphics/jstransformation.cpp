@@ -883,7 +883,7 @@ DEFINE_FUNCTION( TransformVector ) {
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	uint32 length;
+	uint32_t length;
 //	J_JSVAL_TO_ARRAY_LENGTH( JL_ARG(1), length );
 	JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(JL_ARG(1)), &length) );
 
@@ -951,7 +951,7 @@ DEFINE_PROPERTY_SETTER( translation ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float pos[3];
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, *vp, pos, 3, &len) );
 	Matrix44SetTranslation(pv->mat, pos[0], pos[1], pos[2]);
 	pv->isIdentity = false;

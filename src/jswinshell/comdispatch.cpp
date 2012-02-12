@@ -398,8 +398,7 @@ bad:
 DEFINE_EQUALITY_OP() {
 
 	JL_IGNORE(cx);
-
-	*bp = js::Valueify(v)->isObject() && &js::Valueify(v)->toObject() == obj;
+	*bp = JSVAL_IS_OBJECT(*v) && JSVAL_TO_OBJECT(*v) == obj;
 	return JS_TRUE;
 }
 

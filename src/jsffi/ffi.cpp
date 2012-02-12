@@ -22,7 +22,8 @@
 
 // symbol _Py_FatalError referenced in function _ffi_prep_args
 extern "C" void Py_FatalError(char *msg) {
-
+	
+	JL_IGNORE(msg);
 // (TBD) need to manage a pool of context ?
 }
 
@@ -584,7 +585,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
       JL_GetReservedSlot( cx, nativeDataObj, 0, &rootObj );
 
 		// (TBD) check the following line. I transformed it from: JS_SetReservedSlot( cx, dataObj, 0, OBJECT_TO_JSVAL( rootObj ) );
-		JS_SetReservedSlot( cx, dataObj, 0, rootObj ); // a reference of the root object is stored in the slot[0]
+		JS_SetReservedSlot( dataObj, 0, rootObj ); // a reference of the root object is stored in the slot[0]
 
       JL_SetPrivate( cx, dataObj, pptr[index] ); // do not free because JS_NewObject do not call the constructor !!
       *vp = OBJECT_TO_JSVAL( dataObj );
@@ -625,7 +626,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
         if ( JSVAL_IS_INT( *vp ) )
           *pVal = JSVAL_TO_INT( *vp );
         else {
-          int32 val;
+          int32_t val;
           JS_ValueToInt32( cx, *vp, &val ); // TODO: enhance this conversion
           *pVal = (signed int)val;
         }
@@ -647,7 +648,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
             *pVal = (char)s[0];
 			  } else {
             if ( JSVAL_IS_DOUBLE( *vp ) ) {
-              int32 val;
+              int32_t val;
               JS_ValueToInt32( cx, *vp, &val ); // TODO: enhance this conversion
               *pVal = (signed char)val;
             }
@@ -662,7 +663,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
         if ( JSVAL_IS_INT( *vp ) )
           *pVal = (unsigned char)JSVAL_TO_INT( *vp );
         else {
-          uint16 val;
+          uint16_t val;
           JS_ValueToUint16( cx, *vp, &val ); // TODO: enhance this conversion
           *pVal = (unsigned char)val;
         }
@@ -675,7 +676,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
         if ( JSVAL_IS_INT( *vp ) )
           *pVal = (signed short)JSVAL_TO_INT( *vp );
         else {
-          int32 val;
+          int32_t val;
           JS_ValueToInt32( cx, *vp, &val ); // TODO: enhance this conversion
           *pVal = (signed short)val;
         }
@@ -694,7 +695,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
     case FFI_TYPE_SINT32: // PS32[0] = Number( -2147483648 to 2147483647 )
       {
-        int32 *pVal = &((int32*)*pptr)[index];
+        int32_t *pVal = &((int32_t*)*pptr)[index];
         if ( JSVAL_IS_INT( *vp ) )
           *pVal = JSVAL_TO_INT( *vp );
         else
@@ -704,7 +705,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
     case FFI_TYPE_UINT32: // PU32[0] = Number( 0 to 4294967295 )
       {
-        uint32 *pVal = &((uint32*)*pptr)[index];
+        uint32_t *pVal = &((uint32_t*)*pptr)[index];
         if ( JSVAL_IS_INT( *vp ) )
           *pVal = JSVAL_TO_INT( *vp );
         else
@@ -744,10 +745,10 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
           ((void**)*pptr)[index] = *(void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT( *vp ) );
 
 			 // (TBD) check the following line. I transformed it from: JS_SetReservedSlot( cx, obj, 0, OBJECT_TO_JSVAL( *vp ) );
-          JS_SetReservedSlot( cx, obj, 0, *vp ); // it is important to keep a reference to the NativeData *vp to avoid it to be finalised before this one
+          JS_SetReservedSlot( obj, 0, *vp ); // it is important to keep a reference to the NativeData *vp to avoid it to be finalised before this one
         } else {
 
-          uint32 *pVal = &((uint32*)*pptr)[index];
+          uint32_t *pVal = &((uint32_t*)*pptr)[index];
           if ( JSVAL_IS_INT( *vp ) )
             *pVal = JSVAL_TO_INT( *vp );
           else
@@ -818,7 +819,7 @@ JSBool NativeData_Construct(JSContext *cx, uintN argc, jsval *vp) {
 
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 
-  JS_SetReservedSlot( cx, obj, 0, OBJECT_TO_JSVAL(obj) ); // the slot[0] points to this root object. We use this because all the memory allocations are stored in this object ( (*JL_GetPrivate)[1] )
+  JS_SetReservedSlot( obj, 0, OBJECT_TO_JSVAL(obj) ); // the slot[0] points to this root object. We use this because all the memory allocations are stored in this object ( (*JL_GetPrivate)[1] )
 
   void** ppPrivate = (void**)jl_malloc( sizeof(void*) * 2 ); // freed in NativeData_Finalize
   ppPrivate[0] = NULL; // pointer to the start of the native data structure
@@ -848,9 +849,9 @@ JSBool NativeData_getter_Type(JSContext *cx, JSObject *obj, jsid id, jsval *vp) 
     &ffi_type_pointer // 14
   };
 
-  JSObject* accessObj = JS_ConstructObject( cx, &NativeType, NULL, NULL );
+  JSObject* accessObj = JS_ConstructObject( cx, &NativeType, NULL );
 
-  JS_SetReservedSlot(cx, accessObj, 1, OBJECT_TO_JSVAL( obj ));
+  JS_SetReservedSlot(accessObj, 1, OBJECT_TO_JSVAL( obj ));
 
   JL_SetPrivate( cx, accessObj, ffiTypeList[ JSID_TO_INT( id ) ] );
   *vp = OBJECT_TO_JSVAL( accessObj );
@@ -915,7 +916,7 @@ JSBool NativeData_setter_String(JSContext *cx, JSObject *obj, jsid id, JSBool st
 // allows to create a javascript string with binary data ( not based on ending '\0' character )
 JSBool NativeData_Data(JSContext *cx, uintN argc, jsval *vp) {
 
-  int32 len;
+  int32_t len;
   if ( JS_TypeOfValue( cx, JS_ARGV(cx, vp)[0] ) != JSTYPE_NUMBER )
     JS_ValueToInt32( cx, JS_ARGV(cx, vp)[0], &len );
   else
@@ -1171,8 +1172,8 @@ JSBool NativeModule_Proc(JSContext *cx, uintN argc, jsval *vp) {
 
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	JSObject * fo = JS_NewObject( cx, &NativeProc, NULL, NULL );
-	JS_SetReservedSlot( cx, fo, 0, JS_ARGV(cx, vp)[0] );
-	JS_SetReservedSlot( cx, fo, 1, OBJECT_TO_JSVAL(obj) ); // OBJECT_TO_JSVAL(obj) == JS_ARGV(cx, vp)[-1] ???
+	JS_SetReservedSlot( fo, 0, JS_ARGV(cx, vp)[0] );
+	JS_SetReservedSlot( fo, 1, OBJECT_TO_JSVAL(obj) ); // OBJECT_TO_JSVAL(obj) == JS_ARGV(cx, vp)[-1] ???
 	JS_RVAL(cx, vp) = OBJECT_TO_JSVAL( fo );
 	return JS_TRUE;
 }

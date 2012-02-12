@@ -327,7 +327,7 @@ END_STATIC
 
 /*
 
-#include <jsobj.h>
+//#include <jsobj.h>
 
 #include "static.h"
 

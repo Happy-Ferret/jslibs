@@ -209,7 +209,7 @@ DEFINE_FUNCTION( Seek ) {
 	PRSeekWhence whence;
 	if ( JL_ARG_ISDEF(2) ) {
 
-		int32 tmp;
+		int32_t tmp;
 		JS_ValueToInt32( cx, JL_ARG(2), &tmp );
 		whence = (PRSeekWhence)tmp;
 	} else

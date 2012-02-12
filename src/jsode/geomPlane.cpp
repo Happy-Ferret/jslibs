@@ -71,7 +71,7 @@ DEFINE_PROPERTY_SETTER( params ) {
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	JL_ASSERT_IS_ARRAY( *vp, "" );
 	ode::dVector4 params;
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, *vp, params, 4, &length) );
 	JL_ASSERT( length >= 4, E_VALUE, E_TYPE, E_TY_NVECTOR(4) );
 	ode::dGeomPlaneSetParams(geom, params[0], params[1], params[2], params[3]);

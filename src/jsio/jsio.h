@@ -40,8 +40,9 @@ JSBool NativeInterfaceStreamRead(JSContext *cx, JSObject *obj, char *buf, size_t
 ALWAYS_INLINE JSBool
 GetTimeoutInterval(JSContext *cx, JSObject *obj, PRIntervalTime *timeout, PRIntervalTime defaultTimeout = PR_INTERVAL_NO_TIMEOUT) {
 
+	JL_IGNORE(cx);
 	jsval timeoutValue;
-	JL_CHK( JS_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, &timeoutValue) );
+	timeoutValue = JS_GetReservedSlot(obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT);
 	ASSERT( JSVAL_IS_VOID(timeoutValue) || JSVAL_IS_INT(timeoutValue) );
 	*timeout = JSVAL_IS_VOID(timeoutValue) ? defaultTimeout : PR_MillisecondsToInterval(JSVAL_TO_INT(timeoutValue));
 	return JS_TRUE;

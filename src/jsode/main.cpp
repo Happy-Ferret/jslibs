@@ -104,11 +104,11 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	ASSERT( !finite((jsdouble)dInfinity) );
 	ASSERT( !finite((jsdouble)-dInfinity) );
 
-	ASSERT( JSVAL_TO_DOUBLE(js::Jsvalify(cx->runtime->positiveInfinityValue)) == dInfinity );
-	ASSERT( JSVAL_TO_DOUBLE(js::Jsvalify(cx->runtime->negativeInfinityValue)) == -dInfinity );
+	ASSERT( JSVAL_TO_DOUBLE(JS_GetPositiveInfinityValue(cx)) == dInfinity );
+	ASSERT( JSVAL_TO_DOUBLE(JS_GetNegativeInfinityValue(cx)) == -dInfinity );
 
-	ASSERT( js::Jsvalify(cx->runtime->positiveInfinityValue) == DOUBLE_TO_JSVAL(dInfinity) );
-	ASSERT( js::Jsvalify(cx->runtime->negativeInfinityValue) == DOUBLE_TO_JSVAL(-dInfinity) );
+	ASSERT( JS_GetPositiveInfinityValue(cx) == DOUBLE_TO_JSVAL(dInfinity) );
+	ASSERT( JS_GetNegativeInfinityValue(cx) == DOUBLE_TO_JSVAL(-dInfinity) );
 
 
 //	INIT_CLASS( Vector );
@@ -144,6 +144,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 JSBool
 ModuleRelease(JSContext *cx) {
 
+	JL_IGNORE(cx);
 	return JS_TRUE;
 }
 

@@ -926,7 +926,7 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 	JL_CHK( JL_JsvalToNative(cx, *vp, &timeout) );
 	JL_ASSERT( timeout >= 0, E_VALUE, E_MIN, E_NUM(0) );
 	*vp = INT_TO_JSVAL(timeout);
-	JL_CHK( JS_SetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, *vp) );
+	JS_SetReservedSlot(obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, *vp);
 	JL_CHK( JL_StoreProperty(cx, obj, id, vp, false) );
 	return JS_TRUE;
 	JL_BAD;

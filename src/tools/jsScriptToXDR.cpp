@@ -30,8 +30,6 @@
 #include <jsxdrapi.h>
 #include <jsprf.h>
 
-#include <jsscript.h>
-
 #ifdef _MSC_VER
 #pragma warning( pop )
 #endif // _MSC_VER
@@ -152,8 +150,8 @@ int main(int argc, char* argv[]) {
 	};
 
 	JSRuntime *rt = JS_NewRuntime(0);
-	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32)-1);
-	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32)-1);
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
+	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
 	JS_SetOptions(cx, JS_GetOptions(cx));
 	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
@@ -184,7 +182,13 @@ int main(int argc, char* argv[]) {
 
 	printf("Script name: %s\n", argc >= 4 ? argv[4] : "(NULL)" );
 	printf("Compiling file %s\n", argv[1]);
-	JSObject *script = JS_CompileFileHandle(cx, globalObject, argc >= 4 ? argv[4] : NULL, srcFile);
+
+	//JSScript *script = JS_CompileFileHandle(cx, globalObject, argc >= 4 ? argv[4] : NULL, srcFile);
+	char *srcCode = (char*)malloc(fileSize);
+	fread(srcCode, 1, fileSize, srcFile);
+	JSScript *script = JS_CompileScript(cx, globalObject, srcCode, fileSize, srcCode, 1);
+	free(srcCode);
+
 	fclose(srcFile);
 	if ( !script ) {
 
@@ -203,8 +207,8 @@ int main(int argc, char* argv[]) {
 	if ( fileSize > 0 || !allowEmptyDest ) {
 
 		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
-		JS_XDRScriptObject(xdr, &script);
-		uint32 length;
+		JS_XDRScript(xdr, &script);
+		uint32_t length;
 		void *buf = JS_XDRMemGetData(xdr, &length);
 		write(file, buf, length);
 		printf("Writing %d bytes.\n", length);

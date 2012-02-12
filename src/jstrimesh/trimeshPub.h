@@ -31,7 +31,7 @@ struct Surface {
 };
 
 
-ALWAYS_INLINE JSClass* JL_TrimeshJSClass( const JSContext *cx ) {
+ALWAYS_INLINE JSClass* JL_TrimeshJSClass( JSContext *cx ) {
 
 	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	if (unlikely( clasp == NULL ))

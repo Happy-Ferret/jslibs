@@ -187,7 +187,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
 #endif // JS_HAS_JSLIBS_RegisterCustomAllocators
 
-	cx = CreateHost((uint32)-1, (uint32)-1, 0);
+	cx = CreateHost((uint32_t)-1, (uint32_t)-1, 0);
 	JL_CHK( cx != NULL );
 
 	MemoryManagerEnableGCEvent(cx);

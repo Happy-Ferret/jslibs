@@ -1,5 +1,8 @@
-LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask sandbox');
+//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask sandbox');
 
+LoadModule('jsstd');
+Print(1);
+throw 0;
 
 LoadModule('jsstd');
 //LoadModule('jsio');

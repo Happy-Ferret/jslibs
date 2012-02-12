@@ -836,17 +836,17 @@ DEFINE_PROPERTY_SETTER( Option ) {
 			sod.value.keep_alive = ( boolValue == JS_TRUE );
 		} break;
 		case PR_SockOpt_RecvBufferSize: {
-			uint32 size;
+			uint32_t size;
 			JS_ValueToECMAUint32( cx, *vp, &size );
 			sod.value.recv_buffer_size = size;
 		} break;
 		case PR_SockOpt_SendBufferSize: {
-			uint32 size;
+			uint32_t size;
 			JS_ValueToECMAUint32( cx, *vp, &size );
 			sod.value.send_buffer_size = size;
 		} break;
 		case PR_SockOpt_MaxSegment: {
-			uint32 size;
+			uint32_t size;
 			JS_ValueToECMAUint32( cx, *vp, &size );
 			sod.value.max_segment = size;
 		} break;

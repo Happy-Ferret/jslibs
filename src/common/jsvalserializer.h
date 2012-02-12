@@ -224,9 +224,9 @@ namespace jl {
 
 			JSObject *obj = srs;
 			jsval value;
-			uint32 reservedSlotsCount = JSCLASS_RESERVED_SLOTS(obj->getClass());
+			uint32_t reservedSlotsCount = JSCLASS_RESERVED_SLOTS(JL_GetClass(obj));
 			JL_CHK( Write(cx, reservedSlotsCount) );
-			for ( uint32 i = 0; i < reservedSlotsCount; ++i ) {
+			for ( uint32_t i = 0; i < reservedSlotsCount; ++i ) {
 
 				JL_CHK( JL_GetReservedSlot(cx, obj, i, &value) );
 				JL_CHK( Write(cx, value) );
@@ -264,7 +264,7 @@ namespace jl {
 					JL_CHK( Write(cx, JLSTDouble) );
 					JL_CHK( Write(cx, JSVAL_TO_DOUBLE(val)) );
 				} else
-					if ( js::Valueify(val).isMagic(JS_ARRAY_HOLE) ) {
+					if ( val.isMagic(JS_ARRAY_HOLE) ) {
 
 					JL_CHK( Write(cx, JLSTHole) );
 				} else
@@ -302,7 +302,7 @@ namespace jl {
 
 						JL_CHK( JS_HasElement(cx, obj, i, &found) );
 						if ( !found )
-							js::Valueify(tmp).setMagic(JS_ARRAY_HOLE);
+							tmp.setMagic(JS_ARRAY_HOLE);
 					}
 					JL_CHK( Write(cx, tmp) );
 				}
@@ -314,7 +314,7 @@ namespace jl {
 /* JS_XDRValue fails because function chasp has no XDR encoding hook
 				JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
 				JL_CHK( JS_XDRValue(xdr, const_cast<jsval*>(&val)) ); // JSXDR_ENCODE, de-const can be done
-				uint32 length;
+				uint32_t length;
 				void *buf = JS_XDRMemGetData(xdr, &length);
 				ASSERT( buf );
 				JL_CHK( Write(cx, JLSTFunction) );
@@ -334,7 +334,7 @@ namespace jl {
 			if ( !JSVAL_IS_VOID( serializeFctVal ) ) {
 
 				jsval argv[] = { JSVAL_NULL, _serializerObj };
-				JL_ASSERT( JL_ValueIsFunction(cx, serializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_serialize"), E_DEFINED );
+				JL_ASSERT( JL_IsFunction(cx, serializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_serialize"), E_DEFINED );
 
 //				JSObject *objectProto;
 //				JL_CHK( JL_GetClassPrototype(cx, NULL, JSProto_Object, &objectProto) );
@@ -377,7 +377,7 @@ namespace jl {
 */
 				jsval unserializeFctVal;
 				JL_CHK( JS_GetMethodById(cx, obj, JLID(cx, _unserialize), NULL, &unserializeFctVal) );
-				JL_ASSERT( JL_ValueIsFunction(cx, unserializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_unserialize"), E_DEFINED );
+				JL_ASSERT( JL_IsFunction(cx, unserializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_unserialize"), E_DEFINED );
 
 				JL_CHK( Write(cx, unserializeFctVal) );
 				JL_CHK( JS_CallFunctionValue(cx, obj, serializeFctVal, COUNTOF(argv)-1, argv+1, argv) ); // rval not used
@@ -415,7 +415,7 @@ namespace jl {
 			jsval tmp;
 			JL_CHK( JL_JsvalToPrimitive(cx, OBJECT_TO_JSVAL(obj), &tmp) );
 			JL_CHK( Write(cx, JLSTObjectValue) );
-			JL_CHK( Write(cx, obj->getClass()->name) );
+			JL_CHK( Write(cx, JL_GetClass(obj)->name) );
 			JL_CHK( Write(cx, tmp) );
 			return JS_TRUE;
 			}
@@ -527,9 +527,9 @@ namespace jl {
 
 			JSObject *obj = srs;
 			jsval value;
-			uint32 reservedSlotsCount;
+			uint32_t reservedSlotsCount;
 			JL_CHK( Read(cx, reservedSlotsCount) );
-			for ( uint32 i = 0; i < reservedSlotsCount; ++i ) {
+			for ( uint32_t i = 0; i < reservedSlotsCount; ++i ) {
 
 				JL_CHK( Read(cx, value) );
 				JL_CHK( JL_SetReservedSlot(cx, obj, i, value) );
@@ -580,7 +580,7 @@ namespace jl {
 				}
 				case JLSTHole: {
 
-					js::Valueify(val).setMagic(JS_ARRAY_HOLE);
+					val.setMagic(JS_ARRAY_HOLE);
 					break;
 				}
 				case JLSTNull: {
@@ -609,7 +609,7 @@ namespace jl {
 					for ( jsuint i = 0; i < length; ++i ) {
 
 						JL_CHK( Read(cx, tmp) );
-						if ( !js::Valueify(tmp).isMagic(JS_ARRAY_HOLE) ) // if ( !JL_JSVAL_IS_ARRAY_HOLE(*avr.jsval_addr()) )
+						if ( !tmp.isMagic(JS_ARRAY_HOLE) ) // if ( !JL_JSVAL_IS_ARRAY_HOLE(*avr.jsval_addr()) )
 							JL_CHK( JL_SetElement(cx, arr, i, &tmp) );
 					}
 					break;
@@ -686,7 +686,7 @@ namespace jl {
  					jsval argv[] = { JSVAL_NULL, _unserializerObj };
 					jsval fun;
 					JL_CHK( Read(cx, fun) );
-					JL_ASSERT( JL_ValueIsFunction(cx, fun), E_STR("unserializer"), E_STATE ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
+					JL_ASSERT( JL_IsFunction(cx, fun), E_STR("unserializer"), E_STATE ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
 					JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fun, COUNTOF(argv)-1, argv+1, argv) );
 					val = *argv;
 					break;

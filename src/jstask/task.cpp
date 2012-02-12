@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 #include <buffer.h>
-#include <jsvalserializer.h>
+//#include <jsvalserializer.h>
 
 #include "../host/host.h"
 #include "../jslang/handlePub.h"
@@ -280,7 +280,7 @@ JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 	Buffer errBuffer;
 	BufferInitialize(&errBuffer, bufferTypeRealloc, bufferGrowTypeDouble, NULL, NULL, NULL, NULL);
 
-	JSContext *cx = CreateHost((uint32)-1, (uint32)-1, 0);
+	JSContext *cx = CreateHost((uint32_t)-1, (uint32_t)-1, 0);
 	JL_CHK( cx != NULL );
 
 	HostPrivate *hpv;

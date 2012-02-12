@@ -27,12 +27,12 @@
 typedef int (*HostInput)( void *privateData, char *buffer, size_t bufferLength );
 typedef int (*HostOutput)( void *privateData, const char *buffer, size_t length );
 
-JSContext* CreateHost( uint32 maxMem, uint32 maxAlloc, uint32 maybeGCInterval );
+JSContext* CreateHost( uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterval );
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData );
 JSBool DestroyHost( JSContext *cx, bool skipCleanup );
 JSBool ExecuteScriptText( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval );
-JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32 xdrScriptLength );
+JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32_t xdrScriptLength );
 
 bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free );
 JSBool MemoryManagerEnableGCEvent( JSContext *cx );

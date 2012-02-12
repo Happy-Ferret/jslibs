@@ -287,8 +287,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	JSContext *cx = NULL;
 
-	uint32 maxMem = (uint32)-1; // by default, there are no limit
-	uint32 maxAlloc = (uint32)-1; // by default, there are no limit
+	uint32_t maxMem = (uint32_t)-1; // by default, there are no limit
+	uint32_t maxAlloc = (uint32_t)-1; // by default, there are no limit
 	bool warningsToErrors = false;
 	bool unsafeMode = false;
 	bool compileOnly = false;
@@ -414,11 +414,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 //	setvbuf(stderr, pBuffer, mode, buffer_size);
 
-	cx = CreateHost(maxMem, maxAlloc, (uint32)(maybeGCInterval * 1000));
+	cx = CreateHost(maxMem, maxAlloc, (uint32_t)(maybeGCInterval * 1000));
 
 #ifdef DEBUG	
 	if ( debug )
-		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_JIT | JSOPTION_METHODJIT | JSOPTION_PROFILING));
+		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_METHODJIT));
 #endif // DEBUG	
 
 

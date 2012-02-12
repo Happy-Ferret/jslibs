@@ -20,7 +20,7 @@
 
 #include <jstypedarray.h>
 
-#include <jsvalserializer.h>
+//#include <jsvalserializer.h>
 #include <cstring>
 
 #include <stack.h>

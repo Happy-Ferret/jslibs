@@ -157,7 +157,7 @@ DEFINE_FUNCTION( PointDepth ) {
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	ode::dReal depth, point[3];
-	uint32 len;
+	uint32_t len;
 	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), point, 3, &len) );
 	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 
@@ -434,7 +434,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	ode::dVector3 vector;
-	uint32 length;
+	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dGeomSetPosition( geom, vector[0], vector[1], vector[2] );
