@@ -20,11 +20,11 @@ TARGET_FILES=$(INT_DIR)dist/bin/*.{so,dll}
 
 $(INT_DIR)Makefile: ./src/js/src/configure
 	diff -q ./jsversion.h ./src/js/src/jsversion.h || cp ./jsversion.h ./src/js/src/
-	-patch -N ./src/js/src/jsutil.h jsutil.h.patch
-	-patch -N ./src/js/src/jsutil.cpp jsutil.cpp.patch
+	# -patch -N ./src/js/src/jsutil.h jsutil.h.patch
+	# -patch -N ./src/js/src/jsutil.cpp jsutil.cpp.patch
 	mkdir -p $(INT_DIR)
-	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" ../src/js/src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=502 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests
-	# --enable-ctypes (issue with MASM ml.exe)
+	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" ../src/js/src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=601 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests
+	 # --enable-ctypes (require to be linked with NSPR)
 
 all:: $(INT_DIR)Makefile
 	$(MAKE) -C $(INT_DIR) $@
