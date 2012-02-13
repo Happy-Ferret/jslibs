@@ -218,7 +218,7 @@ protected:
 		return JS_InstanceOf(_cx, JSVAL_TO_OBJECT(val), jsClass, NULL) == JS_TRUE;
 	}
 
-	inline bool JsvalIsFunction( jsval val ) {
+	inline bool JsvalIsCallable( jsval val ) {
 
 		return JS_TypeOfValue(_cx, val) == JSTYPE_FUNCTION;
 	}

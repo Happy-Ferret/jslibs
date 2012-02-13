@@ -218,7 +218,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 			return JS_TRUE;
 		}
 
-		if ( JS_ObjectIsFunction(cx, obj) ) {
+		if ( JS_ObjectIsCallable(cx, obj) ) {
 
 			JSFunctionDispatch *disp = new JSFunctionDispatch(JL_GetRuntime(cx), *value); // does the AddRef
 			// beware: *value must be GC protected while disp is in use.

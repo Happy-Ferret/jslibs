@@ -72,7 +72,7 @@ DEFINE_FUNCTION( Expand ) {
 	
 	if ( JL_ARG_ISDEF(2) ) {
 	
-		if ( JL_IsFunction(cx, JL_ARG(2)) )
+		if ( JL_ValueIsCallable(cx, JL_ARG(2)) )
 			mapFct = &JL_ARG(2);
 		else
 		if ( !JSVAL_IS_PRIMITIVE(JL_ARG(2)) )
@@ -816,7 +816,7 @@ DEFINE_FUNCTION( Print ) {
 	jsval fval;
 	JL_CHK( GetHostObjectValue(cx, JLID(cx, stdout), &fval) );
 	*JL_RVAL = JSVAL_VOID;
-	if (likely( JL_IsFunction(cx, fval) ))
+	if (likely( JL_ValueIsCallable(cx, fval) ))
 		return JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fval, JL_ARGC, JL_ARGV, &fval);
 	return JS_TRUE;
 	JL_BAD;
@@ -1050,7 +1050,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_ASSERT_ARG_IS_FUNCTION(2);
+		JL_ASSERT_ARG_IS_CALLABLE(2);
 		pv.queryFunctionValue = JL_ARG(2);
 	} else {
 
@@ -1135,7 +1135,7 @@ DEFINE_FUNCTION( SandboxEval ) {
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_ASSERT_ARG_IS_FUNCTION(2);
+		JL_ASSERT_ARG_IS_CALLABLE(2);
 		pv.queryFunctionValue = JL_ARG(2);
 		JL_CHK( JS_DefineFunction(scx, globalObject, "Query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
 	} else {

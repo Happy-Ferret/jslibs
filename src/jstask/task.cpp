@@ -375,7 +375,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_ASSERT_ARGC_MIN(1);
-	JL_ASSERT_ARG_IS_FUNCTION(1);
+	JL_ASSERT_ARG_IS_CALLABLE(1);
 
 	pv = new TaskPrivate;
 	JL_CHK( pv );
@@ -696,7 +696,7 @@ JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS
 	argv[1] = OBJECT_TO_JSVAL(upe->obj); // already rooted
 
 	JL_CHK( JS_GetProperty(cx, upe->obj, "onResponse", &fct) );
-	if ( JL_ValueIsFunction(cx, fct) )
+	if ( JL_ValueIsCallable(cx, fct) )
 		JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, COUNTOF(argv)-1, argv+1, argv) );
 
 	return JS_TRUE;

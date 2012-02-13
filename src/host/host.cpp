@@ -237,7 +237,7 @@ void StderrWrite(JSContext *cx, const char *message, size_t length) {
 	ASSERT( globalObject );
 
 	jsval fct;
-	if (unlikely( GetHostObjectValue(cx, JLID(cx, stderr), &fct) != JS_TRUE || !JL_IsFunction(cx, fct) ))
+	if (unlikely( GetHostObjectValue(cx, JLID(cx, stderr), &fct) != JS_TRUE || !JL_ValueIsCallable(cx, fct) ))
 		return;
 		
 	JSExceptionState *exs = JS_SaveExceptionState(cx);

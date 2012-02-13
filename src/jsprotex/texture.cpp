@@ -295,7 +295,7 @@ JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) 
 	
 	size_t i;
 
-	if ( JL_IsFunction(cx, value) ) {
+	if ( JL_ValueIsCallable(cx, value) ) {
 
 		double fval;
 		jsval argv[3]; // argv[0] is the rval
@@ -2480,7 +2480,7 @@ DEFINE_FUNCTION( ForEachPixel ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
-	JL_ASSERT_ARG_IS_FUNCTION(1);
+	JL_ASSERT_ARG_IS_CALLABLE(1);
 
 	jsval functionValue;
 	functionValue = JL_ARG(1);

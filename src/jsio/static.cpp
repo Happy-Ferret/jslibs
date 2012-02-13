@@ -58,31 +58,31 @@ JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 
 	JSBool has;
 	//JL_CHK( JS_GetProperty( cx, fdObj, "writable", &tmp ) );
-	//if ( JL_ValueIsFunction(cx, tmp) )
+	//if ( JL_ValueIsCallable(cx, tmp) )
 	JL_CHK( JS_HasProperty(cx, fdObj, "writable", &has) );
 	if ( has )
 		pollDesc->in_flags |= PR_POLL_WRITE;
 
 	//JL_CHK( JS_GetProperty( cx, fdObj, "readable", &tmp ) );
-	//if ( JL_ValueIsFunction(cx, tmp) )
+	//if ( JL_ValueIsCallable(cx, tmp) )
 	JL_CHK( JS_HasProperty(cx, fdObj, "readable", &has) );
 	if ( has )
 		pollDesc->in_flags |= PR_POLL_READ;
 
 	//JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &tmp ) );
-	//if ( JL_ValueIsFunction(cx, tmp) )
+	//if ( JL_ValueIsCallable(cx, tmp) )
 	JL_CHK( JS_HasProperty(cx, fdObj, "hangup", &has) );
 	if ( has )
 		pollDesc->in_flags |= PR_POLL_HUP;
 
 	//JL_CHK( JS_GetProperty( cx, fdObj, "exception", &tmp ) );
-	//if ( JL_ValueIsFunction(cx, tmp) )
+	//if ( JL_ValueIsCallable(cx, tmp) )
 	JL_CHK( JS_HasProperty(cx, fdObj, "exception", &has) );
 	if ( has )
 		pollDesc->in_flags |= PR_POLL_EXCEPT;
 
 	//JL_CHK( JS_GetProperty( cx, fdObj, "error", &tmp ) );
-	//if ( JL_ValueIsFunction(cx, tmp) )
+	//if ( JL_ValueIsCallable(cx, tmp) )
 	JL_CHK( JS_HasProperty(cx, fdObj, "error", &has) );
 	if ( has )
 		pollDesc->in_flags |= PR_POLL_ERR;
@@ -113,35 +113,35 @@ JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int i
 	if ( outFlag & PR_POLL_ERR ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "error", &descVal ) );
-		if ( JL_IsFunction(cx, descVal) )
+		if ( JL_ValueIsCallable(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_EXCEPT ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "exception", &descVal ) );
-		if ( JL_IsFunction(cx, descVal) )
+		if ( JL_ValueIsCallable(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_HUP ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &descVal ) );
-		if ( JL_IsFunction(cx, descVal) )
+		if ( JL_ValueIsCallable(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_READ ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "readable", &descVal ) );
-		if ( JL_IsFunction(cx, descVal) )
+		if ( JL_ValueIsCallable(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
 	if ( outFlag & PR_POLL_WRITE ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "writable", &descVal ) );
-		if ( JL_IsFunction(cx, descVal) )
+		if ( JL_ValueIsCallable(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 

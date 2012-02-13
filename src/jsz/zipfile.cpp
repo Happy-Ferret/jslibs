@@ -222,7 +222,7 @@ DEFINE_FUNCTION( Open ) {
 	JLStr filename;
 
 	JL_DEFINE_FUNCTION_OBJ
-	JL_ASSERT_THIS_INSTANCE()
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -263,7 +263,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( Close ) {
 
 	JL_DEFINE_FUNCTION_OBJ
-	JL_ASSERT_THIS_INSTANCE()
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -380,7 +380,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GoFirst ) {
 
 	JL_DEFINE_FUNCTION_OBJ
-	JL_ASSERT_THIS_INSTANCE()
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -411,7 +411,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GoNext ) {
 
 	JL_DEFINE_FUNCTION_OBJ
-	JL_ASSERT_THIS_INSTANCE()
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -454,7 +454,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( GoTo ) {
 
 	JL_DEFINE_FUNCTION_OBJ
-	JL_ASSERT_THIS_INSTANCE()
+	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -570,7 +570,7 @@ DEFINE_FUNCTION( Write ) {
 	JLStr data;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE()
+	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
@@ -747,7 +747,7 @@ DEFINE_PROPERTY_GETTER( filename ) {
 
 	JL_IGNORE(id);
 
-	JL_ASSERT_THIS_INSTANCE()
+	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );

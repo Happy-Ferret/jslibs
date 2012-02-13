@@ -573,7 +573,7 @@ DEFINE_PROPERTY_SETTER( colorCallback ) {
 		}
 	} else {
 
-		JL_ASSERT_IS_FUNCTION(*vp, "");
+		JL_ASSERT_IS_CALLABLE(*vp, "");
 		OGLFT::ColorTess *colorTess = new ColorTess(JL_GetRuntime(cx), obj, *vp);
 		poly->setColorTess(colorTess);
 	}

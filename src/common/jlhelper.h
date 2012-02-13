@@ -429,17 +429,15 @@ JL_IsGeneratorObject( JSContext * RESTRICT cx, jsval &val ) {
 */
 
 ALWAYS_INLINE bool
-JL_IsFunction( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
+JL_ObjectIsCallable( JSContext *cx, JSObject *obj ) {
 
-	JL_IGNORE(cx);
-	//return obj->isFunction();
-	return JS_ObjectIsFunction(cx, obj) == JS_TRUE;
+	return JS_ObjectIsCallable(cx, obj) == JS_TRUE;
 }
 
 ALWAYS_INLINE bool
-JL_IsFunction( JSContext * RESTRICT cx, jsval &val ) {
+JL_ValueIsCallable( JSContext *cx, jsval &val ) {
 
-	return !JSVAL_IS_PRIMITIVE(val) && JL_IsFunction(cx, JSVAL_TO_OBJECT(val));
+	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsCallable(cx, JSVAL_TO_OBJECT(val));
 }
 
 /*
@@ -493,40 +491,11 @@ JL_IsVector( JSContext *cx, const jsval &val ) {
 	return !JSVAL_IS_PRIMITIVE(val) && ( JL_ObjectIsArray(cx, JSVAL_TO_OBJECT(val)) || js_IsTypedArray(JSVAL_TO_OBJECT(val)) ); // Object::isArray() is not public
 }
 
-/*
-ALWAYS_INLINE bool
-JL_IsScript( const JSContext *cx, const JSObject *obj ) {
-
-	JL_IGNORE(cx);
-	//return JL_GetClass(obj) == js::Jsvalify(&js_ScriptClass); // missing API
-	return true;
-}
-*/
-
-ALWAYS_INLINE bool
-JL_ObjectIsFunction( JSContext *cx, JSObject *obj ) {
-
-	JL_IGNORE(cx);
-	//return obj->isFunction();
-	return JS_ObjectIsFunction(cx, obj) == JS_TRUE;
-}
-
-/* see JL_IsFunction() !
-
-ALWAYS_INLINE bool
-JL_ValueIsFunction( const JSContext *cx, const jsval &val ) {
-
-	JL_IGNORE(cx);
-	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsFunction(cx, JSVAL_TO_OBJECT(val));
-}
-*/
-
 ALWAYS_INLINE bool
 JL_IsXML( JSContext *cx, JSObject *obj ) {
 
 	return JS_TypeOfValue(cx, OBJECT_TO_JSVAL(obj)) == JSTYPE_XML;
 }
-
 
 ALWAYS_INLINE bool
 JL_IsStringObject( JSContext *cx, JSObject *obj ) {
@@ -536,13 +505,11 @@ JL_IsStringObject( JSContext *cx, JSObject *obj ) {
 	return !strcmp(JL_GetClass(obj)->name, "String");
 }
 
-
 ALWAYS_INLINE bool
 JL_IsDataObject( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
 	return BufferGetInterface(cx, obj) != NULL || JL_ObjectIsArray(cx, obj) || (js_IsTypedArray(obj) /*&& js::TypedArray::fromJSObject(obj)->valid()*/) /*|| js_IsArrayBuffer(obj)*/ || JL_IsStringObject(cx, obj);
 }
-
 
 ALWAYS_INLINE bool
 JL_IsData( JSContext *cx, const jsval &val ) {
@@ -1098,8 +1065,8 @@ enum E_TXTID {
 #define JL_ASSERT_IS_NUMBER(val, context) \
 	JL_ASSERT( NOIL(JL_IsNumber)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_NUMBER )
 
-#define JL_ASSERT_IS_FUNCTION(val, context) \
-	JL_ASSERT( NOIL(JL_IsFunction)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_FUNC )
+#define JL_ASSERT_IS_CALLABLE(val, context) \
+	JL_ASSERT( NOIL(JL_ValueIsCallable)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_FUNC )
 
 #define JL_ASSERT_IS_ARRAY(val, context) \
 	JL_ASSERT( NOIL(JL_ValueIsArray)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_ARRAY )
@@ -1155,10 +1122,10 @@ enum E_TXTID {
 	JL_ASSERT( NOIL(JL_ValueIsArray)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("array") )
 
 #define JL_ASSERT_ARG_IS_VECTOR(argNum) \
-	JL_ASSERT( NOIL(JL_IsVector)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("vector") )
+	JL_ASSERT( NOIL(JL_ValueIsVector)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("vector") )
 
-#define JL_ASSERT_ARG_IS_FUNCTION(argNum) \
-	JL_ASSERT( NOIL(JL_IsFunction)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("function") )
+#define JL_ASSERT_ARG_IS_CALLABLE(argNum) \
+	JL_ASSERT( NOIL(JL_ValueIsCallable)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("function") )
 
 // fallback
 #define JL_ASSERT_ARG_TYPE(condition, argNum, typeStr) \
@@ -1176,11 +1143,10 @@ enum E_TXTID {
 
 
 #define JL_ASSERT_INSTANCE( jsObject, jsClass ) \
-	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, jsObject)) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) ); \
+	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, jsObject)) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) )
 
 #define JL_ASSERT_THIS_INSTANCE() \
-	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, JL_OBJ)) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) ); \
-
+	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, JL_OBJ)) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) )
 
 #define JL_ASSERT_INHERITANCE( jsObject, jsClass ) \
 	JL_ASSERT( NOIL(JL_InheritFrom)(cx, JL_GetPrototype(cx, jsObject), (jsClass)), E_OBJ, E_INHERIT, E_NAME((jsClass)->name) )
@@ -3084,7 +3050,7 @@ JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, jsval &func
 	va_end(ap);
 	argv[0] = JSVAL_NULL; // the rval
 	if ( JL_IS_SAFE )
-		JL_CHK( JL_IsFunction(cx, functionValue) );
+		JL_CHK( JL_ValueIsCallable(cx, functionValue) );
 	JSBool st;
 	st = JS_CallFunctionValue(cx, obj, functionValue, argc, argv+1, argv);
 	JL_CHK( st );
@@ -3664,7 +3630,7 @@ StreamReadInterface( JSContext *cx, JSObject *obj ) {
 	if (likely( fct != NULL ))
 		return fct;
 	JSBool found;
-	if ( JS_HasPropertyById(cx, obj, JLID(cx, Read), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, Read), &res) != JS_TRUE || !JL_IsFunction(cx, res)
+	if ( JS_HasPropertyById(cx, obj, JLID(cx, Read), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, Read), &res) != JS_TRUE || !JL_IsCallable(cx, res)
 		return JSStreamRead;
 	return NULL;
 }
@@ -3710,7 +3676,7 @@ BufferGetInterface( JSContext *cx, JSObject *obj ) {
 	if (likely( fct != NULL ))
 		return fct;
 	JSBool found;
-	if ( JS_HasPropertyById(cx, obj, JLID(cx, Get), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, Get), &res) != JS_TRUE || !JL_IsFunction(cx, res)
+	if ( JS_HasPropertyById(cx, obj, JLID(cx, Get), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, Get), &res) != JS_TRUE || !JL_IsCallable(cx, res)
 		return JSBufferGet;
 	return NULL;
 }
@@ -3758,7 +3724,7 @@ Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
 	if (likely( fct != NULL ))
 		return fct;
 	JSBool found;
-	if ( JS_HasPropertyById(cx, obj, JLID(cx, GetMatrix44), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, GetMatrix44), &res) != JS_TRUE || !JL_IsFunction(cx, res)
+	if ( JS_HasPropertyById(cx, obj, JLID(cx, GetMatrix44), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, GetMatrix44), &res) != JS_TRUE || !JL_IsCallable(cx, res)
 		return JSMatrix44Get;
 	return NULL;
 }
@@ -4062,7 +4028,7 @@ JSBool JLSerialize( JSContext *cx, jsval *val ) {
 
 		jsval fctVal;
 		JL_CHK( obj->getProperty(cx, JLID(cx, _Serialize), &fctVal) );
-		if ( JL_IsFunction(cx, fctVal) ) {
+		if ( JL_IsCallable(cx, fctVal) ) {
 
 		}
 	}

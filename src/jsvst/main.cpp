@@ -40,7 +40,7 @@ private:
 
 			jsval fval, rval, ex;
 			fval = GetProperty(vstPlugin, "catch");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				JS_GetPendingException(_cx, &ex);
 				JS_CallFunctionValue(_cx, vstPlugin, fval, 1, &ex, &rval);
@@ -124,7 +124,7 @@ private:
 			jsval fval = GetProperty(vstPlugin, "dispatcher");
 
 			// for DEBUG only ?
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				char *tmp = (char*)ptr;
 /*
@@ -147,7 +147,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "open");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return (void) FunctionCall0(vstPlugin, fval);
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::open();
@@ -157,7 +157,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "close");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return (void) FunctionCall0(vstPlugin, fval);
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::close();
@@ -167,7 +167,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "suspend");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return (void) FunctionCall0(vstPlugin, fval);
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::suspend();
@@ -177,7 +177,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "resume");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return (void) FunctionCall0(vstPlugin, fval);
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::resume();
@@ -187,7 +187,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "startProcess");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				FunctionCall0(vstPlugin, fval);
 				return 1; // (TBD) ???
@@ -200,7 +200,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "stopProcess");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				FunctionCall0(vstPlugin, fval);
 				return 1; // (TBD) ???
@@ -216,7 +216,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getPlugCategory");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				_rval = FunctionCall0(vstPlugin, fval);
 				if ( JSVAL_IS_INT(_rval) ) {
@@ -237,7 +237,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getProductString");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				CopyJsvalToString(FunctionCall0(vstPlugin, fval), text, kVstMaxProductStrLen);
 				return true;
@@ -252,7 +252,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getVendorString");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				CopyJsvalToString(FunctionCall0(vstPlugin, fval), text, kVstMaxVendorStrLen);
 				return true;
@@ -267,7 +267,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getVendorVersion");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return JsvalToInt(FunctionCall0(vstPlugin, fval));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::getVendorVersion();
@@ -280,7 +280,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getEffectName");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return CopyJsvalToString(FunctionCall0(vstPlugin, fval), name, kVstMaxEffectNameLen), true;
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::getEffectName(name);
@@ -308,10 +308,10 @@ private:
 
 		try {
 			jsval jsProcessMidiEvent = GetProperty(vstPlugin, "procesMidiEvent");
-			if ( !JsvalIsFunction(jsProcessMidiEvent) ) // optimization
+			if ( !JsvalIsCallable(jsProcessMidiEvent) ) // optimization
 				jsProcessMidiEvent = JSVAL_VOID;
 			jsval jsSysExEvent = GetProperty(vstPlugin, "procesSysExEvent");
-			if ( !JsvalIsFunction(jsSysExEvent) ) // optimization
+			if ( !JsvalIsCallable(jsSysExEvent) ) // optimization
 				jsSysExEvent = JSVAL_VOID;
 
 			for ( int i = 0; i < events->numEvents; i++ ) {
@@ -335,7 +335,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "canParameterBeAutomated");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return JsvalToBool(FunctionCall1(vstPlugin, fval, IntToJsval(index)));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::canParameterBeAutomated(index);
@@ -346,7 +346,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "setParameterAutomated");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return (void) FunctionCall2(vstPlugin, fval, IntToJsval(index), RealToJsval(value));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::setParameterAutomated(index, value);
@@ -358,7 +358,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "setParameter");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return (void) FunctionCall2(vstPlugin, fval, IntToJsval(index), RealToJsval(value));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::setParameter(index, value);
@@ -371,7 +371,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "string2parameter");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				_rval = FunctionCall2(vstPlugin, fval, IntToJsval(index), StringToJsval(text) );
 				if ( text == NULL )
@@ -392,7 +392,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getParameter");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return (float)JsvalToReal(FunctionCall1(vstPlugin, fval, IntToJsval(index)));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::getParameter(index);
@@ -404,7 +404,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getParameterProperties");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				JSObject *obj = JL_NewObj(_cx);
 				FunctionCall1(vstPlugin, fval, OBJECT_TO_JSVAL(obj));
@@ -425,7 +425,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getParameterLabel");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return CopyJsvalToString(FunctionCall1(vstPlugin, fval, IntToJsval(index)), label, kVstMaxParamStrLen);
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::getParameterLabel(index, label);
@@ -436,7 +436,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getParameterDisplay");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return CopyJsvalToString(FunctionCall1(vstPlugin, fval, IntToJsval(index)), text, kVstMaxParamStrLen);
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::getParameterDisplay(index, text);
@@ -447,7 +447,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getParameterName");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return CopyJsvalToString(FunctionCall1(vstPlugin, fval, IntToJsval(index)), text, kVstMaxParamStrLen);
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::getParameterName(index, text);
@@ -459,7 +459,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getProgram");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return JsvalToInt(FunctionCall0(vstPlugin, fval));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::getProgram();
@@ -470,7 +470,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "setProgram");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				FunctionCall1(vstPlugin, fval, IntToJsval(program));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::setProgram(program);
@@ -480,7 +480,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "beginSetProgram");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return JsvalToBool(FunctionCall0(vstPlugin, fval));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::beginSetProgram();
@@ -490,7 +490,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "endSetProgram");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return JsvalToBool(FunctionCall0(vstPlugin, fval));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::endSetProgram();
@@ -502,7 +502,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "setProgramName");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return (void) FunctionCall1(vstPlugin, fval, StringToJsval(name));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::setProgramName(name);
@@ -513,7 +513,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getProgramName");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return CopyJsvalToString(FunctionCall0(vstPlugin, fval), name, kVstMaxProgNameLen);
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::getProgramName(name);
@@ -525,7 +525,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "canDo");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				_rval = FunctionCall1(vstPlugin, fval, StringToJsval(text));
 				if ( JSVAL_IS_VOID(_rval) || _rval == JSVAL_ZERO )
@@ -542,7 +542,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getProgramNameIndexed");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				_rval = FunctionCall2(vstPlugin, fval, IntToJsval(category), IntToJsval(index));
 				if ( JSVAL_IS_VOID(_rval) ) // end of list
@@ -560,7 +560,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "setBypass");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return JsvalToBool(FunctionCall1(vstPlugin, fval, BoolToJsval(onOff)));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::setBypass(onOff);
@@ -573,7 +573,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getNumMidiInputChannels");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return JsvalToInt(FunctionCall0(vstPlugin, fval));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::getNumMidiInputChannels();
@@ -583,7 +583,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getNumMidiOutputChannels");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return JsvalToInt(FunctionCall0(vstPlugin, fval));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::getNumMidiOutputChannels();
@@ -595,7 +595,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "hasMidiProgramsChanged");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				return JsvalToBool(FunctionCall1(vstPlugin, fval, IntToJsval(channel)));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::hasMidiProgramsChanged(channel);
@@ -606,7 +606,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getMidiProgramName");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				JSObject *jsMpn = JL_NewObj(_cx);
 				_rval = FunctionCall3(vstPlugin, fval, IntToJsval(channel), IntToJsval(mpn->thisProgramIndex), OBJECT_TO_JSVAL(jsMpn));
@@ -636,7 +636,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getCurrentMidiProgram");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				_rval = FunctionCall1(vstPlugin, fval, IntToJsval(channel));
 				if ( !JSVAL_IS_INT(_rval) )
@@ -659,7 +659,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getMidiProgramCategory");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 //				JSObject *jsMpn = JL_NewObj(_cx);
 
@@ -688,7 +688,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getMidiKeyName");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				_rval = FunctionCall3(vstPlugin, fval, IntToJsval(channel), IntToJsval(keyName->thisProgramIndex), IntToJsval(keyName->thisKeyNumber) );
 				if ( JSVAL_IS_VOID(_rval) )
@@ -708,7 +708,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "setSampleRate");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				FunctionCall1(vstPlugin, fval, RealToJsval(sampleRate));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::setSampleRate(sampleRate);
@@ -719,7 +719,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "setBlockSize");
-			if ( JsvalIsFunction(fval) )
+			if ( JsvalIsCallable(fval) )
 				FunctionCall1(vstPlugin, fval, IntToJsval((int)sampleRate));
 		} catch( JsException ) { ManageException(); }
 		return AudioEffectX::setBlockSize((VstInt32)sampleRate);
@@ -730,7 +730,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getInputProperties");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				JSObject *tmpObj = JL_NewObj(_cx);
 				_rval = FunctionCall2(vstPlugin, fval, IntToJsval(index), OBJECT_TO_JSVAL(tmpObj));
@@ -750,7 +750,7 @@ private:
 
 		try {
 			jsval fval = GetProperty(vstPlugin, "getOutputProperties");
-			if ( JsvalIsFunction(fval) ) {
+			if ( JsvalIsCallable(fval) ) {
 
 				JSObject *tmpObj = JL_NewObj(_cx);
 				_rval = FunctionCall2(vstPlugin, fval, IntToJsval(index), OBJECT_TO_JSVAL(tmpObj));

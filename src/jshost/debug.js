@@ -10,7 +10,7 @@ LoadModule('jsstd');
 //LoadModule('jsio');
 //LoadModule('jsdebug');
 
-
+Print(1); throw 0;
 
 
 Print( MyGen.isGenerator(), '\n' );

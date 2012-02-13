@@ -36,7 +36,7 @@
 int _puts(JSContext *cx, const char *str) {
 
 	jsval stdoutFunction;
-	if ( GetHostObjectValue(cx, JLID(cx, stdout), &stdoutFunction) && JL_ValueIsFunction(cx, stdoutFunction) ) {
+	if ( GetHostObjectValue(cx, JLID(cx, stdout), &stdoutFunction) && JL_ValueIsCallable(cx, stdoutFunction) ) {
 
 		int len = (int)strlen(str);
 		JSString *jsstr = JS_NewStringCopyN(cx, str, len);
@@ -1193,7 +1193,7 @@ DEFINE_FUNCTION( DefinitionLocation ) {
 	JSScript *script;
 	script = NULL;
 
-	if ( JL_ValueIsFunction(cx, JL_ARG(1)) ) {
+	if ( JL_ValueIsCallable(cx, JL_ARG(1)) ) {
 
 		JSFunction *fun;
 		fun = JS_ValueToFunction(cx, JL_ARG(1));
@@ -1754,7 +1754,7 @@ DEFINE_FUNCTION( CrashGuard ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
-	JL_ASSERT_ARG_IS_FUNCTION(1);
+	JL_ASSERT_ARG_IS_CALLABLE(1);
 
 #if defined XP_WIN
 	EXCEPTION_POINTERS * eps = 0;

@@ -578,7 +578,7 @@ bad:
 **/
 DEFINE_SET_PROPERTY() {
 
-	if ( JL_IsFunction(cx, *vp) && JSID_IS_STRING(id) ) {
+	if ( JL_ValueIsCallable(cx, *vp) && JSID_IS_STRING(id) ) {
 		
 		JL_ASSERT_THIS_INSTANCE();
 

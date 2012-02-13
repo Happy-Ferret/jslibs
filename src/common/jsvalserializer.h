@@ -309,7 +309,7 @@ namespace jl {
 				return JS_TRUE;
 			}
 			
-			if ( JL_ObjectIsFunction(cx, obj) ) {
+			if ( JL_ObjectIsCallable(cx, obj) ) {
 
 /* JS_XDRValue fails because function chasp has no XDR encoding hook
 				JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
@@ -334,7 +334,7 @@ namespace jl {
 			if ( !JSVAL_IS_VOID( serializeFctVal ) ) {
 
 				jsval argv[] = { JSVAL_NULL, _serializerObj };
-				JL_ASSERT( JL_IsFunction(cx, serializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_serialize"), E_DEFINED );
+				JL_ASSERT( JL_ValueIsCallable(cx, serializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_serialize"), E_DEFINED );
 
 //				JSObject *objectProto;
 //				JL_CHK( JL_GetClassPrototype(cx, NULL, JSProto_Object, &objectProto) );
@@ -360,7 +360,7 @@ namespace jl {
 
 				JSObject *constructor;
 				constructor = JS_GetConstructor(cx, proto);
-				JL_CHKM( constructor && JL_ObjectIsFunction(cx, constructor), "Constructor not found." );
+				JL_CHKM( constructor && JL_ObjectIsCallable(cx, constructor), "Constructor not found." );
 				JL_CHKM( constructor != objectConstructor, "Invalid constructor." );
 
 				JSString *funName;
@@ -377,7 +377,7 @@ namespace jl {
 */
 				jsval unserializeFctVal;
 				JL_CHK( JS_GetMethodById(cx, obj, JLID(cx, _unserialize), NULL, &unserializeFctVal) );
-				JL_ASSERT( JL_IsFunction(cx, unserializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_unserialize"), E_DEFINED );
+				JL_ASSERT( JL_ValueIsCallable(cx, unserializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_unserialize"), E_DEFINED );
 
 				JL_CHK( Write(cx, unserializeFctVal) );
 				JL_CHK( JS_CallFunctionValue(cx, obj, serializeFctVal, COUNTOF(argv)-1, argv+1, argv) ); // rval not used
@@ -686,7 +686,7 @@ namespace jl {
  					jsval argv[] = { JSVAL_NULL, _unserializerObj };
 					jsval fun;
 					JL_CHK( Read(cx, fun) );
-					JL_ASSERT( JL_IsFunction(cx, fun), E_STR("unserializer"), E_STATE ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
+					JL_ASSERT( JL_ValueIsCallable(cx, fun), E_STR("unserializer"), E_STATE ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
 					JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fun, COUNTOF(argv)-1, argv+1, argv) );
 					val = *argv;
 					break;

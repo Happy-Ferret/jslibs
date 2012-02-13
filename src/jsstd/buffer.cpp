@@ -162,7 +162,7 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 	jsval rval, fctVal;
 	unsigned int bufferLengthBeforeRefillRequest;
 	JL_CHK( JS_GetProperty(cx, obj, "onunderflow", &fctVal) );
-	if ( !JsvalIsFunction(cx, fctVal) )
+	if ( !JsvalIsCallable(cx, fctVal) )
 		return JS_TRUE; // cannot refil, onunderflow is not defined
 	do {
 

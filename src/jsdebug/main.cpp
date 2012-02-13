@@ -112,7 +112,7 @@ done_scriptList:
 	ccc = JS_EnterCrossCompartmentCall(cx, moduleObject);
 
 	JS_GetPropertyById(cx, moduleObject, mpv->JLID_onNewScript, &jsHookFct); // try to use ids
-	if ( JL_ValueIsFunction(cx, jsHookFct) ) {
+	if ( JL_ValueIsCallable(cx, jsHookFct) ) {
 
 #define JS_NewScriptObject(cx, script) (JSObject*)(script)
 		// see. http://code.google.com/r/wes-js185/source/browse/spidermonkey/probe-jsapi.incl#376
@@ -148,7 +148,7 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 	JSObject *moduleObject = (JSObject*)callerdata;
 	jsval jsHookFct;
 	JS_GetProperty(cx, moduleObject, "onDestroyScript", &jsHookFct); // try to use ids
-	if ( JL_IsFunction(cx, jsHookFct) ) {
+	if ( JL_IsCallable(cx, jsHookFct) ) {
 
 		jsval argv[4];
 		ASSERT( JSVAL_NULL == 0 );
@@ -230,7 +230,7 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 
 JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc ) {
 
-	if ( JL_ValueIsFunction(cx, *val) ) {
+	if ( JL_ValueIsCallable(cx, *val) ) {
 
 		*script = JS_GetFunctionScript(cx, JS_ValueToFunction(cx, *val));
 		if ( *script == NULL )

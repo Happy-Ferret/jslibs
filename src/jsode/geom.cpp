@@ -542,9 +542,9 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 **/
 DEFINE_PROPERTY_SETTER( contact ) {
 	
-//	JL_ASSERT( JL_IsFunction(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
+//	JL_ASSERT( JL_IsCallable(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
 	if ( !JSVAL_IS_VOID(*vp) )
-		JL_ASSERT_IS_FUNCTION(*vp, "");
+		JL_ASSERT_IS_CALLABLE(*vp, "");
 	return JL_SetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, *vp);
 	JL_BAD;
 }

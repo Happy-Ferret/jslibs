@@ -126,8 +126,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( IsFunction ) {
 
 	JL_ASSERT_ARGC(1);
-	//*JL_RVAL = BOOLEAN_TO_JSVAL( VALUE_IS_FUNCTION(cx, JL_ARG(1)) );
-	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_IsFunction(cx, JL_ARG(1)) );
+	//*JL_RVAL = BOOLEAN_TO_JSVAL( VALUE_IS_CALLABLE(cx, JL_ARG(1)) );
+	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_ValueIsCallable(cx, JL_ARG(1)) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -460,7 +460,7 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 	unsigned int timeout;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
 	if ( JL_ARG_ISDEF(2) )
-		JL_ASSERT_ARG_IS_FUNCTION(2);
+		JL_ASSERT_ARG_IS_CALLABLE(2);
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
@@ -471,7 +471,7 @@ DEFINE_FUNCTION( TimeoutEvents ) {
 	upe->cancel = JLEventCreate(false);
 	ASSERT( JLEventOk(upe->cancel) );
 
-	if ( JL_ARG_ISDEF(2) && JL_IsFunction(cx, JL_ARG(2)) ) {
+	if ( JL_ARG_ISDEF(2) && JL_ValueIsCallable(cx, JL_ARG(2)) ) {
 
 		SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2));
 		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2)) ); // GC protection only

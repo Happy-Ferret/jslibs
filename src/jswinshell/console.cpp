@@ -454,7 +454,7 @@ JSBool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 				case KEY_EVENT: {
 
 					JL_CHK( JS_GetProperty(cx, upe->obj, inputRecord.Event.KeyEvent.bKeyDown ? "onKeyDown" : "onKeyUp", &fct) );
-					if ( JL_IsFunction(cx, fct) ) {
+					if ( JL_ValueIsCallable(cx, fct) ) {
 
 						JSString *str = JS_NewUCStringCopyN(cx, &inputRecord.Event.KeyEvent.uChar.UnicodeChar, 1);
 						argv[1] = STRING_TO_JSVAL(str);
@@ -490,7 +490,7 @@ JSBool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 						}
 					}
 					JL_CHK( JS_GetProperty(cx, upe->obj, eventName, &fct) );
-					if ( JL_IsFunction(cx, fct) ) {
+					if ( JL_ValueIsCallable(cx, fct) ) {
 
 						argv[1] = INT_TO_JSVAL(inputRecord.Event.MouseEvent.dwMousePosition.X);
 						argv[2] = INT_TO_JSVAL(inputRecord.Event.MouseEvent.dwMousePosition.Y);
@@ -507,7 +507,7 @@ JSBool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 				case WINDOW_BUFFER_SIZE_EVENT: {
 
 					JL_CHK( JS_GetProperty(cx, upe->obj, "onSize", &fct) );
-					if ( JL_IsFunction(cx, fct) ) {
+					if ( JL_ValueIsCallable(cx, fct) ) {
 
 						argv[1] = INT_TO_JSVAL(inputRecord.Event.WindowBufferSizeEvent.dwSize.X);
 						argv[2] = INT_TO_JSVAL(inputRecord.Event.WindowBufferSizeEvent.dwSize.Y);
@@ -519,7 +519,7 @@ JSBool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 				case FOCUS_EVENT: {
 
 					JL_CHK( JS_GetProperty(cx, upe->obj, "onFocus", &fct) );
-					if ( JL_IsFunction(cx, fct) ) {
+					if ( JL_ValueIsCallable(cx, fct) ) {
 
 						argv[1] = BOOLEAN_TO_JSVAL(inputRecord.Event.FocusEvent.bSetFocus);
 						JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, 1, argv+1, argv) );

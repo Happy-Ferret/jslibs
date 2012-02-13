@@ -806,7 +806,7 @@ DEFINE_FUNCTION( DirectoryChangesEvents ) {
 	JL_ASSERT_ARG_TYPE( IsHandleType(cx, JL_ARG(1), JLHID("dmon")), 1, "(dmon) Handle" );
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_ASSERT_ARG_IS_FUNCTION(2);
+		JL_ASSERT_ARG_IS_CALLABLE(2);
 
 	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_ARG(1));
 	JL_ASSERT( dc, E_ARG, E_NUM(1), E_STATE );

@@ -35,7 +35,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 	*pixbuf = NULL;
 	jsval onImageFct;
 	JL_CHK( JS_GetProperty(cx, obj, "onImage", &onImageFct) );
-	if ( JL_IsFunction(cx, onImageFct) ) {
+	if ( JL_ValueIsCallable(cx, onImageFct) ) {
 
 		jsval nameVal, image;
 		JL_CHK( JL_NativeToJsval(cx, name, &nameVal) );
