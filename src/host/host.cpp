@@ -320,7 +320,11 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 		buf[0] = (CHR); \
 		buf += 1; \
 	JL_MACRO_END
-	
+
+	#define fflush(FILE) \
+	JL_MACRO_BEGIN \
+	JL_MACRO_END
+
 
 // copy-paste from /js/src/js.cpp (my_ErrorReporter)
 //	 ---8<---
@@ -331,6 +335,7 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
     if (!report) {
         fprintf(gErrFile, "%s\n", message);
+        fflush(gErrFile);
         return;
     }
 
@@ -392,7 +397,7 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
         j++;
     }
     fputs("^\n", gErrFile);
- out:
+out:
     //if (!JSREPORT_IS_WARNING(report->flags)) {
     //    if (report->errorNumber == JSMSG_OUT_OF_MEMORY) {
     //        gExitCode = EXITCODE_OUT_OF_MEMORY;
@@ -408,6 +413,7 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 	#undef fputs
 	#undef fwrite
 	#undef fputc
+	#undef fflush
 	 
 	StderrWrite(cx, buffer, buf-buffer);
 }
@@ -562,6 +568,13 @@ JSBool global_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObje
 		if ( !resolved && id == JLID(cx, Reflect) ) { // JSID_IS_ATOM(id, CLASS_ATOM(cx, Reflect))
 			
 			if ( !JS_InitReflect(cx, obj) )
+				return JS_FALSE;
+			resolved = JS_TRUE;
+		}
+
+		if ( !resolved && id == JLID(cx, Debugger) ) {
+
+			if ( !JS_DefineDebuggerObject(cx, obj) ) // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
 				return JS_FALSE;
 			resolved = JS_TRUE;
 		}

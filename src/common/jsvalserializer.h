@@ -338,7 +338,8 @@ namespace jl {
 
 //				JSObject *objectProto;
 //				JL_CHK( JL_GetClassPrototype(cx, NULL, JSProto_Object, &objectProto) );
-				if ( JL_GetClass(obj) != JL_GetStandardClassByKey(cx, JSProto_Object) ) { // native serializable object
+				if ( JL_ObjectIsObject(cx, obj ) ) {
+//				if ( JL_GetClass(obj) != JL_GetStandardClassByKey(cx, JSProto_Object) ) { // native serializable object
 
 					JL_CHK( Write(cx, JLSTSerializableNativeObject) );
 					JL_CHK( Write(cx, JL_GetClassName(obj)) );
@@ -385,7 +386,7 @@ namespace jl {
 			}
 
 			// simple object
-			if ( obj != NULL && JL_IsObjectObject(cx, obj) ) {
+			if ( obj != NULL && JL_ObjectIsObject(cx, obj) ) {
 
 				JL_CHK( Write(cx, JLSTObject) );
 				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
@@ -393,19 +394,33 @@ namespace jl {
 			}
 
 			// prototype-less object
-			if ( JS_GetPrototype(cx, obj) == NULL ) {
+			if ( JS_GetPrototype(obj) == NULL ) {
 
 				JL_CHK( Write(cx, JLSTProtolessObject) );
 				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
 				return JS_TRUE;
 			}
 
-			if ( JL_GetClass(obj) == JL_GetStandardClassByKey(cx, JSProto_Error) ) {
-
+			if ( JL_ObjectIsError(cx, obj) ) {
+/*
 				JSProtoKey errorProtoKey = JL_GetErrorProtoKey(cx, obj); // see JL_ObjectProtoKey(cx, obj);
 				ASSERT( errorProtoKey != JSProto_Null );
 				JL_CHK( Write(cx, JLSTErrorObject) );
 				JL_CHK( Write(cx, errorProtoKey) );
+				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
+*/
+				JSObject *constructor;
+				constructor = JL_GetConstructor(cx, obj);
+
+				jsval constructorName;
+				JL_CHK( JS_GetPropertyById(cx, constructor, JLID(cx, name), &constructorName) );
+
+				const jschar *str;
+				size_t length;
+				str = JS_GetStringCharsAndLength(cx, JS_ValueToString(cx, constructorName), &length);
+
+				JL_CHK( Write(cx, JLSTErrorObject) );
+				JL_CHK( Write(cx, SerializerConstBufferInfo(str, length)) );
 				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
 				return JS_TRUE;
 			}
@@ -693,6 +708,7 @@ namespace jl {
 				}
 				case JLSTErrorObject: {
 
+/*
 					JSProtoKey errorProtoKey;
 					JL_CHK( Read(cx, errorProtoKey) );
 					//JSObject *errorProto;
@@ -703,6 +719,18 @@ namespace jl {
 					val = OBJECT_TO_JSVAL(errorObj);
 					SerializerObjectOwnProperties sop(errorObj);
 					JL_CHK( Read(cx, sop) );
+*/
+
+					SerializerConstBufferInfo constructorName;
+					jsval constructor;
+					JL_CHK( Read(cx, constructorName) );
+					JL_CHK( JS_GetUCProperty(cx, JL_GetGlobalObject(cx), (const jschar *)constructorName.Data(), constructorName.Length() / 2, &constructor) );
+					JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);
+					val = OBJECT_TO_JSVAL(errorObj);
+					SerializerObjectOwnProperties sop(errorObj);
+					JL_CHK( Read(cx, sop) );
+
+
 					break;
 				}
 				case JLSTFunction: {
@@ -751,7 +779,7 @@ namespace jl {
 	ALWAYS_INLINE bool
 	JsvalIsSerializer( JSContext *cx, jsval &val ) {
 
-		return JL_IsClass(val, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Serializer")->clasp);
+		return JL_ValueIsClass(val, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Serializer")->clasp);
 	}
 
 	ALWAYS_INLINE Serializer*
@@ -765,7 +793,7 @@ namespace jl {
 	ALWAYS_INLINE bool
 	JsvalIsUnserializer( JSContext *cx, jsval &val ) {
 
-		return JL_IsClass(val, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Unserializer")->clasp);
+		return JL_ValueIsClass(val, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Unserializer")->clasp);
 	}
 
 	ALWAYS_INLINE Unserializer*

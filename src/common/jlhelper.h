@@ -173,15 +173,19 @@ JL_GetPrototype(JSContext *cx, JSObject *obj) {
 	return JS_GetPrototype(obj);
 }
 
-extern JS_FRIEND_API(JSBool)
-js_GetClassPrototype(JSContext *cx, JSObject *scope, JSProtoKey protoKey,
-                     JSObject **protop, js::Class *clasp = NULL);
+ALWAYS_INLINE JSObject *
+JL_GetConstructor(JSContext *cx, JSObject *obj) {
+
+	return JS_GetConstructor(cx, obj);
+}
+
 
 ALWAYS_INLINE JSBool
 JL_GetClassPrototype(JSContext *cx, JSObject *scopeobj, JSProtoKey protoKey, JSObject **protop) {
 
 	return js_GetClassPrototype(cx, scopeobj, protoKey, protop);
 }
+
 
 /*
 ALWAYS_INLINE JSClass*
@@ -204,7 +208,7 @@ ASSERT(false);
 }
 */
 
-
+/*
 ALWAYS_INLINE JSObject*
 JL_GetStandardClassProtoByKey(JSContext *cx, JSProtoKey protoKey) {
 
@@ -212,6 +216,7 @@ JL_GetStandardClassProtoByKey(JSContext *cx, JSProtoKey protoKey) {
 	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), protoKey, &proto) ? proto : NULL;
 	// eg. JS_NewObject(cx, JL_GetStandardClassByKey(cx, JSProto_Date), JL_GetStandardClassProtoByKey(cx, JSProto_Date), NULL);
 }
+*/
 
 ALWAYS_INLINE JSBool
 JL_GetElement(JSContext *cx, JSObject *obj, jsuint index, jsval *vp) {
@@ -308,71 +313,80 @@ JL_StringToJsid( JSContext * RESTRICT cx, const jschar * RESTRICT cstr ) {
 // Type check functions
 
 ALWAYS_INLINE bool
-JL_IsBooleanObject( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+JL_ObjectIsBoolean( JSContext *cx, JSObject *obj ) {
+
+	ASSERT(obj);
+	JSObject *proto;
+	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_Boolean, &proto) && JL_GetClass(obj) == JL_GetClass(proto);
+}
+
+ALWAYS_INLINE bool
+JL_ValueIsBooleanObject( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
 	JL_IGNORE(cx);
-	//return !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClassByKey(cx, JSProto_Boolean);
-	// (new Boolean).constructor == Boolean
-	return !JSVAL_IS_PRIMITIVE(value) && !strcmp(JL_GetClass(JSVAL_TO_OBJECT(value))->name, "Boolean");
+	return !JSVAL_IS_PRIMITIVE(value) && JL_ObjectIsBoolean(cx, JSVAL_TO_OBJECT(value));
 }
 
 ALWAYS_INLINE bool
-JL_IsBoolean( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+JL_ValueIsBoolean( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
-	return JSVAL_IS_BOOLEAN(value) || JL_IsBooleanObject(cx, value);
+	return JSVAL_IS_BOOLEAN(value) || JL_ValueIsBooleanObject(cx, value);
 }
 
 ALWAYS_INLINE bool
-JL_IsInteger( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+JL_ValueIsInteger( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
 	JL_IGNORE(cx);
 	return JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && !JL_DOUBLE_IS_INTEGER(JSVAL_TO_DOUBLE(value)));
 }
 
 ALWAYS_INLINE bool
-JL_IsNumberObject( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+JL_ObjectIsNumber( JSContext *cx, JSObject *obj ) {
 
-	JL_IGNORE(cx);
-	//return !JSVAL_IS_PRIMITIVE(value) && JL_GetClass(JSVAL_TO_OBJECT(value)) == JL_GetStandardClassByKey(cx, JSProto_Number);
-	return !JSVAL_IS_PRIMITIVE(value) && !strcmp(JL_GetClass(JSVAL_TO_OBJECT(value))->name, "Number");
+	ASSERT(obj);
+	JSObject *proto;
+	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_Number, &proto) && JL_GetClass(obj) == JL_GetClass(proto);
 }
 
 ALWAYS_INLINE bool
-JL_IsNumber( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+JL_ValueIsNumberObject( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
-	return JSVAL_IS_NUMBER(value) || JL_IsNumberObject(cx, value);
+	return !JSVAL_IS_PRIMITIVE(value) && JL_ObjectIsNumber(cx, JSVAL_TO_OBJECT(value));
 }
 
 ALWAYS_INLINE bool
-JL_IsInteger53( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+JL_ValueIsNumber( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
+
+	return JSVAL_IS_NUMBER(value) || JL_ValueIsNumberObject(cx, value);
+}
+
+ALWAYS_INLINE bool
+JL_ValueIsInteger53( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
 	JL_IGNORE(cx);
 	return JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && JSVAL_TO_DOUBLE(value) < MAX_INT_TO_DOUBLE && JSVAL_TO_DOUBLE(value) > MIN_INT_TO_DOUBLE);
 }
 
 ALWAYS_INLINE bool
-JL_IsNaN( JSContext *cx, const jsval &val ) {
+JL_ValueIsNaN( JSContext *cx, const jsval &val ) {
 
-	//return js::Valueify(val) == JL_GetRuntime(cx)->NaNValue; // == JS_GetNaNValue(cx)
 	return val == JL_GetNaNValue(cx);
 }
 
 ALWAYS_INLINE bool
-JL_IsPInfinity( JSContext *cx, const jsval &val ) {
+JL_ValueIsPInfinity( JSContext *cx, const jsval &val ) {
 
-	//return js::Valueify(val) == JL_GetRuntime(cx)->positiveInfinityValue; // == JS_GetPositiveInfinityValue(cx)
 	return val == JS_GetPositiveInfinityValue(cx);
 }
 
 ALWAYS_INLINE bool
-JL_IsNInfinity( JSContext *cx, const jsval &val ) {
+JL_ValueIsNInfinity( JSContext *cx, const jsval &val ) {
 
-	//return js::Valueify(val) == JL_GetRuntime(cx)->negativeInfinityValue; // == JS_GetNegativeInfinityValue(cx)
 	return val == JS_GetNegativeInfinityValue(cx);
 }
 
 ALWAYS_INLINE bool
-JL_IsReal( const JSContext *cx, const jsval &val ) {
+JL_ValueIsReal( const JSContext *cx, const jsval &val ) {
 
 	JL_IGNORE(cx);
 	if ( JSVAL_IS_INT(val) )
@@ -386,45 +400,35 @@ JL_IsReal( const JSContext *cx, const jsval &val ) {
 }
 
 ALWAYS_INLINE bool
-JL_IsNegative( JSContext *cx, const jsval &val ) {
+JL_ValueIsNegative( JSContext *cx, const jsval &val ) {
 
 	return ( JSVAL_IS_INT(val) && JSVAL_TO_INT(val) < 0 )
-	    || ( JSVAL_IS_DOUBLE(val) && DOUBLE_IS_NEG(JSVAL_TO_DOUBLE(val)) ) // js::Valueify(val).toDouble()
-	    || JL_IsNInfinity(cx, val);
+	    || ( JSVAL_IS_DOUBLE(val) && DOUBLE_IS_NEG(JSVAL_TO_DOUBLE(val)) )
+	    || JL_ValueIsNInfinity(cx, val);
 }
 
 ALWAYS_INLINE bool
-JL_IsClass( const jsval &val, const JSClass *jsClass ) {
+JL_ValueIsClass( const jsval &val, const JSClass *jsClass ) {
 
-	// JSVAL_IS_PRIMITIVE(val)
-	// JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
-	//return !js::Valueify(val).isPrimitive() && jsClass != NULL && js::Valueify(val).toObject().getJSClass() == jsClass;
 	return jsClass != NULL && JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
 }
 
 ALWAYS_INLINE bool
-JL_IsObjectObject( JSContext *cx, JSObject *obj ) {
+JL_ObjectIsObject( JSContext *cx, JSObject *obj ) {
 
-	JL_IGNORE(cx);
-//	JSObject *oproto;
-//	return JL_GetClassPrototype(cx, NULL, JSProto_Object, &oproto) && JL_GetClass(obj) == JL_GetClass(oproto) && obj->getProto() == oproto;
-	ASSERT( obj != NULL );
-	return JS_GetPrototype(obj) == JL_GetStandardClassProtoByKey(cx, JSProto_Object);
-	//return obj->getProto() == JL_GetHostPrivate(cx)->objectProto;
-}
-
-/*
-ALWAYS_INLINE bool
-JL_IsGeneratorObject( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
-
+	ASSERT(obj);
 	JSObject *proto;
-	return JS_GetClassObject(cx, JL_GetGlobalObject(cx), JSProto_Generator, &proto) && JS_GetPrototype(cx, obj) == proto;
+	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_Object, &proto) && JL_GetClass(obj) == JL_GetClass(proto);
 }
 
+/* (TBD) JLID not yet defined !
 ALWAYS_INLINE bool
-JL_IsGeneratorObject( JSContext * RESTRICT cx, jsval &val ) {
+JL_ValueIsGenerator( JSContext * RESTRICT cx, jsval &val ) {
 
-	return JSVAL_IS_OBJECT(val) && JL_IsGeneratorObject(cx, JSVAL_TO_OBJECT(val));
+	jsval fct, rval;
+	return JS_GetPropertyById(cx, JL_GetGlobalObject(cx), JLID(Function), &fct)
+	    && JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fct, 1, &val, &rval)
+	    && rval == JSVAL_TRUE;
 }
 */
 
@@ -469,52 +473,72 @@ JL_IsGeneratorFunction( JSContext * RESTRICT cx, jsval &val ) {
 ALWAYS_INLINE bool
 JL_ObjectIsArray( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
-	return JS_IsArrayObject(cx, obj) == JS_TRUE; // Object::isArray() is not public
+	return JS_IsArrayObject(cx, obj) == JS_TRUE;
 }
 
 ALWAYS_INLINE bool
 JL_ValueIsArray( JSContext *cx, const jsval &val ) {
 
-	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsArray(cx, JSVAL_TO_OBJECT(val)); // Object::isArray() is not public
+	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsArray(cx, JSVAL_TO_OBJECT(val));
 }
 
 
 ALWAYS_INLINE bool
-JL_IsVector( JSContext *cx, JSObject *obj ) {
+JL_ObjectIsVector( JSContext *cx, JSObject *obj ) {
 
-	return JL_ObjectIsArray(cx, obj) || js_IsTypedArray(obj); // Object::isArray() is not public
+	return JL_ObjectIsArray(cx, obj) || js_IsTypedArray(obj);
 }
 
 ALWAYS_INLINE bool
-JL_IsVector( JSContext *cx, const jsval &val ) {
+JL_ValueIsVector( JSContext *cx, const jsval &val ) {
 
-	return !JSVAL_IS_PRIMITIVE(val) && ( JL_ObjectIsArray(cx, JSVAL_TO_OBJECT(val)) || js_IsTypedArray(JSVAL_TO_OBJECT(val)) ); // Object::isArray() is not public
+	return !JSVAL_IS_PRIMITIVE(val) && ( JL_ObjectIsArray(cx, JSVAL_TO_OBJECT(val)) || js_IsTypedArray(JSVAL_TO_OBJECT(val)) );
 }
 
 ALWAYS_INLINE bool
-JL_IsXML( JSContext *cx, JSObject *obj ) {
+JL_ObjectIsXML( JSContext *cx, JSObject *obj ) {
 
+	ASSERT( obj );
 	return JS_TypeOfValue(cx, OBJECT_TO_JSVAL(obj)) == JSTYPE_XML;
 }
 
 ALWAYS_INLINE bool
-JL_IsStringObject( JSContext *cx, JSObject *obj ) {
+JL_ObjectIsString( JSContext *cx, JSObject *obj ) {
 
-	JL_IGNORE(cx);
-	//return JL_GetClass(obj) == JL_GetStandardClassByKey(cx, JSProto_String);
-	return !strcmp(JL_GetClass(obj)->name, "String");
+	ASSERT( obj );
+	JSObject *proto;
+	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_String, &proto) && JL_GetClass(obj) == JL_GetClass(proto);
 }
 
 ALWAYS_INLINE bool
-JL_IsDataObject( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
+JL_ObjectIsError( JSContext *cx, JSObject *obj ) {
 
-	return BufferGetInterface(cx, obj) != NULL || JL_ObjectIsArray(cx, obj) || (js_IsTypedArray(obj) /*&& js::TypedArray::fromJSObject(obj)->valid()*/) /*|| js_IsArrayBuffer(obj)*/ || JL_IsStringObject(cx, obj);
+	ASSERT( obj );
+	JSObject *proto;
+/*
+	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_Error, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_InternalError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_EvalError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_RangeError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_ReferenceError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_SyntaxError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_TypeError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_URIError, &proto) && JL_GetClass(obj) == JL_GetClass(proto);
+*/
+	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_Error, &proto) && JL_GetClass(obj) == JL_GetClass(proto); // JS_GetClass( (new SyntaxError()) ) => JSProto_Error
+}
+
+
+ALWAYS_INLINE bool
+JL_ObjectIsData( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
+
+	return BufferGetInterface(cx, obj) != NULL || JL_ObjectIsArray(cx, obj) || (js_IsTypedArray(obj) /*&& js::TypedArray::fromJSObject(obj)->valid()*/) /*|| js_IsArrayBuffer(obj)*/ || JL_ObjectIsString(cx, obj);
 }
 
 ALWAYS_INLINE bool
-JL_IsData( JSContext *cx, const jsval &val ) {
+JL_ValueIsData( JSContext *cx, const jsval &val ) {
 
-	return JSVAL_IS_STRING(val) || ( !JSVAL_IS_PRIMITIVE(val) && NOIL(JL_IsDataObject)(cx, JSVAL_TO_OBJECT(val)) );
+	return JSVAL_IS_STRING(val) || ( !JSVAL_IS_PRIMITIVE(val) && NOIL(JL_ObjectIsData)(cx, JSVAL_TO_OBJECT(val)) );
 }
 
 
@@ -648,6 +672,7 @@ enum {
 	JLID_SPEC( _private3 ),
 	JLID_SPEC( name ),
 	JLID_SPEC( id ),
+	JLID_SPEC( eval ),
 	JLID_SPEC( push ),
 	JLID_SPEC( pop ),
 	JLID_SPEC( toXMLString ),
@@ -658,6 +683,8 @@ enum {
 	JLID_SPEC( next ),
 	JLID_SPEC( iterator ),
 	JLID_SPEC( Reflect ),
+	JLID_SPEC( Debugger ),
+	JLID_SPEC( Function ),
 	LAST_JSID // see HostPrivate::ids[]
 };
 #undef JLID_SPEC
@@ -1104,13 +1131,13 @@ enum E_TXTID {
 	JL_ASSERT( NOIL(JL_IsInteger)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("integer") )
 
 #define JL_ASSERT_ARG_IS_INTEGER_NUMBER(argNum) \
-	JL_ASSERT( NOIL(JL_IsInteger53)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("integer < 2^53") )
+	JL_ASSERT( NOIL(JL_ValueIsInteger53)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("integer < 2^53") )
 
 #define JL_ASSERT_ARG_IS_NUMBER(argNum) \
 	JL_ASSERT( NOIL(JL_IsNumber)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("number") )
 
 #define JL_ASSERT_ARG_IS_STRING(argNum) \
-	JL_ASSERT( NOIL(JL_IsData)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("string || data") )
+	JL_ASSERT( NOIL(JL_ValueIsData)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("string || data") )
 
 #define JL_ASSERT_ARG_IS_OBJECT(argNum) \
 	JL_ASSERT( !JSVAL_IS_PRIMITIVE(JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("object") )
@@ -3079,10 +3106,10 @@ JL_CallFunctionNameVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, const c
 	JL_BAD;
 }
 
-/*
-INLINE JSBool FASTCALL
-JL_Eval( JSContext * RESTRICT cx, JSString * RESTRICT source, jsval *rval ) { // used in jsvalserializer.h
 
+INLINE JSBool FASTCALL
+JL_Eval( JSContext *cx, JSString *source, jsval *rval ) { // used in jsvalserializer.h
+/*
 	const char *scriptFilename;
 	int scriptLineno;
 	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL); // in jsdbgapi.h
@@ -3103,12 +3130,14 @@ JL_Eval( JSContext * RESTRICT cx, JSString * RESTRICT source, jsval *rval ) { //
 	chars = JS_GetStringCharsAndLength(cx, source, &length);
 	JL_CHK( chars );
 	
-	JS_GetGlobalForFrame
 	//return JS_EvaluateUCScript(cx, JS_GetScopeChain(cx), chars, length, scriptFilename, scriptLineno, rval);
-	return JS_EvaluateUCScript(cx, JS_GetGlobalForScopeChain(cx), chars, length, scriptFilename, scriptLineno, rval);
-	JL_BAD;
-}
+	return JS_EvaluateUCScript(cx, JS_GetGlobalObject(cx), chars, length, scriptFilename, scriptLineno, rval);
 */
+
+	jsval argv = STRING_TO_JSVAL(source);
+	return JL_CallFunctionId(cx, JS_GetGlobalObject(cx), JLID(cx, eval), 1, &argv, rval);
+}
+
 
 
 ALWAYS_INLINE JSBool FASTCALL
@@ -3145,7 +3174,7 @@ JL_JsvalToPrimitive( JSContext * RESTRICT cx, const jsval &val, jsval * RESTRICT
 		return JS_TRUE;
 	}
 	JSObject *obj = JSVAL_TO_OBJECT(val);
-	if (unlikely( JL_IsXML(cx, obj) ))
+	if (unlikely( JL_ObjectIsXML(cx, obj) ))
 		return JL_CallFunctionId(cx, obj, JLID(cx, toXMLString), 0, NULL, rval);
 	//JSClass *clasp = JL_GetClass(obj);
 	//if ( clasp->convert ) // note that JS_ConvertStub calls js_TryValueOf

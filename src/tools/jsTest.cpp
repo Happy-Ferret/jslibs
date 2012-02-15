@@ -175,7 +175,7 @@ JSBool Print(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 
-int main(int argc, char* argv[]) {
+int main_bz726429(int argc, char* argv[]) {
 
 	_unsafeMode = false;
 
@@ -211,7 +211,15 @@ int main(int argc, char* argv[]) {
 
 	JS_SetErrorReporter(cx, ErrorReporter);
 
-	_putws(JS_GetStringCharsZ(cx, JS_ValueToString(cx, INT_TO_JSVAL(9))));
+	xx = JS_GetGCParameter(rt, JSGC_NUMBER);
+
+	jsval myInt = INT_TO_JSVAL(9);
+	JSString *jsstr = JS_ValueToString(cx, myInt);
+
+	_putws(JS_GetStringCharsZ(cx, jsstr));
+
+	xx = JS_GetGCParameter(rt, JSGC_NUMBER);
+
 
 	_putws(L"ttest");
 /* in String.cpp, see:
@@ -237,6 +245,164 @@ int main(int argc, char* argv[]) {
 //	JSScript *script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "<inline>", 1);
 //	jsval rval;
 //	JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
+
+	JS_DestroyContext(cx);
+	JS_DestroyRuntime(rt);
+	JS_ShutDown();
+
+	return EXIT_SUCCESS;
+bad:
+	printf("BAD\n");
+	return EXIT_FAILURE;
+}
+
+
+
+
+// source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
+static JSBool
+sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **objp) {
+
+	JSBool resolved;
+	if ( (flags & JSRESOLVE_ASSIGNING) == 0 ) {
+
+		if ( !JS_ResolveStandardClass(cx, obj, id, &resolved) )
+			return JS_FALSE;
+
+		if ( !resolved && JSID_IS_STRING(id) ) {
+			jsval v;
+			JS_IdToValue(cx, id, &v);
+			if ( !wcscmp(JS_GetStringCharsZ(cx, JSVAL_TO_STRING(v)), L"Debugger" ) ) {
+
+				if ( !JS_DefineDebuggerObject(cx, obj) ) // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
+					return JS_FALSE;
+				resolved = JS_TRUE;
+			}
+		}
+
+		if ( resolved ) {
+
+			*objp = obj;
+			return JS_TRUE;
+		}
+	}
+	*objp = NULL;
+	return JS_TRUE;
+}
+
+
+static JSClass sandbox_class = {
+    "Sandbox",
+    JSCLASS_NEW_RESOLVE | JSCLASS_GLOBAL_FLAGS,
+    JS_PropertyStub,   JS_PropertyStub,
+    JS_PropertyStub,   JS_StrictPropertyStub,
+    JS_EnumerateStub, (JSResolveOp)sandbox_resolve,
+    JS_ConvertStub,    NULL,
+    JSCLASS_NO_OPTIONAL_MEMBERS
+};
+
+
+JSBool Sandbox(JSContext *cx, uintN argc, jsval *vp) {
+
+	JSObject *obj = JS_NewCompartmentAndGlobalObject(cx, &sandbox_class, NULL);
+    JL_CHK( JS_WrapObject(cx, &obj) );
+	JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
+	return JS_TRUE;
+bad:
+	return JS_FALSE;
+}
+
+
+
+
+int main_test_Debugger(int argc, char* argv[]) {
+
+	_unsafeMode = false;
+
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
+	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+	JS_SetErrorReporter(cx, ErrorReporter);
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+
+	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JS_InitStandardClasses(cx, globalObject);
+
+	jsval rval;
+
+	JL_CHK( JS_DefineFunction(cx, globalObject, "sandbox", Sandbox, 0, 0) );
+	JL_CHK( JS_DefineFunction(cx, globalObject, "print", Print, 0, 0) );
+
+	char *scriptText = "\
+		var Dbg = sandbox().Debugger; \
+		var d = new Dbg(this); \
+		d.onNewScript = function(script) { print('url:'+script.url+' / '+script.lineCount)  }; \
+		var a = new Function('var a=1;\\nreturn 123+a') \
+	";
+
+	JSScript *script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "<inline>", 1);
+
+	JS_SetDebugMode(cx, JS_TRUE);
+
+	JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
+
+	JS_DestroyContext(cx);
+	JS_DestroyRuntime(rt);
+	JS_ShutDown();
+
+	return EXIT_SUCCESS;
+bad:
+	printf("BAD\n");
+	return EXIT_FAILURE;
+}
+
+
+#include <jsvalserializer.h>
+
+int main(int argc, char* argv[]) {
+
+	_unsafeMode = false;
+
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
+	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+	JS_SetErrorReporter(cx, ErrorReporter);
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+
+	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JS_InitStandardClasses(cx, globalObject);
+
+	jsval rval;
+	char *scriptText = "(new SyntaxError())";
+
+	JSScript *script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "<inline>", 1);
+	JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
+/*
+	jsval constructor;
+	JL_CHK( JS_GetProperty(cx, JL_GetGlobalObject(cx), "SyntaxError", &constructor) );
+
+	JSObject *err = JS_NewObjectForConstructor(cx, &constructor);
+	
+	
+	//bool r = JL_ObjectIsError(cx, JSVAL_TO_OBJECT(rval));
+
+	JL_ObjectIsError(cx, err);
+*/
+
+
+//	jl::Serializer *ser;
+//	ser = jl::JsvalToSerializer(cx, rval);
+
+//	jl::Unserializer *unser;
+//	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
+
+	//uint32_t gKey;
+	//unser->Read(cx, gKey);
+
+
+
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);

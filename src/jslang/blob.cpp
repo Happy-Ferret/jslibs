@@ -439,7 +439,7 @@ DEFINE_FUNCTION( concat ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
-	if ( JL_IsDataObject(cx, JL_OBJ) ) {
+	if ( JL_ObjectIsData(cx, JL_OBJ) ) {
 
 		jsval tmpStrVal = OBJECT_TO_JSVAL(JL_OBJ);
 		JL_CHK( JL_JsvalToNative(cx, tmpStrVal, &str) );
@@ -1065,7 +1065,7 @@ DEFINE_SET_PROPERTY() {
 
 DEFINE_EQUALITY_OP() {
 
-	JL_CHKB( JL_IsClass(*v, JL_THIS_CLASS), noteq );
+	JL_CHKB( JL_ValueIsClass(*v, JL_THIS_CLASS), noteq );
 
 	//JL_ASSERT_VALID( IsBlobValid(cx, obj) && IsBlobValid(cx, &js::Valueify(v)->toObject()), "Blob");
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) && IsBlobValid(cx, &v->toObject()) );

@@ -16,6 +16,8 @@
 #include <jslibsModule.h>
 #include "jsstd.h"
 
+#include <jsvalserializer.h>
+
 DECLARE_CLASS( OperationLimit )
 
 
@@ -948,6 +950,20 @@ sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **o
 		if ( !JS_ResolveStandardClass(cx, obj, id, &resolved) )
 			return JS_FALSE;
 
+		if ( !resolved && id == JLID(cx, Reflect) ) { // JSID_IS_ATOM(id, CLASS_ATOM(cx, Reflect))
+			
+			if ( !JS_InitReflect(cx, obj) )
+				return JS_FALSE;
+			resolved = JS_TRUE;
+		}
+
+		if ( !resolved && id == JLID(cx, Debugger) ) {
+
+			if ( !JS_DefineDebuggerObject(cx, obj) ) // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
+				return JS_FALSE;
+			resolved = JS_TRUE;
+		}
+
 		if ( resolved ) {
 
 			*objp = obj;
@@ -1468,7 +1484,20 @@ JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 //	JL_BAD;
 }
 
+
+
 DEFINE_FUNCTION( jsstdTest ) {
+
+	jl::Serializer ser;
+
+	
+
+
+/*
+	JSObject *obj = JS_NewCompartmentAndGlobalObject(cx, &sandbox_class, NULL);
+    JL_CHK( JS_WrapObject(cx, &obj) );
+	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+*/
 
 
 /*

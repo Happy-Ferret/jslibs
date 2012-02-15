@@ -10,7 +10,31 @@ LoadModule('jsstd');
 //LoadModule('jsio');
 //LoadModule('jsdebug');
 
-Print(1); throw 0;
+
+function MyClass() {
+}
+
+MyClass.prototype._serialize = function() {
+}
+
+MyClass._deserialize = function() {
+}
+
+
+var a = new MyClass();
+
+var a = TimeoutEvents(500);
+var a = new Map();
+var a = {__proto__:null};
+
+
+
+var buf = Serialize(a);
+var b = Deserialize(buf);
+Print( uneval(b.constructor) );
+
+
+throw 0;
 
 
 Print( MyGen.isGenerator(), '\n' );

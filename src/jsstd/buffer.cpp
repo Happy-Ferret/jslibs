@@ -90,7 +90,7 @@ JSBool WriteDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
-	if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !( !JSVAL_IS_PRIMITIVE(chunk) && JL_IsStringObject(cx, JSVAL_TO_OBJECT(chunk)) ) ) {
+	if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !( !JSVAL_IS_PRIMITIVE(chunk) && JL_ObjectIsString(cx, JSVAL_TO_OBJECT(chunk)) ) ) {
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
 		JL_ASSERT( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
@@ -132,7 +132,7 @@ JSBool UnReadDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
-	if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !(!JSVAL_IS_PRIMITIVE(chunk) && JL_IsStringObject(cx, JSVAL_TO_OBJECT(chunk))) ) {
+	if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !(!JSVAL_IS_PRIMITIVE(chunk) && JL_ObjectIsString(cx, JSVAL_TO_OBJECT(chunk))) ) {
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
 		JL_ASSERT( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
@@ -674,7 +674,7 @@ DEFINE_FUNCTION( Write ) {
 //	if ( JSVAL_IS_VOID(arg1) ) {
 //	}
 
-	if ( JL_IsClass(arg1, JL_THIS_CLASS) ) {
+	if ( JL_ValueIsClass(arg1, JL_THIS_CLASS) ) {
 		
 		JL_ASSERT_ARGC(1);
 		return AddBuffer(cx, obj, JSVAL_TO_OBJECT(arg1));
