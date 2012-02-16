@@ -494,8 +494,8 @@ JL_HasFlags(T value, size_t flags) {
 //static inline void JL_IGNORE(T) {};
 //#define JL_IGNORE(x) x __attribute__((unused))
 //#define JL_IGNORE(x) ((x) = (x))
-#define JL_IGNORE(x) \
-	((void)(x))
+#define JL_IGNORE(...) \
+	((void)(__VA_ARGS__))
 
 ALWAYS_INLINE void
 JL_Break() {

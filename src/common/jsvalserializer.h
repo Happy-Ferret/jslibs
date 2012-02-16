@@ -195,10 +195,11 @@ namespace jl {
 			return JS_TRUE;
 			JL_BAD;
 		}
-			
+
 		JSBool Write( JSContext *cx, const SerializerObjectOwnProperties &sop ) {
 
 			JSObject *obj = sop;
+
 			JSIdArray *idArray = JS_Enumerate(cx, obj); // Get an array of the all *own* enumerable properties of a given object.
 			JL_CHK( idArray );
 			JL_CHK( Write(cx, idArray->length) );
@@ -213,8 +214,30 @@ namespace jl {
 				JL_CHK( Write(cx, value) );
 			}
 			JS_DestroyIdArray(cx, idArray);
+
+/*
+			jsid id;
+			jsval value;
+			JSObject *it = JS_NewPropertyIterator(cx, obj);
+
+			for (;;) {
+
+				JL_CHK( JS_NextProperty(cx, it, &id) );
+				if ( JSID_IS_VOID(id) )
+					break;
+
+				ASSERT( JSID_IS_STRING(id) );
+				// JL_CHK( JS_IdToValue(cx, id, &key) );
+
+				JL_CHK( JS_GetPropertyById(cx, obj, id, &value) );
+
+				JL_CHK( Write(cx, JSID_TO_STRING(id)) );
+				JL_CHK( Write(cx, value) );
+			}
+*/
 			return JS_TRUE;
 		bad:
+
 			if ( idArray )
 				JS_DestroyIdArray(cx, idArray);
 			return JS_FALSE;
@@ -402,18 +425,13 @@ namespace jl {
 			}
 
 			if ( JL_ObjectIsError(cx, obj) ) {
-/*
-				JSProtoKey errorProtoKey = JL_GetErrorProtoKey(cx, obj); // see JL_ObjectProtoKey(cx, obj);
-				ASSERT( errorProtoKey != JSProto_Null );
-				JL_CHK( Write(cx, JLSTErrorObject) );
-				JL_CHK( Write(cx, errorProtoKey) );
-				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
-*/
+
 				JSObject *constructor;
 				constructor = JL_GetConstructor(cx, obj);
 
 				jsval constructorName;
 				JL_CHK( JS_GetPropertyById(cx, constructor, JLID(cx, name), &constructorName) );
+				ASSERT( JSVAL_IS_STRING(constructorName) );
 
 				const jschar *str;
 				size_t length;
@@ -421,7 +439,14 @@ namespace jl {
 
 				JL_CHK( Write(cx, JLSTErrorObject) );
 				JL_CHK( Write(cx, SerializerConstBufferInfo(str, length)) );
-				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
+
+				//JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) ); // (TBD) why this don't work on error object ?
+				
+				jsval tmp;
+				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, fileName), &tmp) );
+				JL_CHK( Write(cx, tmp) );
+				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, lineNumber), &tmp) );
+				JL_CHK( Write(cx, tmp) );
 				return JS_TRUE;
 			}
 
@@ -708,29 +733,16 @@ namespace jl {
 				}
 				case JLSTErrorObject: {
 
-/*
-					JSProtoKey errorProtoKey;
-					JL_CHK( Read(cx, errorProtoKey) );
-					//JSObject *errorProto;
-					//JL_CHK( JL_GetClassPrototype(cx, NULL, errorProtoKey, &errorProto) );
-					JSObject *errorProto = JL_GetStandardClassProtoByKey(cx, errorProtoKey);
-					JL_CHK( errorProto );
-					JSObject *errorObj = JS_NewObjectWithGivenProto(cx, JL_GetClass(errorProto), errorProto, NULL);
-					val = OBJECT_TO_JSVAL(errorObj);
-					SerializerObjectOwnProperties sop(errorObj);
-					JL_CHK( Read(cx, sop) );
-*/
-
 					SerializerConstBufferInfo constructorName;
-					jsval constructor;
+					jsval constructor, tmp;
 					JL_CHK( Read(cx, constructorName) );
 					JL_CHK( JS_GetUCProperty(cx, JL_GetGlobalObject(cx), (const jschar *)constructorName.Data(), constructorName.Length() / 2, &constructor) );
 					JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);
 					val = OBJECT_TO_JSVAL(errorObj);
-					SerializerObjectOwnProperties sop(errorObj);
-					JL_CHK( Read(cx, sop) );
-
-
+					JL_CHK( Read(cx, tmp) );
+					JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, fileName), &tmp) );
+					JL_CHK( Read(cx, tmp) );
+					JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, lineNumber), &tmp) );
 					break;
 				}
 				case JLSTFunction: {

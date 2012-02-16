@@ -1,3 +1,20 @@
+	LoadModule('jsdebug');
+	LoadModule('jsstd');
+
+function a() {
+
+function b() {
+
+}
+
+}
+
+
+
+throw 0;
+
+
+
 if ( 0 ) {
 
 	LoadModule('jsdebug');
@@ -53,8 +70,6 @@ if ( 0 ) {
 		Print( mem, '\n' ); // 1.009
 */
 
-
-	
 	throw 0;
 }
 

@@ -116,8 +116,7 @@ inline size_t NextChunkSize( const Buffer *buffer, size_t lastChunk, size_t requ
 
 inline BufferType GuessType( const Buffer *buffer, size_t lastChunk, size_t requiredLength ) {
 
-	JL_IGNORE(buffer);
-	JL_IGNORE(lastChunk);
+	JL_IGNORE(buffer, lastChunk);
 
 	BufferChunk *chunk = &buffer->chunkList[buffer->chunkPos];
 	if ( chunk->pos + requiredLength - chunk->size < BUFFER_TYPE_AUTO_THRESHOLD )

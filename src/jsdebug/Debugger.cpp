@@ -14,12 +14,13 @@
 
 #include "stdafx.h"
 
+/*
 static const JSCodeSpec jsCodeSpec[] = {
 	#define OPDEF(op,val,name,token,length,nuses,ndefs,prec,format) {length,nuses,ndefs,prec,format},
 	#include <jsopcode.tbl>
 	#undef OPDEF
 };
-
+*/
 
 /**doc
 $CLASS_HEADER
@@ -150,8 +151,8 @@ JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, 
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
 		return JSTRAP_CONTINUE;
-	if ( jsCodeSpec[*pc].format & JOF_DECLARING )
-		return JSTRAP_CONTINUE;
+//	if ( jsCodeSpec[*pc].format & JOF_DECLARING )
+//		return JSTRAP_CONTINUE;
 	return BreakHandler(cx, (JSObject*)closure, JL_CurrentStackFrame(cx), FROM_STEP);
 }
 
@@ -229,7 +230,7 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 	stackFrameIndex = JL_StackSize(cx, fp)-1;
 
 	{
-		jsval argv[9] = {
+		jsval argv[] = {
 			JSVAL_NULL, // argv[0] is reserved for the rval
 			JSVAL_NULL,
 			INT_TO_JSVAL( lineno ),
@@ -238,8 +239,9 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 			BOOLEAN_TO_JSVAL(hasException),
 			hasException ? exception : JSVAL_VOID,
 			//breakOrigin == FROM_STEP_OUT ? fp->regs->sp[-1] : JSVAL_VOID; // (TBD) try to get the functions's rval. ask in the mailing list.
-			JSVAL_NULL,
+			JSVAL_NULL /*,
 			BOOLEAN_TO_JSVAL(script && JS_GetFramePC(cx, fp) == script->code) // is entering function
+			*/
 		};
 		JL_CHK( JL_NativeToJsval(cx, filename, &argv[1]) );
 		
@@ -482,7 +484,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ClearBreakpoints ) {
 
-	JS_ClearAllTraps(cx);
+	//JS_ClearAllTraps(cx);
+	JS_ClearAllTrapsForCompartment(cx);
 	
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;

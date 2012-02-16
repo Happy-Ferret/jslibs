@@ -75,7 +75,7 @@ DEFINE_CONSTRUCTOR() {
 		JSObject *imgObj = JSVAL_TO_OBJECT(iconVal);
 
 //		JL_ASSERT_INSTANCE_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JL_IsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));
-		JL_ASSERT( JL_IsData(cx, iconVal), E_ARG, E_NUM(1), E_TYPE, E_TY_DATA );
+		JL_ASSERT( JL_ValueIsData(cx, iconVal), E_ARG, E_NUM(1), E_TYPE, E_TY_DATA );
 
 		unsigned int width, height, channels, x, y;
 		JL_CHK( JL_GetProperty(cx, imgObj, "width", &width) );

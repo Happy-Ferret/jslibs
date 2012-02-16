@@ -25,4 +25,4 @@ struct ModulePrivate {
 
 
 JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc );
-JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char *filename, uint32 lineno);
+JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char *filename, uint32_t lineno);

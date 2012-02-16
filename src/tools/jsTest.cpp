@@ -177,78 +177,20 @@ JSBool Print(JSContext *cx, uintN argc, jsval *vp) {
 
 int main_bz726429(int argc, char* argv[]) {
 
-	_unsafeMode = false;
+JSRuntime *rt = JS_NewRuntime(0);
+JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
+JSContext *cx = JS_NewContext(rt, 8192L);
+JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+JS_InitStandardClasses(cx, globalObject);
 
-/*
-    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
-//    JS_SetGCParameter(rt, JSGC_MAX_BYTES, 0xffffffff);
-//    JS_SetNativeStackQuota(rt, 500000);
-	JSContext *cx = JS_NewContext(rt, 8192);
-//    JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_COMPARTMENT);
-	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
-	JS_InitStandardClasses(cx, globalObject);
-*/
+JSString *jsstr = JS_ValueToString(cx, INT_TO_JSVAL(10));
+jsval tmp = STRING_TO_JSVAL(jsstr);
+JS_SetProperty(cx, globalObject, "rootme", &tmp);
+_putws(JS_GetStringCharsZ(cx, jsstr));
 
-
-	JSRuntime *rt = JS_NewRuntime(0); // JSGC_MAX_MALLOC_BYTES
-
-	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
-
-	int xx = JS_GetGCParameter(rt, JSGC_MAX_MALLOC_BYTES);
-	
-	xx = JS_GetGCParameter(rt, JSGC_MAX_BYTES);
-
-
-//	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
-	JSContext *cx = JS_NewContext(rt, 8192L);
-//	JS_SetOptions(cx, JSOPTION_VAROBJFIX | /*JSOPTION_ANONFUNFIX |*/ JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
-	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
-	JS_InitStandardClasses(cx, globalObject);
-
-
-
-//	JL_CHK( JS_DefineFunction(cx, globalObject, "print", Print, 0, 0) );
-
-	JS_SetErrorReporter(cx, ErrorReporter);
-
-	xx = JS_GetGCParameter(rt, JSGC_NUMBER);
-
-	jsval myInt = INT_TO_JSVAL(9);
-	JSString *jsstr = JS_ValueToString(cx, myInt);
-
-	_putws(JS_GetStringCharsZ(cx, jsstr));
-
-	xx = JS_GetGCParameter(rt, JSGC_NUMBER);
-
-
-	_putws(L"ttest");
-/* in String.cpp, see:
-    for (uint32_t i = 0; i < INT_STATIC_LIMIT; i++) {
-        if (i < 10) {
-            intStaticTable[i] = unitStaticTable[i + '0'];
-        } else if (i < 100) {
-*/
-
-/*
-	If the runtime is created like this:
-		JSRuntime *rt = JS_NewRuntime(0);
-		JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
-	then JS_ValueToString(cx, INT_TO_JSVAL(X))) returns "0K" to "0T" for 0 <= X <= 9
-*/
-
-
-
-
-
-
-//	char *scriptText = "print(1);";
-//	JSScript *script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "<inline>", 1);
-//	jsval rval;
-//	JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
-
-	JS_DestroyContext(cx);
-	JS_DestroyRuntime(rt);
-	JS_ShutDown();
+JS_DestroyContext(cx);
+JS_DestroyRuntime(rt);
+JS_ShutDown();
 
 	return EXIT_SUCCESS;
 bad:
@@ -360,7 +302,7 @@ bad:
 
 #include <jsvalserializer.h>
 
-int main(int argc, char* argv[]) {
+int main_testconstructor(int argc, char* argv[]) {
 
 	_unsafeMode = false;
 
@@ -412,4 +354,11 @@ int main(int argc, char* argv[]) {
 bad:
 	printf("BAD\n");
 	return EXIT_FAILURE;
+}
+
+
+
+int main(int argc, char* argv[]) {
+
+	return main_bz726429(argc, argv);
 }

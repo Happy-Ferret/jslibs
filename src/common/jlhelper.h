@@ -187,37 +187,6 @@ JL_GetClassPrototype(JSContext *cx, JSObject *scopeobj, JSProtoKey protoKey, JSO
 }
 
 
-/*
-ALWAYS_INLINE JSClass*
-JL_GetStandardClassByKey(JSContext *cx, JSProtoKey protoKey) {
-
-ASSERT(false);
-	//return JS_GetClassObject(cx, JL_GetGlobalObject(cx), protoKey, &ctor) && ctor ? js::Jsvalify(FUN_CLASP(GET_FUNCTION_PRIVATE(cx, ctor))) : NULL; // missing API
-
-//	JSObject *ctor;
-//	if ( !JS_GetClassObject(cx, JL_GetGlobalObject(cx), protoKey, &ctor) || !ctor )
-//		return NULL;
-
-	//return static_cast<JSFunction *>(JS_GetPrivate(cx, ctor));
-
-//	Class *clasp = ctor->getFunctionPrivate()->getConstructorClass();
-
-//	JSFunction *fun = JS_ValueToFunction(cx, OBJECT_TO_JSVAL_IMPL(ctor));
-
-	return NULL;
-}
-*/
-
-/*
-ALWAYS_INLINE JSObject*
-JL_GetStandardClassProtoByKey(JSContext *cx, JSProtoKey protoKey) {
-
-	JSObject *proto;
-	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), protoKey, &proto) ? proto : NULL;
-	// eg. JS_NewObject(cx, JL_GetStandardClassByKey(cx, JSProto_Date), JL_GetStandardClassProtoByKey(cx, JSProto_Date), NULL);
-}
-*/
-
 ALWAYS_INLINE JSBool
 JL_GetElement(JSContext *cx, JSObject *obj, jsuint index, jsval *vp) {
 
@@ -422,6 +391,7 @@ JL_ObjectIsObject( JSContext *cx, JSObject *obj ) {
 }
 
 /* (TBD) JLID not yet defined !
+// see: jsfun.h:fun_isGenerator()
 ALWAYS_INLINE bool
 JL_ValueIsGenerator( JSContext * RESTRICT cx, jsval &val ) {
 
@@ -443,32 +413,6 @@ JL_ValueIsCallable( JSContext *cx, jsval &val ) {
 
 	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsCallable(cx, JSVAL_TO_OBJECT(val));
 }
-
-/*
-// copied from jsfun.h:fun_isGenerator()
-ALWAYS_INLINE bool
-JL_IsGeneratorFunction( JSContext * RESTRICT cx, jsval &val ) {
-
-	JL_IGNORE(cx);
-    JSObject *funobj;
-	if (!js::IsFunctionObject(js::Valueify(val), &funobj)) {
-        
-        return false;
-    }
-
-    JSFunction *fun = GET_FUNCTION_PRIVATE(cx, funobj);
-
-    bool result = false;
-    if (fun->isInterpreted()) {
-
-        JSScript *script = fun->script();
-        JS_ASSERT(script->length != 0);
-        result = script->code[0] == JSOP_GENERATOR;
-    }
-
-    return result;
-}
-*/
 
 ALWAYS_INLINE bool
 JL_ObjectIsArray( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
@@ -515,17 +459,15 @@ JL_ObjectIsError( JSContext *cx, JSObject *obj ) {
 
 	ASSERT( obj );
 	JSObject *proto;
-/*
-	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_Error, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
-		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_InternalError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
-		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_EvalError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
-		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_RangeError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
-		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_ReferenceError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
-		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_SyntaxError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
-		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_TypeError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
-		||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_URIError, &proto) && JL_GetClass(obj) == JL_GetClass(proto);
-*/
-	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_Error, &proto) && JL_GetClass(obj) == JL_GetClass(proto); // JS_GetClass( (new SyntaxError()) ) => JSProto_Error
+	//return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_Error, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+	//	||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_InternalError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+	//	||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_EvalError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+	//	||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_RangeError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+	//	||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_ReferenceError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+	//	||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_SyntaxError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+	//	||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_TypeError, &proto) && JL_GetClass(obj) == JL_GetClass(proto)
+	//	||  JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_URIError, &proto) && JL_GetClass(obj) == JL_GetClass(proto);
+	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_Error, &proto) && JL_GetClass(obj) == JL_GetClass(proto); // note: JS_GetClass( (new SyntaxError()) ) => JSProto_Error
 }
 
 
@@ -679,7 +621,7 @@ enum {
 	JLID_SPEC( valueOf ),
 	JLID_SPEC( toString ),
 	JLID_SPEC( fileName ),
-	JLID_SPEC( fileNunber ),
+	JLID_SPEC( lineNumber ),
 	JLID_SPEC( next ),
 	JLID_SPEC( iterator ),
 	JLID_SPEC( Reflect ),
@@ -1081,16 +1023,16 @@ enum E_TXTID {
 // val
 
 #define JL_ASSERT_IS_BOOLEAN(val, context) \
-	JL_ASSERT( NOIL(JL_IsBoolean)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_BOOLEAN )
+	JL_ASSERT( NOIL(JL_ValueIsBoolean)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_BOOLEAN )
 
 #define JL_ASSERT_IS_INTEGER(val, context) \
-	JL_ASSERT( NOIL(JL_IsInteger)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_INTEGER )
+	JL_ASSERT( NOIL(JL_ValueIsInteger)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_INTEGER )
 
 #define JL_ASSERT_IS_INTEGER_NUMBER(val, context) \
-	JL_ASSERT( NOIL(JL_IsInteger53)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_INTEGERDOUBLE )
+	JL_ASSERT( NOIL(JL_ValueIsInteger53)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_INTEGERDOUBLE )
 
 #define JL_ASSERT_IS_NUMBER(val, context) \
-	JL_ASSERT( NOIL(JL_IsNumber)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_NUMBER )
+	JL_ASSERT( NOIL(JL_ValueIsNumber)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_NUMBER )
 
 #define JL_ASSERT_IS_CALLABLE(val, context) \
 	JL_ASSERT( NOIL(JL_ValueIsCallable)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_FUNC )
@@ -1102,7 +1044,7 @@ enum E_TXTID {
 	JL_ASSERT( !JSVAL_IS_PRIMITIVE(val), E_VALUE, E_STR(context), E_TYPE, E_TY_OBJECT )
 
 #define JL_ASSERT_IS_STRING(val, context) \
-	JL_ASSERT( NOIL(JL_IsData)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_STRINGDATA )
+	JL_ASSERT( NOIL(JL_ValueIsData)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_STRINGDATA )
 
 //
 
@@ -1125,16 +1067,16 @@ enum E_TXTID {
 	JL_ASSERT( JL_ARGC == (count), E_ARGC, E_EQUALS, E_NUM(count) )
 
 #define JL_ASSERT_ARG_IS_BOOLEAN(argNum) \
-	JL_ASSERT( NOIL(JL_IsBoolean)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("boolean") )
+	JL_ASSERT( NOIL(JL_ValueIsBoolean)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("boolean") )
 
 #define JL_ASSERT_ARG_IS_INTEGER(argNum) \
-	JL_ASSERT( NOIL(JL_IsInteger)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("integer") )
+	JL_ASSERT( NOIL(JL_ValueIsInteger)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("integer") )
 
 #define JL_ASSERT_ARG_IS_INTEGER_NUMBER(argNum) \
 	JL_ASSERT( NOIL(JL_ValueIsInteger53)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("integer < 2^53") )
 
 #define JL_ASSERT_ARG_IS_NUMBER(argNum) \
-	JL_ASSERT( NOIL(JL_IsNumber)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("number") )
+	JL_ASSERT( NOIL(JL_ValueIsNumber)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("number") )
 
 #define JL_ASSERT_ARG_IS_STRING(argNum) \
 	JL_ASSERT( NOIL(JL_ValueIsData)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("string || data") )
@@ -3739,9 +3681,7 @@ Matrix44GetNativeInterface( JSContext *cx, JSObject *obj ) {
 INLINE JSBool
 JSMatrix44Get( JSContext *cx, JSObject *obj, float **m ) {
 
-	JL_IGNORE( cx );
-	JL_IGNORE( m );
-	JL_IGNORE( obj );
+	JL_IGNORE( cx, m, obj );
 	return JS_FALSE;
 }
 

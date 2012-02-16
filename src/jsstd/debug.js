@@ -2,4 +2,5 @@
 
 LoadModule('jsstd');
 
-jsstdTest(new SyntaxError());
+
+	Print(currentFilename, '\n');

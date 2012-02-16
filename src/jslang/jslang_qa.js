@@ -931,6 +931,7 @@ LoadModule('jsstd');
 		'a', 
 		String(),
 		new Error(),
+		new SyntaxError(),
 		new URIError(),
 		function(x,y) { return x+y+1; }
 	];

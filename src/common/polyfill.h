@@ -48,5 +48,3 @@ extern JS_FRIEND_API(int)
 js_DateGetSeconds(JSContext *cx, JSObject* obj);
 
 
-// (TBD) add APIs for all "missing API"
-

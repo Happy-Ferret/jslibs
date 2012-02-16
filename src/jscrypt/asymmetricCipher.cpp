@@ -761,6 +761,8 @@ $TOC_MEMBER $INAME
 **/
 
 DEFINE_PROPERTY_SETTER( key ) {
+	
+	JL_IGNORE(strict);
 
 	JLStr key;
 

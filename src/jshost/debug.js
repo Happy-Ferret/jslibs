@@ -1,8 +1,8 @@
 "use strict";
 //RunJsircbot(false); throw 0;
 //var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-//Exec('../common/tools.js'); var QA = FakeQAApi;  RunLocalQAFile();
-// LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask Unserialization');
+//LoadModule('jsstd'); Exec('../common/tools.js'); var QA = FakeQAApi;  RunLocalQAFile();
+LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask Unserialization');
 //LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
 //SetPerfTestMode();
 
@@ -11,27 +11,30 @@ LoadModule('jsstd');
 //LoadModule('jsdebug');
 
 
-function MyClass() {
+var myobj = new SyntaxError();
+
+/*
+for ( var i in myobj ) {
+
+	Print( myobj.hasOwnProperty(i), '\n' );
 }
+throw 0;
+*/
 
-MyClass.prototype._serialize = function() {
-}
+	
+var s = new Serializer();
+s.Write(myobj);
+var s = new Unserializer(s.Done());
 
-MyClass._deserialize = function() {
-}
+var str = uneval(myobj);
+
+Print( uneval(myobj) );
+
+Print( '\n' );
+
+Print( uneval(s.Read()) );
 
 
-var a = new MyClass();
-
-var a = TimeoutEvents(500);
-var a = new Map();
-var a = {__proto__:null};
-
-
-
-var buf = Serialize(a);
-var b = Deserialize(buf);
-Print( uneval(b.constructor) );
 
 
 throw 0;

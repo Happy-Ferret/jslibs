@@ -534,7 +534,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( IV ) {
 
-	JL_IGNORE(id);
+	JL_IGNORE(id, strict);
 
 	JLStr IV;
 

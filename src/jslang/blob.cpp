@@ -1322,7 +1322,6 @@ DEFINE_OPS_GET_PROPERTY() {
 
 
 
-/*
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -1394,7 +1393,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-*/
+
 
 /*
 DEFINE_INIT() {
@@ -1450,10 +1449,10 @@ CONFIGURE_CLASS
 		FUNCTION(toString)
 		FUNCTION_ALIAS(valueOf, toString)
 		FUNCTION(toSource)
-/*
+
 		FUNCTION_ARGC(_serialize, 1)
 		FUNCTION_ARGC(_unserialize, 1)
-*/
+
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

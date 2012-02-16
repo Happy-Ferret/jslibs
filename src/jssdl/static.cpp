@@ -1217,7 +1217,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( maxFPS ) {
 
-	if ( JL_IsPInfinity(cx, *vp) ) {
+	if ( JL_ValueIsPInfinity(cx, *vp) ) {
 
 		_maxFPS = JLINFINITE;
 	} else {

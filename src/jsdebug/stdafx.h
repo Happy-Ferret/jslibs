@@ -19,7 +19,8 @@
 #include <jlclass.h>
 
 #include <jsdbgapi.h>
-#include <jsopcode.h>
+//#include <jsopcode.h>
+//#include "../../../src/js/src/jsscript.h"
 
 #include <stack.h>
 

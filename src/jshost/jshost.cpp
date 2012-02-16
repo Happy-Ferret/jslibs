@@ -357,7 +357,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	static const bool useJslibsMemoryManager = unsafeMode;
 
-
 #if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
 	if ( debug ) {
 		_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
@@ -368,12 +367,14 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	if ( useJslibsMemoryManager ) {
 
+	#ifdef JS_HAS_JSLIBS_RegisterCustomAllocators
 		jl_malloc = nedmalloc;
 		jl_calloc = nedcalloc;
 		jl_memalign = nedmemalign;
 		jl_realloc = nedrealloc;
 		jl_msize = nedblksize_msize;
 		jl_free = nedfree_handlenull;
+	#endif // JS_HAS_JSLIBS_RegisterCustomAllocators
 
 	#ifdef DBG_ALLOC
 		jl_malloc = jl_malloc_count;

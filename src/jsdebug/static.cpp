@@ -16,7 +16,7 @@
 #include <jslibsModule.h>
 
 #include <jsdbgapi.h>
-#include <jsscope.h>
+//#include <jsscope.h>
 
 
 
@@ -141,15 +141,15 @@ DumpScope(JSContext *cx, JSObject *obj)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+/*
 #ifdef DEBUG
 
-/**doc
+/ **doc
 $TOC_MEMBER $INAME
  $INAME( [ filename [, startThing [, thingToFind [, maxDepth [, thingToIgnore] ] ] ] ] )
  $H note
   This function in only available in DEBUG mode.
-**/
+** /
 DEFINE_FUNCTION( DumpHeap )
 {
 
@@ -263,7 +263,7 @@ DEFINE_FUNCTION( DumpHeap ) {
 
 #endif // DEBUG
 
-
+*/
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -473,7 +473,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( currentMemoryUsage ) {
 
-	uint32 bytes;
+	uint32_t bytes;
 
 #if defined(XP_WIN)
 	// SIZE_T is compatible with uint32
@@ -506,7 +506,7 @@ DEFINE_PROPERTY_GETTER( peakMemoryUsage ) {
 
 #if defined(XP_WIN)
 
-	uint32 bytes;
+	uint32_t bytes;
 /*
 	DWORD  dwMin, dwMax;
 	HANDLE hProcess;
@@ -638,7 +638,7 @@ DEFINE_PROPERTY_SETTER( gcZeal ) {
 
 #ifdef JS_GC_ZEAL
 
-	uint8 zeal;
+	uint8_t zeal;
 	JL_CHKM( JL_JsvalToNative(cx, *vp, &zeal), E_VALUE, E_INVALID );
 	JS_SetGCZeal(cx, zeal, JS_DEFAULT_ZEAL_FREQ, JS_FALSE);
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -658,7 +658,7 @@ DEFINE_PROPERTY_SETTER( gcZeal ) {
 // undocumented
 DEFINE_FUNCTION( DisableJIT ) {
 
-	JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_JIT|JSOPTION_METHODJIT));
+	JS_SetOptions(cx, JS_GetOptions(cx) & ~(/*JSOPTION_JIT|*/JSOPTION_METHODJIT));
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -892,7 +892,7 @@ DEFINE_PROPERTY_GETTER( scriptFilenameList ) {
 		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
 
 		jsval filename;
-		JL_CHK( JL_NativeToJsval(cx, s->filename, &filename) );
+		JL_CHK( JL_NativeToJsval(cx, JS_GetScriptFilename(cx, s), &filename) );
 		JL_CHK( JL_SetElement(cx, arr, index, &filename) );
 		++index;
 	}
@@ -1022,6 +1022,7 @@ DEFINE_FUNCTION( StackFrameInfo ) {
 	JL_CHK( JS_GetFrameThis(cx, fp, &tmp) );
 	JL_CHK( JS_SetProperty(cx, frameInfo, "this", &tmp) );
 
+/*
 	if ( js::Valueify(fp)->hasArgs() ) {
 
 		JSObject *arguments;
@@ -1033,20 +1034,24 @@ DEFINE_FUNCTION( StackFrameInfo ) {
 		tmp = JSVAL_VOID;
 	}
 	JL_CHK( JS_SetProperty(cx, frameInfo, "argv", &tmp) );
+*/
 
 	tmp = JS_GetFrameReturnValue(cx, fp);
 	JL_CHK( JS_SetProperty(cx, frameInfo, "rval", &tmp) );
 
 	// JS_IsNativeFrame
 	//tmp = fp->isFunctionFrame() ? JSVAL_FALSE : JSVAL_TRUE; // (TBD) check if isFunctionFrame() <=> !isNative
-	tmp = BOOLEAN_TO_JSVAL( !js::Valueify(fp)->isFunctionFrame() ); // (TBD) check if isFunctionFrame() <=> !isNative
+
+//	tmp = BOOLEAN_TO_JSVAL( !js::Valueify(fp)->isFunctionFrame() ); // (TBD) check if isFunctionFrame() <=> !isNative
+	tmp = BOOLEAN_TO_JSVAL( !JS_IsScriptFrame(cx, fp) );
 	JL_CHK( JS_SetProperty(cx, frameInfo, "isNative", &tmp) );
 
-	tmp = BOOLEAN_TO_JSVAL(js::Valueify(fp)->isConstructing());
+	//tmp = BOOLEAN_TO_JSVAL(js::Valueify(fp)->isConstructing());
+	tmp = BOOLEAN_TO_JSVAL(JS_IsConstructorFrame(cx, fp));
 	JL_CHK( JS_SetProperty(cx, frameInfo, "isConstructing", &tmp) );
 
-	tmp = BOOLEAN_TO_JSVAL(js::Valueify(fp)->isEvalFrame());
-	JL_CHK( JS_SetProperty(cx, frameInfo, "isEval", &tmp) );
+	//tmp = BOOLEAN_TO_JSVAL(js::Valueify(fp)->isEvalFrame());
+	//JL_CHK( JS_SetProperty(cx, frameInfo, "isEval", &tmp) );
 
 // not available any more. see. https://bugzilla.mozilla.org/show_bug.cgi?id=458421
 //	tmp = BOOLEAN_TO_JSVAL(js::Valueify(fp)->isAssigning());
@@ -1215,14 +1220,14 @@ DEFINE_FUNCTION( DefinitionLocation ) {
 				goto next;
 		}
 	}
-
+/*
 	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(1)) && JL_IsScript(cx, JSVAL_TO_OBJECT(JL_ARG(1))) ) {
 
 		JSObject* obj;
 		obj = JSVAL_TO_OBJECT(JL_ARG(1));
 		script = (JSScript*)JL_GetPrivate(cx, obj);
 	}
-
+*/
 next:
 	if ( !script ) {
 
@@ -1231,8 +1236,8 @@ next:
 	}
 
 	jsval values[2];
-	JL_CHK( JL_NativeToJsval(cx, script->filename, &values[0]) );
-	JL_CHK( JL_NativeToJsval(cx, script->lineno, &values[1] ) );
+	JL_CHK( JL_NativeToJsval(cx, JS_GetScriptFilename(cx, script), &values[0]) );
+	JL_CHK( JL_NativeToJsval(cx, JS_GetScriptBaseLineNumber(cx, script), &values[1] ) );
 	*JL_RVAL = OBJECT_TO_JSVAL( JS_NewArrayObject(cx, COUNTOF(values), values) );
 
 	return JS_TRUE;
@@ -1285,16 +1290,18 @@ DEFINE_FUNCTION( PropertiesList ) {
 		// see Bug 688571 - JS_PropertyIterator is broken
 		while ( JS_PropertyIterator(srcObj, &jssp) ) {
 
-			jsid id = ((js::Shape*)jssp)->propid;
-			JL_CHK( JS_IdToValue(cx, id, &tmp) );
-			JL_CHK( JL_SetElement(cx, arrayObject, index, &tmp) );
+			//jsid id = ((js::Shape*)jssp)->propid;
+			JSPropertyDesc pd;
+			JL_CHK( JS_GetPropertyDesc(cx, srcObj, jssp, &pd) );
+			//JL_CHK( JS_IdToValue(cx, pd.id, &tmp) );
+			JL_CHK( JL_SetElement(cx, arrayObject, index, &pd.id) );
 			index++;
 		}
 
 		if ( !followPrototypeChain )
 			break;
 
-		srcObj = JS_GetPrototype(cx, srcObj);
+		srcObj = JS_GetPrototype(srcObj);
 	}
 
 	return JS_TRUE;
@@ -1370,11 +1377,11 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 			else
 				JL_CHK( JS_SetProperty(cx, descObj, "value", &tmp) );
 
-			tmp = BOOLEAN_TO_JSVAL( ((js::Shape*)jssp)->hasGetterValue() );
-			JL_CHK( JS_SetProperty(cx, descObj, "getter", &tmp) );
+//			tmp = BOOLEAN_TO_JSVAL( ((js::Shape*)jssp)->hasGetterValue() );
+//			JL_CHK( JS_SetProperty(cx, descObj, "getter", &tmp) );
 
-			tmp = BOOLEAN_TO_JSVAL( ((js::Shape*)jssp)->hasSetterValue() );
-			JL_CHK( JS_SetProperty(cx, descObj, "setter", &tmp) );
+//			tmp = BOOLEAN_TO_JSVAL( ((js::Shape*)jssp)->hasSetterValue() );
+//			JL_CHK( JS_SetProperty(cx, descObj, "setter", &tmp) );
 
 			tmp = BOOLEAN_TO_JSVAL( desc.flags & JSPD_VARIABLE ); // doc. local variable in function
 			JL_CHK( JS_SetProperty(cx, descObj, "variable", &tmp) );
@@ -1393,8 +1400,8 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 			JL_CHK( JS_SetProperty(cx, descObj, "permanent", &tmp) );
 
 //			tmp = jssp->setter() != NULL || jssp->getter() != NULL ? JSVAL_TRUE : JSVAL_FALSE;
-			tmp = BOOLEAN_TO_JSVAL(  ((js::Shape*)jssp)->isNative() );
-			JL_CHK( JS_SetProperty(cx, descObj, "native", &tmp) );
+//			tmp = BOOLEAN_TO_JSVAL(  ((js::Shape*)jssp)->isNative() );
+//			JL_CHK( JS_SetProperty(cx, descObj, "native", &tmp) );
 
 			tmp = INT_TO_JSVAL(prototypeLevel);
 			JL_CHK( JS_SetProperty(cx, descObj, "prototypeLevel", &tmp) );
@@ -1408,7 +1415,7 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 		if ( !followPrototypeChain )
 			break;
 
-		srcObj = JS_GetPrototype(cx, srcObj);
+		srcObj = JS_GetPrototype(srcObj);
 		prototypeLevel++;
 	}
 
@@ -1417,7 +1424,7 @@ DEFINE_FUNCTION( PropertiesInfo ) {
 }
 
 
-
+/*
 S_ASSERT(JSTRY_CATCH == 0);
 S_ASSERT(JSTRY_FINALLY == 1);
 S_ASSERT(JSTRY_ITER == 2);
@@ -1444,7 +1451,7 @@ TryNotes(JSContext *cx, JSScript *script, FILE *gOutFile)
     } while (++tn != tnlimit);
     return JS_TRUE;
 }
-
+*/
 
 /* *doc
 $TOC_MEMBER $INAME
@@ -1478,13 +1485,15 @@ DEFINE_FUNCTION( ScriptByLocation ) {
 }
 */
 
-/**doc
+/*
+
+/ **doc
 $TOC_MEMBER $INAME
  $STRING $INAME( filename, lineno )
   Returns the assembly code of the given block location.
  $H beware
   This function is only available in DEBUG mode.
-**/
+** /
 DEFINE_FUNCTION( DisassembleScript ) {
 
 #ifdef DEBUG
@@ -1540,14 +1549,14 @@ DEFINE_FUNCTION( DisassembleScript ) {
 
 	JL_BAD;
 }
+*/
 
-
-
-/**doc
+/*
+/ **doc
 $TOC_MEMBER $INAME
  $STRING $INAME( filename, lineno )
   Throw if the calling function failed to JIT
-**/
+** /
 DEFINE_FUNCTION( AssertJit ) {
 
 #ifdef JS_METHODJIT
@@ -1564,7 +1573,7 @@ DEFINE_FUNCTION( AssertJit ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-
+*/
 
 
 /**doc
@@ -1871,9 +1880,9 @@ CONFIGURE_STATIC
 		FUNCTION( TraceGC )
 
 //		FUNCTION( ScriptByLocation )
-		FUNCTION( DisassembleScript )
+//		FUNCTION( DisassembleScript )
 
-		FUNCTION( AssertJit )
+//		FUNCTION( AssertJit )
 
 //		FUNCTION( Trap )
 //		FUNCTION( Untrap )
@@ -1898,7 +1907,7 @@ CONFIGURE_STATIC
 		FUNCTION( VALGRIND_COUNT_LEAKS )
 	#endif // VALGRIND
 
-		FUNCTION( DumpHeap )
+//		FUNCTION( DumpHeap )
 		FUNCTION( DebugBreak )
 		FUNCTION( CrashGuard )
 		FUNCTION( SetPerfTestMode )

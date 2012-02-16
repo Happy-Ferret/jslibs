@@ -336,7 +336,7 @@ JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) 
 		return JS_TRUE;
 	}
 
-	if ( JL_IsData(cx, value) ) {
+	if ( JL_ValueIsData(cx, value) ) {
 
 		JLStr curveData;
 
@@ -471,7 +471,7 @@ DEFINE_CONSTRUCTOR() {
 		return JS_TRUE;
 	}
 
-	if ( JL_IsData(cx, *arg1) ) { // construct from an image, blob, string, ...
+	if ( JL_ValueIsData(cx, *arg1) ) { // construct from an image, blob, string, ...
 
 		JLStr bufferStr;
 		JSObject *imageObj;
@@ -1514,7 +1514,7 @@ DEFINE_FUNCTION( Set ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_IsData(cx, *arg1) ) {
+	if ( JL_ValueIsData(cx, *arg1) ) {
 		
 		JLStr bufferStr;
 

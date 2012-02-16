@@ -1378,22 +1378,6 @@ DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME
-  if $TRUE if the current function is being called as a constructor.
-** /
-DEFINE_PROPERTY_GETTER( isConstructing ) {
-
-	JL_IGNORE(id);
-	JL_IGNORE(obj);
-
-	*vp = BOOLEAN_TO_JSVAL( JS_IsConstructing(cx, vp) ); // JS_IsConstructing must be called in a function
-	return JS_TRUE;
-}
-*/
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME
   Set to $TRUE, this property desactivates the garbage collector.
 **/
 
@@ -1412,9 +1396,7 @@ JSBool VetoingGCCallback(JSContext *cx, JSGCStatus status) {
 
 DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(obj);
-	JL_IGNORE(strict);
+	JL_IGNORE(id, obj, strict);
 
 	// <shaver>	you could install a vetoing callback!
 	// <crowder>	oh, true
@@ -1488,9 +1470,6 @@ JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 DEFINE_FUNCTION( jsstdTest ) {
 
-	jl::Serializer ser;
-
-	
 
 
 /*
@@ -1566,8 +1545,7 @@ DEFINE_FUNCTION( jsstdTest ) {
 
 DEFINE_INIT() {
 
-	JL_IGNORE(proto);
-	JL_IGNORE(sc);
+	JL_IGNORE(proto, sc);
 
 	INIT_CLASS( OperationLimit );
 	return JS_TRUE;
@@ -1611,7 +1589,6 @@ CONFIGURE_STATIC
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_GETTER( currentFilename )
 		PROPERTY_GETTER( currentLineNumber )
-//		PROPERTY_GETTER( isConstructing )
 		PROPERTY( disableGarbageCollection )
 		PROPERTY_GETTER( CPUID )
 #ifdef _DEBUG

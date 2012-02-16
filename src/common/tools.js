@@ -401,7 +401,7 @@ function RunLocalQAFile() {
 	global.QA = { __noSuchMethod__:function(id, args) {
 		Print( id, ':', uneval(args), '\n' )
 	} };
-	Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');
+	Exec( /[^/\\]+$/.exec(currentDirectory)[0] + '_qa.js');
 	throw 0;
 }
 

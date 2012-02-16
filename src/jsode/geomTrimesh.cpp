@@ -100,6 +100,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( triangleCount ) {
 
+	JL_IGNORE(id);
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	int count = ode::dGeomTriMeshGetTriangleCount(geomId);

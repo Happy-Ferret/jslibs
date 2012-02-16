@@ -59,7 +59,7 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
 		if ( s == script )
 			goto done_scriptList; // (TBD) already added, check how it is possible.
-		if ( strcmp(filename, s->filename) == 0 )
+		if ( strcmp(filename, JS_GetScriptFilename(cx, s)) == 0 )
 			break;
 	}
 
@@ -70,6 +70,7 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 		jl::QueuePush(scriptList, script);
 	} else { // add the script at the right place in the queue
 
+/*
 		for ( it = jl::QueueBegin(scriptList); it; it = jl::QueueNext(it) ) {
 
 			JSScript *s = (JSScript*)jl::QueueGetData(it);
@@ -79,6 +80,7 @@ void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *
 				goto done_scriptList;
 			}
 		}
+*/
 		jl::QueuePush(scriptList, script);
 	}
 done_scriptList:
@@ -196,7 +198,7 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 
 
 
-JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char *filename, uint32 lineno) {
+JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char *filename, uint32_t lineno) {
 
 	jl::QueueCell *it;
 	jl::Queue *scriptList = NULL;
@@ -207,7 +209,7 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 		scriptList = (jl::Queue*)jl::QueueGetData(it);
 		JSScript *s = (JSScript*)jl::QueueGetData(jl::QueueBegin(scriptList));
 
-		if ( strcmp(filename, s->filename) == 0 )
+		if ( strcmp(filename, JS_GetScriptFilename(cx, s)) == 0 )
 			break;
 	}
 
@@ -220,7 +222,7 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 		script = (JSScript*)jl::QueueGetData(it);
 		uintN extent = JS_GetScriptLineExtent(cx, script);
 
-		if ( lineno >= script->lineno && lineno < script->lineno + extent )
+		if ( lineno >= JS_GetScriptBaseLineNumber(cx, script) && lineno < JS_GetScriptBaseLineNumber(cx, script) + extent )
 			break;
 		// else the last script in the list (depth 0) will be selected
 	}
@@ -237,13 +239,16 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **sc
 			return JS_TRUE;
 		lineno += JS_GetScriptBaseLineNumber(cx, *script);
 	} else
+/*
 	if ( !JSVAL_IS_PRIMITIVE(*val) && JL_IsScript(cx, JSVAL_TO_OBJECT(*val)) ) {
 
 		*script = (JSScript *) JL_GetPrivate(cx, JSVAL_TO_OBJECT(*val));
 		if ( *script == NULL )
 			return JS_TRUE;
 		lineno += JS_GetScriptBaseLineNumber(cx, *script);
-	} else {
+	} else
+*/
+	{
 
 		jl::Queue *scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;
 

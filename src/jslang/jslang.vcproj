@@ -149,7 +149,6 @@
 				>
 				<FileConfiguration
 					Name="DBG|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -157,7 +156,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="OPT|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"

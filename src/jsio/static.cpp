@@ -186,7 +186,7 @@ DEFINE_FUNCTION( Poll ) {
 	JSObject *fdArrayObj;
 	fdArrayObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
-	if ( JL_ARG_ISDEF(2) && !JL_IsPInfinity(cx, JL_ARG(2)) ) {
+	if ( JL_ARG_ISDEF(2) && !JL_ValueIsPInfinity(cx, JL_ARG(2)) ) {
 
 		PRUint32 tmpint;
 		JL_CHKB( JL_JsvalToNative(cx, JL_ARG(2), &tmpint), bad1 );

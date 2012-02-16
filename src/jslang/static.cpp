@@ -824,9 +824,6 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( ProcessEvents, 4 ) // (just a guess)
 		FUNCTION_ARGC( TimeoutEvents, 2 )
 
-//		FUNCTION_ARGC( Serialize, 1 )
-//		FUNCTION_ARGC( Deserialize, 0 )
-
 		#ifdef DEBUG
 		FUNCTION( _jsapiTests )
 		#endif // DEBUG
