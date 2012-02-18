@@ -885,7 +885,7 @@ LoadModule('jsstd');
 	var ob = new JsClass();
 	ob.a = 7;
 	
-	function ReferenceError() {
+	function GenReferenceError() {
 		
 		try {
 			dgsdfgfvf6z5ef4sdfg();
@@ -896,7 +896,7 @@ LoadModule('jsstd');
 	}
 	
 	var myobj = [
-		ReferenceError(),
+		GenReferenceError(),
 		new Error('error test'), 
 		ob, 
 		function() [,1,{__proto__:null}],

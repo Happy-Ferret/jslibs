@@ -361,7 +361,7 @@ namespace jl {
 
 //				JSObject *objectProto;
 //				JL_CHK( JL_GetClassPrototype(cx, NULL, JSProto_Object, &objectProto) );
-				if ( JL_ObjectIsObject(cx, obj ) ) {
+				if ( !JL_ObjectIsObject(cx, obj ) ) {
 //				if ( JL_GetClass(obj) != JL_GetStandardClassByKey(cx, JSProto_Object) ) { // native serializable object
 
 					JL_CHK( Write(cx, JLSTSerializableNativeObject) );
@@ -408,18 +408,18 @@ namespace jl {
 				return JS_TRUE;
 			}
 
-			// simple object
-			if ( obj != NULL && JL_ObjectIsObject(cx, obj) ) {
-
-				JL_CHK( Write(cx, JLSTObject) );
-				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
-				return JS_TRUE;
-			}
-
 			// prototype-less object
 			if ( JS_GetPrototype(obj) == NULL ) {
 
 				JL_CHK( Write(cx, JLSTProtolessObject) );
+				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
+				return JS_TRUE;
+			}
+
+			// simple object
+			if ( obj != NULL && JL_ObjectIsObject(cx, obj) ) {
+
+				JL_CHK( Write(cx, JLSTObject) );
 				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
 				return JS_TRUE;
 			}
@@ -443,6 +443,8 @@ namespace jl {
 				//JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) ); // (TBD) why this don't work on error object ?
 				
 				jsval tmp;
+				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, message), &tmp) );
+				JL_CHK( Write(cx, tmp) );
 				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, fileName), &tmp) );
 				JL_CHK( Write(cx, tmp) );
 				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, lineNumber), &tmp) );
@@ -739,6 +741,8 @@ namespace jl {
 					JL_CHK( JS_GetUCProperty(cx, JL_GetGlobalObject(cx), (const jschar *)constructorName.Data(), constructorName.Length() / 2, &constructor) );
 					JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);
 					val = OBJECT_TO_JSVAL(errorObj);
+					JL_CHK( Read(cx, tmp) );
+					JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, message), &tmp) );
 					JL_CHK( Read(cx, tmp) );
 					JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, fileName), &tmp) );
 					JL_CHK( Read(cx, tmp) );

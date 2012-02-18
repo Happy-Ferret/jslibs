@@ -379,7 +379,7 @@ JL_ValueIsNegative( JSContext *cx, const jsval &val ) {
 ALWAYS_INLINE bool
 JL_ValueIsClass( const jsval &val, const JSClass *jsClass ) {
 
-	return jsClass != NULL && JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
+	return jsClass != NULL && !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
 }
 
 ALWAYS_INLINE bool
@@ -622,6 +622,7 @@ enum {
 	JLID_SPEC( toString ),
 	JLID_SPEC( fileName ),
 	JLID_SPEC( lineNumber ),
+	JLID_SPEC( message ),
 	JLID_SPEC( next ),
 	JLID_SPEC( iterator ),
 	JLID_SPEC( Reflect ),
@@ -3076,7 +3077,12 @@ JL_Eval( JSContext *cx, JSString *source, jsval *rval ) { // used in jsvalserial
 	return JS_EvaluateUCScript(cx, JS_GetGlobalObject(cx), chars, length, scriptFilename, scriptLineno, rval);
 */
 
-	jsval argv = STRING_TO_JSVAL(source);
+//	size_t length;
+//	const jschar *chars;
+//	chars = JS_GetStringCharsAndLength(cx, source, &length);
+
+
+ 	jsval argv = STRING_TO_JSVAL(source);
 	return JL_CallFunctionId(cx, JS_GetGlobalObject(cx), JLID(cx, eval), 1, &argv, rval);
 }
 
