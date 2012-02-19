@@ -728,8 +728,13 @@ namespace jl {
  					jsval argv[] = { JSVAL_NULL, _unserializerObj };
 					jsval fun;
 					JL_CHK( Read(cx, fun) );
+					
+//					JSObject *parent = JL_GetParent(cx, JSVAL_TO_OBJECT(_unserializerObj));
+//					JL_CHK( JS_SetParent(cx, JSVAL_TO_OBJECT(fun), parent) );
 					JL_ASSERT( JL_ValueIsCallable(cx, fun), E_STR("unserializer"), E_STATE ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
+
 					JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fun, COUNTOF(argv)-1, argv+1, argv) );
+					JL_ASSERT( JSVAL_IS_OBJECT(argv[0]), E_STR("unserializer"), E_RETURNVALUE, E_TYPE, E_TY_OBJECT );
 					val = *argv;
 					break;
 				}

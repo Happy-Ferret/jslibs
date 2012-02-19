@@ -1,10 +1,46 @@
-"use strict";
 //RunJsircbot(false); throw 0;
 //var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 //LoadModule('jsstd'); Exec('../common/tools.js'); var QA = FakeQAApi;  RunLocalQAFile();
-LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask Unserialization');
+//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('serial -exclude jstask');
 //LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
 //SetPerfTestMode();
+
+LoadModule('jsstd');
+
+
+
+	function JsClass() {
+	
+		this.a = 5;
+		this._serialize = function(ser) {
+		
+			ser.Write(this.a);
+		}
+		this._unserialize = function(unser) {
+			
+			Print( typeof JsClass, '\n');
+			
+			var o = new JsClass();
+			o.a = unser.Read();
+			return o;
+		}
+	}
+
+	var ob = new JsClass();
+	ob.a = 7;
+
+	var myobj = ob;
+		
+	var s = new Serializer();
+	s.Write(myobj);
+	var s = new Unserializer(s.Done());
+	
+	Print( uneval(myobj) == uneval( s.Read() ) );
+
+
+
+throw 0;
+
 
 LoadModule('jsstd');
 //LoadModule('jsio');

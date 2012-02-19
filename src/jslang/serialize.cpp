@@ -153,7 +153,8 @@ DEFINE_FUNCTION( Read ) {
 	jl::Unserializer *unser;
 	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(cx, JL_OBJ));
 	JL_ASSERT_THIS_OBJECT_STATE(unser);
-	JL_CHKM( unser->Read(cx, *JL_RVAL), E_MODULE, E_INTERNAL ); // "Unserializer read error."
+//	JL_CHKM( unser->Read(cx, *JL_RVAL), E_MODULE, E_INTERNAL ); // "Unserializer read error."
+	return unser->Read(cx, *JL_RVAL);
 	return JS_TRUE;
 	JL_BAD;
 }
