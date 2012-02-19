@@ -9,7 +9,7 @@ loadModule('jsdebug');
 
 function QAAPI(cx) {
 
-	function FormatVariable(val) {
+	function formatVariable(val) {
 
 		if ( typeof(val) == 'string' ) {
 		
@@ -23,7 +23,7 @@ function QAAPI(cx) {
 	}
 	
 
-	function ValueType(val) {
+	function valueType(val) {
 		
 		var type = typeof(val);
 		if (type == 'object' )
@@ -74,14 +74,14 @@ function QAAPI(cx) {
 
 		cx.checkpoint('ASSERT', testName);
 		if ( value !== expect && !(typeof(value) == 'number' && isNaN(value) && typeof(expect) == 'number' && isNaN(expect)) )
-			cx.reportIssue( '=== ('+ValueType(value)+')'+FormatVariable(value)+', expect '+'('+ValueType(expect)+')'+FormatVariable(expect), testName );
+			cx.reportIssue( '=== ('+valueType(value)+')'+formatVariable(value)+', expect '+'('+valueType(expect)+')'+formatVariable(expect), testName );
 	}
 
 	this.ASSERT_STR = function( value, expect, testName ) {
 	
 		cx.checkpoint('ASSERT_STR', testName);
 		if ( value != expect ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
-			cx.reportIssue( '== '+FormatVariable(value)+', expect '+FormatVariable(expect), testName );
+			cx.reportIssue( '== '+formatVariable(value)+', expect '+formatVariable(expect), testName );
 	}
 
    this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
@@ -96,7 +96,7 @@ function QAAPI(cx) {
 
 	this.gc = function() {
 
-		cx.cfg.nogcDuringTests || CollectGarbage();
+		cx.cfg.nogcDuringTests || collectGarbage();
 	}
 
 	var randomData = '';
@@ -133,7 +133,7 @@ function QAAPI(cx) {
 // QA item creation
 
 
-function RecursiveDir(path, callback) {
+function recursiveDir(path, callback) {
 	
 	(function(path) {
 
@@ -155,24 +155,24 @@ function RecursiveDir(path, callback) {
 	})(path);
 }
 
-function Regexec(regexp) regexp.exec.bind(regexp);
+function regexec(regexp) regexp.exec.bind(regexp);
 
-function CreateQaItemList(startDir, files, include, exclude, flags) {
+function createQaItemList(startDir, files, include, exclude, flags) {
 
-	var hidden = Regexec(/\/\./);
-	var qaFile = Regexec(new RegExp(files));
-	var newQaItem = Regexec(/^\/\/\/\s*(.*?)\s*$/);
+	var hidden = regexec(/\/\./);
+	var qaFile = regexec(new RegExp(files));
+	var newQaItem = regexec(/^\/\/\/\s*(.*?)\s*$/);
 	var parseFlags = function(str) (/\[(.*?)\]/.exec(str)||[,''])[1];
 
 	var itemList = [];
 	var index = 0;
 
-	RecursiveDir( startDir, function(file) {
+	recursiveDir( startDir, function(file) {
 	
 		if ( !hidden(file.name) && qaFile(file.name) ) {
 
 			var source = String(file.content);
-			source = source.replace(Regexec(/\r\n|\r/g), '\n'); // cleanup
+			source = source.replace(regexec(/\r\n|\r/g), '\n'); // cleanup
 			
 			var lines = source.split('\n');
 			
@@ -214,7 +214,7 @@ function CreateQaItemList(startDir, files, include, exclude, flags) {
 ////////////////////////////////////////////////////////////////////////////////
 // tools
 
-function ParseCommandLine(cfg) {
+function parseCommandLine(cfg) {
 
 	var args = global.arguments;
 	cfg.args = [];
@@ -249,7 +249,7 @@ function ParseCommandLine(cfg) {
 
 var globalIssueCount = 0;
 
-function CommonReportIssue(cx, type, location, testName, checkName, details) {
+function commonReportIssue(cx, type, location, testName, checkName, details) {
 
 	globalIssueCount++;
 	var message = type +' @'+ location +' - '+ (testName||'') +' - '+ (checkName||'') +' - '+ details;
@@ -266,7 +266,7 @@ function CommonReportIssue(cx, type, location, testName, checkName, details) {
 }
 
 
-function LaunchTests(itemList, cfg) {
+function launchTests(itemList, cfg) {
 
 	var exportFile;
 
@@ -281,11 +281,11 @@ function LaunchTests(itemList, cfg) {
 		issueList:[], 
 		stackIndex:stackSize-1, 
 		cfg:cfg, 
-		ReportIssue:function(message, checkName) {
+		reportIssue:function(message, checkName) {
 		
-			CommonReportIssue(cx, 'ASSERT',  this.item.file+':'+(locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message );
+			commonReportIssue(cx, 'ASSERT',  this.item.file+':'+(locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message );
 		},
-		Checkpoint:function(title, testName) {
+		checkpoint:function(title, testName) {
 			
 			if ( cfg.verbose )
 				print( '\nCP - '+testName+': checkpoint: '+title+' ('+this.item.file+':'+(locate(this.stackIndex+1)[1] - this.item.relativeLineNumber)+')' );
@@ -308,7 +308,7 @@ function LaunchTests(itemList, cfg) {
 	}	
 	
 
-	CollectGarbage();
+	collectGarbage();
 
 	var testIndex = 0;
 	var testCount = 0;
@@ -327,12 +327,12 @@ function LaunchTests(itemList, cfg) {
 			if ( cfg.gcZeal )
 				gcZeal = cfg.gcZeal;
 
-			cfg.nogcBetweenTests || CollectGarbage();
+			cfg.nogcBetweenTests || collectGarbage();
 			disableGarbageCollection = cfg.nogcDuringTests;
 
 			try {
 
-				var t0 = TimeCounter();
+				var t0 = timeCounter();
 				for ( var i = cfg.repeatEachTest; i && !endSignal ; --i ) {
 
 					++testCount;
@@ -345,18 +345,18 @@ function LaunchTests(itemList, cfg) {
 					if ( cx.item.init )
 						break;
 				}
-				var t1 = TimeCounter() - t0;
+				var t1 = timeCounter() - t0;
 				cfg.quiet || print( ' ...('+(t1/cfg.repeatEachTest).toFixed(1) + 'ms)' );
 			} catch(ex) {
 
-				CommonReportIssue(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', ex );
+				commonReportIssue(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', ex );
 			}
 
 			if ( cfg.gcZeal )
 				gcZeal = 0;
 
 			disableGarbageCollection = cfg.nogcBetweenTests;
-			cfg.nogcBetweenTests || CollectGarbage();
+			cfg.nogcBetweenTests || collectGarbage();
 			
 			cfg.quiet || print('\n');
 
@@ -375,7 +375,7 @@ function LaunchTests(itemList, cfg) {
 			break;
 
 		if ( cfg.sleepBetweenTests )
-			Sleep(cfg.sleepBetweenTests);
+			sleep(cfg.sleepBetweenTests);
 	}
 	
 	if ( exportFile ) {
@@ -392,40 +392,40 @@ function LaunchTests(itemList, cfg) {
 // perf tests
 
 
-function PerfTest(itemList, cfg) {
+function perfTest(itemList, cfg) {
 
 	var i;
-	var qaapi = { cx:{item:{file:cfg.perfTest}}, __noSuchMethod__:function() {}, RandomData:function() 'qa_tmp_123456789', RandomString:function() 'qa_tmp_abcdefghij' };
+	var qaapi = { cx:{item:{file:cfg.perfTest}}, __noSuchMethod__:function() {}, randomData:function() 'qa_tmp_123456789', randomString:function() 'qa_tmp_abcdefghij' };
 
 	var stdout = _host.stdout;
 	var stderr = _host.stderr;
 	delete _host.stdout;
 	delete _host.stderr;
 
-	SetPerfTestMode();
-	CollectGarbage();
+	setPerfTestMode();
+	collectGarbage();
 	disableGarbageCollection = true;
-	Sleep(100);
+	sleep(100);
 
-	TimeCounter();
-	var t = TimeCounter();
-	var timeError = TimeCounter() - t;
+	timeCounter();
+	var t = timeCounter();
+	var timeError = timeCounter() - t;
 
 	stdout('time error: '+timeError+'\n');
 
-	function PrefRefTest() {
+	function prefRefTest() {
 		
 		var tmp = 0.1;
 		function dummy() { return i / 11.1 }
 		for ( var i = 0; i < 1000; ++i )
-			tmp += Expand('$(A)$(B)', {A:dummy(i), B:StringRepeat('x',1)});
+			tmp += expand('$(A)$(B)', {A:dummy(i), B:stringRepeat('x',1)});
 		return tmp;
 	}
 	
-	PrefRefTest();
-	var t = TimeCounter();
-	PrefRefTest();
-	var perfRefTime = TimeCounter() - t - timeError;
+	prefRefTest();
+	var t = timeCounter();
+	prefRefTest();
+	var perfRefTime = timeCounter() - t - timeError;
 
 	stdout('ref time: '+perfRefTime+'\n');
 	stdout('total items: '+itemList.length+'\n');
@@ -439,10 +439,10 @@ function PerfTest(itemList, cfg) {
 			var bestTime = Infinity; 
 			for ( i = 0; i < 3; ++i ) {
 			
-				Sleep(2);
-				t = TimeCounter();
+				sleep(2);
+				t = timeCounter();
 				void item.func(qaapi);
-				t = TimeCounter() - t - timeError;
+				t = timeCounter() - t - timeError;
 				
 				if ( t > perfRefTime * 1.0 ) {
 					
@@ -471,10 +471,10 @@ function PerfTest(itemList, cfg) {
 			var t0, diffTime = 0.0, totalTime = 0.0;
 			for ( i = 0; i < 11; ++i ) {
 			
-				Sleep(2);
-				t = TimeCounter();
+				sleep(2);
+				t = timeCounter();
 				void item.func(qaapi);
-				t = TimeCounter() - t - timeError;
+				t = timeCounter() - t - timeError;
 				
 				totalTime += t;
 
@@ -511,25 +511,25 @@ function PerfTest(itemList, cfg) {
 
 	var perfTestFunction = function(qaapi, testList) {
 	
-		LoadModule("jsstd");
-		LoadModule("jsdebug");
+		loadModule("jsstd");
+		loadModule("jsdebug");
 		var prev_stdout = _host.stdout;
 		var prev_stderr = _host.stderr;
 		delete _host.stdout;
 		delete _host.stderr;
 			
-		SetPerfTestMode();
-		CollectGarbage();
+		setPerfTestMode();
+		collectGarbage();
 		disableGarbageCollection = true;
 
-		var t = TimeCounter();
-		var err = TimeCounter() - t;
+		var t = timeCounter();
+		var err = timeCounter() - t;
 
-		var t = TimeCounter();
+		var t = timeCounter();
 		var len = testList.length;
 		for ( var i = 0; i < len; ++i )
 			testList[i](qaapi);
-		t = TimeCounter() - t - err;
+		t = timeCounter() - t - err;
 
 		_host.stdout = prev_stdout;
 		_host.stderr = prev_stderr;
@@ -549,7 +549,7 @@ function PerfTest(itemList, cfg) {
 // Main
 
 
-function Main() {
+function main() {
 
 	var cfg = { // default configuration
 		help:false,
@@ -579,7 +579,7 @@ function Main() {
 	};
 
 
-	ParseCommandLine(cfg);
+	parseCommandLine(cfg);
 
 	var configurationText = 'configuraion: '+['-'+k+' '+v for ([k,v] in Iterator(cfg))].join('  ');
 	print(configurationText, '\n\n');
@@ -590,11 +590,11 @@ function Main() {
 		return;
 	}
 
-	var itemInclude = Regexec(new RegExp(cfg.args[0] || '.*', 'i'));
-	var itemExclude = cfg.exclude ? Regexec(new RegExp(cfg.exclude, 'i')) : undefined;
+	var itemInclude = regexec(new RegExp(cfg.args[0] || '.*', 'i'));
+	var itemExclude = cfg.exclude ? regexec(new RegExp(cfg.exclude, 'i')) : undefined;
 
 
-	function MatchFlags(flags) {
+	function matchFlags(flags) {
 		
 		if ( flags.indexOf('d') != -1 )
 			return false;
@@ -612,7 +612,7 @@ function Main() {
 	if ( cfg.load )
 		testList = eval(new File(cfg.load).content);
 	else
-		testList = CreateQaItemList(cfg.directory, cfg.files, itemInclude, itemExclude, MatchFlags);
+		testList = createQaItemList(cfg.directory, cfg.files, itemInclude, itemExclude, matchFlags);
 
 	if ( cfg.listTestsOnly ) {
 		
@@ -624,24 +624,24 @@ function Main() {
 		new File(cfg.save).content = uneval(testList);
 
 	if ( cfg.disableJIT )
-		DisableJIT();
+		disableJIT();
 		
 	if ( cfg.perfTest ) {
 	
-		PerfTest(testList, cfg);
+		perfTest(testList, cfg);
 		return;
 	}
 
 	var savePrio = processPriority;
 	processPriority = cfg.priority;
-	var t0 = TimeCounter();
+	var t0 = timeCounter();
 
-	var [issueList, checkCount] = LaunchTests(testList, cfg);
+	var [issueList, checkCount] = launchTests(testList, cfg);
 
-	var t = TimeCounter() - t0;
+	var t = timeCounter() - t0;
 	processPriority = savePrio || 0; // savePrio may be undefined
 
-	print( '\n'+StringRepeat('-',97)+'\n', configurationText, '\n\n', issueList.length +' issues, '+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
+	print( '\n'+stringRepeat('-',97)+'\n', configurationText, '\n\n', issueList.length +' issues, '+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
 	issueList.sort();
 	issueList.reduce( function(previousValue, currentValue, index, array) {
 
@@ -652,7 +652,7 @@ function Main() {
 }
 
 
-Main();
+main();
 print('Done\n');
 
 

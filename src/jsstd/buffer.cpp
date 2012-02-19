@@ -16,7 +16,7 @@
 // RULES:
 // - the buffer MUST NOT contains an empty chunk ( else memory leak during buffer life time )
 // - reading a greater amount that the buffer length make the *source* object (argument of the constructor) to be used to get data until the size of the buffer do not grows any more.
-// - reading only one chunk of data ( with .Read(undefined); ) on an empty buffer just make one try to read data through the *source* object (argument of the constructor)
+// - reading only one chunk of data ( with .read(undefined); ) on an empty buffer just make one try to read data through the *source* object (argument of the constructor)
 //
 
 #include "stdafx.h"

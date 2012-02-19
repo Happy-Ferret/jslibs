@@ -1,9 +1,13 @@
 //RunJsircbot(false); throw 0;
 //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  Halt();
-//loadModule('jsstd'); exec('../common/tools.js'); var QA = FakeQAApi;  RunLocalQAFile();
-//loadModule('jsstd'); exec('../common/tools.js'); RunQATests('jshost -exclude jstask');
+//loadModule('jsstd'); exec('../common/tools.js'); var QA = fakeQAApi;  runLocalQAFile();
+
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask');
+
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //SetPerfTestMode();
+
+Halt();
 
 loadModule('jsstd');
 loadModule('jsio');
@@ -35,7 +39,7 @@ function recursiveDir(path, callback) {
 	})(path);
 }
 
-var jslibsRoot = '..';
+var jslibsRoot = '../../tmp2';
 
 var classList = {__proto__:null};
 
@@ -182,6 +186,8 @@ var i = 0;
 recursiveDir(jslibsRoot, function(f) {
 	
 	if ( /\.js$/.test(f.name) ) {
+		
+		print( f.name, '...\n' );
 
 		var content = f.content.toString();
 		

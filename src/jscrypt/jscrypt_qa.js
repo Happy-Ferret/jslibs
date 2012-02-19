@@ -7,7 +7,7 @@ loadModule('jscrypt');
 /// MD5 digest [ftrm]
 
 		var md5 = new Hash('md5');
-		md5.Process('foobarxxx');
+		md5.process('foobarxxx');
 		QA.ASSERT_STR( md5.done(), "\b\t\xAA\xC0\x10\xB1G\xA8\xC71'}*\x80\x07\xBF", 'digest integrity' );
 
 

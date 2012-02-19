@@ -172,16 +172,16 @@ loadModule('jsstd');
 
 		function genMem() {
 
-			QA.GC();
+			QA.gc();
 			var data = [];
 		
 			for ( var i = 0; i < times; ++i ) {
 			
 				data.push( Blob(stringRepeat('a', length)) );
-				QA.GC();
+				QA.gc();
 			}
 			Blob(stringRepeat('a', length));
-			QA.GC();
+			QA.gc();
 			return data;
 		}
 		
@@ -713,7 +713,7 @@ loadModule('jsstd');
 		var buf = new Buffer();
 		buf.write('abcdefghi');
 
-		function myStream() {
+		function MyStream() {
 		
 			this.read = function(amount) {
 				
@@ -721,7 +721,7 @@ loadModule('jsstd');
 			}
 		}
 		
-		QA.ASSERT( stringify( new myStream() ), 'abcdefghi', 'force string conversion' );
+		QA.ASSERT( stringify( new MyStream() ), 'abcdefghi', 'force string conversion' );
 
 
 

@@ -623,9 +623,9 @@ enum {
 	JLID_SPEC( _NI_BufferGet ),
 	JLID_SPEC( _NI_StreamRead ),
 	JLID_SPEC( _NI_Matrix44Get ),
-	JLID_SPEC( Get ),
-	JLID_SPEC( Read ),
-	JLID_SPEC( GetMatrix44 ),
+	JLID_SPEC( get ),
+	JLID_SPEC( read ),
+	JLID_SPEC( getMatrix44 ),
 	JLID_SPEC( _serialize ),
 	JLID_SPEC( _unserialize ),
 	JLID_SPEC( _private1 ),
@@ -3602,7 +3602,7 @@ JSStreamRead( JSContext * RESTRICT cx, JSObject * RESTRICT obj, char * RESTRICT 
 
 	jsval tmp;
 	JL_CHK( JL_NativeToJsval(cx, *amount, &tmp) );
-	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, Read), 1, &tmp, &tmp) );
+	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, read), 1, &tmp, &tmp) );
 	if ( JSVAL_IS_VOID(tmp) ) { // (TBD)! with sockets, undefined mean 'closed', that is not supported by streams !!
 
 		*amount = 0;
@@ -3626,7 +3626,7 @@ StreamReadInterface( JSContext *cx, JSObject *obj ) {
 	if (likely( fct != NULL ))
 		return fct;
 	JSBool found;
-	if ( JS_HasPropertyById(cx, obj, JLID(cx, Read), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, Read), &res) != JS_TRUE || !JL_IsCallable(cx, res)
+	if ( JS_HasPropertyById(cx, obj, JLID(cx, read), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, Read), &res) != JS_TRUE || !JL_IsCallable(cx, res)
 		return JSStreamRead;
 	return NULL;
 }
@@ -3661,7 +3661,7 @@ INLINE JSBool
 JSBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 
 	jsval tmp;
-	return JL_CallFunctionId(cx, obj, JLID(cx, Get), 0, NULL, &tmp) && JL_JsvalToNative(cx, tmp, str);
+	return JL_CallFunctionId(cx, obj, JLID(cx, get), 0, NULL, &tmp) && JL_JsvalToNative(cx, tmp, str);
 }
 
 
@@ -3672,7 +3672,7 @@ BufferGetInterface( JSContext *cx, JSObject *obj ) {
 	if (likely( fct != NULL ))
 		return fct;
 	JSBool found;
-	if ( JS_HasPropertyById(cx, obj, JLID(cx, Get), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, Get), &res) != JS_TRUE || !JL_IsCallable(cx, res)
+	if ( JS_HasPropertyById(cx, obj, JLID(cx, get), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, Get), &res) != JS_TRUE || !JL_IsCallable(cx, res)
 		return JSBufferGet;
 	return NULL;
 }
@@ -3718,7 +3718,7 @@ Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
 	if (likely( fct != NULL ))
 		return fct;
 	JSBool found;
-	if ( JS_HasPropertyById(cx, obj, JLID(cx, GetMatrix44), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, GetMatrix44), &res) != JS_TRUE || !JL_IsCallable(cx, res)
+	if ( JS_HasPropertyById(cx, obj, JLID(cx, getMatrix44), &found) && found ) // JS_GetPropertyById(cx, obj, JLID(cx, GetMatrix44), &res) != JS_TRUE || !JL_IsCallable(cx, res)
 		return JSMatrix44Get;
 	return NULL;
 }

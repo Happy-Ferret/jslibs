@@ -349,7 +349,7 @@ loadModule('jsdebug');
 		for ( var i=0 ; i < 1000 ; i++ )
 			s.push(new Socket( Socket.TCP ));
 		s = [];
-		QA.GC();
+		QA.gc();
 	}
 
 /// Create/remove a lot of sockets [r]
@@ -416,7 +416,7 @@ loadModule('jsdebug');
 				QA.ASSERT( s.closed , false,  'Socket descriptor is closed' );
 
 				delete soc.writable;
-				QA.ASSERT_HAS_PROPERTIES( s, 'Write' );
+				QA.ASSERT_HAS_PROPERTIES( s, 'write' );
 				s.write('GET\r\n\r\n');
 			}
 			soc.readable = function(s) {

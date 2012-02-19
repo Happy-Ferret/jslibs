@@ -55,7 +55,7 @@ dlist.push(jabberSocket);
 
 jabberSocket.readable = function() {
 	
-	var res = j.Process();
+	var res = j.process();
 	if ( res != Jabber.connNoError )
 		print( 'Error '+res+' while processing data', '\n' );
 }

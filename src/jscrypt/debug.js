@@ -14,7 +14,7 @@ print( hexEncode(md5('qwe')), '\n' );
 
 var md5 = new Hash('md5');
 print( hexEncode(md5('qw')), '\n' );
-md5.Process('e');
+md5.process('e');
 print( hexEncode(md5.done()), '\n' );
 
 halt();
@@ -125,7 +125,7 @@ halt();
 var h1 = new Hash("md5")("some data");
 
 var h2 = new Hash("md5");
-h2.Process("some data");
+h2.process("some data");
 h2 = h2.done();
 
 print( h1 == h2 );
@@ -134,7 +134,7 @@ print( h1 == h2 );
 halt();
 
 var md5 = new Hash('md5');
-md5.Process('foobarxxx');
+md5.process('foobarxxx');
 print(hexEncode(md5.done(), '\n'));
 print( '\n' );
 

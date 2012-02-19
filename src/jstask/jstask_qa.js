@@ -28,7 +28,7 @@ loadModule('jsio');
 	while ( !endSignal && i++ < 100 ) {
 
 		new Task(function(){});
-		QA.GC();
+		QA.gc();
 	}
 
 

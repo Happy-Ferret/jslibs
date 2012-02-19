@@ -182,7 +182,7 @@ loadModule('jsstd');
 		}
 		QA.ASSERT( count, ids.length, 'IdToObject validity before GC (may fail if gcZeal > 0)' );
 		
-		QA.GC();
+		QA.gc();
 
 		var count = 0;
 		for each ( id in (ids) ) {
@@ -196,7 +196,7 @@ loadModule('jsstd');
 		
 		for ( var i = 0; i<500; i++ )
 			objectToId({});
-		QA.GC();
+		QA.gc();
 		for ( var i = 0; i<1000; i++ )
 			objectToId({});
 
@@ -225,15 +225,15 @@ loadModule('jsstd');
 /// buffer and GC []
 
 		var errBuffer = new Buffer();
-		QA.GC();
+		QA.gc();
 		for ( var i = 0; i < 3; i++ ) {
 		
 			errBuffer.write(stringRepeat('z', 1000000));
-			QA.GC();
+			QA.gc();
 		}
 		
 		var res = errBuffer.toString().indexOf('zzz') 
-		QA.GC();
+		QA.gc();
 		
 		QA.ASSERT( res, 0, 'buffer test' ); 
 
@@ -325,13 +325,13 @@ loadModule('jsstd');
 		buf.write('');
 		buf.write('6789');
 
-		QA.GC();
+		QA.gc();
 		var s = buf.read(5);
 		s += 'X'
-		QA.GC();
+		QA.gc();
 		buf.unread(s);
 		s += 'Y'
-		QA.GC();
+		QA.gc();
 
 		QA.ASSERT( buf.length, 10, 'length before read 30' );
 
@@ -605,14 +605,14 @@ loadModule('jsstd');
 		
 		var str = QA.randomString(1024*1024);
 		
-		QA.GC();
+		QA.gc();
 	
 		for ( var i = 0; i < 4; i++ )
 			str += str;
 			
 //		QA.ASSERT( gcBytes, str.length, 'lot of allocated memory' );
 		
-		QA.GC();
+		QA.gc();
 
 
 /// hide properties [ftrm]
@@ -651,11 +651,11 @@ loadModule('jsstd');
 		
 		QA.ASSERT( expand('Hello World'), 'Hello World', 'expanding a simple string' );
 		
-		QA.ASSERT( expand(' $(h) $(w)', { h:'Hello', w:'World' }), ' hello World', 'expanding a string' );
-		QA.ASSERT( expand(' $(h) $(w', { h:'Hello', w:'World' }), ' hello ', 'expanding a bugous string' );
-		QA.ASSERT( expand(' $(h) $(', { h:'Hello', w:'World' }), ' hello ', 'expanding a bugous string' );
-		QA.ASSERT( expand(' $(h) $', { h:'Hello', w:'World' }), ' hello $', 'expanding a string' );
-		QA.ASSERT( expand(' $(h)', { h:'Hello', w:'World' }), ' hello', 'expanding a string' );
+		QA.ASSERT( expand(' $(h) $(w)', { h:'Hello', w:'World' }), ' Hello World', 'expanding a string' );
+		QA.ASSERT( expand(' $(h) $(w', { h:'Hello', w:'World' }), ' Hello ', 'expanding a bugous string' );
+		QA.ASSERT( expand(' $(h) $(', { h:'Hello', w:'World' }), ' Hello ', 'expanding a bugous string' );
+		QA.ASSERT( expand(' $(h) $', { h:'Hello', w:'World' }), ' Hello $', 'expanding a string' );
+		QA.ASSERT( expand(' $(h)', { h:'Hello', w:'World' }), ' Hello', 'expanding a string' );
 
 		QA.ASSERT( expand('$(c)'), '', 'expanding a string' );
 		QA.ASSERT( expand('$(c)a'), 'a', 'expanding a string' );
@@ -898,22 +898,22 @@ loadModule('jsstd');
 		disableGarbageCollection = true;
 		QA.ASSERT( disableGarbageCollection, true, 'GC is disabled' );
 		
-		QA.GC();
+		QA.gc();
 		var mem0 = privateMemoryUsage;
 		var str = stringRepeat('x', 1000000);
 		str = undefined;
-		QA.GC();
+		QA.gc();
 		var mem1 = privateMemoryUsage;
 		QA.ASSERT( mem1 >= mem0 + 1000000, true, 'without GC' );
 		
 		disableGarbageCollection = prev;
 
 /*	
-		QA.GC();
+		QA.gc();
 		var mem0 = privateMemoryUsage;
 		var str = stringRepeat('x', 1000000);
 		str = undefined;
-		QA.GC();
+		QA.gc();
 		var mem1 = privateMemoryUsage;
 		QA.ASSERT( Math.abs(mem1/mem0) < 1.1, true, 'with GC' );
 */

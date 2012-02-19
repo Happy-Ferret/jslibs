@@ -124,12 +124,12 @@ loadModule('jsio');
 	
 /// GC test [r]
 		
-		QA.GC();
+		QA.gc();
 		var s = stringRepeat('x', 100000);
 		//		QA.ASSERT( gcMallocBytes > 100000 && gcMallocBytes < 301000, true, 'Before GC' ); // GC stat not available any more
 
 		s = undefined;
-		QA.GC();
+		QA.gc();
 		//		QA.ASSERT( gcMallocBytes < 100, true, 'After GC');
 		
 
@@ -178,7 +178,7 @@ loadModule('jsio');
 		var times = 3;
 		var data = [];
 
-		QA.GC();
+		QA.gc();
 		var mem0 = privateMemoryUsage;
 		
 		var prev = disableGarbageCollection;
@@ -214,7 +214,7 @@ loadModule('jsio');
 	QA.ASSERT( typeof global, 'object', 'global type' );
 	delete global;
 	QA.ASSERT( typeof global, 'object', 'global type after delete' );
-	QA.ASSERT_STR( global.valueOf(), '[object global]', 'global class' );
+	QA.ASSERT_STR( global.valueOf(), '[object Global]', 'global class' );
 	QA.ASSERT( uneval( global ).length > 0, true, 'uneval global' );
 	QA.ASSERT( global.Math, Math, 'global std objects' );
 	QA.ASSERT_HAS_PROPERTIES( global, '_host,arguments' );
