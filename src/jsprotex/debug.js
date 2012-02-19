@@ -9,7 +9,7 @@ loadModule('jsimage');
 loadModule('jsdebug');
 
 
-//Halt(); //////////////////////////////////////////////////////////////////////
+//halt(); //////////////////////////////////////////////////////////////////////
 
 
 const RED = [1,0,0,1];
@@ -41,69 +41,69 @@ const kernelLaplacian = [-1,-1,-1, -1,8,-1, -1,-1,-1];
 //texture.Convolution([0,-1,0, -1,5,-1, 0,-1,0]); // crystals
 
 
-function AddPixels(t, count) {
+function addPixels(t, count) {
 	
 	while ( count-- > 0 )
-		t.SetPixel(Texture.RandInt(), Texture.RandInt(), 1);
+		t.setPixel(Texture.randInt(), Texture.randInt(), 1);
 }
 
-function Cloud( size, amp ) {
+function cloud( size, amp ) {
 
 	var octaves = Math.log(size) / Math.LN2;
 	var a = 1, s = 1;
 	var cloud = new Texture(s, s, 1);
-	cloud.ClearChannel();
+	cloud.clearChannel();
 	while ( octaves-- > 0 ) {
 		
-		cloud.AddNoise(a);
+		cloud.addNoise(a);
 		a *= amp;
 		s *= 2;
-		cloud.Resize(s, s, false);
-		cloud.BoxBlur(3,3);
+		cloud.resize(s, s, false);
+		cloud.boxBlur(3,3);
 	}
-	cloud.NormalizeLevels();
+	cloud.normalizeLevels();
 	return cloud;
 }
 
-function DesaturateLuminosity( tex ) { // see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimprgb.h?revision=19720&view=markup
+function desaturateLuminosity( tex ) { // see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimprgb.h?revision=19720&view=markup
 	
-	tex.Mult([0.2126, 0.7152, 0.0722]);
-	var tmp = new Texture(tex.width, tex.height, 1).Desaturate(tex, Texture.desaturateSum);
-	tex.Swap(tmp);
-	tmp.Free();
+	tex.mult([0.2126, 0.7152, 0.0722]);
+	var tmp = new Texture(tex.width, tex.height, 1).desaturate(tex, Texture.desaturateSum);
+	tex.swap(tmp);
+	tmp.free();
 }
 
-function GrayToRGB( tex ) {
+function grayToRGB( tex ) {
 
 	if ( tex.channels == 1 )
-		new Texture(tex.width, tex.height, 3).SetChannel(0, tex, 0).SetChannel(1, tex, 0).SetChannel(2, tex, 0).Swap(tex);
+		new Texture(tex.width, tex.height, 3).setChannel(0, tex, 0).setChannel(1, tex, 0).setChannel(2, tex, 0).swap(tex);
 	else if ( tex.channels == 2 )
-		new Texture(tex.width, tex.height, 4).SetChannel(0, tex, 0).SetChannel(1, tex, 0).SetChannel(2, tex, 0).Swap(tex);
+		new Texture(tex.width, tex.height, 4).setChannel(0, tex, 0).setChannel(1, tex, 0).setChannel(2, tex, 0).swap(tex);
 }
 
-function AddAlpha( tex ) {
+function addAlpha( tex ) {
 
 	if ( tex.channels == 1 )
-		new Texture(tex.width, tex.height, 2).SetChannel(0, tex, 0).Swap(tex);
+		new Texture(tex.width, tex.height, 2).setChannel(0, tex, 0).swap(tex);
 	else if ( tex.channels == 3 )
-		new Texture(tex.width, tex.height, 4).SetChannel(0, tex, 0).SetChannel(1, tex, 1).SetChannel(2, tex, 2).Swap(tex);
+		new Texture(tex.width, tex.height, 4).setChannel(0, tex, 0).setChannel(1, tex, 1).setChannel(2, tex, 2).swap(tex);
 }
 
-function ColorToAlpha( tex, color ) {
+function colorToAlpha( tex, color ) {
 
 	ASSERT( tex.channels == 2 || tex.channels == 4 );
 	var alpha = new Texture(tex.width, tex.height, 1);
-	alpha.ExtractColor(tex, color);
-	tex.SetChannel(tex.channels, alpha, 0);
+	alpha.extractColor(tex, color);
+	tex.setChannel(tex.channels, alpha, 0);
 }
 
 
-function NoiseChannel( tex, channel ) {
+function noiseChannel( tex, channel ) {
 	
 	var tmp = new Texture(tex.width, tex.height, 1);
-	tmp.AddNoise();
-	tex.SetChannel(channel, tmp, 0);
-	tmp.Free();
+	tmp.addNoise();
+	tex.setChannel(channel, tmp, 0);
+	tmp.free();
 }
 
 
@@ -120,18 +120,18 @@ var texture = new Texture(size, size, 3);
 //	texture.Set(0);
 //	texture.Import( myImage, 0, 0 );
 
-var t0 = IntervalNow();
-function time() IntervalNow() - t0;
+var t0 = intervalNow();
+function time() intervalNow() - t0;
 var z = 0;
-RandSeed(1);
-PerlinNoiseReinit();
+randSeed(1);
+perlinNoiseReinit();
 
 exec('liveconsole.js');
 
-function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
+function updateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
 
 	// live coding test
-	live.Poll();
+	live.poll();
 	live.Function(texture);
 
 return;
@@ -139,35 +139,35 @@ return;
 	// disco effect
 	tmp = new Texture(size, size, 4);
 	tmp.Set(0);
-	tmp.AddGradiantQuad('#ff0000ff', GREEN, BLUE, BLACK);
+	tmp.addGradiantQuad('#ff0000ff', GREEN, BLUE, BLACK);
 	var tr = new Transformation(null);
-	tr.Scale(5);
-	tr.Rotate(IntervalNow()/5, 1,1,1);
-	tmp.ApplyColorMatrix(tr);
-	texture.SetChannel(0, tmp, 0).SetChannel(1, tmp, 1).SetChannel(2, tmp, 2);
+	tr.scale(5);
+	tr.rotate(intervalNow()/5, 1,1,1);
+	tmp.applyColorMatrix(tr);
+	texture.setChannel(0, tmp, 0).setChannel(1, tmp, 1).setChannel(2, tmp, 2);
 return;
 
 
 	// perlin noise
 	texture.Set(0);
-	texture.AddGradiantQuad(RED, GREEN, BLUE, WHITE);
+	texture.addGradiantQuad(RED, GREEN, BLUE, WHITE);
 return;
 
-	texture.AddPerlin2([z/20,0,0], [10,0,0], [0,10,0], 2);
+	texture.addPerlin2([z/20,0,0], [10,0,0], [0,10,0], 2);
 
-function FractalCubeFace(px, py, pz,  x1, y1, z1,  x2, y2, z2) {
+function fractalCubeFace(px, py, pz,  x1, y1, z1,  x2, y2, z2) {
 
 	var face = new Texture(128,128,1).Set(0);
 	for ( var scale = 2; scale <= 32; scale *= 2 )
-		face.AddPerlin2([px*scale, py*scale, pz*scale], [x1*scale, y1*scale, z1*scale], [x2*scale, y2*scale, z2*scale], 1/scale);
+		face.addPerlin2([px*scale, py*scale, pz*scale], [x1*scale, y1*scale, z1*scale], [x2*scale, y2*scale, z2*scale], 1/scale);
 	return face;
 }
 
-	var t1 = FractalCubeFace(z/10,0,0, -1,0,0, 0,-1,0);
+	var t1 = fractalCubeFace(z/10,0,0, -1,0,0, 0,-1,0);
 
 //	t1.Dilate(1,1);
-	t1.Add(0.25);
-	t1.Mult(1.5);
+	t1.add(0.25);
+	t1.mult(1.5);
 	
 	texture = t1;
 
@@ -177,29 +177,29 @@ return;
 
 	// perlin noise
 	texture.Set(0.5);
-	texture.AddPerlin2(z,0,0, 32, 1);
-	texture.AddPerlin2(z,0,0, 16, 0.5);
-	texture.AddPerlin2(z,0,0, 8, 0.25);
-	texture.AddPerlin2(z,0,0, 4, 0.125);
-	texture.SetChannel(1, texture, 0);
-	texture.SetChannel(2, texture, 0);
+	texture.addPerlin2(z,0,0, 32, 1);
+	texture.addPerlin2(z,0,0, 16, 0.5);
+	texture.addPerlin2(z,0,0, 8, 0.25);
+	texture.addPerlin2(z,0,0, 4, 0.125);
+	texture.setChannel(1, texture, 0);
+	texture.setChannel(2, texture, 0);
 	z += 1;
 return;
 
 
 	// dilate test
 	var mx = texture.width/2, my = texture.height/2;
-	texture.Set(0).SetPixel(mx-mx/2, my, [1,0,0]).SetPixel(mx, my, [0,0.7,0]).SetPixel(mx+mx/2, my, [0,0,1]).BoxBlur(mx/2,mx/2, 5);
+	texture.Set(0).setPixel(mx-mx/2, my, [1,0,0]).setPixel(mx, my, [0,0.7,0]).setPixel(mx+mx/2, my, [0,0,1]).boxBlur(mx/2,mx/2, 5);
 	
-	texture.Dilate(5);
-	texture.NormalizeLevels();
+	texture.dilate(5);
+	texture.normalizeLevels();
 return;
 
 
 
 	// ???
-	var bump = new Texture(texture.width, texture.height, 3).Cells(8, 0).Add( new Texture(size, size, 3).Cells(8, 1).OppositeLevels() ); // broken floor
-	bump.Normals();
+	var bump = new Texture(texture.width, texture.height, 3).cells(8, 0).add( new Texture(size, size, 3).cells(8, 1).oppositeLevels() ); // broken floor
+	bump.normals();
 
 	var t = new Texture(size, size, 3);
 	t.Set(1);
@@ -207,26 +207,26 @@ return;
 
 	
 /*	
-	t.Normals();
+	t.normals();
 	var t1 = new Texture(size, size, 3);
-	t1.SetLevels(0.5);
+	t1.setLevels(0.5);
 	t1.Light( t, 0, 0.5, '#ff0000', [1,1,3], 1, 1 );
-	t.Swap(t1);
+	t.swap(t1);
 */
 return;
 
 
 	// ???
-	RandSeed(1);
+	randSeed(1);
 	texture.Set(0); // clears the texture
-	texture.AddCracks( 1000, 10, 0.1, 1, function(v) { return RandReal() } );
+	texture.addCracks( 1000, 10, 0.1, 1, function(v) { return randReal() } );
 return;
 
 
 	// gozilla's skin
-	RandSeed(1);
-	var bump = Cloud( size, 0.6 );
-	bump.Normals();
+	randSeed(1);
+	var bump = cloud( size, 0.6 );
+	bump.normals();
 	texture.Set(1);
 	texture.Light( bump, [-1, -1, 0.5], 0, [0.4, 0.6, 0.0], 0.2, 0.7, 10 );
 return;
@@ -236,35 +236,35 @@ return;
 
 
 	// disco effect 2
-	var t = Cloud(size, 0.2);
-	GrayToRGB( t );
-	t.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
-	t.MirrorLevels( 0.5 );
-	t.Mult(2);
-	t.CutLevels(0.6, 0.8);
-	t.Colorize( BLACK, RED, 0 );
-	t.Colorize( WHITE, BLUE, 0 );
+	var t = cloud(size, 0.2);
+	grayToRGB( t );
+	t.addGradiantQuad(BLUE, GREEN, RED, YELLOW);
+	t.mirrorLevels( 0.5 );
+	t.mult(2);
+	t.cutLevels(0.6, 0.8);
+	t.colorize( BLACK, RED, 0 );
+	t.colorize( WHITE, BLUE, 0 );
 	texture.Set(t);
 return;
 
 
 	// the sun
 	texture.Set(0);
-	texture.ForEachPixel(function(pixel, x, y) {
+	texture.forEachPixel(function(pixel, x, y) {
 		
-		var val = PerlinNoise(1.5, 0.75, 5, x/4, y/4, z/16);
+		var val = perlinNoise(1.5, 0.75, 5, x/4, y/4, z/16);
 		pixel[0] = val;
 		pixel[1] = val;
 	});
-	texture.AddGradiantRadial( curveGaussian( 0.5 ), true ).Add(-1);
-	texture.AddGradiantRadial( function(v) v > 0.4 ? 1 : 0, true ).Add(-1);
+	texture.addGradiantRadial( curveGaussian( 0.5 ), true ).add(-1);
+	texture.addGradiantRadial( function(v) v > 0.4 ? 1 : 0, true ).add(-1);
 	z += 1;
 return;
 	
 
 	// gaussian like fast blur
 	var mx = texture.width/2, my = texture.height/2;
-	texture.Set(0).SetPixel(mx-mx/2, my, [1,0,0]).SetPixel(mx, my, [0,1,0]).SetPixel(mx+mx/2, my, [0,0,1]).BoxBlur(mx/2,mx/2, 5).NormalizeLevels();
+	texture.Set(0).setPixel(mx-mx/2, my, [1,0,0]).setPixel(mx, my, [0,1,0]).setPixel(mx+mx/2, my, [0,0,1]).boxBlur(mx/2,mx/2, 5).normalizeLevels();
 return;
 
 
@@ -274,8 +274,8 @@ return;
 	for ( var y = 0; y < my; y++ )
 		for ( var x = 0; x < mx; x++ ) {
 		
-			var val = PerlinNoise2((x/24 + -offsetx/30) * -offsetz/2, (y/24 + -offsety/30) * -offsetz/2, z/100);
-			texture.SetPixel(x,y, val);
+			var val = perlinNoise2((x/24 + -offsetx/30) * -offsetz/2, (y/24 + -offsety/30) * -offsetz/2, z/100);
+			texture.setPixel(x,y, val);
 		}
 
 	z += 1;
@@ -283,18 +283,18 @@ return;
 
 
 	// smooth colored noise
-	RandSeed(1);
-	texture.Set(0).AddNoise(1).BoxBlur(7,7, 3).NormalizeLevels();
+	randSeed(1);
+	texture.Set(0).addNoise(1).boxBlur(7,7, 3).normalizeLevels();
 return;
 
 
 	// smoke effect
 	texture.Set(1);
-	texture.ForEachPixel(function(pixel, x, y) {
+	texture.forEachPixel(function(pixel, x, y) {
 		
 		var ry = (y/texture.height);
 //		val = PerlinNoise(2, 0.5, 1, x,y,z);
-		var val = ImprovedPerlinNoise(x/24, (y/24 + z/24), z/246) * ry;
+		var val = improvedPerlinNoise(x/24, (y/24 + z/24), z/246) * ry;
 		pixel[0] = val;
 		pixel[1] = val;
 		pixel[2] = val;
@@ -305,10 +305,10 @@ return;
 
 	// nice clouds effect
 	texture.Set(1);
-	texture.ForEachPixel(function(pixel, x, y) {
+	texture.forEachPixel(function(pixel, x, y) {
 
-		var dis = PerlinNoise(2.1, 0.5, 6, x-z/2, y);
-		var val = PerlinNoise(2, 0.5, 5, (x-z+dis*24)/2, y/2);
+		var dis = perlinNoise(2.1, 0.5, 6, x-z/2, y);
+		var val = perlinNoise(2, 0.5, 5, (x-z+dis*24)/2, y/2);
 		pixel[0] = 1-val;
 		pixel[1] = 1-val;
 	});
@@ -317,9 +317,9 @@ return;
 
 	// binary stream
 	texture.Set(0);
-	texture.ForEachPixel(function(pixel, x, y) {
+	texture.forEachPixel(function(pixel, x, y) {
 
-		var val = PerlinNoise2(x+z, y/3, 0);
+		var val = perlinNoise2(x+z, y/3, 0);
 		pixel[1] = val;
 	});
 	z += 1;
@@ -327,10 +327,10 @@ return;
 
 	// strange effect
 	texture.Set(0);
-	texture.ForEachPixel(function(pixel, x, y) {
+	texture.forEachPixel(function(pixel, x, y) {
 
-		var dx= PerlinNoise2(y*f, (x+z)*f, 0);
-		val = PerlinNoise2((x*dx+z)*f, (y*dx)*f, 0);
+		var dx= perlinNoise2(y*f, (x+z)*f, 0);
+		val = perlinNoise2((x*dx+z)*f, (y*dx)*f, 0);
 
 		pixel[0] = val;
 		pixel[1] = val;
@@ -344,11 +344,11 @@ return;
 
 
 	
-	texture = Cloud( size, 0.5 * Math.sin(time()/1000) );
-	texture.CutLevels(0.49,0.51);
-	texture.BoxBlur(4,4);
-	texture.MirrorLevels(0.5);
-	texture.PowLevels(0.5)
+	texture = cloud( size, 0.5 * Math.sin(time()/1000) );
+	texture.cutLevels(0.49,0.51);
+	texture.boxBlur(4,4);
+	texture.mirrorLevels(0.5);
+	texture.powLevels(0.5)
 //texture.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
 //	texture.SetRectangle( 1*size/4, 1*size/4, 3*size/4, 3*size/4, WHITE );
 //	texture.RotoZoom( 0, 0, 1, 1, time()/10000 );
@@ -408,28 +408,28 @@ return;
 //	t.OppositeLevels();
 //	t.Add(1);
 	
-	var c = Cloud(size, 0.5)
-	t.Mult( c );
-	t.Add(-0.05);
-	t.Mult(3)
+	var c = cloud(size, 0.5)
+	t.mult( c );
+	t.add(-0.05);
+	t.mult(3)
 	
 
 	var tmp = new Texture(size, size, 1);
-	tmp.ClearChannel();
-	tmp.SetRectangle(10,10,size-10,size-10,1);
-	t.Blend(tmp,0.7);
+	tmp.clearChannel();
+	tmp.setRectangle(10,10,size-10,size-10,1);
+	t.blend(tmp,0.7);
 
 	
 return;
 	
 	
 //	t.Set(GRAY);
-	t.AddGradiantLinear(curveHalfSine, curveOne);
+	t.addGradiantLinear(curveHalfSine, curveOne);
 	
 	var bump = new Texture(size, size, 1);
-	bump.ClearChannel();
-	bump.AddGradiantRadial( curveHalfSine );
-	bump.Normals();
+	bump.clearChannel();
+	bump.addGradiantRadial( curveHalfSine );
+	bump.normals();
 //	t.Light( bump, [1, 1, 0.01], 0, [1,0,0], 1, 1, 1 );
 //t.Displace( bump, 1 );
 	
@@ -443,14 +443,14 @@ return;
 return;
 
 	var bump = new Texture(size, size, 3);
-	bump.ClearChannel();
+	bump.clearChannel();
 	for ( var i = 0; i < 20; i++ ) {
-		var x = Texture.RandReal() * bump.width;
-		var y = Texture.RandReal() * bump.height;
-		var s = Texture.RandReal() * 60 + 10;
-		bump.SetRectangle(x, y, x+s, y+s, Texture.RandReal() );
+		var x = Texture.randReal() * bump.width;
+		var y = Texture.randReal() * bump.height;
+		var s = Texture.randReal() * 60 + 10;
+		bump.setRectangle(x, y, x+s, y+s, Texture.randReal() );
 	}
-	bump.Normals();
+	bump.normals();
 	
 //	t.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
 //	t.Colorize(BLUE, WHITE, 1);
@@ -464,10 +464,10 @@ return;
 //	t.Resize(256,256);
 //	t.AddNoise(0.5);
 	
-	t.AddGradiantQuad(BLUE, GREEN, RED, YELLOW);
+	t.addGradiantQuad(BLUE, GREEN, RED, YELLOW);
 //	t.Set( YELLOW )
 
-	t.Colorize(BLUE, WHITE);
+	t.colorize(BLUE, WHITE);
 	
 //	t.NormalizeVectors();
 //	t.NormalizeLevels();
@@ -476,51 +476,51 @@ return;
 	
 	var t1 = new Texture(size, size, 1);
 	
-	t1.ExtractColor(t,BLACK, 1);
-	t1.CutLevels(0.5);
+	t1.extractColor(t,BLACK, 1);
+	t1.cutLevels(0.5);
 	
 	t = t1;
 	
 	
 return;
 
-	t.Colorize(RED, BLACK);
-	t.Colorize(GREEN, BLACK);
-	t.Colorize(BLUE, BLACK);
-	t.NormalizeLevels();
+	t.colorize(RED, BLACK);
+	t.colorize(GREEN, BLACK);
+	t.colorize(BLUE, BLACK);
+	t.normalizeLevels();
 	
 	
 //	DesaturateLuminosity(t);
 
 return;
 
-	var t = Cloud(size, 0.5);
-	t.Aliasing(8,curveLinear);
-	t.BoxBlur(3,3)
+	var t = cloud(size, 0.5);
+	t.aliasing(8,curveLinear);
+	t.boxBlur(3,3)
 
 return;
 
 
 return;
 
-	t.SetLevels('#FFDDEE');
+	t.setLevels('#FFDDEE');
 	
 	var t1 = new Texture(t);
-	t1.AddLevels(-0.5);
-	t1.MultLevels(0.5);
+	t1.addLevels(-0.5);
+	t1.multLevels(0.5);
 	
-	t.Paste( t1, size/2, 0, -1 );
+	t.paste( t1, size/2, 0, -1 );
 	
 return;
 	var t = new Texture(size, size, 1);
-	t.ClearChannel();
-	t.AddNoise(1);
-	GrayToRGB(t);
+	t.clearChannel();
+	t.addNoise(1);
+	grayToRGB(t);
 
-	t.CutLevels( 0.5, 0.5 );
-	t.MultLevels([0.5,1,1]);
+	t.cutLevels( 0.5, 0.5 );
+	t.multLevels([0.5,1,1]);
 	
-	t.BoxBlur(2,2);
+	t.boxBlur(2,2);
 	
 
 return;
@@ -530,15 +530,15 @@ return;
 //	t.AddCracks( 1, 10, 0.5, WHITE, curveSine );
 	
 	var th = new Texture(size, size, 1);
-	th.ClearChannel();
-	th.AddGradiantLinear( 1, curveDot );
+	th.clearChannel();
+	th.addGradiantLinear( 1, curveDot );
 
 	var tv = new Texture(size, size, 1);
-	tv.ClearChannel();
-	tv.AddGradiantLinear( curveDot, 1 );
+	tv.clearChannel();
+	tv.addGradiantLinear( curveDot, 1 );
 	
-	t.Mix(th, tv);
-	t.Aliasing(2);
+	t.mix(th, tv);
+	t.aliasing(2);
 
 
 
@@ -546,37 +546,37 @@ return;
 
 
 	//t.Normals();
-	t.ClearChannel();
-	t.AddGradiantQuad( [0], [0], [1], [1] );
+	t.clearChannel();
+	t.addGradiantQuad( [0], [0], [1], [1] );
 
 	var t = new Texture(128, 128, 3);
-	t.ClearChannel();
-	t.AddNoise();
+	t.clearChannel();
+	t.addNoise();
 	t.RGBToHLS();
 	//t.MultLevels([1,1,0.1]);
 	//t.BoxBlur(2,2);
 	t.HLSToRGB();
 
-	t.ClearChannel();
+	t.clearChannel();
 
 	for ( var i = 0; i< 10; i++ ) {
-		AddPixels(t, 64);
-		t.BoxBlur(2,2);
+		addPixels(t, 64);
+		t.boxBlur(2,2);
 	}
-	t.BoxBlur(2,2);
-	t.NormalizeLevels();
+	t.boxBlur(2,2);
+	t.normalizeLevels();
 
 	var red = new Texture(128,128,3);
-	red.SetLevels([1,0,0]);
+	red.setLevels([1,0,0]);
 	var blue = new Texture(128,128,3);
-	blue.SetLevels([0,0,1]);
+	blue.setLevels([0,0,1]);
 
-	t.Mix(red,blue);
+	t.mix(red,blue);
 
-	t.ClearChannel(2);
+	t.clearChannel(2);
 
-	t.ClearChannel();
-	t.AddCracks( 100, 100, 0, WHITE, [.1,.2,.3,.5,.6,.7,.8,.9,1] );
+	t.clearChannel();
+	t.addCracks( 100, 100, 0, WHITE, [.1,.2,.3,.5,.6,.7,.8,.9,1] );
 
 	//t.Convolution( [ 0,0.5,0, 0.5,1,0.5, 0,0.5,0 ] );
 
@@ -585,40 +585,40 @@ return;
 	var sx = 16; 
 	var sy = 16; 
 
-	var noise = new Texture(sx,sy,1).SetNoise();
-	noise.Resize( 64, 64, true );
+	var noise = new Texture(sx,sy,1).setNoise();
+	noise.resize( 64, 64, true );
 
 	var texture = new Texture(noise.width,noise.height,4);
-	texture.SetChannel(0, noise, 0).SetChannel(1, noise, 0).SetChannel(2, noise, 0);
+	texture.setChannel(0, noise, 0).setChannel(1, noise, 0).setChannel(2, noise, 0);
 	*/
 
 	/*
 	var texture = new Texture(2,2,4);
-	texture.SetValue([0,0,0,1]);
-	texture.SetPixel(0,0,[1,0,0,1]);
-	texture.SetPixel(1,0,[1,0,0,1]);
-	texture.SetPixel(0,1,[0,0,1,1]);
-	texture.SetPixel(1,1,[1,1,1,1]);
-	texture.Resize(64,64,true);
-	texture.Shift(10,0);
+	texture.setValue([0,0,0,1]);
+	texture.setPixel(0,0,[1,0,0,1]);
+	texture.setPixel(1,0,[1,0,0,1]);
+	texture.setPixel(0,1,[0,0,1,1]);
+	texture.setPixel(1,1,[1,1,1,1]);
+	texture.resize(64,64,true);
+	texture.shift(10,0);
 	*/
 
 
 	/* test normals
 	var texture = new Texture(128,128,1);
-	texture.SetNoise();
-	texture.SetRectangle( 0, 0, 10, 10, [1]);
-	texture.Normals(1);
+	texture.setNoise();
+	texture.setRectangle( 0, 0, 10, 10, [1]);
+	texture.normals(1);
 	*/
 
 	/* spaceship hud
 	var texture = new Texture(256,256,1);
-	texture.SetLevels([0]);
-	texture.SetPixels(100);
-	texture.BoxBlur(32,64);
-	texture.Convolution([0,0,-1.5, 0,1,0 ,0,0,1]);
+	texture.setLevels([0]);
+	texture.setPixels(100);
+	texture.boxBlur(32,64);
+	texture.convolution([0,0,-1.5, 0,1,0 ,0,0,1]);
 	//texture.Convolution([0,0,0, 0,1,0 ,0,0,0]);
-	texture.MultLevels([200]);
+	texture.multLevels([200]);
 	//texture.NormalizeLevels();
 	*/
 
@@ -672,7 +672,7 @@ var offsetx = 0, offsety = 0, offsetz = 0;
 var end=false, pause = false;
 
 var listeners = {
-	onVideoResize: function(w,h) { Ogl.Viewport(0, 0, w, h) },
+	onVideoResize: function(w,h) { Ogl.viewport(0, 0, w, h) },
 	onQuit: function() { end = true },
 	onKeyDown: function(key, mod) { end = key == K_ESCAPE },
 	onMouseButtonDown: function(button, x, y) {
@@ -706,51 +706,51 @@ var listeners = {
 
 
 
-GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-GlSetAttribute( GL_DOUBLEBUFFER, 1 );
-GlSetAttribute( GL_DEPTH_SIZE, 16 );
-SetVideoMode( 200, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+glSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+glSetAttribute( GL_DOUBLEBUFFER, 1 );
+glSetAttribute( GL_DEPTH_SIZE, 16 );
+setVideoMode( 200, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 
 with (Ogl) {
 
-	MatrixMode(PROJECTION);
-	ShadeModel(FLAT);
-	Enable(TEXTURE_2D);
-	TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
-	TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
-  Scale(1, -1, 1);
+	matrixMode(PROJECTION);
+	shadeModel(FLAT);
+	enable(TEXTURE_2D);
+	texParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
+	texParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
+  scale(1, -1, 1);
 }
 
 while (!end) {
 
-	while (PollEvent(listeners));
+	while (pollEvent(listeners));
 	if ( pause ) {
 		
-		Sleep(100);
+		sleep(100);
 		continue;
 	}
 
-	var t = TimeCounter();
-	UpdateTexture();
-	t = TimeCounter() - t;
+	var t = timeCounter();
+	updateTexture();
+	t = timeCounter() - t;
 	print( t.toFixed(), 'ms     \r' );
 
 	with (Ogl) {
 		
 		try {
-			DefineTextureImage(TEXTURE_2D, undefined, texture);
+			defineTextureImage(TEXTURE_2D, undefined, texture);
 		} catch (ex) {}
 		
-		Color(1,1,1,1);
-		Begin(QUADS);
-		TexCoord( 0, 0 );	Vertex( -1, -1 );
-		TexCoord( 1, 0 ); Vertex( 1, -1 );
-		TexCoord( 1, 1 ); Vertex( 1, 1 );
-		TexCoord( 0, 1 ); Vertex( -1, 1 );
-		End();
+		color(1,1,1,1);
+		begin(QUADS);
+		texCoord( 0, 0 );	vertex( -1, -1 );
+		texCoord( 1, 0 ); vertex( 1, -1 );
+		texCoord( 1, 1 ); vertex( 1, 1 );
+		texCoord( 0, 1 ); vertex( -1, 1 );
+		end();
 	}
 
-	MaybeCollectGarbage();
-	GlSwapBuffers();
+	maybeCollectGarbage();
+	glSwapBuffers();
 }
 

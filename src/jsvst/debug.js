@@ -4,7 +4,7 @@ loadModule('jsio');
 loadModule('jswinshell');
 
 var log = [];
-function Log(str) log.push(str);
+function log(str) log.push(str);
 
 var opcodeName = {};
 with ( vstPlugin ) {
@@ -78,16 +78,16 @@ vstPlugin.numParams = 5;
 
 vstPlugin.dispatcher = function(opcode, index, value, opt) {
 	
-	Log( 'opcode: '+opcodeName[opcode] + ' index: '+index + ' value: '+value + ' opt: '+opt );
+	log( 'opcode: '+opcodeName[opcode] + ' index: '+index + ' value: '+value + ' opt: '+opt );
 }
 
 
 vstPlugin.close = function() {
 
 	var c = new Console();
-	Log('Press <enter> to continue...');
-	c.Write( log.join('\r\n') );
-	c.Read();
+	log('Press <enter> to continue...');
+	c.write( log.join('\r\n') );
+	c.read();
 }
 
 vstPlugin.getParameterName = function(index) {

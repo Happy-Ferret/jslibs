@@ -46,6 +46,7 @@ function _ProcEnd(proc) {
 		for ( var i = 0; i < len; ++i )
 			taskList.push(atExit[i]);
 	}
+	proc.ended = true;
 }
 
 function StartProc(proc) {
@@ -197,6 +198,57 @@ function Step(elapsed, maxWait) {
 
 
 ////////////////////////////////////
+// test
+
+function P2() {
+
+	for (var i = 0; i< 10; ++i) {
+		
+		Print('b');
+		yield PIdle;
+	}
+}
+
+
+function P1(arg) {
+	
+	try {
+	
+		for (var i = 0;; ++i) {
+			if ( i == 10 ) {
+			
+				var proc = StartProc(P2());
+				yield PWaitProc(proc);
+			}
+				
+			Print(arg);
+			yield PIdle;
+		}
+		
+	} finally {
+		
+		PKill(proc);
+	}
+}
+
+
+var proc = StartProc(P1('a'));
+
+for (var i = 0; !endSignal && i < 100; ++i ) {
+
+	if ( i == 15 ) {
+		
+		Print('x');
+		PKill(proc);
+	}
+	
+	Step(5, 5);
+}
+
+throw 0;
+
+
+////////////////////////////////////
 
 
 
@@ -301,16 +353,20 @@ function Pod() {
 		Ogl.Begin(Ogl.LINES);
 		Ogl.Color( 1,1,1, 1 ); Ogl.Vertex(0,0,0); Ogl.Vertex(0,0,1);
 		Ogl.End();
+		Ogl.Scale(1/5);
+		Ogl.Translate(0,0,2);
+				env3d.Draw3DArrow();
+
 		Ogl.PopMatrix();
+
 		
 		Ogl.PushMatrix();
-//		Ogl.MultMatrix(center);
 		var pos = center.position;
 		Ogl.Translate(pos[0], pos[1], pos[2]);
 		Ogl.Scale(1);
 		Ogl.LineWidth(1);
 		Ogl.Begin(Ogl.LINES);
-		Ogl.Color( 1,0.2,0.2, 0.5 ); Ogl.Vertex(0,0,0); Ogl.Vertex(/*Vec3Normalize*/(center.linearVel));
+		Ogl.Color( 1,0.2,0.2, 0.5 ); Ogl.Vertex(0,0,0); Ogl.Vertex(center.linearVel);
 		Ogl.End();
 		Ogl.PopMatrix();
 		
@@ -318,7 +374,6 @@ function Pod() {
 		Ogl.PushMatrix();
 		Ogl.MultMatrix(m2.body1);
 		env3d.Draw3DArrow();
-
 		Ogl.LineWidth(2);
 		Ogl.Begin(Ogl.LINES);
 		Ogl.Color( 1,1,1, 1 ); Ogl.Vertex(0,0,-1); Ogl.Vertex(0,0,-1-m2.maxForce);
@@ -351,11 +406,18 @@ function Pod() {
 
 	this.__defineGetter__('angularVel', function() {
 		
-		return center.angularVel[1]
+		return center.angularVel[1];
 	});
 	
-	this.__defineGetter__('straightAngle', function() {
-
+<<<<<<< .mine	this.__defineGetter__('straightAngle', function() {
+=======	function GetAngularVel() {
+	
+		//var front = center.Vector3ToWorld([0,0,1]);
+		//var vel = center.linearVel;
+		//return Vec3Dot( Vec3Sub(m1.body1.linearVel, vel), front );
+		return -center.angularVel[1];
+	}
+>>>>>>> .theirs
 		var vel = center.linearVel;
 		var str = Vec3Dot( center.Vector3ToWorld([0,0,1]), Vec3Normalize(vel) );
 		var dir = Vec3Dot( center.Vector3ToWorld([-1,0,0]), vel );
@@ -365,8 +427,20 @@ function Pod() {
 		return radError;
 	});
 
-	this.__defineGetter__('angle', function() {
-
+<<<<<<< .mine	this.__defineGetter__('angle', function() {
+=======			var r1 = GetAngularVel();
+						
+			if ( Math.abs(r1) < rot ) {
+				
+				MForce(0,0);
+				return;
+			}
+			
+			if ( r1 > 0 ) {
+			
+				MForce(0,1);
+			} else {
+>>>>>>> .theirs
 		var str = Vec3Dot( center.Vector3ToWorld([0,0,1]), [0,0,1] );
 		var dir = Vec3Dot( center.Vector3ToWorld([-1,0,0]), [0,0,1] );
 		var radError = Math.PI/2 - Math.asin(str);
@@ -375,15 +449,48 @@ function Pod() {
 		return radError;
 	});
 
+<<<<<<< .mine	this.__defineGetter__('velValue', function() {
+=======	var maxRotationAccelSpeed;
+
+	var TestMaxRotationSpeed = function() {
+	
+		MForce(1,0);
+		yield PSleep(10);
+		var tmp = GetAngularVel();
+		yield PSleep(500);
+		maxRotationAccelSpeed = (GetAngularVel() - tmp)/500;
+		MForce(0,0);
+>>>>>>> .theirs		
+		return Vec3Length(center.linearVel);
+	});
 	
 	this.maxAngularAccel = 0;
 	this.ProbeMaxAngularAccel = function() {
 	
-		MForce(1,0);
+<<<<<<< .mine		MForce(1,0);
 		var tmp = this.angularVel;
 		yield PSleep(500);
 		this.maxAngularAccel = (this.angularVel - tmp)/500 * 1000;
-		MForce(0,0);
+=======		if ( maxRotationAccelSpeed == undefined ) {
+			
+			var newProc = TestMaxRotationSpeed();
+			StartProc(newProc);
+			yield PWaitProc(newProc);
+		}
+
+		var currentRotationSpeed = GetAngularVel();
+//		Print('rotation speed: ', currentRotationSpeed, '\n');
+		
+		var time = currentRotationSpeed / maxRotationAccelSpeed;
+
+		if ( time < 0 )
+			MForce(1,0);
+		else 
+			MForce(0,1);
+		
+		yield PSleep(Math.abs(time));
+		
+>>>>>>> .theirs		MForce(0,0);
 	}
 
 	this.DisplayInfo = function() {
@@ -396,112 +503,218 @@ function Pod() {
 
 		var vel, prevVel;
 		for (;;) {
-
-			PrintValue( 'angle', this.angle );
+<<<<<<< .mine=======			
+//			var str = GetStraightRatio();
+//			Print( ' StraightRatio:', str.toFixed(2) );
+>>>>>>> .theirs
+<<<<<<< .mine			PrintValue( 'angle', this.angle );
 			PrintValue( 'straightAngle', this.straightAngle );
 			PrintValue( 'maxAngularAccel', this.maxAngularAccel );
 			vel = this.angularVel;
 			PrintValue( 'angularVel', vel );
 			PrintValue( 'accel', (prevVel - vel) );
 			prevVel = vel;
-			PrintValue( 'linearVel', Vec3Length(center.linearVel) );
+			PrintValue( 'linearVel', this.velValue );
 			Print( StringRepeat(' ', 20), '\r');
-			yield PSleep(Math.abs(50));
+=======			var radError = GetStraightRad();
+			Print( ' radError:', radError.toFixed(2) );
+			
+			Print( ' maxRotationAccelSpeed:', maxRotationAccelSpeed ? maxRotationAccelSpeed.toFixed(2) : '????' );
+
+			Print( ' angularVel:', GetAngularVel().toFixed(2), ' rad/s' );
+			
+			var vel = center.linearVel;
+			Print( ' vel:', vel[0].toFixed(2), ',', vel[1].toFixed(2), ',', vel[2].toFixed(2) );
+			
+			Print( StringRepeat(' ', 30), '\r');
+>>>>>>> .theirs			yield PSleep(Math.abs(50));
 		}
 	}
-
 	this.Init = function() {
 
-		StartProc(this.DisplayInfo());
+<<<<<<< .mine	this.Init = function() {
+=======		StartProc(this.DisplayInfo());
+
+return;
+		if ( maxRotationAccelSpeed == undefined )
+			yield PWaitProc(StartProc(TestMaxRotationSpeed()));
+	}
+
+	this.GoStraight = function() {
+>>>>>>> .theirs
+<<<<<<< .mine		StartProc(this.DisplayInfo());
 		StartProc(this.ProbeMaxAngularAccel());
 		yield PIdle;
 	}
-	
-	
-	this.PushLeft = function(force) {
+=======/* 
+		if ( maxRotationAccelSpeed == undefined )
+			yield PWaitProc(StartProc(TestMaxRotationSpeed()));
+>>>>>>> .theirs	
+<<<<<<< .mine=======		for (;;) {
+
+			for (;;) {
+			
+				var radError = -GetStraightRad();
+				
+				if ( Math.abs(radError) < 0.1 )
+					break;
+				
+				var pow = Math.abs(radError) / 2;
+				if ( radError > 0 )
+					MForce(0,pow);
+				else
+					MForce(pow,0);
+				
+				yield PIdle;
+			}
+
+			yield PWaitProc(StartProc(this.StopRotation()));
+			
+			
+			if ( Math.abs(GetStraightRad()) < 0.1 && GetAngularVel() < 0.1 )
+				return
+			
+		}
+>>>>>>> .theirs	
+<<<<<<< .mine	this.PushLeft = function(force) {
 		
 		this.m1 = force;
 		return;
 		
 		if ( force == 0 )
-			StartProc(this.GoStraight());
+			StartProc(this.HeadFront());
 		else
 			this.m1 += force;
 		yield PIdle;
 	}
+=======	return;	
+*/
 
-	this.PushRight = function(force) {
 
-		this.m2 = force;
+
+		for (;;) {
+>>>>>>> .theirs
+<<<<<<< .mine	this.PushRight = function(force) {
+=======			//var radError = GetStraightRad();
+			//var time = radError / maxRotationAccelSpeed;
+			
+			// d = d0 + v0*t + 0.5 * a*t*t
+			// t = (-v0 - Sqrt[2 a d - 2 a d0 + v0^2])/a
+			// see http://www.wolframalpha.com/input/?i=solve+d+%3D+d0+%2B+v0*t+%2B+0.5+*+a*t*t+for+t
+
+			var a = maxRotationAccelSpeed; // rad/s^2
+
+			var d = GetStraightRad(); // rad
+			
+			var ccw = d < 0;
+			
+			var v0 = GetAngularVel(); // rad/s
+			
+			if ( v0 > 0 == ccw )
+				v0 = -v0;
+>>>>>>> .theirs
+<<<<<<< .mine		this.m2 = force;
 		return;
 
 		if ( force == 0 )
-			StartProc(this.GoStraight());
+			StartProc(this.HeadFront());
 		else
 			this.m2 += force;
 		yield PIdle;
 	}
-	
+=======
+(Math.sqrt(2*a*Math.abs(d) + v0*v0)*(d < 0 ? -1 : 1) - v0) / a;
+
+			var time = (Math.sqrt(2*a*Math.abs(d) + v0*v0) - v0) / a;
+			
+			Print('\n');
+			Print(' v0:',v0);
+			Print(' d:',d);
+			Print(' time:',time);
+			Print('\n');
+
+			if ( d > 0 )
+				MForce(1,0);
+			else 
+				MForce(0,1);
+				
+			yield PSleep(Math.abs(time));
+
+
+
+/*
+			var v0 = GetAngularVel();
+			var d = GetStraightRad();
+			var time = (-v0 - Math.sqrt(2*a*d + v0*v0)) / a;
+
+			Print('\n', time, '\n');
+
+			if ( d < 0 )
+				MForce(0,1);
+			else 
+				MForce(1,0);
+				
+			yield PSleep(Math.abs(time));
+*/			
+			
+			MForce(0,0);
+			
+			return;
+>>>>>>> .theirs	
 	this.Thrust = function(rad, pow) {
 		
 		var dir = Math.sin(rad) * pow;
 		this.m1 = dir;
 		this.m2 = -dir;
 	}
-			
-	this.StopRotation = function() {
-	
-		var time = this.angularVel / this.maxAngularAccel;
-		
-		this.Thrust( Math.PI/2 * (time < 0 ? -1 : 1) );
-//		if ( time < 0 )
-//			MForce(1,0);
-//		else 
-//			MForce(0,1);
-		yield PSleep(Math.abs(time)*1000);
-		MForce(0,0);
-	}
 
-
-	this.GoStraight = function() {
-	
-		var a = this.maxAngularAccel;
-		var d = this.straightAngle;
-		var v = this.angularVel;
-
-		var time = v / a;
-		this.Thrust( Math.PI/2 * (time < 0 ? 1 : -1), 1 );
-		yield PSleep(Math.abs(time)*1000);
-
-		var d = this.straightAngle;
-		var time = Math.sqrt(a*Math.abs(d))/a;
-
-		this.Thrust( Math.PI/2 * (d < 0 ? 1 : -1), 1 );
-		yield PSleep(time * 1000);
-
-		this.Thrust( Math.PI/2 * (d < 0 ? -1 : 1), 1 );
-		yield PSleep(time * 1000);
-		
-		MForce(0,0);
-	}
-	
 	function ClampAngle(rad) {
 		
 		return (rad + Math.PI) % (2*Math.PI) - Math.PI;
 	}
-
-	this.GoBack = function() {
+			
+	this.StopRotation = function() {
 	
-		var a = this.maxAngularAccel;
-		var v = this.angularVel;
-
-		var time = v / a;
+		var time = this.angularVel / this.maxAngularAccel;
 		this.Thrust( Math.PI/2 * (time < 0 ? 1 : -1), 1 );
 		yield PSleep(Math.abs(time)*1000);
+	}
 
-		var d = this.straightAngle;
-		var d = ClampAngle(d + Math.PI);
+<<<<<<< .mine=======					MForce(1,0);
+				}
+			} else {
+				
+				MForce(0,0);
+			}
+			
+			
+			
+/*						
+			if ( err > 0.9 && Math.abs(GetAngularVel()) < 0.1 ) {
+>>>>>>> .theirs
+	this.HeadFront = function() {
+	
+		yield PWaitProc( StartProc( this.StopRotation() ) );
 		
+		var a = this.maxAngularAccel;
+		var d = this.straightAngle;
+		var time = Math.sqrt(a*Math.abs(d))/a;
+
+		this.Thrust( Math.PI/2 * (d < 0 ? 1 : -1), 1 );
+		yield PSleep(time * 1000);
+
+		this.Thrust( Math.PI/2 * (d < 0 ? -1 : 1), 1 );
+		yield PSleep(time * 1000);
+		
+		MForce(0,0);
+	}
+	
+	this.HeadBack = function() {
+	
+		yield PWaitProc( StartProc( this.StopRotation() ) );
+
+		var a = this.maxAngularAccel;
+		var d = ClampAngle(this.straightAngle + Math.PI);
 		var time = Math.sqrt(a*Math.abs(d))/a;
 
 		this.Thrust( Math.PI/2 * (d < 0 ? 1 : -1), 1 );
@@ -513,77 +726,25 @@ function Pod() {
 		MForce(0,0);
 	};
 	
-
-/*
+	
 	this.Stop = function() {
 	
-		yield WaitProc( StartProc( pod1.ReduceRotate(1) ) );
-	
-		var vel = center.linearVel;
-
-		var err = Vec3Dot( center.Vector3ToWorld([0,0,-1]), Vec3Normalize(vel) );
-
-		for (;;) {
-
-			var front = center.Vector3ToWorld([0,0,1]);
-			var ok = -Vec3Dot( front, Vec3Normalize(vel) );
-			
-			var d1 = Vec3Dot( vel, center.Vector3ToWorld([-1,0,0]) );
-			var d2 = Vec3Dot( vel, center.Vector3ToWorld([1,0,0]) );
-			
-			var r1 = Vec3Dot( Vec3Sub(m1.body1.linearVel, vel), front );
-			var r2 = Vec3Dot( Vec3Sub(m2.body1.linearVel, vel), front );
-
-
-			Print( ' d1:', d1.toFixed(2) );
-			Print( ' d2:', d2.toFixed(2) );
-			Print( ' ok:', ok.toFixed(2) );
-			Print( ' r1:', r1.toFixed(2) );
-			Print( ' r2:', r2.toFixed(2) );
-			
-			var f1 = 0, f2 = 0;
-			
-			if ( ok < 0 && r1 < 1 && r2 < 1 ) {
-
-				if ( d1 > 0 )
-					f1 = 1;
-				if ( d2 > 0 )
-					f2 = 1;
-			}
-
-			if ( ok > 0 && r1 < 1 && r2 < 1 ) {
-			
-			}
-
-			var speed = Vec3Length(vel);
-			Print( ' speed:', speed.toFixed(2) );
-			
-			if ( speed < 0.1 && speed > -0.1 ) {
-
-				M1Force(0);
-				M2Force(0);
-				break;
-			}
-
-			Print( ' f1:', f1.toFixed(2) );
-			Print( ' f2:', f2.toFixed(2) );
-			
-			M1Force(f1);
-			M2Force(f2);
-
-			yield PIdle;
-			
-			Print( StringRepeat(' ', 30), '\r');
-		}
-		
-		Print( StringRepeat(' ', 50), '\r');
-		M1Force(0);
-		M2Force(0);
+		yield PWaitProc( StartProc( this.HeadBack() ) );
+		yield PWaitProc( StartProc( this.HeadBack() ) );
+		MForce(1,1);
+		yield PSleep(10);
+		var tmp = this.velValue;
+		yield PSleep(200);
+		var maxLinearAccel = Math.abs(this.velValue - tmp)/200 * 1000;
+		info = this.velValue / maxLinearAccel * 1000
+		yield PSleep(this.velValue / maxLinearAccel * 1000);
+		yield PWaitProc( StartProc( this.StopRotation() ) );
+		MForce(0,0);
 	};
-*/
 
 
 
+/*
 	this.UTurn = function() taskList.unshift(new function() {
 		
 		var aimdir = center.Vector3ToWorld([0,0,-1]);
@@ -693,6 +854,8 @@ function Pod() {
 			yield;
 		}
 	});
+*/	
+	
 }
 
 
@@ -715,19 +878,20 @@ env3d.AddKeyListener(K_UP, function(polarity) {
 
 	if ( !polarity )
 		return;
-	StartProc( pod1.GoStraight() )
+	StartProc( pod1.HeadFront() )
 });
 
 env3d.AddKeyListener(K_DOWN, function(polarity) { 
 
-	if ( !polarity )
-		return;
-	StartProc( pod1.GoBack() )
+	if ( polarity ) StartProc( pod1.HeadBack() )
 });
 
+<<<<<<< .mine=======//env3d.AddKeyListener(K_HOME, function(polarity) { StartProc( pod1.GoHome() ) });
 
-//env3d.AddKeyListener(K_HOME, function(polarity) { StartProc( pod1.GoHome() ) });
 
+env3d.AddKeyListener(K_LEFT, function(polarity) { StartProc( pod1.PushLeft(polarity ? 10 : 0) ) });
+>>>>>>> .theirs
+env3d.AddKeyListener(K_HOME, function(polarity) { if ( polarity ) StartProc( pod1.Stop() ) });
 
 env3d.AddKeyListener(K_RIGHT, function(polarity) { StartProc( pod1.PushLeft(polarity ? 1 : 0) ) });
 

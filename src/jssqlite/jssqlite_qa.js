@@ -8,7 +8,7 @@ loadModule('jssqlite');
 		db.exec('insert into t1 (name,value) values ("green","#0F0")');
 		db.exec('insert into t1 (name,value) values ("blue","#00F")');
 
-		var res = [ color.name+'='+color.value for each ( color in db.Query('SELECT * from t1') ) ].join(',');
+		var res = [ color.name+'='+color.value for each ( color in db.query('SELECT * from t1') ) ].join(',');
 		QA.ASSERT_STR( res, 'red=#F00,green=#0F0,blue=#00F', 'result' );
 		
 
@@ -17,7 +17,7 @@ loadModule('jssqlite');
 		var db = new Database();
 		var res = db.exec('SELECT 1');
 		QA.ASSERT( res, 1, 'select 1' );
-		db.Close();
+		db.close();
 
 
 /// InMemory Database Create table [ftrm]
@@ -27,10 +27,10 @@ loadModule('jssqlite');
 			var db = new Database();
 			var res = db.exec('create table a (id integer primary key, x varchar)');
 			db.exec('insert into a values (NULL, "aaa")');
-			var res = db.Query('select * from a');
-			var row = res.Row(true);
+			var res = db.query('select * from a');
+			var row = res.row(true);
 			QA.ASSERT( row.x, 'aaa', 'read query result' );
-			db.Close();
+			db.close();
 
 		} catch ( ex if ex instanceof SqliteError ) { // if ex instanceof SqliteError 
 			
@@ -47,7 +47,7 @@ loadModule('jssqlite');
 		QA.ASSERT( db.lastInsertRowid, 2, 'last insert rowid' );
 		QA.ASSERT( db.changes, 1, 'changes count' );
 
-		var res = db.Query('select * from a');
+		var res = db.query('select * from a');
 		
 		QA.ASSERT( res.columnCount, 3, 'column count' );
 //		QA.ASSERT( res.expired, false, 'statement expired' ); // deprecated property has been removed
@@ -57,23 +57,23 @@ loadModule('jssqlite');
 		QA.ASSERT( res.columnIndexes.c, 1, 'column name index' ); 
 		QA.ASSERT( res.columnIndexes.d, 2, 'column name index' ); 
 		
-		var row = res.Row(true);
+		var row = res.row(true);
 		QA.ASSERT( row.c, 'aaa', 'column by name' ); 
 
-		res.Reset();
+		res.reset();
 		
-		var row = res.Row(false);
+		var row = res.row(false);
 		QA.ASSERT( row[1], 'aaa', 'column by index' ); 
 
-		var row = res.Row(false);
+		var row = res.row(false);
 		QA.ASSERT( row[1], 'b', 'column by index' ); 
 		QA.ASSERT( row[2], 333, 'column by index' ); 
 
-		QA.ASSERT( res.Col(0), 2, 'column by index using Col' ); 
-		QA.ASSERT( res.Col(1), 'b', 'column by index using Col' ); 
-		QA.ASSERT( res.Col(2), 333, 'column by index using Col' ); 
+		QA.ASSERT( res.col(0), 2, 'column by index using col' ); 
+		QA.ASSERT( res.col(1), 'b', 'column by index using col' ); 
+		QA.ASSERT( res.col(2), 333, 'column by index using col' ); 
 
-		db.Close();
+		db.close();
 
 
 /// exceptions [ftrm]
@@ -82,7 +82,7 @@ loadModule('jssqlite');
 
 		try {
 
-			var res = db.Query('select * from a');
+			var res = db.query('select * from a');
 			QA.FAILED( 'Failed to throw exception' );
 
 		} catch ( ex if ex instanceof SqliteError ) { // if ex instanceof SqliteError 
@@ -90,38 +90,38 @@ loadModule('jssqlite');
 			QA.ASSERT( ex.code, 1, 'exception code' );
 			QA.ASSERT( ex.text, 'no such table: a', 'exception text' );
 		}
-		db.Close();
+		db.close();
 
 
 /// Query no data [ftrm]
 
 		var db = new Database();
 
-		var result = db.Query('SELECT 1 UNION SELECT 2 UNION ALL SELECT 2');
+		var result = db.query('SELECT 1 UNION SELECT 2 UNION ALL SELECT 2');
 
 		QA.ASSERT( result.columnCount, 1, 'column count' );
-		QA.ASSERT( result.Step(), true, 'has a next line' );
+		QA.ASSERT( result.step(), true, 'has a next line' );
 		QA.ASSERT( db.lastInsertRowid, 0, 'last insert row id' );
 		QA.ASSERT( db.changes, 0, 'changes' );
 		QA.ASSERT( result.columnNames[0], '1', 'first column name' );
 
 		QA.ASSERT( result.columnIndexes[1], 0, 'col index' );
 
-		result.Reset(); // required because the first Step()
+		result.reset(); // required because the first Step()
 
-		QA.ASSERT( result.Row()[0], 1, 'row 1' );
-		QA.ASSERT( result.Row()[0], 2, 'row 2' );
-		QA.ASSERT( result.Row()[0], 2, 'row 3' );
+		QA.ASSERT( result.row()[0], 1, 'row 1' );
+		QA.ASSERT( result.row()[0], 2, 'row 2' );
+		QA.ASSERT( result.row()[0], 2, 'row 3' );
 
 
 /// Database file [ftrm]
 
 		var db = new Database('test_sqlite_database');
-		db.Close();
+		db.close();
 
 		var file = new File('test_sqlite_database');
 		QA.ASSERT( file.exist, true, 'database file exist' );
-		file.Delete();
+		file.delete();
 		QA.ASSERT( file.exist, false, 'database file exist' );
 
 
@@ -129,14 +129,14 @@ loadModule('jssqlite');
 
 		var db = new Database();
 
-		var result1 = db.Query('SELECT :toto');
+		var result1 = db.query('SELECT :toto');
 		
 		result1.toto = new Blob('12' + '\0' + '34');
 
-		QA.ASSERT( result1.Row()[0].length, 5, 'using binding' );
+		QA.ASSERT( result1.row()[0].length, 5, 'using binding' );
 		QA.ASSERT( db.changes, 0, 'changes' );
-		result1.Close();
-		db.Close();
+		result1.close();
+		db.close();
 
 
 /// version [ftrm]
@@ -150,7 +150,7 @@ loadModule('jssqlite');
 		var db = new Database();
 		var res = db.exec('SELECT @varTest', { varTest:123} );
 		QA.ASSERT( res, 123, 'row result' );
-		db.Close();
+		db.close();
 
 
 /// question mark [ftrm]
@@ -160,10 +160,10 @@ loadModule('jssqlite');
 		var res = db.exec( 'select ?+?+?', [2, 3, 4] );
 		QA.ASSERT( res, 9, 'addition using question mark' );
 
-		var row = db.Query('SELECT ?+?+?', {0:2,1:2,2:2,3:2,length:3}).Row();
+		var row = db.query('SELECT ?+?+?', {0:2,1:2,2:2,3:2,length:3}).row();
 		QA.ASSERT( Number(row), 6, 'addition using question mark' );
 
-		db.Close();
+		db.close();
 
 
 /// Function binding [ftrm]
@@ -180,21 +180,21 @@ loadModule('jssqlite');
 
 		QA.ASSERT( res, 1230, 'row result' );
 
-		db.Close();
+		db.close();
 
 
 /// columnNames property independency [rmtf]
 
 		var db = new Database();
-		var res1 = db.Query('select 1');
+		var res1 = db.query('select 1');
 		res1.columnNames[0];
-		var res2 = db.Query('select 2');
+		var res2 = db.query('select 2');
 		QA.ASSERT( res2.columnNames.join(','), '2', 'columns name' );
 
 
 /// parameters [rmtf]
 
 		var db = new Database();
-		var res = db.Query('select "test", ?, ?aaa, ?, @0', [5,6,7]);
+		var res = db.query('select "test", ?, ?aaa, ?, @0', [5,6,7]);
 		QA.ASSERT_STR( res.columnNames.join(','), '"test",?,aaa,?,@0', 'columns' );
-		QA.ASSERT_STR( res.Row(), 'test,5,6,7,5', 'row' );
+		QA.ASSERT_STR( res.row(), 'test,5,6,7,5', 'row' );

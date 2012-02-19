@@ -19,7 +19,7 @@ loadModule('jsz');
 loadModule('jscrypt');
 loadModule('jsdebug');
 
-function IsNotEmpty(obj) {
+function isNotEmpty(obj) {
 
 	for ( var tmp in obj )
 		return true;
@@ -30,17 +30,17 @@ function SimpleHTTPServer(port, bind, basicAuth) {
 
 	var pendingRequestList = [], serverSocket = new Socket(), socketList = [serverSocket], deflate = new Z(Z.DEFLATE, Z.BEST_SPEED);
 
-	function CloseSocket(s) {
+	function closeSocket(s) {
 
-		s.Close();
+		s.close();
 		socketList.splice(socketList.indexOf(s), 1);
 	}
 
-	function ProcessRequest(s) {
+	function processRequest(s) {
 
-		var buf = s.Read();
+		var buf = s.read();
 		if ( buf == undefined )
-			return CloseSocket(s);
+			return closeSocket(s);
 		s.data += buf;
 		var eoh = s.data.indexOf('\r\n\r\n');
 		if ( eoh == -1 )
@@ -55,17 +55,17 @@ function SimpleHTTPServer(port, bind, basicAuth) {
 			if ( s.data.length < contentLength ) {
 
 				s.readable = arguments.callee;
-				var buf = s.Read();
+				var buf = s.read();
 				if ( buf == undefined )
-					return CloseSocket(s);						
+					return closeSocket(s);						
 				s.data += buf;
 				return undefined;
 			}
 
-			if ( basicAuth && authorization != Base64Encode(basicAuth) ) {
+			if ( basicAuth && authorization != base64Encode(basicAuth) ) {
 
-				Sleep(2000);
-				s.Write('HTTP/1.1 401 Authorization Required\r\nWWW-Authenticate: Basic realm="debugger"\r\nContent-Length: 0\r\n\r\n');
+				sleep(2000);
+				s.write('HTTP/1.1 401 Authorization Required\r\nWWW-Authenticate: Basic realm="debugger"\r\nContent-length: 0\r\n\r\n');
 				return undefined;
 			}
 
@@ -73,19 +73,19 @@ function SimpleHTTPServer(port, bind, basicAuth) {
 			pendingRequestList.push([s.data.substring(0, contentLength), function(response) {
 
 				if ( s.connectionClosed )
-					return CloseSocket(s);
+					return closeSocket(s);
 				if ( response == undefined )
-					s.Write('HTTP/1.1 204 No Content\r\n\r\n');
+					s.write('HTTP/1.1 204 No Content\r\n\r\n');
 				else {
 					var head = 'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n';
 					if ( response.length >= 1460 ) {
 
 						response = deflate(response, true);
-						head += 'Content-Encoding: deflate\r\n';
+						head += 'Content-encoding: deflate\r\n';
 					}
-					s.Write(head + 'Content-Length: '+response.length+'\r\n\r\n' + response);
+					s.write(head + 'Content-length: '+response.length+'\r\n\r\n' + response);
 				}
-				s.readable = ProcessRequest;
+				s.readable = processRequest;
 				return true;
 			}]);
 			s.data = s.data.substring(contentLength);
@@ -96,26 +96,26 @@ function SimpleHTTPServer(port, bind, basicAuth) {
 
 	serverSocket.readable = function() {
 
-		var clientSocket = serverSocket.Accept();
+		var clientSocket = serverSocket.accept();
 		socketList.push(clientSocket);
 		clientSocket.data = '';
-		clientSocket.readable = ProcessRequest;
+		clientSocket.readable = processRequest;
 	}
 
 	serverSocket.nonblocking = true;
-	serverSocket.Bind(port, bind);
-	serverSocket.Listen();
+	serverSocket.bind(port, bind);
+	serverSocket.listen();
 
-	this.HasPendingRequest = function() {
+	this.hasPendingRequest = function() {
 
-		Poll(socketList, 0);
+		poll(socketList, 0);
 		return pendingRequestList.length > 0;
 	}		
 
-	this.GetNextRequest = function() {
+	this.getNextRequest = function() {
 
 		while( !endSignal && pendingRequestList.length == 0 )
-			Poll(socketList, 100);
+			poll(socketList, 100);
 		return pendingRequestList.shift();
 	}	
 }
@@ -126,23 +126,23 @@ function RemoteMessageServer( port, ip ) {
 	var server = new SimpleHTTPServer(port, ip);
 	var pendingResponseFunction;
 	
-	this.Poll = function() {
+	this.poll = function() {
 
-		if ( !server.HasPendingRequest() )
+		if ( !server.hasPendingRequest() )
 			return false;
 		if ( pendingResponseFunction )
 			pendingResponseFunction();
 		var req;
-		[req, pendingResponseFunction] = server.GetNextRequest();
+		[req, pendingResponseFunction] = server.getNextRequest();
 		_this.onMessage && _this.onMessage(req);
 		return true;
 	}
 	
-	this.Send = function( message ) {
+	this.send = function( message ) {
 		
 		var req;
 		if ( !pendingResponseFunction )
-			[req, pendingResponseFunction] = server.GetNextRequest();
+			[req, pendingResponseFunction] = server.getNextRequest();
 		pendingResponseFunction(message);
 		pendingResponseFunction = undefined;
 		if ( req )
@@ -156,7 +156,7 @@ function RemoteCall( remoteMessage ) {
 	var _this = this;
 	this.__noSuchMethod__ = function() {
 
-		remoteMessage.Send(uneval(Array.slice(arguments)));
+		remoteMessage.send(uneval(Array.slice(arguments)));
 	}
 
 	remoteMessage.onMessage = function( message ) {
@@ -195,7 +195,7 @@ var live = new function() {
 			return res;
 		} catch(ex) {
 			
-			rc.ReportError('Runtime error: '+ex+' (line '+(ex.lineNumber-codeLocation)+')');
+			rc.reportError('Runtime error: '+ex+' (line '+(ex.lineNumber-codeLocation)+')');
 			codeFunction = lastValidCodeFunection;
 		}
 		return undefined;
@@ -203,7 +203,7 @@ var live = new function() {
 	
 	var api = {
 
-		SetCode: function(code) {
+		setCode: function(code) {
 
 			initData = (initExpr(code)||[''])[1];
 			
@@ -211,22 +211,22 @@ var live = new function() {
 			if ( tmp != userInterfaceCode ) {
 				
 				userInterfaceCode = tmp;
-				rc.SetUserInterface(userInterfaceCode);
+				rc.setUserInterface(userInterfaceCode);
 			}
 			
 			var previousValidFunction = codeFunction;
 			try {
 				
-				[,codeLocation] = Locate();
+				[,codeLocation] = locate();
 				codeFunction = new Function(code);
 			} catch(ex) {
 				
-				rc.ReportError('Compilation error: '+ex+' (line '+(ex.lineNumber-codeLocation)+')');
+				rc.reportError('Compilation error: '+ex+' (line '+(ex.lineNumber-codeLocation)+')');
 				codeFunction = previousValidFunction;
 			}
 		},
 
-		SetVariables: function(variables) {
+		setVariables: function(variables) {
 
 			for ( var name in variables ) {
 			
@@ -235,7 +235,7 @@ var live = new function() {
 			}
 		},
 		
-		WatchVariables: function(variableList) {
+		watchVariables: function(variableList) {
 			
 			for each ( var name in watchList )
 				global.unwatch(name);
@@ -251,11 +251,11 @@ var live = new function() {
 			var state = {};
 			for each ( var name in variableList )
 				state[name] = global[name];
-			rc.SetVariables(state);
+			rc.setVariables(state);
 			updatedVariables = {};
 		},
 		
-		Init: function() {
+		init: function() {
 			
 			var tmp = eval('('+initData+')');
 			for ( var name in tmp )
@@ -268,16 +268,16 @@ var live = new function() {
 	var rc = new RemoteCall(rms);
 	rc.api = api;
 	
-	this.Poll = function() {
+	this.poll = function() {
 		
-		while ( rms.Poll() );
+		while ( rms.poll() );
 
-		if ( IsNotEmpty( updatedVariables ) ) {
+		if ( isNotEmpty( updatedVariables ) ) {
 			
 			var state = {};
 			for ( var name in updatedVariables )
 				state[name] = global[name];
-			rc.SetVariables(state);
+			rc.setVariables(state);
 			updatedVariables = {};
 		}
 	}
@@ -289,8 +289,8 @@ var live = new function() {
 while ( !endSignal ) {
 
 // /*ui slider({min:10, max:20, step:1}); button({ name:'go'});  hr */
-	live.Poll();
+	live.poll();
 	live.Function('test');
-	Sleep(10);
+	sleep(10);
 }
 

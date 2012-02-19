@@ -20,7 +20,7 @@ var j = new Jabber(jid, password);
 
 j.onLog = function( level, area, message ) {
 
-	if ( level == Jabber.LogLevelWarning || level == Jabber.LogLevelError )
+	if ( level == Jabber.logLevelWarning || level == Jabber.logLevelError )
 		 print( 'LOG: '+message, '\n');
 }
 
@@ -28,7 +28,7 @@ j.onConnect = function() {
 	
 	print('onConnect', '\n');
 	print( 'roster: ' + [item for ( item in j.roster )].join(',') );
-	j.presence = Jabber.PresenceAvailable;
+	j.presence = Jabber.presenceAvailable;
 }
 
 j.onDisconnect = function() {
@@ -49,14 +49,14 @@ j.onMessage = function( from, body ) {
 //
 // Connection
 
-var jabberOsSocket = j.Connect(server);
-var jabberSocket = Descriptor.Import(jabberOsSocket, Descriptor.DESC_SOCKET_TCP);
+var jabberOsSocket = j.connect(server);
+var jabberSocket = Descriptor.import(jabberOsSocket, Descriptor.DESC_SOCKET_TCP);
 dlist.push(jabberSocket);
 
 jabberSocket.readable = function() {
 	
 	var res = j.Process();
-	if ( res != Jabber.ConnNoError )
+	if ( res != Jabber.connNoError )
 		print( 'Error '+res+' while processing data', '\n' );
 }
 
@@ -68,14 +68,14 @@ var serverSocket = new Socket();
 serverSocket.nonblocking = true;
 serverSocket.readable = function(s) {
 
-	var incomingClient = s.Accept();
+	var incomingClient = s.accept();
 	dlist.push(incomingClient);
 	
 	incomingClient.console = { code:'' };
 	
 	incomingClient.readable = function(s) {
 
-		var data = s.Read();
+		var data = s.read();
 		if ( !data ) {
 		
 			dlist.splice(dlist.indexOf(incomingClient), 1);
@@ -90,14 +90,14 @@ serverSocket.readable = function(s) {
 			break;
 		case 13:
 		print('enter');
-			if ( IsStatementValid(s.console.code) ) {
+			if ( isStatementValid(s.console.code) ) {
 				
 				try {
 				
-					s.Write('\r\n'+eval(s.console.code)+'\r\n');
+					s.write('\r\n'+eval(s.console.code)+'\r\n');
 				} catch(ex) {
 				
-					s.Write(ex+'\r\n');
+					s.write(ex+'\r\n');
 				}
 				s.console.code = '';
 			}
@@ -107,8 +107,8 @@ serverSocket.readable = function(s) {
 	}
 }
 
-serverSocket.Bind( 21, '127.0.0.1' );
-serverSocket.Listen();
+serverSocket.bind( 21, '127.0.0.1' );
+serverSocket.listen();
 dlist.push( serverSocket );
 */
 
@@ -118,5 +118,5 @@ dlist.push( serverSocket );
 
 while ( !endSignal ) {
 
-	Poll(dlist, 1000);
+	poll(dlist, 1000);
 }

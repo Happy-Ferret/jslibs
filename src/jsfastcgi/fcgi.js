@@ -5,9 +5,9 @@ loadModule('jsfastcgi');
 function log(data) {
 	
 	var f = new File('c:\\myLog.txt');
-	f.Open( File.WRONLY | File.CREATE_FILE | File.APPEND );
-	f.Write(data);
-	f.Close();
+	f.open( File.WRONLY | File.CREATE_FILE | File.APPEND );
+	f.write(data);
+	f.close();
 }
 
 	var fcgi = { 
@@ -59,28 +59,28 @@ function log(data) {
 
 try {
 
-	var fd = Descriptor.Import(FCGI_LISTENSOCK_FILENO, Descriptor.DESC_PIPE);
+	var fd = Descriptor.import(FCGI_LISTENSOCK_FILENO, Descriptor.DESC_PIPE);
 
-	function Responder( request, Writer ) {
+	function responder( request, writer ) {
 		
-		Writer('Content-type: text/html\r\n\r\n<html><body>test ok.</body></html>');
+		writer('Content-type: text/html\r\n\r\n<html><body>test ok.</body></html>');
 	}
 
 
 	for (;;) { 
 	
 //		while( !IsReadable(fd, 100) );
-		var data = fd.Read(FCGI_HEADER_LEN);
-		log( 'IsReadable:'+IsReadable(fd)+' - headers (size:'+data.length+'):');
+		var data = fd.read(FCGI_HEADER_LEN);
+		log( 'IsReadable:'+isReadable(fd)+' - headers (size:'+data.length+'):');
 		if ( data.length == 0 ) {
-			Sleep(200);
+			sleep(200);
 
 //			fd.Close();
 //			fd = Descriptor.Import(FCGI_LISTENSOCK_FILENO, Descriptor.DESC_PIPE);
 			continue;
 		}
 		
-		var header = ParseHeader(data);
+		var header = parseHeader(data);
 		log( header.toSource() + '\n' );
 		switch ( header.type ) {
 			case fcgi.GET_VALUES:
@@ -88,30 +88,30 @@ try {
 			case fcgi.BEGIN_REQUEST:
 				var request = { params:{}, data:'' };
 				requests[header.requestId] = request;
-				ParseBeginRequestBody( fd.Read(header.contentLength), request );
+				parseBeginRequestBody( fd.read(header.contentLength), request );
 				break;
 			case fcgi.ABORT_REQUEST:
 				break;
 			case fcgi.PARAMS:
-				ParsePairs( fd.Read(header.contentLength), requests[header.requestId].params );
+				parsePairs( fd.read(header.contentLength), requests[header.requestId].params );
 				break;
 			case fcgi.STDIN:
 				if ( header.contentLength != 0 )
-					requests[header.requestId].data += fd.Read(header.contentLength);
+					requests[header.requestId].data += fd.read(header.contentLength);
 				else {
 
-					var status = Responder( requests[header.requestId], function(data) {
+					var status = responder( requests[header.requestId], function(data) {
 
-						fd.Write( MakeHeader(fcgi.STDOUT, header.requestId, data.length) );
-						fd.Write( data );
+						fd.write( makeHeader(fcgi.STDOUT, header.requestId, data.length) );
+						fd.write( data );
 					});
-					fd.Write( MakeHeader(fcgi.STDOUT, header.requestId, 0) );
-					var endBody = MakeEndRequestBody( status||0, protocolStatus.REQUEST_COMPLETE );
-					fd.Write( MakeHeader(fcgi.END_REQUEST, header.requestId, endBody.length) );
-					fd.Write( endBody );
+					fd.write( makeHeader(fcgi.STDOUT, header.requestId, 0) );
+					var endBody = makeEndRequestBody( status||0, protocolStatus.REQUEST_COMPLETE );
+					fd.write( makeHeader(fcgi.END_REQUEST, header.requestId, endBody.length) );
+					fd.write( endBody );
 					
 					if ( !requests[header.requestId].keepConn )
-						fd.Close();
+						fd.close();
 					delete requests[header.requestId];
 				}
 				break;
@@ -127,8 +127,8 @@ try {
 /*
 try {
 
-	var f = Descriptor.Import(0, Descriptor.DESC_PIPE);
-	var data = f.Read();
+	var f = Descriptor.import(0, Descriptor.DESC_PIPE);
+	var data = f.read();
 	new File('c:\\myLog.txt').content = data;
 	
 
@@ -148,16 +148,16 @@ loadModule('jsfastcgi');
 
 //new File('c:\\fcgi_process_log.txt').content += 'start\n';
 
-while ( Accept() >= 0 ) {
+while ( accept() >= 0 ) {
 	
 	try {
 	
-		exec(GetParam('SCRIPT_FILENAME'));
+		exec(getParam('SCRIPT_FILENAME'));
 	} catch(ex) {
 	
 		var errorMessage = ex.name + ': ' + ex.message + ' (' + ex.fileName + ':' + ex.lineNumber + ')';
-		Log( errorMessage );
-		Write( 'Status: 500\r\n\r\n' + errorMessage );
+		log( errorMessage );
+		write( 'Status: 500\r\n\r\n' + errorMessage );
 	}
 }
 

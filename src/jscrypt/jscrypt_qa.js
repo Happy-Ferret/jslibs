@@ -8,7 +8,7 @@ loadModule('jscrypt');
 
 		var md5 = new Hash('md5');
 		md5.Process('foobarxxx');
-		QA.ASSERT_STR( md5.Done(), "\b\t\xAA\xC0\x10\xB1G\xA8\xC71'}*\x80\x07\xBF", 'digest integrity' );
+		QA.ASSERT_STR( md5.done(), "\b\t\xAA\xC0\x10\xB1G\xA8\xC71'}*\x80\x07\xBF", 'digest integrity' );
 
 
 /// Cipher, Hash, Prng list [ftrm]
@@ -35,10 +35,10 @@ loadModule('jscrypt');
 /// DSA asymmetric crypt and decrypt [rm]
 		
 		var fortuna = new Prng('fortuna');
-		fortuna.AutoEntropy(123); // give more entropy
+		fortuna.autoEntropy(123); // give more entropy
 		//Alice
 		var alice = new AsymmetricCipher('dsa', 'sha1', fortuna);
-		alice.CreateKeys(64);
+		alice.createKeys(64);
 		QA.ASSERT( alice.keySize, 64, 'Asymmetric Cipher key size (alice)' );
 		var publicKey = alice.publicKey;
 		//Bob
@@ -46,93 +46,93 @@ loadModule('jscrypt');
 		bob.publicKey = publicKey;
 		QA.ASSERT( bob.blockLength, 20, 'Asymmetric Cipher block length' );
 		QA.ASSERT( bob.keySize, 64, 'Asymmetric Cipher key size (bob)' );
-		var secretMessage = QA.RandomString(bob.blockLength);
-		var encryptedData = bob.Encrypt( secretMessage );
+		var secretMessage = QA.randomString(bob.blockLength);
+		var encryptedData = bob.encrypt( secretMessage );
 		//Alice
-		QA.ASSERT_STR( alice.Decrypt(encryptedData), secretMessage, 'data integrity' );
+		QA.ASSERT_STR( alice.decrypt(encryptedData), secretMessage, 'data integrity' );
 
 
 /// RSA asymmetric crypt and decrypt [rm]
 
 		var rnd = new Prng('fortuna');
-		rnd.AutoEntropy(128); // give more entropy
+		rnd.autoEntropy(128); // give more entropy
 
 		var plainText = 'totqutyvq8wyetvq7ewryt9vq78yrt987wveyrt98v7weyr9tv87wery9twev87y9r78o';
 		plainText = plainText;
 
 		var rsa = new AsymmetricCipher('rsa', 'md5', rnd );
-		rsa.CreateKeys( 1024 );
+		rsa.createKeys( 1024 );
 
 		var rsaPubKey = rsa.publicKey;
 
 		var rsa1 = new AsymmetricCipher( 'rsa', 'md5', rnd );
 		rsa1.publicKey = rsaPubKey;
-		var rsaEncryptedData = rsa1.Encrypt( plainText );
+		var rsaEncryptedData = rsa1.encrypt( plainText );
 
-		QA.ASSERT_STR( plainText, rsa.Decrypt( rsaEncryptedData ), 'data integrity' );
+		QA.ASSERT_STR( plainText, rsa.decrypt( rsaEncryptedData ), 'data integrity' );
 		
-		rsa.Wipe();
+		rsa.wipe();
 
 
 /// QA.RandomString [r]
 
-		var data = QA.RandomString(300000);
+		var data = QA.randomString(300000);
 		QA.ASSERT(data.length, 300000, 'random data length');
 		
 
 /// Cipher 1 [ftr]
 		
-		var data = QA.RandomString(30000);
-		var IV = QA.RandomString(100);
+		var data = QA.randomString(30000);
+		var IV = QA.randomString(100);
 		var cr = new Cipher('CFB', "cast5", "my  key of  16B ", IV );
-		var encryptedText = cr.Encrypt(data);
+		var encryptedText = cr.encrypt(data);
 		var cr = new Cipher('CFB', "cast5", "my  key of  16B ", IV );
 	
-		QA.ASSERT_STR( cr.Decrypt(encryptedText), data, 'crypy/decript with Cast5 cipher using CFB mode' );
+		QA.ASSERT_STR( cr.decrypt(encryptedText), data, 'crypy/decript with cast5 cipher using CFB mode' );
 		
-		cr.Wipe();
+		cr.wipe();
 
 
 /// Cipher 2 [ftrdm]
 
 			var hkey = new Hash("sha256")('this is a secret key');
-			print( HexEncode(hkey), '\n');
+			print( hexEncode(hkey), '\n');
 
 			var key = hkey;
-			var IV = r(Crypt.BlockLength('blowfish'));
+			var IV = r(Crypt.blockLength('blowfish'));
 
 		// encrypt:
 			var crypt = new Crypt( 'ctr', 'blowfish', key, IV );
 			var plainText = 'secret string';
-			var cipherData = crypt.Encrypt(plainText);
+			var cipherData = crypt.encrypt(plainText);
 
 		// decrypt:
 			crypt.IV = IV;
-			var decipheredData = crypt.Decrypt( cipherData );
+			var decipheredData = crypt.decrypt( cipherData );
 			print( 'decrypted data: '+decipheredData, '\n' );
 
 
 /// Key size [rm]
 
   var fortuna = new Prng('fortuna');
-  fortuna.AutoEntropy(123); // give more entropy
+  fortuna.autoEntropy(123); // give more entropy
 
   var ecc = new AsymmetricCipher('ecc', 'md5', fortuna );
-  ecc.CreateKeys( AsymmetricCipher.ECC_MAX_KEYSIZE );
+  ecc.createKeys( AsymmetricCipher.ECC_MAX_KEYSIZE );
   QA.ASSERT( ecc.keySize, AsymmetricCipher.ECC_MAX_KEYSIZE, 'ecc key size' );
 
   var dsa = new AsymmetricCipher('dsa', 'sha1', fortuna);
-  dsa.CreateKeys(64);
+  dsa.createKeys(64);
   QA.ASSERT( dsa.keySize, 64, 'dsa key size' );
 
   var rsa = new AsymmetricCipher('rsa', 'md5', fortuna );
-  rsa.CreateKeys( 1024 );
+  rsa.createKeys( 1024 );
   QA.ASSERT( rsa.keySize, 1024, 'rsa key size' );
 
 
 /// crash 1
 
 	var cr = new Cipher("CFB", "cast5", "my  key of  16B ", "xxxxxxx");
-	var encryptedText = cr.Encrypt("secret text");
+	var encryptedText = cr.encrypt("secret text");
 	var cr = new Cipher("CFB", "cast5", "my  key of  16B ", IV);
 	var IV;

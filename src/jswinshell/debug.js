@@ -14,7 +14,7 @@ loadModule('jswinshell');
 
 
 try {
-	var fso = CreateComObject('Scripting.FileSystemObject');
+	var fso = createComObject('Scripting.fileSystemObject');
 
 
 	var tmp = fso.GetFolder('c:\\');
@@ -34,8 +34,8 @@ throw 0;
 
 try {
 
-function Test() {
-	var xmlhttp = CreateComObject("Microsoft.XMLHTTP");
+function test() {
+	var xmlhttp = createComObject("Microsoft.XMLHTTP");
 	xmlhttp.open("GET", "http://www.google.com/", false);
 	xmlhttp.onreadystatechange = function() { print(xmlhttp.readyState) }
 //	xmlhttp.send();
@@ -44,20 +44,20 @@ function Test() {
 	print( xmlhttp.responseText );
 }
 
-Test();
-CollectGarbage();
+test();
+collectGarbage();
 
-Halt();
+halt();
 
 
 
 try {
 
-	var fso = CreateComObject('Scripting.FileSystemObject');
+	var fso = createComObject('Scripting.fileSystemObject');
 	var file = fso.CreateTextFile("testfile.txt")
 
 	for(var i = 1; i < 255; i++)
-		file.Write = 5;
+		file.write = 5;
 
 
 } catch(ex if ex instanceof WinError) {
@@ -67,15 +67,15 @@ try {
 
 
 
-Halt();
+halt();
 
 
-var xml = '<doc><el attr="foo" attr1="bar">Info</el></doc>';
-var xmlReader = CreateComObject("Microsoft.XMLDOM");
+var xml = '<doc><el attr="foo" attr1="bar">info</el></doc>';
+var xmlReader = createComObject("Microsoft.XMLDOM");
 xmlReader.loadXML(xml);
 print('Output: ' + xmlReader.childNodes[0].childNodes[0].attributes[1].nodeValue); // 'foo'
 print('Output: ' + xmlReader.childNodes[0].childNodes[0].childNodes[0].nodeValue); // 'Info'
-Halt();
+halt();
 
 
 //var fso = CreateComObject('MSWinsock.Winsock');
@@ -99,7 +99,7 @@ Halt();
 //print(typeLib.guid); // Should give you a new GUID for every typeLib instantiation
 
 /*
-var shell = new ComObject('WScript.Shell');
+var shell = new ComObject('WScript.shell');
 var process = shell.exec('test.bat');
 stdoutput = process.stdOut.readAll();
 print('out: ',stdoutput); // Should output the stdout of the dir command
@@ -119,7 +119,7 @@ print('out: ',stdoutput); // Should output the stdout of the dir command
 }
 
 
-Halt(); //////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////
 
 
 
@@ -133,27 +133,27 @@ var f = new File("C:\\tmp");//.Open('r'); // MYDOCUMENTS
 
 print(GUIDToString(f.id).quote());
 
-Halt();
+halt();
 
 
 var iconRed = new SVG();
-iconRed.Write(<svg><circle cx="8" cy="8" r="5" fill="orange"/></svg>);
-iconRed = new Icon( iconRed.RenderImage(16,16,3) );
+iconRed.write(<svg><circle cx="8" cy="8" r="5" fill="orange"/></svg>);
+iconRed = new Icon( iconRed.renderImage(16,16,3) );
 
 var iconGreen = new SVG();
-iconGreen.Write(<svg><circle cx="8" cy="8" r="5" fill="lightgreen"/></svg>);
-iconGreen = new Icon( iconGreen.RenderImage(16,16,3) );
+iconGreen.write(<svg><circle cx="8" cy="8" r="5" fill="lightgreen"/></svg>);
+iconGreen = new Icon( iconGreen.renderImage(16,16,3) );
 
 const SECOND = 1000;
 const MINUTE = 60*SECOND;
 const HOUR = 60*MINUTE;
 
-function Now() {
+function now() {
 	
 	return +new Date();
 }
 
-function Today() {
+function today() {
 	
 	var now = new Date();
 	var start = +new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -187,12 +187,12 @@ systray.onmousedown = function( button ) {
 	var pauseMenu = [];
 	
 	if ( button == 2 )
-		systray.PopupMenu(['Quit!']);
+		systray.popupMenu(['Quit!']);
 
 	var pauseList = {};	
-	var today = Today();
+	var today = today();
 	var out = false;
-	var time = Now();
+	var time = now();
 	
 	var total = 0;
 	
@@ -207,7 +207,7 @@ systray.onmousedown = function( button ) {
 		if ( state == 1 ) {
 		
 			for ( var j = i; j < events.length && events[j][0] != 0; ++j );
-			var duration = (events[j] ? events[j][1] : Now()) - evtime;
+			var duration = (events[j] ? events[j][1] : now()) - evtime;
 			total += duration;
 			var d = new Date(evtime);
 			pauseMenu.unshift({id:'p'+i, label:toHMS(duration)+' @ '+d.getHours()+':'+d.getMinutes()});
@@ -222,7 +222,7 @@ systray.onmousedown = function( button ) {
 	
 	if ( state == 1 ) {
 		
-		time -= Now();
+		time -= now();
 	}
 	
 	menu.push(toHMS(time));
@@ -231,7 +231,7 @@ systray.onmousedown = function( button ) {
 	menu.push({label:'Auto', icon:iconGreen});
 	menu.push(null);
 	menu.push('Quit');
-	systray.PopupMenu(menu);
+	systray.popupMenu(menu);
 }
 
 
@@ -246,15 +246,15 @@ systray.oncommand = function( item, button ) {
 	
 		switch (id) {
 			case 'Force':
-				Idle(true, Now());
+				idle(true, now());
 				auto = false;
 				break
 			case 'Auto':
-				Idle(false, Now());
+				idle(false, now());
 				auto = true;
 				break;
 			case 'Quit':
-				if ( MessageBox( 'Quit ?', 'Question', MB_YESNO) == IDYES )
+				if ( messageBox( 'Quit ?', 'Question', MB_YESNO) == IDYES )
 					throw 'end';
 				break;
 			case 'Quit!':
@@ -267,11 +267,11 @@ systray.oncommand = function( item, button ) {
 var lastMoveUpdate;
 systray.onmousemove = function(x,y) {
 	
-	var now = Now();
+	var now = now();
 	if ( lastMoveUpdate + 1000 > now ) // note: undefined > 1234 == false
 		return;
 	lastMoveUpdate = now;
-	systray.text = toHMS(GetTime());
+	systray.text = toHMS(getTime());
 }
 */ 
 
@@ -280,40 +280,40 @@ systray.onclose = function() {
 	throw 'end';
 }
 
-function Idle(polarity, date) {
+function idle(polarity, date) {
 
 	events.push([polarity ? 1 : 0, date]);
 	systray.icon = polarity ? iconRed : iconGreen;
 }
 
-const IdleTres = 1*SECOND; // 5*MINUTE; // 
+const idleTres = 1*SECOND; // 5*MINUTE; // 
 
 var onTimeout;
 
-function IsIdle() {
+function isIdle() {
 	
-	if ( auto && lastInputTime < IdleTres ) {
+	if ( auto && lastInputTime < idleTres ) {
 
-		Idle(false, Now() - lastInputTime);
-		onTimeout = NotIdle;
+		idle(false, now() - lastInputTime);
+		onTimeout = notIdle;
 	}
 }
 
-function NotIdle() {
+function notIdle() {
 	
-	if ( auto && lastInputTime > IdleTres ) {
+	if ( auto && lastInputTime > idleTres ) {
 		
-		Idle(true, Now() - lastInputTime);
-		onTimeout = IsIdle;
+		idle(true, now() - lastInputTime);
+		onTimeout = isIdle;
 	}
 }
 
-IsIdle();
+isIdle();
   
 try {
 
 	for (;;)
-		ProcessEvents( systray.Events(), TimeoutEvents(0.1*SECOND, onTimeout) );
+		processEvents( systray.events(), timeoutEvents(0.1*SECOND, onTimeout) );
 		
 } catch (ex if ex == 'end') {}
 
@@ -322,22 +322,22 @@ try {
 
 
 
-Halt(); //////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////
 
-var dch = DirectoryChangesInit('C:\\', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
+var dch = directoryChangesInit('C:\\', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
 
-function ChangesNotificationFct() {
+function changesNotificationFct() {
 
-	print( DirectoryChangesLookup(dch).join('\n'), '\n');
+	print( directoryChangesLookup(dch).join('\n'), '\n');
 }
 
 while ( !endSignal )
-	ProcessEvents( DirectoryChangesEvents(dch, ChangesNotificationFct), EndSignalEvents() );
+	processEvents( directoryChangesEvents(dch, changesNotificationFct), EndSignalEvents() );
 	
 	
 
 
-Halt(); //////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////
 
 
 
@@ -347,11 +347,11 @@ for ( var i = 0; i < 10; i++ ) {
 	numlockState = !numlockState;
 	capslockState = !capslockState;
 	scrolllockState = !scrolllockState;
-	Sleep(50);
+	sleep(50);
 }	
 
 
-Halt(); //////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////
 
 
 
@@ -365,7 +365,7 @@ Halt(); //////////////////////////////////////////////////////////////////////
  s.menu = { add:'Add', exit:'Exit', s1:{ separator:true } };
  s.onmousedown = function( button ) {
 
- 	s.PopupMenu();
+ 	s.popupMenu();
  }
 
  s.oncommand = function( id, button ) {
@@ -375,27 +375,27 @@ Halt(); //////////////////////////////////////////////////////////////////////
  			endSignal = true;
  			break;
  		case 'add':
- 			var fileName = FileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
+ 			var fileName = fileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
  			if ( !fileName )
  				return;
- 			var icon = ExtractIcon( fileName );
+ 			var icon = extractIcon( fileName );
  			var text = fileName.substr( fileName.lastIndexOf( '\\' ) + 1 );
  			s.menu[fileName] = { icon:icon, text:text };
  			break;
  		default:
  			if ( button == 1 )
- 				CreateProcess( id );
+ 				createProcess( id );
  			else
- 				if ( MessageBox( 'Remove item: ' + id + '? ', 'Question', MB_YESNO) == IDYES )
+ 				if ( messageBox( 'Remove item: ' + id + '? ', 'Question', MB_YESNO) == IDYES )
  					delete s.menu[id];
  		}
  }
 
 while ( !endSignal )
-	ProcessEvents( s.Events(), EndSignalEvents() )
+	processEvents( s.events(), EndSignalEvents() )
 
 
-Halt(); //////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////
 
 
 
@@ -407,9 +407,9 @@ Halt(); //////////////////////////////////////////////////////////////////////
 
 try {
 	
-	var path = 'HKEY_LOCAL_MACHINE\\Software\\Clients\\StartMenuInternet';
-	var defaultBrowser = RegistryGet(path+'\\'+RegistryGet(path, '')+'\\shell\\open\\command', '' );
-	CreateProcess(undefined, defaultBrowser + ' http://jslibs.googlecode.com/');
+	var path = 'HKEY_LOCAL_MACHINE\\Software\\clients\\startMenuInternet';
+	var defaultBrowser = registryGet(path+'\\'+registryGet(path, '')+'\\shell\\open\\command', '' );
+	createProcess(undefined, defaultBrowser + ' http://jslibs.googlecode.com/');
 	
 //	print( uneval( RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip'), '\n' ) );
 
@@ -418,7 +418,7 @@ try {
 	print(ex.text);
 }
 
-Halt(); //////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////
 
 
 
@@ -487,13 +487,13 @@ s.icon = new Icon( 0 );
 s.menu = { add:{ text:'Add', default:true}, exit:'Exit', s1:{ separator:true }, 'C:\\WINDOWS\\notepad.exe':'Notepad' };
 s.onmousedown = function( button ) { 
 	
-		MessageBeep();
-		s.PopupMenu();
+		messageBeep();
+		s.popupMenu();
 }
 
 s.onmousemove = function( x,y ) {
 
-	var pos = s.Position();
+	var pos = s.position();
 	print( x-pos[0], ',', y-pos[1], '\n' );
 }
 
@@ -503,12 +503,12 @@ s.oncommand = function( id, button ) {
 		case 'exit':
 			return true;
 		case 'add':
-			var fileName = FileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
+			var fileName = fileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
 			if ( !fileName )
 				return;
 			var icon = function(val,key) { 
 				try {
-					return ExtractIcon( key )
+					return extractIcon( key )
 				} catch (ex) {}; // do not worry about ExtractIcon failures
 			}
 			var text = fileName.substr( fileName.lastIndexOf( '\\' ) + 1 );
@@ -517,15 +517,15 @@ s.oncommand = function( id, button ) {
 		default:
 			if ( button == 1 ) {
 				try {
-					CreateProcess( id );
+					createProcess( id );
 				} catch (ex) {}; // do not worry about CreateProcess failures
 			} else
-				if ( MessageBox( 'Remove item: ' + id + '? ', 'Question', 4) == 6 )
+				if ( messageBox( 'Remove item: ' + id + '? ', 'Question', 4) == 6 )
 					delete s.menu[id];
 		}
 }
 
-do { Sleep(100) } while ( !s.ProcessEvents() );
+do { sleep(100) } while ( !s.processEvents() );
 
 
 
@@ -547,7 +547,7 @@ if ( clip != null ) {
 
 //print( FileOpenDialog('executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*'), '\n' );
 //print( ExpandEnvironmentStrings('%SystemRoot%\\System32\\calc.exe'), '\n' );
-//CreateProcess('C:\\WINDOWS\\system32\\calc.exe');
+//createProcess('C:\\WINDOWS\\system32\\calc.exe');
 
 var s = new Systray();
 
@@ -556,8 +556,8 @@ var exit = false;
 //var image = new Png(new File('calendar.png').Open(File.RDONLY)).Load();
 //print( image.width+'x'+image.height+'x'+image.channels, '\n' );
 
-var trayIcon = new Icon(new Png(new File('calendar_16x16x3.png').Open(File.RDONLY)).Load());
-var calcIcon = ExtractIcon( "C:\\WINDOWS\\system32\\calc.exe" );
+var trayIcon = new Icon(new Png(new File('calendar_16x16x3.png').open(File.RDONLY)).load());
+var calcIcon = extractIcon( "C:\\WINDOWS\\system32\\calc.exe" );
 //var trayIcon = ExtractIcon( "C:\\Program Files\\Mozilla Firefox\\firefox.exe" );
 
 s.icon = trayIcon;
@@ -586,9 +586,9 @@ s.menu = {
 s.onmousedown = function(button) { 
 	
 	if ( button == 1  )
-		s.Focus()
+		s.focus()
 	if ( button == 2 )
-		s.PopupMenu();
+		s.popupMenu();
 }
 
 s.onchar = function(c) { print(c); }
@@ -607,12 +607,12 @@ s.oncommand = function(id) {
 
 var blink = true;
 
-//MessageBox( s.text );
+//messageBox( s.text );
 //s.Flash();
 
 while ( !endSignal && !exit ) {
-	s.ProcessEvents();
-	Sleep(100);//print('.');
+	s.processEvents();
+	sleep(100);//print('.');
 //	s.icon = blink ? trayIcon : null;
 	blink = !blink;
 //	s.visible = blink;

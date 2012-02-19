@@ -3,22 +3,22 @@ loadModule('jsdebug');
 
 /// list all properties of the global object  [rt]
 
-	PropertiesList( global );
+	propertiesList( global );
 
 
 /// test OBJ_SCOPE in JS_PropertyIterator [rmtf]
 
 //	PropertiesList([]); // see bug 688571 - JS_PropertyIterator is broken
 //	PropertiesList({}); // ... bug 688571
-	PropertiesList({ a:123 });
-	PropertiesList(new String());
-	PropertiesList(PropertiesList);
+	propertiesList({ a:123 });
+	propertiesList(new String());
+	propertiesList(propertiesList);
 
 
 /// gcMallocBytes test [d]
 
 	var v0 = gcMallocBytes;
-	var s = StringRepeat('x', 100000);
+	var s = stringRepeat('x', 100000);
 	var v1 = gcMallocBytes;
 	s = undefined;
 	QA.GC();

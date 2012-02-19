@@ -6,15 +6,15 @@ loadModule('jsio');
 
 /*
 var f = new File('pngtest.png');
-f.Open( File.RDONLY );
+f.open( File.RDONLY );
 var img = new Png(f);
 print( img.width+'x'+img.height+'x'+img.channels, '\n' );
-print( img.Load().length , '\n' );
+print( img.load().length , '\n' );
 */
 
 //var texture = DecodeJpegImage(new File('battleship_1280x1024.jpg').Open( File.RDONLY ));
 //print( texture.width+'x'+texture.height+'x'+texture.channels, '\n' );
 
-var texture = DecodePngImage(new File('battlesuitbj6.png').Open());
+var texture = decodePngImage(new File('battlesuitbj6.png').open());
 print( texture.width+'x'+texture.height+'x'+texture.channels, '\n' );
 

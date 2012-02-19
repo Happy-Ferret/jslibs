@@ -4,7 +4,7 @@ loadModule('jsstd');
 loadModule('jstrimesh');
 loadModule('jsio');
 
-function MeshToTrimesh(filename) {
+function meshToTrimesh(filename) {
 
 	var trimeshList = {};
 	var mesh = eval('('+(new File(filename).content)+')');
@@ -19,15 +19,15 @@ function MeshToTrimesh(filename) {
 			vertexList.push(it[0], it[1], it[2]);
 			normalList.push(it[3], it[4], it[5]);
 		}
-		tm.DefineVertexBuffer(vertexList);
-		tm.DefineNormalBuffer(vertexList);
+		tm.defineVertexBuffer(vertexList);
+		tm.defineNormalBuffer(vertexList);
 
 		var faceList = [];
 		for each ( var it in mesh[id].face )
 			faceList.push(it[0], it[1], it[2]);
-		tm.DefineIndexBuffer(faceList);
+		tm.defineIndexBuffer(faceList);
 	}
 	return trimeshList;
 }
 
-print(uneval(MeshToTrimesh('cube.json')));
+print(uneval(meshToTrimesh('cube.json')));

@@ -1,5 +1,5 @@
 var queryData = {};
-for each ( var item in GetParam('QUERY_STRING').split('&') ) {
+for each ( var item in getParam('QUERY_STRING').split('&') ) {
 
 	var pos = item.indexOf('=');
 	if ( pos != -1 )
@@ -10,7 +10,7 @@ for each ( var item in GetParam('QUERY_STRING').split('&') ) {
 
 function CGIVariableList() {
 	
-	var fcgiParams = GetParam();
+	var fcgiParams = getParam();
 	var list = <ul/>;
 	for ( var k in fcgiParams )
 		list += <li><b>{k}</b><pre>{fcgiParams[k]}</pre></li>;
@@ -18,10 +18,10 @@ function CGIVariableList() {
 }
 
 
-Write( 'Content-type: text/html; charset=iso-8859-1\r\n\r\n' );
-Write( '<?xml version="1.0" encoding="iso-8859-1"?>' );
-Write( '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">' );
-Write(
+write( 'Content-type: text/html; charset=iso-8859-1\r\n\r\n' );
+write( '<?xml version="1.0" encoding="iso-8859-1"?>' );
+write( '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">' );
+write(
 <html>
 	<head>
 		<title>teswt</title>
@@ -32,7 +32,7 @@ Write(
 		</style>
 	</head>
 	<body>
-		<form action={GetParam('SCRIPT_NAME')}>
+		<form action={getParam('SCRIPT_NAME')}>
 			<textarea name="text">{queryData.text||''} </textarea>
 			<hr/>
 			<input type="submit"/>

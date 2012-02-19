@@ -13,7 +13,7 @@ for ( var i = 0; i < 30; i++ ) {
 		db.exec('insert into t1 (name,value) values ("green","#0F0")');
 		db.exec('insert into t1 (name,value) values ("blue","#00F")');
 
-		var res = [ color.name+'='+color.value for each ( color in db.Query('SELECT * from t1') ) ].join(',');
+		var res = [ color.name+'='+color.value for each ( color in db.query('SELECT * from t1') ) ].join(',');
 }
 
 throw 0;
@@ -21,9 +21,9 @@ throw 0;
 
 loadModule('jsstd'); exec('../common/tools.js');
 //var QA = FakeQAApi;
-//RunLocalQAFile();
-//RunJsircbot(false); throw 0;
-RunQATests('-rep 5 -exclude jstask jssqlite');
+//runLocalQAFile();
+//runJsircbot(false); throw 0;
+runQATests('-rep 5 -exclude jstask jssqlite');
 
 
 
@@ -41,7 +41,7 @@ for (var i = 0; i < 11; i++ ) {
 
 	var str = '';
 	
-	var res = db.Query('SELECT * from t1');
+	var res = db.query('SELECT * from t1');
 	
 	str = [ it for each ( it in res ) ];
 //	var arr = []; for each ( var it in res ) arr.push(it); 	str += arr; // path: stubs::IterMore

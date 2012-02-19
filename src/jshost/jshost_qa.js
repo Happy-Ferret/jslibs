@@ -10,14 +10,14 @@
 /// jshost arguments [ftm]
 
 	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments.toString())', '123', '-test']);
-	var res = process.stdout.Read();
+	var res = process.stdout.read();
 	QA.ASSERT_STR( res, "123,-test", "jshost arguments" );
 
 
 /// jshost stderr [ftm]
 
 	var process = new Process('jshost', ['-u', '-i', '_host.stderr("46t5be4qg6b5e46grb5we4g5rn4trnehirwerwer")']);
-	var res = process.stderr.Read();
+	var res = process.stderr.read();
 	QA.ASSERT_STR( res, "46t5be4qg6b5e46grb5we4g5rn4trnehirwerwer", "jshost arguments" );
 
 

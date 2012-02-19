@@ -9,38 +9,38 @@ var t = new Task(function(test){
 	return Blob("123");
 });
 
-t.Request('test');
+t.request('test');
 
-ProcessEvents(t.Events(), EndSignalEvents());
+processEvents(t.events(), EndSignalEvents());
 
-print( uneval(t.Response()) );
+print( uneval(t.response()) );
 
 
-Halt();
+halt();
 
 
 
 var t = new Task(function(data, idx){
 	
 	idx || loadModule('jsstd');
-	Sleep(Math.random()*100);
+	sleep(Math.random()*100);
 	return data+1;
 });
 
 t.onResponse = function(t) {
 
-	var v = t.Response();
-	t.Request( v );
+	var v = t.response();
+	t.request( v );
 	print(v, '\n');
 }
 
-t.Request(0);
+t.request(0);
 
 while (!endSignal)
-	ProcessEvents(t.Events(), EndSignalEvents());
+	processEvents(t.events(), EndSignalEvents());
 
 
-Halt();
+halt();
 
 
 
@@ -49,11 +49,11 @@ Halt();
 loadModule('jsio');
 
 
-myTask.Request();
-myTask.Response();
+myTask.request();
+myTask.response();
 
 var a = 123;
-print( Expand('$(a)') );
+print( expand('$(a)') );
 
 
 /*
@@ -64,25 +64,25 @@ for ( var i = 0; i < 5; i++ ) {
 		loadModule('jsio');
 		var serverSocket = new Socket();
 		serverSocket.reuseAddr = true;
-		serverSocket.Bind(8099, '127.0.0.1');
-		serverSocket.Listen();
+		serverSocket.bind(8099, '127.0.0.1');
+		serverSocket.listen();
 
 		serverSocket.readable = function(s) {
 
-			s.Accept().Write('hello');
-			s.Close();
+			s.accept().write('hello');
+			s.close();
 		}
 		
-		Poll([serverSocket], 1000);
-		serverSocket.Close();
+		poll([serverSocket], 1000);
+		serverSocket.close();
 	});
 	
-	myTask.Request();
+	myTask.request();
 
 	var client = new Socket();
-	client.Bind(0, '192.168.0.11');
-	client.Connect('127.0.0.1', 8099);
-	var res = client.Read(5);
+	client.bind(0, '192.168.0.11');
+	client.connect('127.0.0.1', 8099);
+	var res = client.read(5);
 	print( res, '\n' );
 }
 */

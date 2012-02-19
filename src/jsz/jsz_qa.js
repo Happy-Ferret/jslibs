@@ -70,7 +70,7 @@ loadModule('jsz');
 
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
-		var source = QA.RandomString(10000);
+		var source = QA.randomString(10000);
 		var str = deflate(source, true);	
 		var result = inflate(str, true);
 		QA.ASSERT_STR( result, source, 'inflate result' );
@@ -82,7 +82,7 @@ loadModule('jsz');
 		var inflate = new Z(Z.INFLATE);
 
 		for ( var i = 0; i < 200; i++ )
-			inflate(deflate(QA.RandomString(10000)));
+			inflate(deflate(QA.randomString(10000)));
 		inflate(deflate());
 		
 		QA.ASSERT( deflate.lengthIn, 2000000 , 'input length' );
@@ -92,7 +92,7 @@ loadModule('jsz');
 
 /// end of data methods [ftr]
 
-		var source = QA.RandomString(10000);
+		var source = QA.randomString(10000);
 
 		var deflate1 = new Z(Z.DEFLATE);
 		deflate1(source, true);

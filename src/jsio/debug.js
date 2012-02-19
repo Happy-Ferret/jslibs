@@ -8,22 +8,22 @@ loadModule('jsstd'); loadModule('jsio');
 
 try {
 
-	var rdv = new Socket(); rdv.nonblocking = true; rdv.Bind(9999, '127.0.0.1'); rdv.Listen(); rdv.readable = true;
+	var rdv = new Socket(); rdv.nonblocking = true; rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
 	var cl = new Socket();
 //	cl.nonblocking = true;
-	cl.Connect('127.0.0.1', 9999);
-	ProcessEvents( Descriptor.Events([rdv]), TimeoutEvents(2000) );
-	var sv = rdv.Accept(); rdv.Close();
+	cl.connect('127.0.0.1', 9999);
+	processEvents( Descriptor.events([rdv]), timeoutEvents(2000) );
+	var sv = rdv.accept(); rdv.close();
 	sv.nonblocking = true;
 	
 	sv.linger = 0;
 	
-	sv.Write(StringRepeat('x', 10000000));
-	sv.Close();
+	sv.write(stringRepeat('x', 10000000));
+	sv.close();
 
-	while ( cl.Read() != undefined );
+	while ( cl.read() != undefined );
 
-	print( typeof cl.Read(), '\n' );
+	print( typeof cl.read(), '\n' );
 
 
 
@@ -43,11 +43,11 @@ throw 0;
 //loadModule('jsdebug'); gcZeal = 2;
 
 //var f = new File('C:\\MSDOS.SYS').Open('r');
-var f = new File("C:\\tmp\\vcredist.bmp").Open('r'); // MYDOCUMENTS
+var f = new File("C:\\tmp\\vcredist.bmp").open('r'); // MYDOCUMENTS
 
 print(f.id.quote());
 
-Halt();
+halt();
 
 
 
@@ -79,9 +79,9 @@ throw 0;
 
 
 var f = new Socket();
-f.Connect('apod.nasa.gov', 80);
-f.Write('GET /apod/image/1105/cenAjets_many_1280.jpg HTTP/1.0\r\nAccept:*/*\r\n\r\n');
-var image = Stringify(f);
+f.connect('apod.nasa.gov', 80);
+f.write('GET /apod/image/1105/cenAjets_many_1280.jpg HTTP/1.0\r\nAccept:*/*\r\n\r\n');
+var image = stringify(f);
 
 print( image.length, 'bytes\n' );
 
@@ -97,18 +97,18 @@ if ( 0 ) {
 	loadModule('jswinshell');
 	
 	var f = new File('test.txt');
-	f.Close();
+	f.close();
 	
 	
-	Halt();
+	halt();
 
 /*	
 	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments)', '123', '-c']);
-	var res = process.stdout.Read();
+	var res = process.stdout.read();
 	print( res ==  "_host.stdout(arguments),123,-c");
 */
 
-	var f = new File('c:/MSDOS.SYS').Open('r');
+	var f = new File('c:/MSDOS.SYS').open('r');
 	
 	print( f.id.quote() );
 
@@ -118,11 +118,11 @@ if ( 0 ) {
 
 
 loadModule('jsstd');  loadModule('jsio');
-//RunJsircbot(false); throw 0;
+//runJsircbot(false); throw 0;
 // var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 //exec('../../qaexp.js');  throw 0;
 //var QA = FakeQAApi;  RunLocalQAFile();
-//RunSavedQAFile('../../exitissue');
+//runSavedQAFile('../../exitissue');
 
 
 
@@ -130,7 +130,7 @@ loadModule('jsstd');  loadModule('jsio');
 
 
 loadModule('jsstd'); exec('../common/tools.js');
-RunQATests('-rep 4 udp');
+runQATests('-rep 4 udp');
 
 loadModule('jsstd');
 loadModule('jsio');
@@ -138,7 +138,7 @@ loadModule('jswinshell');
 
 try {
 
-	print( Socket.GetHostsByAddr('10.10.10.10')[0] );
+	print( Socket.getHostsByAddr('10.10.10.10')[0] );
 } catch ( ex if ex instanceof IoError ) {
 
 	print( ex.const, '\n' );
@@ -155,7 +155,7 @@ new File( DESKTOP+'\\test.txt' ).content = '1234';
 
 
 
-Halt();
+halt();
 
 
 
@@ -163,7 +163,7 @@ loadModule('jsio');
 loadModule('jswinshell');
 
 new File( DESKTOP+'\\test.txt' ).content = '1234';
-Halt();
+halt();
 
 loadModule('jsdebug');
 loadModule('jsstd');
@@ -177,40 +177,40 @@ loadModule('jsio');
 const CRLF = '\r\n';
 var descList = [];
 var serv = new Socket(Socket.TCP);
-serv.Bind(8081);
-serv.Listen();
+serv.bind(8081);
+serv.listen();
 descList.push(serv);
 
-function Respond() {
+function respond() {
 
-  this.httpHeader += this.Read();
+  this.httpHeader += this.read();
   if ( this.httpHeader.indexOf(CRLF+CRLF) == -1 )
     return;
 
   print('Received: \n' + this.httpHeader + '\n');
   descList.splice(descList.indexOf(this), 1);
 
-  var writeOp = this.Write(
+  var writeOp = this.write(
     'HTTP/1.0 200 OK' + CRLF +
     'Content-Type: text/html; charset=utf-8' + CRLF +
-    'Cache-Control: no-cache, must-revalidate' + CRLF +
+    'Cache-control: no-cache, must-revalidate' + CRLF +
     'Pragma: no-cache' + CRLF + CRLF +
-    '<html><body>Hello from <a href="http://jslibs.googlecode.com/">jslibs</a> at ' + new Date() + '</body></html>' );
-  this.Close();
+    '<html><body>hello from <a href="http://jslibs.googlecode.com/">jslibs</a> at ' + new Date() + '</body></html>' );
+  this.close();
 };
 
 serv.readable = function () {
 
-  var desc = this.Accept();
+  var desc = this.accept();
   desc.httpHeader = '';
-  desc.readable = Respond;
+  desc.readable = respond;
   descList.push(desc);
 }
 
-print('HTTP server minimal example. Point a web browser at http://localhost:8081. CTRL+C to exit\n');
+print('HTTP server minimal example. point a web browser at http://localhost:8081. CTRL+C to exit\n');
 
 while ( !endSignal )
- Poll(descList, 50);
+ poll(descList, 50);
 
 //while ( !endSignal )
 //	ProcessEvents( IOEvents(descList), EndSignalEvents(), TimeoutEvents(100) );
@@ -219,32 +219,32 @@ while ( !endSignal )
 //jsioTest();
 
 
-Halt();
+halt();
 
 
 var f = new File('com1:');
-f.Open(File.RDWR);
-ConfigureSerialPort(f, 9600);
-f.Write('A');
-f.Read(1);
+f.open(File.RDWR);
+configureSerialPort(f, 9600);
+f.write('A');
+f.read(1);
 
 
 f.writable = function() { print('writable') }
 //f.readable = function() { print('readable') }
 
-Poll([f], 1000);
+poll([f], 1000);
 
 /*
-f.Write('A');
-f.Read(1);
+f.write('A');
+f.read(1);
 */
 
-Halt();
+halt();
 
 
-	var p = new Process(GetEnv('ComSpec'), ['/c', 'svn', 'info', '--xml']); // '-r', 'HEAD', 
+	var p = new Process(getEnv('ComSpec'), ['/c', 'svn', 'info', '--xml']); // '-r', 'HEAD', 
 	var svnInfo = '';
-	for ( let data; data = p.stdout.Read(); )
+	for ( let data; data = p.stdout.read(); )
 		svnInfo += data;
 		
 	print( svnInfo );
@@ -252,118 +252,118 @@ Halt();
 		
 		
 
-Halt();
+halt();
 
 exec('../common/tools.js');
 
-var f = new File('my_test_file.txt').Open();
+var f = new File('my_test_file.txt').open();
 new File('my_test_file.txt').content = '';
-Dump( f.Read(1) );
+dump( f.read(1) );
 
 
 new File('my_test_file.txt').content = 'a';
 
-Dump( f.Read(1) );
+dump( f.read(1) );
 
 
-Halt();
+halt();
 
 	var socket = new Socket();
 	socket.nonblocking = false;
-	socket.Connect('127.0.0.1', 3128);
-	socket.Shutdown();
+	socket.connect('127.0.0.1', 3128);
+	socket.shutdown();
 	socket.available;
 
 
 /*
  var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:'] );
- p.Wait();
- p.stdout.Read(0);
+ p.wait();
+ p.stdout.read(0);
 */	
 
 
 
-Halt(); //////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////
 
 
 
-function ReverseLookup( ip ) {
+function reverseLookup( ip ) {
 
 	try {
 
-		return Socket.GetHostsByAddr(ip)[0];
+		return Socket.getHostsByAddr(ip)[0];
 	} catch ( ex if ex instanceof IoError ) {
 
 		return undefined; // not found
 	}
 }
 
-print( ReverseLookup('10.0.0.99') );
+print( reverseLookup('10.0.0.99') );
 
 
 
 
-Halt(); //////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////
 
 	var myTask = new Task(function() {
 		
 		loadModule('jsio');
 		var serverSocket = new Socket();
 		serverSocket.reuseAddr = true;
-		serverSocket.Bind(8099, '127.0.0.1');
-		serverSocket.Listen();
+		serverSocket.bind(8099, '127.0.0.1');
+		serverSocket.listen();
 
 		serverSocket.readable = function(s) {
 
-			s.Accept().Write('hello');
+			s.accept().write('hello');
 			s.linger = 100;
-			s.Close();
+			s.close();
 		}
 		
-		Poll([serverSocket], 500);
-		serverSocket.Close();
+		poll([serverSocket], 500);
+		serverSocket.close();
 	});
 	
-	myTask.Request();
+	myTask.request();
 
 	var client = new Socket();
-	client.Connect('127.0.0.1', 8099);
-	var res = client.Read();
+	client.connect('127.0.0.1', 8099);
+	var res = client.read();
 	print( res, '\n' );
 
 
 
 
-Halt(); //////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////
 
 gcZeal = 2;
 
 
 var s1 = new Socket( Socket.UDP );
-s1.Connect('127.0.0.1', 9999);
+s1.connect('127.0.0.1', 9999);
 
 var s2 = new Socket( Socket.UDP );
-s2.Bind(9999);
+s2.bind(9999);
 s2.readable = function(s) {
 
-	s.RecvFrom();
+	s.recvFrom();
 }
 
 
 var dlist = [s1,s2];
 
-Poll(dlist, 10);
-s1.Write('x');
+poll(dlist, 10);
+s1.write('x');
 
-Poll(dlist, 10);
-s1.Write('y');
+poll(dlist, 10);
+s1.write('y');
 
-Poll(dlist, 10);
-s1.Write('z');
+poll(dlist, 10);
+s1.write('z');
 
 
 
-Halt(); //////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////
 
 try {
 
@@ -375,11 +375,11 @@ try {
 	
 	
 		
-Halt();
+halt();
 
 				
 
-Halt();
+halt();
 
 	host = 'www.google.com'
 	
@@ -387,28 +387,28 @@ Halt();
 
 	var soc = new Socket();
 	soc.nonblocking = true;
-	soc.Connect( host, 80 );
+	soc.connect( host, 80 );
 	soc.writable = function(s) {
 	
 		delete soc.writable;
-		s.Write('GET\r\n\r\n');
+		s.write('GET\r\n\r\n');
 	}
 	soc.readable = function(s) {
 		
-		var res = s.Read();
+		var res = s.read();
 		if ( res )
 			response += res;
 	}
 	
 	var i = 0;
 	while( ++i < 100 )
-		Poll([soc], 20);
+		poll([soc], 20);
 		
 	print(response);
 
 	
 
-Halt();
+halt();
 
 /*
 try {
@@ -421,16 +421,16 @@ try {
 */
 
 var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:']);
-Sleep(1000);
-print( p.stdout.Read(), '\n' );
+sleep(1000);
+print( p.stdout.read(), '\n' );
 
 
-Halt(); //////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////
 
 var mem = new SharedMemory( 'fileName', 100 );
 var mem1 = new SharedMemory( 'fileName', 100 );
 
-mem1.Close();
+mem1.close();
 //mem.Close();
 
 
@@ -438,7 +438,7 @@ mem1.Close();
 try {
 
 
-	var fd = Descriptor.Import( 5000, Descriptor.DESC_FILE );
+	var fd = Descriptor.import( 5000, Descriptor.DESC_FILE );
 
 	print( fd)
 
@@ -450,7 +450,7 @@ try {
 }
 
 
-Halt(); //////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////
 
 var f = new File('test.txt');
 f.info.toto = 123;
@@ -461,7 +461,7 @@ print( f.info.toto, '\n' );
 
 
 
-Halt(); //////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////
 
 //var tmp = new File('test.txt');
 //tmp.Open('w');
@@ -472,7 +472,7 @@ var f = new File('test.txt');
 
 try {
 
-	f.Move('..');
+	f.move('..');
 
 } catch ( ex if ex instanceof IoError ) { 
 	
@@ -481,29 +481,29 @@ try {
 }
 
 
-Halt(); //////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////
 
 var f = new File('directory.cpp');
-f.Open("r");
+f.open("r");
 var m = new MemoryMapped(f);
 print(m);
 
 
-Halt(); //////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////
 
 
 processPriority = 2;
 while (!endSignal) {
 
-	Sleep(100);
+	sleep(100);
 }
 
 print( processPriority );
 
-Sleep(500);
+sleep(500);
 		
 		
-Halt(); //////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////
 
 var mem = new SharedMemory( 'test.txt', 4 );
 
@@ -511,26 +511,26 @@ var i = 0;
 while (!endSignal) {
 
 	mem.content = i++;
-	Sleep(1000);
+	sleep(1000);
 }
 
 
-Halt(); //////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////
 
 
 
 var mem = new SharedMemory( 'test.txt', 100 );
-mem.Write('test', 10);
+mem.write('test', 10);
 //mem.content = "toto";
 //print( Directory.List('.').join('\n'), '\n' );
 var mem2 = new SharedMemory( 'test.txt', 4 );
 print( mem2.content.length, '\n' );
 
-Halt(); //////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////
 
 try {
 
-    Poll(desc,1);
+    poll(desc,1);
     
     
 
@@ -552,13 +552,13 @@ print('\n * testing UDP socket \n');
 	
 	var s2 = new Socket( Socket.UDP );
 	s2.nonblocking = true;
-	s2.Bind(9999);
+	s2.bind(9999);
 	s2.readable = function(s) {
 	
 //		print( 'port:'+s.sockPort+'\n' );
-		var [data, ip, port] = s.RecvFrom();
+		var [data, ip, port] = s.recvFrom();
 		
-		s.SendTo(ip, port, '5554');
+		s.sendTo(ip, port, '5554');
 		
 		
 //		new Socket( Socket.UDP ).SendTo( ip, port, 'receiving from '+ip+':'+port+'   '+ data.length );
@@ -567,7 +567,7 @@ print('\n * testing UDP socket \n');
 	var s1 = new Socket( Socket.UDP );
 	s1.reuseAddr = true;
 	s1.nonblocking = true;
-	s1.Connect('127.0.0.1', 9999);
+	s1.connect('127.0.0.1', 9999);
 	
 	s1.readable = function(s) { print( 'readable', '\n' ); }
 //	s1.writable = function(s) { print( 'writable', '\n' ); }
@@ -581,60 +581,60 @@ print('\n * testing UDP socket \n');
 	while(++i < 20 && !endSignal) {
 		
 		print('.\n');
-		Poll(dlist,100);
+		poll(dlist,100);
 		step++;
 		if ( !(step % 4) ) {
 		
-			s1.Write('1234');
+			s1.write('1234');
 
 		}
 	}
 
 
 
-Halt(); //////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////
 
 
 	var server = new Socket( Socket.TCP );
-	server.Bind( 80, '127.0.0.1');
-	server.Listen();
+	server.bind( 80, '127.0.0.1');
+	server.listen();
 	
-	Sleep(100);
+	sleep(100);
 
 	var server1 = new Socket( Socket.TCP );
 
-	for ( var port = 80; !server1.Bind( port, '127.0.0.1' ) && port <= 82; port++ );
+	for ( var port = 80; !server1.bind( port, '127.0.0.1' ) && port <= 82; port++ );
 	
 	print('port '+port);
 
-	server1.Listen();
+	server1.listen();
 
-Halt(); //////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////
 
 //print( Socket.GetHostsByName('www.google.com') );
 
 
 /*
 var f = new File('toto.txt');
-f.Open( "w+" );
-File.stdin.Read();
+f.open( "w+" );
+File.stdin.read();
 
-f.Close();
+f.close();
 
-Halt(); //////////////////////////////////////////////////////////	
+halt(); //////////////////////////////////////////////////////////	
 	
 
 print('\n * testing stdout \n');
 
 	var f = File.stdout;
-	f.Write(new Date());
+	f.write(new Date());
 
 print('\n * testing simple file write \n');
 
 	var f = new File('test.txt');
-	f.Open( File.RDWR | File.CREATE_FILE );
-	f.Write(new Date());
-	f.Close();
+	f.open( File.RDWR | File.CREATE_FILE );
+	f.write(new Date());
+	f.close();
 */
 
 
@@ -645,16 +645,16 @@ print('\n * testing TCP socket \n');
 	var step = 0;
 
 	var server = new Socket( Socket.TCP );
-	server.Bind(80, '127.0.0.1');
-	server.Listen();
+	server.bind(80, '127.0.0.1');
+	server.listen();
 	
 	server.readable = function(s) {
 		
-		var soc = s.Accept();
+		var soc = s.accept();
 		dlist.push(soc);
 		soc.readable = function(s) {
 
-			var data = s.Read();
+			var data = s.read();
 			
 			print('recv '+data+' from '+s.sockPort);
 			if ( !data.length )
@@ -663,7 +663,7 @@ print('\n * testing TCP socket \n');
 	}
 	
 	var client = new Socket( Socket.TCP );
-	client.Connect('127.0.0.1', 80);
+	client.connect('127.0.0.1', 80);
 	
 	print('seg: '+client.maxSegment);
 	
@@ -674,11 +674,11 @@ print('\n * testing TCP socket \n');
 	while(++i < 10) {
 		
 		print('.\n');
-		Poll(dlist,100);
+		poll(dlist,100);
 		step++;
 		if ( !(step%5) ) {
 		
-			client.Write('test');
+			client.write('test');
 		}
 	}
 	

@@ -5,13 +5,13 @@ loadModule('jsio');
 loadModule('jsaudio');
 loadModule('jssound');
 
-Oal.Open();
+Oal.open();
 
-var dec = new SoundFileDecoder( new File('41_30secOgg-q0.wav').Open('r') );
+var dec = new SoundFileDecoder( new File('41_30secOgg-q0.wav').open('r') );
 //var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').Open('r') );
 //var dec = new SoundFileDecoder( new File('break3.wav').Open('r') );
 
-var block = dec.Read(100000);
+var block = dec.read(100000);
 
 //var [left, right] = SplitChannels(block);
 
@@ -22,22 +22,22 @@ print( block.rate, '\n' );
 print( block.frames, '\n' );
 
 var b = Oal.Buffer(block);
-var src = Oal.GenSource();
-Oal.SourceQueueBuffers(src, b);
-Oal.PlaySource(src);
+var src = Oal.genSource();
+Oal.sourceQueueBuffers(src, b);
+Oal.playSource(src);
 
-Sleep( 2000 );
+sleep( 2000 );
 
-Halt();
+halt();
 
-var t0 = IntervalNow();
+var t0 = intervalNow();
 
 do {
-	var block = dec.Read(100000);
+	var block = dec.read(100000);
 	print( 'frames: '+block.frames, '\n' );
 } while(block);
 
-print( IntervalNow() - t0, '\n' );
+print( intervalNow() - t0, '\n' );
 
 
 

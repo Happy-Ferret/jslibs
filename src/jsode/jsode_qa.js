@@ -24,7 +24,7 @@ loadModule('jsode');
 
 	var space = new Space();
 	var geom = new GeomPlane(space);
-	space.Destroy();
+	space.destroy();
 
 
 /// memory leak test [rmtf]

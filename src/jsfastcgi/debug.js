@@ -3,9 +3,9 @@
 loadModule('jsstd');
 loadModule('jsfastcgi');
 
-GetParam();
-//Write();
-Log();
+getParam();
+//write();
+log();
 
 print( URLDecode( 'a+a+a+a' ), '\n' );
 
@@ -22,7 +22,7 @@ loadModule('jsfastcgi');
 //throw 0;
 
 var buffer = new Buffer();
-buffer.Write( new File('test.txt').content );
+buffer.write( new File('test.txt').content );
 
 var fcgi = { 
 	BEGIN_REQUEST     : 1,
@@ -55,30 +55,30 @@ var stdinBuffer = new Buffer();
 
 for ( var i = 0; i < 4; i++ ) { 
 
-	var header = ParseHeader( buffer.Read(8) ); // FCGI_HEADER_LEN
+	var header = parseHeader( buffer.read(8) ); // FCGI_HEADER_LEN
 	print( 'type:',header.type, '\n' );
 	print( 'id:',header.requestId, '\n' );
 	switch ( header.type ) {
 		case fcgi.GET_VALUES:
 			break;
 		case fcgi.BEGIN_REQUEST:
-			ParseBeginRequestBody( buffer.Read(header.contentLength), header );
+			parseBeginRequestBody( buffer.read(header.contentLength), header );
 			break;
 		case fcgi.ABORT_REQUEST:
 			break;
 		case fcgi.PARAMS:
 			header.param || (header.param={});
-			ParsePairs( buffer.Read(header.contentLength), header.param );
+			parsePairs( buffer.read(header.contentLength), header.param );
 			break;
 		case fcgi.STDIN:
-			stdinBuffer.Write( buffer.Read(header.contentLength) );
+			stdinBuffer.write( buffer.read(header.contentLength) );
 			break;
 	}
 	print( '[remain ' + buffer.length + ']', '\n' );
 }
 
 
-//MakeHeader( fcgi.STDOUT, id, length );
+//makeHeader( fcgi.STDOUT, id, length );
 
 
 
@@ -90,7 +90,7 @@ for ( var i = 0; i < 4; i++ ) {
 
 loadModule('jsnspr');
 
-var data = File.stdin.Read(10000); // spec: ... FCGI_LISTENSOCK_FILENO equals STDIN_FILENO.
+var data = File.stdin.read(10000); // spec: ... FCGI_LISTENSOCK_FILENO equals STDIN_FILENO.
 var result;
 
 //var hex = [];

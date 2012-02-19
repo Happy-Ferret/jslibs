@@ -7,16 +7,16 @@ loadModule('jsaudio');
 loadModule('jssound');
 
 Oal.maxAuxiliarySends;
-Halt();
+halt();
 
 
-Oal.Open();
+Oal.open();
 
 //var dec = new SoundFileDecoder( new File('41_30secOgg-q0.wav').Open('r') );
 //var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').Open('r') );
-var dec = new SoundFileDecoder( new File('break3.wav').Open('r') );
+var dec = new SoundFileDecoder( new File('break3.wav').open('r') );
 
-var block = dec.Read(100000);
+var block = dec.read(100000);
 
 //var [left, right] = SplitChannels(block);
 
@@ -27,11 +27,11 @@ print( block.rate, '\n' );
 print( block.frames, '\n' );
 
 var b = Oal.Buffer(block);
-var src = Oal.GenSource();
-Oal.SourceQueueBuffers(src, b);
-Oal.PlaySource(src);
+var src = Oal.genSource();
+Oal.sourceQueueBuffers(src, b);
+Oal.playSource(src);
 
-Sleep(2000);
+sleep(2000);
 
 throw 0; ///////////
 
@@ -43,13 +43,13 @@ loadModule('jssound');
 loadModule('jsaudio');
 loadModule('jsdebug');
 
-Oal.Open('Generic Software');
+Oal.open('Generic Software');
 
-var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').Open('r') );
-var [left, right] = SplitChannels(dec.Read(200000));
+var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').open('r') );
+var [left, right] = splitChannels(dec.read(200000));
 var b = new OalBuffer(right);
-left.Free();
-right.Free();
+left.free();
+right.free();
 
 var src = new OalSource();
 
@@ -72,27 +72,27 @@ src.effectSlot = effectSlot;
 
 src.buffer = b;
 src.looping = false;
-src.Position(-1,0,0);
+src.position(-1,0,0);
 
 OalListener.position = [10,0,0];
 
-src.Play();
+src.play();
 
 //effectSlot.effect = effect2;
 
-Sleep(3000);
+sleep(3000);
 
 //effectSlot.effect = effect;
 
 
 
-Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
+halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-function Hex(int) '0x'+int.toString(16).toUpperCase();
+function hex(int) '0x'+int.toString(16).toUpperCase();
 
 //var dec = new SoundFileDecoder( new File('41_30secOgg-q0.wav').Open('r') );
-var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').Open('r') );
+var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').open('r') );
 //var dec = new SoundFileDecoder( new File('break3.wav').Open('r') );
 
 print( dec.bits, '\n' );
@@ -102,8 +102,8 @@ print( dec.frames, '\n' );
 
 print( '------------------------\n' );
 
-var block = dec.Read(100000);
-var [left, right] = SplitChannels(block);
+var block = dec.read(100000);
+var [left, right] = splitChannels(block);
 block = left;
 
 print( 'Decoded sound blob:', '\n' );
@@ -117,14 +117,14 @@ print( '\n' );
 
 
 
-Oal.Open('Generic Software');
+Oal.open('Generic Software');
 print( 'has EFX: '+Oal.hasEfx, '\n' );
 print( 'maxAuxiliarySends: '+Oal.maxAuxiliarySends, '\n' );
 
 print( '\n' );
 print( 'OpenAL buffer:', '\n' );
 var b = new OalBuffer(block);
-block.Free(); // no more needed
+block.free(); // no more needed
 
 print( ' rate: '+b.frequency, '\n' );
 print( ' size: '+b.size, '\n' );
@@ -141,7 +141,7 @@ print( 'OpenAL source:', '\n' );
 var src = new OalSource();
 src.buffer = b;
 src.looping = false;
-src.Position(1,0,0);
+src.position(1,0,0);
 
 
 var effect = new OalEffect();
@@ -173,7 +173,7 @@ src.directFilter = filter;
 print( ' position: '+src.position, '\n' );
 
 
-src.Play();
+src.play();
 
 for ( var i=0; i < 100; i++) {
 
@@ -182,91 +182,91 @@ for ( var i=0; i < 100; i++) {
 //	print( ' state: '+Hex(src.state), '\n' );
 //	print( ' offset: '+src.secOffset.toFixed(3), '\n' );
 //	print( '\n' );
-	Sleep(40);
+	sleep(40);
 }
-src.Stop();
+src.stop();
 
 
-Oal.Close();
+Oal.close();
 
 
 
 
-Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
+halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 var filename = '41_30secOgg-q0.ogg';
 
-print('playing '+filename, '\npress Ctrl-c to exit\n' );
+print('playing '+filename, '\npress ctrl-c to exit\n' );
 
-var decoder = new OggVorbisDecoder(new File(filename).Open(File.RDONLY));
+var decoder = new OggVorbisDecoder(new File(filename).open(File.RDONLY));
 
-Oal.Open();
-var src = Oal.GenSource();
+Oal.open();
+var src = Oal.genSource();
 
 var pcm, decodeSize = 512;
-while ( (pcm = decoder.Read(decodeSize)) && !endSignal ) {
+while ( (pcm = decoder.read(decodeSize)) && !endSignal ) {
 
-	Oal.SourceQueueBuffers(src, Oal.Buffer(pcm));
-	if ( Oal.GetSourceInteger(src, Oal.SOURCE_STATE) == Oal.INITIAL )
-		Oal.PlaySource(src);
+	Oal.sourceQueueBuffers(src, Oal.Buffer(pcm));
+	if ( Oal.getSourceInteger(src, Oal.SOURCE_STATE) == Oal.INITIAL )
+		Oal.playSource(src);
 	decodeSize = pcm.frames * 2;
 }
 
 var totalTime = decoder.frames/decoder.rate;
-var currentTimeOffset = Oal.GetSourceReal(src, Oal.SEC_OFFSET);
+var currentTimeOffset = Oal.getSourceReal(src, Oal.SEC_OFFSET);
 for ( i = 0; !endSignal && i < totalTime - currentTimeOffset; i++ )
-	Sleep(1000);
+	sleep(1000);
 
-Oal.Close();
+Oal.close();
 
-Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
+halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Oal.Listener(Oal.POSITION, [0,0,0]);
 //Oal.Listener(Oal.VELOCITY, [0,0,0]);
 //Oal.Listener(Oal.ORIENTATION, [0,0,-1, 0,1,0]);
 
-var src = Oal.GenSource();
+var src = Oal.genSource();
 
 //Oal.SourceQueueBuffers(src, b);
-Oal.Source(src, Oal.BUFFER, b);
+Oal.source(src, Oal.BUFFER, b);
 //Oal.Source(src, Oal.PITCH, 1);
 //Oal.Source(src, Oal.GAIN, 1);
 //Oal.Source(src, Oal.POSITION, [1,1,1]);
 //Oal.Source(src, Oal.VELOCITY, [0,0,0]);
 
-Oal.PlaySource(src);
+Oal.playSource(src);
 
 print( 'error: '+Oal.error.toString(16).toUpperCase(), '\n' );
 
-Sleep( 2000 );
-Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
+sleep( 2000 );
+halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
-var decoder = new OggVorbisDecoder(new File('41_30secOgg-q0.ogg').Open( File.RDONLY ));
-var block = decoder.Read(40000);
-var [left, right] = SplitChannels(block);
-var src = Oal.GenSource();
+var decoder = new OggVorbisDecoder(new File('41_30secOgg-q0.ogg').open( File.RDONLY ));
+var block = decoder.read(40000);
+var [left, right] = splitChannels(block);
+var src = Oal.genSource();
 //Oal.Source( src, Oal.POSITION, [10,10,0] );
-Oal.SourceQueueBuffers(src, Oal.Buffer(left));
-Oal.PlaySource(src);
-Sleep( 1000 );
-Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
+Oal.sourceQueueBuffers(src, Oal.Buffer(left));
+Oal.playSource(src);
+sleep( 1000 );
+halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////
 */
 
-var src = Oal.GenSource();
+var src = Oal.genSource();
 
 var pcm;
-while ( pcm = decoder.Read(10000) ) {
+while ( pcm = decoder.read(10000) ) {
 	
 	var b = Oal.Buffer(pcm);
-	Oal.SourceQueueBuffers(src, b);
-	if ( Oal.GetSourceInteger(src, Oal.SOURCE_STATE) == Oal.INITIAL )
-		Oal.PlaySource(src);
+	Oal.sourceQueueBuffers(src, b);
+	if ( Oal.getSourceInteger(src, Oal.SOURCE_STATE) == Oal.INITIAL )
+		Oal.playSource(src);
 };
 
 var totalTime = decoder.frames/decoder.rate;
-var currentTimeOffset = Oal.GetSourceReal(src, Oal.SEC_OFFSET);
+var currentTimeOffset = Oal.getSourceReal(src, Oal.SEC_OFFSET);
 
-Sleep( 1000 * (totalTime - currentTimeOffset) );
+sleep( 1000 * (totalTime - currentTimeOffset) );
 

@@ -12,9 +12,9 @@ throw 0;
 
 loadModule('jsstd'); exec('../common/tools.js');
 //var QA = FakeQAApi;
-//RunLocalQAFile();
-//RunJsircbot(false); throw 0;
-RunQATests('-rep 1 -exclude jstask jsiconv');
+//runLocalQAFile();
+//runJsircbot(false); throw 0;
+runQATests('-rep 1 -exclude jstask jsiconv');
 
 
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
@@ -30,7 +30,7 @@ loadModule('jswinshell');
 
 
 	
-Halt(); //////////////////////////////////////////
+halt(); //////////////////////////////////////////
 	
 
 	var conv = new Iconv('UTF-8', 'UCS-2-INTERNAL', false, true);
@@ -41,14 +41,14 @@ Halt(); //////////////////////////////////////////
 
 
 
-Halt(); //////////////////////////////////////////
+halt(); //////////////////////////////////////////
 
 	var conv = new Iconv('UCS-2-INTERNAL', 'UTF-8', true, false);
 	var result = conv(String.fromCharCode(0x20AC));
 	print(result, '\n');
 
 
-Halt(); //////////////////////////////////////////
+halt(); //////////////////////////////////////////
 
 
 print( Iconv.version );

@@ -27,21 +27,21 @@ throw 0;
 
 // OpenGl doc: http://www.opengl.org/sdk/docs/man/
 
-GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-GlSetAttribute( GL_DOUBLEBUFFER, 1 );
-GlSetAttribute( GL_DEPTH_SIZE, 16 );
-GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+glSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+glSetAttribute( GL_DOUBLEBUFFER, 1 );
+glSetAttribute( GL_DEPTH_SIZE, 16 );
+glSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 
-GlSetAttribute( GL_MULTISAMPLEBUFFERS, 1 );
-GlSetAttribute( GL_MULTISAMPLESAMPLES, 1 );
+glSetAttribute( GL_MULTISAMPLEBUFFERS, 1 );
+glSetAttribute( GL_MULTISAMPLESAMPLES, 1 );
 
-SetVideoMode( 64, 64, 32, OPENGL );
+setVideoMode( 64, 64, 32, OPENGL );
 
-print( 'LINE_WIDTH_RANGE: ', Ogl.GetDouble(Ogl.LINE_WIDTH_RANGE, 2).toString(), '\n' );
+print( 'LINE_WIDTH_RANGE: ', Ogl.getDouble(Ogl.LINE_WIDTH_RANGE, 2).toString(), '\n' );
 
 
 
-Halt(); //////////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////////
 
 
 
@@ -57,30 +57,30 @@ loadModule('jstrimesh');
 loadModule('jssdl');
 loadModule('jsgraphics');
 
-var e = QuaternionToEuler(EulerToQuaternion([-0.1, -0.2, -0.3]));
-var e = AxisAngleToQuaternion(QuaternionToAxisAngle([.1,.2,.3,.4]) );
+var e = quaternionToEuler(eulerToQuaternion([-0.1, -0.2, -0.3]));
+var e = axisAngleToQuaternion(quaternionToAxisAngle([.1,.2,.3,.4]) );
 
 
-e = Vector3Length([2,2,2], [1,1,1]);
+e = vector3Length([2,2,2], [1,1,1]);
 
 print( e, '\n' );
 
-Halt();
+halt();
 
 
 
 
-//Halt(); //////////////////////////////////////////////////////////////////////
+//halt(); //////////////////////////////////////////////////////////////////////
 
 
-function Trace() {
+function trace() {
 	
 	for ( var i=0; i<arguments.length; i++ )
 		print( arguments[i], ' ' );
 	print( '\n' );
 }
 
-function DumpMatrix(m) {
+function dumpMatrix(m) {
     
 	for (var y = 0; y < 4; ++y) {
 		print('[ ' );
@@ -92,11 +92,11 @@ function DumpMatrix(m) {
 }
 
 
-function MinMax(val, min, max) val < min ? min : val > max ? max : val;
+function minMax(val, min, max) val < min ? min : val > max ? max : val;
 
-function Range(min, max) ({ __iterator__:function() { for (var i = min; i <= max; i++) yield i }});
+function range(min, max) ({ __iterator__:function() { for (var i = min; i <= max; i++) yield i }});
 
-function Count(n) ({ __iterator__:function() { for (var i = 0; i < n; i++) yield i }});
+function count(n) ({ __iterator__:function() { for (var i = 0; i < n; i++) yield i }});
 
 
 const curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
@@ -113,7 +113,7 @@ var lines = [];
 var listeners = {
 	onQuit: function() { end = true },
 	onKeyDown: function(key, mod) { end = key == K_ESCAPE },
-	onVideoResize: function(w,h) { Ogl.Viewport(0, 0, w, h) },
+	onVideoResize: function(w,h) { Ogl.viewport(0, 0, w, h) },
 	onMouseButtonDown: function(button, x, y) {
 		
 		if ( button == BUTTON_LEFT ) {
@@ -121,12 +121,12 @@ var listeners = {
 			x = 2*x/videoWidth - 1;
 			y = -(2*y/videoHeight - 1);
 
-			var p1 = mat.TransformVector([x,y,0,1]);
+			var p1 = mat.transformVector([x,y,0,1]);
 			p1[0] /= p1[3];
 			p1[1] /= p1[3];
 			p1[2] /= p1[3];
 
-			var p2 = mat.TransformVector([x,y,1,1]);
+			var p2 = mat.transformVector([x,y,1,1]);
 			p2[0] /= p2[3];
 			p2[1] /= p2[3];
 			p2[2] /= p2[3];
@@ -165,80 +165,80 @@ var listeners = {
 }
 
 var listList = { __proto__:null };
-function CondNewList(name, invalidate) {
+function condNewList(name, invalidate) {
 	
 	if ( name in listList && !invalidate ) {
 		
-		Ogl.CallList(listList[name]);
+		Ogl.callList(listList[name]);
 		return false;
 	} else {
 		
-		listList[name] = Ogl.NewList();
+		listList[name] = Ogl.newList();
 		return true;
 	}
 }
 
-function Axis(size) {
+function axis(size) {
 
 	with (Ogl) {
 	
-		LineWidth(1);
-		Begin(LINES);
-		Color( 1,0,0, 0.5 ); Vertex( 0,0,0 ); Vertex( size,0,0 );
-		Color( 0,1,0, 0.5 ); Vertex( 0,0,0 ); Vertex( 0,size,0 );
-		Color( 0,0,1, 0.5 ); Vertex( 0,0,0 ); Vertex( 0,0,size );
-		End();
+		lineWidth(1);
+		begin(LINES);
+		color( 1,0,0, 0.5 ); vertex( 0,0,0 ); vertex( size,0,0 );
+		color( 0,1,0, 0.5 ); vertex( 0,0,0 ); vertex( 0,size,0 );
+		color( 0,0,1, 0.5 ); vertex( 0,0,0 ); vertex( 0,0,size );
+		end();
 	}
 }
 
-function Quad() {
+function quad() {
 	
 	with (Ogl) {
 		
-		Begin(QUADS);
-		TexCoord(0, 0); Vertex(-1, -1);
-		TexCoord(1, 0); Vertex(+1, -1);
-		TexCoord(1, 1); Vertex(+1, +1);
-		TexCoord(0, 1); Vertex(-1, +1);
-		End();
+		begin(QUADS);
+		texCoord(0, 0); vertex(-1, -1);
+		texCoord(1, 0); vertex(+1, -1);
+		texCoord(1, 1); vertex(+1, +1);
+		texCoord(0, 1); vertex(-1, +1);
+		end();
 	}
 }
 
 
-function Cloud( size, amp ) {
+function cloud( size, amp ) {
 
 	var octaves = Math.log(size) / Math.LN2;
 	var a = 1, s = 1;
 	var cloud = new Texture(s, s, 1);
-	cloud.ClearChannel();
+	cloud.clearChannel();
 	while ( octaves-- > 0 ) {
 		
-		cloud.AddNoise(a);
+		cloud.addNoise(a);
 		a *= amp;
 		s *= 2;
-		cloud.Resize(s, s, false);
-		cloud.BoxBlur(3, 3);
+		cloud.resize(s, s, false);
+		cloud.boxBlur(3, 3);
 	}
-	cloud.NormalizeLevels();
+	cloud.normalizeLevels();
 	return cloud;
 }
 
 
-function CreateCloudTextureLayer() {
+function createCloudTextureLayer() {
 	
-	var texture = Cloud(32, 1);
+	var texture = cloud(32, 1);
 	var gaussian = new Texture(texture.width, texture.height, 1);
 	gaussian.Set(0);
-	gaussian.AddGradiantRadial(curveGaussian(0.5), true);
+	gaussian.addGradiantRadial(curveGaussian(0.5), true);
 //	gaussian.NormalizeLevels();
-	gaussian.Add(-gaussian.GetBorderLevelRange()[1]);
+	gaussian.add(-gaussian.getBorderLevelRange()[1]);
 
-	texture.Mult(gaussian);
-	var tid = Ogl.GenTexture();
-	Ogl.BindTexture(Ogl.TEXTURE_2D, tid);
-	Ogl.DefineTextureImage(Ogl.TEXTURE_2D, Ogl.ALPHA, texture);
-	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.LINEAR);
-	Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
+	texture.mult(gaussian);
+	var tid = Ogl.genTexture();
+	Ogl.bindTexture(Ogl.TEXTURE_2D, tid);
+	Ogl.defineTextureImage(Ogl.TEXTURE_2D, Ogl.ALPHA, texture);
+	Ogl.texParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.LINEAR);
+	Ogl.texParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
 	return tid;
 }
 
@@ -246,64 +246,64 @@ function CreateCloudTextureLayer() {
 
 
 
-RandSeed(1235);
+randSeed(1235);
 // var cloudLayerList = [ [ (RandReal()-0.5)*5, (RandReal()-0.5)*5, (RandReal()-0.5)*5, 5, CreateCloudTextureLayer() ] for (i in Count(5)) ];
 
-function Draw3DCloud() {
+function draw3DCloud() {
 	
 	// http://graphicsrunner.blogspot.com/2008/03/volumetric-clouds.html / http://www.inframez.com/events_volclouds_slide18.htm
 	// volumetric cloud and particules: http://www.inframez.com/events_volclouds_slide01.htm
 
 	with (Ogl) {
 
-		PushAttrib(ENABLE_BIT | DEPTH_BUFFER_BIT | LIGHTING_BIT | TEXTURE_BIT) // http://www.opengl.org/documentation/specs/man_pages/hardcopy/GL/html/gl/pushattrib.html
+		pushAttrib(ENABLE_BIT | DEPTH_BUFFER_BIT | LIGHTING_BIT | TEXTURE_BIT) // http://www.opengl.org/documentation/specs/man_pages/hardcopy/GL/html/gl/pushattrib.html
 
-		ShadeModel(FLAT);
+		shadeModel(FLAT);
 //		DepthFunc(ALWAYS);
-		Disable(DEPTH_TEST);
+		disable(DEPTH_TEST);
 		
 		// color = polygon * src + screen * dst
-		Enable(BLEND); 
+		enable(BLEND); 
 		// http://www.opengl.org/sdk/docs/man/xhtml/glBlendFunc.xml
 
 // with LUMINANCE only		
-		//BlendFunc(ONE, ONE); // radioactive cloud
-		//BlendFunc(DST_COLOR, ONE); // less radioactive cloud
-		//BlendFunc(ONE_MINUS_DST_COLOR, ONE); // normal cloud
-		//BlendFunc(ONE_MINUS_SRC_COLOR, ONE_MINUS_SRC_COLOR); // normal strange 1
-		//BlendFunc(ONE_MINUS_DST_COLOR, ONE_MINUS_SRC_COLOR); // normal strange 2
-		//BlendFunc(ZERO, ONE_MINUS_SRC_COLOR); // dark cloud
-		//BlendFunc(SRC_COLOR, ONE_MINUS_SRC_COLOR); // less dark cloud
+		//blendFunc(ONE, ONE); // radioactive cloud
+		//blendFunc(DST_COLOR, ONE); // less radioactive cloud
+		//blendFunc(ONE_MINUS_DST_COLOR, ONE); // normal cloud
+		//blendFunc(ONE_MINUS_SRC_COLOR, ONE_MINUS_SRC_COLOR); // normal strange 1
+		//blendFunc(ONE_MINUS_DST_COLOR, ONE_MINUS_SRC_COLOR); // normal strange 2
+		//blendFunc(ZERO, ONE_MINUS_SRC_COLOR); // dark cloud
+		//blendFunc(SRC_COLOR, ONE_MINUS_SRC_COLOR); // less dark cloud
 		
 // with ALPHA only
-		BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
+		blendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
 		
 		
-		Enable(TEXTURE_2D);
+		enable(TEXTURE_2D);
 
 		for each ( var [x,y,z, scale, tid] in cloudLayerList ) {
 
-			BindTexture(TEXTURE_2D, tid);
+			bindTexture(TEXTURE_2D, tid);
 
-			PushMatrix();
-			Translate(x, y, z);
-			KeepTranslation();
+			pushMatrix();
+			translate(x, y, z);
+			keepTranslation();
 
-			var dis = Vector3Length(cx-x, cy-y, cz-z);
+			var dis = vector3Length(cx-x, cy-y, cz-z);
 			var fx = dis > 2 ? 1 : dis/2;
 //			Color(0.7 * fx, 0.6 * fx, 0.4 * fx);
-			Color(0.6, 0.5, 0, 1);
+			color(0.6, 0.5, 0, 1);
 
-			Begin(QUADS);
-			TexCoord(0, 0); Vertex(-scale, -scale);
-			TexCoord(1, 0); Vertex(+scale, -scale);
-			TexCoord(1, 1); Vertex(+scale, +scale);
-			TexCoord(0, 1); Vertex(-scale, +scale);
-			End();
-			//DrawDisk(scale, 6);
-			PopMatrix();
+			begin(QUADS);
+			texCoord(0, 0); vertex(-scale, -scale);
+			texCoord(1, 0); vertex(+scale, -scale);
+			texCoord(1, 1); vertex(+scale, +scale);
+			texCoord(0, 1); vertex(-scale, +scale);
+			end();
+			//drawDisk(scale, 6);
+			popMatrix();
 		}
-		PopAttrib();
+		popAttrib();
 	}
 }
 
@@ -312,9 +312,9 @@ function Draw3DCloud() {
 
 with (Ogl) {
 
-	Hint(PERSPECTIVE_CORRECTION_HINT, NICEST);
-	Hint(LINE_SMOOTH_HINT, NICEST);
-	Hint(POINT_SMOOTH_HINT, NICEST);
+	hint(PERSPECTIVE_CORRECTION_HINT, NICEST);
+	hint(LINE_SMOOTH_HINT, NICEST);
+	hint(POINT_SMOOTH_HINT, NICEST);
 
 //	PointParameter( POINT_SIZE_MIN, 0 );
 //	PointParameter( POINT_SIZE_MAX, 1 );
@@ -323,81 +323,81 @@ with (Ogl) {
 //	TexEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
 // Enable(POINT_SPRITE);
 
-	TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
+	texEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
 //	TexEnv(TEXTURE_ENV, TEXTURE_ENV_COLOR, [1,1,1,0]);
 
 // see. http://jerome.jouvie.free.fr/OpenGl/Tutorials/Tutorial9.php
 
 //	Enable(LINE_SMOOTH);
 
-	ClearColor(0.2, 0.1, 0.4, 1);
-	Enable(DEPTH_TEST);
+	clearColor(0.2, 0.1, 0.4, 1);
+	enable(DEPTH_TEST);
 
-	MatrixMode(PROJECTION);
-	Perspective(60, 0.1, 10000);
-	perspective.Load(Ogl);
-	MatrixMode(MODELVIEW);
+	matrixMode(PROJECTION);
+	perspective(60, 0.1, 10000);
+	perspective.load(Ogl);
+	matrixMode(MODELVIEW);
 }
 
 
-function Scene1() {
+function scene1() {
 
 	with (Ogl) {
 
-		LineWidth(2);
-		Begin(LINES);
-		Color(1,1,1, 1);
-		Vertex( -10, 0 );
-		Vertex( 10, 0 );
-		Color(0,0,0, 1);
-		Vertex( -10, 0.2 );
-		Vertex( 10, 0.2 );
-		Color(1,0,0, 1);
-		Vertex( -10, 0.4 );
-		Vertex( 10, 0.4 );
-		Color(0,1,0, 1);
-		Vertex( -10, 0.6 );
-		Vertex( 10, 0.6 );
-		Color(0,0,1, 1);
-		Vertex( -10, 0.8 );
-		Vertex( 10, 0.8 );
-		End();
+		lineWidth(2);
+		begin(LINES);
+		color(1,1,1, 1);
+		vertex( -10, 0 );
+		vertex( 10, 0 );
+		color(0,0,0, 1);
+		vertex( -10, 0.2 );
+		vertex( 10, 0.2 );
+		color(1,0,0, 1);
+		vertex( -10, 0.4 );
+		vertex( 10, 0.4 );
+		color(0,1,0, 1);
+		vertex( -10, 0.6 );
+		vertex( 10, 0.6 );
+		color(0,0,1, 1);
+		vertex( -10, 0.8 );
+		vertex( 10, 0.8 );
+		end();
 
-		if ( CondNewList('clouds', isCameraMoving) ) { // clouds are static.
+		if ( condNewList('clouds', isCameraMoving) ) { // clouds are static.
 			
-			Draw3DCloud();
-			EndList();
+			draw3DCloud();
+			endList();
 		}
 
-		Enable(BLEND);
-		BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
+		enable(BLEND);
+		blendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
 		
-		LineWidth(4);
-		Begin(LINES);
-		Color(1,1,1, 1);
-		Vertex( -10, 1 );
-		Vertex( 10, 1 );
-		Color(0,0,0, 1);
-		Vertex( -10, 1.2 );
-		Vertex( 10, 1.2 );
-		Color(1,0,0, 1);
-		Vertex( -10, 1.4 );
-		Vertex( 10, 1.4 );
-		Color(0,1,0, 1);
-		Vertex( -10, 1.6 );
-		Vertex( 10, 1.6 );
-		Color(0,0,1, 1);
-		Vertex( -10, 1.8 );
-		Vertex( 10, 1.8 );
-		End();
+		lineWidth(4);
+		begin(LINES);
+		color(1,1,1, 1);
+		vertex( -10, 1 );
+		vertex( 10, 1 );
+		color(0,0,0, 1);
+		vertex( -10, 1.2 );
+		vertex( 10, 1.2 );
+		color(1,0,0, 1);
+		vertex( -10, 1.4 );
+		vertex( 10, 1.4 );
+		color(0,1,0, 1);
+		vertex( -10, 1.6 );
+		vertex( 10, 1.6 );
+		color(0,0,1, 1);
+		vertex( -10, 1.8 );
+		vertex( 10, 1.8 );
+		end();
 
-		Disable(TEXTURE_2D);
-		Axis(1);
+		disable(TEXTURE_2D);
+		axis(1);
 	}
 }
 
 
-var Scene2 = new function() {
+var scene2 = new function() {
 	
 	var vertexList = [];
 	var colorList = [];
@@ -412,11 +412,11 @@ var Scene2 = new function() {
 //					var oy = (PerlinNoise( 1.6, 0.5, 5, y )-0.5)*20;
 //					var oz = (PerlinNoise( 1.6, 0.5, 5, z )-0.5)*20;
 				
-				var ox = RandReal()-0.5;
-				var oy = RandReal()-0.5;
-				var oz = RandReal()-0.5;
+				var ox = randReal()-0.5;
+				var oy = randReal()-0.5;
+				var oz = randReal()-0.5;
 				
-				var v = (PerlinNoise( 1.3, 0.3, 3, ox/2, oy/2, oz/2 ))*1.5;
+				var v = (perlinNoise( 1.3, 0.3, 3, ox/2, oy/2, oz/2 ))*1.5;
 			
 				colorList.push( v, 1-v, 0.5, v/2 );
 				vertexList.push( ox,oy,oz );
@@ -425,22 +425,22 @@ var Scene2 = new function() {
 
 	print( vertexList.length / 3, '\n' );
 	var tm = new Trimesh();
-	tm.DefineVertexBuffer(vertexList);
-	tm.DefineColorBuffer(colorList);
-	var tmid = Ogl.LoadTrimesh(tm);
+	tm.defineVertexBuffer(vertexList);
+	tm.defineColorBuffer(colorList);
+	var tmid = Ogl.loadTrimesh(tm);
 	
-	var tex = new Texture(16,16, 1).Set(0).AddGradiantRadial( curveGaussian( 0.5 ) );
+	var tex = new Texture(16,16, 1).Set(0).addGradiantRadial( curveGaussian( 0.5 ) );
 	
 	with (Ogl) {
 	
-		var textureId = GenTexture();
-		BindTexture(TEXTURE_2D, textureId);
-		DefineTextureImage(TEXTURE_2D, ALPHA, tex);
-		TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR);
-		TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
+		var textureId = genTexture();
+		bindTexture(TEXTURE_2D, textureId);
+		defineTextureImage(TEXTURE_2D, ALPHA, tex);
+		texParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR);
+		texParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
 //		PointParameter(POINT_DISTANCE_ATTENUATION, [0, 0, 0.01]); // 1/(a + b*d + c *d^2)
-		Enable(POINT_SPRITE);
-		TexEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
+		enable(POINT_SPRITE);
+		texEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
 //		TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
 	}
 	
@@ -448,13 +448,13 @@ var Scene2 = new function() {
 
 //		Ogl.Color(0, 0, 1, 0.5);
 //		Ogl.Enable(Ogl.POINT_SMOOTH);
-		Ogl.Disable(Ogl.DEPTH_TEST);
-		Ogl.Enable(Ogl.BLEND);
-		Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
-		Ogl.PointSize(10);
-		Ogl.Enable(Ogl.TEXTURE_2D);
-		Ogl.BindTexture(Ogl.TEXTURE_2D, textureId);
-		Ogl.DrawTrimesh( tmid, Ogl.POINTS );
+		Ogl.disable(Ogl.DEPTH_TEST);
+		Ogl.enable(Ogl.BLEND);
+		Ogl.blendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+		Ogl.pointSize(10);
+		Ogl.enable(Ogl.TEXTURE_2D);
+		Ogl.bindTexture(Ogl.TEXTURE_2D, textureId);
+		Ogl.drawTrimesh( tmid, Ogl.POINTS );
 //		Quad();
 	
 	} while ( !(yield) );
@@ -463,92 +463,92 @@ var Scene2 = new function() {
 
 
 
-var Scene3 = new function() {
+var scene3 = new function() {
 	
-	function FractalCubeFace( px, py, pz,  x1, y1, z1,  x2, y2, z2 ) {
+	function fractalCubeFace( px, py, pz,  x1, y1, z1,  x2, y2, z2 ) {
 
 		var face = new Texture(128,128,1).Set(0);
 		for ( var scale = 2; scale <= 64; scale *= 2 )
-			face.AddPerlin2([px*scale, py*scale, pz*scale], [x1*scale, y1*scale, z1*scale], [x2*scale, y2*scale, z2*scale], 1/scale);
-		face.Add(0.25);
-		face.Mult(1.5);
+			face.addPerlin2([px*scale, py*scale, pz*scale], [x1*scale, y1*scale, z1*scale], [x2*scale, y2*scale, z2*scale], 1/scale);
+		face.add(0.25);
+		face.mult(1.5);
 		return face;
 	}	
 
-	function GenFaceTexture( px, py, pz,  x1, y1, z1,  x2, y2, z2 ) {
+	function genFaceTexture( px, py, pz,  x1, y1, z1,  x2, y2, z2 ) {
 
-		var tid = Ogl.GenTexture();
-		Ogl.BindTexture(Ogl.TEXTURE_2D, tid);
-		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.LINEAR);
-		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
-		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_S, Ogl.CLAMP );
-		Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_T, Ogl.CLAMP );
-		Ogl.DefineTextureImage(Ogl.TEXTURE_2D, Ogl.ALPHA, FractalCubeFace(px, py, pz,  x1, y1, z1,  x2, y2, z2));
+		var tid = Ogl.genTexture();
+		Ogl.bindTexture(Ogl.TEXTURE_2D, tid);
+		Ogl.texParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.LINEAR);
+		Ogl.texParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
+		Ogl.texParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_S, Ogl.CLAMP );
+		Ogl.texParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_WRAP_T, Ogl.CLAMP );
+		Ogl.defineTextureImage(Ogl.TEXTURE_2D, Ogl.ALPHA, fractalCubeFace(px, py, pz,  x1, y1, z1,  x2, y2, z2));
 		return tid;
 	}
 	
-	var fractalCube = Ogl.NewList(true);
-	Ogl.BindTexture(Ogl.TEXTURE_2D, GenFaceTexture(-1,-1,1, 2,0,0, 0,2,0));
-	Ogl.Begin(Ogl.QUADS);
-	Ogl.TexCoord(0.0, 0.0); Ogl.Vertex(-1.0, -1.0,  1.0);
-	Ogl.TexCoord(1.0, 0.0); Ogl.Vertex( 1.0, -1.0,  1.0);
-	Ogl.TexCoord(1.0, 1.0); Ogl.Vertex( 1.0,  1.0,  1.0);
-	Ogl.TexCoord(0.0, 1.0); Ogl.Vertex(-1.0,  1.0,  1.0);
-	Ogl.End();
+	var fractalCube = Ogl.newList(true);
+	Ogl.bindTexture(Ogl.TEXTURE_2D, genFaceTexture(-1,-1,1, 2,0,0, 0,2,0));
+	Ogl.begin(Ogl.QUADS);
+	Ogl.texCoord(0.0, 0.0); Ogl.vertex(-1.0, -1.0,  1.0);
+	Ogl.texCoord(1.0, 0.0); Ogl.vertex( 1.0, -1.0,  1.0);
+	Ogl.texCoord(1.0, 1.0); Ogl.vertex( 1.0,  1.0,  1.0);
+	Ogl.texCoord(0.0, 1.0); Ogl.vertex(-1.0,  1.0,  1.0);
+	Ogl.end();
 
-	Ogl.BindTexture(Ogl.TEXTURE_2D, GenFaceTexture(-1,1,1, 2,0,0, 0,0,-2));
-	Ogl.Begin(Ogl.QUADS);
-	Ogl.TexCoord(0.0, 1.0); Ogl.Vertex(-1.0,  1.0, -1.0);
-	Ogl.TexCoord(0.0, 0.0); Ogl.Vertex(-1.0,  1.0,  1.0);
-	Ogl.TexCoord(1.0, 0.0); Ogl.Vertex( 1.0,  1.0,  1.0);
-	Ogl.TexCoord(1.0, 1.0); Ogl.Vertex( 1.0,  1.0, -1.0);
-	Ogl.End();
+	Ogl.bindTexture(Ogl.TEXTURE_2D, genFaceTexture(-1,1,1, 2,0,0, 0,0,-2));
+	Ogl.begin(Ogl.QUADS);
+	Ogl.texCoord(0.0, 1.0); Ogl.vertex(-1.0,  1.0, -1.0);
+	Ogl.texCoord(0.0, 0.0); Ogl.vertex(-1.0,  1.0,  1.0);
+	Ogl.texCoord(1.0, 0.0); Ogl.vertex( 1.0,  1.0,  1.0);
+	Ogl.texCoord(1.0, 1.0); Ogl.vertex( 1.0,  1.0, -1.0);
+	Ogl.end();
 
-	Ogl.BindTexture(Ogl.TEXTURE_2D, GenFaceTexture(-1,1,-1, 2,0,0, 0,-2,0));
-	Ogl.Begin(Ogl.QUADS);
-	Ogl.TexCoord(0.0, 1.0); Ogl.Vertex(-1.0, -1.0, -1.0);
-	Ogl.TexCoord(0.0, 0.0); Ogl.Vertex(-1.0,  1.0, -1.0);
-	Ogl.TexCoord(1.0, 0.0); Ogl.Vertex( 1.0,  1.0, -1.0);
-	Ogl.TexCoord(1.0, 1.0); Ogl.Vertex( 1.0, -1.0, -1.0);
-	Ogl.End();
+	Ogl.bindTexture(Ogl.TEXTURE_2D, genFaceTexture(-1,1,-1, 2,0,0, 0,-2,0));
+	Ogl.begin(Ogl.QUADS);
+	Ogl.texCoord(0.0, 1.0); Ogl.vertex(-1.0, -1.0, -1.0);
+	Ogl.texCoord(0.0, 0.0); Ogl.vertex(-1.0,  1.0, -1.0);
+	Ogl.texCoord(1.0, 0.0); Ogl.vertex( 1.0,  1.0, -1.0);
+	Ogl.texCoord(1.0, 1.0); Ogl.vertex( 1.0, -1.0, -1.0);
+	Ogl.end();
 
-	Ogl.BindTexture(Ogl.TEXTURE_2D, GenFaceTexture(1,-1,1, -2,0,0, 0,0,-2));
-	Ogl.Begin(Ogl.QUADS);
-	Ogl.TexCoord(1.0, 1.0); Ogl.Vertex(-1.0, -1.0, -1.0);
-	Ogl.TexCoord(0.0, 1.0); Ogl.Vertex( 1.0, -1.0, -1.0);
-	Ogl.TexCoord(0.0, 0.0); Ogl.Vertex( 1.0, -1.0,  1.0);
-	Ogl.TexCoord(1.0, 0.0); Ogl.Vertex(-1.0, -1.0,  1.0);
-	Ogl.End();
+	Ogl.bindTexture(Ogl.TEXTURE_2D, genFaceTexture(1,-1,1, -2,0,0, 0,0,-2));
+	Ogl.begin(Ogl.QUADS);
+	Ogl.texCoord(1.0, 1.0); Ogl.vertex(-1.0, -1.0, -1.0);
+	Ogl.texCoord(0.0, 1.0); Ogl.vertex( 1.0, -1.0, -1.0);
+	Ogl.texCoord(0.0, 0.0); Ogl.vertex( 1.0, -1.0,  1.0);
+	Ogl.texCoord(1.0, 0.0); Ogl.vertex(-1.0, -1.0,  1.0);
+	Ogl.end();
 
-	Ogl.BindTexture(Ogl.TEXTURE_2D, GenFaceTexture(1,-1,1, 0,0,-2, 0,2,0));
-	Ogl.Begin(Ogl.QUADS);
-	Ogl.TexCoord(1.0, 0.0); Ogl.Vertex( 1.0, -1.0, -1.0);
-	Ogl.TexCoord(1.0, 1.0); Ogl.Vertex( 1.0,  1.0, -1.0);
-	Ogl.TexCoord(0.0, 1.0); Ogl.Vertex( 1.0,  1.0,  1.0);
-	Ogl.TexCoord(0.0, 0.0); Ogl.Vertex( 1.0, -1.0,  1.0);
-	Ogl.End();
+	Ogl.bindTexture(Ogl.TEXTURE_2D, genFaceTexture(1,-1,1, 0,0,-2, 0,2,0));
+	Ogl.begin(Ogl.QUADS);
+	Ogl.texCoord(1.0, 0.0); Ogl.vertex( 1.0, -1.0, -1.0);
+	Ogl.texCoord(1.0, 1.0); Ogl.vertex( 1.0,  1.0, -1.0);
+	Ogl.texCoord(0.0, 1.0); Ogl.vertex( 1.0,  1.0,  1.0);
+	Ogl.texCoord(0.0, 0.0); Ogl.vertex( 1.0, -1.0,  1.0);
+	Ogl.end();
 	
-	Ogl.BindTexture(Ogl.TEXTURE_2D, GenFaceTexture(-1,-1,-1, 0,0,2, 0,2,0));
-	Ogl.Begin(Ogl.QUADS);
-	Ogl.TexCoord(0.0, 0.0); Ogl.Vertex(-1.0, -1.0, -1.0);
-	Ogl.TexCoord(1.0, 0.0); Ogl.Vertex(-1.0, -1.0,  1.0);
-	Ogl.TexCoord(1.0, 1.0); Ogl.Vertex(-1.0,  1.0,  1.0);
-	Ogl.TexCoord(0.0, 1.0); Ogl.Vertex(-1.0,  1.0, -1.0);
-	Ogl.End();
+	Ogl.bindTexture(Ogl.TEXTURE_2D, genFaceTexture(-1,-1,-1, 0,0,2, 0,2,0));
+	Ogl.begin(Ogl.QUADS);
+	Ogl.texCoord(0.0, 0.0); Ogl.vertex(-1.0, -1.0, -1.0);
+	Ogl.texCoord(1.0, 0.0); Ogl.vertex(-1.0, -1.0,  1.0);
+	Ogl.texCoord(1.0, 1.0); Ogl.vertex(-1.0,  1.0,  1.0);
+	Ogl.texCoord(0.0, 1.0); Ogl.vertex(-1.0,  1.0, -1.0);
+	Ogl.end();
 
 
-	Ogl.EndList();
+	Ogl.endList();
 
-	Ogl.Enable(Ogl.TEXTURE_2D);
-	Ogl.Enable(Ogl.BLEND);
-	Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
-	Ogl.TexEnv(Ogl.TEXTURE_ENV, Ogl.TEXTURE_ENV_MODE, Ogl.MODULATE);
-	Ogl.Disable(Ogl.DEPTH_TEST);
+	Ogl.enable(Ogl.TEXTURE_2D);
+	Ogl.enable(Ogl.BLEND);
+	Ogl.blendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+	Ogl.texEnv(Ogl.TEXTURE_ENV, Ogl.TEXTURE_ENV_MODE, Ogl.MODULATE);
+	Ogl.disable(Ogl.DEPTH_TEST);
 
 	do {
 		
-		Ogl.Color(1);
-		Ogl.CallList(fractalCube);
+		Ogl.color(1);
+		Ogl.callList(fractalCube);
 //		Axis(1);
 	} while ( !(yield) );
 
@@ -556,20 +556,20 @@ var Scene3 = new function() {
 
 
 
-var Scene4 = new function() {
+var scene4 = new function() {
 
-	var tId = Ogl.GenTexture();
-	Ogl.BindTexture(TEXTURE_2D, tId);
+	var tId = Ogl.genTexture();
+	Ogl.bindTexture(TEXTURE_2D, tId);
 
 //	var tb = Ogl.CreateTextureBuffer();
 //	Ogl.Test(tb);
 
 	do {
 		
-		Ogl.Color(1);
-		Ogl.Rotate(90, 0,1,0);
-		Ogl.BindTexture(vTEXTURE_2D, tId);
-		Quad();
+		Ogl.color(1);
+		Ogl.rotate(90, 0,1,0);
+		Ogl.bindTexture(vTEXTURE_2D, tId);
+		quad();
 	} while ( !(yield) );
 
 }
@@ -580,54 +580,54 @@ function HWConvolution( width, height, matrix ) {
 	
 	with (Ogl) {
 
-		DrawBuffer(BACK);
-		Viewport(0, 0, width, height);
+		drawBuffer(BACK);
+		viewport(0, 0, width, height);
 
-		Trace( 'VIEWPORT', GetInteger( VIEWPORT, 4 ) );
+		trace( 'VIEWPORT', getInteger( VIEWPORT, 4 ) );
 
-		MatrixMode(PROJECTION);
-		LoadIdentity();
-		Ortho(0, width, 0, height, -1, 1);
-		MatrixMode(MODELVIEW);
-		LoadIdentity();
+		matrixMode(PROJECTION);
+		loadIdentity();
+		ortho(0, width, 0, height, -1, 1);
+		matrixMode(MODELVIEW);
+		loadIdentity();
 
 
-		Disable(DEPTH_TEST);
-		Enable(TEXTURE_2D);
-		Enable(BLEND);
-		BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
+		disable(DEPTH_TEST);
+		enable(TEXTURE_2D);
+		enable(BLEND);
+		blendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
 //		BlendFunc(ONE, ONE);
-		TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR); // NEAREST
-		TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
-		TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
+		texParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR); // NEAREST
+		texParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
+		texEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
 	
-		ClearColor(0,0,0,1);
-		Clear(COLOR_BUFFER_BIT);
-		ShadeModel(FLAT);
+		clearColor(0,0,0,1);
+		clear(COLOR_BUFFER_BIT);
+		shadeModel(FLAT);
 
 		for ( var [y, line] in Iterator(matrix) ) {
 			for ( var [x, ratio] in Iterator(line) ) {
 				
-				Color(1,1,1, ratio);
-				Begin(QUADS);
-				TexCoord(0, 0); Vertex(x, y);
-				TexCoord(1, 0); Vertex(width+x, y);
-				TexCoord(1, 1); Vertex(width+x, height+y);
-				TexCoord(0, 1); Vertex(x, height+y);
-				End();
+				color(1,1,1, ratio);
+				begin(QUADS);
+				texCoord(0, 0); vertex(x, y);
+				texCoord(1, 0); vertex(width+x, y);
+				texCoord(1, 1); vertex(width+x, height+y);
+				texCoord(0, 1); vertex(x, height+y);
+				end();
 			}
 		}
 		
 		
-		Halt();
+		halt();
 		
-		var tId = GenTexture();
-		BindTexture(TEXTURE_2D, tId);
-		ReadBuffer(BACK);
-		CopyTexImage2D(TEXTURE_2D, 0, RGBA, 0, 0,width, height, 0);
+		var tId = genTexture();
+		bindTexture(TEXTURE_2D, tId);
+		readBuffer(BACK);
+		copyTexImage2D(TEXTURE_2D, 0, RGBA, 0, 0,width, height, 0);
 		
-		BindFramebuffer(FRAMEBUFFER, 0);
-		DeleteRenderbuffer(renderbuffer);
+		bindFramebuffer(FRAMEBUFFER, 0);
+		deleteRenderbuffer(renderbuffer);
 		return tId;
 	}
 }
@@ -641,29 +641,29 @@ function HWBlur() {
 	
 		// DBD chack display height and width.
 
-		var [,,width, height] = GetInteger(VIEWPORT, 4);
+		var [,,width, height] = getInteger(VIEWPORT, 4);
 		
-		var tId = GenTexture();
-		BindTexture(TEXTURE_2D, tId);
-		CopyTexImage2D(TEXTURE_2D, 0, RGB, 0, 0, width, height, 0);
+		var tId = genTexture();
+		bindTexture(TEXTURE_2D, tId);
+		copyTexImage2D(TEXTURE_2D, 0, RGB, 0, 0, width, height, 0);
 		
-		MatrixMode(PROJECTION);
-		LoadIdentity();
-		Ortho(0, width, 0, height, -1, 1);
-		MatrixMode(MODELVIEW);
-		LoadIdentity();
+		matrixMode(PROJECTION);
+		loadIdentity();
+		ortho(0, width, 0, height, -1, 1);
+		matrixMode(MODELVIEW);
+		loadIdentity();
 		
-		Disable(DEPTH_TEST);
-		Enable(TEXTURE_2D);
-		Enable(BLEND);
-		BlendFunc(ONE, ONE);
-		TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR); // NEAREST
-		TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
-		TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
-		ShadeModel(FLAT);
+		disable(DEPTH_TEST);
+		enable(TEXTURE_2D);
+		enable(BLEND);
+		blendFunc(ONE, ONE);
+		texParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR); // NEAREST
+		texParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
+		texEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
+		shadeModel(FLAT);
 		
-		ClearColor(0,0,0,1);
-		Clear(COLOR_BUFFER_BIT);
+		clearColor(0,0,0,1);
+		clear(COLOR_BUFFER_BIT);
 		
 		var factors = [5,12,15,12,5];
 		
@@ -671,28 +671,28 @@ function HWBlur() {
 		var y = 0;
 		for ( var x = -2; x <= +2; x++ ) {
 			
-			Color(factors[x+2]/49);
-			Begin(QUADS);
-			TexCoord(0, 0); Vertex(x, y);
-			TexCoord(1, 0); Vertex(width+x, y);
-			TexCoord(1, 1); Vertex(width+x, height+y);
-			TexCoord(0, 1); Vertex(x, height+y);
-			End();
+			color(factors[x+2]/49);
+			begin(QUADS);
+			texCoord(0, 0); vertex(x, y);
+			texCoord(1, 0); vertex(width+x, y);
+			texCoord(1, 1); vertex(width+x, height+y);
+			texCoord(0, 1); vertex(x, height+y);
+			end();
 		}	
 
 		var x = 0;
 		for ( var y = -y; y <= +2; y++ ) {
 			
-			Color(factors[x+2]/49);
-			Begin(QUADS);
-			TexCoord(0, 0); Vertex(x, y);
-			TexCoord(1, 0); Vertex(width+x, y);
-			TexCoord(1, 1); Vertex(width+x, height+y);
-			TexCoord(0, 1); Vertex(x, height+y);
-			End();
+			color(factors[x+2]/49);
+			begin(QUADS);
+			texCoord(0, 0); vertex(x, y);
+			texCoord(1, 0); vertex(width+x, y);
+			texCoord(1, 1); vertex(width+x, height+y);
+			texCoord(0, 1); vertex(x, height+y);
+			end();
 		}	
 		
-		DeleteTexture(tId);
+		deleteTexture(tId);
 	}
 	
 //	new File('myImage.png').content = EncodePngImage(Ogl.RenderToImage());
@@ -701,12 +701,12 @@ function HWBlur() {
 
 
 /*
-var textureId = Ogl.GenTexture();
-Ogl.BindTexture(Ogl.TEXTURE_2D, textureId);
-var texture = DecodeJpegImage(new File('image.jpg').Open(File.RDONLY))
-Ogl.DefineTextureImage(Ogl.TEXTURE_2D, undefined, texture);
-Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.LINEAR);
-Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
+var textureId = Ogl.genTexture();
+Ogl.bindTexture(Ogl.TEXTURE_2D, textureId);
+var texture = decodeJpegImage(new File('image.jpg').open(File.RDONLY))
+Ogl.defineTextureImage(Ogl.TEXTURE_2D, undefined, texture);
+Ogl.texParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MIN_FILTER, Ogl.LINEAR);
+Ogl.texParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
 */
 
 
@@ -714,67 +714,67 @@ Ogl.TexParameter(Ogl.TEXTURE_2D, Ogl.TEXTURE_MAG_FILTER, Ogl.LINEAR);
 var sleep = 20;
 for (var end = false; !end ;) {
 	
-	t1 = TimeCounter();
+	t1 = timeCounter();
 	print( (1000/(t1-t-sleep)).toFixed(), 'fps     \r' );
 	t = t1;
 	
 	isCameraMoving = false;
-	while (PollEvent(listeners));
+	while (pollEvent(listeners));
 
 	var tmp = Math.cos(vy/400);
 	cx = -Math.cos(vx/400)*Math.abs(tmp) * vz;
 	cy = Math.sin(vx/400)*Math.abs(tmp) * vz;
 	cz = Math.sin(vy/400) * vz;
 
-	Ogl.MatrixMode(Ogl.MODELVIEW);
-	Ogl.LoadIdentity();
-	Ogl.LookAt(cx,cy,cz, 0,0,0, 0,0,1);
+	Ogl.matrixMode(Ogl.MODELVIEW);
+	Ogl.loadIdentity();
+	Ogl.lookAt(cx,cy,cz, 0,0,0, 0,0,1);
 
-	Ogl.Clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
+	Ogl.clear(Ogl.COLOR_BUFFER_BIT | Ogl.DEPTH_BUFFER_BIT);
 	
 
 //	Scene1();
 //	Scene2.next();
-	Scene3.next();
+	scene3.next();
 //	Scene4.next();
 
 
 /*
-	Ogl.MatrixMode(Ogl.PROJECTION);
-	Ogl.LoadIdentity();
-	Ogl.MatrixMode(Ogl.MODELVIEW);
-	Ogl.LoadIdentity();
+	Ogl.matrixMode(Ogl.PROJECTION);
+	Ogl.loadIdentity();
+	Ogl.matrixMode(Ogl.MODELVIEW);
+	Ogl.loadIdentity();
 
-	mat.Load(Ogl);
-	mat.Product(perspective);
-	mat.Invert();
+	mat.load(Ogl);
+	mat.product(perspective);
+	mat.invert();
 	
 
 //	Ogl.Enable(Ogl.TEXTURE_2D);
 	
 //	Ogl.BindTexture(Ogl.TEXTURE_2D, textureId);
 
-	//Color(1,1,1);
-	Ogl.Scale(1, -1);
-	Ogl.Begin(Ogl.QUADS);
-	Ogl.TexCoord(0, 0); Ogl.Vertex(-1, -1);
-	Ogl.TexCoord(1, 0); Ogl.Vertex(+1, -1);
-	Ogl.TexCoord(1, 1); Ogl.Vertex(+1, +1);
-	Ogl.TexCoord(0, 1); Ogl.Vertex(-1, +1);
-	Ogl.End();
+	//color(1,1,1);
+	Ogl.scale(1, -1);
+	Ogl.begin(Ogl.QUADS);
+	Ogl.texCoord(0, 0); Ogl.vertex(-1, -1);
+	Ogl.texCoord(1, 0); Ogl.vertex(+1, -1);
+	Ogl.texCoord(1, 1); Ogl.vertex(+1, +1);
+	Ogl.texCoord(0, 1); Ogl.vertex(-1, +1);
+	Ogl.end();
 	
 	HWBlur();
 */
 
 	for each ( var [p1, p2] in lines ) {
 
-		Ogl.Begin(Ogl.LINES);
-		Ogl.Color(1,1,1); Ogl.Vertex( p1[0], p1[1], p1[2] ); Ogl.Vertex( p2[0], p2[1], p2[2] );
-		Ogl.End();
+		Ogl.begin(Ogl.LINES);
+		Ogl.color(1,1,1); Ogl.vertex( p1[0], p1[1], p1[2] ); Ogl.vertex( p2[0], p2[1], p2[2] );
+		Ogl.end();
 	}
 
-	GlSwapBuffers();
-	Sleep(sleep);
+	glSwapBuffers();
+	sleep(sleep);
 }
 
 
@@ -801,47 +801,47 @@ for (var end = false; !end ;) {
 
 
 
-Halt(); //////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////
 
 var t = new Transformation(null);
-t.LookAt(0,0,0, 1,0,0, 0,0,1);
-t.Translate(0, 0, 1);
+t.lookAt(0,0,0, 1,0,0, 0,0,1);
+t.translate(0, 0, 1);
 
 var v = [0,0,0];
-print( [c.toFixed(2) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
+print( [c.toFixed(2) for each ( c in t.transformVector(v) )].join('  '), '\n' );
 
 
-Halt(); //////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////
 
 
 var t = new Transformation(null);
-t.Translate(0, 0, 0);
-t.RotateZ(-90);
-t.Translate(2, 0, 0);
-t.RotateY(360);
-t.RotateZ(45);
-t.Rotate(45, 0,0,1);
-t.Translate(1, 0, 0);
-t.RotateY(90);
-t.Translate(1, 0, 0);
-t.RotateY(360);
-t.Translate(1, 0, 0);
-t.RotateX(360);
-t.Translate(1, 0, 0);
-t.RotateY(123);
-t.Translate(5, 6, 7);
-t.Translate(-5, -6, -7);
+t.translate(0, 0, 0);
+t.rotateZ(-90);
+t.translate(2, 0, 0);
+t.rotateY(360);
+t.rotateZ(45);
+t.rotate(45, 0,0,1);
+t.translate(1, 0, 0);
+t.rotateY(90);
+t.translate(1, 0, 0);
+t.rotateY(360);
+t.translate(1, 0, 0);
+t.rotateX(360);
+t.translate(1, 0, 0);
+t.rotateY(123);
+t.translate(5, 6, 7);
+t.translate(-5, -6, -7);
 
 var v = [0,0,0];
-print( [c.toFixed(2) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
-t.Invert();
-print( [c.toFixed(1) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
+print( [c.toFixed(2) for each ( c in t.transformVector(v) )].join('  '), '\n' );
+t.invert();
+print( [c.toFixed(1) for each ( c in t.transformVector(v) )].join('  '), '\n' );
 print( '\n\n' );
 
 
 
 
-Halt(); //////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////
 
 
 
@@ -855,89 +855,89 @@ print( '\n' );
 
 
 
-Halt();
+halt();
 
 var t = new Transformation(undefined);
-t.LookAt(-10,-10,10, 0,0,0, 0,0,1);
+t.lookAt(-10,-10,10, 0,0,0, 0,0,1);
 		
-Transformation.Test();
-Halt();
+Transformation.test();
+halt();
 
 
 
 var t = new Transformation( undefined );
-t.LookAt(1,1,10, 0,0,0);
+t.lookAt(1,1,10, 0,0,0);
 
-DumpMatrix(t);
+dumpMatrix(t);
 
-Halt();
+halt();
 
 
 /*
-function Quad2D(x0, y0, x1, y1) {
+function quad2D(x0, y0, x1, y1) {
 
 	with (Ogl) {
-		Begin(QUADS);
-		TexCoord( 0, 0 );
-		Vertex( x0, y0 );
-		TexCoord( 1, 0 );
-		Vertex( x1, y0 );
-		TexCoord( 1, 1 );
-		Vertex( x1, y1 );
-		TexCoord( 0, 1 );
-		Vertex( x0, y1 );
-		End();
+		begin(QUADS);
+		texCoord( 0, 0 );
+		vertex( x0, y0 );
+		texCoord( 1, 0 );
+		vertex( x1, y0 );
+		texCoord( 1, 1 );
+		vertex( x1, y1 );
+		texCoord( 0, 1 );
+		vertex( x0, y1 );
+		end();
 	}
 }
 */
 
-function Line(x0, y0, z0, x1, y1, z1) {
+function line(x0, y0, z0, x1, y1, z1) {
 
 	with (Ogl) {
 	
-		Begin(LINES);
-		Vertex(x0, y0, z0);
-		Vertex(x1, y1, z1);
-		End();
+		begin(LINES);
+		vertex(x0, y0, z0);
+		vertex(x1, y1, z1);
+		end();
 	}
 }
 
 
-function Cube() {
+function cube() {
 
 	with (Ogl) {
 	
-		Begin(QUADS);
-		TexCoord(0.0, 0.0); Vertex(-1.0, -1.0,  1.0);
-		TexCoord(1.0, 0.0); Vertex( 1.0, -1.0,  1.0);
-		TexCoord(1.0, 1.0); Vertex( 1.0,  1.0,  1.0);
-		TexCoord(0.0, 1.0); Vertex(-1.0,  1.0,  1.0);
+		begin(QUADS);
+		texCoord(0.0, 0.0); vertex(-1.0, -1.0,  1.0);
+		texCoord(1.0, 0.0); vertex( 1.0, -1.0,  1.0);
+		texCoord(1.0, 1.0); vertex( 1.0,  1.0,  1.0);
+		texCoord(0.0, 1.0); vertex(-1.0,  1.0,  1.0);
 
-		TexCoord(1.0, 0.0); Vertex(-1.0, -1.0, -1.0);
-		TexCoord(1.0, 1.0); Vertex(-1.0,  1.0, -1.0);
-		TexCoord(0.0, 1.0); Vertex( 1.0,  1.0, -1.0);
-		TexCoord(0.0, 0.0); Vertex( 1.0, -1.0, -1.0);
+		texCoord(1.0, 0.0); vertex(-1.0, -1.0, -1.0);
+		texCoord(1.0, 1.0); vertex(-1.0,  1.0, -1.0);
+		texCoord(0.0, 1.0); vertex( 1.0,  1.0, -1.0);
+		texCoord(0.0, 0.0); vertex( 1.0, -1.0, -1.0);
 
-		TexCoord(0.0, 1.0); Vertex(-1.0,  1.0, -1.0);
-		TexCoord(0.0, 0.0); Vertex(-1.0,  1.0,  1.0);
-		TexCoord(1.0, 0.0); Vertex( 1.0,  1.0,  1.0);
-		TexCoord(1.0, 1.0); Vertex( 1.0,  1.0, -1.0);
+		texCoord(0.0, 1.0); vertex(-1.0,  1.0, -1.0);
+		texCoord(0.0, 0.0); vertex(-1.0,  1.0,  1.0);
+		texCoord(1.0, 0.0); vertex( 1.0,  1.0,  1.0);
+		texCoord(1.0, 1.0); vertex( 1.0,  1.0, -1.0);
 
-		TexCoord(1.0, 1.0); Vertex(-1.0, -1.0, -1.0);
-		TexCoord(0.0, 1.0); Vertex( 1.0, -1.0, -1.0);
-		TexCoord(0.0, 0.0); Vertex( 1.0, -1.0,  1.0);
-		TexCoord(1.0, 0.0); Vertex(-1.0, -1.0,  1.0);
+		texCoord(1.0, 1.0); vertex(-1.0, -1.0, -1.0);
+		texCoord(0.0, 1.0); vertex( 1.0, -1.0, -1.0);
+		texCoord(0.0, 0.0); vertex( 1.0, -1.0,  1.0);
+		texCoord(1.0, 0.0); vertex(-1.0, -1.0,  1.0);
 
-		TexCoord(1.0, 0.0); Vertex( 1.0, -1.0, -1.0);
-		TexCoord(1.0, 1.0); Vertex( 1.0,  1.0, -1.0);
-		TexCoord(0.0, 1.0); Vertex( 1.0,  1.0,  1.0);
-		TexCoord(0.0, 0.0); Vertex( 1.0, -1.0,  1.0);
+		texCoord(1.0, 0.0); vertex( 1.0, -1.0, -1.0);
+		texCoord(1.0, 1.0); vertex( 1.0,  1.0, -1.0);
+		texCoord(0.0, 1.0); vertex( 1.0,  1.0,  1.0);
+		texCoord(0.0, 0.0); vertex( 1.0, -1.0,  1.0);
 
-		TexCoord(0.0, 0.0); Vertex(-1.0, -1.0, -1.0);
-		TexCoord(1.0, 0.0); Vertex(-1.0, -1.0,  1.0);
-		TexCoord(1.0, 1.0); Vertex(-1.0,  1.0,  1.0);
-		TexCoord(0.0, 1.0); Vertex(-1.0,  1.0, -1.0);
-		End();
+		texCoord(0.0, 0.0); vertex(-1.0, -1.0, -1.0);
+		texCoord(1.0, 0.0); vertex(-1.0, -1.0,  1.0);
+		texCoord(1.0, 1.0); vertex(-1.0,  1.0,  1.0);
+		texCoord(0.0, 1.0); vertex(-1.0,  1.0, -1.0);
+		end();
 	}
 }
 
@@ -952,10 +952,10 @@ var rotateY = 0;
 
 var tremeshId;
 var tremeshTransformation = new Transformation();
-tremeshTransformation.Clear();
+tremeshTransformation.clear();
 
 
-function Init() {
+function init() {
 
 	var t = new Trimesh();
 
@@ -974,51 +974,51 @@ function Init() {
 	for ( var i = 0; i < triangleCount*3; i++ )
 		index.push(Math.floor( Math.random() * vertexCount ) );
 
-	t.DefineVertexBuffer(vertex);
-	t.DefineColorBuffer(color);
-	t.DefineIndexBuffer(index);
+	t.defineVertexBuffer(vertex);
+	t.defineColorBuffer(color);
+	t.defineIndexBuffer(index);
 	
-	tremeshId = Ogl.LoadTrimesh(t);
+	tremeshId = Ogl.loadTrimesh(t);
 	
 
 	with (Ogl) {
-		Enable(DEPTH_TEST);
-		Enable(BLEND); //Enable alpha blending
-		BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
-	  Enable(CULL_FACE);
+		enable(DEPTH_TEST);
+		enable(BLEND); //enable alpha blending
+		blendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA); //Set the blend function
+	  enable(CULL_FACE);
 	  
-  	LoadIdentity();
-	  PushMatrix(); 
+  	loadIdentity();
+	  pushMatrix(); 
 	 }
 }
 
-function Draw() {
+function draw() {
 
 	with (Ogl) {
 	
 		var t = new Date().valueOf() - time0;
 
-		LoadMatrix(tremeshTransformation);
+		loadMatrix(tremeshTransformation);
 
-		Translate(-0.5, -0.5, -0.5);
-		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
-		DrawTrimesh(tremeshId);
+		translate(-0.5, -0.5, -0.5);
+		clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+		drawTrimesh(tremeshId);
 	};
 
 	var rotation = new Transformation();
-	rotation.Clear();
-	rotation.RotateToVector( -speedX, speedY, 1 );
-	tremeshTransformation.Product(rotation);
+	rotation.clear();
+	rotation.rotateToVector( -speedX, speedY, 1 );
+	tremeshTransformation.product(rotation);
 
 
 }
 
-GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-GlSetAttribute( GL_DOUBLEBUFFER, 1 );
-GlSetAttribute( GL_DEPTH_SIZE, 16 );
+glSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+glSetAttribute( GL_DOUBLEBUFFER, 1 );
+glSetAttribute( GL_DEPTH_SIZE, 16 );
 
-SetVideoMode( 320, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
-Ogl.Perspective( 90, 0.01, 1000 );
+setVideoMode( 320, 200, 32, HWSURFACE | OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+Ogl.perspective( 90, 0.01, 1000 );
 
 showCursor = true;
 
@@ -1041,7 +1041,7 @@ var listeners = {
 	onVideoResize: function(w,h) {
 
 //		SetVideoMode(w, h);
-		Ogl.Viewport(0, 0, w, h);
+		Ogl.viewport(0, 0, w, h);
 	},
 	onMouseMotion: function(x,y,dx,dy,button) {
 		
@@ -1057,23 +1057,23 @@ var listeners = {
 
 }
 
-Init();
+init();
 
 while ( !done ) {
 
-	PollEvent(listeners);
-	Draw();	
-	GlSwapBuffers();
-	Sleep(10);
+	pollEvent(listeners);
+	draw();	
+	glSwapBuffers();
+	sleep(10);
 }
 
 
 
 
-Halt(); //////////////////////////////////////////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	var camera = new Transformation;
-	camera.Clear();
+	camera.clear();
 
 	var objects = [];
 
@@ -1099,32 +1099,32 @@ Halt(); ////////////////////////////////////////////////////////////////////////
 	win.onmousedown = function(button) {
 	
 		/*
-			1/ Object Coordinates are transformed by the ModelView matrix to produce Eye Coordinates.
-			2/ Eye Coordinates are transformed by the Projection matrix to produce Clip Coordinates.
-			3/ Clip Coordinate X, Y, and Z are divided by Clip Coordinate W to produce Normalized Device Coordinates.
+			1/ Object Coordinates are transformed by the modelView matrix to produce Eye Coordinates.
+			2/ Eye Coordinates are transformed by the projection matrix to produce Clip Coordinates.
+			3/ Clip coordinate X, Y, and Z are divided by Clip coordinate W to produce Normalized Device Coordinates.
 			4/ Normalized Device Coordinates are scaled and translated by the viewport parameters to produce Window Coordinates.
 		*/
 		
 		// http://www.gamedev.net/community/forums/topic.asp?topic_id=480322
 		/*
-			Expand to 3D homogenous coordinate. That is make a vector (x, y, z, 1). See below for Z-value.
+			expand to 3D homogenous coordinate. That is make a vector (x, y, z, 1). See below for Z-value.
 			Map the X- and Y-value into normalized device coordinates, that is, from [0, viewport size] to the range [-1, 1].
-			Multiply by the inverse of the projection matrix.
-			Multiply by the inverse of the modelview matrix.
-			Perform perspective division.
-			The result after perspective division is world space coordinates. Skip the multiplication by the modelview matrix and you get the result in eye space instead.
+			multiply by the inverse of the projection matrix.
+			multiply by the inverse of the modelview matrix.
+			perform perspective division.
+			The result after perspective division is world space coordinates. skip the multiplication by the modelview matrix and you get the result in eye space instead.
 		*/		
 		
 		var m = new Transformation();
 
 		var p = new Transformation();
-		Ogl.MatrixMode(Ogl.PROJECTION);
-		p.Load(Ogl);
-		p.Invert();
+		Ogl.matrixMode(Ogl.PROJECTION);
+		p.load(Ogl);
+		p.invert();
 		
 		var c = new Transformation();
-		c.Load(camera);
-		c.Invert();
+		c.load(camera);
+		c.invert();
 	
 		// 4/
 		var clientRect = win.clientRect;
@@ -1147,7 +1147,7 @@ Halt(); ////////////////////////////////////////////////////////////////////////
 //		p.TransformVector(vect);
 
 		// 1/
-		c.TransformVector(vect);
+		c.transformVector(vect);
 		
 		vect[0] /= p[0];
 		vect[1] /= p[5];
@@ -1157,7 +1157,7 @@ Halt(); ////////////////////////////////////////////////////////////////////////
 
 		
 		var obj = {};
-		obj.createTime = TimeCounter();
+		obj.createTime = timeCounter();
 		obj.x = vect[0];
 		obj.y = vect[1];
 		obj.z = vect[2]-1;
@@ -1165,21 +1165,21 @@ Halt(); ////////////////////////////////////////////////////////////////////////
 	}
 
 /*
-Line3 Viewport::Ray( int winx, int winy ) {
+Line3 viewport::ray( int winx, int winy ) {
 
-  Vector4 in( -1 + 2 * ( (float)winx / (float)( _width - _offsetWidth ) ), -1 + 2 * (float)( _height - winy - _offsetHeight ) / (float)(_height - _offsetHeight ), -1, 1 );
+  vector4 in( -1 + 2 * ( (float)winx / (float)( _width - _offsetWidth ) ), -1 + 2 * (float)( _height - winy - _offsetHeight ) / (float)(_height - _offsetHeight ), -1, 1 );
 
-  in.x /= ProjectionMatrix()[0];
-  in.y /= ProjectionMatrix()[5];
+  in.x /= projectionMatrix()[0];
+  in.y /= projectionMatrix()[5];
 
-  Matrix44 invView = Camera().Transformation();
-  invView.Invert();
+  matrix44 invView = camera().Transformation();
+  invView.invert();
 
-  Vector4 out = invView( in ); ...
+  vector4 out = invView( in ); ...
 
-												  Vector4 operator()( const Vector4 &vector ) const {
+												  vector4 operator()( const vector4 &vector ) const {
 												    
-													 return Vector4( _m[0]*vector.x + _m[4]*vector.y + _m[8]*vector.z  + _m[12]*vector.w,
+													 return vector4( _m[0]*vector.x + _m[4]*vector.y + _m[8]*vector.z  + _m[12]*vector.w,
 																		  _m[1]*vector.x + _m[5]*vector.y + _m[9]*vector.z  + _m[13]*vector.w,
 																		  _m[2]*vector.x + _m[6]*vector.y + _m[10]*vector.z + _m[14]*vector.w,
 																		  _m[3]*vector.x + _m[7]*vector.y + _m[11]*vector.z + _m[15]*vector.w );
@@ -1188,8 +1188,8 @@ Line3 Viewport::Ray( int winx, int winy ) {
 
 //  out.Rescale(); // should be done if needed
 
-  Point3 position( invView.Translation() );
-  Vector3 direction( out.x, out.y, out.z );
+  point3 position( invView.translation() );
+  vector3 direction( out.x, out.y, out.z );
   direction -= position;
 	return Line3( position, direction );
 }
@@ -1199,110 +1199,110 @@ Line3 Viewport::Ray( int winx, int winy ) {
 
 
 /*
-function ResizeWindow(w, h) {
+function resizeWindow(w, h) {
 
 	with (Ogl) {
-		Viewport(0,0,w,h);
-		MatrixMode(PROJECTION);
-		LoadIdentity();
-		Ortho(0,0,10,10, -10, 10);
+		viewport(0,0,w,h);
+		matrixMode(PROJECTION);
+		loadIdentity();
+		ortho(0,0,10,10, -10, 10);
 //		Perspective( 90, -1000, 1000 );
 	}
-	Render();
+	render();
 }
 
-win.onsize = ResizeWindow;		
+win.onsize = resizeWindow;		
 */
 
-win.Open();
-win.CreateOpenGLContext();
+win.open();
+win.createOpenGLContext();
 
 
 with (Ogl) {
 
 //	ShadeModel(SMOOTH);
-	ShadeModel(FLAT);
-	FrontFace(CCW);
+	shadeModel(FLAT);
+	frontFace(CCW);
 
-	ClearColor(0.1,0.15,0.2,1);	
+	clearColor(0.1,0.15,0.2,1);	
 
-	ClearDepth(1);
+	clearDepth(1);
 //	Enable(DEPTH_TEST); // !!!!
-	DepthFunc(LESS);
+	depthFunc(LESS);
 
 //	DepthRange(1000, -1000);
 	
-	Hint(PERSPECTIVE_CORRECTION_HINT, NICEST);
-	Hint(LINE_SMOOTH_HINT, DONT_CARE);		
-	Enable(LINE_SMOOTH);
-	LineWidth(1);
+	hint(PERSPECTIVE_CORRECTION_HINT, NICEST);
+	hint(LINE_SMOOTH_HINT, DONT_CARE);		
+	enable(LINE_SMOOTH);
+	lineWidth(1);
 
-	Enable( TEXTURE_2D );
-	BindTexture( TEXTURE_2D, GenTexture() );
-	TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
-	TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
-	TexEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
-	TexEnv(TEXTURE_ENV, TEXTURE_ENV_COLOR, [0,0,0,0]);
+	enable( TEXTURE_2D );
+	bindTexture( TEXTURE_2D, genTexture() );
+	texParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
+	texParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
+	texEnv(TEXTURE_ENV, TEXTURE_ENV_MODE, MODULATE);
+	texEnv(TEXTURE_ENV, TEXTURE_ENV_COLOR, [0,0,0,0]);
 	
 
 //	var texture = new Jpeg(new File('R0010235.JPG').Open( File.RDONLY )).Load();
 	var texture = new Texture(128, 128, 1);
 	texture.Set([0]);
 //	var curveGaussian = function(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
-	texture.AddGradiantRadial( curveGaussian( 0.3 ), false );
-	texture.AddNoise(0.1,0,0,0);
+	texture.addGradiantRadial( curveGaussian( 0.3 ), false );
+	texture.addNoise(0.1,0,0,0);
 
 //	Enable(ALPHA_TEST);
 //	AlphaFunc( GREATER, 0.5 );
 
-	Enable(BLEND);
+	enable(BLEND);
 //	BlendFunc(ONE, ONE);
-	BlendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
+	blendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
 	
-	DefineTextureImage( TEXTURE_2D, ALPHA, texture );
+	defineTextureImage( TEXTURE_2D, ALPHA, texture );
 
 // http://www.informit.com/articles/article.aspx?p=770639&seqNum=7
 //		PointParameter( POINT_SIZE_MIN, 0 );
 //		PointParameter( POINT_SIZE_MAX, 1 );
-	PointParameter( POINT_DISTANCE_ATTENUATION, [0, 0, 0.01] ); // 1/(a + b*d + c *d^2)
-	TexEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
+	pointParameter( POINT_DISTANCE_ATTENUATION, [0, 0, 0.01] ); // 1/(a + b*d + c *d^2)
+	texEnv(POINT_SPRITE, COORD_REPLACE, TRUE);
 
-	MatrixMode(PROJECTION);
-	LoadIdentity();
-	Perspective(60, 0.5, 100);
+	matrixMode(PROJECTION);
+	loadIdentity();
+	perspective(60, 0.5, 100);
 }
 
 
 const degToRad = 360/Math.PI;
 
-camera.Translate(0, 0, -20);
+camera.translate(0, 0, -20);
 //camera.Rotate(45, 1,0,0);
 
-function Render(imgIndex) {
+function render(imgIndex) {
 	with (Ogl) {
 
-		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+		clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
 	
-		MatrixMode(MODELVIEW);
-		LoadMatrix(camera);
-		Quad();
+		matrixMode(MODELVIEW);
+		loadMatrix(camera);
+		quad();
 	
-		Enable( TEXTURE_2D );
-		Color(1,1,1,1);
+		enable( TEXTURE_2D );
+		color(1,1,1,1);
 		for each ( var obj in objects ) {
 			
-			var t = TimeCounter() - obj.createTime;
+			var t = timeCounter() - obj.createTime;
 /*
-			PointSize((-Math.cos(t/1000)+1)*10);
-			Begin(POINTS);
-			Vertex(obj.x, obj.y);
-			End();	
+			pointSize((-Math.cos(t/1000)+1)*10);
+			begin(POINTS);
+			vertex(obj.x, obj.y);
+			end();	
 */
 
-			PushMatrix();
-			Translate( obj.x, obj.y, obj.z );
-			Axis(1);
-			PopMatrix();
+			pushMatrix();
+			translate( obj.x, obj.y, obj.z );
+			axis(1);
+			popMatrix();
 			
 
 		}
@@ -1312,14 +1312,14 @@ function Render(imgIndex) {
 
 for (var i=0; !_quit; i++) {
 
-	MaybeCollectGarbage();
-	Ogl.Viewport(0,0,w,h);
+	maybeCollectGarbage();
+	Ogl.viewport(0,0,w,h);
 	
-	var t0 = TimeCounter();
-	Render(i);
+	var t0 = timeCounter();
+	render(i);
 //	print( (1000/(TimeCounter() - t0)).toFixed(), ' fps\n' );
-	win.SwapBuffers();
-	win.ProcessEvents();
-	Sleep(10);
+	win.swapBuffers();
+	win.processEvents();
+	sleep(10);
 }
 

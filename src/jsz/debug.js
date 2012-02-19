@@ -14,38 +14,38 @@ loadModule('jsz');
 
 
 var f = new ZipFile('test.zip');
-f.Open(ZipFile.CREATE);
+f.open(ZipFile.CREATE);
 f.level = 9;
 for ( var i = 0; i < 10; ++i ) {
 
-	f.Select('file'+i+'.txt');
-	f.Write('content data '+i+' '+StringRepeat('z',100));
+	f.select('file'+i+'.txt');
+	f.write('content data '+i+' '+stringRepeat('z',100));
 }
-f.Close();
+f.close();
 print( '---\n' );
 
 
 var g = new ZipFile('test.zip');
-g.Open(ZipFile.READ);
+g.open(ZipFile.READ);
 
 //
-g.Select('file9.txt');
-g.GoNext();
-g.GoTo(10);
-g.GoTo(100);
+g.select('file9.txt');
+g.goNext();
+g.goTo(10);
+g.goTo(100);
 
 
 
 //g.GoTo(8); g.GoNext(); g.GoNext();
 
-//Stringify(g);
+//stringify(g);
 
 //for ( g.GoFirst(); !g.eol; g.GoNext() )  print( ' '+g.filename, ' : ', g.Read(), ' (lvl='+g.level+' eol=', g.eol, ')\n' ); 
 //print( ' '+g.filename, ' : ', g.Read(), ' (eol=', g.eol, ')\n' );
 
 
 
-g.Close();
+g.close();
 
 
 
@@ -53,85 +53,85 @@ g.Close();
 throw 0;
 
 var f = new ZipFile('test.zip');
-f.Open(ZipFile.CREATE);
-f.Select('toto/xxx.txt');
+f.open(ZipFile.CREATE);
+f.select('toto/xxx.txt');
 f.date = new Date(2008,6,4);
 f.globalComment = 'a comment';
 print( 'global comment:', f.globalComment, '\n' );
 print( 'date:', f.date, '\n' );
 f.extra = 'extra field';
-f.Write('content data');
-f.Close();
+f.write('content data');
+f.close();
 
 print( '---\n' );
 
 var g = new ZipFile('test.zip');
-g.Open(ZipFile.READ);
-g.Select('toto/xxx.txt');
+g.open(ZipFile.READ);
+g.select('toto/xxx.txt');
 print( 'global comment:', g.globalComment, '\n' );
 print( g.filename, ' / ', g.date, ' / ', '\n' );
-print( g.Read(30), '\n' );
-print( g.Read(30), '\n' );
-print( g.Read(30), '\n' );
-print( g.Read(30), '\n' );
-print( g.Read(), '\n' );
+print( g.read(30), '\n' );
+print( g.read(30), '\n' );
+print( g.read(30), '\n' );
+print( g.read(30), '\n' );
+print( g.read(), '\n' );
 print( 'current extra:', g.extra, '\n' );
 
 
 //print( Stringify(g) );
-g.Close();
+g.close();
 
 
 throw 0;
 
 
 var g = new ZipFile('test.zip');
-g.Open(ZipFile.READ);
+g.open(ZipFile.READ);
 g.password = 'aze';
 
-g.Select('toto/UpgradeLog.XML');
-print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.Read(), '\n' );
+g.select('toto/UpgradeLog.XML');
+print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.read(), '\n' );
 
-g.Select('toto/xxx.txt');
-print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.Read(), '\n' );
+g.select('toto/xxx.txt');
+print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.read(), '\n' );
 
-g.Close();
+g.close();
 
 
 throw 0;
 
 
 var f = new ZipFile('test.zip');
-f.Open(ZipFile.CREATE, 0);
-f.Select('toto/xxx.txt');
+f.open(ZipFile.CREATE, 0);
+f.select('toto/xxx.txt');
 f.date = new Date(2008,6,4);
-f.Write('content');
-f.Write(' ');
-f.Write('data');
+f.write('content');
+f.write(' ');
+f.write('data');
 f.comment = 'toto';
-f.Close();
+f.close();
 
 
 var g = new ZipFile('test.zip');
-g.Open(ZipFile.READ);
-for ( g.GoFirst(); !g.eol; g.GoNext() ) {
+g.open(ZipFile.READ);
+for ( g.goFirst(); !g.eol; g.goNext() ) {
 
-	print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.Read(), '\n' );
+	print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.read(), '\n' );
 }
-g.Close();
+g.close();
 
 
 throw 0;
 
 var g = new ZipFile('codemirror-0.65.zip');
-g.Open(ZipFile.READ);
+g.open(ZipFile.READ);
 
-for ( g.GoFirst(); !g.eol; g.GoNext() ) {
+for ( g.goFirst(); !g.eol; g.goNext() ) {
 
 	print( g.filename, '\n' );
 }
 
-g.Close();
+g.close();
 
 
 throw 0;
@@ -139,16 +139,16 @@ throw 0;
 
 
 var f = new ZipFile('test.zip');
-f.Open(ZipFile.CREATE);
-f.Select('toto/xxx.txt');
-f.Write('content data');
-f.Close();
+f.open(ZipFile.CREATE);
+f.select('toto/xxx.txt');
+f.write('content data');
+f.close();
 
 var g = new ZipFile('test.zip');
-g.Open(ZipFile.READ);
-g.Select('toto/xxx.txt');
-var data = g.Read();
-g.Close();
+g.open(ZipFile.READ);
+g.select('toto/xxx.txt');
+var data = g.read();
+g.close();
 
 print( String(data).quote(), '\n' );
 
@@ -156,7 +156,7 @@ throw 0;
 
 
 
-Halt(); //////////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////////
 
 		var data = 'clear data';
 		var deflatedData = new Z(Z.DEFLATE)(data, true);
@@ -169,11 +169,11 @@ Halt(); ////////////////////////////////////////////////////////////////////////
 
 
 
-Halt(); //////////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////////
 
 var deflate = new Z(Z.DEFLATE);
 var inflate = new Z(Z.INFLATE);
-var source = StringRepeat('x', 100000);
+var source = stringRepeat('x', 100000);
 var str = deflate(source);
 str += deflate();
 
@@ -182,7 +182,7 @@ var result = inflate(str, true);
 print( result == source, '\n' );
 
 
-Halt(); //////////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////////
 
 
 function randomString(size) {
@@ -199,7 +199,7 @@ var str = deflate(source, true);
 var result = inflate(str, true);
 
 
-Halt(); //////////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////////
 
 
 
@@ -231,7 +231,7 @@ print( 'adler32:' + (deflate.adler32 == inflate.adler32) ,'\n');
 
 
 
-Halt(); //////////////////////////////////////////////////////////////////////////
+halt(); //////////////////////////////////////////////////////////////////////////
 
 
 function test1() {
@@ -286,14 +286,14 @@ function test4() {
 
 /*
 var compressor = new Z(Z.DEFLATE);
-var res = compressor.Transform( 'hello ' );
-res += compressor.Transform( 'world.' );
-res += compressor.Transform();
+var res = compressor.transform( 'hello ' );
+res += compressor.transform( 'world.' );
+res += compressor.transform();
 
 
 var compressor2 = new Z(Z.INFLATE);
-var res2 = compressor2.Transform( res );
-res2 += compressor2.Transform();
+var res2 = compressor2.transform( res );
+res2 += compressor2.transform();
 
 print( '['+res2+']' );
 */

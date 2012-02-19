@@ -32,7 +32,7 @@ function test() {
 	return 12345;
 }
 
-function Debug1() {
+function debug1() {
 
 	debugger;
 	
@@ -45,7 +45,7 @@ function Debug1() {
 
 	var data = { d1:#1={ a:[4,5,6], b:null, b1:undefined, c:'test', d:{x:1, y:0, z:1}, e:123, e1:new Number(123), f:#1# } };
 
-	function ThrowTest(arg) {
+	function throwTest(arg) {
 
 		test(data, 'http://jslibs.googlecode.com/');
 		print('ThrowTest: '+arg, '\n');
@@ -54,7 +54,7 @@ function Debug1() {
 	
 	try {
 		
-		ThrowTest('end');
+		throwTest('end');
 	} catch(ex) {
 		
 		print('in catch', '\n');
@@ -62,7 +62,7 @@ function Debug1() {
 	
 	test(123, 'abc', [4,5,6], new Date(), {}, {__proto__:null}, null, undefined );
 	
-	Sleep(1000);
+	sleep(1000);
 	
 	var long = '1234';
 	for ( var i = 0; i < 10; i++ )

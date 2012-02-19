@@ -1,6 +1,6 @@
-LoadModule('jsstd');
-LoadModule('jsio');
-LoadModule('jsdebug');
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jsdebug');
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -37,64 +37,64 @@ function QAAPI(cx) {
 
 	this.FAILED = function( message ) {
 
-		cx.ReportIssue( message, 'FAILURE' );
+		cx.reportIssue( message, 'FAILURE' );
 	}
 	
 	this.NO_CRASH = function() {}
 
 	this.ASSERT_TYPE = function( value, type, testName ) {
 
-		cx.Checkpoint('ASSERT_TYPE', testName);
+		cx.checkpoint('ASSERT_TYPE', testName);
 		if ( typeof(value) != type && !(value instanceof type) )
-			cx.ReportIssue( 'Invalid type, '+type.name+' is expected.', testName );
+			cx.reportIssue( 'Invalid type, '+type.name+' is expected.', testName );
 	}
 
 	this.ASSERT_EXCEPTION = function( fct, exType, testName ) {
 		
-		cx.Checkpoint('ASSERT_EXCEPTION', testName);
+		cx.checkpoint('ASSERT_EXCEPTION', testName);
 		try {
 		
 			fct();
-			cx.ReportIssue( 'Exception not detected (expect '+exType.toString()+')', testName );
+			cx.reportIssue( 'Exception not detected (expect '+exType.toString()+')', testName );
 		} catch(ex) {
 			
 			if ( typeof(exType) == 'string' ) {
 			
 				if ( ex.constructor.name != exType )
-					cx.ReportIssue('Invalid exception name ('+ex.constructor.name+' != '+exType+')', testName );
+					cx.reportIssue('Invalid exception name ('+ex.constructor.name+' != '+exType+')', testName );
 			} else {
 
 				if ( ex != exType && ex.constructor != exType )
-					cx.ReportIssue('Invalid exception ('+ex.constructor.name+' != '+exType.name+')', testName );
+					cx.reportIssue('Invalid exception ('+ex.constructor.name+' != '+exType.name+')', testName );
 			}
 		}
 	}
 
 	this.ASSERT = function( value, expect, testName ) {
 
-		cx.Checkpoint('ASSERT', testName);
+		cx.checkpoint('ASSERT', testName);
 		if ( value !== expect && !(typeof(value) == 'number' && isNaN(value) && typeof(expect) == 'number' && isNaN(expect)) )
-			cx.ReportIssue( '=== ('+ValueType(value)+')'+FormatVariable(value)+', expect '+'('+ValueType(expect)+')'+FormatVariable(expect), testName );
+			cx.reportIssue( '=== ('+ValueType(value)+')'+FormatVariable(value)+', expect '+'('+ValueType(expect)+')'+FormatVariable(expect), testName );
 	}
 
 	this.ASSERT_STR = function( value, expect, testName ) {
 	
-		cx.Checkpoint('ASSERT_STR', testName);
+		cx.checkpoint('ASSERT_STR', testName);
 		if ( value != expect ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
-			cx.ReportIssue( '== '+FormatVariable(value)+', expect '+FormatVariable(expect), testName );
+			cx.reportIssue( '== '+FormatVariable(value)+', expect '+FormatVariable(expect), testName );
 	}
 
    this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
    	
-		cx.Checkpoint('ASSERT_HAS_PROPERTIES', names);
+		cx.checkpoint('ASSERT_HAS_PROPERTIES', names);
    	for each ( var p in names.split(/\s*,\s*/) ) {
    	
    		if ( !(p in obj) )
-	  			cx.ReportIssue( 'Property '+p.quote()+' not found.' );
+	  			cx.reportIssue( 'Property '+p.quote()+' not found.' );
 	  	}
    }
 
-	this.GC = function() {
+	this.gc = function() {
 
 		cx.cfg.nogcDuringTests || CollectGarbage();
 	}
@@ -103,7 +103,7 @@ function QAAPI(cx) {
 	for ( var i = 0; i < 1024; ++i )
 		randomData += String.fromCharCode(Math.random()*255);
 		
-	this.RandomData = function(length) {
+	this.randomData = function(length) {
 
 		var data = '';
 		while( data.length < length )
@@ -115,7 +115,7 @@ function QAAPI(cx) {
 	for ( var i = 0; i < 1024; ++i )
 		randomString += Math.random().toString(36).substr(2);
    
-	this.RandomString = function(length) { // [0-9A-Za-z]
+	this.randomString = function(length) { // [0-9A-Za-z]
 		
 		if ( length == undefined )
 			throw Error('RandomString() invalid argument');
@@ -138,8 +138,8 @@ function RecursiveDir(path, callback) {
 	(function(path) {
 
 		var dir = new Directory(path);
-		dir.Open();
-		for ( var entry; ( entry = dir.Read(Directory.SKIP_BOTH) ); ) {
+		dir.open();
+		for ( var entry; ( entry = dir.read(Directory.SKIP_BOTH) ); ) {
 
 			var file = new File(dir.name+'/'+entry);
 			switch ( file.info.type ) {
@@ -151,7 +151,7 @@ function RecursiveDir(path, callback) {
 					break;
 			}
 		}
-		dir.Close();
+		dir.close();
 	})(path);
 }
 
@@ -193,16 +193,15 @@ function CreateQaItemList(startDir, files, include, exclude, flags) {
 	})
 	
 	for each ( var item in itemList ) {
-
 		try {
-			item.relativeLineNumber = Locate()[1]+1 - item.line;
+			item.relativeLineNumber = locate()[1]+1 - item.line;
 			item.func = new Function('QA', item.code.join('\n'));
 		} catch(ex) {
 			
 			item.func = function() {}
 			var lineno = ex.lineNumber - item.relativeLineNumber;
 			var message = 'COMPILATION: @'+ item.file +':'+ lineno +' - '+ item.name +' - '+ ex;
-			Print( '*** ' + message, '\n' );
+			print( '*** ' + message, '\n' );
 		}
 	}
 
@@ -232,7 +231,7 @@ function ParseCommandLine(cfg) {
 		var item = items[0];
 		if ( item == undefined )
 			throw Error('Invalid argument: '+args[1]);
-		if ( IsBoolean(cfg[item]) ) {
+		if ( isBoolean(cfg[item]) ) {
 		
 			cfg[item] = !cfg[item];
 			args.splice(1,1);
@@ -255,14 +254,14 @@ function CommonReportIssue(cx, type, location, testName, checkName, details) {
 	globalIssueCount++;
 	var message = type +' @'+ location +' - '+ (testName||'') +' - '+ (checkName||'') +' - '+ details;
 	cx.issueList.push(message);
-	Print( '\n X '+ message, '\n' );
+	print( '\n X '+ message, '\n' );
 	
 	if ( cx.cfg.logFilename ) {
 	
 		logFile = new File(cfg.logFilename);
-		logFile.Open('a+');
-		logFile.Write(message + '\n');
-		logFile.Close();
+		logFile.open('a+');
+		logFile.write(message + '\n');
+		logFile.close();
 	}
 }
 
@@ -273,8 +272,8 @@ function LaunchTests(itemList, cfg) {
 
 	if ( cfg.export ) {
 	
-		exportFile = new File(cfg.export).Open('w');
-		exportFile.Write("LoadModule('jsstd');var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\\n' ) } };\n");
+		exportFile = new File(cfg.export).open('w');
+		exportFile.write("LoadModule('jsstd');var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\\n' ) } };\n");
 	}
 
 	var cx = { 
@@ -284,12 +283,12 @@ function LaunchTests(itemList, cfg) {
 		cfg:cfg, 
 		ReportIssue:function(message, checkName) {
 		
-			CommonReportIssue(cx, 'ASSERT',  this.item.file+':'+(Locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message );
+			CommonReportIssue(cx, 'ASSERT',  this.item.file+':'+(locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message );
 		},
 		Checkpoint:function(title, testName) {
 			
 			if ( cfg.verbose )
-				Print( '\nCP - '+testName+': checkpoint: '+title+' ('+this.item.file+':'+(Locate(this.stackIndex+1)[1] - this.item.relativeLineNumber)+')' );
+				print( '\nCP - '+testName+': checkpoint: '+title+' ('+this.item.file+':'+(locate(this.stackIndex+1)[1] - this.item.relativeLineNumber)+')' );
 			this.checkCount++;
 		}
 	};
@@ -323,7 +322,7 @@ function LaunchTests(itemList, cfg) {
 		
 		if ( cx.item.init || cfg.runOnlyTestIndex == undefined || cfg.runOnlyTestIndex == testIndex ) {
 
-			cfg.quiet || Print( ' - '+testIndex+' - '+cx.item.file+':'+cx.item.line+' - '+ cx.item.name );
+			cfg.quiet || print( ' - '+testIndex+' - '+cx.item.file+':'+cx.item.line+' - '+ cx.item.name );
 
 			if ( cfg.gcZeal )
 				gcZeal = cfg.gcZeal;
@@ -340,14 +339,14 @@ function LaunchTests(itemList, cfg) {
 					void cx.item.func(qaapi);
 					if ( exportFile ) {
 
-						exportFile.Write('('+cx.item.func.toSource()+')(QA);\n');
-						exportFile.Sync();
+						exportFile.write('('+cx.item.func.toSource()+')(QA);\n');
+						exportFile.sync();
 					}
 					if ( cx.item.init )
 						break;
 				}
 				var t1 = TimeCounter() - t0;
-				cfg.quiet || Print( ' ...('+(t1/cfg.repeatEachTest).toFixed(1) + 'ms)' );
+				cfg.quiet || print( ' ...('+(t1/cfg.repeatEachTest).toFixed(1) + 'ms)' );
 			} catch(ex) {
 
 				CommonReportIssue(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', ex );
@@ -359,7 +358,7 @@ function LaunchTests(itemList, cfg) {
 			disableGarbageCollection = cfg.nogcBetweenTests;
 			cfg.nogcBetweenTests || CollectGarbage();
 			
-			cfg.quiet || Print('\n');
+			cfg.quiet || print('\n');
 
 		}
 
@@ -381,7 +380,7 @@ function LaunchTests(itemList, cfg) {
 	
 	if ( exportFile ) {
 		
-		exportFile.Close();
+		exportFile.close();
 	}
 	
 	return [cx.issueList, cx.checkCount];
@@ -534,14 +533,14 @@ function PerfTest(itemList, cfg) {
 
 		_host.stdout = prev_stdout;
 		_host.stderr = prev_stderr;
-		Print(len+' tests in '+ t.toFixed(4) +' ms\n');
+		print(len+' tests in '+ t.toFixed(4) +' ms\n');
 	}
 
-	var exportFile = new File(cfg.perfTest).Open('w');
-	exportFile.Write( initSrc.join('\n')+'\n' );
-	exportFile.Write( '('+perfTestFunction.toSource()+')' );
-	exportFile.Write( '('+qaapi.toSource()+','+testSrcList.toSource()+')' );
-	exportFile.Close();
+	var exportFile = new File(cfg.perfTest).open('w');
+	exportFile.write( initSrc.join('\n')+'\n' );
+	exportFile.write( '('+perfTestFunction.toSource()+')' );
+	exportFile.write( '('+qaapi.toSource()+','+testSrcList.toSource()+')' );
+	exportFile.close();
 }
 
 
@@ -583,11 +582,11 @@ function Main() {
 	ParseCommandLine(cfg);
 
 	var configurationText = 'configuraion: '+['-'+k+' '+v for ([k,v] in Iterator(cfg))].join('  ');
-	Print(configurationText, '\n\n');
+	print(configurationText, '\n\n');
 
 	if ( cfg.help ) {
 		
-		Print('(TBD)');
+		print('(TBD)');
 		return;
 	}
 
@@ -617,7 +616,7 @@ function Main() {
 
 	if ( cfg.listTestsOnly ) {
 		
-		Print([String.quote(t.file+' - '+t.name) for each ( t in testList )].join('\n'), '\n', testList.length +' tests.', '\n');
+		print([String.quote(t.file+' - '+t.name) for each ( t in testList )].join('\n'), '\n', testList.length +' tests.', '\n');
 		return;
 	}
 
@@ -642,19 +641,19 @@ function Main() {
 	var t = TimeCounter() - t0;
 	processPriority = savePrio || 0; // savePrio may be undefined
 
-	Print( '\n'+StringRepeat('-',97)+'\n', configurationText, '\n\n', issueList.length +' issues, '+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
+	print( '\n'+StringRepeat('-',97)+'\n', configurationText, '\n\n', issueList.length +' issues, '+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
 	issueList.sort();
 	issueList.reduce( function(previousValue, currentValue, index, array) {
 
 		 if ( previousValue != currentValue )
-			Print( '- ' + currentValue, '\n' );
+			print( '- ' + currentValue, '\n' );
 		 return currentValue;
 	}, undefined );
 }
 
 
 Main();
-Print('Done\n');
+print('Done\n');
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -664,4 +663,4 @@ Print('Done\n');
 //	'f' for fast: the test execution is fast. Time should be less that 10ms.
 //	't' for time: the test execution time is always the same. The test do not use any variable-execution-time function (CollectGarbage, Poll, Socket, ...)
 //	'r' for reliable: external parameters (like the platform, CPU load, TCP/IP connection, weather, ...) cannot make the test to fail.
-//	'm' for low memory usage. The test uses the minimum amount of memory in the script part. no QA.RandomString(300000000) or StringRepeat('x', 10000000000)
+//	'm' for low memory usage. The test uses the minimum amount of memory in the script part. no QA.randomString(300000000) or StringRepeat('x', 10000000000)

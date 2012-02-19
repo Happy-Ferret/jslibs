@@ -17,20 +17,20 @@ exec('..\\common\\tools.js');
 	
 	//	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 //		GlSetAttribute( GL_DOUBLEBUFFER, 1 );
-		GlSetAttribute( GL_DEPTH_SIZE, 16 );
+		glSetAttribute( GL_DEPTH_SIZE, 16 );
 //		GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
-		SetVideoMode( 640, 480, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
+		setVideoMode( 640, 480, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 
-		Ogl.Hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
-		Ogl.Hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
-		Ogl.Viewport(0,0,videoWidth,videoHeight);
-		Ogl.MatrixMode(Ogl.PROJECTION);
-		Ogl.Perspective(60, 1, 0.1, 100000);
-		Ogl.MatrixMode(Ogl.MODELVIEW);
-		Ogl.ClearColor(0.2, 0.1, 0.4, 1);
-		Ogl.Enable(Ogl.DEPTH_TEST);
-		Ogl.Enable(Ogl.BLEND);
-		Ogl.BlendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
+		Ogl.hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
+		Ogl.hint(Ogl.POINT_SMOOTH_HINT, Ogl.NICEST);
+		Ogl.viewport(0,0,videoWidth,videoHeight);
+		Ogl.matrixMode(Ogl.PROJECTION);
+		Ogl.perspective(60, 1, 0.1, 100000);
+		Ogl.matrixMode(Ogl.MODELVIEW);
+		Ogl.clearColor(0.2, 0.1, 0.4, 1);
+		Ogl.enable(Ogl.DEPTH_TEST);
+		Ogl.enable(Ogl.BLEND);
+		Ogl.blendFunc(Ogl.SRC_ALPHA, Ogl.ONE_MINUS_SRC_ALPHA);
 
 
 
@@ -50,36 +50,36 @@ vi.onImage = function() {
 var frames = [];
 var frame = 0;
 var key;
-while ( !GetKeyState(K_ESCAPE) ) {
+while ( !getKeyState(K_ESCAPE) ) {
 
-	ProcessEvents(SDLEvents({}), vi.Events());
+	processEvents(SDLEvents({}), vi.events());
 
 //	while( PollEvent({}) );
 
-	GlSwapBuffers();
+	glSwapBuffers();
 
-var t1 = TimeCounter();
-//CollectGarbage();
+var t1 = timeCounter();
+//collectGarbage();
 //print( 'GC:',  (TimeCounter() - t1).toFixed(1), 'ms\n' );
 
 
 	frame++;
-	var image = vi.GetImage();
-	var texture = new Texture(image).Resize(256,256);
-	image.Free();
+	var image = vi.getImage();
+	var texture = new Texture(image).resize(256,256);
+	image.free();
 	
 	frames.push(texture);
 	if ( frames.length < 3 )
 		continue;
 	
-	if ( GetKeyState(K_n) )
+	if ( getKeyState(K_n) )
 		frames[0].NR(frames[1], frames[2]);
 
 //	frames[1] = frames[2];
 
 	var tmp = frames.shift();
-	DisplayTexture(tmp);
-	tmp.Free();
+	displayTexture(tmp);
+	tmp.free();
 
 
 //	var level = texture.GetGlobalLevel();
@@ -90,16 +90,16 @@ const kernelGaussian2 = [2,4,5,4,2, 4,9,12,9,4, 5,12,15,12,5, 4,9,12,9,4, 2,4,5,
 const kernelEmboss = [-1,0,0, 0,0,0 ,0,0,1];
 const kernelLaplacian = [-1,-1,-1, -1,8,-1, -1,-1,-1];
 
-	texture.Desaturate();
+	texture.desaturate();
 	 
-	 texture.NormalizeLevels();
+	 texture.normalizeLevels();
 	
 /*
 	tmp1.Set(texture);
-	tmp1.Shift(1,1);
-	texture.Add(tmp1);
-	tmp1.Shift(1,-1);
-	texture.Add(tmp1, -1);
+	tmp1.shift(1,1);
+	texture.add(tmp1);
+	tmp1.shift(1,-1);
+	texture.add(tmp1, -1);
 */	
 	
 
@@ -108,27 +108,27 @@ continue;
 
 
 
-	if ( texture.GetGlobalLevel() < 0.16 ) {
+	if ( texture.getGlobalLevel() < 0.16 ) {
 
-		noise.Add(texture);
-		noise.Mult(0.84);
-		print('...Getting noise\n');
-		DisplayTexture(noise);
+		noise.add(texture);
+		noise.mult(0.84);
+		print('...getting noise\n');
+		displayTexture(noise);
 	} else {
 
-		tmp1.Mult(0.92);
-		tmp1.Add(texture);
+		tmp1.mult(0.92);
+		tmp1.add(texture);
 
 		final.Set(tmp1);
 
-		if ( GetKeyState(K_n) ) // without noise reduction
-			final.Add(noise, -1);
-		final.Mult(0.2);
+		if ( getKeyState(K_n) ) // without noise reduction
+			final.add(noise, -1);
+		final.mult(0.2);
 
-		if ( GetKeyState(K_a) ) // accum image
-			DisplayTexture(final);
+		if ( getKeyState(K_a) ) // accum image
+			displayTexture(final);
 		else
-			DisplayTexture(texture);
+			displayTexture(texture);
 	}
 continue;
 
@@ -138,10 +138,10 @@ continue;
 		tmp1.Set(texture);
 	} else {
 		
-		tmp1.Add(texture, -1);
+		tmp1.add(texture, -1);
 		
-		if ( tmp1.GetGlobalLevel() > 0.001 )
-			DisplayTexture(texture);
+		if ( tmp1.getGlobalLevel() > 0.001 )
+			displayTexture(texture);
 		
 	}
 continue;

@@ -5,73 +5,73 @@ loadModule('jsdebug');
 
 /// Socket shutdown(true) behavior [trm]
 
-	var rdv = new Socket(); rdv.Bind(9999, '127.0.0.1'); rdv.Listen(); rdv.readable = true;
-	var cl = new Socket(); cl.Connect('127.0.0.1', 9999);
-	ProcessEvents( Descriptor.Events([rdv]), TimeoutEvents(2000) );
-	var sv = rdv.Accept(); rdv.Close();
+	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+	processEvents( Descriptor.events([rdv]), timeoutEvents(2000) );
+	var sv = rdv.accept(); rdv.close();
 
 
-	var data = StringRepeat('x', 100);
-	sv.Write(data);
-	sv.Shutdown(true);
+	var data = stringRepeat('x', 100);
+	sv.write(data);
+	sv.shutdown(true);
 
-	QA.ASSERT_STR( cl.Read(), data, 'data' );
-	QA.ASSERT( cl.Read(), undefined, 'No more data' );
+	QA.ASSERT_STR( cl.read(), data, 'data' );
+	QA.ASSERT( cl.read(), undefined, 'No more data' );
 
 
 
 /// Socket shutdown(false) behavior [trm]
 
-	var rdv = new Socket(); rdv.Bind(9999, '127.0.0.1'); rdv.Listen(); rdv.readable = true;
+	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
 	var cl = new Socket();
 	cl.nonblocking = true;
-	cl.Connect('127.0.0.1', 9999);
-	ProcessEvents( Descriptor.Events([rdv]), TimeoutEvents(2000) );
-	var sv = rdv.Accept(); rdv.Close();
+	cl.connect('127.0.0.1', 9999);
+	processEvents( Descriptor.events([rdv]), timeoutEvents(2000) );
+	var sv = rdv.accept(); rdv.close();
 
 
-	var data = StringRepeat('x', 100);
-	sv.Write(data);
-	sv.Shutdown(false);
+	var data = stringRepeat('x', 100);
+	sv.write(data);
+	sv.shutdown(false);
 
-	QA.ASSERT_STR( cl.Read(), data, 'data' );
-	QA.ASSERT( cl.Read(), '', 'no data' );
+	QA.ASSERT_STR( cl.read(), data, 'data' );
+	QA.ASSERT( cl.read(), '', 'no data' );
 
 
 
 /// basic Socket client/server [trm]
 
-	var rdv = new Socket(); rdv.Bind(9999, '127.0.0.1'); rdv.Listen(); rdv.readable = true;
-	var cl = new Socket(); cl.Connect('127.0.0.1', 9999);
-	ProcessEvents( Descriptor.Events([rdv]), TimeoutEvents(2000) );
-	var sv = rdv.Accept(); rdv.Close();
+	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+	processEvents( Descriptor.events([rdv]), timeoutEvents(2000) );
+	var sv = rdv.accept(); rdv.close();
 
 
-	sv.Write(StringRepeat('x', 10000));
-	sv.Close();
+	sv.write(stringRepeat('x', 10000));
+	sv.close();
 
 	var data = '';
 	var tmp;
-	while ( (tmp = cl.Read()) != undefined ) {
+	while ( (tmp = cl.read()) != undefined ) {
 		
 		data += tmp;
 	}
 
 	QA.ASSERT( data.length, 10000, 'read amount' );
-	QA.ASSERT( cl.Read(), undefined, 'read done' );
+	QA.ASSERT( cl.read(), undefined, 'read done' );
 
 
 
 /// Descriptor inheritance
 
-	QA.ASSERT( new Socket().Import, undefined, 'new Socket .Import unavailable' );
-	QA.ASSERT( Socket.Import, undefined, 'Socket.Import unavailable' );
-	QA.ASSERT( Descriptor.Import != undefined, true, 'Descriptor.Import available' );
+	QA.ASSERT( new Socket().import, undefined, 'new Socket .import unavailable' );
+	QA.ASSERT( Socket.import, undefined, 'Socket.import unavailable' );
+	QA.ASSERT( Descriptor.import != undefined, true, 'Descriptor.import available' );
 
 
 /// Binary data test
 
-	var filename = QA.RandomString(10);
+	var filename = QA.randomString(10);
 	var file = new File(filename);
 	file.content = "\xBC\x00\x30\x01"
 	var data = file.content;
@@ -85,59 +85,59 @@ loadModule('jsdebug');
 
 /// Basic File Read/Write [tr]
 
-	var filename = QA.RandomString(10);
+	var filename = QA.randomString(10);
 
-	var f1 = new File(filename).Open('w');
-	f1.Write('1234');
-	f1.Close();
+	var f1 = new File(filename).open('w');
+	f1.write('1234');
+	f1.close();
 
-	var f2 = new File(filename).Open('r');
-	f2.Read(4);
-	f2.Close();
+	var f2 = new File(filename).open('r');
+	f2.read(4);
+	f2.close();
 
-	f1.Delete();
+	f1.delete();
 
 
 
 /// File Read [tr]
 
-		var filename = QA.RandomString(10);
+		var filename = QA.randomString(10);
 
-		var f1 = new File(filename).Open('w');
-		var f2 = new File(filename).Open('r');
+		var f1 = new File(filename).open('w');
+		var f2 = new File(filename).open('r');
 		
-		f1.Write('1234');
-		QA.ASSERT_STR( f2.Read(5), '1234' );
-		f1.Write('56');
-		QA.ASSERT_STR( f2.Read(1), '5' );
-		QA.ASSERT_STR( f2.Read(1), '6' );
-		QA.ASSERT( f2.Read(1), undefined );
-		QA.ASSERT( f2.Read(), undefined );
-		f1.Write('78');
-		QA.ASSERT_STR( f2.Read(), '78' );
-		QA.ASSERT( f2.Read(), undefined );
-		f1.Write('9');
-		QA.ASSERT_STR( f2.Read(), '9' );
-		QA.ASSERT( f2.Read(), undefined );
-		f1.Write('');
-		QA.ASSERT( f2.Read(), undefined );
-		var str = StringRepeat('x', 1023);
-		f1.Write(str);
-		QA.ASSERT_STR( f2.Read(), str );
-		var str = StringRepeat('x', 1024);
-		f1.Write(str);
-		QA.ASSERT_STR( f2.Read(), str );
-		var str = StringRepeat('x', 1025);
-		f1.Write(str);
-		QA.ASSERT_STR( f2.Read(), str );
-		QA.ASSERT( f2.Read(), undefined );
-		var str = StringRepeat('x', 1000000);
-		f1.Write(str);
-		QA.ASSERT_STR( f2.Read(), str );
-		QA.ASSERT( f2.Read(), undefined );
+		f1.write('1234');
+		QA.ASSERT_STR( f2.read(5), '1234' );
+		f1.write('56');
+		QA.ASSERT_STR( f2.read(1), '5' );
+		QA.ASSERT_STR( f2.read(1), '6' );
+		QA.ASSERT( f2.read(1), undefined );
+		QA.ASSERT( f2.read(), undefined );
+		f1.write('78');
+		QA.ASSERT_STR( f2.read(), '78' );
+		QA.ASSERT( f2.read(), undefined );
+		f1.write('9');
+		QA.ASSERT_STR( f2.read(), '9' );
+		QA.ASSERT( f2.read(), undefined );
+		f1.write('');
+		QA.ASSERT( f2.read(), undefined );
+		var str = stringRepeat('x', 1023);
+		f1.write(str);
+		QA.ASSERT_STR( f2.read(), str );
+		var str = stringRepeat('x', 1024);
+		f1.write(str);
+		QA.ASSERT_STR( f2.read(), str );
+		var str = stringRepeat('x', 1025);
+		f1.write(str);
+		QA.ASSERT_STR( f2.read(), str );
+		QA.ASSERT( f2.read(), undefined );
+		var str = stringRepeat('x', 1000000);
+		f1.write(str);
+		QA.ASSERT_STR( f2.read(), str );
+		QA.ASSERT( f2.read(), undefined );
 		
-		f1.Close();
-		f2.Close();
+		f1.close();
+		f2.close();
 		
 		new File(filename).content = undefined;
 
@@ -145,45 +145,45 @@ loadModule('jsdebug');
 
 /// File busy [trfm]	
 
-		var filename = QA.RandomString(10);
+		var filename = QA.randomString(10);
 
-		var f2 = new File(filename).Open('w');
+		var f2 = new File(filename).open('w');
 		QA.ASSERT_EXCEPTION(function() { new File(filename).content = undefined }, IoError, 'Checking busy file error' );
-		f2.Close();
+		f2.close();
 		new File(filename).content = undefined;
 
 
 
 /// File copy [tr]
 
-		var filename = QA.RandomString(10);
+		var filename = QA.randomString(10);
 
-		function Copy(fromFilename, toFilename) {
+		function copy(fromFilename, toFilename) {
 
-		 var fromFile = new File(fromFilename).Open(File.RDONLY);
-		 var toFile = new File(toFilename).Open(File.WRONLY | File.CREATE_FILE | File.TRUNCATE);
-		 for ( var buf; buf = fromFile.Read(65536); )
-		 toFile.Write(buf);
-		 toFile.Close();
-		 fromFile.Close();
+		 var fromFile = new File(fromFilename).open(File.RDONLY);
+		 var toFile = new File(toFilename).open(File.WRONLY | File.CREATE_FILE | File.TRUNCATE);
+		 for ( var buf; buf = fromFile.read(65536); )
+		 toFile.write(buf);
+		 toFile.close();
+		 fromFile.close();
 		}
 		
-		var file = new File(filename).Open('w');
+		var file = new File(filename).open('w');
 		for ( var i = 0; i < 1000; i++ )
-			file.Write( StringRepeat('z', 1024) );
-		file.Close();
+			file.write( stringRepeat('z', 1024) );
+		file.close();
 
-		Copy( filename, 'copy_'+filename );
+		copy( filename, 'copy_'+filename );
 		
 		var cf = new File( 'copy_'+filename );
 		QA.ASSERT( cf.info.size, 1000*1024, 'copied file size');
 
-		cf.Open('r');
-		QA.ASSERT_STR( cf.Read(), StringRepeat('z', 1000*1024), 'copied data');
-		cf.Close();		
+		cf.open('r');
+		QA.ASSERT_STR( cf.read(), stringRepeat('z', 1000*1024), 'copied data');
+		cf.close();		
 
-		cf.Delete();
-		file.Delete();
+		cf.delete();
+		file.delete();
 
 
 
@@ -209,19 +209,19 @@ loadModule('jsdebug');
 
 /// physical memory [ftrm]
 
-		QA.ASSERT( physicalMemorySize == physicalMemorySize && physicalMemorySize > 1000000, true, 'physical Memory Size' );
+		QA.ASSERT( physicalMemorySize == physicalMemorySize && physicalMemorySize > 1000000, true, 'physical Memory size' );
 
 
 /// Noise generation [m]
 		
-		QA.ASSERT( GetRandomNoise(1).length, 1, 'random noise 1 byte' );
-		QA.ASSERT( GetRandomNoise(3).length, 3, 'random noise 3 bytes' );
+		QA.ASSERT( getRandomNoise(1).length, 1, 'random noise 1 byte' );
+		QA.ASSERT( getRandomNoise(3).length, 3, 'random noise 3 bytes' );
 
 
 /// environment variables [ftm]
 		
-		QA.ASSERT( GetEnv('PATH').length > 1, true, 'get an environment' );
-		QA.ASSERT( GetEnv('sdfrwetwergfqwuyoruiqwye'), undefined, 'undefined environment variable' );
+		QA.ASSERT( getEnv('PATH').length > 1, true, 'get an environment' );
+		QA.ASSERT( getEnv('sdfrwetwergfqwuyoruiqwye'), undefined, 'undefined environment variable' );
 
 
 /// process priority [ftrm]
@@ -242,7 +242,7 @@ loadModule('jsdebug');
 
 /// Process pipes type [ftrm]
 
-	var cmdPath = GetEnv('ComSpec');
+	var cmdPath = getEnv('ComSpec');
 	var process = new Process(cmdPath, ['/c', 'cd']);
 	QA.ASSERT( process.stdout instanceof Descriptor, true, 'stdout instanceof Descriptor' );
 
@@ -252,7 +252,7 @@ loadModule('jsdebug');
 		switch (systemInfo.name) {
 			case 'Windows_NT':
 				
-				QA.ASSERT( GetEnv('COMPUTERNAME').toLowerCase(), hostName.toLowerCase(), 'COMPUTERNAME and hostName' );
+				QA.ASSERT( getEnv('COMPUTERNAME').toLowerCase(), hostName.toLowerCase(), 'COMPUTERNAME and hostName' );
 				break;
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
@@ -261,25 +261,25 @@ loadModule('jsdebug');
 
 /// GetHostByName function [rm]
 
-		var res = Socket.GetHostsByName('localhost');
+		var res = Socket.getHostsByName('localhost');
 		QA.ASSERT( res.indexOf('127.0.0.1') != -1, true, 'localhost is 127.0.0.1' );
 
-		var res = Socket.GetHostsByName(QA.RandomString(25));
+		var res = Socket.getHostsByName(QA.randomString(25));
 		QA.ASSERT_TYPE( res, Array );
 		QA.ASSERT( res.length, 0, 'find nonexistent hostName' );
 
 
 /// GetHostByName function with hostName argument [m]
 
-		var res = Socket.GetHostsByName(hostName);
+		var res = Socket.getHostsByName(hostName);
 		QA.ASSERT( res.length >= 1, true, 'find hostName (may fail)' );
 
 
 /// empty poll [trm]
 
-		var t0 = IntervalNow();
-		var count = Poll([], 100);
-		var t = IntervalNow() - t0;
+		var t0 = intervalNow();
+		var count = poll([], 100);
+		var t = intervalNow() - t0;
 		QA.ASSERT( count, 0, 'descriptor event count' );
 		QA.ASSERT( t >= 99 && t < 150, true, 'poll timeout (may fail if high CPU load) t='+t );
 
@@ -296,22 +296,22 @@ loadModule('jsdebug');
 		serverSocket.exception = function(s) { QA.ASSERT( true, false, 'serverSocket.exception') }
 		serverSocket.readable = function(s) {
 
-			var incomingClient = s.Accept(); 
+			var incomingClient = s.accept(); 
 			dlist.push(incomingClient);
 			incomingClient.readable = function(s) {
 
-				QA.ASSERT( s.IsReadable(), true, 'socket is readable' );
-				QA.ASSERT( s.IsWritable(), true, 'socket is writable' );
-				QA.ASSERT_STR( s.Read(), '1234', 'read data match' );
+				QA.ASSERT( s.isReadable(), true, 'socket is readable' );
+				QA.ASSERT( s.isWritable(), true, 'socket is writable' );
+				QA.ASSERT_STR( s.read(), '1234', 'read data match' );
 				count++;
 			}
 		}
 
-		serverSocket.Bind( 9998, '127.0.0.1' );
+		serverSocket.bind( 9998, '127.0.0.1' );
 		
-		QA.ASSERT( GetObjectPrivate(serverSocket) != 0, true, 'descriptor' );
+		QA.ASSERT( getObjectPrivate(serverSocket) != 0, true, 'descriptor' );
 		
-		serverSocket.Listen();
+		serverSocket.listen();
 		dlist.push(serverSocket);
 		var clientSocket = new Socket();
 		clientSocket.nonblocking = true;
@@ -319,26 +319,26 @@ loadModule('jsdebug');
 		QA.ASSERT( clientSocket.nonblocking, true, 'non blocking state' );
 		clientSocket.exception = function(s) { QA.ASSERT( true, false, 'client.exception') }
 
-		clientSocket.Connect( 'localhost', 9998 );
+		clientSocket.connect( 'localhost', 9998 );
 
-		Sleep(50);
+		sleep(50);
 
-		QA.ASSERT( clientSocket.IsReadable(), false, 'socket is readable' );
-		QA.ASSERT( clientSocket.IsWritable(), true, 'socket is writable' );
+		QA.ASSERT( clientSocket.isReadable(), false, 'socket is readable' );
+		QA.ASSERT( clientSocket.isWritable(), true, 'socket is writable' );
 
 		dlist.push(clientSocket);
 
 		for ( var i = 0; i < 10; i++ ) {
 
-			Poll(dlist, 10);
+			poll(dlist, 10);
 			if ( !(++step % 4) ) {
 
-				clientSocket.Write('1234');
+				clientSocket.write('1234');
 			}
 		}
 		
 		while (dlist.length)
-		dlist.pop().Close();
+		dlist.pop().close();
 
 
 /// Creating a lot of sockets + GC [r]
@@ -358,24 +358,24 @@ loadModule('jsdebug');
 	for ( var i=0 ; i < 1000 ; i++ )
 		s.push(new Socket( Socket.TCP ));
 	while (s.length)
-		s.pop().Close();
+		s.pop().close();
 
 
 /// Non-blocking UDP Socket [trm]
 	
 		var s2 = new Socket( Socket.UDP );
 		s2.nonblocking = true;
-		s2.Bind(9999);
+		s2.bind(9999);
 		s2.readable = function(s) {
 
-			var [data, ip, port] = s.RecvFrom();
+			var [data, ip, port] = s.recvFrom();
 			QA.ASSERT_STR( data, '1234', 'received data' );
 		}
 
 		var s1 = new Socket( Socket.UDP );
 		s1.reuseAddr = true;
 		s1.nonblocking = true;
-		s1.Connect('127.0.0.1', 9999);
+		s1.connect('127.0.0.1', 9999);
 
 		var dlist = [s1,s2]; //descriptor list
 
@@ -383,10 +383,10 @@ loadModule('jsdebug');
 		var i = 0;
 		while(++i < 50) {
 
-			Poll(dlist, 5);
+			poll(dlist, 5);
 			if ( !(++step % 4) ) {
 
-				s1.Write('1234');
+				s1.write('1234');
 			}
 		}
 
@@ -398,7 +398,7 @@ loadModule('jsdebug');
 		do {
 
 			host = hostList.shift();
-			res = Socket.GetHostsByName(host);
+			res = Socket.getHostsByName(host);
 		} while ( !res || res.length == 0 );
 		
 		QA.ASSERT( res && res.length > 0, true, 'unable to find a host' );
@@ -409,7 +409,7 @@ loadModule('jsdebug');
 		
 			var soc = new Socket();
 			soc.nonblocking = true;
-			soc.Connect( host, 80 );
+			soc.connect( host, 80 );
 			soc.writable = function(s) {
 			
 				QA.ASSERT_TYPE( s, Socket,  'object is a Socket' );
@@ -417,18 +417,18 @@ loadModule('jsdebug');
 
 				delete soc.writable;
 				QA.ASSERT_HAS_PROPERTIES( s, 'Write' );
-				s.Write('GET\r\n\r\n');
+				s.write('GET\r\n\r\n');
 			}
 			soc.readable = function(s) {
 				
-				var res = s.Read();
+				var res = s.read();
 				if ( res )
 					response += res;
 			}
 			
 			var i = 0;
 			while( ++i < 400 )
-				Poll([soc], 5);
+				poll([soc], 5);
 				
 		} catch( ex if ex instanceof IoError ) {
 			
@@ -449,60 +449,60 @@ loadModule('jsdebug');
 		var soc = new Socket();
 		QA.ASSERT( soc.type, Descriptor.DESC_SOCKET_TCP, 'descriptor type' );
 		QA.ASSERT( soc.closed, false, 'socket is not closed' );
-		soc.Close();		
+		soc.close();		
 		QA.ASSERT( soc.closed, true, 'socket is closed' );
 
 
 /// time interval [trm]
 
-		var t0 = IntervalNow();
-		Sleep(250);
-		var t = IntervalNow() - t0;
+		var t0 = intervalNow();
+		sleep(250);
+		var t = intervalNow() - t0;
 		QA.ASSERT( t >= 249 && t < 275, true, 'time accuracy' );
 
 
 /// shared memory simple test 1 [ftrm]
 
-		var fileName = 'qa'+QA.RandomString(10);
+		var fileName = 'qa'+QA.randomString(10);
 		var mem = new SharedMemory( fileName, 100 );
 		mem.content = ' abcdef ';
 		QA.ASSERT_STR( mem.content, ' abcdef ', 'content' );
-		mem.Close();
+		mem.close();
 		QA.ASSERT( new File(fileName).exist, false, 'SharedMemory file has been removed (linux only ?)' );
 		
 
 /// shared memory simple test 2 [ftrm]
 
-		var fileName = 'qa'+QA.RandomString(10);
+		var fileName = 'qa'+QA.randomString(10);
 		
 		var mem = new SharedMemory( fileName, 100 );
 		mem.content = 'xxxxxx789';
-		mem.Write('xxx456');
-		mem.Write('123', 0);
-		mem.Write('ABC', 9);
-		QA.ASSERT_STR( mem.Read(), '123456789ABC', 'content' );
+		mem.write('xxx456');
+		mem.write('123', 0);
+		mem.write('ABC', 9);
+		QA.ASSERT_STR( mem.read(), '123456789ABC', 'content' );
 		QA.ASSERT_STR( mem.content, '123456789ABC', 'content' );
-		mem.Close();
+		mem.close();
 		QA.ASSERT( new File(fileName).exist, false, 'SharedMemory file has been removed (linux only ?)' );
 
 
 /// shared memory [ftrm]
 
-		var fileName = 'qa'+QA.RandomString(10);
+		var fileName = 'qa'+QA.randomString(10);
 		
 		var mem = new SharedMemory( fileName, 100 );
 		mem.content = 'xxxxxx789';
-		mem.Write('xxx456');
-		mem.Write('123', 0);
-		mem.Write('ABC', 9);
+		mem.write('xxx456');
+		mem.write('123', 0);
+		mem.write('ABC', 9);
 		var mem2 = new SharedMemory( fileName, 100 );
-		QA.ASSERT_STR( mem2.Read(), '123456789ABC', 'content' );
+		QA.ASSERT_STR( mem2.read(), '123456789ABC', 'content' );
 		QA.ASSERT( mem2.content.length, 12, 'used memory length' );
 		QA.ASSERT_STR( mem2.content, '123456789ABC', 'content' );
-		mem2.Write('Z',99);
-		QA.ASSERT_STR( mem.Read(1, 99), 'Z', 'writing at the end' );
-		mem.Close();
-		mem2.Close();
+		mem2.write('Z',99);
+		QA.ASSERT_STR( mem.read(1, 99), 'Z', 'writing at the end' );
+		mem.close();
+		mem2.close();
 		QA.ASSERT( new File(fileName).exist, false, 'SharedMemory file has been removed (linux only ?)' );
 
 
@@ -517,15 +517,15 @@ loadModule('jsdebug');
 /// File I/O [ftrm]
 
 		var f = new File('qa_tmp_file.txt')
-		f.Open(File.CREATE_FILE | File.RDWR);
-		f.Write('abcd');
+		f.open(File.CREATE_FILE | File.RDWR);
+		f.write('abcd');
 		QA.ASSERT( f.exist, true, 'file exist' );
-		f.Close();
-		f.Open(File.CREATE_FILE | File.RDWR);
-		f.Seek(1);
-		QA.ASSERT_STR( f.Read(), 'bcd', 'read file' );
-		f.Close();
-		f.Delete();	
+		f.close();
+		f.open(File.CREATE_FILE | File.RDWR);
+		f.seek(1);
+		QA.ASSERT_STR( f.read(), 'bcd', 'read file' );
+		f.close();
+		f.delete();	
 		QA.ASSERT( f.exist, false, 'file delete' );
 
 
@@ -545,12 +545,12 @@ loadModule('jsdebug');
 
 		QA.ASSERT( f.info.type, File.FILE_FILE, 'file type' );
 
-		f.Delete();
+		f.delete();
 
 
 /// File content [ftrm]
 
-		var f = new File(QA.RandomString(10));
+		var f = new File(QA.randomString(10));
 		var data = String(new Date());
 		QA.ASSERT( f.exist, false, 'file exist' );
 		f.content = data;
@@ -559,7 +559,7 @@ loadModule('jsdebug');
 		f.content = undefined;
 		QA.ASSERT( f.exist, false, 'file exist' );
 
-		var f = new File(QA.RandomString(10));
+		var f = new File(QA.randomString(10));
 		QA.ASSERT( f.content, undefined, 'file2 does not exist' );
 
 
@@ -567,7 +567,7 @@ loadModule('jsdebug');
 
 		var f = new File('qa_tmp_notfound.txt')
 		try {
-			f.Open(File.RDONLY);
+			f.open(File.RDONLY);
 		} catch( ex if ex instanceof IoError ) {
 
 			QA.ASSERT( ex.code, -5950, 'IoError code' );
@@ -596,7 +596,7 @@ loadModule('jsdebug');
 		
 		var f = new File('qa_tmp_dir.txt');
 		f.content = 'test';
-		var dir = Directory.List('./.', Directory.SKIP_BOTH | Directory.SKIP_DIRECTORY | Directory.SKIP_OTHER );
+		var dir = Directory.list('./.', Directory.SKIP_BOTH | Directory.SKIP_DIRECTORY | Directory.SKIP_OTHER );
 		QA.ASSERT( dir.indexOf('qa_tmp_dir.txt') != -1, true, 'directory listing' );
 		f.content = undefined;
 
@@ -615,13 +615,13 @@ loadModule('jsdebug');
 	
 		switch (systemInfo.name) {
 			case 'Windows_NT':
-				var cmdPath = GetEnv('ComSpec');
+				var cmdPath = getEnv('ComSpec');
 				QA.ASSERT( cmdPath.indexOf('cmd') != -1, true, 'cmd.exe path' );
 				var process = new Process(cmdPath, ['/c', 'date', '/T']);
 				QA.ASSERT_TYPE( process.stdin, Descriptor, 'process stdin type' );
 				QA.ASSERT_TYPE( process.stdout, Descriptor, 'process stdout type' );
 				QA.ASSERT_TYPE( process.stderr, Descriptor, 'process stderr type' );
-				var data = process.stdout.Read(10);
+				var data = process.stdout.read(10);
 				QA.ASSERT( data.length, 10, 'reading Process stdout' );
 				break;
 			default:
@@ -634,12 +634,12 @@ loadModule('jsdebug');
 	do {
 		switch ( systemInfo.name ) {
 			case 'Windows_NT':
-				var cmd = GetEnv('ComSpec');
+				var cmd = getEnv('ComSpec');
 				var args1 = ['/c', 'cd fvasdfvasdfvasdfv'];
 				var args2 = ['/c', 'cd']; // if 'dir' is used instead of 'cd', one should empty the stdout pipe or process.Wait() will block.
 				break;
 			case 'Linux':
-				var cmd = GetEnv('SHELL');
+				var cmd = getEnv('SHELL');
 				var args1 = ['-c', 'cd fvasdfvasdfvasdfv'];
 				var args2 = ['-c', 'ls'];
 				break;
@@ -649,11 +649,11 @@ loadModule('jsdebug');
 		}
 				
 		var process = new Process(cmd, args1);
-		var exitCode = process.Wait();
+		var exitCode = process.wait();
 		QA.ASSERT( exitCode, 1, 'process exit code 1' );
 
 		var process = new Process(cmd, args2);
-		var exitCode = process.Wait();
+		var exitCode = process.wait();
 		QA.ASSERT( exitCode, 0, 'process exit code 0' );
 	
 	} while (0);
@@ -680,11 +680,11 @@ loadModule('jsdebug');
 	do {
 		switch ( systemInfo.name ) {
 			case 'Windows_NT':
-				var cmd = GetEnv('ComSpec');
+				var cmd = getEnv('ComSpec');
 				var args = ['/c', 'cd'];
 				break;
 			case 'Linux':
-				var cmd = GetEnv('SHELL');
+				var cmd = getEnv('SHELL');
 				var args = ['-c', 'ls'];
 				break;
 			default:
@@ -693,7 +693,7 @@ loadModule('jsdebug');
 		}
 		
 		var process = new Process(cmd, args);
-		process.Detach();
+		process.detach();
 	} while (0);
 
 /// current working directory [ftrm]
@@ -706,21 +706,21 @@ loadModule('jsdebug');
 /// MemoryMapped class [ftrm]
 
 		var thisFilename = QA.cx.item.file;
-		var m = new MemoryMapped(new File(thisFilename).Open('r'));
+		var m = new MemoryMapped(new File(thisFilename).open('r'));
 		QA.ASSERT( m.file instanceof File, true, 'instanceof .file memeber' );
-		QA.ASSERT_STR( new Stream(m).Read(15), '// don\'t remove', 'convert to a Stream (1)' );
-		QA.ASSERT_STR( new Stream(m).Read(15), '// don\'t remove', 'convert to a Stream (2)' );
-		QA.ASSERT_STR( Stringify(m).substr(0,15), '// don\'t remove', 'stringify it' );
+		QA.ASSERT_STR( new Stream(m).read(15), '// don\'t remove', 'convert to a Stream (1)' );
+		QA.ASSERT_STR( new Stream(m).read(15), '// don\'t remove', 'convert to a Stream (2)' );
+		QA.ASSERT_STR( stringify(m).substr(0,15), '// don\'t remove', 'stringify it' );
 
 
 /// MemoryMapped with offset [ftrm]
 
 		var thisFilename = QA.cx.item.file;
-		var m = new MemoryMapped(new File(thisFilename).Open('r'));
+		var m = new MemoryMapped(new File(thisFilename).open('r'));
 		QA.ASSERT( m.file instanceof File, true, 'instanceof .file memeber' );
 		
 		m.offset = 3;
 		QA.ASSERT( m.offset, 3, 'get offset value' );
-		QA.ASSERT_STR( new Stream(m).Read(5), 'don\'t', 'convert to a Stream (1)' );
+		QA.ASSERT_STR( new Stream(m).read(5), 'don\'t', 'convert to a Stream (1)' );
 		m.offset = 0;
-		QA.ASSERT_STR( new Stream(m).Read(15), '// don\'t remove', 'convert to a Stream (2)' );
+		QA.ASSERT_STR( new Stream(m).read(15), '// don\'t remove', 'convert to a Stream (2)' );

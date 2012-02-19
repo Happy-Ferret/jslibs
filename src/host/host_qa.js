@@ -5,7 +5,7 @@ loadModule('jsio');
 
 	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', '_host.stdin' ];
 
-	loadModule('jswinshell'); excludeList.push('FileOpenDialog', 'Console.Close');
+	loadModule('jswinshell'); excludeList.push('FileOpenDialog', 'Console.close');
 	loadModule('jssdl'); excludeList.push('SetVideoMode', 'Iconify');
 	loadModule('jsstd'); excludeList.push('Halt');
 	loadModule('jsdebug'); excludeList.push('DebugBreak', 'DumpHeap');
@@ -37,16 +37,16 @@ loadModule('jsio');
 	var count = 0;
 	var done = {__proto__:null};
 	for each ( var item in excludeList )
-		done[ObjectGCId(eval(item))] = true;
+		done[objectGCId(eval(item))] = true;
 	
 	function fct(obj, left) {
 
 		if ( endSignal )
-			Halt();
-		if ( IsPrimitive(obj) )
+			halt();
+		if ( isPrimitive(obj) )
 			return;
 
-		done[ObjectGCId(obj)] = true;
+		done[objectGCId(obj)] = true;
 		var list = Object.getOwnPropertyNames(obj);
 		for each ( var name in list ) {
 
@@ -62,7 +62,7 @@ loadModule('jsio');
 				continue;
 			}
 			
-			if ( done[ObjectGCId(nextObj)] )
+			if ( done[objectGCId(nextObj)] )
 				continue;
 
 			try {
@@ -98,21 +98,21 @@ loadModule('jsio');
 /// bug bz#522024 [rmtf]
 
 		var list = [];
-		function Add() {
+		function add() {
 
 			 list.push(arguments);
 		}
 
-		function Run() {
+		function run() {
 
 			 for each ( var item in list )
 				  item[0]();
 		}
 
 		for ( var i = 0; i < 10; i++ )
-			 Add(function(s) { });
+			 add(function(s) { });
 
-		Run();
+		run();
 
 
 
@@ -125,7 +125,7 @@ loadModule('jsio');
 /// GC test [r]
 		
 		QA.GC();
-		var s = StringRepeat('x', 100000);
+		var s = stringRepeat('x', 100000);
 		//		QA.ASSERT( gcMallocBytes > 100000 && gcMallocBytes < 301000, true, 'Before GC' ); // GC stat not available any more
 
 		s = undefined;
@@ -186,7 +186,7 @@ loadModule('jsio');
 		
 		for ( var i = 0; i < times; ++i ) {
 		
-			data.push( StringRepeat('a', length) ); // disableGarbageCollection should be enough
+			data.push( stringRepeat('a', length) ); // disableGarbageCollection should be enough
 		}
 		var mem = (privateMemoryUsage - mem0) / length / times;
 		
@@ -214,7 +214,7 @@ loadModule('jsio');
 	QA.ASSERT( typeof global, 'object', 'global type' );
 	delete global;
 	QA.ASSERT( typeof global, 'object', 'global type after delete' );
-	QA.ASSERT_STR( global.valueOf(), '[object Global]', 'global class' );
+	QA.ASSERT_STR( global.valueOf(), '[object global]', 'global class' );
 	QA.ASSERT( uneval( global ).length > 0, true, 'uneval global' );
 	QA.ASSERT( global.Math, Math, 'global std objects' );
 	QA.ASSERT_HAS_PROPERTIES( global, '_host,arguments' );
@@ -301,13 +301,13 @@ loadModule('jsio');
 
 	var b = new Blob('abc');
 
-	QA.NO_CRASH( Stringify(b), 'abc' );
+	QA.NO_CRASH( stringify(b), 'abc' );
 
 	var c = {};
 	c._NI_BufferGet = b._NI_BufferGet;
-	QA.NO_CRASH( Stringify(c) );
+	QA.NO_CRASH( stringify(c) );
 
-	QA.NO_CRASH( Stringify({ _NI_BufferGet:function() {} }) );
+	QA.NO_CRASH( stringify({ _NI_BufferGet:function() {} }) );
 
 	try {
 //	QA.NO_CRASH( Stringify({ __proto__:b}) );

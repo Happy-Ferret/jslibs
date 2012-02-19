@@ -21,14 +21,14 @@ if ( 0 ) {
 	loadModule('jsstd');
 	
 		
-	print( PropertiesList([]) );
+	print( propertiesList([]) );
 	
-	Halt();
+	halt();
 
 	var m = privateMemoryUsage;
 
 	!function() {
-		StringRepeat('a', 0);
+		stringRepeat('a', 0);
 	}();
 
 	var err = privateMemoryUsage - m
@@ -36,7 +36,7 @@ if ( 0 ) {
 	m = privateMemoryUsage;
 
 	!function() {
-		StringRepeat('a', 3000000);
+		stringRepeat('a', 3000000);
 	}();
 	m = privateMemoryUsage - m;
 	
@@ -47,23 +47,23 @@ if ( 0 ) {
 		var length = 1024*1024;
 		var times = 3;
 
-		function GenMem() {
+		function genMem() {
 
-			CollectGarbage();
+			collectGarbage();
 			var data = [];
 		
 			for ( var i = 0; i < times; ++i ) {
 			
-				data.push( Blob(StringRepeat('a', length)) );
-				CollectGarbage();
+				data.push( Blob(stringRepeat('a', length)) );
+				collectGarbage();
 			}
-			Blob(StringRepeat('a', length));
-			CollectGarbage();
+			Blob(stringRepeat('a', length));
+			collectGarbage();
 			return data;
 		}
 		
 		var mem = privateMemoryUsage;
-		GenMem();
+		genMem();
 		
 		mem = (privateMemoryUsage-mem) / (length*times);
 		
@@ -81,8 +81,8 @@ loadModule('jsdebug');
 //loadModule('jssqlite');
 
 
-print( uneval( PropertiesList({}) ));
-//TestDebug();
+print( uneval( propertiesList({}) ));
+//testDebug();
 
 
 throw 0;
@@ -97,21 +97,21 @@ Object.defineProperty(s, "b", {get : function(){ return bValue; },
                                enumerable : true,  
                                configurable : true});  
 
-print( uneval(PropertiesInfo(s)) );
+print( uneval(propertiesInfo(s)) );
 
 
 
-Halt();
+halt();
 
 
 function prop(obj, prev, lvl) {
 
 	if ( lvl > 6 )
 		return;
-	if ( IsPrimitive(obj) )
+	if ( isPrimitive(obj) )
 		return;
 
-	for each ( name in PropertiesList(obj) ) {
+	for each ( name in propertiesList(obj) ) {
 		
 		print( (prev+'.'+name).quote(), ':\n' );
 		var v;
@@ -128,7 +128,7 @@ function prop(obj, prev, lvl) {
 prop(global, 'global', 0);
 
 
-Halt();
+halt();
 
 loadModule('jsio');
 loadModule('jscrypt');
@@ -145,8 +145,8 @@ loadModule('jsfont');
 
 
 var myTask = new Task(function() { loadModule('jsdebug') } );
-myTask.Request();
-myTask.Response();
+myTask.request();
+myTask.response();
 
 onNewScript = function( filename, lineno, script, fct) {
 
@@ -156,26 +156,26 @@ onNewScript = function( filename, lineno, script, fct) {
 
 var list = [];
 
-eval('function Test() {	list[1]; } ');
+eval('function test() {	list[1]; } ');
 
-CollectGarbage();
-
-
-PropertiesInfo(list);
+collectGarbage();
 
 
-Halt();
+propertiesInfo(list);
 
-for each ( var item in PropertiesList(global) )
+
+halt();
+
+for each ( var item in propertiesList(global) )
 	String( item );
 
-for each ( var item in PropertiesInfo(global) )
-	String( PropertiesInfo(item.object) );
+for each ( var item in propertiesInfo(global) )
+	String( propertiesInfo(item.object) );
 
 
 
 
-Halt();
+halt();
 
 exec('debugger.js');
 
@@ -183,7 +183,7 @@ exec('debugger.js');
 exec('testForDebugger.js');
 }();
 
-CollectGarbage();
+collectGarbage();
 
 debugger;
 
@@ -199,10 +199,10 @@ var test = -1; \
 }');
 
 
-var MyTest;
+var myTest;
 !function() {
 var x = 2;
-MyTest = function (arg) {
+myTest = function (arg) {
 	
 	try {
 	throw 123;
@@ -213,6 +213,6 @@ MyTest = function (arg) {
 }()
 
 
-print( DisassembleScript('debug.js', 3) );
+print( disassembleScript('debug.js', 3) );
 
 */

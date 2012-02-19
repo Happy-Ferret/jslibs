@@ -23,29 +23,29 @@ loadModule('jsdebug');
 	if ( '__dbg' in global )
 		return;
 	global.__dbg = undefined;
-	SetPropertyEnumerate(global, '__dbg', false);
+	setPropertyEnumerate(global, '__dbg', false);
 	
-	function Try(fct) { try { return fct() } catch(ex) { return ex } }
-	function Match(v) Array.indexOf(arguments,v,1)-1;
-	function Switch(i) arguments[++i];
+	function try(fct) { try { return fct() } catch(ex) { return ex } }
+	function match(v) Array.indexOf(arguments,v,1)-1;
+	function switch(i) arguments[++i];
 	
-	var ValToString = function(val) {
+	var valToString = function(val) {
 		
-		function Crop(str, len) str.length > len ? str.substr(0, len)+'...' : str;
+		function crop(str, len) str.length > len ? str.substr(0, len)+'...' : str;
 		
 		try {
 			switch ( typeof(val) ) {
 				
 				case 'string':
-					return '"'+Crop(val,16)+'"';
+					return '"'+crop(val,16)+'"';
 				case 'number':
 					return val;
 				case 'object':
 					if ( val === null )
 						return 'null';
 					if ( val instanceof Array )
-						return '['+Crop(val.join(','),16)+'] (#'+val.length+')';
-					return val.constructor.name+'{'+Crop(val.toString(),16)+'}';
+						return '['+crop(val.join(','),16)+'] (#'+val.length+')';
+					return val.constructor.name+'{'+crop(val.toString(),16)+'}';
 			}
 			return String(val);
 		} catch (ex){}
@@ -56,17 +56,17 @@ loadModule('jsdebug');
 		
 		var pendingRequestList = [], serverSocket = new Socket(), socketList = [serverSocket], deflate = new Z(Z.DEFLATE, Z.BEST_SPEED);
 		
-		function CloseSocket(s) {
+		function closeSocket(s) {
 			
-			s.Close();
+			s.close();
 			socketList.splice(socketList.indexOf(s), 1);
 		}
 	
-		function ProcessRequest(s) {
+		function processRequest(s) {
 
-			var buf = s.Read();
+			var buf = s.read();
 			if ( buf == undefined )
-				return CloseSocket(s);
+				return closeSocket(s);
 			s.data += buf;
 			var eoh = s.data.indexOf('\r\n\r\n');
 			if ( eoh == -1 )
@@ -81,17 +81,17 @@ loadModule('jsdebug');
 				if ( s.data.length < contentLength ) {
 			
 					s.readable = arguments.callee;
-					var buf = s.Read();
+					var buf = s.read();
 					if ( buf == undefined )
-						return CloseSocket(s);						
+						return closeSocket(s);						
 					s.data += buf;
 					return undefined;
 				}
 				
-				if ( basicAuth && authorization != Base64Encode(basicAuth) ) {
+				if ( basicAuth && authorization != base64Encode(basicAuth) ) {
 					
-					Sleep(2000);
-					s.Write('HTTP/1.1 401 Authorization Required\r\nWWW-Authenticate: Basic realm="debugger"\r\nContent-Length: 0\r\n\r\n');
+					sleep(2000);
+					s.write('HTTP/1.1 401 Authorization Required\r\nWWW-Authenticate: Basic realm="debugger"\r\nContent-length: 0\r\n\r\n');
 					return undefined;
 				}
 			
@@ -99,19 +99,19 @@ loadModule('jsdebug');
 				pendingRequestList.push([s.data.substring(0, contentLength), function(response) {
 					
 					if ( s.connectionClosed )
-						return CloseSocket(s);
+						return closeSocket(s);
 					if ( response == undefined )
-						s.Write('HTTP/1.1 204 No Content\r\n\r\n');
+						s.write('HTTP/1.1 204 No Content\r\n\r\n');
 					else {
 						var head = 'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n';
 						if ( response.length >= 1460 ) {
 						
 							response = deflate(response, true);
-							head += 'Content-Encoding: deflate\r\n';
+							head += 'Content-encoding: deflate\r\n';
 						}
-						s.Write(head + 'Content-Length: '+response.length+'\r\n\r\n' + response);
+						s.write(head + 'Content-length: '+response.length+'\r\n\r\n' + response);
 					}
-					s.readable = ProcessRequest;
+					s.readable = processRequest;
 					return true;
 				}]);
 				s.data = s.data.substring(contentLength);
@@ -122,25 +122,25 @@ loadModule('jsdebug');
 			
 		serverSocket.readable = function() {
 
-			var clientSocket = serverSocket.Accept();
+			var clientSocket = serverSocket.accept();
 			socketList.push(clientSocket);
 			clientSocket.data = '';
-			clientSocket.readable = ProcessRequest;
+			clientSocket.readable = processRequest;
 		}
 
 		serverSocket.nonblocking = true;
-		serverSocket.Bind(port, bind);
-		serverSocket.Listen();
-		this.HasPendingRequest = function() {
+		serverSocket.bind(port, bind);
+		serverSocket.listen();
+		this.hasPendingRequest = function() {
 
-			Poll(socketList, 0);
+			poll(socketList, 0);
 			return pendingRequestList.length > 0;
 		}		
 
-		this.GetNextRequest = function() {
+		this.getNextRequest = function() {
 
 			while( !endSignal && pendingRequestList.length == 0 )
-				Poll(socketList, 100);
+				poll(socketList, 100);
 			return pendingRequestList.shift();
 		}	
 	}
@@ -159,7 +159,7 @@ loadModule('jsdebug');
 
 	var _breakpointList = {};
 	var _cookie = { __proto__:null };
-	var _time = TimeCounter();
+	var _time = timeCounter();
 	var _reset = [];
 	var _breakContext;
 	var _stdout = '';
@@ -169,46 +169,46 @@ loadModule('jsdebug');
 	_host.stdout = function() { _stdout += Array.slice(arguments).join(''); return _prevStdout.apply(this, arguments) }
 	_host.stderr = function() { _stderr += Array.slice(arguments).join(''); return _prevStderr.apply(this, arguments) }
 
-	function OriginToString( breakOrigin ) {
+	function originToString( breakOrigin ) {
 
 		with (Debugger)
-			var pos = Match(breakOrigin, FROM_INTERRUPT, FROM_BREAKPOINT, FROM_STEP, FROM_STEP_OVER, FROM_STEP_THROUGH, FROM_STEP_OUT, FROM_THROW, FROM_ERROR, FROM_DEBUGGER, FROM_EXECUTE, FROM_CALL);
-		return Switch(pos, 'interrupt', 'breakpoint', 'step', 'stepover', 'stepthrough', 'stepout', 'throw', 'error', 'debugger', 'execute', 'call');
+			var pos = match(breakOrigin, FROM_INTERRUPT, FROM_BREAKPOINT, FROM_STEP, FROM_STEP_OVER, FROM_STEP_THROUGH, FROM_STEP_OUT, FROM_THROW, FROM_ERROR, FROM_DEBUGGER, FROM_EXECUTE, FROM_CALL);
+		return switch(pos, 'interrupt', 'breakpoint', 'step', 'stepover', 'stepthrough', 'stepout', 'throw', 'error', 'debugger', 'execute', 'call');
 	}
 
 	function Action(id) { throw id }
-	function Asynchronus(fct) { throw fct }
+	function asynchronus(fct) { throw fct }
 
 	var debuggerApi = {
 
-		Ping: function() true,
+		ping: function() true,
 		
-		StdOut: function() {
+		stdOut: function() {
 			
 			var tmp = _stdout;
 			_stdout = '';
 			return tmp;
 		},
 
-		StdErr: function() {
+		stdErr: function() {
 			
 			var tmp = _stderr;
 			_stderr = '';
 			return tmp;
 		},
 
-		State: function() {
+		state: function() {
 		
 			with (_breakContext)
-				return { filename:filename, lineno:lineno, breakOrigin:OriginToString(breakOrigin), stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:ValToString(rval), enteringFunction:enteringFunction, time:time };
+				return { filename:filename, lineno:lineno, breakOrigin:originToString(breakOrigin), stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:valToString(rval), enteringFunction:enteringFunction, time:time };
 		},
 
-		GetConfiguration: function() {
+		getConfiguration: function() {
 		
 			return { breakOnError:dbg.breakOnError, breakOnException:dbg.breakOnException, breakOnDebuggerKeyword:dbg.breakOnDebuggerKeyword };
 		},
 
-		SetConfiguration: function( configuration ) {
+		setConfiguration: function( configuration ) {
 		
 			for ( var [item, value] in Iterator(configuration) )
 				switch ( item ) {
@@ -220,71 +220,71 @@ loadModule('jsdebug');
 			}
 		},
 		
-		SetValToStringFilter: function(functionSource) {
+		setValToStringFilter: function(functionSource) {
 			
-			ValToString = eval('('+functionSource+')');
+			valToString = eval('('+functionSource+')');
 		},
 		
-		SetCookie: function(name, data) {
+		setCookie: function(name, data) {
 			
 			_cookie[name] = data;
 		},
 		
-		GetCookie: function(name) {
+		getCookie: function(name) {
 			
 			return name in _cookie ? _cookie[name] : undefined;
 		},
 		
-		GetSource: function(filename) {
+		getSource: function(filename) {
 		
 			return new File(filename).content;
 		},
 		
-		GetScriptList: function() {
+		getScriptList: function() {
 		
 			return scriptFilenameList; // (TBD) remove excludedFileList from scriptFilenameList.
 		},
 		
-		GetActualLineno: function(filename, lineno) {
+		getActualLineno: function(filename, lineno) {
 		
-			return GetActualLineno(filename, lineno);
+			return getActualLineno(filename, lineno);
 		},
 		
-		AddBreakpoint: function(filename, lineno, condition) {
+		addBreakpoint: function(filename, lineno, condition) {
 			
-			if ( GetActualLineno(filename, lineno) != lineno )
+			if ( getActualLineno(filename, lineno) != lineno )
 				return false;
-			dbg.ToggleBreakpoint(true, filename, lineno);
+			dbg.toggleBreakpoint(true, filename, lineno);
 			var list = (filename in _breakpointList) ? _breakpointList[filename] : (_breakpointList[filename] = {});
 			list[lineno] = condition;
 			return true;
 		},
 
-		RemoveBreakpoint: function(filename, lineno) {
+		removeBreakpoint: function(filename, lineno) {
 
-			if ( GetActualLineno(filename, lineno) != lineno )
+			if ( getActualLineno(filename, lineno) != lineno )
 				return false;
-			dbg.ToggleBreakpoint(false, filename, lineno);
+			dbg.toggleBreakpoint(false, filename, lineno);
 			delete _breakpointList[filename][lineno];
 			return true;
 		},
 
-		BreakpointList: function(filename) {
+		breakpointList: function(filename) {
 			
 			return _breakpointList[filename] || {};
 		},
 		
-		GetStack: function() {
+		getStack: function() {
 			
 			var stack = [];
 			for ( var i = 0; i <= _breakContext.stackFrameIndex; i++ ) {
 			
-				var frameInfo = StackFrameInfo(i);
+				var frameInfo = stackFrameInfo(i);
 				var contextInfo;
 				if ( frameInfo.isEval )
 					contextInfo = '(eval)';
 				else if ( frameInfo.callee && frameInfo.callee.constructor == Function )
-					contextInfo = (frameInfo.callee.name || '?') + '('+[ ValToString(arg) for each ( arg in frameInfo.argv ) ].join(' , ')+')';
+					contextInfo = (frameInfo.callee.name || '?') + '('+[ valToString(arg) for each ( arg in frameInfo.argv ) ].join(' , ')+')';
 				else
 					contextInfo = '';
 
@@ -294,80 +294,80 @@ loadModule('jsdebug');
 			return stack;
 		},
 
-		Eval: function(code, stackFrameIndex) {
+		eval: function(code, stackFrameIndex) {
 
-			return EvalInStackFrame(code, stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex );
+			return evalInStackFrame(code, stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex );
 		},
 		
-		ExpressionInfo: function(path, stackFrameIndex, ChildListOnly) {
+		expressionInfo: function(path, stackFrameIndex, childListOnly) {
 			
 			stackFrameIndex = stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex;
 			var val, expression = path.shift();
 			try {
 				if ( expression[0] != '.' ) {
 
-					val = EvalInStackFrame('('+expression+')', stackFrameIndex );
+					val = evalInStackFrame('('+expression+')', stackFrameIndex );
 				} else {
 
-					val = { stack:StackFrameInfo(stackFrameIndex), rval:_breakContext.rval }[expression.substr(1)];
+					val = { stack:stackFrameInfo(stackFrameIndex), rval:_breakContext.rval }[expression.substr(1)];
 				}
 				val = path.reduce(function(prev, cur) prev[cur], val);
-				if ( ChildListOnly )
-					return IsPrimitive(val) ? undefined : [ { name:v.name, enumerate:v.enumerate, readonly:v.readonly, permanent:v.permanent } for each ( v in PropertiesInfo(val, true) ) ];
+				if ( childListOnly )
+					return isPrimitive(val) ? undefined : [ { name:v.name, enumerate:v.enumerate, readonly:v.readonly, permanent:v.permanent } for each ( v in propertiesInfo(val, true) ) ];
 				else
-					return { isObj:!IsPrimitive(val), string:Try(function() ValToString(val)), source:Try(function() uneval(val)) };
+					return { isObj:!isPrimitive(val), string:try(function() valToString(val)), source:try(function() uneval(val)) };
 
 			} catch(ex) {
 				return { isObj:false, string:String(ex), source:'' };
 			}
 		},
 		
-		DefinitionLocation: function(identifier, stackFrameIndex) {
+		definitionLocation: function(identifier, stackFrameIndex) {
 			
-			var value = EvalInStackFrame(identifier, stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex );
-			return DefinitionLocation(value);
+			var value = evalInStackFrame(identifier, stackFrameIndex == undefined ? _breakContext.stackFrameIndex : stackFrameIndex );
+			return definitionLocation(value);
 		},
 		
-		DisassembleScript: function(filename, lineno) {
+		disassembleScript: function(filename, lineno) {
 			
-			var asm = DisassembleScript(filename, lineno);
+			var asm = disassembleScript(filename, lineno);
 			if ( !asm )
 				return 'Disassembly is only available in DEBUG mode\n';
 			asm = [ let (r = /(\d+): *(\d+) *(.*)/(line)) r ? r[2]+' '+r[3] : '' for each ( line in asm.split('\n') ) ].join('\n');
 			return 'Script at '+filename+':'+lineno+'\n'+asm+'\n';
 		},
 		
-		Shutdown: function() {
+		shutdown: function() {
 
 			dbg.breakOnDebuggerKeyword = false;
 			dbg.breakOnError = false;
 			dbg.breakOnException = false;
 			dbg.breakOnexecute = false;
 			delete dbg.onBreak;
-			dbg.ClearBreakpoints();
+			dbg.clearBreakpoints();
 			delete global.__dbg;
 			_host.stdout = _prevStdout;
 			_host.stdout = _prevStderr;
 			Action(Debugger.DO_CONTINUE);
 		},
 
-		Step: function() new Action(Debugger.DO_STEP),
-		StepOver: function() new Action(Debugger.DO_STEP_OVER),
-		StepThrough: function() new Action(Debugger.DO_STEP_THROUGH),
-		StepOut: function() new Action(Debugger.DO_STEP_OUT),
-		Continue: function() new Action(Debugger.DO_CONTINUE),
-		Goto: function(filename, lineno) {
+		step: function() new Action(Debugger.DO_STEP),
+		stepOver: function() new Action(Debugger.DO_STEP_OVER),
+		stepThrough: function() new Action(Debugger.DO_STEP_THROUGH),
+		stepOut: function() new Action(Debugger.DO_STEP_OUT),
+		continue: function() new Action(Debugger.DO_CONTINUE),
+		goto: function(filename, lineno) {
 		
 			if ( _breakContext.filename == filename && _breakContext.lineno == lineno )
 				return;
-			if ( dbg.HasBreakpoint(filename, lineno) )
+			if ( dbg.hasBreakpoint(filename, lineno) )
 				Action(Debugger.DO_CONTINUE);
-			lineno = dbg.ToggleBreakpoint(true, filename, lineno);
-			_reset.push(function() dbg.ToggleBreakpoint(false, filename, lineno));
+			lineno = dbg.toggleBreakpoint(true, filename, lineno);
+			_reset.push(function() dbg.toggleBreakpoint(false, filename, lineno));
 			Action(Debugger.DO_CONTINUE);
 		},
 		
-		TraceTo: function(aimFilename, aimLineno) Asynchronus(function(responseFunction) {
+		traceTo: function(aimFilename, aimLineno) asynchronus(function(responseFunction) {
 		
 			var time;
 			with (_breakContext)
@@ -377,15 +377,15 @@ loadModule('jsdebug');
 
 				if ( filename != aimFilename || lineno != aimLineno ) {
 				
-					trace.push([filename, lineno, stackFrameIndex, (TimeCounter() - time).toFixed(3)]);
-					time = TimeCounter();
+					trace.push([filename, lineno, stackFrameIndex, (timeCounter() - time).toFixed(3)]);
+					time = timeCounter();
 					return Debugger.DO_STEP;
 				}
 				dbg.onBreak = prevBreakFct;
 				responseFunction(uneval(trace));
 				return dbg.onBreak.apply(dbg, arguments);
 			}
-			time = TimeCounter();
+			time = timeCounter();
 			Action(Debugger.DO_STEP);
 		})
 	}
@@ -395,7 +395,7 @@ loadModule('jsdebug');
 //		if ( breakOrigin == Debugger.FROM_INTERRUPT && !server.HasPendingRequest() )
 //			return Debugger.DO_CONTINUE;
 		
-		var tmpTime = TimeCounter();
+		var tmpTime = timeCounter();
 		while (_reset.length) _reset.shift()();
 		
 		if ( breakOrigin == Debugger.FROM_BREAKPOINT && filename in _breakpointList ) {
@@ -404,7 +404,7 @@ loadModule('jsdebug');
 			if ( condition && condition != 'true' ) {
 			
 				try {
-					var test = EvalInStackFrame(condition, stackFrameIndex);
+					var test = evalInStackFrame(condition, stackFrameIndex);
 				} catch(ex) {}
 				if ( !test )
 					return Debugger.DO_CONTINUE;
@@ -414,7 +414,7 @@ loadModule('jsdebug');
 		_breakContext = { filename:filename, lineno:lineno, breakOrigin:breakOrigin, stackFrameIndex:stackFrameIndex, hasException:hasException, exception:exception, rval:rval, enteringFunction:enteringFunction, time:tmpTime - _time };
 		for(;;) {
 
-			var res = undefined, [req, responseFunction] = server.GetNextRequest();
+			var res = undefined, [req, responseFunction] = server.getNextRequest();
 			
 			try {
 				try {
@@ -422,7 +422,7 @@ loadModule('jsdebug');
 					req = eval('('+req+')');
 					res = debuggerApi[req[0]].apply(debuggerApi, req[1]);
 					responseFunction(uneval(res));
-				} catch ( fct if IsFunction(fct) ) {
+				} catch ( fct if isFunction(fct) ) {
 					
 					var tmp = responseFunction;
 					responseFunction = function(){}
@@ -431,7 +431,7 @@ loadModule('jsdebug');
 			} catch ( action if !isNaN(action) ) {
 
 				responseFunction();
-				_time = TimeCounter();
+				_time = timeCounter();
 				return action;
 			}  catch ( ex ) {
 				

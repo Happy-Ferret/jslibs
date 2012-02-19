@@ -6,14 +6,14 @@ loadModule('jstrimesh');
 	var t = new Trimesh();
 
 
-	t.DefineVertexBuffer([
+	t.defineVertexBuffer([
 		0,0,0,
 		0,0,1,
 		0,1,0,
 		1,0,0
 	]);
 
-	t.DefineIndexBuffer([
+	t.defineIndexBuffer([
 		0,1,2,
 		0,3,1
 	]);

@@ -91,7 +91,7 @@ loadModule('jsstd');
 
 /// Blob memory issue [d]
 
-	var s = StringRepeat(s, 1000*1000);
+	var s = stringRepeat(s, 1000*1000);
 	var b = new Blob(s);
 	for ( var i = 0; i < 100; ++i )
 		b.toString();
@@ -170,23 +170,23 @@ loadModule('jsstd');
 		var length = 1024*1024;
 		var times = 3;
 
-		function GenMem() {
+		function genMem() {
 
 			QA.GC();
 			var data = [];
 		
 			for ( var i = 0; i < times; ++i ) {
 			
-				data.push( Blob(StringRepeat('a', length)) );
+				data.push( Blob(stringRepeat('a', length)) );
 				QA.GC();
 			}
-			Blob(StringRepeat('a', length));
+			Blob(stringRepeat('a', length));
 			QA.GC();
 			return data;
 		}
 		
 		var mem = privateMemoryUsage;
-		GenMem();
+		genMem();
 		
 		// QA.ASSERT_STR(data[0] == StringRepeat('a', length), true, "test validity");
 		// QA.ASSERT_STR(data[data.length-1] == StringRepeat('a', length), true, "test validity");
@@ -211,9 +211,9 @@ loadModule('jsstd');
 /// Blob BufferGet NativeInterface [ftrm]
 
 		var buffer = new Buffer();
-		buffer.Write('123');
-		var blob = buffer.Read(2);
-		QA.ASSERT( blob.length, 2, 'buffer.Read() length' )
+		buffer.write('123');
+		var blob = buffer.read(2);
+		QA.ASSERT( blob.length, 2, 'buffer.read() length' )
 //		QA.ASSERT( blob instanceof Blob, true, 'buffer.Read() returns a Blob' )
 		QA.ASSERT( typeof blob, 'string', 'typeof blob' );
 //		QA.ASSERT( ('_NI_BufferGet' in blob), true, 'returned Blob has _NI_BufferGet' );
@@ -680,15 +680,15 @@ loadModule('jsstd');
 		QA.ASSERT( stream.source, blob, 'source object' )
 
 		QA.ASSERT( stream.position, 0, 'initial stream position' )
-		QA.ASSERT( String(stream.Read(3)), '123', 'stream Read()' )
-		QA.ASSERT( stream.position, 3, 'stream position after Read()' )
-		QA.ASSERT( String(stream.Read(0)), '', 'read 0 bytes on the stream' )
-		QA.ASSERT( stream.position, 3, 'stream position after Read(0)' )
-		QA.ASSERT( String(stream.Read(100)), '4567', 'read more than the stream size' )
+		QA.ASSERT( String(stream.read(3)), '123', 'stream read()' )
+		QA.ASSERT( stream.position, 3, 'stream position after read()' )
+		QA.ASSERT( String(stream.read(0)), '', 'read 0 bytes on the stream' )
+		QA.ASSERT( stream.position, 3, 'stream position after read(0)' )
+		QA.ASSERT( String(stream.read(100)), '4567', 'read more than the stream size' )
 		QA.ASSERT( stream.position, 7, 'stream position after reading more than the stream size' )
 
 		stream.position = 0;
-		QA.ASSERT( String(stream.Read(blob.length)), '1234567', 'read the exact length' )
+		QA.ASSERT( String(stream.read(blob.length)), '1234567', 'read the exact length' )
 
 
 /// Stream add [ftrm]
@@ -696,58 +696,58 @@ loadModule('jsstd');
 		var blob = new Blob("1234");
 		var stream = Stream(blob);
 		blob = blob.concat('ABC');
-		QA.ASSERT( String(stream.Read(3)), '123', 'stream Read()' )
+		QA.ASSERT( String(stream.read(3)), '123', 'stream read()' )
 		blob = blob.concat('DEF');
 		QA.ASSERT( blob.length, 10, 'stream source length' )
-		QA.ASSERT( String(stream.Read(3)), '4', 'stream Read()' )
+		QA.ASSERT( String(stream.read(3)), '4', 'stream read()' )
 		QA.ASSERT( stream.position, 4, 'stream position' )
 
 		var s1 = Stream(blob);
 		QA.ASSERT( s1.position, 0, 'stream position' )
 		QA.ASSERT( s1.available, 10, 'stream source length' )
-		QA.ASSERT( String(s1.Read(3)), '123', 'stream Read()' )
+		QA.ASSERT( String(s1.read(3)), '123', 'stream read()' )
 
 
 /// non-native Stream [ftrm]
 
 		var buf = new Buffer();
-		buf.Write('abcdefghi');
+		buf.write('abcdefghi');
 
 		function myStream() {
 		
-			this.Read = function(amount) {
+			this.read = function(amount) {
 				
-				return buf.Read(2);
+				return buf.read(2);
 			}
 		}
 		
-		QA.ASSERT( Stringify( new myStream() ), 'abcdefghi', 'force string conversion' );
+		QA.ASSERT( stringify( new myStream() ), 'abcdefghi', 'force string conversion' );
 
 
 
 /// another non-native Stream [ftrm]
 
 		var buf = new Buffer();
-		buf.Write('abcdefghijklmnopqrstuvwxyz');
-		var res = Stringify({ Read:function(n) { return buf.Read(3); } });
+		buf.write('abcdefghijklmnopqrstuvwxyz');
+		var res = stringify({ read:function(n) { return buf.read(3); } });
 		QA.ASSERT_STR( res, 'abcdefghijklmnopqrstuvwxyz', 'stringified stream' );
 
 
 /// Stringify function [ftr]
 	
-		QA.ASSERT( 'test', Stringify('test'), 'force string conversion' );
+		QA.ASSERT( 'test', stringify('test'), 'force string conversion' );
 		
 		var len = 0;
 		var b = new Buffer();
 		for ( var i = 0; i < 500; i++ ) {
 			
 			len += i;
-			b.Write(QA.RandomString(i));
+			b.write(QA.randomString(i));
 		}
 
 		QA.ASSERT( b.length, len, 'buffer length' );
 		
-		var s = Stringify(b);
+		var s = stringify(b);
 
 		QA.ASSERT( s.length, len, 'string length' );
 
@@ -756,8 +756,8 @@ loadModule('jsstd');
 
 		var b = Blob("my blob");
 		b.aPropertyOfMyBlob = 12345;
-		var xdrData = XdrEncode(b);
-		var val = XdrDecode(xdrData);
+		var xdrData = xdrEncode(b);
+		var val = xdrDecode(xdrData);
 		QA.ASSERT( val.length, 7, 'blob length' );
 		QA.ASSERT( val.aPropertyOfMyBlob, 12345, 'blob property' );
 		QA.ASSERT_STR( val, "my blob", 'blob content' );
@@ -776,15 +776,15 @@ loadModule('jsstd');
 
 		var obj = {a:1, b:2, c:3};
 		var m = Map(obj);
-		var xdrData = XdrEncode(m);
-		var val = XdrDecode(xdrData);
+		var xdrData = xdrEncode(m);
+		var val = xdrDecode(xdrData);
 		QA.ASSERT_STR( uneval(obj), uneval(val), 'map content' );
 
 
 /// Stringify blob [ft]
 
 	var b = new Blob('123');
-	var c = Stringify(b);
+	var c = stringify(b);
 
 	QA.ASSERT_STR( c , 123, 'Stringified blob' );
 
@@ -792,23 +792,23 @@ loadModule('jsstd');
 /// Stringify StreamRead [ftmr]
 
 	var i = 10;
-	var res = Stringify({ Read: function(count) i-- ? 'Str' : '' } );
-	QA.ASSERT_STR( res, 'StrStrStrStrStrStrStrStrStrStr', 'Stringify StreamRead object' );
+	var res = stringify({ read: function(count) i-- ? 'Str' : '' } );
+	QA.ASSERT_STR( res, 'StrStrStrStrStrStrStrStrStrStr', 'Stringify streamRead object' );
 
 
 /// Stringify BufferGet [ftmr]
 
-	QA.ASSERT_STR( Stringify({ Get: function() { return 'ABCD' } }) , 'ABCD', 'Stringify BufferGet object' );
+	QA.ASSERT_STR( stringify({ get: function() { return 'ABCD' } }) , 'ABCD', 'Stringify bufferGet object' );
 
 
 /// Stringify TypedArray [ftmr]
 
-	QA.ASSERT_STR( Stringify(Int8Array([100,101,102])), 'def', 'Int8Array to string' );
+	QA.ASSERT_STR( stringify(Int8Array([100,101,102])), 'def', 'Int8Array to string' );
 
 
 /// Stringify Array [ftmr]
 
-	QA.ASSERT_STR( Stringify([100,101,102]), '100,101,102', 'JS Array to string' );
+	QA.ASSERT_STR( stringify([100,101,102]), '100,101,102', 'JS Array to string' );
 
 
 /// Handle constructor [ft]
@@ -818,7 +818,7 @@ loadModule('jsstd');
 
 /// Handle object [ft]
 
-	var h = TimeoutEvents(100);
+	var h = timeoutEvents(100);
 
 	QA.ASSERT(Handle instanceof Object, true, 'instance test');
 	QA.ASSERT_TYPE(h, Handle, 'handle object type');
@@ -835,22 +835,22 @@ loadModule('jsstd');
 	var a = new A;
 	var b = new B;
 	
-	QA.ASSERT(InheritFrom(a, A), false, 'InheritFrom is not instanceof a,B');
-	QA.ASSERT(InheritFrom(a, B), true, 'InheritFrom test a,B');
-	QA.ASSERT(InheritFrom(b, B), false, 'InheritFrom is not instanceof b,A');
-	QA.ASSERT(InheritFrom(b, A), false, 'InheritFrom test b,A');
-	QA.ASSERT(InheritFrom(a, b), false, 'InheritFrom test a,b');
-	QA.ASSERT(InheritFrom(b, a), false, 'InheritFrom test b,a');
-	QA.ASSERT(InheritFrom(A, B), false, 'InheritFrom test A,B');
-	QA.ASSERT(InheritFrom(B, A), false, 'InheritFrom test B,A');
+	QA.ASSERT(inheritFrom(a, A), false, 'InheritFrom is not instanceof a,B');
+	QA.ASSERT(inheritFrom(a, B), true, 'InheritFrom test a,B');
+	QA.ASSERT(inheritFrom(b, B), false, 'InheritFrom is not instanceof b,A');
+	QA.ASSERT(inheritFrom(b, A), false, 'InheritFrom test b,A');
+	QA.ASSERT(inheritFrom(a, b), false, 'InheritFrom test a,b');
+	QA.ASSERT(inheritFrom(b, a), false, 'InheritFrom test b,a');
+	QA.ASSERT(inheritFrom(A, B), false, 'InheritFrom test A,B');
+	QA.ASSERT(inheritFrom(B, A), false, 'InheritFrom test B,A');
 
 
 /// ProcessEvents() [t]
 
-	var timeout = TimeoutEvents(123);
-	var t = TimeCounter();
-	ProcessEvents(timeout);
-	t = TimeCounter() - t;
+	var timeout = timeoutEvents(123);
+	var t = timeCounter();
+	processEvents(timeout);
+	t = timeCounter() - t;
 	QA.ASSERT( t > 122 && t < 130, true, 'TimeoutEvents time ('+t+')' );
 //	QA.ASSERT_EXCEPTION( function() ProcessEvents(timeout), Error, 'ProcessEvents reused' );
 
@@ -858,10 +858,10 @@ loadModule('jsstd');
 /// Serialization / Unserialization crash 1
 
 	var s = new Serializer();
-	s.Write(1);
-	s.Write(2);
-	var u = new Unserializer( s.Done() );
-	QA.ASSERT( uneval(u.Read())+uneval(u.Read()), '12', 'unserialized data' );
+	s.write(1);
+	s.write(2);
+	var u = new Unserializer( s.done() );
+	QA.ASSERT( uneval(u.read())+uneval(u.read()), '12', 'unserialized data' );
 
 
 
@@ -872,12 +872,12 @@ loadModule('jsstd');
 		this.a = 5;
 		this._serialize = function(ser) {
 		
-			ser.Write(this.a);
+			ser.write(this.a);
 		}
 		this._unserialize = function(unser) {
 			
 			var o = new JsClass();
-			o.a = unser.Read();
+			o.a = unser.read();
 			return o;
 		}
 	}
@@ -885,7 +885,7 @@ loadModule('jsstd');
 	var ob = new JsClass();
 	ob.a = 7;
 	
-	function GenReferenceError() {
+	function genReferenceError() {
 		
 		try {
 			dgsdfgfvf6z5ef4sdfg();
@@ -896,7 +896,7 @@ loadModule('jsstd');
 	}
 	
 	var myobj = [
-		GenReferenceError(),
+		genReferenceError(),
 		new Error('error test'), 
 		ob, 
 		function() [,1,{__proto__:null}],
@@ -938,25 +938,25 @@ loadModule('jsstd');
 	
 	
 	var s = new Serializer();
-	s.Write(myobj);
-	var s = new Unserializer(s.Done());
+	s.write(myobj);
+	var s = new Unserializer(s.done());
 
 	var str = uneval(myobj);
-	var str1 = uneval(s.Read());
+	var str1 = uneval(s.read());
 	QA.ASSERT_STR( str, str1, 'several serialized / unserialized objects' );
 
 
 /// Unserialization crash
 
 	var s = new Serializer();
-	s.Write(Blob('1'));
-	var s = new Unserializer(s.Done());
-	s.Read();
+	s.write(Blob('1'));
+	var s = new Unserializer(s.done());
+	s.read();
 
 
 /// Stringify TypedArray
 
-	QA.ASSERT_STR( Stringify(new Float32Array()), '', 'stringify empty float array' );
-	QA.ASSERT_STR( Stringify(new Int8Array()), '', 'stringify empty Int8Array' );
-	QA.ASSERT_STR( Stringify(new Int8Array([100,100,100])), 'ddd', 'stringify Int8Array "ddd"' );
-	QA.ASSERT_STR( Stringify(new Uint16Array([100,100,100])), 'ddd', 'stringify Uint16Array "ddd"' );
+	QA.ASSERT_STR( stringify(new Float32Array()), '', 'stringify empty float array' );
+	QA.ASSERT_STR( stringify(new Int8Array()), '', 'stringify empty Int8Array' );
+	QA.ASSERT_STR( stringify(new Int8Array([100,100,100])), 'ddd', 'stringify Int8Array "ddd"' );
+	QA.ASSERT_STR( stringify(new Uint16Array([100,100,100])), 'ddd', 'stringify Uint16Array "ddd"' );

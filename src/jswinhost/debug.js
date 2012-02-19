@@ -3,10 +3,10 @@
 throw 'error test';
 
 while ( !endSignal )
-	ProcessEvents( EndSignalEvents() );
+	processEvents( EndSignalEvents() );
 
 //loadModule('jsshell');
-//MessageBox(isfirstInstance);
+//messageBox(isfirstInstance);
 
 
 //var cons = new Console();

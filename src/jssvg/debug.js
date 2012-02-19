@@ -1,13 +1,13 @@
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-function Time( fct ) {
+function time( fct ) {
 
 	var t0 = +new Date();
 	fct();
 	print( fct.name + ' time: ', +new Date() - t0, 'ms\n' );
 }
 
-Time( function() {
+time( function() {
 	loadModule('jsstd');
 	loadModule('jsio');
 	loadModule('jsimage');
@@ -26,13 +26,13 @@ var s =
                <stop offset="1" stop-color="white" stop-opacity="1"/>
           </linearGradient>
           <mask id="Mask" maskUnits="userSpaceOnUse" x="0" y="0" width="800" height="300">
-               <rect x="0" y="0" width="800" height="300" fill="url(#Gradient)"/>
+               <rect x="0" y="0" width="800" height="300" fill="url(#gradient)"/>
           </mask>
           <text id="Text" x="400" y="200" font-family="Verdana" font-size="100" text-anchor="middle"> Masked text </text>
      </defs>
      <rect x="0" y="0" width="800" height="300" fill="#FF8080"/>
-     <use xlink:href="#Text" fill="blue" mask="url(#Mask)"/>
-     <use xlink:href="#Text" fill="none" stroke="black" stroke-width="2"/>
+     <use xlink:href="#text" fill="blue" mask="url(#mask)"/>
+     <use xlink:href="#text" fill="none" stroke="black" stroke-width="2"/>
 </svg>;
 
 /*
@@ -62,7 +62,7 @@ var s = <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2
  <defs>
       <path id="MyPath" d="M 100 200 C 200 100 300 0 400 100 C 500 200 600 300 700 200 C 800 100 900 100 900 100"/>
  </defs>
-  <use xlink:href="#MyPath" fill="none" stroke="red"/>
+  <use xlink:href="#myPath" fill="none" stroke="red"/>
   <text>123</text>
 </svg>
 
@@ -86,7 +86,7 @@ xmlns="http://www.w3.org/2000/svg">
 </filter>
 </defs>
 <rect x="1" y="1" width="198" height="118" fill="#cccccc" />
-<g filter="url(#MyFilter)">
+<g filter="url(#myFilter)">
 <path fill="none" stroke="#D90000" stroke-width="10" d="M50,90 C0,90 0,30 50,30 L150,30 C200,30 200,90 150,90 z" />
 <text fill="#FFFFFF" stroke="black" font-size="45" font-family="Verdana" x="52" y="76">SVG</text>
 </g>
@@ -116,13 +116,13 @@ svg.onImage = function(href) {
 //	return DecodePngImage( new File('img.png').Open('r') );
 }
 
-Time( function readXmlData()
-svg.Write(s)
+time( function readXmlData()
+svg.write(s)
 )
 
 print( 'width: '+svg.width + ' height: '+svg.height, '\n' );
 
-svg.SetVisible('#test', false);
+svg.setVisible('#test', false);
 
 //svg.dpi = [30, 600];
 
@@ -131,8 +131,8 @@ var svgimage;
 //svg.Translate(64,0);
 //svg.Rotate(Math.PI/4);
 
-Time( function renderImage()
-svgimage = svg.RenderImage(undefined, undefined, 3, true)
+time( function renderImage()
+svgimage = svg.renderImage(undefined, undefined, 3, true)
 )
 
 
@@ -141,14 +141,14 @@ svgimage = svg.RenderImage(undefined, undefined, 3, true)
 //var svgimage = svg.Write(svgText);
 
 /*
-Time( function encodePNG()
-new File('test.png').content = EncodePngImage( svgimage )
+time( function encodePNG()
+new File('test.png').content = encodePngImage( svgimage )
 )
 */
 
 loadModule('jssdl');
 loadModule('jsgraphics');
 exec('../common/tools.js');
-DisplayImage( svgimage );
+displayImage( svgimage );
 
 

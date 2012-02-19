@@ -88,7 +88,7 @@ var TEST_STRING = new String( " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNO
 function TestCase( section, name, expected, result ) QA.ASSERT( result, expected, name );
 var SECTION = '';
 
-function LastIndexOf( string, search, position ) arguments.length == 3 ? string.lastIndexOf(search, position) : string.lastIndexOf(search);
+function lastIndexOf( string, search, position ) arguments.length == 3 ? string.lastIndexOf(search, position) : string.lastIndexOf(search);
 
 
 
@@ -97,29 +97,29 @@ QA.ASSERT( delete Blob.prototype.lastIndexOf.length, false, "delete Blob.prototy
 //QA.ASSERT( eval("delete Blob.prototype.lastIndexOf.length; Blob.prototype.lastIndexOf.length" ), 1, 'eval("delete Blob.prototype.lastIndexOf.length; Blob.prototype.lastIndexOf.length" )' );
 
 
-TestCase( SECTION, "var s = new Blob(''); s.lastIndexOf('', 0)",          LastIndexOf("","",0),  eval("var s = new Blob(''); s.lastIndexOf('', 0)") );
-TestCase( SECTION, "var s = new Blob(''); s.lastIndexOf('')",             LastIndexOf("",""),  eval("var s = new Blob(''); s.lastIndexOf('')") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('', 0)",     LastIndexOf("hello","",0),  eval("var s = new Blob('hello'); s.lastIndexOf('',0)") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('')",        LastIndexOf("hello",""),  eval("var s = new Blob('hello'); s.lastIndexOf('')") );
+TestCase( SECTION, "var s = new Blob(''); s.lastIndexOf('', 0)",          lastIndexOf("","",0),  eval("var s = new Blob(''); s.lastIndexOf('', 0)") );
+TestCase( SECTION, "var s = new Blob(''); s.lastIndexOf('')",             lastIndexOf("",""),  eval("var s = new Blob(''); s.lastIndexOf('')") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('', 0)",     lastIndexOf("hello","",0),  eval("var s = new Blob('hello'); s.lastIndexOf('',0)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('')",        lastIndexOf("hello",""),  eval("var s = new Blob('hello'); s.lastIndexOf('')") );
 
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll')",     LastIndexOf("hello","ll"),  eval("var s = new Blob('hello'); s.lastIndexOf('ll')") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 0)",  LastIndexOf("hello","ll",0),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 0)") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 1)",  LastIndexOf("hello","ll",1),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 1)") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 2)",  LastIndexOf("hello","ll",2),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 2)") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 3)",  LastIndexOf("hello","ll",3),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 3)") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 4)",  LastIndexOf("hello","ll",4),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 4)") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 5)",  LastIndexOf("hello","ll",5),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 5)") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 6)",  LastIndexOf("hello","ll",6),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 6)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll')",     lastIndexOf("hello","ll"),  eval("var s = new Blob('hello'); s.lastIndexOf('ll')") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 0)",  lastIndexOf("hello","ll",0),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 0)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 1)",  lastIndexOf("hello","ll",1),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 1)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 2)",  lastIndexOf("hello","ll",2),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 2)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 3)",  lastIndexOf("hello","ll",3),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 3)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 4)",  lastIndexOf("hello","ll",4),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 4)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 5)",  lastIndexOf("hello","ll",5),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 5)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 6)",  lastIndexOf("hello","ll",6),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 6)") );
 
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 1.5)", LastIndexOf('hello','ll', 1.5), eval("var s = new Blob('hello'); s.lastIndexOf('ll', 1.5)") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 2.5)", LastIndexOf('hello','ll', 2.5),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 2.5)") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', -1)",  LastIndexOf('hello','ll', -1), eval("var s = new Blob('hello'); s.lastIndexOf('ll', -1)") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', -1.5)",LastIndexOf('hello','ll', -1.5), eval("var s = new Blob('hello'); s.lastIndexOf('ll', -1.5)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 1.5)", lastIndexOf('hello','ll', 1.5), eval("var s = new Blob('hello'); s.lastIndexOf('ll', 1.5)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', 2.5)", lastIndexOf('hello','ll', 2.5),  eval("var s = new Blob('hello'); s.lastIndexOf('ll', 2.5)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', -1)",  lastIndexOf('hello','ll', -1), eval("var s = new Blob('hello'); s.lastIndexOf('ll', -1)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', -1.5)",lastIndexOf('hello','ll', -1.5), eval("var s = new Blob('hello'); s.lastIndexOf('ll', -1.5)") );
 
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', -Infinity)",    LastIndexOf("hello","ll",-Infinity), eval("var s = new Blob('hello'); s.lastIndexOf('ll', -Infinity)") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', Infinity)",    LastIndexOf("hello","ll",Infinity), eval("var s = new Blob('hello'); s.lastIndexOf('ll', Infinity)") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', NaN)",    LastIndexOf("hello","ll",NaN), eval("var s = new Blob('hello'); s.lastIndexOf('ll', NaN)") );
-TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', -0)",    LastIndexOf("hello","ll",-0), eval("var s = new Blob('hello'); s.lastIndexOf('ll', -0)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', -Infinity)",    lastIndexOf("hello","ll",-Infinity), eval("var s = new Blob('hello'); s.lastIndexOf('ll', -Infinity)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', Infinity)",    lastIndexOf("hello","ll",Infinity), eval("var s = new Blob('hello'); s.lastIndexOf('ll', Infinity)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', NaN)",    lastIndexOf("hello","ll",NaN), eval("var s = new Blob('hello'); s.lastIndexOf('ll', NaN)") );
+TestCase( SECTION, "var s = new Blob('hello'); s.lastIndexOf('ll', -0)",    lastIndexOf("hello","ll",-0), eval("var s = new Blob('hello'); s.lastIndexOf('ll', -0)") );
 
 
 var i, k, j = 0;
@@ -151,7 +151,7 @@ for ( k = 9, i = 0x0021; i < 0x007d; i++, j++, k++ ) {
 		"String.lastIndexOf("+(String.fromCharCode(i) +
 				       String.fromCharCode(i+1)+
 				       String.fromCharCode(i+2)) +", "+ 0 + ")",
-		LastIndexOf( TEST_STRING, String.fromCharCode(i) +
+		lastIndexOf( TEST_STRING, String.fromCharCode(i) +
 			     String.fromCharCode(i+1)+String.fromCharCode(i+2), 0),
 		TEST_STRING.lastIndexOf( (String.fromCharCode(i)+
 					  String.fromCharCode(i+1)+
@@ -189,7 +189,7 @@ for ( k = 0, i = 0x0020; i < 0x007d; i++, j++, k++ ) {
 		(String.fromCharCode(i) +
 		 String.fromCharCode(i+1)+
 		 String.fromCharCode(i+2)) +", "+ (k-1) +")",
-		LastIndexOf( TEST_STRING, String.fromCharCode(i) +
+		lastIndexOf( TEST_STRING, String.fromCharCode(i) +
 			     String.fromCharCode(i+1)+String.fromCharCode(i+2), k-1),
 		TEST_STRING.lastIndexOf( (String.fromCharCode(i)+
 					  String.fromCharCode(i+1)+
@@ -312,7 +312,7 @@ QA.ASSERT( (aString instanceof Blob) && !(aString instanceof String), true, 'no 
 /// Blob::substring tests using Mozilla String tests [rt]
 
 function TestCase( section, name, expected, result ) QA.ASSERT_STR( result, expected, name );
-function AssertBlob(b) b instanceof Blob;
+function assertBlob(b) b instanceof Blob;
 var SECTION = '';
 
 
