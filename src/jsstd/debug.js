@@ -1,6 +1,2 @@
-//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask sandbox');
+LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('jsstd -exclude jstask');
 
-LoadModule('jsstd');
-
-
-	Print(currentFilename, '\n');

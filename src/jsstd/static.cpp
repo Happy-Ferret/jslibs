@@ -375,7 +375,13 @@ DEFINE_FUNCTION( ClearObject ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
+/* beware:
+     once an object is exposed to a script, the object's parent must not change. The JavaScript engine relies on this invariant.
+	 JS_SetParent has no way to check that this is the case, but nonetheless, applications must not call JS_SetParent on an object that has already been exposed to a script.
+	 If an application does this, the behavior is undefined.
+	 (see MDN doc.)
+
+/ **doc
 $TOC_MEMBER $INAME
  $OBJ $INAME( obj, scopeObject )
   Set the scope object of _obj_. Use this function with care.
@@ -427,7 +433,7 @@ $TOC_MEMBER $INAME
   var fct = myObj.Test;
   fct(); // prints: foo
   }}}
-**/
+** /
 DEFINE_FUNCTION( SetScope ) {
 
 	JL_ASSERT_ARGC(2);
@@ -1566,7 +1572,7 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( DeepFreezeObject, 1 )
 		FUNCTION_ARGC( CountProperties, 1 )
 		FUNCTION_ARGC( ClearObject, 1 )
-		FUNCTION_ARGC( SetScope, 2 )
+//		FUNCTION_ARGC( SetScope, 2 )
 		FUNCTION_ARGC( Exec, 2 )
 		FUNCTION_ARGC( SandboxEval, 3 )
 		FUNCTION_ARGC( IsStatementValid, 1 )

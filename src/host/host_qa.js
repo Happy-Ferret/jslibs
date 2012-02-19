@@ -297,7 +297,6 @@ LoadModule('jsio');
 	_host.stderr = prev;
 
 
-
 /// NativeInterface hacking
 
 	var b = new Blob('abc');
@@ -311,5 +310,5 @@ LoadModule('jsio');
 	QA.NO_CRASH( Stringify({ _NI_BufferGet:function() {} }) );
 
 	try {
-	QA.NO_CRASH( Stringify({ __proto__:b}) );
+//	QA.NO_CRASH( Stringify({ __proto__:b}) );
 	} catch(ex) {}

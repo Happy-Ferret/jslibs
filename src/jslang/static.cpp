@@ -749,8 +749,9 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	jsid pid;
 	pid = JL_StringToJsid(cx, jsstr);
 
-	ASSERT( JS_GetParent(JS_NewObject(cx, NULL, NULL, NULL)) != NULL );
-	ASSERT( JS_GetParent(JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL)) != NULL );
+//	// see Bug 688510
+//	ASSERT( JS_GetParent(JS_NewObject(cx, NULL, NULL, NULL)) != NULL );
+//	ASSERT( JS_GetParent(JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL)) != NULL );
 
 
 /*
@@ -789,6 +790,10 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_IGNORE(argc);
 	JL_IGNORE(vp);
 
+//	*JL_RVAL = OBJECT_TO_JSVAL( JS_GetParentOrScopeChain(cx, JSVAL_TO_OBJECT(JL_ARG(1))) );
+
+/*
+
 	JSObject *o = JL_NewObj(cx);
 	jsid t;
 	jsval s = OBJECT_TO_JSVAL(o);
@@ -796,7 +801,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	jsval r;
 	JL_JsidToJsval(cx, t, &r);
 	ASSERT( JSVAL_TO_OBJECT(r) == o );
-
+*/
 
 	return JS_TRUE;
 	JL_BAD;
