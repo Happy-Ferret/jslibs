@@ -73,7 +73,8 @@ ALWAYS_INLINE JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBuff
 ALWAYS_INLINE JSRuntime*
 JL_GetRuntime( JSContext *cx ) {
 
-	return JS_GetRuntime(cx);
+	//return JS_GetRuntime(cx);
+	return js::GetRuntime(cx); // jsfriendapi
 }
 
 ALWAYS_INLINE void*
@@ -124,7 +125,8 @@ JL_GetNaNValue( JSContext *cx ) {
 ALWAYS_INLINE JSClass*
 JL_GetClass( JSObject *obj ) {
 
-	return JS_GetClass(obj);
+	//return JS_GetClass(obj);
+	return js::GetObjectJSClass(obj); // jsfriendapi
 }
 
 ALWAYS_INLINE const char *
@@ -156,13 +158,16 @@ ALWAYS_INLINE void*
 JL_GetPrivate( JSContext *cx, JSObject *obj ) {
 
 	JL_IGNORE(cx);
-	return JS_GetPrivate(obj);
+	//return JS_GetPrivate(obj);
+	ASSERT( JL_HasPrivateSlot(cx, obj) );
+	return js::GetObjectPrivate(obj); // jsfriendapi
 }
 
 ALWAYS_INLINE void
 JL_SetPrivate( JSContext *cx, JSObject *obj, void *data ) {
 
 	JL_IGNORE(cx);
+	ASSERT( JL_HasPrivateSlot(cx, obj) );
 	JS_SetPrivate(obj, data);
 }
 
@@ -170,13 +175,21 @@ ALWAYS_INLINE JSObject *
 JL_GetPrototype(JSContext *cx, JSObject *obj) {
 
 	JL_IGNORE(cx);
-	return JS_GetPrototype(obj);
+	//return JS_GetPrototype(obj);
+	return js::GetObjectProto(obj); // jsfriendapi
 }
 
 ALWAYS_INLINE JSObject *
 JL_GetConstructor(JSContext *cx, JSObject *obj) {
 
 	return JS_GetConstructor(cx, obj);
+}
+
+ALWAYS_INLINE JSObject *
+JL_GetParent(JSContext *cx, JSObject *obj) {
+	
+	JL_IGNORE(cx);
+	return js::GetObjectParent(obj);
 }
 
 
@@ -190,7 +203,8 @@ JL_GetClassPrototype(JSContext *cx, JSObject *scopeobj, JSProtoKey protoKey, JSO
 ALWAYS_INLINE JSBool
 JL_GetElement(JSContext *cx, JSObject *obj, jsuint index, jsval *vp) {
 
-    return JS_GetPropertyById(cx, obj, INT_TO_JSID(index), vp);
+    //return JS_GetPropertyById(cx, obj, INT_TO_JSID(index), vp);
+	return JS_ForwardGetElementTo(cx, obj, index, obj, vp);
 }
 
 ALWAYS_INLINE JSBool
@@ -204,7 +218,10 @@ ALWAYS_INLINE JSBool
 JL_GetReservedSlot( JSContext *cx, JSObject *obj, uint32_t slot, jsval *vp ) {
 
 	JL_IGNORE(cx);
-	*vp = JS_GetReservedSlot(obj, slot);
+	ASSERT( slot < JSCLASS_RESERVED_SLOTS(JL_GetClass(obj)) );
+	//ASSERT( obj->isNative() );
+	//*vp = JS_GetReservedSlot(obj, slot);
+	*vp = js::GetReservedSlot(obj, slot); // jsfriendapi
 	return JS_TRUE;
 }
 
@@ -212,7 +229,9 @@ ALWAYS_INLINE JSBool
 JL_SetReservedSlot(JSContext *cx, JSObject *obj, uintN slot, const jsval &v) {
 
 	JL_IGNORE(cx);
-	JS_SetReservedSlot(obj, slot, v);
+	//ASSERT( obj->isNative() );
+	//JS_SetReservedSlot(obj, slot, v);
+	js::SetReservedSlot(obj, slot, v); // jsfriendapi
 	return JS_TRUE;
 }
 
@@ -1116,7 +1135,7 @@ enum E_TXTID {
 	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, jsObject)) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) )
 
 #define JL_ASSERT_THIS_INSTANCE() \
-	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, JL_OBJ)) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) )
+	JL_ASSERT( JL_GetClass(JL_OBJ) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) )
 
 #define JL_ASSERT_INHERITANCE( jsObject, jsClass ) \
 	JL_ASSERT( NOIL(JL_InheritFrom)(cx, JL_GetPrototype(cx, jsObject), (jsClass)), E_OBJ, E_INHERIT, E_NAME((jsClass)->name) )
