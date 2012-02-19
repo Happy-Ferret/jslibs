@@ -507,7 +507,7 @@ $TOC_MEMBER $INAME
   Free the memory allocated by the current texture.
   This is not mandatory but may be useful to free memory before the GC did.
 **/
-DEFINE_FUNCTION( Free ) {
+DEFINE_FUNCTION( free ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -540,7 +540,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 // PTYPE ok
-DEFINE_FUNCTION( Swap ) {
+DEFINE_FUNCTION( swap ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -565,7 +565,7 @@ $TOC_MEMBER $INAME
   Clears (set to 0) the given _channel_ or all channels if the method is called without argument.
 **/
 // PTYPE ok
-DEFINE_FUNCTION( ClearChannel ) {
+DEFINE_FUNCTION( clearChannel ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -622,7 +622,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 // PTYPE ok
-DEFINE_FUNCTION( SetChannel ) {
+DEFINE_FUNCTION( setChannel ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -676,7 +676,7 @@ $TOC_MEMBER $INAME
   Does a conversion from RGB (Red, Green, Blue) to HSV (Hue, Saturation, Value) colorspace.
 **/
 // (TBD) PTYPE
-DEFINE_FUNCTION( ToHLS ) { // (TBD) test it
+DEFINE_FUNCTION( toHLS ) { // (TBD) test it
 
 	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
 
@@ -755,7 +755,7 @@ $TOC_MEMBER $INAME
   Does a conversion from HSV (Hue, Saturation, Value) to RGB (Red, Green, Blue) colorspace.
 **/
 // (TBD) PTYPE
-DEFINE_FUNCTION( ToRGB ) { // (TBD) test it
+DEFINE_FUNCTION( toRGB ) { // (TBD) test it
 	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -831,7 +831,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 // PTYPE ok
-DEFINE_FUNCTION( Aliasing ) {
+DEFINE_FUNCTION( aliasing ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -895,7 +895,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 // PTYPE ok
-DEFINE_FUNCTION( Colorize ) {
+DEFINE_FUNCTION( colorize ) {
 	// GIMP color to alpha: http://www.google.com/codesearch?hl=en&q=+gimp+%22color+to+alpha%22
 	// color exchange algo. : http://www.koders.com/c/fidB39DAC5A8DB8B6073D78FB23363C5E0541208B02.aspx
 
@@ -968,7 +968,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 // PTYPE ok
-DEFINE_FUNCTION( ExtractColor ) {
+DEFINE_FUNCTION( extractColor ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1021,7 +1021,7 @@ $TOC_MEMBER $INAME
    Normalization is sometimes called contrast stretching.
 **/
 // PTYPE ok
-DEFINE_FUNCTION( NormalizeLevels ) {
+DEFINE_FUNCTION( normalizeLevels ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1062,7 +1062,7 @@ $TOC_MEMBER $INAME
    $ARG $REAL max: high value
 **/
 // PTYPE ok
-DEFINE_FUNCTION( ClampLevels ) { // (TBD) check if this algo is right
+DEFINE_FUNCTION( clampLevels ) { // (TBD) check if this algo is right
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1102,7 +1102,7 @@ $TOC_MEMBER $INAME
    $ARG $REAL max: high value
 **/
 // PTYPE ok
-DEFINE_FUNCTION( CutLevels ) { // (TBD) check if this algo is right
+DEFINE_FUNCTION( cutLevels ) { // (TBD) check if this algo is right
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1135,7 +1135,7 @@ DEFINE_FUNCTION( CutLevels ) { // (TBD) check if this algo is right
 
 /*
 // PTYPE ok
-DEFINE_FUNCTION( CutLevels ) {
+DEFINE_FUNCTION( cutLevels ) {
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
@@ -1196,7 +1196,7 @@ $TOC_MEMBER $INAME
   Each $pval is mathematically inverted ( v = 1 / v ).
 **/
 // PTYPE ok
-DEFINE_FUNCTION( InvertLevels ) { // level = 1 / level
+DEFINE_FUNCTION( invertLevels ) { // level = 1 / level
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1218,7 +1218,7 @@ $TOC_MEMBER $INAME
   Each $pval is set to its mathematical opposite ( v = -v ).
 **/
 // PTYPE ok
-DEFINE_FUNCTION( OppositeLevels ) { // level = -level
+DEFINE_FUNCTION( oppositeLevels ) { // level = -level
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1240,7 +1240,7 @@ $TOC_MEMBER $INAME
   Each $pval is powered by _power_ ( v = v ^ _power_ ).
 **/
 // PTYPE ok
-DEFINE_FUNCTION( PowLevels ) { //
+DEFINE_FUNCTION( powLevels ) { //
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1272,7 +1272,7 @@ $TOC_MEMBER $INAME
    $ARG $BOOL mirrorFromTop: if true, the values over _threshold_ are reflected toward the bottom, else values under _threshold_ are reflected toward the top.
 **/
 // PTYPE ok
-DEFINE_FUNCTION( MirrorLevels ) {
+DEFINE_FUNCTION( mirrorLevels ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1321,7 +1321,7 @@ $TOC_MEMBER $INAME
    $REAL modulo: the non-integer modulo
 **/
 // PTYPE ok
-DEFINE_FUNCTION( WrapLevels ) { // real modulo
+DEFINE_FUNCTION( wrapLevels ) { // real modulo
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1356,7 +1356,7 @@ $TOC_MEMBER $INAME
    $ARG colorInfo color: noise color.
 **/
 // PTYPE ok
-DEFINE_FUNCTION( AddNoise ) {
+DEFINE_FUNCTION( addNoise ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1400,7 +1400,7 @@ $TOC_MEMBER $INAME
    $ARG $INT mode: is the type of desaturation, either Texture.desaturateLightness, Texture.desaturateSum or Texture.desaturateAverage
 **/
 // PTYPE ok
-DEFINE_FUNCTION( Desaturate ) {
+DEFINE_FUNCTION( desaturate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1482,7 +1482,7 @@ $TOC_MEMBER $INAME
   Set a texture with another texture, image or _color_.
 **/
 // PTYPE ok
-DEFINE_FUNCTION( Set ) {
+DEFINE_FUNCTION( set ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1560,7 +1560,7 @@ $TOC_MEMBER $INAME
   _factor_ is applied to the source (object or color) before the addition.
 **/
 // PTYPE ok
-DEFINE_FUNCTION( Add ) {
+DEFINE_FUNCTION( add ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1650,7 +1650,7 @@ $TOC_MEMBER $INAME
   Mathematically multiply a texture (_textureObject_) or a given color (_colorInfo_) to the current texture.
 **/
 // PTYPE ok
-DEFINE_FUNCTION( Mult ) {
+DEFINE_FUNCTION( mult ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1750,7 +1750,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 // PTYPE ok
-DEFINE_FUNCTION( Blend ) { // texture1, blenderTexture|blenderColor
+DEFINE_FUNCTION( blend ) { // texture1, blenderTexture|blenderColor
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1822,7 +1822,7 @@ $TOC_MEMBER $INAME
   $H note
    For non-integer rotations, see RotoZoom() function.
 **/
-DEFINE_FUNCTION( Rotate90 ) { // (TBD) test it
+DEFINE_FUNCTION( rotate90 ) { // (TBD) test it
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1896,7 +1896,7 @@ $TOC_MEMBER $INAME
    $ARG $BOOL horizontally: flips the texture horizontally (against x axis).
    $ARG $BOOL vertically: flips the texture vertically (against y axis).
 **/
-DEFINE_FUNCTION( Flip ) {
+DEFINE_FUNCTION( flip ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1944,7 +1944,7 @@ $TOC_MEMBER $INAME
    $ARG $REAL zoomY:
    $ARG $REAL rotations: the number of totations to perform. 0.25 is 90 degres (use 0 for none).
 **/
-DEFINE_FUNCTION( RotoZoom ) { // source: FxGen
+DEFINE_FUNCTION( rotoZoom ) { // source: FxGen
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2082,7 +2082,7 @@ $TOC_MEMBER $INAME
    $ARG $ENUM borderMode: how to manage the border. either Texture.borderClamp, Texture.borderWrap, Texture.borderMirror or Texture.borderValue.
 **/
 // PTYPE ok
-DEFINE_FUNCTION( Resize ) {
+DEFINE_FUNCTION( resize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2243,7 +2243,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 // (TBD) PTYPE
-DEFINE_FUNCTION( Convolution ) {
+DEFINE_FUNCTION( convolution ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2380,7 +2380,7 @@ $TOC_MEMBER $INAME
  $THIS $INAME( iterations [ , radius = 1 ] [ , borderMode = Texture.borderWrap ] )
   (TBD)
 **/
-DEFINE_FUNCTION( Dilate ) {
+DEFINE_FUNCTION( dilate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2475,7 +2475,7 @@ $TOC_MEMBER $INAME
   });
   }}}
 **/
-DEFINE_FUNCTION( ForEachPixel ) {
+DEFINE_FUNCTION( forEachPixel ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2555,7 +2555,7 @@ $TOC_MEMBER $INAME
   texture.NormalizeLevels();
   }}}
 **/
-DEFINE_FUNCTION( BoxBlur ) {
+DEFINE_FUNCTION( boxBlur ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2652,7 +2652,7 @@ $TOC_MEMBER $INAME
  $THIS $INAME()
   Converts each pixel into a vector, normalize this vector, then store the vector as a pixel.
 **/
-DEFINE_FUNCTION( NormalizeVectors ) {
+DEFINE_FUNCTION( normalizeVectors ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2697,7 +2697,7 @@ $TOC_MEMBER $INAME
   Converts the texture to a normals map using the Sobel filter.
 **/
 // (TBD) PTYPE
-DEFINE_FUNCTION( Normals ) {
+DEFINE_FUNCTION( normals ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2802,7 +2802,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 // (TBD) PTYPE
-DEFINE_FUNCTION( Light ) {
+DEFINE_FUNCTION( light ) {
 	// Simple Lighting: http://www.gamasutra.com/features/19990416/intel_simd_04.htm
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -2918,7 +2918,7 @@ $TOC_MEMBER $INAME
   Among the three textures (this, t1, t2), process each $pval by making the average of both that are the nearest.
 
 **/
-DEFINE_FUNCTION( NR ) {
+DEFINE_FUNCTION( nr ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2991,7 +2991,7 @@ $TOC_MEMBER $INAME
  $THIS $INAME( x0, y0, x1, y1 )
   Remove the part of the texture that is outside the rectangle (x1,y1)-(x2,y2).
 **/
-DEFINE_FUNCTION( Trim ) { // (TBD) test this new version that use memcpy
+DEFINE_FUNCTION( trim ) { // (TBD) test this new version that use memcpy
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3069,7 +3069,7 @@ $TOC_MEMBER $INAME
    $ARG $INT y:
    $ARG $ENUM borderMode: one of Texture.borderWrap or Texture.borderClamp.
 **/
-DEFINE_FUNCTION( Copy ) {
+DEFINE_FUNCTION( copy ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3147,7 +3147,7 @@ $TOC_MEMBER $INAME
    $ARG $INT y:
    $ARG $ENUM borderMode: one of Texture.borderWrap or Texture.borderClamp.
 **/
-DEFINE_FUNCTION( Paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
+DEFINE_FUNCTION( paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3246,7 +3246,7 @@ $TOC_MEMBER $INAME
   new File('text.png').content = EncodePngImage(t.Export());
   }}}
 **/
-DEFINE_FUNCTION( Export ) { // (int)x, (int)y, (int)width, (int)height. Returns a Blob
+DEFINE_FUNCTION( export ) { // (int)x, (int)y, (int)width, (int)height. Returns a Blob
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3339,7 +3339,7 @@ $TOC_MEMBER $INAME
   ...
   }}}
 **/
-DEFINE_FUNCTION( Import ) { // (Blob)image, (int)x, (int)y
+DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 
 	JLStr bufferStr;
 
@@ -3442,7 +3442,7 @@ $TOC_MEMBER $INAME
    $ARG $INT offsetY:
    $ARG $ENUM borderMode: one of Texture.borderWrap, Texture.borderClamp, Texture.borderMirror or Texture.borderValue.
 **/
-DEFINE_FUNCTION( Shift ) {
+DEFINE_FUNCTION( shift ) {
 	// (TBD) I think it is possible to do the Shift operation without using a second buffer.
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -3493,7 +3493,7 @@ $TOC_MEMBER $INAME
    $ARG $ENUM borderMode: one of Texture.borderWrap, Texture.borderClamp, Texture.borderMirror or Texture.borderValue.
 **/
 // (TBD) PTYPE
-DEFINE_FUNCTION( Displace ) {
+DEFINE_FUNCTION( displace ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3569,7 +3569,7 @@ $TOC_MEMBER $INAME
    $ARG $INT density:
    $ARG $REAL regularity:
 **/
-DEFINE_FUNCTION( Cells ) { // source: FxGen
+DEFINE_FUNCTION( cells ) { // source: FxGen
 
 	struct Point {
 		float x, y;
@@ -3697,7 +3697,7 @@ $TOC_MEMBER $INAME
   texture.AddGradiantQuad(BLACK, RED, BLUE, BLACK);
   }}}
 **/
-DEFINE_FUNCTION( AddGradiantQuad ) {
+DEFINE_FUNCTION( addGradiantQuad ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3759,7 +3759,7 @@ $TOC_MEMBER $INAME
   texture.AddGradiantLinear([0,1,0], [0,1,0]);
   }}}
 **/
-DEFINE_FUNCTION( AddGradiantLinear ) {
+DEFINE_FUNCTION( addGradiantLinear ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3818,7 +3818,7 @@ $TOC_MEMBER $INAME
   texture.AddGradiantRadial([0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1], true);
   }}}
 **/
-DEFINE_FUNCTION( AddGradiantRadial ) {
+DEFINE_FUNCTION( addGradiantRadial ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3887,7 +3887,7 @@ DEFINE_FUNCTION( AddGradiantRadial ) {
 
 
 /*
-DEFINE_FUNCTION( AddGradiantRadial ) {
+DEFINE_FUNCTION( addGradiantRadial ) {
 
 	JL_ASSERT_ARGC_MIN( 3 );
 
@@ -3975,7 +3975,7 @@ $TOC_MEMBER $INAME
   texture.AddCracks( 10, 10000, 0.1, 1, function(v) Texture.RandReal() );
   }}}
 **/
-DEFINE_FUNCTION( AddCracks ) { // source: FxGen
+DEFINE_FUNCTION( addCracks ) { // source: FxGen
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4070,7 +4070,7 @@ DEFINE_FUNCTION( AddCracks ) { // source: FxGen
 $TOC_MEMBER $INAME
  $THIS $INAME( $TYPE matrix )
 **/
-DEFINE_FUNCTION( ApplyColorMatrix ) {
+DEFINE_FUNCTION( applyColorMatrix ) {
 
 	// 4x4 matrix for linear transformations, 5x5 matrix for non-linear transformations
 	// Color Transformations and the Color Matrix: http://www.c-sharpcorner.com/UploadFile/mahesh/Transformations0512192005050129AM/Transformations05.aspx
@@ -4120,7 +4120,7 @@ $TOC_MEMBER $INAME
 texture.AddPerlin2([0,0,0], [1,0,0], [0,1,0]);
 }}}
 **/
-DEFINE_FUNCTION( AddPerlin2 ) {
+DEFINE_FUNCTION( addPerlin2 ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4186,7 +4186,7 @@ $TOC_MEMBER $INAME
    $ARG colorInfo color:
 **/
 // PTYPE ok
-DEFINE_FUNCTION( SetRectangle ) {
+DEFINE_FUNCTION( setRectangle ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4234,7 +4234,7 @@ $TOC_MEMBER $INAME
    If x and y are wrapped to the image width and height.
 **/
 // PTYPE ok
-DEFINE_FUNCTION( SetPixel ) { // x, y, levels
+DEFINE_FUNCTION( setPixel ) { // x, y, levels
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4280,7 +4280,7 @@ $TOC_MEMBER $INAME
   Print( 'Red: '+pixel[0], 'Green: '+pixel[1], 'Blue: '+pixel[2] );
   }}}
 **/
-DEFINE_FUNCTION( GetPixelAt ) {
+DEFINE_FUNCTION( getPixelAt ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4315,7 +4315,7 @@ $TOC_MEMBER $INAME
  $THIS $INAME( [ channel ] )
   Returns the average $pval. If _channel_ argument is given, the average is done on that channel only.
 **/
-DEFINE_FUNCTION( GetGlobalLevel ) {
+DEFINE_FUNCTION( getGlobalLevel ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4360,7 +4360,7 @@ $TOC_MEMBER $INAME
   Returns the [ lowest,highest ] level value of the texture. If _channel_ argument is given, the average is done on that channel only.
 **/
 // PTYPE ok
-DEFINE_FUNCTION( GetLevelRange ) {
+DEFINE_FUNCTION( getLevelRange ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4419,7 +4419,7 @@ $TOC_MEMBER $INAME
   Returns the [ lowest, highest ] level value of the border of the texture.
 **/
 // PTYPE ok
-DEFINE_FUNCTION( GetBorderLevelRange ) {
+DEFINE_FUNCTION( getBorderLevelRange ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4562,7 +4562,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 **/
 
 
-//DEFINE_FUNCTION( Noise ) {
+//DEFINE_FUNCTION( noise ) {
 //
 //	JL_ASSERT_ARGC_MIN(1);
 //	unsigned long seed;
@@ -4575,7 +4575,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 
 #ifdef _DEBUG
 //static JSBool _Test(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
-DEFINE_FUNCTION( Test ) {
+DEFINE_FUNCTION( test ) {
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -4656,64 +4656,64 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Free )
-		FUNCTION( Swap )
-		FUNCTION( ClearChannel )
-		FUNCTION( ToHLS )
-		FUNCTION( ToRGB )
-		FUNCTION( SetChannel )
-		FUNCTION( Desaturate )
-		FUNCTION( Colorize )
-		FUNCTION( ExtractColor )
-		FUNCTION( SetPixel )
-		FUNCTION( SetRectangle )
-		FUNCTION( AddNoise )
-		FUNCTION( Set )
-		FUNCTION( Add )
-		FUNCTION( Mult )
-		FUNCTION( Blend )
-		FUNCTION( Rotate90 )
-		FUNCTION( RotoZoom )
-		FUNCTION( Resize )
-		FUNCTION( Trim )
-		FUNCTION( Copy )
-		FUNCTION( Paste )
-		FUNCTION( Export )
-		FUNCTION( Import )
-		FUNCTION( Flip )
-		FUNCTION( Shift )
-		FUNCTION( Convolution )
-		FUNCTION( Dilate )
-		FUNCTION( ForEachPixel )
-		FUNCTION( Normals )
-		FUNCTION( NormalizeVectors )
-		FUNCTION( Light )
-		FUNCTION( BoxBlur )
-		FUNCTION( ClampLevels )
-		FUNCTION( CutLevels )
-		FUNCTION( Displace )
-		FUNCTION( NormalizeLevels )
-		FUNCTION( InvertLevels )
-		FUNCTION( OppositeLevels )
-		FUNCTION( PowLevels )
-		FUNCTION( MirrorLevels )
-		FUNCTION( WrapLevels )
-		FUNCTION( Aliasing )
-		FUNCTION( Cells )
-		FUNCTION( AddCracks )
-		FUNCTION( AddGradiantQuad )
-		FUNCTION( AddGradiantLinear )
-		FUNCTION( AddGradiantRadial )
-		FUNCTION( GetPixelAt )
-		FUNCTION( GetLevelRange )
-		FUNCTION( GetBorderLevelRange )
-		FUNCTION( GetGlobalLevel )
-		FUNCTION( NR )
-		FUNCTION( ApplyColorMatrix )
-		FUNCTION( AddPerlin2 )
+		FUNCTION( free )
+		FUNCTION( swap )
+		FUNCTION( clearChannel )
+		FUNCTION( toHLS )
+		FUNCTION( toRGB )
+		FUNCTION( setChannel )
+		FUNCTION( desaturate )
+		FUNCTION( colorize )
+		FUNCTION( extractColor )
+		FUNCTION( setPixel )
+		FUNCTION( setRectangle )
+		FUNCTION( addNoise )
+		FUNCTION( set )
+		FUNCTION( add )
+		FUNCTION( mult )
+		FUNCTION( blend )
+		FUNCTION( rotate90 )
+		FUNCTION( rotoZoom )
+		FUNCTION( resize )
+		FUNCTION( trim )
+		FUNCTION( copy )
+		FUNCTION( paste )
+		FUNCTION( export )
+		FUNCTION( import )
+		FUNCTION( flip )
+		FUNCTION( shift )
+		FUNCTION( convolution )
+		FUNCTION( dilate )
+		FUNCTION( forEachPixel )
+		FUNCTION( normals )
+		FUNCTION( normalizeVectors )
+		FUNCTION( light )
+		FUNCTION( boxBlur )
+		FUNCTION( clampLevels )
+		FUNCTION( cutLevels )
+		FUNCTION( displace )
+		FUNCTION( normalizeLevels )
+		FUNCTION( invertLevels )
+		FUNCTION( oppositeLevels )
+		FUNCTION( powLevels )
+		FUNCTION( mirrorLevels )
+		FUNCTION( wrapLevels )
+		FUNCTION( aliasing )
+		FUNCTION( cells )
+		FUNCTION( addCracks )
+		FUNCTION( addGradiantQuad )
+		FUNCTION( addGradiantLinear )
+		FUNCTION( addGradiantRadial )
+		FUNCTION( getPixelAt )
+		FUNCTION( getLevelRange )
+		FUNCTION( getBorderLevelRange )
+		FUNCTION( getGlobalLevel )
+		FUNCTION( nr )
+		FUNCTION( applyColorMatrix )
+		FUNCTION( addPerlin2 )
 
 		#ifdef _DEBUG
-		FUNCTION( Test )
+		FUNCTION( test )
 		#endif // _DEBUG
 
 	END_FUNCTION_SPEC

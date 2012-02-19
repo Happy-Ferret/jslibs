@@ -1,12 +1,12 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsstd');
-LoadModule('jsio');
-LoadModule('jssdl');
-LoadModule('jsgraphics');
-LoadModule('jsprotex');
-LoadModule('jsimage');
-LoadModule('jsdebug');
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jssdl');
+loadModule('jsgraphics');
+loadModule('jsprotex');
+loadModule('jsimage');
+loadModule('jsdebug');
 
 
 //Halt(); //////////////////////////////////////////////////////////////////////
@@ -126,7 +126,7 @@ var z = 0;
 RandSeed(1);
 PerlinNoiseReinit();
 
-Exec('liveconsole.js');
+exec('liveconsole.js');
 
 function UpdateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
 
@@ -386,7 +386,7 @@ return;
 
 //	var tex = t;
 //	var channel = 1;
-//	Print( tex.width );
+//	print( tex.width );
 //	var tmp = new Texture(tex.width, tex.height, 1);
 //	tmp.AddNoise();
 //	tex.SetChannel(channel, tmp, 0);
@@ -733,7 +733,7 @@ while (!end) {
 	var t = TimeCounter();
 	UpdateTexture();
 	t = TimeCounter() - t;
-	Print( t.toFixed(), 'ms     \r' );
+	print( t.toFixed(), 'ms     \r' );
 
 	with (Ogl) {
 		

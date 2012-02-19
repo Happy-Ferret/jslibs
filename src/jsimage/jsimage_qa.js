@@ -1,4 +1,4 @@
-LoadModule('jsimage');
+loadModule('jsimage');
 
 /// load an image [d]
 

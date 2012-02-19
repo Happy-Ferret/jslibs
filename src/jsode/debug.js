@@ -1,5 +1,5 @@
-LoadModule('jsstd');
-LoadModule('jsode');
+loadModule('jsstd');
+loadModule('jsode');
 
 /*
 World.prototype.env.mass.value;
@@ -14,25 +14,25 @@ throw 0;
 */
 
 
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-// LoadModule('jsstd'); Exec('../../tests/explodebox.js'); throw 0;
-LoadModule('jsstd'); Exec('../../tests/podtest.js'); throw 0;
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd'); exec('../../tests/explodebox.js'); throw 0;
+loadModule('jsstd'); exec('../../tests/podtest.js'); throw 0;
 
 throw 0;
 
 try {
 
-LoadModule('jsdebug');
-LoadModule('jsstd');
-LoadModule('jsio');
+loadModule('jsdebug');
+loadModule('jsstd');
+loadModule('jsio');
 
-LoadModule('jssdl');
+loadModule('jssdl');
 
-LoadModule('jsgraphics');
+loadModule('jsgraphics');
 
 //////////////////////////////////////////////////////////////////////////////
 
-LoadModule('jsode');
+loadModule('jsode');
 
 var world = new World();
 world.quickStepNumIterations = 20;
@@ -47,7 +47,7 @@ world.defaultSurfaceParameters.bounceVel = 2;
 
 var InputManager = new function () {
 	
-	LoadModule('jssdl');	
+	loadModule('jssdl');	
 	var self = this;
 	
 	var listenerList = [];
@@ -101,7 +101,7 @@ var InputManager = new function () {
 
 var TrimeshManager = new function() {
 	
-	LoadModule('jstrimesh');
+	loadModule('jstrimesh');
 	
 	var trimeshList = [];
 		
@@ -142,9 +142,9 @@ var TrimeshManager = new function() {
 
 var TextureManager = new function() {
 	
-	LoadModule('jsimage');
-	LoadModule('jsprotex');
-	LoadModule('jssvg');
+	loadModule('jsimage');
+	loadModule('jsprotex');
+	loadModule('jssvg');
 
 	var textureList = {};
 	
@@ -180,8 +180,8 @@ var TextureManager = new function() {
 
 var SoundManager = new function() {
 	
-	LoadModule('jsaudio');
-	LoadModule('jssound');
+	loadModule('jsaudio');
+	loadModule('jssound');
 	Oal.Open("Generic Software"); // "Generic Hardware", "Generic Software", "DirectSound3D" (for legacy), "DirectSound", "MMSYSTEM"
 
 	var bufferList = {};
@@ -229,8 +229,8 @@ var SoundManager = new function() {
 
 var DisplayManager = new function() {
 
-	LoadModule('jssdl');
-	LoadModule('jsgraphics');
+	loadModule('jssdl');
+	loadModule('jsgraphics');
 	
 	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
 	GlSetAttribute( GL_DOUBLEBUFFER, 1 );
@@ -273,7 +273,7 @@ var DisplayManager = new function() {
 			DefineTextureImage(TEXTURE_2D, undefined, texture);
 			textureId = GenTexture();
 			BindTexture(TEXTURE_2D, textureId);
-//			Print( 'ogl error: ', Ogl.error, '\n' );
+//			print( 'ogl error: ', Ogl.error, '\n' );
 		}
 		return textureIdList[name] = textureId;
 	}
@@ -477,7 +477,7 @@ function Ball() {
 			var dist = Vector3Length(v);
 
 			var objSize = Ogl.PixelWidthFactor() * width / dist;
-//			Print(objSize, '\n');
+//			print(objSize, '\n');
 	
 			MultMatrix(geom);
 			Color(1,0.5,0.75);
@@ -562,19 +562,19 @@ j.velocity = 100;
 		LoadIdentity();
 		Translate(10,10,10);
 		LookAt(10, 10, 15, 0,0,0, 0,0,1);
-		Print('gl '); PrintGlMatrix();
+		print('gl '); printGlMatrix();
 
 		var t = new Transformation(undefined);
 		t.Translate(10,10,10);
 		t.LookAt(10, 10, 15, 0,0,0, 0,0,1);
 		LoadMatrix(t);
-		Print('tr '); PrintGlMatrix();
-		Print('\n'); 
+		print('tr '); printGlMatrix();
+		print('\n'); 
 */
 
 } catch(ex) {
 	
-	Print( ex.fileName+':'+ex.lineNumber+' '+ex, '\n' );
+	print( ex.fileName+':'+ex.lineNumber+' '+ex, '\n' );
 	Halt();
 }
 

@@ -111,7 +111,7 @@ $TOC_MEMBER $INAME
   $LF
   The functions returns the file object itself (this), this allows to write things like: `new File('foo.txt').Open('r').Read();`
 **/
-DEFINE_FUNCTION( Open ) {
+DEFINE_FUNCTION( open ) {
 
 	JLStr str;
 
@@ -188,7 +188,7 @@ $TOC_MEMBER $INAME
  $H note
   max offset is 2^53
 **/
-DEFINE_FUNCTION( Seek ) {
+DEFINE_FUNCTION( seek ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -232,7 +232,7 @@ $TOC_MEMBER $INAME
   Delete a file from the filesystem.
   The operation may fail if the file is open.
 **/
-DEFINE_FUNCTION( Delete ) {
+DEFINE_FUNCTION( delete ) {
 
 	JLStr str;
 
@@ -261,7 +261,7 @@ $TOC_MEMBER $INAME
   Lock or unlock a file for exclusive access.
   _state_ can be _true_ or _false_.
 **/
-DEFINE_FUNCTION( Lock ) {
+DEFINE_FUNCTION( lock ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -287,7 +287,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( directory )
   Move the file to another directory.
 **/
-DEFINE_FUNCTION( Move ) {
+DEFINE_FUNCTION( move ) {
 
 	JLStr fileName, destDirName;
 	JL_DEFINE_FUNCTION_OBJ;
@@ -825,11 +825,11 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS( 3 ) // SLOT_JSIO_DESCRIPTOR_IMPORTED, SLOT_JSIO_DESCRIPTOR_TIMEOUT, SLOT_JSIO_FILE_NAME
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Open )
-		FUNCTION( Seek )
-		FUNCTION( Delete )
-		FUNCTION( Lock )
-		FUNCTION( Move )
+		FUNCTION( open )
+		FUNCTION( seek )
+		FUNCTION( delete )
+		FUNCTION( lock )
+		FUNCTION( move )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

@@ -12,11 +12,11 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-LoadModule('jsio');
-LoadModule('jsstd');
-LoadModule('jsz');
-LoadModule('jscrypt');
-LoadModule('jsdebug');
+loadModule('jsio');
+loadModule('jsstd');
+loadModule('jsz');
+loadModule('jscrypt');
+loadModule('jsdebug');
 
 !function() {
 
@@ -154,7 +154,7 @@ LoadModule('jsdebug');
 	dbg.breakOnDebuggerKeyword = true;
 	dbg.breakOnError = true;
 	dbg.breakOnException = false;
-	dbg.breakOnExecute = false;
+	dbg.breakOnexecute = false;
 	dbg.interruptCounterLimit = 0;
 
 	var _breakpointList = {};
@@ -342,7 +342,7 @@ LoadModule('jsdebug');
 			dbg.breakOnDebuggerKeyword = false;
 			dbg.breakOnError = false;
 			dbg.breakOnException = false;
-			dbg.breakOnExecute = false;
+			dbg.breakOnexecute = false;
 			delete dbg.onBreak;
 			dbg.ClearBreakpoints();
 			delete global.__dbg;
@@ -442,9 +442,9 @@ LoadModule('jsdebug');
 
 	if ( global.arguments[0] == currentFilename ) { // debugger.js is used like: jshost jsdebugger.js programToDebug.js
 		
-		dbg.breakOnFirstExecute = true;
+		dbg.breakOnFirstexecute = true;
 		var prog = global.arguments.splice(1,1);
-		Exec(prog, false);
+		exec(prog, false);
 	}
 
 	global.__dbg = dbg; // avoid CG

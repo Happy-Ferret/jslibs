@@ -109,7 +109,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Resets the hash state.
 **/
-DEFINE_FUNCTION( Reset ) {
+DEFINE_FUNCTION( reset ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -136,7 +136,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( data )
   Process a block of data though the hash.
 **/
-DEFINE_FUNCTION( Process ) {
+DEFINE_FUNCTION( process ) {
 
 	JLStr in;
 	JL_DEFINE_FUNCTION_OBJ;
@@ -180,7 +180,7 @@ $TOC_MEMBER $INAME
   Print( HexEncode( md5.Done(), '\n' ) ); // prints: 3858F62230AC3C915F300C664312C63F
   }}}
 **/
-DEFINE_FUNCTION( Done ) {
+DEFINE_FUNCTION( done ) {
 
 	JL_IGNORE(argc);
 
@@ -367,7 +367,7 @@ $TOC_MEMBER $INAME
    In this mode applicable block ciphers (such as AES) can be turned into hash functions that other functions can use.
    In particular this allows a cryptosystem to be designed using very few moving parts.   
 **/
-DEFINE_FUNCTION( CipherHash ) {
+DEFINE_FUNCTION( cipherHash ) {
 
 	JLStr cipherName;
 
@@ -436,9 +436,9 @@ CONFIGURE_CLASS
 	HAS_CALL
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Reset )
-		FUNCTION( Process )
-		FUNCTION( Done )
+		FUNCTION( reset )
+		FUNCTION( process )
+		FUNCTION( done )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -449,7 +449,7 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( CipherHash )
+		FUNCTION( cipherHash )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

@@ -1,11 +1,11 @@
-LoadModule('jssdl');
-LoadModule('jsgraphics');
-LoadModule('jsfont');
-LoadModule('jsoglft');
-//LoadModule('jsimage');
-LoadModule('jsprotex');
-//LoadModule('jstrimesh');
-LoadModule('jssvg');
+loadModule('jssdl');
+loadModule('jsgraphics');
+loadModule('jsfont');
+loadModule('jsoglft');
+//loadModule('jsimage');
+loadModule('jsprotex');
+//loadModule('jstrimesh');
+loadModule('jssvg');
 
 
 function FrustumPlanes() {
@@ -155,14 +155,14 @@ var ShaderProgramProto = {
 		Ogl.CompileShader(shader);
 		if ( !Ogl.GetObjectParameter(shader, Ogl.OBJECT_COMPILE_STATUS) ) {
 
-			Print( 'CompileShader log:\n', Ogl.GetInfoLog(shader), '\n' );
+			print( 'CompileShader log:\n', Ogl.GetInfoLog(shader), '\n' );
 			throw 0;
 		}
 		Ogl.AttachObject(this.program, shader);
 		Ogl.DeleteObject(shader);
 		if ( !Ogl.GetObjectParameter(shader, Ogl.OBJECT_DELETE_STATUS) ) {
 
-			Print( 'DeleteObject log:\n', Ogl.GetInfoLog(this.program), '\n' );
+			print( 'DeleteObject log:\n', Ogl.GetInfoLog(this.program), '\n' );
 			throw 0;
 		}
 	},
@@ -185,7 +185,7 @@ var ShaderProgramProto = {
 		Ogl.LinkProgram(this.program);
 		if ( !Ogl.GetObjectParameter(this.program, Ogl.OBJECT_LINK_STATUS) ) {
 
-			Print( 'LinkProgram log:\n', Ogl.GetInfoLog(this.program), '\n' );
+			print( 'LinkProgram log:\n', Ogl.GetInfoLog(this.program), '\n' );
 			throw 0;
 		}
 	},
@@ -346,7 +346,7 @@ function UI(currentWidth, currentHeight) {
 	
 	SetVideoMode(currentWidth, currentHeight, undefined, defaultVideoMode);
 	
-	Print( 'OpenGL v', Ogl.GetString(Ogl.VERSION), '\n' );
+	print( 'OpenGL v', Ogl.GetString(Ogl.VERSION), '\n' );
 	
 	//	Assert( Ogl.HasExtensionName('GL_EXT_stencil_two_side') );
 	Assert( Ogl.HasExtensionName('GL_ARB_texture_env_combine') );
@@ -783,7 +783,7 @@ function UI(currentWidth, currentHeight) {
 		},
 		onVideoResize: function(w, h) {
 			
-//			Print('resize '+w+'x'+h, '\n')
+//			print('resize '+w+'x'+h, '\n')
 //			SetVideoMode();
 //			Ogl.Viewport(0, 0, w,h);
 		},

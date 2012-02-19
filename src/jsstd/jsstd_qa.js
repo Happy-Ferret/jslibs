@@ -1,6 +1,6 @@
-LoadModule('jsstd');
+loadModule('jsstd');
 
-/// Exec error
+/// exec error
 
 	var filename = 'jsqa_' + QA.RandomString(8);
 	new File(filename).content = '\n\n\n\nfunction();\n';
@@ -12,7 +12,7 @@ LoadModule('jsstd');
 //		errorMsg += txt;
 //	}
 	
-	QA.ASSERT_EXCEPTION(function() { Exec(filename, false) }, SyntaxError, 'Exec handle compilation errors');
+	QA.ASSERT_EXCEPTION(function() { exec(filename, false) }, SyntaxError, 'exec handle compilation errors');
 
 	new File(filename).content = undefined;
 	
@@ -56,8 +56,8 @@ LoadModule('jsstd');
 		QA.ASSERT( IsNumber( new Number(123) ), true, 'not a number object' );
 
 
-/// Print returns undefined [ftrm]
-		QA.ASSERT( Print(), undefined, 'Print return value' );
+/// print returns undefined [ftrm]
+		QA.ASSERT( print(), undefined, 'print return value' );
 
 
 /// ObjEx simple access (crash test) [ftrm]
@@ -601,7 +601,7 @@ LoadModule('jsstd');
 
 /// Garbage collector [rd]
 		
-		LoadModule('jsdebug');
+		loadModule('jsdebug');
 		
 		var str = QA.RandomString(1024*1024);
 		
@@ -727,34 +727,34 @@ LoadModule('jsstd');
 		QA.ASSERT_STR( res +'-'+ ids, 'ab01e2g3ij-cdfh', 'Expand result is correct' );
 
 
-/// Exec error [ftrm]
+/// exec error [ftrm]
 
-		QA.ASSERT_EXCEPTION( function() Exec('e654ser65t'), ReferenceError, 'Exec unknown file' );
+		QA.ASSERT_EXCEPTION( function() exec('e654ser65t'), ReferenceError, 'exec unknown file' );
 
 		
-/// Exec basic test [ftrm]
+/// exec basic test [ftrm]
 		
-		LoadModule('jsio');
+		loadModule('jsio');
 		var f = new File('qa_exec_test.js');
 		f.content = '((1234))';
-		var res = Exec('qa_exec_test.js', false);
+		var res = exec('qa_exec_test.js', false);
 		QA.ASSERT_STR( res, eval( f.content.toString() ), 'content validity' );
 
-		var res = Exec.call(this, 'qa_exec_test.js', false);
+		var res = exec.call(this, 'qa_exec_test.js', false);
 		QA.ASSERT_STR( res, eval( f.content.toString() ), 'content validity' );
 
 		f.content = undefined;
 
 
-/// Exec using XDR [ftrm]
+/// exec using XDR [ftrm]
 		
-		LoadModule('jsio');
+		loadModule('jsio');
 	
 		var f = new File('qa_exec_test.js');
 		f.content = '(1234)';
 		
-		var res = Exec(f.name, true);
-		QA.ASSERT( res, 1234, 'Exec return value' );
+		var res = exec(f.name, true);
+		QA.ASSERT( res, 1234, 'exec return value' );
 
 		var fxdr = new File('qa_exec_test.jsxdr');
 		QA.ASSERT( fxdr.exist, true, 'XDR file exist' );
@@ -763,20 +763,20 @@ LoadModule('jsstd');
 
 		QA.ASSERT( f.exist, false, 'do not have source file' );
 
-		var res = Exec(f.name, true);
-		QA.ASSERT( res, 1234, 'Exec using XDR file' );
+		var res = exec(f.name, true);
+		QA.ASSERT( res, 1234, 'exec using XDR file' );
 
 		fxdr.Delete();
 		QA.ASSERT( fxdr.exist, false, 'XDR file is deleted' );
 		
 		try {
 			
-			var res = Exec(f.name, false);
-			QA.FAILED('Exec do not detect missing file');
+			var res = exec(f.name, false);
+			QA.FAILED('exec do not detect missing file');
 			
 		} catch(ex) {
 			
-			QA.ASSERT( ex.constructor, ReferenceError, 'Exec exception' );
+			QA.ASSERT( ex.constructor, ReferenceError, 'exec exception' );
 			QA.ASSERT( ex.message.indexOf('xdr cannot be found') != -1, true, 'error message' );
 		}
 
@@ -865,11 +865,11 @@ LoadModule('jsstd');
 
 /// Sandbox external access [tfm]
 
-		LoadModule('jsio');
+		loadModule('jsio');
 		var res = SandboxEval('typeof File');
 		QA.ASSERT( res == typeof File, false, 'forbidden File class access' );
-		var res = SandboxEval('typeof LoadModule');
-		QA.ASSERT( res == typeof LoadModule, false, 'forbidden LoadModule function access' );
+		var res = SandboxEval('typeof loadModule');
+		QA.ASSERT( res == typeof loadModule, false, 'forbidden loadModule function access' );
 
 
 /// Sandbox basic Query [tfm]
@@ -946,19 +946,19 @@ LoadModule('jsstd');
 	QA.ASSERT_EXCEPTION( function() { SandboxEval('(function f(){f();})();') }, 'InternalError', 'Stack overflow detection' );
 
 
-/// Exec function [f]
+/// exec function [f]
 	
 	var filename = QA.RandomString(10);
 	new File(filename).content = '_exectest++';
 	
 	_exectest = 5;
-	Exec(filename);
-	QA.ASSERT( _exectest, 6, 'Exec an expression script (1)' );
-	Exec(filename);
-	QA.ASSERT( _exectest, 7, 'Exec an expression script (2)' );
+	exec(filename);
+	QA.ASSERT( _exectest, 6, 'exec an expression script (1)' );
+	exec(filename);
+	QA.ASSERT( _exectest, 7, 'exec an expression script (2)' );
 		
 	new File(filename).content = undefined;
-	QA.ASSERT( new File(filename).content, undefined, 'Exec etest file deletion' );
+	QA.ASSERT( new File(filename).content, undefined, 'exec etest file deletion' );
 	new File(filename+'xdr').content = undefined;
 
 /// warning messages [ft]
@@ -974,6 +974,6 @@ LoadModule('jsstd');
 	} catch (ex) {}
 	_host.stderr = prev;
 	
-	//Print(buffer.length)
+	//print(buffer.length)
 	QA.ASSERT_STR( buffer.indexOf('warning: testing warning messages') != -1, true, 'stderr redirection result' ); 
 

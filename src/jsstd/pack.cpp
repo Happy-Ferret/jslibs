@@ -352,7 +352,7 @@ $TOC_MEMBER $INAME
   Supported sizes are 1, 2, 3, 4, 8 (for 8-bit, 16-bit, 24-bit, 32-bit, 64-bit). 64-bit values range is [-2^53-1, 2^53-1].$LF
   Returns $UNDEF if the buffer does not contain enough data to read the integer.
 **/
-DEFINE_FUNCTION( ReadInt ) {
+DEFINE_FUNCTION( readInt ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -479,7 +479,7 @@ $TOC_MEMBER $INAME
   Write an integer to the current stream. cf. systemIntSize property.$LF
   Supported sizes are 1, 2, 3, 4, 8 (for 8-bit, 16-bit, 24-bit, 32-bit, 64-bit). 64-bit values range is [-2^53-1, 2^53-1].
 **/
-DEFINE_FUNCTION( WriteInt ) { // incompatible with NIStreamRead
+DEFINE_FUNCTION( writeInt ) { // incompatible with NIStreamRead
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -575,7 +575,7 @@ $TOC_MEMBER $INAME
   Read a 4-byte single precision real (float) or a 8-byte double precision real (double) on the current stream.$LF
   Returns $UNDEF if the buffer does not contain enough data to read the integer.
 **/
-DEFINE_FUNCTION( ReadReal ) {
+DEFINE_FUNCTION( readReal ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -618,7 +618,7 @@ $TOC_MEMBER $INAME
  $STR $INAME( length )
   Read a string of the specifiex _length_ on the current stream.
 **/
-DEFINE_FUNCTION( ReadString ) {
+DEFINE_FUNCTION( readString ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -750,10 +750,10 @@ CONFIGURE_CLASS
 	HAS_INIT
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION(ReadInt)
-		FUNCTION(ReadReal)
-		FUNCTION(ReadString)
-		FUNCTION(WriteInt)
+		FUNCTION(readInt)
+		FUNCTION(readReal)
+		FUNCTION(readString)
+		FUNCTION(writeInt)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

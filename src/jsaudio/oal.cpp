@@ -36,7 +36,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alcOpenDevice, alcCreateContext, alcMakeContextCurrent
 **/
-DEFINE_FUNCTION( Open ) {
+DEFINE_FUNCTION( open ) {
 
 	// Initialize the OpenAL library (cf. alutInit)
 	JLStr deviceName;
@@ -86,7 +86,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alcGetCurrentContext, alcMakeContextCurrent, alcGetContextsDevice, alcDestroyContext, alcCloseDevice
 **/
-DEFINE_FUNCTION( Close ) {
+DEFINE_FUNCTION( close ) {
 
 	ResetEfxApi();
 	// cf. alutExit
@@ -155,7 +155,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDopplerFactor
 **/
-DEFINE_FUNCTION( DopplerFactor ) {
+DEFINE_FUNCTION( dopplerFactor ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -178,7 +178,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDopplerVelocity
 **/
-DEFINE_FUNCTION( DopplerVelocity ) {
+DEFINE_FUNCTION( dopplerVelocity ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -201,7 +201,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alSpeedOfSound
 **/
-DEFINE_FUNCTION( SpeedOfSound ) {
+DEFINE_FUNCTION( speedOfSound ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -223,7 +223,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDistanceModel
 **/
-DEFINE_FUNCTION( DistanceModel ) {
+DEFINE_FUNCTION( distanceModel ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -245,7 +245,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alEnable
 **/
-DEFINE_FUNCTION( Enable ) {
+DEFINE_FUNCTION( enable ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -265,7 +265,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDisable
 **/
-DEFINE_FUNCTION( Disable ) {
+DEFINE_FUNCTION( disable ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -285,7 +285,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alIsEnabled
 **/
-DEFINE_FUNCTION( IsEnabled ) {
+DEFINE_FUNCTION( isEnabled ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -306,7 +306,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetString
 **/
-DEFINE_FUNCTION( GetString ) {
+DEFINE_FUNCTION( getString ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -335,7 +335,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetBooleanv
 **/
-DEFINE_FUNCTION( GetBoolean ) {
+DEFINE_FUNCTION( getBoolean ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -360,7 +360,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetIntegerv
 **/
-DEFINE_FUNCTION( GetInteger ) {
+DEFINE_FUNCTION( getInteger ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -401,7 +401,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetDoublev
 **/
-DEFINE_FUNCTION( GetDouble ) {
+DEFINE_FUNCTION( getDouble ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -440,7 +440,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alListeneri, alListenerf, alListenerfv
 **/
-DEFINE_FUNCTION( Listener ) {
+DEFINE_FUNCTION( listener ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -485,7 +485,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetListenerfv
 **/
-DEFINE_FUNCTION( GetListenerReal ) {
+DEFINE_FUNCTION( getListenerReal ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -522,7 +522,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alSourcei, alSourcef, alSourcefv
 **/
-DEFINE_FUNCTION( GenSource ) {
+DEFINE_FUNCTION( genSource ) {
 
 	ALuint sourceID; // The OpenAL sound source
 	alGenSources(1, &sourceID);
@@ -542,7 +542,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alSourcei, alSourcef, alSourcefv
 **/
-DEFINE_FUNCTION( Source ) {
+DEFINE_FUNCTION( source ) {
 
 	JL_ASSERT_ARGC_MIN(3);
 	JL_ASSERT_ARG_IS_NUMBER(1);
@@ -592,7 +592,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetSourcef
 **/
-DEFINE_FUNCTION( GetSourceReal ) {
+DEFINE_FUNCTION( getSourceReal ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT_ARG_IS_NUMBER(1);
@@ -633,7 +633,7 @@ DEFINE_FUNCTION( GetSourceReal ) {
 $TOC_MEMBER $INAME
  $REAL | $ARRAY $INAME( source, pname [, count] )
 **/
-DEFINE_FUNCTION( GetSourceInteger ) {
+DEFINE_FUNCTION( getSourceInteger ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT_ARG_IS_NUMBER(1);
@@ -680,7 +680,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDeleteBuffers
 **/
-DEFINE_FUNCTION( DeleteSource ) {
+DEFINE_FUNCTION( deleteSource ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
@@ -705,7 +705,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDeleteBuffers
 **/
-DEFINE_FUNCTION( SourceQueueBuffers ) {
+DEFINE_FUNCTION( sourceQueueBuffers ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT_ARG_IS_NUMBER(1);
@@ -742,7 +742,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDeleteBuffers
 **/
-DEFINE_FUNCTION( SourceUnqueueBuffers ) {
+DEFINE_FUNCTION( sourceUnqueueBuffers ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT_ARG_IS_NUMBER(1);
@@ -778,7 +778,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG soundObject sound: a sound object that contains PCM audio data and the following properties: rate, channels and bits.
 **/
-DEFINE_FUNCTION( Buffer ) {
+DEFINE_FUNCTION( buffer ) {
 
 	JLStr buffer;
 
@@ -838,7 +838,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetBufferfv
 **/
-DEFINE_FUNCTION( GetBufferReal ) {
+DEFINE_FUNCTION( getBufferReal ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -880,7 +880,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alGetBufferiv
 **/
-DEFINE_FUNCTION( GetBufferInteger ) {
+DEFINE_FUNCTION( getBufferInteger ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -923,7 +923,7 @@ $TOC_MEMBER $INAME
   $H OpenAL API
    alDeleteBuffers
 **/
-DEFINE_FUNCTION( DeleteBuffer ) {
+DEFINE_FUNCTION( deleteBuffer ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
@@ -945,7 +945,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $INT source: the ID of the source to play.
 **/
-DEFINE_FUNCTION( PlaySource ) {
+DEFINE_FUNCTION( playSource ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
@@ -966,7 +966,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $INT source: the ID of the source to play.
 **/
-DEFINE_FUNCTION( StopSource ) {
+DEFINE_FUNCTION( stopSource ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
@@ -987,7 +987,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $INT source: the ID of the source to play.
 **/
-DEFINE_FUNCTION( PauseSource ) {
+DEFINE_FUNCTION( pauseSource ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
@@ -1008,7 +1008,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $INT source: the ID of the source to play.
 **/
-DEFINE_FUNCTION( RewindSource ) {
+DEFINE_FUNCTION( rewindSource ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
@@ -1029,7 +1029,7 @@ $TOC_MEMBER $INAME
    alGenEffects
 **/
 /*
-DEFINE_FUNCTION( GenEffect ) {
+DEFINE_FUNCTION( genEffect ) {
 
 	ALuint eid;
 	alGenEffects(1, &eid);
@@ -1046,7 +1046,7 @@ $TOC_MEMBER $INAME
    alGenEffects
 **/
 /*
-DEFINE_FUNCTION( DeleteEffect ) {
+DEFINE_FUNCTION( deleteEffect ) {
 
 	ALuint eid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &eid) );
@@ -1065,7 +1065,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG soundObject sound: sound object to play.
 **/
-DEFINE_FUNCTION( PlaySound ) {
+DEFINE_FUNCTION( playSound ) {
 
 	JLStr buffer;
 
@@ -1335,41 +1335,41 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_FUNCTION_SPEC
 
-		FUNCTION_ARGC( Open, 1 )
-		FUNCTION_ARGC( Close, 0 )
+		FUNCTION_ARGC( open, 1 )
+		FUNCTION_ARGC( close, 0 )
 
-		FUNCTION_ARGC( DopplerFactor, 1 )
-		FUNCTION_ARGC( DopplerVelocity, 1 )
-		FUNCTION_ARGC( SpeedOfSound, 1 )
-		FUNCTION_ARGC( DistanceModel, 1 )
+		FUNCTION_ARGC( dopplerFactor, 1 )
+		FUNCTION_ARGC( dopplerVelocity, 1 )
+		FUNCTION_ARGC( speedOfSound, 1 )
+		FUNCTION_ARGC( distanceModel, 1 )
 
-		FUNCTION_ARGC( Enable, 1 )
-		FUNCTION_ARGC( Disable, 1 )
-		FUNCTION_ARGC( IsEnabled, 1 )
-		FUNCTION_ARGC( GetString, 1 )
-		FUNCTION_ARGC( GetBoolean, 1 )
-		FUNCTION_ARGC( GetInteger, 2 )
-		FUNCTION_ARGC( GetDouble, 2 )
+		FUNCTION_ARGC( enable, 1 )
+		FUNCTION_ARGC( disable, 1 )
+		FUNCTION_ARGC( isEnabled, 1 )
+		FUNCTION_ARGC( getString, 1 )
+		FUNCTION_ARGC( getBoolean, 1 )
+		FUNCTION_ARGC( getInteger, 2 )
+		FUNCTION_ARGC( getDouble, 2 )
 
-		FUNCTION_ARGC( Listener, 2 )
-		FUNCTION_ARGC( GetListenerReal, 3 )
-		FUNCTION_ARGC( GenSource, 0 )
-		FUNCTION_ARGC( Source, 3 )
-		FUNCTION_ARGC( GetSourceInteger, 3 )
-		FUNCTION_ARGC( GetSourceReal, 3 )
-		FUNCTION_ARGC( DeleteSource, 1 )
-		FUNCTION_ARGC( SourceQueueBuffers, 2 )
-		FUNCTION_ARGC( SourceUnqueueBuffers, 2 )
-		FUNCTION_ARGC( Buffer, 1 )
-		FUNCTION_ARGC( GetBufferReal, 3 )
-		FUNCTION_ARGC( GetBufferInteger, 3 )
-		FUNCTION_ARGC( DeleteBuffer, 1 )
-		FUNCTION_ARGC( PlaySource, 1 )
-		FUNCTION_ARGC( StopSource, 1 )
-		FUNCTION_ARGC( PauseSource, 1 )
-		FUNCTION_ARGC( RewindSource, 1 )
+		FUNCTION_ARGC( listener, 2 )
+		FUNCTION_ARGC( getListenerReal, 3 )
+		FUNCTION_ARGC( genSource, 0 )
+		FUNCTION_ARGC( source, 3 )
+		FUNCTION_ARGC( getSourceInteger, 3 )
+		FUNCTION_ARGC( getSourceReal, 3 )
+		FUNCTION_ARGC( deleteSource, 1 )
+		FUNCTION_ARGC( sourceQueueBuffers, 2 )
+		FUNCTION_ARGC( sourceUnqueueBuffers, 2 )
+		FUNCTION_ARGC( buffer, 1 )
+		FUNCTION_ARGC( getBufferReal, 3 )
+		FUNCTION_ARGC( getBufferInteger, 3 )
+		FUNCTION_ARGC( deleteBuffer, 1 )
+		FUNCTION_ARGC( playSource, 1 )
+		FUNCTION_ARGC( stopSource, 1 )
+		FUNCTION_ARGC( pauseSource, 1 )
+		FUNCTION_ARGC( rewindSource, 1 )
 
-		FUNCTION_ARGC( PlaySound, 1 ) // non-openal API
+		FUNCTION_ARGC( playSound, 1 ) // non-openal API
 
 		// OpenAL extensions
 //		FUNCTION_ARGC( GenEffect, 0 )

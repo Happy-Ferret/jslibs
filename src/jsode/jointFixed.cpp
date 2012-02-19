@@ -69,7 +69,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Set the current position of body1 and body2 as fixed.
 **/
-DEFINE_FUNCTION( Set ) {
+DEFINE_FUNCTION( set ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -93,7 +93,7 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(2) // body1, body2
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Set )
+		FUNCTION( set )
 	END_FUNCTION_SPEC
 
 END_CLASS

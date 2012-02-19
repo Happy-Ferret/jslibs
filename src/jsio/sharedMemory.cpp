@@ -217,7 +217,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( data [, offset] )
   Write _data_ at _offset_ in the shared memory.
 **/
-DEFINE_FUNCTION( Write ) {
+DEFINE_FUNCTION( write ) {
 
 	JLStr data;
 	JL_DEFINE_FUNCTION_OBJ;
@@ -260,7 +260,7 @@ $TOC_MEMBER $INAME
  $STR $INAME( length [, offset] )
   Read _length_ bytes from _offset_ in the shared memory.
 **/
-DEFINE_FUNCTION( Read ) {
+DEFINE_FUNCTION( read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -304,7 +304,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Clears the content of the shared memory.
 **/
-DEFINE_FUNCTION( Clear ) {
+DEFINE_FUNCTION( clear ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -331,7 +331,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Close the shared memory.
 **/
-DEFINE_FUNCTION( Close ) {
+DEFINE_FUNCTION( close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -492,10 +492,10 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Read )
-		FUNCTION( Write )
-		FUNCTION( Clear )
-		FUNCTION( Close )
+		FUNCTION( read )
+		FUNCTION( write )
+		FUNCTION( clear )
+		FUNCTION( close )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

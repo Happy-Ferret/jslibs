@@ -320,7 +320,7 @@ $TOC_MEMBER $INAME
    Any access to a freed Blob will rise an error.$LF
    Use this function to free huge amounts of memory, like images or sounds, before the GC does it for you.
 **/
-DEFINE_FUNCTION( Free ) {
+DEFINE_FUNCTION( free ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -361,7 +361,7 @@ $TOC_MEMBER $INAME
  ArrayBuffer $INAME()
   Copy the content of blob into a new Uint8Array. The blob it then invalidated.
 ** /
-DEFINE_FUNCTION( ReloacateToArray ) {
+DEFINE_FUNCTION( reloacateToArray ) {
 
 	JL_ASSERT_ARGC(0);
 	JL_DEFINE_FUNCTION_OBJ;
@@ -1433,7 +1433,7 @@ CONFIGURE_CLASS
 //	HAS_NEW_RESOLVE_GETS_START
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION(Free)
+		FUNCTION(free)
 
 //		FUNCTION(ReloacateToArray)
 

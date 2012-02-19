@@ -488,7 +488,7 @@ public:
 
 /* QA test:
 
-DEFINE_FUNCTION( Test ) {
+DEFINE_FUNCTION( test ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	char *ref = (char*)jl_malloc(2000000);

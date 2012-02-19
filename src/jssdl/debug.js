@@ -1,4 +1,4 @@
-LoadModule('jsstd');
-Exec('../../tests/explodebox.js');
+loadModule('jsstd');
+exec('../../tests/explodebox.js');
 
 

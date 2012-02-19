@@ -13,11 +13,11 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-LoadModule('jsio');
-LoadModule('jsstd');
-LoadModule('jsz');
-LoadModule('jscrypt');
-LoadModule('jsdebug');
+loadModule('jsio');
+loadModule('jsstd');
+loadModule('jsz');
+loadModule('jscrypt');
+loadModule('jsdebug');
 
 function IsNotEmpty(obj) {
 

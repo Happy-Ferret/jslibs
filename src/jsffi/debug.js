@@ -1,6 +1,6 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsffi');
+loadModule('jsffi');
 
 function VOID( value ) {
 
@@ -179,8 +179,8 @@ Halt();
 
 		(new NativeModule('C:\\WINDOWS\\SYSTEM32\\kernel32')).Proc('GetSystemDirectoryA')( ret.PU32, arg1.PP, arg2.PU32 );
 
-		//Print( arg1.String );
+		//print( arg1.String );
 		return undefined;
 	}
 
-	Print( 'runing tests...' + (tests() || 'nothing') + ' failed.' , '\n');
+	print( 'runing tests...' + (tests() || 'nothing') + ' failed.' , '\n');

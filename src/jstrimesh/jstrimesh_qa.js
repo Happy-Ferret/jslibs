@@ -1,5 +1,5 @@
-LoadModule('jsstd');
-LoadModule('jstrimesh');
+loadModule('jsstd');
+loadModule('jstrimesh');
 
 /// basic test [rmtf]
 

@@ -438,7 +438,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( [data] )
   Send data to the task. This function do not block. If the task is already processing a request, next requests are automatically queued.
 **/
-DEFINE_FUNCTION( Request ) {
+DEFINE_FUNCTION( request ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -472,7 +472,7 @@ $TOC_MEMBER $INAME
  data $INAME()
   Read a response from the task. If no response is pending, the function wait until a response is available.
 **/
-DEFINE_FUNCTION( Response ) {
+DEFINE_FUNCTION( response ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -704,7 +704,7 @@ JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS
 }
 
 
-DEFINE_FUNCTION( Events ) {
+DEFINE_FUNCTION( events ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
@@ -742,9 +742,9 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION(Request)
-		FUNCTION(Response)
-		FUNCTION(Events)
+		FUNCTION(request)
+		FUNCTION(response)
+		FUNCTION(events)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

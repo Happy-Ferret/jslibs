@@ -115,7 +115,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Close the descriptor.
 **/
-DEFINE_FUNCTION( Close ) {
+DEFINE_FUNCTION( close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
@@ -356,7 +356,7 @@ $TOC_MEMBER $INAME
   Print( soc.Read(undefined), '\n' );
   }}}
 **/
-DEFINE_FUNCTION( Read ) {
+DEFINE_FUNCTION( read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
@@ -395,7 +395,7 @@ $TOC_MEMBER $INAME
   If the whole data cannot be written, Write returns that have not be written.
   If the descriptor is disconnected (socket only), this function returns _undefined_.
 **/
-DEFINE_FUNCTION( Write ) {
+DEFINE_FUNCTION( write ) {
 
 	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
@@ -500,7 +500,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Sync any buffered data for a fd to its backing device.
 **/
-DEFINE_FUNCTION( Sync ) {
+DEFINE_FUNCTION( sync ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
@@ -616,7 +616,7 @@ DEFINE_PROPERTY( eof ) {
 $TOC_MEMBER $INAME
  $INAME( nativeDescriptor, type )
 **/
-DEFINE_FUNCTION( Import ) {
+DEFINE_FUNCTION( import ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 	//int stdfd;
@@ -758,7 +758,7 @@ bad:
 }
 
 
-DEFINE_FUNCTION( Events ) {
+DEFINE_FUNCTION( events ) {
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
@@ -824,7 +824,7 @@ $TOC_MEMBER $INAME
   Use _timeout_ property to manage time limit for completion of this operation.
   If _timeout_ property is $UNDEF, returns the result immediately.
 **/
-DEFINE_FUNCTION( IsReadable ) {
+DEFINE_FUNCTION( isReadable ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
@@ -871,7 +871,7 @@ $TOC_MEMBER $INAME
   Use _timeout_ property to manage time limit for completion of this operation.
   If _timeout_ property is $UNDEF, returns the result immediately.
 **/
-DEFINE_FUNCTION( IsWritable ) {
+DEFINE_FUNCTION( isWritable ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
@@ -974,12 +974,12 @@ CONFIGURE_CLASS
 	HAS_PRIVATE // unused. Just avoid Print(Descriptor.available); to crash
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Close )
-		FUNCTION( Read )
-		FUNCTION( Write )
-		FUNCTION( Sync )
-		FUNCTION( IsReadable )
-		FUNCTION( IsWritable )
+		FUNCTION( close )
+		FUNCTION( read )
+		FUNCTION( write )
+		FUNCTION( sync )
+		FUNCTION( isReadable )
+		FUNCTION( isWritable )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -990,8 +990,8 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( Import )
-		FUNCTION( Events )
+		FUNCTION( import )
+		FUNCTION( events )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

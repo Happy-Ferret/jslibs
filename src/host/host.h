@@ -21,8 +21,8 @@
 
 #define NAME_GLOBAL_CLASS "Global"
 
-#define NAME_GLOBAL_FUNCTION_LOAD_MODULE "LoadModule"
-#define NAME_GLOBAL_FUNCTION_UNLOAD_MODULE "UnloadModule"
+#define NAME_GLOBAL_FUNCTION_LOAD_MODULE "loadModule"
+#define NAME_GLOBAL_FUNCTION_UNLOAD_MODULE "unloadModule"
 
 typedef int (*HostInput)( void *privateData, char *buffer, size_t bufferLength );
 typedef int (*HostOutput)( void *privateData, const char *buffer, size_t length );

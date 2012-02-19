@@ -41,14 +41,14 @@ function Debug1() {
 	
 	}
 	
-	Print('message test\nzzzzz', '\n');
+	print('message test\nzzzzz', '\n');
 
 	var data = { d1:#1={ a:[4,5,6], b:null, b1:undefined, c:'test', d:{x:1, y:0, z:1}, e:123, e1:new Number(123), f:#1# } };
 
 	function ThrowTest(arg) {
 
 		test(data, 'http://jslibs.googlecode.com/');
-		Print('ThrowTest: '+arg, '\n');
+		print('ThrowTest: '+arg, '\n');
 		throw arg;
 	}
 	
@@ -57,7 +57,7 @@ function Debug1() {
 		ThrowTest('end');
 	} catch(ex) {
 		
-		Print('in catch', '\n');
+		print('in catch', '\n');
 	}
 	
 	test(123, 'abc', [4,5,6], new Date(), {}, {__proto__:null}, null, undefined );

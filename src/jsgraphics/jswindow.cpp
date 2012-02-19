@@ -276,7 +276,7 @@ bool TrackMouseLeave( HWND hWnd ) {
 //	JL_ASSERT( status != 0, "Unable to TrackMouseEvent.(%d)", GetLastError() );
 }
 
-DEFINE_FUNCTION( Open ) {
+DEFINE_FUNCTION( open ) {
 
 	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( hWnd );
@@ -291,7 +291,7 @@ DEFINE_FUNCTION( Open ) {
 }
 
 
-DEFINE_FUNCTION( ProcessEvents ) {
+DEFINE_FUNCTION( processEvents ) {
 
 	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( hWnd );
@@ -333,7 +333,7 @@ DEFINE_FUNCTION( ProcessEvents ) {
 }
 
 
-DEFINE_FUNCTION( Close ) {
+DEFINE_FUNCTION( close ) {
 
 // some events can occur after this point, then we NUST keep cxobj as long as possible
 
@@ -359,7 +359,7 @@ JSBool Exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) 
 }
 */
 
-DEFINE_FUNCTION( WaitForMessage ) {
+DEFINE_FUNCTION( waitForMessage ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	int32 val;
@@ -372,7 +372,7 @@ DEFINE_FUNCTION( WaitForMessage ) {
 }
 
 /*
-DEFINE_FUNCTION( CreateOpenGLBitmap ) {
+DEFINE_FUNCTION( createOpenGLBitmap ) {
 
 
 	PIXELFORMATDESCRIPTOR pfd ;
@@ -413,7 +413,7 @@ JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 }
 */
 
-DEFINE_FUNCTION( CreateOpenGLContext ) {
+DEFINE_FUNCTION( createOpenGLContext ) {
 
 //	JL_ASSERT( JS_IsConstructing(cx) && JL_GetClass(obj) == _class, RT_ERROR_INVALID_CLASS );
 //	JL_ASSERT_ARGC_MIN(1);
@@ -494,7 +494,7 @@ JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval
 }
 
 
-DEFINE_FUNCTION( Mode ) {
+DEFINE_FUNCTION( mode ) {
 
 	LONG status;
 	if ( argc > 0 ) {
@@ -809,13 +809,13 @@ CONFIGURE_CLASS
 //	HAS_FINALIZE // (TBD) create it !
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION(Open)
-		FUNCTION(Close)
-		FUNCTION(ProcessEvents)
-//		FUNCTION(Exit)
-		FUNCTION(WaitForMessage)
-		FUNCTION(CreateOpenGLContext)
-		FUNCTION(SwapBuffers)
+		FUNCTION(open)
+		FUNCTION(close)
+		FUNCTION(processEvents)
+//		FUNCTION(exit)
+		FUNCTION(waitForMessage)
+		FUNCTION(createOpenGLContext)
+		FUNCTION(swapBuffers)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -830,7 +830,7 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION(Mode)
+		FUNCTION(mode)
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

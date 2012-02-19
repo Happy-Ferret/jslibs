@@ -46,7 +46,7 @@ $SVN_REVISION $Revision$
 BEGIN_STATIC
 
 
-DEFINE_FUNCTION( Accept ) {
+DEFINE_FUNCTION( accept ) {
 
 	if ( !_initDone ) {
 	
@@ -68,7 +68,7 @@ DEFINE_FUNCTION( Accept ) {
 	JL_BAD;
 }
 
-DEFINE_FUNCTION( GetParam ) {
+DEFINE_FUNCTION( getParam ) {
 
 	if ( argc >= 1 ) {
 
@@ -108,7 +108,7 @@ DEFINE_FUNCTION( GetParam ) {
 	JL_BAD;
 }
 
-DEFINE_FUNCTION( Read ) {
+DEFINE_FUNCTION( read ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 
@@ -134,7 +134,7 @@ DEFINE_FUNCTION( Read ) {
 	JL_BAD;
 }
 
-DEFINE_FUNCTION( Write ) {
+DEFINE_FUNCTION( write ) {
 
 	JLStr str;
 
@@ -154,7 +154,7 @@ DEFINE_FUNCTION( Write ) {
 	JL_BAD;
 }
 
-DEFINE_FUNCTION( Flush ) {
+DEFINE_FUNCTION( flush ) {
 
 	JL_ASSERT( _request.out != NULL, E_LIB, E_STR("fastcgi"), E_INTERNAL );
 
@@ -165,7 +165,7 @@ DEFINE_FUNCTION( Flush ) {
 	JL_BAD;
 }
 
-DEFINE_FUNCTION( Log ) {
+DEFINE_FUNCTION( log ) {
 
 	JLStr str;
 
@@ -181,14 +181,14 @@ DEFINE_FUNCTION( Log ) {
 	JL_BAD;
 }
 
-DEFINE_FUNCTION( ShutdownPending ) {
+DEFINE_FUNCTION( shutdownPending ) {
 
 	FCGX_ShutdownPending();
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( URLEncode ) {
+DEFINE_FUNCTION( urlEncode ) {
 
 	JLStr srcStr;
 
@@ -229,7 +229,7 @@ DEFINE_FUNCTION( URLEncode ) {
 
 
 
-DEFINE_FUNCTION( URLDecode ) {
+DEFINE_FUNCTION( urlDecode ) {
 
 	JLStr srcStr;
 
@@ -304,16 +304,16 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( Accept )
-		FUNCTION( GetParam )
-		FUNCTION( Read )
-		FUNCTION( Write )
-		FUNCTION( Flush )
-		FUNCTION( ShutdownPending )
-		FUNCTION( Log )
+		FUNCTION( accept )
+		FUNCTION( getParam )
+		FUNCTION( read )
+		FUNCTION( write )
+		FUNCTION( flush )
+		FUNCTION( shutdownPending )
+		FUNCTION( log )
 
-		FUNCTION( URLEncode )
-		FUNCTION( URLDecode )
+		FUNCTION( urlEncode )
+		FUNCTION( urlDecode )
 
 	END_STATIC_FUNCTION_SPEC
 
@@ -337,7 +337,7 @@ END_STATIC
 
 BEGIN_STATIC
 
-DEFINE_FUNCTION( ParseHeader ) {
+DEFINE_FUNCTION( parseHeader ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 
@@ -361,7 +361,7 @@ DEFINE_FUNCTION( ParseHeader ) {
 	JL_BAD;
 }
 
-DEFINE_FUNCTION( ParseBeginRequestBody ) {
+DEFINE_FUNCTION( parseBeginRequestBody ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 
@@ -384,7 +384,7 @@ DEFINE_FUNCTION( ParseBeginRequestBody ) {
 }
 
 
-//DEFINE_FUNCTION( ParseEndRequest ) {
+//DEFINE_FUNCTION( parseEndRequest ) {
 //
 //	JL_ASSERT_ARGC_MIN( 1 );
 //
@@ -409,7 +409,7 @@ DEFINE_FUNCTION( ParseBeginRequestBody ) {
 //}
 
 
-DEFINE_FUNCTION( ParsePairs ) { // arguments: data [, paramObject ]
+DEFINE_FUNCTION( parsePairs ) { // arguments: data [, paramObject ]
 
 	JL_ASSERT_ARGC_MIN( 1 );
 
@@ -470,7 +470,7 @@ DEFINE_FUNCTION( ParsePairs ) { // arguments: data [, paramObject ]
 //FCGI_GET_VALUES
 
 
-DEFINE_FUNCTION( MakeHeader ) { // type, requestId, contentLength
+DEFINE_FUNCTION( makeHeader ) { // type, requestId, contentLength
 	
 	JL_ASSERT_ARGC_MIN( 3 );
 
@@ -503,7 +503,7 @@ DEFINE_FUNCTION( MakeHeader ) { // type, requestId, contentLength
 }
 
 
-DEFINE_FUNCTION( MakeEndRequestBody ) {
+DEFINE_FUNCTION( makeEndRequestBody ) {
 
 	JL_ASSERT_ARGC_MIN( 2 );
 
@@ -529,7 +529,7 @@ DEFINE_FUNCTION( MakeEndRequestBody ) {
 
 
 
-DEFINE_FUNCTION( MakePairs ) {
+DEFINE_FUNCTION( makePairs ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_OBJECT( argv[0] );
@@ -598,19 +598,19 @@ DEFINE_FUNCTION( MakePairs ) {
 CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( ParseHeader )
-		FUNCTION( ParseBeginRequestBody )
-		FUNCTION( ParsePairs )
-		FUNCTION( MakeHeader )
-		FUNCTION( MakeEndRequestBody )
-		FUNCTION( MakePairs )
+		FUNCTION( parseHeader )
+		FUNCTION( parseBeginRequestBody )
+		FUNCTION( parsePairs )
+		FUNCTION( makeHeader )
+		FUNCTION( makeEndRequestBody )
+		FUNCTION( makePairs )
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC
 
 
 
-DEFINE_FUNCTION( ParseRecord ) {
+DEFINE_FUNCTION( parseRecord ) {
 
 	// http://www.fastcgi.com/devkit/doc/fcgi-spec.html
 

@@ -316,7 +316,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glIsEnabled
 **/
-DEFINE_FUNCTION( IsEnabled ) {
+DEFINE_FUNCTION( isEnabled ) {
 
 	OGL_CX_CHK;
 
@@ -330,7 +330,7 @@ DEFINE_FUNCTION( IsEnabled ) {
 
 
 
-DEFINE_FUNCTION( Get ) {
+DEFINE_FUNCTION( get ) {
 
 	OGL_CX_CHK;
 
@@ -815,7 +815,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGetBooleanv
 **/
-DEFINE_FUNCTION( GetBoolean ) {
+DEFINE_FUNCTION( getBoolean ) {
 
 	OGL_CX_CHK;
 
@@ -842,7 +842,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGetIntegerv
 **/
-DEFINE_FUNCTION( GetInteger ) {
+DEFINE_FUNCTION( getInteger ) {
 
 	OGL_CX_CHK;
 
@@ -915,7 +915,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGetDoublev
 **/
-DEFINE_FUNCTION( GetDouble ) {
+DEFINE_FUNCTION( getDouble ) {
 
 	OGL_CX_CHK;
 
@@ -984,7 +984,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGetString
 **/
-DEFINE_FUNCTION( GetString ) {
+DEFINE_FUNCTION( getString ) {
 
 	OGL_CX_CHK;
 
@@ -1001,7 +1001,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glDrawBuffer
 **/
-DEFINE_FUNCTION( DrawBuffer ) {
+DEFINE_FUNCTION( drawBuffer ) {
 
 	OGL_CX_CHK;
 
@@ -1022,7 +1022,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glReadBuffer
 **/
-DEFINE_FUNCTION( ReadBuffer ) {
+DEFINE_FUNCTION( readBuffer ) {
 
 	OGL_CX_CHK;
 
@@ -1046,7 +1046,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glAccum
 **/
-DEFINE_FUNCTION( Accum ) {
+DEFINE_FUNCTION( accum ) {
 
 	OGL_CX_CHK;
 
@@ -1077,7 +1077,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glStencilFunc
 **/
-DEFINE_FUNCTION( StencilFunc ) {
+DEFINE_FUNCTION( stencilFunc ) {
 
 	OGL_CX_CHK;
 
@@ -1110,7 +1110,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glStencilOp
 **/
-DEFINE_FUNCTION( StencilOp ) {
+DEFINE_FUNCTION( stencilOp ) {
 
 	OGL_CX_CHK;
 
@@ -1137,7 +1137,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glStencilMask
 **/
-DEFINE_FUNCTION( StencilMask ) {
+DEFINE_FUNCTION( stencilMask ) {
 
 	OGL_CX_CHK;
 
@@ -1167,7 +1167,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glAlphaFunc
 **/
-DEFINE_FUNCTION( AlphaFunc ) {
+DEFINE_FUNCTION( alphaFunc ) {
 
 	OGL_CX_CHK;
 
@@ -1192,7 +1192,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glFlush
 **/
-DEFINE_FUNCTION( Flush ) {
+DEFINE_FUNCTION( flush ) {
 
 	OGL_CX_CHK;
 
@@ -1213,7 +1213,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glFinish
 **/
-DEFINE_FUNCTION( Finish ) {
+DEFINE_FUNCTION( finish ) {
 
 	OGL_CX_CHK;
 
@@ -1237,7 +1237,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glFogi, glFogf, glFogfv
 **/
-DEFINE_FUNCTION( Fog ) {
+DEFINE_FUNCTION( fog ) {
 
 	OGL_CX_CHK;
 
@@ -1285,7 +1285,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glHint
 **/
-DEFINE_FUNCTION( Hint ) {
+DEFINE_FUNCTION( hint ) {
 
 	OGL_CX_CHK;
 
@@ -1313,7 +1313,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glVertex3d, glVertex2d
 **/
-DEFINE_FUNCTION( Vertex ) {
+DEFINE_FUNCTION( vertex ) {
 
 	OGL_CX_CHK;
 
@@ -1370,7 +1370,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glEdgeFlag
 **/
-DEFINE_FUNCTION( EdgeFlag ) {
+DEFINE_FUNCTION( edgeFlag ) {
 
 	OGL_CX_CHK;
 
@@ -1400,7 +1400,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glColor4d, glColor3d
 **/
-DEFINE_FUNCTION( Color ) {
+DEFINE_FUNCTION( color ) {
 
 	OGL_CX_CHK;
 
@@ -1460,7 +1460,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glNormal3d
 **/
-DEFINE_FUNCTION( Normal ) {
+DEFINE_FUNCTION( normal ) {
 
 	OGL_CX_CHK;
 
@@ -1493,7 +1493,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glTexCoord1d, glTexCoord2d, glTexCoord3d
 **/
-DEFINE_FUNCTION( TexCoord ) {
+DEFINE_FUNCTION( texCoord ) {
 
 	OGL_CX_CHK;
 
@@ -1538,7 +1538,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glTexParameteri, glTexParameterf, glTexParameterfv
 **/
-DEFINE_FUNCTION( TexParameter ) {
+DEFINE_FUNCTION( texParameter ) {
 
 	OGL_CX_CHK;
 
@@ -1591,7 +1591,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glTexEnvi, glTexEnvf, glTexEnvfv
 **/
-DEFINE_FUNCTION( TexEnv ) {
+DEFINE_FUNCTION( texEnv ) {
 
 	OGL_CX_CHK;
 
@@ -1649,7 +1649,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glTexGeni, glTexGend, glTexGendv
 **/
-DEFINE_FUNCTION( TexGen ) {
+DEFINE_FUNCTION( texGen ) {
 
 	OGL_CX_CHK;
 
@@ -1715,7 +1715,7 @@ $TOC_MEMBER $INAME
   $H OpenGL documentation
    http://www.opengl.org/sdk/docs/man/xhtml/glTexImage2D.xml
 **/
-DEFINE_FUNCTION( TexImage2D ) {
+DEFINE_FUNCTION( texImage2D ) {
 
 	JLStr data;
 
@@ -1758,7 +1758,7 @@ $TOC_MEMBER $INAME
    glCopyTexSubImage2D
   $H OpenGL documentation
 **/
-DEFINE_FUNCTION( CopyTexSubImage2D ) {
+DEFINE_FUNCTION( copyTexSubImage2D ) {
 
 	OGL_CX_CHK;
 
@@ -1797,7 +1797,7 @@ $TOC_MEMBER $INAME
    glTexSubImage2D
   $H OpenGL documentation
 **/
-DEFINE_FUNCTION( TexSubImage2D ) {
+DEFINE_FUNCTION( texSubImage2D ) {
 
 	JLStr data;
 
@@ -1842,7 +1842,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glLightModeli, glLightModelf, glLightModelfv
 **/
-DEFINE_FUNCTION( LightModel ) {
+DEFINE_FUNCTION( lightModel ) {
 
 	OGL_CX_CHK;
 
@@ -1889,7 +1889,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glLighti, glLightf, glLightfv
 **/
-DEFINE_FUNCTION( Light ) {
+DEFINE_FUNCTION( light ) {
 
 	OGL_CX_CHK;
 
@@ -1944,7 +1944,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGetLightfv
 **/
-DEFINE_FUNCTION( GetLight ) {
+DEFINE_FUNCTION( getLight ) {
 
 	OGL_CX_CHK;
 
@@ -2017,7 +2017,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glColorMaterial
 **/
-DEFINE_FUNCTION( ColorMaterial ) {
+DEFINE_FUNCTION( colorMaterial ) {
 
 	OGL_CX_CHK;
 
@@ -2043,7 +2043,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glMateriali, glMaterialf, glMaterialfv
 **/
-DEFINE_FUNCTION( Material ) {
+DEFINE_FUNCTION( material ) {
 
 	OGL_CX_CHK;
 
@@ -2104,7 +2104,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glEnable
 **/
-DEFINE_FUNCTION( Enable ) {
+DEFINE_FUNCTION( enable ) {
 
 	OGL_CX_CHK;
 
@@ -2128,7 +2128,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glDisable
 **/
-DEFINE_FUNCTION( Disable ) {
+DEFINE_FUNCTION( disable ) {
 
 	OGL_CX_CHK;
 
@@ -2152,7 +2152,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glPointSize
 **/
-DEFINE_FUNCTION( PointSize ) {
+DEFINE_FUNCTION( pointSize ) {
 
 	OGL_CX_CHK;
 
@@ -2176,7 +2176,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glLineWidth
 **/
-DEFINE_FUNCTION( LineWidth ) {
+DEFINE_FUNCTION( lineWidth ) {
 
 	OGL_CX_CHK;
 
@@ -2200,7 +2200,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glShadeModel
 **/
-DEFINE_FUNCTION( ShadeModel ) {
+DEFINE_FUNCTION( shadeModel ) {
 
 	OGL_CX_CHK;
 
@@ -2224,7 +2224,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glBlendFunc
 **/
-DEFINE_FUNCTION( BlendFunc ) {
+DEFINE_FUNCTION( blendFunc ) {
 
 	OGL_CX_CHK;
 
@@ -2248,7 +2248,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glDepthFunc
 **/
-DEFINE_FUNCTION( DepthFunc ) {
+DEFINE_FUNCTION( depthFunc ) {
 
 	OGL_CX_CHK;
 
@@ -2271,7 +2271,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glDepthMask
 **/
-DEFINE_FUNCTION( DepthMask ) {
+DEFINE_FUNCTION( depthMask ) {
 
 	OGL_CX_CHK;
 
@@ -2296,7 +2296,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glDepthRange
 **/
-DEFINE_FUNCTION( DepthRange ) {
+DEFINE_FUNCTION( depthRange ) {
 
 	OGL_CX_CHK;
 
@@ -2326,7 +2326,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glPolygonOffset
 **/
-DEFINE_FUNCTION( PolygonOffset ) {
+DEFINE_FUNCTION( polygonOffset ) {
 
 	OGL_CX_CHK;
 
@@ -2357,7 +2357,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glCullFace
 **/
-DEFINE_FUNCTION( CullFace ) {
+DEFINE_FUNCTION( cullFace ) {
 
 	OGL_CX_CHK;
 
@@ -2380,7 +2380,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glFrontFace
 **/
-DEFINE_FUNCTION( FrontFace ) {
+DEFINE_FUNCTION( frontFace ) {
 
 	OGL_CX_CHK;
 
@@ -2405,7 +2405,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glClearStencil
 **/
-DEFINE_FUNCTION( ClearStencil ) {
+DEFINE_FUNCTION( clearStencil ) {
 
 	OGL_CX_CHK;
 
@@ -2434,7 +2434,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glClearDepth
 **/
-DEFINE_FUNCTION( ClearDepth ) {
+DEFINE_FUNCTION( clearDepth ) {
 
 	OGL_CX_CHK;
 
@@ -2463,7 +2463,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glClearColor
 **/
-DEFINE_FUNCTION( ClearColor ) {
+DEFINE_FUNCTION( clearColor ) {
 
 	OGL_CX_CHK;
 
@@ -2498,7 +2498,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glClearAccum
 **/
-DEFINE_FUNCTION( ClearAccum ) {
+DEFINE_FUNCTION( clearAccum ) {
 
 	OGL_CX_CHK;
 
@@ -2530,7 +2530,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glClear
 **/
-DEFINE_FUNCTION( Clear ) {
+DEFINE_FUNCTION( clear ) {
 
 	OGL_CX_CHK;
 
@@ -2559,7 +2559,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glColorMask
 **/
-DEFINE_FUNCTION( ColorMask ) {
+DEFINE_FUNCTION( colorMask ) {
 
 	OGL_CX_CHK;
 
@@ -2599,7 +2599,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glClipPlane
 **/
-DEFINE_FUNCTION( ClipPlane ) {
+DEFINE_FUNCTION( clipPlane ) {
 
 	OGL_CX_CHK;
 
@@ -2628,7 +2628,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glViewport
 **/
-DEFINE_FUNCTION( Viewport ) {
+DEFINE_FUNCTION( viewport ) {
 
 	OGL_CX_CHK;
 
@@ -2659,7 +2659,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glFrustum
 **/
-DEFINE_FUNCTION( Frustum ) {
+DEFINE_FUNCTION( frustum ) {
 
 	OGL_CX_CHK;
 
@@ -2700,7 +2700,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glOrtho
 **/
-DEFINE_FUNCTION( Ortho ) {
+DEFINE_FUNCTION( ortho ) {
 
 	OGL_CX_CHK;
 
@@ -2740,7 +2740,7 @@ $TOC_MEMBER $INAME
   $H API
    gluPerspective
 **/
-DEFINE_FUNCTION( Perspective ) {
+DEFINE_FUNCTION( perspective ) {
 
 	OGL_CX_CHK;
 
@@ -2811,7 +2811,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glMatrixMode
 **/
-DEFINE_FUNCTION( MatrixMode ) {
+DEFINE_FUNCTION( matrixMode ) {
 
 	OGL_CX_CHK;
 
@@ -2832,7 +2832,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glLoadIdentity
 **/
-DEFINE_FUNCTION( LoadIdentity ) {
+DEFINE_FUNCTION( loadIdentity ) {
 
 	OGL_CX_CHK;
 
@@ -2852,7 +2852,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glPushMatrix
 **/
-DEFINE_FUNCTION( PushMatrix ) {
+DEFINE_FUNCTION( pushMatrix ) {
 
 	OGL_CX_CHK;
 
@@ -2872,7 +2872,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glPopMatrix
 **/
-DEFINE_FUNCTION( PopMatrix ) {
+DEFINE_FUNCTION( popMatrix ) {
 
 	OGL_CX_CHK;
 
@@ -2894,7 +2894,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glLoadMatrixf
 **/
-DEFINE_FUNCTION( LoadMatrix ) {
+DEFINE_FUNCTION( loadMatrix ) {
 
 	OGL_CX_CHK;
 
@@ -2918,7 +2918,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glLoadMatrixf
 **/
-DEFINE_FUNCTION( MultMatrix ) {
+DEFINE_FUNCTION( multMatrix ) {
 
 	OGL_CX_CHK;
 
@@ -2946,7 +2946,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glRotated
 **/
-DEFINE_FUNCTION( Rotate ) {
+DEFINE_FUNCTION( rotate ) {
 
 	OGL_CX_CHK;
 
@@ -2975,7 +2975,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glTranslated
 **/
-DEFINE_FUNCTION( Translate ) {
+DEFINE_FUNCTION( translate ) {
 
 	OGL_CX_CHK;
 
@@ -3010,7 +3010,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glScaled
 **/
-DEFINE_FUNCTION( Scale ) {
+DEFINE_FUNCTION( scale ) {
 
 	OGL_CX_CHK;
 
@@ -3049,7 +3049,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGenLists, glNewList
 **/
-DEFINE_FUNCTION( NewList ) {
+DEFINE_FUNCTION( newList ) {
 
 	OGL_CX_CHK;
 
@@ -3079,7 +3079,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glDeleteLists
 **/
-DEFINE_FUNCTION( DeleteList ) {
+DEFINE_FUNCTION( deleteList ) {
 
 	OGL_CX_CHK;
 
@@ -3099,7 +3099,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glEndList
 **/
-DEFINE_FUNCTION( EndList ) {
+DEFINE_FUNCTION( endList ) {
 
 	OGL_CX_CHK;
 
@@ -3121,7 +3121,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glCallList, glCallLists
 **/
-DEFINE_FUNCTION( CallList ) {
+DEFINE_FUNCTION( callList ) {
 
 	OGL_CX_CHK;
 
@@ -3168,7 +3168,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glPolygonMode
 **/
-DEFINE_FUNCTION( PolygonMode ) {
+DEFINE_FUNCTION( polygonMode ) {
 
 	OGL_CX_CHK;
 
@@ -3191,7 +3191,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glBegin
 **/
-DEFINE_FUNCTION( Begin ) {
+DEFINE_FUNCTION( begin ) {
 
 	OGL_CX_CHK;
 
@@ -3216,7 +3216,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glEnd
 **/
-DEFINE_FUNCTION( End ) {
+DEFINE_FUNCTION( end ) {
 
 	OGL_CX_CHK;
 
@@ -3241,7 +3241,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glPushAttrib
 **/
-DEFINE_FUNCTION( PushAttrib ) {
+DEFINE_FUNCTION( pushAttrib ) {
 
 	OGL_CX_CHK;
 
@@ -3267,7 +3267,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glPopAttrib
 **/
-DEFINE_FUNCTION( PopAttrib ) {
+DEFINE_FUNCTION( popAttrib ) {
 
 	OGL_CX_CHK;
 
@@ -3287,7 +3287,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGenTextures
 **/
-DEFINE_FUNCTION( GenTexture ) {
+DEFINE_FUNCTION( genTexture ) {
 
 	OGL_CX_CHK;
 
@@ -3310,7 +3310,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glBindTexture
 **/
-DEFINE_FUNCTION( BindTexture ) {
+DEFINE_FUNCTION( bindTexture ) {
 
 	OGL_CX_CHK;
 
@@ -3338,7 +3338,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glDeleteTextures
 **/
-DEFINE_FUNCTION( DeleteTexture ) {
+DEFINE_FUNCTION( deleteTexture ) {
 
 	OGL_CX_CHK;
 
@@ -3371,7 +3371,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glCopyTexImage2D
 **/
-DEFINE_FUNCTION( CopyTexImage2D ) {
+DEFINE_FUNCTION( copyTexImage2D ) {
 
 	OGL_CX_CHK;
 
@@ -3411,7 +3411,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glPixelTransferi, glPixelTransferf
 **/
-DEFINE_FUNCTION( PixelTransfer ) {
+DEFINE_FUNCTION( pixelTransfer ) {
 
 	OGL_CX_CHK;
 
@@ -3442,7 +3442,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glPixelStorei, glPixelStoref
 **/
-DEFINE_FUNCTION( PixelStore ) {
+DEFINE_FUNCTION( pixelStore ) {
 
 	OGL_CX_CHK;
 
@@ -3473,7 +3473,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glRasterPos*
 **/
-DEFINE_FUNCTION( RasterPos ) {
+DEFINE_FUNCTION( rasterPos ) {
 
 	OGL_CX_CHK;
 
@@ -3514,7 +3514,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glPixelZoom
 **/
-DEFINE_FUNCTION( PixelZoom ) {
+DEFINE_FUNCTION( pixelZoom ) {
 
 	OGL_CX_CHK;
 
@@ -3540,7 +3540,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glPixelMapfv
 **/
-DEFINE_FUNCTION( PixelMap ) {
+DEFINE_FUNCTION( pixelMap ) {
 
 	OGL_CX_CHK;
 
@@ -3572,7 +3572,7 @@ $TOC_MEMBER $INAME
   $H return value
    true if all extension proc are found.
 **/
-DEFINE_FUNCTION( HasExtensionProc ) {
+DEFINE_FUNCTION( hasExtensionProc ) {
 
 	JLStr procName;
 	OGL_CX_CHK;
@@ -3605,7 +3605,7 @@ $TOC_MEMBER $INAME
   $H return value
    true if all extensions are available.
 **/
-DEFINE_FUNCTION( HasExtensionName ) {
+DEFINE_FUNCTION( hasExtensionName ) {
 
 	OGL_CX_CHK;
 
@@ -3643,7 +3643,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glBlendEquation
 **/
-DEFINE_FUNCTION( BlendEquation ) {
+DEFINE_FUNCTION( blendEquation ) {
 
 	OGL_CX_CHK;
 
@@ -3674,7 +3674,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glStencilFunc
 **/
-DEFINE_FUNCTION( StencilFuncSeparate ) {
+DEFINE_FUNCTION( stencilFuncSeparate ) {
 
 	OGL_CX_CHK;
 
@@ -3711,7 +3711,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glStencilOp
 **/
-DEFINE_FUNCTION( StencilOpSeparate ) {
+DEFINE_FUNCTION( stencilOpSeparate ) {
 
 	OGL_CX_CHK;
 
@@ -3739,7 +3739,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glActiveStencilFaceEXT
 **/
-DEFINE_FUNCTION( ActiveStencilFaceEXT ) {
+DEFINE_FUNCTION( activeStencilFaceEXT ) {
 
 	OGL_CX_CHK;
 
@@ -3765,7 +3765,7 @@ $TOC_MEMBER $INAME
   $H API
    glBindRenderbufferEXT
 **/
-DEFINE_FUNCTION( BindRenderbuffer ) {
+DEFINE_FUNCTION( bindRenderbuffer ) {
 
 	OGL_CX_CHK;
 
@@ -3789,7 +3789,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGenRenderbuffersEXT
 **/
-DEFINE_FUNCTION( GenRenderbuffer ) {
+DEFINE_FUNCTION( genRenderbuffer ) {
 
 	OGL_CX_CHK;
 
@@ -3815,7 +3815,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glDeleteRenderbuffersEXT
 **/
-DEFINE_FUNCTION( DeleteRenderbuffer ) {
+DEFINE_FUNCTION( deleteRenderbuffer ) {
 
 	OGL_CX_CHK;
 
@@ -3843,7 +3843,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glRenderbufferStorageEXT
 **/
-DEFINE_FUNCTION( RenderbufferStorage ) {
+DEFINE_FUNCTION( renderbufferStorage ) {
 
 	OGL_CX_CHK;
 
@@ -3872,7 +3872,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGetRenderbufferParameterivEXT
 **/
-DEFINE_FUNCTION( GetRenderbufferParameter ) {
+DEFINE_FUNCTION( getRenderbufferParameter ) {
 
 	OGL_CX_CHK;
 
@@ -3911,7 +3911,7 @@ $TOC_MEMBER $INAME
   $H API
    glBindFramebufferEXT
 **/
-DEFINE_FUNCTION( BindFramebuffer ) {
+DEFINE_FUNCTION( bindFramebuffer ) {
 
 	OGL_CX_CHK;
 
@@ -3934,7 +3934,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGenFramebuffersEXT
 **/
-DEFINE_FUNCTION( GenFramebuffer ) {
+DEFINE_FUNCTION( genFramebuffer ) {
 
 	OGL_CX_CHK;
 
@@ -3958,7 +3958,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glDeleteFranebuffersEXT
 **/
-DEFINE_FUNCTION( DeleteFramebuffer ) {
+DEFINE_FUNCTION( deleteFramebuffer ) {
 
 	OGL_CX_CHK;
 
@@ -3983,7 +3983,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glCheckFramebufferStatusEXT
 **/
-DEFINE_FUNCTION( CheckFramebufferStatus ) {
+DEFINE_FUNCTION( checkFramebufferStatus ) {
 
 	OGL_CX_CHK;
 
@@ -4010,7 +4010,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glFramebufferTexture1DEXT
 **/
-DEFINE_FUNCTION( FramebufferTexture1D ) {
+DEFINE_FUNCTION( framebufferTexture1D ) {
 
 	OGL_CX_CHK;
 
@@ -4043,7 +4043,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glFramebufferTexture2DEXT
 **/
-DEFINE_FUNCTION( FramebufferTexture2D ) {
+DEFINE_FUNCTION( framebufferTexture2D ) {
 
 	OGL_CX_CHK;
 
@@ -4077,7 +4077,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glFramebufferTexture3DEXT
 **/
-DEFINE_FUNCTION( FramebufferTexture3D ) {
+DEFINE_FUNCTION( framebufferTexture3D ) {
 
 	OGL_CX_CHK;
 
@@ -4111,7 +4111,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glFramebufferRenderbufferEXT
 **/
-DEFINE_FUNCTION( FramebufferRenderbuffer ) {
+DEFINE_FUNCTION( framebufferRenderbuffer ) {
 
 	OGL_CX_CHK;
 
@@ -4144,7 +4144,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGetFramebufferAttachmentParameterivEXT
 **/
-DEFINE_FUNCTION( GetFramebufferAttachmentParameter ) {
+DEFINE_FUNCTION( getFramebufferAttachmentParameter ) {
 
 	OGL_CX_CHK;
 
@@ -4184,7 +4184,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glCreateShaderObjectARB
 **/
-DEFINE_FUNCTION( CreateShaderObject ) {
+DEFINE_FUNCTION( createShaderObject ) {
 
 	OGL_CX_CHK;
 
@@ -4207,7 +4207,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glDeleteObjectARB
 **/
-DEFINE_FUNCTION( DeleteObject ) {
+DEFINE_FUNCTION( deleteObject ) {
 
 	OGL_CX_CHK;
 
@@ -4230,7 +4230,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glGetInfoLogARB
 **/
-DEFINE_FUNCTION( GetInfoLog ) {
+DEFINE_FUNCTION( getInfoLog ) {
 
 	OGL_CX_CHK;
 
@@ -4258,7 +4258,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glCreateProgramObjectARB
 **/
-DEFINE_FUNCTION( CreateProgramObject ) {
+DEFINE_FUNCTION( createProgramObject ) {
 
 	OGL_CX_CHK;
 
@@ -4278,7 +4278,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glShaderSourceARB
 **/
-DEFINE_FUNCTION( ShaderSource ) {
+DEFINE_FUNCTION( shaderSource ) {
 
 	JLStr source;
 	OGL_CX_CHK;
@@ -4309,7 +4309,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glCompileShaderARB
 **/
-DEFINE_FUNCTION( CompileShader ) {
+DEFINE_FUNCTION( compileShader ) {
 
 	OGL_CX_CHK;
 
@@ -4332,7 +4332,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glCompileShaderARB
 **/
-DEFINE_FUNCTION( AttachObject ) {
+DEFINE_FUNCTION( attachObject ) {
 
 	OGL_CX_CHK;
 
@@ -4360,7 +4360,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glLinkProgramARB
 **/
-DEFINE_FUNCTION( LinkProgram ) {
+DEFINE_FUNCTION( linkProgram ) {
 
 	OGL_CX_CHK;
 
@@ -4389,7 +4389,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glUseProgramObjectARB
 **/
-DEFINE_FUNCTION( UseProgramObject ) {
+DEFINE_FUNCTION( useProgramObject ) {
 
 	OGL_CX_CHK;
 
@@ -4416,7 +4416,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glGetActiveUniformARB, glGetUniformLocationARB, glGetProgramiv
 **/
-DEFINE_FUNCTION( GetUniformInfo ) {
+DEFINE_FUNCTION( getUniformInfo ) {
 
 	OGL_CX_CHK;
 
@@ -4486,7 +4486,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
    glGetUniformLocationARB
 **/
-DEFINE_FUNCTION( GetUniformLocation ) {
+DEFINE_FUNCTION( getUniformLocation ) {
 
 	JLStr name;
 
@@ -4520,7 +4520,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glUniform1fARB, glUniform1iARB
 **/
-DEFINE_FUNCTION( Uniform ) {
+DEFINE_FUNCTION( uniform ) {
 
 	OGL_CX_CHK;
 
@@ -4768,7 +4768,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glUniformMatrix4fvARB
 **/
-DEFINE_FUNCTION( UniformMatrix ) {
+DEFINE_FUNCTION( uniformMatrix ) {
 
 	OGL_CX_CHK;
 
@@ -4801,7 +4801,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glUniform1fARB, glUniform2fARB, glUniform3fARB, glUniform4fARB
 **/
-DEFINE_FUNCTION( UniformFloatVector ) {
+DEFINE_FUNCTION( uniformFloatVector ) {
 
 	GLfloat *value = NULL;
 	OGL_CX_CHK;
@@ -4882,7 +4882,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glUniform1fARB, glUniform2fARB, glUniform3fARB, glUniform4fARB
 **/
-DEFINE_FUNCTION( UniformFloat ) {
+DEFINE_FUNCTION( uniformFloat ) {
 
 	OGL_CX_CHK;
 
@@ -4937,7 +4937,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glUniform1iARB, glUniform2iARB, glUniform3iARB, glUniform4iARB
 **/
-DEFINE_FUNCTION( UniformInteger ) {
+DEFINE_FUNCTION( uniformInteger ) {
 
 	OGL_CX_CHK;
 
@@ -4993,7 +4993,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glGetObjectParameterfvARB, glGetObjectParameterivARB
 **/
-DEFINE_FUNCTION( GetObjectParameter ) {
+DEFINE_FUNCTION( getObjectParameter ) {
 
 	OGL_CX_CHK;
 
@@ -5041,7 +5041,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glBindAttribLocationARB
 **/
-DEFINE_FUNCTION( BindAttribLocation ) {
+DEFINE_FUNCTION( bindAttribLocation ) {
 
 	JLStr name;
 	OGL_CX_CHK;
@@ -5067,7 +5067,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glGetAttribLocationARB
 **/
-DEFINE_FUNCTION( GetAttribLocation ) {
+DEFINE_FUNCTION( getAttribLocation ) {
 
 	JLStr name;
 	OGL_CX_CHK;
@@ -5092,7 +5092,7 @@ $TOC_MEMBER $INAME
  $H OpenGL API
   glVertexAttrib1dARB
 **/
-DEFINE_FUNCTION( VertexAttrib ) {
+DEFINE_FUNCTION( vertexAttrib ) {
 
 	OGL_CX_CHK;
 
@@ -5158,7 +5158,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGenBuffers
 **/
-DEFINE_FUNCTION( GenBuffer ) {
+DEFINE_FUNCTION( genBuffer ) {
 
 	OGL_CX_CHK;
 
@@ -5185,7 +5185,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glBindBuffer
 **/
-DEFINE_FUNCTION( BindBuffer ) {
+DEFINE_FUNCTION( bindBuffer ) {
 
 	OGL_CX_CHK;
 
@@ -5213,7 +5213,7 @@ $TOC_MEMBER $INAME
    glBindBufferARB
 **/
 /*
-DEFINE_FUNCTION( BufferData ) {
+DEFINE_FUNCTION( bufferData ) {
 
 	OGL_CX_CHK;
 
@@ -5245,7 +5245,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glPointParameterf, glPointParameterfv
 **/
-DEFINE_FUNCTION( PointParameter ) {
+DEFINE_FUNCTION( pointParameter ) {
 
 	OGL_CX_CHK;
 
@@ -5297,7 +5297,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glActiveTexture
 **/
-DEFINE_FUNCTION( ActiveTexture ) {
+DEFINE_FUNCTION( activeTexture ) {
 
 	OGL_CX_CHK;
 
@@ -5322,7 +5322,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glClientActiveTexture
 **/
-DEFINE_FUNCTION( ClientActiveTexture ) {
+DEFINE_FUNCTION( clientActiveTexture ) {
 
 	OGL_CX_CHK;
 
@@ -5350,7 +5350,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glMultiTexCoord1d, glMultiTexCoord2d, glMultiTexCoord3d
 **/
-DEFINE_FUNCTION( MultiTexCoord ) {
+DEFINE_FUNCTION( multiTexCoord ) {
 
 	OGL_CX_CHK;
 
@@ -5403,7 +5403,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
 **/
 /*
-DEFINE_FUNCTION( CreatePbuffer ) {
+DEFINE_FUNCTION( createPbuffer ) {
 
 	OGL_CX_CHK;
 
@@ -5424,7 +5424,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGenQueriesARB
 **/
-DEFINE_FUNCTION( GenQueries ) {
+DEFINE_FUNCTION( genQueries ) {
 
 	OGL_CX_CHK;
 
@@ -5450,7 +5450,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glDeleteQueriesARB
 **/
-DEFINE_FUNCTION( DeleteQueries ) {
+DEFINE_FUNCTION( deleteQueries ) {
 
 	OGL_CX_CHK;
 
@@ -5479,7 +5479,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glBeginQueryARB
 **/
-DEFINE_FUNCTION( BeginQuery ) {
+DEFINE_FUNCTION( beginQuery ) {
 
 	OGL_CX_CHK;
 
@@ -5506,7 +5506,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glEndQueryARB
 **/
-DEFINE_FUNCTION( EndQuery ) {
+DEFINE_FUNCTION( endQuery ) {
 
 	OGL_CX_CHK;
 
@@ -5533,7 +5533,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGetQueryivARB
 **/
-DEFINE_FUNCTION( GetQuery ) {
+DEFINE_FUNCTION( getQuery ) {
 
 	OGL_CX_CHK;
 
@@ -5564,7 +5564,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGetQueryObjectARB, glGetQueryObjectuivARB
 **/
-DEFINE_FUNCTION( GetQueryObject ) {
+DEFINE_FUNCTION( getQueryObject ) {
 
 	OGL_CX_CHK;
 
@@ -5608,7 +5608,7 @@ $TOC_MEMBER $INAME
   $H API
    gluLookAt
 **/
-DEFINE_FUNCTION( UnProject ) {
+DEFINE_FUNCTION( unProject ) {
 
 	OGL_CX_CHK;
 
@@ -5647,7 +5647,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glDrawPixels
 **/
-DEFINE_FUNCTION( DrawImage ) {
+DEFINE_FUNCTION( drawImage ) {
 
 	JLStr dataStr;
 	OGL_CX_CHK;
@@ -5734,7 +5734,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glGenTextures, glBindTexture, glGetIntegerv, glCopyTexImage2D, glGetTexLevelParameteriv, glGetTexImage, glDeleteTextures
 **/
-DEFINE_FUNCTION( ReadImage ) {
+DEFINE_FUNCTION( readImage ) {
 
 	OGL_CX_CHK;
 
@@ -5892,7 +5892,7 @@ void FinalizeTrimesh(void *pv) {
 $TOC_MEMBER $INAME
  $TYPE trimeshId $INAME( trimesh )
 **/
-DEFINE_FUNCTION( LoadTrimesh ) {
+DEFINE_FUNCTION( loadTrimesh ) {
 
 	OGL_CX_CHK;
 
@@ -5970,7 +5970,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glVertexPointer
 **/
-DEFINE_FUNCTION( DrawTrimesh ) {
+DEFINE_FUNCTION( drawTrimesh ) {
 
 	OGL_CX_CHK;
 
@@ -6112,7 +6112,7 @@ void TextureBufferFinalize(void* data) {
 // OpenGL Pixel Buffer Object: http://www.songho.ca/opengl/gl_pbo.html
 
 
-DEFINE_FUNCTION( CreateTextureBuffer ) {
+DEFINE_FUNCTION( createTextureBuffer ) {
 
 	OGL_CX_CHK;
 
@@ -6154,7 +6154,7 @@ JSBool TextureHelper(JSObject *obj, int *width, int *height, int *channels, cons
 }
 */
 
-DEFINE_FUNCTION( DefineTextureImage ) {
+DEFINE_FUNCTION( defineTextureImage ) {
 
 	JLStr dataStr;
 	OGL_CX_CHK;
@@ -6273,7 +6273,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME()
   pixelWidth = PixelWidthFactor() * width / distance
 **/
-DEFINE_FUNCTION( PixelWidthFactor ) {
+DEFINE_FUNCTION( pixelWidthFactor ) {
 
 	OGL_CX_CHK;
 
@@ -6299,7 +6299,7 @@ DEFINE_FUNCTION( PixelWidthFactor ) {
 /**doc
 $TOC_MEMBER $INAME( size )
 **/
-DEFINE_FUNCTION( DrawPoint ) {
+DEFINE_FUNCTION( drawPoint ) {
 
 	OGL_CX_CHK;
 
@@ -6321,7 +6321,7 @@ DEFINE_FUNCTION( DrawPoint ) {
 $TOC_MEMBER $INAME
 $INAME( radius [ , vertexCount = 12 ] )
 ** /
-DEFINE_FUNCTION( DrawDisk ) {
+DEFINE_FUNCTION( drawDisk ) {
 
 	OGL_CX_CHK;
 
@@ -6353,7 +6353,7 @@ DEFINE_FUNCTION( DrawDisk ) {
 $TOC_MEMBER $INAME
 $INAME( radius, slices, stacks, smooth );
 **/
-DEFINE_FUNCTION( DrawSphere ) {
+DEFINE_FUNCTION( drawSphere ) {
 
 	OGL_CX_CHK;
 
@@ -6381,7 +6381,7 @@ DEFINE_FUNCTION( DrawSphere ) {
 $TOC_MEMBER $INAME
 $INAME( radius, slices, loops );
 **/
-DEFINE_FUNCTION( DrawDisk ) {
+DEFINE_FUNCTION( drawDisk ) {
 
 	OGL_CX_CHK;
 
@@ -6408,7 +6408,7 @@ DEFINE_FUNCTION( DrawDisk ) {
 $TOC_MEMBER $INAME
 $INAME( baseRadius, topRadius, height, slices, stacks, smooth );
 **/
-DEFINE_FUNCTION( DrawCylinder ) {
+DEFINE_FUNCTION( drawCylinder ) {
 
 	OGL_CX_CHK;
 
@@ -6441,7 +6441,7 @@ DEFINE_FUNCTION( DrawCylinder ) {
 $TOC_MEMBER $INAME
 $INAME( lengthX, lengthY, lengthZ );
 **/
-DEFINE_FUNCTION( DrawBox ) {
+DEFINE_FUNCTION( drawBox ) {
 
 	OGL_CX_CHK;
 
@@ -6605,7 +6605,7 @@ DEFINE_FUNCTION( DrawBox ) {
 /**doc
 $TOC_MEMBER $INAME()
 **/
-DEFINE_FUNCTION( FullQuad ) {
+DEFINE_FUNCTION( fullQuad ) {
 
 	OGL_CX_CHK;
 
@@ -6640,7 +6640,7 @@ $TOC_MEMBER $INAME
   $H API
    gluLookAt
 **/
-DEFINE_FUNCTION( LookAt ) {
+DEFINE_FUNCTION( lookAt ) {
 
 	OGL_CX_CHK;
 
@@ -6679,7 +6679,7 @@ DEFINE_FUNCTION( LookAt ) {
 $TOC_MEMBER $INAME
  $VOID $INAME( pointX, pointY, pointZ [, upx, upy, upz] )
 **/
-DEFINE_FUNCTION( AimAt ) {
+DEFINE_FUNCTION( aimAt ) {
 
 	OGL_CX_CHK;
 
@@ -6737,7 +6737,7 @@ DEFINE_FUNCTION( AimAt ) {
 /**doc
 $TOC_MEMBER $INAME()
 **/
-DEFINE_FUNCTION( KeepTranslation ) {
+DEFINE_FUNCTION( keepTranslation ) {
 
 	OGL_CX_CHK;
 
@@ -6883,7 +6883,7 @@ DEFINE_INIT() {
 **/
 
 #ifdef DEBUG
-DEFINE_FUNCTION( Test ) {
+DEFINE_FUNCTION( test ) {
 	
 	JL_IGNORE(argc);
 	JL_IGNORE(cx);
@@ -6917,181 +6917,181 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_FUNCTION_SPEC
 
-		IFDEBUG( FUNCTION_ARGC(Test, 1) )
+		IFDEBUG( FUNCTION_ARGC(test, 1) )
 
 	// OpenGL 1.1 functions
-		FUNCTION_ARGC(IsEnabled, 1) // cap
-		FUNCTION_ARGC(Get, 1) // pname
-		FUNCTION_ARGC(GetBoolean, 2) // pname [,count]
-		FUNCTION_ARGC(GetInteger, 2) // pname [,count]
-		FUNCTION_ARGC(GetDouble, 2) // pname [,count]
-		FUNCTION_ARGC(GetString, 1)
-		FUNCTION_ARGC(DrawBuffer, 1) // mode
-		FUNCTION_ARGC(ReadBuffer, 1) // mode
-		FUNCTION_ARGC(Accum, 2) // op, value
-		FUNCTION_ARGC(StencilFunc, 3) // func, ref, mask
-		FUNCTION_ARGC(StencilOp, 3) // fail, zfail, zpass
-		FUNCTION_ARGC(StencilMask, 1) // mask
-		FUNCTION_ARGC(AlphaFunc, 2) // func, ref
-		FUNCTION_ARGC(Flush, 0)
-		FUNCTION_ARGC(Finish, 0)
-		FUNCTION_ARGC(Fog, 2) // pname, param | array of params
-		FUNCTION_ARGC(Hint, 2) // target, mode
-		FUNCTION_ARGC(Vertex, 4) // x, y [, z [, w]]
-		FUNCTION_ARGC(EdgeFlag, 1) // flag
-		FUNCTION_ARGC(Color, 4) // r, g, b [, a]
-		FUNCTION_ARGC(Normal, 3) // nx, ny, nz
-		FUNCTION_ARGC(TexCoord, 3) // s [, t [,r ]]
-		FUNCTION_ARGC(TexParameter, 3) // target, pname, param | array of params
-		FUNCTION_ARGC(TexEnv, 3) // target, pname, param | array of params
-		FUNCTION_ARGC(TexGen, 3) // coord, pname, params
-		FUNCTION_ARGC(TexImage2D, 9) // target, level, internalFormat, width, height, border, format, type, data
-		FUNCTION_ARGC(CopyTexSubImage2D, 8) // target, level, xoffset, yoffset, x, y, width, height
-		FUNCTION_ARGC(TexSubImage2D, 9) // target, level, xoffset, yoffset, width, height, format, type, data
-		FUNCTION_ARGC(LightModel, 2) // pname, param
-		FUNCTION_ARGC(Light, 3) // light, pname, param
-		FUNCTION_ARGC(GetLight, 3) // light, pname, count
-		FUNCTION_ARGC(ColorMaterial, 2) // face, mode
-		FUNCTION_ARGC(Material, 3) // face, pname, param
-		FUNCTION_ARGC(Enable, 1) // cap
-		FUNCTION_ARGC(Disable ,1) // cap
-		FUNCTION_ARGC(PointSize, 1) // size
-		FUNCTION_ARGC(LineWidth, 1) // width
-		FUNCTION_ARGC(ShadeModel, 1) // mode
-		FUNCTION_ARGC(BlendFunc, 2) // sfactor, dfactor
-		FUNCTION_ARGC(DepthFunc, 1) // func
-		FUNCTION_ARGC(DepthMask, 1) // mask
-		FUNCTION_ARGC(DepthRange, 2) // zNear, zFar
-		FUNCTION_ARGC(PolygonOffset, 2) // factor, units
+		FUNCTION_ARGC(isEnabled, 1) // cap
+		FUNCTION_ARGC(get, 1) // pname
+		FUNCTION_ARGC(getBoolean, 2) // pname [,count]
+		FUNCTION_ARGC(getInteger, 2) // pname [,count]
+		FUNCTION_ARGC(getDouble, 2) // pname [,count]
+		FUNCTION_ARGC(getString, 1)
+		FUNCTION_ARGC(drawBuffer, 1) // mode
+		FUNCTION_ARGC(readBuffer, 1) // mode
+		FUNCTION_ARGC(accum, 2) // op, value
+		FUNCTION_ARGC(stencilFunc, 3) // func, ref, mask
+		FUNCTION_ARGC(stencilOp, 3) // fail, zfail, zpass
+		FUNCTION_ARGC(stencilMask, 1) // mask
+		FUNCTION_ARGC(alphaFunc, 2) // func, ref
+		FUNCTION_ARGC(flush, 0)
+		FUNCTION_ARGC(finish, 0)
+		FUNCTION_ARGC(fog, 2) // pname, param | array of params
+		FUNCTION_ARGC(hint, 2) // target, mode
+		FUNCTION_ARGC(vertex, 4) // x, y [, z [, w]]
+		FUNCTION_ARGC(edgeFlag, 1) // flag
+		FUNCTION_ARGC(color, 4) // r, g, b [, a]
+		FUNCTION_ARGC(normal, 3) // nx, ny, nz
+		FUNCTION_ARGC(texCoord, 3) // s [, t [,r ]]
+		FUNCTION_ARGC(texParameter, 3) // target, pname, param | array of params
+		FUNCTION_ARGC(texEnv, 3) // target, pname, param | array of params
+		FUNCTION_ARGC(texGen, 3) // coord, pname, params
+		FUNCTION_ARGC(texImage2D, 9) // target, level, internalFormat, width, height, border, format, type, data
+		FUNCTION_ARGC(copyTexSubImage2D, 8) // target, level, xoffset, yoffset, x, y, width, height
+		FUNCTION_ARGC(texSubImage2D, 9) // target, level, xoffset, yoffset, width, height, format, type, data
+		FUNCTION_ARGC(lightModel, 2) // pname, param
+		FUNCTION_ARGC(light, 3) // light, pname, param
+		FUNCTION_ARGC(getLight, 3) // light, pname, count
+		FUNCTION_ARGC(colorMaterial, 2) // face, mode
+		FUNCTION_ARGC(material, 3) // face, pname, param
+		FUNCTION_ARGC(enable, 1) // cap
+		FUNCTION_ARGC(disable ,1) // cap
+		FUNCTION_ARGC(pointSize, 1) // size
+		FUNCTION_ARGC(lineWidth, 1) // width
+		FUNCTION_ARGC(shadeModel, 1) // mode
+		FUNCTION_ARGC(blendFunc, 2) // sfactor, dfactor
+		FUNCTION_ARGC(depthFunc, 1) // func
+		FUNCTION_ARGC(depthMask, 1) // mask
+		FUNCTION_ARGC(depthRange, 2) // zNear, zFar
+		FUNCTION_ARGC(polygonOffset, 2) // factor, units
 
-		FUNCTION_ARGC(CullFace, 1) // mode
-		FUNCTION_ARGC(FrontFace, 1) // mode
-		FUNCTION_ARGC(ClearStencil, 1) // s
-		FUNCTION_ARGC(ClearDepth, 1) // depth
-		FUNCTION_ARGC(ClearColor, 4) // r, g, b, alpha
-		FUNCTION_ARGC(ClearAccum, 4) // r, g, b, alpha
-		FUNCTION_ARGC(Clear, 1) // mask
-		FUNCTION_ARGC(ColorMask, 4) // r,g,b,a
-		FUNCTION_ARGC(ClipPlane, 2) // plane, equation
-		FUNCTION_ARGC(Viewport, 4) // x, y, width, height
-		FUNCTION_ARGC(Frustum, 6) // left, right, bottom, top, zNear, zFar
-		FUNCTION_ARGC(Perspective, 4) // fovY, aspectRatio, zNear, zFar (non-OpenGL API)
-		FUNCTION_ARGC(Ortho, 6) // left, right, bottom, top, zNear, zFar
-		FUNCTION_ARGC(MatrixMode, 1) // mode
-		FUNCTION_ARGC(LoadIdentity, 0)
-		FUNCTION_ARGC(PushMatrix, 0)
-		FUNCTION_ARGC(PopMatrix, 0)
-		FUNCTION_ARGC(LoadMatrix, 1) // matrix
-		FUNCTION_ARGC(MultMatrix, 1) // matrix
-		FUNCTION_ARGC(Rotate, 4) // angle, x, y, z
-		FUNCTION_ARGC(Translate, 3) // x, y, z
-		FUNCTION_ARGC(Scale, 3) // x, y, z
-		FUNCTION_ARGC(NewList, 0)
-		FUNCTION_ARGC(DeleteList, 1) // listId
-		FUNCTION_ARGC(EndList, 0)
-		FUNCTION_ARGC(CallList, 1) // listId | array of listId
-		FUNCTION_ARGC(PolygonMode, 2) // face, mode
-		FUNCTION_ARGC(Begin, 1) // mode
-		FUNCTION_ARGC(End, 0)
-		FUNCTION_ARGC(PushAttrib, 1) // mask
-		FUNCTION_ARGC(PopAttrib, 0)
-		FUNCTION_ARGC(GenTexture, 0)
-		FUNCTION_ARGC(BindTexture, 2) // target, texture
-		FUNCTION_ARGC(DeleteTexture, 1) // textureId
-		FUNCTION_ARGC(CopyTexImage2D, 8) // target, level, internalFormat, x, y, width, height, border
-		FUNCTION_ARGC(PixelTransfer, 2) // pname, param
-		FUNCTION_ARGC(PixelStore, 2) // pname, param
-		FUNCTION_ARGC(RasterPos, 4) // x,y,z,w
-		FUNCTION_ARGC(PixelZoom, 2) // x,y
-		FUNCTION_ARGC(PixelMap, 2) // map,<array>
+		FUNCTION_ARGC(cullFace, 1) // mode
+		FUNCTION_ARGC(frontFace, 1) // mode
+		FUNCTION_ARGC(clearStencil, 1) // s
+		FUNCTION_ARGC(clearDepth, 1) // depth
+		FUNCTION_ARGC(clearColor, 4) // r, g, b, alpha
+		FUNCTION_ARGC(clearAccum, 4) // r, g, b, alpha
+		FUNCTION_ARGC(clear, 1) // mask
+		FUNCTION_ARGC(colorMask, 4) // r,g,b,a
+		FUNCTION_ARGC(clipPlane, 2) // plane, equation
+		FUNCTION_ARGC(viewport, 4) // x, y, width, height
+		FUNCTION_ARGC(frustum, 6) // left, right, bottom, top, zNear, zFar
+		FUNCTION_ARGC(perspective, 4) // fovY, aspectRatio, zNear, zFar (non-OpenGL API)
+		FUNCTION_ARGC(ortho, 6) // left, right, bottom, top, zNear, zFar
+		FUNCTION_ARGC(matrixMode, 1) // mode
+		FUNCTION_ARGC(loadIdentity, 0)
+		FUNCTION_ARGC(pushMatrix, 0)
+		FUNCTION_ARGC(popMatrix, 0)
+		FUNCTION_ARGC(loadMatrix, 1) // matrix
+		FUNCTION_ARGC(multMatrix, 1) // matrix
+		FUNCTION_ARGC(rotate, 4) // angle, x, y, z
+		FUNCTION_ARGC(translate, 3) // x, y, z
+		FUNCTION_ARGC(scale, 3) // x, y, z
+		FUNCTION_ARGC(newList, 0)
+		FUNCTION_ARGC(deleteList, 1) // listId
+		FUNCTION_ARGC(endList, 0)
+		FUNCTION_ARGC(callList, 1) // listId | array of listId
+		FUNCTION_ARGC(polygonMode, 2) // face, mode
+		FUNCTION_ARGC(begin, 1) // mode
+		FUNCTION_ARGC(end, 0)
+		FUNCTION_ARGC(pushAttrib, 1) // mask
+		FUNCTION_ARGC(popAttrib, 0)
+		FUNCTION_ARGC(genTexture, 0)
+		FUNCTION_ARGC(bindTexture, 2) // target, texture
+		FUNCTION_ARGC(deleteTexture, 1) // textureId
+		FUNCTION_ARGC(copyTexImage2D, 8) // target, level, internalFormat, x, y, width, height, border
+		FUNCTION_ARGC(pixelTransfer, 2) // pname, param
+		FUNCTION_ARGC(pixelStore, 2) // pname, param
+		FUNCTION_ARGC(rasterPos, 4) // x,y,z,w
+		FUNCTION_ARGC(pixelZoom, 2) // x,y
+		FUNCTION_ARGC(pixelMap, 2) // map,<array>
 
-		FUNCTION_ARGC(CreateTextureBuffer, 0)
-		FUNCTION_ARGC(DefineTextureImage, 3) // target, format, image (non-OpenGL API)
+		FUNCTION_ARGC(createTextureBuffer, 0)
+		FUNCTION_ARGC(defineTextureImage, 3) // target, format, image (non-OpenGL API)
 
 
 // OpenGL extensions
-		FUNCTION_ARGC(HasExtensionProc, 1) // procName
-		FUNCTION_ARGC(HasExtensionName, 1) // name
+		FUNCTION_ARGC(hasExtensionProc, 1) // procName
+		FUNCTION_ARGC(hasExtensionName, 1) // name
 
-		FUNCTION_ARGC(BlendEquation, 1) // mode
-		FUNCTION_ARGC(StencilFuncSeparate, 4) // func, ref, mask
-		FUNCTION_ARGC(StencilOpSeparate, 4) // fail, zfail, zpass
-		FUNCTION_ARGC(ActiveStencilFaceEXT, 1) // face
+		FUNCTION_ARGC(blendEquation, 1) // mode
+		FUNCTION_ARGC(stencilFuncSeparate, 4) // func, ref, mask
+		FUNCTION_ARGC(stencilOpSeparate, 4) // fail, zfail, zpass
+		FUNCTION_ARGC(activeStencilFaceEXT, 1) // face
 
-		FUNCTION_ARGC(BindRenderbuffer, 2) // target, renderbuffer
-		FUNCTION_ARGC(GenRenderbuffer, 0)
-		FUNCTION_ARGC(DeleteRenderbuffer, 1) // renderbuffer
-		FUNCTION_ARGC(RenderbufferStorage, 4) // target, internalformat, width, height
-		FUNCTION_ARGC(GetRenderbufferParameter, 3) // target, pname [, count]
-		FUNCTION_ARGC(BindFramebuffer, 2) // target, renderbuffer
-		FUNCTION_ARGC(GenFramebuffer, 0)
-		FUNCTION_ARGC(DeleteFramebuffer, 1) // framebuffer
-		FUNCTION_ARGC(CheckFramebufferStatus, 1) // target
-		FUNCTION_ARGC(FramebufferTexture1D, 5) // target, attachment, textarget, texture, level
-		FUNCTION_ARGC(FramebufferTexture2D, 5) // target, attachment, textarget, texture, level
-		FUNCTION_ARGC(FramebufferTexture3D, 6) // target, attachment, textarget, texture, level, zoffset
-		FUNCTION_ARGC(FramebufferRenderbuffer, 4) // target, attachment, renderbuffertarget, renderbuffer
-		FUNCTION_ARGC(GetFramebufferAttachmentParameter, 4) // target, attachment, pname [, count]
+		FUNCTION_ARGC(bindRenderbuffer, 2) // target, renderbuffer
+		FUNCTION_ARGC(genRenderbuffer, 0)
+		FUNCTION_ARGC(deleteRenderbuffer, 1) // renderbuffer
+		FUNCTION_ARGC(renderbufferStorage, 4) // target, internalformat, width, height
+		FUNCTION_ARGC(getRenderbufferParameter, 3) // target, pname [, count]
+		FUNCTION_ARGC(bindFramebuffer, 2) // target, renderbuffer
+		FUNCTION_ARGC(genFramebuffer, 0)
+		FUNCTION_ARGC(deleteFramebuffer, 1) // framebuffer
+		FUNCTION_ARGC(checkFramebufferStatus, 1) // target
+		FUNCTION_ARGC(framebufferTexture1D, 5) // target, attachment, textarget, texture, level
+		FUNCTION_ARGC(framebufferTexture2D, 5) // target, attachment, textarget, texture, level
+		FUNCTION_ARGC(framebufferTexture3D, 6) // target, attachment, textarget, texture, level, zoffset
+		FUNCTION_ARGC(framebufferRenderbuffer, 4) // target, attachment, renderbuffertarget, renderbuffer
+		FUNCTION_ARGC(getFramebufferAttachmentParameter, 4) // target, attachment, pname [, count]
 
-		FUNCTION_ARGC(CreateShaderObject, 1)
-		FUNCTION_ARGC(DeleteObject, 1)
-		FUNCTION_ARGC(GetInfoLog, 1)
-		FUNCTION_ARGC(CreateProgramObject, 0)
-		FUNCTION_ARGC(ShaderSource, 2)
-		FUNCTION_ARGC(CompileShader, 1)
-		FUNCTION_ARGC(AttachObject, 2)
-		FUNCTION_ARGC(LinkProgram, 1)
-		FUNCTION_ARGC(UseProgramObject, 1)
-		FUNCTION_ARGC(GetUniformLocation, 2)
-		FUNCTION_ARGC(Uniform, 5)
-		FUNCTION_ARGC(UniformMatrix, 2)
-		FUNCTION_ARGC(UniformFloatVector, 3)
-		FUNCTION_ARGC(UniformFloat, 5)
-		FUNCTION_ARGC(UniformInteger, 5)
-		FUNCTION_ARGC(GetObjectParameter, 2)
-		FUNCTION_ARGC(BindAttribLocation, 3)
-		FUNCTION_ARGC(GetAttribLocation, 2)
-		FUNCTION_ARGC(VertexAttrib, 2)
-		FUNCTION_ARGC(GenBuffer, 0)
-		FUNCTION_ARGC(BindBuffer, 2) // target, buffer
+		FUNCTION_ARGC(createShaderObject, 1)
+		FUNCTION_ARGC(deleteObject, 1)
+		FUNCTION_ARGC(getInfoLog, 1)
+		FUNCTION_ARGC(createProgramObject, 0)
+		FUNCTION_ARGC(shaderSource, 2)
+		FUNCTION_ARGC(compileShader, 1)
+		FUNCTION_ARGC(attachObject, 2)
+		FUNCTION_ARGC(linkProgram, 1)
+		FUNCTION_ARGC(useProgramObject, 1)
+		FUNCTION_ARGC(getUniformLocation, 2)
+		FUNCTION_ARGC(uniform, 5)
+		FUNCTION_ARGC(uniformMatrix, 2)
+		FUNCTION_ARGC(uniformFloatVector, 3)
+		FUNCTION_ARGC(uniformFloat, 5)
+		FUNCTION_ARGC(uniformInteger, 5)
+		FUNCTION_ARGC(getObjectParameter, 2)
+		FUNCTION_ARGC(bindAttribLocation, 3)
+		FUNCTION_ARGC(getAttribLocation, 2)
+		FUNCTION_ARGC(vertexAttrib, 2)
+		FUNCTION_ARGC(genBuffer, 0)
+		FUNCTION_ARGC(bindBuffer, 2) // target, buffer
 
-		FUNCTION_ARGC(PointParameter, 2) // pname, param | Array of param
-		FUNCTION_ARGC(ActiveTexture, 1) // texture
-		FUNCTION_ARGC(ClientActiveTexture, 1) // texture
-		FUNCTION_ARGC(MultiTexCoord, 4) // target, s, t, r
+		FUNCTION_ARGC(pointParameter, 2) // pname, param | Array of param
+		FUNCTION_ARGC(activeTexture, 1) // texture
+		FUNCTION_ARGC(clientActiveTexture, 1) // texture
+		FUNCTION_ARGC(multiTexCoord, 4) // target, s, t, r
 
-		FUNCTION_ARGC(GenQueries, 0)
-		FUNCTION_ARGC(DeleteQueries, 1) // query id
-		FUNCTION_ARGC(BeginQuery, 2) // target, query id
-		FUNCTION_ARGC(EndQuery, 1) // query id
-		FUNCTION_ARGC(GetQuery, 2) // target, pname
-		FUNCTION_ARGC(GetQueryObject, 3) // id, pname, length
+		FUNCTION_ARGC(genQueries, 0)
+		FUNCTION_ARGC(deleteQueries, 1) // query id
+		FUNCTION_ARGC(beginQuery, 2) // target, query id
+		FUNCTION_ARGC(endQuery, 1) // query id
+		FUNCTION_ARGC(getQuery, 2) // target, pname
+		FUNCTION_ARGC(getQueryObject, 3) // id, pname, length
 
 
 // Helper functions
 
-		FUNCTION_ARGC(GetUniformInfo, 1) // (non-OpenGL API)
+		FUNCTION_ARGC(getUniformInfo, 1) // (non-OpenGL API)
 
-		FUNCTION_ARGC(UnProject, 2) // (non-OpenGL API)
+		FUNCTION_ARGC(unProject, 2) // (non-OpenGL API)
 
-		FUNCTION_ARGC(DrawImage, 3) // target, format, image (non-OpenGL API)
-		FUNCTION_ARGC(ReadImage, 0) // (non-OpenGL API)
+		FUNCTION_ARGC(drawImage, 3) // target, format, image (non-OpenGL API)
+		FUNCTION_ARGC(readImage, 0) // (non-OpenGL API)
 
-		FUNCTION_ARGC(LoadTrimesh, 1) // Trimesh object
-		FUNCTION_ARGC(DrawTrimesh, 2) // TrimeshId, mode
+		FUNCTION_ARGC(loadTrimesh, 1) // Trimesh object
+		FUNCTION_ARGC(drawTrimesh, 2) // TrimeshId, mode
 
-		FUNCTION_ARGC(PixelWidthFactor, 0)
+		FUNCTION_ARGC(pixelWidthFactor, 0)
 
-		FUNCTION_ARGC(DrawPoint, 1)
-		FUNCTION_ARGC(DrawDisk, 2)
-		FUNCTION_ARGC(DrawSphere, 4)
-		FUNCTION_ARGC(DrawCylinder, 6)
-		FUNCTION_ARGC(DrawBox, 3)
-		FUNCTION_ARGC(FullQuad, 0)
+		FUNCTION_ARGC(drawPoint, 1)
+		FUNCTION_ARGC(drawDisk, 2)
+		FUNCTION_ARGC(drawSphere, 4)
+		FUNCTION_ARGC(drawCylinder, 6)
+		FUNCTION_ARGC(drawBox, 3)
+		FUNCTION_ARGC(fullQuad, 0)
 
-		FUNCTION_ARGC(LookAt, 9) // (non-OpenGL API)
-		FUNCTION_ARGC(AimAt, 6)
-		FUNCTION_ARGC(KeepTranslation, 0)
+		FUNCTION_ARGC(lookAt, 9) // (non-OpenGL API)
+		FUNCTION_ARGC(aimAt, 6)
+		FUNCTION_ARGC(keepTranslation, 0)
 	END_STATIC_FUNCTION_SPEC
 
 

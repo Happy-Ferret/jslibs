@@ -1,17 +1,17 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsstd');
-LoadModule('jsjabber');
-LoadModule('jsio');
+loadModule('jsstd');
+loadModule('jsjabber');
+loadModule('jsio');
 
 dlist = [];
 
 // create the file info.txt, and store ['username@gmail.com','********','talk.google.com']
 var [jid, password, server] = eval(new File('info.txt').content.toString());
 
-Print( 'jid: '+jid, '\n' );
-Print( 'password: '+password, '\n' );
-Print( 'server: '+server, '\n' );
+print( 'jid: '+jid, '\n' );
+print( 'password: '+password, '\n' );
+print( 'server: '+server, '\n' );
 
 //
 // Configuration
@@ -21,29 +21,29 @@ var j = new Jabber(jid, password);
 j.onLog = function( level, area, message ) {
 
 	if ( level == Jabber.LogLevelWarning || level == Jabber.LogLevelError )
-		 Print( 'LOG: '+message, '\n');
+		 print( 'LOG: '+message, '\n');
 }
 
 j.onConnect = function() {
 	
-	Print('onConnect', '\n');
-	Print( 'roster: ' + [item for ( item in j.roster )].join(',') );
+	print('onConnect', '\n');
+	print( 'roster: ' + [item for ( item in j.roster )].join(',') );
 	j.presence = Jabber.PresenceAvailable;
 }
 
 j.onDisconnect = function() {
 	
-	Print('onDisconnect', '\n');
+	print('onDisconnect', '\n');
 }
 
 j.onRosterPresence = function( fromVal, presenceVal, msgVal ) {
 
-	Print( 'onRosterPresence: '+fromVal.full+'='+presenceVal+' '+msgVal, '\n');
+	print( 'onRosterPresence: '+fromVal.full+'='+presenceVal+' '+msgVal, '\n');
 }
 
 j.onMessage = function( from, body ) {
 
-	Print( 'onMessage: '+from.full+'='+body, '\n');
+	print( 'onMessage: '+from.full+'='+body, '\n');
 }
 
 //
@@ -57,7 +57,7 @@ jabberSocket.readable = function() {
 	
 	var res = j.Process();
 	if ( res != Jabber.ConnNoError )
-		Print( 'Error '+res+' while processing data', '\n' );
+		print( 'Error '+res+' while processing data', '\n' );
 }
 
 /*
@@ -89,7 +89,7 @@ serverSocket.readable = function(s) {
 			s.console.code = '';
 			break;
 		case 13:
-		Print('enter');
+		print('enter');
 			if ( IsStatementValid(s.console.code) ) {
 				
 				try {

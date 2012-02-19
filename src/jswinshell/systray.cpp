@@ -465,7 +465,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Close the Systray.
 **/
-DEFINE_FUNCTION( Close ) {
+DEFINE_FUNCTION( close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -594,7 +594,7 @@ $TOC_MEMBER $INAME
   Precess all pending events of the systray.
   The function returns true if at least one of the event function ( see Remarks below ) returns true.
 **/
-DEFINE_FUNCTION( ProcessEvents ) {
+DEFINE_FUNCTION( processEvents ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -679,7 +679,7 @@ JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 	JL_BAD;
 }
 
-DEFINE_FUNCTION( Events ) {
+DEFINE_FUNCTION( events ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -710,7 +710,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Puts the systray into the foreground. Keyboard input is directed to the systray.
 **/
-DEFINE_FUNCTION( Focus ) {
+DEFINE_FUNCTION( focus ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -972,7 +972,7 @@ $TOC_MEMBER $INAME
 ]
 }}}
 **/
-DEFINE_FUNCTION( PopupMenu ) {
+DEFINE_FUNCTION( popupMenu ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1004,7 +1004,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( balloonObject )
   Displays a systray balloon.
 */
-DEFINE_FUNCTION( PopupBalloon ) {
+DEFINE_FUNCTION( popupBalloon ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1079,7 +1079,7 @@ DEFINE_FUNCTION( PopupBalloon ) {
 
 
 /*
-DEFINE_FUNCTION( CallDefault ) {
+DEFINE_FUNCTION( callDefault ) {
 
 	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(nid);
@@ -1117,7 +1117,7 @@ $TOC_MEMBER $INAME
   }
   }}}
 **/
-DEFINE_FUNCTION( Position ) {
+DEFINE_FUNCTION( position ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1158,7 +1158,7 @@ $TOC_MEMBER $INAME
   $H note
    If you provide a _reusableArray_, the function will use it to store the values.
 **/
-DEFINE_FUNCTION( Rect ) {
+DEFINE_FUNCTION( rect ) {
 
 	HWND hWndTrayWnd = GetTrayNotifyWnd();
 	if ( !hWndTrayWnd )
@@ -1358,13 +1358,13 @@ CONFIGURE_CLASS
 	HAS_TRACER
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION(Close)
-		FUNCTION(ProcessEvents)
-		FUNCTION(Events)
-		FUNCTION(PopupMenu)
-		FUNCTION(PopupBalloon)
-		FUNCTION(Focus)
-		FUNCTION(Position)
+		FUNCTION(close)
+		FUNCTION(processEvents)
+		FUNCTION(events)
+		FUNCTION(popupMenu)
+		FUNCTION(popupBalloon)
+		FUNCTION(focus)
+		FUNCTION(position)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -1374,7 +1374,7 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION(Rect)
+		FUNCTION(rect)
 	END_STATIC_FUNCTION_SPEC
 
 END_CLASS

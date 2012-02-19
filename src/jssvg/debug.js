@@ -1,18 +1,18 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
 function Time( fct ) {
 
 	var t0 = +new Date();
 	fct();
-	Print( fct.name + ' time: ', +new Date() - t0, 'ms\n' );
+	print( fct.name + ' time: ', +new Date() - t0, 'ms\n' );
 }
 
 Time( function() {
-	LoadModule('jsstd');
-	LoadModule('jsio');
-	LoadModule('jsimage');
-	LoadModule('jssvg');
-	LoadModule('jsprotex');
+	loadModule('jsstd');
+	loadModule('jsio');
+	loadModule('jsimage');
+	loadModule('jssvg');
+	loadModule('jsprotex');
 });
 
 
@@ -120,7 +120,7 @@ Time( function readXmlData()
 svg.Write(s)
 )
 
-Print( 'width: '+svg.width + ' height: '+svg.height, '\n' );
+print( 'width: '+svg.width + ' height: '+svg.height, '\n' );
 
 svg.SetVisible('#test', false);
 
@@ -137,7 +137,7 @@ svgimage = svg.RenderImage(undefined, undefined, 3, true)
 
 
 //var svgText = new File('Image_Tectonic_plates.svg').content
-//Print( svgText.length );
+//print( svgText.length );
 //var svgimage = svg.Write(svgText);
 
 /*
@@ -146,9 +146,9 @@ new File('test.png').content = EncodePngImage( svgimage )
 )
 */
 
-LoadModule('jssdl');
-LoadModule('jsgraphics');
-Exec('../common/tools.js');
+loadModule('jssdl');
+loadModule('jsgraphics');
+exec('../common/tools.js');
 DisplayImage( svgimage );
 
 

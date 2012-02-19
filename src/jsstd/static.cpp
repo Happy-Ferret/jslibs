@@ -50,7 +50,7 @@ $TOC_MEMBER $INAME
   Expand('$(foo)-$(bar)', function(id) '<'+id+'>' ); // returns "<foo>-<bar>"
   }}}
 **/
-DEFINE_FUNCTION( Expand ) {
+DEFINE_FUNCTION( expand ) {
 
 	typedef struct {
 		const jschar *chars;
@@ -205,7 +205,7 @@ $TOC_MEMBER $INAME
  $VAL $INAME( value, case1, result1, case2, result2, ..., caseN, resultN, defaultResult )
   Based on _value_, returns _resultN_ value for the matching _caseN_, or _defaultResult_ if sothing match.
 ** /
-DEFINE_FUNCTION( SwitchCase ) {
+DEFINE_FUNCTION( switchCase ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 
@@ -240,7 +240,7 @@ DEFINE_FUNCTION( SwitchCase ) {
 $TOC_MEMBER $INAME
  $VAL $INAME( value, caseArray, resultArray [, defaultResult] )
 **/
-DEFINE_FUNCTION( SwitchCase ) {
+DEFINE_FUNCTION( switchCase ) {
 
 	JL_ASSERT_ARGC_RANGE( 3, 4 );
 	JL_ASSERT_ARG_IS_ARRAY(2);
@@ -275,7 +275,7 @@ $TOC_MEMBER $INAME
   Make an interned string, a string that is automatically shared with other code that needs a string with the same value. Use this function with care.
 **/
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
-DEFINE_FUNCTION( InternString ) {
+DEFINE_FUNCTION( internString ) {
 	
 	JL_IGNORE(argc);
 
@@ -309,7 +309,7 @@ $TOC_MEMBER $INAME
   obj.c = 3; // Error: obj.c is read-only
 }}}
 **/
-DEFINE_FUNCTION( DeepFreezeObject ) {
+DEFINE_FUNCTION( deepFreezeObject ) {
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -326,7 +326,7 @@ $TOC_MEMBER $INAME
  $INT $INAME( obj )
   Returns the number of own properties of an object.
 **/
-DEFINE_FUNCTION( CountProperties ) {
+DEFINE_FUNCTION( countProperties ) {
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -359,7 +359,7 @@ $TOC_MEMBER $INAME
   Print( uneval(obj) ); // prints: ({})
   }}}
 **/
-DEFINE_FUNCTION( ClearObject ) {
+DEFINE_FUNCTION( clearObject ) {
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -434,7 +434,7 @@ $TOC_MEMBER $INAME
   fct(); // prints: foo
   }}}
 ** /
-DEFINE_FUNCTION( SetScope ) {
+DEFINE_FUNCTION( setScope ) {
 
 	JL_ASSERT_ARGC(2);
 	JSObject *o, *p;
@@ -487,7 +487,7 @@ JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
 }
 
 
-DEFINE_FUNCTION( ObjectToId ) {
+DEFINE_FUNCTION( objectToId ) {
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -550,7 +550,7 @@ $TOC_MEMBER $INAME
   Print( IdToObject(id) ); // prints: undefined
   }}}
 **/
-DEFINE_FUNCTION( IdToObject ) {
+DEFINE_FUNCTION( idToObject ) {
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_INTEGER_NUMBER(1);
@@ -585,7 +585,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( text )
   Report the given _text_ as warning. The warning is reported on the stderr. Warnings are ignored in unsafeMode.
 **/
-DEFINE_FUNCTION( Warning ) {
+DEFINE_FUNCTION( warning ) {
 
 	JLStr str;
 	JL_ASSERT_ARGC(1);
@@ -614,7 +614,7 @@ $TOC_MEMBER $INAME
   $H note
    The error output can be redirected by redefining the _host.stderr function. see the Print() function.
 **/
-DEFINE_FUNCTION( Assert ) {
+DEFINE_FUNCTION( assert ) {
 
 	if ( !JL_IS_SAFE )
 		return JS_TRUE;
@@ -648,7 +648,7 @@ $TOC_MEMBER $INAME
  $INT $INAME()
   Performs an unconditional garbage collection in the JS memory pool.
 **/
-DEFINE_FUNCTION( CollectGarbage ) {
+DEFINE_FUNCTION( collectGarbage ) {
 
 	JL_IGNORE(argc);
 
@@ -665,7 +665,7 @@ $TOC_MEMBER $INAME
   Performs a conditional garbage collection of JS objects, doubles, and strings that are no longer needed by a script executing.
   This offers the JavaScript engine an opportunity to perform garbage collection if needed.
 **/
-DEFINE_FUNCTION( MaybeCollectGarbage ) {
+DEFINE_FUNCTION( maybeCollectGarbage ) {
 
 	JL_IGNORE(argc);
 
@@ -682,7 +682,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME( time )
   Suspends the execution of the current program during _time_ milliseconds.
 **/
-DEFINE_FUNCTION( Sleep ) {
+DEFINE_FUNCTION( sleep ) {
 
 	JL_ASSERT_ARGC(1);
 	unsigned int time;
@@ -717,7 +717,7 @@ $TOC_MEMBER $INAME
   t2: 100.02473070050955
   }}}
 **/
-DEFINE_FUNCTION( TimeCounter ) {
+DEFINE_FUNCTION( timeCounter ) {
 
 	JL_IGNORE(argc);
 
@@ -736,7 +736,7 @@ $TOC_MEMBER $INAME
   Print( StringRepeat('foo', 3) ); // prints: foofoofoo
   }}}
 **/
-DEFINE_FUNCTION( StringRepeat ) {
+DEFINE_FUNCTION( stringRepeat ) {
 
 	JLStr str;
 
@@ -818,7 +818,7 @@ $TOC_MEMBER $INAME
    Print('bar\n'); // prints nothing
    }}}
 **/
-DEFINE_FUNCTION( Print ) {
+DEFINE_FUNCTION( print ) {
 
 	// Print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
 	jsval fval;
@@ -847,7 +847,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 // function copied from mozilla/js/src/js.c
-DEFINE_FUNCTION( Exec ) {
+DEFINE_FUNCTION( exec ) {
 
 	JLStr str;
 //	JSObject *scriptObjRoot;
@@ -1057,7 +1057,7 @@ JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 
-DEFINE_FUNCTION( SandboxEval ) {
+DEFINE_FUNCTION( sandboxEval ) {
 
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -1277,7 +1277,7 @@ $TOC_MEMBER $INAME
   }
   }}}
 **/
-DEFINE_FUNCTION( IsStatementValid ) {
+DEFINE_FUNCTION( isStatementValid ) {
 
 	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
@@ -1299,7 +1299,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Stop the execution of the program. This is a ungraceful way to finish a program and should only be used in critical cases.
 **/
-DEFINE_FUNCTION( Halt ) {
+DEFINE_FUNCTION( halt ) {
 
 	JL_IGNORE(vp);
 	JL_IGNORE(argc);
@@ -1566,27 +1566,27 @@ CONFIGURE_STATIC
 	HAS_INIT
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_ARGC( Expand, 2 )
-		FUNCTION_ARGC( SwitchCase, 4 )
-		FUNCTION_ARGC( InternString, 1 )
-		FUNCTION_ARGC( DeepFreezeObject, 1 )
-		FUNCTION_ARGC( CountProperties, 1 )
-		FUNCTION_ARGC( ClearObject, 1 )
-//		FUNCTION_ARGC( SetScope, 2 )
-		FUNCTION_ARGC( Exec, 2 )
-		FUNCTION_ARGC( SandboxEval, 3 )
-		FUNCTION_ARGC( IsStatementValid, 1 )
-		FUNCTION_ARGC( StringRepeat, 2 )
-		FUNCTION_ARGC( Print, 1 ) // ...
-		FUNCTION_ARGC( Sleep, 1 )
-		FUNCTION_ARGC( TimeCounter, 0 )
-		FUNCTION_ARGC( CollectGarbage, 0 )
-		FUNCTION_ARGC( MaybeCollectGarbage, 0 )
-		FUNCTION_ARGC( ObjectToId, 1 )
-		FUNCTION_ARGC( IdToObject, 1 )
-		FUNCTION_ARGC( Warning, 1 )
-		FUNCTION_ARGC( Assert, 2 )
-		FUNCTION_ARGC( Halt, 0 )
+		FUNCTION_ARGC( expand, 2 )
+		FUNCTION_ARGC( switchCase, 4 )
+		FUNCTION_ARGC( internString, 1 )
+		FUNCTION_ARGC( deepFreezeObject, 1 )
+		FUNCTION_ARGC( countProperties, 1 )
+		FUNCTION_ARGC( clearObject, 1 )
+//		FUNCTION_ARGC( setScope, 2 )
+		FUNCTION_ARGC( exec, 2 )
+		FUNCTION_ARGC( sandboxEval, 3 )
+		FUNCTION_ARGC( isStatementValid, 1 )
+		FUNCTION_ARGC( stringRepeat, 2 )
+		FUNCTION_ARGC( print, 1 ) // ...
+		FUNCTION_ARGC( sleep, 1 )
+		FUNCTION_ARGC( timeCounter, 0 )
+		FUNCTION_ARGC( collectGarbage, 0 )
+		FUNCTION_ARGC( maybeCollectGarbage, 0 )
+		FUNCTION_ARGC( objectToId, 1 )
+		FUNCTION_ARGC( idToObject, 1 )
+		FUNCTION_ARGC( warning, 1 )
+		FUNCTION_ARGC( assert, 2 )
+		FUNCTION_ARGC( halt, 0 )
 #ifdef _DEBUG
 		FUNCTION( jsstdTest )
 #endif // _DEBUG

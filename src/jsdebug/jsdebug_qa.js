@@ -1,4 +1,4 @@
-LoadModule('jsdebug');
+loadModule('jsdebug');
 
 
 /// list all properties of the global object  [rt]

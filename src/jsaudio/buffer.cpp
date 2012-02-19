@@ -84,7 +84,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /*
-DEFINE_FUNCTION( Free ) {
+DEFINE_FUNCTION( free ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	ALuint bid = (ALuint) JL_GetPrivate(cx, JL_OBJ);

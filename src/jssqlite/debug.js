@@ -1,17 +1,17 @@
-LoadModule('jsstd');
-LoadModule('jssqlite');
+loadModule('jsstd');
+loadModule('jssqlite');
 
 /*
-LoadModule('jsstd');
-LoadModule('jssqlite');
+loadModule('jsstd');
+loadModule('jssqlite');
 
 for ( var i = 0; i < 30; i++ ) {
 
 		var db = new Database(); // in-memory database
-		db.Exec('create table t1 (name,value);');
-		db.Exec('insert into t1 (name,value) values ("red","#F00")');
-		db.Exec('insert into t1 (name,value) values ("green","#0F0")');
-		db.Exec('insert into t1 (name,value) values ("blue","#00F")');
+		db.exec('create table t1 (name,value);');
+		db.exec('insert into t1 (name,value) values ("red","#F00")');
+		db.exec('insert into t1 (name,value) values ("green","#0F0")');
+		db.exec('insert into t1 (name,value) values ("blue","#00F")');
 
 		var res = [ color.name+'='+color.value for each ( color in db.Query('SELECT * from t1') ) ].join(',');
 }
@@ -19,7 +19,7 @@ for ( var i = 0; i < 30; i++ ) {
 throw 0;
 */
 
-LoadModule('jsstd'); Exec('../common/tools.js');
+loadModule('jsstd'); exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();
 //RunJsircbot(false); throw 0;
@@ -27,17 +27,17 @@ RunQATests('-rep 5 -exclude jstask jssqlite');
 
 
 
-LoadModule('jsstd');
-LoadModule('jssqlite');
+loadModule('jsstd');
+loadModule('jssqlite');
 
 var db = new Database(); // in-memory database
-db.Exec('create table t1 (name,value);');
-db.Exec('insert into t1 (name,value) values ("red","#F00")');
+db.exec('create table t1 (name,value);');
+db.exec('insert into t1 (name,value) values ("red","#F00")');
 
 
 for (var i = 0; i < 11; i++ ) {
 
-	Print(i, '\n');
+	print(i, '\n');
 
 	var str = '';
 	
@@ -46,7 +46,7 @@ for (var i = 0; i < 11; i++ ) {
 	str = [ it for each ( it in res ) ];
 //	var arr = []; for each ( var it in res ) arr.push(it); 	str += arr; // path: stubs::IterMore
 
-	Print('\n');
+	print('\n');
 
 }
 

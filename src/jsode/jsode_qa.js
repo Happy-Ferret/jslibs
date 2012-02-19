@@ -1,4 +1,4 @@
-LoadModule('jsode');
+loadModule('jsode');
 
 /// crash 1 [rmtf]
 
@@ -15,7 +15,7 @@ LoadModule('jsode');
 
 /// crash 3 [rmtf]
 
-	LoadModule('jsode');
+	loadModule('jsode');
 	var w = new World();
 	var geom = new GeomPlane(w.space);
 

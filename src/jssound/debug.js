@@ -1,9 +1,9 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsstd');
-LoadModule('jsio');
-LoadModule('jsaudio');
-LoadModule('jssound');
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jsaudio');
+loadModule('jssound');
 
 Oal.Open();
 
@@ -16,10 +16,10 @@ var block = dec.Read(100000);
 //var [left, right] = SplitChannels(block);
 
 
-Print( block.bits, '\n' );
-Print( block.channels, '\n' );
-Print( block.rate, '\n' );
-Print( block.frames, '\n' );
+print( block.bits, '\n' );
+print( block.channels, '\n' );
+print( block.rate, '\n' );
+print( block.frames, '\n' );
 
 var b = Oal.Buffer(block);
 var src = Oal.GenSource();
@@ -34,10 +34,10 @@ var t0 = IntervalNow();
 
 do {
 	var block = dec.Read(100000);
-	Print( 'frames: '+block.frames, '\n' );
+	print( 'frames: '+block.frames, '\n' );
 } while(block);
 
-Print( IntervalNow() - t0, '\n' );
+print( IntervalNow() - t0, '\n' );
 
 
 

@@ -153,7 +153,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $VAL matrix: an Array or an object that supports NIMatrix44Read native interface.
 **/
-DEFINE_FUNCTION( Load ) {
+DEFINE_FUNCTION( load ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -202,7 +202,7 @@ $TOC_MEMBER $INAME
  $THIS $INAME()
   Reset the current transformation (set to identity).
 **/
-DEFINE_FUNCTION( Clear ) {
+DEFINE_FUNCTION( clear ) {
 	
 	JL_IGNORE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
@@ -224,7 +224,7 @@ $TOC_MEMBER $INAME
  $THIS $INAME()
   Clear the rotation part of the current transformation.
 **/
-DEFINE_FUNCTION( ClearRotation ) {
+DEFINE_FUNCTION( clearRotation ) {
 
 	JL_IGNORE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
@@ -245,7 +245,7 @@ $TOC_MEMBER $INAME
  $THIS $INAME()
   Clear the translation part of the current transformation.
 **/
-DEFINE_FUNCTION( ClearTranslation ) {
+DEFINE_FUNCTION( clearTranslation ) {
 
 	JL_IGNORE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
@@ -270,7 +270,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $VAL matrix: an Array or an object that supports NIMatrix44Read native interface.
 **/
-DEFINE_FUNCTION( LoadRotation ) {
+DEFINE_FUNCTION( loadRotation ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -311,7 +311,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $VAL matrix: an Array or an object that supports NIMatrix44Read native interface.
 **/
-DEFINE_FUNCTION( LoadTranslation ) {
+DEFINE_FUNCTION( loadTranslation ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -345,7 +345,7 @@ $TOC_MEMBER $INAME
    $ARG $REAL y
    $ARG $REAL z
 **/
-DEFINE_FUNCTION( Translate ) {
+DEFINE_FUNCTION( translate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -387,7 +387,7 @@ $TOC_MEMBER $INAME
    $ARG $REAL y
    $ARG $REAL z
 **/
-DEFINE_FUNCTION( Scale ) {
+DEFINE_FUNCTION( scale ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -439,7 +439,7 @@ $TOC_MEMBER $INAME
    $ARG $REAL y
    $ARG $REAL z
 **/
-DEFINE_FUNCTION( RotationFromQuaternion ) {
+DEFINE_FUNCTION( rotationFromQuaternion ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -494,7 +494,7 @@ $TOC_MEMBER $INAME
    $ARG $REAL pitch
    $ARG $REAL yaw
 **/
-DEFINE_FUNCTION( TaitBryanRotation ) {
+DEFINE_FUNCTION( taitBryanRotation ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -527,7 +527,7 @@ $TOC_MEMBER $INAME
    $ARG $REAL y
    $ARG $REAL z
 **/
-DEFINE_FUNCTION( Rotate ) {
+DEFINE_FUNCTION( rotate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -573,7 +573,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $REAL angle in degres
 **/
-DEFINE_FUNCTION( RotateX ) {
+DEFINE_FUNCTION( rotateX ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -612,7 +612,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $REAL angle in degres
 **/
-DEFINE_FUNCTION( RotateY ) {
+DEFINE_FUNCTION( rotateY ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -651,7 +651,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $REAL angle in degres
 **/
-DEFINE_FUNCTION( RotateZ ) {
+DEFINE_FUNCTION( rotateZ ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -692,7 +692,7 @@ $TOC_MEMBER $INAME
    $ARG $REAL y
    $ARG $REAL z
 **/
-DEFINE_FUNCTION( LookAt ) {
+DEFINE_FUNCTION( lookAt ) {
 
 /*
     _vector3_sse z(from - to);
@@ -763,7 +763,7 @@ $TOC_MEMBER $INAME
  $THIS $INAME( x, y, z )
   Apply the (0,0,1)-(x,y,z) angle to the current transformation.
 **/
-DEFINE_FUNCTION( RotateToVector ) {
+DEFINE_FUNCTION( rotateToVector ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -807,7 +807,7 @@ $TOC_MEMBER $INAME
  $THIS $INAME()
   invert the current transformation.
 **/
-DEFINE_FUNCTION( Invert ) {
+DEFINE_FUNCTION( invert ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -832,7 +832,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $VAL newTransformation: an Array or an object that supports NIMatrix44Read native interface.
 **/
-DEFINE_FUNCTION( Product ) {
+DEFINE_FUNCTION( product ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -873,7 +873,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $ARRAY vector
 **/
-DEFINE_FUNCTION( TransformVector ) {
+DEFINE_FUNCTION( transformVector ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1059,7 +1059,7 @@ DEFINE_INIT() {
 
 
 #ifdef DEBUG
-DEFINE_FUNCTION( Test ) {
+DEFINE_FUNCTION( test ) {
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1080,25 +1080,25 @@ CONFIGURE_CLASS
 	HAS_SET_PROPERTY
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_ARGC( Clear, 0 )
-		FUNCTION_ARGC( Load, 1 )
-		FUNCTION_ARGC( LoadRotation, 1 )
-		FUNCTION_ARGC( LoadTranslation, 1 )
-		FUNCTION_ARGC( Product, 1 )
-		FUNCTION_ARGC( Invert, 0 )
-		FUNCTION_ARGC( Translate, 3 ) // x, y, z
-		FUNCTION_ARGC( Scale, 3 ) // x, y, z
-		FUNCTION_ARGC( ClearRotation, 0 )
-		FUNCTION_ARGC( ClearTranslation, 0 )
-		FUNCTION_ARGC( RotationFromQuaternion, 4 ) // w,x,y,z
-		FUNCTION_ARGC( TaitBryanRotation, 3 ) // roll, pitch, yaw
-		FUNCTION_ARGC( RotateToVector, 3 ) // x,y,z
-		FUNCTION_ARGC( Rotate, 4 ) // angle, x, y, z
-		FUNCTION_ARGC( RotateX, 1 ) // angle
-		FUNCTION_ARGC( RotateY, 1 ) // angle
-		FUNCTION_ARGC( RotateZ, 1 ) // angle
-		FUNCTION_ARGC( LookAt, 3 ) // x, y, z
-		FUNCTION_ARGC( TransformVector, 1 ) // 3D or 4D vector
+		FUNCTION_ARGC( clear, 0 )
+		FUNCTION_ARGC( load, 1 )
+		FUNCTION_ARGC( loadRotation, 1 )
+		FUNCTION_ARGC( loadTranslation, 1 )
+		FUNCTION_ARGC( product, 1 )
+		FUNCTION_ARGC( invert, 0 )
+		FUNCTION_ARGC( translate, 3 ) // x, y, z
+		FUNCTION_ARGC( scale, 3 ) // x, y, z
+		FUNCTION_ARGC( clearRotation, 0 )
+		FUNCTION_ARGC( clearTranslation, 0 )
+		FUNCTION_ARGC( rotationFromQuaternion, 4 ) // w,x,y,z
+		FUNCTION_ARGC( taitBryanRotation, 3 ) // roll, pitch, yaw
+		FUNCTION_ARGC( rotateToVector, 3 ) // x,y,z
+		FUNCTION_ARGC( rotate, 4 ) // angle, x, y, z
+		FUNCTION_ARGC( rotateX, 1 ) // angle
+		FUNCTION_ARGC( rotateY, 1 ) // angle
+		FUNCTION_ARGC( rotateZ, 1 ) // angle
+		FUNCTION_ARGC( lookAt, 3 ) // x, y, z
+		FUNCTION_ARGC( transformVector, 1 ) // 3D or 4D vector
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -1107,7 +1107,7 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_FUNCTION_SPEC
 #ifdef DEBUG
-		FUNCTION( Test )
+		FUNCTION( test )
 #endif //DEBUG
 	END_STATIC_FUNCTION_SPEC
 

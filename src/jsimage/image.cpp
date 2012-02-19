@@ -28,7 +28,7 @@ DEFINE_FINALIZE() {
 		jl_free(data); // jl_free(NULL) is legal
 }
 
-DEFINE_FUNCTION( Alloc ) {
+DEFINE_FUNCTION( alloc ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
@@ -58,7 +58,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JSFunction *allocFunction;
-	allocFunction = JS_NewFunction(cx, _Alloc, 0, 0, NULL, "Alloc");
+	allocFunction = JS_NewFunction(cx, _alloc, 0, 0, NULL, "alloc");
 	JL_ASSERT_ALLOC( allocFunction ); // "Unable to create allocation function."
 	JSObject *functionObject;
 	functionObject = JS_GetFunctionObject(allocFunction);
@@ -68,7 +68,7 @@ DEFINE_CONSTRUCTOR() {
 }
 
 
-DEFINE_FUNCTION( Free ) {
+DEFINE_FUNCTION( free ) {
 
 	JL_IGNORE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
@@ -83,7 +83,7 @@ DEFINE_FUNCTION( Free ) {
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( Trim ) {
+DEFINE_FUNCTION( trim ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN(1);
@@ -167,7 +167,7 @@ DEFINE_FUNCTION( Trim ) {
 	JL_BAD;
 }
 
-DEFINE_FUNCTION( Gamma ) {
+DEFINE_FUNCTION( gamma ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 
@@ -198,10 +198,10 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION(Trim)
-		FUNCTION(Gamma)
-//		FUNCTION(Alloc) // see SLOT_FUNCTION_ALLOC
-		FUNCTION(Free)
+		FUNCTION(trim)
+		FUNCTION(gamma)
+//		FUNCTION(alloc) // see SLOT_FUNCTION_ALLOC
+		FUNCTION(free)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

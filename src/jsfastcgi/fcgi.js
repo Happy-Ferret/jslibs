@@ -1,6 +1,6 @@
-LoadModule('jsstd');
-LoadModule('jsio');
-LoadModule('jsfastcgi');
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jsfastcgi');
 
 function log(data) {
 	
@@ -142,9 +142,9 @@ try {
 */
 
 /*
-LoadModule('jsnspr');
-LoadModule('jsstd');
-LoadModule('jsfastcgi');
+loadModule('jsnspr');
+loadModule('jsstd');
+loadModule('jsfastcgi');
 
 //new File('c:\\fcgi_process_log.txt').content += 'start\n';
 
@@ -152,7 +152,7 @@ while ( Accept() >= 0 ) {
 	
 	try {
 	
-		Exec(GetParam('SCRIPT_FILENAME'));
+		exec(GetParam('SCRIPT_FILENAME'));
 	} catch(ex) {
 	
 		var errorMessage = ex.name + ': ' + ex.message + ' (' + ex.fileName + ':' + ex.lineNumber + ')';

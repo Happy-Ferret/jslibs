@@ -1,6 +1,6 @@
 // don't remove this first line !! ( see MemoryMapped test )
-LoadModule('jsio');
-LoadModule('jsdebug');
+loadModule('jsio');
+loadModule('jsdebug');
 
 
 /// Socket shutdown(true) behavior [trm]

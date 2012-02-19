@@ -1,7 +1,7 @@
-//LoadModule('jsstd'); LoadModule('jsio'); currentDirectory += '/../../tests/jslinux'; Exec('start.js'); throw 0;
-//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-exclude jstask -rep 1 jsio');
+//loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
+//loadModule('jsstd'); exec('../common/tools.js'); RunQATests('-exclude jstask -rep 1 jsio');
 
-LoadModule('jsstd'); LoadModule('jsio');
+loadModule('jsstd'); loadModule('jsio');
 
 
 /// Socket shutdown(false) behavior [trm]
@@ -23,14 +23,14 @@ try {
 
 	while ( cl.Read() != undefined );
 
-	Print( typeof cl.Read(), '\n' );
+	print( typeof cl.Read(), '\n' );
 
 
 
 
 } catch( ex if ex instanceof IoError ) {
 
-	Print( ex.fileName+':'+ex.lineNumber+' '+ex.text+'\n' );
+	print( ex.fileName+':'+ex.lineNumber+' '+ex.text+'\n' );
 }
 
 
@@ -40,12 +40,12 @@ throw 0;
 
 
 
-//LoadModule('jsdebug'); gcZeal = 2;
+//loadModule('jsdebug'); gcZeal = 2;
 
 //var f = new File('C:\\MSDOS.SYS').Open('r');
 var f = new File("C:\\tmp\\vcredist.bmp").Open('r'); // MYDOCUMENTS
 
-Print(f.id.quote());
+print(f.id.quote());
 
 Halt();
 
@@ -58,7 +58,7 @@ var f1 = new File('');
 var f2 = new File('');
 
 f1.name = 'test';
-Print( f2.name );
+print( f2.name );
 
 
 
@@ -68,11 +68,11 @@ var f1 = new File('');
 var f2 = new File('');
 
 f1.timeout = 123;
-Print(1, f2.timeout, '\n');
-Print(2, File.prototype.timeout, '\n');
-Print(3, f1.__proto__.__proto__.hasOwnProperty('timeout'), '\n');
-Print(4, File.prototype.hasOwnProperty('timeout'), '\n');
-Print(3, f1.__proto__.__proto__.timeout, '\n');
+print(1, f2.timeout, '\n');
+print(2, File.prototype.timeout, '\n');
+print(3, f1.__proto__.__proto__.hasOwnProperty('timeout'), '\n');
+print(4, File.prototype.hasOwnProperty('timeout'), '\n');
+print(3, f1.__proto__.__proto__.timeout, '\n');
 
 
 throw 0;
@@ -83,7 +83,7 @@ f.Connect('apod.nasa.gov', 80);
 f.Write('GET /apod/image/1105/cenAjets_many_1280.jpg HTTP/1.0\r\nAccept:*/*\r\n\r\n');
 var image = Stringify(f);
 
-Print( image.length, 'bytes\n' );
+print( image.length, 'bytes\n' );
 
 
 
@@ -92,9 +92,9 @@ throw 0;
 
 if ( 0 ) {
 
-	LoadModule('jsstd');
-	LoadModule('jsio');
-	LoadModule('jswinshell');
+	loadModule('jsstd');
+	loadModule('jsio');
+	loadModule('jswinshell');
 	
 	var f = new File('test.txt');
 	f.Close();
@@ -105,22 +105,22 @@ if ( 0 ) {
 /*	
 	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments)', '123', '-c']);
 	var res = process.stdout.Read();
-	Print( res ==  "_host.stdout(arguments),123,-c");
+	print( res ==  "_host.stdout(arguments),123,-c");
 */
 
 	var f = new File('c:/MSDOS.SYS').Open('r');
 	
-	Print( f.id.quote() );
+	print( f.id.quote() );
 
 	throw 0;
 }
 
 
 
-LoadModule('jsstd');  LoadModule('jsio');
+loadModule('jsstd');  loadModule('jsio');
 //RunJsircbot(false); throw 0;
-// var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-//Exec('../../qaexp.js');  throw 0;
+// var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+//exec('../../qaexp.js');  throw 0;
 //var QA = FakeQAApi;  RunLocalQAFile();
 //RunSavedQAFile('../../exitissue');
 
@@ -129,19 +129,19 @@ LoadModule('jsstd');  LoadModule('jsio');
 
 
 
-LoadModule('jsstd'); Exec('../common/tools.js');
+loadModule('jsstd'); exec('../common/tools.js');
 RunQATests('-rep 4 udp');
 
-LoadModule('jsstd');
-LoadModule('jsio');
-LoadModule('jswinshell');
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jswinshell');
 
 try {
 
-	Print( Socket.GetHostsByAddr('10.10.10.10')[0] );
+	print( Socket.GetHostsByAddr('10.10.10.10')[0] );
 } catch ( ex if ex instanceof IoError ) {
 
-	Print( ex.const, '\n' );
+	print( ex.const, '\n' );
 }
 
 
@@ -159,20 +159,20 @@ Halt();
 
 
 
-LoadModule('jsio');
-LoadModule('jswinshell');
+loadModule('jsio');
+loadModule('jswinshell');
 
 new File( DESKTOP+'\\test.txt' ).content = '1234';
 Halt();
 
-LoadModule('jsdebug');
-LoadModule('jsstd');
-LoadModule('jstask');
+loadModule('jsdebug');
+loadModule('jsstd');
+loadModule('jstask');
 
 //jsioTest(); Halt();
 
-LoadModule('jsstd');
-LoadModule('jsio');
+loadModule('jsstd');
+loadModule('jsio');
 
 const CRLF = '\r\n';
 var descList = [];
@@ -187,7 +187,7 @@ function Respond() {
   if ( this.httpHeader.indexOf(CRLF+CRLF) == -1 )
     return;
 
-  Print('Received: \n' + this.httpHeader + '\n');
+  print('Received: \n' + this.httpHeader + '\n');
   descList.splice(descList.indexOf(this), 1);
 
   var writeOp = this.Write(
@@ -207,7 +207,7 @@ serv.readable = function () {
   descList.push(desc);
 }
 
-Print('HTTP server minimal example. Point a web browser at http://localhost:8081. CTRL+C to exit\n');
+print('HTTP server minimal example. Point a web browser at http://localhost:8081. CTRL+C to exit\n');
 
 while ( !endSignal )
  Poll(descList, 50);
@@ -229,8 +229,8 @@ f.Write('A');
 f.Read(1);
 
 
-f.writable = function() { Print('writable') }
-//f.readable = function() { Print('readable') }
+f.writable = function() { print('writable') }
+//f.readable = function() { print('readable') }
 
 Poll([f], 1000);
 
@@ -247,14 +247,14 @@ Halt();
 	for ( let data; data = p.stdout.Read(); )
 		svnInfo += data;
 		
-	Print( svnInfo );
+	print( svnInfo );
 		
 		
 		
 
 Halt();
 
-Exec('../common/tools.js');
+exec('../common/tools.js');
 
 var f = new File('my_test_file.txt').Open();
 new File('my_test_file.txt').content = '';
@@ -298,7 +298,7 @@ function ReverseLookup( ip ) {
 	}
 }
 
-Print( ReverseLookup('10.0.0.99') );
+print( ReverseLookup('10.0.0.99') );
 
 
 
@@ -307,7 +307,7 @@ Halt(); //////////////////////////////////////////////////////////////////////
 
 	var myTask = new Task(function() {
 		
-		LoadModule('jsio');
+		loadModule('jsio');
 		var serverSocket = new Socket();
 		serverSocket.reuseAddr = true;
 		serverSocket.Bind(8099, '127.0.0.1');
@@ -329,7 +329,7 @@ Halt(); //////////////////////////////////////////////////////////////////////
 	var client = new Socket();
 	client.Connect('127.0.0.1', 8099);
 	var res = client.Read();
-	Print( res, '\n' );
+	print( res, '\n' );
 
 
 
@@ -370,7 +370,7 @@ try {
 	var res = new Process('uryqoiwueyrqoweu');
 } catch( ex if ex instanceof IoError ) {
 
-	Print( ex.filename+':'+ex.lineno, '\n' );
+	print( ex.filename+':'+ex.lineno, '\n' );
 }
 	
 	
@@ -404,7 +404,7 @@ Halt();
 	while( ++i < 100 )
 		Poll([soc], 20);
 		
-	Print(response);
+	print(response);
 
 	
 
@@ -416,13 +416,13 @@ try {
 	var res = new Process('uryqoiwueyrqoweu');
 } catch( ex if ex instanceof IoError ) {
 
-	Print( ex.code, -5994, 'CreateProcess error detection' );
+	print( ex.code, -5994, 'CreateProcess error detection' );
 }
 */
 
 var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:']);
 Sleep(1000);
-Print( p.stdout.Read(), '\n' );
+print( p.stdout.Read(), '\n' );
 
 
 Halt(); //////////////////////////////////////////////////////////
@@ -440,12 +440,12 @@ try {
 
 	var fd = Descriptor.Import( 5000, Descriptor.DESC_FILE );
 
-	Print( fd)
+	print( fd)
 
 
 } catch ( ex if ex instanceof IoError ) { 
 
-	Print( ex.toSource() );
+	print( ex.toSource() );
 	
 }
 
@@ -455,9 +455,9 @@ Halt(); //////////////////////////////////////////////////////////
 var f = new File('test.txt');
 f.info.toto = 123;
 f.content = 'xx'
-Print( f.info.size, '\n' );
+print( f.info.size, '\n' );
 f.content = 'xxx'
-Print( f.info.toto, '\n' );
+print( f.info.toto, '\n' );
 
 
 
@@ -486,7 +486,7 @@ Halt(); //////////////////////////////////////////////////////////
 var f = new File('directory.cpp');
 f.Open("r");
 var m = new MemoryMapped(f);
-Print(m);
+print(m);
 
 
 Halt(); //////////////////////////////////////////////////////////
@@ -498,7 +498,7 @@ while (!endSignal) {
 	Sleep(100);
 }
 
-Print( processPriority );
+print( processPriority );
 
 Sleep(500);
 		
@@ -522,9 +522,9 @@ Halt(); //////////////////////////////////////////////////////////
 var mem = new SharedMemory( 'test.txt', 100 );
 mem.Write('test', 10);
 //mem.content = "toto";
-//Print( Directory.List('.').join('\n'), '\n' );
+//print( Directory.List('.').join('\n'), '\n' );
 var mem2 = new SharedMemory( 'test.txt', 4 );
-Print( mem2.content.length, '\n' );
+print( mem2.content.length, '\n' );
 
 Halt(); //////////////////////////////////////////////////////////
 
@@ -535,7 +535,7 @@ try {
     
 
 } catch ( ex if ex instanceof IoError ) { 
-	Print( ex.text + ' ('+ex.code+')', '\n' );
+	print( ex.text + ' ('+ex.code+')', '\n' );
 } catch (ex) {
 	throw(ex);
 }
@@ -546,7 +546,7 @@ var desc;
 try {
 
 
-Print('\n * testing UDP socket \n');
+print('\n * testing UDP socket \n');
 
 	var step = 0;
 	
@@ -555,7 +555,7 @@ Print('\n * testing UDP socket \n');
 	s2.Bind(9999);
 	s2.readable = function(s) {
 	
-//		Print( 'port:'+s.sockPort+'\n' );
+//		print( 'port:'+s.sockPort+'\n' );
 		var [data, ip, port] = s.RecvFrom();
 		
 		s.SendTo(ip, port, '5554');
@@ -569,10 +569,10 @@ Print('\n * testing UDP socket \n');
 	s1.nonblocking = true;
 	s1.Connect('127.0.0.1', 9999);
 	
-	s1.readable = function(s) { Print( 'readable', '\n' ); }
-//	s1.writable = function(s) { Print( 'writable', '\n' ); }
-	s1.exception = function(s) { Print( 'exception', '\n' ); }
-	s1.error = function(s) { Print( 'error', '\n' ); }
+	s1.readable = function(s) { print( 'readable', '\n' ); }
+//	s1.writable = function(s) { print( 'writable', '\n' ); }
+	s1.exception = function(s) { print( 'exception', '\n' ); }
+	s1.error = function(s) { print( 'error', '\n' ); }
 	
 	var dlist = [s1,s2]; //descriptor list
 
@@ -580,7 +580,7 @@ Print('\n * testing UDP socket \n');
 	var i = 0;
 	while(++i < 20 && !endSignal) {
 		
-		Print('.\n');
+		print('.\n');
 		Poll(dlist,100);
 		step++;
 		if ( !(step % 4) ) {
@@ -605,13 +605,13 @@ Halt(); //////////////////////////////////////////////////////////
 
 	for ( var port = 80; !server1.Bind( port, '127.0.0.1' ) && port <= 82; port++ );
 	
-	Print('port '+port);
+	print('port '+port);
 
 	server1.Listen();
 
 Halt(); //////////////////////////////////////////////////////////
 
-//Print( Socket.GetHostsByName('www.google.com') );
+//print( Socket.GetHostsByName('www.google.com') );
 
 
 /*
@@ -624,12 +624,12 @@ f.Close();
 Halt(); //////////////////////////////////////////////////////////	
 	
 
-Print('\n * testing stdout \n');
+print('\n * testing stdout \n');
 
 	var f = File.stdout;
 	f.Write(new Date());
 
-Print('\n * testing simple file write \n');
+print('\n * testing simple file write \n');
 
 	var f = new File('test.txt');
 	f.Open( File.RDWR | File.CREATE_FILE );
@@ -638,7 +638,7 @@ Print('\n * testing simple file write \n');
 */
 
 
-Print('\n * testing TCP socket \n');
+print('\n * testing TCP socket \n');
 
 	var dlist = []; //descriptor list
 
@@ -656,7 +656,7 @@ Print('\n * testing TCP socket \n');
 
 			var data = s.Read();
 			
-			Print('recv '+data+' from '+s.sockPort);
+			print('recv '+data+' from '+s.sockPort);
 			if ( !data.length )
 				delete s.readable;
 		}
@@ -665,7 +665,7 @@ Print('\n * testing TCP socket \n');
 	var client = new Socket( Socket.TCP );
 	client.Connect('127.0.0.1', 80);
 	
-	Print('seg: '+client.maxSegment);
+	print('seg: '+client.maxSegment);
 	
 	dlist.push(client);
 	dlist.push(server);
@@ -673,7 +673,7 @@ Print('\n * testing TCP socket \n');
 	var i = 0;
 	while(++i < 10) {
 		
-		Print('.\n');
+		print('.\n');
 		Poll(dlist,100);
 		step++;
 		if ( !(step%5) ) {
@@ -686,7 +686,7 @@ Print('\n * testing TCP socket \n');
 
 
 } catch ( ex if ex instanceof IoError ) {
-	Print( 'IoError: ' + ex.text + ' ('+ex.os+')', '\n' );
+	print( 'IoError: ' + ex.text + ' ('+ex.os+')', '\n' );
 } catch( ex ) {
 	throw ex;
 }

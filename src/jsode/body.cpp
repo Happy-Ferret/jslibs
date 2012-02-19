@@ -134,7 +134,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   TBD dBodyDestroy
 **/
-DEFINE_FUNCTION( Destroy ) {
+DEFINE_FUNCTION( destroy ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -162,7 +162,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME( _body_ )
   TBD dAreConnected
 **/
-DEFINE_FUNCTION( IsConnectedTo ) {
+DEFINE_FUNCTION( isConnectedTo ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -183,7 +183,7 @@ DEFINE_FUNCTION( IsConnectedTo ) {
 $TOC_MEMBER $INAME
  $OBJ $INAME( index )
 **/
-DEFINE_FUNCTION( GetGeom ) {
+DEFINE_FUNCTION( getGeom ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -209,7 +209,7 @@ DEFINE_FUNCTION( GetGeom ) {
 $TOC_MEMBER $INAME
  $OBJ $INAME( index )
 **/
-DEFINE_FUNCTION( GetJoint ) {
+DEFINE_FUNCTION( getJoint ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -242,7 +242,7 @@ DEFINE_FUNCTION( GetJoint ) {
 $TOC_MEMBER $INAME
  $VOID $INAME( $TYPE vec3 force [, $TYPE vec3 pos] )
 **/
-DEFINE_FUNCTION( AddForce ) {
+DEFINE_FUNCTION( addForce ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -273,7 +273,7 @@ DEFINE_FUNCTION( AddForce ) {
 $TOC_MEMBER $INAME
  $VOID $INAME( $TYPE vec3 torque )
 **/
-DEFINE_FUNCTION( AddTorque ) {
+DEFINE_FUNCTION( addTorque ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -296,7 +296,7 @@ DEFINE_FUNCTION( AddTorque ) {
 $TOC_MEMBER $INAME
  $VOID $INAME()
 **/
-DEFINE_FUNCTION( SetDampingDefaults ) {
+DEFINE_FUNCTION( setDampingDefaults ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -315,7 +315,7 @@ DEFINE_FUNCTION( SetDampingDefaults ) {
 $TOC_MEMBER $INAME
  $TYPE real $INAME( point )
 **/
-DEFINE_FUNCTION( GetRelativeVelocityValue ) {
+DEFINE_FUNCTION( getRelativeVelocityValue ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -354,7 +354,7 @@ DEFINE_FUNCTION( GetRelativeVelocityValue ) {
 $TOC_MEMBER $INAME
  $TYPE vec3 $INAME( point [ , dest ] )
 **/
-DEFINE_FUNCTION( GetRelPointVel ) {
+DEFINE_FUNCTION( getRelPointVel ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -381,7 +381,7 @@ DEFINE_FUNCTION( GetRelPointVel ) {
 $TOC_MEMBER $INAME
  $VOID $INAME( vector [ , dest ] )
 **/
-DEFINE_FUNCTION( Vector3ToWorld ) {
+DEFINE_FUNCTION( vector3ToWorld ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1070,7 +1070,7 @@ DEFINE_PROPERTY_GETTER( mass ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME()
 **/
-DEFINE_FUNCTION( AreConnected ) {
+DEFINE_FUNCTION( areConnected ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 	ode::dBodyID body1, body2;
@@ -1144,16 +1144,16 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Destroy )
-		FUNCTION_ARGC( IsConnectedTo, 1 )
-		FUNCTION_ARGC( GetGeom, 1 )
-		FUNCTION_ARGC( GetJoint, 1 )
-		FUNCTION_ARGC( AddForce, 1 )
-		FUNCTION_ARGC( AddTorque, 1 )
-		FUNCTION_ARGC( SetDampingDefaults, 0 )
-		FUNCTION_ARGC( GetRelativeVelocityValue, 1 )
-		FUNCTION_ARGC( GetRelPointVel, 2 )
-		FUNCTION_ARGC( Vector3ToWorld, 2 )
+		FUNCTION( destroy )
+		FUNCTION_ARGC( isConnectedTo, 1 )
+		FUNCTION_ARGC( getGeom, 1 )
+		FUNCTION_ARGC( getJoint, 1 )
+		FUNCTION_ARGC( addForce, 1 )
+		FUNCTION_ARGC( addTorque, 1 )
+		FUNCTION_ARGC( setDampingDefaults, 0 )
+		FUNCTION_ARGC( getRelativeVelocityValue, 1 )
+		FUNCTION_ARGC( getRelPointVel, 2 )
+		FUNCTION_ARGC( vector3ToWorld, 2 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -1196,7 +1196,7 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_ARGC( AreConnected, 2 )
+		FUNCTION_ARGC( areConnected, 2 )
 	END_STATIC_FUNCTION_SPEC
 
 END_CLASS

@@ -29,9 +29,9 @@
 		QA.ASSERT_TYPE( global, 'object', 'has "global" property' );
 		// Obsolete in Gecko 2 (Firefox 4) // QA.ASSERT( global, Object.__parent__, 'global points to the right global object' );
 		
-		var mod = LoadModule('jsstd');
-		var mod1 = LoadModule('jsstd');
-		QA.ASSERT( mod, mod1, 'LoadModule' );
+		var mod = loadModule('jsstd');
+		var mod1 = loadModule('jsstd');
+		QA.ASSERT( mod, mod1, 'loadModule' );
 		QA.ASSERT( 'unsafeMode' in _host, true, 'unsafe mode is present' );
 		QA.ASSERT( global.arguments[0].substr(-5), 'qa.js', 'javascript program name' );
 

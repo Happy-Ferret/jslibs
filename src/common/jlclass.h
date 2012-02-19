@@ -82,7 +82,7 @@ ALWAYS_INLINE JSBool JL_DefineClassProperties(JSContext *cx, JSObject *obj, JSPr
 ALWAYS_INLINE char *JLNormalizeFunctionName( const char *name ) {
 
 	char *buf = JL_strdup(name); // (TBD) if needed, do free with js_free() function.
-	buf[0] = (char)tolower(buf[0]);
+	buf[0] = (char)toupper(buf[0]);
 	return buf;
 }
 
@@ -96,7 +96,7 @@ inline JSBool JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JL_CHK(obj);
 
-	if ( JL_GetHostPrivate(cx)->camelCase == 1 )
+	if ( JL_GetHostPrivate(cx)->camelCase == 2 )
 		JLNormalizeFunctionSpecNames(cs->static_fs);
 
 	if ( cs->static_fs != NULL )
@@ -135,7 +135,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_CHK(obj);
 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
 
-	if ( JL_GetHostPrivate(cx)->camelCase == 1 ) {
+	if ( JL_GetHostPrivate(cx)->camelCase == 2 ) {
 
 		JLNormalizeFunctionSpecNames(cs->fs);
 		JLNormalizeFunctionSpecNames(cs->static_fs);

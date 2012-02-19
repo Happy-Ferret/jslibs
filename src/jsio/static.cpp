@@ -173,7 +173,7 @@ $TOC_MEMBER $INAME
     Print( 'Nothing has been recived' );
   }}}
 **/
-DEFINE_FUNCTION( Poll ) {
+DEFINE_FUNCTION( poll ) {
 
 	PRInt32 result;
 	PRIntervalTime pr_timeout;
@@ -315,7 +315,7 @@ bad:
 }
 
 
-DEFINE_FUNCTION( IOEvents ) {
+DEFINE_FUNCTION( iOEvents ) {
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
@@ -379,7 +379,7 @@ $TOC_MEMBER $INAME
  $INT $INAME()
   Returns the milliseconds value of NSPR's free-running interval timer.
 **/
-DEFINE_FUNCTION( IntervalNow ) {
+DEFINE_FUNCTION( intervalNow ) {
 
 	PRUint32 interval = PR_IntervalToMilliseconds( PR_IntervalNow() ); // (TBD) Check if it may wrap around in about 12 hours. Is it related to the data type ???
 	return JL_NewNumberValue(cx, interval, JL_RVAL);
@@ -391,7 +391,7 @@ DEFINE_FUNCTION( IntervalNow ) {
 // $INT $INAME()
 //  Returns the microseconds value of NSPR's free-running interval timer.
 //**/
-//DEFINE_FUNCTION( UIntervalNow ) {
+//DEFINE_FUNCTION( uIntervalNow ) {
 //
 //	PRUint32 interval = PR_IntervalToMicroseconds( PR_IntervalNow() );
 //	return JL_NewNumberValue(cx, interval, JL_RVAL);
@@ -403,7 +403,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( _milliseconds_ )
   Sleeps _milliseconds_ milliseconds.
 **/
-DEFINE_FUNCTION( Sleep ) {
+DEFINE_FUNCTION( sleep ) {
 
 	PRUint32 timeout;
 	if ( JL_ARG_ISDEF(1) )
@@ -423,7 +423,7 @@ $TOC_MEMBER $INAME
  $STR $INAME( name )
   Retrieve the value of the given environment variable.
 **/
-DEFINE_FUNCTION( GetEnv ) {
+DEFINE_FUNCTION( getEnv ) {
 
 	JLStr name;
 	JL_ASSERT_ARGC_MIN(1);
@@ -452,7 +452,7 @@ $TOC_MEMBER $INAME
   Set, unset or change an environment variable.
 **/
 /*
-DEFINE_FUNCTION( SetEnv ) {
+DEFINE_FUNCTION( setEnv ) {
 
 doc:
 	The caller must ensure that the string passed
@@ -483,7 +483,7 @@ $TOC_MEMBER $INAME
    $LF
    [http://developer.mozilla.org/en/docs/PR_GetRandomNoise NSPR API]
 **/
-DEFINE_FUNCTION( GetRandomNoise ) {
+DEFINE_FUNCTION( getRandomNoise ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -544,7 +544,7 @@ $TOC_MEMBER $INAME
   $H note
    The "test and decrement" operation is performed atomically.
 **/
-DEFINE_FUNCTION( WaitSemaphore ) {
+DEFINE_FUNCTION( waitSemaphore ) {
 
 	JLStr name;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -599,7 +599,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( semaphoreName )
   Increments the value of a specified semaphore.
 **/
-DEFINE_FUNCTION( PostSemaphore ) {
+DEFINE_FUNCTION( postSemaphore ) {
 
 	JLStr name;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -648,7 +648,7 @@ $TOC_MEMBER $INAME
 **/
 /*
 // Doc. http://www.mozilla.org/projects/nspr/reference/html/prprocess.html#24535
-DEFINE_FUNCTION( CreateProcess ) {
+DEFINE_FUNCTION( createProcess ) {
 
 	const char **processArgv = NULL; // keep on top
 
@@ -760,7 +760,7 @@ $TOC_MEMBER $INAME
   Print( AvailableSpace('/var') );
   }}}
 **/
-DEFINE_FUNCTION( AvailableSpace ) {
+DEFINE_FUNCTION( availableSpace ) {
 
 	JLStr path;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -815,7 +815,7 @@ $TOC_MEMBER $INAME
  f.Read(1);
  }}}
 **/
-DEFINE_FUNCTION( ConfigureSerialPort ) {
+DEFINE_FUNCTION( configureSerialPort ) {
 
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -1259,18 +1259,18 @@ CONFIGURE_STATIC
 		FUNCTION( jsioTest )
 		#endif // DEBUG
 
-		FUNCTION( Poll ) // Do not turn it in FAST NATIVE because we need a stack frame for debuging
-//		FUNCTION( IOEvents ) // moved do Descriptor.Events()
-		FUNCTION( IntervalNow )
-//		FUNCTION( UIntervalNow )
-		FUNCTION( Sleep )
-		FUNCTION( GetEnv )
-		FUNCTION( GetRandomNoise )
-		FUNCTION( WaitSemaphore )
-		FUNCTION( PostSemaphore )
-//		FUNCTION( CreateProcess )
-		FUNCTION( AvailableSpace )
-		FUNCTION( ConfigureSerialPort )
+		FUNCTION( poll ) // Do not turn it in FAST NATIVE because we need a stack frame for debuging
+//		FUNCTION( iOEvents ) // moved do Descriptor.Events()
+		FUNCTION( intervalNow )
+//		FUNCTION( uIntervalNow )
+		FUNCTION( sleep )
+		FUNCTION( getEnv )
+		FUNCTION( getRandomNoise )
+		FUNCTION( waitSemaphore )
+		FUNCTION( postSemaphore )
+//		FUNCTION( createProcess )
+		FUNCTION( availableSpace )
+		FUNCTION( configureSerialPort )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

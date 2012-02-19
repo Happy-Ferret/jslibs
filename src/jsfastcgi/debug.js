@@ -1,24 +1,24 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsstd');
-LoadModule('jsfastcgi');
+loadModule('jsstd');
+loadModule('jsfastcgi');
 
 GetParam();
 //Write();
 Log();
 
-Print( URLDecode( 'a+a+a+a' ), '\n' );
+print( URLDecode( 'a+a+a+a' ), '\n' );
 
 
 
 /*
-LoadModule('jsstd');
-LoadModule('jsnspr');
-LoadModule('jsfastcgi');
+loadModule('jsstd');
+loadModule('jsnspr');
+loadModule('jsfastcgi');
 
 
 //var p = ParsePairs( MakePairs({aaa:123444, bbb:'test'}) ); // test
-//Print( p.bbb.length );
+//print( p.bbb.length );
 //throw 0;
 
 var buffer = new Buffer();
@@ -56,8 +56,8 @@ var stdinBuffer = new Buffer();
 for ( var i = 0; i < 4; i++ ) { 
 
 	var header = ParseHeader( buffer.Read(8) ); // FCGI_HEADER_LEN
-	Print( 'type:',header.type, '\n' );
-	Print( 'id:',header.requestId, '\n' );
+	print( 'type:',header.type, '\n' );
+	print( 'id:',header.requestId, '\n' );
 	switch ( header.type ) {
 		case fcgi.GET_VALUES:
 			break;
@@ -74,7 +74,7 @@ for ( var i = 0; i < 4; i++ ) {
 			stdinBuffer.Write( buffer.Read(header.contentLength) );
 			break;
 	}
-	Print( '[remain ' + buffer.length + ']', '\n' );
+	print( '[remain ' + buffer.length + ']', '\n' );
 }
 
 
@@ -88,7 +88,7 @@ for ( var i = 0; i < 4; i++ ) {
 
 /*
 
-LoadModule('jsnspr');
+loadModule('jsnspr');
 
 var data = File.stdin.Read(10000); // spec: ... FCGI_LISTENSOCK_FILENO equals STDIN_FILENO.
 var result;

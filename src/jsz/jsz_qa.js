@@ -1,4 +1,4 @@
-LoadModule('jsz');
+loadModule('jsz');
 
 /// empty operation [ftrm]
 

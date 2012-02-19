@@ -37,7 +37,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( [x, y, z] )
  $ARRAY $INAME( x, y, z )
 **/
-DEFINE_FUNCTION( Vec3 ) {
+DEFINE_FUNCTION( vec3 ) {
 	
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -83,7 +83,7 @@ $TOC_MEMBER $INAME
   $INAME(1,2,3) == $INAME([1,2,3]);
   }}}
 **/
-DEFINE_FUNCTION( Vec3Length ) {
+DEFINE_FUNCTION( vec3Length ) {
 	
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -139,7 +139,7 @@ $TOC_MEMBER $INAME
   Print( Array.slice( Vector3Normalize( v ) ) ); // prints: 0.491455078125,0.5733642578125,0.6552734375
   }}}
 **/
-DEFINE_FUNCTION( Vec3Normalize ) {
+DEFINE_FUNCTION( vec3Normalize ) {
 	
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -165,7 +165,7 @@ $TOC_MEMBER $INAME
   $H note
    If _dest_ is given, the result is stored in _dest_ then _vector_ and _vector2_ stay unchanged.
 **/
-DEFINE_FUNCTION( Vec3Add ) {
+DEFINE_FUNCTION( vec3Add ) {
 	
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -193,7 +193,7 @@ $TOC_MEMBER $INAME
   $H note
    If _dest_ is given, the result is stored in _dest_ then _vector_ and _vector2_ stay unchanged.
 **/
-DEFINE_FUNCTION( Vec3Sub ) {
+DEFINE_FUNCTION( vec3Sub ) {
 	
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -221,7 +221,7 @@ $TOC_MEMBER $INAME
   $H note
    If _dest_ is given, the result is stored in _dest_ then _vector_ and _vector2_ stay unchanged.
 **/
-DEFINE_FUNCTION( Vec3Cross ) {
+DEFINE_FUNCTION( vec3Cross ) {
 	
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -247,7 +247,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME( vector, vector2 )
   vector . vector2
 **/
-DEFINE_FUNCTION( Vec3Dot ) {
+DEFINE_FUNCTION( vec3Dot ) {
 	
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -283,7 +283,7 @@ $TOC_MEMBER $INAME
  ...
 }}}
 **/
-DEFINE_FUNCTION( FrustumSphere ) {
+DEFINE_FUNCTION( frustumSphere ) {
 	
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -340,7 +340,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( $ARR box )
   _box_ is a JavaScript Array: [minx, miny, minz,  maxx, maxy, maxz]
 **/
-DEFINE_FUNCTION( BoxToCircumscribedSphere ) {
+DEFINE_FUNCTION( boxToCircumscribedSphere ) {
 	
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
@@ -376,7 +376,7 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME( $TYPE vec4 src [, $TYPE vec3 dest] )
   if _dest is $UNDEF, _src_ is used to store the result.
 **/
-DEFINE_FUNCTION( QuaternionToEuler ) {
+DEFINE_FUNCTION( quaternionToEuler ) {
 
 	// see http://www.google.com/codesearch/p?hl=en#kpcXlMp9-Eg/cs7491/projects/proj002/cs7491.zip|pBok6PPJvB8/cs7491/MatrixLib/Quaternion.cpp&q=EulerToQuaternion%20lang:c++&l=185&t=1
 	// eg. http://www.euclideanspace.com/maths/geometry/rotations/conversions/eulerToQuaternion/steps/index.htm
@@ -444,7 +444,7 @@ $TOC_MEMBER $INAME
   To store the result in a new array, use: `$INAME( str, [] );`
 
 **/
-DEFINE_FUNCTION( EulerToQuaternion ) {
+DEFINE_FUNCTION( eulerToQuaternion ) {
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -500,7 +500,7 @@ $TOC_MEMBER $INAME
   _dest_ has the following form: [ x, y, z, angle ]
   If _dest is omited, the result is stored in _src_.$LF
 **/
-DEFINE_FUNCTION( QuaternionToAxisAngle ) {
+DEFINE_FUNCTION( quaternionToAxisAngle ) {
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -534,7 +534,7 @@ $TOC_MEMBER $INAME
  $TYPE vec3 $INAME( $TYPE vec4 src [, $TYPE vec4 dest] )
   _src_ has the following form: [ x, y, z, angle ]
 **/
-DEFINE_FUNCTION( AxisAngleToQuaternion ) {
+DEFINE_FUNCTION( axisAngleToQuaternion ) {
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -563,7 +563,7 @@ DEFINE_FUNCTION( AxisAngleToQuaternion ) {
 $TOC_MEMBER $INAME
  $TYPE vec16 $INAME( $TYPE matrix44 matrix )
 **/
-DEFINE_FUNCTION( GetMatrix ) {
+DEFINE_FUNCTION( getMatrix ) {
 
 	JL_ASSERT_ARGC(1);
 	float tmp[16], *m = tmp;
@@ -586,7 +586,7 @@ $TOC_MEMBER $INAME
  $TYPE vec4 $INAME( $TYPE vec3 p1, $TYPE vec3 p2, $TYPE vec3 p3 )
   Find the plane equation given 3 points.
 **/
-DEFINE_FUNCTION( PlaneFromPoints ) {
+DEFINE_FUNCTION( planeFromPoints ) {
 
 	JL_ASSERT_ARGC_MIN(3);
 
@@ -632,7 +632,7 @@ $TOC_MEMBER $INAME
  $H see
   http://www.opengl.org/resources/code/samples/advanced/advanced97/notes/node100.html
 **/
-DEFINE_FUNCTION( ShadowMatrix ) {
+DEFINE_FUNCTION( shadowMatrix ) {
 
 	JL_ASSERT_ARGC_RANGE(2, 3);
 
@@ -687,25 +687,25 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_ARGC( Vec3, 3 )
-		FUNCTION_ARGC( Vec3Length, 3 )
-		FUNCTION_ARGC( Vec3Normalize, 1 )
-		FUNCTION_ARGC( Vec3Add, 2 )
-		FUNCTION_ARGC( Vec3Sub, 2 )
-		FUNCTION_ARGC( Vec3Cross, 2 )
-		FUNCTION_ARGC( Vec3Dot, 2 )
+		FUNCTION_ARGC( vec3, 3 )
+		FUNCTION_ARGC( vec3Length, 3 )
+		FUNCTION_ARGC( vec3Normalize, 1 )
+		FUNCTION_ARGC( vec3Add, 2 )
+		FUNCTION_ARGC( vec3Sub, 2 )
+		FUNCTION_ARGC( vec3Cross, 2 )
+		FUNCTION_ARGC( vec3Dot, 2 )
 
-		FUNCTION_ARGC( FrustumSphere, 2 )
-		FUNCTION_ARGC( BoxToCircumscribedSphere, 1 )
-		FUNCTION_ARGC( QuaternionToEuler, 1 )
-		FUNCTION_ARGC( EulerToQuaternion, 1 )
-		FUNCTION_ARGC( QuaternionToAxisAngle, 1 )
-		FUNCTION_ARGC( AxisAngleToQuaternion, 1 )
+		FUNCTION_ARGC( frustumSphere, 2 )
+		FUNCTION_ARGC( boxToCircumscribedSphere, 1 )
+		FUNCTION_ARGC( quaternionToEuler, 1 )
+		FUNCTION_ARGC( eulerToQuaternion, 1 )
+		FUNCTION_ARGC( quaternionToAxisAngle, 1 )
+		FUNCTION_ARGC( axisAngleToQuaternion, 1 )
 		
-		FUNCTION_ARGC( GetMatrix, 1 )
+		FUNCTION_ARGC( getMatrix, 1 )
 
-		FUNCTION_ARGC( PlaneFromPoints, 3 )
-		FUNCTION_ARGC( ShadowMatrix, 2 )
+		FUNCTION_ARGC( planeFromPoints, 3 )
+		FUNCTION_ARGC( shadowMatrix, 2 )
 
 	END_STATIC_FUNCTION_SPEC
 

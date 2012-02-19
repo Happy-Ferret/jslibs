@@ -34,7 +34,7 @@ $TOC_MEMBER $INAME
    $ARG $STR str: the string.
    $ARG $INT size: the point size of the font to generate. A point is essentially 1/72th of an inch.
 **/
-DEFINE_FUNCTION( Draw3DText ) {
+DEFINE_FUNCTION( draw3DText ) {
 
 	JLStr text;
 
@@ -88,7 +88,7 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision: 3060 $"))
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( Draw3DText )
+		FUNCTION( draw3DText )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

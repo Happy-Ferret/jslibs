@@ -113,7 +113,7 @@ $TOC_MEMBER $INAME
   $LF
   For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
 **/
-DEFINE_FUNCTION( DecodeJpegImage ) {
+DEFINE_FUNCTION( decodeJpegImage ) {
 
 	jpeg_decompress_struct cinfo;
 	jpeg_error_mgr errMgr;
@@ -217,7 +217,7 @@ DEFINE_FUNCTION( DecodeJpegImage ) {
 
 
 /*
-DEFINE_FUNCTION( EncodeJpegImage ) {
+DEFINE_FUNCTION( encodeJpegImage ) {
 
 	JL_REPORT_ERROR("TBD!"); // (TBD)
 	return JS_TRUE;
@@ -269,7 +269,7 @@ $TOC_MEMBER $INAME
   $LF
   For further details about stream objects, see jslang::Stream object and NativeInterface mechanism.
 **/
-DEFINE_FUNCTION( DecodePngImage ) {
+DEFINE_FUNCTION( decodePngImage ) {
 
 	PngReadUserStruct desc;
 
@@ -366,7 +366,7 @@ void write_row_callback(png_structp png_ptr, png_bytep data, png_size_t size) {
 void output_flush_fn(png_structp png_ptr) {
 }
 
-DEFINE_FUNCTION( EncodePngImage ) {
+DEFINE_FUNCTION( encodePngImage ) {
 
 	JLStr buffer;
 
@@ -451,10 +451,10 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( DecodePngImage )
-		FUNCTION( EncodePngImage )
-		FUNCTION( DecodeJpegImage )
-//		FUNCTION( EncodeJpegImage )
+		FUNCTION( decodePngImage )
+		FUNCTION( encodePngImage )
+		FUNCTION( decodeJpegImage )
+//		FUNCTION( encodeJpegImage )
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC

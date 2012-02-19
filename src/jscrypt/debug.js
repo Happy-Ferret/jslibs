@@ -1,8 +1,8 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
-//LoadModule('jsstd'); Exec('../common/tools.js'); RunQATests('-rep 4 jscrypt');
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+//loadModule('jsstd'); exec('../common/tools.js'); RunQATests('-rep 4 jscrypt');
 
-LoadModule('jsstd');
-LoadModule('jscrypt');
+loadModule('jsstd');
+loadModule('jscrypt');
 
 var cr = new Cipher("ECB", "cast5", "my");
 
@@ -10,12 +10,12 @@ Halt();
 
 
 var md5 = new Hash('md5');
-Print( HexEncode(md5('qwe')), '\n' );
+print( HexEncode(md5('qwe')), '\n' );
 
 var md5 = new Hash('md5');
-Print( HexEncode(md5('qw')), '\n' );
+print( HexEncode(md5('qw')), '\n' );
 md5.Process('e');
-Print( HexEncode(md5.Done()), '\n' );
+print( HexEncode(md5.Done()), '\n' );
 
 Halt();
 
@@ -35,30 +35,30 @@ try {
 		var ac = new AsymmetricCipher( acName, 'sha512', rnd );
 		ac.CreateKeys( acKeySize, true );
 		var acPubKey = ac.publicKey;
-		Print( ac.keySize, '\n' );
+		print( ac.keySize, '\n' );
 		
 		var ac2 = new AsymmetricCipher( acName, 'sha512', rnd );
 
 		ac2.publicKey = acPubKey;
 
-		Print( ac2.keySize, '\n' );
+		print( ac2.keySize, '\n' );
 
 		ac2.blockLength;
 		var plainText = StringRepeat(' ', ac2.blockLength );
-		Print( 'len ', plainText.length, '\n' );
+		print( 'len ', plainText.length, '\n' );
 		
 		var enc = ac2.Encrypt( plainText );
 //		var res = ac.Decrypt( enc );
-//		Print ( res == plainText, '\n' );
+//		print ( res == plainText, '\n' );
 		
-//		Print('Rise an error:\n');
+//		print('Rise an error:\n');
 //		var res = ac2.Decrypt( ac.Encrypt( plainText ) );
 
 
 } catch(ex) {
 	
-	Print( ex.const, '\n' );
-	Print( ex.lineNumber, '\n' );
+	print( ex.const, '\n' );
+	print( ex.lineNumber, '\n' );
 }
 
 	
@@ -77,7 +77,7 @@ Halt();
 		rsa1.publicKey = rsaPubKey;
 		var rsaEncryptedData = rsa1.Encrypt( plainText );
 		var res = rsa.Decrypt( rsaEncryptedData );
-		Print ( res == plainText )
+		print ( res == plainText )
 
 		
 		
@@ -91,14 +91,14 @@ Halt();
 		var alice = new AsymmetricCipher('dsa', 'sha1', fortuna);
 		alice.CreateKeys(64);
 
-Print( alice.keySize, '\n' );
+print( alice.keySize, '\n' );
 
 		var publicKey = alice.publicKey;
 		//Bob
 		var bob = new AsymmetricCipher('dsa', 'sha1', fortuna);
 		bob.publicKey = publicKey;
 
-Print( bob.keySize, '\n' );
+print( bob.keySize, '\n' );
 		
 		
 Halt();	
@@ -110,14 +110,14 @@ Halt();
 
 		var alice = new AsymmetricCipher('dsa', 'sha1', fortuna);
 		alice.CreateKeys(64);
-		Print( alice.keySize, '\n' );
+		print( alice.keySize, '\n' );
 		
 		var publicKey = alice.publicKey;
 
 		var bob = new AsymmetricCipher('dsa', 'sha1', fortuna);
 		bob.publicKey = publicKey;
 
-//		Print( bob.keySize, '\n' );
+//		print( bob.keySize, '\n' );
 
 
 Halt();
@@ -128,31 +128,31 @@ var h2 = new Hash("md5");
 h2.Process("some data");
 h2 = h2.Done();
 
-Print( h1 == h2 );
+print( h1 == h2 );
 
 
 Halt();
 
 var md5 = new Hash('md5');
 md5.Process('foobarxxx');
-Print(HexEncode(md5.Done(), '\n'));
-Print( '\n' );
+print(HexEncode(md5.Done(), '\n'));
+print( '\n' );
 
 
-Print( Cipher.list.toSource() );
-Print( '\n' );
-Print( Hash.list.toSource() );
-Print( '\n' );
-Print( Prng.list.toSource() );
-Print( '\n' );
+print( Cipher.list.toSource() );
+print( '\n' );
+print( Hash.list.toSource() );
+print( '\n' );
+print( Prng.list.toSource() );
+print( '\n' );
 
 
 var IV = "123";
 var cr = new Cipher('CFB', "cast5", "my  key of  16B ", IV );
 var encryptedText = cr.Encrypt('my  dataof  16B ');
 var cr = new Cipher('CFB', "cast5", "my  key of  16B ", IV );
-Print( cr.Decrypt(encryptedText) );
-Print( '\n' );
+print( cr.Decrypt(encryptedText) );
+print( '\n' );
 
 function createString(count) {
 
@@ -175,17 +175,17 @@ var publicKey = alice.publicKey;
 //Bob
 var bob = new AsymmetricCipher('dsa', 'sha1', fortuna);
 bob.publicKey = publicKey;
-Print('blockLength = '+bob.blockLength, '\n' );
-Print('keySize = '+bob.keySize, '\n' );
+print('blockLength = '+bob.blockLength, '\n' );
+print('keySize = '+bob.keySize, '\n' );
 
 
 var encryptedData = bob.Encrypt(createString(bob.blockLength));
-Print('OK!\n');
+print('OK!\n');
 var encryptedData = bob.Encrypt(createString(bob.blockLength)+'z');
 
 
 //Alice
-Print( alice.Decrypt(encryptedData), '\n' );
+print( alice.Decrypt(encryptedData), '\n' );
 
 
 
@@ -212,10 +212,10 @@ try {
 	var rsaEncryptedData = rsa1.EncryptKey( r ,'md5', plainText );
 	
 
-	Print( plainText == rsa.DecryptKey( 'md5', rsaEncryptedData ) , '\n' );
+	print( plainText == rsa.DecryptKey( 'md5', rsaEncryptedData ) , '\n' );
 
 	var hkey = new Hash("sha256")('this is a secret key');
-	Print( HexEncode(hkey), '\n');
+	print( HexEncode(hkey), '\n');
 	
 	
 	var key = hkey;
@@ -232,11 +232,11 @@ try {
 // decrypt:
 	crypt.IV = IV;
 	var decipheredData = crypt.Decrypt( cipherData );
-	Print( 'decrypted data: '+decipheredData, '\n' );
+	print( 'decrypted data: '+decipheredData, '\n' );
 	
 	
 } catch( ex if ex instanceof CryptError ) {
-	Print( ex.text );
+	print( ex.text );
 } catch( ex ) {
 	throw(ex);
 }

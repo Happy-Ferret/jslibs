@@ -1,32 +1,32 @@
-LoadModule('jsstd'); 
-LoadModule('jsiconv'); 
+loadModule('jsstd'); 
+loadModule('jsiconv'); 
 
 	var conv = new Iconv('UTF-8', 'ISO-8859-1', true, false); // source is not wide, dest is wide
 	var res = conv('été');
 	//QA.ASSERT( res.length, 3, 'UC string length' );
-	Print( res.length, '\n' );
+	print( res.length, '\n' );
 
 
 throw 0;
 
 
-LoadModule('jsstd'); Exec('../common/tools.js');
+loadModule('jsstd'); exec('../common/tools.js');
 //var QA = FakeQAApi;
 //RunLocalQAFile();
 //RunJsircbot(false); throw 0;
 RunQATests('-rep 1 -exclude jstask jsiconv');
 
 
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsstd');
-LoadModule('jsio');
-LoadModule('jsiconv');
-LoadModule('jswinshell');
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jsiconv');
+loadModule('jswinshell');
 
 	
 	var conv = new Iconv(consoleCodepage, Iconv.jsUC, false, true);
-	Print ( consoleCodepage )
+	print ( consoleCodepage )
 
 
 	
@@ -34,10 +34,10 @@ Halt(); //////////////////////////////////////////
 	
 
 	var conv = new Iconv('UTF-8', 'UCS-2-INTERNAL', false, true);
-	Print( conv.invalidChar, '?', 'default invalidChar' );
+	print( conv.invalidChar, '?', 'default invalidChar' );
 	ASSERT_EXCEPTION( function() { conv.invalidChar = '???' }, TypeError, 'invalid invalidChar' );
 	conv.invalidChar = '.';
-	Print( conv.invalidChar, '.', 'new invalidChar' );
+	print( conv.invalidChar, '.', 'new invalidChar' );
 
 
 
@@ -45,21 +45,21 @@ Halt(); //////////////////////////////////////////
 
 	var conv = new Iconv('UCS-2-INTERNAL', 'UTF-8', true, false);
 	var result = conv(String.fromCharCode(0x20AC));
-	Print(result, '\n');
+	print(result, '\n');
 
 
 Halt(); //////////////////////////////////////////
 
 
-Print( Iconv.version );
+print( Iconv.version );
 
 var conv = new Iconv('UCS-2-INTERNAL', 'ISO-8859-1', true, false); // source is not wide, dest is wide
 
 var src = [ String.fromCharCode(c) for each ( c in [256, 300, 65000] ) ].join('');
 
-Print( src.quote(), '\n' );
+print( src.quote(), '\n' );
 
 var res = conv(src);
 
-Print( String.charCodeAt(res[0]) );
+print( String.charCodeAt(res[0]) );
 

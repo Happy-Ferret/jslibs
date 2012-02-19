@@ -1,5 +1,5 @@
-	LoadModule('jsdebug');
-	LoadModule('jsstd');
+	loadModule('jsdebug');
+	loadModule('jsstd');
 
 function a() {
 
@@ -17,11 +17,11 @@ throw 0;
 
 if ( 0 ) {
 
-	LoadModule('jsdebug');
-	LoadModule('jsstd');
+	loadModule('jsdebug');
+	loadModule('jsstd');
 	
 		
-	Print( PropertiesList([]) );
+	print( PropertiesList([]) );
 	
 	Halt();
 
@@ -40,7 +40,7 @@ if ( 0 ) {
 	}();
 	m = privateMemoryUsage - m;
 	
-	Print(m-err, '\n');
+	print(m-err, '\n');
 
 
 /*
@@ -67,21 +67,21 @@ if ( 0 ) {
 		
 		mem = (privateMemoryUsage-mem) / (length*times);
 		
-		Print( mem, '\n' ); // 1.009
+		print( mem, '\n' ); // 1.009
 */
 
 	throw 0;
 }
 
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsstd');
-LoadModule('jsdebug');
-//LoadModule('jsio');
-//LoadModule('jssqlite');
+loadModule('jsstd');
+loadModule('jsdebug');
+//loadModule('jsio');
+//loadModule('jssqlite');
 
 
-Print( uneval( PropertiesList({}) ));
+print( uneval( PropertiesList({}) ));
 //TestDebug();
 
 
@@ -97,7 +97,7 @@ Object.defineProperty(s, "b", {get : function(){ return bValue; },
                                enumerable : true,  
                                configurable : true});  
 
-Print( uneval(PropertiesInfo(s)) );
+print( uneval(PropertiesInfo(s)) );
 
 
 
@@ -113,13 +113,13 @@ function prop(obj, prev, lvl) {
 
 	for each ( name in PropertiesList(obj) ) {
 		
-		Print( (prev+'.'+name).quote(), ':\n' );
+		print( (prev+'.'+name).quote(), ':\n' );
 		var v;
 		try {
 			v = obj[name];
 		} catch(ex) {
 			
-			Print(ex, '\n');
+			print(ex, '\n');
 		}
 		prop(v, prev+'.'+name, lvl+1);
 	}
@@ -130,27 +130,27 @@ prop(global, 'global', 0);
 
 Halt();
 
-LoadModule('jsio');
-LoadModule('jscrypt');
-LoadModule('jssqlite');
-LoadModule('jsode');
-LoadModule('jssound');
-LoadModule('jsz');
-LoadModule('jsimage');
-LoadModule('jsgraphics');
-LoadModule('jstask');
-LoadModule('jstrimesh');
-LoadModule('jsiconv');
-LoadModule('jsfont');
+loadModule('jsio');
+loadModule('jscrypt');
+loadModule('jssqlite');
+loadModule('jsode');
+loadModule('jssound');
+loadModule('jsz');
+loadModule('jsimage');
+loadModule('jsgraphics');
+loadModule('jstask');
+loadModule('jstrimesh');
+loadModule('jsiconv');
+loadModule('jsfont');
 
 
-var myTask = new Task(function() { LoadModule('jsdebug') } );
+var myTask = new Task(function() { loadModule('jsdebug') } );
 myTask.Request();
 myTask.Response();
 
 onNewScript = function( filename, lineno, script, fct) {
 
-	Print( 'onNewScript ', filename, lineno, script, fct, '\n' );
+	print( 'onNewScript ', filename, lineno, script, fct, '\n' );
 }
 
 
@@ -177,10 +177,10 @@ for each ( var item in PropertiesInfo(global) )
 
 Halt();
 
-Exec('debugger.js');
+exec('debugger.js');
 
 !function() {
-Exec('testForDebugger.js');
+exec('testForDebugger.js');
 }();
 
 CollectGarbage();
@@ -190,7 +190,7 @@ debugger;
 
 
 	/*
-Print('processTime ', processTime, '\n');
+print('processTime ', processTime, '\n');
 
 
 
@@ -213,6 +213,6 @@ MyTest = function (arg) {
 }()
 
 
-Print( DisassembleScript('debug.js', 3) );
+print( DisassembleScript('debug.js', 3) );
 
 */

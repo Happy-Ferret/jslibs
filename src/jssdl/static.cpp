@@ -210,7 +210,7 @@ $TOC_MEMBER $INAME
    * an empty Array if there are no dimensions available for a particular format.
    * $UNDEF if any dimension is okay for the given format.
 **/
-DEFINE_FUNCTION( GetVideoModeList ) {
+DEFINE_FUNCTION( getVideoModeList ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 
@@ -275,7 +275,7 @@ $TOC_MEMBER $INAME
    If the requested mode is not supported under any bit depth or returns the bits-per-pixel of the closest available mode with the iven width and height.
    If this bits-per-pixel is different from the one used when setting the video mode, SDL_SetVideoMode() will succeed, but will emulate the requested bits-per-pixel with a shadow surface.
 **/
-DEFINE_FUNCTION( VideoModeOK ) {
+DEFINE_FUNCTION( videoModeOK ) {
 
 	int width, height, bpp;
 	Uint32 flags;
@@ -322,7 +322,7 @@ $TOC_MEMBER $INAME
    $ARG bitmsak flags: a bitwise-ored combination of the following flags. If omited, use the previous flags.
     SWSURFACE, HWSURFACE, ASYNCBLIT, ANYFORMAT, HWPALETTE, DOUBLEBUF, OPENGL, OPENGLBLIT, RESIZABLE, NOFRAME HWACCEL, SRCCOLORKEY, RLEACCELOK, RLEACCEL, SRCALPHA, PREALLOC
 **/
-DEFINE_FUNCTION( SetVideoMode ) {
+DEFINE_FUNCTION( setVideoMode ) {
 
 	JL_ASSERT_ARGC_RANGE(0, 4);
 
@@ -534,7 +534,7 @@ $TOC_MEMBER $INAME
   $H return value
    true if this function was able to toggle fullscreen mode (change from running in a window to fullscreen, or vice-versa). false if it is not implemented, or fails.
 ** /
-DEFINE_FUNCTION( ToggleFullScreen ) {
+DEFINE_FUNCTION( toggleFullScreen ) {
 
 	SDL_Surface *surface = SDL_GetVideoSurface();
 	if ( surface == NULL ) {
@@ -574,7 +574,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Iconify the window in window managed environments. A successful iconification will result in an SDL_APPACTIVE loss event.
 **/
-DEFINE_FUNCTION( Iconify ) {
+DEFINE_FUNCTION( iconify ) {
 
 	SDL_WM_IconifyWindow();
 	*JL_RVAL = JSVAL_VOID;
@@ -590,7 +590,7 @@ $TOC_MEMBER $INAME
    ARG integer green
    ARG integer blue
 **/
-DEFINE_FUNCTION( SetGamma ) {
+DEFINE_FUNCTION( setGamma ) {
 
 	JL_ASSERT_ARGC_MIN(3);
 	float r,g,b;
@@ -612,7 +612,7 @@ $TOC_MEMBER $INAME
   Perform a GL buffer swap on the current GL context.
   If _async_ is true, you must wait for the SurfaceReadyEvents through the ProcessEvents() function before drawing again.
 **/
-DEFINE_FUNCTION( GlSwapBuffers ) {
+DEFINE_FUNCTION( glSwapBuffers ) {
 
 	JL_ASSERT_ARGC_RANGE(0,1);
 	bool async;
@@ -641,7 +641,7 @@ $TOC_MEMBER $INAME
    $ARG $ENUM attribute:
    $ARG $INT value:
 **/
-DEFINE_FUNCTION( GlSetAttribute ) {
+DEFINE_FUNCTION( glSetAttribute ) {
 
 	int attr;
 	int value;
@@ -666,7 +666,7 @@ $TOC_MEMBER $INAME
   $H return value
    the value of the requested attribute.
 **/
-DEFINE_FUNCTION( GlGetAttribute ) {
+DEFINE_FUNCTION( glGetAttribute ) {
 
 	int attr;
 	int value;
@@ -773,7 +773,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG ImageObject image:
 **/
-DEFINE_FUNCTION( SetCursor ) {
+DEFINE_FUNCTION( setCursor ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -830,7 +830,7 @@ $TOC_MEMBER $INAME
    }
    }}}
 **/
-DEFINE_FUNCTION( PollEvent ) {
+DEFINE_FUNCTION( pollEvent ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	SDL_Event ev;
@@ -870,7 +870,7 @@ $TOC_MEMBER $INAME
    $ARG $INT x
    $ARG $INT y
 **/
-DEFINE_FUNCTION( WarpMouse ) {
+DEFINE_FUNCTION( warpMouse ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 	Uint16 x, y;
@@ -970,7 +970,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $ENUM keysym: the key to be tested. see key constants below.
 **/
-DEFINE_FUNCTION( GetKeyState ) {
+DEFINE_FUNCTION( getKeyState ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -990,7 +990,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $ENUM keysym
 **/
-DEFINE_FUNCTION( GetKeyName ) {
+DEFINE_FUNCTION( getKeyName ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -1308,7 +1308,7 @@ JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext
 }
 
 
-DEFINE_FUNCTION( SurfaceReadyEvents ) {
+DEFINE_FUNCTION( surfaceReadyEvents ) {
 
 	JL_ASSERT_ARGC_RANGE(0,1);
 
@@ -1417,7 +1417,7 @@ JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSO
 }
 
 
-DEFINE_FUNCTION( SDLEvents ) {
+DEFINE_FUNCTION( sdlEvents ) {
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -1446,23 +1446,23 @@ CONFIGURE_STATIC
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( GetVideoModeList )
-		FUNCTION( VideoModeOK )
-		FUNCTION_ARGC( SetVideoMode, 5 )
-//		FUNCTION( ToggleFullScreen )
-		FUNCTION( Iconify )
-		FUNCTION_ARGC( SetGamma, 3 )
-		FUNCTION( GlSwapBuffers )
-		FUNCTION_ARGC( GlSetAttribute, 2 )
-		FUNCTION_ARGC( GlGetAttribute, 1 )
-		FUNCTION_ARGC( PollEvent, 1 )
-		FUNCTION_ARGC( WarpMouse, 2 )
-		FUNCTION_ARGC( SetCursor, 1 )
-		FUNCTION_ARGC( GetKeyState, 1 )
-		FUNCTION_ARGC( GetKeyName, 1 )
+		FUNCTION( getVideoModeList )
+		FUNCTION( videoModeOK )
+		FUNCTION_ARGC( setVideoMode, 5 )
+//		FUNCTION( toggleFullScreen )
+		FUNCTION( iconify )
+		FUNCTION_ARGC( setGamma, 3 )
+		FUNCTION( glSwapBuffers )
+		FUNCTION_ARGC( glSetAttribute, 2 )
+		FUNCTION_ARGC( glGetAttribute, 1 )
+		FUNCTION_ARGC( pollEvent, 1 )
+		FUNCTION_ARGC( warpMouse, 2 )
+		FUNCTION_ARGC( setCursor, 1 )
+		FUNCTION_ARGC( getKeyState, 1 )
+		FUNCTION_ARGC( getKeyName, 1 )
 #ifndef JL_NOTHREAD
-		FUNCTION( SurfaceReadyEvents )
-		FUNCTION_ARGC( SDLEvents, 1 )
+		FUNCTION( surfaceReadyEvents )
+		FUNCTION_ARGC( sdlEvents, 1 )
 #endif // JL_NOTHREAD
 	END_STATIC_FUNCTION_SPEC
 

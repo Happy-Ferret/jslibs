@@ -1,4 +1,4 @@
-LoadModule('jsiconv');
+loadModule('jsiconv');
 
 /// basic tests [rfmt]
 

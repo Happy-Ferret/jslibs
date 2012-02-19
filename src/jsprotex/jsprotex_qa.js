@@ -1,4 +1,4 @@
-LoadModule('jsprotex');
+loadModule('jsprotex');
 
 /// back buffer size [t]
 

@@ -72,7 +72,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   dJointAddAMotorTorques
 **/
-DEFINE_FUNCTION( AddTorque0 ) {
+DEFINE_FUNCTION( addTorque0 ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -93,7 +93,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   dJointAddAMotorTorques
 **/
-DEFINE_FUNCTION( AddTorque1 ) {
+DEFINE_FUNCTION( addTorque1 ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -114,7 +114,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   dJointAddAMotorTorques
 **/
-DEFINE_FUNCTION( AddTorque2 ) {
+DEFINE_FUNCTION( addTorque2 ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -138,7 +138,7 @@ $TOC_MEMBER $INAME
   (TBD)
   If the axis vecor is ommited, the axis is disabled.
 **/
-DEFINE_FUNCTION( SetAxis ) {
+DEFINE_FUNCTION( setAxis ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 3 );
@@ -174,7 +174,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( axisIndex, angle )
   (TBD)
 **/
-DEFINE_FUNCTION( SetAngle ) {
+DEFINE_FUNCTION( setAngle ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
@@ -278,11 +278,11 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(2) // body1, body2
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_ARGC( SetAxis, 3 )
-		FUNCTION_ARGC( SetAngle, 2 )
-		FUNCTION_ARGC( AddTorque0, 1 )
-		FUNCTION_ARGC( AddTorque1, 1 )
-		FUNCTION_ARGC( AddTorque2, 1 )
+		FUNCTION_ARGC( setAxis, 3 )
+		FUNCTION_ARGC( setAngle, 2 )
+		FUNCTION_ARGC( addTorque0, 1 )
+		FUNCTION_ARGC( addTorque1, 1 )
+		FUNCTION_ARGC( addTorque2, 1 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

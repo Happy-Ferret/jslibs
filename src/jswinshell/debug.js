@@ -1,14 +1,14 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsio');
-LoadModule('jsstd');
-LoadModule('jswinshell');
-LoadModule('jssvg');
+loadModule('jsio');
+loadModule('jsstd');
+loadModule('jswinshell');
+loadModule('jssvg');
 
 
 
-LoadModule('jsstd');
-LoadModule('jswinshell');
+loadModule('jsstd');
+loadModule('jswinshell');
 
 //jswinshelltest();
 
@@ -19,12 +19,12 @@ try {
 
 	var tmp = fso.GetFolder('c:\\');
 	for each ( var folder in tmp.SubFolders )
-		Print( folder.name.quote(), '\n' );
+		print( folder.name.quote(), '\n' );
 
 
 } catch(ex if ex instanceof WinError) {
 
-	Print( ex.text, ' ', ex.const, ' (', ex.code, ')', '\n' );
+	print( ex.text, ' ', ex.const, ' (', ex.code, ')', '\n' );
 }
 
 
@@ -37,11 +37,11 @@ try {
 function Test() {
 	var xmlhttp = CreateComObject("Microsoft.XMLHTTP");
 	xmlhttp.open("GET", "http://www.google.com/", false);
-	xmlhttp.onreadystatechange = function() { Print(xmlhttp.readyState) }
+	xmlhttp.onreadystatechange = function() { print(xmlhttp.readyState) }
 //	xmlhttp.send();
 
 //	Sleep(1000);
-	Print( xmlhttp.responseText );
+	print( xmlhttp.responseText );
 }
 
 Test();
@@ -62,7 +62,7 @@ try {
 
 } catch(ex if ex instanceof WinError) {
 
-	Print( ex.text, ' ', ex.const, ' (', ex.code, ')', '\n' );
+	print( ex.text, ' ', ex.const, ' (', ex.code, ')', '\n' );
 }
 
 
@@ -73,8 +73,8 @@ Halt();
 var xml = '<doc><el attr="foo" attr1="bar">Info</el></doc>';
 var xmlReader = CreateComObject("Microsoft.XMLDOM");
 xmlReader.loadXML(xml);
-Print('Output: ' + xmlReader.childNodes[0].childNodes[0].attributes[1].nodeValue); // 'foo'
-Print('Output: ' + xmlReader.childNodes[0].childNodes[0].childNodes[0].nodeValue); // 'Info'
+print('Output: ' + xmlReader.childNodes[0].childNodes[0].attributes[1].nodeValue); // 'foo'
+print('Output: ' + xmlReader.childNodes[0].childNodes[0].childNodes[0].nodeValue); // 'Info'
 Halt();
 
 
@@ -88,7 +88,7 @@ Halt();
 //	file.attributes = 2;
 
 //	file.Close();
-//	Print( o.CreateTextFile.dispid );
+//	print( o.CreateTextFile.dispid );
 //	var a = o.test;
 
 
@@ -96,26 +96,26 @@ Halt();
 //shell.popup('Bonjour, tout le monde!');
 
 //var typeLib = new ComObject('Scriptlet.TypeLib');
-//Print(typeLib.guid); // Should give you a new GUID for every typeLib instantiation
+//print(typeLib.guid); // Should give you a new GUID for every typeLib instantiation
 
 /*
 var shell = new ComObject('WScript.Shell');
 var process = shell.exec('test.bat');
 stdoutput = process.stdOut.readAll();
-Print('out: ',stdoutput); // Should output the stdout of the dir command
+print('out: ',stdoutput); // Should output the stdout of the dir command
 */
 
 //var shell = new ComObject('WScript.Shell');
-//shell.Exec('calc.exe');
+//shell.exec('calc.exe');
 
 
 
-	Print('\nDone.\n');
+	print('\nDone.\n');
 
 } catch(ex if ex instanceof WinError) {
 	
 
-	Print( ex.text, '\n' );
+	print( ex.text, '\n' );
 }
 
 
@@ -126,12 +126,12 @@ Halt(); //////////////////////////////////////////////////////////////////////
 //throw 0;
 
 
-//LoadModule('jsdebug'); gcZeal = 2;
+//loadModule('jsdebug'); gcZeal = 2;
 
 //var f = new File('C:\\MSDOS.SYS').Open('r');
 var f = new File("C:\\tmp");//.Open('r'); // MYDOCUMENTS
 
-Print(GUIDToString(f.id).quote());
+print(GUIDToString(f.id).quote());
 
 Halt();
 
@@ -328,7 +328,7 @@ var dch = DirectoryChangesInit('C:\\', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_
 
 function ChangesNotificationFct() {
 
-	Print( DirectoryChangesLookup(dch).join('\n'), '\n');
+	print( DirectoryChangesLookup(dch).join('\n'), '\n');
 }
 
 while ( !endSignal )
@@ -357,8 +357,8 @@ Halt(); //////////////////////////////////////////////////////////////////////
 
 
 
- LoadModule('jsstd');
- LoadModule('jswinshell');
+ loadModule('jsstd');
+ loadModule('jswinshell');
 
  var s = new Systray();
  s.icon = new Icon( 0 );
@@ -411,11 +411,11 @@ try {
 	var defaultBrowser = RegistryGet(path+'\\'+RegistryGet(path, '')+'\\shell\\open\\command', '' );
 	CreateProcess(undefined, defaultBrowser + ' http://jslibs.googlecode.com/');
 	
-//	Print( uneval( RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip'), '\n' ) );
+//	print( uneval( RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip'), '\n' ) );
 
 } catch(ex) {
 
-	Print(ex.text);
+	print(ex.text);
 }
 
 Halt(); //////////////////////////////////////////////////////////////////////
@@ -494,7 +494,7 @@ s.onmousedown = function( button ) {
 s.onmousemove = function( x,y ) {
 
 	var pos = s.Position();
-	Print( x-pos[0], ',', y-pos[1], '\n' );
+	print( x-pos[0], ',', y-pos[1], '\n' );
 }
 
 s.oncommand = function( id, button ) {
@@ -539,14 +539,14 @@ var clip = clipboard;
 if ( clip != null ) {
 	
 	clipboard = 'tata';
-	Print( clipboard, '\n' );
+	print( clipboard, '\n' );
 	clipboard = clip;
 }
 
 
 
-//Print( FileOpenDialog('executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*'), '\n' );
-//Print( ExpandEnvironmentStrings('%SystemRoot%\\System32\\calc.exe'), '\n' );
+//print( FileOpenDialog('executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*'), '\n' );
+//print( ExpandEnvironmentStrings('%SystemRoot%\\System32\\calc.exe'), '\n' );
 //CreateProcess('C:\\WINDOWS\\system32\\calc.exe');
 
 var s = new Systray();
@@ -554,7 +554,7 @@ var s = new Systray();
 var exit = false;
 
 //var image = new Png(new File('calendar.png').Open(File.RDONLY)).Load();
-//Print( image.width+'x'+image.height+'x'+image.channels, '\n' );
+//print( image.width+'x'+image.height+'x'+image.channels, '\n' );
 
 var trayIcon = new Icon(new Png(new File('calendar_16x16x3.png').Open(File.RDONLY)).Load());
 var calcIcon = ExtractIcon( "C:\\WINDOWS\\system32\\calc.exe" );
@@ -591,7 +591,7 @@ s.onmousedown = function(button) {
 		s.PopupMenu();
 }
 
-s.onchar = function(c) { Print(c); }
+s.onchar = function(c) { print(c); }
 
 s.onmousemove = function(x,y) {  }
 //s.onfocus = function(polarity) { s.icon = null }
@@ -612,7 +612,7 @@ var blink = true;
 
 while ( !endSignal && !exit ) {
 	s.ProcessEvents();
-	Sleep(100);//Print('.');
+	Sleep(100);//print('.');
 //	s.icon = blink ? trayIcon : null;
 	blink = !blink;
 //	s.visible = blink;

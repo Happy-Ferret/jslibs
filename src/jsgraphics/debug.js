@@ -1,24 +1,24 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsstd');
-LoadModule('jsio');
-LoadModule('jsimage');
-LoadModule('jsode');
-LoadModule('jsprotex');
-LoadModule('jstrimesh');
-LoadModule('jssdl');
-LoadModule('jsgraphics');
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jsimage');
+loadModule('jsode');
+loadModule('jsprotex');
+loadModule('jstrimesh');
+loadModule('jssdl');
+loadModule('jsgraphics');
 
 try {
 
-//LoadModule('jsstd'); Exec('../../tests/arabesques.js'); throw 0;
-//LoadModule('jsstd'); Exec('../../tests/explodebox.js'); throw 0;
-//LoadModule('jsstd'); Exec('../../tests/fragmentShaderTest.js'); throw 0;
-LoadModule('jsstd'); Exec('../../tests/podtest.js'); throw 0;
+//loadModule('jsstd'); exec('../../tests/arabesques.js'); throw 0;
+//loadModule('jsstd'); exec('../../tests/explodebox.js'); throw 0;
+//loadModule('jsstd'); exec('../../tests/fragmentShaderTest.js'); throw 0;
+loadModule('jsstd'); exec('../../tests/podtest.js'); throw 0;
 
 } catch(ex) {
 
-	Print( uneval(ex) );
+	print( uneval(ex) );
 }
 
 throw 0;
@@ -37,7 +37,7 @@ GlSetAttribute( GL_MULTISAMPLESAMPLES, 1 );
 
 SetVideoMode( 64, 64, 32, OPENGL );
 
-Print( 'LINE_WIDTH_RANGE: ', Ogl.GetDouble(Ogl.LINE_WIDTH_RANGE, 2).toString(), '\n' );
+print( 'LINE_WIDTH_RANGE: ', Ogl.GetDouble(Ogl.LINE_WIDTH_RANGE, 2).toString(), '\n' );
 
 
 
@@ -48,14 +48,14 @@ Halt(); ////////////////////////////////////////////////////////////////////////
 
 /*
 
-LoadModule('jsstd');
-LoadModule('jsio');
-LoadModule('jsimage');
-LoadModule('jsode');
-LoadModule('jsprotex');
-LoadModule('jstrimesh');
-LoadModule('jssdl');
-LoadModule('jsgraphics');
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jsimage');
+loadModule('jsode');
+loadModule('jsprotex');
+loadModule('jstrimesh');
+loadModule('jssdl');
+loadModule('jsgraphics');
 
 var e = QuaternionToEuler(EulerToQuaternion([-0.1, -0.2, -0.3]));
 var e = AxisAngleToQuaternion(QuaternionToAxisAngle([.1,.2,.3,.4]) );
@@ -63,7 +63,7 @@ var e = AxisAngleToQuaternion(QuaternionToAxisAngle([.1,.2,.3,.4]) );
 
 e = Vector3Length([2,2,2], [1,1,1]);
 
-Print( e, '\n' );
+print( e, '\n' );
 
 Halt();
 
@@ -76,19 +76,19 @@ Halt();
 function Trace() {
 	
 	for ( var i=0; i<arguments.length; i++ )
-		Print( arguments[i], ' ' );
-	Print( '\n' );
+		print( arguments[i], ' ' );
+	print( '\n' );
 }
 
 function DumpMatrix(m) {
     
 	for (var y = 0; y < 4; ++y) {
-		Print('[ ' );
+		print('[ ' );
 		for (var x = 0; x < 4; ++x)
-			Print( m[x+y*4].toFixed(3) + '  ' );
-		Print(']\n' );
+			print( m[x+y*4].toFixed(3) + '  ' );
+		print(']\n' );
 	}
-	Print('\n' );
+	print('\n' );
 }
 
 
@@ -423,7 +423,7 @@ var Scene2 = new function() {
 
 			}
 
-	Print( vertexList.length / 3, '\n' );
+	print( vertexList.length / 3, '\n' );
 	var tm = new Trimesh();
 	tm.DefineVertexBuffer(vertexList);
 	tm.DefineColorBuffer(colorList);
@@ -715,7 +715,7 @@ var sleep = 20;
 for (var end = false; !end ;) {
 	
 	t1 = TimeCounter();
-	Print( (1000/(t1-t-sleep)).toFixed(), 'fps     \r' );
+	print( (1000/(t1-t-sleep)).toFixed(), 'fps     \r' );
 	t = t1;
 	
 	isCameraMoving = false;
@@ -808,7 +808,7 @@ t.LookAt(0,0,0, 1,0,0, 0,0,1);
 t.Translate(0, 0, 1);
 
 var v = [0,0,0];
-Print( [c.toFixed(2) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
+print( [c.toFixed(2) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
 
 
 Halt(); //////////////////////////////////////////////////////////////////////
@@ -833,10 +833,10 @@ t.Translate(5, 6, 7);
 t.Translate(-5, -6, -7);
 
 var v = [0,0,0];
-Print( [c.toFixed(2) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
+print( [c.toFixed(2) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
 t.Invert();
-Print( [c.toFixed(1) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
-Print( '\n\n' );
+print( [c.toFixed(1) for each ( c in t.TransformVector(v) )].join('  '), '\n' );
+print( '\n\n' );
 
 
 
@@ -848,8 +848,8 @@ Halt(); //////////////////////////////////////////////////////////////////////
 
 
 for ( var i = 0; i < 16; i++ )
-	Print( i%4 ? ' ' : '  ', t[i].toFixed(2) );
-Print( '\n' );
+	print( i%4 ? ' ' : '  ', t[i].toFixed(2) );
+print( '\n' );
 
 
 
@@ -1138,7 +1138,7 @@ Halt(); ////////////////////////////////////////////////////////////////////////
 		var px = -1 + 2 * cursorPosition[0] / width;
 		var py = -1 + 2 * ( height - cursorPosition[1] ) / height;
 		
-//		Print( ' px='+px,' py='+py, '\n' );
+//		print( ' px='+px,' py='+py, '\n' );
 	
 //		var vect = [px / p[0], py / p[5], -1];
 		var vect = [px, py, -1, 1];
@@ -1153,7 +1153,7 @@ Halt(); ////////////////////////////////////////////////////////////////////////
 		vect[1] /= p[5];
 		
 
-		Print( 'world space coordinates vect '+[ v.toFixed(1) for each (v in vect) ].join(' '), '\n' );
+		print( 'world space coordinates vect '+[ v.toFixed(1) for each (v in vect) ].join(' '), '\n' );
 
 		
 		var obj = {};
@@ -1317,7 +1317,7 @@ for (var i=0; !_quit; i++) {
 	
 	var t0 = TimeCounter();
 	Render(i);
-//	Print( (1000/(TimeCounter() - t0)).toFixed(), ' fps\n' );
+//	print( (1000/(TimeCounter() - t0)).toFixed(), ' fps\n' );
 	win.SwapBuffers();
 	win.ProcessEvents();
 	Sleep(10);

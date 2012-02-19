@@ -38,7 +38,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_CONSTRUCTOR
 //	HAS_FINALIZE
 
-//DEFINE_FUNCTION( Call ) {
+//DEFINE_FUNCTION( call ) {
 //	return JS_TRUE;
 //}
 
@@ -46,12 +46,12 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 //	return JS_TRUE;
 //}
 
-//DEFINE_FUNCTION( Func ) {
+//DEFINE_FUNCTION( func ) {
 //	return JS_TRUE;
 //}
 
 	BEGIN_FUNCTION_SPEC
-//		FUNCTION(Func)
+//		FUNCTION(func)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

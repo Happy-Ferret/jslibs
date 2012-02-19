@@ -216,7 +216,7 @@ $TOC_MEMBER $INAME
    * if the file file exist and mode is ADDINZIP, files are added in existing zip (be sure you don't add file that doesn't exist).
    If the zipfile cannot be opened, an error is rised.
 **/
-DEFINE_FUNCTION( Open ) {
+DEFINE_FUNCTION( open ) {
 
 	int mode;
 	JLStr filename;
@@ -260,7 +260,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Close a zip file.
 **/
-DEFINE_FUNCTION( Close ) {
+DEFINE_FUNCTION( close ) {
 
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
@@ -316,7 +316,7 @@ $TOC_MEMBER $INAME
   f.Close();
   }}}
 **/
-DEFINE_FUNCTION( Select ) {
+DEFINE_FUNCTION( select ) {
 
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
@@ -377,7 +377,7 @@ $TOC_MEMBER $INAME
   }
   }}}
 **/
-DEFINE_FUNCTION( GoFirst ) {
+DEFINE_FUNCTION( goFirst ) {
 
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
@@ -408,7 +408,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Go to the next file in the zip file.
 **/
-DEFINE_FUNCTION( GoNext ) {
+DEFINE_FUNCTION( goNext ) {
 
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
@@ -451,7 +451,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( index )
   Go to index-th file in the zip file.
 **/
-DEFINE_FUNCTION( GoTo ) {
+DEFINE_FUNCTION( goTo ) {
 
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
@@ -500,7 +500,7 @@ $TOC_MEMBER $INAME
   If the returned data is an empty string, this mean that the end of the file is reached.
   On error, a ZipFileError exception is rised.
 **/
-DEFINE_FUNCTION( Read ) {
+DEFINE_FUNCTION( read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -565,7 +565,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( data )
   Append _data_ to the current file in the zip file.
 **/
-DEFINE_FUNCTION( Write ) {
+DEFINE_FUNCTION( write ) {
 
 	JLStr data;
 
@@ -1069,14 +1069,14 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Open )
-		FUNCTION( Close )
-		FUNCTION( Select )
-		FUNCTION( Write )
-		FUNCTION( Read )
-		FUNCTION( GoFirst )
-		FUNCTION( GoNext )
-		FUNCTION( GoTo )
+		FUNCTION( open )
+		FUNCTION( close )
+		FUNCTION( select )
+		FUNCTION( write )
+		FUNCTION( read )
+		FUNCTION( goFirst )
+		FUNCTION( goNext )
+		FUNCTION( goTo )
 #ifdef DEBUG
 		FUNCTION( zipfileTest )
 #endif // DEBUG

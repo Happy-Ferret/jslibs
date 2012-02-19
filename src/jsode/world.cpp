@@ -323,7 +323,7 @@ $TOC_MEMBER $INAME
 **/
 /* ISSUE: all underlying objects have to be notified of this operation else on their finalizers,
           they will try to reset ode object private data that has already been freed !!
-DEFINE_FUNCTION( Destroy ) {
+DEFINE_FUNCTION( destroy ) {
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -341,7 +341,7 @@ DEFINE_FUNCTION( Destroy ) {
 $TOC_MEMBER $INAME
  $VOID $INAME( [ spaceOrGeom [, spaceOrGeom2 ] ] )
 **/
-DEFINE_FUNCTION( Collide ) {
+DEFINE_FUNCTION( collide ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE(0,2);
@@ -431,7 +431,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG real stepsize: The number of milliseconds that the simulation has to advance.
 **/
-DEFINE_FUNCTION( Step ) {
+DEFINE_FUNCTION( step ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
@@ -458,7 +458,7 @@ $TOC_MEMBER $INAME
   _stepSize_ is the step size for the next step that will be taken. 
 
 **/
-DEFINE_FUNCTION( ScaleImpulse ) {
+DEFINE_FUNCTION( scaleImpulse ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -754,9 +754,9 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_ARGC( Collide, 2 ) // not FAST because colide is called from here
-		FUNCTION_ARGC( Step, 1 )
-		FUNCTION_ARGC( ScaleImpulse, 2 )
+		FUNCTION_ARGC( collide, 2 ) // not FAST because colide is called from here
+		FUNCTION_ARGC( step, 1 )
+		FUNCTION_ARGC( scaleImpulse, 2 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

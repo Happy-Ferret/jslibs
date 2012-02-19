@@ -218,7 +218,7 @@ $TOC_MEMBER $INAME
   $H note
    This object may contain sensitive data.
 **/
-DEFINE_FUNCTION( Wipe ) {
+DEFINE_FUNCTION( wipe ) {
 
 	JL_IGNORE(argc);
 
@@ -246,7 +246,7 @@ var ac = new AsymmetricCipher( 'rsa', 'md5', new Prng('fortuna') );
 ac.CreateKeys( AsymmetricCipher.RSA_MIN_KEYSIZE );
 }}}
 **/
-DEFINE_FUNCTION( CreateKeys ) { // ( bitsSize )
+DEFINE_FUNCTION( createKeys ) { // ( bitsSize )
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -333,7 +333,7 @@ $TOC_MEMBER $INAME
   $H note
    This function may throw CRYPT_INVALID_HASH or CRYPT_PK_INVALID_SIZE if the data length is greater that the hash size (see blockLength property);
 **/
-DEFINE_FUNCTION( Encrypt ) { // ( data [, lparam] )
+DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 
 	JLStr in;
 
@@ -422,7 +422,7 @@ $TOC_MEMBER $INAME
    $LF
    When performing v1.5 RSA decryption, the hash and lparam parameters are totally ignored.
 **/
-DEFINE_FUNCTION( Decrypt ) { // ( encryptedData [, lparam] )
+DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 
 	JLStr in;
 
@@ -512,7 +512,7 @@ $TOC_MEMBER $INAME
   $LF
   _saltLength_ is only used with RSA signatures. (default value is 16)
 **/
-DEFINE_FUNCTION( Sign ) { // ( data [, saltLength] )
+DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 
 	JLStr in;
 
@@ -587,7 +587,7 @@ $TOC_MEMBER $INAME
   $LF
   _saltLength_ is only used with RSA signatures. (default value is 16)
 **/
-DEFINE_FUNCTION( VerifySignature ) { // ( data, signature [, saltLength] )
+DEFINE_FUNCTION( verifySignature ) { // ( data, signature [, saltLength] )
 
 	JLStr data, sign;
 
@@ -879,12 +879,12 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Wipe )
-		FUNCTION( CreateKeys )
-		FUNCTION( Encrypt )
-		FUNCTION( Decrypt )
-		FUNCTION( Sign )
-		FUNCTION( VerifySignature )
+		FUNCTION( wipe )
+		FUNCTION( createKeys )
+		FUNCTION( encrypt )
+		FUNCTION( decrypt )
+		FUNCTION( sign )
+		FUNCTION( verifySignature )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

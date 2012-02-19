@@ -400,7 +400,7 @@ $TOC_MEMBER $INAME
   An existing breakpoint can be overwritten by a new breakpoint.
   Removing an nonexistent breakpoint does not matter.
 **/
-DEFINE_FUNCTION( ToggleBreakpoint ) {
+DEFINE_FUNCTION( toggleBreakpoint ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 3 );
@@ -444,7 +444,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME( function, relativeLineno )
   Returns $TRUE if the given line (actual line number) has a breakpoint, otherwise returns $FALSE.
 **/
-DEFINE_FUNCTION( HasBreakpoint ) {
+DEFINE_FUNCTION( hasBreakpoint ) {
 
 	JL_ASSERT_ARGC_MIN( 2 );
 
@@ -482,7 +482,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Unconditionally remove all breakpoints.
 **/
-DEFINE_FUNCTION( ClearBreakpoints ) {
+DEFINE_FUNCTION( clearBreakpoints ) {
 
 	//JS_ClearAllTraps(cx);
 	JS_ClearAllTrapsForCompartment(cx);
@@ -706,9 +706,9 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( ToggleBreakpoint )
-		FUNCTION( HasBreakpoint )
-		FUNCTION( ClearBreakpoints )
+		FUNCTION( toggleBreakpoint )
+		FUNCTION( hasBreakpoint )
+		FUNCTION( clearBreakpoints )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

@@ -146,7 +146,7 @@ $TOC_MEMBER $INAME
   svg.Write('<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>');
   }}}
 **/
-DEFINE_FUNCTION( Write ) {
+DEFINE_FUNCTION( write ) {
 
 	JLStr data;
 
@@ -256,7 +256,7 @@ $TOC_MEMBER $INAME
   new File('test.png').content = EncodePngImage( svgimage )
   }}}
 **/
-DEFINE_FUNCTION( RenderImage ) { // using cairo
+DEFINE_FUNCTION( renderImage ) { // using cairo
 
 	JLStr id;
 
@@ -419,7 +419,7 @@ DEFINE_FUNCTION( RenderImage ) { // using cairo
 
 
 /*
-DEFINE_FUNCTION( GetImage ) { // using pixbuf
+DEFINE_FUNCTION( getImage ) { // using pixbuf
 
 	RsvgHandle *handle = (RsvgHandle*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(handle);
@@ -460,7 +460,7 @@ $TOC_MEMBER $INAME
   $H return value
    true if the element visibility has been set, otherwise false.
 **/
-DEFINE_FUNCTION( SetVisible ) {
+DEFINE_FUNCTION( setVisible ) {
 
 	JLStr id;
 
@@ -501,7 +501,7 @@ $TOC_MEMBER $INAME
   The effect of the new transformation is to first scale the coordinates by _sx_ and _sy_,
   then apply the original transformation to the coordinates.
 **/
-DEFINE_FUNCTION( Scale ) {
+DEFINE_FUNCTION( scale ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -526,7 +526,7 @@ $TOC_MEMBER $INAME
   The effect of the new transformation is to first rotate the coordinates by _radians_,
   then apply the original transformation to the coordinates.
 **/
-DEFINE_FUNCTION( Rotate ) {
+DEFINE_FUNCTION( rotate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -550,7 +550,7 @@ $TOC_MEMBER $INAME
   The effect of the new transformation is to first translate the coordinates by _tx_ and _ty_,
   then apply the original transformation to the coordinates.
 **/
-DEFINE_FUNCTION( Translate ) {
+DEFINE_FUNCTION( translate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -770,13 +770,13 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION(Write)
-		FUNCTION(RenderImage)
-		FUNCTION(SetVisible)
-//		FUNCTION(GetImage)
-		FUNCTION(Scale)
-		FUNCTION(Rotate)
-		FUNCTION(Translate)
+		FUNCTION(write)
+		FUNCTION(renderImage)
+		FUNCTION(setVisible)
+//		FUNCTION(getImage)
+		FUNCTION(scale)
+		FUNCTION(rotate)
+		FUNCTION(translate)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

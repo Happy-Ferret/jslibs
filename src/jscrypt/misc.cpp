@@ -33,7 +33,7 @@ $TOC_MEMBER $INAME
  $STR $INAME( string )
   Encode the given _string_ using base64 encoding.
 **/
-DEFINE_FUNCTION( Base64Encode ) {
+DEFINE_FUNCTION( base64Encode ) {
 
 	JLStr in;
 
@@ -73,7 +73,7 @@ $TOC_MEMBER $INAME
  $STR $INAME( string )
   Encode the given _string_ using base64 encoding.
 **/
-DEFINE_FUNCTION( Base64Decode ) {
+DEFINE_FUNCTION( base64Decode ) {
 
 	JLStr in;
 
@@ -108,7 +108,7 @@ $TOC_MEMBER $INAME
  $STR $INAME( string )
   Encode the given _string_ using hexadecimal encoding.
 **/
-DEFINE_FUNCTION( HexEncode ) {
+DEFINE_FUNCTION( hexEncode ) {
 
 	static const char hex[] = "0123456789ABCDEF";
 
@@ -157,7 +157,7 @@ $TOC_MEMBER $INAME
  $STR $INAME( string )
   Decode the given _string_ using hexadecimal encoding.
 **/
-DEFINE_FUNCTION( HexDecode ) {
+DEFINE_FUNCTION( hexDecode ) {
 
 	static const unsigned char unhex[] = {
 
@@ -203,10 +203,10 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( Base64Encode )
-		FUNCTION( Base64Decode )
-		FUNCTION( HexEncode )
-		FUNCTION( HexDecode )
+		FUNCTION( base64Encode )
+		FUNCTION( base64Decode )
+		FUNCTION( hexEncode )
+		FUNCTION( hexDecode )
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC

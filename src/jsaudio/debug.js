@@ -1,10 +1,10 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
 
-LoadModule('jsstd');
-LoadModule('jsio');
-LoadModule('jsaudio');
-LoadModule('jssound');
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jsaudio');
+loadModule('jssound');
 
 Oal.maxAuxiliarySends;
 Halt();
@@ -21,10 +21,10 @@ var block = dec.Read(100000);
 //var [left, right] = SplitChannels(block);
 
 
-Print( block.bits, '\n' );
-Print( block.channels, '\n' );
-Print( block.rate, '\n' );
-Print( block.frames, '\n' );
+print( block.bits, '\n' );
+print( block.channels, '\n' );
+print( block.rate, '\n' );
+print( block.frames, '\n' );
 
 var b = Oal.Buffer(block);
 var src = Oal.GenSource();
@@ -37,11 +37,11 @@ throw 0; ///////////
 
 
 
-LoadModule('jsio');
-LoadModule('jsstd');
-LoadModule('jssound');
-LoadModule('jsaudio');
-LoadModule('jsdebug');
+loadModule('jsio');
+loadModule('jsstd');
+loadModule('jssound');
+loadModule('jsaudio');
+loadModule('jsdebug');
 
 Oal.Open('Generic Software');
 
@@ -95,48 +95,48 @@ function Hex(int) '0x'+int.toString(16).toUpperCase();
 var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').Open('r') );
 //var dec = new SoundFileDecoder( new File('break3.wav').Open('r') );
 
-Print( dec.bits, '\n' );
-Print( dec.channels, '\n' );
-Print( dec.rate, '\n' );
-Print( dec.frames, '\n' );
+print( dec.bits, '\n' );
+print( dec.channels, '\n' );
+print( dec.rate, '\n' );
+print( dec.frames, '\n' );
 
-Print( '------------------------\n' );
+print( '------------------------\n' );
 
 var block = dec.Read(100000);
 var [left, right] = SplitChannels(block);
 block = left;
 
-Print( 'Decoded sound blob:', '\n' );
-Print( ' bits: '+block.bits, '\n' );
-Print( ' channels: '+block.channels, '\n' );
-Print( ' rate: '+block.rate, '\n' );
-Print( ' frames: '+block.frames, '\n' );
+print( 'Decoded sound blob:', '\n' );
+print( ' bits: '+block.bits, '\n' );
+print( ' channels: '+block.channels, '\n' );
+print( ' rate: '+block.rate, '\n' );
+print( ' frames: '+block.frames, '\n' );
 
-Print( '\n' );
+print( '\n' );
 
 
 
 
 Oal.Open('Generic Software');
-Print( 'has EFX: '+Oal.hasEfx, '\n' );
-Print( 'maxAuxiliarySends: '+Oal.maxAuxiliarySends, '\n' );
+print( 'has EFX: '+Oal.hasEfx, '\n' );
+print( 'maxAuxiliarySends: '+Oal.maxAuxiliarySends, '\n' );
 
-Print( '\n' );
-Print( 'OpenAL buffer:', '\n' );
+print( '\n' );
+print( 'OpenAL buffer:', '\n' );
 var b = new OalBuffer(block);
 block.Free(); // no more needed
 
-Print( ' rate: '+b.frequency, '\n' );
-Print( ' size: '+b.size, '\n' );
-Print( ' bits: '+b.bits, '\n' );
-Print( ' channels: '+b.channels, '\n' );
+print( ' rate: '+b.frequency, '\n' );
+print( ' size: '+b.size, '\n' );
+print( ' bits: '+b.bits, '\n' );
+print( ' channels: '+b.channels, '\n' );
 
-Print( '\n' );
-Print( 'OpenAL listener:', '\n' );
-Print( ' position: '+OalListener.position, '\n' );
+print( '\n' );
+print( 'OpenAL listener:', '\n' );
+print( ' position: '+OalListener.position, '\n' );
 
-Print( '\n' );
-Print( 'OpenAL source:', '\n' );
+print( '\n' );
+print( 'OpenAL source:', '\n' );
 
 var src = new OalSource();
 src.buffer = b;
@@ -160,7 +160,7 @@ src.effect = effect;
 src.directFilter = undefined;
 
 
-Print( ' effect: '+effect, '\n' );
+print( ' effect: '+effect, '\n' );
 
 /*
 var filter = new OalFilter();
@@ -170,7 +170,7 @@ filter.lowpassGainHF = 0.1;
 src.directFilter = filter;
 */
 
-Print( ' position: '+src.position, '\n' );
+print( ' position: '+src.position, '\n' );
 
 
 src.Play();
@@ -179,9 +179,9 @@ for ( var i=0; i < 100; i++) {
 
 //	src.position = [Math.sin(i/10)*5,Math.cos(i/10)*5, 0];
 
-//	Print( ' state: '+Hex(src.state), '\n' );
-//	Print( ' offset: '+src.secOffset.toFixed(3), '\n' );
-//	Print( '\n' );
+//	print( ' state: '+Hex(src.state), '\n' );
+//	print( ' offset: '+src.secOffset.toFixed(3), '\n' );
+//	print( '\n' );
 	Sleep(40);
 }
 src.Stop();
@@ -197,7 +197,7 @@ Halt(); ////////////////////////////////////////////////////////////////////////
 
 var filename = '41_30secOgg-q0.ogg';
 
-Print('playing '+filename, '\npress Ctrl-c to exit\n' );
+print('playing '+filename, '\npress Ctrl-c to exit\n' );
 
 var decoder = new OggVorbisDecoder(new File(filename).Open(File.RDONLY));
 
@@ -237,7 +237,7 @@ Oal.Source(src, Oal.BUFFER, b);
 
 Oal.PlaySource(src);
 
-Print( 'error: '+Oal.error.toString(16).toUpperCase(), '\n' );
+print( 'error: '+Oal.error.toString(16).toUpperCase(), '\n' );
 
 Sleep( 2000 );
 Halt(); ////////////////////////////////////////////////////////////////////////////////////////////////////

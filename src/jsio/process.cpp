@@ -192,7 +192,7 @@ $TOC_MEMBER $INAME
   $H note
    In bash, `true;echo $?` prints `0` and `false;echo $?` prints `1`
 **/
-DEFINE_FUNCTION( Wait ) {
+DEFINE_FUNCTION( wait ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -214,7 +214,7 @@ $TOC_MEMBER $INAME
  $INT $INAME()
   This function detaches the process. A detached process does not need to be and cannot be reaped.
 **/
-DEFINE_FUNCTION( Detach ) {
+DEFINE_FUNCTION( detach ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -235,7 +235,7 @@ $TOC_MEMBER $INAME
  $INT $INAME()
   Terminates the process.
 **/
-DEFINE_FUNCTION( Kill ) {
+DEFINE_FUNCTION( kill ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -310,9 +310,9 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Wait )
-		FUNCTION( Detach )
-		FUNCTION( Kill )
+		FUNCTION( wait )
+		FUNCTION( detach )
+		FUNCTION( kill )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

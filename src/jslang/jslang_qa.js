@@ -1,4 +1,4 @@
-LoadModule('jsstd');
+loadModule('jsstd');
 
 /// Handle prototype [ftrm]
 
@@ -461,7 +461,7 @@ LoadModule('jsstd');
 		 for (;;) {
 		 
 				var args = argGen.next();
-//				Print( 'substr('+args+')\n' );
+//				print( 'substr('+args+')\n' );
 				QA.ASSERT_STR( s.substr.apply(s, args), b.substr.apply(b, args), 'substr('+args.toSource()+')' );
 				QA.ASSERT_STR( s.substring.apply(s, args), b.substring.apply(b, args), 'substring('+args.toSource()+')' );
 		 }

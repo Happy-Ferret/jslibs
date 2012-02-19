@@ -1,10 +1,10 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsstd');
-LoadModule('jsfont');
-LoadModule('jsimage');
-LoadModule('jsprotex');
-LoadModule('jsio');
+loadModule('jsstd');
+loadModule('jsfont');
+loadModule('jsimage');
+loadModule('jsprotex');
+loadModule('jsio');
 
 var f = new Font('c:\\windows\\fonts\\arial.ttf');
 f.size = 32;

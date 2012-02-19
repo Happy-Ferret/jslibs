@@ -161,7 +161,7 @@ bad:
 	return JS_FALSE;
 }
 
-DEFINE_FUNCTION( Events ) {
+DEFINE_FUNCTION( events ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(0);
@@ -196,7 +196,7 @@ DEFINE_FUNCTION( Events ) {
 $TOC_MEMBER $INAME
  $Image $INAME( [flipImage] )
 **/
-DEFINE_FUNCTION( GetImage ) {
+DEFINE_FUNCTION( getImage ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE( 0,1 );
@@ -253,7 +253,7 @@ DEFINE_FUNCTION( GetImage ) {
 $TOC_MEMBER $INAME
  $Image $INAME()
 **/
-DEFINE_FUNCTION( Close ) {
+DEFINE_FUNCTION( close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	*JL_RVAL = JSVAL_VOID;
@@ -411,9 +411,9 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Events )
-		FUNCTION( GetImage )
-		FUNCTION( Close )
+		FUNCTION( events )
+		FUNCTION( getImage )
+		FUNCTION( close )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

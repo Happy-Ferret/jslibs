@@ -1,4 +1,4 @@
-LoadModule('jscrypt');
+loadModule('jscrypt');
 
 /// CryptError.text []
 	
@@ -96,7 +96,7 @@ LoadModule('jscrypt');
 /// Cipher 2 [ftrdm]
 
 			var hkey = new Hash("sha256")('this is a secret key');
-			Print( HexEncode(hkey), '\n');
+			print( HexEncode(hkey), '\n');
 
 			var key = hkey;
 			var IV = r(Crypt.BlockLength('blowfish'));
@@ -109,7 +109,7 @@ LoadModule('jscrypt');
 		// decrypt:
 			crypt.IV = IV;
 			var decipheredData = crypt.Decrypt( cipherData );
-			Print( 'decrypted data: '+decipheredData, '\n' );
+			print( 'decrypted data: '+decipheredData, '\n' );
 
 
 /// Key size [rm]

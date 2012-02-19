@@ -34,7 +34,7 @@ $TOC_MEMBER $INAME
   $H beware
    Only one console per process is allowed. The construction fails if the calling process already has a console.
 **/
-DEFINE_FUNCTION( Open ) {
+DEFINE_FUNCTION( open ) {
 
 	BOOL status = AllocConsole();
 	if ( status == FALSE )
@@ -50,7 +50,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Detach the current process from its console.
 **/
-DEFINE_FUNCTION( Close ) {
+DEFINE_FUNCTION( close ) {
 
 //	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 //	CloseHandle(hStdout);
@@ -74,7 +74,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $STR text
 **/
-DEFINE_FUNCTION( Write ) {
+DEFINE_FUNCTION( write ) {
 
 	JLStr str;
 	JL_ASSERT_ARGC(1);
@@ -100,7 +100,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $INT amount
 **/
-DEFINE_FUNCTION( Read ) {
+DEFINE_FUNCTION( read ) {
 
 	JL_ASSERT_ARGC(1);
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
@@ -120,7 +120,7 @@ DEFINE_FUNCTION( Read ) {
 $TOC_MEMBER $INAME
  $STR $INAME( mode )
 **/
-DEFINE_FUNCTION( SetConsoleMode ) {
+DEFINE_FUNCTION( setConsoleMode ) {
 
 	JL_ASSERT_ARGC(1);
 	DWORD mode;
@@ -140,7 +140,7 @@ DEFINE_FUNCTION( SetConsoleMode ) {
 $TOC_MEMBER $INAME
  $STR $INAME( x, y, chr [, color] [, backgroundColor] )
 **/
-DEFINE_FUNCTION( WriteConsoleOutput ) {
+DEFINE_FUNCTION( writeConsoleOutput ) {
 
 	JLStr str;
 	BOOL res;
@@ -207,7 +207,7 @@ DEFINE_FUNCTION( WriteConsoleOutput ) {
 $TOC_MEMBER $INAME
  $STR $INAME( x, y, width, height, char, textAttribute )
 **/
-DEFINE_FUNCTION( FillConsoleOutput ) {
+DEFINE_FUNCTION( fillConsoleOutput ) {
 
 	JLStr str;
 	BOOL res;
@@ -273,7 +273,7 @@ DEFINE_FUNCTION( FillConsoleOutput ) {
 $TOC_MEMBER $INAME
  $STR $INAME( scrollY )
 **/
-DEFINE_FUNCTION( ScrollY ) {
+DEFINE_FUNCTION( scrollY ) {
 
 	//see. http://msdn.microsoft.com/en-us/library/ms685113(v=vs.85).aspx
 
@@ -324,7 +324,7 @@ $TOC_MEMBER $INAME
 
 // see ConsoleEndWait()
 
-DEFINE_FUNCTION( ReadConsoleInput ) {
+DEFINE_FUNCTION( readConsoleInput ) {
 
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 
@@ -535,7 +535,7 @@ bad:
 }
 
 
-DEFINE_FUNCTION( Events ) {
+DEFINE_FUNCTION( events ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(0);
@@ -767,7 +767,7 @@ DEFINE_PROPERTY_SETTER( cursorPositionY ) {
 $TOC_MEMBER $INAME
  $STR $INAME( x, y )
 **/
-DEFINE_FUNCTION( SetCursorPosition ) {
+DEFINE_FUNCTION( setCursorPosition ) {
 
 	JL_ASSERT_ARGC(2);
 	COORD position;
@@ -844,20 +844,20 @@ CONFIGURE_CLASS
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( Open )
-		FUNCTION( Close )
-		FUNCTION( Write )
-		FUNCTION( Read )
+		FUNCTION( open )
+		FUNCTION( close )
+		FUNCTION( write )
+		FUNCTION( read )
 
-		FUNCTION( SetConsoleMode )
-//		FUNCTION( ReadConsoleInput )
+		FUNCTION( setConsoleMode )
+//		FUNCTION( readConsoleInput )
 
-		FUNCTION( WriteConsoleOutput )
-		FUNCTION( FillConsoleOutput )
-		FUNCTION( SetCursorPosition )
-		FUNCTION( ScrollY )
+		FUNCTION( writeConsoleOutput )
+		FUNCTION( fillConsoleOutput )
+		FUNCTION( setCursorPosition )
+		FUNCTION( scrollY )
 		
-		FUNCTION( Events )
+		FUNCTION( events )
 
 	END_STATIC_FUNCTION_SPEC
 

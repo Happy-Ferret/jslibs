@@ -73,7 +73,7 @@ $TOC_MEMBER $INAME
   (TBD)
   If the axis vecor is ommited, the axis is disabled.
 **/
-DEFINE_FUNCTION( SetAxis ) {
+DEFINE_FUNCTION( setAxis ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
 
@@ -119,7 +119,7 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(2) // body1, body2
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_ARGC( SetAxis, 3 )
+		FUNCTION_ARGC( setAxis, 3 )
 	END_FUNCTION_SPEC
 
 END_CLASS

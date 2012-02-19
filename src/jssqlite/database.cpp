@@ -162,7 +162,7 @@ $TOC_MEMBER $INAME
   $H note
    It is recommended to close all [Result] objects before closing the database.
 **/
-DEFINE_FUNCTION( Close ) {
+DEFINE_FUNCTION( close ) {
 
 	DatabasePrivate *pv = NULL;
 
@@ -253,7 +253,7 @@ $TOC_MEMBER $INAME
   Print( result.Col(0) );
   }}}
 **/
-DEFINE_FUNCTION( Query ) {
+DEFINE_FUNCTION( query ) {
 
 	JLStr sql;
 	JL_DEFINE_FUNCTION_OBJ;
@@ -325,7 +325,7 @@ $TOC_MEMBER $INAME
   db.Exec('PRAGMA user_version = 5');
   }}}
 **/
-DEFINE_FUNCTION( Exec ) {
+DEFINE_FUNCTION( exec ) {
 
 	JLStr sql;
 
@@ -620,9 +620,9 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Query )
-		FUNCTION( Exec )
-		FUNCTION( Close )
+		FUNCTION( query )
+		FUNCTION( exec )
+		FUNCTION( close )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

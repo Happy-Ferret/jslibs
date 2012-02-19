@@ -1,36 +1,36 @@
-LoadModule('jsstd');
-LoadModule('jsio');
+loadModule('jsstd');
+loadModule('jsio');
 
 /// call all possible functions reachable in the scope [rmtf]
 
 	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', '_host.stdin' ];
 
-	LoadModule('jswinshell'); excludeList.push('FileOpenDialog', 'Console.Close');
-	LoadModule('jssdl'); excludeList.push('SetVideoMode', 'Iconify');
-	LoadModule('jsstd'); excludeList.push('Halt');
-	LoadModule('jsdebug'); excludeList.push('DebugBreak', 'DumpHeap');
+	loadModule('jswinshell'); excludeList.push('FileOpenDialog', 'Console.Close');
+	loadModule('jssdl'); excludeList.push('SetVideoMode', 'Iconify');
+	loadModule('jsstd'); excludeList.push('Halt');
+	loadModule('jsdebug'); excludeList.push('DebugBreak', 'DumpHeap');
 
-	LoadModule('jscrypt');
-	LoadModule('jsfont');
-	LoadModule('jsiconv');
-	LoadModule('jsimage');
-	LoadModule('jsio');
-	LoadModule('jsjabber');
-	LoadModule('jsode');
-	LoadModule('jsoglft');
-	LoadModule('jsprotex');
-	LoadModule('jssound');
-	LoadModule('jssqlite');
-	LoadModule('jssvg');
-	LoadModule('jstrimesh');
-	LoadModule('jsvideoinput');
-	LoadModule('jsz');
+	loadModule('jscrypt');
+	loadModule('jsfont');
+	loadModule('jsiconv');
+	loadModule('jsimage');
+	loadModule('jsio');
+	loadModule('jsjabber');
+	loadModule('jsode');
+	loadModule('jsoglft');
+	loadModule('jsprotex');
+	loadModule('jssound');
+	loadModule('jssqlite');
+	loadModule('jssvg');
+	loadModule('jstrimesh');
+	loadModule('jsvideoinput');
+	loadModule('jsz');
 	
-//	LoadModule('jstask');
-//	LoadModule('jsffi');
-//	LoadModule('jsfastcgi');
-//	LoadModule('jsaudio');
-// LoadModule('jsgraphics');
+//	loadModule('jstask');
+//	loadModule('jsffi');
+//	loadModule('jsfastcgi');
+//	loadModule('jsaudio');
+// loadModule('jsgraphics');
 
 	if ( _host.unsafeMode ) throw "Cannot run this test in unsafe mode (else crash)";
 
@@ -53,7 +53,7 @@ LoadModule('jsio');
 			if ( name == 'arguments' )
 				continue;
 
-//Print( left+'.'+name+'\n' );
+//print( left+'.'+name+'\n' );
 
 			var nextObj;
 			try {
@@ -140,7 +140,7 @@ LoadModule('jsio');
 
 		var prev = _host.stdout;
 		_host.stdout = function(chunk) buffer += chunk;
-		Print('this_is_a_test');
+		print('this_is_a_test');
 		_host.stdout = prev;
 
 		QA.ASSERT( buffer.indexOf('this_is_a_test') != -1, true, 'stdout redirection result' ); 
@@ -158,17 +158,17 @@ LoadModule('jsio');
 
 
 
-/// LoadModule function [ftrm]
+/// loadModule function [ftrm]
 		
-		var id = LoadModule('jsstd');
-		QA.ASSERT( LoadModule('jsstd'), id, 'reloading the same module' );
-		QA.ASSERT( LoadModule('azyegyiazgiazygc'), false, 'loading inexisting module' );
-		QA.ASSERT( LoadModule(undefined), false, 'loading inexisting module' );
-		QA.ASSERT( LoadModule(0), false, 'loading inexisting module' );
-		QA.ASSERT( LoadModule(0.0), false, 'loading inexisting module' );
-		QA.ASSERT( LoadModule(''), false, 'loading inexisting module' );
-		QA.ASSERT( LoadModule(NaN), false, 'loading inexisting module' );
-		//QA.ASSERT_EXCEPTION(function() LoadModule(), RangeError, 'call LoadModule() without arguments');
+		var id = loadModule('jsstd');
+		QA.ASSERT( loadModule('jsstd'), id, 'reloading the same module' );
+		QA.ASSERT( loadModule('azyegyiazgiazygc'), false, 'loading inexisting module' );
+		QA.ASSERT( loadModule(undefined), false, 'loading inexisting module' );
+		QA.ASSERT( loadModule(0), false, 'loading inexisting module' );
+		QA.ASSERT( loadModule(0.0), false, 'loading inexisting module' );
+		QA.ASSERT( loadModule(''), false, 'loading inexisting module' );
+		QA.ASSERT( loadModule(NaN), false, 'loading inexisting module' );
+		//QA.ASSERT_EXCEPTION(function() loadModule(), RangeError, 'call loadModule() without arguments');
 
 
 
@@ -256,19 +256,19 @@ LoadModule('jsio');
 	
 	var ex = undefined;
 	try {
-		LoadModule();
+		loadModule();
 	} catch (_ex) {
 		ex = _ex
 	}
 	
-	QA.ASSERT(!ex, _host.unsafeMode, "detect exception for empty LoadModule call");
+	QA.ASSERT(!ex, _host.unsafeMode, "detect exception for empty loadModule call");
 
 	_host.stderr = prev;
 	
 	QA.ASSERT_STR( buffer.length == 0, true, 'stderr redirection result' ); 
 	
 	if ( !_host.unsafeMode )
-		QA.ASSERT_STR( ex.message.indexOf('number of arguments') != -1, true, 'LoadModule() error' ); 
+		QA.ASSERT_STR( ex.message.indexOf('number of arguments') != -1, true, 'loadModule() error' ); 
 
 
 

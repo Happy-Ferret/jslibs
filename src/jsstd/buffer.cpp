@@ -602,7 +602,7 @@ DEFINE_CONSTRUCTOR() {
 **/
 
 /*
-DEFINE_FUNCTION( Clone ) {
+DEFINE_FUNCTION( clone ) {
 
 		// (TBD) loop over all args
 		if ( JL_IsClass(JL_ARG(1), _class) ) {
@@ -629,7 +629,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Empty the whole buffer.
 **/
-DEFINE_FUNCTION( Clear ) {
+DEFINE_FUNCTION( clear ) {
 
 	JL_IGNORE(argc);
 
@@ -656,7 +656,7 @@ $TOC_MEMBER $INAME
   Add _data_ in the buffer. If _length_ is used, only the first _length_ bytes of _data_ are added.
   The second form allow to add another whole buffer in the current buffer.
 **/
-DEFINE_FUNCTION( Write ) {
+DEFINE_FUNCTION( write ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
@@ -715,7 +715,7 @@ $TOC_MEMBER $INAME
   $H return value
    true if it matchs, else false.
 **/
-DEFINE_FUNCTION( Match ) {
+DEFINE_FUNCTION( match ) {
 
 	JLStr str;
 
@@ -777,7 +777,7 @@ $TOC_MEMBER $INAME
   $H note
   The read operation never blocks, even if the requested amount of data is greater than the buffer length.
 **/
-DEFINE_FUNCTION( Read ) { // Read( [ amount | <undefined> ] )
+DEFINE_FUNCTION( read ) { // Read( [ amount | <undefined> ] )
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -807,7 +807,7 @@ $TOC_MEMBER $INAME
  $INT $INAME( length )
   Skip _length_ bytes of data from the buffer. Returns how many bytes has been skiped.
 **/
-DEFINE_FUNCTION( Skip ) { // Skip( amount )
+DEFINE_FUNCTION( skip ) { // Skip( amount )
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -833,7 +833,7 @@ $TOC_MEMBER $INAME
   Reads the buffer until it match the _boundaryString_, else it returns $UNDEF.
   If _skip_ argument is $TRUE, the _boundaryString_ is skiped from the buffer.
 **/
-DEFINE_FUNCTION( ReadUntil ) {
+DEFINE_FUNCTION( readUntil ) {
 
 	JLStr str;
 
@@ -878,7 +878,7 @@ $TOC_MEMBER $INAME
  $INT $INAME( string )
   Find _string_ in the buffer and returns the offset of the first letter. If not found, this function returns -1.
 **/
-DEFINE_FUNCTION( IndexOf ) {
+DEFINE_FUNCTION( indexOf ) {
 
 	JLStr str;
 
@@ -913,7 +913,7 @@ $TOC_MEMBER $INAME
   }
   }}}
 **/
-DEFINE_FUNCTION( Unread ) {
+DEFINE_FUNCTION( unread ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1179,14 +1179,14 @@ CONFIGURE_CLASS
 	HAS_SET_PROPERTY
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION(Clear)
-		FUNCTION(Write)
-		FUNCTION(Match)
-		FUNCTION(Read)
-		FUNCTION(Unread)
-		FUNCTION(ReadUntil)
-		FUNCTION(IndexOf)
-		FUNCTION(Skip)
+		FUNCTION(clear)
+		FUNCTION(write)
+		FUNCTION(match)
+		FUNCTION(read)
+		FUNCTION(unread)
+		FUNCTION(readUntil)
+		FUNCTION(indexOf)
+		FUNCTION(skip)
 		FUNCTION(toString) // used when the buffer has to be transformed into a javascript string
 	END_FUNCTION_SPEC
 

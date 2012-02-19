@@ -106,7 +106,7 @@ DEFINE_CONSTRUCTOR() {
 
 
 /*
-DEFINE_FUNCTION( SetSize ) {
+DEFINE_FUNCTION( setSize ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 
@@ -145,7 +145,7 @@ int CubicToFunc( const FT_Vector* control1, const FT_Vector* control2, const FT_
 	return 0;
 }
 
-DEFINE_FUNCTION( GetCharOutline ) {
+DEFINE_FUNCTION( getCharOutline ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 
@@ -192,7 +192,7 @@ $TOC_MEMBER $INAME
   $H return value
    An image object that contains the char.
 **/
-DEFINE_FUNCTION( DrawChar ) {
+DEFINE_FUNCTION( drawChar ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN(1);
@@ -259,7 +259,7 @@ $TOC_MEMBER $INAME
   $H return value
    An image object that contains the text or the length of the text in pixel.
 **/
-DEFINE_FUNCTION( DrawString ) {
+DEFINE_FUNCTION( drawString ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN(1);
@@ -730,9 +730,9 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_RESERVED_SLOTS(7)
 
 	BEGIN_FUNCTION_SPEC
-//		FUNCTION(GetCharOutline)
-		FUNCTION(DrawString)
-		FUNCTION(DrawChar)
+//		FUNCTION(getCharOutline)
+		FUNCTION(drawString)
+		FUNCTION(drawChar)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

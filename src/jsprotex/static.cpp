@@ -49,7 +49,7 @@ $TOC_MEMBER $INAME
   0.6221087664882906
   }}}
 **/
-DEFINE_FUNCTION( RandSeed ) {
+DEFINE_FUNCTION( randSeed ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	unsigned int seed;
@@ -67,7 +67,7 @@ $TOC_MEMBER $INAME
  $INT $INAME
   Generates a random number on `[ 0 , 0x7fffffff ]` interval.
 **/
-DEFINE_FUNCTION( RandInt ) {
+DEFINE_FUNCTION( randInt ) {
 
 	return JL_NativeToJsval(cx, genrand_int32(), JL_RVAL);
 }
@@ -78,7 +78,7 @@ $TOC_MEMBER $INAME
  $REAL $INAME
   Generates a random number on `[ 0 , 1 ]` real interval.
 **/
-DEFINE_FUNCTION( RandReal ) {
+DEFINE_FUNCTION( randReal ) {
 
 	return JL_NativeToJsval(cx, genrand_real1(), JL_RVAL);
 }
@@ -87,7 +87,7 @@ DEFINE_FUNCTION( RandReal ) {
 $TOC_MEMBER $INAME
  $REAL $INAME( n, a, b, x [,y [,z] ] )
 **/
-DEFINE_FUNCTION( PerlinNoise ) {
+DEFINE_FUNCTION( perlinNoise ) {
 
 	JL_ASSERT_ARGC_RANGE(4,6);
 	int n;
@@ -118,7 +118,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Reinitialize the perlin noise state with the current random state.
 **/
-DEFINE_FUNCTION( PerlinNoiseReinit ) {
+DEFINE_FUNCTION( perlinNoiseReinit ) {
 
 	JL_ASSERT_ARGC_MAX(0);
 	InitNoise();
@@ -133,7 +133,7 @@ DEFINE_FUNCTION( PerlinNoiseReinit ) {
 $TOC_MEMBER $INAME
  $REAL $INAME(x, y, z)
 **/
-DEFINE_FUNCTION( PerlinNoise2 ) {
+DEFINE_FUNCTION( perlinNoise2 ) {
 
 	JL_ASSERT_ARGC(3);
 	double x, y, z;
@@ -158,13 +158,13 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( RandSeed )
-		FUNCTION( RandInt )
-		FUNCTION( RandReal )
-		FUNCTION( PerlinNoise )
-		FUNCTION( PerlinNoiseReinit )
+		FUNCTION( randSeed )
+		FUNCTION( randInt )
+		FUNCTION( randReal )
+		FUNCTION( perlinNoise )
+		FUNCTION( perlinNoiseReinit )
 
-		FUNCTION( PerlinNoise2 )
+		FUNCTION( perlinNoise2 )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

@@ -291,7 +291,7 @@ $TOC_MEMBER $INAME
   $H return value
    A connected socket ID that can be used in a Poll() call. Or $UNDEF if no connection is established.
 **/
-DEFINE_FUNCTION( Connect ) {
+DEFINE_FUNCTION( connect ) {
 
 	JLStr serverName;
 
@@ -336,7 +336,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Disconnects from the server.
 **/
-DEFINE_FUNCTION( Disconnect ) {
+DEFINE_FUNCTION( disconnect ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -362,7 +362,7 @@ $TOC_MEMBER $INAME
  $VAL $INAME()
   Receive data from the socket and to feed the parser and call the event functions.
 **/
-DEFINE_FUNCTION( Process ) {
+DEFINE_FUNCTION( process ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -392,7 +392,7 @@ $TOC_MEMBER $INAME
    $ARG $STR to: the destination of the message.
    $ARG $STR body: the body of the message.
 **/
-DEFINE_FUNCTION( SendMessage ) {
+DEFINE_FUNCTION( sendMessage ) {
 
 	JLStr to, body;
 
@@ -424,7 +424,7 @@ DEFINE_FUNCTION( SendMessage ) {
 
 
 /*
-DEFINE_FUNCTION( RosterItem ) {
+DEFINE_FUNCTION( rosterItem ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -617,10 +617,10 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Connect )
-		FUNCTION( Disconnect )
-		FUNCTION( Process )
-		FUNCTION( SendMessage )
+		FUNCTION( connect )
+		FUNCTION( disconnect )
+		FUNCTION( process )
+		FUNCTION( sendMessage )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

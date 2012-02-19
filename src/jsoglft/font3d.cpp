@@ -193,7 +193,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_BAD;
 }
 
-//DEFINE_FUNCTION( Call ) {
+//DEFINE_FUNCTION( call ) {
 //	return JS_TRUE;
 //}
 
@@ -207,7 +207,7 @@ $TOC_MEMBER $INAME
    $ARG $STR string: the string to measure.
    $ARG $BOOL absolute: if true, compute the bounding box info for a string with conversion to modeling coordinates.
 **/
-DEFINE_FUNCTION( Measure ) {
+DEFINE_FUNCTION( measure ) {
 
 	JLStr str;
 
@@ -254,7 +254,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $STR string: the string to measure.
 **/
-DEFINE_FUNCTION( Width ) {
+DEFINE_FUNCTION( width ) {
 	
 	JLStr str;
 
@@ -295,7 +295,7 @@ var f3d = new Font3D(f, Font3D.SOLID, 12);
 f3d.Draw('test');
 }}}
 **/
-DEFINE_FUNCTION( Draw ) {
+DEFINE_FUNCTION( draw ) {
 
 	JLStr str;
 
@@ -343,7 +343,7 @@ $TOC_MEMBER $INAME
   $H return value
    the display list name for the string.
 **/
-DEFINE_FUNCTION( Compile ) {
+DEFINE_FUNCTION( compile ) {
 
 	JLStr str;
 
@@ -372,7 +372,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $ARR color: array of 4 values corresponding to the red, green, blue and alpha components of the foreground color.
 **/
-DEFINE_FUNCTION( SetColor ) {
+DEFINE_FUNCTION( setColor ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -415,7 +415,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $ARR color: array of 4 values corresponding to the red, green, blue and alpha components of the background color.
 **/
-DEFINE_FUNCTION( SetBackgroundColor ) {
+DEFINE_FUNCTION( setBackgroundColor ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -584,7 +584,7 @@ DEFINE_PROPERTY_SETTER( colorCallback ) {
 
 
 /*
-DEFINE_FUNCTION( SetCharacterDisplayLists ) {
+DEFINE_FUNCTION( setCharacterDisplayLists ) {
 
 	OGLFT::DisplayLists lists;
 
@@ -620,13 +620,13 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION(Measure)
-		FUNCTION(Width)
-		FUNCTION(Draw)
-		FUNCTION(Compile)
-		FUNCTION(SetColor)
-		FUNCTION(SetBackgroundColor)
-//		FUNCTION(SetCharacterDisplayLists)
+		FUNCTION(measure)
+		FUNCTION(width)
+		FUNCTION(draw)
+		FUNCTION(compile)
+		FUNCTION(setColor)
+		FUNCTION(setBackgroundColor)
+//		FUNCTION(setCharacterDisplayLists)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

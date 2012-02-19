@@ -153,7 +153,7 @@ $TOC_MEMBER $INAME
   Returns the _auxObject_ stored in the _objex_.
   If newAux is given, it replaces the current auxiliary value of _objex_.
 **/
-DEFINE_FUNCTION( Aux ) {
+DEFINE_FUNCTION( aux ) {
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -189,7 +189,7 @@ CONFIGURE_CLASS
 	HAS_SET_PROPERTY
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION(Aux)
+		FUNCTION(aux)
 	END_STATIC_FUNCTION_SPEC
 
 END_CLASS

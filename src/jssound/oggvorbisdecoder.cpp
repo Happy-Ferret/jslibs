@@ -235,7 +235,7 @@ $TOC_MEMBER $INAME
   Print( 'time: '+(block.frames/block.rate)+' seconds', '\n' );
   }}}
 **/
-DEFINE_FUNCTION( Read ) {
+DEFINE_FUNCTION( read ) {
 
 	char *buf = NULL;
 	char *buffer = NULL;
@@ -498,7 +498,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Read )
+		FUNCTION( read )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

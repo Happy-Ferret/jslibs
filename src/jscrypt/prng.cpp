@@ -132,7 +132,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( data )
   Add _data_ as entropy (randomness) to the current prng.
 **/
-DEFINE_FUNCTION( AddEntropy ) {
+DEFINE_FUNCTION( addEntropy ) {
 
 	JLStr entropy;
 
@@ -164,7 +164,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( size )
   Automaticaly add _size_ bits of entropy to the current prng.
 **/
-DEFINE_FUNCTION( AutoEntropy ) {
+DEFINE_FUNCTION( autoEntropy ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -303,8 +303,8 @@ CONFIGURE_CLASS
 	HAS_CALL
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( AddEntropy )
-		FUNCTION( AutoEntropy )
+		FUNCTION( addEntropy )
+		FUNCTION( autoEntropy )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

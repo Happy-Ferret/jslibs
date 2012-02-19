@@ -44,7 +44,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a boolean value or object.
 **/
-DEFINE_FUNCTION( IsBoolean ) {
+DEFINE_FUNCTION( isBoolean ) {
 
 	JL_ASSERT_ARGC(1);
 
@@ -75,7 +75,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a number value or object.
 **/
-DEFINE_FUNCTION( IsNumber ) {
+DEFINE_FUNCTION( isNumber ) {
 
 	JL_ASSERT_ARGC(1);
 
@@ -105,7 +105,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a primitive ( null or not an object ).
 **/
-DEFINE_FUNCTION( IsPrimitive ) {
+DEFINE_FUNCTION( isPrimitive ) {
 
 	JL_IGNORE(cx);
 	JL_ASSERT_ARGC(1);
@@ -123,7 +123,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a function.
 **/
-DEFINE_FUNCTION( IsFunction ) {
+DEFINE_FUNCTION( isFunction ) {
 
 	JL_ASSERT_ARGC(1);
 	//*JL_RVAL = BOOLEAN_TO_JSVAL( VALUE_IS_CALLABLE(cx, JL_ARG(1)) );
@@ -140,7 +140,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a generator function.
 ** /
-DEFINE_FUNCTION( IsGeneratorFunction ) {
+DEFINE_FUNCTION( isGeneratorFunction ) {
 
 	JL_ASSERT_ARGC(1);
 	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_IsGeneratorFunction(cx, JL_ARG(1)) );
@@ -156,7 +156,7 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a generator instance.
 ** /
-DEFINE_FUNCTION( IsGeneratorObject ) {
+DEFINE_FUNCTION( isGeneratorObject ) {
 
 	JL_ASSERT_ARGC(1);
 	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_IsGeneratorObject(cx, JL_ARG(1)) );
@@ -170,7 +170,7 @@ $TOC_MEMBER $INAME
  $STR $INAME( value )
   This function converts any value into a floating point value.
 **/
-DEFINE_FUNCTION( Real ) {
+DEFINE_FUNCTION( real ) {
 
 	JL_ASSERT_ARGC(1);
 
@@ -188,7 +188,7 @@ $TOC_MEMBER $INAME
  $STR $INAME( value )
   This function converts any value of stream into a string.
 **/
-DEFINE_FUNCTION( Stringify ) {
+DEFINE_FUNCTION( stringify ) {
 
 	JL_ASSERT_ARGC(1);
 
@@ -278,7 +278,7 @@ JLThreadFuncDecl ProcessEventThread( void *data ) {
 	return 0;
 }
 
-DEFINE_FUNCTION( ProcessEvents ) {
+DEFINE_FUNCTION( processEvents ) {
 
 	int st;
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
@@ -453,7 +453,7 @@ JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 	JL_BAD;
 }
 
-DEFINE_FUNCTION( TimeoutEvents ) {
+DEFINE_FUNCTION( timeoutEvents ) {
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -521,7 +521,7 @@ JSBool WriteStructuredClone(JSContext *cx, JSStructuredCloneWriter *w, JSObject 
 const JSStructuredCloneCallbacks structuredClone = { ReadStructuredClone, WriteStructuredClone, NULL };
 
 
-DEFINE_FUNCTION( Serialize ) {
+DEFINE_FUNCTION( serialize ) {
 
     jsval v = argc > 0 ? JS_ARGV(cx, vp)[0] : JSVAL_VOID;
     uint64 *datap;
@@ -543,7 +543,7 @@ DEFINE_FUNCTION( Serialize ) {
 }
 
 
-DEFINE_FUNCTION( Deserialize ) {
+DEFINE_FUNCTION( deserialize ) {
 
     jsval v = argc > 0 ? JS_ARGV(cx, vp)[0] : JSVAL_VOID;
     JSObject *obj;
@@ -662,7 +662,7 @@ const JSStructuredCloneCallbacks structuredCloneCallbacks = { ReadStructuredClon
 
 // source copied from /js/src/js.cpp (Serialize/Deserialize)
 
-DEFINE_FUNCTION( Serialize ) {
+DEFINE_FUNCTION( serialize ) {
 	
 	jsval v = argc > 0 ? JS_ARGV(cx, vp)[0] : JSVAL_VOID;
     uint64_t *datap;
@@ -683,7 +683,7 @@ DEFINE_FUNCTION( Serialize ) {
     return true;
 }
 
-DEFINE_FUNCTION( Deserialize ) {
+DEFINE_FUNCTION( deserialize ) {
 
     jsval v = argc > 0 ? JS_ARGV(cx, vp)[0] : JSVAL_VOID;
     JSObject *obj;
@@ -815,19 +815,19 @@ CONFIGURE_STATIC
 //	REVISION(JL_SvnRevToInt("$Revision$")) // avoid to set a revision to the global context
 	BEGIN_STATIC_FUNCTION_SPEC
 
-		FUNCTION_ARGC( IsBoolean, 1 )
-		FUNCTION_ARGC( IsNumber, 1 )
-		FUNCTION_ARGC( IsPrimitive, 1 )
-		FUNCTION_ARGC( IsFunction, 1 )
-//		FUNCTION_ARGC( IsGeneratorFunction, 1 )
-//		FUNCTION_ARGC( IsGeneratorObject, 1 )
+		FUNCTION_ARGC( isBoolean, 1 )
+		FUNCTION_ARGC( isNumber, 1 )
+		FUNCTION_ARGC( isPrimitive, 1 )
+		FUNCTION_ARGC( isFunction, 1 )
+//		FUNCTION_ARGC( isGeneratorFunction, 1 )
+//		FUNCTION_ARGC( isGeneratorObject, 1 )
 
 
-		FUNCTION_ARGC( Real, 1 )
+		FUNCTION_ARGC( real, 1 )
 
-		FUNCTION_ARGC( Stringify, 1 )
-		FUNCTION_ARGC( ProcessEvents, 4 ) // (just a guess)
-		FUNCTION_ARGC( TimeoutEvents, 2 )
+		FUNCTION_ARGC( stringify, 1 )
+		FUNCTION_ARGC( processEvents, 4 ) // (just a guess)
+		FUNCTION_ARGC( timeoutEvents, 2 )
 
 		#ifdef DEBUG
 		FUNCTION( _jsapiTests )

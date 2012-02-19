@@ -81,7 +81,7 @@ DEFINE_CONSTRUCTOR() {
 //	return JS_TRUE;
 //}
 /*
-DEFINE_FUNCTION( AddVertex ) {
+DEFINE_FUNCTION( addVertex ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -112,7 +112,7 @@ DEFINE_FUNCTION( AddVertex ) {
 }
 
 
-DEFINE_FUNCTION( AddTriangle ) {
+DEFINE_FUNCTION( addTriangle ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -145,7 +145,7 @@ DEFINE_FUNCTION( AddTriangle ) {
 */
 
 /*
-DEFINE_FUNCTION( AddIndices ) {
+DEFINE_FUNCTION( addIndices ) {
 
 	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -172,7 +172,7 @@ DEFINE_FUNCTION( AddIndices ) {
 */
 
 
-DEFINE_FUNCTION( DefineVertexBuffer ) {
+DEFINE_FUNCTION( defineVertexBuffer ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -210,7 +210,7 @@ DEFINE_FUNCTION( DefineVertexBuffer ) {
 }
 
 
-DEFINE_FUNCTION( DefineNormalBuffer ) {
+DEFINE_FUNCTION( defineNormalBuffer ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -244,7 +244,7 @@ DEFINE_FUNCTION( DefineNormalBuffer ) {
 }
 
 
-DEFINE_FUNCTION( DefineTextureCoordinateBuffer ) {
+DEFINE_FUNCTION( defineTextureCoordinateBuffer ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -278,7 +278,7 @@ DEFINE_FUNCTION( DefineTextureCoordinateBuffer ) {
 }
 
 
-DEFINE_FUNCTION( DefineColorBuffer ) {
+DEFINE_FUNCTION( defineColorBuffer ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -312,7 +312,7 @@ DEFINE_FUNCTION( DefineColorBuffer ) {
 }
 
 
-DEFINE_FUNCTION( DefineIndexBuffer ) {
+DEFINE_FUNCTION( defineIndexBuffer ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -403,11 +403,11 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_ARGC(DefineVertexBuffer, 1)
-		FUNCTION_ARGC(DefineNormalBuffer, 1)
-		FUNCTION_ARGC(DefineTextureCoordinateBuffer, 1)
-		FUNCTION_ARGC(DefineColorBuffer, 1)
-		FUNCTION_ARGC(DefineIndexBuffer, 1)
+		FUNCTION_ARGC(defineVertexBuffer, 1)
+		FUNCTION_ARGC(defineNormalBuffer, 1)
+		FUNCTION_ARGC(defineTextureCoordinateBuffer, 1)
+		FUNCTION_ARGC(defineColorBuffer, 1)
+		FUNCTION_ARGC(defineIndexBuffer, 1)
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

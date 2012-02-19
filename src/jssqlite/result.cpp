@@ -252,7 +252,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Close the current Result object.
 **/
-DEFINE_FUNCTION( Close ) {
+DEFINE_FUNCTION( close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -405,7 +405,7 @@ $TOC_MEMBER $INAME
   $H return value
    returns true if another row is ready. false if the last line has been reached.
 **/
-DEFINE_FUNCTION( Step ) {
+DEFINE_FUNCTION( step ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -422,7 +422,7 @@ $TOC_MEMBER $INAME
   $H arguments
    $ARG $INT colIndex
 **/
-DEFINE_FUNCTION( Col ) {
+DEFINE_FUNCTION( col ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -447,7 +447,7 @@ $TOC_MEMBER $INAME
   $H note
    The *Step* function is internally called before each *Row* call.
 **/
-DEFINE_FUNCTION( Row ) {
+DEFINE_FUNCTION( row ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -528,7 +528,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Resets the current Result object to its initial state.
 **/
-DEFINE_FUNCTION( Reset ) {
+DEFINE_FUNCTION( reset ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -709,11 +709,11 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Step )
-		FUNCTION( Reset )
-		FUNCTION( Close )
-		FUNCTION( Col )
-		FUNCTION( Row )
+		FUNCTION( step )
+		FUNCTION( reset )
+		FUNCTION( close )
+		FUNCTION( col )
+		FUNCTION( row )
 		FUNCTION( next )
 	END_FUNCTION_SPEC
 

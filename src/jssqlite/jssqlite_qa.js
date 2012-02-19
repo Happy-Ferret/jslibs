@@ -1,12 +1,12 @@
-LoadModule('jssqlite');
+loadModule('jssqlite');
 
 /// for each iteration over a Query result [ftrm]
 
 		var db = new Database(); // in-memory database
-		db.Exec('create table t1 (name,value);');
-		db.Exec('insert into t1 (name,value) values ("red","#F00")');
-		db.Exec('insert into t1 (name,value) values ("green","#0F0")');
-		db.Exec('insert into t1 (name,value) values ("blue","#00F")');
+		db.exec('create table t1 (name,value);');
+		db.exec('insert into t1 (name,value) values ("red","#F00")');
+		db.exec('insert into t1 (name,value) values ("green","#0F0")');
+		db.exec('insert into t1 (name,value) values ("blue","#00F")');
 
 		var res = [ color.name+'='+color.value for each ( color in db.Query('SELECT * from t1') ) ].join(',');
 		QA.ASSERT_STR( res, 'red=#F00,green=#0F0,blue=#00F', 'result' );
@@ -15,7 +15,7 @@ LoadModule('jssqlite');
 /// InMemory Database [ftrm]
 
 		var db = new Database();
-		var res = db.Exec('SELECT 1');
+		var res = db.exec('SELECT 1');
 		QA.ASSERT( res, 1, 'select 1' );
 		db.Close();
 
@@ -25,8 +25,8 @@ LoadModule('jssqlite');
 		try {
 
 			var db = new Database();
-			var res = db.Exec('create table a (id integer primary key, x varchar)');
-			db.Exec('insert into a values (NULL, "aaa")');
+			var res = db.exec('create table a (id integer primary key, x varchar)');
+			db.exec('insert into a values (NULL, "aaa")');
 			var res = db.Query('select * from a');
 			var row = res.Row(true);
 			QA.ASSERT( row.x, 'aaa', 'read query result' );
@@ -41,9 +41,9 @@ LoadModule('jssqlite');
 /// Result format [ftrm]
 
 		var db = new Database();
-		var res = db.Exec('create table a (b integer primary key, c varchar, d integer)');
-		db.Exec('insert into a values (NULL, "aaa", 222)');
-		db.Exec('insert into a values (NULL, "b", 333)');
+		var res = db.exec('create table a (b integer primary key, c varchar, d integer)');
+		db.exec('insert into a values (NULL, "aaa", 222)');
+		db.exec('insert into a values (NULL, "b", 333)');
 		QA.ASSERT( db.lastInsertRowid, 2, 'last insert rowid' );
 		QA.ASSERT( db.changes, 1, 'changes count' );
 
@@ -148,7 +148,7 @@ LoadModule('jssqlite');
 /// named variables [ftrm]
 
 		var db = new Database();
-		var res = db.Exec('SELECT @varTest', { varTest:123} );
+		var res = db.exec('SELECT @varTest', { varTest:123} );
 		QA.ASSERT( res, 123, 'row result' );
 		db.Close();
 
@@ -157,7 +157,7 @@ LoadModule('jssqlite');
 
 		var db = new Database();
 	
-		var res = db.Exec( 'select ?+?+?', [2, 3, 4] );
+		var res = db.exec( 'select ?+?+?', [2, 3, 4] );
 		QA.ASSERT( res, 9, 'addition using question mark' );
 
 		var row = db.Query('SELECT ?+?+?', {0:2,1:2,2:2,3:2,length:3}).Row();
@@ -175,8 +175,8 @@ LoadModule('jssqlite');
 		
 		var blob = new Blob('qqwe\0\0fv1234');
 		
-		//var res = db.Exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});
-		var res = db.Exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});
+		//var res = db.exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});
+		var res = db.exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});
 
 		QA.ASSERT( res, 1230, 'row result' );
 

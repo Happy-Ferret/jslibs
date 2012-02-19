@@ -51,7 +51,7 @@ $TOC_MEMBER $INAME
   TBD dMassTranslate + dBodySetMass
 **/
 
-DEFINE_FUNCTION( Translate ) {
+DEFINE_FUNCTION( translate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
@@ -77,7 +77,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( mass )
   TBD dBodyGetMass, dMassAdjust, dBodySetMass
 **/
-DEFINE_FUNCTION( Adjust ) {
+DEFINE_FUNCTION( adjust ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
@@ -101,7 +101,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   TBD dBodyGetMass, dMassSetZero, dBodySetMass
 **/
-DEFINE_FUNCTION( SetZero ) {
+DEFINE_FUNCTION( setZero ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
@@ -122,7 +122,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( mass, vec3 )
   TBD dBodyGetMass, dMassSetBoxTotal, dBodySetMass
 **/
-DEFINE_FUNCTION( SetBoxTotal ) {
+DEFINE_FUNCTION( setBoxTotal ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
@@ -229,10 +229,10 @@ CONFIGURE_CLASS
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Translate )
-		FUNCTION( Adjust )
-		FUNCTION( SetBoxTotal )
-		FUNCTION( SetZero )
+		FUNCTION( translate )
+		FUNCTION( adjust )
+		FUNCTION( setBoxTotal )
+		FUNCTION( setZero )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

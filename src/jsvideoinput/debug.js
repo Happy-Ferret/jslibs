@@ -1,18 +1,18 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsstd');
-LoadModule('jsio');
-LoadModule('jsimage');
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jsimage');
 
-LoadModule('jsvideoinput');
+loadModule('jsvideoinput');
 
-//Print( VideoInput.list.join('\n') ); throw 0;
+//print( VideoInput.list.join('\n') ); throw 0;
 
-LoadModule('jssdl');
-LoadModule('jsgraphics');
-LoadModule('jsprotex');
+loadModule('jssdl');
+loadModule('jsgraphics');
+loadModule('jsprotex');
 
-Exec('..\\common\\tools.js');
+exec('..\\common\\tools.js');
 
 	
 	//	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
@@ -35,16 +35,16 @@ Exec('..\\common\\tools.js');
 
 
 var vi = new VideoInput('QuickCam', 1, 1, 60); // try to get the smallest size and the lowest fps
-Print('full name: '+vi.name, '\n');
+print('full name: '+vi.name, '\n');
 
 var tmp1 = new Texture(256,256,3).Set(0);
 var final = new Texture(256,256,3).Set(0);
 var noise = new Texture(256,256,3).Set(0);
 
-Print( vi.width + 'x' + vi.height, '\n' );
+print( vi.width + 'x' + vi.height, '\n' );
 
 vi.onImage = function() {
-	Print('-');
+	print('-');
 }
 
 var frames = [];
@@ -60,7 +60,7 @@ while ( !GetKeyState(K_ESCAPE) ) {
 
 var t1 = TimeCounter();
 //CollectGarbage();
-//Print( 'GC:',  (TimeCounter() - t1).toFixed(1), 'ms\n' );
+//print( 'GC:',  (TimeCounter() - t1).toFixed(1), 'ms\n' );
 
 
 	frame++;
@@ -112,7 +112,7 @@ continue;
 
 		noise.Add(texture);
 		noise.Mult(0.84);
-		Print('...Getting noise\n');
+		print('...Getting noise\n');
 		DisplayTexture(noise);
 	} else {
 

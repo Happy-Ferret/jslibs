@@ -114,7 +114,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   TBD
 **/
-DEFINE_FUNCTION( Destroy ) {
+DEFINE_FUNCTION( destroy ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
@@ -131,7 +131,7 @@ DEFINE_FUNCTION( Destroy ) {
 }
 
 /*
-DEFINE_FUNCTION( GetBody ) {
+DEFINE_FUNCTION( getBody ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( jointId );
@@ -160,7 +160,7 @@ DEFINE_FUNCTION( GetBody ) {
 
 
 /*
-DEFINE_FUNCTION( Attach ) {
+DEFINE_FUNCTION( attach ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT( IsInstanceOf(cx, obj, thisClass), RT_ERROR_INVALID_CLASS );
@@ -650,8 +650,8 @@ CONFIGURE_CLASS
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Destroy )
-//		FUNCTION( GetBody )
+		FUNCTION( destroy )
+//		FUNCTION( getBody )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

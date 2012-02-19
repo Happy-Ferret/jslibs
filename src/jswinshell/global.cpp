@@ -40,7 +40,7 @@ $TOC_MEMBER $INAME
   $H beware
    This function is not supported for icons in 16-bit executables and DLLs.
 **/
-DEFINE_FUNCTION( ExtractIcon ) {
+DEFINE_FUNCTION( extractIcon ) {
 
 	JLStr fileName;
 	JL_ASSERT_ARGC_MIN(1);
@@ -118,7 +118,7 @@ $TOC_MEMBER $INAME
    * IDYES: Yes button was selected.
    * 32000: timeout ???
 **/
-DEFINE_FUNCTION( MessageBox ) {
+DEFINE_FUNCTION( messageBox ) {
 
 	JLStr caption, text;
 
@@ -156,7 +156,7 @@ $TOC_MEMBER $INAME
  CreateProcess( 'C:\\WINDOWS\\system32\\calc.exe', undefined, undefined, 'c:\\' );
  }}}
 **/
-DEFINE_FUNCTION( CreateProcess ) {
+DEFINE_FUNCTION( createProcess ) {
 
 	JLStr applicationName, commandLine, environment, currentDirectory;
 
@@ -203,7 +203,7 @@ $TOC_MEMBER $INAME
  FileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
  }}}
 **/
-DEFINE_FUNCTION( FileOpenDialog ) {
+DEFINE_FUNCTION( fileOpenDialog ) {
 
 	OPENFILENAME ofn = { sizeof(OPENFILENAME) };
 	char fileName[MAX_PATH];
@@ -251,7 +251,7 @@ $TOC_MEMBER $INAME
  $STR $INAME( sourceString )
   Expands environment-variable strings and replaces them with the values defined for the current user.
 **/
-DEFINE_FUNCTION( ExpandEnvironmentStrings ) {
+DEFINE_FUNCTION( expandEnvironmentStrings ) {
 
 	JLStr src;
 	JL_ASSERT_ARGC_MIN(1);
@@ -271,7 +271,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( milliseconds )
   Suspends the execution of the current process until the time-out interval elapses.
 **/
-DEFINE_FUNCTION( Sleep ) {
+DEFINE_FUNCTION( sleep ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	unsigned int timeout;
@@ -297,7 +297,7 @@ $TOC_MEMBER $INAME
     * ICONHAND: SystemHand
     * ICONQUESTION: SystemQuestion
 **/
-DEFINE_FUNCTION( MessageBeep ) {
+DEFINE_FUNCTION( messageBeep ) {
 
 	UINT type = (UINT)-1;
 	if ( argc >= 1 )
@@ -317,7 +317,7 @@ $TOC_MEMBER $INAME
   $H note
    The function is synchronous, it does not return control to its caller until the sound finishes.
 **/
-DEFINE_FUNCTION( Beep ) {
+DEFINE_FUNCTION( beep ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 	unsigned int freq, duration;
@@ -337,7 +337,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( id )
   Creates a new COM object by object name or CLSID.
 **/
-DEFINE_FUNCTION( CreateComObject ) {
+DEFINE_FUNCTION( createComObject ) {
 
 	IUnknown *punk = NULL;
 	IDispatch *pdisp = NULL;
@@ -403,7 +403,7 @@ $TOC_MEMBER $INAME
   CreateProcess(undefined, defaultBrowser + ' http://jslibs.googlecode.com/');
   }}}
 **/
-DEFINE_FUNCTION( RegistryGet ) {
+DEFINE_FUNCTION( registryGet ) {
 
 	JLStr pathStr, valueName;
 	JL_ASSERT_ARGC_RANGE(1,2);
@@ -605,7 +605,7 @@ void FinalizeDirectoryHandle(void *data) {
 	CloseHandle(dc->hDirectory);
 }
 
-DEFINE_FUNCTION( DirectoryChangesInit ) {
+DEFINE_FUNCTION( directoryChangesInit ) {
 
 	JLStr pathName;
 	JL_ASSERT_ARGC_RANGE(2,3);
@@ -653,7 +653,7 @@ $TOC_MEMBER $INAME
   * 4: The file was renamed and this is the old name.
   * 5: The file was renamed and this is the new name.
 **/
-DEFINE_FUNCTION( DirectoryChangesLookup ) {
+DEFINE_FUNCTION( directoryChangesLookup ) {
 
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_ARG_TYPE( IsHandleType(cx, JL_ARG(1), JLHID("dmon")), 1, "(dmon) Handle" );
@@ -800,7 +800,7 @@ JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSCon
 	JL_BAD;
 }
 
-DEFINE_FUNCTION( DirectoryChangesEvents ) {
+DEFINE_FUNCTION( directoryChangesEvents ) {
 	
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_ARG_TYPE( IsHandleType(cx, JL_ARG(1), JLHID("dmon")), 1, "(dmon) Handle" );
@@ -839,7 +839,7 @@ var file = new File("C:\\tmp");
 Print(GUIDToString(f.id).quote());
 }}}
 **/
-DEFINE_FUNCTION( GUIDToString ) {
+DEFINE_FUNCTION( guidToString ) {
 
 	JLStr str;
 
@@ -1198,22 +1198,22 @@ CONFIGURE_STATIC
 		FUNCTION( jswinshelltest )
 		#endif //DEBUG
 
-		FUNCTION( MessageBox )
-		FUNCTION( CreateProcess )
-		FUNCTION( ExtractIcon )
-		FUNCTION( ExpandEnvironmentStrings )
-		FUNCTION( FileOpenDialog )
-		FUNCTION( Sleep )
-		FUNCTION( MessageBeep )
-		FUNCTION( Beep )
-		FUNCTION( RegistryGet )
-		FUNCTION( CreateComObject )
+		FUNCTION( messageBox )
+		FUNCTION( createProcess )
+		FUNCTION( extractIcon )
+		FUNCTION( expandEnvironmentStrings )
+		FUNCTION( fileOpenDialog )
+		FUNCTION( sleep )
+		FUNCTION( messageBeep )
+		FUNCTION( beep )
+		FUNCTION( registryGet )
+		FUNCTION( createComObject )
 
-		FUNCTION( DirectoryChangesInit )
-		FUNCTION( DirectoryChangesLookup )
-		FUNCTION( DirectoryChangesEvents )
+		FUNCTION( directoryChangesInit )
+		FUNCTION( directoryChangesLookup )
+		FUNCTION( directoryChangesEvents )
 
-		FUNCTION_ARGC( GUIDToString, 1 )
+		FUNCTION_ARGC( guidToString, 1 )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

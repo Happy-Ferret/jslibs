@@ -1,11 +1,11 @@
-LoadModule('jsstd');
-LoadModule('jsio');
+loadModule('jsstd');
+loadModule('jsio');
 
 
 function Env3D() {
 	
-	LoadModule('jssdl');
-	LoadModule('jsgraphics');
+	loadModule('jssdl');
+	loadModule('jsgraphics');
 	
 	var _this = this;
 	
@@ -374,41 +374,41 @@ function DisplayImage( image ) {
 
 function DumpVector(v) {
 
-	Print( v[0].toFixed(1), '  ', v[1].toFixed(1), '  ', v[2].toFixed(1), '\n' );
+	print( v[0].toFixed(1), '  ', v[1].toFixed(1), '  ', v[2].toFixed(1), '\n' );
 }
 
 function DumpMatrix(m) {
     
 	for (var y = 0; y < 4; ++y) {
-		Print('[ ' );
+		print('[ ' );
 		for (var x = 0; x < 4; ++x)
-			Print( m[x+y*4].toFixed(3) + '  ' );
-		Print(']\n' );
+			print( m[x+y*4].toFixed(3) + '  ' );
+		print(']\n' );
 	}
-	Print('\n' );
+	print('\n' );
 }
 
 function Dump(/*...*/) {
 	
 	for ( var i = 0; i < arguments.length; i++ )
-		Print(uneval(arguments[i]), '  ');
-	Print('\n');
+		print(uneval(arguments[i]), '  ');
+	print('\n');
 }
 
 function RunLocalQAFile() {
 	
-	LoadModule('jsio');
+	loadModule('jsio');
 	global.QA = { __noSuchMethod__:function(id, args) {
-		Print( id, ':', uneval(args), '\n' )
+		print( id, ':', uneval(args), '\n' )
 	} };
-	Exec( /[^/\\]+$/.exec(currentDirectory)[0] + '_qa.js');
+	exec( /[^/\\]+$/.exec(currentDirectory)[0] + '_qa.js');
 	throw 0;
 }
 
 function RunSavedQAFile(fileName) {
 
-	LoadModule('jsstd');
-	LoadModule('jsio');
+	loadModule('jsstd');
+	loadModule('jsio');
 	var itemList = eval('('+new File(fileName).content+')');
 	var qaapi = { __noSuchMethod__:function() {} };
 	for ( var i = 0; i < itemList.length; i++ )
@@ -418,26 +418,26 @@ function RunSavedQAFile(fileName) {
 
 function RunQATests( argStr ) {
 
-	LoadModule('jsio');
+	loadModule('jsio');
 	currentDirectory += '/../..';
 	global.arguments = Array.concat('qa.js', argStr.split(' '));
-	Exec(global.arguments[0], false);
+	exec(global.arguments[0], false);
 	throw 0;
 }
 
 function RunJsircbot( withDebuggerEnabled ) {
 
-	LoadModule('jsio');
-	LoadModule('jsdebug');
-	withDebuggerEnabled && Exec('../jsdebug/debugger.js', false);
+	loadModule('jsio');
+	loadModule('jsdebug');
+	withDebuggerEnabled && exec('../jsdebug/debugger.js', false);
 	currentDirectory += '/../../../jsircbot';
 	global.arguments[1] = 'my_configuration.js'; // simulate: jshost main.js my_configuration.js
-	Print( 'RunJsircbot arguments: '+uneval(global.arguments), '\n' );
-	Exec('main.js', false);
+	print( 'RunJsircbot arguments: '+uneval(global.arguments), '\n' );
+	exec('main.js', false);
 	throw 0;
 }
 
-var FakeQAApi = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args).substr(0,32), '\n' ) } };
+var FakeQAApi = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args).substr(0,32), '\n' ) } };
 
 
 /* z-pass

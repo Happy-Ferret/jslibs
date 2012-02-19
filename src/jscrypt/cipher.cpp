@@ -311,7 +311,7 @@ $TOC_MEMBER $INAME
   $H note
    This object may contain sensitive data.
 **/
-DEFINE_FUNCTION( Wipe ) {
+DEFINE_FUNCTION( wipe ) {
 
 	JL_IGNORE(argc);
 
@@ -331,7 +331,7 @@ $TOC_MEMBER $INAME
  $DATA $INAME( data )
   Encrypts the given _data_ using the current cipher.
 **/
-DEFINE_FUNCTION( Encrypt ) {
+DEFINE_FUNCTION( encrypt ) {
 
 	JLStr pt;
 
@@ -401,7 +401,7 @@ $TOC_MEMBER $INAME
  $DATA $INAME( data )
   Decrypts the given _data_ using the current cipher.
 **/
-DEFINE_FUNCTION( Decrypt ) {
+DEFINE_FUNCTION( decrypt ) {
 
 	JLStr ct;
 
@@ -740,9 +740,9 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Wipe )
-		FUNCTION( Encrypt )
-		FUNCTION( Decrypt )
+		FUNCTION( wipe )
+		FUNCTION( encrypt )
+		FUNCTION( decrypt )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

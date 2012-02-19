@@ -68,7 +68,7 @@ $TOC_MEMBER $INAME
  $THIS $INAME()
   Open the directory.
 **/
-DEFINE_FUNCTION( Open ) {
+DEFINE_FUNCTION( open ) {
 
 	JLStr str;
 
@@ -98,7 +98,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Close the specified directory.
 **/
-DEFINE_FUNCTION( Close ) {
+DEFINE_FUNCTION( close ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -128,7 +128,7 @@ $TOC_MEMBER $INAME
   $H return value
    A single directory item.
 **/
-DEFINE_FUNCTION( Read ) {
+DEFINE_FUNCTION( read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -169,7 +169,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Create the directory given in the constructor.
 **/
-DEFINE_FUNCTION( Make ) {
+DEFINE_FUNCTION( make ) {
 
 	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
@@ -199,7 +199,7 @@ $TOC_MEMBER $INAME
   $H return value
    returns _false_ If the directory is not empty else it returns _true_.
 **/
-DEFINE_FUNCTION( Remove ) {
+DEFINE_FUNCTION( remove ) {
 
 	JLStr str;
 	JL_DEFINE_FUNCTION_OBJ;
@@ -298,7 +298,7 @@ $TOC_MEMBER $INAME
   Print( Directory.List('.').join('\n'), '\n' );
   }}}
 **/
-DEFINE_FUNCTION( List ) {
+DEFINE_FUNCTION( list ) {
 
 	JLStr directoryName;
 	PRDir *dd = NULL;
@@ -393,11 +393,11 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Open )
-		FUNCTION( Close )
-		FUNCTION( Read )
-		FUNCTION( Make )
-		FUNCTION( Remove )
+		FUNCTION( open )
+		FUNCTION( close )
+		FUNCTION( read )
+		FUNCTION( make )
+		FUNCTION( remove )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -406,7 +406,7 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( List )
+		FUNCTION( list )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

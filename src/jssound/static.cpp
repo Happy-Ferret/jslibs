@@ -75,7 +75,7 @@ $TOC_MEMBER $INAME
   }}}
 **/
 
-DEFINE_FUNCTION( DecodeOggVorbis ) {
+DEFINE_FUNCTION( decodeOggVorbis ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -280,7 +280,7 @@ $TOC_MEMBER $INAME
   $H return value
    A sound object in a 16-bit per sample format.
 **/
-DEFINE_FUNCTION( DecodeSound ) {
+DEFINE_FUNCTION( decodeSound ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 
@@ -391,7 +391,7 @@ $TOC_MEMBER $INAME
   $H return value
    An array that contains each individual channel of the sound.
 **/
-DEFINE_FUNCTION( SplitChannels ) {
+DEFINE_FUNCTION( splitChannels ) {
 
 	JLStr bufStr;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -461,9 +461,9 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
-//		FUNCTION( DecodeOggVorbis )
-//		FUNCTION( DecodeSound )
-		FUNCTION( SplitChannels )
+//		FUNCTION( decodeOggVorbis )
+//		FUNCTION( decodeSound )
+		FUNCTION( splitChannels )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC

@@ -85,7 +85,7 @@ $TOC_MEMBER $INAME
   $LF
   if _what_ is ommited or $UNDEF, further sends and receives will be disallowed
 **/
-DEFINE_FUNCTION( Shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
+DEFINE_FUNCTION( shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -139,7 +139,7 @@ $TOC_MEMBER $INAME
   client.Connect('127.0.0.1', 8099);
   }}}
 **/
-DEFINE_FUNCTION( Bind ) {
+DEFINE_FUNCTION( bind ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -208,7 +208,7 @@ $TOC_MEMBER $INAME
 //   Since your call sequence shows that the SERVER called Listen()
 //   and the SERVER socket was readable, the above is what happened.
 //    Wan-Teh
-DEFINE_FUNCTION( Listen ) {
+DEFINE_FUNCTION( listen ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -237,7 +237,7 @@ $TOC_MEMBER $INAME
   This function returns a connected jsio::Socket.
   Use _timeout_ property to manage time limit for completion of this operation.
 **/
-DEFINE_FUNCTION( Accept ) {
+DEFINE_FUNCTION( accept ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -304,7 +304,7 @@ $TOC_MEMBER $INAME
 //	Since the client side has no way of telling when the server has called
 //	accept() it can't wait for the server to do that before making the
 //	descriptor writeable.
-DEFINE_FUNCTION( Connect ) {
+DEFINE_FUNCTION( connect ) {
 
 	JLStr host;
 	JL_DEFINE_FUNCTION_OBJ;
@@ -385,7 +385,7 @@ $TOC_MEMBER $INAME
   Send a specified number of bytes from an unconnected socket.
   See. Static functions.
 **/
-DEFINE_FUNCTION( SendTo ) {
+DEFINE_FUNCTION( sendTo ) {
 
 	JLStr host, str;
 	JL_DEFINE_FUNCTION_OBJ;
@@ -473,7 +473,7 @@ $TOC_MEMBER $INAME
   Receive all data from socket which may or may not be connected.
   See. Static functions.
 **/
-DEFINE_FUNCTION( RecvFrom ) {
+DEFINE_FUNCTION( recvFrom ) {
 
 	char *buffer = NULL;
 
@@ -576,7 +576,7 @@ $TOC_MEMBER $INAME
   $H note
    This function only works with blocking sockets.
 **/
-DEFINE_FUNCTION( TransmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
+DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 	JLStr headers;
 	JL_DEFINE_FUNCTION_OBJ;
@@ -1032,7 +1032,7 @@ $TOC_MEMBER $INAME
   Print( GetHostsByName('localhost')[0] ); // prints: 127.0.0.1
   }}}
 **/
-DEFINE_FUNCTION( GetHostsByName ) {
+DEFINE_FUNCTION( getHostsByName ) {
 
 	JLStr host;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -1100,7 +1100,7 @@ $TOC_MEMBER $INAME
 }
 }}}
 **/
-DEFINE_FUNCTION( GetHostsByAddr ) {
+DEFINE_FUNCTION( getHostsByAddr ) {
 
 	JLStr addr;
 	JL_ASSERT_ARGC( 1 );
@@ -1192,14 +1192,14 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS( 2 ) // SLOT_JSIO_DESCRIPTOR_IMPORTED, SLOT_JSIO_DESCRIPTOR_TIMEOUT
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Shutdown )
-		FUNCTION( Bind )
-		FUNCTION( Listen )
-		FUNCTION( Accept )
-		FUNCTION( Connect )
-		FUNCTION( SendTo )
-		FUNCTION( RecvFrom )
-		FUNCTION( TransmitFile )
+		FUNCTION( shutdown )
+		FUNCTION( bind )
+		FUNCTION( listen )
+		FUNCTION( accept )
+		FUNCTION( connect )
+		FUNCTION( sendTo )
+		FUNCTION( recvFrom )
+		FUNCTION( transmitFile )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
@@ -1223,10 +1223,10 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( SendTo )
-		FUNCTION( RecvFrom )
-		FUNCTION( GetHostsByName )
-		FUNCTION_ARGC( GetHostsByAddr, 1 )
+		FUNCTION( sendTo )
+		FUNCTION( recvFrom )
+		FUNCTION( getHostsByName )
+		FUNCTION_ARGC( getHostsByAddr, 1 )
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

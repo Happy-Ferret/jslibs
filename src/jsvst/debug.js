@@ -1,7 +1,7 @@
 // WARNING: rename it into vstPlugin.js
 
-LoadModule('jsio');
-LoadModule('jswinshell');
+loadModule('jsio');
+loadModule('jswinshell');
 
 var log = [];
 function Log(str) log.push(str);

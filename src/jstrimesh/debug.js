@@ -1,8 +1,8 @@
-// LoadModule('jsstd');  LoadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { Print( id, ':', uneval(args), '\n' ) } };  Exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
 
-LoadModule('jsstd');
-LoadModule('jstrimesh');
-LoadModule('jsio');
+loadModule('jsstd');
+loadModule('jstrimesh');
+loadModule('jsio');
 
 function MeshToTrimesh(filename) {
 
@@ -30,4 +30,4 @@ function MeshToTrimesh(filename) {
 	return trimeshList;
 }
 
-Print(uneval(MeshToTrimesh('cube.json')));
+print(uneval(MeshToTrimesh('cube.json')));

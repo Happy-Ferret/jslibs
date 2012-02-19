@@ -1,11 +1,11 @@
-LoadModule('jstask');
-LoadModule('jsio');
+loadModule('jstask');
+loadModule('jsio');
 
 /// crash about serializer cleanup [rmt]
 
 	var t = new Task(function(){
 		
-		LoadModule('jsstd');
+		loadModule('jsstd');
 		Sleep(100);
 		return "test";
 	});
@@ -136,7 +136,7 @@ LoadModule('jsio');
 /// multiple tasks [rf]
 
 	function TaskFunction() {
-		LoadModule('jsstd');
+		loadModule('jsstd');
 		return Expand('1$(a)5', { a:234 });
 	}
 
@@ -193,11 +193,11 @@ LoadModule('jsio');
 	QA.ASSERT( count, 100, 'count');
 
 
-/// task and LoadModule [r]
+/// task and loadModule [r]
 
 	function MyTask(req, i) {
 	
-		i || LoadModule('jsio');
+		i || loadModule('jsio');
 		return currentDirectory;
 	}
 
@@ -245,7 +245,7 @@ LoadModule('jsio');
 	function MyTask(req, i) {
 		
 		if ( !i )
-			LoadModule('jsstd');
+			loadModule('jsstd');
 		return Map({req:Blob(req), i:i});
 	}
 	
@@ -268,7 +268,7 @@ LoadModule('jsio');
 	function MyFileTask(filename, i) {
 		
 		if ( !i )
-			LoadModule('jsio');
+			loadModule('jsio');
 		var file = new File(filename); 
 		var res = file.content;
 		file.content = undefined;
@@ -301,7 +301,7 @@ LoadModule('jsio');
 
 	var myTask = new Task(function() {
 
-		LoadModule('jsio');
+		loadModule('jsio');
 		var serverSocket = new Socket();
 		serverSocket.reuseAddr = true;
 		serverSocket.Bind(8099, '127.0.0.1');

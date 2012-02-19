@@ -118,7 +118,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   If the value of the semaphore is > 0, decrement the value and return. If the value is 0, sleep until the value becomes > 0, then decrement the value and return. The "test and decrement" operation is performed atomically.
 **/
-DEFINE_FUNCTION( Wait ) {
+DEFINE_FUNCTION( wait ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -141,7 +141,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME()
   Increment the value of the named semaphore by 1.
 **/
-DEFINE_FUNCTION( Post ) {
+DEFINE_FUNCTION( post ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -201,8 +201,8 @@ CONFIGURE_CLASS
 	HAS_PRIVATE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( Wait )
-		FUNCTION( Post )
+		FUNCTION( wait )
+		FUNCTION( post )
 	END_FUNCTION_SPEC
 
 	BEGIN_CONST_INTEGER_SPEC

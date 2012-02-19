@@ -150,7 +150,7 @@ $TOC_MEMBER $INAME
  $H note
   This function in only available in DEBUG mode.
 ** /
-DEFINE_FUNCTION( DumpHeap )
+DEFINE_FUNCTION( dumpHeap )
 {
 
     JLStr fileName;
@@ -253,7 +253,7 @@ DEFINE_FUNCTION( DumpHeap )
 
 #else // DEBUG
 
-DEFINE_FUNCTION( DumpHeap ) {
+DEFINE_FUNCTION( dumpHeap ) {
 
 	JL_WARN( E_THISOPERATION, E_NOTSUPPORTED );
 	*JL_RVAL = JSVAL_VOID;
@@ -320,7 +320,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( [ filename ] )
   TBD
 **/
-DEFINE_FUNCTION( TraceGC )
+DEFINE_FUNCTION( traceGC )
 {
 	JLStr fileName;
 
@@ -656,7 +656,7 @@ DEFINE_PROPERTY_SETTER( gcZeal ) {
 
 
 // undocumented
-DEFINE_FUNCTION( DisableJIT ) {
+DEFINE_FUNCTION( disableJIT ) {
 
 	JS_SetOptions(cx, JS_GetOptions(cx) & ~(/*JSOPTION_JIT|*/JSOPTION_METHODJIT));
 
@@ -666,7 +666,7 @@ DEFINE_FUNCTION( DisableJIT ) {
 
 
 // undocumented
-DEFINE_FUNCTION( ObjectGCId ) {
+DEFINE_FUNCTION( objectGCId ) {
 
 	JL_ASSERT_ARGC(1);
 	if ( JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
@@ -690,7 +690,7 @@ $TOC_MEMBER $INAME
  $INT $INAME()
   TBD
 **/
-DEFINE_FUNCTION( GetObjectPrivate ) {
+DEFINE_FUNCTION( getObjectPrivate ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -784,7 +784,7 @@ $TOC_MEMBER $INAME
  $VOID $INAME( ??? )
   TBD
 ** /
-DEFINE_FUNCTION( Trap )
+DEFINE_FUNCTION( trap )
 {
     JSString *str;
     JSScript *script;
@@ -808,7 +808,7 @@ $TOC_MEMBER $INAME
  $INAME( ??? )
   TBD
 ** /
-DEFINE_FUNCTION( Untrap )
+DEFINE_FUNCTION( untrap )
 {
     JSScript *script;
     int32 i;
@@ -824,7 +824,7 @@ $TOC_MEMBER $INAME
  $INAME( ??? )
   TBD
 ** /
-DEFINE_FUNCTION( LineToPC )
+DEFINE_FUNCTION( lineToPC )
 {
     JSScript *script;
     int32 i;
@@ -850,7 +850,7 @@ $TOC_MEMBER $INAME
  $INAME( ??? )
   TBD
 ** /
-DEFINE_FUNCTION( PCToLine )
+DEFINE_FUNCTION( pCToLine )
 {
     JSScript *script;
     int32 i;
@@ -917,7 +917,7 @@ $TOC_MEMBER $INAME
   GetActualLineno('nofile.js', 2); // returns: undefined
   }}}
 **/
-DEFINE_FUNCTION( GetActualLineno ) {
+DEFINE_FUNCTION( getActualLineno ) {
 
 	JL_ASSERT_ARGC_MIN( 2 );
 
@@ -969,7 +969,7 @@ $TOC_MEMBER $INAME
   * isEval: frame for eval.
   * isAssigning: a complex op is currently assigning to a property.
 **/
-DEFINE_FUNCTION( StackFrameInfo ) {
+DEFINE_FUNCTION( stackFrameInfo ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 
@@ -1071,7 +1071,7 @@ $TOC_MEMBER $INAME
  Evaluates code in the given stack frame.
  0 is the older stack frame index. The current (last) stack frame index is (stackSize-1). See Locate() function for more details.
 **/
-DEFINE_FUNCTION( EvalInStackFrame ) {
+DEFINE_FUNCTION( evalInStackFrame ) {
 
 	JL_ASSERT_ARGC_MIN( 2 );
 
@@ -1138,7 +1138,7 @@ $TOC_MEMBER $INAME
   16 test();
   }}}
 **/
-DEFINE_FUNCTION( Locate ) {
+DEFINE_FUNCTION( locate ) {
 
 	JSStackFrame *fp;
 	if ( JL_ARG_ISDEF(1) ) {
@@ -1191,7 +1191,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( value )
   Try to find the definition location of the given value.
 **/
-DEFINE_FUNCTION( DefinitionLocation ) {
+DEFINE_FUNCTION( definitionLocation ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 
@@ -1250,7 +1250,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( object [, followPrototypeChain = false ] )
   Returns an array of properties name.
 **/
-DEFINE_FUNCTION( PropertiesList ) {
+DEFINE_FUNCTION( propertiesList ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -1314,7 +1314,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( object [, followPrototypeChain = false ] )
   Returns an array of properties information.
 **/
-DEFINE_FUNCTION( PropertiesInfo ) {
+DEFINE_FUNCTION( propertiesInfo ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -1458,7 +1458,7 @@ $TOC_MEMBER $INAME
  $TYPE Script $INAME( filename, lineno )
 **/
 /*
-DEFINE_FUNCTION( ScriptByLocation ) {
+DEFINE_FUNCTION( scriptByLocation ) {
 
 	JL_ASSERT_ARGC(2);
 
@@ -1494,7 +1494,7 @@ $TOC_MEMBER $INAME
  $H beware
   This function is only available in DEBUG mode.
 ** /
-DEFINE_FUNCTION( DisassembleScript ) {
+DEFINE_FUNCTION( disassembleScript ) {
 
 #ifdef DEBUG
 
@@ -1557,7 +1557,7 @@ $TOC_MEMBER $INAME
  $STRING $INAME( filename, lineno )
   Throw if the calling function failed to JIT
 ** /
-DEFINE_FUNCTION( AssertJit ) {
+DEFINE_FUNCTION( assertJit ) {
 
 #ifdef JS_METHODJIT
 	if (JS_GetOptions(cx) & JSOPTION_METHODJIT) {
@@ -1654,7 +1654,7 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 }
 
 
-DEFINE_FUNCTION( DebugOutput ) {
+DEFINE_FUNCTION( debugOutput ) {
 
 	JL_ASSERT_ARGC(1);
 
@@ -1681,7 +1681,7 @@ DEFINE_FUNCTION( DebugOutput ) {
 // http://valgrind.org/docs/manual/mc-manual.html#mc-manual.clientreqs
 
 // undocumented
-DEFINE_FUNCTION( CreateLeak ) {
+DEFINE_FUNCTION( createLeak ) {
 
 	malloc(1234);
 
@@ -1751,7 +1751,7 @@ DEFINE_FUNCTION( VALGRIND_COUNT_LEAKS ) {
 #endif // VALGRIND
 
 
-DEFINE_FUNCTION( DebugBreak ) {
+DEFINE_FUNCTION( debugBreak ) {
 
 	JL_Break();
 	*JL_RVAL = JSVAL_VOID;
@@ -1759,7 +1759,7 @@ DEFINE_FUNCTION( DebugBreak ) {
 }
 
 
-DEFINE_FUNCTION( CrashGuard ) {
+DEFINE_FUNCTION( crashGuard ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
@@ -1793,7 +1793,7 @@ DEFINE_FUNCTION( CrashGuard ) {
 }
 
 
-DEFINE_FUNCTION( SetPerfTestMode ) {
+DEFINE_FUNCTION( setPerfTestMode ) {
 
 	*JL_RVAL = JSVAL_VOID;
 
@@ -1835,7 +1835,7 @@ DEFINE_FUNCTION( SetPerfTestMode ) {
 
 
 #ifdef DEBUG
-DEFINE_FUNCTION( TestDebug ) {
+DEFINE_FUNCTION( testDebug ) {
 
 /*
 	// see https://bugzilla.mozilla.org/show_bug.cgi?id=488924
@@ -1857,7 +1857,7 @@ DEFINE_FUNCTION( TestDebug ) {
 	return JS_TRUE;
 }
 
-DEFINE_FUNCTION( Test2Debug ) {
+DEFINE_FUNCTION( test2Debug ) {
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1875,47 +1875,47 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( GetObjectPrivate )
-//		FUNCTION( DumpStats )
-		FUNCTION( TraceGC )
+		FUNCTION( getObjectPrivate )
+//		FUNCTION( dumpStats )
+		FUNCTION( traceGC )
 
-//		FUNCTION( ScriptByLocation )
-//		FUNCTION( DisassembleScript )
+//		FUNCTION( scriptByLocation )
+//		FUNCTION( disassembleScript )
 
-//		FUNCTION( AssertJit )
+//		FUNCTION( assertJit )
 
-//		FUNCTION( Trap )
-//		FUNCTION( Untrap )
-//		FUNCTION( LineToPC )
-//		FUNCTION( PCToLine )
+//		FUNCTION( trap )
+//		FUNCTION( untrap )
+//		FUNCTION( lineToPC )
+//		FUNCTION( pCToLine )
 
-		FUNCTION( GetActualLineno )
-		FUNCTION( Locate )
-		FUNCTION( DefinitionLocation )
-		FUNCTION( StackFrameInfo )
-		FUNCTION( EvalInStackFrame )
-		FUNCTION_ARGC( PropertiesList, 1 )
-		FUNCTION_ARGC( PropertiesInfo, 1 )
-		FUNCTION_ARGC( DebugOutput, 1 )
-		FUNCTION( DisableJIT )
-		FUNCTION( ObjectGCId )
+		FUNCTION( getActualLineno )
+		FUNCTION( locate )
+		FUNCTION( definitionLocation )
+		FUNCTION( stackFrameInfo )
+		FUNCTION( evalInStackFrame )
+		FUNCTION_ARGC( propertiesList, 1 )
+		FUNCTION_ARGC( propertiesInfo, 1 )
+		FUNCTION_ARGC( debugOutput, 1 )
+		FUNCTION( disableJIT )
+		FUNCTION( objectGCId )
 	#ifdef VALGRIND
-		FUNCTION( CreateLeak )
+		FUNCTION( createLeak )
 		FUNCTION( VALGRIND_COUNT_ERRORS )
 		FUNCTION( VALGRIND_DO_QUICK_LEAK_CHECK )
 		FUNCTION( VALGRIND_DO_LEAK_CHECK )
 		FUNCTION( VALGRIND_COUNT_LEAKS )
 	#endif // VALGRIND
 
-//		FUNCTION( DumpHeap )
-		FUNCTION( DebugBreak )
-		FUNCTION( CrashGuard )
-		FUNCTION( SetPerfTestMode )
+//		FUNCTION( dumpHeap )
+		FUNCTION( debugBreak )
+		FUNCTION( crashGuard )
+		FUNCTION( setPerfTestMode )
 
 	// for internal tests
 	#ifdef DEBUG
-		FUNCTION( TestDebug )
-		FUNCTION( Test2Debug )
+		FUNCTION( testDebug )
+		FUNCTION( test2Debug )
 	#endif // DEBUG
 	END_STATIC_FUNCTION_SPEC
 
