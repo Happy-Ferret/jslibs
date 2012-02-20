@@ -21,7 +21,7 @@
 // (TBD) Mass object seems to be useless. Try to merge Body with Mass
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( Mass )
 
@@ -226,7 +226,7 @@ DEFINE_PROPERTY_GETTER( center ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( translate )

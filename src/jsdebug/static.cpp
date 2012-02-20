@@ -913,8 +913,8 @@ $TOC_MEMBER $INAME
   2.
   3.  i++;
 
-  GetActualLineno('test.js', 2); // returns: 3
-  GetActualLineno('nofile.js', 2); // returns: undefined
+  getActualLineno('test.js', 2); // returns: 3
+  getActualLineno('nofile.js', 2); // returns: undefined
   }}}
 **/
 DEFINE_FUNCTION( getActualLineno ) {
@@ -1120,14 +1120,14 @@ $TOC_MEMBER $INAME
   $H example
   (file debug.js)
   {{{
-   1 LoadModule('jsstd');
-   2 LoadModule('jsdebug');
+   1 loadModule('jsstd');
+   2 loadModule('jsdebug');
    3
    4 function test2() {
    5
-   6 Print( stackSize, ' - ', Locate(stackSize-1), '\n' ); // prints: 3 - debug.js,6
-   7 Print( Locate(-1), ' - ', Locate(-2), ' - ', Locate(-3), '\n' ); // prints: debug.js,13 - debug.js,16 - undefined
-   8 Print( Locate(0), ' - ', Locate(1), ' - ', Locate(2), '\n' ); // prints: debug.js,16 - debug.js,13 - debug.js,8
+   6 print( stackSize, ' - ', locate(stackSize-1), '\n' ); // prints: 3 - debug.js,6
+   7 print( locate(-1), ' - ', locate(-2), ' - ', locate(-3), '\n' ); // prints: debug.js,13 - debug.js,16 - undefined
+   8 print( locate(0), ' - ', locate(1), ' - ', locate(2), '\n' ); // prints: debug.js,16 - debug.js,13 - debug.js,8
    9 }
   10
   11 function test() {

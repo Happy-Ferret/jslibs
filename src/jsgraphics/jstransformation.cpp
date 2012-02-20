@@ -998,7 +998,7 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   var t = new Transformation();
-  t.Clear();
+  t.clear();
   t[3] = 1;
   t[7] = 2;
   t[11] = 3;

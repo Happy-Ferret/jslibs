@@ -93,12 +93,12 @@ END_CLASS
  m.b = 2;
  m.c = 3;
 
- Print( m.c ); // prints: 3
+ print( m.c ); // prints: 3
  }}}
 
 === example 2 ===
  {{{
  var m = new Map([1,2,3,4]);
- Print( [k+'='+v for ([k,v] in Iterator(m))] ); // prints: 3=4,2=3,1=2,0=1
+ print( [k+'='+v for ([k,v] in Iterator(m))] ); // prints: 3=4,2=3,1=2,0=1
  }}}
 **/

@@ -43,11 +43,11 @@ $TOC_MEMBER $INAME
    $UNDEF or null values are ignored in the resulting string.
   $H example 1
   {{{
-  Expand('$(h) $(xxx) $(w)', { h:'Hello', w:'World' }); // returns "Hello  World"
+  expand('$(h) $(xxx) $(w)', { h:'Hello', w:'World' }); // returns "Hello  World"
   }}}
   $H example 2
   {{{
-  Expand('$(foo)-$(bar)', function(id) '<'+id+'>' ); // returns "<foo>-<bar>"
+  expand('$(foo)-$(bar)', function(id) '<'+id+'>' ); // returns "<foo>-<bar>"
   }}}
 **/
 DEFINE_FUNCTION( expand ) {
@@ -301,11 +301,11 @@ $TOC_MEMBER $INAME
   If _recursively_ is $TRUE, the function seal any non-null objects in the graph connected to obj's slots.
   $H example
   {{{
-  LoadModule('jsstd');
+  loadModule('jsstd');
 
   var obj = { a:1 };
   obj.b = 2;
-  Seal(obj);
+  seal(obj);
   obj.c = 3; // Error: obj.c is read-only
 }}}
 **/
@@ -350,13 +350,13 @@ $TOC_MEMBER $INAME
    $INAME removes all of obj's own properties, except the special __proto__ and __parent__ properties, in a single operation. Properties belonging to objects on obj's prototype chain are not affected.
   $H example
   {{{
-  LoadModule('jsstd');
+  loadModule('jsstd');
 
   var obj = { a:1, b:[2,3,4], c:{} };
-  Print( uneval(obj) ); // prints: ({a:1, b:[2, 3, 4], c:{}})
+  print( uneval(obj) ); // prints: ({a:1, b:[2, 3, 4], c:{}})
 
-  ClearObject(obj);
-  Print( uneval(obj) ); // prints: ({})
+  clearObject(obj);
+  print( uneval(obj) ); // prints: ({})
   }}}
 **/
 DEFINE_FUNCTION( clearObject ) {
@@ -390,11 +390,11 @@ $TOC_MEMBER $INAME
   function foo() {
 
    var data = 55;
-   function bar() { Print( data, '\n' ); }
+   function bar() { print( data, '\n' ); }
    bar();
-   var old = SetScope( bar, {data:7} );
+   var old = setScope( bar, {data:7} );
    bar();
-   var old = SetScope( bar, old );
+   var old = setScope( bar, old );
    bar();
   }
   foo();
@@ -405,32 +405,32 @@ $TOC_MEMBER $INAME
    $F 55 $LF
   $H example 2
   {{{
-  LoadModule('jsstd');
+  loadModule('jsstd');
 
-  function Bind(fun, obj) {
+  function bind(fun, obj) {
 
-   SetScope(obj, SetScope(fun, obj));
+   setScope(obj, setScope(fun, obj));
   }
 
 
   function MyClass() {
 
-   this.Test = function() {
+   this.test = function() {
 
     foo();
    }
 
    this.foo = function() {
 
-    Print('foo\n');
+    print('foo\n');
    }
 
-   Bind(this.Test, this);
+   bind(this.test, this);
   }
 
   var myObj = new MyClass();
-  myObj.Test(); // prints: foo
-  var fct = myObj.Test;
+  myObj.test(); // prints: foo
+  var fct = myObj.test;
   fct(); // prints: foo
   }}}
 ** /
@@ -455,7 +455,7 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   var myObj = {};
-  Print( ObjectToId(myObj), '\n' );
+  print( ObjectToId(myObj), '\n' );
   }}}
 **/
 
@@ -540,14 +540,14 @@ $TOC_MEMBER $INAME
   $H example 1
   {{{
   var myObj = {};
-  Print( IdToObject( ObjectToId(myObj) ) === myObj ); // prints true
+  print( IdToObject( objectToId(myObj) ) === myObj ); // prints true
   }}}
   $H example 2
   {{{
-  var id = ObjectToId({});
-  Print( IdToObject(id) ); // prints: [object Object]
-  CollectGarbage();
-  Print( IdToObject(id) ); // prints: undefined
+  var id = objectToId({});
+  print( idToObject(id) ); // prints: [object Object]
+  collectGarbage();
+  print( idToObject(id) ); // prints: undefined
   }}}
 **/
 DEFINE_FUNCTION( idToObject ) {
@@ -609,10 +609,10 @@ $TOC_MEMBER $INAME
   {{{
   var foo = ['a', 'b', 'c'];
   $INAME( i >= 0 || i < 3, 'Invalid value.' );
-  Print( foo[i] );
+  print( foo[i] );
   }}}
   $H note
-   The error output can be redirected by redefining the _host.stderr function. see the Print() function.
+   The error output can be redirected by redefining the _host.stderr function. see the print() function.
 **/
 DEFINE_FUNCTION( assert ) {
 
@@ -703,12 +703,12 @@ $TOC_MEMBER $INAME
   The returned value is a relative time value.
   $H example
   {{{
-  LoadModule('jsstd');
-  LoadModule('jsio');
-  Print( 't0: '+TimeCounter(), '\n' );
-  Print( 't1: '+TimeCounter(), '\n' );
-  Sleep(100);
-  Print( 't2: '+TimeCounter(), '\n' );
+  loadModule('jsstd');
+  loadModule('jsio');
+  print( 't0: '+timeCounter(), '\n' );
+  print( 't1: '+timeCounter(), '\n' );
+  sleep(100);
+  print( 't2: '+timeCounter(), '\n' );
   }}}
   prints:
   {{{
@@ -733,7 +733,7 @@ $TOC_MEMBER $INAME
   Returns the string that is _count_ times _str_.
   $H example
   {{{
-  Print( StringRepeat('foo', 3) ); // prints: foofoofoo
+  print( stringRepeat('foo', 3) ); // prints: foofoofoo
   }}}
 **/
 DEFINE_FUNCTION( stringRepeat ) {
@@ -801,26 +801,26 @@ $TOC_MEMBER $INAME
   Display _val_ to the output (the screen by default).
   $H example
   {{{
-  Print( 'Hello', ' ', 'World', '\n' ); // prints: Hello World
+  print( 'Hello', ' ', 'World', '\n' ); // prints: Hello World
   }}}
   $H note
    The output can be redirected by redefining the _host.stdout function.
    $H example 1
    {{{
-   LoadModule('jsstd');
-   Print('Hello', 'World'); // prints: HelloWorld
+   loadModule('jsstd');
+   print('Hello', 'World'); // prints: HelloWorld
    }}}
    $H example 2
    {{{
-   LoadModule('jsstd');
-   Print('foo\n'); // prints: foo
+   loadModule('jsstd');
+   print('foo\n'); // prints: foo
    _host.stdout = function() {}
-   Print('bar\n'); // prints nothing
+   print('bar\n'); // prints nothing
    }}}
 **/
 DEFINE_FUNCTION( print ) {
 
-	// Print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
+	// print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
 	jsval fval;
 	JL_CHK( GetHostObjectValue(cx, JLID(cx, stdout), &fval) );
 	*JL_RVAL = JSVAL_VOID;
@@ -843,7 +843,7 @@ $TOC_MEMBER $INAME
    returns the last evaluated statement of the script.
   $H example
   {{{
-  var foo = Exec('constants.js'); // loads constants.js or constants.jsxrd if available.
+  var foo = exec('constants.js'); // loads constants.js or constants.jsxrd if available.
   }}}
 **/
 // function copied from mozilla/js/src/js.c
@@ -893,24 +893,27 @@ $TOC_MEMBER $INAME
    the value of the last-executed expression statement processed in the script.
   $H example 1
   {{{
-  function QueryCallback(val) {
+  function queryCallback(val) {
+
    return val;
   }
-  var res = SandboxEval('1 + 2 + Query(3)', QueryCallback);
-  Print( res ); // prints: 6
+  var res = sandboxEval('1 + 2 + Query(3)', QueryCallback);
+  print( res ); // prints: 6
   }}}
   $H example 2
   {{{
-  var res = SandboxEval('Math');
-  Print( res == Math ); // prints: false
+  var res = sandboxEval('Math');
+  print( res == Math ); // prints: false
   }}}
   $H example 3
    abort very-long-running scripts.
   {{{
   try {
-   var res = SandboxEval('while (true);', undefined, 1000);
+
+   var res = sandboxEval('while (true);', undefined, 1000);
   } catch (ex if ex instanceof OperationLimit) {
-   Print( 'script execution too long !' );
+
+   print( 'script execution too long !' );
   }
   }}}
 **/
@@ -1249,31 +1252,31 @@ $TOC_MEMBER $INAME
   This function is useful to write an interactive console.
   $H example
   {{{
-  LoadModule('jsstd');
-  LoadModule('jsio');
+  loadModule('jsstd');
+  loadModule('jsio');
 
-  global.__defineGetter__('quit', Halt);
+  global.__defineGetter__('quit', halt);
 
   for (;;) {
 
-   Print('js> ');
+   print('js> ');
 
    var code = '';
    do {
 
-    code += File.stdin.Read();
-   } while( !IsStatementValid( code ) );
+    code += File.stdin.read();
+   } while( !isStatementValid( code ) );
 
    try {
 
     var res = eval( code );
    } catch(ex) {
 
-    Print( ex, '\n' );
+    print( ex, '\n' );
    }
 
    if ( res != undefined )
-    Print( res, '\n' );
+    print( res, '\n' );
   }
   }}}
 **/

@@ -17,7 +17,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3528 $
 **/
 BEGIN_CLASS( Icon )
 
@@ -139,7 +139,7 @@ DEFINE_FINALIZE() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3528 $"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 

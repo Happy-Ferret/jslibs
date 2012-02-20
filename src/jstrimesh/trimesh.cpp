@@ -33,7 +33,7 @@ glBufferDataARB()
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( Trimesh ) // Start the definition of the class. It defines some symbols: _name, _class, _prototype
 
@@ -396,7 +396,7 @@ DEFINE_PROPERTY_GETTER( hasColor ) {
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 	HAS_PRIVATE
 
 	HAS_CONSTRUCTOR

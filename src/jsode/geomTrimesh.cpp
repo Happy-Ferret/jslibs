@@ -20,7 +20,7 @@
 
 /**doc
 $CLASS_HEADER Geom
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3528 $
 **/
 BEGIN_CLASS( GeomTrimesh )
 
@@ -112,7 +112,7 @@ DEFINE_PROPERTY_GETTER( triangleCount ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3528 $"))
 	HAS_PROTOTYPE( Geom )
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

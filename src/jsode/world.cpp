@@ -204,7 +204,7 @@ bad:
 
 /**doc fileIndex:top
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( World )
 
@@ -745,7 +745,7 @@ $TOC_MEMBER $INAME
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(2)

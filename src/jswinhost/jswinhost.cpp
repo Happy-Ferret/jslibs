@@ -281,7 +281,7 @@ bad:
 
 === Methods ===
 
- * status *LoadModule*( moduleFileName )
+ * status *loadModule*( moduleFileName )
   see [jshost]
 
 === Properties ===
@@ -306,11 +306,11 @@ Because jwinshost do not use a console window, errors and printed messages will 
 
 However, you can write your own output system:
 {{{
-LoadModule('jswinshell');
+loadModule('jswinshell');
 _host.stdout = new Console().Write;
 _host.stderr = MessageBox;
-LoadModule('jsstd');
-Print('toto');
+loadModule('jsstd');
+print('toto');
 hkqjsfhkqsdu_error();
 }}}
 

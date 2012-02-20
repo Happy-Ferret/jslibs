@@ -347,13 +347,13 @@ $TOC_MEMBER $INAME
    This function returns a Blob or a string literal as empty string.
   $H example
   {{{
-  LoadModule('jsstd');
-  LoadModule('jsio');
+  loadModule('jsstd');
+  loadModule('jsio');
 
   var soc = new Socket();
-  soc.Connect('www.google.com', 80);
-  soc.Write('GET\r\n\r\n');
-  Print( soc.Read(undefined), '\n' );
+  soc.connect('www.google.com', 80);
+  soc.write('GET\r\n\r\n');
+  print( soc.read(undefined), '\n' );
   }}}
 **/
 DEFINE_FUNCTION( read ) {
@@ -971,7 +971,7 @@ CONFIGURE_CLASS
 	//HAS_HAS_INSTANCE // see issue#52
 	IS_INCONSTRUCTIBLE
 
-	HAS_PRIVATE // unused. Just avoid Print(Descriptor.available); to crash
+	HAS_PRIVATE // unused. Just avoid print(Descriptor.available); to crash
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( close )

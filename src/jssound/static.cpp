@@ -63,15 +63,15 @@ $TOC_MEMBER $INAME
    A sound object in a 16-bit per sample format.
   $H example
   {{{
-  LoadModule('jsstd');
-  LoadModule('jsio');
-  LoadModule('jssound');
+  loadModule('jsstd');
+  loadModule('jsio');
+  loadModule('jssound');
 
   var file = new File('41_30secOgg-q0.ogg');
   var buffer = file.content;
   var stream = new Stream(buffer);
-  var mySoundObject = DecodeOggVorbis(stream);
-  Print('sample length: ', mySoundObject.length, '\n');
+  var mySoundObject = decodeOggVorbis(stream);
+  print('sample length: ', mySoundObject.length, '\n');
   }}}
 **/
 
@@ -475,29 +475,29 @@ END_STATIC
 === Examples ===
  $H example 1
  {{{
- LoadModule('jsstd');
- LoadModule('jsio');
- LoadModule('jssound');
+ loadModule('jsstd');
+ loadModule('jsio');
+ loadModule('jssound');
 
  var file = new File('41_30secOgg-q0.wav');
- file.Open('r');
- var pcm = DecodeSound(file);
- file.Close();
- Print('sample length: '+pcm.length, '\n');
+ file.open('r');
+ var pcm = decodeSound(file);
+ file.close();
+ print('sample length: '+pcm.length, '\n');
  }}}
 
  $H example 2
  {{{
- LoadModule('jsstd');
- LoadModule('jsio');
- LoadModule('jssound');
+ loadModule('jsstd');
+ loadModule('jsio');
+ loadModule('jssound');
 
  var file = new File('41_30secOgg-q0.wav');
  var buffer = file.content;
  var stream = new Stream(buffer);
- var pcm = DecodeSound(stream);
+ var pcm = decodeSound(stream);
 
- Print('sample length: '+pcm.length, '\n');
+ print('sample length: '+pcm.length, '\n');
  }}}
 **/
 

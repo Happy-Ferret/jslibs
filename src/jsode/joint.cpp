@@ -78,7 +78,7 @@ JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) 
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( Joint )
 
@@ -647,7 +647,7 @@ DEFINE_PROPERTY_GETTER( jointParam2 ) {
 }
 
 CONFIGURE_CLASS
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( destroy )

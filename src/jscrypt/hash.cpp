@@ -172,12 +172,12 @@ $TOC_MEMBER $INAME
   Terminate the hash and get the digest in a binary format.
   $H example
   {{{
-  LoadModule('jsstd');
-  LoadModule('jscrypt');
+  loadModule('jsstd');
+  loadModule('jscrypt');
   var md5 = new Hash('md5');
-  md5.Process('foo');
-  md5.Process('bar');
-  Print( HexEncode( md5.Done(), '\n' ) ); // prints: 3858F62230AC3C915F300C664312C63F
+  md5.process('foo');
+  md5.process('bar');
+  print( hexEncode( md5.done(), '\n' ) ); // prints: 3858F62230AC3C915F300C664312C63F
   }}}
 **/
 DEFINE_FUNCTION( done ) {
@@ -219,10 +219,10 @@ $TOC_MEMBER $INAME
    Using this methode to compute a digest automaticaly resets previous state let by Init(), Process() or Done().
   $H example
   {{{
-  LoadModule('jsstd');
-  LoadModule('jscrypt');
+  loadModule('jsstd');
+  loadModule('jscrypt');
   var md5 = new Hash('md5');
-  Print( HexEncode( md5('foobar') ) ); // prints: 3858F62230AC3C915F300C664312C63F
+  print( hexEncode( md5('foobar') ) ); // prints: 3858F62230AC3C915F300C664312C63F
   }}}
 **/
 DEFINE_CALL() {
@@ -399,9 +399,9 @@ $TOC_MEMBER $INAME
   Contains the list of all available hash and their feature. The list is a javascript object that map hash names (key) with another object (value) that contain information.
   $H example
   {{{
-  LoadModule('jsstd');
-  LoadModule('jscrypt');
-  Print('hash list: ' + Hash.list.toSource() );
+  loadModule('jsstd');
+  loadModule('jscrypt');
+  print('hash list: ' + Hash.list.toSource() );
   }}}
 **/
 DEFINE_PROPERTY_GETTER( list ) {

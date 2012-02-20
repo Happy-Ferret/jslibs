@@ -152,7 +152,7 @@ Match(const uint8_t *text, size_t textlen, const uint8_t *pat, size_t patlen) {
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( Blob )
 
@@ -1415,7 +1415,7 @@ DEFINE_INIT() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 //	HAS_INIT
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(2)

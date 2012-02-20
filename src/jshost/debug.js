@@ -1,16 +1,23 @@
 //RunJsircbot(false); throw 0;
-//loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  Halt();
+//loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
 //loadModule('jsstd'); exec('../common/tools.js'); var QA = fakeQAApi;  runLocalQAFile();
+
+loadModule('jsstd');
+print( _host.build, '\n' );
+halt();
 
 loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask');
 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //SetPerfTestMode();
 
-Halt();
-
+loadModule('jscrypt');
 loadModule('jsstd');
 loadModule('jsio');
+
+jslangTest();
+
+halt();
 
 function camelify(str) {
 	

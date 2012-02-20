@@ -199,7 +199,7 @@ END_CLASS
 {{{
 function addCallback( name, value ) {
 
-   Print('adding ' + name + ' = ' + value);
+   print('adding ' + name + ' = ' + value);
 }
 
 var obj = new ObjEx( addCallback, undefined, undefined, undefined, null );
@@ -214,8 +214,8 @@ adding foo = 123
 
 === Example 2 ===
 {{{
-LoadModule('jsstd');
-LoadModule('jsio');
+loadModule('jsstd');
+loadModule('jsio');
 
 function OnGet(name, value, aux) {
 
@@ -227,7 +227,7 @@ function OnGet(name, value, aux) {
 }
 var root = new ObjEx(undefined, undefined, OnGet, undefined, 'c:');
 
-Print( root.windows.system32.drivers.etc.hosts.content );
+print( root.windows.system32.drivers.etc.hosts.content );
 }}}
 
 

@@ -129,14 +129,14 @@ $TOC_MEMBER $INAME
   $H example 1
   {{{
   var server = new Socket();
-  server.Bind(8099, '127.0.0.1');
-  server.Listen();
+  server.bind(8099, '127.0.0.1');
+  server.listen();
   }}}
   $H example 2
   {{{
   var client = new Socket();
-  client.Bind(0, '192.168.0.1');
-  client.Connect('127.0.0.1', 8099);
+  client.bind(0, '192.168.0.1');
+  client.connect('127.0.0.1', 8099);
   }}}
 **/
 DEFINE_FUNCTION( bind ) {
@@ -1029,7 +1029,7 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( hostName )
   Lookup a host by name (DNS lookup) and returns the results in a javascript array.
   {{{
-  Print( GetHostsByName('localhost')[0] ); // prints: 127.0.0.1
+  print( getHostsByName('localhost')[0] ); // prints: 127.0.0.1
   }}}
 **/
 DEFINE_FUNCTION( getHostsByName ) {
@@ -1085,14 +1085,14 @@ $TOC_MEMBER $INAME
   Lookup a name by host (reverse DNS lookup) and returns the results in a javascript array.
   $H example 1
 {{{
- Print( GetHostsByAddr('127.0.0.1')[0] ); // prints: localhost
+ print( getHostsByAddr('127.0.0.1')[0] ); // prints: localhost
 }}}
   $H example 2
 {{{
- function ReverseLookup( ip ) {
+ function reverseLookup( ip ) {
   try {
    
-   return Socket.GetHostsByAddr(ip)[0];
+   return Socket.getHostsByAddr(ip)[0];
   } catch ( ex if ex instanceof IoError ) {
    
    return undefined; // not found

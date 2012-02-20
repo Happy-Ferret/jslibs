@@ -165,9 +165,9 @@ DEFINE_PROPERTY_GETTER( offset ) {
   $H example
   {{{
   var stream = new Stream( new MemoryMapped(new File('directory.cpp').Open("r")) );
-  Print(stream.read(10));
-  Print(stream.read(10));
-  Print(stream.read(10));
+  print(stream.read(10));
+  print(stream.read(10));
+  print(stream.read(10));
   }}}
 **/
 
@@ -191,8 +191,8 @@ END_CLASS
 === Example ===
 {{{
 var f = new File('directory.cpp');
-f.Open("r");
+f.open("r");
 var m = new MemoryMapped(f);
-Print(m);
+print(m);
 }}}
 **/

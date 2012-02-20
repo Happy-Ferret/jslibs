@@ -293,9 +293,9 @@ $TOC_MEMBER $INAME
    This function supports additional flags: Directory.`SKIP_FILE`, Directory.`SKIP_DIRECTORY`, Directory.`SKIP_OTHER`
   $H example
   {{{
-  LoadModule('jsstd');
-  LoadModule('jsio');
-  Print( Directory.List('.').join('\n'), '\n' );
+  loadModule('jsstd');
+  loadModule('jsio');
+  print( Directory.list('.').join('\n'), '\n' );
   }}}
 **/
 DEFINE_FUNCTION( list ) {
@@ -430,22 +430,24 @@ END_CLASS
 === Example ===
 {{{
 var dir = new Directory( 'c:/tmp' );
-dir.Open();
-for ( var entry; ( entry = dir.Read() ); ) {
+dir.open();
+for ( var entry; ( entry = dir.read() ); ) {
 
    var file = new File(dir.name+'/'+entry);
-   Print( entry + ' ('+ file.info.type +')', '\n');
+   print( entry + ' ('+ file.info.type +')', '\n');
 }
 }}}
 
 === Example ===
 {{{
-function RecursiveDir(path) {
+function recursiveDir(path) {
+
    var testList = [];
    (function(path) {
+
       var dir = new Directory(path);
-      dir.Open();
-      for ( var entry; ( entry = dir.Read(Directory.SKIP_BOTH) ); ) {
+      dir.open();
+      for ( var entry; ( entry = dir.read(Directory.SKIP_BOTH) ); ) {
 
          var file = new File(dir.name+'/'+entry);
          switch ( file.info.type ) {
@@ -457,11 +459,11 @@ function RecursiveDir(path) {
                break;
          }
       }
-      dir.Close();
+      dir.close();
    })(path);
    return testList;
 }
 
-Print( RecursiveDir('jshost').join('\n') );
+print( recursiveDir('jshost').join('\n') );
 }}}
 **/

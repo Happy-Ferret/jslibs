@@ -42,7 +42,7 @@ typedef struct {
 
 /**XXXdoc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( Window )
 

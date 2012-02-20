@@ -1,4 +1,4 @@
-// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 loadModule('jsstd');
 loadModule('jsfont');
@@ -12,9 +12,9 @@ f.verticalPadding = 10;
 f.horizontalPadding = 10;
 f.letterSpacing = 5;
 
-//f.GetCharOutline('o'); Halt();
+//f.getCharOutline('o'); halt();
 
-//var bump = new Texture(f.DrawString('Hello World', true));
+//var bump = new Texture(f.drawString('Hello World', true));
 
 
 f.drawChar({__proto__:null});

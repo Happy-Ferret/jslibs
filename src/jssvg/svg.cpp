@@ -141,9 +141,9 @@ $TOC_MEMBER $INAME
    calls to callback function 'onImage' may occur during this call.
   $H example
   {{{
-  svg.Write(<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>);
+  svg.write(<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>);
   // or
-  svg.Write('<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>');
+  svg.write('<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>');
   }}}
 **/
 DEFINE_FUNCTION( write ) {
@@ -250,10 +250,10 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   var svg = new SVG();
-  svg.Write(<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>);
-  svg.Rotate(Math.PI/4); // +45 deg
-  svgimage = svg.RenderImage(100, 100, true);
-  new File('test.png').content = EncodePngImage( svgimage )
+  svg.write(<svg><circle cx="50" cy="50" r="25" fill="red"/></svg>);
+  svg.rotate(Math.PI/4); // +45 deg
+  svgimage = svg.renderImage(100, 100, true);
+  new File('test.png').content = encodePngImage( svgimage )
   }}}
 **/
 DEFINE_FUNCTION( renderImage ) { // using cairo
@@ -754,9 +754,10 @@ DEFINE_PROPERTY(images) {
   $H example
   {{{
   var svg = new SVG();
-  svg.Write(<svg><image x="0" y="0" path="img.png"/></svg>);
+  svg.write(<svg><image x="0" y="0" path="img.png"/></svg>);
   svg.onImage = function(href) {
-   return DecodePngImage( new File('myImage.png').Open('r') );
+   
+   return decodePngImage( new File('myImage.png').open('r') );
   }
   }}}
 **/

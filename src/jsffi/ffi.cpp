@@ -227,17 +227,17 @@ Advanced examples:
     -------
 
 	    var i = new NativeData();
-      i.PI.Alloc();
+      i.PI.alloc();
       i[0] = 123;
 
       ...
-		  var pi = new NativeData().PP.Alloc();
+		  var pi = new NativeData().PP.alloc();
 		  pi[0] = i;
 
       ...
-      lib.Proc('AddOne')( VOID(), pi );
+      lib.proc('AddOne')( VOID(), pi );
 
-      Print( i[0] ); => 124;
+      print( i[0] ); => 124;
 
 
 Advanced informations:

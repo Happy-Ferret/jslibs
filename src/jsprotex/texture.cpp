@@ -422,12 +422,12 @@ $TOC_MEMBER $INAME
    The darker value is 0.0 and the brighter value is 1.0.
   $H example
   {{{
-  LoadModule('jsstd');
-  LoadModule('jsimage');
+  loadModule('jsstd');
+  loadModule('jsimage');
 
-  var image = DecodePngImage( new File('picture.png').Open("r") );
+  var image = decodePngImage( new File('picture.png').open("r") );
   var tex = new Texture(image);
-  tex.NormalizeLevels();
+  tex.normalizeLevels();
   }}}
 **/
 DEFINE_CONSTRUCTOR() {
@@ -530,12 +530,12 @@ $TOC_MEMBER $INAME
    $ARG Texture otherTexture: texture object against wich the exchange is done.
   $H example
   {{{
-  function AddAlphaChannel( tex ) {
+  function addAlphaChannel( tex ) {
 
     if ( tex.channels == 1 )
-      new Texture(tex.width, tex.height, 2).SetChannel(0, tex, 0).Swap(tex);
+      new Texture(tex.width, tex.height, 2).setChannel(0, tex, 0).swap(tex);
     else if ( tex.channels == 3 )
-      new Texture(tex.width, tex.height, 4).SetChannel(0, tex, 0).SetChannel(1, tex, 1).SetChannel(2, tex, 2).Swap(tex);
+      new Texture(tex.width, tex.height, 4).setChannel(0, tex, 0).setChannel(1, tex, 1).setChannel(2, tex, 2).swap(tex);
   }
   }}}
 **/
@@ -612,12 +612,12 @@ $TOC_MEMBER $INAME
    $ARG $INT destinationChannel: the channel of the _otherTexture_ to be imported.
   $H example
   {{{
-  function NoiseChannel( tex, channel ) {
+  function noiseChannel( tex, channel ) {
 
     var tmp = new Texture(tex.width, tex.height, 1);
-    tmp.AddNoise();
-    tex.SetChannel(channel, tmp, 0);
-    tmp.Free();
+    tmp.addNoise();
+    tex.setChannel(channel, tmp, 0);
+    tmp.free();
   }
   }}}
 **/
@@ -819,15 +819,15 @@ $TOC_MEMBER $INAME
    Each channel is processed independently.
   $H example 1
   {{{
-  var t = Cloud(size, 0.5);
-  t.Aliasing(2);
+  var t = cloud(size, 0.5);
+  t.aliasing(2);
   }}}
   $H example 2
   {{{
   const curveLinear = function(v) { return v }
-  var t = Cloud(size, 0.5);
-  t.Aliasing(8, curveLinear);
-  t.BoxBlur(3, 3)
+  var t = cloud(size, 0.5);
+  t.aliasing(8, curveLinear);
+  t.boxBlur(3, 3)
   }}}
 **/
 // PTYPE ok
@@ -891,7 +891,7 @@ $TOC_MEMBER $INAME
 
   var texture = new Texture( 100, 100, 3 );
   ...
-  texture.Colorize( WHITE, BLUE, 0 );
+  texture.colorize( WHITE, BLUE, 0 );
   }}}
 **/
 // PTYPE ok
@@ -964,7 +964,7 @@ $TOC_MEMBER $INAME
    The current texture must have only one channel because the method only extracts one color.
   $H example
   {{{
-  t1.ExtractColor(t, RED, 10);
+  t1.extractColor(t, RED, 10);
   }}}
 **/
 // PTYPE ok
@@ -1744,9 +1744,9 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   var tmp = new Texture(size, size, 1);
-  tmp.ClearChannel();
-  tmp.SetRectangle(10,10,size-10,size-10,1);
-  t.Blend(tmp, 0.7);
+  tmp.clearChannel();
+  tmp.setRectangle(10, 10, size-10, size-10, 1);
+  t.blend(tmp, 0.7);
   }}}
 **/
 // PTYPE ok
@@ -2238,8 +2238,8 @@ $TOC_MEMBER $INAME
   const kernelShift = [0,0,0, 0,0,0 ,0,0,1];
   const kernelCrystals = [0,-1,0, -1,5,-1, 0,-1,0];
   ...
-  texture.Convolution(kernelGaussian);
-  texture.NormalizeLevels();
+  texture.convolution(kernelGaussian);
+  texture.normalizeLevels();
   }}}
 **/
 // (TBD) PTYPE
@@ -2464,8 +2464,8 @@ $TOC_MEMBER $INAME
    draws a line from (0,0) to (100,100)
   {{{
   var texture = new Texture(100, 100, 3); // RGB texture
-  texture.Set(0); // clears the texture
-  texture.ForEachPixel(function(x, y, pixel) {
+  texture.set(0); // clears the texture
+  texture.forEachPixel(function(x, y, pixel) {
    if ( x == y ) {
     pixel[0] = 1; // Red
     pixel[1] = 1; // Green
@@ -2543,16 +2543,16 @@ $TOC_MEMBER $INAME
    BoxBlur is very fast but the result is not very smooth.
   $H example
   {{{
-  function AddPixels(t, count) {
+  function addPixels(t, count) {
    while ( count-- > 0 )
-    t.SetPixel(Texture.RandInt(), Texture.RandInt(), 1);
+    t.setPixel(Texture.randInt(), Texture.randInt(), 1);
   }
 
   var texture = new Texture(128, 128, 3);
-  texture.Set(0);
-  AddPixels(texture, 100);
-  texture.BoxBlur(20,20);
-  texture.NormalizeLevels();
+  texture.set(0);
+  addPixels(texture, 100);
+  texture.boxBlur(20,20);
+  texture.normalizeLevels();
   }}}
 **/
 DEFINE_FUNCTION( boxBlur ) {
@@ -2794,11 +2794,11 @@ $TOC_MEMBER $INAME
    $ARG $REAL specularPower:
   $H example
   {{{
-  var bump = new Texture(size, size, 3).Cells(8, 0).Add( new Texture(size, size, 3).Cells(8, 1).OppositeLevels() ); // broken floor
-  bump.Normals();
+  var bump = new Texture(size, size, 3).cells(8, 0).add( new Texture(size, size, 3).cells(8, 1).oppositeLevels() ); // broken floor
+  bump.normals();
   var texture = new Texture(size, size, 3);
-  texture.Set(1);
-  texture.Light( bump, [-1, -1, 1], 0, [0.1, 0.3, 0.4], 0.2, 0.5, 10 );
+  texture.set(1);
+  texture.light( bump, [-1, -1, 1], 0, [0.1, 0.3, 0.4], 0.2, 0.5, 10 );
   }}}
 **/
 // (TBD) PTYPE
@@ -3232,16 +3232,16 @@ $TOC_MEMBER $INAME
   var f = new Font('arial.ttf');
   f.size = 100;
   f.verticalPadding = -16;
-  var img = f.DrawString('Hello world', true);
+  var img = f.drawString('Hello world', true);
 
   var t = new Texture(img);
   var t1 = new Texture(t);
 
-  t.BoxBlur(10,10);
-  t1.OppositeLevels();
-  t.Add(t1);
-  t.OppositeLevels();
-  t.Add(1);
+  t.boxBlur(10,10);
+  t1.oppositeLevels();
+  t.add(t1);
+  t.oppositeLevels();
+  t.add(1);
 
   new File('text.png').content = EncodePngImage(t.Export());
   }}}
@@ -3328,14 +3328,14 @@ $TOC_MEMBER $INAME
    $ARG $ENUM borderMode: one of Texture.borderWrap, Texture.borderClamp.
   $H example
   {{{
-  var file = new File('myImage.png').Open('r'); // note: Open() returns the file object.
-  var image = DecodePngImage( file );
-  file.Close();
-  texture.Import( image, 0, 0 );
+  var file = new File('myImage.png').open('r'); // note: Open() returns the file object.
+  var image = decodePngImage( file );
+  file.close();
+  texture.import(image, 0, 0);
 
-  Ogl.MatrixMode(MODELVIEW);
-  Ogl.DefineTextureImage(TEXTURE_2D, undefined, texture);
-  Ogl.LoadIdentity();
+  Ogl.matrixMode(MODELVIEW);
+  Ogl.defineTextureImage(TEXTURE_2D, undefined, texture);
+  Ogl.loadIdentity();
   ...
   }}}
 **/
@@ -3693,8 +3693,8 @@ $TOC_MEMBER $INAME
   const BLUE = [0,0,1,1];
   const BLACK = [0,0,0,1];
 
-  texture.Set(0); // clears the texture
-  texture.AddGradiantQuad(BLACK, RED, BLUE, BLACK);
+  texture.set(0); // clears the texture
+  texture.addGradiantQuad(BLACK, RED, BLUE, BLACK);
   }}}
 **/
 DEFINE_FUNCTION( addGradiantQuad ) {
@@ -3751,12 +3751,12 @@ $TOC_MEMBER $INAME
   const curveHalfSine = function(v) Math.cos(v*Math.PI/2);
   const curveOne = function() 1;
 
-  texture.Set(0); // clears the texture
-  texture.AddGradiantLinear(curveHalfSine, curveOne);
+  texture.set(0); // clears the texture
+  texture.addGradiantLinear(curveHalfSine, curveOne);
   }}}
   $H example 2
   {{{
-  texture.AddGradiantLinear([0,1,0], [0,1,0]);
+  texture.addGradiantLinear([0,1,0], [0,1,0]);
   }}}
 **/
 DEFINE_FUNCTION( addGradiantLinear ) {
@@ -3811,11 +3811,11 @@ $TOC_MEMBER $INAME
   {{{
   const curveHalfSine = function(v) Math.cos(v*Math.PI/2);
 
-  texture.AddGradiantRadial(curveHalfSine);
+  texture.addGradiantRadial(curveHalfSine);
   }}}
   $H example 2
   {{{
-  texture.AddGradiantRadial([0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1], true);
+  texture.addGradiantRadial([0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1], true);
   }}}
 **/
 DEFINE_FUNCTION( addGradiantRadial ) {
@@ -3966,13 +3966,13 @@ $TOC_MEMBER $INAME
    Adding cracks on a white texture does nothing.
   $H examples
   {{{
-  texture.AddCracks( 1000, 10, 0, RED, 1 );
+  texture.addCracks( 1000, 10, 0, RED, 1 );
 
-  texture.AddCracks( 100, 100, 0, 1, [1,0,1,0,1,0,1,0,1] );
+  texture.addCracks( 100, 100, 0, 1, [1,0,1,0,1,0,1,0,1] );
 
-  texture.AddCracks( 10, 10000, 0.1, 1, curveLinear );
+  texture.addCracks( 10, 10000, 0.1, 1, curveLinear );
 
-  texture.AddCracks( 10, 10000, 0.1, 1, function(v) Texture.RandReal() );
+  texture.addCracks( 10, 10000, 0.1, 1, function(v) Texture.randReal() );
   }}}
 **/
 DEFINE_FUNCTION( addCracks ) { // source: FxGen
@@ -4117,7 +4117,7 @@ $TOC_MEMBER $INAME
    $ARG vec3 dirY: direction vector [x,y,z] for Y axis.
   $H example
 {{{
-texture.AddPerlin2([0,0,0], [1,0,0], [0,1,0]);
+texture.addPerlin2([0,0,0], [1,0,0], [0,1,0]);
 }}}
 **/
 DEFINE_FUNCTION( addPerlin2 ) {
@@ -4275,9 +4275,9 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   var texture = new Texture(20,20,3);
-  texture.Set([0.1, 0.2, 0.3]);
-  var pixel = texture.PixelAt(10,10);
-  Print( 'Red: '+pixel[0], 'Green: '+pixel[1], 'Blue: '+pixel[2] );
+  texture.set([0.1, 0.2, 0.3]);
+  var pixel = texture.pixelAt(10,10);
+  print( 'Red: '+pixel[0], 'Green: '+pixel[1], 'Blue: '+pixel[2] );
   }}}
 **/
 DEFINE_FUNCTION( getPixelAt ) {
@@ -4589,7 +4589,7 @@ DEFINE_FUNCTION( test ) {
  $H example
  {{{
  var texture = new Texture(64,64,3);
- texture.Set(0).AddNoise().AddCracks(10, 100, 0, BLUE, 1);
+ texture.set(0).addNoise().addCracks(10, 100, 0, BLUE, 1);
  }}}
 
 === Definitions ===
@@ -4639,9 +4639,9 @@ DEFINE_FUNCTION( test ) {
   const curveDot = function(v,i) { return i%2 }
   const curveZero = function(v,i) { return 0 }
   const curveOne = function(v,i) { return 1 }
-  function GaussianCurveGenerator(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
+  function gaussianCurveGenerator(c) { return function(x) { return Math.exp( -(x*x)/(2*c*c) ) } }
 
-  texture.AddGradiantRadial( GaussianCurveGenerator( 0.5 ) );
+  texture.addGradiantRadial( gaussianCurveGenerator( 0.5 ) );
   }}}
 
  * *ImageObject*
@@ -4750,136 +4750,136 @@ END_CLASS
 $H example 1
  Some utility functions.
 {{{
-function Cloud( size, amp ) {
+function cloud( size, amp ) {
 
    var octaves = Math.log(size) / Math.LN2;
    var a = 1, s = 1;
    var cloud = new Texture(s, s, 1);
-   cloud.ClearChannel();
+   cloud.clearChannel();
    while ( octaves-- > 0 ) {
 
-      cloud.AddNoise(a);
+      cloud.addNoise(a);
       a *= amp;
       s *= 2;
-      cloud.Resize(s, s, false);
-      cloud.BoxBlur(5, 5);
+      cloud.resize(s, s, false);
+      cloud.boxBlur(5, 5);
    }
-   cloud.NormalizeLevels();
+   cloud.normalizeLevels();
    return cloud;
 }
 
-function DesaturateLuminosity( tex ) {
+function desaturateLuminosity( tex ) {
 
-   tex.Mult([0.2126, 0.7152, 0.0722]);
-   var tmp = new Texture(tex.width, tex.height, 1).Desaturate(tex, Texture.desaturateSum);
-   tex.Swap(tmp);
-   tmp.Free();
+   tex.mult([0.2126, 0.7152, 0.0722]);
+   var tmp = new Texture(tex.width, tex.height, 1).desaturate(tex, Texture.desaturateSum);
+   tex.swap(tmp);
+   tmp.free();
 }
 
-function AddAlphaChannel( tex ) {
+function addAlphaChannel( tex ) {
 
    if ( tex.channels == 1 )
-      new Texture(tex.width, tex.height, 2).SetChannel(0, tex, 0).Swap(tex);
+      new Texture(tex.width, tex.height, 2).setChannel(0, tex, 0).swap(tex);
    else if ( tex.channels == 3 )
-      new Texture(tex.width, tex.height, 4).SetChannel(0, tex, 0).SetChannel(1, tex, 1).SetChannel(2, tex, 2).Swap(tex);
+      new Texture(tex.width, tex.height, 4).setChannel(0, tex, 0).setChannel(1, tex, 1).setChannel(2, tex, 2).swap(tex);
 }
 }}}
 
 $H example 2
  This example shows how to save a texture to the disk.
 {{{
-LoadModule('jsstd');
-LoadModule('jsio');
-LoadModule('jsprotex');
-LoadModule('jsimage');
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jsprotex');
+loadModule('jsimage');
 
 var bacteria = new Texture(256,256,3);
-bacteria.Set(0);
-bacteria.AddCracks(100, 100, 2, undefined, function(v) v);
-bacteria.BoxBlur(5,5);
-bacteria.MirrorLevels(0.5, false);
-bacteria.BoxBlur(2,2);
+bacteria.set(0);
+bacteria.addCracks(100, 100, 2, undefined, function(v) v);
+bacteria.boxBlur(5,5);
+bacteria.mirrorLevels(0.5, false);
+bacteria.boxBlur(2,2);
 
-new File('test.png').content = EncodePngImage(bacteria.Export());
+new File('test.png').content = encodePngImage(bacteria.export());
 }}}
 
 $H example 3
  This is a complete example that displays a texture in real-time in a OpenGL environment.
 {{{
-LoadModule('jsstd');
-LoadModule('jsio');
-LoadModule('jsgraphics');
-LoadModule('jsprotex');
-LoadModule('jsimage');
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jsgraphics');
+loadModule('jsprotex');
+loadModule('jsimage');
 
 with (Ogl) {
 
    var texture = new Texture(128, 128, 3);
-   texture.Set(0);
+   texture.set(0);
    // play here for static textures
 
-   function UpdateTexture(imageIndex) {
+   function updateTexture(imageIndex) {
 
       // play here for dynamic textures
-      texture.Set(0);
-      texture.AddNoise(1);
+      texture.set(0);
+      texture.addNoise(1);
    }
 
    var win = new Window();
-   win.Open();
-   win.CreateOpenGLContext();
+   win.open();
+   win.createOpenGLContext();
    win.rect = [200,200,800,800];
 
-   function ResizeWindow(w, h) {
+   function resizeWindow(w, h) {
 
-      Ogl.Viewport(0,0,w,h);
-      Ogl.MatrixMode(PROJECTION);
-      Ogl.LoadIdentity();
-      Ogl.Ortho(0,0,10,10, -1, 1);
-      Render();
+      Ogl.viewport(0,0,w,h);
+      Ogl.matrixMode(PROJECTION);
+      Ogl.loadIdentity();
+      Ogl.ortho(0,0,10,10, -1, 1);
+      render();
    }
 
-   ShadeModel(FLAT);
-   FrontFace(CCW);
-   ClearColor(0, 0, 0, 0);
-   Enable(TEXTURE_2D);
-   tid = GenTexture();
-   BindTexture(TEXTURE_2D, tid);
-   TexParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
-   TexParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
-   Clear( COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT );
+   shadeModel(FLAT);
+   frontFace(CCW);
+   clearColor(0, 0, 0, 0);
+   enable(TEXTURE_2D);
+   tid = genTexture();
+   bindTexture(TEXTURE_2D, tid);
+   texParameter(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST); // GL_LINEAR
+   texParameter(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST);
+   clear( COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT );
 
-   function Render(imageIndex) {
+   function render(imageIndex) {
 
-      UpdateTexture();
-      DefineTextureImage(TEXTURE_2D, undefined, texture);
-      MatrixMode(MODELVIEW);
-      LoadIdentity();
-      Scale(1, -1, 1);
-      Color(1,1,1);
-      Begin(QUADS);
-      TexCoord( 0, 0 );
-      Vertex( -1, -1, 0 );
-      TexCoord( 1, 0, 0 );
-      Vertex( 1, -1 );
-      TexCoord( 1, 1 );
-      Vertex( 1, 1 );
-      TexCoord( 0, 1 );
-      Vertex( -1, 1 );
-      End();
-      win.SwapBuffers();
-      MaybeCollectGarbage();
+      updateTexture();
+      defineTextureImage(TEXTURE_2D, undefined, texture);
+      matrixMode(MODELVIEW);
+      loadIdentity();
+      scale(1, -1, 1);
+      color(1,1,1);
+      begin(QUADS);
+      texCoord( 0, 0 );
+      vertex( -1, -1, 0 );
+      texCoord( 1, 0, 0 );
+      vertex( 1, -1 );
+      texCoord( 1, 1 );
+      vertex( 1, 1 );
+      texCoord( 0, 1 );
+      vertex( -1, 1 );
+      end();
+      win.swapBuffers();
+      maybeCollectGarbage();
    }
 
-   win.onsize = ResizeWindow;
+   win.onsize = resizeWindow;
    var end = false;
    win.onkeydown = function( key, l ) { end = ( key == 0x1B ) }
    while (!end) {
 
-      win.ProcessEvents();
-      Render();
+      win.processEvents();
+      render();
    }
-   win.Close();
+   win.close();
 }
 }}}
 **/

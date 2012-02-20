@@ -23,8 +23,8 @@ $SVN_REVISION $Revision$
  $H exemple
  {{{
  var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:'] );
- p.Wait();
- Print( p.stdout.Read() );
+ p.wait();
+ print( p.stdout.read() );
  }}}
 **/
 BEGIN_CLASS( Pipe )

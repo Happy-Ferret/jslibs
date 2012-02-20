@@ -639,7 +639,7 @@ $TOC_MEMBER $INAME
    {{{
    var f = new File('test.txt');
    f.content = '123';
-   Print( new Date( f.info.modifyTime ) );
+   print( new Date( f.info.modifyTime ) );
    }}}
 **/
 DEFINE_PROPERTY_GETTER( info ) {
@@ -874,34 +874,34 @@ END_CLASS
 /**doc
 === Example 1 ===
 {{{
-function Copy(fromFilename, toFilename) {
+function copy(fromFilename, toFilename) {
 
- var fromFile = new File(fromFilename).Open(File.RDONLY);
- var toFile = new File(toFilename).Open(File.WRONLY | File.CREATE_FILE | File.TRUNCATE);
- for ( var buf; buf = fromFile.Read(65536); )
-  toFile.Write(buf);
- toFile.Close();
- fromFile.Close();
+ var fromFile = new File(fromFilename).open(File.RDONLY);
+ var toFile = new File(toFilename).open(File.WRONLY | File.CREATE_FILE | File.TRUNCATE);
+ for ( var buf; buf = fromFile.read(65536); )
+  toFile.write(buf);
+ toFile.close();
+ fromFile.close();
 }
 }}}
 
 === Example 2 ===
 {{{
-LoadModule('jsstd');
-LoadModule('jsio');
+loadModule('jsstd');
+loadModule('jsio');
 
 try {
 
    var file = new File('file_test.txt');
    if ( file.exist ) {
-      file.Open( File.RDONLY );
-      Print( 'file content:\n' + file.Read() );
-      file.Close();
+      file.open( File.RDONLY );
+      print( 'file content:\n' + file.read() );
+      file.close();
    }
 
 } catch ( ex if ex instanceof IoError ) {
 
-   Print( 'IOError: ' + ex.text, '\n' );
+   print( 'IOError: ' + ex.text, '\n' );
 } catch( ex ) {
 
    throw ex;

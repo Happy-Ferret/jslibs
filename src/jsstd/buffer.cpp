@@ -529,32 +529,33 @@ $TOC_MEMBER $INAME
 
   $H example 1
   {{{
-  var buf1 = new Buffer(Stream('456'));
-  buf1.Write('123');
-  Print( buf1.Read(6) ); // prints: '123456'
+  var buf1 = new Buffer(new Stream('456'));
+  buf1.write('123');
+  print( buf1.read(6) ); // prints: '123456'
   }}}
 
   $H example 2
   {{{
-  var buf1 = new Buffer(Stream('123'));
-  Print( buf1.Read(1) ,'\n'); // prints: '1'
-  Print( buf1.Read(1) ,'\n'); // prints: '2'
-  Print( buf1.Read(1) ,'\n'); // prints: '3'
+  var buf1 = new Buffer(new Stream('123'));
+  print( buf1.read(1) ,'\n'); // prints: '1'
+  print( buf1.read(1) ,'\n'); // prints: '2'
+  print( buf1.read(1) ,'\n'); // prints: '3'
   }}}
 
   $H example 3
   {{{
   var buf2 = new Buffer(new function() {
-   this.Read = function(count) StringRepeat('x',count);
+
+   this.read = function(count) stringRepeat('x',count);
   });
-  Print( buf2.Read(6) ); // prints: 'xxxxxx'
+  print( buf2.read(6) ); // prints: 'xxxxxx'
   }}}
 
   $H example 4
    Create a long chain ( pack << buffer << buffer << stream )
   {{{
-  var p = new Pack(new Buffer(new Buffer(Stream('\x12\x34'))));
-  Print( (p.ReadInt(2, false, true)).toString(16) ); // prints: '1234'
+  var p = new Pack(new Buffer(new Buffer(new Stream('\x12\x34'))));
+  print( (p.readInt(2, false, true)).toString(16) ); // prints: '1234'
   }}}
 **/
 DEFINE_CONSTRUCTOR() {
@@ -772,7 +773,7 @@ $TOC_MEMBER $INAME
   If _amount_ == undefined, an arbitrary (ideal) amount of data is returned. Use this when you don't know how many data you have to read.
   $H example
   {{{
-  var chunk = buffer.Read(undefined);
+  var chunk = buffer.read(undefined);
   }}}
   $H note
   The read operation never blocks, even if the requested amount of data is greater than the buffer length.
@@ -907,9 +908,9 @@ $TOC_MEMBER $INAME
   Insert _data_ at the begining of the buffer. This function can undo a read operation. The returned value is _data_.
   $H example
   {{{
-  function Peek(len) {
+  function peek(len) {
 
-    return buffer.Unread( buffer.Read(len) );
+    return buffer.unread( buffer.read(len) );
   }
   }}}
 **/
@@ -1127,18 +1128,19 @@ $TOC_MEMBER $INAME
 	$H example 1
    {{{
 	var buf1 = new Buffer('123');
-	buf1.source = Stream('456');
+	buf1.source = new Stream('456');
 	QA.ASSERT( buf1.length, 3, 'length' );
-	Print( buf2.Read(6) ); // prints: '123456'
+	print( buf2.read(6) ); // prints: '123456'
 	}}}
 
 	$H example 2
 	{{{
 	var buf2 = new Buffer('123');
 	buf2.source = new function() {
-		this.Read = function(count) StringRepeat('x',count);
+
+		this.read = function(count) stringRepeat('x', count);
 	}
-	Print( buf2.Read(6) ); // prints: '123xxx'
+	print( buf2.read(6) ); // prints: '123xxx'
 	}}}
 
 	$H example 3
@@ -1146,7 +1148,7 @@ $TOC_MEMBER $INAME
 	var first = new Buffer();
 	first.source = new Buffer();
 	first.source.source = new Buffer('123');
-	Print( first.Read(4) ); // prints: '123'
+	print( first.read(4) ); // prints: '123'
 	}}}
 
 	$H example 4
@@ -1154,8 +1156,8 @@ $TOC_MEMBER $INAME
 	{{{
 	var p = new Pack(new Buffer());
 	p.buffer.source = new Buffer();
-	p.buffer.source.source = Stream('\x12\x34');
-	Print( (p.ReadInt(2, false, true)).toString(16) ); // prints: '1234'
+	p.buffer.source.source = new Stream('\x12\x34');
+	print( (p.readInt(2, false, true)).toString(16) ); // prints: '1234'
 	}}}
 **/
 
@@ -1206,32 +1208,32 @@ END_CLASS
  buf.Write('5');
  buf.Write('');
  buf.Write('6789');
- Print( buf.Read() );
+ print( buf.read() );
  }}}
 
 === example 2 ===
  {{{
  var buf = new Buffer();
- buf.Write('0123456789');
- Print( buf.Read(4) );
- Print( buf.Read(1) );
- Print( buf.Read(1) );
- Print( buf.Read(4) );
+ buf.write('0123456789');
+ print( buf.read(4) );
+ print( buf.read(1) );
+ print( buf.read(1) );
+ print( buf.read(4) );
  }}}
 
 
 === example 3 ===
  Buffered read from a stream.
  {{{
- function ReadFromFile() {
+ function readFromFile() {
 
-  Print('*** read from the file\n');
-  return StringRepeat('x',5);
+  print('*** read from the file\n');
+  return stringRepeat('x',5);
  }
 
- var buf = new Buffer({ Read:function() { buf.Write(ReadFromFile()); }})
+ var buf = new Buffer({ read:function() { buf.write(readFromFile()); }})
 
  for ( var i=0; i<15; i++ )
-  Print( buf.Read(1), '\n' )
+  print( buf.read(1), '\n' )
  }}}
 **/

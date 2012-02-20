@@ -7107,46 +7107,46 @@ END_CLASS
 == Example ==
 {{{
 
-LoadModule('jsstd');
-LoadModule('jssdl');
-LoadModule('jsgraphics');
+loadModule('jsstd');
+loadModule('jssdl');
+loadModule('jsgraphics');
 
-GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-GlSetAttribute( GL_DOUBLEBUFFER, 1 );
-GlSetAttribute( GL_DEPTH_SIZE, 16 );
-SetVideoMode( 320, 200, 32, HWSURFACE | OPENGL | RESIZABLE );
+glSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+glSetAttribute( GL_DOUBLEBUFFER, 1 );
+glSetAttribute( GL_DEPTH_SIZE, 16 );
+setVideoMode( 320, 200, 32, HWSURFACE | OPENGL | RESIZABLE );
 
 var listeners = {
 	onQuit: function() { end = true },
 	onKeyDown: function(key, mod) { end = key == K_ESCAPE }
 }
 
-Ogl.MatrixMode(Ogl.PROJECTION);
-Ogl.Perspective(60, 0.001, 1000);
-Ogl.MatrixMode(Ogl.MODELVIEW);
+Ogl.matrixMode(Ogl.PROJECTION);
+Ogl.perspective(60, 0.001, 1000);
+Ogl.matrixMode(Ogl.MODELVIEW);
 
 for (var end = false; !end ;) {
 
-	PollEvent(listeners);
+	pollEvent(listeners);
 
 	with (Ogl) { // beware: slower than Ogl.*
 
-		Clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
-		LoadIdentity();
+		clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+		loadIdentity();
 
-		LookAt(-1,-1,1, 0,0,0, 0,0,1);
+		lookAt(-1,-1,1, 0,0,0, 0,0,1);
 
-		Begin(QUADS);
-		Color(1,0,0);
-		Vertex(-0.5, -0.5, 0);
-		Vertex(-0.5,  0.5, 0);
-		Vertex( 0.5,  0.5, 0);
-		Vertex( 0.5, -0.5, 0);
-		End(QUADS);
+		begin(QUADS);
+		color(1,0,0);
+		vertex(-0.5, -0.5, 0);
+		vertex(-0.5,  0.5, 0);
+		vertex( 0.5,  0.5, 0);
+		vertex( 0.5, -0.5, 0);
+		end(QUADS);
    }
 
-	GlSwapBuffers();
-	Sleep(10);
+	glSwapBuffers();
+	sleep(10);
 }
 
 }}}

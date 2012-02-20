@@ -18,7 +18,7 @@
 
 /**doc
 $CLASS_HEADER Geom
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3524 $
 **/
 BEGIN_CLASS( GeomPlane )
 
@@ -125,7 +125,7 @@ DEFINE_PROPERTY( lengthsGetter ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
 	HAS_PROTOTYPE( Geom )
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

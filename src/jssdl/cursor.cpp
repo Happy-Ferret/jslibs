@@ -19,7 +19,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3508 $
 **/
 BEGIN_CLASS( Cursor )
 
@@ -127,7 +127,7 @@ DEFINE_CONSTRUCTOR() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3508 $"))
 	HAS_PRIVATE
 
 	HAS_CONSTRUCTOR

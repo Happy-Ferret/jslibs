@@ -18,7 +18,7 @@
 
 /**doc
 $CLASS_HEADER Geom
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3524 $
 **/
 BEGIN_CLASS( GeomRay )
 
@@ -237,7 +237,7 @@ DEFINE_PROPERTY_GETTER( closestHit ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
 	HAS_PROTOTYPE( Geom )
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

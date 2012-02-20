@@ -17,7 +17,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
  This class manages interprocess communication semaphores using a counting semaphore model similar to that which is provided in Unix and Windows platforms.
 **/
 BEGIN_CLASS( Semaphore )
@@ -195,7 +195,7 @@ DEFINE_FUNCTION( post ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PRIVATE

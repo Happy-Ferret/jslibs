@@ -826,7 +826,8 @@ $TOC_MEMBER $INAME
     }
    }
    while ( !done ) {
-    PollEvent(listeners);
+
+    pollEvent(listeners);
    }
    }}}
 **/

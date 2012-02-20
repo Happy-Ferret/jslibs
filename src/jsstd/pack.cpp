@@ -298,7 +298,7 @@ inline JSBool JL_JsvalToUInt64( JSContext *cx, jsval val, uint64_t *result, bool
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
  Pack is a class that helps to convert binary data into Integer, Real or String and to write an integer in a binary data string.
  The Pack class manages the system endian or network endian.
 **/
@@ -743,7 +743,7 @@ DEFINE_INIT() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

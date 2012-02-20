@@ -20,7 +20,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3487 $
 
   midi spec: http://www.gweep.net/~prefect/eng/reference/protocol/midispec.html
 **/
@@ -317,7 +317,7 @@ DEFINE_PROPERTY_SETTER( value2 ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3487 $"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1)
 	HAS_FINALIZE

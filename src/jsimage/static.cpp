@@ -33,7 +33,7 @@ EXTERN_C {
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_STATIC
 
@@ -449,7 +449,7 @@ DEFINE_FUNCTION( encodePngImage ) {
 
 CONFIGURE_STATIC
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( decodePngImage )
 		FUNCTION( encodePngImage )

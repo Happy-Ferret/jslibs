@@ -442,10 +442,10 @@ compressedData += deflate(); // flush
 var inflate = new Z( Z.INFLATE );
 var clearData2 = inflate( compressedData, true );
 
-Print( 'ratio:' + compressedData.length + ': ' + Math.round( 100 * compressedData.length / clearData.length ) + '%','\n');
+print( 'ratio:' + compressedData.length + ': ' + Math.round( 100 * compressedData.length / clearData.length ) + '%','\n');
 if ( clearData2 != clearData )
 
-   Print('error!!!','\n');
+   print('error!!!','\n');
 }
 }}}
 

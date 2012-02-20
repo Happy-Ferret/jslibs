@@ -117,11 +117,11 @@ $TOC_MEMBER $INAME
    For the raster styles (MONOCHROME, GRAYSCALE and TRANSLUCENT), it is essential that the pixel store unpacking alignment be set to 1.
   $H example
 {{{
-Ogl.PixelStore( Ogl.UNPACK_ALIGNMENT, 1 );
+Ogl.pixelStore( Ogl.UNPACK_ALIGNMENT, 1 );
 var font = new Font('c:\\windows\\fonts\\arial.ttf');
 var font3d = new Font3D(f, Font3D.GRAYSCALE, 48);
 ...
-f3d.Draw('Hello World');
+f3d.draw('Hello World');
 }}}
 **/
 DEFINE_CONSTRUCTOR() {
@@ -292,7 +292,7 @@ $TOC_MEMBER $INAME
 var f = new Font('c:\\windows\\fonts\\arial.ttf');
 var f3d = new Font3D(f, Font3D.SOLID, 12);
 ...
-f3d.Draw('test');
+f3d.draw('test');
 }}}
 **/
 DEFINE_FUNCTION( draw ) {
@@ -547,7 +547,7 @@ f3d.colorCallback = function( pos ) {
 	return [pos[0]/20, pos[1]/20, pos[2]/20, 1]; // Bob ?
 }
 ...
-f3d.Draw('Marley');
+f3d.draw('Marley');
 }}}
 **/
 DEFINE_PROPERTY_SETTER( colorCallback ) {

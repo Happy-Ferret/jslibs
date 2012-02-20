@@ -16,7 +16,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3524 $
 **/
 BEGIN_CLASS( OalListener )
 
@@ -87,7 +87,7 @@ DEFINE_PROPERTY_GETTER( metersPerUnit ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
 	BEGIN_STATIC_FUNCTION_SPEC
 	END_STATIC_FUNCTION_SPEC
 

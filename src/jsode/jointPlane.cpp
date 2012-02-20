@@ -18,7 +18,7 @@
 
 /**doc
 $CLASS_HEADER Joint
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( JointPlane )
 
@@ -122,7 +122,7 @@ DEFINE_PROPERTY( x ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 	HAS_PROTOTYPE( Joint )
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

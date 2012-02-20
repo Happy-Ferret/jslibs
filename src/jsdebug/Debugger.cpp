@@ -365,7 +365,7 @@ $TOC_MEMBER $INAME
   var dbg = new Debugger();
   dbg.onBreak = function(filename, lineno, breakOrigin, stackFrameIndex, hasException, exception, rval, isEnteringFunction) {
 
-   Print( 'break at '+ filename +':'+ lineno + ' because '+breakOrigin ,'\n' );
+   print( 'break at '+ filename +':'+ lineno + ' because '+breakOrigin ,'\n' );
   }}}
 **/
 DEFINE_CONSTRUCTOR() {

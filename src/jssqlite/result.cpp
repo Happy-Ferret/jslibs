@@ -193,13 +193,13 @@ $SVN_REVISION $Revision$
  $H example 1
   {{{
   var db = new Database(); // in-memory database
-  db.Exec('create table t1 (name,value);');
-  db.Exec('insert into t1 (name,value) values ("red","#F00")');
-  db.Exec('insert into t1 (name,value) values ("green","#0F0")');
-  db.Exec('insert into t1 (name,value) values ("blue","#00F")');
+  db.exec('create table t1 (name,value);');
+  db.exec('insert into t1 (name,value) values ("red","#F00")');
+  db.exec('insert into t1 (name,value) values ("green","#0F0")');
+  db.exec('insert into t1 (name,value) values ("blue","#00F")');
   
-  for each ( row in db.Query('SELECT * from t1') )
-   Print( row.name + ' = ' + row.value, '\n' );
+  for each ( row in db.query('SELECT * from t1') )
+   print( row.name + ' = ' + row.value, '\n' );
   }}}
   prints:
   {{{
@@ -210,7 +210,7 @@ $SVN_REVISION $Revision$
 
  $H example 2
   {{{
-  Print( [ color.name for each ( color in db.Query('SELECT * from t1') ) ] ); // prints: red,green,blue
+  print( [ color.name for each ( color in db.query('SELECT * from t1') ) ] ); // prints: red,green,blue
   }}}
 
  $H note
@@ -571,9 +571,9 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   var db = new Database();
-  db.Exec('create table t1 (a,b,c);');
-  var res = db.Query('SELECT a,c from t1');
-  Print( res.columnNames.toSource(), '\n' ); // prints: ["a", "c"]
+  db.exec('create table t1 (a,b,c);');
+  var res = db.query('SELECT a,c from t1');
+  print( res.columnNames.toSource(), '\n' ); // prints: ["a", "c"]
   }}}
 **/
 DEFINE_PROPERTY_GETTER( columnNames ) {
@@ -614,9 +614,9 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   var db = new Database();
-  db.Exec('create table t1 (a,b,c);');
-  var res = db.Query('SELECT a,c from t1');
-  Print( res.columnIndexes.toSource(), '\n' ); // prints: ({a:0, c:1})
+  db.exec('create table t1 (a,b,c);');
+  var res = db.query('SELECT a,c from t1');
+  print( res.columnIndexes.toSource(), '\n' ); // prints: ({a:0, c:1})
   }}}
 **/
 DEFINE_PROPERTY_GETTER( columnIndexes ) {

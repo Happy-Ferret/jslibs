@@ -961,6 +961,8 @@ loadModule('jsstd');
 	QA.ASSERT( new File(filename).content, undefined, 'exec etest file deletion' );
 	new File(filename+'xdr').content = undefined;
 
+	delete global._exectest;
+
 /// warning messages [ft]
 
 	if ( !_host.safeMode ) // warning messages are disabled in unsafe mode

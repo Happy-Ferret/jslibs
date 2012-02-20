@@ -17,7 +17,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3491 $
 **/
 BEGIN_CLASS( SurfaceParameters )
 
@@ -247,7 +247,7 @@ DEFINE_PROPERTY_SETTER( surface ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3491 $"))
 	HAS_PRIVATE
 
 	HAS_CONSTRUCTOR

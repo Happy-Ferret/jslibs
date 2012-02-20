@@ -53,7 +53,7 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   var db = new Database();
-  db.Exec('create table t1 (a,b,c);');
+  db.exec('create table t1 (a,b,c);');
   }}}
 **/
 DEFINE_CONSTRUCTOR() {
@@ -215,42 +215,42 @@ $TOC_MEMBER $INAME
    $ARG $OBJ map: _map_ is bind to the SQL statement and can be access using '@' char ( see. *Exec* ). If you create new properties on the [Result] object, you can access then in the _sqlStr_ using ':' char. '?' allows you access the _map_ as an array ( see examples ).
     $H example 1
     {{{
-    var res = db.Query('SELECT :test1 + 5');
+    var res = db.query('SELECT :test1 + 5');
     res.test1 = 123;
-    Print( res.Row().toSource() ); // Prints: [128]
+    print( res.row().toSource() ); // Prints: [128]
     }}}
     $H example 2
     {{{
-    var res = db.Query('SELECT @test2 + 5', {test2:6});
-    Print( res.Row().toSource() ); // Prints: [11]
+    var res = db.query('SELECT @test2 + 5', {test2:6});
+    print( res.row().toSource() ); // Prints: [11]
     }}}
     $H example 3
     {{{
-    var res = db.Query('SELECT ? + ?', [4,5]);
-    Print( res.Row().toSource() ); // Prints: [9]
+    var res = db.query('SELECT ? + ?', [4,5]);
+    print( res.row().toSource() ); // Prints: [9]
     }}}
   $H return value
    A new Result object.
   $H beware
    There are some limitation in variable bindings. For example, they cannot be used to specify a table name.
-   `db.Query('SELECT * FROM ?', ['myTable']);` will failed with this exception: `SQLite error 1: near "?": syntax error`
+   `db.query('SELECT * FROM ?', ['myTable']);` will failed with this exception: `SQLite error 1: near "?": syntax error`
   $H example 1
   {{{
   ...
-  var result = db.Query('SELECT name FROM table WHERE id=:userId' );
+  var result = db.query('SELECT name FROM table WHERE id=:userId' );
   result.userId = 1341;
-  result.Step();
-  Print( result.Col(0) );
+  result.step();
+  print( result.col(0) );
   }}}
   $H example 2
   {{{
-  var result = db.Query('SELECT name FROM table WHERE id=@userId', { userId: 1341 } );
-  Print( result.Col(0) );
+  var result = db.query('SELECT name FROM table WHERE id=@userId', { userId: 1341 } );
+  print( result.col(0) );
   }}}
   $H example 3
   {{{
-  var result = db.Query('SELECT ? FROM table WHERE id=?', ['name', 1341] ); // array-like objects {0:'name', 1:1341, length:2} also work.
-  Print( result.Col(0) );
+  var result = db.query('SELECT ? FROM table WHERE id=?', ['name', 1341] ); // array-like objects {0:'name', 1:1341, length:2} also work.
+  print( result.col(0) );
   }}}
 **/
 DEFINE_FUNCTION( query ) {
@@ -313,7 +313,7 @@ $TOC_MEMBER $INAME
    $ARG $OBJ map: if given, this argument is bind (as a key:value variable map) to the SQL statement.
     $H example
     {{{
-    db.Exec('PRAGMA user_version = @ver', { ver:5 } );
+    db.exec('PRAGMA user_version = @ver', { ver:5 } );
     }}}
   $H return value
    returns the first line and first column of the result.
@@ -321,8 +321,8 @@ $TOC_MEMBER $INAME
    [http://www.sqlite.org/capi3ref.html#sqlite3_bind_blob sqlite documentation]
   $H example
   {{{
-  var version = db.Exec('PRAGMA user_version');
-  db.Exec('PRAGMA user_version = 5');
+  var version = db.exec('PRAGMA user_version');
+  db.exec('PRAGMA user_version = 5');
   }}}
 **/
 DEFINE_FUNCTION( exec ) {
@@ -358,7 +358,7 @@ DEFINE_FUNCTION( exec ) {
 
 	// (TBD) support multiple statements
 
-	JL_CHK( SqliteSetupBindings(cx, pStmt, argc < 2 || JSVAL_IS_PRIMITIVE( JL_ARG(2) ) ? NULL : JSVAL_TO_OBJECT( JL_ARG(2) ), obj) ); // "@" : the the argument passed to Exec(), ":" nothing
+	JL_CHK( SqliteSetupBindings(cx, pStmt, argc < 2 || JSVAL_IS_PRIMITIVE( JL_ARG(2) ) ? NULL : JSVAL_TO_OBJECT( JL_ARG(2) ), obj) ); // "@" : the the argument passed to exec(), ":" nothing
 
 	pv->tmpcx = cx;
 	int status;
@@ -573,7 +573,7 @@ bad:
   {{{
   var db = new Database('myDatabase');
   db.multBy10 = function(a) { return a * 10 }
-  Print( db.Exec('SELECT multBy10(123)') ); // prints: 1230
+  print( db.exec('SELECT multBy10(123)') ); // prints: 1230
   }}}
 **/
 DEFINE_SET_PROPERTY() {
@@ -656,33 +656,33 @@ END_CLASS
 === Examples ===
  $H example 1
  {{{
- Print('database version: ' + Database.version ,'\n' );
+ print('database version: ' + Database.version ,'\n' );
 
  var obj = { foo:Blob('qqwe\0\0fv1234') };
- Print( 'testFunc = ' + db.Exec('SELECT length(:foo)', obj  ) ,'\n' );
+ print( 'testFunc = ' + db.exec('SELECT length(:foo)', obj  ) ,'\n' );
  }}}
  $H example 2
  {{{
- LoadModule('jsstd');
- LoadModule('jssqlite');
+ loadModule('jsstd');
+ loadModule('jssqlite');
 
  try {
 
   var db = new Database();
-  db.Exec('create table t1 (a,b,c);');
-  db.Exec('insert into t1 (a,b,c) values (5,6,7)');
-  db.Exec('insert into t1 (a,b,c) values (2,3,4)');
-  db.Exec('insert into t1 (a,b,c) values ("a","b","c")');
+  db.exec('create table t1 (a,b,c);');
+  db.exec('insert into t1 (a,b,c) values (5,6,7)');
+  db.exec('insert into t1 (a,b,c) values (2,3,4)');
+  db.exec('insert into t1 (a,b,c) values ("a","b","c")');
 
-  var res = db.Query('SELECT a,c from t1');
+  var res = db.query('SELECT a,c from t1');
 
-  Print( res.Row().toSource(), '\n' );
-  Print( res.Row().toSource(), '\n' );
-  Print( res.Row().toSource(), '\n' );
+  print( res.row().toSource(), '\n' );
+  print( res.row().toSource(), '\n' );
+  print( res.row().toSource(), '\n' );
 
   } catch ( ex if ex instanceof SqliteError ) {
 
-   Print( 'SQLite error '+ex.code+': '+ex.text+'\n' );
+   print( 'SQLite error '+ex.code+': '+ex.text+'\n' );
   }
  }}}
 **/

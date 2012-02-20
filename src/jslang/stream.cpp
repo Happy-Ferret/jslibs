@@ -73,7 +73,7 @@ JSBool StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( Stream )
 
@@ -225,7 +225,7 @@ DEFINE_PROPERTY_GETTER( source ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 	HAS_CONSTRUCTOR
 	HAS_RESERVED_SLOTS(2)
 

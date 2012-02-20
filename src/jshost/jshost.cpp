@@ -624,7 +624,7 @@ The main features are:
  * Lightweight
   The binary executable file is less than 60KB
  * Minimalist internal API
-  LoadModule is enough, everything else can be added using dynamic loadable modules.
+  loadModule is enough, everything else can be added using dynamic loadable modules.
 
 === Command line options ===
  * `-c <0 or 1>` (default = 0)
@@ -658,29 +658,30 @@ $H beware
  * If there is a pending uncatched exception and if this exception can be converted into a number (see valueOf()), this numeric value is used as exit code.
  $H example
  {{{
- function Exit(code) {
+ function exit(code) {
+
   throw code;
  }
 
- Exit(2);
+ exit(2);
  }}}
 
 === Global functions ===
- * status *LoadModule*( moduleFileName )
+ * status *loadModule*( moduleFileName )
   Loads and initialize the specified module.
   Do not provide the file extension in _moduleFileName_.
   $H exemple
   {{{
-  LoadModule('jsstd');
-  Print( 'Unsafe mode: '+_host.unsafeMode, '\n' );
+  loadModule('jsstd');
+  print( 'Unsafe mode: ' + _host.unsafeMode, '\n' );
   }}}
   $H note
-  You can avoid LoadModule to use the global object and load the module in your own namespace:
+  You can avoid loadModule to use the global object and load the module in your own namespace:
   {{{
   var std = {};
-  LoadModule.call( std, 'jsstd' );
-  std.Print( std.IdOf(1234), '\n' );
-  std.Print( std.IdOf(1234), '\n' );
+  loadModule.call( std, 'jsstd' );
+  std.print( std.idOf(1234), '\n' );
+  std.print( std.idOf(1234), '\n' );
   }}}
 
 === Global properties ===
@@ -691,7 +692,7 @@ $H beware
   {{{
   for ( var i in arguments ) {
 
-   Print( 'argument['+i+'] = '+arguments[i] ,'\n' );
+   print( 'argument['+i+'] = '+arguments[i] ,'\n' );
   }
   }}}
   <pre>
@@ -710,6 +711,22 @@ $H beware
 
 ==== Example ====
  host version information can be obtained using: `jshost -i "_host.stdout(_host.build+' r'+_host.revision)"`
+
+==== Example ====
+{{{
+var r = _host.revision + (((2006*12 + 6)*31 + 22)*24 + 0);
+
+var d = 12 * 31 * 24;
+var year = Math.floor(r / d);
+r = r % d;
+
+var d = 31 * 24;
+var month = Math.floor(r / d);
+r = r % d;
+
+var d = 24;
+var day = Math.floor(r / d);
+}}}
 
 == Remarks ==
 

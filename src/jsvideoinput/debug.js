@@ -1,4 +1,4 @@
-// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 loadModule('jsstd');
 loadModule('jsio');
@@ -15,10 +15,10 @@ loadModule('jsprotex');
 exec('..\\common\\tools.js');
 
 	
-	//	GlSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
-//		GlSetAttribute( GL_DOUBLEBUFFER, 1 );
+	//	glSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
+//		glSetAttribute( GL_DOUBLEBUFFER, 1 );
 		glSetAttribute( GL_DEPTH_SIZE, 16 );
-//		GlSetAttribute( GL_ACCELERATED_VISUAL, 1 );
+//		glSetAttribute( GL_ACCELERATED_VISUAL, 1 );
 		setVideoMode( 640, 480, 32, OPENGL | RESIZABLE ); // | ASYNCBLIT // RESIZABLE FULLSCREEN
 
 		Ogl.hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);

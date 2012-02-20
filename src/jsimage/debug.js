@@ -1,4 +1,4 @@
-// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 loadModule('jsstd');
 loadModule('jsimage');
@@ -12,7 +12,7 @@ print( img.width+'x'+img.height+'x'+img.channels, '\n' );
 print( img.load().length , '\n' );
 */
 
-//var texture = DecodeJpegImage(new File('battleship_1280x1024.jpg').Open( File.RDONLY ));
+//var texture = decodeJpegImage(new File('battleship_1280x1024.jpg').open( File.RDONLY ));
 //print( texture.width+'x'+texture.height+'x'+texture.channels, '\n' );
 
 var texture = decodePngImage(new File('battlesuitbj6.png').open());

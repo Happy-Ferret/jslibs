@@ -167,10 +167,12 @@ $TOC_MEMBER $INAME
    No timeout means that the function will endless wait for events.
   $H example
   {{{
-  socket1.readable = function(soc) { Print( soc.Recv(); ) }
-  var count = Poll( [socket1, socket2], 1000 );
+  socket1.readable = function(soc) {
+   print( soc.Recv() )
+  }
+  var count = poll( [socket1, socket2], 1000 );
   if ( count == 0 )
-    Print( 'Nothing has been recived' );
+    print( 'Nothing has been recived' );
   }}}
 **/
 DEFINE_FUNCTION( poll ) {
@@ -639,11 +641,11 @@ $TOC_MEMBER $INAME
   If _waitExit_ is not true, the function immediately returns an array that contains an input pipe and an output pipe to the current process stdin and stdout.
   $H example
   {{{
-  var [stdin, stdout] = CreateProcess( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:\\'], false );
-  Sleep(100);
-  Print( stdout.Read(), '\n' );
-  stdin.Close();
-  stdout.Close();
+  var [stdin, stdout] = createProcess( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:\\'], false );
+  sleep(100);
+  print( stdout.Read(), '\n' );
+  stdin.close();
+  stdout.close();
   }}}
 **/
 /*
@@ -757,7 +759,7 @@ $TOC_MEMBER $INAME
   Returns the available storage space (in bytes) at the given path.
   $H example
   {{{
-  Print( AvailableSpace('/var') );
+  print( availableSpace('/var') );
   }}}
 **/
 DEFINE_FUNCTION( availableSpace ) {
@@ -809,10 +811,10 @@ $TOC_MEMBER $INAME
  $H example
  {{{
  var f = new File( systemInfo.name == 'Linux' ? '/dev/ttyS0' : '//./com1' );
- f.Open(File.RDWR);
- ConfigureSerialPort(f, 9600);
- f.Write('A');
- f.Read(1);
+ f.open(File.RDWR);
+ configureSerialPort(f, 9600);
+ f.write('A');
+ f.read(1);
  }}}
 **/
 DEFINE_FUNCTION( configureSerialPort ) {
@@ -960,9 +962,9 @@ $TOC_MEMBER $INAME
    * $STR *release*: 2.6.22.18, 5.1, ...
   $H example
   {{{
-  LoadModule('jsstd');
-  LoadModule('jsio');
-  Print( systemInfo.toSource() );
+  loadModule('jsstd');
+  loadModule('jsio');
+  print( systemInfo.toSource() );
   }}}
   prints:
    * on coLinux: {{{ ({architecture:"x86", name:"Linux", release:"2.6.22.18-co-0.7.3"}) }}}
@@ -1165,7 +1167,7 @@ $TOC_MEMBER $INAME
   Get the host' path separator.
   $H example
   {{{
-  Print( GetEnv('PATH').split($INAME) )
+  print( getEnv('PATH').split($INAME) )
   }}}
 **/
 DEFINE_PROPERTY_GETTER( pathSeparator ) {

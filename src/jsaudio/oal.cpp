@@ -1389,27 +1389,27 @@ END_CLASS
 $H example 1
  A simple ogg player
  {{{
- LoadModule('jsio');
- LoadModule('jsstd');
- LoadModule('jssound');
- LoadModule('jsaudio');
+ loadModule('jsio');
+ loadModule('jsstd');
+ loadModule('jssound');
+ loadModule('jsaudio');
 
- var decoder = new OggVorbisDecoder(new File('41_30secOgg-q0.ogg').Open(File.RDONLY));
+ var decoder = new OggVorbisDecoder(new File('41_30secOgg-q0.ogg').open(File.RDONLY));
 
- Oal.Open();
- var sourceId = Oal.GenSource();
+ Oal.open();
+ var sourceId = Oal.genSource();
  var pcm;
- while ( pcm = decoder.Read(10000) ) {
+ while ( pcm = decoder.read(10000) ) {
 
-  var bufferId = Oal.Buffer(pcm);
-  Oal.SourceQueueBuffers(sourceId, bufferId);
-  if ( Oal.GetSourceInteger(sourceId, Oal.SOURCE_STATE) == Oal.INITIAL )
-   Oal.PlaySource(sourceId);
+  var bufferId = Oal.buffer(pcm);
+  Oal.sourceQueueBuffers(sourceId, bufferId);
+  if ( Oal.getSourceInteger(sourceId, Oal.SOURCE_STATE) == Oal.INITIAL )
+   Oal.playSource(sourceId);
  };
 
- var totalTime = decoder.frames/decoder.rate;
- var currentTimeOffset = Oal.GetSourceReal(sourceId, Oal.SEC_OFFSET);
- Sleep( 1000 * (totalTime - currentTimeOffset) );
+ var totalTime = decoder.frames / decoder.rate;
+ var currentTimeOffset = Oal.getSourceReal(sourceId, Oal.SEC_OFFSET);
+ sleep( 1000 * (totalTime - currentTimeOffset) );
  }}}
 **/
 

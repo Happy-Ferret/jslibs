@@ -1,10 +1,9 @@
-// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 loadModule('jsio');
 loadModule('jsstd');
 loadModule('jswinshell');
 loadModule('jssvg');
-
 
 
 loadModule('jsstd');
@@ -15,7 +14,6 @@ loadModule('jswinshell');
 
 try {
 	var fso = createComObject('Scripting.fileSystemObject');
-
 
 	var tmp = fso.GetFolder('c:\\');
 	for each ( var folder in tmp.SubFolders )

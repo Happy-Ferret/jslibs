@@ -130,13 +130,13 @@ $TOC_MEMBER $INAME
   $H example 1
   {{{
   var v = [6,7,8];
-  Vector3Normalize( v );
-  Print( v ); // prints: 0.491455078125,0.5733642578125,0.6552734375
+  vector3Normalize( v );
+  print( v ); // prints: 0.491455078125,0.5733642578125,0.6552734375
   }}}
   $H example 2
   {{{
   var v = { length:3, 0:6, 1:7, 2:8 };
-  Print( Array.slice( Vector3Normalize( v ) ) ); // prints: 0.491455078125,0.5733642578125,0.6552734375
+  print( Array.slice( vector3Normalize( v ) ) ); // prints: 0.491455078125,0.5733642578125,0.6552734375
   }}}
 **/
 DEFINE_FUNCTION( vec3Normalize ) {
@@ -276,10 +276,10 @@ $TOC_MEMBER $INAME
   $H example
 {{{
  var mat = new Transformation();
- mat.Load(Ogl);
- mat.Product(perspective);
- mat.Invert();
- frustumSphere = FrustumSphere(mat, frustumSphere);
+ mat.load(Ogl);
+ mat.product(perspective);
+ mat.invert();
+ frustumSphere = frustumSphere(mat, frustumSphere);
  ...
 }}}
 **/

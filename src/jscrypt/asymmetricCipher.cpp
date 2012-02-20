@@ -243,7 +243,7 @@ $TOC_MEMBER $INAME
   $H example:
 {{{
 var ac = new AsymmetricCipher( 'rsa', 'md5', new Prng('fortuna') );
-ac.CreateKeys( AsymmetricCipher.RSA_MIN_KEYSIZE );
+ac.createKeys( AsymmetricCipher.RSA_MIN_KEYSIZE );
 }}}
 **/
 DEFINE_FUNCTION( createKeys ) { // ( bitsSize )
@@ -919,22 +919,22 @@ END_CLASS
 === Example ===
 Data (or key) encryption using RSA:
 {{{
-LoadModule('jsstd');
-LoadModule('jscrypt');
+loadModule('jsstd');
+loadModule('jscrypt');
 var fortuna = new Prng('fortuna');
-fortuna.AutoEntropy(123); // give more entropy
+fortuna.autoEntropy(123); // give more entropy
 
 //Alice
 var alice = new AsymmetricCipher('RSA', 'md5', fortuna);
-alice.CreateKeys(1024);
+alice.createKeys(1024);
 var publicKey = alice.publicKey;
 
 //Bob
 var bob = new AsymmetricCipher('RSA', 'md5', fortuna);
 bob.publicKey = publicKey;
-var encryptedData = bob.Encrypt('Alice, I love you !');
+var encryptedData = bob.encrypt('Alice, I love you !');
 
 //Alice
-Print( alice.Decrypt(encryptedData), '\n' );
+print( alice.decrypt(encryptedData), '\n' );
 }}}
 **/

@@ -22,7 +22,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3455 $
 **/
 BEGIN_CLASS( AudioMaster )
 
@@ -45,7 +45,7 @@ DEFINE_PROPERTY_GETTER( version ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3455 $"))
 	HAS_PRIVATE
 
 	//HAS_HAS_INSTANCE

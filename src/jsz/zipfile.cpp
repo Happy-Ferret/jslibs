@@ -173,10 +173,10 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   var f = new ZipFile('test.zip');
-  f.Open(ZipFile.CREATE);
-  f.Select('file1.txt');
-  f.Write('data1');
-  f.Close();
+  f.open(ZipFile.CREATE);
+  f.select('file1.txt');
+  f.write('data1');
+  f.close();
   }}}
 **/
 DEFINE_CONSTRUCTOR() {
@@ -302,18 +302,18 @@ $TOC_MEMBER $INAME
   $H example 1
   {{{
   var f = new ZipFile('test.zip');
-  f.Open(ZipFile.READ);
-  f.Select('file1.txt');
-  Print( f.Read() );
-  f.Close();
+  f.open(ZipFile.READ);
+  f.select('file1.txt');
+  print( f.read() );
+  f.close();
   }}}
   $H example 2
   {{{
   var f = new ZipFile('test.zip');
-  f.Open(ZipFile.CREATE);
-  f.Select('file1.txt');
-  f.Write('content1');
-  f.Close();
+  f.open(ZipFile.CREATE);
+  f.select('file1.txt');
+  f.write('content1');
+  f.close();
   }}}
 **/
 DEFINE_FUNCTION( select ) {
@@ -370,10 +370,10 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   var f = new ZipFile('test.zip');
-  f.Open(ZipFile.READ);
-  for ( f.GoFirst(); !f.eol; f.GoNext() ) {
+  f.open(ZipFile.READ);
+  for ( f.goFirst(); !f.eol; f.goNext() ) {
 
-    Print( ' '+f.filename, ' : ', f.Read(), ' (lvl='+f.level+' eol=', f.eol, ')\n' );
+    print( ' '+f.filename, ' : ', f.read(), ' (lvl='+f.level+' eol=', f.eol, ')\n' );
   }
   }}}
 **/
@@ -721,7 +721,7 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   ...
-  for ( g.GoFirst(); !g.eol; g.GoNext() ) { ...
+  for ( g.goFirst(); !g.eol; g.goNext() ) { ...
   }}}
 **/
 DEFINE_PROPERTY_GETTER( eol ) {
@@ -874,11 +874,11 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   var f = new ZipFile('test.zip');
-  f.Open(ZipFile.CREATE);
-  f.Select('foo/bar/file1.txt');
+  f.open(ZipFile.CREATE);
+  f.select('foo/bar/file1.txt');
   f.date = new Date(2008,6,29);
-  f.Write('content1');
-  f.Close();
+  f.write('content1');
+  f.close();
   }}}
 **/
 DEFINE_PROPERTY_GETTER( date ) {

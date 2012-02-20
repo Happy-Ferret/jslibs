@@ -140,7 +140,7 @@ DEFINE_FUNCTION( _unserialize ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
 
 	//HAS_HAS_INSTANCE // see issue#52
 	IS_INCONSTRUCTIBLE

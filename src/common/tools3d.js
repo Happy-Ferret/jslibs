@@ -598,7 +598,7 @@ function UI(currentWidth, currentHeight) {
 		Ogl.perspective(60, undefined, 0.5, 500);
 		
 //		// http://www.songho.ca/opengl/gl_projectionmatrix.html
-//		DumpMatrix(Ogl.Get(Ogl.PROJECTION_MATRIX)); Halt();
+//		dumpMatrix(Ogl.Get(Ogl.PROJECTION_MATRIX)); halt();
 	}
 
 	this.idle = function() { // default function

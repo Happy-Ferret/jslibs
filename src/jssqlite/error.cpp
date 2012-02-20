@@ -226,11 +226,11 @@ SqliteThrowError( JSContext *cx, sqlite3 *db ) {
 {{{
 try {
 
-  db.Exec('yfiqwygqiwye'); // generate an error
+  db.exec('yfiqwygqiwye'); // generate an error
 
 } catch ( ex if ex instanceof SqliteError ) {
 
-   Print( 'SqliteError: ' + ex.text + '('+ex.code+')', '\n' );
+   print( 'SqliteError: ' + ex.text + '('+ex.code+')', '\n' );
 } catch( ex ) {
 
    throw ex;

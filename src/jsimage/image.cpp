@@ -193,7 +193,7 @@ DEFINE_FUNCTION( gamma ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 

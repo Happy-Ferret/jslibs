@@ -167,18 +167,18 @@ $TOC_MEMBER $INAME
    $ARG streamObject stream: is the data stream from where encoded data are read from.
   $H example
   {{{
-  LoadModule('jsstd');
-  LoadModule('jsio');
-  LoadModule('jssound');
+  loadModule('jsstd');
+  loadModule('jsio');
+  loadModule('jssound');
   var file = new File('41_30secOgg-q0.wav'); // file: http://xiph.org/vorbis/listen.html
-  file.Open('r');
+  file.open('r');
   var dec = new SoundFileDecoder( file );
-  Print( dec.bits, '\n' );
-  Print( dec.channels, '\n' );
-  Print( dec.rate, '\n' );
+  print( dec.bits, '\n' );
+  print( dec.channels, '\n' );
+  print( dec.rate, '\n' );
   do {
-   var block = dec.Read(10000);
-   Print( 'frames: '+block.frames, '\n' );
+   var block = dec.read(10000);
+   print( 'frames: '+block.frames, '\n' );
   } while(block);
   }}}
 **/
@@ -251,17 +251,17 @@ $TOC_MEMBER $INAME
    If all data has been decoded and the Read function is called again, the return expression is evaluated to $FALSE.
   $H example
   {{{
-  LoadModule('jsstd');
-  LoadModule('jsio');
-  LoadModule('jssound');
+  loadModule('jsstd');
+  loadModule('jsio');
+  loadModule('jssound');
   var file = new File('41_30secOgg-q0.wav'); // file: http://xiph.org/vorbis/listen.html
-  file.Open('r');
+  file.open('r');
   var dec = new SoundFileDecoder( file );
-  var block = dec.Read(10000);
-  Print( 'rezolution: '+block.bits+' per channel', '\n' );
-  Print( block.channels == 2 ? 'stereo' : 'mono', '\n' );
-  Print( block.rate+' frames/seconds', '\n' );
-  Print( 'time: '+(block.frames/block.rate)+' seconds', '\n' );
+  var block = dec.read(10000);
+  print( 'rezolution: '+block.bits+' per channel', '\n' );
+  print( block.channels == 2 ? 'stereo' : 'mono', '\n' );
+  print( block.rate+' frames/seconds', '\n' );
+  print( 'time: '+(block.frames/block.rate)+' seconds', '\n' );
   }}}
 **/
 DEFINE_FUNCTION( read ) {

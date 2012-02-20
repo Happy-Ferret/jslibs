@@ -782,7 +782,7 @@ private:
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3526 $
 **/
 BEGIN_CLASS( VSTPlugin )
 
@@ -1134,7 +1134,7 @@ DEFINE_HAS_INSTANCE() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3526 $"))
 	HAS_PRIVATE
 	//HAS_HAS_INSTANCE
 	IS_INCONSTRUCTIBLE

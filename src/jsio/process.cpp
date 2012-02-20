@@ -48,8 +48,8 @@ $TOC_MEMBER $INAME
   $H exemple
   {{{
   var p = new Process( 'c:\\windows\\System32\\cmd.exe', ['/c', 'dir', 'c:'] );
-  p.Wait();
-  Print( p.stdout.Read() );
+  p.wait();
+  print( p.stdout.read() );
   }}}
 **/
 DEFINE_CONSTRUCTOR() {

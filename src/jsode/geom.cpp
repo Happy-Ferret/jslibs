@@ -114,7 +114,7 @@ JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // 
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( Geom )
 
@@ -563,7 +563,7 @@ DEFINE_PROPERTY_GETTER( contact ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 //	HAS_PRIVATE
 
 	BEGIN_FUNCTION_SPEC

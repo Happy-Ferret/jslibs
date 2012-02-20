@@ -18,7 +18,7 @@
 
 /**doc
 $CLASS_HEADER Joint
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( JointGroup )
 
@@ -82,7 +82,7 @@ DEFINE_FUNCTION( empty ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 	HAS_CONSTRUCTOR
 	HAS_PRIVATE
 

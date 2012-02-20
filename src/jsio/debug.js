@@ -119,9 +119,9 @@ if ( 0 ) {
 
 loadModule('jsstd');  loadModule('jsio');
 //runJsircbot(false); throw 0;
-// var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 //exec('../../qaexp.js');  throw 0;
-//var QA = FakeQAApi;  RunLocalQAFile();
+//var QA = FakeQAApi;  runLocalQAFile();
 //runSavedQAFile('../../exitissue');
 
 
@@ -169,7 +169,7 @@ loadModule('jsdebug');
 loadModule('jsstd');
 loadModule('jstask');
 
-//jsioTest(); Halt();
+//jsioTest(); halt();
 
 loadModule('jsstd');
 loadModule('jsio');

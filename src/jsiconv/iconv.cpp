@@ -64,9 +64,9 @@ $TOC_MEMBER $INAME
    $ARG $BOOL fromUsesWide: source uses 16bit per char.
   $H example
 {{{
-  LoadModule('winshell'); // required for consoleCodepage
+  loadModule('winshell'); // required for consoleCodepage
   var consEnc = new Iconv(consoleCodepage, 'UCS-2le', false, true); // source is wide (16bit), dest is not wide (8bit)
-  Print( consEnc('été') );
+  print( consEnc('été') );
 }}}
 
 **/
@@ -482,14 +482,14 @@ END_CLASS
 === Example 1 ===
  Convert and convert back a string.
 {{{
-LoadModule('jsstd');
-LoadModule('jsiconv');
+loadModule('jsstd');
+loadModule('jsiconv');
 
 var conv = new Iconv('UTF-8', 'ISO-8859-1');
 var invConv = new Iconv('ISO-8859-1', 'UTF-8');
 var converted = conv('été');
 var result = invConv(converted);
-Print( result == 'été','\n' ); // should be true
+print( result == 'été','\n' ); // should be true
 }}}
 
 === Example 2 ===
@@ -501,16 +501,16 @@ var converted = conv('été');
 var result = '';
 for each ( var c in converted )
  result += invConv(c);
-Print( result == 'été','\n' ); // should be true
+print( result == 'été','\n' ); // should be true
 }}}
 
 === Example 3 ===
  Convert a JavaScript for printing in a Windows console
 {{{
-LoadModule('jsiconv');
-LoadModule('jswinshell'); // defines consoleCodepage
+loadModule('jsiconv');
+loadModule('jswinshell'); // defines consoleCodepage
 var conv = new Iconv(consoleCodepage, Iconv.jsUC, false, true);
-Print ( conv('été') );
+print ( conv('été') );
 }}}
 
 **/

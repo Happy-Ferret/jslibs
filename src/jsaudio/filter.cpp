@@ -22,7 +22,7 @@ struct Private {
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3420 $
 **/
 BEGIN_CLASS( OalFilter )
 
@@ -200,7 +200,7 @@ $TOC_MEMBER (many)
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3420 $"))
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

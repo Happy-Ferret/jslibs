@@ -510,13 +510,13 @@ END_CLASS
 /**doc
 === Exemple ===
 {{{
-LoadModule('jsstd');
-LoadModule('jsio');
+loadModule('jsstd');
+loadModule('jsio');
 
 var mem1 = new SharedMemory( 'mytest', 100 );
-mem1.Write('foo');
+mem1.write('foo');
 
 var mem2 = new SharedMemory( 'mytest', 100 );
-Print( mem2.Read(3), '\n' );
+print( mem2.read(3), '\n' );
 }}}
 **/

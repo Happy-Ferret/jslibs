@@ -240,21 +240,21 @@ $TOC_MEMBER $INAME
   Returns the bit field that represents the index (in arguments order) of the triggered events. eg. if eventsHandler1 event is triggered, bit 1 is set.
   $H example 1
 {{{
-LoadModule('jsstd');
+loadModule('jsstd');
 
 function onTimeout() {
 
-  Print('.');
+  print('.');
 }
 
 function onEndSignal() {
 
-  Print('end signal detected\n');
+  print('end signal detected\n');
   throw 0;
 }
 
 for (;;)
-  ProcessEvents( TimeoutEvents(500, onTimeout), EndSignalEvents(onEndSignal) );
+  processEvents( timeoutEvents(500, onTimeout), endSignalEvents(onEndSignal) );
 }}}
 **/
 JLThreadFuncDecl ProcessEventThread( void *data ) {
@@ -777,8 +777,6 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 
 
-
-
 #define JSLANG_TEST DEBUG //|| true
 
 #ifdef JSLANG_TEST
@@ -790,7 +788,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_IGNORE(argc);
 	JL_IGNORE(vp);
 
-//	*JL_RVAL = OBJECT_TO_JSVAL( JS_GetParentOrScopeChain(cx, JSVAL_TO_OBJECT(JL_ARG(1))) );
+//	jsid l = JLID(cx, length);
 
 /*
 

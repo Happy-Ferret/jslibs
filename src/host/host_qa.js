@@ -5,10 +5,10 @@ loadModule('jsio');
 
 	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', '_host.stdin' ];
 
-	loadModule('jswinshell'); excludeList.push('FileOpenDialog', 'Console.close');
-	loadModule('jssdl'); excludeList.push('SetVideoMode', 'Iconify');
-	loadModule('jsstd'); excludeList.push('Halt');
-	loadModule('jsdebug'); excludeList.push('DebugBreak', 'DumpHeap');
+	loadModule('jswinshell'); excludeList.push('fileOpenDialog', 'Console.close');
+	loadModule('jssdl'); excludeList.push('setVideoMode', 'iconify');
+	loadModule('jsstd'); excludeList.push('halt');
+	loadModule('jsdebug'); excludeList.push('debugBreak');
 
 	loadModule('jscrypt');
 	loadModule('jsfont');
@@ -213,6 +213,7 @@ loadModule('jsio');
 
 	QA.ASSERT( typeof global, 'object', 'global type' );
 	delete global;
+	delete global.global;
 	QA.ASSERT( typeof global, 'object', 'global type after delete' );
 	QA.ASSERT_STR( global.valueOf(), '[object Global]', 'global class' );
 	QA.ASSERT( uneval( global ).length > 0, true, 'uneval global' );

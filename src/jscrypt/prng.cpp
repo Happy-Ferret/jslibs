@@ -94,11 +94,11 @@ $TOC_MEMBER $INAME
   Returns _size_ bytes of pseudo-random data.
   $H example
   {{{
-  LoadModule('jsstd');
-  LoadModule('jscrypt');
+  loadModule('jsstd');
+  loadModule('jscrypt');
   var myGen = new Prng('yarrow');
-  myGen.AutoEntropy(128); // give more entropy
-  Print(HexEncode(myGen(100))); // prints random data
+  myGen.autoEntropy(128); // give more entropy
+  print(hexEncode(myGen(100))); // prints random data
   }}}
 **/
 DEFINE_CALL() {

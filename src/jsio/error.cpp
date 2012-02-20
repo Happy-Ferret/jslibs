@@ -105,7 +105,7 @@ const char *ConstString( int errorCode ) {
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3524 $
  You cannot construct this class.$LF
  Its aim is to throw as an exception on any NSPR runtime error.
 **/
@@ -248,7 +248,7 @@ DEFINE_FUNCTION( _unserialize ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
 
 //	HAS_CONSTRUCTOR // see issue#52
 	//HAS_HAS_INSTANCE // see issue#52

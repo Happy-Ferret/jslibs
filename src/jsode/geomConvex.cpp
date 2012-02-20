@@ -19,7 +19,7 @@
 
 /**doc
 $CLASS_HEADER Geom
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3414 $
 **/
 BEGIN_CLASS( GeomConvex )
 
@@ -72,7 +72,7 @@ DEFINE_CONSTRUCTOR() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3414 $"))
 	HAS_PROTOTYPE( Geom )
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

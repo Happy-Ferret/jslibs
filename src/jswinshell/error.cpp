@@ -18,7 +18,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3524 $
 **/
 BEGIN_CLASS( WinError )
 
@@ -156,7 +156,7 @@ DEFINE_FUNCTION( _unserialize ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
 
 //	HAS_CONSTRUCTOR // see issue#52
 

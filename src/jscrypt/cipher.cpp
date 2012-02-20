@@ -35,7 +35,7 @@ struct CipherPrivate {
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( Cipher )
 
@@ -735,7 +735,7 @@ DEFINE_PROPERTY_GETTER( list ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 

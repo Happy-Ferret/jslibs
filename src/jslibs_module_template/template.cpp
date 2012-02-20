@@ -16,7 +16,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( Template ) // Start the definition of the class. It defines some symbols: _name, _class, _prototype
 
@@ -78,7 +78,7 @@ DEFINE_FUNCTION( _unserialize ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 	HAS_PRIVATE
 	//HAS_RESERVED_SLOTS(1)
 

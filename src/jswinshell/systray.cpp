@@ -1112,8 +1112,8 @@ $TOC_MEMBER $INAME
   {{{
   systray.onmousemove = function( x, y ) {
 
-   var pos = systray.Position();
-   Print( x-pos[0], ', ', y-pos[1], '\n' );
+   var pos = systray.position();
+   print( x-pos[0], ', ', y-pos[1], '\n' );
   }
   }}}
 **/
@@ -1341,8 +1341,8 @@ DEFINE_TRACER() {
  s.icon = new Icon( 0 );
  s.onmousedown = function( button ) {
 
-  MessageBeep();
-  s.PopupMenu();
+  messageBeep();
+  s.popupMenu();
  }
  }}}
 **/
@@ -1383,20 +1383,20 @@ END_CLASS
 === Examples ===
  $H example 1
  {{{
-LoadModule('jswinshell');
-LoadModule('jsio');
-LoadModule('jsimage');
+loadModule('jswinshell');
+loadModule('jsio');
+loadModule('jsimage');
 
 var s = new Systray();
 
-s.icon = new Icon( DecodePngImage(new File('calendar.png').Open(File.RDONLY)) );
+s.icon = new Icon( decodePngImage(new File('calendar.png').open(File.RDONLY)) );
 s.text = 'calendar';
 s.menu = { exit_cmd:'exit' }
 
 s.onmousedown = function(button) {
 
   if ( button == 2 )
-    s.PopupMenu();
+    s.popupMenu();
 }
 
 s.oncommand = function(id) {
@@ -1407,22 +1407,22 @@ s.oncommand = function(id) {
 
 while ( !endSignal ) {
 
-  s.ProcessEvents();
-  Sleep(100);
+  s.processEvents();
+  sleep(100);
 }
  }}}
 
  $H example 2
  {{{
- LoadModule('jsstd');
- LoadModule('jswinshell');
+ loadModule('jsstd');
+ loadModule('jswinshell');
 
  var s = new Systray();
  s.icon = new Icon( 0 );
  s.menu = { add:'Add', exit:'Exit', s1:{ separator:true } };
  s.onmousedown = function( button ) {
 
- 	s.PopupMenu();
+ 	s.popupMenu();
  }
 
  s.oncommand = function( id, button ) {
@@ -1431,23 +1431,23 @@ while ( !endSignal ) {
  		case 'exit':
  			return true;
  		case 'add':
- 			var fileName = FileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
+ 			var fileName = fileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
  			if ( !fileName )
  				return;
- 			var icon = ExtractIcon( fileName );
+ 			var icon = extractIcon( fileName );
  			var text = fileName.substr( fileName.lastIndexOf( '\\' ) + 1 );
  			s.menu[fileName] = { icon:icon, text:text };
  			break;
  		default:
  			if ( button == 1 )
- 				CreateProcess( id );
+ 				createProcess( id );
  			else
- 				if ( MessageBox( 'Remove item: ' + id + '? ', 'Question', MB_YESNO) == IDYES )
+ 				if ( messageBox( 'Remove item: ' + id + '? ', 'Question', MB_YESNO) == IDYES )
  					delete s.menu[id];
  		}
  }
 
- do { Sleep(100) } while ( !s.ProcessEvents() );
+ do { sleep(100) } while ( !s.processEvents() );
  }}}
 **/
 

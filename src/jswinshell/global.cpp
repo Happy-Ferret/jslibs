@@ -153,7 +153,7 @@ $TOC_MEMBER $INAME
   $ARG $STR currentDirectory
  $H example
  {{{
- CreateProcess( 'C:\\WINDOWS\\system32\\calc.exe', undefined, undefined, 'c:\\' );
+ createProcess( 'C:\\WINDOWS\\system32\\calc.exe', undefined, undefined, 'c:\\' );
  }}}
 **/
 DEFINE_FUNCTION( createProcess ) {
@@ -200,7 +200,7 @@ $TOC_MEMBER $INAME
   Creates an Open dialog box that lets the user specify the drive, directory, and the name of a file. The function returns $UNDEF if the dialog is canceled.
  $H example
  {{{
- FileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
+ fileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
  }}}
 **/
 DEFINE_FUNCTION( fileOpenDialog ) {
@@ -392,15 +392,15 @@ $TOC_MEMBER $INAME
   If valueName is given but is $UNDEF, the returned value is the list of available values.
   $H example 1
   {{{
-  RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip'); // returns ["FM"]
-  RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip', undefined); // returns ["Path", "Lang"]
-  RegistryGet('HKEY_CURRENT_USER\\Software\\7-Zip', 'path') // returns "C:\\Program Files\\7-Zip"
+  registryGet('HKEY_CURRENT_USER\\Software\\7-Zip'); // returns ["FM"]
+  registryGet('HKEY_CURRENT_USER\\Software\\7-Zip', undefined); // returns ["Path", "Lang"]
+  registryGet('HKEY_CURRENT_USER\\Software\\7-Zip', 'path') // returns "C:\\Program Files\\7-Zip"
   }}}
   $H example 2
   {{{
   var path = 'HKEY_LOCAL_MACHINE\\Software\\Clients\\StartMenuInternet';
-  var defaultBrowser = RegistryGet(path+'\\'+RegistryGet(path, '')+'\\shell\\open\\command', '');
-  CreateProcess(undefined, defaultBrowser + ' http://jslibs.googlecode.com/');
+  var defaultBrowser = registryGet(path+'\\' + registryGet(path, '') + '\\shell\\open\\command', '');
+  createProcess(undefined, defaultBrowser + ' http://jslibs.googlecode.com/');
   }}}
 **/
 DEFINE_FUNCTION( registryGet ) {
@@ -582,10 +582,11 @@ $TOC_MEMBER $INAME
   * 0x100: Any security-descriptor change in the watched directory or subtree.
   $H example 1
   {{{
-  var dch = DirectoryChangesInit('C:\\WINDOWS', 0x10|0x40, true);
+  var dch = directoryChangesInit('C:\\WINDOWS', 0x10|0x40, true);
   while (!endSignal) {
-    Print( uneval( DirectoryChangesLookup(dch) ), '\n');
-    Sleep(1000);
+
+    print( uneval( directoryChangesLookup(dch) ), '\n');
+    sleep(1000);
   }
   }}}
 **/
@@ -731,18 +732,18 @@ $TOC_MEMBER $INAME
   Passively waits for directory changes through the ProcessEvents function.
   $H example:
 {{{
-LoadModule('jsstd');
-LoadModule('jswinshell');
+loadModule('jsstd');
+loadModule('jswinshell');
 
-var dch = DirectoryChangesInit('C:\\', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
+var dch = directoryChangesInit('C:\\', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
 
 function onChanges() {
 
-	Print( DirectoryChangesLookup(dch).join('\n'), '\n');
+	print( directoryChangesLookup(dch).join('\n'), '\n');
 }
 
 while ( !endSignal )
-	ProcessEvents( DirectoryChangesEvents(dch, onChanges), EndSignalEvents() );
+	processEvents( directoryChangesEvents(dch, onChanges), endSignalEvents() );
 }}}
 **/
 
@@ -836,7 +837,7 @@ $TOC_MEMBER $INAME
   $H example:
 {{{
 var file = new File("C:\\tmp");
-Print(GUIDToString(f.id).quote());
+print(guidToString(f.id).quote());
 }}}
 **/
 DEFINE_FUNCTION( guidToString ) {

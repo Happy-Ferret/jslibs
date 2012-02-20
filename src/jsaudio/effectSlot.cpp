@@ -21,7 +21,7 @@ struct Private {
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3455 $
 **/
 BEGIN_CLASS( OalEffectSlot )
 
@@ -152,7 +152,7 @@ DEFINE_PROPERTY_GETTER( effectSendAuto ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3455 $"))
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

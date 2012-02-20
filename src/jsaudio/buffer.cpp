@@ -16,7 +16,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( OalBuffer )
 
@@ -205,7 +205,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

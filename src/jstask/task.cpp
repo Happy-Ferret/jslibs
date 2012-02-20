@@ -126,7 +126,7 @@ $SVN_REVISION $Revision$
   function MyTask( req, idx ) {
 
    if ( idx == 0 ) {
-    LoadModule('jsio');
+    loadModule('jsio');
    }
    ...
   }
@@ -632,27 +632,27 @@ $TOC_MEMBER $INAME
  Passively waits for a response through the ProcessEvents function. When a new response is available, the onResponse function of the Task object is called.
  $H example
 {{{
-LoadModule('jstask');
-LoadModule('jsstd');
+loadModule('jstask');
+loadModule('jsstd');
 
 var t = new Task(function(data) {
 
-	LoadModule('jsstd');
-	Sleep(100);
+	loadModule('jsstd');
+	sleep(100);
 	return data+1;
 });
 
 t.onResponse = function(t) {
 
-	var v = t.Response();
-	t.Request( v );
-	Print(v, '\n');
+	var v = t.response();
+	t.request( v );
+	print(v, '\n');
 }
 
-t.Request(0);
+t.request(0);
 
 while ( !endSignal )
-	ProcessEvents(t.Event(), EndSignalEvent());
+	processEvents(t.event(), endSignalEvent());
 }}}
 **/
 struct UserProcessEvent {
@@ -761,8 +761,8 @@ END_CLASS
 === Examples ===
  $H example 1
  {{{
- LoadModule('jsstd');
- LoadModule('jstask');
+ loadModule('jsstd');
+ loadModule('jstask');
 
  function MyTask( request ) {
 
@@ -778,10 +778,10 @@ END_CLASS
 
  for ( var i = 0; i < 100; i++ ) {
 
-  myTask.Request(i);
+  myTask.request(i);
  }
 
  while ( !myTask.idle )
-  Print( myTask.Response(), '\n' );
+  print( myTask.response(), '\n' );
  }}}
  **/

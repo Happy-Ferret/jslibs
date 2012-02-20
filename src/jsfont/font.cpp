@@ -780,28 +780,28 @@ END_CLASS
 $H example 1
  Write "Hello world" in the file text.png
 {{{
-LoadModule('jslang');
-LoadModule('jsstd');
-LoadModule('jsfont');
-LoadModule('jsimage');
-LoadModule('jsprotex');
-LoadModule('jsio');
+loadModule('jslang');
+loadModule('jsstd');
+loadModule('jsfont');
+loadModule('jsimage');
+loadModule('jsprotex');
+loadModule('jsio');
 
 var f = new Font('arial.ttf');
 f.size = 100;
 f.verticalPadding = -16;
-var img = f.DrawString('Hello world', true);
+var img = f.drawString('Hello world', true);
 
 var t = new Texture(img);
 var t1 = new Texture(t);
 
-t.BoxBlur(10,10);
-t1.OppositeLevels();
-t.Add(t1);
-t.OppositeLevels();
-t.Add(1);
+t.boxBlur(10,10);
+t1.oppositeLevels();
+t.add(t1);
+t.oppositeLevels();
+t.add(1);
 
-new File('text.png').content = EncodePngImage(t.Export());
+new File('text.png').content = encodePngImage(t.export());
 }}}
 **/
 

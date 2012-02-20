@@ -1,4 +1,4 @@
-// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  Halt();
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 loadModule('jsstd');
 loadModule('jsfastcgi');
@@ -17,7 +17,7 @@ loadModule('jsnspr');
 loadModule('jsfastcgi');
 
 
-//var p = ParsePairs( MakePairs({aaa:123444, bbb:'test'}) ); // test
+//var p = parsePairs( makePairs({aaa:123444, bbb:'test'}) ); // test
 //print( p.bbb.length );
 //throw 0;
 

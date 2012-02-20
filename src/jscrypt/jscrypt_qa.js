@@ -3,6 +3,7 @@ loadModule('jscrypt');
 /// CryptError.text []
 	
 		String( CryptError.text );
+		QA.ASSERT_STR( String( CryptError.prototype.text ), 'undefined' );
 
 /// MD5 digest [ftrm]
 

@@ -182,7 +182,7 @@ JSBool JSDefaultStdinFunction(JSContext *cx, uintN, jsval *vp) {
 }
 
 
-// route: Print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
+// route: print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
 JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 	*JL_RVAL = JSVAL_VOID;
@@ -469,7 +469,7 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 // MAC OSX: 	'@executable_path' ??
 
 /*
-	while (0) { // namespace management. Avoid using val ns = {}, LoadModule.call(ns, '...');
+	while (0) { // namespace management. Avoid using val ns = {}, loadModule.call(ns, '...');
 
 		if ( JL_ARG_ISDEF(2) ) {
 
@@ -745,10 +745,10 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	JL_CHK( JL_NativeToJsval(cx, JL_SvnRevToInt(SVN_REVISION_STR), &tmp1) );
 	JL_CHK( JL_NativeToJsval(cx, JL_BUILD, &tmp2) ); // __DATE__YEAR, __DATE__MONTH+1, __DATE__DAY
 	JL_CHK( JL_NativeToJsval(cx, (int)JS_GetVersion(cx), &tmp3) ); // JS_GetImplementationVersion()
-	JL_CHK( SetHostObjectValue(cx, L("revision"), tmp1) );
+	JL_CHK( SetHostObjectValue(cx, L("revision"), tmp1) ); // JLID(cx, _revision)
 	JL_CHK( SetHostObjectValue(cx, L("build"), tmp2) );
 	JL_CHK( SetHostObjectValue(cx, L("jsVersion"), tmp3) );
-	
+
 	// init static modules
 	if ( !jslangModuleInit(cx, globalObject) )
 		JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );
@@ -1242,7 +1242,7 @@ for ( var size in stat )
     stat2.push( [Number(size), stat[size]] );
 stat2.sort(function(a,b) b[1]-a[1]);
 for each ( var i in stat2 )
-     Print( i[1] + ' x ' + i[0] )
+     print( i[1] + ' x ' + i[0] )
 */
 
 

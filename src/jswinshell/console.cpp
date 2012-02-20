@@ -18,7 +18,7 @@
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( Console )
 
@@ -841,7 +841,7 @@ DEFINE_PROPERTY_SETTER( cursorSize ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( open )

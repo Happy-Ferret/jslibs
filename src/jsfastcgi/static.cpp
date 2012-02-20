@@ -41,7 +41,7 @@ void onExit() {
 
 /**doc
 $CLASS_HEADER
-$SVN_REVISION $Revision$
+$SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_STATIC
 
@@ -302,7 +302,7 @@ decoding_error:
 
 CONFIGURE_STATIC
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( accept )
 		FUNCTION( getParam )

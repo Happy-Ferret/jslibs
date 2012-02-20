@@ -37,16 +37,18 @@ $TOC_MEMBER $INAME
   Resets a random sequence of the Mersenne Twister random number generator.
   $H example
   {{{
-  Texture.RandSeed(1234);
-  Print( Texture.RandReal(), '\n' );
-  Print( Texture.RandReal(), '\n' );
-  Print( Texture.RandReal(), '\n' );
+  Texture.randSeed(1234);
+  print( Texture.randReal(), '\n' );
+  print( Texture.randReal(), '\n' );
+  print( Texture.randReal(), '\n' );
+  ...
   }}}
   will always prints:
   {{{
   0.19151945020806033
   0.4976636663772314
   0.6221087664882906
+  ...
   }}}
 **/
 DEFINE_FUNCTION( randSeed ) {
