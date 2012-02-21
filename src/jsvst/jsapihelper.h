@@ -208,14 +208,14 @@ protected:
 
 	inline bool InstanceOf( JSObject *obj, JSClass *jsClass ) {
 
-		return JS_InstanceOf(_cx, obj, jsClass, NULL) == JS_TRUE;
+		return JL_ObjectIsInstanceOf(_cx, obj, jsClass) == JS_TRUE;
 	}
 
 	inline bool InstanceOf( jsval val, JSClass *jsClass ) {
 
 		if ( !JSVAL_IS_PRIMITIVE(val) )
 			return false;
-		return JS_InstanceOf(_cx, JSVAL_TO_OBJECT(val), jsClass, NULL) == JS_TRUE;
+		return JL_ObjectIsInstanceOf(_cx, JSVAL_TO_OBJECT(val), jsClass) == JS_TRUE;
 	}
 
 	inline bool JsvalIsCallable( jsval val ) {

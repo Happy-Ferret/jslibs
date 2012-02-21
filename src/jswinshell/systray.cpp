@@ -903,7 +903,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 //			S_ASSERT( sizeof(jsval) == sizeof(UINT_PTR) );
 
 			jsid id;
-			JL_CHK( JL_JsvalToJsid(cx, &item, &id) );
+			JL_CHK( JL_JsvalToJsid(cx, item, &id) );
 			S_ASSERT(sizeof(id) <= sizeof(UINT_PTR));
 			uIDNewItem = *(UINT_PTR*)&id;
 		}

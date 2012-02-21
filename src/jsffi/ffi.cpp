@@ -740,7 +740,7 @@ JL_GetReservedSlot(cx, obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
     case FFI_TYPE_POINTER: // PU32[0] = nativeData ...
       {
-        if ( JSVAL_IS_OBJECT( *vp ) && JS_InstanceOf( cx, JSVAL_TO_OBJECT( *vp ), &NativeData, NULL ) ) {
+        if ( JSVAL_IS_OBJECT( *vp ) && JL_ObjectIsInstanceOf(cx, JSVAL_TO_OBJECT( *vp ), &NativeData) ) {
 
           ((void**)*pptr)[index] = *(void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT( *vp ) );
 
@@ -982,7 +982,7 @@ JSBool NativeProc_Call(JSContext *cx, uintN argc, jsval *vp) {
   for ( unsigned int argIterator = 0; argIterator < argc; ++argIterator ) {
 
     jsval currentArg = JS_ARGV(cx, vp)[argIterator];
-    if ( JSVAL_IS_PRIMITIVE(currentArg) || !JS_InstanceOf( cx, JSVAL_TO_OBJECT( currentArg ), &NativeType, NULL ) ) {
+    if ( JSVAL_IS_PRIMITIVE(currentArg) || !JL_ObjectIsInstanceOf(cx, JSVAL_TO_OBJECT( currentArg ), &NativeType) ) {
 
       JS_ReportError( cx, "argument %d must be a NativeType ( current type: %d )", argIterator+1, JS_TypeOfValue( cx, currentArg ) );
       return JS_FALSE;
@@ -997,7 +997,7 @@ JL_GetReservedSlot(cx, JSVAL_TO_OBJECT( currentArg ), 1, &val); // ..., JSVAL_TO
     ffiValueList[argIterator] = *((void**)JL_GetPrivate( cx, JSVAL_TO_OBJECT(val) ) );
   }
 
-  JSObject *thisObj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)); // get 'this' object of the current object ... TODO: check JS_InstanceOf( cx, thisObj, &NativeProc, NULL )
+  JSObject *thisObj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)); // get 'this' object of the current object ... TODO: check JL_ObjectIsInstanceOf(cx, thisObj, &NativeProc)
 
   jsval val;
   JL_GetReservedSlot(cx, thisObj, 1, &val );

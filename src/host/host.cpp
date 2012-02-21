@@ -542,7 +542,10 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 //	CHKHEAP();
 
 	jl::QueueUnshift( &pv->moduleList, module ); // store the module (LIFO)
-	JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID
+	
+	//JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID, ... but UnloadModule is too complicqted to implement and will never exist
+	*JL_RVAL = OBJECT_TO_JSVAL(JL_OBJ);
+
 	return JS_TRUE;
 
 bad:
@@ -742,12 +745,9 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdout), tmp2) );
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, stderr), tmp3) );
 
-	JL_CHK( JL_NativeToJsval(cx, JL_SvnRevToInt(SVN_REVISION_STR), &tmp1) );
-	JL_CHK( JL_NativeToJsval(cx, JL_BUILD, &tmp2) ); // __DATE__YEAR, __DATE__MONTH+1, __DATE__DAY
-	JL_CHK( JL_NativeToJsval(cx, (int)JS_GetVersion(cx), &tmp3) ); // JS_GetImplementationVersion()
-	JL_CHK( SetHostObjectValue(cx, L("revision"), tmp1) ); // JLID(cx, _revision)
-	JL_CHK( SetHostObjectValue(cx, L("build"), tmp2) );
-	JL_CHK( SetHostObjectValue(cx, L("jsVersion"), tmp3) );
+	JL_CHK( SetHostObjectValue(cx, L("revision"), INT_TO_JSVAL(JL_SvnRevToInt(SVN_REVISION_STR))) ); // or JLID(cx, _revision) ?
+	JL_CHK( SetHostObjectValue(cx, L("buildDate"), DOUBLE_TO_JSVAL((double)__DATE__EPOCH * 1000)) );
+	JL_CHK( SetHostObjectValue(cx, L("jsVersion"), INT_TO_JSVAL(JS_GetVersion(cx))) ); // see also JS_GetImplementationVersion()
 
 	// init static modules
 	if ( !jslangModuleInit(cx, globalObject) )

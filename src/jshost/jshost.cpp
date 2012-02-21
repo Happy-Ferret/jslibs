@@ -667,7 +667,7 @@ $H beware
  }}}
 
 === Global functions ===
- * status *loadModule*( moduleFileName )
+ * $THIS *loadModule*( moduleFileName )
   Loads and initialize the specified module.
   Do not provide the file extension in _moduleFileName_.
   $H exemple
@@ -677,11 +677,40 @@ $H beware
   }}}
   $H note
   You can avoid loadModule to use the global object and load the module in your own namespace:
+  $H example 1
   {{{
   var std = {};
-  loadModule.call( std, 'jsstd' );
+  loadModule.call(std, 'jsstd');
   std.print( std.idOf(1234), '\n' );
   std.print( std.idOf(1234), '\n' );
+  }}}
+  $H example 2
+  {{{
+  var std = loadModule.call({}, 'jsstd');
+  std.print('hello ');
+  std.print('world');
+  }}}
+  $H example 3
+  {{{
+  var moduleMap = new Map();
+  function myLoadModule(name) {
+    
+    var ns = {};
+    var id = loadModule.call(ns, name);
+    return id ? (moduleMap.set(name, ns), ns) : moduleMap.get(name);
+  }
+
+  // ...
+
+  var s1 = myLoadModule('jsstd');
+  var s2 = myLoadModule('jsstd');
+  var s3 = myLoadModule('jsstd');
+
+  s1.print('hello\n');
+  s2.print('hello\n');
+  s3.print('hello\n');
+
+  throw 0;
   }}}
 
 === Global properties ===

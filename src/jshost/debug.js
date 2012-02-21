@@ -1,13 +1,7 @@
 //RunJsircbot(false); throw 0;
 //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
 //loadModule('jsstd'); exec('../common/tools.js'); var QA = fakeQAApi;  runLocalQAFile();
-
-loadModule('jsstd');
-print( _host.build, '\n' );
-halt();
-
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask');
-
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('-rep 5 -exclude jstask');
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //SetPerfTestMode();
 
@@ -15,10 +9,25 @@ loadModule('jscrypt');
 loadModule('jsstd');
 loadModule('jsio');
 
-jslangTest();
+_jsapiTests();
+
+var err = new Error();
+for ( var p in err ) {
+
+	err.hasOwnProperty(p);
+}
+
+// JS_Enumerate(cx, JSVAL_TO_OBJECT(JL_ARG(1)))->length
+
+jslangTest(err);
 
 halt();
 
+
+
+
+
+/*
 function camelify(str) {
 	
 	return str[0].toLowerCase() + str.substr(1);
@@ -201,24 +210,8 @@ recursiveDir(jslibsRoot, function(f) {
 		var newContent = content.replace(/([^\w'"])([A-Z][a-z0-9]\w*)/g, function(all, p1, token, offset, str) {
 			
 			if ( !classList[token] && !global[token] ) {
-
-/*				
-				var end = str.indexOf('\n', offset);
-				var line = str.substring( str.lastIndexOf('\n', offset)+1, end != -1 ? end-1 : str.length );
-
-				var before = str.substring( str.lastIndexOf('\n', offset)+1, offset );
-				var after = str.substring( offset, end != -1 ? end-1 : str.length );
-				
-				if ( before.indexOf('//') != -1 || ( before.indexOf('/ *') != -1 && before.indexOf('* /') == -1 ) ) {
-				
-					changes += token + '(' + before + 'XXXXX' + after + ')'+'\n';
-				} else {
-				}
-				changes += token + '   ...('+line+')' + '\n';
-*/				
-				
+		
 				var before = str.substring( str.lastIndexOf('\n', offset)+1, offset );				
-	
 				if ( before.indexOf('//') == -1 )
 					token = camelify(token);
 			}
@@ -229,3 +222,6 @@ recursiveDir(jslibsRoot, function(f) {
 		f.content = newContent;
 	}
 });
+
+*/
+

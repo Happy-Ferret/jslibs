@@ -731,26 +731,30 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	JSObject *o = JL_NewObj(cx);
 	jsid id;
 	jsval s = OBJECT_TO_JSVAL(o);
-	JL_CHK( JL_JsvalToJsid(cx, &s, &id) );
+	ASSERT( JL_JsvalToJsid(cx, s, &id) );
 	ASSERT( JSID_IS_OBJECT(id) );
 	jsval r;
-	JL_CHK( JL_JsidToJsval(cx, id, &r) );
+	ASSERT( JL_JsidToJsval(cx, id, &r) );
 	ASSERT( JSVAL_TO_OBJECT(r) == o );
 
-	JL_CHK( JS_ValueToId(cx, OBJECT_TO_JSVAL(o), &id) );
+	ASSERT( JS_ValueToId(cx, OBJECT_TO_JSVAL(o), &id) );
 	ASSERT( !JSID_IS_OBJECT(id) );
 
 	JSBool found;
-	JL_CHK( JS_DefineProperty(cx, o, "test", JSVAL_ONE, NULL, NULL, JSPROP_PERMANENT) );
-	JL_CHK( JS_HasProperty(cx, o, "test", &found) );
+	ASSERT( JS_DefineProperty(cx, o, "test", JSVAL_ONE, NULL, NULL, JSPROP_PERMANENT) );
+	ASSERT( JS_HasProperty(cx, o, "test", &found) );
 	ASSERT( found );
 
 	JSString *jsstr = JS_NewUCStringCopyZ(cx, L"testtesttesttesttesttesttesttesttesttesttesttest");
 	jsid pid;
 	pid = JL_StringToJsid(cx, jsstr);
 
+	ASSERT( JL_JsvalToJsid(cx, OBJECT_TO_JSVAL(JS_NewObject(cx, NULL, NULL, NULL)), &id) );
+	ASSERT( JSID_IS_OBJECT(id) );
+
+
 //	// see Bug 688510
-//	ASSERT( JS_GetParent(JS_NewObject(cx, NULL, NULL, NULL)) != NULL );
+	ASSERT( JS_GetParent(JS_NewObject(cx, NULL, NULL, NULL)) != NULL );
 //	ASSERT( JS_GetParent(JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL)) != NULL );
 
 
@@ -787,6 +791,8 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_IGNORE(cx);
 	JL_IGNORE(argc);
 	JL_IGNORE(vp);
+
+
 
 //	jsid l = JLID(cx, length);
 

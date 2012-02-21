@@ -657,7 +657,7 @@ DEFINE_FUNCTION( createProcess ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	int processArgc;
-	if ( JL_ARG_ISDEF(2) && JSVAL_IS_OBJECT(JL_ARG(2)) && JS_IsArrayObject( cx, JSVAL_TO_OBJECT(JL_ARG(2)) ) == JS_TRUE ) {
+	if ( JL_ARG_ISDEF(2) && JSVAL_IS_OBJECT(JL_ARG(2)) && JL_IsArrayObject( cx, JSVAL_TO_OBJECT(JL_ARG(2)) ) == JS_TRUE ) {
 
 		JSIdArray *idArray;
 		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(JL_ARG(2)) ); // make a kind of auto-ptr for this

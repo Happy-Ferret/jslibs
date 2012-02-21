@@ -38,6 +38,8 @@
 #define __DATE__HOUR (((__TIME__[0]-'0')*10) + (__TIME__[1]-'0'))
 #define __DATE__MINUTE (((__TIME__[3]-'0')*10) + (__TIME__[4]-'0'))
 #define __DATE__SECOND (((__TIME__[6]-'0')*10) + (__TIME__[7]-'0'))
+#define __DATE__EPOCH_DAYS (( __DATE__MONTH > 2 ? (__DATE__YEAR*365 + __DATE__YEAR/4 - __DATE__YEAR/100 + __DATE__YEAR/400 + (__DATE__MONTH+1) * 306001 / 10000 + __DATE__DAY) : ((__DATE__YEAR-1)*365 + (__DATE__YEAR-1)/4 - (__DATE__YEAR-1)/100 + (__DATE__YEAR-1)/400 + (__DATE__MONTH+13) * 306001 / 10000 + __DATE__DAY) ) - 719591)
+#define __DATE__EPOCH (__DATE__EPOCH_DAYS * 86400 + __DATE__HOUR * 3600 + __DATE__MINUTE * 60 + __DATE__SECOND)
 
 #define JL_BUILD ( (((__DATE__YEAR * 12 + __DATE__MONTH) * 31 + __DATE__DAY) * 24 + __DATE__HOUR) - (((2006*12 + 6)*31 + 22)*24 + 0) ) // - Aug 22, 2006
 

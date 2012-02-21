@@ -309,7 +309,7 @@ namespace jl {
 			JSObject *obj;
 			obj = JSVAL_TO_OBJECT(val);
 
-			if ( JL_ObjectIsArray(cx, obj) ) {
+			if ( JL_ObjectIsArray(cx, obj) ) { // real array object, not array-like !
 
 				jsuint length;
 				JL_CHK( JS_GetArrayLength(cx, obj, &length) );

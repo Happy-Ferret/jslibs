@@ -416,6 +416,7 @@ enum {
 	JLID_SPEC( stdout ),
 	JLID_SPEC( stderr ),
 	JLID_SPEC( _revision ),
+	JLID_SPEC( _buildDate ),
 	JLID_SPEC( scripthostpath ),
 	JLID_SPEC( scripthostname ),
 	JLID_SPEC( isfirstinstance ),
@@ -718,7 +719,7 @@ JL_GetPrivateJsid( JSContext * RESTRICT cx, int index, const jschar * RESTRICT n
 ///////////////////////////////////////////////////////////////////////////////
 // Type check functions
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsBoolean( JSContext *cx, JSObject *obj ) {
 
 	ASSERT( obj != NULL );
@@ -726,27 +727,27 @@ JL_ObjectIsBoolean( JSContext *cx, JSObject *obj ) {
 	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_Boolean, &proto) && JL_GetClass(obj) == JL_GetClass(proto);
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsBooleanObject( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
 	JL_IGNORE(cx);
 	return !JSVAL_IS_PRIMITIVE(value) && JL_ObjectIsBoolean(cx, JSVAL_TO_OBJECT(value));
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsBoolean( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
 	return JSVAL_IS_BOOLEAN(value) || JL_ValueIsBooleanObject(cx, value);
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsInteger( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
 	JL_IGNORE(cx);
 	return JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && JL_DOUBLE_IS_INTEGER(JSVAL_TO_DOUBLE(value)));
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsNumber( JSContext *cx, JSObject *obj ) {
 
 	ASSERT( obj != NULL );
@@ -754,13 +755,13 @@ JL_ObjectIsNumber( JSContext *cx, JSObject *obj ) {
 	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_Number, &proto) && JL_GetClass(obj) == JL_GetClass(proto);
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsNumberObject( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
 	return !JSVAL_IS_PRIMITIVE(value) && JL_ObjectIsNumber(cx, JSVAL_TO_OBJECT(value));
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsNumber( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
 	return JSVAL_IS_NUMBER(value) || JL_ValueIsNumberObject(cx, value);
@@ -775,25 +776,25 @@ JL_ValueIsInteger53( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 }
 */
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsNaN( JSContext *cx, const jsval &val ) {
 
 	return val == JL_GetNaNValue(cx);
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsPInfinity( JSContext *cx, const jsval &val ) {
 
 	return val == JS_GetPositiveInfinityValue(cx);
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsNInfinity( JSContext *cx, const jsval &val ) {
 
 	return val == JS_GetNegativeInfinityValue(cx);
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsReal( const JSContext *cx, const jsval &val ) {
 
 	JL_IGNORE(cx);
@@ -807,7 +808,7 @@ JL_ValueIsReal( const JSContext *cx, const jsval &val ) {
 	return false;
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsNegative( JSContext *cx, const jsval &val ) {
 
 	return ( JSVAL_IS_INT(val) && JSVAL_TO_INT(val) < 0 )
@@ -815,14 +816,14 @@ JL_ValueIsNegative( JSContext *cx, const jsval &val ) {
 	    || JL_ValueIsNInfinity(cx, val);
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsClass( const jsval &val, const JSClass *jsClass ) {
 	
 	ASSERT( jsClass != NULL );
 	return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsObject( JSContext *cx, JSObject *obj ) {
 
 	ASSERT( obj != NULL );
@@ -830,7 +831,7 @@ JL_ObjectIsObject( JSContext *cx, JSObject *obj ) {
 	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_Object, &proto) && JL_GetClass(obj) == JL_GetClass(proto);
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsGenerator( JSContext * RESTRICT cx, jsval &val ) {
 
 	// see: jsfun.h:fun_isGenerator()
@@ -840,57 +841,57 @@ JL_ValueIsGenerator( JSContext * RESTRICT cx, jsval &val ) {
 	    && rval == JSVAL_TRUE;
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsCallable( JSContext *cx, JSObject *obj ) {
 
 	return JS_ObjectIsCallable(cx, obj) == JS_TRUE;
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsCallable( JSContext *cx, jsval &val ) {
 
 	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsCallable(cx, JSVAL_TO_OBJECT(val));
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsArray( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
 	return JS_IsArrayObject(cx, obj) == JS_TRUE;
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsArrayLike( JSContext *cx, JSObject *obj ) {
 
 	JSBool found;
 	return JS_HasPropertyById(cx, obj, JLID(cx, length), &found) && found == JS_TRUE;
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsArray( JSContext *cx, const jsval &val ) {
 
 	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsArray(cx, JSVAL_TO_OBJECT(val));
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsVector( JSContext *cx, JSObject *obj ) {
 
-	return JL_ObjectIsArray(cx, obj) || js_IsTypedArray(obj);
+	return JL_ObjectIsArray(cx, obj) || js_IsTypedArray(obj) || JL_ObjectIsArrayLike(cx, obj);
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsVector( JSContext *cx, const jsval &val ) {
 
-	return !JSVAL_IS_PRIMITIVE(val) && ( JL_ObjectIsArray(cx, JSVAL_TO_OBJECT(val)) || js_IsTypedArray(JSVAL_TO_OBJECT(val)) );
+	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsVector(cx, JSVAL_TO_OBJECT(val));
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsXML( JSContext *cx, JSObject *obj ) {
 
 	ASSERT( obj );
 	return JS_TypeOfValue(cx, OBJECT_TO_JSVAL(obj)) == JSTYPE_XML;
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsString( JSContext *cx, JSObject *obj ) {
 
 	ASSERT( obj );
@@ -898,7 +899,7 @@ JL_ObjectIsString( JSContext *cx, JSObject *obj ) {
 	return JL_GetClassPrototype(cx, JL_GetGlobalObject(cx), JSProto_String, &proto) && JL_GetClass(obj) == JL_GetClass(proto);
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsError( JSContext *cx, JSObject *obj ) {
 
 	ASSERT( obj );
@@ -907,18 +908,24 @@ JL_ObjectIsError( JSContext *cx, JSObject *obj ) {
 }
 
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsData( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
 	return BufferGetInterface(cx, obj) != NULL || JL_ObjectIsArray(cx, obj) || (js_IsTypedArray(obj) /*&& js::TypedArray::fromJSObject(obj)->valid()*/) /*|| js_IsArrayBuffer(obj)*/ || JL_ObjectIsString(cx, obj);
 }
 
-ALWAYS_INLINE bool
+ALWAYS_INLINE bool FASTCALL
 JL_ValueIsData( JSContext *cx, const jsval &val ) {
 
 	return JSVAL_IS_STRING(val) || ( !JSVAL_IS_PRIMITIVE(val) && NOIL(JL_ObjectIsData)(cx, JSVAL_TO_OBJECT(val)) );
 }
 
+ALWAYS_INLINE bool FASTCALL
+JL_ObjectIsInstanceOf( JSContext *cx, JSObject * RESTRICT obj, JSClass * RESTRICT clasp ) {
+
+	JL_IGNORE(cx);
+	return obj && JL_GetClass(obj) == clasp;
+}
 
 
 
@@ -1128,10 +1135,10 @@ enum E_TXTID {
 	JL_ASSERT( (JL_ARGC, JS_IsConstructing(cx, vp)), E_THISOBJ, E_CONSTRUCT )
 
 #define JL_ASSERT_INSTANCE( jsObject, jsClass ) \
-	JL_ASSERT( JL_GetClass(/*JL_GetPrototype(cx, */jsObject/*)*/) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) )
+	JL_ASSERT( JL_GetClass(/*JL_GetPrototype(cx, */jsObject/*)*/) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
 
 #define JL_ASSERT_THIS_INSTANCE() \
-	JL_ASSERT( JL_GetClass(JL_OBJ) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) )
+	JL_ASSERT( JL_GetClass(JL_OBJ) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
 
 #define JL_ASSERT_INHERITANCE( jsObject, jsClass ) \
 	JL_ASSERT( NOIL(JL_InheritFrom)(cx, JL_GetPrototype(cx, jsObject), (jsClass)), E_OBJ, E_INHERIT, E_NAME((jsClass)->name) )
@@ -2616,27 +2623,27 @@ JL_JsvalToFunction( JSContext *cx, jsval &val ) {
 }
 
 
-ALWAYS_INLINE JSBool
-JL_JsvalToJsid( JSContext * RESTRICT cx, jsval * RESTRICT val, jsid * RESTRICT id ) {
+ALWAYS_INLINE JSBool FASTCALL
+JL_JsvalToJsid( JSContext * RESTRICT cx, jsval val, jsid * RESTRICT id ) {
 
-	if ( JSVAL_IS_INT( *val ) ) {
+	if ( JSVAL_IS_STRING( val ) ) {
 
-		*id = INT_TO_JSID( JSVAL_TO_INT( *val ) );
-	} else
-	if ( JSVAL_IS_OBJECT( *val ) ) {
-
-		*id = OBJECT_TO_JSID( JSVAL_TO_OBJECT( *val ) );
-	} else
-	if ( JSVAL_IS_STRING( *val ) ) {
-
-		*id = JL_StringToJsid(cx, JSVAL_TO_STRING( *val ));
+		*id = JL_StringToJsid(cx, JSVAL_TO_STRING( val ));
 		ASSERT( JSID_IS_STRING( *id ) );
 	} else
-	if ( JSVAL_IS_VOID( *val ) ) {
+	if ( JSVAL_IS_INT( val ) && INT_FITS_IN_JSID( JSVAL_TO_INT( val ) ) ) {
+
+		*id = INT_TO_JSID( JSVAL_TO_INT( val ) );
+	} else
+	if ( JSVAL_IS_OBJECT( val ) ) {
+
+		*id = OBJECT_TO_JSID( JSVAL_TO_OBJECT( val ) );
+	} else
+	if ( JSVAL_IS_VOID( val ) ) {
 
 		*id = JSID_VOID;
 	} else
-		return JS_ValueToId(cx, *val, id);
+		return JS_ValueToId(cx, val, id);
 	return JS_TRUE;
 }
 
@@ -2645,9 +2652,24 @@ ALWAYS_INLINE JSBool FASTCALL
 JL_JsidToJsval( JSContext * RESTRICT cx, jsid id, jsval * RESTRICT val ) {
 
 	JL_IGNORE(cx);
-	//*val = js::IdToJsval(id); // see jsatom.h
-	//return JS_TRUE;
-	return JS_IdToValue(cx, id, val);
+	if (JSID_IS_STRING(id)) {
+        
+		*val = js::StringValue(JSID_TO_STRING(id));
+	} else
+	if (JS_LIKELY(JSID_IS_INT(id))) {
+
+		*val = js::Int32Value(JSID_TO_INT(id));
+	} else
+	if (JS_LIKELY(JSID_IS_OBJECT(id))) {
+
+		*val = js::ObjectValue(*JSID_TO_OBJECT(id));
+	} else
+	if (JS_LIKELY(JSID_IS_VOID(id))) {
+
+		*val = js::UndefinedValue();
+	} else
+		return JS_IdToValue(cx, id, val);
+	return JS_TRUE;
 }
 
 
@@ -2746,7 +2768,8 @@ RemoveHostObject(JSContext *cx) {
 INLINE JSObject* FASTCALL
 GetHostObject(JSContext *cx) {
 
-	JSObject *cobj, *globalObject = JL_GetGlobalObject(cx);
+	JSObject *cobj;
+	JSObject *globalObject = JL_GetGlobalObject(cx);
 	JL_CHK( globalObject );
 	jsval hostObjectValue;
 	jsid hostObjectId;
@@ -2764,6 +2787,7 @@ GetHostObject(JSContext *cx) {
 		//cobj = JS_DefineObject(cx, globalObject, JLID_NAME(cx, _host), NULL, NULL, 0 );
 		//JL_CHK( cobj ); // Doc: If the property already exists, or cannot be created, JS_DefineObject returns NULL.
 	} else {
+
 		JL_CHK( JSVAL_IS_OBJECT(hostObjectValue) );
 		cobj = JSVAL_TO_OBJECT(hostObjectValue);
 	}

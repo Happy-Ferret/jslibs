@@ -37,6 +37,7 @@ struct JLClassSpec {
 	JLConstIntegerSpec *cis;
 	JSBool (*init)(JSContext *cx, JLClassSpec *sc, JSObject *proto, JSObject *obj);
 	JLRevisionType revision;
+	double buildDate;
 };
 
 
@@ -112,8 +113,8 @@ inline JSBool JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	if ( cs->cds != NULL )
 		JL_CHK( JS_DefineConstDoubles(cx, obj, cs->cds) );
 
-	if ( cs->revision != 0 )
-		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( cs->init )
 		JL_CHK( cs->init(cx, cs, NULL, obj) );
@@ -191,6 +192,10 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 //if ( cs->revision != 0 )
 	if ( !(cs->clasp.flags & JSCLASS_FREEZE_PROTO) )
 		JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+
+	if ( !(cs->clasp.flags & JSCLASS_FREEZE_PROTO) )
+		JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+
 //	if ( protoFrozen )
 //		JL_CHK( JS_FreezeObject(cx, proto) );
 
@@ -249,6 +254,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 			cs.clasp.resolve = JS_ResolveStub; \
 			cs.clasp.convert = JS_ConvertStub; \
 			cs.clasp.finalize = JS_FinalizeStub; \
+			cs.buildDate = (double)__DATE__EPOCH * 1000; \
 
 #define END_CLASS \
 			return &cs; \

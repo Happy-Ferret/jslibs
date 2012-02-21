@@ -16,8 +16,6 @@
 #include <jslibsModule.h>
 
 #include <jsdbgapi.h>
-//#include <jsscope.h>
-
 
 
 #ifdef VALGRIND
@@ -630,7 +628,6 @@ in about:config javascript.options.gczeal = 2 (or 1, or 0, to disable).
 $TOC_MEMBER $INAME
  $INAME $READONLY
   Enable GC zeal, a testing and debugging feature that helps find GC-related bugs in JSAPI applications.
-  Level of garbage collection: 0 for normal, 1 for very frequent GC, 2 for extremely frequent GC.
  $H note
   This function in only available in DEBUG mode.
 **/
@@ -640,7 +637,7 @@ DEFINE_PROPERTY_SETTER( gcZeal ) {
 
 	uint8_t zeal;
 	JL_CHKM( JL_JsvalToNative(cx, *vp, &zeal), E_VALUE, E_INVALID );
-	JS_SetGCZeal(cx, zeal, JS_DEFAULT_ZEAL_FREQ, JS_FALSE);
+	JS_SetGCZeal(cx, zeal, 1, JS_FALSE); // JS_DEFAULT_ZEAL_FREQ
 	return JL_StoreProperty(cx, obj, id, vp, false);
 
 #else // JS_GC_ZEAL

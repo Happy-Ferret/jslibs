@@ -1104,7 +1104,7 @@ DEFINE_FUNCTION( sendVstEventToHost ) {
 
 	bool res;
 
-	if ( JS_InstanceOf(cx, eventObj, JL_CLASS(MidiEvent), NULL) == JS_TRUE ) {
+	if ( JL_ObjectIsInstanceOf(cx, eventObj, JL_CLASS(MidiEvent)) == JS_TRUE ) {
 
 		VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(cx, eventObj);
 		JL_ASSERT_OBJECT_STATE(pv, JL_CLASS_NAME(MidiEvent));
