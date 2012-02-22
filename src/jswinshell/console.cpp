@@ -401,7 +401,7 @@ DEFINE_FUNCTION( readConsoleInput ) {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE HANDLE $INAME()
-  Passively waits for a new Console event through the ProcessEvents function.
+  Passively waits for a new Console event through the processEvents function.
 **/
 
 struct UserProcessEvent {

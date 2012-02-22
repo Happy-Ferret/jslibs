@@ -121,12 +121,21 @@ DEFINE_FUNCTION( isPrimitive ) {
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME()
-  Returns $TRUE if the value is a function.
+  Returns $TRUE if the value is callable (either a function or a callable object).
+  $H example
+  {{{
+  var md5 = new Hash('md5');
+
+  print( isCallable(md5) ) // prints true
+  print( typeof(md5) == 'function' ) // prints false
+  
+  // md5 can be called even if it is not a function.
+  print( hexEncode( md5('foobar') ) ); // prints: 3858F62230AC3C915F300C664312C63F
+  }}}
 **/
-DEFINE_FUNCTION( isFunction ) {
+DEFINE_FUNCTION( isCallable ) {
 
 	JL_ASSERT_ARGC(1);
-	//*JL_RVAL = BOOLEAN_TO_JSVAL( VALUE_IS_CALLABLE(cx, JL_ARG(1)) );
 	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_ValueIsCallable(cx, JL_ARG(1)) );
 	return JS_TRUE;
 	JL_BAD;
@@ -238,6 +247,8 @@ $TOC_MEMBER $INAME
  $INT $INAME( eventsHandler1 [, ... [, eventsHandler30]] )
   Passive event waiting.
   Returns the bit field that represents the index (in arguments order) of the triggered events. eg. if eventsHandler1 event is triggered, bit 1 is set.
+  $H note
+   Calling processEvents() with no argument jsut returns 0.
   $H example 1
 {{{
 loadModule('jsstd');
@@ -253,8 +264,18 @@ function onEndSignal() {
   throw 0;
 }
 
-for (;;)
+for (;;) {
+
   processEvents( timeoutEvents(500, onTimeout), endSignalEvents(onEndSignal) );
+}
+}}}
+
+  $H example 2
+{{{
+function mySleep(timeout) {
+
+	processEvents( timeoutEvents(timeout) );
+}
 }}}
 **/
 JLThreadFuncDecl ProcessEventThread( void *data ) {
@@ -400,7 +421,7 @@ DEFINE_FUNCTION( processEvents ) {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE id $INAME( msTimeout [, onTimeout] )
- Passively waits for a timeout through the ProcessEvents function.
+ Passively waits for a timeout through the processEvents function.
 **/
 struct UserProcessEvent {
 
@@ -822,7 +843,7 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( isBoolean, 1 )
 		FUNCTION_ARGC( isNumber, 1 )
 		FUNCTION_ARGC( isPrimitive, 1 )
-		FUNCTION_ARGC( isFunction, 1 )
+		FUNCTION_ARGC( isCallable, 1 )
 //		FUNCTION_ARGC( isGeneratorFunction, 1 )
 //		FUNCTION_ARGC( isGeneratorObject, 1 )
 
@@ -830,7 +851,7 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( real, 1 )
 
 		FUNCTION_ARGC( stringify, 1 )
-		FUNCTION_ARGC( processEvents, 4 ) // (just a guess)
+		FUNCTION_ARGC( processEvents, 4 ) // (4 is just a guess)
 		FUNCTION_ARGC( timeoutEvents, 2 )
 
 		#ifdef DEBUG

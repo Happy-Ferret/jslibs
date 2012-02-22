@@ -251,7 +251,7 @@ bad1:
 / **doc
 $TOC_MEMBER $INAME
  $INT $INAME( _descriptorArray_ )
-  Passively waits for a descriptor event through the ProcessEvents function.
+  Passively waits for a descriptor event through the processEvents function.
   $H example:
 {{{
 (TBD)

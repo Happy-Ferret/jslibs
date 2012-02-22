@@ -629,7 +629,7 @@ DEFINE_PROPERTY_GETTER( idle ) {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE Handle $INAME
- Passively waits for a response through the ProcessEvents function. When a new response is available, the onResponse function of the Task object is called.
+ Passively waits for a response through the processEvents function. When a new response is available, the onResponse function of the Task object is called.
  $H example
 {{{
 loadModule('jstask');

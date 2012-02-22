@@ -729,7 +729,7 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE HANDLE $INAME( directoryChangesHandle [, onChanges] )
-  Passively waits for directory changes through the ProcessEvents function.
+  Passively waits for directory changes through the processEvents function.
   $H example:
 {{{
 loadModule('jsstd');

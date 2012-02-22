@@ -108,7 +108,7 @@ DEFINE_CONSTRUCTOR() {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE HANDLE $INAME()
-  Passively waits for a new image through the ProcessEvents function.
+  Passively waits for a new image through the processEvents function.
 **/
 
 struct UserProcessEvent {

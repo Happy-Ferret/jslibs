@@ -619,7 +619,7 @@ DEFINE_FUNCTION( processEvents ) {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE HANDLE $INAME()
-  Passively waits for Systray events through the ProcessEvents function.
+  Passively waits for Systray events through the processEvents function.
 **/
 
 struct UserProcessEvent {
@@ -1326,7 +1326,7 @@ DEFINE_TRACER() {
 
 /**doc
 === Callback functions ===
- The following functions are called when you call ProcessEvents() according the events received by the tray icon.
+ The following functions are called when you call processEvents() according the events received by the tray icon.
   * *onfocus*( $TRUE )
   * *onblur*( $FALSE )
   * *onchar*( $STR char )

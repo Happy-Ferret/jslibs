@@ -610,7 +610,7 @@ DEFINE_FUNCTION( setGamma ) {
 $TOC_MEMBER $INAME
  $VOID $INAME( [async = false] )
   Perform a GL buffer swap on the current GL context.
-  If _async_ is true, you must wait for the SurfaceReadyEvents through the ProcessEvents() function before drawing again.
+  If _async_ is true, you must wait for the SurfaceReadyEvents through the processEvents() function before drawing again.
 **/
 DEFINE_FUNCTION( glSwapBuffers ) {
 
@@ -1250,7 +1250,7 @@ DEFINE_PROPERTY_GETTER( maxFPS ) {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE HANDLE $INAME()
-  Passively waits for the SDL drawing surface ready state through the ProcessEvents function.
+  Passively waits for the SDL drawing surface ready state through the processEvents function.
 **/
 struct SurfaceReadyProcessEvent {
 	
@@ -1341,10 +1341,10 @@ DEFINE_FUNCTION( surfaceReadyEvents ) {
 /**doc
 $TOC_MEMBER $INAME
  $TYPE HANDLE $INAME()
-  Passively waits for a SDL event through the ProcessEvents function.
+  Passively waits for a SDL event through the processEvents function.
   $H note
    Receiving a SDL event do not mean that the surface is ready to be drawn.$LF
-	Call ProcessEvents( SurfaceReadyEvents() ); to ensur the surface is ready to use.
+	Call processEvents( SurfaceReadyEvents() ); to ensur the surface is ready to use.
 **/
 struct UserProcessEvent {
 	

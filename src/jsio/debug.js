@@ -213,7 +213,7 @@ while ( !endSignal )
  poll(descList, 50);
 
 //while ( !endSignal )
-//	ProcessEvents( IOEvents(descList), EndSignalEvents(), TimeoutEvents(100) );
+//	processEvents( IOEvents(descList), EndSignalEvents(), TimeoutEvents(100) );
 
 
 //jsioTest();

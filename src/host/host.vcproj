@@ -187,6 +187,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\common\jsvalserializer.h"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>

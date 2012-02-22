@@ -845,14 +845,14 @@ loadModule('jsstd');
 	QA.ASSERT(inheritFrom(B, A), false, 'InheritFrom test B,A');
 
 
-/// ProcessEvents() [t]
+/// processEvents() [t]
 
 	var timeout = timeoutEvents(123);
 	var t = timeCounter();
 	processEvents(timeout);
 	t = timeCounter() - t;
 	QA.ASSERT( t > 122 && t < 130, true, 'TimeoutEvents time ('+t+')' );
-//	QA.ASSERT_EXCEPTION( function() ProcessEvents(timeout), Error, 'ProcessEvents reused' );
+//	QA.ASSERT_EXCEPTION( function() processEvents(timeout), Error, 'processEvents reused' );
 
 
 /// Serialization / Unserialization crash 1

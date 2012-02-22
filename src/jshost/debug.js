@@ -9,17 +9,19 @@ loadModule('jscrypt');
 loadModule('jsstd');
 loadModule('jsio');
 
-_jsapiTests();
 
-var err = new Error();
-for ( var p in err ) {
 
-	err.hasOwnProperty(p);
-}
+	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+	
+	processEvents( Descriptor.events([rdv]), timeoutEvents(2000) );
+	
+	var sv = rdv.accept(); rdv.close();
 
-// JS_Enumerate(cx, JSVAL_TO_OBJECT(JL_ARG(1)))->length
 
-jslangTest(err);
+
+print( processEvents() );
+
 
 halt();
 
