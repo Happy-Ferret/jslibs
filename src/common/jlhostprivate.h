@@ -57,6 +57,10 @@ struct HostPrivate {
 	jsid ids[LAST_JSID];
 	ClassProtoCache classProtoCache[1<<MAX_CLASS_PROTO_CACHE_BIT]; // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
 	JLApi *jlapi;
+#ifdef DEBUG
+	uint32_t tmp_count;
+#endif
+
 };
 
 S_ASSERT( offsetof(HostPrivate, unsafeMode) == 0 ); // check this because JL_ASSERT macro must be usable before hostPrivateVersion is tested.

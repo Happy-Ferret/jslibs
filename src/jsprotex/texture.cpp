@@ -246,14 +246,6 @@ JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, P
 		return JS_TRUE;
 	}
 
-	if ( JL_ValueIsArray(cx, value) ) {
-
-		uint32_t length;
-		JL_CHK( JL_JsvalToNativeVector(cx, value, level, levelMaxLength, &length) );
-		JL_ASSERT( length < levelMaxLength, E_ARRAYLENGTH, E_MAX, E_NUM(levelMaxLength) ); // JL_ASSERT( length >= levelMaxLength, "Array too small." );
-		return JS_TRUE;
-	}
-
 	if ( JSVAL_IS_STRING(value) ) {
 
 		JLStr colorStr;
@@ -285,6 +277,14 @@ JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, P
 		}
 	}
 
+	if ( JL_ValueIsArrayLike(cx, value) ) {
+
+		uint32_t length;
+		JL_CHK( JL_JsvalToNativeVector(cx, value, level, levelMaxLength, &length) );
+		JL_ASSERT( length < levelMaxLength, E_ARRAYLENGTH, E_MAX, E_NUM(levelMaxLength) ); // JL_ASSERT( length >= levelMaxLength, "Array too small." );
+		return JS_TRUE;
+	}
+
 	JL_ERR( E_ARG, E_TYPE, E_TY_NUMBER, E_OR, E_TY_ARRAY, E_OR, E_TY_STRING );
 	JL_BAD;
 }
@@ -311,7 +311,7 @@ JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) 
 		return JS_TRUE;
 	}
 
-	if ( JL_ValueIsArray(cx, value) ) {
+	if ( JL_ValueIsArray(cx, value) ) { // do not manage array-like here since string are handeled below.
 
 		jsuint curveArrayLength;
 		JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(value), &curveArrayLength) );
@@ -1620,7 +1620,7 @@ DEFINE_FUNCTION( add ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_ValueIsArray(cx, *arg1) ) {
+	if ( JL_ValueIsArrayLike(cx, *arg1) ) {
 
 		PTYPE *pos, level, pixel[PMAXCHANNELS];
 		JL_CHK( InitLevelData(cx, *arg1, channels, pixel) );
@@ -1707,7 +1707,7 @@ DEFINE_FUNCTION( mult ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_ValueIsArray(cx, *arg1) ) {
+	if ( JL_ValueIsArrayLike(cx, *arg1) ) {
 
 		PTYPE *pos, level, pixel[PMAXCHANNELS];
 		JL_CHK( InitLevelData(cx, *arg1, channels, pixel) );

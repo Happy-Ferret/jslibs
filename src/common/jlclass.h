@@ -327,7 +327,6 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define FROZEN_CONSTRUCTOR cs.clasp.flags |= JSCLASS_FREEZE_CTOR;
 #define HAS_PRIVATE cs.clasp.flags |= JSCLASS_HAS_PRIVATE;
 #define HAS_RESERVED_SLOTS(COUNT) cs.clasp.flags |= JSCLASS_HAS_RESERVED_SLOTS(COUNT);
-#define CONSTRUCT_PROTOTYPE cs.clasp.flags |= JSCLASS_CONSTRUCT_PROTOTYPE;
 #define IS_GLOBAL cs.clasp.flags |= JSCLASS_GLOBAL_FLAGS;
 #define IS_ANONYMOUS cs.clasp.flags |= JSCLASS_IS_ANONYMOUS;
 #define HAS_ALL_PROPERTIES_SHARED cs.clasp.flags |= JSCLASS_SHARE_ALL_PROPERTIES;
@@ -431,7 +430,6 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 //JSCLASS_NEW_ENUMERATE         
 //JSCLASS_NEW_RESOLVE           
 //JSCLASS_NEW_RESOLVE_GETS_START
-//JSCLASS_CONSTRUCT_PROTOTYPE
 //JSCLASS_DOCUMENT_OBSERVER  
 //JSCLASS_HAS_RESERVED_SLOTS(n)
 //JSCLASS_RESERVED_SLOTS(clasp)

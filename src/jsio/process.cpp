@@ -59,7 +59,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_ASSERT_ARGC_MIN(1);
-	JL_ASSERT( !JL_ARG_ISDEF(2) || JL_ValueIsArray(cx, JL_ARG(2)), E_ARG, E_NUM(2), E_TYPE, E_TY_ARRAY );
+	JL_ASSERT( !JL_ARG_ISDEF(2) || JL_ValueIsArrayLike(cx, JL_ARG(2)), E_ARG, E_NUM(2), E_TYPE, E_TY_ARRAY );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &path) );
 
@@ -67,26 +67,24 @@ DEFINE_CONSTRUCTOR() {
 	psattr = PR_NewProcessAttr();
 	JL_CHK( psattr );
 
-	int processArgc;
+	uint32_t processArgc;
 	const char **processArgv;
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JSIdArray *idArray;
-		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(JL_ARG(2)) ); // make a kind of auto-ptr for this
-		processArgc = idArray->length +1; // +1 is argv[0]
+		JSObject *argObj = JSVAL_TO_OBJECT(JL_ARG(2));
+		JL_CHK( JS_GetArrayLength(cx, argObj, &processArgc) );
+		processArgc++; // +1 is argv[0]
 		processArgv = (const char**)alloca(sizeof(const char**) * (processArgc +1)); // +1 because the NULL list terminator.
 		JL_ASSERT_ALLOC( processArgv );
 
-		for ( int i=0; i<processArgc -1; i++ ) { // -1 because argv[0]
+		for ( uint32_t i = 0; i < processArgc -1; ++i ) { // -1 because argv[0]
 
 			JLStr tmp;
 			jsval propVal;
-			JL_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal) );
-			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), JSVAL_TO_INT(propVal), &propVal) ); // (TBD) optimize
+			JL_CHK( JL_GetElement(cx, argObj, i, &propVal) );
 			JL_CHK( JL_JsvalToNative(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
-			processArgv[i+1] = tmp.GetStrZOwnership();
+			processArgv[i +1] = tmp.GetStrZOwnership(); // -1 because 0 is reserved to argv[0]
 		}
-		JS_DestroyIdArray( cx, idArray ); // (TBD) free it on error too !
 	} else {
 
 		processArgc = 0 +1; // +1 is argv[0]
@@ -129,7 +127,7 @@ DEFINE_CONSTRUCTOR() {
 	PR_DestroyProcessAttr(psattr);
 
 	if ( JL_ARG_ISDEF(2) ) // see GetStrZOwnership
-		for ( int i = 0; i < processArgc - 1; ++i )
+		for ( uint32_t i = 0; i < processArgc - 1; ++i )
 			jl_free( const_cast<char*>(processArgv[i+1]) );
 
 	//free(processArgv); // alloca do not need free

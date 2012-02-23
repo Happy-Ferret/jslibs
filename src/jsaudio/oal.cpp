@@ -458,7 +458,7 @@ DEFINE_FUNCTION( listener ) {
 		alListenerf( JSVAL_TO_INT( JL_ARG(1) ), param );
 		return JS_TRUE;
 	}
-	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {
+	if ( JL_ValueIsArrayLike(cx, JL_ARG(2)) ) {
 
 		ALfloat params[16];
 		uint32_t length;
@@ -566,7 +566,7 @@ DEFINE_FUNCTION( source ) {
 		alSourcef( sid, JSVAL_TO_INT( JL_ARG(2) ), param );
 		return JS_TRUE;
 	}
-	if ( JL_ValueIsArray(cx, JL_ARG(3)) ) {
+	if ( JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
 
 		ALfloat params[16];
 		uint32_t length;
@@ -713,7 +713,7 @@ DEFINE_FUNCTION( sourceQueueBuffers ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	*JL_RVAL = JSVAL_VOID;
 
-	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {
+	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) { // no array-like. We must exclude strings that may be converted in integer below.
 
 		ALuint params[1024];
  		uint32_t length = COUNTOF(params);
@@ -750,7 +750,7 @@ DEFINE_FUNCTION( sourceUnqueueBuffers ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	*JL_RVAL = JSVAL_VOID;
 
-	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {
+	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) { // no array-like. We must exclude strings that may be converted in integer below.
 
 		ALuint params[1024];
 		uint32_t length;

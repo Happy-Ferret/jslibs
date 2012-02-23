@@ -1260,7 +1260,7 @@ DEFINE_FUNCTION( fog ) {
 
 		return JS_TRUE;
 	}
-	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {
+	if ( JL_ValueIsArrayLike(cx, JL_ARG(2)) ) {
 
 		GLfloat params[MAX_PARAMS];
 		uint32_t length;
@@ -1563,7 +1563,7 @@ DEFINE_FUNCTION( texParameter ) {
 
 		return JS_TRUE;
 	}
-	if ( JL_ValueIsArray(cx, JL_ARG(3)) ) {
+	if ( JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
 
 		GLfloat params[MAX_PARAMS];
 		uint32_t length;
@@ -1617,7 +1617,7 @@ DEFINE_FUNCTION( texEnv ) {
 	}
 
 	GLfloat params[MAX_PARAMS];
-	if ( argc == 3 && JL_ValueIsArray(cx, JL_ARG(3)) ) {
+	if ( argc == 3 && JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
 
 		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
@@ -1626,6 +1626,8 @@ DEFINE_FUNCTION( texEnv ) {
 
 		return JS_TRUE;
 	}
+
+	// process functions arguments [2..n]
 
 	JL_ASSERT_ARGC_MIN( 3 ); // at least
 	ASSERT( argc-2 < COUNTOF(params) );
@@ -1675,7 +1677,7 @@ DEFINE_FUNCTION( texGen ) {
 	}
 
 	GLdouble params[MAX_PARAMS];
-	if ( argc == 3 && JL_ValueIsArray(cx, JL_ARG(3)) ) {
+	if ( argc == 3 && JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
 
 		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
@@ -1864,7 +1866,7 @@ DEFINE_FUNCTION( lightModel ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {
+	if ( JL_ValueIsArrayLike(cx, JL_ARG(2)) ) {
 
 		GLfloat params[MAX_PARAMS];
 		uint32_t length;
@@ -1913,7 +1915,7 @@ DEFINE_FUNCTION( light ) {
 	}
 
 	GLfloat params[MAX_PARAMS];
-	if ( argc == 3 && JL_ValueIsArray(cx, JL_ARG(3)) ) {
+	if ( argc == 3 && JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
 
 		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
@@ -2076,7 +2078,7 @@ DEFINE_FUNCTION( material ) {
 	}
 
 	GLfloat params[MAX_PARAMS]; // alloca ?
-	if ( argc == 3 && JL_ValueIsArray(cx, JL_ARG(3)) ) {
+	if ( argc == 3 && JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
 
 		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
@@ -3134,7 +3136,7 @@ DEFINE_FUNCTION( callList ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_ValueIsArray(cx, JL_ARG(1)) ) {
+	if ( JL_ValueIsArray(cx, JL_ARG(1)) ) { // no array-like. convert a string into an array of calllist does not make sense here.
 
 		JSObject *jsArray = JSVAL_TO_OBJECT(JL_ARG(1));
 		jsuint length;
@@ -4618,7 +4620,7 @@ DEFINE_FUNCTION( uniform ) {
 	jsval staticArgs[4];
 	jsval *args;
 	int count;
-	if ( JL_ARGC == 2 && JL_ValueIsArray(cx, JL_ARG(2)) ) {
+	if ( JL_ARGC == 2 && JL_ValueIsArrayLike(cx, JL_ARG(2)) ) { // (TBD) check if array-like make sense here.
 
 		JSObject *arr = JSVAL_TO_OBJECT(JL_ARG(2));
 		jsuint tmp;
@@ -5273,7 +5275,7 @@ DEFINE_FUNCTION( pointParameter ) {
 		;
 		return JS_TRUE;
 	}
-	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {
+	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {  // (TBD) check if array-like make sense here.
 
 		GLfloat params[MAX_PARAMS];
 		uint32_t length;

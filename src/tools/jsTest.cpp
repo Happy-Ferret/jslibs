@@ -357,8 +357,155 @@ bad:
 }
 
 
+void strFinalize(const JSStringFinalizer *fin, jschar *chars) {
+}
+
+static const JSStringFinalizer finalizer1 = { strFinalize };
+
+
+int main_depstring(int argc, char* argv[]) {
+
+	_unsafeMode = false;
+
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
+	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+	JS_SetErrorReporter(cx, ErrorReporter);
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+
+	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JS_InitStandardClasses(cx, globalObject);
+
+
+	const jschar *str = L"Hello World";
+	int strlen = wcslen(str);
+
+	JSObject *ab = JS_NewArrayBuffer(cx, (strlen+1)*2);
+
+	JS_AddObjectRoot(cx, &ab);
+
+	char *data = (char*)JS_GetArrayBufferData(ab);
+
+	wcscpy((jschar*)data, str);
+
+	JSString *jsstr = JS_NewExternalString(cx, (jschar*)data, strlen-1, &finalizer1);
+	
+
+	((jschar*)data)[0] = L'X';
+
+	size_t l;
+	const jschar *tmp = JS_GetStringCharsZ(cx, jsstr); //JS_GetStringCharsZAndLength(cx, jsstr, &l);
+	
+	((jschar*)data)[0] = L'Y';
+
+
+
+
+
+	return EXIT_SUCCESS;
+bad:
+	printf("BAD\n");
+	return EXIT_FAILURE;
+}
+
+
+
+
+int main_arraylike(int argc, char* argv[]) {
+
+	_unsafeMode = false;
+
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
+	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+	JS_SetErrorReporter(cx, ErrorReporter);
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+
+	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JS_InitStandardClasses(cx, globalObject);
+
+
+	JSObject *o = JS_NewObject(cx, NULL, NULL, NULL);
+
+	jsuint len;
+	JSBool err = JS_GetArrayLength(cx, o, &len);
+
+	JSString *s = JS_NewStringCopyZ(cx, (const char *)L"hello");
+
+	bool tmp = JSVAL_IS_PRIMITIVE(STRING_TO_JSVAL(s));
+
+
+	return EXIT_SUCCESS;
+bad:
+	printf("BAD\n");
+	return EXIT_FAILURE;
+}
+
+/////////////////////////////////////////////////////////
+
+#include <time.h>
+
+
+int _fastcall func(JSContext *cx, JSObject *obj, int i)
+{   
+	
+    return (int)cx + (int)obj + i;
+}
+
+int _stdcall func2(JSContext *cx, JSObject *obj, int i)
+{   
+    return (int)cx + (int)obj + i;
+}
+
+__declspec(noinline) int main_fastcall(int argc, char* argv[]) {
+
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
+	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+	JS_SetErrorReporter(cx, ErrorReporter);
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+
+	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JS_InitStandardClasses(cx, globalObject);
+
+
+	JSObject *o = JS_NewObject(cx, NULL, NULL, NULL);
+
+
+    int iter = 300;
+    int x = 0;
+    clock_t t = clock();
+
+	int tmp = 213;
+
+	_asm { int 3 }
+
+    for (int j = 0; j <= iter;j++)
+        for (int i = 0; i <= 1000000;i++)
+            x = NOIL(func)(cx, o, i);
+	
+	printf("__fastcall: %d\n", clock() - t);
+
+	t = clock();
+    for (int j = 0; j <= iter;j++)
+        for (int i = 0; i <= 1000000;i++)
+            x = NOIL(func2)(cx, o, i);
+
+	printf("_stdcall: %d\n", clock() - t);
+
+
+
+    //printf("%d", x);
+    return 0;
+
+
+}
+
 
 int main(int argc, char* argv[]) {
 
-	return main_bz726429(argc, argv);
+	return main_fastcall(argc, argv);
 }

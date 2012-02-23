@@ -813,6 +813,17 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_IGNORE(argc);
 	JL_IGNORE(vp);
 
+	_asm { int 3 }
+	_asm { int 3 }
+	_asm { int 3 }
+
+	//JL_CHK( JL_NativeToJsval(cx, "Test", JL_RVAL) );
+
+
+	JLStr str;
+
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+
 
 
 //	jsid l = JLID(cx, length);

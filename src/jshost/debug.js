@@ -1,7 +1,7 @@
 //RunJsircbot(false); throw 0;
 //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
 //loadModule('jsstd'); exec('../common/tools.js'); var QA = fakeQAApi;  runLocalQAFile();
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('-rep 5 -exclude jstask');
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('-rep 1 -exclude jstask');
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //SetPerfTestMode();
 
@@ -9,18 +9,15 @@ loadModule('jscrypt');
 loadModule('jsstd');
 loadModule('jsio');
 
+jslangTest();
+halt();
+
 
 
 	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
 	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
-	
 	processEvents( Descriptor.events([rdv]), timeoutEvents(2000) );
-	
 	var sv = rdv.accept(); rdv.close();
-
-
-
-print( processEvents() );
 
 
 halt();

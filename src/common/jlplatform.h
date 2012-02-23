@@ -172,7 +172,7 @@
 #if defined DEBUG
 #define NOIL(f) f
 #else
-template <class F> ALWAYS_INLINE F NOIL( F f ) { return f; }
+template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 #endif
 
 

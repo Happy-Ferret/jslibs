@@ -599,7 +599,7 @@ DEFINE_PROPERTY_SETTER( dpi ) {
 		JL_CHK( JL_JsvalToNative(cx, *vp, &dpi) );
 		rsvg_handle_set_dpi(handle, dpi);
 	} else
-	if ( JL_ValueIsArray(cx, *vp) ) {
+	if ( JL_ValueIsArray(cx, *vp) ) { // array-like does not make sense here.
 
 		size_t dpiX, dpiY;
 		jsval tmp;
