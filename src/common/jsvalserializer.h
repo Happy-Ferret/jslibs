@@ -375,15 +375,15 @@ namespace jl {
 
 /*
 				JSObject *objectConstructor;
-				objectConstructor = JS_GetConstructor(cx, objectProto);
+				objectConstructor = JL_GetConstructor(cx, objectProto);
 				ASSERT( objectConstructor != NULL );
 				
 				JSObject *proto;
-				proto = JS_GetPrototype(cx, obj);
+				proto = JL_GetPrototype(cx, obj);
 				JL_CHKM( proto, "Invalid class prototype." );
 
 				JSObject *constructor;
-				constructor = JS_GetConstructor(cx, proto);
+				constructor = JL_GetConstructor(cx, proto);
 				JL_CHKM( constructor && JL_ObjectIsCallable(cx, constructor), "Constructor not found." );
 				JL_CHKM( constructor != objectConstructor, "Invalid constructor." );
 
@@ -409,7 +409,7 @@ namespace jl {
 			}
 
 			// prototype-less object
-			if ( JS_GetPrototype(obj) == NULL ) {
+			if ( JL_GetPrototype(cx, obj) == NULL ) {
 
 				JL_CHK( Write(cx, JLSTProtolessObject) );
 				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
@@ -693,10 +693,10 @@ namespace jl {
 					JL_CHK( Read(cx, className) );
 					ASSERT(strlen(className) > 0);
 					ASSERT(strlen(className) < 64);
-					ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
+					const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
 					JL_CHKM( cpc != NULL, E_CLASS, E_NAME(className), E_NOTFOUND );
 					JSObject *newObj;
-					newObj = JS_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
+					newObj = JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
 					JL_CHK( newObj );
  					jsval argv[] = { JSVAL_NULL, _unserializerObj };
 					JL_CHK( JL_CallFunctionId(cx, newObj, JLID(cx, _unserialize), COUNTOF(argv)-1, argv+1, argv) ); // rval not used
@@ -733,7 +733,7 @@ namespace jl {
 //					JL_CHK( JS_SetParent(cx, JSVAL_TO_OBJECT(fun), parent) );
 					JL_ASSERT( JL_ValueIsCallable(cx, fun), E_STR("unserializer"), E_STATE ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
 
-					JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fun, COUNTOF(argv)-1, argv+1, argv) );
+					JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobal(cx), fun, COUNTOF(argv)-1, argv+1, argv) );
 					JL_ASSERT( JSVAL_IS_OBJECT(argv[0]), E_STR("unserializer"), E_RETURNVALUE, E_TYPE, E_TY_OBJECT );
 					val = *argv;
 					break;
@@ -743,7 +743,7 @@ namespace jl {
 					SerializerConstBufferInfo constructorName;
 					jsval constructor, tmp;
 					JL_CHK( Read(cx, constructorName) );
-					JL_CHK( JS_GetUCProperty(cx, JL_GetGlobalObject(cx), (const jschar *)constructorName.Data(), constructorName.Length() / 2, &constructor) );
+					JL_CHK( JS_GetUCProperty(cx, JL_GetGlobal(cx), (const jschar *)constructorName.Data(), constructorName.Length() / 2, &constructor) );
 					JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);
 					val = OBJECT_TO_JSVAL(errorObj);
 					JL_CHK( Read(cx, tmp) );
@@ -764,7 +764,7 @@ namespace jl {
 					JL_ASSERT_FUNCTION( val );
 					JS_XDRMemSetData(xdr, NULL, 0);
 					JS_XDRDestroy(xdr);
-					JL_CHK( JS_SetParent(cx, JSVAL_TO_OBJECT(val), JL_GetGlobalObject(cx)) );
+					JL_CHK( JS_SetParent(cx, JSVAL_TO_OBJECT(val), JL_GetGlobal(cx)) );
 					JSObject *funProto;
 					JL_CHK( JL_GetClassPrototype(cx, NULL, JSProto_Function, &funProto) );
 					JL_CHK( JS_SetPrototype(cx, JSVAL_TO_OBJECT(val), funProto) );

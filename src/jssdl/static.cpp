@@ -1303,7 +1303,7 @@ JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext
 	jsval thisVal, rval;
 	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, &thisVal) ); // restore "this" object.
 
-	JL_CHK( JS_CallFunctionValue(cx, /*JL_GetGlobalObject(cx)*/ JSVAL_TO_OBJECT(thisVal), upe->callbackFctVal, 0, NULL, &rval) );
+	JL_CHK( JS_CallFunctionValue(cx, /*JL_GetGlobal(cx)*/ JSVAL_TO_OBJECT(thisVal), upe->callbackFctVal, 0, NULL, &rval) );
 	return JS_TRUE;
 	JL_BAD;
 }

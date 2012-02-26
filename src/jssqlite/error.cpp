@@ -199,7 +199,7 @@ END_CLASS
 NEVER_INLINE JSBool FASTCALL
 SqliteThrowErrorStatus( JSContext *cx, sqlite3 *db, int status ) {
 
-	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_PROTOTYPE(cx, SqliteError), NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
+	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_PROTOTYPE(cx, SqliteError), NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(status) ) );
 	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, "???")) ) );
@@ -212,7 +212,7 @@ SqliteThrowErrorStatus( JSContext *cx, sqlite3 *db, int status ) {
 NEVER_INLINE JSBool FASTCALL
 SqliteThrowError( JSContext *cx, sqlite3 *db ) {
 
-	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_PROTOTYPE(cx, SqliteError), NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
+	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_PROTOTYPE(cx, SqliteError), NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(sqlite3_extended_errcode(db)) ) );
 	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, sqlite3_errmsg(db))) ) );

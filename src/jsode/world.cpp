@@ -226,7 +226,7 @@ DEFINE_FINALIZE() {
 	
 		JSObject *bodyObj = (JSObject*)ode::dBodyGetData(bodyIt);
 		if ( bodyObj != NULL )
-			JS_SetPrivate(bodyObj, NULL);
+			JL_SetPrivate(cx, bodyObj, NULL);
 			// ode::dBodySetData(bodyIt, NULL);
 
 		// same rule for geoms
@@ -234,7 +234,7 @@ DEFINE_FINALIZE() {
 
 			JSObject *geomObj = (JSObject*)ode::dGeomGetData(geomIt);
 			if ( geomObj != NULL )
-				JS_SetPrivate(geomObj, NULL);
+				JL_SetPrivate(cx, geomObj, NULL);
 			// ode::dGeomSetData(geomIt, NULL);
 	  }
 
@@ -243,7 +243,7 @@ DEFINE_FINALIZE() {
 		
 			JSObject *jointObj = (JSObject*)ode::dJointGetData(jointIt->joint);
 			if ( jointObj != NULL )
-				JS_SetPrivate(jointObj, NULL);
+				JL_SetPrivate(cx, jointObj, NULL);
 			// ode::dJointSetData(jointIt, NULL);
 		}
 	}
@@ -253,7 +253,7 @@ DEFINE_FINALIZE() {
 	
 		JSObject *jointObj = (JSObject*)ode::dJointGetData(jointIt);
 		if ( jointObj != NULL )
-			JS_SetPrivate(jointObj, NULL);
+			JL_SetPrivate(cx, jointObj, NULL);
 		// ode::dJointSetData(jointIt, NULL);
 	}
 
@@ -265,7 +265,7 @@ DEFINE_FINALIZE() {
 
 		JSObject *geomObj = (JSObject*)ode::dGeomGetData(geomId);
 		if ( geomObj != NULL )
-			JS_SetPrivate(geomObj, NULL);
+			JL_SetPrivate(cx, geomObj, NULL);
 //		ode::dSpaceRemove(pv->spaceId, geomId);
 		ode::dGeomDestroy(geomId);
 	}
@@ -724,7 +724,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( env ) {
 
 	JL_ASSERT_THIS_INSTANCE();
-	JSObject *staticBody = JS_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
+	JSObject *staticBody = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
 	JL_CHK(staticBody);
 	JL_SetPrivate(cx, staticBody, (ode::dBodyID)0);
 	*vp = OBJECT_TO_JSVAL(staticBody);

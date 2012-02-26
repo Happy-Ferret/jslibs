@@ -122,7 +122,7 @@ END_CLASS
 NEVER_INLINE JSBool FASTCALL
 ThrowSdlError( JSContext *cx ) {
 
-	JSObject *errorObj = JS_NewObjectWithGivenProto( cx, JL_CLASS(SdlError), JL_PROTOTYPE(cx, SdlError), NULL );
+	JSObject *errorObj = JL_NewObjectWithGivenProto( cx, JL_CLASS(SdlError), JL_PROTOTYPE(cx, SdlError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( errorObj ) );
 	const char *errorMessage = SDL_GetError();
 	SDL_ClearError();

@@ -55,6 +55,8 @@ typedef SourceMgr *SourceMgrPtr;
 
 
 METHODDEF(void) init_source(j_decompress_ptr cinfo) {
+	
+	JL_IGNORE(cinfo);
 }
 
 
@@ -102,6 +104,8 @@ METHODDEF(void) skip_input_data(j_decompress_ptr cinfo, long num_bytes) {
 }
 
 METHODDEF(void) term_source(j_decompress_ptr cinfo) {
+	
+	JL_IGNORE(cinfo);
 }
 
 /**doc
@@ -251,12 +255,14 @@ void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) {
 NOALIAS png_voidp
 malloc_wrapper(png_structp png_ptr, png_size_t size) NOTHROW {
 
+	JL_IGNORE(png_ptr);
 	return jl_malloc(size);
 }
 
 void
 free_wrapper(png_structp png_ptr, png_voidp ptr) NOTHROW {
-	
+
+	JL_IGNORE(png_ptr);
 	jl_free(ptr);
 }
 
@@ -364,6 +370,8 @@ void write_row_callback(png_structp png_ptr, png_bytep data, png_size_t size) {
 }
 
 void output_flush_fn(png_structp png_ptr) {
+
+	JL_IGNORE(png_ptr);
 }
 
 DEFINE_FUNCTION( encodePngImage ) {

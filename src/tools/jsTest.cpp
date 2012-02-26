@@ -323,7 +323,7 @@ int main_testconstructor(int argc, char* argv[]) {
 	JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
 /*
 	jsval constructor;
-	JL_CHK( JS_GetProperty(cx, JL_GetGlobalObject(cx), "SyntaxError", &constructor) );
+	JL_CHK( JS_GetProperty(cx, JL_GetGlobal(cx), "SyntaxError", &constructor) );
 
 	JSObject *err = JS_NewObjectForConstructor(cx, &constructor);
 	
@@ -496,16 +496,42 @@ __declspec(noinline) int main_fastcall(int argc, char* argv[]) {
 
 	printf("_stdcall: %d\n", clock() - t);
 
-
-
-    //printf("%d", x);
+	//printf("%d", x);
     return 0;
-
-
 }
 
+int main_NewObjectWithGivenProto_NewObject(int argc, char* argv[]) {
+
+
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
+	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+	JS_SetErrorReporter(cx, ErrorReporter);
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+
+	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JS_InitStandardClasses(cx, globalObject);
+
+/*
+parent = GetCurrentGlobal(cx);
+
+    JSObject *scopeChain = (cx->hasfp()) ? &cx->fp()->scopeChain() : cx->globalObject;
+    return scopeChain ? &scopeChain->global() : NULL;
+*/
+// -> GetGlobalForScopeChain
+
+//	JSObject *o2 = JS_GetParent(JS_NewObject(cx, NULL, NULL, NULL));
+//	JSObject *o1 = JS_GetParent(JL_NewObjectWithGivenProto(cx, NULL, NULL, NULL));
+
+	//JSObject *o1 = JS_GetGlobalForScopeChain(cx);
+	JSObject *o2 = JS_GetGlobalObject(cx);
+	JSObject *o3 = JS_GetGlobalForObject(cx, o2);
+
+	return 0;
+}
 
 int main(int argc, char* argv[]) {
 
-	return main_fastcall(argc, argv);
+	return main_NewObjectWithGivenProto_NewObject(argc, argv);
 }

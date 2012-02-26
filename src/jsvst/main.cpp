@@ -76,15 +76,15 @@ public:
 		JS_AddValueRoot(_cx, &_rval);
 		JS_AddValueRoot(_cx, &_arg);
 
-		( JLInitClass(_cx, JL_GetGlobalObject(_cx), MidiEvent::jlClassSpec ) );
-		( JLInitClass(_cx, JL_GetGlobalObject(_cx), AudioMaster::jlClassSpec ) );
-		( JLInitClass(_cx, JL_GetGlobalObject(_cx), VSTPlugin::jlClassSpec ) );
+		( JLInitClass(_cx, JL_GetGlobal(_cx), MidiEvent::jlClassSpec ) );
+		( JLInitClass(_cx, JL_GetGlobal(_cx), AudioMaster::jlClassSpec ) );
+		( JLInitClass(_cx, JL_GetGlobal(_cx), VSTPlugin::jlClassSpec ) );
 
 		JSObject *audioMasterObject = CreateAudioMasterObject(_cx, audioMaster);
 		_arg = OBJECT_TO_JSVAL(audioMasterObject);
-		JS_SetProperty(_cx, JL_GetGlobalObject(_cx), "audioMaster", &_arg);
+		JS_SetProperty(_cx, JL_GetGlobal(_cx), "audioMaster", &_arg);
 
-		vstPlugin = JS_DefineObject(_cx, JL_GetGlobalObject(_cx), "vstPlugin", JL_CLASS(VSTPlugin), NULL, NULL);
+		vstPlugin = JS_DefineObject(_cx, JL_GetGlobal(_cx), "vstPlugin", JL_CLASS(VSTPlugin), NULL, NULL);
 		JL_SetPrivate(_cx, vstPlugin, this);
 
 		JSBool status = ExecuteScriptFileName(_cx, "vstPlugin.js", false, 0, NULL, &_rval);

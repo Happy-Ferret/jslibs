@@ -77,28 +77,28 @@ JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // 
 
 	switch( ode::dGeomGetClass(geomId) ) {
 		case ode::dSphereClass:
-			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomSphere), JL_PROTOTYPE(cx, GeomSphere), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomSphere), JL_PROTOTYPE(cx, GeomSphere), NULL);
 			break;
 		case ode::dBoxClass:
-			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomBox), JL_PROTOTYPE(cx, GeomBox), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomBox), JL_PROTOTYPE(cx, GeomBox), NULL);
 			break;
 		case ode::dCapsuleClass:
-			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomCapsule), JL_PROTOTYPE(cx, GeomCapsule), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomCapsule), JL_PROTOTYPE(cx, GeomCapsule), NULL);
 			break;
 		case ode::dCylinderClass:
-			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomCylinder), JL_PROTOTYPE(cx, GeomCylinder), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomCylinder), JL_PROTOTYPE(cx, GeomCylinder), NULL);
 			break;
 		case ode::dPlaneClass:
-			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomPlane), JL_PROTOTYPE(cx, GeomPlane), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomPlane), JL_PROTOTYPE(cx, GeomPlane), NULL);
 			break;
 		case ode::dRayClass:
-			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomRay), JL_PROTOTYPE(cx, GeomRay), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomRay), JL_PROTOTYPE(cx, GeomRay), NULL);
 			break;
 		case ode::dConvexClass:
-			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomConvex), JL_PROTOTYPE(cx, GeomConvex), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomConvex), JL_PROTOTYPE(cx, GeomConvex), NULL);
 			break;
 		case ode::dTriMeshClass:
-			*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(GeomTrimesh), JL_PROTOTYPE(cx, GeomTrimesh), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomTrimesh), JL_PROTOTYPE(cx, GeomTrimesh), NULL);
 			break;
 		default:
 			ASSERT(false);

@@ -59,7 +59,7 @@ DEFINE_FUNCTION( extractIcon ) {
 		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
-	JSObject *icon = JS_NewObjectWithGivenProto(cx, JL_CLASS(Icon), JL_PROTOTYPE(cx, Icon), NULL);
+	JSObject *icon = JL_NewObjectWithGivenProto(cx, JL_CLASS(Icon), JL_PROTOTYPE(cx, Icon), NULL);
 	HICON *phIcon = (HICON*)jl_malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
 	JL_ASSERT_ALLOC( phIcon );
 	*phIcon = hIcon;
@@ -795,7 +795,7 @@ JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSCon
 		return JS_TRUE;
 
 	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, &argv[1]) );
-	JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fct, COUNTOF(argv)-1, argv+1, argv) );
+	JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobal(cx), fct, COUNTOF(argv)-1, argv+1, argv) );
 
 	return JS_TRUE;
 	JL_BAD;

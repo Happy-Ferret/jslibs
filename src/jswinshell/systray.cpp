@@ -977,7 +977,7 @@ DEFINE_FUNCTION( popupMenu ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JS_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_ARGC(1);
 
@@ -1009,7 +1009,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JS_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	BOOL status;
 
@@ -1122,7 +1122,7 @@ DEFINE_FUNCTION( position ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JS_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	RECT r;
@@ -1220,7 +1220,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 		JL_ERR( E_STR("icon"), E_INVALID );
 	}
 
-	Private *pv = (Private*)JS_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	pv->nid.hIcon = hIcon;
@@ -1244,7 +1244,7 @@ DEFINE_PROPERTY_SETTER( visible ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JS_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JSBool state;
@@ -1268,7 +1268,7 @@ DEFINE_PROPERTY_SETTER( text ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JS_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tipText) );
 	size_t len = JL_MIN(sizeof(pv->nid.szTip)-1, tipText.Length());
@@ -1288,7 +1288,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JS_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	if ( pv->nid.uFlags & NIF_TIP )
 		*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, pv->nid.szTip) );

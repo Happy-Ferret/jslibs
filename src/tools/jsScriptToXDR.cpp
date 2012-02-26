@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
 	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
-	//JSScript *script = JS_CompileFile(cx, JL_GetGlobalObject(cx), argv[1]);
+	//JSScript *script = JS_CompileFile(cx, JL_GetGlobal(cx), argv[1]);
 	printf("Opening source file %s\n", argv[1]);
 	FILE *srcFile = fopen(argv[1], "r");
 	if ( !srcFile ) {

@@ -82,7 +82,7 @@ JL_Realloc( T*&ptr, size_t count = 1 ) {
 // note: MSVC _ALLOCA_S_THRESHOLD is 1024
 #define JL_MALLOCA_THRESHOLD 2048
 
-ALWAYS_INLINE void *
+ALWAYS_INLINE void * FASTCALL
 jl__malloca_internal(void *mem, size_t heapMem) {
 	
 	if (likely( mem != NULL )) {

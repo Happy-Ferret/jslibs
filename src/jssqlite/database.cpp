@@ -287,7 +287,7 @@ DEFINE_FUNCTION( query ) {
 	// create the Result (statement) object
 	JSObject *dbStatement;
 	
-	dbStatement = JS_NewObjectWithGivenProto(cx, JL_CLASS(Result), JL_PROTOTYPE(cx, Result), NULL);
+	dbStatement = JL_NewObjectWithGivenProto(cx, JL_CLASS(Result), JL_PROTOTYPE(cx, Result), NULL);
 	JL_CHK( dbStatement );
 
 	JL_SetPrivate(cx, dbStatement, pStmt);

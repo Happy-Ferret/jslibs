@@ -1175,7 +1175,7 @@ NEVER_INLINE JSBool FASTCALL
 ThrowZipFileError( JSContext *cx, int errorCode ) {
 
 	ASSERT( errorCode <= 0 );
-	JSObject *error = JS_NewObjectWithGivenProto(cx, JL_CLASS(ZipFileError), JL_PROTOTYPE(cx, ZipFileError), NULL);
+	JSObject *error = JL_NewObjectWithGivenProto(cx, JL_CLASS(ZipFileError), JL_PROTOTYPE(cx, ZipFileError), NULL);
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JL_CHK( JL_SetReservedSlot(cx, error, 0, INT_TO_JSVAL(errorCode)) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );

@@ -825,7 +825,7 @@ DEFINE_FUNCTION( print ) {
 	JL_CHK( GetHostObjectValue(cx, JLID(cx, stdout), &fval) );
 	*JL_RVAL = JSVAL_VOID;
 	if (likely( JL_ValueIsCallable(cx, fval) ))
-		return JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), fval, JL_ARGC, JL_ARGV, &fval);
+		return JS_CallFunctionValue(cx, JL_GetGlobal(cx), fval, JL_ARGC, JL_ARGV, &fval);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1011,12 +1011,12 @@ JSBool SandboxMaxOperationCallback(JSContext *cx) {
 	if ( pv->expired && !JL_IsExceptionPending(cx) ) {
 
 		JSOperationCallback tmp = JS_SetOperationCallback(cx, NULL);
-		ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), JL_CLASS_NAME(OperationLimit));
+		const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), JL_CLASS_NAME(OperationLimit));
 		ASSERT( cpc );
 		JSCrossCompartmentCall *ccc;
 		ccc = JS_EnterCrossCompartmentCall(cx, cpc->proto);
 		JL_CHK( ccc );
-		JSObject *branchLimitExceptionObj = JS_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
+		JSObject *branchLimitExceptionObj = JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
 		JS_SetPendingException(cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ));
 		JS_LeaveCrossCompartmentCall(ccc);
 		JL_CHK( branchLimitExceptionObj );
@@ -1516,7 +1516,7 @@ DEFINE_FUNCTION( jsstdTest ) {
 /*
 	jschar *str = (jschar*)jl_malloc(2 * sizeof(jschar));
 	str[1] = 0;
-	*JL_RVAL = STRING_TO_JSVAL( JS_NewUCString(cx, str, 1) );
+	*JL_RVAL = STRING_TO_JSVAL( JL_NewUCString(cx, str, 1) );
 */	
 
 
@@ -1525,9 +1525,9 @@ DEFINE_FUNCTION( jsstdTest ) {
 	JL_JsvalToNative(cx, JL_ARG(1), &str);
 	JSObject *scriptObj;
 
-	//	scriptObj = JS_CompileFile(cx, JL_GetGlobalObject(cx), str.GetConstStrZ());
+	//	scriptObj = JS_CompileFile(cx, JL_GetGlobal(cx), str.GetConstStrZ());
 
-	//	scriptObj = JL_LoadScript(cx, JL_GetGlobalObject(cx), str, false, false);
+	//	scriptObj = JL_LoadScript(cx, JL_GetGlobal(cx), str, false, false);
 
 	size_t scriptFileSize;
 	int scriptFile;
@@ -1540,7 +1540,7 @@ DEFINE_FUNCTION( jsstdTest ) {
 	res = read(scriptFile, (void*)scriptBuffer, (unsigned int)scriptFileSize);
 	close(scriptFile);
 
-	scriptObj = JS_CompileScript(cx, JL_GetGlobalObject(cx), scriptBuffer, scriptFileSize, str.GetConstStrZ(), 1);
+	scriptObj = JS_CompileScript(cx, JL_GetGlobal(cx), scriptBuffer, scriptFileSize, str.GetConstStrZ(), 1);
 */
 
 

@@ -80,7 +80,7 @@ END_CLASS
 
 JSBool NewComEnum( JSContext *cx, IEnumVARIANT *ienumv, jsval *rval ) {
 
-	JSObject *varObj = JS_NewObjectWithGivenProto(cx, JL_CLASS(ComEnum), JL_PROTOTYPE(cx, ComEnum), NULL);
+	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComEnum), JL_PROTOTYPE(cx, ComEnum), NULL);
 	JL_CHK( varObj );
 	*rval = OBJECT_TO_JSVAL( varObj );
 	JL_SetPrivate(cx, varObj, ienumv);

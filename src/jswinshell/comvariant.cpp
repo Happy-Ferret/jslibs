@@ -101,7 +101,7 @@ public:
 
 		js::AutoArrayRooter tvr(cx, argc+1, argv);
 
-		JSBool status = JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), _funcVal, argc, argv+1, argv);
+		JSBool status = JS_CallFunctionValue(cx, JL_GetGlobal(cx), _funcVal, argc, argv+1, argv);
 
 		JL_IGNORE(status); // (TBD) error check
 
@@ -687,7 +687,7 @@ END_CLASS
 // acquire the ownership of the variant
 JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
-	JSObject *varObj = JS_NewObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_PROTOTYPE(cx, ComVariant), NULL);
+	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_PROTOTYPE(cx, ComVariant), NULL);
 	*rval = OBJECT_TO_JSVAL( varObj );
 	JL_SetPrivate(cx, varObj, variant);
 	return JS_TRUE;

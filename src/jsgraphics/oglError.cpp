@@ -204,7 +204,7 @@ END_CLASS
 NEVER_INLINE JSBool FASTCALL
 ThrowOglError( JSContext *cx, GLenum err ) {
 
-	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(OglError), JL_PROTOTYPE(cx, OglError), NULL );
+	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(OglError), JL_PROTOTYPE(cx, OglError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	jsval errVal;
 	JL_CHK( JL_NativeToJsval(cx, err, &errVal) );

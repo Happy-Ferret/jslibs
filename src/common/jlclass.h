@@ -169,7 +169,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_CHKM( JL_CacheClassProto(hpv, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
 	JSObject *staticDest;
-	staticDest = cs->constructor ? JS_GetConstructor(cx, proto) : proto;
+	staticDest = cs->constructor ? JL_GetConstructor(cx, proto) : proto;
 
 
 	if ( cs->ps != NULL )

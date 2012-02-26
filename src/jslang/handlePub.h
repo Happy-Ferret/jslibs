@@ -54,7 +54,7 @@ HandleCreate( JSContext *cx, HANDLE_TYPE handleType, size_t userDataSize, void**
 	JL_ASSERT( classProtoCache->clasp != NULL, E_CLASS, E_NAME("Handle"), E_NOTFOUND );
 
 	JSObject *handleObj;
-	handleObj = JS_NewObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto, NULL);
+	handleObj = JL_NewObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto, NULL);
 	JL_CHK( handleObj );
 
 	*handleVal = OBJECT_TO_JSVAL(handleObj);

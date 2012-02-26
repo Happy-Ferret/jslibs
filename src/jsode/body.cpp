@@ -55,14 +55,14 @@ JSBool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj) { // 
 
 	if (unlikely( bodyId == (ode::dBodyID)0 )) { // bodyId may be null if body is world.env
 
-		*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
+		*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
 		JL_CHK( *obj );
 	} else {
 
 		//JL_ASSERT( ode::dBodyGetData(bodyId) == NULL, "Invalid case (object not finalized)." );
 		JL_ASSERT( ode::dBodyGetData(bodyId) == NULL, E_MODULE, E_INTERNAL, E_SEP, E_STR(JL_CLASS_NAME(Body)), E_STATE );
 
-		*obj = JS_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
+		*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
 		JL_CHK( *obj );
 //		BodyPrivate *bodypv = (BodyPrivate*)jl_malloc(sizeof(BodyPrivate));
 //		JL_ASSERT_ALLOC( bodypv );
@@ -1048,7 +1048,7 @@ DEFINE_PROPERTY_GETTER( mass ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 	
-	JSObject *massObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(Mass), JL_PROTOTYPE(cx, Mass), NULL);
+	JSObject *massObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Mass), JL_PROTOTYPE(cx, Mass), NULL);
 	//JL_ASSERT(massObject != NULL, "Unable to create the Mass object.");
 	JL_ASSERT_ALLOC( massObject );
 

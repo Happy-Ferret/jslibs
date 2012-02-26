@@ -63,7 +63,10 @@ DEFINE_FINALIZE() {
 		while ( !PoolIsEmpty(&matrixPool) )
 			Matrix44Free((Matrix44*)jl::PoolPop(&matrixPool));
 		jl::PoolFinalize(&matrixPool);
-		JL_THIS_PROTOTYPE = NULL; // last GC
+
+		ASSERT( JL_GetHostPrivate(cx)->isEnding ); // (TBD) to be tested !
+		JL_RemoveCachedClassProto(JL_GetHostPrivate(cx), jlClassSpec->clasp.name); // old JL_THIS_PROTOTYPE = NULL; // last GC
+
 		return;
 	}
 

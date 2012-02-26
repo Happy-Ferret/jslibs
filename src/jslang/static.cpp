@@ -469,7 +469,7 @@ JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
 		return JS_TRUE;
 	jsval rval;
-	JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), upe->callbackFunction, 0, NULL, &rval) );
+	JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobal(cx), upe->callbackFunction, 0, NULL, &rval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -633,7 +633,7 @@ JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r, uint32_
 	JL_CHK( JL_NewTypedArrayCopyN(cx, buf, bufLength, &arrayobj) );
 
 	jsval constructor;
-	JL_CHK( JS_GetUCProperty(cx, JL_GetGlobalObject(cx), name, nameLength, &constructor) );
+	JL_CHK( JS_GetUCProperty(cx, JL_GetGlobal(cx), name, nameLength, &constructor) );
 
 	jsval rval, argv;
 	argv = OBJECT_TO_JSVAL(arrayobj);
@@ -658,7 +658,7 @@ JSBool WriteStructuredClone(JSContext *cx, JSStructuredCloneWriter *w, JSObject 
 
 	JL_CHK( JL_JsvalToNative(cx, rval, &str) );
 
-	JSObject *constructor = JS_GetConstructor(cx, obj);
+	JSObject *constructor = JL_GetConstructor(cx, obj);
 	JL_CHK( constructor );
 	JL_CHK( JS_GetPropertyById(cx, constructor, JLID(cx, name), &fname) );
 
@@ -776,7 +776,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 //	// see Bug 688510
 	ASSERT( JS_GetParent(JS_NewObject(cx, NULL, NULL, NULL)) != NULL );
-//	ASSERT( JS_GetParent(JS_NewObjectWithGivenProto(cx, NULL, NULL, NULL)) != NULL );
+//	ASSERT( JS_GetParent(JL_NewObjectWithGivenProto(cx, NULL, NULL, NULL)) != NULL );
 
 
 /*

@@ -1158,7 +1158,7 @@ JSBool next_foreach(JSContext *cx, uintN argc, jsval *vp) {
 
 DEFINE_ITERATOR_OBJECT() {
 
-	JSObject *itObj = JS_NewObjectWithGivenProto(cx, NULL, NULL, JS_GetParent(obj));
+	JSObject *itObj = JL_NewObjectWithGivenProto(cx, NULL, NULL, JS_GetParent(obj));
 	JL_CHK( itObj );
 	JL_CHK( JS_DefineFunctionById(cx, itObj, JLID(cx, next), keysonly ? next_for : next_foreach, 0, 0) );
 	jsval v;
@@ -1230,7 +1230,7 @@ DEFINE_NEW_RESOLVE() {
 	JSObject *blobProto = JL_PROTOTYPE(cx, Blob);
 
 	// check if obj is a Blob
-	if ( JS_GetPrototype(cx, obj) != blobProto )
+	if ( JL_GetPrototype(cx, obj) != blobProto )
 		return JS_TRUE;
 
 	JL_ASSERT_THIS_OBJECT_STATE( IsBlobValid(cx, JL_OBJ) );
@@ -1246,7 +1246,7 @@ DEFINE_NEW_RESOLVE() {
 
 	// search id in String's prototype.
 	JSObject *stringProto;
-	JL_CHK( JS_GetClassObject(cx, JL_GetGlobalObject(cx), JSProto_String, &stringProto) );
+	JL_CHK( JS_GetClassObject(cx, JL_GetGlobal(cx), JSProto_String, &stringProto) );
 
 	JL_CHK( stringProto->lookupProperty(cx, id, objp, &prop) );
 	if ( !prop )
@@ -1307,7 +1307,7 @@ DEFINE_OPS_GET_PROPERTY() {
 
 		GetBlobString(cx, obj, js::Jsvalify(vp));
 		JSObject *stringProto;
-		JS_GetClassObject(cx, JL_GetGlobalObject(cx), JSProto_String, &stringProto);
+		JS_GetClassObject(cx, JL_GetGlobal(cx), JSProto_String, &stringProto);
 
 		JS_LookupPropertyById(cx, stringProto, id, js::Jsvalify(vp));
 //		JS_DefineFunction(cx, obj, "toString", _valueOf, 0, 0);

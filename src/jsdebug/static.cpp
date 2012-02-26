@@ -43,7 +43,7 @@ int _puts(JSContext *cx, const char *str) {
 	//	jsstr = JS_ConcatStrings(cx, jsstr, JS_NewStringCopyZ(cx, "\n"));
 
 		jsval tmp;
-		JSBool status = JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), stdoutFunction, 1, &tmp, &tmp);
+		JSBool status = JS_CallFunctionValue(cx, JL_GetGlobal(cx), stdoutFunction, 1, &tmp, &tmp);
 		if ( status == JS_TRUE )
 			return len;
 	}
@@ -1207,7 +1207,7 @@ DEFINE_FUNCTION( definitionLocation ) {
 	if ( !JSVAL_IS_PRIMITIVE( JL_ARG(1) ) ) {
 
 		JSObject* obj;
-		obj = JS_GetConstructor(cx, JSVAL_TO_OBJECT( JL_ARG(1) ));
+		obj = JL_GetConstructor(cx, JSVAL_TO_OBJECT( JL_ARG(1) ));
 		JSFunction *fun;
 		fun = JS_ValueToFunction(cx, OBJECT_TO_JSVAL( obj ) );
 		if ( fun ) {
@@ -1298,7 +1298,7 @@ DEFINE_FUNCTION( propertiesList ) {
 		if ( !followPrototypeChain )
 			break;
 
-		srcObj = JS_GetPrototype(srcObj);
+		srcObj = JL_GetPrototype(cx, srcObj);
 	}
 
 	return JS_TRUE;
@@ -1412,7 +1412,7 @@ DEFINE_FUNCTION( propertiesInfo ) {
 		if ( !followPrototypeChain )
 			break;
 
-		srcObj = JS_GetPrototype(srcObj);
+		srcObj = JL_GetPrototype(cx, srcObj);
 		prototypeLevel++;
 	}
 

@@ -6860,7 +6860,7 @@ DEFINE_INIT() {
 #ifdef XP_WIN
 	glGetProcAddress = windowsGLGetProcAddress;
 #else
-	//	JL_CHK( GetPrivateNativeFunction(cx, JL_GetGlobalObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
+	//	JL_CHK( GetPrivateNativeFunction(cx, JL_GetGlobal(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
 	JL_CHK( JL_GetProperty(cx, GetHostObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
 #endif
 

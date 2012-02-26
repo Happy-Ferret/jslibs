@@ -651,22 +651,22 @@ DEFINE_FUNCTION( import ) {
 	switch ( type ) {
 		case PR_DESC_FILE:
 			fd = PR_ImportFile(osfd);
-			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_PROTOTYPE(cx, File), NULL); // (TBD) check if proto is needed !
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_PROTOTYPE(cx, File), NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_SOCKET_TCP:
 			fd = PR_ImportTCPSocket(osfd);
-			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_PROTOTYPE(cx, Socket), NULL); // (TBD) check if proto is needed !
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_PROTOTYPE(cx, Socket), NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_SOCKET_UDP:
 			fd = PR_ImportUDPSocket(osfd);
-			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_PROTOTYPE(cx, Socket), NULL); // (TBD) check if proto is needed !
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_PROTOTYPE(cx, Socket), NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_LAYERED:
 			JL_ERR(E_THISOPERATION, E_NOTSUPPORTED);
 			break;
 		case PR_DESC_PIPE:
 			fd = PR_ImportPipe(osfd);
-			descriptorObject = JS_NewObjectWithGivenProto(cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL); // (TBD) check if proto is needed !
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL); // (TBD) check if proto is needed !
 			break;
 		default:
 			ASSERT(false);
@@ -926,7 +926,7 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 	JL_CHK( JL_JsvalToNative(cx, *vp, &timeout) );
 	JL_ASSERT( timeout >= 0, E_VALUE, E_MIN, E_NUM(0) );
 	*vp = INT_TO_JSVAL(timeout);
-	JS_SetReservedSlot(obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, *vp);
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, *vp) );
 	JL_CHK( JL_StoreProperty(cx, obj, id, vp, false) );
 	return JS_TRUE;
 	JL_BAD;

@@ -40,8 +40,8 @@ DEFINE_CONSTRUCTOR() {
 	JSObject *obj;
 	if ( !JS_IsConstructing_PossiblyWithGivenThisObject(cx, vp, &obj) || !obj ) {
 
-		// Doc. JS_NewObject, JS_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
-		obj = JS_NewObjectWithGivenProto(cx, JL_THIS_CLASS, NULL, NULL);
+		// Doc. JS_NewObject, JL_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
+		obj = JL_NewObjectWithGivenProto(cx, JL_THIS_CLASS, NULL, NULL);
 		if ( obj == NULL )
 			return JS_FALSE;
 		JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));

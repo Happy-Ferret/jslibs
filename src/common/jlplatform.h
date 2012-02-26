@@ -1611,7 +1611,7 @@ JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
  #if defined(XP_WIN)
 	DWORD errorCode = ::GetLastError();
 	LPVOID lpMsgBuf;
-	DWORD result = ::FormatMessage(
+	DWORD result = ::FormatMessage( // FormatMessageW
 		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
 		NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL );
 	if ( result != 0 ) {
@@ -1624,7 +1624,7 @@ JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 		*message = '\0';
 	}
  #elif defined(XP_UNIX)
-	const char *msgBuf = strerror(errno);
+	const char *msgBuf = strerror(errno); // wcserror
 	if ( msgBuf != NULL ) {
 
 		strncpy(message, msgBuf, maxLength-1);

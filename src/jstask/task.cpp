@@ -185,7 +185,7 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 	JSObject *funObj;
 	funObj = JS_GetFunctionObject(fun);
 	JSObject *globalObj;
-	globalObj = JL_GetGlobalObject(cx);
+	globalObj = JL_GetGlobal(cx);
 	ASSERT( funObj != NULL );
 	JL_CHK( JS_SetParent(cx, funObj, globalObj) ); // re-scope the function
 

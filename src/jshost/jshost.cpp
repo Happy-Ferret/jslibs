@@ -168,7 +168,7 @@ JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *c
 	jsval rval;
 	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
 		return JS_TRUE;
-	JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobalObject(cx), upe->callbackFunction, 0, NULL, &rval) );
+	JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobal(cx), upe->callbackFunction, 0, NULL, &rval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -445,7 +445,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JL_CHKM( InitHost(cx, unsafeMode, HostStdin, HostStdout, HostStderr, NULL), E_HOST, E_INIT ); // "Unable to initialize the host."
 
 	JSObject *globalObject;
-	globalObject = JL_GetGlobalObject(cx);
+	globalObject = JL_GetGlobal(cx);
 
 	gEndSignalCond = JLCondCreate();
 	gEndSignalLock = JLMutexCreate();

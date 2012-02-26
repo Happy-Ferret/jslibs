@@ -189,7 +189,7 @@ NEVER_INLINE JSBool FASTCALL
 ThrowCryptError( JSContext *cx, int errorCode ) {
 
 //	JS_ReportWarning( cx, "CryptError exception" );
-	JSObject *error = JS_NewObjectWithGivenProto( cx, JL_CLASS(CryptError), JL_PROTOTYPE(cx, CryptError), NULL );
+	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(CryptError), JL_PROTOTYPE(cx, CryptError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JL_CHK( JL_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) ) );
 //	JL_SetReservedSlot( cx, error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );

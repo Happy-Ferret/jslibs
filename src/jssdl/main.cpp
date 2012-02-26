@@ -508,7 +508,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 //	typedef void* (__cdecl *glGetProcAddress_t)(const char*);
 
-// // JL_CHK( SetNativePrivatePointer(cx, JL_GetGlobalObject(cx), "_glGetProcAddress", (glGetProcAddress_t)SDL_GL_GetProcAddress) );
+// // JL_CHK( SetNativePrivatePointer(cx, JL_GetGlobal(cx), "_glGetProcAddress", (glGetProcAddress_t)SDL_GL_GetProcAddress) );
 // JL_CHK( JL_GetProperty(cx, GetHostObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
 
 

@@ -14,6 +14,31 @@
 
 #pragma once
 
+
+// from jsnum.h
+
+typedef union jsdpun {
+    struct {
+#if defined(IS_LITTLE_ENDIAN) && !defined(FPU_IS_ARM_FPA)
+        uint32_t lo, hi;
+#else
+        uint32_t hi, lo;
+#endif
+    } s;
+    uint64_t u64;
+    jsdouble d;
+} jsdpun;
+
+static inline int
+JSDOUBLE_IS_NaN(jsdouble d)
+{
+    jsdpun u;
+    u.d = d;
+    return (u.u64 & JSDOUBLE_EXPMASK) == JSDOUBLE_EXPMASK &&
+           (u.u64 & JSDOUBLE_MANTMASK) != 0;
+}
+
+
 // only defined as JS_FRIEND_API in js/src/js/src/jsobj.h
 
 extern JS_FRIEND_API(JSBool)

@@ -222,7 +222,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	JL_ASSERT( err == 0, E_LIB, E_INTERNAL );
 
 
-	JSObject *globalObject = JL_GetGlobalObject(cx);
+	JSObject *globalObject = JL_GetGlobal(cx);
 
 	// arguments
 //	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // see ExecuteScriptFileName()

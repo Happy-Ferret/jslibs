@@ -270,7 +270,7 @@ DEFINE_CALL() {
 	*BufferNewChunk(&resultBuffer, 1) = '\0';
 	BufferConfirm(&resultBuffer, 1);
 	JL_CHKB( JL_NewBlob(cx, (void*)BufferGetDataOwnership(&resultBuffer), BufferGetLength(&resultBuffer)-1, JL_RVAL), bad_freebuf );
-//	js_UpdateMallocCounter(cx, 1);
+//	JL_updateMallocCounter(cx, 1);
 	BufferFinalize(&resultBuffer);
 
 // close the stream and free resources

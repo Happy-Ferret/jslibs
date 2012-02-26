@@ -233,7 +233,7 @@ void ErrorReporterBasic(JSContext *cx, const char *message, JSErrorReport *repor
 
 void StderrWrite(JSContext *cx, const char *message, size_t length) {
 
-	JSObject *globalObject = JL_GetGlobalObject(cx);
+	JSObject *globalObject = JL_GetGlobal(cx);
 	ASSERT( globalObject );
 
 	jsval fct;
@@ -710,7 +710,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_STRICT | JSOPTION_RELIMIT));
 
 	JSObject *globalObject;
-	globalObject = JL_GetGlobalObject(cx);
+	globalObject = JL_GetGlobal(cx);
 	ASSERT( globalObject != NULL ); // "Global object not found."
 	
 	pv->report = Report;
@@ -725,12 +725,12 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	//pv->objectProto = JL_GetStandardClassProtoByKey(cx, JSProto_Object);
 	JSObject *newObject = JS_NewObject(cx, NULL, NULL, NULL);
 	pv->objectClass = JS_GetClass(newObject);
-	pv->objectProto = JS_GetPrototype(newObject);
+	pv->objectProto = JL_GetPrototype(cx, newObject);
 
 	ASSERT( pv->objectClass && pv->objectProto );
 
 	// global functions & properties
-	JL_CHKM( JS_DefinePropertyById( cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(JL_GetGlobalObject(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), E_PROP, E_CREATE ); // "unable to define a property."
+	JL_CHKM( JS_DefinePropertyById( cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(JL_GetGlobal(cx)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), E_PROP, E_CREATE ); // "unable to define a property."
 	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == 2 ? JLNormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), E_PROP, E_CREATE ); // "unable to define a property."
 
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, unsafeMode), BOOLEAN_TO_JSVAL(unsafeMode), false) );
@@ -860,7 +860,7 @@ void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
 
 JSBool RemoveScriptArguments( JSContext *cx ) {
 
-	JSObject *globalObject = JL_GetGlobalObject(cx);
+	JSObject *globalObject = JL_GetGlobal(cx);
 	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
 	JL_CHKM( JS_DeletePropertyById(cx, globalObject, JLID(cx, arguments)), E_HOST, E_INTERNAL ); // "Unable to cleanup script arguments." // beware: permanant properties cannot be removed.
 	return JS_TRUE;
@@ -869,7 +869,7 @@ JSBool RemoveScriptArguments( JSContext *cx ) {
 
 JSBool CreateScriptArguments( JSContext *cx, int argc, const char * const * argv ) {
 
-	JSObject *globalObject = JL_GetGlobalObject(cx);
+	JSObject *globalObject = JL_GetGlobal(cx);
 	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
 
 	JSObject *argsObj;
@@ -897,7 +897,7 @@ JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnl
 	//  When returning from the outermost API call, prevent uncaught exceptions from being converted to error reports
 	//  we can use JS_ReportPendingException to report it manually
 
-	JSObject *globalObject = JL_GetGlobalObject(cx);
+	JSObject *globalObject = JL_GetGlobal(cx);
 	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
 
 	JL_CHK( CreateScriptArguments(cx, argc, argv) );
@@ -946,7 +946,7 @@ bad:
 JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
 
 	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
-	JSObject *globalObject = JL_GetGlobalObject(cx);
+	JSObject *globalObject = JL_GetGlobal(cx);
 	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
 	JL_CHK( CreateScriptArguments(cx, argc, argv) );
 
@@ -982,7 +982,7 @@ bad:
 JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32_t xdrScriptLength ) {
 
 	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
-//	JL_CHKM( JS_EvaluateScript(cx, JL_GetGlobalObject(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
+//	JL_CHKM( JS_EvaluateScript(cx, JL_GetGlobal(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
 //	JSObject *scriptObjRoot;
 	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
 	JL_CHK( xdr );
@@ -995,7 +995,7 @@ JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32_t xdrScrip
 //	scriptObjRoot = JS_NewScriptObject(cx, script);
 //	JL_CHK( SetConfigurationReadonlyValue(cx, JLID_NAME(cx, bootstrapScript), OBJECT_TO_JSVAL(bootstrapScriptObject)) ); // bootstrap script cannot be hidden
 	jsval tmp;
-	JL_CHK( JS_ExecuteScript(cx, JL_GetGlobalObject(cx), script, &tmp) );
+	JL_CHK( JS_ExecuteScript(cx, JL_GetGlobal(cx), script, &tmp) );
 //	JS_DestroyScript(cx, script);
 	JS_SetOptions(cx, prevOpt);
 	return JS_TRUE;
