@@ -86,8 +86,8 @@ DEFINE_FUNCTION( base64Decode ) {
 
 	unsigned long outLength;
 	outLength = 3 * ((unsigned long)in.Length()-2) / 4 +1;
-	char *out;
-	out = (char *)JS_malloc(cx, outLength +1);
+	uint8_t *out;
+	out = JL_NewBuffer(cx, outLength, JL_RVAL);
 	JL_CHK( out );
 
 	int err;
@@ -95,8 +95,8 @@ DEFINE_FUNCTION( base64Decode ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	out[outLength] = '\0';
-	JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
+	//out[outLength] = '\0';
+	//JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -150,7 +150,6 @@ DEFINE_FUNCTION( hexEncode ) {
 	JL_BAD;
 }
 
-#define XX 0
 
 /**doc
 $TOC_MEMBER $INAME
@@ -160,14 +159,13 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( hexDecode ) {
 
 	static const unsigned char unhex[] = {
-
-		XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX,
-		XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX,
-		XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX,
-		 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, XX, XX, XX, XX, XX, XX,
-		XX, 10, 11, 12, 13, 14, 15, XX, XX, XX, XX, XX, XX, XX, XX, XX,
-		XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX,
-		XX, 10, 11, 12, 13, 14, 15, XX, XX, XX, XX, XX, XX, XX, XX, XX
+		 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+		 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+		 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+		 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  0,  0,  0,  0,  0,  0,
+		 0, 10, 11, 12, 13, 14, 15,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+		 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+		 0, 10, 11, 12, 13, 14, 15,  0,  0,  0,  0,  0,  0,  0,  0,  0
 	};
 
 	JLStr data;
@@ -184,15 +182,15 @@ DEFINE_FUNCTION( hexDecode ) {
 
 	size_t outLength;
 	outLength = inLength / 2;
-	char *out;
-	out = (char *)JS_malloc(cx, outLength +1);
+	uint8_t *out;
+	out = JL_NewBuffer(cx, outLength, JL_RVAL);
 	JL_CHK( out );
 
 	for ( unsigned long i=0; i<outLength; ++i )
 		out[i] = unhex[ (unsigned char)in[i*2] ] << 4 | unhex[ (unsigned char)in[i*2+1] ];
 
-	out[outLength] = '\0';
-	JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
+	//out[outLength] = '\0';
+	//JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
 	return JS_TRUE;
 	JL_BAD;

@@ -171,7 +171,7 @@ JSBool VariantToBlob( JSContext *cx, VARIANT *variant, jsval *rval ) {
 	HRESULT hr = SafeArrayAccessData(variant->parray, &pArrayData);
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
-	JL_CHK( JL_NewBlobCopyN(cx, pArrayData, variant->parray->rgsabound[0].cElements, rval) );
+	JL_CHK( JL_NewBufferCopyN(cx, pArrayData, variant->parray->rgsabound[0].cElements, rval) );
 	SafeArrayUnaccessData(variant->parray);
 
 	return JS_TRUE;
@@ -187,7 +187,8 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 		JSObject *obj = JSVAL_TO_OBJECT(*value);
 
-		if ( JL_GetClass(obj) == JL_BlobJSClass(cx) ) {
+		//if ( JL_GetClass(obj) == JL_BlobJSClass(cx) ) {
+		if ( JL_ValueIsData(cx, *value) ) {
 
 			// see also: Write and read binary data in VARIANT - http://www.ucosoft.com/write-and-read-binary-data-in-variant.html
 			
@@ -430,7 +431,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 		//	BLOB = isRef ? *V_BSTRREF(variant) : V_BSTR(variant);
 
 		//	BSTR bstr = isRef ? *V_BSTRREF(variant) : V_BSTR(variant);
-		//	JL_CHK( JL_NewBlobCopyN(cx, (const jschar*)((ULONG*)bstr+1), *(ULONG*)bstr, rval) );
+		//	JL_CHK( JL_NewBufferCopyN(cx, (const jschar*)((ULONG*)bstr+1), *(ULONG*)bstr, rval) );
 		//	}
 		//	break;
 		case VT_R4:

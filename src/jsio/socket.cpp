@@ -475,7 +475,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( recvFrom ) {
 
-	char *buffer = NULL;
+	uint8_t *buffer = NULL;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -500,27 +500,20 @@ DEFINE_FUNCTION( recvFrom ) {
 	if ( available == -1 )
 		return ThrowIoError(cx);
 
-	buffer = (char *)JS_malloc(cx, (size_t)available +1); // (TBD) optimize this if  available == 0 !!
+	buffer = JL_DataBufferAlloc(cx, (size_t)available); // (TBD) optimize this if  available == 0 !!
 	JL_CHK( buffer );
 
 	PRNetAddr addr;
 	PRInt32 res;
 	res = PR_RecvFrom(fd, buffer, (PRInt32)available, 0, &addr, PR_INTERVAL_NO_TIMEOUT);
-	if (unlikely( res == -1 )) {
+	if (unlikely( res == -1 ))
 		goto bad_ex;
-/*
-		JS_free(cx, buffer);
-			return ThrowIoError(cx);
-		tmp = JL_GetEmptyStringValue(cx);
-		JL_CHK( JL_SetElement(cx, arrayObject, 0, &tmp));
-*/
-	}
 
 	char peerName[47]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
 
 	JSObject *arrayObject;
 	arrayObject = JS_NewArrayObject(cx, 3, NULL);
-	JL_CHK( arrayObject ); // (TBD) else free buffer
+	JL_CHK( arrayObject );
 	*JL_RVAL = OBJECT_TO_JSVAL( arrayObject );
 
 	JL_CHKB( PR_NetAddrToString(&addr, peerName, sizeof(peerName)) == PR_SUCCESS, bad_ex ); // Converts a character string to a network address.
@@ -537,14 +530,14 @@ DEFINE_FUNCTION( recvFrom ) {
 
 	if (likely( res > 0 )) {
 
-		buffer[res] = '\0';
-		JL_CHK( JL_NewBlob( cx, buffer, res, &tmp ) );
+		// (TBD) maybeRealloc ?
+		JL_CHK( JL_NewBufferGetOwnership(cx, buffer, res, &tmp) );
 		JL_CHK( JL_SetElement(cx, arrayObject, 0, &tmp) );
 		return JS_TRUE;
 	} else
 	if ( res == 0 ) {
 
-		JS_free(cx, buffer);
+		JL_DataBufferFree(cx, buffer);
 		tmp = JSVAL_VOID;
 		JL_CHK( JL_SetElement(cx, arrayObject, 0, &tmp) );
 	}
@@ -554,7 +547,7 @@ DEFINE_FUNCTION( recvFrom ) {
 bad_ex:
 	ThrowIoError(cx);
 bad:
-	JS_free(cx, buffer); // JS_free NULL pointer is legal.
+	JL_DataBufferFree(cx, buffer); // JS_free NULL pointer is legal.
 	return JS_FALSE;
 }
 

@@ -31,7 +31,7 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval *rval ) {
 			JL_CHK( JL_NativeToJsval(cx, sqlite3_value_double(value), rval) );
 			break;
 		case SQLITE_BLOB:
-			JL_CHK( JL_NewBlobCopyN(cx, sqlite3_value_blob(value), sqlite3_value_bytes(value), rval) );
+			JL_CHK( JL_NewBufferCopyN(cx, sqlite3_value_blob(value), sqlite3_value_bytes(value), rval) );
 			break;
 		case SQLITE_NULL:
 			*rval = JSVAL_NULL;
@@ -154,7 +154,8 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 					break;
 				}
 //				if ( JL_GetClass(JSVAL_TO_OBJECT(val)) == JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Blob")->clasp ) { // beware: with SQLite, blob != text
-				if ( JL_JsvalIsBlob(cx, val) ) {
+				//if ( JL_JsvalIsBlob(cx, val) ) {
+				if ( JL_ValueIsData(cx, val) ) {
 
 					JLStr data;
 					JL_CHK( JL_JsvalToNative(cx, val, &data) );

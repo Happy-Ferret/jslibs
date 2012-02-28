@@ -546,7 +546,7 @@ DEFINE_FUNCTION( substr ) {
                 len = length - begin;
         }
 
-		return JL_NewBlobCopyN(cx, buffer + size_t(begin), size_t(len), JL_RVAL);
+		return JL_NewBufferCopyN(cx, buffer + size_t(begin), size_t(len), JL_RVAL);
 	}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -612,7 +612,7 @@ DEFINE_FUNCTION( substring ) {
                 }
             }
         }
-		return JL_NewBlobCopyN(cx, buffer + size_t(begin), size_t(end - begin), JL_RVAL);
+		return JL_NewBufferCopyN(cx, buffer + size_t(begin), size_t(end - begin), JL_RVAL);
     }
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);

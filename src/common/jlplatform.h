@@ -749,6 +749,17 @@ JL_CAST_CSTR_TO_UINT32( const char *cstr ) {
 }
 
 
+ALWAYS_INLINE void *
+jl_memcpy(void *dst_, const void *src_, size_t len) {
+    
+	char *dst = (char *) dst_;
+    const char *src = (const char *) src_;
+    ASSERT_IF(dst >= src, (size_t) (dst - src) >= len);
+    ASSERT_IF(src >= dst, (size_t) (src - dst) >= len);
+    return memcpy(dst, src, len);
+}
+
+
 INLINE unsigned long FASTCALL
 int_sqrt(unsigned long x) {
 

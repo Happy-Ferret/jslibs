@@ -190,19 +190,8 @@ DEFINE_FUNCTION( decodeJpegImage ) {
 	int length;
 	length = height * bytePerRow;
 	JOCTET * data;
-	data = (JOCTET *)JS_malloc(cx, length +1);
+	data = (JOCTET *)JL_NewByteImageBuffer(cx, width, height, channels, JL_RVAL);
 	JL_CHK( data );
-
-	data[length] = 0;
-	JL_CHK( JL_NewBlob(cx, data, length, JL_RVAL) );
-	JSObject *blobObj;
-	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
-	JL_ASSERT( blobObj, E_STR("Blob"), E_CREATE );
-	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
-
-	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
 	// cinfo->rec_outbuf_height : recomanded scanline height ( 1, 2 or 4 )
 	while (cinfo.output_scanline < cinfo.output_height) {
@@ -322,21 +311,8 @@ DEFINE_FUNCTION( decodePngImage ) {
 	int length;
 	length = height * bytePerRow;
 	png_bytep data;
-	data = (png_bytep)JS_malloc(cx, length +1);
+	data = (png_bytep)JL_NewByteImageBuffer(cx, width, height, channels, JL_RVAL);
 	JL_CHK( data );
-
-	data[length] = 0;
-	JL_CHK( JL_NewBlob(cx, data, length, JL_RVAL) );
-	JSObject *blobObj;
-	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
-	JL_ASSERT( blobObj, E_STR("Blob"), E_CREATE );
-	
-	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
-
-	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-
 
 	// int number_of_passes = png_set_interlace_handling(desc.png);
 // for ( int p = 0; p < number_of_passes; p++ )
@@ -376,6 +352,8 @@ void output_flush_fn(png_structp png_ptr) {
 
 DEFINE_FUNCTION( encodePngImage ) {
 
+	PngWriteUserStruct desc;
+	desc.buffer = NULL; // see bad:
 	JLStr buffer;
 
 	JL_ASSERT_ARGC_MIN(1);
@@ -395,17 +373,15 @@ DEFINE_FUNCTION( encodePngImage ) {
 	JSObject *image;
 	image = JSVAL_TO_OBJECT( JL_ARG(1) );
 	int sWidth, sHeight, sChannels;
-	JL_CHK( JL_GetProperty(cx, image, "width", &sWidth) );
-	JL_CHK( JL_GetProperty(cx, image, "height", &sHeight) );
-	JL_CHK( JL_GetProperty(cx, image, "channels", &sChannels) );
+	JL_CHK( JL_GetProperty(cx, image, JLID(cx, width), &sWidth) );
+	JL_CHK( JL_GetProperty(cx, image, JLID(cx, height), &sHeight) );
+	JL_CHK( JL_GetProperty(cx, image, JLID(cx, channels), &sChannels) );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &buffer) );
 	JL_ASSERT( buffer.Length() == (size_t)(sWidth * sHeight * sChannels * 1), E_ARG, E_NUM(1), E_SEP, E_DATASIZE, E_INVALID );
 
-	PngWriteUserStruct desc;
-
-	desc.buffer = JS_malloc(cx, sWidth * sHeight * sChannels + 1024);
-	JL_CHK( desc.buffer );
+	desc.buffer = JL_DataBufferAlloc(cx, sWidth * sHeight * sChannels + 1024);
+	JL_ASSERT_ALLOC( desc.buffer );
 	desc.pos = 0;
 
 	desc.png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -443,14 +419,14 @@ DEFINE_FUNCTION( encodePngImage ) {
 
 	png_destroy_write_struct(&desc.png, &desc.info);
 
-	desc.buffer = JS_realloc(cx, desc.buffer, desc.pos +1);
-	JL_CHK( desc.buffer );
-
-	((uint8_t*)desc.buffer)[desc.pos] = 0;
-	JL_CHK( JL_NewBlob(cx, desc.buffer, desc.pos, JL_RVAL) );
-
+	// (TBD) use maybeRealloc here ?
+	desc.buffer = (void*)JL_DataBufferRealloc(cx, (uint8_t*)desc.buffer, desc.pos); // usually, compressed data is smaller that original one.
+	JL_ASSERT_ALLOC( desc.buffer );
+	JL_CHK( JL_NewBufferGetOwnership(cx, desc.buffer, desc.pos, JL_RVAL) );
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	JL_DataBufferFree(cx, (uint8_t*)desc.buffer);
+	return JS_FALSE;
 }
 
 // (TBD) use these compilation options: PNG_SETJMP_NOT_SUPPORTED, PNG_NO_CONSOLE_IO, PNG_NO_STDIO, ...

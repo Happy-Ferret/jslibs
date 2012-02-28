@@ -15,8 +15,8 @@
 
 // note: JL_HOST_PRIVATE_VERSION is supposed to change each time the structure is changed.
 #define JL_HOST_PRIVATE_VERSION (JL_SvnRevToInt("$Revision: 3524 $"))
-
-#define MAX_CLASS_PROTO_CACHE_BIT 9
+#define JL_HOST_PRIVATE_TMPBUFFER_SIZE (4096 * 32) // 128KB
+#define JL_HOST_PRIVATE_MAX_CLASS_PROTO_CACHE_BIT (9)
 
 struct ClassProtoCache {
 	JSClass *clasp;
@@ -30,8 +30,9 @@ struct JLApi {
 #undef DEF
 
 struct HostPrivate {
-
-	bool unsafeMode;
+	
+	void *tmpBuffer; // points to a temporary memory area that can be used freely by modules.
+	bool unsafeMode; // used to spread the unsafe status across modules.
 	bool isEnding;
 	bool canSkipCleanup; // allows modules to skip the memory cleanup phase.
 	char camelCase;
@@ -55,7 +56,7 @@ struct HostPrivate {
 //	JSClass *stringObjectClass;
 	jl_allocators_t alloc;
 	jsid ids[LAST_JSID];
-	ClassProtoCache classProtoCache[1<<MAX_CLASS_PROTO_CACHE_BIT]; // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
+	ClassProtoCache classProtoCache[1<<JL_HOST_PRIVATE_MAX_CLASS_PROTO_CACHE_BIT]; // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
 	JLApi *jlapi;
 #ifdef DEBUG
 	uint32_t tmp_count;
@@ -63,4 +64,4 @@ struct HostPrivate {
 
 };
 
-S_ASSERT( offsetof(HostPrivate, unsafeMode) == 0 ); // check this because JL_ASSERT macro must be usable before hostPrivateVersion is tested.
+S_ASSERT( offsetof(HostPrivate, unsafeMode) == 4 ); // check this because JL_ASSERT macro must be usable before hostPrivateVersion is tested.

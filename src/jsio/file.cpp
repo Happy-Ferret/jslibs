@@ -390,9 +390,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( content ) {
 
-	JLStr fileName;
-	jsval jsvalFileName;
 	uint8_t *buf = NULL;
+	jsval jsvalFileName;
+	JLStr fileName;
 
 	JL_ASSERT( !JL_GetPrivate(cx, obj), E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) ); // (TBD) add somthing like J_SCHK instead
@@ -428,7 +428,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 	if ( available == 0 ) {
 
 		PR_Close(fd);
-		*vp = JL_GetEmptyStringValue(cx);
+		JL_CHK( JL_NewEmptyBuffer(cx, vp) );
 		return JS_TRUE;
 	}
 
@@ -444,9 +444,8 @@ DEFINE_PROPERTY_GETTER( content ) {
 		JL_ERR( E_DATASIZE, E_MAX, E_STR("2^32") );
 	}
 
-	
-	buf = (uint8_t *)jl_malloc(available +1);
-	JL_CHK(buf);
+	buf = JL_DataBufferAlloc(cx, (size_t)available);
+	JL_ASSERT_ALLOC( buf );
 	
 	PRInt32 res;
 	res = PR_Read(fd, buf, (PRInt32)available);
@@ -454,30 +453,26 @@ DEFINE_PROPERTY_GETTER( content ) {
 
 		ThrowIoError(cx);
 		PR_Close(fd);
-		goto bad_free;
+		goto bad;
 	}
 
 	if (unlikely( PR_Close(fd) != PR_SUCCESS )) {
 
 		ThrowIoError(cx);
-		goto bad_free;
+		goto bad;
 	}
 
-	if (unlikely( JL_MaybeRealloc(available, res) )) { // should never occured
+	if (unlikely( JL_MaybeRealloc((size_t)available, res) )) { // should never occured
 
-		buf = (uint8_t *)JS_realloc(cx, buf, res +1); // realloc the string using its real size
-		JL_CHK(buf);
+		buf = JL_DataBufferRealloc(cx, buf, res); // realloc the string using its real size
+		JL_ASSERT_ALLOC(buf);
 	}
 
-	buf[res] = '\0';
-	JL_CHKB( JL_NewBlob(cx, buf, res, vp), bad_free );
-	JL_updateMallocCounter(cx, res);
+	JL_CHK( JL_NewBufferGetOwnership(cx, buf, res, vp) );
 	return JS_TRUE;
 
-bad_free:
-	jl_free(buf);
-
 bad:
+	JL_DataBufferFree(cx, buf);
 	return JS_FALSE;
 }
 

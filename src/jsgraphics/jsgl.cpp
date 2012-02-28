@@ -5676,9 +5676,9 @@ DEFINE_FUNCTION( drawImage ) {
 		type = GL_FLOAT;
 	} else {
 
-		JL_CHK( JL_GetProperty(cx, tObj, "width", &width) );
-		JL_CHK( JL_GetProperty(cx, tObj, "height", &height) );
-		JL_CHK( JL_GetProperty(cx, tObj, "channels", &channels) );
+		JL_CHK( JL_GetProperty(cx, tObj, JLID(cx, width), &width) );
+		JL_CHK( JL_GetProperty(cx, tObj, JLID(cx, height), &height) );
+		JL_CHK( JL_GetProperty(cx, tObj, JLID(cx, channels), &channels) );
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &dataStr) );
 		data = dataStr.GetConstStr();
@@ -5791,7 +5791,7 @@ DEFINE_FUNCTION( readImage ) {
 	int lineLength = width * channels;
 	int length = lineLength * height;
 	ASSERT( length > 0 ); //, "Invalid image size." );
-	GLvoid *data = JS_malloc(cx, length +1);
+	uint8_t *data = JL_NewByteImageBuffer(cx, width, height, channels, JL_RVAL);
 	JL_CHK( data );
 
 /*
@@ -5821,22 +5821,11 @@ DEFINE_FUNCTION( readImage ) {
 		int mid = height / 2;
 		for ( int line = 0; line < mid; ++line ) {
 
-			memcpy(tmp, (char*)data + (line*lineLength), lineLength);
-			memcpy((char*)data + (line*lineLength), (char*)data + ((height-1-line)*lineLength), lineLength);
-			memcpy((char*)data + ((height-1-line)*lineLength), tmp, lineLength);
+			memcpy(tmp, data + (line*lineLength), lineLength);
+			memcpy(data + (line*lineLength), data + ((height-1-line)*lineLength), lineLength);
+			memcpy(data + ((height-1-line)*lineLength), tmp, lineLength);
 		}
 	}
-
-	((uint8_t*)data)[length] = 0;
-	JL_CHK( JL_NewBlob(cx, data, length, JL_RVAL) );
-	JSObject *blobObj;
-	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
-	ASSERT( blobObj ); //, "Unable to create Blob object." );
-	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
-
-	JS_DefineProperty( cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty( cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty( cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -6223,7 +6212,7 @@ DEFINE_FUNCTION( defineTextureImage ) {
 		data = JS_GetTypedArrayData(tObj);
 	} else {
 
-		JL_CHKM( JL_GetProperty(cx, tObj, "width", &width) && JL_GetProperty(cx, tObj, "height", &height) && JL_GetProperty(cx, tObj, "channels", &channels), E_ARG, E_NUM(3), E_INVALID ); // "Invalid texture object."
+		JL_CHKM( JL_GetProperty(cx, tObj, JLID(cx, width), &width) && JL_GetProperty(cx, tObj, JLID(cx, height), &height) && JL_GetProperty(cx, tObj, JLID(cx, channels), &channels), E_ARG, E_NUM(3), E_INVALID ); // "Invalid texture object."
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &dataStr) );
 		data = dataStr.GetConstStr();

@@ -531,7 +531,8 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			}
 
 //			if ( JL_GetClass(JSVAL_TO_OBJECT(argv[0])) == JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Blob")->clasp ) { // beware: with SQLite, blob != text
-			if ( JL_JsvalIsBlob(cx, argv[0]) ) {
+//			if ( JL_JsvalIsBlob(cx, argv[0]) ) {
+			if ( JL_ValueIsData(cx, argv[0]) ) {
 
 				//const char *data;
 				//size_t length;

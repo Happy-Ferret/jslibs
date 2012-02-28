@@ -102,22 +102,10 @@ DEFINE_FUNCTION( trim ) {
 	int y1;
 	y1= vect[3];
 
-	jsval tmp;
-	JS_GetProperty(cx, obj, "width", &tmp);
-	JL_ASSERT_IS_INTEGER(tmp, "width");
-	int width;
-	width = JSVAL_TO_INT(tmp);
+	int width, height, channels;
+	JL_CHK( JL_GetProperty(cx, obj, JLID(cx, width), &width) && JL_GetProperty(cx, obj, JLID(cx, height), &height) && JL_GetProperty(cx, obj, JLID(cx, channels), &channels) );
 
-	JS_GetProperty(cx, obj, "height", &tmp);
-	JL_ASSERT_IS_INTEGER(tmp, "height");
-	int height;
-	height = JSVAL_TO_INT(tmp);
-
-	JS_GetProperty(cx, obj, "channels", &tmp);
-	JL_ASSERT_IS_INTEGER(tmp, "channels");
-	int channels;
-	channels = JSVAL_TO_INT(tmp);
-	// assume that we have 1 Byte/channel
+// assume that we have 1 Byte/channel !
 
 	//JL_ASSERT( !(x<0 || x1<0 || x>width || x1>width || y<0 || y1<0 || y>height || y1>height), "Invalid size." );
 	JL_ASSERT( !(x<0 || x1<0 || x>width || x1>width || y<0 || y1<0 || y>height || y1>height), E_ARG, E_NUM(1), E_INVALID );
@@ -155,8 +143,10 @@ DEFINE_FUNCTION( trim ) {
 		data += channels * width;
 	}
 
-	JS_DefineProperty(cx, obj, "width", INT_TO_JSVAL(newWidth), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, obj, "height", INT_TO_JSVAL(newHeight), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	//JS_DefineProperty(cx, obj, "width", INT_TO_JSVAL(newWidth), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+	//JS_DefineProperty(cx, obj, "height", INT_TO_JSVAL(newHeight), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
+
+	JL_CHK( JL_SetProperty(cx, obj, JLID(cx, width), newWidth) && JL_SetProperty(cx, obj, JLID(cx, width), newHeight) );
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj); // allows to write: var texture = new Jpeg(f).Load().Trim(...)
 

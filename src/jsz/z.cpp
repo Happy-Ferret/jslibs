@@ -267,10 +267,8 @@ DEFINE_CALL() {
 
 //	JL_CHK( StringAndLengthToJsval(cx, rval, BufferGetData(&resultBuffer), BufferGetLength(&resultBuffer)) );
 
-	*BufferNewChunk(&resultBuffer, 1) = '\0';
-	BufferConfirm(&resultBuffer, 1);
-	JL_CHKB( JL_NewBlob(cx, (void*)BufferGetDataOwnership(&resultBuffer), BufferGetLength(&resultBuffer)-1, JL_RVAL), bad_freebuf );
-//	JL_updateMallocCounter(cx, 1);
+	JL_CHKB( JL_NewBufferGetOwnership(cx, BufferGetDataOwnership(&resultBuffer), BufferGetLength(&resultBuffer), JL_RVAL), bad_freebuf );
+
 	BufferFinalize(&resultBuffer);
 
 // close the stream and free resources

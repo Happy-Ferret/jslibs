@@ -193,16 +193,17 @@ DEFINE_FUNCTION( done ) {
 
 	unsigned long outLength;
 	outLength = pv->descriptor->hashsize;
-	char *out;
-	out = (char*)JS_malloc(cx, outLength +1);
+	uint8_t *out;
+	out = JL_NewBuffer(cx, outLength, JL_RVAL);
+	
 	JL_CHK( out );
 	int err;
 	err = pv->descriptor->done(&pv->state, (unsigned char*)out); // Terminate the hash to get the digest
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 
-	out[outLength] = '\0';
-	JL_CHK( JL_NewBlob(cx, out, outLength, JL_RVAL) );
+//	out[outLength] = '\0';
+//	JL_CHK( JL_NewBlob(cx, out, outLength, JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -242,8 +243,8 @@ DEFINE_CALL() {
 
 	unsigned long outLength;
 	outLength = pv->descriptor->hashsize;
-	char *out;
-	out = (char *)JS_malloc( cx, outLength +1);
+	uint8_t *out;
+	out = JL_NewBuffer(cx, outLength, JL_RVAL);
 	JL_CHK( out );
 
 //	const char *in;
@@ -269,8 +270,8 @@ DEFINE_CALL() {
 //		return ThrowCryptError(cx, err);
 //	pv->inputLength = 0;
 
-	out[outLength] = '\0';
-	JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
+	//out[outLength] = '\0';
+	//JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
 	return JS_TRUE;
 	JL_BAD;

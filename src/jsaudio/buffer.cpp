@@ -47,9 +47,9 @@ DEFINE_CONSTRUCTOR() {
 	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	int rate, channels, bits;
-	JL_CHK( JL_GetProperty(cx, blobObj, "rate", &rate) );
-	JL_CHK( JL_GetProperty(cx, blobObj, "channels", &channels) );
-	JL_CHK( JL_GetProperty(cx, blobObj, "bits", &bits) );
+	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, rate), &rate) );
+	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, channels), &channels) );
+	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, bits), &bits) );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &buffer) );
 

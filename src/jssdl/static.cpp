@@ -489,9 +489,9 @@ DEFINE_PROPERTY_SETTER( icon ) {
 
 	JSObject *imageObj = JSVAL_TO_OBJECT( image );
 	int sWidth, sHeight, sChannels;
-	JL_CHK( JL_GetProperty(cx, imageObj, "width", &sWidth) );
-	JL_CHK( JL_GetProperty(cx, imageObj, "height", &sHeight) );
-	JL_CHK( JL_GetProperty(cx, imageObj, "channels", &sChannels) );
+	JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, width), &sWidth) );
+	JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, height), &sHeight) );
+	JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, channels), &sChannels) );
 
 	//const char *sBuffer;
 	//size_t bufferLength;

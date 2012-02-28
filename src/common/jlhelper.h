@@ -405,6 +405,12 @@ enum {
 	JLID_SPEC( stdin ),
 	JLID_SPEC( stdout ),
 	JLID_SPEC( stderr ),
+	JLID_SPEC( width ),
+	JLID_SPEC( height ),
+	JLID_SPEC( channels ),
+	JLID_SPEC( bits ),
+	JLID_SPEC( rate ),
+	JLID_SPEC( frames ),
 	JLID_SPEC( _revision ),
 	JLID_SPEC( _buildDate ),
 	JLID_SPEC( scripthostpath ),
@@ -479,6 +485,32 @@ JL_SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 	JL_SetRuntimePrivate(JL_GetRuntime(cx), static_cast<void*>(hostPrivate));
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// HostPrivate tmpBuffer
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_tmpAlloc( JSContext *cx, size_t size ) {
+	
+	if ( size <= JL_HOST_PRIVATE_TMPBUFFER_SIZE ) {
+		
+		return (uint8_t*)JL_GetHostPrivate(cx)->tmpBuffer;
+	} else {
+	
+		return (uint8_t*)jl_malloc(size);
+	}
+}
+
+ALWAYS_INLINE void FASTCALL
+JL_tmpFree( JSContext *cx, uint8_t *data ) {
+
+	if ( data != NULL ) {
+		
+		if ( data != JL_GetHostPrivate(cx)->tmpBuffer ) {
+
+			jl_free(data);
+		}
+	}
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -590,7 +622,7 @@ JL_ClassNameToClassProtoCacheSlot( const char *n ) {
 	if ( n[22] ) { h ^= n[22]<<2;
 	if ( n[23] ) { h ^= n[23]<<6;
 	}}}}}}}}}}}}}}}}}}}}}}}}
-	return ((h >> 7) ^ h) & ((1<<MAX_CLASS_PROTO_CACHE_BIT) - 1);
+	return ((h >> 7) ^ h) & ((1<<JL_HOST_PRIVATE_MAX_CLASS_PROTO_CACHE_BIT) - 1);
 }
 
 
@@ -722,9 +754,9 @@ JL_NewJslibsObject( JSContext *cx, const char *className ) {
 ALWAYS_INLINE jsid
 JL_GetPrivateJsid( JSContext * RESTRICT cx, int index, const jschar * RESTRICT name ) {
 
-	HostPrivate *pv = JL_GetHostPrivate(cx);
-	ASSERT( pv != NULL );
-	jsid *ids = pv->ids;
+	HostPrivate *hpv = JL_GetHostPrivate(cx);
+	ASSERT( hpv != NULL );
+	jsid *ids = hpv->ids;
 	jsid id = ids[index];
 	if (likely( id != JL_NullJsid() ))
 		return id;
@@ -906,13 +938,26 @@ JL_ValueIsArrayLike( JSContext *cx, const jsval &val ) {
 ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsData( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
-	return BufferGetInterface(cx, obj) != NULL || JL_ObjectIsArrayLike(cx, obj) || JS_IsArrayBufferObject(obj);
+	return JS_IsArrayBufferObject(obj) || BufferGetInterface(cx, obj) != NULL || JL_ObjectIsArrayLike(cx, obj);
 }
 
 ALWAYS_INLINE bool FASTCALL
 JL_ValueIsData( JSContext *cx, const jsval &val ) {
 
 	return JSVAL_IS_STRING(val) || ( !JSVAL_IS_PRIMITIVE(val) && NOIL(JL_ObjectIsData)(cx, JSVAL_TO_OBJECT(val)) );
+}
+
+ALWAYS_INLINE bool FASTCALL
+JL_ObjectIsIterable( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
+
+	JSBool found;
+	return JS_HasPropertyById(cx, obj, JLID(cx, next), &found) && found == JS_TRUE || js::Valueify(JL_GetClass(obj))->ext.iteratorObject != NULL;
+}
+
+ALWAYS_INLINE bool FASTCALL
+JL_ValueIsIterable( JSContext * RESTRICT cx, jsval &val ) {
+
+	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsIterable(cx, JSVAL_TO_OBJECT(val));
 }
 
 
@@ -1391,9 +1436,8 @@ public:
 		NewInner(str, NULL, nullTerminated, true, length);
 	}
 
-
 	ALWAYS_INLINE JLStr(const char *str, bool nullTerminated) {
-
+		
 		NewInner(NULL, str, nullTerminated, false);
 	}
 
@@ -1402,16 +1446,15 @@ public:
 		NewInner(NULL, str, nullTerminated, false, length);
 	}
 
-	ALWAYS_INLINE JLStr(char *str, bool nullTerminated) { // give ownership of str to JLStr
+	ALWAYS_INLINE JLStr(char *str, bool nullTerminated) { // give ownership of str to JLStr (non-const char*)
 
 		NewInner(NULL, str, nullTerminated, true);
 	}
 
-	ALWAYS_INLINE JLStr(char *str, size_t length, bool nullTerminated) { // give ownership of str to JLStr
+	ALWAYS_INLINE JLStr(char *str, size_t length, bool nullTerminated) { // give ownership of str to JLStr (non-const char*)
 
 		NewInner(NULL, str, nullTerminated, true, length);
 	}
-
 
 	ALWAYS_INLINE JLStr(const uint8_t *str, bool nullTerminated) {
 
@@ -1432,7 +1475,6 @@ public:
 
 		NewInner(NULL, (char*)str, nullTerminated, true, length);
 	}
-
 
 	ALWAYS_INLINE JLStr(void *str, size_t length, bool nullTerminated, bool hasOwnership) { // give ownership of str to JLStr
 
@@ -1589,6 +1631,20 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLStr * RESTRICT str ) {
 		if ( fct )
 			return fct(cx, obj, str);
 
+		if ( JS_IsArrayBufferObject(obj) ) {
+			
+			uint32_t length = JS_GetArrayBufferByteLength(obj);
+			if ( length ) {
+
+				*str = JLStr((const char*)JS_GetArrayBufferData(obj), length, false);
+			} else {
+
+				*str = JLStr(L(""), 0, true);
+			}
+
+			return JS_TRUE;
+		}
+
 		if ( js_IsTypedArray(obj) ) {
 
 			uint32_t length = JS_GetTypedArrayLength(obj);
@@ -1604,21 +1660,6 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLStr * RESTRICT str ) {
 			}
 			return JS_TRUE;
 		}
-
-		if ( JS_IsArrayBufferObject(obj) ) {
-			
-			uint32_t length = JS_GetArrayBufferByteLength(obj);
-			if ( length ) {
-
-				*str = JLStr((const char*)JS_GetArrayBufferData(obj), length, false);
-			} else {
-
-				*str = JLStr(L(""), 0, true);
-			}
-
-			return JS_TRUE;
-		}
-
 
 		// the following conversion can be replaced by: (new Uint8Array([1,2,3]))
 		//		if ( JL_ObjectIsArray(cx, obj) )
@@ -2910,7 +2951,7 @@ SetHostObjectValue(JSContext *cx, const jschar *name, jsval value, bool modifiab
 }
 
 
-
+/*
 ///////////////////////////////////////////////////////////////////////////////
 // Blob functions
 
@@ -2977,24 +3018,141 @@ JL_NewBlobCopyN( JSContext * RESTRICT cx, const void * RESTRICT buffer, size_t l
 	JS_free(cx, blobBuf);
 	JL_BAD;
 }
-
+*/
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Buffer
 
 ALWAYS_INLINE uint8_t* FASTCALL
-JL_NewBuffer( JSContext *cx, size_t nbytes, jsval &rval ) {
+JL_DataBufferAlloc( JSContext *cx, size_t nbytes ) {
+
+	JL_IGNORE(cx);
+	return (uint8_t*)jl_malloc(nbytes);
+}
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_DataBufferRealloc( JSContext *cx, uint8_t *data, size_t nbytes ) {
+
+	JL_IGNORE(cx);
+	return (uint8_t*)jl_realloc(data, nbytes);
+}
+
+ALWAYS_INLINE void FASTCALL
+JL_DataBufferFree( JSContext *cx, uint8_t *data ) {
+	
+	JL_IGNORE(cx);
+	return jl_free(data);
+}
+
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_NewBuffer( JSContext *cx, size_t nbytes, jsval *rval ) {
 
 	JSObject *bufferObj = js::ArrayBuffer::create(cx, nbytes); // JS_NewArrayBuffer(cx, nbytes);
 	if ( bufferObj ) {
 
-		rval = OBJECT_TO_JSVAL(bufferObj);
+		*rval = OBJECT_TO_JSVAL(bufferObj);
 		return JS_GetArrayBufferData(bufferObj);
 	} else {
 
 		return NULL;
 	}
+}
+
+
+ALWAYS_INLINE bool FASTCALL
+JL_NewBufferGetOwnership( JSContext *cx, void *src, size_t nbytes, jsval *rval ) {
+
+	uint8_t *buffer;
+	buffer = JL_NewBuffer(cx, nbytes, rval);
+	if ( buffer ) {
+			
+		memcpy(buffer, src, nbytes);
+		js_free(src);
+		return true;
+	} else {
+		
+		js_free(src);
+		return false;
+	}
+}
+
+
+ALWAYS_INLINE bool FASTCALL
+JL_NewBufferCopyN( JSContext *cx, const void *src, size_t nbytes, jsval *rval ) {
+
+	uint8_t *buffer;
+	buffer = JL_NewBuffer(cx, nbytes, rval);
+	if ( buffer ) {
+			
+		jl_memcpy(buffer, src, nbytes);
+		return true;
+	} else {
+		
+		return false;
+	}
+}
+
+
+ALWAYS_INLINE bool FASTCALL
+JL_NewEmptyBuffer( JSContext *cx, jsval *rval ) {
+	
+	JSObject *obj = js::ArrayBuffer::create(cx, 0);
+	if ( obj ) {
+
+		*rval = OBJECT_TO_JSVAL(obj);
+		return true;
+	} else {
+		
+		return false;
+	}
+}
+
+
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_NewByteImageBuffer( JSContext *cx, int32_t width, int32_t height, int32_t channels, jsval *rval ) {
+
+	ASSERT( width >= 0 );
+	ASSERT( height >= 0 );
+	ASSERT( channels > 0 );
+
+	JSObject *bufferObj = js::ArrayBuffer::create(cx, width*height*channels); // JS_NewArrayBuffer(cx, nbytes);
+	if ( bufferObj ) {
+
+		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, width), width) );
+		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, height), height) );
+		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, channels), channels) );
+		*rval = OBJECT_TO_JSVAL(bufferObj);
+		return JS_GetArrayBufferData(bufferObj);
+	}
+bad:
+	return NULL;
+}
+
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_NewByteAudioBuffer( JSContext *cx, int32_t bits, int32_t rate, int32_t channels, int32_t frames, jsval *rval ) {
+
+	ASSERT( bits % 8 == 0 );
+	ASSERT( bits > 0 );
+	ASSERT( rate > 0 );
+	ASSERT( channels > 0 );
+	ASSERT( frames >= 0 );
+
+	JSObject *bufferObj = js::ArrayBuffer::create(cx, (bits/2)*rate*channels*frames); // JS_NewArrayBuffer(cx, nbytes);
+	if ( bufferObj ) {
+
+		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, bits), bits) );
+		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, rate), rate) );
+		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, channels), channels) );
+		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, frames), frames) );
+		*rval = OBJECT_TO_JSVAL(bufferObj);
+		return JS_GetArrayBufferData(bufferObj);
+	}
+bad:
+	return NULL;
 }
 
 

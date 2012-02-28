@@ -114,14 +114,16 @@ DEFINE_CALL() {
 	unsigned int readCount;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &readCount) );
 
-	char *pr;
-	pr = (char*)JS_malloc( cx, readCount +1);
+	uint8_t *pr;
+	//pr = (char*)JS_malloc( cx, readCount +1);
+	pr = JL_NewBuffer(cx, readCount, JL_RVAL);
 	JL_CHK( pr );
 	unsigned long hasRead;
 	hasRead = pv->prng.read( (unsigned char*)pr, readCount, &pv->state );
 	JL_CHKM( hasRead == readCount, E_DATA, E_CREATE );
-	pr[readCount] = '\0';
-	JL_CHK( JL_NewBlob( cx, pr, hasRead, JL_RVAL ) );
+	
+	//pr[readCount] = '\0';
+	//JL_CHK( JL_NewBlob( cx, pr, hasRead, JL_RVAL ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -208,21 +210,22 @@ DEFINE_PROPERTY_GETTER( state ) {
 
 	unsigned long size;
 	size = pv->prng.export_size;
-	char *stateData;
-	stateData = (char*)JS_malloc(cx, size +1);
+	uint8_t *stateData;
+	stateData = JL_NewBuffer(cx, size, vp);
 	JL_CHK( stateData );
 
 	unsigned long stateLength;
 	stateLength = size;
 	int err;
-	err = pv->prng.pexport((unsigned char*)stateData, &stateLength, &pv->state);
+	err = pv->prng.pexport(stateData, &stateLength, &pv->state);
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	
 	JL_CHKM( stateLength == size, E_LIB, E_INTERNAL, E_SEP, E_STR("state"), E_LENGTH, E_NUM(size) );
 
-	stateData[size] = '\0';
-	JL_CHK( JL_NewBlob(cx, stateData, size, vp) );
+	//stateData[size] = '\0';
+	//JL_CHK( JL_NewBlob(cx, stateData, size, vp) );
+
 	return JS_TRUE;
 	JL_BAD;
 }

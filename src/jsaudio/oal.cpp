@@ -788,9 +788,9 @@ DEFINE_FUNCTION( buffer ) {
 	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	int rate, channels, bits;
-	JL_CHK( JL_GetProperty(cx, blobObj, "rate", &rate) );
-	JL_CHK( JL_GetProperty(cx, blobObj, "channels", &channels) );
-	JL_CHK( JL_GetProperty(cx, blobObj, "bits", &bits) );
+	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, rate), &rate) );
+	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, channels), &channels) );
+	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, bits), &bits) );
 
 //	const char *buffer;
 //	size_t bufferLength;
@@ -1075,9 +1075,9 @@ DEFINE_FUNCTION( playSound ) {
 	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	int rate, channels, bits;
-	JL_CHK( JL_GetProperty(cx, blobObj, "rate", &rate) );
-	JL_CHK( JL_GetProperty(cx, blobObj, "channels", &channels) );
-	JL_CHK( JL_GetProperty(cx, blobObj, "bits", &bits) );
+	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, rate), &rate) );
+	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, channels), &channels) );
+	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, bits), &bits) );
 
 //	const char *buffer;
 //	size_t bufferLength;

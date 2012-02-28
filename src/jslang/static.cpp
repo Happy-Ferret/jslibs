@@ -200,6 +200,16 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( stringify ) {
 
 	JL_ASSERT_ARGC(1);
+/* [, isWide] 
+	bool isWide;
+	if ( JL_ARG_ISDEF(2) ) {
+
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &isWide) );
+	} else {
+	
+		isWide = false;
+	}
+*/
 
 	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 
@@ -235,6 +245,37 @@ DEFINE_FUNCTION( stringify ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	*JL_RVAL = STRING_TO_JSVAL( str.GetJSString(cx) );
 	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME( collection )
+  
+**/
+DEFINE_FUNCTION( join ) {
+
+	JL_ASSERT_ARGC(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
+
+	JSObject *obj = JSVAL_TO_OBJECT(JL_ARG(1));
+
+	//bool isti = JL_ObjectIsIterable(cx, obj);
+
+
+	
+	JSObject *iterator = JS_NewElementIterator(cx, obj);
+	JSBool found;
+	
+	JL_CHK( JS_HasPropertyById(cx, iterator, JLID(cx, next), &found) );
+
+	bool has = found == JS_TRUE;
+	*JL_RVAL = OBJECT_TO_JSVAL(iterator);
+
+	
 
 	return JS_TRUE;
 	JL_BAD;
@@ -598,18 +639,6 @@ DEFINE_FUNCTION( deserialize ) {
 }
 */
 
-ALWAYS_INLINE JSBool
-JL_NewTypedArrayCopyN( JSContext *cx, void *datap, uint32_t dataLength, JSObject **arrayobj ) {
-
-	*arrayobj = js_CreateTypedArray(cx, js::TypedArray::TYPE_UINT8, dataLength);
-    if (!*arrayobj)
-        return JS_FALSE;
-    JSObject *array = js::TypedArray::getTypedArray(*arrayobj);
-    JS_ASSERT((uintptr_t(js::TypedArray::getDataOffset(array)) & 7) == 0);
-    js_memcpy(js::TypedArray::getDataOffset(array), datap, dataLength);
-	return JS_TRUE;
-}
-
 
 
 /* serialization/deserialization test using StructuredClone API:
@@ -813,31 +842,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_IGNORE(argc);
 	JL_IGNORE(vp);
 
-	_asm { int 3 }
-	_asm { int 3 }
-	_asm { int 3 }
-
-	//JL_CHK( JL_NativeToJsval(cx, "Test", JL_RVAL) );
-
-
-	JLStr str;
-
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-
-
-
-//	jsid l = JLID(cx, length);
-
-/*
-
-	JSObject *o = JL_NewObj(cx);
-	jsid t;
-	jsval s = OBJECT_TO_JSVAL(o);
-	JL_CHK( JL_JsvalToJsid(cx, &s, &t) );
-	jsval r;
-	JL_JsidToJsval(cx, t, &r);
-	ASSERT( JSVAL_TO_OBJECT(r) == o );
-*/
+//	uint8_t *buf = JL_NewByteImageBuffer(cx, 100, 100, 3, JL_RVAL);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -857,6 +862,8 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( isCallable, 1 )
 //		FUNCTION_ARGC( isGeneratorFunction, 1 )
 //		FUNCTION_ARGC( isGeneratorObject, 1 )
+
+		FUNCTION_ARGC( join, 1 )
 
 
 		FUNCTION_ARGC( real, 1 )

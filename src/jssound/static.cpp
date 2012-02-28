@@ -138,20 +138,10 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 	} while (bytes > 0);
 
 	// convert data chunks into a single memory buffer.
-	char *buf = (char*)jl_malloc(totalSize +1);
+	//char *buf = (char*)jl_malloc(totalSize +1);
+	uint8_t *buf;
+	buf = JL_NewByteAudioBuffer(cx, bits, info->rate, info->channels, totalSize / (info->channels * (bits / 8)), JL_RVAL);
 	JL_CHK( buf );
-
-	buf[totalSize] = '\0';
-	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
-	JL_updateMallocCounter(cx, totalSize);
-	JSObject *bstrObj;
-	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &bstrObj) );
-	JL_CHKM( bstrObj != NULL, E_STR("Blob"), E_CREATE );
-	*JL_RVAL = OBJECT_TO_JSVAL(bstrObj);
-
-	JL_CHK(JL_SetProperty(cx, bstrObj, "bits", bits) ); // bits per sample
-	JL_CHK(JL_SetProperty(cx, bstrObj, "rate", info->rate) );
-	JL_CHK(JL_SetProperty(cx, bstrObj, "channels", info->channels) );
 
 	ov_clear(&descriptor); // beware: info must be valid
 
@@ -344,25 +334,9 @@ DEFINE_FUNCTION( decodeSound ) {
 
 
 	// convert data chunks into a single memory buffer.
-	char *buf = (char*)jl_malloc(totalSize);
+	uint8_t *buf;
+	buf = JL_NewByteAudioBuffer(cx, 16, info.samplerate, info.channels, totalSize / (info.channels * (16 / 8)), JL_RVAL);
 	JL_CHK( buf );
-
-//	JSObject *bstrObj = JL_NewBlob(cx, buf, totalSize);
-//	JL_ASSERT( bstrObj != NULL, "Unable to create the Blob object.");
-//	*JL_RVAL = OBJECT_TO_JSVAL(bstrObj);
-
-	buf[totalSize] = '\0';
-	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
-	JL_updateMallocCounter(cx, totalSize);
-	JSObject *bstrObj;
-	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &bstrObj) );
-	JL_CHKM( bstrObj != NULL, E_STR("Blob"), E_CREATE );
-
-	*JL_RVAL = OBJECT_TO_JSVAL(bstrObj);
-
-	JL_CHK(JL_SetProperty(cx, bstrObj, "bits", 16) ); // bits per sample
-	JL_CHK(JL_SetProperty(cx, bstrObj, "rate", info.samplerate) );
-	JL_CHK(JL_SetProperty(cx, bstrObj, "channels", info.channels) );
 
 	sf_close(descriptor);
 
@@ -399,10 +373,10 @@ DEFINE_FUNCTION( splitChannels ) {
 
 	unsigned int rate, channelCount, bits, frames;
 	JSObject *srcBlobObj = JSVAL_TO_OBJECT(JL_ARG(1));
-	JL_CHK(JL_GetProperty(cx, srcBlobObj, "rate", &rate) );
-	JL_CHK(JL_GetProperty(cx, srcBlobObj, "channels", &channelCount) );
-	JL_CHK(JL_GetProperty(cx, srcBlobObj, "bits", &bits) );
-	JL_CHK(JL_GetProperty(cx, srcBlobObj, "frames", &frames) );
+	JL_CHK(JL_GetProperty(cx, srcBlobObj, JLID(cx, rate), &rate) );
+	JL_CHK(JL_GetProperty(cx, srcBlobObj, JLID(cx, channels), &channelCount) );
+	JL_CHK(JL_GetProperty(cx, srcBlobObj, JLID(cx, bits), &bits) );
+	JL_CHK(JL_GetProperty(cx, srcBlobObj, JLID(cx, frames), &frames) );
 
 	JL_ASSERT( bits == 8 || bits == 16, E_ARG, E_NUM(1), E_FORMAT, E_COMMENT_BEGIN, E_NUM(bits), E_STR("bit"), E_COMMENT_END );
 
@@ -416,10 +390,16 @@ DEFINE_FUNCTION( splitChannels ) {
 	JSObject *destArray = JS_NewArrayObject(cx, 0, NULL);
 	*JL_RVAL = OBJECT_TO_JSVAL(destArray);
 
+	jsval tmpVal;
+
 	for ( size_t c = 0; c < channelCount; c++ ) {
 
 		size_t totalSize = frames * (bits/8);
-		char *buf = (char*)JS_malloc(cx, totalSize +1);
+		//char *buf = (char*)JS_malloc(cx, totalSize +1);
+		uint8_t *buf;
+		buf = JL_NewByteAudioBuffer(cx, bits, rate, 1, frames, &tmpVal);
+		JL_CHK( buf );
+		JL_CHK( JL_SetElement(cx, destArray, c, &tmpVal) );
 
 		if ( bits == 16 ) {
 
@@ -431,20 +411,6 @@ DEFINE_FUNCTION( splitChannels ) {
 			for ( size_t frame = 0; frame < frames; frame++ )
 				((int8_t*)buf)[frame] = ((int8_t*)srcBuf)[frame*channelCount+c];
 		}
-
-		jsval blobVal;
-		buf[totalSize] = '\0';
-		JL_CHK( JL_NewBlob(cx, buf, totalSize, &blobVal) );
-		JSObject *blobObj;
-		JL_CHK( JS_ValueToObject(cx, blobVal, &blobObj) );
-		JL_CHKM( blobObj != NULL, E_STR("Blob"), E_CREATE );
-		blobVal = OBJECT_TO_JSVAL(blobObj);
-		JL_CHK( JL_SetElement(cx, destArray, c, &blobVal) );
-
-		JL_CHK(JL_SetProperty(cx, blobObj, "bits", bits) );
-		JL_CHK(JL_SetProperty(cx, blobObj, "rate", rate) );
-		JL_CHK(JL_SetProperty(cx, blobObj, "channels", 1) );
-		JL_CHK(JL_SetProperty(cx, blobObj, "frames", frames ) );
 	}
 
 	return JS_TRUE;

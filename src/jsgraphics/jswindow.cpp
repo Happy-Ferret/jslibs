@@ -237,7 +237,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-//	JSClass *test = JS_GetClass(obj);
+//	JSClass *test = JL_GetClass(obj);
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	JL_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 

@@ -147,7 +147,7 @@ ALWAYS_INLINE bool IsTexture( JSContext *cx, jsval val ) {
 	JL_IGNORE(cx);
 	//return JL_IsClass(val, JL_CLASS(Texture));
 	//return !js::Valueify(val).isPrimitive() && js::Valueify(val).toObject().getProto()->getJSClass() == JL_CLASS(Texture);
-	return val.isPrimitive() && JS_GetClass(JSVAL_TO_OBJECT(val)) == JL_CLASS(Texture);
+	return val.isPrimitive() && JL_GetClass(JSVAL_TO_OBJECT(val)) == JL_CLASS(Texture);
 }
 
 
@@ -478,9 +478,9 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JS_ValueToObject(cx, *arg1, &imageObj) );
 		unsigned int i, tsize, sWidth, sHeight, sChannels;
 
-		JL_CHK( JL_GetProperty(cx, imageObj, "width", &sWidth) );
-		JL_CHK( JL_GetProperty(cx, imageObj, "height", &sHeight) );
-		JL_CHK( JL_GetProperty(cx, imageObj, "channels", &sChannels) );
+		JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, width), &sWidth) );
+		JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, height), &sHeight) );
+		JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, channels), &sChannels) );
 		tsize = sWidth * sHeight * sChannels;
 
 		const uint8_t *buffer;
@@ -1522,9 +1522,9 @@ DEFINE_FUNCTION( set ) {
 		JL_CHK( JS_ValueToObject(cx, *arg1, &imageObj) );
 		unsigned int i, tsize, sWidth, sHeight, sChannels;
 
-		JL_CHK( JL_GetProperty(cx, imageObj, "width", &sWidth) );
-		JL_CHK( JL_GetProperty(cx, imageObj, "height", &sHeight) );
-		JL_CHK( JL_GetProperty(cx, imageObj, "channels", &sChannels) );
+		JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, width), &sWidth) );
+		JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, height), &sHeight) );
+		JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, channels), &sChannels) );
 
 		JL_ASSERT( tex->width == sWidth && tex->height == sHeight && channels == sChannels, E_ARG, E_NUM(1), E_FORMAT );
 
@@ -3283,7 +3283,8 @@ DEFINE_FUNCTION( export ) { // (int)x, (int)y, (int)width, (int)height. Returns 
 	}
 
 	bufferLength = dWidth * dHeight * sChannels;
-	buffer = (uint8_t*)JS_malloc(cx, bufferLength +1);
+	//buffer = (uint8_t*)JS_malloc(cx, bufferLength +1);
+	buffer = JL_NewByteImageBuffer(cx, dWidth, dHeight, sChannels, JL_RVAL);
 	JL_CHK( buffer );
 
 	unsigned int c, x, y, posDst, posSrc;
@@ -3300,16 +3301,6 @@ DEFINE_FUNCTION( export ) { // (int)x, (int)y, (int)width, (int)height. Returns 
 			for ( c = 0; c < sChannels; c++ )
 				buffer[posDst+c] = (uint8_t)(MINMAX(tex->cbuffer[posSrc+c] * 255.f, 0, 255)); // map [0.0 -> 1.0] to [0 -> 255]
 		}
-
-	buffer[bufferLength] = 0;
-	JL_CHK( JL_NewBlob(cx, buffer, bufferLength, JL_RVAL ) );
-	JSObject *bstrObj;
-	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &bstrObj) );
-	*JL_RVAL = OBJECT_TO_JSVAL( bstrObj );
-
-	JL_CHK( JL_SetProperty(cx, bstrObj, "width", dWidth) );
-	JL_CHK( JL_SetProperty(cx, bstrObj, "height", dHeight) );
-	JL_CHK( JL_SetProperty(cx, bstrObj, "channels", sChannels) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -3354,7 +3345,7 @@ DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *bstr;
 	bstr = JSVAL_TO_OBJECT( JL_ARG(1) );
-	JL_ASSERT_INSTANCE( bstr, JL_BlobJSClass(cx) ); // (TBD) String object should also work.
+	//JL_ASSERT_INSTANCE( bstr, JL_BlobJSClass(cx) ); // (TBD) String object should also work.
 
 	int px, py;
 	if ( JL_ARG_ISDEF(2) && JL_ARG_ISDEF(3) ) {
@@ -3372,9 +3363,9 @@ DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 	dHeight = tex->height;
 	dChannels = tex->channels;
 
-	JL_CHK( JL_GetProperty(cx, bstr, "width", &sWidth) );
-	JL_CHK( JL_GetProperty(cx, bstr, "height", &sHeight) );
-	JL_CHK( JL_GetProperty(cx, bstr, "channels", &sChannels) );
+	JL_CHK( JL_GetProperty(cx, bstr, JLID(cx, width), &sWidth) );
+	JL_CHK( JL_GetProperty(cx, bstr, JLID(cx, height), &sHeight) );
+	JL_CHK( JL_GetProperty(cx, bstr, JLID(cx, channels), &sChannels) );
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 

@@ -81,8 +81,9 @@ DEFINE_FUNCTION( done ) {
 	JL_CHKM( ser->GetBufferOwnership(&data, &length), E_MODULE, E_INTERNAL ); // "Serializer buffer error."
 	delete ser;
 	JL_SetPrivate(cx, JL_OBJ, NULL);
-	JL_updateMallocCounter(cx, length);
-	return JL_NewBlob(cx, data, length, vp);
+	//JL_updateMallocCounter(cx, length);
+	JL_CHK( JL_NewBufferGetOwnership(cx, data, length, vp) );
+	return JS_TRUE;
 	JL_BAD;
 }
 

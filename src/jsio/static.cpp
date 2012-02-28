@@ -492,19 +492,14 @@ DEFINE_FUNCTION( getRandomNoise ) {
 	PRSize rndSize;
 	rndSize = JSVAL_TO_INT( JL_ARG(1) );
 	uint8_t *buf;
-	buf = (uint8_t*)JS_malloc(cx, rndSize +1);
+	buf = JL_NewBuffer(cx, rndSize, JL_RVAL);
 	JL_CHK( buf );
 	PRSize size;
 	size = PR_GetRandomNoise(buf, rndSize);
 	if ( size <= 0 ) {
 
-		JS_free(cx, buf);
 		JL_ERR( E_FUNC, E_NOTIMPL );
 	}
-
-	buf[size] = 0;
-	JL_CHK( JL_NewBlob( cx, buf, size, JL_RVAL ) );
-
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -228,19 +228,9 @@ DEFINE_FUNCTION( drawChar ) {
 	bufLength = width * height * 1; // 1 channel
 
 	uint8_t *buf;
-	buf = (uint8_t*)JS_malloc(cx, bufLength +1);
+	buf = JL_NewByteImageBuffer(cx, width, height, 1, JL_RVAL);
 	JL_CHK( buf );
-
-	buf[bufLength] = 0;
-	JL_CHK( JL_NewBlob(cx, buf, bufLength, JL_RVAL) );
-	JSObject *blobObj;
-	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
-	*JL_RVAL = OBJECT_TO_JSVAL( blobObj );
-
-	JL_CHK(JL_SetProperty(cx, blobObj, "width", width) );
-	JL_CHK(JL_SetProperty(cx, blobObj, "height", height) );
-	JL_CHK(JL_SetProperty(cx, blobObj, "channels", 1) );
-	memcpy( buf, pv->face->glyph->bitmap.buffer, bufLength );
+	memcpy(buf, pv->face->glyph->bitmap.buffer, bufLength);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -416,18 +406,9 @@ DEFINE_FUNCTION( drawString ) {
 		// allocates the resulting image buffer
 		size_t bufLength = width * height * 1; // 1 channel
 
-		char *buf = (char*)JS_malloc(cx, bufLength +1); // JS_malloc do not supports 0 bytes size and blob need a trailing 0
+		uint8_t *buf = JL_NewByteImageBuffer(cx, width, height, 1, JL_RVAL);
 		JL_CHK( buf );
-		memset(buf, 0, bufLength +1);
-
-		JL_CHK( JL_NewBlob(cx, buf, bufLength, JL_RVAL) );
-		JSObject *blobObj;
-		JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
-		*JL_RVAL = OBJECT_TO_JSVAL( blobObj );
-
-		JL_CHK(JL_SetProperty(cx, blobObj, "width", width) );
-		JL_CHK(JL_SetProperty(cx, blobObj, "height", height) );
-		JL_CHK(JL_SetProperty(cx, blobObj, "channels", 1) );
+		memset(buf, 0, bufLength);
 
 		// render glyphs in the bitmap
 		for ( i=0; i<strlen; i++ ) {

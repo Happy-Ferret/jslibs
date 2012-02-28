@@ -237,7 +237,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-	char *buf = NULL;
+	uint8_t *buf = NULL;
 	char *buffer = NULL;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -259,8 +259,8 @@ DEFINE_FUNCTION( read ) {
 
 		if ( frames > 0 ) {
 
-			size_t amount = frames * pv->ofInfo->channels * pv->bits/8; // amount in bytes
-			buf = (char*)jl_malloc(amount +1);
+			size_t amount = frames * pv->ofInfo->channels * (pv->bits / 8); // amount in bytes
+			buf = (uint8_t*)jl_malloc(amount +1);
 			JL_ASSERT_ALLOC(buf);
 
 	//		sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
@@ -270,7 +270,7 @@ DEFINE_FUNCTION( read ) {
 			do {
 
 				int prevBitstream = bitStream;
-				bytes = ov_read(&pv->ofDescriptor, buf + totalSize, amount - totalSize, 0, pv->bits / 8, 1, &bitStream);
+				bytes = ov_read(&pv->ofDescriptor, (char*)buf + totalSize, amount - totalSize, 0, pv->bits / 8, 1, &bitStream);
 				JL_CHKM( bitStream == prevBitstream, E_ARG, E_NUM(1), E_FORMAT, E_COMMENT("ogg vorbis bitstream") ); // bitstream has changed
 
 				// (TBD) update the channels, rate, ... according to: ov_info(&pv->ofDescriptor, bitStream);
@@ -299,7 +299,7 @@ DEFINE_FUNCTION( read ) {
 	*/
 
 			if ( JL_MaybeRealloc(amount, totalSize) )
-				buf = (char*)jl_realloc(buf, totalSize +1);
+				buf = (uint8_t*)jl_realloc(buf, totalSize +1);
 		} else {
 
 			JL_ERR( E_ARG, E_NUM(1), E_MIN, E_NUM(1) );
@@ -351,7 +351,7 @@ DEFINE_FUNCTION( read ) {
 		} while (bytes > 0); // 0 indicates EOF
 
 		// convert data chunks into a single memory buffer.
-		buf = (char*)jl_malloc(totalSize +1);
+		buf = JL_NewByteAudioBuffer(cx, pv->bits, pv->ofInfo->rate, pv->ofInfo->channels, totalSize / (pv->ofInfo->channels * pv->bits / 8) , JL_RVAL);
 		JL_CHK( buf );
 
 		// because the stack is LIFO, we have to start from the end.
@@ -373,19 +373,12 @@ DEFINE_FUNCTION( read ) {
 		return JS_TRUE;
 	}
 
-	buf[totalSize] = 0;
-	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
-	JL_updateMallocCounter(cx, totalSize);
-	JSObject *blobObj;
-	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
-	JL_CHKM( blobObj != NULL, E_STR("Blob"), E_CREATE );
-	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
-
+/*
 	JL_CHK(JL_SetProperty(cx, blobObj, "bits", pv->bits) ); // bits per sample
 	JL_CHK(JL_SetProperty(cx, blobObj, "rate", pv->ofInfo->rate) ); // samples per second
 	JL_CHK(JL_SetProperty(cx, blobObj, "channels", pv->ofInfo->channels) ); // 1:mono, 2:stereo
 	JL_CHK(JL_SetProperty(cx, blobObj, "frames", totalSize / (pv->ofInfo->channels * pv->bits / 8) ) );
-
+*/
 	return JS_TRUE;
 bad:
 	jl_free(buf);

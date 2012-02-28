@@ -113,6 +113,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
+	uint8_t *buffer = NULL;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -120,22 +122,24 @@ DEFINE_FUNCTION( read ) {
 	int amount;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
 
-	char *buffer;
-	buffer = (char*)JS_malloc(cx, amount +1);
+	buffer = JL_DataBufferAlloc(cx, amount);
 	JL_CHK(buffer);
 
 	size_t readAmount;
 	readAmount = amount;
-	JL_CHK( StreamRead(cx, JL_OBJ, buffer, &readAmount ) );
+	JL_CHK( StreamRead(cx, JL_OBJ, (char*)buffer, &readAmount ) );
 
-	if ( JL_MaybeRealloc(amount, readAmount) )
-		buffer = (char*)JS_realloc(cx, buffer, readAmount +1);
+	if ( JL_MaybeRealloc(amount, readAmount) ) {
 
-	buffer[readAmount] = '\0';
-	JL_CHK( JL_NewBlob(cx, buffer, readAmount, JL_RVAL) );
+		buffer = JL_DataBufferRealloc(cx, buffer, readAmount);
+	}
+
+	JL_CHK( JL_NewBufferGetOwnership(cx, buffer, readAmount, JL_RVAL) );
 
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	JL_DataBufferFree(cx, buffer);
+	return JS_FALSE;
 }
 
 

@@ -47,23 +47,25 @@ JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
 	// printf("id=%u / &_moduleId=%p / _moduleId=%u\n", &_moduleId, _moduleId, id);
 	
 #ifdef XP_WIN
-	BOOL st = DisableThreadLibraryCalls(JLGetCurrentModule());
+	//  Disables the DLL_THREAD_ATTACH and DLL_THREAD_DETACH notifications for the specified dynamic-link library (DLL).
+	//  This can reduce the size of the working set for some applications.
+	BOOL st = ::DisableThreadLibraryCalls(JLGetCurrentModule());
 	ASSERT(st);
 #endif // XP_WIN
 
-	HostPrivate *pv = JL_GetHostPrivate(cx);
-	_unsafeMode = pv ? pv->unsafeMode : _unsafeMode;
-	JL_ASSERT( !pv || pv->hostPrivateVersion == 0 || pv->hostPrivateVersion == JL_HOST_PRIVATE_VERSION, E_HOST, E_VERSION );
+	HostPrivate *hpv = JL_GetHostPrivate(cx);
+	_unsafeMode = hpv ? hpv->unsafeMode : _unsafeMode;
+	JL_ASSERT( !hpv || hpv->hostPrivateVersion == 0 || hpv->hostPrivateVersion == JL_HOST_PRIVATE_VERSION, E_HOST, E_VERSION );
 
 	ASSERT( _moduleId == 0 || _moduleId == id );
 	if ( _moduleId == 0 )
 		_moduleId = id;
-	jl_malloc = pv && pv->alloc.malloc ? pv->alloc.malloc : jl_malloc; // ie. if we have a host and if the host has custom allocators, else keep the current one.
-	jl_calloc = pv && pv->alloc.calloc ? pv->alloc.calloc : jl_calloc;
-	jl_memalign = pv && pv->alloc.memalign ? pv->alloc.memalign : jl_memalign;
-	jl_realloc = pv && pv->alloc.realloc ? pv->alloc.realloc : jl_realloc;
-	jl_msize = pv && pv->alloc.msize ? pv->alloc.msize : jl_msize;
-	jl_free = pv && pv->alloc.free ? pv->alloc.free : jl_free;
+	jl_malloc = hpv && hpv->alloc.malloc ? hpv->alloc.malloc : jl_malloc; // ie. if we have a host and if the host has custom allocators, else keep the current one.
+	jl_calloc = hpv && hpv->alloc.calloc ? hpv->alloc.calloc : jl_calloc;
+	jl_memalign = hpv && hpv->alloc.memalign ? hpv->alloc.memalign : jl_memalign;
+	jl_realloc = hpv && hpv->alloc.realloc ? hpv->alloc.realloc : jl_realloc;
+	jl_msize = hpv && hpv->alloc.msize ? hpv->alloc.msize : jl_msize;
+	jl_free = hpv && hpv->alloc.free ? hpv->alloc.free : jl_free;
 	return JS_TRUE;
 	JL_BAD;
 }

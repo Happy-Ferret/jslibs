@@ -525,8 +525,9 @@ parent = GetCurrentGlobal(cx);
 //	JSObject *o1 = JS_GetParent(JL_NewObjectWithGivenProto(cx, NULL, NULL, NULL));
 
 	//JSObject *o1 = JS_GetGlobalForScopeChain(cx);
-	JSObject *o2 = JS_GetGlobalObject(cx);
-	JSObject *o3 = JS_GetGlobalForObject(cx, o2);
+//	JSObject *o2 = JS_GetGlobalObject(cx);
+//	JSObject *o3 = JS_GetGlobalForObject(cx, o2);
+
 
 	return 0;
 }

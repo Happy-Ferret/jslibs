@@ -147,41 +147,42 @@ DEFINE_FUNCTION( close ) {
 
 JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, uint32_t amount, jsval *rval ) {
 
-	uint8_t *buf = (uint8_t*)JS_malloc(cx, amount +1);
-	JL_CHK( buf );
+	uint8_t *buf = JL_NewBuffer(cx, amount, rval);
+	JL_ASSERT_ALLOC( buf );
 
 	PRInt32 res;
 	res = PR_Read(fd, buf, amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
 
-	if (likely( res > 0 )) { // a positive number indicates the number of bytes actually read in.
-
-		if (unlikely( JL_MaybeRealloc(amount, res) )) {
-
-			buf = (uint8_t*)JS_realloc(cx, buf, res +1); // realloc the string using its real size
-			JL_CHK( buf );
-		}
-
-		buf[res] = 0;
-		JL_CHK( JL_NewBlob(cx, buf, res, rval) );
+	if ( likely(res == (PRInt32)amount) ) {
+		
 		return JS_TRUE;
 	}
 
-	if ( likely(res == 0) ) {
+	if ( likely(res == 0 && amount > 0) ) { // 0 means end of file is reached or the network connection is closed.
 
 		// 0 means end of file is reached or the network connection is closed.
 		// requesting 0 bytes and receiving 0 bytes does not indicate eof.
 		// BUT if amount is given by PR_Available and is 0 (see Read()), and the eof is reached, this function should return JSVAL_VOID.
-		JS_free(cx, buf);
 		*rval = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+
+	if ( res > 0 ) { // a positive number indicates the number of bytes actually read in.
+
+		jsval tmp;
+		uint8_t *buf1 = JL_NewBuffer(cx, amount, &tmp);
+		JL_ASSERT_ALLOC( buf1 );
+		jl_memcpy(buf1, buf, res);
+		*rval = tmp;
 		return JS_TRUE;
 	}
 
 	if (unlikely( res == -1 )) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
-		JS_free( cx, buf );
 		switch ( PR_GetError() ) { // see Write() for details about errors
 			case PR_WOULD_BLOCK_ERROR:
-				*rval = JL_GetEmptyStringValue(cx); // mean no data available, but connection still established.
+				JL_CHK( JL_NewEmptyBuffer(cx, rval) ); // mean no data available, but connection still established.
 				return JS_TRUE;
 
 			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
@@ -215,7 +216,6 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, uint32_t amount, jsval *rval 
 	}
 
 bad:
-	JS_free(cx, buf);
 	return JS_FALSE;
 }
 
@@ -292,13 +292,11 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 	if ( BufferGetLength(&buf) == 0 ) { // no data but NOT end of file/socket
 
 		BufferFinalize(&buf);
-		*rval = JL_GetEmptyStringValue(cx);
+		JL_CHK( JL_NewEmptyBuffer(cx, rval) );
 		return JS_TRUE;
 	}
 
-	*BufferNewChunk(&buf, 1) = '\0';
-	BufferConfirm(&buf, 1);
-	JL_CHK( JL_NewBlob(cx, BufferGetDataOwnership(&buf), BufferGetLength(&buf) -1, rval) ); // -1 because '\0' is not a part of the data.
+	JL_CHK( JL_NewBufferGetOwnership(cx, BufferGetDataOwnership(&buf), BufferGetLength(&buf), rval) );
 
 	BufferFinalize(&buf);
 	return JS_TRUE;
@@ -332,7 +330,7 @@ bad:
 		return JS_TRUE;
 	}
 
-	return JL_NewBlobCopyN(cx, buffer, res, rval);
+	return JL_NewBufferCopyN(cx, buffer, res, rval);
 */
 }
 
@@ -342,7 +340,7 @@ $TOC_MEMBER $INAME
  $VAL $INAME( [amount] )
   Read _amount_ bytes of data from the current descriptor. If _amount_ is ommited, the whole available data is read.
   If the descriptor is exhausted (eof or disconnected), this function returns _undefined_.
-  If the descriptor is a blocking socket and _amount_ is set to the value $UNDEF value, the call blocks until data is available.
+  If the descriptor is a blocking socket and _amount_ is set to the value 0 value, the call blocks until data is available.
   $H beware
    This function returns a Blob or a string literal as empty string.
   $H example
@@ -364,25 +362,25 @@ DEFINE_FUNCTION( read ) {
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
-	if (likely( JL_ARGC == 0 )) {
+	// Determine the amount of data in bytes available for reading in the given file or socket.
+	PRInt64 available = PR_Available64( fd );
+	PRInt64 amount;
 
-		PRInt32 available = PR_Available( fd ); // (TBD) use PRInt64 available = PR_Available64(fd);
-		if (likely( available != -1 )) // we can use the 'available' information (possible reason: PR_NOT_IMPLEMENTED_ERROR)
-			JL_CHK( ReadToJsval(cx, fd, available, JL_RVAL) ); // may block !
-		else // 'available' is not usable with this fd type, then we use a buffered read (ie. read while there is someting to read)
-			JL_CHK( ReadAllToJsval(cx, fd, JL_RVAL) );
-	} else { // amount value is NOT provided, then try to read all
+	if ( JL_ARG_ISDEF(1) ) {
 
-		if (likely( !JSVAL_IS_VOID(JL_ARG(1)) )) {
-
-			PRInt32 amount;
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
-			JL_CHK( ReadToJsval(cx, fd, amount, JL_RVAL) ); // (TBD) check if it is good to call it even if amount is 0.
-		} else {
-
-			JL_CHK( ReadAllToJsval(cx, fd, JL_RVAL) ); // may block ! (TBD) check if this case is useful.
-		}
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
+		if ( available != -1 && available < amount ) // available == -1 -> PR_NOT_IMPLEMENTED_ERROR ?
+			amount = available;
+	} else {
+		
+		amount = available;
 	}
+
+	 // following reads may block !
+	if ( amount != -1 )
+		JL_CHK( ReadToJsval(cx, fd, (PRInt32)amount, JL_RVAL) );
+	else
+		JL_CHK( ReadAllToJsval(cx, fd, JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -485,7 +483,8 @@ DEFINE_FUNCTION( write ) {
 //		((char*)buffer)[remaining] = '\0';
 //		JL_CHKB( JL_NewBlob(cx, buffer, remaining, JL_RVAL), bad_free ); // (TBD) keep the type: return a string if the JL_ARG(1) is a sring.
 //		JL_CHK( , bad_free ); // (TBD) keep the type: return a string if the JL_ARG(1) is a sring.
- 		return JL_NewBlobCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL);
+ 		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+		return JS_TRUE;
 	}
 
 	*JL_RVAL = JL_ARG(1); // nothing has been sent

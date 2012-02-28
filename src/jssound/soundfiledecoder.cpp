@@ -266,7 +266,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-	char *buf = NULL;
+	uint8_t *buf = NULL;
 	char *buffer = NULL;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -290,7 +290,7 @@ DEFINE_FUNCTION( read ) {
 		if ( frames > 0 ) {
 
 			size_t amount = frames * pv->sfInfo.channels * pv->bits/8; // amount in bytes
-			buf = (char*)jl_malloc(amount +1);
+			buf = (uint8_t*)jl_malloc(amount);
 			JL_ASSERT_ALLOC(buf);
 
 			sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
@@ -301,7 +301,7 @@ DEFINE_FUNCTION( read ) {
 			totalSize = size_t(items) * sizeof(short);
 
 			if ( JL_MaybeRealloc(amount, totalSize) )
-				buf = (char*)jl_realloc(buf, totalSize +1);
+				buf = (uint8_t*)jl_realloc(buf, totalSize);
 		} else {
 
 			JL_ERR( E_ARG, E_NUM(1), E_MIN, E_NUM(1) );
@@ -345,7 +345,7 @@ DEFINE_FUNCTION( read ) {
 		} while (items > 0);
 
 		// convert data chunks into a single memory buffer.
-		buf = (char*)jl_malloc(totalSize +1);
+		buf = JL_NewByteAudioBuffer(cx, pv->bits, pv->sfInfo.samplerate, pv->sfInfo.channels, totalSize / (pv->sfInfo.channels * pv->bits / 8) , JL_RVAL);
 		JL_CHK( buf );
 
 		// because the stack is LIFO, we have to start from the end.
@@ -366,19 +366,6 @@ DEFINE_FUNCTION( read ) {
 		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
-
-	buf[totalSize] = 0;
-	JL_CHK( JL_NewBlob(cx, buf, totalSize, JL_RVAL) );
-	JL_updateMallocCounter(cx, totalSize);
-	JSObject *blobObj;
-	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
-	JL_CHKM( blobObj != NULL, E_STR("Blob"), E_CREATE );
-	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
-
-	JL_CHK(JL_SetProperty(cx, blobObj, "bits", pv->bits) ); // bits per sample
-	JL_CHK(JL_SetProperty(cx, blobObj, "rate", pv->sfInfo.samplerate) ); // samples per second
-	JL_CHK(JL_SetProperty(cx, blobObj, "channels", pv->sfInfo.channels) ); // 1:mono, 2:stereo
-	JL_CHK(JL_SetProperty(cx, blobObj, "frames", totalSize / (pv->sfInfo.channels * pv->bits / 8) ) );
 
 	return JS_TRUE;
 bad:

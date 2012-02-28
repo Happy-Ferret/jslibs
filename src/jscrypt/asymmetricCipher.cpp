@@ -335,6 +335,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 
+	unsigned long outLength = 4096;
+	uint8_t *out = NULL;
 	JLStr in;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -354,10 +356,10 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 //	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength( cx, &JL_ARG(1), &in, &inLength ) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
+	
+	out = JL_DataBufferAlloc(cx, outLength);
+	JL_ASSERT_ALLOC(out);
 
-	char out[4096];
-	unsigned long outLength;
-	outLength = sizeof(out);
 	int err;
 	err = -1; // default
 	switch ( pv->cipher ) {
@@ -372,16 +374,16 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 			// doc. When performing v1.5 encryption, the hash and lparam parameters are totally ignored and can be set to NULL or zero (respectively).
-			err = rsa_encrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, pv->hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
+			err = rsa_encrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, pv->hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
 			break;
 		}
 		case ecc: {
-			err = ecc_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.eccKey );
+			err = ecc_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.eccKey );
 			break;
 		}
 		case dsa: {
 			// if inlen > hash_descriptor[hash].hashsize => ERROR
-			err = dsa_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.dsaKey );
+			err = dsa_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.dsaKey );
 			break;
 		}
 #ifdef MKAT
@@ -389,21 +391,24 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 			JLStr lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
-			err = katja_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, pv->hashIndex, &pv->key.katjaKey );
+			err = katja_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, pv->hashIndex, &pv->key.katjaKey );
 			break;
 		}
 #endif
 		default:
 			ASSERT(false);
 	}
-	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err);
 
-	JL_CHK( JL_NewBlobCopyN(cx, out, outLength, JL_RVAL) );
-	zeromem(out, sizeof(out)); // safe clear
+	if ( err != CRYPT_OK )
+		JL_CHK( ThrowCryptError(cx, err) );
 
+	JL_CHK( JL_NewBufferGetOwnership(cx, out, outLength, JL_RVAL) );
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	zeromem(out, outLength); // safe clear
+	JL_DataBufferFree(cx, out);
+	return JS_FALSE;
 }
 
 
@@ -424,6 +429,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 
+	unsigned long outLength = 4096;
+	uint8_t *out = NULL;
 	JLStr in;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -439,9 +446,8 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
 
-	char out[4096];
-	unsigned long outLength;
-	outLength = sizeof(out);
+	out = JL_DataBufferAlloc(cx, outLength);
+	JL_ASSERT_ALLOC(out);
 
 	int err;
 	err = -1; // default
@@ -453,7 +459,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 
 			int stat = 0; // default: failed
-			err = rsa_decrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), pv->hashIndex, pv->padding, &stat, &pv->key.rsaKey );
+			err = rsa_decrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), pv->hashIndex, pv->padding, &stat, &pv->key.rsaKey );
 			// doc: if all went well pt == pt2, l2 == 16, res == 1
 			if ( err == CRYPT_OK && stat != 1 ) {
 
@@ -463,11 +469,11 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 			break;
 		}
 		case ecc: {
-			err = ecc_decrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, &pv->key.eccKey );
+			err = ecc_decrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, &pv->key.eccKey );
 			break;
 		}
 		case dsa: {
-			err = dsa_decrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, &pv->key.dsaKey );
+			err = dsa_decrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, &pv->key.dsaKey );
 			break;
 		}
 #ifdef MKAT
@@ -478,7 +484,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 
 			int stat = 0; // default: failed
-			err = katja_decrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), pv->hashIndex, &stat, &pv->key.katjaKey );
+			err = katja_decrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), pv->hashIndex, &stat, &pv->key.katjaKey );
 			// doc: if all went well pt == pt2, l2 == 16, res == 1
 			if ( err == CRYPT_OK && stat != 1 ) {
 
@@ -492,17 +498,18 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 			ASSERT(false);
 	}
 
-	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err);
+	if ( err != CRYPT_OK )
+		JL_CHK( ThrowCryptError(cx, err) );
 
-	out[outLength] = '\0';
-
-	JL_CHK( JL_NewBlobCopyN( cx, out, outLength, JL_RVAL ) );
-	zeromem(out, sizeof(out));
-
+	JL_CHK( JL_NewBufferGetOwnership(cx, out, outLength, JL_RVAL) );
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	zeromem(out, outLength); // safe clear
+	JL_DataBufferFree(cx, out);
+	return JS_FALSE;
 }
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -514,6 +521,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 
+	unsigned long outLength = 4096;
+	uint8_t *out = NULL;
 	JLStr in;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -534,9 +543,8 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
 
-	char out[4096];
-	unsigned long outLength;
-	outLength = sizeof(out);
+	out = JL_DataBufferAlloc(cx, outLength);
+	JL_ASSERT_ALLOC(out);
 
 	int err;
 	err = -1; // default
@@ -549,15 +557,15 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &saltLength) );
 
-			err = rsa_sign_hash_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, pv->hashIndex, saltLength, &pv->key.rsaKey );
+			err = rsa_sign_hash_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, pv->hashIndex, saltLength, &pv->key.rsaKey );
 			break;
 		}
 		case ecc: {
-			err = ecc_sign_hash( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, &pv->key.eccKey );
+			err = ecc_sign_hash( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, prngState, prngIndex, &pv->key.eccKey );
 			break;
 		}
 		case dsa: {
-			err = dsa_sign_hash( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength, prngState, prngIndex, &pv->key.dsaKey );
+			err = dsa_sign_hash( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, prngState, prngIndex, &pv->key.dsaKey );
 			break;
 		}
 #ifdef MKAT
@@ -570,15 +578,18 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 			ASSERT(false);
 	}
 
-	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err);
+	if ( err != CRYPT_OK )
+		JL_CHK( ThrowCryptError(cx, err) );
 
-	JL_CHK( JL_NewBlobCopyN( cx, out, outLength, JL_RVAL ) );
-	zeromem(out, sizeof(out));
-
+	JL_CHK( JL_NewBufferGetOwnership(cx, out, outLength, JL_RVAL) );
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	zeromem(out, outLength); // safe clear
+	JL_DataBufferFree(cx, out);
+	return JS_FALSE;
 }
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -818,6 +829,9 @@ DEFINE_PROPERTY_SETTER( key ) {
 
 DEFINE_PROPERTY_GETTER( key ) {
 
+	unsigned long keyLength = 4096;
+	uint8_t *key = NULL;
+
 	JL_ASSERT_THIS_INSTANCE();
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( cx, obj );
@@ -826,39 +840,40 @@ DEFINE_PROPERTY_GETTER( key ) {
 
 	int type;
 	type = JSID_TO_INT(id);
-	
-	char key[4096];
-	unsigned long keyLength;
-	keyLength = sizeof(key);
+
+	key = JL_DataBufferAlloc(cx, keyLength);
 
 	int err;
 	err = -1; // default
 	switch ( pv->cipher ) {
 		case rsa:
-			err = rsa_export( (unsigned char *)key, &keyLength, type, &pv->key.rsaKey );
+			err = rsa_export( key, &keyLength, type, &pv->key.rsaKey );
 			break;
 		case ecc:
-			err = ecc_export( (unsigned char *)key, &keyLength, type, &pv->key.eccKey );
+			err = ecc_export( key, &keyLength, type, &pv->key.eccKey );
 			break;
 		case dsa:
-			err = dsa_export( (unsigned char *)key, &keyLength, type, &pv->key.dsaKey );
+			err = dsa_export( key, &keyLength, type, &pv->key.dsaKey );
 			break;
 #ifdef MKAT
 		case katja:
-			err = katja_export( (unsigned char *)key, &keyLength, type, &pv->key.katjaKey );
+			err = katja_export( key, &keyLength, type, &pv->key.katjaKey );
 			break;
 #endif
 		default:
 			ASSERT(false);
 	}
-	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err);
 
-	JL_CHK( JL_NewBlobCopyN(cx, key, keyLength, vp) );
-	zeromem(key, sizeof(key)); // wipe
+	if ( err != CRYPT_OK )
+		JL_CHK( ThrowCryptError(cx, err) );
 
+	JL_CHK( JL_NewBufferGetOwnership(cx, key, keyLength, vp) );
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	zeromem(key, keyLength); // safe clear
+	JL_DataBufferFree(cx, key);
+	return JS_FALSE;
 }
 
 

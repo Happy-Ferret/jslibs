@@ -17,6 +17,7 @@
 
 #define SLOT_FUNCTION_ALLOC 0
 
+/*
 ALWAYS_INLINE JSClass* JL_ImageJSClass( JSContext *cx ) {
 
 	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
@@ -38,3 +39,4 @@ inline JSObject* NewImage( JSContext *cx, int width, int height, int channels, v
 	JL_SetPrivate(cx, image, data);
 	return image;
 }
+*/

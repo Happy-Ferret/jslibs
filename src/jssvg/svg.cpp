@@ -47,9 +47,9 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 
 			JSObject *imageObj = JSVAL_TO_OBJECT( image );
 			int sWidth, sHeight, sChannels;
-			JL_CHK( JL_GetProperty(cx, imageObj, "width", &sWidth) );
-			JL_CHK( JL_GetProperty(cx, imageObj, "height", &sHeight) );
-			JL_CHK( JL_GetProperty(cx, imageObj, "channels", &sChannels) );
+			JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, width), &sWidth) );
+			JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, height), &sHeight) );
+			JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, channels), &sChannels) );
 			JL_ASSERT( sChannels == 3 || sChannels == 4, E_PROP, E_NAME("channels"), E_RANGE, E_INTERVAL_NUM(3, 4), E_COMMENT(name) ); // "Unsupported image format for %s.", name
 
 //			const char *sBuffer;
@@ -370,12 +370,10 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 	int height = cairo_image_surface_get_height(surface);
 	void *buffer = cairo_image_surface_get_data(surface);
 
-	size_t pixelCount = width * height;
-	size_t length = pixelCount * channels;
-
-	void *image = JS_malloc(cx, length +1);
+	uint8_t *image = JL_NewByteImageBuffer(cx, width, height, channels, JL_RVAL);
 	JL_CHK( image );
 
+	size_t pixelCount = width * height;
 
 	switch ( surfaceFormat ) {
 		case CAIRO_FORMAT_RGB24:
@@ -396,23 +394,13 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 			}
 			break;
 		case CAIRO_FORMAT_A8:
-			memcpy(image, buffer, length);
+			memcpy(image, buffer, pixelCount * channels);
 			break;
 	}
 
 	cairo_destroy(cr);
 	cairo_surface_destroy(surface);
 
-	((uint8_t*)image)[length] = 0;
-	JL_CHK( JL_NewBlob(cx, image, length, JL_RVAL) );
-	JSObject *blobObj;
-	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
-	JL_ASSERT( blobObj, E_STR("Blob"), E_CREATE );
-	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
-
-	JL_CHK( JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
-	JL_CHK( JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
-	JL_CHK( JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
 	return JS_TRUE;
 	JL_BAD;
 }

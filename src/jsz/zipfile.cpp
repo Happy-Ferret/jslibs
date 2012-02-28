@@ -502,6 +502,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
+	uint8_t *buffer = NULL;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -534,8 +536,7 @@ DEFINE_FUNCTION( read ) {
 		requestedLength = pv->remainingLength;
 	}
 	
-	uint8_t *buffer;
-	buffer = (uint8_t *)jl_malloc(requestedLength +1);
+	buffer = JL_DataBufferAlloc(cx, requestedLength);
 	JL_ASSERT_ALLOC(buffer);
 	int rd;
 	rd = unzReadCurrentFile(pv->uf, buffer, requestedLength);
@@ -545,18 +546,15 @@ DEFINE_FUNCTION( read ) {
 	ASSERT( (uLong)rd <= requestedLength );
 
 //	if ( JL_MaybeRealloc(requestedLength, rd) )
-//		buffer = (uint8_t*)jl_realloc(buffer, rd +1);
+//		buffer = JL_DataBufferRealloc(buffer, rd);
 
-	JL_updateMallocCounter(cx, rd);
-	buffer[rd] = '\0'; 
-	JL_CHK( JL_NewBlob(cx, buffer, rd, JL_RVAL) );
-
+	JL_CHK( JL_NewBufferGetOwnership(cx, buffer, rd, JL_RVAL) );
 	pv->remainingLength -= rd;
-
 	ASSERT( unzeof(pv->uf) == (pv->remainingLength == 0) );
-
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	JL_DataBufferFree(cx, buffer);
+	return JS_FALSE;
 }
 
 
@@ -671,20 +669,17 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 
 		unz_global_info pglobal_info;
 		UNZ_CHK( unzGetGlobalInfo(pv->uf, &pglobal_info) );
-
+		
 		uLong commentLength = pglobal_info.size_comment;
-		char *comment;
-		comment = (char *)jl_malloc(commentLength +1);
+		uint8_t *comment;
+		comment = JL_NewBuffer(cx, commentLength, vp);
 		JL_ASSERT_ALLOC( comment );
 
 		int rd;
-		rd = unzGetGlobalComment(pv->uf, comment, commentLength);
+		rd = unzGetGlobalComment(pv->uf, (char*)comment, commentLength);
 		if ( rd < 0 )
 			return ThrowZipFileError(cx, rd);
-
-		JL_updateMallocCounter(cx, rd);
-		comment[rd] = '\0';
-		JL_CHK( JL_NewBlob(cx, comment, rd, JL_RVAL) );
+		ASSERT( (uLong)rd == commentLength );
 	} else 
 	if ( pv->zf ) {
 
@@ -966,19 +961,15 @@ DEFINE_PROPERTY_GETTER( extra ) {
 		if ( extraLength < 0 )
 			return ThrowZipFileError(cx, extraLength);
 
-		char *buffer;
-		buffer = (char *)jl_malloc(extraLength +1);
+		uint8_t *buffer;
+		buffer = JL_NewBuffer(cx, extraLength, vp);
 		JL_ASSERT_ALLOC( buffer );
 
 		int rd;
 		rd = unzGetLocalExtrafield(pv->uf, buffer, extraLength);
 		if ( rd < 0 )
 			return ThrowZipFileError(cx, rd);
-
-		JL_updateMallocCounter(cx, rd);
-		buffer[rd] = '\0';
-		JL_CHK( JL_NewBlob(cx, buffer, rd, JL_RVAL) );
-
+		ASSERT( rd == extraLength );
 	} else
 	if ( pv->zf ) {
 

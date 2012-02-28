@@ -692,11 +692,13 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 
-		pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc, because WatchDogThreadProc points on it !!!
+		pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc later because WatchDogThreadProc points on it !!!
 		JL_ASSERT_ALLOC( pv );
 		pv->hostPrivateVersion = JL_HOST_PRIVATE_VERSION;
 		JL_SetHostPrivate(cx, pv);
 	}
+
+	pv->tmpBuffer = jl_malloc(JL_HOST_PRIVATE_TMPBUFFER_SIZE);
 
 	pv->privateData = userPrivateData;
 
@@ -724,7 +726,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	//pv->objectClass = JL_GetStandardClassByKey(cx, JSProto_Object);
 	//pv->objectProto = JL_GetStandardClassProtoByKey(cx, JSProto_Object);
 	JSObject *newObject = JS_NewObject(cx, NULL, NULL, NULL);
-	pv->objectClass = JS_GetClass(newObject);
+	pv->objectClass = JL_GetClass(newObject);
 	pv->objectProto = JL_GetPrototype(cx, newObject);
 
 	ASSERT( pv->objectClass && pv->objectProto );
@@ -756,7 +758,11 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 //	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, _revision), INT_TO_JSVAL(JL_SvnRevToInt(SVN_REVISION_STR)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // see _host.revision
 
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pv && pv->tmpBuffer )
+		jl_free(pv->tmpBuffer);
+	return JS_FALSE;
 }
 
 
@@ -836,6 +842,7 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 	jslangModuleFree();
 
+	jl_free(pv->tmpBuffer);
 	jl_free(pv);
 	return JS_TRUE;
 

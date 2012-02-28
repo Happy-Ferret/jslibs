@@ -405,6 +405,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( registryGet ) {
 
+	uint8_t *buffer = NULL;
 	JLStr pathStr, valueName;
 	JL_ASSERT_ARGC_RANGE(1,2);
 	
@@ -523,22 +524,21 @@ DEFINE_FUNCTION( registryGet ) {
 		return WinThrowError(cx, error);
 	}
 
-	void *buffer = JS_malloc(cx, size +1);
-	error = RegQueryValueEx(hKey, valueName, NULL, NULL, (LPBYTE)buffer, &size);
+	buffer = JL_DataBufferAlloc(cx, size);
+	error = RegQueryValueEx(hKey, valueName, NULL, NULL, buffer, &size);
 
 	// doc. http://msdn.microsoft.com/en-us/library/ms724884(VS.85).aspx
 	switch (type) {
 		case REG_NONE:
 			*JL_RVAL = JSVAL_VOID;
-			JS_free(cx, buffer);
+			JL_DataBufferFree(cx, buffer);
 			break;
 		case REG_BINARY:
-			((uint8_t*)buffer)[size] = 0;
-			JL_CHK( JL_NewBlob(cx, buffer, size, JL_RVAL) );
+			JL_CHK( JL_NewBufferGetOwnership(cx, buffer, size, JL_RVAL) );
 			break;
 		case REG_DWORD:
 			JL_CHK( JL_NativeToJsval(cx, *(DWORD*)buffer, JL_RVAL) );
-			JS_free(cx, buffer);
+			JL_DataBufferFree(cx, buffer);
 			break;
 		case REG_QWORD:
 			JL_CHK( JL_NativeToJsval(cx, (double)*(DWORD64*)buffer, JL_RVAL) );
@@ -563,7 +563,9 @@ DEFINE_FUNCTION( registryGet ) {
 	RegCloseKey(hKey);
 
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	JL_DataBufferFree(cx, buffer);
+	return JS_FALSE;
 }
 
 

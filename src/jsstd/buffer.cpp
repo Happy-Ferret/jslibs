@@ -90,7 +90,8 @@ JSBool WriteDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
-	if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !( !JSVAL_IS_PRIMITIVE(chunk) && JL_ObjectIsString(cx, JSVAL_TO_OBJECT(chunk)) ) ) {
+	//if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !( !JSVAL_IS_PRIMITIVE(chunk) && JL_ObjectIsString(cx, JSVAL_TO_OBJECT(chunk)) ) ) {
+	if ( !JL_ValueIsData(cx, chunk) ) {
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
 		JL_ASSERT( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
@@ -117,7 +118,7 @@ JSBool WriteRawDataChunk( JSContext *cx, JSObject *obj, size_t amount, const cha
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 	jsval bstr;
-	JL_CHK( JL_NewBlobCopyN(cx, str, amount, &bstr) );
+	JL_CHK( JL_NewBufferCopyN(cx, str, amount, &bstr) );
 	JL_CHK( PushJsval(cx, pv->queue, bstr) );
 	pv->length += amount;
 	return JS_TRUE;
@@ -132,7 +133,9 @@ JSBool UnReadDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
-	if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !(!JSVAL_IS_PRIMITIVE(chunk) && JL_ObjectIsString(cx, JSVAL_TO_OBJECT(chunk))) ) {
+	//if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !(!JSVAL_IS_PRIMITIVE(chunk) && JL_ObjectIsString(cx, JSVAL_TO_OBJECT(chunk))) ) {
+	if ( !JL_ValueIsData(cx, chunk) ) {
+
 
 		JSString *jsstr = JS_ValueToString(cx, chunk);
 		JL_ASSERT( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
@@ -227,7 +230,7 @@ JSBool UnReadRawDataChunk( JSContext *cx, JSObject *obj, char *data, size_t leng
 	if ( length == 0 ) // optimization & RULES
 		return JS_TRUE;
 	jsval bstr;
-	JL_CHK( JL_NewBlobCopyN(cx, data, length, &bstr) );
+	JL_CHK( JL_NewBufferCopyN(cx, data, length, &bstr) );
 	JL_CHK( UnReadDataChunk(cx, obj, bstr) );
 	return JS_TRUE;
 	JL_BAD;
@@ -306,7 +309,7 @@ JSBool ReadRawDataAmount( JSContext *cx, JSObject *obj, size_t *amount, char *st
 
 			memcpy(ptr, chunk, remainToRead);
 			jsval bstr;
-			JL_CHK( JL_NewBlobCopyN(cx, chunk + remainToRead, chunkLen - remainToRead, &bstr) );
+			JL_CHK( JL_NewBufferCopyN(cx, chunk + remainToRead, chunkLen - remainToRead, &bstr) );
 			UnshiftJsval(cx, pv->queue, bstr);
 			remainToRead = 0; // adjust remaining required data length
 		}
@@ -362,7 +365,7 @@ JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t *amount ) { // amo
 			JL_CHK( JL_JsvalToNative(cx, item, &str) );
 
 			jsval bstr;
-			JL_CHK( JL_NewBlobCopyN(cx, str.GetConstStr() + remainToRead, str.Length() - remainToRead, &bstr) );
+			JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + remainToRead, str.Length() - remainToRead, &bstr) );
 			UnshiftJsval(cx, pv->queue, bstr);
 			remainToRead = 0;
 		}

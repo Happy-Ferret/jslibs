@@ -215,7 +215,9 @@ DEFINE_FUNCTION( getImage ) {
 		return JS_TRUE;
 	}
 
-	unsigned char *data = (unsigned char *)JS_malloc(cx, dataSize +1);
+	//unsigned char *data = (unsigned char *)JS_malloc(cx, dataSize +1);
+	uint8_t *data;
+	data = JL_NewByteImageBuffer(cx, width, height, dataSize / (width * height), JL_RVAL);
 	JL_CHK( data );
 
 	bool flipImage;
@@ -232,17 +234,6 @@ DEFINE_FUNCTION( getImage ) {
 		*JL_RVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}
-
-	data[dataSize] = 0;
-	JL_CHK( JL_NewBlob(cx, data, dataSize, JL_RVAL) );
-	JSObject *blobObj;
-	JL_CHK( JS_ValueToObject(cx, *JL_RVAL, &blobObj) );
-	JL_ASSERT( blobObj, E_STR("Blob"), E_CREATE );
-	*JL_RVAL = OBJECT_TO_JSVAL(blobObj);
-
-	JS_DefineProperty(cx, blobObj, "channels", INT_TO_JSVAL(dataSize / (width * height)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
 	return JS_TRUE;
 	JL_BAD;

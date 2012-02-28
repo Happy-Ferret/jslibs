@@ -198,8 +198,10 @@ inline char *BufferNewChunk( Buffer *buffer, size_t maxLength ) {
 		return chunk->begin + chunk->pos;
 
 	switch ( buffer->type == bufferTypeAuto ? GuessType(buffer, buffer->chunkPos, maxLength) : buffer->type ) {
+
 		case bufferTypeAuto:
 			return NULL; // invalid case.
+
 		case bufferTypeRealloc:
 			chunk->size += NextChunkSize(buffer, buffer->chunkPos, maxLength);
 			chunk->begin = (char*)_BufferRealloc(buffer, chunk->begin, chunk->size);
@@ -291,6 +293,12 @@ inline char *BufferGetDataOwnership( Buffer *buffer ) {
 
 	buffer->chunkList[0].begin = NULL;
 	return buf;
+}
+
+inline char *BufferGetDataZOwnership( Buffer *buffer ) {
+	
+	*BufferNewChunk(buffer, 1) = '\0';
+	return BufferGetDataOwnership(buffer);
 }
 
 

@@ -283,16 +283,17 @@ DEFINE_FUNCTION( read ) {
 	else
 		dataLength = mh->currentDataLength;
 
-	char *data;
-	data = (char*)JS_malloc(cx, dataLength +1);
+	uint8_t *data;
+	//data = (char*)JS_malloc(cx, dataLength +1);
+	data = JL_NewBuffer(cx, dataLength, JL_RVAL);
 	JL_CHK( data );
 
 	memmove( data, (char *)pv->mem + sizeof(MemHeader) + offset, dataLength );
 
 	JL_CHK( Unlock(cx, pv) );
 
-	data[dataLength] = '\0';
-	JL_CHK( JL_NewBlob( cx, data, dataLength, JL_RVAL ) );
+	//data[dataLength] = '\0';
+	//JL_CHK( JL_NewBlob( cx, data, dataLength, JL_RVAL ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -403,16 +404,17 @@ DEFINE_PROPERTY_GETTER( content ) {
 
 	size_t dataLength;
 	dataLength = mh->currentDataLength;
-	char *data;
-	data = (char*)JS_malloc(cx, dataLength +1);
+	uint8_t *data;
+	//data = (char*)JS_malloc(cx, dataLength +1);
+	data = JL_NewBuffer(cx, dataLength, JL_RVAL);
 	JL_CHK( data );
 
 	memmove( data, (char *)pv->mem + sizeof(MemHeader), dataLength );
 
 	JL_CHK( Unlock(cx, pv) );
 
-	data[dataLength] = '\0';
-	JL_CHK( JL_NewBlob( cx, data, dataLength, vp ) );
+	//data[dataLength] = '\0';
+	//JL_CHK( JL_NewBlob( cx, data, dataLength, vp ) );
 
 	return JS_TRUE;
 	JL_BAD;

@@ -78,9 +78,9 @@ DEFINE_CONSTRUCTOR() {
 		JL_ASSERT( JL_ValueIsData(cx, iconVal), E_ARG, E_NUM(1), E_TYPE, E_TY_DATA );
 
 		unsigned int width, height, channels, x, y;
-		JL_CHK( JL_GetProperty(cx, imgObj, "width", &width) );
-		JL_CHK( JL_GetProperty(cx, imgObj, "height", &height) );
-		JL_CHK( JL_GetProperty(cx, imgObj, "channels", &channels) );
+		JL_CHK( JL_GetProperty(cx, imgObj, JLID(cx, width), &width) );
+		JL_CHK( JL_GetProperty(cx, imgObj, JLID(cx, height), &height) );
+		JL_CHK( JL_GetProperty(cx, imgObj, JLID(cx, channels), &channels) );
 		unsigned char *imageData = (unsigned char*)JL_GetPrivate(cx, imgObj);
 
 		// http://groups.google.com/group/microsoft.public.win32.programmer.gdi/browse_frm/thread/adaf38d715cef81/3825af9edde28cdc?lnk=st&q=RGB+CreateIcon&rnum=9&hl=en#3825af9edde28cdc
