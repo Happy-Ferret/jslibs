@@ -11,20 +11,33 @@ loadModule('jscrypt');
 loadModule('jsstd');
 loadModule('jsio');
 
+var arr = new Int8Array( new ArrayBuffer(5) );
 
-var f = new File('debug.js');
-f.open('r');
+arr[0] = 100;
+arr[1] = 100;
+arr[2] = 100;
+arr[3] = 100;
+arr[4] = 100;
 
-print(f.read(10).byteLength, '\n');
+function Gen() {
+
+	yield arr;
+	yield arr;
+	yield arr;
+	yield arr;
+	yield arr;
+}
 
 
-//print( join(['a', 'b', 'c']), '\n' );
+//print( join(['a', 'b', 'c']) );
+
+print( join([arr, arr, arr, arr, arr, arr, arr], true) );
+
+
 
 
 //jslangTest();
 halt();
-
-
 
 	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
 	var cl = new Socket(); cl.connect('127.0.0.1', 9999);

@@ -253,29 +253,107 @@ DEFINE_FUNCTION( stringify ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $STR $INAME( collection )
+ $STR $INAME( collection [, toArrayBuffer] )
   
 **/
 DEFINE_FUNCTION( join ) {
 
-	JL_ASSERT_ARGC(1);
+	AutoValueVector avr(cx);
+	avr.reserve(16);
+
+	jl::Stack<JLStr, jl::StaticAllocMedium> strList;
+	size_t length = 0;
+
+	JL_DEFINE_FUNCTION_OBJ;
+
+	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	JSObject *obj = JSVAL_TO_OBJECT(JL_ARG(1));
+	jsval arg;
+	arg = JL_ARG(1);
 
-	//bool isti = JL_ObjectIsIterable(cx, obj);
+	JSObject *argObj;
+	argObj = JSVAL_TO_OBJECT(arg);
 
+	jsval val;
 
-	
-	JSObject *iterator = JS_NewElementIterator(cx, obj);
-	JSBool found;
-	
-	JL_CHK( JS_HasPropertyById(cx, iterator, JLID(cx, next), &found) );
+	if ( JL_ObjectIsArrayLike(cx, argObj) ) {
 
-	bool has = found == JS_TRUE;
-	*JL_RVAL = OBJECT_TO_JSVAL(iterator);
+		uint32_t arrayLen;
+		JL_CHK( JS_GetArrayLength(cx, argObj, &arrayLen) );
+		for ( jsuint i = 0; i < arrayLen; ++i ) {
 
-	
+			JL_CHK( JS_GetElement(cx, argObj, i, &val) );
+			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
+			length += strList->Length();
+			avr.append(val);
+		}
+	} else {
+		
+		if ( JL_ValueIsGenerator(cx, arg) ) {
+			
+			JL_CHK( JS_CallFunctionValue(cx, obj, arg, 0, NULL, &arg) );
+			JL_ASSERT_IS_OBJECT(arg, "generator");
+			argObj = JSVAL_TO_OBJECT(arg);
+		}
+
+		jsval nextFct;
+		JL_CHK( JS_GetPropertyById(cx, argObj, JLID(cx, next), &nextFct) );
+
+		if ( JL_ValueIsCallable(cx, nextFct) ) {
+		
+			while ( JS_CallFunctionValue(cx, argObj, nextFct, 0, NULL, &val) != JS_FALSE ) { // loop until StopIteration or error
+
+				JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
+				length += strList->Length();
+				avr.append(val);
+			}
+			JL_CHK( JL_IsStopIterationExceptionPending(cx) );
+			JS_ClearPendingException(cx);
+		} else {
+
+			JL_ERR(E_ARG, E_NUM(1), E_INVALID);
+		}
+	}
+
+	bool toArrayBuffer;
+	if ( JL_ARG_ISDEF(2) ) {
+
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &toArrayBuffer) );
+	} else {
+
+		toArrayBuffer = false;
+	}
+
+	if ( toArrayBuffer ) {
+		
+		uint8_t *buf = JL_NewBuffer(cx, length, JL_RVAL);
+		JL_CHK( buf );
+		buf += length;
+		while ( strList ) {
+
+			buf -= strList->Length();
+			strList->CopyTo(buf);
+			--strList;
+		}
+
+	} else {
+
+		jschar *buf = (jschar*)JS_malloc(cx, (length +1) * sizeof(jschar));
+		buf += length;
+		*buf = 0;
+
+		while ( strList ) {
+
+			buf -= strList->Length();
+			strList->CopyTo(buf);
+			--strList;
+		}
+
+		JSString *jsstr = JL_NewUCString(cx, buf, length);
+		JL_ASSERT( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
+		*JL_RVAL = STRING_TO_JSVAL(jsstr);
+	}
 
 	return JS_TRUE;
 	JL_BAD;
@@ -806,6 +884,11 @@ DEFINE_FUNCTION( _jsapiTests ) {
 //	// see Bug 688510
 	ASSERT( JS_GetParent(JS_NewObject(cx, NULL, NULL, NULL)) != NULL );
 //	ASSERT( JS_GetParent(JL_NewObjectWithGivenProto(cx, NULL, NULL, NULL)) != NULL );
+
+
+	JS_ThrowStopIteration(cx);
+	ASSERT( JL_IsStopIterationExceptionPending(cx) );
+	JS_ClearPendingException(cx);
 
 
 /*

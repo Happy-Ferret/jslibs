@@ -52,6 +52,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( expand ) {
 
+	// look at jslang: ::join()
 	typedef struct {
 		const jschar *chars;
 		size_t count;
@@ -59,7 +60,6 @@ DEFINE_FUNCTION( expand ) {
 	} Chunk;
 
 	jl::Stack<Chunk, jl::StaticAllocMedium> stack;
-
 	JLStr srcStr;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -367,7 +367,11 @@ DEFINE_FUNCTION( clearObject ) {
 	// JS_ClearScope removes all of obj's own properties, except the special __proto__ and __parent__ properties,
 	// in a single operation. Properties belonging to objects on obj's prototype chain are not affected.
 	JS_ClearScope(cx, JSVAL_TO_OBJECT( JL_ARG(1) ));
-	
+
+	//JS_Enumerate
+
+	// JS_NewPropertyIterator, JS_NextProperty
+
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;

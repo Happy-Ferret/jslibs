@@ -432,6 +432,7 @@ enum {
 	JLID_SPEC( Reflect ),
 	JLID_SPEC( Debugger ),
 	JLID_SPEC( Function ),
+	JLID_SPEC( isGenerator ),
 	LAST_JSID // see HostPrivate::ids[]
 };
 #undef JLID_SPEC
@@ -921,12 +922,15 @@ JL_ValueIsArray( JSContext *cx, const jsval &val ) {
 }
 
 
-// note that TypedArray, String and Array objects have a .length (ArrayBuffer does not).
+// note that TypedArray, String and Array objects have a length property (ArrayBuffer does not),
+// and unfortunately Function also have a length property.
 ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsArrayLike( JSContext *cx, JSObject *obj ) {
 
 	JSBool found;
-	return JS_HasPropertyById(cx, obj, JLID(cx, length), &found) && found == JS_TRUE;
+	return JS_HasPropertyById(cx, obj, JLID(cx, length), &found)
+	    && found == JS_TRUE
+	    && !JS_ObjectIsFunction(cx, obj);
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -960,17 +964,28 @@ JL_ValueIsIterable( JSContext * RESTRICT cx, jsval &val ) {
 	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsIterable(cx, JSVAL_TO_OBJECT(val));
 }
 
+ALWAYS_INLINE bool FASTCALL
+JL_IsStopIterationExceptionPending( JSContext *cx ) {
 
+	JSObject *proto;
+	jsval ex;
+	return JS_GetPendingException(cx, &ex) // note: JS_GetPendingException returns false if no exception is pending.
+	    && JSVAL_IS_OBJECT(ex)
+	    && JL_GetClassPrototype(cx, JL_GetGlobal(cx), JSProto_StopIteration, &proto)
+	    && JL_GetClass(JSVAL_TO_OBJECT(ex)) == JL_GetClass(proto);
+}
 
 ALWAYS_INLINE bool FASTCALL
-JL_ValueIsGenerator( JSContext * RESTRICT cx, jsval &val ) {
+JL_ValueIsGenerator( JSContext *cx, jsval &val ) {
 
-	// see: jsfun.h:fun_isGenerator()
+	// Function.prototype.isGenerator.call(Gen)
+	JSObject *proto;
 	jsval fct, rval;
-	JSObject *global = JL_GetGlobal(cx);
-	return JS_GetPropertyById(cx, global, JLID(cx, Function), &fct)
-	    && JS_CallFunctionValue(cx, global, fct, 1, &val, &rval)
-	    && rval == JSVAL_TRUE;
+	return JSVAL_IS_OBJECT(val)
+		&& JL_GetClassPrototype(cx, JL_GetGlobal(cx), JSProto_Function, &proto) 
+	    && JS_GetPropertyById(cx, proto, JLID(cx, isGenerator), &fct)
+		&& JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(val), fct, 0, NULL, &rval)
+		&& rval == JSVAL_TRUE;
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -1391,7 +1406,7 @@ public:
 
 	ALWAYS_INLINE ~JLStr() {
 
-		if ( !_inner || --_inner->count )
+		if ( _inner == NULL || --_inner->count )
 			return;
 		if ( JL_HasFlags(_inner->jsstrFlags, OWN) )
 			jl_free(_inner->jsstr);
@@ -1413,7 +1428,7 @@ public:
 
 	ALWAYS_INLINE void operator=(const JLStr &jlstr) {
 
-		ASSERT( !_inner );
+		ASSERT( _inner == NULL );
 		_inner = jlstr._inner;
 		++_inner->count;
 	}
@@ -1509,6 +1524,39 @@ public:
 	ALWAYS_INLINE size_t LengthOrZero() {
 
 		return IsSet() ? Length() : 0;
+	}
+
+	ALWAYS_INLINE void CopyTo(jschar *dst) {
+
+		ASSERT( IsSet() );
+
+		size_t length = Length();
+		if ( _inner->jsstr ) {
+			
+			jl_memcpy(dst, _inner->jsstr, length*2 );
+		} else {
+
+			ASSERT( _inner->str );
+			const char *src = _inner->str;
+			for ( size_t i = length; i > 0; --i )
+				*(dst++) = (unsigned char)*(src++);
+		}
+	}
+
+	ALWAYS_INLINE void CopyTo(uint8_t *dst) {
+		
+		ASSERT( IsSet() );
+
+		size_t length = Length();
+		if ( _inner->str ) {
+
+			jl_memcpy(dst, _inner->str, length );
+		} else {
+
+			const jschar *src = _inner->jsstr;
+			for ( size_t i = length; i > 0; --i )
+				*(dst++) = (uint8_t)(*(src++) & 0xff); // (TBD) uint8_t or char ?
+		}
 	}
 
 	ALWAYS_INLINE const jschar *GetConstJsStr() {
@@ -3272,6 +3320,7 @@ JL_EngineEnding(JSContext *cx) {
 	//return JL_GetRuntime(cx)->state == JSRTS_LANDING || JL_GetRuntime(cx)->state == JSRTS_DOWN; // could be replaced by a flag in HostPrivate that keep the state of the engine.
 	return JL_GetHostPrivate(cx)->isEnding;
 }
+
 
 
 ALWAYS_INLINE JSContext* FASTCALL
