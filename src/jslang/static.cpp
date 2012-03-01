@@ -194,22 +194,18 @@ DEFINE_FUNCTION( real ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $STR $INAME( value )
+ $STR $INAME( value [, toArrayBuffer] )
   This function converts any value of stream into a string.
 **/
-DEFINE_FUNCTION( stringify ) {
+DEFINE_FUNCTION( toString ) {
 
-	JL_ASSERT_ARGC(1);
-/* [, isWide] 
-	bool isWide;
-	if ( JL_ARG_ISDEF(2) ) {
+	JL_ASSERT_ARGC_MIN(1);
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &isWide) );
-	} else {
-	
-		isWide = false;
-	}
-*/
+	bool toArrayBuffer;
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &toArrayBuffer) );
+	else
+		toArrayBuffer = false;
 
 	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 
@@ -229,13 +225,19 @@ DEFINE_FUNCTION( stringify ) {
 				BufferConfirm(&buf, length);
 			} while ( length != 0 );
 
-			*JL_RVAL = STRING_TO_JSVAL( JLStr(BufferGetDataOwnership(&buf), BufferGetLength(&buf), false).GetJSString(cx) );
+			if ( toArrayBuffer ) {
+
+				JL_CHKB( JL_NewBufferGetOwnership(cx, BufferGetDataOwnership(&buf), BufferGetLength(&buf), JL_RVAL), bad_freeBuffer);
+			} else {
+
+				*JL_RVAL = STRING_TO_JSVAL( JLStr(BufferGetDataOwnership(&buf), BufferGetLength(&buf), false).GetJSString(cx) );
+			}
 			BufferFinalize(&buf);
 			return JS_TRUE;
 
 		bad_freeBuffer:
 			BufferFinalize(&buf);
-			return JS_FALSE;
+			goto bad;
 		}
 	}
 
@@ -243,7 +245,13 @@ DEFINE_FUNCTION( stringify ) {
 	{
 	JLStr str;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	*JL_RVAL = STRING_TO_JSVAL( str.GetJSString(cx) );
+	if ( toArrayBuffer ) {
+
+		JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
+	} else {
+
+		*JL_RVAL = STRING_TO_JSVAL( str.GetJSString(cx) ); // handle Z ?
+	}
 	}
 
 	return JS_TRUE;
@@ -255,6 +263,7 @@ DEFINE_FUNCTION( stringify ) {
 $TOC_MEMBER $INAME
  $STR $INAME( collection [, toArrayBuffer] )
   
+  
 **/
 DEFINE_FUNCTION( join ) {
 
@@ -264,16 +273,11 @@ DEFINE_FUNCTION( join ) {
 	jl::Stack<JLStr, jl::StaticAllocMedium> strList;
 	size_t length = 0;
 
-	JL_DEFINE_FUNCTION_OBJ;
-
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	jsval arg;
-	arg = JL_ARG(1);
-
 	JSObject *argObj;
-	argObj = JSVAL_TO_OBJECT(arg);
+	argObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	jsval val;
 
@@ -283,47 +287,57 @@ DEFINE_FUNCTION( join ) {
 		JL_CHK( JS_GetArrayLength(cx, argObj, &arrayLen) );
 		for ( jsuint i = 0; i < arrayLen; ++i ) {
 
-			JL_CHK( JS_GetElement(cx, argObj, i, &val) );
+			JL_CHK( JL_GetElement(cx, argObj, i, &val) );
 			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
 			length += strList->Length();
 			avr.append(val);
 		}
 	} else {
-		
+/*		
 		if ( JL_ValueIsGenerator(cx, arg) ) {
 			
 			JL_CHK( JS_CallFunctionValue(cx, obj, arg, 0, NULL, &arg) );
 			JL_ASSERT_IS_OBJECT(arg, "generator");
 			argObj = JSVAL_TO_OBJECT(arg);
 		}
+*/
 
 		jsval nextFct;
 		JL_CHK( JS_GetPropertyById(cx, argObj, JLID(cx, next), &nextFct) );
 
-		if ( JL_ValueIsCallable(cx, nextFct) ) {
-		
-			while ( JS_CallFunctionValue(cx, argObj, nextFct, 0, NULL, &val) != JS_FALSE ) { // loop until StopIteration or error
+		if ( !JL_ValueIsCallable(cx, nextFct) ) {
 
-				JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
-				length += strList->Length();
-				avr.append(val);
+			jsval tmp = OBJECT_TO_JSVAL(argObj);
+			JL_CHK( js_ValueToIterator(cx, JSITER_FOR_OF, &tmp) ); // or maybe call new Ierator(argObj) ???
+			JL_ASSERT_IS_OBJECT(tmp, "iterator");
+			argObj = JSVAL_TO_OBJECT(tmp);
+			JL_CHK( JS_GetPropertyById(cx, argObj, JLID(cx, next), &nextFct) );
+			if ( !JL_ValueIsCallable(cx, nextFct) ) {
+
+				JL_ERR(E_ARG, E_NUM(1), E_INVALID);
 			}
-			JL_CHK( JL_IsStopIterationExceptionPending(cx) );
-			JS_ClearPendingException(cx);
-		} else {
-
-			JL_ERR(E_ARG, E_NUM(1), E_INVALID);
 		}
+
+		while ( JS_CallFunctionValue(cx, argObj, nextFct, 0, NULL, &val) != JS_FALSE ) { // loop until StopIteration or error
+
+			if ( !JL_JsvalToNative(cx, val, &*++strList) ) {
+
+				js_CloseIterator(cx, argObj);
+				JL_CHK(false);
+			}
+			length += strList->Length();
+			avr.append(val);
+		}
+		JL_CHK( js_CloseIterator(cx, argObj) );
+		JL_CHK( JL_IsStopIterationExceptionPending(cx) );
+		JS_ClearPendingException(cx);
 	}
 
 	bool toArrayBuffer;
-	if ( JL_ARG_ISDEF(2) ) {
-
+	if ( JL_ARG_ISDEF(2) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &toArrayBuffer) );
-	} else {
-
+	else
 		toArrayBuffer = false;
-	}
 
 	if ( toArrayBuffer ) {
 		
@@ -336,7 +350,6 @@ DEFINE_FUNCTION( join ) {
 			strList->CopyTo(buf);
 			--strList;
 		}
-
 	} else {
 
 		jschar *buf = (jschar*)JS_malloc(cx, (length +1) * sizeof(jschar));
@@ -921,14 +934,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 DEFINE_FUNCTION( jslangTest ) {
 
-	JL_IGNORE(cx);
-	JL_IGNORE(argc);
-	JL_IGNORE(vp);
-
-//	uint8_t *buf = JL_NewByteImageBuffer(cx, 100, 100, 3, JL_RVAL);
-
-	return JS_TRUE;
-	JL_BAD;
+	return 0;
 }
 
 #endif // JSLANG_TEST
@@ -951,7 +957,7 @@ CONFIGURE_STATIC
 
 		FUNCTION_ARGC( real, 1 )
 
-		FUNCTION_ARGC( stringify, 1 )
+		FUNCTION_ARGC( toString, 1 )
 		FUNCTION_ARGC( processEvents, 4 ) // (4 is just a guess)
 		FUNCTION_ARGC( timeoutEvents, 2 )
 

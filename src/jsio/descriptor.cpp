@@ -396,6 +396,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( write ) {
 
 	JLStr str;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
 	JL_ASSERT_ARGC( 1 );
@@ -404,10 +405,6 @@ DEFINE_FUNCTION( write ) {
 	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	size_t sentAmount;
-
-//	size_t len;
-//	const char *str;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &len) );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
@@ -463,31 +460,12 @@ DEFINE_FUNCTION( write ) {
 		sentAmount = res;
 	}
 
-	// (TBD) try to detect if the return value will be used else just return.
-	//	js_Disassemble1(cx, JL_CurrentStackFrame(cx)->script, JL_CurrentStackFrame(cx)->regs->pc +3, 0, false, stdout); // 00000:  setgvar "test"
+	ASSERT( sentAmount <= str.Length() );
 
-	if (likely( sentAmount == str.Length() )) {
-
-		*JL_RVAL = JL_GetEmptyStringValue(cx); // nothing remains
-		return JS_TRUE;
-	}
-
-	if (unlikely( sentAmount < str.Length() )) {
-
-		//*rval = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_ARG(1) ), sentAmount, len - sentAmount) ); // return unsent data // (TBD) use Blob ?
-//		size_t remaining;
-//		remaining = str.Length() - sentAmount;
-//		buffer = JS_malloc(cx, remaining +1);
-//		JL_CHK( buffer );
-//		memcpy(buffer, str.GetConstStr() + sentAmount, remaining);
-//		((char*)buffer)[remaining] = '\0';
-//		JL_CHKB( JL_NewBlob(cx, buffer, remaining, JL_RVAL), bad_free ); // (TBD) keep the type: return a string if the JL_ARG(1) is a sring.
-//		JL_CHK( , bad_free ); // (TBD) keep the type: return a string if the JL_ARG(1) is a sring.
- 		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
-		return JS_TRUE;
-	}
-
-	*JL_RVAL = JL_ARG(1); // nothing has been sent
+	if (likely( sentAmount == str.Length() ))
+		JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+	else
+		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;

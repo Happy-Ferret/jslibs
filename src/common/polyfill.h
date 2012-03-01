@@ -39,6 +39,15 @@ JSDOUBLE_IS_NaN(jsdouble d)
 }
 
 
+// declared friend in jsiter.h
+
+extern JS_FRIEND_API(JSBool)
+js_ValueToIterator(JSContext *cx, uintN flags, js::Value *vp);
+
+extern JS_FRIEND_API(JSBool)
+js_CloseIterator(JSContext *cx, JSObject *iterObj);
+
+
 // only defined as JS_FRIEND_API in js/src/js/src/jsobj.h
 
 extern JS_FRIEND_API(JSBool)

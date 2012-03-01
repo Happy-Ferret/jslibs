@@ -496,19 +496,19 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 		case WM_SETFOCUS:
 			JL_CHK( JS_GetProperty(cx, obj, "onfocus", &functionVal) );
 			if ( JL_ValueIsCallable(cx, functionVal) )
-				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, JSVAL_TRUE ) );
+				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, JSVAL_TRUE ) );
 			break;
 		case WM_KILLFOCUS:
 			JL_CHK( JS_GetProperty(cx, obj, "onblur", &functionVal) );
 			if ( JL_ValueIsCallable(cx, functionVal) )
-				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, JSVAL_FALSE ) );
+				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, JSVAL_FALSE ) );
 			break;
 		case WM_CHAR:
 			JL_CHK( JS_GetProperty(cx, obj, "onchar", &functionVal) );
 			if ( JL_ValueIsCallable(cx, functionVal) ) {
 
 				char c = jl::SafeCast<char>(wParam);
-				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
+				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
 			}
 			break;
 
@@ -518,7 +518,7 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 			if ( JL_ValueIsCallable(cx, functionVal) ) {
 
 				bool endCase = message == WM_ENDSESSION && lParam == 0;
-				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, BOOLEAN_TO_JSVAL(endCase) ) );
+				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, BOOLEAN_TO_JSVAL(endCase) ) );
 			}
 			break;
 
@@ -529,7 +529,7 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 				jsval key;
 				S_ASSERT( sizeof(jsid) == sizeof(wParam) );
 				JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) );
-				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
+				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, key, INT_TO_JSVAL( mButton ) ) );
 				FreePopupMenuRoots(cx, obj);
 			}
 			break;
@@ -546,7 +546,7 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 						jsval key;
 						S_ASSERT( sizeof(jsid) == sizeof(wParam) );
 						JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) );
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, key, INT_TO_JSVAL( mButton ) ) );
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, key, INT_TO_JSVAL( mButton ) ) );
 					}
 				break;
 			}
@@ -557,28 +557,28 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 				case WM_MOUSEMOVE:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousemove", &functionVal) );
 					if ( JL_ValueIsCallable(cx, functionVal) )
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( mouseX ), INT_TO_JSVAL( mouseY ) ) );
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, INT_TO_JSVAL( mouseX ), INT_TO_JSVAL( mouseY ) ) );
 					break;
 				case WM_LBUTTONDOWN:
 				case WM_MBUTTONDOWN:
 				case WM_RBUTTONDOWN:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousedown", &functionVal) );
 					if ( JL_ValueIsCallable(cx, functionVal) )
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
 					break;
 				case WM_LBUTTONUP:
 				case WM_MBUTTONUP:
 				case WM_RBUTTONUP:
 					JL_CHK( JS_GetProperty(cx, obj, "onmouseup", &functionVal) );
 					if ( JL_ValueIsCallable(cx, functionVal) )
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 2, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
 					break;
 				case WM_LBUTTONDBLCLK:
 				case WM_MBUTTONDBLCLK:
 				case WM_RBUTTONDBLCLK:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousedblclick", &functionVal) );
 					if ( JL_ValueIsCallable(cx, functionVal) )
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, 1, INT_TO_JSVAL( lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0 ) ) );
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, INT_TO_JSVAL( lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0 ) ) );
 					break;
 			} // switch lParam
 	} //  switch message
@@ -727,7 +727,7 @@ DEFINE_FUNCTION( focus ) {
 ALWAYS_INLINE JSBool NormalizeMenuInfo( JSContext *cx, JSObject *obj, const jsval key, jsval *value ) {
 
 	if ( JL_ValueIsCallable(cx, *value) )
-		return JL_CallFunctionVA(cx, obj, *value, value, 1, key);
+		return JL_CallFunctionVA(cx, obj, *value, value, key);
 	return JS_TRUE;
 }
 

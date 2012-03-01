@@ -2,7 +2,7 @@
 //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
 //loadModule('jsstd'); exec('../common/tools.js'); var QA = fakeQAApi;  runLocalQAFile();
 
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('-rep 1 -exclude jstask');
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('-rep 1 -exclude jstask');
 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //SetPerfTestMode();
@@ -11,13 +11,21 @@ loadModule('jscrypt');
 loadModule('jsstd');
 loadModule('jsio');
 
-var arr = new Int8Array( new ArrayBuffer(5) );
+/*
+loadModule('jswinshell');
+var fso = createComObject('Scripting.fileSystemObject');
+var tmp = fso.GetFolder('c:\\');
+print( uneval(join(tmp.SubFolders)) );
+//jslangTest(res);
+halt();
+*/
 
-arr[0] = 100;
-arr[1] = 100;
-arr[2] = 100;
+var arr = ( new ArrayBuffer(4) );
+
+arr[0] = 97;
+arr[1] = 98;
+arr[2] = 99;
 arr[3] = 100;
-arr[4] = 100;
 
 function Gen() {
 
@@ -30,8 +38,9 @@ function Gen() {
 
 
 //print( join(['a', 'b', 'c']) );
+//print( join(Gen()) );
 
-print( join([arr, arr, arr, arr, arr, arr, arr], true) );
+print( join( [arr, arr, arr, ' ', arr, arr, arr] ), '\n' );
 
 
 

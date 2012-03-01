@@ -364,13 +364,16 @@ DEFINE_FUNCTION( clearObject ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	// JS_ClearScope removes all of obj's own properties, except the special __proto__ and __parent__ properties,
-	// in a single operation. Properties belonging to objects on obj's prototype chain are not affected.
-	JS_ClearScope(cx, JSVAL_TO_OBJECT( JL_ARG(1) ));
+	JSObject *argObj;
+	argObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
-	//JS_Enumerate
+	JSIdArray *list;
+	list = JS_Enumerate(cx, argObj); // JS_NewPropertyIterator, JS_NextProperty ?
+	JL_CHK(list);
 
-	// JS_NewPropertyIterator, JS_NextProperty
+	for ( jsint i = 0; i < list->length; ++i )
+		JL_CHK( JS_DeletePropertyById(cx, argObj, list->vector[i]) );
+	JS_DestroyIdArray(cx, list);
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -1579,7 +1582,6 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( deepFreezeObject, 1 )
 		FUNCTION_ARGC( countProperties, 1 )
 		FUNCTION_ARGC( clearObject, 1 )
-//		FUNCTION_ARGC( setScope, 2 )
 		FUNCTION_ARGC( exec, 2 )
 		FUNCTION_ARGC( sandboxEval, 3 )
 		FUNCTION_ARGC( isStatementValid, 1 )

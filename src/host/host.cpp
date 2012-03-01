@@ -760,7 +760,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	return JS_TRUE;
 
 bad:
-	if ( pv && pv->tmpBuffer )
+	if ( pv )
 		jl_free(pv->tmpBuffer);
 	return JS_FALSE;
 }

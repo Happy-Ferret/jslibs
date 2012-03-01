@@ -78,7 +78,7 @@ DEFINE_FINALIZE() {
 	//beware: prototype may be finalized before the object
 	if ( JL_THIS_PROTOTYPE != NULL ) { // add to the pool if the pool is still alive !
 
-		if ( /*JL_EngineEnding(cx) ||*/ !jl::PoolPush(&matrixPool, pv->mat) ) // if the runtime is shutting down, there is no more need to fill the pool.
+		if ( /*JL_IsHostEnding(cx) ||*/ !jl::PoolPush(&matrixPool, pv->mat) ) // if the runtime is shutting down, there is no more need to fill the pool.
 			Matrix44Free(pv->mat);
 	} else {
 

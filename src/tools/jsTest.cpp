@@ -513,6 +513,7 @@ int main_NewObjectWithGivenProto_NewObject(int argc, char* argv[]) {
 	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
+	
 /*
 parent = GetCurrentGlobal(cx);
 
@@ -532,7 +533,100 @@ parent = GetCurrentGlobal(cx);
 	return 0;
 }
 
+#include <jsfriendapi.h>
+
+bool test_perf(jsval &val) {
+
+	int i = sizeof(js::shadow::Object);
+
+/*
+	return JSVAL_IS_DOUBLE(val);
+004014E9  mov         eax,dword ptr [val] 
+004014EC  mov         ecx,dword ptr [eax] 
+004014EE  cmp         dword ptr [eax+4],0FFFFFF80h 
+004014F2  mov         dword ptr [esp],ecx 
+004014F5  setbe       al   
+*/
+/*
+	return val.isDouble();
+004014E3  mov         eax,dword ptr [esp+0Ch] 
+004014E7  mov         ecx,dword ptr [eax] 
+004014E9  cmp         dword ptr [eax+4],0FFFFFF80h 
+004014ED  mov         dword ptr [esp],ecx 
+004014F0  setbe       al  
+*/
+	return i;
+}
+
+
+
+int main_PerfTest(int argc, char* argv[]) {
+
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
+	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+	JS_SetErrorReporter(cx, ErrorReporter);
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+
+	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JS_InitStandardClasses(cx, globalObject);
+
+
+	jsval v;
+
+	bool b = NOIL(test_perf)(v);
+	
+
+
+	return 0;
+}
+
+template <class T>
+struct Auto {
+
+	void *_ptr;
+	AutoFree(T void*ptr) : _ptr(ptr) {
+	}
+
+	operator void *() const {
+	
+		return _ptr;
+	}
+
+	void Forget() {
+		_ptr = NULL;
+	}
+
+	~AutoFree() {
+		
+		jl_free(_ptr);
+	}
+};
+
+
+int main_bad(int argc, char* argv[]) {
+
+
+	AutoFree ptr(jl_malloc(123));
+
+	if ( argc > 0 )
+		return 1;
+
+	JLStr str;
+
+	printf("%d%p", str.Length(), ptr);
+
+
+
+	return 0;
+bad:
+	return 1;
+}
+
+
 int main(int argc, char* argv[]) {
 
-	return main_NewObjectWithGivenProto_NewObject(argc, argv);
+	//return main_PerfTest(argc, argv);
+	return main_bad(argc, argv);
 }

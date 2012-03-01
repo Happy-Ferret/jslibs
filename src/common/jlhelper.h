@@ -48,6 +48,13 @@ extern int _unsafeMode;
 class JLStr;
 
 
+ALWAYS_INLINE bool FASTCALL
+JL_NewEmptyBuffer( JSContext *cx, jsval *rval );
+
+ALWAYS_INLINE bool FASTCALL
+JL_NewBufferGetOwnership( JSContext *cx, void *src, size_t nbytes, jsval *rval );
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Native Interface function prototypes
 
@@ -195,14 +202,13 @@ JL_GetClassPrototype(JSContext *cx, JSObject *scopeobj, JSProtoKey protoKey, JSO
 ALWAYS_INLINE JSBool FASTCALL
 JL_GetElement(JSContext *cx, JSObject *obj, jsuint index, jsval *vp) {
 
-    //return JS_GetPropertyById(cx, obj, INT_TO_JSID(index), vp);
 	return JS_ForwardGetElementTo(cx, obj, index, obj, vp);
 }
 
 ALWAYS_INLINE JSBool FASTCALL
 JL_SetElement(JSContext *cx, JSObject *obj, jsuint index, jsval *vp) {
 
-	return JS_SetPropertyById(cx, obj, INT_TO_JSID(index), vp);
+	return JS_SetElement(cx, obj, index, vp);
 }
 
 
@@ -951,11 +957,12 @@ JL_ValueIsData( JSContext *cx, const jsval &val ) {
 	return JSVAL_IS_STRING(val) || ( !JSVAL_IS_PRIMITIVE(val) && NOIL(JL_ObjectIsData)(cx, JSVAL_TO_OBJECT(val)) );
 }
 
+
 ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsIterable( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
 	JSBool found;
-	return JS_HasPropertyById(cx, obj, JLID(cx, next), &found) && found == JS_TRUE || js::Valueify(JL_GetClass(obj))->ext.iteratorObject != NULL;
+	return JS_HasPropertyById(cx, obj, JLID(cx, next), &found) && found == JS_TRUE;
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -963,6 +970,7 @@ JL_ValueIsIterable( JSContext * RESTRICT cx, jsval &val ) {
 
 	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsIterable(cx, JSVAL_TO_OBJECT(val));
 }
+
 
 ALWAYS_INLINE bool FASTCALL
 JL_IsStopIterationExceptionPending( JSContext *cx ) {
@@ -1582,12 +1590,41 @@ public:
 		return tmp;
 	}
 
+	ALWAYS_INLINE char *GetStrZOwnership() {
+
+		ASSERT( IsSet() );
+		if ( !_inner->str || !JL_HasFlags(_inner->strFlags, OWN | NT) )
+			CreateOwnStrZ();
+		char *tmp = _inner->str;
+		_inner->str = NULL;
+		return tmp;
+	}
+
+	ALWAYS_INLINE char *GetStrOwnership() {
+
+		ASSERT( IsSet() );
+		if ( !_inner->str || !JL_HasFlags(_inner->strFlags, OWN) )
+			CreateOwnStrZ();
+		char *tmp = _inner->str;
+		_inner->str = NULL;
+		return tmp;
+	}
+
+
 	ALWAYS_INLINE JSString *GetJSString(JSContext *cx) {
 
 		ASSERT( IsSet() );
 		if ( Length() == 0 )
 			return JSVAL_TO_STRING( JL_GetEmptyStringValue(cx) );
 		return JL_NewUCString(cx, GetJsStrZOwnership(), Length()); // (TBD) manage allocator issue in GetJsStrZOwnership() ?
+	}
+
+	ALWAYS_INLINE JSBool GetArrayBuffer(JSContext *cx, jsval *rval) {
+
+		ASSERT( IsSet() );
+		if ( Length() == 0 )
+			return JL_NewEmptyBuffer(cx, rval);
+		return JL_NewBufferGetOwnership(cx, GetStrOwnership(), Length(), rval);
 	}
 
 	ALWAYS_INLINE const char *GetConstStr() {
@@ -1602,15 +1639,6 @@ public:
 		return IsSet() ? GetConstStr() : NULL;
 	}
 
-	ALWAYS_INLINE char *GetStrZOwnership() {
-
-		ASSERT( IsSet() );
-		if ( !_inner->str || !JL_HasFlags(_inner->strFlags, OWN | NT) )
-			CreateOwnStrZ();
-		char *tmp = _inner->str;
-		_inner->str = NULL;
-		return tmp;
-	}
 
 	ALWAYS_INLINE const char *GetConstStrZ() {
 
@@ -3167,14 +3195,13 @@ JL_NewByteImageBuffer( JSContext *cx, int32_t width, int32_t height, int32_t cha
 	ASSERT( channels > 0 );
 
 	JSObject *bufferObj = js::ArrayBuffer::create(cx, width*height*channels); // JS_NewArrayBuffer(cx, nbytes);
-	if ( bufferObj ) {
+	JL_CHK( bufferObj );
 
-		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, width), width) );
-		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, height), height) );
-		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, channels), channels) );
-		*rval = OBJECT_TO_JSVAL(bufferObj);
-		return JS_GetArrayBufferData(bufferObj);
-	}
+	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, width), width) );
+	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, height), height) );
+	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, channels), channels) );
+	*rval = OBJECT_TO_JSVAL(bufferObj);
+	return JS_GetArrayBufferData(bufferObj);
 bad:
 	return NULL;
 }
@@ -3189,16 +3216,15 @@ JL_NewByteAudioBuffer( JSContext *cx, int32_t bits, int32_t rate, int32_t channe
 	ASSERT( channels > 0 );
 	ASSERT( frames >= 0 );
 
-	JSObject *bufferObj = js::ArrayBuffer::create(cx, (bits/2)*rate*channels*frames); // JS_NewArrayBuffer(cx, nbytes);
-	if ( bufferObj ) {
+	JSObject *bufferObj = js::ArrayBuffer::create(cx, (bits/8) * rate * channels * frames); // JS_NewArrayBuffer(cx, nbytes);
+	JL_CHK( bufferObj );
 
-		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, bits), bits) );
-		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, rate), rate) );
-		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, channels), channels) );
-		JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, frames), frames) );
-		*rval = OBJECT_TO_JSVAL(bufferObj);
-		return JS_GetArrayBufferData(bufferObj);
-	}
+	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, bits), bits) );
+	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, rate), rate) );
+	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, channels), channels) );
+	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, frames), frames) );
+	*rval = OBJECT_TO_JSVAL(bufferObj);
+	return JS_GetArrayBufferData(bufferObj);
 bad:
 	return NULL;
 }
@@ -3314,15 +3340,6 @@ JL_ThrowOSError(JSContext *cx) {
 }
 
 
-ALWAYS_INLINE bool FASTCALL
-JL_EngineEnding(JSContext *cx) {
-	
-	//return JL_GetRuntime(cx)->state == JSRTS_LANDING || JL_GetRuntime(cx)->state == JSRTS_DOWN; // could be replaced by a flag in HostPrivate that keep the state of the engine.
-	return JL_GetHostPrivate(cx)->isEnding;
-}
-
-
-
 ALWAYS_INLINE JSContext* FASTCALL
 JL_GetFirstContext(JSRuntime *rt) {
 
@@ -3353,51 +3370,38 @@ JL_CallFunctionId(JSContext *cx, JSObject *obj, jsid id, uintN argc, jsval *argv
 
 	jsval tmp;
 	return JS_GetMethodById(cx, obj, id, NULL, &tmp) && JS_CallFunctionValue(cx, obj, tmp, argc, argv, rval);
-// (TBD) choose the best
-//	jsval val;
-//	return JL_JsidToJsval(cx, id, &val) && JS_CallFunctionValue(cx, obj, val, argc, argv, rval);
 }
 
 
-INLINE JSBool FASTCALL
-JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, jsval &functionValue, jsval *rval, uintN argc, ... ) {
+// JL_CallFunctionVA
 
-	va_list ap;
-	jsval *argv = (jsval*)alloca((argc+1)*sizeof(jsval));
-	va_start(ap, argc);
-	for ( uintN i = 1; i <= argc; i++ )
-		argv[i] = va_arg(ap, jsval);
-	va_end(ap);
-	argv[0] = JSVAL_NULL; // the rval
-	if ( JL_IS_SAFE )
-		JL_CHK( JL_ValueIsCallable(cx, functionValue) );
-	JSBool st;
-	st = JS_CallFunctionValue(cx, obj, functionValue, argc, argv+1, argv);
-	JL_CHK( st );
-	if ( rval != NULL )
-		*rval = argv[0];
-	return JS_TRUE;
-	JL_BAD;
+ALWAYS_INLINE JSBool FASTCALL
+JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, jsval &functionValue, jsval *rval ) {
+
+	return JS_CallFunctionValue(cx, obj, functionValue, 0, NULL, rval);
 }
 
+ALWAYS_INLINE JSBool FASTCALL
+JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, jsval &functionValue, jsval *rval, const jsval &arg1 ) {
 
-INLINE JSBool FASTCALL
-JL_CallFunctionNameVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char* functionName, jsval *rval, uintN argc, ... ) {
-
-	va_list ap;
-	jsval *argv = (jsval*)alloca((argc+1)*sizeof(jsval));
-	va_start(ap, argc);
-	for ( uintN i = 1; i <= argc; i++ )
-		argv[i] = va_arg(ap, jsval);
-	va_end(ap);
-	argv[0] = JSVAL_NULL; // the rval
-	JSBool st = JS_CallFunctionName(cx, obj, functionName, argc, argv+1, argv);
-	JL_CHK( st );
-	if ( rval != NULL )
-		*rval = argv[0];
-	return JS_TRUE;
-	JL_BAD;
+	jsval args[] = { arg1 };
+	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval);
 }
+
+ALWAYS_INLINE JSBool FASTCALL
+JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, jsval &functionValue, jsval *rval, const jsval &arg1, const jsval &arg2 ) {
+
+	jsval args[] = { arg1, arg2 };
+	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval);
+}
+
+ALWAYS_INLINE JSBool FASTCALL
+JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, jsval &functionValue, jsval *rval, const jsval &arg1, const jsval &arg2, const jsval &arg3 ) {
+
+	jsval args[] = { arg1, arg2, arg3 };
+	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval);
+}
+
 
 
 INLINE JSBool FASTCALL
@@ -3441,11 +3445,7 @@ ALWAYS_INLINE JSBool FASTCALL
 JL_Push( JSContext * RESTRICT cx, JSObject * RESTRICT arr, jsval * RESTRICT value ) {
 
 	jsuint length;
-	JL_CHK( JS_GetArrayLength(cx, arr, &length) );
-	JL_CHK( JL_SetElement(cx, arr, length, value) );
-	//JL_CHK( JS_SetArrayLength(cx, arr, length+1) ); // implicitly done.
-	return JS_TRUE;
-	JL_BAD;
+	return JS_GetArrayLength(cx, arr, &length) && JL_SetElement(cx, arr, length, value);
 }
 
 
@@ -3453,12 +3453,7 @@ ALWAYS_INLINE JSBool FASTCALL
 JL_Pop( JSContext * RESTRICT cx, JSObject * RESTRICT arr, jsval * RESTRICT vp ) {
 
 	jsuint length;
-	JL_CHK( JS_GetArrayLength(cx, arr, &length) );
-	--length;
-	JL_CHK( JS_GetPropertyById(cx, arr, INT_TO_JSID(length), vp) ); //JL_CHK( JL_GetElement(cx, arrObj, length, vp) );
-	JL_CHK( JS_SetArrayLength(cx, arr, length) ); // pop does reduce the array length
-	return JS_TRUE;
-	JL_BAD;
+	return JS_GetArrayLength(cx, arr, &length) && JL_GetElement(cx, arr, --length, vp) && JS_SetArrayLength(cx, arr, length); 
 }
 
 

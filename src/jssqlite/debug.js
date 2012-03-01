@@ -19,11 +19,11 @@ for ( var i = 0; i < 30; i++ ) {
 throw 0;
 */
 
-loadModule('jsstd'); exec('../common/tools.js');
+//loadModule('jsstd'); exec('../common/tools.js');
 //var QA = FakeQAApi;
 //runLocalQAFile();
 //runJsircbot(false); throw 0;
-runQATests('-rep 5 -exclude jstask jssqlite');
+//runQATests('-rep 5 -exclude jstask jssqlite');
 
 
 
@@ -32,7 +32,17 @@ loadModule('jssqlite');
 
 var db = new Database(); // in-memory database
 db.exec('create table t1 (name,value);');
-db.exec('insert into t1 (name,value) values ("red","#F00")');
+db.exec('insert into t1 (name,value) values ("one","1")');
+db.exec('insert into t1 (name,value) values ("two","2")');
+
+var res = db.query('SELECT * from t1');
+
+for ( var e of res ) {
+
+	print( e.name, '\n' );
+}
+
+halt();
 
 
 for (var i = 0; i < 11; i++ ) {
@@ -41,9 +51,8 @@ for (var i = 0; i < 11; i++ ) {
 
 	var str = '';
 	
-	var res = db.query('SELECT * from t1');
 	
-	str = [ it for each ( it in res ) ];
+//	str = [ it for each ( it in res ) ];
 //	var arr = []; for each ( var it in res ) arr.push(it); 	str += arr; // path: stubs::IterMore
 
 	print('\n');

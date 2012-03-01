@@ -72,6 +72,7 @@
 	#pragma warning(error : 4239) // nonstandard extension used
 	#pragma warning(error : 4005) // 'XXX' : macro redefinition
 	#pragma warning(error : 4717) // 'XXX' : recursive on all control paths, function will cause runtime stack overflow
+	#pragma warning(error : 4508) // 'XXX' : function should return a value; 'void' return type assumed
 	#ifdef DEBUG
 		#pragma warning(error : 4701) // potentially uninitialized local variable 'XXX' used
 	#endif

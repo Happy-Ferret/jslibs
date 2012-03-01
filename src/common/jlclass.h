@@ -347,6 +347,8 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, uintN argc, jsval *vp)
 
 #define HAS_FINALIZE cs.clasp.finalize = Finalize;
+// make Finalize able to return a value ( good for bad: ):
+//  #define DEFINE_FINALIZE() Finalize_withReturnValue(JSContext *cx, JSObject *obj); static void Finalize(JSContext *cx, JSObject *obj) { Finalize_withReturnValue(cx, obj) } ALWAYS_INLINE JSBool Finalize_withReturnValue(JSContext *cx, JSObject *obj)
 #define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
 
 #define HAS_OBJECT_CONSTRUCTOR cs.clasp.construct = ObjectConstructor;
