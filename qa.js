@@ -171,7 +171,7 @@ function createQaItemList(startDir, files, include, exclude, flags) {
 	
 		if ( !hidden(file.name) && qaFile(file.name) ) {
 
-			var source = String(file.content);
+			var source = toString(file.content);
 			source = source.replace(regexec(/\r\n|\r/g), '\n'); // cleanup
 			
 			var lines = source.split('\n');
@@ -193,14 +193,17 @@ function createQaItemList(startDir, files, include, exclude, flags) {
 	})
 	
 	for each ( var item in itemList ) {
+		
+			var functionCode = item.code.join('\n');
 		try {
+
 			item.relativeLineNumber = locate()[1]+1 - item.line;
-			item.func = new Function('QA', item.code.join('\n'));
+			item.func = new Function('QA', functionCode);
 		} catch(ex) {
 			
 			item.func = function() {}
 			var lineno = ex.lineNumber - item.relativeLineNumber;
-			var message = 'COMPILATION: @'+ item.file +':'+ lineno +' - '+ item.name +' - '+ ex;
+			var message = 'COMPILATION: @'+ item.file +':'+ lineno +' - '+ item.name +' - '+ ex + ' : ' + functionCode;
 			print( '*** ' + message, '\n' );
 		}
 	}
