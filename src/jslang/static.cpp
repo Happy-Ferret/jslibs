@@ -376,6 +376,20 @@ DEFINE_FUNCTION( join ) {
 
 /**doc
 $TOC_MEMBER $INAME
+ $STR $INAME( collection )
+**/
+DEFINE_FUNCTION( indexOf ) {
+
+	ASSERT(false);
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
  $INT $INAME( eventsHandler1 [, ... [, eventsHandler30]] )
   Passive event waiting.
   Returns the bit field that represents the index (in arguments order) of the triggered events. eg. if eventsHandler1 event is triggered, bit 1 is set.
@@ -862,9 +876,7 @@ bad:
 
 DEFINE_FUNCTION( _jsapiTests ) {
 
-	JL_IGNORE(cx);
-	JL_IGNORE(argc);
-	JL_IGNORE(vp);
+	JL_IGNORE(cx, argc, vp);
 
 	///////////////////////////////////////////////////////////////
 	// check JL_JsvalToJsid -> JL_JsidToJsval
@@ -933,6 +945,13 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 
 DEFINE_FUNCTION( jslangTest ) {
+
+	JL_IGNORE(cx, argc, vp);
+
+	char *str = (char*)jl_malloc(10);
+	strcpy(str, "");
+
+	jschar *w = JL_StretchBuffer(str, 0);
 
 	return 0;
 }

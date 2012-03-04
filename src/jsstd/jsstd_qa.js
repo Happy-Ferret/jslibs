@@ -444,10 +444,12 @@ loadModule('jsstd');
 
 /// Buffer and Blob [ftrm]
 
-		var str = new Blob('123');
+		// var str = new Blob('123');
+		var str = join(['123'], true);
+
 		var b = new Buffer();
 		b.write(str);
-		str.concat('456');
+		str = join([str, '456'], true)
 		b.write('7');
 		QA.ASSERT_STR( b.read(), '1237', 'buffer containing a Blob' );
 
@@ -738,10 +740,10 @@ loadModule('jsstd');
 		var f = new File('qa_exec_test.js');
 		f.content = '((1234))';
 		var res = exec('qa_exec_test.js', false);
-		QA.ASSERT_STR( res, eval( f.content.toString() ), 'content validity' );
+		QA.ASSERT_STR( res, eval( toString(f.content) ), 'content validity' );
 
 		var res = exec.call(this, 'qa_exec_test.js', false);
-		QA.ASSERT_STR( res, eval( f.content.toString() ), 'content validity' );
+		QA.ASSERT_STR( res, eval( toString(f.content) ), 'content validity' );
 
 		f.content = undefined;
 

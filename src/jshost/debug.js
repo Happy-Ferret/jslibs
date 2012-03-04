@@ -2,7 +2,7 @@
 //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
 //loadModule('jsstd'); exec('../common/tools.js'); var QA = fakeQAApi;  runLocalQAFile();
 
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('-rep 1 -exclude jstask');
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('-rep 1 -exclude jstask jsstd');
 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //SetPerfTestMode();
@@ -19,6 +19,11 @@ print( uneval(join(tmp.SubFolders)) );
 //jslangTest(res);
 halt();
 */
+
+jslangTest(); halt();
+
+
+
 
 var arr = ( new ArrayBuffer(4) );
 
@@ -40,7 +45,17 @@ function Gen() {
 //print( join(['a', 'b', 'c']) );
 //print( join(Gen()) );
 
-print( join( [arr, arr, arr, ' ', arr, arr, arr] ), '\n' );
+//print( join( [arr, arr, arr, ' ', arr, arr, arr] ), '\n' );
+
+
+var str = join(['123'], true);
+
+var b = new Buffer();
+b.write(str);
+str = join([str, '456'], true)
+b.write('7');
+
+print( b.read(), '1237', 'buffer containing a Blob' );
 
 
 

@@ -1056,9 +1056,7 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
-	JL_IGNORE(vp);
-	JL_IGNORE(obj);
-	JL_IGNORE(strict);
+	JL_IGNORE(vp, obj, strict);
 
 	JL_ASSERT( !JSID_IS_INT(id), E_THISOBJ, E_OPERATION );
 

@@ -888,7 +888,10 @@ JSBool CreateScriptArguments( JSContext *cx, int argc, const char * const * argv
 
 		JSString *str = JS_NewStringCopyZ(cx, argv[index]);
 		JL_ASSERT( str != NULL, E_HOST, E_INTERNAL ); // "Unable to store the argument."
-		JL_CHKM( JS_DefineElement(cx, argsObj, index, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE), E_HOST, E_INTERNAL ); // "Unable to define the argument."
+		//JL_CHKM( JS_DefineElement(cx, argsObj, index, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE), E_HOST, E_INTERNAL ); // "Unable to define the argument."
+		jsval tmp;
+		tmp = STRING_TO_JSVAL(str);
+		JL_CHKM( JL_SetElement(cx, argsObj, index, &tmp), E_HOST, E_INTERNAL ); // "Unable to define the argument."
 	}
 	return JS_TRUE;
 	JL_BAD;

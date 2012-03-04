@@ -29,8 +29,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( code ) {
 
-	JL_IGNORE(cx);
-	JL_IGNORE(id);
+	JL_IGNORE(cx, id);
 	return JL_GetReservedSlot( cx, obj, 0, vp );
 }
 
@@ -42,8 +41,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( text ) {
 
-	JL_IGNORE(cx);
-	JL_IGNORE(id);
+	JL_IGNORE(cx, id);
 	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;

@@ -1196,8 +1196,7 @@ DEFINE_FUNCTION( flush ) {
 
 	OGL_CX_CHK;
 
-	JL_IGNORE(argc);
-	JL_IGNORE(cx);
+	JL_IGNORE(argc, cx);
 
 	glFlush();  OGL_ERR_CHK;
 
@@ -1217,8 +1216,7 @@ DEFINE_FUNCTION( finish ) {
 
 	OGL_CX_CHK;
 
-	JL_IGNORE(argc);
-	JL_IGNORE(cx);
+	JL_IGNORE(argc, cx);
 
 	glFinish();  OGL_ERR_CHK;
 
@@ -6600,8 +6598,7 @@ DEFINE_FUNCTION( fullQuad ) {
 
 	OGL_CX_CHK;
 
-	JL_IGNORE(argc);
-	JL_IGNORE(cx);
+	JL_IGNORE(argc, cx);
 
 	glPushMatrix();
 	glLoadIdentity();
@@ -6732,8 +6729,7 @@ DEFINE_FUNCTION( keepTranslation ) {
 
 	OGL_CX_CHK;
 
-	JL_IGNORE(argc);
-	JL_IGNORE(cx);
+	JL_IGNORE(argc, cx);
 
 	GLfloat m[16];
 	glGetFloatv(GL_MODELVIEW_MATRIX, m);  OGL_ERR_CHK;
@@ -6770,9 +6766,7 @@ DEFINE_PROPERTY_GETTER( error ) {
 
 	OGL_CX_CHK;
 
-	JL_IGNORE(id);
-	JL_IGNORE(obj);
-	JL_IGNORE(cx);
+	JL_IGNORE(id, obj, cx);
 
 	// When an error occurs, the error flag is set to the appropriate error code value. No other errors are recorded
 	// until glGetError is called, the error code is returned, and the flag is reset to GL_NO_ERROR.
@@ -6785,8 +6779,7 @@ DEFINE_PROPERTY_GETTER( error ) {
 
 JSBool MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 
-	JL_IGNORE(obj);
-	JL_IGNORE(cx);
+	JL_IGNORE(obj, cx);
 
 	GLint matrixMode;
 	glGetIntegerv(GL_MATRIX_MODE, &matrixMode);  OGL_ERR_CHK;
@@ -6818,8 +6811,7 @@ void *windowsGLGetProcAddress(const char *procName) {
 
 DEFINE_INIT() {
 
-	JL_IGNORE(proto);
-	JL_IGNORE(sc);
+	JL_IGNORE(proto, sc);
 
 #ifdef DEBUG
 
@@ -6876,8 +6868,7 @@ DEFINE_INIT() {
 #ifdef DEBUG
 DEFINE_FUNCTION( test ) {
 	
-	JL_IGNORE(argc);
-	JL_IGNORE(cx);
+	JL_IGNORE(argc, cx);
 
 /*
 	jsval id = JL_ARG(1);

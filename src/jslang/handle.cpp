@@ -38,7 +38,7 @@ DEFINE_FUNCTION( toString ) {
 	JL_DEFINE_FUNCTION_OBJ;
 //	JL_ASSERT_THIS_INSTANCE();
 
-	HandlePrivate *pv = JL_HasPrivateSlot(cx, JL_OBJ) ? (HandlePrivate*)JL_GetPrivate(cx, JL_OBJ) : NULL;
+	HandlePrivate *pv = JL_HasPrivate(cx, JL_OBJ) ? (HandlePrivate*)JL_GetPrivate(cx, JL_OBJ) : NULL;
 	JSString *handleStr;
 	char str[] = "[Handle ????]";
 	if ( pv != NULL ) { // this manage Print(Handle) issue
@@ -90,11 +90,7 @@ DEFINE_HAS_INSTANCE() { // see issue#52
 
 DEFINE_INIT() {
 
-	JL_IGNORE(cx);
-	JL_IGNORE(sc);
-	JL_IGNORE(proto);
-	JL_IGNORE(obj);
-
+	JL_IGNORE(cx, sc, proto, obj);
 	JL_SAFE( globalKey = JLSessionId() );
 	return JS_TRUE;
 }

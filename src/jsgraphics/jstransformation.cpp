@@ -1052,10 +1052,7 @@ DEFINE_SET_PROPERTY() {
 
 DEFINE_INIT() {
 
-	JL_IGNORE(obj);
-	JL_IGNORE(proto);
-	JL_IGNORE(sc);
-	JL_IGNORE(cx);
+	JL_IGNORE(obj, proto, sc, cx);
 	jl::PoolInitialize( &matrixPool, 8192 );
 	return JS_TRUE;
 }

@@ -660,8 +660,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( useNetworkEndian ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(strict);
+	JL_IGNORE(id, strict);
 
 	JL_ASSERT_THIS_INSTANCE();
 	bool useNetworkEndian;
@@ -708,9 +707,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( systemIntSize ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(obj);
-	JL_IGNORE(cx);
+	JL_IGNORE(id, obj, cx);
 
 	*vp = INT_TO_JSVAL( sizeof(size_t) );
 	return JS_TRUE;
@@ -723,9 +720,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( systemIsBigEndian ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(obj);
-	JL_IGNORE(cx);
+	JL_IGNORE(id, obj, cx);
 
 	*vp = BOOLEAN_TO_JSVAL( JLHostEndian == JLBigEndian );
 	return JS_TRUE;
@@ -733,9 +728,7 @@ DEFINE_PROPERTY_GETTER( systemIsBigEndian ) {
 
 DEFINE_INIT() {
 
-	JL_IGNORE(obj);
-	JL_IGNORE(proto);
-	JL_IGNORE(sc);
+	JL_IGNORE(obj, proto, sc);
 	JL_ASSERT( sizeof(int8_t) == 1 && sizeof(int16_t) == 2 && sizeof(int32_t) == 4 && sizeof(int64_t) == 8, E_CLASS, E_NAME(JL_THIS_CLASS_NAME), E_INIT, E_COMMENT("system native types") );
 	return JS_TRUE;
 	JL_BAD;

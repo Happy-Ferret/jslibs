@@ -233,8 +233,7 @@ DEFINE_PROPERTY_GETTER( state ) {
 
 DEFINE_PROPERTY_SETTER( state ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(strict);
+	JL_IGNORE(id, strict);
 	JLStr state;
 
 	JL_ASSERT_THIS_INSTANCE();

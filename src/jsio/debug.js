@@ -1,5 +1,5 @@
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio'); halt();
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
 
 
 loadModule('jsstd'); loadModule('jsio');

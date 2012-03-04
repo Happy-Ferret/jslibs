@@ -161,8 +161,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 
 DEFINE_PROPERTY_SETTER( position ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(strict);
+	JL_IGNORE(id, strict);
 
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	size_t position;

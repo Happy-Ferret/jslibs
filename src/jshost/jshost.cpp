@@ -69,9 +69,7 @@ JLMutexHandler gEndSignalLock;
 
 JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
-	JL_IGNORE(cx);
-	JL_IGNORE(obj);
-	JL_IGNORE(id);
+	JL_IGNORE(cx, obj, id);
 	//return JL_NativeToJsval(cx, (int)gEndSignalState, vp);
 	*vp = INT_TO_JSVAL(gEndSignalState);
 	return JS_TRUE;
@@ -79,9 +77,7 @@ JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
 
 JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp) {
 
-	JL_IGNORE(obj);
-	JL_IGNORE(id);
-	JL_IGNORE(strict);
+	JL_IGNORE(obj, id, strict);
 
 	int tmp;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tmp) );

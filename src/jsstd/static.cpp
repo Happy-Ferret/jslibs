@@ -1311,8 +1311,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( halt ) {
 
-	JL_IGNORE(vp);
-	JL_IGNORE(argc);
+	JL_IGNORE(vp, argc);
 
 	JL_ERR(E_STR("the program has been stopped"));
 bad:	
@@ -1335,8 +1334,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( currentFilename ) {
 	
-	JL_IGNORE(id);
-	JL_IGNORE(obj);
+	JL_IGNORE(id, obj);
 
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( fp == NULL ) {
@@ -1365,8 +1363,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 	
-	JL_IGNORE(id);
-	JL_IGNORE(obj);
+	JL_IGNORE(id, obj);
 
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( fp == NULL ) {
@@ -1437,8 +1434,7 @@ DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
 
 DEFINE_PROPERTY_GETTER( disableGarbageCollection ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(obj);
+	JL_IGNORE(id, obj);
 
 	JSGCCallback cb = JS_SetGCCallback(cx, NULL);
 	JS_SetGCCallback(cx, cb);
@@ -1455,8 +1451,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( CPUID ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(obj);
+	JL_IGNORE(id, obj);
 
 	if ( !JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
@@ -1473,10 +1468,7 @@ DEFINE_PROPERTY_GETTER( CPUID ) {
 
 JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
-	JL_IGNORE(vp);
-	JL_IGNORE(id);
-	JL_IGNORE(obj);
-	JL_IGNORE(cx);
+	JL_IGNORE(vp, id, obj, cx);
 
 	return JS_TRUE;
 //	JL_BAD;

@@ -121,8 +121,7 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
 
-	JL_IGNORE(hPrevInstance);
-	JL_IGNORE(nCmdShow);
+	JL_IGNORE(hPrevInstance, nCmdShow);
 
 	HANDLE heap = GetProcessHeap();
 	ULONG enable = 2;

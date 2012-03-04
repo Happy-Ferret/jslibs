@@ -692,8 +692,7 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 
 DEFINE_PROPERTY_SETTER( globalComment ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(strict);
+	JL_IGNORE(id, strict);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -843,8 +842,7 @@ DEFINE_PROPERTY_GETTER( level ) {
 
 DEFINE_PROPERTY_SETTER( level ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(strict);
+	JL_IGNORE(id, strict);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -914,8 +912,7 @@ DEFINE_PROPERTY_GETTER( date ) {
 
 DEFINE_PROPERTY_SETTER( date ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(strict);
+	JL_IGNORE(id, strict);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -982,8 +979,7 @@ DEFINE_PROPERTY_GETTER( extra ) {
 
 DEFINE_PROPERTY_SETTER( extra ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(strict);
+	JL_IGNORE(id, strict);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -1006,8 +1002,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( password ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(strict);
+	JL_IGNORE(id, strict);
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(cx, obj);
@@ -1026,9 +1021,7 @@ DEFINE_PROPERTY_SETTER( password ) {
 
 DEFINE_FUNCTION( zipfileTest ) {
 
-	JL_IGNORE(vp);
-	JL_IGNORE(cx);
-	JL_IGNORE(argc);
+	JL_IGNORE(vp, cx, argc);
 
 	return JS_TRUE;
 	JL_BAD;

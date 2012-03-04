@@ -75,7 +75,6 @@ ALWAYS_INLINE JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBuff
 ALWAYS_INLINE JSRuntime* FASTCALL
 JL_GetRuntime( JSContext *cx ) {
 
-	//return JS_GetRuntime(cx);
 	return js::GetRuntime(cx); // jsfriendapi
 }
 
@@ -94,7 +93,7 @@ JL_SetRuntimePrivate( JSRuntime *rt, void *data ) {
 ALWAYS_INLINE void FASTCALL
 JL_updateMallocCounter( JSContext *cx, size_t nbytes ) {
 
-	return JS_updateMallocCounter(cx, nbytes);
+	JS_updateMallocCounter(cx, nbytes);
 }
 
 ALWAYS_INLINE JSObject * FASTCALL
@@ -110,11 +109,13 @@ JL_IsExceptionPending( JSContext *cx ) {
 }
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_NewNumberValue( const JSContext *cx, double d, jsval *rval ) {
+JL_NewNumberValue( JSContext *cx, double d, jsval *rval ) {
 
 	JL_IGNORE(cx);
-	rval->setDouble(JS_CANONICALIZE_NAN(d));
-	return JS_TRUE;
+	ASSERT( JS_NewNumberValue(cx, d, rval) ); // AssertNoGC(cx);
+    d = JS_CANONICALIZE_NAN(d);
+    rval->setNumber(d);
+    return JS_TRUE;
 }
 
 ALWAYS_INLINE jsval FASTCALL
@@ -126,7 +127,6 @@ JL_GetNaNValue( JSContext *cx ) {
 ALWAYS_INLINE JSClass* FASTCALL
 JL_GetClass( JSObject *obj ) {
 
-	//return JS_GetClass(obj);
 	return js::GetObjectJSClass(obj); // jsfriendapi
 }
 
@@ -149,17 +149,18 @@ JL_GetEmptyStringValue( JSContext *cx ) {
 }
 
 ALWAYS_INLINE bool FASTCALL
-JL_HasPrivateSlot( JSContext *cx, JSObject *obj ) {
+JL_HasPrivate( JSContext *cx, JSObject *obj ) {
 
 	JL_IGNORE(cx);
-	return JL_GetClass(obj)->flags & JSCLASS_HAS_PRIVATE;
+	return !!(JL_GetClass(obj)->flags & JSCLASS_HAS_PRIVATE);
 }
 
 ALWAYS_INLINE void* FASTCALL
 JL_GetPrivate( JSContext *cx, JSObject *obj ) {
 
 	JL_IGNORE(cx);
-	ASSERT( JL_HasPrivateSlot(cx, obj) );
+	ASSERT( JS_IsNative(obj) );
+	ASSERT( JL_HasPrivate(cx, obj) );
 	return js::GetObjectPrivate(obj); // jsfriendapi
 }
 
@@ -167,7 +168,8 @@ ALWAYS_INLINE void FASTCALL
 JL_SetPrivate( JSContext *cx, JSObject *obj, void *data ) {
 
 	JL_IGNORE(cx);
-	ASSERT( JL_HasPrivateSlot(cx, obj) );
+	ASSERT( JS_IsNative(obj) );
+	ASSERT( JL_HasPrivate(cx, obj) );
 	JS_SetPrivate(obj, data);
 }
 
@@ -217,7 +219,7 @@ JL_GetReservedSlot( JSContext *cx, JSObject *obj, uint32_t slot, jsval *vp ) {
 
 	JL_IGNORE(cx);
 	ASSERT( slot < JSCLASS_RESERVED_SLOTS(JL_GetClass(obj)) );
-	//ASSERT( obj->isNative() );
+	ASSERT( JS_IsNative(obj) );
 	*vp = js::GetReservedSlot(obj, slot); // jsfriendapi
 	return JS_TRUE;
 }
@@ -226,7 +228,7 @@ ALWAYS_INLINE JSBool FASTCALL
 JL_SetReservedSlot(JSContext *cx, JSObject *obj, uintN slot, const jsval &v) {
 
 	JL_IGNORE(cx);
-	//ASSERT( obj->isNative() );
+	ASSERT( JS_IsNative(obj) );
 	js::SetReservedSlot(obj, slot, v); // jsfriendapi
 	return JS_TRUE;
 }
@@ -251,30 +253,27 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 
 
 // useful for structure with jsid initialized to 0, (see HostPrivate ids)
-ALWAYS_INLINE jsid
-JL_NullJsid() { // is (double)0
+ALWAYS_INLINE const jsid
+JL_NullJsid() {
 
-	jsid tmp = {0}; // -or- memset(&tmp, 0, sizeof(tmp));
+	jsid tmp;
+	JSID_BITS(tmp) = 0;
+	ASSERT(JSID_IS_ZERO(tmp));
 	return tmp;
 }
 
 ALWAYS_INLINE jsid FASTCALL
-JL_StringToJsid( JSContext * RESTRICT cx, JSString * RESTRICT jsstr ) {
+JL_StringToJsid( JSContext *cx, JSString *jsstr ) {
 
 	ASSERT( jsstr != NULL );
 	jsstr = JS_InternJSString(cx, jsstr); // if ( !JS_StringHasBeenInterned(cx, jsstr) )
 	if ( jsstr == NULL )
 		return JL_NullJsid();
-	//jsid id;
-	//if ( !JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &id) )
-	//	return JL_NullJsid();
-	//ASSERT( JSID_IS_STRING( id ) );
-	//return id;
 	return INTERNED_STRING_TO_JSID(cx, jsstr);
 }
 
 ALWAYS_INLINE jsid FASTCALL
-JL_StringToJsid( JSContext * RESTRICT cx, const jschar * RESTRICT cstr ) {
+JL_StringToJsid( JSContext *cx, const jschar *cstr ) {
 
 	ASSERT( cstr != NULL );
 	JSString *jsstr = JS_InternUCString(cx, cstr);
@@ -739,27 +738,25 @@ JL_NewJslibsObject( JSContext *cx, const char *className ) {
 	return JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // IDs cache management
 
-	// slow part of JL_GetPrivateJsid()
 	INLINE NEVER_INLINE jsid FASTCALL
-	jl_GetPrivateJsid_slow( JSContext * RESTRICT cx, jsid * RESTRICT ids, int index, const jschar * RESTRICT name ) {
+	jl_GetPrivateJsid_slow( JSContext *cx, jsid * RESTRICT ids, int index, const jschar * RESTRICT name ) {
 
 		ASSERT( ids != NULL );
 		jsid id;
 		JSString *jsstr = JS_InternUCString(cx, name);
 		if (unlikely( jsstr == NULL ))
 			return JL_NullJsid();
-//		if (unlikely( JS_ValueToId(cx, STRING_TO_JSVAL(jsstr), &id) != JS_TRUE ))
-//			return JL_NullJsid();
 		id = JL_StringToJsid(cx, jsstr);
 		ids[index] = id;
 		return id;
 	}
 
-ALWAYS_INLINE jsid
-JL_GetPrivateJsid( JSContext * RESTRICT cx, int index, const jschar * RESTRICT name ) {
+ALWAYS_INLINE jsid FASTCALL
+JL_GetPrivateJsid( JSContext *cx, int index, const jschar *name ) {
 
 	HostPrivate *hpv = JL_GetHostPrivate(cx);
 	ASSERT( hpv != NULL );
@@ -777,10 +774,8 @@ JL_GetPrivateJsid( JSContext * RESTRICT cx, int index, const jschar * RESTRICT n
 #define JLID_NAME(cx, name) (#name)
 #endif // DEBUG
 
-
 #define JLID(cx, name) JL_GetPrivateJsid(cx, JLID_##name, L(#name))
-// example of use: jsid cfg = JLID(cx, _host); const char *name = JLID_NAME(_host);
-
+// eg: jsid cfg = JLID(cx, _host); const char *name = JLID_NAME(_host);
 
 
 
@@ -1668,6 +1663,27 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 // convertion functions
+
+
+ALWAYS_INLINE jschar * FASTCALL
+JL_StretchBuffer(char *src, size_t length) {
+
+	if ( length == 0 ) {
+		
+		jl_free(src);
+		return NULL;
+	}
+	src = (char*)jl_realloc(src, length * 2);
+	if ( src == NULL )
+		return NULL;
+	jschar *dst = (jschar*)src + length;
+	src = src + length;
+	while ((char*)dst != src)
+		*--dst = *--src;
+	return dst;
+}
+
+
 
 /*
 template <class T>

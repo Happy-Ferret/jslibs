@@ -568,8 +568,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( dpi ) {
 
-	JL_IGNORE(strict);
-	JL_IGNORE(id);
+	JL_IGNORE(strict, id);
 
 	JL_ASSERT_THIS_INSTANCE();
 

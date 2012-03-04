@@ -895,8 +895,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( timeout ) {
 
-	JL_IGNORE(id);
-	JL_IGNORE(strict);
+	JL_IGNORE(id, strict);
 	JL_ASSERT_THIS_INHERITANCE();
 
 	int32 timeout;

@@ -203,8 +203,7 @@ bad:
 
 DEFINE_SET_PROPERTY() {
 	
-	JL_IGNORE(strict);
-	JL_IGNORE(cx);
+	JL_IGNORE(strict, cx);
 
 	JL_ASSERT_THIS_INSTANCE();
 
