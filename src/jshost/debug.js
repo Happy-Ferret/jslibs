@@ -11,6 +11,12 @@ loadModule('jscrypt');
 loadModule('jsstd');
 loadModule('jsio');
 
+jslangTest(); halt();
+
+
+
+print(isBoolean.length); halt();
+
 /*
 loadModule('jswinshell');
 var fso = createComObject('Scripting.fileSystemObject');
@@ -20,7 +26,6 @@ print( uneval(join(tmp.SubFolders)) );
 halt();
 */
 
-jslangTest(); halt();
 
 
 

@@ -292,10 +292,10 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 // functions
 #define BEGIN_FUNCTION_SPEC static JSFunctionSpec fs[] = { // *name, call, nargs, flags
-#define END_FUNCTION_SPEC {NULL, NULL, 0, 0}}; cs.fs = fs;
+#define END_FUNCTION_SPEC JS_FS_END }; cs.fs = fs;
 
 #define BEGIN_STATIC_FUNCTION_SPEC static JSFunctionSpec static_fs[] = {
-#define END_STATIC_FUNCTION_SPEC {NULL, NULL, 0, 0}}; cs.static_fs = static_fs;
+#define END_STATIC_FUNCTION_SPEC JS_FS_END }; cs.static_fs = static_fs;
 
 // properties
 #define BEGIN_PROPERTY_SPEC static JSPropertySpec ps[] = { // *name, tinyid, flags, getter, setter

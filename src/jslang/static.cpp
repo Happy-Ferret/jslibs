@@ -21,6 +21,101 @@
 
 using namespace jl;
 
+
+
+
+struct MemCmp { // from jsstr.cpp
+    typedef size_t Extent;
+    static ALWAYS_INLINE Extent computeExtent(const uint8_t *, size_t patlen) {
+        return (patlen - 1) * sizeof(uint8_t);
+    }
+    static ALWAYS_INLINE bool match(const uint8_t *p, const uint8_t *t, Extent extent) {
+        return memcmp(p, t, extent) == 0;
+    }
+};
+
+
+struct ManualCmp { // from jsstr.cpp
+    typedef const uint8_t *Extent;
+	 static ALWAYS_INLINE Extent computeExtent(const uint8_t *pat, size_t patlen) {
+        return pat + patlen;
+    }
+    static ALWAYS_INLINE bool match(const uint8_t *p, const uint8_t *t, Extent extent) {
+        for (; p != extent; ++p, ++t) {
+            if (*p != *t)
+                return false;
+        }
+        return true;
+    }
+};
+
+
+template <class InnerMatch> // from jsstr.cpp
+ptrdiff_t
+UnrolledMatch(const uint8_t *text, size_t textlen, const uint8_t *pat, size_t patlen)
+{
+    ASSERT(patlen > 0 && textlen > 0);
+    const uint8_t *textend = text + textlen - (patlen - 1);
+    const uint8_t p0 = *pat;
+    const uint8_t *const patNext = pat + 1;
+    const typename InnerMatch::Extent extent = InnerMatch::computeExtent(pat, patlen);
+    uint8_t fixup;
+
+    const uint8_t *t = text;
+    switch ((textend - t) & 7) {
+      case 0: if (*t++ == p0) { fixup = 8; goto match; }
+      case 7: if (*t++ == p0) { fixup = 7; goto match; }
+      case 6: if (*t++ == p0) { fixup = 6; goto match; }
+      case 5: if (*t++ == p0) { fixup = 5; goto match; }
+      case 4: if (*t++ == p0) { fixup = 4; goto match; }
+      case 3: if (*t++ == p0) { fixup = 3; goto match; }
+      case 2: if (*t++ == p0) { fixup = 2; goto match; }
+      case 1: if (*t++ == p0) { fixup = 1; goto match; }
+    }
+    while (t != textend) {
+      if (t[0] == p0) { t += 1; fixup = 8; goto match; }
+      if (t[1] == p0) { t += 2; fixup = 7; goto match; }
+      if (t[2] == p0) { t += 3; fixup = 6; goto match; }
+      if (t[3] == p0) { t += 4; fixup = 5; goto match; }
+      if (t[4] == p0) { t += 5; fixup = 4; goto match; }
+      if (t[5] == p0) { t += 6; fixup = 3; goto match; }
+      if (t[6] == p0) { t += 7; fixup = 2; goto match; }
+      if (t[7] == p0) { t += 8; fixup = 1; goto match; }
+        t += 8;
+        continue;
+        do {
+            if (*t++ == p0) {
+              match:
+                if (!InnerMatch::match(patNext, t, extent))
+                    goto failed_match;
+                return t - text - 1;
+            }
+          failed_match:;
+        } while (--fixup > 0);
+    }
+    return -1;
+}
+
+
+ALWAYS_INLINE int32_t
+Match(const uint8_t *text, size_t textlen, const uint8_t *pat, size_t patlen) {
+
+    if (patlen == 0)
+        return 0;
+    if (textlen < patlen)
+        return -1;
+
+	return
+	#if !defined(__linux__)
+		patlen > 128 ? UnrolledMatch<MemCmp>(text, textlen, pat, patlen) :
+	#endif
+		UnrolledMatch<ManualCmp>(text, textlen, pat, patlen);
+
+}
+
+
+
+
 DECLARE_CLASS(Handle)
 
 
@@ -196,6 +291,8 @@ DEFINE_FUNCTION( real ) {
 $TOC_MEMBER $INAME
  $STR $INAME( value [, toArrayBuffer] )
   This function converts any value of stream into a string.
+  If _toArrayBuffer_ is given and is true, the result is stored into an ArrayBuffer.
+  The _value_ argument may be: StreamRead compatible object, any kind of data value (string, TypedArray, ...)
 **/
 DEFINE_FUNCTION( toString ) {
 
@@ -262,7 +359,8 @@ DEFINE_FUNCTION( toString ) {
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME( collection [, toArrayBuffer] )
-  
+ The _collection_ argument is an array-like or a generator instance.
+ If _toArrayBuffer_ is given and is true, the result is stored into an ArrayBuffer.
   
 **/
 DEFINE_FUNCTION( join ) {
@@ -293,7 +391,8 @@ DEFINE_FUNCTION( join ) {
 			avr.append(val);
 		}
 	} else {
-/*		
+
+/* do not create the generator instance
 		if ( JL_ValueIsGenerator(cx, arg) ) {
 			
 			JL_CHK( JS_CallFunctionValue(cx, obj, arg, 0, NULL, &arg) );
@@ -376,14 +475,60 @@ DEFINE_FUNCTION( join ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $STR $INAME( collection )
+ $STR $INAME( collection, needle )
 **/
-DEFINE_FUNCTION( indexOf ) {
+DEFINE_FUNCTION( lastIndexOf ) {
+
+	jsval srcVal, needleVal;
+	JLStr srcStr, needleStr;
+
+	uint8_t *buffer = NULL;
+
+	JL_ASSERT_ARGC_MIN(2);
+	JL_ASSERT_ARG_IS_ARRAYLIKE(1);
+
+	JSObject *argObj;
+	argObj = JSVAL_TO_OBJECT(JL_ARG(1));
+
+
+	JL_CHK( JL_JsvalToNative(cx, needleVal, &needleStr) );
+	size_t needleLen = needleStr.Length();
+	const uint8_t *needle = (const uint8_t*)needleStr.GetConstStr();
 
 	ASSERT(false);
 
+	buffer = (uint8_t*)jl_malloca(needleLen);
+
+	uint32_t i;
+	JL_CHK( JS_GetArrayLength(cx, argObj, &i) );
+	while ( i-- ) {
+	
+		JL_CHK( JL_GetElement(cx, argObj, i, &srcVal) );
+		JL_CHK( JL_JsvalToNative(cx, srcVal, &srcStr) );
+
+		size_t srcLen = srcStr.Length();
+		const uint8_t *src = (const uint8_t*)srcStr.GetConstStr();
+
+		size_t j = srcLen;
+
+		while ( j-- ) {
+
+//			buffer
+
+
+		}
+
+
+
+
+	}
+
+
+	jl_freea(buffer);
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	jl_freea(buffer);
+	return JS_FALSE;
 }
 
 
@@ -947,11 +1092,11 @@ DEFINE_FUNCTION( _jsapiTests ) {
 DEFINE_FUNCTION( jslangTest ) {
 
 	JL_IGNORE(cx, argc, vp);
-
+/*
 	char *str = (char*)jl_malloc(10);
 	strcpy(str, "");
-
 	jschar *w = JL_StretchBuffer(str, 0);
+*/
 
 	return 0;
 }
@@ -977,6 +1122,7 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( real, 1 )
 
 		FUNCTION_ARGC( toString, 1 )
+		FUNCTION_ARGC( lastIndexOf, 1 )
 		FUNCTION_ARGC( processEvents, 4 ) // (4 is just a guess)
 		FUNCTION_ARGC( timeoutEvents, 2 )
 

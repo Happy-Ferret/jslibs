@@ -1431,9 +1431,10 @@ public:
 
 	ALWAYS_INLINE void operator=(const JLStr &jlstr) {
 
-		ASSERT( _inner == NULL );
+		//ASSERT( _inner == NULL );
+		++jlstr._inner->count; // beware: slef assignment (jlstr = jlstr)
+		this->JLStr::~JLStr();
 		_inner = jlstr._inner;
-		++_inner->count;
 	}
 
 	ALWAYS_INLINE JLStr(JSContext * RESTRICT cx, JSString * RESTRICT jsstr) {
@@ -1664,6 +1665,11 @@ private:
 ///////////////////////////////////////////////////////////////////////////////
 // convertion functions
 
+/*
+ALWAYS_INLINE char * FASTCALL
+JL_ShrinkBuffer(jschar *src, size_t length) {
+}
+*/
 
 ALWAYS_INLINE jschar * FASTCALL
 JL_StretchBuffer(char *src, size_t length) {
@@ -4076,6 +4082,39 @@ struct ProcessEvent {
 };
 
 
+///////////////////////////////////////////////////////////////////////////////
+// Auto buffer
+
+
+template <class T>
+struct AutoBuffer {
+
+	void *_ptr;
+	AutoBuffer(size_t length) {
+
+		_ptr = jl_malloc(length * sizeof(T));
+	}
+
+	~AutoBuffer() {
+		
+		jl_free(_ptr);
+	}
+
+	T *Ptr() const {
+	
+		return _ptr;
+	}
+
+	T *PtrOwnership() {
+		
+		T *tmp = _ptr;
+		_ptr = NULL;
+		return tmp;
+	}
+private:
+	AutoBuffer(const AutoBuffer &);
+	AutoBuffer & operator =(const AutoBuffer &);
+};
 
 
 

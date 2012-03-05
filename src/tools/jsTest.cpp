@@ -582,33 +582,11 @@ int main_PerfTest(int argc, char* argv[]) {
 	return 0;
 }
 
-template <class T>
-struct Auto {
-
-	void *_ptr;
-	AutoFree(T void*ptr) : _ptr(ptr) {
-	}
-
-	operator void *() const {
-	
-		return _ptr;
-	}
-
-	void Forget() {
-		_ptr = NULL;
-	}
-
-	~AutoFree() {
-		
-		jl_free(_ptr);
-	}
-};
-
 
 int main_bad(int argc, char* argv[]) {
 
 
-	AutoFree ptr(jl_malloc(123));
+	AutoBuffer<char> ptr(10);
 
 	if ( argc > 0 )
 		return 1;
