@@ -419,7 +419,7 @@ function runSavedQAFile(fileName) {
 function runQATests( argStr ) {
 
 	loadModule('jsio');
-	currentDirectory += '/../..';
+	currentDirectory += '/../common';
 	global.arguments = Array.concat('qa.js', argStr.split(' '));
 	exec(global.arguments[0], false);
 	throw 0;
