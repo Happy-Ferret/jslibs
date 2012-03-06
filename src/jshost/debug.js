@@ -2,7 +2,7 @@
 //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
 //loadModule('jsstd'); exec('../common/tools.js'); var QA = fakeQAApi;  runLocalQAFile();
 
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('-rep 1 -exclude jstask jsstd');
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('-rep 1 -exclude jstask jsstd'); throw 0;
 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //SetPerfTestMode();
@@ -11,8 +11,11 @@ loadModule('jscrypt');
 loadModule('jsstd');
 loadModule('jsio');
 
-jslangTest(); halt();
+//jslangTest(); halt();
 
+print( indexOf('123', '3', 3), '\n' );
+print( toString('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxa', true).constructor.name, '\n' )
+halt();
 
 
 print(isBoolean.length); halt();

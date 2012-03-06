@@ -559,7 +559,7 @@ function main() {
 		repeatEachTest:1,
 		gcZeal:0, 
 		loopForever:false, 
-		directory:'src', 
+		directory:'..', 
 		files:'_qa.js$', 
 		priority:0, 
 		flags:'', 

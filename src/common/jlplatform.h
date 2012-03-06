@@ -1599,6 +1599,96 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 #endif // _MSC_VER
 
 
+
+template <class T>
+struct MemCmp { // from jsstr.cpp
+    typedef size_t Extent;
+    static ALWAYS_INLINE Extent computeExtent(const T *, size_t patlen) {
+        return (patlen - 1) * sizeof(T);
+    }
+    static ALWAYS_INLINE bool match(const T *p, const T *t, Extent extent) {
+        return memcmp(p, t, extent) == 0;
+    }
+};
+
+template <class T>
+struct ManualCmp { // from jsstr.cpp
+    typedef const T *Extent;
+	 static ALWAYS_INLINE Extent computeExtent(const T *pat, size_t patlen) {
+        return pat + patlen;
+    }
+    static ALWAYS_INLINE bool match(const T *p, const T *t, Extent extent) {
+        for (; p != extent; ++p, ++t) {
+            if (*p != *t)
+                return false;
+        }
+        return true;
+    }
+};
+
+template <class InnerMatch, class T> // from jsstr.cpp
+ALWAYS_INLINE int32_t
+UnrolledMatch(const T *text, size_t textlen, const T *pat, size_t patlen)
+{
+    ASSERT(patlen > 0 && textlen > 0);
+    const T *textend = text + textlen - (patlen - 1);
+    const T p0 = *pat;
+    const T *const patNext = pat + 1;
+    const typename InnerMatch::Extent extent = InnerMatch::computeExtent(pat, patlen);
+    T fixup;
+
+    const T *t = text;
+    switch ((textend - t) & 7) {
+      case 0: if (*t++ == p0) { fixup = 8; goto match; }
+      case 7: if (*t++ == p0) { fixup = 7; goto match; }
+      case 6: if (*t++ == p0) { fixup = 6; goto match; }
+      case 5: if (*t++ == p0) { fixup = 5; goto match; }
+      case 4: if (*t++ == p0) { fixup = 4; goto match; }
+      case 3: if (*t++ == p0) { fixup = 3; goto match; }
+      case 2: if (*t++ == p0) { fixup = 2; goto match; }
+      case 1: if (*t++ == p0) { fixup = 1; goto match; }
+    }
+    while (t != textend) {
+      if (t[0] == p0) { t += 1; fixup = 8; goto match; }
+      if (t[1] == p0) { t += 2; fixup = 7; goto match; }
+      if (t[2] == p0) { t += 3; fixup = 6; goto match; }
+      if (t[3] == p0) { t += 4; fixup = 5; goto match; }
+      if (t[4] == p0) { t += 5; fixup = 4; goto match; }
+      if (t[5] == p0) { t += 6; fixup = 3; goto match; }
+      if (t[6] == p0) { t += 7; fixup = 2; goto match; }
+      if (t[7] == p0) { t += 8; fixup = 1; goto match; }
+        t += 8;
+        continue;
+        do {
+            if (*t++ == p0) {
+              match:
+                if (!InnerMatch::match(patNext, t, extent))
+                    goto failed_match;
+                return t - text - 1;
+            }
+          failed_match:;
+        } while (--fixup > 0);
+    }
+    return -1;
+}
+
+template <class T>
+ALWAYS_INLINE int32_t
+Match(const T *text, size_t textlen, const T *pat, size_t patlen) {
+
+    if (patlen == 0)
+        return 0;
+    if (textlen < patlen)
+        return -1;
+
+	return
+	#if !defined(__linux__)
+		patlen > 128 ? UnrolledMatch<MemCmp<T>>(text, textlen, pat, patlen) :
+	#endif
+		UnrolledMatch<ManualCmp<T>>(text, textlen, pat, patlen);
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 

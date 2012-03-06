@@ -83,3 +83,13 @@ extern JS_FRIEND_API(int)
 js_DateGetSeconds(JSContext *cx, JSObject* obj);
 
 
+
+ALWAYS_INLINE JSBool
+JS_DescribeTopFrame(JSContext *cx, JSScript **script, unsigned *lineno) {
+
+	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
+	ASSERT( frame != NULL );
+	*script = JS_GetFrameScript(cx, frame);
+	*lineno = JS_PCToLineNumber(cx, *script, JS_GetFramePC(cx, frame));
+	return JS_TRUE;
+}

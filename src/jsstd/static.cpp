@@ -1095,18 +1095,11 @@ DEFINE_FUNCTION( sandboxEval ) {
 		pv.maxExecutionTime = 1000; // default value
 
 
-	JSStackFrame *fp;
-	fp = JS_GetScriptedCaller(cx, NULL);
-	JL_CHK( fp );
 	JSScript *script;
-	script = JS_GetFrameScript(cx, fp);
-	JL_CHK( script );
+	unsigned lineno;
+	JL_CHK( JS_DescribeTopFrame(cx, &script, &lineno) );
 	const char *filename;
 	filename = JS_GetScriptFilename(cx, script);
-	jsbytecode *pc;
-	pc = JS_GetFramePC(cx, fp);
-	uintN lineno;
-	lineno = JS_PCToLineNumber(cx, script, pc);
 
 	pv.expired = false;
 	pv.semEnd = JLSemaphoreCreate(0);
@@ -1336,19 +1329,8 @@ DEFINE_PROPERTY_GETTER( currentFilename ) {
 	
 	JL_IGNORE(id, obj);
 
-	JSStackFrame *fp = JL_CurrentStackFrame(cx);
-	if ( fp == NULL ) {
-
-		*vp = JSVAL_VOID;
-		return JS_TRUE;
-	}
-	JSScript *script = JS_GetFrameScript(cx, fp);
-	if ( script == NULL ) {
-
-		*vp = JSVAL_VOID;
-		return JS_TRUE;
-	}
-
+	JSScript *script;
+	JL_CHK( JS_DescribeTopFrame(cx, &script, NULL) );
 	const char *filename = JS_GetScriptFilename(cx, script);
 	JL_CHK( JL_NativeToJsval(cx, filename, vp) );
 	return JS_TRUE;
@@ -1365,22 +1347,8 @@ DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 	
 	JL_IGNORE(id, obj);
 
-	JSStackFrame *fp = JL_CurrentStackFrame(cx);
-	if ( fp == NULL ) {
-
-		*vp = JSVAL_VOID;
-		return JS_TRUE;
-	}
-	JSScript *script = JS_GetFrameScript(cx, fp);
-	if ( script == NULL ) {
-
-		*vp = JSVAL_VOID;
-		return JS_TRUE;
-	}
-
-	uintN lineno;
-	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
-
+	unsigned lineno;
+	JL_CHK( JS_DescribeTopFrame(cx, NULL, &lineno) );
 	JL_CHK( JL_NativeToJsval(cx, lineno, vp) );
 	return JS_TRUE;
 	JL_BAD;

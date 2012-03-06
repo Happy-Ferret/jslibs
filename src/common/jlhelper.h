@@ -99,7 +99,7 @@ JL_updateMallocCounter( JSContext *cx, size_t nbytes ) {
 ALWAYS_INLINE JSObject * FASTCALL
 JL_GetGlobal( JSContext *cx ) {
 	
-	return JS_GetGlobalForScopeChain(cx); //JS_GetGlobalObject(cx); // JS_GetGlobalForScopeChain ?
+	return JS_GetGlobalForScopeChain(cx); // JS_GetGlobalForObject(cx, obj); ?  // JS_GetGlobalObject(cx):Obsolete;
 }
 
 ALWAYS_INLINE JSBool FASTCALL
@@ -929,9 +929,12 @@ ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsArrayLike( JSContext *cx, JSObject *obj ) {
 
 	JSBool found;
-	return JS_HasPropertyById(cx, obj, JLID(cx, length), &found)
+	return JS_IsArrayObject(cx, obj)
+		|| (
+		JS_HasPropertyById(cx, obj, JLID(cx, length), &found)
 	    && found == JS_TRUE
-	    && !JS_ObjectIsFunction(cx, obj);
+	    && !JS_ObjectIsFunction(cx, obj)
+		);
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -1270,12 +1273,12 @@ class JLStr {
 	};
 
 	struct Inner {
+		uint32_t count;
 		size_t len;
 		jschar *jsstr;
 		char *str;
 		uint8_t jsstrFlags;
 		uint8_t strFlags;
-		uint32_t count;
 	} *_inner;
 
 	static jl::PreservAllocNone_threadsafe<JLStr::Inner> mem; // require #include <jlhelper.cpp>
@@ -1721,6 +1724,9 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLStr * RESTRICT str ) {
 		*str = JLStr(cx, JSVAL_TO_STRING(val));
 		return JS_TRUE;
 	}
+
+//	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, JLStr *str )
+//	UNLIKELY_SPLIT_END(cx, val, str)
 
 	if (likely( !JSVAL_IS_PRIMITIVE(val) )) { // for NIBufferGet support
 
@@ -3428,37 +3434,9 @@ JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, jsval &func
 
 INLINE JSBool FASTCALL
 JL_Eval( JSContext *cx, JSString *source, jsval *rval ) { // used in jsvalserializer.h
-/*
-	const char *scriptFilename;
-	int scriptLineno;
-	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL); // in jsdbgapi.h
-	if ( frame ) {
-
-		JSScript *script;
-		script = JS_GetFrameScript(cx, frame);
-		JL_CHK( script );
-		scriptFilename = JS_GetScriptFilename(cx, script);
-		JL_CHK( scriptFilename );
-		scriptLineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, frame));
-	} else {
-		scriptFilename = "<no_file>";
-		scriptLineno = 1;
-	}
-	size_t length;
-	const jschar *chars;
-	chars = JS_GetStringCharsAndLength(cx, source, &length);
-	JL_CHK( chars );
-	
-	//return JS_EvaluateUCScript(cx, JS_GetScopeChain(cx), chars, length, scriptFilename, scriptLineno, rval);
-	return JS_EvaluateUCScript(cx, JL_GetGlobal(cx), chars, length, scriptFilename, scriptLineno, rval);
-*/
-
-//	size_t length;
-//	const jschar *chars;
-//	chars = JS_GetStringCharsAndLength(cx, source, &length);
 
  	jsval argv = STRING_TO_JSVAL(source);
-	return JL_CallFunctionId(cx, JL_GetGlobal(cx), JLID(cx, eval), 1, &argv, rval);
+	return JL_CallFunctionId(cx, JL_GetGlobal(cx), JLID(cx, eval), 1, &argv, rval); // see JS_EvaluateUCScript
 }
 
 
@@ -3754,13 +3732,7 @@ bad:
 
 ALWAYS_INLINE JSStackFrame* FASTCALL
 JL_CurrentStackFrame(JSContext *cx) {
-/*
-	#ifdef DEBUG
-		JSStackFrame *fp = NULL;
-		ASSERT( JS_FrameIterator(cx, &fp) == js::Jsvalify(js_GetTopStackFrame(cx)) ); // Mozilla JS engine private API behavior has changed.
-	#endif //DEBUG
-	return Jsvalify(js_GetTopStackFrame(cx));
-*/
+
 	JSStackFrame *fp = NULL;
 	return JS_FrameIterator(cx, &fp);
 }
@@ -3771,14 +3743,9 @@ JL_StackSize(JSContext * RESTRICT cx, JSStackFrame * RESTRICT fp) {
 
 	JL_IGNORE(cx);
 	uint32_t length = 0;
-	//const js::StackFrame *tmp;
-	//tmp = js::Valueify(fp);
-	//for ( ; tmp; tmp = tmp->prev() ) // 
-//	for ( JSStackFrame *fp = JL_CurrentStackFrame(cx); fp; JS_FrameIterator(cx, &fp) )
 	for ( ; fp; JS_FrameIterator(cx, &fp) )
 		++length;
 	return length; // 0 is the first frame
-
 }
 
 
@@ -3813,23 +3780,14 @@ JL_StackFrameByIndex(JSContext *cx, int frameIndex) {
 INLINE NEVER_INLINE JSBool FASTCALL
 JL_DebugPrintScriptLocation( JSContext *cx ) {
 
-	JSStackFrame *fp = NULL;
-	do {
-
-		JS_FrameIterator(cx, &fp);
-	} while ( fp && !JS_GetFramePC(cx, fp) );
-
-	JL_CHK( fp );
-	JSScript *script;
-	script = JS_GetFrameScript(cx, fp);
-	JL_CHK( script );
-	int lineno;
-	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 	const char *filename;
+	JSScript *script;
+	unsigned lineno;
+	JL_CHK( JS_DescribeTopFrame(cx, &script, &lineno) );
 	filename = JS_GetScriptFilename(cx, script);
 	if ( filename == NULL || *filename == '\0' )
 		filename = "<no_filename>";
-	printf("%s:%d\n", filename, lineno);\
+	printf("%s:%d\n", filename, lineno);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3848,30 +3806,20 @@ JL_ExceptionSetScriptLocation( JSContext * RESTRICT cx, JSObject * RESTRICT obj 
     //    }
     //}
 
-	JSStackFrame *fp = NULL;
-	do {
-
-		JS_FrameIterator(cx, &fp);
-	} while ( fp && !JS_GetFramePC(cx, fp) );
-
-	JL_CHK( fp );
-	JSScript *script;
-	script = JS_GetFrameScript(cx, fp);
-	JL_CHK( script );
 	const char *filename;
-	int lineno;
+	JSScript *script;
+	unsigned lineno;
+	JL_CHK( JS_DescribeTopFrame(cx, &script, &lineno) );
 	filename = JS_GetScriptFilename(cx, script);
+
 	if ( filename == NULL || *filename == '\0' )
 		filename = "<no_filename>";
-	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 
 	jsval tmp;
 	JL_CHK( JL_NativeToJsval(cx, filename, &tmp) );
-	//JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, fileName), &tmp) );
-	JL_CHK( JS_SetProperty(cx, obj, "fileName", &tmp) );
+	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, fileName), &tmp) );
 	JL_CHK( JL_NativeToJsval(cx, lineno, &tmp) );
-	//JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, lineNumber), &tmp) );
-	JL_CHK( JS_SetProperty(cx, obj, "lineNumber", &tmp) );
+	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, lineNumber), &tmp) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -4183,230 +4131,3 @@ private:
 	SharedBuffer();
 };
 
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Recycle bin
-
-
-/*
-// Franck, this is hopeless. The JS engine is not going to keep around apparently-dead variables on the off chance that
-// someone might call a native function that uses the debugger APIs to read them off the stack. The debugger APIs don't work that way.
-// ...
-// -j
-
-//ALWAYS_INLINE jsid StringToJsid( JSContext *cx, const char *cstr );
-// Get the value of a variable in the current or parent's scopes.
-ALWAYS_INLINE JSBool JL_GetVariableValue( JSContext *cx, const char *name, jsval *vp ) {
-
-//	JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL);
-//	return JS_EvaluateInStackFrame(cx, fp, name, strlen(name), "", 0, vp);
-
-	JSBool found;
-	JSStackFrame *fp = JS_GetScriptedCaller(cx, NULL);
-
-	for ( JSObject *scope = JS_GetFrameScopeChain(cx, fp); scope; scope = scope->getParent() ) {
-
-		JL_CHK( JS_HasProperty(cx, scope, name, &found) );
-		if ( found ) {
-
-			JL_CHK( JS_GetProperty(cx, scope, name, vp) );
-
-//			JS_LookupProperty(cx, scope, name, vp);
-//			uintN attrs;
-//			JS_GetPropertyAttributes(cx, scope, name, &attrs, &found);
-
-//			JSPropertyDescriptor desc;
-//			JS_GetPropertyDescriptorById(cx, scope, StringToJsid(cx, name), 0, &desc);
-//			*vp = desc.value;
-
-			return JS_TRUE;
-		}
-	}
-	*vp = JSVAL_VOID;
-
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Serialization
-
-
-/*
-typedef JSXDRState* Serialized;
-
-ALWAYS_INLINE bool JL_IsSerializable( jsval val ) {
-
-	if ( JSVAL_IS_PRIMITIVE(val) )
-		return true;
-	JSClass *cl = JL_GetClass(JSVAL_TO_OBJECT(val));
-	return cl->xdrObject != NULL;
-}
-
-ALWAYS_INLINE void JL_SerializerCreate( Serialized *xdr ) {
-
-	*xdr = NULL;
-}
-
-ALWAYS_INLINE void JL_SerializerFree( Serialized *xdr ) {
-
-	if ( *xdr != NULL ) {
-
-		JS_XDRDestroy(*xdr);
-//		JS_XDRMemSetData(*xdr, NULL, 0);
-		*xdr = NULL;
-	}
-}
-
-ALWAYS_INLINE bool JL_SerializerIsEmpty( const Serialized *xdr ) {
-
-	return *xdr == NULL;
-}
-
-ALWAYS_INLINE JSBool JL_SerializeJsval( JSContext *cx, Serialized *xdr, jsval *val ) {
-
-	if ( *xdr != NULL )
-		SerializerFree(xdr);
-	*xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
-	JL_ASSERT( *xdr != NULL, "Unable to create the serializer." );
-	JL_CHK( JS_XDRValue(*xdr, val) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-ALWAYS_INLINE JSBool JL_UnserializeJsval( JSContext *cx, const Serialized *xdr, jsval *rval ) {
-
-	JSXDRState *xdrDecoder = JS_XDRNewMem(cx, JSXDR_DECODE);
-	JL_ASSERT( xdrDecoder != NULL, "Unable to create the unserializer." );
-	uint32_t length;
-	void *data;
-	data = JS_XDRMemGetData(*xdr, &length);
-	JS_XDRMemSetData(xdrDecoder, data, length);
-	JL_CHK( JS_XDRValue(xdrDecoder, rval) );
-	JS_XDRMemSetData(xdrDecoder, NULL, 0);
-	JS_XDRDestroy(xdrDecoder);
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
-
-// serializer 2
-
-/*
-class JLSerializer {
-private:
-
-	class ISerializer {
-		virtual bool Process( jsval *val );
-	};
-
-
-	class Serializer : public ISerializer {
-		bool Process( jsval *val ) {
-		}
-	};
-
-	class UnSerializer : public ISerializer {
-		bool Process( jsval *val ) {
-		}
-	};
-
-	ISerializer *_serializer;
-
-public:
-	JLSerializer( bool serialize ) {
-
-		_serializer = serialize ? new Serializer() : new UnSerializer();
-	}
-
-	bool Process( jsval *val ) {
-
-		_serializer->Process( jsval *val );
-	}
-};
-*/
-
-//#include <deque>
-
-/*
-class JLAllocator {
-  void *operator new(size_t size);
-  void operator delete(void *p);
-  void *operator new[](size_t size);
-  void operator delete[](void *p);
-}
-*/
-/*
-class JLSerializationBuffer {
-
-	bool _serialize;
-
-	uint8_t *_start;
-	uint8_t *_pos;
-	size_t _length;
-
-public:
-	JLSerializationBuffer() : _serialize(true) {
-
-		_length = 4096;
-		_start = (uint8_t*)jl_malloc(_length);
-		ASSERT(_start);
-		_pos = _start;
-	}
-
-	JLSerializationBuffer( uint8_t *data, size_t length ) : _serialize(false) {
-
-		_length = 4096;
-		_start = data;
-		_pos = _start;
-	}
-
-	bool ReserveBytes( size_t length ) {
-
-		size_t offset = _pos - _start;
-		if ( offset + length > _length ) {
-
-			_length *= 2;
-			_start = (uint8_t*)jl_realloc(_start, _length);
-			ASSERT(_start);
-			_pos = _start + offset;
-		}
-	}
-
-	bool Process( uint32_t &value ) {
-
-		if ( _serialize ) {
-
-			ReserveBytes(sizeof(uint32_t));
-			*(uint32_t*)_pos = value;
-		} else {
-
-			value = *(uint32_t*)_pos;
-		}
-		_pos += sizeof(uint32_t);
-		return true;
-	}
-};
-
-
-JSBool JLSerialize( JSContext *cx, jsval *val ) {
-
-	if ( JSVAL_IS_OBJECT(*val) ) {
-
-		JSObject *obj = JSVAL_TO_OBJECT(*val);
-
-		jsval fctVal;
-		JL_CHK( obj->getProperty(cx, JLID(cx, _Serialize), &fctVal) );
-		if ( JL_IsCallable(cx, fctVal) ) {
-
-		}
-	}
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
