@@ -237,14 +237,15 @@ namespace jl {
 
 			if ( PREALLOC > 0 && _prealloc == NULL ) {
 
-				_prealloc = (uint8_t*)jl_malloc(PREALLOC * size);
-				_preallocEnd = _prealloc + PREALLOC * size;
+				_count = PREALLOC / size;
+				_prealloc = (uint8_t*)jl_malloc(_count * size);
+				_preallocEnd = _prealloc + _count * size;
+				
 				for ( uint8_t *it = _prealloc; it != _preallocEnd; it += size ) {
 
 					*(void**)it = _last;
 					_last = it;
 				}
-				_count += PREALLOC;
 			}
 
 			if ( _last != NULL ) {
@@ -279,6 +280,9 @@ namespace jl {
 
 	template <class T>
 	class NOVTABLE PreservAllocBig : public PreservAlloc<T, 65536> {};
+
+
+
 
 
 
@@ -336,6 +340,9 @@ namespace jl {
 		}
 	};
 
+
+
+
 	template <class T>
 	class NOVTABLE StaticAllocSmall : public StaticAlloc<T, 256> {};
 
@@ -345,4 +352,8 @@ namespace jl {
 	template <class T>
 	class NOVTABLE StaticAllocBig : public StaticAlloc<T, 65536> {};
 
-}
+
+
+
+
+} // namespace

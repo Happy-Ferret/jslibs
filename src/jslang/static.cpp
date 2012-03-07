@@ -225,37 +225,37 @@ DEFINE_FUNCTION( toString ) {
 			do {
 
 				length = 4096;
-				JL_CHKB( read(cx, sobj, BufferNewChunk(&buf, length), &length), bad_freeBuffer );
+				JL_CHKB( read(cx, sobj, BufferNewChunk(&buf, length), &length), bad_ReadInterface_freeBuffer );
 				BufferConfirm(&buf, length);
 			} while ( length != 0 );
 
 			if ( toArrayBuffer ) {
 
-				JL_CHKB( JL_NewBufferGetOwnership(cx, BufferGetDataOwnership(&buf), BufferGetLength(&buf), JL_RVAL), bad_freeBuffer);
+				JL_CHKB( JL_NewBufferGetOwnership(cx, BufferGetDataOwnership(&buf), BufferGetLength(&buf), JL_RVAL), bad_ReadInterface_freeBuffer );
 			} else {
 
-				*JL_RVAL = STRING_TO_JSVAL( JLStr(BufferGetDataOwnership(&buf), BufferGetLength(&buf), false).GetJSString(cx) );
+				JSString *jsstr = JS_NewStringCopyN(cx, BufferGetData(&buf), BufferGetLength(&buf));
+				JL_CHKB( jsstr, bad_ReadInterface_freeBuffer );
+				*JL_RVAL = STRING_TO_JSVAL( jsstr );
 			}
 			BufferFinalize(&buf);
 			return JS_TRUE;
 
-		bad_freeBuffer:
+		bad_ReadInterface_freeBuffer:
 			BufferFinalize(&buf);
 			goto bad;
 		}
+
 	}
 
 	// fallback:
-	{
+	{ //block
 	JLStr str;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	if ( toArrayBuffer ) {
-
+	if ( toArrayBuffer )
 		JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
-	} else {
-
-		*JL_RVAL = STRING_TO_JSVAL( str.GetJSString(cx) ); // handle Z ?
-	}
+	else
+		JL_CHK( str.GetJSString(cx, JL_RVAL) ); // (TBD) handle Z ?
 	}
 
 	return JS_TRUE;
@@ -263,12 +263,12 @@ DEFINE_FUNCTION( toString ) {
 }
 
 
+
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME( collection [, toArrayBuffer] )
- The _collection_ argument is an array-like or a generator instance.
- If _toArrayBuffer_ is given and is true, the result is stored into an ArrayBuffer.
-  
+ The _collection_ argument is an array-like of data or a generator instance that returns data.
+ If _toArrayBuffer_ is given and is true, the result is stored into an ArrayBuffer instead of a string.
 **/
 DEFINE_FUNCTION( join ) {
 
@@ -299,15 +299,6 @@ DEFINE_FUNCTION( join ) {
 		}
 	} else {
 
-/* do not create the generator instance
-		if ( JL_ValueIsGenerator(cx, arg) ) {
-			
-			JL_CHK( JS_CallFunctionValue(cx, obj, arg, 0, NULL, &arg) );
-			JL_ASSERT_IS_OBJECT(arg, "generator");
-			argObj = JSVAL_TO_OBJECT(arg);
-		}
-*/
-
 		jsval nextFct;
 		JL_CHK( JS_GetPropertyById(cx, argObj, JLID(cx, next), &nextFct) );
 
@@ -328,8 +319,8 @@ DEFINE_FUNCTION( join ) {
 
 			if ( !JL_JsvalToNative(cx, val, &*++strList) ) {
 
-				js_CloseIterator(cx, argObj);
-				JL_CHK(false);
+				JL_CHK( js_CloseIterator(cx, argObj) );
+				goto bad;
 			}
 			length += strList->Length();
 			avr.append(val);
@@ -360,7 +351,7 @@ DEFINE_FUNCTION( join ) {
 
 		jschar *buf = (jschar*)JS_malloc(cx, (length +1) * sizeof(jschar));
 		buf += length;
-		*buf = 0;
+		*buf = 0; // required by JL_NewUCString
 
 		while ( strList ) {
 
@@ -973,9 +964,196 @@ DEFINE_FUNCTION( _jsapiTests ) {
 #ifdef JSLANG_TEST
 
 
+class JLData {
+
+	void *_buf;
+	size_t _len;
+	bool _own : 1; // has ownership
+	bool _nt : 1; // null-terminated
+	bool _w : 1; // is wide-char
+
+public:
+	ALWAYS_INLINE JLData() : _len(0), _buf(NULL), _own(0), _nt(0), _w(0) {}
+
+	ALWAYS_INLINE ~JLData() {
+		
+		if ( _buf && _own )
+			jl_free(_buf);
+	}
+
+	ALWAYS_INLINE void operator=( JLData &data ) {
+
+		if ( _buf && _own )
+			jl_free(_buf);
+
+		_buf = data._buf;
+		data._buf = NULL;
+
+		_own = data._own;
+		_nt = data._nt;
+		_w = data._w;
+	}
+
+	ALWAYS_INLINE JLData( JLData &data ) {
+
+		*this = data;
+	}
+
+	ALWAYS_INLINE bool IsSet() const {
+		
+		return _buf != NULL;
+	}
+
+	ALWAYS_INLINE bool IsWide() const {
+		
+		return _w;
+	}
+
+	ALWAYS_INLINE size_t Length() {
+		
+		if ( _len != SIZE_MAX ) // known length
+			return _len;
+		if ( !_nt ) // unable to compute
+			return 0;
+		return _len = _w ? wcslen((wchar_t*)_buf) : strlen((char*)_buf);
+	}
+
+	ALWAYS_INLINE
+	JLData( const jschar *str, size_t length, bool nullTerminated ) : _buf((void*)str), _len(length), _own(0), _nt(nullTerminated), _w(true) {}
+
+	ALWAYS_INLINE
+	JLData( const jschar *str, bool nullTerminated ) : _buf((void*)str), _len(SIZE_MAX), _own(0), _nt(nullTerminated), _w(true) {}
+
+	ALWAYS_INLINE
+	JLData( jschar *str, size_t length, bool nullTerminated ) : _buf((void*)str), _len(length), _own(true), _nt(nullTerminated), _w(true) {}
+
+	ALWAYS_INLINE
+	JLData( const char *str, bool nullTerminated ) : _buf((void*)str), _len(SIZE_MAX), _own(false), _nt(nullTerminated), _w(false) {}
+
+	ALWAYS_INLINE
+	JLData( char *str, size_t length, bool nullTerminated ) : _buf((void*)str), _len(length), _own(true), _nt(nullTerminated), _w(false) {}
+
+	ALWAYS_INLINE
+	JLData( JSContext *cx, JSString *jsstr ) : _own(false), _nt(false), _w(true) {
+	
+		_buf = (void*)JS_GetStringCharsAndLength(cx, jsstr, &_len);
+	}
+
+	ALWAYS_INLINE jschar *
+	GetWStrZOwnership() {
+
+		Mutate(true, true, true);
+		jschar *_tmp = (jschar*)_buf;
+		_own = false;
+		return _tmp;
+	}
+
+	ALWAYS_INLINE char *
+	GetStrZOwnership() {
+
+		Mutate(true, true, false);
+		char *tmp = (char*)_buf;
+		_own = false;
+		return tmp;
+	}
+
+private:
+
+	void
+	Mutate( bool own, bool nullTerminated, bool wide ) {
+
+		if ( _own == own && _w == wide && ( _nt == nullTerminated || _nt && !nullTerminated ) ) {
+
+			//_nt = nullTerminated;
+			return;
+		}
+
+		const size_t length = Length();
+
+		size_t dstBufSize = (length + (nullTerminated ? 1 : 0)) * (wide ? 2 : 1);
+
+		void *dst;
+
+		if ( !_own && ( own || ( _w != wide ) || ( !_nt && nullTerminated ) ) ) {
+
+			// need a new buffer, cannot realloc
+			dst = jl_malloc(dstBufSize);
+			_own = own;
+		} else {
+
+			dst = _buf;
+		}
+
+		if ( _w && !wide ) {
+
+			// shrink before realloc
+			jschar *s = (jschar*)_buf;
+			char *d = (char*)dst;
+			size_t tmpLen = length;
+			while ( tmpLen-- > 0 )
+				*(d++) = *(s++) & 0xFF;
+
+			if ( dst == _buf )
+				_buf = dst = jl_realloc(_buf, dstBufSize);
+			
+			_buf = dst;
+		} else
+		if ( _w == wide ) {
+
+			if ( dst != _buf ) {
+			
+				jl_memcpy(dst, _buf, length * (wide ? 2 : 1));
+				_buf = dst;
+			}
+		} else
+		if ( !_w && wide ) {
+
+			if ( dst == _buf )
+				_buf = dst = jl_realloc(_buf, dstBufSize);
+
+			// grow after realloc
+			char *s = (char*)_buf + length;
+			jschar *d = (jschar*)dst + length;
+			size_t tmpLen = length;
+			while ( tmpLen-- > 0 )
+				*(--d) = *(--s);
+			_buf = dst;
+		}
+
+		if ( nullTerminated ) {
+
+			if ( wide )
+				((jschar*)_buf)[length] = 0;
+			else
+				((char*)_buf)[length] = 0;
+		}
+
+		_nt = nullTerminated;
+		_w = wide;
+	}
+};
+
+
 DEFINE_FUNCTION( jslangTest ) {
 
 	JL_IGNORE(cx, argc, vp);
+
+	JLData a("test", true);
+
+	a.GetWStrZOwnership();
+
+
+	//JLData a(L("test"), true);
+	//a.GetWStrZOwnership();
+	//a.GetStrZOwnership();
+
+
+
+//	void *p = JL_GetHostPrivate(cx)->p16.Alloc();
+
+
+//	JL_NewUCString(cx, L("abc"), 2);
+
 /*
 	char *str = (char*)jl_malloc(10);
 	strcpy(str, "");

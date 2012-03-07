@@ -491,6 +491,7 @@ JL_SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 	JL_SetRuntimePrivate(JL_GetRuntime(cx), static_cast<void*>(hostPrivate));
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // HostPrivate tmpBuffer
 
@@ -1609,21 +1610,29 @@ public:
 		return tmp;
 	}
 
-
-	ALWAYS_INLINE JSString *GetJSString(JSContext *cx) {
+	ALWAYS_INLINE JSBool GetJSString(JSContext *cx, jsval *rval) {
 
 		ASSERT( IsSet() );
-		if ( Length() == 0 )
-			return JSVAL_TO_STRING( JL_GetEmptyStringValue(cx) );
-		return JL_NewUCString(cx, GetJsStrZOwnership(), Length()); // (TBD) manage allocator issue in GetJsStrZOwnership() ?
+		if ( Length() != 0 ) {
+			
+			// note: JL_NewUCString require null-terminated strings (see JS_ASSERT(chars[length] == jschar(0)); in JSFixedString::new_ )
+			JSString *jsstr = JL_NewUCString(cx, GetJsStrZOwnership(), Length()); // (TBD) manage allocator issue in GetJsStrZOwnership() ?
+			JL_CHK( jsstr );
+			*rval = STRING_TO_JSVAL( jsstr );
+		} else {
+			
+			*rval = JL_GetEmptyStringValue(cx);
+		}
+		return JS_TRUE;
+		JL_BAD;
 	}
 
 	ALWAYS_INLINE JSBool GetArrayBuffer(JSContext *cx, jsval *rval) {
 
 		ASSERT( IsSet() );
-		if ( Length() == 0 )
-			return JL_NewEmptyBuffer(cx, rval);
-		return JL_NewBufferGetOwnership(cx, GetStrOwnership(), Length(), rval);
+		if ( Length() != 0 )
+			return JL_NewBufferGetOwnership(cx, GetStrOwnership(), Length(), rval);
+		return JL_NewEmptyBuffer(cx, rval);
 	}
 
 	ALWAYS_INLINE const char *GetConstStr() {
@@ -1785,15 +1794,7 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLStr * RESTRICT str ) {
 ALWAYS_INLINE JSBool FASTCALL
 JL_NativeToJsval( JSContext *cx, JLStr &cval, jsval *vp ) {
 
-	JSString *str = cval.GetJSString(cx);
-	if (likely( str != NULL )) {
-
-		*vp = STRING_TO_JSVAL(str);
-		return JS_TRUE;
-	} else {
-
-		return JS_FALSE;
-	}
+	return cval.GetJSString(cx, vp);
 }
 
 
@@ -4028,6 +4029,24 @@ struct ProcessEvent {
 	bool (*cancelWait)( volatile ProcessEvent *self ); // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
 	JSBool (*endWait)( volatile ProcessEvent *self, bool *hasEvent, JSContext *cx, JSObject *obj ); // process the result
 };
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Auto buffer
+
+struct AutoCloseIterator {
+
+    AutoCloseIterator(JSContext *cx, JSObject *obj) : cx(cx), obj(obj) {}
+
+    ~AutoCloseIterator() { if (obj) js_CloseIterator(cx, obj); }
+
+    void clear() { obj = NULL; }
+
+  private:
+    JSContext *cx;
+    JSObject *obj;
+};
+
 
 
 ///////////////////////////////////////////////////////////////////////////////

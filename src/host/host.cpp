@@ -659,8 +659,8 @@ JSContext* CreateHost(uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterv
 	//	Doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
 	JS_SetGlobalObject(cx, globalObject); // no call to JS_InitStandardClasses(), then JS_SetGlobalObject() is required (see also LAZY_STANDARD_CLASSES).
 
-	HostPrivate *pv;
-	pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc, because WatchDogThreadProc points on it !!!
+	HostPrivate *pv = new (jl_calloc(1, sizeof(HostPrivate))) HostPrivate;  // beware: don't realloc, because WatchDogThreadProc points on it !!!
+
 	JL_ASSERT_ALLOC( pv );
 	pv->hostPrivateVersion = JL_HOST_PRIVATE_VERSION;
 	JL_SetHostPrivate(cx, pv);
@@ -692,7 +692,9 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 
-		pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc later because WatchDogThreadProc points on it !!!
+//		pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc later because WatchDogThreadProc points on it !!!
+		pv = new (jl_calloc(1, sizeof(HostPrivate))) HostPrivate;  // beware: don't realloc, because WatchDogThreadProc points on it !!!
+
 		JL_ASSERT_ALLOC( pv );
 		pv->hostPrivateVersion = JL_HOST_PRIVATE_VERSION;
 		JL_SetHostPrivate(cx, pv);
@@ -843,7 +845,10 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 	jslangModuleFree();
 
 	jl_free(pv->tmpBuffer);
+
+	pv->HostPrivate::~HostPrivate();
 	jl_free(pv);
+
 	return JS_TRUE;
 
 bad:

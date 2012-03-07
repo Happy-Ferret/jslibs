@@ -553,9 +553,7 @@ DEFINE_FUNCTION( registryGet ) {
 		case REG_MULTI_SZ:
 		case REG_SZ: {
 			//JSString *jsstr = JL_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
-			JSString *jsstr = JLStr((char*)buffer, size-1, true).GetJSString(cx);
-			JL_CHK( jsstr );
-			*JL_RVAL = STRING_TO_JSVAL(jsstr);
+			JL_CHK( JLStr((char*)buffer, size-1, true).GetJSString(cx, JL_RVAL) );
 			break;
 		}
 	}
@@ -875,6 +873,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( clipboard ) {
 
+	JL_IGNORE( id, obj );
+
 	BOOL res = OpenClipboard(NULL);
 	if ( res == 0 )
 		return JL_ThrowOSError(cx);
@@ -902,6 +902,8 @@ DEFINE_PROPERTY_GETTER( clipboard ) {
 }
 
 DEFINE_PROPERTY_SETTER( clipboard ) {
+
+	JL_IGNORE( strict, id, obj );
 
 	BOOL res = OpenClipboard(NULL);
 	if ( res == 0 )
@@ -947,6 +949,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( systemCodepage ) {
 
+	JL_IGNORE( id, obj, cx );
+
 	*vp = INT_TO_JSVAL(GetACP());
 	return JS_TRUE;
 }
@@ -957,6 +961,8 @@ $TOC_MEMBER $INAME
   current Windows ANSI code page identifier for the console.
 **/
 DEFINE_PROPERTY_GETTER( consoleCodepage ) {
+
+	JL_IGNORE( id, obj, cx );
 
 	*vp = INT_TO_JSVAL(GetOEMCP());
 	return JS_TRUE;
@@ -982,10 +988,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( numlockState ) {
 
+	JL_IGNORE( id, obj );
+
 	return JL_NativeToJsval(cx, GetKeyState(VK_NUMLOCK) & 1, vp);
 }
 
 DEFINE_PROPERTY_SETTER( numlockState ) {
+
+	JL_IGNORE( strict, id, obj );
 
 	bool state;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
@@ -1001,10 +1011,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( capslockState ) {
 
+	JL_IGNORE( id, obj );
 	return JL_NativeToJsval(cx, GetKeyState(VK_CAPITAL) & 1, vp);
 }
 
 DEFINE_PROPERTY_SETTER( capslockState ) {
+
+	JL_IGNORE( strict, id, obj );
 
 	bool state;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
@@ -1020,10 +1033,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( scrolllockState ) {
 
+	JL_IGNORE( id, obj );
+
 	return JL_NativeToJsval(cx, GetKeyState(VK_SCROLL) & 1, vp);
 }
 
 DEFINE_PROPERTY_SETTER( scrolllockState ) {
+
+	JL_IGNORE( strict, id, obj );
 
 	bool state;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
@@ -1039,6 +1056,8 @@ $TOC_MEMBER $INAME
   is the elapsed time since the last input event (in milliseconds).
 **/
 DEFINE_PROPERTY_GETTER( lastInputTime ) {
+
+	JL_IGNORE( id, obj );
 
 	LASTINPUTINFO lastInputInfo = {0};
 	lastInputInfo.cbSize = sizeof(LASTINPUTINFO);
@@ -1176,6 +1195,8 @@ enum {
 
 DEFINE_PROPERTY_GETTER( folderPath ) {
 
+	JL_IGNORE( obj );
+
 	TCHAR path[MAX_PATH];
 	if ( SUCCEEDED( SHGetFolderPath(NULL, JSID_TO_INT(id), NULL, 0, path) ) ) // |CSIDL_FLAG_CREATE
 		return JL_NativeToJsval(cx, path, vp);
@@ -1186,6 +1207,8 @@ DEFINE_PROPERTY_GETTER( folderPath ) {
 
 #ifdef DEBUG
 DEFINE_FUNCTION( jswinshelltest ) {
+
+	JL_IGNORE( argc, cx );
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;

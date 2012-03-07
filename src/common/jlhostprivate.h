@@ -57,6 +57,11 @@ struct HostPrivate {
 	jl_allocators_t alloc;
 	jsid ids[LAST_JSID];
 	ClassProtoCache classProtoCache[1<<JL_HOST_PRIVATE_MAX_CLASS_PROTO_CACHE_BIT]; // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
+	
+// experimental
+
+	//	jl::StaticAlloc<char[16], 128> p16;
+
 	JLApi *jlapi;
 #ifdef DEBUG
 	uint32_t tmp_count;

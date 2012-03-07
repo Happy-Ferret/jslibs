@@ -11,10 +11,15 @@ loadModule('jscrypt');
 loadModule('jsstd');
 loadModule('jsio');
 
-//jslangTest(); halt();
 
-print( indexOf('123', '3', 3), '\n' );
-print( toString('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxa', true).constructor.name, '\n' )
+jslangTest('test'); halt();
+
+join(Iterator([5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8])); halt();
+
+
+print( toString('123456789', true).slice(3), '\n\n' )
+
+
 halt();
 
 

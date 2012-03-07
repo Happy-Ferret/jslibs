@@ -47,6 +47,8 @@ BEGIN_STATIC
 
 
 DEFINE_FUNCTION( accept ) {
+	
+	JL_IGNORE( argc );
 
 	if ( !_initDone ) {
 	
@@ -125,11 +127,7 @@ DEFINE_FUNCTION( read ) {
 		return JS_TRUE;
 	}
 	str[result] = '\0';
-	JSString *jsstr;
-	//jsstr = JL_NewString(cx, str, result);
-	jsstr = JLStr(str, result, true).GetJSString(cx);
-	JL_CHK( jsstr );
-	*JL_RVAL = STRING_TO_JSVAL( jsstr );
+	JL_CHK( JLStr(str, result, true).GetJSString(cx, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -155,6 +153,8 @@ DEFINE_FUNCTION( write ) {
 }
 
 DEFINE_FUNCTION( flush ) {
+
+	JL_IGNORE( argc );
 
 	JL_ASSERT( _request.out != NULL, E_LIB, E_STR("fastcgi"), E_INTERNAL );
 
@@ -182,6 +182,8 @@ DEFINE_FUNCTION( log ) {
 }
 
 DEFINE_FUNCTION( shutdownPending ) {
+
+	JL_IGNORE( argc, cx );
 
 	FCGX_ShutdownPending();
 	*JL_RVAL = JSVAL_VOID;
@@ -221,8 +223,7 @@ DEFINE_FUNCTION( urlEncode ) {
 				*(it1++) = *it;
 
 	*it1 = '\0';
-	//*JL_RVAL = STRING_TO_JSVAL( JL_NewString(cx, dest, it1-dest ) ); // do not include the '\0' in the string length
-	*JL_RVAL = STRING_TO_JSVAL( JLStr(dest, it1-dest, true).GetJSString(cx) );
+	JL_CHK( JLStr(dest, it1-dest, true).GetJSString(cx, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -288,8 +289,7 @@ DEFINE_FUNCTION( urlDecode ) {
 				*(it1++) = *it;
 
 	*it1 = '\0';
-	//*JL_RVAL = STRING_TO_JSVAL( JL_NewString(cx, dest, it1-dest ) ); // do not include the '\0' in the string length
-	*JL_RVAL = STRING_TO_JSVAL( JLStr(dest, it1-dest, true).GetJSString(cx) );
+	JL_CHK( JLStr(dest, it1-dest, true).GetJSString(cx, JL_RVAL) );
 	return JS_TRUE;
 
 decoding_error:

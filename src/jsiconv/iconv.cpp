@@ -304,12 +304,13 @@ DEFINE_CALL() {
 
 		((jschar*)outBuf)[length / 2] = 0;
 		jsEncStr = JL_NewUCString(cx, (jschar*)outBuf, length / 2);
+		JL_CHK( jsEncStr );
+		*JL_RVAL = STRING_TO_JSVAL(jsEncStr);
 	} else {
 
 		//jsEncStr = JL_NewString(cx, outBuf, length); // loose outBuf ownership	// JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
-		jsEncStr = JLStr(outBuf, length, true).GetJSString(cx);
+		JL_CHK( JLStr(outBuf, length, true).GetJSString(cx, JL_RVAL) );
 	}
-	*JL_RVAL = STRING_TO_JSVAL(jsEncStr);
 
 	return JS_TRUE;
 
