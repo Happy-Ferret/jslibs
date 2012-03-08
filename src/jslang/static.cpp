@@ -972,113 +972,36 @@ class JLData {
 	bool _nt : 1; // null-terminated
 	bool _w : 1; // is wide-char
 
-public:
-	ALWAYS_INLINE JLData() : _len(0), _buf(NULL), _own(0), _nt(0), _w(0) {}
+	void Check() {
 
-	ALWAYS_INLINE ~JLData() {
-		
-		if ( _buf && _own )
-			jl_free(_buf);
+		ASSERT_IF( _len == SIZE_MAX, _nt );
+		ASSERT_IF( _own && _nt && !_w, jl_msize(_buf) >= (Length()+1) );
+		ASSERT_IF( _own && _nt && _w, jl_msize(_buf) >= (Length()+1)*2 );
+		ASSERT_IF( _nt && !_w, ((char*)_buf)[Length()] == 0 );
+		ASSERT_IF( _nt && _w, ((jschar*)_buf)[Length()] == 0 );
 	}
 
-	ALWAYS_INLINE void operator=( JLData &data ) {
+	bool Mutate( bool own, bool nullTerminated, bool wide ) {
 
-		if ( _buf && _own )
-			jl_free(_buf);
+		ASSERT( IsSet() );
+		if ( _own == own && _w == wide && ( (_nt == nullTerminated) || (_nt && !nullTerminated) ) )
+			return true;
 
-		_buf = data._buf;
-		data._buf = NULL;
-
-		_own = data._own;
-		_nt = data._nt;
-		_w = data._w;
-	}
-
-	ALWAYS_INLINE JLData( JLData &data ) {
-
-		*this = data;
-	}
-
-	ALWAYS_INLINE bool IsSet() const {
-		
-		return _buf != NULL;
-	}
-
-	ALWAYS_INLINE bool IsWide() const {
-		
-		return _w;
-	}
-
-	ALWAYS_INLINE size_t Length() {
-		
-		if ( _len != SIZE_MAX ) // known length
-			return _len;
-		if ( !_nt ) // unable to compute
-			return 0;
-		return _len = _w ? wcslen((wchar_t*)_buf) : strlen((char*)_buf);
-	}
-
-	ALWAYS_INLINE
-	JLData( const jschar *str, size_t length, bool nullTerminated ) : _buf((void*)str), _len(length), _own(0), _nt(nullTerminated), _w(true) {}
-
-	ALWAYS_INLINE
-	JLData( const jschar *str, bool nullTerminated ) : _buf((void*)str), _len(SIZE_MAX), _own(0), _nt(nullTerminated), _w(true) {}
-
-	ALWAYS_INLINE
-	JLData( jschar *str, size_t length, bool nullTerminated ) : _buf((void*)str), _len(length), _own(true), _nt(nullTerminated), _w(true) {}
-
-	ALWAYS_INLINE
-	JLData( const char *str, bool nullTerminated ) : _buf((void*)str), _len(SIZE_MAX), _own(false), _nt(nullTerminated), _w(false) {}
-
-	ALWAYS_INLINE
-	JLData( char *str, size_t length, bool nullTerminated ) : _buf((void*)str), _len(length), _own(true), _nt(nullTerminated), _w(false) {}
-
-	ALWAYS_INLINE
-	JLData( JSContext *cx, JSString *jsstr ) : _own(false), _nt(false), _w(true) {
-	
-		_buf = (void*)JS_GetStringCharsAndLength(cx, jsstr, &_len);
-	}
-
-	ALWAYS_INLINE jschar *
-	GetWStrZOwnership() {
-
-		Mutate(true, true, true);
-		jschar *_tmp = (jschar*)_buf;
-		_own = false;
-		return _tmp;
-	}
-
-	ALWAYS_INLINE char *
-	GetStrZOwnership() {
-
-		Mutate(true, true, false);
-		char *tmp = (char*)_buf;
-		_own = false;
-		return tmp;
-	}
-
-private:
-
-	void
-	Mutate( bool own, bool nullTerminated, bool wide ) {
-
-		if ( _own == own && _w == wide && ( _nt == nullTerminated || _nt && !nullTerminated ) ) {
-
-			//_nt = nullTerminated;
-			return;
-		}
+		if ( _nt && !nullTerminated )
+			nullTerminated = true;
 
 		const size_t length = Length();
-
 		size_t dstBufSize = (length + (nullTerminated ? 1 : 0)) * (wide ? 2 : 1);
 
 		void *dst;
 
 		if ( !_own && ( own || ( _w != wide ) || ( !_nt && nullTerminated ) ) ) {
 
-			// need a new buffer, cannot realloc
 			dst = jl_malloc(dstBufSize);
-			_own = own;
+			if ( !dst )
+				return false;
+
+			_own = true;
 		} else {
 
 			dst = _buf;
@@ -1093,14 +1016,23 @@ private:
 			while ( tmpLen-- > 0 )
 				*(d++) = *(s++) & 0xFF;
 
-			if ( dst == _buf )
+			if ( dst == _buf && dstBufSize > 64 ) {
+
 				_buf = dst = jl_realloc(_buf, dstBufSize);
-			
+				if ( !dst )
+					return false;
+			}
 			_buf = dst;
+			_w = false;
 		} else
 		if ( _w == wide ) {
 
-			if ( dst != _buf ) {
+			if ( dst == _buf ) {
+
+				_buf = dst = jl_realloc(_buf, dstBufSize);
+				if ( !dst )
+					return false;
+			} else {
 			
 				jl_memcpy(dst, _buf, length * (wide ? 2 : 1));
 				_buf = dst;
@@ -1108,8 +1040,12 @@ private:
 		} else
 		if ( !_w && wide ) {
 
-			if ( dst == _buf )
+			if ( dst == _buf ) {
+
 				_buf = dst = jl_realloc(_buf, dstBufSize);
+				if ( !dst )
+					return false;
+			}
 
 			// grow after realloc
 			char *s = (char*)_buf + length;
@@ -1118,6 +1054,7 @@ private:
 			while ( tmpLen-- > 0 )
 				*(--d) = *(--s);
 			_buf = dst;
+			_w = true;
 		}
 
 		if ( nullTerminated ) {
@@ -1129,28 +1066,258 @@ private:
 		}
 
 		_nt = nullTerminated;
-		_w = wide;
+		return true;
+	}
+
+public:
+	ALWAYS_INLINE JLData() : _buf(NULL) {}
+
+	ALWAYS_INLINE ~JLData() {
+		
+		if ( _buf && _own )
+			jl_free(_buf);
+	}
+
+	ALWAYS_INLINE void operator=( JLData &data ) {
+
+		ASSERT_IF( _buf, _buf != data._buf );
+//		if ( _buf == data._buf ) // data = data
+//			return;
+
+		if ( _buf && _own )
+			jl_free(_buf);
+
+		_buf = data._buf;
+		_len = data._len;
+		_own = data._own;
+		_nt = data._nt;
+		_w = data._w;
+		data._buf = NULL;
+	}
+
+	ALWAYS_INLINE JLData( JLData &data ) {
+
+		*this = data;
+	}
+
+	ALWAYS_INLINE JLData& operator *() {
+
+		// workarount to:
+		// C4239: nonstandard extension used : 'argument' : conversion from 'FOO' to 'FOO &'
+		// A non-const reference may only be bound to an lvalue; copy constructor takes a reference to non-const
+		//
+		// The problem is that a fundamental requirement of standard containers is that objects are copy-constructible.
+		// That not only means that they have a copy constructor, but that also means that if you copy the object, the copy and the original are the same.
+
+		return *this;
+	}
+
+	ALWAYS_INLINE bool IsSet() const {
+		
+		return _buf != NULL;
+	}
+
+	ALWAYS_INLINE bool IsWide() const {
+		
+		ASSERT( IsSet() );
+		return _w;
+	}
+
+	ALWAYS_INLINE size_t Length() {
+		
+		ASSERT( IsSet() );
+		if ( _len != SIZE_MAX ) // known length
+			return _len;
+		if ( !_nt ) // unable to compute
+			return 0;
+		return _len = _w ? wcslen((wchar_t*)_buf) : strlen((char*)_buf);
+	}
+
+	// raw data
+	ALWAYS_INLINE JLData( const void *buf, size_t size ) : _buf((void*)buf), _len(size), _own(false), _nt(false), _w(false) { IFDEBUG(Check()); }
+	ALWAYS_INLINE JLData( void *buf, size_t size ) : _buf(buf), _len(size), _own(true), _nt(false), _w(false) { IFDEBUG(Check()); }
+	ALWAYS_INLINE JLData( void *buf, size_t size, bool own, bool nullTerminated, bool wide ) : _buf(buf), _len(size), _own(own), _nt(nullTerminated), _w(wide) { IFDEBUG(Check()); }
+
+	// jschar
+	ALWAYS_INLINE JLData( const jschar *str, bool nullTerminated, size_t length ) : _buf((void*)str), _len(length), _own(false), _nt(nullTerminated), _w(true) { IFDEBUG(Check()); }
+	ALWAYS_INLINE JLData( const jschar *str, bool nullTerminated ) : _buf((void*)str), _len(SIZE_MAX), _own(false), _nt(nullTerminated), _w(true) { IFDEBUG(Check()); }
+	ALWAYS_INLINE JLData( jschar *str, bool nullTerminated, size_t length ) : _buf((void*)str), _len(length), _own(true), _nt(nullTerminated), _w(true) { IFDEBUG(Check()); }
+	ALWAYS_INLINE JLData( jschar *str, bool nullTerminated ) : _buf((void*)str), _len(SIZE_MAX), _own(true), _nt(nullTerminated), _w(true) { IFDEBUG(Check()); }
+
+	// char
+	ALWAYS_INLINE JLData( const char *str, bool nullTerminated, size_t length ) : _buf((void*)str), _len(length), _own(false), _nt(nullTerminated), _w(false) { IFDEBUG(Check()); }
+	ALWAYS_INLINE JLData( const char *str, bool nullTerminated ) : _buf((void*)str), _len(SIZE_MAX), _own(false), _nt(nullTerminated), _w(false) { IFDEBUG(Check()); }
+	ALWAYS_INLINE JLData( char *str, bool nullTerminated, size_t length ) : _buf((void*)str), _len(length), _own(true), _nt(nullTerminated), _w(false) { IFDEBUG(Check()); }
+	ALWAYS_INLINE JLData( char *str, bool nullTerminated ) : _buf((void*)str), _len(SIZE_MAX), _own(true), _nt(nullTerminated), _w(false) { IFDEBUG(Check()); }
+
+	// other
+	ALWAYS_INLINE JLData( JSContext *cx, JSString *jsstr ) : _own(false), _nt(false), _w(true) {
+	
+		_buf = (void*)JS_GetStringCharsAndLength(cx, jsstr, &_len);
+	}
+
+	//
+
+	ALWAYS_INLINE const jschar* GetConstWStr() {
+
+		if ( !Mutate(false, false, true) )
+			return false;
+		return (const jschar*)_buf;
+	}
+
+	ALWAYS_INLINE const char* GetConstStr() {
+
+		if ( !Mutate(false, false, false) )
+			return false;
+		return (const char*)_buf;
+	}
+
+	ALWAYS_INLINE jschar* GetWStrZOwnership() {
+
+		if ( !Mutate(true, true, true) )
+			return false;
+		_own = false;
+		jschar *_tmp = (jschar*)_buf;
+		return _tmp;
+	}
+
+	ALWAYS_INLINE char* GetStrZOwnership() {
+
+		if ( !Mutate(true, true, false) )
+			return NULL;
+		_own = false;
+		char *tmp = (char*)_buf;
+		return tmp;
+	}
+
+	ALWAYS_INLINE char* GetStrOwnership() {
+
+		if ( !Mutate(true, false, false) )
+			return NULL;
+		_own = false;
+		char *tmp = (char*)_buf;
+		return tmp;
+	}
+
+	ALWAYS_INLINE JSBool GetJSString( JSContext *cx, jsval *rval ) {
+
+		ASSERT( IsSet() );
+		size_t length = Length();
+		if ( length != 0 ) {
+
+			JSString *jsstr = JL_NewUCString(cx, GetWStrZOwnership(), length);
+			if ( !jsstr )
+				return JS_FALSE;
+			rval->setString(jsstr);
+		} else {
+
+			*rval = JL_GetEmptyStringValue(cx);
+		}
+		return JS_TRUE;
+	}
+
+	ALWAYS_INLINE JSBool GetArrayBuffer( JSContext *cx, jsval *rval ) {
+
+		ASSERT( IsSet() );
+		size_t length = Length();
+		if ( length != 0 )
+			return JL_NewBufferGetOwnership(cx, GetStrOwnership(), length, rval);
+		return JL_NewEmptyBuffer(cx, rval);
 	}
 };
+
+
+JLData create( int step ) {
+
+	switch ( step ) {
+/*
+		case 0:
+			return *JLData("test", true);
+//		case 1:
+//			return *JLData("test", false);
+		case 2: {
+			char *buf = (char*)malloc(10);
+			strcpy(buf, "test");
+			return *JLData(buf, false, 4);
+		}
+*/
+		case 3: {
+			char *buf = (char*)malloc(10);
+			strcpy(buf, "test");
+			return *JLData(buf, false, strlen(buf));
+		}
+/*
+		case 4: {
+			char *buf = (char*)malloc(10);
+			strcpy(buf, "test");
+			return *JLData(buf, true, strlen(buf));
+		}
+		case 5:
+			return *JLData(L("test"), true);
+//		case 6:
+//			return *JLData(L("test"), false);
+		case 7: {
+			jschar *buf = (jschar*)malloc(10);
+			wcscpy(buf, L("test"));
+			return *JLData(buf, true);
+		}
+		case 8: {
+			jschar *buf = (jschar*)malloc(10);
+			wcscpy(buf, L("test"));
+			return *JLData(buf, false);
+		}
+*/
+	}
+	return *JLData();
+}
+
+
+/*
+struct FOO {
+	explicit FOO( const FOO &b ) {} // non-const copy constructor
+	FOO& operator *() { return *this; }
+	FOO( int i ) {}
+}; // FOO a(FOO(5));
+*/
 
 
 DEFINE_FUNCTION( jslangTest ) {
 
 	JL_IGNORE(cx, argc, vp);
 
-	JLData a("test", true);
+	// C4239: nonstandard extension used : 'argument' : conversion from 'FOO' to 'FOO &'
+	// A non-const reference may only be bound to an lvalue; copy constructor takes a reference to non-const
+	
+	// Your problem is that a fundamental requirement of standard containers is that objects are copy-constructible.
+	// That not only means that they have a copy constructor, but that also means that if you copy the object, the copy and the original are the same.
 
-	a.GetWStrZOwnership();
+	for ( int i = 3; i <= 4; ++i ) {
+		
+		JLData xxx = *create(i);
+	}
 
+	
+
+
+	//char *s = (char*)jl_malloc(100);
+	//strcpy(s, "test");
+
+//	JLData a(L("test"), true);
+
+	//a.GetWStrZOwnership();
+//	a.GetConstStr();
+
+
+//	JLData b("xxx", true);
+//	JLData c;
+//	c = b;
+//	JLData d(b);
 
 	//JLData a(L("test"), true);
 	//a.GetWStrZOwnership();
 	//a.GetStrZOwnership();
 
-
-
 //	void *p = JL_GetHostPrivate(cx)->p16.Alloc();
-
 
 //	JL_NewUCString(cx, L("abc"), 2);
 
