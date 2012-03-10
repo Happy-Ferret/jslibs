@@ -74,7 +74,7 @@ DEFINE_FUNCTION( getParam ) {
 
 	if ( argc >= 1 ) {
 
-		JLStr paramName;
+		JLData paramName;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &paramName) );
 		char *paramValue = FCGX_GetParam(paramName, _request.envp);
 		if ( paramValue != NULL ) {
@@ -127,14 +127,14 @@ DEFINE_FUNCTION( read ) {
 		return JS_TRUE;
 	}
 	str[result] = '\0';
-	JL_CHK( JLStr(str, result, true).GetJSString(cx, JL_RVAL) );
+	JL_CHK( JLData(str, true, result).GetJSString(cx, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_FUNCTION( write ) {
 
-	JLStr str;
+	JLData str;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 
@@ -167,7 +167,7 @@ DEFINE_FUNCTION( flush ) {
 
 DEFINE_FUNCTION( log ) {
 
-	JLStr str;
+	JLData str;
 
 	JL_ASSERT_ARGC(1);
 
@@ -192,7 +192,7 @@ DEFINE_FUNCTION( shutdownPending ) {
 
 DEFINE_FUNCTION( urlEncode ) {
 
-	JLStr srcStr;
+	JLData srcStr;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	static unsigned char hex[] = "0123456789ABCDEF";
@@ -223,7 +223,7 @@ DEFINE_FUNCTION( urlEncode ) {
 				*(it1++) = *it;
 
 	*it1 = '\0';
-	JL_CHK( JLStr(dest, it1-dest, true).GetJSString(cx, JL_RVAL) );
+	JL_CHK( JLData(dest, true, it1-dest).GetJSString(cx, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -232,7 +232,7 @@ DEFINE_FUNCTION( urlEncode ) {
 
 DEFINE_FUNCTION( urlDecode ) {
 
-	JLStr srcStr;
+	JLData srcStr;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	const char *src;
@@ -289,7 +289,7 @@ DEFINE_FUNCTION( urlDecode ) {
 				*(it1++) = *it;
 
 	*it1 = '\0';
-	JL_CHK( JLStr(dest, it1-dest, true).GetJSString(cx, JL_RVAL) );
+	JL_CHK( JLData(dest, true, it1-dest).GetJSString(cx, JL_RVAL) );
 	return JS_TRUE;
 
 decoding_error:

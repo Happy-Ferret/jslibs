@@ -1717,7 +1717,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( texImage2D ) {
 
-	JLStr data;
+	JLData data;
 
 	OGL_CX_CHK;
 
@@ -1799,7 +1799,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( texSubImage2D ) {
 
-	JLStr data;
+	JLData data;
 
 	OGL_CX_CHK;
 
@@ -3574,7 +3574,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( hasExtensionProc ) {
 
-	JLStr procName;
+	JLData procName;
 	OGL_CX_CHK;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT( glGetProcAddress != NULL, E_OS, E_INIT, E_STR("OpenGL"), E_COMMENT("extensions") );
@@ -3616,7 +3616,7 @@ DEFINE_FUNCTION( hasExtensionName ) {
 
 	for ( uintN i = 0; i < JL_ARGC; ++i ) {
 
-		JLStr name;
+		JLData name;
 //		const char *name;
 //		unsigned int nameLength;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARGV[i], &name, &nameLength) );
@@ -4280,7 +4280,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( shaderSource ) {
 
-	JLStr source;
+	JLData source;
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glShaderSourceARB, PFNGLSHADERSOURCEARBPROC );
 	JL_ASSERT_ARGC(2);
@@ -4488,7 +4488,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getUniformLocation ) {
 
-	JLStr name;
+	JLData name;
 
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glGetUniformLocationARB, PFNGLGETUNIFORMLOCATIONARBPROC );
@@ -5043,7 +5043,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( bindAttribLocation ) {
 
-	JLStr name;
+	JLData name;
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glBindAttribLocationARB, PFNGLBINDATTRIBLOCATIONARBPROC );
 
@@ -5069,7 +5069,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getAttribLocation ) {
 
-	JLStr name;
+	JLData name;
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glGetAttribLocationARB, PFNGLGETATTRIBLOCATIONARBPROC );
 
@@ -5649,7 +5649,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( drawImage ) {
 
-	JLStr dataStr;
+	JLData dataStr;
 	OGL_CX_CHK;
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -6145,7 +6145,7 @@ JSBool TextureHelper(JSObject *obj, int *width, int *height, int *channels, cons
 
 DEFINE_FUNCTION( defineTextureImage ) {
 
-	JLStr dataStr;
+	JLData dataStr;
 	OGL_CX_CHK;
 	JL_ASSERT_ARGC_MIN(3);
 	JL_ASSERT_ARG_IS_INTEGER(1);

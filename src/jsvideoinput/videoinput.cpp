@@ -62,7 +62,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_ASSERT_ARG_VAL_RANGE( deviceId, 0, numDevices-1, 1 );
 	} else {
 	
-		JLStr requiredDeviceName;
+		JLData requiredDeviceName;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &requiredDeviceName) );
 		deviceId = -1;
 		for ( int i = 0; i < numDevices; i++ ) {

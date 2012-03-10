@@ -151,7 +151,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( dumpHeap )
 {
 
-    JLStr fileName;
+    JLData fileName;
     jsval v;
     void* startThing;
     uint32 startTraceKind;
@@ -171,7 +171,7 @@ DEFINE_FUNCTION( dumpHeap )
             if (!str)
                 return JS_FALSE;
             JS_ARGV(cx, vp)[0] = STRING_TO_JSVAL(str);
-				fileName = JLStr(cx, str);
+				fileName = JLData(cx, str);
 //            fileName = JL_GetStringBytesZ(cx, str);
 //				if ( fileName == NULL )
 //					fileName = "";
@@ -320,7 +320,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( traceGC )
 {
-	JLStr fileName;
+	JLData fileName;
 
 	if ( argc > 0 ) { // start GC dump
 
@@ -334,7 +334,7 @@ DEFINE_FUNCTION( traceGC )
 			if (!str)
 				 return JS_FALSE;
 			argv[0] = STRING_TO_JSVAL(str);
-			fileName = JLStr(cx, str);
+			fileName = JLData(cx, str);
 		}
 
 		if (!fileName.IsSet())
@@ -1497,7 +1497,7 @@ DEFINE_FUNCTION( disassembleScript ) {
 
 	jl::Queue *scriptFileList = NULL;
 
-	JLStr filename;
+	JLData filename;
 	unsigned int lineno;
 
 	JL_ASSERT_ARGC(2);
@@ -1657,7 +1657,7 @@ DEFINE_FUNCTION( debugOutput ) {
 
 #if defined(_MSC_VER) && defined(DEBUG)
 	{
-	JLStr str;
+	JLData str;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	OutputDebugString(str);
 	}
@@ -1847,7 +1847,7 @@ DEFINE_FUNCTION( testDebug ) {
 	jsid id;
 	JSObject *obj = JL_NewObj(cx);
 	JS_ValueToId(cx, OBJECT_TO_JSVAL(obj), &id);
-	bool isobjid = JSID_IS_OBJECT(id);
+	JSBool isobjid = JSID_IS_OBJECT(id);
 
 
 	*JL_RVAL = JSVAL_VOID;

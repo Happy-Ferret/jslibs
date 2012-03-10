@@ -180,7 +180,7 @@ void* wrapped_JS_realloc(void * opaqueAllocatorContext, void* address, size_t si
 
 DEFINE_CALL() {
 
-	JLStr inputData;
+	JLData inputData;
 
 	JL_DEFINE_CALL_FUNCTION_OBJ;
 

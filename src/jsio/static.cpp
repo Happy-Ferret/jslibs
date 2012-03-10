@@ -427,7 +427,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getEnv ) {
 
-	JLStr name;
+	JLData name;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
 	char* value;
@@ -543,7 +543,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( waitSemaphore ) {
 
-	JLStr name;
+	JLData name;
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PRUintn mode;
@@ -598,7 +598,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( postSemaphore ) {
 
-	JLStr name;
+	JLData name;
 	JL_ASSERT_ARGC_MIN( 1 );
 
 //	const char *name;
@@ -759,7 +759,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( availableSpace ) {
 
-	JLStr path;
+	JLData path;
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &path) );
 
@@ -1124,7 +1124,7 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 
 DEFINE_PROPERTY_SETTER( currentDirectory ) {
 
-	JLStr dir;
+	JLData dir;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &dir ) );
 #ifdef XP_WIN
 //	_chdir(dir);

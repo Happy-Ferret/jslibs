@@ -35,7 +35,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( base64Encode ) {
 
-	JLStr in;
+	JLData in;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -58,7 +58,7 @@ DEFINE_FUNCTION( base64Encode ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JL_CHK( JLStr(out, outLength, true).GetJSString(cx, JL_RVAL) ); // "unable to create the base64 string."
+	JL_CHK( JLData(out, true, outLength).GetJSString(cx, JL_RVAL) ); // "unable to create the base64 string."
 
 	return JS_TRUE;
 	JL_BAD;
@@ -71,7 +71,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( base64Decode ) {
 
-	JLStr in;
+	JLData in;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
@@ -108,7 +108,7 @@ DEFINE_FUNCTION( hexEncode ) {
 
 	static const char hex[] = "0123456789ABCDEF";
 
-	JLStr data;
+	JLData data;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 
@@ -136,7 +136,7 @@ DEFINE_FUNCTION( hexEncode ) {
 		out[i*2+1] = hex[ c & 0xF ];
 	}
 
-	JL_CHK( JLStr(out, outLength, true).GetJSString(cx, JL_RVAL) ); // "unable to create the hex string."
+	JL_CHK( JLData(out, true, outLength).GetJSString(cx, JL_RVAL) ); // "unable to create the hex string."
 
 	return JS_TRUE;
 	JL_BAD;
@@ -160,7 +160,7 @@ DEFINE_FUNCTION( hexDecode ) {
 		 0, 10, 11, 12, 13, 14, 15,  0,  0,  0,  0,  0,  0,  0,  0,  0
 	};
 
-	JLStr data;
+	JLData data;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);

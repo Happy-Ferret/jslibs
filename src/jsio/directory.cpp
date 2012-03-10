@@ -70,7 +70,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( open ) {
 
-	JLStr str;
+	JL_IGNORE( argc );
+
+	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
 
@@ -82,7 +84,7 @@ DEFINE_FUNCTION( open ) {
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
 	PRDir *dd;
-	dd = PR_OpenDir( str.GetConstStr() );
+	dd = PR_OpenDir( str.GetConstStrZ() );
 	if ( dd == NULL )
 		return ThrowIoError(cx);
 
@@ -99,6 +101,8 @@ $TOC_MEMBER $INAME
   Close the specified directory.
 **/
 DEFINE_FUNCTION( close ) {
+
+	JL_IGNORE( argc );
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -171,7 +175,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( make ) {
 
-	JLStr str;
+	JL_IGNORE( argc );
+
+	JLData str;
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
@@ -184,7 +190,7 @@ DEFINE_FUNCTION( make ) {
 
 	PRIntn mode;
 	mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
-	if ( PR_MkDir(str.GetConstStr(), mode) != PR_SUCCESS )
+	if ( PR_MkDir(str.GetConstStrZ(), mode) != PR_SUCCESS )
 		return ThrowIoError(cx);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -201,7 +207,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( remove ) {
 
-	JLStr str;
+	JL_IGNORE( argc );
+
+	JLData str;
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
@@ -211,7 +219,7 @@ DEFINE_FUNCTION( remove ) {
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
-	if ( PR_RmDir(str.GetConstStr()) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
+	if ( PR_RmDir(str.GetConstStrZ()) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
 
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode == PR_DIRECTORY_NOT_EMPTY_ERROR )
@@ -237,7 +245,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( exist ) {
 
-	JLStr str;
+	JL_IGNORE( id );
+
+	JLData str;
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
@@ -247,7 +257,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
 	PRDir *dd;
-	dd = PR_OpenDir(str.GetConstStr());
+	dd = PR_OpenDir(str.GetConstStrZ());
 
 	if ( dd == NULL ) {
 
@@ -300,7 +310,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( list ) {
 
-	JLStr directoryName;
+	JLData directoryName;
 	PRDir *dd = NULL;
 	JL_ASSERT_ARGC_MIN( 1 );
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &directoryName, &directoryNameLength) );
@@ -308,7 +318,7 @@ DEFINE_FUNCTION( list ) {
 
 	JL_ASSERT( directoryName.Length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
-	dd = PR_OpenDir(directoryName.GetConstStr());
+	dd = PR_OpenDir(directoryName.GetConstStrZ());
 	JL_CHKB( dd, bad_throw);
 
 	PRDirFlags flags;

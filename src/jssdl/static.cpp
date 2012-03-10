@@ -476,7 +476,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( icon ) {
 
-	JLStr buffer;
+	JLData buffer;
 	jsval image = *vp;
 
 	if ( JSVAL_IS_VOID(image) ) {
@@ -515,7 +515,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 		 amask = 0xff000000;
 	#endif
 
-		 SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)buffer.GetConstStr(), sWidth, sHeight, 8 * sChannels, sWidth * sChannels, rmask, gmask, bmask, amask);
+		 SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)buffer.GetConstStrZ(), sWidth, sHeight, 8 * sChannels, sWidth * sChannels, rmask, gmask, bmask, amask);
 
 	if ( surface == NULL )
 		return ThrowSdlError(cx);
@@ -690,7 +690,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( caption ) {
 
-	JLStr title;
+	JLData title;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &title) );
 	SDL_WM_SetCaption(title, NULL);
 	return JS_TRUE;

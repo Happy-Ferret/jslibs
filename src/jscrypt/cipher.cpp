@@ -151,7 +151,7 @@ $TOC_MEMBER $INAME
 // mode, cipher, key, IV
 DEFINE_CONSTRUCTOR() {
 	
-	JLStr modeName, cipherName, key, IV, optarg;
+	JLData modeName, cipherName, key, IV, optarg;
 
 	CipherPrivate *pv = NULL; // see. bad label
 
@@ -185,7 +185,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( argc >= 4 && !JSVAL_IS_VOID( JL_ARG(4) ) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &IV) ); // warning: GC on the returned buffer !
 	else
-		IV = JLStr("", true);
+		IV = JLData::Empty();
 
 	if ( argc >= 5 && !JSVAL_IS_VOID( JL_ARG(5) ) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &optarg) ); // warning: GC on the returned buffer !
@@ -333,7 +333,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( encrypt ) {
 
-	JLStr pt;
+	JLData pt;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -401,7 +401,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( decrypt ) {
 
-	JLStr ct;
+	JLData ct;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -534,7 +534,7 @@ DEFINE_PROPERTY_SETTER( IV ) {
 
 	JL_IGNORE(id, strict);
 
-	JLStr IV;
+	JLData IV;
 
 	JL_ASSERT_THIS_INSTANCE();
 

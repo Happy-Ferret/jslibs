@@ -80,8 +80,8 @@ function QAAPI(cx) {
 	this.ASSERT_STR = function( value, expect, testName ) {
 	
 		cx.checkpoint('ASSERT_STR', testName);
-		if ( value != expect ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
-			cx.reportIssue( '== '+formatVariable(value)+', expect '+formatVariable(expect), testName );
+		if ( toString(value) != toString(expect) ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
+			cx.reportIssue( '== '+formatVariable(toString(value))+', expect '+formatVariable(toString(expect)), testName );
 	}
 
    this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
@@ -654,8 +654,11 @@ function main() {
 	}, undefined );
 }
 
-
-main();
+try {
+	main();
+} catch (ex) {
+	print(uneval(ex));
+}
 print('Done\n');
 
 

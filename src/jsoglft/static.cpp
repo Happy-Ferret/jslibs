@@ -36,7 +36,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( draw3DText ) {
 
-	JLStr text;
+	JLData text;
 
 	JL_ASSERT_ARGC_RANGE( 2, 4 );
 	JL_ASSERT_ARG_IS_OBJECT(1);

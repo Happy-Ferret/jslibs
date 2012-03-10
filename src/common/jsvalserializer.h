@@ -19,7 +19,7 @@ namespace jl {
 
 	typedef enum JLSerializeType {
 
-		JLSTRawJsval,
+		JLDataawJsval,
 		JLSTHole,
 		JLSTVoid,
 		JLSTNull,
@@ -297,7 +297,7 @@ namespace jl {
 				}
 
 				// else {
-				//	JL_CHK( Write(cx, JLSTRawJsval) );
+				//	JL_CHK( Write(cx, JLDataawJsval) );
 				//	JL_CHK( Write(cx, *(uint64*)&val) ); // JL_REPORT_ERROR("Unsupported value.");
 				//}
 
@@ -588,7 +588,7 @@ namespace jl {
 
 			switch ( type ) {
 
-				//case JLSTRawJsval: {
+				//case JLDataawJsval: {
 				//	
 				//	JL_CHK( Read(cx, JSVAL_BITS(val)) );
 				//	break;

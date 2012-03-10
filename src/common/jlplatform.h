@@ -58,6 +58,7 @@
 	#pragma warning(disable : 4102) // unreferenced label
 	#pragma warning(disable : 4702) // unreachable code
 	#pragma warning(disable : 4227) // anachronism used : qualifiers on reference are ignored
+	#pragma warning(disable : 4521) // 'XXX' : multiple copy constructors specified
 	#ifndef DEBUG
 		#pragma warning(disable : 4701) // potentially uninitialized local variable 'XXX' used
 	#endif
@@ -73,6 +74,7 @@
 	#pragma warning(error : 4005) // 'XXX' : macro redefinition
 	#pragma warning(error : 4717) // 'XXX' : recursive on all control paths, function will cause runtime stack overflow
 	#pragma warning(error : 4508) // 'XXX' : function should return a value; 'void' return type assumed
+	#pragma warning(error : 4800) // 'XXX' : forcing value to bool 'true' or 'false' (performance warning)
 	#ifdef DEBUG
 		#pragma warning(error : 4701) // potentially uninitialized local variable 'XXX' used
 	#endif

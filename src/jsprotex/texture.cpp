@@ -248,7 +248,7 @@ JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, P
 
 	if ( JSVAL_IS_STRING(value) ) {
 
-		JLStr colorStr;
+		JLData colorStr;
 		const char *color;
 		size_t length;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &value, &color, &length) );
@@ -338,7 +338,7 @@ JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) 
 
 	if ( JL_ValueIsData(cx, value) ) {
 
-		JLStr curveData;
+		JLData curveData;
 
 		JSObject *bstrObj;
 		bstrObj = JSVAL_TO_OBJECT(value);
@@ -374,7 +374,7 @@ $SVN_REVISION $Revision$
 
 BEGIN_CLASS( Texture )
 
-JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
+JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -382,7 +382,7 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 	JL_ASSERT_THIS_OBJECT_STATE( tex );
 //	*buf = (char*)tex->cbuffer;
 //	*size = tex->width * tex->height * tex->channels * sizeof(PTYPE);
-	*str = JLStr((const uint8_t *)tex->cbuffer,  tex->width * tex->height * tex->channels * sizeof(PTYPE), false);
+	*str = JLData((const void *)tex->cbuffer,  tex->width * tex->height * tex->channels * sizeof(PTYPE));
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -473,7 +473,7 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( JL_ValueIsData(cx, *arg1) ) { // construct from an image, blob, string, ...
 
-		JLStr bufferStr;
+		JLData bufferStr;
 		JSObject *imageObj;
 		JL_CHK( JS_ValueToObject(cx, *arg1, &imageObj) );
 		unsigned int i, tsize, sWidth, sHeight, sChannels;
@@ -1516,7 +1516,7 @@ DEFINE_FUNCTION( set ) {
 
 	if ( JL_ValueIsData(cx, *arg1) ) {
 		
-		JLStr bufferStr;
+		JLData bufferStr;
 
 		JSObject *imageObj;
 		JL_CHK( JS_ValueToObject(cx, *arg1, &imageObj) );
@@ -3332,7 +3332,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 
-	JLStr bufferStr;
+	JLData bufferStr;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();

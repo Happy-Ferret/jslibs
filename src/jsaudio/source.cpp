@@ -204,6 +204,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( unqueueBuffers ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -228,6 +230,8 @@ DEFINE_FUNCTION( unqueueBuffers ) {
 
 DEFINE_FUNCTION( play ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -243,6 +247,8 @@ DEFINE_FUNCTION( play ) {
 }
 
 DEFINE_FUNCTION( pause ) {
+
+	JL_IGNORE( argc );
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -260,6 +266,8 @@ DEFINE_FUNCTION( pause ) {
 
 DEFINE_FUNCTION( stop ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -275,6 +283,8 @@ DEFINE_FUNCTION( stop ) {
 }
 
 DEFINE_FUNCTION( rewind ) {
+
+	JL_IGNORE( argc );
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -324,6 +334,8 @@ DEFINE_FUNCTION( effect ) {
 
 DEFINE_FUNCTION( valueOf ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -340,6 +352,8 @@ DEFINE_FUNCTION( valueOf ) {
 **/
 
 DEFINE_PROPERTY_SETTER( effectSlot ) {
+
+	JL_IGNORE( strict );
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -362,6 +376,8 @@ DEFINE_PROPERTY_SETTER( effectSlot ) {
 
 DEFINE_PROPERTY_SETTER( directFilter ) {
 
+	JL_IGNORE( strict );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -382,6 +398,8 @@ DEFINE_PROPERTY_SETTER( directFilter ) {
 
 
 DEFINE_PROPERTY_SETTER( buffer ) {
+
+	JL_IGNORE( strict );
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -490,6 +508,8 @@ DEFINE_FUNCTION( position ) {
 
 DEFINE_PROPERTY_GETTER( position ) {
 
+	JL_IGNORE( id );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -541,6 +561,8 @@ DEFINE_FUNCTION( velocity ) {
 
 DEFINE_PROPERTY_GETTER( velocity ) {
 
+	JL_IGNORE( id );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -559,6 +581,8 @@ DEFINE_PROPERTY_GETTER( velocity ) {
 
 
 DEFINE_PROPERTY_GETTER( remainingTime ) {
+
+	JL_IGNORE( id );
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -636,6 +660,8 @@ enum {
 // 'ind' suffix mean that an indirection is needed because tinyid (8bit) cannot store any OpenAL constant.
 DEFINE_PROPERTY_SETTER( sourceFloatInd ) {
 
+	JL_IGNORE( strict );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -664,7 +690,10 @@ DEFINE_PROPERTY_GETTER( sourceFloatInd ) {
 	JL_BAD;
 }
 
+/* (TBD) no setter ?
 DEFINE_PROPERTY_SETTER( sourceIntInd ) {
+
+	JL_IGNORE( strict );
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -678,6 +707,7 @@ DEFINE_PROPERTY_SETTER( sourceIntInd ) {
 	return JS_TRUE;
 	JL_BAD;
 }
+*/
 
 DEFINE_PROPERTY_GETTER( sourceIntInd ) {
 
@@ -695,6 +725,8 @@ DEFINE_PROPERTY_GETTER( sourceIntInd ) {
 }
 
 DEFINE_PROPERTY_SETTER( sourceBoolInd ) {
+
+	JL_IGNORE( strict );
 
 	JL_ASSERT_THIS_INSTANCE();
 

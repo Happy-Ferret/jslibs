@@ -770,7 +770,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 			JL_CHK( list );
 			for ( jsint j = 0; j < list->length; ++j ) {
 
-				JLStr keyStr;
+				JLData keyStr;
 			
 				JL_CHK( JS_IdToValue(cx, list->vector[j], &key) );
 				JL_CHK( JS_GetPropertyById(cx, itemObj, list->vector[j], &value) );
@@ -855,7 +855,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 			JS_DestroyIdArray(cx, list);
 		}
 
-		JLStr newItemStr;
+		JLData newItemStr;
 		LPCTSTR lpNewItem;
 		UINT_PTR uIDNewItem;
 
@@ -877,7 +877,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 
 				JL_CHK( JL_JsvalToNative(cx, label, &newItemStr) );
 				
-				lpNewItem = newItemStr.GetConstStr();
+				lpNewItem = newItemStr.GetConstStrZ();
 				uFlags |= MF_STRING;
 			} else {
 
@@ -1023,7 +1023,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		JL_CHK( JS_GetProperty(cx, infoObj, "infoTitle", JL_RVAL) );
 		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
 
-			JLStr infoTitle;
+			JLData infoTitle;
 			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &infoTitle) );
 
 			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoTitle.Length());
@@ -1034,7 +1034,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		JL_CHK( JS_GetProperty(cx, infoObj, "info", JL_RVAL) );
 		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
 
-			JLStr infoStr;
+			JLData infoStr;
 			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &infoStr) );
 			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoStr.Length());
 
@@ -1047,7 +1047,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		JL_CHK( JS_GetProperty(cx, infoObj, "icon", JL_RVAL) );
 		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
 
-			JLStr iconNameStr;
+			JLData iconNameStr;
 			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &iconNameStr) );
 			
 			if ( strcmp(iconNameStr, "info") == 0 )
@@ -1264,7 +1264,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( text ) {
 
-	JLStr tipText;
+	JLData tipText;
 
 	JL_ASSERT_THIS_INSTANCE();
 

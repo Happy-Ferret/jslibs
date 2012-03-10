@@ -255,7 +255,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JLStr jid, password;
+	JLData jid, password;
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -267,7 +267,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &jid) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &password) );
 	pv->handlers = new Handlers(obj);
-	pv->client = new Client(JID(jid.GetConstStr()), password.GetConstStr());
+	pv->client = new Client(JID(jid.GetConstStrZ()), password.GetConstStrZ());
 	pv->client->logInstance().registerLogHandler(LogLevelDebug, LogAreaAll, pv->handlers); // LogLevelDebug
 	pv->client->registerConnectionListener( pv->handlers );
 	pv->client->rosterManager()->registerRosterListener( pv->handlers, true );
@@ -293,7 +293,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( connect ) {
 
-	JLStr serverName;
+	JLData serverName;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -302,7 +302,7 @@ DEFINE_FUNCTION( connect ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT_ARGC_MIN(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &serverName) );
-	pv->client->setServer( serverName.GetConstStr() );
+	pv->client->setServer( serverName.GetConstStrZ() );
 	if ( JL_ARG_ISDEF(2) ) {
 
 		int port;
@@ -394,7 +394,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( sendMessage ) {
 
-	JLStr to, body;
+	JLData to, body;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -409,10 +409,10 @@ DEFINE_FUNCTION( sendMessage ) {
 
 	Tag *message = new Tag( "message" );
 	message->addAttribute( "type", "chat" );
-	new Tag( message, "body", body.GetConstStr() );
+	new Tag( message, "body", body.GetConstStrZ() );
 
 	message->addAttribute( "from", pv->client->jid().full() );
-	message->addAttribute( "to", to.GetConstStr());
+	message->addAttribute( "to", to.GetConstStrZ());
 	message->addAttribute( "id", pv->client->getID() );
 
 	pv->client->send( message );
@@ -489,14 +489,14 @@ DEFINE_PROPERTY_GETTER( status ) {
 
 DEFINE_PROPERTY_SETTER( status ) {
 
-	JLStr status;
+	JLData status;
 	
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_JsvalToNative(cx, *vp, &status) );
-	pv->client->setPresence(pv->client->presence(), pv->client->priority(), status.GetConstStr());
+	pv->client->setPresence(pv->client->presence(), pv->client->priority(), status.GetConstStrZ());
 	return JS_TRUE;
 	JL_BAD;
 }

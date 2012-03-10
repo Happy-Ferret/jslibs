@@ -39,7 +39,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( open ) {
 
 	// Initialize the OpenAL library (cf. alutInit)
-	JLStr deviceName;
+	JLData deviceName;
 	JL_ASSERT_WARN( alcGetCurrentContext() == NULL, E_LIB, E_STR("OpenAL"), E_OPEN );
 
 	if ( JL_ARG_ISDEF(1) )
@@ -88,6 +88,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( close ) {
 
+	JL_IGNORE( argc );
+
 	ResetEfxApi();
 	// cf. alutExit
 	ALCcontext *context = alcGetCurrentContext();
@@ -119,6 +121,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( hasEfx ) {
 
+	JL_IGNORE( id, obj );
+
 	ALCcontext *pContext = alcGetCurrentContext();
 	JL_ASSERT( pContext != NULL, E_LIB, E_STR("OpenAL"), E_INTERNAL );
 	ALCdevice *pDevice = alcGetContextsDevice(pContext);
@@ -134,6 +138,8 @@ $TOC_MEMBER $INAME
   is the number of aux sends per source.
 **/
 DEFINE_PROPERTY_GETTER( maxAuxiliarySends ) {
+
+	JL_IGNORE( id, obj );
 
 	ALCcontext *pContext = alcGetCurrentContext();
 	JL_ASSERT( pContext != NULL, E_LIB, E_STR("OpenAL"), E_INTERNAL );
@@ -524,6 +530,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( genSource ) {
 
+	JL_IGNORE( argc );
+
 	ALuint sourceID; // The OpenAL sound source
 	alGenSources(1, &sourceID);
 	JL_CHK( JL_NativeToJsval(cx, sourceID, JL_RVAL) );
@@ -780,7 +788,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( buffer ) {
 
-	JLStr buffer;
+	JLData buffer;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -1067,7 +1075,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( playSound ) {
 
-	JLStr buffer;
+	JLData buffer;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);

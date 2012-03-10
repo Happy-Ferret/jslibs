@@ -54,7 +54,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JLStr path;
+	JLData path;
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
@@ -79,7 +79,7 @@ DEFINE_CONSTRUCTOR() {
 
 		for ( uint32_t i = 0; i < processArgc -1; ++i ) { // -1 because argv[0]
 
-			JLStr tmp;
+			JLData tmp;
 			jsval propVal;
 			JL_CHK( JL_GetElement(cx, argObj, i, &propVal) );
 			JL_CHK( JL_JsvalToNative(cx, propVal, &tmp) ); // warning: GC on the returned buffer !

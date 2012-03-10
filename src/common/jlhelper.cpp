@@ -18,4 +18,4 @@
 // mixing safe and unsafe is not allowed.
 DLLLOCAL int _unsafeMode = true;
 
-jl::PreservAllocNone_threadsafe<JLStr::Inner> JLStr::mem;
+

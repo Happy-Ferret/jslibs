@@ -1079,7 +1079,7 @@ DEFINE_PROPERTY_SETTER( uniqueID ) {
 	JL_ASSERT_IS_STRING(*vp, "");
 	JSString *jsstr = JS_ValueToString(cx, *vp);
 	{
-	JLStr str(cx, jsstr);
+	JLData str(cx, jsstr);
 	JL_ASSERT( str.Length() == 4, E_VALUELENGTH, E_EQUALS, E_NUM(1) );
 	JL_CHK( str.IsSet() );
 	VstInt32 vstid = CCONST( str.GetConstStr()[0], str.GetConstStr()[1], str.GetConstStr()[2], str.GetConstStr()[3] );

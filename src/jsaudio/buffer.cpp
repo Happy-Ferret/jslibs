@@ -36,7 +36,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JLStr buffer;
+	JLData buffer;
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -101,6 +101,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( valueOf ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -123,6 +125,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( frequency ) {
 
+	JL_IGNORE( id );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
@@ -143,6 +147,8 @@ $TOC_MEMBER $INAME
   is the size (in bytes) of the sound hold by the buffer.
 **/
 DEFINE_PROPERTY_GETTER( size ) {
+
+	JL_IGNORE( id );
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -166,6 +172,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( bits ) {
 
+	JL_IGNORE( id );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
@@ -186,6 +194,8 @@ $TOC_MEMBER $INAME
   is the number of channels of the sound hold by the buffer.
 **/
 DEFINE_PROPERTY_GETTER( channels ) {
+
+	JL_IGNORE( id );
 
 	JL_ASSERT_THIS_INSTANCE();
 

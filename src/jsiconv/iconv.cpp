@@ -72,7 +72,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JLStr tocode, fromcode;
+	JLData tocode, fromcode;
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -122,7 +122,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CALL() {
 	
-	JLStr data;
+	JLData data;
 	JL_DEFINE_CALL_FUNCTION_OBJ;
 
 	char *outBuf = NULL; // keep on top
@@ -161,7 +161,7 @@ DEFINE_CALL() {
 	if ( pv->wFrom ) {
 
 		inLen = data.Length() * 2;
-		inBuf =  (char*)data.GetConstJsStr();
+		inBuf =  (char*)data.GetConstWStr();
 	} else {
 
 		inLen = data.Length();
@@ -309,7 +309,7 @@ DEFINE_CALL() {
 	} else {
 
 		//jsEncStr = JL_NewString(cx, outBuf, length); // loose outBuf ownership	// JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
-		JL_CHK( JLStr(outBuf, length, true).GetJSString(cx, JL_RVAL) );
+		JL_CHK( JLData(outBuf, true, length).GetJSString(cx, JL_RVAL) );
 	}
 
 	return JS_TRUE;
@@ -328,7 +328,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 
 	JL_IGNORE(id, strict);
 
-	JLStr chr;
+	JLData chr;
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );

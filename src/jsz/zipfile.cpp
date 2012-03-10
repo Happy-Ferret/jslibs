@@ -98,7 +98,7 @@ JSBool PrepareReadCurrentFile( JSContext *cx, JSObject *obj ) {
 
 	if ( pfile_info.flag & 1 ) { // has password
 
-		JLStr password;
+		JLData password;
 		jsval tmp;
 		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_CURRENTPASSWORD, &tmp) );
 		if ( !JSVAL_IS_VOID(tmp) )
@@ -219,7 +219,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( open ) {
 
 	int mode;
-	JLStr filename;
+	JLData filename;
 
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
@@ -278,7 +278,7 @@ DEFINE_FUNCTION( close ) {
 	if ( pv->zf ) {
 
 		ASSERT( !pv->uf );
-		JLStr comment;
+		JLData comment;
 		jsval tmp;
 		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_GLOBALCOMMENT, &tmp) );
 		if ( !JSVAL_IS_VOID(tmp) )
@@ -329,7 +329,7 @@ DEFINE_FUNCTION( select ) {
 
 	if ( pv->uf ) {
 
-		JLStr inZipFilename;
+		JLData inZipFilename;
 
 		if ( pv->inZipOpened ) {
 
@@ -565,7 +565,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
-	JLStr data;
+	JLData data;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -578,8 +578,8 @@ DEFINE_FUNCTION( write ) {
 
 	if ( !pv->inZipOpened ) {
 
-		JLStr inZipFilename;
-		JLStr currentExtraField;
+		JLData inZipFilename;
+		JLData currentExtraField;
 
 		zip_fileinfo zipfi;
 		zipfi.dosDate = 0;

@@ -354,7 +354,7 @@ DEFINE_FUNCTION( encodePngImage ) {
 
 	PngWriteUserStruct desc;
 	desc.buffer = NULL; // see bad:
-	JLStr buffer;
+	JLData buffer;
 
 	JL_ASSERT_ARGC_MIN(1);
 

@@ -49,7 +49,7 @@ JSBool StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount
 	JL_CHK( JL_GetReservedSlot(cx, streamObj, SLOT_STREAM_SOURCE, &source) );
 
 	{
-	JLStr str;
+	JLData str;
 	JL_CHK( JL_JsvalToNative(cx, source, &str) ); // (TBD) GC protect source
 
 	size_t length = str.Length();

@@ -946,7 +946,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( translation ) {
 
-	JL_IGNORE(id);
+	JL_IGNORE(id, strict);
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_IS_ARRAY( *vp, "" );
 
@@ -1025,6 +1025,8 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
+	JL_IGNORE(strict);
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	if ( !JSID_IS_INT(id) )
@@ -1060,6 +1062,8 @@ DEFINE_INIT() {
 
 #ifdef DEBUG
 DEFINE_FUNCTION( test ) {
+
+	JL_IGNORE(argc, cx);
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;

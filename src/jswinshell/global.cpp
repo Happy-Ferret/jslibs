@@ -42,7 +42,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( extractIcon ) {
 
-	JLStr fileName;
+	JLData fileName;
 	JL_ASSERT_ARGC_MIN(1);
 	UINT iconIndex = 0;
 	if ( argc >= 2 )
@@ -120,7 +120,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( messageBox ) {
 
-	JLStr caption, text;
+	JLData caption, text;
 
 	JL_ASSERT_ARGC_MIN(1);
 
@@ -133,7 +133,7 @@ DEFINE_FUNCTION( messageBox ) {
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &text) );
 
-	int res = MessageBox(NULL, text.GetConstStr(), caption.GetStrConstOrNull(), type);
+	int res = MessageBox(NULL, text.GetConstStrZ(), caption.GetConstStrZOrNULL(), type);
 	if ( res == 0 )
 		return JL_ThrowOSError(cx);
 	*JL_RVAL = INT_TO_JSVAL( res );
@@ -158,7 +158,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( createProcess ) {
 
-	JLStr applicationName, commandLine, environment, currentDirectory;
+	JLData applicationName, commandLine, environment, currentDirectory;
 
 	JL_ASSERT_ARGC_MIN(1);
 
@@ -211,7 +211,7 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 
 	if ( argc >= 1 && !JSVAL_IS_VOID( JL_ARG(1) ) ) {
 
-		JLStr str;
+		JLData str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 		strcpy( filter, str );
 		for ( char *tmp = filter; (tmp = strchr(tmp, '|')) != 0; tmp++ )
@@ -222,7 +222,7 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 
 	if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) ) {
 
-		JLStr tmp;
+		JLData tmp;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &tmp) );
 		strcpy( fileName, tmp );
 	} else {
@@ -253,7 +253,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( expandEnvironmentStrings ) {
 
-	JLStr src;
+	JLData src;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &src) );
 	TCHAR dst[MAX_PATH];
@@ -406,12 +406,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( registryGet ) {
 
 	uint8_t *buffer = NULL;
-	JLStr pathStr, valueName;
+	JLData pathStr, valueName;
 	JL_ASSERT_ARGC_RANGE(1,2);
 	
 	const char *path;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pathStr) );
-	path = pathStr.GetConstStr();
+	path = pathStr.GetConstStrZ();
 
 	HKEY rootHKey;
 	if ( !strncmp(path, "HKEY_CURRENT_USER", 17) ) {
@@ -553,7 +553,7 @@ DEFINE_FUNCTION( registryGet ) {
 		case REG_MULTI_SZ:
 		case REG_SZ: {
 			//JSString *jsstr = JL_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
-			JL_CHK( JLStr((char*)buffer, size-1, true).GetJSString(cx, JL_RVAL) );
+			JL_CHK( JLData((char*)buffer, true, size-1).GetJSString(cx, JL_RVAL) );
 			break;
 		}
 	}
@@ -608,7 +608,7 @@ void FinalizeDirectoryHandle(void *data) {
 
 DEFINE_FUNCTION( directoryChangesInit ) {
 
-	JLStr pathName;
+	JLData pathName;
 	JL_ASSERT_ARGC_RANGE(2,3);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pathName) );
@@ -842,7 +842,7 @@ print(guidToString(f.id).quote());
 **/
 DEFINE_FUNCTION( guidToString ) {
 
-	JLStr str;
+	JLData str;
 
 	JL_ASSERT_ARGC(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
@@ -918,7 +918,7 @@ DEFINE_PROPERTY_SETTER( clipboard ) {
 
 	if ( !JSVAL_IS_VOID( *vp ) ) {
 
-		JLStr str;
+		JLData str;
 
 		res = OpenClipboard(NULL);
 		if ( res == 0 )

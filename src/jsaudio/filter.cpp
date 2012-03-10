@@ -77,6 +77,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( valueOf ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -105,6 +107,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( type ) {
 
+	JL_IGNORE( strict, id );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -121,6 +125,8 @@ DEFINE_PROPERTY_SETTER( type ) {
 }
 
 DEFINE_PROPERTY_GETTER( type ) {
+
+	JL_IGNORE( id );
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -142,6 +148,8 @@ DEFINE_PROPERTY_GETTER( type ) {
 
 
 DEFINE_PROPERTY_SETTER( filterFloat ) {
+
+	JL_IGNORE( strict );
 
 	JL_ASSERT_THIS_INSTANCE();
 

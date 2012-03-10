@@ -36,6 +36,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( open ) {
 
+	JL_IGNORE(vp, argc);
+
 	BOOL status = AllocConsole();
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
@@ -52,7 +54,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( close ) {
 
-//	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+	JL_IGNORE(argc);
+
+	//	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 //	CloseHandle(hStdout);
 //	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 //	CloseHandle(hStdin);
@@ -76,7 +80,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
-	JLStr str;
+	JLData str;
 	JL_ASSERT_ARGC(1);
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	if ( hStdout == NULL )
@@ -142,7 +146,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( writeConsoleOutput ) {
 
-	JLStr str;
+	JLData str;
 	BOOL res;
 
 	JL_ASSERT_ARGC_RANGE(3, 5);
@@ -158,7 +162,7 @@ DEFINE_FUNCTION( writeConsoleOutput ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &str) );
 	JL_ASSERT( str.LengthOrZero() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
 	CHAR_INFO charInfo;
-	charInfo.Char.UnicodeChar = str.GetJsStrConstOrNull()[0];
+	charInfo.Char.UnicodeChar = str.GetConstWStrOrNull()[0];
 
 	int color, backgroundColor;
 	
@@ -209,7 +213,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( fillConsoleOutput ) {
 
-	JLStr str;
+	JLData str;
 	BOOL res;
 
 	JL_ASSERT_ARGC(6);
@@ -224,7 +228,7 @@ DEFINE_FUNCTION( fillConsoleOutput ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &str) );
 		JL_ASSERT( str.LengthOrZero() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
-		WCHAR unicodeChar = str.GetJsStrConstOrNull()[0];
+		WCHAR unicodeChar = str.GetConstWStrOrNull()[0];
 
 		WORD attributes;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &attributes) );
@@ -568,7 +572,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( title ) {
 
-	JLStr str;
+	JLData str;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &str) );
 	SetConsoleTitle(str);
 	return JS_TRUE;

@@ -102,13 +102,13 @@ protected:
 		return BOOLEAN_TO_JSVAL( b );
 	}
 
-	inline JLStr JsvalToString( jsval &val ) { // beware: val is a reference !
+	inline JLData JsvalToString( jsval &val ) { // beware: val is a reference !
 
 		JSString *jsstr = JS_ValueToString(_cx, val);
 		val = STRING_TO_JSVAL(jsstr);
 		if ( jsstr == NULL )
 			throw JsException(_cx, "cannot convert the value to a string");
-		return JLStr(_cx, jsstr);
+		return JLData(_cx, jsstr);
 	}
 
 	inline void CopyJsvalToString( jsval val, char *str, size_t maxLength ) {
@@ -126,7 +126,7 @@ protected:
 		if ( len > maxLength - 1 )
 			 len = maxLength - 1;
 		{
-		JLStr tmp(_cx, jsstr);
+		JLData tmp(_cx, jsstr);
 		memcpy(str, tmp.GetConstStr(), tmp.Length());
 		}
 		str[len] = '\0';

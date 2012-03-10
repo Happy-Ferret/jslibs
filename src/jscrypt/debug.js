@@ -1,5 +1,7 @@
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
-//loadModule('jsstd'); exec('../common/tools.js'); RunQATests('-rep 4 jscrypt');
+
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jscrypt -exclude jstask'); throw 0;
+
 
 loadModule('jsstd');
 loadModule('jscrypt');

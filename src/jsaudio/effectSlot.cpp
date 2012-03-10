@@ -56,6 +56,8 @@ DEFINE_CONSTRUCTOR() {
 
 DEFINE_FUNCTION( valueOf ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -72,6 +74,8 @@ DEFINE_FUNCTION( valueOf ) {
 **/
 
 DEFINE_PROPERTY_SETTER( effect ) {
+
+	JL_IGNORE( strict );
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -94,6 +98,8 @@ DEFINE_PROPERTY_SETTER( effect ) {
 
 DEFINE_PROPERTY_SETTER( effectGain ) {
 
+	JL_IGNORE( strict, id );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -107,6 +113,8 @@ DEFINE_PROPERTY_SETTER( effectGain ) {
 }
 
 DEFINE_PROPERTY_GETTER( effectGain ) {
+
+	JL_IGNORE( id );
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -123,6 +131,8 @@ DEFINE_PROPERTY_GETTER( effectGain ) {
 
 DEFINE_PROPERTY_SETTER( effectSendAuto ) {
 
+	JL_IGNORE( strict, id );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);
@@ -136,6 +146,8 @@ DEFINE_PROPERTY_SETTER( effectSendAuto ) {
 }
 
 DEFINE_PROPERTY_GETTER( effectSendAuto ) {
+
+	JL_IGNORE( id );
 
 	JL_ASSERT_THIS_INSTANCE();
 

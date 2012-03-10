@@ -367,7 +367,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( splitChannels ) {
 
-	JLStr bufStr;
+	JLData bufStr;
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 

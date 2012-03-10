@@ -687,7 +687,7 @@ DEFINE_PROPERTY_SETTER( excludedFileList ) {
 	jsval tmp;
 	for ( jsuint i = 0; i < length; ++i ) {
 
-		JLStr fileName;
+		JLData fileName;
 		JL_CHK( JL_GetElement(cx, arrayObject, i, &tmp ) );
 		JL_CHK( JL_JsvalToNative(cx, tmp, &fileName) );
 		AddExcludedFile(&pv->excludedFiles, fileName.GetStrZOwnership());

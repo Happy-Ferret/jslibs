@@ -209,7 +209,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( measure ) {
 
-	JLStr str;
+	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -256,7 +256,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( width ) {
 	
-	JLStr str;
+	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -297,7 +297,7 @@ f3d.draw('test');
 **/
 DEFINE_FUNCTION( draw ) {
 
-	JLStr str;
+	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -345,7 +345,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( compile ) {
 
-	JLStr str;
+	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();

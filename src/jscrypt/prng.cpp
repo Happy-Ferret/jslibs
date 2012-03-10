@@ -50,7 +50,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JLStr prngName;
+	JLData prngName;
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -136,7 +136,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( addEntropy ) {
 
-	JLStr entropy;
+	JLData entropy;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -234,7 +234,7 @@ DEFINE_PROPERTY_GETTER( state ) {
 DEFINE_PROPERTY_SETTER( state ) {
 
 	JL_IGNORE(id, strict);
-	JLStr state;
+	JLData state;
 
 	JL_ASSERT_THIS_INSTANCE();
 

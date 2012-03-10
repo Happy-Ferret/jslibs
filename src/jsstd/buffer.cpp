@@ -84,7 +84,7 @@ inline JSBool PeekJsval( JSContext *cx, jl::QueueCell *cell, jsval *value ) {
 
 JSBool WriteDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 
-	JLStr str;
+	JLData str;
 
 	BufferPrivate *pv;
 	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
@@ -128,7 +128,7 @@ JSBool WriteRawDataChunk( JSContext *cx, JSObject *obj, size_t amount, const cha
 
 JSBool UnReadDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 
-	JLStr str;
+	JLData str;
 
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
@@ -239,7 +239,7 @@ JSBool UnReadRawDataChunk( JSContext *cx, JSObject *obj, char *data, size_t leng
 
 JSBool ReadChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 
-	JLStr str;
+	JLData str;
 
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
@@ -289,7 +289,7 @@ JSBool ReadRawDataAmount( JSContext *cx, JSObject *obj, size_t *amount, char *st
 
 	while ( remainToRead > 0 ) { // while there is something to read,
 
-		JLStr str;
+		JLData str;
 		jsval item;
 		JL_CHK( ShiftJsval(cx, pv->queue, &item) );
 
@@ -345,7 +345,7 @@ JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t *amount ) { // amo
 	remainToRead = *amount;
 	while ( remainToRead > 0 ) { // while there is something to read,
 
-		JLStr str;
+		JLData str;
 		jsval item;
 		size_t chunkLen;
 		JL_CHK( ShiftJsval(cx, pv->queue, &item) );
@@ -358,7 +358,7 @@ JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t *amount ) { // amo
 			remainToRead -= chunkLen;
 		} else {
 
-			JLStr str;
+			JLData str;
 
 			//const char *chunk;
 			//JL_CHK( JL_JsvalToStringAndLength(cx, &item, &chunk, &chunkLen) );
@@ -408,7 +408,7 @@ JSBool ReadDataAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval 
 	}
 
 	str[amount] = '\0'; // (TBD) explain this
-	JL_CHK( JLStr(str, amount, true).GetJSString(cx, rval) );
+	JL_CHK( JLData(str, true, amount).GetJSString(cx, rval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -432,7 +432,7 @@ JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t ne
 
 		jsval *pNewStr = (jsval*)QueueGetData(it);
 		//JL_CHK( JL_JsvalToStringAndLength(cx, pNewStr, &chunk, &chunkLength) );
-		JLStr str;
+		JLData str;
 		JL_CHK( JL_JsvalToNative(cx, *pNewStr, &str) );
 		chunkLength = str.Length();
 		chunk = str.GetConstStr();
@@ -685,7 +685,7 @@ DEFINE_FUNCTION( write ) {
 //		const char *buf;
 		
 		//JL_CHK( JL_JsvalToStringAndLength(cx, arg1, &buf, &strLen) ); // warning: GC on the returned buffer !
-		JLStr str;
+		JLData str;
 		JL_CHK( JL_JsvalToNative(cx, arg1, &str) );
 
 		if ( str.Length() == 0 )
@@ -716,7 +716,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( match ) {
 
-	JLStr str;
+	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
 
@@ -834,7 +834,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( readUntil ) {
 
-	JLStr str;
+	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -879,7 +879,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( indexOf ) {
 
-	JLStr str;
+	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -961,7 +961,7 @@ DEFINE_FUNCTION( toString ) {
 //	while ( !QueueIsEmpty(pv->queue) ) {
 	for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
 
-		JLStr str;
+		JLData str;
 //		JL_CHK( ShiftJsval(cx, pv->queue, rval) );
 		JL_CHK( PeekJsval(cx, it, JL_RVAL) );
 
@@ -974,7 +974,7 @@ DEFINE_FUNCTION( toString ) {
 		pos += str.Length();
 	}
 
-	JL_CHK( JLStr(buffer, pv->length, true).GetJSString(cx, JL_RVAL) );
+	JL_CHK( JLData(buffer, true, pv->length).GetJSString(cx, JL_RVAL) );
 
 //	pv->length = 0;
 
@@ -1023,7 +1023,7 @@ DEFINE_GET_PROPERTY() {
 
 			jsval *pNewStr = (jsval*)QueueGetData(it);
 //			JL_CHK( JL_JsvalToStringLength(cx, *pNewStr, &chunkLength) );
-			JLStr str;
+			JLData str;
 			JL_CHK( JL_JsvalToNative(cx, *pNewStr, &str) );
 
 			if ( (size_t)slot >= offset && (size_t)slot < offset + str.Length() ) {

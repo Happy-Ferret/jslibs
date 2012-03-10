@@ -434,7 +434,7 @@ int main_arraylike(int argc, char* argv[]) {
 
 	JSString *s = JS_NewStringCopyZ(cx, (const char *)L"hello");
 
-	bool tmp = JSVAL_IS_PRIMITIVE(STRING_TO_JSVAL(s));
+	JSBool tmp = JSVAL_IS_PRIMITIVE(STRING_TO_JSVAL(s));
 
 
 	return EXIT_SUCCESS;
@@ -555,7 +555,7 @@ bool test_perf(jsval &val) {
 004014ED  mov         dword ptr [esp],ecx 
 004014F0  setbe       al  
 */
-	return i;
+	return !!i;
 }
 
 
@@ -591,7 +591,7 @@ int main_bad(int argc, char* argv[]) {
 	if ( argc > 0 )
 		return 1;
 
-	JLStr str;
+	JLData str;
 
 	printf("%d%p", str.Length(), ptr);
 
@@ -602,9 +602,132 @@ bad:
 	return 1;
 }
 
+////////////////////////////////////////////////////////////////////
+
+JLData JLData_test_create( int step ) {
+
+	switch ( step ) {
+
+		case 0:
+			return JLData("test", true);
+		case 1:
+			return JLData("test", false, 4);
+		case 2: {
+			char *buf = (char*)malloc(10);
+			strcpy(buf, "test");
+			return JLData(buf, false, 4);
+		}
+		case 3: {
+			char *buf = (char*)malloc(10);
+			strcpy(buf, "test");
+			return JLData(buf, false, 4);
+		}
+		case 4: {
+			char *buf = (char*)malloc(10);
+			strcpy(buf, "test");
+			return JLData(buf, true, 4);
+		}
+		case 5:
+			return JLData(L("test"), true);
+		case 6:
+			return JLData(L("test"), false, 4);
+		case 7: {
+			jschar *buf = (jschar*)malloc(10);
+			wcscpy(buf, L("test"));
+			return JLData(buf, true);
+		}
+		case 8: {
+			jschar *buf = (jschar*)malloc(10);
+			wcscpy(buf, L("test"));
+			return JLData(buf, false, 4);
+		}
+		case 9: {
+			void *buf = malloc(10);
+			return JLData(buf, 10);
+		}
+		case 10: {
+			return JLData((const void *)"test", 4);
+		}
+	}
+	return JLData::Empty();
+}
+
+
+
+void JLData_test_test( int step, JLData &data ) {
+
+	switch ( step ) {
+		case 0:
+			data.GetConstStr();
+			return;
+		case 1:
+			data.GetConstStrZ();
+			return;
+		case 2:
+			data.GetConstWStr();
+			return;
+		case 3:
+			data.GetConstWStrOrNull();
+			return;
+		case 4:
+			data.GetConstWStrZ();
+			return;
+		case 5:
+			data.GetStrOwnership();
+			return;
+		case 6:
+			data.GetWStrZOwnership();
+			return;
+		case 7:
+			data.LengthOrZero();
+			return;
+		case 8:
+			data.GetStrZOwnership();
+			return;
+		case 9:
+			data.GetWStrOwnership();
+			return;
+	}
+}
+
+int main_JLData_test(int argc, char* argv[]) {
+
+	JLData b("xxx", true);
+	JLData c;
+	c = b;
+	JLData d(b);
+
+	JLData e(JLData("", true));
+
+
+	JLData("test", true).GetConstWStr();
+
+	for ( int i = 0; i <= 20; ++i ) {
+		
+		for ( int j = 0; j <= 20; ++j ) {
+
+			printf("%3d:%3d ", i, j);
+			JLData xxx = JLData_test_create(i);
+			JLData_test_test(j, xxx);
+			{
+				JLData yyy = xxx;
+				yyy = yyy;
+			}
+			ASSERT( !xxx.IsSet() );
+
+			JLData aaa = JLData_test_create(i);
+			JLData_test_test(j, aaa);
+
+		}
+	}
+
+	return 0;
+}
+
+
 
 int main(int argc, char* argv[]) {
 
 	//return main_PerfTest(argc, argv);
-	return main_bad(argc, argv);
+	return main_JLData_test(argc, argv);
 }

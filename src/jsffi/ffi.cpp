@@ -890,7 +890,7 @@ JSBool NativeData_setter_String(JSContext *cx, JSObject *obj, jsid id, JSBool st
 //  if ( str == NULL )
 //	  return JS_FALSE;
 
-	JLStr str;
+	JLData str;
 	if ( !JL_JsvalToNative(cx, *vp, &str) )
 		return JS_FALSE;
 
@@ -1013,7 +1013,7 @@ JL_GetReservedSlot(cx, JSVAL_TO_OBJECT( currentArg ), 1, &val); // ..., JSVAL_TO
 //  if ( procName == NULL )
 //	  return JS_FALSE;
 
-  JLStr procName;
+  JLData procName;
   if ( !JL_JsvalToNative(cx, id, &procName) )
 	  return JS_FALSE;
 
@@ -1072,7 +1072,7 @@ JSBool NativeModule_Construct(JSContext *cx, uintN argc, jsval *vp) {
 //  if ( libName == NULL || *libName == '\0' )
 //    return JS_FALSE;
 
-	JLStr libName;
+	JLData libName;
 	if ( !JL_JsvalToNative(cx, JS_ARGV(cx, vp)[0], &libName) )
 		return JS_FALSE;
 

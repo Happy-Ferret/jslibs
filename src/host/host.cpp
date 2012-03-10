@@ -192,7 +192,7 @@ JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 	for ( uintN i = 0; i < argc; ++i ) {
 
-		JLStr str;
+		JLData str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
 		int status = pv->hostStdOut(pv->privateData, str.GetConstStr(), str.Length());
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
@@ -211,7 +211,7 @@ JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 
 	for ( uintN i = 0; i < argc; ++i ) {
 
-		JLStr str;
+		JLData str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
 		int status = pv->hostStdErr(pv->privateData, str.GetConstStr(), str.Length());
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
@@ -447,7 +447,7 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 
 JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 
-	JLStr str;
+	JLData str;
 	JLLibraryHandler module = JLDynamicLibraryNullHandler;
 
 	JL_DEFINE_FUNCTION_OBJ;

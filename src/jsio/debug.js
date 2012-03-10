@@ -1,8 +1,17 @@
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
 
 
-loadModule('jsstd'); loadModule('jsio');
+loadModule('jsstd');
+loadModule('jsio');
+
+var dir = new Directory('..');
+dir.open();
+
+halt();
+
+
+//loadModule('jsstd'); loadModule('jsio');
 
 
 /// Socket shutdown(false) behavior [trm]

@@ -31,6 +31,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( position ) {
 
+	JL_IGNORE( strict, id, obj );
+
 	float pos[3];
 	uint32_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, *vp, pos, 3, &len) );
@@ -43,6 +45,8 @@ DEFINE_PROPERTY_SETTER( position ) {
 }
 
 DEFINE_PROPERTY_GETTER( position ) {
+
+	JL_IGNORE( id, obj );
 
 	float pos[3];
 
@@ -62,6 +66,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( metersPerUnit ) {
 
+	JL_IGNORE( strict, id, obj );
+
 	float metersPerUnit;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &metersPerUnit) );
 
@@ -73,6 +79,8 @@ DEFINE_PROPERTY_SETTER( metersPerUnit ) {
 }
 
 DEFINE_PROPERTY_GETTER( metersPerUnit ) {
+
+	JL_IGNORE( id, obj );
 
 	float metersPerUnit;
 

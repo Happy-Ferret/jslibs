@@ -157,7 +157,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 				//if ( JL_JsvalIsBlob(cx, val) ) {
 				if ( JL_ValueIsData(cx, val) ) {
 
-					JLStr data;
+					JLData data;
 					JL_CHK( JL_JsvalToNative(cx, val, &data) );
 					if ( sqlite3_bind_blob(pStmt, param, data.GetConstStr(), data.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
@@ -167,7 +167,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 			case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
 			case JSTYPE_STRING: {
 
-				JLStr str;
+				JLData str;
 				JL_CHK( JL_JsvalToNative(cx, val, &str) );
 
 				if ( sqlite3_bind_text(pStmt, param, str.GetConstStr(), str.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT

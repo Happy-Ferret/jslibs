@@ -43,7 +43,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 
 		if ( JSVAL_IS_OBJECT( image ) ) {
 
-			JLStr buffer;
+			JLData buffer;
 
 			JSObject *imageObj = JSVAL_TO_OBJECT( image );
 			int sWidth, sHeight, sChannels;
@@ -148,7 +148,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
-	JLStr data;
+	JLData data;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -258,7 +258,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( renderImage ) { // using cairo
 
-	JLStr id;
+	JLData id;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -329,7 +329,7 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 	if ( JL_ARG_ISDEF(5) ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &id) );
-		JL_ASSERT( id.IsSet() && id.GetConstStr()[0] == '#', E_ARG, E_NUM(5), E_INVALID );
+		JL_ASSERT( id.IsSet() && id.GetConstStrZ()[0] == '#', E_ARG, E_NUM(5), E_INVALID );
 	}
 
 	cairo_format_t surfaceFormat;
@@ -450,7 +450,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( setVisible ) {
 
-	JLStr id;
+	JLData id;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -461,7 +461,7 @@ DEFINE_FUNCTION( setVisible ) {
 	RsvgHandle *handle = pv->handle;
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &id) );
-	JL_ASSERT( id.IsSet() && id.GetConstStr()[0] == '#', E_ARG, E_NUM(1), E_INVALID );
+	JL_ASSERT( id.IsSet() && id.GetConstStrZ()[0] == '#', E_ARG, E_NUM(1), E_INVALID );
 
 	bool visible;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &visible) );

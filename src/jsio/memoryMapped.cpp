@@ -27,10 +27,10 @@ struct MemoryMappedPrivate {
 	void *addr;
 };
 
-JSBool MemoryMappedBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
+JSBool MemoryMappedBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
-	*str = JLStr(((const char*)pv->addr) + pv->offset, pv->size, false);
+	*str = JLData(((const char*)pv->addr) + pv->offset, false, pv->size);
 	return JS_TRUE;
 }
 

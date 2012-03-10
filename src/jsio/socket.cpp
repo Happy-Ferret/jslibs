@@ -162,7 +162,7 @@ DEFINE_FUNCTION( bind ) {
 
 	if ( JL_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
-		JLStr host;
+		JLData host;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &host) );
 
 		if ( PR_StringToNetAddr(host, &addr) != PR_SUCCESS )
@@ -306,7 +306,7 @@ $TOC_MEMBER $INAME
 //	descriptor writeable.
 DEFINE_FUNCTION( connect ) {
 
-	JLStr host;
+	JLData host;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(2);
@@ -387,7 +387,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( sendTo ) {
 
-	JLStr host, str;
+	JLData host, str;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -571,7 +571,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
-	JLStr headers;
+	JLData headers;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1,3);
@@ -1027,7 +1027,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getHostsByName ) {
 
-	JLStr host;
+	JLData host;
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	char netdbBuf[PR_NETDB_BUF_SIZE];
@@ -1095,7 +1095,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getHostsByAddr ) {
 
-	JLStr addr;
+	JLData addr;
 	JL_ASSERT_ARGC( 1 );
 
 	//const char *addr; // MAX_IP_STRING

@@ -60,7 +60,7 @@ DEFINE_CONSTRUCTOR() {
 
 	DatabasePrivate *pv = NULL;
 
-	JLStr fileName;
+	JLData fileName;
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -78,7 +78,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
 	else
-		fileName = JLStr(":memory:", true);
+		fileName = JLData(":memory:", true);
 
 	pv = (DatabasePrivate*)JS_malloc(cx, sizeof(DatabasePrivate));
 	JL_CHK(pv);
@@ -255,7 +255,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( query ) {
 
-	JLStr sql;
+	JLData sql;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
@@ -327,7 +327,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( exec ) {
 
-	JLStr sql;
+	JLData sql;
 
 	sqlite3_stmt *pStmt = NULL;
 	// see sqlite3_exec()
@@ -537,7 +537,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				//const char *data;
 				//size_t length;
 				//JL_CHKB( JL_JsvalToStringAndLength(cx, &argv[0], &data, &length), bad_unroot );
-				JLStr data;
+				JLData data;
 				JL_CHK( JL_JsvalToNative(cx, argv[0], &data) );
 				sqlite3_result_blob(sCx, data.GetConstStr(), data.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				break;
@@ -551,7 +551,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 //			size_t len;
 //			JL_CHKB( JL_JsvalToStringAndLength(cx, &argv[0], &str, &len), bad_unroot );
 
-			JLStr str;
+			JLData str;
 			JL_CHK( JL_JsvalToNative(cx, argv[0], &str) );
 			sqlite3_result_text(sCx, str.GetConstStr(), str.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 			break;

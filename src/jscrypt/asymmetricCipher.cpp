@@ -129,7 +129,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersion] )
 
-	JLStr asymmetricCipherName, hashName;
+	JLData asymmetricCipherName, hashName;
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -181,7 +181,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 
 		if ( JL_ARGC >= 4 && !JSVAL_IS_VOID( JL_ARG(4) ) ) {
 
-			JLStr paddingName;
+			JLData paddingName;
 			JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &paddingName) );
 
 			if ( strcasecmp(paddingName, "1_OAEP") == 0 ) {
@@ -337,7 +337,7 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 
 	unsigned long outLength = 4096;
 	uint8_t *out = NULL;
-	JLStr in;
+	JLData in;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -370,7 +370,7 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 //			unsigned long lparamlen = 0;
 //			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 //				JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(2), &in, &inLength) );
-			JLStr lparam;
+			JLData lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 			// doc. When performing v1.5 encryption, the hash and lparam parameters are totally ignored and can be set to NULL or zero (respectively).
@@ -388,7 +388,7 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 		}
 #ifdef MKAT
 		case katja: {
-			JLStr lparam;
+			JLData lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 			err = katja_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, pv->hashIndex, &pv->key.katjaKey );
@@ -431,7 +431,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 
 	unsigned long outLength = 4096;
 	uint8_t *out = NULL;
-	JLStr in;
+	JLData in;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -454,7 +454,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 	switch ( pv->cipher ) {
 		case rsa: {
 
-			JLStr lparam;
+			JLData lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 
@@ -479,7 +479,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 #ifdef MKAT
 		case katja: {
 
-			JLStr lparam;
+			JLData lparam;
 			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 
@@ -523,7 +523,7 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 
 	unsigned long outLength = 4096;
 	uint8_t *out = NULL;
-	JLStr in;
+	JLData in;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -600,7 +600,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( verifySignature ) { // ( data, signature [, saltLength] )
 
-	JLStr data, sign;
+	JLData data, sign;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -775,7 +775,7 @@ DEFINE_PROPERTY_SETTER( key ) {
 	
 	JL_IGNORE(strict);
 
-	JLStr key;
+	JLData key;
 
 	JL_ASSERT_THIS_INSTANCE();
 	AsymmetricCipherPrivate *pv;

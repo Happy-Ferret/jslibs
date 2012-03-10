@@ -190,7 +190,7 @@ BlobBuffer( JSContext *cx, JSObject *blobObject, const uint8_t **buffer ) {
 }
 
 
-JSBool Blob_NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
+JSBool Blob_NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
 	ASSERT( JL_GetClass(obj) == JL_CLASS(Blob) );
 
@@ -201,7 +201,7 @@ JSBool Blob_NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLStr *str )
 	JL_CHK( BlobLength(cx, obj, &len) );
 	JL_CHK( BlobBuffer(cx, obj, &buf) );
 
-	*str = JLStr(buf, len, true);
+	*str = JLData(buf, len, true);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -279,7 +279,7 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( !genEmpty ) { // new Blob('xxx')
 
-		JLStr str;
+		JLData str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) ); // warning: GC on the returned buffer !
 		size_t length = str.Length();
 		dBuffer = (char*)JS_malloc(cx, length +1);
@@ -429,7 +429,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( concat ) {
 
-	JLStr str;
+	JLData str;
 
 	uint8_t *dst;
 	IFDEBUG( dst = NULL );
@@ -476,7 +476,7 @@ DEFINE_FUNCTION( concat ) {
 
 	for ( arg = 1; arg <= JL_ARGC; arg++ ) {
 
-		JLStr str;
+		JLData str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(arg), &str) );
 		memcpy(tmp, str.GetConstStr(), str.Length());
 		tmp += str.Length();
@@ -633,7 +633,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( indexOf ) {
 
-	JLStr str;
+	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -705,7 +705,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( lastIndexOf ) {
 
-	JLStr str;
+	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -791,7 +791,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( split ) {
 
-	JLStr str;
+	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();

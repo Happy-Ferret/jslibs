@@ -50,7 +50,7 @@ JSBool Unlock( JSContext *cx, ClassPrivate *pv ) {
 }
 
 
-JSBool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
+JSBool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(SharedMemory) );
@@ -58,7 +58,7 @@ JSBool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLStr *str ) {
 	mh = (MemHeader*)pv->mem;
 //	*buf = (char *)pv->mem + sizeof(MemHeader);
 //	*size = mh->currentDataLength;
-	*str = JLStr(((const char *)pv->mem) + sizeof(MemHeader), mh->currentDataLength, false);
+	*str = JLData(((const char *)pv->mem) + sizeof(MemHeader), false, mh->currentDataLength);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -132,7 +132,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JLStr name;
+	JLData name;
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
@@ -219,7 +219,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
-	JLStr data;
+	JLData data;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
 
@@ -370,7 +370,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 		JL_CHK( Unlock(cx, pv) );
 	} else {
 
-		JLStr data;
+		JLData data;
 //		const char *data;
 //		size_t dataLength;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, vp, &data, &dataLength) );

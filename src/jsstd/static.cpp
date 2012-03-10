@@ -60,7 +60,7 @@ DEFINE_FUNCTION( expand ) {
 	} Chunk;
 
 	jl::Stack<Chunk, jl::StaticAllocMedium> stack;
-	JLStr srcStr;
+	JLData srcStr;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE(1, 2);
@@ -84,7 +84,7 @@ DEFINE_FUNCTION( expand ) {
 	ptrdiff_t total;
 
 	const jschar *src, *srcEnd;
-	src = srcStr.GetConstJsStr();
+	src = srcStr.GetConstWStr();
 	srcEnd = src + srcStr.Length();
 
 	const jschar *txt, *key, *keyEnd;
@@ -594,12 +594,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( warning ) {
 
-	JLStr str;
+	JLData str;
 	JL_ASSERT_ARGC(1);
 //	const char *message;
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	JL_CHK( JS_ReportWarning(cx, "%s", str.GetConstStr()) );
+	JL_CHK( JS_ReportWarning(cx, "%s", str.GetConstStrZ()) );
 	
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -634,13 +634,13 @@ DEFINE_FUNCTION( assert ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &assert) );
 	if ( !assert ) {
 
-		JLStr str;
+		JLData str;
 		if ( JL_ARG_ISDEF(2) )
 			JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &str) );
 		else
-			str = JLStr("Assertion failed.", true);
+			str = JLData("Assertion failed.", true);
 		
-		JS_ReportError( cx, "%s", str.GetConstStr());
+		JS_ReportError( cx, "%s", str.GetConstStrZ());
 		return JS_FALSE;
 	}
 
@@ -745,7 +745,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( stringRepeat ) {
 
-	JLStr str;
+	JLData str;
 
 	JL_ASSERT_ARGC(2);
 
@@ -781,7 +781,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 	newBuf[newLen] = 0;
 	
 	const jschar *buf;
-	buf = str.GetConstJsStr();
+	buf = str.GetConstWStr();
 
 	jschar *tmp = newBuf;
 	size_t i;
@@ -856,7 +856,7 @@ $TOC_MEMBER $INAME
 // function copied from mozilla/js/src/js.c
 DEFINE_FUNCTION( exec ) {
 
-	JLStr str;
+	JLData str;
 //	JSObject *scriptObjRoot;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE(1, 2);
@@ -1282,7 +1282,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( isStatementValid ) {
 
-	JLStr str;
+	JLData str;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
 
@@ -1446,6 +1446,7 @@ JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 DEFINE_FUNCTION( jsstdTest ) {
 
+	JL_IGNORE(vp, argc, cx);
 
 
 /*
@@ -1488,7 +1489,7 @@ DEFINE_FUNCTION( jsstdTest ) {
 
 
 /*
-	JLStr str;
+	JLData str;
 	JL_JsvalToNative(cx, JL_ARG(1), &str);
 	JSObject *scriptObj;
 
