@@ -6,13 +6,17 @@ loadModule('jsz');
 		var inflate = new Z(Z.INFLATE);
 		inflate(deflate());
 
+/// no erport on GC [ftrm]
+
+		var deflater = new Z(Z.DEFLATE, 9);
+		var compressedText = deflater('xxx');
 
 /// deflate ratio 1 [ftrm]
 		
 		var uncompressezText = 'jjjjjjjjjjjssssssssssssssssssslllllliiiiiiiibbsssssssssssssss';
 		var level = 9; // 0..9
 		var compressedText = new Z(Z.DEFLATE, level)(uncompressezText, true);
-		var ratio = (100*compressedText.length/uncompressezText.length).toFixed(2)+'%';
+		var ratio = (100*compressedText.byteLength/uncompressezText.length).toFixed(2)+'%';
 		QA.ASSERT( ratio, '37.70%', 'Bad compression ratio' );
 
 
@@ -24,9 +28,9 @@ loadModule('jsz');
 		QA.ASSERT( deflater.idle, true, 'idle' );
 		var compressedText = deflater(uncompressezText);
 		QA.ASSERT( deflater.idle, false, 'idle' );
-		compressedText += deflater(uncompressezText);
+		compressedText = join([compressedText, deflater(uncompressezText)]);
 		QA.ASSERT( deflater.idle, false, 'idle' );
-		compressedText += deflater(uncompressezText, true); //		compressedText += deflater();
+		compressedText = join([compressedText, deflater(uncompressezText, true)]); //		compressedText += deflater();
 		QA.ASSERT( deflater.idle, true, 'idle' );
 
 		QA.ASSERT( compressedText.length, deflater.lengthOut, 'compressed text length' );

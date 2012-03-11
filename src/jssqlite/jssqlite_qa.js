@@ -131,9 +131,9 @@ loadModule('jssqlite');
 
 		var result1 = db.query('SELECT :toto');
 		
-		result1.toto = new Blob('12' + '\0' + '34');
+		result1.toto = join(['12', '\0', '34'], true);
 
-		QA.ASSERT( result1.row()[0].length, 5, 'using binding' );
+		QA.ASSERT( result1.row()[0].byteLength, 5, 'using binding' );
 		QA.ASSERT( db.changes, 0, 'changes' );
 		result1.close();
 		db.close();
@@ -173,7 +173,7 @@ loadModule('jssqlite');
 		db.testFun = function(a) { return a*10 }
 		db.jseval = function(s){ return eval(s) };
 		
-		var blob = new Blob('qqwe\0\0fv1234');
+		var blob = join(['qqwe\0\0fv1234'], true);
 		
 		//var res = db.exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});
 		var res = db.exec('SELECT testFun(123), length(:toto), jseval("null") is null', {toto:blob, aaa:null});

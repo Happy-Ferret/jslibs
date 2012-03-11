@@ -1,6 +1,13 @@
 loadModule('jsstd');
 loadModule('jssqlite');
 
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssqlite -exclude jstask');
+
+
+
+throw 0;
+
+
 /*
 loadModule('jsstd');
 loadModule('jssqlite');

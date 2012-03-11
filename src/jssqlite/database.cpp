@@ -164,6 +164,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( close ) {
 
+	JL_IGNORE( argc );
+
 	DatabasePrivate *pv = NULL;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -274,10 +276,14 @@ DEFINE_FUNCTION( query ) {
 	sqlite3_stmt *pStmt;
 
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
-	if ( sqlite3_prepare_v2(pv->db, sql.GetConstStr(), sql.Length(), &pStmt, &szTail) != SQLITE_OK )
-		JL_CHK( SqliteThrowError(cx, pv->db) );
 
-	JL_ASSERT_WARN( *szTail == '\0', E_STR("too many SQL statements") ); // (TBD) for the moment, do not support multiple statements
+	const char *sqlStr = sql.GetConstStr();
+	size_t sqlLen = sql.Length();
+
+	if ( sqlite3_prepare_v2(pv->db, sqlStr, sqlLen, &pStmt, &szTail) != SQLITE_OK )
+		JL_CHK( SqliteThrowError(cx, pv->db) );
+	ASSERT( pStmt != NULL );
+	JL_ASSERT_WARN( szTail == sqlStr + sqlLen, E_STR("too many SQL statements") ); // (TBD) for the moment, do not support multiple statements
 
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 //		JL_REPORT_ERROR( "Invalid SQL string." );
@@ -348,10 +354,14 @@ DEFINE_FUNCTION( exec ) {
 
 	const char *szTail;
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
-	if ( sqlite3_prepare_v2( pv->db, sql.GetConstStr(), sql.Length(), &pStmt, &szTail ) != SQLITE_OK )
+
+	const char *sqlStr = sql.GetConstStr();
+	size_t sqlLen = sql.Length();
+
+	if ( sqlite3_prepare_v2( pv->db, sqlStr, sqlLen, &pStmt, &szTail ) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, pv->db) );
 	ASSERT( pStmt != NULL );
-	JL_ASSERT_WARN( *szTail == '\0', E_STR("too many SQL statements") ); // for the moment, do not support multiple statements
+	JL_ASSERT_WARN( szTail == sqlStr + sqlLen, E_STR("too many SQL statements") ); // for the moment, do not support multiple statements
 
 //	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 //		JL_REPORT_ERROR( "Invalid SQL string." );
@@ -408,6 +418,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( lastInsertRowid ) {
 
+	JL_IGNORE( id );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	DatabasePrivate *pv;
@@ -428,6 +440,8 @@ $TOC_MEMBER $INAME
    [http://www.sqlite.org/capi3ref.html#sqlite3_changes sqlite documentation]
 **/
 DEFINE_PROPERTY_GETTER( changes ) {
+
+	JL_IGNORE( id );
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -465,6 +479,8 @@ $TOC_MEMBER $INAME
   Is the amount of memory currently checked out.
 **/
 DEFINE_PROPERTY_GETTER( memoryUsed ) {
+
+	JL_IGNORE( id, obj );
 
 	//	int val, tmp;
 //	sqlite3_status(SQLITE_STATUS_MEMORY_USED, &val, &tmp, false);
@@ -578,6 +594,8 @@ bad:
   }}}
 **/
 DEFINE_SET_PROPERTY() {
+
+	JL_IGNORE( strict );
 
 	if ( JL_ValueIsCallable(cx, *vp) && JSID_IS_STRING(id) ) {
 		
