@@ -70,15 +70,41 @@ function QAAPI(cx) {
 		}
 	}
 
-	this.ASSERT = function( value, expect, testName ) {
+	this.ASSERT_EQ = function( eq, value, expect, testName ) {
 
+		testName = testName || '(noname)';
+		cx.checkpoint('ASSERT', testName);
+		
+		var eqRes;
+		switch ( eq ) {
+			case '==': eqRes = (value == expect); break;
+			case '===': eqRes = (value === expect); break;
+			case '!=': eqRes = (value != expect); break;
+			case '!==': eqRes = (value !== expect); break;
+			case '>': eqRes = (value > expect); break;
+			case '<': eqRes = (value < expect); break;
+			case '>=': eqRes = (value >= expect); break;
+			case '<=': eqRes = (value <= expect); break;
+			case 'instanceof': eqRes = (value instanceof expect); break;
+			case 'typeof': eqRes = (typeof(value) == expect); break;
+			default: eqRes = '???';
+		}
+		
+		if ( eqRes !== true )
+			cx.reportIssue( '('+valueType(value)+')'+formatVariable(value)+' ! ' + eq +' '+'('+valueType(expect)+')'+formatVariable(expect), testName );
+	}
+
+	this.ASSERT = function( value, expect, testName ) {
+		
+		testName = testName || '(noname)';
 		cx.checkpoint('ASSERT', testName);
 		if ( value !== expect && !(typeof(value) == 'number' && isNaN(value) && typeof(expect) == 'number' && isNaN(expect)) )
-			cx.reportIssue( '=== ('+valueType(value)+')'+formatVariable(value)+', expect '+'('+valueType(expect)+')'+formatVariable(expect), testName );
+			cx.reportIssue( '=== ('+valueType(value)+')'+formatVariable(value)+' but expect '+'('+valueType(expect)+')'+formatVariable(expect), testName );
 	}
 
 	this.ASSERT_STR = function( value, expect, testName ) {
 	
+		testName = testName || '(noname)';
 		cx.checkpoint('ASSERT_STR', testName);
 		if ( toString(value) != toString(expect) ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
 			cx.reportIssue( '== '+formatVariable(toString(value))+', expect '+formatVariable(toString(expect)), testName );
@@ -87,10 +113,12 @@ function QAAPI(cx) {
    this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
    	
 		cx.checkpoint('ASSERT_HAS_PROPERTIES', names);
-   	for each ( var p in names.split(/\s*,\s*/) ) {
+   		for each ( var p in names.split(/\s*,\s*/) ) {
    	
-   		if ( !(p in obj) )
+			if ( !(p in obj) ) {
+
 	  			cx.reportIssue( 'Property '+p.quote()+' not found.' );
+			}
 	  	}
    }
 
@@ -157,15 +185,68 @@ function recursiveDir(path, callback) {
 
 function regexec(regexp) regexp.exec.bind(regexp);
 
-function createQaItemList(startDir, files, include, exclude, flags) {
+
+function addQaItemListFromSource(itemList, startDir, files) {
+
+	var hidden = regexec(/\/\./);
+	var srcFile = regexec(new RegExp(files));
+	var qaExpr = /\/\*\*qa([^]*?)(?:\n([^]*?))?\*\*\//g;
+
+	function linesBefore(str) {
+
+        var count = 1, pos = 0;
+        for ( ; (pos = str.indexOf('\n', pos)) != -1; ++count, ++pos );
+        return count;
+    }
+
+	var newItemList = [];
+	recursiveDir( startDir, function(file) {
+	
+		if ( !hidden(file.name) && srcFile(file.name) ) {
+
+			var source = toString(file.content);
+			source = source.replace(/\r\n|\r/g, '\n'); // cleanup
+			
+			qaExpr.lastIndex = 0; // The index at which to start the next match.
+			var res, item;
+			while( (res = qaExpr.exec(source)) ) {
+				
+				var startPos = qaExpr.lastIndex - res[0].length;
+
+				if ( item ) // adjust the previous followingTextEnd
+					item.followingSourceTextEnd = startPos;
+
+				var item = {};
+				item.path = file.name.substr(0, file.name.lastIndexOf('/'));
+				item.lastDir = item.path.substr(item.path.lastIndexOf('/')+1);
+				item.fileName = file.name.substr(file.name.lastIndexOf('/')+1);
+				item.source = source;
+				item.followingSourceTextStart = qaExpr.lastIndex;
+				item.followingSourceTextEnd = source.length;
+				var iName = /DEFINE_(\w*)\( *(\w*) *\)/.exec(item.source.substring(item.followingSourceTextStart, item.followingSourceTextEnd));
+				item.name = iName ? item.lastDir + ':' + (iName[2] || iName[1]) : '(inline)';
+				item.file = file.name;
+				item.line = linesBefore(source.substr(0, startPos));
+				item.code = res[2]||'';
+				item.flags = '';
+				newItemList.push(item);
+			}
+		}
+	});
+	Array.prototype.push.apply(itemList, newItemList);
+}
+
+
+
+function addQaItemList(itemList, startDir, files) {
 
 	var hidden = regexec(/\/\./);
 	var qaFile = regexec(new RegExp(files));
 	var newQaItem = regexec(/^\/\/\/\s*(.*?)\s*$/);
 	var parseFlags = function(str) (/\[(.*?)\]/.exec(str)||[,''])[1];
 
-	var itemList = [];
 	var index = 0;
+	var newItemList = [];
 
 	recursiveDir( startDir, function(file) {
 	
@@ -183,34 +264,47 @@ function createQaItemList(startDir, files, include, exclude, flags) {
 				var res = newQaItem(lines[l]);
 				if ( res ) {
 					
-					itemList.push(item);
+					newItemList.push(item);
 					item = { file:file.name, line:Number(l)+1, name:res[1], flags:parseFlags(res[1]), code:[] };
 				}
 				item.code.push(lines[l]);
 			}
-			itemList.push(item);
+			newItemList.push(item);
 		}
-	})
-	
+	});
+
+	for each ( var item in newItemList )
+		item.code = item.code.join('\n');
+
+	Array.prototype.push.apply(itemList, newItemList);
+}
+
+
+
+function filterQaItemList(itemList, include, exclude, flags) {
+
+	var newItemList = [ item for each ( item in itemList ) if (  item.init || (include?include(item.name)||include(item.file):true) && !(exclude?exclude(item.name)||exclude(item.file):false) && (!flags || flags(item.flags))  ) ];
+	itemList.splice(0, itemList.length);
+	Array.prototype.push.apply(itemList, newItemList);
+}
+
+
+function compileTests(itemList) {
+
 	for each ( var item in itemList ) {
 		
-			var functionCode = item.code.join('\n');
 		try {
 
 			item.relativeLineNumber = locate()[1]+1 - item.line;
-			item.func = new Function('QA', functionCode);
+			item.func = new Function('QA', item.code);
 		} catch(ex) {
 			
 			item.func = function() {}
 			var lineno = ex.lineNumber - item.relativeLineNumber;
-			var message = 'COMPILATION: @'+ item.file +':'+ lineno +' - '+ item.name +' - '+ ex + ' : ' + functionCode;
+			var message = 'COMPILATION: @'+ item.file +':'+ lineno +' - '+ item.name +' - '+ ex + ' : ' + item.code;
 			print( '*** ' + message, '\n' );
 		}
 	}
-
-	itemList = [ item for each ( item in itemList ) if (  item.init || (include?include(item.name)||include(item.file):true) && !(exclude?exclude(item.name)||exclude(item.file):false) && (!flags || flags(item.flags))  ) ];
-	itemList = itemList.sort( function(a,b) a.init ? -1 : 1 ); // put all init function at the top of the test list.
-	return itemList;
 }
 
 
@@ -560,7 +654,8 @@ function main() {
 		gcZeal:0, 
 		loopForever:false, 
 		directory:'..', 
-		files:'_qa.js$', 
+		files:'_qa\\.js$', 
+		inlineOnly:false,
 		priority:0, 
 		flags:'', 
 		export:'', 
@@ -612,10 +707,22 @@ function main() {
 	}
 
 	var testList;
-	if ( cfg.load )
+	if ( cfg.load ) {
+	
 		testList = eval(new File(cfg.load).content);
-	else
-		testList = createQaItemList(cfg.directory, cfg.files, itemInclude, itemExclude, matchFlags);
+	} else {
+
+		var testList = [];
+		
+		if ( !cfg.inlineOnly )
+			addQaItemList(testList, cfg.directory, cfg.files);
+			
+		addQaItemListFromSource(testList, cfg.directory, '\\.cpp$');
+		
+		filterQaItemList(testList, itemInclude, itemExclude, matchFlags);
+		testList = testList.sort( function(a,b) a.init ? -1 : 1 ); // put all init function at the top of the test list.
+		compileTests(testList);
+	}
 
 	if ( cfg.listTestsOnly ) {
 		

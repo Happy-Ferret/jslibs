@@ -89,7 +89,12 @@ JS_DescribeTopFrame(JSContext *cx, JSScript **script, unsigned *lineno) {
 
 	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
 	ASSERT( frame != NULL );
-	*script = JS_GetFrameScript(cx, frame);
-	*lineno = JS_PCToLineNumber(cx, *script, JS_GetFramePC(cx, frame));
+	
+	JSScript *s;
+	s = JS_GetFrameScript(cx, frame);
+	if ( script )
+		*script = s;
+	if ( lineno )
+		*lineno = JS_PCToLineNumber(cx, s, JS_GetFramePC(cx, frame));
 	return JS_TRUE;
 }

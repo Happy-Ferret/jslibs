@@ -2,7 +2,7 @@
 //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
 //loadModule('jsstd'); exec('../common/tools.js'); var QA = fakeQAApi;  runLocalQAFile();
 
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsstd -exclude jstask'); throw 0;
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jslang -exclude jstask -inlineOnly'); throw 0;
 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //SetPerfTestMode();
@@ -11,19 +11,10 @@ loadModule('jscrypt');
 loadModule('jsstd');
 loadModule('jsio');
 
-loadModule('jsz');
 
+print( global );
 
-		var uncompressezText = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
-
-		var deflater = new Z(Z.DEFLATE, 9);
-		var compressedText = deflater(uncompressezText);
-		compressedText = join(compressedText, deflater(uncompressezText));
-
-
-
-
-halt();
+throw 0;
 
 jslangTest('test'); halt();
 

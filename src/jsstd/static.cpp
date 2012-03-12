@@ -1325,6 +1325,10 @@ $TOC_MEMBER $INAME
   $H note
    The current filename is also available using: `StackFrameInfo(stackSize-1).filename` (see jsdebug module)
 **/
+/**qa
+	QA.ASSERT_EQ( 'typeof', currentFilename, 'string' );
+	QA.ASSERT_EQ( '!=', currentFilename, '' );
+**/
 DEFINE_PROPERTY_GETTER( currentFilename ) {
 	
 	JL_IGNORE(id, obj);
@@ -1342,6 +1346,9 @@ DEFINE_PROPERTY_GETTER( currentFilename ) {
 $TOC_MEMBER $INAME
  $ARRAY $INAME $READONLY
   Is the line number of the script being executed.
+**/
+/**qa
+	QA.ASSERT_EQ( 'typeof', currentLineNumber, 'number' );
 **/
 DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 	

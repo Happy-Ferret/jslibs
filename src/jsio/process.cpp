@@ -74,7 +74,7 @@ DEFINE_CONSTRUCTOR() {
 		JSObject *argObj = JSVAL_TO_OBJECT(JL_ARG(2));
 		JL_CHK( JS_GetArrayLength(cx, argObj, &processArgc) );
 		processArgc++; // +1 is argv[0]
-		processArgv = (const char**)alloca(sizeof(const char**) * (processArgc +1)); // +1 because the NULL list terminator.
+		processArgv = (const char**)alloca(sizeof(char**) * (processArgc +1)); // +1 because the NULL list terminator.
 		JL_ASSERT_ALLOC( processArgv );
 
 		for ( uint32_t i = 0; i < processArgc -1; ++i ) { // -1 because argv[0]
@@ -88,7 +88,7 @@ DEFINE_CONSTRUCTOR() {
 	} else {
 
 		processArgc = 0 +1; // +1 is argv[0]
-		processArgv = (const char**)alloca(sizeof(const char**) * (processArgc +1)); // +1 is NULL
+		processArgv = (const char**)alloca(sizeof(char**) * (processArgc +1)); // +1 is NULL
 		JL_ASSERT_ALLOC( processArgv );
 	}
 
@@ -122,7 +122,9 @@ DEFINE_CONSTRUCTOR() {
 	// cf. bug 113095 -  PR_CreateProcess reports success even when it fails to create the process. (https://bugzilla.mozilla.org/show_bug.cgi?id=113095)
 	// workaround: check the rights and execution flag before runiong the file
 	PRProcess *process;
-	process = PR_CreateProcess(path, (char * const *)processArgv, NULL, psattr); // (TBD) avoid cast to (char * const *)
+	process = PR_CreateProcess(path, (char *const *)processArgv, NULL, psattr); // (TBD) avoid cast to (char * const *)
+
+	//printf("%s - %p \n", processArgv[0], process);
 
 	PR_DestroyProcessAttr(psattr);
 
@@ -192,6 +194,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( wait ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -214,6 +218,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( detach ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -234,6 +240,8 @@ $TOC_MEMBER $INAME
   Terminates the process.
 **/
 DEFINE_FUNCTION( kill ) {
+
+	JL_IGNORE( argc );
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -261,6 +269,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( stdin ) {
 
+	JL_IGNORE( id );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, vp) );
@@ -275,6 +285,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( stdout ) {
 
+	JL_IGNORE( id );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, vp) );
@@ -288,6 +300,8 @@ $TOC_MEMBER $INAME
   Is the stderr pipe to the running process.
 **/
 DEFINE_PROPERTY_GETTER( stderr ) {
+
+	JL_IGNORE( id );
 
 	JL_ASSERT_THIS_INSTANCE();
 

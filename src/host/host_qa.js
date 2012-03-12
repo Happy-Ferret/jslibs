@@ -3,7 +3,7 @@ loadModule('jsio');
 
 /// call all possible functions reachable in the scope [rmtf]
 
-	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', '_host.stdin' ];
+	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', '_host.stdin', 'jslangTest' ];
 
 	loadModule('jswinshell'); excludeList.push('fileOpenDialog', 'Console.close');
 	loadModule('jssdl'); excludeList.push('setVideoMode', 'iconify');
@@ -89,7 +89,7 @@ loadModule('jsio');
 
 /// host version info [rmtf]
 
-	QA.ASSERT( _host.build > 43000, true, 'build version validity' );
+	QA.ASSERT_EQ( '>', _host.build, 43000, 'build version validity' );
 	QA.ASSERT( _host.revision > 3400, true, 'revision version validity' );
 	QA.ASSERT( _host.jsVersion >= 185, true, 'javascript version validity' );
 	
@@ -242,13 +242,6 @@ loadModule('jsio');
 
 
 
-/// blob revision number [f]
-	
-	QA.ASSERT( '_revision' in Blob, true, 'Blob revision');
-	QA.ASSERT( Blob._revision > 3000, true, 'Blob revision number' );
-
-
-
 /// error messages []
 
 	var buffer = '';
@@ -300,16 +293,16 @@ loadModule('jsio');
 
 /// NativeInterface hacking
 
-	var b = new Blob('abc');
+	var b = toString('abc', true);
 
-	QA.NO_CRASH( stringify(b), 'abc' );
+	QA.NO_CRASH( toString(b), 'abc' );
 
 	var c = {};
 	c._NI_BufferGet = b._NI_BufferGet;
-	QA.NO_CRASH( stringify(c) );
+	QA.NO_CRASH( toString(c) );
 
-	QA.NO_CRASH( stringify({ _NI_BufferGet:function() {} }) );
+	QA.NO_CRASH( toString({ _NI_BufferGet:function() {} }) );
 
 	try {
-//	QA.NO_CRASH( Stringify({ __proto__:b}) );
+//	QA.NO_CRASH( toString({ __proto__:b}) );
 	} catch(ex) {}

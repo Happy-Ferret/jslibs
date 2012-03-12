@@ -48,6 +48,11 @@ $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a boolean value or object.
 **/
+/**qa
+	QA.ASSERT( isBoolean(true), true );
+	QA.ASSERT( isBoolean(false), true );
+	QA.ASSERT( isBoolean(new Boolean(true)), true );
+**/
 DEFINE_FUNCTION( isBoolean ) {
 
 	JL_ASSERT_ARGC(1);
@@ -64,9 +69,7 @@ DEFINE_FUNCTION( isBoolean ) {
 		return JS_TRUE;
 	}
 
-	//*JL_RVAL = BOOLEAN_TO_JSVAL( JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Boolean) );
 	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_ValueIsBoolean(cx, JL_ARG(1)) );
-	
 
 	return JS_TRUE;
 	JL_BAD;
@@ -95,7 +98,6 @@ DEFINE_FUNCTION( isNumber ) {
 		return JS_TRUE;
 	}
 
-	//*JL_RVAL = BOOLEAN_TO_JSVAL( JL_GetClass(JSVAL_TO_OBJECT(JL_ARG(1))) == JL_GetStandardClassByKey(cx, JSProto_Number) );
 	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_ValueIsNumber(cx, JL_ARG(1)) );
 
 	return JS_TRUE;
@@ -134,6 +136,11 @@ $TOC_MEMBER $INAME
   // md5 can be called even if it is not a function.
   print( hexEncode( md5('foobar') ) ); // prints: 3858F62230AC3C915F300C664312C63F
   }}}
+**/
+/**qa
+	loadModule('jscrypt');
+	QA.ASSERT( isCallable(new Hash('md5')), true );
+	QA.ASSERT( isCallable(function()0), true );
 **/
 DEFINE_FUNCTION( isCallable ) {
 
@@ -201,9 +208,26 @@ $TOC_MEMBER $INAME
   If _toArrayBuffer_ is given and is true, the result is stored into an ArrayBuffer.
   The _value_ argument may be: StreamRead compatible object, any kind of data value (string, TypedArray, ...)
 **/
+/**qa
+	QA.ASSERT_EQ( '==', toString(), undefined );
+	QA.ASSERT_EQ( '==', toString(undefined), undefined );
+	QA.ASSERT_EQ( '==', toString('str'), 'str' );
+	QA.ASSERT_EQ( 'typeof', typeof toString('str', false), 'string' );
+	QA.ASSERT_EQ( 'instanceof', toString('str', true), ArrayBuffer );
+	QA.ASSERT( toString(toString(toString(toString('abcd'), true)), true)), 'abcd' );
+**/
 DEFINE_FUNCTION( toString ) {
 
-	JL_ASSERT_ARGC_MIN(1);
+	if ( JL_ARGC == 1 && JSVAL_IS_STRING(JL_ARG(1)) ) { // identity
+		
+		*JL_RVAL = JL_ARG(1);
+		return JS_TRUE;
+	} else 
+	if ( JL_ARGC == 0 || (JL_ARGC == 1 && JSVAL_IS_VOID(JL_ARG(1))) ) { // undefined
+
+		*JL_RVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
 
 	bool toArrayBuffer;
 	if ( JL_ARG_ISDEF(2) )
@@ -270,6 +294,11 @@ $TOC_MEMBER $INAME
  $STR $INAME( collection [, toArrayBuffer] )
  The _collection_ argument is an array-like of data or a generator instance that returns data.
  If _toArrayBuffer_ is given and is true, the result is stored into an ArrayBuffer instead of a string.
+**/
+/**qa
+	QA.ASSERT(join([1,2,3,4,5]), '12345');
+	QA.ASSERT(join([toString('abc', true), toString('def', true)]), 'abcdef');
+	QA.ASSERT(join([]), '');
 **/
 DEFINE_FUNCTION( join ) {
 

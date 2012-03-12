@@ -35,7 +35,7 @@ loadModule('jsdebug');
 	sv.shutdown(false);
 
 	QA.ASSERT_STR( cl.read(), data, 'data' );
-	QA.ASSERT( cl.read(), '', 'no data' );
+	QA.ASSERT( toString(cl.read()), '', 'no data' );
 
 
 
@@ -50,14 +50,16 @@ loadModule('jsdebug');
 	sv.write(stringRepeat('x', 10000));
 	sv.close();
 
-	var data = '';
-	var tmp;
-	while ( (tmp = cl.read()) != undefined ) {
+	var data = [];
+	var chunk;
+	while ( (chunk = cl.read()) != undefined ) {
 		
-		data += tmp;
+		data.push(chunk);
 	}
+	
+	var result = join(data);
 
-	QA.ASSERT( data.length, 10000, 'read amount' );
+	QA.ASSERT( result.length, 10000, 'read amount' );
 	QA.ASSERT( cl.read(), undefined, 'read done' );
 
 
@@ -74,7 +76,7 @@ loadModule('jsdebug');
 	var filename = QA.randomString(10);
 	var file = new File(filename);
 	file.content = "\xBC\x00\x30\x01"
-	var data = file.content;
+	var data = toString(file.content);
 	file.content = undefined;
 	QA.ASSERT_STR( data[0], '\xBC' );
 	QA.ASSERT_STR( data[1], '\x00' );
@@ -160,12 +162,12 @@ loadModule('jsdebug');
 
 		function copy(fromFilename, toFilename) {
 
-		 var fromFile = new File(fromFilename).open(File.RDONLY);
-		 var toFile = new File(toFilename).open(File.WRONLY | File.CREATE_FILE | File.TRUNCATE);
-		 for ( var buf; buf = fromFile.read(65536); )
-		 toFile.write(buf);
-		 toFile.close();
-		 fromFile.close();
+			var fromFile = new File(fromFilename).open(File.RDONLY);
+			var toFile = new File(toFilename).open(File.WRONLY | File.CREATE_FILE | File.TRUNCATE);
+			for ( var buf; (buf = fromFile.read(65536)) != undefined; )
+			toFile.write(buf);
+			toFile.close();
+			fromFile.close();
 		}
 		
 		var file = new File(filename).open('w');
@@ -214,8 +216,8 @@ loadModule('jsdebug');
 
 /// Noise generation [m]
 		
-		QA.ASSERT( getRandomNoise(1).length, 1, 'random noise 1 byte' );
-		QA.ASSERT( getRandomNoise(3).length, 3, 'random noise 3 bytes' );
+		QA.ASSERT( getRandomNoise(1).byteLength, 1, 'random noise 1 byte' );
+		QA.ASSERT( getRandomNoise(3).byteLength, 3, 'random noise 3 bytes' );
 
 
 /// environment variables [ftm]
@@ -497,7 +499,7 @@ loadModule('jsdebug');
 		mem.write('ABC', 9);
 		var mem2 = new SharedMemory( fileName, 100 );
 		QA.ASSERT_STR( mem2.read(), '123456789ABC', 'content' );
-		QA.ASSERT( mem2.content.length, 12, 'used memory length' );
+		QA.ASSERT( mem2.content.byteLength, 12, 'used memory length' );
 		QA.ASSERT_STR( mem2.content, '123456789ABC', 'content' );
 		mem2.write('Z',99);
 		QA.ASSERT_STR( mem.read(1, 99), 'Z', 'writing at the end' );
@@ -622,7 +624,7 @@ loadModule('jsdebug');
 				QA.ASSERT_TYPE( process.stdout, Descriptor, 'process stdout type' );
 				QA.ASSERT_TYPE( process.stderr, Descriptor, 'process stderr type' );
 				var data = process.stdout.read(10);
-				QA.ASSERT( data.length, 10, 'reading Process stdout' );
+				QA.ASSERT( data.byteLength, 10, 'reading Process stdout' );
 				break;
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
@@ -710,7 +712,7 @@ loadModule('jsdebug');
 		QA.ASSERT( m.file instanceof File, true, 'instanceof .file memeber' );
 		QA.ASSERT_STR( new Stream(m).read(15), '// don\'t remove', 'convert to a Stream (1)' );
 		QA.ASSERT_STR( new Stream(m).read(15), '// don\'t remove', 'convert to a Stream (2)' );
-		QA.ASSERT_STR( stringify(m).substr(0,15), '// don\'t remove', 'stringify it' );
+		QA.ASSERT_STR( toString(m).substr(0,15), '// don\'t remove', 'toString it' );
 
 
 /// MemoryMapped with offset [ftrm]
@@ -724,3 +726,23 @@ loadModule('jsdebug');
 		QA.ASSERT_STR( new Stream(m).read(5), 'don\'t', 'convert to a Stream (1)' );
 		m.offset = 0;
 		QA.ASSERT_STR( new Stream(m).read(15), '// don\'t remove', 'convert to a Stream (2)' );
+
+// File EOF test
+
+	var filename = QA.randomString(10);
+
+	var file = new File(filename).open('w');
+	file.write('xyz');
+	file.close();
+
+	var fromFile = new File(filename).open(File.RDONLY);
+	
+	QA.ASSERT_STR( fromFile.read(1), 'x', 'before EOF' );
+	QA.ASSERT_STR( fromFile.read(0), '', 'before EOF' );
+	QA.ASSERT_STR( fromFile.read(3), 'yz', 'before EOF' );
+	QA.ASSERT( fromFile.read(0), undefined, 'after EOF' );
+	QA.ASSERT( fromFile.read(1), undefined, 'after EOF' );
+
+	fromFile.close();
+
+	file.delete();

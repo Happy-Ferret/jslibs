@@ -178,6 +178,10 @@ $TOC_MEMBER $INAME
  $INT $INAME $READONLY
   The remaining data from the stream pointer position to the end of the stream.
 **/
+/**qa
+	QA.ASSERT_EQ( '==', Stream(toString("1234ABCDEF", true)).available, undefined );
+	QA.ASSERT_EQ( '==', Stream(Int8Array(toString("1234ABCDEF", true))).available, 10 );
+**/
 DEFINE_PROPERTY_GETTER( available ) {
 
 	JL_IGNORE(id);

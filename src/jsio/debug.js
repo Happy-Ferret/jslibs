@@ -6,8 +6,6 @@ loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio -exclude jstas
 loadModule('jsstd');
 loadModule('jsio');
 
-var dir = new Directory('..');
-dir.open();
 
 halt();
 

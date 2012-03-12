@@ -3127,6 +3127,42 @@ JL_NewBuffer( JSContext *cx, size_t nbytes, jsval *rval ) {
 }
 
 
+ALWAYS_INLINE JSBool FASTCALL
+JL_FreeBuffer( JSContext *cx, jsval *rval ) {
+
+	JL_IGNORE( rval, cx );
+
+	// do nothing at the moment. The CG will free the buffer.
+	return JS_TRUE;
+}
+
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_ChangeBufferLength( JSContext *cx, jsval *rval, size_t nbytes ) {
+
+	// need to create a new buffer because ArrayBuffer does not support realloc nor length changing, then we copy it in a new one.
+
+	jsval bufVal = *rval;
+	ASSERT( JSVAL_IS_OBJECT(bufVal) );
+
+	JSObject *arrayBufferObj = JSVAL_TO_OBJECT(bufVal);
+
+	ASSERT( JS_IsArrayBufferObject(arrayBufferObj) );
+
+	uint32_t bufLen = JS_GetArrayBufferByteLength(arrayBufferObj);
+	void *buf = JS_GetArrayBufferData(arrayBufferObj);
+
+	uint8_t *newBuf = JL_NewBuffer(cx, nbytes, rval);
+	JL_ASSERT_ALLOC( newBuf );
+
+	jl_memcpy(newBuf, buf, JL_MIN(bufLen, nbytes));
+
+	return newBuf;
+bad:
+	return NULL;
+}
+
+
 ALWAYS_INLINE bool FASTCALL
 JL_NewBufferGetOwnership( JSContext *cx, void *src, size_t nbytes, jsval *rval ) {
 
