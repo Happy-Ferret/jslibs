@@ -18,7 +18,6 @@
 #include <jlhelper.h>
 #include <jlclass.h>
 //#include <jsvalserializer.h>
-#include "../jslang/blobPub.h"
 #include "../jslang/handlePub.h"
 
 //#include <jsdate.h>

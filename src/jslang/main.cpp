@@ -36,6 +36,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
+
 JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 
 	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);

@@ -13,7 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-//#include "blobPub.h"
 
 #define SLOT_STREAM_SOURCE 0
 #define SLOT_STREAM_POSITION 1
@@ -179,7 +178,8 @@ $TOC_MEMBER $INAME
   The remaining data from the stream pointer position to the end of the stream.
 **/
 /**qa
-	QA.ASSERT_EQ( '==', Stream(toString("1234ABCDEF", true)).available, undefined );
+	QA.ASSERT_EQ( 'in', Stream(toString('1234ABCDEF', true)), 'available' );
+	QA.ASSERT_EQ( '===', Stream(toString('1234ABCDEF', true)).available, undefined );
 	QA.ASSERT_EQ( '==', Stream(Int8Array(toString("1234ABCDEF", true))).available, 10 );
 **/
 DEFINE_PROPERTY_GETTER( available ) {

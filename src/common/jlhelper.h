@@ -1736,6 +1736,7 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLData * RESTRICT str ) {
 		//		if ( JL_ObjectIsArray(cx, obj) )
 		//			return JL_JSArrayToBuffer(cx, obj, str);
 	}
+
 	// fallback
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, val);
@@ -2381,8 +2382,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, double *num ) {
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, double *num )
 
-	if ( !JS_ValueToNumber(cx, val, num) )
-		return JS_FALSE;
+	JL_CHK( JS_ValueToNumber(cx, val, num) );
 	ASSERT( JSDOUBLE_IS_NaN(JSVAL_TO_DOUBLE(JL_GetNaNValue(cx))) );
 	JL_CHKM( !JSDOUBLE_IS_NaN(*num), E_VALUE, E_TYPE, E_TY_NUMBER );
 	return JS_TRUE;

@@ -369,7 +369,9 @@ DEFINE_FUNCTION( list ) {
 
 		JSString *jsStr = JS_NewStringCopyZ( cx, dirEntry->name );
 		JL_CHK( jsStr );
-		JL_CHK( JS_DefineElement(cx, addrJsObj, index++, STRING_TO_JSVAL(jsStr), NULL, NULL, JSPROP_ENUMERATE) );
+//		JL_CHK( JS_DefineElement(cx, addrJsObj, index++, STRING_TO_JSVAL(jsStr), NULL, NULL, JSPROP_ENUMERATE) );
+		jsval tmp = STRING_TO_JSVAL(jsStr);
+		JL_CHK( JL_SetElement(cx, addrJsObj, index++, &tmp) );
 	}
 
 	JL_CHKB( PR_CloseDir(dd) == PR_SUCCESS, bad_throw);

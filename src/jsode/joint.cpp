@@ -439,7 +439,7 @@ DEFINE_PROPERTY_SETTER( feedbackVector ) {
 	ode::dJointFeedback *feedback = ode::dJointGetFeedback(jointId);
 	JL_ASSERT( feedback != NULL, E_STR("feedback"), E_DISABLED );
 	uint32_t length;
-	IFDEBUG( length = 0; ) // avoid "potentially uninitialized local variable" warning
+	IFDEBUG( length = 0 ); // avoid "potentially uninitialized local variable" warning
 
 	ode::dReal *vector;
 	switch ( JSID_TO_INT(id) ) {

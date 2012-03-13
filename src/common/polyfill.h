@@ -98,3 +98,12 @@ JS_DescribeTopFrame(JSContext *cx, JSScript **script, unsigned *lineno) {
 		*lineno = JS_PCToLineNumber(cx, s, JS_GetFramePC(cx, frame));
 	return JS_TRUE;
 }
+
+
+/*
+ALWAYS_INLINE JSObject *
+JS_NewObjectForConstructor(JSContext *cx, const JSClass *cl, const jsval *vp) {
+
+	return NULL;
+}
+*/

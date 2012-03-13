@@ -6,11 +6,20 @@ loadModule('jsdebug');
 ////////////////////////////////////////////////////////////////////////////////
 // QA API
 
-
 function QAAPI(cx) {
 
-	function formatVariable(val) {
+	function valueType(val) {
+		
+		var type = typeof(val);
+		if (type == 'object' )
+			return val.constructor.name;
+		return type;
+	}
 
+	function formatVariable(val) {
+		
+		if ( val === undefined )
+			return 'undefined';
 		if ( typeof(val) == 'string' ) {
 		
 			if ( val.length > 50 )
@@ -19,16 +28,7 @@ function QAAPI(cx) {
 		}
 		if ( val instanceof Array )
 			return '['+val+']';
-		return val;
-	}
-	
-
-	function valueType(val) {
-		
-		var type = typeof(val);
-		if (type == 'object' )
-			return val.constructor.name;
-		return type;
+		return '('+valueType(val)+')'+val;
 	}
 	
 	
@@ -74,24 +74,30 @@ function QAAPI(cx) {
 
 		testName = testName || '(noname)';
 		cx.checkpoint('ASSERT', testName);
+
+		function isnan(val) {
+			return (typeof(val) == 'number') && isNaN(val);
+		}
 		
 		var eqRes;
 		switch ( eq ) {
-			case '==': eqRes = (value == expect); break;
-			case '===': eqRes = (value === expect); break;
-			case '!=': eqRes = (value != expect); break;
-			case '!==': eqRes = (value !== expect); break;
+			case '==': eqRes = (value == expect) || (isnan(value) && isnan(expect)); break;
+			case '===': eqRes = (value === expect) || (isnan(value) && isnan(expect)); break;
+			case '!=': eqRes = (value != expect) && (!isnan(value) || !isnan(expect)); break;
+			case '!==': eqRes = (value !== expect) && (!isnan(value) || !isnan(expect)); break;
 			case '>': eqRes = (value > expect); break;
 			case '<': eqRes = (value < expect); break;
 			case '>=': eqRes = (value >= expect); break;
 			case '<=': eqRes = (value <= expect); break;
+			case 'in': eqRes = (expect in value); break;
+			case '!in': eqRes = (!(expect in value)); break;
 			case 'instanceof': eqRes = (value instanceof expect); break;
 			case 'typeof': eqRes = (typeof(value) == expect); break;
 			default: eqRes = '???';
 		}
 		
 		if ( eqRes !== true )
-			cx.reportIssue( '('+valueType(value)+')'+formatVariable(value)+' ! ' + eq +' '+'('+valueType(expect)+')'+formatVariable(expect), testName );
+			cx.reportIssue( formatVariable(value)+' ! ' + eq +' '+formatVariable(expect), testName );
 	}
 
 	this.ASSERT = function( value, expect, testName ) {
@@ -99,7 +105,7 @@ function QAAPI(cx) {
 		testName = testName || '(noname)';
 		cx.checkpoint('ASSERT', testName);
 		if ( value !== expect && !(typeof(value) == 'number' && isNaN(value) && typeof(expect) == 'number' && isNaN(expect)) )
-			cx.reportIssue( '=== ('+valueType(value)+')'+formatVariable(value)+' but expect '+'('+valueType(expect)+')'+formatVariable(expect), testName );
+			cx.reportIssue( '=== '+formatVariable(value)+' but expect '+formatVariable(expect), testName );
 	}
 
 	this.ASSERT_STR = function( value, expect, testName ) {
@@ -224,7 +230,7 @@ function addQaItemListFromSource(itemList, startDir, files) {
 				item.followingSourceTextStart = qaExpr.lastIndex;
 				item.followingSourceTextEnd = source.length;
 				var iName = /DEFINE_(\w*)\( *(\w*) *\)/.exec(item.source.substring(item.followingSourceTextStart, item.followingSourceTextEnd));
-				item.name = iName ? item.lastDir + ':' + (iName[2] || iName[1]) : '(inline)';
+				item.name = item.lastDir + ':' + (iName ? (iName[2] || iName[1]) : '???');
 				item.file = file.name;
 				item.line = linesBefore(source.substr(0, startPos));
 				item.code = res[2]||'';
@@ -751,7 +757,7 @@ function main() {
 	var t = timeCounter() - t0;
 	processPriority = savePrio || 0; // savePrio may be undefined
 
-	print( '\n'+stringRepeat('-',97)+'\n', configurationText, '\n\n', issueList.length +' issues, '+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n' );
+	print( '\n'+stringRepeat('-',97)+'\n', configurationText, '\n\n', ' '+issueList.length +' issues, '+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n\n' );
 	issueList.sort();
 	issueList.reduce( function(previousValue, currentValue, index, array) {
 
@@ -762,11 +768,14 @@ function main() {
 }
 
 try {
+	
 	main();
 } catch (ex) {
+	
 	print(uneval(ex));
 }
-print('Done\n');
+
+print('Done.\n');
 
 
 ////////////////////////////////////////////////////////////////////////////////

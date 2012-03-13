@@ -334,6 +334,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( close ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -357,6 +359,8 @@ $TOC_MEMBER $INAME
   Read or write the whole content of the shared memory. Setting _undefined_ as value clears the memory area.
 **/
 DEFINE_PROPERTY_SETTER( content ) {
+
+	JL_IGNORE( strict, id );
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -393,6 +397,8 @@ DEFINE_PROPERTY_SETTER( content ) {
 
 
 DEFINE_PROPERTY_GETTER( content ) {
+
+	JL_IGNORE( id );
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );

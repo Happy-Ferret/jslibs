@@ -230,34 +230,6 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 bad:
 	BufferFinalize(&buf);
 	return JS_FALSE;
-
-
-/* simplified version but do not work for files because we expect to read the whole file.
-	uint8_t buffer[65536];
-	PRInt32 res = PR_Read(fd, buffer, sizeof(buffer));
-
-	if ( res == -1 ) { // -1 indicates a failure. The reason for the failure can be obtained by calling PR_GetError.
-
-		switch ( PR_GetError() ) { // see Write() for details about errors
-			case PR_WOULD_BLOCK_ERROR: // The operation would have blocked (non-fatal error)
-				return JL_NewBlob(cx, NULL, 0, rval);
-			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
-			//case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
-			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
-				*rval = JSVAL_VOID;
-				return JS_TRUE;
-		}
-		return ThrowIoError(cx);
-	}
-
-	if ( res == 0 ) {
-
-		*rval = JSVAL_VOID;
-		return JS_TRUE;
-	}
-
-	return JL_NewBufferCopyN(cx, buffer, res, rval);
-*/
 }
 
 
@@ -276,7 +248,7 @@ JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, uint32_t amount, PRInt64 avai
 
 		switch ( PR_GetError() ) { // see Write() for details about errors
 			case PR_WOULD_BLOCK_ERROR:
-				
+
 				// mean no data available, but connection still established.
 				JL_CHK( JL_ChangeBufferLength(cx, rval, 0) );
 				return JS_TRUE;

@@ -234,6 +234,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( delete ) {
 
+	JL_IGNORE( argc );
+
 	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -350,6 +352,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( position ) {
 
+	JL_IGNORE( strict, id );
+
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_ASSERT( fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED );
 
@@ -367,6 +371,8 @@ DEFINE_PROPERTY_SETTER( position ) {
 }
 
 DEFINE_PROPERTY_GETTER( position ) {
+
+	JL_IGNORE( id );
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_ASSERT( fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED );
@@ -389,6 +395,8 @@ $TOC_MEMBER $INAME
   Setting content with _undefined_ deletes the file.
 **/
 DEFINE_PROPERTY_GETTER( content ) {
+
+	JL_IGNORE( id );
 
 	uint8_t *buf = NULL;
 	jsval jsvalFileName;
@@ -479,6 +487,8 @@ bad:
 
 DEFINE_PROPERTY_SETTER( content ) {
 
+	JL_IGNORE( strict, id );
+
 	JLData fileName, buf;
 	jsval jsvalFileName;
 
@@ -537,10 +547,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( name ) {
 
+	JL_IGNORE( id );
+
 	return JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, vp );
 }
 
 DEFINE_PROPERTY_SETTER( name ) {
+
+	JL_IGNORE( strict, id );
 
 	JLData fromFileName, toFileName;
 
@@ -571,6 +585,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( exist ) {
 
+	JL_IGNORE( id );
+
 	JLData fileName;
 	jsval jsvalFileName;
 	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
@@ -588,6 +604,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( hasWriteAccess ) {
 	
+	JL_IGNORE( id );
+
 	JLData fileName;
 	jsval jsvalFileName;
 	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
@@ -604,6 +622,8 @@ $TOC_MEMBER $INAME
   is true if the file is readable.
 **/
 DEFINE_PROPERTY_GETTER( hasReadAccess ) {
+
+	JL_IGNORE( id );
 
 	JLData fileName;
 	jsval jsvalFileName;
@@ -691,6 +711,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( id ) {
 
+	JL_IGNORE( id );
+
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
@@ -740,6 +762,8 @@ $TOC_MEMBER $INAME
   Is a jsio::File that represents the standard error.
 **/
 DEFINE_PROPERTY( standard ) {
+
+	JL_IGNORE( obj );
 
 	if ( JSVAL_IS_VOID( *vp ) ) {
 

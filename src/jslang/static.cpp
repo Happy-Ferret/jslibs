@@ -22,9 +22,6 @@
 using namespace jl;
 
 
-
-
-
 DECLARE_CLASS(Handle)
 
 
@@ -110,6 +107,15 @@ DEFINE_FUNCTION( isNumber ) {
 $TOC_MEMBER $INAME
  $BOOL $INAME()
   Returns $TRUE if the value is a primitive ( null or not an object ).
+**/
+/**qa
+	QA.ASSERT_EQ( '==', isPrimitive(true), true );
+	QA.ASSERT_EQ( '==', isPrimitive(false), true );
+	QA.ASSERT_EQ( '==', isPrimitive(1), true );
+	QA.ASSERT_EQ( '==', isPrimitive('a'), true );
+	QA.ASSERT_EQ( '==', isPrimitive(1.23), true );
+	QA.ASSERT_EQ( '==', isPrimitive(null), true );
+	QA.ASSERT_EQ( '==', isPrimitive(undefined), true );
 **/
 DEFINE_FUNCTION( isPrimitive ) {
 
@@ -214,9 +220,12 @@ $TOC_MEMBER $INAME
 	QA.ASSERT_EQ( '==', toString('str'), 'str' );
 	QA.ASSERT_EQ( 'typeof', typeof toString('str', false), 'string' );
 	QA.ASSERT_EQ( 'instanceof', toString('str', true), ArrayBuffer );
-	QA.ASSERT( toString(toString(toString(toString('abcd'), true)), true)), 'abcd' );
+	QA.ASSERT_EQ( '===', toString(toString(toString(toString(toString('abcd'), true)), true)), 'abcd' );
+	QA.ASSERT_EQ( '===', toString(Uint16Array(toString('\x00\x01\x02\x03', true))), '\u0100\u0302' ); // endian issue ?
 **/
 DEFINE_FUNCTION( toString ) {
+
+	JLData str;
 
 	if ( JL_ARGC == 1 && JSVAL_IS_STRING(JL_ARG(1)) ) { // identity
 		
@@ -273,15 +282,8 @@ DEFINE_FUNCTION( toString ) {
 	}
 
 	// fallback:
-
-	{ //block
-	JLData str;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	if ( toArrayBuffer )
-		JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
-	else
-		JL_CHK( str.GetJSString(cx, JL_RVAL) ); // (TBD) handle Z ?
-	}
+	JL_CHK( toArrayBuffer ? str.GetArrayBuffer(cx, JL_RVAL) : str.GetJSString(cx, JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -299,6 +301,20 @@ $TOC_MEMBER $INAME
 	QA.ASSERT(join([1,2,3,4,5]), '12345');
 	QA.ASSERT(join([toString('abc', true), toString('def', true)]), 'abcdef');
 	QA.ASSERT(join([]), '');
+	QA.ASSERT(join(Iterator([0,0,0], true)), '012');
+	QA.ASSERT(join((function() {yield ''; yield 'a'; yield 'bc'; yield ''; yield 'def'; yield 'g' })()) , 'abcdefg');
+	QA.ASSERT_EQ('===', join((function() {yield})()) , 'undefined');
+	var a = 'abcd';
+	var it = {
+		next: function() {
+			delete this.next;
+			a = a.substr(1);
+			if ( !a )
+				throw StopIteration;
+			return a[0];
+		}
+	};
+	QA.ASSERT_EQ('==', join(it) , 'bcd');
 **/
 DEFINE_FUNCTION( join ) {
 
@@ -619,6 +635,16 @@ $TOC_MEMBER $INAME
  $TYPE id $INAME( msTimeout [, onTimeout] )
  Passively waits for a timeout through the processEvents function.
 **/
+/**qa
+	QA.ASSERT_EQ('instanceof', timeoutEvents(0), Handle);
+	QA.ASSERT_EQ('==', timeoutEvents(0), '[Handle  pev]');
+	QA.ASSERT_EQ('===', processEvents(timeoutEvents(0)), 1);
+	QA.ASSERT_EXCEPTION(function() { timeoutEvents(undefined) }, 'RangeError');
+	QA.ASSERT_EXCEPTION(function() { timeoutEvents(-1) }, 'RangeError');
+	var d = Date.now(); processEvents(timeoutEvents(123)); d = Date.now() - d;
+	QA.ASSERT_EQ('>=', d, 123 -5); // error margin
+	QA.ASSERT_EQ('<=', d, 123 +10); // error margin
+**/
 struct UserProcessEvent {
 
 	ProcessEvent pe;
@@ -676,9 +702,7 @@ DEFINE_FUNCTION( timeoutEvents ) {
 
 	unsigned int timeout;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
-	if ( JL_ARG_ISDEF(2) )
-		JL_ASSERT_ARG_IS_CALLABLE(2);
-
+	
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
 	upe->pe.startWait = TimeoutStartWait;
@@ -688,11 +712,10 @@ DEFINE_FUNCTION( timeoutEvents ) {
 	upe->cancel = JLEventCreate(false);
 	ASSERT( JLEventOk(upe->cancel) );
 
-	if ( JL_ARG_ISDEF(2) && JL_ValueIsCallable(cx, JL_ARG(2)) ) {
+	if ( JL_ARGC >= 2 && JL_ValueIsCallable(cx, JL_ARG(2)) ) {
 
-		SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2));
 		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2)) ); // GC protection only
-		upe->callbackFunction = JL_ARG(2);
+		upe->callbackFunction = JL_ARG(2); // access to ->callbackFunction is faster than Handle slots.
 	} else {
 
 		upe->callbackFunction = JSVAL_VOID;
@@ -928,6 +951,9 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 	JL_IGNORE(cx, argc, vp);
 
+
+	ASSERT( JSVAL_IS_PRIMITIVE(JSVAL_NULL) );
+
 	///////////////////////////////////////////////////////////////
 	// check JL_JsvalToJsid -> JL_JsidToJsval
 	//
@@ -1004,13 +1030,37 @@ struct FOO {
 
 
 DEFINE_FUNCTION( jslangTest ) {
-
+	
 	JL_IGNORE(cx, argc, vp);
+/*
+	const jschar *name = L("SyntaxError");
 
+	jsval constructor;
+	JL_CHK( JS_GetUCProperty(cx, JL_GetGlobal(cx), name, wcslen(name), &constructor) );
+
+	//JSObject *test = JS_GetConstructor(cx, JSVAL_TO_OBJECT(constructor));
+
+	JSObject *proto = JS_GetPrototype(JSVAL_TO_OBJECT(constructor));
+
+	JSObject *ob = JS_NewObject(cx, NULL, proto, NULL);
+
+	JSClass *cl = JS_GetClass(ob);
+	//JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);
+*/
 	return 0;
+	JL_BAD;
 }
 
 #endif // JSLANG_TEST
+
+/**qa
+	QA.ASSERT_EQ( '==', NaN, NaN ); // test qa.js
+	QA.ASSERT_EQ( '===', NaN, NaN );  // test qa.js
+	QA.ASSERT_EQ( '!=', 1, NaN ); // test qa.js
+	QA.ASSERT_EQ( '!==', 1, NaN );  // test qa.js
+
+	_jsapiTests();
+**/
 
 
 CONFIGURE_STATIC
@@ -1024,14 +1074,13 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( isCallable, 1 )
 //		FUNCTION_ARGC( isGeneratorFunction, 1 )
 //		FUNCTION_ARGC( isGeneratorObject, 1 )
-
-		FUNCTION_ARGC( join, 1 )
-
-
+		
 		FUNCTION_ARGC( real, 1 )
 
-		FUNCTION_ARGC( toString, 1 )
-		FUNCTION_ARGC( indexOf, 1 )
+		FUNCTION_ARGC( toString, 2 )
+		FUNCTION_ARGC( join, 2 )
+		FUNCTION_ARGC( indexOf, 3 )
+
 		FUNCTION_ARGC( processEvents, 4 ) // (4 is just a guess)
 		FUNCTION_ARGC( timeoutEvents, 2 )
 

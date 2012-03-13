@@ -91,7 +91,7 @@
 #ifdef DEBUG
 	#define IFDEBUG(expr) expr
 #else
-	#define IFDEBUG(expr)
+	#define IFDEBUG(expr) 0
 #endif // DEBUG
 
 
@@ -801,6 +801,11 @@ int_pow(int base, int exp) {
     return result;
 }
 
+ALWAYS_INLINE bool
+JL_IsPow2(uint32_t v) {
+
+	return (v & (v - 1)) == 0;
+}
 
 ALWAYS_INLINE int
 JL_CountSetBits(int32_t v) {
@@ -1303,7 +1308,7 @@ JLCpuInfo( JLCpuInfo_t info ) {
 	// see. http://msdn.microsoft.com/en-us/library/hskdteyh(v=vs.80).aspx
 	// see. http://faydoc.tripod.com/cpu/cpuid.htm
 
-	IFDEBUG( char *tmp = (char*)info; )
+	IFDEBUG( char *tmp = (char*)info );
 
 	cpuid((int*)info, 0);
 	info += 16;

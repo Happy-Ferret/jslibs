@@ -16,8 +16,6 @@
 
 #include "texture.h"
 
-#include "../jslang/blobPub.h"
-
 #define _USE_MATH_DEFINES
 #include <math.h>
 

@@ -129,6 +129,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( file ) {
 
+	JL_IGNORE( id );
+
 	JL_CHK( JL_GetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, vp) );
 	return JS_TRUE;
 	JL_BAD;
@@ -141,6 +143,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( offset ) {
 
+	JL_IGNORE( strict, id );
+
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &pv->offset) );
@@ -149,6 +153,8 @@ DEFINE_PROPERTY_SETTER( offset ) {
 }
 
 DEFINE_PROPERTY_GETTER( offset ) {
+
+	JL_IGNORE( id );
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);

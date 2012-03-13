@@ -7,6 +7,9 @@ loadModule('jsstd');
 loadModule('jsio');
 
 
+		
+		Directory.list('./.');
+
 halt();
 
 

@@ -46,8 +46,8 @@ loadModule('jsdebug');
 	processEvents( Descriptor.events([rdv]), timeoutEvents(2000) );
 	var sv = rdv.accept(); rdv.close();
 
-
 	sv.write(stringRepeat('x', 10000));
+	sleep(10); // need a gracefull close
 	sv.close();
 
 	var data = [];

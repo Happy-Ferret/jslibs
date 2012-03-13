@@ -6898,9 +6898,9 @@ CONFIGURE_CLASS
 	END_CONST_INTEGER_SPEC
 
 	BEGIN_STATIC_FUNCTION_SPEC
-
-		IFDEBUG( FUNCTION_ARGC(test, 1) )
-
+#ifdef DEBUG
+		FUNCTION_ARGC(test, 1)
+#endif // DEBUG
 	// OpenGL 1.1 functions
 		FUNCTION_ARGC(isEnabled, 1) // cap
 		FUNCTION_ARGC(get, 1) // pname

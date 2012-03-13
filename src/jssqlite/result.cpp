@@ -13,7 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include "../jslang/blobPub.h"
 
 #include "error.h"
 #include "result.h"
@@ -484,10 +483,14 @@ DEFINE_FUNCTION( row ) {
 		//JL_CHK( SqliteColumnToJsval(cx, pStmt, col, &colJsValue ) ); // if something goes wrong in SqliteColumnToJsval, error report has already been set.
 		JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, col), &colJsValue) );
 
-		if ( namedRows )
+		if ( namedRows ) {
+
 			JL_CHK( JS_SetProperty(cx, row, sqlite3_column_name( pStmt, col ), &colJsValue) );
-		else
-			JL_CHK( JS_DefineElement(cx, row, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE) );
+		} else {
+
+			//JL_CHK( JS_DefineElement(cx, row, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE) );
+			JL_CHK( JL_SetElement(cx, row, col, &colJsValue) );
+		}
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -600,7 +603,8 @@ DEFINE_PROPERTY_GETTER( columnNames ) {
 
 		//see. sqlite3_column_origin_name(pStmt, col);
 		colJsValue = STRING_TO_JSVAL(JS_NewStringCopyZ(cx,(const char *)sqlite3_column_name( pStmt, col ))); // sqlite3_column_name can be called BEFORE sqlite3_step
-		JL_CHK( JS_DefineElement(cx, columnNames, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE | JSPROP_PERMANENT) );
+		//JL_CHK( JS_DefineElement(cx, columnNames, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE | JSPROP_PERMANENT) );
+		JL_CHK( JL_SetElement(cx, columnNames, col, &colJsValue) );
 	}
 	
 	return JL_StoreProperty(cx, obj, id, vp, false);

@@ -475,6 +475,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( recvFrom ) {
 
+	JL_IGNORE( argc );
+
 	uint8_t *buffer = NULL;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -656,6 +658,8 @@ $TOC_MEMBER $INAME
 // When PR_Poll returns, call PR_GetConnectStatus on the socket to determine whether the nonblocking connect has succeeded or failed.
 DEFINE_PROPERTY_GETTER( connectContinue ) {
 
+	JL_IGNORE( id );
+
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
@@ -701,6 +705,8 @@ $TOC_MEMBER $INAME
   Check if the socket connection is closed.
 **/
 DEFINE_PROPERTY_GETTER( connectionClosed ) {
+
+	JL_IGNORE( id );
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
@@ -794,6 +800,8 @@ enum {
 };
 
 DEFINE_PROPERTY_SETTER( Option ) {
+
+	JL_IGNORE( strict );
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
@@ -928,6 +936,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( peerName ) {
 
+	JL_IGNORE( id );
+
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	PRNetAddr peerAddr;
@@ -956,6 +966,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( peerPort ) {
 
+	JL_IGNORE( id );
+
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	PRNetAddr peerAddr;
@@ -981,6 +993,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( sockName ) {
 
+	JL_IGNORE( id );
+
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	PRNetAddr sockAddr;
@@ -1001,6 +1015,8 @@ $TOC_MEMBER $INAME
   Return the port for this socket.
 **/
 DEFINE_PROPERTY_GETTER( sockPort ) {
+
+	JL_IGNORE( id );
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
@@ -1063,7 +1079,9 @@ DEFINE_FUNCTION( getHostsByName ) {
 		JL_CHKB( PR_NetAddrToString(&addr, addrStr, sizeof(addrStr)) == PR_SUCCESS, bad_throw ); // memory leak
 		jsval tmp;
 		JL_CHK( JL_NativeToJsval(cx, addrStr, &tmp) );
-		JL_CHK( JS_DefineElement(cx, addrJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
+		
+		//JL_CHK( JS_DefineElement(cx, addrJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
+		JL_CHK( JL_SetElement(cx, addrJsObj, index++, &tmp) );
 	}
 	return JS_TRUE;
 
@@ -1122,7 +1140,8 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 	jsval tmp;
 
 	JL_CHK( JL_NativeToJsval(cx, hostent.h_name, &tmp) );
-	JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
+	//JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
+	JL_CHK( JL_SetElement(cx, hostJsObj, index++, &tmp) );
 	
 	if ( hostent.h_aliases == NULL )
 		return JS_TRUE;
@@ -1130,7 +1149,8 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 	for ( int i = 0; hostent.h_aliases[i]; ++i ) {
 
 		JL_CHK( JL_NativeToJsval(cx, hostent.h_aliases[i], &tmp) );
-		JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
+		//JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
+		JL_CHK( JL_SetElement(cx, hostJsObj, index++, &tmp) );
 	}
 
 	return JS_TRUE;
