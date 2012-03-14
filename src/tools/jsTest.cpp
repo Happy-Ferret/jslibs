@@ -394,7 +394,6 @@ int main_depstring(int argc, char* argv[]) {
 
 	((jschar*)data)[0] = L'X';
 
-	size_t l;
 	const jschar *tmp = JS_GetStringCharsZ(cx, jsstr); //JS_GetStringCharsZAndLength(cx, jsstr, &l);
 	
 	((jschar*)data)[0] = L'Y';

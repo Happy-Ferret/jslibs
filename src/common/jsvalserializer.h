@@ -124,7 +124,7 @@ namespace jl {
 		~Serializer() {
 
 			if ( _start != NULL )
-				jl_free(_start); // jl_free(NULL) is legal, but here is an optimization.
+				jl_free(_start); // jl_free(NULL) is legal, but this is an optimization, since usually one use GetBufferOwnership() that set _start to NULL
 		}
 
 		Serializer( jsval serializerObj )

@@ -433,7 +433,6 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 
 	JSContext *cx = (JSContext*)threadArg;
 	HostPrivate *pv = JL_GetHostPrivate(cx);
-	//JSPackedBool *gcRunning = &cx->runtime->gcRunning;
 	for (;;) {
 
 		if ( JLSemaphoreAcquire(pv->watchDogSemEnd, pv->maybeGCInterval) != JLTIMEOUT ) // used as a breakable Sleep instead of SleepMilliseconds (see SandboxEval).
@@ -543,7 +542,7 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 
 	jl::QueueUnshift( &pv->moduleList, module ); // store the module (LIFO)
 	
-	//JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID, ... but UnloadModule is too complicqted to implement and will never exist
+	//JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID, ... but UnloadModule is too complicated to implement and will never exist.
 	*JL_RVAL = OBJECT_TO_JSVAL(JL_OBJ);
 
 	return JS_TRUE;
@@ -605,13 +604,14 @@ JSBool global_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObje
 
 // global object
 // doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
-// note: global_class is a global variable, but this is not an issue even is several runtimes share the same JSClass.
+// note: global_class is a global variable, but this is not an issue even if several runtimes share the same JSClass.
 static JSClass global_class = {
 	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
 	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
 	global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // global_resolve: see LAZY_STANDARD_CLASSES
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };
+
 
 
 // default: CreateHost(-1, -1, 0);
@@ -632,8 +632,6 @@ JSContext* CreateHost(uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterv
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
-// no more availavle in firefox 7
-//	JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA); // good place to manage stack limit ( that is 32MB by default ). Btw, JS_SetScriptStackQuota ( see also JS_SetThreadStackLimit )
 
 /* 2012.02.10 removed ?
 	uint32_t maxCodeCacheBytes;
@@ -650,16 +648,16 @@ JSContext* CreateHost(uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterv
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
 	// JS_SetOptions doc: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_SetOptions
 	ASSERT( JS_GetOptions(cx) == 0 );
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE); // avoid JSOPTION_COMPILE_N_GO here
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE); // beware: avoid using JSOPTION_COMPILE_N_GO here.
 
 	JSObject *globalObject;
 	globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
 	JL_CHK( globalObject ); // "unable to create the global object." );
 
-	//	Doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
+	//	doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
 	JS_SetGlobalObject(cx, globalObject); // no call to JS_InitStandardClasses(), then JS_SetGlobalObject() is required (see also LAZY_STANDARD_CLASSES).
 
-	HostPrivate *pv = new (jl_calloc(1, sizeof(HostPrivate))) HostPrivate;  // beware: don't realloc, because WatchDogThreadProc points on it !!!
+	HostPrivate *pv = ConstructHostPrivate();
 
 	JL_ASSERT_ALLOC( pv );
 	pv->hostPrivateVersion = JL_HOST_PRIVATE_VERSION;
@@ -694,9 +692,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 
-//		pv = (HostPrivate*)jl_calloc(sizeof(HostPrivate), 1); // beware: don't realloc later because WatchDogThreadProc points on it !!!
-		pv = new (jl_calloc(1, sizeof(HostPrivate))) HostPrivate;  // beware: don't realloc, because WatchDogThreadProc points on it !!!
-
+		pv = ConstructHostPrivate();
 		JL_ASSERT_ALLOC( pv );
 		pv->hostPrivateVersion = JL_HOST_PRIVATE_VERSION;
 		JL_SetHostPrivate(cx, pv);
@@ -848,8 +844,7 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 	jl_free(pv->tmpBuffer);
 
-	pv->HostPrivate::~HostPrivate();
-	jl_free(pv);
+	DestructHostPrivate(pv);
 
 	return JS_TRUE;
 
@@ -1243,7 +1238,6 @@ bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *ca
 	return true;
 }
 
-
 /* memory stat report maker:
 
 //	fprintf(stderr, "%x ", malloc_usable_size(ptr)); // for stat
@@ -1260,81 +1254,4 @@ for ( var size in stat )
 stat2.sort(function(a,b) b[1]-a[1]);
 for each ( var i in stat2 )
      print( i[1] + ' x ' + i[0] )
-*/
-
-
-/* memory pool, to be fixed: memory grows endless
-
-void *memoryPool[14] = {NULL};
-JLMutexHandler poolMutex[14];
-
-ALWAYS_INLINE int PoolSelect( size_t size ) {
-
-	if ( size == 44 ) return 0;
-	if ( size == 16 ) return 1;
-	if ( size == 48 ) return 2;
-	if ( size == 12 ) return 3;
-
-	//if ( size <=   18 ) return 5;
-	//if ( size <=   38 ) return 6;
-	//if ( size <=   68 ) return 7;
-	//if ( size <=  128 ) return 8;
-	//if ( size <=  512 ) return 9;
-	//if ( size <= 1078 ) return 10;
-	//if ( size <= 2096 ) return 11;
-	//if ( size <= 4100 ) return 12;
-	//if ( size <= 8200 ) return 13;
-
-	return -1;
-}
-
-
-ALWAYS_INLINE void MemoryPoolFree( void *ptr ) {
-
-	size_t size = malloc_usable_size(ptr);
-	int pool = PoolSelect(size);
-	if ( pool == -1 ) {
-
-		free(ptr);
-		return;
-	}
-
-	JLAcquireMutex(poolMutex[pool]);
-	*(void**)ptr = memoryPool[pool];
-	memoryPool[pool] = ptr;
-	JLReleaseMutex(poolMutex[pool]);
-}
-
-ALWAYS_INLINE void* MemoryPoolMalloc( size_t size ) {
-
-	int pool = PoolSelect(size);
-	if ( pool == -1 || memoryPool[pool] == NULL )
-		return malloc(size);
-
-	JLAcquireMutex(poolMutex[pool]);
-	void *ptr = memoryPool[pool];
-	memoryPool[pool] = *(void**)memoryPool[pool];
-	JLReleaseMutex(poolMutex[pool]);
-	return ptr;
-}
-
-void MemoryPoolInit() {
-
-	for ( int i = 0; i < COUNTOF(poolMutex); i++ )
-		poolMutex[i] = JLCreateMutex();
-}
-
-void MemoryPoolFinalize() {
-
-	for ( int i = 0; i < COUNTOF(poolMutex); i++ ) {
-
-		JLFreeMutex(&poolMutex[i]);
-		while ( memoryPool[i] ) {
-
-			void *next = *(void**)memoryPool[i];
-			free(memoryPool[i]);
-			memoryPool[i] = next;
-		}
-	}
-}
 */

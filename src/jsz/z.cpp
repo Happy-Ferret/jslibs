@@ -66,8 +66,8 @@ DEFINE_FINALIZE() {
 		}
 
 		// cannot report an error while GC is running
-		// (TBD) send to log !
-		//JL_ASSERT_WARN( status == Z_OK, E_OBJ, E_STR(JL_THIS_CLASS_NAME), E_FIN, E_COMMENT(pv->stream.msg ? pv->stream.msg : "") ); // "Unable to finalize zlib stream (%s).", pv->stream.msg );
+
+		//JL_ASSERT_WARN( status == Z_OK, E_OBJ, E_STR(JL_THIS_CLASS_NAME), E_FIN, E_COMMENT(pv->stream.msg ? pv->stream.msg : "") ); // "Unable to finalize zlib stream (%s).", pv->stream.msg ); // (TBD) send to log !
 	}
 	JS_free(cx, pv);
 bad:

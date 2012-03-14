@@ -80,7 +80,7 @@ JL_Realloc( T*&ptr, size_t count = 1 ) {
 // malloca
 
 // note: MSVC _ALLOCA_S_THRESHOLD is 1024
-#define JL_MALLOCA_THRESHOLD 2048
+#define JL_MALLOCA_THRESHOLD 1024
 
 ALWAYS_INLINE void * FASTCALL
 jl__malloca_internal(void *mem, size_t heapMem) {
@@ -106,6 +106,26 @@ jl_freea(void *mem) {
 }
 
 /*
+class AutoMalloca {
+	void *_ptr;
+public:
+	AutoMalloc( void *ptr ) : _ptr(ptr) {}
+	~AutoMalloc() {
+
+		if ( _ptr && *((size_t*)_ptr-1) )
+			jl_free((size_t*)_ptr-1);
+	}
+	operator void *() {
+
+		return _ptr;
+	}
+};
+
+#define JL_malloca(size) \
+	( ( (size)+sizeof(size_t) > JL_MALLOCA_THRESHOLD ) ? AutoMalloca(jl_malloc((size)+sizeof(size_t)), 1) : jl__malloca_internal(alloca((size)+sizeof(size_t)), 0) )
+*/
+
+/*
 #define JL_AutoFreea(ptr, size)
 
 class JL_AutoMallocaClass {
@@ -119,6 +139,7 @@ public:
 
 #define JL_AutoMalloca(size) JL_AutoMallocaClass(jl_malloca(size), size);
 */
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -284,8 +305,6 @@ namespace jl {
 
 
 
-
-
 	template <class T, const size_t PREALLOC_SIZE = 1024>
 	class NOVTABLE StaticAlloc {
 
@@ -356,4 +375,81 @@ namespace jl {
 
 
 
-} // namespace
+} // namespace jl
+
+
+/* memory pool, to be fixed: memory grows endless
+
+void *memoryPool[14] = {NULL};
+JLMutexHandler poolMutex[14];
+
+ALWAYS_INLINE int PoolSelect( size_t size ) {
+
+	if ( size == 44 ) return 0;
+	if ( size == 16 ) return 1;
+	if ( size == 48 ) return 2;
+	if ( size == 12 ) return 3;
+
+	//if ( size <=   18 ) return 5;
+	//if ( size <=   38 ) return 6;
+	//if ( size <=   68 ) return 7;
+	//if ( size <=  128 ) return 8;
+	//if ( size <=  512 ) return 9;
+	//if ( size <= 1078 ) return 10;
+	//if ( size <= 2096 ) return 11;
+	//if ( size <= 4100 ) return 12;
+	//if ( size <= 8200 ) return 13;
+
+	return -1;
+}
+
+
+ALWAYS_INLINE void MemoryPoolFree( void *ptr ) {
+
+	size_t size = malloc_usable_size(ptr);
+	int pool = PoolSelect(size);
+	if ( pool == -1 ) {
+
+		free(ptr);
+		return;
+	}
+
+	JLAcquireMutex(poolMutex[pool]);
+	*(void**)ptr = memoryPool[pool];
+	memoryPool[pool] = ptr;
+	JLReleaseMutex(poolMutex[pool]);
+}
+
+ALWAYS_INLINE void* MemoryPoolMalloc( size_t size ) {
+
+	int pool = PoolSelect(size);
+	if ( pool == -1 || memoryPool[pool] == NULL )
+		return malloc(size);
+
+	JLAcquireMutex(poolMutex[pool]);
+	void *ptr = memoryPool[pool];
+	memoryPool[pool] = *(void**)memoryPool[pool];
+	JLReleaseMutex(poolMutex[pool]);
+	return ptr;
+}
+
+void MemoryPoolInit() {
+
+	for ( int i = 0; i < COUNTOF(poolMutex); i++ )
+		poolMutex[i] = JLCreateMutex();
+}
+
+void MemoryPoolFinalize() {
+
+	for ( int i = 0; i < COUNTOF(poolMutex); i++ ) {
+
+		JLFreeMutex(&poolMutex[i]);
+		while ( memoryPool[i] ) {
+
+			void *next = *(void**)memoryPool[i];
+			free(memoryPool[i]);
+			memoryPool[i] = next;
+		}
+	}
+}
+*/

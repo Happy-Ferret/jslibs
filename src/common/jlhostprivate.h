@@ -52,8 +52,6 @@ struct HostPrivate {
 	jl::Queue moduleList;
 	JSClass *objectClass;
 	JSObject *objectProto;
-//	jl::Queue registredNativeClasses;
-//	JSClass *stringObjectClass;
 	jl_allocators_t alloc;
 	jsid ids[LAST_JSID];
 	ClassProtoCache classProtoCache[1<<JL_HOST_PRIVATE_MAX_CLASS_PROTO_CACHE_BIT]; // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
@@ -70,3 +68,17 @@ struct HostPrivate {
 };
 
 S_ASSERT( offsetof(HostPrivate, unsafeMode) == 4 ); // check this because JL_ASSERT macro must be usable before hostPrivateVersion is tested.
+
+
+ALWAYS_INLINE HostPrivate *
+ConstructHostPrivate() {
+
+	return ::new(jl_calloc(1, sizeof(HostPrivate))) HostPrivate; // beware: don't realloc later because WatchDogThreadProc points on it.
+}
+
+ALWAYS_INLINE void
+DestructHostPrivate(HostPrivate *hpv) {
+
+	hpv->HostPrivate::~HostPrivate();
+	jl_free(hpv);
+}

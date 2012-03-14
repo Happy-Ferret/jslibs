@@ -471,6 +471,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( currentMemoryUsage ) {
 
+	JL_IGNORE( id, obj );
+
 	uint32_t bytes;
 
 #if defined(XP_WIN)
@@ -501,6 +503,8 @@ $TOC_MEMBER $INAME
   TBD
 **/
 DEFINE_PROPERTY_GETTER( peakMemoryUsage ) {
+
+	JL_IGNORE( id, obj );
 
 #if defined(XP_WIN)
 
@@ -540,6 +544,8 @@ $TOC_MEMBER $INAME
   TBD
 **/
 DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
+
+	JL_IGNORE( id, obj );
 
 #if defined(XP_WIN)
 
@@ -586,6 +592,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( gcNumber ) {
 
+	JL_IGNORE( id, obj );
+
 	return JL_NewNumberValue(cx, JS_GetGCParameter(JL_GetRuntime(cx), JSGC_NUMBER), vp);
 }
 
@@ -613,6 +621,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( gcBytes ) {
 
+	JL_IGNORE( id, obj );
+
 	return JL_NewNumberValue(cx, JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES), vp);
 }
 
@@ -632,6 +642,8 @@ $TOC_MEMBER $INAME
   This function in only available in DEBUG mode.
 **/
 DEFINE_PROPERTY_SETTER( gcZeal ) {
+
+	JL_IGNORE( strict );
 
 #ifdef JS_GC_ZEAL
 
@@ -654,6 +666,8 @@ DEFINE_PROPERTY_SETTER( gcZeal ) {
 
 // undocumented
 DEFINE_FUNCTION( disableJIT ) {
+
+	JL_IGNORE( argc );
 
 	JS_SetOptions(cx, JS_GetOptions(cx) & ~(/*JSOPTION_JIT|*/JSOPTION_METHODJIT));
 
@@ -873,6 +887,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( scriptFilenameList ) {
 
+	JL_IGNORE( id, obj );
+
 	JSObject *arr = JS_NewArrayObject(cx, 0, NULL);
 	JL_CHK(arr);
 	*vp = OBJECT_TO_JSVAL(arr);
@@ -941,6 +957,8 @@ $TOC_MEMBER $INAME
   Is the number of stack frames. 0 is the older stack frame index. The current stack frame index is (stackSize-1).
 **/
 DEFINE_PROPERTY_GETTER( stackSize ) {
+
+	JL_IGNORE( id, obj );
 
 	return JL_NativeToJsval(cx, JL_StackSize(cx, JL_CurrentStackFrame(cx)), vp);
 }
@@ -1272,7 +1290,6 @@ DEFINE_FUNCTION( propertiesList ) {
 	JL_CHK( arrayObject );
 	*JL_RVAL = OBJECT_TO_JSVAL( arrayObject );
 
-	jsval tmp;
 	int index;
 	index = 0;
 	
@@ -1580,6 +1597,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( processTime ) {
 
+	JL_IGNORE( id, obj );
+
 #if defined(XP_WIN)
 
 	__int64 creationTime, exitTime, kernelTime, userTime;
@@ -1607,6 +1626,8 @@ $TOC_MEMBER $INAME
   Is the current CPU usage in percent.
 **/
 DEFINE_PROPERTY_GETTER( cpuLoad ) {
+
+	JL_IGNORE( id, obj );
 
 #if defined(XP_WIN)
 

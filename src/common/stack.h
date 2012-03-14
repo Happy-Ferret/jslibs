@@ -185,19 +185,17 @@ inline void StackFree( void **stack ) {
 template <class T, template<class> class A = DefaultAlloc>
 class NOVTABLE Stack {
 
-	class Item {
-	public:
+	struct Item {
 		T data;
 		Item *prev;
 	};
 
 	A<Item> allocator;
-
 	Item* _top;
 
-private: // forbidden access
-	ALWAYS_INLINE Stack& operator++( int );
-	ALWAYS_INLINE Stack& operator--( int );
+	// forbidden access
+	ALWAYS_INLINE Stack& operator++( int ); // stack++
+	ALWAYS_INLINE Stack& operator--( int ); // stack--
 	Stack( const Stack & );
 	Stack & operator=( const Stack & );
 
@@ -237,7 +235,7 @@ public:
 		return &_top->data;
 	}
 
-	ALWAYS_INLINE Stack& operator++() { // ++s
+	ALWAYS_INLINE Stack& operator++() { // ++stack
 
 		Item *newItem = ::new(allocator.Alloc()) Item;
 		newItem->prev = _top;
@@ -245,7 +243,7 @@ public:
 		return *this;
 	}
 
-	ALWAYS_INLINE Stack& operator--() { // --s
+	ALWAYS_INLINE Stack& operator--() { // --stack
 
 		ASSERT( _top != NULL );
 		Item* oldItem = _top;
@@ -258,13 +256,12 @@ public:
 	template <class U>
 	ALWAYS_INLINE Stack& operator+=( const U &src ) {
 
-		class Copy {
+		struct Copy {
 
 			ThisType &_dst;
 			Item **_itemPtr;
 			Item *_prevTop;
 
-		public:
 			ALWAYS_INLINE Copy( ThisType &dst ) : _dst(dst), _prevTop(dst._top), _itemPtr(&dst._top) {
 			}
 
@@ -315,6 +312,7 @@ public:
 
 		while ( this->operator bool() )
 			this->operator--();
+		ASSERT( _top == NULL );
 	}
 
 	ALWAYS_INLINE bool Remove( const T &ref ) {

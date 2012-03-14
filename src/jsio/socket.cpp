@@ -451,12 +451,23 @@ DEFINE_FUNCTION( sendTo ) {
 	} else
 		sentAmount = res;
 
-	if ( sentAmount < str.Length() )
-		*JL_RVAL = STRING_TO_JSVAL( JS_NewDependentString(cx, JSVAL_TO_STRING( JL_ARG(3) ), sentAmount, str.Length() - sentAmount) ); // return unsent data
-	else if ( sentAmount == 0 )
-		*JL_RVAL = JL_ARG(3); // nothing has been sent
-	else
-		*JL_RVAL = JL_GetEmptyStringValue(cx); // nothing remains
+
+	if ( sentAmount < str.Length() ) { // return unsent data
+
+		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+	} else if ( sentAmount == 0 ) { // nothing has been sent
+
+		if ( JSVAL_IS_STRING( JL_ARG(3) ) ) {
+			
+			*JL_RVAL = JL_ARG(3);
+		} else {
+
+			JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
+		}
+	} else { // nothing remains
+
+		JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+	}
 
 	if ( JL_GetClass(obj) != JL_THIS_CLASS )
 		PR_Close(fd);

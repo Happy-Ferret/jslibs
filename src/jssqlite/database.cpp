@@ -140,7 +140,7 @@ DEFINE_FINALIZE() {
 	// close the database
 	// All prepared statements must finalized before sqlite3_close() is called or else the close will fail with a return code of SQLITE_BUSY.
 	
-	JL_ASSERT_WARN( sqlite3_close(pv->db) == SQLITE_OK, E_NAME(JL_THIS_CLASS_NAME), E_FIN, E_DETAILS, E_STR(sqlite3_errmsg(pv->db)), E_ERRNO(sqlite3_extended_errcode(pv->db)) );
+	// JL_ASSERT_WARN( sqlite3_close(pv->db) == SQLITE_OK, E_NAME(JL_THIS_CLASS_NAME), E_FIN, E_DETAILS, E_STR(sqlite3_errmsg(pv->db)), E_ERRNO(sqlite3_extended_errcode(pv->db)) ); // (TBD) send to log !
 //	JL_SetPrivate( cx, obj, NULL );
 
 bad:
@@ -676,7 +676,7 @@ END_CLASS
  {{{
  print('database version: ' + Database.version ,'\n' );
 
- var obj = { foo:Blob('qqwe\0\0fv1234') };
+ var obj = { foo:toString('qqwe\0\0fv1234', true) };
  print( 'testFunc = ' + db.exec('SELECT length(:foo)', obj  ) ,'\n' );
  }}}
  $H example 2

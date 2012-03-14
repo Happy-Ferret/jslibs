@@ -152,8 +152,6 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 					break;
 				}
-//				if ( JL_GetClass(JSVAL_TO_OBJECT(val)) == JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Blob")->clasp ) { // beware: with SQLite, blob != text
-				//if ( JL_JsvalIsBlob(cx, val) ) {
 				if ( JL_ValueIsData(cx, val) ) {
 
 					JLData data;

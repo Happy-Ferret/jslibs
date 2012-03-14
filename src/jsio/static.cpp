@@ -51,8 +51,6 @@ JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 	pollDesc->fd = (PRFileDesc *)JL_GetPrivate(cx, fdObj); // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
 	// beware: fd == NULL is supported !
 
-	jsval tmp;
-
 	pollDesc->out_flags = 0;
 	pollDesc->in_flags = 0;
 
@@ -382,6 +380,8 @@ $TOC_MEMBER $INAME
   Returns the milliseconds value of NSPR's free-running interval timer.
 **/
 DEFINE_FUNCTION( intervalNow ) {
+
+	JL_IGNORE( argc );
 
 	PRUint32 interval = PR_IntervalToMilliseconds( PR_IntervalNow() ); // (TBD) Check if it may wrap around in about 12 hours. Is it related to the data type ???
 	return JL_NewNumberValue(cx, interval, JL_RVAL);
@@ -915,6 +915,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( hostName ) {
 
+	JL_IGNORE( id, obj );
+
 	char tmp[SYS_INFO_BUFFER_LENGTH];
 	/* doc:
 			Suppose the name of the host is configured as "foo.bar.com".
@@ -940,6 +942,8 @@ $TOC_MEMBER $INAME
   Is the amount of physical RAM in the system in bytes.
 **/
 DEFINE_PROPERTY_GETTER( physicalMemorySize ) {
+
+	JL_IGNORE( id, obj );
 
 	PRUint64 mem = PR_GetPhysicalMemorySize();
 	JL_CHK( JL_NewNumberValue(cx, (jsdouble)mem, vp) );
@@ -1024,6 +1028,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( processPriority ) {
 
+	JL_IGNORE( id, obj, cx );
+
 	PRThreadPriority priority = PR_GetThreadPriority(PR_GetCurrentThread());
 	int priorityValue;
 	switch (priority) {
@@ -1049,6 +1055,8 @@ DEFINE_PROPERTY_GETTER( processPriority ) {
 }
 
 DEFINE_PROPERTY_SETTER( processPriority ) {
+
+	JL_IGNORE( strict, id, obj );
 
 	int priorityValue;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &priorityValue) );
@@ -1108,6 +1116,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( currentDirectory ) {
 
+	JL_IGNORE( id, obj );
+
 	char buf[PATH_MAX];
 #ifdef XP_WIN
 //	_getcwd(buf, sizeof(buf));
@@ -1123,6 +1133,8 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 }
 
 DEFINE_PROPERTY_SETTER( currentDirectory ) {
+
+	JL_IGNORE( id, obj, strict );
 
 	JLData dir;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &dir ) );
@@ -1192,6 +1204,8 @@ DEFINE_PROPERTY_GETTER( version ) {
 #include "jlalloc.h"
 
 DEFINE_FUNCTION( jsioTest ) {
+
+	JL_IGNORE( argc, cx );
 
 /*
 	JSObject *o = JL_NewObj(cx);

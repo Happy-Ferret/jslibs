@@ -173,18 +173,12 @@ GetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval *value 
 }
 
 
-/* Usage
-
-void FinalizeTrimesh(void *data) {
-}
-
-...
-
-void *data;
-JL_CHK( CreateId(cx, 'TEST', 10, &data, FinalizeTrimesh, JL_RVAL) );
-
-bool c = IsIdType(cx, *JL_RVAL, 'TEST');
-
-bool d = (data == GetHandlePrivate(cx, *JL_RVAL));
-
+/* Usage:
+	void FinalizeTrimesh(void *data) {
+	}
+	...
+	void *data;
+	JL_CHK( CreateId(cx, 'TEST', 10, &data, FinalizeTrimesh, JL_RVAL) );
+	bool c = IsIdType(cx, *JL_RVAL, 'TEST');
+	bool d = (data == GetHandlePrivate(cx, *JL_RVAL));
 */

@@ -2,7 +2,7 @@
 //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
 //loadModule('jsstd'); exec('../common/tools.js'); var QA = fakeQAApi;  runLocalQAFile();
 
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask '); throw 0; //-inlineOnly
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -inlineOnly'); throw 0; //-inlineOnly
 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //SetPerfTestMode();
@@ -10,20 +10,14 @@ loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask ');
 loadModule('jscrypt');
 loadModule('jsstd');
 loadModule('jsio');
-
-//_jsapiTests();
+_jsapiTests();
 //jslangTest();
+
 
 
 
 throw 0;
 
-jslangTest('test'); halt();
-
-join(Iterator([5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8])); halt();
-
-
-print( toString('123456789', true).slice(3), '\n\n' )
 
 
 halt();
@@ -39,9 +33,6 @@ print( uneval(join(tmp.SubFolders)) );
 //jslangTest(res);
 halt();
 */
-
-
-
 
 
 var arr = ( new ArrayBuffer(4) );

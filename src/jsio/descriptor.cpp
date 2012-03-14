@@ -433,10 +433,22 @@ DEFINE_FUNCTION( write ) {
 
 	ASSERT( sentAmount <= str.Length() );
 
-	if (likely( sentAmount == str.Length() ))
+	if (likely( sentAmount == str.Length() )) { // nothing remains
+
 		JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
-	else
+	} else if ( sentAmount == 0 ) { // nothing has been sent
+		
+		if ( JSVAL_IS_STRING( JL_ARG(1) ) ) { // optimization (string are immutable)
+			
+			*JL_RVAL = JL_ARG(1);
+		} else {
+			
+			JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
+		}
+	} else { // return unsent data
+
 		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+	}
 
 	return JS_TRUE;
 	JL_BAD;

@@ -75,6 +75,7 @@
 	#pragma warning(error : 4717) // 'XXX' : recursive on all control paths, function will cause runtime stack overflow
 	#pragma warning(error : 4508) // 'XXX' : function should return a value; 'void' return type assumed
 	#pragma warning(error : 4800) // 'XXX' : forcing value to bool 'true' or 'false' (performance warning)
+	#pragma warning(error : 4101) // 'XXX' : unreferenced local variable
 	#ifdef DEBUG
 		#pragma warning(error : 4701) // potentially uninitialized local variable 'XXX' used
 	#endif
