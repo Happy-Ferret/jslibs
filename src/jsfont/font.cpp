@@ -230,7 +230,7 @@ DEFINE_FUNCTION( drawChar ) {
 	uint8_t *buf;
 	buf = JL_NewByteImageBuffer(cx, width, height, 1, JL_RVAL);
 	JL_CHK( buf );
-	memcpy(buf, pv->face->glyph->bitmap.buffer, bufLength);
+	jl_memcpy(buf, pv->face->glyph->bitmap.buffer, bufLength);
 
 	return JS_TRUE;
 	JL_BAD;

@@ -61,7 +61,7 @@ JSBool StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount
 	if ( position + *amount > length )
 		*amount = length - position;
 
-	memcpy( buf, str.GetConstStr() + position, *amount );
+	jl_memcpy( buf, str.GetConstStr() + position, *amount );
 	position += *amount;
 	PositionSet(cx, streamObj, position);
 	}

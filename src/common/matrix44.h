@@ -149,7 +149,7 @@ inline void Matrix44Identity( Matrix44 *m ) {
 	//m->m4 = _mm_shuffle_ps(tmp, tmp, _MM_SHUFFLE(0,1,1,1));
 
 #else // SSE
-	memcpy(m->raw, Matrix44IdentityValue.raw, sizeof(Matrix44IdentityValue));
+	jl_memcpy(m->raw, Matrix44IdentityValue.raw, sizeof(Matrix44IdentityValue));
 #endif // SSE
 
 }
@@ -162,7 +162,7 @@ inline void Matrix44Load( Matrix44 *m, const Matrix44 *m1 ) {
 	m->m3 = m1->m3;
 	m->m4 = m1->m4;
 #else // SSE
-	memcpy(m->raw, m1->raw, sizeof(Matrix44));
+	jl_memcpy(m->raw, m1->raw, sizeof(Matrix44));
 #endif // SSE
 
 }
@@ -176,7 +176,7 @@ inline void Matrix44LoadFromPtr( Matrix44 *m, const float *ptr ) {
 	m->m3 = _mm_loadu_ps(ptr+8);
 	m->m4 = _mm_loadu_ps(ptr+12);
 #else // SSE
-	memcpy(m->raw, ptr, sizeof(Matrix44));
+	jl_memcpy(m->raw, ptr, sizeof(Matrix44));
 #endif // SSE
 
 }
@@ -189,7 +189,7 @@ inline void Matrix44LoadToPtr( Matrix44 *m, float *ptr ) {
 	_mm_storeu_ps(ptr+ 8 ,m->m3);
 	_mm_storeu_ps(ptr+12, m->m4);
 #else // SSE
-	memcpy(ptr, m->raw, sizeof(Matrix44));
+	jl_memcpy(ptr, m->raw, sizeof(Matrix44));
 #endif // SSE
 
 }

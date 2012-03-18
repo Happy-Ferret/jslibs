@@ -61,19 +61,19 @@ inline bool Matrix55IsIdentity( Matrix55 *m ) {
 
 inline void Matrix55Identity( Matrix55 *m ) {
 
-	memcpy(m->raw, Matrix55IdentityValue.raw, sizeof(Matrix55IdentityValue));
+	jl_memcpy(m->raw, Matrix55IdentityValue.raw, sizeof(Matrix55IdentityValue));
 }
 
 
 inline void Matrix55Load( Matrix55 *m, const Matrix55 *m1 ) {
 
-	memcpy(m->raw, m1->raw, sizeof(Matrix55));
+	jl_memcpy(m->raw, m1->raw, sizeof(Matrix55));
 }
 
 
 inline void Matrix55LoadFromPtr( Matrix55 *m, const float *ptr ) {
 
-	memcpy(m->raw, ptr, sizeof(Matrix55));
+	jl_memcpy(m->raw, ptr, sizeof(Matrix55));
 }
 
 

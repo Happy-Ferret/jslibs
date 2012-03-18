@@ -167,7 +167,7 @@ public:
 		for ( int i=0; i<=_currentIndex; ++i ) {
 
 			size_t length = _queue[i].data - _queue[i].mem;
-			memcpy( data, _queue[i].mem, length );
+			jl_memcpy( data, _queue[i].mem, length );
 			data += length;
 		}
 	}

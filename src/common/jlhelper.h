@@ -83,13 +83,21 @@ JL_GetRuntime( JSContext *cx ) {
 ALWAYS_INLINE void* FASTCALL
 JL_GetRuntimePrivate( JSRuntime *rt ) {
 
+#ifdef JSRUNTIME_HAS_JLDATA
+	return js::RuntimeFriendFields::get(rt)->jldata;
+#else
 	return JS_GetRuntimePrivate(rt);
+#endif
 }
 
 ALWAYS_INLINE void FASTCALL
 JL_SetRuntimePrivate( JSRuntime *rt, void *data ) {
 
+#ifdef JSRUNTIME_HAS_JLDATA
+	const_cast<js::RuntimeFriendFields*>(js::RuntimeFriendFields::get(rt))->jldata = data;
+#else
 	JS_SetRuntimePrivate(rt, data);
+#endif
 }
 
 ALWAYS_INLINE void FASTCALL
@@ -244,7 +252,7 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 //	void *tmp = JS_malloc(cx, length);
 //	if ( !tmp )
 //		return NULL;
-//	memcpy(tmp, bytes, length * sizeof(*jschar));
+//	jl_memcpy(tmp, bytes, length * sizeof(*jschar));
 //	jl_free(bytes);
 //	bytes = (char*)tmp;
 //
@@ -359,22 +367,6 @@ JL_StringToJsid( JSContext *cx, const jschar *cstr ) {
 
 // initialise 'this' object (obj) for constructors
 // see. JS_NewObjectForConstructor(cx, vp) if JL_THIS_CLASS or JL_THIS_PROTOTYPE cannot be used
-/*
-#define JL_DEFINE_CONSTRUCTOR_OBJ \
-	JSObject *obj; \
-	{ \
-		if ( !((JL_THIS_CLASS->flags & JSCLASS_CONSTRUCT_PROTOTYPE) && JS_IsConstructing_PossiblyWithGivenThisObject(cx, vp, &obj) && obj) ) { \
-			obj = JL_NewObjectWithGivenProto(cx, JL_THIS_CLASS, JL_THIS_PROTOTYPE, NULL); \
-			if ( obj == NULL ) { \
-				return JS_FALSE; \
-			} \
-		} \
-		JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj)); \
-		if ( js::Valueify(JL_THIS_CLASS)->ext.equality ) { \
-			obj->flags |= JSObject::HAS_EQUALITY; \
-		} \
-	}
-*/
 #define JL_DEFINE_CONSTRUCTOR_OBJ \
 	JSObject *obj; \
 	{ \
@@ -512,12 +504,9 @@ JL_tmpAlloc( JSContext *cx, size_t size ) {
 ALWAYS_INLINE void FASTCALL
 JL_tmpFree( JSContext *cx, uint8_t *data ) {
 
-	if ( data != NULL ) {
-		
-		if ( data != JL_GetHostPrivate(cx)->tmpBuffer ) {
+	if ( data != NULL && data != JL_GetHostPrivate(cx)->tmpBuffer ) {
 
-			jl_free(data);
-		}
+		jl_free(data);
 	}
 }
 
@@ -1301,8 +1290,6 @@ class JLData {
 		const size_t length = Length();
 		const size_t dstSize = (length + (nullTerminated ? 1 : 0)) * (wide ? 2 : 1) + IFDEBUG( 2 ); // IFDEBUG: force non-Z strings if !nullTerminated;
 
-		
-
 		if ( !_own && ( own || ( _w != wide ) || ( !_nt && nullTerminated ) ) ) {
 
 			dst = jl_malloc(dstSize);
@@ -1522,7 +1509,7 @@ public:
 		size_t length = Length();
 		if ( _w ) {
 
-			jl_memcpy(dst, _buf, length*2 );
+			jl_memcpy(dst, _buf, length*2);
 		} else {
 
 			const char *src = (const char*)_buf;
@@ -1531,13 +1518,13 @@ public:
 		}
 	}
 
-	ALWAYS_INLINE void CopyTo( uint8_t *dst ) {
+	ALWAYS_INLINE void CopyTo( char *dst ) {
 
 		ASSERT( IsSet() );
 		size_t length = Length();
 		if ( !_w ) {
 
-			jl_memcpy(dst, _buf, length );
+			jl_memcpy(dst, _buf, length);
 		} else {
 
 			const jschar *src = (const jschar*)_buf;
@@ -1545,6 +1532,12 @@ public:
 				*(dst++) = *(src++) & 0xFF;
 		}
 	}
+
+	ALWAYS_INLINE void CopyTo( uint8_t *dst ) {
+	
+		CopyTo((char*)dst);
+	}
+
 
 	// jschar
 
@@ -1588,6 +1581,13 @@ public:
 
 		return IsSet() ? GetConstWStr() : NULL;
 	}
+
+	ALWAYS_INLINE jschar GetWCharAt( size_t index ) {
+		
+		ASSERT( IsSet() );
+		return _w ? ((jschar*)_buf)[index] : ((char*)_buf)[index] & 0xFF;
+	}
+
 	
 	// char
 
@@ -1636,6 +1636,13 @@ public:
 
 		return IsSet() ? GetConstStrZ() : NULL;
 	}
+
+	ALWAYS_INLINE char GetCharAt( size_t index ) {
+		
+		ASSERT( IsSet() );
+		return _w ? ((jschar*)_buf)[index] & 0xFF : ((char*)_buf)[index];
+	}
+
 
 	// other
 
@@ -1754,9 +1761,9 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLData * RESTRICT str ) {
 
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_NativeToJsval( JSContext *cx, JLData &cval, jsval *vp ) {
+JL_NativeToJsval( JSContext *cx, JLData &cval, jsval *vp, bool toArrayBuffer ) {
 
-	return cval.GetJSString(cx, vp);
+	return toArrayBuffer ? cval.GetJSString(cx, vp) : cval.GetArrayBuffer(cx, vp);
 }
 
 
@@ -2596,7 +2603,7 @@ INLINE JSBool FASTCALL
 JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T * RESTRICT vector, jsuint maxLength, jsuint * RESTRICT actualLength ) {
 
 	ASSERT( js_IsTypedArray(obj) );
-	JL_ASSERT( JS_GetTypedArrayType(obj) == JLNativeTypeToTypedArrayType(*vector), E_STR("TypedArray"), E_TYPE, E_NAME(JLNativeTypeToString(*vector)) );
+	JL_ASSERT( JS_GetTypedArrayType(obj) == JLNativeTypeToTypedArrayType(*vector), E_TY_TYPEDARRAY, E_TYPE, E_NAME(JLNativeTypeToString(*vector)) );
 	void *data = JS_GetTypedArrayData(obj);
 	*actualLength = JS_GetTypedArrayLength(obj);
 	maxLength = JL_MIN( *actualLength, maxLength );
@@ -2618,7 +2625,7 @@ JL_ArrayBufferToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, 
 	ASSERT( buffer != NULL );
 	*actualLength = JS_GetArrayBufferByteLength(obj);
 	maxLength = JL_MIN( *actualLength, maxLength );
-	memcpy((uint8_t*)vector, buffer, maxLength);
+	jl_memcpy((uint8_t*)vector, buffer, maxLength);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2642,7 +2649,7 @@ JL_JsvalToNativeVector( JSContext * RESTRICT cx, jsval & RESTRICT val, T * RESTR
 		if ( sizeof(*vector) == 1 )
 			return JL_ArrayBufferToNativeVector(cx, arrayObj, (uint8_t *)vector, maxLength, actualLength);
 		else
-			JL_ERR( E_STR("ArrayBuffer"), E_UNEXP );
+			JL_ERR( E_TY_ARRAYBUFFER, E_UNEXP );
 	}
 
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, actualLength) );
@@ -2870,7 +2877,7 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, jsval &val, float ** RESTRICT m ) {
 
 	if ( JSVAL_IS_NULL(val) ) {
 
-		memcpy(*m, &Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
+		jl_memcpy(*m, &Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
 		return JS_TRUE;
 	}
 
@@ -2890,7 +2897,7 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, jsval &val, float ** RESTRICT m ) {
 			
 			if ( JS_GetTypedArrayLength(matrixObj) == 16 ) {
 
-				memcpy(*m, JS_GetTypedArrayData(matrixObj), (32 / 8) * 16);
+				jl_memcpy(*m, JS_GetTypedArrayData(matrixObj), (32 / 8) * 16);
 				return JS_TRUE;
 			}
 		}
@@ -2957,18 +2964,19 @@ GetHostObject(JSContext *cx) {
 	JSObject *globalObject = JL_GetGlobal(cx);
 	JL_CHK( globalObject );
 	jsval hostObjectValue;
+	
 	jsid hostObjectId;
 	hostObjectId = JLID(cx, _host);
-	JL_CHK( hostObjectId != JL_NullJsid() );
+	ASSERT( hostObjectId != JL_NullJsid() );
+
 	JL_CHK( JS_GetPropertyById(cx, globalObject, hostObjectId, &hostObjectValue) );
 
 	if ( JSVAL_IS_VOID( hostObjectValue ) ) { // if configuration object do not exist, we build one
 
-		cobj = JS_NewObject(cx, NULL, NULL, NULL); // possible to use JL_NewObj ?
+		cobj = JL_NewObj(cx); //JS_NewObject(cx, NULL, NULL, NULL);
 		JL_CHK( cobj );
-		jsval val;
-		val = OBJECT_TO_JSVAL( cobj );
-		JL_CHK( JS_SetPropertyById(cx, globalObject, hostObjectId, &val) );
+		hostObjectValue = OBJECT_TO_JSVAL( cobj );
+		JL_CHK( JS_SetPropertyById(cx, globalObject, hostObjectId, &hostObjectValue) );
 		//cobj = JS_DefineObject(cx, globalObject, JLID_NAME(cx, _host), NULL, NULL, 0 );
 		//JL_CHK( cobj ); // Doc: If the property already exists, or cannot be created, JS_DefineObject returns NULL.
 	} else {
@@ -3100,7 +3108,7 @@ JL_NewBufferGetOwnership( JSContext *cx, void *src, size_t nbytes, jsval *rval )
 	buffer = JL_NewBuffer(cx, nbytes, rval);
 	if ( buffer ) {
 			
-		memcpy(buffer, src, nbytes);
+		jl_memcpy(buffer, src, nbytes);
 		js_free(src);
 		return true;
 	} else {
@@ -3835,7 +3843,7 @@ JSStreamRead( JSContext * RESTRICT cx, JSObject * RESTRICT obj, char * RESTRICT 
 		JL_CHK( JL_JsvalToNative(cx, tmp, &str) );
 		ASSERT( str.Length() <= *amount );
 		*amount = str.Length();
-		memcpy(buffer, str.GetConstStr(), *amount);
+		jl_memcpy(buffer, str.GetConstStr(), *amount);
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -3955,125 +3963,5 @@ struct ProcessEvent {
 	void (*startWait)( volatile ProcessEvent *self ); // starts the blocking thread and call signalEvent() when an event has arrived.
 	bool (*cancelWait)( volatile ProcessEvent *self ); // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
 	JSBool (*endWait)( volatile ProcessEvent *self, bool *hasEvent, JSContext *cx, JSObject *obj ); // process the result
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Auto buffer
-
-struct AutoCloseIterator {
-
-    AutoCloseIterator(JSContext *cx, JSObject *obj) : cx(cx), obj(obj) {}
-
-    ~AutoCloseIterator() { if (obj) js_CloseIterator(cx, obj); }
-
-    void clear() { obj = NULL; }
-
-  private:
-    JSContext *cx;
-    JSObject *obj;
-};
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Auto buffer
-
-
-template <class T>
-struct AutoBuffer {
-
-	void *_ptr;
-	AutoBuffer(size_t length) {
-
-		_ptr = jl_malloc(length * sizeof(T));
-	}
-
-	~AutoBuffer() {
-		
-		jl_free(_ptr);
-	}
-
-	T *Ptr() const {
-	
-		return _ptr;
-	}
-
-	T *PtrOwnership() {
-		
-		T *tmp = _ptr;
-		_ptr = NULL;
-		return tmp;
-	}
-private:
-	AutoBuffer(const AutoBuffer &);
-	AutoBuffer & operator =(const AutoBuffer &);
-};
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Shared buffer
-
-class SharedBuffer {
-
-	struct Shared {
-		size_t count;
-		size_t length;
-		char buffer[1]; // first char of the buffer
-	};
-	Shared *_shared;
-
-	void AddRef() {
-
-		++_shared->count;
-	}
-
-	void DelRef() {
-
-		if ( !--_shared->count )
-			jl_free(_shared);
-	}
-
-public:
-	~SharedBuffer() {
-
-		DelRef();
-	}
-
-	SharedBuffer( size_t length ) {
-
-		_shared = (Shared*)jl_malloc(sizeof(*_shared)-1 + length);
-//		ASSERT( _shared );
-		_shared->count = 1;
-		_shared->length = length;
-	}
-
-	SharedBuffer( const SharedBuffer &other ) {
-
-		_shared = other._shared;
-		AddRef();
-	}
-
-	const SharedBuffer & operator =( const SharedBuffer &other ) {
-
-		DelRef();
-		_shared = other._shared;
-		AddRef();
-		return *this;
-	}
-
-	size_t Length() const {
-
-		return _shared->length;
-	}
-
-	char *Data() const {
-
-		return _shared->buffer;
-	}
-
-private:
-	SharedBuffer();
 };
 

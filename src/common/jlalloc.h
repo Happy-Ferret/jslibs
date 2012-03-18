@@ -49,9 +49,101 @@ JL_strdup(const char * src) {
 	dst = (char*)jl_malloc(size);
 	if ( dst == NULL )
 		return NULL;
-	memcpy(dst, src, size);
+	jl_memcpy(dst, src, size);
 	return dst;
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+// alloc wrappers
+
+template<class T>
+class JLAutoPtr {
+   T *_ptr;
+public:
+	JLAutoPtr(T *p = NULL) : _ptr(p) {}
+	~JLAutoPtr() {
+
+		Free();
+	}
+	operator const void *() {
+
+		return _ptr;
+	}
+	operator T *() {
+		
+		return _ptr;
+	}
+	operator const T *() const {
+		
+		return _ptr;
+	}
+	T *&operator->() {
+
+		return _ptr;
+	}
+	T *&operator=(T *p) {
+
+		_ptr = p;
+		return _ptr;
+	}
+	void Free() {
+
+		if ( _ptr )
+			jl_free(_ptr);
+		IFDEBUG( _ptr=0; );
+	}
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Auto buffer
+
+
+template <class T>
+class JLAutoBuffer {
+
+	void *_ptr;
+	JLAutoBuffer(const JLAutoBuffer &);
+	JLAutoBuffer & operator =(const JLAutoBuffer &);
+public:
+
+	JLAutoBuffer(size_t length) {
+
+		_ptr = jl_malloc(length * sizeof(T));
+	}
+
+	~JLAutoBuffer() {
+
+		Free();
+	}
+
+	operator T *() {
+	
+		return _ptr;
+	}
+
+	operator const T *() const {
+		
+		return _ptr;
+	}
+
+	T *GetOwnership() {
+		
+		T *tmp = _ptr;
+		_ptr = NULL;
+		return tmp;
+	}
+
+	void Free() {
+		
+		if ( _ptr )
+			jl_free(_ptr);
+		IFDEBUG( _ptr = NULL );
+	}
+
+};
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -104,41 +196,6 @@ jl_freea(void *mem) {
 	if ( mem && *((size_t*)mem-1) )
 		jl_free((size_t*)mem-1);
 }
-
-/*
-class AutoMalloca {
-	void *_ptr;
-public:
-	AutoMalloc( void *ptr ) : _ptr(ptr) {}
-	~AutoMalloc() {
-
-		if ( _ptr && *((size_t*)_ptr-1) )
-			jl_free((size_t*)_ptr-1);
-	}
-	operator void *() {
-
-		return _ptr;
-	}
-};
-
-#define JL_malloca(size) \
-	( ( (size)+sizeof(size_t) > JL_MALLOCA_THRESHOLD ) ? AutoMalloca(jl_malloc((size)+sizeof(size_t)), 1) : jl__malloca_internal(alloca((size)+sizeof(size_t)), 0) )
-*/
-
-/*
-#define JL_AutoFreea(ptr, size)
-
-class JL_AutoMallocaClass {
-	void *_ptr;
-	size_t _size;
-public:
-	JL_AutoMallocaClass(void *ptr, size_t size) : _ptr(ptr), _size(size) {}
-	~JL_AutoMallocaClass() { jl_freea(_ptr, _size); }
-	void *Ptr() const { return _ptr; }
-};
-
-#define JL_AutoMalloca(size) JL_AutoMallocaClass(jl_malloca(size), size);
-*/
 
 
 

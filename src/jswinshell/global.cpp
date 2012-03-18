@@ -929,7 +929,7 @@ DEFINE_PROPERTY_SETTER( clipboard ) {
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
 		if ( lptstrCopy == NULL )
 			return JL_ThrowOSError(cx);
-		memcpy(lptstrCopy, str.GetConstStr(), str.Length() + 1);
+		jl_memcpy(lptstrCopy, str.GetConstStr(), str.Length() + 1);
 		lptstrCopy[str.Length()] = 0;
 		GlobalUnlock(hglbCopy);
 		HANDLE h = SetClipboardData(CF_TEXT, hglbCopy);

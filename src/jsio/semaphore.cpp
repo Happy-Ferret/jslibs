@@ -95,8 +95,8 @@ DEFINE_CONSTRUCTOR() {
 	pv = (ClassPrivate*)JS_malloc(cx, sizeof(ClassPrivate));
 	JL_CHK( pv );
 
-//	strcpy( pv->name, name ); // (TBD) use memcpy instead ?
-	memcpy(pv->name, name.GetConstStr(), name.Length());
+//	strcpy( pv->name, name ); // (TBD) use jl_memcpy instead ?
+	jl_memcpy(pv->name, name.GetConstStr(), name.Length());
 	pv->name[name.Length()] = '\0';
 
 	pv->semaphore = semaphore;

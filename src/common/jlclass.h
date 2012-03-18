@@ -113,6 +113,7 @@ inline JSBool JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	if ( cs->cds != NULL )
 		JL_CHK( JS_DefineConstDoubles(cx, obj, cs->cds) );
 
+	// (TBD) handle if obj is frozen ?
 	JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
@@ -168,9 +169,18 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(cx, proto) == NULL );
 	JL_CHKM( JL_CacheClassProto(hpv, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
+	bool destFrozen;
 	JSObject *staticDest;
-	staticDest = cs->constructor ? JL_GetConstructor(cx, proto) : proto;
+	//staticDest = cs->constructor ? JL_GetConstructor(cx, proto) : proto;
+	if ( cs->constructor ) {
 
+		staticDest = JL_GetConstructor(cx, proto);
+		destFrozen = (cs->clasp.flags & JSCLASS_FREEZE_CTOR) != 0;
+	} else {
+
+		staticDest = proto;
+		destFrozen = (cs->clasp.flags & JSCLASS_FREEZE_PROTO) != 0;
+	}
 
 	if ( cs->ps != NULL )
 		JL_CHK( JL_DefineClassProperties(cx, proto, cs->ps) );
@@ -189,12 +199,11 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_CHK( JS_SetPropertyAttributes(cx, obj, cs->clasp.name, JSPROP_READONLY | JSPROP_PERMANENT, &found) );
 	ASSERT( found ); // "Unable to set class flags."
 
-//if ( cs->revision != 0 )
-	if ( !(cs->clasp.flags & JSCLASS_FREEZE_PROTO) )
+	if ( !destFrozen ) {
+		
 		JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-
-	if ( !(cs->clasp.flags & JSCLASS_FREEZE_PROTO) )
 		JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	}
 
 //	if ( protoFrozen )
 //		JL_CHK( JS_FreezeObject(cx, proto) );

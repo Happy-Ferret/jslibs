@@ -90,7 +90,7 @@
 
 
 #ifdef DEBUG
-	#define IFDEBUG(expr) expr
+	#define IFDEBUG(expr) expr;
 #else
 	#define IFDEBUG(expr) 0
 #endif // DEBUG
@@ -506,6 +506,9 @@ JL_HasFlags(T value, size_t flags) {
 ALWAYS_INLINE void
 JL_Break() {
 #if defined(WIN32)
+#ifdef DEBUG
+	_asm { int 3 }
+#endif // DEBUG
 	*((int *) NULL) = 0;
 	exit(3);
 #elif defined(__APPLE__)
@@ -541,6 +544,28 @@ JL_AssertFailure( const char *message, const char *location ) {
 
 ///////////////////////////////////////////////////////////////////////////////
 // Platform tools
+
+/* SFINAE
+template<typename T>
+struct HasX {
+	struct Fallback {
+		int jldata;
+	};
+	struct Derived : T, Fallback {};
+	template<typename C, C> struct ChT;    
+	template<typename C> static char (&f(ChT<int Fallback::*, &C::jldata>*))[1];
+	
+	template<typename C> static char (&f(...))[2];
+	static bool const value = sizeof(f<Derived>(0)) == 2;
+};
+
+struct A {
+int jldatad;
+};
+	int b = HasX<A>::value;
+	printf("has%d \n", b);
+*/
+
 
 template <class T>
 struct Wrap {
@@ -2741,7 +2766,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 			return;
 		}
 		int len = JL_MIN(strlen(info.dli_fname), maxFileNameLength-1);
-		memcpy(fileName, info.dli_fname, len);
+		jl_memcpy(fileName, info.dli_fname, len);
 		fileName[len] = '\0';
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)

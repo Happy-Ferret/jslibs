@@ -28,12 +28,12 @@ BEGIN_CLASS( Directory )
 
 DEFINE_FINALIZE() {
 
-	PRDir *dd = (PRDir *)JL_GetPrivate( cx, obj );
+	PRDir *dd = (PRDir*)JL_GetPrivate( cx, obj );
 	if ( dd != NULL ) {
 
 		if ( PR_CloseDir(dd) != PR_SUCCESS ) {
 
-			JL_WARN( E_NAME(JL_THIS_CLASS_NAME), E_FIN ); // "a directory descriptor cannot be closed while Finalize"
+			// JL_WARN( E_NAME(JL_THIS_CLASS_NAME), E_FIN ); // "a directory descriptor cannot be closed while Finalize" // (TBD) send to log !
 		}
 	}
 
@@ -215,20 +215,21 @@ DEFINE_FUNCTION( remove ) {
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
-//	const char *directoryName;
-//	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
-	if ( PR_RmDir(str.GetConstStrZ()) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
+	if ( PR_RmDir(str) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
 
 		PRErrorCode errorCode = PR_GetError();
-		if ( errorCode == PR_DIRECTORY_NOT_EMPTY_ERROR )
+		if ( errorCode == PR_DIRECTORY_NOT_EMPTY_ERROR || errorCode == PR_READ_ONLY_FILESYSTEM_ERROR ) {
+
 			*JL_RVAL = JSVAL_FALSE;
-		else
+		} else {
+
 			return ThrowIoError(cx);
+		}
 	} else {
 
-			*JL_RVAL = JSVAL_TRUE;
+		*JL_RVAL = JSVAL_TRUE;
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -250,22 +251,27 @@ DEFINE_PROPERTY_GETTER( exist ) {
 	JLData str;
 
 	jsval jsvalDirectoryName;
-	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
+	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName ) );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
-//	const char *directoryName;
-//	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
 	PRDir *dd;
-	dd = PR_OpenDir(str.GetConstStrZ());
+	dd = PR_OpenDir(str);
 
 	if ( dd == NULL ) {
+		
+		if ( PR_GetError() == PR_FILE_NOT_FOUND_ERROR ) {
+		
+			*vp = JSVAL_FALSE;
+			return JS_TRUE;
+		} else {
 
-		*vp = JSVAL_FALSE;
+			return ThrowIoError(cx);
+		}
 	} else {
 
 		if ( PR_CloseDir(dd) != PR_SUCCESS )
-			return ThrowIoError(cx); // ??? Doc do not say it is possible to read PR_GetError after an error on PR_OpenDir !!!
+			return ThrowIoError(cx);
 		*vp = JSVAL_TRUE;
 	}
 	return JS_TRUE;
@@ -281,7 +287,8 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, vp ) );
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	JL_CHK( JL_StoreProperty(cx, obj, id, vp, false) );
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -318,22 +325,26 @@ DEFINE_FUNCTION( list ) {
 
 	JL_ASSERT( directoryName.Length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
-	dd = PR_OpenDir(directoryName.GetConstStrZ());
+	dd = PR_OpenDir(directoryName);
 	JL_CHKB( dd, bad_throw);
 
 	PRDirFlags flags;
-	flags = PR_SKIP_DOT;
 	if ( JL_ARG_ISDEF( 2 ) ) {
 
 		int32_t tmp;
 		JL_CHK( JS_ValueToInt32( cx, JL_ARG(2), &tmp ) );
 		flags = (PRDirFlags)tmp;
+	} else {
+	
+		flags = PR_SKIP_DOT;
 	}
 
 	JSObject *addrJsObj;
 	addrJsObj = JS_NewArrayObject(cx, 0, NULL);
 	JL_CHK( addrJsObj );
 	*JL_RVAL = OBJECT_TO_JSVAL( addrJsObj );
+
+	char dirSepChar = PR_GetDirectorySeparator();
 
 	int index;
 	index = 0;
@@ -350,26 +361,37 @@ DEFINE_FUNCTION( list ) {
 		if ( flags & (_SKIP_FILE | _SKIP_DIRECTORY | _SKIP_OTHER) ) {
 
 			PRFileInfo fileInfo;
-			PRStatus status;
 
 			char fileName[PATH_MAX];
-			strcpy( fileName, directoryName );
-			if ( directoryName.GetConstStr()[directoryName.Length()-1] != '/' && directoryName.GetConstStr()[directoryName.Length()-1] != '\\' )
-				strcat( fileName, "/" );
-			strcat( fileName, dirEntry->name );
+			char *tmp = fileName;
 
+			directoryName.CopyTo(tmp);
+			tmp += directoryName.Length();
+
+			char lastDirNameChar = directoryName.GetCharAt(directoryName.Length()-1);
+
+			if ( lastDirNameChar != '/' && lastDirNameChar != '\\' ) {
+
+				*tmp = dirSepChar;
+				++tmp;
+			}
+
+			strcpy(tmp, dirEntry->name);
+
+			PRStatus status;
 			status = PR_GetFileInfo( fileName, &fileInfo );
 			JL_CHKB( status == PR_SUCCESS, bad_throw );
 
-			if ( ((flags & _SKIP_FILE) && fileInfo.type == PR_FILE_FILE) ||
-				  ((flags & _SKIP_DIRECTORY) && fileInfo.type == PR_FILE_DIRECTORY) ||
-				  ((flags & _SKIP_OTHER) && fileInfo.type == PR_FILE_OTHER) )
+			if ( (!!(flags & _SKIP_FILE) && (fileInfo.type == PR_FILE_FILE))
+			  || (!!(flags & _SKIP_DIRECTORY) && (fileInfo.type == PR_FILE_DIRECTORY))
+			  || (!!(flags & _SKIP_OTHER) && (fileInfo.type == PR_FILE_OTHER)) ) {
+
 				continue;
+			}
 		}
 
 		JSString *jsStr = JS_NewStringCopyZ( cx, dirEntry->name );
 		JL_CHK( jsStr );
-//		JL_CHK( JS_DefineElement(cx, addrJsObj, index++, STRING_TO_JSVAL(jsStr), NULL, NULL, JSPROP_ENUMERATE) );
 		jsval tmp = STRING_TO_JSVAL(jsStr);
 		JL_CHK( JL_SetElement(cx, addrJsObj, index++, &tmp) );
 	}

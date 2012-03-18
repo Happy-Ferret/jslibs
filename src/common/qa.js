@@ -20,6 +20,8 @@ function QAAPI(cx) {
 		
 		if ( val === undefined )
 			return 'undefined';
+		if ( typeof(val) == 'number' )
+			return val;
 		if ( typeof(val) == 'string' ) {
 		
 			if ( val.length > 50 )
@@ -230,6 +232,7 @@ function addQaItemListFromSource(itemList, startDir, files) {
 				item.followingSourceTextStart = qaExpr.lastIndex;
 				item.followingSourceTextEnd = source.length;
 				var iName = /DEFINE_(\w*)\( *(\w*) *\)/.exec(item.source.substring(item.followingSourceTextStart, item.followingSourceTextEnd));
+				//item.name = res[1];
 				item.name = item.lastDir + ':' + (iName ? (iName[2] || iName[1]) : '???');
 				item.file = file.name;
 				item.line = linesBefore(source.substr(0, startPos));

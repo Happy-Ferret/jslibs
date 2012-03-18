@@ -434,6 +434,7 @@ DEFINE_FINALIZE() {
 	if ( pv->nid.hWnd != NULL ) { // pv->nid.hWnd may have already been closed.
 
 		LRESULT res = SendMessage( pv->nid.hWnd, WM_CLOSE, 0, 0 ); // PostMessage
+		// (TBD) send to log !
 
 		JL_IGNORE(res);
 	}
@@ -1027,7 +1028,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &infoTitle) );
 
 			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoTitle.Length());
-			memcpy( pv->nid.szInfoTitle, infoTitle.GetConstStr(), JL_MIN(sizeof(pv->nid.szInfoTitle)-1, infoTitle.Length()) );
+			jl_memcpy( pv->nid.szInfoTitle, infoTitle.GetConstStr(), JL_MIN(sizeof(pv->nid.szInfoTitle)-1, infoTitle.Length()) );
 			pv->nid.szInfoTitle[len] = '\0';
 		}
 
@@ -1040,7 +1041,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 
 			JL_IGNORE(len);
 
-			memcpy( pv->nid.szInfo, infoStr.GetConstStr(), infoStr.Length() );
+			jl_memcpy( pv->nid.szInfo, infoStr.GetConstStr(), infoStr.Length() );
 			pv->nid.szInfo[infoStr.Length()] = '\0';
 		}
 
@@ -1272,7 +1273,7 @@ DEFINE_PROPERTY_SETTER( text ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tipText) );
 	size_t len = JL_MIN(sizeof(pv->nid.szTip)-1, tipText.Length());
-	memcpy(pv->nid.szTip, tipText.GetConstStr(), tipText.Length());
+	jl_memcpy(pv->nid.szTip, tipText.GetConstStr(), tipText.Length());
 	pv->nid.szTip[len] = '\0';
 
 	pv->nid.uFlags |= NIF_TIP;

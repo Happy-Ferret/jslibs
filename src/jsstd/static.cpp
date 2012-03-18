@@ -787,7 +787,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 	size_t i;
 	for ( i = 0; i < count; ++i ) {
 
-		memcpy(tmp, buf, len * sizeof(jschar));
+		jl_memcpy(tmp, buf, len * sizeof(jschar));
 		tmp += len;
 	}
 
@@ -1066,7 +1066,10 @@ JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
 	JL_BAD;
 }
 
-
+/**qa
+	QA.ASSERT_EXCEPTION( function() { (function f(){f();})(); }, InternalError, 'too much recursion' );
+	QA.ASSERT_EXCEPTION( function() { sandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 250) }, OperationLimit, 'OperationLimit detection' );
+**/
 DEFINE_FUNCTION( sandboxEval ) {
 
 	JL_ASSERT_ARGC_RANGE(1, 3);
@@ -1124,8 +1127,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 		JL_CHK( JS_DefineFunction(cx, globalObj, "Query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
 	}
 
-	//JS_SetNativeStackQuota(cx, 50000); // (TBD) seems to be optional ?
-	// JS_SetScriptStackQuota(cx, JS_DEFAULT_SCRIPT_STACK_QUOTA / 16); ?
+	JS_SetNativeStackQuota(JL_GetRuntime(cx), 32000);
 
 	pv.prevOperationCallback = JS_SetOperationCallback(cx, SandboxMaxOperationCallback);
 
@@ -1135,6 +1137,8 @@ DEFINE_FUNCTION( sandboxEval ) {
 	JSOperationCallback tmp;
 	tmp = JS_SetOperationCallback(cx, pv.prevOperationCallback);
 	ASSERT( tmp == SandboxMaxOperationCallback );
+
+	JS_SetNativeStackQuota(JL_GetRuntime(cx), 0); // (TBD) any way to restore the previous value ?
 
 	JS_LeaveCrossCompartmentCall(ccc);
 

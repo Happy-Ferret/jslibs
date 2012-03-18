@@ -341,7 +341,7 @@ typedef struct {
 void write_row_callback(png_structp png_ptr, png_bytep data, png_size_t size) {
 
 	PngWriteUserStruct *desc = (PngWriteUserStruct*)png_get_io_ptr(png_ptr);
-	memcpy((char*)desc->buffer + desc->pos, data, size);
+	jl_memcpy((char*)desc->buffer + desc->pos, data, size);
 	desc->pos += size;
 }
 

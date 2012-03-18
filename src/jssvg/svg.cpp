@@ -394,7 +394,7 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 			}
 			break;
 		case CAIRO_FORMAT_A8:
-			memcpy(image, buffer, pixelCount * channels);
+			jl_memcpy(image, buffer, pixelCount * channels);
 			break;
 	}
 

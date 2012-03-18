@@ -1,14 +1,21 @@
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
 
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio -exclude jstask'); throw 0;
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio -exclude jstask'); throw 0;
 
 loadModule('jsstd');
 loadModule('jsio');
 
 
-		
-		Directory.list('./.');
+new Directory('asdfvsadfvsadf').exist;
+
+var list = Directory.list('..', Directory.SKIP_DIRECTORY);
+
+for ( var i in list ) {
+
+	print( uneval(list[i]), '\n' );
+}
+
 
 halt();
 

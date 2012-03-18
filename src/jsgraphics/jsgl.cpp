@@ -5819,9 +5819,9 @@ DEFINE_FUNCTION( readImage ) {
 		int mid = height / 2;
 		for ( int line = 0; line < mid; ++line ) {
 
-			memcpy(tmp, data + (line*lineLength), lineLength);
-			memcpy(data + (line*lineLength), data + ((height-1-line)*lineLength), lineLength);
-			memcpy(data + ((height-1-line)*lineLength), tmp, lineLength);
+			jl_memcpy(tmp, data + (line*lineLength), lineLength);
+			jl_memcpy(data + (line*lineLength), data + ((height-1-line)*lineLength), lineLength);
+			jl_memcpy(data + ((height-1-line)*lineLength), tmp, lineLength);
 		}
 	}
 

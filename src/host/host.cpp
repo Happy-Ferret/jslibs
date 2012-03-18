@@ -84,7 +84,7 @@ Report( JSContext *cx, bool isWarning, ... ) {
 
 		if ( buf != message ) {
 
-			memcpy(buf, " ", 1);
+			jl_memcpy(buf, " ", 1);
 			buf += 1;
 		}
 
@@ -96,12 +96,12 @@ Report( JSContext *cx, bool isWarning, ... ) {
 			const char *newPos = strchr(pos, '%');
 			if ( !newPos ) {
 
-				memcpy(buf, pos, strEnd-pos);
+				jl_memcpy(buf, pos, strEnd-pos);
 				buf += strEnd-pos;
 				break;
 			} else {
 
-				memcpy(buf, pos, newPos-pos);
+				jl_memcpy(buf, pos, newPos-pos);
 				buf += newPos-pos;
 			}
 			pos = newPos;
@@ -114,7 +114,7 @@ Report( JSContext *cx, bool isWarning, ... ) {
 					break;
 				case 'x':
 					++pos;
-					memcpy(buf, "0x", 2);
+					jl_memcpy(buf, "0x", 2);
 					buf += 2;
 					JL_itoa(va_arg(vl, long), buf, 16);
 					buf += strlen(buf);
@@ -125,13 +125,13 @@ Report( JSContext *cx, bool isWarning, ... ) {
 					int len = strlen(tmp);
 					if ( len > 128 ) {
 						
-						memcpy(buf, tmp, 128);
+						jl_memcpy(buf, tmp, 128);
 						buf += 128;
-						memcpy(buf, "...", 3);
+						jl_memcpy(buf, "...", 3);
 						buf += 3;
 					} else {
 
-						memcpy(buf, tmp, len);
+						jl_memcpy(buf, tmp, len);
 						buf += len;
 					}
 					break;
@@ -142,7 +142,7 @@ Report( JSContext *cx, bool isWarning, ... ) {
 			}
 		}
 	}
-	memcpy(buf, ".", 1);
+	jl_memcpy(buf, ".", 1);
 	buf += 1;
 	*buf = '\0';
 
@@ -300,7 +300,7 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 		size_t remaining = sizeof(buffer)-(buf-buffer); \
 		if ( remaining == 0 ) break; \
 		size_t len = JL_MIN(strlen(STR), remaining); \
-		memcpy(buf, STR, len); \
+		jl_memcpy(buf, STR, len); \
 		buf += len; \
 	JL_MACRO_END
 
@@ -309,7 +309,7 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 		size_t remaining = sizeof(buffer)-(buf-buffer); \
 		if ( remaining == 0 ) break; \
 		size_t len = JL_MIN(size_t((SIZE)*(COUNT)), remaining); \
-		memcpy(buf, (STR), len); \
+		jl_memcpy(buf, (STR), len); \
 		buf += len; \
 	JL_MACRO_END
 
@@ -683,6 +683,9 @@ bad:
 
 /**qa
 	QA.ASSERT_EQ( '==', processEvents, global.processEvents );
+	QA.ASSERT_EQ( '>', _host.buildDate, 0 );
+	QA.ASSERT_EQ( '>', _host.buildDate, +new Date(2012, 3 -1, 1) );
+	QA.ASSERT_EQ( '<=', _host.buildDate, Date.now() - new Date().getTimezoneOffset() * 60 * 1000 );
 **/
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
 

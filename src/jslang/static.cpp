@@ -778,7 +778,7 @@ DEFINE_FUNCTION( serialize ) {
     }
     js::TypedArray *array = js::TypedArray::fromJSObject(arrayobj);
     JS_ASSERT((uintptr_t(array->data) & 7) == 0);
-    memcpy(array->data, datap, nbytes);
+    jl_memcpy(array->data, datap, nbytes);
     JS_free(cx, datap);
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(arrayobj));
     return true;
@@ -1018,6 +1018,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	++stack;
 	--stack;
 	ASSERT( STest_count == 1 ); // test if the destructor of STest is called properly
+	STest_count = 0;
 
 	/////////////////////////////////////////////////////////////////
 
@@ -1036,7 +1037,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 		int rnd = rand() & 0xff; // 0->127
 		char *tmp = BufferNewChunk(&b, rnd);
-		memcpy(tmp, ref + refPos, rnd);
+		jl_memcpy(tmp, ref + refPos, rnd);
 		BufferConfirm(&b, rnd);
 		refPos += rnd;
 	}
@@ -1055,13 +1056,37 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 	// Buffer (2) ////////////////////////////////////////////////////
 
-
 	Buffer resultBuffer;
 	BufferInitialize(&resultBuffer, bufferTypeAuto, bufferGrowTypeAuto, NULL, NULL, NULL, NULL);
 	BufferNewChunk(&resultBuffer, 10000);
 	BufferConfirm(&resultBuffer, 10000);
 	free( BufferGetDataOwnership(&resultBuffer) );
 	BufferFinalize(&resultBuffer);
+
+	/////////////////////////////////////////////////////////////////
+
+	// JLData ///////////////////////////////////////////////////////
+
+	JLData str1("aé\x10\x1B\xFF", 1); // 97 130
+	ASSERT( str1.GetCharAt(0) == 'a' );
+	ASSERT( str1.GetCharAt(1) == 'é' );
+
+	JLData str2(L("aé\x10\x1B\xFF"), 1);
+	ASSERT( str1.GetWCharAt(0) == L('a') );
+	ASSERT( str1.GetWCharAt(1) == L('é') );
+
+	jschar s1[100];
+	str1.CopyTo(s1);
+	s1[str1.Length()] = 0;
+	ASSERT( !wcscmp(s1, L("aé\x10\x1B\xFF") ) );
+
+	char s2[100];
+	str2.CopyTo(s2);
+	s2[str2.Length()] = 0;
+	ASSERT( !strcmp(s2, "aé\x10\x1B\xFF" ) );
+
+	ASSERT( !wcscmp(str1.GetConstWStrZ(), L("aé\x10\x1B\xFF") ) );
+	ASSERT( !strcmp(str2.GetConstStrZ(), "aé\x10\x1B\xFF" ) );
 
 	/////////////////////////////////////////////////////////////////
 
@@ -1073,24 +1098,24 @@ DEFINE_FUNCTION( _jsapiTests ) {
 #endif // DEBUG
 
 
-
-#define JSLANG_TEST DEBUG //|| true
+#define JSLANG_TEST DEBUG // || true
 
 #ifdef JSLANG_TEST
-
-
-/*
-struct FOO {
-	explicit FOO( const FOO &b ) {} // non-const copy constructor
-	FOO& operator *() { return *this; }
-	FOO( int i ) {}
-}; // FOO a(FOO(5));
-*/
-
 
 DEFINE_FUNCTION( jslangTest ) {
 	
 	JL_IGNORE(cx, argc, vp);
+/*
+	jsval constructor, val;
+
+	JL_CHK( JS_GetProperty(cx, JL_GetGlobal(cx), "SyntaxError", &constructor) );
+	JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);
+	//JSObject *errorObj = JS_New(cx, JSVAL_TO_OBJECT(constructor), 0, NULL);
+	val = OBJECT_TO_JSVAL(errorObj);
+*/
+
+
+
 /*
 	const jschar *name = L("SyntaxError");
 
@@ -1113,12 +1138,14 @@ DEFINE_FUNCTION( jslangTest ) {
 #endif // JSLANG_TEST
 
 /**qa
+	_jsapiTests();
+
 	QA.ASSERT_EQ( '==', NaN, NaN ); // test qa.js
 	QA.ASSERT_EQ( '===', NaN, NaN );  // test qa.js
 	QA.ASSERT_EQ( '!=', 1, NaN ); // test qa.js
 	QA.ASSERT_EQ( '!==', 1, NaN );  // test qa.js
 
-	_jsapiTests();
+	QA.ASSERT_EQ( '>', Handle._buildDate, 0 );
 **/
 
 

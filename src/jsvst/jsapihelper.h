@@ -127,7 +127,7 @@ protected:
 			 len = maxLength - 1;
 		{
 		JLData tmp(_cx, jsstr);
-		memcpy(str, tmp.GetConstStr(), tmp.Length());
+		jl_memcpy(str, tmp.GetConstStr(), tmp.Length());
 		}
 		str[len] = '\0';
 	}

@@ -268,7 +268,7 @@ DEFINE_CALL() {
 				case EINVAL: { // An incomplete multibyte sequence has been encountered in the input.
 
 					JL_CHKM( inLeft < sizeof(pv->remainderBuf), E_LIB, E_STR("iconv"), E_OPERATION, E_COMMENT("incomplete multibyte sequence"));
-					memcpy(pv->remainderBuf + pv->remainderLen, inPtr, inLeft); // save
+					jl_memcpy(pv->remainderBuf + pv->remainderLen, inPtr, inLeft); // save
 					pv->remainderLen = inLeft;
 					inPtr += inLeft;
 					inLeft = 0;

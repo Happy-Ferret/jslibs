@@ -676,11 +676,21 @@ DEFINE_SET_PROPERTY() {
 	return JL_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 }
 
+
+/**qa
+	loadModule('jssqlite');
+	var db = new Database();
+	var res = db.exec('create table a (id integer primary key, x varchar)');
+	db.exec('insert into a values (NULL, "aaa")');
+	var res = db.query('select * from a');
+	QA.ASSERT_EQ('!=', res, res);
+**/
 DEFINE_EQUALITY_OP() {
 
 	*bp = JS_FALSE;
 	return JS_TRUE;
 }
+
 
 DEFINE_ITERATOR_OBJECT() {
 

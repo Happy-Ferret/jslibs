@@ -454,7 +454,7 @@ DEFINE_FUNCTION( parsePairs ) { // arguments: data [, paramObject ]
 		else
 			name = (char*)JS_malloc(cx, nameLength +1);
 		name[nameLength] = '\0';
-		memcpy(name, data, nameLength);
+		jl_memcpy(name, data, nameLength);
 		data += nameLength;
 		JSString *value = JS_NewDependentString(cx, JS_ValueToString(cx, argv[0]), data-start, valueLength);
 		JS_DefineProperty(cx, params, name, STRING_TO_JSVAL( value ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE);
@@ -582,10 +582,10 @@ DEFINE_FUNCTION( makePairs ) {
 			buffer = (unsigned char *)JS_realloc(cx, buffer, bufferLength);
 		}
 
-		memcpy(buffer+bufferPos, key, keyLen);
+		jl_memcpy(buffer+bufferPos, key, keyLen);
 		bufferPos += keyLen;
 
-		memcpy(buffer+bufferPos, value, valueLen);
+		jl_memcpy(buffer+bufferPos, value, valueLen);
 		bufferPos += valueLen;
 	}
 	JS_DestroyIdArray(cx, pairsArray);
@@ -694,7 +694,7 @@ DEFINE_FUNCTION( parseRecord ) {
 				else
 					name = (char*)JS_malloc(cx, nameLength +1);
 				name[nameLength] = '\0';
-				memcpy(name, data, nameLength);
+				jl_memcpy(name, data, nameLength);
 				data += nameLength;
 				JSString *value = JS_NewDependentString(cx, JS_ValueToString(cx, argv[0]), data-start, valueLength);
 				JS_DefineProperty(cx, params, name, STRING_TO_JSVAL( value ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE);

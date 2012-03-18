@@ -152,7 +152,7 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 		char *buffer = (char *)jl::StackPop(&stack);
 		int size = *(int*)buffer;
 		buf = buf - size;
-		memcpy( buf, buffer+sizeof(int), size );
+		jl_memcpy( buf, buffer+sizeof(int), size );
 		jl_free(buffer);
 	}
 
@@ -347,7 +347,7 @@ DEFINE_FUNCTION( decodeSound ) {
 		char *buffer = (char *)jl::StackPop(&stack);
 		int size = *(int*)buffer;
 		buf = buf - size;
-		memcpy( buf, buffer+sizeof(int), size );
+		jl_memcpy( buf, buffer+sizeof(int), size );
 		jl_free(buffer);
 	}
 

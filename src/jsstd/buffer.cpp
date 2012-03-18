@@ -301,12 +301,12 @@ JSBool ReadRawDataAmount( JSContext *cx, JSObject *obj, size_t *amount, char *st
 
 		if ( chunkLen <= remainToRead ) {
 
-			memcpy(ptr, chunk, chunkLen);
+			jl_memcpy(ptr, chunk, chunkLen);
 			ptr += chunkLen;
 			remainToRead -= chunkLen; // adjust remaining required data length
 		} else { // chunkLen > remain: this is the last chunk we have to manage. we only get a part of it chunk and we 'unread' the remaining.
 
-			memcpy(ptr, chunk, remainToRead);
+			jl_memcpy(ptr, chunk, remainToRead);
 			jsval bstr;
 			JL_CHK( JL_NewBufferCopyN(cx, chunk + remainToRead, chunkLen - remainToRead, &bstr) );
 			UnshiftJsval(cx, pv->queue, bstr);
@@ -969,7 +969,7 @@ DEFINE_FUNCTION( toString ) {
 //		JL_CHK( JL_JsvalToStringAndLength(cx, JL_RVAL, &chunkBuf, &chunkLen) );
 		JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &str) );
 
-		memcpy(buffer + pos, str.GetConstStr(), str.Length());
+		jl_memcpy(buffer + pos, str.GetConstStr(), str.Length());
 		pos += str.Length();
 	}
 

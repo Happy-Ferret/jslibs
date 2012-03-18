@@ -155,7 +155,7 @@ JSBool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
 	HRESULT hr = SafeArrayAccessData(variant->parray, &pArrayData);
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
-	memcpy(pArrayData, buf.GetConstStr(), buf.Length());
+	jl_memcpy(pArrayData, buf.GetConstStr(), buf.Length());
 	SafeArrayUnaccessData(variant->parray);
 
 	return JS_TRUE;
@@ -518,6 +518,7 @@ DEFINE_FINALIZE() {
 	HRESULT hr = VariantClear(variant);
 
 	JL_IGNORE(hr); // (TBD) error check
+	// (TBD) send to log !
 
 	JS_free(cx, variant);
 }

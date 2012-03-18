@@ -1680,7 +1680,7 @@ DEFINE_FUNCTION( debugOutput ) {
 	{
 	JLData str;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	OutputDebugString(str);
+	OutputDebugString(str); // (TBD) not thread-safe, use a critical section
 	}
 	*JL_RVAL = JSVAL_TRUE;
 	return JS_TRUE;

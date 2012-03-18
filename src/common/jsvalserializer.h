@@ -162,7 +162,7 @@ namespace jl {
 			size_t length = strlen(cstr) + 1; // + 1 for the '\0' 
 			JL_CHK( Write(cx, length) );
 			JL_CHK( PrepareBytes(length) );
-			memcpy(_pos, cstr, length);
+			jl_memcpy(_pos, cstr, length);
 			_pos += length;
 			return JS_TRUE;
 			JL_BAD;
@@ -189,7 +189,7 @@ namespace jl {
 			if ( buf.Length() > 0 ) {
 
 				JL_CHK( PrepareBytes(buf.Length()) );
-				memcpy(_pos, buf.Data(), buf.Length());
+				jl_memcpy(_pos, buf.Data(), buf.Length());
 				_pos += buf.Length();
 			}
 			return JS_TRUE;

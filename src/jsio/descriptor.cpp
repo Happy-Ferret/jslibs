@@ -90,7 +90,7 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 
 		if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) { // if non-blocking descriptor, this is a non-fatal error
 
-			JL_WARN( E_NAME(JL_CLASS_NAME(Descriptor)), E_FIN ); // "A descriptor cannot be closed while Finalize."
+			//JL_WARN( E_NAME(JL_CLASS_NAME(Descriptor)), E_FIN ); // "A descriptor cannot be closed while Finalize." // (TBD) send to log !
 		}
 	}
 	JL_SetPrivate(cx, obj, NULL);

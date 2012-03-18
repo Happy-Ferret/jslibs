@@ -465,7 +465,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_ASSERT_OBJECT_STATE(srcTex, JL_GetClassName(JSVAL_TO_OBJECT(*arg1)) );
 
 		JL_CHK( TextureInit(cx, tex, srcTex->width, srcTex->height, srcTex->channels) );
-		memcpy( tex->cbuffer, srcTex->cbuffer, srcTex->width * srcTex->height * srcTex->channels * sizeof(PTYPE) );
+		jl_memcpy( tex->cbuffer, srcTex->cbuffer, srcTex->width * srcTex->height * srcTex->channels * sizeof(PTYPE) );
 		return JS_TRUE;
 	}
 
@@ -2989,7 +2989,7 @@ $TOC_MEMBER $INAME
  $THIS $INAME( x0, y0, x1, y1 )
   Remove the part of the texture that is outside the rectangle (x1,y1)-(x2,y2).
 **/
-DEFINE_FUNCTION( trim ) { // (TBD) test this new version that use memcpy
+DEFINE_FUNCTION( trim ) { // (TBD) test this new version that use jl_memcpy
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3028,7 +3028,7 @@ DEFINE_FUNCTION( trim ) { // (TBD) test this new version that use memcpy
 
 	for ( y = 0; y < newHeight; y++ ) {
 
-		memcpy( pDst, pSrc, dstLineLength);
+		jl_memcpy( pDst, pSrc, dstLineLength);
 		pDst += dstLineLength;
 		pSrc += srcLineLength;
 	}
