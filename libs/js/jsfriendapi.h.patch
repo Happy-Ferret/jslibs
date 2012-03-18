@@ -1,0 +1,12 @@
+--- 
++++ src/js/src/jsfriendapi.h	2012-03-18 17:37:41 +0100
+@@ -198,6 +198,9 @@
+     /* Limit pointer for checking native stack consumption. */
+     uintptr_t           nativeStackLimit;
+ 
++    void *jldata;
++    #define JSRUNTIME_HAS_JLDATA
++
+     RuntimeFriendFields()
+       : interrupt(0),
+         nativeStackLimit(0) { }

@@ -20,11 +20,11 @@ TARGET_FILES=$(INT_DIR)dist/bin/*.{so,dll}
 
 $(INT_DIR)Makefile: ./src/js/src/configure
 	diff -q ./jsversion.h ./src/js/src/jsversion.h || cp ./jsversion.h ./src/js/src/
-	# -patch -N ./src/js/src/jsutil.h jsutil.h.patch
-	# -patch -N ./src/js/src/jsutil.cpp jsutil.cpp.patch
+	# diff src/js/src/jsfriendapi.h.orig src/js/src/jsfriendapi.h -U 3 --label "" > jsfriendapi.h.patch
+	-patch -N src/js/src/jsfriendapi.h jsfriendapi.h.patch
 	mkdir -p $(INT_DIR)
 	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" ../src/js/src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=601 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests
-	 # --enable-ctypes (require to be linked with NSPR)
+	# --enable-ctypes (require to be linked with NSPR)
 
 all:: $(INT_DIR)Makefile
 	$(MAKE) -C $(INT_DIR) $@
