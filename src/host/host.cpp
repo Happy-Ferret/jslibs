@@ -562,13 +562,21 @@ JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STANDARD_CLA
 JSBool global_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **objp) { // see LAZY_STANDARD_CLASSES
 
 	JL_IGNORE( flags );
-
+/*
 	#ifdef DEBUG
-		//const jschar *ch = JS_GetStringCharsZ(cx, JSID_TO_STRING(id));
-		//OutputDebugStringW(ch); OutputDebugStringW(L"\n");
+		jsval tmp;
+		if ( JSID_IS_STRING(id) )
+			tmp = STRING_TO_JSVAL(JSID_TO_STRING(id));
+		else
+			JS_IdToValue(cx, id, &tmp);
+		const jschar *ch = JS_GetStringCharsZ(cx, JS_ValueToString(cx, tmp));
+		OutputDebugStringW(ch); OutputDebugStringW(L"\n");
 	#endif // DEBUG
-
+*/
     JSBool resolved;
+
+//	if ( (flags & JSRESOLVE_ASSIGNING) != 0)
+//		return JS_TRUE;
 
     if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
         return JS_FALSE;
