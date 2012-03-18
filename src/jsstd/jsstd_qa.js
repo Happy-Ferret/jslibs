@@ -740,10 +740,10 @@ loadModule('jsstd');
 		var f = new File('qa_exec_test.js');
 		f.content = '((1234))';
 		var res = exec('qa_exec_test.js', false);
-		QA.ASSERT_STR( res, eval( toString(f.content) ), 'content validity' );
+		QA.ASSERT_STR( res, eval( stringify(f.content) ), 'content validity' );
 
 		var res = exec.call(this, 'qa_exec_test.js', false);
-		QA.ASSERT_STR( res, eval( toString(f.content) ), 'content validity' );
+		QA.ASSERT_STR( res, eval( stringify(f.content) ), 'content validity' );
 
 		f.content = undefined;
 

@@ -35,7 +35,7 @@ loadModule('jsdebug');
 	sv.shutdown(false);
 
 	QA.ASSERT_STR( cl.read(), data, 'data' );
-	QA.ASSERT( toString(cl.read()), '', 'no data' );
+	QA.ASSERT( stringify(cl.read()), '', 'no data' );
 
 
 
@@ -76,7 +76,7 @@ loadModule('jsdebug');
 	var filename = QA.randomString(10);
 	var file = new File(filename);
 	file.content = "\xBC\x00\x30\x01"
-	var data = toString(file.content);
+	var data = stringify(file.content);
 	file.content = undefined;
 	QA.ASSERT_STR( data[0], '\xBC' );
 	QA.ASSERT_STR( data[1], '\x00' );
@@ -712,7 +712,7 @@ loadModule('jsdebug');
 		QA.ASSERT( m.file instanceof File, true, 'instanceof .file memeber' );
 		QA.ASSERT_STR( new Stream(m).read(15), '// don\'t remove', 'convert to a Stream (1)' );
 		QA.ASSERT_STR( new Stream(m).read(15), '// don\'t remove', 'convert to a Stream (2)' );
-		QA.ASSERT_STR( toString(m).substr(0,15), '// don\'t remove', 'toString it' );
+		QA.ASSERT_STR( stringify(m).substr(0,15), '// don\'t remove', 'toString it' );
 
 
 /// MemoryMapped with offset [ftrm]

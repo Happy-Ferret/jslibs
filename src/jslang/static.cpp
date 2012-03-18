@@ -215,15 +215,15 @@ $TOC_MEMBER $INAME
   The _value_ argument may be: StreamRead compatible object, any kind of data value (string, TypedArray, ...)
 **/
 /**qa
-	QA.ASSERT_EQ( '==', toString(), undefined );
-	QA.ASSERT_EQ( '==', toString(undefined), undefined );
-	QA.ASSERT_EQ( '==', toString('str'), 'str' );
-	QA.ASSERT_EQ( 'typeof', typeof toString('str', false), 'string' );
-	QA.ASSERT_EQ( 'instanceof', toString('str', true), ArrayBuffer );
-	QA.ASSERT_EQ( '===', toString(toString(toString(toString(toString('abcd'), true)), true)), 'abcd' );
-	QA.ASSERT_EQ( '===', toString(Uint16Array(toString('\x00\x01\x02\x03', true))), '\u0100\u0302' ); // endian issue ?
+	QA.ASSERT_EQ( '==', stringify(), undefined );
+	QA.ASSERT_EQ( '==', stringify(undefined), undefined );
+	QA.ASSERT_EQ( '==', stringify('str'), 'str' );
+	QA.ASSERT_EQ( 'typeof', typeof stringify('str', false), 'string' );
+	QA.ASSERT_EQ( 'instanceof', stringify('str', true), ArrayBuffer );
+	QA.ASSERT_EQ( '===', stringify(stringify(stringify(stringify(stringify('abcd'), true)), true)), 'abcd' );
+	QA.ASSERT_EQ( '===', stringify(Uint16Array(stringify('\x00\x01\x02\x03', true))), '\u0100\u0302' ); // endian issue ?
 **/
-DEFINE_FUNCTION( toString ) {
+DEFINE_FUNCTION( stringify ) {
 
 	JLData str;
 
@@ -300,7 +300,7 @@ $TOC_MEMBER $INAME
 **/
 /**qa
 	QA.ASSERT(join([1,2,3,4,5]), '12345');
-	QA.ASSERT(join([toString('abc', true), toString('def', true)]), 'abcdef');
+	QA.ASSERT(join([stringify('abc', true), stringify('def', true)]), 'abcdef');
 	QA.ASSERT(join([]), '');
 	QA.ASSERT(join(Iterator([0,0,0], true)), '012');
 	QA.ASSERT(join((function() {yield ''; yield 'a'; yield 'bc'; yield ''; yield 'def'; yield 'g' })()) , 'abcdefg');
@@ -316,7 +316,7 @@ $TOC_MEMBER $INAME
 		}
 	};
 	QA.ASSERT_EQ('==', join(it) , 'bcd');
-	QA.ASSERT_EQ('==', toString(toString('123456789', true).slice(3)), '456789');
+	QA.ASSERT_EQ('==', stringify(stringify('123456789', true).slice(3)), '456789');
 **/
 DEFINE_FUNCTION( join ) {
 
@@ -1098,13 +1098,14 @@ DEFINE_FUNCTION( _jsapiTests ) {
 #endif // DEBUG
 
 
-#define JSLANG_TEST DEBUG // || true
+#define JSLANG_TEST DEBUG  || true
 
 #ifdef JSLANG_TEST
 
 DEFINE_FUNCTION( jslangTest ) {
 	
 	JL_IGNORE(cx, argc, vp);
+
 /*
 	jsval constructor, val;
 
@@ -1163,7 +1164,7 @@ CONFIGURE_STATIC
 		
 		FUNCTION_ARGC( real, 1 )
 
-		FUNCTION_ARGC( toString, 2 )
+		FUNCTION_ARGC( stringify, 2 )
 		FUNCTION_ARGC( join, 2 )
 		FUNCTION_ARGC( indexOf, 3 )
 

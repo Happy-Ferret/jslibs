@@ -732,7 +732,7 @@ $H beware
 
 === Host object ===
  jshost create a global `_host` object to provide other modules some useful informations like `stdin/stdout/stderr` access and `unsafeMode` flag.
- The `_host` also contains the `revision`, `build` and `jsVersion` properties.
+ The `_host` also contains the `revision`, `buildDate` and `jsVersion` properties.
 
 ==== Example ====
  host version information can be obtained using: `jshost -i "_host.stdout(_host.build+' r'+_host.revision)"`

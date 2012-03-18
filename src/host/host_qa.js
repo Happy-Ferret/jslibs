@@ -89,7 +89,6 @@ loadModule('jsio');
 
 /// host version info [rmtf]
 
-	QA.ASSERT_EQ( '>', _host.build, 43000, 'build version validity' );
 	QA.ASSERT( _host.revision > 3400, true, 'revision version validity' );
 	QA.ASSERT( _host.jsVersion >= 185, true, 'javascript version validity' );
 	
@@ -293,16 +292,16 @@ loadModule('jsio');
 
 /// NativeInterface hacking
 
-	var b = toString('abc', true);
+	var b = stringify('abc', true);
 
-	QA.NO_CRASH( toString(b), 'abc' );
+	QA.NO_CRASH( stringify(b), 'abc' );
 
 	var c = {};
 	c._NI_BufferGet = b._NI_BufferGet;
-	QA.NO_CRASH( toString(c) );
+	QA.NO_CRASH( stringify(c) );
 
-	QA.NO_CRASH( toString({ _NI_BufferGet:function() {} }) );
+	QA.NO_CRASH( stringify({ _NI_BufferGet:function() {} }) );
 
 	try {
-//	QA.NO_CRASH( toString({ __proto__:b}) );
+//	QA.NO_CRASH( stringify({ __proto__:b}) );
 	} catch(ex) {}

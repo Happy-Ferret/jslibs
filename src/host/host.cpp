@@ -561,44 +561,21 @@ JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STANDARD_CLA
 
 JSBool global_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **objp) { // see LAZY_STANDARD_CLASSES
 
-	if ( (flags & JSRESOLVE_ASSIGNING) == 0 ) {
-
-		JSBool resolved;
-		if ( !JS_ResolveStandardClass(cx, obj, id, &resolved) )
-			return JS_FALSE;
-
-		if ( !resolved && id == JLID(cx, Reflect) ) { // JSID_IS_ATOM(id, CLASS_ATOM(cx, Reflect))
-			
-			if ( !JS_InitReflect(cx, obj) )
-				return JS_FALSE;
-			resolved = JS_TRUE;
-		}
-
-		if ( !resolved && id == JLID(cx, Debugger) ) {
-
-			if ( !JS_DefineDebuggerObject(cx, obj) ) // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
-				return JS_FALSE;
-			resolved = JS_TRUE;
-		}
-
-		if ( resolved ) {
-			
-			*objp = obj;
-			return JS_TRUE;
-		}
+	JL_IGNORE( flags );
 
 	#ifdef DEBUG
-		{
-		jsval idName;
-		JL_JsidToJsval(cx, id, &idName);
-		JSString *jsstr = JS_ValueToString(cx, idName);
-		const jschar *ch = JS_GetStringCharsZ(cx, jsstr);
-		ASSERT(ch);
+		//const jschar *ch = JS_GetStringCharsZ(cx, JSID_TO_STRING(id));
 		//OutputDebugStringW(ch); OutputDebugStringW(L"\n");
-		}
 	#endif // DEBUG
 
-	}
+    JSBool resolved;
+
+    if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
+        return JS_FALSE;
+
+    if (resolved)
+        *objp = obj;
+
 	return JS_TRUE;
 }
 
@@ -606,12 +583,13 @@ JSBool global_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObje
 // doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
 // note: global_class is a global variable, but this is not an issue even if several runtimes share the same JSClass.
 static JSClass global_class = {
-	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
-	global_enumerate, (JSResolveOp)global_resolve, JS_ConvertStub, JS_FinalizeStub, // global_resolve: see LAZY_STANDARD_CLASSES
+	NAME_GLOBAL_CLASS, JSCLASS_NEW_RESOLVE | JSCLASS_GLOBAL_FLAGS,
+	JS_PropertyStub, JS_PropertyStub,
+	JS_PropertyStub, JS_StrictPropertyStub,
+	global_enumerate, (JSResolveOp)global_resolve, // global_resolve: see LAZY_STANDARD_CLASSES
+	JS_ConvertStub, JS_FinalizeStub,
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };
-
 
 
 // default: CreateHost(-1, -1, 0);
@@ -656,6 +634,12 @@ JSContext* CreateHost(uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterv
 
 	//	doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
 	JS_SetGlobalObject(cx, globalObject); // no call to JS_InitStandardClasses(), then JS_SetGlobalObject() is required (see also LAZY_STANDARD_CLASSES).
+
+	JL_CHK( JS_DefineDebuggerObject(cx, globalObject) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
+	JL_CHK( JS_InitReflect(cx, globalObject) );
+#ifdef JS_HAS_CTYPES
+	JL_CHK( JS_InitCTypesClass(cx, globalObject) );
+#endif
 
 	HostPrivate *pv = ConstructHostPrivate();
 
@@ -741,14 +725,11 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, unsafeMode), BOOLEAN_TO_JSVAL(unsafeMode), false) );
 
 	// note: we have to support: var prevStderr = _host.stderr; _host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
-	jsval tmp1, tmp2, tmp3;
 
-	tmp1 = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdinFunction, 1, 0, NULL, JLID(cx, stdin)))); // doc: If you do not assign a name to the function, it is assigned the name "anonymous".
-	tmp2 = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdoutFunction, 1, 0, NULL, JLID(cx, stdout))));
-	tmp3 = OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStderrFunction, 1, 0, NULL, JLID(cx, stderr))));
-	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdin), tmp1) );
-	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdout), tmp2) );
-	JL_CHK( SetHostObjectValue(cx, JLID(cx, stderr), tmp3) );
+	 // doc: If you do not assign a name to the function, it is assigned the name "anonymous".
+	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdin), OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdinFunction, 1, 0, NULL, JLID(cx, stdin))))) );
+	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdout), OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdoutFunction, 1, 0, NULL, JLID(cx, stdout))))) );
+	JL_CHK( SetHostObjectValue(cx, JLID(cx, stderr), OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStderrFunction, 1, 0, NULL, JLID(cx, stderr))))) );
 
 	JL_CHK( SetHostObjectValue(cx, L("revision"), INT_TO_JSVAL(JL_SvnRevToInt(SVN_REVISION_STR))) ); // or JLID(cx, _revision) ?
 	JL_CHK( SetHostObjectValue(cx, L("buildDate"), DOUBLE_TO_JSVAL((double)__DATE__EPOCH * 1000)) );

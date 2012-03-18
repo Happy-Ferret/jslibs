@@ -114,8 +114,8 @@ function QAAPI(cx) {
 	
 		testName = testName || '(noname)';
 		cx.checkpoint('ASSERT_STR', testName);
-		if ( toString(value) != toString(expect) ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
-			cx.reportIssue( '== '+formatVariable(toString(value))+', expect '+formatVariable(toString(expect)), testName );
+		if ( stringify(value) != stringify(expect) ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
+			cx.reportIssue( '== '+formatVariable(stringify(value))+', expect '+formatVariable(stringify(expect)), testName );
 	}
 
    this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
@@ -212,7 +212,7 @@ function addQaItemListFromSource(itemList, startDir, files) {
 	
 		if ( !hidden(file.name) && srcFile(file.name) ) {
 
-			var source = toString(file.content);
+			var source = stringify(file.content);
 			source = source.replace(/\r\n|\r/g, '\n'); // cleanup
 			
 			qaExpr.lastIndex = 0; // The index at which to start the next match.
@@ -261,7 +261,7 @@ function addQaItemList(itemList, startDir, files) {
 	
 		if ( !hidden(file.name) && qaFile(file.name) ) {
 
-			var source = toString(file.content);
+			var source = stringify(file.content);
 			source = source.replace(regexec(/\r\n|\r/g), '\n'); // cleanup
 			
 			var lines = source.split('\n');
