@@ -19,7 +19,6 @@
 
 
 DECLARE_STATIC()
-//DECLARE_CLASS( Map )
 DECLARE_CLASS( Buffer )
 DECLARE_CLASS( Pack )
 DECLARE_CLASS( ObjEx )
@@ -50,7 +49,6 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	mpv->prevJSGCCallback = NULL;
 
 	INIT_STATIC();
-//	INIT_CLASS( Map );
 	INIT_CLASS( Buffer );
 	INIT_CLASS( Pack );
 	INIT_CLASS( ObjEx );

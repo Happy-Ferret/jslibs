@@ -449,6 +449,8 @@ namespace jl {
 				JL_CHK( Write(cx, tmp) );
 				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, lineNumber), &tmp) );
 				JL_CHK( Write(cx, tmp) );
+				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, stack), &tmp) );
+				JL_CHK( Write(cx, tmp) );
 				return JS_TRUE;
 			}
 
@@ -479,6 +481,7 @@ namespace jl {
 	};
 
 
+//////////////////////////////////////////////////////////////////////////////
 
 
 	class Unserializer : public CppAllocators {
@@ -725,17 +728,14 @@ namespace jl {
 					JL_CHK( JL_CallFunctionId(cx, newObj, JLID(cx, _unserialize), COUNTOF(argv)-1, argv+1, argv) );
 					val = OBJECT_TO_JSVAL(newObj);
 */
- 					jsval argv[] = { JSVAL_NULL, _unserializerObj };
-					jsval fun;
-					JL_CHK( Read(cx, fun) );
+					jsval funVal;
+					JL_CHK( Read(cx, funVal) );
 					
 //					JSObject *parent = JL_GetParent(cx, JSVAL_TO_OBJECT(_unserializerObj));
 //					JL_CHK( JS_SetParent(cx, JSVAL_TO_OBJECT(fun), parent) );
-					JL_ASSERT( JL_ValueIsCallable(cx, fun), E_STR("unserializer"), E_STATE ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
-
-					JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobal(cx), fun, COUNTOF(argv)-1, argv+1, argv) );
-					JL_ASSERT( JSVAL_IS_OBJECT(argv[0]), E_STR("unserializer"), E_RETURNVALUE, E_TYPE, E_TY_OBJECT );
-					val = *argv;
+					JL_ASSERT( JL_ValueIsCallable(cx, funVal), E_STR("unserializer"), E_STATE ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
+					JL_CHK( JL_CallFunctionVA(cx, JL_GetGlobal(cx), funVal, &val, _unserializerObj) );
+					JL_ASSERT( JSVAL_IS_OBJECT(val), E_STR("unserializer"), E_RETURNVALUE, E_TYPE, E_TY_OBJECT );
 					break;
 				}
 				case JLSTErrorObject: {
@@ -743,6 +743,7 @@ namespace jl {
 					SerializerConstBufferInfo constructorName;
 					jsval constructor, tmp;
 					JL_CHK( Read(cx, constructorName) );
+					// js_GetClassPrototype
 					JL_CHK( JS_GetUCProperty(cx, JL_GetGlobal(cx), (const jschar *)constructorName.Data(), constructorName.Length() / 2, &constructor) );
 					JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);
 					val = OBJECT_TO_JSVAL(errorObj);
@@ -752,6 +753,8 @@ namespace jl {
 					JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, fileName), &tmp) );
 					JL_CHK( Read(cx, tmp) );
 					JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, lineNumber), &tmp) );
+					JL_CHK( Read(cx, tmp) );
+					JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, stack), &tmp) );
 					break;
 				}
 				case JLSTFunction: {

@@ -277,17 +277,16 @@ $TOC_MEMBER $INAME
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 DEFINE_FUNCTION( internString ) {
 	
-	JL_IGNORE(argc);
-
-	JSString *jsstr = JS_ValueToString(cx, vp[2]);
-	JL_CHK( jsstr );
-
-	size_t length;
-	const jschar *chars;
-	chars = JS_GetStringCharsAndLength(cx, jsstr, &length);
-	JL_CHK( chars );
-	JL_CHK( JS_InternUCStringN(cx, chars, length) );
-	*JL_RVAL = JSVAL_VOID;
+	JL_ASSERT_ARGC(1);
+	JSString *str;
+	if ( JSVAL_IS_STRING(JL_ARG(1)) )
+		str = JSVAL_TO_STRING(JL_ARG(1));
+	else
+		str = JS_ValueToString(cx, JL_ARG(1));
+	JL_CHK( str );
+	str = JS_InternJSString(cx, str);
+	JL_CHK( str );
+	*JL_RVAL = STRING_TO_JSVAL(str);
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -187,28 +187,8 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\libs\js\Win32_dbg\dist\include\jsapi.h"
+				RelativePath="..\..\libs\js\src\js\src\jsapi.h"
 				>
-				<FileConfiguration
-					Name="OPT|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\libs\js\Win32_opt\dist\include\jsapi.h"
-				>
-				<FileConfiguration
-					Name="DBG|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\common\jsvalserializer.h"

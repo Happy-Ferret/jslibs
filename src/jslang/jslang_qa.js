@@ -2,11 +2,6 @@ loadModule('jsstd');
 
 /// Handle prototype [ftrm]
 
-	_jsapiTests();
-
-
-/// Handle prototype [ftrm]
-
 	QA.ASSERT( Handle._serialize, undefined, '_serialize access' );
 
 
@@ -203,8 +198,7 @@ loadModule('jsstd');
 	QA.ASSERT( uneval(u.read())+uneval(u.read()), '12', 'unserialized data' );
 
 
-
-/// Serialization / Unserialization
+/// Serialization / Unserialization of custom class
 
 	function JsClass() {
 	
@@ -223,7 +217,20 @@ loadModule('jsstd');
 
 	var ob = new JsClass();
 	ob.a = 7;
-	
+
+	var myobj = [ ob ];
+
+	var s = new Serializer();
+	s.write(myobj);
+	var s = new Unserializer(s.done());
+
+	var str = uneval(myobj);
+	var str1 = uneval(s.read());
+	QA.ASSERT_STR( str, str1, 'several serialized / unserialized objects' );
+
+
+/// Serialization / Unserialization
+
 	function genReferenceError() {
 		
 		try {
@@ -237,7 +244,6 @@ loadModule('jsstd');
 	var myobj = [
 		genReferenceError(),
 		new Error('error test'), 
-		ob, 
 		function() [,1,{__proto__:null}],
 		'',
 		'string', 
@@ -272,7 +278,6 @@ loadModule('jsstd');
 		new URIError(),
 		function(x,y) { return x+y+1; }
 	];
-	
 	
 	var s = new Serializer();
 	s.write(myobj);

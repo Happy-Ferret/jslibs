@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 
-#include <jlapiexport.h>
 #include <jslibsModule.h>
 
 #define SVN_REVISION_STR "$Revision$"
@@ -40,7 +39,6 @@ const JSErrorFormatString *GetErrorMessage(void *, const char *, const uintN err
 
 
 struct {
-
 	JSExnType exn;
 	const char *msg;
 } E_msg[] = {
@@ -495,6 +493,7 @@ JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
 		}
 	}
 */
+
 	HostPrivate *pv;
 	pv = JL_GetHostPrivate(cx);
 	JL_ASSERT( pv, E_HOST, E_STATE, E_COMMENT("context private") );
@@ -554,47 +553,14 @@ bad:
 }
 
 
-JSBool global_enumerate(JSContext *cx, JSObject *obj) { // see LAZY_STANDARD_CLASSES
-
-	return JS_EnumerateStandardClasses(cx, obj);
-}
-
-JSBool global_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **objp) { // see LAZY_STANDARD_CLASSES
-
-	JL_IGNORE( flags );
-/*
-	#ifdef DEBUG
-		jsval tmp;
-		if ( JSID_IS_STRING(id) )
-			tmp = STRING_TO_JSVAL(JSID_TO_STRING(id));
-		else
-			JS_IdToValue(cx, id, &tmp);
-		const jschar *ch = JS_GetStringCharsZ(cx, JS_ValueToString(cx, tmp));
-		OutputDebugStringW(ch); OutputDebugStringW(L"\n");
-	#endif // DEBUG
-*/
-    JSBool resolved;
-
-//	if ( (flags & JSRESOLVE_ASSIGNING) != 0)
-//		return JS_TRUE;
-
-    if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
-        return JS_FALSE;
-
-    if (resolved)
-        *objp = obj;
-
-	return JS_TRUE;
-}
-
 // global object
 // doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
 // note: global_class is a global variable, but this is not an issue even if several runtimes share the same JSClass.
 static JSClass global_class = {
-	NAME_GLOBAL_CLASS, JSCLASS_NEW_RESOLVE | JSCLASS_GLOBAL_FLAGS,
+	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS,
 	JS_PropertyStub, JS_PropertyStub,
 	JS_PropertyStub, JS_StrictPropertyStub,
-	global_enumerate, (JSResolveOp)global_resolve, // global_resolve: see LAZY_STANDARD_CLASSES
+	JS_EnumerateStub, JS_ResolveStub,
 	JS_ConvertStub, JS_FinalizeStub,
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };
@@ -643,6 +609,7 @@ JSContext* CreateHost(uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterv
 	//	doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
 	JS_SetGlobalObject(cx, globalObject); // no call to JS_InitStandardClasses(), then JS_SetGlobalObject() is required (see also LAZY_STANDARD_CLASSES).
 
+	JL_CHK( JS_InitStandardClasses(cx, globalObject) );
 	JL_CHK( JS_DefineDebuggerObject(cx, globalObject) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
 	JL_CHK( JS_InitReflect(cx, globalObject) );
 #ifdef JS_HAS_CTYPES
@@ -693,11 +660,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 		JL_SetHostPrivate(cx, pv);
 	}
 
-	pv->tmpBuffer = jl_malloc(JL_HOST_PRIVATE_TMPBUFFER_SIZE);
-
 	pv->privateData = userPrivateData;
-
-	pv->jlapi = &jlapi;
 
 	jl::QueueInitialize(&pv->moduleList);
 
@@ -720,15 +683,18 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	
 	//pv->objectClass = JL_GetStandardClassByKey(cx, JSProto_Object);
 	//pv->objectProto = JL_GetStandardClassProtoByKey(cx, JSProto_Object);
-	JSObject *newObject = JS_NewObject(cx, NULL, NULL, NULL);
-	pv->objectClass = JL_GetClass(newObject);
-	pv->objectProto = JL_GetPrototype(cx, newObject);
 
+
+	//JSObject *newObject = JS_NewObject(cx, NULL, NULL, NULL);
+	//pv->objectClass = JL_GetClass(newObject);
+	//pv->objectProto = JL_GetPrototype(cx, newObject);
+	js_GetClassPrototype(cx, globalObject, JSProto_Object, &pv->objectProto, NULL);
+	pv->objectClass = JL_GetClass(pv->objectProto);
 	ASSERT( pv->objectClass && pv->objectProto );
 	
 	// global functions & properties
-	JL_CHKM( JS_DefinePropertyById( cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(globalObject), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), E_PROP, E_CREATE ); // "unable to define a property."
-	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == 2 ? JLNormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), E_PROP, E_CREATE ); // "unable to define a property."
+	JL_CHKM( JS_DefinePropertyById( cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(globalObject), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), E_PROP, E_CREATE );
+	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == 2 ? JLNormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), E_PROP, E_CREATE );
 
 	JL_CHK( SetHostObjectValue(cx, JLID(cx, unsafeMode), BOOLEAN_TO_JSVAL(unsafeMode), false) );
 
@@ -752,8 +718,6 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	return JS_TRUE;
 
 bad:
-	if ( pv )
-		jl_free(pv->tmpBuffer);
 	return JS_FALSE;
 }
 
@@ -833,8 +797,6 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 	}
 
 	jslangModuleFree();
-
-	jl_free(pv->tmpBuffer);
 
 	DestructHostPrivate(pv);
 

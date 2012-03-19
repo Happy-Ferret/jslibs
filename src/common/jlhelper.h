@@ -427,6 +427,7 @@ enum {
 	JLID_SPEC( toXMLString ),
 	JLID_SPEC( fileName ),
 	JLID_SPEC( lineNumber ),
+	JLID_SPEC( stack ),
 	JLID_SPEC( message ),
 	JLID_SPEC( Reflect ),
 	JLID_SPEC( Debugger ),
@@ -483,31 +484,6 @@ ALWAYS_INLINE void
 JL_SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
 	JL_SetRuntimePrivate(JL_GetRuntime(cx), static_cast<void*>(hostPrivate));
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-// HostPrivate tmpBuffer
-
-ALWAYS_INLINE uint8_t* FASTCALL
-JL_tmpAlloc( JSContext *cx, size_t size ) {
-	
-	if ( size <= JL_HOST_PRIVATE_TMPBUFFER_SIZE ) {
-		
-		return (uint8_t*)JL_GetHostPrivate(cx)->tmpBuffer;
-	} else {
-	
-		return (uint8_t*)jl_malloc(size);
-	}
-}
-
-ALWAYS_INLINE void FASTCALL
-JL_tmpFree( JSContext *cx, uint8_t *data ) {
-
-	if ( data != NULL && data != JL_GetHostPrivate(cx)->tmpBuffer ) {
-
-		jl_free(data);
-	}
 }
 
 

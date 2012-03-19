@@ -151,7 +151,7 @@
 # if defined DEBUG
 #  define ALWAYS_INLINE INLINE
 # elif defined _MSC_VER
-#  define ALWAYS_INLINE __forceinline
+#  define ALWAYS_INLINE __forceinline /* __inline */
 # elif defined __GNUC__
 #  define ALWAYS_INLINE __attribute__((always_inline)) INLINE
 # else
@@ -503,19 +503,21 @@ JL_HasFlags(T value, size_t flags) {
 #define JL_IGNORE(...) \
 	((void)(__VA_ARGS__))
 
+
+// see CrashInJS() in jsutil.cpp
 ALWAYS_INLINE void
 JL_Break() {
 #if defined(WIN32)
 #ifdef DEBUG
-	_asm { int 3 }
+//	_asm { int 3 }
 #endif // DEBUG
-	*((int *) NULL) = 0;
+	*((volatile int *) NULL) = 123;
 	exit(3);
 #elif defined(__APPLE__)
-	*((int *) NULL) = 0;  /* To continue from here in GDB: "return" then "continue". */
-	raise(SIGABRT);  /* In case above statement gets nixed by the optimizer. */
+	*((volatile int *) NULL) = 123;
+	raise(SIGABRT);
 #else
-	raise(SIGABRT);  /* To continue from here in GDB: "signal 0". */
+	raise(SIGABRT);
 #endif
 }
 
@@ -1235,16 +1237,20 @@ INLINE double FASTCALL
 AccurateTimeCounter() {
 
 #if defined(XP_WIN)
-	static volatile LONGLONG initTime = 0; // initTime helps in avoiding precision waste.
+	static volatile LONGLONG initTime = 0; // initTime helps in avoiding precision waste by having a relative time
 	LARGE_INTEGER frequency, performanceCount;
+	HANDLE thread = ::GetCurrentThread();
+	// beware: rdtsc is a per-cpu operation. On multiprocessor systems, be careful that calls to rdtsc are actually executing on the same cpu.
+	DWORD_PTR oldmask = ::SetThreadAffinityMask(thread, 1);
+	ASSERT( oldmask );
 	BOOL result = ::QueryPerformanceFrequency(&frequency);
 	ASSERT( result );
-	DWORD_PTR oldmask = ::SetThreadAffinityMask(::GetCurrentThread(), 0); // manage bug in BIOS or HAL
 	result = ::QueryPerformanceCounter(&performanceCount);
 	ASSERT( result );
 	if ( initTime == 0 )
 		initTime = performanceCount.QuadPart;
-	::SetThreadAffinityMask(::GetCurrentThread(), oldmask);
+	result = ::SetThreadAffinityMask(thread, oldmask);
+	ASSERT( result );
 	JL_IGNORE( result );
 	return (double)1000 * (performanceCount.QuadPart-initTime) / (double)frequency.QuadPart;
 #elif defined(XP_UNIX)
@@ -1259,6 +1265,7 @@ AccurateTimeCounter() {
 	// (TBD) or see js_IntervalNow() or JS_Now() ? no, it could be expensive and is not suitable for calls when a GC lock is held.
 #endif
 }
+
 // see also:
 //__int64 GetTime() {
 //    __int64 clock;

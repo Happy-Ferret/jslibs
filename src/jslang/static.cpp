@@ -946,6 +946,10 @@ bad:
 
 */
 
+/**qa
+	if ( typeof _jsapiTests != 'undefined' )
+		_jsapiTests();
+**/
 
 #ifdef DEBUG
 
@@ -1103,8 +1107,18 @@ DEFINE_FUNCTION( _jsapiTests ) {
 #ifdef JSLANG_TEST
 
 DEFINE_FUNCTION( jslangTest ) {
-	
+
 	JL_IGNORE(cx, argc, vp);
+
+/*
+	//jsval constructor;
+	//JS_GetProperty(cx, JS_GetGlobalObject(cx), "SyntaxError", &constructor);
+	
+	JSObject *proto;
+	js_GetClassPrototype(cx, JS_GetGlobalObject(cx), JSProto_Error, &proto, NULL);
+
+	JSClass *cl = JS_GetClass(proto);
+*/
 
 /*
 	jsval constructor, val;
@@ -1132,7 +1146,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	JSClass *cl = JS_GetClass(ob);
 	//JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);
 */
-	return 0;
+
 	JL_BAD;
 }
 
