@@ -51,23 +51,23 @@ function QAAPI(cx) {
 			cx.reportIssue( 'Invalid type, '+type.name+' is expected.', testName );
 	}
 
-	this.ASSERT_EXCEPTION = function( fct, exType, testName ) {
+	this.ASSERT_EXCEPTION = function( fct, expectType, testName ) {
 		
 		cx.checkpoint('ASSERT_EXCEPTION', testName);
 		try {
 		
 			fct();
-			cx.reportIssue( 'Exception not detected (expect '+exType.toString()+')', testName );
-		} catch(ex) {
+			cx.reportIssue( 'Exception not detected (expect '+String(expectType)+')', testName );
+		} catch( ex ) {
 			
-			if ( typeof(exType) == 'string' ) {
-			
-				if ( ex.constructor.name != exType )
-					cx.reportIssue('Invalid exception name ('+ex.constructor.name+' != '+exType+')', testName );
+			if ( typeof(expectType) != 'string' ) {
+
+				if ( ex != expectType && ex.constructor != expectType && !(ex instanceof expectType) )
+					cx.reportIssue('Invalid exception ('+ex.constructor.name+' != '+expectType.name+')', testName );
 			} else {
 
-				if ( ex != exType && ex.constructor != exType )
-					cx.reportIssue('Invalid exception ('+ex.constructor.name+' != '+exType.name+')', testName );
+				if ( String(ex) != ('[object '+expectType+']') && ( ex.constructor.name != expectType ) )
+					cx.reportIssue('Invalid exception name ('+String(ex)+' != '+expectType+')', testName );
 			}
 		}
 	}
@@ -94,8 +94,10 @@ function QAAPI(cx) {
 			case 'in': eqRes = (expect in value); break;
 			case '!in': eqRes = (!(expect in value)); break;
 			case 'instanceof': eqRes = (value instanceof expect); break;
+			case '!instanceof': eqRes = (!(value instanceof expect)); break;
 			case 'typeof': eqRes = (typeof(value) == expect); break;
-			default: eqRes = '???';
+			case '!typeof': eqRes = (typeof(value) != expect); break;
+			default: eq = '???'; eqRes = '???';
 		}
 		
 		if ( eqRes !== true )
@@ -235,7 +237,7 @@ function addQaItemListFromSource(itemList, startDir, files) {
 				//item.name = res[1];
 				item.name = item.lastDir + ':' + (iName ? (iName[2] || iName[1]) : '???');
 				item.file = file.name;
-				item.line = linesBefore(source.substr(0, startPos));
+				item.line = linesBefore(source.substr(0, startPos)) + 1;
 				item.code = res[2]||'';
 				item.flags = '';
 				newItemList.push(item);

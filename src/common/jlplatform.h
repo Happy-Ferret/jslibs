@@ -191,6 +191,7 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 
 // restrict says that the pointer is the only thing that accesses the underlying object. 
 // see also. http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
+// I certify that writes through this pointer will not effect the values read through any other pointer available in the same context which is also declared as restricted.
 #ifndef RESTRICT
 # if defined _MSC_VER
 // msdn doc. the __restrict keyword indicates that a symbol is not aliased in the current scope
@@ -508,9 +509,9 @@ JL_HasFlags(T value, size_t flags) {
 ALWAYS_INLINE void
 JL_Break() {
 #if defined(WIN32)
-#ifdef DEBUG
-//	_asm { int 3 }
-#endif // DEBUG
+# if defined(DEBUG)
+	_asm { int 3 }
+# endif // DEBUG
 	*((volatile int *) NULL) = 123;
 	exit(3);
 #elif defined(__APPLE__)
@@ -835,6 +836,18 @@ JL_IsPow2(uint32_t v) {
 	return (v & (v - 1)) == 0;
 }
 
+ALWAYS_INLINE uint32_t
+JL_NextPow2(uint32_t v) {
+
+	v--;
+	v |= v >> 1;
+	v |= v >> 2;
+	v |= v >> 4;
+	v |= v >> 8;
+	v |= v >> 16;
+	return v+1;
+}
+
 ALWAYS_INLINE int
 JL_CountSetBits(int32_t v) {
 
@@ -858,6 +871,29 @@ ALWAYS_INLINE uint8_t
 JL_ReverseBits(uint8_t b) {
 
 	return (((b * 0x0802LU & 0x22110LU) | (b * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16) & 0xFF;
+}
+
+
+ALWAYS_INLINE uint32_t
+JL_MostSignificantBit(register uint32_t x) {
+
+	x |= (x >> 1);
+	x |= (x >> 2);
+	x |= (x >> 4);
+	x |= (x >> 8);
+	x |= (x >> 16);
+	return (x & ~(x >> 1));
+}
+
+
+template <class T>
+ALWAYS_INLINE T
+JL_LeastSignificantBit(register T x) {
+
+	#pragma warning(push)
+	#pragma warning(disable : 4146) // warning C4146: unary minus operator applied to unsigned type, result still unsigned
+	return x & -x;
+	#pragma warning(pop)
 }
 
 
@@ -1237,20 +1273,31 @@ INLINE double FASTCALL
 AccurateTimeCounter() {
 
 #if defined(XP_WIN)
-	static volatile LONGLONG initTime = 0; // initTime helps in avoiding precision waste by having a relative time
+	// beware: rdtsc is a per-cpu operation. On multiprocessor systems, be careful that calls to rdtsc are actually executing on the same cpu.
+
+	BOOL result;
+	static volatile LONGLONG initTime = 0; // initTime helps in avoiding precision waste by having a relative time.
+	static volatile DWORD_PTR cpuMask = 0;
+	if ( cpuMask == 0 ) {
+
+		DWORD_PTR processAffinityMask = 0;
+		DWORD_PTR systemAffinityMask = 0;
+		result = ::GetProcessAffinityMask(::GetCurrentProcess(), &processAffinityMask, &systemAffinityMask);
+		ASSERT( result );
+		ASSERT( processAffinityMask );
+		cpuMask = JL_LeastSignificantBit(processAffinityMask);
+	}
 	LARGE_INTEGER frequency, performanceCount;
 	HANDLE thread = ::GetCurrentThread();
-	// beware: rdtsc is a per-cpu operation. On multiprocessor systems, be careful that calls to rdtsc are actually executing on the same cpu.
-	DWORD_PTR oldmask = ::SetThreadAffinityMask(thread, 1);
-	ASSERT( oldmask );
-	BOOL result = ::QueryPerformanceFrequency(&frequency);
+	DWORD_PTR oldmask = ::SetThreadAffinityMask(thread, cpuMask);
+	result = ::QueryPerformanceFrequency(&frequency);
 	ASSERT( result );
 	result = ::QueryPerformanceCounter(&performanceCount);
 	ASSERT( result );
 	if ( initTime == 0 )
 		initTime = performanceCount.QuadPart;
-	result = ::SetThreadAffinityMask(thread, oldmask);
-	ASSERT( result );
+	if ( oldmask )
+		::SetThreadAffinityMask(thread, oldmask);
 	JL_IGNORE( result );
 	return (double)1000 * (performanceCount.QuadPart-initTime) / (double)frequency.QuadPart;
 #elif defined(XP_UNIX)

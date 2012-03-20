@@ -248,7 +248,7 @@ public:
 		ASSERT( _top != NULL );
 		Item* oldItem = _top;
 		_top = _top->prev;
-		oldItem->~Item();
+		oldItem->Item::~Item();
 		allocator.Free(oldItem);
 		return *this;
 	}
@@ -321,7 +321,7 @@ public:
 
 			Item* tmp = _top;
 			_top = _top->prev;
-			tmp->~Item();
+			tmp->Item::~Item();
 			allocator.Free(tmp);
 			return true;
 		}
@@ -330,7 +330,7 @@ public:
 			if ( prev->data == ref ) {
 
 				item->prev = prev->prev;
-				prev->~Item();
+				prev->Item::~Item();
 				allocator.Free(prev);
 				return true;
 			}

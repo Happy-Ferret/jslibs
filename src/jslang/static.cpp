@@ -1102,13 +1102,18 @@ DEFINE_FUNCTION( _jsapiTests ) {
 #endif // DEBUG
 
 
-#define JSLANG_TEST DEBUG  || true
+#define JSLANG_TEST DEBUG // || true
 
 #ifdef JSLANG_TEST
 
 DEFINE_FUNCTION( jslangTest ) {
 
 	JL_IGNORE(cx, argc, vp);
+
+
+	jl::Stack<int> s;
+	++s;
+	--s;
 
 /*
 	//jsval constructor;

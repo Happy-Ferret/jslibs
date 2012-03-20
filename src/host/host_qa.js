@@ -3,7 +3,7 @@ loadModule('jsio');
 
 /// call all possible functions reachable in the scope [rmtf]
 
-	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', '_host.stdin', 'jslangTest' ];
+	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', '_host.stdin', 'jslangTest', 'setPerfTestMode' ];
 
 	loadModule('jswinshell'); excludeList.push('fileOpenDialog', 'Console.close');
 	loadModule('jssdl'); excludeList.push('setVideoMode', 'iconify');

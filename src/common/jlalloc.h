@@ -220,13 +220,11 @@ namespace jl {
 		ALWAYS_INLINE void* operator new[](size_t size) NOTHROW {
 			return jl_malloc(size);
 		}
-		ALWAYS_INLINE void operator delete(void *ptr, size_t size) {
+		ALWAYS_INLINE void operator delete(void *ptr, size_t) {
 			jl_free(ptr);
-			JL_IGNORE(size);
 		}
-		ALWAYS_INLINE void operator delete[](void *ptr, size_t size) {
+		ALWAYS_INLINE void operator delete[](void *ptr, size_t) {
 			jl_free(ptr);
-			JL_IGNORE(size);
 		}
 	};
 

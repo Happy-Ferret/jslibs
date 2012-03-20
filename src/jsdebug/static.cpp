@@ -1817,33 +1817,16 @@ DEFINE_FUNCTION( setPerfTestMode ) {
 
 #if defined(WIN32)
 
-	JL_CHK( SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS) );
-	JL_CHK( SetProcessPriorityBoost(GetCurrentProcess(), TRUE) );
-
-	// beware:
-	//   do neot set time critical because this will set time critical for this thread only !
-	//   other threads in jslibs will suffer of this (see PREACTION(m) call in internal_realloc() of nedmalloc).
-	//	JL_CHK( SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL) );
-	//	JL_CHK( SetThreadPriorityBoost(GetCurrentThread(), TRUE) );
-
-	SYSTEM_INFO sysinfo;
-	GetSystemInfo( &sysinfo );
-	if ( sysinfo.dwNumberOfProcessors > 1 ) {
-
-		DWORD processAffinityMask, systemAffinityMask;
-		JL_CHK( GetProcessAffinityMask(GetCurrentProcess(), &processAffinityMask, &systemAffinityMask) );
-		DWORD affinity = processAffinityMask & systemAffinityMask;
-		JL_CHK( affinity != 0 );
-
-		int i;
-		for ( i = 0; affinity >> i; ++i );
-		--i;
-
-		JL_CHK( SetProcessAffinityMask(GetCurrentProcess(), 1 << i) ); // warning: Do not call SetProcessAffinityMask in a DLL that may be called by processes other than your own.
-		JL_CHK( SetThreadAffinityMask(GetCurrentThread(), 1 << i) );
-	}
-
-	Sleep(0);
+	HANDLE currentProcess = ::GetCurrentProcess();
+	HANDLE currentThread = ::GetCurrentThread();
+	DWORD_PTR processAffinityMask, systemAffinityMask;
+	// detect thread availability
+	JL_CHK( ::GetProcessAffinityMask(currentProcess, &processAffinityMask, &systemAffinityMask) );
+	// select a thread
+	JL_CHK( ::SetThreadAffinityMask(currentThread, JL_LeastSignificantBit(processAffinityMask)) );
+	//   do not set time critical because this will set time critical for this thread only !
+	JL_CHK( ::SetPriorityClass(currentProcess, REALTIME_PRIORITY_CLASS) );
+	JL_CHK( ::SetProcessPriorityBoost(currentProcess, TRUE) ); // disable dynamic boosting
 
 #endif // WIN32
 

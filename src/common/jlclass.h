@@ -41,10 +41,11 @@ struct JLClassSpec {
 };
 
 
-// JL_StoreProperty is used to override a property definition (from the prototype to the obj.
+// JL_StoreProperty is used to override a property definition (from the prototype to the obj).
 // if removeGetterAndSetter is false, it is up to the caller to filter calls using: if ( *vp != JSVAL_VOID ) return JS_TRUE;
 // if removeGetterAndSetter is true, the value is stored for r/w getter or setter will never be called again.
-inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool removeGetterAndSetter ) {
+INLINE JSBool
+JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool removeGetterAndSetter ) {
 
 	JSBool found;
 	uintN attrs;
@@ -67,7 +68,8 @@ inline JSBool JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsv
 
 // because it is difficult to override properties by tinyId (JSPropertyOp) see. bz#526979
 // note. PROPERTY_SWITCH uses enum values as tinyId
-ALWAYS_INLINE JSBool JL_DefineClassProperties(JSContext *cx, JSObject *obj, JSPropertySpec *ps) {
+ALWAYS_INLINE JSBool
+JL_DefineClassProperties(JSContext *cx, JSObject *obj, JSPropertySpec *ps) {
 
 	for ( ; ps->name; ++ps ) {
 
@@ -80,20 +82,23 @@ ALWAYS_INLINE JSBool JL_DefineClassProperties(JSContext *cx, JSObject *obj, JSPr
 	JL_BAD;
 }
 
-ALWAYS_INLINE char *JLNormalizeFunctionName( const char *name ) {
+ALWAYS_INLINE char *
+JLNormalizeFunctionName( const char *name ) {
 
 	char *buf = JL_strdup(name); // (TBD) if needed, do free with js_free() function.
 	buf[0] = (char)toupper(buf[0]);
 	return buf;
 }
 
-ALWAYS_INLINE void JLNormalizeFunctionSpecNames( JSFunctionSpec *functionSpec ) {
+ALWAYS_INLINE void
+JLNormalizeFunctionSpecNames( JSFunctionSpec *functionSpec ) {
 
 	for ( JSFunctionSpec *it = functionSpec; it && it->name; ++it )
 		it->name = JLNormalizeFunctionName(it->name);
 }
 
-inline JSBool JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
+INLINE JSBool
+JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JL_CHK(obj);
 
@@ -125,14 +130,16 @@ inline JSBool JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 }
 
 
-INLINE JSBool InvalidConstructor(JSContext *cx, uintN, jsval *) {
+INLINE JSBool
+InvalidConstructor(JSContext *cx, uintN, jsval *) {
 
 	JL_ERR( E_CLASS, E_NOTCONSTRUCT );
 	JL_BAD;
 }
 
 
-inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
+INLINE JSBool
+JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JL_CHK(obj);
 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
@@ -156,22 +163,17 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 		parent_proto = NULL;
 	}
 
-//	uint32_t protoFrozen = cs->clasp.flags & JSCLASS_FREEZE_PROTO;
-//	cs->clasp.flags &= ~JSCLASS_FREEZE_PROTO;
-
-	JSNative constructor;
-	constructor = cs->constructor;
-
 	JSObject *proto;
-	proto = JS_InitClass(cx, obj, parent_proto, &cs->clasp, constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
+	proto = JS_InitClass(cx, obj, parent_proto, &cs->clasp, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
 
 	JL_ASSERT( proto != NULL, E_CLASS, E_NAME(cs->clasp.name), E_CREATE ); //RTE
 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(cx, proto) == NULL );
 	JL_CHKM( JL_CacheClassProto(hpv, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
-	bool destFrozen;
+//	volatile uint32_t iii = JL_ClassNameToClassProtoCacheSlot(cs->clasp.name);
+
 	JSObject *staticDest;
-	//staticDest = cs->constructor ? JL_GetConstructor(cx, proto) : proto;
+	bool destFrozen;
 	if ( cs->constructor ) {
 
 		staticDest = JL_GetConstructor(cx, proto);
@@ -181,6 +183,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 		staticDest = proto;
 		destFrozen = (cs->clasp.flags & JSCLASS_FREEZE_PROTO) != 0;
 	}
+
 
 	if ( cs->ps != NULL )
 		JL_CHK( JL_DefineClassProperties(cx, proto, cs->ps) );
@@ -204,9 +207,6 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 		JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 		JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	}
-
-//	if ( protoFrozen )
-//		JL_CHK( JS_FreezeObject(cx, proto) );
 
 	if ( cs->init )
 		JL_CHK( cs->init(cx, cs, proto, staticDest) );
@@ -245,6 +245,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define INIT_CLASS(CLASSNAME) \
 	JL_CHK( JLInitClass(cx, obj, CLASSNAME::jlClassSpec ) ); \
 
+
 #define BEGIN_CLASS(CLASSNAME) \
 	namespace CLASSNAME { \
 		static const char *className = #CLASSNAME; \
@@ -254,7 +255,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define CONFIGURE_CLASS \
 		ALWAYS_INLINE JLClassSpec *JLClassSpecInit() { \
 			static JLClassSpec cs; \
-			cs.clasp.name = (char *)className; \
+			cs.clasp.name = className; \
 			cs.clasp.addProperty = JS_PropertyStub; \
 			cs.clasp.delProperty = JS_PropertyStub; \
 			cs.clasp.getProperty = JS_PropertyStub; \
@@ -268,7 +269,7 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define END_CLASS \
 			return &cs; \
 		} \
-	} \
+	} /* namespace */ \
 
 //soubok>	in the JSClass finalize function, what is the best method to distinguish between object and prototype finalization ?
 //jorendorff>	that's hard to do... if you're willing to be imprecise about it, you can just check to see if the object's prototype has the same class.
@@ -432,59 +433,4 @@ inline JSBool JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define DEFINE_PROPERTY(name) static JSBool _##name(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
 #define DEFINE_PROPERTY_GETTER(name) static JSBool _##name##Getter(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
 #define DEFINE_PROPERTY_SETTER(name) static JSBool _##name##Setter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp)
-
-
-/*
-
-// flags:
-//JSCLASS_HAS_PRIVATE           
-//JSCLASS_NEW_ENUMERATE         
-//JSCLASS_NEW_RESOLVE           
-//JSCLASS_NEW_RESOLVE_GETS_START
-//JSCLASS_DOCUMENT_OBSERVER  
-//JSCLASS_HAS_RESERVED_SLOTS(n)
-//JSCLASS_RESERVED_SLOTS(clasp)
-//JSCLASS_HIGH_FLAGS_SHIFT     
-//JSCLASS_IS_ANONYMOUS         
-//JSCLASS_IS_GLOBAL            
-//JSCLASS_MARK_IS_TRACE 
-//JSCLASS_FREEZE_PROTO 
-//JSCLASS_FREEZE_CTOR  
-
-static js::Class OperationLimit_class = {
-    "ClassName",
-	 0, // see flags.
-	 js::PropertyStub, js::PropertyStub, js::PropertyStub, js::StrictPropertyStub,
-	 js::EnumerateStub, js::ResolveStub, js::ConvertStub, js::FinalizeStub,
-    NULL, // JSClassInternal     reserved0;
-    NULL, // JSCheckAccessOp     checkAccess;
-    NULL, // JSNative            call;
-    NULL, // JSNative            construct;
-    NULL, // JSXDRObjectOp       xdrObject;
-    NULL, // JSHasInstanceOp     hasInstance;
-    NULL, // JSMarkOp            mark;
-    {
-        NULL, // EqualityOp    equality;
-        NULL, // JSObjectOp    outerObject;
-        NULL, // JSObjectOp    innerObject;
-        NULL, // JSIteratorOp  iteratorObject;
-        NULL, // void         *unused;
-    },
-    {
-        NULL, // js::LookupPropOp        lookupProperty;
-        NULL, // js::DefinePropOp        defineProperty;
-        NULL, // js::PropertyIdOp        getProperty;
-        NULL, // js::StrictPropertyIdOp  setProperty;
-        NULL, // js::AttributesOp        getAttributes;
-        NULL, // js::AttributesOp        setAttributes;
-        NULL, // js::DeleteIdOp          deleteProperty;
-        NULL, // js::NewEnumerateOp      enumerate;
-        NULL, // js::TypeOfOp            typeOf;
-        NULL, // js::TraceOp             trace;
-        NULL, // js::FixOp               fix;
-        NULL, // js::ObjectOp            thisObject;
-        NULL, // js::FinalizeOp          clear;
-    },
-};
-*/
 

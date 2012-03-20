@@ -924,6 +924,35 @@ $TOC_MEMBER $INAME
   }}}
 **/
 
+/**qa
+	QA.ASSERT_EXCEPTION( function() { (function f(){f();})(); }, InternalError, 'too much recursion' );
+	QA.ASSERT_EXCEPTION( function() { sandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 250) }, OperationLimit, 'OperationLimit detection' );
+	QA.ASSERT_EQ( '!typeof', OperationLimit, 'undefined' );
+	QA.ASSERT_EQ( '===', OperationLimit.constructor, StopIteration.constructor );
+	QA.ASSERT_EQ( '===', OperationLimit.prototype, StopIteration.prototype );
+	
+
+// OperationLimit instance test
+	try {
+		sandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 10);
+	} catch(ex) {
+
+		QA.ASSERT_EQ( 'instanceof', ex, OperationLimit, 'check OperationLimit instance' );
+		QA.ASSERT_EQ( '===', ex.constructor, Object, 'check OperationLimit instance constructor' );
+		QA.ASSERT_EQ( '===', ex.__proto__, OperationLimit, 'check OperationLimit instance prototype' );
+	}
+
+// not-a-constructor test
+	try { new OperationLimit() } catch (ex1) {
+
+		var message1 = ex1.message.replace('OperationLimit', 'XXX');
+		try { new StopIteration() } catch (ex2) {
+
+			var message2 = ex2.message.replace('StopIteration', 'XXX');
+			QA.ASSERT_EQ( '==', message1, message2 );
+		}
+	}
+**/
 
 BEGIN_CLASS( OperationLimit )
 
@@ -935,24 +964,18 @@ DEFINE_CONSTRUCTOR() {
 }
 */
 
-/*
+
 DEFINE_HAS_INSTANCE() {
 
-	JL_IGNORE(obj);
-
-	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
+	JL_IGNORE(obj, cx);
+	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_GetClass(JSVAL_TO_OBJECT(*v)) == JL_THIS_CLASS;
 	return JS_TRUE;
 }
-*/
+
 CONFIGURE_CLASS
-
-//	HAS_CONSTRUCTOR
-	IS_INCONSTRUCTIBLE
-
-//	HAS_HAS_INSTANCE // see issue#52
-
+	FROZEN_PROTOTYPE
+	HAS_HAS_INSTANCE // see issue#52
 END_CLASS
-
 
 
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
@@ -989,7 +1012,6 @@ sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **o
 	return JS_TRUE;
 }
 
-
 static JSClass sandbox_class = {
     "Sandbox",
     JSCLASS_NEW_RESOLVE | JSCLASS_GLOBAL_FLAGS,
@@ -1000,7 +1022,6 @@ static JSClass sandbox_class = {
     JSCLASS_NO_OPTIONAL_MEMBERS
 };
 
-
 struct SandboxContextPrivate {
 
 	JLSemaphoreHandler semEnd;
@@ -1009,7 +1030,6 @@ struct SandboxContextPrivate {
 	jsval queryFunctionValue;
 	JSOperationCallback prevOperationCallback;
 };
-
 
 JSBool SandboxMaxOperationCallback(JSContext *cx) {
 
@@ -1032,7 +1052,6 @@ JSBool SandboxMaxOperationCallback(JSContext *cx) {
 	return pv->prevOperationCallback(cx);
 }
 
-
 JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
 
 	JSContext *cx = (JSContext*)threadArg;
@@ -1046,7 +1065,6 @@ JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
 	JLThreadExit(0);
 	return 0;
 }
-
 
 JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
 
@@ -1065,10 +1083,6 @@ JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
 	JL_BAD;
 }
 
-/**qa
-	QA.ASSERT_EXCEPTION( function() { (function f(){f();})(); }, InternalError, 'too much recursion' );
-	QA.ASSERT_EXCEPTION( function() { sandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 250) }, OperationLimit, 'OperationLimit detection' );
-**/
 DEFINE_FUNCTION( sandboxEval ) {
 
 	JL_ASSERT_ARGC_RANGE(1, 3);

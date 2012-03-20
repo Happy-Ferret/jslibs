@@ -564,8 +564,12 @@ JL_GetModulePrivate( JSContext *cx, uint32_t moduleId ) {
 ///////////////////////////////////////////////////////////////////////////////
 // cached class and proto
 
+// see:
+//   SuperFastHash (http://www.azillionmonkeys.com/qed/hash.html)
+//   FNV variants (http://isthe.com/chongo/tech/comp/fnv/)
+//   MurmurHash 1.0 (https://sites.google.com/site/murmurhash/)
 ALWAYS_INLINE NOALIAS uint32_t FASTCALL
-JL_ClassNameToClassProtoCacheSlot( const char *n ) {
+JL_ClassNameToClassProtoCacheSlot( const char * const n ) {
 
 	ASSERT( n != NULL );
 	ASSERT( strlen(n) <= 24 );
@@ -601,7 +605,7 @@ JL_ClassNameToClassProtoCacheSlot( const char *n ) {
 
 
 INLINE bool FASTCALL
-JL_CacheClassProto( HostPrivate * RESTRICT hpv, const char * RESTRICT className, JSClass * RESTRICT clasp, JSObject * RESTRICT proto ) {
+JL_CacheClassProto( HostPrivate * RESTRICT hpv, const char * const RESTRICT className, JSClass * const RESTRICT clasp, JSObject * const RESTRICT proto ) {
 
 	size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
 	size_t first = slotIndex;
@@ -629,7 +633,7 @@ JL_CacheClassProto( HostPrivate * RESTRICT hpv, const char * RESTRICT className,
 }
 
 ALWAYS_INLINE const ClassProtoCache* FASTCALL
-JL_GetCachedClassProto( HostPrivate *hpv, const char *className ) {
+JL_GetCachedClassProto( const HostPrivate * const hpv, const char * const className ) {
 
 	size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
 	size_t first = slotIndex;
@@ -637,7 +641,7 @@ JL_GetCachedClassProto( HostPrivate *hpv, const char *className ) {
 
 	for (;;) {
 
-		ClassProtoCache *slot = &hpv->classProtoCache[slotIndex];
+		const ClassProtoCache *slot = &hpv->classProtoCache[slotIndex];
 
 		if ( slot->clasp == NULL || strcmp(slot->clasp->name, className) == 0 ) // since classes cannot completly be removed from jslibs, NULL mean "not found"
 			return slot;
@@ -650,7 +654,7 @@ JL_GetCachedClassProto( HostPrivate *hpv, const char *className ) {
 }
 
 ALWAYS_INLINE void FASTCALL
-JL_RemoveCachedClassProto( HostPrivate *hpv, const char *className ) {
+JL_RemoveCachedClassProto( HostPrivate * const hpv, const char *const className ) {
 
 	size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
 	size_t first = slotIndex;
@@ -3486,8 +3490,12 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 	if ( !hasSrcFile )
 		goto bad; // no source, no compiled version of the source, die.
 
-	if ( saveCompFile )
-		JS_SetOptions( cx, JS_GetOptions(cx) & ~JSOPTION_COMPILE_N_GO ); // see https://bugzilla.mozilla.org/show_bug.cgi?id=494363
+
+	// doc.
+	//   JSOPTION_COMPILE_N_GO: caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
+	// see https://bugzilla.mozilla.org/show_bug.cgi?id=494363
+	if ( saveCompFile ) // saving the compiled file mean that we cannot promise to execute compiled script once only.
+		JS_SetOptions(cx, prevOpts & ~JSOPTION_COMPILE_N_GO); // previous options a restored below.
 
 #define JL_UC
 #ifndef JL_UC
