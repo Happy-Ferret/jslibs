@@ -26,7 +26,7 @@ struct JLConstIntegerSpec {
 
 struct JLClassSpec {
 	JSClass clasp;
-	JSNative constructor;
+	JSNative constructor; // JSFUN_CONSTRUCTOR ???
 	uintN nargs;
 	const char *parentProtoName;
 	JSPropertySpec *ps;
@@ -102,7 +102,7 @@ JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JL_CHK(obj);
 
-	if ( JL_GetHostPrivate(cx)->camelCase == 2 )
+	if ( JL_GetHostPrivate(cx)->camelCase == JL_CAMELCASE_UPPER )
 		JLNormalizeFunctionSpecNames(cs->static_fs);
 
 	if ( cs->static_fs != NULL )
@@ -144,7 +144,7 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_CHK(obj);
 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
 
-	if ( JL_GetHostPrivate(cx)->camelCase == 2 ) {
+	if ( JL_GetHostPrivate(cx)->camelCase == JL_CAMELCASE_UPPER ) {
 
 		JLNormalizeFunctionSpecNames(cs->fs);
 		JLNormalizeFunctionSpecNames(cs->static_fs);
@@ -169,8 +169,6 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_ASSERT( proto != NULL, E_CLASS, E_NAME(cs->clasp.name), E_CREATE ); //RTE
 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(cx, proto) == NULL );
 	JL_CHKM( JL_CacheClassProto(hpv, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
-
-//	volatile uint32_t iii = JL_ClassNameToClassProtoCacheSlot(cs->clasp.name);
 
 	JSObject *staticDest;
 	bool destFrozen;
@@ -239,18 +237,19 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 #define DECLARE_CLASS(CLASSNAME) \
 	namespace CLASSNAME { \
-		extern JLClassSpec *jlClassSpec; \
+		extern const char *className; \
+		extern JLClassSpec *classSpec; \
 	} \
 
 #define INIT_CLASS(CLASSNAME) \
-	JL_CHK( JLInitClass(cx, obj, CLASSNAME::jlClassSpec ) ); \
+	JL_CHK( JLInitClass(cx, obj, CLASSNAME::classSpec ) ); \
 
 
 #define BEGIN_CLASS(CLASSNAME) \
 	namespace CLASSNAME { \
-		static const char *className = #CLASSNAME; \
+		const char *className = #CLASSNAME; \
 		ALWAYS_INLINE JLClassSpec *JLClassSpecInit(); \
-		JLClassSpec *jlClassSpec = JLClassSpecInit(); \
+		JLClassSpec *classSpec = JLClassSpecInit(); \
 
 #define CONFIGURE_CLASS \
 		ALWAYS_INLINE JLClassSpec *JLClassSpecInit() { \
@@ -276,14 +275,16 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 //jorendorff>	The best way is to keep the result of JS_InitClass around somewhere.
 //jorendorff>	Then just compare with == to see if you're finalizing that object.
 
-#define JL_CLASS(CLASSNAME) (&(CLASSNAME::jlClassSpec->clasp))
-#define JL_CLASS_NAME(CLASSNAME) (JL_CLASS(CLASSNAME)->name)
-#define JL_THIS_CLASS (&(jlClassSpec->clasp))
-#define JL_THIS_CLASS_NAME (jlClassSpec->clasp.name)
-#define JL_THIS_REVISION (jlClassSpec->revision)
+#define JL_CLASS(CLASSNAME) (&(CLASSNAME::classSpec->clasp))
+#define JL_THIS_CLASS (&(classSpec->clasp))
 
-#define JL_PROTOTYPE(cx, CLASSNAME) (JL_GetCachedClassProto(JL_GetHostPrivate(cx), CLASSNAME::jlClassSpec->clasp.name)->proto)
-#define JL_THIS_PROTOTYPE (JL_GetCachedClassProto(JL_GetHostPrivate(cx), jlClassSpec->clasp.name)->proto)
+#define JL_CLASS_NAME(CLASSNAME) (CLASSNAME::className)
+#define JL_THIS_CLASS_NAME (className)
+
+#define JL_THIS_CLASS_REVISION (classSpec->revision)
+
+#define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (JL_GetCachedClassProto(JL_GetHostPrivate(cx), CLASSNAME::className)->proto)
+#define JL_THIS_CLASS_PROTOTYPE (JL_GetCachedClassProto(JL_GetHostPrivate(cx), className)->proto)
 
 #define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.
 

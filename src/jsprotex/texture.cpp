@@ -388,7 +388,7 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
 DEFINE_FINALIZE() {
 
-//	if ( obj == JL_THIS_PROTOTYPE )
+//	if ( obj == JL_THIS_CLASS_PROTOTYPE )
 //		return;
 
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.

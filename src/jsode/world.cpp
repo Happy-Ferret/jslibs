@@ -298,13 +298,13 @@ DEFINE_CONSTRUCTOR() {
 	pv->worldId = ode::dWorldCreate();
 	pv->contactGroupId = ode::dJointGroupCreate(0); // see nearCallback()
 
-	JSObject *spaceObject = JS_ConstructObject(cx, JL_CLASS(Space), /*JL_PROTOTYPE(cx, Space),*/ NULL); // no arguments = create a topmost space object
+	JSObject *spaceObject = JS_ConstructObject(cx, JL_CLASS(Space), /*JL_CLASS_PROTOTYPE(cx, Space),*/ NULL); // no arguments = create a topmost space object
 	JL_CHK( spaceObject );
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_WORLD_SPACE, OBJECT_TO_JSVAL(spaceObject)) );
 	pv->spaceId = (ode::dSpaceID)JL_GetPrivate(cx, spaceObject);
 
 
-	JSObject *surfaceParameters = JS_ConstructObject(cx, JL_CLASS(SurfaceParameters), /*JL_PROTOTYPE(cx, SurfaceParameters),*/ NULL);
+	JSObject *surfaceParameters = JS_ConstructObject(cx, JL_CLASS(SurfaceParameters), /*JL_CLASS_PROTOTYPE(cx, SurfaceParameters),*/ NULL);
 	JL_CHK( surfaceParameters );
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, OBJECT_TO_JSVAL(surfaceParameters)) );
 
@@ -724,7 +724,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( env ) {
 
 	JL_ASSERT_THIS_INSTANCE();
-	JSObject *staticBody = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
+	JSObject *staticBody = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_CLASS_PROTOTYPE(cx, Body), NULL);
 	JL_CHK(staticBody);
 	JL_SetPrivate(cx, staticBody, (ode::dBodyID)0);
 	*vp = OBJECT_TO_JSVAL(staticBody);

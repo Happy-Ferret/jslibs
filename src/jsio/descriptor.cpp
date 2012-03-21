@@ -611,22 +611,22 @@ DEFINE_FUNCTION( import ) {
 	switch ( type ) {
 		case PR_DESC_FILE:
 			fd = PR_ImportFile(osfd);
-			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_PROTOTYPE(cx, File), NULL); // (TBD) check if proto is needed !
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_CLASS_PROTOTYPE(cx, File), NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_SOCKET_TCP:
 			fd = PR_ImportTCPSocket(osfd);
-			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_PROTOTYPE(cx, Socket), NULL); // (TBD) check if proto is needed !
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket), NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_SOCKET_UDP:
 			fd = PR_ImportUDPSocket(osfd);
-			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_PROTOTYPE(cx, Socket), NULL); // (TBD) check if proto is needed !
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket), NULL); // (TBD) check if proto is needed !
 			break;
 		case PR_DESC_LAYERED:
 			JL_ERR(E_THISOPERATION, E_NOTSUPPORTED);
 			break;
 		case PR_DESC_PIPE:
 			fd = PR_ImportPipe(osfd);
-			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL); // (TBD) check if proto is needed !
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe), NULL); // (TBD) check if proto is needed !
 			break;
 		default:
 			ASSERT(false);

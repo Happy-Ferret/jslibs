@@ -154,17 +154,17 @@ DEFINE_CONSTRUCTOR() {
 	if ( stdioRedirect ) {
 
 		JSObject *fdInObj;
-		fdInObj = JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL );
+		fdInObj = JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe), NULL );
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdInObj)) );
 		JL_SetPrivate( cx, fdInObj, stdin_parent );
 
 		JSObject *fdOutObj;
-		fdOutObj = JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL );
+		fdOutObj = JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe), NULL );
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOutObj)) );
 		JL_SetPrivate( cx, fdOutObj, stdout_parent );
 
 		JSObject *fdErrObj;
-		fdErrObj = JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_PROTOTYPE(cx, Pipe), NULL );
+		fdErrObj = JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe), NULL );
 		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErrObj)) );
 		JL_SetPrivate( cx, fdErrObj, stderr_parent );
 	}

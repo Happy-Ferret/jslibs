@@ -76,9 +76,9 @@ public:
 		JS_AddValueRoot(_cx, &_rval);
 		JS_AddValueRoot(_cx, &_arg);
 
-		( JLInitClass(_cx, JL_GetGlobal(_cx), MidiEvent::jlClassSpec ) );
-		( JLInitClass(_cx, JL_GetGlobal(_cx), AudioMaster::jlClassSpec ) );
-		( JLInitClass(_cx, JL_GetGlobal(_cx), VSTPlugin::jlClassSpec ) );
+		( JLInitClass(_cx, JL_GetGlobal(_cx), MidiEvent::classSpec ) ); // INIT_CLASS uses cx, not _cx
+		( JLInitClass(_cx, JL_GetGlobal(_cx), AudioMaster::classSpec ) );
+		( JLInitClass(_cx, JL_GetGlobal(_cx), VSTPlugin::classSpec ) );
 
 		JSObject *audioMasterObject = CreateAudioMasterObject(_cx, audioMaster);
 		_arg = OBJECT_TO_JSVAL(audioMasterObject);

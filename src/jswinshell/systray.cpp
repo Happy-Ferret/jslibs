@@ -424,7 +424,7 @@ DEFINE_CONSTRUCTOR() {
 
 DEFINE_FINALIZE() {
 
-//	if ( obj == JL_PROTOTYPE(cx, Systray) )
+//	if ( obj == JL_CLASS_PROTOTYPE(cx, Systray) )
 //		return;
 
 	Private *pv = (Private*)JL_GetPrivate(cx, obj);

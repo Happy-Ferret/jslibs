@@ -41,7 +41,7 @@ DEFINE_CONSTRUCTOR() {
 	ser = new jl::Serializer(OBJECT_TO_JSVAL(JL_OBJ));
 	JL_ASSERT_ALLOC(ser);
 	JL_SetPrivate(cx, JL_OBJ, ser);
-	ser->Write(cx, JL_THIS_REVISION);
+	ser->Write(cx, JL_THIS_CLASS_REVISION);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -136,7 +136,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_SetPrivate(cx, JL_OBJ, unser);
 	JLRevisionType rev;
 	JL_CHK( unser->Read(cx, rev) );
-	JL_ASSERT( rev == JL_THIS_REVISION, E_ARG, E_NUM(1), E_VERSION, E_COMMENT("serialized data") );
+	JL_ASSERT( rev == JL_THIS_CLASS_REVISION, E_ARG, E_NUM(1), E_VERSION, E_COMMENT("serialized data") );
 	return JS_TRUE;
 	JL_BAD;
 }

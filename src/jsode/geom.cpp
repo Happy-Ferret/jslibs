@@ -77,28 +77,28 @@ JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // 
 
 	switch( ode::dGeomGetClass(geomId) ) {
 		case ode::dSphereClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomSphere), JL_PROTOTYPE(cx, GeomSphere), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomSphere), JL_CLASS_PROTOTYPE(cx, GeomSphere), NULL);
 			break;
 		case ode::dBoxClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomBox), JL_PROTOTYPE(cx, GeomBox), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomBox), JL_CLASS_PROTOTYPE(cx, GeomBox), NULL);
 			break;
 		case ode::dCapsuleClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomCapsule), JL_PROTOTYPE(cx, GeomCapsule), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomCapsule), JL_CLASS_PROTOTYPE(cx, GeomCapsule), NULL);
 			break;
 		case ode::dCylinderClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomCylinder), JL_PROTOTYPE(cx, GeomCylinder), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomCylinder), JL_CLASS_PROTOTYPE(cx, GeomCylinder), NULL);
 			break;
 		case ode::dPlaneClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomPlane), JL_PROTOTYPE(cx, GeomPlane), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomPlane), JL_CLASS_PROTOTYPE(cx, GeomPlane), NULL);
 			break;
 		case ode::dRayClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomRay), JL_PROTOTYPE(cx, GeomRay), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomRay), JL_CLASS_PROTOTYPE(cx, GeomRay), NULL);
 			break;
 		case ode::dConvexClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomConvex), JL_PROTOTYPE(cx, GeomConvex), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomConvex), JL_CLASS_PROTOTYPE(cx, GeomConvex), NULL);
 			break;
 		case ode::dTriMeshClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomTrimesh), JL_PROTOTYPE(cx, GeomTrimesh), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomTrimesh), JL_CLASS_PROTOTYPE(cx, GeomTrimesh), NULL);
 			break;
 		default:
 			ASSERT(false);

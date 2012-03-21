@@ -268,7 +268,7 @@ DEFINE_FUNCTION( accept ) {
 		return ThrowIoError(cx);
 
 	JSObject *object;
-	object = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_PROTOTYPE(cx, Socket), NULL);
+	object = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket), NULL);
 	JL_SetPrivate(cx, object, newFd);
 //	JL_CHK( JL_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_FALSE) );
 

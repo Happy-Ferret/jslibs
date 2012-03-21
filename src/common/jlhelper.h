@@ -262,15 +262,19 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 }
 
 
-// useful for structure with jsid initialized to 0, (see HostPrivate ids)
-ALWAYS_INLINE const jsid
-JL_NullJsid() {
+namespace jspv {
 
-	jsid tmp;
-	JSID_BITS(tmp) = 0;
-	ASSERT(JSID_IS_ZERO(tmp));
-	return tmp;
+	// useful for structure with jsid initialized to 0, (see HostPrivate ids)
+	ALWAYS_INLINE const jsid
+	NullJsid() {
+
+		jsid tmp;
+		JSID_BITS(tmp) = 0;
+		ASSERT(JSID_IS_ZERO(tmp));
+		return tmp;
+	}
 }
+
 
 ALWAYS_INLINE jsid FASTCALL
 JL_StringToJsid( JSContext *cx, JSString *jsstr ) {
@@ -278,17 +282,18 @@ JL_StringToJsid( JSContext *cx, JSString *jsstr ) {
 	ASSERT( jsstr != NULL );
 	jsstr = JS_InternJSString(cx, jsstr); // if ( !JS_StringHasBeenInterned(cx, jsstr) )
 	if ( jsstr == NULL )
-		return JL_NullJsid();
+		return jspv::NullJsid();
 	return INTERNED_STRING_TO_JSID(cx, jsstr);
 }
 
-ALWAYS_INLINE jsid FASTCALL
-JL_StringToJsid( JSContext *cx, const jschar *cstr ) {
 
-	ASSERT( cstr != NULL );
-	JSString *jsstr = JS_InternUCString(cx, cstr);
+ALWAYS_INLINE jsid FASTCALL
+JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
+
+	ASSERT( wstr != NULL );
+	JSString *jsstr = JS_InternUCString(cx, wstr);
 	if ( jsstr == NULL )
-		return JL_NullJsid();
+		return jspv::NullJsid();
 	jsid id = JL_StringToJsid(cx, jsstr);
 	ASSERT( JSID_IS_STRING(id) );
 	return id;
@@ -349,33 +354,6 @@ JL_StringToJsid( JSContext *cx, const jschar *cstr ) {
 
 // the return value
 #define JL_RVAL (&JS_RVAL(cx, vp))
-
-// define obj variable for native functions
-#define JL_DEFINE_FUNCTION_OBJ \
-	JSObject *obj; \
-	{ \
-		obj = JS_THIS_OBJECT(cx, vp); \
-		ASSERT( obj ); \
-	}
-
-#define JL_DEFINE_CALL_FUNCTION_OBJ \
-	JSObject *obj; \
-	{ \
-		obj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)); \
-		ASSERT( obj ); \
-	}
-
-// initialise 'this' object (obj) for constructors
-// see. JS_NewObjectForConstructor(cx, vp) if JL_THIS_CLASS or JL_THIS_PROTOTYPE cannot be used
-#define JL_DEFINE_CONSTRUCTOR_OBJ \
-	JSObject *obj; \
-	{ \
-		obj = JL_NewObjectWithGivenProto(cx, JL_THIS_CLASS, JL_THIS_PROTOTYPE, NULL); \
-		if ( obj == NULL ) { \
-			return JS_FALSE; \
-		} \
-		JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj)); \
-	}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -495,7 +473,7 @@ JL_ModulePrivateHash( const uint32_t moduleId ) {
 
 	ASSERT( moduleId != 0 );
 //	return ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3] << 1;
-	uint32_t a = moduleId ^ moduleId >> 16;
+	uint32_t a = moduleId ^ (moduleId >> 16);
 	return (a ^ a >> 8) & 0xFF;
 }
 
@@ -603,9 +581,24 @@ JL_ClassNameToClassProtoCacheSlot( const char * const n ) {
 	return ((h >> 7) ^ h) & ((1<<JL_HOST_PRIVATE_MAX_CLASS_PROTO_CACHE_BIT) - 1);
 }
 
+namespace jlpv {
+
+	ALWAYS_INLINE void *RemovedSlot() {
+
+		return (void*)-1;
+	}
+}
+
 
 INLINE bool FASTCALL
 JL_CacheClassProto( HostPrivate * RESTRICT hpv, const char * const RESTRICT className, JSClass * const RESTRICT clasp, JSObject * const RESTRICT proto ) {
+
+	ASSERT( className != NULL );
+	ASSERT( className[0] != '\0' );
+	ASSERT( clasp != NULL );
+	ASSERT( clasp != jlpv::RemovedSlot() );
+	ASSERT( proto != NULL );
+	ASSERT( JL_GetClass(proto) == clasp );
 
 	size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
 	size_t first = slotIndex;
@@ -632,18 +625,21 @@ JL_CacheClassProto( HostPrivate * RESTRICT hpv, const char * const RESTRICT clas
 	}
 }
 
+
 ALWAYS_INLINE const ClassProtoCache* FASTCALL
 JL_GetCachedClassProto( const HostPrivate * const hpv, const char * const className ) {
 
 	size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
-	size_t first = slotIndex;
+	const size_t first = slotIndex;
 	ASSERT( slotIndex < COUNTOF(hpv->classProtoCache) );
 
 	for (;;) {
 
 		const ClassProtoCache *slot = &hpv->classProtoCache[slotIndex];
-
-		if ( slot->clasp == NULL || strcmp(slot->clasp->name, className) == 0 ) // since classes cannot completly be removed from jslibs, NULL mean "not found"
+		
+		// slot->clasp == NULL -> empty
+		// slot->clasp == jlpv::RemovedSlot() -> slot removed, but maybe next slot will match !
+		if ( slot->clasp == NULL || ( slot->clasp != (JSClass*)jlpv::RemovedSlot() && ( slot->clasp->name == className || strcmp(slot->clasp->name, className) == 0 ) ) ) // see "Enable String Pooling"
 			return slot;
 
 		slotIndex = (slotIndex + 1) % COUNTOF(hpv->classProtoCache);
@@ -652,6 +648,7 @@ JL_GetCachedClassProto( const HostPrivate * const hpv, const char * const classN
 			return NULL;
 	}
 }
+
 
 ALWAYS_INLINE void FASTCALL
 JL_RemoveCachedClassProto( HostPrivate * const hpv, const char *const className ) {
@@ -664,9 +661,9 @@ JL_RemoveCachedClassProto( HostPrivate * const hpv, const char *const className 
 
 		ClassProtoCache *slot = &hpv->classProtoCache[slotIndex];
 
-		if ( slot->clasp == NULL || strcmp(slot->clasp->name, className) == 0 ) {
+		if ( slot->clasp == NULL || ( slot->clasp != (JSClass*)jlpv::RemovedSlot() && ( slot->clasp->name == className || strcmp(slot->clasp->name, className) == 0 ) ) ) {
 			
-			slot->clasp = NULL;
+			slot->clasp = (JSClass*)jlpv::RemovedSlot();
 			slot->proto = NULL;
 			return;
 		}
@@ -678,6 +675,11 @@ JL_RemoveCachedClassProto( HostPrivate * const hpv, const char *const className 
 	}
 }
 
+
+
+///////////////////////////////////////////////////////////////////////////////
+// new object management
+
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, JSObject *proto, JSObject *parent ) {
 
@@ -687,6 +689,7 @@ JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, JSObject *proto, JSOb
 	return obj;
 }
 
+
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewProtolessObj( JSContext *cx ) {
 
@@ -695,12 +698,14 @@ JL_NewProtolessObj( JSContext *cx ) {
 	return obj;
 }
 
+
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewObj( JSContext *cx ) {
 
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	return JS_NewObject(cx, pv->objectClass, pv->objectProto, JL_GetGlobal(cx));
 }
+
 
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewJslibsObject( JSContext *cx, const char *className ) {
@@ -711,21 +716,53 @@ JL_NewJslibsObject( JSContext *cx, const char *className ) {
 }
 
 
+#define JL_DEFINE_FUNCTION_OBJ \
+	JSObject *obj = JS_THIS_OBJECT(cx, vp); \
+	ASSERT( obj ); \
+
+
+#define JL_DEFINE_CALL_FUNCTION_OBJ \
+	JSObject *obj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)); \
+	ASSERT( obj ); \
+
+
+namespace jlpv {
+	
+	ALWAYS_INLINE JSObject *
+	CreateConstructorObject(JSContext *cx, JSClass *clasp, JSObject *proto, jsval *vp) {
+
+		JSObject *obj = JL_NewObjectWithGivenProto(cx, clasp, proto, NULL);
+		if ( obj != NULL )
+			JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
+		return obj;
+	}
+}
+
+// Initialise 'this' object (obj variable) for constructors native functions ( support constructing and non-constructing form, eg. |Stream()| and  |new Stream()| ).
+// If JL_THIS_CLASS or JL_THIS_CLASS_PROTOTYPE are not available, use JS_NewObjectForConstructor(cx, vp) instead.
+#define JL_DEFINE_CONSTRUCTOR_OBJ \
+	JSObject *obj = jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, vp);
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // IDs cache management
 
+namespace jlpv {
+
 	INLINE NEVER_INLINE jsid FASTCALL
-	jl_GetPrivateJsid_slow( JSContext *cx, jsid * RESTRICT ids, int index, const jschar * RESTRICT name ) {
+	GetPrivateJsidSlow( JSContext *cx, jsid * RESTRICT ids, int index, const jschar * RESTRICT name ) {
 
 		ASSERT( ids != NULL );
 		jsid id;
 		JSString *jsstr = JS_InternUCString(cx, name);
 		if (unlikely( jsstr == NULL ))
-			return JL_NullJsid();
+			return jspv::NullJsid();
 		id = JL_StringToJsid(cx, jsstr);
 		ids[index] = id;
 		return id;
 	}
+}
 
 ALWAYS_INLINE jsid FASTCALL
 JL_GetPrivateJsid( JSContext *cx, int index, const jschar *name ) {
@@ -734,9 +771,9 @@ JL_GetPrivateJsid( JSContext *cx, int index, const jschar *name ) {
 	ASSERT( hpv != NULL );
 	jsid *ids = hpv->ids;
 	jsid id = ids[index];
-	if (likely( id != JL_NullJsid() ))
+	if (likely( id != jspv::NullJsid() ))
 		return id;
-	return jl_GetPrivateJsid_slow(cx, ids, index, name);
+	return jlpv::GetPrivateJsidSlow(cx, ids, index, name);
 }
 
 
@@ -2947,7 +2984,7 @@ GetHostObject(JSContext *cx) {
 	
 	jsid hostObjectId;
 	hostObjectId = JLID(cx, _host);
-	ASSERT( hostObjectId != JL_NullJsid() );
+	ASSERT( hostObjectId != jspv::NullJsid() );
 
 	JL_CHK( JS_GetPropertyById(cx, globalObject, hostObjectId, &hostObjectValue) );
 
@@ -3753,7 +3790,7 @@ JL_ExceptionSetScriptLocation( JSContext * RESTRICT cx, JSObject * RESTRICT obj 
 ALWAYS_INLINE JSBool
 ReserveNativeInterface( JSContext *cx, JSObject *obj, const jsid &id ) {
 
-	ASSERT( id != JL_NullJsid() );
+	ASSERT( id != jspv::NullJsid() );
 	return JS_DefinePropertyById(cx, obj, id, JSVAL_VOID, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 }
 
@@ -3762,7 +3799,7 @@ template <class T>
 ALWAYS_INLINE JSBool
 SetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id, const T nativeFct ) {
 
-	ASSERT( id != JL_NullJsid() );
+	ASSERT( id != jspv::NullJsid() );
 	if ( nativeFct != NULL ) {
 
 		JL_CHK( JS_DefinePropertyById(cx, obj, id, JSVAL_TRUE, NULL, (JSStrictPropertyOp)nativeFct, JSPROP_READONLY | JSPROP_PERMANENT) ); // hacking the setter of a read-only property seems safe.
@@ -3779,7 +3816,7 @@ template <class T>
 ALWAYS_INLINE const T
 GetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id ) {
 
-	ASSERT( id != JL_NullJsid() );
+	ASSERT( id != jspv::NullJsid() );
 	JSPropertyDescriptor desc;
 	if ( JS_GetPropertyDescriptorById(cx, obj, id, JSRESOLVE_QUALIFIED, &desc) )
 		return desc.obj == obj && desc.setter != JS_StrictPropertyStub ? (const T)desc.setter : NULL; // is JS_PropertyStub when eg. Stringify({_NI_BufferGet:function() {} })

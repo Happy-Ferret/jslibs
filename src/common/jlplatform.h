@@ -31,6 +31,7 @@
 	#define JL_MACRO_END   } while (0)
 #endif
 
+#define JL_CODE_LOCATION __FILE__ ":" J__TOSTRING(__LINE__)
 
 #define __DATE__YEAR ((((__DATE__ [7] - '0') * 10 + (__DATE__ [8] - '0')) * 10 + (__DATE__ [9] - '0')) * 10 + (__DATE__ [10] - '0'))
 #define __DATE__MONTH ((__DATE__ [2] == 'n' ? 0 : __DATE__ [2] == 'b' ? 1 : __DATE__ [2] == 'r' ? (__DATE__ [0] == 'M' ? 2 : 3) : __DATE__ [2] == 'y' ? 4 : __DATE__ [2] == 'n' ? 5 : __DATE__ [2] == 'l' ? 6 : __DATE__ [2] == 'g' ? 7 : __DATE__ [2] == 'p' ? 8 : __DATE__ [2] == 't' ? 9 : __DATE__ [2] == 'v' ? 10 : 11)+1)
@@ -41,9 +42,10 @@
 #define __DATE__EPOCH_DAYS (( __DATE__MONTH > 2 ? (__DATE__YEAR*365 + __DATE__YEAR/4 - __DATE__YEAR/100 + __DATE__YEAR/400 + (__DATE__MONTH+1) * 306001 / 10000 + __DATE__DAY) : ((__DATE__YEAR-1)*365 + (__DATE__YEAR-1)/4 - (__DATE__YEAR-1)/100 + (__DATE__YEAR-1)/400 + (__DATE__MONTH+13) * 306001 / 10000 + __DATE__DAY) ) - 719591)
 #define __DATE__EPOCH (__DATE__EPOCH_DAYS * 86400 + __DATE__HOUR * 3600 + __DATE__MINUTE * 60 + __DATE__SECOND)
 
+/* unused
 #define JL_BUILD ( (((__DATE__YEAR * 12 + __DATE__MONTH) * 31 + __DATE__DAY) * 24 + __DATE__HOUR) - (((2006*12 + 6)*31 + 22)*24 + 0) ) // - Aug 22, 2006
+*/
 
-#define JL_CODE_LOCATION __FILE__ ":" J__TOSTRING(__LINE__)
 
 
 
@@ -1327,7 +1329,8 @@ AccurateTimeCounter() {
 
 
 #if defined(XP_WIN)
-INLINE __declspec(naked) __declspec(noinline) size_t JLGetEIP() {
+INLINE NEVER_INLINE __declspec(naked) size_t 
+JLGetEIP() {
 
 	__asm pop eax;
 	__asm jmp eax;

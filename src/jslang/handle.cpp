@@ -133,6 +133,8 @@ DEFINE_FUNCTION( _unserialize ) {
 /**qa
 	Handle.prototype.xxx = 123;
 	QA.ASSERT_EQ( '!=', Handle.prototype.xxx, 123, 'FROZEN_PROTOTYPE' );
+	QA.ASSERT_EQ( '<=', new Date(Handle._buildDate + new Date().getTimezoneOffset() * 60 * 1000), Date.now(), 'build date validity' );
+	QA.ASSERT_EQ( '>', Handle._buildDate, 0, 'build date validity' );
 **/
 CONFIGURE_CLASS
 

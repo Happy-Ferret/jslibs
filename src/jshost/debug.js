@@ -2,11 +2,13 @@
 //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
 //loadModule('jsstd'); exec('../common/tools.js'); var QA = fakeQAApi;  runLocalQAFile();
 
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask'); throw 0; //-inlineOnly
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask'); throw 0; // -inlineOnly
 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 
-throw 0;
+loadModule('jsstd');
+//print( new Date(Handle._buildDate + new Date().getTimezoneOffset() * 60 * 1000), '\n' );
+
 
 //SetPerfTestMode();
 
@@ -15,6 +17,7 @@ throw 0;
 
 loadModule('jsstd');
 
+jslangTest(); throw 0;
 
 
 
@@ -29,7 +32,6 @@ print( err.lineNumber, '\n' );
 print( err.stack, '\n' );
 
 
-jslangTest();
 
 throw 0;
 

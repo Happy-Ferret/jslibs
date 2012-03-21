@@ -29,7 +29,7 @@ BEGIN_CLASS( VideoInput ) // Start the definition of the class. It defines some 
 
 DEFINE_FINALIZE() {
 
-	if ( obj == JL_THIS_PROTOTYPE )
+	if ( obj == JL_THIS_CLASS_PROTOTYPE )
 		return;
 
 	jsval deviceIdVal;

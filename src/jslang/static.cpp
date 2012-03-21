@@ -951,7 +951,7 @@ bad:
 		_jsapiTests();
 **/
 
-#ifdef DEBUG
+#ifdef DEBUG // || true
 
 DEFINE_FUNCTION( _jsapiTests ) {
 
@@ -1094,6 +1094,20 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 	/////////////////////////////////////////////////////////////////
 
+	// misc inlining ////////////////////////////////////////////////
+
+	static JSObject *obj;
+	size_t a = JLGetEIP();
+	{
+	obj = JL_CLASS_PROTOTYPE(cx, Handle);
+	JL_IGNORE(obj);
+	}
+	a = JLGetEIP() - a;
+	ASSERT( a < 200 );
+	//printf("%d\n", a); exit(0);
+
+	/////////////////////////////////////////////////////////////////
+
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1110,10 +1124,20 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	JL_IGNORE(cx, argc, vp);
 
+/*
+	JSObject *o = JSVAL_TO_OBJECT(*vp);
 
-	jl::Stack<int> s;
-	++s;
-	--s;
+	static const void *tmp;
+
+	size_t a = JLGetEIP();
+
+	tmp = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Handle");
+	
+	a = JLGetEIP() - a;
+	
+	printf("%d\n", a); exit(0);
+*/
+
 
 /*
 	//jsval constructor;
@@ -1158,7 +1182,9 @@ DEFINE_FUNCTION( jslangTest ) {
 #endif // JSLANG_TEST
 
 /**qa
-	_jsapiTests();
+	if ( _jsapiTests in global )
+		_jsapiTests();
+
 
 	QA.ASSERT_EQ( '==', NaN, NaN ); // test qa.js
 	QA.ASSERT_EQ( '===', NaN, NaN );  // test qa.js

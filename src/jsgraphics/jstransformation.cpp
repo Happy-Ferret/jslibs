@@ -58,14 +58,14 @@ DEFINE_FINALIZE() {
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
 		return;
 
-	if ( obj == JL_THIS_PROTOTYPE ) {
+	if ( obj == JL_THIS_CLASS_PROTOTYPE ) {
 
 		while ( !PoolIsEmpty(&matrixPool) )
 			Matrix44Free((Matrix44*)jl::PoolPop(&matrixPool));
 		jl::PoolFinalize(&matrixPool);
 
 		ASSERT( JL_GetHostPrivate(cx)->isEnding ); // (TBD) to be tested !
-		JL_RemoveCachedClassProto(JL_GetHostPrivate(cx), jlClassSpec->clasp.name); // old JL_THIS_PROTOTYPE = NULL; // last GC
+		JL_RemoveCachedClassProto(JL_GetHostPrivate(cx), JL_THIS_CLASS_NAME);
 
 		return;
 	}
@@ -76,7 +76,7 @@ DEFINE_FINALIZE() {
 		return;
 
 	//beware: prototype may be finalized before the object
-	if ( JL_THIS_PROTOTYPE != NULL ) { // add to the pool if the pool is still alive !
+	if ( JL_THIS_CLASS_PROTOTYPE != NULL ) { // add to the pool if the pool is still alive !
 
 		if ( /*JL_IsHostEnding(cx) ||*/ !jl::PoolPush(&matrixPool, pv->mat) ) // if the runtime is shutting down, there is no more need to fill the pool.
 			Matrix44Free(pv->mat);

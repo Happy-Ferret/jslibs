@@ -512,7 +512,7 @@ BEGIN_CLASS( ComVariant )
 
 DEFINE_FINALIZE() {
 
-	if ( obj == JL_PROTOTYPE(cx, ComVariant) )
+	if ( obj == JL_CLASS_PROTOTYPE(cx, ComVariant) )
 		return;
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, obj);
 	HRESULT hr = VariantClear(variant);
@@ -689,7 +689,7 @@ END_CLASS
 // acquire the ownership of the variant
 JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
-	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_PROTOTYPE(cx, ComVariant), NULL);
+	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_CLASS_PROTOTYPE(cx, ComVariant), NULL);
 	*rval = OBJECT_TO_JSVAL( varObj );
 	JL_SetPrivate(cx, varObj, variant);
 	return JS_TRUE;

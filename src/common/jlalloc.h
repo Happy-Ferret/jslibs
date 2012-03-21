@@ -174,21 +174,24 @@ JL_Realloc( T*&ptr, size_t count = 1 ) {
 // note: MSVC _ALLOCA_S_THRESHOLD is 1024
 #define JL_MALLOCA_THRESHOLD 1024
 
-ALWAYS_INLINE void * FASTCALL
-jl__malloca_internal(void *mem, size_t heapMem) {
-	
-	if (likely( mem != NULL )) {
+namespace jlpv {
 
-		*(size_t*)mem = heapMem;
-		return (size_t*)mem+1;
-	} else {
+	ALWAYS_INLINE void * FASTCALL
+	MallocaInternal(void *mem, size_t heapMem) {
+		
+		if (likely( mem != NULL )) {
 
-		return NULL;
+			*(size_t*)mem = heapMem;
+			return (size_t*)mem+1;
+		} else {
+
+			return NULL;
+		}
 	}
 }
 
 #define jl_malloca(size) \
-	( ( (size)+sizeof(size_t) > JL_MALLOCA_THRESHOLD ) ? jl__malloca_internal(jl_malloc((size)+sizeof(size_t)), 1) : jl__malloca_internal(alloca((size)+sizeof(size_t)), 0) )
+	( ( (size)+sizeof(size_t) > JL_MALLOCA_THRESHOLD ) ? jlpv::MallocaInternal(jl_malloc((size)+sizeof(size_t)), 1) : jlpv::MallocaInternal(alloca((size)+sizeof(size_t)), 0) )
 
 ALWAYS_INLINE void
 jl_freea(void *mem) {

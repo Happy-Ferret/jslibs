@@ -286,7 +286,7 @@ END_CLASS
 NEVER_INLINE JSBool FASTCALL
 ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 
-	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(IoError), JL_PROTOTYPE(cx, IoError), NULL );
+	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(IoError), JL_CLASS_PROTOTYPE(cx, IoError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JL_CHK( JL_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) ) );
 	JL_CHK( JL_SetReservedSlot( cx, error, 1, INT_TO_JSVAL(osError) ) );

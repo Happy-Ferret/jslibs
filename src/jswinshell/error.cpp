@@ -183,7 +183,7 @@ END_CLASS
 NEVER_INLINE JSBool FASTCALL
 WinNewError( JSContext *cx, DWORD errorCode, jsval *rval ) {
 
-	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_PROTOTYPE(cx, WinError), NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
+	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_CLASS_PROTOTYPE(cx, WinError), NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
 	
 	*rval = OBJECT_TO_JSVAL( error );
 
@@ -197,7 +197,7 @@ NEVER_INLINE JSBool FASTCALL
 WinThrowError( JSContext *cx, DWORD errorCode ) {
 
 //	JL_SAFE(	JS_ReportWarning( cx, "WinError exception" ) );
-	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_PROTOTYPE(cx, WinError), NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
+	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_CLASS_PROTOTYPE(cx, WinError), NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
 //	JL_ASSERT( error != NULL, "Unable to create WinError object." );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 

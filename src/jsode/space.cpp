@@ -29,14 +29,14 @@ JSBool ReconstructSpace(JSContext *cx, ode::dSpaceID spaceId, JSObject **obj) { 
 	/*
 	if (unlikely( bodyId == (ode::dBodyID)0 )) { // bodyId may be null if body is world.env
 
-		*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
+		*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_CLASS_PROTOTYPE(cx, Body), NULL);
 		JL_CHK( *obj );
 	} else {
 
 		JL_ASSERT( ode::dBodyGetData(bodyId) == NULL, "Invalid case (object not finalized)." );
 		JL_ASSERT( bodyId != NULL, "Invalid ode object." );
 
-		*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_PROTOTYPE(cx, Body), NULL);
+		*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_CLASS_PROTOTYPE(cx, Body), NULL);
 		JL_CHK( *obj );
 //		BodyPrivate *bodypv = (BodyPrivate*)jl_malloc(sizeof(BodyPrivate));
 //		JL_ASSERT_ALLOC( bodypv );

@@ -17,6 +17,10 @@
 #define JL_HOST_PRIVATE_VERSION (JL_SvnRevToInt("$Revision: 3524 $"))
 #define JL_HOST_PRIVATE_MAX_CLASS_PROTO_CACHE_BIT (9)
 
+#define JL_CAMELCASE_DEFAULT 0
+#define JL_CAMELCASE_LOWER 1 // loadModule
+#define JL_CAMELCASE_UPPER 2 // LoadModule
+
 struct ClassProtoCache {
 	JSClass *clasp;
 	JSObject *proto;
