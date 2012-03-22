@@ -741,20 +741,26 @@ namespace jl {
 				case JLSTErrorObject: {
 
 					SerializerConstBufferInfo constructorName;
-					jsval constructor, tmp;
+					jsval constructor, constructorArgs[3], stack;
 					JL_CHK( Read(cx, constructorName) );
+
 					// js_GetClassPrototype
 					JL_CHK( JS_GetUCProperty(cx, JL_GetGlobal(cx), (const jschar *)constructorName.Data(), constructorName.Length() / 2, &constructor) );
-					JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);
+					JL_ASSERT( JSVAL_IS_OBJECT(constructor), E_TY_ERROR, E_NOTCONSTRUCT );
+
+					//JSClass *cl = JL_GetErrorJSClassJSClassByProtoKey(cx, JSProto_Error, JL_GetGlobal(cx));
+					//JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);
+
+					JL_CHK( Read(cx, constructorArgs[0]) ); // message
+					JL_CHK( Read(cx, constructorArgs[1]) ); // fileName
+					JL_CHK( Read(cx, constructorArgs[2]) ); // lineNumber
+					JL_CHK( Read(cx, stack) );
+
+					JSObject *errorObj = JS_New(cx, JSVAL_TO_OBJECT(constructor), COUNTOF(constructorArgs), constructorArgs);
+					JL_CHK( errorObj );
 					val = OBJECT_TO_JSVAL(errorObj);
-					JL_CHK( Read(cx, tmp) );
-					JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, message), &tmp) );
-					JL_CHK( Read(cx, tmp) );
-					JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, fileName), &tmp) );
-					JL_CHK( Read(cx, tmp) );
-					JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, lineNumber), &tmp) );
-					JL_CHK( Read(cx, tmp) );
-					JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, stack), &tmp) );
+
+					JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, stack), &stack) );
 					break;
 				}
 				case JLSTFunction: {

@@ -421,7 +421,4 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 		PROPERTY_GETTER( hasDevice )
 	END_STATIC_PROPERTY_SPEC
 
-	BEGIN_STATIC_FUNCTION_SPEC
-	END_STATIC_FUNCTION_SPEC
-
 END_CLASS

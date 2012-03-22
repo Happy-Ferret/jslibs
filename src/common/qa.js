@@ -20,6 +20,7 @@ function QAAPI(cx) {
 		
 		if ( val === undefined )
 			return 'undefined';
+/* see below
 		if ( typeof(val) == 'number' )
 			return val;
 		if ( typeof(val) == 'string' ) {
@@ -31,8 +32,13 @@ function QAAPI(cx) {
 		if ( val instanceof Array )
 			return '['+val+']';
 		return '('+valueType(val)+')'+val;
+*/
+		val = uneval(val);
+		if ( val.length > 50 )
+			val = val.substr(0, 47).quote()+'...';
+		return val;
 	}
-	
+
 	
 	//	this.__defineGetter__('cx', function() cx);
 	Object.defineProperty(this, 'cx', { get:function() cx });
@@ -51,6 +57,18 @@ function QAAPI(cx) {
 			cx.reportIssue( 'Invalid type, '+type.name+' is expected.', testName );
 	}
 
+	this.ASSERT_NOEXCEPTION = function( fct, testName ) {
+
+		cx.checkpoint('ASSERT_EXCEPTION', testName);
+		try {
+		
+			fct();
+		} catch( ex ) {
+
+			cx.reportIssue( 'Unexpected exception ('+String(ex)+')', testName );
+		}
+	}
+
 	this.ASSERT_EXCEPTION = function( fct, expectType, testName ) {
 		
 		cx.checkpoint('ASSERT_EXCEPTION', testName);
@@ -60,11 +78,17 @@ function QAAPI(cx) {
 			cx.reportIssue( 'Exception not detected (expect '+String(expectType)+')', testName );
 		} catch( ex ) {
 			
+//			if ( typeof(expectType) == 'function' ) {
+//				
+//				if ( !expectType(ex) )
+//					cx.reportIssue('Invalid exception details ("'+ex.message+'")', testName );
+//			} else
 			if ( typeof(expectType) != 'string' ) {
 
 				if ( ex != expectType && ex.constructor != expectType && !(ex instanceof expectType) )
 					cx.reportIssue('Invalid exception ('+ex.constructor.name+' != '+expectType.name+')', testName );
-			} else {
+			} else
+			{
 
 				if ( String(ex) != ('[object '+expectType+']') && ( ex.constructor.name != expectType ) )
 					cx.reportIssue('Invalid exception name ('+String(ex)+' != '+expectType+')', testName );

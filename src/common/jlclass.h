@@ -26,7 +26,7 @@ struct JLConstIntegerSpec {
 
 struct JLClassSpec {
 	JSClass clasp;
-	JSNative constructor; // JSFUN_CONSTRUCTOR ???
+	JSNative constructor; // (TBD) JSFUN_CONSTRUCTOR ???
 	uintN nargs;
 	const char *parentProtoName;
 	JSPropertySpec *ps;
@@ -102,7 +102,7 @@ JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JL_CHK(obj);
 
-	if ( JL_GetHostPrivate(cx)->camelCase == JL_CAMELCASE_UPPER )
+	if (unlikely( JL_GetHostPrivate(cx)->camelCase == JL_CAMELCASE_UPPER ))
 		JLNormalizeFunctionSpecNames(cs->static_fs);
 
 	if ( cs->static_fs != NULL )
@@ -118,9 +118,11 @@ JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	if ( cs->cds != NULL )
 		JL_CHK( JS_DefineConstDoubles(cx, obj, cs->cds) );
 
-	// (TBD) handle if obj is frozen ?
-	JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-	JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	if ( JS_IsExtensible(obj) ) {
+	
+		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	}
 
 	if ( cs->init )
 		JL_CHK( cs->init(cx, cs, NULL, obj) );
@@ -129,22 +131,14 @@ JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_BAD;
 }
 
-
-INLINE JSBool
-InvalidConstructor(JSContext *cx, uintN, jsval *) {
-
-	JL_ERR( E_CLASS, E_NOTCONSTRUCT );
-	JL_BAD;
-}
-
-
 INLINE JSBool
 JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JL_CHK(obj);
+
 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
 
-	if ( JL_GetHostPrivate(cx)->camelCase == JL_CAMELCASE_UPPER ) {
+	if (unlikely( JL_GetHostPrivate(cx)->camelCase == JL_CAMELCASE_UPPER )) {
 
 		JLNormalizeFunctionSpecNames(cs->fs);
 		JLNormalizeFunctionSpecNames(cs->static_fs);
@@ -153,35 +147,32 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	HostPrivate *hpv;
 	hpv = JL_GetHostPrivate(cx);
 
-	JSObject *parent_proto;
+	JSObject *parentProto;
 	if ( cs->parentProtoName != NULL ) {
 
-		parent_proto = JL_GetCachedClassProto(hpv, cs->parentProtoName)->proto;
-		JL_CHKM( parent_proto != NULL, E_STR(cs->parentProtoName), E_STR("prototype"), E_NOTFOUND );
+		parentProto = JL_GetCachedClassProto(hpv, cs->parentProtoName)->proto;
+		JL_CHKM( parentProto != NULL, E_STR(cs->parentProtoName), E_STR("prototype"), E_NOTFOUND );
 	} else {
 
-		parent_proto = NULL;
+		parentProto = NULL;
 	}
 
-	JSObject *proto;
-	proto = JS_InitClass(cx, obj, parent_proto, &cs->clasp, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
+	JSObject *proto; // doc: object that is the prototype for the newly initialized class.
+	proto = JS_InitClass(cx, obj, parentProto, &cs->clasp, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
 
 	JL_ASSERT( proto != NULL, E_CLASS, E_NAME(cs->clasp.name), E_CREATE ); //RTE
 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(cx, proto) == NULL );
+	
 	JL_CHKM( JL_CacheClassProto(hpv, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
 	JSObject *staticDest;
-	bool destFrozen;
 	if ( cs->constructor ) {
 
 		staticDest = JL_GetConstructor(cx, proto);
-		destFrozen = (cs->clasp.flags & JSCLASS_FREEZE_CTOR) != 0;
 	} else {
 
 		staticDest = proto;
-		destFrozen = (cs->clasp.flags & JSCLASS_FREEZE_PROTO) != 0;
 	}
-
 
 	if ( cs->ps != NULL )
 		JL_CHK( JL_DefineClassProperties(cx, proto, cs->ps) );
@@ -196,11 +187,8 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	if ( cs->cds != NULL )
 		JL_CHK( JS_DefineConstDoubles(cx, staticDest, cs->cds) );
 
-	JSBool found;
-	JL_CHK( JS_SetPropertyAttributes(cx, obj, cs->clasp.name, JSPROP_READONLY | JSPROP_PERMANENT, &found) );
-	ASSERT( found ); // "Unable to set class flags."
 
-	if ( !destFrozen ) {
+	if ( JS_IsExtensible(staticDest) ) {
 		
 		JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 		JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
@@ -347,15 +335,56 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	cs.parentProtoName = #PROTOTYPENAME; \
 
 #define HAS_CONSTRUCTOR_ARGC(ARGC) \
-	ASSERT(cs.constructor == NULL); cs.constructor = Constructor; cs.argc = (ARGC);
+	ASSERT(cs.constructor == NULL); \
+	cs.constructor = Constructor; cs.argc = (ARGC);
 
 #define HAS_CONSTRUCTOR \
-	ASSERT(cs.constructor == NULL); cs.constructor = Constructor;
-
-#define IS_INCONSTRUCTIBLE \
-	ASSERT(cs.constructor == NULL); cs.constructor = InvalidConstructor;
+	ASSERT(cs.constructor == NULL); \
+	cs.constructor = Constructor;
 
 #define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, uintN argc, jsval *vp)
+
+
+INLINE JSBool
+InvalidConstructor(JSContext *cx, uintN, jsval *) {
+
+	JL_ERR( E_CLASS, E_NOTCONSTRUCT );
+	JL_BAD;
+}
+
+// throw an error if one tries to construct it
+// (TBD) see error in js_ReportIsNotFunction
+#define IS_UNCONSTRUCTIBLE \
+	ASSERT(cs.constructor == NULL); \
+	cs.constructor = InvalidConstructor;
+
+
+INLINE JSBool
+DefaultInstanceof(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp) {
+
+	// *bp = !JSVAL_IS_PRIMITIVE(*v) && js::GetObjectJSClass(JSVAL_TO_OBJECT(*v)) == js::GetObjectJSClass(obj); // incomplete
+
+	if ( !JSVAL_IS_PRIMITIVE(*v) ) {
+		
+		JSClass *objClass = js::GetObjectJSClass(obj);
+		JSObject *it = JSVAL_TO_OBJECT(*v);
+		do {
+
+			if ( js::GetObjectJSClass(it) == objClass ) {
+				
+				*bp = JS_TRUE;
+				return JS_TRUE;
+			}
+			it = JL_GetPrototype(cx, it);
+		} while ( it != NULL );
+	}
+	*bp = JS_FALSE;
+	return JS_TRUE;
+}
+
+#define HAS_DEFAULT_INSTANCEOF \
+	ASSERT(cs.clasp.hasInstance == NULL); \
+	cs.clasp.hasInstance = DefaultInstanceof;
 
 #define HAS_FINALIZE cs.clasp.finalize = Finalize;
 // make Finalize able to return a value ( good for bad: ):

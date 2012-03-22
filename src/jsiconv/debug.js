@@ -1,3 +1,11 @@
+loadModule('jsstd'); exec('../common/tools.js');
+//var QA = FakeQAApi;
+//runLocalQAFile();
+//runJsircbot(false); throw 0;
+runQATests('-rep 1 -exclude jstask jsiconv'); throw 0;
+
+
+
 loadModule('jsstd'); 
 loadModule('jsiconv'); 
 
@@ -10,11 +18,6 @@ loadModule('jsiconv');
 throw 0;
 
 
-loadModule('jsstd'); exec('../common/tools.js');
-//var QA = FakeQAApi;
-//runLocalQAFile();
-//runJsircbot(false); throw 0;
-runQATests('-rep 1 -exclude jstask jsiconv');
 
 
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();

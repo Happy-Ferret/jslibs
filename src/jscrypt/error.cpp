@@ -106,16 +106,6 @@ DEFINE_FUNCTION( toString ) {
 	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
-/*
-DEFINE_HAS_INSTANCE() { // see issue#52
-
-	JL_IGNORE(obj);
-
-	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
-	return JS_TRUE;
-}
-*/
-
 
 /*
 DEFINE_FUNCTION( _serialize ) {
@@ -164,8 +154,8 @@ CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
 
-	//HAS_HAS_INSTANCE // see issue#52
-	IS_INCONSTRUCTIBLE
+	HAS_RESERVED_SLOTS(1)
+	IS_UNCONSTRUCTIBLE
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_GETTER( code )
@@ -178,8 +168,6 @@ CONFIGURE_CLASS
 //		FUNCTION_ARGC(_serialize, 1)
 //		FUNCTION_ARGC(_unserialize, 1)
 	END_FUNCTION_SPEC
-
-	HAS_RESERVED_SLOTS(1)
 
 END_CLASS
 

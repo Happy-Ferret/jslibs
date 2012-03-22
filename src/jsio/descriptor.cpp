@@ -915,20 +915,14 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 **/
 
 
-/*
-DEFINE_HAS_INSTANCE() { // see issue#52
+/**qa
 
-	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
-	return JS_TRUE;
-}
-*/
-
+**/
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 
-	//HAS_HAS_INSTANCE // see issue#52
-	IS_INCONSTRUCTIBLE
+	IS_UNCONSTRUCTIBLE
 
 	HAS_PRIVATE // unused. Just avoid print(Descriptor.available); to crash
 

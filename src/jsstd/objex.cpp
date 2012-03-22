@@ -169,19 +169,11 @@ DEFINE_FUNCTION( aux ) {
 
 }
 
-//DEFINE_HAS_INSTANCE() { // see issue#52
-//
-//	*bp = JL_IsClass(*v, JL_THIS_CLASS);
-//	return JS_TRUE;
-//}
-
-
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_RESERVED_SLOTS(5)
 	HAS_CONSTRUCTOR
-//	HAS_HAS_INSTANCE
 
 	HAS_ADD_PROPERTY
 	HAS_DEL_PROPERTY

@@ -1,10 +1,15 @@
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jscrypt -exclude jstask'); throw 0;
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jscrypt -exclude jstask'); throw 0;
 
 
 loadModule('jsstd');
 loadModule('jscrypt');
+
+
+print( CryptError.text, '\n' );
+
+throw 0;
 
 var cr = new Cipher("ECB", "cast5", "my");
 

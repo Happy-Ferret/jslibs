@@ -925,12 +925,12 @@ $TOC_MEMBER $INAME
 **/
 
 /**qa
+	QA.ASSERT_EXCEPTION( function() { new OperationLimit }, TypeError, 'unconstructability' );
 	QA.ASSERT_EXCEPTION( function() { (function f(){f();})(); }, InternalError, 'too much recursion' );
 	QA.ASSERT_EXCEPTION( function() { sandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 250) }, OperationLimit, 'OperationLimit detection' );
 	QA.ASSERT_EQ( '!typeof', OperationLimit, 'undefined' );
 	QA.ASSERT_EQ( '===', OperationLimit.constructor, StopIteration.constructor );
 	QA.ASSERT_EQ( '===', OperationLimit.prototype, StopIteration.prototype );
-	
 
 // OperationLimit instance test
 	try {
@@ -973,8 +973,10 @@ DEFINE_HAS_INSTANCE() {
 }
 
 CONFIGURE_CLASS
+
 	FROZEN_PROTOTYPE
-	HAS_HAS_INSTANCE // see issue#52
+	HAS_HAS_INSTANCE
+
 END_CLASS
 
 

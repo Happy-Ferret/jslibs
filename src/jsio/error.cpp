@@ -117,16 +117,6 @@ BEGIN_CLASS( IoError )
 **/
 
 
-/* see issue#52
-DEFINE_CONSTRUCTOR() {
-
-	JL_DEFINE_CONSTRUCTOR_OBJ;
-
-	JL_REPORT_ERROR( "This object cannot be construct." ); // (TBD) remove constructor and define HAS_HAS_INSTANCE
-	return JS_TRUE;
-}
-*/
-
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME $READONLY
@@ -201,14 +191,6 @@ DEFINE_FUNCTION( toString ) {
 }
 
 /*
-DEFINE_HAS_INSTANCE() { // see issue#52
-
-	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
-	return JS_TRUE;
-}
-*/
-
-/*
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -256,13 +238,16 @@ DEFINE_FUNCTION( _unserialize ) {
 }
 */
 
+/**qa
+	QA.ASSERT_EQ( '!in', IoError, 'text' );
+	QA.ASSERT_EQ( 'in', IoError.prototype, 'text' );
+**/
+
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
-
-//	HAS_CONSTRUCTOR // see issue#52
-	//HAS_HAS_INSTANCE // see issue#52
-	IS_INCONSTRUCTIBLE
+	HAS_RESERVED_SLOTS(2)
+	IS_UNCONSTRUCTIBLE
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_GETTER( code )
@@ -276,8 +261,6 @@ CONFIGURE_CLASS
 //		FUNCTION_ARGC(_serialize, 1)
 //		FUNCTION_ARGC(_unserialize, 1)
 	END_FUNCTION_SPEC
-
-	HAS_RESERVED_SLOTS(2)
 
 END_CLASS
 

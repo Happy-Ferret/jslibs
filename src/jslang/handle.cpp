@@ -79,15 +79,6 @@ DEFINE_FUNCTION( valueOf ) {
 */
 
 
-/*
-DEFINE_HAS_INSTANCE() { // see issue#52
-
-	JL_IGNORE(obj);
-	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
-	return JS_TRUE;
-}
-*/
-
 DEFINE_INIT() {
 
 	JL_IGNORE(cx, sc, proto, obj);
@@ -131,22 +122,28 @@ DEFINE_FUNCTION( _unserialize ) {
 */
 
 /**qa
-	Handle.prototype.xxx = 123;
-	QA.ASSERT_EQ( '!=', Handle.prototype.xxx, 123, 'FROZEN_PROTOTYPE' );
+	
+//	QA.ASSERT_NOEXCEPTION( function() { Handle.prototype.xxx = 123; } );
+//	QA.ASSERT_EQ( '!=', Handle.prototype.xxx, 123, 'FROZEN_PROTOTYPE' );
+
 	QA.ASSERT_EQ( '<=', new Date(Handle._buildDate + new Date().getTimezoneOffset() * 60 * 1000), Date.now(), 'build date validity' );
 	QA.ASSERT_EQ( '>', Handle._buildDate, 0, 'build date validity' );
+
+	var handle = timeoutEvents(100);
+
+	QA.ASSERT_EQ( 'instanceof', handle, Handle);
+
 **/
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
 	HAS_INIT
-	FROZEN_PROTOTYPE
+//	FROZEN_PROTOTYPE
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(HANDLE_PUBLIC_SLOT_COUNT)
 	HAS_FINALIZE
 	
-	//HAS_HAS_INSTANCE
-	IS_INCONSTRUCTIBLE
+	IS_UNCONSTRUCTIBLE
 
 	BEGIN_FUNCTION_SPEC
 

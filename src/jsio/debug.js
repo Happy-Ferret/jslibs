@@ -1,11 +1,15 @@
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
 
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio -exclude jstask'); throw 0;
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio -exclude jstask'); throw 0;
 
 loadModule('jsstd');
 loadModule('jsio');
 
+print( Descriptor.import, '\n' );
+
+
+throw 0;
 
 new Directory('asdfvsadfvsadf').exist;
 

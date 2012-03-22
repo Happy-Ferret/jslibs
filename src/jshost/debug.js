@@ -10,6 +10,23 @@ loadModule('jsstd');
 //print( new Date(Handle._buildDate + new Date().getTimezoneOffset() * 60 * 1000), '\n' );
 
 
+//var handle = timeoutEvents(100);
+
+print( Handle.prototype, '\n' ); // HAS_DEFAULT_INSTANCEOF
+
+print( Handle._buildDate, '\n' ); // FROZEN_PROTOTYPE
+throw 0;
+
+
+
+print( handle instanceof Handle, '\n' );
+print( handle.__proto__, '\n' );
+print( handle.constructor, '\n' );
+print( Handle.prototype, '\n' );
+
+throw 0;
+
+
 //SetPerfTestMode();
 
 //loadModule('jscrypt');

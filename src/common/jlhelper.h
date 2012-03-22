@@ -203,13 +203,20 @@ JL_GetParent(JSContext *cx, JSObject *obj) {
 	return js::GetObjectParent(obj);
 }
 
-
 ALWAYS_INLINE JSBool FASTCALL
 JL_GetClassPrototype(JSContext *cx, JSObject *scopeobj, JSProtoKey protoKey, JSObject **protop) {
 
 	return js_GetClassPrototype(cx, scopeobj, protoKey, protop);
 }
 
+ALWAYS_INLINE JSClass* FASTCALL
+JL_GetErrorJSClassJSClassByProtoKey( JSContext *cx, JSProtoKey protoKey, JSObject *parent ) {
+
+	JSObject *proto;
+	if ( !JL_GetClassPrototype(cx, parent, protoKey, &proto) )
+		return NULL;
+	return JL_GetClass(proto);
+}
 
 ALWAYS_INLINE JSBool FASTCALL
 JL_GetElement(JSContext *cx, JSObject *obj, jsuint index, jsval *vp) {
@@ -680,6 +687,21 @@ JL_RemoveCachedClassProto( HostPrivate * const hpv, const char *const className 
 ///////////////////////////////////////////////////////////////////////////////
 // new object management
 
+/*
+ALWAYS_INLINE JSObject* FASTCALL
+JL_NewObjectWithGivenProtoKey( JSContext *cx, JSProtoKey protoKey, JSObject *parent ) {
+
+	ASSERT( parent );
+	JSObject *proto;
+	if ( !JL_GetClassPrototype(cx, parent, protoKey, &proto) )
+		return NULL;
+	JSClass *clasp = JL_GetClass(proto);
+	JSObject *obj = JS_NewObjectWithGivenProto(cx, clasp, proto, parent);
+	ASSERT( JL_GetParent(cx, obj) != NULL );
+	return obj;
+}
+*/
+
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, JSObject *proto, JSObject *parent ) {
 
@@ -1017,6 +1039,7 @@ JL_ObjectIsError( JSContext *cx, JSObject *obj ) {
 	JSObject *proto;
 	return JL_GetClassPrototype(cx, JL_GetGlobal(cx), JSProto_Error, &proto) && JL_GetClass(obj) == JL_GetClass(proto); // note: JS_GetClass( (new SyntaxError()) ) => JSProto_Error
 }
+
 
 ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsCallable( JSContext *cx, JSObject *obj ) {
