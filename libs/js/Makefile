@@ -12,6 +12,7 @@ else
 	_CFLAGS += -m32
 endif
 
+_CFLAGS += -DJS_USE_CUSTOM_ALLOCATOR=1 -I.. -I../..
 
 TARGET_FILES=$(INT_DIR)dist/bin/*.{so,dll}
 
