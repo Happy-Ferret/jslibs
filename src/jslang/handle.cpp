@@ -124,14 +124,14 @@ DEFINE_FUNCTION( _unserialize ) {
 /**qa
 	
 //	QA.ASSERT_NOEXCEPTION( function() { Handle.prototype.xxx = 123; } );
-//	QA.ASSERT_EQ( '!=', Handle.prototype.xxx, 123, 'FROZEN_PROTOTYPE' );
+//	QA.ASSERTOP( Handle.prototype.xxx, '!=', 123, 'FROZEN_PROTOTYPE' );
 
-	QA.ASSERT_EQ( '<=', new Date(Handle._buildDate + new Date().getTimezoneOffset() * 60 * 1000), Date.now(), 'build date validity' );
-	QA.ASSERT_EQ( '>', Handle._buildDate, 0, 'build date validity' );
+	QA.ASSERTOP( new Date(Handle._buildDate + new Date().getTimezoneOffset() * 60 * 1000), '<=', Date.now(), 'build date validity' );
+	QA.ASSERTOP( Handle._buildDate, '>', 0, 'build date validity' );
 
 	var handle = timeoutEvents(100);
 
-	QA.ASSERT_EQ( 'instanceof', handle, Handle);
+	QA.ASSERTOP( handle, 'instanceof', Handle);
 
 **/
 CONFIGURE_CLASS

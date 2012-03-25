@@ -12,7 +12,7 @@ loadModule('jsstd');
 //		errorMsg += txt;
 //	}
 	
-	QA.ASSERT_EXCEPTION(function() { exec(filename, false) }, SyntaxError, 'exec handle compilation errors');
+	QA.ASSERTOP(function() { exec(filename, false) }, 'ex', SyntaxError, 'exec handle compilation errors');
 
 	new File(filename).content = undefined;
 	
@@ -116,7 +116,7 @@ loadModule('jsstd');
 		function setOnceObject() new ObjEx( undefined,undefined,undefined, function(name, value) this[name] ? (function() { throw new MyException() })() : value );
 		var o = setOnceObject();
 		o.abc = 123;
-		QA.ASSERT_EXCEPTION( function() {  o.abc = 456;  }, MyException, 'using setter' );
+		QA.ASSERTOP( function() {  o.abc = 456;  }, 'ex', MyException, 'using setter' );
 
 
 /// ObjEx data slot [ftrm]
@@ -175,7 +175,7 @@ loadModule('jsstd');
 		var count = 0;
 		for each ( id in (ids) ) {
 
-			QA.ASSERT_TYPE( id, 'number', 'id type is good' );
+			QA.ASSERTOP( id, 'typeof', 'number', 'id type is good' );
 			QA.ASSERT( id >= 1, true, 'id is valid' );
 		
 			count += ((idToObject(id) == undefined) ? 0 : 1);
@@ -187,7 +187,7 @@ loadModule('jsstd');
 		var count = 0;
 		for each ( id in (ids) ) {
 
-			QA.ASSERT_TYPE( id, 'number', 'id type is good' );
+			QA.ASSERTOP( id, 'typeof', 'number', 'id type is good' );
 			QA.ASSERT( id >= 1, true, 'id is valid' );
 		
 			count += ((idToObject(id) == undefined) ? 0 : 1);
@@ -545,7 +545,7 @@ loadModule('jsstd');
 	var v = pack.readInt(8);
 	QA.ASSERT(v, 9007199254740991, "max value");
 
-	QA.ASSERT_EXCEPTION( function() { pack.writeInt(9007199254740992, 8, true) }, RangeError, "value overflow" );
+	QA.ASSERTOP( function() { pack.writeInt(9007199254740992, 8, true) }, 'ex', RangeError, "value overflow" );
 
 
 /// Pack endian [ftrm]
@@ -687,7 +687,7 @@ loadModule('jsstd');
 		QA.ASSERT( expand('', function(key) key), '', 'expanding a string' );
 		QA.ASSERT( expand('', function(key) key), '', 'expanding a string' );
 
-		QA.ASSERT_EXCEPTION( function() expand('$()', function(key) { throw 123 }), 123, 'Expand function throw exception' );
+		QA.ASSERTOP( function() expand('$()', function(key) { throw 123 }), 'ex', 123, 'Expand function throw exception' );
 
 		var obj = {
 			toString: function() {
@@ -731,7 +731,7 @@ loadModule('jsstd');
 
 /// exec error [ftrm]
 
-		QA.ASSERT_EXCEPTION( function() exec('e654ser65t'), ReferenceError, 'exec unknown file' );
+		QA.ASSERTOP( function() exec('e654ser65t'), 'ex', ReferenceError, 'exec unknown file' );
 
 		
 /// exec basic test [ftrm]
@@ -786,7 +786,7 @@ loadModule('jsstd');
 /// XDR serialization [ftrmd]
 
 		var s = new Script('/./');
-		QA.ASSERT_EXCEPTION( function() xdrEncode(s), TypeError );
+		QA.ASSERTOP( function() xdrEncode(s), 'ex', TypeError );
 		//var res = XdrDecode(XdrEncode(s));
 		//QA.ASSERT_STR( s.toSource(), res.toSource(), 'XDR->unXDR a Script' );
 
@@ -874,24 +874,26 @@ loadModule('jsstd');
 		QA.ASSERT( res == typeof loadModule, false, 'forbidden loadModule function access' );
 
 
-/// Sandbox basic Query [tfm]
+/// Sandbox basic query [tfm]
 
-		sandboxEval('', function() 123);
-		sandboxEval('Query()', function() 123);
+	QA.ASSERTOP( sandboxEval('', function() 123), '===', undefined );
+	QA.ASSERTOP( sandboxEval('typeof query'), '===', 'undefined' );
+	QA.ASSERTOP( sandboxEval('query()', function() 123), '===', 123 );
+	
 
 /// Sandbox Query [tfm]
 
-		var res = Function("var v = 567; return sandboxEval('Query()', function(val) v)")();
+		var res = Function("var v = 567; return sandboxEval('query()', function(val) v)")();
 		QA.ASSERT( res, 567, 'SandboxEval result using Function( query function )' );
 
-		var res = sandboxEval('Query(123)', function(val) val + 1 );
+		var res = sandboxEval('query(123)', function(val) val + 1 );
 		QA.ASSERT( res, 124, 'SandboxEval result using query function' );
 		
 		var obj = {};
-		QA.ASSERT_EXCEPTION( function() {  sandboxEval('Query()', function(val) obj)  }, 'TypeError', 'Query returns a non-primitive value');
+		QA.ASSERTOP( function() { sandboxEval('query()', function(val) obj) }, 'ex', 'TypeError', 'Query returns a non-primitive value');
 
 //		var obj = { abc: 321 };
-//		QA.ASSERT( SandboxEval('Query()', function(val) obj).abc, 321, 'Query return value');
+//		QA.ASSERT( SandboxEval('query()', function(val) obj).abc, 321, 'Query return value');
 
 
 /// Disabled GC [r]
@@ -928,7 +930,7 @@ loadModule('jsstd');
 
 /// Sandbox watchdog [rmt]
 	
-	QA.ASSERT_EXCEPTION( function() { sandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 250) }, OperationLimit, 'OperationLimit detection' );
+	QA.ASSERTOP( function() { sandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 250) }, 'ex', OperationLimit, 'OperationLimit detection' );
 
 
 /// OperationLimit is not extensible [fmtr d]
@@ -939,13 +941,13 @@ loadModule('jsstd');
 		QA.FAILED('OperationLimit exception not thrown');
 	} catch (ex) {
 
-		QA.ASSERT_EXCEPTION( function() { 'use strict'; ex.__proto__.test = 1 }, TypeError, 'OperationLimit extensibility' );
+		QA.ASSERTOP( function() { 'use strict'; ex.__proto__.test = 1 }, 'ex', TypeError, 'OperationLimit extensibility' );
 	}
 
 
 /// Sandbox stack overflow [rmt]
 
-	QA.ASSERT_EXCEPTION( function() { sandboxEval('(function f(){f();})();') }, 'InternalError', 'Stack overflow detection' );
+	QA.ASSERTOP( function() { sandboxEval('(function f(){f();})();') }, 'ex', 'InternalError', 'Stack overflow detection' );
 
 
 /// exec function [f]

@@ -89,8 +89,8 @@ loadModule('jsio');
 
 /// host version info [rmtf]
 
-	QA.ASSERT( _host.revision > 3400, true, 'revision version validity' );
-	QA.ASSERT( _host.jsVersion >= 185, true, 'javascript version validity' );
+	QA.ASSERTOP( _host.revision, '>', 3400, 'revision version validity' );
+	QA.ASSERTOP( _host.jsVersion, '>=', 185, 'javascript version validity' );
 	
 	
 	
@@ -142,7 +142,7 @@ loadModule('jsio');
 		print('this_is_a_test');
 		_host.stdout = prev;
 
-		QA.ASSERT( buffer.indexOf('this_is_a_test') != -1, true, 'stdout redirection result' ); 
+		QA.ASSERTOP( buffer.indexOf('this_is_a_test'), '!=', -1, 'stdout redirection result' ); 
 
 
 
@@ -160,13 +160,13 @@ loadModule('jsio');
 /// loadModule function [ftrm]
 		
 		var id = loadModule('jsstd');
-		QA.ASSERT( loadModule('jsstd'), id, 'reloading the same module' );
-		QA.ASSERT( loadModule('azyegyiazgiazygc'), false, 'loading inexisting module' );
-		QA.ASSERT( loadModule(undefined), false, 'loading inexisting module' );
-		QA.ASSERT( loadModule(0), false, 'loading inexisting module' );
-		QA.ASSERT( loadModule(0.0), false, 'loading inexisting module' );
-		QA.ASSERT( loadModule(''), false, 'loading inexisting module' );
-		QA.ASSERT( loadModule(NaN), false, 'loading inexisting module' );
+		QA.ASSERTOP( loadModule('jsstd'), '===', id, 'reloading the same module' );
+		QA.ASSERTOP( loadModule('azyegyiazgiazygc'), '===', false, 'loading inexisting module' );
+		QA.ASSERTOP( loadModule(undefined), '===', false, 'loading inexisting module' );
+		QA.ASSERTOP( loadModule(0), '===', false, 'loading inexisting module' );
+		QA.ASSERTOP( loadModule(0.0), '===', false, 'loading inexisting module' );
+		QA.ASSERTOP( loadModule(''), '===', false, 'loading inexisting module' );
+		QA.ASSERTOP( loadModule(NaN), '===', false, 'loading inexisting module' );
 		//QA.ASSERT_EXCEPTION(function() loadModule(), RangeError, 'call loadModule() without arguments');
 
 
@@ -191,42 +191,46 @@ loadModule('jsio');
 		
 		disableGarbageCollection = prev;
 
-		QA.ASSERT( mem > 3 && mem < 3.02, true, 'string memory usage ('+mem+')' );
+		QA.ASSERTOP( mem, '>', 3, 'min string memory usage' );
+		QA.ASSERTOP( mem, '<', 3.02, 'max string memory usage' );
 
 
 
 /// undefined is read-only [ftrm]
 
-	QA.ASSERT( undefined in global, true, 'undefined is in global object' );
+	QA.ASSERTOP( undefined, 'in', global, 'undefined is in global object' );
 	delete undefined;
 	delete global.undefined;
-	QA.ASSERT( undefined in global, true, 'undefined is in global object' );
+	QA.ASSERTOP( undefined, 'in', global, 'undefined is still in global object' );
 
-	QA.ASSERT( undefined, (void 0), 'undefined is (void 0)' );
+	QA.ASSERTOP( undefined, '===', (void 0), 'undefined is (void 0)' );
 	undefined = 123;
-	QA.ASSERT( undefined, (void 0), 'undefined is (void 0)' );
+	QA.ASSERTOP( undefined, '===', (void 0), 'undefined is still (void 0)' );
 
 
 
 /// global object [f]
 
-	QA.ASSERT( typeof global, 'object', 'global type' );
+	QA.ASSERTOP( global, 'typeof', 'object', 'global type' );
 	delete global;
 	delete global.global;
-	QA.ASSERT( typeof global, 'object', 'global type after delete' );
+	QA.ASSERTOP( global, 'typeof', 'object', 'global type after delete' );
 	QA.ASSERT_STR( global.valueOf(), '[object Global]', 'global class' );
-	QA.ASSERT( uneval( global ).length > 0, true, 'uneval global' );
-	QA.ASSERT( global.Math, Math, 'global std objects' );
-	QA.ASSERT_HAS_PROPERTIES( global, '_host,arguments' );
-	QA.ASSERT( global.arguments[0].indexOf('js') != -1, true , 'current script' );
-	QA.ASSERT_TYPE( global.arguments, Array, 'arguments type' );
-
+	QA.ASSERTOP( uneval(global).length, '>', 0, 'uneval global' );
+	QA.ASSERTOP( global.Math, '===', Math, 'global std objects' );
+	QA.ASSERTOP( global, 'has', '_host' );
+	QA.ASSERTOP( global, 'has', 'arguments' );
+	QA.ASSERTOP( global.arguments[0].indexOf('js'), '!=', -1, 'current script' );
+	QA.ASSERTOP( global.arguments, 'instanceof', Array, 'arguments type' );
 
 
 /// global _host object [f]
 
-	QA.ASSERT( typeof global._host, 'object', '_host is object' );
-	QA.ASSERT_HAS_PROPERTIES( global._host, 'unsafeMode,stdout,stderr' );
+	QA.ASSERTOP( global._host, 'typeof', 'object', '_host is object' );
+	QA.ASSERTOP( global._host, 'has', 'unsafeMode' );
+	QA.ASSERTOP( global._host, 'has', 'stdout' );
+	QA.ASSERTOP( global._host, 'has', 'stderr' );
+	QA.ASSERTOP( global._host, 'has', 'stdin' );
 
 	
 	

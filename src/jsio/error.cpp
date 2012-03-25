@@ -239,8 +239,8 @@ DEFINE_FUNCTION( _unserialize ) {
 */
 
 /**qa
-	QA.ASSERT_EQ( '!in', IoError, 'text' );
-	QA.ASSERT_EQ( 'in', IoError.prototype, 'text' );
+	QA.ASSERTOP( IoError, '!has', 'text' );
+	QA.ASSERTOP( IoError.prototype, 'has', 'text' );
 **/
 
 CONFIGURE_CLASS

@@ -162,9 +162,9 @@ loadModule('jsio');
 	myTask.request(2);
 	myTask.request(3);
 	
-	QA.ASSERT_EXCEPTION( function() myTask.response(), 'my exception 1', 'the exception' );
-	QA.ASSERT_EXCEPTION( function() myTask.response(), 'my exception 2', 'the exception' );
-	QA.ASSERT_EXCEPTION( function() myTask.response(), 'my exception 3', 'the exception' );
+	QA.ASSERTOP( function() myTask.response(), 'ex', 'my exception 1', 'the exception' );
+	QA.ASSERTOP( function() myTask.response(), 'ex', 'my exception 2', 'the exception' );
+	QA.ASSERTOP( function() myTask.response(), 'ex', 'my exception 3', 'the exception' );
 
 
 /// task idle property [fr]

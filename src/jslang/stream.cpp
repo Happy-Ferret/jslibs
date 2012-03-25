@@ -178,9 +178,9 @@ $TOC_MEMBER $INAME
   The remaining data from the stream pointer position to the end of the stream.
 **/
 /**qa
-	QA.ASSERT_EQ( 'in', Stream(stringify('1234ABCDEF', true)), 'available' );
-	QA.ASSERT_EQ( '===', Stream(stringify('1234ABCDEF', true)).available, undefined );
-	QA.ASSERT_EQ( '==', Stream(Int8Array(stringify("1234ABCDEF", true))).available, 10 );
+	QA.ASSERTOP( Stream(stringify('1234ABCDEF', true)), 'has', 'available' );
+	QA.ASSERTOP( Stream(stringify('1234ABCDEF', true)).available, '===', undefined );
+	QA.ASSERTOP( Stream(Int8Array(stringify("1234ABCDEF", true))).available, '==', 10 );
 **/
 DEFINE_PROPERTY_GETTER( available ) {
 

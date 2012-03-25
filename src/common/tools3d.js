@@ -793,7 +793,7 @@ function UI(currentWidth, currentHeight) {
 		
 		while ( !endSignal ) {
 
-			var events = [ EndSignalEvents(), SDLEvents(listeners), surfaceReadyEvents.call(this, surfaceReady) ];
+			var events = [ endSignalEvents(), SDLEvents(listeners), surfaceReadyEvents.call(this, surfaceReady) ];
 			additionalEventCallback && additionalEventCallback(events);
 			processEvents.apply(this, events);
 		}

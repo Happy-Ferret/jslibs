@@ -270,6 +270,15 @@ EXTERN_C void jl_free_count( void *ptr ) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
+/**qa
+	QA.ASSERTOP(global, 'has', 'scripthostpath');
+	QA.ASSERTOP(global, 'has', 'scripthostname');
+	if ( scripthostname.indexOf('jshost') == 0 ) {
+
+		QA.ASSERTOP(global, 'has', 'endSignal');
+		QA.ASSERTOP(global, 'has', 'endSignalEvents');
+	}
+**/
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
 
 //	BOOL st = SetProcessAffinityMask(GetCurrentProcess(), 1);
@@ -363,30 +372,38 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	if ( useJslibsMemoryManager ) {
 
-	#ifdef JS_HAS_JSLIBS_RegisterCustomAllocators
+		#ifdef HAS_JL_ALLOCATORS
 		jl_malloc = nedmalloc;
 		jl_calloc = nedcalloc;
 		jl_memalign = nedmemalign;
 		jl_realloc = nedrealloc;
 		jl_msize = nedblksize_msize;
 		jl_free = nedfree_handlenull;
-	#endif // JS_HAS_JSLIBS_RegisterCustomAllocators
+		#endif // HAS_JL_ALLOCATORS
 
-	#ifdef DBG_ALLOC
+
+		#ifdef DBG_ALLOC
 		jl_malloc = jl_malloc_count;
 		jl_calloc = jl_calloc_count;
 		jl_memalign = jl_memalign_count;
 		jl_realloc = jl_realloc_count;
 		jl_msize = jl_msize_count;
 		jl_free = jl_free_count;
-	#endif // DBG_ALLOC
+		#endif // DBG_ALLOC
 		
-		InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
+
+		JL_CHK( InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free) );
 		
+
 	// jslibs and spidermonkey allocator should be the same, else JL_NewString() and JL_NewUCString() should be fixed !
-	#ifdef JS_HAS_JSLIBS_RegisterCustomAllocators
-		JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
-	#endif // JS_HAS_JSLIBS_RegisterCustomAllocators
+		#ifdef HAS_JL_ALLOCATORS
+
+		js_jl_malloc = jl_malloc;
+		js_jl_calloc = jl_calloc;
+		js_jl_realloc = jl_realloc;
+		js_jl_free = jl_free;
+	
+		#endif // HAS_JL_ALLOCATORS
 
 	} else {
 
@@ -397,7 +414,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		jl_msize = msize;
 		jl_free = free;
 
-	#ifdef DBG_ALLOC
+		#ifdef DBG_ALLOC
 		jl_malloc = jl_malloc_count;
 		jl_calloc = jl_calloc_count;
 		jl_memalign = jl_memalign_count;
@@ -405,7 +422,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		jl_msize = jl_msize_count;
 		jl_free = jl_free_count;
 		JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
-	#endif // DBG_ALLOC
+		#endif // DBG_ALLOC
 
 	}
 
@@ -456,7 +473,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 #endif
 
 	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
-	JL_CHK( JS_DefineFunction(cx, globalObject, "EndSignalEvents", (JSNative)EndSignalEvents, 0, JSPROP_SHARED | JSPROP_PERMANENT) );
+	JL_CHK( JS_DefineFunction(cx, globalObject, "endSignalEvents", EndSignalEvents, 0, JSPROP_SHARED | JSPROP_PERMANENT) );
 
 // script name
 	//	if ( inlineScript == NULL )

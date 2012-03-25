@@ -109,13 +109,13 @@ $TOC_MEMBER $INAME
   Returns $TRUE if the value is a primitive ( null or not an object ).
 **/
 /**qa
-	QA.ASSERT_EQ( '==', isPrimitive(true), true );
-	QA.ASSERT_EQ( '==', isPrimitive(false), true );
-	QA.ASSERT_EQ( '==', isPrimitive(1), true );
-	QA.ASSERT_EQ( '==', isPrimitive('a'), true );
-	QA.ASSERT_EQ( '==', isPrimitive(1.23), true );
-	QA.ASSERT_EQ( '==', isPrimitive(null), true );
-	QA.ASSERT_EQ( '==', isPrimitive(undefined), true );
+	QA.ASSERTOP( isPrimitive(true), '==', true );
+	QA.ASSERTOP( isPrimitive(false), '==', true );
+	QA.ASSERTOP( isPrimitive(1), '==', true );
+	QA.ASSERTOP( isPrimitive('a'), '==', true );
+	QA.ASSERTOP( isPrimitive(1.23), '==', true );
+	QA.ASSERTOP( isPrimitive(null), '==', true );
+	QA.ASSERTOP( isPrimitive(undefined), '==', true );
 **/
 DEFINE_FUNCTION( isPrimitive ) {
 
@@ -215,13 +215,13 @@ $TOC_MEMBER $INAME
   The _value_ argument may be: StreamRead compatible object, any kind of data value (string, TypedArray, ...)
 **/
 /**qa
-	QA.ASSERT_EQ( '==', stringify(), undefined );
-	QA.ASSERT_EQ( '==', stringify(undefined), undefined );
-	QA.ASSERT_EQ( '==', stringify('str'), 'str' );
-	QA.ASSERT_EQ( 'typeof', typeof stringify('str', false), 'string' );
-	QA.ASSERT_EQ( 'instanceof', stringify('str', true), ArrayBuffer );
-	QA.ASSERT_EQ( '===', stringify(stringify(stringify(stringify(stringify('abcd'), true)), true)), 'abcd' );
-	QA.ASSERT_EQ( '===', stringify(Uint16Array(stringify('\x00\x01\x02\x03', true))), '\u0100\u0302' ); // endian issue ?
+	QA.ASSERTOP( stringify(), '==', undefined );
+	QA.ASSERTOP( stringify(undefined), '==', undefined );
+	QA.ASSERTOP( stringify('str'), '==', 'str' );
+	QA.ASSERTOP( stringify('str', false), 'typeof', 'string' );
+	QA.ASSERTOP( stringify('str', true), 'instanceof', ArrayBuffer );
+	QA.ASSERTOP( stringify(stringify(stringify(stringify(stringify('abcd'), true)), true)), '===', 'abcd' );
+	QA.ASSERTOP( stringify(Uint16Array(stringify('\x00\x01\x02\x03', true))), '===', '\u0100\u0302' ); // endian issue ?
 **/
 DEFINE_FUNCTION( stringify ) {
 
@@ -304,7 +304,9 @@ $TOC_MEMBER $INAME
 	QA.ASSERT(join([]), '');
 	QA.ASSERT(join(Iterator([0,0,0], true)), '012');
 	QA.ASSERT(join((function() {yield ''; yield 'a'; yield 'bc'; yield ''; yield 'def'; yield 'g' })()) , 'abcdefg');
-	QA.ASSERT_EQ('===', join((function() {yield})()) , 'undefined');
+	
+	QA.ASSERTOP( join((function() {yield})()), '===', 'undefined');
+	
 	var a = 'abcd';
 	var it = {
 		next: function() {
@@ -315,8 +317,8 @@ $TOC_MEMBER $INAME
 			return a[0];
 		}
 	};
-	QA.ASSERT_EQ('==', join(it) , 'bcd');
-	QA.ASSERT_EQ('==', stringify(stringify('123456789', true).slice(3)), '456789');
+	QA.ASSERTOP( join(it), '==', 'bcd');
+	QA.ASSERTOP( stringify(stringify('123456789', true).slice(3)), '==', '456789');
 **/
 DEFINE_FUNCTION( join ) {
 
@@ -638,14 +640,16 @@ $TOC_MEMBER $INAME
  Passively waits for a timeout through the processEvents function.
 **/
 /**qa
-	QA.ASSERT_EQ('instanceof', timeoutEvents(0), Handle);
-	QA.ASSERT_EQ('==', timeoutEvents(0), '[Handle  pev]');
-	QA.ASSERT_EQ('===', processEvents(timeoutEvents(0)), 1);
-	QA.ASSERT_EXCEPTION(function() { timeoutEvents(undefined) }, 'RangeError');
-	QA.ASSERT_EXCEPTION(function() { timeoutEvents(-1) }, 'RangeError');
-	var d = Date.now(); processEvents(timeoutEvents(123)); d = Date.now() - d;
-	QA.ASSERT_EQ('>=', d, 123 -5); // error margin
-	QA.ASSERT_EQ('<=', d, 123 +10); // error margin
+	QA.ASSERTOP( timeoutEvents(0), 'instanceof', Handle );
+	QA.ASSERTOP( timeoutEvents(0), '==', '[Handle  pev]' );
+	QA.ASSERTOP( processEvents(timeoutEvents(0)), '===', 1 );
+	QA.ASSERTOP( function() timeoutEvents(undefined), 'ex', RangeError );
+	QA.ASSERTOP( function() timeoutEvents(-1), 'ex', RangeError );
+	var d = Date.now();
+	processEvents(timeoutEvents(123));
+	d = Date.now() - d;
+	QA.ASSERTOP( d, '>=', 123 -5); // error margin
+	QA.ASSERTOP( d, '<=', 123 +10); // error margin
 **/
 struct UserProcessEvent {
 
@@ -957,6 +961,15 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 	JL_IGNORE(cx, argc, vp);
 
+	// allocators ////////////////////////////////////////////////////
+
+	void *tmp1 = jl_malloc(100000);
+	js_free(tmp1);
+
+	void *tmp2 = js_malloc(100000);
+	jl_free(tmp2);
+
+	/////////////////////////////////////////////////////////////////
 
 	ASSERT( JSVAL_IS_PRIMITIVE(JSVAL_NULL) );
 
@@ -1064,7 +1077,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	BufferInitialize(&resultBuffer, bufferTypeAuto, bufferGrowTypeAuto, NULL, NULL, NULL, NULL);
 	BufferNewChunk(&resultBuffer, 10000);
 	BufferConfirm(&resultBuffer, 10000);
-	free( BufferGetDataOwnership(&resultBuffer) );
+	jl_free( BufferGetDataOwnership(&resultBuffer) );
 	BufferFinalize(&resultBuffer);
 
 	/////////////////////////////////////////////////////////////////
@@ -1182,16 +1195,23 @@ DEFINE_FUNCTION( jslangTest ) {
 #endif // JSLANG_TEST
 
 /**qa
-	if ( _jsapiTests in global )
+	if ( '_jsapiTests' in global )
 		_jsapiTests();
 
+	QA.ASSERTOP( NaN, '==', NaN ); // test qa.js
+	QA.ASSERTOP( NaN, '===', NaN );  // test qa.js
+	QA.ASSERTOP( 1, '!=', NaN ); // test qa.js
+	QA.ASSERTOP( 1, '!==', NaN );  // test qa.js
 
-	QA.ASSERT_EQ( '==', NaN, NaN ); // test qa.js
-	QA.ASSERT_EQ( '===', NaN, NaN );  // test qa.js
-	QA.ASSERT_EQ( '!=', 1, NaN ); // test qa.js
-	QA.ASSERT_EQ( '!==', 1, NaN );  // test qa.js
+	QA.ASSERTOP( Handle._buildDate, '>', 0 );
 
-	QA.ASSERT_EQ( '>', Handle._buildDate, 0 );
+	QA.ASSERTOP( Handle, 'has', 'prototype' );
+	QA.ASSERTOP( Handle, 'has', 'constructor' );
+
+	QA.ASSERTOP( timeoutEvents(1), 'instanceof', Handle );
+	QA.ASSERTOP( timeoutEvents(1), 'has', '__proto__' );
+	QA.ASSERTOP( timeoutEvents(1), 'has', 'constructor' );
+
 **/
 
 

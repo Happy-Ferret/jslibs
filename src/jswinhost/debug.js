@@ -3,7 +3,7 @@
 throw 'error test';
 
 while ( !endSignal )
-	processEvents( EndSignalEvents() );
+	processEvents( endSignalEvents() );
 
 //loadModule('jsshell');
 //messageBox(isfirstInstance);

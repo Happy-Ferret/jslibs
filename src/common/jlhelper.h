@@ -3149,11 +3149,11 @@ JL_NewBufferGetOwnership( JSContext *cx, void *src, size_t nbytes, jsval *rval )
 	if ( buffer ) {
 			
 		jl_memcpy(buffer, src, nbytes);
-		js_free(src);
+		jl_free(src);
 		return true;
 	} else {
 		
-		js_free(src);
+		jl_free(src);
 		return false;
 	}
 }

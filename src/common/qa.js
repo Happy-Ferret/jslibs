@@ -2,163 +2,128 @@ loadModule('jsstd');
 loadModule('jsio');
 loadModule('jsdebug');
 
+function pad(val, width, prefix) {
+
+    var str = String(val);
+    width -= str.length;
+    if ( width > 0 )
+        return new Array(width+1).join(prefix) + str;
+    return str;
+}
+
+function formatVal(val) {
+	
+	if ( val === undefined )
+		return 'undefined';
+	val = uneval(val);
+	if ( val.length > 50 )
+		val = val.substr(0, 47).quote()+'...';
+	return val;
+}
+
+function isnan(val) {
+
+	return (typeof(val) == 'number') && isNaN(val);
+}
+
+function isException(ex, ref) {
+
+	if ( ex === ref )
+		return true;
+	if ( typeof(ref) != 'string' )
+		return !( ex != ref && ex.constructor != ref && !(ex instanceof ref) );
+	else
+		return !( String(ex) != ('[object '+ref+']') && ( ex.constructor.name != ref ) )
+}
+
+function testOp( left, op, right ) {
+
+	var res;
+	switch ( op ) {
+		case '==': res = (left == right) || (isnan(left) && isnan(right)); break;
+		case '===': res = (left === right) || (isnan(left) && isnan(right)); break;
+		case '!=': res = (left != right) && (!isnan(left) || !isnan(right)); break;
+		case '!==': res = (left !== right) && (!isnan(left) || !isnan(right)); break;
+		case '>': res = (left > right); break;
+		case '<': res = (left < right); break;
+		case '>=': res = (left >= right); break;
+		case '<=': res = (left <= right); break;
+		case 'has': res = (right in left); break;
+		case '!has': res = (!(right in left)); break;
+		case 'in': res = (left in right); break;
+		case '!in': res = (!(left in right)); break;
+		case 'instanceof': res = (left instanceof right); break;
+		case '!instanceof': res = (!(left instanceof right)); break;
+		case 'typeof': res = (typeof(left) == String(right)); break;
+		case '!typeof': res = (typeof(left) != String(right)); break;
+		case 'ex':
+			try {
+				void left();
+				res = false;
+			} catch (ex) {
+				res = isException(ex, right);
+			}
+			break;
+		default: res = undefined;
+	}
+	return res;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // QA API
 
 function QAAPI(cx) {
 
-	function valueType(val) {
-		
-		var type = typeof(val);
-		if (type == 'object' )
-			return val.constructor.name;
-		return type;
-	}
+	this.cx = cx; // expose the current context
 
-	function formatVariable(val) {
-		
-		if ( val === undefined )
-			return 'undefined';
-/* see below
-		if ( typeof(val) == 'number' )
-			return val;
-		if ( typeof(val) == 'string' ) {
-		
-			if ( val.length > 50 )
-				return val.substr(0, 47).quote()+'...';
-			return val.quote();
-		}
-		if ( val instanceof Array )
-			return '['+val+']';
-		return '('+valueType(val)+')'+val;
-*/
-		val = uneval(val);
-		if ( val.length > 50 )
-			val = val.substr(0, 47).quote()+'...';
-		return val;
+	this.NO_CRASH = function() {
 	}
-
-	
-	//	this.__defineGetter__('cx', function() cx);
-	Object.defineProperty(this, 'cx', { get:function() cx });
 
 	this.FAILED = function( message ) {
 
-		cx.reportIssue( message, 'FAILURE' );
+		cx.checkpoint('FAILED');
+		cx.reportIssue('FAILED', message);
 	}
 	
-	this.NO_CRASH = function() {}
+	this.ASSERTOP = function( left, op, right, testName ) {
 
-	this.ASSERT_TYPE = function( value, type, testName ) {
+		cx.checkpoint('ASSERTOP', testName);
 
-		cx.checkpoint('ASSERT_TYPE', testName);
-		if ( typeof(value) != type && !(value instanceof type) )
-			cx.reportIssue( 'Invalid type, '+type.name+' is expected.', testName );
-	}
+		var res = testOp(left, op, right);
+		if ( res === undefined ) {
 
-	this.ASSERT_NOEXCEPTION = function( fct, testName ) {
+			cx.reportIssue('ASSERTOP: unknown operator "'+op+'"');
+		} else if ( res !== true ) {
 
-		cx.checkpoint('ASSERT_EXCEPTION', testName);
-		try {
-		
-			fct();
-		} catch( ex ) {
-
-			cx.reportIssue( 'Unexpected exception ('+String(ex)+')', testName );
+			cx.reportIssue(formatVal(left)+' !' + op +' '+formatVal(right), testName);
 		}
-	}
-
-	this.ASSERT_EXCEPTION = function( fct, expectType, testName ) {
-		
-		cx.checkpoint('ASSERT_EXCEPTION', testName);
-		try {
-		
-			fct();
-			cx.reportIssue( 'Exception not detected (expect '+String(expectType)+')', testName );
-		} catch( ex ) {
-			
-//			if ( typeof(expectType) == 'function' ) {
-//				
-//				if ( !expectType(ex) )
-//					cx.reportIssue('Invalid exception details ("'+ex.message+'")', testName );
-//			} else
-			if ( typeof(expectType) != 'string' ) {
-
-				if ( ex != expectType && ex.constructor != expectType && !(ex instanceof expectType) )
-					cx.reportIssue('Invalid exception ('+ex.constructor.name+' != '+expectType.name+')', testName );
-			} else
-			{
-
-				if ( String(ex) != ('[object '+expectType+']') && ( ex.constructor.name != expectType ) )
-					cx.reportIssue('Invalid exception name ('+String(ex)+' != '+expectType+')', testName );
-			}
-		}
-	}
-
-	this.ASSERT_EQ = function( eq, value, expect, testName ) {
-
-		testName = testName || '(noname)';
-		cx.checkpoint('ASSERT', testName);
-
-		function isnan(val) {
-			return (typeof(val) == 'number') && isNaN(val);
-		}
-		
-		var eqRes;
-		switch ( eq ) {
-			case '==': eqRes = (value == expect) || (isnan(value) && isnan(expect)); break;
-			case '===': eqRes = (value === expect) || (isnan(value) && isnan(expect)); break;
-			case '!=': eqRes = (value != expect) && (!isnan(value) || !isnan(expect)); break;
-			case '!==': eqRes = (value !== expect) && (!isnan(value) || !isnan(expect)); break;
-			case '>': eqRes = (value > expect); break;
-			case '<': eqRes = (value < expect); break;
-			case '>=': eqRes = (value >= expect); break;
-			case '<=': eqRes = (value <= expect); break;
-			case 'in': eqRes = (expect in value); break;
-			case '!in': eqRes = (!(expect in value)); break;
-			case 'instanceof': eqRes = (value instanceof expect); break;
-			case '!instanceof': eqRes = (!(value instanceof expect)); break;
-			case 'typeof': eqRes = (typeof(value) == expect); break;
-			case '!typeof': eqRes = (typeof(value) != expect); break;
-			default: eq = '???'; eqRes = '???';
-		}
-		
-		if ( eqRes !== true )
-			cx.reportIssue( formatVariable(value)+' ! ' + eq +' '+formatVariable(expect), testName );
 	}
 
 	this.ASSERT = function( value, expect, testName ) {
 		
-		testName = testName || '(noname)';
 		cx.checkpoint('ASSERT', testName);
-		if ( value !== expect && !(typeof(value) == 'number' && isNaN(value) && typeof(expect) == 'number' && isNaN(expect)) )
-			cx.reportIssue( '=== '+formatVariable(value)+' but expect '+formatVariable(expect), testName );
+
+		if ( !testOp(value, '===', expect) )
+			cx.reportIssue(formatVal(value)+' ! === '+formatVal(expect), testName);
 	}
 
 	this.ASSERT_STR = function( value, expect, testName ) {
 	
-		testName = testName || '(noname)';
 		cx.checkpoint('ASSERT_STR', testName);
-		if ( stringify(value) != stringify(expect) ) // value = String(value); expect = String(expect); // not needed because we use the != sign, not !== sign
-			cx.reportIssue( '== '+formatVariable(stringify(value))+', expect '+formatVariable(stringify(expect)), testName );
+
+		value = stringify(value);
+		expect = stringify(expect);
+
+		if ( !testOp(value, '==', expect) )
+			cx.reportIssue(formatVal(value)+' ! == '+formatVal(expect), testName);
 	}
 
-   this.ASSERT_HAS_PROPERTIES = function( obj, names ) {
-   	
-		cx.checkpoint('ASSERT_HAS_PROPERTIES', names);
-   		for each ( var p in names.split(/\s*,\s*/) ) {
-   	
-			if ( !(p in obj) ) {
-
-	  			cx.reportIssue( 'Property '+p.quote()+' not found.' );
-			}
-	  	}
-   }
+	// tools
 
 	this.gc = function() {
 
-		cx.cfg.nogcDuringTests || collectGarbage();
+		if ( !cx.cfg.nogcDuringTests )
+			collectGarbage();
 	}
 
 	var randomData = '';
@@ -378,21 +343,20 @@ function parseCommandLine(cfg) {
 ////////////////////////////////////////////////////////////////////////////////
 // run tests
 
+function reportInfo(cx, type, location, testName, checkName, details) {
 
-var globalIssueCount = 0;
+	var message = type +' @'+ location +' "'+ (testName||'') +'", "'+ (checkName||'') +'" : '+ details;
 
-function commonReportIssue(cx, type, location, testName, checkName, details) {
-
-	globalIssueCount++;
-	var message = type +' @'+ location +' - '+ (testName||'') +' - '+ (checkName||'') +' - '+ details;
-	cx.issueList.push(message);
-	print( '\n X '+ message, '\n' );
+	if ( type != 'CHECK' )
+		cx.issueList.push(message);
+	
+	print( '\n  '+ message );
 	
 	if ( cx.cfg.logFilename ) {
 	
 		logFile = new File(cfg.logFilename);
 		logFile.open('a+');
-		logFile.write(message + '\n');
+		logFile.write('\n' + message);
 		logFile.close();
 	}
 }
@@ -414,14 +378,14 @@ function launchTests(itemList, cfg) {
 		stackIndex:stackSize-1, 
 		cfg:cfg, 
 		reportIssue:function(message, checkName) {
-		
-			commonReportIssue(cx, 'ASSERT',  this.item.file+':'+(locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message );
+			
+			reportInfo(this, 'ASSERT', this.item.file+':'+(locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message);
 		},
 		checkpoint:function(title, testName) {
 			
-			if ( cfg.verbose )
-				print( '\nCP - '+testName+': checkpoint: '+title+' ('+this.item.file+':'+(locate(this.stackIndex+1)[1] - this.item.relativeLineNumber)+')' );
 			this.checkCount++;
+			if ( cfg.verbose )
+				reportInfo(this, 'CHECK', this.item.file+':'+(locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, testName, title);
 		}
 	};
 
@@ -453,8 +417,9 @@ function launchTests(itemList, cfg) {
 		cx.item = itemList[testIndex];
 		
 		if ( cx.item.init || cfg.runOnlyTestIndex == undefined || cfg.runOnlyTestIndex == testIndex ) {
-
-			cfg.quiet || print( ' - '+testIndex+' - '+cx.item.file+':'+cx.item.line+' - '+ cx.item.name );
+			
+			if ( !cfg.quiet )
+				print( pad(testIndex, 4, ' ')+' - '+cx.item.file+':'+cx.item.line+' - '+cx.item.name+' ' );
 
 			if ( cfg.gcZeal )
 				gcZeal = cfg.gcZeal;
@@ -478,10 +443,10 @@ function launchTests(itemList, cfg) {
 						break;
 				}
 				var t1 = timeCounter() - t0;
-				cfg.quiet || print( ' ...('+(t1/cfg.repeatEachTest).toFixed(1) + 'ms)' );
+				cfg.quiet || print( ' ...'+(t1/cfg.repeatEachTest).toFixed(1) + 'ms' );
 			} catch(ex) {
 
-				commonReportIssue(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', ex );
+				reportInfo(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', ex);
 			}
 
 			if ( cfg.gcZeal )
@@ -497,7 +462,7 @@ function launchTests(itemList, cfg) {
 		if ( cfg.stopAfterNTests && (testCount >= cfg.stopAfterNTests) )
 			break;
 
-		if ( cfg.stopAfterNIssues && (globalIssueCount >= cfg.stopAfterNIssues) )
+		if ( cfg.stopAfterNIssues && (cx.issueList.length >= cfg.stopAfterNIssues) )
 			break;
 
 		if ( endSignal )
@@ -715,7 +680,6 @@ function main() {
 	parseCommandLine(cfg);
 
 	var configurationText = 'configuraion: '+['-'+k+' '+v for ([k,v] in Iterator(cfg))].join('  ');
-	print(configurationText, '\n\n');
 
 	if ( cfg.help ) {
 		
@@ -786,12 +750,19 @@ function main() {
 	var t = timeCounter() - t0;
 	processPriority = savePrio || 0; // savePrio may be undefined
 
-	print( '\n'+stringRepeat('-',97)+'\n', configurationText, '\n\n', ' '+issueList.length +' issues, '+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests, ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms.', '\n\n' );
+	var separator = stringRepeat('-',79);
+
+	print('\n', separator);
+	print('\n', configurationText);
+	print('\n', separator);
+	print('\n', pad(issueList.length, 4, ' ') +' issues ('+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests = ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms)');
+	print('\n', separator);
+	print('\n');
 	issueList.sort();
 	issueList.reduce( function(previousValue, currentValue, index, array) {
 
 		 if ( previousValue != currentValue )
-			print( '- ' + currentValue, '\n' );
+			print( ' ' + currentValue, '\n' );
 		 return currentValue;
 	}, undefined );
 }
@@ -804,7 +775,7 @@ try {
 	print(uneval(ex));
 }
 
-print('Done.\n');
+print('\n', 'Done.', '\n');
 
 
 ////////////////////////////////////////////////////////////////////////////////

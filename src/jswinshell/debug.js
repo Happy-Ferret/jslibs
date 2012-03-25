@@ -330,7 +330,7 @@ function changesNotificationFct() {
 }
 
 while ( !endSignal )
-	processEvents( directoryChangesEvents(dch, changesNotificationFct), EndSignalEvents() );
+	processEvents( directoryChangesEvents(dch, changesNotificationFct), endSignalEvents() );
 	
 	
 
@@ -390,7 +390,7 @@ halt(); //////////////////////////////////////////////////////////////////////
  }
 
 while ( !endSignal )
-	processEvents( s.events(), EndSignalEvents() )
+	processEvents( s.events(), endSignalEvents() )
 
 
 halt(); //////////////////////////////////////////////////////////////////////

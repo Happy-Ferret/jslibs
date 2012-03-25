@@ -188,9 +188,9 @@ JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 	if (unlikely( pv == NULL || pv->hostStdOut == NULL ))
 		return JS_TRUE;
 
+	JLData str;
 	for ( uintN i = 0; i < argc; ++i ) {
 
-		JLData str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
 		int status = pv->hostStdOut(pv->privateData, str.GetConstStr(), str.Length());
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
@@ -207,9 +207,9 @@ JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 	if (unlikely( pv == NULL || pv->hostStdErr == NULL ))
 		return JS_TRUE;
 
+	JLData str;
 	for ( uintN i = 0; i < argc; ++i ) {
 
-		JLData str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
 		int status = pv->hostStdErr(pv->privateData, str.GetConstStr(), str.Length());
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
@@ -600,7 +600,7 @@ JSContext* CreateHost(uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterv
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
 	// JS_SetOptions doc: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_SetOptions
 	ASSERT( JS_GetOptions(cx) == 0 );
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE); // beware: avoid using JSOPTION_COMPILE_N_GO here.
+	JS_SetOptions(cx, JSOPTION_ATLINE | JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE); // beware: avoid using JSOPTION_COMPILE_N_GO here.
 
 	JSObject *globalObject;
 	globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
@@ -641,10 +641,10 @@ bad:
 }
 
 /**qa
-	QA.ASSERT_EQ( '==', processEvents, global.processEvents );
-	QA.ASSERT_EQ( '>', _host.buildDate, 0 );
-	QA.ASSERT_EQ( '>', _host.buildDate, +new Date(2012, 3 -1, 1) );
-	QA.ASSERT_EQ( '<=', _host.buildDate, Date.now() - new Date().getTimezoneOffset() * 60 * 1000 );
+	QA.ASSERTOP( processEvents, '==', global.processEvents );
+	QA.ASSERTOP( _host.buildDate, '>', 0 );
+	QA.ASSERTOP( _host.buildDate, '>', +new Date(2012, 3 -1, 1) );
+	QA.ASSERTOP( _host.buildDate, '<=', Date.now() - new Date().getTimezoneOffset() * 60 * 1000 );
 **/
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
 

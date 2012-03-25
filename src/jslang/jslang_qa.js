@@ -155,7 +155,7 @@ loadModule('jsstd');
 	var h = timeoutEvents(100);
 
 	QA.ASSERT(Handle instanceof Object, true, 'instance test');
-	QA.ASSERT_TYPE(h, Handle, 'handle object type');
+	QA.ASSERTOP(h, 'instanceof', Handle, 'handle object type');
 //	QA.ASSERT_STR(h, '[Handle ????]', 'handle type string');
 //	QA.ASSERT(h.constructor, Math.constructor, 'constructor test');
 //	QA.ASSERT(h.prototype, Math.prototype, 'prototype test');
@@ -186,7 +186,7 @@ loadModule('jsstd');
 	processEvents(timeout);
 	t = timeCounter() - t;
 	QA.ASSERT( t > 122 && t < 130, true, 'TimeoutEvents time ('+t+')' );
-//	QA.ASSERT_EXCEPTION( function() processEvents(timeout), Error, 'processEvents reused' );
+//	QA.ASSERTOP( function() processEvents(timeout), 'ex', Error, 'processEvents reused' );
 
 
 /// Serialization / Unserialization crash 1

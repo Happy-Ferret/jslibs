@@ -150,7 +150,7 @@ loadModule('jsdebug');
 		var filename = QA.randomString(10);
 
 		var f2 = new File(filename).open('w');
-		QA.ASSERT_EXCEPTION(function() { new File(filename).content = undefined }, IoError, 'Checking busy file error' );
+		QA.ASSERTOP(function() { new File(filename).content = undefined }, 'ex', IoError, 'Checking busy file error' );
 		f2.close();
 		new File(filename).content = undefined;
 
@@ -206,7 +206,9 @@ loadModule('jsdebug');
 		QA.ASSERT( res, false, 'delete a property' );
 		var res = delete systemInfo.release;
 		QA.ASSERT( res, false, 'delete a property' );
-		QA.ASSERT_HAS_PROPERTIES( systemInfo, 'architecture,name,release' );
+		QA.ASSERTOP( systemInfo, 'has', 'architecture' );
+		QA.ASSERTOP( systemInfo, 'has', 'name' );
+		QA.ASSERTOP( systemInfo, 'has', 'release' );
 
 
 /// physical memory [ftrm]
@@ -267,7 +269,7 @@ loadModule('jsdebug');
 		QA.ASSERT( res.indexOf('127.0.0.1') != -1, true, 'localhost is 127.0.0.1' );
 
 		var res = Socket.getHostsByName(QA.randomString(25));
-		QA.ASSERT_TYPE( res, Array );
+		QA.ASSERTOP( res, 'instanceof', Array );
 		QA.ASSERT( res.length, 0, 'find nonexistent hostName' );
 
 
@@ -414,11 +416,11 @@ loadModule('jsdebug');
 			soc.connect( host, 80 );
 			soc.writable = function(s) {
 			
-				QA.ASSERT_TYPE( s, Socket,  'object is a Socket' );
+				QA.ASSERTOP( s, 'instanceof', Socket, 'object is a Socket' );
 				QA.ASSERT( s.closed , false,  'Socket descriptor is closed' );
 
 				delete soc.writable;
-				QA.ASSERT_HAS_PROPERTIES( s, 'write' );
+				QA.ASSERTOP( s, 'has', 'write' );
 				s.write('GET\r\n\r\n');
 			}
 			soc.readable = function(s) {
@@ -510,10 +512,12 @@ loadModule('jsdebug');
 
 /// standard file descriptors [ftrm]
 		
-		QA.ASSERT_HAS_PROPERTIES( File, 'stdin,stdout,stderr' );
-		QA.ASSERT( File.stdin.type, File.FILE_FILE, 'stdin file type');
-		QA.ASSERT( File.stdout.type, File.FILE_FILE, 'stdout file type');
-		QA.ASSERT( File.stderr.type, File.FILE_FILE, 'stderr file type');
+		QA.ASSERTOP( File, 'has', 'stdin' );
+		QA.ASSERTOP( File, 'has', 'stdout' );
+		QA.ASSERTOP( File, 'has', 'stderr' );
+		QA.ASSERTOP( File.stdin.type, '===', File.FILE_FILE, 'stdin file type');
+		QA.ASSERTOP( File.stdout.type, '===', File.FILE_FILE, 'stdout file type');
+		QA.ASSERTOP( File.stderr.type, '===', File.FILE_FILE, 'stderr file type');
 
 
 /// File I/O [ftrm]
@@ -573,6 +577,7 @@ loadModule('jsdebug');
 		} catch( ex if ex instanceof IoError ) {
 
 			QA.ASSERT( ex.code, -5950, 'IoError code' );
+			QA.ASSERT( ex.const, 'PR_FILE_NOT_FOUND_ERROR', 'IoError const' );
 			QA.ASSERT( ex.text, 'File not found', 'IoError text' );
 			QA.ASSERT( ex.os != 0, true, 'OS code' );
 		} catch(ex) {
@@ -582,16 +587,35 @@ loadModule('jsdebug');
 
 
 /// File constants [ftrm]
-	
-		QA.ASSERT_HAS_PROPERTIES( File, 'RDONLY,WRONLY,RDWR,CREATE_FILE,APPEND,TRUNCATE,SYNC,EXCL' );
-		QA.ASSERT_HAS_PROPERTIES( File, 'SEEK_SET,SEEK_CUR,SEEK_END' );
-		QA.ASSERT_HAS_PROPERTIES( File, 'FILE_FILE,FILE_DIRECTORY,FILE_OTHER' );
+
+	QA.ASSERTOP( File, 'has', 'RDONLY' );
+	QA.ASSERTOP( File, 'has', 'WRONLY' );
+	QA.ASSERTOP( File, 'has', 'RDWR' );
+	QA.ASSERTOP( File, 'has', 'CREATE_FILE' );
+	QA.ASSERTOP( File, 'has', 'APPEND' );
+	QA.ASSERTOP( File, 'has', 'TRUNCATE' );
+	QA.ASSERTOP( File, 'has', 'SYNC' );
+	QA.ASSERTOP( File, 'has', 'EXCL' );
+
+	QA.ASSERTOP( File, 'has', 'SEEK_SET' );
+	QA.ASSERTOP( File, 'has', 'SEEK_CUR' );
+	QA.ASSERTOP( File, 'has', 'SEEK_END' );
+
+	QA.ASSERTOP( File, 'has', 'FILE_FILE' );
+	QA.ASSERTOP( File, 'has', 'FILE_DIRECTORY' );
+	QA.ASSERTOP( File, 'has', 'FILE_OTHER' );
 
 
 /// Directory constants [ftrm]
-		
-		delete Directory.SKIP_DOT_DOT;
-		QA.ASSERT_HAS_PROPERTIES( Directory, 'SKIP_NONE,SKIP_DOT,SKIP_DOT_DOT,SKIP_BOTH,SKIP_HIDDEN' );
+
+	QA.ASSERTOP( Directory, 'has', 'SKIP_NONE' );
+	QA.ASSERTOP( Directory, 'has', 'SKIP_DOT' );
+	QA.ASSERTOP( Directory, 'has', 'SKIP_DOT_DOT' );
+	QA.ASSERTOP( Directory, 'has', 'SKIP_BOTH' );
+	QA.ASSERTOP( Directory, 'has', 'SKIP_HIDDEN' );
+
+	delete Directory.SKIP_DOT_DOT;
+	QA.ASSERTOP( Directory, 'has', 'SKIP_DOT_DOT', 'Directory const cannot be removed' );
 
 
 /// Directory [ftrm]
@@ -620,9 +644,9 @@ loadModule('jsdebug');
 				var cmdPath = getEnv('ComSpec');
 				QA.ASSERT( cmdPath.indexOf('cmd') != -1, true, 'cmd.exe path' );
 				var process = new Process(cmdPath, ['/c', 'date', '/T']);
-				QA.ASSERT_TYPE( process.stdin, Descriptor, 'process stdin type' );
-				QA.ASSERT_TYPE( process.stdout, Descriptor, 'process stdout type' );
-				QA.ASSERT_TYPE( process.stderr, Descriptor, 'process stderr type' );
+				QA.ASSERTOP( process.stdin, 'instanceof', Descriptor, 'process stdin type' );
+				QA.ASSERTOP( process.stdout, 'instanceof', Descriptor, 'process stdout type' );
+				QA.ASSERTOP( process.stderr, 'instanceof', Descriptor, 'process stderr type' );
 				var data = process.stdout.read(10);
 				QA.ASSERT( data.byteLength, 10, 'reading Process stdout' );
 				break;

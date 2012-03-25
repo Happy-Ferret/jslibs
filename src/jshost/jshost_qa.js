@@ -23,10 +23,11 @@
 
 /// global variables [ftrm]
 
-		QA.ASSERT( scripthostpath.length > 0, true, 'script host path' );
-		QA.ASSERT( scripthostname.substr(0, 6), 'jshost', 'script host name' );
-		QA.ASSERT_TYPE( _host, 'object', 'has _host object' );
-		QA.ASSERT_TYPE( global, 'object', 'has "global" property' );
+		QA.ASSERTOP( scripthostpath.length, '>', 0, 'script host path' );
+		QA.ASSERTOP( scripthostname.substr(0, 6), '==', 'jshost', 'script host name' );
+		QA.ASSERTOP( _host, 'typeof', 'object', 'has _host object' );
+		QA.ASSERTOP( global, 'typeof', 'object', 'has "global" property' );
+
 		// Obsolete in Gecko 2 (Firefox 4) // QA.ASSERT( global, Object.__parent__, 'global points to the right global object' );
 		
 		var mod = loadModule('jsstd');
@@ -53,10 +54,9 @@
 		QA.ASSERT( 'bootstrapScript' in _host, false, 'no embedded bootstrap script by default' );
 
 
-/// EndSignalEvents handle object [ft]
+/// endSignalEvents() handle object [ft]
 
-	var h = EndSignalEvents();
-	QA.ASSERT_TYPE(h, Handle, 'handle object type');
-	QA.ASSERT_STR(h, '[Handle  pev]', 'handle type string');
-	QA.ASSERT_TYPE(h.toString, Function, 'handle toString is a function');
-	
+	var h = endSignalEvents();
+	QA.ASSERTOP(h, 'instanceof', Handle, 'handle object type');
+	QA.ASSERTOP(h, '==', '[Handle  pev]', 'handle type string');
+	QA.ASSERTOP(h.toString, 'instanceof', Function, 'handle toString is a function');

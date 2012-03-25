@@ -7,22 +7,10 @@ loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask'); 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 
 loadModule('jsstd');
+loadModule('jsdebug');
 //print( new Date(Handle._buildDate + new Date().getTimezoneOffset() * 60 * 1000), '\n' );
 
-
-//var handle = timeoutEvents(100);
-
-print( Handle.prototype, '\n' ); // HAS_DEFAULT_INSTANCEOF
-
-print( Handle._buildDate, '\n' ); // FROZEN_PROTOTYPE
-throw 0;
-
-
-
-print( handle instanceof Handle, '\n' );
-print( handle.__proto__, '\n' );
-print( handle.constructor, '\n' );
-print( Handle.prototype, '\n' );
+print( scripthostname );
 
 throw 0;
 

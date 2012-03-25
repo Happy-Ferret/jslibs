@@ -925,21 +925,21 @@ $TOC_MEMBER $INAME
 **/
 
 /**qa
-	QA.ASSERT_EXCEPTION( function() { new OperationLimit }, TypeError, 'unconstructability' );
-	QA.ASSERT_EXCEPTION( function() { (function f(){f();})(); }, InternalError, 'too much recursion' );
-	QA.ASSERT_EXCEPTION( function() { sandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 250) }, OperationLimit, 'OperationLimit detection' );
-	QA.ASSERT_EQ( '!typeof', OperationLimit, 'undefined' );
-	QA.ASSERT_EQ( '===', OperationLimit.constructor, StopIteration.constructor );
-	QA.ASSERT_EQ( '===', OperationLimit.prototype, StopIteration.prototype );
+	QA.ASSERTOP( function() { new OperationLimit }, 'ex', TypeError, 'unconstructability' );
+	QA.ASSERTOP( function() { (function f(){f();})(); }, 'ex', InternalError, 'too much recursion' );
+	QA.ASSERTOP( function() { sandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 250) }, 'ex', OperationLimit, 'OperationLimit detection' );
+	QA.ASSERTOP( OperationLimit, '!typeof', 'undefined' );
+	QA.ASSERTOP( OperationLimit.constructor, '===', StopIteration.constructor );
+	QA.ASSERTOP( OperationLimit.prototype, '===', StopIteration.prototype );
 
 // OperationLimit instance test
 	try {
 		sandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 10);
 	} catch(ex) {
 
-		QA.ASSERT_EQ( 'instanceof', ex, OperationLimit, 'check OperationLimit instance' );
-		QA.ASSERT_EQ( '===', ex.constructor, Object, 'check OperationLimit instance constructor' );
-		QA.ASSERT_EQ( '===', ex.__proto__, OperationLimit, 'check OperationLimit instance prototype' );
+		QA.ASSERTOP( ex, 'instanceof', OperationLimit, 'check OperationLimit instance' );
+		QA.ASSERTOP( ex.constructor, '===', Object, 'check OperationLimit instance constructor' );
+		QA.ASSERTOP( ex.__proto__, '===', OperationLimit, 'check OperationLimit instance prototype' );
 	}
 
 // not-a-constructor test
@@ -949,21 +949,12 @@ $TOC_MEMBER $INAME
 		try { new StopIteration() } catch (ex2) {
 
 			var message2 = ex2.message.replace('StopIteration', 'XXX');
-			QA.ASSERT_EQ( '==', message1, message2 );
+			QA.ASSERTOP( message1, '==', message2 );
 		}
 	}
 **/
 
 BEGIN_CLASS( OperationLimit )
-
-/*
-DEFINE_CONSTRUCTOR() {
-
-	JL_DEFINE_CONSTRUCTOR_OBJ;
-	return JS_TRUE;
-}
-*/
-
 
 DEFINE_HAS_INSTANCE() {
 
@@ -1139,7 +1130,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 	if ( pv.queryFunctionValue != JSVAL_VOID ) {
 
 		JL_CHK( JS_WrapValue(cx, &pv.queryFunctionValue) );
-		JL_CHK( JS_DefineFunction(cx, globalObj, "Query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
+		JL_CHK( JS_DefineFunction(cx, globalObj, "query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
 	}
 
 	JS_SetNativeStackQuota(JL_GetRuntime(cx), 32000);
@@ -1164,7 +1155,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 	JS_SetContextPrivate(cx, prevCxPrivate);
 
-	// JL_CHK( JS_DeleteProperty(scx, globalObject, "Query") ); // (TBD) needed ? also check of the deletion is successful using JS_HasProperty...
+	// JL_CHK( JS_DeleteProperty(scx, globalObject, "query") ); // (TBD) needed ? also check of the deletion is successful using JS_HasProperty...
 
 	if ( ok )
 		return JS_WrapValue(cx, vp);
@@ -1181,7 +1172,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(2);
 		pv.queryFunctionValue = JL_ARG(2);
-		JL_CHK( JS_DefineFunction(scx, globalObject, "Query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
+		JL_CHK( JS_DefineFunction(scx, globalObject, "query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
 	} else {
 
 		pv.queryFunctionValue = JSVAL_VOID;
@@ -1245,7 +1236,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 	prev = JS_SetOperationCallback(scx, prev);
 	JL_ASSERT( prev == SandboxMaxOperationCallback, "Invalid SandboxMaxOperationCallback handler." );
 
-	JL_CHK( JS_DeleteProperty(scx, globalObject, "Query") ); // (TBD) also check of the deletion is successful using JS_HasProperty...
+	JL_CHK( JS_DeleteProperty(scx, globalObject, "query") ); // (TBD) also check of the deletion is successful using JS_HasProperty...
 
 	if (!ok) {
 
@@ -1345,8 +1336,8 @@ $TOC_MEMBER $INAME
    The current filename is also available using: `StackFrameInfo(stackSize-1).filename` (see jsdebug module)
 **/
 /**qa
-	QA.ASSERT_EQ( 'typeof', currentFilename, 'string' );
-	QA.ASSERT_EQ( '!=', currentFilename, '' );
+	QA.ASSERTOP( currentFilename, 'typeof', 'string' );
+	QA.ASSERTOP( currentFilename, '!=', '' );
 **/
 DEFINE_PROPERTY_GETTER( currentFilename ) {
 	
@@ -1367,7 +1358,7 @@ $TOC_MEMBER $INAME
   Is the line number of the script being executed.
 **/
 /**qa
-	QA.ASSERT_EQ( 'typeof', currentLineNumber, 'number' );
+	QA.ASSERTOP( currentLineNumber, 'typeof', 'number' );
 **/
 DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 	

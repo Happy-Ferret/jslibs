@@ -683,7 +683,7 @@ DEFINE_SET_PROPERTY() {
 	var res = db.exec('create table a (id integer primary key, x varchar)');
 	db.exec('insert into a values (NULL, "aaa")');
 	var res = db.query('select * from a');
-	QA.ASSERT_EQ('!=', res, res);
+	QA.ASSERTOP( res, '!=', res );
 **/
 DEFINE_EQUALITY_OP() {
 
