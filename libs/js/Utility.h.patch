@@ -1,0 +1,28 @@
+--- 
++++ src/js/public/Utility.h	2012-03-25 18:06:09 +0200
+@@ -102,8 +102,23 @@
+ /*
+  * Custom allocator support for SpiderMonkey
+  */
+-#if defined JS_USE_CUSTOM_ALLOCATOR
+-# include "jscustomallocator.h"
++#if 1
++#define HAS_JL_ALLOCATORS
++extern JS_PUBLIC_DATA(uint32_t) OOM_maxAllocations;
++extern JS_PUBLIC_DATA(uint32_t) OOM_counter;
++typedef void* (*js_jl_malloc_t)( size_t );
++typedef void* (*js_jl_calloc_t)( size_t, size_t );
++typedef void* (*js_jl_realloc_t)( void*, size_t );
++typedef void (*js_jl_free_t)( void* );
++extern JS_PUBLIC_DATA(js_jl_malloc_t) js_jl_malloc;
++extern JS_PUBLIC_DATA(js_jl_calloc_t) js_jl_calloc;
++extern JS_PUBLIC_DATA(js_jl_realloc_t) js_jl_realloc;
++extern JS_PUBLIC_DATA(js_jl_free_t) js_jl_free;
++static JS_INLINE void* js_malloc(size_t bytes) { return js_jl_malloc(bytes); }
++static JS_INLINE void* js_calloc(size_t bytes) { return js_jl_calloc(bytes, 1); }
++static JS_INLINE void* js_realloc(void* p, size_t bytes) { return js_jl_realloc(p, bytes); }
++static JS_INLINE void js_free(void* p) { js_jl_free(p); }
++// /HAS_JL_ALLOCATORS
+ #else
+ # ifdef DEBUG
+ /*
