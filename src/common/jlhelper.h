@@ -1330,6 +1330,8 @@ class JLData {
 		const size_t length = Length();
 		const size_t dstSize = (length + (nullTerminated ? 1 : 0)) * (wide ? 2 : 1) + IFDEBUG( 2 ); // IFDEBUG: force non-Z strings if !nullTerminated;
 
+		//printf( "*** _own:%d, own:%d, _w:%d, wide:%d, _nt:%d, nullTerminated:%d\n", _own, own, _w, wide, _nt, nullTerminated );
+
 		if ( !_own && ( own || ( _w != wide ) || ( !_nt && nullTerminated ) ) ) {
 
 			dst = jl_malloc(dstSize);
@@ -1427,7 +1429,7 @@ class JLData {
 	ALWAYS_INLINE bool Mutate( bool own, bool nullTerminated, bool wide ) {
 
 		ASSERT( IsSet() );
-		if ( _own != own || _w != wide || ( (_nt != nullTerminated) && (!_nt || nullTerminated) ) )
+		if ( !_own && own || _w != wide || !_nt && nullTerminated )
 			return ForceMutation(own, nullTerminated, wide);
 		else
 			return true;
@@ -1746,9 +1748,10 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLData * RESTRICT str ) {
 
 		JSObject *obj = JSVAL_TO_OBJECT(val);
 		NIBufferGet fct = BufferGetInterface(cx, obj); // BufferGetNativeInterface
-		if ( fct )
-			return fct(cx, obj, str);
+		if ( fct ) {
 
+			return fct(cx, obj, str);
+		} else
 		if ( JS_IsArrayBufferObject(obj) ) {
 			
 			uint32_t length = JS_GetArrayBufferByteLength(obj);
@@ -1759,10 +1762,7 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLData * RESTRICT str ) {
 
 				*str = JLData::Empty();
 			}
-
-			return JS_TRUE;
-		}
-
+		} else
 		if ( js_IsTypedArray(obj) ) {
 
 			uint32_t length = JS_GetTypedArrayLength(obj);
@@ -1776,22 +1776,17 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLData * RESTRICT str ) {
 
 				*str = JLData::Empty();
 			}
-			return JS_TRUE;
+		} else
+		{
+			// fallback
+			JSString *jsstr;
+			jsstr = JS_ValueToString(cx, val);
+			JL_CHKM( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
+			val = STRING_TO_JSVAL(jsstr); // GC protection
+			*str = JLData(cx, jsstr);
 		}
-
-		// the following conversion can be replaced by: (new Uint8Array([1,2,3]))
-		//		if ( JL_ObjectIsArray(cx, obj) )
-		//			return JL_JSArrayToBuffer(cx, obj, str);
 	}
 
-	// fallback
-	JSString *jsstr;
-	jsstr = JS_ValueToString(cx, val);
-//	if ( jsstr == NULL )
-//		JL_REPORT_ERROR_NUM( JLSMSG_FAIL_TO_CONVERT_TO, "string" );
-	JL_CHKM( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
-	val = STRING_TO_JSVAL(jsstr); // GC protection
-	*str = JLData(cx, jsstr);
 	return JS_TRUE;
 	JL_BAD;
 

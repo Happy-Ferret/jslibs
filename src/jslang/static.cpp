@@ -955,7 +955,20 @@ bad:
 		_jsapiTests();
 **/
 
-#ifdef DEBUG // || true
+
+#if defined(DEBUG) // || 1
+#define HAS_JL_API_TESTS
+#endif
+
+
+#ifdef HAS_JL_API_TESTS
+
+#if !DEBUG
+#pragma message ( "WARNING: test API available in non-debug mode !" )
+#endif
+
+#define TEST(expr) \
+	( (expr) ? (void)0 : JL_AssertFailure(#expr, JL_CODE_LOCATION) )
 
 DEFINE_FUNCTION( _jsapiTests ) {
 
@@ -971,43 +984,68 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 	/////////////////////////////////////////////////////////////////
 
-	ASSERT( JSVAL_IS_PRIMITIVE(JSVAL_NULL) );
+	// Data issues //////////////////////////////////////////////////
+
+	JLData dat1("0123456789", false, 10);
+	
+	const char *sd1 = dat1.GetConstStrZ();
+	const char *sd2 = dat1.GetConstStrZ();
+
+	TEST( sd1 == sd2 );
+
+	/////////////////////////////////////////////////////////////////
+
+	// Data issues 2 ////////////////////////////////////////////////
+	{
+	JLData path;
+	jsval tmp;
+	tmp = JSVAL_ONE;
+	JL_CHK( JL_JsvalToNative(cx, tmp, &path) );
+	const char *d1 = path.GetConstStrZ();
+	const char *d2 = path.GetConstStrZ();
+	TEST( d1 == d2 );
+	}
+
+	/////////////////////////////////////////////////////////////////
+
+	TEST( JSVAL_IS_PRIMITIVE(JSVAL_NULL) );
 
 	///////////////////////////////////////////////////////////////
 	// check JL_JsvalToJsid -> JL_JsidToJsval
 	//
 	JSObject *o = JL_NewObj(cx);
 	jsid id;
-	jsval s = OBJECT_TO_JSVAL(o);
-	ASSERT( JL_JsvalToJsid(cx, s, &id) );
-	ASSERT( JSID_IS_OBJECT(id) );
+	jsval s;
+	s = OBJECT_TO_JSVAL(o);
+	TEST( JL_JsvalToJsid(cx, s, &id) );
+	TEST( JSID_IS_OBJECT(id) );
 	jsval r;
-	ASSERT( JL_JsidToJsval(cx, id, &r) );
-	ASSERT( JSVAL_TO_OBJECT(r) == o );
+	TEST( JL_JsidToJsval(cx, id, &r) );
+	TEST( JSVAL_TO_OBJECT(r) == o );
 
-	ASSERT( JS_ValueToId(cx, OBJECT_TO_JSVAL(o), &id) );
-	ASSERT( !JSID_IS_OBJECT(id) );
+	TEST( JS_ValueToId(cx, OBJECT_TO_JSVAL(o), &id) );
+	TEST( !JSID_IS_OBJECT(id) );
 
 	JSBool found;
-	ASSERT( JS_DefineProperty(cx, o, "test", JSVAL_ONE, NULL, NULL, JSPROP_PERMANENT) );
-	ASSERT( JS_HasProperty(cx, o, "test", &found) );
-	ASSERT( found );
+	TEST( JS_DefineProperty(cx, o, "test", JSVAL_ONE, NULL, NULL, JSPROP_PERMANENT) );
+	TEST( JS_HasProperty(cx, o, "test", &found) );
+	TEST( found );
 
 	JSString *jsstr = JS_NewUCStringCopyZ(cx, L"testtesttesttesttesttesttesttesttesttesttesttest");
 	jsid pid;
 	pid = JL_StringToJsid(cx, jsstr);
 
-	ASSERT( JL_JsvalToJsid(cx, OBJECT_TO_JSVAL(JS_NewObject(cx, NULL, NULL, NULL)), &id) );
-	ASSERT( JSID_IS_OBJECT(id) );
+	TEST( JL_JsvalToJsid(cx, OBJECT_TO_JSVAL(JS_NewObject(cx, NULL, NULL, NULL)), &id) );
+	TEST( JSID_IS_OBJECT(id) );
 
 
 //	// see Bug 688510
-	ASSERT( JS_GetParent(JS_NewObject(cx, NULL, NULL, NULL)) != NULL );
-//	ASSERT( JS_GetParent(JL_NewObjectWithGivenProto(cx, NULL, NULL, NULL)) != NULL );
+	TEST( JS_GetParent(JS_NewObject(cx, NULL, NULL, NULL)) != NULL );
+//	TEST( JS_GetParent(JL_NewObjectWithGivenProto(cx, NULL, NULL, NULL)) != NULL );
 
 
 	JS_ThrowStopIteration(cx);
-	ASSERT( JL_IsStopIterationExceptionPending(cx) );
+	TEST( JL_IsStopIterationExceptionPending(cx) );
 	JS_ClearPendingException(cx);
 
 
@@ -1022,11 +1060,11 @@ DEFINE_FUNCTION( _jsapiTests ) {
 //	JL_RemovePropertyById(cx, o, JL_StringToJsid(cx, L"test"));
 
 	JL_CHK( JS_HasProperty(cx, o, "test", &found) );
-	ASSERT( !found );
+	TEST( !found );
 */
 
 	// jl::Stack ////////////////////////////////////////////////////
-
+	{
 	static int STest_count = 0;
 	struct STest {
 		~STest() { STest_count++; }
@@ -1034,9 +1072,9 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	jl::Stack<STest> stack;
 	++stack;
 	--stack;
-	ASSERT( STest_count == 1 ); // test if the destructor of STest is called properly
+	TEST( STest_count == 1 ); // test if the destructor of STest is called properly
 	STest_count = 0;
-
+	}
 	/////////////////////////////////////////////////////////////////
 
 	// Buffer ////////////////////////////////////////////////////
@@ -1067,7 +1105,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	const char *d = BufferGetData(&b);
 	bool success = memcmp(ref, d, l) == 0 && memcmp(ref, tmp, l) == 0;
 	
-	ASSERT( success );
+	TEST( success );
 
 	/////////////////////////////////////////////////////////////////
 
@@ -1083,28 +1121,28 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	/////////////////////////////////////////////////////////////////
 
 	// JLData ///////////////////////////////////////////////////////
-
+	{
 	JLData str1("aé\x10\x1B\xFF", 1); // 97 130
-	ASSERT( str1.GetCharAt(0) == 'a' );
-	ASSERT( str1.GetCharAt(1) == 'é' );
+	TEST( str1.GetCharAt(0) == 'a' );
+	TEST( str1.GetCharAt(1) == 'é' );
 
 	JLData str2(L("aé\x10\x1B\xFF"), 1);
-	ASSERT( str1.GetWCharAt(0) == L('a') );
-	ASSERT( str1.GetWCharAt(1) == L('é') );
+	TEST( str1.GetWCharAt(0) == L('a') );
+	TEST( str1.GetWCharAt(1) == L('é') );
 
 	jschar s1[100];
 	str1.CopyTo(s1);
 	s1[str1.Length()] = 0;
-	ASSERT( !wcscmp(s1, L("aé\x10\x1B\xFF") ) );
+	TEST( !wcscmp(s1, L("aé\x10\x1B\xFF") ) );
 
 	char s2[100];
 	str2.CopyTo(s2);
 	s2[str2.Length()] = 0;
-	ASSERT( !strcmp(s2, "aé\x10\x1B\xFF" ) );
+	TEST( !strcmp(s2, "aé\x10\x1B\xFF" ) );
 
-	ASSERT( !wcscmp(str1.GetConstWStrZ(), L("aé\x10\x1B\xFF") ) );
-	ASSERT( !strcmp(str2.GetConstStrZ(), "aé\x10\x1B\xFF" ) );
-
+	TEST( !wcscmp(str1.GetConstWStrZ(), L("aé\x10\x1B\xFF") ) );
+	TEST( !strcmp(str2.GetConstStrZ(), "aé\x10\x1B\xFF" ) );
+	}
 	/////////////////////////////////////////////////////////////////
 
 	// misc inlining ////////////////////////////////////////////////
@@ -1116,20 +1154,21 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	JL_IGNORE(obj);
 	}
 	a = JLGetEIP() - a;
-	ASSERT( a < 200 );
+	TEST( a < 200 );
 	//printf("%d\n", a); exit(0);
 
 	/////////////////////////////////////////////////////////////////
-
 
 	return JS_TRUE;
 	JL_BAD;
 }
 
-#endif // DEBUG
+#undef TEST
+
+#endif // HAS_JL_API_TESTS
 
 
-#define JSLANG_TEST DEBUG // || true
+#define JSLANG_TEST DEBUG // || 1
 
 #ifdef JSLANG_TEST
 
@@ -1236,7 +1275,7 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( processEvents, 4 ) // (4 is just a guess)
 		FUNCTION_ARGC( timeoutEvents, 2 )
 
-		#ifdef DEBUG
+		#ifdef HAS_JL_API_TESTS
 		FUNCTION( _jsapiTests )
 		#endif
 

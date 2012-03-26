@@ -6,10 +6,12 @@ loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio -exclude jstas
 loadModule('jsstd');
 loadModule('jsio');
 
-print( Descriptor.import, '\n' );
 
+var ip = Socket.getHostsByName('proxy');
 
 throw 0;
+
+
 
 new Directory('asdfvsadfvsadf').exist;
 

@@ -41,7 +41,7 @@ DEFINE_FINALIZE() {
 
 /**doc
 $TOC_MEMBER $INAME
- $VAL $INAME( path , [ argv ] , [ stdioRedirect = true ]  )
+ $VAL $INAME( path , [ argv ] , [ currentDir = undefined ], [ stdioRedirect = true ]  )
   This function starts a new process optionaly using the JavaScript Array _argv_ for arguments or _undefined_ for no arguments.
   $H note
    The new process inherits the environment of the parent process.
@@ -55,6 +55,9 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JLData path;
+	JLData currentDir;
+	PRProcessAttr *psattr = NULL;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
@@ -62,10 +65,6 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT( !JL_ARG_ISDEF(2) || JL_ValueIsArrayLike(cx, JL_ARG(2)), E_ARG, E_NUM(2), E_TYPE, E_TY_ARRAY );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &path) );
-
-	PRProcessAttr *psattr;
-	psattr = PR_NewProcessAttr();
-	JL_CHK( psattr );
 
 	uint32_t processArgc;
 	const char **processArgv;
@@ -77,13 +76,13 @@ DEFINE_CONSTRUCTOR() {
 		processArgv = (const char**)alloca(sizeof(char**) * (processArgc +1)); // +1 because the NULL list terminator.
 		JL_ASSERT_ALLOC( processArgv );
 
-		for ( uint32_t i = 0; i < processArgc -1; ++i ) { // -1 because argv[0]
+		for ( uint32_t i = 1; i < processArgc; ++i ) {
 
 			JLData tmp;
 			jsval propVal;
-			JL_CHK( JL_GetElement(cx, argObj, i, &propVal) );
+			JL_CHK( JL_GetElement(cx, argObj, i -1, &propVal) ); // -1 because 0 is reserved to argv[0]
 			JL_CHK( JL_JsvalToNative(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
-			processArgv[i +1] = tmp.GetStrZOwnership(); // -1 because 0 is reserved to argv[0]
+			processArgv[i] = tmp.GetStrZOwnership();
 		}
 	} else {
 
@@ -95,25 +94,38 @@ DEFINE_CONSTRUCTOR() {
 	processArgv[0] = path.GetConstStrZ();
 	processArgv[processArgc] = NULL;
 
-	bool stdioRedirect;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &stdioRedirect) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &currentDir) );
+
+	bool stdioRedirect;
+	if ( JL_ARG_ISDEF(4) )
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &stdioRedirect) );
 	else
 		stdioRedirect = true;
 
 	PRFileDesc *stdin_child, *stdout_child, *stderr_child;
 	PRFileDesc *stdin_parent, *stdout_parent, *stderr_parent;
-	IFDEBUG( stdin_child = stdout_child = stderr_child = stdin_parent = stdout_parent = stderr_parent = 0 ); // avoid "potentially uninitialized local variable" warning
+	IFDEBUG( stdin_child = stdout_child = stderr_child = stdin_parent = stdout_parent = stderr_parent = NULL ); // avoid "potentially uninitialized local variable" warning
 
-	if ( stdioRedirect ) {
+	if ( stdioRedirect || currentDir.IsSet() ) {
 
-		JL_CHKB( PR_CreatePipe(&stdin_parent, &stdin_child) == PR_SUCCESS, bad_throw );
-		JL_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
-		JL_CHKB( PR_CreatePipe(&stderr_parent, &stderr_child) == PR_SUCCESS, bad_throw );
+		psattr = PR_NewProcessAttr();
+		JL_CHKB( psattr, bad_throw );
 
-		PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardInput, stdin_child);
-		PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardOutput, stdout_child);
-		PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardError, stderr_child);
+		if ( currentDir.IsSet() ) {
+			
+			JL_CHKB( PR_ProcessAttrSetCurrentDirectory(psattr, currentDir) == PR_SUCCESS, bad_throw );
+		}
+
+		if ( stdioRedirect ) {
+
+			JL_CHKB( PR_CreatePipe(&stdin_parent, &stdin_child) == PR_SUCCESS, bad_throw );
+			JL_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
+			JL_CHKB( PR_CreatePipe(&stderr_parent, &stderr_child) == PR_SUCCESS, bad_throw );
+			PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardInput, stdin_child);
+			PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardOutput, stdout_child);
+			PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardError, stderr_child);
+		}
 	}
 
 	//	JL_CHKB( PR_ProcessAttrSetCurrentDirectory(psattr, buf) == PR_SUCCESS, bad_throw );
@@ -122,11 +134,15 @@ DEFINE_CONSTRUCTOR() {
 	// cf. bug 113095 -  PR_CreateProcess reports success even when it fails to create the process. (https://bugzilla.mozilla.org/show_bug.cgi?id=113095)
 	// workaround: check the rights and execution flag before runiong the file
 	PRProcess *process;
-	process = PR_CreateProcess(path, (char *const *)processArgv, NULL, psattr); // (TBD) avoid cast to (char * const *)
+	process = PR_CreateProcess(processArgv[0], (char *const *)processArgv, NULL, psattr);
 
-	//printf("%s - %p \n", processArgv[0], process);
+	//printf("***[%p - %s - %d]\n", processArgv[0], processArgv[0], processArgv[0][0]);
 
-	PR_DestroyProcessAttr(psattr);
+	if ( psattr != NULL ) {
+	
+		PR_DestroyProcessAttr(psattr);
+		psattr = NULL;
+	}
 
 	if ( JL_ARG_ISDEF(2) ) // see GetStrZOwnership
 		for ( uint32_t i = 0; i < processArgc - 1; ++i )
@@ -174,6 +190,8 @@ DEFINE_CONSTRUCTOR() {
 bad_throw:
 	ThrowIoError(cx);
 bad:
+	if ( psattr != NULL )
+		PR_DestroyProcessAttr(psattr);
 	return JS_FALSE;
 }
 

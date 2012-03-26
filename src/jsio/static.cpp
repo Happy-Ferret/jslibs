@@ -1198,14 +1198,44 @@ DEFINE_PROPERTY_GETTER( version ) {
 	return JL_StoreProperty(cx, obj, id, vp, true);
 }
 
+#if defined(DEBUG) // || 1
+#define HAS_JSIOTEST
+#endif
 
-#ifdef DEBUG
+#ifdef HAS_JSIOTEST
+
+#if !DEBUG
+#pragma message ( "WARNING: test API available in non-debug mode !" )
+#endif
 
 #include "jlalloc.h"
 
 DEFINE_FUNCTION( jsioTest ) {
 
 	JL_IGNORE( argc, cx );
+/*
+	const char **processArgv;
+
+	processArgv = (const char **)malloc(100);
+	
+	processArgv[0] = "C:\\Windows\\system32\\cmd.exe";
+	processArgv[1] = NULL;
+
+	const char *path = "C:\\Windows\\system32\\cmd.exe";
+
+	PRProcessAttr *psattr;
+	psattr = PR_NewProcessAttr();
+
+
+	PRProcess *process;
+
+	printf("***[%p - %s - %d]\n", processArgv[0], processArgv[0], processArgv[0][0]);
+
+	process = PR_CreateProcess(path, (char *const *)processArgv, NULL, psattr);
+
+	printf("***[%p - %s - %d]\n", processArgv[0], processArgv[0], processArgv[0][0]);
+*/
+
 
 /*
 	JSObject *o = JL_NewObj(cx);
@@ -1258,7 +1288,7 @@ DEFINE_FUNCTION( jsioTest ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-#endif // DEBUG
+#endif // HAS_JSIOTEST
 
 
 CONFIGURE_STATIC
@@ -1266,9 +1296,9 @@ CONFIGURE_STATIC
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 
-		#ifdef DEBUG
+		#ifdef HAS_JSIOTEST
 		FUNCTION( jsioTest )
-		#endif // DEBUG
+		#endif // HAS_JSIOTEST
 
 		FUNCTION( poll ) // Do not turn it in FAST NATIVE because we need a stack frame for debuging
 //		FUNCTION( iOEvents ) // moved do Descriptor.Events()

@@ -16,8 +16,8 @@ function formatVal(val) {
 	if ( val === undefined )
 		return 'undefined';
 	val = uneval(val);
-	if ( val.length > 50 )
-		val = val.substr(0, 47).quote()+'...';
+	if ( val.length > 40 )
+		val = (val.substr(0, 20)+'...'+val.substr(20)).quote();
 	return val;
 }
 
@@ -302,7 +302,7 @@ function compileTests(itemList) {
 			item.func = function() {}
 			var lineno = ex.lineNumber - item.relativeLineNumber;
 			var message = 'COMPILATION: @'+ item.file +':'+ lineno +' - '+ item.name +' - '+ ex + ' : ' + item.code;
-			print( '*** ' + message, '\n' );
+			throw message;
 		}
 	}
 }

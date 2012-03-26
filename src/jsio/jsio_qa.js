@@ -248,19 +248,49 @@ loadModule('jsdebug');
 
 	var cmdPath = getEnv('ComSpec');
 	var process = new Process(cmdPath, ['/c', 'cd']);
-	QA.ASSERT( process.stdout instanceof Descriptor, true, 'stdout instanceof Descriptor' );
+	QA.ASSERTOP( process.stdout, 'instanceof', Descriptor, 'stdout instanceof Descriptor' );
+
+
+/// Process arguments [ftrm]
+
+	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments.toString())', '1', '2', '3']);
+	var res = stringify(process.stdout.read());
+	QA.ASSERT_STR( res, "1,2,3", "Process arguments validity" );
+
+
+/// Process default current directory [ftrm]
+
+	var process = new Process('jshost', ['-u', '-i', 'loadModule("jsio"); _host.stdout(currentDirectory)']);
+	var res = stringify(process.stdout.read());
+	QA.ASSERT_STR( res, currentDirectory );
+
+
+/// Process current directory [ftrm]
+	
+	var process = new Process('jshost', ['-u', '-i', 'loadModule("jsio"); _host.stdout(currentDirectory)'], '..');
+	var res = stringify(process.stdout.read());
+	QA.ASSERTOP( res, '==', currentDirectory.substr(0, currentDirectory.lastIndexOf(directorySeparator)) );
+
+
+/// Process no stdio redirect [ftrm]
+
+	var cmdPath = getEnv('ComSpec');
+	var process = new Process(cmdPath, ['/c', 'cd'], undefined, false);
+	QA.ASSERTOP( process.stdout, '===', undefined, 'stdout is not defined' );
+	QA.ASSERTOP( process.stderr, '===', undefined, 'stderr is not defined' );
+	QA.ASSERTOP( process.stdin, '===', undefined, 'stdin is not defined' );
 
 
 /// host name [ftm]
 
-		switch (systemInfo.name) {
-			case 'Windows_NT':
-				
-				QA.ASSERT( getEnv('COMPUTERNAME').toLowerCase(), hostName.toLowerCase(), 'COMPUTERNAME and hostName' );
-				break;
-			default:
-				QA.FAILED('(TBD) no test available for this system.');
-		}
+	switch (systemInfo.name) {
+		case 'Windows_NT':
+			
+			QA.ASSERT( getEnv('COMPUTERNAME').toLowerCase(), hostName.toLowerCase(), 'COMPUTERNAME and hostName' );
+			break;
+		default:
+			QA.FAILED('(TBD) no test available for this system.');
+	}
 
 
 /// GetHostByName function [rm]
