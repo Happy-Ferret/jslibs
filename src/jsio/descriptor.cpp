@@ -138,7 +138,6 @@ DEFINE_FUNCTION( close ) {
 	}
 	JL_SetPrivate(cx, obj, NULL);
 	JL_CHK( SetStreamReadInterface(cx, obj, NULL) );
-	//	JS_ClearScope( cx, obj ); // (TBD) check if this can help to clear readable, writable, exception ?
 
 	return JS_TRUE;
 	JL_BAD;
@@ -611,22 +610,22 @@ DEFINE_FUNCTION( import ) {
 	switch ( type ) {
 		case PR_DESC_FILE:
 			fd = PR_ImportFile(osfd);
-			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_CLASS_PROTOTYPE(cx, File), NULL); // (TBD) check if proto is needed !
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_CLASS_PROTOTYPE(cx, File), NULL);
 			break;
 		case PR_DESC_SOCKET_TCP:
 			fd = PR_ImportTCPSocket(osfd);
-			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket), NULL); // (TBD) check if proto is needed !
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket), NULL);
 			break;
 		case PR_DESC_SOCKET_UDP:
 			fd = PR_ImportUDPSocket(osfd);
-			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket), NULL); // (TBD) check if proto is needed !
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket), NULL);
 			break;
 		case PR_DESC_LAYERED:
 			JL_ERR(E_THISOPERATION, E_NOTSUPPORTED);
 			break;
 		case PR_DESC_PIPE:
 			fd = PR_ImportPipe(osfd);
-			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe), NULL); // (TBD) check if proto is needed !
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe), NULL);
 			break;
 		default:
 			ASSERT(false);
@@ -737,8 +736,10 @@ DEFINE_FUNCTION( events ) {
 
 	upe->pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdCount)); // pollDesc[0] is the event fd
 	JL_ASSERT_ALLOC( upe->pollDesc );
+	
 	upe->descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
 	JL_ASSERT_ALLOC( upe->descVal );
+	
 	JL_updateMallocCounter(cx, (sizeof(PRPollDesc) + sizeof(jsval)) * fdCount); // approximately (pollDesc + descVal)
 
 	JsioPrivate *mpv;
@@ -756,19 +757,20 @@ DEFINE_FUNCTION( events ) {
 
 	upe->fdCount = fdCount; // count excluding peCancel
 
-	// (TBD) try to get the 'agruments' variable instead of using rootedValues ?
+	// (TBD) use AutoValueVector avr(cx); avr.reserve(16); avr.append(val);
+
 
 	JSObject *rootedValues;
 	rootedValues = JS_NewArrayObject(cx, fdCount, NULL);
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(rootedValues)) );
 
-	jsval *tmp;
+	jsval *descriptor;
 	for ( jsuint i = 0; i < fdCount; ++i ) {
 
-		tmp = &upe->descVal[i];
-		JL_CHK( JL_GetElement(cx, fdArrayObj, i, tmp) );
-		JL_CHK( JL_SetElement(cx, rootedValues, i, tmp) );
-		JL_CHK( InitPollDesc(cx, *tmp, &upe->pollDesc[1 + i]) );
+		descriptor = &upe->descVal[i]; // get the slot addr
+		JL_CHK( JL_GetElement(cx, fdArrayObj, i, descriptor) ); // read the item
+		JL_CHK( JL_SetElement(cx, rootedValues, i, descriptor) ); // root the item
+		JL_CHK( InitPollDesc(cx, *descriptor, &upe->pollDesc[1 + i]) ); // upe->pollDesc[0] is reserved for mpv->peCancel
 	}
 
 	return JS_TRUE;

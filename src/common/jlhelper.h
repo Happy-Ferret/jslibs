@@ -49,26 +49,30 @@ extern int _unsafeMode;
 
 class JLData;
 
-
 ALWAYS_INLINE bool FASTCALL
 JL_NewEmptyBuffer( JSContext *cx, jsval *rval );
 
 ALWAYS_INLINE bool FASTCALL
 JL_NewBufferGetOwnership( JSContext *cx, void *src, size_t nbytes, jsval *rval );
 
-
-///////////////////////////////////////////////////////////////////////////////
-// Native Interface function prototypes
+ALWAYS_INLINE bool FASTCALL
+JL_MaybeRealloc( size_t requested, size_t received );
 
 typedef JSBool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, size_t *amount );
 typedef JSBool (*NIBufferGet)( JSContext *cx, JSObject *obj, JLData *str );
 typedef JSBool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
 
-inline NIBufferGet BufferGetNativeInterface( JSContext *cx, JSObject *obj );
-inline NIBufferGet BufferGetInterface( JSContext *cx, JSObject *obj );
-inline NIMatrix44Get Matrix44GetInterface( JSContext *cx, JSObject *obj );
+ALWAYS_INLINE NIBufferGet
+BufferGetNativeInterface( JSContext *cx, JSObject *obj );
 
-ALWAYS_INLINE JSBool SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet pFct );
+ALWAYS_INLINE NIBufferGet
+BufferGetInterface( JSContext *cx, JSObject *obj );
+
+ALWAYS_INLINE NIMatrix44Get
+Matrix44GetInterface( JSContext *cx, JSObject *obj );
+
+ALWAYS_INLINE JSBool
+SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet pFct );
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -418,6 +422,12 @@ enum {
 	JLID_SPEC( Debugger ),
 	JLID_SPEC( Function ),
 	JLID_SPEC( isGenerator ),
+	JLID_SPEC( writable ),
+	JLID_SPEC( readable ),
+	JLID_SPEC( hangup ),
+	JLID_SPEC( exception ),
+	JLID_SPEC( error ),
+
 	LAST_JSID // see HostPrivate::ids[]
 };
 #undef JLID_SPEC
@@ -715,7 +725,7 @@ JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, JSObject *proto, JSOb
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewProtolessObj( JSContext *cx ) {
 
-	JSObject *obj = JL_NewObjectWithGivenProto(cx, NULL, NULL, JL_GetGlobal(cx)); // (TBD) or JL_GetGlobalObject ?
+	JSObject *obj = JL_NewObjectWithGivenProto(cx, NULL, NULL, JL_GetGlobal(cx));
 	ASSERT( JL_GetParent(cx, obj) != NULL );
 	return obj;
 }
@@ -1357,7 +1367,8 @@ class JLData {
 			if ( dst == _buf ) {
 				
 				ASSERT( _own );
-				if ( dstSize > 64 ) { // (TBD) use JL_MaybeRealloc ?
+				//if ( dstSize > 64 ) {
+				if ( JL_MaybeRealloc(length, dstSize) ) {
 					
 					dst = jl_realloc(_buf, dstSize);
 					if ( !dst )
@@ -1751,7 +1762,8 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLData * RESTRICT str ) {
 		if ( fct ) {
 
 			return fct(cx, obj, str);
-		} else
+		}
+
 		if ( JS_IsArrayBufferObject(obj) ) {
 			
 			uint32_t length = JS_GetArrayBufferByteLength(obj);
@@ -1762,7 +1774,9 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLData * RESTRICT str ) {
 
 				*str = JLData::Empty();
 			}
-		} else
+			return JS_TRUE;
+		}
+		
 		if ( js_IsTypedArray(obj) ) {
 
 			uint32_t length = JS_GetTypedArrayLength(obj);
@@ -1776,18 +1790,18 @@ JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLData * RESTRICT str ) {
 
 				*str = JLData::Empty();
 			}
-		} else
-		{
-			// fallback
-			JSString *jsstr;
-			jsstr = JS_ValueToString(cx, val);
-			JL_CHKM( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
-			val = STRING_TO_JSVAL(jsstr); // GC protection
-			*str = JLData(cx, jsstr);
+			return JS_TRUE;
 		}
 	}
 
+	// fallback
+	JSString *jsstr;
+	jsstr = JS_ValueToString(cx, val);
+	JL_CHKM( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
+	val = STRING_TO_JSVAL(jsstr); // GC protection
+	*str = JLData(cx, jsstr);
 	return JS_TRUE;
+
 	JL_BAD;
 
 	UNLIKELY_SPLIT_END(cx, val, str)
@@ -1802,7 +1816,7 @@ JL_NativeToJsval( JSContext *cx, JLData &cval, jsval *vp, bool toArrayBuffer ) {
 }
 
 
-// jschar
+// jschar*
 
 ALWAYS_INLINE JSBool FASTCALL
 JL_NativeToJsval( JSContext *cx, const jschar *cval, size_t length, jsval *vp ) {
@@ -1850,7 +1864,7 @@ JL_NativeToJsval( JSContext *cx, OwnerlessJsstr cval, size_t length, jsval *vp )
 }
 
 
-// c-strings
+// const char * (c-strings)
 
 ALWAYS_INLINE JSBool FASTCALL
 JL_NativeToJsval( JSContext *cx, const char* cval, jsval *vp ) {
@@ -2096,6 +2110,18 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int32_t *num ) {
 
 S_ASSERT( UINT32_MAX >= JSVAL_INT_MAX );
 
+/*
+namespace jlpv {
+	INLINE NEVER_INLINE JSBool
+	NativeToJsval_slow( const uint32_t &num, jsval *vp ) {
+
+		ASSERT( jsdouble(num) <= MAX_INT_TO_DOUBLE );
+		*vp = DOUBLE_TO_JSVAL(jsdouble(num));
+		return JS_TRUE;
+	}
+}
+*/
+
 ALWAYS_INLINE JSBool FASTCALL
 JL_NativeToJsval( JSContext *cx, const uint32_t &num, jsval *vp ) {
 
@@ -2105,14 +2131,15 @@ JL_NativeToJsval( JSContext *cx, const uint32_t &num, jsval *vp ) {
 		*vp = INT_TO_JSVAL(num);
 		return JS_TRUE;
 	}
+//	return jlpv::NativeToJsval_slow(num, vp);
 
-//	UNLIKELY_SPLIT_BEGIN( const uint32_t &num, jsval *vp )
+	UNLIKELY_SPLIT_BEGIN( const uint32_t &num, jsval *vp )
 
 		ASSERT( jsdouble(num) <= MAX_INT_TO_DOUBLE );
 		*vp = DOUBLE_TO_JSVAL(jsdouble(num));
 		return JS_TRUE;
 
-//	UNLIKELY_SPLIT_END(num, vp)
+	UNLIKELY_SPLIT_END(num, vp)
 
 }
 
@@ -3636,7 +3663,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 			script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
 			break;
 		}
-		case ENC_UTF8: { // (TBD) check if JS_DecodeBytes does the right things
+		case ENC_UTF8: {
 
 			scriptText = (jschar*)jl_malloca(scriptFileSize * 2);
 			scriptTextLength = scriptFileSize * 2;
@@ -3873,7 +3900,7 @@ JSStreamRead( JSContext * RESTRICT cx, JSObject * RESTRICT obj, char * RESTRICT 
 	jsval tmp;
 	JL_CHK( JL_NativeToJsval(cx, *amount, &tmp) );
 	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, read), 1, &tmp, &tmp) );
-	if ( JSVAL_IS_VOID(tmp) ) { // (TBD)! with sockets, undefined mean 'closed', that is not supported by streams !!
+	if ( JSVAL_IS_VOID(tmp) ) { // (TBD) with sockets, undefined mean 'closed', that is not supported by NIStreamRead.
 
 		*amount = 0;
 	} else {
@@ -3882,7 +3909,7 @@ JSStreamRead( JSContext * RESTRICT cx, JSObject * RESTRICT obj, char * RESTRICT 
 		JL_CHK( JL_JsvalToNative(cx, tmp, &str) );
 		ASSERT( str.Length() <= *amount );
 		*amount = str.Length();
-		jl_memcpy(buffer, str.GetConstStr(), *amount);
+		str.CopyTo(buffer);
 	}
 	return JS_TRUE;
 	JL_BAD;

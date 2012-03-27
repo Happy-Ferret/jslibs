@@ -37,51 +37,40 @@ BEGIN_STATIC
 
 JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 
+	pollDesc->in_flags = 0;
+	pollDesc->out_flags = 0;
+
 	if ( JSVAL_IS_PRIMITIVE( descVal ) ) {
 
-		pollDesc->fd = 0;
-		pollDesc->in_flags = 0;
-		pollDesc->out_flags = 0;
+		pollDesc->fd = NULL; // indicate to PR_Poll that this PRFileDesc object should be ignored.
 		return JS_TRUE;
 	}
 
 	JSObject *fdObj = JSVAL_TO_OBJECT( descVal );
 	JL_ASSERT_INHERITANCE( fdObj, JL_CLASS(Descriptor) );
 
-	pollDesc->fd = (PRFileDesc *)JL_GetPrivate(cx, fdObj); // fd is A pointer to a PRFileDesc object representing a socket or a pollable event.  This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
-	// beware: fd == NULL is supported !
-
-	pollDesc->out_flags = 0;
-	pollDesc->in_flags = 0;
+	// doc:
+	//   fd is a pointer to a PRFileDesc object representing a socket or a pollable event. This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
+	pollDesc->fd = (PRFileDesc*)JL_GetPrivate(cx, fdObj); // beware: fd == NULL may be NULL !
 
 	JSBool has;
-	//JL_CHK( JS_GetProperty( cx, fdObj, "writable", &tmp ) );
-	//if ( JL_ValueIsCallable(cx, tmp) )
-	JL_CHK( JS_HasProperty(cx, fdObj, "writable", &has) );
+	JL_CHK( JS_HasPropertyById(cx, fdObj, JLID(cx, writable), &has) );
 	if ( has )
 		pollDesc->in_flags |= PR_POLL_WRITE;
 
-	//JL_CHK( JS_GetProperty( cx, fdObj, "readable", &tmp ) );
-	//if ( JL_ValueIsCallable(cx, tmp) )
-	JL_CHK( JS_HasProperty(cx, fdObj, "readable", &has) );
+	JL_CHK( JS_HasPropertyById(cx, fdObj, JLID(cx, readable), &has) );
 	if ( has )
 		pollDesc->in_flags |= PR_POLL_READ;
 
-	//JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &tmp ) );
-	//if ( JL_ValueIsCallable(cx, tmp) )
-	JL_CHK( JS_HasProperty(cx, fdObj, "hangup", &has) );
+	JL_CHK( JS_HasPropertyById(cx, fdObj, JLID(cx, hangup), &has) );
 	if ( has )
 		pollDesc->in_flags |= PR_POLL_HUP;
 
-	//JL_CHK( JS_GetProperty( cx, fdObj, "exception", &tmp ) );
-	//if ( JL_ValueIsCallable(cx, tmp) )
-	JL_CHK( JS_HasProperty(cx, fdObj, "exception", &has) );
+	JL_CHK( JS_HasPropertyById(cx, fdObj, JLID(cx, exception), &has) );
 	if ( has )
 		pollDesc->in_flags |= PR_POLL_EXCEPT;
 
-	//JL_CHK( JS_GetProperty( cx, fdObj, "error", &tmp ) );
-	//if ( JL_ValueIsCallable(cx, tmp) )
-	JL_CHK( JS_HasProperty(cx, fdObj, "error", &has) );
+	JL_CHK( JS_HasPropertyById(cx, fdObj, JLID(cx, error), &has) );
 	if ( has )
 		pollDesc->in_flags |= PR_POLL_ERR;
 
@@ -110,7 +99,7 @@ JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int i
 
 	if ( outFlag & PR_POLL_ERR ) {
 
-		JL_CHK( JS_GetProperty( cx, fdObj, "error", &descVal ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "error", &descVal ) ); // (TBD) use JS_HasPropertyById
 		if ( JL_ValueIsCallable(cx, descVal) )
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}

@@ -1167,16 +1167,78 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 #endif // HAS_JL_API_TESTS
 
-
-#define JSLANG_TEST DEBUG // || 1
+#if defined(DEBUG)  || 1
+#define JSLANG_TEST 
+#endif
 
 #ifdef JSLANG_TEST
+
+INLINE NEVER_INLINE void
+testFct( JSContext *cx ) {
+
+	static jsval tmp = JSVAL_ONE;
+/* 2000
+	static JSObject *o = JS_NewArrayObject(cx, 0, NULL);
+	JS_SetElement(cx, o, 1, &tmp); JS_SetElement(cx, o, 2, &tmp); JS_SetElement(cx, o, 3, &tmp); JS_SetElement(cx, o, 4, &tmp); JS_SetElement(cx, o, 5, &tmp); JS_SetElement(cx, o, 6, &tmp); JS_SetElement(cx, o, 7, &tmp); JS_SetElement(cx, o, 8, &tmp); JS_SetElement(cx, o, 9, &tmp); JS_SetElement(cx, o, 10, &tmp); JS_SetElement(cx, o, 11, &tmp); JS_SetElement(cx, o, 12, &tmp); JS_SetElement(cx, o, 13, &tmp); JS_SetElement(cx, o, 14, &tmp); JS_SetElement(cx, o, 15, &tmp); JS_SetElement(cx, o, 16, &tmp);
+*/
+
+/* 750
+	static AutoValueVector avr(cx);
+	avr.append(tmp); avr.append(tmp); avr.append(tmp); avr.append(tmp); avr.append(tmp); avr.append(tmp); avr.append(tmp); avr.append(tmp); avr.append(tmp); avr.append(tmp); avr.append(tmp); avr.append(tmp); avr.append(tmp); avr.append(tmp); avr.append(tmp); avr.append(tmp);
+*/
+
+//	malloc(1);
+
+}
+
 
 DEFINE_FUNCTION( jslangTest ) {
 
 	JL_IGNORE(cx, argc, vp);
 
 /*
+	JL_CHK( ::SetThreadAffinityMask(GetCurrentThread(), 1) );
+	JL_CHK( ::SetProcessPriorityBoost(GetCurrentProcess(), TRUE) ); // disable dynamic boosting
+	JL_CHK( ::SetPriorityClass(::GetCurrentProcess(), REALTIME_PRIORITY_CLASS) );
+	JL_CHK( ::SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL) );
+
+	// (TBD) try to get the 'agruments' variable instead of using rootedValues ?
+	// (TBD) use AutoValueVector avr(cx); avr.reserve(16); avr.append(val);
+
+	unsigned __int64 count, min = UINT64_MAX, sum = 0;
+
+	int i = 0;
+	for (; i < 10000; ++i ) {
+
+		count = rdtsc();
+		testFct(cx);
+		testFct(cx);
+		testFct(cx);
+		testFct(cx);
+		testFct(cx);
+		testFct(cx);
+		testFct(cx);
+		testFct(cx);
+		count = (rdtsc() - count) / 8;
+		sum += count;
+		min = JL_MIN(min, count);
+	}
+
+	printf("min cycles: %I64d\n", min);
+	printf("avg cycles: %I64d\n", sum/i);
+
+	exit(0);
+*/
+
+
+/*
+	size_t a = JLGetEIP();
+	//
+	a = JLGetEIP() - a;
+	printf("res: %d\n", a); exit(0);
+
+
+
 	JSObject *o = JSVAL_TO_OBJECT(*vp);
 
 	static const void *tmp;

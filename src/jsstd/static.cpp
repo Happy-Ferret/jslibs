@@ -873,12 +873,7 @@ DEFINE_FUNCTION( exec ) {
 	JS_SetOptions(cx, oldopts);
 	JL_CHK( script );
 
-//	scriptObjRoot = JS_NewScriptObject(cx, script);
-	
-	JSBool ok;
-	ok = JS_ExecuteScript(cx, obj, script, JL_RVAL); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
-//	JS_DestroyScript(cx, script);
-	JL_CHK( ok );
+	JL_CHK( JS_ExecuteScript(cx, obj, script, JL_RVAL) ); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
 
 	return JS_TRUE;
 	JL_BAD;

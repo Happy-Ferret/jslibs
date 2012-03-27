@@ -338,9 +338,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 //	size_t length;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &chr, &length) );
 	JL_CHK( JL_JsvalToNative(cx, *vp, &chr) );
-
-	JL_ASSERT( chr.Length() == 1, E_VALUE, E_LENGTH, E_NUM(1) );
-
+	JL_ASSERT_WARN( chr.Length() == 1, E_VALUE, E_LENGTH, E_NUM(1) );
 	pv->invalidChar = chr.GetConstStr()[0];
 	return JS_TRUE;
 	JL_BAD;

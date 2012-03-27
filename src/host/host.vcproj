@@ -187,10 +187,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\libs\js\src\js\src\jsapi.h"
-				>
-			</File>
-			<File
 				RelativePath="..\common\jsvalserializer.h"
 				>
 			</File>

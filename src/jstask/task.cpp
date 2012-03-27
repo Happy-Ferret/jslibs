@@ -511,7 +511,7 @@ DEFINE_FUNCTION( response ) {
 
 	JLMutexAcquire(pv->mutex); // --
 
-	if ( QueueIsEmpty(&pv->responseList) ) { // || !JLThreadIsActive( pv->threadHandle )
+	if ( QueueIsEmpty(&pv->responseList) ) { // || !JLThreadIsActive( pv->threadHandle ) ?
 
 		JLMutexRelease(pv->mutex); // ++
 		*JL_RVAL = JSVAL_VOID;

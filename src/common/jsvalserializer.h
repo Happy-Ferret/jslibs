@@ -440,7 +440,7 @@ namespace jl {
 				JL_CHK( Write(cx, JLSTErrorObject) );
 				JL_CHK( Write(cx, SerializerConstBufferInfo(str, length)) );
 
-				//JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) ); // (TBD) why this don't work on error object ?
+				//JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) ); // (TBD) why this don't work on error object => bug 724768
 				
 				jsval tmp;
 				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, message), &tmp) );

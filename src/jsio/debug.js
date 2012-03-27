@@ -1,13 +1,33 @@
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
 
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio -exclude jstask'); throw 0;
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio -exclude jstask'); throw 0;
 
 loadModule('jsstd');
 loadModule('jsio');
 
+	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+	processEvents( Descriptor.events([rdv]), timeoutEvents(2000) );
+	var sv = rdv.accept(); rdv.close();
 
-var ip = Socket.getHostsByName('proxy');
+	sv.write(stringRepeat('x', 10000));
+	sleep(10); // need a gracefull close
+	sv.close();
+
+	var data = [];
+	var chunk;
+	while ( (chunk = cl.read()) != undefined ) {
+		
+		data.push(chunk);
+	}
+	
+	var result = join(data);
+
+	print( result.length, 10000, 'read amount' );
+	print( cl.read(), undefined, 'read done' );
+
+
 
 throw 0;
 

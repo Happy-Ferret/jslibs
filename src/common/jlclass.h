@@ -26,7 +26,7 @@ struct JLConstIntegerSpec {
 
 struct JLClassSpec {
 	JSClass clasp;
-	JSNative constructor; // (TBD) JSFUN_CONSTRUCTOR ???
+	JSNative constructor;
 	uintN nargs;
 	const char *parentProtoName;
 	JSPropertySpec *ps;
@@ -85,7 +85,7 @@ JL_DefineClassProperties(JSContext *cx, JSObject *obj, JSPropertySpec *ps) {
 ALWAYS_INLINE char *
 JLNormalizeFunctionName( const char *name ) {
 
-	char *buf = JL_strdup(name); // (TBD) if needed, do free with js_free() function.
+	char *buf = JL_strdup(name);
 	buf[0] = (char)toupper(buf[0]);
 	return buf;
 }
@@ -353,7 +353,6 @@ InvalidConstructor(JSContext *cx, uintN, jsval *) {
 }
 
 // throw an error if one tries to construct it
-// (TBD) see error in js_ReportIsNotFunction
 #define IS_UNCONSTRUCTIBLE \
 	ASSERT(cs.constructor == NULL); \
 	cs.constructor = InvalidConstructor;

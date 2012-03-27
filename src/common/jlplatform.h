@@ -691,7 +691,7 @@ template<class T, class U>
 ALWAYS_INLINE bool
 JL_INRANGE(T val, U vmin, U vmax) {
 
-	return val >= vmin && val <= vmax; // (TBD) test perf. with: return unsigned(val - vmin) <= unsigned(vmax - vmin);
+	return val >= vmin && val <= vmax; // note: unsigned(val - vmin) <= unsigned(vmax - vmin) is 10 cycles faster.
 }
 
 
@@ -939,27 +939,38 @@ JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and e
 //}
 
 
-INLINE void FASTCALL
+INLINE bool FASTCALL
 fpipe( FILE **read, FILE **write ) {
 
 	int readfd, writefd;
 #if defined(XP_WIN)
 	HANDLE readPipe, writePipe;
-	CreatePipe(&readPipe, &writePipe, NULL, 65536);
+	if ( CreatePipe(&readPipe, &writePipe, NULL, 65536) == 0 )
+		return false;
 	// doc: The underlying handle is also closed by a call to _close,
 	//      so it is not necessary to call the Win32 function CloseHandle on the original handle.
 	readfd = _open_osfhandle((intptr_t)readPipe, _O_RDONLY);
+	if ( readfd == -1 )
+		return false;
 	writefd = _open_osfhandle((intptr_t)writePipe, _O_WRONLY);
+	if ( writefd == -1 )
+		return false;
 #elif defined(XP_UNIX)
 	int fd[2];
-	pipe(fd); // (TBD) check return value
+	if ( pipe(fd) == -1 )
+		return false;
 	readfd = fd[0];
 	writefd = fd[1];
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 	*read = fdopen(readfd, "r");
+	if ( *read == NULL )
+		return false;
 	*write = fdopen(writefd, "w");
+	if ( *write == NULL )
+		return false;
+	return true;
 }
 
 
@@ -1262,11 +1273,41 @@ SleepMilliseconds(uint32_t ms) {
 		Sleep(ms); // winbase.h
 
 #elif defined(XP_UNIX)
-	usleep(ms * 1000); // unistd.h
+	usleep(ms * 1000); // unistd.h // (TBD) obsolete, use nanosleep() instead.
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 }
+
+
+// ReaD Time Stamp Counter (rdtsc)
+
+#if defined(XP_WIN)
+INLINE uint64_t
+rdtsc(void) {
+
+  return __rdtsc();
+}
+#elif defined(XP_UNIX)
+#ifdef __i386
+INLINE uint64_t
+rdtsc() {
+  uint64_t x;
+  __asm__ volatile ("rdtsc" : "=A" (x));
+  return x;
+}
+#elif defined __amd64
+INLINE uint64_t
+rdtsc() {
+  uint64_t a, d;
+  __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
+  return (d<<32) | a;
+}
+#endif
+#else
+	#error NOT IMPLEMENTED YET
+#endif
+
 
 
 // Accurate FPS Limiting / High-precision 'Sleeps': see. http://www.geisswerks.com/ryan/FAQS/timing.html
@@ -1311,7 +1352,6 @@ AccurateTimeCounter() {
 	return (double)(tv.tv_sec-initTime) * (double)1000 + tv.tv_usec / (double)1000;
 #else
 	#error NOT IMPLEMENTED YET
-	// (TBD) or see js_IntervalNow() or JS_Now() ? no, it could be expensive and is not suitable for calls when a GC lock is held.
 #endif
 }
 
@@ -1907,7 +1947,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	#if defined(XP_WIN)
 		return CreateSemaphore(NULL, initCount, LONG_MAX, NULL);
 	#elif defined(XP_UNIX)
-		sem_t *sem = (sem_t*)malloc(sizeof(sem_t)); // (TBD) max ???
+		sem_t *sem = (sem_t*)malloc(sizeof(sem_t));
 		if ( sem == NULL )
 			return NULL;
 		sem_init(sem, 0, initCount);
@@ -2508,7 +2548,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#endif
 	}
 
-	ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) {  // (TBD) how to manage errors ?
+	ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) { // (TBD) how to manage errors ?
 
 		ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
