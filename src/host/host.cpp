@@ -567,7 +567,7 @@ static JSClass global_class = {
 
 
 // default: CreateHost(-1, -1, 0);
-JSContext* CreateHost(uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterval ) {
+JSContext* CreateHost( uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterval ) {
 
 	JSRuntime *rt = JS_NewRuntime(maxAlloc); // JSGC_MAX_MALLOC_BYTES
 	JL_CHK( rt );
@@ -820,40 +820,8 @@ void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
 }
 */
 
-JSBool RemoveScriptArguments( JSContext *cx ) {
 
-	JSObject *globalObject = JL_GetGlobal(cx);
-	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
-	JL_CHKM( JS_DeletePropertyById(cx, globalObject, JLID(cx, arguments)), E_HOST, E_INTERNAL ); // "Unable to cleanup script arguments." // beware: permanant properties cannot be removed.
-	return JS_TRUE;
-	JL_BAD;
-}
-
-JSBool CreateScriptArguments( JSContext *cx, int argc, const char * const * argv ) {
-
-	JSObject *globalObject = JL_GetGlobal(cx);
-	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
-
-	JSObject *argsObj;
-	argsObj = JS_NewArrayObject(cx, argc, NULL); // JL_IsArray(cx, OBJECT_TO_JSVAL(argsObj));
-	JL_ASSERT_ALLOC( argsObj ); // JL_CHKM( argsObj != NULL, E_HOST, E_INTERNAL ); // "Unable to create script arguments."
-	JL_CHKM( JS_DefinePropertyById(cx, globalObject, JLID(cx, arguments), OBJECT_TO_JSVAL(argsObj), NULL, NULL, /*JSPROP_READONLY | JSPROP_PERMANENT*/ 0), E_HOST, E_INTERNAL ); // "Unable to store script arguments."
-
-	for ( int index = 0; index < argc; ++index ) {
-
-		JSString *str = JS_NewStringCopyZ(cx, argv[index]);
-		JL_ASSERT( str != NULL, E_HOST, E_INTERNAL ); // "Unable to store the argument."
-		//JL_CHKM( JS_DefineElement(cx, argsObj, index, STRING_TO_JSVAL(str), NULL, NULL, JSPROP_ENUMERATE), E_HOST, E_INTERNAL ); // "Unable to define the argument."
-		jsval tmp;
-		tmp = STRING_TO_JSVAL(str);
-		JL_CHKM( JL_SetElement(cx, argsObj, index, &tmp), E_HOST, E_INTERNAL ); // "Unable to define the argument."
-	}
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
+JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnly, jsval *rval ) {
 
 	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); //  | JSOPTION_DONT_REPORT_UNCAUGHT
 	// JSOPTION_COMPILE_N_GO:
@@ -864,9 +832,6 @@ JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnl
 
 	JSObject *globalObject = JL_GetGlobal(cx);
 	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
-
-	JL_CHK( CreateScriptArguments(cx, argc, argv) );
-
 
 // compile & executes the script
 
@@ -891,7 +856,6 @@ JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnl
 	else
 		*rval = JSVAL_VOID;
 
-	JL_CHK( RemoveScriptArguments( cx ) );
 	JS_SetOptions(cx, prevOpt);
 	return JS_TRUE;
 
@@ -902,12 +866,11 @@ bad:
 
 
 
-JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, int argc, const char * const * argv, jsval *rval ) {
+JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, jsval *rval ) {
 
 	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
 	JSObject *globalObject = JL_GetGlobal(cx);
 	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
-	JL_CHK( CreateScriptArguments(cx, argc, argv) );
 
 	JSScript *script;
 	script = JL_LoadScript(cx, globalObject, scriptFileName, ENC_UNKNOWN, true, false); // use xdr if available, but don't save it.
@@ -922,7 +885,6 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 	else
 		*rval = JSVAL_VOID;
 
-	JL_CHK( RemoveScriptArguments(cx) );
 	JS_SetOptions(cx, prevOpt);
 	return JS_TRUE;
 
@@ -932,7 +894,7 @@ bad:
 }
 
 
-JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32_t xdrScriptLength ) {
+JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32_t xdrScriptLength, jsval *rval ) {
 
 	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
 //	JL_CHKM( JS_EvaluateScript(cx, JL_GetGlobal(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
@@ -947,8 +909,7 @@ JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32_t xdrScrip
 	JS_XDRDestroy(xdr);
 
 //	JL_CHK( SetConfigurationReadonlyValue(cx, JLID_NAME(cx, bootstrapScript), OBJECT_TO_JSVAL(bootstrapScriptObject)) ); // bootstrap script cannot be hidden
-	jsval tmp;
-	JL_CHK( JS_ExecuteScript(cx, JL_GetGlobal(cx), script, &tmp) );
+	JL_CHK( JS_ExecuteScript(cx, JL_GetGlobal(cx), script, rval) );
 
 	JS_SetOptions(cx, prevOpt);
 	return JS_TRUE;

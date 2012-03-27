@@ -148,9 +148,9 @@ if ( 0 ) {
 	halt();
 
 /*	
-	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments)', '123', '-c']);
+	var process = new Process('jshost', ['-u', '-i', '_host.stdout(_host.arguments)', '123', '-c']);
 	var res = process.stdout.read();
-	print( res ==  "_host.stdout(arguments),123,-c");
+	print( res ==  "_host.stdout(_host.arguments),123,-c");
 */
 
 	var f = new File('c:/MSDOS.SYS').open('r');

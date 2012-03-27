@@ -436,7 +436,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 #endif // DEBUG	
 
 
-	HOST_MAIN_ASSERT( cx != NULL, "Unable to initialize JavaScript engine." );
+	HOST_MAIN_ASSERT( cx != NULL, "Unable to initialize the JavaScript engine." );
 
 	if ( useJslibsMemoryManager )
 		MemoryManagerEnableGCEvent(cx);
@@ -474,6 +474,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
 	JL_CHK( JS_DefineFunction(cx, globalObject, "endSignalEvents", EndSignalEvents, 0, JSPROP_SHARED | JSPROP_PERMANENT) );
+
+	jsval arguments;
+	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), &arguments) );
+	JL_CHK( SetHostObjectValue(cx, JLID(cx, arguments), arguments) );
+
 
 // script name
 	//	if ( inlineScript == NULL )
@@ -516,31 +521,30 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JL_CHK( JL_SetProperty(cx, globalObject, JLID(cx, scripthostpath), hostPath) );
 	JL_CHK( JL_SetProperty(cx, globalObject, JLID(cx, scripthostname), hostName) );
 
+	int exitValue;
+	jsval rval;
+
 	if ( sizeof(embeddedBootstrapScript)-1 > 0 )
-		JL_CHK( ExecuteBootstrapScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1) ); // -1 because sizeof("") == 1
+		JL_CHK( ExecuteBootstrapScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, &rval) ); // -1 because sizeof("") == 1
 
 	if ( useFileBootstrapScript ) {
 
-		jsval tmp;
 		char bootstrapFilename[PATH_MAX +1];
 		strcpy(bootstrapFilename, hostPath);
 		strcat(bootstrapFilename, PATH_SEPARATOR_STRING);
 		strcat(bootstrapFilename, hostName);
-		strcat(bootstrapFilename, ".js"); // (TBD) perhaps find another extension for bootstrap scripts (on windows: jshost.exe.js)
-		JL_CHK( ExecuteScriptFileName(cx, bootstrapFilename, compileOnly, argc - (argumentVector-argv), argumentVector, &tmp) );
+		strcat(bootstrapFilename, ".js");
+		JL_CHK( ExecuteScriptFileName(cx, bootstrapFilename, compileOnly, &rval) );
 	}
-
-	int exitValue;
-	jsval rval;
 
 	ASSERT( !JL_IsExceptionPending(cx) );
 
 	JSBool executeStatus;
 	if ( inlineScript != NULL )
-		executeStatus = ExecuteScriptText(cx, inlineScript, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
+		executeStatus = ExecuteScriptText(cx, inlineScript, compileOnly, &rval);
 
 	if ( (!inlineScript || inlineScript && executeStatus == JS_TRUE) && scriptName != NULL )
-		executeStatus = ExecuteScriptFileName(cx, scriptName, compileOnly, argc - (argumentVector-argv), argumentVector, &rval);
+		executeStatus = ExecuteScriptFileName(cx, scriptName, compileOnly, &rval);
 
 	if ( executeStatus == JS_TRUE ) {
 
@@ -732,9 +736,9 @@ $H beware
   The command-line arguments (given after command line options).
   $H example
   {{{
-  for ( var i in arguments ) {
+  for ( var i in _host.arguments ) {
 
-   print( 'argument['+i+'] = '+arguments[i] ,'\n' );
+   print( 'argument['+i+'] = '+_host.arguments[i] ,'\n' );
   }
   }}}
   <pre>

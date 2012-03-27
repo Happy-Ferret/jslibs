@@ -313,7 +313,7 @@ function compileTests(itemList) {
 
 function parseCommandLine(cfg) {
 
-	var args = global.arguments;
+	var args = _host.arguments;
 	cfg.args = [];
 	while ( args.length > 1 ) {
 

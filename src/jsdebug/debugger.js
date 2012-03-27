@@ -440,10 +440,10 @@ loadModule('jsdebug');
 		}
 	}
 
-	if ( global.arguments[0] == currentFilename ) { // debugger.js is used like: jshost jsdebugger.js programToDebug.js
+	if ( _host.arguments[0] == currentFilename ) { // debugger.js is used like: jshost jsdebugger.js programToDebug.js
 		
 		dbg.breakOnFirstexecute = true;
-		var prog = global.arguments.splice(1,1);
+		var prog = _host.arguments.splice(1,1);
 		exec(prog, false);
 	}
 

@@ -735,6 +735,8 @@ ALWAYS_INLINE JSObject* FASTCALL
 JL_NewObj( JSContext *cx ) {
 
 	HostPrivate *pv = JL_GetHostPrivate(cx);
+	ASSERT( pv->objectClass );
+	ASSERT( pv->objectProto );
 	return JS_NewObject(cx, pv->objectClass, pv->objectProto, JL_GetGlobal(cx));
 }
 
@@ -3015,7 +3017,6 @@ RemoveHostObject(JSContext *cx) {
 	JSObject *globalObject = JL_GetGlobal(cx);
 	ASSERT( globalObject );
 	return JS_DeletePropertyById(cx, globalObject, JLID(cx, _host)); // beware: permanant properties cannot be removed.
-	JL_BAD;
 }
 
 
@@ -3035,7 +3036,7 @@ GetHostObject(JSContext *cx) {
 
 	if ( JSVAL_IS_VOID( hostObjectValue ) ) { // if configuration object do not exist, we build one
 
-		cobj = JL_NewObj(cx); //JS_NewObject(cx, NULL, NULL, NULL);
+		cobj = JL_NewObj(cx);
 		JL_CHK( cobj );
 		hostObjectValue = OBJECT_TO_JSVAL( cobj );
 		JL_CHK( JS_SetPropertyById(cx, globalObject, hostObjectId, &hostObjectValue) );

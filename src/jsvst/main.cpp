@@ -87,7 +87,7 @@ public:
 		vstPlugin = JS_DefineObject(_cx, JL_GetGlobal(_cx), "vstPlugin", JL_CLASS(VSTPlugin), NULL, NULL);
 		JL_SetPrivate(_cx, vstPlugin, this);
 
-		JSBool status = ExecuteScriptFileName(_cx, "vstPlugin.js", false, 0, NULL, &_rval);
+		JSBool status = ExecuteScriptFileName(_cx, "vstPlugin.js", false, &_rval);
 		
 		JL_IGNORE(status);
 

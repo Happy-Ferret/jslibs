@@ -229,15 +229,21 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, scripthostname), STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, isfirstinstance), BOOLEAN_TO_JSVAL(hasPrevInstance?JS_FALSE:JS_TRUE), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
+	const char *argv[] = { scriptName, lpCmdLine };
+
+	jsval arguments;
+	JL_CHK( JL_NativeVectorToJsval(cx, argv, COUNTOF(argv), &arguments) );
+	JL_CHK( SetHostObjectValue(cx, JLID(cx, arguments), arguments) );
+
 	//#pragma comment (lib, "User32.lib")
 	//MessageBox(NULL, scriptName, "script name", 0);
 
-	if ( sizeof(embeddedBootstrapScript)-1 > 0 )
-		JL_CHK( ExecuteBootstrapScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1) ); // -1 because sizeof("") == 1
-
 	jsval rval;
-	const char *argv[] = { scriptName, lpCmdLine };
-	if ( ExecuteScriptFileName(cx, scriptName, false, COUNTOF(argv), argv, &rval) != JS_TRUE )
+
+	if ( sizeof(embeddedBootstrapScript)-1 > 0 )
+		JL_CHK( ExecuteBootstrapScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, &rval) ); // -1 because sizeof("") == 1
+
+	if ( ExecuteScriptFileName(cx, scriptName, false, &rval) != JS_TRUE )
 		if ( JL_IsExceptionPending(cx) )
 			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 

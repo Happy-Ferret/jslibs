@@ -420,8 +420,8 @@ function runQATests( argStr ) {
 
 	loadModule('jsio');
 	currentDirectory += '/../common';
-	global.arguments = Array.concat('qa.js', argStr.split(' '));
-	exec(global.arguments[0], false);
+	_host.arguments = Array.concat('qa.js', argStr.split(' '));
+	exec(_host.arguments[0], false);
 	throw 0;
 }
 
@@ -431,8 +431,8 @@ function runJsircbot( withDebuggerEnabled ) {
 	loadModule('jsdebug');
 	withDebuggerEnabled && exec('../jsdebug/debugger.js', false);
 	currentDirectory += '/../../../jsircbot';
-	global.arguments[1] = 'my_configuration.js'; // simulate: jshost main.js my_configuration.js
-	print( 'RunJsircbot arguments: '+uneval(global.arguments), '\n' );
+	_host.arguments[1] = 'my_configuration.js'; // simulate: jshost main.js my_configuration.js
+	print( 'RunJsircbot arguments: '+uneval(_host.arguments), '\n' );
 	exec('main.js', false);
 	throw 0;
 }

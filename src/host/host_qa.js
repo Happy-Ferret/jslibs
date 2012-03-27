@@ -219,9 +219,9 @@ loadModule('jsio');
 	QA.ASSERTOP( uneval(global).length, '>', 0, 'uneval global' );
 	QA.ASSERTOP( global.Math, '===', Math, 'global std objects' );
 	QA.ASSERTOP( global, 'has', '_host' );
-	QA.ASSERTOP( global, 'has', 'arguments' );
-	QA.ASSERTOP( global.arguments[0].indexOf('js'), '!=', -1, 'current script' );
-	QA.ASSERTOP( global.arguments, 'instanceof', Array, 'arguments type' );
+	QA.ASSERTOP( _host, 'has', 'arguments' );
+	QA.ASSERTOP( _host.arguments[0].indexOf('js'), '!=', -1, 'current script' );
+	QA.ASSERTOP( _host.arguments, 'instanceof', Array, 'arguments type' );
 
 
 /// global _host object [f]

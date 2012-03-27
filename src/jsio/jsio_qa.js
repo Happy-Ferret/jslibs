@@ -253,7 +253,7 @@ loadModule('jsdebug');
 
 /// Process arguments [ftrm]
 
-	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments.toString())', '1', '2', '3']);
+	var process = new Process('jshost', ['-u', '-i', '_host.stdout(_host.arguments.toString())', '1', '2', '3']);
 	var res = stringify(process.stdout.read());
 	QA.ASSERT_STR( res, "1,2,3", "Process arguments validity" );
 

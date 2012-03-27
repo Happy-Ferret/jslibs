@@ -9,7 +9,7 @@ loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask'); 
 loadModule('jsstd');
 
 
-print( arguments );
+print( _host.arguments );
 
 
 throw 0;

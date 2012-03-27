@@ -9,7 +9,7 @@
 
 /// jshost arguments [ftm]
 
-	var process = new Process('jshost', ['-u', '-i', '_host.stdout(arguments.toString())', '123', '-test']);
+	var process = new Process('jshost', ['-u', '-i', '_host.stdout(_host.arguments.toString())', '123', '-test']);
 	var res = stringify(process.stdout.read());
 	QA.ASSERT_STR( res, "123,-test", "jshost arguments" );
 
@@ -34,7 +34,7 @@
 		var mod1 = loadModule('jsstd');
 		QA.ASSERT( mod, mod1, 'loadModule' );
 		QA.ASSERT( 'unsafeMode' in _host, true, 'unsafe mode is present' );
-		QA.ASSERT( global.arguments[0].substr(-5), 'qa.js', 'javascript program name' );
+		QA.ASSERT( _host.arguments[0].substr(-5), 'qa.js', 'javascript program name' );
 
 
 /// eval function [ftrm]
