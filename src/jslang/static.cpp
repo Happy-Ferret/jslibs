@@ -1175,6 +1175,8 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 INLINE NEVER_INLINE void
 testFct( JSContext *cx ) {
+	
+	JL_IGNORE(cx);
 
 	static jsval tmp = JSVAL_ONE;
 /* 2000
@@ -1295,6 +1297,8 @@ DEFINE_FUNCTION( jslangTest ) {
 
 #endif // JSLANG_TEST
 
+
+
 /**qa
 	if ( '_jsapiTests' in global )
 		_jsapiTests();
@@ -1312,9 +1316,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	QA.ASSERTOP( timeoutEvents(1), 'instanceof', Handle );
 	QA.ASSERTOP( timeoutEvents(1), 'has', '__proto__' );
 	QA.ASSERTOP( timeoutEvents(1), 'has', 'constructor' );
-
 **/
-
 
 CONFIGURE_STATIC
 

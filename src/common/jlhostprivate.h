@@ -13,9 +13,9 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-// note: JL_HOST_PRIVATE_VERSION is supposed to change each time the structure is changed.
-#define JL_HOST_PRIVATE_VERSION (JL_SvnRevToInt("$Revision: 3524 $"))
-#define JL_HOST_PRIVATE_MAX_CLASS_PROTO_CACHE_BIT (9)
+// note: JL_HOSTPRIVATE_KEY is supposed to change each time the structure is modified.
+#define JL_HOSTPRIVATE_KEY ( JL_SvnRevToInt("$Revision: 3524 $") << 16 | (sizeof(HostPrivate) ^ offsetof(HostPrivate, ids) ^ offsetof(HostPrivate, modulePrivate)) & 0xFFFF )
+#define JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT (9)
 
 #define JL_CAMELCASE_DEFAULT 0
 #define JL_CAMELCASE_LOWER 1 // loadModule
@@ -27,11 +27,11 @@ struct ClassProtoCache {
 };
 
 struct HostPrivate {
+	uint32_t versionKey; // used to ensure compatibility between host and modules. see JL_HOSTPRIVATE_KEY macro.
 	bool unsafeMode; // used to spread the unsafe status across modules.
 	bool isEnding;
 	bool canSkipCleanup; // allows modules to skip the memory cleanup phase.
 	char camelCase;
-	uint32_t hostPrivateVersion; // used to ensure compatibility between host and modules. see JL_HOST_PRIVATE_VERSION macro.
 	void *privateData;
 	uint32_t maybeGCInterval;
 	JLSemaphoreHandler watchDogSemEnd;
@@ -48,8 +48,8 @@ struct HostPrivate {
 	JSClass *objectClass;
 	JSObject *objectProto;
 	jl_allocators_t alloc;
+	ClassProtoCache classProtoCache[1<<JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT]; // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
 	jsid ids[LAST_JSID];
-	ClassProtoCache classProtoCache[1<<JL_HOST_PRIVATE_MAX_CLASS_PROTO_CACHE_BIT]; // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
 	
 // experimental:
 	//	jl::StaticAlloc<char[16], 128> p16;
@@ -58,7 +58,8 @@ struct HostPrivate {
 #endif
 };
 
-S_ASSERT( offsetof(HostPrivate, unsafeMode) == 0 ); // check this because JL_ASSERT macro must be usable before hostPrivateVersion is tested.
+S_ASSERT( offsetof(HostPrivate, versionKey) == 0 ); // versionKey must be reachable before any other member.
+S_ASSERT( offsetof(HostPrivate, unsafeMode) == 4 ); // then unsafeMode.
 
 
 ALWAYS_INLINE HostPrivate *

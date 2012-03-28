@@ -23,8 +23,8 @@
 
 /// global variables [ftrm]
 
-		QA.ASSERTOP( scripthostpath.length, '>', 0, 'script host path' );
-		QA.ASSERTOP( scripthostname.substr(0, 6), '==', 'jshost', 'script host name' );
+		QA.ASSERTOP( _host.path.length, '>', 0, 'script host path' );
+		QA.ASSERTOP( _host.name.substr(0, 6), '==', 'jshost', 'script host name' );
 		QA.ASSERTOP( _host, 'typeof', 'object', 'has _host object' );
 		QA.ASSERTOP( global, 'typeof', 'object', 'has "global" property' );
 

@@ -399,11 +399,13 @@ enum {
 	JLID_SPEC( bits ),
 	JLID_SPEC( rate ),
 	JLID_SPEC( frames ),
+	JLID_SPEC( revision ),
 	JLID_SPEC( _revision ),
+	JLID_SPEC( buildDate ),
 	JLID_SPEC( _buildDate ),
-	JLID_SPEC( scripthostpath ),
-	JLID_SPEC( scripthostname ),
-	JLID_SPEC( isfirstinstance ),
+	JLID_SPEC( jsVersion ),
+	JLID_SPEC( path ),
+	JLID_SPEC( isFirstInstance ),
 	JLID_SPEC( bootstrapScript ),
 	JLID_SPEC( _serialize ),
 	JLID_SPEC( _unserialize ),
@@ -431,8 +433,9 @@ enum {
 	LAST_JSID // see HostPrivate::ids[]
 };
 #undef JLID_SPEC
-// eg. JLID(cx, _unserialize) -> jsid
-//     JLID_NAME(cx, _unserialize) -> w_char
+// examples:
+//   JLID(cx, _unserialize) -> jsid
+//   JLID_NAME(cx, _unserialize) -> w_char
 
 
 
@@ -462,7 +465,7 @@ JL_SetContextPrivate( const JSContext *cx, JLContextPrivate *ContextPrivate ) {
 ///////////////////////////////////////////////////////////////////////////////
 // Host private
 
-// Using a separate file allow a better versioning of the HostPrivate structure (see JL_HOST_PRIVATE_VERSION).
+// Using a separate file allow a better versioning of the HostPrivate structure (see JL_HOSTPRIVATE_KEY).
 #include "jlhostprivate.h"
 
 ALWAYS_INLINE HostPrivate*
@@ -595,7 +598,7 @@ JL_ClassNameToClassProtoCacheSlot( const char * const n ) {
 	if ( n[22] ) { h ^= n[22]<<2;
 	if ( n[23] ) { h ^= n[23]<<6;
 	}}}}}}}}}}}}}}}}}}}}}}}}
-	return ((h >> 7) ^ h) & ((1<<JL_HOST_PRIVATE_MAX_CLASS_PROTO_CACHE_BIT) - 1);
+	return ((h >> 7) ^ h) & ((1<<JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT) - 1);
 }
 
 namespace jlpv {
@@ -610,6 +613,7 @@ namespace jlpv {
 INLINE bool FASTCALL
 JL_CacheClassProto( HostPrivate * RESTRICT hpv, const char * const RESTRICT className, JSClass * const RESTRICT clasp, JSObject * const RESTRICT proto ) {
 
+	ASSERT( jlpv::RemovedSlot() != NULL );
 	ASSERT( className != NULL );
 	ASSERT( className[0] != '\0' );
 	ASSERT( clasp != NULL );
@@ -646,6 +650,8 @@ JL_CacheClassProto( HostPrivate * RESTRICT hpv, const char * const RESTRICT clas
 ALWAYS_INLINE const ClassProtoCache* FASTCALL
 JL_GetCachedClassProto( const HostPrivate * const hpv, const char * const className ) {
 
+	ASSERT( jlpv::RemovedSlot() != NULL );
+
 	size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
 	const size_t first = slotIndex;
 	ASSERT( slotIndex < COUNTOF(hpv->classProtoCache) );
@@ -669,6 +675,8 @@ JL_GetCachedClassProto( const HostPrivate * const hpv, const char * const classN
 
 ALWAYS_INLINE void FASTCALL
 JL_RemoveCachedClassProto( HostPrivate * const hpv, const char *const className ) {
+
+	ASSERT( jlpv::RemovedSlot() != NULL );
 
 	size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
 	size_t first = slotIndex;
@@ -735,6 +743,7 @@ ALWAYS_INLINE JSObject* FASTCALL
 JL_NewObj( JSContext *cx ) {
 
 	HostPrivate *pv = JL_GetHostPrivate(cx);
+	ASSERT( pv );
 	ASSERT( pv->objectClass );
 	ASSERT( pv->objectProto );
 	return JS_NewObject(cx, pv->objectClass, pv->objectProto, JL_GetGlobal(cx));
@@ -805,9 +814,7 @@ JL_GetPrivateJsid( JSContext *cx, int index, const jschar *name ) {
 	ASSERT( hpv != NULL );
 	jsid *ids = hpv->ids;
 	jsid id = ids[index];
-	if (likely( id != jspv::NullJsid() ))
-		return id;
-	return jlpv::GetPrivateJsidSlow(cx, ids, index, name);
+	return id != jspv::NullJsid() ? id : jlpv::GetPrivateJsidSlow(cx, ids, index, name);
 }
 
 
@@ -2778,6 +2785,7 @@ JL_SetProperty( JSContext *cx, JSObject *obj, jsid id, const T &cval ) {
 	return JL_NativeToJsval(cx, cval, &tmp) && JS_SetPropertyById(cx, obj, id, &tmp);
 }
 
+
 // Define
 
 template <class T>
@@ -2788,6 +2796,13 @@ JL_DefineProperty( JSContext *cx, JSObject *obj, const char *name, const T &cval
 	return JL_NativeToJsval(cx, cval, &tmp) && JS_DefineProperty(cx, obj, name, tmp, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
 }
 
+ALWAYS_INLINE JSBool FASTCALL
+JL_DefineProperty( JSContext *cx, JSObject *obj, const char *name, const jsval &val, bool visible = true, bool modifiable = true ) {
+
+	return JS_DefineProperty(cx, obj, name, val, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
+}
+
+
 template <class T>
 ALWAYS_INLINE JSBool FASTCALL
 JL_DefineProperty( JSContext *cx, JSObject *obj, jsid id, const T &cval, bool visible = true, bool modifiable = true ) {
@@ -2795,6 +2810,13 @@ JL_DefineProperty( JSContext *cx, JSObject *obj, jsid id, const T &cval, bool vi
 	jsval tmp;
 	return JL_NativeToJsval(cx, cval, &tmp) && JS_DefinePropertyById(cx, obj, id, tmp, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
 }
+
+ALWAYS_INLINE JSBool FASTCALL
+JL_DefineProperty( JSContext *cx, JSObject *obj, jsid id, const jsval &val, bool visible = true, bool modifiable = true ) {
+
+	return JS_DefinePropertyById(cx, obj, id, val, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
+}
+
 
 // Get
 
@@ -3023,25 +3045,23 @@ RemoveHostObject(JSContext *cx) {
 INLINE JSObject* FASTCALL
 GetHostObject(JSContext *cx) {
 
-	JSObject *cobj;
 	JSObject *globalObject = JL_GetGlobal(cx);
-	JL_CHK( globalObject );
-	jsval hostObjectValue;
+	ASSERT( globalObject );
 	
 	jsid hostObjectId;
 	hostObjectId = JLID(cx, _host);
 	ASSERT( hostObjectId != jspv::NullJsid() );
 
+	jsval hostObjectValue;
 	JL_CHK( JS_GetPropertyById(cx, globalObject, hostObjectId, &hostObjectValue) );
 
-	if ( JSVAL_IS_VOID( hostObjectValue ) ) { // if configuration object do not exist, we build one
+	JSObject *cobj;
+	if ( JSVAL_IS_VOID( hostObjectValue ) ) {
 
 		cobj = JL_NewObj(cx);
 		JL_CHK( cobj );
 		hostObjectValue = OBJECT_TO_JSVAL( cobj );
 		JL_CHK( JS_SetPropertyById(cx, globalObject, hostObjectId, &hostObjectValue) );
-		//cobj = JS_DefineObject(cx, globalObject, JLID_NAME(cx, _host), NULL, NULL, 0 );
-		//JL_CHK( cobj ); // Doc: If the property already exists, or cannot be created, JS_DefineObject returns NULL.
 	} else {
 
 		JL_CHK( JSVAL_IS_OBJECT(hostObjectValue) );
@@ -3070,23 +3090,29 @@ GetHostObjectValue(JSContext *cx, const jschar *name, jsval *value) {
 	return GetHostObjectValue(cx, JL_StringToJsid(cx, name), value);
 }
 
-
+/*
+template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-SetHostObjectValue(JSContext *cx, jsid id, jsval value, bool modifiable = true, bool visible = true) {
+SetHostObjectValue(JSContext *cx, jsid id, const T &cval, bool modifiable = true, bool visible = true) {
 
 	JSObject *cobj = GetHostObject(cx);
-	if ( cobj )
-		return JS_DefinePropertyById(cx, cobj, id, value, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
-	return JS_TRUE;
+	if ( cobj ) {
+		jsval tmp;
+		return JL_NativeToJsval(cx, cval, &tmp) && JS_DefinePropertyById(cx, cobj, id, value, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
+	} else {
+
+		return JS_TRUE;
+	}
 }
 
 
+template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-SetHostObjectValue(JSContext *cx, const jschar *name, jsval value, bool modifiable = true, bool visible = true) {
+SetHostObjectValue(JSContext *cx, const jschar *name, const T &cval, bool modifiable = true, bool visible = true) {
 
 	return SetHostObjectValue(cx, JL_StringToJsid(cx, name), value, modifiable, visible);
 }
-
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // Buffer

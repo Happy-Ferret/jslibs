@@ -140,24 +140,24 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	// (TBD) use file index as mutexName. note: If the file is on an NTFS volume, you can get a unique 64 bit identifier for it with GetFileInformationByHandle.  The 64 bit identifier is the "file index". 
 	
-	bool hasPrevInstance;
+	bool isFirstInstance;
 	err = strncpy_s(mutexName, sizeof(mutexName), moduleName, moduleNameLen);
 	HOST_MAIN_ASSERT( err == 0, "Buffer overflow." );
+	
 	// normalize the mutex name
 	char *pos;
 	while ( (pos = strchr(mutexName, '\\')) != 0 )
 		*pos = '/';
 	SetLastError(0);
-	HANDLE instanceCheckMutex = CreateMutex(NULL, TRUE, mutexName); // see Global\\ and Local\\ prefixes for mutex name.
+	HANDLE instanceCheckMutex = ::CreateMutex(NULL, TRUE, mutexName); // see Global\\ and Local\\ prefixes for mutex name.
 	switch ( GetLastError() ) {
 		case ERROR_ALREADY_EXISTS:
-			hasPrevInstance = true;
+			isFirstInstance = false;
 			break;
 		case ERROR_SUCCESS:
-			hasPrevInstance = false;
+			isFirstInstance = true;
 			break;
 		default: {
-
 			char message[1024];
 			JLLastSysetmErrorMessage(message, sizeof(message));
 			HOST_MAIN_ASSERT( false,  message );
@@ -180,11 +180,6 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 */
 
 	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
-
-// jslibs and spidermonkey allocator should be the same, else JL_NewString() and JL_NewUCString() should be fixed !
-#ifdef JS_HAS_JSLIBS_RegisterCustomAllocators
-	JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
-#endif // JS_HAS_JSLIBS_RegisterCustomAllocators
 
 	cx = CreateHost((uint32_t)-1, (uint32_t)-1, 0);
 	JL_CHK( cx != NULL );
@@ -211,7 +206,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	name++;
 
 
-	err = strncpy_s(scriptName, sizeof(scriptName), moduleName, moduleNameLen );
+	err = strncpy_s(scriptName, sizeof(scriptName), moduleName, moduleNameLen);
 	JL_ASSERT( err == 0, E_LIB, E_INTERNAL );
 //	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
 	char *dotPos = strrchr(scriptName, '.');
@@ -220,20 +215,17 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	err = strcat_s( scriptName, sizeof(scriptName), ".js" );
 	JL_ASSERT( err == 0, E_LIB, E_INTERNAL );
 
+	JSObject *hostObj = GetHostObject(cx);
 
-	JSObject *globalObject = JL_GetGlobal(cx);
-
-	// arguments
-//	JL_CHK( JS_DefineProperty(cx, globalObject, NAME_GLOBAL_ARGUMENT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, lpCmdLine)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // see ExecuteScriptFileName()
-	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, scripthostpath), STRING_TO_JSVAL(JS_NewStringCopyZ(cx, moduleFileName)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, scripthostname), STRING_TO_JSVAL(JS_NewStringCopyZ(cx, name)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, isfirstinstance), BOOLEAN_TO_JSVAL(hasPrevInstance?JS_FALSE:JS_TRUE), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, path), moduleFileName) );
+	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, name), name) );
+	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, isFirstInstance), isFirstInstance) );
 
 	const char *argv[] = { scriptName, lpCmdLine };
 
 	jsval arguments;
 	JL_CHK( JL_NativeVectorToJsval(cx, argv, COUNTOF(argv), &arguments) );
-	JL_CHK( SetHostObjectValue(cx, JLID(cx, arguments), arguments) );
+	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, arguments), arguments) );
 
 	//#pragma comment (lib, "User32.lib")
 	//MessageBox(NULL, scriptName, "script name", 0);

@@ -179,7 +179,7 @@ JSBool JSDefaultStdinFunction(JSContext *cx, uintN, jsval *vp) {
 	JL_BAD;
 }
 
-
+// note: we have to support: var prevStderr = _host.stderr; _host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
 // route: print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
 JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 
@@ -616,10 +616,11 @@ JSContext* CreateHost( uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInter
 	JL_CHK( JS_InitCTypesClass(cx, globalObject) );
 #endif
 
-	HostPrivate *pv = ConstructHostPrivate();
-
+	HostPrivate *pv;
+	
+	pv = ConstructHostPrivate();
 	JL_ASSERT_ALLOC( pv );
-	pv->hostPrivateVersion = JL_HOST_PRIVATE_VERSION;
+	pv->versionKey = JL_HOSTPRIVATE_KEY;
 	JL_SetHostPrivate(cx, pv);
 
 	// setup WatchDog
@@ -656,7 +657,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 
 		pv = ConstructHostPrivate();
 		JL_ASSERT_ALLOC( pv );
-		pv->hostPrivateVersion = JL_HOST_PRIVATE_VERSION;
+		pv->versionKey = JL_HOSTPRIVATE_KEY;
 		JL_SetHostPrivate(cx, pv);
 	}
 
@@ -679,44 +680,32 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	pv->hostStdOut = stdOut;
 	pv->hostStdIn = stdIn;
 
-	// Object class & proto cache ( see JL_NewObj() )
-	
-	//pv->objectClass = JL_GetStandardClassByKey(cx, JSProto_Object);
-	//pv->objectProto = JL_GetStandardClassProtoByKey(cx, JSProto_Object);
-
-
 	//JSObject *newObject = JS_NewObject(cx, NULL, NULL, NULL);
 	//pv->objectClass = JL_GetClass(newObject);
 	//pv->objectProto = JL_GetPrototype(cx, newObject);
-	js_GetClassPrototype(cx, globalObject, JSProto_Object, &pv->objectProto, NULL);
+	JL_CHK( js_GetClassPrototype(cx, globalObject, JSProto_Object, &pv->objectProto, NULL) );
 	pv->objectClass = JL_GetClass(pv->objectProto);
-	ASSERT( pv->objectClass && pv->objectProto );
+	ASSERT( pv->objectClass );
+	ASSERT( pv->objectProto );
 	
 	// global functions & properties
 	JL_CHKM( JS_DefinePropertyById( cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(globalObject), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), E_PROP, E_CREATE );
 	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == JL_CAMELCASE_UPPER ? JLNormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), E_PROP, E_CREATE );
 
-	JL_CHK( SetHostObjectValue(cx, JLID(cx, unsafeMode), BOOLEAN_TO_JSVAL(unsafeMode), false) );
-
-	// note: we have to support: var prevStderr = _host.stderr; _host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
-
-	 // doc: If you do not assign a name to the function, it is assigned the name "anonymous".
-	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdin), OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdinFunction, 1, 0, NULL, JLID(cx, stdin))))) );
-	JL_CHK( SetHostObjectValue(cx, JLID(cx, stdout), OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdoutFunction, 1, 0, NULL, JLID(cx, stdout))))) );
-	JL_CHK( SetHostObjectValue(cx, JLID(cx, stderr), OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStderrFunction, 1, 0, NULL, JLID(cx, stderr))))) );
-
-	JL_CHK( SetHostObjectValue(cx, L("revision"), INT_TO_JSVAL(JL_SvnRevToInt(SVN_REVISION_STR))) ); // or JLID(cx, _revision) ?
-	JL_CHK( SetHostObjectValue(cx, L("buildDate"), DOUBLE_TO_JSVAL((double)__DATE__EPOCH * 1000)) );
-	JL_CHK( SetHostObjectValue(cx, L("jsVersion"), INT_TO_JSVAL(JS_GetVersion(cx))) ); // see also JS_GetImplementationVersion()
+	JSObject *hostObj = GetHostObject(cx);
+	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, unsafeMode), unsafeMode, true, false) );
+	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, stdin ), OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdinFunction , 1, 0, NULL, JLID(cx, stdin ))))) );
+	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, stdout), OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdoutFunction, 1, 0, NULL, JLID(cx, stdout))))) );
+	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, stderr), OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStderrFunction, 1, 0, NULL, JLID(cx, stderr))))) );
+	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, jsVersion), JS_GetVersion(cx), true, false) ); // btw, see JS_GetImplementationVersion()
+	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, buildDate), (double)__DATE__EPOCH * 1000, true, false) );
+	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, revision), JL_SvnRevToInt(SVN_REVISION_STR), true, false) );
 
 	// init static modules
 	if ( !jslangModuleInit(cx, globalObject) )
 		JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );
 
-//	JL_CHK( JS_DefinePropertyById(cx, globalObject, JLID(cx, _revision), INT_TO_JSVAL(JL_SvnRevToInt(SVN_REVISION_STR)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // see _host.revision
-
 	return JS_TRUE;
-
 bad:
 	return JS_FALSE;
 }

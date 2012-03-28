@@ -271,9 +271,9 @@ EXTERN_C void jl_free_count( void *ptr ) {
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 /**qa
-	QA.ASSERTOP(global, 'has', 'scripthostpath');
-	QA.ASSERTOP(global, 'has', 'scripthostname');
-	if ( scripthostname.indexOf('jshost') == 0 ) {
+	QA.ASSERTOP(_host, 'has', 'path');
+	QA.ASSERTOP(_host, 'has', 'name');
+	if ( _host.name.indexOf('jshost') == 0 ) {
 
 		QA.ASSERTOP(global, 'has', 'endSignal');
 		QA.ASSERTOP(global, 'has', 'endSignalEvents');
@@ -429,14 +429,12 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 //	setvbuf(stderr, pBuffer, mode, buffer_size);
 
 	cx = CreateHost(maxMem, maxAlloc, (uint32_t)(maybeGCInterval * 1000));
+	HOST_MAIN_ASSERT( cx != NULL, "Unable to initialize the JavaScript engine." );
 
 #ifdef DEBUG	
 	if ( debug )
-		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_METHODJIT));
+		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_METHODJIT | JSOPTION_METHODJIT_ALWAYS | JSOPTION_TYPE_INFERENCE));
 #endif // DEBUG	
-
-
-	HOST_MAIN_ASSERT( cx != NULL, "Unable to initialize the JavaScript engine." );
 
 	if ( useJslibsMemoryManager )
 		MemoryManagerEnableGCEvent(cx);
@@ -475,13 +473,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
 	JL_CHK( JS_DefineFunction(cx, globalObject, "endSignalEvents", EndSignalEvents, 0, JSPROP_SHARED | JSPROP_PERMANENT) );
 
-	jsval arguments;
-	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), &arguments) );
-	JL_CHK( SetHostObjectValue(cx, JLID(cx, arguments), arguments) );
 
-
-// script name
-	//	if ( inlineScript == NULL )
 	scriptName = *argumentVector;
 
 	JL_CHKM( inlineScript != NULL || scriptName != NULL || sizeof(embeddedBootstrapScript)-1 > 0, E_SCRIPT, E_NOTFOUND ); // "No script specified."
@@ -516,10 +508,14 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		hostName = hostFullPath;
 	}
 
-//	RT_HOST_MAIN_ASSERT( name != NULL, "unable to get module FileName." );
+	JSObject *hostObj = GetHostObject(cx);
 
-	JL_CHK( JL_SetProperty(cx, globalObject, JLID(cx, scripthostpath), hostPath) );
-	JL_CHK( JL_SetProperty(cx, globalObject, JLID(cx, scripthostname), hostName) );
+	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, path), hostPath) );
+	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, name), hostName) );
+
+	jsval arguments;
+	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), &arguments) );
+	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, arguments), arguments) );
 
 	int exitValue;
 	jsval rval;

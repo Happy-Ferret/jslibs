@@ -197,6 +197,9 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	if ( cs->init )
 		JL_CHK( cs->init(cx, cs, proto, staticDest) );
 
+	ASSERT( JL_GetCachedClassProto(hpv, cs->clasp.name)->clasp == &cs->clasp );
+	ASSERT( JL_GetCachedClassProto(hpv, cs->clasp.name)->proto == proto );
+
 	return JS_TRUE;
 	JL_BAD;
 }

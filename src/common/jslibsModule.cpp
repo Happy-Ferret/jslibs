@@ -54,8 +54,10 @@ JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
 #endif // XP_WIN
 
 	HostPrivate *hpv = JL_GetHostPrivate(cx);
+	if ( hpv && hpv->versionKey != 0 && hpv->versionKey != JL_HOSTPRIVATE_KEY )
+		JL_ERR( E_MODULE, E_NOTCOMPATIBLE, E_HOST );
+
 	_unsafeMode = hpv ? hpv->unsafeMode : _unsafeMode;
-	JL_ASSERT( !hpv || hpv->hostPrivateVersion == 0 || hpv->hostPrivateVersion == JL_HOST_PRIVATE_VERSION, E_HOST, E_VERSION );
 
 	ASSERT( _moduleId == 0 || _moduleId == id );
 	if ( _moduleId == 0 )

@@ -17,7 +17,7 @@ function formatVal(val) {
 		return 'undefined';
 	val = uneval(val);
 	if ( val.length > 40 )
-		val = (val.substr(0, 20)+'...'+val.substr(20)).quote();
+		val = (val.substr(0, 20)+'...'+val.length+'...'+val.substr(-20)).quote();
 	return val;
 }
 
