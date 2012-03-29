@@ -116,7 +116,7 @@ dlist.push( serverSocket );
 //
 // Idle
 
-while ( !endSignal ) {
+while ( !_host.endSignal ) {
 
 	poll(dlist, 1000);
 }

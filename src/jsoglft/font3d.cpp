@@ -76,7 +76,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
 		return;
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( pv == NULL )
 		return;
 	if ( pv->face == NULL ) // has not been properly initialized. see constructor.
@@ -215,7 +215,7 @@ DEFINE_FUNCTION( measure ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE( 1, 2 );
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	bool absolute;
@@ -262,7 +262,7 @@ DEFINE_FUNCTION( width ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC( 1 );
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
@@ -303,7 +303,7 @@ DEFINE_FUNCTION( draw ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE( 1, 3 );
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 //	const char *str;
@@ -351,7 +351,7 @@ DEFINE_FUNCTION( compile ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC( 1 );
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	GLuint list = pv->face->compile(str);
@@ -378,7 +378,7 @@ DEFINE_FUNCTION( setColor ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE( 0, 1 );
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*JL_RVAL = JSVAL_VOID;
 	if ( JL_ARGC == 0 ) {
@@ -421,7 +421,7 @@ DEFINE_FUNCTION( setBackgroundColor ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE( 0, 1 );
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*JL_RVAL = JSVAL_VOID;
 
@@ -459,7 +459,7 @@ DEFINE_PROPERTY_GETTER( height ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->face->height(), vp) );
 	return JL_StoreProperty(cx, obj, id, vp, true);
@@ -478,7 +478,7 @@ DEFINE_PROPERTY_GETTER( advance ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK(JL_NativeToJsval(cx, pv->face->advance(), vp) );
 	return JS_TRUE;
@@ -489,7 +489,7 @@ DEFINE_PROPERTY_SETTER( advance ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	bool advance;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &advance) );
@@ -514,7 +514,7 @@ DEFINE_PROPERTY_SETTER( tessellationSteps ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_ASSERT( pv->style == FILLED || pv->style == SOLID || pv->style == OUTLINE, E_THISOPERATION, E_NOTSUPPORTED ); // "operation not supported with this style of object"
@@ -554,7 +554,7 @@ DEFINE_PROPERTY_SETTER( colorCallback ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT( pv->style == FILLED || pv->style == SOLID || pv->style == OUTLINE, E_THISOPERATION, E_NOTSUPPORTED );
 
@@ -589,14 +589,14 @@ DEFINE_FUNCTION( setCharacterDisplayLists ) {
 	OGLFT::DisplayLists lists;
 
 	JL_ASSERT_ARGC( 1 );
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	JSObject *arrObj = JSVAL_TO_OBJECT(JL_ARG(1));
-	jsuint length;
+	unsigned length;
 	JL_CHK( JS_GetArrayLength(cx, arrObj, &length) );
-	for ( jsuint i = 0; i < length; i++ ) {
+	for ( unsigned i = 0; i < length; i++ ) {
 
 		JL_CHK( JL_GetElement(cx, arrObj, i, JL_RVAL) );
 		JL_ASSERT_INT( *JL_RVAL );

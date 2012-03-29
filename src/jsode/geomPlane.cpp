@@ -67,7 +67,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( params ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	JL_ASSERT_IS_ARRAY( *vp, "" );
 	ode::dVector4 params;
@@ -81,7 +81,7 @@ DEFINE_PROPERTY_SETTER( params ) {
 
 DEFINE_PROPERTY_GETTER( params ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dVector4 result;
 	ode::dGeomPlaneGetParams(geom, result);
@@ -96,7 +96,7 @@ DEFINE_PROPERTY_GETTER( params ) {
 /*
 DEFINE_PROPERTY( lengthsSetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	//JL_ASSERT_NUMBER( *vp );
 	ode::dVector3 vector;
@@ -111,7 +111,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 
 DEFINE_PROPERTY( lengthsGetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dVector3 result;
 	ode::dGeomPlaneGetLengths(geom, result);

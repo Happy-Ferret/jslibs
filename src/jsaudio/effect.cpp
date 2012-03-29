@@ -27,7 +27,7 @@ BEGIN_CLASS( OalEffect )
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( pv ) {
 
 		if ( alcGetCurrentContext() ) {
@@ -81,7 +81,7 @@ DEFINE_FUNCTION( valueOf ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_NativeToJsval(cx, pv->effect, JL_RVAL) );
@@ -119,7 +119,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int effectType;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &effectType) );
@@ -137,7 +137,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int effectType;
 
@@ -154,7 +154,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 DEFINE_FUNCTION( test ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 
@@ -170,7 +170,7 @@ DEFINE_PROPERTY_SETTER( effectFloat ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	float f;
@@ -185,7 +185,7 @@ DEFINE_PROPERTY_GETTER( effectFloat ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	float f;
@@ -202,7 +202,7 @@ DEFINE_PROPERTY_SETTER( effectInt ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	int i;
@@ -217,7 +217,7 @@ DEFINE_PROPERTY_GETTER( effectInt ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	int i;
@@ -234,7 +234,7 @@ DEFINE_PROPERTY_SETTER( effectBool ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	bool b;
@@ -249,7 +249,7 @@ DEFINE_PROPERTY_GETTER( effectBool ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	int i;

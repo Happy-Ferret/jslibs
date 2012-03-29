@@ -81,7 +81,7 @@ HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
 	JSObject *handleObj;
 	handleObj = JSVAL_TO_OBJECT(handleVal);
 	HandlePrivate *pv;
-	pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);
+	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
 	JL_ASSERT_OBJECT_STATE(pv, "Handle");
 
 	if ( pv->finalizeCallback )
@@ -103,7 +103,7 @@ GetHandleType( JSContext *cx, jsval handleVal ) {
 	JSObject *handleObj;
 	handleObj = JSVAL_TO_OBJECT(handleVal);
 	HandlePrivate *pv;
-	pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);
+	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
 	JL_CHK( pv != NULL );
 	return pv->handleType;
 bad:
@@ -118,9 +118,9 @@ IsHandle( JSContext *cx, jsval handleVal ) {
 }
 
 ALWAYS_INLINE bool
-IsHandleType( JSContext *cx, JSObject *handleObj, HANDLE_TYPE handleType ) {
+IsHandleType( JSContext *, JSObject *handleObj, HANDLE_TYPE handleType ) {
 
-	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);
+	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(handleObj);
 	return pv != NULL && pv->handleType == handleType;
 }
 
@@ -131,7 +131,7 @@ IsHandleType( JSContext *cx, jsval handleVal, HANDLE_TYPE handleType ) {
 	if ( !JL_ValueIsClass(handleVal, JL_HandleJSClass(cx)) )
 		return false;
 	JSObject *handleObj = JSVAL_TO_OBJECT(handleVal);
-	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, handleObj);
+	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(handleObj);
 	return pv != NULL && pv->handleType == handleType;
 }
 
@@ -143,7 +143,7 @@ GetHandlePrivate( JSContext *cx, const jsval &handleVal ) {
 	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
 
 	HandlePrivate *pv;
-	pv = (HandlePrivate*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(handleVal));
+	pv = (HandlePrivate*)JL_GetPrivate(JSVAL_TO_OBJECT(handleVal));
 	JL_CHK( pv != NULL );
 	return (char*)pv + sizeof(HandlePrivate); // user data is just behind our private structure.
 bad:

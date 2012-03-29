@@ -198,7 +198,7 @@ DEFINE_FUNCTION( vec3Sub ) {
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	Vector3 v, v2;
-	jsuint len, len2;
+	unsigned len, len2;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 
@@ -592,7 +592,7 @@ DEFINE_FUNCTION( planeFromPoints ) {
 
 	float plane[4], v0[3], v1[3], v2[3];
 
-	jsuint len1, len2, len3;
+	unsigned len1, len2, len3;
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v0, 3, &len1) );
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v1, 3, &len2) );
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), v2, 3, &len3) );

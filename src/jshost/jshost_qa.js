@@ -54,9 +54,9 @@
 		QA.ASSERT( 'bootstrapScript' in _host, false, 'no embedded bootstrap script by default' );
 
 
-/// endSignalEvents() handle object [ft]
+/// _host.endSignalEvents() handle object [ft]
 
-	var h = endSignalEvents();
+	var h = _host.endSignalEvents();
 	QA.ASSERTOP(h, 'instanceof', Handle, 'handle object type');
 	QA.ASSERTOP(h, '==', '[Handle  pev]', 'handle type string');
 	QA.ASSERTOP(h.toString, 'instanceof', Function, 'handle toString is a function');

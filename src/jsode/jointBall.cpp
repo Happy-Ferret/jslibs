@@ -43,7 +43,7 @@ DEFINE_CONSTRUCTOR() {
 		
 		JL_ASSERT_ARG_IS_OBJECT(2);
 		JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
-		groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(2)));
+		groupId = (ode::dJointGroupID)JL_GetPrivate(JSVAL_TO_OBJECT(JL_ARG(2)));
 	} else {
 		
 		groupId = 0;
@@ -70,7 +70,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( anchor ) {
 
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
@@ -84,7 +84,7 @@ DEFINE_PROPERTY_SETTER( anchor ) {
 
 DEFINE_PROPERTY_GETTER( anchor ) {
 
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetBallAnchor(jointId,vector);
@@ -100,7 +100,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( anchor2 ) {
 
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	ode::dVector3 vector;
 	//FloatArrayToVector(cx, 3, vp, vector);
@@ -114,7 +114,7 @@ DEFINE_PROPERTY_SETTER( anchor2 ) {
 
 DEFINE_PROPERTY_GETTER( anchor2 ) {
 
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetBallAnchor2(jointId,vector);
@@ -131,7 +131,7 @@ $TOC_MEMBER $INAME
 /*
 DEFINE_PROPERTY( anchor2 ) { // read only
 
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, obj);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dVector3 vector;
 	ode::dJointGetBallAnchor2(jointId,vector);

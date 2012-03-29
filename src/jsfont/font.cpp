@@ -46,7 +46,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
 		return;
 
-	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(obj);
 	if ( pv == NULL )
 		return;
 	FT_Done_Face(pv->face);
@@ -110,7 +110,7 @@ DEFINE_FUNCTION( setSize ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 
-	FT_Face face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
+	FT_Face face = (FT_Face)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(face);
 
 	FT_UInt width, height;
@@ -150,7 +150,7 @@ DEFINE_FUNCTION( getCharOutline ) {
 	JL_ASSERT_ARGC_MIN(1);
 
 	FT_Face face;
-	face = (FT_Face)JL_GetPrivate(cx, JL_OBJ);
+	face = (FT_Face)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(face);
 
 	FT_Outline_Funcs funcs;
@@ -198,7 +198,7 @@ DEFINE_FUNCTION( drawChar ) {
 	JL_ASSERT_ARGC_MIN(1);
 
 	JsfontPrivate *pv;
-	pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	pv = (JsfontPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	ASSERT( pv->face->size->metrics.height > 0 ); // JL_ASSERT_ERROR_NUM( pv->face->size->metrics.height > 0, JLSMSG_VALUE_OUTOFRANGE, "height > 0" );
@@ -255,7 +255,7 @@ DEFINE_FUNCTION( drawString ) {
 	JL_ASSERT_ARGC_MIN(1);
 
 	JsfontPrivate *pv;
-	pv = (JsfontPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	pv = (JsfontPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	ASSERT( pv->face->size->metrics.height > 0 ); // JL_ASSERT_ERROR_NUM( pv->face->size->metrics.height > 0, JLSMSG_VALUE_OUTOFRANGE, "height > 0" );
@@ -460,7 +460,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( ascender ) {
 
-	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL(pv->face->size->metrics.ascender >> 6);
 	return JS_TRUE;
@@ -476,7 +476,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( descender ) {
 
-	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL(pv->face->size->metrics.descender >> 6);
 	return JS_TRUE;
@@ -490,7 +490,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( width ) {
 
-	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL(pv->face->size->metrics.max_advance >> 6);
 	return JS_TRUE;
@@ -505,7 +505,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( size ) {
 
-	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	FT_UInt size;
@@ -529,7 +529,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( encoding ) {
 
-	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned int encoding;
@@ -547,7 +547,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( poscriptName ) {
 
-	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, obj);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_NativeToJsval(cx, FT_Get_Postscript_Name(pv->face), vp) );

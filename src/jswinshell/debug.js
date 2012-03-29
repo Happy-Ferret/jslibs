@@ -329,8 +329,8 @@ function changesNotificationFct() {
 	print( directoryChangesLookup(dch).join('\n'), '\n');
 }
 
-while ( !endSignal )
-	processEvents( directoryChangesEvents(dch, changesNotificationFct), endSignalEvents() );
+while ( !_host.endSignal )
+	processEvents( directoryChangesEvents(dch, changesNotificationFct), _host.endSignalEvents() );
 	
 	
 
@@ -370,7 +370,7 @@ halt(); //////////////////////////////////////////////////////////////////////
 
  	switch ( id ) {
  		case 'exit':
- 			endSignal = true;
+ 			_host.endSignal = true;
  			break;
  		case 'add':
  			var fileName = fileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
@@ -389,8 +389,8 @@ halt(); //////////////////////////////////////////////////////////////////////
  		}
  }
 
-while ( !endSignal )
-	processEvents( s.events(), endSignalEvents() )
+while ( !_host.endSignal )
+	processEvents( s.events(), _host.endSignalEvents() )
 
 
 halt(); //////////////////////////////////////////////////////////////////////
@@ -608,7 +608,7 @@ var blink = true;
 //messageBox( s.text );
 //s.Flash();
 
-while ( !endSignal && !exit ) {
+while ( !_host.endSignal && !exit ) {
 	s.processEvents();
 	sleep(100);//print('.');
 //	s.icon = blink ? trayIcon : null;

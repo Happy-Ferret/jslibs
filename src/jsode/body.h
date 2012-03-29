@@ -33,7 +33,7 @@ ALWAYS_INLINE JSBool JL_JsvalToBody( JSContext *cx, jsval val, ode::dBodyID *bod
 	JSObject *obj = JSVAL_TO_OBJECT(val);
 	JL_ASSERT_INSTANCE(obj, JL_CLASS(Body));
 	
-	*bodyId = (ode::dBodyID)JL_GetPrivate(cx,obj); // may be null if body is world.env
+	*bodyId = (ode::dBodyID)JL_GetPrivate(obj); // may be null if body is world.env
 	return JS_TRUE;
 	JL_BAD;
 }

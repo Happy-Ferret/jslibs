@@ -26,11 +26,11 @@ typedef union jsdpun {
 #endif
     } s;
     uint64_t u64;
-    jsdouble d;
+    double d;
 } jsdpun;
 
 static inline int
-JSDOUBLE_IS_NaN(jsdouble d)
+JSDOUBLE_IS_NaN(double d)
 {
     jsdpun u;
     u.d = d;
@@ -38,15 +38,15 @@ JSDOUBLE_IS_NaN(jsdouble d)
            (u.u64 & JSDOUBLE_MANTMASK) != 0;
 }
 
-
+/*
 // declared friend in jsiter.h
 
 extern JS_FRIEND_API(JSBool)
-js_ValueToIterator(JSContext *cx, uintN flags, js::Value *vp);
+js_ValueToIterator(JSContext *cx, unsigned flags, js::Value *vp);
 
 extern JS_FRIEND_API(JSBool)
 js_CloseIterator(JSContext *cx, JSObject *iterObj);
-
+*/
 
 // only defined as JS_FRIEND_API in js/src/js/src/jsobj.h
 
@@ -59,7 +59,7 @@ js_GetClassPrototype(JSContext *cx, JSObject *scope, JSProtoKey protoKey,
 // only defined as JS_FRIEND_API in js/src/js/src/jstypedarray.h
 
 JS_FRIEND_API(JSObject *)
-js_CreateTypedArray(JSContext *cx, jsint atype, uint32_t nelements);
+js_CreateTypedArray(JSContext *cx, int atype, uint32_t nelements);
 */
 
 // only defined as JS_FRIEND_API in js/src/js/src/jsdate.h
@@ -81,23 +81,6 @@ js_DateGetMinutes(JSContext *cx, JSObject* obj);
 
 extern JS_FRIEND_API(int)
 js_DateGetSeconds(JSContext *cx, JSObject* obj);
-
-
-
-ALWAYS_INLINE JSBool
-JS_DescribeTopFrame(JSContext *cx, JSScript **script, unsigned *lineno) {
-
-	JSStackFrame *frame = JS_GetScriptedCaller(cx, NULL);
-	ASSERT( frame != NULL );
-	
-	JSScript *s;
-	s = JS_GetFrameScript(cx, frame);
-	if ( script )
-		*script = s;
-	if ( lineno )
-		*lineno = JS_PCToLineNumber(cx, s, JS_GetFramePC(cx, frame));
-	return JS_TRUE;
-}
 
 
 /*

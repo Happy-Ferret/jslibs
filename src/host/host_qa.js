@@ -41,7 +41,7 @@ loadModule('jsio');
 	
 	function fct(obj, left) {
 
-		if ( endSignal )
+		if ( _host.endSignal )
 			halt();
 		if ( isPrimitive(obj) )
 			return;

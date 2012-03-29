@@ -39,7 +39,7 @@ jl::Pool matrixPool; // (TBD) manage thread safety / use modulePrivate
 
 int GetMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	if ( !pv )
 		return false;
 	*m = pv->mat->raw; // returns its private pointer. Caller SHOULD not modify it
@@ -71,7 +71,7 @@ DEFINE_FINALIZE() {
 	}
 
 	//	printf("Fin:%d\n", matrixPoolLength);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	if ( pv == NULL )
 		return;
 
@@ -161,7 +161,7 @@ DEFINE_FUNCTION( load ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_ARGC_MAX(16);
 
@@ -211,7 +211,7 @@ DEFINE_FUNCTION( clear ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44Identity(pv->mat);
 	pv->isIdentity = true;
@@ -233,7 +233,7 @@ DEFINE_FUNCTION( clearRotation ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44ClearRotation(pv->mat);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -254,7 +254,7 @@ DEFINE_FUNCTION( clearTranslation ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44ClearTranslation(pv->mat);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -279,7 +279,7 @@ DEFINE_FUNCTION( loadRotation ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	Matrix44 tmp, *m = &tmp;
@@ -320,7 +320,7 @@ DEFINE_FUNCTION( loadTranslation ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	Matrix44 tmp, *m = &tmp;
@@ -354,7 +354,7 @@ DEFINE_FUNCTION( translate ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(3);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float x, y, z;
@@ -396,7 +396,7 @@ DEFINE_FUNCTION( scale ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float x, y, z;
@@ -448,7 +448,7 @@ DEFINE_FUNCTION( rotationFromQuaternion ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(4);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float w, x, y, z;
@@ -503,7 +503,7 @@ DEFINE_FUNCTION( taitBryanRotation ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(3);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float roll, pitch, yaw;
@@ -536,7 +536,7 @@ DEFINE_FUNCTION( rotate ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(4);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
@@ -582,7 +582,7 @@ DEFINE_FUNCTION( rotateX ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
@@ -621,7 +621,7 @@ DEFINE_FUNCTION( rotateY ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
@@ -660,7 +660,7 @@ DEFINE_FUNCTION( rotateZ ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
@@ -715,7 +715,7 @@ DEFINE_FUNCTION( lookAt ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(6, 9);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz;
@@ -772,7 +772,7 @@ DEFINE_FUNCTION( rotateToVector ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(3);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float x, y, z;
@@ -816,7 +816,7 @@ DEFINE_FUNCTION( invert ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	if ( !pv->isIdentity )
@@ -841,7 +841,7 @@ DEFINE_FUNCTION( product ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	Matrix44 tmp, *m = &tmp;
@@ -883,7 +883,7 @@ DEFINE_FUNCTION( transformVector ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	uint32_t length;
@@ -950,7 +950,7 @@ DEFINE_PROPERTY_SETTER( translation ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_IS_ARRAY( *vp, "" );
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float pos[3];
@@ -967,7 +967,7 @@ DEFINE_PROPERTY_GETTER( translation ) {
 	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float pos[3];
@@ -985,7 +985,7 @@ DEFINE_NEW_RESOLVE() {
 
 	if (!JSVAL_IS_INT(id) || (flags & JSRESOLVE_ASSIGNING))
 		return JS_TRUE;
-	jsint slot = JSVAL_TO_INT( id );
+	int slot = JSVAL_TO_INT( id );
 	JL_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
 	JS_DefineProperty(cx, obj, (char*)slot, JSVAL_VOID, NULL, NULL, JSPROP_INDEX | JSPROP_SHARED );
 	*objp = obj;
@@ -1013,8 +1013,8 @@ DEFINE_GET_PROPERTY() {
 
 	if ( !JSID_IS_INT(id) )
 		return JS_TRUE;
-	jsint slot = JSID_IS_INT( id );
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	int slot = JSID_IS_INT( id );
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_RANGE( slot, 0, 15, "[index]" );
 	JL_CHK( JL_NativeToJsval(cx, pv->mat->raw[slot], vp) );
@@ -1031,8 +1031,8 @@ DEFINE_SET_PROPERTY() {
 
 	if ( !JSID_IS_INT(id) )
 		return JS_TRUE;
-	jsint slot = JSID_IS_INT( id );
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(cx, obj);
+	int slot = JSID_IS_INT( id );
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_IS_NUMBER(*vp, "");
 	JL_ASSERT_RANGE( slot, 0, 15, "[index]" );

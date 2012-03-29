@@ -73,7 +73,7 @@ protected:
 
 		if ( val == JL_GetNaNValue(_cx) ) // (TBD) needed ?
 			throw JsException(_cx, "not a number");
-		jsdouble d;
+		double d;
 		if ( !JL_JsvalToNative(_cx, val, &d) )
 			throw JsException(_cx, "cannot convert to a real");
 		return d;

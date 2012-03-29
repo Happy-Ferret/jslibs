@@ -22,7 +22,9 @@ BEGIN_CLASS( Handle )
 
 DEFINE_FINALIZE() { // see HandleClose()
 
-	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(cx, obj);
+	JL_IGNORE(cx);
+
+	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(obj);
 	if ( pv ) {
 
 		if ( pv->finalizeCallback ) // callback function is present
@@ -38,7 +40,7 @@ DEFINE_FUNCTION( toString ) {
 	JL_DEFINE_FUNCTION_OBJ;
 //	JL_ASSERT_THIS_INSTANCE();
 
-	HandlePrivate *pv = JL_HasPrivate(cx, JL_OBJ) ? (HandlePrivate*)JL_GetPrivate(cx, JL_OBJ) : NULL;
+	HandlePrivate *pv = JL_HasPrivate(JL_OBJ) ? (HandlePrivate*)JL_GetPrivate(JL_OBJ) : NULL;
 	JSString *handleStr;
 	char str[] = "[Handle ????]";
 	if ( pv != NULL ) { // this manage Print(Handle) issue

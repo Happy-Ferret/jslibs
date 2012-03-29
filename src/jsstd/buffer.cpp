@@ -86,7 +86,7 @@ JSBool WriteDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 	JLData str;
 
 	BufferPrivate *pv;
-	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	//if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !( !JSVAL_IS_PRIMITIVE(chunk) && JL_ObjectIsString(cx, JSVAL_TO_OBJECT(chunk)) ) ) {
@@ -114,7 +114,7 @@ JSBool WriteDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 
 JSBool WriteRawDataChunk( JSContext *cx, JSObject *obj, size_t amount, const char *str ) {
 
-	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 	jsval bstr;
 	JL_CHK( JL_NewBufferCopyN(cx, str, amount, &bstr) );
@@ -129,7 +129,7 @@ JSBool UnReadDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 
 	JLData str;
 
-	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	//if ( !JSVAL_IS_STRING(chunk) && !JL_JsvalIsBlob(cx, chunk) && !(!JSVAL_IS_PRIMITIVE(chunk) && JL_ObjectIsString(cx, JSVAL_TO_OBJECT(chunk))) ) {
@@ -159,7 +159,7 @@ JSBool UnReadDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 /*
 inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // amount = total needed amount
 
-	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	jsval rval, fctVal;
 	unsigned int bufferLengthBeforeRefillRequest;
@@ -179,7 +179,7 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // amount = total needed amount
 
 	char *buf;
-	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	jsval srcVal;
@@ -240,7 +240,7 @@ JSBool ReadChunk( JSContext *cx, JSObject *obj, jsval *rval ) {
 
 	JLData str;
 
-	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	if ( pv->length == 0 ) { // if buffer is empty, try to refill it.
@@ -269,7 +269,7 @@ JSBool ReadRawDataAmount( JSContext *cx, JSObject *obj, size_t *amount, char *st
 		return JS_TRUE;
 
 	BufferPrivate *pv;
-	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	if ( pv->length < *amount )
@@ -324,7 +324,7 @@ JSBool BufferSkipAmount( JSContext *cx, JSObject *obj, size_t *amount ) { // amo
 	if ( *amount == 0 ) // optimization
 		return JS_TRUE;
 
-	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	if ( pv->length < *amount )
@@ -416,7 +416,7 @@ JSBool ReadDataAmount( JSContext *cx, JSObject *obj, size_t amount, jsval *rval 
 JSBool FindInBuffer( JSContext *cx, JSObject *obj, const char *needle, size_t needleLength, bool *found, size_t *foundAt ) {
 
 	// (TBD) optimise this function for needleLength == 1 (eg. '\0' in a string)
-	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
 	size_t chunkLength, i, j, pos;
@@ -466,12 +466,12 @@ JSBool AddBuffer( JSContext *cx, JSObject *destBuffer, JSObject *srcBuffer ) {
 
 	JL_ASSERT_INSTANCE( destBuffer, JL_CLASS(Buffer) );
 	BufferPrivate *dpv;
-	dpv = (BufferPrivate*)JL_GetPrivate(cx, destBuffer);
+	dpv = (BufferPrivate*)JL_GetPrivate(destBuffer);
 	JL_ASSERT_OBJECT_STATE( dpv, JL_CLASS_NAME(Buffer) );
 
 	JL_ASSERT_INSTANCE( srcBuffer, JL_CLASS(Buffer) );
 	BufferPrivate *spv;
-	spv = (BufferPrivate*)JL_GetPrivate(cx, srcBuffer);
+	spv = (BufferPrivate*)JL_GetPrivate(srcBuffer);
 	JL_ASSERT_OBJECT_STATE( spv, JL_CLASS_NAME(Buffer) );
 
 	for ( jl::QueueCell *it = jl::QueueBegin(spv->queue); it; it = jl::QueueNext(it) )
@@ -495,7 +495,7 @@ DEFINE_FINALIZE() {
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
 		return;
 
-	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 
@@ -635,7 +635,7 @@ DEFINE_FUNCTION( clear ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	BufferPrivate *pv;
-	pv = (BufferPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	pv = (BufferPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	while ( !QueueIsEmpty(pv->queue) )
 		JL_CHK( ShiftJsval(cx, pv->queue, NULL) );
@@ -660,7 +660,7 @@ DEFINE_FUNCTION( write ) {
 
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	BufferPrivate *pv;
-	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT_ARGC_RANGE(1, 2);
 	
@@ -781,7 +781,7 @@ DEFINE_FUNCTION( read ) { // Read( [ amount | <undefined> ] )
 	JL_ASSERT_THIS_INSTANCE();
 
 	BufferPrivate *pv;
-	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	if ( JL_ARGC == 1 && JSVAL_IS_VOID( JL_ARG(1) ) ) // read the next chunk (of an unknown length) (read something as fast as possible)
@@ -811,7 +811,7 @@ DEFINE_FUNCTION( skip ) { // Skip( amount )
 	JL_ASSERT_THIS_INSTANCE();
 
 	BufferPrivate *pv;
-	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT_ARGC(1);
 	size_t amount;
@@ -941,7 +941,7 @@ DEFINE_FUNCTION( toString ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	BufferPrivate *pv;
-	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	if ( pv->length == 0 ) {
@@ -1008,7 +1008,7 @@ DEFINE_GET_PROPERTY() {
 	slot = JSID_TO_INT( id );
 
 	BufferPrivate *pv;
-	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	if ( slot >= 0 && (size_t)slot < pv->length ) {
@@ -1073,7 +1073,7 @@ DEFINE_PROPERTY_GETTER( length ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 	BufferPrivate *pv;
-	pv = (BufferPrivate*)JL_GetPrivate(cx, obj);
+	pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	return JL_NativeToJsval(cx, pv->length, vp);
 	JL_BAD;
@@ -1089,7 +1089,7 @@ DEFINE_PROPERTY_GETTER( length ) {
 
 DEFINE_TRACER() {
 
-	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(trc->context, obj);
+	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(obj);
 	if ( pv )
 		for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) )
 			JS_CALL_VALUE_TRACER(trc, *(jsval*)QueueGetData(it), "jsstd/Buffer:bufferQueueItem");

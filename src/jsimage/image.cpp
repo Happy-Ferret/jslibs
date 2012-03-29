@@ -23,7 +23,7 @@ DEFINE_FINALIZE() {
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
 		return;
 
-	void *data = JL_GetPrivate(cx, obj);
+	void *data = JL_GetPrivate(obj);
 	if ( data != NULL )
 		jl_free(data); // jl_free(NULL) is legal
 }
@@ -35,7 +35,7 @@ DEFINE_FUNCTION( alloc ) {
 	JL_ASSERT_ARGC_MIN(1);
 
 	void *data;
-	data = JL_GetPrivate(cx, obj);
+	data = JL_GetPrivate(obj);
 	if ( data != NULL )
 		jl_free(data);
 
@@ -74,7 +74,7 @@ DEFINE_FUNCTION( free ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	*JL_RVAL = JSVAL_VOID;
 
-	void *data = JL_GetPrivate(cx, obj);
+	void *data = JL_GetPrivate(obj);
 	if ( data != NULL ) {
 
 		JL_SetPrivate(cx, obj, NULL);
@@ -116,7 +116,7 @@ DEFINE_FUNCTION( trim ) {
 		JS_ValueToBoolean(cx, JL_ARG(2), &reuseBuffer);
 
 	char *data;
-	data = (char*)JL_GetPrivate(cx, obj);
+	data = (char*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( data );
 
 	char *tmpDataPtr;
@@ -168,7 +168,7 @@ DEFINE_FUNCTION( gamma ) {
 
 
 
-//	JSBool Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+//	JSBool Call(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 //		return JS_TRUE;
 //	}
 
@@ -176,7 +176,7 @@ DEFINE_FUNCTION( gamma ) {
 //		return JS_TRUE;
 //	}
 
-//	JSBool Func(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+//	JSBool Func(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 //		return JS_TRUE;
 //	}
 

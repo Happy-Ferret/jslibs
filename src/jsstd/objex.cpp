@@ -129,7 +129,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC_MAX(5);
 
 
-	for ( uintN i = 0; i < JL_ARGC && i < 4; i++ )
+	for ( unsigned i = 0; i < JL_ARGC && i < 4; i++ )
 		if ( JL_ARG_ISDEF(i+1) ) {
 
 			JL_ASSERT_ARG_IS_CALLABLE(i+1);

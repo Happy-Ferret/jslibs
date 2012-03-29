@@ -29,7 +29,7 @@ struct MemoryMappedPrivate {
 
 JSBool MemoryMappedBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
-	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
+	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
 	*str = JLData(((const char*)pv->addr) + pv->offset, false, pv->size);
 	return JS_TRUE;
 }
@@ -42,7 +42,7 @@ BEGIN_CLASS( MemoryMapped )
 
 DEFINE_FINALIZE() {
 
-	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
+	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 
@@ -72,7 +72,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( JL_SetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, JL_ARG(1)) ); // avoid the file to be GCed while being used by MemoryMapped
 
 	PRFileDesc *fd;
-	fd = (PRFileDesc*)JL_GetPrivate(cx, fdObj);
+	fd = (PRFileDesc*)JL_GetPrivate(fdObj);
 	JL_ASSERT_OBJECT_STATE( fd, JL_CLASS_NAME(File) );
 
 	MemoryMappedPrivate *pv;
@@ -145,7 +145,7 @@ DEFINE_PROPERTY_SETTER( offset ) {
 
 	JL_IGNORE( strict, id );
 
-	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
+	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &pv->offset) );
 	return JS_TRUE;
@@ -156,7 +156,7 @@ DEFINE_PROPERTY_GETTER( offset ) {
 
 	JL_IGNORE( id );
 
-	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(cx, obj);
+	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->offset, vp) );
 	return JS_TRUE;

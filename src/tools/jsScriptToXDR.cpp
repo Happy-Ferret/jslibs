@@ -27,7 +27,6 @@
 #endif // _MSC_VER
 
 #include <jsapi.h>
-#include <jsxdrapi.h>
 #include <jsprf.h>
 
 #ifdef _MSC_VER
@@ -146,7 +145,7 @@ int main(int argc, char* argv[]) {
 	
 	JSClass global_class = {
 		 "global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
-		 JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
+		 JS_EnumerateStub, JS_ResolveStub
 	};
 
 	JSRuntime *rt = JS_NewRuntime(0);
@@ -206,13 +205,12 @@ int main(int argc, char* argv[]) {
 
 	if ( fileSize > 0 || !allowEmptyDest ) {
 
-		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
-		JS_XDRScript(xdr, &script);
 		uint32_t length;
-		void *buf = JS_XDRMemGetData(xdr, &length);
+		void *buf = JS_EncodeScript(cx, script, &length);
 		write(file, buf, length);
+		js_free(buf);
 		printf("Writing %d bytes.\n", length);
-		JS_XDRDestroy(xdr);
+		
 	} else {
 
 		printf("Empty destination file.\n");

@@ -35,7 +35,7 @@ DEFINE_FINALIZE() {
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
 		return;
 
-	HashPrivate *pv = (HashPrivate *)JL_GetPrivate( cx, obj );
+	HashPrivate *pv = (HashPrivate *)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 	JS_free(cx, pv);
@@ -116,7 +116,7 @@ DEFINE_FUNCTION( reset ) {
 	JL_ASSERT_ARGC_MAX( 0 );
 
 	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	int err;
@@ -145,7 +145,7 @@ DEFINE_FUNCTION( process ) {
 	JL_ASSERT_ARG_IS_STRING(1);
 
 	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	int err;
@@ -188,7 +188,7 @@ DEFINE_FUNCTION( done ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned long outLength;
@@ -236,7 +236,7 @@ DEFINE_CALL() {
 	JL_ASSERT_ARG_IS_STRING(1);
 
 	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate( cx, obj );
+	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	int err;
@@ -292,7 +292,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JSString *jsstr;
 	jsstr = JS_NewStringCopyZ(cx, pv->descriptor->name );
@@ -313,7 +313,7 @@ DEFINE_PROPERTY_GETTER( blockSize ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL( pv->descriptor->blocksize );
 	return JS_TRUE;
@@ -331,7 +331,7 @@ DEFINE_PROPERTY_GETTER( length ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL( pv->descriptor->hashsize );
 	return JS_TRUE;
@@ -349,7 +349,7 @@ DEFINE_PROPERTY_GETTER( inputLength ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate(cx, obj);
+	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	return JL_NativeToJsval(cx, pv->inputLength, vp);
 	JL_BAD;

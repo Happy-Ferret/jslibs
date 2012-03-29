@@ -68,7 +68,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( lengths ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	JL_ASSERT_IS_ARRAY(*vp, "");
 	ode::dVector3 vector;
@@ -83,7 +83,7 @@ DEFINE_PROPERTY_SETTER( lengths ) {
 
 DEFINE_PROPERTY_GETTER( lengths ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dVector3 result;
 	ode::dGeomBoxGetLengths(geom, result);

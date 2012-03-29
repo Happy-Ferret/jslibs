@@ -44,7 +44,7 @@ DEFINE_CONSTRUCTOR() {
 	
 		JL_ASSERT_ARG_IS_OBJECT(2);
 		JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
-		groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(2)));
+		groupId = (ode::dJointGroupID)JL_GetPrivate(JSVAL_TO_OBJECT(JL_ARG(2)));
 	} else {
 
 		groupId = 0;
@@ -73,7 +73,7 @@ DEFINE_FUNCTION( set ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dJointSetFixed(jointId);
 

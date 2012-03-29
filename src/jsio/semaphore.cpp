@@ -32,7 +32,7 @@ struct ClassPrivate {
 
 DEFINE_FINALIZE() {
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
 	if ( !pv )
 		return;
 
@@ -125,7 +125,7 @@ DEFINE_FUNCTION( wait ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	PRStatus status;
@@ -150,7 +150,7 @@ DEFINE_FUNCTION( post ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	PRStatus status;

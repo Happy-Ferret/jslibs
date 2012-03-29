@@ -45,7 +45,7 @@ DEFINE_CONSTRUCTOR() {
 		
 		JL_ASSERT_ARG_IS_OBJECT(2);
 		JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
-		groupId = (ode::dJointGroupID)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(2)));
+		groupId = (ode::dJointGroupID)JL_GetPrivate(JSVAL_TO_OBJECT(JL_ARG(2)));
 	} else {
 
 		groupId = 0;
@@ -78,7 +78,7 @@ DEFINE_FUNCTION( setAxis ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_ASSERT_ARGC_MIN( 3 );
-	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(cx, JL_OBJ);
+	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	*JL_RVAL = JSVAL_VOID;
 

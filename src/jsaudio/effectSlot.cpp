@@ -27,7 +27,7 @@ BEGIN_CLASS( OalEffectSlot )
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 	if ( alcGetCurrentContext() )
@@ -61,7 +61,7 @@ DEFINE_FUNCTION( valueOf ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->effectSlot, JL_RVAL) );
 	return JS_TRUE;
@@ -79,7 +79,7 @@ DEFINE_PROPERTY_SETTER( effect ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	ALuint effect;
@@ -102,7 +102,7 @@ DEFINE_PROPERTY_SETTER( effectGain ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float gain;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &gain) );
@@ -118,7 +118,7 @@ DEFINE_PROPERTY_GETTER( effectGain ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float gain;
 	alGetAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, &gain );
@@ -135,7 +135,7 @@ DEFINE_PROPERTY_SETTER( effectSendAuto ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	bool sendAuto;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &sendAuto) );
@@ -151,7 +151,7 @@ DEFINE_PROPERTY_GETTER( effectSendAuto ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int sendAuto;
 	alGetAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, &sendAuto );

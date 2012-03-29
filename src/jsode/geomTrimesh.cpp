@@ -26,7 +26,7 @@ BEGIN_CLASS( GeomTrimesh )
 
 DEFINE_FINALIZE() {
 
-	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	if ( !geomId )
 		return;
 	ode::dGeomSetData(geomId, NULL);
@@ -101,7 +101,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( triangleCount ) {
 
 	JL_IGNORE(id);
-	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	int count = ode::dGeomTriMeshGetTriangleCount(geomId);
 	JL_CHK( JL_NativeToJsval(cx, count, vp) );

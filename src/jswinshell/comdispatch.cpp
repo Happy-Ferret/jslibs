@@ -22,12 +22,12 @@ DEFINE_FINALIZE() {
 
 	if ( obj == JL_CLASS_PROTOTYPE(cx, ComDispatch) )
 		return;
-	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
+	IDispatch *disp = (IDispatch*)JL_GetPrivate(obj);
 	disp->Release();
 }
 
 
-JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
+JSBool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -39,7 +39,7 @@ JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 	JL_IGNORE(dbg_name);
 #endif
 
-	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JL_OBJ);
+	IDispatch *disp = (IDispatch*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( disp );
 
 	JSObject *funObj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp));
@@ -55,7 +55,7 @@ JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 	params.cNamedArgs = 0;
 	params.rgdispidNamedArgs = NULL;
 	params.cArgs = argc;
-	for ( uintN i = 0; i < argc; ++i ) {
+	for ( unsigned i = 0; i < argc; ++i ) {
 
 		VariantInit(&params.rgvarg[i]);
 		JL_CHK( JL_JsvalToVariant(cx, &JL_ARGV[i], &params.rgvarg[i]) );
@@ -67,7 +67,7 @@ JSBool FunctionInvoke(JSContext *cx, uintN argc, jsval *vp) {
 	EXCEPINFO ex;
 	UINT argErr;
 	hr = disp->Invoke(dispid, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD, &params, result, &ex, &argErr);
-	for ( uintN i = 0; i < argc; ++i ) {
+	for ( unsigned i = 0; i < argc; ++i ) {
 
 		HRESULT hr1 = VariantClear(&params.rgvarg[i]);
 		if ( FAILED(hr1) )
@@ -119,7 +119,7 @@ DEFINE_GET_PROPERTY() {
 	UINT argErr;
 	DISPPARAMS params;
 
-	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
+	IDispatch *disp = (IDispatch*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( disp );
 
 	result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
@@ -214,7 +214,7 @@ DEFINE_SET_PROPERTY() {
 
 	HRESULT hr;
 
-	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
+	IDispatch *disp = (IDispatch*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( disp );
 
 	ASSERT( JSID_IS_STRING( id ) );
@@ -286,7 +286,7 @@ DEFINE_FUNCTION( functionList ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
+	IDispatch *disp = (IDispatch*)JL_GetPrivate(JSVAL_TO_OBJECT(JL_ARG(1)));
 	JL_ASSERT_OBJECT_STATE( disp, JL_THIS_CLASS_NAME );
 
 //	JSObject *memberList = JL_NewProtolessObj(cx);
@@ -351,7 +351,7 @@ DEFINE_ITERATOR_OBJECT() {
 
 	JL_CHKM( !keysonly, E_NAME("for...in"), E_NOTSUPPORTED ); // JL_ASSERT( !keysonly, "Only for each..in loop is supported." );
 
-	IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
+	IDispatch *disp = (IDispatch*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( disp );
 
 	VariantInit(&result);

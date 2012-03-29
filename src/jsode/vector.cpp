@@ -23,7 +23,7 @@ BEGIN_CLASS( Vector )
 
 DEFINE_FINALIZE() {
 	
-	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(cx, obj);
+	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 	JS_free(cx, pv);
@@ -31,7 +31,7 @@ DEFINE_FINALIZE() {
 
 DEFINE_PROPERTY( xSetter ) {
 	
-	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(cx, obj);
+	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(obj);
 	float f;
 	JSBool ok = JL_JsvalToNative(cx, *vp, &f);
 	pv->Set(pv->userData, 0, f);
@@ -40,13 +40,13 @@ DEFINE_PROPERTY( xSetter ) {
 
 DEFINE_PROPERTY( xGetter ) {
 
-	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(cx, obj);
+	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(obj);
 	return JL_NativeToJsval(cx, pv->Get(pv->userData, 0), vp);
 }
 
 DEFINE_PROPERTY( ySetter ) {
 	
-	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(cx, obj);
+	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(obj);
 	float f;
 	JSBool ok = JL_JsvalToNative(cx, *vp, &f);
 	pv->Set(pv->userData, 1, f);
@@ -55,13 +55,13 @@ DEFINE_PROPERTY( ySetter ) {
 
 DEFINE_PROPERTY( yGetter ) {
 
-	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(cx, obj);
+	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(obj);
 	return JL_NativeToJsval(cx, pv->Get(pv->userData, 1), vp);
 }
 
 DEFINE_PROPERTY( zSetter ) {
 	
-	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(cx, obj);
+	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(obj);
 	float f;
 	JSBool ok = JL_JsvalToNative(cx, *vp, &f);
 	pv->Set(pv->userData, 2, f);
@@ -70,7 +70,7 @@ DEFINE_PROPERTY( zSetter ) {
 
 DEFINE_PROPERTY( zGetter ) {
 
-	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(cx, obj);
+	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(obj);
 	return JL_NativeToJsval(cx, pv->Get(pv->userData, 2), vp);
 }
 

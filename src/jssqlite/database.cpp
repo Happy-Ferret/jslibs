@@ -103,7 +103,7 @@ DEFINE_FINALIZE() {
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
 		return;
 
-	DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+	DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivate(obj);
 	if ( pv == NULL )
 		return;
 
@@ -170,7 +170,7 @@ DEFINE_FUNCTION( close ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+	pv = (DatabasePrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_SetPrivate(cx, obj, NULL);
 
@@ -262,7 +262,7 @@ DEFINE_FUNCTION( query ) {
 	JL_ASSERT_ARGC_MIN(1);
 
 	DatabasePrivate *pv;
-	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+	pv = (DatabasePrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 //	const char *sqlQuery;
@@ -342,7 +342,7 @@ DEFINE_FUNCTION( exec ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	DatabasePrivate *pv;
-	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+	pv = (DatabasePrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 //	const char *sqlQuery;
@@ -422,7 +422,7 @@ DEFINE_PROPERTY_GETTER( lastInsertRowid ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	DatabasePrivate *pv;
-	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+	pv = (DatabasePrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	sqlite3_int64 lastId;
 	lastId = sqlite3_last_insert_rowid(pv->db);
@@ -445,7 +445,7 @@ DEFINE_PROPERTY_GETTER( changes ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	DatabasePrivate *pv;
-	pv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+	pv = (DatabasePrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	// This function returns the number of database rows that were changed (or inserted or deleted) by the most recently completed INSERT, UPDATE, or DELETE statement.
@@ -530,7 +530,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				sqlite3_result_int(sCx, JSVAL_TO_INT(argv[0]));
 			} else {
 
-				jsdouble jd;
+				double jd;
 				JL_CHK( JL_JsvalToNative(cx, argv[0], &jd) );
 				if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
 					sqlite3_result_int(sCx, (int)jd);
@@ -600,7 +600,7 @@ DEFINE_SET_PROPERTY() {
 		
 		JL_ASSERT_THIS_INSTANCE();
 
-		DatabasePrivate *dbpv = (DatabasePrivate*)JL_GetPrivate(cx, obj);
+		DatabasePrivate *dbpv = (DatabasePrivate*)JL_GetPrivate(obj);
 		JL_ASSERT_THIS_OBJECT_STATE(dbpv);
 
 		FunctionPrivate *fpv = (FunctionPrivate*)jl_malloc(sizeof(FunctionPrivate));

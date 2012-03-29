@@ -65,9 +65,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( radius ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
-	jsdouble radius;
+	double radius;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &radius) );
 	ode::dGeomSphereSetRadius(geom, (ode::dReal)radius);
 	return JS_TRUE;
@@ -76,7 +76,7 @@ DEFINE_PROPERTY_SETTER( radius ) {
 
 DEFINE_PROPERTY_GETTER( radius ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	JL_CHK( ODERealToJsval(cx, ode::dGeomSphereGetRadius(geom), vp) ); // see JL_NewNumberValue and JS_NewDouble
 	return JS_TRUE;

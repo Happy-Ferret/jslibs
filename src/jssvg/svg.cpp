@@ -98,7 +98,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
 		return;
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 
@@ -153,7 +153,7 @@ DEFINE_FUNCTION( write ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
@@ -199,7 +199,7 @@ DEFINE_FUNCTION( write ) {
 /*
 DEFINE_PROPERTY( xmlData ) {
 
-	RsvgHandle *handle = (RsvgHandle*)JL_GetPrivate(cx, obj);
+	RsvgHandle *handle = (RsvgHandle*)JL_GetPrivate(obj);
 	if ( handle )
 		g_object_unref(handle);
 	handle = rsvg_handle_new();
@@ -263,7 +263,7 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
@@ -409,7 +409,7 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 /*
 DEFINE_FUNCTION( getImage ) { // using pixbuf
 
-	RsvgHandle *handle = (RsvgHandle*)JL_GetPrivate(cx, JL_OBJ);
+	RsvgHandle *handle = (RsvgHandle*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(handle);
 
 	GdkPixbuf *pb = rsvg_handle_get_pixbuf(handle);
@@ -456,7 +456,7 @@ DEFINE_FUNCTION( setVisible ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(2);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
@@ -495,7 +495,7 @@ DEFINE_FUNCTION( scale ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(2);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	double sx, sy;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sx) );
@@ -520,7 +520,7 @@ DEFINE_FUNCTION( rotate ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	double angle;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &angle) );
@@ -544,7 +544,7 @@ DEFINE_FUNCTION( translate ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(2);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	double tx, ty;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &tx) );
@@ -572,7 +572,7 @@ DEFINE_PROPERTY_SETTER( dpi ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
@@ -611,7 +611,7 @@ DEFINE_PROPERTY_GETTER( width ) {
 	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
@@ -632,7 +632,7 @@ DEFINE_PROPERTY_GETTER( height ) {
 	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
@@ -653,7 +653,7 @@ DEFINE_PROPERTY_GETTER( title ) {
 	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
@@ -676,7 +676,7 @@ DEFINE_PROPERTY_GETTER( metadata ) {
 	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
@@ -699,7 +699,7 @@ DEFINE_PROPERTY_GETTER( description ) {
 	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
@@ -720,7 +720,7 @@ $TOC_MEMBER $INAME
 /*
 DEFINE_PROPERTY(images) {
 
-	RsvgHandle *handle = (RsvgHandle*)JL_GetPrivate(cx, JL_OBJ);
+	RsvgHandle *handle = (RsvgHandle*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(handle);
 
 	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, SLOT_IMAGES_OBJECT, vp) );

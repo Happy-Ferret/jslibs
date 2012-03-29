@@ -81,7 +81,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JL_GetProperty(cx, imgObj, JLID(cx, width), &width) );
 		JL_CHK( JL_GetProperty(cx, imgObj, JLID(cx, height), &height) );
 		JL_CHK( JL_GetProperty(cx, imgObj, JLID(cx, channels), &channels) );
-		unsigned char *imageData = (unsigned char*)JL_GetPrivate(cx, imgObj);
+		unsigned char *imageData = (unsigned char*)JL_GetPrivate(imgObj);
 
 		// http://groups.google.com/group/microsoft.public.win32.programmer.gdi/browse_frm/thread/adaf38d715cef81/3825af9edde28cdc?lnk=st&q=RGB+CreateIcon&rnum=9&hl=en#3825af9edde28cdc
 		HDC screenDC = GetDC(NULL); // doc: If this value is NULL, GetDC retrieves the DC for the entire screen.
@@ -128,7 +128,7 @@ DEFINE_CONSTRUCTOR() {
 
 DEFINE_FINALIZE() {
 
-	HICON *phIcon = (HICON*)JL_GetPrivate(cx, obj);
+	HICON *phIcon = (HICON*)JL_GetPrivate(obj);
 	if ( !phIcon )
 		return;
 

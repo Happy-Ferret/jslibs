@@ -42,7 +42,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
 		return;
 
-	Surface *pv = (Surface*)JL_GetPrivate(cx, obj);
+	Surface *pv = (Surface*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 
@@ -83,7 +83,7 @@ DEFINE_CONSTRUCTOR() {
 /*
 DEFINE_FUNCTION( addVertex ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	double x, y, z;
@@ -114,7 +114,7 @@ DEFINE_FUNCTION( addVertex ) {
 
 DEFINE_FUNCTION( addTriangle ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	INDEX i1, i2, i3;
@@ -147,7 +147,7 @@ DEFINE_FUNCTION( addTriangle ) {
 /*
 DEFINE_FUNCTION( addIndices ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	for ( size_t i = 0; i < argc; i++ )
@@ -178,14 +178,14 @@ DEFINE_FUNCTION( defineVertexBuffer ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	Surface *pv;
-	pv  = (Surface*)JL_GetPrivate(cx, JL_OBJ);
+	pv  = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	*JL_RVAL = JSVAL_VOID;
 
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
-	jsuint count;
+	unsigned count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
 	if ( count == 0 )
@@ -196,7 +196,7 @@ DEFINE_FUNCTION( defineVertexBuffer ) {
 	pv->vertex = (SURFACE_REAL_TYPE*)JS_malloc(cx, sizeof(SURFACE_REAL_TYPE) * count);
 
 	jsval item;
-	for ( jsuint i = 0; i < count; i++ ) {
+	for ( unsigned i = 0; i < count; i++ ) {
 
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 //		if ( sizeof(SURFACE_REAL_TYPE) == sizeof(float) )
@@ -216,14 +216,14 @@ DEFINE_FUNCTION( defineNormalBuffer ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	Surface *pv;
-	pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
+	pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	*JL_RVAL = JSVAL_VOID;
 
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
-	jsuint count;
+	unsigned count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
 	if ( count == 0 )
@@ -234,7 +234,7 @@ DEFINE_FUNCTION( defineNormalBuffer ) {
 	pv->normal = (SURFACE_REAL_TYPE*)JS_malloc(cx, sizeof(SURFACE_REAL_TYPE) * count);
 
 	jsval item;
-	for ( jsuint i = 0; i < count; i++ ) {
+	for ( unsigned i = 0; i < count; i++ ) {
 
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 		JL_CHK( JL_JsvalToNative(cx, item, &pv->normal[i]) );
@@ -250,14 +250,14 @@ DEFINE_FUNCTION( defineTextureCoordinateBuffer ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	Surface *pv;
-	pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
+	pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	*JL_RVAL = JSVAL_VOID;
 
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
-	jsuint count;
+	unsigned count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
 	if ( count == 0 )
@@ -268,7 +268,7 @@ DEFINE_FUNCTION( defineTextureCoordinateBuffer ) {
 	pv->textureCoordinate = (SURFACE_REAL_TYPE*)JS_malloc(cx, sizeof(SURFACE_REAL_TYPE) * count);
 
 	jsval item;
-	for ( jsuint i = 0; i < count; i++ ) {
+	for ( unsigned i = 0; i < count; i++ ) {
 
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 		JL_CHK( JL_JsvalToNative(cx, item, &pv->textureCoordinate[i]) );
@@ -284,14 +284,14 @@ DEFINE_FUNCTION( defineColorBuffer ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	Surface *pv;
-	pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
+	pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	*JL_RVAL = JSVAL_VOID;
 
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
-	jsuint count;
+	unsigned count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
 	if ( count == 0 )
@@ -302,7 +302,7 @@ DEFINE_FUNCTION( defineColorBuffer ) {
 	pv->color = (SURFACE_REAL_TYPE*)JS_malloc(cx, sizeof(SURFACE_REAL_TYPE) * count);
 
 	jsval item;
-	for ( jsuint i = 0; i < count; i++ ) {
+	for ( unsigned i = 0; i < count; i++ ) {
 
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 		JL_CHK( JL_JsvalToNative(cx, item, &pv->color[i]) );
@@ -318,14 +318,14 @@ DEFINE_FUNCTION( defineIndexBuffer ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	Surface *pv;
-	pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
+	pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	*JL_RVAL = JSVAL_VOID;
 
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
-	jsuint count;
+	unsigned count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
 	if ( count == 0 )
@@ -336,7 +336,7 @@ DEFINE_FUNCTION( defineIndexBuffer ) {
 	pv->index = (SURFACE_INDEX_TYPE*)JS_malloc(cx, sizeof(SURFACE_INDEX_TYPE) * count);
 
 	jsval item;
-	for ( jsuint i = 0; i < count; i++ ) {
+	for ( unsigned i = 0; i < count; i++ ) {
 
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 		JL_CHK( JL_JsvalToNative(cx, item, &pv->index[i]) );
@@ -349,7 +349,7 @@ DEFINE_FUNCTION( defineIndexBuffer ) {
 
 DEFINE_PROPERTY_GETTER( vertexCount ) {
 
-	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
+	Surface *pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->vertexCount, vp) );
 	return JS_TRUE;
@@ -358,7 +358,7 @@ DEFINE_PROPERTY_GETTER( vertexCount ) {
 
 DEFINE_PROPERTY_GETTER( indexCount ) {
 
-	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
+	Surface *pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->indexCount, vp) );
 	return JS_TRUE;
@@ -368,7 +368,7 @@ DEFINE_PROPERTY_GETTER( indexCount ) {
 
 DEFINE_PROPERTY_GETTER( hasNormal ) {
 
-	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
+	Surface *pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = BOOLEAN_TO_JSVAL( pv->normal != NULL );
 	return JS_TRUE;
@@ -377,7 +377,7 @@ DEFINE_PROPERTY_GETTER( hasNormal ) {
 
 DEFINE_PROPERTY_GETTER( hasTextureCoordinateBuffer ) {
 
-	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
+	Surface *pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = BOOLEAN_TO_JSVAL( pv->normal != NULL );
 	return JS_TRUE;
@@ -386,7 +386,7 @@ DEFINE_PROPERTY_GETTER( hasTextureCoordinateBuffer ) {
 
 DEFINE_PROPERTY_GETTER( hasColor ) {
 
-	Surface *pv = (Surface*)JL_GetPrivate(cx, JL_OBJ);
+	Surface *pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = BOOLEAN_TO_JSVAL( pv->normal != NULL );
 	return JS_TRUE;

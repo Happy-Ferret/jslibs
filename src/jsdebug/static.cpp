@@ -87,7 +87,7 @@ BEGIN_STATIC
 void
 DumpScope(JSContext *cx, JSObject *obj)
 {
-    uintN i;
+    unsigned i;
     JSScope *scope;
     JSScopeProperty *sprop;
     jsval v;
@@ -275,7 +275,7 @@ static char GCTraceFileName[PATH_MAX]; // (TBD) fix static keyword issue
 JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 
 //	const char *statusStr[4] = { "JSGC_BEGIN", "JSGC_END", "JSGC_MARK_END", "JSGC_FINALIZE_END" };
-	if ( status == JSGC_MARK_END || status == JSGC_FINALIZE_END )
+	if ( status == JSGC_END )
 		return JS_TRUE;
 
 	time_t t;
@@ -312,56 +312,6 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 
 	return JS_TRUE;
 }
-
-/**doc
-$TOC_MEMBER $INAME
- $VOID $INAME( [ filename ] )
-  TBD
-**/
-DEFINE_FUNCTION( traceGC )
-{
-	JLData fileName;
-
-	if ( argc > 0 ) { // start GC dump
-
-		jsval *argv = JS_ARGV(cx, vp);
-//		JSObject *obj = JS_THIS_OBJECT(cx, vp);
-
-		if ( !JSVAL_IS_NULL( argv[0] ) ) {
-
-			JSString *str;
-			str = JS_ValueToString(cx, argv[0]);
-			if (!str)
-				 return JS_FALSE;
-			argv[0] = STRING_TO_JSVAL(str);
-			fileName = JLData(cx, str);
-		}
-
-		if (!fileName.IsSet())
-			GCTraceFileName[0] = '\0';
-		else
-			strcpy( GCTraceFileName, fileName );
-
-		if (!hasGCTrace) {
-
-			prevGCCallback = JS_SetGCCallback(cx, GCCallTrace);  // JS_SetGCCallbackRT(rt, GCCallTrace); ???
-			hasGCTrace = true;
-		}
-
-	} else { // stop GC dump
-
-		if ( hasGCTrace ) {
-
-			JS_SetGCCallback(cx, prevGCCallback); // (TBD) check this !
-			hasGCTrace = false;
-		}
-	}
-
-	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
-}
-
-
 
 
 #ifdef XP_UNIX
@@ -713,7 +663,7 @@ DEFINE_FUNCTION( getObjectPrivate ) {
 		return JS_TRUE;
 	}
 	unsigned long n;
-	n = (unsigned long)JL_GetPrivate(cx, JSVAL_TO_OBJECT( JL_ARG( 1 ) ));
+	n = (unsigned long)JL_GetPrivate(JSVAL_TO_OBJECT( JL_ARG( 1 ) ));
 	JL_CHK( JL_NewNumberValue(cx, (double)n, JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
@@ -730,7 +680,7 @@ ValueToScript(JSContext *cx, jsval v)
 
     if (!JSVAL_IS_PRIMITIVE(v) &&
         JL_GetClass(JSVAL_TO_OBJECT(v)) == &js_ScriptClass) {
-        script = (JSScript *) JL_GetPrivate(cx, JSVAL_TO_OBJECT(v));
+        script = (JSScript *) JL_GetPrivate(JSVAL_TO_OBJECT(v));
     } else {
         fun = JS_ValueToFunction(cx, v);
         if (!fun)
@@ -741,11 +691,11 @@ ValueToScript(JSContext *cx, jsval v)
 }
 
 JSBool
-GetTrapArgs(JSContext *cx, uintN argc, jsval *argv, JSScript **scriptp,
+GetTrapArgs(JSContext *cx, unsigned argc, jsval *argv, JSScript **scriptp,
             int32 *ip)
 {
     jsval v;
-    uintN intarg;
+    unsigned intarg;
     JSScript *script;
 
     *scriptp = JS_GetScriptedCaller(cx, NULL)->script;
@@ -839,7 +789,7 @@ DEFINE_FUNCTION( lineToPC )
 {
     JSScript *script;
     int32 i;
-    uintN lineno;
+    unsigned lineno;
     jsbytecode *pc;
 
 	 JL_ASSERT_ARGC_MIN(1);
@@ -847,7 +797,7 @@ DEFINE_FUNCTION( lineToPC )
 	 script = JS_GetScriptedCaller(cx, NULL)->script;
     if (!GetTrapArgs(cx, argc, argv, &script, &i))
         return JS_FALSE;
-    lineno = (i == 0) ? script->lineno : (uintN)i;
+    lineno = (i == 0) ? script->lineno : (unsigned)i;
     pc = JS_LineNumberToPC(cx, script, lineno);
     if (!pc)
         return JS_FALSE;
@@ -865,7 +815,7 @@ DEFINE_FUNCTION( pCToLine )
 {
     JSScript *script;
     int32 i;
-    uintN lineno;
+    unsigned lineno;
 
     if (!GetTrapArgs(cx, argc, argv, &script, &i))
         return JS_FALSE;
@@ -934,7 +884,7 @@ DEFINE_FUNCTION( getActualLineno ) {
 
 	JL_ASSERT_ARGC_MIN( 2 );
 
-	uintN lineno;
+	unsigned lineno;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
 
 	JSScript *script;
@@ -1117,7 +1067,7 @@ DEFINE_FUNCTION( evalInStackFrame ) {
 	const jschar *str;
 	str = JS_GetStringCharsAndLength(cx, jsstr, &strlen);
 
-	JL_CHK( JS_EvaluateUCInStackFrame(cx, fp, str, (uintN)strlen, JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), JL_RVAL) );
+	JL_CHK( JS_EvaluateUCInStackFrame(cx, fp, str, (unsigned)strlen, JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1174,7 +1124,7 @@ DEFINE_FUNCTION( locate ) {
 
 	JSScript *script;
 	script = JS_GetFrameScript(cx, fp); // because we are in a fast native function, this frame is ok.
-	uintN lineno;
+	unsigned lineno;
 	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 
 	JSObject *arrObj;
@@ -1240,7 +1190,7 @@ DEFINE_FUNCTION( definitionLocation ) {
 
 		JSObject* obj;
 		obj = JSVAL_TO_OBJECT(JL_ARG(1));
-		script = (JSScript*)JL_GetPrivate(cx, obj);
+		script = (JSScript*)JL_GetPrivate(obj);
 	}
 */
 next:
@@ -1535,7 +1485,7 @@ DEFINE_FUNCTION( disassembleScript ) {
     INIT_SPRINTER(cx, &sprinter, &cx->tempPool, 0);
 
 	jsbytecode *pc, *end;
-	uintN len;
+	unsigned len;
 	pc = script->main;
 	end = script->code + script->length;
 	while (pc < end) {
@@ -1878,7 +1828,6 @@ CONFIGURE_STATIC
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( getObjectPrivate )
 //		FUNCTION( dumpStats )
-		FUNCTION( traceGC )
 
 //		FUNCTION( scriptByLocation )
 //		FUNCTION( disassembleScript )

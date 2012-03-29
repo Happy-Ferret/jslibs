@@ -139,7 +139,7 @@ loadModule('jsdebug');
 
 		this.getNextRequest = function() {
 
-			while( !endSignal && pendingRequestList.length == 0 )
+			while( !_host.endSignal && pendingRequestList.length == 0 )
 				poll(socketList, 100);
 			return pendingRequestList.shift();
 		}	

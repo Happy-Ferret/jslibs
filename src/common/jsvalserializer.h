@@ -311,14 +311,14 @@ namespace jl {
 
 			if ( JL_ObjectIsArray(cx, obj) ) { // real array object, not array-like !!
 
-				jsuint length;
+				unsigned length;
 				JL_CHK( JS_GetArrayLength(cx, obj, &length) );
 				JL_CHK( Write(cx, JLSTArray) );
 				JL_CHK( Write(cx, length) );
 
 				JSBool found;
 				jsval tmp;
-				for ( jsint i = 0; i < jl::SafeCast<jsint>(length); ++i ) {
+				for ( int i = 0; i < jl::SafeCast<int>(length); ++i ) {
 
 					JL_CHK( JL_GetElement(cx, obj, i, &tmp) );
 					if ( JSVAL_IS_VOID(tmp) ) {
@@ -552,7 +552,7 @@ namespace jl {
 
 		JSBool Read( JSContext *cx, SerializerObjectOwnProperties &sop ) {
 
-			jsint length;
+			int length;
 			JL_CHK( Read(cx, length) );
 
 			for ( int i = 0; i < length; ++i ) {
@@ -599,7 +599,7 @@ namespace jl {
 
 				case JLSTInt: {
 
-					jsint i;
+					int i;
 					JL_CHK( Read(cx, i) );
 					val = INT_TO_JSVAL(i);
 					break;
@@ -618,7 +618,7 @@ namespace jl {
 				}
 				case JLSTDouble: {
 
-					jsdouble d;
+					double d;
 					JL_CHK( Read(cx, d) );
 					val = DOUBLE_TO_JSVAL(d);
 					break;
@@ -643,7 +643,7 @@ namespace jl {
 				}
 				case JLSTArray: {
 
-					jsuint length;
+					unsigned length;
 					JL_CHK( Read(cx, length) );
 					JSObject *arr;
 					arr = JS_NewArrayObject(cx, length, NULL);
@@ -651,7 +651,7 @@ namespace jl {
 					val = OBJECT_TO_JSVAL(arr);
 
 					jsval tmp;
-					for ( jsuint i = 0; i < length; ++i ) {
+					for ( unsigned i = 0; i < length; ++i ) {
 
 						JL_CHK( Read(cx, tmp) );
 						if ( !tmp.isMagic(JS_ARRAY_HOLE) ) // if ( !JL_JSVAL_IS_ARRAY_HOLE(*avr.jsval_addr()) )
@@ -816,7 +816,7 @@ namespace jl {
 	JsvalToSerializer( JSContext *cx, jsval &val ) {
 
 		ASSERT( jl::JsvalIsSerializer(cx, val) );
-		return static_cast<Serializer*>(JL_GetPrivate(cx, JSVAL_TO_OBJECT(val)));
+		return static_cast<Serializer*>(JL_GetPrivate(JSVAL_TO_OBJECT(val)));
 	}
 
 
@@ -830,7 +830,7 @@ namespace jl {
 	JsvalToUnserializer( JSContext *cx, jsval &val ) {
 		
 		ASSERT( jl::JsvalIsUnserializer(cx, val) );
-		return static_cast<Unserializer*>(JL_GetPrivate(cx, JSVAL_TO_OBJECT(val)));
+		return static_cast<Unserializer*>(JL_GetPrivate(JSVAL_TO_OBJECT(val)));
 	}
 
 }

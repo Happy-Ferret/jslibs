@@ -141,7 +141,7 @@ struct JsfontPrivate {
 
 ALWAYS_INLINE JsfontPrivate* GetJsfontPrivate(JSContext *cx, JSObject *fontObj) {
 	
-	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(cx, fontObj);
+	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(fontObj);
 	ASSERT( pv );
 	return pv;
 }

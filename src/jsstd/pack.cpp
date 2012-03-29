@@ -242,7 +242,7 @@ inline JSBool JL_JsvalToUInt32( JSContext *cx, jsval val, uint32_t *result, bool
 }
 
 
-// range if jsval is a jsdouble: +/-2^53
+// range if jsval is a double: +/-2^53
 inline JSBool JL_JsvalToSInt64( JSContext *cx, jsval val, int64_t *result, bool *outOfRange ) {
 
 	if ( JSVAL_IS_INT( val ) ) {
@@ -252,8 +252,8 @@ inline JSBool JL_JsvalToSInt64( JSContext *cx, jsval val, int64_t *result, bool 
 		*result = (int64_t)v;
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
 
-		jsdouble d = JSVAL_TO_DOUBLE(val);
-		*outOfRange = d < MIN_INT_TO_DOUBLE || d > jsdouble(MAX_INT_TO_DOUBLE) || d != jsdouble(int64_t(d));
+		double d = JSVAL_TO_DOUBLE(val);
+		*outOfRange = d < MIN_INT_TO_DOUBLE || d > double(MAX_INT_TO_DOUBLE) || d != double(int64_t(d));
 		*result = (int64_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
@@ -279,8 +279,8 @@ inline JSBool JL_JsvalToUInt64( JSContext *cx, jsval val, uint64_t *result, bool
 		*result = (uint64_t)v;
 	} else if ( JSVAL_IS_DOUBLE( val ) ) {
 
-		jsdouble d = JSVAL_TO_DOUBLE(val);
-		*outOfRange = d < 0 || d > jsdouble(MAX_INT_TO_DOUBLE) || d != jsdouble(int64_t(d));
+		double d = JSVAL_TO_DOUBLE(val);
+		*outOfRange = d < 0 || d > double(MAX_INT_TO_DOUBLE) || d != double(int64_t(d));
 		*result = (uint64_t)d;
 	} else if ( JSVAL_IS_STRING( val ) ) { // using system byte order
 
@@ -378,7 +378,7 @@ DEFINE_FUNCTION( readInt ) {
 	if ( JL_ARG_ISDEF(3) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &netConv) );
 	else
-		netConv = (size_t)JL_GetPrivate(cx, obj) != 0;
+		netConv = (size_t)JL_GetPrivate(obj) != 0;
 
 	uint8_t data[8]; // = { 0 };
 	memset(data, 0, sizeof(data));
@@ -457,11 +457,11 @@ DEFINE_FUNCTION( readInt ) {
 			if ( isSigned ) {
 
 				int64_t val = *(int64_t*)data;
-				JL_CHK( JL_NewNumberValue(cx, (jsdouble)val, JL_RVAL) );
+				JL_CHK( JL_NewNumberValue(cx, (double)val, JL_RVAL) );
 			} else {
 
 				uint64_t val = *(uint64_t*)data;
-				JL_CHK( JL_NewNumberValue(cx, (jsdouble)val, JL_RVAL) );
+				JL_CHK( JL_NewNumberValue(cx, (double)val, JL_RVAL) );
 			}
 			break;
 		default:
@@ -508,7 +508,7 @@ DEFINE_FUNCTION( writeInt ) { // incompatible with NIStreamRead
 	if ( JL_ARG_ISDEF(4) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &netConv) );
 	else
-		netConv = (size_t)JL_GetPrivate(cx, obj) != 0;
+		netConv = (size_t)JL_GetPrivate(obj) != 0;
 
 	uint8_t data[8]; // = { 0 };
 	memset(data, 0, sizeof(data));
@@ -675,7 +675,7 @@ DEFINE_PROPERTY_GETTER( useNetworkEndian ) {
 	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
-	return JL_NativeToJsval(cx, (size_t)JL_GetPrivate(cx, obj) != 0, vp);
+	return JL_NativeToJsval(cx, (size_t)JL_GetPrivate(obj) != 0, vp);
 	JL_BAD;
 }
 

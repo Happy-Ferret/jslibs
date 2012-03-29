@@ -89,7 +89,7 @@ struct Private {
 
 JSBool PrepareReadCurrentFile( JSContext *cx, JSObject *obj ) {
 
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->inZipOpened && pv->uf );
 
@@ -123,7 +123,7 @@ JSBool PrepareReadCurrentFile( JSContext *cx, JSObject *obj ) {
 JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	if ( pv->eol )
@@ -149,7 +149,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	if ( pv ) {
 
 		if ( pv->zf ) {
@@ -224,7 +224,7 @@ DEFINE_FUNCTION( open ) {
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_ARGC(1);
 
@@ -265,7 +265,7 @@ DEFINE_FUNCTION( close ) {
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT_ARGC(0);
@@ -320,7 +320,7 @@ DEFINE_FUNCTION( select ) {
 
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_ARGC(1);
@@ -382,7 +382,7 @@ DEFINE_FUNCTION( goFirst ) {
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT_ARGC(0);
@@ -413,7 +413,7 @@ DEFINE_FUNCTION( goNext ) {
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT_ARGC(0);
@@ -456,7 +456,7 @@ DEFINE_FUNCTION( goTo ) {
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT_ARGC(1);
@@ -507,7 +507,7 @@ DEFINE_FUNCTION( read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT_ARGC_RANGE(0, 1);
@@ -569,7 +569,7 @@ DEFINE_FUNCTION( write ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT_ARGC(1);
@@ -661,7 +661,7 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 
@@ -695,7 +695,7 @@ DEFINE_PROPERTY_SETTER( globalComment ) {
 	JL_IGNORE(id, strict);
 
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
@@ -723,7 +723,7 @@ DEFINE_PROPERTY_GETTER( eol ) {
 	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->uf, E_VALUE, E_READ );
@@ -742,7 +742,7 @@ DEFINE_PROPERTY_GETTER( filename ) {
 	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	
@@ -802,7 +802,7 @@ DEFINE_PROPERTY_GETTER( level ) {
 	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 
@@ -845,7 +845,7 @@ DEFINE_PROPERTY_SETTER( level ) {
 	JL_IGNORE(id, strict);
 
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
@@ -879,7 +879,7 @@ DEFINE_PROPERTY_GETTER( date ) {
 	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 
@@ -915,7 +915,7 @@ DEFINE_PROPERTY_SETTER( date ) {
 	JL_IGNORE(id, strict);
 
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
@@ -939,7 +939,7 @@ DEFINE_PROPERTY_GETTER( extra ) {
 	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 
@@ -982,7 +982,7 @@ DEFINE_PROPERTY_SETTER( extra ) {
 	JL_IGNORE(id, strict);
 
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
@@ -1005,7 +1005,7 @@ DEFINE_PROPERTY_SETTER( password ) {
 	JL_IGNORE(id, strict);
 
 	JL_ASSERT_THIS_INSTANCE();
-	Private *pv = (Private *)JL_GetPrivate(cx, obj);
+	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->uf, E_THISOPERATION, E_INVALID );

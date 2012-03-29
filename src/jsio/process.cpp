@@ -32,7 +32,7 @@ BEGIN_CLASS( Process )
 DEFINE_FINALIZE() {
 
 	PRProcess *process;
-	process = (PRProcess*)JL_GetPrivate(cx, obj);
+	process = (PRProcess*)JL_GetPrivate(obj);
 	if ( process )
 		PR_DetachProcess(process); // may crash ?
 }
@@ -218,7 +218,7 @@ DEFINE_FUNCTION( wait ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	PRProcess *process;
-	process = (PRProcess*)JL_GetPrivate(cx, obj);
+	process = (PRProcess*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(process);
 	PRInt32 exitValue;
 	JL_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
@@ -242,7 +242,7 @@ DEFINE_FUNCTION( detach ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	PRProcess *process;
-	process = (PRProcess*)JL_GetPrivate(cx, obj);
+	process = (PRProcess*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(process);
 	JL_CHK( PR_DetachProcess(process) == PR_SUCCESS );
 	JL_SetPrivate(cx, obj, NULL); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
@@ -265,7 +265,7 @@ DEFINE_FUNCTION( kill ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	PRProcess *process;
-	process = (PRProcess*)JL_GetPrivate(cx, obj);
+	process = (PRProcess*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(process);
 	JL_CHK( PR_KillProcess(process) == PR_SUCCESS );
 	JL_SetPrivate(cx, obj, NULL); // Invalidates the current process pointer.

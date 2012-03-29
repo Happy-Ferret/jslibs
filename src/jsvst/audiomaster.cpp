@@ -36,7 +36,7 @@ DEFINE_HAS_INSTANCE() {
 
 DEFINE_PROPERTY_GETTER( version ) {
 
-	audioMasterCallback audioMaster = (audioMasterCallback)JL_GetPrivate(cx, obj);
+	audioMasterCallback audioMaster = (audioMasterCallback)JL_GetPrivate(obj);
 	VstIntPtr version = audioMaster(0, audioMasterVersion, 0, 0, 0, 0);
 	*vp = INT_TO_JSVAL( version );
 	return JL_StoreProperty(cx, obj, id, vp, true);

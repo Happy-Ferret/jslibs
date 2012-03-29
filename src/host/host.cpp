@@ -28,7 +28,7 @@ JSErrorFormatString jlErrorFormatString[] = {
 };
 
 
-const JSErrorFormatString *GetErrorMessage(void *, const char *, const uintN errorNumber) {
+const JSErrorFormatString *GetErrorMessage(void *, const char *, const unsigned errorNumber) {
 
 	if ( errorNumber > JLErrOffset && errorNumber < JLErrLimit )
 		return &jlErrorFormatString[errorNumber-JLErrOffset-1];
@@ -51,7 +51,7 @@ struct {
 
 
 static const JSErrorFormatString *
-ErrorCallback(void *userRef, const char *, const uintN) {
+ErrorCallback(void *userRef, const char *, const unsigned) {
 
 	return (JSErrorFormatString*)userRef;
 }
@@ -155,7 +155,7 @@ Report( JSContext *cx, bool isWarning, ... ) {
 }
 
 
-JSBool JSDefaultStdinFunction(JSContext *cx, uintN, jsval *vp) {
+JSBool JSDefaultStdinFunction(JSContext *cx, unsigned, jsval *vp) {
 
 	HostPrivate *pv = JL_GetHostPrivate(cx);
 	if (unlikely( pv == NULL || pv->hostStdIn == NULL )) {
@@ -181,7 +181,7 @@ JSBool JSDefaultStdinFunction(JSContext *cx, uintN, jsval *vp) {
 
 // note: we have to support: var prevStderr = _host.stderr; _host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
 // route: print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
-JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
+JSBool JSDefaultStdoutFunction(JSContext *cx, unsigned argc, jsval *vp) {
 
 	*JL_RVAL = JSVAL_VOID;
 	HostPrivate *pv = JL_GetHostPrivate(cx);
@@ -189,7 +189,7 @@ JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 		return JS_TRUE;
 
 	JLData str;
-	for ( uintN i = 0; i < argc; ++i ) {
+	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
 		int status = pv->hostStdOut(pv->privateData, str.GetConstStr(), str.Length());
@@ -200,7 +200,7 @@ JSBool JSDefaultStdoutFunction(JSContext *cx, uintN argc, jsval *vp) {
 }
 
 
-JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
+JSBool JSDefaultStderrFunction(JSContext *cx, unsigned argc, jsval *vp) {
 
 	*JL_RVAL = JSVAL_VOID;
 	HostPrivate *pv = JL_GetHostPrivate(cx);
@@ -208,7 +208,7 @@ JSBool JSDefaultStderrFunction(JSContext *cx, uintN argc, jsval *vp) {
 		return JS_TRUE;
 
 	JLData str;
-	for ( uintN i = 0; i < argc; ++i ) {
+	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
 		int status = pv->hostStdErr(pv->privateData, str.GetConstStr(), str.Length());
@@ -435,14 +435,14 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 
 		if ( JLSemaphoreAcquire(pv->watchDogSemEnd, pv->maybeGCInterval) != JLTIMEOUT ) // used as a breakable Sleep instead of SleepMilliseconds (see SandboxEval).
 			break;
-		JS_TriggerOperationCallback(cx);
+		JS_TriggerOperationCallback(JL_GetRuntime(cx));
 	}
 	JLThreadExit(0);
 	return 0;
 }
 
 
-JSBool LoadModule(JSContext *cx, uintN argc, jsval *vp) {
+JSBool LoadModule(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JLData str;
 	JLLibraryHandler module = JLDynamicLibraryNullHandler;
@@ -561,8 +561,7 @@ static JSClass global_class = {
 	JS_PropertyStub, JS_PropertyStub,
 	JS_PropertyStub, JS_StrictPropertyStub,
 	JS_EnumerateStub, JS_ResolveStub,
-	JS_ConvertStub, JS_FinalizeStub,
-	JSCLASS_NO_OPTIONAL_MEMBERS
+	JS_ConvertStub
 };
 
 
@@ -694,9 +693,9 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 
 	JSObject *hostObj = GetHostObject(cx);
 	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, unsafeMode), unsafeMode, true, false) );
-	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, stdin ), OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdinFunction , 1, 0, NULL, JLID(cx, stdin ))))) );
-	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, stdout), OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStdoutFunction, 1, 0, NULL, JLID(cx, stdout))))) );
-	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, stderr), OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, JSDefaultStderrFunction, 1, 0, NULL, JLID(cx, stderr))))) );
+	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, stdin ), JL_FunctionToJsval(cx, JSDefaultStdinFunction , 1, 0, NULL, JLID(cx, stdin ))) );
+	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, stdout), JL_FunctionToJsval(cx, JSDefaultStdoutFunction, 1, 0, NULL, JLID(cx, stdout))) );
+	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, stderr), JL_FunctionToJsval(cx, JSDefaultStderrFunction, 1, 0, NULL, JLID(cx, stderr))) );
 	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, jsVersion), JS_GetVersion(cx), true, false) ); // btw, see JS_GetImplementationVersion()
 	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, buildDate), (double)__DATE__EPOCH * 1000, true, false) );
 	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, revision), JL_SvnRevToInt(SVN_REVISION_STR), true, false) );
@@ -886,22 +885,15 @@ bad:
 JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32_t xdrScriptLength, jsval *rval ) {
 
 	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
-//	JL_CHKM( JS_EvaluateScript(cx, JL_GetGlobal(cx), embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, "bootstrap", 1, &tmp), "Invalid bootstrap." ); // for plain text scripts.
-//	JSObject *scriptObjRoot;
-	JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
-	JL_CHK( xdr );
-	JS_XDRMemSetData(xdr, xdrScript, xdrScriptLength);
-	JSScript *script;
-	script = NULL;
-	JL_CHK( JS_XDRScript(xdr, &script) );
-	JS_XDRMemSetData(xdr, NULL, 0); // embeddedBootstrapScript is a static buffer, this avoid JS_free to be called on it.
-	JS_XDRDestroy(xdr);
+	JSScript *script = JS_DecodeScript(cx, xdrScript, xdrScriptLength, NULL, NULL);
+	JL_CHK( script );
 
 //	JL_CHK( SetConfigurationReadonlyValue(cx, JLID_NAME(cx, bootstrapScript), OBJECT_TO_JSVAL(bootstrapScriptObject)) ); // bootstrap script cannot be hidden
 	JL_CHK( JS_ExecuteScript(cx, JL_GetGlobal(cx), script, rval) );
 
 	JS_SetOptions(cx, prevOpt);
 	return JS_TRUE;
+
 bad:
 	JS_SetOptions(cx, prevOpt);
 	return JS_FALSE;
@@ -1051,29 +1043,27 @@ MemoryFreeThreadProc( void *threadArg ) {
 	return 0;
 }
 
+
 // GC callback that triggers the thread
-static JSGCCallback prevGCCallback;
 
-JSBool NewGCCallback(JSContext *cx, JSGCStatus status) {
+void NewGCCallback(JSRuntime *, JSGCStatus status) {
 
-	if ( status == JSGC_FINALIZE_END ) {
+	if ( status == JSGC_END ) {
 
 		threadAction = MemThreadProcess;
 		JLSemaphoreRelease(memoryFreeThreadSem);
 	}
-	return prevGCCallback ? prevGCCallback(cx, status) : JS_TRUE;
 }
 
 // (TBD) manage nested GCCallbacks
-JSBool MemoryManagerEnableGCEvent( JSContext *cx ) {
+void MemoryManagerEnableGCEvent( JSContext *cx ) {
 
-	prevGCCallback = JS_SetGCCallback(cx, NewGCCallback);
-	return JS_TRUE;
+	JS_SetGCCallback(JL_GetRuntime(cx), NewGCCallback);
 }
 
-JSBool MemoryManagerDisableGCEvent( JSContext *cx ) {
+void MemoryManagerDisableGCEvent( JSContext *cx ) {
 
-	return JS_SetGCCallback(cx, prevGCCallback) == NewGCCallback;
+	JS_SetGCCallback(JL_GetRuntime(cx), NULL);
 }
 
 

@@ -90,7 +90,7 @@ DEFINE_FUNCTION( shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRShutdownHow how;
@@ -147,7 +147,7 @@ DEFINE_FUNCTION( bind ) {
 	JL_ASSERT_ARGC_MIN( 1 ); // need port number (at least)
 
 	PRFileDesc *fd;
-	fd = (PRFileDesc*)JL_GetPrivate(cx, JL_OBJ);
+	fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRNetAddr addr;
@@ -213,7 +213,7 @@ DEFINE_FUNCTION( listen ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, JL_OBJ);
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	PRIntn backlog;
 	if ( JL_ARG_ISDEF(1) )
@@ -243,7 +243,7 @@ DEFINE_FUNCTION( accept ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, JL_OBJ);
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 /*
@@ -312,7 +312,7 @@ DEFINE_FUNCTION( connect ) {
 	JL_ASSERT_ARGC(2);
 
 	PRFileDesc *fd;
-	fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
+	fd = (PRFileDesc*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRUint16 port;
@@ -396,7 +396,7 @@ DEFINE_FUNCTION( sendTo ) {
 	PRFileDesc *fd;
 	if ( JL_GetClass(obj) == JL_THIS_CLASS ) {
 		
-		fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
+		fd = (PRFileDesc*)JL_GetPrivate(obj);
 		JL_ASSERT_THIS_OBJECT_STATE( fd );
 	} else {
 
@@ -499,7 +499,7 @@ DEFINE_FUNCTION( recvFrom ) {
 	PRFileDesc *fd;
 	if ( JL_GetClass(obj) == JL_THIS_CLASS ) {
 
-		fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
+		fd = (PRFileDesc*)JL_GetPrivate(obj);
 		JL_ASSERT_THIS_OBJECT_STATE( fd );
 	} else {
 
@@ -590,7 +590,7 @@ DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	JL_ASSERT_ARGC_RANGE(1,3);
 
 	PRFileDesc *socketFd;
-	socketFd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
+	socketFd = (PRFileDesc *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( socketFd );
 
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -598,7 +598,7 @@ DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	fileObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_ASSERT_INSTANCE( fileObj, JL_CLASS(File) );
 	PRFileDesc *fileFd;
-	fileFd = (PRFileDesc*)JL_GetPrivate( cx, fileObj );
+	fileFd = (PRFileDesc*)JL_GetPrivate( fileObj );
 	JL_ASSERT_OBJECT_STATE( fileFd, JL_CLASS_NAME(File) );
 
 	PRTransmitFileFlags flag;
@@ -671,7 +671,7 @@ DEFINE_PROPERTY_GETTER( connectContinue ) {
 
 	JL_IGNORE( id );
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRPollDesc desc;
@@ -719,7 +719,7 @@ DEFINE_PROPERTY_GETTER( connectionClosed ) {
 
 	JL_IGNORE( id );
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 	//If PR_Poll() reports that the socket is readable (i.e., PR_POLL_READ is set in out_flags),
@@ -814,7 +814,7 @@ DEFINE_PROPERTY_SETTER( Option ) {
 
 	JL_IGNORE( strict );
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRSocketOptionData sod;
@@ -888,7 +888,7 @@ DEFINE_PROPERTY_SETTER( Option ) {
 
 DEFINE_PROPERTY_GETTER( Option ) {
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRSocketOptionData sod;
@@ -949,7 +949,7 @@ DEFINE_PROPERTY_GETTER( peerName ) {
 
 	JL_IGNORE( id );
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	PRNetAddr peerAddr;
 	if ( PR_GetPeerName(fd, &peerAddr) != PR_SUCCESS ) {
@@ -979,7 +979,7 @@ DEFINE_PROPERTY_GETTER( peerPort ) {
 
 	JL_IGNORE( id );
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	PRNetAddr peerAddr;
 	if ( PR_GetPeerName(fd, &peerAddr) != PR_SUCCESS ) {
@@ -1006,7 +1006,7 @@ DEFINE_PROPERTY_GETTER( sockName ) {
 
 	JL_IGNORE( id );
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	PRNetAddr sockAddr;
 	if ( PR_GetSockName( fd, &sockAddr ) != PR_SUCCESS )
@@ -1029,7 +1029,7 @@ DEFINE_PROPERTY_GETTER( sockPort ) {
 
 	JL_IGNORE( id );
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	PRNetAddr sockAddr;
 	if ( PR_GetSockName( fd, &sockAddr ) != PR_SUCCESS )

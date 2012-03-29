@@ -29,7 +29,7 @@ BEGIN_CLASS( OalFilter )
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( pv ) {
 
 		if ( alcGetCurrentContext() ) {
@@ -82,7 +82,7 @@ DEFINE_FUNCTION( valueOf ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->filter, JL_RVAL) );
 	return JS_TRUE;
@@ -111,7 +111,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int filterType;
 	if ( JSVAL_IS_VOID(*vp) )
@@ -130,7 +130,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int filterType;
 	alGetFilteri(pv->filter, AL_FILTER_TYPE, &filterType);
@@ -153,7 +153,7 @@ DEFINE_PROPERTY_SETTER( filterFloat ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	float f;
@@ -168,7 +168,7 @@ DEFINE_PROPERTY_GETTER( filterFloat ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	float f;

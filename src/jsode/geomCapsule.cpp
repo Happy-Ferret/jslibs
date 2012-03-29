@@ -67,11 +67,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( radius ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
-	jsdouble value;
+	double value;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
 	ode::dGeomCapsuleSetParams(geom, (ode::dReal)value, length);
 	return JS_TRUE;
@@ -80,7 +80,7 @@ DEFINE_PROPERTY_SETTER( radius ) {
 
 DEFINE_PROPERTY_GETTER( radius ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
@@ -96,11 +96,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( length ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
-	jsdouble value;
+	double value;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
 	ode::dGeomCapsuleSetParams(geom, radius, (ode::dReal)value);
 	return JS_TRUE;
@@ -109,7 +109,7 @@ DEFINE_PROPERTY_SETTER( length ) {
 
 DEFINE_PROPERTY_GETTER( length ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);

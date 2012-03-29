@@ -29,7 +29,7 @@ check:
 
 JSBool ReadMatrix(JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
-	ode::dGeomID geomID = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geomID = (ode::dGeomID)JL_GetPrivate(obj);
 
 	// read LOCAL position and rotation
 	const ode::dReal* pos = ode::dGeomGetPosition(geomID);
@@ -64,7 +64,7 @@ JSBool SetupReadMatrix(JSContext *cx, JSObject *obj) {
 
 void FinalizeGeom(JSContext *cx, JSObject *obj) {
 
-	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	if ( !geomId )
 		return;
 	ode::dGeomSetData(geomId, NULL);
@@ -132,7 +132,7 @@ DEFINE_FUNCTION( destroy ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
 
-	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	ode::dGeomDestroy(geomId);
 	JL_SetPrivate(cx, obj, NULL);
@@ -153,7 +153,7 @@ DEFINE_FUNCTION( pointDepth ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
 
-	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, JL_OBJ);
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	ode::dReal depth, point[3];
@@ -205,7 +205,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( disabled ) {
 
 	JL_ASSERT_THIS_INHERITANCE();
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	bool disabled;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &disabled) );
@@ -221,7 +221,7 @@ DEFINE_PROPERTY_SETTER( disabled ) {
 DEFINE_PROPERTY( disabledGetter ) {
 
 	JL_ASSERT_THIS_INHERITANCE();
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	*vp = BOOLEAN_TO_JSVAL( ode::dGeomIsEnabled(geom) != 1 );
 	return JS_TRUE;
@@ -237,7 +237,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( temporalCoherence ) {
 
 	JL_ASSERT_THIS_INHERITANCE();
-	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geomId);
 	bool enableState;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &enableState) );
@@ -250,7 +250,7 @@ DEFINE_PROPERTY_SETTER( temporalCoherence ) {
 DEFINE_PROPERTY_GETTER( temporalCoherence ) {
 
 	JL_ASSERT_THIS_INHERITANCE();
-	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	*vp = BOOLEAN_TO_JSVAL( ode::dGeomTriMeshIsTCEnabled(geomId, ode::dGeomGetClass(geomId)) == 1 );
 	return JS_TRUE;
@@ -266,7 +266,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( body ) {
 
 	JL_ASSERT_THIS_INHERITANCE();
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dBodyID bodyId;
 	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
@@ -278,7 +278,7 @@ DEFINE_PROPERTY_SETTER( body ) {
 DEFINE_PROPERTY_GETTER( body ) {
 
 	JL_ASSERT_THIS_INHERITANCE();
-	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	JL_CHK( BodyToJsval(cx, ode::dGeomGetBody(geomId), vp) );
 	return JL_StoreProperty(cx, obj, id, vp, false);
@@ -296,7 +296,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( offset ) {
 
 	JL_ASSERT_THIS_INHERITANCE();
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
@@ -341,7 +341,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( tansformation ) {
 
 	JL_ASSERT_THIS_INHERITANCE();
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 
 	if ( !JSVAL_IS_PRIMITIVE(*vp) ) {
@@ -379,7 +379,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( space ) {
 
 	JL_ASSERT_THIS_INHERITANCE();
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 /*
 	ode::dSpaceID space = ode::dGeomGetSpace(geom);
@@ -393,7 +393,7 @@ DEFINE_PROPERTY_GETTER( space ) {
 //	JL_ASSERT_OBJECT( *vp );
 //	JSObject *spaceObj = JSVAL_TO_OBJECT( *vp );
 //	JL_ASSERT_INSTANCE( spaceObj, JL_CLASS(Space) );
-//	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(cx, spaceObj);
+//	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(spaceObj);
 
 	ode::dSpaceID spaceId;
 	JL_CHK( JL_JsvalToSpaceID(cx, *vp, &spaceId) );
@@ -419,7 +419,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( position ) {
 
 	JL_ASSERT_THIS_INHERITANCE();
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	const ode::dReal *vector = ode::dGeomGetPosition(geom);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
@@ -431,7 +431,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 DEFINE_PROPERTY_SETTER( position ) {
 
 	JL_ASSERT_THIS_INHERITANCE();
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	ode::dVector3 vector;
 	uint32_t length;
@@ -450,7 +450,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( aabb ) {
 
 	JL_ASSERT_THIS_INHERITANCE();
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	ode::dReal aabb[6];
 	ode::dGeomGetAABB(geom, aabb);
@@ -477,7 +477,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( boundarySphere ) {
 
 	JL_ASSERT_THIS_INHERITANCE();
-	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geomId);
 	ode::dReal aabb[6];
 	ode::dGeomGetAABB(geomId, aabb);
@@ -505,7 +505,7 @@ DEFINE_PROPERTY_GETTER( boundarySphere ) {
 
 DEFINE_PROPERTY( offsetPositionGetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	const ode::dReal *vector = ode::dGeomGetOffsetPosition(geom); // (TBD) dGeomGetOffsetRotation
 	//ODERealVectorToArray(cx, 3, vector, vp);
@@ -518,7 +518,7 @@ DEFINE_PROPERTY( offsetPositionGetter ) {
 
 DEFINE_PROPERTY( offsetPositionSetter ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);

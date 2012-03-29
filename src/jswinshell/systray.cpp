@@ -68,7 +68,7 @@ typedef struct MSGInfo {
 
 void AddPopupMenuRoot(JSContext *cx, JSObject *obj, jsval value) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 //	jsid id;
 //	JL_JsvalToJsid(cx, &value, &id);
 //	JS_S_ASSERT( sizeof(id) <= sizeof(void*) );
@@ -78,7 +78,7 @@ void AddPopupMenuRoot(JSContext *cx, JSObject *obj, jsval value) {
 
 void FreePopupMenuRoots(JSContext *cx, JSObject *obj) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 //	while ( !jl::QueueIsEmpty(&pv->popupMenuRoots) )
 //		jl::QueuePop(&pv->popupMenuRoots);
 	while ( pv->popupMenuRoots )
@@ -427,7 +427,7 @@ DEFINE_FINALIZE() {
 //	if ( obj == JL_CLASS_PROTOTYPE(cx, Systray) )
 //		return;
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 
@@ -600,7 +600,7 @@ DEFINE_FUNCTION( processEvents ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	MSGInfo *trayMsg;
@@ -686,7 +686,7 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	UserProcessEvent *upe;
@@ -716,7 +716,7 @@ DEFINE_FUNCTION( focus ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	SetForegroundWindow(pv->nid.hWnd);
 
@@ -736,10 +736,10 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 
 	*hMenu = CreatePopupMenu();
 
-	jsuint menuLength;
+	unsigned menuLength;
 	JL_CHK( JS_GetArrayLength(cx, menuObj, &menuLength) );
 
-	for ( jsuint i = 0; i < menuLength; ++i ) {
+	for ( unsigned i = 0; i < menuLength; ++i ) {
 		
 		UINT uFlags = 0;
 		bool isDefault = false;
@@ -769,7 +769,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 			jsval key, value;
 			JSIdArray *list = JS_Enumerate(cx, itemObj);
 			JL_CHK( list );
-			for ( jsint j = 0; j < list->length; ++j ) {
+			for ( int j = 0; j < list->length; ++j ) {
 
 				JLData keyStr;
 			
@@ -838,7 +838,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 					JL_ASSERT_IS_OBJECT(value, keyStr);
 					JSObject *iconObj = JSVAL_TO_OBJECT(value);
 					JL_ASSERT_INSTANCE( iconObj, JL_CLASS(Icon) );
-					HICON *phIcon = (HICON*)JL_GetPrivate(cx, iconObj);
+					HICON *phIcon = (HICON*)JL_GetPrivate(iconObj);
 					JL_ASSERT_OBJECT_STATE(phIcon, JL_CLASS_NAME(Icon));
 					hBMP = MenuItemBitmapFromIcon(*phIcon);
 					JL_ASSERT( hBMP != NULL, E_STR("icon"), E_CREATE );
@@ -867,7 +867,7 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 		if ( !JSVAL_IS_PRIMITIVE(label) && JL_GetClass(JSVAL_TO_OBJECT(label)) == JL_CLASS(Icon) ) {
 
 			uFlags |= MF_BITMAP;
-			HICON *phIcon = (HICON*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(label));
+			HICON *phIcon = (HICON*)JL_GetPrivate(JSVAL_TO_OBJECT(label));
 			JL_ASSERT_OBJECT_STATE(phIcon, JL_CLASS_NAME(Icon));
 			hBMP = MenuItemBitmapFromIcon(*phIcon);
 			JL_ASSERT( hBMP != NULL, E_STR("icon"), E_CREATE );
@@ -978,7 +978,7 @@ DEFINE_FUNCTION( popupMenu ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_ARGC(1);
 
@@ -1010,7 +1010,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	BOOL status;
 
@@ -1082,7 +1082,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 /*
 DEFINE_FUNCTION( callDefault ) {
 
-	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JL_GetPrivate(cx, obj);
+	PNOTIFYICONDATA nid = (PNOTIFYICONDATA)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(nid);
 	HMENU hMenu = GetMenu(nid->hWnd);
 	JL_ASSERT_THIS_OBJECT_STATE(hMenu);
@@ -1123,7 +1123,7 @@ DEFINE_FUNCTION( position ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	RECT r;
@@ -1210,7 +1210,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 
 		JSObject *iconObj = JSVAL_TO_OBJECT(*vp);
 		JL_ASSERT_INSTANCE( iconObj, JL_CLASS(Icon) );
-		HICON *phIcon = (HICON*)JL_GetPrivate(cx, iconObj);
+		HICON *phIcon = (HICON*)JL_GetPrivate(iconObj);
 		JL_ASSERT_OBJECT_STATE( phIcon, JL_CLASS_NAME(Icon) );
 		hIcon = *phIcon;
 	} else if ( JSVAL_IS_NULL( *vp ) || JSVAL_IS_VOID( *vp ) ) {
@@ -1221,7 +1221,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 		JL_ERR( E_STR("icon"), E_INVALID );
 	}
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	pv->nid.hIcon = hIcon;
@@ -1245,7 +1245,7 @@ DEFINE_PROPERTY_SETTER( visible ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JSBool state;
@@ -1269,7 +1269,7 @@ DEFINE_PROPERTY_SETTER( text ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tipText) );
 	size_t len = JL_MIN(sizeof(pv->nid.szTip)-1, tipText.Length());
@@ -1289,7 +1289,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	if ( pv->nid.uFlags & NIF_TIP )
 		*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, pv->nid.szTip) );
@@ -1300,7 +1300,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 DEFINE_TRACER() {
 
-	Private *pv = (Private*)JL_GetPrivate(trc->context, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( pv ) {
 
 //		for ( jl::QueueCell *it = jl::QueueBegin(&pv->popupMenuRoots); it; it = jl::QueueNext(it) )
@@ -1403,10 +1403,10 @@ s.onmousedown = function(button) {
 s.oncommand = function(id) {
 
   if ( id == 'exit_cmd' )
-    endSignal = true;
+    _host.endSignal = true;
 }
 
-while ( !endSignal ) {
+while ( !_host.endSignal ) {
 
   s.processEvents();
   sleep(100);

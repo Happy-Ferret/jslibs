@@ -162,10 +162,10 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 JSClass global_class = {
 	 "global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
-    JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
+    JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub
 };
 
-JSBool Print(JSContext *cx, uintN argc, jsval *vp) {
+JSBool Print(JSContext *cx, unsigned argc, jsval *vp) {
 		
 	JSString *str = JS_ValueToString(cx, vp[2]);
 
@@ -203,7 +203,7 @@ bad:
 
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 static JSBool
-sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **objp) {
+sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags, JSObject **objp) {
 
 	JSBool resolved;
 	if ( (flags & JSRESOLVE_ASSIGNING) == 0 ) {
@@ -244,7 +244,7 @@ static JSClass sandbox_class = {
 };
 
 
-JSBool Sandbox(JSContext *cx, uintN argc, jsval *vp) {
+JSBool Sandbox(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JSObject *obj = JS_NewCompartmentAndGlobalObject(cx, &sandbox_class, NULL);
     JL_CHK( JS_WrapObject(cx, &obj) );
@@ -428,7 +428,7 @@ int main_arraylike(int argc, char* argv[]) {
 
 	JSObject *o = JS_NewObject(cx, NULL, NULL, NULL);
 
-	jsuint len;
+	unsigned len;
 	JSBool err = JS_GetArrayLength(cx, o, &len);
 
 	JSString *s = JS_NewStringCopyZ(cx, (const char *)L"hello");

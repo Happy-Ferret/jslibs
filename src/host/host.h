@@ -35,6 +35,6 @@ JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool co
 JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32_t xdrScriptLength, jsval *rval );
 
 bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free );
-JSBool MemoryManagerEnableGCEvent( JSContext *cx );
-JSBool MemoryManagerDisableGCEvent( JSContext *cx );
+void MemoryManagerEnableGCEvent( JSContext *cx );
+void MemoryManagerDisableGCEvent( JSContext *cx );
 bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free );

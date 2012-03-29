@@ -50,7 +50,7 @@ DEFINE_FINALIZE() {
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
 		return;
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 
@@ -191,7 +191,7 @@ DEFINE_CALL() {
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(cx, obj);
+	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 
@@ -307,7 +307,7 @@ DEFINE_PROPERTY_GETTER( idle ) {
 
 	JL_IGNORE(id);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.state == Z_NULL, vp) );
 	return JS_TRUE;
@@ -325,7 +325,7 @@ DEFINE_PROPERTY_GETTER( adler32 ) {
 
 	JL_IGNORE(id);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.adler, vp) );
 	return JS_TRUE;
@@ -342,7 +342,7 @@ DEFINE_PROPERTY_GETTER( lengthIn ) {
 
 	JL_IGNORE(id);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.total_in, vp) );
 	return JS_TRUE;
@@ -359,7 +359,7 @@ DEFINE_PROPERTY_GETTER( lengthOut ) {
 
 	JL_IGNORE(id);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.total_out, vp) );
 	return JS_TRUE;

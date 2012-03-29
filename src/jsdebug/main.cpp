@@ -35,7 +35,7 @@ $MODULE_FOOTER
 // tools functions
 
 
-void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
+void NewScriptHook(JSContext *cx, const char *filename, unsigned lineno, JSScript *script, JSFunction *fun, void *callerdata) {
 
 // (TBD) do we protect new file-based scripts against GC to allow later debugging them ?
 
@@ -220,7 +220,7 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 	for ( it = jl::QueueBegin(scriptList); it; it = jl::QueueNext(it) ) {
 
 		script = (JSScript*)jl::QueueGetData(it);
-		uintN extent = JS_GetScriptLineExtent(cx, script);
+		unsigned extent = JS_GetScriptLineExtent(cx, script);
 
 		if ( lineno >= JS_GetScriptBaseLineNumber(cx, script) && lineno < JS_GetScriptBaseLineNumber(cx, script) + extent )
 			break;
@@ -230,7 +230,7 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 }
 
 
-JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **script, jsbytecode **pc ) {
+JSBool GetScriptLocation( JSContext *cx, jsval *val, unsigned lineno, JSScript **script, jsbytecode **pc ) {
 
 	if ( JL_ValueIsCallable(cx, *val) ) {
 
@@ -242,7 +242,7 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **sc
 /*
 	if ( !JSVAL_IS_PRIMITIVE(*val) && JL_IsScript(cx, JSVAL_TO_OBJECT(*val)) ) {
 
-		*script = (JSScript *) JL_GetPrivate(cx, JSVAL_TO_OBJECT(*val));
+		*script = (JSScript *) JL_GetPrivate(JSVAL_TO_OBJECT(*val));
 		if ( *script == NULL )
 			return JS_TRUE;
 		lineno += JS_GetScriptBaseLineNumber(cx, *script);
@@ -264,7 +264,7 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, uintN lineno, JSScript **sc
 }
 
 
-void SourceHandler(const char *filename, uintN lineno, jschar *str, size_t length, void **listenerTSData, void *closure) {
+void SourceHandler(const char *filename, unsigned lineno, jschar *str, size_t length, void **listenerTSData, void *closure) {
 }
 
 
@@ -295,7 +295,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 		const char *filename = JS_GetScriptFilename(cx, script);
 		if ( !filename )
 			continue;
-		uintN lineno = JS_GetScriptBaseLineNumber(cx, script);
+		unsigned lineno = JS_GetScriptBaseLineNumber(cx, script);
 		JSFunction *fun = JS_GetFrameFunction(cx, fp);
 		NewScriptHook(cx, filename, lineno, script, fun, obj);
 	}

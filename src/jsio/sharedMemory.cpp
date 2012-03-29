@@ -52,7 +52,7 @@ JSBool Unlock( JSContext *cx, ClassPrivate *pv ) {
 
 JSBool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(SharedMemory) );
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
@@ -67,7 +67,7 @@ JSBool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
 JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_OBJECT_STATE(pv, JL_CLASS_NAME(SharedMemory));
 
 	JL_CHKB( PR_WaitSemaphore( pv->accessSem ) == PR_SUCCESS, bad_ioerror );
@@ -113,7 +113,7 @@ BEGIN_CLASS( SharedMemory )
 
 DEFINE_FINALIZE() {
 
-	if ( !JL_GetPrivate(cx, JL_OBJ) )
+	if ( !JL_GetPrivate(JL_OBJ) )
 		return;
 	CloseSharedMemory(cx, obj);
 }
@@ -224,7 +224,7 @@ DEFINE_FUNCTION( write ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	ClassPrivate *pv;
-	pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	size_t offset;
@@ -265,7 +265,7 @@ DEFINE_FUNCTION( read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	size_t offset;
@@ -311,7 +311,7 @@ DEFINE_FUNCTION( clear ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	ClassPrivate *pv;
-	pv = (ClassPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( Lock(cx, pv) );
@@ -339,7 +339,7 @@ DEFINE_FUNCTION( close ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( CloseSharedMemory(cx, obj) );
 
@@ -362,7 +362,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 
 	JL_IGNORE( strict, id );
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	if ( JSVAL_IS_VOID( *vp ) ) {
@@ -400,7 +400,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 
 	JL_IGNORE( id );
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( Lock(cx, pv) );
@@ -437,7 +437,7 @@ TypeError: can't XDR class Array
 
 DEFINE_PROPERTY( xdrSetter ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( Lock(cx, pv) );
@@ -466,7 +466,7 @@ DEFINE_PROPERTY( xdrSetter ) {
 
 DEFINE_PROPERTY( xdrGetter ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(cx, obj);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( Lock(cx, pv) );

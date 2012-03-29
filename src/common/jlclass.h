@@ -27,7 +27,7 @@ struct JLConstIntegerSpec {
 struct JLClassSpec {
 	JSClass clasp;
 	JSNative constructor;
-	uintN nargs;
+	unsigned nargs;
 	const char *parentProtoName;
 	JSPropertySpec *ps;
 	JSPropertySpec *static_ps;
@@ -48,11 +48,14 @@ INLINE JSBool
 JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool removeGetterAndSetter ) {
 
 	JSBool found;
-	uintN attrs;
+	unsigned attrs;
 	JSPropertyOp getter;
 	JSStrictPropertyOp setter;
 	JL_CHK( JS_GetPropertyAttrsGetterAndSetterById(cx, obj, id, &attrs, &found, &getter, &setter) );
 	JL_CHKM( found, E_PROP, E_NOTFOUND );
+
+	// doc:
+	//   JSPROP_SHARED: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 
 	if ( (attrs & JSPROP_SHARED) == 0 ) // Has already been stored somewhere. The slot will be updated after JSPropertyOp returns.
 		return JS_TRUE;
@@ -161,7 +164,7 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	proto = JS_InitClass(cx, obj, parentProto, &cs->clasp, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
 
 	JL_ASSERT( proto != NULL, E_CLASS, E_NAME(cs->clasp.name), E_CREATE ); //RTE
-	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(cx, proto) == NULL );
+	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
 	
 	JL_CHKM( JL_CacheClassProto(hpv, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
@@ -253,7 +256,6 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 			cs.clasp.enumerate = JS_EnumerateStub; \
 			cs.clasp.resolve = JS_ResolveStub; \
 			cs.clasp.convert = JS_ConvertStub; \
-			cs.clasp.finalize = JS_FinalizeStub; \
 			cs.buildDate = (double)__DATE__EPOCH * 1000; \
 
 #define END_CLASS \
@@ -316,6 +318,7 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define FUNCTION_ARGC(name, nargs) JS_FN( #name, _##name, nargs, FUNCTION_DEFAULT_FLAGS ),
 #define FUNCTION_ALIAS(alias, name) JS_FN( #alias, _##name, 0, FUNCTION_DEFAULT_FLAGS ),
 
+// doc: JSPROP_SHARED - https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 #define PROPERTY(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
 #define PROPERTY_GETTER(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name##Getter, NULL },
 #define PROPERTY_SETTER(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name##Setter },
@@ -345,11 +348,11 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	ASSERT(cs.constructor == NULL); \
 	cs.constructor = Constructor;
 
-#define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, uintN argc, jsval *vp)
+#define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, unsigned argc, jsval *vp)
 
 
 INLINE JSBool
-InvalidConstructor(JSContext *cx, uintN, jsval *) {
+InvalidConstructor(JSContext *cx, unsigned, jsval *) {
 
 	JL_ERR( E_CLASS, E_NOTCONSTRUCT );
 	JL_BAD;
@@ -394,10 +397,10 @@ DefaultInstanceof(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp) {
 #define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
 
 #define HAS_OBJECT_CONSTRUCTOR cs.clasp.construct = ObjectConstructor;
-#define DEFINE_OBJECT_CONSTRUCTOR() static JSBool ObjectConstructor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+#define DEFINE_OBJECT_CONSTRUCTOR() static JSBool ObjectConstructor(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval)
 
 #define HAS_CALL cs.clasp.call = Call;
-#define DEFINE_CALL() static JSBool Call(JSContext *cx, uintN argc, jsval *vp)
+#define DEFINE_CALL() static JSBool Call(JSContext *cx, unsigned argc, jsval *vp)
 
 #define HAS_CONVERT cs.clasp.convert = Convert;
 #define DEFINE_CONVERT() static JSBool Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
@@ -407,7 +410,7 @@ DefaultInstanceof(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp) {
 
 #define HAS_NEW_RESOLVE cs.clasp.flags |= JSCLASS_NEW_RESOLVE; JSNewResolveOp tmp = NewResolve; cs.clasp.resolve = (JSResolveOp)tmp;
 #define HAS_NEW_RESOLVE_GETS_START cs.clasp.flags |= JSCLASS_NEW_RESOLVE_GETS_START; JSNewResolveOp tmp = NewResolve; cs.clasp.resolve = (JSResolveOp)tmp;
-#define DEFINE_NEW_RESOLVE() static JSBool NewResolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **objp)
+#define DEFINE_NEW_RESOLVE() static JSBool NewResolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags, JSObject **objp)
 
 #define HAS_ENUMERATE cs.clasp.enumerate = Enumerate;
 #define DEFINE_ENUMERATE() static JSBool Enumerate(JSContext *cx, JSObject *obj)
@@ -460,7 +463,7 @@ DefaultInstanceof(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp) {
 
 // definition
 
-#define DEFINE_FUNCTION(name) static JSBool _##name(JSContext *cx, uintN argc, jsval *vp)
+#define DEFINE_FUNCTION(name) static JSBool _##name(JSContext *cx, unsigned argc, jsval *vp)
 
 #define DEFINE_PROPERTY(name) static JSBool _##name(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
 #define DEFINE_PROPERTY_GETTER(name) static JSBool _##name##Getter(JSContext *cx, JSObject *obj, jsid id, jsval *vp)

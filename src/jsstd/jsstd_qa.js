@@ -157,7 +157,7 @@ loadModule('jsstd');
 		QA.ASSERT( getData(test.aaa.bbb.ccc.ddd), undefined, 'check data in the tree' );
 
 
-/// ObjectToId and IdToObject [rt]
+/// ObjectToId and IdToObject [rtd]
 
 		var ids = function() {
 
@@ -896,7 +896,7 @@ loadModule('jsstd');
 //		QA.ASSERT( SandboxEval('query()', function(val) obj).abc, 321, 'Query return value');
 
 
-/// Disabled GC [r]
+/// Disabled GC [rd]
 
 		var prev = disableGarbageCollection;
 		disableGarbageCollection = true;

@@ -42,7 +42,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
 		return;
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 	int status = iconv_close(pv->cd); // if ( status == -1 ) error is in errno.
@@ -131,7 +131,7 @@ DEFINE_CALL() {
 	JL_ASSERT_INSTANCE(obj, JL_CLASS(Iconv));
 
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(cx, obj);
+	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	size_t status;
@@ -331,7 +331,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 
 	JLData chr;
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(cx, obj);
+	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 //	const char *chr;
@@ -349,7 +349,7 @@ DEFINE_PROPERTY_GETTER( invalidChar ) {
 	JL_IGNORE(id);
 
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(cx, obj);
+	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );	
 //	JL_CHK( JL_StringAndLengthToJsval(cx, vp, &pv->invalidChar, 1) );
 	JL_CHK( JL_NativeToJsval(cx, &pv->invalidChar, 1, vp) );
@@ -362,7 +362,7 @@ DEFINE_PROPERTY_GETTER( hasIncompleteSequence ) {
 	JL_IGNORE(id);
 
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(cx, obj);
+	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );	
 	JL_CHK(JL_NativeToJsval(cx, pv->remainderLen != 0, vp) );
 	return JS_TRUE;

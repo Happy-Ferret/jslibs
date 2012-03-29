@@ -33,7 +33,7 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID
 	JSObject *bodyObject;
 	bodyObject = JSVAL_TO_OBJECT(bodyVal);
 	JL_ASSERT_INSTANCE(bodyObject, JL_CLASS(Body));
-	*pBodyID = (ode::dBodyID)JL_GetPrivate(cx, bodyObject);
+	*pBodyID = (ode::dBodyID)JL_GetPrivate(bodyObject);
 	ASSERT(*pBodyID);
 	ode::dBodyGetMass(*pBodyID, pMass);
 	return JS_TRUE;
@@ -85,7 +85,7 @@ DEFINE_FUNCTION( adjust ) {
 	ode::dMass mass;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
-	jsdouble newMass;
+	double newMass;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &newMass) );
 	ode::dMassAdjust(&mass, (ode::dReal)newMass);
 	ode::dBodySetMass(bodyID, &mass);
@@ -132,7 +132,7 @@ DEFINE_FUNCTION( setBoxTotal ) {
 	ode::dBodyID bodyID;
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 // arg 0
-	jsdouble totalMass;
+	double totalMass;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &totalMass) );
 // arg 1
 	real dimensions[3];
@@ -167,7 +167,7 @@ DEFINE_PROPERTY_SETTER( value ) {
 	ode::dMass mass;
 
 	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
-	jsdouble massValue;
+	double massValue;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &massValue) );
 	mass.mass = (ode::dReal)massValue;
 	ode::dBodySetMass(bodyID, &mass);
@@ -199,8 +199,8 @@ DEFINE_PROPERTY_SETTER( center ) {
 	ode::dBodyID bodyID;
 	ode::dMass mass;
 	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
-//	jsdouble massValue;
-//	jsdouble translation[3];
+//	double massValue;
+//	double translation[3];
 	//JL_CHK( FloatArrayToVector(cx, 3, vp, mass.c) );
 	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, *vp, mass.c, 3, &length) );

@@ -42,7 +42,7 @@ BEGIN_CLASS( Cipher )
 ALWAYS_INLINE void
 FinalizeCipher( JSContext *cx, JSObject *obj, bool wipe ) {
 
-	CipherPrivate *pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
+	CipherPrivate *pv = (CipherPrivate *)JL_GetPrivate( obj );
 	if ( pv ) {
 
 		size_t size;
@@ -340,7 +340,7 @@ DEFINE_FUNCTION( encrypt ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	CipherPrivate *pv;
-	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
+	pv = (CipherPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pt) );
@@ -408,7 +408,7 @@ DEFINE_FUNCTION( decrypt ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	CipherPrivate *pv;
-	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
+	pv = (CipherPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 //	const char *ct;
@@ -474,7 +474,7 @@ DEFINE_PROPERTY_GETTER( blockLength ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	CipherPrivate *pv;
-	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
+	pv = (CipherPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL( pv->descriptor->block_length );
 	return JS_TRUE;
@@ -490,7 +490,7 @@ DEFINE_PROPERTY( keySize ) {
 
 	JL_ASSERT_INSTANCE( obj, _class );
 	CipherPrivate *pv;
-	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
+	pv = (CipherPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int size = 0;
 	int err = pv->descriptor->keysize(&size);
@@ -514,7 +514,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	CipherPrivate *pv;
-	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
+	pv = (CipherPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JSString *jsstr;
 	jsstr = JS_NewStringCopyZ(cx, pv->descriptor->name);
@@ -539,7 +539,7 @@ DEFINE_PROPERTY_SETTER( IV ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	CipherPrivate *pv;
-	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
+	pv = (CipherPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 //	const char *IV;
@@ -615,7 +615,7 @@ DEFINE_PROPERTY_GETTER( IV ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	CipherPrivate *pv;
-	pv = (CipherPrivate *)JL_GetPrivate( cx, obj );
+	pv = (CipherPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	uint8_t *IV;

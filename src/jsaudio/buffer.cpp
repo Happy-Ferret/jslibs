@@ -23,7 +23,7 @@ BEGIN_CLASS( OalBuffer )
 
 DEFINE_FINALIZE() {
 
-	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
+	ALuint bid = (ALuint) JL_GetPrivate(obj);
 	if ( bid )
 		alDeleteBuffers(1, &bid);
 }
@@ -87,7 +87,7 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION( free ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	ALuint bid = (ALuint) JL_GetPrivate(cx, JL_OBJ);
+	ALuint bid = (ALuint) JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	alBufferData(bid, AL_FORMAT_MONO8, NULL, 0, 0);
 	return JS_TRUE;
@@ -106,7 +106,7 @@ DEFINE_FUNCTION( valueOf ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	ALuint bid = (ALuint) JL_GetPrivate(cx, JL_OBJ);
+	ALuint bid = (ALuint) JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	JL_CHK( JL_NativeToJsval(cx, bid, JL_RVAL) );
 	return JS_TRUE;
@@ -129,7 +129,7 @@ DEFINE_PROPERTY_GETTER( frequency ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
+	ALuint bid = (ALuint) JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	ALint frequency;
 
@@ -152,7 +152,7 @@ DEFINE_PROPERTY_GETTER( size ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
+	ALuint bid = (ALuint) JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	ALint size;
 
@@ -176,7 +176,7 @@ DEFINE_PROPERTY_GETTER( bits ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
+	ALuint bid = (ALuint) JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	ALint bits;
 
@@ -199,7 +199,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	ALuint bid = (ALuint) JL_GetPrivate(cx, obj);
+	ALuint bid = (ALuint) JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	ALint channels;
 

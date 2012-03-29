@@ -28,7 +28,7 @@ DEFINE_FINALIZE() {
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
 		return;
 
-	PrngPrivate *pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
+	PrngPrivate *pv = (PrngPrivate *)JL_GetPrivate( obj );
 	if ( !pv )
 		return;
 
@@ -108,7 +108,7 @@ DEFINE_CALL() {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
+	pv = (PrngPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned int readCount;
@@ -143,7 +143,7 @@ DEFINE_FUNCTION( addEntropy ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
+	pv = (PrngPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &entropy) );
@@ -173,7 +173,7 @@ DEFINE_FUNCTION( autoEntropy ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
+	pv = (PrngPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned int bits;
@@ -205,7 +205,7 @@ DEFINE_PROPERTY_GETTER( state ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
+	pv = (PrngPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned long size;
@@ -239,7 +239,7 @@ DEFINE_PROPERTY_SETTER( state ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
+	pv = (PrngPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
 	JL_CHKM( state.Length() == (size_t)pv->prng.export_size, E_VALUE, E_LENGTH, E_NUM(pv->prng.export_size) );
@@ -265,7 +265,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JL_GetPrivate( cx, obj );
+	pv = (PrngPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx,pv->prng.name) );

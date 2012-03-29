@@ -1309,6 +1309,14 @@ rdtsc() {
 #endif
 
 
+INLINE DWORD
+GetCurrentProcessorNumberXP(void) {
+
+	_asm { mov eax, 1 }
+	_asm { cpuid }
+	_asm { shr ebx, 24 }
+	_asm { mov eax, ebx }
+}
 
 // Accurate FPS Limiting / High-precision 'Sleeps': see. http://www.geisswerks.com/ryan/FAQS/timing.html
 
@@ -1321,6 +1329,7 @@ AccurateTimeCounter() {
 	BOOL result;
 	static volatile LONGLONG initTime = 0; // initTime helps in avoiding precision waste by having a relative time.
 	static volatile DWORD_PTR cpuMask = 0;
+	
 	if ( cpuMask == 0 ) {
 
 		DWORD_PTR processAffinityMask = 0;

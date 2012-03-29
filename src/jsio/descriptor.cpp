@@ -33,7 +33,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 
 	PRInt32 res;
 	PRFileDesc *fd;
-	fd = (PRFileDesc*)JL_GetPrivate(cx, obj); // (PRFileDesc *)pv;
+	fd = (PRFileDesc*)JL_GetPrivate(obj); // (PRFileDesc *)pv;
 	JL_ASSERT_OBJECT_STATE(fd, JL_CLASS_NAME(Descriptor));
 
 	PRPollDesc desc;
@@ -75,7 +75,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 
 void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( cx, obj );
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( obj );
 	if ( !fd ) // check if not already closed
 		return;
 
@@ -123,7 +123,7 @@ DEFINE_FUNCTION( close ) {
 
 	*JL_RVAL = JSVAL_VOID;
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, obj);
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(obj);
 
 	JL_ASSERT_WARN( fd, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED ); // see PublicApiRules (http://code.google.com/p/jslibs/wiki/PublicApiRules)
 	if ( !fd )
@@ -334,7 +334,7 @@ DEFINE_FUNCTION( read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(cx, JL_OBJ);
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 	// doc: Determine the amount of data in bytes available for reading in the given file or socket. Returns a -1 and the reason for the failure can be retrieved via PR_GetError()
@@ -372,7 +372,7 @@ DEFINE_FUNCTION( write ) {
 	JL_ASSERT_ARGC( 1 );
 
 	PRFileDesc *fd;
-	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
+	fd = (PRFileDesc *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	size_t sentAmount;
 
@@ -465,7 +465,7 @@ DEFINE_FUNCTION( sync ) {
 	JL_ASSERT_THIS_INHERITANCE();
 	JL_ASSERT_ARGC(0);
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ);
+	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	JL_CHKB( PR_Sync(fd) == PR_SUCCESS, bad_ioerror );
 
@@ -494,7 +494,7 @@ DEFINE_PROPERTY_GETTER( available ) {
 	PRFileDesc *fd;
 	JL_ASSERT_THIS_INHERITANCE();
 
-	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd ); //	JL_ASSERT_THIS_INSTANCE();
 
 	PRInt64 available;
@@ -526,9 +526,9 @@ DEFINE_PROPERTY_GETTER( type ) {
 	JL_ASSERT_THIS_INHERITANCE();
 
 	PRFileDesc *fd;
-	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd ); //	JL_ASSERT_THIS_INSTANCE();
-	*vp = INT_TO_JSVAL( (jsint)PR_GetDescType(fd) );
+	*vp = INT_TO_JSVAL( (int)PR_GetDescType(fd) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -548,7 +548,7 @@ DEFINE_PROPERTY_GETTER( closed ) {
 	JL_ASSERT_THIS_INHERITANCE();
 
 	PRFileDesc *fd;
-	fd = (PRFileDesc *)JL_GetPrivate( cx, obj );
+	fd = (PRFileDesc *)JL_GetPrivate( obj );
 	*vp = BOOLEAN_TO_JSVAL( fd == NULL );
 	return JS_TRUE;
 	JL_BAD;
@@ -731,7 +731,7 @@ DEFINE_FUNCTION( events ) {
 	upe->pe.cancelWait = IOCancelWait;
 	upe->pe.endWait = IOEndWait;
 
-	jsuint fdCount;
+	unsigned fdCount;
 	JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &fdCount) );
 
 	upe->pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdCount)); // pollDesc[0] is the event fd
@@ -765,7 +765,7 @@ DEFINE_FUNCTION( events ) {
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(rootedValues)) );
 
 	jsval *descriptor;
-	for ( jsuint i = 0; i < fdCount; ++i ) {
+	for ( unsigned i = 0; i < fdCount; ++i ) {
 
 		descriptor = &upe->descVal[i]; // get the slot addr
 		JL_CHK( JL_GetElement(cx, fdArrayObj, i, descriptor) ); // read the item
@@ -793,7 +793,7 @@ DEFINE_FUNCTION( isReadable ) {
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	PRFileDesc *fd;
-	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ); //beware: fd == NULL is supported !
+	fd = (PRFileDesc *)JL_GetPrivate(JL_OBJ); //beware: fd == NULL is supported !
 
 /*
 	PRIntervalTime prTimeout;
@@ -840,7 +840,7 @@ DEFINE_FUNCTION( isWritable ) {
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	PRFileDesc *fd;
-	fd = (PRFileDesc *)JL_GetPrivate(cx, JL_OBJ); //beware: fd == NULL is supported !
+	fd = (PRFileDesc *)JL_GetPrivate(JL_OBJ); //beware: fd == NULL is supported !
 
 /*
 	PRIntervalTime prTimeout;

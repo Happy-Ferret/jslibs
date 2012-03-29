@@ -26,7 +26,7 @@ DEFINE_FINALIZE() {
 
 	if ( obj == JL_CLASS_PROTOTYPE(cx, ComEnum) )
 		return;
-	IEnumVARIANT *ienumv = (IEnumVARIANT*)JL_GetPrivate(cx, obj);
+	IEnumVARIANT *ienumv = (IEnumVARIANT*)JL_GetPrivate(obj);
 	ienumv->Release();
 }
 
@@ -40,7 +40,7 @@ DEFINE_FUNCTION( next ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	IEnumVARIANT *ienumv = (IEnumVARIANT*)JL_GetPrivate(cx, JL_OBJ);
+	IEnumVARIANT *ienumv = (IEnumVARIANT*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(ienumv);
 
 	result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));

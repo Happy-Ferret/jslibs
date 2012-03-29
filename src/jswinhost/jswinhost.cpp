@@ -86,7 +86,7 @@ int consoleStdErr( JSContext *cx, const char *data, int length ) {
 */
 
 /*
-JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool stderrFunction(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
@@ -96,7 +96,7 @@ JSBool stderrFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	return JS_TRUE;
 }
 
-JSBool stdoutFunction(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool stdoutFunction(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 
 	JSString *str;
 	str = JS_ValueToString(cx, argv[0]);
@@ -151,11 +151,11 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	SetLastError(0);
 	HANDLE instanceCheckMutex = ::CreateMutex(NULL, TRUE, mutexName); // see Global\\ and Local\\ prefixes for mutex name.
 	switch ( GetLastError() ) {
-		case ERROR_ALREADY_EXISTS:
-			isFirstInstance = false;
-			break;
 		case ERROR_SUCCESS:
 			isFirstInstance = true;
+			break;
+		case ERROR_ALREADY_EXISTS:
+			isFirstInstance = false;
 			break;
 		default: {
 			char message[1024];
@@ -179,9 +179,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	jl_free = free;
 */
 
-	InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
+	JL_CHK( InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free) );
 
-	cx = CreateHost((uint32_t)-1, (uint32_t)-1, 0);
+	cx = CreateHost((uint32_t)-1, (uint32_t)-1, 30000); // 30 seconds
 	JL_CHK( cx != NULL );
 
 	MemoryManagerEnableGCEvent(cx);
@@ -200,7 +200,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	JL_CHK( InitHost(cx, true, NULL, NULL, HostStderr, NULL) ); // DbgOutString ?
 	CHAR moduleFileName[PATH_MAX];
 	strcpy(moduleFileName, moduleName);
-	char *name = strrchr( moduleFileName, '\\' );
+	char *name = strrchr(moduleFileName, '\\');
 	JL_CHK( name );
 	*name = '\0';
 	name++;
@@ -212,7 +212,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	char *dotPos = strrchr(scriptName, '.');
 	JL_CHK( dotPos );
 	*dotPos = '\0';
-	err = strcat_s( scriptName, sizeof(scriptName), ".js" );
+	err = strcat_s(scriptName, sizeof(scriptName), ".js");
 	JL_ASSERT( err == 0, E_LIB, E_INTERNAL );
 
 	JSObject *hostObj = GetHostObject(cx);
@@ -243,7 +243,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	MemoryManagerDisableGCEvent(cx);
 	FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 
-	JS_SetGCCallback(cx, NULL);
+	JS_SetGCCallback(JL_GetRuntime(cx), NULL);
 	DestroyHost(cx, disabledFree);
 	cx = NULL;
 	JS_ShutDown();
@@ -256,7 +256,7 @@ bad:
 	if ( cx ) {
 
 		disabledFree = true;
-		JS_SetGCCallback(cx, NULL);
+		JS_SetGCCallback(JL_GetRuntime(cx), NULL);
 		DestroyHost(cx, disabledFree);
 	}
 	JS_ShutDown();

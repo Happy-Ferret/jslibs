@@ -139,7 +139,7 @@ DEFINE_FINALIZE() {
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
 		return;
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( pv != NULL ) {
 
 		ov_clear(&pv->ofDescriptor); // beware: info must be valid
@@ -243,7 +243,7 @@ DEFINE_FUNCTION( read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JL_CHKM( pv->ofInfo->channels == 1 || pv->ofInfo->channels == 2, E_NUM(pv->ofInfo->channels), E_STR("channels"), E_FORMAT );
@@ -400,7 +400,7 @@ DEFINE_PROPERTY_GETTER( inputStream ) {
 	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
 	return JS_TRUE;
@@ -417,7 +417,7 @@ DEFINE_PROPERTY_GETTER( bits ) {
 	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->bits );
 	return JS_TRUE;
@@ -434,7 +434,7 @@ DEFINE_PROPERTY_GETTER( rate ) {
 	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->ofInfo->rate );
 	return JS_TRUE;
@@ -451,7 +451,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = INT_TO_JSVAL( pv->ofInfo->channels );
 	return JS_TRUE;
@@ -469,7 +469,7 @@ DEFINE_PROPERTY_GETTER( frames ) {
 	JL_IGNORE(id);
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ogg_int64_t pcmTotal = ov_pcm_total(&pv->ofDescriptor, -1);
 	if ( pcmTotal == OV_EINVAL ) { // if the stream is not seekable (we can't know the length) or only partially open.

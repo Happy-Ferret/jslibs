@@ -23,7 +23,7 @@ BEGIN_CLASS( SurfaceParameters )
 
 DEFINE_FINALIZE() {
 
-	ode::dSurfaceParameters *pv = (ode::dSurfaceParameters*)JL_GetPrivate(cx, obj);
+	ode::dSurfaceParameters *pv = (ode::dSurfaceParameters*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 	JS_free(cx, pv);
@@ -95,7 +95,7 @@ enum { mu, mu2, fDir1, bounce, bounceVel, softERP, softCFM, motion1, motion2, mo
 
 DEFINE_PROPERTY_GETTER( surface ) {
 
-	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JL_GetPrivate(cx, obj);
+	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(surface); // (TBD) check if NULL is meaningful for joints !
 	
 	*vp = JSVAL_VOID;
@@ -154,7 +154,7 @@ DEFINE_PROPERTY_GETTER( surface ) {
 
 DEFINE_PROPERTY_SETTER( surface ) {
 
-	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JL_GetPrivate(cx, obj);
+	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(surface); // (TBD) check if NULL is meaningful for joints !
 
 	ode::dReal value;

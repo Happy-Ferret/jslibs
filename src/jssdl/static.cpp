@@ -779,7 +779,7 @@ DEFINE_FUNCTION( setCursor ) {
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *cursorObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_ASSERT_INSTANCE( cursorObj, JL_CLASS(Cursor) );
-	SDL_Cursor *cursor = (SDL_Cursor *)JL_GetPrivate(cx, cursorObj);
+	SDL_Cursor *cursor = (SDL_Cursor *)JL_GetPrivate(cursorObj);
 	JL_ASSERT_OBJECT_STATE( cursor, JL_CLASS_NAME(Cursor) );
 	SDL_SetCursor(cursor);
 	

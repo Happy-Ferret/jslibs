@@ -25,7 +25,7 @@ loadModule('jsio');
 /// many new threads [r]
 
 	var i = 0;
-	while ( !endSignal && i++ < 100 ) {
+	while ( !_host.endSignal && i++ < 100 ) {
 
 		new Task(function(){});
 		QA.gc();

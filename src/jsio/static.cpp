@@ -51,7 +51,7 @@ JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 
 	// doc:
 	//   fd is a pointer to a PRFileDesc object representing a socket or a pollable event. This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
-	pollDesc->fd = (PRFileDesc*)JL_GetPrivate(cx, fdObj); // beware: fd == NULL may be NULL !
+	pollDesc->fd = (PRFileDesc*)JL_GetPrivate(fdObj); // beware: fd == NULL may be NULL !
 
 	JSBool has;
 	JL_CHK( JS_HasPropertyById(cx, fdObj, JLID(cx, writable), &has) );
@@ -166,7 +166,7 @@ DEFINE_FUNCTION( poll ) {
 
 	PRInt32 result;
 	PRIntervalTime pr_timeout;
-	jsuint i;
+	unsigned i;
 	PRPollDesc *pollDesc = NULL;
 	jsval *props = NULL;
 
@@ -185,7 +185,7 @@ DEFINE_FUNCTION( poll ) {
 		pr_timeout = PR_INTERVAL_NO_TIMEOUT;
 	}
 
-	jsuint propsCount;
+	unsigned propsCount;
 	JL_CHKB( JS_GetArrayLength(cx, fdArrayObj, &propsCount), bad1 );
 
 	if ( propsCount == 0 ) { // optimization
@@ -318,7 +318,7 @@ DEFINE_FUNCTION( iOEvents ) {
 	upe->pe.cancelWait = IOCancelWait;
 	upe->pe.endWait = IOEndWait;
 
-	jsuint fdCount;
+	unsigned fdCount;
 	JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &fdCount) );
 
 	upe->pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdCount)); // pollDesc[0] is the event fd
@@ -349,7 +349,7 @@ DEFINE_FUNCTION( iOEvents ) {
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(rootedValues)) );
 
 	jsval *tmp;
-	for ( jsuint i = 0; i < fdCount; ++i ) {
+	for ( unsigned i = 0; i < fdCount; ++i ) {
 
 		tmp = &upe->descVal[i];
 		JL_CHK( JL_GetElement(cx, fdArrayObj, i, tmp) );
@@ -752,19 +752,19 @@ DEFINE_FUNCTION( availableSpace ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &path) );
 
-	jsdouble available;
+	double available;
 
 #ifdef XP_WIN
 	ULARGE_INTEGER freeBytesAvailable;
 	BOOL res = ::GetDiskFreeSpaceEx(path, &freeBytesAvailable, NULL, NULL);
 	if ( res == 0 )
 		JL_ThrowOSError(cx);
-	available = (jsdouble)freeBytesAvailable.QuadPart;
+	available = (double)freeBytesAvailable.QuadPart;
 #else // now for XP_UNIX an MacOS ?
 	struct statvfs fsd;
 	if ( statvfs(path, &fsd) < 0 )
 		JL_ThrowOSError(cx);
-	available = (jsdouble)fsd.f_bsize * (jsdouble)fsd.f_bavail;
+	available = (double)fsd.f_bsize * (double)fsd.f_bavail;
 #endif // XP_WIN
 
 	*JL_RVAL = DOUBLE_TO_JSVAL( available );
@@ -810,7 +810,7 @@ DEFINE_FUNCTION( configureSerialPort ) {
 	JL_ASSERT_INHERITANCE( fileObj, JL_CLASS(File) );
 
 	PRFileDesc *fd;
-	fd = (PRFileDesc *)JL_GetPrivate(cx, fileObj);
+	fd = (PRFileDesc *)JL_GetPrivate(fileObj);
 
 	JL_ASSERT( fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_CLASS_NAME(File)), E_CLOSED );
 
@@ -935,7 +935,7 @@ DEFINE_PROPERTY_GETTER( physicalMemorySize ) {
 	JL_IGNORE( id, obj );
 
 	PRUint64 mem = PR_GetPhysicalMemorySize();
-	JL_CHK( JL_NewNumberValue(cx, (jsdouble)mem, vp) );
+	JL_CHK( JL_NewNumberValue(cx, (double)mem, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

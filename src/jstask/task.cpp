@@ -137,7 +137,7 @@ BEGIN_CLASS( Task )
 
 DEFINE_FINALIZE() {
 
-	TaskPrivate *pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
+	TaskPrivate *pv = (TaskPrivate*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 
@@ -444,7 +444,7 @@ DEFINE_FUNCTION( request ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	TaskPrivate *pv;
-	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	pv = (TaskPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	SerializedData * serializedRequest;
@@ -478,7 +478,7 @@ DEFINE_FUNCTION( response ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	TaskPrivate *pv;
-	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	pv = (TaskPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	bool hasNoResponse;
@@ -553,7 +553,7 @@ DEFINE_PROPERTY_GETTER( pendingRequestCount ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	TaskPrivate *pv;
-	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
+	pv = (TaskPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JLMutexAcquire(pv->mutex); // --
 	JL_CHK( JL_NativeToJsval(cx, (size_t)pv->pendingRequestCount, vp) );
@@ -574,7 +574,7 @@ DEFINE_PROPERTY_GETTER( processingRequestCount ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	TaskPrivate *pv;
-	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
+	pv = (TaskPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JLMutexAcquire(pv->mutex); // --
 	JL_CHK( JL_NativeToJsval(cx, (size_t)pv->processingRequestCount, vp) );
@@ -594,7 +594,7 @@ DEFINE_PROPERTY_GETTER( pendingResponseCount ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	TaskPrivate *pv;
-	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
+	pv = (TaskPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JLMutexAcquire(pv->mutex); // --
 	JL_CHK( JL_NativeToJsval(cx, (size_t)pv->pendingResponseCount, vp) );
@@ -615,7 +615,7 @@ DEFINE_PROPERTY_GETTER( idle ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	TaskPrivate *pv;
-	pv = (TaskPrivate*)JL_GetPrivate(cx, obj);
+	pv = (TaskPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JLMutexAcquire(pv->mutex); // --
 	JL_CHK(JL_NativeToJsval(cx, pv->pendingRequestCount + pv->processingRequestCount + pv->pendingResponseCount == 0 || pv->end, vp) );
@@ -651,8 +651,8 @@ t.onResponse = function(t) {
 
 t.request(0);
 
-while ( !endSignal )
-	processEvents(t.event(), endSignalEvent());
+while ( !_host.endSignal )
+	processEvents(t.event(), _host.endSignalEvent());
 }}}
 **/
 struct UserProcessEvent {
@@ -712,7 +712,7 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	TaskPrivate *pv;
-	pv = (TaskPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	pv = (TaskPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	UserProcessEvent *upe;

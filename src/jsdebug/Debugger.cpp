@@ -64,7 +64,7 @@ struct DebuggerPrivate {
 	JSStackFrame *frame;
 	JSStackFrame *pframe;
 	JSScript *script;
-	uintN lineno;
+	unsigned lineno;
 };
 
 
@@ -93,7 +93,7 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 
 JSTrapStatus InterruptCounterHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate((JSObject*)closure);
 	if ( --pv->interruptCounter != 0 )
 		return JSTRAP_CONTINUE;
 	return BreakHandler(cx, (JSObject*)closure, JL_CurrentStackFrame(cx), FROM_INTERRUPT);
@@ -148,7 +148,7 @@ JSTrapStatus DebuggerKeyword(JSContext *cx, JSScript *script, jsbytecode *pc, js
 
 JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate((JSObject*)closure);
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
 		return JSTRAP_CONTINUE;
 //	if ( jsCodeSpec[*pc].format & JOF_DECLARING )
@@ -159,7 +159,7 @@ JSTrapStatus Step(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, 
 
 JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate((JSObject*)closure);
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) == pv->lineno )
 		return JSTRAP_CONTINUE;
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
@@ -172,7 +172,7 @@ JSTrapStatus StepOver(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rv
 JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
 	// (TBD) manage return value with JS_GetFrameReturnValue()
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate((JSObject*)closure);
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( fp != pv->pframe )
 		return JSTRAP_CONTINUE;
@@ -182,7 +182,7 @@ JSTrapStatus StepOut(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rva
 
 JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc, jsval *rval, void *closure) {
 
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, (JSObject*)closure);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate((JSObject*)closure);
 	if ( script == pv->script && JS_PCToLineNumber(cx, script, pc) <= pv->lineno )
 		return JSTRAP_CONTINUE;
 
@@ -195,7 +195,7 @@ JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc, jsval 
 
 JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakReason breakOrigin) {
 
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JSScript *script;
@@ -224,7 +224,7 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 	
 	JSRuntime *rt;
 	rt = JL_GetRuntime(cx);
-	uintN lineno;
+	unsigned lineno;
 	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 	uint32_t stackFrameIndex;
 	stackFrameIndex = JL_StackSize(cx, fp)-1;
@@ -322,7 +322,7 @@ bad:
 
 DEFINE_FINALIZE() {
 
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 	JSRuntime *rt = JL_GetRuntime(cx);
@@ -408,7 +408,7 @@ DEFINE_FUNCTION( toggleBreakpoint ) {
 	bool polarity;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &polarity) );
 
-	uintN lineno;
+	unsigned lineno;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &lineno) );
 
 	JSScript *script;
@@ -448,7 +448,7 @@ DEFINE_FUNCTION( hasBreakpoint ) {
 
 	JL_ASSERT_ARGC_MIN( 2 );
 
-	uintN lineno;
+	unsigned lineno;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
 
 	JSScript *script;
@@ -506,7 +506,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( interruptCounterLimit ) {
 
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	if ( JSVAL_IS_VOID(*vp) ) {
@@ -545,7 +545,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( breakOnError ) {
 
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
@@ -570,7 +570,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( breakOnException ) {
 
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
@@ -595,7 +595,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( breakOnDebuggerKeyword ) {
 
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
@@ -620,7 +620,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( breakOnExecute ) {
 
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
@@ -645,7 +645,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( breakOnFirstExecute ) {
 
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
@@ -670,7 +670,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( excludedFileList ) {
 
-	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(cx, obj);
+	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JL_ASSERT_IS_ARRAY( *vp, "" );
@@ -681,11 +681,11 @@ DEFINE_PROPERTY_SETTER( excludedFileList ) {
 	if ( pv->excludedFiles )
 		CleanExcludedFileList(&pv->excludedFiles);
 
-	jsuint length;
+	unsigned length;
 	JL_CHK( JS_GetArrayLength(cx, arrayObject, &length) );
 
 	jsval tmp;
-	for ( jsuint i = 0; i < length; ++i ) {
+	for ( unsigned i = 0; i < length; ++i ) {
 
 		JLData fileName;
 		JL_CHK( JL_GetElement(cx, arrayObject, i, &tmp ) );
@@ -772,8 +772,8 @@ END_CLASS
 	//		frame = JS_GetScriptedCaller(cx, frame->down);
 	//		JSScript *nextScript = JS_GetFrameScript(cx, frame);
 	//		jsbytecode *nextPc = JS_GetFramePC(cx, frame);
-	////		uintN lineno = JS_PCToLineNumber(cx, nextScript, nextPc);
-	////		uintN lastlineno = JS_GetScriptBaseLineNumber(cx, nextScript) + JS_GetScriptLineExtent(cx, nextScript);
+	////		unsigned lineno = JS_PCToLineNumber(cx, nextScript, nextPc);
+	////		unsigned lastlineno = JS_GetScriptBaseLineNumber(cx, nextScript) + JS_GetScriptLineExtent(cx, nextScript);
 	////		if ( lineno + 1 >= lastlineno )
 	////			return JSTRAP_CONTINUE;
 	////		nextPc = JS_LineNumberToPC(cx, nextScript, lineno +1 );

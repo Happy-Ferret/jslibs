@@ -100,7 +100,7 @@ BEGIN_CLASS( OalSource )
 
 DEFINE_TRACER() {
 
-	Private *pv = (Private*)JL_GetPrivate(trc->context, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( pv )
 		for ( jl::QueueCell *it = jl::QueueBegin(pv->queue); it; it = jl::QueueNext(it) ) {
 
@@ -113,7 +113,7 @@ DEFINE_TRACER() {
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( pv ) {
 
 		if ( alcGetCurrentContext() ) {
@@ -173,7 +173,7 @@ DEFINE_FUNCTION( queueBuffers ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	ALuint bid;
@@ -209,7 +209,7 @@ DEFINE_FUNCTION( unqueueBuffers ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALuint bid;
 	alSourceUnqueueBuffers(pv->sid, 1, &bid);
@@ -235,7 +235,7 @@ DEFINE_FUNCTION( play ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	alSourcePlay(pv->sid);
@@ -253,7 +253,7 @@ DEFINE_FUNCTION( pause ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	alSourcePause(pv->sid);
@@ -271,7 +271,7 @@ DEFINE_FUNCTION( stop ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	alSourceStop(pv->sid);
@@ -289,7 +289,7 @@ DEFINE_FUNCTION( rewind ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	alSourceRewind(pv->sid);
@@ -307,7 +307,7 @@ DEFINE_FUNCTION( effect ) {
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALuint send;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &send) );
@@ -339,7 +339,7 @@ DEFINE_FUNCTION( valueOf ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->sid, JL_RVAL) );
 	return JS_TRUE;
@@ -357,7 +357,7 @@ DEFINE_PROPERTY_SETTER( effectSlot ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	ALuint effectSlot;
@@ -380,7 +380,7 @@ DEFINE_PROPERTY_SETTER( directFilter ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	ALuint filter;
@@ -403,7 +403,7 @@ DEFINE_PROPERTY_SETTER( buffer ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALint bid;
 	if ( JSVAL_IS_VOID( *vp ) || *vp == JSVAL_ZERO )
@@ -427,7 +427,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALint bid;
 	alGetSourcei(pv->sid, AL_BUFFER, &bid);
@@ -472,7 +472,7 @@ out:
 /*
 DEFINE_PROPERTY_SETTER( position ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float pos[3];
 	size_t len;
@@ -490,7 +490,7 @@ DEFINE_FUNCTION( position ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(3);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float pos[3];
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pos[0]) );
@@ -512,7 +512,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float pos[3];
 
@@ -528,7 +528,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 /*
 DEFINE_PROPERTY_SETTER( velocity ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float pos[3];
 	size_t len;
@@ -544,7 +544,7 @@ DEFINE_FUNCTION( velocity ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(3);
 
-	Private *pv = (Private*)JL_GetPrivate(cx, JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float pos[3];
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pos[0]) );
@@ -565,7 +565,7 @@ DEFINE_PROPERTY_GETTER( velocity ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float pos[3];
 
@@ -586,7 +586,7 @@ DEFINE_PROPERTY_GETTER( remainingTime ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	ALint loop;
@@ -664,7 +664,7 @@ DEFINE_PROPERTY_SETTER( sourceFloatInd ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = enumToConst[JSID_TO_INT(id)];
 	float f;
@@ -679,7 +679,7 @@ DEFINE_PROPERTY_GETTER( sourceFloatInd ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = enumToConst[JSID_TO_INT(id)]; // see sourceFloatInd comment.
 	float f;
@@ -697,7 +697,7 @@ DEFINE_PROPERTY_SETTER( sourceIntInd ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	int i;
@@ -713,7 +713,7 @@ DEFINE_PROPERTY_GETTER( sourceIntInd ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	int i;
@@ -730,7 +730,7 @@ DEFINE_PROPERTY_SETTER( sourceBoolInd ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = enumToConst[JSID_TO_INT(id)]; // see sourceFloatInd comment.
 	bool b;
@@ -745,7 +745,7 @@ DEFINE_PROPERTY_GETTER( sourceBoolInd ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = enumToConst[JSID_TO_INT(id)]; // see sourceFloatInd comment.
 	int i;

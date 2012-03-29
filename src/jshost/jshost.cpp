@@ -169,7 +169,7 @@ JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *c
 	JL_BAD;
 }
 
-JSBool EndSignalEvents(JSContext *cx, uintN argc, jsval *vp) {
+JSBool EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JL_ASSERT_ARGC_RANGE( 0, 1 );
 
@@ -224,7 +224,7 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 }
 
 
-//void NewScriptHook(JSContext *cx, const char *filename, uintN lineno, JSScript *script, JSFunction *fun, void *callerdata) {
+//void NewScriptHook(JSContext *cx, const char *filename, unsigned lineno, JSScript *script, JSFunction *fun, void *callerdata) {
 //	printf( "add - %s:%d - %s - %d - %p\n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticDepth, script );
 //}
 //void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
@@ -235,26 +235,27 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 // Helps to detect memory leaks (alloc/free balance)
 //#define DBG_ALLOC 1
 
+
 #ifdef DBG_ALLOC
 
 static volatile int allocCount = 0;
 static volatile int freeCount = 0;
 
 EXTERN_C void* jl_malloc_count( size_t size ) {
-	allocCount++;
+	++allocCount;
 	return malloc(size);
 }
 EXTERN_C void* jl_calloc_count( size_t num, size_t size ) {
-	allocCount++;
+	++allocCount;
 	return calloc(num, size);
 }
 EXTERN_C void* jl_memalign_count( size_t alignment, size_t size ) {
-	allocCount++;
+	++allocCount;
 	return memalign(alignment, size);
 }
 EXTERN_C void* jl_realloc_count( void *ptr, size_t size ) {
 	if ( !ptr )
-		allocCount++;
+		++allocCount;
 	return realloc(ptr, size);
 }
 EXTERN_C size_t jl_msize_count( void *ptr ) {
@@ -262,7 +263,7 @@ EXTERN_C size_t jl_msize_count( void *ptr ) {
 }
 EXTERN_C void jl_free_count( void *ptr ) {
 	if ( ptr )
-		freeCount++;
+		++freeCount;
 	free(ptr);
 }
 
@@ -275,8 +276,8 @@ EXTERN_C void jl_free_count( void *ptr ) {
 	QA.ASSERTOP(_host, 'has', 'name');
 	if ( _host.name.indexOf('jshost') == 0 ) {
 
-		QA.ASSERTOP(global, 'has', 'endSignal');
-		QA.ASSERTOP(global, 'has', 'endSignalEvents');
+		QA.ASSERTOP(_host, 'has', 'endSignal');
+		QA.ASSERTOP(_host, 'has', 'endSignalEvents');
 	}
 **/
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
@@ -415,13 +416,19 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		jl_free = free;
 
 		#ifdef DBG_ALLOC
+		
 		jl_malloc = jl_malloc_count;
 		jl_calloc = jl_calloc_count;
 		jl_memalign = jl_memalign_count;
 		jl_realloc = jl_realloc_count;
 		jl_msize = jl_msize_count;
 		jl_free = jl_free_count;
-		JSLIBS_RegisterCustomAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
+
+		js_jl_malloc = jl_malloc;
+		js_jl_calloc = jl_calloc;
+		js_jl_realloc = jl_realloc;
+		js_jl_free = jl_free;
+
 		#endif // DBG_ALLOC
 
 	}
@@ -455,9 +462,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	JL_CHKM( InitHost(cx, unsafeMode, HostStdin, HostStdout, HostStderr, NULL), E_HOST, E_INIT ); // "Unable to initialize the host."
 
-	JSObject *globalObject;
-	globalObject = JL_GetGlobal(cx);
-
 	gEndSignalCond = JLCondCreate();
 	gEndSignalLock = JLMutexCreate();
 
@@ -469,9 +473,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
-
-	JL_CHK( JS_DefineProperty(cx, globalObject, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED | JSPROP_PERMANENT) );
-	JL_CHK( JS_DefineFunction(cx, globalObject, "endSignalEvents", EndSignalEvents, 0, JSPROP_SHARED | JSPROP_PERMANENT) );
 
 
 	scriptName = *argumentVector;
@@ -516,6 +517,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	jsval arguments;
 	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), &arguments) );
 	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, arguments), arguments) );
+
+	// doc: JSPROP_SHARED - https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
+	JL_CHK( JS_DefineProperty(cx, hostObj, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) );
+	JL_CHK( JS_DefineFunction(cx, hostObj, "endSignalEvents", EndSignalEvents, 1, 0) );
+
 
 	int exitValue;
 	jsval rval;
@@ -576,7 +582,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 	}
 
-	JS_SetGCCallback(cx, NULL);
+	JS_SetGCCallback(JL_GetRuntime(cx), NULL);
 	DestroyHost(cx, disabledFree);
 	JS_ShutDown();
 	cx = NULL;
@@ -607,7 +613,7 @@ bad:
 
 		if ( useJslibsMemoryManager )
 			disabledFree = true;
-		JS_SetGCCallback(cx, NULL);
+		JS_SetGCCallback(JL_GetRuntime(cx), NULL);
 		DestroyHost(cx, true);
 	}
 	JS_ShutDown();
@@ -744,7 +750,7 @@ $H beware
   argument[1] = bar
   </pre>
 
- * *endSignal*
+ * *_host.endSignal*
   Is $TRUE if a break signal (ctrl-c, ...) has been sent to jshost. This event can be reset.
 
 === Host object ===

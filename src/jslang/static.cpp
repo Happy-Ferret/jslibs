@@ -198,7 +198,7 @@ DEFINE_FUNCTION( real ) {
 
 	JL_ASSERT_ARGC(1);
 
-	jsdouble val;
+	double val;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &val) );
 	*JL_RVAL = DOUBLE_TO_JSVAL(val);
 
@@ -340,7 +340,7 @@ DEFINE_FUNCTION( join ) {
 
 		uint32_t arrayLen;
 		JL_CHK( JS_GetArrayLength(cx, argObj, &arrayLen) );
-		for ( jsuint i = 0; i < arrayLen; ++i ) {
+		for ( unsigned i = 0; i < arrayLen; ++i ) {
 
 			JL_CHK( JL_GetElement(cx, argObj, i, &val) );
 			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
@@ -351,31 +351,14 @@ DEFINE_FUNCTION( join ) {
 
 		jsval nextFct;
 		JL_CHK( JS_GetPropertyById(cx, argObj, JLID(cx, next), &nextFct) );
-
-		if ( !JL_ValueIsCallable(cx, nextFct) ) {
-
-			jsval tmp = OBJECT_TO_JSVAL(argObj);
-			JL_CHK( js_ValueToIterator(cx, JSITER_FOR_OF, &tmp) ); // or maybe call new Ierator(argObj) ???
-			JL_ASSERT_IS_OBJECT(tmp, "iterator");
-			argObj = JSVAL_TO_OBJECT(tmp);
-			JL_CHK( JS_GetPropertyById(cx, argObj, JLID(cx, next), &nextFct) );
-			if ( !JL_ValueIsCallable(cx, nextFct) ) {
-
-				JL_ERR(E_ARG, E_NUM(1), E_INVALID);
-			}
-		}
-
+		JL_ASSERT_IS_CALLABLE(nextFct, "iterator");
 		while ( JS_CallFunctionValue(cx, argObj, nextFct, 0, NULL, &val) != JS_FALSE ) { // loop until StopIteration or error
 
-			if ( !JL_JsvalToNative(cx, val, &*++strList) ) {
-
-				JL_CHK( js_CloseIterator(cx, argObj) );
+			if ( !JL_JsvalToNative(cx, val, &*++strList) )
 				goto bad;
-			}
 			length += strList->Length();
 			avr.append(val);
 		}
-		JL_CHK( js_CloseIterator(cx, argObj) );
 		JL_CHK( JL_IsStopIterationExceptionPending(cx) );
 		JS_ClearPendingException(cx);
 	}
@@ -482,7 +465,7 @@ function onEndSignal() {
 
 for (;;) {
 
-  processEvents( timeoutEvents(500, onTimeout), endSignalEvents(onEndSignal) );
+  processEvents( timeoutEvents(500, onTimeout), _host.endSignalEvents(onEndSignal) );
 }
 }}}
 
@@ -529,7 +512,7 @@ DEFINE_FUNCTION( processEvents ) {
 		return JS_TRUE;
 	}
 
-	uintN i;
+	unsigned i;
 	for ( i = 0; i < argc; ++i ) {
 
 		JL_ASSERT_ARG_TYPE( IsHandle(cx, JL_ARGV[i]), i+1, "(pev) Handle" );
@@ -982,6 +965,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	void *tmp2 = js_malloc(100000);
 	jl_free(tmp2);
 
+
 	/////////////////////////////////////////////////////////////////
 
 	// Data issues //////////////////////////////////////////////////
@@ -1048,7 +1032,6 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	TEST( JL_IsStopIterationExceptionPending(cx) );
 	JS_ClearPendingException(cx);
 
-
 /*
 	JL_CHK( JS_SetPropertyAttributes(cx, o, "test", 0, &found) );
 
@@ -1077,6 +1060,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	}
 	/////////////////////////////////////////////////////////////////
 
+
 	// Buffer ////////////////////////////////////////////////////
 
 	char *ref = (char*)jl_malloc(20000);
@@ -1104,8 +1088,12 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 	const char *d = BufferGetData(&b);
 	bool success = memcmp(ref, d, l) == 0 && memcmp(ref, tmp, l) == 0;
-	
 	TEST( success );
+
+	BufferFinalize(&b);
+	jl_free(tmp);
+	jl_free(ref);
+
 
 	/////////////////////////////////////////////////////////////////
 

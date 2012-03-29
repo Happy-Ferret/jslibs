@@ -67,9 +67,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( length ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
-	jsdouble radius;
+	double radius;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &radius) );
 	ode::dGeomRaySetLength(geom, (ode::dReal)radius);
 	return JS_TRUE;
@@ -78,7 +78,7 @@ DEFINE_PROPERTY_SETTER( length ) {
 
 DEFINE_PROPERTY_GETTER( length ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	JL_CHK( JL_NativeToJsval(cx, ode::dGeomRayGetLength(geom), vp) );
 	return JS_TRUE;
@@ -93,7 +93,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( start ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
@@ -108,7 +108,7 @@ DEFINE_PROPERTY_SETTER( start ) {
 
 DEFINE_PROPERTY_GETTER( start ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
@@ -125,7 +125,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( direction ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
@@ -140,7 +140,7 @@ DEFINE_PROPERTY_SETTER( direction ) {
 
 DEFINE_PROPERTY_GETTER( direction ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
@@ -156,7 +156,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( firstContact ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	JL_ASSERT_IS_INTEGER(*vp, "");
 	int firstContact, backfaceCull;
@@ -169,7 +169,7 @@ DEFINE_PROPERTY_SETTER( firstContact ) {
 
 DEFINE_PROPERTY_GETTER( firstContact ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
@@ -184,7 +184,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( backfaceCull ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	JL_ASSERT_IS_INTEGER(*vp, "");
 	int firstContact, backfaceCull;
@@ -197,7 +197,7 @@ DEFINE_PROPERTY_SETTER( backfaceCull ) {
 
 DEFINE_PROPERTY_GETTER( backfaceCull ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
@@ -214,7 +214,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( closestHit ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	int closestHit;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &closestHit) );
@@ -225,7 +225,7 @@ DEFINE_PROPERTY_SETTER( closestHit ) {
 
 DEFINE_PROPERTY_GETTER( closestHit ) {
 
-	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(cx, obj);
+	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	int closestHit;
 	closestHit = ode::dGeomRayGetClosestHit(geom);

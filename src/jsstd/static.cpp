@@ -247,11 +247,11 @@ DEFINE_FUNCTION( switchCase ) {
 	JL_ASSERT_ARG_IS_ARRAY(3);
 
 	JSObject *caseArray;
-	jsuint caseArrayLength;
+	unsigned caseArrayLength;
 	caseArray = JSVAL_TO_OBJECT(JL_ARG(2));
 	JL_CHK( JS_GetArrayLength(cx, caseArray, &caseArrayLength) );
 
-	jsuint i;
+	unsigned i;
 	for ( i = 0; i < caseArrayLength; ++i ) {
 	
 		JL_CHK( JL_GetElement(cx, caseArray, i, JL_RVAL) );
@@ -370,7 +370,7 @@ DEFINE_FUNCTION( clearObject ) {
 	list = JS_Enumerate(cx, argObj); // JS_NewPropertyIterator, JS_NextProperty ?
 	JL_CHK(list);
 
-	for ( jsint i = 0; i < list->length; ++i )
+	for ( int i = 0; i < list->length; ++i )
 		JL_CHK( JS_DeletePropertyById(cx, argObj, list->vector[i]) );
 	JS_DestroyIdArray(cx, list);
 
@@ -448,137 +448,6 @@ DEFINE_FUNCTION( setScope ) {
 	JL_CHK( JS_ValueToObject(cx, JL_ARG(2), &p) ); // p = JSVAL_TO_OBJECT(JL_ARG(2));
 	*JL_RVAL = OBJECT_TO_JSVAL( JS_GetParent(o) );
 	JL_CHK( JS_SetParent(cx, o, p) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $INT $INAME( object )
-  Returns an integer value that is a unique identifier of the object _object_ .
-  $H example
-  {{{
-  var myObj = {};
-  print( ObjectToId(myObj), '\n' );
-  }}}
-**/
-
-struct ObjId {
-	JSObject *obj;
-	unsigned int id;
-};
-
-//unsigned int lastObjectId = 0;
-//unsigned int objectIdAllocated = 0;
-
-//JSGCCallback prevObjectIdGCCallback = NULL;
-
-JSBool ObjectIdGCCallback(JSContext *cx, JSGCStatus status) {
-
-	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
-	if ( status == JSGC_MARK_END ) {
-
-		for ( ObjId *it = mpv->objIdList, *end = mpv->objIdList + mpv->objectIdAllocated; it < end; ++it ) {
-
-			if ( it->obj && JS_IsAboutToBeFinalized(it->obj) ) {
-
-				it->id = 0;
-				it->obj = NULL;
-			}
-		}
-	}
-	return mpv->prevObjectIdGCCallback ? mpv->prevObjectIdGCCallback(cx, status) : JS_TRUE;
-}
-
-
-DEFINE_FUNCTION( objectToId ) {
-
-	JL_ASSERT_ARGC(1);
-	JL_ASSERT_ARG_IS_OBJECT(1);
-	JSObject *obj;
-	obj = JSVAL_TO_OBJECT( JL_ARG(1) );
-
-	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
-
-	ObjId *freeSlot;
-	freeSlot = NULL;
-	for ( ObjId *it = mpv->objIdList, *end = mpv->objIdList + mpv->objectIdAllocated; it < end; ++it ) {
-
-		if ( it->obj == obj ) // safer alternative (but slower): JS_StrictlyEqual()
-			return JL_NativeToJsval(cx, it->id, JL_RVAL);
-		if ( !freeSlot && it->id == 0 )
-			freeSlot = it;
-	}
-
-	if ( !freeSlot ) {
-
-		unsigned int prevAlloced = mpv->objectIdAllocated;
-
-		if ( !mpv->objIdList ) {
-
-			mpv->prevObjectIdGCCallback = JS_SetGCCallback(cx, ObjectIdGCCallback);
-			mpv->objectIdAllocated = 32;
-		} else {
-
-			mpv->objectIdAllocated *= 2;
-		}
-		mpv->objIdList = (ObjId*)jl_realloc(mpv->objIdList, sizeof(ObjId) * mpv->objectIdAllocated); // (TBD) free mpv->objIdList at the end !
-		freeSlot = mpv->objIdList + prevAlloced;
-		memset(freeSlot, 0, (mpv->objectIdAllocated - prevAlloced) * sizeof(ObjId)); // init only new slots
-	}
-
-	freeSlot->id = ++mpv->lastObjectId;
-	freeSlot->obj = obj;
-
-	return JL_NativeToJsval(cx, mpv->lastObjectId, JL_RVAL);
-	JL_BAD;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $INT $INAME( id )
-  Returns the object with the identifier _id_ or $UNDEF if the identifier do not exist or the object has been GCed.
-  It is up to you to keep a reference to the object if you want to keep it through GC cycles.
-  $H example 1
-  {{{
-  var myObj = {};
-  print( IdToObject( objectToId(myObj) ) === myObj ); // prints true
-  }}}
-  $H example 2
-  {{{
-  var id = objectToId({});
-  print( idToObject(id) ); // prints: [object Object]
-  collectGarbage();
-  print( idToObject(id) ); // prints: undefined
-  }}}
-**/
-DEFINE_FUNCTION( idToObject ) {
-
-	JL_ASSERT_ARGC(1);
-	JL_ASSERT_ARG_IS_INTEGER_NUMBER(1);
-
-	unsigned int id;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &id) );
-
-	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
-
-	if ( id > 0 && id <= mpv->lastObjectId ) {
-
-		for ( ObjId *it = mpv->objIdList, *end = mpv->objIdList + mpv->objectIdAllocated; it < end; ++it ) {
-
-			if ( it->id == id ) {
-
-				*JL_RVAL = OBJECT_TO_JSVAL( it->obj );
-				return JS_TRUE;
-			}
-		}
-	}
-
-	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -968,7 +837,7 @@ END_CLASS
 
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 static JSBool
-sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, uintN flags, JSObject **objp) {
+sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags, JSObject **objp) {
 
 	JSBool resolved;
 	if ( (flags & JSRESOLVE_ASSIGNING) == 0 ) {
@@ -1048,13 +917,13 @@ JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
 	if ( st == JLTIMEOUT ) {
 		
 		pv->expired = true;
-		JS_TriggerOperationCallback(cx);
+		JS_TriggerOperationCallback(JL_GetRuntime(cx));
 	}
 	JLThreadExit(0);
 	return 0;
 }
 
-JSBool SandboxQueryFunction(JSContext *cx, uintN argc, jsval *vp) {
+JSBool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
 	if ( JSVAL_IS_VOID( pv->queryFunctionValue ) ) {
@@ -1101,7 +970,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 	JSScript *script;
 	unsigned lineno;
-	JL_CHK( JS_DescribeTopFrame(cx, &script, &lineno) );
+	JL_CHK( JS_DescribeScriptedCaller(cx, &script, &lineno) );
 	const char *filename;
 	filename = JS_GetScriptFilename(cx, script);
 
@@ -1203,7 +1072,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 	filename = JS_GetScriptFilename(cx, script);
 	jsbytecode *pc;
 	pc = JS_GetFramePC(cx, fp);
-	uintN lineno;
+	unsigned lineno;
 	lineno = JS_PCToLineNumber(cx, script, pc);
 
 	JS_SetContextPrivate(scx, &pv);
@@ -1218,7 +1087,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 //	JSCrossCompartmentCall *call = JS_EnterCrossCompartmentCall(cx, globalObject);
 
 	JSBool ok;
-	ok = JS_EvaluateUCScript(scx, globalObject, src, (uintN)srclen, filename, lineno, JL_RVAL);
+	ok = JS_EvaluateUCScript(scx, globalObject, src, (unsigned)srclen, filename, lineno, JL_RVAL);
 
 //	JS_LeaveCrossCompartmentCall(call);
 
@@ -1339,7 +1208,7 @@ DEFINE_PROPERTY_GETTER( currentFilename ) {
 	JL_IGNORE(id, obj);
 
 	JSScript *script;
-	JL_CHK( JS_DescribeTopFrame(cx, &script, NULL) );
+	JL_CHK( JS_DescribeScriptedCaller(cx, &script, NULL) );
 	const char *filename = JS_GetScriptFilename(cx, script);
 	JL_CHK( JL_NativeToJsval(cx, filename, vp) );
 	return JS_TRUE;
@@ -1360,66 +1229,10 @@ DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 	JL_IGNORE(id, obj);
 
 	unsigned lineno;
-	JL_CHK( JS_DescribeTopFrame(cx, NULL, &lineno) );
+	JL_CHK( JS_DescribeScriptedCaller(cx, NULL, &lineno) );
 	JL_CHK( JL_NativeToJsval(cx, lineno, vp) );
 	return JS_TRUE;
 	JL_BAD;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME
-  Set to $TRUE, this property desactivates the garbage collector.
-**/
-
-//JSGCCallback prevJSGCCallback = NULL; // (TBD) restore the previous callback at the end (on REMOVE_CLASS ?)
-
-JSBool VetoingGCCallback(JSContext *cx, JSGCStatus status) {
-
-	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
-	// doc. JSGC_BEGIN: Start of GC. The callback may prevent GC from starting by returning JS_FALSE.
-	//      But even if the callback returns JS_TRUE, the garbage collector may determine that GC is not necessary,
-	//      in which case the other three callbacks are skipped.
-	if ( status == JSGC_BEGIN )
-		return JS_FALSE;
-	return mpv->prevJSGCCallback ? mpv->prevJSGCCallback(cx, status) : JS_TRUE;
-}
-
-DEFINE_PROPERTY_SETTER( disableGarbageCollection ) {
-
-	JL_IGNORE(id, obj, strict);
-
-	// <shaver>	you could install a vetoing callback!
-	// <crowder>	oh, true
-	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
-	bool disableGC;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &disableGC) );
-	if ( disableGC ) {
-
-		JSGCCallback tmp = JS_SetGCCallback(cx, VetoingGCCallback);
-		if ( tmp != VetoingGCCallback )
-			mpv->prevJSGCCallback = tmp;
-	} else {
-
-		JSGCCallback tmp = JS_SetGCCallback(cx, mpv->prevJSGCCallback);
-		if ( tmp != VetoingGCCallback )
-			JS_SetGCCallback(cx, tmp);
-	}
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-DEFINE_PROPERTY_GETTER( disableGarbageCollection ) {
-
-	JL_IGNORE(id, obj);
-
-	JSGCCallback cb = JS_SetGCCallback(cx, NULL);
-	JS_SetGCCallback(cx, cb);
-	*vp = BOOLEAN_TO_JSVAL( cb == VetoingGCCallback );
-	return JS_TRUE;
 }
 
 
@@ -1564,8 +1377,6 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( timeCounter, 0 )
 		FUNCTION_ARGC( collectGarbage, 0 )
 		FUNCTION_ARGC( maybeCollectGarbage, 0 )
-		FUNCTION_ARGC( objectToId, 1 )
-		FUNCTION_ARGC( idToObject, 1 )
 		FUNCTION_ARGC( warning, 1 )
 		FUNCTION_ARGC( assert, 2 )
 		FUNCTION_ARGC( halt, 0 )
@@ -1577,7 +1388,6 @@ CONFIGURE_STATIC
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_GETTER( currentFilename )
 		PROPERTY_GETTER( currentLineNumber )
-		PROPERTY( disableGarbageCollection )
 		PROPERTY_GETTER( CPUID )
 #ifdef _DEBUG
 //		PROPERTY( jsstdPropTest )

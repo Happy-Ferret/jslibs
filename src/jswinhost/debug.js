@@ -2,8 +2,8 @@
 
 throw 'error test';
 
-while ( !endSignal )
-	processEvents( endSignalEvents() );
+while ( !_host.endSignal )
+	processEvents( _host.endSignalEvents() );
 
 //loadModule('jsshell');
 //messageBox(isfirstInstance);

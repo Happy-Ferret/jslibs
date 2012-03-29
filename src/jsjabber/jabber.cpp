@@ -235,7 +235,7 @@ BEGIN_CLASS( Jabber )
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 
@@ -298,7 +298,7 @@ DEFINE_FUNCTION( connect ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT_ARGC_MIN(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &serverName) );
@@ -341,7 +341,7 @@ DEFINE_FUNCTION( disconnect ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	pv->handlers->_cx = cx;
@@ -367,7 +367,7 @@ DEFINE_FUNCTION( process ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	pv->handlers->_cx = cx;
@@ -399,7 +399,7 @@ DEFINE_FUNCTION( sendMessage ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_ASSERT_ARGC_MIN(2);
@@ -426,7 +426,7 @@ DEFINE_FUNCTION( sendMessage ) {
 /*
 DEFINE_FUNCTION( rosterItem ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT_ARGC_MIN(1);
 
@@ -450,7 +450,7 @@ DEFINE_PROPERTY_GETTER( socket ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() ); // (TBD) TM
 	if ( !connection ) {
@@ -479,7 +479,7 @@ DEFINE_PROPERTY_GETTER( status ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->client->status().c_str(), vp) );
 	return JS_TRUE;
@@ -493,7 +493,7 @@ DEFINE_PROPERTY_SETTER( status ) {
 	
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_JsvalToNative(cx, *vp, &status) );
 	pv->client->setPresence(pv->client->presence(), pv->client->priority(), status.GetConstStrZ());
@@ -511,7 +511,7 @@ DEFINE_PROPERTY_GETTER( presence ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	Presence presence = pv->client->presence();
 	JL_CHK( JL_NativeToJsval(cx, presence, vp) );
@@ -523,7 +523,7 @@ DEFINE_PROPERTY_SETTER( presence ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int presence;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &presence) );
@@ -535,7 +535,7 @@ DEFINE_PROPERTY_SETTER( presence ) {
 /*
 DEFINE_PROPERTY( roster ) {
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 //	JSObject *rosterObj = JL_NewProtolessObj(cx);
@@ -564,7 +564,7 @@ DEFINE_PROPERTY_GETTER( connectionTotalIn ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int totalIn, totalOut;
 	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);
@@ -583,7 +583,7 @@ DEFINE_PROPERTY_GETTER( connectionTotalOut ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(cx, obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int totalIn, totalOut;
 	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);

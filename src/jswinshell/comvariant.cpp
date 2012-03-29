@@ -90,7 +90,7 @@ public:
 		if ( riid != IID_NULL )
 			return DISP_E_UNKNOWNINTERFACE;
 		
-		uintN argc = pDispParams->cArgs;
+		unsigned argc = pDispParams->cArgs;
 		jsval *argv = (jsval*)alloca((argc+1) * sizeof(jsval));
 		memset(argv, 0, (argc+1) * sizeof(jsval));
 		ASSERT( JSVAL_IS_PRIMITIVE(*argv) );
@@ -201,7 +201,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 		if ( JL_GetClass(obj) == JL_CLASS(ComDispatch) ) {
 			
-			IDispatch *disp = (IDispatch*)JL_GetPrivate(cx, obj);
+			IDispatch *disp = (IDispatch*)JL_GetPrivate(obj);
 			JL_ASSERT_OBJECT_STATE(disp, JL_CLASS_NAME(ComDispatch));
 			disp->AddRef();
 			V_VT(variant) = VT_DISPATCH;
@@ -211,7 +211,7 @@ JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant ) {
 
 		if ( JL_GetClass(obj) == JL_CLASS(ComVariant) ) {
 			
-			VARIANT *v = (VARIANT*)JL_GetPrivate(cx, obj);
+			VARIANT *v = (VARIANT*)JL_GetPrivate(obj);
 			JL_ASSERT_OBJECT_STATE(v, JL_CLASS_NAME(ComVariant));
 			HRESULT hr = VariantCopy(variant, v); // Frees the destination variant and makes a copy of the source variant.
 			if ( FAILED(hr) )
@@ -514,7 +514,7 @@ DEFINE_FINALIZE() {
 
 	if ( obj == JL_CLASS_PROTOTYPE(cx, ComVariant) )
 		return;
-	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, obj);
+	VARIANT *variant = (VARIANT*)JL_GetPrivate(obj);
 	HRESULT hr = VariantClear(variant);
 
 	JL_IGNORE(hr); // (TBD) error check
@@ -531,7 +531,7 @@ DEFINE_FUNCTION( toDispatch ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
+	VARIANT *variant = (VARIANT*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( variant );
 
 	if ( V_VT(variant) != VT_DISPATCH ) {
@@ -567,7 +567,7 @@ DEFINE_FUNCTION( toString ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	HRESULT hr;
-	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
+	VARIANT *variant = (VARIANT*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( variant );
 
 	VARIANT tmpVariant;
@@ -595,7 +595,7 @@ DEFINE_FUNCTION( toTypeName ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	VARIANT *variant = (VARIANT*)JL_GetPrivate(cx, JL_OBJ);
+	VARIANT *variant = (VARIANT*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( variant );
 
 	char str[64];

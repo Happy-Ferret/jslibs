@@ -101,8 +101,8 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	ASSERT( !finite(dInfinity) );
 	ASSERT( !finite(-dInfinity) );
 
-	ASSERT( !finite((jsdouble)dInfinity) );
-	ASSERT( !finite((jsdouble)-dInfinity) );
+	ASSERT( !finite((double)dInfinity) );
+	ASSERT( !finite((double)-dInfinity) );
 
 	ASSERT( JSVAL_TO_DOUBLE(JS_GetPositiveInfinityValue(cx)) == dInfinity );
 	ASSERT( JSVAL_TO_DOUBLE(JS_GetNegativeInfinityValue(cx)) == -dInfinity );

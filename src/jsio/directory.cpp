@@ -28,7 +28,7 @@ BEGIN_CLASS( Directory )
 
 DEFINE_FINALIZE() {
 
-	PRDir *dd = (PRDir*)JL_GetPrivate( cx, obj );
+	PRDir *dd = (PRDir*)JL_GetPrivate( obj );
 	if ( dd != NULL ) {
 
 		if ( PR_CloseDir(dd) != PR_SUCCESS ) {
@@ -109,7 +109,7 @@ DEFINE_FUNCTION( close ) {
 
 	*JL_RVAL = JSVAL_VOID;
 
-	PRDir *dd = (PRDir *)JL_GetPrivate( cx, obj );
+	PRDir *dd = (PRDir *)JL_GetPrivate( obj );
 	JL_ASSERT_WARN( dd, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED );
 	if ( !dd )
 		return JS_TRUE;
@@ -137,7 +137,7 @@ DEFINE_FUNCTION( read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	PRDir *dd = (PRDir *)JL_GetPrivate( cx, obj );
+	PRDir *dd = (PRDir *)JL_GetPrivate( obj );
 	JL_ASSERT( dd != NULL, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED );
 
 	PRDirFlags flags;

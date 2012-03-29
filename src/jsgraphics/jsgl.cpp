@@ -75,7 +75,7 @@ ALWAYS_INLINE double JsvalToDouble(JSContext * RESTRICT cx, const jsval &val) {
 DECLARE_CLASS(Ogl)
 
 /*
-JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rval ) { // (TBD) jsval** = Conservative Stack Scanning issue ?
+JSBool GetArgInt( JSContext *cx, unsigned *argc, jsval **argv, unsigned count, int *rval ) { // (TBD) jsval** = Conservative Stack Scanning issue ?
 
 	size_t i;
 	if ( JSVAL_IS_PRIMITIVE(**argv) || !JL_IsArray(cx, **argv) ) {
@@ -90,7 +90,7 @@ JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rv
 		*argc -= count;
 		return JS_TRUE;
 	}
-	jsuint len;
+	unsigned len;
 	JL_CHK( JL_JsvalToNativeVector(cx, **argv, rval, count, &len) );
 	JL_ASSERT( len == count, "Not enough elements." );
 	++*argv;
@@ -99,7 +99,7 @@ JSBool GetArgInt( JSContext *cx, uintN *argc, jsval **argv, uintN count, int *rv
 	JL_BAD;
 }
 
-JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, double *rval ) { // (TBD) jsval** = Conservative Stack Scanning issue ?
+JSBool GetArgDouble( JSContext *cx, unsigned *argc, jsval **argv, unsigned count, double *rval ) { // (TBD) jsval** = Conservative Stack Scanning issue ?
 
 	size_t i;
 	if ( JSVAL_IS_PRIMITIVE(**argv) || !JL_IsArray(cx, **argv) ) {
@@ -114,7 +114,7 @@ JSBool GetArgDouble( JSContext *cx, uintN *argc, jsval **argv, uintN count, doub
 		*argc -= count;
 		return JS_TRUE;
 	}
-	jsuint len;
+	unsigned len;
 	JL_CHK( JL_JsvalToNativeVector(cx, **argv, rval, count, &len) );
 	JL_ASSERT( len == count, "Not enough elements." );
 	++*argv;
@@ -860,7 +860,7 @@ DEFINE_FUNCTION( getInteger ) {
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		jsuint count;
+		unsigned count;
 		JSObject *arrayObj;
 
 		if ( JSVAL_IS_INT(JL_ARG(2)) ) {
@@ -877,7 +877,7 @@ DEFINE_FUNCTION( getInteger ) {
 
 		if ( JL_IS_SAFE ) {
 
-			jsuint argset = sizeof(params);
+			unsigned argset = sizeof(params);
 			while ( --argset >= 0 && ((unsigned char*)params)[argset] == 0xAA );
 			argset = argset / sizeof(*params) + 1;
 			JL_ASSERT_WARN( argset == count, E_ARG, E_NUM(2), E_EQUALS, E_NUM(argset) );
@@ -933,7 +933,7 @@ DEFINE_FUNCTION( getDouble ) {
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		jsuint count;
+		unsigned count;
 		JSObject *arrayObj;
 
 		if ( JSVAL_IS_INT(JL_ARG(2)) ) {
@@ -950,7 +950,7 @@ DEFINE_FUNCTION( getDouble ) {
 
 		if ( JL_IS_SAFE ) {
 
-			jsuint argset = sizeof(params);
+			unsigned argset = sizeof(params);
 			while ( --argset >= 0 && ((unsigned char*)params)[argset] == 0xAA );
 			argset = argset / sizeof(*params) + 1;
 			JL_ASSERT_WARN( argset == count, E_ARGVALUE, E_NUM(2), E_EQUALS, E_NUM(argset) );
@@ -2109,7 +2109,7 @@ DEFINE_FUNCTION( enable ) {
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC_MIN(1);
-	for ( uintN i = 0; i < JL_ARGC; ++i ) {
+	for ( unsigned i = 0; i < JL_ARGC; ++i ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(i+1);
 		glEnable( JSVAL_TO_INT(JL_ARGV[i]) );  OGL_ERR_CHK;
@@ -2133,7 +2133,7 @@ DEFINE_FUNCTION( disable ) {
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC_MIN(1);
-	for ( uintN i = 0; i < JL_ARGC; ++i ) {
+	for ( unsigned i = 0; i < JL_ARGC; ++i ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(i+1);
 		glDisable( JSVAL_TO_INT(JL_ARGV[i]) );  OGL_ERR_CHK;
@@ -2671,7 +2671,7 @@ DEFINE_FUNCTION( frustum ) {
 	JL_ASSERT_ARG_IS_NUMBER(5);
 	JL_ASSERT_ARG_IS_NUMBER(6);
 
-	jsdouble left, right, bottom, top, zNear, zFar;
+	double left, right, bottom, top, zNear, zFar;
 	JL_JsvalToNative(cx, JL_ARG(1), &left);
 	JL_JsvalToNative(cx, JL_ARG(2), &right);
 	JL_JsvalToNative(cx, JL_ARG(3), &bottom);
@@ -2712,7 +2712,7 @@ DEFINE_FUNCTION( ortho ) {
 	JL_ASSERT_ARG_IS_NUMBER(5);
 	JL_ASSERT_ARG_IS_NUMBER(6);
 
-	jsdouble left, right, bottom, top, zNear, zFar;
+	double left, right, bottom, top, zNear, zFar;
 	JL_JsvalToNative(cx, JL_ARG(1), &left);
 	JL_JsvalToNative(cx, JL_ARG(2), &right);
 	JL_JsvalToNative(cx, JL_ARG(3), &bottom);
@@ -2951,7 +2951,7 @@ DEFINE_FUNCTION( rotate ) {
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(4);
-	jsdouble angle, x, y, z;
+	double angle, x, y, z;
 	JL_JsvalToNative(cx, JL_ARG(1), &angle);
 	JL_JsvalToNative(cx, JL_ARG(2), &x);
 	JL_JsvalToNative(cx, JL_ARG(3), &y);
@@ -3137,12 +3137,12 @@ DEFINE_FUNCTION( callList ) {
 	if ( JL_ValueIsArray(cx, JL_ARG(1)) ) { // no array-like. convert a string into an array of calllist does not make sense here.
 
 		JSObject *jsArray = JSVAL_TO_OBJECT(JL_ARG(1));
-		jsuint length;
+		unsigned length;
 		JL_CHK( JS_GetArrayLength(cx, jsArray, &length) );
 
 		GLuint *lists = (GLuint*)alloca(length * sizeof(GLuint));
 		jsval value;
-		for ( jsuint i = 0; i < length; ++i ) {
+		for ( unsigned i = 0; i < length; ++i ) {
 
 			JL_CHK( JL_GetElement(cx, jsArray, i, &value) );
 			lists[i] = JSVAL_TO_INT(value);
@@ -3547,7 +3547,7 @@ DEFINE_FUNCTION( pixelMap ) {
 	JL_ASSERT_ARGC(2);
 	JL_ASSERT_ARG_IS_ARRAY(2);
 
-	jsuint mapsize;
+	unsigned mapsize;
 	JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(JL_ARG(2)), &mapsize) );
 	GLfloat *values = (GLfloat*)alloca(mapsize * sizeof(*values));
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), values, mapsize, &mapsize ) );
@@ -3580,7 +3580,7 @@ DEFINE_FUNCTION( hasExtensionProc ) {
 	JL_ASSERT( glGetProcAddress != NULL, E_OS, E_INIT, E_STR("OpenGL"), E_COMMENT("extensions") );
 
 	void *procAddr;
-	for ( uintN i = 0; i < JL_ARGC; ++i ) {
+	for ( unsigned i = 0; i < JL_ARGC; ++i ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &procName) );
 		procAddr = glGetProcAddress(procName);
@@ -3614,7 +3614,7 @@ DEFINE_FUNCTION( hasExtensionName ) {
 	const char *extensions = (const char *)glGetString(GL_EXTENSIONS);
 	ASSERT( extensions != NULL );
 
-	for ( uintN i = 0; i < JL_ARGC; ++i ) {
+	for ( unsigned i = 0; i < JL_ARGC; ++i ) {
 
 		JLData name;
 //		const char *name;
@@ -4621,7 +4621,7 @@ DEFINE_FUNCTION( uniform ) {
 	if ( JL_ARGC == 2 && JL_ValueIsArrayLike(cx, JL_ARG(2)) ) { // (TBD) check if array-like make sense here.
 
 		JSObject *arr = JSVAL_TO_OBJECT(JL_ARG(2));
-		jsuint tmp;
+		unsigned tmp;
 		JL_CHK( JS_GetArrayLength(cx, arr, &tmp) );
 		count = tmp;
 		while ( tmp-- ) {
@@ -4819,7 +4819,7 @@ DEFINE_FUNCTION( uniformFloatVector ) {
 
 	// doc. in glUniform*fvARB, count should be 1 if the targeted uniform variable is not an array, and 1 or more if it is an array.
 
-	jsuint len;
+	unsigned len;
 
 	if ( JL_ARGC == 2 ) {
 
@@ -4827,7 +4827,7 @@ DEFINE_FUNCTION( uniformFloatVector ) {
 		GLfloat val[4]; // max for *4fv
 //		JSObject *arr = JSVAL_TO_OBJECT(JL_ARG(2));
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), val, COUNTOF(val), &len) );
-		JL_ASSERT_RANGE(len, (jsuint)0, (jsuint)4, "vec.length" );
+		JL_ASSERT_RANGE(len, (unsigned)0, (unsigned)4, "vec.length" );
 
 		ASSERT( len >= 0 && len <= 4 );
 		(len == 3 ? glUniform3fvARB : len == 4 ? glUniform4fvARB : len == 2 ? glUniform2fvARB : len == 1 ? glUniform1fvARB : NULL)(uniformLocation, 1, val);  OGL_ERR_CHK;
@@ -4837,7 +4837,7 @@ DEFINE_FUNCTION( uniformFloatVector ) {
 
 	ASSERT( JL_ARGC > 2 );
 
-	jsuint firstLen = 0;
+	unsigned firstLen = 0;
 	jsval *tmpVal = JL_ARGV + 1;
 	int count = JL_ARGC - 1;
 	value = (GLfloat*)jl_malloca(sizeof(GLfloat) * 4 * count); // allocate the max
@@ -5664,7 +5664,7 @@ DEFINE_FUNCTION( drawImage ) {
 
 	if ( JL_GetClass(tObj) == JL_TextureJSClass(cx) ) {
 
-		TextureStruct *tex = (TextureStruct*)JL_GetPrivate(cx, tObj);
+		TextureStruct *tex = (TextureStruct*)JL_GetPrivate(tObj);
 		JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(tObj));
 
 		data = tex->cbuffer;
@@ -6161,7 +6161,7 @@ DEFINE_FUNCTION( defineTextureImage ) {
 
 	if ( JL_GetClass(tObj) == JL_TextureJSClass(cx) ) {
 
-		TextureStruct *tex = (TextureStruct*)JL_GetPrivate(cx, tObj);
+		TextureStruct *tex = (TextureStruct*)JL_GetPrivate(tObj);
 		JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(tObj));
 
 		data = tex->cbuffer;

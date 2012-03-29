@@ -411,11 +411,14 @@ function launchTests(itemList, cfg) {
 
 	for (;;) {
 
+		if ( testCount >= cfg.stopAfterNTests )
+			break;
+
 		if ( cfg.loopForever )
 			testIndex = Math.floor(Math.random() * itemList.length);
 
 		cx.item = itemList[testIndex];
-		
+	
 		if ( cx.item.init || cfg.runOnlyTestIndex == undefined || cfg.runOnlyTestIndex == testIndex ) {
 			
 			if ( !cfg.quiet )
@@ -425,12 +428,12 @@ function launchTests(itemList, cfg) {
 				gcZeal = cfg.gcZeal;
 
 			cfg.nogcBetweenTests || collectGarbage();
-			disableGarbageCollection = cfg.nogcDuringTests;
+//			disableGarbageCollection = cfg.nogcDuringTests;
 
 			try {
 
 				var t0 = timeCounter();
-				for ( var i = cfg.repeatEachTest; i && !endSignal ; --i ) {
+				for ( var i = cfg.repeatEachTest; i && !_host.endSignal ; --i ) {
 
 					++testCount;
 					void cx.item.func(qaapi);
@@ -452,22 +455,20 @@ function launchTests(itemList, cfg) {
 			if ( cfg.gcZeal )
 				gcZeal = 0;
 
-			disableGarbageCollection = cfg.nogcBetweenTests;
+//			disableGarbageCollection = cfg.nogcBetweenTests;
 			cfg.nogcBetweenTests || collectGarbage();
 			
 			cfg.quiet || print('\n');
 
 		}
 
-		if ( cfg.stopAfterNTests && (testCount >= cfg.stopAfterNTests) )
+		if ( _host.endSignal )
 			break;
 
-		if ( cfg.stopAfterNIssues && (cx.issueList.length >= cfg.stopAfterNIssues) )
+		if ( cx.issueList.length >= cfg.stopAfterNIssues )
 			break;
 
-		if ( endSignal )
-			break;
-			
+		
 		if ( !cfg.loopForever && ++testIndex >= itemList.length )
 			break;
 
@@ -501,7 +502,7 @@ function perfTest(itemList, cfg) {
 
 	setPerfTestMode();
 	collectGarbage();
-	disableGarbageCollection = true;
+//	disableGarbageCollection = true;
 	sleep(100);
 
 	timeCounter();
@@ -617,7 +618,7 @@ function perfTest(itemList, cfg) {
 			
 		setPerfTestMode();
 		collectGarbage();
-		disableGarbageCollection = true;
+//		disableGarbageCollection = true;
 
 		var t = timeCounter();
 		var err = timeCounter() - t;
@@ -665,8 +666,8 @@ function main() {
 		listTestsOnly:false, 
 		nogcBetweenTests:false, 
 		nogcDuringTests:false, 
-		stopAfterNIssues:0, 
-		stopAfterNTests:0, 
+		stopAfterNIssues:Infinity, 
+		stopAfterNTests:Infinity, 
 		logFilename:'', 
 		sleepBetweenTests:0,
 		quiet:false, 
@@ -767,6 +768,8 @@ function main() {
 	}, undefined );
 }
 
+print('Begin...', '\n');
+
 try {
 	
 	main();
@@ -775,7 +778,7 @@ try {
 	print(uneval(ex));
 }
 
-print('\n', 'Done.', '\n');
+print('\n', 'End.', '\n');
 
 
 ////////////////////////////////////////////////////////////////////////////////

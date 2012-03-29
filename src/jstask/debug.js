@@ -11,7 +11,7 @@ var t = new Task(function(test){
 
 t.request('test');
 
-processEvents(t.events(), endSignalEvents());
+processEvents(t.events(), _host.endSignalEvents());
 
 print( uneval(t.response()) );
 
@@ -36,8 +36,8 @@ t.onResponse = function(t) {
 
 t.request(0);
 
-while (!endSignal)
-	processEvents(t.events(), endSignalEvents());
+while (!_host.endSignal)
+	processEvents(t.events(), _host.endSignalEvents());
 
 
 halt();

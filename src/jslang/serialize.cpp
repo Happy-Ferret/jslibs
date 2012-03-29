@@ -26,7 +26,7 @@ DEFINE_FINALIZE() {
 		return;
 
 	jl::Serializer *ser;
-	ser = static_cast<jl::Serializer*>(JL_GetPrivate(cx, obj));
+	ser = static_cast<jl::Serializer*>(JL_GetPrivate(obj));
 	if ( !ser )
 		return;
 	delete ser;
@@ -57,7 +57,7 @@ DEFINE_FUNCTION( write ) {
 	JL_ASSERT_ARGC(1);
 	*JL_RVAL = JSVAL_VOID;
 	jl::Serializer *ser;
-	ser = static_cast<jl::Serializer*>(JL_GetPrivate(cx, JL_OBJ));
+	ser = static_cast<jl::Serializer*>(JL_GetPrivate(JL_OBJ));
 	JL_ASSERT_THIS_OBJECT_STATE(ser);
 	JL_CHKM( ser->Write(cx, JL_ARG(1)), E_MODULE, E_INTERNAL ); // "Serializer write error."
 	return JS_TRUE;
@@ -74,7 +74,7 @@ DEFINE_FUNCTION( done ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 	jl::Serializer* ser;
-	ser = (jl::Serializer*)JL_GetPrivate(cx, JL_OBJ);
+	ser = (jl::Serializer*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(ser);
 	void *data;
 	size_t length;
@@ -117,7 +117,7 @@ DEFINE_FINALIZE() {
 		return;
 
 	jl::Unserializer *unser;
-	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(cx, obj));
+	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(obj));
 	if ( !unser )
 		return;
 	delete unser;
@@ -152,7 +152,7 @@ DEFINE_FUNCTION( read ) {
 	JL_ASSERT_ARGC(0);
 
 	jl::Unserializer *unser;
-	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(cx, JL_OBJ));
+	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(JL_OBJ));
 	JL_ASSERT_THIS_OBJECT_STATE(unser);
 //	JL_CHKM( unser->Read(cx, *JL_RVAL), E_MODULE, E_INTERNAL ); // "Unserializer read error."
 	return unser->Read(cx, *JL_RVAL);

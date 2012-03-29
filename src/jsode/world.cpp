@@ -52,7 +52,7 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		JL_CHK( JL_GetReservedSlot(cx, obj1, SLOT_GEOM_SURFACEPARAMETER, &obj1surf) );
 		if ( JL_IsClass(obj1surf, classSurfaceParameters) ) {
 			
-			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(obj1surf));
+			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(JSVAL_TO_OBJECT(obj1surf));
 			JL_ASSERT_OBJECT_STATE( surf, classSurfaceParameters->name );
 			contact[i].surface = *surf;
 		} else {
@@ -63,7 +63,7 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		JL_CHK( JL_GetReservedSlot(cx, obj2, SLOT_GEOM_SURFACEPARAMETER, &obj2surf) );
 		if ( JL_IsClass(obj2surf, classSurfaceParameters) ) {
 
-			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(obj1surf));
+			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(JSVAL_TO_OBJECT(obj1surf));
 			JL_ASSERT_OBJECT_STATE( surf, classSurfaceParametres->name );
 
 		}
@@ -211,7 +211,7 @@ BEGIN_CLASS( World )
 
 DEFINE_FINALIZE() {
 
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 
@@ -301,7 +301,7 @@ DEFINE_CONSTRUCTOR() {
 	JSObject *spaceObject = JS_ConstructObject(cx, JL_CLASS(Space), /*JL_CLASS_PROTOTYPE(cx, Space),*/ NULL); // no arguments = create a topmost space object
 	JL_CHK( spaceObject );
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_WORLD_SPACE, OBJECT_TO_JSVAL(spaceObject)) );
-	pv->spaceId = (ode::dSpaceID)JL_GetPrivate(cx, spaceObject);
+	pv->spaceId = (ode::dSpaceID)JL_GetPrivate(spaceObject);
 
 
 	JSObject *surfaceParameters = JS_ConstructObject(cx, JL_CLASS(SurfaceParameters), /*JL_CLASS_PROTOTYPE(cx, SurfaceParameters),*/ NULL);
@@ -325,7 +325,7 @@ $TOC_MEMBER $INAME
           they will try to reset ode object private data that has already been freed !!
 DEFINE_FUNCTION( destroy ) {
 
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dJointGroupDestroy(pv->contactGroupId);
 	ode::dWorldDestroy(pv->worldId);
@@ -346,7 +346,7 @@ DEFINE_FUNCTION( collide ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE(0,2);
 	JL_ASSERT_INSTANCE(obj, JL_CLASS(World));
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*JL_RVAL = JSVAL_VOID;
 
@@ -406,7 +406,7 @@ DEFINE_FUNCTION( collide ) {
 	jsval defaultSurfaceParametersVal;
 	JL_GetReservedSlot(cx, obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, &defaultSurfaceParametersVal);
 	//	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), JL_CLASS(SurfaceParameters) ); // (TBD) simplify RT_ASSERT
-	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JL_GetPrivate(cx, JSVAL_TO_OBJECT(defaultSurfaceParametersVal)); // beware: local variable !
+	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JL_GetPrivate(JSVAL_TO_OBJECT(defaultSurfaceParametersVal)); // beware: local variable !
 	JL_ASSERT_OBJECT_STATE( defaultSurfaceParameters, JL_CLASS_NAME(SurfaceParameters) );
 
 	ColideContextPrivate ccp;
@@ -437,7 +437,7 @@ DEFINE_FUNCTION( step ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_INSTANCE(JL_OBJ, JL_CLASS(World));
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ode::dReal stepSize;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &stepSize) );
@@ -463,7 +463,7 @@ DEFINE_FUNCTION( scaleImpulse ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, JL_OBJ);
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT_ARGC_MIN(1);
 	ode::dVector3 force;
@@ -476,7 +476,7 @@ DEFINE_FUNCTION( scaleImpulse ) {
 	ode::dWorldImpulseToForce(pv->worldId, stepSize / 1000, force[0], force[1], force[2], force);
 	
 	JSObject *objArr = JSVAL_TO_OBJECT(JL_ARG(1));
-	for ( jsint i = 0; i < 3; i++ ) {
+	for ( int i = 0; i < 3; i++ ) {
 
 		JL_CHK( JL_NativeToJsval(cx, force[i], JL_RVAL) );
 		JL_CHK( JL_SetElement(cx, objArr, i, JL_RVAL) );
@@ -501,7 +501,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( autoDisableLinearThreshold ) {
 
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dReal threshold;
 	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
@@ -512,7 +512,7 @@ DEFINE_PROPERTY_SETTER( autoDisableLinearThreshold ) {
 
 DEFINE_PROPERTY_GETTER( autoDisableLinearThreshold ) {
 
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dReal threshold;
 	threshold = ode::dWorldGetAutoDisableLinearThreshold(pv->worldId);
@@ -529,7 +529,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( autoDisableAngularThreshold ) {
 
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dReal threshold;
 	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
@@ -540,7 +540,7 @@ DEFINE_PROPERTY_SETTER( autoDisableAngularThreshold ) {
 
 DEFINE_PROPERTY_GETTER( autoDisableAngularThreshold ) {
 
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	ode::dReal threshold;
@@ -558,7 +558,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( gravity ) {
 
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dVector3 gravity;
 	ode::dWorldGetGravity(pv->worldId, gravity);
@@ -570,7 +570,7 @@ DEFINE_PROPERTY_GETTER( gravity ) {
 
 DEFINE_PROPERTY_SETTER( gravity ) {
 
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dVector3 gravity;
 	//FloatArrayToVector(cx, 3, vp, gravity);
@@ -604,7 +604,7 @@ enum { ERP, CFM, quickStepNumIterations, quickStepW, contactSurfaceLayer, contac
 
 DEFINE_PROPERTY_SETTER( real ) {
 
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float value;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
@@ -650,7 +650,7 @@ DEFINE_PROPERTY_SETTER( real ) {
 
 DEFINE_PROPERTY_GETTER( real ) {
 
-	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(cx, obj);
+	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float value;
 	switch ( JSID_TO_INT(id) ) {

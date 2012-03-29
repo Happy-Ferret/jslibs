@@ -21,7 +21,7 @@ JS_END_EXTERN_C
 
 int count = 0;
 
-static JSBool soubokTest_next(JSContext *cx, uintN argc, jsval *vp) {
+static JSBool soubokTest_next(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	if ( ++count == 5 )
@@ -37,7 +37,7 @@ static JSObject* soubokTest_IteratorObject(JSContext *cx, JSObject *obj, JSBool 
 	return itObj;
 }
 
-JSBool soubokTest_constructor( JSContext *cx, uintN argc, jsval *vp ) {
+JSBool soubokTest_constructor( JSContext *cx, unsigned argc, jsval *vp ) {
 
 	JSObject *obj;
 	obj = JS_NewObjectForConstructor(cx, vp);

@@ -47,13 +47,13 @@ $SVN_REVISION $Revision: 3533 $
 BEGIN_CLASS( Window )
 
 //void Finalize(JSContext *cx, JSObject *obj) {
-//	JL_GetPrivate(cx, obj);
+//	JL_GetPrivate(obj);
 //}
-//static JSBool ClassConstruct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+//static JSBool ClassConstruct(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 //	JL_ASSERT( JS_IsConstructing(cx) && JL_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
 //	return JS_TRUE;
 //}
-//	JSBool Call(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+//	JSBool Call(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 //		return JS_TRUE;
 //	}
 
@@ -278,7 +278,7 @@ bool TrackMouseLeave( HWND hWnd ) {
 
 DEFINE_FUNCTION( open ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( hWnd );
 
 	ShowWindow(hWnd, SW_SHOWNORMAL);
@@ -293,7 +293,7 @@ DEFINE_FUNCTION( open ) {
 
 DEFINE_FUNCTION( processEvents ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( hWnd );
 	*JL_RVAL = JSVAL_VOID;
 
@@ -337,7 +337,7 @@ DEFINE_FUNCTION( close ) {
 
 // some events can occur after this point, then we NUST keep cxobj as long as possible
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( hWnd );
 
 	CxObj *cxobj = (CxObj*)GetWindowLong(hWnd, GWL_USERDATA);
@@ -352,7 +352,7 @@ DEFINE_FUNCTION( close ) {
 
 
 /*
-JSBool Exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool Exit(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 
 	PostQuitMessage(0);
 	return JS_TRUE;
@@ -400,7 +400,7 @@ DEFINE_FUNCTION( createOpenGLBitmap ) {
 /*
 // The Effects of Double Buffering on Animation Frame Rates
 //		http://www.futuretech.blinkenlights.nl/dbuffer.html
-JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool _SwapBuffers(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 
 	glFlush();
 	glFinish();
@@ -420,7 +420,7 @@ DEFINE_FUNCTION( createOpenGLContext ) {
 //	JL_ASSERT_OBJECT(argv[0]);
 //	JL_ASSERT_INSTANCE(JSVAL_TO_OBJECT(argv[0]), &classWindow);
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( hWnd );
 
 //	JL_SetReservedSlot(cx, obj, SLOT_WINDOW_OBJECT, argv[0]); // avoid being GC while Gl is in use
@@ -481,7 +481,7 @@ DEFINE_FUNCTION( createOpenGLContext ) {
 
 // The Effects of Double Buffering on Animation Frame Rates
 //		http://www.futuretech.blinkenlights.nl/dbuffer.html
-JSBool _SwapBuffers(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval) {
+JSBool _SwapBuffers(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 
 //	glFlush();
 //	glFinish();
@@ -534,7 +534,7 @@ DEFINE_FUNCTION( mode ) {
 
 DEFINE_PROPERTY( clipCursor ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT(hWnd != NULL, "Uninitialized data");
 	JSBool clip;
 	JS_ValueToBoolean(cx, *vp, &clip);
@@ -583,7 +583,7 @@ DEFINE_PROPERTY( showCursor ) {
 
 DEFINE_PROPERTY( clientRect ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	RECT r;
 	GetClientRect(hWnd, &r);
@@ -614,7 +614,7 @@ DEFINE_PROPERTY( clientRect ) {
 
 DEFINE_PROPERTY( rectGetter ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	RECT r;
 	GetWindowRect(hWnd, &r);
@@ -643,7 +643,7 @@ DEFINE_PROPERTY( rectGetter ) {
 
 DEFINE_PROPERTY( rectSetter ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	int v[4];
 
@@ -661,7 +661,7 @@ DEFINE_PROPERTY( rectSetter ) {
 
 DEFINE_PROPERTY( cursorAbsolutePositionSetter ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	int vec[2];
 
@@ -678,7 +678,7 @@ DEFINE_PROPERTY( cursorAbsolutePositionSetter ) {
 
 DEFINE_PROPERTY( cursorAbsolutePositionGetter ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	POINT pt;
 	GetCursorPos( &pt );
@@ -690,7 +690,7 @@ DEFINE_PROPERTY( cursorAbsolutePositionGetter ) {
 
 DEFINE_PROPERTY( cursorPositionSetter ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	int vec[2];
 //	IntArrayToVector(cx, 2, vp, vec);
@@ -707,7 +707,7 @@ DEFINE_PROPERTY( cursorPositionSetter ) {
 
 DEFINE_PROPERTY( cursorPositionGetter ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	POINT pt;
 	GetCursorPos( &pt );
@@ -720,7 +720,7 @@ DEFINE_PROPERTY( cursorPositionGetter ) {
 
 DEFINE_PROPERTY( title ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	const char *title;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &title) );
@@ -731,7 +731,7 @@ DEFINE_PROPERTY( title ) {
 
 DEFINE_PROPERTY( showFrame ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 
 	JSBool show;
@@ -766,7 +766,7 @@ DEFINE_PROPERTY( desktopRect ) {
 
 DEFINE_PROPERTY( captureMouse ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	JSBool capture;
 	JS_ValueToBoolean(cx, *vp, &capture);
@@ -782,7 +782,7 @@ DEFINE_PROPERTY( captureMouse ) {
 
 DEFINE_PROPERTY( activeGetter ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	*vp = BOOLEAN_TO_JSVAL( GetActiveWindow() == hWnd );
 	return JS_TRUE;
@@ -790,7 +790,7 @@ DEFINE_PROPERTY( activeGetter ) {
 
 DEFINE_PROPERTY( activeSetter ) {
 
-	HWND hWnd = (HWND)JL_GetPrivate(cx, obj);
+	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	JSBool active;
 	JS_ValueToBoolean(cx, *vp, &active);

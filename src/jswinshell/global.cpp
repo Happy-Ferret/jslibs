@@ -583,7 +583,7 @@ $TOC_MEMBER $INAME
   $H example 1
   {{{
   var dch = directoryChangesInit('C:\\WINDOWS', 0x10|0x40, true);
-  while (!endSignal) {
+  while (!_host.endSignal) {
 
     print( uneval( directoryChangesLookup(dch) ), '\n');
     sleep(1000);
@@ -701,7 +701,7 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 
 	jsval tmp;
 	jsval eltContent[2];
-	jsint index = 0;
+	int index = 0;
 	// see http://www.google.fr/codesearch/p?hl=fr&sa=N&cd=17&ct=rc#8WOCRDPt-u8/trunk/src/FileWatch.cc&q=ReadDirectoryChangesW
 	while ( pFileNotify ) {
 
@@ -742,8 +742,8 @@ function onChanges() {
 	print( directoryChangesLookup(dch).join('\n'), '\n');
 }
 
-while ( !endSignal )
-	processEvents( directoryChangesEvents(dch, onChanges), endSignalEvents() );
+while ( !_host.endSignal )
+	processEvents( directoryChangesEvents(dch, onChanges), _host.endSignalEvents() );
 }}}
 **/
 

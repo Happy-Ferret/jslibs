@@ -64,7 +64,7 @@ BEGIN_CLASS( Space )
 // Finalize should not destroy the item, but simply unwrap it.
 DEFINE_FINALIZE() {
 
-	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(cx, obj);
+	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(obj);
 	if ( spaceId == NULL )
 		return;
 }
@@ -108,7 +108,7 @@ DEFINE_FUNCTION( destroy ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(cx, obj);
+	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(spaceId);
 	if ( spaceId != NULL ) {
 

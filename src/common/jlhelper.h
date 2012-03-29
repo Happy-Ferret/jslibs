@@ -32,7 +32,6 @@
 #include <jsdbgapi.h>
 #include "jsatom.h"
 
-#include <jsxdrapi.h> // used by JL_LoadScript()
 #include <jstypedarray.h>
 
 #include "polyfill.h"
@@ -163,18 +162,16 @@ JL_GetEmptyStringValue( JSContext *cx ) {
 }
 
 ALWAYS_INLINE bool FASTCALL
-JL_HasPrivate( JSContext *cx, JSObject *obj ) {
+JL_HasPrivate( JSObject *obj ) {
 
-	JL_IGNORE(cx);
 	return !!(JL_GetClass(obj)->flags & JSCLASS_HAS_PRIVATE);
 }
 
 ALWAYS_INLINE void* FASTCALL
-JL_GetPrivate( JSContext *cx, JSObject *obj ) {
+JL_GetPrivate( JSObject *obj ) {
 
-	JL_IGNORE(cx);
 	ASSERT( JS_IsNative(obj) );
-	ASSERT( JL_HasPrivate(cx, obj) );
+	ASSERT( JL_HasPrivate(obj) );
 	return js::GetObjectPrivate(obj); // jsfriendapi
 }
 
@@ -183,7 +180,7 @@ JL_SetPrivate( JSContext *cx, JSObject *obj, void *data ) {
 
 	JL_IGNORE(cx);
 	ASSERT( JS_IsNative(obj) );
-	ASSERT( JL_HasPrivate(cx, obj) );
+	ASSERT( JL_HasPrivate(obj) );
 	JS_SetPrivate(obj, data);
 }
 
@@ -223,13 +220,13 @@ JL_GetErrorJSClassJSClassByProtoKey( JSContext *cx, JSProtoKey protoKey, JSObjec
 }
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_GetElement(JSContext *cx, JSObject *obj, jsuint index, jsval *vp) {
+JL_GetElement(JSContext *cx, JSObject *obj, unsigned index, jsval *vp) {
 
 	return JS_ForwardGetElementTo(cx, obj, index, obj, vp);
 }
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_SetElement(JSContext *cx, JSObject *obj, jsuint index, jsval *vp) {
+JL_SetElement(JSContext *cx, JSObject *obj, unsigned index, jsval *vp) {
 
 	return JS_SetElement(cx, obj, index, vp);
 }
@@ -246,7 +243,7 @@ JL_GetReservedSlot( JSContext *cx, JSObject *obj, uint32_t slot, jsval *vp ) {
 }
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_SetReservedSlot(JSContext *cx, JSObject *obj, uintN slot, const jsval &v) {
+JL_SetReservedSlot(JSContext *cx, JSObject *obj, unsigned slot, const jsval &v) {
 
 	JL_IGNORE(cx);
 	ASSERT( JS_IsNative(obj) );
@@ -258,7 +255,7 @@ JL_SetReservedSlot(JSContext *cx, JSObject *obj, uintN slot, const jsval &v) {
 ALWAYS_INLINE JSString* FASTCALL
 JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 
-//#ifndef JS_HAS_JSLIBS_RegisterCustomAllocators
+//if spidermonkey et jslibs allocators are not the same:
 //
 //	void *tmp = JS_malloc(cx, length);
 //	if ( !tmp )
@@ -266,8 +263,6 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 //	jl_memcpy(tmp, bytes, length * sizeof(*jschar));
 //	jl_free(bytes);
 //	bytes = (char*)tmp;
-//
-//#endif // JS_HAS_JSLIBS_RegisterCustomAllocators
 
 	return JS_NewUCString(cx, chars, length); // doc. https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_NewString
 }
@@ -1244,7 +1239,7 @@ enum E_TXTID {
 	JL_ASSERT( JL_ARGC <= (maxCount), E_ARGC, E_MAX, E_NUM(maxCount) )
 
 #define JL_ASSERT_ARGC_RANGE(minCount, maxCount) \
-	JL_ASSERT( JL_INRANGE((int)JL_ARGC, (int)minCount, (int)maxCount), E_ARGC, E_RANGE, E_INTERVAL_NUM(uintN(minCount), uintN(maxCount)) )
+	JL_ASSERT( JL_INRANGE((int)JL_ARGC, (int)minCount, (int)maxCount), E_ARGC, E_RANGE, E_INTERVAL_NUM(unsigned(minCount), unsigned(maxCount)) )
 
 #define JL_ASSERT_ARGC(count) \
 	JL_ASSERT( JL_ARGC == (count), E_ARGC, E_EQUALS, E_NUM(count) )
@@ -1947,7 +1942,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
-		jsint tmp = JSVAL_TO_INT(val);
+		int tmp = JSVAL_TO_INT(val);
 		if (likely( tmp <= UINT8_MAX && tmp >= 0 )) {
 
 			*num = uint8_t(tmp);
@@ -1959,13 +1954,13 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint8_t *num )
 
-	jsdouble d;
+	double d;
 	if (likely( JSVAL_IS_DOUBLE(val) ))
 		d = JSVAL_TO_DOUBLE(val);
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) );
 
-	if (likely( d >= jsdouble(0) && d <= jsdouble(UINT8_MAX) )) {
+	if (likely( d >= double(0) && d <= double(UINT8_MAX) )) {
 
 		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
 		*num = uint8_t(d);
@@ -1989,7 +1984,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int16_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
-		jsint tmp = JSVAL_TO_INT(val);
+		int tmp = JSVAL_TO_INT(val);
 		if (likely( tmp <= INT16_MAX && tmp >= INT16_MIN )) {
 
 			*num = int16_t(tmp);
@@ -2000,13 +1995,13 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int16_t *num ) {
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, int16_t *num )
 
-	jsdouble d;
+	double d;
 	if (likely( JSVAL_IS_DOUBLE(val) ))
 		d = JSVAL_TO_DOUBLE(val);
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) );
 
-	if (likely( d >= jsdouble(INT16_MIN) && d <= jsdouble(INT16_MAX) )) {
+	if (likely( d >= double(INT16_MIN) && d <= double(INT16_MAX) )) {
 
 		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
 		*num = int16_t(d);
@@ -2038,7 +2033,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint16_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
-		jsint tmp = JSVAL_TO_INT(val);
+		int tmp = JSVAL_TO_INT(val);
 		if (likely( tmp <= UINT16_MAX )) {
 
 			*num = uint16_t(tmp);
@@ -2049,13 +2044,13 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint16_t *num ) {
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint16_t *num )
 
-	jsdouble d;
+	double d;
 	if (likely( JSVAL_IS_DOUBLE(val) ))
 		d = JSVAL_TO_DOUBLE(val);
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) );
 
-	if (likely( d >= jsdouble(0) && d <= jsdouble(UINT16_MAX) )) {
+	if (likely( d >= double(0) && d <= double(UINT16_MAX) )) {
 
 		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
 		*num = uint16_t(d);
@@ -2094,13 +2089,13 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int32_t *num ) {
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, int32_t *num )
 
-	jsdouble d;
+	double d;
 	if (likely( JSVAL_IS_DOUBLE(val) ))
 		d = JSVAL_TO_DOUBLE(val);
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) ); // NULL gives 0
 
-	if (likely( d >= jsdouble(INT32_MIN) && d <= jsdouble(INT32_MAX) )) {
+	if (likely( d >= double(INT32_MIN) && d <= double(INT32_MAX) )) {
 
 		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
 		*num = int32_t(d);
@@ -2124,8 +2119,8 @@ namespace jlpv {
 	INLINE NEVER_INLINE JSBool
 	NativeToJsval_slow( const uint32_t &num, jsval *vp ) {
 
-		ASSERT( jsdouble(num) <= MAX_INT_TO_DOUBLE );
-		*vp = DOUBLE_TO_JSVAL(jsdouble(num));
+		ASSERT( double(num) <= MAX_INT_TO_DOUBLE );
+		*vp = DOUBLE_TO_JSVAL(double(num));
 		return JS_TRUE;
 	}
 }
@@ -2144,8 +2139,8 @@ JL_NativeToJsval( JSContext *cx, const uint32_t &num, jsval *vp ) {
 
 	UNLIKELY_SPLIT_BEGIN( const uint32_t &num, jsval *vp )
 
-		ASSERT( jsdouble(num) <= MAX_INT_TO_DOUBLE );
-		*vp = DOUBLE_TO_JSVAL(jsdouble(num));
+		ASSERT( double(num) <= MAX_INT_TO_DOUBLE );
+		*vp = DOUBLE_TO_JSVAL(double(num));
 		return JS_TRUE;
 
 	UNLIKELY_SPLIT_END(num, vp)
@@ -2157,7 +2152,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
-		jsint tmp = JSVAL_TO_INT(val);
+		int tmp = JSVAL_TO_INT(val);
 		if (likely( tmp >= 0 )) {
 
 			*num = uint32_t(tmp);
@@ -2168,13 +2163,13 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint32_t *num )
 
-	jsdouble d;
+	double d;
 	if (likely( JSVAL_IS_DOUBLE(val) ))
 		d = JSVAL_TO_DOUBLE(val);
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) );
 
-	if (likely( d >= jsdouble(0) && d <= jsdouble(UINT32_MAX) )) {
+	if (likely( d >= double(0) && d <= double(UINT32_MAX) )) {
 
 		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
 		*num = uint32_t(d);
@@ -2196,11 +2191,11 @@ JL_NativeToJsval( JSContext *cx, const int64_t &num, jsval *vp ) {
 
 	if (likely( num <= int64_t(JSVAL_INT_MAX) && num >= int64_t(JSVAL_INT_MIN) )) {
 
-		*vp = INT_TO_JSVAL(jsint(num));
+		*vp = INT_TO_JSVAL(int(num));
 	} else {
 
 		JL_CHKM( num >= int64_t(MIN_INT_TO_DOUBLE) && num <= int64_t(MAX_INT_TO_DOUBLE), E_VALUE, E_RANGE, E_INTERVAL_STR("-2^53", "2^53") );
-		*vp = DOUBLE_TO_JSVAL(jsdouble(num));
+		*vp = DOUBLE_TO_JSVAL(double(num));
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -2217,13 +2212,13 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int64_t *num ) {
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, int64_t *num )
 
-	jsdouble d;
+	double d;
 	if (likely( JSVAL_IS_DOUBLE(val) ))
 		d = JSVAL_TO_DOUBLE(val);
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) ); // NULL gives 0
 
-	if (likely( d >= jsdouble(MIN_INT_TO_DOUBLE) && d <= jsdouble(MAX_INT_TO_DOUBLE) )) {
+	if (likely( d >= double(MIN_INT_TO_DOUBLE) && d <= double(MAX_INT_TO_DOUBLE) )) {
 
 		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
 		*num = int64_t(d);
@@ -2251,7 +2246,7 @@ JL_NativeToJsval( JSContext *cx, const uint64_t &num, jsval *vp ) {
 
 	if ( num <= uint64_t(MAX_INT_TO_DOUBLE) ) {
 
-		*vp = DOUBLE_TO_JSVAL(jsdouble(num));
+		*vp = DOUBLE_TO_JSVAL(double(num));
 		return JS_TRUE;
 	}
 
@@ -2265,7 +2260,7 @@ JL_NativeToJsval( JSContext *cx, const uint64_t &num, jsval *vp ) {
 	if (unlikely( num > MAX_INT_TO_DOUBLE ))
 		JL_REPORT_WARNING_NUM( JLSMSG_LOSS_OF_PRECISION);
 	JL_SAFE_END
-	*vp = DOUBLE_TO_JSVAL(jsdouble(num));
+	*vp = DOUBLE_TO_JSVAL(double(num));
 	return JS_TRUE;
 	JL_BAD;
 
@@ -2285,13 +2280,13 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, uint64_t *num )
 
-	jsdouble d;
+	double d;
 	if (likely( JSVAL_IS_DOUBLE(val) ))
 		d = JSVAL_TO_DOUBLE(val);
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) ); // NULL gives 0
 
-	if (likely( d >= jsdouble(0) && d <= jsdouble(MAX_INT_TO_DOUBLE) )) { // or d <= jsdouble(UINT64_MAX)
+	if (likely( d >= double(0) && d <= double(MAX_INT_TO_DOUBLE) )) { // or d <= double(UINT64_MAX)
 
 		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
 		*num = uint64_t(d);
@@ -2351,9 +2346,9 @@ ALWAYS_INLINE JSBool JL_NativeToJsval( JSContext *cx, const size_t &num, jsval *
 
 	JL_IGNORE(cx);
 	if (likely( num <= JSVAL_INT_MAX ))
-		*vp = INT_TO_JSVAL(jsint(num));
+		*vp = INT_TO_JSVAL(int(num));
 	else
-		*vp = DOUBLE_TO_JSVAL(jsdouble(num));
+		*vp = DOUBLE_TO_JSVAL(double(num));
 	return JS_TRUE;
 }
 
@@ -2361,20 +2356,20 @@ ALWAYS_INLINE JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, size_t *
 
 	if (likely( JSVAL_IS_INT(val) )) {
 
-		jsint tmp = JSVAL_TO_INT(val);
+		int tmp = JSVAL_TO_INT(val);
 		if (unlikely( tmp < 0 ))
 			JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, ...);
 		*num = size_t(uint32_t(tmp));
 		return JS_TRUE;
 	}
 
-	jsdouble d;
+	double d;
 	if (likely( JSVAL_IS_DOUBLE(val) ))
 		d = JSVAL_TO_DOUBLE(val);
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) );
 
-	if (likely( d >= jsdouble(0) && d <= jsdouble(SIZE_T_MAX) )) { // cannot use jl::IsSafeCast(d, *i) because if d is not integer, the test fails.
+	if (likely( d >= double(0) && d <= double(SIZE_T_MAX) )) { // cannot use jl::IsSafeCast(d, *i) because if d is not integer, the test fails.
 
 		JL_SAFE_BEGIN
 		if ( !jl::IsSafeCast(d, *num) )
@@ -2396,9 +2391,9 @@ ALWAYS_INLINE JSBool JL_NativeToJsval( JSContext *cx, const ptrdiff_t &num, jsva
 
 	JL_IGNORE(cx);
 	if (likely( num >= JSVAL_INT_MIN && size <= JSVAL_INT_MAX ))
-		*vp = INT_TO_JSVAL(jsint(num));
+		*vp = INT_TO_JSVAL(int(num));
 	else
-		*vp = DOUBLE_TO_JSVAL(jsdouble(num));
+		*vp = DOUBLE_TO_JSVAL(double(num));
 	return JS_TRUE;
 }
 
@@ -2410,13 +2405,13 @@ ALWAYS_INLINE JSBool JL_JsvalToNative( JSContext *cx, const jsval &val, ptrdiff_
 		return JS_TRUE;
 	}
 
-	jsdouble d;
+	double d;
 	if (likely( JSVAL_IS_DOUBLE(val) ))
 		d = JSVAL_TO_DOUBLE(val);
 	else
 		JL_CHK( JS_ValueToNumber(cx, val, &d) );
 
-	if (likely( d >= jsdouble(PTRDIFF_MIN) && d <= jsdouble(PTRDIFF_MAX) )) {
+	if (likely( d >= double(PTRDIFF_MIN) && d <= double(PTRDIFF_MAX) )) {
 
 		JL_SAFE_BEGIN
 		if ( !jl::IsSafeCast(d, *i) )
@@ -2477,7 +2472,7 @@ ALWAYS_INLINE JSBool FASTCALL
 JL_NativeToJsval( JSContext *cx, const float &num, jsval *vp ) {
 
 	JL_IGNORE(cx);
-	*vp = DOUBLE_TO_JSVAL(jsdouble(num));
+	*vp = DOUBLE_TO_JSVAL(double(num));
 	return JS_TRUE;
 }
 
@@ -2497,7 +2492,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, float *num ) {
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, float *num )
 
-	jsdouble tmp;
+	double tmp;
 	if ( !JS_ValueToNumber(cx, val, &tmp) )
 		return JS_FALSE;
 	ASSERT( JSDOUBLE_IS_NaN(JSVAL_TO_DOUBLE(JL_GetNaNValue(cx))) );
@@ -2620,7 +2615,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, void **ptr ) {
 // if useValArray is true, val must be a valid array that is used to store the values.
 template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-JL_NativeVectorToJsval( JSContext * RESTRICT cx, const T * RESTRICT vector, jsuint length, jsval * RESTRICT val, bool useValArray = false ) {
+JL_NativeVectorToJsval( JSContext * RESTRICT cx, const T * RESTRICT vector, unsigned length, jsval * RESTRICT val, bool useValArray = false ) {
 
 	ASSERT( vector );
 	ASSERT( val );
@@ -2639,7 +2634,7 @@ JL_NativeVectorToJsval( JSContext * RESTRICT cx, const T * RESTRICT vector, jsui
 	}
 
 	jsval tmp;
-	for ( jsuint i = 0; i < length; ++i ) {
+	for ( unsigned i = 0; i < length; ++i ) {
 
 		JL_CHK( JL_NativeToJsval(cx, vector[i], &tmp) );
 		JL_CHK( JL_SetElement(cx, arrayObj, i, &tmp) );
@@ -2671,14 +2666,14 @@ ALWAYS_INLINE const char * JLNativeTypeToString( const float64_t & ) { return "F
 
 template <class T>
 INLINE JSBool FASTCALL
-JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T * RESTRICT vector, jsuint maxLength, jsuint * RESTRICT actualLength ) {
+JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T * RESTRICT vector, unsigned maxLength, unsigned * RESTRICT actualLength ) {
 
 	ASSERT( js_IsTypedArray(obj) );
 	JL_ASSERT( JS_GetTypedArrayType(obj) == JLNativeTypeToTypedArrayType(*vector), E_TY_TYPEDARRAY, E_TYPE, E_NAME(JLNativeTypeToString(*vector)) );
 	void *data = JS_GetTypedArrayData(obj);
 	*actualLength = JS_GetTypedArrayLength(obj);
 	maxLength = JL_MIN( *actualLength, maxLength );
-	for ( jsuint i = 0; i < maxLength; ++i ) {
+	for ( unsigned i = 0; i < maxLength; ++i ) {
 
 		vector[i] = ((T*)data)[i];
 	}
@@ -2688,7 +2683,7 @@ JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T
 
 template <class T>
 INLINE JSBool FASTCALL
-JL_ArrayBufferToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T * RESTRICT vector, jsuint maxLength, jsuint * RESTRICT actualLength ) {
+JL_ArrayBufferToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T * RESTRICT vector, unsigned maxLength, unsigned * RESTRICT actualLength ) {
 	
 	JL_IGNORE(cx);
 	ASSERT( js_IsArrayBuffer(obj) );
@@ -2705,7 +2700,7 @@ JL_ArrayBufferToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, 
 // supports Array-like objects and typedArray
 template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-JL_JsvalToNativeVector( JSContext * RESTRICT cx, jsval & RESTRICT val, T * RESTRICT vector, jsuint maxLength, jsuint *actualLength ) {
+JL_JsvalToNativeVector( JSContext * RESTRICT cx, jsval & RESTRICT val, T * RESTRICT vector, unsigned maxLength, unsigned *actualLength ) {
 
 	JL_ASSERT_IS_OBJECT(val, "vector");
 
@@ -2726,7 +2721,7 @@ JL_JsvalToNativeVector( JSContext * RESTRICT cx, jsval & RESTRICT val, T * RESTR
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, actualLength) );
 	maxLength = JL_MIN( *actualLength, maxLength );
 	jsval tmp;
-	for ( jsuint i = 0; i < maxLength; ++i ) {  // while ( maxLength-- ) { // avoid reverse walk (L1 cache issue)
+	for ( unsigned i = 0; i < maxLength; ++i ) {  // while ( maxLength-- ) { // avoid reverse walk (L1 cache issue)
 
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &tmp) );
 		JL_CHK( JL_JsvalToNative(cx, tmp, &vector[i]) );
@@ -2742,7 +2737,7 @@ JL_JsvalToNativeVector( JSContext * RESTRICT cx, jsval & RESTRICT val, T * RESTR
 
 template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-JL_NativeToReservedSlot( JSContext * RESTRICT cx, JSObject * RESTRICT obj, uintN slot, T &value ) {
+JL_NativeToReservedSlot( JSContext * RESTRICT cx, JSObject * RESTRICT obj, unsigned slot, T &value ) {
 
 	jsval tmp;
 	JL_CHK( JL_NativeToJsval(cx, value, &tmp) );
@@ -2754,7 +2749,7 @@ JL_NativeToReservedSlot( JSContext * RESTRICT cx, JSObject * RESTRICT obj, uintN
 
 template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-JL_ReservedSlotToNative( JSContext * RESTRICT cx, JSObject * RESTRICT obj, uintN slot, T * RESTRICT value ) {
+JL_ReservedSlotToNative( JSContext * RESTRICT cx, JSObject * RESTRICT obj, unsigned slot, T * RESTRICT value ) {
 
 	jsval tmp;
 	JL_CHK( JL_GetReservedSlot(cx, obj, slot, &tmp) );
@@ -2863,7 +2858,7 @@ INLINE JSBool FASTCALL
 JL_JSArrayToBuffer( JSContext * RESTRICT cx, JSObject * RESTRICT arrObj, JLData * RESTRICT str ) {
 
 	ASSERT( JL_ObjectIsArray(cx, arrObj) );
-	jsuint length;
+	unsigned length;
 	JL_CHK( JS_GetArrayLength(cx, arrObj, &length) );
 
 	jschar *buf;
@@ -2872,7 +2867,7 @@ JL_JSArrayToBuffer( JSContext * RESTRICT cx, JSObject * RESTRICT arrObj, JLData 
 
 	jsval elt;
 	int32_t num;
-	for ( jsuint i = 0; i < length; ++i ) {
+	for ( unsigned i = 0; i < length; ++i ) {
 
 		JL_CHK( JL_GetElement(cx, arrObj, i, &elt) );
 		JL_CHK( JL_JsvalToNative(cx, elt, &num) ); //JL_CHK( JS_ValueToInt32(cx, elt, &num) );
@@ -2898,6 +2893,12 @@ JL_JsvalToFunction( JSContext *cx, jsval &val ) {
 	JL_IGNORE(cx);
 	//return GET_FUNCTION_PRIVATE(cx, JSVAL_TO_OBJECT(val));
 	return JS_ValueToFunction(cx, val);
+}
+
+ALWAYS_INLINE jsval FASTCALL
+JL_FunctionToJsval(JSContext *cx, JSNative call, unsigned nargs, unsigned flags, JSObject *parent, jsid id) {
+
+	return OBJECT_TO_JSVAL(JS_GetFunctionObject(JS_NewFunctionById(cx, call , nargs, flags, parent, id)));
 }
 
 
@@ -3419,7 +3420,7 @@ JL_InheritFrom( JSContext *cx, JSObject *obj, const JSClass *clasp ) {
 
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_CallFunctionId(JSContext *cx, JSObject *obj, jsid id, uintN argc, jsval *argv, jsval *rval) {
+JL_CallFunctionId(JSContext *cx, JSObject *obj, jsid id, unsigned argc, jsval *argv, jsval *rval) {
 
 	jsval tmp;
 	return JS_GetMethodById(cx, obj, id, NULL, &tmp) && JS_CallFunctionValue(cx, obj, tmp, argc, argv, rval);
@@ -3469,7 +3470,7 @@ JL_Eval( JSContext *cx, JSString *source, jsval *rval ) { // used in jsvalserial
 ALWAYS_INLINE JSBool FASTCALL
 JL_Push( JSContext * RESTRICT cx, JSObject * RESTRICT arr, jsval * RESTRICT value ) {
 
-	jsuint length;
+	unsigned length;
 	return JS_GetArrayLength(cx, arr, &length) && JL_SetElement(cx, arr, length, value);
 }
 
@@ -3477,7 +3478,7 @@ JL_Push( JSContext * RESTRICT cx, JSObject * RESTRICT arr, jsval * RESTRICT valu
 ALWAYS_INLINE JSBool FASTCALL
 JL_Pop( JSContext * RESTRICT cx, JSObject * RESTRICT arr, jsval * RESTRICT vp ) {
 
-	jsuint length;
+	unsigned length;
 	return JS_GetArrayLength(cx, arr, &length) && JL_GetElement(cx, arr, --length, vp) && JS_SetArrayLength(cx, arr, length); 
 }
 
@@ -3544,16 +3545,13 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 
 		int file = open(compiledFileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
 		JL_CHKM( file != -1, E_FILE, E_NAME(compiledFileName), E_ACCESS ); // "Unable to open file \"%s\" for reading.", compiledFileName
-		size_t compFileSize = compFileStat.st_size; // filelength(file); ?
+		size_t compFileSize;
+		compFileSize = compFileStat.st_size; // filelength(file); ?
 		data = jl_malloca(compFileSize);
 		JL_ASSERT_ALLOC( data );
-		int readCount = read( file, data, jl::SafeCast<unsigned int>(compFileSize) ); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
+		int readCount = read(file, data, jl::SafeCast<unsigned int>(compFileSize)); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
 		JL_CHKM( readCount >= 0 && (size_t)readCount == compFileSize, E_FILE, E_NAME(compiledFileName), E_READ ); // "Unable to read the file \"%s\" ", compiledFileName
 		close( file );
-
-		JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_DECODE);
-		JL_CHK( xdr );
-		JS_XDRMemSetData(xdr, data, jl::SafeCast<uint32_t>(compFileSize));
 
 		// we want silent failures.
 //		JSErrorReporter prevErrorReporter = JS_SetErrorReporter(cx, NULL);
@@ -3561,7 +3559,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 //		void *debugErrorHookData = cx->debugHooks->debugErrorHookData;
 //		JS_SetDebugErrorHook(JL_GetRuntime(cx), NULL, NULL);
 
-		JSBool status = JS_XDRScript(xdr, &script);
+		script = JS_DecodeScript(cx, data, readCount, NULL, NULL);
 
 //		JS_SetDebugErrorHook(JL_GetRuntime(cx), debugErrorHook, debugErrorHookData);
 //		if (cx->lastMessage)
@@ -3569,12 +3567,9 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 //		cx->lastMessage = NULL;
 //		JS_SetErrorReporter(cx, prevErrorReporter);
 
-		if ( status == JS_TRUE ) {
+		if ( script ) {
 
-//			*script->notes() = 0;
 			// (TBD) manage BIG_ENDIAN here ?
-			JS_XDRMemSetData(xdr, NULL, 0);
-			JS_XDRDestroy(xdr);
 			jl_freea(data);
 			data = NULL;
 
@@ -3719,19 +3714,15 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 	if ( file == -1 ) // if the file cannot be write, this is not an error ( eg. read-only drive )
 		goto good;
 
-	JSXDRState *xdr;
-	xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
-	JL_CHK( xdr );
-	JL_CHK( JS_XDRScript(xdr, &script) );
-
 	uint32_t length;
 	void *buf;
-	buf = JS_XDRMemGetData(xdr, &length);
+	buf = JS_EncodeScript(cx, script, &length);
 	JL_CHK( buf );
+
 	// manage BIG_ENDIAN here ?
 	JL_CHK( write(file, buf, length) != -1 ); // On error, -1 is returned, and errno is set appropriately.
 	JL_CHK( close(file) == 0 );
-	JS_XDRDestroy(xdr);
+	js_free(buf);
 	goto good;
 
 good:
@@ -3812,7 +3803,7 @@ JL_DebugPrintScriptLocation( JSContext *cx ) {
 	const char *filename;
 	JSScript *script;
 	unsigned lineno;
-	JL_CHK( JS_DescribeTopFrame(cx, &script, &lineno) );
+	JL_CHK( JS_DescribeScriptedCaller(cx, &script, &lineno) );
 	filename = JS_GetScriptFilename(cx, script);
 	if ( filename == NULL || *filename == '\0' )
 		filename = "<no_filename>";
@@ -3838,7 +3829,7 @@ JL_ExceptionSetScriptLocation( JSContext * RESTRICT cx, JSObject * RESTRICT obj 
 	const char *filename;
 	JSScript *script;
 	unsigned lineno;
-	JL_CHK( JS_DescribeTopFrame(cx, &script, &lineno) );
+	JL_CHK( JS_DescribeScriptedCaller(cx, &script, &lineno) );
 	filename = JS_GetScriptFilename(cx, script);
 
 	if ( filename == NULL || *filename == '\0' )

@@ -25,7 +25,7 @@ BEGIN_CLASS( Cursor )
 
 DEFINE_FINALIZE() {
 
-	SDL_Cursor *cursor = (SDL_Cursor*)JL_GetPrivate(cx, obj);
+	SDL_Cursor *cursor = (SDL_Cursor*)JL_GetPrivate(obj);
 	if ( cursor != NULL ) {
 
 		SDL_FreeCursor(cursor); // default cursor is restored
