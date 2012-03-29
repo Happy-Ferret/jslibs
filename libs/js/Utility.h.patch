@@ -1,6 +1,6 @@
 --- 
-+++ src/js/public/Utility.h	2012-03-25 18:06:09 +0200
-@@ -102,8 +102,23 @@
++++ src/js/public/Utility.h	2012-03-29 15:51:54 +0200
+@@ -107,8 +107,24 @@
  /*
   * Custom allocator support for SpiderMonkey
   */
@@ -10,6 +10,7 @@
 +#define HAS_JL_ALLOCATORS
 +extern JS_PUBLIC_DATA(uint32_t) OOM_maxAllocations;
 +extern JS_PUBLIC_DATA(uint32_t) OOM_counter;
++#define JS_OOM_POSSIBLY_FAIL() do {} while(0)
 +typedef void* (*js_jl_malloc_t)( size_t );
 +typedef void* (*js_jl_calloc_t)( size_t, size_t );
 +typedef void* (*js_jl_realloc_t)( void*, size_t );
