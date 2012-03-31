@@ -3,7 +3,7 @@ loadModule('jsio');
 
 /// call all possible functions reachable in the scope [rmtf]
 
-	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', '_host.stdin', 'jslangTest', 'setPerfTestMode' ];
+	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', 'host.stdin', 'jslangTest', 'setPerfTestMode' ];
 
 	loadModule('jswinshell'); excludeList.push('fileOpenDialog', 'Console.close');
 	loadModule('jssdl'); excludeList.push('setVideoMode', 'iconify');
@@ -32,7 +32,7 @@ loadModule('jsio');
 //	loadModule('jsaudio');
 // loadModule('jsgraphics');
 
-	if ( _host.unsafeMode ) throw "Cannot run this test in unsafe mode (else crash)";
+	if ( host.unsafeMode ) throw "Cannot run this test in unsafe mode (else crash)";
 
 	var count = 0;
 	var done = {__proto__:null};
@@ -41,7 +41,7 @@ loadModule('jsio');
 	
 	function fct(obj, left) {
 
-		if ( _host.endSignal )
+		if ( host.endSignal )
 			halt();
 		if ( isPrimitive(obj) )
 			return;
@@ -89,8 +89,8 @@ loadModule('jsio');
 
 /// host version info [rmtf]
 
-	QA.ASSERTOP( _host.revision, '>', 3400, 'revision version validity' );
-	QA.ASSERTOP( _host.jsVersion, '>=', 185, 'javascript version validity' );
+	QA.ASSERTOP( host.revision, '>', 3400, 'revision version validity' );
+	QA.ASSERTOP( host.jsVersion, '>=', 185, 'javascript version validity' );
 	
 	
 	
@@ -137,10 +137,10 @@ loadModule('jsio');
 
 		var buffer = '';
 
-		var prev = _host.stdout;
-		_host.stdout = function(chunk) buffer += chunk;
+		var prev = host.stdout;
+		host.stdout = function(chunk) buffer += chunk;
 		print('this_is_a_test');
-		_host.stdout = prev;
+		host.stdout = prev;
 
 		QA.ASSERTOP( buffer.indexOf('this_is_a_test'), '!=', -1, 'stdout redirection result' ); 
 
@@ -148,12 +148,12 @@ loadModule('jsio');
 
 /// error in stderr [ftrm]
 
-	var prev = _host.stderr;
+	var prev = host.stderr;
 	try { 
-		_host.stderr = function() { fvoasudyfvoasuid() }
+		host.stderr = function() { fvoasudyfvoasuid() }
 		wuiyoiryuoeyu();
 	} catch(ex) {}
-	_host.stderr = prev;
+	host.stderr = prev;
 
 
 
@@ -218,19 +218,19 @@ loadModule('jsio');
 	QA.ASSERT_STR( global.valueOf(), '[object Global]', 'global class' );
 	QA.ASSERTOP( uneval(global).length, '>', 0, 'uneval global' );
 	QA.ASSERTOP( global.Math, '===', Math, 'global std objects' );
-	QA.ASSERTOP( global, 'has', '_host' );
-	QA.ASSERTOP( _host, 'has', 'arguments' );
-	QA.ASSERTOP( _host.arguments[0].indexOf('js'), '!=', -1, 'current script' );
-	QA.ASSERTOP( _host.arguments, 'instanceof', Array, 'arguments type' );
+	QA.ASSERTOP( global, 'has', 'host' );
+	QA.ASSERTOP( host, 'has', 'arguments' );
+	QA.ASSERTOP( host.arguments[0].indexOf('js'), '!=', -1, 'current script' );
+	QA.ASSERTOP( host.arguments, 'instanceof', Array, 'arguments type' );
 
 
-/// global _host object [f]
+/// global host object [f]
 
-	QA.ASSERTOP( global._host, 'typeof', 'object', '_host is object' );
-	QA.ASSERTOP( global._host, 'has', 'unsafeMode' );
-	QA.ASSERTOP( global._host, 'has', 'stdout' );
-	QA.ASSERTOP( global._host, 'has', 'stderr' );
-	QA.ASSERTOP( global._host, 'has', 'stdin' );
+	QA.ASSERTOP( global.host, 'typeof', 'object', 'host is object' );
+	QA.ASSERTOP( global.host, 'has', 'unsafeMode' );
+	QA.ASSERTOP( global.host, 'has', 'stdout' );
+	QA.ASSERTOP( global.host, 'has', 'stderr' );
+	QA.ASSERTOP( global.host, 'has', 'stdin' );
 
 	
 	
@@ -248,8 +248,8 @@ loadModule('jsio');
 /// error messages []
 
 	var buffer = '';
-	var prev = _host.stderr;
-	_host.stderr = function(chunk) buffer += chunk;
+	var prev = host.stderr;
+	host.stderr = function(chunk) buffer += chunk;
 	
 	var ex = undefined;
 	try {
@@ -258,13 +258,13 @@ loadModule('jsio');
 		ex = _ex
 	}
 	
-	QA.ASSERT(!ex, _host.unsafeMode, "detect exception for empty loadModule call");
+	QA.ASSERT(!ex, host.unsafeMode, "detect exception for empty loadModule call");
 
-	_host.stderr = prev;
+	host.stderr = prev;
 	
 	QA.ASSERT_STR( buffer.length == 0, true, 'stderr redirection result' ); 
 	
-	if ( !_host.unsafeMode )
+	if ( !host.unsafeMode )
 		QA.ASSERT_STR( ex.message.indexOf('number of arguments') != -1, true, 'loadModule() error' ); 
 
 
@@ -272,26 +272,26 @@ loadModule('jsio');
 /// catched error messages [rmtf]
 
 	var buffer = '';
-	var prev = _host.stderr;
-	_host.stderr = function(chunk) buffer += chunk;
+	var prev = host.stderr;
+	host.stderr = function(chunk) buffer += chunk;
 	try {
 		eval('azer()');
 	} catch (ex) {}
-	_host.stderr = prev;
+	host.stderr = prev;
 	QA.ASSERT_STR( buffer.length == 0, true, 'stderr redirection result' );
 
 
 
 /// mute error messages [rmtf]
 
-	var prev = _host.stderr;
-	delete _host.stderr;
+	var prev = host.stderr;
+	delete host.stderr;
 	
 	try {
 		eval('azer()');
 	} catch (ex) {}
 
-	_host.stderr = prev;
+	host.stderr = prev;
 
 
 /// NativeInterface hacking

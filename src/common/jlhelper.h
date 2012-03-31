@@ -368,7 +368,6 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 // defined here because required by jlhostprivate.h
 #define JLID_SPEC(name) JLID_##name
 enum {
-	JLID_SPEC( _host ),
 	JLID_SPEC( global ),
 	JLID_SPEC( get ),
 	JLID_SPEC( read ),
@@ -398,7 +397,6 @@ enum {
 	JLID_SPEC( _revision ),
 	JLID_SPEC( buildDate ),
 	JLID_SPEC( _buildDate ),
-	JLID_SPEC( jsVersion ),
 	JLID_SPEC( path ),
 	JLID_SPEC( isFirstInstance ),
 	JLID_SPEC( bootstrapScript ),
@@ -820,7 +818,7 @@ JL_GetPrivateJsid( JSContext *cx, int index, const jschar *name ) {
 #endif // DEBUG
 
 #define JLID(cx, name) JL_GetPrivateJsid(cx, JLID_##name, L(#name))
-// eg: jsid cfg = JLID(cx, _host); const char *name = JLID_NAME(_host);
+// eg: jsid cfg = JLID(cx, fileName); const char *name = JLID_NAME(fileName);
 
 
 
@@ -3031,91 +3029,6 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, jsval &val, float ** RESTRICT m ) {
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// Host info functions (_host global property)
-
-
-ALWAYS_INLINE JSBool FASTCALL
-RemoveHostObject(JSContext *cx) {
-
-	JSObject *globalObject = JL_GetGlobal(cx);
-	ASSERT( globalObject );
-	return JS_DeletePropertyById(cx, globalObject, JLID(cx, _host)); // beware: permanant properties cannot be removed.
-}
-
-
-INLINE JSObject* FASTCALL
-GetHostObject(JSContext *cx) {
-
-	JSObject *globalObject = JL_GetGlobal(cx);
-	ASSERT( globalObject );
-	
-	jsid hostObjectId;
-	hostObjectId = JLID(cx, _host);
-	ASSERT( hostObjectId != jspv::NullJsid() );
-
-	jsval hostObjectValue;
-	JL_CHK( JS_GetPropertyById(cx, globalObject, hostObjectId, &hostObjectValue) );
-
-	JSObject *cobj;
-	if ( JSVAL_IS_VOID( hostObjectValue ) ) {
-
-		cobj = JL_NewObj(cx);
-		JL_CHK( cobj );
-		hostObjectValue = OBJECT_TO_JSVAL( cobj );
-		JL_CHK( JS_SetPropertyById(cx, globalObject, hostObjectId, &hostObjectValue) );
-	} else {
-
-		JL_CHK( JSVAL_IS_OBJECT(hostObjectValue) );
-		cobj = JSVAL_TO_OBJECT(hostObjectValue);
-	}
-	return cobj;
-bad:
-	return NULL;
-}
-
-
-ALWAYS_INLINE JSBool FASTCALL
-GetHostObjectValue(JSContext *cx, jsid id, jsval *value) {
-
-	JSObject *cobj = GetHostObject(cx);
-	if ( cobj )
-		return JS_LookupPropertyById(cx, cobj, id, value);
-	*value = JSVAL_VOID;
-	return JS_TRUE;
-}
-
-
-ALWAYS_INLINE JSBool FASTCALL
-GetHostObjectValue(JSContext *cx, const jschar *name, jsval *value) {
-
-	return GetHostObjectValue(cx, JL_StringToJsid(cx, name), value);
-}
-
-/*
-template <class T>
-ALWAYS_INLINE JSBool FASTCALL
-SetHostObjectValue(JSContext *cx, jsid id, const T &cval, bool modifiable = true, bool visible = true) {
-
-	JSObject *cobj = GetHostObject(cx);
-	if ( cobj ) {
-		jsval tmp;
-		return JL_NativeToJsval(cx, cval, &tmp) && JS_DefinePropertyById(cx, cobj, id, value, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
-	} else {
-
-		return JS_TRUE;
-	}
-}
-
-
-template <class T>
-ALWAYS_INLINE JSBool FASTCALL
-SetHostObjectValue(JSContext *cx, const jschar *name, const T &cval, bool modifiable = true, bool visible = true) {
-
-	return SetHostObjectValue(cx, JL_StringToJsid(cx, name), value, modifiable, visible);
-}
-*/
-
-///////////////////////////////////////////////////////////////////////////////
 // Buffer
 
 ALWAYS_INLINE uint8_t* FASTCALL
@@ -3745,6 +3658,79 @@ bad:
 	return NULL; // report a warning ?
 }
 
+
+ALWAYS_INLINE JSBool FASTCALL
+ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnly, jsval *rval ) {
+
+	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); //  | JSOPTION_DONT_REPORT_UNCAUGHT
+	// JSOPTION_COMPILE_N_GO:
+	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
+	// JSOPTION_DONT_REPORT_UNCAUGHT:
+	//  When returning from the outermost API call, prevent uncaught exceptions from being converted to error reports
+	//  we can use JS_ReportPendingException to report it manually
+
+	JSObject *globalObject = JL_GetGlobal(cx);
+	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
+
+// compile & executes the script
+
+	//JSPrincipals *principals = (JSPrincipals*)jl_malloc(sizeof(JSPrincipals));
+	//JSPrincipals tmp = {0};
+	//*principals = tmp;
+	//principals->codebase = (char*)jl_malloc(PATH_MAX);
+	//strncpy(principals->codebase, scriptFileName, PATH_MAX-1);
+	//principals->refcount = 1;
+	//principals->destroy = HostPrincipalsDestroy;
+
+	JSScript *script;
+	script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "inline", 1);
+	JL_CHK( script );
+	
+	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
+
+	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
+	if ( !compileOnly )
+		JL_CHK( JS_ExecuteScript(cx, globalObject, script, rval) ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+	else
+		*rval = JSVAL_VOID;
+
+	JS_SetOptions(cx, prevOpt);
+	return JS_TRUE;
+
+bad:
+	JS_SetOptions(cx, prevOpt);
+	return JS_FALSE;
+}
+
+
+ALWAYS_INLINE JSBool FASTCALL
+ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, jsval *rval ) {
+
+	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
+	JSObject *globalObject = JL_GetGlobal(cx);
+	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
+
+	JSScript *script;
+	script = JL_LoadScript(cx, globalObject, scriptFileName, ENC_UNKNOWN, true, false); // use xdr if available, but don't save it.
+	JL_CHK( script );
+
+	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
+
+	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
+	if ( !compileOnly )
+		JL_CHK( JS_ExecuteScript(cx, globalObject, script, rval) ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+	else
+		*rval = JSVAL_VOID;
+
+	JS_SetOptions(cx, prevOpt);
+	return JS_TRUE;
+
+bad:
+	JS_SetOptions(cx, prevOpt);
+	return JS_FALSE;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -155,73 +155,9 @@ Report( JSContext *cx, bool isWarning, ... ) {
 }
 
 
-JSBool JSDefaultStdinFunction(JSContext *cx, unsigned, jsval *vp) {
-
-	HostPrivate *pv = JL_GetHostPrivate(cx);
-	if (unlikely( pv == NULL || pv->hostStdIn == NULL )) {
-
-		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
-	}
-	char buffer[8192];
-	int status = pv->hostStdIn(pv->privateData, buffer, COUNTOF(buffer));
-	if ( status > 0 ) {
-	
-		JSString *jsstr = JS_NewStringCopyN(cx, buffer, status);
-		JL_CHK( jsstr );
-		*JL_RVAL = STRING_TO_JSVAL( jsstr );
-	} else {
-
-		JL_WARN( E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdin"), E_READ );
-		*JL_RVAL = JL_GetEmptyStringValue(cx);
-	}
-	return JS_TRUE;
-	JL_BAD;
-}
-
-// note: we have to support: var prevStderr = _host.stderr; _host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
-// route: print() => _host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
-JSBool JSDefaultStdoutFunction(JSContext *cx, unsigned argc, jsval *vp) {
-
-	*JL_RVAL = JSVAL_VOID;
-	HostPrivate *pv = JL_GetHostPrivate(cx);
-	if (unlikely( pv == NULL || pv->hostStdOut == NULL ))
-		return JS_TRUE;
-
-	JLData str;
-	for ( unsigned i = 0; i < argc; ++i ) {
-
-		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
-		int status = pv->hostStdOut(pv->privateData, str.GetConstStr(), str.Length());
-		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
-	}
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-JSBool JSDefaultStderrFunction(JSContext *cx, unsigned argc, jsval *vp) {
-
-	*JL_RVAL = JSVAL_VOID;
-	HostPrivate *pv = JL_GetHostPrivate(cx);
-	if (unlikely( pv == NULL || pv->hostStdErr == NULL ))
-		return JS_TRUE;
-
-	JLData str;
-	for ( unsigned i = 0; i < argc; ++i ) {
-
-		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
-		int status = pv->hostStdErr(pv->privateData, str.GetConstStr(), str.Length());
-		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
-	}
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
 void ErrorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report) {
 
-	JL_IGNORE(cx);
+	JL_IGNORE( cx );
 	if ( !report )
 		fprintf(stderr, "%s\n", message);
 	else
@@ -235,7 +171,7 @@ void StderrWrite(JSContext *cx, const char *message, size_t length) {
 	ASSERT( globalObject );
 
 	jsval fct;
-	if (unlikely( GetHostObjectValue(cx, JLID(cx, stderr), &fct) != JS_TRUE || !JL_ValueIsCallable(cx, fct) ))
+	if (unlikely( JS_GetPropertyById(cx, JL_GetHostPrivate(cx)->hostObject, JLID(cx, stderr), &fct) != JS_TRUE || !JL_ValueIsCallable(cx, fct) ))
 		return;
 		
 	JSExceptionState *exs = JS_SaveExceptionState(cx);
@@ -430,10 +366,10 @@ JSBool OperationCallback(JSContext *cx) {
 JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 
 	JSContext *cx = (JSContext*)threadArg;
-	HostPrivate *pv = JL_GetHostPrivate(cx);
+	HostPrivate *hpv = JL_GetHostPrivate(cx);
 	for (;;) {
 
-		if ( JLSemaphoreAcquire(pv->watchDogSemEnd, pv->maybeGCInterval) != JLTIMEOUT ) // used as a breakable Sleep instead of SleepMilliseconds (see SandboxEval).
+		if ( JLSemaphoreAcquire(hpv->watchDogSemEnd, hpv->maybeGCInterval) != JLTIMEOUT ) // used as a breakable Sleep instead of SleepMilliseconds (see SandboxEval).
 			break;
 		JS_TriggerOperationCallback(JL_GetRuntime(cx));
 	}
@@ -442,14 +378,163 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 }
 
 
-JSBool LoadModule(JSContext *cx, unsigned argc, jsval *vp) {
+// global object
+// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
+// note: global_class is a global variable, but this is not an issue even if several runtimes share the same JSClass.
+static JSClass global_class = {
+	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS,
+	JS_PropertyStub, JS_PropertyStub,
+	JS_PropertyStub, JS_StrictPropertyStub,
+	JS_EnumerateStub, JS_ResolveStub,
+	JS_ConvertStub
+};
+
+
+
+BEGIN_CLASS( host )
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
+**/
+DEFINE_PROPERTY_GETTER( unsafeMode ) {
+
+	JL_IGNORE( id, obj );
+
+	JL_CHK( JL_NativeToJsval(cx, JL_GetHostPrivate(cx)->unsafeMode, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
+**/
+DEFINE_PROPERTY_GETTER( jsVersion ) {
+
+	JL_IGNORE( id, obj );
+
+	JL_CHK( JL_NativeToJsval(cx, JS_GetVersion(cx), vp) ); // btw, see JS_GetImplementationVersion()
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
+**/
+DEFINE_PROPERTY_GETTER( incrementalGarbageCollector ) {
+
+	JL_IGNORE( id, obj );
+
+	uint32_t gcMode = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_MODE);
+	JL_CHK( JL_NativeToJsval(cx, gcMode == JSGC_MODE_INCREMENTAL, vp) ); // JSGC_MODE_GLOBAL
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_SETTER( incrementalGarbageCollector ) {
+
+	JL_IGNORE( strict, id, obj );
+
+	bool incGc;
+	JL_CHK( JL_JsvalToNative(cx, *vp, &incGc) );
+	JS_SetGCParameter(JL_GetRuntime(cx), JSGC_MODE, incGc ? JSGC_MODE_INCREMENTAL : JSGC_MODE_GLOBAL);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+**/
+DEFINE_FUNCTION( stdout ) {
+
+	*JL_RVAL = JSVAL_VOID;
+	JLData str;
+	HostPrivate *hpv = JL_GetHostPrivate(cx);
+	if (likely( hpv != NULL && hpv->hostStdOut != NULL )) {
+
+		for ( unsigned i = 0; i < argc; ++i ) {
+
+			JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
+			int status = hpv->hostStdOut(hpv->privateData, str.GetConstStr(), str.Length());
+			JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
+		}
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+**/
+DEFINE_FUNCTION( stderr ) {
+
+	*JL_RVAL = JSVAL_VOID;
+	JLData str;
+	HostPrivate *hpv = JL_GetHostPrivate(cx);
+	if (likely( hpv != NULL && hpv->hostStdErr != NULL )) {
+
+		for ( unsigned i = 0; i < argc; ++i ) {
+
+			JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
+			int status = hpv->hostStdErr(hpv->privateData, str.GetConstStr(), str.Length());
+			JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
+		}
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME()
+**/
+DEFINE_FUNCTION( stdin ) {
+
+	JL_IGNORE( argc );
+
+	HostPrivate *hpv = JL_GetHostPrivate(cx);
+	if (likely( hpv != NULL && hpv->hostStdIn != NULL )) {
+
+		char buffer[8192];
+		int status = hpv->hostStdIn(hpv->privateData, buffer, COUNTOF(buffer));
+		if ( status > 0 ) {
+		
+			JSString *jsstr = JS_NewStringCopyN(cx, buffer, status);
+			JL_CHK( jsstr );
+			*JL_RVAL = STRING_TO_JSVAL( jsstr );
+		} else {
+
+			JL_WARN( E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdin"), E_READ );
+			*JL_RVAL = JL_GetEmptyStringValue(cx);
+		}
+	} else {
+
+		*JL_RVAL = JSVAL_VOID;
+	}
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME()
+**/
+DEFINE_FUNCTION( loadModule ) {
 
 	JLData str;
 	JLLibraryHandler module = JLDynamicLibraryNullHandler;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN(1);
-
 
 	if (unlikely( JL_ARGC < 1 )) {
 
@@ -494,9 +579,9 @@ JSBool LoadModule(JSContext *cx, unsigned argc, jsval *vp) {
 	}
 */
 
-	HostPrivate *pv;
-	pv = JL_GetHostPrivate(cx);
-	JL_ASSERT( pv, E_HOST, E_STATE, E_COMMENT("context private") );
+	HostPrivate *hpv;
+	hpv = JL_GetHostPrivate(cx);
+	JL_ASSERT( hpv, E_HOST, E_STATE, E_COMMENT("context private") );
 	JL_ASSERT( libFileName != NULL && *libFileName != '\0', E_ARG, E_NUM(1), E_DEFINED );
 
 	module = JLDynamicLibraryOpen(libFileName);
@@ -511,7 +596,7 @@ JSBool LoadModule(JSContext *cx, unsigned argc, jsval *vp) {
 		*JL_RVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}
-	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) )
+	for ( jl::QueueCell *it = jl::QueueBegin(&hpv->moduleList); it; it = jl::QueueNext(it) )
 		if ( (JLLibraryHandler)jl::QueueGetData(it) == module ) {
 
 			JLDynamicLibraryClose(&module);
@@ -539,7 +624,7 @@ JSBool LoadModule(JSContext *cx, unsigned argc, jsval *vp) {
 
 //	CHKHEAP();
 
-	jl::QueueUnshift( &pv->moduleList, module ); // store the module (LIFO)
+	jl::QueueUnshift( &hpv->moduleList, module ); // store the module (LIFO)
 	
 	//JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID, ... but UnloadModule is too complicated to implement and will never exist.
 	*JL_RVAL = OBJECT_TO_JSVAL(JL_OBJ);
@@ -553,16 +638,44 @@ bad:
 }
 
 
-// global object
-// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
-// note: global_class is a global variable, but this is not an issue even if several runtimes share the same JSClass.
-static JSClass global_class = {
-	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS,
-	JS_PropertyStub, JS_PropertyStub,
-	JS_PropertyStub, JS_StrictPropertyStub,
-	JS_EnumerateStub, JS_ResolveStub,
-	JS_ConvertStub
-};
+DEFINE_INIT() {
+
+	JL_IGNORE( proto, sc );
+
+	JL_GetHostPrivate(cx)->hostObject = obj;
+	return JS_TRUE;
+}
+
+
+/**qa
+	QA.ASSERTOP(global, 'has', 'host');
+	QA.ASSERTOP(host, 'has', 'stdout');
+	QA.ASSERTOP(host, 'has', 'unsafeMode');
+**/
+CONFIGURE_CLASS
+
+	REVISION(JL_SvnRevToInt("$Revision$"))
+
+	HAS_INIT
+
+	BEGIN_STATIC_FUNCTION_SPEC
+		FUNCTION_ARGC(loadModule, 1)
+
+		// note: we have to support: var prevStderr = host.stderr; host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
+		// route: print() => host->stdout() => JSDefaultStdoutFunction() => hpv->hostStdOut()
+		FUNCTION_ARGC(stdin, 0)
+		FUNCTION_ARGC(stdout, 1)
+		FUNCTION_ARGC(stderr, 1)
+	END_STATIC_FUNCTION_SPEC
+
+	BEGIN_STATIC_PROPERTY_SPEC
+		PROPERTY_GETTER( unsafeMode )
+		PROPERTY_GETTER( jsVersion )
+		PROPERTY( incrementalGarbageCollector )
+	END_STATIC_PROPERTY_SPEC
+
+END_CLASS
+
 
 
 // default: CreateHost(-1, -1, 0);
@@ -594,6 +707,8 @@ JSContext* CreateHost( uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInter
 
 	JS_SetVersion(cx, JSVERSION_LATEST);
 
+	JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_INCREMENTAL); // JSGC_MODE_GLOBAL
+
 	JS_SetErrorReporter(cx, ErrorReporter);
 
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
@@ -615,24 +730,24 @@ JSContext* CreateHost( uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInter
 	JL_CHK( JS_InitCTypesClass(cx, globalObject) );
 #endif
 
-	HostPrivate *pv;
+	HostPrivate *hpv;
 	
-	pv = ConstructHostPrivate();
-	JL_ASSERT_ALLOC( pv );
-	pv->versionKey = JL_HOSTPRIVATE_KEY;
-	JL_SetHostPrivate(cx, pv);
+	hpv = ConstructHostPrivate();
+	JL_ASSERT_ALLOC( hpv );
+	hpv->versionKey = JL_HOSTPRIVATE_KEY;
+	JL_SetHostPrivate(cx, hpv);
 
 	// setup WatchDog
 	if ( maybeGCInterval ) {
 
-		pv->maybeGCInterval = maybeGCInterval;
+		hpv->maybeGCInterval = maybeGCInterval;
 		JSOperationCallback prevOperationCallback;
 		prevOperationCallback = JS_SetOperationCallback(cx, OperationCallback);
 		ASSERT( prevOperationCallback == NULL );
-		pv->watchDogSemEnd = JLSemaphoreCreate(0);
-		pv->watchDogThread = JLThreadStart(WatchDogThreadProc, cx);
-		//	JLThreadPriority(pv->watchDogThread, JL_THREAD_PRIORITY_LOW);
-		JL_ASSERT( JLSemaphoreOk(pv->watchDogSemEnd) && JLThreadOk(pv->watchDogThread), E_HOST, E_CREATE ); // "Unable to create the GC thread."
+		hpv->watchDogSemEnd = JLSemaphoreCreate(0);
+		hpv->watchDogThread = JLThreadStart(WatchDogThreadProc, cx);
+		//	JLThreadPriority(hpv->watchDogThread, JL_THREAD_PRIORITY_LOW);
+		JL_ASSERT( JLSemaphoreOk(hpv->watchDogSemEnd) && JLThreadOk(hpv->watchDogThread), E_HOST, E_CREATE ); // "Unable to create the GC thread."
 	}
 	return cx;
 
@@ -641,64 +756,58 @@ bad:
 }
 
 /**qa
-	QA.ASSERTOP( processEvents, '==', global.processEvents );
-	QA.ASSERTOP( _host.buildDate, '>', 0 );
-	QA.ASSERTOP( _host.buildDate, '>', +new Date(2012, 3 -1, 1) );
-	QA.ASSERTOP( _host.buildDate, '<=', Date.now() - new Date().getTimezoneOffset() * 60 * 1000 );
+	QA.ASSERTOP( global, 'has', 'processEvents' );
+//	QA.ASSERTOP( host, '!has', 'processEvents' );
+	QA.ASSERTOP( host._buildDate, '>', 0 );
+	QA.ASSERTOP( host._buildDate, '>', +new Date(2012, 3 -1, 1) );
+	QA.ASSERTOP( host._buildDate, '<=', Date.now() - new Date().getTimezoneOffset() * 60 * 1000 );
 **/
 JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
 
 	ASSERT( !JS_CStringsAreUTF8() );
 
 	_unsafeMode = unsafeMode;
-	HostPrivate *pv = JL_GetHostPrivate(cx);
-	if ( pv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
+	HostPrivate *hpv = JL_GetHostPrivate(cx);
+	if ( hpv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 
-		pv = ConstructHostPrivate();
-		JL_ASSERT_ALLOC( pv );
-		pv->versionKey = JL_HOSTPRIVATE_KEY;
-		JL_SetHostPrivate(cx, pv);
+		hpv = ConstructHostPrivate();
+		JL_ASSERT_ALLOC( hpv );
+		hpv->versionKey = JL_HOSTPRIVATE_KEY;
+		JL_SetHostPrivate(cx, hpv);
 	}
 
-	pv->privateData = userPrivateData;
+	hpv->privateData = userPrivateData;
 
-	jl::QueueInitialize(&pv->moduleList);
+	jl::QueueInitialize(&hpv->moduleList);
 
-	pv->unsafeMode = unsafeMode;
+	hpv->unsafeMode = unsafeMode;
 
 	if ( unsafeMode )
 		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_STRICT | JSOPTION_RELIMIT));
 
+	hpv->report = Report;
+
+	hpv->hostStdErr = stdErr;
+	hpv->hostStdOut = stdOut;
+	hpv->hostStdIn = stdIn;
+
+
 	JSObject *globalObject;
 	globalObject = JL_GetGlobal(cx);
 	ASSERT( globalObject != NULL ); // "Global object not found."
-	
-	pv->report = Report;
-
-	pv->hostStdErr = stdErr;
-	pv->hostStdOut = stdOut;
-	pv->hostStdIn = stdIn;
 
 	//JSObject *newObject = JS_NewObject(cx, NULL, NULL, NULL);
-	//pv->objectClass = JL_GetClass(newObject);
-	//pv->objectProto = JL_GetPrototype(cx, newObject);
-	JL_CHK( js_GetClassPrototype(cx, globalObject, JSProto_Object, &pv->objectProto, NULL) );
-	pv->objectClass = JL_GetClass(pv->objectProto);
-	ASSERT( pv->objectClass );
-	ASSERT( pv->objectProto );
+	//hpv->objectClass = JL_GetClass(newObject);
+	//hpv->objectProto = JL_GetPrototype(cx, newObject);
+	JL_CHK( js_GetClassPrototype(cx, globalObject, JSProto_Object, &hpv->objectProto, NULL) );
+	hpv->objectClass = JL_GetClass(hpv->objectProto);
+	ASSERT( hpv->objectClass );
+	ASSERT( hpv->objectProto );
 	
 	// global functions & properties
-	JL_CHKM( JS_DefinePropertyById( cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(globalObject), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ), E_PROP, E_CREATE );
-	JL_CHKM( JS_DefineFunction( cx, globalObject, JL_GetHostPrivate(cx)->camelCase == JL_CAMELCASE_UPPER ? JLNormalizeFunctionName(NAME_GLOBAL_FUNCTION_LOAD_MODULE) : NAME_GLOBAL_FUNCTION_LOAD_MODULE, LoadModule, 0, 0 ), E_PROP, E_CREATE );
+	JL_CHKM( JS_DefinePropertyById(cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(globalObject), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
 
-	JSObject *hostObj = GetHostObject(cx);
-	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, unsafeMode), unsafeMode, true, false) );
-	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, stdin ), JL_FunctionToJsval(cx, JSDefaultStdinFunction , 1, 0, NULL, JLID(cx, stdin ))) );
-	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, stdout), JL_FunctionToJsval(cx, JSDefaultStdoutFunction, 1, 0, NULL, JLID(cx, stdout))) );
-	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, stderr), JL_FunctionToJsval(cx, JSDefaultStderrFunction, 1, 0, NULL, JLID(cx, stderr))) );
-	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, jsVersion), JS_GetVersion(cx), true, false) ); // btw, see JS_GetImplementationVersion()
-	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, buildDate), (double)__DATE__EPOCH * 1000, true, false) );
-	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, revision), JL_SvnRevToInt(SVN_REVISION_STR), true, false) );
+	JL_CHK( JLInitClass(cx, globalObject, host::classSpec) ); // INIT_CLASS( host );
 
 	// init static modules
 	if ( !jslangModuleInit(cx, globalObject) )
@@ -714,24 +823,23 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 	JSRuntime *rt = JL_GetRuntime(cx);
 
-	HostPrivate *pv = JL_GetHostPrivate(cx);
-	JL_ASSERT( pv, E_HOST, E_STATE, E_COMMENT("context private") );
+	HostPrivate *hpv = JL_GetHostPrivate(cx);
+	JL_ASSERT( hpv, E_HOST, E_STATE, E_COMMENT("context private") );
 
-	pv->canSkipCleanup = skipCleanup;
-	
-	JL_ASSERT( pv->isEnding == false );
-	pv->isEnding = true;
+	JL_ASSERT( hpv->isEnding == false );
+	hpv->isEnding = true;
+	hpv->canSkipCleanup = skipCleanup;
 
-	if ( JLThreadOk(pv->watchDogThread) ) {
+	if ( JLThreadOk(hpv->watchDogThread) ) {
 
-		// beware: it is important to destroy the watchDogThread BEFORE destroying the cx or pv !!!
-		JLSemaphoreRelease(pv->watchDogSemEnd);
-		JLThreadWait(pv->watchDogThread, NULL);
-		JLThreadFree(&pv->watchDogThread);
-		JLSemaphoreFree(&pv->watchDogSemEnd);
+		// beware: it is important to destroy the watchDogThread BEFORE destroying the cx or hpv !!!
+		JLSemaphoreRelease(hpv->watchDogSemEnd);
+		JLThreadWait(hpv->watchDogThread, NULL);
+		JLThreadFree(&hpv->watchDogThread);
+		JLSemaphoreFree(&hpv->watchDogSemEnd);
 	}
 
-	for ( jl::QueueCell *it = jl::QueueBegin(&pv->moduleList); it; it = jl::QueueNext(it) ) {
+	for ( jl::QueueCell *it = jl::QueueBegin(&hpv->moduleList); it; it = jl::QueueNext(it) ) {
 
 		JLLibraryHandler module = (JLLibraryHandler)jl::QueueGetData(it);
 		ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_RELEASE);
@@ -758,7 +866,6 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 //	if ( tmp != JSVAL_VOID && JSVAL_TO_PRIVATE(tmp) )
 //		jl_free( JSVAL_TO_PRIVATE(tmp) );
 
-	JL_CHKM( RemoveHostObject(cx), E_HOST, E_INTERNAL ); // "Unable to remove the host object."
 
 // cleanup
 
@@ -772,9 +879,9 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 	// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
 
-	while ( !jl::QueueIsEmpty(&pv->moduleList) ) {
+	while ( !jl::QueueIsEmpty(&hpv->moduleList) ) {
 
-		JLLibraryHandler module = (JLLibraryHandler)jl::QueueShift(&pv->moduleList);
+		JLLibraryHandler module = (JLLibraryHandler)jl::QueueShift(&hpv->moduleList);
 		ModuleFreeFunction moduleFree = (ModuleFreeFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_FREE);
 		if ( moduleFree != NULL )
 			moduleFree();
@@ -785,7 +892,7 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 	jslangModuleFree();
 
-	DestructHostPrivate(pv);
+	DestructHostPrivate(hpv);
 
 	return JS_TRUE;
 
@@ -796,106 +903,6 @@ bad:
 		JS_DestroyContext(cx);
 		JS_DestroyRuntime(rt);
 	}
-	return JS_FALSE;
-}
-
-
-/*
-void HostPrincipalsDestroy(JSContext *cx, JSPrincipals *principals) {
-
-	jl_free(principals->codebase);
-	jl_free(principals);
-}
-*/
-
-
-JSBool ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnly, jsval *rval ) {
-
-	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); //  | JSOPTION_DONT_REPORT_UNCAUGHT
-	// JSOPTION_COMPILE_N_GO:
-	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
-	// JSOPTION_DONT_REPORT_UNCAUGHT:
-	//  When returning from the outermost API call, prevent uncaught exceptions from being converted to error reports
-	//  we can use JS_ReportPendingException to report it manually
-
-	JSObject *globalObject = JL_GetGlobal(cx);
-	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
-
-// compile & executes the script
-
-	//JSPrincipals *principals = (JSPrincipals*)jl_malloc(sizeof(JSPrincipals));
-	//JSPrincipals tmp = {0};
-	//*principals = tmp;
-	//principals->codebase = (char*)jl_malloc(PATH_MAX);
-	//strncpy(principals->codebase, scriptFileName, PATH_MAX-1);
-	//principals->refcount = 1;
-	//principals->destroy = HostPrincipalsDestroy;
-
-	JSScript *script;
-	script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "inline", 1);
-	JL_CHK( script );
-	
-	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
-
-	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
-	if ( !compileOnly )
-		JL_CHK( JS_ExecuteScript(cx, globalObject, script, rval) ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
-	else
-		*rval = JSVAL_VOID;
-
-	JS_SetOptions(cx, prevOpt);
-	return JS_TRUE;
-
-bad:
-	JS_SetOptions(cx, prevOpt);
-	return JS_FALSE;
-}
-
-
-
-JSBool ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, jsval *rval ) {
-
-	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
-	JSObject *globalObject = JL_GetGlobal(cx);
-	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
-
-	JSScript *script;
-	script = JL_LoadScript(cx, globalObject, scriptFileName, ENC_UNKNOWN, true, false); // use xdr if available, but don't save it.
-	JL_CHK( script );
-
-	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
-
-	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
-	if ( !compileOnly )
-		JL_CHK( JS_ExecuteScript(cx, globalObject, script, rval) ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
-	else
-		*rval = JSVAL_VOID;
-
-	JS_SetOptions(cx, prevOpt);
-	return JS_TRUE;
-
-bad:
-	JS_SetOptions(cx, prevOpt);
-	return JS_FALSE;
-}
-
-
-JSBool ExecuteBootstrapScript( JSContext *cx, void *xdrScript, uint32_t xdrScriptLength, jsval *rval ) {
-
-	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
-	JSScript *script = JS_DecodeScript(cx, xdrScript, xdrScriptLength, NULL, NULL);
-	JL_CHK( script );
-
-//	JL_CHK( SetConfigurationReadonlyValue(cx, JLID_NAME(cx, bootstrapScript), OBJECT_TO_JSVAL(bootstrapScriptObject)) ); // bootstrap script cannot be hidden
-	JL_CHK( JS_ExecuteScript(cx, JL_GetGlobal(cx), script, rval) );
-
-	JS_SetOptions(cx, prevOpt);
-	return JS_TRUE;
-
-bad:
-	JS_SetOptions(cx, prevOpt);
 	return JS_FALSE;
 }
 
@@ -1023,7 +1030,7 @@ FreeHead() {
 JLThreadFuncDecl
 MemoryFreeThreadProc( void *threadArg ) {
 
-	JL_IGNORE(threadArg);
+	JL_IGNORE( threadArg );
 
 	for (;;) {
 

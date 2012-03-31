@@ -34,7 +34,10 @@
 int _puts(JSContext *cx, const char *str) {
 
 	jsval stdoutFunction;
-	if ( GetHostObjectValue(cx, JLID(cx, stdout), &stdoutFunction) && JL_ValueIsCallable(cx, stdoutFunction) ) {
+
+	JL_CHK( JS_GetPropertyById(cx, JL_GetHostPrivate(cx)->hostObject, JLID(cx, stdout), &stdoutFunction) );
+
+	if ( JL_ValueIsCallable(cx, stdoutFunction) ) {
 
 		int len = (int)strlen(str);
 		JSString *jsstr = JS_NewStringCopyN(cx, str, len);
@@ -47,6 +50,8 @@ int _puts(JSContext *cx, const char *str) {
 		if ( status == JS_TRUE )
 			return len;
 	}
+
+bad:
 	return EOF;
 }
 

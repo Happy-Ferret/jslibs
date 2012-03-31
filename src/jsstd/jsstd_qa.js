@@ -6,8 +6,8 @@ loadModule('jsstd');
 	new File(filename).content = '\n\n\n\nfunction();\n';
 	
 //	var errorMsg = '';
-//	var tmp = _host.stderr;
-//	_host.stderr = function(txt) {
+//	var tmp = host.stderr;
+//	host.stderr = function(txt) {
 //		
 //		errorMsg += txt;
 //	}
@@ -16,7 +16,7 @@ loadModule('jsstd');
 
 	new File(filename).content = undefined;
 	
-//	_host.stderr = tmp;
+//	host.stderr = tmp;
 //	QA.ASSERT( errorMsg.indexOf('function()') != -1, true, 'correct error message' );
 	
 
@@ -969,16 +969,16 @@ loadModule('jsstd');
 
 /// warning messages [ft]
 
-	if ( !_host.safeMode ) // warning messages are disabled in unsafe mode
+	if ( !host.safeMode ) // warning messages are disabled in unsafe mode
 		return;
 		
 	var buffer = '';
-	var prev = _host.stderr;
-	_host.stderr = function(chunk) buffer += chunk;
+	var prev = host.stderr;
+	host.stderr = function(chunk) buffer += chunk;
 	try {
 		warning('testing warning messages');
 	} catch (ex) {}
-	_host.stderr = prev;
+	host.stderr = prev;
 	
 	//print(buffer.length)
 	QA.ASSERT_STR( buffer.indexOf('warning: testing warning messages') != -1, true, 'stderr redirection result' ); 

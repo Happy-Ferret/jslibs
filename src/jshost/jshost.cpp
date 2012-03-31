@@ -272,12 +272,12 @@ EXTERN_C void jl_free_count( void *ptr ) {
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 /**qa
-	QA.ASSERTOP(_host, 'has', 'path');
-	QA.ASSERTOP(_host, 'has', 'name');
-	if ( _host.name.indexOf('jshost') == 0 ) {
+	QA.ASSERTOP(host, 'has', 'path');
+	QA.ASSERTOP(host, 'has', 'name');
+	if ( host.name.indexOf('jshost') == 0 ) {
 
-		QA.ASSERTOP(_host, 'has', 'endSignal');
-		QA.ASSERTOP(_host, 'has', 'endSignalEvents');
+		QA.ASSERTOP(host, 'has', 'endSignal');
+		QA.ASSERTOP(host, 'has', 'endSignalEvents');
 	}
 **/
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
@@ -509,7 +509,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		hostName = hostFullPath;
 	}
 
-	JSObject *hostObj = GetHostObject(cx);
+	JSObject *hostObj = JL_GetHostPrivate(cx)->hostObject;
 
 	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, path), hostPath) );
 	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, name), hostName) );
@@ -517,17 +517,20 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	jsval arguments;
 	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), &arguments) );
 	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, arguments), arguments) );
-
-	// doc: JSPROP_SHARED - https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
-	JL_CHK( JS_DefineProperty(cx, hostObj, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) );
+	JL_CHK( JS_DefineProperty(cx, hostObj, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) ); // https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 	JL_CHK( JS_DefineFunction(cx, hostObj, "endSignalEvents", EndSignalEvents, 1, 0) );
-
 
 	int exitValue;
 	jsval rval;
 
-	if ( sizeof(embeddedBootstrapScript)-1 > 0 )
-		JL_CHK( ExecuteBootstrapScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, &rval) ); // -1 because sizeof("") == 1
+	if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
+
+		uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
+		JSScript *script = JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL, NULL); // -1 because sizeof("") == 1
+		JL_CHK( script );
+		JL_CHK( JS_ExecuteScript(cx, JL_GetGlobal(cx), script, &rval) );
+		JS_SetOptions(cx, prevOpt);
+	}
 
 	if ( useFileBootstrapScript ) {
 
@@ -692,7 +695,7 @@ $H beware
   $H exemple
   {{{
   loadModule('jsstd');
-  print( 'Unsafe mode: ' + _host.unsafeMode, '\n' );
+  print( 'Unsafe mode: ' + host.unsafeMode, '\n' );
   }}}
   $H note
   You can avoid loadModule to use the global object and load the module in your own namespace:
@@ -738,9 +741,9 @@ $H beware
   The command-line arguments (given after command line options).
   $H example
   {{{
-  for ( var i in _host.arguments ) {
+  for ( var i in host.arguments ) {
 
-   print( 'argument['+i+'] = '+_host.arguments[i] ,'\n' );
+   print( 'argument['+i+'] = '+host.arguments[i] ,'\n' );
   }
   }}}
   <pre>
@@ -750,19 +753,19 @@ $H beware
   argument[1] = bar
   </pre>
 
- * *_host.endSignal*
+ * *host.endSignal*
   Is $TRUE if a break signal (ctrl-c, ...) has been sent to jshost. This event can be reset.
 
 === Host object ===
- jshost create a global `_host` object to provide other modules some useful informations like `stdin/stdout/stderr` access and `unsafeMode` flag.
- The `_host` also contains the `revision`, `buildDate` and `jsVersion` properties.
+ jshost create a global `host` object to provide other modules some useful informations like `stdin/stdout/stderr` access and `unsafeMode` flag.
+ The `host` also contains the `revision`, `buildDate` and `jsVersion` properties.
 
 ==== Example ====
- host version information can be obtained using: `jshost -i "_host.stdout(_host.build+' r'+_host.revision)"`
+ host version information can be obtained using: `jshost -i "host.stdout(_host.build+' r'+_host.revision)"`
 
 ==== Example ====
 {{{
-var r = _host.revision + (((2006*12 + 6)*31 + 22)*24 + 0);
+var r = host.revision + (((2006*12 + 6)*31 + 22)*24 + 0);
 
 var d = 12 * 31 * 24;
 var year = Math.floor(r / d);

@@ -25,7 +25,7 @@ loadModule('jsio');
 /// many new threads [r]
 
 	var i = 0;
-	while ( !_host.endSignal && i++ < 100 ) {
+	while ( !host.endSignal && i++ < 100 ) {
 
 		new Task(function(){});
 		QA.gc();
@@ -289,7 +289,7 @@ loadModule('jsio');
 
 	function myFileTask() {
 
-		_host.stderr('myerror');
+		host.stderr('myerror');
 	}
 
 	var myTask = new Task(myFileTask);

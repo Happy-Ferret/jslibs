@@ -139,7 +139,7 @@ loadModule('jsdebug');
 
 		this.getNextRequest = function() {
 
-			while( !_host.endSignal && pendingRequestList.length == 0 )
+			while( !host.endSignal && pendingRequestList.length == 0 )
 				poll(socketList, 100);
 			return pendingRequestList.shift();
 		}	
@@ -164,10 +164,10 @@ loadModule('jsdebug');
 	var _breakContext;
 	var _stdout = '';
 	var _stderr = '';
-	var _prevStdout = _host.stdout;
-	var _prevStderr = _host.stdout;
-	_host.stdout = function() { _stdout += Array.slice(arguments).join(''); return _prevStdout.apply(this, arguments) }
-	_host.stderr = function() { _stderr += Array.slice(arguments).join(''); return _prevStderr.apply(this, arguments) }
+	var _prevStdout = host.stdout;
+	var _prevStderr = host.stdout;
+	host.stdout = function() { _stdout += Array.slice(arguments).join(''); return _prevStdout.apply(this, arguments) }
+	host.stderr = function() { _stderr += Array.slice(arguments).join(''); return _prevStderr.apply(this, arguments) }
 
 	function originToString( breakOrigin ) {
 
@@ -346,8 +346,8 @@ loadModule('jsdebug');
 			delete dbg.onBreak;
 			dbg.clearBreakpoints();
 			delete global.__dbg;
-			_host.stdout = _prevStdout;
-			_host.stdout = _prevStderr;
+			host.stdout = _prevStdout;
+			host.stdout = _prevStderr;
 			Action(Debugger.DO_CONTINUE);
 		},
 
@@ -440,10 +440,10 @@ loadModule('jsdebug');
 		}
 	}
 
-	if ( _host.arguments[0] == currentFilename ) { // debugger.js is used like: jshost jsdebugger.js programToDebug.js
+	if ( host.arguments[0] == currentFilename ) { // debugger.js is used like: jshost jsdebugger.js programToDebug.js
 		
 		dbg.breakOnFirstexecute = true;
-		var prog = _host.arguments.splice(1,1);
+		var prog = host.arguments.splice(1,1);
 		exec(prog, false);
 	}
 

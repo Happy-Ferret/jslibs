@@ -651,8 +651,8 @@ t.onResponse = function(t) {
 
 t.request(0);
 
-while ( !_host.endSignal )
-	processEvents(t.event(), _host.endSignalEvent());
+while ( !host.endSignal )
+	processEvents(t.event(), host.endSignalEvent());
 }}}
 **/
 struct UserProcessEvent {

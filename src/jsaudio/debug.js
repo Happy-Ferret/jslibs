@@ -205,7 +205,7 @@ Oal.open();
 var src = Oal.genSource();
 
 var pcm, decodeSize = 512;
-while ( (pcm = decoder.read(decodeSize)) && !_host.endSignal ) {
+while ( (pcm = decoder.read(decodeSize)) && !host.endSignal ) {
 
 	Oal.sourceQueueBuffers(src, Oal.Buffer(pcm));
 	if ( Oal.getSourceInteger(src, Oal.SOURCE_STATE) == Oal.INITIAL )
@@ -215,7 +215,7 @@ while ( (pcm = decoder.read(decodeSize)) && !_host.endSignal ) {
 
 var totalTime = decoder.frames/decoder.rate;
 var currentTimeOffset = Oal.getSourceReal(src, Oal.SEC_OFFSET);
-for ( i = 0; !_host.endSignal && i < totalTime - currentTimeOffset; i++ )
+for ( i = 0; !host.endSignal && i < totalTime - currentTimeOffset; i++ )
 	sleep(1000);
 
 Oal.close();

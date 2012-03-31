@@ -1,3 +1,4 @@
+loadModule = host.loadModule;
 loadModule('jsstd');
 loadModule('jsio');
 loadModule('jsdebug');
@@ -313,7 +314,7 @@ function compileTests(itemList) {
 
 function parseCommandLine(cfg) {
 
-	var args = _host.arguments;
+	var args = host.arguments;
 	cfg.args = [];
 	while ( args.length > 1 ) {
 
@@ -433,7 +434,7 @@ function launchTests(itemList, cfg) {
 			try {
 
 				var t0 = timeCounter();
-				for ( var i = cfg.repeatEachTest; i && !_host.endSignal ; --i ) {
+				for ( var i = cfg.repeatEachTest; i && !host.endSignal ; --i ) {
 
 					++testCount;
 					void cx.item.func(qaapi);
@@ -462,7 +463,7 @@ function launchTests(itemList, cfg) {
 
 		}
 
-		if ( _host.endSignal )
+		if ( host.endSignal )
 			break;
 
 		if ( cx.issueList.length >= cfg.stopAfterNIssues )
@@ -495,10 +496,10 @@ function perfTest(itemList, cfg) {
 	var i;
 	var qaapi = { cx:{item:{file:cfg.perfTest}}, __noSuchMethod__:function() {}, randomData:function() 'qa_tmp_123456789', randomString:function() 'qa_tmp_abcdefghij' };
 
-	var stdout = _host.stdout;
-	var stderr = _host.stderr;
-	delete _host.stdout;
-	delete _host.stderr;
+	var stdout = host.stdout;
+	var stderr = host.stderr;
+	delete host.stdout;
+	delete host.stderr;
 
 	setPerfTestMode();
 	collectGarbage();
@@ -596,8 +597,8 @@ function perfTest(itemList, cfg) {
 	
 	stdout('time-constant items: '+itemList.length+'\n');
 
-	_host.stdout = stdout;
-	_host.stderr = stderr;
+	host.stdout = stdout;
+	host.stderr = stderr;
 
 	var initSrc = [ '!'+item.func.toSource()+'();' for each ( item in itemList ) if ( item.init ) ];
 	var initCount = initSrc.length;
@@ -611,10 +612,10 @@ function perfTest(itemList, cfg) {
 	
 		loadModule("jsstd");
 		loadModule("jsdebug");
-		var prev_stdout = _host.stdout;
-		var prev_stderr = _host.stderr;
-		delete _host.stdout;
-		delete _host.stderr;
+		var prev_stdout = host.stdout;
+		var prev_stderr = host.stderr;
+		delete host.stdout;
+		delete host.stderr;
 			
 		setPerfTestMode();
 		collectGarbage();
@@ -629,8 +630,8 @@ function perfTest(itemList, cfg) {
 			testList[i](qaapi);
 		t = timeCounter() - t - err;
 
-		_host.stdout = prev_stdout;
-		_host.stderr = prev_stderr;
+		host.stdout = prev_stdout;
+		host.stderr = prev_stderr;
 		print(len+' tests in '+ t.toFixed(4) +' ms\n');
 	}
 

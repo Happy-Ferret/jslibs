@@ -215,7 +215,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	err = strcat_s(scriptName, sizeof(scriptName), ".js");
 	JL_ASSERT( err == 0, E_LIB, E_INTERNAL );
 
-	JSObject *hostObj = GetHostObject(cx);
+	JSObject *hostObj = JL_GetHostPrivate(cx)->hostObject;
 
 	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, path), moduleFileName) );
 	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, name), name) );
@@ -232,8 +232,14 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	jsval rval;
 
-	if ( sizeof(embeddedBootstrapScript)-1 > 0 )
-		JL_CHK( ExecuteBootstrapScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, &rval) ); // -1 because sizeof("") == 1
+	if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
+
+		uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
+		JSScript *script = JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL, NULL); // -1 because sizeof("") == 1
+		JL_CHK( script );
+		JL_CHK( JS_ExecuteScript(cx, JL_GetGlobal(cx), script, &rval) );
+		JS_SetOptions(cx, prevOpt);
+	}
 
 	if ( ExecuteScriptFileName(cx, scriptName, false, &rval) != JS_TRUE )
 		if ( JL_IsExceptionPending(cx) )
@@ -304,8 +310,8 @@ Because jwinshost do not use a console window, errors and printed messages will 
 However, you can write your own output system:
 {{{
 loadModule('jswinshell');
-_host.stdout = new Console().Write;
-_host.stderr = MessageBox;
+host.stdout = new Console().Write;
+host.stderr = MessageBox;
 loadModule('jsstd');
 print('toto');
 hkqjsfhkqsdu_error();

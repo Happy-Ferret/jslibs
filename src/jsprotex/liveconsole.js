@@ -114,7 +114,7 @@ function SimpleHTTPServer(port, bind, basicAuth) {
 
 	this.getNextRequest = function() {
 
-		while( !_host.endSignal && pendingRequestList.length == 0 )
+		while( !host.endSignal && pendingRequestList.length == 0 )
 			poll(socketList, 100);
 		return pendingRequestList.shift();
 	}	
@@ -286,7 +286,7 @@ var live = new function() {
 
 // test part
 
-while ( !_host.endSignal ) {
+while ( !host.endSignal ) {
 
 // /*ui slider({min:10, max:20, step:1}); button({ name:'go'});  hr */
 	live.poll();

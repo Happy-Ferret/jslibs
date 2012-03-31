@@ -40,21 +40,21 @@ $MODULE_FOOTER
 
 
 void*
-JsfontAlloc( FT_Memory memory, long size ) {
+JsfontAlloc( FT_Memory, long size ) {
 
 	return jl_malloc(size);
 }
 
 
 void
-JsfontFree( FT_Memory memory, void* block ) {
+JsfontFree( FT_Memory, void* block ) {
 
 	jl_free(block);
 }
 
 
 void*
-JsfontRealloc( FT_Memory  memory, long cur_size, long new_size, void* block ) {
+JsfontRealloc( FT_Memory, long, long new_size, void* block ) {
 
 	return jl_realloc(block, new_size);
 }
@@ -83,7 +83,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	mpv->GetFTSymbols = GetFTSymbols;
 
-	JL_CHK( JL_DefineProperty(cx, GetHostObject(cx), "_jsfontModulePrivate", (void*)mpv, false, false) );
+	JL_CHK( JL_DefineProperty(cx, JL_GetHostPrivate(cx)->hostObject, "_jsfontModulePrivate", (void*)mpv, false, false) );
 
 	INIT_CLASS(Font);
 
@@ -93,7 +93,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 
 JSBool
-ModuleRelease(JSContext *cx) {
+ModuleRelease(JSContext *) {
 
 	return JS_TRUE;
 }

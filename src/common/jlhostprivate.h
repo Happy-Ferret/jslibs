@@ -29,6 +29,7 @@ struct ClassProtoCache {
 struct HostPrivate {
 	uint32_t versionKey; // used to ensure compatibility between host and modules. see JL_HOSTPRIVATE_KEY macro.
 	bool unsafeMode; // used to spread the unsafe status across modules.
+	JSObject *hostObject;
 	bool isEnding;
 	bool canSkipCleanup; // allows modules to skip the memory cleanup phase.
 	char camelCase;

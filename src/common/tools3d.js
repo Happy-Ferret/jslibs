@@ -726,7 +726,7 @@ function UI(currentWidth, currentHeight) {
 
 			if ( sym == K_ESCAPE ) {
 				
-				_host.endSignal = true;
+				host.endSignal = true;
 			}
 	
 			if ( sym == K_RETURN && (mod & KMOD_LALT) ) {
@@ -779,7 +779,7 @@ function UI(currentWidth, currentHeight) {
 		
 		onQuit: function() {
 		 
-			_host.endSignal = true;
+			host.endSignal = true;
 		},
 		onVideoResize: function(w, h) {
 			
@@ -791,9 +791,9 @@ function UI(currentWidth, currentHeight) {
 
 	this.loop = function( additionalEventCallback ) {
 		
-		while ( !_host.endSignal ) {
+		while ( !host.endSignal ) {
 
-			var events = [ _host.endSignalEvents(), SDLEvents(listeners), surfaceReadyEvents.call(this, surfaceReady) ];
+			var events = [ host.endSignalEvents(), SDLEvents(listeners), surfaceReadyEvents.call(this, surfaceReady) ];
 			additionalEventCallback && additionalEventCallback(events);
 			processEvents.apply(this, events);
 		}

@@ -1403,10 +1403,10 @@ s.onmousedown = function(button) {
 s.oncommand = function(id) {
 
   if ( id == 'exit_cmd' )
-    _host.endSignal = true;
+    host.endSignal = true;
 }
 
-while ( !_host.endSignal ) {
+while ( !host.endSignal ) {
 
   s.processEvents();
   sleep(100);

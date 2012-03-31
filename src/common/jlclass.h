@@ -161,44 +161,52 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	}
 
 	JSObject *proto; // doc: object that is the prototype for the newly initialized class.
-	proto = JS_InitClass(cx, obj, parentProto, &cs->clasp, cs->constructor, cs->nargs, NULL, cs->fs, NULL, cs->static_fs);
+	JSObject *ctor;
+
+	proto = JS_InitClass(cx, obj, parentProto, &cs->clasp, cs->constructor, cs->nargs, NULL, NULL, NULL, NULL);
 
 	JL_ASSERT( proto != NULL, E_CLASS, E_NAME(cs->clasp.name), E_CREATE ); //RTE
 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
-	
+
 	JL_CHKM( JL_CacheClassProto(hpv, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
-	JSObject *staticDest;
-	if ( cs->constructor ) {
+	if ( cs->constructor )
+		ctor = JL_GetConstructor(cx, proto);
+	else
+		ctor = proto;
 
-		staticDest = JL_GetConstructor(cx, proto);
-	} else {
+	// functions
+	if ( cs->fs )
+		JL_CHK( JS_DefineFunctions(cx, proto, cs->fs) );
+	
+	if ( cs->static_fs )
+		JL_CHK( JS_DefineFunctions(cx, ctor, cs->static_fs) );
 
-		staticDest = proto;
-	}
-
+	// properties
 	if ( cs->ps != NULL )
 		JL_CHK( JL_DefineClassProperties(cx, proto, cs->ps) );
 
 	if ( cs->static_ps != NULL )
-		JL_CHK( JL_DefineClassProperties(cx, staticDest, cs->static_ps) );
+		JL_CHK( JL_DefineClassProperties(cx, ctor, cs->static_ps) );
 
+	// const
 	if ( cs->cis != NULL )
 		for ( JLConstIntegerSpec *it = cs->cis; it->name; ++it )
-			JL_CHK( JS_DefineProperty(cx, staticDest, it->name, INT_TO_JSVAL(jl::SafeCast<int32_t>(it->ival)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+			JL_CHK( JS_DefineProperty(cx, ctor, it->name, INT_TO_JSVAL(jl::SafeCast<int32_t>(it->ival)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( cs->cds != NULL )
-		JL_CHK( JS_DefineConstDoubles(cx, staticDest, cs->cds) );
+		JL_CHK( JS_DefineConstDoubles(cx, ctor, cs->cds) );
 
 
-	if ( JS_IsExtensible(staticDest) ) {
+	// info
+	if ( JS_IsExtensible(ctor) ) {
 		
-		JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-		JL_CHK( JS_DefinePropertyById(cx, staticDest, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	}
 
 	if ( cs->init )
-		JL_CHK( cs->init(cx, cs, proto, staticDest) );
+		JL_CHK( cs->init(cx, cs, proto, ctor) );
 
 	ASSERT( JL_GetCachedClassProto(hpv, cs->clasp.name)->clasp == &cs->clasp );
 	ASSERT( JL_GetCachedClassProto(hpv, cs->clasp.name)->proto == proto );

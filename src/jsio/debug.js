@@ -148,9 +148,9 @@ if ( 0 ) {
 	halt();
 
 /*	
-	var process = new Process('jshost', ['-u', '-i', '_host.stdout(_host.arguments)', '123', '-c']);
+	var process = new Process('jshost', ['-u', '-i', 'host.stdout(host.arguments)', '123', '-c']);
 	var res = process.stdout.read();
-	print( res ==  "_host.stdout(_host.arguments),123,-c");
+	print( res ==  "host.stdout(host.arguments),123,-c");
 */
 
 	var f = new File('c:/MSDOS.SYS').open('r');
@@ -254,11 +254,11 @@ serv.readable = function () {
 
 print('HTTP server minimal example. point a web browser at http://localhost:8081. CTRL+C to exit\n');
 
-while ( !_host.endSignal )
+while ( !host.endSignal )
  poll(descList, 50);
 
-//while ( !_host.endSignal )
-//	processEvents( IOEvents(descList), _host.endSignalEvents(), TimeoutEvents(100) );
+//while ( !host.endSignal )
+//	processEvents( IOEvents(descList), host.endSignalEvents(), TimeoutEvents(100) );
 
 
 //jsioTest();
@@ -538,7 +538,7 @@ halt(); //////////////////////////////////////////////////////////
 
 
 processPriority = 2;
-while (!_host.endSignal) {
+while (!host.endSignal) {
 
 	sleep(100);
 }
@@ -553,7 +553,7 @@ halt(); //////////////////////////////////////////////////////////
 var mem = new SharedMemory( 'test.txt', 4 );
 
 var i = 0;
-while (!_host.endSignal) {
+while (!host.endSignal) {
 
 	mem.content = i++;
 	sleep(1000);
@@ -623,7 +623,7 @@ print('\n * testing UDP socket \n');
 
 
 	var i = 0;
-	while(++i < 20 && !_host.endSignal) {
+	while(++i < 20 && !host.endSignal) {
 		
 		print('.\n');
 		poll(dlist,100);

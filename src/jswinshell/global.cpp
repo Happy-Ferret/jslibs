@@ -583,7 +583,7 @@ $TOC_MEMBER $INAME
   $H example 1
   {{{
   var dch = directoryChangesInit('C:\\WINDOWS', 0x10|0x40, true);
-  while (!_host.endSignal) {
+  while (!host.endSignal) {
 
     print( uneval( directoryChangesLookup(dch) ), '\n');
     sleep(1000);
@@ -742,8 +742,8 @@ function onChanges() {
 	print( directoryChangesLookup(dch).join('\n'), '\n');
 }
 
-while ( !_host.endSignal )
-	processEvents( directoryChangesEvents(dch, onChanges), _host.endSignalEvents() );
+while ( !host.endSignal )
+	processEvents( directoryChangesEvents(dch, onChanges), host.endSignalEvents() );
 }}}
 **/
 

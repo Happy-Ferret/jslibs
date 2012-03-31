@@ -50,6 +50,17 @@ $TOC_MEMBER $INAME
 	QA.ASSERT( isBoolean(false), true );
 	QA.ASSERT( isBoolean(new Boolean(true)), true );
 **/
+
+/*
+#define CRLF "\r\n"
+#define DEFINE_DOC( name, description ) static const char *_##name##_doc = description
+
+DEFINE_DOC( isBoolean
+"boolean isBoolean" CRLF
+" is true the value is a boolean value or the object is a Boolean object"
+);
+*/
+
 DEFINE_FUNCTION( isBoolean ) {
 
 	JL_ASSERT_ARGC(1);
@@ -465,7 +476,7 @@ function onEndSignal() {
 
 for (;;) {
 
-  processEvents( timeoutEvents(500, onTimeout), _host.endSignalEvents(onEndSignal) );
+  processEvents( timeoutEvents(500, onTimeout), host.endSignalEvents(onEndSignal) );
 }
 }}}
 
@@ -1184,7 +1195,12 @@ testFct( JSContext *cx ) {
 
 DEFINE_FUNCTION( jslangTest ) {
 
+
 	JL_IGNORE(cx, argc, vp);
+
+
+
+
 
 /*
 	JL_CHK( ::SetThreadAffinityMask(GetCurrentThread(), 1) );
