@@ -941,6 +941,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( stackFrameInfo ) {
 
+	jsval tmp;
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	unsigned int frameIndex;
@@ -958,7 +959,6 @@ DEFINE_FUNCTION( stackFrameInfo ) {
 	frameInfo = JL_NewObj(cx);
 	JL_CHK( frameInfo );
 	*JL_RVAL = OBJECT_TO_JSVAL(frameInfo);
-	jsval tmp;
 
 	JSScript *script;
 	script = JS_GetFrameScript(cx, fp);
@@ -1110,6 +1110,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( locate ) {
 
+	jsval tmp;
 	JSStackFrame *fp;
 	if ( JL_ARG_ISDEF(1) ) {
 
@@ -1136,7 +1137,6 @@ DEFINE_FUNCTION( locate ) {
 	arrObj = JS_NewArrayObject(cx, 2, NULL);
 	*JL_RVAL = OBJECT_TO_JSVAL(arrObj);
 
-	jsval tmp;
 	if ( script ) {
 
 		const char *filename;
@@ -1163,6 +1163,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( definitionLocation ) {
 
+	jsval values[2];
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	JSScript *script;
@@ -1205,7 +1206,6 @@ next:
 		return JS_TRUE;
 	}
 
-	jsval values[2];
 	JL_CHK( JL_NativeToJsval(cx, JS_GetScriptFilename(cx, script), &values[0]) );
 	JL_CHK( JL_NativeToJsval(cx, JS_GetScriptBaseLineNumber(cx, script), &values[1] ) );
 	*JL_RVAL = OBJECT_TO_JSVAL( JS_NewArrayObject(cx, COUNTOF(values), values) );
@@ -1285,6 +1285,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( propertiesInfo ) {
 
+	jsval tmp;
+	JSPropertyDesc desc;
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
@@ -1312,9 +1314,6 @@ DEFINE_FUNCTION( propertiesInfo ) {
 	JL_CHK( arrayObject );
 	*JL_RVAL = OBJECT_TO_JSVAL( arrayObject );
 
-	JSPropertyDesc desc;
-
-	jsval tmp;
 	int index;
 	index = 0;
 	int prototypeLevel;

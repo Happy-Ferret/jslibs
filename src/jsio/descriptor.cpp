@@ -123,7 +123,8 @@ DEFINE_FUNCTION( close ) {
 
 	*JL_RVAL = JSVAL_VOID;
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(obj);
+	PRFileDesc *fd;
+	fd = (PRFileDesc*)JL_GetPrivate(obj);
 
 	JL_ASSERT_WARN( fd, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED ); // see PublicApiRules (http://code.google.com/p/jslibs/wiki/PublicApiRules)
 	if ( !fd )
@@ -334,11 +335,13 @@ DEFINE_FUNCTION( read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
+	PRFileDesc *fd;
+	fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 	// doc: Determine the amount of data in bytes available for reading in the given file or socket. Returns a -1 and the reason for the failure can be retrieved via PR_GetError()
-	PRInt64 available = PR_Available64( fd );
+	PRInt64 available;
+	available = PR_Available64( fd );
 	uint32_t amount;
 
 	if ( JL_ARG_ISDEF(1) ) {
@@ -465,7 +468,8 @@ DEFINE_FUNCTION( sync ) {
 	JL_ASSERT_THIS_INHERITANCE();
 	JL_ASSERT_ARGC(0);
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate(JL_OBJ);
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	JL_CHKB( PR_Sync(fd) == PR_SUCCESS, bad_ioerror );
 

@@ -140,8 +140,10 @@ DEFINE_PROPERTY_GETTER( const ) {
 	JL_CHK( JL_GetReservedSlot(cx, obj, 0, vp) );
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
-	int errorCode = JSVAL_TO_INT(*vp);
-	JSString *str = JS_NewStringCopyZ( cx, ConstString(errorCode) );
+	int errorCode;
+	errorCode = JSVAL_TO_INT(*vp);
+	JSString *str;
+	str = JS_NewStringCopyZ( cx, ConstString(errorCode) );
 	JL_CHK( str );
 	*vp = STRING_TO_JSVAL( str );
 	return JS_TRUE;

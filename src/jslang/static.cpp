@@ -51,15 +51,14 @@ $TOC_MEMBER $INAME
 	QA.ASSERT( isBoolean(new Boolean(true)), true );
 **/
 
-/*
-#define CRLF "\r\n"
-#define DEFINE_DOC( name, description ) static const char *_##name##_doc = description
 
-DEFINE_DOC( isBoolean
-"boolean isBoolean" CRLF
-" is true the value is a boolean value or the object is a Boolean object"
+#define LF "\n"
+#define DEFINE_DOC( NAME, DOC ) static const char *_##NAME##_doc = DOC
+
+DEFINE_DOC( isBoolean,
+"boolean isBoolean" LF
+"returns true if the value is a boolean value or a Boolean object"
 );
-*/
 
 DEFINE_FUNCTION( isBoolean ) {
 
@@ -333,19 +332,19 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( join ) {
 
-	AutoValueVector avr(cx);
+	js::AutoValueVector avr(cx);
 	avr.reserve(16);
 
 	jl::Stack<JLData, jl::StaticAllocMedium> strList;
 	size_t length = 0;
+
+	jsval val;
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JSObject *argObj;
 	argObj = JSVAL_TO_OBJECT(JL_ARG(1));
-
-	jsval val;
 
 	if ( JL_ObjectIsArrayLike(cx, argObj) ) {
 
@@ -726,230 +725,6 @@ DEFINE_FUNCTION( timeoutEvents ) {
 }
 
 
-
-/*
-var obj = {__proto__:null};
-Print(typeof obj.__proto__, '\n' ); // -> undefined
-var obj2 = Deserialize(Serialize(obj));
-Print(typeof obj2.__proto__, '\n' ); // -> object
-// cannot use StructuredClone since { __proto__:null } is not supported.
-
-JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r, uint32_t tag, uint32_t data, void *closure) {
-
-	void *buffer = jl_malloc(data);
-	JL_CHK( JS_ReadBytes(r, buffer, data) );
-
-	//JSObject *obj = JL_NewJslibsObject(cx, "Blob");
-	jsval blob;
-	JL_CHK( JL_NewBlob(cx, buffer, data-1, &blob) ); // -1 : the '\0' terminator is not a part of the data
-
-	return JSVAL_TO_OBJECT(blob);
-
-bad:
-	jl_free(buffer);
-	return NULL;
-}
-
-JSBool WriteStructuredClone(JSContext *cx, JSStructuredCloneWriter *w, JSObject *obj, void *closure) {
-
-	JL_CHK( JS_WriteUint32Pair(w, JS_SCTAG_USER_MIN + 1, 7) );
-	JL_CHK( JS_WriteBytes(w, "123456", 7) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-const JSStructuredCloneCallbacks structuredClone = { ReadStructuredClone, WriteStructuredClone, NULL };
-
-
-DEFINE_FUNCTION( serialize ) {
-
-    jsval v = argc > 0 ? JS_ARGV(cx, vp)[0] : JSVAL_VOID;
-    uint64 *datap;
-    size_t nbytes;
-    if (!JS_WriteStructuredClone(cx, v, &datap, &nbytes, &structuredClone, JL_GetHostPrivate(cx)))
-        return false;
-
-	JSObject *arrayobj = js_CreateTypedArray(cx, js::TypedArray::TYPE_UINT8, nbytes);
-    if (!arrayobj) {
-        JS_free(cx, datap);
-        return false;
-    }
-    js::TypedArray *array = js::TypedArray::fromJSObject(arrayobj);
-    JS_ASSERT((uintptr_t(array->data) & 7) == 0);
-    jl_memcpy(array->data, datap, nbytes);
-    JS_free(cx, datap);
-    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(arrayobj));
-    return true;
-}
-
-
-DEFINE_FUNCTION( deserialize ) {
-
-    jsval v = argc > 0 ? JS_ARGV(cx, vp)[0] : JSVAL_VOID;
-    JSObject *obj;
-    if (JSVAL_IS_PRIMITIVE(v) || !js_IsTypedArray((obj = JSVAL_TO_OBJECT(v)))) {
-
-        //JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSSMSG_INVALID_ARGS, "deserialize");
-		 JL_ERR( E_DATA, E_INVALID );
-        return false;
-    }
-    js::TypedArray *array = js::TypedArray::fromJSObject(obj);
-    if ((array->byteLength & 7) != 0) {
-
-        //JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSSMSG_INVALID_ARGS, "deserialize");
-		 JL_ERR( E_DATA, E_INVALID );
-        return false;
-    }
-    if ((uintptr_t(array->data) & 7) != 0) {
-
-        //JS_ReportErrorNumber(cx, js_GetErrorMessage, NULL, JSSMSG_BAD_ALIGNMENT);
-		 JL_ERR( E_DATA, E_INVALID );
-        return false;
-    }
-
-    if (!JS_ReadStructuredClone(cx, (uint64 *) array->data, array->byteLength, JS_STRUCTURED_CLONE_VERSION, &v, &structuredClone, JL_GetHostPrivate(cx))) {
-
-		 return false;
-    }
-    JS_SET_RVAL(cx, vp, v);
-    return true;
-	 JL_BAD;
-}
-*/
-
-
-
-/* serialization/deserialization test using StructuredClone API:
-   - fail to serialize {__proto__:null}
-   - fail to serialize custom JS-defined objects
-
-JSObject *ReadStructuredClone(JSContext *cx, JSStructuredCloneReader *r, uint32_t tag, uint32_t data, void *closure) {
-
-	void *buf = NULL;
-	jschar *name = NULL;
-	uint32_t nameLength, bufLength;
-	JS_ReadUint32Pair(r, &nameLength, &bufLength);
-
-	name = (jschar*)jl_malloca(nameLength*2);
-	JL_ASSERT_ALLOC(name);
-	JL_CHK( JS_ReadBytes(r, name, nameLength*2) );
-
-	buf = jl_malloc(bufLength);
-	JL_ASSERT_ALLOC(buf);
-	JSObject *arrayobj;
-	JL_CHK( JL_NewTypedArrayCopyN(cx, buf, bufLength, &arrayobj) );
-
-	jsval constructor;
-	JL_CHK( JS_GetUCProperty(cx, JL_GetGlobal(cx), name, nameLength, &constructor) );
-
-	jsval rval, argv;
-	argv = OBJECT_TO_JSVAL(arrayobj);
-	JL_CHK( JL_CallFunctionId(cx, JSVAL_TO_OBJECT(constructor), JLID(cx, _deserialize), 1, &argv, &rval) );
-	
-	return JSVAL_TO_OBJECT(rval);
-
-bad:
-	if ( name )
-		jl_freea(name);
-	if ( buf )
-		jl_free(buf);
-	return NULL;
-}
-
-
-JSBool WriteStructuredClone(JSContext *cx, JSStructuredCloneWriter *w, JSObject *obj, void *closure) {
-
-	JLData str;
-	jsval rval, fname;
-	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, _serialize), 0, NULL, &rval) );
-
-	JL_CHK( JL_JsvalToNative(cx, rval, &str) );
-
-	JSObject *constructor = JL_GetConstructor(cx, obj);
-	JL_CHK( constructor );
-	JL_CHK( JS_GetPropertyById(cx, constructor, JLID(cx, name), &fname) );
-
-	const jschar *name;
-	uint32_t nameLength;
-	name = JS_GetStringCharsAndLength(cx, JSVAL_TO_STRING(fname), &nameLength);
-
-	JS_WriteUint32Pair(w, nameLength, str.Length());
-	JS_WriteBytes(w, name, nameLength);
-	JS_WriteBytes(w, str.GetConstStr(), str.Length());
-
-
-//	JL_CHK( JS_WriteUint32Pair(w, JS_SCTAG_USER_MIN + 1, 7) );
-//	JL_CHK( JS_WriteBytes(w, "123456", 7) );
-
-	return JS_TRUE;
-	JL_BAD;
-}
-
-const JSStructuredCloneCallbacks structuredCloneCallbacks = { ReadStructuredClone, WriteStructuredClone, NULL };
-
-
-// source copied from /js/src/js.cpp (Serialize/Deserialize)
-
-DEFINE_FUNCTION( serialize ) {
-	
-	jsval v = argc > 0 ? JS_ARGV(cx, vp)[0] : JSVAL_VOID;
-    uint64_t *datap;
-    size_t nbytes;
-    if (!JS_WriteStructuredClone(cx, v, &datap, &nbytes, &structuredCloneCallbacks, NULL))
-        return false;
-
-	JSObject *arrayobj = js_CreateTypedArray(cx, js::TypedArray::TYPE_UINT8, nbytes);
-    if (!arrayobj) {
-        JS_free(cx, datap);
-        return false;
-    }
-    JSObject *array = js::TypedArray::getTypedArray(arrayobj);
-    JS_ASSERT((uintptr_t(js::TypedArray::getDataOffset(array)) & 7) == 0);
-    js_memcpy(js::TypedArray::getDataOffset(array), datap, nbytes);
-    JS_free(cx, datap);
-    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(arrayobj));
-    return true;
-}
-
-DEFINE_FUNCTION( deserialize ) {
-
-    jsval v = argc > 0 ? JS_ARGV(cx, vp)[0] : JSVAL_VOID;
-    JSObject *obj;
-    if (JSVAL_IS_PRIMITIVE(v) || !js_IsTypedArray((obj = JSVAL_TO_OBJECT(v)))) {
-        //JS_ReportErrorNumber(cx, my_GetErrorMessage, NULL, JSSMSG_INVALID_ARGS, "deserialize");
-		JL_ERR( E_DATA, E_INVALID );
-        return false;
-    }
-    JSObject *array = js::TypedArray::getTypedArray(obj);
-    if ((js::TypedArray::getByteLength(array) & 7) != 0) {
-        //JS_ReportErrorNumber(cx, my_GetErrorMessage, NULL, JSSMSG_INVALID_ARGS, "deserialize");
-		JL_ERR( E_DATA, E_INVALID );
-        return false;
-    }
-    if ((uintptr_t(js::TypedArray::getDataOffset(array)) & 7) != 0) {
-        //JS_ReportErrorNumber(cx, my_GetErrorMessage, NULL, JSSMSG_BAD_ALIGNMENT);
-		JL_ERR( E_DATA, E_INVALID );
-        return false;
-    }
-
-    if (!JS_ReadStructuredClone(cx, (uint64_t *) js::TypedArray::getDataOffset(array), js::TypedArray::getByteLength(array), JS_STRUCTURED_CLONE_VERSION, &v, &structuredCloneCallbacks, NULL)) {
-
-        return false;
-    }
-    JS_SET_RVAL(cx, vp, v);
-    return true;
-bad:
-	return false;
-}
-
-*/
-
-/**qa
-	if ( typeof _jsapiTests != 'undefined' )
-		_jsapiTests();
-**/
-
-
 #if defined(DEBUG) // || 1
 #define HAS_JL_API_TESTS
 #endif
@@ -963,6 +738,12 @@ bad:
 
 #define TEST(expr) \
 	( (expr) ? (void)0 : JL_AssertFailure(#expr, JL_CODE_LOCATION) )
+
+
+/**qa
+	if ( typeof _jsapiTests != 'undefined' )
+		_jsapiTests();
+**/
 
 DEFINE_FUNCTION( _jsapiTests ) {
 
@@ -1166,7 +947,10 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 #endif // HAS_JL_API_TESTS
 
-#if defined(DEBUG)  || 1
+
+
+
+#if defined(DEBUG) // || 1
 #define JSLANG_TEST 
 #endif
 
@@ -1198,9 +982,11 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	JL_IGNORE(cx, argc, vp);
 
+	jsval xx = DOUBLE_TO_JSVAL(0);
 
+	JL_IGNORE(xx);
 
-
+	
 
 /*
 	JL_CHK( ::SetThreadAffinityMask(GetCurrentThread(), 1) );
@@ -1328,6 +1114,7 @@ CONFIGURE_STATIC
 	BEGIN_STATIC_FUNCTION_SPEC
 
 		FUNCTION_ARGC( isBoolean, 1 )
+
 		FUNCTION_ARGC( isNumber, 1 )
 		FUNCTION_ARGC( isPrimitive, 1 )
 		FUNCTION_ARGC( isCallable, 1 )

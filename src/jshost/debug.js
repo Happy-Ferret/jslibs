@@ -11,7 +11,7 @@ loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
 
-jslangTest();
+jslangTest	();
 
 throw 0;
 

@@ -75,6 +75,48 @@ SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet pFct );
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// js string handling
+
+JS_ALWAYS_INLINE size_t FASTCALL
+js_strlen(const jschar *s)
+{
+    const jschar *t;
+
+    for (t = s; *t != 0; t++)
+        continue;
+    return (size_t)(t - s);
+}
+
+JS_ALWAYS_INLINE void FASTCALL
+js_strncpy(jschar *dst, const jschar *src, size_t nelem)
+{
+    memcpy(dst, src, nelem * sizeof(jschar));
+}
+
+ALWAYS_INLINE jschar * FASTCALL
+js_strchr(const jschar *s, jschar c)
+{
+    while (*s != 0) {
+        if (*s == c)
+            return (jschar *)s;
+        s++;
+    }
+    return NULL;
+}
+
+ALWAYS_INLINE jschar * FASTCALL
+js_strchr_limit(const jschar *s, jschar c, const jschar *limit)
+{
+    while (s < limit) {
+        if (*s == c)
+            return (jschar *)s;
+        s++;
+    }
+    return NULL;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 // helper macros to avoid a function call to the jsapi
 
 ALWAYS_INLINE JSRuntime* FASTCALL
@@ -777,7 +819,7 @@ namespace jlpv {
 // Initialise 'this' object (obj variable) for constructors native functions ( support constructing and non-constructing form, eg. |Stream()| and  |new Stream()| ).
 // If JL_THIS_CLASS or JL_THIS_CLASS_PROTOTYPE are not available, use JS_NewObjectForConstructor(cx, vp) instead.
 #define JL_DEFINE_CONSTRUCTOR_OBJ \
-	JSObject *obj = jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, vp);
+	JSObject *obj; obj = jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, vp)
 
 
 
@@ -1442,7 +1484,7 @@ class JLData {
 	ALWAYS_INLINE bool Mutate( bool own, bool nullTerminated, bool wide ) {
 
 		ASSERT( IsSet() );
-		if ( !_own && own || _w != wide || !_nt && nullTerminated )
+		if ( ( !_own && (own || _w != wide) ) || (!_nt && nullTerminated) )
 			return ForceMutation(own, nullTerminated, wide);
 		else
 			return true;
@@ -2553,13 +2595,17 @@ JL_NativeToJsval( JSContext *cx, void *ptr, jsval *vp ) {
 		} else
 		if ( 8 * sizeof(ptrdiff_t) == 64 ) {
 
+			#ifdef XP_WIN
 			#pragma warning(push)
 			#pragma warning(disable:4293)
+			#endif // XP_WIN
 			tmp = INT_TO_JSVAL( reinterpret_cast<ptrdiff_t>(ptr) & 0xFFFFFFFF );
 			JL_CHK( JS_SetPropertyById(cx, obj, INT_TO_JSID(0), &tmp) );
 			tmp = INT_TO_JSVAL( reinterpret_cast<ptrdiff_t>(ptr) >> 32 );
 			JL_CHK( JS_SetPropertyById(cx, obj, INT_TO_JSID(1), &tmp) );
+			#ifdef XP_WIN
 			#pragma warning(pop)
+			#endif // XP_WIN
 		} else {
 
 			ASSERT(false);
@@ -2584,15 +2630,22 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, void **ptr ) {
 		} else
 		if ( 8 * sizeof(ptrdiff_t) == 64 ) {
 
+	#ifdef XP_WIN
+	#endif // XP_WIN
+
+			#ifdef XP_WIN
 			#pragma warning(push)
 			#pragma warning(disable:4293)
+			#endif // XP_WIN
 			uint32_t h, l;
 			JL_CHK( JS_GetPropertyById(cx, obj, INT_TO_JSID(0), &tmp) );
 			l = static_cast<uint32_t>(JSVAL_TO_INT(tmp));
 			JL_CHK( JS_GetPropertyById(cx, obj, INT_TO_JSID(1), &tmp) );
 			h = static_cast<uint32_t>(JSVAL_TO_INT(tmp));
 			*ptr = reinterpret_cast<void*>( (h << 32) | l );
+			#ifdef XP_WIN
 			#pragma warning(pop)
+			#endif // XP_WIN
 		} else {
 
 			ASSERT(false);
@@ -2618,6 +2671,7 @@ JL_NativeVectorToJsval( JSContext * RESTRICT cx, const T * RESTRICT vector, unsi
 	ASSERT( vector );
 	ASSERT( val );
 
+	jsval tmp;
 	JSObject *arrayObj;
 	if (likely( useValArray )) {
 
@@ -2631,7 +2685,6 @@ JL_NativeVectorToJsval( JSContext * RESTRICT cx, const T * RESTRICT vector, unsi
 		*val = OBJECT_TO_JSVAL(arrayObj);
 	}
 
-	jsval tmp;
 	for ( unsigned i = 0; i < length; ++i ) {
 
 		JL_CHK( JL_NativeToJsval(cx, vector[i], &tmp) );
@@ -2668,7 +2721,8 @@ JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T
 
 	ASSERT( js_IsTypedArray(obj) );
 	JL_ASSERT( JS_GetTypedArrayType(obj) == JLNativeTypeToTypedArrayType(*vector), E_TY_TYPEDARRAY, E_TYPE, E_NAME(JLNativeTypeToString(*vector)) );
-	void *data = JS_GetTypedArrayData(obj);
+	void *data;
+	data = JS_GetTypedArrayData(obj);
 	*actualLength = JS_GetTypedArrayLength(obj);
 	maxLength = JL_MIN( *actualLength, maxLength );
 	for ( unsigned i = 0; i < maxLength; ++i ) {
@@ -2700,6 +2754,8 @@ template <class T>
 ALWAYS_INLINE JSBool FASTCALL
 JL_JsvalToNativeVector( JSContext * RESTRICT cx, jsval & RESTRICT val, T * RESTRICT vector, unsigned maxLength, unsigned *actualLength ) {
 
+	jsval tmp;
+
 	JL_ASSERT_IS_OBJECT(val, "vector");
 
 	JSObject *arrayObj;
@@ -2718,7 +2774,6 @@ JL_JsvalToNativeVector( JSContext * RESTRICT cx, jsval & RESTRICT val, T * RESTR
 
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, actualLength) );
 	maxLength = JL_MIN( *actualLength, maxLength );
-	jsval tmp;
 	for ( unsigned i = 0; i < maxLength; ++i ) {  // while ( maxLength-- ) { // avoid reverse walk (L1 cache issue)
 
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &tmp) );
@@ -3745,7 +3800,7 @@ JL_CurrentStackFrame(JSContext *cx) {
 
 
 ALWAYS_INLINE uint32_t FASTCALL
-JL_StackSize(JSContext * RESTRICT cx, JSStackFrame * RESTRICT fp) {
+JL_StackSize(JSContext *cx, JSStackFrame *fp) {
 
 	JL_IGNORE(cx);
 	uint32_t length = 0;
@@ -3815,13 +3870,14 @@ JL_ExceptionSetScriptLocation( JSContext * RESTRICT cx, JSObject * RESTRICT obj 
 	const char *filename;
 	JSScript *script;
 	unsigned lineno;
+	jsval tmp;
+
 	JL_CHK( JS_DescribeScriptedCaller(cx, &script, &lineno) );
 	filename = JS_GetScriptFilename(cx, script);
 
 	if ( filename == NULL || *filename == '\0' )
 		filename = "<no_filename>";
 
-	jsval tmp;
 	JL_CHK( JL_NativeToJsval(cx, filename, &tmp) );
 	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, fileName), &tmp) );
 	JL_CHK( JL_NativeToJsval(cx, lineno, &tmp) );

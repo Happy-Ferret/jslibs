@@ -109,7 +109,8 @@ DEFINE_FUNCTION( close ) {
 
 	*JL_RVAL = JSVAL_VOID;
 
-	PRDir *dd = (PRDir *)JL_GetPrivate( obj );
+	PRDir *dd;
+	dd = (PRDir *)JL_GetPrivate( obj );
 	JL_ASSERT_WARN( dd, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED );
 	if ( !dd )
 		return JS_TRUE;
@@ -137,7 +138,8 @@ DEFINE_FUNCTION( read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	PRDir *dd = (PRDir *)JL_GetPrivate( obj );
+	PRDir *dd;
+	dd = (PRDir *)JL_GetPrivate( obj );
 	JL_ASSERT( dd != NULL, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED );
 
 	PRDirFlags flags;
@@ -344,7 +346,8 @@ DEFINE_FUNCTION( list ) {
 	JL_CHK( addrJsObj );
 	*JL_RVAL = OBJECT_TO_JSVAL( addrJsObj );
 
-	char dirSepChar = PR_GetDirectorySeparator();
+	char dirSepChar;
+	dirSepChar = PR_GetDirectorySeparator();
 
 	int index;
 	index = 0;

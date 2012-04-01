@@ -114,9 +114,9 @@ JSBool WriteDataChunk( JSContext *cx, JSObject *obj, jsval chunk ) {
 
 JSBool WriteRawDataChunk( JSContext *cx, JSObject *obj, size_t amount, const char *str ) {
 
+	jsval bstr;
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
-	jsval bstr;
 	JL_CHK( JL_NewBufferCopyN(cx, str, amount, &bstr) );
 	JL_CHK( PushJsval(cx, pv->queue, bstr) );
 	pv->length += amount;
@@ -179,10 +179,11 @@ inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // a
 inline JSBool BufferRefill( JSContext *cx, JSObject *obj, size_t amount ) { // amount = total needed amount
 
 	char *buf;
+	jsval srcVal;
+
 	BufferPrivate *pv = (BufferPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(Buffer) );
 
-	jsval srcVal;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_SOURCE, &srcVal) );
 
 	if ( JSVAL_IS_VOID( srcVal ) ) // no source for refill
@@ -656,6 +657,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
+	jsval arg1;
 	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
@@ -665,7 +667,6 @@ DEFINE_FUNCTION( write ) {
 	JL_ASSERT_ARGC_RANGE(1, 2);
 	
 	*JL_RVAL = JSVAL_VOID;
-	jsval arg1;
 	arg1 = JL_ARG(1);
 
 // rekated to buffer markers

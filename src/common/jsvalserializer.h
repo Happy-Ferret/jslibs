@@ -199,11 +199,10 @@ namespace jl {
 		JSBool Write( JSContext *cx, const SerializerObjectOwnProperties &sop ) {
 
 			JSObject *obj = sop;
-
+			jsval name, value;
 			JSIdArray *idArray = JS_Enumerate(cx, obj); // Get an array of the all *own* enumerable properties of a given object.
 			JL_CHK( idArray );
 			JL_CHK( Write(cx, idArray->length) );
-			jsval name, value;
 			for ( int i = 0; i < idArray->length; ++i ) {
 
 				JL_CHK( JS_IdToValue(cx, idArray->vector[i], &name) );
@@ -260,6 +259,8 @@ namespace jl {
 		
 
 		JSBool Write( JSContext *cx, const jsval &val ) {
+
+			jsval serializeFctVal;
 
 			if ( JSVAL_IS_PRIMITIVE(val) ) {
 
@@ -351,7 +352,6 @@ namespace jl {
 				return Write(cx, src);
 			}
 
-			jsval serializeFctVal;
 			JL_CHK( JS_GetMethodById(cx, obj, JLID(cx, _serialize), NULL, &serializeFctVal) ); // JL_CHK( JS_GetProperty(cx, obj, "_serialize", &serializeFctVal) );
 
 			if ( !JSVAL_IS_VOID( serializeFctVal ) ) {

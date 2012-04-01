@@ -37,7 +37,9 @@ DEFINE_FINALIZE() {
 		PR_DetachProcess(process); // may crash ?
 }
 
+#ifdef XP_WIN
 #include <direct.h>
+#endif // XP_WIN
 
 /**doc
 $TOC_MEMBER $INAME

@@ -40,11 +40,10 @@ inline JSBool PositionGet( JSContext *cx, JSObject *streamObj, size_t *position 
 
 JSBool StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount ) {
 
-	JL_ASSERT_INSTANCE(streamObj, JL_CLASS(Stream));
-
 	size_t position;
-	JL_CHK( PositionGet(cx, streamObj, &position) );
 	jsval source;
+	JL_ASSERT_INSTANCE(streamObj, JL_CLASS(Stream));
+	JL_CHK( PositionGet(cx, streamObj, &position) );
 	JL_CHK( JL_GetReservedSlot(cx, streamObj, SLOT_STREAM_SOURCE, &source) );
 
 	{

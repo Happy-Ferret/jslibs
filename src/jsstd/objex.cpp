@@ -38,6 +38,9 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsid id
 //	if ( JSVAL_IS_VOID(*vp) && strcmp( JL_GetStringBytes(JS_ValueToString(cx,id)), "__iterator__" ) == 0 ) // we don't want to override the iterator
 //		return JS_TRUE;
 	
+	jsval args[4]; // = { id, *vp, aux, INT_TO_JSVAL(slotIndex) }; // ( propertyName, propertyValue, auxObject, callbackIndex )
+	jsval slot, aux;
+
 	if ( id == JLID(cx, iterator) )
 		return JS_TRUE;
 
@@ -57,13 +60,10 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsid id
 //	jsval prevValue;
 //	JL_CHK( JS_LookupPropertyWithFlags(cx, obj, JL_GetStringBytes(JS_ValueToString(cx, id)), JSRESOLVE_QUALIFIED|JSRESOLVE_ASSIGNING|JSRESOLVE_DECLARING, &prevValue) );
 
-	jsval slot;
 	JL_CHK( JL_GetReservedSlot( cx, obj, slotIndex , &slot ) );
 	if ( JSVAL_IS_VOID(slot) )
 		return JS_TRUE;
-	jsval aux;
 	JL_CHK( JL_GetReservedSlot( cx, obj, AUX_SLOT, &aux ) );
-	jsval args[4]; // = { id, *vp, aux, INT_TO_JSVAL(slotIndex) }; // ( propertyName, propertyValue, auxObject, callbackIndex )
 	// args[0] = id;
 	JL_CHK( JS_IdToValue(cx, id, &args[0]) );
 	args[1] = *vp;

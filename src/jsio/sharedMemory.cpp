@@ -265,7 +265,8 @@ DEFINE_FUNCTION( read ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
+	ClassPrivate *pv;
+	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	size_t offset;
@@ -339,7 +340,8 @@ DEFINE_FUNCTION( close ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(obj);
+	ClassPrivate *pv;
+	pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( CloseSharedMemory(cx, obj) );
 

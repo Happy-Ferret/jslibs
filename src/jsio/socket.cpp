@@ -90,7 +90,8 @@ DEFINE_FUNCTION( shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( obj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc*)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRShutdownHow how;
@@ -213,7 +214,8 @@ DEFINE_FUNCTION( listen ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
+	PRFileDesc *fd;
+	fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	PRIntn backlog;
 	if ( JL_ARG_ISDEF(1) )
@@ -243,7 +245,8 @@ DEFINE_FUNCTION( accept ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
+	PRFileDesc *fd;
+	fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 /*
@@ -488,6 +491,7 @@ DEFINE_FUNCTION( recvFrom ) {
 
 	JL_IGNORE( argc );
 
+	jsval tmp;
 	uint8_t *buffer = NULL;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -531,7 +535,6 @@ DEFINE_FUNCTION( recvFrom ) {
 
 	JL_CHKB( PR_NetAddrToString(&addr, peerName, sizeof(peerName)) == PR_SUCCESS, bad_ex ); // Converts a character string to a network address.
 
-	jsval tmp;
 	JL_CHK( JL_NativeToJsval(cx, peerName, &tmp) );
 	JL_CHK( JL_SetElement(cx, arrayObject, 1, &tmp) );
 
@@ -1124,6 +1127,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getHostsByAddr ) {
 
+	jsval tmp;
 	JLData addr;
 	JL_ASSERT_ARGC( 1 );
 
@@ -1147,8 +1151,6 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 
 	int index;
 	index = 0;
-
-	jsval tmp;
 
 	JL_CHK( JL_NativeToJsval(cx, hostent.h_name, &tmp) );
 	//JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );

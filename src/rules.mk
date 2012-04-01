@@ -12,11 +12,11 @@ BITS ?= 32
 
 INT_DIR = $(shell uname)_$(BUILD)_$(BITS)/
 
-LDFLAGS += -Wl,-Bdynamic -L../../libs/js/$(INT_DIR) -lmozjs
+LDFLAGS += -Wl,-Bdynamic -L../../libs/js/$(INT_DIR)/dist/bin -lmozjs
 
-CFLAGS += -I../common -I../../libs/js/$(INT_DIR) -I../../libs/js/src
+CFLAGS += -I../common -I../../libs/js/$(INT_DIR)/dist/include
 
-CFLAGS += -Wall -Wno-unused-parameter -Wno-unused-value -Wno-unused-function -Wno-multichar
+CFLAGS += -fshort-wchar -Wall -Wno-unused-parameter -Wno-unused-value -Wno-unused-function -Wno-multichar
 
 # -static-libgcc -Wl,-Bstatic,-lstdc++
 #,-lgcc_s

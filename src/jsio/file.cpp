@@ -113,6 +113,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( open ) {
 
+	jsval jsvalFileName;
 	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -155,8 +156,6 @@ DEFINE_FUNCTION( open ) {
 		mode = DEFAULT_ACCESS_RIGHTS;
 	}
 
-
-	jsval jsvalFileName;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 //	const char *fileName;
@@ -193,7 +192,8 @@ DEFINE_FUNCTION( seek ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT( fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED );
 
 	PRInt64 offset;
@@ -236,15 +236,16 @@ DEFINE_FUNCTION( delete ) {
 
 	JL_IGNORE( argc );
 
+	jsval jsvalFileName;
 	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
+	PRFileDesc *fd;
+	fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT( !fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 
-	jsval jsvalFileName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &str) );
@@ -291,6 +292,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( move ) {
 
+	jsval jsvalFileName;
 	JLData fileName, destDirName;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -301,7 +303,6 @@ DEFINE_FUNCTION( move ) {
 	fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT( !fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 
-	jsval jsvalFileName;
 	JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) ); // warning: GC on the returned buffer !
@@ -556,6 +557,7 @@ DEFINE_PROPERTY_SETTER( name ) {
 
 	JL_IGNORE( strict, id );
 
+	jsval jsvalFileName;
 	JLData fromFileName, toFileName;
 
 	PRFileDesc *fd;
@@ -564,7 +566,6 @@ DEFINE_PROPERTY_SETTER( name ) {
 	JL_ASSERT( !fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 	JL_ASSERT( !JSVAL_IS_VOID(*vp), E_VALUE, E_DEFINED );
 
-	jsval jsvalFileName;
 	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 
@@ -661,6 +662,7 @@ DEFINE_PROPERTY_GETTER( info ) {
 
 	PRFileInfo fileInfo;
 	PRStatus status;
+	jsval dateValue;
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	if ( fd == NULL ) {
@@ -691,8 +693,6 @@ DEFINE_PROPERTY_GETTER( info ) {
 	JL_CHK( JS_DefineProperty(cx, fileInfoObj, "type", INT_TO_JSVAL((int)fileInfo.type), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
 
 	JL_CHK( JS_DefineProperty(cx, fileInfoObj, "size", INT_TO_JSVAL(fileInfo.size), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
-
-	jsval dateValue;
 
 	JL_CHK( JL_NewNumberValue(cx, fileInfo.creationTime / (double)1000, &dateValue) );
 	JL_CHK( JS_DefineProperty(cx, fileInfoObj, "creationTime", dateValue, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
@@ -728,9 +728,11 @@ DEFINE_PROPERTY_GETTER( id ) {
 
 #elif defined XP_UNIX
 
-	int fileHandle = (int)PR_FileDesc2NativeHandle(fd);
+	int fileHandle;
+	fileHandle = (int)PR_FileDesc2NativeHandle(fd);
 
-	stat fileStat;
+	struct stat fileStat;
+
 	if ( fstat(fileHandle, &fileStat) == -1 )
 		return JL_ThrowOSError(cx);
 

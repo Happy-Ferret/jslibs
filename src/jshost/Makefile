@@ -1,9 +1,11 @@
 TARGET=jshost
 SRC=$(wildcard *.cpp)
 INCLUDES=
-STATICLIBS=../host/$(INT_DIR)host.a ../jslang/$(INT_DIR)jslang.a ../../libs/nedmalloc/$(INT_DIR)libnedmalloc.a -lm
+STATICLIBS=../host/$(INT_DIR)host.a ../jslang/$(INT_DIR)jslang.a
+#../../libs/nedmalloc/$(INT_DIR)libnedmalloc.a -lm
 SHAREDLIBS=-ldl -lpthread
-DEPENDS=../host/Makefile ../jslang/Makefile ../tools/Makefile ../../libs/nedmalloc/Makefile
+DEPENDS=../host/Makefile ../jslang/Makefile ../tools/Makefile
+#../../libs/nedmalloc/Makefile
 
 %.js.xdr.cres: %.js.xdr
 	../tools/fileToCRes $? $@

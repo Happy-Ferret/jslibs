@@ -25,6 +25,10 @@
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
+#if defined(XP_WIN)
+#define USE_NEDMALLOC
+#endif
+
 
 #include <jslibsModule.cpp>
 
@@ -33,10 +37,11 @@
 
 volatile bool disabledFree = false;
 
+
+#ifdef USE_NEDMALLOC
 #define NO_NED_NAMESPACE
 #define NO_MALLINFO 1
 #include "../../libs/nedmalloc/nedmalloc.h"
-
 
 NOALIAS void nedfree_handlenull(void *mem) NOTHROW {
 
@@ -48,6 +53,7 @@ NOALIAS size_t nedblksize_msize(void *mem) NOTHROW {
 
 	return nedblksize(0, mem);
 }
+#endif // USE_NEDMALLOC
 
 
 static unsigned char embeddedBootstrapScript[] =
@@ -291,6 +297,10 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable));
 #endif // XP_WIN
 
+	int exitValue;
+	jsval rval;
+	jsval arguments;
+
 	JSContext *cx = NULL;
 
 	uint32_t maxMem = (uint32_t)-1; // by default, there are no limit
@@ -374,12 +384,14 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	if ( useJslibsMemoryManager ) {
 
 		#ifdef HAS_JL_ALLOCATORS
+		#ifdef USE_NEDMALLOC
 		jl_malloc = nedmalloc;
 		jl_calloc = nedcalloc;
 		jl_memalign = nedmemalign;
 		jl_realloc = nedrealloc;
 		jl_msize = nedblksize_msize;
 		jl_free = nedfree_handlenull;
+		#endif // USE_NEDMALLOC
 		#endif // HAS_JL_ALLOCATORS
 
 
@@ -509,19 +521,16 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		hostName = hostFullPath;
 	}
 
-	JSObject *hostObj = JL_GetHostPrivate(cx)->hostObject;
+	JSObject *hostObj;
+	hostObj = JL_GetHostPrivate(cx)->hostObject;
 
 	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, path), hostPath) );
 	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, name), hostName) );
 
-	jsval arguments;
 	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), &arguments) );
 	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, arguments), arguments) );
 	JL_CHK( JS_DefineProperty(cx, hostObj, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) ); // https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 	JL_CHK( JS_DefineFunction(cx, hostObj, "endSignalEvents", EndSignalEvents, 1, 0) );
-
-	int exitValue;
-	jsval rval;
 
 	if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
 

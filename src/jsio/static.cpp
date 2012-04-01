@@ -487,7 +487,7 @@ DEFINE_FUNCTION( getRandomNoise ) {
 	size = PR_GetRandomNoise(buf, rndSize);
 	if ( size <= 0 ) {
 
-		JL_ERR( E_FUNC, E_NOTIMPL );
+		JL_ERR( E_FUNC, E_NOTIMPLEMENTED );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -814,11 +814,11 @@ DEFINE_FUNCTION( configureSerialPort ) {
 
 	JL_ASSERT( fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_CLASS_NAME(File)), E_CLOSED );
 
+#ifdef XP_WIN
+
 	DWORD baudRate;
 	BYTE byteSize, parity, stopBits;
 
-
-#ifdef XP_WIN
 	HANDLE fh = (HANDLE)PR_FileDesc2NativeHandle(fd);
 
 	BOOL status;
@@ -1085,7 +1085,7 @@ DEFINE_PROPERTY_GETTER( numberOfProcessors ) {
 	PRInt32 count = PR_GetNumberOfProcessors();
 	if ( count < 0 ) {
 
-		JL_WARN( E_FUNC, E_NOTIMPL );
+		JL_WARN( E_FUNC, E_NOTIMPLEMENTED );
 		count = 1;
 	}
 	JL_CHK( JL_NativeToJsval(cx, count, vp) );

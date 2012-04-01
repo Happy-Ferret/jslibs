@@ -276,6 +276,7 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 #include <stdlib.h>
 #include <stdio.h>
 #include <cstring>
+#include <cctype>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -420,6 +421,7 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 	#define __STDC_LIMIT_MACROS
 	#include <stdint.h>
 	#include <signal.h>
+	#include <sys/statvfs.h>
 
 	#ifndef O_BINARY
 	#define O_BINARY 0
@@ -456,13 +458,6 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 #endif // Windows/MacosX/Linux platform
 
 
-#ifdef WIN32
-#define L(CSTRING) (L##CSTRING)
-#else
-#define L(CSTRING) ((uint16_t*)L##CSTRING)
-#endif
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
 
@@ -490,13 +485,25 @@ JL_CONSTIFY(T variable) {
 	return (const T)variable;
 }
 
+#ifdef WIN32
+#define L(CSTRING) (L##CSTRING)
+#else
+S_ASSERT(sizeof(wchar_t) == sizeof(uint16_t)); // see -fshort-wchar
 
-template<class T>
-ALWAYS_INLINE bool
-JL_HasFlags(T value, size_t flags) {
-	
-	return (value & flags) == flags;
+ALWAYS_INLINE const uint16_t
+LL(const wchar_t c) {
+	return (const uint16_t)c;
 }
+
+ALWAYS_INLINE const uint16_t*
+LL(const wchar_t *s) {
+	return (const uint16_t*)s;
+}
+
+#define L(CSTRING) (LL(L##CSTRING))
+
+#endif
+
 
 
 //template<class T>
@@ -892,10 +899,14 @@ template <class T>
 ALWAYS_INLINE T
 JL_LeastSignificantBit(register T x) {
 
+	#ifdef XP_WIN
 	#pragma warning(push)
 	#pragma warning(disable : 4146) // warning C4146: unary minus operator applied to unsigned type, result still unsigned
+	#endif // XP_WIN
 	return x & -x;
+	#ifdef XP_WIN
 	#pragma warning(pop)
+	#endif // XP_WIN
 }
 
 
@@ -1309,14 +1320,18 @@ rdtsc() {
 #endif
 
 
+#if defined(XP_WIN)
 INLINE DWORD
-GetCurrentProcessorNumberXP(void) {
+GetCurrentProcessor(void) {
 
 	_asm { mov eax, 1 }
 	_asm { cpuid }
 	_asm { shr ebx, 24 }
 	_asm { mov eax, ebx }
 }
+#else
+#endif
+
 
 // Accurate FPS Limiting / High-precision 'Sleeps': see. http://www.geisswerks.com/ryan/FAQS/timing.html
 
@@ -1822,9 +1837,9 @@ Match(const T *text, size_t textlen, const T *pat, size_t patlen) {
 
 	return
 	#if !defined(__linux__)
-		patlen > 128 ? UnrolledMatch<MemCmp<T>>(text, textlen, pat, patlen) :
+		patlen > 128 ? UnrolledMatch< MemCmp<T> >(text, textlen, pat, patlen) :
 	#endif
-		UnrolledMatch<ManualCmp<T>>(text, textlen, pat, patlen);
+		UnrolledMatch< ManualCmp<T> >(text, textlen, pat, patlen);
 }
 
 
@@ -2053,6 +2068,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	#elif defined(XP_UNIX)
 		int st = sem_post(semaphore);
 		ASSERT( st == 0 );
+		JL_IGNORE( st );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -2072,6 +2088,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 		*pSemaphore = (JLSemaphoreHandler)0;
+		JL_IGNORE( st );
 	}
 
 
@@ -2114,6 +2131,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_init(mutex, NULL);
 		ASSERT( st == 0 );
+		JL_IGNORE( st );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -2128,6 +2146,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_destroy(*pMutex);
 		ASSERT( st == 0 );
+		JL_IGNORE( st );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -2143,6 +2162,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_lock(mutex); // doc. shall not return an error code of [EINTR].
 		ASSERT( st == 0 );
+		JL_IGNORE( st );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -2156,6 +2176,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	#elif defined(XP_UNIX)
 		int st = pthread_mutex_unlock(mutex);
 		ASSERT( st == 0 );
+		JL_IGNORE( st );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -2617,6 +2638,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#elif defined(XP_UNIX)
 		int st = pthread_cancel(*thread);
 		ASSERT( st == 0 );
+		JL_IGNORE( st );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -2640,6 +2662,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		param.sched_priority = min + (max - min) * priority / 128;
 		st = pthread_setschedparam(*thread, policy, &param);
 		ASSERT( st == 0 );
+		JL_IGNORE( st );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -2657,6 +2680,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#elif defined(XP_UNIX)
 		int st = pthread_join(*thread, (void**)exitValue); // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED. pthread_join shall not return an error code of [EINTR].
 		ASSERT( st == 0 );
+		JL_IGNORE( st );
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
@@ -2686,8 +2710,8 @@ ALWAYS_INLINE JLTLSKey JLTLSAllocKey() {
 	key++;
 #elif defined(XP_UNIX)
 	int st = pthread_key_create(&key, NULL);
-	JL_IGNORE( st );
 	ASSERT( st == 0 );
+	JL_IGNORE( st );
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
@@ -2708,6 +2732,7 @@ ALWAYS_INLINE void JLTLSFreeKey( JLTLSKey key ) {
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
+	JL_IGNORE( st );
 }
 
 
@@ -2724,6 +2749,7 @@ ALWAYS_INLINE void JLTLSSet( JLTLSKey key, void *value ) {
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
+	JL_IGNORE( st );
 }
 
 
@@ -2802,6 +2828,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		#error NOT IMPLEMENTED YET	// (TBD)
 	#endif
 		*libraryHandler = (JLLibraryHandler)0;
+		JL_IGNORE( st );
 	}
 
 	INLINE NEVER_INLINE void FASTCALL

@@ -60,7 +60,7 @@ public:
 		*pctinfo = 1;
 		return NOERROR;
 */
-		return E_NOTIMPL;
+		return E_NOTIMPLEMENTED;
 	}
 
 	STDMETHOD(GetTypeInfo)( UINT iTInfo, LCID lcid, ITypeInfo **ppTInfo ) {

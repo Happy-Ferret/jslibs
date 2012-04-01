@@ -50,27 +50,31 @@ $TOC_MEMBER $INAME
   expand('$(foo)-$(bar)', function(id) '<'+id+'>' ); // returns "<foo>-<bar>"
   }}}
 **/
+
+typedef struct {
+	const jschar *chars;
+	size_t count;
+	JSString *root;
+} ExpandChunk;
+
 DEFINE_FUNCTION( expand ) {
 
 	// look at jslang: ::join()
-	typedef struct {
-		const jschar *chars;
-		size_t count;
-		JSString *root;
-	} Chunk;
 
-	jl::Stack<Chunk, jl::StaticAllocMedium> stack;
+	jl::Stack<ExpandChunk, jl::StaticAllocMedium> stack;
 	JLData srcStr;
+	jsval value;
+	JSObject *mapObj;
+	jsval *mapFct;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
-	jsval value;
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
 
-	JSObject *mapObj = NULL;
-	jsval *mapFct = NULL;
+	mapObj = NULL;
+	mapFct = NULL;
 	
 	if ( JL_ARG_ISDEF(2) ) {
 	
@@ -96,7 +100,7 @@ DEFINE_FUNCTION( expand ) {
 		key = txt;
 		do {
 
-			key = wmemchr(key, L'$', srcEnd-key);
+			key = js_strchr_limit(key, L('$'), srcEnd);
 			if ( key == NULL || ++key == srcEnd ) {
 
 				++stack;
@@ -105,7 +109,7 @@ DEFINE_FUNCTION( expand ) {
 				total += stack->count;
 				goto assemble;
 			}
-		} while ( *key != L'(' );
+		} while ( *key != L('(') );
 
 		if ( key ) {
 
@@ -119,7 +123,7 @@ DEFINE_FUNCTION( expand ) {
 			}
 
 			++key;
-			keyEnd = wmemchr(key, L')', srcEnd-key);
+			keyEnd = js_strchr_limit(key, L(')'), srcEnd);
 			
 			if ( keyEnd ) {
 
@@ -174,7 +178,7 @@ assemble:
 	for ( ; stack; --stack ) {
 
 		tmp -= stack->count;
-		wmemcpy(tmp, stack->chars, stack->count);
+		js_strncpy(tmp, stack->chars, stack->count);
 		if ( stack->root != NULL )
 			JS_RemoveStringRoot(cx, &stack->root);
 	}
@@ -651,7 +655,8 @@ DEFINE_FUNCTION( stringRepeat ) {
 	const jschar *buf;
 	buf = str.GetConstWStr();
 
-	jschar *tmp = newBuf;
+	jschar *tmp;
+	tmp = newBuf;
 	size_t i;
 	for ( i = 0; i < count; ++i ) {
 
@@ -900,7 +905,8 @@ JSBool SandboxMaxOperationCallback(JSContext *cx) {
 		JSCrossCompartmentCall *ccc;
 		ccc = JS_EnterCrossCompartmentCall(cx, cpc->proto);
 		JL_CHK( ccc );
-		JSObject *branchLimitExceptionObj = JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
+		JSObject *branchLimitExceptionObj;
+		branchLimitExceptionObj = JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
 		JS_SetPendingException(cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ));
 		JS_LeaveCrossCompartmentCall(ccc);
 		JL_CHK( branchLimitExceptionObj );
@@ -943,9 +949,10 @@ JSBool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 
 DEFINE_FUNCTION( sandboxEval ) {
 
+	SandboxContextPrivate pv;
+
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
-	SandboxContextPrivate pv;
 
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, JL_ARG(1));
@@ -982,7 +989,8 @@ DEFINE_FUNCTION( sandboxEval ) {
 	if ( !JLThreadOk(sandboxWatchDogThread) )
 		return JL_ThrowOSError(cx);
 
-	void *prevCxPrivate = JS_GetContextPrivate(cx);
+	void *prevCxPrivate;
+	prevCxPrivate = JS_GetContextPrivate(cx);
 	JS_SetContextPrivate(cx, &pv);
 
 	JSObject *globalObj;
@@ -1210,7 +1218,8 @@ DEFINE_PROPERTY_GETTER( currentFilename ) {
 
 	JSScript *script;
 	JL_CHK( JS_DescribeScriptedCaller(cx, &script, NULL) );
-	const char *filename = JS_GetScriptFilename(cx, script);
+	const char *filename;
+	filename = JS_GetScriptFilename(cx, script);
 	JL_CHK( JL_NativeToJsval(cx, filename, vp) );
 	return JS_TRUE;
 	JL_BAD;

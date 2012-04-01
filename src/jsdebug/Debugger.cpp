@@ -195,6 +195,8 @@ JSTrapStatus StepThrough(JSContext *cx, JSScript *script, jsbytecode *pc, jsval 
 
 JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakReason breakOrigin) {
 
+	jsval exception;
+	jsval fval;
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -205,13 +207,11 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 	if ( pv->excludedFiles && script && IsExcludedFile(&pv->excludedFiles, filename) )
 		return JSTRAP_CONTINUE;
 
-	jsval fval;
 	if ( JS_GetProperty(cx, obj, "onBreak", &fval) == JS_FALSE )
 		return JSTRAP_ERROR;
 	if ( !JL_ValueIsCallable(cx, fval) ) // nothing to do
 		return JSTRAP_CONTINUE;
 
-	jsval exception;
 	IFDEBUG( exception = JSVAL_VOID ); // avoid "potentially uninitialized local variable" warning
 
 	JSBool hasException;
@@ -402,6 +402,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( toggleBreakpoint ) {
 
+	jsval prevClosure;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 3 );
 
@@ -422,7 +424,6 @@ DEFINE_FUNCTION( toggleBreakpoint ) {
 	}
 
 	JSTrapHandler prevHandler;
-	jsval prevClosure;
 	JS_ClearTrap(cx, script, pc, &prevHandler, &prevClosure);
 
 	if ( polarity ) {
@@ -446,6 +447,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( hasBreakpoint ) {
 
+	jsval prevClosure;
 	JL_ASSERT_ARGC_MIN( 2 );
 
 	unsigned lineno;
@@ -462,7 +464,6 @@ DEFINE_FUNCTION( hasBreakpoint ) {
 	}
 
 	JSTrapHandler prevHandler;
-	jsval prevClosure;
 	JS_ClearTrap(cx, script, pc, &prevHandler, &prevClosure);
 	if ( prevHandler ) {
 
@@ -670,6 +671,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( excludedFileList ) {
 
+	jsval tmp;
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -684,7 +686,6 @@ DEFINE_PROPERTY_SETTER( excludedFileList ) {
 	unsigned length;
 	JL_CHK( JS_GetArrayLength(cx, arrayObject, &length) );
 
-	jsval tmp;
 	for ( unsigned i = 0; i < length; ++i ) {
 
 		JLData fileName;

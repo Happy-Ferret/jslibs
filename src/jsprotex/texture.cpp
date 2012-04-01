@@ -1453,7 +1453,7 @@ DEFINE_FUNCTION( desaturate ) {
 //				break;
 			default:
 				val = 0;
-				JL_WARN( E_NOTIMPL );
+				JL_WARN( E_NOTIMPLEMENTED );
 		}
 		*dPos = val;
 		dPos++;

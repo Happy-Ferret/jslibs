@@ -324,6 +324,9 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	via either JSFunctionSpec.nargs or the nargs parameter to JS_FS, JS_DefineFunction, or JS_NewFunction.
 	If present, these locations initially contain JSVAL_VOID. */
 #define FUNCTION_ARGC(name, nargs) JS_FN( #name, _##name, nargs, FUNCTION_DEFAULT_FLAGS ),
+
+#define FUNCTION_NARG(name) JS_FN( #name, _##name, _##name##_nargs, FUNCTION_DEFAULT_FLAGS ),
+
 #define FUNCTION_ALIAS(alias, name) JS_FN( #alias, _##name, 0, FUNCTION_DEFAULT_FLAGS ),
 
 // doc: JSPROP_SHARED - https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
@@ -472,6 +475,8 @@ DefaultInstanceof(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp) {
 // definition
 
 #define DEFINE_FUNCTION(name) static JSBool _##name(JSContext *cx, unsigned argc, jsval *vp)
+
+#define DEFINE_FUNCTION_NARG(name, nargs) const static uint16_t _##name##_nargs = nargs; static JSBool _##name(JSContext *cx, unsigned argc, jsval *vp)
 
 #define DEFINE_PROPERTY(name) static JSBool _##name(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
 #define DEFINE_PROPERTY_GETTER(name) static JSBool _##name##Getter(JSContext *cx, JSObject *obj, jsid id, jsval *vp)

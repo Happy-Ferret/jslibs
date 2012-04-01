@@ -570,7 +570,7 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 		}
 #ifdef MKAT
 		case katja: {
-			JL_ERR( E_THISOPERATION, E_NOTIMPL );
+			JL_ERR( E_THISOPERATION, E_NOTIMPLEMENTED );
 			break;
 		}
 #endif
@@ -643,7 +643,7 @@ DEFINE_FUNCTION( verifySignature ) { // ( data, signature [, saltLength] )
 		}
 #ifdef MKAT
 		case katja: {
-			JL_ERR( E_THISOPERATION, E_NOTIMPL );
+			JL_ERR( E_THISOPERATION, E_NOTIMPLEMENTED );
 			break;
 		}
 #endif

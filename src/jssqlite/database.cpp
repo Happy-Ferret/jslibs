@@ -276,8 +276,10 @@ DEFINE_FUNCTION( query ) {
 
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 
-	const char *sqlStr = sql.GetConstStr();
-	size_t sqlLen = sql.Length();
+	const char *sqlStr;
+	sqlStr = sql.GetConstStr();
+	size_t sqlLen;
+	sqlLen = sql.Length();
 
 	if ( sqlite3_prepare_v2(pv->db, sqlStr, sqlLen, &pStmt, &szTail) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, pv->db) );
@@ -354,8 +356,10 @@ DEFINE_FUNCTION( exec ) {
 	const char *szTail;
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 
-	const char *sqlStr = sql.GetConstStr();
-	size_t sqlLen = sql.Length();
+	const char *sqlStr;
+	sqlStr = sql.GetConstStr();
+	size_t sqlLen;
+	sqlLen = sql.Length();
 
 	if ( sqlite3_prepare_v2( pv->db, sqlStr, sqlLen, &pStmt, &szTail ) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, pv->db) );
@@ -489,8 +493,11 @@ DEFINE_PROPERTY_GETTER( memoryUsed ) {
 
 void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArgv ) {
 
-	jsval argv[1 + MAX_FUNCTION_ARG] = {0}; // argv[0] is rval
-	//	memset(argv, 0, sizeof(argv)); // set JSVAL_NULL
+	//S_ASSERT( JSVAL_NULL == 0 );
+	ASSERT( DOUBLE_TO_JSVAL(0).asRawBits() == 0 );
+	jsval argv[1 + MAX_FUNCTION_ARG]; // = {0}; // argv[0] is rval
+	memset(argv, 0, sizeof(argv));
+	
 	ASSERT( JSVAL_IS_PRIMITIVE(argv[0]) && JSVAL_IS_PRIMITIVE(argv[1 + MAX_FUNCTION_ARG -1]) );
 
 	FunctionPrivate *fpv = (FunctionPrivate*)sqlite3_user_data(sCx);
