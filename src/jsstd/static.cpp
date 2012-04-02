@@ -742,7 +742,7 @@ DEFINE_FUNCTION( exec ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
 	uint32_t oldopts;
-	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); // JSOPTION_COMPILE_N_GO is properly removed in JLLoadScript if needed.
+	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) /*| JSOPTION_COMPILE_N_GO*/); // JSOPTION_COMPILE_N_GO is properly removed in JLLoadScript if needed.
 	JSScript *script;
 	script = JL_LoadScript(cx, obj, str, ENC_UNKNOWN, useAndSaveCompiledScripts, useAndSaveCompiledScripts);
 	JS_SetOptions(cx, oldopts);

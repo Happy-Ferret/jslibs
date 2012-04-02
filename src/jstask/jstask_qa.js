@@ -1,6 +1,18 @@
 loadModule('jstask');
 loadModule('jsio');
 
+/// crash when exception in the task function [rmt]
+
+	var t = new Task(function(test){
+
+		joazijozaeijv();
+	});
+
+	t.request('test');
+
+	processEvents(t.events(), host.endSignalEvents());
+
+
 /// crash about serializer cleanup [rmt]
 
 	var t = new Task(function(){

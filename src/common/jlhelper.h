@@ -1484,7 +1484,7 @@ class JLData {
 	ALWAYS_INLINE bool Mutate( bool own, bool nullTerminated, bool wide ) {
 
 		ASSERT( IsSet() );
-		if ( ( !_own && (own || _w != wide) ) || (!_nt && nullTerminated) )
+		if ( (!_own && own) || (_w != wide) || (!_nt && nullTerminated) )
 			return ForceMutation(own, nullTerminated, wide);
 		else
 			return true;
@@ -3717,7 +3717,7 @@ bad:
 ALWAYS_INLINE JSBool FASTCALL
 ExecuteScriptText( JSContext *cx, const char *scriptText, bool compileOnly, jsval *rval ) {
 
-	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO); //  | JSOPTION_DONT_REPORT_UNCAUGHT
+	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) /*| JSOPTION_COMPILE_N_GO*/); //  | JSOPTION_DONT_REPORT_UNCAUGHT
 	// JSOPTION_COMPILE_N_GO:
 	//  caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
 	// JSOPTION_DONT_REPORT_UNCAUGHT:
@@ -3762,7 +3762,7 @@ bad:
 ALWAYS_INLINE JSBool FASTCALL
 ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOnly, jsval *rval ) {
 
-	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_COMPILE_N_GO);
+	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) /*| JSOPTION_COMPILE_N_GO*/);
 	JSObject *globalObject = JL_GetGlobal(cx);
 	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
 

@@ -4,14 +4,15 @@ loadModule = host.loadModule;
 
 //loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile();
 
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask'); throw 0; // -inlineOnly
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask'); throw 0; // -inlineOnly
 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 
 //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
+loadModule('jsstd');
 
-jslangTest	();
+//jslangTest();
 
 throw 0;
 

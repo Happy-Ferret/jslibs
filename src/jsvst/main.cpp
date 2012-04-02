@@ -1175,7 +1175,7 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC( sendVstEventToHost, 1 )
 	END_FUNCTION_SPEC
 
-	BEGIN_CONST_INTEGER_SPEC
+	BEGIN_CONST
 
 		// Language code returned by audioMasterGetLanguage / VstHostLanguage
 		CONST_INTEGER_SINGLE( kVstLangEnglish )
@@ -1323,7 +1323,7 @@ CONFIGURE_CLASS
 		CONST_INTEGER_SINGLE(effSetProcessPrecision)
 		CONST_INTEGER_SINGLE(effGetNumMidiInputChannels)
 		CONST_INTEGER_SINGLE(effGetNumMidiOutputChannels)
-	END_CONST_INTEGER_SPEC
+	END_CONST
 
 END_CLASS
 

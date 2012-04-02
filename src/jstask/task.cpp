@@ -77,7 +77,7 @@ ALWAYS_INLINE bool SerializerIsEmpty( const SerializedData *ser ) {
 
 
 
-struct TaskPrivate : CppAllocators {
+struct TaskPrivate : CppJlAllocators {
 
 	JLMutexHandler mutex;
 	JLThreadHandler threadHandle;
@@ -211,6 +211,7 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 		JL_CHK( UnserializeJsval(cx, serializedRequest, &argv[1]) );
 		SerializerFree(&serializedRequest);
 		argv[2] = INT_TO_JSVAL(index++);
+
 		JSBool status = JS_CallFunction(cx, globalObj, fun, COUNTOF(argv)-1, argv+1, argv);
 
 		if ( !status ) {
@@ -375,7 +376,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_ASSERT_ARGC_MIN(1);
-	JL_ASSERT_ARG_IS_CALLABLE(1);
+	JL_ASSERT_ARG_IS_CALLABLE(1); // (TBD) replace with IsFunction...
 
 	pv = new TaskPrivate;
 	JL_CHK( pv );

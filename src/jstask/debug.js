@@ -1,19 +1,20 @@
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
-
+loadModule = host.loadModule;
 loadModule('jstask');
 loadModule('jsstd');
 
 
 var t = new Task(function(test){
 
-	return Blob("123");
+	return "123";
+	//return Blob("123");
 });
 
 t.request('test');
 
 processEvents(t.events(), host.endSignalEvents());
 
-print( uneval(t.response()) );
+//print( uneval(t.response()) );
 
 
 halt();

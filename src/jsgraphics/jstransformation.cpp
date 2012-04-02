@@ -39,6 +39,8 @@ jl::Pool matrixPool; // (TBD) manage thread safety / use modulePrivate
 
 int GetMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
+	JL_IGNORE( cx );
+
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	if ( !pv )
 		return false;

@@ -94,7 +94,7 @@ namespace jl {
 	};
 
 
-	class Serializer : public CppAllocators {
+	class Serializer : public CppJlAllocators {
 
 		jsval _serializerObj;
 
@@ -333,7 +333,8 @@ namespace jl {
 				return JS_TRUE;
 			}
 			
-			if ( JL_ObjectIsCallable(cx, obj) ) {
+			//if ( JL_ObjectIsCallable(cx, obj) ) {
+			if ( JS_ObjectIsFunction(cx, obj) ) {
 
 /* JS_XDRValue fails because function chasp has no XDR encoding hook
 				JSXDRState *xdr = JS_XDRNewMem(cx, JSXDR_ENCODE);
@@ -345,11 +346,21 @@ namespace jl {
 				JL_CHK( Write(cx, SerializerConstBufferInfo(buf, length)) );
 				JS_XDRDestroy(xdr);
 */
+/*				
 				JSString *src;
 				src = JS_ValueToSource(cx, OBJECT_TO_JSVAL(obj));
 				JL_ASSERT( src, E_JSLIBS, E_INTERNAL ); // "Unable to get function source."
 				JL_CHK( Write(cx, JLSTFunction) );
 				return Write(cx, src);
+*/
+
+
+				uint32_t length;
+				void *data;
+				data = JS_EncodeInterpretedFunction(cx, obj, &length);
+				JL_CHK( Write(cx, JLSTFunction) );
+				JL_CHK( Write(cx, SerializerConstBufferInfo(data, length)) );
+				return JS_TRUE;
 			}
 
 			JL_CHK( JS_GetMethodById(cx, obj, JLID(cx, _serialize), NULL, &serializeFctVal) ); // JL_CHK( JS_GetProperty(cx, obj, "_serialize", &serializeFctVal) );
@@ -484,7 +495,7 @@ namespace jl {
 //////////////////////////////////////////////////////////////////////////////
 
 
-	class Unserializer : public CppAllocators {
+	class Unserializer : public CppJlAllocators {
 
 		jsval _unserializerObj;
 
@@ -778,10 +789,18 @@ namespace jl {
 					JL_CHK( JL_GetClassPrototype(cx, NULL, JSProto_Function, &funProto) );
 					JL_CHK( JS_SetPrototype(cx, JSVAL_TO_OBJECT(val), funProto) );
 */
+
+/*
 					JSString *source;
 					JL_CHK( Read(cx, source) );
 					JL_CHK( JL_Eval(cx, source, &val) ); // beware, non-functionExpression behavior 
 					//JL_CHKM( !JSVAL_IS_VOID(val), 
+*/
+
+					SerializerConstBufferInfo encodedFunction;
+					JL_CHK( Read(cx, encodedFunction) );
+					JSObject *fctObj = JS_DecodeInterpretedFunction(cx, encodedFunction.Data(), encodedFunction.Length(), NULL, NULL);
+					val = OBJECT_TO_JSVAL(fctObj);
 					break;
 				}
 				default:

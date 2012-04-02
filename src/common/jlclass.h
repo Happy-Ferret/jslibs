@@ -18,11 +18,22 @@
 #define JL_NO_TINYID (-1) // see JL_DefineClassProperties()
 
 typedef int32_t JLRevisionType;
-
+/*
 struct JLConstIntegerSpec {
     int ival;
     const char *name;
 };
+
+struct JLConstDoubleSpec {
+	double dval;
+	const char *name;
+};
+*/
+struct JLConstValueSpec {
+	const char *name;
+	jsval val;
+};
+
 
 struct JLClassSpec {
 	JSClass clasp;
@@ -33,8 +44,7 @@ struct JLClassSpec {
 	JSPropertySpec *static_ps;
 	JSFunctionSpec *fs;
 	JSFunctionSpec *static_fs;
-	JSConstDoubleSpec *cds;
-	JLConstIntegerSpec *cis;
+	JLConstValueSpec *static_const;
 	JSBool (*init)(JSContext *cx, JLClassSpec *sc, JSObject *proto, JSObject *obj);
 	JLRevisionType revision;
 	double buildDate;
@@ -44,7 +54,7 @@ struct JLClassSpec {
 // JL_StoreProperty is used to override a property definition (from the prototype to the obj).
 // if removeGetterAndSetter is false, it is up to the caller to filter calls using: if ( *vp != JSVAL_VOID ) return JS_TRUE;
 // if removeGetterAndSetter is true, the value is stored for r/w getter or setter will never be called again.
-INLINE JSBool
+INLINE JSBool FASTCALL
 JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool removeGetterAndSetter ) {
 
 	JSBool found;
@@ -71,7 +81,7 @@ JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool r
 
 // because it is difficult to override properties by tinyId (JSPropertyOp) see. bz#526979
 // note. PROPERTY_SWITCH uses enum values as tinyId
-ALWAYS_INLINE JSBool
+ALWAYS_INLINE JSBool FASTCALL
 JL_DefineClassProperties(JSContext *cx, JSObject *obj, JSPropertySpec *ps) {
 
 	for ( ; ps->name; ++ps ) {
@@ -84,6 +94,35 @@ JL_DefineClassProperties(JSContext *cx, JSObject *obj, JSPropertySpec *ps) {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+ALWAYS_INLINE JSBool FASTCALL
+JL_DefineFunctions(JSContext *cx, JSObject *obj, JSFunctionSpec *fs) {
+
+	for ( ; fs->name; fs++ )
+		JL_CHK( JS_DefineFunction(cx, obj, fs->name, fs->call, fs->nargs, fs->flags) );
+	return JS_TRUE;
+	JL_BAD;
+}
+/*
+ALWAYS_INLINE JSBool FASTCALL
+JL_DefineConstDoubles(JSContext *cx, JSObject *obj, JLConstDoubleSpec *cds) {
+
+    for ( ; cds->name; cds++ )
+		JL_CHK( JS_DefineProperty(cx, obj, cds->name, DOUBLE_TO_JSVAL(cds->dval), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	return JS_TRUE;
+	JL_BAD;
+}
+*/
+ALWAYS_INLINE JSBool FASTCALL
+JL_DefineConstValues(JSContext *cx, JSObject *obj, JLConstValueSpec *cs) {
+
+    for ( ; cs->name; cs++ )
+		JL_CHK( JS_DefineProperty(cx, obj, cs->name, cs->val, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 ALWAYS_INLINE char *
 JLNormalizeFunctionName( const char *name ) {
@@ -100,7 +139,7 @@ JLNormalizeFunctionSpecNames( JSFunctionSpec *functionSpec ) {
 		it->name = JLNormalizeFunctionName(it->name);
 }
 
-INLINE JSBool
+INLINE JSBool FASTCALL
 JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JL_CHK(obj);
@@ -109,17 +148,21 @@ JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 		JLNormalizeFunctionSpecNames(cs->static_fs);
 
 	if ( cs->static_fs != NULL )
-		JL_CHK( JS_DefineFunctions(cx, obj, cs->static_fs) );
+		JL_CHK( JL_DefineFunctions(cx, obj, cs->static_fs) );
 
 	if ( cs->static_ps != NULL )
 		JL_CHK( JL_DefineClassProperties(cx, obj, cs->static_ps) );
-
+/*
 	if ( cs->cis != NULL )
 		for ( JLConstIntegerSpec *it = cs->cis; it->name; ++it )
 			JL_CHK( JS_DefineProperty(cx, obj, it->name, INT_TO_JSVAL(jl::SafeCast<int32_t>(it->ival)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	if ( cs->cds != NULL )
-		JL_CHK( JS_DefineConstDoubles(cx, obj, cs->cds) );
+		JL_CHK( JL_DefineConstDoubles(cx, obj, cs->cds) );
+*/
+
+	if ( cs->static_const != NULL )
+		JL_CHK( JL_DefineConstValues(cx, obj, cs->static_const) );
 
 	if ( JS_IsExtensible(obj) ) {
 	
@@ -134,7 +177,7 @@ JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_BAD;
 }
 
-INLINE JSBool
+INLINE JSBool FASTCALL
 JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JL_CHK(obj);
@@ -177,10 +220,10 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	// functions
 	if ( cs->fs )
-		JL_CHK( JS_DefineFunctions(cx, proto, cs->fs) );
+		JL_CHK( JL_DefineFunctions(cx, proto, cs->fs) );
 	
 	if ( cs->static_fs )
-		JL_CHK( JS_DefineFunctions(cx, ctor, cs->static_fs) );
+		JL_CHK( JL_DefineFunctions(cx, ctor, cs->static_fs) );
 
 	// properties
 	if ( cs->ps != NULL )
@@ -189,13 +232,8 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	if ( cs->static_ps != NULL )
 		JL_CHK( JL_DefineClassProperties(cx, ctor, cs->static_ps) );
 
-	// const
-	if ( cs->cis != NULL )
-		for ( JLConstIntegerSpec *it = cs->cis; it->name; ++it )
-			JL_CHK( JS_DefineProperty(cx, ctor, it->name, INT_TO_JSVAL(jl::SafeCast<int32_t>(it->ival)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-
-	if ( cs->cds != NULL )
-		JL_CHK( JS_DefineConstDoubles(cx, ctor, cs->cds) );
+	if ( cs->static_const != NULL )
+		JL_CHK( JL_DefineConstValues(cx, ctor, cs->static_const) );
 
 
 	// info
@@ -289,18 +327,16 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 #define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.
 
+// const value
+#define BEGIN_CONST static JLConstValueSpec static_const[] = {
+#define END_CONST { NULL, 0 } }; cs.static_const = static_const;
 
-// const integer
-#define BEGIN_CONST_INTEGER_SPEC static JLConstIntegerSpec cis[] = {
-#define END_CONST_INTEGER_SPEC {0, NULL}}; cs.cis = cis;
-#define CONST_INTEGER(name,value) { value, #name },
-#define CONST_INTEGER_SINGLE(name) { name, #name },
+#define CONST_INTEGER(name, ival) { #name, INT_TO_JSVAL(ival) },
+#define CONST_INTEGER_SINGLE(name) { #name, INT_TO_JSVAL(name) },
 
-// const double
-#define BEGIN_CONST_DOUBLE_SPEC static JSConstDoubleSpec cds[] = { // dval; *name; flags; spare[3];
-#define END_CONST_DOUBLE_SPEC {0, NULL, 0, {0, 0, 0}}}; cs.cds = cds;
-#define CONST_DOUBLE(name,value) { value, #name, 0, {0, 0, 0}},
-#define CONST_DOUBLE_SINGLE(name) { name, #name, 0, {0, 0, 0}},
+#define CONST_DOUBLE(name, dval) { #name, DOUBLE_TO_JSVAL(dval) },
+#define CONST_DOUBLE_SINGLE(name) { #name, DOUBLE_TO_JSVAL(name) },
+
 
 // functions
 #define BEGIN_FUNCTION_SPEC static JSFunctionSpec fs[] = { // *name, call, nargs, flags
@@ -482,3 +518,9 @@ DefaultInstanceof(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp) {
 #define DEFINE_PROPERTY_GETTER(name) static JSBool _##name##Getter(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
 #define DEFINE_PROPERTY_SETTER(name) static JSBool _##name##Setter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp)
 
+
+// documentation
+
+#define ADD_DOC(NAME, SYNTAX, DESCRIPTION) \
+	static const char *_##NAME##_syntax = SYNTAX; \
+	static const char *_##NAME##_description = DESCRIPTION;

@@ -1159,7 +1159,7 @@ DEFINE_FUNCTION( playSound ) {
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision$"))
-	BEGIN_CONST_INTEGER_SPEC
+	BEGIN_CONST
 		CONST_INTEGER( NONE                      ,AL_NONE                       )
 		CONST_INTEGER( FALSE                     ,AL_FALSE                      )
 		CONST_INTEGER( TRUE                      ,AL_TRUE                       )
@@ -1339,7 +1339,7 @@ CONFIGURE_CLASS
 		CONST_INTEGER(CHORUS_WAVEFORM_SINUSOID                       , AL_CHORUS_WAVEFORM_SINUSOID                   )
 		CONST_INTEGER(CHORUS_WAVEFORM_TRIANGLE                       , AL_CHORUS_WAVEFORM_TRIANGLE                   )
 
-	END_CONST_INTEGER_SPEC
+	END_CONST
 
 	BEGIN_STATIC_FUNCTION_SPEC
 

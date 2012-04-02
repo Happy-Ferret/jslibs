@@ -31,6 +31,8 @@ BEGIN_CLASS( Process )
 
 DEFINE_FINALIZE() {
 
+	JL_IGNORE(cx);
+
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(obj);
 	if ( process )

@@ -1,5 +1,5 @@
-#define GL_CONST(name) { GL_##name, #name },
-#define GL_CONST_EX(name, ext) { GL_##name##_##ext, #name },
+#define GL_CONST(name) { #name, GL_##name },
+#define GL_CONST_EX(name, ext) { #name, GL_##name##_##ext },
 
 GL_CONST( ACCUM )
 GL_CONST( LOAD )

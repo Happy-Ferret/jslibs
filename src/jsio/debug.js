@@ -1,10 +1,19 @@
+loadModule = host.loadModule;
+
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
 
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio -exclude jstask'); throw 0;
 
+
 loadModule('jsstd');
 loadModule('jsio');
+
+print( File.FILE_FILE );
+
+
+throw 0;
+
 
 	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
 	var cl = new Socket(); cl.connect('127.0.0.1', 9999);

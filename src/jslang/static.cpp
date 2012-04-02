@@ -51,14 +51,7 @@ $TOC_MEMBER $INAME
 	QA.ASSERT( isBoolean(new Boolean(true)), true );
 **/
 
-
-#define LF "\n"
-#define DEFINE_DOC( NAME, DOC ) static const char *_##NAME##_doc = DOC
-
-DEFINE_DOC( isBoolean,
-"boolean isBoolean" LF
-"returns true if the value is a boolean value or a Boolean object"
-);
+ADD_DOC(isBoolean, "boolean isBoolean(value)", "returns true if value is a boolean or a boolean object");
 
 DEFINE_FUNCTION( isBoolean ) {
 
@@ -220,7 +213,7 @@ DEFINE_FUNCTION( real ) {
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME( value [, toArrayBuffer] )
-  This function converts any value of stream into a string.
+  This function converts any value or stream into a string.
   If _toArrayBuffer_ is given and is true, the result is stored into an ArrayBuffer.
   The _value_ argument may be: StreamRead compatible object, any kind of data value (string, TypedArray, ...)
 **/
@@ -233,6 +226,9 @@ $TOC_MEMBER $INAME
 	QA.ASSERTOP( stringify(stringify(stringify(stringify(stringify('abcd'), true)), true)), '===', 'abcd' );
 	QA.ASSERTOP( stringify(Uint16Array(stringify('\x00\x01\x02\x03', true))), '===', '\u0100\u0302' ); // endian issue ?
 **/
+
+ADD_DOC(stringify, "string|ArrayBuffer stringify(value [, toArrayBuffer])", "convert a value to a string or an ArrayBuffer");
+
 DEFINE_FUNCTION( stringify ) {
 
 	JLData str;
@@ -330,6 +326,7 @@ $TOC_MEMBER $INAME
 	QA.ASSERTOP( join(it), '==', 'bcd');
 	QA.ASSERTOP( stringify(stringify('123456789', true).slice(3)), '==', '456789');
 **/
+ADD_DOC( join, "string|ArrayBuffer join(iterableObject [,toArrayBuffer])", "joins data" )
 DEFINE_FUNCTION( join ) {
 
 	js::AutoValueVector avr(cx);
@@ -418,6 +415,8 @@ DEFINE_FUNCTION( join ) {
 $TOC_MEMBER $INAME
  $STR $INAME( data, pattern [, startIndex = 0] )
 **/
+
+ADD_DOC( indexOf, "string|ArrayBuffer indexOf(data, pattern [,startIndex = 0])", "" );
 DEFINE_FUNCTION( indexOf ) {
 
 	JLData srcStr, patStr;
@@ -978,14 +977,25 @@ testFct( JSContext *cx ) {
 
 
 DEFINE_FUNCTION( jslangTest ) {
-
-
+	
 	JL_IGNORE(cx, argc, vp);
 
-	jsval xx = DOUBLE_TO_JSVAL(0);
+/*
+	static uint64_t xx[2];
+
+	__asm { int 3 }
+	__asm { int 3 }
+	__asm { int 3 }
+
+	xx[1] = DOUBLE_TO_JSVAL(123).asRawBits();
+	xx[2] = DOUBLE_TO_JSVAL(456).asRawBits();
+
+	__asm { int 3 }
+	__asm { int 3 }
+	__asm { int 3 }
 
 	JL_IGNORE(xx);
-
+*/
 	
 
 /*

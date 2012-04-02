@@ -29,6 +29,8 @@ struct MemoryMappedPrivate {
 
 JSBool MemoryMappedBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
+	JL_IGNORE( cx );
+
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
 	*str = JLData(((const char*)pv->addr) + pv->offset, false, pv->size);
 	return JS_TRUE;

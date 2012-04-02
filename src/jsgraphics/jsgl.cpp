@@ -6816,16 +6816,16 @@ DEFINE_INIT() {
 #ifdef DEBUG
 
 	// check GL const duplicates
-	JLConstIntegerSpec *it2, *it1 = sc->cis;
+	JLConstValueSpec *it2, *it1 = sc->static_const;
 
 	int count;
-	for ( it1 = sc->cis; it1->name != NULL; ++it1 ) {
+	for ( it1 = sc->static_const; it1->name != NULL; ++it1 ) {
 
 		count = 0;
-		for ( it2 = sc->cis; it2->name != NULL; ++it2 ) {
+		for ( it2 = sc->static_const; it2->name != NULL; ++it2 ) {
 
 //			if ( strcmp(it1->name, it2->name) == 0 && it1->ival != it2->ival ) // detect duplicate name with different value !
-			if ( it1->ival == it2->ival && strcmp(it1->name, it2->name) == 0 ) // detect duplicate name with same value.
+			if ( it1->val == it2->val && strcmp(it1->name, it2->name) == 0 ) // detect duplicate name with same value.
 				count++;
 		}
 		if ( count > 1 )
@@ -6892,10 +6892,10 @@ CONFIGURE_CLASS
 	REVISION(JL_SvnRevToInt("$Revision$"))
 	HAS_INIT
 
-	BEGIN_CONST_INTEGER_SPEC
+	BEGIN_CONST
 		// OpenGL constants
 		#include "jsglconst.h"
-	END_CONST_INTEGER_SPEC
+	END_CONST
 
 	BEGIN_STATIC_FUNCTION_SPEC
 #ifdef DEBUG

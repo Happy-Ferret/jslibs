@@ -10,6 +10,7 @@
 #include <string.h>
 #include <jsprf.h>
 
+#pragma warning(disable : 4100) // unreferenced formal parameter
 
 void StderrWrite(JSContext *cx, const char *message, size_t length) {
 
@@ -725,8 +726,58 @@ int main_JLData_test(int argc, char* argv[]) {
 
 
 
+// http://pastebin.mozilla.org/1551010
+
+int main_test_call(int argc, char* argv[]) {
+
+	uint32_t xdrLength;
+	void *xdrData;
+
+	{
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JS_InitStandardClasses(cx, globalObject);
+
+	char *scriptText = "(function() { return 123 })";
+	JSScript *script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "test", 1);
+
+	jsval rval;
+	ASSERT( JS_ExecuteScript(cx, globalObject, script, &rval) );
+
+	void *tmp = JS_EncodeInterpretedFunction(cx, JSVAL_TO_OBJECT(rval), &xdrLength);
+	xdrData = malloc(xdrLength);
+	memcpy(xdrData, tmp, xdrLength);
+
+	JS_DestroyContext(cx);
+	JS_DestroyRuntime(rt);
+	}
+
+	{
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JS_InitStandardClasses(cx, globalObject);
+
+	JSObject *fctObj = JS_DecodeInterpretedFunction(cx, xdrData, xdrLength, NULL, NULL);
+	JS::AutoObjectRooter tvr(cx, fctObj);
+
+	jsval rval;
+	JS_CallFunctionValue(cx, globalObject, OBJECT_TO_JSVAL(fctObj), 0, NULL, &rval); // <- crash here
+
+	JS_DestroyContext(cx);
+	JS_DestroyRuntime(rt);
+
+	}
+	
+	JS_ShutDown();
+
+	return EXIT_SUCCESS;
+}
+
+
 int main(int argc, char* argv[]) {
 
 	//return main_PerfTest(argc, argv);
-	return main_JLData_test(argc, argv);
+	return main_test_call(argc, argv);
 }
