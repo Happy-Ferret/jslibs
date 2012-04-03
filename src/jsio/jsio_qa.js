@@ -781,7 +781,8 @@ loadModule('jsdebug');
 		m.offset = 0;
 		QA.ASSERT_STR( new Stream(m).read(15), '// don\'t remove', 'convert to a Stream (2)' );
 
-// File EOF test
+
+/// File EOF test
 
 	var filename = QA.randomString(10);
 

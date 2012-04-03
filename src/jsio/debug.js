@@ -1,15 +1,73 @@
-loadModule = host.loadModule;
+var loadModule = host.loadModule;
 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
 
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio -exclude jstask'); throw 0;
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask'); throw 0;
 
-
+loadModule('jstask');
 loadModule('jsstd');
 loadModule('jsio');
 
-print( File.FILE_FILE );
+
+
+	var filename = 'xxxxxxx.tmp';
+
+	var file = new File(filename).open('w');
+	file.write('xyz');
+	file.close();
+
+	var fromFile = new File(filename).open(File.RDONLY);
+	
+//	fromFile.read(1);
+	print( fromFile.read(0) );
+	print( fromFile.read(3) );
+	print( fromFile.read(0) );
+
+
+	
+	
+throw 0;	
+	
+	var myTask = new Task(function() {
+		
+		var loadModule = host.loadModule;
+		loadModule('jsio');
+		var serverSocket = new Socket();
+		serverSocket.reuseAddr = true;
+		serverSocket.bind(8099, '127.0.0.1');
+		serverSocket.listen();
+
+		serverSocket.readable = function(s) {
+
+			var s1 = s.accept();
+			s1.linger = 1000;
+			sleep(1000);
+			s1.write('hello');
+			s1.close();
+		}
+
+		poll([serverSocket], 1000);
+		serverSocket.close();
+	});
+
+	myTask.request();
+
+	var client = new Socket();
+	client.connect('127.0.0.1', 8099);
+	client.nonblocking = false;
+	
+	sleep(100);
+	
+	print( 'read...\n' )
+	var res = client.read();
+	print( stringify(res) + '\n' )
+	
+
+
+	myTask.response();
+
+	print( 'end\n' )
 
 
 throw 0;

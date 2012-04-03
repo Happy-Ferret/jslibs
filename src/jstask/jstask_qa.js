@@ -5,6 +5,18 @@ loadModule('jsio');
 
 	var t = new Task(function(test){
 
+		throw 1;
+	});
+
+	t.request('test');
+
+	processEvents(t.events(), host.endSignalEvents());
+
+
+/// crash when error in the task function [rmt]
+
+	var t = new Task(function(test){
+
 		joazijozaeijv();
 	});
 
@@ -17,6 +29,7 @@ loadModule('jsio');
 
 	var t = new Task(function(){
 		
+		var loadModule = host.loadModule;
 		loadModule('jsstd');
 		sleep(100);
 		return "test";
@@ -33,6 +46,7 @@ loadModule('jsio');
 
 		new Task(function(){});
 	}
+
 
 /// many new threads [r]
 
@@ -76,7 +90,7 @@ loadModule('jsio');
 
 /// idle property [fr]
 
-	function myTask() {}
+	var myTask = function() {}
 
 	var myTask = new Task(myTask);
 
@@ -100,7 +114,7 @@ loadModule('jsio');
 
 /// pending properties [r]
 
-	function myTask() {}
+	var myTask = function() {}
 
 	var myTask = new Task(myTask);
 
@@ -147,7 +161,9 @@ loadModule('jsio');
 
 /// multiple tasks [rf]
 
-	function taskFunction() {
+	var taskFunction = function() {
+		
+		var loadModule = host.loadModule;
 		loadModule('jsstd');
 		return expand('1$(a)5', { a:234 });
 	}
@@ -165,7 +181,8 @@ loadModule('jsio');
 
 /// task exception [rf]
 
-	function myTask(i) {
+	var myTask = function(i) {
+
 		throw 'my exception '+i;
 	}
 
@@ -181,7 +198,7 @@ loadModule('jsio');
 
 /// task idle property [fr]
 
-	function myTask() {
+	var myTask = function() {
 		for ( var j = 0; j < 1000; j++ );
 		return j;
 	}
@@ -207,8 +224,9 @@ loadModule('jsio');
 
 /// task and loadModule [r]
 
-	function myTask(req, i) {
-	
+	var myTask = function(req, i) {
+		
+		var loadModule = host.loadModule;
 		i || loadModule('jsio');
 		return currentDirectory;
 	}
@@ -220,7 +238,7 @@ loadModule('jsio');
 
 /// local context [fr]
 
-	function myTask() {
+	var myTask = function() {
 	
 		if ( !('i' in this) )
 			i = 0;
@@ -240,7 +258,7 @@ loadModule('jsio');
 
 /// request index [fr]
 
-	function myTask(req, index) index;
+	var myTask = function(req, index) index;
 	
 	var myTask = new Task(myTask);
 	myTask.request(undefined);
@@ -254,11 +272,12 @@ loadModule('jsio');
 
 /// task returns a map object [fr]
 
-	function myTask(req, i) {
-		
+	var myTask = function(req, i) {
+
+		var loadModule = host.loadModule;
 		if ( !i )
 			loadModule('jsstd');
-		return Map({req:Blob(req), i:i});
+		return {req:req, i:i};
 	}
 	
 	var myTask = new Task(myTask);
@@ -277,12 +296,13 @@ loadModule('jsio');
 
 /// file access in a task [fr]
 	
-	function myFileTask(filename, i) {
-		
+	var myFileTask = function(filename, i) {
+
+		var loadModule = host.loadModule;
 		if ( !i )
 			loadModule('jsio');
 		var file = new File(filename); 
-		var res = file.content;
+		var res = stringify(file.content);
 		file.content = undefined;
 		return res;
 	}
@@ -290,16 +310,17 @@ loadModule('jsio');
 	var myTask = new Task(myFileTask);
 
 	var filename = QA.randomString(10)+'.tmp';
+
 	new File(filename).content = 'XXX'+filename;
 	myTask.request(filename);
-	sleep(10);
+	sleep(100);
 	var res = myTask.response();
 	QA.ASSERT_STR( res, 'XXX'+filename, 'response' );
 
 
 /// task stderr custom test [frd]
 
-	function myFileTask() {
+	var myFileTask = function() {
 
 		host.stderr('myerror');
 	}
@@ -312,7 +333,8 @@ loadModule('jsio');
 /// blocking TCP client []
 
 	var myTask = new Task(function() {
-
+		
+		var loadModule = host.loadModule;
 		loadModule('jsio');
 		var serverSocket = new Socket();
 		serverSocket.reuseAddr = true;
@@ -321,7 +343,9 @@ loadModule('jsio');
 
 		serverSocket.readable = function(s) {
 
-			s.accept().write('hello');
+			var s1 = s.accept();
+			sleep(100);
+			s1.write('hello');
 		}
 
 		poll([serverSocket], 1000);
@@ -333,6 +357,9 @@ loadModule('jsio');
 
 	var client = new Socket();
 	client.connect('127.0.0.1', 8099);
+	client.readable = true;
+	poll([client], 1000);
 	var res = client.read(5);
 	QA.ASSERT_STR( res, 'hello', 'response' );
 	myTask.response();
+	client.close();

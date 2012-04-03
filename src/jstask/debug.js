@@ -1,28 +1,36 @@
+var loadModule = host.loadModule;
+
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
-loadModule = host.loadModule;
+
+ loadModule('jsstd'); exec('../common/tools.js'); runQATests('jstask'); throw 0; // -inlineOnly
+
 loadModule('jstask');
 loadModule('jsstd');
+loadModule('jsio');
+
+
+
+throw 0;
 
 
 var t = new Task(function(test){
 
-	return "123";
-	//return Blob("123");
+	wer();
 });
 
 t.request('test');
 
 processEvents(t.events(), host.endSignalEvents());
 
-//print( uneval(t.response()) );
+print( uneval(t.response()));
+
+throw 0;
 
 
-halt();
 
-
-
-var t = new Task(function(data, idx){
+var t = new Task(function(data, idx) {
 	
+	var loadModule = host.loadModule;
 	idx || loadModule('jsstd');
 	sleep(Math.random()*100);
 	return data+1;

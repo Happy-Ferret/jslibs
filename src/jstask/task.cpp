@@ -67,12 +67,13 @@ ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, const SerializedData *ser,
 }
 
 ALWAYS_INLINE bool IsSerializable( jsval val ) {
+
 	return true;
 }
 
 ALWAYS_INLINE bool SerializerIsEmpty( const SerializedData *ser ) {
 
-	return ser->length == 0;
+	return ser == NULL/* || ser->length == 0*/;
 }
 
 
@@ -187,7 +188,9 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 	JSObject *globalObj;
 	globalObj = JL_GetGlobal(cx);
 	ASSERT( funObj != NULL );
-	JL_CHK( JS_SetParent(cx, funObj, globalObj) ); // re-scope the function
+
+	// JL_CHK( JS_SetParent(cx, funObj, globalObj) ); // re-scope the function
+	ASSERT( JS_GetParent(funObj) );
 
 	size_t index;
 	index = 0;

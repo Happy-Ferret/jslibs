@@ -1,4 +1,4 @@
-loadModule = host.loadModule;
+var loadModule = host.loadModule;
 //RunJsircbot(false); throw 0;
 //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
 

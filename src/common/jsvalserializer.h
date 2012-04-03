@@ -799,7 +799,9 @@ namespace jl {
 
 					SerializerConstBufferInfo encodedFunction;
 					JL_CHK( Read(cx, encodedFunction) );
-					JSObject *fctObj = JS_DecodeInterpretedFunction(cx, encodedFunction.Data(), encodedFunction.Length(), NULL, NULL);
+					JSObject *fctObj;
+					fctObj = JS_DecodeInterpretedFunction(cx, encodedFunction.Data(), encodedFunction.Length(), NULL, NULL);
+					fctObj = JS_CloneFunctionObject(cx, fctObj, JS_GetParent(fctObj)); // (TBD) remove this wen bz#741597 wil be fixed.
 					val = OBJECT_TO_JSVAL(fctObj);
 					break;
 				}

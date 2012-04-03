@@ -171,8 +171,8 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 	for (;;) {
 
 		PRInt32 res = PR_Read(fd, BufferNewChunk(&buf, currentReadLength), currentReadLength); // like recv() with PR_INTERVAL_NO_TIMEOUT
-		if (likely( res > 0 )) { // a positive number indicates the number of bytes actually read in.
-
+		if (likely( res > 0 )) { // doc: a positive number indicates the number of bytes actually read in.
+			
 			BufferConfirm(&buf, res);
 			if ( res < currentReadLength )
 				break;
@@ -187,7 +187,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 			*rval = JSVAL_VOID;
 			return JS_TRUE;
 		} else
-		if ( res == -1 ) { // -1 indicates a failure. The reason for the failure can be obtained by calling PR_GetError.
+		if ( res == -1 ) { // doc: -1 indicates a failure. The reason for the failure can be obtained by calling PR_GetError.
 
 			if ( BufferGetLength(&buf) > 0 ) // an error has occured, but we want to keep the current data, error will rise in the next call.
 				break;
@@ -233,82 +233,6 @@ bad:
 }
 
 
-JSBool ReadToJsval( JSContext *cx, PRFileDesc *fd, uint32_t amount, PRInt64 available, jsval *rval ) {
-
-	if ( available != -1 && amount > available )
-		amount = (uint32_t)available;
-
-	uint8_t *buf = JL_NewBuffer(cx, amount, rval);
-	JL_ASSERT_ALLOC( buf );
-
-	PRInt32 res;
-	res = PR_Read(fd, buf, amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
-
-	if (unlikely( res == -1 )) { // failure. The reason for the failure can be obtained by calling PR_GetError.
-
-		switch ( PR_GetError() ) { // see Write() for details about errors
-			case PR_WOULD_BLOCK_ERROR:
-
-				// mean no data available, but connection still established.
-				JL_CHK( JL_ChangeBufferLength(cx, rval, 0) );
-				return JS_TRUE;
-			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
-				//Network dropped connection on reset.
-				//  The connection has been broken due to keep-alive activity detecting a failure while the operation was in progress.
-				//  It can also be returned by setsockopt if an attempt is made to set SO_KEEPALIVE on a connection that has already failed.
-				//Software caused connection abort.
-				//  An established connection was aborted by the software in your host computer, possibly due to a data transmission time-out or protocol error.
-				//Connection timed out.
-				//  A connection attempt failed because the connected party did not properly respond after a period of time,
-				//  or the established connection failed because the connected host has failed to respond.
-
-			//case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
-				//Cannot send after socket shutdown.
-				//  A request to send or receive data was disallowed because the socket had already been shut down in that direction with a previous shutdown call.
-				//  By calling shutdown a partial close of a socket is requested, which is a signal that sending or receiving, or both have been discontinued.
-
-			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
-				//Connection reset by peer.
-				//  An existing connection was forcibly closed by the remote host.
-				//  This normally results if the peer application on the remote host is suddenly stopped, the host is rebooted,
-				//  the host or remote network interface is disabled, or the remote host uses a hard close (see setsockopt for more information on the SO_LINGER option on the remote socket).
-				//  This error may also result if a connection was broken due to keep-alive activity detecting a failure while one or more operations are in progress.
-				//  Operations that were in progress fail with WSAENETRESET. Subsequent operations fail with WSAECONNRESET.
-				JL_CHK( JL_FreeBuffer(cx, rval) );
-				*rval = JSVAL_VOID;
-				return JS_TRUE;
-			default:
-				return ThrowIoError(cx);
-		}
-	}
-
-	if ( available == 0 || ( res == 0 && amount > 0 ) ) { // 0 means end of file is reached or the network connection is closed.
-
-		// 0 means end of file is reached or the network connection is closed.
-		// requesting 0 bytes and receiving 0 bytes does not necessary indicate eof.
-		// BUT if amount is given by PR_Available and is 0 (see Read()), and the eof is reached, this function should return JSVAL_VOID.
-		
-		JL_CHK( JL_FreeBuffer(cx, rval) );
-		*rval = JSVAL_VOID;
-		return JS_TRUE;
-	}
-
-	if (likely( res == (PRInt32)amount )) {
-
-		return JS_TRUE;
-	}
-
-	if ( res > 0 ) { // doc: a positive number indicates the number of bytes actually read in.
-
-		buf = JL_ChangeBufferLength(cx, rval, res);
-		JL_CHK( buf );
-		return JS_TRUE;
-	}
-
-	return JS_TRUE;
-	JL_BAD;
-}
-
 
 
 /**doc
@@ -339,22 +263,101 @@ DEFINE_FUNCTION( read ) {
 	fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
-	// doc: Determine the amount of data in bytes available for reading in the given file or socket. Returns a -1 and the reason for the failure can be retrieved via PR_GetError()
-	PRInt64 available;
-	available = PR_Available64( fd );
+	bool requestAmount;
 	uint32_t amount;
+	PRInt32 res;
+
+	PRInt64 available = PR_Available64( fd );
 
 	if ( JL_ARG_ISDEF(1) ) {
 
+		requestAmount = true;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
-		JL_CHK( ReadToJsval(cx, fd, amount, available, JL_RVAL) );
 	} else {
 
-		if ( available != -1 )
-			JL_CHK( ReadToJsval(cx, fd, (uint32_t)available, available, JL_RVAL) );
-		else
-			JL_CHK( ReadAllToJsval(cx, fd, JL_RVAL) );
+		requestAmount = false;
+		res = PR_Read(fd, NULL, 0);
+		ASSERT( res == 0 || res == -1 );
+		// doc:
+		//  Determine the amount of data in bytes available for reading in the given file or socket.
+		//  Returns a -1 and the reason for the failure can be retrieved via PR_GetError().
+		if ( available == -1 ) // API not available
+			available = 4096;
+		amount = (uint32_t)available;
 	}
+
+
+	uint8_t *buf;
+	buf = JL_NewBuffer(cx, amount, JL_RVAL);
+	JL_ASSERT_ALLOC( buf );
+
+	res = PR_Read(fd, buf, amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
+
+	if (unlikely( res == -1 )) { // failure. The reason for the failure can be obtained by calling PR_GetError.
+
+		switch ( PR_GetError() ) { // see Write() for details about errors
+			case PR_WOULD_BLOCK_ERROR:
+
+				if ( amount > 0 )
+					JL_CHK( JL_ChangeBufferLength(cx, JL_RVAL, 0) ); // mean no data available, but connection still established.
+				return JS_TRUE;
+
+			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
+				//Network dropped connection on reset.
+				//  The connection has been broken due to keep-alive activity detecting a failure while the operation was in progress.
+				//  It can also be returned by setsockopt if an attempt is made to set SO_KEEPALIVE on a connection that has already failed.
+				//Software caused connection abort.
+				//  An established connection was aborted by the software in your host computer, possibly due to a data transmission time-out or protocol error.
+				//Connection timed out.
+				//  A connection attempt failed because the connected party did not properly respond after a period of time,
+				//  or the established connection failed because the connected host has failed to respond.
+
+			//case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
+				//Cannot send after socket shutdown.
+				//  A request to send or receive data was disallowed because the socket had already been shut down in that direction with a previous shutdown call.
+				//  By calling shutdown a partial close of a socket is requested, which is a signal that sending or receiving, or both have been discontinued.
+
+			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
+				//Connection reset by peer.
+				//  An existing connection was forcibly closed by the remote host.
+				//  This normally results if the peer application on the remote host is suddenly stopped, the host is rebooted,
+				//  the host or remote network interface is disabled, or the remote host uses a hard close (see setsockopt for more information on the SO_LINGER option on the remote socket).
+				//  This error may also result if a connection was broken due to keep-alive activity detecting a failure while one or more operations are in progress.
+				//  Operations that were in progress fail with WSAENETRESET. Subsequent operations fail with WSAECONNRESET.
+				JL_CHK( JL_FreeBuffer(cx, JL_RVAL) );
+				*JL_RVAL = JSVAL_VOID;
+				return JS_TRUE;
+
+			default:
+				return ThrowIoError(cx);
+		}
+	}
+
+	if ( requestAmount && amount == 0 && available > 0 ) {
+	
+		ASSERT( res == 0 );
+		return JS_TRUE;
+	}
+
+	if ( res == 0 ) { // doc: 0 means end of file is reached or the network connection is closed.
+
+		JL_CHK( JL_FreeBuffer(cx, JL_RVAL) );
+		*JL_RVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	if ( (uint32_t)res == amount ) {
+		
+		return JS_TRUE;
+	}
+
+	if ( res > 0 ) { // doc: a positive number indicates the number of bytes actually read in.
+
+		buf = JL_ChangeBufferLength(cx, JL_RVAL, res);
+		JL_CHK( buf );
+		return JS_TRUE;
+	}
+
 	return JS_TRUE;
 	JL_BAD;
 }
