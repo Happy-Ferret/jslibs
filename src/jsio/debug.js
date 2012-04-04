@@ -3,31 +3,32 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
 
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask'); throw 0;
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask'); throw 0;
 
 loadModule('jstask');
 loadModule('jsstd');
 loadModule('jsio');
+loadModule('jsdebug');
 
 
+function createSocketPair() {
 
-	var filename = 'xxxxxxx.tmp';
+	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+	processEvents( Descriptor.events([rdv]), timeoutEvents(1000) );
+	var sv = rdv.accept(); rdv.close();
+	return [cl, sv];
+}
 
-	var file = new File(filename).open('w');
-	file.write('xyz');
-	file.close();
+var [c, s] = createSocketPair();	
 
-	var fromFile = new File(filename).open(File.RDONLY);
+s.write('123');
+s.close();
+print( stringify(c) );
 	
-//	fromFile.read(1);
-	print( fromFile.read(0) );
-	print( fromFile.read(3) );
-	print( fromFile.read(0) );
-
-
 	
-	
-throw 0;	
+throw 0;
+
 	
 	var myTask = new Task(function() {
 		

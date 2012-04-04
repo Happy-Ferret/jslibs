@@ -21,7 +21,7 @@ DECLARE_CLASS( Descriptor )
 DECLARE_CLASS( File )
 
 
-#define MAX_IP_STRING 39 // IPv4 & IPv6
+#define MAX_IP_STRING_LENGTH 39 // IPv4 & IPv6
 
 /**doc
 $CLASS_HEADER Descriptor
@@ -964,7 +964,7 @@ DEFINE_PROPERTY_GETTER( peerName ) {
 		}
 		return ThrowIoError(cx);
 	}
-	char buf[MAX_IP_STRING + 1];
+	char buf[MAX_IP_STRING_LENGTH + 1];
 	if ( PR_NetAddrToString(&peerAddr, buf, sizeof(buf)) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ( cx, buf ) );
@@ -1014,7 +1014,7 @@ DEFINE_PROPERTY_GETTER( sockName ) {
 	PRNetAddr sockAddr;
 	if ( PR_GetSockName( fd, &sockAddr ) != PR_SUCCESS )
 		return ThrowIoError(cx);
-	char buf[MAX_IP_STRING + 1];
+	char buf[MAX_IP_STRING_LENGTH + 1];
 	if ( PR_NetAddrToString( &sockAddr, buf, sizeof(buf) ) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ( cx, buf ) );
@@ -1082,7 +1082,7 @@ DEFINE_FUNCTION( getHostsByName ) {
 	index = 0;
 	PRIntn hostIndex;
 	hostIndex = 0;
-	char addrStr[MAX_IP_STRING + 1];
+	char addrStr[MAX_IP_STRING_LENGTH + 1];
 
 	for (;;) {
 
@@ -1131,7 +1131,7 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 	JLData addr;
 	JL_ASSERT_ARGC( 1 );
 
-	//const char *addr; // MAX_IP_STRING
+	//const char *addr; // MAX_IP_STRING_LENGTH
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &addr) );
 
 	PRNetAddr netaddr;

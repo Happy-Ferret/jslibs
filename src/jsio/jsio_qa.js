@@ -795,9 +795,250 @@ loadModule('jsdebug');
 	QA.ASSERT_STR( fromFile.read(1), 'x', 'before EOF' );
 	QA.ASSERT_STR( fromFile.read(0), '', 'before EOF' );
 	QA.ASSERT_STR( fromFile.read(3), 'yz', 'before EOF' );
-	QA.ASSERT( fromFile.read(0), undefined, 'after EOF' );
+	QA.ASSERT( stringify(fromFile.read(0)), '', 'after EOF' );
 	QA.ASSERT( fromFile.read(1), undefined, 'after EOF' );
+	QA.ASSERT( fromFile.read(), undefined, 'after EOF' );
 
 	fromFile.close();
 
 	file.delete();
+
+
+/// complete jsio tests
+
+	/* for local tests
+	var QA = { ASSERTOP: function(a, op, b, name) {
+		
+		if ( !eval('(a '+op+' b)') ) {
+
+			print('error: '+a+' ! '+op+' '+b, '  '+name + ' / ' + locate(1).join(':')+'\n');
+		}
+	}};
+	*/
+
+	function createSocketPair() {
+
+		var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+		var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+		processEvents( Descriptor.events([rdv]), timeoutEvents(1000) );
+		var sv = rdv.accept(); rdv.close();
+		return [cl, sv];
+	}
+
+	function runBasicTests(fdm, name) {
+
+		var fd = fdm('abcde');
+		QA.ASSERTOP( stringify(fd.read(0)), '==', '', name );
+		QA.ASSERTOP( stringify(fd.read(0)), '==', '', name );
+		QA.ASSERTOP( stringify(fd.read(1)), '==', 'a', name );
+		QA.ASSERTOP( stringify(fd.read(100)), '==', 'bcde', name );
+		QA.ASSERTOP( stringify(fd.read(0)), '==', '', name );
+		var fd = fdm('fghij');
+		QA.ASSERTOP( stringify(fd.read()), '==', 'fghij', name );
+		QA.ASSERTOP( stringify(fd.read(0)), '==', '', name );
+		var fd = fdm('');
+		QA.ASSERTOP( fd.read(0).byteLength, '==', 0, name );
+	}
+
+	function testEof(fdm, name) {
+
+		var fd = fdm('');
+		QA.ASSERTOP( stringify(fd.read()), '==', undefined, name );
+		QA.ASSERTOP( stringify(fd.read(0)), '==', '', name );
+		QA.ASSERTOP( stringify(fd.read(1)), '==', undefined, name );
+		QA.ASSERTOP( stringify(fd.read(10)), '==', undefined, name );
+		QA.ASSERTOP( stringify(fd.read(100)), '==', undefined, name );
+	}
+
+	function testEmpty(fdm, name) {
+
+		var fd = fdm('');
+		QA.ASSERTOP( stringify(fd.read()), '==', '', name );
+		QA.ASSERTOP( stringify(fd.read(0)), '==', '', name );
+		QA.ASSERTOP( stringify(fd.read(1)), '==', '', name );
+		QA.ASSERTOP( stringify(fd.read(10)), '==', '', name );
+		QA.ASSERTOP( stringify(fd.read(100)), '==', '', name );
+	}
+
+	//
+
+	[
+	function linger0() {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = false;
+		s.linger = 0; // triggers |res==0 && amount==1| 
+		s.write('');
+		s.close();
+		return c;
+	},
+	function linger1() {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = false;
+		s.linger = 1;
+		s.write('');
+		s.close();
+		return c;
+	},
+	function linger100() {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = false;
+		s.linger = 100; // triggers PR_CONNECT_RESET_ERROR that both returns |undefined|
+		s.write('');
+		s.close();
+		return c;
+	}
+	].forEach(function(fdm) {
+
+		var c = fdm('');
+		QA.ASSERTOP( c.read(), '==', undefined, '' );
+		var c = fdm('');
+		sleep(50);
+		QA.ASSERTOP( c.read(), '==', undefined, '' );
+		var c = fdm('');
+		sleep(150);
+		QA.ASSERTOP( c.read(), '==', undefined, '' );
+	});
+
+
+	[
+	function pipe(data) {
+
+		switch ( systemInfo.name ) {
+			case 'Windows_NT':
+				return new Process(getEnv('ComSpec'), ['/c', 'echo/|set /p ='+data]).stdout;
+			case 'Linux':
+				return new Process(getEnv('SHELL'), ['-c', 'echo -n '+data]).stdout;
+		}
+		return null;
+	},
+	function file(data) {
+
+		var f = new File('a_tmp_file.tmp');
+		f.open('w');
+		f.write(data);
+		f.close();
+		f.open('r');
+		return f;
+	},
+	function s1(data) {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = true;
+		s.write(data);
+		s.close();
+		return c;
+	},
+	function s2(data) {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = true;
+		s.write(data);
+		s.shutdown(true); // further sends will be disallowed.
+		return c;
+	},
+	function s3(data) {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = false;
+		s.write(data);
+		s.shutdown(true);
+		return c;
+	},
+	function s4(data) {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = true;
+		s.write(data);
+		s.close();
+		return c;
+	},
+	function s5(data) {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = true;
+		s.linger = 2000;
+		s.write(data);
+		s.close();
+		return c;
+	}
+	].forEach( function(fdm) {
+
+		var name = fdm.name;
+		runBasicTests(fdm, name);
+		testEof(fdm, name);
+	} );
+
+
+	[
+	function s1(data) {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = true;
+		s.write(data);
+		return c;
+	}
+	].forEach( function(fdm) {
+
+		var name = fdm.name;
+		runBasicTests(fdm, name);
+		testEmpty(fdm, name);
+	} );
+
+
+	[
+	function s1(data) {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = false;
+		s.write(data);
+		return c;
+	},
+	function s2(data) {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = false;
+		s.write(data);
+		s.linger = 1000;
+		s.close();
+		sleep(100);
+		return c;
+	}
+	].forEach( function(fdm) {
+
+		var name = fdm.name;
+		var fd = fdm('abcde');
+		QA.ASSERTOP( stringify(fd.read(0)), '==', '', name );
+		QA.ASSERTOP( stringify(fd.read(1)), '==', 'a', name );
+		QA.ASSERTOP( stringify(fd.read(0)), '==', '', name );
+		QA.ASSERTOP( stringify(fd.read(4)), '==', 'bcde', name );
+	} );
+
+
+	[
+	function s1(data) {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = false;
+		s.linger = 500; // http://msdn.microsoft.com/en-us/library/windows/desktop/ms738547(v=vs.85).aspx
+		s.write(data);
+		s.close();
+		return c;
+	}
+	].forEach( function(fdm) {
+
+		var name = fdm.name;
+		var c = fdm('abcde');
+		QA.ASSERTOP( stringify(c), '==', 'abcde', name );
+	} );
+
+	//
+
+	var [c, s] = createSocketPair();	
+
+	s.write('123');
+	s.close();
+	QA.ASSERTOP( stringify(c), '==', '123', 'basic c-s test' );
+

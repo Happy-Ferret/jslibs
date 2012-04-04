@@ -51,6 +51,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	res = PR_Poll(&desc, 1, timeout);
 	if ( res == -1 ) // if PR_Poll is not compatible with the file descriptor, just ignore the error ?
 		return ThrowIoError(cx);
+
 	if ( res == 0 ) { // timeout, no data
 
 		*amount = 0;
@@ -62,10 +63,23 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	// * 0 means end of file is reached or the network connection is closed.
 	// * -1 indicates a failure. The reason for the failure is obtained by calling PR_GetError().
 	res = PR_Read(fd, buf, (PRInt32)*amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
-	// impossible to have PR_Poll() followed by PR_GetError() == PR_WOULD_BLOCK_ERROR
-	if ( res == -1 )
-		return ThrowIoError(cx);
+	if ( res == -1 ) {
 
+		PRErrorCode err = PR_GetError();
+		switch ( err ) { // see Write() for details about errors
+
+			case PR_WOULD_BLOCK_ERROR: // The operation would have blocked
+			case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
+			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
+			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
+			case PR_CONNECT_TIMEOUT_ERROR: // Connection attempt timed out
+				*amount = 0;
+				return JS_TRUE;
+			default:
+				return ThrowIoError(cx);
+		}
+	}
+	
 	*amount = res;
 	return JS_TRUE;
 	JL_BAD;
@@ -146,7 +160,7 @@ DEFINE_FUNCTION( close ) {
 
 
 
-
+/*
 void* JSBufferAlloc(void * opaqueAllocatorContext, size_t size) {
 
 	return JS_malloc((JSContext*)opaqueAllocatorContext, size);
@@ -231,20 +245,22 @@ bad:
 	BufferFinalize(&buf);
 	return JS_FALSE;
 }
-
+*/
 
 
 
 /**doc
 $TOC_MEMBER $INAME
  $VAL $INAME( [amount] )
-  Read _amount_ bytes of data from the current descriptor. If _amount_ is ommited, the whole available data is read.
+  Read _amount_ bytes of data from the current descriptor. If _amount_ is ommited, the available data is read (not all the data).
   If the descriptor is exhausted (eof or disconnected), this function returns _undefined_.
   If the descriptor is a blocking socket and _amount_ is set to the value 0 value, the call blocks until data is available.
-  $H beware
-   This function returns a Blob or a string literal as empty string.
+  See stringify() to read the whole content of a file descriptor.
+  $H return
+   This function may returns a ArrayBuffer or undefined.
   $H example
   {{{
+  var loadModule = host.loadModule;
   loadModule('jsstd');
   loadModule('jsio');
 
@@ -263,33 +279,50 @@ DEFINE_FUNCTION( read ) {
 	fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
-	bool requestAmount;
 	uint32_t amount;
 	PRInt32 res;
 
-	PRInt64 available = PR_Available64( fd );
-
 	if ( JL_ARG_ISDEF(1) ) {
 
-		requestAmount = true;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
 	} else {
 
-		requestAmount = false;
-		res = PR_Read(fd, NULL, 0);
-		ASSERT( res == 0 || res == -1 );
 		// doc:
-		//  Determine the amount of data in bytes available for reading in the given file or socket.
-		//  Returns a -1 and the reason for the failure can be retrieved via PR_GetError().
-		if ( available == -1 ) // API not available
-			available = 4096;
-		amount = (uint32_t)available;
+		//   Determine the amount of data in bytes available for reading in the given file or socket.
+		//   Returns a -1 and the reason for the failure can be retrieved via PR_GetError().
+		//   PR_Available64 works on normal files and sockets. PR_Available does not work with pipes on Win32 platforms.
+		PRInt64 available;
+		available = PR_Available64( fd );
+
+		if ( available == 0 ) {
+
+			res = PR_Read(fd, NULL, 0);
+			ASSERT( res == 0 || res == -1 );
+			available = PR_Available64( fd );
+		}
+
+		if ( available == 0 ) {
+			
+			amount = 1; // don't use 0 to avoid |res == amount == 0| case and wrongly return empty instead of undefined
+		} else
+		if ( available == -1 ) { // API not available
+
+			ASSERT( PR_GetError() == PR_NOT_IMPLEMENTED_ERROR ); // (TBD) else handle errors properly
+			amount = 4096;
+		} else {
+			
+			amount = (uint32_t)available;
+		}
 	}
 
 
 	uint8_t *buf;
 	buf = JL_NewBuffer(cx, amount, JL_RVAL);
 	JL_ASSERT_ALLOC( buf );
+
+	//PRIntervalTime timeout;
+	//GetTimeoutInterval(cx, JL_OBJ, &timeout);
+	//res = PR_Recv(fd, buf, amount, 0, timeout);
 
 	res = PR_Read(fd, buf, amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
 
@@ -333,9 +366,8 @@ DEFINE_FUNCTION( read ) {
 		}
 	}
 
-	if ( requestAmount && amount == 0 && available > 0 ) {
-	
-		ASSERT( res == 0 );
+	if ( (uint32_t)res == amount ) { // also handle |res == amount == 0|
+		
 		return JS_TRUE;
 	}
 
@@ -343,11 +375,6 @@ DEFINE_FUNCTION( read ) {
 
 		JL_CHK( JL_FreeBuffer(cx, JL_RVAL) );
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
-	}
-
-	if ( (uint32_t)res == amount ) {
-		
 		return JS_TRUE;
 	}
 
@@ -883,12 +910,14 @@ DEFINE_FUNCTION( isWritable ) {
 /**doc
 $TOC_MEMBER $INAME
  $INAME
-  Set the timeout value (in milliseconds) for blocking operations. A value of $UNDEF mean no timeout.
+  Set the timeout value (in milliseconds) for blocking operations. A value of $UNDEF or +Infinity mean no timeout.
 **/
 DEFINE_PROPERTY_SETTER( timeout ) {
 
 	JL_IGNORE(id, strict);
 	JL_ASSERT_THIS_INHERITANCE();
+
+	//if ( JL_ValueIsPInfinity(cx, *vp) ) {
 
 	int32 timeout;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &timeout) );
