@@ -322,7 +322,7 @@ namespace jl {
 
 				JL_CHK( Write(cx, JLSTArrayBuffer) );
 				JL_CHK( Write(cx, SerializerConstBufferInfo(data, length)) );
-				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
+//				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
 				return JS_TRUE;
 			}
 
@@ -770,9 +770,9 @@ namespace jl {
 					SerializerConstBufferInfo data;
 					JL_CHK( Read(cx, data) );
 					JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), &val) );
-					JSObject *obj = JSVAL_TO_OBJECT(val);
-					SerializerObjectOwnProperties sop(obj);
-					JL_CHK( Read(cx, sop) );
+//					JSObject *obj = JSVAL_TO_OBJECT(val);
+//					SerializerObjectOwnProperties sop(obj);
+//					JL_CHK( Read(cx, sop) );
 					break;
 				}
 				case JLSTErrorObject: {
