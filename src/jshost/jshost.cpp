@@ -309,7 +309,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	bool unsafeMode = false;
 	bool compileOnly = false;
 	float maybeGCInterval = 10; // seconds
-	char camelCase = JL_CAMELCASE_DEFAULT;
 	bool useFileBootstrapScript = false;
 	const char *inlineScript = NULL;
 	const char *scriptName = NULL;
@@ -346,11 +345,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 				break;
 			case 'c': // compileOnly
 				compileOnly = true;
-				break;
-			case 'l': // camelCase
-				argumentVector++;
-				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-				camelCase = char(atoi( *argumentVector ));
 				break;
 			case 'b': // bootstrap
 				useFileBootstrapScript = true;
@@ -460,7 +454,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 	HostPrivate *hpv;
 	hpv = JL_GetHostPrivate(cx);
-	hpv->camelCase = camelCase;
 
 	// custom memory allocators are transfered to modules through the HostPrivate structure:
 	hpv->alloc.malloc = jl_malloc;
@@ -670,10 +663,6 @@ The main features are:
   Specifies the number of allocated megabytes after which garbage collection is run.
  * `-g <time>` (default = 60)
   This is the frequency (in seconds) at wich the GarbageCollector may be launched (0 for disabled).
- * `-l <case>` (default = 0)
-  This is a temporary option that allow to select function name naming. 0:version default, 1:lowerCamelCase, 2:UpperCamelCase
-  $H note
-   Default is UpperCamelCase for jslibs version < 1.0 and lowerCamelCase for jslibs version >= 1.0
  * `-b`
   Run the bootstrap file (<executable filename>.js, eg. jshost.exe.js on windows and jshost.js on Linux)
  * `-h` `-h`

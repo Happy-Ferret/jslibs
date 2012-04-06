@@ -125,29 +125,10 @@ JL_DefineConstValues(JSContext *cx, JSObject *obj, JLConstValueSpec *cs) {
 	JL_BAD;
 }
 
-
-ALWAYS_INLINE char *
-JLNormalizeFunctionName( const char *name ) {
-
-	char *buf = JL_strdup(name);
-	buf[0] = (char)toupper(buf[0]);
-	return buf;
-}
-
-ALWAYS_INLINE void
-JLNormalizeFunctionSpecNames( JSFunctionSpec *functionSpec ) {
-
-	for ( JSFunctionSpec *it = functionSpec; it && it->name; ++it )
-		it->name = JLNormalizeFunctionName(it->name);
-}
-
 INLINE JSBool FASTCALL
 JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	JL_CHK(obj);
-
-	if (unlikely( JL_GetHostPrivate(cx)->camelCase == JL_CAMELCASE_UPPER ))
-		JLNormalizeFunctionSpecNames(cs->static_fs);
 
 	if ( cs->static_fs != NULL )
 		JL_CHK( JL_DefineFunctions(cx, obj, cs->static_fs) );
@@ -185,12 +166,6 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_CHK(obj);
 
 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
-
-	if (unlikely( JL_GetHostPrivate(cx)->camelCase == JL_CAMELCASE_UPPER )) {
-
-		JLNormalizeFunctionSpecNames(cs->fs);
-		JLNormalizeFunctionSpecNames(cs->static_fs);
-	}
 
 	HostPrivate *hpv;
 	hpv = JL_GetHostPrivate(cx);

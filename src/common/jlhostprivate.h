@@ -17,10 +17,6 @@
 #define JL_HOSTPRIVATE_KEY ( (JL_SvnRevToInt("$Revision: 3524 $") << 16) | ((sizeof(HostPrivate) ^ offsetof(HostPrivate, ids) ^ offsetof(HostPrivate, modulePrivate)) & 0xFFFF) )
 #define JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT (9)
 
-#define JL_CAMELCASE_DEFAULT 0
-#define JL_CAMELCASE_LOWER 1 // loadModule
-#define JL_CAMELCASE_UPPER 2 // LoadModule
-
 struct ClassProtoCache {
 	JSClass *clasp;
 	JSObject *proto;
@@ -32,7 +28,6 @@ struct HostPrivate {
 	JSObject *hostObject;
 	bool isEnding;
 	bool canSkipCleanup; // allows modules to skip the memory cleanup phase.
-	char camelCase;
 	void *privateData;
 	uint32_t maybeGCInterval;
 	JLSemaphoreHandler watchDogSemEnd;
