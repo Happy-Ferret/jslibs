@@ -469,22 +469,11 @@ DEFINE_CONSTRUCTOR() {
 		return JS_TRUE;
 	}
 
-	if ( JL_ValueIsData(cx, *arg1) ) { // construct from an image, blob, string, ...
-
-		JLData bufferStr;
-		JSObject *imageObj;
-		JL_CHK( JS_ValueToObject(cx, *arg1, &imageObj) );
-		unsigned int i, tsize, sWidth, sHeight, sChannels;
-
-		JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, width), &sWidth) );
-		JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, height), &sHeight) );
-		JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, channels), &sChannels) );
-		tsize = sWidth * sHeight * sChannels;
-
-		const uint8_t *buffer;
-		JL_CHK( JL_JsvalToNative(cx, *arg1, &bufferStr)); // warning: GC on the returned buffer !
-		buffer = (const uint8_t *)bufferStr.GetConstStr();
-
+	{
+		int i, tsize, sWidth, sHeight, sChannels;
+		JLData data = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels);
+		tsize = data.Length();
+		const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
 		JL_CHK( TextureInit(cx, tex, sWidth, sHeight, sChannels) );
 		for ( i = 0; i < tsize; ++i )
 			tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
@@ -1512,26 +1501,11 @@ DEFINE_FUNCTION( set ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_ValueIsData(cx, *arg1) ) {
-		
-		JLData bufferStr;
-
-		JSObject *imageObj;
-		JL_CHK( JS_ValueToObject(cx, *arg1, &imageObj) );
-		unsigned int i, tsize, sWidth, sHeight, sChannels;
-
-		JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, width), &sWidth) );
-		JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, height), &sHeight) );
-		JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, channels), &sChannels) );
-
-		JL_ASSERT( tex->width == sWidth && tex->height == sHeight && channels == sChannels, E_ARG, E_NUM(1), E_FORMAT );
-
-		tsize = sWidth * sHeight * sChannels;
-
-		const uint8_t *buffer;
-		JL_CHK( JL_JsvalToNative(cx, *arg1, &bufferStr) ); // warning: GC on the returned buffer !
-		buffer = (const uint8_t *)bufferStr.GetConstStr();
-
+	{
+		int i, tsize, sWidth, sHeight, sChannels;
+		JLData data = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels);
+		tsize = data.Length();
+		const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
 		for ( i = 0; i < tsize; i++ )
 			tex->cbuffer[i] = (PTYPE)buffer[i] / PTYPE(255); // map [0 -> 255] to [0.0 -> 1.0]
 		JL_SetPrivate(cx, obj, tex);
@@ -3282,7 +3256,7 @@ DEFINE_FUNCTION( export ) { // (int)x, (int)y, (int)width, (int)height. Returns 
 
 	bufferLength = dWidth * dHeight * sChannels;
 	//buffer = (uint8_t*)JS_malloc(cx, bufferLength +1);
-	buffer = JL_NewByteImageBuffer(cx, dWidth, dHeight, sChannels, JL_RVAL);
+	buffer = JL_NewByteImageObject(cx, dWidth, dHeight, sChannels, JL_RVAL);
 	JL_CHK( buffer );
 
 	unsigned int c, x, y, posDst, posSrc;
@@ -3330,7 +3304,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 
-	JLData bufferStr;
+	JLData data;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3339,6 +3313,8 @@ DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
+
+	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *bstr;
@@ -3356,25 +3332,20 @@ DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 		py = 0;
 	}
 
-	int dWidth, dHeight, dChannels, sWidth, sHeight, sChannels;
+	int dWidth, dHeight, dChannels;
+	int sWidth, sHeight, sChannels;
 	dWidth = tex->width;
 	dHeight = tex->height;
 	dChannels = tex->channels;
 
-	JL_CHK( JL_GetProperty(cx, bstr, JLID(cx, width), &sWidth) );
-	JL_CHK( JL_GetProperty(cx, bstr, JLID(cx, height), &sHeight) );
-	JL_CHK( JL_GetProperty(cx, bstr, JLID(cx, channels), &sChannels) );
-
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bufferStr) );
-	const uint8_t *buffer = (const uint8_t *)bufferStr.GetConstStr();
+	data = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels);
+	const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
 
 	if ( dWidth == sWidth && dHeight == sHeight && dChannels == sChannels && px == 0 && py == 0 ) { // optimization
 		
 		PTYPE *dPos = tex->cbuffer;
 		const uint8_t *sPos = buffer;
-		unsigned int count = dWidth * dHeight * dChannels;
+		unsigned int count = data.Length();
 
 		for ( unsigned int i = 0; i < count; i++ ) {
 			

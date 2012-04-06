@@ -140,7 +140,7 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 	// convert data chunks into a single memory buffer.
 	//char *buf = (char*)jl_malloc(totalSize +1);
 	uint8_t *buf;
-	buf = JL_NewByteAudioBuffer(cx, bits, info->rate, info->channels, totalSize / (info->channels * (bits / 8)), JL_RVAL);
+	buf = JL_NewByteAudioObject(cx, bits, info->rate, info->channels, totalSize / (info->channels * (bits / 8)), JL_RVAL);
 	JL_CHK( buf );
 
 	ov_clear(&descriptor); // beware: info must be valid
@@ -335,7 +335,7 @@ DEFINE_FUNCTION( decodeSound ) {
 
 	// convert data chunks into a single memory buffer.
 	uint8_t *buf;
-	buf = JL_NewByteAudioBuffer(cx, 16, info.samplerate, info.channels, totalSize / (info.channels * (16 / 8)), JL_RVAL);
+	buf = JL_NewByteAudioObject(cx, 16, info.samplerate, info.channels, totalSize / (info.channels * (16 / 8)), JL_RVAL);
 	JL_CHK( buf );
 
 	sf_close(descriptor);
@@ -397,7 +397,7 @@ DEFINE_FUNCTION( splitChannels ) {
 		size_t totalSize = frames * (bits/8);
 		//char *buf = (char*)JS_malloc(cx, totalSize +1);
 		uint8_t *buf;
-		buf = JL_NewByteAudioBuffer(cx, bits, rate, 1, frames, &tmpVal);
+		buf = JL_NewByteAudioObject(cx, bits, rate, 1, frames, &tmpVal);
 		JL_CHK( buf );
 		JL_CHK( JL_SetElement(cx, destArray, c, &tmpVal) );
 

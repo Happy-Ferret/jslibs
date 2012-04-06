@@ -5649,7 +5649,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( drawImage ) {
 
-	JLData dataStr;
 	OGL_CX_CHK;
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -5674,18 +5673,10 @@ DEFINE_FUNCTION( drawImage ) {
 		type = GL_FLOAT;
 	} else {
 
-		JL_CHK( JL_GetProperty(cx, tObj, JLID(cx, width), &width) );
-		JL_CHK( JL_GetProperty(cx, tObj, JLID(cx, height), &height) );
-		JL_CHK( JL_GetProperty(cx, tObj, JLID(cx, channels), &channels) );
-
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &dataStr) );
-		data = dataStr.GetConstStr();
-
-		JL_ASSERT( (int)dataStr.Length() == width * height * channels * 1, E_ARG, E_NUM(1), E_FORMAT );
-
-		JL_ASSERT_OBJECT_STATE(data, JL_GetClassName(tObj));
-
 		type = GL_UNSIGNED_BYTE;
+		JLData jldata = JL_GetByteImageObject(cx, JL_ARG(1), &width, &height, &channels);
+		data = jldata.GetConstStr();
+		JL_ASSERT( jl::SafeCast<int>(jldata.Length()) == width * height * channels * 1, E_ARG, E_NUM(1), E_FORMAT );
 	}
 
 	if ( JL_ARG_ISDEF(2) ) {
@@ -5789,7 +5780,7 @@ DEFINE_FUNCTION( readImage ) {
 	int lineLength = width * channels;
 	int length = lineLength * height;
 	ASSERT( length > 0 ); //, "Invalid image size." );
-	uint8_t *data = JL_NewByteImageBuffer(cx, width, height, channels, JL_RVAL);
+	uint8_t *data = JL_NewByteImageObject(cx, width, height, channels, JL_RVAL);
 	JL_CHK( data );
 
 /*
@@ -6210,15 +6201,9 @@ DEFINE_FUNCTION( defineTextureImage ) {
 		data = JS_GetTypedArrayData(tObj);
 	} else {
 
-		JL_CHKM( JL_GetProperty(cx, tObj, JLID(cx, width), &width) && JL_GetProperty(cx, tObj, JLID(cx, height), &height) && JL_GetProperty(cx, tObj, JLID(cx, channels), &channels), E_ARG, E_NUM(3), E_INVALID ); // "Invalid texture object."
-
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &dataStr) );
-		data = dataStr.GetConstStr();
-
-		JL_ASSERT( (int)dataStr.Length() == width * height * channels * 1, E_DATASIZE, E_INVALID );
-
-		JL_ASSERT_OBJECT_STATE(data, JL_GetClassName(tObj));
 		type = GL_UNSIGNED_BYTE;
+		JLData jldata = JL_GetByteImageObject(cx, JL_ARG(3), &width, &height, &channels);
+		data = jldata.GetConstStr();
 	}
 
 	if ( JL_ARG_ISDEF(2) ) {

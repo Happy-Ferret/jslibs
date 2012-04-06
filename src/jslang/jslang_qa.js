@@ -198,6 +198,20 @@ loadModule('jsstd');
 	QA.ASSERT( uneval(u.read())+uneval(u.read()), '12', 'unserialized data' );
 
 
+/// ArrayBuffer Serialization / Unserialization
+
+	var ab = stringify('test', true);
+	ab.foo = 123;
+	QA.ASSERT( ab.foo, 123, 'unserialized data' );
+	var s = new Serializer();
+	s.write(ab);
+	var s = new Unserializer(s.done());
+	
+	var unser = s.read();
+	QA.ASSERT( stringify(unser), 'test', 'unserialized data' );
+	QA.ASSERT( unser.foo, 123, 'unserialized data property' );
+
+
 /// Serialization / Unserialization of custom class
 
 	function JsClass() {

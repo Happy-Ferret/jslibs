@@ -1789,7 +1789,7 @@ public:
 // JLData
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_JsvalToNative( JSContext * RESTRICT cx, jsval &val, JLData * RESTRICT str ) {
+JL_JsvalToNative( JSContext *cx, jsval &val, JLData *str ) {
 
 	if (likely( JSVAL_IS_STRING(val) )) { // for string literals
 
@@ -3207,10 +3207,11 @@ JL_NewEmptyBuffer( JSContext *cx, jsval *rval ) {
 	}
 }
 
-
+///////////////////////////////////////////////////////////////////////////////
+// Generic Image object
 
 ALWAYS_INLINE uint8_t* FASTCALL
-JL_NewByteImageBuffer( JSContext *cx, int32_t width, int32_t height, int32_t channels, jsval *rval ) {
+JL_NewByteImageObject( JSContext *cx, int32_t width, int32_t height, int32_t channels, jsval *rval ) {
 
 	ASSERT( width >= 0 );
 	ASSERT( height >= 0 );
@@ -3228,9 +3229,29 @@ bad:
 	return NULL;
 }
 
+ALWAYS_INLINE JLData FASTCALL
+JL_GetByteImageObject( JSContext *cx, jsval &val, int32_t *width, int32_t *height, int32_t *channels ) {
+
+	JLData data;
+	JSObject *bufferObj = JSVAL_TO_OBJECT(val);
+	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, width), width) );
+	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, height), height) );
+	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, channels), channels) );
+	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
+	JL_CHK( JL_JsvalToNative(cx, val, &data) );
+	JL_ASSERT( jl::SafeCast<int>(data.Length()) == *width * *height * *channels * 1, E_ARG, E_NUM(3), E_FORMAT );
+	return data;
+	//return JS_GetArrayBufferData(bufferObj);
+bad:
+	return JLData();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Generic Audio object
 
 ALWAYS_INLINE uint8_t* FASTCALL
-JL_NewByteAudioBuffer( JSContext *cx, int32_t bits, int32_t rate, int32_t channels, int32_t frames, jsval *rval ) {
+JL_NewByteAudioObject( JSContext *cx, int32_t bits, int32_t rate, int32_t channels, int32_t frames, jsval *rval ) {
 
 	ASSERT( bits % 8 == 0 );
 	ASSERT( bits > 0 );
@@ -3250,6 +3271,10 @@ JL_NewByteAudioBuffer( JSContext *cx, int32_t bits, int32_t rate, int32_t channe
 bad:
 	return NULL;
 }
+
+
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////

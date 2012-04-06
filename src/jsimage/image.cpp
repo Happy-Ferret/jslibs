@@ -93,17 +93,17 @@ DEFINE_FUNCTION( trim ) {
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), vect, 4, &length) );
 	JL_ASSERT( length == 4, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(4) );
 
-	int x;
+	int x, y;
+	int x1, y1;
 	x = vect[0];
-	int y;
 	y = vect[1];
-	int x1;
 	x1 = vect[2];
-	int y1;
-	y1= vect[3];
+	y1 = vect[3];
 
 	int width, height, channels;
-	JL_CHK( JL_GetProperty(cx, obj, JLID(cx, width), &width) && JL_GetProperty(cx, obj, JLID(cx, height), &height) && JL_GetProperty(cx, obj, JLID(cx, channels), &channels) );
+	JL_CHK( JL_GetProperty(cx, obj, JLID(cx, width), &width) );
+	JL_CHK( JL_GetProperty(cx, obj, JLID(cx, height), &height) );
+	JL_CHK( JL_GetProperty(cx, obj, JLID(cx, channels), &channels) );
 
 // assume that we have 1 Byte/channel !
 

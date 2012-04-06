@@ -25,6 +25,8 @@ BEGIN_CLASS( Cursor )
 
 DEFINE_FINALIZE() {
 
+	JL_IGNORE(cx);
+
 	SDL_Cursor *cursor = (SDL_Cursor*)JL_GetPrivate(obj);
 	if ( cursor != NULL ) {
 
@@ -46,7 +48,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JLData buffer;
+	JLData data;
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -54,21 +56,11 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	
-	JSObject *imageObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-	unsigned int sWidth, sHeight, sChannels;
-	JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, width), &sWidth) );
-	JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, height), &sHeight) );
-	JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, channels), &sChannels) );
-
-	const unsigned char *sBuffer;
-	size_t bufferLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &buffer) );
-	bufferLength = buffer.Length();
-	sBuffer = (const unsigned char*)buffer.GetConstStr();
+	int sWidth, sHeight, sChannels;
+	data = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels);
+	const uint8_t *sBuffer = (const unsigned char*)data.GetConstStr();
 
 	JL_ASSERT( sWidth % 8 == 0, E_ARG, E_NUM(1), E_FORMAT ); // "The cursor width must be a multiple of 8."
-	JL_ASSERT( bufferLength == sWidth * sHeight * sChannels * 1, E_ARG, E_NUM(1), E_FORMAT );
 	JL_ASSERT( sChannels == 3 || sChannels == 4, E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(3, 4) );
 
 	int length = sWidth * sHeight;

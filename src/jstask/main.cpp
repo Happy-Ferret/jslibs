@@ -17,6 +17,7 @@
 
 #include <jslibsModule.cpp>
 
+
 DECLARE_CLASS( Task )
 
 JSBool

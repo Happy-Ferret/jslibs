@@ -34,7 +34,8 @@ namespace jl {
 		JLSTErrorObject,
 		JLSTObjectValue,
 		JLSTSerializableNativeObject,
-		JLSTSerializableScriptObject
+		JLSTSerializableScriptObject,
+		JLSTArrayBuffer
 	} JLSerializeType;
 
 
@@ -309,6 +310,21 @@ namespace jl {
 
 			JSObject *obj;
 			obj = JSVAL_TO_OBJECT(val);
+
+			if ( JS_IsArrayBufferObject(obj) ) {
+
+				uint8_t *data;
+				uint32_t length = JS_GetArrayBufferByteLength(obj);
+				if ( length )
+					data = JS_GetArrayBufferData(obj);
+				else
+					data = NULL;
+
+				JL_CHK( Write(cx, JLSTArrayBuffer) );
+				JL_CHK( Write(cx, SerializerConstBufferInfo(data, length)) );
+				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
+				return JS_TRUE;
+			}
 
 			if ( JL_ObjectIsArray(cx, obj) ) { // real array object, not array-like !!
 
@@ -747,6 +763,16 @@ namespace jl {
 					JL_ASSERT( JL_ValueIsCallable(cx, funVal), E_STR("unserializer"), E_STATE ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
 					JL_CHK( JL_CallFunctionVA(cx, JL_GetGlobal(cx), funVal, &val, _unserializerObj) );
 					JL_ASSERT( JSVAL_IS_OBJECT(val), E_STR("unserializer"), E_RETURNVALUE, E_TYPE, E_TY_OBJECT );
+					break;
+				}
+				case JLSTArrayBuffer: {
+
+					SerializerConstBufferInfo data;
+					JL_CHK( Read(cx, data) );
+					JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), &val) );
+					JSObject *obj = JSVAL_TO_OBJECT(val);
+					SerializerObjectOwnProperties sop(obj);
+					JL_CHK( Read(cx, sop) );
 					break;
 				}
 				case JLSTErrorObject: {

@@ -190,7 +190,7 @@ DEFINE_FUNCTION( decodeJpegImage ) {
 	int length;
 	length = height * bytePerRow;
 	JOCTET * data;
-	data = (JOCTET *)JL_NewByteImageBuffer(cx, width, height, channels, JL_RVAL);
+	data = (JOCTET *)JL_NewByteImageObject(cx, width, height, channels, JL_RVAL);
 	JL_CHK( data );
 
 	// cinfo->rec_outbuf_height : recomanded scanline height ( 1, 2 or 4 )
@@ -311,7 +311,7 @@ DEFINE_FUNCTION( decodePngImage ) {
 	int length;
 	length = height * bytePerRow;
 	png_bytep data;
-	data = (png_bytep)JL_NewByteImageBuffer(cx, width, height, channels, JL_RVAL);
+	data = (png_bytep)JL_NewByteImageObject(cx, width, height, channels, JL_RVAL);
 	JL_CHK( data );
 
 	// int number_of_passes = png_set_interlace_handling(desc.png);
@@ -370,17 +370,10 @@ DEFINE_FUNCTION( encodePngImage ) {
 	}
 
 	JL_ASSERT_ARG_IS_OBJECT(1);
-	JSObject *image;
-	image = JSVAL_TO_OBJECT( JL_ARG(1) );
 	int sWidth, sHeight, sChannels;
-	JL_CHK( JL_GetProperty(cx, image, JLID(cx, width), &sWidth) );
-	JL_CHK( JL_GetProperty(cx, image, JLID(cx, height), &sHeight) );
-	JL_CHK( JL_GetProperty(cx, image, JLID(cx, channels), &sChannels) );
+	buffer = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels); // source
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &buffer) );
-	JL_ASSERT( buffer.Length() == (size_t)(sWidth * sHeight * sChannels * 1), E_ARG, E_NUM(1), E_SEP, E_DATASIZE, E_INVALID );
-
-	desc.buffer = JL_DataBufferAlloc(cx, sWidth * sHeight * sChannels + 1024);
+	desc.buffer = JL_DataBufferAlloc(cx, sWidth * sHeight * sChannels + 1024); // destination
 	JL_ASSERT_ALLOC( desc.buffer );
 	desc.pos = 0;
 

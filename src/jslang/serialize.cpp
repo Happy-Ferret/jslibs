@@ -87,6 +87,7 @@ DEFINE_FUNCTION( done ) {
 	JL_BAD;
 }
 
+
 CONFIGURE_CLASS
 
 	REVISION(JL_SvnRevToInt("$Revision: 3321 $"))

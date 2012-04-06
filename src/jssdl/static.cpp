@@ -476,7 +476,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( icon ) {
 
-	JLData buffer;
+	JLData data;
 	jsval image = *vp;
 
 	if ( JSVAL_IS_VOID(image) ) {
@@ -486,19 +486,8 @@ DEFINE_PROPERTY_SETTER( icon ) {
 	}
 
 	JL_ASSERT_IS_OBJECT(image, "");
-
-	JSObject *imageObj = JSVAL_TO_OBJECT( image );
 	int sWidth, sHeight, sChannels;
-	JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, width), &sWidth) );
-	JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, height), &sHeight) );
-	JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, channels), &sChannels) );
-
-	//const char *sBuffer;
-	//size_t bufferLength;
-	//JL_CHK( JL_JsvalToStringAndLength(cx, &image, &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, image, &buffer) );
-
-	JL_ASSERT( buffer.Length() == (size_t)(sWidth * sHeight * sChannels * 1), E_ARG, E_NUM(1), E_FORMAT );
+	data = JL_GetByteImageObject(cx, image, &sWidth, &sHeight, &sChannels);
 	JL_ASSERT( sChannels == 3 || sChannels == 4, E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(3, 4) );
 
 	Uint32 rmask, gmask, bmask, amask;
@@ -515,7 +504,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 		 amask = 0xff000000;
 	#endif
 
-		 SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)buffer.GetConstStrZ(), sWidth, sHeight, 8 * sChannels, sWidth * sChannels, rmask, gmask, bmask, amask);
+	SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)data.GetConstStr(), sWidth, sHeight, 8 * sChannels, sWidth * sChannels, rmask, gmask, bmask, amask);
 
 	if ( surface == NULL )
 		return ThrowSdlError(cx);

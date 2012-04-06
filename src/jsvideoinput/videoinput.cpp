@@ -217,7 +217,7 @@ DEFINE_FUNCTION( getImage ) {
 
 	//unsigned char *data = (unsigned char *)JS_malloc(cx, dataSize +1);
 	uint8_t *data;
-	data = JL_NewByteImageBuffer(cx, width, height, dataSize / (width * height), JL_RVAL);
+	data = JL_NewByteImageObject(cx, width, height, dataSize / (width * height), JL_RVAL);
 	JL_CHK( data );
 
 	bool flipImage;

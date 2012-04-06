@@ -66,22 +66,14 @@ DEFINE_CONSTRUCTOR() {
 				break;
 		}
 	} else
-	if ( JSVAL_IS_OBJECT(iconVal) && !JSVAL_IS_NULL( iconVal ) ) {
+	if ( !JSVAL_IS_PRIMITIVE(iconVal) ) {
 
 		HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
-		
 		JL_IGNORE(hInst);
 
-		JSObject *imgObj = JSVAL_TO_OBJECT(iconVal);
-
-//		JL_ASSERT_INSTANCE_NAME(imgObj, "Image"); // (TBD) need something better/safer ? like JL_IsClass(iconVal, JL_GetRegistredNativeClass(cx, "Image"));
-		JL_ASSERT( JL_ValueIsData(cx, iconVal), E_ARG, E_NUM(1), E_TYPE, E_TY_DATA );
-
-		unsigned int width, height, channels, x, y;
-		JL_CHK( JL_GetProperty(cx, imgObj, JLID(cx, width), &width) );
-		JL_CHK( JL_GetProperty(cx, imgObj, JLID(cx, height), &height) );
-		JL_CHK( JL_GetProperty(cx, imgObj, JLID(cx, channels), &channels) );
-		unsigned char *imageData = (unsigned char*)JL_GetPrivate(imgObj);
+		int width, height, channels;
+		JLData data = JL_GetByteImageObject(cx, iconVal, &width, &height, &channels); // sourc
+		unsigned char *imageData = (unsigned char*)data.GetConstStr();
 
 		// http://groups.google.com/group/microsoft.public.win32.programmer.gdi/browse_frm/thread/adaf38d715cef81/3825af9edde28cdc?lnk=st&q=RGB+CreateIcon&rnum=9&hl=en#3825af9edde28cdc
 		HDC screenDC = GetDC(NULL); // doc: If this value is NULL, GetDC retrieves the DC for the entire screen.
@@ -92,6 +84,7 @@ DEFINE_CONSTRUCTOR() {
 		HBITMAP oldColorBMP = (HBITMAP)SelectObject(colorDC, colorBMP);
 		HBITMAP oldMaskBMP = (HBITMAP)SelectObject(maskDC, maskBMP);
 
+		int x, y;
 		for ( x = 0; x < width; x++ )
 			for ( y = 0; y < width; y++ ) {
 

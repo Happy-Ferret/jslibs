@@ -43,22 +43,11 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 
 		if ( JSVAL_IS_OBJECT( image ) ) {
 
-			JLData buffer;
-
-			JSObject *imageObj = JSVAL_TO_OBJECT( image );
 			int sWidth, sHeight, sChannels;
-			JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, width), &sWidth) );
-			JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, height), &sHeight) );
-			JL_CHK( JL_GetProperty(cx, imageObj, JLID(cx, channels), &sChannels) );
+			JLData data = JL_GetByteImageObject(cx, image, &sWidth, &sHeight, &sChannels);
 			JL_ASSERT( sChannels == 3 || sChannels == 4, E_PROP, E_NAME("channels"), E_RANGE, E_INTERVAL_NUM(3, 4), E_COMMENT(name) ); // "Unsupported image format for %s.", name
 
-//			const char *sBuffer;
-//			size_t bufferLength;
-//			JL_CHK( JL_JsvalToStringAndLength(cx, image.jsval_addr(), &sBuffer, &bufferLength ) ); // warning: GC on the returned buffer !
-			JL_CHK( JL_JsvalToNative(cx, image, &buffer) );
-			JL_ASSERT( (int)buffer.Length() == sWidth * sHeight * sChannels * 1, E_DATASIZE, E_INVALID );
-
-			*pixbuf = gdk_pixbuf_new_from_data((const guchar *)buffer.GetConstStr(), GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);
+			*pixbuf = gdk_pixbuf_new_from_data((const guchar *)data.GetConstStr(), GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);
 			JL_ASSERT( *pixbuf == NULL, E_STR("image"), E_CREATE );
 		}
 	}
@@ -370,7 +359,7 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 	int height = cairo_image_surface_get_height(surface);
 	void *buffer = cairo_image_surface_get_data(surface);
 
-	uint8_t *image = JL_NewByteImageBuffer(cx, width, height, channels, JL_RVAL);
+	uint8_t *image = JL_NewByteImageObject(cx, width, height, channels, JL_RVAL);
 	JL_CHK( image );
 
 	size_t pixelCount = width * height;

@@ -4,7 +4,7 @@ var loadModule = host.loadModule;
 
 //loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile();
 
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask'); throw 0; // -inlineOnly
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 
@@ -13,6 +13,23 @@ loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask'); 
 loadModule('jsstd');
 
 //jslangTest();
+
+	var image = {
+		data: stringify('135464351343538431', true),
+		width: 1024,
+		height: 768
+	}
+		
+
+	var s = new Serializer();
+	s.write(image);
+	var s = new Unserializer(s.done());
+	
+	var unser = s.read();
+	
+	print( uneval(unser), '\n' );
+
+
 
 throw 0;
 

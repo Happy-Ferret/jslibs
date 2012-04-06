@@ -41,10 +41,17 @@ ALWAYS_INLINE JSBool
 GetTimeoutInterval(JSContext *cx, JSObject *obj, PRIntervalTime *timeout, PRIntervalTime defaultTimeout = PR_INTERVAL_NO_TIMEOUT) {
 
 	JL_IGNORE(cx);
+
 	jsval timeoutValue;
 	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, &timeoutValue) );
-	ASSERT( JSVAL_IS_VOID(timeoutValue) || JSVAL_IS_INT(timeoutValue) );
-	*timeout = JSVAL_IS_VOID(timeoutValue) ? defaultTimeout : PR_MillisecondsToInterval(JSVAL_TO_INT(timeoutValue));
+	
+	if ( !JSVAL_IS_VOID( timeoutValue ) ) {
+		
+		JL_CHK( JL_JsvalToNative(cx, timeoutValue, timeout) );
+	} else {
+	
+		*timeout = defaultTimeout;
+	}
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -68,6 +68,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 		PRErrorCode err = PR_GetError();
 		switch ( err ) { // see Write() for details about errors
 
+			// try to catch runtime errors
 			case PR_WOULD_BLOCK_ERROR: // The operation would have blocked
 			case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
 			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
@@ -76,6 +77,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 				*amount = 0;
 				return JS_TRUE;
 			default:
+				// try to catch logic errors
 				return ThrowIoError(cx);
 		}
 	}
@@ -910,26 +912,38 @@ DEFINE_FUNCTION( isWritable ) {
 /**doc
 $TOC_MEMBER $INAME
  $INAME
-  Set the timeout value (in milliseconds) for blocking operations. A value of $UNDEF or +Infinity mean no timeout.
+  Set the timeout value (in milliseconds) for blocking operations. +Infinity mean no timeout. 0 mean no wait.
+  A value of $UNDEF mean that desctiptor will use the default behavior.
 **/
 DEFINE_PROPERTY_SETTER( timeout ) {
 
 	JL_IGNORE(id, strict);
 	JL_ASSERT_THIS_INHERITANCE();
 
-	//if ( JL_ValueIsPInfinity(cx, *vp) ) {
+	if ( !JSVAL_IS_VOID( *vp ) ) {
+		
+		PRIntervalTime timeout;
+		if ( *vp == JSVAL_ZERO ) {
+		
+			timeout = PR_INTERVAL_NO_WAIT;
+		} else
+		if ( JL_ValueIsPInfinity(cx, *vp) ) {
+			
+			timeout = PR_INTERVAL_NO_TIMEOUT;
+		} else {
 
-	int32 timeout;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &timeout) );
-	JL_ASSERT( timeout >= 0, E_VALUE, E_MIN, E_NUM(0) );
-	*vp = INT_TO_JSVAL(timeout);
+			PRUint32 milli;
+			JL_CHK( JL_JsvalToNative(cx, *vp, &milli) );
+			timeout = PR_MillisecondsToInterval(milli);
+		}
+		JL_CHK( JL_NativeToJsval(cx, timeout, vp) );
+	}
+
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, *vp) );
 	JL_CHK( JL_StoreProperty(cx, obj, id, vp, false) );
 	return JS_TRUE;
 	JL_BAD;
 }
-
-
 
 
 /**doc

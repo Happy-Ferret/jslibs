@@ -345,7 +345,7 @@ DEFINE_FUNCTION( read ) {
 		} while (items > 0);
 
 		// convert data chunks into a single memory buffer.
-		buf = JL_NewByteAudioBuffer(cx, pv->bits, pv->sfInfo.samplerate, pv->sfInfo.channels, totalSize / (pv->sfInfo.channels * pv->bits / 8) , JL_RVAL);
+		buf = JL_NewByteAudioObject(cx, pv->bits, pv->sfInfo.samplerate, pv->sfInfo.channels, totalSize / (pv->sfInfo.channels * pv->bits / 8) , JL_RVAL);
 		JL_CHK( buf );
 
 		// because the stack is LIFO, we have to start from the end.

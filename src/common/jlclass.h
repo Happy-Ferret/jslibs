@@ -57,12 +57,13 @@ struct JLClassSpec {
 INLINE JSBool FASTCALL
 JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool removeGetterAndSetter ) {
 
+	unsigned int attrs;
 	JSBool found;
-	unsigned attrs;
 	JSPropertyOp getter;
 	JSStrictPropertyOp setter;
 	JL_CHK( JS_GetPropertyAttrsGetterAndSetterById(cx, obj, id, &attrs, &found, &getter, &setter) );
-	JL_CHKM( found, E_PROP, E_NOTFOUND );
+	//JL_CHKM( found, E_PROP, E_NOTFOUND );
+	ASSERT( found );
 
 	// doc:
 	//   JSPROP_SHARED: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
@@ -78,6 +79,7 @@ JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool r
 	return JS_DefinePropertyById(cx, obj, id, *vp, getter, setter, attrs);
 	JL_BAD;
 }
+
 
 // because it is difficult to override properties by tinyId (JSPropertyOp) see. bz#526979
 // note. PROPERTY_SWITCH uses enum values as tinyId
