@@ -290,7 +290,7 @@ DEFINE_FUNCTION( read ) {
 		if ( frames <= 0 ) {
 
 			// like Descriptor::read, returns an empty audio object even if EOF
-			JL_CHK( JL_NewByteAudioObjectOwner(cx, NULL, pv->bits, pv->sfInfo.samplerate, pv->sfInfo.channels, 0, JL_RVAL) );
+			JL_CHK( JL_NewByteAudioObjectOwner(cx, NULL, pv->bits, pv->sfInfo.channels, 0, pv->sfInfo.samplerate, JL_RVAL) );
 			return JS_TRUE;
 		}
 	} else {
@@ -337,7 +337,7 @@ DEFINE_FUNCTION( read ) {
 
 			if ( JL_MaybeRealloc(amount, totalSize) )
 				buf = (uint8_t*)jl_realloc(buf, totalSize);
-			buf = JL_NewByteAudioObject(cx, pv->bits, pv->sfInfo.samplerate, pv->sfInfo.channels, totalSize / (pv->sfInfo.channels * pv->bits / 8) , JL_RVAL);
+			buf = JL_NewByteAudioObject(cx, pv->bits, pv->sfInfo.channels, totalSize / (pv->sfInfo.channels * pv->bits / 8), pv->sfInfo.samplerate, JL_RVAL);
 		}
 
 	} else {
@@ -360,7 +360,7 @@ DEFINE_FUNCTION( read ) {
 		} while ( items > 0 );
 
 		if ( buffer.Length() )
-			JL_CHK( JL_NewByteAudioObjectOwner(cx, buffer.GetDataOwnership(), pv->bits, pv->sfInfo.samplerate, pv->sfInfo.channels, buffer.Length() / (pv->sfInfo.channels * pv->bits/8), JL_RVAL) );
+			JL_CHK( JL_NewByteAudioObjectOwner(cx, buffer.GetDataOwnership(), pv->bits, pv->sfInfo.channels, buffer.Length() / (pv->sfInfo.channels * pv->bits/8), pv->sfInfo.samplerate, JL_RVAL) );
 		else
 			*JL_RVAL = JSVAL_VOID;
 	}

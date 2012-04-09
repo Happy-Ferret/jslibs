@@ -47,7 +47,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	int bits, rate, channels, frames;
-	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &rate, &channels, &frames);
+	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits,  &channels, &frames, &rate);
 
 	ALenum format; // The sound data format
 	switch (channels) {

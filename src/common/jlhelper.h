@@ -3085,6 +3085,7 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, jsval &val, float ** RESTRICT m ) {
 #define JL_ARG_GEN(N, type) TYPE arg##N; JL_CHK( JL_JsvalToNative(cx, JL_ARG(n), &arg##N) );
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // Buffer
 
@@ -3110,6 +3111,7 @@ JL_DataBufferFree( JSContext *cx, uint8_t *data ) {
 }
 
 
+
 ALWAYS_INLINE uint8_t* FASTCALL
 JL_NewBuffer( JSContext *cx, size_t nbytes, jsval *rval ) {
 
@@ -3124,12 +3126,24 @@ JL_NewBuffer( JSContext *cx, size_t nbytes, jsval *rval ) {
 	}
 }
 
+ALWAYS_INLINE bool FASTCALL
+JL_NewBufferCopyN( JSContext *cx, const void *src, size_t nbytes, jsval *rval ) {
+
+	JSObject *bufferObj = js::ArrayBuffer::create(cx, nbytes, (uint8_t*)src); // JS_NewArrayBuffer(cx, nbytes);
+	if ( bufferObj ) {
+
+		*rval = OBJECT_TO_JSVAL(bufferObj);
+		return true;
+	} else {
+
+		return false;
+	}
+}
 
 ALWAYS_INLINE JSBool FASTCALL
 JL_FreeBuffer( JSContext *cx, jsval *rval ) {
 
 	JL_IGNORE( rval, cx );
-
 	// do nothing at the moment. The CG will free the buffer.
 	return JS_TRUE;
 }
@@ -3140,58 +3154,42 @@ JL_ChangeBufferLength( JSContext *cx, jsval *rval, size_t nbytes ) {
 
 	// need to create a new buffer because ArrayBuffer does not support realloc nor length changing, then we copy it in a new one.
 
-	jsval bufVal = *rval;
-	ASSERT( JSVAL_IS_OBJECT(bufVal) );
-
-	JSObject *arrayBufferObj = JSVAL_TO_OBJECT(bufVal);
-
+	ASSERT( JSVAL_IS_OBJECT(*rval) );
+	JSObject *arrayBufferObj = JSVAL_TO_OBJECT(*rval);
 	ASSERT( JS_IsArrayBufferObject(arrayBufferObj) );
+	uint32_t bufferLen = JS_GetArrayBufferByteLength(arrayBufferObj);
+	void *bufferData = JS_GetArrayBufferData(arrayBufferObj);
 
-	uint32_t bufLen = JS_GetArrayBufferByteLength(arrayBufferObj);
-	void *buf = JS_GetArrayBufferData(arrayBufferObj);
+	if ( nbytes == bufferLen )
+		return (uint8_t*)bufferData;
 
-	uint8_t *newBuf = JL_NewBuffer(cx, nbytes, rval);
-	JL_ASSERT_ALLOC( newBuf );
+	JSObject *newBufferObj;
+	void *newBufferData;
+	if ( nbytes < bufferLen ) {
 
-	jl_memcpy(newBuf, buf, JL_MIN(bufLen, nbytes));
+		newBufferObj = js::ArrayBuffer::create(cx, nbytes, (uint8_t*)bufferData); // JS_NewArrayBuffer(cx, nbytes);
+		if ( !newBufferObj )
+			return false;
+		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
+	} else {
 
-	return newBuf;
-bad:
-	return NULL;
+		newBufferObj = js::ArrayBuffer::create(cx, nbytes);
+		if ( !newBufferObj )
+			return false;
+		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
+		jl_memcpy(newBufferData, bufferData, bufferLen);
+	}
+	*rval = OBJECT_TO_JSVAL(newBufferObj);
+	return (uint8_t*)newBufferData;
 }
 
 
 ALWAYS_INLINE bool FASTCALL
 JL_NewBufferGetOwnership( JSContext *cx, void *src, size_t nbytes, jsval *rval ) {
 
-	uint8_t *buffer;
-	buffer = JL_NewBuffer(cx, nbytes, rval);
-	if ( buffer ) {
-			
-		jl_memcpy(buffer, src, nbytes);
-		jl_free(src);
-		return true;
-	} else {
-		
-		jl_free(src);
-		return false;
-	}
-}
-
-
-ALWAYS_INLINE bool FASTCALL
-JL_NewBufferCopyN( JSContext *cx, const void *src, size_t nbytes, jsval *rval ) {
-
-	uint8_t *buffer;
-	buffer = JL_NewBuffer(cx, nbytes, rval);
-	if ( buffer ) {
-			
-		jl_memcpy(buffer, src, nbytes);
-		return true;
-	} else {
-		
-		return false;
-	}
+	bool ok = JL_NewBufferCopyN(cx, src, nbytes, rval);
+	jl_free(src);
+	return ok;
 }
 
 
@@ -3209,17 +3207,19 @@ JL_NewEmptyBuffer( JSContext *cx, jsval *rval ) {
 	}
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // Generic Image object
 
+template <class T, class U>
 ALWAYS_INLINE uint8_t* FASTCALL
-JL_NewByteImageObject( JSContext *cx, int32_t width, int32_t height, int32_t channels, jsval *rval ) {
+JL_NewByteImageObject( JSContext *cx, T width, T height, U channels, jsval *rval ) {
 
 	ASSERT( width >= 0 );
 	ASSERT( height >= 0 );
 	ASSERT( channels > 0 );
 
-	JSObject *bufferObj = js::ArrayBuffer::create(cx, width*height*channels); // JS_NewArrayBuffer(cx, nbytes);
+	JSObject *bufferObj = js::ArrayBuffer::create(cx, width * height* channels); // JS_NewArrayBuffer(cx, nbytes);
 	JL_CHK( bufferObj );
 
 	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, width), width) );
@@ -3231,8 +3231,9 @@ bad:
 	return NULL;
 }
 
+template <class T, class U>
 ALWAYS_INLINE JLData FASTCALL
-JL_GetByteImageObject( JSContext *cx, jsval &val, int32_t *width, int32_t *height, int32_t *channels ) {
+JL_GetByteImageObject( JSContext *cx, jsval &val, T *width, T *height, U *channels ) {
 
 	JLData data;
 	JL_ASSERT_IS_OBJECT(val, "image");
@@ -3253,66 +3254,64 @@ bad:
 ///////////////////////////////////////////////////////////////////////////////
 // Generic Audio object
 
+template <class T, class U, class V,  class W>
 ALWAYS_INLINE uint8_t* FASTCALL
-JL_NewByteAudioObject( JSContext *cx, int32_t bits, int32_t rate, int32_t channels, int32_t frames, jsval *rval ) {
+JL_NewByteAudioObject( JSContext *cx, T bits, U channels, V frames, W rate, jsval *rval ) {
 
-	ASSERT( bits % 8 == 0 );
-	ASSERT( bits > 0 );
-	ASSERT( rate > 0 );
+	ASSERT( bits > 0 && bits % 8 == 0 );
 	ASSERT( channels > 0 );
+	ASSERT( rate > 0 );
 	ASSERT( frames >= 0 );
 
 	JSObject *bufferObj = js::ArrayBuffer::create(cx, (bits/8) * channels * frames); // JS_NewArrayBuffer(cx, nbytes);
 	JL_CHK( bufferObj );
-
 	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, bits), bits) );
-	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, rate), rate) );
 	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, channels), channels) );
 	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, frames), frames) );
+	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, rate), rate) );
 	*rval = OBJECT_TO_JSVAL(bufferObj);
 	return JS_GetArrayBufferData(bufferObj);
 bad:
 	return NULL;
 }
 
+template <class T, class U, class V,  class W>
 ALWAYS_INLINE JSBool FASTCALL
-JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, int32_t bits, int32_t rate, int32_t channels, int32_t frames, jsval *rval ) {
+JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, T bits, U channels, V frames, W rate, jsval *rval ) {
 	
 	ASSERT_IF( buffer == NULL, frames == 0 );
-	ASSERT( bits % 8 == 0 && bits > 0 && rate > 0 && channels > 0 && frames >= 0 );
-	ASSERT( (int)jl_msize(buffer) >= (bits/8) * channels * frames );
-
+	ASSERT( bits > 0 && (bits % 8) == 0 && rate > 0 && channels > 0 && frames >= 0 );
+	ASSERT_IF( buffer != NULL, jl_msize(buffer) >= (size_t)( (bits/8) * channels * frames ) );
 	// (TBD) handle ArrayBuffer ownership
-
-	uint8_t* tmp = JL_NewByteAudioObject(cx, bits, rate, channels, frames, rval);
-	JL_ASSERT_ALLOC( tmp );
-	if ( buffer != NULL ) {
-
-		jl_memcpy(tmp, buffer, (bits/8) * channels * frames);
-		jl_free(buffer);
-	}
-
+	JSObject *bufferObj = js::ArrayBuffer::create(cx, (bits/8) * channels * frames, buffer);
+	JL_CHK( bufferObj );
+	jl_free(buffer);
+	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, bits), bits) );
+	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, channels), channels) );
+	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, frames), frames) );
+	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, rate), rate) );
+	*rval = OBJECT_TO_JSVAL(bufferObj);
 	return JS_TRUE;
 bad:
 	jl_free(buffer);
 	return JS_FALSE;
 }
 
-
+template <class T, class U, class V,  class W>
 ALWAYS_INLINE JLData FASTCALL
-JL_GetByteAudioObject( JSContext *cx, jsval &val, int32_t *bits, int32_t *rate, int32_t *channels, int32_t *frames ) {
+JL_GetByteAudioObject( JSContext *cx, jsval &val, T *bits, U *channels, V *frames, W *rate ) {
 
 	JLData data;
 	JL_ASSERT_IS_OBJECT(val, "audio");
 	JSObject *bufferObj = JSVAL_TO_OBJECT(val);
 	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, bits), bits) );
-	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, rate), rate) );
 	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, channels), channels) );
 	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, frames), frames) );
+	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, rate), rate) );
 	JL_CHK( JL_JsvalToNative(cx, val, &data) );
 
-	JL_ASSERT( bits > 0 && (*bits % 8) == 0 && rate > 0 && channels > 0 && frames >= 0, E_STR("audio"), E_FORMAT );
-	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) == (*bits/8) * *channels * *frames, E_DATASIZE, E_INVALID );
+	JL_ASSERT( *bits > 0 && (*bits % 8) == 0 && *rate > 0 && *channels > 0 && *frames >= 0, E_STR("audio"), E_FORMAT );
+	JL_ASSERT( data.IsSet() && data.Length() == (size_t)( (*bits/8) * *channels * *frames ), E_DATASIZE, E_INVALID );
 	return data;
 bad:
 	return JLData();

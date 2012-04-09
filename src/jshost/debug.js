@@ -4,7 +4,7 @@ var loadModule = host.loadModule;
 
 //loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile();
 
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
+loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 

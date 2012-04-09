@@ -140,7 +140,7 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 	// convert data chunks into a single memory buffer.
 	//char *buf = (char*)jl_malloc(totalSize +1);
 	uint8_t *buf;
-	buf = JL_NewByteAudioObject(cx, bits, info->rate, info->channels, totalSize / (info->channels * (bits / 8)), JL_RVAL);
+	buf = JL_NewByteAudioObject(cx, bits, info->channels, totalSize / (info->channels * (bits/8)), info->rate, JL_RVAL);
 	JL_CHK( buf );
 
 	ov_clear(&descriptor); // beware: info must be valid
@@ -335,7 +335,7 @@ DEFINE_FUNCTION( decodeSound ) {
 
 	// convert data chunks into a single memory buffer.
 	uint8_t *buf;
-	buf = JL_NewByteAudioObject(cx, 16, info.samplerate, info.channels, totalSize / (info.channels * (16 / 8)), JL_RVAL);
+	buf = JL_NewByteAudioObject(cx, 16, info.channels, totalSize / (info.channels * (16 / 8)), info.samplerate, JL_RVAL);
 	JL_CHK( buf );
 
 	sf_close(descriptor);
@@ -373,7 +373,7 @@ DEFINE_FUNCTION( splitChannels ) {
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	int bits, rate, channels, frames;
-	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &rate, &channels, &frames);
+	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &channels, &frames, &rate);
 
 	JL_ASSERT( bits == 8 || bits == 16, E_ARG, E_NUM(1), E_FORMAT, E_COMMENT_BEGIN, E_NUM(bits), E_STR("bit"), E_COMMENT_END );
 	JL_ASSERT( data.IsSet(), E_INVALID, E_DATA );
@@ -389,7 +389,7 @@ DEFINE_FUNCTION( splitChannels ) {
 	for ( int c = 0; c < channels; c++ ) {
 
 		uint8_t *buf;
-		buf = JL_NewByteAudioObject(cx, bits, rate, 1, frames, &tmpVal);
+		buf = JL_NewByteAudioObject(cx, bits, 1, frames, rate, &tmpVal);
 		JL_CHK( buf );
 		JL_CHK( JL_SetElement(cx, destArray, c, &tmpVal) );
 

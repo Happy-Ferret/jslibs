@@ -794,7 +794,7 @@ DEFINE_FUNCTION( buffer ) {
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	int bits, rate, channels, frames;
-	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &rate, &channels, &frames);
+	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &channels, &frames, &rate);
 
 	ALuint bufferID; // The OpenAL sound buffer ID
 	alGenBuffers(1, &bufferID);
@@ -1070,7 +1070,7 @@ DEFINE_FUNCTION( playSound ) {
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	int bits, rate, channels, frames;
-	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &rate, &channels, &frames);
+	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &channels, &frames, &rate);
 
 	ALint state;                // The state of the sound source
 	ALuint bufferID;            // The OpenAL sound buffer ID
