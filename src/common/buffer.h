@@ -17,11 +17,6 @@
 
 #include <jlalloc.h>
 
-#define BUFFER_INIT_CHUNK_SIZE 8192
-#define BUFFER_INIT_CHUNK_LIST_SIZE 16
-#define BUFFER_TYPE_AUTO_THRESHOLD 64
-#define BUFFER_PAGE_SIZE 4096
-
 
 // (TBD) use this Buffer in: jsz, jsio::Descriptor, jsiconv, jslang::Stringify, DecodeOggVorbis, DecodeSound
 //       AND perhaps in: jsstd::Buffer::ReadRawAmount, jsstd::Expand
@@ -42,6 +37,12 @@ chunk size:
 	fixed
 	variable
 */
+
+/*
+#define BUFFER_INIT_CHUNK_SIZE 8192
+#define BUFFER_INIT_CHUNK_LIST_SIZE 16
+#define BUFFER_TYPE_AUTO_THRESHOLD 64
+#define BUFFER_PAGE_SIZE 4096
 
 enum BufferType {
 	bufferTypeAuto, // try to guess what is the best between chunk or realloc
@@ -324,5 +325,145 @@ inline void BufferFinalize( Buffer *buffer ) {
 	if ( buffer->chunkList != buffer->staticChunkList )
 		_BufferFree(buffer, buffer->chunkList);
 }
+*/
+
+
+template <class T>
+class Buf {
+
+	struct Chunk {
+		T *begin;
+		size_t pos;
+		size_t size;
+	};
+
+	size_t _length;
+
+	Chunk *_chunkList;
+	size_t _chunkPos;
+	size_t _chunkListSize;
+
+	Chunk _staticChunkList[8];
+	T _staticBuffer[8192];
+
+public:
+	~Buf() {
+
+		for ( size_t i = _chunkList[0].begin == _staticBuffer ? 1 : 0; i <= _chunkPos; ++i )
+			jl_free(_chunkList[i].begin);
+		if ( _chunkList != _staticChunkList )
+			jl_free(_chunkList);
+	}
+
+	Buf() {
+
+		_chunkList = _staticChunkList;
+		_chunkListSize = COUNTOF(_staticChunkList);
+		_chunkPos = 0;
+		_length = 0;
+
+		Chunk *chunk0 = &_chunkList[0];
+		chunk0->pos = 0;
+		chunk0->size = sizeof(_staticBuffer);
+		chunk0->begin = _staticBuffer;
+	}
+
+	void Reserve( size_t maxLength ) {
+
+		Chunk *chunk = &_chunkList[_chunkPos];
+		if ( chunk->pos + maxLength > chunk->size ) {
+
+			_chunkPos++;
+			if ( _chunkPos >= _chunkListSize ) {
+
+				_chunkListSize *= 2;
+				if ( _chunkList == _staticChunkList ) {
+
+					_chunkList = (Chunk*)jl_malloc(_chunkListSize * sizeof(Chunk));
+					jl_memcpy(_chunkList, _staticChunkList, sizeof(_staticChunkList));
+				} else {
+
+					_chunkList = (Chunk*)jl_realloc(_chunkList, _chunkListSize * sizeof(Chunk));
+				}
+			}
+
+			chunk = &_chunkList[_chunkPos];
+			chunk->size = _chunkList[_chunkPos-1].size * 3/2 + maxLength * 3/2;
+			ASSERT( chunk->size >= maxLength );
+			chunk->begin = (T*)jl_malloc(chunk->size);
+			chunk->pos = 0;
+		}
+	}
+
+	size_t Length() const {
+
+		return _length;
+	}
+
+	size_t PtrLength() const {
+
+		Chunk *chunk = &_chunkList[_chunkPos];
+		return chunk->size - chunk->pos;
+	}
+
+	T *Ptr() const {
+
+		Chunk *chunk = &_chunkList[_chunkPos];
+		return chunk->begin + chunk->pos;
+	}
+
+	void Advance( size_t length ) {
+
+		_chunkList[_chunkPos].pos += length;
+		_length += length;
+	}
+
+	void CopyTo( T *dest, size_t length ) const {
+
+		size_t chunkIndex = 0;
+		while ( length ) {
+
+			Chunk *chunk = &_chunkList[chunkIndex++];
+			size_t amount = chunk->pos > length ? length : chunk->pos;
+			jl_memcpy(dest, chunk->begin, amount);
+			length -= amount;
+			dest += amount;
+		}
+	}
+
+	T *GetData() {
+
+		Chunk *chunk0 = &_chunkList[0];
+		if ( _chunkPos == 0 )
+			return chunk0->begin;
+
+		if ( chunk0->begin == _staticBuffer )
+			chunk0->begin = (T*)jl_memcpy(jl_malloc(_length), chunk0->begin, chunk0->pos);
+		else
+			chunk0->begin = (T*)jl_realloc(chunk0->begin, _length);
+		chunk0->pos = _length;
+		chunk0->size = _length;
+
+		T *dest = chunk0->begin + _length;
+		do {
+
+			Chunk *chunk = &_chunkList[_chunkPos];
+			dest -= chunk->pos;
+			jl_memcpy(dest, chunk->begin, chunk->pos);
+			jl_free(chunk->begin);
+		} while ( --_chunkPos );
+
+		return chunk0->begin;
+	}
+
+	T *GetDataOwnership() {
+
+		T *buf = GetData();
+		if ( buf == _staticBuffer )
+			buf = (T*)jl_memcpy(jl_malloc(_length), buf, _length);
+		_chunkList[0].begin = NULL;
+		return buf;
+	}
+};
 
 } // namespace jl

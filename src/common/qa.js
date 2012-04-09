@@ -60,7 +60,7 @@ function testOp( left, op, right ) {
 		case 'ex':
 			try {
 				void left();
-				res = false;
+				res = (right == undefined);
 			} catch (ex) {
 				res = isException(ex, right);
 			}
@@ -258,7 +258,15 @@ function addQaItemList(itemList, startDir, files) {
 			
 			var lines = source.split('\n');
 			
-			var item = { name:'[INIT]', file:file.name, line:1, flags:'', code:[], init:true }; // for the initialization item
+			var item = { // initialization item
+				name: '[INIT]',
+				path: file.name.substr(0, file.name.lastIndexOf('/')),
+				file: file.name,
+				line: 1,
+				flags: '',
+				code: [],
+				init: true
+			};
 			
 			for ( var l in lines ) {
 				
@@ -266,7 +274,14 @@ function addQaItemList(itemList, startDir, files) {
 				if ( res ) {
 					
 					newItemList.push(item);
-					item = { file:file.name, line:Number(l)+1, name:res[1], flags:parseFlags(res[1]), code:[] };
+					item = {
+						name: res[1],
+						path: file.name.substr(0, file.name.lastIndexOf('/')),
+						file: file.name,
+						line: Number(l)+1,
+						flags: parseFlags(res[1]),
+						code: [],
+					};
 				}
 				item.code.push(lines[l]);
 			}
@@ -419,7 +434,7 @@ function launchTests(itemList, cfg) {
 			testIndex = Math.floor(Math.random() * itemList.length);
 
 		cx.item = itemList[testIndex];
-	
+
 		if ( cx.item.init || cfg.runOnlyTestIndex == undefined || cfg.runOnlyTestIndex == testIndex ) {
 			
 			if ( !cfg.quiet )

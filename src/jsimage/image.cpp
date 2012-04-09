@@ -131,13 +131,13 @@ DEFINE_FUNCTION( trim ) {
 		JL_SetPrivate(cx, obj, newData);
 	}
 
-	int newWidth;
+	int newWidth, newHeight;
 	newWidth = x1-x;
-	int newHeight;
 	newHeight = y1-y;
 
 	data += channels * (width * y + x); // now, data points to the first byte to displace
 	for ( int i=0; i<newHeight; i++) {
+
 		jl_memcpy(newData, data, channels * newWidth);
 		newData += channels * newWidth;
 		data += channels * width;
@@ -146,7 +146,8 @@ DEFINE_FUNCTION( trim ) {
 	//JS_DefineProperty(cx, obj, "width", INT_TO_JSVAL(newWidth), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	//JS_DefineProperty(cx, obj, "height", INT_TO_JSVAL(newHeight), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
-	JL_CHK( JL_SetProperty(cx, obj, JLID(cx, width), newWidth) && JL_SetProperty(cx, obj, JLID(cx, width), newHeight) );
+	JL_CHK( JL_SetProperty(cx, obj, JLID(cx, width), newWidth) );
+	JL_CHK( JL_SetProperty(cx, obj, JLID(cx, height), newHeight) );
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj); // allows to write: var texture = new Jpeg(f).Load().Trim(...)
 

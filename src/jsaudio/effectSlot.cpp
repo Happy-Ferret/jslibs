@@ -27,6 +27,8 @@ BEGIN_CLASS( OalEffectSlot )
 
 DEFINE_FINALIZE() {
 
+	JL_IGNORE( cx );
+
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;

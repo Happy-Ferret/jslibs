@@ -464,6 +464,8 @@ enum {
 	JLID_SPEC( hangup ),
 	JLID_SPEC( exception ),
 	JLID_SPEC( error ),
+	JLID_SPEC( position ),
+	JLID_SPEC( available ),
 
 	LAST_JSID // see HostPrivate::ids[]
 };
@@ -3233,15 +3235,16 @@ ALWAYS_INLINE JLData FASTCALL
 JL_GetByteImageObject( JSContext *cx, jsval &val, int32_t *width, int32_t *height, int32_t *channels ) {
 
 	JLData data;
+	JL_ASSERT_IS_OBJECT(val, "image");
 	JSObject *bufferObj = JSVAL_TO_OBJECT(val);
 	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, width), width) );
 	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, height), height) );
 	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, channels), channels) );
-	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
 	JL_CHK( JL_JsvalToNative(cx, val, &data) );
-	JL_ASSERT( jl::SafeCast<int>(data.Length()) == *width * *height * *channels * 1, E_ARG, E_NUM(3), E_FORMAT );
+
+	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
+	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) == *width * *height * *channels * 1, E_DATASIZE, E_INVALID );
 	return data;
-	//return JS_GetArrayBufferData(bufferObj);
 bad:
 	return JLData();
 }
@@ -3259,7 +3262,7 @@ JL_NewByteAudioObject( JSContext *cx, int32_t bits, int32_t rate, int32_t channe
 	ASSERT( channels > 0 );
 	ASSERT( frames >= 0 );
 
-	JSObject *bufferObj = js::ArrayBuffer::create(cx, (bits/8) * rate * channels * frames); // JS_NewArrayBuffer(cx, nbytes);
+	JSObject *bufferObj = js::ArrayBuffer::create(cx, (bits/8) * channels * frames); // JS_NewArrayBuffer(cx, nbytes);
 	JL_CHK( bufferObj );
 
 	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, bits), bits) );
@@ -3272,7 +3275,48 @@ bad:
 	return NULL;
 }
 
+ALWAYS_INLINE JSBool FASTCALL
+JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, int32_t bits, int32_t rate, int32_t channels, int32_t frames, jsval *rval ) {
+	
+	ASSERT_IF( buffer == NULL, frames == 0 );
+	ASSERT( bits % 8 == 0 && bits > 0 && rate > 0 && channels > 0 && frames >= 0 );
+	ASSERT( (int)jl_msize(buffer) >= (bits/8) * channels * frames );
 
+	// (TBD) handle ArrayBuffer ownership
+
+	uint8_t* tmp = JL_NewByteAudioObject(cx, bits, rate, channels, frames, rval);
+	JL_ASSERT_ALLOC( tmp );
+	if ( buffer != NULL ) {
+
+		jl_memcpy(tmp, buffer, (bits/8) * channels * frames);
+		jl_free(buffer);
+	}
+
+	return JS_TRUE;
+bad:
+	jl_free(buffer);
+	return JS_FALSE;
+}
+
+
+ALWAYS_INLINE JLData FASTCALL
+JL_GetByteAudioObject( JSContext *cx, jsval &val, int32_t *bits, int32_t *rate, int32_t *channels, int32_t *frames ) {
+
+	JLData data;
+	JL_ASSERT_IS_OBJECT(val, "audio");
+	JSObject *bufferObj = JSVAL_TO_OBJECT(val);
+	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, bits), bits) );
+	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, rate), rate) );
+	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, channels), channels) );
+	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, frames), frames) );
+	JL_CHK( JL_JsvalToNative(cx, val, &data) );
+
+	JL_ASSERT( bits > 0 && (*bits % 8) == 0 && rate > 0 && channels > 0 && frames >= 0, E_STR("audio"), E_FORMAT );
+	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) == (*bits/8) * *channels * *frames, E_DATASIZE, E_INVALID );
+	return data;
+bad:
+	return JLData();
+}
 
 
 

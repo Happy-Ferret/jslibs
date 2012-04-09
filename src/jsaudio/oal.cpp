@@ -788,30 +788,19 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( buffer ) {
 
-	JLData buffer;
+	JLData data;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
-
-	int rate, channels, bits;
-	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, rate), &rate) );
-	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, channels), &channels) );
-	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, bits), &bits) );
-
-//	const char *buffer;
-//	size_t bufferLength;
-//	tmp = OBJECT_TO_JSVAL(blobObj);
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &buffer) );
+	int bits, rate, channels, frames;
+	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &rate, &channels, &frames);
 
 	ALuint bufferID; // The OpenAL sound buffer ID
 	alGenBuffers(1, &bufferID);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	ALenum format; // The sound data format
-
 	switch (channels) {
 		case 1:
 			format = bits == 16 ? AL_FORMAT_MONO16 : AL_FORMAT_MONO8;
@@ -824,7 +813,7 @@ DEFINE_FUNCTION( buffer ) {
 	}
 
 	// Upload sound data to buffer
-	alBufferData(bufferID, format, buffer.GetConstStr(), (ALsizei)buffer.Length(), rate);
+	alBufferData(bufferID, format, data.GetConstStr(), (ALsizei)data.Length(), rate);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_CHK( JL_NativeToJsval(cx, bufferID, JL_RVAL) );
@@ -1075,29 +1064,19 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( playSound ) {
 
-	JLData buffer;
+	JLData data;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
-
-	int rate, channels, bits;
-	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, rate), &rate) );
-	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, channels), &channels) );
-	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, bits), &bits) );
-
-//	const char *buffer;
-//	size_t bufferLength;
-//	tmp = OBJECT_TO_JSVAL(blobObj);
-//	JL_JsvalToStringAndLength(cx, &tmp, &buffer, &bufferLength); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &buffer) );
+	int bits, rate, channels, frames;
+	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &rate, &channels, &frames);
 
 	ALint state;                // The state of the sound source
 	ALuint bufferID;            // The OpenAL sound buffer ID
 	ALuint sourceID;            // The OpenAL sound source
-	ALenum format;              // The sound data format
 
+	ALenum format;              // The sound data format
 	if (channels == 1)
 		format = bits == 16 ? AL_FORMAT_MONO16 : AL_FORMAT_MONO8;
 	else
@@ -1116,7 +1095,7 @@ DEFINE_FUNCTION( playSound ) {
 	alSource3i(sourceID, AL_POSITION, 0,0,0 );
 
 	// Upload sound data to buffer
-	alBufferData(bufferID, format, buffer.GetConstStr(), (ALsizei)buffer.Length(), rate);
+	alBufferData(bufferID, format, data.GetConstStr(), (ALsizei)data.Length(), rate);
 
 	// Attach sound buffer to source
 	alSourcei(sourceID, AL_BUFFER, bufferID);

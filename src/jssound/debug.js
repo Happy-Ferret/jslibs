@@ -1,25 +1,60 @@
+var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
+
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssound'); throw 0;
+
 
 loadModule('jsstd');
 loadModule('jsio');
 loadModule('jsaudio');
 loadModule('jssound');
 
-Oal.open();
 
-var dec = new SoundFileDecoder( new File('41_30secOgg-q0.wav').open('r') );
-//var dec = new OggVorbisDecoder( new File('41_30secOgg-q0.ogg').Open('r') );
-//var dec = new SoundFileDecoder( new File('break3.wav').Open('r') );
+//	var audioFileName = QA.cx.item.path + '/41_30secOgg-q0_a.wav';
+	var audioFileName = '.' + '/41_30secOgg-q0_a.wav';
 
-var block = dec.read(100000);
+	var file = new File(audioFileName).open('r');
+	var stream = {
+		read: function(n) {
+			return file.read(n);
+		},
+		get position() {
+			return file.position;
+		},
+		set position(pos) {
+			file.position = pos;
+		},
+		get available() {
+			return file.available;
+		}
+	}
+	
+	var stream = file;
+	var decoder = new SoundFileDecoder( stream );
+	print( decoder.read().frames );
+	file.close();
+	
+	
 
-//var [left, right] = SplitChannels(block);
+throw 0;
+
+var audioFileName = './41_30secOgg-q0.ogg';
 
 
-print( block.bits, '\n' );
-print( block.channels, '\n' );
-print( block.rate, '\n' );
+
+var file = new File(audioFileName).open('r');
+
+var stream = { read: function(n) { return ile.read(n); } }
+
+var decoder = new OggVorbisDecoder( stream );
+var block = decoder.read();
+file.close();
+
+
 print( block.frames, '\n' );
+
+
+throw 0;
 
 var b = Oal.Buffer(block);
 var src = Oal.genSource();

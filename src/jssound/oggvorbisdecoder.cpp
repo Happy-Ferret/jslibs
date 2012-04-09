@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-
+#include <buffer.h>
 
 #define malloc jl_malloc_fct
 #define calloc jl_calloc_fct
@@ -50,24 +50,10 @@ typedef struct {
 } Private;
 
 
-
-size_t read_func( void *ptr, size_t size, size_t nmemb, void *privateData ) {
-
-	Private *pv = (Private*)privateData;
-
-	size_t amount = size * nmemb;
-//	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &amount ) != JS_TRUE )
-//		return -1; // (TBD) check for a better error
-	if ( StreamReadInterface(pv->cx, pv->streamObject)(pv->cx, pv->streamObject, (char*)ptr, &amount) != JS_TRUE )
-		return (size_t)-1; // (TBD) check for a better error
-	return amount;
-}
-
 int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 
-//	return -1;
-
 	Private *pv = (Private*)datasource;
+	ASSERT(pv->cx);
 
 	jsval tmpVal;
 	int64_t position;
@@ -77,60 +63,77 @@ int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 		case SEEK_SET:
 			if ( offset < 0 )
 				return -1;
-			JL_NativeToJsval(pv->cx, offset, &tmpVal); // (TBD) manage error
-			JS_SetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
+			JL_CHK( JL_SetProperty(pv->cx, pv->streamObject, JLID(pv->cx, position), offset) );
+
+//			JL_CHK( JL_NativeToJsval(pv->cx, offset, &tmpVal) ); // (TBD) manage error
+//			JL_CHK( JS_SetProperty(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) ); // (TBD) manage error
 			return 0;
 
 		case SEEK_CUR:
-			JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
+			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) ); // (TBD) manage error
 			if ( JSVAL_IS_VOID( tmpVal ) ) //
 				return -1;
 			if ( offset == 0 ) // no move, just tested, but let -1 to be return if no position property available.
 				return 0;
-			JL_JsvalToNative(pv->cx, tmpVal, &position); // (TBD) manage error
+			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) ); // (TBD) manage error
 			position += offset;
-			JL_NativeToJsval(pv->cx, position, &tmpVal); // (TBD) manage error
-			JS_SetProperty(pv->cx, pv->streamObject, "position", &tmpVal); // (TBD) manage error
+			JL_CHK( JL_NativeToJsval(pv->cx, position, &tmpVal) ); // (TBD) manage error
+			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) ); // (TBD) manage error
 			return 0;
 
 		case SEEK_END:
-			JS_GetProperty(pv->cx, pv->streamObject, "available", &tmpVal);
+			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, available), &tmpVal) );
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
-			JL_JsvalToNative(pv->cx, tmpVal, &available);
+			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &available) );
 
-			JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
+			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
-			JL_JsvalToNative(pv->cx, tmpVal, &position);
+			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
 
 			if ( offset > 0 || -offset > position + available )
 				return -1;
-			JL_JsvalToNative(pv->cx, tmpVal, &position);
-			JL_NativeToJsval(pv->cx, position + available + offset, &tmpVal); // the pointer is set to the size of the file plus offset.
-			JS_SetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
+			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
+			JL_CHK( JL_NativeToJsval(pv->cx, position + available + offset, &tmpVal) ); // the pointer is set to the size of the file plus offset.
+			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
 			return 0;
 	}
+
+bad:
 	return -1; // doc: you *MUST* return -1 if the stream is unseekable
 }
-
-
 
 
 long tell_func(void *datasource) {
 
 	Private *pv = (Private*)datasource;
 	jsval tmpVal;
-
 	int position;
-	JS_GetProperty(pv->cx, pv->streamObject, "position", &tmpVal);
+	ASSERT(pv->cx);
+	JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
 	if ( JSVAL_IS_VOID( tmpVal ) )
 		return -1;
-	JL_JsvalToNative(pv->cx, tmpVal, &position);
+	JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
 	return position;
+bad:
+	return -1;
 }
 
 
+size_t read_func( void *ptr, size_t size, size_t nmemb, void *privateData ) {
+
+	Private *pv = (Private*)privateData;
+	ASSERT(pv->cx);
+	size_t amount = size * nmemb;
+	JL_CHK( StreamReadInterface(pv->cx, pv->streamObject)(pv->cx, pv->streamObject, (char*)ptr, &amount) );
+	return amount;
+bad:
+	errno = 1;
+	return 0;
+}
+
+// doc: http://xiph.org/vorbis/doc/vorbisfile/ov_callbacks.html
 static const ov_callbacks ovCallbacks = { read_func, seek_func, 0, tell_func };
 
 
@@ -183,15 +186,23 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( pv );
 	JL_SetPrivate(cx, obj, pv);
 
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_INPUT_STREAM, JL_ARG(1) ) );
+	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_INPUT_STREAM, JL_ARG(1)) );
 	pv->streamObject = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	pv->cx = cx;
-	int result = ov_open_callbacks(pv, &pv->ofDescriptor, NULL, 0, ovCallbacks);
-	JL_CHKM( result == 0, E_ARG, E_NUM(1), E_INVALID, E_COMMENT("ogg vorbis descriptor") );
+	int result = ov_open_callbacks(pv, &pv->ofDescriptor, NULL, 0, ovCallbacks); // doc: 0 for success
+	if ( result != 0 ) {
 
-	pv->ofInfo = ov_info(&pv->ofDescriptor, -1);
-	JL_CHKM( pv->ofInfo != NULL, E_ARG, E_NUM(1), E_INVALID, E_COMMENT("ogg vorbis info") );
+		JL_CHK( !JL_IsExceptionPending(cx) ); // error is already set.
+		JL_ERR( E_ARG, E_NUM(1), E_INVALID, E_COMMENT("ogg vorbis descriptor") );
+	}
+
+	pv->ofInfo = ov_info(&pv->ofDescriptor, -1); // doc: returns NULL if the specified bitstream does not exist or the file has been initialized improperly.
+	if ( pv->ofInfo == NULL ) {
+
+		JL_CHK( !JL_IsExceptionPending(cx) ); // error is already set.
+		JL_ERR( E_ARG, E_NUM(1), E_INVALID, E_COMMENT("ogg vorbis info") );
+	}
 
 	pv->bits = 16;
 
@@ -238,7 +249,6 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( read ) {
 
 	uint8_t *buf = NULL;
-	char *buffer = NULL;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -249,140 +259,113 @@ DEFINE_FUNCTION( read ) {
 	JL_CHKM( pv->ofInfo->channels == 1 || pv->ofInfo->channels == 2, E_NUM(pv->ofInfo->channels), E_STR("channels"), E_FORMAT );
 	JL_CHKM( pv->bits == 8 || pv->bits == 16, E_NUM(pv->bits), E_STR("bit"), E_FORMAT );
 
-	size_t totalSize = 0;
-
-	pv->cx = cx;
+	int32_t frames;
 	if ( JL_ARG_ISDEF(1) ) {
 
-		size_t frames;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &frames) );
+		if ( frames <= 0 ) {
 
-		if ( frames > 0 ) {
+			// like Descriptor::read, returns an empty audio object even if EOF
+			JL_CHK( JL_NewByteAudioObjectOwner(cx, NULL, pv->bits, pv->ofInfo->rate, pv->ofInfo->channels, 0, JL_RVAL) );
+			return JS_TRUE;
+		}
+	} else {
 
-			size_t amount = frames * pv->ofInfo->channels * (pv->bits / 8); // amount in bytes
-			buf = (uint8_t*)jl_malloc(amount +1);
-			JL_ASSERT_ALLOC(buf);
+		ogg_int64_t total = ov_pcm_total(&pv->ofDescriptor, 0); // logical bitstream 0
+		if ( total == OV_EINVAL ) {
+		
+			frames = -1; // mean unknown
+		} else
+		if ( total == 0 ) {
+		
+			*JL_RVAL = JSVAL_VOID; // EOF
+			return JS_TRUE;
+		} else {
+		
+			frames = (int32_t)total;
+		}
+	}
 
-	//		sf_count_t items = sf_read_short(pv->sfDescriptor, (short*)buf, amount/sizeof(short));
 
-			int bitStream = 0;
-			long bytes;
-			do {
+	if ( frames != -1 ) {
 
-				int prevBitstream = bitStream;
-				bytes = ov_read(&pv->ofDescriptor, (char*)buf + totalSize, amount - totalSize, 0, pv->bits / 8, 1, &bitStream);
-				JL_CHKM( bitStream == prevBitstream, E_ARG, E_NUM(1), E_FORMAT, E_COMMENT("ogg vorbis bitstream") ); // bitstream has changed
+		size_t totalSize = 0;
 
-				// (TBD) update the channels, rate, ... according to: ov_info(&pv->ofDescriptor, bitStream);
-				if ( JL_IsExceptionPending(cx) )
-					return JS_FALSE;
+		size_t amount = frames * pv->ofInfo->channels * (pv->bits/8); // amount in bytes
+		buf = (uint8_t*)jl_malloc(amount);
+		JL_ASSERT_ALLOC(buf);
 
+		long bytes;
+		int bitStream = 0;
+		pv->cx = cx;
+		do {
+			int prevBitstream = bitStream;
+			bytes = ov_read(&pv->ofDescriptor, (char*)buf + totalSize, amount - totalSize, 0, pv->bits/8, 1, &bitStream);
+			JL_CHKM( bitStream == prevBitstream, E_STR("bitstream"), E_INVALID ); // bitstream has unexpectedly changed
+			// (TBD) update the channels, rate, ... according to: ov_info(&pv->ofDescriptor, bitStream); ?
+			if ( bytes < 0 ) {
+				
+				JL_CHK( !JL_IsExceptionPending(cx) );
 				if ( bytes == OV_HOLE )
 					continue; // ignore corrupted/dropped/lost parts
-
-				totalSize += bytes;
-
-			} while ( bytes > 0 && totalSize < amount );
-			// manage ov_read errors here
-
-
-	/*
-			if ( bytes < 0 ) { // 0 indicates EOF
-
-				// (TBD) manage errors
-				if ( bytes == OV_HOLE ) { // indicates there was an interruption in the data. (one of: garbage between pages, loss of sync followed by recapture, or a corrupt page)
-
-				} else if ( bytes == OV_EINVAL ) { // doc. indicates that an invalid stream section was supplied to libvorbisfile, or the requested link is corrupt.
-					break;
-				}
+				JL_ERR( E_STR("stream"), E_INVALID );
+				// doc: OV_EINVAL indicates the initial file headers couldn't be read or are corrupt, or that the initial open call for vf failed.
+				// doc: OV_EBADLINK indicates that an invalid stream section was supplied to libvorbisfile, or the requested link is corrupt.
 			}
-	*/
+			totalSize += bytes;
 
-			if ( JL_MaybeRealloc(amount, totalSize) )
-				buf = (uint8_t*)jl_realloc(buf, totalSize +1);
+		} while ( bytes > 0 && totalSize < amount );
+		
+		pv->cx = NULL;
+
+		if ( totalSize == 0 ) {
+
+			jl_free(buf);
+			*JL_RVAL = JSVAL_VOID;
 		} else {
 
-			JL_ERR( E_ARG, E_NUM(1), E_MIN, E_NUM(1) );
+			if ( JL_MaybeRealloc(amount, totalSize) )
+				buf = (uint8_t*)jl_realloc(buf, totalSize);
+			JL_CHK( JL_NewByteAudioObjectOwner(cx, buf, pv->bits, pv->ofInfo->rate, pv->ofInfo->channels, totalSize / (pv->bits/8 * pv->ofInfo->channels), JL_RVAL) );
 		}
 
 	} else {
 
-		void *stack;
-		jl::StackInit(&stack);
-
-		int bufferSize = 16384 - 16; // try to alloc less than one page
-
-		int bitStream = 0;
 		long bytes;
+		jl::Buf<char> buffer;
+		int bitStream = 0;
+		pv->cx = cx;
 		do {
-
-			buffer = (char*)jl_malloc(bufferSize);
-			JL_CHK( buffer );
-			jl::StackPush(&stack, buffer);
-
-			char *data = buffer+sizeof(int);
-			int *len = (int*)buffer;
-			int maxlen = bufferSize - sizeof(int);
-
-			// pv->bits: ???=8, sf_read_short=16, sf_read_int=32
-//			items = sf_read_short(pv->sfDescriptor, (short*)data, maxlen/sizeof(short)); // bits per sample
-
 			int prevBitstream = bitStream;
-			bytes = ov_read(&pv->ofDescriptor, data, maxlen, 0, pv->bits / 8, 1, &bitStream);
-			JL_CHKM( bitStream == prevBitstream, E_ARG, E_NUM(1), E_FORMAT, E_COMMENT("ogg vorbis bitstream") ); // bitstream has changed
+			buffer.Reserve(8192);
+			bytes = ov_read(&pv->ofDescriptor, buffer.Ptr(), buffer.PtrLength(), 0, pv->bits/8, 1, &bitStream);
+			JL_CHKM( bitStream == prevBitstream,  E_STR("bitstream"), E_INVALID ); // bitstream has unexpectedly changed
+			JL_CHK( bytes > 0 || !JL_IsExceptionPending(cx) );
 
-			if ( JL_IsExceptionPending(cx) )
-				return JS_FALSE;
-
-			if ( bytes == OV_HOLE)
-				continue; // ignore corrupted/dropped/lost parts
-
-//(TBD)			JL_ASSERT( sf_error(pv->ofDescriptor) == SF_ERR_NO_ERROR, "sndfile error: %d", sf_error(pv->sfDescriptor) );
-
-			if ( bytes <= 0 ) { // < 0 is an error
-
-				*len = 0;
-			} else {
-
-				*len = bytes;
-				totalSize += bytes;
+			if ( bytes < 0 ) {
+				
+				if ( bytes == OV_HOLE )
+					continue; // ignore corrupted/dropped/lost parts
+				JL_ERR( E_STR("stream"), E_INVALID );
+				// doc: OV_EINVAL indicates the initial file headers couldn't be read or are corrupt, or that the initial open call for vf failed.
+				// doc: OV_EBADLINK indicates that an invalid stream section was supplied to libvorbisfile, or the requested link is corrupt.
 			}
 
-		} while (bytes > 0); // 0 indicates EOF
+			buffer.Advance(bytes);
 
-		// convert data chunks into a single memory buffer.
-		buf = JL_NewByteAudioObject(cx, pv->bits, pv->ofInfo->rate, pv->ofInfo->channels, totalSize / (pv->ofInfo->channels * pv->bits / 8) , JL_RVAL);
-		JL_CHK( buf );
+		} while ( bytes > 0 ); // 0 indicates EOF
+		pv->cx = NULL;
 
-		// because the stack is LIFO, we have to start from the end.
-		buf += totalSize;
-		while( !jl::StackIsEnd(&stack) ) {
-
-			char *buffer = (char *)jl::StackPop(&stack);
-			int size = *(int*)buffer;
-			buf = buf - size;
-			jl_memcpy( buf, buffer+sizeof(int), size );
-			jl_free(buffer);
-		}
-	}
-	pv->cx = NULL; // see definition
-
-	if ( totalSize == 0 ) {
-
-		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		if ( buffer.Length() )
+			JL_CHK( JL_NewByteAudioObjectOwner(cx, (uint8_t*)buffer.GetDataOwnership(), pv->bits, pv->ofInfo->rate, pv->ofInfo->channels, buffer.Length() / (pv->ofInfo->channels * pv->bits/8), JL_RVAL) );
+		else
+			*JL_RVAL = JSVAL_VOID;
 	}
 
-/*
-	JL_CHK(JL_SetProperty(cx, blobObj, "bits", pv->bits) ); // bits per sample
-	JL_CHK(JL_SetProperty(cx, blobObj, "rate", pv->ofInfo->rate) ); // samples per second
-	JL_CHK(JL_SetProperty(cx, blobObj, "channels", pv->ofInfo->channels) ); // 1:mono, 2:stereo
-	JL_CHK(JL_SetProperty(cx, blobObj, "frames", totalSize / (pv->ofInfo->channels * pv->bits / 8) ) );
-*/
 	return JS_TRUE;
 bad:
-	jl_free(buf);
-	jl_free(buffer);
+	if ( buf )
+		jl_free(buf);
 	return JS_FALSE;
 }
 

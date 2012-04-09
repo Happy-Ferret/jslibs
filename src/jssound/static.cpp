@@ -367,35 +367,27 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( splitChannels ) {
 
-	JLData bufStr;
+	JLData data;
+
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	unsigned int rate, channelCount, bits, frames;
-	JSObject *srcBlobObj = JSVAL_TO_OBJECT(JL_ARG(1));
-	JL_CHK(JL_GetProperty(cx, srcBlobObj, JLID(cx, rate), &rate) );
-	JL_CHK(JL_GetProperty(cx, srcBlobObj, JLID(cx, channels), &channelCount) );
-	JL_CHK(JL_GetProperty(cx, srcBlobObj, JLID(cx, bits), &bits) );
-	JL_CHK(JL_GetProperty(cx, srcBlobObj, JLID(cx, frames), &frames) );
+	int bits, rate, channels, frames;
+	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &rate, &channels, &frames);
 
 	JL_ASSERT( bits == 8 || bits == 16, E_ARG, E_NUM(1), E_FORMAT, E_COMMENT_BEGIN, E_NUM(bits), E_STR("bit"), E_COMMENT_END );
+	JL_ASSERT( data.IsSet(), E_INVALID, E_DATA );
 
 	const char *srcBuf;
-	size_t srcBufLength;
-	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &srcBuf, &srcBufLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bufStr) );
-	srcBufLength = bufStr.Length();
-	srcBuf = bufStr.GetConstStr();
+	srcBuf = data.GetConstStr();
 
 	JSObject *destArray = JS_NewArrayObject(cx, 0, NULL);
 	*JL_RVAL = OBJECT_TO_JSVAL(destArray);
 
 	jsval tmpVal;
 
-	for ( size_t c = 0; c < channelCount; c++ ) {
+	for ( int c = 0; c < channels; c++ ) {
 
-		size_t totalSize = frames * (bits/8);
-		//char *buf = (char*)JS_malloc(cx, totalSize +1);
 		uint8_t *buf;
 		buf = JL_NewByteAudioObject(cx, bits, rate, 1, frames, &tmpVal);
 		JL_CHK( buf );
@@ -403,13 +395,13 @@ DEFINE_FUNCTION( splitChannels ) {
 
 		if ( bits == 16 ) {
 
-			for ( size_t frame = 0; frame < frames; frame++ )
-				((int16_t*)buf)[frame] = ((int16_t*)srcBuf)[frame*channelCount+c];
+			for ( int frame = 0; frame < frames; frame++ )
+				((int16_t*)buf)[frame] = ((int16_t*)srcBuf)[frame*channels+c];
 		} else
 		if ( bits == 8 ) {
 
-			for ( size_t frame = 0; frame < frames; frame++ )
-				((int8_t*)buf)[frame] = ((int8_t*)srcBuf)[frame*channelCount+c];
+			for ( int frame = 0; frame < frames; frame++ )
+				((int8_t*)buf)[frame] = ((int8_t*)srcBuf)[frame*channels+c];
 		}
 	}
 

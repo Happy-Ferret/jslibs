@@ -23,6 +23,8 @@ BEGIN_CLASS( OalBuffer )
 
 DEFINE_FINALIZE() {
 
+	JL_IGNORE( cx );
+
 	ALuint bid = (ALuint) JL_GetPrivate(obj);
 	if ( bid )
 		alDeleteBuffers(1, &bid);
@@ -36,7 +38,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JLData buffer;
+	JLData data;
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -44,14 +46,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	JSObject *blobObj = JSVAL_TO_OBJECT(JL_ARG(1));
-
-	int rate, channels, bits;
-	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, rate), &rate) );
-	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, channels), &channels) );
-	JL_CHK( JL_GetProperty(cx, blobObj, JLID(cx, bits), &bits) );
-
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &buffer) );
+	int bits, rate, channels, frames;
+	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &rate, &channels, &frames);
 
 	ALenum format; // The sound data format
 	switch (channels) {
@@ -70,7 +66,7 @@ DEFINE_CONSTRUCTOR() {
 	alGenBuffers(1, &bid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	alBufferData(bid, format, buffer.GetConstStr(), (ALsizei)buffer.Length(), rate); // Upload sound data to buffer
+	alBufferData(bid, format, data.GetConstStr(), (ALsizei)data.Length(), rate); // Upload sound data to buffer
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_SetPrivate(cx, obj, (void*)bid);

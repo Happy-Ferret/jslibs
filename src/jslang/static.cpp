@@ -257,32 +257,28 @@ DEFINE_FUNCTION( stringify ) {
 		NIStreamRead read = StreamReadInterface(cx, sobj);
 		if ( read ) {
 
-			Buffer buf;
-			BufferInitialize(&buf, bufferTypeAuto, bufferGrowTypeAuto, NULL, NULL, NULL, NULL);
+			Buf<char> buf;
 
 			size_t length;
 			do {
 
 				length = 4096;
-				JL_CHKB( read(cx, sobj, BufferNewChunk(&buf, length), &length), bad_ReadInterface_freeBuffer );
-				BufferConfirm(&buf, length);
+				buf.Reserve(4096);
+				JL_CHK( read(cx, sobj, buf.Ptr(), &length) );
+				buf.Advance(length);
 			} while ( length != 0 );
 
 			if ( toArrayBuffer ) {
 
-				JL_CHKB( JL_NewBufferGetOwnership(cx, BufferGetDataOwnership(&buf), BufferGetLength(&buf), JL_RVAL), bad_ReadInterface_freeBuffer );
+				JL_CHK( JL_NewBufferGetOwnership(cx, buf.GetDataOwnership(), buf.Length(), JL_RVAL) );
 			} else {
 
-				JSString *jsstr = JS_NewStringCopyN(cx, BufferGetData(&buf), BufferGetLength(&buf));
-				JL_CHKB( jsstr, bad_ReadInterface_freeBuffer );
+				JSString *jsstr = JS_NewStringCopyN(cx, buf.GetData(), buf.Length());
+				JL_CHK( jsstr );
 				*JL_RVAL = STRING_TO_JSVAL( jsstr );
 			}
-			BufferFinalize(&buf);
-			return JS_TRUE;
 
-		bad_ReadInterface_freeBuffer:
-			BufferFinalize(&buf);
-			goto bad;
+			return JS_TRUE;
 		}
 
 	}
@@ -854,48 +850,49 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 	// Buffer ////////////////////////////////////////////////////
 
+	{
 	char *ref = (char*)jl_malloc(20000);
 	for ( int i = 0; i < 20000; i++ )
 		ref[i] = rand() & 0xff; // 0->255
 	int refPos = 0;
 
 	using namespace jl;
-	Buffer b;
-	BufferInitialize(&b, bufferTypeChunk, bufferGrowTypeAuto, NULL, NULL, NULL, NULL);
+	Buf<char> b;
 
 	for ( int i = 0; i < 100; i++ ) {
 
 		int rnd = rand() & 0xff; // 0->127
-		char *tmp = BufferNewChunk(&b, rnd);
+		b.Reserve(rnd);
+		char *tmp = b.Ptr();
 		jl_memcpy(tmp, ref + refPos, rnd);
-		BufferConfirm(&b, rnd);
+		b.Advance(rnd);
 		refPos += rnd;
 	}
 
-	int l = BufferGetLength(&b);
+	int l = b.Length();
 
 	char *tmp = (char*)jl_malloc(l);
-	BufferCopyData(&b, tmp, l);
+	b.CopyTo(tmp, l);
 
-	const char *d = BufferGetData(&b);
+	const char *d = b.GetData();
 	bool success = memcmp(ref, d, l) == 0 && memcmp(ref, tmp, l) == 0;
 	TEST( success );
 
-	BufferFinalize(&b);
 	jl_free(tmp);
 	jl_free(ref);
+	}
 
 
 	/////////////////////////////////////////////////////////////////
 
 	// Buffer (2) ////////////////////////////////////////////////////
 
-	Buffer resultBuffer;
-	BufferInitialize(&resultBuffer, bufferTypeAuto, bufferGrowTypeAuto, NULL, NULL, NULL, NULL);
-	BufferNewChunk(&resultBuffer, 10000);
-	BufferConfirm(&resultBuffer, 10000);
-	jl_free( BufferGetDataOwnership(&resultBuffer) );
-	BufferFinalize(&resultBuffer);
+	{
+	Buf<char> resultBuffer;
+	resultBuffer.Reserve(10000);
+	resultBuffer.Advance(10000);
+	jl_free( resultBuffer.GetDataOwnership() );
+	}
 
 	/////////////////////////////////////////////////////////////////
 

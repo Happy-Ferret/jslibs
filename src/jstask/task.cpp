@@ -66,7 +66,7 @@ ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, const SerializedData *ser,
 	JL_BAD;
 }
 
-ALWAYS_INLINE bool IsSerializable( jsval val ) {
+ALWAYS_INLINE bool IsSerializable( jsval ) {
 
 	return true;
 }
@@ -137,6 +137,8 @@ BEGIN_CLASS( Task )
 
 
 DEFINE_FINALIZE() {
+
+	JL_IGNORE( cx );
 
 	TaskPrivate *pv = (TaskPrivate*)JL_GetPrivate(obj);
 	if ( !pv )
@@ -270,9 +272,10 @@ bad:
 
 int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
 
-	Buffer *eb = (Buffer*)privateData;
-	jl_memcpy(BufferNewChunk(eb, length), buffer, length);
-	BufferConfirm(eb, length);
+	Buf<char> *errBuffer = (Buf<char>*)privateData;
+	errBuffer->Reserve(length);
+	jl_memcpy(errBuffer->Ptr(), buffer, length);
+	errBuffer->Advance(length);
 	return 0;
 }
 
@@ -281,8 +284,7 @@ JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 
 	TaskPrivate *pv = NULL;
 
-	Buffer errBuffer;
-	BufferInitialize(&errBuffer, bufferTypeRealloc, bufferGrowTypeDouble, NULL, NULL, NULL, NULL);
+	Buf<char> errBuffer;
 
 	JSContext *cx = CreateHost((uint32_t)-1, (uint32_t)-1, 0);
 	JL_CHK( cx != NULL );
@@ -321,7 +323,7 @@ JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 		} else {
 
 			//JL_CHK( StringAndLengthToJsval(cx, &ex, BufferGetData(&errBuffer), BufferGetLength(&errBuffer)) );
-			JL_CHK( JL_NativeToJsval(cx, BufferGetData(&errBuffer), BufferGetLength(&errBuffer), &ex) );
+			JL_CHK( JL_NativeToJsval(cx, errBuffer.GetData(), errBuffer.Length(), &ex) );
 
 			//ex = JSVAL_VOID; // unknown exception
 		}
@@ -339,7 +341,6 @@ JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 	}
 
 bad:
-	BufferFinalize(&errBuffer);
 
 	// These queues must be destroyed before cx because SerializedData * *ser hold a reference to the context that created the value.
 	JLMutexAcquire(pv->mutex); // --
@@ -478,6 +479,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( response ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -554,6 +557,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( pendingRequestCount ) {
 
+	JL_IGNORE( id );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	TaskPrivate *pv;
@@ -575,6 +580,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( processingRequestCount ) {
 
+	JL_IGNORE( id );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	TaskPrivate *pv;
@@ -594,6 +601,8 @@ $TOC_MEMBER $INAME
   Is the number of available responses that has already been processed by the task.
 **/
 DEFINE_PROPERTY_GETTER( pendingResponseCount ) {
+
+	JL_IGNORE( id );
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -615,6 +624,8 @@ $TOC_MEMBER $INAME
   Is the current state of the task. true if there is no request being processed, if request and response queues are empty and if there is no pending error.
 **/
 DEFINE_PROPERTY_GETTER( idle ) {
+
+	JL_IGNORE( id );
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -688,7 +699,7 @@ bool TaskCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
