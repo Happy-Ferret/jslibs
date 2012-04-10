@@ -204,6 +204,8 @@ function addQaItemListFromSource(itemList, startDir, files) {
 	
 		if ( !hidden(file.name) && srcFile(file.name) ) {
 
+			print('.');
+
 			var source = stringify(file.content);
 			source = source.replace(/\r\n|\r/g, '\n'); // cleanup
 			
@@ -252,6 +254,8 @@ function addQaItemList(itemList, startDir, files) {
 	recursiveDir( startDir, function(file) {
 	
 		if ( !hidden(file.name) && qaFile(file.name) ) {
+
+			print('.');
 
 			var source = stringify(file.content);
 			source = source.replace(regexec(/\r\n|\r/g), '\n'); // cleanup
@@ -728,6 +732,8 @@ function main() {
 		testList = eval(new File(cfg.load).content);
 	} else {
 
+		print('\n', 'Building');
+
 		var testList = [];
 		
 		if ( !cfg.inlineOnly )
@@ -758,6 +764,8 @@ function main() {
 		return;
 	}
 
+	print('\n', 'Testing...', '\n');
+
 	var savePrio = processPriority;
 	processPriority = cfg.priority;
 	var t0 = timeCounter();
@@ -783,8 +791,6 @@ function main() {
 		 return currentValue;
 	}, undefined );
 }
-
-print('Begin...', '\n');
 
 try {
 	

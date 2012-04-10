@@ -44,10 +44,13 @@ size_t readStream( void *ptr, size_t size, size_t nmemb, void *pv ) {
 	size_t amount = size * nmemb;
 //	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &amount ) != JS_TRUE )
 //		return -1; // (TBD) check for a better error
-	if ( StreamReadInterface(info->cx, info->obj)(info->cx, info->obj, (char*)ptr, &amount) != JS_TRUE )
-		return (size_t)-1; // (TBD) check for a better error
 
+	NIStreamRead read = StreamReadInterface(info->cx, info->obj);
+	JL_CHK( read );
+	JL_CHK( read(info->cx, info->obj, (char*)ptr, &amount) );
 	return amount;
+bad:
+	return (size_t)-1; // (TBD) check for a better error
 }
 
 static const ov_callbacks ovCallbacks = { readStream,0,0,0 };
@@ -252,9 +255,13 @@ sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
 	size_t amount = size_t(count);
 //	if ( pv->streamRead( pv->cx, pv->obj, (char*)ptr, &amount ) != JS_TRUE )
 //		return -1; // (TBD) find a better error
-	if ( StreamReadInterface( pv->cx, pv->obj)( pv->cx, pv->obj, (char*)ptr, &amount ) != JS_TRUE )
-		return -1; // (TBD) find a better error
+
+	NIStreamRead read = StreamReadInterface( pv->cx, pv->obj);
+	JL_CHK( read );
+	JL_CHK( read(pv->cx, pv->obj, (char*)ptr, &amount) );
 	return amount;
+bad:
+	return -1; // (TBD) find a better error
 }
 
 

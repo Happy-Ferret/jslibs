@@ -422,7 +422,6 @@ function runQATests( argStr ) {
 	currentDirectory += '/../common';
 	host.arguments = Array.concat('qa.js', argStr.split(' '));
 	exec(host.arguments[0], false);
-	throw 0;
 }
 
 function runJsircbot( withDebuggerEnabled ) {

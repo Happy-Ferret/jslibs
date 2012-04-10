@@ -4,15 +4,26 @@ var loadModule = host.loadModule;
 
 //loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile();
 
-loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('stream'); throw 0; // -inlineOnly
 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 
 //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
 loadModule('jsstd');
+loadModule('jssound');
+
+var q = new Stream(stringify('1234ABCDEF', true))
+
+print( q.available );
+
+
 
 //jslangTest();
+
+
+
+throw 0;
 
 	var image = {
 		data: stringify('135464351343538431', true),

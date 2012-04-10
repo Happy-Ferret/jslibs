@@ -1805,21 +1805,16 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLData *str ) {
 
 		JSObject *obj = JSVAL_TO_OBJECT(val);
 		NIBufferGet fct = BufferGetInterface(cx, obj); // BufferGetNativeInterface
-		if ( fct ) {
-
+		if ( fct )
 			return fct(cx, obj, str);
-		}
 
 		if ( JS_IsArrayBufferObject(obj) ) {
 			
 			uint32_t length = JS_GetArrayBufferByteLength(obj);
-			if ( length ) {
-
+			if ( length )
 				*str = JLData((const char*)JS_GetArrayBufferData(obj), false, length);
-			} else {
-
+			else
 				*str = JLData::Empty();
-			}
 			return JS_TRUE;
 		}
 		

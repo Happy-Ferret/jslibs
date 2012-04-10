@@ -2,7 +2,7 @@ loadModule('jsstd');
 
 /// Handle prototype [ftrm]
 
-	QA.ASSERT( Handle._serialize, undefined, '_serialize access' );
+	QA.ASSERT_STR( Handle._serialize, undefined, '_serialize access' );
 
 
 /// NativeInterface [ftrm]
@@ -19,6 +19,18 @@ loadModule('jsstd');
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 		stream._NI_StreamRead = 987654;
 		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
+
+
+/// Stream test [ftrm]
+
+	var s = new Stream( String('hello') );
+
+	QA.ASSERT_STR( s.read(1), 'h', 'stream reading' );
+	QA.ASSERT_STR( s.read(0), '', 'stream reading 0' );
+	QA.ASSERT_STR( s.read(1), 'e', 'stream reading' );
+	QA.ASSERT_STR( s.read(3), 'llo', 'stream reading' );
+	QA.ASSERT_STR( s.read(0), '', 'stream reading' );
+	QA.ASSERT( s.read(1), undefined, 'stream reading EOF' );
 
 
 /// Stream [ftrm]
@@ -111,7 +123,6 @@ loadModule('jsstd');
 		QA.ASSERT( val.length, 7, 'blob length' );
 		QA.ASSERT( val.aPropertyOfMyBlob, 12345, 'blob property' );
 		QA.ASSERT_STR( val, "my blob", 'blob content' );
-
 
 
 /// map serialization [ftrm d]

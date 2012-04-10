@@ -3,53 +3,20 @@ var loadModule = host.loadModule;
 
 loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssound'); throw 0;
 
-
 loadModule('jsstd');
 loadModule('jsio');
-loadModule('jsaudio');
 loadModule('jssound');
 
 
-//	var audioFileName = QA.cx.item.path + '/41_30secOgg-q0_a.wav';
-	var audioFileName = '.' + '/41_30secOgg-q0_a.wav';
-
-	var file = new File(audioFileName).open('r');
-	var stream = {
-		read: function(n) {
-			return file.read(n);
-		},
-		get position() {
-			return file.position;
-		},
-		set position(pos) {
-			file.position = pos;
-		},
-		get available() {
-			return file.available;
-		}
-	}
-	
-	var stream = file;
-	var decoder = new SoundFileDecoder( stream );
-	print( decoder.read().frames );
-	file.close();
-	
-	
-
-throw 0;
-
 var audioFileName = './41_30secOgg-q0.ogg';
 
+var data = new File(audioFileName).content;
 
-
-var file = new File(audioFileName).open('r');
-
-var stream = { read: function(n) { return ile.read(n); } }
+var stream = new Stream(data);
 
 var decoder = new OggVorbisDecoder( stream );
-var block = decoder.read();
-file.close();
 
+var block = decoder.read();
 
 print( block.frames, '\n' );
 

@@ -143,7 +143,10 @@ sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
 	size_t amount = (size_t)count;
 
 	ASSERT(pv->cx);
-	JL_CHK( StreamReadInterface(pv->cx, pv->streamObject)(pv->cx, pv->streamObject, (char*)ptr, &amount) );
+
+	NIStreamRead read = StreamReadInterface(pv->cx, pv->streamObject);
+	JL_CHK( read );
+	JL_CHK( read(pv->cx, pv->streamObject, (char*)ptr, &amount) );
 	return amount;
 bad:
 	return -1;

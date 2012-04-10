@@ -20,8 +20,18 @@
 #define realloc jl_realloc_fct
 #define free jl_free_fct
 
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4244 ) // 'argument' : conversion from 'xxx' to 'yyy', possible loss of data
+#endif // _MSC_VER
+
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
+
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif // _MSC_VER
+
 
 #undef malloc
 #undef calloc
@@ -126,7 +136,10 @@ size_t read_func( void *ptr, size_t size, size_t nmemb, void *privateData ) {
 	Private *pv = (Private*)privateData;
 	ASSERT(pv->cx);
 	size_t amount = size * nmemb;
-	JL_CHK( StreamReadInterface(pv->cx, pv->streamObject)(pv->cx, pv->streamObject, (char*)ptr, &amount) );
+
+	NIStreamRead read = StreamReadInterface(pv->cx, pv->streamObject);
+	JL_CHK( read );
+	JL_CHK( read(pv->cx, pv->streamObject, (char*)ptr, &amount) );
 	return amount;
 bad:
 	errno = 1;
@@ -240,7 +253,7 @@ $TOC_MEMBER $INAME
   file.open('r');
   var dec = new OggVorbisDecoder( file );
   var block = dec.read(10000);
-  print( 'rezolution: '+block.bits+' per channel', '\n' );
+  print( 'resolution: '+block.bits+' per channel', '\n' );
   print( block.channels == 2 ? 'stereo' : 'mono', '\n' );
   print( block.rate+' frames/seconds', '\n' );
   print( 'time: '+(block.frames/block.rate)+' seconds', '\n' );
