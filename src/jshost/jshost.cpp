@@ -517,8 +517,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JSObject *hostObj;
 	hostObj = JL_GetHostPrivate(cx)->hostObject;
 
-	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, path), hostPath) );
-	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, name), hostName) );
+	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), hostPath) );
+	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), hostName) );
 
 	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), &arguments) );
 	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, arguments), arguments) );

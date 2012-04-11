@@ -662,20 +662,20 @@ DEFINE_PROPERTY_GETTER( info ) {
 
 	PRFileInfo fileInfo;
 	PRStatus status;
-	jsval dateValue;
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	if ( fd == NULL ) {
 
 		JLData fileName;
 		jsval jsvalFileName;
-		JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+		JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
 		JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 		JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
-
 		status = PR_GetFileInfo( fileName, &fileInfo );
-	} else
+	} else {
+
 		status = PR_GetOpenFileInfo( fd, &fileInfo );
+	}
 
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
@@ -690,15 +690,10 @@ DEFINE_PROPERTY_GETTER( info ) {
 		*vp = OBJECT_TO_JSVAL( fileInfoObj );
 	}
 
-	JL_CHK( JS_DefineProperty(cx, fileInfoObj, "type", INT_TO_JSVAL((int)fileInfo.type), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
-
-	JL_CHK( JS_DefineProperty(cx, fileInfoObj, "size", INT_TO_JSVAL(fileInfo.size), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
-
-	JL_CHK( JL_NewNumberValue(cx, fileInfo.creationTime / (double)1000, &dateValue) );
-	JL_CHK( JS_DefineProperty(cx, fileInfoObj, "creationTime", dateValue, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
-
-	JL_CHK( JL_NewNumberValue(cx, fileInfo.modifyTime / (double)1000, &dateValue) );
-	JL_CHK( JS_DefineProperty(cx, fileInfoObj, "modifyTime", dateValue, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE) );
+	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "type", fileInfo.type) );
+	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "size", fileInfo.size) );
+	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "creationTime", fileInfo.creationTime / (double)1000) );
+	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "modifyTime", fileInfo.modifyTime / (double)1000) );
 
 	return JL_StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;

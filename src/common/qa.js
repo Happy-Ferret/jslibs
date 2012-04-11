@@ -60,9 +60,9 @@ function testOp( left, op, right ) {
 		case 'ex':
 			try {
 				void left();
-				res = (right == undefined);
+				res = (right === undefined);
 			} catch (ex) {
-				res = isException(ex, right);
+				res = (right !== undefined) && isException(ex, right);
 			}
 			break;
 		default: res = undefined;
@@ -732,7 +732,7 @@ function main() {
 		testList = eval(new File(cfg.load).content);
 	} else {
 
-		print('\n', 'Building');
+		print('Building');
 
 		var testList = [];
 		

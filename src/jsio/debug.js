@@ -11,6 +11,9 @@ loadModule('jsio');
 loadModule('jsdebug');
 
 
+print( uneval(systemInfo) );
+throw 0;
+
 function createSocketPair() {
 
 	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;

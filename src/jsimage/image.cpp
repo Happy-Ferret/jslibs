@@ -101,9 +101,9 @@ DEFINE_FUNCTION( trim ) {
 	y1 = vect[3];
 
 	int width, height, channels;
-	JL_CHK( JL_GetProperty(cx, obj, JLID(cx, width), &width) );
-	JL_CHK( JL_GetProperty(cx, obj, JLID(cx, height), &height) );
-	JL_CHK( JL_GetProperty(cx, obj, JLID(cx, channels), &channels) );
+	JL_CHK( JL_PropertyToNative(cx, obj, JLID(cx, width), &width) );
+	JL_CHK( JL_PropertyToNative(cx, obj, JLID(cx, height), &height) );
+	JL_CHK( JL_PropertyToNative(cx, obj, JLID(cx, channels), &channels) );
 
 // assume that we have 1 Byte/channel !
 
@@ -146,8 +146,8 @@ DEFINE_FUNCTION( trim ) {
 	//JS_DefineProperty(cx, obj, "width", INT_TO_JSVAL(newWidth), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	//JS_DefineProperty(cx, obj, "height", INT_TO_JSVAL(newHeight), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
-	JL_CHK( JL_SetProperty(cx, obj, JLID(cx, width), newWidth) );
-	JL_CHK( JL_SetProperty(cx, obj, JLID(cx, height), newHeight) );
+	JL_CHK( JL_NativeToProperty(cx, obj, JLID(cx, width), newWidth) );
+	JL_CHK( JL_NativeToProperty(cx, obj, JLID(cx, height), newHeight) );
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj); // allows to write: var texture = new Jpeg(f).Load().Trim(...)
 

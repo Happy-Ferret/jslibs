@@ -217,9 +217,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 	JSObject *hostObj = JL_GetHostPrivate(cx)->hostObject;
 
-	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, path), moduleFileName) );
-	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, name), name) );
-	JL_CHK( JL_SetProperty(cx, hostObj, JLID(cx, isFirstInstance), isFirstInstance) );
+	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), moduleFileName) );
+	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), name) );
+	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, isFirstInstance), isFirstInstance) );
 
 	const char *argv[] = { scriptName, lpCmdLine };
 

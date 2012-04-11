@@ -1,5 +1,12 @@
 loadModule('jsstd');
 
+
+/// Stream prototype JL_ASSERT_INSTANCE [ftrm]
+
+	QA.ASSERTOP( function() { Stream.prototype.available }, 'ex', TypeError );
+	QA.ASSERTOP( function() { Stream.prototype.read.call({}) }, 'ex', TypeError );
+
+
 /// Handle prototype [ftrm]
 
 	QA.ASSERT_STR( Handle._serialize, undefined, '_serialize access' );
@@ -7,18 +14,18 @@ loadModule('jsstd');
 
 /// NativeInterface [ftrm]
 
-		var stream = new Stream('456');
-		QA.ASSERT( !isNaN(stream._NI_StreamRead), true, 'NativeInterface system' )
+	var stream = new Stream('456');
+	QA.ASSERT( !isNaN(stream._NI_StreamRead), true, 'NativeInterface system' )
 
 
 /// NativeInterface security [ftrm]
 
-		var stream = new Stream('456');
-		var prev = stream._NI_StreamRead;
-		stream._NI_StreamRead = 123456;
-		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
-		stream._NI_StreamRead = 987654;
-		QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
+	var stream = new Stream('456');
+	var prev = stream._NI_StreamRead;
+	stream._NI_StreamRead = 123456;
+	QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
+	stream._NI_StreamRead = 987654;
+	QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 
 
 /// Stream test [ftrm]
@@ -220,7 +227,30 @@ loadModule('jsstd');
 	
 	var unser = s.read();
 	QA.ASSERT( stringify(unser), 'test', 'unserialized data' );
-	QA.ASSERT( unser.foo, 123, 'unserialized data property' );
+	QA.ASSERT( unser.foo, undefined, 'unserialized data property' );
+
+
+/// ArrayBuffer Serialization / Unserialization
+
+	var o = { data:stringify('test', true), x:123, y:456 };
+
+	var s = new Serializer();
+	s.write(o);
+	var buffer = s.done();
+	// ...
+	var u = new Unserializer(buffer);
+	var o1 = u.read();
+
+	QA.ASSERTOP( o.data, 'instanceof', ArrayBuffer, 'source object data property type' );
+	QA.ASSERT_STR( o.data, 'test', 'source object data property' );
+
+	QA.ASSERTOP( o1, 'has', 'data', 'unserialized object properties' );
+	QA.ASSERTOP( o1, 'has', 'x', 'unserialized object properties' );
+	QA.ASSERTOP( o1, 'has', 'y', 'unserialized object properties' );
+	QA.ASSERTOP( o1.data, 'instanceof', ArrayBuffer, 'unserialized object data property type' );
+	QA.ASSERT_STR( o1.data, 'test', 'unserialized object data property' );
+	QA.ASSERTOP( o1.x, '===', 123, 'unserialized object properties value' );
+	QA.ASSERTOP( o1.y, '===', 456, 'unserialized object properties value' );
 
 
 /// Serialization / Unserialization of custom class
@@ -266,7 +296,15 @@ loadModule('jsstd');
 		return undefined;
 	}
 	
+	var typedArray = new Uint32Array(10);
+	for ( var i = 0; i < 10 + 5; ++i )
+		typedArray[i] = i*100;
+
+	var emptyTypedArray = new Uint32Array(10);
+
 	var myobj = [
+		emptyTypedArray,
+		typedArray,
 		genReferenceError(),
 		new Error('error test'), 
 		function() [,1,{__proto__:null}],

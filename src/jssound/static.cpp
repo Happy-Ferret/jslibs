@@ -14,10 +14,19 @@
 
 #include "stdafx.h"
 
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4244 ) // 'argument' : conversion from 'xxx' to 'yyy', possible loss of data
+#endif // _MSC_VER
+
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
 
-#include	<sndfile.h>
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif // _MSC_VER
+
+#include <sndfile.h>
 
 DECLARE_STATIC()
 

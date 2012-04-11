@@ -370,10 +370,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( intervalNow ) {
 
-	JL_IGNORE( argc );
-
-	PRUint32 interval = PR_IntervalToMilliseconds( PR_IntervalNow() ); // (TBD) Check if it may wrap around in about 12 hours. Is it related to the data type ???
-	return JL_NewNumberValue(cx, interval, JL_RVAL);
+	JL_ASSERT_ARGC(0);
+	// (TBD) Check if it may wrap around in about 12 hours. Is it related to the data type ???
+	JL_CHK( JL_NativeToJsval(cx, PR_IntervalToMilliseconds( PR_IntervalNow() ), JL_RVAL) );
+	return JS_TRUE;
+	JL_BAD;
 }
 
 //
@@ -417,7 +418,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( getEnv ) {
 
 	JLData name;
-	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARGC(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
 	char* value;
 	value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
@@ -427,10 +428,7 @@ DEFINE_FUNCTION( getEnv ) {
 		*JL_RVAL = JSVAL_VOID;
 	} else {
 
-//		JSString *jsstr = JS_NewExternalString(cx, (jschar*)value, strlen(value), JS_AddExternalStringFinalizer(NULL)); only works with unicode strings
-		JSString *jsstr = JS_NewStringCopyZ(cx,value);
-		JL_CHK( jsstr );
-		*JL_RVAL = STRING_TO_JSVAL(jsstr);
+		JL_CHK( JL_NativeToJsval(cx, value, JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -907,19 +905,14 @@ DEFINE_PROPERTY_GETTER( hostName ) {
 	JL_IGNORE( id, obj );
 
 	char tmp[SYS_INFO_BUFFER_LENGTH];
-	/* doc:
-			Suppose the name of the host is configured as "foo.bar.com".
-			If PR_SI_HOSTNAME is specified, "foo" is returned.
-			If PR_SI_HOSTNAME_UNTRUNCATED is specified, "foo.bar.com" is returned.
-			On the other hand, if the name of the host is configured as just "foo",
-			both PR_SI_HOSTNAME and PR_SI_HOSTNAME_UNTRUNCATED return "foo".
-	*/
+	// doc:
+	//   Suppose the name of the host is configured as "foo.bar.com".
+	//   If PR_SI_HOSTNAME is specified, "foo" is returned. If PR_SI_HOSTNAME_UNTRUNCATED is specified, "foo.bar.com" is returned.
+	//   On the other hand, if the name of the host is configured as just "foo",	both PR_SI_HOSTNAME and PR_SI_HOSTNAME_UNTRUNCATED return "foo".
 	PRStatus status = PR_GetSystemInfo( PR_SI_HOSTNAME_UNTRUNCATED, tmp, sizeof(tmp) );
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
-	JSString *jsstr = JS_NewStringCopyZ(cx,tmp);
-	JL_CHK( jsstr );
-	*vp = STRING_TO_JSVAL(jsstr);
+	JL_CHK( JL_NativeToJsval(cx, tmp, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -933,9 +926,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( physicalMemorySize ) {
 
 	JL_IGNORE( id, obj );
-
-	PRUint64 mem = PR_GetPhysicalMemorySize();
-	JL_CHK( JL_NewNumberValue(cx, (double)mem, vp) );
+	JL_CHK( JL_NativeToJsval(cx, (double)PR_GetPhysicalMemorySize(), vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -967,37 +958,21 @@ DEFINE_PROPERTY_GETTER( systemInfo ) {
 	*vp = OBJECT_TO_JSVAL( info );
 
 	PRStatus status;
-//		jsval tmpVal;
-	JSString *jsstr;
-
-	// (TBD) these properties must be read-only !!
 
 	status = PR_GetSystemInfo( PR_SI_ARCHITECTURE, tmp, sizeof(tmp) );
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
-	jsstr = JS_NewStringCopyZ(cx,tmp);
-	JL_CHK( jsstr );
-//		tmpVal = STRING_TO_JSVAL(jsstr);
-//		JS_SetProperty(cx, info, "architecture", &tmpVal);
-	JL_CHK( JS_DefineProperty(cx, info, "architecture", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JL_NativeToProperty(cx, info, "architecture", tmp) );
 
 	status = PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) );
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
-	jsstr = JS_NewStringCopyZ(cx,tmp);
-	JL_CHK( jsstr );
-//		tmpVal = STRING_TO_JSVAL(jsstr);
-//		JS_SetProperty(cx, info, "name", &tmpVal);
-	JL_CHK( JS_DefineProperty(cx, info, "name", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JL_NativeToProperty(cx, info, "name", tmp) );
 
 	status = PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) );
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
-	jsstr = JS_NewStringCopyZ(cx,tmp);
-	JL_CHK( jsstr );
-//		tmpVal = STRING_TO_JSVAL(jsstr);
-//		JS_SetProperty(cx, info, "release", &tmpVal);
-	JL_CHK( JS_DefineProperty(cx, info, "release", STRING_TO_JSVAL(jsstr), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT) );
+	JL_CHK( JL_NativeToProperty(cx, info, "release", tmp) );
 
 	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
@@ -1067,9 +1042,8 @@ DEFINE_PROPERTY_SETTER( processPriority ) {
 			priority = PR_PRIORITY_NORMAL;
 			JL_WARN( E_VALUE, E_RANGE, E_INTERVAL_NUM(-1, 2) );
 	}
-	PRThread *thread;
-	thread = PR_GetCurrentThread();
-	PR_SetThreadPriority( thread, priority );
+
+	PR_SetThreadPriority(PR_GetCurrentThread(), priority);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1089,7 +1063,8 @@ DEFINE_PROPERTY_GETTER( numberOfProcessors ) {
 		count = 1;
 	}
 	JL_CHK( JL_NativeToJsval(cx, count, vp) );
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	JL_CHK( JL_StoreProperty(cx, obj, id, vp, true) );
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -1149,11 +1124,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( directorySeparator ) {
 
-	jschar sep = (unsigned char)PR_GetDirectorySeparator();
-	JSString *str = JS_InternUCStringN(cx, &sep, 1);
-	JL_CHK( str );
-	*vp = STRING_TO_JSVAL( str );
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	JL_CHK( JL_NativeToJsval(cx, PR_GetDirectorySeparator(), vp) );
+	JL_CHK( JL_StoreProperty(cx, obj, id, vp, true) );
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -1168,11 +1141,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( pathSeparator ) {
 
-	jschar sep = (unsigned char)PR_GetPathSeparator();
-	JSString *str = JS_InternUCStringN(cx, &sep, 1);
-	JL_CHK( str );
-	*vp = STRING_TO_JSVAL( str );
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	JL_CHK( JL_NativeToJsval(cx, PR_GetPathSeparator(), vp) );
+	JL_CHK( JL_StoreProperty(cx, obj, id, vp, true) );
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -1183,9 +1154,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( version ) {
 
-	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, PR_VERSION));
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	JL_CHK( JL_NativeToJsval(cx, PR_VERSION, vp) );
+	JL_CHK( JL_StoreProperty(cx, obj, id, vp, true) );
+	return JS_TRUE;
+	JL_BAD;
 }
+
 
 #if defined(DEBUG) // || 1
 #define HAS_JSIOTEST

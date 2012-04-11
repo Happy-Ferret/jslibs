@@ -4,7 +4,7 @@ var loadModule = host.loadModule;
 
 //loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile();
 
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('stream'); throw 0; // -inlineOnly
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jslang'); throw 0; // -inlineOnly
 
 //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
 
@@ -13,27 +13,29 @@ loadModule('jsstd'); exec('../common/tools.js'); runQATests('stream'); throw 0; 
 loadModule('jsstd');
 loadModule('jssound');
 
-var q = new Stream(stringify('1234ABCDEF', true))
 
-print( q.available );
+var s = new Stream('123');
+print( s.test, '\n' );
+print( s.test, '\n' );
+
+print( uneval(Object.getOwnPropertyDescriptor(Stream.prototype, 'test')), '\n' );
+print( uneval(Object.getOwnPropertyDescriptor(Stream.prototype, 'test')), '\n' );
 
 
+throw 0;
 
 //jslangTest();
 
 
 
-throw 0;
 
-	var image = {
-		data: stringify('135464351343538431', true),
-		width: 1024,
-		height: 768
-	}
-		
+
+	var data = new Uint32Array(10);
+	for ( var i = 0; i < 10; ++i )
+		data[i] = i*100;
 
 	var s = new Serializer();
-	s.write(image);
+	s.write(data);
 	var s = new Unserializer(s.done());
 	
 	var unser = s.read();

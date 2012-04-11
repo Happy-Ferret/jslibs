@@ -73,7 +73,7 @@ int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 		case SEEK_SET:
 			if ( offset < 0 )
 				return -1;
-			JL_CHK( JL_SetProperty(pv->cx, pv->streamObject, JLID(pv->cx, position), offset) );
+			JL_CHK( JL_NativeToProperty(pv->cx, pv->streamObject, JLID(pv->cx, position), offset) );
 
 //			JL_CHK( JL_NativeToJsval(pv->cx, offset, &tmpVal) ); // (TBD) manage error
 //			JL_CHK( JS_SetProperty(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) ); // (TBD) manage error

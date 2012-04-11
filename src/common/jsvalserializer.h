@@ -35,7 +35,8 @@ namespace jl {
 		JLSTObjectValue,
 		JLSTSerializableNativeObject,
 		JLSTSerializableScriptObject,
-		JLSTArrayBuffer
+		JLSTArrayBuffer,
+		JLSTTypedArray
 	} JLSerializeType;
 
 
@@ -313,16 +314,20 @@ namespace jl {
 
 			if ( JS_IsArrayBufferObject(obj) ) {
 
-				uint8_t *data;
 				uint32_t length = JS_GetArrayBufferByteLength(obj);
-				if ( length )
-					data = JS_GetArrayBufferData(obj);
-				else
-					data = NULL;
-
+				uint8_t *data = length ? JS_GetArrayBufferData(obj) : NULL;
 				JL_CHK( Write(cx, JLSTArrayBuffer) );
 				JL_CHK( Write(cx, SerializerConstBufferInfo(data, length)) );
-//				JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
+				return JS_TRUE;
+			}
+
+			if ( js_IsTypedArray(obj) ) {
+
+				uint32_t length = JS_GetTypedArrayByteLength(obj);
+				void *data = length ? JS_GetTypedArrayData(obj) : NULL;
+				JL_CHK( Write(cx, JLSTTypedArray) );
+				JL_CHK( Write(cx, JS_GetTypedArrayType(obj)) );
+				JL_CHK( Write(cx, SerializerConstBufferInfo(data, length)) );
 				return JS_TRUE;
 			}
 
@@ -770,9 +775,19 @@ namespace jl {
 					SerializerConstBufferInfo data;
 					JL_CHK( Read(cx, data) );
 					JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), &val) );
-//					JSObject *obj = JSVAL_TO_OBJECT(val);
-//					SerializerObjectOwnProperties sop(obj);
-//					JL_CHK( Read(cx, sop) );
+					break;
+				}
+				case JLSTTypedArray: {
+
+					SerializerConstBufferInfo data;
+
+					uint32_t type;
+					JL_CHK( Read(cx, type) );
+					JL_CHK( Read(cx, data) );
+					JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), &val) );
+					JSObject *arrayBuffer = js_CreateTypedArrayWithBuffer(cx, type, JSVAL_TO_OBJECT(val), -1, -1);
+					JL_CHK( arrayBuffer );
+					val = OBJECT_TO_JSVAL(arrayBuffer);
 					break;
 				}
 				case JLSTErrorObject: {
@@ -827,7 +842,9 @@ namespace jl {
 					JL_CHK( Read(cx, encodedFunction) );
 					JSObject *fctObj;
 					fctObj = JS_DecodeInterpretedFunction(cx, encodedFunction.Data(), encodedFunction.Length(), NULL, NULL);
+					
 					fctObj = JS_CloneFunctionObject(cx, fctObj, JS_GetParent(fctObj)); // (TBD) remove this wen bz#741597 wil be fixed.
+					
 					val = OBJECT_TO_JSVAL(fctObj);
 					break;
 				}

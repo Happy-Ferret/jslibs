@@ -42,7 +42,7 @@ ALWAYS_INLINE JSBool
 SetStreamSource(JSContext *cx, JSObject *obj, jsval *srcVal) {
 
 	if ( JSVAL_IS_PRIMITIVE( *srcVal ) ) {
-	
+
 		JSObject *tmpObj;
 		JL_CHK( JS_ValueToObject(cx, *srcVal, &tmpObj) );
 		*srcVal = OBJECT_TO_JSVAL(tmpObj);
@@ -55,7 +55,7 @@ SetStreamSource(JSContext *cx, JSObject *obj, jsval *srcVal) {
 
 ALWAYS_INLINE JSBool
 SetPosition(JSContext *cx, JSObject *obj, size_t position) {
-	
+
 	JL_CHK( JL_NativeToReservedSlot(cx, JL_OBJ, SLOT_STREAM_POSITION, position) );
 	return JS_TRUE;
 	JL_BAD;
@@ -63,7 +63,7 @@ SetPosition(JSContext *cx, JSObject *obj, size_t position) {
 
 ALWAYS_INLINE JSBool
 GetPosition(JSContext *cx, JSObject *obj, size_t *position) {
-	
+
 	JL_CHK( JL_ReservedSlotToNative(cx, JL_OBJ, SLOT_STREAM_POSITION, position) );
 	return JS_TRUE;
 	JL_BAD;
@@ -80,7 +80,7 @@ GetAvailable(JSContext *cx, JSObject *obj, size_t *available) {
 
 	JSBool found;
 	JL_CHK( JS_HasPropertyById(cx, obj, JLID(cx, length), &found) );
-	
+
 	jsval val;
 	JL_CHK( JS_GetPropertyByIdDefault(cx, obj, JLID(cx, length), JSVAL_VOID, &val) );
 
@@ -108,7 +108,7 @@ StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount ) {
 	JLData data;
 	size_t position;
 	jsval source;
-	
+
 	JL_ASSERT_INSTANCE(streamObj, JL_THIS_CLASS);
 
 	JL_CHK( GetPosition(cx, streamObj, &position) );
@@ -283,6 +283,26 @@ DEFINE_PROPERTY_GETTER( source ) {
 	JL_BAD;
 }
 
+
+#ifdef DEBUG
+
+static int index = 0;
+
+DEFINE_PROPERTY_GETTER( test ) {
+
+	if ( *vp != JSVAL_VOID )
+		return JS_TRUE;
+	*vp = INT_TO_JSVAL(index);
+	index++;
+
+	JL_StoreProperty(cx, obj, id, vp, false);
+
+	return JS_TRUE;
+}
+
+#endif // DEBUG
+
+
 /**doc
 === note ===
  Basically, a Stream is nothing else that a buffer with a stream pointer position.
@@ -308,6 +328,11 @@ CONFIGURE_CLASS
 		PROPERTY(position)
 		PROPERTY_GETTER(available)
 		PROPERTY_GETTER(source)
+
+#ifdef DEBUG
+		PROPERTY_GETTER(test)
+#endif // DEBUG
+
 	END_PROPERTY_SPEC
 
 END_CLASS

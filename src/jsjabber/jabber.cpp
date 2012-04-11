@@ -47,11 +47,11 @@ JSBool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
 
 	JSObject *jidObj = JL_NewObj(cx);
 	*rval = OBJECT_TO_JSVAL(jidObj);
-	JL_CHK( JL_SetProperty(cx, jidObj, "bare", jid->bare().c_str()) );
-	JL_CHK( JL_SetProperty(cx, jidObj, "full", jid->full().c_str()) );
-	JL_CHK( JL_SetProperty(cx, jidObj, "server", jid->server().c_str()) );
-	JL_CHK( JL_SetProperty(cx, jidObj, "username", jid->username().c_str()) );
-	JL_CHK( JL_SetProperty(cx, jidObj, "resource", jid->resource().c_str()) );
+	JL_CHK( JL_NativeToProperty(cx, jidObj, "bare", jid->bare().c_str()) );
+	JL_CHK( JL_NativeToProperty(cx, jidObj, "full", jid->full().c_str()) );
+	JL_CHK( JL_NativeToProperty(cx, jidObj, "server", jid->server().c_str()) );
+	JL_CHK( JL_NativeToProperty(cx, jidObj, "username", jid->username().c_str()) );
+	JL_CHK( JL_NativeToProperty(cx, jidObj, "resource", jid->resource().c_str()) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -100,15 +100,15 @@ private:
 		}
 
 		JSObject *infoObj = JL_NewObj(_cx);
-		JL_SetProperty(_cx, _obj, "chain", info.chain);
-		JL_SetProperty(_cx, _obj, "issuer", info.issuer.c_str());
-		JL_SetProperty(_cx, _obj, "server", info.server.c_str());
-		JL_SetProperty(_cx, _obj, "dateFrom", info.date_from);
-		JL_SetProperty(_cx, _obj, "dateTo", info.date_to);
-		JL_SetProperty(_cx, _obj, "protocol", info.protocol.c_str());
-		JL_SetProperty(_cx, _obj, "cipher", info.cipher.c_str());
-		JL_SetProperty(_cx, _obj, "mac", info.mac.c_str());
-		JL_SetProperty(_cx, _obj, "compression", info.compression.c_str());
+		JL_NativeToProperty(_cx, _obj, "chain", info.chain);
+		JL_NativeToProperty(_cx, _obj, "issuer", info.issuer.c_str());
+		JL_NativeToProperty(_cx, _obj, "server", info.server.c_str());
+		JL_NativeToProperty(_cx, _obj, "dateFrom", info.date_from);
+		JL_NativeToProperty(_cx, _obj, "dateTo", info.date_to);
+		JL_NativeToProperty(_cx, _obj, "protocol", info.protocol.c_str());
+		JL_NativeToProperty(_cx, _obj, "cipher", info.cipher.c_str());
+		JL_NativeToProperty(_cx, _obj, "mac", info.mac.c_str());
+		JL_NativeToProperty(_cx, _obj, "compression", info.compression.c_str());
 
 		jsval argv[] = { OBJECT_TO_JSVAL(infoObj) };
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JL_IsExceptionPending(cx)

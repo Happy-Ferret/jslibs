@@ -20,7 +20,7 @@
 #define realloc jl_realloc_fct
 #define free jl_free_fct
 
-#include	<sndfile.h>
+#include <sndfile.h>
 
 #undef malloc
 #undef calloc

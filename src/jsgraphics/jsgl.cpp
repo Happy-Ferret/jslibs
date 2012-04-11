@@ -6827,7 +6827,7 @@ DEFINE_INIT() {
 	glGetProcAddress = windowsGLGetProcAddress;
 #else
 	//	JL_CHK( GetPrivateNativeFunction(cx, JL_GetGlobal(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
-	JL_CHK( JL_GetProperty(cx, GetHostObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
+	JL_CHK( JL_PropertyToNative(cx, GetHostObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
 #endif
 
 	ASSERT( glGetProcAddress != NULL );

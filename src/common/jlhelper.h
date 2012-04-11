@@ -466,6 +466,7 @@ enum {
 	JLID_SPEC( error ),
 	JLID_SPEC( position ),
 	JLID_SPEC( available ),
+	JLID_SPEC( data ),
 
 	LAST_JSID // see HostPrivate::ids[]
 };
@@ -1330,11 +1331,12 @@ enum E_TXTID {
 #define JL_ASSERT_CONSTRUCTING() \
 	JL_ASSERT( (JL_ARGC, JS_IsConstructing(cx, vp)), E_THISOBJ, E_CONSTRUCT )
 
+// note: JL_GetClass(JL_GetPrototype(... because |JL_ASSERT_THIS_INSTANCE( new Stream() )| must pass whereas |JL_ASSERT_THIS_INSTANCE( Stream.prototype )| must fail.
 #define JL_ASSERT_INSTANCE( jsObject, jsClass ) \
-	JL_ASSERT( JL_GetClass(/*JL_GetPrototype(cx, */jsObject/*)*/) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
+	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, jsObject)) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
 
 #define JL_ASSERT_THIS_INSTANCE() \
-	JL_ASSERT( JL_GetClass(JL_OBJ) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
+	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, JL_OBJ)) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
 
 #define JL_ASSERT_INHERITANCE( jsObject, jsClass ) \
 	JL_ASSERT( NOIL(JL_InheritFrom)(cx, JL_GetPrototype(cx, jsObject), (jsClass)), E_OBJ, E_INHERIT, E_NAME((jsClass)->name) )
@@ -2816,7 +2818,7 @@ JL_ReservedSlotToNative( JSContext * RESTRICT cx, JSObject * RESTRICT obj, unsig
 
 template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-JL_SetProperty( JSContext *cx, JSObject *obj, const char *name, const T &cval ) {
+JL_NativeToProperty( JSContext *cx, JSObject *obj, const char *name, const T &cval ) {
 
 	jsval tmp;
 	return JL_NativeToJsval(cx, cval, &tmp) && JS_SetProperty(cx, obj, name, &tmp);
@@ -2824,7 +2826,7 @@ JL_SetProperty( JSContext *cx, JSObject *obj, const char *name, const T &cval ) 
 
 template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-JL_SetProperty( JSContext *cx, JSObject *obj, jsid id, const T &cval ) {
+JL_NativeToProperty( JSContext *cx, JSObject *obj, jsid id, const T &cval ) {
 
 	jsval tmp;
 	return JL_NativeToJsval(cx, cval, &tmp) && JS_SetPropertyById(cx, obj, id, &tmp);
@@ -2867,7 +2869,7 @@ JL_DefineProperty( JSContext *cx, JSObject *obj, jsid id, const jsval &val, bool
 
 template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-JL_GetProperty( JSContext *cx, JSObject *obj, const char *propertyName, T *cval ) {
+JL_PropertyToNative( JSContext *cx, JSObject *obj, const char *propertyName, T *cval ) {
 
 	jsval tmp;
 	return JS_GetProperty(cx, obj, propertyName, &tmp) && JL_JsvalToNative(cx, tmp, cval);
@@ -2875,7 +2877,7 @@ JL_GetProperty( JSContext *cx, JSObject *obj, const char *propertyName, T *cval 
 
 template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-JL_GetProperty( JSContext *cx, JSObject *obj, jsid id, T *cval ) {
+JL_PropertyToNative( JSContext *cx, JSObject *obj, jsid id, T *cval ) {
 
 	jsval tmp;
 	return JS_GetPropertyById(cx, obj, id, &tmp) && JL_JsvalToNative(cx, tmp, cval);
@@ -3106,6 +3108,7 @@ JL_DataBufferFree( JSContext *cx, uint8_t *data ) {
 }
 
 
+//
 
 ALWAYS_INLINE uint8_t* FASTCALL
 JL_NewBuffer( JSContext *cx, size_t nbytes, jsval *rval ) {
@@ -3121,6 +3124,7 @@ JL_NewBuffer( JSContext *cx, size_t nbytes, jsval *rval ) {
 	}
 }
 
+
 ALWAYS_INLINE bool FASTCALL
 JL_NewBufferCopyN( JSContext *cx, const void *src, size_t nbytes, jsval *rval ) {
 
@@ -3134,6 +3138,32 @@ JL_NewBufferCopyN( JSContext *cx, const void *src, size_t nbytes, jsval *rval ) 
 		return false;
 	}
 }
+
+
+ALWAYS_INLINE bool FASTCALL
+JL_NewBufferGetOwnership( JSContext *cx, void *src, size_t nbytes, jsval *rval ) {
+
+	// (TBD) need to handle ownership properly
+	bool ok = JL_NewBufferCopyN(cx, src, nbytes, rval);
+	jl_free(src);
+	return ok;
+}
+
+
+ALWAYS_INLINE bool FASTCALL
+JL_NewEmptyBuffer( JSContext *cx, jsval *rval ) {
+	
+	JSObject *obj = js::ArrayBuffer::create(cx, 0);
+	if ( obj ) {
+
+		*rval = OBJECT_TO_JSVAL(obj);
+		return true;
+	} else {
+		
+		return false;
+	}
+}
+
 
 ALWAYS_INLINE JSBool FASTCALL
 JL_FreeBuffer( JSContext *cx, jsval *rval ) {
@@ -3179,29 +3209,6 @@ JL_ChangeBufferLength( JSContext *cx, jsval *rval, size_t nbytes ) {
 }
 
 
-ALWAYS_INLINE bool FASTCALL
-JL_NewBufferGetOwnership( JSContext *cx, void *src, size_t nbytes, jsval *rval ) {
-
-	bool ok = JL_NewBufferCopyN(cx, src, nbytes, rval);
-	jl_free(src);
-	return ok;
-}
-
-
-ALWAYS_INLINE bool FASTCALL
-JL_NewEmptyBuffer( JSContext *cx, jsval *rval ) {
-	
-	JSObject *obj = js::ArrayBuffer::create(cx, 0);
-	if ( obj ) {
-
-		*rval = OBJECT_TO_JSVAL(obj);
-		return true;
-	} else {
-		
-		return false;
-	}
-}
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Generic Image object
@@ -3210,21 +3217,48 @@ template <class T, class U>
 ALWAYS_INLINE uint8_t* FASTCALL
 JL_NewByteImageObject( JSContext *cx, T width, T height, U channels, jsval *rval ) {
 
-	ASSERT( width >= 0 );
-	ASSERT( height >= 0 );
-	ASSERT( channels > 0 );
+	ASSERT( width >= 0 && height >= 0 && channels > 0 );
 
-	JSObject *bufferObj = js::ArrayBuffer::create(cx, width * height* channels); // JS_NewArrayBuffer(cx, nbytes);
-	JL_CHK( bufferObj );
-
-	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, width), width) );
-	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, height), height) );
-	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, channels), channels) );
-	*rval = OBJECT_TO_JSVAL(bufferObj);
-	return JS_GetArrayBufferData(bufferObj);
+	jsval dataVal;
+	JSObject *imageObj = JL_NewObj(cx);
+	JL_CHK( imageObj );
+	*rval = OBJECT_TO_JSVAL(imageObj);
+	JSObject *dataObj = js::ArrayBuffer::create(cx, width * height* channels); // JS_NewArrayBuffer(cx, nbytes);
+	JL_CHK( dataObj );
+	dataVal = OBJECT_TO_JSVAL(dataObj);
+	JL_CHK( JS_SetPropertyById(cx, imageObj, JLID(cx, data), &dataVal) );
+	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, width), width) );
+	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, height), height) );
+	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, channels), channels) );
+	return JS_GetArrayBufferData(dataObj);
 bad:
 	return NULL;
 }
+
+template <class T, class U>
+ALWAYS_INLINE JSBool FASTCALL
+JL_NewByteImageObjectOwner( JSContext *cx, uint8_t* buffer, T width, T height, U channels, jsval *rval ) {
+
+	ASSERT_IF( buffer == NULL, width * height * channels == 0 );
+	ASSERT_IF( buffer != NULL, width > 0 && height > 0 && channels > 0 );
+	ASSERT_IF( buffer != NULL, jl_msize(buffer) >= (size_t)(width * height * channels) );
+
+	jsval dataVal;
+	JSObject *imageObj = JL_NewObj(cx);
+	JL_CHK( imageObj );
+	*rval = OBJECT_TO_JSVAL(imageObj);
+	JSObject *dataObj = js::ArrayBuffer::create(cx, width * height * channels, buffer); // (TBD) handle ArrayBuffer ownership
+	jl_free(buffer);
+	JL_CHK( dataObj );
+	dataVal = OBJECT_TO_JSVAL(dataObj);
+	JL_CHK( JS_SetPropertyById(cx, imageObj, JLID(cx, data), &dataVal) );
+	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, width), width) );
+	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, height), height) );
+	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, channels), channels) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 template <class T, class U>
 ALWAYS_INLINE JLData FASTCALL
@@ -3232,11 +3266,11 @@ JL_GetByteImageObject( JSContext *cx, jsval &val, T *width, T *height, U *channe
 
 	JLData data;
 	JL_ASSERT_IS_OBJECT(val, "image");
-	JSObject *bufferObj = JSVAL_TO_OBJECT(val);
-	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, width), width) );
-	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, height), height) );
-	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, channels), channels) );
-	JL_CHK( JL_JsvalToNative(cx, val, &data) );
+
+	JSObject *imageObj = JSVAL_TO_OBJECT(val);
+	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, width), width) );
+	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, height), height) );
+	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, channels), channels) );
 
 	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
 	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) == *width * *height * *channels * 1, E_DATASIZE, E_INVALID );
@@ -3253,19 +3287,21 @@ template <class T, class U, class V,  class W>
 ALWAYS_INLINE uint8_t* FASTCALL
 JL_NewByteAudioObject( JSContext *cx, T bits, U channels, V frames, W rate, jsval *rval ) {
 
-	ASSERT( bits > 0 && bits % 8 == 0 );
-	ASSERT( channels > 0 );
-	ASSERT( rate > 0 );
-	ASSERT( frames >= 0 );
+	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
 
-	JSObject *bufferObj = js::ArrayBuffer::create(cx, (bits/8) * channels * frames); // JS_NewArrayBuffer(cx, nbytes);
-	JL_CHK( bufferObj );
-	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, bits), bits) );
-	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, channels), channels) );
-	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, frames), frames) );
-	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, rate), rate) );
-	*rval = OBJECT_TO_JSVAL(bufferObj);
-	return JS_GetArrayBufferData(bufferObj);
+	jsval dataVal;
+	JSObject *audioObj = JL_NewObj(cx);
+	JL_CHK( audioObj );
+	*rval = OBJECT_TO_JSVAL(audioObj);
+	JSObject *dataObj = js::ArrayBuffer::create(cx, (bits/8) * channels * frames); // JS_NewArrayBuffer(cx, nbytes);
+	JL_CHK( dataObj );
+	dataVal = OBJECT_TO_JSVAL(dataObj);
+	JL_CHK( JS_SetPropertyById(cx, audioObj, JLID(cx, data), &dataVal) );
+	JL_CHK( JL_NativeToProperty(cx, audioObj, JLID(cx, bits), bits) );
+	JL_CHK( JL_NativeToProperty(cx, audioObj, JLID(cx, channels), channels) );
+	JL_CHK( JL_NativeToProperty(cx, audioObj, JLID(cx, frames), frames) );
+	JL_CHK( JL_NativeToProperty(cx, audioObj, JLID(cx, rate), rate) );
+	return JS_GetArrayBufferData(dataObj);
 bad:
 	return NULL;
 }
@@ -3275,21 +3311,24 @@ ALWAYS_INLINE JSBool FASTCALL
 JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, T bits, U channels, V frames, W rate, jsval *rval ) {
 	
 	ASSERT_IF( buffer == NULL, frames == 0 );
-	ASSERT( bits > 0 && (bits % 8) == 0 && rate > 0 && channels > 0 && frames >= 0 );
+	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
 	ASSERT_IF( buffer != NULL, jl_msize(buffer) >= (size_t)( (bits/8) * channels * frames ) );
-	// (TBD) handle ArrayBuffer ownership
-	JSObject *bufferObj = js::ArrayBuffer::create(cx, (bits/8) * channels * frames, buffer);
-	JL_CHK( bufferObj );
+
+	jsval dataVal;
+	JSObject *audioObj = JL_NewObj(cx);
+	JL_CHK( audioObj );
+	*rval = OBJECT_TO_JSVAL(audioObj);
+	JSObject *dataObj = js::ArrayBuffer::create(cx, (bits/8) * channels * frames, buffer); // (TBD) handle ArrayBuffer ownership
 	jl_free(buffer);
-	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, bits), bits) );
-	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, channels), channels) );
-	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, frames), frames) );
-	JL_CHK( JL_SetProperty(cx, bufferObj, JLID(cx, rate), rate) );
-	*rval = OBJECT_TO_JSVAL(bufferObj);
+	JL_CHK( dataObj );
+	dataVal = OBJECT_TO_JSVAL(dataObj);
+	JL_CHK( JS_SetPropertyById(cx, audioObj, JLID(cx, data), &dataVal) );
+	JL_CHK( JL_NativeToProperty(cx, audioObj, JLID(cx, bits), bits) );
+	JL_CHK( JL_NativeToProperty(cx, audioObj, JLID(cx, channels), channels) );
+	JL_CHK( JL_NativeToProperty(cx, audioObj, JLID(cx, frames), frames) );
+	JL_CHK( JL_NativeToProperty(cx, audioObj, JLID(cx, rate), rate) );
 	return JS_TRUE;
-bad:
-	jl_free(buffer);
-	return JS_FALSE;
+	JL_BAD;
 }
 
 template <class T, class U, class V,  class W>
@@ -3298,13 +3337,14 @@ JL_GetByteAudioObject( JSContext *cx, jsval &val, T *bits, U *channels, V *frame
 
 	JLData data;
 	JL_ASSERT_IS_OBJECT(val, "audio");
-	JSObject *bufferObj = JSVAL_TO_OBJECT(val);
-	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, bits), bits) );
-	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, channels), channels) );
-	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, frames), frames) );
-	JL_CHK( JL_GetProperty(cx, bufferObj, JLID(cx, rate), rate) );
-	JL_CHK( JL_JsvalToNative(cx, val, &data) );
 
+	JSObject *audioObj = JSVAL_TO_OBJECT(val);
+	JL_CHK( JL_PropertyToNative(cx, audioObj, JLID(cx, data), &data) );
+	JL_CHK( JL_PropertyToNative(cx, audioObj, JLID(cx, bits), bits) );
+	JL_CHK( JL_PropertyToNative(cx, audioObj, JLID(cx, channels), channels) );
+	JL_CHK( JL_PropertyToNative(cx, audioObj, JLID(cx, frames), frames) );
+	JL_CHK( JL_PropertyToNative(cx, audioObj, JLID(cx, rate), rate) );
+ 
 	JL_ASSERT( *bits > 0 && (*bits % 8) == 0 && *rate > 0 && *channels > 0 && *frames >= 0, E_STR("audio"), E_FORMAT );
 	JL_ASSERT( data.IsSet() && data.Length() == (size_t)( (*bits/8) * *channels * *frames ), E_DATASIZE, E_INVALID );
 	return data;

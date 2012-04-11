@@ -51,23 +51,20 @@ struct JLClassSpec {
 };
 
 
-// JL_StoreProperty is used to override a property definition (from the prototype to the obj).
+// JL_StoreProperty is used to override a property definition (from the prototype to the obj). see bug 526979
 // if removeGetterAndSetter is false, it is up to the caller to filter calls using: if ( *vp != JSVAL_VOID ) return JS_TRUE;
 // if removeGetterAndSetter is true, the value is stored for r/w getter or setter will never be called again.
-INLINE JSBool FASTCALL
+ALWAYS_INLINE JSBool FASTCALL
 JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool removeGetterAndSetter ) {
 
 	unsigned int attrs;
 	JSBool found;
 	JSPropertyOp getter;
 	JSStrictPropertyOp setter;
+
 	JL_CHK( JS_GetPropertyAttrsGetterAndSetterById(cx, obj, id, &attrs, &found, &getter, &setter) );
-	//JL_CHKM( found, E_PROP, E_NOTFOUND );
 	ASSERT( found );
-
-	// doc:
-	//   JSPROP_SHARED: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
-
+	// doc: JSPROP_SHARED: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 	if ( (attrs & JSPROP_SHARED) == 0 ) // Has already been stored somewhere. The slot will be updated after JSPropertyOp returns.
 		return JS_TRUE;
 	attrs &= ~JSPROP_SHARED; // stored mean not shared.
@@ -340,7 +337,7 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 #define FUNCTION_NARG(name) JS_FN( #name, _##name, _##name##_nargs, FUNCTION_DEFAULT_FLAGS ),
 
-#define FUNCTION_ALIAS(alias, name) JS_FN( #alias, _##name, 0, FUNCTION_DEFAULT_FLAGS ),
+//unused: #define FUNCTION_ALIAS(alias, name) JS_FN( #alias, _##name, 0, FUNCTION_DEFAULT_FLAGS ),
 
 // doc: JSPROP_SHARED - https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 #define PROPERTY(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
