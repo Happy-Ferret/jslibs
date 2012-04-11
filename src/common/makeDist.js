@@ -2,12 +2,13 @@ LoadModule('jsstd');
 LoadModule('jsio');
 
 
+
 function Zip(dir, destFilename) {
 
 	Print( 'zip '+dir+' to '+destFilename, '\n' );
 	// eXclude Recursively .svn directories
 	// eXclude .tpl files
-	var p = new Process('D:/Tools/mozilla-build/7zip/7z.exe', ['a', '-tzip', '-mx9', '-xr!*.tpl', '-xr!*.svn', destFilename, dir]);
+	var p = new Process('7z', ['a', '-tzip', '-mx9', '-xr!*.tpl', '-xr!*.svn', destFilename, dir]);
 	for ( let data; data = p.stdout.Read(); )
 		Print(data);
 	for ( let data; data = p.stderr.Read(); )
