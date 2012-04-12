@@ -406,7 +406,7 @@ DEFINE_PROPERTY_GETTER( list ) {
 	ipv.list = list;
 	ipv.listLen = 0;
 	iconvlist(do_one, &ipv);
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	return JL_StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
 	JL_BAD;
 }
 #endif // JL_NOT_HAS_ICONVLIST
@@ -414,16 +414,17 @@ DEFINE_PROPERTY_GETTER( list ) {
 
 DEFINE_PROPERTY_GETTER( version ) {
 
-	char versionStr[16];
+	char versionStr[16], tmp[JL_ITOA10_MAX_DIGITS];
 #ifdef _LIBICONV_VERSION
-	strcpy( versionStr, IntegerToString( _LIBICONV_VERSION >> 8, 10 ) );
+
+	strcpy( versionStr, JL_itoa10(_LIBICONV_VERSION >> 8, tmp) );
 	strcat( versionStr, ".");
-	strcat( versionStr, IntegerToString( _LIBICONV_VERSION & 0xFF, 10 ) );
+	strcat( versionStr, JL_itoa10(_LIBICONV_VERSION & 0xFF, tmp) );
 #else
 	strcpy( versionStr, "system");
 #endif
 	return JL_NativeToJsval(cx, versionStr, vp);
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	return JL_StoreProperty(cx, obj, id, vp, true);  // create and store store the value once for all.
 }
 
 

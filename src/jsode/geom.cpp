@@ -271,7 +271,8 @@ DEFINE_PROPERTY_SETTER( body ) {
 	ode::dBodyID bodyId;
 	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
 	ode::dGeomSetBody(geom, bodyId);
-	return JL_StoreProperty(cx, obj, id, vp, false);
+//	return JL_StoreProperty(cx, obj, id, vp, false);
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -281,7 +282,8 @@ DEFINE_PROPERTY_GETTER( body ) {
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	JL_CHK( BodyToJsval(cx, ode::dGeomGetBody(geomId), vp) );
-	return JL_StoreProperty(cx, obj, id, vp, false);
+//	return JL_StoreProperty(cx, obj, id, vp, false);
+	return JS_TRUE;
 	JL_BAD;
 }
 

@@ -284,25 +284,6 @@ DEFINE_PROPERTY_GETTER( source ) {
 }
 
 
-#ifdef DEBUG
-
-static int index = 0;
-
-DEFINE_PROPERTY_GETTER( test ) {
-
-	if ( *vp != JSVAL_VOID )
-		return JS_TRUE;
-	*vp = INT_TO_JSVAL(index);
-	index++;
-
-	JL_StoreProperty(cx, obj, id, vp, false);
-
-	return JS_TRUE;
-}
-
-#endif // DEBUG
-
-
 /**doc
 === note ===
  Basically, a Stream is nothing else that a buffer with a stream pointer position.
@@ -328,11 +309,6 @@ CONFIGURE_CLASS
 		PROPERTY(position)
 		PROPERTY_GETTER(available)
 		PROPERTY_GETTER(source)
-
-#ifdef DEBUG
-		PROPERTY_GETTER(test)
-#endif // DEBUG
-
 	END_PROPERTY_SPEC
 
 END_CLASS

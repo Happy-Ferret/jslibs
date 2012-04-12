@@ -276,7 +276,8 @@ DEFINE_PROPERTY_SETTER( body1 ) {
 	ode::dBodyID bodyId;
 	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
 	ode::dJointAttach(jointId, bodyId, ode::dJointGetBody(jointId, 1));
-	return JL_StoreProperty(cx, obj, id, vp, false);
+//	return JL_StoreProperty(cx, obj, id, vp, false);
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -291,7 +292,8 @@ DEFINE_PROPERTY_GETTER( body1 ) {
 		BodyToJsval(cx, bodyId, vp);
 	else
 		*vp = JSVAL_VOID;
-	return JL_StoreProperty(cx, obj, id, vp, false);
+//	return JL_StoreProperty(cx, obj, id, vp, false);
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -310,7 +312,8 @@ DEFINE_PROPERTY_SETTER( body2 ) {
 	ode::dBodyID bodyId;
 	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
 	ode::dJointAttach(jointId, ode::dJointGetBody(jointId, 0), bodyId);
-	return JL_StoreProperty(cx, obj, id, vp, false);
+//	return JL_StoreProperty(cx, obj, id, vp, false);
+	return JS_TRUE;
 	JL_BAD;
 }
 
@@ -325,7 +328,8 @@ DEFINE_PROPERTY_GETTER( body2 ) {
 		BodyToJsval(cx, bodyId, vp);
 	else
 		*vp = JSVAL_VOID;
-	return JL_StoreProperty(cx, obj, id, vp, false);
+//	return JL_StoreProperty(cx, obj, id, vp, false);
+	return JS_TRUE;
 	JL_BAD;
 }
 

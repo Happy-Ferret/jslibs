@@ -920,6 +920,76 @@ DEFINE_PROPERTY_GETTER( hostName ) {
 
 /**doc
 $TOC_MEMBER $INAME
+ $STR $INAME $READONLY
+  Is the architecture of the system (eg. x86).
+**/
+DEFINE_PROPERTY_GETTER( architecture ) {
+
+	JL_IGNORE( id, obj );
+	char tmp[SYS_INFO_BUFFER_LENGTH];
+	if ( PR_GetSystemInfo( PR_SI_ARCHITECTURE, tmp, sizeof(tmp) ) != PR_SUCCESS )
+		return ThrowIoError(cx);
+	JL_CHK( JL_NativeToJsval(cx, tmp, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
+  Is the name of the system (eg. Windows_NT).
+**/
+DEFINE_PROPERTY_GETTER( systemName ) {
+
+	JL_IGNORE( id, obj );
+	char tmp[SYS_INFO_BUFFER_LENGTH];
+	if ( PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) ) != PR_SUCCESS )
+		return ThrowIoError(cx);
+	JL_CHK( JL_NativeToJsval(cx, tmp, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME $READONLY
+  Is the release number of the system (eg. 2.6.22.18, 5.1, ...).
+**/
+DEFINE_PROPERTY_GETTER( systemRelease ) {
+
+	JL_IGNORE( id, obj );
+	char tmp[SYS_INFO_BUFFER_LENGTH];
+	if ( PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) ) != PR_SUCCESS )
+		return ThrowIoError(cx);
+	JL_CHK( JL_NativeToJsval(cx, tmp, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $STR $INAME
+  Is the number of processors (CPUs available in a symmetric multiprocessing system).
+**/
+DEFINE_PROPERTY_GETTER( numberOfProcessors ) {
+
+	JL_IGNORE( id, obj );
+	PRInt32 count = PR_GetNumberOfProcessors();
+	if ( count < 0 ) {
+
+		JL_WARN( E_FUNC, E_NOTIMPLEMENTED );
+		count = 1;
+	}
+	JL_CHK( JL_NativeToJsval(cx, count, vp) );
+	//	JL_CHK( JL_StoreProperty(cx, obj, id, vp, true) ); // may change ??
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
  $INT $INAME $READONLY
   Is the amount of physical RAM in the system in bytes.
 **/
@@ -928,53 +998,6 @@ DEFINE_PROPERTY_GETTER( physicalMemorySize ) {
 	JL_IGNORE( id, obj );
 	JL_CHK( JL_NativeToJsval(cx, (double)PR_GetPhysicalMemorySize(), vp) );
 	return JS_TRUE;
-	JL_BAD;
-}
-
-
-/**doc
-$TOC_MEMBER $INAME
- $OBJ $INAME $READONLY
-  Returns an object that contains the following properties:
-   * $STR *architecture*: x86, ...
-   * $STR *name*: Linux, Windows_NT, ...
-   * $STR *release*: 2.6.22.18, 5.1, ...
-  $H example
-  {{{
-  loadModule('jsstd');
-  loadModule('jsio');
-  print( systemInfo.toSource() );
-  }}}
-  prints:
-   * on coLinux: {{{ ({architecture:"x86", name:"Linux", release:"2.6.22.18-co-0.7.3"}) }}}
-   * on WinXP: {{{ ({architecture:"x86", name:"Windows_NT", release:"5.1"}) }}}
-**/
-DEFINE_PROPERTY_GETTER( systemInfo ) {
-
-	char tmp[SYS_INFO_BUFFER_LENGTH];
-
-	JSObject *info = JL_NewObj(cx);
-	JL_CHK( info );
-	*vp = OBJECT_TO_JSVAL( info );
-
-	PRStatus status;
-
-	status = PR_GetSystemInfo( PR_SI_ARCHITECTURE, tmp, sizeof(tmp) );
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
-	JL_CHK( JL_NativeToProperty(cx, info, "architecture", tmp) );
-
-	status = PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) );
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
-	JL_CHK( JL_NativeToProperty(cx, info, "name", tmp) );
-
-	status = PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) );
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
-	JL_CHK( JL_NativeToProperty(cx, info, "release", tmp) );
-
-	return JL_StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
 
@@ -1049,25 +1072,6 @@ DEFINE_PROPERTY_SETTER( processPriority ) {
 }
 
 
-/**doc
-$TOC_MEMBER $INAME
- $STR $INAME
-  Is the number of processors (CPUs available in a symmetric multiprocessing system).
-**/
-DEFINE_PROPERTY_GETTER( numberOfProcessors ) {
-
-	PRInt32 count = PR_GetNumberOfProcessors();
-	if ( count < 0 ) {
-
-		JL_WARN( E_FUNC, E_NOTIMPLEMENTED );
-		count = 1;
-	}
-	JL_CHK( JL_NativeToJsval(cx, count, vp) );
-	JL_CHK( JL_StoreProperty(cx, obj, id, vp, true) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1124,7 +1128,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( directorySeparator ) {
 
-	JL_CHK( JL_NativeToJsval(cx, PR_GetDirectorySeparator(), vp) );
+	char tmp = PR_GetDirectorySeparator();
+	JL_CHK( JL_NativeToJsval(cx, &tmp, 1, vp) );
 	JL_CHK( JL_StoreProperty(cx, obj, id, vp, true) );
 	return JS_TRUE;
 	JL_BAD;
@@ -1141,7 +1146,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( pathSeparator ) {
 
-	JL_CHK( JL_NativeToJsval(cx, PR_GetPathSeparator(), vp) );
+	char tmp = PR_GetPathSeparator();
+	JL_CHK( JL_NativeToJsval(cx, &tmp, 1, vp) );
 	JL_CHK( JL_StoreProperty(cx, obj, id, vp, true) );
 	return JS_TRUE;
 	JL_BAD;
@@ -1279,10 +1285,12 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_GETTER( hostName )
-		PROPERTY_GETTER( physicalMemorySize )
-		PROPERTY_GETTER( systemInfo )
-		PROPERTY( processPriority )
+		PROPERTY_GETTER( architecture )
+		PROPERTY_GETTER( systemName )
+		PROPERTY_GETTER( systemRelease )
 		PROPERTY_GETTER( numberOfProcessors )
+		PROPERTY_GETTER( physicalMemorySize )
+		PROPERTY( processPriority )
 		PROPERTY( currentDirectory )
 		PROPERTY_GETTER( directorySeparator )
 		PROPERTY_GETTER( pathSeparator )

@@ -605,7 +605,7 @@ DEFINE_PROPERTY_SETTER( gcZeal ) {
 	uint8_t zeal;
 	JL_CHKM( JL_JsvalToNative(cx, *vp, &zeal), E_VALUE, E_INVALID );
 	JS_SetGCZeal(cx, zeal, 1, JS_FALSE); // JS_DEFAULT_ZEAL_FREQ
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return JL_StoreProperty(cx, obj, id, vp, false); // make the value available for default getter
 
 #else // JS_GC_ZEAL
 

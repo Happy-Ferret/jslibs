@@ -100,8 +100,9 @@ DEFINE_FUNCTION( getParam ) {
 			char *separator = strchr( *ptr, '=' );
 			JL_ASSERT( separator != NULL, E_PARAM, E_INVALID );
 			*separator = '\0';
-			JSString *value = JS_NewStringCopyZ(cx, separator + 1);
-			JS_DefineProperty(cx, argsObj, *ptr, STRING_TO_JSVAL(value), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT);
+//			JSString *value = JS_NewStringCopyZ(cx, separator + 1);
+//			JS_DefineProperty(cx, argsObj, *ptr, STRING_TO_JSVAL(value), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT);
+			JL_CHK( JL_NativeToProperty(cx, argsObj, *ptr, separator + 1) );
 			*separator = '=';
 		}
 		*JL_RVAL = OBJECT_TO_JSVAL(argsObj);

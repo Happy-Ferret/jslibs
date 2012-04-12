@@ -515,7 +515,7 @@ DEFINE_PROPERTY_SETTER( size ) {
 		size = 0;
 
 	FTCHK( FT_Set_Pixel_Sizes(pv->face, size, size) );
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return JL_StoreProperty(cx, obj, id, vp, false); // storing the value allow one to use the default getter of the property.
 	JL_BAD;
 }
 
@@ -535,7 +535,7 @@ DEFINE_PROPERTY_SETTER( encoding ) {
 	unsigned int encoding;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &encoding) );
 	FTCHK( FT_Select_Charmap(pv->face, (FT_Encoding)encoding) );
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return JL_StoreProperty(cx, obj, id, vp, false); // storing the value allow one to use the default getter of the property.
 	JL_BAD;
 }
 

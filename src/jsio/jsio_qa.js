@@ -199,16 +199,9 @@ loadModule('jsdebug');
 
 /// system info [ftmr]
 
-		QA.ASSERT( typeof systemInfo, 'object', 'system info' );
-		var res = delete systemInfo.architecture;
-		QA.ASSERT( res, false, 'delete a property' );
-		var res = delete systemInfo.name;
-		QA.ASSERT( res, false, 'delete a property' );
-		var res = delete systemInfo.release;
-		QA.ASSERT( res, false, 'delete a property' );
-		QA.ASSERTOP( systemInfo, 'has', 'architecture' );
-		QA.ASSERTOP( systemInfo, 'has', 'name' );
-		QA.ASSERTOP( systemInfo, 'has', 'release' );
+		QA.ASSERTOP( global, 'has', 'architecture' );
+		QA.ASSERTOP( global, 'has', 'systemName' );
+		QA.ASSERTOP( global, 'has', 'systemRelease' );
 
 
 /// physical memory [ftrm]
@@ -265,6 +258,17 @@ loadModule('jsdebug');
 	QA.ASSERT_STR( res, currentDirectory );
 
 
+/// directorySeparator test
+
+	QA.ASSERT( directorySeparator.length,  1, 'directorySeparator length' );
+	QA.ASSERT( directorySeparator == '/' || directorySeparator == '\\', true, 'directorySeparator value' );
+
+
+/// pathSeparator test
+
+	QA.ASSERT( pathSeparator.length, 1, 'pathSeparator length' );
+
+
 /// Process current directory [ftrm]
 	
 	var process = new Process('jshost', ['-u', '-i', 'loadModule = host.loadModule; loadModule("jsio"); host.stdout(currentDirectory)'], '..');
@@ -283,7 +287,7 @@ loadModule('jsdebug');
 
 /// host name [ftm]
 
-	switch (systemInfo.name) {
+	switch (systemName) {
 		case 'Windows_NT':
 			
 			QA.ASSERT( getEnv('COMPUTERNAME').toLowerCase(), hostName.toLowerCase(), 'COMPUTERNAME and hostName' );
@@ -669,7 +673,7 @@ loadModule('jsdebug');
 
 /// create process read pipe [m]
 	
-		switch (systemInfo.name) {
+		switch (systemName) {
 			case 'Windows_NT':
 				var cmdPath = getEnv('ComSpec');
 				QA.ASSERT( cmdPath.indexOf('cmd') != -1, true, 'cmd.exe path' );
@@ -688,7 +692,7 @@ loadModule('jsdebug');
 /// create process wait for exitcode [m]
 
 	do {
-		switch ( systemInfo.name ) {
+		switch ( systemName ) {
 			case 'Windows_NT':
 				var cmd = getEnv('ComSpec');
 				var args1 = ['/c', 'cd fvasdfvasdfvasdfv'];
@@ -734,7 +738,7 @@ loadModule('jsdebug');
 /// create process detach [m]
 	
 	do {
-		switch ( systemInfo.name ) {
+		switch ( systemName ) {
 			case 'Windows_NT':
 				var cmd = getEnv('ComSpec');
 				var args = ['/c', 'cd'];
@@ -906,7 +910,7 @@ loadModule('jsdebug');
 	[
 	function pipe(data) {
 
-		switch ( systemInfo.name ) {
+		switch ( systemName ) {
 			case 'Windows_NT':
 				return new Process(getEnv('ComSpec'), ['/c', 'echo/|set /p ='+data]).stdout;
 			case 'Linux':

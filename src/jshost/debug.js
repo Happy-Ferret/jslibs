@@ -1,34 +1,25 @@
 var loadModule = host.loadModule;
-//RunJsircbot(false); throw 0;
-//loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
 
-//loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile();
+ //RunJsircbot(false); throw 0;
+ //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
+ //loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile();
+ 
+loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jslang'); throw 0; // -inlineOnly
-
-//loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
-
-//loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
+ //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
+ //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
 loadModule('jsstd');
 loadModule('jssound');
 
 
-var s = new Stream('123');
-print( s.test, '\n' );
-print( s.test, '\n' );
 
-print( uneval(Object.getOwnPropertyDescriptor(Stream.prototype, 'test')), '\n' );
-print( uneval(Object.getOwnPropertyDescriptor(Stream.prototype, 'test')), '\n' );
 
 
 throw 0;
 
+
 //jslangTest();
-
-
-
-
 
 	var data = new Uint32Array(10);
 	for ( var i = 0; i < 10; ++i )

@@ -950,6 +950,7 @@ JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and e
 //}
 
 
+/* unused
 INLINE bool FASTCALL
 fpipe( FILE **read, FILE **write ) {
 
@@ -983,6 +984,7 @@ fpipe( FILE **read, FILE **write ) {
 		return false;
 	return true;
 }
+*/
 
 
 #ifdef XP_UNIX
@@ -1151,11 +1153,12 @@ JL_atoi(const char *buf, int base) {
 }
 
 
-
+/* buggy: static buffer issue in multi-threaded
 INLINE NEVER_INLINE const char* FASTCALL
 IntegerToString(int32_t val, int base) {
 
 	bool neg;
+	jl_allocators_t
 	static char buf[34]; // sign + binary of max int32 + '\0' = 33 and 34 for uint32_t
 	buf[sizeof(buf)-1] = '\0';
 	if ( val < 0 ) {
@@ -1173,6 +1176,7 @@ IntegerToString(int32_t val, int base) {
 		buf[i--] = '-';
 	return &buf[i+1];
 }
+*/
 
 
 INLINE NEVER_INLINE char* FASTCALL
@@ -1319,18 +1323,22 @@ rdtsc() {
 	#error NOT IMPLEMENTED YET
 #endif
 
-
+/*
 #if defined(XP_WIN)
 INLINE DWORD
 GetCurrentProcessor(void) {
-
+#if defined(__i386__) || defined(__x86_64__)
 	_asm { mov eax, 1 }
 	_asm { cpuid }
 	_asm { shr ebx, 24 }
 	_asm { mov eax, ebx }
+#else
+	#error not implemented
+#endif
 }
 #else
 #endif
+*/
 
 
 // Accurate FPS Limiting / High-precision 'Sleeps': see. http://www.geisswerks.com/ryan/FAQS/timing.html

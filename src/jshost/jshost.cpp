@@ -521,7 +521,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), hostName) );
 
 	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), &arguments) );
-	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, arguments), arguments) );
+	JL_CHK( JS_SetPropertyById(cx, hostObj, JLID(cx, arguments), &arguments) );
 	JL_CHK( JS_DefineProperty(cx, hostObj, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) ); // https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 	JL_CHK( JS_DefineFunction(cx, hostObj, "endSignalEvents", EndSignalEvents, 1, 0) );
 

@@ -1,5 +1,11 @@
 loadModule('jssqlite');
 
+/// sqlite version [ftrm]
+
+	var db = new Database();
+	var r = db.exec('select sqlite_version()');
+	QA.ASSERTOP( r.length, '>=', 5, 'sqlite version length' );
+
 /// for each iteration over a Query result [ftrm]
 
 		var db = new Database(); // in-memory database

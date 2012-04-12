@@ -1,12 +1,13 @@
+var loadModule = host.loadModule;
 loadModule('jsstd');
 loadModule('jssqlite');
 
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssqlite -exclude jstask');
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssqlite');
 
 	loadModule('jsstd');
 	loadModule('jssqlite');
 	
-	var db = new Database();
+
 
 //	var res = db.exec('create table a (id integer primary key, x varchar)');
 

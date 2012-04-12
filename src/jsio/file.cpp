@@ -694,8 +694,9 @@ DEFINE_PROPERTY_GETTER( info ) {
 	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "size", fileInfo.size) );
 	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "creationTime", fileInfo.creationTime / (double)1000) );
 	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "modifyTime", fileInfo.modifyTime / (double)1000) );
-
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	
+//	return JL_StoreProperty(cx, obj, id, vp, false); // file info may change between dwo calls
+	return JS_TRUE;
 	JL_BAD;
 }
 

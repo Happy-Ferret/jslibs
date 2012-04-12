@@ -293,7 +293,7 @@ DEFINE_PROPERTY_GETTER( list ) {
 	LTC_MUTEX_UNLOCK(&ltc_prng_mutex);
 
 	*vp = OBJECT_TO_JSVAL(listObj);
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	return JL_StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
 }
 
 
