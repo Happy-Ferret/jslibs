@@ -1,11 +1,24 @@
 var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssound'); throw 0;
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssound -rep 2'); throw 0; // -inlineOnly
+
+
+throw 0;
+
 
 loadModule('jsstd');
 loadModule('jsio');
 loadModule('jssound');
+
+
+	loadModule('jsio');
+	var audioFileName = '.' + '/41_30secOgg-q0_a.wav';
+	var file = new File(audioFileName).open('r');
+	var decoder = new SoundFileDecoder( file );
+
+
+throw 0;
 
 
 var audioFileName = './41_30secOgg-q0.ogg';

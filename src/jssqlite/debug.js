@@ -1,17 +1,37 @@
 var loadModule = host.loadModule;
 loadModule('jsstd');
-loadModule('jssqlite');
+//loadModule('jssqlite');
 
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssqlite');
 
-	loadModule('jsstd');
-	loadModule('jssqlite');
-	
+
+	loadModule('jstask');
+	var myTaskFct = function() {
+
+		var loadModule = host.loadModule;
+		loadModule('jssqlite');
+		new Database().exec('123');
+	}
+	var myTask = new Task(myTaskFct);
+	myTask.request();
+
+	myTask.response();
 
 
-//	var res = db.exec('create table a (id integer primary key, x varchar)');
+throw 0;
 
 
+
+	loadModule('jstask');
+	var myTaskFct = function() {
+
+		var loadModule = host.loadModule;
+		loadModule('jssqlite');
+		new Database().exec('123');
+	}
+	var myTask = new Task(myTaskFct);
+	myTask.request();
+	myTask.response();
 
 throw 0;
 

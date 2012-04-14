@@ -23,7 +23,7 @@
 #define NO_MALLINFO 1
 #include "../../libs/nedmalloc/nedmalloc.h"
 
-volatile bool disabledFree = false;
+static volatile bool disabledFree = false;
 
 void nedfree_handlenull(void *mem) {
 	

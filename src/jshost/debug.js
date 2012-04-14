@@ -9,10 +9,6 @@ loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -in
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
-loadModule('jsstd');
-loadModule('jssound');
-
-
 
 
 

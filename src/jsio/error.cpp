@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include <jsvalserializer.h>
 
 
 /**doc fileIndex:bottom **/
@@ -192,7 +193,7 @@ DEFINE_FUNCTION( toString ) {
 	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
-/*
+
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -214,9 +215,8 @@ DEFINE_FUNCTION( _serialize ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-*/
 
-/*
+
 DEFINE_FUNCTION( _unserialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -238,7 +238,8 @@ DEFINE_FUNCTION( _unserialize ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-*/
+
+
 
 /**qa
 	QA.ASSERTOP( IoError, '!has', 'text' );
@@ -260,8 +261,8 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(toString)
-//		FUNCTION_ARGC(_serialize, 1)
-//		FUNCTION_ARGC(_unserialize, 1)
+		FUNCTION_ARGC(_serialize, 1)
+		FUNCTION_ARGC(_unserialize, 1)
 	END_FUNCTION_SPEC
 
 END_CLASS

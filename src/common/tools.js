@@ -421,6 +421,7 @@ function runQATests( argStr ) {
 	loadModule('jsio');
 	currentDirectory += '/../common';
 	host.arguments = Array.concat('qa.js', argStr.split(' '));
+	//host.arguments = Array.concat('qa.js', argStr.match(/\w+|"[^"]+"/g));
 	exec(host.arguments[0], false);
 }
 

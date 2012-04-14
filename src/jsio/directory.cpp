@@ -303,45 +303,63 @@ DEFINE_PROPERTY_GETTER( name ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $TYPE Array $INAME( dirName [, flags = Directory.SKIP_DOT] )
+ $TYPE Array $INAME( dirName [, flags = Directory.SKIP_DOT] [, showDirectoryChar] )
   Read all entries of a directory at once.
   $H arguments
    $ARG $STR dirName: is the path of the directory.
    $ARG $ENUM flags: specifies how special files are processed.
+   $ARG $BOOL showDirectoryChar: if true, the directory names are ended with the directory separator (directorySeparator).
   $H return value
    All entries in the directory _name_.
   $H note
    This function supports additional flags: Directory.`SKIP_FILE`, Directory.`SKIP_DIRECTORY`, Directory.`SKIP_OTHER`
-  $H example
+  $H example 1
   {{{
   loadModule('jsstd');
   loadModule('jsio');
   print( Directory.list('.').join('\n'), '\n' );
   }}}
+
+  $H example 2
+{{{
+loadModule('jsstd');
+loadModule('jsio');
+
+(function(path) {
+
+  for ( var name of Directory.list(path, Directory.SKIP_BOTH, true) ) {
+
+    if ( name.substr(-1) == directorySeparator )
+
+      arguments.callee(path+name);
+    else
+
+      print(path+name, '\n');
+  }
+})('.'+directorySeparator);
+}}}
 **/
 DEFINE_FUNCTION( list ) {
 
 	JLData directoryName;
 	PRDir *dd = NULL;
-	JL_ASSERT_ARGC_MIN( 1 );
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &directoryName, &directoryNameLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &directoryName) );
+	JL_ASSERT_ARGC_RANGE(1, 3);
 
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &directoryName) );
 	JL_ASSERT( directoryName.Length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
-	dd = PR_OpenDir(directoryName);
-	JL_CHKB( dd, bad_throw);
-
 	PRDirFlags flags;
-	if ( JL_ARG_ISDEF( 2 ) ) {
-
-		int32_t tmp;
-		JL_CHK( JS_ValueToInt32( cx, JL_ARG(2), &tmp ) );
-		flags = (PRDirFlags)tmp;
-	} else {
-	
+	S_ASSERT( sizeof(PRDirFlags) == sizeof(int) );
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), (int*)&flags) );
+	else
 		flags = PR_SKIP_DOT;
-	}
+
+	bool showDirectoryChar;
+	if ( JL_ARG_ISDEF(3) )
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &showDirectoryChar) );
+	else
+		showDirectoryChar = false;
 
 	JSObject *addrJsObj;
 	addrJsObj = JS_NewArrayObject(cx, 0, NULL);
@@ -351,63 +369,79 @@ DEFINE_FUNCTION( list ) {
 	char dirSepChar;
 	dirSepChar = PR_GetDirectorySeparator();
 
-	int index;
-	index = 0;
-	for (;;) {
+	char entryName[PATH_MAX];
+	int entryNameLength;
 
-		PRDirEntry *dirEntry = PR_ReadDir( dd, flags ); // & 0x0F
+	dd = PR_OpenDir(directoryName);
+	JL_CHKB( dd, bad_throw );
+
+	for ( unsigned int index = 0; ; ++index ) {
+
+		PRDirEntry *dirEntry = PR_ReadDir(dd, flags); // & 0x0F
 		if ( dirEntry == NULL ) {
 
-			if ( PR_GetError() == PR_NO_MORE_FILES_ERROR ) // reaching the end of the directory
+			if ( PR_GetError() == PR_NO_MORE_FILES_ERROR ) { // reaching the end of the directory
+				
+				// PR_SetError(0, 0); needed ?
 				break;
+			}
 			goto bad_throw; // or when an error occurs.
 		}
 
-		if ( flags & (_SKIP_FILE | _SKIP_DIRECTORY | _SKIP_OTHER) ) {
+		entryNameLength = strlen(dirEntry->name);
+		strcpy(entryName, dirEntry->name);
 
-			PRFileInfo fileInfo;
+		if ( showDirectoryChar || flags & (_SKIP_FILE | _SKIP_DIRECTORY | _SKIP_OTHER) ) {
 
+			// add dir separator if not present
 			char fileName[PATH_MAX];
 			char *tmp = fileName;
-
 			directoryName.CopyTo(tmp);
 			tmp += directoryName.Length();
 
 			char lastDirNameChar = directoryName.GetCharAt(directoryName.Length()-1);
-
-			if ( lastDirNameChar != '/' && lastDirNameChar != '\\' ) {
+			if ( lastDirNameChar != '/' && lastDirNameChar != dirSepChar ) {
 
 				*tmp = dirSepChar;
 				++tmp;
 			}
+			strcpy(tmp, entryName);
 
-			strcpy(tmp, dirEntry->name);
 
+			PRFileInfo fileInfo;
 			PRStatus status;
-			status = PR_GetFileInfo( fileName, &fileInfo );
+			status = PR_GetFileInfo(fileName, &fileInfo);
 			JL_CHKB( status == PR_SUCCESS, bad_throw );
 
-			if ( (!!(flags & _SKIP_FILE) && (fileInfo.type == PR_FILE_FILE))
-			  || (!!(flags & _SKIP_DIRECTORY) && (fileInfo.type == PR_FILE_DIRECTORY))
-			  || (!!(flags & _SKIP_OTHER) && (fileInfo.type == PR_FILE_OTHER)) ) {
-
+			if ( flags & _SKIP_FILE && fileInfo.type == PR_FILE_FILE )
 				continue;
+
+			if ( flags & _SKIP_DIRECTORY && fileInfo.type == PR_FILE_DIRECTORY )
+				continue;
+
+			if ( flags & _SKIP_OTHER && fileInfo.type == PR_FILE_OTHER )
+				continue;
+
+			if ( fileInfo.type == PR_FILE_DIRECTORY ) {
+				
+				entryName[entryNameLength] = dirSepChar;
+				entryName[++entryNameLength] = '\0';
 			}
 		}
 
-		JSString *jsStr = JS_NewStringCopyZ( cx, dirEntry->name );
-		JL_CHK( jsStr );
-		jsval tmp = STRING_TO_JSVAL(jsStr);
-		JL_CHK( JL_SetElement(cx, addrJsObj, index++, &tmp) );
+		jsval tmp;
+		JL_CHK( JL_NativeToJsval(cx, entryName, entryNameLength, &tmp) );
+		JL_CHK( JL_SetElement(cx, addrJsObj, index, &tmp) );
 	}
 
 	JL_CHKB( PR_CloseDir(dd) == PR_SUCCESS, bad_throw);
+
 	return JS_TRUE;
 
 bad_throw:
+	ThrowIoError(cx);
 	if (dd)
 		PR_CloseDir(dd);
-	ThrowIoError(cx);
 	JL_BAD;
 }
 
@@ -424,6 +458,30 @@ bad_throw:
  $CONST SKIP_HIDDEN
   Skip hidden files. On Windows platforms and the Mac OS, this value identifies files with the "hidden" attribute set. On Unix platform, this value identifies files whose names begin with a period (".").
 **/
+
+
+/*
+static JSBool getListNext(JSContext *cx, unsigned argc, jsval *vp) {
+
+	return JS_TRUE;
+}
+
+DEFINE_FUNCTION( getList ) {
+
+	JL_IGNORE( argc );
+
+	JSObject *iterator = JL_NewObj(cx);
+	JS_DefineFunctionById(cx, iterator, JLID(cx, next), getListNext, 0, 0); // JSPROP_PERMANENT | JSPROP_READONLY
+	JL_NativeToProperty(cx, iterator, 
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+JSObject *jl::CreateIterator(JSContext *cx, JSNative call, void *private) {
+}
+*/
+
 
 CONFIGURE_CLASS
 

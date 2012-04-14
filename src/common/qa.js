@@ -162,25 +162,21 @@ function QAAPI(cx) {
 
 
 function recursiveDir(path, callback) {
-	
+
+	var list = [];
 	(function(path) {
 
-		var dir = new Directory(path);
-		dir.open();
-		for ( var entry; ( entry = dir.read(Directory.SKIP_BOTH) ); ) {
+		for ( var name of Directory.list(path, Directory.SKIP_BOTH + Directory.SKIP_HIDDEN, true) ) {
 
-			var file = new File(dir.name+'/'+entry);
-			switch ( file.info.type ) {
-				case File.FILE_DIRECTORY:
-					arguments.callee(file.name);
-					break;
-				case File.FILE_FILE:
-					callback(file);
-					break;
-			}
+			if ( name.substr(-1) == directorySeparator )
+				arguments.callee(path+name);
+			else
+				list.push(path+name);
 		}
-		dir.close();
-	})(path);
+	})(path+directorySeparator);
+	
+	for ( var name of list )
+		callback(name);
 }
 
 function regexec(regexp) regexp.exec.bind(regexp);
@@ -200,9 +196,11 @@ function addQaItemListFromSource(itemList, startDir, files) {
     }
 
 	var newItemList = [];
-	recursiveDir( startDir, function(file) {
+	recursiveDir( startDir, function(fullFileName) {
 	
-		if ( !hidden(file.name) && srcFile(file.name) ) {
+		if ( !hidden(fullFileName) && srcFile(fullFileName) ) {
+		
+			var file = new File(fullFileName);
 
 			print('.');
 
@@ -219,9 +217,9 @@ function addQaItemListFromSource(itemList, startDir, files) {
 					item.followingSourceTextEnd = startPos;
 
 				var item = {};
-				item.path = file.name.substr(0, file.name.lastIndexOf('/'));
-				item.lastDir = item.path.substr(item.path.lastIndexOf('/')+1);
-				item.fileName = file.name.substr(file.name.lastIndexOf('/')+1);
+				item.path = file.name.substr(0, file.name.lastIndexOf(directorySeparator));
+				item.lastDir = item.path.substr(item.path.lastIndexOf(directorySeparator)+1);
+				item.fileName = file.name.substr(file.name.lastIndexOf(directorySeparator)+1);
 				item.source = source;
 				item.followingSourceTextStart = qaExpr.lastIndex;
 				item.followingSourceTextEnd = source.length;
@@ -251,9 +249,11 @@ function addQaItemList(itemList, startDir, files) {
 	var index = 0;
 	var newItemList = [];
 
-	recursiveDir( startDir, function(file) {
+	recursiveDir( startDir, function(fullFileName) {
 	
-		if ( !hidden(file.name) && qaFile(file.name) ) {
+		if ( !hidden(fullFileName) && qaFile(fullFileName) ) {
+
+			var file = new File(fullFileName);
 
 			print('.');
 
@@ -264,7 +264,7 @@ function addQaItemList(itemList, startDir, files) {
 			
 			var item = { // initialization item
 				name: '[INIT]',
-				path: file.name.substr(0, file.name.lastIndexOf('/')),
+				path: file.name.substr(0, file.name.lastIndexOf(directorySeparator)),
 				file: file.name,
 				line: 1,
 				flags: '',
@@ -280,7 +280,7 @@ function addQaItemList(itemList, startDir, files) {
 					newItemList.push(item);
 					item = {
 						name: res[1],
-						path: file.name.substr(0, file.name.lastIndexOf('/')),
+						path: file.name.substr(0, file.name.lastIndexOf(directorySeparator)),
 						file: file.name,
 						line: Number(l)+1,
 						flags: parseFlags(res[1]),
@@ -509,7 +509,6 @@ function launchTests(itemList, cfg) {
 ////////////////////////////////////////////////////////////////////////////////
 // perf tests
 
-
 function perfTest(itemList, cfg) {
 
 	var i;
@@ -666,7 +665,6 @@ function perfTest(itemList, cfg) {
 ////////////////////////////////////////////////////////////////////////////////
 // Main
 
-
 function main() {
 
 	var cfg = { // default configuration
@@ -674,7 +672,7 @@ function main() {
 		repeatEachTest:1,
 		gcZeal:0, 
 		loopForever:false, 
-		directory:'..', 
+		directory:'..'+directorySeparator, 
 		files:'_qa\\.js$', 
 		inlineOnly:false,
 		priority:0, 

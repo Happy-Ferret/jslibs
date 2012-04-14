@@ -1294,7 +1294,7 @@ CONFIGURE_STATIC
 		PROPERTY( currentDirectory )
 		PROPERTY_GETTER( directorySeparator )
 		PROPERTY_GETTER( pathSeparator )
-		PROPERTY_GETTER( version )
+//		PROPERTY_GETTER( version )
 	END_STATIC_PROPERTY_SPEC
 
 END_STATIC

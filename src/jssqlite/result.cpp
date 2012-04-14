@@ -382,7 +382,7 @@ JSBool DoStep(JSContext *cx, JSObject *obj, jsval *rval) {
 			// doc. means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE.
 			//      Or it could be the case that a database connection is being used by a different thread than the one it was created it.
 			// doc. If an interface fails with SQLITE_MISUSE, that means the interface was invoked incorrectly by the application. In that case, the error code and message may or may not be set.
-			JL_CHK( SqliteThrowErrorStatus(cx, db, status) );
+			JL_CHK( SqliteThrowError(cx, db) );
 //		case SQLITE_ERROR:
 //		case SQLITE_SCHEMA: // (TBD) check for another error (doc. The database schema changed)
 //			JL_CHK( SqliteThrowError(cx, db) );

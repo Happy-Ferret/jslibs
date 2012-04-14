@@ -253,6 +253,21 @@ loadModule('jsstd');
 	QA.ASSERTOP( o1.y, '===', 456, 'unserialized object properties value' );
 
 
+/// function Serialization
+
+	var s = new Serializer();
+	s.write(function(){});
+	s.done();
+
+
+/// function Serialization / Unserialization
+
+	var s = new Serializer();
+	s.write(function(){});
+	var s = new Unserializer(s.done());
+	s.read();
+
+
 /// Serialization / Unserialization of custom class
 
 	function JsClass() {

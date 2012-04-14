@@ -55,7 +55,7 @@ DEFINE_FUNCTION( write ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
-	*JL_RVAL = JSVAL_VOID;
+	*JL_RVAL = OBJECT_TO_JSVAL(JL_OBJ);
 	jl::Serializer *ser;
 	ser = static_cast<jl::Serializer*>(JL_GetPrivate(JL_OBJ));
 	JL_ASSERT_THIS_OBJECT_STATE(ser);

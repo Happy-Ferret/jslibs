@@ -1,6 +1,71 @@
 loadModule('jstask');
 loadModule('jsio');
 
+/// missing exception test
+
+	var myTaskFct = function() {
+
+		new (host.loadModule('jssqlite').Database)().exec('123');;
+	}
+	var myTask = new Task(myTaskFct);
+	myTask.request();
+	QA.ASSERTOP( function() { myTask.response() }, 'ex', ReferenceError );
+
+
+/// exception test
+
+	loadModule('jstask');
+	var myTaskFct = function() {
+
+		var loadModule = host.loadModule;
+		loadModule('jsio');
+		new File();
+	}
+	var myTask = new Task(myTaskFct);
+	myTask.request();
+	QA.ASSERTOP( function() { myTask.response() }, 'ex', RangeError );
+
+
+/// memory leak 4
+
+	var myTaskFct = function() {
+		new (host.loadModule('jssqlite').Database)().exec('123');
+	}
+	var myTask = new Task(myTaskFct);
+	myTask.request();
+	myTask.response();
+
+
+/// memory leak 3
+
+	var myTaskFct = function() {
+
+		new (host.loadModule('jssqlite').Database);
+	}
+	
+	var myTask = new Task(myTaskFct);
+	myTask.request();
+	myTask.response();
+
+
+/// memory leak 2
+
+	var myTaskFct = function() {
+
+		host.loadModule('jsstd');
+	}
+	
+	var myTask = new Task(myTaskFct);
+	myTask.request();
+	myTask.response();
+
+
+/// memory leak 1
+
+	var t = new Task(function(){});
+	t.request();
+
+
 /// crash when exception in the task function [rmt]
 
 	var t = new Task(function(test){

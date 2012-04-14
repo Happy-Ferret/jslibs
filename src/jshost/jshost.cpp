@@ -35,7 +35,7 @@
 #include "../jslang/handlePub.h"
 
 
-volatile bool disabledFree = false;
+static volatile bool disabledFree = false;
 
 
 #ifdef USE_NEDMALLOC
@@ -68,22 +68,19 @@ static unsigned char embeddedBootstrapScript[] =
 		} \
 	JL_MACRO_END
 
-volatile int gEndSignalState = 0;
-JLCondHandler gEndSignalCond;
-JLMutexHandler gEndSignalLock;
 
+static volatile int32_t gEndSignalState = 0;
+static JLCondHandler gEndSignalCond;
+static JLMutexHandler gEndSignalLock;
 
-JSBool EndSignalGetter(JSContext *cx, JSObject *obj, jsid id, jsval *vp) {
+JSBool EndSignalGetter(JSContext *, JSObject *, jsid, jsval *vp) {
 
-	JL_IGNORE(cx, obj, id);
 	//return JL_NativeToJsval(cx, (int)gEndSignalState, vp);
 	*vp = INT_TO_JSVAL(gEndSignalState);
 	return JS_TRUE;
 }
 
-JSBool EndSignalSetter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp) {
-
-	JL_IGNORE(obj, id, strict);
+JSBool EndSignalSetter(JSContext *cx, JSObject *, jsid, JSBool, jsval *vp) {
 
 	int tmp;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tmp) );
@@ -159,9 +156,8 @@ bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
 
-	JL_IGNORE(obj);
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	*hasEvent = gEndSignalState != 0;
@@ -205,25 +201,22 @@ static int stdin_fileno = -1;
 static int stdout_fileno = -1;
 static int stderr_fileno = -1;
 
-int HostStdin( void *privateData, char *buffer, size_t bufferLength ) {
+int HostStdin( void *, char *buffer, size_t bufferLength ) {
 
-	JL_IGNORE(privateData);
 	if (unlikely( stdin_fileno == -1 ))
 		stdin_fileno = fileno(stdin);
 	return read(stdin_fileno, (void*)buffer, bufferLength);
 }
 
-int HostStdout( void *privateData, const char *buffer, size_t length ) {
+int HostStdout( void *, const char *buffer, size_t length ) {
 
-	JL_IGNORE(privateData);
 	if (unlikely( stdout_fileno == -1 ))
 		stdout_fileno = fileno(stdout);
 	return write(stdout_fileno, buffer, length);
 }
 
-int HostStderr( void *privateData, const char *buffer, size_t length ) {
+int HostStderr( void *, const char *buffer, size_t length ) {
 
-	JL_IGNORE(privateData);
 	if (unlikely( stderr_fileno == -1 ))
 		stderr_fileno = fileno(stderr);
 	return write(stderr_fileno, buffer, length);
@@ -239,7 +232,7 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 
 
 // Helps to detect memory leaks (alloc/free balance)
-//#define DBG_ALLOC 1
+#define DBG_ALLOC 1
 
 
 #ifdef DBG_ALLOC
@@ -248,20 +241,20 @@ static volatile int allocCount = 0;
 static volatile int freeCount = 0;
 
 EXTERN_C void* jl_malloc_count( size_t size ) {
-	++allocCount;
+	JLAtomicIncrement(&allocCount);
 	return malloc(size);
 }
 EXTERN_C void* jl_calloc_count( size_t num, size_t size ) {
-	++allocCount;
+	JLAtomicIncrement(&allocCount);
 	return calloc(num, size);
 }
 EXTERN_C void* jl_memalign_count( size_t alignment, size_t size ) {
-	++allocCount;
+	JLAtomicIncrement(&allocCount);
 	return memalign(alignment, size);
 }
 EXTERN_C void* jl_realloc_count( void *ptr, size_t size ) {
 	if ( !ptr )
-		++allocCount;
+		JLAtomicIncrement(&allocCount);
 	return realloc(ptr, size);
 }
 EXTERN_C size_t jl_msize_count( void *ptr ) {
@@ -269,7 +262,7 @@ EXTERN_C size_t jl_msize_count( void *ptr ) {
 }
 EXTERN_C void jl_free_count( void *ptr ) {
 	if ( ptr )
-		++freeCount;
+		JLAtomicIncrement(&freeCount);
 	free(ptr);
 }
 
@@ -628,7 +621,7 @@ bad:
 #ifdef DBG_ALLOC
 struct DBG_ALLOC_dummyClass {
 	~DBG_ALLOC_dummyClass() { // we must count at exit, see "dynamic atexit destructor"
-		fprintf(stderr, "alloc:%d  free:%d (diff:%d)\n", allocCount, freeCount, allocCount - freeCount);
+		fprintf(stderr, "\nalloc:%d  free:%d (diff:%d)\n", allocCount, freeCount, allocCount - freeCount);
 	}
 } DBG_ALLOC_dummy;
 #endif // DBG_ALLOC

@@ -33,12 +33,18 @@ typedef struct SerializedData {
 ALWAYS_INLINE void SerializerCreate( SerializedData **ser ) {
 
 	*ser = (SerializedData*)jl_malloc(sizeof(SerializedData));
+	(*ser)->data = NULL;
 	(*ser)->length = 0;
 }
 
 ALWAYS_INLINE void SerializerFree( SerializedData **ser ) {
 
-	jl_free(*ser);
+	if ( *ser ) {
+	
+		if ( (*ser)->data )
+			jl_free((*ser)->data);
+		jl_free(*ser);
+	}
 	*ser = NULL;
 }
 
@@ -47,20 +53,14 @@ ALWAYS_INLINE JSBool SerializeJsval( JSContext *cx, SerializedData *ser, jsval *
 	jl::Serializer serializer(JSVAL_VOID);
 	JL_CHK( serializer.Write(cx, *val) );
 	JL_CHK( serializer.GetBufferOwnership(&ser->data, &ser->length) );
-
-	// (TBD) big strange crash when we return JS_FALSE here.
-	// stacktrace:
-	// 	ntdll.dll!7c90100b()
-	// 	[Frames below may be incorrect and/or missing, no symbols loaded for ntdll.dll]
-	//	>	jstask.dll!JLMutexAcquire(__JSMUtexHandler * mutex=0x7c840c5b)  Line 1733 + 0xc bytes	C++
-	//	 	ffffffff()
 	return JS_TRUE;
 	JL_BAD;
 }
 
-ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, const SerializedData *ser, jsval *rval ) {
+ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, SerializedData *ser, jsval *rval ) {
 
 	jl::Unserializer unserializer(JSVAL_VOID, ser->data, ser->length);
+	ser->data = NULL;
 	JL_CHK( unserializer.Read(cx, *rval) );
 	return JS_TRUE;
 	JL_BAD;
@@ -136,44 +136,14 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( Task )
 
 
-DEFINE_FINALIZE() {
+int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
 
-	JL_IGNORE( cx );
-
-	TaskPrivate *pv = (TaskPrivate*)JL_GetPrivate(obj);
-	if ( !pv )
-		return;
-
-	JLMutexAcquire(pv->mutex); // --
-	pv->end = true;
-	JLMutexRelease(pv->mutex); // ++
-
-	JLSemaphoreRelease(pv->requestSem); // +1 // unlock the thread an let it manage the "end"
-
-	JLThreadWait(pv->threadHandle, NULL); // wait for the end of the thread
-	JLThreadFree(&pv->threadHandle);
-
-	JLSemaphoreFree(&pv->requestSem);
-	JLSemaphoreFree(&pv->responseSem);
-	JLEventFree(&pv->responseEvent);
-
-	JLMutexFree(&pv->mutex);
-
-	while ( !QueueIsEmpty(&pv->requestList) ) {
-
-		SerializedData * ser = (SerializedData *)QueueShift(&pv->requestList);
-		SerializerFree(&ser);
-	}
-
-	delete pv;
-	return;
-
-bad:
-	delete pv;
-	// (TBD) report a warning.
-	return;
+	Buf<char> *errBuffer = (Buf<char>*)privateData;
+	errBuffer->Reserve(length);
+	jl_memcpy(errBuffer->Ptr(), buffer, length);
+	errBuffer->Advance(length);
+	return 0;
 }
-
 
 JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 
@@ -208,7 +178,7 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 			break;
 		}
 
-		SerializedData * serializedRequest = (SerializedData *)QueueShift(&pv->requestList);
+		SerializedData * serializedRequest = (SerializedData*)QueueShift(&pv->requestList);
 		pv->pendingRequestCount--;
 		pv->processingRequestCount++; // = 1;
 		JLMutexRelease(pv->mutex); // ++
@@ -270,16 +240,6 @@ bad:
 }
 
 
-int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
-
-	Buf<char> *errBuffer = (Buf<char>*)privateData;
-	errBuffer->Reserve(length);
-	jl_memcpy(errBuffer->Ptr(), buffer, length);
-	errBuffer->Advance(length);
-	return 0;
-}
-
-
 JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 
 	TaskPrivate *pv = NULL;
@@ -330,7 +290,14 @@ JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 
 		SerializedData * serializedException;
 		SerializerCreate(&serializedException);
-		JL_CHK( SerializeJsval(cx, serializedException, &ex) );
+
+		if ( !SerializeJsval(cx, serializedException, &ex) ) {
+
+			ASSERT(false);
+// (TBD) ??
+			JLSemaphoreRelease(pv->responseSem); // +1
+			goto bad;
+		}
 
 		JLMutexAcquire(pv->mutex); // --
 		pv->end = true;
@@ -340,7 +307,8 @@ JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 		JLSemaphoreRelease(pv->responseSem); // +1
 	}
 
-bad:
+
+bad: // and good
 
 	// These queues must be destroyed before cx because SerializedData * *ser hold a reference to the context that created the value.
 	JLMutexAcquire(pv->mutex); // --
@@ -357,7 +325,7 @@ bad:
 	JLMutexRelease(pv->mutex); // ++
 
 	if ( cx )
-		DestroyHost(cx, true);
+		DestroyHost(cx, false); // no skip cleanup, else memory leaks.
 	JLThreadExit(0);
 	return 0;
 }
@@ -431,12 +399,50 @@ DEFINE_CONSTRUCTOR() {
 	pv->threadHandle = JLThreadStart(TaskThreadProc, pv);
 	JL_CHKM( JLThreadOk(pv->threadHandle), E_THISOBJ, E_CREATE ); // "Unable to create the thread."
 	return JS_TRUE;
+
 bad:
 	delete pv;
 	return JS_FALSE;
 }
 
 
+DEFINE_FINALIZE() {
+
+	JL_IGNORE( cx );
+
+	TaskPrivate *pv = (TaskPrivate*)JL_GetPrivate(obj);
+	if ( !pv )
+		return;
+
+	JLMutexAcquire(pv->mutex); // --
+	pv->end = true;
+	JLMutexRelease(pv->mutex); // ++
+
+	JLSemaphoreRelease(pv->requestSem); // +1 // unlock the thread an let it manage the "end"
+
+	JLThreadWait(pv->threadHandle, NULL); // wait for the end of the thread
+	JLThreadFree(&pv->threadHandle);
+
+	JLSemaphoreFree(&pv->requestSem);
+	JLSemaphoreFree(&pv->responseSem);
+	JLEventFree(&pv->responseEvent);
+
+	JLMutexFree(&pv->mutex);
+
+	while ( !QueueIsEmpty(&pv->requestList) ) {
+
+		SerializedData * ser = (SerializedData *)QueueShift(&pv->requestList);
+		SerializerFree(&ser);
+	}
+
+	delete pv;
+	return;
+
+bad:
+	delete pv;
+	// (TBD) report a warning.
+	return;
+}
 
 /**doc
 $TOC_MEMBER $INAME
@@ -454,9 +460,10 @@ DEFINE_FUNCTION( request ) {
 
 	SerializedData * serializedRequest;
 	SerializerCreate(&serializedRequest);
-	if ( JL_ARG_ISDEF(1) )
+	if ( JL_ARG_ISDEF(1) ) {
+
 		JL_CHK( SerializeJsval(cx, serializedRequest, &JL_ARG(1)) ); // leak ???
-	else {
+	} else {
 		jsval arg = JSVAL_VOID;
 		JL_CHK( SerializeJsval(cx, serializedRequest, &arg) );
 	}

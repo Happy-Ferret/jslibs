@@ -255,3 +255,4 @@ loadModule('jssound');
 	QA.ASSERT( right.channels, 1, 'channels' );
 	QA.ASSERT( right.rate, 44100, 'rate' );
 	QA.ASSERT( right.frames, 1000, 'frames' );
+

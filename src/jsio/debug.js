@@ -10,6 +10,23 @@ loadModule('jsio');
 loadModule('jsdebug');
 
 
+	(function(path) {
+		
+		for ( var name of Directory.list(path, Directory.SKIP_BOTH, true) ) {
+
+			if ( name.substr(-1) == directorySeparator )
+				arguments.callee(path+name);
+			else
+				print(path+name, '\n');
+		}
+	})('.'+directorySeparator);
+
+
+
+
+throw 0;
+
+
 print( directorySeparator );
 throw 0;
 
@@ -22,7 +39,7 @@ function createSocketPair() {
 	return [cl, sv];
 }
 
-var [c, s] = createSocketPair();	
+var [c, s] = createSocketPair();
 
 s.write('123');
 s.close();

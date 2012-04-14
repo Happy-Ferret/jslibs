@@ -1,10 +1,39 @@
 loadModule('jssqlite');
 
+/// crash [ftrm]
+
+	try {
+		
+		new Database().exec('123');
+		
+	} catch(ex) {
+
+		var s = new Serializer();
+		var u = new Unserializer( s.write(ex).done() );
+		u.read();
+	}
+
+
+/// crash / deadlock [ftrm]
+
+	loadModule('jstask');
+	var myTaskFct = function() {
+
+		var loadModule = host.loadModule;
+		loadModule('jssqlite');
+		new Database().exec('123');
+	}
+	var myTask = new Task(myTaskFct);
+	myTask.request();
+	myTask.response();
+
+
 /// sqlite version [ftrm]
 
 	var db = new Database();
 	var r = db.exec('select sqlite_version()');
 	QA.ASSERTOP( r.length, '>=', 5, 'sqlite version length' );
+
 
 /// for each iteration over a Query result [ftrm]
 

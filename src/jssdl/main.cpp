@@ -209,7 +209,7 @@ void JLSwapBuffers(bool async) {
 }
 
 
-int SwapBuffersThread( void *unused ) {
+int SwapBuffersThread( void * ) {
 
 	HGLRC hglrc = NULL; // SwapBuffersThread must have its own opengl context else SwapBuffers(GL_hdc); (in WIN_GL_SwapBuffers) will crash !
 
@@ -278,7 +278,7 @@ int EventFilter( const SDL_Event *e ) {
 }
 
 
-int VideoThread( void *unused ) {
+int VideoThread( void * ) {
 
 	int status;
 	status = SDL_InitSubSystem(SDL_INIT_VIDEO); // (TBD) SDL_INIT_EVENTTHREAD on Linux ?

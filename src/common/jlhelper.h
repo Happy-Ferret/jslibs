@@ -275,9 +275,8 @@ JL_SetElement(JSContext *cx, JSObject *obj, unsigned index, jsval *vp) {
 
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_GetReservedSlot( JSContext *cx, JSObject *obj, uint32_t slot, jsval *vp ) {
+JL_GetReservedSlot( JSContext *, JSObject *obj, uint32_t slot, jsval *vp ) {
 
-	JL_IGNORE(cx);
 	ASSERT( slot < JSCLASS_RESERVED_SLOTS(JL_GetClass(obj)) );
 	ASSERT( JS_IsNative(obj) );
 	*vp = js::GetReservedSlot(obj, slot); // jsfriendapi
@@ -285,9 +284,8 @@ JL_GetReservedSlot( JSContext *cx, JSObject *obj, uint32_t slot, jsval *vp ) {
 }
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_SetReservedSlot(JSContext *cx, JSObject *obj, unsigned slot, const jsval &v) {
+JL_SetReservedSlot(JSContext *, JSObject *obj, unsigned slot, const jsval &v) {
 
-	JL_IGNORE(cx);
 	ASSERT( JS_IsNative(obj) );
 	js::SetReservedSlot(obj, slot, v); // jsfriendapi
 	return JS_TRUE;
@@ -700,7 +698,11 @@ JL_GetCachedClassProto( const HostPrivate * const hpv, const char * const classN
 		
 		// slot->clasp == NULL -> empty
 		// slot->clasp == jlpv::RemovedSlot() -> slot removed, but maybe next slot will match !
-		if ( slot->clasp == NULL || ( slot->clasp != (JSClass*)jlpv::RemovedSlot() && ( slot->clasp->name == className || strcmp(slot->clasp->name, className) == 0 ) ) ) // see "Enable String Pooling"
+
+		if ( slot->clasp == NULL ) // not found
+			return NULL;
+
+		if ( slot->clasp != (JSClass*)jlpv::RemovedSlot() && ( slot->clasp->name == className || !strcmp(slot->clasp->name, className) ) ) // see "Enable String Pooling"
 			return slot;
 
 		slotIndex = (slotIndex + 1) % COUNTOF(hpv->classProtoCache);
@@ -761,6 +763,8 @@ JL_NewObjectWithGivenProtoKey( JSContext *cx, JSProtoKey protoKey, JSObject *par
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, JSObject *proto, JSObject *parent ) {
 
+	ASSERT( JL_GetParent(cx, proto) != NULL );
+//	ASSERT( parent != NULL );
 	// Doc. JS_NewObject, JL_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
 	JSObject *obj = JS_NewObjectWithGivenProto(cx, clasp, proto, parent);  // (TBD) test if parent is ok (see bug 688510)
 	ASSERT( JL_GetParent(cx, obj) != NULL );

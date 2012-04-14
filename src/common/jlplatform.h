@@ -1153,31 +1153,6 @@ JL_atoi(const char *buf, int base) {
 }
 
 
-/* buggy: static buffer issue in multi-threaded
-INLINE NEVER_INLINE const char* FASTCALL
-IntegerToString(int32_t val, int base) {
-
-	bool neg;
-	jl_allocators_t
-	static char buf[34]; // sign + binary of max int32 + '\0' = 33 and 34 for uint32_t
-	buf[sizeof(buf)-1] = '\0';
-	if ( val < 0 ) {
-
-		val = -val;
-		neg = true;
-	} else {
-
-		neg = false;
-	}
-	int i = sizeof(buf)-1;
-	for(; val && i ; --i, val /= base)
-		buf[i] = "0123456789abcdefghijklmnopqrstuvwxyz"[val % base];
-	if ( neg )
-		buf[i--] = '-';
-	return &buf[i+1];
-}
-*/
-
 
 INLINE NEVER_INLINE char* FASTCALL
 JL_itoa(long val, char *buf, int base) {
@@ -1760,6 +1735,24 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 #pragma warning( pop )
 #endif // _MSC_VER
 
+
+template <typename T>
+static inline bool
+jl_Compare(T *a, T *b, size_t c) {
+	size_t n = (c + size_t(7)) / size_t(8);
+	switch (c % 8) {
+		case 0: do { if (*a++ != *b++) return false;
+		case 7:      if (*a++ != *b++) return false;
+		case 6:      if (*a++ != *b++) return false;
+		case 5:      if (*a++ != *b++) return false;
+		case 4:      if (*a++ != *b++) return false;
+		case 3:      if (*a++ != *b++) return false;
+		case 2:      if (*a++ != *b++) return false;
+		case 1:      if (*a++ != *b++) return false;
+		        } while (--n > 0);
+	}
+	return true;
+}
 
 
 template <class T>

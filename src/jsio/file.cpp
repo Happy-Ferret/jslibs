@@ -84,12 +84,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_ASSERT_ARGC_MIN(1);
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_JSIO_FILE_NAME, JL_ARG(1)) );
-	JL_SetPrivate(cx, obj, NULL); // (TBD) optional ?
+	ASSERT( JL_GetPrivate(obj) == NULL ); // JL_SetPrivate(cx, obj, NULL); // (TBD) optional ?
 	JL_CHK( ReserveStreamReadInterface(cx, obj) );
 	return JS_TRUE;
 	JL_BAD;
@@ -660,6 +660,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( info ) {
 
+	JL_IGNORE( id );
+
 	PRFileInfo fileInfo;
 	PRStatus status;
 
@@ -870,7 +872,7 @@ CONFIGURE_CLASS
 // PR_Open flags
 		CONST_INTEGER( RDONLY      ,PR_RDONLY )
 		CONST_INTEGER( WRONLY      ,PR_WRONLY )
-		CONST_INTEGER( RDWR			,PR_RDWR )
+		CONST_INTEGER( RDWR        ,PR_RDWR )
 		CONST_INTEGER( CREATE_FILE ,PR_CREATE_FILE )
 		CONST_INTEGER( APPEND      ,PR_APPEND )
 		CONST_INTEGER( TRUNCATE    ,PR_TRUNCATE )

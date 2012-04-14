@@ -14,6 +14,7 @@
 
 #include "stdafx.h"
 #include "error.h"
+#include <jsvalserializer.h>
 
 
 /**doc
@@ -90,7 +91,7 @@ DEFINE_FUNCTION( toString ) {
 	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
-/*
+
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -135,7 +136,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-*/
+
 
 
 CONFIGURE_CLASS
@@ -153,8 +154,8 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(toString)
-//		FUNCTION_ARGC(_serialize, 1)
-//		FUNCTION_ARGC(_unserialize, 1)
+		FUNCTION_ARGC(_serialize, 1)
+		FUNCTION_ARGC(_unserialize, 1)
 	END_FUNCTION_SPEC
 
 END_CLASS

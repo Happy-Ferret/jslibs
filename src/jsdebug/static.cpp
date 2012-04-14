@@ -624,7 +624,7 @@ DEFINE_FUNCTION( disableJIT ) {
 
 	JL_IGNORE( argc );
 
-	JS_SetOptions(cx, JS_GetOptions(cx) & ~(/*JSOPTION_JIT|*/JSOPTION_METHODJIT));
+	JS_SetOptions(cx, JS_GetOptions(cx) & ~(/*JSOPTION_JIT|*/JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE));
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;

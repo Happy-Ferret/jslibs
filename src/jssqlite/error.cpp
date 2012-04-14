@@ -14,6 +14,7 @@
 
 #include "stdafx.h"
 #include "error.h"
+#include <jsvalserializer.h>
 
 /**doc fileIndex:bottom
 $CLASS_HEADER
@@ -107,7 +108,7 @@ DEFINE_FUNCTION( toString ) {
 }
 
 
-/*
+
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -152,7 +153,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	return JS_TRUE;
 	JL_BAD;
 }
-*/
+
 
 CONFIGURE_CLASS
 
@@ -169,15 +170,15 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(toString)
-//		FUNCTION_ARGC(_serialize, 1)
-//		FUNCTION_ARGC(_unserialize, 1)
+		FUNCTION_ARGC(_serialize, 1)
+		FUNCTION_ARGC(_unserialize, 1)
 	END_FUNCTION_SPEC
 
 END_CLASS
 
 
 NEVER_INLINE JSBool FASTCALL
-SqliteThrowErrorStatus( JSContext *cx, sqlite3 *db, int status ) {
+SqliteThrowErrorStatus( JSContext *cx, int status ) {
 
 	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_CLASS_PROTOTYPE(cx, SqliteError), NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
