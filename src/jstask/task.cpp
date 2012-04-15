@@ -150,8 +150,9 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 	jsval argv[3] = { JSVAL_NULL }; // argv[0] is rval and code
 
 	// no need to mutex this because this and the constructor are the only places that access pv->serializedCode.
-	JL_CHK( UnserializeJsval(cx, pv->serializedCode, &argv[0]) );
+	JSBool ok = UnserializeJsval(cx, pv->serializedCode, &argv[0]);
 	SerializerFree(&pv->serializedCode);
+	JL_CHK( ok );
 
 	JSFunction *fun;
 	fun = JS_ValueToFunction(cx, argv[0]);
@@ -183,8 +184,9 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 		pv->processingRequestCount++; // = 1;
 		JLMutexRelease(pv->mutex); // ++
 
-		JL_CHK( UnserializeJsval(cx, serializedRequest, &argv[1]) );
+		JSBool ok = UnserializeJsval(cx, serializedRequest, &argv[1]);
 		SerializerFree(&serializedRequest);
+		JL_CHK( ok );
 		argv[2] = INT_TO_JSVAL(index++);
 
 		JSBool status = JS_CallFunction(cx, globalObj, fun, COUNTOF(argv)-1, argv+1, argv);
@@ -541,14 +543,16 @@ DEFINE_FUNCTION( response ) {
 		SerializedData * serializedException = (SerializedData *)QueueShift(&pv->exceptionList);
 		JLMutexRelease(pv->mutex); // ++
 		jsval exception;
-		JL_CHK( UnserializeJsval(cx, serializedException, &exception) ); // (TBD) throw a TaskException ?
-		JS_SetPendingException(cx, exception);
+		JSBool ok = UnserializeJsval(cx, serializedException, &exception);
 		SerializerFree(&serializedException);
+		JL_CHK( ok ); // (TBD) throw a TaskException ?
+		JS_SetPendingException(cx, exception);
 		return JS_FALSE;
 	} else {
 
-		JL_CHK( UnserializeJsval(cx, serializedResponse, JL_RVAL) );
+		JSBool ok = UnserializeJsval(cx, serializedResponse, JL_RVAL);
 		SerializerFree(&serializedResponse);
+		JL_CHK( ok );
 	}
 	JLMutexRelease(pv->mutex); // ++
 
