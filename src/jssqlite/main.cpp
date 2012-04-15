@@ -80,6 +80,9 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 		JL_CHKM( SqliteThrowErrorStatus(cx, status) );
 */
 
+	
+//	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MULTITHREAD) == SQLITE_OK, E_MODULE, E_INIT ); // doc: If SQLite is compiled with the SQLITE_THREADSAFE=0 compile-time option then it is not possible to set the Multi-thread threading mode and sqlite3_config() will return SQLITE_ERROR if called with the SQLITE_CONFIG_MULTITHREAD configuration option.
+
 	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0) == SQLITE_OK, E_MODULE, E_INIT ); // "Unable to disable memory stats."
 	JL_CHKM( sqlite3_config(SQLITE_CONFIG_MALLOC, &mem) == SQLITE_OK, E_MODULE, E_INIT ); // "Unable to initialize memory manager."
 	JL_CHKM( sqlite3_enable_shared_cache(true) == SQLITE_OK, E_MODULE, E_INIT ); // "Unable to enable shared cache."

@@ -170,7 +170,7 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JSObject *parentProto;
 	if ( cs->parentProtoName != NULL ) {
 
-		parentProto = JL_GetCachedClassProto(hpv, cs->parentProtoName)->proto;
+		parentProto = JL_GetCachedProto(hpv, cs->parentProtoName);
 		JL_CHKM( parentProto != NULL, E_STR(cs->parentProtoName), E_STR("prototype"), E_NOTFOUND );
 	} else {
 
@@ -220,8 +220,8 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	if ( cs->init )
 		JL_CHK( cs->init(cx, cs, proto, ctor) );
 
-	ASSERT( JL_GetCachedClassProto(hpv, cs->clasp.name)->clasp == &cs->clasp );
-	ASSERT( JL_GetCachedClassProto(hpv, cs->clasp.name)->proto == proto );
+	ASSERT( JL_GetCachedClass(hpv, cs->clasp.name) == &cs->clasp );
+	ASSERT( JL_GetCachedProto(hpv, cs->clasp.name) == proto );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -296,8 +296,8 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 #define JL_THIS_CLASS_REVISION (classSpec->revision)
 
-#define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (JL_GetCachedClassProto(JL_GetHostPrivate(cx), CLASSNAME::className)->proto)
-#define JL_THIS_CLASS_PROTOTYPE (JL_GetCachedClassProto(JL_GetHostPrivate(cx), className)->proto)
+#define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (JL_GetCachedProto(JL_GetHostPrivate(cx), CLASSNAME::className))
+#define JL_THIS_CLASS_PROTOTYPE (JL_GetCachedProto(JL_GetHostPrivate(cx), className))
 
 #define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.
 

@@ -132,7 +132,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC_RANGE( 2, 3 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *fontObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-	JL_ASSERT_INSTANCE( fontObj, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Font")->clasp );
+
+	JL_ASSERT_INSTANCE( fontObj, JL_GetCachedClass(JL_GetHostPrivate(cx), "Font") );
 
 	FT_Face ftface = GetJsfontPrivate(cx, fontObj)->face;
 	JL_ASSERT_OBJECT_STATE( ftface, JL_GetClassName(fontObj) );

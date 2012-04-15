@@ -5,7 +5,8 @@ loadModule('jsio');
 
 	var myTaskFct = function() {
 
-		new (host.loadModule('jssqlite').Database)().exec('123');;
+		//new (host.loadModule('jssqlite').Database)().exec('123');
+		xxx += 1;
 	}
 	var myTask = new Task(myTaskFct);
 	myTask.request();

@@ -35,7 +35,7 @@ ALWAYS_INLINE JSClass* JL_TrimeshJSClass( JSContext *cx ) {
 
 	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	if (unlikely( clasp == NULL ))
-		clasp = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Trimesh")->clasp;
+		clasp = JL_GetCachedClass(JL_GetHostPrivate(cx), "Trimesh");
 	return clasp;
 }
 

@@ -6,17 +6,14 @@ loadModule('jsstd');
 
 
 	loadModule('jstask');
-	var myTaskFct = function() {
-
-		var loadModule = host.loadModule;
-		loadModule('jssqlite');
-		new Database().exec('123');
-	}
-	var myTask = new Task(myTaskFct);
+	host.loadModule('jssqlite');
+	var myTask = new Task(function() {
+		new (host.loadModule('jssqlite').Database)().exec('123')
+	});
 	myTask.request();
-
 	myTask.response();
-
+	
+	
 
 throw 0;
 

@@ -713,6 +713,21 @@ JL_GetCachedClassProto( const HostPrivate * const hpv, const char * const classN
 }
 
 
+ALWAYS_INLINE JSClass * FASTCALL
+JL_GetCachedClass( const HostPrivate * const hpv, const char * const className ) {
+	
+	const ClassProtoCache *cpc = JL_GetCachedClassProto(hpv, className);
+	return cpc ? cpc->clasp : NULL;
+}
+
+ALWAYS_INLINE JSObject * FASTCALL
+JL_GetCachedProto( const HostPrivate * const hpv, const char * const className ) {
+	
+	const ClassProtoCache *cpc = JL_GetCachedClassProto(hpv, className);
+	return cpc ? cpc->proto : NULL;
+}
+
+
 ALWAYS_INLINE void FASTCALL
 JL_RemoveCachedClassProto( HostPrivate * const hpv, const char *const className ) {
 
@@ -763,8 +778,7 @@ JL_NewObjectWithGivenProtoKey( JSContext *cx, JSProtoKey protoKey, JSObject *par
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, JSObject *proto, JSObject *parent ) {
 
-	ASSERT( JL_GetParent(cx, proto) != NULL );
-//	ASSERT( parent != NULL );
+	ASSERT_IF( proto != NULL, JL_GetParent(cx, proto) != NULL );
 	// Doc. JS_NewObject, JL_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
 	JSObject *obj = JS_NewObjectWithGivenProto(cx, clasp, proto, parent);  // (TBD) test if parent is ok (see bug 688510)
 	ASSERT( JL_GetParent(cx, obj) != NULL );
@@ -796,8 +810,9 @@ ALWAYS_INLINE JSObject* FASTCALL
 JL_NewJslibsObject( JSContext *cx, const char *className ) {
 
 	const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
-	ASSERT( cpc );
-	return JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
+	if ( cpc != NULL )
+		return JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
+	return NULL;
 }
 
 

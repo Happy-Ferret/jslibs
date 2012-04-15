@@ -95,6 +95,7 @@ namespace jl {
 		}
 	};
 
+	//
 
 	class Serializer : public CppJlAllocators {
 
@@ -905,7 +906,7 @@ namespace jl {
 	ALWAYS_INLINE bool
 	JsvalIsSerializer( JSContext *cx, jsval &val ) {
 
-		return JL_ValueIsClass(val, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Serializer")->clasp);
+		return JL_ValueIsClass(val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Serializer"));
 	}
 
 	ALWAYS_INLINE Serializer*
@@ -919,7 +920,7 @@ namespace jl {
 	ALWAYS_INLINE bool
 	JsvalIsUnserializer( JSContext *cx, jsval &val ) {
 
-		return JL_ValueIsClass(val, JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Unserializer")->clasp);
+		return JL_ValueIsClass(val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Unserializer"));
 	}
 
 	ALWAYS_INLINE Unserializer*
