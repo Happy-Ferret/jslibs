@@ -95,7 +95,8 @@ namespace jl {
 		}
 	};
 
-	//
+
+	/////////////////////////////////////////////////////////////////////////////
 
 	class Serializer : public CppJlAllocators {
 
@@ -119,7 +120,6 @@ namespace jl {
 			return true;
 		}
 
-		Serializer();
 		Serializer( const Serializer & );
 
 	public:
@@ -130,11 +130,12 @@ namespace jl {
 				jl_free(_start); // jl_free(NULL) is legal, but this is an optimization, since usually one use GetBufferOwnership() that set _start to NULL
 		}
 
-		Serializer( jsval serializerObj )
+		explicit Serializer( jsval serializerObj = JSVAL_NULL )
 		: _serializerObj(serializerObj), _start(NULL), _pos(NULL), _length(0) {
 
 			PrepareBytes(JL_PAGESIZE / 2);
 		}
+
 
 		JSBool GetBufferOwnership( void **data, size_t *length ) {
 
@@ -399,11 +400,11 @@ namespace jl {
 
 				JSObject *serializerWrapper;
 
-				if ( JSVAL_IS_VOID(_serializerObj) ) {
+				if ( JSVAL_IS_NULL(_serializerObj) ) {
 
-// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
+					// create a temporary wrapper to this serializer c++ object.
 
-					// create a tomporary wrapper to this serializer c++ object.
+					// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 					serializerWrapper = JL_NewJslibsObject(cx, "Serializer");
 					JL_CHK( serializerWrapper );
 					JL_SetPrivate(cx, serializerWrapper, this);
@@ -416,7 +417,7 @@ namespace jl {
 				JSBool ok;
 				ok = JS_CallFunctionValue(cx, obj, serializeFctVal, COUNTOF(argv)-1, argv+1, argv); // rval not used
 				
-				if ( JSVAL_IS_VOID(_serializerObj) ) {
+				if ( JSVAL_IS_NULL(_serializerObj) ) {
 
 					JL_SetPrivate(cx, serializerWrapper, NULL);
 				}
@@ -503,7 +504,7 @@ namespace jl {
 	};
 
 
-//////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////
 
 
 	class Unserializer : public CppJlAllocators {
@@ -519,7 +520,6 @@ namespace jl {
 			return (_pos - _start) + length <= _length;
 		}
 
-		Unserializer();
 		Unserializer( const Unserializer & );
 
 	public:
@@ -529,8 +529,15 @@ namespace jl {
 			jl_free(_start);
 		}
 		
-		Unserializer( jsval unserializerObj, void *dataOwnership, size_t length )
+		explicit Unserializer( void *dataOwnership, size_t length, jsval unserializerObj = JSVAL_NULL )
 		: _unserializerObj(unserializerObj), _start((uint8_t*)dataOwnership), _pos(_start), _length(length) {
+
+		}
+
+		bool IsEmpty() const {
+			
+			ASSERT( _pos >= _start );
+			return  size_t(_pos - _start) < _length;
 		}
 
 		JSBool Read( JSContext *cx, const char *&buf ) {
@@ -724,16 +731,13 @@ namespace jl {
 					newObj = JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
 					JL_CHK( newObj );
 
-
-// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
-
-
  					jsval argv[2];
 					argv[0] = JSVAL_NULL;
 
 					JSObject *unserializerWrapper;
-					if ( JSVAL_IS_VOID( _unserializerObj ) ) {
+					if ( JSVAL_IS_NULL( _unserializerObj ) ) {
 
+						// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 						unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
 						JL_CHK( unserializerWrapper );
 						JL_SetPrivate(cx, unserializerWrapper, this);
@@ -744,7 +748,7 @@ namespace jl {
 					}
 
 					JSBool ok = JL_CallFunctionId(cx, newObj, JLID(cx, _unserialize), COUNTOF(argv)-1, argv+1, argv); // rval not used
-					if ( JSVAL_IS_VOID( _unserializerObj ) )
+					if ( JSVAL_IS_NULL( _unserializerObj ) )
 						JL_SetPrivate(cx, unserializerWrapper, NULL);
 					JL_CHK( ok );
 
@@ -752,39 +756,17 @@ namespace jl {
 					break;
 				}
 				case JLSTSerializableScriptObject: {
-/*
-					SerializerConstBufferInfo buf;
-					JL_CHK( Read(cx, buf) );
 
-					JSObject *scope;
-					scope = JS_GetScopeChain(cx);
-
-					jsval constructorVal;
-					JL_CHK( JS_GetUCProperty(cx, scope, (const jschar*)buf.Data(), buf.Length()/2, &constructorVal) );
-					//JL_CHK( JS_LookupUCProperty(cx, scope, (const jschar*)buf.Data(), buf.Length()/2, &constructorVal) );
-
-					JL_CHKM( !JSVAL_IS_VOID(constructorVal), "Constructor not found." );
-					JSObject *newObj;
-					newObj = JS_New(cx, JSVAL_TO_OBJECT(constructorVal), 0, NULL);
-					JL_CHK( newObj );
-
- 					jsval argv[] = { JSVAL_NULL, _unserializerObj };
-
-					JL_CHK( JL_CallFunctionId(cx, newObj, JLID(cx, _unserialize), COUNTOF(argv)-1, argv+1, argv) );
-					val = OBJECT_TO_JSVAL(newObj);
-*/
 					jsval funVal;
 					JL_CHK( Read(cx, funVal) );
-
-//					JSObject *parent = JL_GetParent(cx, JSVAL_TO_OBJECT(_unserializerObj));
-//					JL_CHK( JS_SetParent(cx, JSVAL_TO_OBJECT(fun), parent) );
 					JL_ASSERT( JL_ValueIsCallable(cx, funVal), E_STR("unserializer"), E_STATE ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
 
 
 					jsval arg_1;
 					JSObject *unserializerWrapper;
-					if ( JSVAL_IS_VOID( _unserializerObj ) ) {
+					if ( JSVAL_IS_NULL( _unserializerObj ) ) {
 
+						// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 						unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
 						JL_CHK( unserializerWrapper );
 						JL_SetPrivate(cx, unserializerWrapper, this);
@@ -795,7 +777,7 @@ namespace jl {
 					}
 
 					JSBool ok = JL_CallFunctionVA(cx, JL_GetGlobal(cx), funVal, &val, arg_1);
-					if ( JSVAL_IS_VOID( _unserializerObj ) )
+					if ( JSVAL_IS_NULL( _unserializerObj ) )
 						JL_SetPrivate(cx, unserializerWrapper, NULL);
 					JL_CHK( ok );
 

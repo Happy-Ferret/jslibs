@@ -19,6 +19,9 @@
 #include "../host/host.h"
 #include "../jslang/handlePub.h"
 
+#include <jsvalserializer.h>
+
+
 #include <errno.h>
 
 using namespace jl;
@@ -50,7 +53,7 @@ ALWAYS_INLINE void SerializerFree( SerializedData **ser ) {
 
 ALWAYS_INLINE JSBool SerializeJsval( JSContext *cx, SerializedData *ser, jsval *val ) {
 
-	jl::Serializer serializer(JSVAL_VOID);
+	jl::Serializer serializer;
 	JL_CHK( serializer.Write(cx, *val) );
 	JL_CHK( serializer.GetBufferOwnership(&ser->data, &ser->length) );
 	return JS_TRUE;
@@ -59,16 +62,11 @@ ALWAYS_INLINE JSBool SerializeJsval( JSContext *cx, SerializedData *ser, jsval *
 
 ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, SerializedData *ser, jsval *rval ) {
 
-	jl::Unserializer unserializer(JSVAL_VOID, ser->data, ser->length);
+	jl::Unserializer unserializer(ser->data, ser->length);
 	ser->data = NULL;
 	JL_CHK( unserializer.Read(cx, *rval) );
 	return JS_TRUE;
 	JL_BAD;
-}
-
-ALWAYS_INLINE bool IsSerializable( jsval ) {
-
-	return true;
 }
 
 ALWAYS_INLINE bool SerializerIsEmpty( const SerializedData *ser ) {
@@ -138,7 +136,7 @@ BEGIN_CLASS( Task )
 
 int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
 
-	Buf<char> *errBuffer = (Buf<char>*)privateData;
+	Buf<char> *errBuffer = static_cast<Buf<char>*>(privateData);
 	errBuffer->Reserve(length);
 	jl_memcpy(errBuffer->Ptr(), buffer, length);
 	errBuffer->Advance(length);
@@ -147,23 +145,28 @@ int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length )
 
 JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 
+	JSBool ok;
 	jsval argv[3] = { JSVAL_NULL }; // argv[0] is rval and code
 
+	JSObject *globalObj;
+	globalObj = JL_GetGlobal(cx);
+	ASSERT( globalObj );
+
 	// no need to mutex this because this and the constructor are the only places that access pv->serializedCode.
-	JSBool ok = UnserializeJsval(cx, pv->serializedCode, &argv[0]);
+	ok = UnserializeJsval(cx, pv->serializedCode, &argv[0]);
 	SerializerFree(&pv->serializedCode);
 	JL_CHK( ok );
 
 	JSFunction *fun;
 	fun = JS_ValueToFunction(cx, argv[0]);
+	JL_CHK( fun );
+/*
 	JSObject *funObj;
 	funObj = JS_GetFunctionObject(fun);
-	JSObject *globalObj;
-	globalObj = JL_GetGlobal(cx);
-	ASSERT( funObj != NULL );
-
+	ASSERT( funObj );
 	// JL_CHK( JS_SetParent(cx, funObj, globalObj) ); // re-scope the function
 	ASSERT( JS_GetParent(funObj) );
+*/
 
 	size_t index;
 	index = 0;
@@ -179,35 +182,45 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 			break;
 		}
 
-		SerializedData * serializedRequest = (SerializedData*)QueueShift(&pv->requestList);
+		SerializedData *serializedRequest;
+		serializedRequest = (SerializedData*)QueueShift(&pv->requestList);
 		pv->pendingRequestCount--;
 		pv->processingRequestCount++; // = 1;
 		JLMutexRelease(pv->mutex); // ++
 
-		JSBool ok = UnserializeJsval(cx, serializedRequest, &argv[1]);
+		ASSERT( serializedRequest );
+		ok = UnserializeJsval(cx, serializedRequest, &argv[1]);
 		SerializerFree(&serializedRequest);
 		JL_CHK( ok );
+
 		argv[2] = INT_TO_JSVAL(index++);
 
-		JSBool status = JS_CallFunction(cx, globalObj, fun, COUNTOF(argv)-1, argv+1, argv);
+		ok = JS_CallFunction(cx, globalObj, fun, COUNTOF(argv)-1, argv+1, argv);
+		if ( ok ) {
 
-		if ( !status ) {
+			SerializedData *serializedResponse;
+			SerializerCreate(&serializedResponse);
+			JL_CHK( SerializeJsval(cx, serializedResponse, &argv[0]) );
+
+			JLMutexAcquire(pv->mutex); // --
+			QueuePush(&pv->responseList, serializedResponse);
+			pv->pendingResponseCount++;
+			pv->processingRequestCount--;
+			JLMutexRelease(pv->mutex); // ++
+		} else {
 
 			jsval ex;
 			if ( JL_IsExceptionPending(cx) ) { // manageable error
 
-				JL_CHK( JS_GetPendingException(cx, &ex) );
-				if ( !IsSerializable(ex) ) {
-
-					JSString *jsstr = JS_ValueToString(cx, ex); // transform the exception into a string
-					ex = STRING_TO_JSVAL(jsstr);
-				}
+				ok = JS_GetPendingException(cx, &ex);
+				JS_ClearPendingException(cx);
+				JL_CHK( ok );
 			} else {
 
 				ex = JSVAL_VOID; // unknown exception
 			}
 
-			SerializedData * serializedException;
+			SerializedData *serializedException;
 			SerializerCreate(&serializedException);
 			JL_CHK( SerializeJsval(cx, serializedException, &ex) );
 
@@ -217,35 +230,22 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 			pv->pendingResponseCount++;
 			pv->processingRequestCount--;
 			JLMutexRelease(pv->mutex); // ++
-
-			JS_ClearPendingException(cx);
-		} else {
-
-			SerializedData * serializedResponse;
-			SerializerCreate(&serializedResponse);
-			JL_CHK( SerializeJsval(cx, serializedResponse, &argv[0]) ); // (TBD) need a better exception management
-
-			JLMutexAcquire(pv->mutex); // --
-			QueuePush(&pv->responseList, serializedResponse);
-			pv->pendingResponseCount++;
-			pv->processingRequestCount = 0;
-			JLMutexRelease(pv->mutex); // ++
 		}
+
+		ASSERT( pv->processingRequestCount == 0 );
 
 		JLSemaphoreRelease(pv->responseSem); // +1 // signals a response
 		JLEventTrigger(pv->responseEvent);
 	}
 
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
 
 
 JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 
 	TaskPrivate *pv = NULL;
-
 	Buf<char> errBuffer;
 
 	JSContext *cx = CreateHost((uint32_t)-1, (uint32_t)-1, 0);
@@ -268,26 +268,21 @@ JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 
 	pv = (TaskPrivate*)threadArg;
 
-	JSBool status;
-	status = TheTask(cx, pv);
-	if ( status != JS_TRUE ) { // fatal errors
+	JSBool ok;
+	
+	ok = TheTask(cx, pv);
+	
+	if ( !ok ) { // handle fatal error
 
 		jsval ex;
 		if ( JL_IsExceptionPending(cx) ) {
 
-			JL_CHK( JS_GetPendingException(cx, &ex) );
-
-			if ( !IsSerializable(ex) ) {
-
-				JSString *jsstr = JS_ValueToString(cx, ex); // transform the exception into a string
-				ex = STRING_TO_JSVAL(jsstr);
-			}
+			ok = JS_GetPendingException(cx, &ex);
+			JS_ClearPendingException(cx);
+			JL_CHK( ok );
 		} else {
 
-			//JL_CHK( StringAndLengthToJsval(cx, &ex, BufferGetData(&errBuffer), BufferGetLength(&errBuffer)) );
 			JL_CHK( JL_NativeToJsval(cx, errBuffer.GetData(), errBuffer.Length(), &ex) );
-
-			//ex = JSVAL_VOID; // unknown exception
 		}
 
 		SerializedData * serializedException;
@@ -295,22 +290,22 @@ JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 
 		if ( !SerializeJsval(cx, serializedException, &ex) ) {
 
-			ASSERT(false);
-// (TBD) ??
+ASSERT( false );
+
 			JLSemaphoreRelease(pv->responseSem); // +1
-			goto bad;
+			JL_ERR( E_JSLIBS, E_STR("serializer"), E_INTERNAL );
 		}
 
 		JLMutexAcquire(pv->mutex); // --
 		pv->end = true;
 		QueuePush(&pv->exceptionList, serializedException);
 		JLMutexRelease(pv->mutex); // ++
-
+		
 		JLSemaphoreRelease(pv->responseSem); // +1
 	}
 
-
-bad: // and good
+good:
+bad:
 
 	// These queues must be destroyed before cx because SerializedData * *ser hold a reference to the context that created the value.
 	JLMutexAcquire(pv->mutex); // --

@@ -9,10 +9,33 @@ loadModule('jsio');
 
 
 
+var t = new Task(function(test) {
+
+	return {
+		_serialize: function(serializer) {
+
+			serializer.write(123);
+		},
+		_unserialize: function(unserializer) {
+			
+			return { a:unserializer.read() };
+		}
+	};
+
+});
+
+
+t.request('test');
+
+processEvents(t.events(), host.endSignalEvents());
+
+print( uneval(t.response()) );
+
+
 throw 0;
 
 
-var t = new Task(function(test){
+var t = new Task(function(test) {
 
 	wer();
 });

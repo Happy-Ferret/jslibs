@@ -1,6 +1,28 @@
 loadModule('jstask');
 loadModule('jsio');
 
+
+/// object un/serialization
+
+	var t = new Task(function(test) {
+
+		return {
+			_serialize: function(serializer) {
+
+				serializer.write(123);
+			},
+			_unserialize: function(unserializer) {
+				
+				return { a:unserializer.read() };
+			}
+		};
+	});
+
+	t.request('test');
+	processEvents(t.events(), host.endSignalEvents());
+	QA.ASSERTOP( uneval(t.response()), '==', '({a:123})', ReferenceError );
+
+
 /// missing exception test
 
 	var myTaskFct = function() {
@@ -93,7 +115,7 @@ loadModule('jsio');
 
 /// crash about serializer cleanup [rmt]
 
-	var t = new Task(function(){
+	var t = new Task(function() {
 		
 		var loadModule = host.loadModule;
 		loadModule('jsstd');

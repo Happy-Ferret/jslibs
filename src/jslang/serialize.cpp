@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include <jsvalserializer.h>
 
 /**doc
 $CLASS_HEADER
@@ -132,7 +133,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARG_IS_STRING(1);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	jl::Unserializer *unser;
-	unser = new jl::Unserializer(OBJECT_TO_JSVAL(JL_OBJ), str.GetStrZOwnership(), str.Length());
+	unser = new jl::Unserializer(str.GetStrZOwnership(), str.Length(), OBJECT_TO_JSVAL(JL_OBJ));
 	JL_ASSERT_ALLOC(unser);
 	JL_SetPrivate(cx, JL_OBJ, unser);
 	JLRevisionType rev;
@@ -155,8 +156,26 @@ DEFINE_FUNCTION( read ) {
 	jl::Unserializer *unser;
 	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(JL_OBJ));
 	JL_ASSERT_THIS_OBJECT_STATE(unser);
-//	JL_CHKM( unser->Read(cx, *JL_RVAL), E_MODULE, E_INTERNAL ); // "Unserializer read error."
-	return unser->Read(cx, *JL_RVAL);
+	JL_CHKM( unser->Read(cx, *JL_RVAL), E_MODULE, E_INTERNAL ); // "Unserializer read error."
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME $READONLY
+**/
+DEFINE_PROPERTY_GETTER( eof ) {
+	
+	JL_IGNORE( id );
+
+	JL_ASSERT_THIS_INSTANCE();
+
+	jl::Unserializer *unser;
+	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(JL_OBJ));
+	JL_ASSERT_THIS_OBJECT_STATE(unser);
+	*vp = BOOLEAN_TO_JSVAL(!unser->IsEmpty());
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -172,6 +191,10 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_ARGC(read, 0)
 	END_FUNCTION_SPEC
+
+	BEGIN_PROPERTY_SPEC
+	PROPERTY_GETTER(eof)
+	END_PROPERTY_SPEC
 
 END_CLASS
 

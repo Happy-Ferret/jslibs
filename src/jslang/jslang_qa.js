@@ -207,6 +207,22 @@ loadModule('jsstd');
 //	QA.ASSERTOP( function() processEvents(timeout), 'ex', Error, 'processEvents reused' );
 
 
+
+/// unserializer EOF
+
+	var s = new Serializer();
+	s.write(1);
+	s.write(2);
+	var u = new Unserializer( s.done() );
+
+	QA.ASSERTOP( u.eof, '==', false, 'unserialized data' );
+	QA.ASSERTOP( u.read(), '==', 1, 'unserialized data' );
+	QA.ASSERTOP( u.eof, '==', false, 'unserialized data' );
+	QA.ASSERTOP( u.read(), '==', 2, 'unserialized data' );
+	QA.ASSERTOP( u.eof, '==', true, 'unserialized data' );
+	QA.ASSERTOP( u.read(), 'ex', InternalError, 'unserialized data' );
+
+
 /// Serialization / Unserialization crash 1
 
 	var s = new Serializer();
