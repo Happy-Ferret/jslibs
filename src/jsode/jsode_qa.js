@@ -1,5 +1,36 @@
 loadModule('jsode');
 
+
+/// 2 memory leak
+
+	var space = new Space();
+	var floor = new GeomPlane(space);
+
+
+/// 1 memory leak
+	
+	new Space();
+
+
+/// JointGroup multiple destroy [rmtf]
+
+	var j = new JointGroup();
+	j.destroy();
+	QA.ASSERTOP( function() j.destroy(), 'ex', Error );
+
+
+/// Geom multiple destroy [rmtf]
+
+	var g = new GeomSphere();
+	g.destroy();
+	QA.ASSERTOP( function() g.destroy(), 'ex', Error );
+
+
+/// object type check [rmtf]
+
+	QA.ASSERTOP( function() World.prototype.env.mass.value, 'ex', TypeError );
+
+
 /// crash 1 [rmtf]
 
   new Body(new World);
@@ -15,7 +46,6 @@ loadModule('jsode');
 
 /// crash 3 [rmtf]
 
-	loadModule('jsode');
 	var w = new World();
 	var geom = new GeomPlane(w.space);
 

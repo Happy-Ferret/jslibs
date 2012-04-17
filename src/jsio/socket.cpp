@@ -523,8 +523,7 @@ DEFINE_FUNCTION( recvFrom ) {
 	PRNetAddr addr;
 	PRInt32 res;
 	res = PR_RecvFrom(fd, buffer, (PRInt32)available, 0, &addr, PR_INTERVAL_NO_TIMEOUT);
-	if (unlikely( res == -1 ))
-		goto bad_ex;
+	JL_CHKB( res != -1, bad_ex );
 
 	char peerName[47]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
 

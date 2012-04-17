@@ -158,177 +158,6 @@ function QAAPI(cx) {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// QA item creation
-
-
-function recursiveDir(path, callback) {
-
-	var list = [];
-	(function(path) {
-
-		for ( var name of Directory.list(path, Directory.SKIP_BOTH + Directory.SKIP_HIDDEN, true) ) {
-
-			if ( name.substr(-1) == directorySeparator )
-				arguments.callee(path+name);
-			else
-				list.push(path+name);
-		}
-	})(path+directorySeparator);
-	
-	for ( var name of list )
-		callback(name);
-}
-
-function regexec(regexp) regexp.exec.bind(regexp);
-
-
-function addQaItemListFromSource(itemList, startDir, files) {
-
-	var hidden = regexec(/\/\./);
-	var srcFile = regexec(new RegExp(files));
-	var qaExpr = /\/\*\*qa([^]*?)(?:\n([^]*?))?\*\*\//g;
-
-	function linesBefore(str) {
-
-        var count = 1, pos = 0;
-        for ( ; (pos = str.indexOf('\n', pos)) != -1; ++count, ++pos );
-        return count;
-    }
-
-	var newItemList = [];
-	recursiveDir( startDir, function(fullFileName) {
-	
-		if ( !hidden(fullFileName) && srcFile(fullFileName) ) {
-		
-			var file = new File(fullFileName);
-
-			print('.');
-
-			var source = stringify(file.content);
-			source = source.replace(/\r\n|\r/g, '\n'); // cleanup
-			
-			qaExpr.lastIndex = 0; // The index at which to start the next match.
-			var res, item;
-			while( (res = qaExpr.exec(source)) ) {
-				
-				var startPos = qaExpr.lastIndex - res[0].length;
-
-				if ( item ) // adjust the previous followingTextEnd
-					item.followingSourceTextEnd = startPos;
-
-				var item = {};
-				item.path = file.name.substr(0, file.name.lastIndexOf(directorySeparator));
-				item.lastDir = item.path.substr(item.path.lastIndexOf(directorySeparator)+1);
-				item.fileName = file.name.substr(file.name.lastIndexOf(directorySeparator)+1);
-				item.source = source;
-				item.followingSourceTextStart = qaExpr.lastIndex;
-				item.followingSourceTextEnd = source.length;
-				var iName = /DEFINE_(\w*)\( *(\w*) *\)/.exec(item.source.substring(item.followingSourceTextStart, item.followingSourceTextEnd));
-				//item.name = res[1];
-				item.name = item.lastDir + ':' + (iName ? (iName[2] || iName[1]) : '???');
-				item.file = file.name;
-				item.line = linesBefore(source.substr(0, startPos)) + 1;
-				item.code = res[2]||'';
-				item.flags = '';
-				newItemList.push(item);
-			}
-		}
-	});
-	Array.prototype.push.apply(itemList, newItemList);
-}
-
-
-
-function addQaItemList(itemList, startDir, files) {
-
-	var hidden = regexec(/\/\./);
-	var qaFile = regexec(new RegExp(files));
-	var newQaItem = regexec(/^\/\/\/\s*(.*?)\s*$/);
-	var parseFlags = function(str) (/\[(.*?)\]/.exec(str)||[,''])[1];
-
-	var index = 0;
-	var newItemList = [];
-
-	recursiveDir( startDir, function(fullFileName) {
-	
-		if ( !hidden(fullFileName) && qaFile(fullFileName) ) {
-
-			var file = new File(fullFileName);
-
-			print('.');
-
-			var source = stringify(file.content);
-			source = source.replace(regexec(/\r\n|\r/g), '\n'); // cleanup
-			
-			var lines = source.split('\n');
-			
-			var item = { // initialization item
-				name: '[INIT]',
-				path: file.name.substr(0, file.name.lastIndexOf(directorySeparator)),
-				file: file.name,
-				line: 1,
-				flags: '',
-				code: [],
-				init: true
-			};
-			
-			for ( var l in lines ) {
-				
-				var res = newQaItem(lines[l]);
-				if ( res ) {
-					
-					newItemList.push(item);
-					item = {
-						name: res[1],
-						path: file.name.substr(0, file.name.lastIndexOf(directorySeparator)),
-						file: file.name,
-						line: Number(l)+1,
-						flags: parseFlags(res[1]),
-						code: [],
-					};
-				}
-				item.code.push(lines[l]);
-			}
-			newItemList.push(item);
-		}
-	});
-
-	for each ( var item in newItemList )
-		item.code = item.code.join('\n');
-
-	Array.prototype.push.apply(itemList, newItemList);
-}
-
-
-
-function filterQaItemList(itemList, include, exclude, flags) {
-
-	var newItemList = [ item for each ( item in itemList ) if (  item.init || (include?include(item.name)||include(item.file):true) && !(exclude?exclude(item.name)||exclude(item.file):false) && (!flags || flags(item.flags))  ) ];
-	itemList.splice(0, itemList.length);
-	Array.prototype.push.apply(itemList, newItemList);
-}
-
-
-function compileTests(itemList) {
-
-	for each ( var item in itemList ) {
-		
-		try {
-
-			item.relativeLineNumber = locate()[1]+1 - item.line;
-			item.func = new Function('QA', item.code);
-		} catch(ex) {
-			
-			item.func = function() {}
-			var lineno = ex.lineNumber - item.relativeLineNumber;
-			var message = 'COMPILATION: @'+ item.file +':'+ lineno +' - '+ item.name +' - '+ ex + ' : ' + item.code;
-			throw message;
-		}
-	}
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
 // tools
 
 function parseCommandLine(cfg) {
@@ -360,6 +189,181 @@ function parseCommandLine(cfg) {
 }
 
 
+
+////////////////////////////////////////////////////////////////////////////////
+// QA item creation
+
+
+function recursiveDir(path, callback) {
+
+	var list = [];
+	(function(path) {
+
+		for ( var name of Directory.list(path, Directory.SKIP_BOTH | Directory.SKIP_HIDDEN, true) ) {
+
+			if ( name.substr(-1) == directorySeparator )
+				arguments.callee(path+name);
+			else
+				list.push(path+name);
+		}
+	})(path+directorySeparator);
+	
+	for ( var name of list )
+		callback(name);
+}
+
+function regexec(regexp) regexp.exec.bind(regexp);
+
+
+function addQaItemListFromSource(itemList, startDir, fileMatch) {
+
+	var srcFile = regexec(new RegExp(fileMatch));
+	var qaExpr = /\/\*\*qa([^]*?)(?:\n([^]*?))?\*\*\//g;
+
+	function linesBefore(str) {
+
+        var count = 1, pos = 0;
+        for ( ; (pos = str.indexOf('\n', pos)) != -1; ++count, ++pos );
+        return count;
+    }
+
+	var newItemList = [];
+	recursiveDir( startDir, function(fullFileName) {
+	
+		if ( srcFile(fullFileName) ) {
+		
+			var file = new File(fullFileName);
+
+			print('l');
+
+			var source = stringify(file.content);
+			source = source.replace(/\r\n|\r/g, '\n'); // cleanup
+			
+			qaExpr.lastIndex = 0; // The index at which to start the next match.
+			var res, item;
+			while ( (res = qaExpr.exec(source)) ) {
+				
+				var startPos = qaExpr.lastIndex - res[0].length;
+
+				if ( item ) // adjust the previous followingTextEnd
+					item.followingSourceTextEnd = startPos;
+
+				var item = {};
+				item.path = fullFileName.substr(0, fullFileName.lastIndexOf(directorySeparator));
+				item.lastDir = item.path.substr(item.path.lastIndexOf(directorySeparator)+1);
+				item.fileName = fullFileName.substr(fullFileName.lastIndexOf(directorySeparator)+1);
+				item.source = source;
+				item.followingSourceTextStart = qaExpr.lastIndex;
+				item.followingSourceTextEnd = source.length;
+				var iName = /DEFINE_(\w*)\( *(\w*) *\)/.exec(item.source.substring(item.followingSourceTextStart, item.followingSourceTextEnd));
+				//item.name = res[1];
+				item.name = item.lastDir + ':' + (iName ? (iName[2] || iName[1]) : '???');
+				item.file = fullFileName;
+				item.line = linesBefore(source.substr(0, startPos)) + 1;
+				item.code = res[2]||'';
+				item.flags = '';
+
+				newItemList.push(item);
+			}
+		}
+	});
+	Array.prototype.push.apply(itemList, newItemList);
+}
+
+
+
+function addQaItemList(itemList, startDir, fileMatch) {
+
+	var qaFile = regexec(new RegExp(fileMatch));
+	var newQaItem = regexec(/^\/\/\/\s*(.*?)\s*$/);
+	var parseFlags = function(str) (/\[(.*?)\]/.exec(str)||[,''])[1];
+
+	var index = 0;
+	var newItemList = [];
+
+	recursiveDir( startDir, function(fullFileName) {
+	
+		if ( qaFile(fullFileName) ) {
+
+			print('l');
+
+			var file = new File(fullFileName);
+			var lines = stringify(file.content).split(/\r\n|\n/);
+			var item = { // initialization item
+				name: '[INIT]',
+				path: fullFileName.substr(0, fullFileName.lastIndexOf(directorySeparator)),
+				file: fullFileName,
+				line: 1,
+				flags: '',
+				code: []
+			};
+
+			var initItem = item;
+
+			item.init = initItem;
+			
+			for ( var ln in lines ) {
+				
+				var line = lines[ln];
+				var res = newQaItem(line);
+				if ( res ) {
+					
+					newItemList.push(item);
+
+					item = {
+						name: res[1],
+						path: fullFileName.substr(0, fullFileName.lastIndexOf(directorySeparator)),
+						file: fullFileName,
+						line: ln +1, // +1 because ln is 0-based.
+						flags: parseFlags(res[1]),
+						code: [],
+						init: initItem
+					};
+				}
+				item.code.push(line);
+			}
+			newItemList.push(item);
+		}
+	});
+
+	for each ( var item in newItemList )
+		item.code = item.code.join('\n');
+
+	Array.prototype.push.apply(itemList, newItemList);
+}
+
+
+
+function filterQaItemList(itemList, include, exclude, flags) {
+
+	var newItemList = [ item for ( item of itemList ) if ( item == item.init || (include?include(item.name)||include(item.file):true) && !(exclude?exclude(item.name)||exclude(item.file):false) && (!flags || flags(item.flags))  ) ];
+	itemList.splice(0, itemList.length);
+	Array.prototype.push.apply(itemList, newItemList);
+}
+
+
+function compileTests(itemList) {
+
+	for ( var item of itemList ) {
+
+		print('c');
+		
+		try {
+
+			item.relativeLineNumber = locate()[1] +1 - item.line;
+			item.func = new Function('QA', item.code);
+
+		} catch(ex) {
+			
+			item.func = function() {}
+			var lineno = ex.lineNumber - item.relativeLineNumber;
+			var message = 'COMPILATION: @'+ item.file +':'+ lineno +' - '+ item.name +' - '+ ex + ' : ' + item.code;
+			throw message;
+		}
+	}
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // run tests
 
@@ -382,6 +386,7 @@ function reportInfo(cx, type, location, testName, checkName, details) {
 }
 
 
+
 function launchTests(itemList, cfg) {
 
 	var exportFile;
@@ -389,15 +394,15 @@ function launchTests(itemList, cfg) {
 	if ( cfg.export ) {
 	
 		exportFile = new File(cfg.export).open('w');
-		exportFile.write("LoadModule('jsstd');var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\\n' ) } };\n");
+		exportFile.write("host.loadModule.call(global, 'jsstd'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\\n' ) } };\n");
 	}
 
 	var cx = { 
-		checkCount:0, 
-		issueList:[], 
-		stackIndex:stackSize-1, 
-		cfg:cfg, 
-		reportIssue:function(message, checkName) {
+		checkCount: 0,
+		issueList: [],
+		stackIndex: stackSize-1,
+		cfg: cfg,
+		reportIssue: function(message, checkName) {
 			
 			reportInfo(this, 'ASSERT', this.item.file+':'+(locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message);
 		},
@@ -410,96 +415,88 @@ function launchTests(itemList, cfg) {
 	};
 
 	var qaapi = new QAAPI(cx);
-	
 
-	if ( cfg.loopForever ) {
-
-		for ( var i in itemList ) {
-
-			if ( !itemList[i].init ) // list is sorted, init are first.
-				break;
-			itemList[i].func(qaapi);
-		}
-		itemList = itemList.slice(i);
-	}	
-	
 
 	collectGarbage();
 
-	var testIndex = 0;
 	var testCount = 0;
+	var testIndex = cfg.rangeStart;
 
-	for (;;) {
-
-		if ( testCount >= cfg.stopAfterNTests )
-			break;
+	testloop: for (;;) {
 
 		if ( cfg.loopForever )
 			testIndex = Math.floor(Math.random() * itemList.length);
 
 		cx.item = itemList[testIndex];
 
-		if ( cx.item.init || cfg.runOnlyTestIndex == undefined || cfg.runOnlyTestIndex == testIndex ) {
-			
-			if ( !cfg.quiet )
-				print( pad(testIndex, 4, ' ')+' - '+cx.item.file+':'+cx.item.line+' - '+cx.item.name+' ' );
-
-			if ( cfg.gcZeal )
-				gcZeal = cfg.gcZeal;
-
-			cfg.nogcBetweenTests || collectGarbage();
-//			disableGarbageCollection = cfg.nogcDuringTests;
+		if ( !cx.item.init || cx.item != cx.item.init ) { // is not the init item (because init items are only called when necessary.
 
 			try {
 
-				var t0 = timeCounter();
+				if ( testCount >= cfg.rangeLength )
+					break testloop;
+
+				if ( !cfg.quiet )
+					print( pad(testIndex, 4, ' ')+' - '+cx.item.file+':'+cx.item.line+' - '+cx.item.name+' ');
+
+				if ( cx.item.init && !cx.item.init.done ) {
+
+					if ( exportFile ) {
+
+						exportFile.write('('+cx.item.init.func.toSource()+')(QA);\n');
+						exportFile.sync();
+					}
+					void cx.item.init.func(qaapi);
+					++testCount;
+					cx.item.init.done = true;
+				}
+
 				for ( var i = cfg.repeatEachTest; i && !host.endSignal ; --i ) {
 
-					++testCount;
-					void cx.item.func(qaapi);
 					if ( exportFile ) {
 
 						exportFile.write('('+cx.item.func.toSource()+')(QA);\n');
 						exportFile.sync();
 					}
-					if ( cx.item.init )
-						break;
+
+					var t0 = timeCounter();
+					void cx.item.func(qaapi);
+					var time = timeCounter() - t0;
+					++testCount;
 				}
-				var t1 = timeCounter() - t0;
-				cfg.quiet || print( ' ...'+(t1/cfg.repeatEachTest).toFixed(1) + 'ms' );
+
+				if ( !cfg.quiet )
+					print( ' ...' + (time/cfg.repeatEachTest).toFixed(1) + 'ms' );
+
 			} catch(ex) {
 
 				reportInfo(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', ex);
 			}
 
-			if ( cfg.gcZeal )
-				gcZeal = 0;
+			if ( !cfg.quiet )
+				print('\n');
 
-//			disableGarbageCollection = cfg.nogcBetweenTests;
-			cfg.nogcBetweenTests || collectGarbage();
-			
-			cfg.quiet || print('\n');
+			if ( host.endSignal )
+				break testloop;
 
+			if ( !cfg.nogcBetweenTests )
+				collectGarbage();
+
+			if ( cx.issueList.length >= cfg.stopAfterNIssues )
+				testloop;
+
+			if ( cfg.sleepBetweenTests )
+				sleep(cfg.sleepBetweenTests);
 		}
 
-		if ( host.endSignal )
-			break;
+		++testIndex;
 
-		if ( cx.issueList.length >= cfg.stopAfterNIssues )
-			break;
-
-		
-		if ( !cfg.loopForever && ++testIndex >= itemList.length )
-			break;
-
-		if ( cfg.sleepBetweenTests )
-			sleep(cfg.sleepBetweenTests);
+		if ( !cfg.loopForever && testIndex >= itemList.length )
+			break testloop;
 	}
 	
-	if ( exportFile ) {
-		
+	if ( exportFile )
 		exportFile.close();
-	}
 	
 	return [cx.issueList, cx.checkCount];
 }
@@ -637,7 +634,7 @@ function perfTest(itemList, cfg) {
 			
 		setPerfTestMode();
 		collectGarbage();
-//		disableGarbageCollection = true;
+		// disableGarbageCollection = true;
 
 		var t = timeCounter();
 		var err = timeCounter() - t;
@@ -667,12 +664,13 @@ function perfTest(itemList, cfg) {
 
 function main() {
 
-	var cfg = { // default configuration
+	// default configuration:
+	var cfg = {
 		help:false,
 		repeatEachTest:1,
 		gcZeal:0, 
 		loopForever:false, 
-		directory:'..'+directorySeparator, 
+		directory:'..', 
 		files:'_qa\\.js$', 
 		inlineOnly:false,
 		priority:0, 
@@ -685,20 +683,17 @@ function main() {
 		nogcBetweenTests:false, 
 		nogcDuringTests:false, 
 		stopAfterNIssues:Infinity, 
-		stopAfterNTests:Infinity, 
+		rangeStart:0,
+		rangeLength:Infinity,
 		logFilename:'', 
 		sleepBetweenTests:0,
 		quiet:false, 
 		verbose:false, 
-		runOnlyTestIndex:undefined, 
 		exclude:undefined,
 		perfTest:''
 	};
 
-
 	parseCommandLine(cfg);
-
-	var configurationText = 'configuraion: '+['-'+k+' '+v for ([k,v] in Iterator(cfg))].join('  ');
 
 	if ( cfg.help ) {
 		
@@ -727,34 +722,48 @@ function main() {
 	var testList;
 	if ( cfg.load ) {
 	
+		print('Loading tests:\n');
 		testList = eval(new File(cfg.load).content);
 	} else {
 
-		print('Building');
-
+		print('Building tests:\n');
 		var testList = [];
-		
 		if ( !cfg.inlineOnly )
 			addQaItemList(testList, cfg.directory, cfg.files);
-			
 		addQaItemListFromSource(testList, cfg.directory, '\\.cpp$');
-		
+
 		filterQaItemList(testList, itemInclude, itemExclude, matchFlags);
-		testList = testList.sort( function(a,b) a.init ? -1 : 1 ); // put all init function at the top of the test list.
+
+		testList = testList.sort( function(a,b) {
+			
+			if ( a.file == b.file )
+				return a.line < b.line ? -1 : 1;
+			else
+				return a.file < b.file ? -1 : 1;
+		});
+
+//		testList = testList.slice
+
 		compileTests(testList);
+		print('\n');
 	}
 
 	if ( cfg.listTestsOnly ) {
 		
+		print('Tests list:\n');
 		print([String.quote(t.file+' - '+t.name) for each ( t in testList )].join('\n'), '\n', testList.length +' tests.', '\n');
 		return;
 	}
 
-	if ( cfg.save )
-		new File(cfg.save).content = uneval(testList);
+	if ( cfg.save ) {
 
-	if ( cfg.disableJIT )
+		new File(cfg.save).content = uneval(testList);
+	}
+
+	if ( cfg.disableJIT ) {
+
 		disableJIT();
+	}
 		
 	if ( cfg.perfTest ) {
 	
@@ -762,7 +771,10 @@ function main() {
 		return;
 	}
 
-	print('\n', 'Testing...', '\n');
+	if ( cfg.gcZeal )
+		gcZeal = cfg.gcZeal;
+
+	print('Testing:\n');
 
 	var savePrio = processPriority;
 	processPriority = cfg.priority;
@@ -776,7 +788,7 @@ function main() {
 	var separator = stringRepeat('-',79);
 
 	print('\n', separator);
-	print('\n', configurationText);
+	print('\n', 'configuraion: '+['-'+k+' '+v for ([k,v] in Iterator(cfg))].join('  '));
 	print('\n', separator);
 	print('\n', pad(issueList.length, 4, ' ') +' issues ('+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests = ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms)');
 	print('\n', separator);
@@ -798,7 +810,7 @@ try {
 	print(uneval(ex));
 }
 
-print('\n', 'End.', '\n');
+print('\nEnd.\n');
 
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -287,6 +287,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
+	JL_ASSERT_ARGC(0);
 
 
 	WorldPrivate *pv = (WorldPrivate*)JS_malloc(cx, sizeof(WorldPrivate));

@@ -3,7 +3,10 @@ loadModule('jsio');
 
 /// call all possible functions reachable in the scope [rmtf]
 
-	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', 'host.stdin', 'jslangTest', 'setPerfTestMode' ];
+	if ( host.unsafeMode )
+		throw "Cannot run this test in unsafe mode (else crash)";
+
+	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', 'host.stdin', 'setPerfTestMode' , 'jslangTest' ]; // 
 
 	loadModule('jswinshell'); excludeList.push('fileOpenDialog', 'Console.close');
 	loadModule('jssdl'); excludeList.push('setVideoMode', 'iconify');
@@ -25,30 +28,34 @@ loadModule('jsio');
 	loadModule('jstrimesh');
 	loadModule('jsvideoinput');
 	loadModule('jsz');
-
-//	loadModule('jstask');
+	loadModule('jstask');
+	
 //	loadModule('jsffi');
 //	loadModule('jsfastcgi');
 //	loadModule('jsaudio');
-// loadModule('jsgraphics');
+//	loadModule('jsgraphics');
 
-	if ( host.unsafeMode ) throw "Cannot run this test in unsafe mode (else crash)";
 
 	var count = 0;
 	var done = {__proto__:null};
-	for each ( var item in excludeList )
-		done[objectGCId(eval(item))] = true;
+	for ( var item of excludeList ) {
+		try {
+			var ob = eval(item);
+			done[objectGCId(ob)] = ob;
+		} catch(ex){}
+	}
 	
 	function fct(obj, left) {
 
 		if ( host.endSignal )
 			halt();
+			
 		if ( isPrimitive(obj) )
 			return;
 
-		done[objectGCId(obj)] = true;
+		done[objectGCId(obj)] = obj;
 		var list = Object.getOwnPropertyNames(obj);
-		for each ( var name in list ) {
+		for ( var name of list ) {
 
 			if ( name == 'arguments' )
 				continue;

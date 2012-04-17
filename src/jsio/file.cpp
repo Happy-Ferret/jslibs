@@ -462,13 +462,12 @@ DEFINE_PROPERTY_GETTER( content ) {
 
 		ThrowIoError(cx);
 		PR_Close(fd);
-		goto bad;
+		JL_CHK( false );
 	}
 
 	if (unlikely( PR_Close(fd) != PR_SUCCESS )) {
 
-		ThrowIoError(cx);
-		goto bad;
+		JL_CHK( ThrowIoError(cx) );
 	}
 
 	if (unlikely( JL_MaybeRealloc((size_t)available, res) )) { // should never occured

@@ -39,7 +39,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../libs/ode/win32_config;../../libs/ode/src/include"
-				PreprocessorDefinitions="SSE"
+				PreprocessorDefinitions="dSINGLE;SSE"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -99,7 +99,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="../../libs/ode/win32_config;../../libs/ode/src/include"
-				PreprocessorDefinitions="SSE"
+				PreprocessorDefinitions="dSINGLE;SSE"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

@@ -39,22 +39,17 @@ $MODULE_FOOTER
 **/
 
 
-void*
-JsfontAlloc( FT_Memory, long size ) {
+void* JsfontAlloc( FT_Memory, long size ) {
 
 	return jl_malloc(size);
 }
 
-
-void
-JsfontFree( FT_Memory, void* block ) {
+void JsfontFree( FT_Memory, void* block ) {
 
 	jl_free(block);
 }
 
-
-void*
-JsfontRealloc( FT_Memory, long, long new_size, void* block ) {
+void* JsfontRealloc( FT_Memory, long, long new_size, void* block ) {
 
 	return jl_realloc(block, new_size);
 }

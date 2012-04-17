@@ -3287,6 +3287,7 @@ JL_GetByteImageObject( JSContext *cx, jsval &val, T *width, T *height, U *channe
 	JL_ASSERT_IS_OBJECT(val, "image");
 
 	JSObject *imageObj = JSVAL_TO_OBJECT(val);
+	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, data), &data) );
 	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, width), width) );
 	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, height), height) );
 	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, channels), channels) );

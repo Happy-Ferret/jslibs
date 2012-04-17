@@ -29,10 +29,12 @@ DECLARE_CLASS( Vector )
 
 
 #ifdef XP_WIN
-// The following avoid the need for ODE to be linked with User32.lib ( MessageBox* symbol is used in ../ode/src/ode/src/error.cpp )
+	// The following avoid the need for ODE to be linked with User32.lib ( MessageBox* symbol is used in ../ode/src/ode/src/error.cpp )
+	// see ode link options
 	#pragma warning( push )
 	#pragma warning(disable : 4273)
-	int WINAPI MessageBoxA( HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType) { return IDOK; }
+	int WINAPI MessageBoxA(HWND, LPCSTR, LPCSTR, UINT) { return IDOK; }
+	int WINAPI MessageBoxW(HWND, LPCWSTR, LPCWSTR, UINT) { return IDOK; }
 	#pragma warning( pop )
 #endif
 
@@ -72,10 +74,12 @@ $MODULE_FOOTER
 //typedef void * dReallocFunction (void *ptr, size_t oldsize, size_t newsize);
 //typedef void dFreeFunction (void *ptr, size_t size);
 
-void* odeReallocFunction (void *ptr, size_t oldsize, size_t newsize) {
+void* odeReallocFunction (void *ptr, size_t, size_t newsize) {
+
 	return jl_realloc(ptr, newsize);
 }
-void odeFreeFunction (void *ptr, size_t size) {
+
+void odeFreeFunction (void *ptr, size_t) {
 	jl_free(ptr);
 }
 

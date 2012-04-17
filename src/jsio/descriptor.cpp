@@ -664,8 +664,7 @@ DEFINE_FUNCTION( import ) {
 			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe), NULL);
 			break;
 		default:
-			ASSERT(false);
-			IFDEBUG( goto bad );
+			JL_ERR( E_MODULE, E_INTERNAL );
 	}
 	if ( fd == NULL )
 		return ThrowIoError(cx);

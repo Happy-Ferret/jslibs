@@ -69,7 +69,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARGC_RANGE(1, 2);
 
 //	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, _moduleId);
 
@@ -252,7 +252,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( drawString ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	JsfontPrivate *pv;
 	pv = (JsfontPrivate*)JL_GetPrivate(JL_OBJ);

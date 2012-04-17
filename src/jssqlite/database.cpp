@@ -512,14 +512,14 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 
 			//sqlite3_result_error(sCx, "Invalid argument type", -1 ); // (TBD) enhance error report
 			sqlite3_result_error_code(sCx, SQLITE_MISMATCH); // (TBD) check this
-			goto bad;
+			JL_CHK( false );
 		}
 	}
 
 	if ( JS_CallFunctionValue(cx, fpv->obj, fpv->fval, sArgc, argv+1, argv) != JS_TRUE ) {
 
 		sqlite3_result_error(sCx, "Function call error", -1 ); // (TBD) better error message
-		goto bad;
+		JL_CHK( false );
 	}
 
 	// (TBD) how to use sqlite3_result_value

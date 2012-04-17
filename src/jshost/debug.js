@@ -4,12 +4,14 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
  //loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile();
  
-loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('call.all'); throw 0; // -inlineOnly
 
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
-
+	loadModule('jsdebug');
+	var done = {__proto__:null};
+	done[objectGCId(eval('jslangTest'))] = true;
 
 
 throw 0;

@@ -1,6 +1,5 @@
 loadModule('jsstd');
 
-
 /// Stream prototype JL_ASSERT_INSTANCE [ftrm]
 
 	QA.ASSERTOP( function() { Stream.prototype.available }, 'ex', TypeError );
@@ -220,7 +219,7 @@ loadModule('jsstd');
 	QA.ASSERTOP( u.eof, '==', false, 'unserialized data' );
 	QA.ASSERTOP( u.read(), '==', 2, 'unserialized data' );
 	QA.ASSERTOP( u.eof, '==', true, 'unserialized data' );
-	QA.ASSERTOP( u.read(), 'ex', InternalError, 'unserialized data' );
+	QA.ASSERTOP( function() u.read(), 'ex', InternalError, 'unserialized data' );
 
 
 /// Serialization / Unserialization crash 1

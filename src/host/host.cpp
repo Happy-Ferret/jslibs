@@ -614,12 +614,10 @@ DEFINE_FUNCTION( loadModule ) {
 
 	if ( !moduleInit(cx, JL_OBJ, uid) ) {
 
-		if ( JL_IsExceptionPending(cx) )
-			goto bad;
+		JL_CHK( !JL_IsExceptionPending(cx) );
 		char filename[PATH_MAX];
 		JLDynamicLibraryName((void*)moduleInit, filename, sizeof(filename));
 		JL_ERR( E_MODULE, E_NAME(filename), E_INIT );
-		goto bad;
 	}
 
 //	CHKHEAP();

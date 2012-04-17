@@ -1,22 +1,32 @@
+var loadModule = host.loadModule;
+
+	//loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
+	//loadModule('jsstd'); exec('../../tests/explodebox.js'); throw 0;
+	//loadModule('jsstd'); exec('../../tests/podtest.js'); throw 0;
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsode'); throw 0;
+
+
 loadModule('jsstd');
 loadModule('jsode');
 
-/*
-World.prototype.env.mass.value;
-var g = new GeomSphere();
-g.destroy();
-//Geom.Destroy();
-throw 0;
 
-var j = new JointGroup();
-j.destroy();
-throw 0;
+var space = new Space();
+var floor = new GeomPlane(space);
+
+
+  /*
+	var space = new Space();
+	var geom = new GeomPlane(space);
+	space.destroy();
+	geom.destroy();
 */
 
 
-// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
-// loadModule('jsstd'); exec('../../tests/explodebox.js'); throw 0;
-loadModule('jsstd'); exec('../../tests/podtest.js'); throw 0;
+
+
+
+
+
 
 throw 0;
 

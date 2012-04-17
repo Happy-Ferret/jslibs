@@ -357,8 +357,7 @@ DEFINE_FUNCTION( join ) {
 		JL_ASSERT_IS_CALLABLE(nextFct, "iterator");
 		while ( JS_CallFunctionValue(cx, argObj, nextFct, 0, NULL, &val) != JS_FALSE ) { // loop until StopIteration or error
 
-			if ( !JL_JsvalToNative(cx, val, &*++strList) )
-				goto bad;
+			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
 			length += strList->Length();
 			avr.append(val);
 		}

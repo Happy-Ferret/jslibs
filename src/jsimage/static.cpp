@@ -350,6 +350,10 @@ void output_flush_fn(png_structp png_ptr) {
 	JL_IGNORE(png_ptr);
 }
 
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE data $INAME( imageObject [, compressionLevel = default] )
+**/
 DEFINE_FUNCTION( encodePngImage ) {
 
 	PngWriteUserStruct desc;
@@ -361,8 +365,7 @@ DEFINE_FUNCTION( encodePngImage ) {
 	int compressionLevel;
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_ASSERT_ARG_IS_INTEGER(2);
-		compressionLevel = JSVAL_TO_INT( JL_ARG(2) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &compressionLevel) );
 		JL_ASSERT_ARG_VAL_RANGE( compressionLevel, 0, 9, 2 );
 	} else {
 

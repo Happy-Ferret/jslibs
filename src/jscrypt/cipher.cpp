@@ -281,11 +281,8 @@ DEFINE_CONSTRUCTOR() {
 			ASSERT(false);
 	}
 
-	if ( err != CRYPT_OK ) {
-		
-		ThrowCryptError(cx, err);
-		goto bad;
-	}
+	if ( err != CRYPT_OK )
+		JL_CHK( ThrowCryptError(cx, err) );
 
 	JL_SetPrivate( cx, obj, pv );
 	return JS_TRUE;

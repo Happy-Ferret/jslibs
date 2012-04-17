@@ -671,7 +671,7 @@ JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 		if ( ProcessSystrayMessage(cx, upe->systrayObj, trayMsg, &rval) != JS_TRUE ) {
 			
 			jl_free(trayMsg);
-			goto bad;
+			JL_CHK( false );
 		}
 		jl_free(trayMsg);
 	}	
