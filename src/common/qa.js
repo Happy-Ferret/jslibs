@@ -737,7 +737,7 @@ function main() {
 		testList = testList.sort( function(a,b) {
 			
 			if ( a.file == b.file )
-				return a.line < b.line ? -1 : 1;
+				return Number(a.line) < Number(b.line) ? -1 : 1;
 			else
 				return a.file < b.file ? -1 : 1;
 		});
