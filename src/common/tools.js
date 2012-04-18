@@ -415,13 +415,12 @@ function runSavedQAFile(fileName) {
 		itemList[i].func(qaapi);
 }
 
-
 function runQATests( argStr ) {
 
-	loadModule('jsio');
-	currentDirectory += '/../common';
-	host.arguments = Array.concat('qa.js', argStr.split(' '));
-	//host.arguments = Array.concat('qa.js', argStr.match(/\w+|"[^"]+"/g));
+	host.arguments = ['../common/qa.js'];
+	var res, reg = /([^ "]+)|"([^"]+)"/g;
+	while ( (res = reg.exec(argStr)) )
+		host.arguments.push(res[1]||res[2]);
 	exec(host.arguments[0], false);
 }
 

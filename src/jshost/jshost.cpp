@@ -39,6 +39,7 @@ static volatile bool disabledFree = false;
 
 
 #ifdef USE_NEDMALLOC
+
 #define NO_NED_NAMESPACE
 #define NO_MALLINFO 1
 #include "../../libs/nedmalloc/nedmalloc.h"
@@ -53,6 +54,7 @@ NOALIAS size_t nedblksize_msize(void *mem) NOTHROW {
 
 	return nedblksize(0, mem);
 }
+
 #endif // USE_NEDMALLOC
 
 
@@ -619,11 +621,14 @@ bad:
 }
 
 #ifdef DBG_ALLOC
+
 struct DBG_ALLOC_dummyClass {
 	~DBG_ALLOC_dummyClass() { // we must count at exit, see "dynamic atexit destructor"
-		fprintf(stderr, "\nalloc:%d  free:%d (diff:%d)\n", allocCount, freeCount, allocCount - freeCount);
+
+		fprintf(stderr, "\n{alloc:%d, leaks:%d}\n", allocCount, allocCount - freeCount);
 	}
 } DBG_ALLOC_dummy;
+
 #endif // DBG_ALLOC
 
 

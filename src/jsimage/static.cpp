@@ -108,6 +108,22 @@ METHODDEF(void) term_source(j_decompress_ptr cinfo) {
 	JL_IGNORE(cinfo);
 }
 
+
+struct JpegErrorManager {
+  struct jpeg_error_mgr pub;
+  JSContext *cx;
+  jmp_buf setjmp_buffer;
+};
+
+
+METHODDEF(void)
+JpegErrorExit(j_common_ptr cinfo) {
+
+	JpegErrorManager *myerr = (JpegErrorManager*)cinfo->err;
+	longjmp(myerr->setjmp_buffer, 1);
+}
+
+
 /**doc
 $TOC_MEMBER $INAME
  $TYPE imageObject $INAME( streamObject )
@@ -119,14 +135,41 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( decodeJpegImage ) {
 
+	JL_ASSERT_ARGC(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
+
+	// see: jslibs/libs/libjpeg/src/example.c
+	JpegErrorManager jerr;
+
 	jpeg_decompress_struct cinfo;
-	jpeg_error_mgr errMgr;
-	cinfo.err = jpeg_std_error(&errMgr);
+	cinfo.err = jpeg_std_error(&jerr.pub);
+	jerr.pub.error_exit = JpegErrorExit;
+	
+	int longJumpValue;
+
+	#ifdef _MSC_VER
+	#pragma warning( push, 0 )
+	#pragma warning(disable : 4611) // warning C4611: interaction between '_setjmp' and C++ object destruction is non-portable
+	#endif // _MSC_VER
+
+	longJumpValue = setjmp(jerr.setjmp_buffer);
+
+	#ifdef _MSC_VER
+	#pragma warning( pop )
+	#endif // _MSC_VER
+
+	if ( longJumpValue ) {
+
+		char message[JMSG_LENGTH_MAX];
+		cinfo.err->format_message((j_common_ptr)&cinfo, message);
+		jpeg_destroy_decompress(&cinfo);
+		JL_ERR( E_LIB, E_STR("JPEG"), E_INTERNAL, E_DETAILS, E_STR(message) );
+	}
 
 	jpeg_create_decompress(&cinfo);
 
 // alloc reader structure & buffer ( both are freed by jpeg_destroy_decompress )
-	cinfo.src = (struct jpeg_source_mgr *) (*cinfo.mem->alloc_small) ((j_common_ptr) &cinfo, JPOOL_PERMANENT, sizeof(SourceMgr));
+	cinfo.src = (struct jpeg_source_mgr*)(*cinfo.mem->alloc_small) ((j_common_ptr) &cinfo, JPOOL_PERMANENT, sizeof(SourceMgr));
 	SourceMgrPtr src = (SourceMgrPtr)cinfo.src;
 
 //	src->buffer = (JOCTET *)(*cinfo.mem->alloc_small) ((j_common_ptr) &cinfo, JPOOL_PERMANENT, INPUT_BUF_SIZE * sizeof(JOCTET));
@@ -144,8 +187,6 @@ DEFINE_FUNCTION( decodeJpegImage ) {
 	src->pub.bytes_in_buffer = 0; // forces fill_input_buffer on first read
 	src->pub.next_input_byte = NULL; // until buffer loaded
 
-	JL_ASSERT_ARGC_MIN(1);
-	JL_ASSERT_ARG_IS_OBJECT(1);
 	src->obj = JSVAL_TO_OBJECT( JL_ARG(1) ); // required by NIStreamRead
 	src->cx = cx; // required by NIStreamRead
 
@@ -176,18 +217,13 @@ DEFINE_FUNCTION( decodeJpegImage ) {
 // read the image
 	jpeg_start_decompress(&cinfo);
 
-	int width;
+	int width, height, bytePerRow, channels, size, length;
 	width = cinfo.output_width;
-	int height;
 	height = cinfo.output_height;
-	int bytePerRow;
 	bytePerRow = cinfo.output_width * cinfo.output_components;
-	int size;
 	size = height * bytePerRow;
-	int channels;
 	channels = cinfo.output_components;
 
-	int length;
 	length = height * bytePerRow;
 	JOCTET * data;
 	data = (JOCTET *)JL_NewByteImageObject(cx, width, height, channels, JL_RVAL);
@@ -202,7 +238,7 @@ DEFINE_FUNCTION( decodeJpegImage ) {
 
 	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);
-	// jpeg_destroy(); ??
+	//jpeg_destroy((j_common_ptr)&cinfo);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -219,8 +255,13 @@ DEFINE_FUNCTION( encodeJpegImage ) {
 */
 
 
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 //// PNG
+
+
 
 typedef struct {
 	png_structp png;
@@ -241,19 +282,38 @@ void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) {
 //		png_error(png_ptr, "Trying to read after EOF."); // png_warning()
 }
 
-NOALIAS png_voidp
-malloc_wrapper(png_structp png_ptr, png_size_t size) NOTHROW {
 
-	JL_IGNORE(png_ptr);
+NOALIAS png_voidp
+PngMalloc(png_structp, png_size_t size) NOTHROW {
+
 	return jl_malloc(size);
 }
 
 void
-free_wrapper(png_structp png_ptr, png_voidp ptr) NOTHROW {
+PngFree(png_structp, png_voidp ptr) NOTHROW {
 
-	JL_IGNORE(png_ptr);
 	jl_free(ptr);
 }
+
+static void
+PngError(png_structp png_ptr, png_const_charp message) {
+
+	JSContext *cx = (JSContext*)png_get_error_ptr(png_ptr);
+	JL_ERR( E_LIB, E_STR("PNG"), E_INTERNAL, E_STR(message) );
+bad:
+	longjmp(png_ptr->jmpbuf, 1);
+}
+
+static void
+PngWarning(png_structp png_ptr, png_const_charp message) {
+
+	JSContext *cx = (JSContext*)png_get_error_ptr(png_ptr);
+	JL_WARN( E_STR(message) );
+bad:
+	longjmp(png_ptr->jmpbuf, 1);
+}
+
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -266,36 +326,60 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( decodePngImage ) {
 
+	JL_ASSERT_ARGC(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
+
 	PngReadUserStruct desc;
 
-//	desc.png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL );
-	desc.png = png_create_read_struct_2(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL, NULL, malloc_wrapper, free_wrapper);
+	desc.png = png_create_read_struct_2(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL, NULL, PngMalloc, PngFree);
 	JL_ASSERT( desc.png != NULL, E_LIB, E_STR("PNG"), E_INTERNAL, E_COMMENT("png_create_read_struct") );
+
+	png_set_error_fn(desc.png, (png_voidp)cx, PngError, PngWarning);
 
 	desc.info = png_create_info_struct(desc.png);
 	JL_ASSERT( desc.info != NULL, E_LIB, E_STR("PNG"), E_INTERNAL, E_COMMENT("png_create_info_struct") );
 
+	int longJumpValue;
+
+	#ifdef _MSC_VER
+	#pragma warning( push, 0 )
+	#pragma warning(disable : 4611) // warning C4611: interaction between '_setjmp' and C++ object destruction is non-portable
+	#endif // _MSC_VER
+
+	longJumpValue = setjmp(png_jmpbuf(desc.png));
+
+	#ifdef _MSC_VER
+	#pragma warning( pop )
+	#endif // _MSC_VER
+
+	if ( longJumpValue ) {
+
+        png_destroy_read_struct(&desc.png, &desc.info, NULL);
+        goto bad;
+    }
+
+
 //	JL_CHK( GetStreamReadInterface(cx, JSVAL_TO_OBJECT(argv[0]), &desc.read) );
 //	JL_ASSERT( desc.read != NULL, "Unable to GetNativeResource." );
 
-	JL_ASSERT_ARGC(1);
-	JL_ASSERT_ARG_IS_OBJECT(1);
 	desc.obj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	desc.cx = cx;
 
 	png_set_read_fn( desc.png, (voidp)&desc, _png_read );
-   png_read_info(desc.png, desc.info);
-	//JL_ASSERT( desc.info->height <= PNG_UINT_32_MAX/png_sizeof(png_bytep), "Image is too high to process with png_read_png()");
-	JL_ASSERT( desc.info->height <= PNG_UINT_32_MAX/png_sizeof(png_bytep), E_NAME("height"), E_MAX, E_NUM(PNG_UINT_32_MAX/png_sizeof(png_bytep)) );
+	png_read_info(desc.png, desc.info);
+	JL_ASSERT( desc.info->height <= PNG_UINT_32_MAX / png_sizeof(png_bytep), E_NAME("height"), E_MAX, E_NUM(PNG_UINT_32_MAX / png_sizeof(png_bytep)) );
 	
 	JL_CHKM( png_set_interlace_handling(desc.png) == 1, E_ARG, E_NUM(1), E_NOTSUPPORTED, E_COMMENT("Interleaved") );
 
 // Load
 	png_set_strip_16(desc.png);
 	png_set_packing(desc.png);
-	if ((desc.png->bit_depth < 8) || (desc.png->color_type == PNG_COLOR_TYPE_PALETTE) || (png_get_valid(desc.png, desc.info, PNG_INFO_tRNS)))
+	if ( (desc.png->bit_depth < 8) || (desc.png->color_type == PNG_COLOR_TYPE_PALETTE) || (png_get_valid(desc.png, desc.info, PNG_INFO_tRNS)) ) {
+
 		png_set_expand(desc.png);
-   png_read_update_info(desc.png, desc.info); // optional call to update the users info_ptr structure
+	}
+
+	png_read_update_info(desc.png, desc.info); // optional call to update the users info_ptr structure
 
 	png_uint_32 width;
 	width = png_get_image_width(desc.png, desc.info);
@@ -321,7 +405,7 @@ DEFINE_FUNCTION( decodePngImage ) {
 		png_read_row(desc.png, data, png_bytep_NULL);
 		data += bytePerRow;
 	}
-   png_read_end(desc.png, desc.info); // read rest of file, and get additional chunks in desc.info - REQUIRED
+	png_read_end(desc.png, desc.info); // read rest of file, and get additional chunks in desc.info - REQUIRED
 	png_destroy_read_struct(&desc.png, &desc.info, NULL);
 
 	return JS_TRUE;

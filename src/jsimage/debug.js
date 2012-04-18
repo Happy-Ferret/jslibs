@@ -7,6 +7,11 @@ loadModule('jsstd');
 loadModule('jsimage');
 loadModule('jsio');
 
+
+
+print( 'end' );
+
+
 /*
 var f = new File('pngtest.png');
 f.open( File.RDONLY );
@@ -15,9 +20,10 @@ print( img.width+'x'+img.height+'x'+img.channels, '\n' );
 print( img.load().length , '\n' );
 */
 
+/*
 var texture = decodeJpegImage(new File('Patern_test.jpg').open( File.RDONLY ));
 print( texture.width+'x'+texture.height+'x'+texture.channels, '\n' );
 
 var texture = decodePngImage(new File('battlesuitbj6.png').open());
 print( texture.width+'x'+texture.height+'x'+texture.channels, '\n' );
-
+*/

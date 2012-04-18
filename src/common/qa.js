@@ -193,7 +193,6 @@ function parseCommandLine(cfg) {
 ////////////////////////////////////////////////////////////////////////////////
 // QA item creation
 
-
 function recursiveDir(path, callback) {
 
 	var list = [];
@@ -232,10 +231,9 @@ function addQaItemListFromSource(itemList, startDir, fileMatch) {
 	
 		if ( srcFile(fullFileName) ) {
 		
-			var file = new File(fullFileName);
-
 			print('l');
 
+			var file = new File(fullFileName);
 			var source = stringify(file.content);
 			source = source.replace(/\r\n|\r/g, '\n'); // cleanup
 			
@@ -303,7 +301,7 @@ function addQaItemList(itemList, startDir, fileMatch) {
 			item.init = initItem;
 			
 			for ( var ln in lines ) {
-				
+
 				var line = lines[ln];
 				var res = newQaItem(line);
 				if ( res ) {
@@ -314,7 +312,7 @@ function addQaItemList(itemList, startDir, fileMatch) {
 						name: res[1],
 						path: fullFileName.substr(0, fullFileName.lastIndexOf(directorySeparator)),
 						file: fullFileName,
-						line: ln +1, // +1 because ln is 0-based.
+						line: Number(ln) +1, // +1 because ln is 0-based.
 						flags: parseFlags(res[1]),
 						code: [],
 						init: initItem
@@ -350,7 +348,7 @@ function compileTests(itemList) {
 		
 		try {
 
-			item.relativeLineNumber = locate()[1] +1 - item.line;
+			item.relativeLineNumber = locate()[1] +1 - item.line; // currentLineNumber
 			item.func = new Function('QA', item.code);
 
 		} catch(ex) {
@@ -416,7 +414,6 @@ function launchTests(itemList, cfg) {
 
 	var qaapi = new QAAPI(cx);
 
-
 	collectGarbage();
 
 	var testCount = 0;
@@ -429,12 +426,12 @@ function launchTests(itemList, cfg) {
 
 		cx.item = itemList[testIndex];
 
-		if ( !cx.item.init || cx.item != cx.item.init ) { // is not the init item (because init items are only called when necessary.
+		if ( !cx.item.init || cx.item != cx.item.init ) { // is not the init item (because init items are only called when necessary).
 
+			if ( testCount >= cfg.rangeLength )
+				break testloop;
+				
 			try {
-
-				if ( testCount >= cfg.rangeLength )
-					break testloop;
 
 				if ( !cfg.quiet )
 					print( pad(testIndex, 4, ' ')+' - '+cx.item.file+':'+cx.item.line+' - '+cx.item.name+' ');
@@ -447,9 +444,9 @@ function launchTests(itemList, cfg) {
 						exportFile.sync();
 					}
 					void cx.item.init.func(qaapi);
-					++testCount;
 					cx.item.init.done = true;
 				}
+
 
 				for ( var i = cfg.repeatEachTest; i && !host.endSignal ; --i ) {
 
@@ -459,14 +456,14 @@ function launchTests(itemList, cfg) {
 						exportFile.sync();
 					}
 
-					var t0 = timeCounter();
+//					var t0 = timeCounter();
 					void cx.item.func(qaapi);
-					var time = timeCounter() - t0;
+//					var time = timeCounter() - t0;
 					++testCount;
 				}
 
-				if ( !cfg.quiet )
-					print( ' ...' + (time/cfg.repeatEachTest).toFixed(1) + 'ms' );
+//				if ( !cfg.quiet )
+//					print( ' ...' + (time/cfg.repeatEachTest).toFixed(1) + 'ms' );
 
 			} catch(ex) {
 
@@ -736,10 +733,10 @@ function main() {
 
 		testList = testList.sort( function(a,b) {
 			
-			if ( a.file == b.file )
-				return Number(a.line) < Number(b.line) ? -1 : 1;
-			else
+			if ( a.file != b.file )
 				return a.file < b.file ? -1 : 1;
+			else
+				return a.line < b.line ? -1 : 1;
 		});
 
 //		testList = testList.slice
@@ -774,12 +771,11 @@ function main() {
 	if ( cfg.gcZeal )
 		gcZeal = cfg.gcZeal;
 
-	print('Testing:\n');
-
 	var savePrio = processPriority;
 	processPriority = cfg.priority;
 	var t0 = timeCounter();
 
+	print('Testing:\n');
 	var [issueList, checkCount] = launchTests(testList, cfg);
 
 	var t = timeCounter() - t0;

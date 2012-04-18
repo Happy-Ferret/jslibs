@@ -11,7 +11,7 @@ loadModule('jsode');
 
 
 var space = new Space();
-var floor = new GeomPlane(space);
+//var floor = new GeomPlane(space);
 
 
   /*

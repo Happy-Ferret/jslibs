@@ -395,3 +395,4 @@ loadModule('jsstd');
 	QA.ASSERT_STR( stringify(new Int8Array()), '', 'toString empty Int8Array' );
 	QA.ASSERT_STR( stringify(new Int8Array([100,100,100])), 'ddd', 'toString Int8Array "ddd"' );
 	QA.ASSERT_STR( stringify(new Uint16Array([100,100,100])), 'ddd', 'toString Uint16Array "ddd"' );
+

@@ -4,14 +4,98 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
  //loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile();
  
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('-rangeStart 16 -rangeLength 1'); throw 0; // -inlineOnly
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('-rangeStart 150 -rangeLength 50 -excl ode'); throw 0; // -inlineOnly
 
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
-	loadModule('jsdebug');
+
+try {
+
+	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', 'host.stdin', 'setPerfTestMode' , 'jslangTest' ]; // 
+
+//	loadModule('jswinshell'); excludeList.push('fileOpenDialog', 'Console.close');
+	loadModule('jssdl'); excludeList.push('setVideoMode', 'iconify');
+	loadModule('jsstd'); excludeList.push('halt');
+	loadModule('jsdebug'); excludeList.push('debugBreak');
+
+	
+	var count = 0;
 	var done = {__proto__:null};
-	done[objectGCId(eval('jslangTest'))] = true;
+	for ( var item of excludeList ) {
+		try {
+			var ob = eval(item);
+			done[objectGCId(ob)] = ob;
+		} catch(ex){}
+	}
+	
+	function fct(obj, left) {
+
+		if ( host.endSignal )
+			halt();
+			
+		if ( isPrimitive(obj) )
+			return;
+
+		done[objectGCId(obj)] = obj;
+		var list = Object.getOwnPropertyNames(obj);
+		for ( var name of list ) {
+
+			if ( name == 'arguments' )
+				continue;
+
+host.stdout( left+'.'+name+'\n' );
+
+			var nextObj;
+			try {
+				nextObj = obj[name];
+			} catch(ex) {
+				continue;
+			}
+			
+			if ( done[objectGCId(nextObj)] )
+				continue;
+
+			try {
+				if ( String.prototype.indexOf.call(nextObj, '[native code]') == -1 )
+					continue;
+			} catch(ex) {
+				continue;
+			}
+
+			try {
+				obj[name]();
+			} catch(ex) {}
+
+if ( ++count >= 300 )
+	throw 'done';
+
+			try {
+				nextObj();
+			} catch(ex) {}
+
+			fct(nextObj, left+'.'+name);
+		}
+	}
+
+	fct(global, '');
+
+
+} catch (ex) {
+}
+
+print('press ctrl-c');
+processEvents(timeoutEvents(2000), host.endSignalEvents());
+print('done.');
+
+
+
+
+
+
+
+
+
 
 
 throw 0;

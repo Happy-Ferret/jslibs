@@ -8,6 +8,7 @@ loadModule('jsio');
 
 	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', 'host.stdin', 'setPerfTestMode' , 'jslangTest' ]; // 
 
+
 	loadModule('jswinshell'); excludeList.push('fileOpenDialog', 'Console.close');
 	loadModule('jssdl'); excludeList.push('setVideoMode', 'iconify');
 	loadModule('jsstd'); excludeList.push('halt');
@@ -238,17 +239,6 @@ loadModule('jsio');
 	QA.ASSERTOP( global.host, 'has', 'stdout' );
 	QA.ASSERTOP( global.host, 'has', 'stderr' );
 	QA.ASSERTOP( global.host, 'has', 'stdin' );
-
-	
-	
-/// jit enabled [t]
-	
-	function noop() {}
-	var t = +new Date();
-	for ( var i = 0; i < 1000000; ++i );
-		noop();
-	t = +new Date() - t;
-	QA.ASSERT( t < 30 , true, 'run time' );
 
 
 

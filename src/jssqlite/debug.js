@@ -1,8 +1,5 @@
 var loadModule = host.loadModule;
-loadModule('jsstd');
-//loadModule('jssqlite');
-
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssqlite');
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssqlite');
 
 
 	loadModule('jstask');

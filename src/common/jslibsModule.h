@@ -12,22 +12,9 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-
 #pragma once
 
 #include "jlplatform.h"
-//#include <sys/types.h>
-//#include <jstypes.h>
-
-/*
-EXTERN_C void* jl_malloc_fct( size_t );
-EXTERN_C void* jl_calloc_fct( size_t, size_t );
-EXTERN_C void* jl_memalign_fct( size_t, size_t );
-EXTERN_C void* jl_realloc_fct( void*, size_t );
-EXTERN_C size_t jl_msize_fct( void* );
-EXTERN_C void jl_free_fct( void* );
-*/
-//extern int _unsafeMode;
 
 extern uint32_t _moduleId;
 

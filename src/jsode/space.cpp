@@ -67,6 +67,8 @@ DEFINE_FINALIZE() {
 	ode::dSpaceID spaceId = (ode::dSpaceID)JL_GetPrivate(obj);
 	if ( spaceId == NULL )
 		return;
+
+//	dSpaceDestroy(spaceId); // (TBD) ???
 }
 
 
@@ -86,7 +88,10 @@ DEFINE_CONSTRUCTOR() {
 		parentSpace = 0;
 
 	ode::dSpaceID spaceId = ode::dHashSpaceCreate(parentSpace); // dSimpleSpaceCreate / dHashSpaceCreate / dQuadTreeSpaceCreate
-	ode::dSpaceSetCleanup(spaceId, 0); // manual cleanup
+	
+	// doc:  If the clean-up mode is 1, then the contained geoms will be destroyed when the space is destroyed. If the clean-up mode is 0 this does not happen. The default clean-up mode for new spaces is 1.
+	ode::dSpaceSetCleanup(spaceId, 0);
+
 	//ode::dHashSpaceSetLevels(spaceId, -3, 10);
 
 	JL_SetPrivate(cx, obj, spaceId);
