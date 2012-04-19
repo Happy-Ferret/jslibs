@@ -4,4 +4,4 @@ Official SVN source:
 	https://opende.svn.sourceforge.net/svnroot/opende/trunk/
 
 
-jslibs\libs\ode\src\build>premake4.exe --os=windows --with-gimpact --no-dif --enable-static-only --to=../.. vs2005
+jslibs\libs\ode\src\build>premake4.exe --os=windows --with-gimpact --no-dif --enable-static-only --to=../.. vs2008
