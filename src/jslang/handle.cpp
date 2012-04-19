@@ -54,7 +54,7 @@ DEFINE_FUNCTION( toString ) {
 			str[11] = ht[0];
 		} else {
 
-			*((HANDLE_TYPE*)str + 8) = pv->handleType;
+			*((JL_HANDLE_TYPE*)str + 8) = pv->handleType;
 		}
 
 		if ( str[ 8] == '\0' )  str[ 8] = ' ';
@@ -142,7 +142,7 @@ CONFIGURE_CLASS
 	HAS_INIT
 //	FROZEN_PROTOTYPE
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(HANDLE_PUBLIC_SLOT_COUNT)
+	HAS_RESERVED_SLOTS(JL_HANDLE_PUBLIC_SLOT_COUNT)
 	HAS_FINALIZE
 	
 	IS_UNCONSTRUCTIBLE
@@ -157,3 +157,65 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 END_CLASS
+
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+/*
+#define JL_HANDLE2_PUBLIC_SLOT_COUNT 4
+
+BEGIN_CLASS( Handle2 )
+
+class HandlePrivate {
+};
+
+
+DEFINE_FINALIZE() {
+}
+
+CONFIGURE_CLASS
+	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
+	HAS_PRIVATE
+	HAS_FINALIZE
+	HAS_RESERVED_SLOTS(JL_HANDLE2_PUBLIC_SLOT_COUNT)
+	IS_UNCONSTRUCTIBLE
+END_CLASS
+
+// usage: UserProcessEvent *upe = NewHandle2<UserProcessEvent, "upev">(cx, JL_RVAL);
+
+
+template <class UserClass>
+UserClass*
+NewHandle2(JSContext *cx, jsval *rval) {
+
+//	uint32_t handleType = Type;
+
+	const ClassProtoCache *classProtoCache = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Handle2");
+	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Handle2"), E_NOTFOUND );
+
+	JSObject *handleObj;
+	handleObj = JL_NewObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto, NULL);
+	JL_CHK( handleObj );
+	*rval = OBJECT_TO_JSVAL(handleObj);
+
+	UserClass* userData = ::new(jl_malloc(sizeof(UserClass))) UserClass;
+	JL_SetPrivate(cx, handleObj, userData);
+	return userData;
+bad:
+	return NULL;
+}
+
+
+int test() {
+
+	class Foo {
+	};
+
+	Foo *foo = NewHandle2<Foo>(NULL, NULL);
+
+	return 0;
+}
+
+*/
+

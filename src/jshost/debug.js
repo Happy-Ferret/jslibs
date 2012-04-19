@@ -10,13 +10,30 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
 
+
+host.stdout('press ctrl-c\n');
+
+var to = timeoutEvents(500, function() { host.stdout('timeout.\n') });
+var es = host.endSignalEvents();
+
+processEvents(to);
+
+host.stdout('...\n');
+
+processEvents(to);
+
+host.stdout('done.\n');
+
+throw 0;
+
+
 try {
 
 	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', 'host.stdin', 'setPerfTestMode' , 'jslangTest' ]; // 
 
 //	loadModule('jswinshell'); excludeList.push('fileOpenDialog', 'Console.close');
 	loadModule('jssdl'); excludeList.push('setVideoMode', 'iconify');
-	loadModule('jsstd'); excludeList.push('halt');
+//	loadModule('jsstd'); excludeList.push('halt');
 	loadModule('jsdebug'); excludeList.push('debugBreak');
 
 	
@@ -67,7 +84,7 @@ host.stdout( left+'.'+name+'\n' );
 				obj[name]();
 			} catch(ex) {}
 
-if ( ++count >= 300 )
+if ( ++count >= 0 )
 	throw 'done';
 
 			try {
@@ -84,9 +101,9 @@ if ( ++count >= 300 )
 } catch (ex) {
 }
 
-print('press ctrl-c');
+host.stdout('press ctrl-c');
 processEvents(timeoutEvents(2000), host.endSignalEvents());
-print('done.');
+host.stdout('done.');
 
 
 

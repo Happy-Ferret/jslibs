@@ -17,20 +17,22 @@
 
 #include "stdafx.h"
 
-#define HANDLE_PUBLIC_SLOT_COUNT 4
+#define JL_HANDLE_PUBLIC_SLOT_COUNT 4
 
-#define JLHID(id) JL_CAST_CSTR_TO_UINT32(#id)
+#define JLHID(id) \
+	JL_CAST_CSTR_TO_UINT32(#id)
 
 typedef void (*HandleFinalizeCallback_t)(void* data);
 
-#define HANDLE_TYPE uint32_t
-#define HANDLE_INVALID (0)
+#define JL_HANDLE_TYPE uint32_t
+#define JL_HANDLE_INVALID (0)
+
 
 // (TBD) better alignment: __attribute__ ((__vector_size__ (16), __may_alias__)); OR  __declspec(align(64))
 //       note that SSE data must be 128bits alligned !
 
 struct HandlePrivate {
-	HANDLE_TYPE handleType;
+	JL_HANDLE_TYPE handleType;
 	HandleFinalizeCallback_t finalizeCallback;
 };
 
@@ -46,9 +48,9 @@ JL_HandleJSClass( JSContext *cx ) {
 
 
 INLINE JSBool
-HandleCreate( JSContext *cx, HANDLE_TYPE handleType, size_t userDataSize, void** userData, HandleFinalizeCallback_t finalizeCallback, jsval *handleVal ) {
+HandleCreate( JSContext *cx, JL_HANDLE_TYPE handleType, size_t userDataSize, void** userData, HandleFinalizeCallback_t finalizeCallback, jsval *handleVal ) {
 
-	ASSERT( handleType != HANDLE_INVALID );
+	ASSERT( handleType != JL_HANDLE_INVALID );
 
 	const ClassProtoCache *classProtoCache = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Handle");
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Handle"), E_NOTFOUND );
@@ -94,7 +96,7 @@ HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
 }
 
 
-INLINE HANDLE_TYPE
+INLINE JL_HANDLE_TYPE
 GetHandleType( JSContext *cx, jsval handleVal ) {
 
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
@@ -107,7 +109,7 @@ GetHandleType( JSContext *cx, jsval handleVal ) {
 	JL_CHK( pv != NULL );
 	return pv->handleType;
 bad:
-	return HANDLE_INVALID;
+	return JL_HANDLE_INVALID;
 }
 
 
@@ -118,7 +120,7 @@ IsHandle( JSContext *cx, jsval handleVal ) {
 }
 
 ALWAYS_INLINE bool
-IsHandleType( JSContext *, JSObject *handleObj, HANDLE_TYPE handleType ) {
+IsHandleType( JSContext *, JSObject *handleObj, JL_HANDLE_TYPE handleType ) {
 
 	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(handleObj);
 	return pv != NULL && pv->handleType == handleType;
@@ -126,7 +128,7 @@ IsHandleType( JSContext *, JSObject *handleObj, HANDLE_TYPE handleType ) {
 
 
 ALWAYS_INLINE bool
-IsHandleType( JSContext *cx, jsval handleVal, HANDLE_TYPE handleType ) {
+IsHandleType( JSContext *cx, jsval handleVal, JL_HANDLE_TYPE handleType ) {
 
 	if ( !JL_ValueIsClass(handleVal, JL_HandleJSClass(cx)) )
 		return false;
@@ -154,7 +156,7 @@ bad:
 INLINE JSBool
 SetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval value ) {
 
-	ASSERT( slotIndex < HANDLE_PUBLIC_SLOT_COUNT );
+	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
 	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
 	return JL_SetReservedSlot(cx, JSVAL_TO_OBJECT(handleVal), slotIndex, value);
@@ -165,7 +167,7 @@ SetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval value )
 INLINE JSBool
 GetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval *value ) {
 
-	ASSERT( slotIndex < HANDLE_PUBLIC_SLOT_COUNT );
+	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
 	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
 	return JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(handleVal), slotIndex, value);

@@ -252,6 +252,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( close ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -405,6 +407,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( step ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -498,6 +502,8 @@ DEFINE_FUNCTION( row ) {
 
 DEFINE_FUNCTION( next ) { // for details, see Row() function thet is the base of this function.
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -532,6 +538,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( reset ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -555,6 +563,8 @@ $TOC_MEMBER $INAME
   Hold the number of columns of the current [Result]
 **/
 DEFINE_PROPERTY_GETTER( columnCount ) {
+
+	JL_IGNORE( id );
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -668,10 +678,14 @@ DEFINE_PROPERTY_GETTER( sql ) {
 
 DEFINE_DEL_PROPERTY() {
 
+	JL_IGNORE( id, vp );
+
 	return JL_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 }
 
 DEFINE_SET_PROPERTY() {
+
+	JL_IGNORE( id, vp, strict );
 
 	return JL_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 }
@@ -686,6 +700,8 @@ DEFINE_SET_PROPERTY() {
 	QA.ASSERTOP( res, '!=', res );
 **/
 DEFINE_EQUALITY_OP() {
+
+	JL_IGNORE( v, obj, cx );
 
 	*bp = JS_FALSE;
 	return JS_TRUE;

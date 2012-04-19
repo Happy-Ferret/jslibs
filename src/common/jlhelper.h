@@ -791,6 +791,7 @@ JL_NewProtolessObj( JSContext *cx ) {
 
 	JSObject *obj = JL_NewObjectWithGivenProto(cx, NULL, NULL, JL_GetGlobal(cx));
 	ASSERT( JL_GetParent(cx, obj) != NULL );
+	ASSERT( JL_GetPrototype(cx, obj) == NULL );
 	return obj;
 }
 
@@ -3518,7 +3519,17 @@ JL_CallFunctionId(JSContext *cx, JSObject *obj, jsid id, unsigned argc, jsval *a
 }
 
 
-// JL_CallFunctionVA
+// JL_CallFunctionVA (cx, obj, function, rval, ... )
+
+// (TBD)
+
+
+// JL_CallFunctionVA (cx, obj, functionId, rval, ... )
+
+// (TBD)
+
+
+// JL_CallFunctionVA (cx, obj, functionValue, rval, ... )
 
 ALWAYS_INLINE JSBool FASTCALL
 JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, jsval &functionValue, jsval *rval ) {

@@ -3,10 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsode", "jsode.vcproj", "{F96A90A1-2DFB-4C89-BFEF-9B703D2A78EE}"
 	ProjectSection(ProjectDependencies) = postProject
-		{80E535F1-2E11-8F4F-9194-D9BD53ADCCA2} = {80E535F1-2E11-8F4F-9194-D9BD53ADCCA2}
+		{73956686-BEE4-8B48-9CFB-1E6DC32DB2D5} = {73956686-BEE4-8B48-9CFB-1E6DC32DB2D5}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ode", "..\..\libs\ode\ode.vcproj", "{80E535F1-2E11-8F4F-9194-D9BD53ADCCA2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ode", "..\..\libs\ode\ode.vcproj", "{73956686-BEE4-8B48-9CFB-1E6DC32DB2D5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,10 +18,10 @@ Global
 		{F96A90A1-2DFB-4C89-BFEF-9B703D2A78EE}.DBG|Win32.Build.0 = DBG|Win32
 		{F96A90A1-2DFB-4C89-BFEF-9B703D2A78EE}.OPT|Win32.ActiveCfg = OPT|Win32
 		{F96A90A1-2DFB-4C89-BFEF-9B703D2A78EE}.OPT|Win32.Build.0 = OPT|Win32
-		{80E535F1-2E11-8F4F-9194-D9BD53ADCCA2}.DBG|Win32.ActiveCfg = DebugSingleLib|Win32
-		{80E535F1-2E11-8F4F-9194-D9BD53ADCCA2}.DBG|Win32.Build.0 = DebugSingleLib|Win32
-		{80E535F1-2E11-8F4F-9194-D9BD53ADCCA2}.OPT|Win32.ActiveCfg = ReleaseSingleLib|Win32
-		{80E535F1-2E11-8F4F-9194-D9BD53ADCCA2}.OPT|Win32.Build.0 = ReleaseSingleLib|Win32
+		{73956686-BEE4-8B48-9CFB-1E6DC32DB2D5}.DBG|Win32.ActiveCfg = DebugSingleLib|Win32
+		{73956686-BEE4-8B48-9CFB-1E6DC32DB2D5}.DBG|Win32.Build.0 = DebugSingleLib|Win32
+		{73956686-BEE4-8B48-9CFB-1E6DC32DB2D5}.OPT|Win32.ActiveCfg = ReleaseSingleLib|Win32
+		{73956686-BEE4-8B48-9CFB-1E6DC32DB2D5}.OPT|Win32.Build.0 = ReleaseSingleLib|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -502,6 +502,7 @@ JLThreadFuncDecl ProcessEventThread( void *data ) {
 	return 0;
 }
 
+
 DEFINE_FUNCTION( processEvents ) {
 
 	int st;
@@ -512,18 +513,17 @@ DEFINE_FUNCTION( processEvents ) {
 
 	if ( JL_ARGC == 0 ) {
 		
-		*JL_RVAL = INT_TO_JSVAL(0);
+		*JL_RVAL = JSVAL_ZERO;
 		return JS_TRUE;
 	}
 
-	unsigned i;
+	unsigned int i;
 	for ( i = 0; i < argc; ++i ) {
 
 		JL_ASSERT_ARG_TYPE( IsHandle(cx, JL_ARGV[i]), i+1, "(pev) Handle" );
-		JSObject *pevObj = JSVAL_TO_OBJECT(JL_ARGV[i]);
-		JL_ASSERT_ARG_TYPE( IsHandleType(cx, pevObj, JL_CAST_CSTR_TO_UINT32("pev")), i+1, "(pev) Handle" );
+		JL_ASSERT_ARG_TYPE( IsHandleType(cx, JSVAL_TO_OBJECT(JL_ARGV[i]), JL_CAST_CSTR_TO_UINT32("pev")), i+1, "(pev) Handle" );
 		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, JL_ARGV[i]);
-		JL_ASSERT(  pe != NULL, E_ARG, E_NUM(i+1), E_STATE ); //JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_ANINVALID, E_NAME("pev Handle") );
+		JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_STATE ); //JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_ANINVALID, E_NAME("pev Handle") );
 
 		ASSERT( pe->startWait );
 		ASSERT( pe->cancelWait );
@@ -580,11 +580,13 @@ DEFINE_FUNCTION( processEvents ) {
 	}
 
 	ASSERT( argc <= JSVAL_INT_BITS ); // bits
-	unsigned int eventsMask;
+
+	int32_t eventsMask;
 	eventsMask = 0;
 	bool hasEvent;
 	JSBool ok;
 	ok = JS_TRUE;
+
 	for ( i = 0; i < argc; ++i ) {
 
 		ProcessEvent *pe = peList[i];
@@ -604,7 +606,8 @@ DEFINE_FUNCTION( processEvents ) {
 
 		if ( hasEvent )
 			eventsMask |= 1 << i;
-		JL_CHK( HandleClose(cx, JL_ARGV[i]) );
+
+//		JL_CHK( HandleClose(cx, JL_ARGV[i]) ); // (TBD) recycle items instead of closing them
 	}
 
 #ifdef DEBUG
@@ -639,7 +642,6 @@ $TOC_MEMBER $INAME
 	QA.ASSERTOP( d, '<=', 123 +10); // error margin
 **/
 struct UserProcessEvent {
-
 	ProcessEvent pe;
 	unsigned int timeout;
 	JLEventHandler cancel;
@@ -649,7 +651,7 @@ struct UserProcessEvent {
 
 S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-void TimeoutStartWait( volatile ProcessEvent *pe ) {
+static void TimeoutStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -663,7 +665,7 @@ void TimeoutStartWait( volatile ProcessEvent *pe ) {
 	}
 }
 
-bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
+static bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -671,22 +673,36 @@ bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	JL_IGNORE(obj);
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	JLEventFree(&upe->cancel);
 	*hasEvent = !upe->canceled;
+
+	// not triggered, then nothing to reset
 	if ( !*hasEvent )
 		return JS_TRUE;
+
+	// reset for further use.
+	JLEventReset(upe->cancel);
+	upe->canceled = false;
+
 	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
 		return JS_TRUE;
+
 	jsval rval;
-	JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobal(cx), upe->callbackFunction, 0, NULL, &rval) );
+	JL_CHK( JL_CallFunctionVA(cx, JL_GetGlobal(cx), upe->callbackFunction, &rval) );
+
 	return JS_TRUE;
 	JL_BAD;
+}
+
+static void TimeoutFinalize( void* data ) {
+	
+	UserProcessEvent *upe = (UserProcessEvent*)data;
+	JLEventFree(&upe->cancel);
 }
 
 DEFINE_FUNCTION( timeoutEvents ) {
@@ -697,7 +713,7 @@ DEFINE_FUNCTION( timeoutEvents ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
 	
 	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, TimeoutFinalize, JL_RVAL) );
 	upe->pe.startWait = TimeoutStartWait;
 	upe->pe.cancelWait = TimeoutCancelWait;
 	upe->pe.endWait = TimeoutEndWait;
