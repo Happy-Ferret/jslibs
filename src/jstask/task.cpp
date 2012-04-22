@@ -687,6 +687,11 @@ struct UserProcessEvent {
 
 S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
+static JSBool TaskPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+	
+	return JS_TRUE;
+}
+
 void TaskStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
@@ -738,6 +743,7 @@ DEFINE_FUNCTION( events ) {
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
+	upe->pe.prepareWait = TaskPrepareWait;
 	upe->pe.startWait = TaskStartWait;
 	upe->pe.cancelWait = TaskCancelWait;
 	upe->pe.endWait = TaskEndWait;

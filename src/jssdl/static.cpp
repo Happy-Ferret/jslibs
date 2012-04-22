@@ -1251,6 +1251,11 @@ struct SurfaceReadyProcessEvent {
 
 S_ASSERT( offsetof(SurfaceReadyProcessEvent, pe) == 0 );
 
+static JSBool SurfaceReadyPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+	
+	return JS_TRUE;
+}
+
 void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
 
 	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
@@ -1304,6 +1309,8 @@ DEFINE_FUNCTION( surfaceReadyEvents ) {
 
 	SurfaceReadyProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
+
+	upe->pe.prepareWait = SurfaceReadyPrepareWait;
 	upe->pe.startWait = SurfaceReadyStartWait;
 	upe->pe.cancelWait = SurfaceReadyCancelWait;
 	upe->pe.endWait = SurfaceReadyEndWait;
@@ -1344,6 +1351,11 @@ struct UserProcessEvent {
 };
 
 S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+
+static JSBool SDLPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+	
+	return JS_TRUE;
+}
 
 void SDLStartWait( volatile ProcessEvent *pe ) {
 
@@ -1414,6 +1426,7 @@ DEFINE_FUNCTION( sdlEvents ) {
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
+	upe->pe.prepareWait = SDLPrepareWait;
 	upe->pe.startWait = SDLStartWait;
 	upe->pe.cancelWait = SDLCancelWait;
 	upe->pe.endWait = SDLEndWait;

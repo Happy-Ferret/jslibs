@@ -757,6 +757,11 @@ struct UserProcessEvent {
 
 S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
+static JSBool DirectoryChangesPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+	
+	return JS_TRUE;
+}
+
 void DirectoryChangesStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
@@ -814,6 +819,7 @@ DEFINE_FUNCTION( directoryChangesEvents ) {
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
+	upe->pe.prepareWait = DirectoryChangesPrepareWait;
 	upe->pe.startWait = DirectoryChangesStartWait;
 	upe->pe.cancelWait = DirectoryChangesCancelWait;
 	upe->pe.endWait = DirectoryChangesEndWait;

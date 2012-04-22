@@ -1,5 +1,10 @@
 loadModule('jsstd');
 
+/// crash
+
+	processEvents( timeoutEvents(1) );
+
+
 /// Stream prototype JL_ASSERT_INSTANCE [ftrm]
 
 	QA.ASSERTOP( function() { Stream.prototype.available }, 'ex', TypeError );

@@ -419,6 +419,11 @@ struct UserProcessEvent {
 
 S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
+static JSBool ConsolePrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+	
+	return JS_TRUE;
+}
+
 void ConsoleStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
@@ -546,6 +551,7 @@ DEFINE_FUNCTION( events ) {
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
+	upe->pe.prepareWait = ConsolePrepareWait;
 	upe->pe.startWait = ConsoleStartWait;
 	upe->pe.cancelWait = ConsoleCancelWait;
 	upe->pe.endWait = ConsoleEndWait;

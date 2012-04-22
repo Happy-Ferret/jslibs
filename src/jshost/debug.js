@@ -9,6 +9,7 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
+processEvents(timeoutEvents(500)); throw 0;
 
 //jslangTest(); throw 0;
 

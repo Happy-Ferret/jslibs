@@ -126,7 +126,7 @@ void Interrupt(int CtrlType) {
 #endif
 
 
-struct UserProcessEvent {
+struct EndSignalProcessEvent {
 	
 	ProcessEvent pe;
 
@@ -134,11 +134,16 @@ struct UserProcessEvent {
 	jsval callbackFunction;
 };
 
-S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(EndSignalProcessEvent, pe) == 0 );
+
+static JSBool EndSignalPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+	
+	return JS_TRUE;
+}
 
 static void EndSignalStartWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
 
 	JLMutexAcquire(gEndSignalLock);
 	while ( gEndSignalState == 0 && !upe->cancel )
@@ -148,7 +153,7 @@ static void EndSignalStartWait( volatile ProcessEvent *pe ) {
 
 static bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
 
 	JLMutexAcquire(gEndSignalLock);
 	upe->cancel = true;
@@ -160,7 +165,7 @@ static bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 
 static JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
 
 	*hasEvent = gEndSignalState != 0;
 	if ( !*hasEvent )
@@ -173,14 +178,13 @@ static JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSCon
 	JL_BAD;
 }
 
-
-
 JSBool EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JL_ASSERT_ARGC_RANGE( 0, 1 );
 
-	UserProcessEvent *upe;
+	EndSignalProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
+	upe->pe.prepareWait = EndSignalPrepareWait;
 	upe->pe.startWait = EndSignalStartWait;
 	upe->pe.cancelWait = EndSignalCancelWait;
 	upe->pe.endWait = EndSignalEndWait;

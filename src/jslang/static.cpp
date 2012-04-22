@@ -517,6 +517,7 @@ DEFINE_FUNCTION( processEvents ) {
 		return JS_TRUE;
 	}
 
+	// fill peList slots
 	unsigned int i;
 	for ( i = 0; i < argc; ++i ) {
 
@@ -525,12 +526,17 @@ DEFINE_FUNCTION( processEvents ) {
 		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, JL_ARGV[i]);
 		JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_STATE ); //JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_ANINVALID, E_NAME("pev Handle") );
 
+		ASSERT( pe->prepareWait );
 		ASSERT( pe->startWait );
 		ASSERT( pe->cancelWait );
 		ASSERT( pe->endWait );
+
+		JL_CHK( pe->prepareWait(pe, cx, JSVAL_TO_OBJECT(JL_ARGV[i])) );
+
 		peList[i] = pe;
 	}
 
+	// prepare threads
 	for ( i = 0; i < argc; ++i ) {
 
 		ProcessEventThreadInfo *ti = &mpv->processEventThreadInfo[i];
@@ -551,9 +557,11 @@ DEFINE_FUNCTION( processEvents ) {
 		JLSemaphoreRelease(ti->startSem);
 	}
 
+	// wait !
 	JLSemaphoreAcquire(mpv->processEventSignalEventSem, JLINFINITE); // wait for an event (timeout can also be managed here)
 	JLSemaphoreRelease(mpv->processEventSignalEventSem);
 
+	// cancel other waits
 	for ( i = 0; i < argc; ++i ) {
 
 		volatile ProcessEvent *peSlot = mpv->processEventThreadInfo[i].peSlot; // avoids to mutex ti->mpSlot access.
@@ -587,6 +595,7 @@ DEFINE_FUNCTION( processEvents ) {
 	JSBool ok;
 	ok = JS_TRUE;
 
+	// notify waiters
 	for ( i = 0; i < argc; ++i ) {
 
 		ProcessEvent *pe = peList[i];
@@ -641,7 +650,7 @@ $TOC_MEMBER $INAME
 	QA.ASSERTOP( d, '>=', 123 -5); // error margin
 	QA.ASSERTOP( d, '<=', 123 +10); // error margin
 **/
-struct UserProcessEvent {
+struct TimeoutProcessEvent {
 	ProcessEvent pe;
 	unsigned int timeout;
 	JLEventHandler cancel;
@@ -649,11 +658,16 @@ struct UserProcessEvent {
 	jsval callbackFunction;
 };
 
-S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(TimeoutProcessEvent, pe) == 0 );
+
+static JSBool TimeoutPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+	
+	return JS_TRUE;
+}
 
 static void TimeoutStartWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	TimeoutProcessEvent *upe = (TimeoutProcessEvent*)pe;
 
 	if ( upe->timeout > 0 ) {
 
@@ -667,7 +681,7 @@ static void TimeoutStartWait( volatile ProcessEvent *pe ) {
 
 static bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	TimeoutProcessEvent *upe = (TimeoutProcessEvent*)pe;
 
 	JLEventTrigger(upe->cancel);
 	return true;
@@ -677,7 +691,7 @@ static JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSConte
 
 	JL_IGNORE(obj);
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	TimeoutProcessEvent *upe = (TimeoutProcessEvent*)pe;
 
 	*hasEvent = !upe->canceled;
 
@@ -701,7 +715,7 @@ static JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSConte
 
 static void TimeoutFinalize( void* data ) {
 	
-	UserProcessEvent *upe = (UserProcessEvent*)data;
+	TimeoutProcessEvent *upe = (TimeoutProcessEvent*)data;
 	JLEventFree(&upe->cancel);
 }
 
@@ -713,9 +727,11 @@ DEFINE_FUNCTION( timeoutEvents ) {
 	unsigned int timeout;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
 
-	UserProcessEvent *upe;
+	TimeoutProcessEvent *upe;
+	int tmp = sizeof(TimeoutProcessEvent);
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, TimeoutFinalize, JL_RVAL) );
 
+	upe->pe.prepareWait = TimeoutPrepareWait;
 	upe->pe.startWait = TimeoutStartWait;
 	upe->pe.cancelWait = TimeoutCancelWait;
 	upe->pe.endWait = TimeoutEndWait;
