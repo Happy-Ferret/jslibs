@@ -704,9 +704,59 @@ struct UserProcessEvent {
 S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
 
-static JSBool IOPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+static JSBool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
+
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
+
+	jsval fdArrayVal;
+	JSObject *fdArrayObj;
+	unsigned fdCount;
+
+	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, &fdArrayVal) );
+	fdArrayObj = JSVAL_TO_OBJECT(fdArrayVal);
+	JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &fdCount) );
+
+	upe->pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdCount)); // pollDesc[0] is the event fd
+	JL_ASSERT_ALLOC( upe->pollDesc );
 	
+	upe->descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
+	JL_ASSERT_ALLOC( upe->descVal );
+	
+	JL_updateMallocCounter(cx, (sizeof(PRPollDesc) + sizeof(jsval)) * fdCount); // approximately (pollDesc + descVal)
+
+	JsioPrivate *mpv;
+	mpv = (JsioPrivate*)JL_GetModulePrivate(cx, _moduleId);
+	if ( mpv->peCancel == NULL ) {
+
+		mpv->peCancel = PR_NewPollableEvent();
+		if ( mpv->peCancel == NULL )
+			return ThrowIoError(cx);
+	}
+
+	upe->pollDesc[0].fd = mpv->peCancel;
+	upe->pollDesc[0].in_flags = PR_POLL_READ;
+	upe->pollDesc[0].out_flags = 0;
+
+	upe->fdCount = fdCount; // count excluding peCancel
+
+	// (TBD) use AutoValueVector avr(cx); avr.reserve(16); avr.append(val);
+
+
+	JSObject *rootedValues;
+	rootedValues = JS_NewArrayObject(cx, fdCount, NULL);
+	JL_CHK( SetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, OBJECT_TO_JSVAL(rootedValues)) );
+
+	jsval *descriptor;
+	for ( unsigned int i = 0; i < fdCount; ++i ) {
+
+		descriptor = &upe->descVal[i]; // get the slot addr
+		JL_CHK( JL_GetElement(cx, fdArrayObj, i, descriptor) ); // read the item
+		JL_CHK( JL_SetElement(cx, rootedValues, i, descriptor) ); // root the item
+		JL_CHK( InitPollDesc(cx, *descriptor, &upe->pollDesc[1 + i]) ); // upe->pollDesc[0] is reserved for mpv->peCancel
+	}
+
 	return JS_TRUE;
+	JL_BAD;
 }
 
 static void IOStartWait( volatile ProcessEvent *pe ) {
@@ -763,57 +813,14 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
-	JSObject *fdArrayObj;
-	fdArrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
-
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
 	upe->pe.prepareWait = IOPrepareWait;
 	upe->pe.startWait = IOStartWait;
 	upe->pe.cancelWait = IOCancelWait;
 	upe->pe.endWait = IOEndWait;
-
-	unsigned fdCount;
-	JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &fdCount) );
-
-	upe->pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdCount)); // pollDesc[0] is the event fd
-	JL_ASSERT_ALLOC( upe->pollDesc );
 	
-	upe->descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
-	JL_ASSERT_ALLOC( upe->descVal );
-	
-	JL_updateMallocCounter(cx, (sizeof(PRPollDesc) + sizeof(jsval)) * fdCount); // approximately (pollDesc + descVal)
-
-	JsioPrivate *mpv;
-	mpv = (JsioPrivate*)JL_GetModulePrivate(cx, _moduleId);
-	if ( mpv->peCancel == NULL ) {
-
-		mpv->peCancel = PR_NewPollableEvent();
-		if ( mpv->peCancel == NULL )
-			return ThrowIoError(cx);
-	}
-
-	upe->pollDesc[0].fd = mpv->peCancel;
-	upe->pollDesc[0].in_flags = PR_POLL_READ;
-	upe->pollDesc[0].out_flags = 0;
-
-	upe->fdCount = fdCount; // count excluding peCancel
-
-	// (TBD) use AutoValueVector avr(cx); avr.reserve(16); avr.append(val);
-
-
-	JSObject *rootedValues;
-	rootedValues = JS_NewArrayObject(cx, fdCount, NULL);
-	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(rootedValues)) );
-
-	jsval *descriptor;
-	for ( unsigned int i = 0; i < fdCount; ++i ) {
-
-		descriptor = &upe->descVal[i]; // get the slot addr
-		JL_CHK( JL_GetElement(cx, fdArrayObj, i, descriptor) ); // read the item
-		JL_CHK( JL_SetElement(cx, rootedValues, i, descriptor) ); // root the item
-		JL_CHK( InitPollDesc(cx, *descriptor, &upe->pollDesc[1 + i]) ); // upe->pollDesc[0] is reserved for mpv->peCancel
-	}
+	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(1)) );
 
 	return JS_TRUE;
 	JL_BAD;

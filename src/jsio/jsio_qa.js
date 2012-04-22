@@ -2,6 +2,14 @@
 loadModule('jsio');
 loadModule('jsdebug');
 
+/// recycle upe event
+
+	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+	var io = Descriptor.events([rdv]);
+	processEvents( io  );
+	processEvents( io );
+
 
 /// Socket shutdown(true) behavior [trm]
 
