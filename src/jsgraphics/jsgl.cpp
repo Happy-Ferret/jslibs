@@ -5890,7 +5890,7 @@ DEFINE_FUNCTION( loadTrimesh ) {
 	JL_ASSERT_OBJECT_STATE(srf, JL_GetClassName(trimeshObj));
 
 	OpenGlTrimeshInfo *info;
-	JL_CHK( HandleCreate(cx, TRIMESH_ID_NAME, sizeof(OpenGlTrimeshInfo), (void**)&info, FinalizeTrimesh, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, TRIMESH_ID_NAME, &info, FinalizeTrimesh, JL_RVAL) );
 
 	if ( srf->vertex ) {
 
@@ -6102,7 +6102,7 @@ DEFINE_FUNCTION( createTextureBuffer ) {
 //	JL_INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
 
 	TextureBuffer *tb;
-	JL_CHK( HandleCreate(cx, JLHID(TBUF), sizeof(TextureBuffer), (void**)&tb, TextureBufferFinalize, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(TBUF), &tb, TextureBufferFinalize, JL_RVAL) );
 	GLuint pbo;
 	glGenBuffers(1, &pbo);  OGL_ERR_CHK;
 	tb->pv = (void*)pbo;

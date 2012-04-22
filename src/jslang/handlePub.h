@@ -47,8 +47,9 @@ JL_HandleJSClass( JSContext *cx ) {
 }
 
 
-INLINE JSBool
-HandleCreate( JSContext *cx, JL_HANDLE_TYPE handleType, size_t userDataSize, void** userData, HandleFinalizeCallback_t finalizeCallback, jsval *handleVal ) {
+template <class Struct>
+INLINE JSBool FASTCALL
+HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruct, HandleFinalizeCallback_t finalizeCallback, jsval *handleVal ) {
 
 	ASSERT( handleType != JL_HANDLE_INVALID );
 
@@ -58,16 +59,17 @@ HandleCreate( JSContext *cx, JL_HANDLE_TYPE handleType, size_t userDataSize, voi
 	JSObject *handleObj;
 	handleObj = JL_NewObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto, NULL);
 	JL_CHK( handleObj );
-
 	*handleVal = OBJECT_TO_JSVAL(handleObj);
+
 	HandlePrivate *pv;
-	pv = (HandlePrivate*)jl_malloc(sizeof(HandlePrivate) + userDataSize);
+	pv = (HandlePrivate*)jl_malloc(sizeof(HandlePrivate) + sizeof(Struct));
 	JL_ASSERT_ALLOC( pv );
-	JL_updateMallocCounter(cx, sizeof(HandlePrivate) + userDataSize);
+	JL_updateMallocCounter(cx, sizeof(HandlePrivate) + sizeof(Struct));
 	JL_SetPrivate(cx, handleObj, pv);
+
 	pv->handleType = handleType;
 	pv->finalizeCallback = finalizeCallback;
-	*userData = (uint8_t*)pv + sizeof(HandlePrivate);
+	*userStruct = (Struct*)(pv+1);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -87,7 +89,7 @@ HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
 	JL_ASSERT_OBJECT_STATE(pv, "Handle");
 
 	if ( pv->finalizeCallback )
-		pv->finalizeCallback((char*)pv + sizeof(HandlePrivate));
+		pv->finalizeCallback(pv+1);
 	jl_free(pv);
 	JL_SetPrivate(cx, handleObj, NULL);
 
@@ -105,6 +107,7 @@ GetHandleType( JSContext *cx, jsval handleVal ) {
 	JSObject *handleObj;
 	handleObj = JSVAL_TO_OBJECT(handleVal);
 	HandlePrivate *pv;
+	
 	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
 	JL_CHK( pv != NULL );
 	return pv->handleType;

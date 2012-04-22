@@ -136,7 +136,7 @@ struct UserProcessEvent {
 
 S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-void EndSignalStartWait( volatile ProcessEvent *pe ) {
+static void EndSignalStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -146,7 +146,7 @@ void EndSignalStartWait( volatile ProcessEvent *pe ) {
 	JLMutexRelease(gEndSignalLock);
 }
 
-bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
+static bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -158,7 +158,7 @@ bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
+static JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -174,12 +174,13 @@ JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *c
 }
 
 
+
 JSBool EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JL_ASSERT_ARGC_RANGE( 0, 1 );
 
 	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
 	upe->pe.startWait = EndSignalStartWait;
 	upe->pe.cancelWait = EndSignalCancelWait;
 	upe->pe.endWait = EndSignalEndWait;

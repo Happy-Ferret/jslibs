@@ -47,7 +47,7 @@ INLINE JSBool
 MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, void* mem, size_t size, MemBufferFree_t free, MemBufferResize_t resize ) {
 
 	MemBuffer *membuf;
-	JL_CHK( HandleCreate(cx, JLHID(MEMB), sizeof(MemBuffer), (void**)&membuf, MemBufferFinalizeCallback, memBufferVal) );
+	JL_CHK( HandleCreate(cx, JLHID(MEMB), &membuf, MemBufferFinalizeCallback, memBufferVal) );
 	membuf->mem = mem;
 	membuf->size = size;
 	membuf->MemBufferFree = free;

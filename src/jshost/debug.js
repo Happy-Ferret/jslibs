@@ -10,17 +10,19 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
 
+//jslangTest(); throw 0;
 
 host.stdout('press ctrl-c\n');
 
-var to = timeoutEvents(500, function() { host.stdout('timeout.\n') });
+//var to = timeoutEvents(500, function() { host.stdout('timeout.\n') });
 var es = host.endSignalEvents();
 
-processEvents(to);
+processEvents(es);
 
 host.stdout('...\n');
 
-processEvents(to);
+host.endSignal = false;
+processEvents(es);
 
 host.stdout('done.\n');
 

@@ -623,7 +623,7 @@ DEFINE_FUNCTION( directoryChangesInit ) {
 		watchSubtree = false;
 
 	DirectoryChanges *dc;
-	JL_CHK( HandleCreate(cx, JLHID(dmon), sizeof(DirectoryChanges), (void**)&dc, FinalizeDirectoryHandle, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(dmon), &dc, FinalizeDirectoryHandle, JL_RVAL) );
 
 	dc->watchSubtree = watchSubtree;
 	dc->notifyFilter = notifyFilter;
@@ -813,7 +813,7 @@ DEFINE_FUNCTION( directoryChangesEvents ) {
 	JL_ASSERT( dc, E_ARG, E_NUM(1), E_STATE );
 
 	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
 	upe->pe.startWait = DirectoryChangesStartWait;
 	upe->pe.cancelWait = DirectoryChangesCancelWait;
 	upe->pe.endWait = DirectoryChangesEndWait;

@@ -1303,7 +1303,7 @@ DEFINE_FUNCTION( surfaceReadyEvents ) {
 	JL_ASSERT_ARGC_RANGE(0,1);
 
 	SurfaceReadyProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(SurfaceReadyProcessEvent), (void**)&upe, NULL, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
 	upe->pe.startWait = SurfaceReadyStartWait;
 	upe->pe.cancelWait = SurfaceReadyCancelWait;
 	upe->pe.endWait = SurfaceReadyEndWait;
@@ -1413,7 +1413,7 @@ DEFINE_FUNCTION( sdlEvents ) {
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
 	upe->pe.startWait = SDLStartWait;
 	upe->pe.cancelWait = SDLCancelWait;
 	upe->pe.endWait = SDLEndWait;

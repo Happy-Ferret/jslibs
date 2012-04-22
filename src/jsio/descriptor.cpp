@@ -703,14 +703,14 @@ struct UserProcessEvent {
 
 S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-void IOStartWait( volatile ProcessEvent *pe ) {
+static void IOStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
 	upe->pollResult = PR_Poll(upe->pollDesc, 1 + upe->fdCount, PR_INTERVAL_NO_TIMEOUT); // 1 is the PollableEvent
 }
 
-bool IOCancelWait( volatile ProcessEvent *pe ) {
+static bool IOCancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -723,7 +723,7 @@ bool IOCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-JSBool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static JSBool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	JL_IGNORE(obj);
 
@@ -761,7 +761,7 @@ DEFINE_FUNCTION( events ) {
 	fdArrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
 	upe->pe.startWait = IOStartWait;
 	upe->pe.cancelWait = IOCancelWait;
 	upe->pe.endWait = IOEndWait;
@@ -800,7 +800,7 @@ DEFINE_FUNCTION( events ) {
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(rootedValues)) );
 
 	jsval *descriptor;
-	for ( unsigned i = 0; i < fdCount; ++i ) {
+	for ( unsigned int i = 0; i < fdCount; ++i ) {
 
 		descriptor = &upe->descVal[i]; // get the slot addr
 		JL_CHK( JL_GetElement(cx, fdArrayObj, i, descriptor) ); // read the item

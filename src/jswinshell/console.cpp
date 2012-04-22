@@ -545,7 +545,7 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_ARGC(0);
 
 	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
 	upe->pe.startWait = ConsoleStartWait;
 	upe->pe.cancelWait = ConsoleCancelWait;
 	upe->pe.endWait = ConsoleEndWait;

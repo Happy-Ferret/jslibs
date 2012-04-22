@@ -705,15 +705,17 @@ static void TimeoutFinalize( void* data ) {
 	JLEventFree(&upe->cancel);
 }
 
+
 DEFINE_FUNCTION( timeoutEvents ) {
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	unsigned int timeout;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
-	
+
 	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, TimeoutFinalize, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, TimeoutFinalize, JL_RVAL) );
+
 	upe->pe.startWait = TimeoutStartWait;
 	upe->pe.cancelWait = TimeoutCancelWait;
 	upe->pe.endWait = TimeoutEndWait;
@@ -996,9 +998,31 @@ testFct( JSContext *cx ) {
 }
 
 
+struct TestIf {
+	
+	virtual int fct(int i) = 0;
+};
+
+
+struct Test1 : public TestIf {
+
+	int fct(int i) {
+		return i * 123;
+	}
+};
+
+
 DEFINE_FUNCTION( jslangTest ) {
 	
 	JL_IGNORE(cx, argc, vp);
+
+
+	Test1 t;
+
+	void *v = (void*)&t;
+
+
+
 
 /*
 	static uint64_t xx[2];

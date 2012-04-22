@@ -28,7 +28,7 @@ DEFINE_FINALIZE() { // see HandleClose()
 	if ( pv ) {
 
 		if ( pv->finalizeCallback ) // callback function is present
-			pv->finalizeCallback((uint8_t*)pv + sizeof(HandlePrivate)); // (TBD) test it !
+			pv->finalizeCallback(pv+1);
 		jl_free(pv);
 	}
 }

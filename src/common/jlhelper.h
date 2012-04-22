@@ -4220,6 +4220,7 @@ Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
 // ProcessEvent
 
 struct ProcessEvent {
+//	JSBool (*prepareWait)( volatile ProcessEvent *self, JSContext *cx, JSObject *obj );
 	void (*startWait)( volatile ProcessEvent *self ); // starts the blocking thread and call signalEvent() when an event has arrived.
 	bool (*cancelWait)( volatile ProcessEvent *self ); // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
 	JSBool (*endWait)( volatile ProcessEvent *self, bool *hasEvent, JSContext *cx, JSObject *obj ); // process the result

@@ -737,7 +737,7 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
 	upe->pe.startWait = TaskStartWait;
 	upe->pe.cancelWait = TaskCancelWait;
 	upe->pe.endWait = TaskEndWait;

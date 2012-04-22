@@ -313,7 +313,7 @@ DEFINE_FUNCTION( iOEvents ) {
 	fdArrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), sizeof(UserProcessEvent), (void**)&upe, NULL, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
 	upe->pe.startWait = IOStartWait;
 	upe->pe.cancelWait = IOCancelWait;
 	upe->pe.endWait = IOEndWait;
