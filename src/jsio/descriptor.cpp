@@ -808,13 +808,19 @@ bad:
 }
 
 
+static void IOWaitFinalize( void* data ) {
+	
+	UserProcessEvent *upe = (UserProcessEvent*)data;
+}
+
+
 DEFINE_FUNCTION( events ) {
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
 	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, IOWaitFinalize, JL_RVAL) );
 	upe->pe.prepareWait = IOPrepareWait;
 	upe->pe.startWait = IOStartWait;
 	upe->pe.cancelWait = IOCancelWait;

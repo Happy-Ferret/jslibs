@@ -2,12 +2,21 @@
 loadModule('jsio');
 loadModule('jsdebug');
 
+
+/// listen multiple times on the same fd
+
+	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+	var io = Descriptor.events([rdv,rdv,rdv,rdv]);
+	processEvents( io );
+
+
 /// recycle upe event
 
 	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
 	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
 	var io = Descriptor.events([rdv]);
-	processEvents( io  );
+	processEvents( io );
 	processEvents( io );
 
 
@@ -17,7 +26,6 @@ loadModule('jsdebug');
 	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
 	processEvents( Descriptor.events([rdv]), timeoutEvents(2000) );
 	var sv = rdv.accept(); rdv.close();
-
 
 	var data = stringRepeat('x', 100);
 	sv.write(data);
