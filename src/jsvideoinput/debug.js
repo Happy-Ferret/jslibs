@@ -1,3 +1,4 @@
+var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 loadModule('jsstd');
@@ -5,6 +6,24 @@ loadModule('jsio');
 loadModule('jsimage');
 
 loadModule('jsvideoinput');
+
+var vi = new VideoInput('QuickCam', 1, 1, 60); // try to get the smallest size and the lowest fps
+print('full name: '+vi.name, '\n');
+
+vi.onImage = function() {
+
+	print( vi.width + 'x' + vi.height, '\n' );
+}
+
+var vie = vi.events();
+
+for ( var i = 0; i < 20; ++i ) {
+
+	processEvents(vie, timeoutEvents(i == 10 ? 1 : 200));
+}
+
+
+throw 0;
 
 //print( VideoInput.list.join('\n') ); throw 0;
 

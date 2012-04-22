@@ -121,12 +121,16 @@ struct UserProcessEvent {
 
 S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-static JSBool VIPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+static JSBool VIPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
 	
+	UserProcessEvent *upe = (UserProcessEvent*)pe;
+
+	ResetEvent(upe->imageEvent); // (TBD) handle errors ?
+
 	return JS_TRUE;
 }
 
-void VIStartWait( volatile ProcessEvent *pe ) {
+static void VIStartWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -135,7 +139,7 @@ void VIStartWait( volatile ProcessEvent *pe ) {
 	ASSERT( status != WAIT_FAILED );
 }
 
-bool VICancelWait( volatile ProcessEvent *pe ) {
+static bool VICancelWait( volatile ProcessEvent *pe ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
@@ -143,12 +147,10 @@ bool VICancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-JSBool VIEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static JSBool VIEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	CloseHandle(upe->cancelEvent);
-	
 	*hasEvent = WaitForSingleObject(upe->imageEvent, 0) == WAIT_OBJECT_0;
 
 	if ( *hasEvent ) {
@@ -162,9 +164,16 @@ JSBool VIEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSOb
 	}
 
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
 }
+
+static void VIWaitFinalize( void* data ) {
+	
+	UserProcessEvent *upe = (UserProcessEvent*)data;
+
+	CloseHandle(upe->cancelEvent);
+}
+
 
 DEFINE_FUNCTION( events ) {
 	
@@ -172,13 +181,13 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_ARGC(0);
 
 	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, VIWaitFinalize, JL_RVAL) );
 	upe->pe.prepareWait = VIPrepareWait;
 	upe->pe.startWait = VIStartWait;
 	upe->pe.cancelWait = VICancelWait;
 	upe->pe.endWait = VIEndWait;
 
-	upe->cancelEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
