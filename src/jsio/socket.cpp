@@ -179,11 +179,13 @@ DEFINE_FUNCTION( bind ) {
 
 	if ( PR_Bind(fd, &addr) != PR_SUCCESS ) {
 
+/* we must throw anyway
 		if ( PR_GetError() == PR_ADDRESS_IN_USE_ERROR ) { // do not failed but return false
 
 			*JL_RVAL = JSVAL_FALSE;
 			return JS_TRUE;
 		}
+*/
 		return ThrowIoError(cx);
 	}
 
