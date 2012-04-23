@@ -467,7 +467,7 @@ function launchTests(itemList, cfg) {
 
 			} catch(ex) {
 
-				reportInfo(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', ex);
+				reportInfo(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', '('+ex.constructor.name+') '+ex);
 			}
 
 			if ( !cfg.quiet )
