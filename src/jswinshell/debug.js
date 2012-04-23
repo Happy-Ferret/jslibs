@@ -1,3 +1,4 @@
+var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 loadModule('jsio');
@@ -5,11 +6,69 @@ loadModule('jsstd');
 loadModule('jswinshell');
 loadModule('jssvg');
 
-
-loadModule('jsstd');
-loadModule('jswinshell');
-
 //jswinshelltest();
+
+
+var s = new Systray();
+s.icon = new Icon( 0 );
+
+s.onmousedown = function( button ) {
+
+	//s.popupMenu( [{label:'test', popup:['Force']}] );
+	s.popupMenu([ { label:'aaa', popup:[ '1','2','3','4','5' ] } ]);
+}
+
+s.oncommand = function( id, button ) {
+
+	print( s.oncommand, ' ', id );
+}
+
+var ev = s.events();
+
+while ( !host.endSignal )
+	processEvents( ev, host.endSignalEvents() )
+
+
+throw 0; //////////////////////////////////////////////////////////////////////
+
+
+var dch = directoryChangesInit('C:\\', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
+
+function changesNotificationFct() {
+
+	print( directoryChangesLookup(dch).join('\n'), '\n');
+}
+
+var ev = directoryChangesEvents(dch, changesNotificationFct);
+
+while ( !host.endSignal )
+	processEvents( ev, host.endSignalEvents() );
+	
+	
+
+throw 0; //////////////////////////////////////////////////////////////////////
+
+
+try {
+
+Console.onKeyDown = function() {
+
+	print('.');
+}
+
+var ev = Console.events();
+
+while ( !host.endSignal )
+	processEvents( ev, host.endSignalEvents() );
+	
+
+} catch (ex) {
+	print( uneval(ex) );
+}
+
+
+throw 0; //////////////////////////////////////////////////////////////////////
+
 
 
 try {
@@ -322,20 +381,6 @@ try {
 
 halt(); //////////////////////////////////////////////////////////////////////
 
-var dch = directoryChangesInit('C:\\', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
-
-function changesNotificationFct() {
-
-	print( directoryChangesLookup(dch).join('\n'), '\n');
-}
-
-while ( !host.endSignal )
-	processEvents( directoryChangesEvents(dch, changesNotificationFct), host.endSignalEvents() );
-	
-	
-
-
-halt(); //////////////////////////////////////////////////////////////////////
 
 
 

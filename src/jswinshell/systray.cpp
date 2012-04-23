@@ -64,25 +64,16 @@ typedef struct MSGInfo {
 } MSGInfo;
 
 
-//S_ASSERT(sizeof(jsval) <= sizeof(/*jl::QueueCell::data aka.*/void*));
-
 void AddPopupMenuRoot(JSContext *cx, JSObject *obj, jsval value) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
-//	jsid id;
-//	JL_JsvalToJsid(cx, &value, &id);
-//	JS_S_ASSERT( sizeof(id) <= sizeof(void*) );
-	//jl::QueuePush(&pv->popupMenuRoots, *(void**)&id);
 	*++pv->popupMenuRoots = value;
 }
 
 void FreePopupMenuRoots(JSContext *cx, JSObject *obj) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
-//	while ( !jl::QueueIsEmpty(&pv->popupMenuRoots) )
-//		jl::QueuePop(&pv->popupMenuRoots);
-	while ( pv->popupMenuRoots )
-		--pv;
+	pv->popupMenuRoots.Clear();
 }
 
 
@@ -494,16 +485,19 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 //	char dbg[65535];  sprintf(dbg, "msg: %x\n", message);  OutputDebugString(dbg);
 
 	switch ( message ) {
+
 		case WM_SETFOCUS:
 			JL_CHK( JS_GetProperty(cx, obj, "onfocus", &functionVal) );
 			if ( JL_ValueIsCallable(cx, functionVal) )
 				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, JSVAL_TRUE ) );
 			break;
+
 		case WM_KILLFOCUS:
 			JL_CHK( JS_GetProperty(cx, obj, "onblur", &functionVal) );
 			if ( JL_ValueIsCallable(cx, functionVal) )
 				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, JSVAL_FALSE ) );
 			break;
+
 		case WM_CHAR:
 			JL_CHK( JS_GetProperty(cx, obj, "onchar", &functionVal) );
 			if ( JL_ValueIsCallable(cx, functionVal) ) {
@@ -536,7 +530,6 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 			break;
 
 		case WM_SYSCOMMAND: // avoid any system command (including Alt-F4) from systray icon.
-
 			switch ( wParam ) {
 				case SC_SCREENSAVE:
 				case SC_MONITORPOWER:
@@ -623,7 +616,7 @@ $TOC_MEMBER $INAME
   Passively waits for Systray events through the processEvents function.
 **/
 
-struct UserProcessEvent {
+struct SystrayUserProcessEvent {
 	
 	ProcessEvent pe;
 	Private *systrayPrivate;
@@ -631,7 +624,7 @@ struct UserProcessEvent {
 	JSObject *systrayObj;
 };
 
-S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(SystrayUserProcessEvent, pe) == 0 );
 
 static JSBool SystrayPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
 	
@@ -640,17 +633,16 @@ static JSBool SystrayPrepareWait( volatile ProcessEvent *self, JSContext *cx, JS
 
 void SystrayStartWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	SystrayUserProcessEvent *upe = (SystrayUserProcessEvent*)pe;
 
 	HANDLE events[] = { upe->systrayPrivate->event, upe->cancelEvent };
 	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
 	ASSERT( status != WAIT_FAILED );
-
 }
 
 bool SystrayCancelWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	SystrayUserProcessEvent *upe = (SystrayUserProcessEvent*)pe;
 
 	SetEvent(upe->cancelEvent);
 	return true;
@@ -658,12 +650,10 @@ bool SystrayCancelWait( volatile ProcessEvent *pe ) {
 
 JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	SystrayUserProcessEvent *upe = (SystrayUserProcessEvent*)pe;
 
 	Private *pv = upe->systrayPrivate;
 
-	CloseHandle(upe->cancelEvent);
-	
 	*hasEvent = !jl::QueueIsEmpty(&pv->msgQueue);
 
 	jsval rval;
@@ -685,6 +675,13 @@ JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 	JL_BAD;
 }
 
+void SystrayWaitFinalize( void* pe ) {
+
+	SystrayUserProcessEvent *upe = (SystrayUserProcessEvent*)pe;
+
+	CloseHandle(upe->cancelEvent);
+}
+
 DEFINE_FUNCTION( events ) {
 	
 	JL_DEFINE_FUNCTION_OBJ;
@@ -694,18 +691,19 @@ DEFINE_FUNCTION( events ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
+	SystrayUserProcessEvent *upe;
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, SystrayWaitFinalize, JL_RVAL) );
 	upe->pe.prepareWait = SystrayPrepareWait;
 	upe->pe.startWait = SystrayStartWait;
 	upe->pe.cancelWait = SystrayCancelWait;
 	upe->pe.endWait = SystrayEndWait;
 
-	upe->cancelEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	upe->systrayPrivate = pv;
-	upe->systrayObj = obj;
 
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(obj)) ); // GC protection
+	upe->systrayObj = obj;
+
+	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 
 	return JS_TRUE;
 	JL_BAD;
@@ -738,9 +736,10 @@ ALWAYS_INLINE JSBool NormalizeMenuInfo( JSContext *cx, JSObject *obj, const jsva
 	return JS_TRUE;
 }
 
-JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *hMenu ) {
+JSBool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *hMenu ) {
 
-	*hMenu = CreatePopupMenu();
+//	*hMenu = CreatePopupMenu();
+	ASSERT( *hMenu != NULL );
 
 	unsigned menuLength;
 	JL_CHK( JS_GetArrayLength(cx, menuObj, &menuLength) );
@@ -855,11 +854,15 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					JL_ASSERT_IS_OBJECT(value, keyStr);
 					uFlags |= MF_POPUP;
-					JL_CHK( MakeMenu(cx, systrayObj, JSVAL_TO_OBJECT(value), &popupMenu) );
+					popupMenu = CreatePopupMenu();
+					JL_CHK( FillMenu(cx, systrayObj, JSVAL_TO_OBJECT(value), &popupMenu) );
 					continue;
 				}
 			}
 			JS_DestroyIdArray(cx, list);
+		} else {
+
+			JL_ERR( E_STR("menu item"), E_INVALID );
 		}
 
 		JLData newItemStr;
@@ -903,29 +906,26 @@ JSBool MakeMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 
 			if ( cmdid == JSVAL_VOID )
 				cmdid = label;
-//			AddPopupMenuRoot(cx, systrayObj, cmdid);
-//			uIDNewItem = (UINT_PTR)cmdid;
-			AddPopupMenuRoot(cx, systrayObj, item);
 
-//			S_ASSERT( sizeof(jsval) == sizeof(UINT_PTR) );
+			AddPopupMenuRoot(cx, systrayObj, item);
 
 			jsid id;
 			JL_CHK( JL_JsvalToJsid(cx, item, &id) );
-			S_ASSERT(sizeof(id) <= sizeof(UINT_PTR));
-			uIDNewItem = *(UINT_PTR*)&id;
+
+			S_ASSERT( sizeof(id) <= sizeof(UINT_PTR) );
+
+			uIDNewItem = (UINT_PTR)JSID_BITS(id);
 		}
 
-//		JS_ValueToId(
-//			JSID_IS_OBJECT
-
-		AppendMenu(*hMenu, uFlags, uIDNewItem, lpNewItem);
+		BOOL res = AppendMenu(*hMenu, uFlags, uIDNewItem, lpNewItem);
+		ASSERT( res );
 
 		if ( isDefault )
 			SetMenuDefaultItem(*hMenu, i, TRUE);
 
 		if ( hBMP != NULL ) {
 
-			BOOL res = SetMenuItemBitmaps(*hMenu, i, MF_BYPOSITION, hBMP, hBMP ); // doc: When the menu is destroyed, these bitmaps are not destroyed; it is up to the application to destroy them.
+			res = SetMenuItemBitmaps(*hMenu, i, MF_BYPOSITION, hBMP, hBMP ); // doc: When the menu is destroyed, these bitmaps are not destroyed; it is up to the application to destroy them.
 			if ( res == 0 )
 				return JL_ThrowOSError(cx);
 		}
@@ -967,16 +967,15 @@ $TOC_MEMBER $INAME
    If a function is used to define a menu item or the value of an object item, its returned value is used as item value.
   $H example
 {{{ 
-[ 
+systray.popupMenu([ 
   'Start',
   'Stop',
   '---',
-  function() { return 'uptime: '+new Date() }
-  { status:'sub', popup:function() { return [ 1,2,3,4,5 ] }
+  function() { return 'uptime: '+new Date() },
+  { status:'sub', popup:function() { return [ 1,2,3,4,5 ] } },
   '---',
-  { text:'Exit', id:'do_exit', icon:iconRedCross },
-  }
-]
+  { text:'Exit', id:'do_exit', icon:iconRedCross }
+]);
 }}}
 **/
 DEFINE_FUNCTION( popupMenu ) {
@@ -989,16 +988,21 @@ DEFINE_FUNCTION( popupMenu ) {
 	JL_ASSERT_ARGC(1);
 
 	JL_ASSERT_ARG_IS_OBJECT(1);
+	
+	BOOL st;
 
 	HMENU hMenu = GetMenu(pv->nid.hWnd);
 	JL_ASSERT_THIS_OBJECT_STATE( hMenu );
 
-	DestroyMenu(hMenu);
+//	st = DestroyMenu(hMenu);
+//	ASSERT( st );
+	
+	// there is no way to detect the menu popup has been closed. Here we free previous items.
 	FreePopupMenuRoots(cx, obj);
-	JL_CHK( MakeMenu(cx, obj, JSVAL_TO_OBJECT( JL_ARG(1) ), &hMenu) );
-	SetMenu(pv->nid.hWnd, hMenu);
+	JL_CHK( FillMenu(cx, obj, JSVAL_TO_OBJECT( JL_ARG(1) ), &hMenu) );
 
-	PostMessage(pv->nid.hWnd, MSG_POPUP_MENU, 0, 0);
+	st = PostMessage(pv->nid.hWnd, MSG_POPUP_MENU, 0, 0);
+	ASSERT( st );
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;

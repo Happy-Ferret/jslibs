@@ -384,7 +384,7 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 #define JL_ARGV (JS_ARGV(cx,vp))
 
 // returns the ARGument n
-#define JL_ARG( n ) (ASSERT(n <= argc), JL_ARGV[(n)-1])
+#define JL_ARG( n ) (ASSERT((n) > 0 && (unsigned)(n) <= JL_ARGC), JL_ARGV[(n)-1])
 
 // returns the ARGument n or undefined if it does not exist
 #define JL_SARG( n ) (JL_ARGC >= (n) ? JL_ARG(n) : JSVAL_VOID)
@@ -396,7 +396,7 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 #define JL_OBJ (obj)
 
 // is the current obj (this) as a jsval
-#define JL_OBJVAL (argc=argc, JS_THIS(cx, vp))
+#define JL_OBJVAL (argc, JS_THIS(cx, vp))
 
 // the return value
 #define JL_RVAL (&JS_RVAL(cx, vp))
@@ -3982,7 +3982,7 @@ JL_DebugPrintScriptLocation( JSContext *cx ) {
 	filename = JS_GetScriptFilename(cx, script);
 	if ( filename == NULL || *filename == '\0' )
 		filename = "<no_filename>";
-	printf("%s:%d\n", filename, lineno);
+	fprintf(stderr, "%s:%d\n", filename, lineno);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -4220,9 +4220,8 @@ Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
 // ProcessEvent
 
 struct ProcessEvent {
-	JSBool (*prepareWait)( volatile ProcessEvent *self, JSContext *cx, JSObject *obj );
+	JSBool (*prepareWait)( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ); // called before startWait() to allow one to prepare the blocking step
 	void (*startWait)( volatile ProcessEvent *self ); // starts the blocking thread and call signalEvent() when an event has arrived.
 	bool (*cancelWait)( volatile ProcessEvent *self ); // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
 	JSBool (*endWait)( volatile ProcessEvent *self, bool *hasEvent, JSContext *cx, JSObject *obj ); // process the result
 };
-

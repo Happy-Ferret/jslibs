@@ -215,7 +215,7 @@ namespace jl {
 	};
 
 
-	class NOVTABLE CppJlAllocators {
+	class NOVTABLE JLCppAllocators {
 	public:
 		ALWAYS_INLINE void* operator new(size_t size) NOTHROW {
 			return jl_malloc(size);

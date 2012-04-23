@@ -107,6 +107,32 @@ DEFINE_CONSTRUCTOR() {
 
 /**doc
 $TOC_MEMBER $INAME
+ $Image $INAME()
+**/
+DEFINE_FUNCTION( close ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	*JL_RVAL = JSVAL_VOID;
+
+	jsval deviceIdVal;
+	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	if ( deviceIdVal == JSVAL_VOID ) { // the device is already closed
+		
+		JL_WARN( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED);
+		return JS_TRUE;
+	}
+	int deviceId = JSVAL_TO_INT(deviceIdVal);
+	vi->stopDevice(deviceId);
+	JL_CHK( JL_SetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, JSVAL_VOID) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
+
+/**doc
+$TOC_MEMBER $INAME
  $TYPE HANDLE $INAME()
   Passively waits for a new image through the processEvents function.
 **/
@@ -151,16 +177,16 @@ static JSBool VIEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *c
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	*hasEvent = WaitForSingleObject(upe->imageEvent, 0) == WAIT_OBJECT_0;
+	*hasEvent = (WaitForSingleObject(upe->imageEvent, 0) == WAIT_OBJECT_0);
 
 	if ( *hasEvent ) {
 	
-		jsval fct, argv[2];
-		argv[1] = OBJECT_TO_JSVAL(upe->obj);
-
+		jsval fct, rval;
 		JL_CHK( JS_GetProperty(cx, upe->obj, "onImage", &fct) );
-		if ( JL_ValueIsCallable(cx, fct) )
-			JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, COUNTOF(argv)-1, argv+1, argv) );
+		if ( JL_ValueIsCallable(cx, fct) ) {
+		
+			JL_CHK( JL_CallFunctionVA(cx, upe->obj, fct, &rval, OBJECT_TO_JSVAL(upe->obj)) );
+		}
 	}
 
 	return JS_TRUE;
@@ -177,8 +203,9 @@ static void VIWaitFinalize( void* data ) {
 
 DEFINE_FUNCTION( events ) {
 	
-	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(0);
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
 
 	UserProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, VIWaitFinalize, JL_RVAL) );
@@ -186,8 +213,6 @@ DEFINE_FUNCTION( events ) {
 	upe->pe.startWait = VIStartWait;
 	upe->pe.cancelWait = VICancelWait;
 	upe->pe.endWait = VIEndWait;
-
-	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 
 	jsval deviceIdVal;
 	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
@@ -198,8 +223,9 @@ DEFINE_FUNCTION( events ) {
 	upe->imageEvent = vi->ImageEvent(deviceId);
 
 	upe->obj = JL_OBJ;
-
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(upe->obj)) ); // GC protection
+
+	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 
 	return JS_TRUE;
 	JL_BAD;
@@ -250,30 +276,6 @@ DEFINE_FUNCTION( getImage ) {
 		return JS_TRUE;
 	}
 
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-/**doc
-$TOC_MEMBER $INAME
- $Image $INAME()
-**/
-DEFINE_FUNCTION( close ) {
-
-	JL_DEFINE_FUNCTION_OBJ;
-	*JL_RVAL = JSVAL_VOID;
-
-	jsval deviceIdVal;
-	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
-	if ( deviceIdVal == JSVAL_VOID ) { // the device is already closed
-		
-		JL_WARN( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED);
-		return JS_TRUE;
-	}
-	int deviceId = JSVAL_TO_INT(deviceIdVal);
-	vi->stopDevice(deviceId);
-	JL_CHK( JL_SetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, JSVAL_VOID) );
 	return JS_TRUE;
 	JL_BAD;
 }

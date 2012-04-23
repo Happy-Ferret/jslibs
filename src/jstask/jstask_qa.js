@@ -1,6 +1,11 @@
 loadModule('jstask');
 loadModule('jsio');
 
+/// open and close a task
+
+	var t = new Task(function() {});
+	t.close();
+
 
 /// object un/serialization
 

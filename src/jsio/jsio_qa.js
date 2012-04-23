@@ -2,6 +2,28 @@
 loadModule('jsio');
 loadModule('jsdebug');
 
+/// listen: several times on the same address
+
+	var s1 = new Socket();
+	s1.bind(9999, '127.0.0.1');
+	s1.listen();
+
+	var s2 = new Socket();
+	QA.ASSERTOP( function() s2.bind(9999, '127.0.0.1'), 'ex', IoError );
+	QA.ASSERTOP( function() s2.listen(), 'ex', IoError );
+	s1.close();
+	s2.close();
+
+/// bind: several times on the same address
+
+	var s1 = new Socket();
+	s1.bind(9999, '127.0.0.1');
+	s1.listen();
+
+	var s2 = new Socket();
+	QA.ASSERTOP( function() s2.bind(9999, '127.0.0.1'), 'ex', IoError );
+	s1.close();
+	s2.close();
 
 /// listen multiple times on the same fd
 
@@ -9,6 +31,7 @@ loadModule('jsdebug');
 	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
 	var io = Descriptor.events([rdv,rdv,rdv,rdv]);
 	processEvents( io );
+	rdv.close();
 
 
 /// recycle upe event
@@ -18,6 +41,7 @@ loadModule('jsdebug');
 	var io = Descriptor.events([rdv]);
 	processEvents( io );
 	processEvents( io );
+	rdv.close();
 
 
 /// Socket shutdown(true) behavior [trm]
@@ -292,7 +316,7 @@ loadModule('jsdebug');
 	QA.ASSERTOP( res, '==', currentDirectory.substr(0, currentDirectory.lastIndexOf(directorySeparator)) );
 
 
-/// Process no stdio redirect [ftrm]
+/// Process no stdio redirect [ftrm] (possible stdio perturbations)
 
 	var cmdPath = getEnv('ComSpec');
 	var process = new Process(cmdPath, ['/c', 'cd'], undefined, false);
@@ -1056,7 +1080,7 @@ loadModule('jsdebug');
 
 	//
 
-	var [c, s] = createSocketPair();	
+	var [c, s] = createSocketPair();
 
 	s.write('123');
 	s.close();

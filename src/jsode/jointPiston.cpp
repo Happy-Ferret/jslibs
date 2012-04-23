@@ -95,16 +95,16 @@ DEFINE_FUNCTION( axisDelta ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 
-	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARGC(6);
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	float x,y,z,  dx, dy, dz;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(0), &x ) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &y ) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &z ) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &dx ) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &dy ) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &dz ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &y ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &z ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &dx ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &dy ) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &dz ) );
 	ode::dJointSetPistonAxisDelta(jointId, x,y,z, dx, dy, dz);
 
 	*JL_RVAL = JSVAL_VOID;

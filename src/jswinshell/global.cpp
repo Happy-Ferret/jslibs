@@ -657,7 +657,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( directoryChangesLookup ) {
 
 	JL_ASSERT_ARGC_RANGE(1,2);
-	JL_ASSERT_ARG_TYPE( IsHandleType(cx, JL_ARG(1), JLHID("dmon")), 1, "(dmon) Handle" );
+	JL_ASSERT_ARG_TYPE( IsHandleType(cx, JL_ARG(1), JLHID(dmon)), 1, "(dmon) Handle" );
 
 	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_ARG(1));
 	JL_ASSERT( dc, E_ARG, E_NUM(1), E_STATE );
@@ -747,33 +747,38 @@ while ( !host.endSignal )
 }}}
 **/
 
-struct UserProcessEvent {
+struct DirectoryUserProcessEvent {
 	
 	ProcessEvent pe;
 
 	DirectoryChanges *dc;
 	HANDLE cancelEvent;
+
+	JSObject *callbackFunctionThis;
+	jsval callbackFunction;
+
+	jsval dcVal;
 };
 
-S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(DirectoryUserProcessEvent, pe) == 0 );
 
 static JSBool DirectoryChangesPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
 	
 	return JS_TRUE;
 }
 
-void DirectoryChangesStartWait( volatile ProcessEvent *pe ) {
+static void DirectoryChangesStartWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	DirectoryUserProcessEvent *upe = (DirectoryUserProcessEvent*)pe;
 	
-	const HANDLE events[2] = { upe->cancelEvent, upe->dc->hDirectory };
+	const HANDLE events[] = { upe->cancelEvent, upe->dc->hDirectory };
 	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
 	ASSERT( status != WAIT_FAILED );
 }
 
-bool DirectoryChangesCancelWait( volatile ProcessEvent *pe ) {
+static bool DirectoryChangesCancelWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	DirectoryUserProcessEvent *upe = (DirectoryUserProcessEvent*)pe;
 
 	BOOL status = SetEvent(upe->cancelEvent);
 	ASSERT( status );
@@ -781,12 +786,9 @@ bool DirectoryChangesCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 	
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
-
-	BOOL status = CloseHandle(upe->cancelEvent);
-	ASSERT( status );
+	DirectoryUserProcessEvent *upe = (DirectoryUserProcessEvent*)pe;
 
 	DWORD st = WaitForSingleObject(upe->dc->hDirectory, 0);
 	*hasEvent = (st == WAIT_OBJECT_0);
@@ -794,42 +796,59 @@ JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSCon
 	if ( !*hasEvent )
 		return JS_TRUE;
 
-	jsval fct, argv[2];
-	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, &fct) );
-	if ( JSVAL_IS_VOID( fct ) )
+	if ( JSVAL_IS_VOID(upe->callbackFunction) )
 		return JS_TRUE;
 
-	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, &argv[1]) );
-	JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobal(cx), fct, COUNTOF(argv)-1, argv+1, argv) );
-
+	jsval rval;
+	JL_CHK( JL_CallFunctionVA(cx, upe->callbackFunctionThis, upe->callbackFunction, &rval, upe->dcVal) );
 	return JS_TRUE;
 	JL_BAD;
 }
 
+static void FinalizeDirectoryChangesEvents( void *data ) {
+	
+	DirectoryUserProcessEvent *upe = (DirectoryUserProcessEvent*)data;
+
+	BOOL status = CloseHandle(upe->cancelEvent);
+	ASSERT( status );
+}
+
+
 DEFINE_FUNCTION( directoryChangesEvents ) {
 	
-	JL_ASSERT_ARGC_RANGE(1,2);
-	JL_ASSERT_ARG_TYPE( IsHandleType(cx, JL_ARG(1), JLHID("dmon")), 1, "(dmon) Handle" );
-
-	if ( JL_ARG_ISDEF(2) )
-		JL_ASSERT_ARG_IS_CALLABLE(2);
+	JL_ASSERT_ARGC_RANGE(1, 2);
+	JL_ASSERT_ARG_TYPE( IsHandleType(cx, JL_ARG(1), JLHID(dmon)), 1, "(dmon) Handle" );
 
 	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_ARG(1));
 	JL_ASSERT( dc, E_ARG, E_NUM(1), E_STATE );
 
-	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
+	DirectoryUserProcessEvent *upe;
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, FinalizeDirectoryChangesEvents, JL_RVAL) );
 	upe->pe.prepareWait = DirectoryChangesPrepareWait;
 	upe->pe.startWait = DirectoryChangesStartWait;
 	upe->pe.cancelWait = DirectoryChangesCancelWait;
 	upe->pe.endWait = DirectoryChangesEndWait;
 
-	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2) ) );
-	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(1) ) );
+	if ( JL_ARG_ISDEF(2) ) {
 
-	upe->cancelEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+		JL_ASSERT_ARG_IS_CALLABLE(2);
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 2, JL_ARG(2) ) ); // GC protection only
+
+		upe->callbackFunctionThis = JSVAL_TO_OBJECT(JL_OBJVAL); // store "this" object.
+		upe->callbackFunction = JL_ARG(2);
+		upe->dcVal = JL_ARG(1); // dmon handle (argument 1 of the callback function)
+	} else {
+	
+		upe->callbackFunction = JSVAL_VOID;
+	}
+
 	upe->dc = dc;
+	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
+
+//	if ( upe->cancelEvent == NULL )
+//		JL_ThrowOSError(cx);
 
 	return JS_TRUE;
 	JL_BAD;

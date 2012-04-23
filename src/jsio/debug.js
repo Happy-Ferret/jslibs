@@ -2,13 +2,11 @@ var loadModule = host.loadModule;
 
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio'); throw 0;
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio'); throw 0;
 
-loadModule('jstask');
+//loadModule('jstask');
 loadModule('jsstd');
 loadModule('jsio');
-loadModule('jsdebug');
-
 
 
 	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;

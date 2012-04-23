@@ -691,7 +691,7 @@ $TOC_MEMBER $INAME
 }}}
 **/
 
-struct UserProcessEvent {
+struct IOProcessEvent {
 
 	ProcessEvent pe;
 
@@ -701,12 +701,12 @@ struct UserProcessEvent {
 	PRInt32 pollResult;
 };
 
-S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(IOProcessEvent, pe) == 0 );
 
 
 static JSBool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	IOProcessEvent *upe = (IOProcessEvent*)pe;
 
 	jsval fdArrayVal;
 	JSObject *fdArrayObj;
@@ -761,14 +761,14 @@ static JSBool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject 
 
 static void IOStartWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	IOProcessEvent *upe = (IOProcessEvent*)pe;
 
 	upe->pollResult = PR_Poll(upe->pollDesc, 1 + upe->fdCount, PR_INTERVAL_NO_TIMEOUT); // 1 is the PollableEvent
 }
 
 static bool IOCancelWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	IOProcessEvent *upe = (IOProcessEvent*)pe;
 
 	PRStatus st;
 	st = PR_SetPollableEvent(upe->pollDesc[0].fd); // cancel the poll
@@ -783,7 +783,7 @@ static JSBool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *c
 
 	JL_IGNORE(obj);
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	IOProcessEvent *upe = (IOProcessEvent*)pe;
 
 	if ( upe->pollResult == -1 )
 		JL_CHK( ThrowIoError(cx) );
@@ -808,9 +808,9 @@ bad:
 }
 
 
-static void IOWaitFinalize( void* data ) {
+static void IOWaitFinalize( void* ) {
 	
-	UserProcessEvent *upe = (UserProcessEvent*)data;
+//	IOProcessEvent *upe = (IOProcessEvent*)data;
 }
 
 
@@ -819,7 +819,7 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
-	UserProcessEvent *upe;
+	IOProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, IOWaitFinalize, JL_RVAL) );
 	upe->pe.prepareWait = IOPrepareWait;
 	upe->pe.startWait = IOStartWait;

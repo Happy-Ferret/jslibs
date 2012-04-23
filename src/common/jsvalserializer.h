@@ -98,7 +98,7 @@ namespace jl {
 
 	/////////////////////////////////////////////////////////////////////////////
 
-	class Serializer : public CppJlAllocators {
+	class Serializer : public JLCppAllocators {
 
 		jsval _serializerObj;
 
@@ -507,7 +507,7 @@ namespace jl {
 	/////////////////////////////////////////////////////////////////////////////
 
 
-	class Unserializer : public CppJlAllocators {
+	class Unserializer : public JLCppAllocators {
 
 		jsval _unserializerObj;
 

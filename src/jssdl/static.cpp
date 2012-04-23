@@ -1246,17 +1246,21 @@ struct SurfaceReadyProcessEvent {
 	ProcessEvent pe;
 
 	bool cancel;
+	JSObject *callbackFctThis;
 	jsval callbackFctVal;
 };
 
 S_ASSERT( offsetof(SurfaceReadyProcessEvent, pe) == 0 );
 
-static JSBool SurfaceReadyPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
-	
+static JSBool SurfaceReadyPrepareWait( volatile ProcessEvent *pe, JSContext *, JSObject * ) {
+
+	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
+	upe->cancel = false;
+
 	return JS_TRUE;
 }
 
-void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
+static void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
 
 	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
 
@@ -1267,7 +1271,7 @@ void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
 	JLMutexRelease(surfaceReadyLock);
 }
 
-bool SurfaceReadyCancelWait( volatile ProcessEvent *pe ) {
+static bool SurfaceReadyCancelWait( volatile ProcessEvent *pe ) {
 
 	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
 
@@ -1294,10 +1298,8 @@ JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext
 	if ( JSVAL_IS_VOID(upe->callbackFctVal) )
 		return JS_TRUE;
 
-	jsval thisVal, rval;
-	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, &thisVal) ); // restore "this" object.
-
-	JL_CHK( JS_CallFunctionValue(cx, /*JL_GetGlobal(cx)*/ JSVAL_TO_OBJECT(thisVal), upe->callbackFctVal, 0, NULL, &rval) );
+	jsval rval;
+	JL_CHK( JS_CallFunctionValue(cx, upe->callbackFctThis, upe->callbackFctVal, 0, NULL, &rval) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1305,28 +1307,28 @@ JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext
 
 DEFINE_FUNCTION( surfaceReadyEvents ) {
 
-	JL_ASSERT_ARGC_RANGE(0,1);
+	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	SurfaceReadyProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
-
 	upe->pe.prepareWait = SurfaceReadyPrepareWait;
 	upe->pe.startWait = SurfaceReadyStartWait;
 	upe->pe.cancelWait = SurfaceReadyCancelWait;
 	upe->pe.endWait = SurfaceReadyEndWait;
 
-	upe->cancel = false;
+	if ( JL_ARG_ISDEF(1) ) {
 
-	if ( JL_ARG_ISDEF(1) && JL_ValueIsCallable(cx, JL_ARG(1)) ) {
+		JL_ASSERT_ARG_IS_CALLABLE(1);
 
-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(1)) ); // GC protection.
 		upe->callbackFctVal = JL_ARG(1);
+		upe->callbackFctThis = JSVAL_TO_OBJECT(JL_OBJVAL); // store "this" object.
+
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, upe->callbackFctVal) ); // GC protection
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_OBJVAL) ); // GC protection
 	} else {
 
 		upe->callbackFctVal = JSVAL_VOID;
 	}
-
-	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_OBJVAL) ); // store "this" object.
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1342,24 +1344,28 @@ $TOC_MEMBER $INAME
    Receiving a SDL event do not mean that the surface is ready to be drawn.$LF
 	Call processEvents( SurfaceReadyEvents() ); to ensur the surface is ready to use.
 **/
-struct UserProcessEvent {
+struct SdlEventsProcessEvent {
 	
 	ProcessEvent pe;
 
 	bool cancel;
+	JSObject *thisObj;
 	JSObject *listenersObj;
 };
 
-S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(SdlEventsProcessEvent, pe) == 0 );
 
-static JSBool SDLPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+static JSBool SDLPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
 	
+	SdlEventsProcessEvent *upe = (SdlEventsProcessEvent*)pe;
+	upe->cancel = false;
+
 	return JS_TRUE;
 }
 
 void SDLStartWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	SdlEventsProcessEvent *upe = (SdlEventsProcessEvent*)pe;
 	int status = 0;
 	JLMutexAcquire(sdlEventsLock);
 	while ( !upe->cancel && (status = SDL_PeepEvents(NULL, 0, SDL_PEEKEVENT, SDL_ALLEVENTS)) == 0 ) // no cancel and no SDL event
@@ -1371,7 +1377,7 @@ void SDLStartWait( volatile ProcessEvent *pe ) {
 
 bool SDLCancelWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	SdlEventsProcessEvent *upe = (SdlEventsProcessEvent*)pe;
 
 	JLMutexAcquire(sdlEventsLock);
 	upe->cancel = true;
@@ -1383,34 +1389,31 @@ bool SDLCancelWait( volatile ProcessEvent *pe ) {
 
 JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	SdlEventsProcessEvent *upe = (SdlEventsProcessEvent*)pe;
 
 	int status;
 	bool fired; // unused
+	jsval rval; // unused
+	SDL_Event ev[64];
 
-	*hasEvent = true;
-	SDL_Event ev[128];
-
-	jsval tmp, rval;
-	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, &tmp) ); // restore "this" object.
-	JSObject *thisObj = JSVAL_TO_OBJECT( tmp );
+	*hasEvent = false;
 
 	for (;;) {
 
 		status = SDL_PeepEvents(ev, COUNTOF(ev), SDL_GETEVENT, SDL_ALLEVENTS);
-		if ( status == -1 )
+
+		if ( status == 0 )
+			break;
+
+		if ( status < 0 )
 			JL_CHK( ThrowSdlError(cx) );
 
-		if ( status == 0 ) {
-
-			*hasEvent = false;
-			break;
-		}
+		*hasEvent = true;
 
 		for ( int i = 0; i < status; i++ )
-			JL_CHK( FireListener(cx, thisObj, upe->listenersObj, &ev[i], &rval, &fired) );
+			JL_CHK( FireListener(cx, upe->thisObj, upe->listenersObj, &ev[i], &rval, &fired) );
 
-		if ( status < COUNTOF(ev) ) 
+		if ( status < COUNTOF(ev) )
 			break;
 	}
 
@@ -1424,18 +1427,18 @@ DEFINE_FUNCTION( sdlEvents ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	UserProcessEvent *upe;
+	SdlEventsProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
 	upe->pe.prepareWait = SDLPrepareWait;
 	upe->pe.startWait = SDLStartWait;
 	upe->pe.cancelWait = SDLCancelWait;
 	upe->pe.endWait = SDLEndWait;
 
-	upe->cancel = false;
-
+	upe->thisObj = JSVAL_TO_OBJECT(JL_OBJVAL); // store "this" object.
 	upe->listenersObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(1)) ); // GC protection
-	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_OBJVAL) ); // store "this" object.
+
+	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_OBJVAL) ); // GC protection
+	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(1)) ); // GC protection
 
 	return JS_TRUE;
 	JL_BAD;

@@ -76,7 +76,7 @@ ALWAYS_INLINE bool SerializerIsEmpty( const SerializedData *ser ) {
 
 
 
-struct TaskPrivate : CppJlAllocators {
+struct TaskPrivate : JLCppAllocators {
 
 	JLMutexHandler mutex;
 	JLThreadHandler threadHandle;
@@ -249,7 +249,9 @@ JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 	Buf<char> errBuffer;
 
 	JSContext *cx = CreateHost((uint32_t)-1, (uint32_t)-1, 0);
-	JL_CHK( cx != NULL );
+	//JL_CHK( cx != NULL );
+	if ( cx == NULL ) // out of memory
+		JLThreadExit(0);
 
 	HostPrivate *hpv;
 	hpv = JL_GetHostPrivate(cx);
@@ -267,6 +269,7 @@ JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
 	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_DONT_REPORT_UNCAUGHT);
 
 	pv = (TaskPrivate*)threadArg;
+	ASSERT( pv );
 
 	JSBool ok;
 	
@@ -305,7 +308,9 @@ ASSERT( false );
 	}
 
 good:
+	ASSERT( pv );
 bad:
+	ASSERT( pv );
 
 	// These queues must be destroyed before cx because SerializedData * *ser hold a reference to the context that created the value.
 	JLMutexAcquire(pv->mutex); // --
@@ -349,6 +354,12 @@ DEFINE_CONSTRUCTOR() {
 
 	pv = new TaskPrivate;
 	JL_CHK( pv );
+	JL_updateMallocCounter(cx, sizeof(TaskPrivate));
+
+	pv->mutex = 0;
+	pv->requestSem = 0;
+	pv->responseSem = 0;
+	pv->threadHandle = 0;
 
 	JLThreadPriorityType priority;
 	if ( JL_ARG_ISDEF(2) ) {
@@ -378,6 +389,7 @@ DEFINE_CONSTRUCTOR() {
 
 	QueueInitialize(&pv->requestList);
 	pv->requestSem = JLSemaphoreCreate(0);
+	ASSERT( pv->requestSem );
 	pv->pendingRequestCount = 0;
 
 	pv->processingRequestCount = 0;
@@ -395,10 +407,27 @@ DEFINE_CONSTRUCTOR() {
 
 	pv->threadHandle = JLThreadStart(TaskThreadProc, pv);
 	JL_CHKM( JLThreadOk(pv->threadHandle), E_THISOBJ, E_CREATE ); // "Unable to create the thread."
+
+	//JL_updateMallocCounter(cx, ???); 400KB ?
+
 	return JS_TRUE;
 
 bad:
-	delete pv;
+	if ( pv != NULL ) {
+
+		if ( pv->threadHandle != 0 )
+			JLThreadFree(&pv->threadHandle);
+		if ( pv->responseEvent != 0 )
+			JLEventFree(&pv->responseEvent);
+		if ( pv->responseSem != 0 )
+			JLSemaphoreFree(&pv->responseSem);
+		if ( pv->requestSem != 0 )
+			JLSemaphoreFree(&pv->requestSem);
+		if ( pv->mutex != 0 )
+			JLMutexFree(&pv->mutex);
+		delete pv;
+//		JL_SetPrivate(cx, obj, NULL);
+	}
 	return JS_FALSE;
 }
 
@@ -440,6 +469,32 @@ bad:
 	// (TBD) report a warning.
 	return;
 }
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME()
+  Close a task to release system resources.
+**/
+DEFINE_FUNCTION( close ) {
+
+	JL_ASSERT_ARGC(0);
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+
+	if ( JL_GetPrivate(JL_OBJ) != NULL ) {
+
+		Finalize(cx, JL_OBJ);
+		JL_SetPrivate(cx, JL_OBJ, NULL);
+	} else {
+
+		JL_WARN( E_THISOBJ, E_CLOSED );
+	}
+
+	*JL_RVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -517,6 +572,8 @@ DEFINE_FUNCTION( response ) {
 	}
 
 	JLMutexRelease(pv->mutex); // ++
+
+	ASSERT( pv );
 
 	JL_CHK( JLSemaphoreAcquire(pv->responseSem, JLINFINITE) ); // -1 // wait for a response
 
@@ -687,7 +744,7 @@ struct UserProcessEvent {
 
 S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
 
-static JSBool TaskPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+static JSBool TaskPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
 	
 	return JS_TRUE;
 }
@@ -714,7 +771,8 @@ JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS
 
 	UserProcessEvent *upe = (UserProcessEvent*)pe;
 
-	*hasEvent = upe->pv->pendingResponseCount > 0;
+	*hasEvent = (upe->pv->pendingResponseCount > 0);
+
 	if ( !*hasEvent )
 		return JS_TRUE;
 
@@ -769,6 +827,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 	BEGIN_FUNCTION_SPEC
+		FUNCTION(close)
 		FUNCTION(request)
 		FUNCTION(response)
 		FUNCTION(events)

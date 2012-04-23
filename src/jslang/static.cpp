@@ -656,11 +656,12 @@ struct TimeoutProcessEvent {
 	JLEventHandler cancel;
 	bool canceled;
 	jsval callbackFunction;
+	JSObject *callbackFunctionThis;
 };
 
 S_ASSERT( offsetof(TimeoutProcessEvent, pe) == 0 );
 
-static JSBool TimeoutPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+static JSBool TimeoutPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
 	
 	return JS_TRUE;
 }
@@ -707,7 +708,7 @@ static JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSConte
 		return JS_TRUE;
 
 	jsval rval;
-	JL_CHK( JL_CallFunctionVA(cx, JL_GetGlobal(cx), upe->callbackFunction, &rval) );
+	JL_CHK( JL_CallFunctionVA(cx, upe->callbackFunctionThis, upe->callbackFunction, &rval) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -724,24 +725,30 @@ DEFINE_FUNCTION( timeoutEvents ) {
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
-	unsigned int timeout;
+	uint32_t timeout;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
 
 	TimeoutProcessEvent *upe;
-	int tmp = sizeof(TimeoutProcessEvent);
+
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, TimeoutFinalize, JL_RVAL) );
 
 	upe->pe.prepareWait = TimeoutPrepareWait;
 	upe->pe.startWait = TimeoutStartWait;
 	upe->pe.cancelWait = TimeoutCancelWait;
 	upe->pe.endWait = TimeoutEndWait;
+
 	upe->timeout = timeout;
 	upe->cancel = JLEventCreate(false);
 	ASSERT( JLEventOk(upe->cancel) );
 
-	if ( JL_ARGC >= 2 && JL_ValueIsCallable(cx, JL_ARG(2)) ) {
+	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(2)) ); // GC protection only
+		JL_ASSERT_ARG_IS_CALLABLE(2);
+
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(2)) ); // GC protection only
+
+		upe->callbackFunctionThis = JSVAL_TO_OBJECT(JL_OBJVAL); // store "this" object.
 		upe->callbackFunction = JL_ARG(2); // access to ->callbackFunction is faster than Handle slots.
 	} else {
 
@@ -1031,14 +1038,6 @@ struct Test1 : public TestIf {
 DEFINE_FUNCTION( jslangTest ) {
 	
 	JL_IGNORE(cx, argc, vp);
-
-
-	Test1 t;
-
-	void *v = (void*)&t;
-
-
-
 
 /*
 	static uint64_t xx[2];

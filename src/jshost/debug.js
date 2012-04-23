@@ -9,6 +9,13 @@ loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -in
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
+loadModule('jsstd');
+print(host.dbgAlloc, '\n');
+processEvents(timeoutEvents(0));
+print(host.dbgAlloc, '\n');
+
+throw 0;
+
 processEvents(timeoutEvents(500)); throw 0;
 
 //jslangTest(); throw 0;

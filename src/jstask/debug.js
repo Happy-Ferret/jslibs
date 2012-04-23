@@ -1,13 +1,40 @@
 var loadModule = host.loadModule;
 
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jstask'); throw 0; // -inlineOnly
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jstask -nogcD -nogcB'); throw 0; // -inlineOnly
 
 loadModule('jstask');
 loadModule('jsstd');
 loadModule('jsio');
 
 
+var m0 = host.dbgAlloc;
+
+	var t = new Task(function() {});
+sleep(1000)
+
+
+print(host.dbgAlloc-m0, '\n');
+
+	t.close();
+
+throw 0;
+
+var tasks = [];
+for ( var i = 0; i < 300; i++ ) {
+
+	tasks.push(new Task(function() {}));
+}
+
+for ( var t of tasks )
+	t.request();
+
+for ( var t of tasks )
+	print( t.response(), '\n' );
+
+
+
+throw 0;
 
 var t = new Task(function(test) {
 
@@ -26,10 +53,21 @@ var t = new Task(function(test) {
 
 
 t.request('test');
+t.request('test');
+t.request('test');
+t.request('test');
 
-processEvents(t.events(), host.endSignalEvents());
+t.onResponse = function() {
 
-print( uneval(t.response()) );
+	print( uneval(t.response()) );
+}
+
+
+while ( !host.endSignal ) {
+
+	processEvents(t.events(), host.endSignalEvents());
+	print('.');
+}
 
 
 throw 0;

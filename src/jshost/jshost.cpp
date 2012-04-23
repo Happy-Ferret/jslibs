@@ -132,12 +132,16 @@ struct EndSignalProcessEvent {
 
 	bool cancel;
 	jsval callbackFunction;
+	JSObject *callbackFunctionThis;
 };
 
 S_ASSERT( offsetof(EndSignalProcessEvent, pe) == 0 );
 
-static JSBool EndSignalPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+static JSBool EndSignalPrepareWait( volatile ProcessEvent *pe, JSContext *, JSObject * ) {
 	
+	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
+
+	upe->cancel = false;
 	return JS_TRUE;
 }
 
@@ -170,17 +174,20 @@ static JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSCon
 	*hasEvent = gEndSignalState != 0;
 	if ( !*hasEvent )
 		return JS_TRUE;
-	jsval rval;
+
 	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
 		return JS_TRUE;
-	JL_CHK( JS_CallFunctionValue(cx, JL_GetGlobal(cx), upe->callbackFunction, 0, NULL, &rval) );
+
+	jsval rval;
+	JL_CHK( JS_CallFunctionValue(cx, upe->callbackFunctionThis, upe->callbackFunction, 0, NULL, &rval) );
+
 	return JS_TRUE;
 	JL_BAD;
 }
 
 JSBool EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 
-	JL_ASSERT_ARGC_RANGE( 0, 1 );
+	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	EndSignalProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
@@ -188,12 +195,14 @@ JSBool EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 	upe->pe.startWait = EndSignalStartWait;
 	upe->pe.cancelWait = EndSignalCancelWait;
 	upe->pe.endWait = EndSignalEndWait;
-	upe->cancel = false;
 
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(1);
-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(1)) ); // GC protection only
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
+
+		upe->callbackFunctionThis = JSVAL_TO_OBJECT(JL_OBJVAL); // store "this" object.
 		upe->callbackFunction = JL_ARG(1);
 	} else {
 	
@@ -245,32 +254,50 @@ int HostStderr( void *, const char *buffer, size_t length ) {
 
 #ifdef DBG_ALLOC
 
-static volatile int allocCount = 0;
-static volatile int freeCount = 0;
+static volatile int32_t allocCount = 0;
+static volatile int32_t allocAmount = 0;
+static volatile int32_t freeCount = 0;
 
 EXTERN_C void* jl_malloc_count( size_t size ) {
 	JLAtomicIncrement(&allocCount);
-	return malloc(size);
+	void *mem = malloc(size);
+	ASSERT( mem );
+	JLAtomicAdd(&allocAmount, msize(mem));
+	return mem;
 }
 EXTERN_C void* jl_calloc_count( size_t num, size_t size ) {
 	JLAtomicIncrement(&allocCount);
-	return calloc(num, size);
+	void *mem = calloc(num, size);
+	ASSERT( mem );
+	JLAtomicAdd(&allocAmount, msize(mem));
+	return mem;
 }
 EXTERN_C void* jl_memalign_count( size_t alignment, size_t size ) {
 	JLAtomicIncrement(&allocCount);
-	return memalign(alignment, size);
+	void *mem = memalign(alignment, size);
+	ASSERT( mem );
+	JLAtomicAdd(&allocAmount, msize(mem));
+	return mem;
 }
 EXTERN_C void* jl_realloc_count( void *ptr, size_t size ) {
-	if ( !ptr )
+	if ( ptr == NULL ) {
 		JLAtomicIncrement(&allocCount);
-	return realloc(ptr, size);
+		JLAtomicAdd(&allocAmount, size);
+	} else {
+		JLAtomicAdd(&allocAmount, (int32_t)size - (int32_t)msize(ptr));
+	}
+	void *mem = realloc(ptr, size);
+	ASSERT( mem );
+	return mem;
 }
 EXTERN_C size_t jl_msize_count( void *ptr ) {
 	return msize(ptr);
 }
 EXTERN_C void jl_free_count( void *ptr ) {
-	if ( ptr )
+	if ( ptr ) {
 		JLAtomicIncrement(&freeCount);
+		JLAtomicAdd(&allocAmount, -(int32_t)msize(ptr));
+	}
 	free(ptr);
 }
 
@@ -437,8 +464,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		js_jl_free = jl_free;
 
 		#endif // DBG_ALLOC
-
 	}
+
 
 //	setvbuf(stderr, pBuffer, mode, buffer_size);
 
@@ -525,6 +552,15 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JL_CHK( JS_SetPropertyById(cx, hostObj, JLID(cx, arguments), &arguments) );
 	JL_CHK( JS_DefineProperty(cx, hostObj, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) ); // https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 	JL_CHK( JS_DefineFunction(cx, hostObj, "endSignalEvents", EndSignalEvents, 1, 0) );
+
+#ifdef DBG_ALLOC
+	struct Tmp {
+		static JSBool dbgAllocGetter(JSContext *cx, JSObject *, jsid, jsval *vp) {
+			return JL_NativeToJsval(cx, (int32_t)allocAmount, vp);
+		}
+	};
+	JL_CHK( JS_DefineProperty(cx, hostObj, "dbgAlloc", JSVAL_VOID, Tmp::dbgAllocGetter, NULL, JSPROP_SHARED) );
+#endif // DBG_ALLOC
 
 	if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
 
@@ -631,7 +667,7 @@ bad:
 struct DBG_ALLOC_dummyClass {
 	~DBG_ALLOC_dummyClass() { // we must count at exit, see "dynamic atexit destructor"
 
-		fprintf(stderr, "\n{alloc:%d, leaks:%d}\n", allocCount, allocCount - freeCount);
+		fprintf(stderr, "\n{alloc:%d, leaks:%d (%d bytes)}\n", allocCount, allocCount - freeCount, allocAmount);
 	}
 } DBG_ALLOC_dummy;
 

@@ -123,12 +123,13 @@ DEFINE_FUNCTION( read ) {
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME( mode )
+  ENABLE_ECHO_INPUT, ENABLE_EXTENDED_FLAGS, ENABLE_INSERT_MODE, ENABLE_LINE_INPUT, ENABLE_MOUSE_INPUT, ENABLE_PROCESSED_INPUT, ENABLE_QUICK_EDIT_MODE, ENABLE_WINDOW_INPUT, ENABLE_PROCESSED_OUTPUT, ENABLE_WRAP_AT_EOL_OUTPUT
 **/
 DEFINE_FUNCTION( setConsoleMode ) {
 
 	JL_ASSERT_ARGC(1);
 	DWORD mode;
-	JL_JsvalToNative(cx, JL_ARG(0), &mode);
+	JL_JsvalToNative(cx, JL_ARG(1), &mode);
 
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	BOOL res = SetConsoleMode(hStdin, mode);
@@ -408,7 +409,7 @@ $TOC_MEMBER $INAME
   Passively waits for a new Console event through the processEvents function.
 **/
 
-struct UserProcessEvent {
+struct ConsoleUserProcessEvent {
 	
 	ProcessEvent pe;
 	HANDLE consoleEvent;
@@ -417,7 +418,7 @@ struct UserProcessEvent {
 };
 
 
-S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(ConsoleUserProcessEvent, pe) == 0 );
 
 static JSBool ConsolePrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
 	
@@ -426,7 +427,7 @@ static JSBool ConsolePrepareWait( volatile ProcessEvent *self, JSContext *cx, JS
 
 void ConsoleStartWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	ConsoleUserProcessEvent *upe = (ConsoleUserProcessEvent*)pe;
 
 	HANDLE events[] = { upe->consoleEvent, upe->cancelEvent };
 	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
@@ -435,7 +436,7 @@ void ConsoleStartWait( volatile ProcessEvent *pe ) {
 
 bool ConsoleCancelWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	ConsoleUserProcessEvent *upe = (ConsoleUserProcessEvent*)pe;
 
 	SetEvent(upe->cancelEvent);
 	return true;
@@ -443,13 +444,13 @@ bool ConsoleCancelWait( volatile ProcessEvent *pe ) {
 
 JSBool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
-	CloseHandle(upe->cancelEvent);
+	ConsoleUserProcessEvent *upe = (ConsoleUserProcessEvent*)pe;
+
 	*hasEvent = WaitForSingleObject(upe->consoleEvent, 0) == WAIT_OBJECT_0;
 
 	if ( *hasEvent ) {
 	
-		HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+		HANDLE hStdin = upe->consoleEvent; //GetStdHandle(STD_INPUT_HANDLE);
 		INPUT_RECORD inputRecord;
 		DWORD numberOfEventsRead;
 		BOOL res = ReadConsoleInput(hStdin, &inputRecord, 1, &numberOfEventsRead);
@@ -468,9 +469,9 @@ JSBool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 						JSString *str = JS_NewUCStringCopyN(cx, &inputRecord.Event.KeyEvent.uChar.UnicodeChar, 1);
 						argv[1] = STRING_TO_JSVAL(str);
 						argv[2] = INT_TO_JSVAL(inputRecord.Event.KeyEvent.wVirtualKeyCode);
-						argv[3] = BOOLEAN_TO_JSVAL(inputRecord.Event.KeyEvent.dwControlKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED));
-						argv[4] = BOOLEAN_TO_JSVAL(inputRecord.Event.KeyEvent.dwControlKeyState & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED));
-						argv[5] = BOOLEAN_TO_JSVAL(inputRecord.Event.KeyEvent.dwControlKeyState & SHIFT_PRESSED);
+						argv[3] = BOOLEAN_TO_JSVAL(!!(inputRecord.Event.KeyEvent.dwControlKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)));
+						argv[4] = BOOLEAN_TO_JSVAL(!!(inputRecord.Event.KeyEvent.dwControlKeyState & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED)));
+						argv[5] = BOOLEAN_TO_JSVAL(!!(inputRecord.Event.KeyEvent.dwControlKeyState & SHIFT_PRESSED));
 						for ( int i = 0; i < inputRecord.Event.KeyEvent.wRepeatCount; ++i ) {
 							
 							JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, 5, argv+1, argv) );
@@ -539,8 +540,14 @@ JSBool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 		}
 	}
 	return JS_TRUE;
-bad:
-	return JS_FALSE;
+	JL_BAD;
+}
+
+void ConsoleWaitFinalize( void *pe ) {
+
+	ConsoleUserProcessEvent *upe = (ConsoleUserProcessEvent*)pe;
+
+	CloseHandle(upe->cancelEvent);
 }
 
 
@@ -549,17 +556,18 @@ DEFINE_FUNCTION( events ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(0);
 
-	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
+	ConsoleUserProcessEvent *upe;
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, ConsoleWaitFinalize, JL_RVAL) );
 	upe->pe.prepareWait = ConsolePrepareWait;
 	upe->pe.startWait = ConsoleStartWait;
 	upe->pe.cancelWait = ConsoleCancelWait;
 	upe->pe.endWait = ConsoleEndWait;
 
-	upe->cancelEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 	upe->consoleEvent = GetStdHandle(STD_INPUT_HANDLE);
 	upe->obj = JL_OBJ;
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(upe->obj)) ); // GC protection
+
 	return JS_TRUE;
 	JL_BAD;
 }
