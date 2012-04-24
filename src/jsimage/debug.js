@@ -8,6 +8,24 @@ loadModule('jsimage');
 loadModule('jsio');
 
 
+	var image = { width:0, height:0, channels:1, data:'' };
+
+	encodeJpegImage(image, 100);
+
+
+
+throw 0;
+
+	loadModule('jsio');
+	var image = decodePngImage(new File('.' + '/z09n2c08.png').open(File.RDONLY));
+
+	var jpeg = encodeJpegImage(image, 50);
+//	var jpeg = encodeJpegImage(image, 100);
+
+	print( jpeg.byteLength, ' ', 1154,  '\n' );
+
+	new File('test.jpeg').content = jpeg;
+
 
 print( 'end' );
 

@@ -14,7 +14,6 @@
 
 #include "stdafx.h"
 
-
 #ifndef INT32
 	#define XMD_H // avoid: jslibs\libjpeg\src\jmorecfg.h(161) : error C2371: 'INT32' : redefinition; different basic types /n Microsoft Platform SDK\Include\basetsd.h(62) : see declaration of 'INT32'
 #endif // INT32
@@ -42,6 +41,9 @@ BEGIN_STATIC
 //////////////////////////////////////////////////////////////////////////////
 //// JPEG
 
+// doc: http://uw714doc.sco.com/en/jpeg/libjpeg.txt
+
+
 #define INPUT_BUF_SIZE 4096
 
 typedef struct {
@@ -51,7 +53,6 @@ typedef struct {
 	JSObject *obj;
 //	NIStreamRead read;
 } SourceMgr;
-typedef SourceMgr *SourceMgrPtr;
 
 
 METHODDEF(void) init_source(j_decompress_ptr cinfo) {
@@ -59,24 +60,14 @@ METHODDEF(void) init_source(j_decompress_ptr cinfo) {
 	JL_IGNORE(cinfo);
 }
 
-
 METHODDEF(boolean) fill_input_buffer(j_decompress_ptr cinfo) {
 
-	SourceMgrPtr src = (SourceMgrPtr) cinfo->src;
-
+	SourceMgr * src = (SourceMgr *) cinfo->src;
 	size_t amount = INPUT_BUF_SIZE;
-//	src->read(src->pv, src->buffer, &amount);
-//	src->read( src->cx, src->obj, (char*)src->buffer, &amount);
-
-//	StreamReadInterface( src->cx, src->obj, (char*)src->buffer, &amount);
-
 	NIStreamRead streamRead = StreamReadInterface( src->cx, src->obj );
-	
 	if ( streamRead == NULL )
 		return false;
-
 	streamRead(src->cx, src->obj, (char*)src->buffer, &amount);
-
 
 	// (TBD) manage errors
 
@@ -94,7 +85,7 @@ METHODDEF(boolean) fill_input_buffer(j_decompress_ptr cinfo) {
 
 METHODDEF(void) skip_input_data(j_decompress_ptr cinfo, long num_bytes) {
 
-	SourceMgrPtr src = (SourceMgrPtr) cinfo->src;
+	SourceMgr * src = (SourceMgr *) cinfo->src;
 
 	if (num_bytes > 0) {
 
@@ -120,7 +111,6 @@ struct JpegErrorManager {
   jmp_buf setjmp_buffer;
 };
 
-
 METHODDEF(void)
 JpegErrorExit(j_common_ptr cinfo) {
 
@@ -144,9 +134,9 @@ DEFINE_FUNCTION( decodeJpegImage ) {
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	// see: jslibs/libs/libjpeg/src/example.c
-	JpegErrorManager jerr;
 
 	jpeg_decompress_struct cinfo;
+	JpegErrorManager jerr;
 	cinfo.err = jpeg_std_error(&jerr.pub);
 	jerr.pub.error_exit = JpegErrorExit;
 	
@@ -174,15 +164,15 @@ DEFINE_FUNCTION( decodeJpegImage ) {
 	jpeg_create_decompress(&cinfo);
 
 // alloc reader structure & buffer ( both are freed by jpeg_destroy_decompress )
-	cinfo.src = (struct jpeg_source_mgr*)(*cinfo.mem->alloc_small) ((j_common_ptr) &cinfo, JPOOL_PERMANENT, sizeof(SourceMgr));
-	SourceMgrPtr src = (SourceMgrPtr)cinfo.src;
+	cinfo.src = (struct jpeg_source_mgr*)cinfo.mem->alloc_small((j_common_ptr) &cinfo, JPOOL_PERMANENT, sizeof(SourceMgr));
+	SourceMgr * src = (SourceMgr *)cinfo.src;
 
 //	src->buffer = (JOCTET *)(*cinfo.mem->alloc_small) ((j_common_ptr) &cinfo, JPOOL_PERMANENT, INPUT_BUF_SIZE * sizeof(JOCTET));
 	JOCTET buffer[INPUT_BUF_SIZE];
 	src->buffer = buffer;
 
 // setup reader structure
-	src = (SourceMgrPtr) cinfo.src;
+	src = (SourceMgr *) cinfo.src;
 	src->pub.init_source = init_source;
 	src->pub.fill_input_buffer = fill_input_buffer;
 	src->pub.skip_input_data = skip_input_data;
@@ -250,15 +240,168 @@ DEFINE_FUNCTION( decodeJpegImage ) {
 }
 
 
-/*
+
+#define INITIAL_OUTPUT_BUF_SIZE 8192
+
+struct jpegDestination {
+  jpeg_destination_mgr pub; // public fields
+  JOCTET *buffer;
+  size_t bufferLength;
+  size_t dataLength;
+};
+
+METHODDEF(void) jpegDestInit( j_compress_ptr cinfo ) {
+
+	jpegDestination *dest = (jpegDestination*)cinfo->dest;
+
+	dest->bufferLength = INITIAL_OUTPUT_BUF_SIZE;
+	dest->buffer = (JOCTET*)jl_malloc(dest->bufferLength);
+
+	dest->pub.next_output_byte = dest->buffer;
+	dest->pub.free_in_buffer = dest->bufferLength;
+}
+
+METHODDEF(boolean) jpegDestEmptyBuffer( j_compress_ptr cinfo ) {
+
+	// beware:
+	//  In typical applications, this should write the entire output buffer (ignoring the current state of next_output_byte & free_in_buffer),
+	//  reset the pointer & count to the start of the buffer, and return TRUE indicating that the buffer has been dumped.
+
+	jpegDestination *dest = (jpegDestination*)cinfo->dest;
+	
+	size_t length = dest->bufferLength;
+	dest->bufferLength = length * 2;
+	dest->buffer = (JOCTET*)jl_realloc(dest->buffer, dest->bufferLength);
+	if ( dest->buffer == NULL )
+		return FALSE;
+
+	dest->pub.next_output_byte = dest->buffer + length;
+	dest->pub.free_in_buffer = dest->bufferLength - length;
+
+	return TRUE;
+}
+
+METHODDEF(void) jpegDestTerm( j_compress_ptr cinfo ) {
+
+	jpegDestination *dest = (jpegDestination*)cinfo->dest;
+
+	dest->dataLength = dest->pub.next_output_byte - dest->buffer;
+
+	if ( JL_MaybeRealloc(dest->bufferLength, dest->dataLength) )
+		dest->buffer = (JOCTET*)jl_realloc(dest->buffer, dest->dataLength);
+}
+
+
 DEFINE_FUNCTION( encodeJpegImage ) {
 
-	JL_REPORT_ERROR("TBD!"); // (TBD)
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
+	jpegDestination dest;
+	dest.buffer = NULL;
+	jpeg_compress_struct cinfo;
+	cinfo.global_state = 0;
 
+	JL_ASSERT_ARGC_RANGE(1, 2);
+	JL_ASSERT_ARG_IS_OBJECT(1);
+
+	int quality;
+	if ( JL_ARG_ISDEF(2) ) {
+
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &quality) );
+		JL_ASSERT_ARG_VAL_RANGE(quality, 0, 100, 2);
+	} else {
+	
+		quality = -1; // use default. see below.
+	}
+
+	JpegErrorManager jerr;
+	cinfo.err = jpeg_std_error(&jerr.pub);
+	jerr.pub.error_exit = JpegErrorExit;
+
+	// error management
+
+	int longJumpValue;
+
+	#ifdef _MSC_VER
+	#pragma warning( push, 0 )
+	#pragma warning(disable : 4611) // warning C4611: interaction between '_setjmp' and C++ object destruction is non-portable
+	#endif // _MSC_VER
+
+	longJumpValue = setjmp(jerr.setjmp_buffer);
+
+	#ifdef _MSC_VER
+	#pragma warning( pop )
+	#endif // _MSC_VER
+
+	if ( longJumpValue ) {
+
+		char message[JMSG_LENGTH_MAX];
+		cinfo.err->format_message((j_common_ptr)&cinfo, message);
+		JL_ERR( E_LIB, E_STR("JPEG"), E_INTERNAL, E_DETAILS, E_STR(message) );
+	}
+
+	// initialization
+
+	jpeg_create_compress(&cinfo);
+
+	cinfo.dest = (jpeg_destination_mgr*)&dest;
+
+	dest.pub.init_destination = jpegDestInit;
+	dest.pub.empty_output_buffer = jpegDestEmptyBuffer;
+	dest.pub.term_destination = jpegDestTerm;
+
+	// setup source data
+
+	const JSAMPLE *sImageData;
+
+	{
+	JLData buffer = JL_GetByteImageObject(cx, JL_ARG(1), &cinfo.image_width, &cinfo.image_height, &cinfo.input_components); // source
+	ASSERT( buffer.IsSet() );
+	sImageData = (const JSAMPLE*)buffer.GetConstStr();
+	}
+
+	JL_ASSERT( cinfo.input_components == 1 || cinfo.input_components == 3, E_STR("image"), E_FORMAT );
+
+	cinfo.in_color_space = cinfo.input_components == 3 ? JCS_RGB : JCS_GRAYSCALE;
+
+	jpeg_set_defaults(&cinfo);
+  
+	if ( quality >= 0 ) {
+
+		// The quality value ranges from 0..100. If "force_baseline" is TRUE, the computed quantization table entries are limited to 1..255 for JPEG baseline compatibility.
+		jpeg_set_quality(&cinfo, quality, TRUE);
+	}
+
+	// compress
+
+	jpeg_start_compress(&cinfo, TRUE);
+
+	int rowStride;
+	rowStride = cinfo.image_width * cinfo.input_components;
+
+	while ( cinfo.next_scanline < cinfo.image_height ) {
+
+		// jpeg_write_scanlines expects an array of pointers to scanlines. Here the array is only one element long,
+		// but you could pass more than one scanline at a time if that's more convenient.
+		if ( jpeg_write_scanlines(&cinfo, const_cast<JSAMPARRAY>(&sImageData), 1) != 1 )
+			break;
+		sImageData += rowStride;
+	}
+
+	jpeg_finish_compress(&cinfo);
+
+	// store compressed data
+
+	JL_CHK( JL_NewBufferGetOwnership(cx, dest.buffer, dest.dataLength, JL_RVAL) );
+
+	jpeg_destroy_compress(&cinfo);
+	return JS_TRUE;
+
+bad:
+	if ( dest.buffer != NULL )
+		jl_free(dest.buffer);
+	if ( cinfo.global_state != 0 )
+		jpeg_destroy_compress(&cinfo);
+	return JS_FALSE;
+}
 
 
 
@@ -268,13 +411,13 @@ DEFINE_FUNCTION( encodeJpegImage ) {
 
 
 
-typedef struct {
+struct PngReadUserStruct {
+
 	png_structp png;
 	png_infop info;
 	JSContext *cx;
 	JSObject *obj;
-//	NIStreamRead read;
-} PngReadUserStruct;
+};
 
 
 void _png_read( png_structp png_ptr, png_bytep data, png_size_t length ) {
@@ -457,6 +600,7 @@ DEFINE_FUNCTION( encodePngImage ) {
 	JLData buffer;
 
 	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	int compressionLevel;
 	if ( JL_ARG_ISDEF(2) ) {
@@ -468,7 +612,7 @@ DEFINE_FUNCTION( encodePngImage ) {
 		compressionLevel = Z_DEFAULT_COMPRESSION;
 	}
 
-	JL_ASSERT_ARG_IS_OBJECT(1);
+
 	int sWidth, sHeight, sChannels;
 	buffer = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels); // source
 
@@ -527,10 +671,10 @@ CONFIGURE_STATIC
 
 	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION( decodePngImage )
-		FUNCTION( encodePngImage )
-		FUNCTION( decodeJpegImage )
-//		FUNCTION( encodeJpegImage )
+		FUNCTION_ARGC( decodePngImage, 1 )
+		FUNCTION_ARGC( encodePngImage, 2 )
+		FUNCTION_ARGC( decodeJpegImage, 1 )
+		FUNCTION_ARGC( encodeJpegImage, 2 )
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC
