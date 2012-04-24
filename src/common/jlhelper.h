@@ -1039,9 +1039,9 @@ JL_ObjectIsArrayLike( JSContext *cx, JSObject *obj ) {
 	JSBool found;
 	return JS_IsArrayObject(cx, obj)
 		|| (
-		JS_HasPropertyById(cx, obj, JLID(cx, length), &found)
-	    && found == JS_TRUE
-	    && !JS_ObjectIsFunction(cx, obj)
+			JS_HasPropertyById(cx, obj, JLID(cx, length), &found)
+			&& found == JS_TRUE
+			&& !JS_ObjectIsFunction(cx, obj) // (function(){}).length
 		);
 }
 
@@ -3294,7 +3294,7 @@ JL_GetByteImageObject( JSContext *cx, jsval &val, T *width, T *height, U *channe
 	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, channels), channels) );
 
 	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
-	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) == *width * *height * *channels * 1, E_DATASIZE, E_INVALID );
+	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) ==(int)(*width * *height * *channels * 1), E_DATASIZE, E_INVALID );
 	return data;
 bad:
 	return JLData();

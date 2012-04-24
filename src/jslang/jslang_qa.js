@@ -401,3 +401,10 @@ loadModule('jsstd');
 	QA.ASSERT_STR( stringify(new Int8Array([100,100,100])), 'ddd', 'toString Int8Array "ddd"' );
 	QA.ASSERT_STR( stringify(new Uint16Array([100,100,100])), 'ddd', 'toString Uint16Array "ddd"' );
 
+
+/// issue with jslibs serializer
+
+	var s = new Serializer();
+	s.write(new URIError()); var ln = currentLineNumber;
+	var u = new Unserializer(s.done());
+	QA.ASSERT( u.read().lineNumber, ln );

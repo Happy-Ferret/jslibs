@@ -257,6 +257,7 @@ int HostStderr( void *, const char *buffer, size_t length ) {
 static volatile int32_t allocCount = 0;
 static volatile int32_t allocAmount = 0;
 static volatile int32_t freeCount = 0;
+static volatile int32_t freeAmount = 0;
 
 EXTERN_C void* jl_malloc_count( size_t size ) {
 	JLAtomicIncrement(&allocCount);
@@ -265,6 +266,7 @@ EXTERN_C void* jl_malloc_count( size_t size ) {
 	JLAtomicAdd(&allocAmount, msize(mem));
 	return mem;
 }
+
 EXTERN_C void* jl_calloc_count( size_t num, size_t size ) {
 	JLAtomicIncrement(&allocCount);
 	void *mem = calloc(num, size);
@@ -272,6 +274,7 @@ EXTERN_C void* jl_calloc_count( size_t num, size_t size ) {
 	JLAtomicAdd(&allocAmount, msize(mem));
 	return mem;
 }
+
 EXTERN_C void* jl_memalign_count( size_t alignment, size_t size ) {
 	JLAtomicIncrement(&allocCount);
 	void *mem = memalign(alignment, size);
@@ -279,24 +282,39 @@ EXTERN_C void* jl_memalign_count( size_t alignment, size_t size ) {
 	JLAtomicAdd(&allocAmount, msize(mem));
 	return mem;
 }
+
 EXTERN_C void* jl_realloc_count( void *ptr, size_t size ) {
+
+	size_t prev;
 	if ( ptr == NULL ) {
+		prev = 0;
 		JLAtomicIncrement(&allocCount);
-		JLAtomicAdd(&allocAmount, size);
 	} else {
-		JLAtomicAdd(&allocAmount, (int32_t)size - (int32_t)msize(ptr));
+		prev = msize(ptr);
 	}
+
 	void *mem = realloc(ptr, size);
 	ASSERT( mem );
+
+	if ( mem != ptr ) {
+
+		JLAtomicAdd(&freeAmount, prev);
+		JLAtomicAdd(&allocAmount, msize(mem));
+	} else {
+
+		JLAtomicAdd(&allocAmount, msize(mem) - prev);
+	}
 	return mem;
 }
+
 EXTERN_C size_t jl_msize_count( void *ptr ) {
 	return msize(ptr);
 }
+
 EXTERN_C void jl_free_count( void *ptr ) {
 	if ( ptr ) {
 		JLAtomicIncrement(&freeCount);
-		JLAtomicAdd(&allocAmount, -(int32_t)msize(ptr));
+		JLAtomicAdd(&freeAmount, msize(ptr));
 	}
 	free(ptr);
 }
@@ -667,7 +685,7 @@ bad:
 struct DBG_ALLOC_dummyClass {
 	~DBG_ALLOC_dummyClass() { // we must count at exit, see "dynamic atexit destructor"
 
-		fprintf(stderr, "\n{alloc:%d, leaks:%d (%d bytes)}\n", allocCount, allocCount - freeCount, allocAmount);
+		fprintf(stderr, "\n{alloc:%d (%dB), leaks:%d (%dB)}\n", allocCount, allocAmount, allocCount - freeCount, allocAmount - freeAmount);
 	}
 } DBG_ALLOC_dummy;
 

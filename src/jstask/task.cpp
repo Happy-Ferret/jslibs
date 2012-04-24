@@ -71,7 +71,7 @@ ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, SerializedData *ser, jsval
 
 ALWAYS_INLINE bool SerializerIsEmpty( const SerializedData *ser ) {
 
-	return ser == NULL/* || ser->length == 0*/;
+	return ser == NULL || ser->length == 0;
 }
 
 
@@ -121,29 +121,32 @@ $SVN_REVISION $Revision$
   The execution context of the taskFunc function is reused, this mean that the global object can be used to store data.
   The second argument of the taskFunc(req, index) is the index of the current request. This value can be used for initialization purpose.
   eg.
-  {{{
-  function MyTask( req, idx ) {
+{{{
+function MyTask( req, idx ) {
 
-   if ( idx == 0 ) {
-    loadModule('jsio');
-   }
-   ...
-  }
- }}}
+ if ( idx == 0 ) {
+  loadModule('jsio');
+ }
+ ...
+}
+}}}
 **/
 BEGIN_CLASS( Task )
 
 
-int TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
+int
+TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
 
 	Buf<char> *errBuffer = static_cast<Buf<char>*>(privateData);
 	errBuffer->Reserve(length);
 	jl_memcpy(errBuffer->Ptr(), buffer, length);
 	errBuffer->Advance(length);
-	return 0;
+	return 0; // ok
 }
 
-JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
+
+JSBool
+TheTask(JSContext *cx, TaskPrivate *pv) {
 
 	JSBool ok;
 	jsval argv[3] = { JSVAL_NULL }; // argv[0] is rval and code
@@ -243,13 +246,13 @@ JSBool TheTask(JSContext *cx, TaskPrivate *pv) {
 }
 
 
-JLThreadFuncDecl TaskThreadProc( void *threadArg ) {
+JLThreadFuncDecl
+TaskThreadProc( void *threadArg ) {
 
 	TaskPrivate *pv = NULL;
 	Buf<char> errBuffer;
 
 	JSContext *cx = CreateHost((uint32_t)-1, (uint32_t)-1, 0);
-	//JL_CHK( cx != NULL );
 	if ( cx == NULL ) // out of memory
 		JLThreadExit(0);
 
@@ -308,9 +311,7 @@ ASSERT( false );
 	}
 
 good:
-	ASSERT( pv );
 bad:
-	ASSERT( pv );
 
 	// These queues must be destroyed before cx because SerializedData * *ser hold a reference to the context that created the value.
 	JLMutexAcquire(pv->mutex); // --
@@ -733,7 +734,7 @@ while ( !host.endSignal )
 	processEvents(t.event(), host.endSignalEvent());
 }}}
 **/
-struct UserProcessEvent {
+struct TaskEvent {
 
 	ProcessEvent pe;
 
@@ -742,7 +743,7 @@ struct UserProcessEvent {
 	TaskPrivate *pv;
 };
 
-S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(TaskEvent, pe) == 0 );
 
 static JSBool TaskPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
 	
@@ -751,7 +752,7 @@ static JSBool TaskPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * 
 
 void TaskStartWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	TaskEvent *upe = (TaskEvent*)pe;
 
 	while ( upe->pv->pendingResponseCount == 0 && !upe->canceled )
 		JLEventWait(upe->pv->responseEvent, JLINFINITE);
@@ -760,7 +761,7 @@ void TaskStartWait( volatile ProcessEvent *pe ) {
 
 bool TaskCancelWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	TaskEvent *upe = (TaskEvent*)pe;
 
 	upe->canceled = true;
 	JLEventTrigger(upe->pv->responseEvent);
@@ -769,7 +770,7 @@ bool TaskCancelWait( volatile ProcessEvent *pe ) {
 
 JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	TaskEvent *upe = (TaskEvent*)pe;
 
 	*hasEvent = (upe->pv->pendingResponseCount > 0);
 
@@ -799,7 +800,7 @@ DEFINE_FUNCTION( events ) {
 	pv = (TaskPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	UserProcessEvent *upe;
+	TaskEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
 	upe->pe.prepareWait = TaskPrepareWait;
 	upe->pe.startWait = TaskStartWait;

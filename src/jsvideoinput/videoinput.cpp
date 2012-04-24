@@ -137,7 +137,7 @@ $TOC_MEMBER $INAME
   Passively waits for a new image through the processEvents function.
 **/
 
-struct UserProcessEvent {
+struct VIEvent {
 	
 	ProcessEvent pe;
 	HANDLE imageEvent;
@@ -145,11 +145,11 @@ struct UserProcessEvent {
 	JSObject *obj;
 };
 
-S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
+S_ASSERT( offsetof(VIEvent, pe) == 0 );
 
 static JSBool VIPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
 	
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	VIEvent *upe = (VIEvent*)pe;
 
 	ResetEvent(upe->imageEvent); // (TBD) handle errors ?
 
@@ -158,7 +158,7 @@ static JSBool VIPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject 
 
 static void VIStartWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	VIEvent *upe = (VIEvent*)pe;
 
 	HANDLE events[] = { upe->imageEvent, upe->cancelEvent };
 	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
@@ -167,7 +167,7 @@ static void VIStartWait( volatile ProcessEvent *pe ) {
 
 static bool VICancelWait( volatile ProcessEvent *pe ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	VIEvent *upe = (VIEvent*)pe;
 
 	SetEvent(upe->cancelEvent);
 	return true;
@@ -175,7 +175,7 @@ static bool VICancelWait( volatile ProcessEvent *pe ) {
 
 static JSBool VIEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
+	VIEvent *upe = (VIEvent*)pe;
 
 	*hasEvent = (WaitForSingleObject(upe->imageEvent, 0) == WAIT_OBJECT_0);
 
@@ -195,7 +195,7 @@ static JSBool VIEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *c
 
 static void VIWaitFinalize( void* data ) {
 	
-	UserProcessEvent *upe = (UserProcessEvent*)data;
+	VIEvent *upe = (VIEvent*)data;
 
 	CloseHandle(upe->cancelEvent);
 }
@@ -207,7 +207,7 @@ DEFINE_FUNCTION( events ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	UserProcessEvent *upe;
+	VIEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, VIWaitFinalize, JL_RVAL) );
 	upe->pe.prepareWait = VIPrepareWait;
 	upe->pe.startWait = VIStartWait;

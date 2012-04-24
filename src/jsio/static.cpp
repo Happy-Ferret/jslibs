@@ -234,134 +234,6 @@ bad1:
 	return JS_FALSE;
 }
 
-/*
-/ **doc
-$TOC_MEMBER $INAME
- $INT $INAME( _descriptorArray_ )
-  Passively waits for a descriptor event through the processEvents function.
-  $H example:
-{{{
-(TBD)
-}}}
-** /
-
-struct UserProcessEvent {
-
-	ProcessEvent pe;
-
-	int fdCount;
-	PRPollDesc *pollDesc;
-	jsval *descVal;
-	PRInt32 pollResult;
-};
-
-S_ASSERT( offsetof(UserProcessEvent, pe) == 0 );
-
-void IOStartWait( volatile ProcessEvent *pe ) {
-
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
-
-	upe->pollResult = PR_Poll(upe->pollDesc, 1 + upe->fdCount, PR_INTERVAL_NO_TIMEOUT); // 1 is the PollableEvent
-}
-
-bool IOCancelWait( volatile ProcessEvent *pe ) {
-
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
-
-	PRStatus st;
-	st = PR_SetPollableEvent(upe->pollDesc[0].fd); // cancel the poll
-	ASSERT( st == PR_SUCCESS );
-	st = PR_WaitForPollableEvent(upe->pollDesc[0].fd); // resets the event. doc. blocks the calling thread until the pollable event is set, and then it atomically unsets the pollable event before it returns.
-	ASSERT( st == PR_SUCCESS );
-
-	return true;
-}
-
-JSBool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
-
-	UserProcessEvent *upe = (UserProcessEvent*)pe;
-
-	if ( upe->pollResult == -1 )
-		JL_CHK( ThrowIoError(cx) );
-
-	*hasEvent = upe->pollResult > 0 && !( upe->pollDesc[0].out_flags & PR_POLL_READ );
-
-	if ( !*hasEvent ) // optimization
-		goto end;
-
-	for ( int i = 0; i < upe->fdCount; ++i )
-		JL_CHK( PollDescNotify(cx, upe->descVal[i], &upe->pollDesc[1 + i], i) );
-
-end:
-	jl_free(upe->pollDesc);
-	jl_free(upe->descVal);
-	return JS_TRUE;
-
-bad:
-	jl_free(upe->pollDesc);
-	jl_free(upe->descVal);
-	return JS_FALSE;
-}
-
-
-DEFINE_FUNCTION( iOEvents ) {
-
-	JL_ASSERT_ARGC(1);
-	JL_ASSERT_ARG_IS_ARRAY(1);
-
-	JSObject *fdArrayObj;
-	fdArrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
-
-	UserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
-	upe->pe.startWait = IOStartWait;
-	upe->pe.cancelWait = IOCancelWait;
-	upe->pe.endWait = IOEndWait;
-
-	unsigned fdCount;
-	JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &fdCount) );
-
-	upe->pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdCount)); // pollDesc[0] is the event fd
-	JL_ASSERT_ALLOC( upe->pollDesc );
-	upe->descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
-	JL_ASSERT_ALLOC( upe->descVal );
-	JL_updateMallocCounter(cx, (sizeof(PRPollDesc) + sizeof(jsval)) * fdCount); // approximately (pollDesc + descVal)
-
-	JsioPrivate *mpv;
-	mpv = (JsioPrivate*)JL_GetModulePrivate(cx, _moduleId);
-	if ( mpv->peCancel == NULL ) {
-
-		mpv->peCancel = PR_NewPollableEvent();
-		if ( mpv->peCancel == NULL )
-			return ThrowIoError(cx);
-	}
-
-	upe->pollDesc[0].fd = mpv->peCancel;
-	upe->pollDesc[0].in_flags = PR_POLL_READ;
-	upe->pollDesc[0].out_flags = 0;
-
-	upe->fdCount = fdCount; // count excluding peCancel
-
-	// (TBD) try to get the 'agruments' variable instead of using rootedValues ?
-
-	JSObject *rootedValues;
-	rootedValues = JS_NewArrayObject(cx, fdCount, NULL);
-	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(rootedValues)) );
-
-	jsval *tmp;
-	for ( unsigned i = 0; i < fdCount; ++i ) {
-
-		tmp = &upe->descVal[i];
-		JL_CHK( JL_GetElement(cx, fdArrayObj, i, tmp) );
-		JL_CHK( JL_SetElement(cx, rootedValues, i, tmp) );
-		JL_CHK( InitPollDesc(cx, *tmp, &upe->pollDesc[1 + i]) );
-	}
-
-	return JS_TRUE;
-	JL_BAD;
-}
-
-*/
 
 /**doc
 $TOC_MEMBER $INAME
@@ -377,22 +249,10 @@ DEFINE_FUNCTION( intervalNow ) {
 	JL_BAD;
 }
 
-//
-///**doc
-//$TOC_MEMBER $INAME
-// $INT $INAME()
-//  Returns the microseconds value of NSPR's free-running interval timer.
-//**/
-//DEFINE_FUNCTION( uIntervalNow ) {
-//
-//	PRUint32 interval = PR_IntervalToMicroseconds( PR_IntervalNow() );
-//	return JL_NewNumberValue(cx, interval, JL_RVAL);
-//}
-
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( _milliseconds_ )
+ $VOID $INAME( [ _milliseconds_ = 0 ] )
   Sleeps _milliseconds_ milliseconds.
 **/
 DEFINE_FUNCTION( sleep ) {

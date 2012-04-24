@@ -739,9 +739,8 @@ static JSBool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject 
 
 	upe->fdCount = fdCount; // count excluding peCancel
 
+	// (TBD) find a better solution to root fdArray content
 	// (TBD) use AutoValueVector avr(cx); avr.reserve(16); avr.append(val);
-
-
 	JSObject *rootedValues;
 	rootedValues = JS_NewArrayObject(cx, fdCount, NULL);
 	JL_CHK( SetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, OBJECT_TO_JSVAL(rootedValues)) );
