@@ -824,7 +824,8 @@ JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
 	HostPrivate *hpv = JL_GetHostPrivate(cx);
 	JL_ASSERT( hpv, E_HOST, E_STATE, E_COMMENT("context private") );
 
-	JL_ASSERT( hpv->isEnding == false );
+	ASSERT( hpv->isEnding == false );
+
 	hpv->isEnding = true;
 	hpv->canSkipCleanup = skipCleanup;
 

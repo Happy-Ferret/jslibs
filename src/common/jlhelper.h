@@ -316,7 +316,7 @@ namespace jspv {
 
 		jsid tmp;
 		JSID_BITS(tmp) = 0;
-		ASSERT(JSID_IS_ZERO(tmp));
+		ASSERT( JSID_IS_ZERO(tmp) );
 		return tmp;
 	}
 }
@@ -433,8 +433,8 @@ enum {
 	JLID_SPEC( bits ),
 	JLID_SPEC( rate ),
 	JLID_SPEC( frames ),
-	JLID_SPEC( revision ),
-	JLID_SPEC( _revision ),
+	JLID_SPEC( sourceId ),
+	JLID_SPEC( _sourceId ),
 	JLID_SPEC( buildDate ),
 	JLID_SPEC( _buildDate ),
 	JLID_SPEC( path ),
@@ -442,9 +442,6 @@ enum {
 	JLID_SPEC( bootstrapScript ),
 	JLID_SPEC( _serialize ),
 	JLID_SPEC( _unserialize ),
-	JLID_SPEC( _private1 ),
-	JLID_SPEC( _private2 ),
-	JLID_SPEC( _private3 ),
 	JLID_SPEC( eval ),
 	JLID_SPEC( push ),
 	JLID_SPEC( pop ),
@@ -455,7 +452,6 @@ enum {
 	JLID_SPEC( message ),
 	JLID_SPEC( Reflect ),
 	JLID_SPEC( Debugger ),
-	JLID_SPEC( Function ),
 	JLID_SPEC( isGenerator ),
 	JLID_SPEC( writable ),
 	JLID_SPEC( readable ),
@@ -2597,31 +2593,34 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, bool *b ) {
 ALWAYS_INLINE JSBool FASTCALL
 JL_NativeToJsval( JSContext *cx, void *ptr, jsval *vp ) {
 
-	if ( ((uint32_t)ptr & 1) == 0 ) {
+	if ( ((uint32_t)ptr & 1) == 0 ) { // see PRIVATE_PTR_TO_JSVAL_IMPL()
 
 		*vp = PRIVATE_TO_JSVAL(ptr);
-	} else {
+	} else { // rare since pointers are alligned (except function ptr in DBG mode ?)
 
 		JSObject *obj = JL_NewProtolessObj(cx);
 		JL_CHK( obj );
 		*vp = OBJECT_TO_JSVAL(obj);
 		jsval tmp;
 
-		if ( 8 * sizeof(ptrdiff_t) == 32 ) {
+		if ( PLATFORM_BITS == 32 ) {
 
-			tmp = INT_TO_JSVAL( reinterpret_cast<int32_t>(ptr) );
+			tmp = INT_TO_JSVAL( reinterpret_cast<ptrdiff_t>(ptr) );
 			JL_CHK( JS_SetPropertyById(cx, obj, INT_TO_JSID(0), &tmp) );
 		} else
-		if ( 8 * sizeof(ptrdiff_t) == 64 ) {
+		if ( PLATFORM_BITS == 64 ) {
 
 			#ifdef XP_WIN
 			#pragma warning(push)
-			#pragma warning(disable:4293)
+			#pragma warning(disable:4293) // 'operator' : shift count negative or too big, undefined behavior
 			#endif // XP_WIN
-			tmp = INT_TO_JSVAL( reinterpret_cast<ptrdiff_t>(ptr) & 0xFFFFFFFF );
+
+			tmp = INT_TO_JSVAL( reinterpret_cast<ptrdiff_t>(ptr) & UINT32_MAX );
 			JL_CHK( JS_SetPropertyById(cx, obj, INT_TO_JSID(0), &tmp) );
+
 			tmp = INT_TO_JSVAL( reinterpret_cast<ptrdiff_t>(ptr) >> 32 );
 			JL_CHK( JS_SetPropertyById(cx, obj, INT_TO_JSID(1), &tmp) );
+
 			#ifdef XP_WIN
 			#pragma warning(pop)
 			#endif // XP_WIN
@@ -2637,31 +2636,37 @@ JL_NativeToJsval( JSContext *cx, void *ptr, jsval *vp ) {
 ALWAYS_INLINE JSBool FASTCALL
 JL_JsvalToNative( JSContext *cx, const jsval &val, void **ptr ) {
 
-	if ( JSVAL_IS_OBJECT(val) ) {
+	if ( !JSVAL_IS_OBJECT(val) ) {
+
+		JL_CHKM( JSVAL_IS_DOUBLE(val), E_JSLIBS, E_INTERNAL );
+		*ptr = JSVAL_TO_PRIVATE(val);
+	} else {
 
 		jsval tmp;
 		JSObject *obj = JSVAL_TO_OBJECT(val);
 
-		if ( 8 * sizeof(ptrdiff_t) == 32 ) {
+		if ( PLATFORM_BITS == 32 ) {
 
 			JL_CHK( JS_GetPropertyById(cx, obj, INT_TO_JSID(0), &tmp) );
 			*ptr = reinterpret_cast<void*>( JSVAL_TO_INT(tmp) );
 		} else
-		if ( 8 * sizeof(ptrdiff_t) == 64 ) {
-
-	#ifdef XP_WIN
-	#endif // XP_WIN
+		if ( PLATFORM_BITS == 64 ) {
 
 			#ifdef XP_WIN
 			#pragma warning(push)
-			#pragma warning(disable:4293)
+			#pragma warning(disable:4293) // 'operator' : shift count negative or too big, undefined behavior
 			#endif // XP_WIN
-			uint32_t h, l;
+
+			ptrdiff_t h, l;
+			
 			JL_CHK( JS_GetPropertyById(cx, obj, INT_TO_JSID(0), &tmp) );
-			l = static_cast<uint32_t>(JSVAL_TO_INT(tmp));
+			l = static_cast<ptrdiff_t>(JSVAL_TO_INT(tmp));
+
 			JL_CHK( JS_GetPropertyById(cx, obj, INT_TO_JSID(1), &tmp) );
-			h = static_cast<uint32_t>(JSVAL_TO_INT(tmp));
+			h = static_cast<ptrdiff_t>(JSVAL_TO_INT(tmp));
+
 			*ptr = reinterpret_cast<void*>( (h << 32) | l );
+
 			#ifdef XP_WIN
 			#pragma warning(pop)
 			#endif // XP_WIN
@@ -2669,10 +2674,6 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, void **ptr ) {
 
 			ASSERT(false);
 		}
-	} else {
-
-		JL_CHKM( JSVAL_IS_DOUBLE(val), E_JSLIBS, E_INTERNAL );
-		*ptr = JSVAL_TO_PRIVATE(val);
 	}
 	return JS_TRUE;
 	JL_BAD;

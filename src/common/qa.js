@@ -77,6 +77,8 @@ function QAAPI(cx) {
 
 	this.cx = cx; // expose the current context
 
+	this.IS_UNSAFE = host.unsafeMode;
+
 	this.NO_CRASH = function() {
 	}
 
@@ -96,7 +98,7 @@ function QAAPI(cx) {
 			cx.reportIssue('ASSERTOP: unknown operator "'+op+'"');
 		} else if ( res !== true ) {
 
-			cx.reportIssue(formatVal(left)+' !' + op +' '+formatVal(right), testName);
+			cx.reportIssue(formatVal(left)+' ! ' + op +' '+formatVal(right), testName);
 		}
 	}
 
@@ -419,6 +421,12 @@ function launchTests(itemList, cfg) {
 	var testCount = 0;
 	var testIndex = cfg.rangeStart;
 
+	if ( cfg.quiet ) {
+
+		var prevStderr = host.stderr;
+		host.stderr = function() {};
+	}
+
 	testloop: for (;;) {
 
 		if ( cfg.loopForever )
@@ -494,6 +502,9 @@ function launchTests(itemList, cfg) {
 	
 	if ( exportFile )
 		exportFile.close();
+
+	if ( cfg.quiet )
+		host.stderr = prevStderr;
 	
 	return [cx.issueList, cx.checkCount];
 }
@@ -812,8 +823,13 @@ print('\nEnd.\n');
 ////////////////////////////////////////////////////////////////////////////////
 // flags:
 //
-//	'd' for desactivated: the test is disabled.
-//	'f' for fast: the test execution is fast. Time should be less that 10ms.
-//	't' for time: the test execution time is always the same. The test do not use any variable-execution-time function (CollectGarbage, Poll, Socket, ...)
-//	'r' for reliable: external parameters (like the platform, CPU load, TCP/IP connection, weather, ...) cannot make the test to fail.
-//	'm' for low memory usage. The test uses the minimum amount of memory in the script part. no QA.randomString(300000000) or StringRepeat('x', 10000000000)
+//	d: disabled.
+//  p: suitable for perf tests
+//
+// deprecated:
+//	f: for fast: the test execution is fast. Time should be less that 10ms.
+//	t: for time: the test execution time is always the same. The test do not use any variable-execution-time function (CollectGarbage, Poll, Socket, ...)
+//	r: for reliable: external parameters (like the platform, CPU load, TCP/IP connection, weather, ...) cannot make the test to fail.
+//	m: for low memory usage. The test uses the minimum amount of memory in the script part. no QA.randomString(300000000) or StringRepeat('x', 10000000000)
+//  u: crash in unsafe mode.
+//

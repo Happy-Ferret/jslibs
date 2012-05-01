@@ -74,7 +74,7 @@ function getLatestChanges() {
 
 function getClassRevision(moduleName, className) {
 
-  var proc = new Process('jshost', [ '-u', '-i', 'var loadModule = host.loadModule; loadModule("'+moduleName+'"); host.stdout('+className+'._revision)']);
+  var proc = new Process('jshost', [ '-u', '-i', 'var loadModule = host.loadModule; loadModule("'+moduleName+'"); host.stdout('+className+'._sourceId)']);
   return Number(proc.stdout.read());
 }
 
@@ -164,7 +164,7 @@ var readme = expand(new File('./dist/readme.txt.tpl').content, function(id) {
 			return type;
 		case 'version':
 			return jslibsVersion;
-		case 'revision':
+		case 'sourceId':
 			return jslibsRevision;
 		case 'changes':
 			return indentText(changes, '  ');

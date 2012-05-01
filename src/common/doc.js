@@ -167,7 +167,7 @@ var api = {
 
 		var res = /\$Revision: (\d+) \$/(ReadEol(cx));
 		if ( res )
-			cx.center = '[http://code.google.com/p/jslibs/source/browse/trunk/'+item.path+'/'+item.fileName+'?r='+res[1]+' revision] - ';
+			cx.center = '[http://code.google.com/p/jslibs/source/browse/trunk/'+item.path+'/'+item.fileName+'?r='+res[1]+' source] - ';
 		else
 			cx.center = '';
 //		cx.center += '<br/>';

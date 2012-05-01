@@ -1,7 +1,6 @@
 var loadModule = host.loadModule;
-// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
-
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsfont'); throw 0; // -inlineOnly
+ //loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsfont'); throw 0; // -inlineOnly
 
 loadModule('jsstd');
 loadModule('jsfont');
@@ -9,17 +8,15 @@ loadModule('jsimage');
 loadModule('jsprotex');
 loadModule('jsio');
 
-//var f = new Font('AnarchySans.otf');
+var QA = {cx:{item:{path:'.'}}};
+
+var f = new Font(QA.cx.item.path + '/AnarchySans.otf');
+f.size = 10;
+var image = f.drawString('Hello World', true);
 
 
 
 throw 0;
-
-var f = new Font('c:\\windows\\fonts\\arial.ttf');
-f.size = 32;
-f.verticalPadding = 10;
-f.horizontalPadding = 10;
-f.letterSpacing = 5;
 
 //f.getCharOutline('o'); halt();
 

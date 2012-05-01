@@ -23,12 +23,17 @@
 #include FT_OUTLINE_H
 #include FT_TRIGONOMETRY_H
 
+typedef const char* FTError_t;
+
+extern const FTError_t ftErrorList[];
+
 
 #define FTCHK( apiCall ) \
 	JL_MACRO_BEGIN \
-		FT_Error apiError = (apiCall); \
+		FT_Error apiError; \
+		apiError = (apiCall); \
 		if ( apiError != FT_Err_Ok ) { \
-			JL_ERR( E_LIB, E_STR("freetype2"), E_OPERATION, E_ERRNO(apiError) ); \
+			JL_ERR( E_LIB, E_STR("freetype2"), E_OPERATION, E_DETAILS, E_STR(ftErrorList[apiError]), E_ERRNO(apiError) ); \
 		} \
 	JL_MACRO_END
 
@@ -139,7 +144,7 @@ struct JsfontPrivate {
 };
 
 
-ALWAYS_INLINE JsfontPrivate* GetJsfontPrivate(JSContext *cx, JSObject *fontObj) {
+ALWAYS_INLINE JsfontPrivate* GetJsfontPrivate(JSContext *, JSObject *fontObj) {
 	
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(fontObj);
 	ASSERT( pv );

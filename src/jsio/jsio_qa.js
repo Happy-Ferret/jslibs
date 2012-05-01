@@ -44,7 +44,7 @@ loadModule('jsdebug');
 	rdv.close();
 
 
-/// Socket shutdown(true) behavior [trm]
+/// Socket shutdown(true) behavior []
 
 	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
 	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
@@ -60,7 +60,7 @@ loadModule('jsdebug');
 
 
 
-/// Socket shutdown(false) behavior [trm]
+/// Socket shutdown(false) behavior []
 
 	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
 	var cl = new Socket();
@@ -79,7 +79,7 @@ loadModule('jsdebug');
 
 
 
-/// basic Socket client/server [trm]
+/// basic Socket client/server []
 
 	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
 	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
@@ -125,7 +125,7 @@ loadModule('jsdebug');
 
 
 
-/// Basic File Read/Write [tr]
+/// Basic File Read/Write []
 
 	var filename = QA.randomString(10);
 
@@ -141,7 +141,7 @@ loadModule('jsdebug');
 
 
 
-/// File Read [tr]
+/// File Read []
 
 		var filename = QA.randomString(10);
 
@@ -185,7 +185,7 @@ loadModule('jsdebug');
 
 
 
-/// File busy [trfm]	
+/// File busy []
 
 		var filename = QA.randomString(10);
 
@@ -196,7 +196,7 @@ loadModule('jsdebug');
 
 
 
-/// File copy [tr]
+/// File copy []
 
 		var filename = QA.randomString(10);
 
@@ -229,7 +229,7 @@ loadModule('jsdebug');
 
 
 
-/// File ancestor [ftrm]
+/// File ancestor [p]
 
 		var f = new File('');
 		QA.ASSERT( f instanceof File, true, 'File inheritance' );
@@ -237,31 +237,31 @@ loadModule('jsdebug');
 
 
 
-/// system info [ftmr]
+/// system info []
 
 		QA.ASSERTOP( global, 'has', 'architecture' );
 		QA.ASSERTOP( global, 'has', 'systemName' );
 		QA.ASSERTOP( global, 'has', 'systemRelease' );
 
 
-/// physical memory [ftrm]
+/// physical memory [p]
 
 		QA.ASSERT( physicalMemorySize == physicalMemorySize && physicalMemorySize > 1000000, true, 'physical Memory size' );
 
 
-/// Noise generation [m]
+/// Noise generation []
 		
 		QA.ASSERT( getRandomNoise(1).byteLength, 1, 'random noise 1 byte' );
 		QA.ASSERT( getRandomNoise(3).byteLength, 3, 'random noise 3 bytes' );
 
 
-/// environment variables [ftm]
+/// environment variables [p]
 		
 		QA.ASSERT( getEnv('PATH').length > 1, true, 'get an environment' );
 		QA.ASSERT( getEnv('sdfrwetwergfqwuyoruiqwye'), undefined, 'undefined environment variable' );
 
 
-/// process priority [ftrm]
+/// process priority [p]
 	
 		var save = processPriority;
 		
@@ -277,21 +277,21 @@ loadModule('jsdebug');
 		processPriority = save;
 
 
-/// Process pipes type [ftrm]
+/// Process pipes type [p]
 
 	var cmdPath = getEnv('ComSpec');
 	var process = new Process(cmdPath, ['/c', 'cd']);
 	QA.ASSERTOP( process.stdout, 'instanceof', Descriptor, 'stdout instanceof Descriptor' );
 
 
-/// Process arguments [ftrm]
+/// Process arguments [p]
 
 	var process = new Process('jshost', ['-u', '-i', 'host.stdout(host.arguments.toString())', '1', '2', '3']);
 	var res = stringify(process.stdout.read());
 	QA.ASSERT_STR( res, "1,2,3", "Process arguments validity" );
 
 
-/// Process default current directory [ftrm]
+/// Process default current directory [p]
 
 	var process = new Process('jshost', ['-u', '-i', 'loadModule = host.loadModule; loadModule("jsio"); host.stdout(currentDirectory)']);
 	var res = stringify(process.stdout.read());
@@ -309,14 +309,14 @@ loadModule('jsdebug');
 	QA.ASSERT( pathSeparator.length, 1, 'pathSeparator length' );
 
 
-/// Process current directory [ftrm]
+/// Process current directory [p]
 	
 	var process = new Process('jshost', ['-u', '-i', 'loadModule = host.loadModule; loadModule("jsio"); host.stdout(currentDirectory)'], '..');
 	var res = stringify(process.stdout.read());
 	QA.ASSERTOP( res, '==', currentDirectory.substr(0, currentDirectory.lastIndexOf(directorySeparator)) );
 
 
-/// Process no stdio redirect [ftrm] (possible stdio perturbations)
+/// Process no stdio redirect (possible stdio perturbations) [p]
 
 	var cmdPath = getEnv('ComSpec');
 	var process = new Process(cmdPath, ['/c', 'cd'], undefined, false);
@@ -325,7 +325,7 @@ loadModule('jsdebug');
 	QA.ASSERTOP( process.stdin, '===', undefined, 'stdin is not defined' );
 
 
-/// host name [ftm]
+/// host name [p]
 
 	switch (systemName) {
 		case 'Windows_NT':
@@ -337,7 +337,7 @@ loadModule('jsdebug');
 	}
 
 
-/// GetHostByName function [rm]
+/// GetHostByName function []
 
 		var res = Socket.getHostsByName('localhost');
 		QA.ASSERT( res.indexOf('127.0.0.1') != -1, true, 'localhost is 127.0.0.1' );
@@ -347,13 +347,13 @@ loadModule('jsdebug');
 		QA.ASSERT( res.length, 0, 'find nonexistent hostName' );
 
 
-/// GetHostByName function with hostName argument [m]
+/// GetHostByName function with hostName argument []
 
 		var res = Socket.getHostsByName(hostName);
 		QA.ASSERT( res.length >= 1, true, 'find hostName (may fail)' );
 
 
-/// empty poll [trm]
+/// empty poll []
 
 		var t0 = intervalNow();
 		var count = poll([], 100);
@@ -362,7 +362,7 @@ loadModule('jsdebug');
 		QA.ASSERT( t >= 99 && t < 150, true, 'poll timeout (may fail if high CPU load) t='+t );
 
 
-/// Non-blocking TCP Socket [trm]
+/// Non-blocking TCP Socket []
 		
 		var count = 0;
 		var dlist = [];
@@ -419,7 +419,7 @@ loadModule('jsdebug');
 		dlist.pop().close();
 
 
-/// Creating a lot of sockets + GC [r]
+/// Creating a lot of sockets + GC []
 
 	var s = [];
 	for ( var j = 0; j < 15; j++ ) {
@@ -430,7 +430,7 @@ loadModule('jsdebug');
 		QA.gc();
 	}
 
-/// Create/remove a lot of sockets [r]
+/// Create/remove a lot of sockets []
 
 	var s = [];
 	for ( var i=0 ; i < 1000 ; i++ )
@@ -439,7 +439,7 @@ loadModule('jsdebug');
 		s.pop().close();
 
 
-/// Non-blocking UDP Socket [trm]
+/// Non-blocking UDP Socket []
 	
 		var s2 = new Socket( Socket.UDP );
 		s2.nonblocking = true;
@@ -469,7 +469,7 @@ loadModule('jsdebug');
 		}
 
 
-/// TCP get [m]
+/// TCP get []
 
 	do {
 		var res, host, hostList = ['proxy', 'www.google.com', 'localhost']; // try to find a web server on port 80
@@ -522,7 +522,7 @@ loadModule('jsdebug');
 	} while (0);
 
 
-/// closing Socket [ftrm]
+/// closing Socket [p]
 
 		var soc = new Socket();
 		QA.ASSERT( soc.type, Descriptor.DESC_SOCKET_TCP, 'descriptor type' );
@@ -531,7 +531,7 @@ loadModule('jsdebug');
 		QA.ASSERT( soc.closed, true, 'socket is closed' );
 
 
-/// time interval [trm]
+/// time interval []
 
 		var t0 = intervalNow();
 		sleep(250);
@@ -539,7 +539,7 @@ loadModule('jsdebug');
 		QA.ASSERT( t >= 249 && t < 275, true, 'time accuracy' );
 
 
-/// shared memory simple test 1 [ftrm]
+/// shared memory simple test 1 [p]
 
 		var fileName = 'qa'+QA.randomString(10);
 		var mem = new SharedMemory( fileName, 100 );
@@ -549,7 +549,7 @@ loadModule('jsdebug');
 		QA.ASSERT( new File(fileName).exist, false, 'SharedMemory file has been removed (linux only ?)' );
 		
 
-/// shared memory simple test 2 [ftrm]
+/// shared memory simple test 2 [p]
 
 		var fileName = 'qa'+QA.randomString(10);
 		
@@ -564,7 +564,7 @@ loadModule('jsdebug');
 		QA.ASSERT( new File(fileName).exist, false, 'SharedMemory file has been removed (linux only ?)' );
 
 
-/// shared memory [ftrm]
+/// shared memory [p]
 
 		var fileName = 'qa'+QA.randomString(10);
 		
@@ -584,7 +584,7 @@ loadModule('jsdebug');
 		QA.ASSERT( new File(fileName).exist, false, 'SharedMemory file has been removed (linux only ?)' );
 
 
-/// standard file descriptors [ftrm]
+/// standard file descriptors [p]
 		
 		QA.ASSERTOP( File, 'has', 'stdin' );
 		QA.ASSERTOP( File, 'has', 'stdout' );
@@ -594,7 +594,7 @@ loadModule('jsdebug');
 		QA.ASSERTOP( File.stderr.type, '===', File.FILE_FILE, 'stderr file type');
 
 
-/// File I/O [ftrm]
+/// File I/O [p]
 
 		var f = new File('qa_tmp_file.txt')
 		f.open(File.CREATE_FILE | File.RDWR);
@@ -609,7 +609,7 @@ loadModule('jsdebug');
 		QA.ASSERT( f.exist, false, 'file delete' );
 
 
-/// File info [ftrm]
+/// File info [p]
 	
 		var f = new File('qa_tmp_file_FileInfo.txt');
 		
@@ -628,7 +628,7 @@ loadModule('jsdebug');
 		f.delete();
 
 
-/// File content [ftrm]
+/// File content [p]
 
 		var f = new File(QA.randomString(10));
 		var data = String(new Date());
@@ -643,7 +643,7 @@ loadModule('jsdebug');
 		QA.ASSERT( f.content, undefined, 'file2 does not exist' );
 
 
-/// File exception [ftrm]
+/// File exception [p]
 
 		var f = new File('qa_tmp_notfound.txt')
 		try {
@@ -660,7 +660,7 @@ loadModule('jsdebug');
 		}
 
 
-/// File constants [ftrm]
+/// File constants [p]
 
 	QA.ASSERTOP( File, 'has', 'RDONLY' );
 	QA.ASSERTOP( File, 'has', 'WRONLY' );
@@ -680,7 +680,7 @@ loadModule('jsdebug');
 	QA.ASSERTOP( File, 'has', 'FILE_OTHER' );
 
 
-/// Directory constants [ftrm]
+/// Directory constants [p]
 
 	QA.ASSERTOP( Directory, 'has', 'SKIP_NONE' );
 	QA.ASSERTOP( Directory, 'has', 'SKIP_DOT' );
@@ -692,7 +692,7 @@ loadModule('jsdebug');
 	QA.ASSERTOP( Directory, 'has', 'SKIP_DOT_DOT', 'Directory const cannot be removed' );
 
 
-/// Directory [ftrm]
+/// Directory [p]
 		
 		var f = new File('qa_tmp_dir.txt');
 		f.content = 'test';
@@ -701,7 +701,7 @@ loadModule('jsdebug');
 		f.content = undefined;
 
 
-/// Directory exist [ftrm]
+/// Directory exist [p]
 		
 		var d = new Directory('.');
 		QA.ASSERT( d.exist, true, 'directory exist' );
@@ -711,7 +711,7 @@ loadModule('jsdebug');
 		QA.ASSERT( d1.name, 'qa_directory_do_not_exist', 'directory name' );
 
 
-/// create process read pipe [m]
+/// create process read pipe []
 	
 		switch (systemName) {
 			case 'Windows_NT':
@@ -729,7 +729,7 @@ loadModule('jsdebug');
 		}
 
 
-/// create process wait for exitcode [m]
+/// create process wait for exitcode []
 
 	do {
 		switch ( systemName ) {
@@ -759,7 +759,7 @@ loadModule('jsdebug');
 	} while (0);
 
 
-/// create process error detection [ftrm]
+/// create process error detection [p]
 
 	do {
 		try {
@@ -775,7 +775,7 @@ loadModule('jsdebug');
 	
 
 
-/// create process detach [m]
+/// create process detach []
 	
 	do {
 		switch ( systemName ) {
@@ -796,14 +796,14 @@ loadModule('jsdebug');
 		process.detach();
 	} while (0);
 
-/// current working directory [ftrm]
+/// current working directory [p]
 	
 		QA.ASSERT( 'currentDirectory' in global, true, 'has currentDirectory' );
 		QA.ASSERT( typeof currentDirectory, 'string', 'current directory' );
 		QA.ASSERT( currentDirectory.length >= 1, true, 'current directory length' );
 
 
-/// MemoryMapped class [ftrm]
+/// MemoryMapped class [p]
 
 		var thisFilename = QA.cx.item.file;
 		var m = new MemoryMapped(new File(thisFilename).open('r'));
@@ -813,7 +813,7 @@ loadModule('jsdebug');
 		QA.ASSERT_STR( stringify(m).substr(0,15), '// don\'t remove', 'toString it' );
 
 
-/// MemoryMapped with offset [ftrm]
+/// MemoryMapped with offset [p]
 
 		var thisFilename = QA.cx.item.file;
 		var m = new MemoryMapped(new File(thisFilename).open('r'));

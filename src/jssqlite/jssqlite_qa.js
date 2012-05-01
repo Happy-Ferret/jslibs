@@ -1,6 +1,6 @@
 loadModule('jssqlite');
 
-/// crash [ftrm]
+/// crash [p]
 
 	try {
 		
@@ -14,7 +14,7 @@ loadModule('jssqlite');
 	}
 
 
-/// crash / deadlock [ftrm]
+/// crash / deadlock [p]
 
 	loadModule('jstask');
 	var myTaskFct = function() {
@@ -28,14 +28,14 @@ loadModule('jssqlite');
 	myTask.response();
 
 
-/// sqlite version [ftrm]
+/// sqlite version [p]
 
 	var db = new Database();
 	var r = db.exec('select sqlite_version()');
 	QA.ASSERTOP( r.length, '>=', 5, 'sqlite version length' );
 
 
-/// for each iteration over a Query result [ftrm]
+/// for each iteration over a Query result [p]
 
 		var db = new Database(); // in-memory database
 		db.exec('create table t1 (name,value);');
@@ -47,7 +47,7 @@ loadModule('jssqlite');
 		QA.ASSERT_STR( res, 'red=#F00,green=#0F0,blue=#00F', 'result' );
 		
 
-/// InMemory Database [ftrm]
+/// InMemory Database [p]
 
 		var db = new Database();
 		var res = db.exec('SELECT 1');
@@ -55,7 +55,7 @@ loadModule('jssqlite');
 		db.close();
 
 
-/// InMemory Database Create table [ftrm]
+/// InMemory Database Create table [p]
 		
 		try {
 
@@ -73,7 +73,7 @@ loadModule('jssqlite');
 		}
 
 
-/// Result format [ftrm]
+/// Result format [p]
 
 		var db = new Database();
 		var res = db.exec('create table a (b integer primary key, c varchar, d integer)');
@@ -111,7 +111,7 @@ loadModule('jssqlite');
 		db.close();
 
 
-/// exceptions [ftrm]
+/// exceptions [p]
 
 		var db = new Database();
 
@@ -128,7 +128,7 @@ loadModule('jssqlite');
 		db.close();
 
 
-/// Query no data [ftrm]
+/// Query no data [p]
 
 		var db = new Database();
 
@@ -149,7 +149,7 @@ loadModule('jssqlite');
 		QA.ASSERT( result.row()[0], 2, 'row 3' );
 
 
-/// Database file [ftrm]
+/// Database file [p]
 
 		var db = new Database('test_sqlite_database');
 		db.close();
@@ -160,7 +160,7 @@ loadModule('jssqlite');
 		QA.ASSERT( file.exist, false, 'database file exist' );
 
 
-/// Bindings [ftrm]
+/// Bindings [p]
 
 		var db = new Database();
 
@@ -174,13 +174,13 @@ loadModule('jssqlite');
 		db.close();
 
 
-/// version [ftrm]
+/// version [p]
 
 		QA.ASSERT( Database.version[1], '.', 'version string' );
 		QA.ASSERT( Database.version[3], '.', 'version string' );
 
 
-/// named variables [ftrm]
+/// named variables [p]
 
 		var db = new Database();
 		var res = db.exec('SELECT @varTest', { varTest:123} );
@@ -188,7 +188,7 @@ loadModule('jssqlite');
 		db.close();
 
 
-/// question mark [ftrm]
+/// question mark [p]
 
 		var db = new Database();
 	
@@ -201,7 +201,7 @@ loadModule('jssqlite');
 		db.close();
 
 
-/// Function binding [ftrm]
+/// Function binding [p]
 
 		var db = new Database('');
 	
@@ -218,7 +218,7 @@ loadModule('jssqlite');
 		db.close();
 
 
-/// columnNames property independency [rmtf]
+/// columnNames property independency [p]
 
 		var db = new Database();
 		var res1 = db.query('select 1');
@@ -227,7 +227,7 @@ loadModule('jssqlite');
 		QA.ASSERT( res2.columnNames.join(','), '2', 'columns name' );
 
 
-/// parameters [rmtf]
+/// parameters [p]
 
 		var db = new Database();
 		var res = db.query('select "test", ?, ?aaa, ?, @0', [5,6,7]);

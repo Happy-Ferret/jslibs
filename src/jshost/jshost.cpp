@@ -44,13 +44,15 @@ static volatile bool disabledFree = false;
 #define NO_MALLINFO 1
 #include "../../libs/nedmalloc/nedmalloc.h"
 
-NOALIAS void nedfree_handlenull(void *mem) NOTHROW {
+static NOALIAS void
+nedfree_handlenull(void *mem) NOTHROW {
 
 	if ( mem != NULL && !disabledFree )
 		nedfree(mem);
 }
 
-NOALIAS size_t nedblksize_msize(void *mem) NOTHROW {
+static NOALIAS size_t
+nedblksize_msize(void *mem) NOTHROW {
 
 	return nedblksize(0, mem);
 }
@@ -98,6 +100,7 @@ JSBool EndSignalSetter(JSContext *cx, JSObject *, jsid, JSBool, jsval *vp) {
 
 
 #if defined(XP_WIN)
+
 BOOL WINAPI Interrupt(DWORD CtrlType) {
 
 // see. http://msdn2.microsoft.com/en-us/library/ms683242.aspx
@@ -112,7 +115,9 @@ BOOL WINAPI Interrupt(DWORD CtrlType) {
 
 	return TRUE;
 }
+
 #elif defined(XP_UNIX)
+
 void Interrupt(int CtrlType) {
 
 	JLMutexAcquire(gEndSignalLock);
@@ -121,8 +126,11 @@ void Interrupt(int CtrlType) {
 	JLMutexRelease(gEndSignalLock);
 
 }
+
 #else
+
 	#error NOT IMPLEMENTED YET	// (TBD)
+
 #endif
 
 
@@ -171,7 +179,8 @@ static JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSCon
 
 	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
 
-	*hasEvent = gEndSignalState != 0;
+	*hasEvent = (gEndSignalState != 0);
+
 	if ( !*hasEvent )
 		return JS_TRUE;
 
@@ -411,7 +420,13 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	}
 
 
-	static const bool useJslibsMemoryManager = unsafeMode;
+	static const bool useJslibsMemoryManager =
+#ifdef DBG_ALLOC
+	false;
+#else
+	unsafeMode;
+#endif // DBG_ALLOC
+
 
 #if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
 	if ( debug ) {
@@ -814,14 +829,14 @@ $H beware
 
 === Host object ===
  jshost create a global `host` object to provide other modules some useful informations like `stdin/stdout/stderr` access and `unsafeMode` flag.
- The `host` also contains the `revision`, `buildDate` and `jsVersion` properties.
+ The `host` also contains the `sourceId`, `buildDate` and `jsVersion` properties.
 
 ==== Example ====
- host version information can be obtained using: `jshost -i "host.stdout(_host.build+' r'+_host.revision)"`
+ host version information can be obtained using: `jshost -i "host.stdout(_host.build+' r'+_host.sourceId)"`
 
 ==== Example ====
 {{{
-var r = host.revision + (((2006*12 + 6)*31 + 22)*24 + 0);
+var r = host.sourceId + (((2006*12 + 6)*31 + 22)*24 + 0);
 
 var d = 12 * 31 * 24;
 var year = Math.floor(r / d);

@@ -20,7 +20,7 @@ loadModule('jsstd');
 //	QA.ASSERT( errorMsg.indexOf('function()') != -1, true, 'correct error message' );
 	
 
-/// Count object properties [rmtf]
+/// Count object properties [p]
 
 	QA.ASSERT( countProperties({}), 0, 'test with 0 properties' );
 	QA.ASSERT( countProperties({a:1}), 1, 'test with 1 properties' );
@@ -31,7 +31,7 @@ loadModule('jsstd');
 	delete obj.b;
 	QA.ASSERT( countProperties(obj), 0, 'test with deleted properties' );
 
-/// SwitchCase function [ftrm]
+/// SwitchCase function [p]
 
 	QA.ASSERT( switchCase( 1, [1, '1'], ['num', 'str'] ), 'num', 'SwitchCase type' );
 	QA.ASSERT( switchCase( '1', [1, '1'], ['num', 'str'] ), 'str', 'SwitchCase type' );
@@ -40,7 +40,7 @@ loadModule('jsstd');
 	QA.ASSERT( switchCase( 2, [1, '1'], ['num', 'str'], 'def' ), 'def', 'SwitchCase default value' );
 
 
-/// IsBoolean function [ftrm]
+/// IsBoolean function [p]
 
 		QA.ASSERT( isBoolean( false ), true, 'boolean value' );
 		QA.ASSERT( isBoolean( 0 ), false, 'not a boolean value' );
@@ -48,7 +48,7 @@ loadModule('jsstd');
 		QA.ASSERT( isBoolean( new Boolean(123) ), true, 'boolean object' );
 
 
-/// IsNumber function [ftrm]
+/// IsNumber function [p]
 
 		QA.ASSERT( isNumber( 123 ), true, 'number value' );
 		QA.ASSERT( isNumber( true ), false, 'not a number value' );
@@ -56,16 +56,16 @@ loadModule('jsstd');
 		QA.ASSERT( isNumber( new Number(123) ), true, 'not a number object' );
 
 
-/// print returns undefined [ftrm]
+/// print returns undefined [p]
 		QA.ASSERT( print(), undefined, 'print return value' );
 
 
-/// ObjEx simple access (crash test) [ftrm]
+/// ObjEx simple access (crash test) [p]
 
 		ObjEx.aux(new ObjEx());
 		
 		
-/// ObjEx callback functions [ftrm]
+/// ObjEx callback functions [p]
 		
 		var aux = {};
 		
@@ -110,7 +110,7 @@ loadModule('jsstd');
 		QA.ASSERT( setCallbackCalls, 2, 'setCallback calls count' );
 
 
-/// ObjEx setter [ftrm]
+/// ObjEx setter [p]
 
 		function MyException() {}
 		function setOnceObject() new ObjEx( undefined,undefined,undefined, function(name, value) this[name] ? (function() { throw new MyException() })() : value );
@@ -119,7 +119,7 @@ loadModule('jsstd');
 		QA.ASSERTOP( function() {  o.abc = 456;  }, 'ex', MyException, 'using setter' );
 
 
-/// ObjEx data slot [ftrm]
+/// ObjEx data slot [p]
 
 		function newDataNode(parent) new ObjEx(undefined,undefined,newDataNode.get,undefined,{listenerList:[],parent:parent});
 
@@ -157,7 +157,7 @@ loadModule('jsstd');
 		QA.ASSERT( getData(test.aaa.bbb.ccc.ddd), undefined, 'check data in the tree' );
 
 
-/// ObjectToId and IdToObject [rtd]
+/// ObjectToId and IdToObject [d]
 
 		var ids = function() {
 
@@ -201,7 +201,7 @@ loadModule('jsstd');
 			objectToId({});
 
 
-/// StringRepeat function [ftrm]
+/// StringRepeat function [p]
 
 		QA.ASSERT( stringRepeat( '', 0 ), '', '0 x empty' );
 		QA.ASSERT( stringRepeat( '', 1 ), '', '1 x empty' );
@@ -217,7 +217,7 @@ loadModule('jsstd');
 
 		QA.ASSERT( stringRepeat( '\u1234', 2 ), '\u1234\u1234', 'UC string' );
 
-/// big StringRepeat[tr]
+/// big StringRepeat []
 
 		QA.ASSERT( stringRepeat( '123', 1024*1024 ).length, 3*1024*1024, '3MB' );
 
@@ -239,7 +239,7 @@ loadModule('jsstd');
 
 	
 
-/// Buffer access [ftrm]
+/// Buffer access [p]
 
 		var b = new Buffer();
 		b.write('');
@@ -260,7 +260,7 @@ loadModule('jsstd');
 
 
 
-/// empty Buffer [ftrm]
+/// empty Buffer [p]
 
 		var b = new Buffer();
 		QA.ASSERT( typeof b.read(), 'string', 'empty buffer read' );
@@ -275,7 +275,7 @@ loadModule('jsstd');
 //		QA.ASSERT( b.Read() instanceof Blob, true, 'buffer read (instanceof)' );
 
 
-/// Buffer test 1 [ftrm]
+/// Buffer test 1 [p]
 		
 		var b = new Buffer();
 		b.read(0);
@@ -302,7 +302,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( t, 'eeeeffffgggg', 'buffer match' );
 
 
-/// Buffer test 2 [ftrm]
+/// Buffer test 2 [p]
 
 		var b = new Buffer();
 		b.write("abcdefghi");
@@ -313,7 +313,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( b.read(2), 'i', 'buffer match' );
 
 
-/// Buffer underflow [ftrm]
+/// Buffer underflow [p]
 		
 		var times = 0;
 		var toto = 'Zz';
@@ -352,7 +352,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( buf.read(), 'z', 'read()' );
 
 
-/// Buffer copy [ftrm]
+/// Buffer copy [p]
 
 		var b1 = new Buffer();
 		b1.write('1');
@@ -377,7 +377,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( b1.toString(), '111', 'source buffer content' );	
 
 
-/// Buffer simple read [ftrm]
+/// Buffer simple read [p]
 	
 		var b = new Buffer();
 		b.write('123');
@@ -385,7 +385,7 @@ loadModule('jsstd');
 
 
 
-/// Buffer toString [ftrm]
+/// Buffer toString [p]
 	
 		var b = new Buffer();
 		b.write('12345');
@@ -395,7 +395,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( b, '123456789', 'buffer toString' );	
 
 
-/// Buffer toString consumption [ftrm]
+/// Buffer toString consumption [p]
 
 		var b = new Buffer();
 		b.write('123');
@@ -408,7 +408,7 @@ loadModule('jsstd');
 		QA.ASSERT( str2, '123', 'second toString result' );
 
 
-/// Buffer valueOf [ftrm]
+/// Buffer valueOf [p]
 	
 		var b = new Buffer();
 		b.write('12345');
@@ -418,7 +418,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( b.valueOf(), '123456789', 'buffer valueOf' );	
 
 
-/// Buffer values store [ftrm]
+/// Buffer values store [p]
 	
 		var b = new Buffer();
 		b.write({ toString:function(){return '01'} });
@@ -428,7 +428,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( b.read(), '012,345678.9', 'buffer read stored values' );	
 
 
-/// Buffer values store [ftrm]
+/// Buffer values store [p]
 	
 		var b = new Buffer();
 		b.write({ toString:function(){return '01'} });
@@ -442,7 +442,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( b.read(1), '9', 'buffer read stored values' );	
 
 
-/// Buffer and Blob [ftrm]
+/// Buffer and Blob [p]
 
 		// var str = new Blob('123');
 		var str = join(['123'], true);
@@ -454,7 +454,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( b.read(), '1237', 'buffer containing a Blob' );
 
 
-/// Buffer IndexOf [ftrm]
+/// Buffer IndexOf [p]
 	
 		var b = new Buffer();
 		b.write('abcd');
@@ -465,7 +465,7 @@ loadModule('jsstd');
 		QA.ASSERT( b.indexOf('def'), 3, 'buffer read' );	
 
 
-/// Buffer readUntil [ftrm]
+/// Buffer readUntil [p]
 
 		var buf = new Buffer();
 		buf.write('xxx');
@@ -479,7 +479,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( buf, 'cccbuffer2', 'remaining' );
 
 
-/// Buffer misc [ftrm]
+/// Buffer misc [p]
 
 		var buf = new Buffer();
 		buf.write('12345');
@@ -495,14 +495,14 @@ loadModule('jsstd');
 		QA.ASSERT( buf.length, 3, 'content length' );
 
 
-/// Buffer missing unroot [ftrm]
+/// Buffer missing unroot [p]
 
 		var buf = new Buffer();
 		buf.write('1234');
 		buf.read(4);
 
 
-/// Buffer Source [ftrm]
+/// Buffer Source [p]
 
 		var buf = new Buffer(Stream('456'));
 		buf.write('123');
@@ -532,7 +532,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( buf3.read(6), '123xxx', 'read' );
 
 
-/// Pack int64 [rmtf]
+/// Pack int64 [p]
 
 	var buf = new Buffer();
 	var pack = new Pack(buf);
@@ -548,7 +548,7 @@ loadModule('jsstd');
 	QA.ASSERTOP( function() { pack.writeInt(9007199254740992, 8, true) }, 'ex', RangeError, "value overflow" );
 
 
-/// Pack endian [ftrm]
+/// Pack endian [p]
 	
 		if ( !Pack.systemIsBigEndian ) {
 		
@@ -563,7 +563,7 @@ loadModule('jsstd');
 		}
 
 
-/// Pack read integer [ftrm]
+/// Pack read integer [p]
 
 		var buf = new Buffer();
 		buf.write('\xAA\xBB\xCC\xDD');
@@ -571,7 +571,7 @@ loadModule('jsstd');
 		QA.ASSERT( pack.readInt(4, false, true).toString(16), 'aabbccdd', 'ReadInt' );
 
 
-/// Pack read string [ftrm]
+/// Pack read string [p]
 
 		var buf = new Buffer();
 		buf.write('\xAA\xBB\xCC\xDD');
@@ -579,7 +579,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( pack.readString(4), "\xAA\xBB\xCC\xDD", 'ReadString' );
 
 
-/// Pack class [ftrm]
+/// Pack class [p]
 
 		var buf = new Buffer();
 		var pack = new Pack(buf);
@@ -601,7 +601,7 @@ loadModule('jsstd');
 		QA.ASSERT( v, pack.readInt(2), 'data validity' );
 
 
-/// Garbage collector [rd]
+/// Garbage collector []
 		
 		loadModule('jsdebug');
 		
@@ -617,7 +617,7 @@ loadModule('jsstd');
 		QA.gc();
 
 
-/// hide properties [ftrm]
+/// hide properties [p]
 	
 		var o = { a:1, b:2, c:3, d:4 };
 
@@ -630,7 +630,7 @@ loadModule('jsstd');
 		QA.ASSERT( [p for each (p in o)].join(','), '1,4', 'visible properties' );
 
 
-/// SetScope function [ftrmd]
+/// SetScope function [pd]
 
 		var data = 55;
 		function bar() { QA.ASSERT( data, 7, 'modified scope' ); }
@@ -639,7 +639,7 @@ loadModule('jsstd');
 
 
 
-/// Expand function [ftrm]
+/// Expand function [p]
 
 		QA.ASSERT( expand('\u1234', {} ), '\u1234', 'unicode' );
 		QA.ASSERT( expand('$(\u1234)', { '\u1234':'ok' } ), 'ok', 'unicode key' );
@@ -708,20 +708,20 @@ loadModule('jsstd');
 		o.text = '<html><title>$(title)</title>\n'
 		QA.ASSERT_STR( o, '<html><title>My HTML Page</title>\n', 'expand string using this object' );
 
-/// expand bug1 [tr]
+/// expand bug1 [p]
 
 	var source = 'gl_LightSource[$(xxx)';
 	QA.ASSERT_STR( expand(source, { xxx:1 }), 'gl_LightSource[1' );
 		
 		
-/// Big expand [tr]
+/// Big expand []
 		
 	var exp = stringRepeat('$(X)', 1000);
 	for ( var i = 0 ; i < 10; ++i )
 		expand(exp, {X:'123'});
 
 
-/// Expand using a callback function [ftrm]
+/// Expand using a callback function [p]
 
 		var ids = '';
 		var i = 0;
@@ -729,12 +729,12 @@ loadModule('jsstd');
 		QA.ASSERT_STR( res +'-'+ ids, 'ab01e2g3ij-cdfh', 'Expand result is correct' );
 
 
-/// exec error [ftrm]
+/// exec error [p]
 
 		QA.ASSERTOP( function() exec('e654ser65t'), 'ex', ReferenceError, 'exec unknown file' );
 
 		
-/// exec basic test [ftrm]
+/// exec basic test [p]
 		
 		loadModule('jsio');
 		var f = new File('qa_exec_test.js');
@@ -748,7 +748,7 @@ loadModule('jsstd');
 		f.content = undefined;
 
 
-/// exec using XDR [ftrm]
+/// exec using XDR [p]
 		
 		loadModule('jsio');
 	
@@ -783,7 +783,7 @@ loadModule('jsstd');
 		}
 
 
-/// XDR serialization [ftrmd]
+/// XDR serialization [pd]
 
 		var s = new Script('/./');
 		QA.ASSERTOP( function() xdrEncode(s), 'ex', TypeError );
@@ -799,7 +799,7 @@ loadModule('jsstd');
 		QA.ASSERT( xdrDecode(xdrEncode(1.234567)), 1.234567, 'XDR->unXDR a double' );
 
 
-/// Clear function [ftrm]
+/// Clear function [p]
 
 		var o = { x:5, y:6, z:7 };
 		QA.ASSERT( 'z' in o, true, 'has z property' );
@@ -807,7 +807,7 @@ loadModule('jsstd');
 		QA.ASSERT( 'z' in o, false, 'property z is cleared' );
 
 
-/// Clear on an array [ftrm]
+/// Clear on an array [p]
 	
 		var o = { x:5, y:6, z:7 };
 		QA.ASSERT( 'z' in o, true, 'has z property' );
@@ -816,7 +816,7 @@ loadModule('jsstd');
 
 
 
-/// Seal function [ftrm]
+/// Seal function [p]
 		
 		var o = { a:1, b:{c:2} };
 		deepFreezeObject(o);
@@ -826,14 +826,14 @@ loadModule('jsstd');
 		QA.ASSERT( o.b.c, 2, 'deep freezed object' );
 
 
-/// IsStatementValid  function [ftrm]
+/// IsStatementValid  function [p]
 		
 		QA.ASSERT( isStatementValid( 'for ( var i; i<10; i++ )' ), false, 'invalid statement' );
 		QA.ASSERT( isStatementValid( 'for ( var i; i<10; i++ );' ), true, 'valid statement' );
 		QA.ASSERT( isStatementValid( '{a,b,c} = { a:1, b:2, c:3 }' ), true, 'valid statement' );
 
 
-/// StrChr function [ftr]
+/// StrChr function [p]
 
 		var str1 = stringRepeat('y', 100);
 		QA.ASSERT( [ c for each ( c in str1 ) if (c == 'y') ].length, 100, 'all chars are good' );
@@ -845,7 +845,7 @@ loadModule('jsstd');
 
 
 
-/// MultiLineStringUsingE4X [ftrm]
+/// MultiLineStringUsingE4X [p]
 				
 		var t = <text>
 		this is
@@ -858,14 +858,14 @@ loadModule('jsstd');
 		QA.ASSERT_STR( t, "\n\t\tthis is\n\t\ta multiline\n\n\t\ttext\n\t\t", 'text' );
 
 
-/// Sandbox global objects [tfm]
+/// Sandbox global objects [p]
 	
 		var res = sandboxEval('Math');
 		QA.ASSERT( res.toString(), Math.toString(), 'Math object' );
 		QA.ASSERT( res == Math, false, 'Global objects' );
 
 
-/// Sandbox external access [tfm]
+/// Sandbox external access [p]
 
 		loadModule('jsio');
 		var res = sandboxEval('typeof File');
@@ -874,14 +874,14 @@ loadModule('jsstd');
 		QA.ASSERT( res == typeof loadModule, false, 'forbidden loadModule function access' );
 
 
-/// Sandbox basic query [tfm]
+/// Sandbox basic query [p]
 
 	QA.ASSERTOP( sandboxEval('', function() 123), '===', undefined );
 	QA.ASSERTOP( sandboxEval('typeof query'), '===', 'undefined' );
 	QA.ASSERTOP( sandboxEval('query()', function() 123), '===', 123 );
 	
 
-/// Sandbox Query [tfm]
+/// Sandbox Query []
 
 		var res = Function("var v = 567; return sandboxEval('query()', function(val) v)")();
 		QA.ASSERT( res, 567, 'SandboxEval result using Function( query function )' );
@@ -896,7 +896,7 @@ loadModule('jsstd');
 //		QA.ASSERT( SandboxEval('query()', function(val) obj).abc, 321, 'Query return value');
 
 
-/// Disabled GC [rd]
+/// Disabled GC [d]
 
 		var prev = disableGarbageCollection;
 		disableGarbageCollection = true;
@@ -922,18 +922,18 @@ loadModule('jsstd');
 		QA.ASSERT( Math.abs(mem1/mem0) < 1.1, true, 'with GC' );
 */
 
-/// Sandbox misc [rmtf]
+/// Sandbox misc [p]
 
 	var s = sandboxEval('var a = Math.abs(-123); a');
 	QA.ASSERT( s, 123, 'abs' );
 
 
-/// Sandbox watchdog [rmt]
+/// Sandbox watchdog []
 	
 	QA.ASSERTOP( function() { sandboxEval('for (var i=0; i<10000000000; ++i);', undefined, 250) }, 'ex', OperationLimit, 'OperationLimit detection' );
 
 
-/// OperationLimit is not extensible [fmtr d]
+/// OperationLimit is not extensible []
 
 	try {
 		
@@ -945,12 +945,12 @@ loadModule('jsstd');
 	}
 
 
-/// Sandbox stack overflow [rmt]
+/// Sandbox stack overflow []
 
 	QA.ASSERTOP( function() { sandboxEval('(function f(){f();})();') }, 'ex', 'InternalError', 'Stack overflow detection' );
 
 
-/// exec function [f]
+/// exec function []
 	
 	var filename = QA.randomString(10);
 	new File(filename).content = '_exectest++';
@@ -967,9 +967,10 @@ loadModule('jsstd');
 
 	delete global._exectest;
 
-/// warning messages [ft]
 
-	if ( !host.safeMode ) // warning messages are disabled in unsafe mode
+/// warning messages [p]
+
+	if ( QA.IS_UNSAFE ) // warning messages are disabled in unsafe mode
 		return;
 		
 	var buffer = '';

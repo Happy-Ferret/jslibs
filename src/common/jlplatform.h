@@ -461,6 +461,8 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
 
+#define PLATFORM_BITS \
+	(sizeof(ptrdiff_t) * 8)
 
 #define S_ASSERT(cond) \
 	extern void STATIC_ASSERT_DUMMY(int arg[(cond) ? 1 : -1])

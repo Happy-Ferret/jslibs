@@ -1,6 +1,6 @@
 loadModule('jsprotex');
 
-/// back buffer size [t]
+/// back buffer size []
 
 	var bump = new Texture(100, 100, 1);
 	bump.resize( 300, 300 );

@@ -17,7 +17,7 @@
 
 #define JL_NO_TINYID (-1) // see JL_DefineClassProperties()
 
-typedef int32_t JLRevisionType;
+typedef int32_t JLSourceId_t;
 /*
 struct JLConstIntegerSpec {
     int ival;
@@ -46,7 +46,7 @@ struct JLClassSpec {
 	JSFunctionSpec *static_fs;
 	JLConstValueSpec *static_const;
 	JSBool (*init)(JSContext *cx, JLClassSpec *sc, JSObject *proto, JSObject *obj);
-	JLRevisionType revision;
+	JLSourceId_t sourceId;
 	double buildDate;
 };
 
@@ -146,7 +146,7 @@ JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	if ( JS_IsExtensible(obj) ) {
 	
-		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _sourceId), INT_TO_JSVAL(cs->sourceId), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	}
 
@@ -213,7 +213,7 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	// info
 	if ( JS_IsExtensible(ctor) ) {
 		
-		JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _revision), INT_TO_JSVAL(cs->revision), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _sourceId), INT_TO_JSVAL(cs->sourceId), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 		JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	}
 
@@ -294,7 +294,7 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define JL_CLASS_NAME(CLASSNAME) (CLASSNAME::className)
 #define JL_THIS_CLASS_NAME (className)
 
-#define JL_THIS_CLASS_REVISION (classSpec->revision)
+#define JL_THIS_CLASS_REVISION (classSpec->sourceId)
 
 #define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (JL_GetCachedProto(JL_GetHostPrivate(cx), CLASSNAME::className))
 #define JL_THIS_CLASS_PROTOTYPE (JL_GetCachedProto(JL_GetHostPrivate(cx), className))
@@ -356,7 +356,7 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define IS_GLOBAL cs.clasp.flags |= JSCLASS_GLOBAL_FLAGS;
 #define IS_ANONYMOUS cs.clasp.flags |= JSCLASS_IS_ANONYMOUS;
 #define HAS_ALL_PROPERTIES_SHARED cs.clasp.flags |= JSCLASS_SHARE_ALL_PROPERTIES;
-#define REVISION(NUMBER) cs.revision = (NUMBER);
+#define REVISION(NUMBER) cs.sourceId = (NUMBER);
 
 #define HAS_PROTOTYPE(PROTOTYPENAME) \
 	cs.parentProtoName = #PROTOTYPENAME; \

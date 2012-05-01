@@ -40,18 +40,21 @@ loadModule('jsio');
 	QA.ASSERTOP( function() { myTask.response() }, 'ex', ReferenceError );
 
 
-/// exception test
+/// exception test []
+
+	if ( QA.IS_UNSAFE ) // see "unsafe issue"
+		return;
 
 	loadModule('jstask');
 	var myTaskFct = function() {
 
 		var loadModule = host.loadModule;
 		loadModule('jsio');
-		new File();
+		new File(); // unsafe issue
 	}
 	var myTask = new Task(myTaskFct);
 	myTask.request();
-	QA.ASSERTOP( function() { myTask.response() }, 'ex', RangeError );
+	QA.ASSERTOP( function() { myTask.response() }, 'ex', RangeError ); // unsafe issue
 
 
 /// memory leak 4
@@ -94,9 +97,9 @@ loadModule('jsio');
 	t.request();
 
 
-/// crash when exception in the task function [rmt]
+/// crash when exception in the task function []
 
-	var t = new Task(function(test){
+	var t = new Task(function(test) {
 
 		throw 1;
 	});
@@ -106,7 +109,7 @@ loadModule('jsio');
 	processEvents(t.events(), host.endSignalEvents());
 
 
-/// crash when error in the task function [rmt]
+/// crash when error in the task function []
 
 	var t = new Task(function(test){
 
@@ -118,7 +121,7 @@ loadModule('jsio');
 	processEvents(t.events(), host.endSignalEvents());
 
 
-/// crash about serializer cleanup [rmt]
+/// crash about serializer cleanup []
 
 	var t = new Task(function() {
 		
@@ -132,7 +135,7 @@ loadModule('jsio');
 	sleep(10);
 
 
-/// some new threads [f]
+/// some new threads []
 
 	var i = 0;
 	while ( i++ < 17 ) {
@@ -141,7 +144,7 @@ loadModule('jsio');
 	}
 
 
-/// many new threads [r]
+/// many new threads []
 
 	var i = 0;
 	while ( !host.endSignal && i++ < 100 ) {
@@ -151,7 +154,7 @@ loadModule('jsio');
 	}
 
 
-/// many Request with big data [r]
+/// many Request with big data []
 
 	var myTask = new Task(function(){});
 	for ( var i = 0; i < 1000; i++ )
@@ -161,7 +164,7 @@ loadModule('jsio');
 		myTask.response();
 
 
-/// many Request/Response with low priority [r]
+/// many Request/Response with low priority []
 
 	var myTask = new Task(function(){}, -1);
 	for ( var i = 0; i < 1000; i++ )
@@ -170,7 +173,7 @@ loadModule('jsio');
 		myTask.response();
 
 		
-/// many Request/Response with high priority [r]
+/// many Request/Response with high priority []
 
 	var myTask = new Task(function(){}, -1);
 	sleep(2);
@@ -181,7 +184,7 @@ loadModule('jsio');
 		myTask.response();
 
 
-/// idle property [fr]
+/// idle property []
 
 	var myTask = function() {}
 
@@ -205,7 +208,7 @@ loadModule('jsio');
 	QA.ASSERT( myTask.idle, true, 'idle state');
 
 
-/// pending properties [r]
+/// pending properties []
 
 	var myTask = function() {}
 
@@ -234,7 +237,7 @@ loadModule('jsio');
 	QA.ASSERT( myTask.pendingResponseCount, 0, 'pendingResponseCount');
 
 	
-/// multiple requests [rf]
+/// multiple requests []
 
 	var myTask = new Task(function(req) req);
 
@@ -252,7 +255,7 @@ loadModule('jsio');
 	QA.ASSERT( myTask.pendingResponseCount, 0, 'pendingResponseCount');
 
 
-/// multiple tasks [rf]
+/// multiple tasks []
 
 	var taskFunction = function() {
 		
@@ -272,7 +275,7 @@ loadModule('jsio');
 		QA.ASSERT( t.response(), '12345', 'task response' );
 
 
-/// task exception [rf]
+/// task exception []
 
 	var myTask = function(i) {
 
@@ -289,7 +292,7 @@ loadModule('jsio');
 	QA.ASSERTOP( function() myTask.response(), 'ex', 'my exception 3', 'the exception' );
 
 
-/// task idle property [fr]
+/// task idle property []
 
 	var myTask = function() {
 		for ( var j = 0; j < 1000; j++ );
@@ -315,7 +318,7 @@ loadModule('jsio');
 	QA.ASSERT( count, 100, 'count');
 
 
-/// task and loadModule [r]
+/// task and loadModule []
 
 	var myTask = function(req, i) {
 		
@@ -329,7 +332,7 @@ loadModule('jsio');
 	QA.ASSERT( myTask.response(), currentDirectory, 'currentDirectory');
 
 
-/// local context [fr]
+/// local context []
 
 	var myTask = function() {
 	
@@ -349,7 +352,7 @@ loadModule('jsio');
 	QA.ASSERT( myTask.response(), 3, 'response' );
 
 
-/// request index [fr]
+/// request index []
 
 	var myTask = function(req, index) index;
 	
@@ -363,7 +366,7 @@ loadModule('jsio');
 	QA.ASSERT( myTask.response(), 2, 'response' );
 
 
-/// task returns a map object [fr]
+/// task returns a map object []
 
 	var myTask = function(req, i) {
 
@@ -387,7 +390,7 @@ loadModule('jsio');
 
 
 
-/// file access in a task [fr]
+/// file access in a task []
 	
 	var myFileTask = function(filename, i) {
 
@@ -411,7 +414,7 @@ loadModule('jsio');
 	QA.ASSERT_STR( res, 'XXX'+filename, 'response' );
 
 
-/// task stderr custom test [frd]
+/// task stderr custom test []
 
 	var myFileTask = function() {
 

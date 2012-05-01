@@ -15,17 +15,16 @@ loadModule('jssound');
 	QA.ASSERT( block.frames, 1323001, 'frames' );
 
 
-
 /// invalid stream object
 
-	QA.ASSERTOP( function() { new OggVorbisDecoder({}) }, 'ex', Error );
-	QA.ASSERTOP( function() { new SoundFileDecoder({}) }, 'ex', Error );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() { new OggVorbisDecoder({}) }, 'ex', Error );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() { new SoundFileDecoder({}) }, 'ex', Error );
 
 
-/// invalid arg cound
+/// invalid arg cound []
 
-	QA.ASSERTOP( function() { new SoundFileDecoder() }, 'ex', RangeError );
-	QA.ASSERTOP( function() { new OggVorbisDecoder() }, 'ex', RangeError );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() { new SoundFileDecoder() }, 'ex', RangeError );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() { new OggVorbisDecoder() }, 'ex', RangeError );
 
 
 /// wav stream decoding error
@@ -217,20 +216,20 @@ loadModule('jssound');
 
 
 
-/// ogg decoding non-opened file
+/// ogg decoding non-opened file []
 
 	loadModule('jsio');
 	var file = new File(QA.cx.item.path + '/41_30secOgg-q0.ogg');
-	QA.ASSERTOP( function() { new OggVorbisDecoder( file ) }, 'ex', Error );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() { new OggVorbisDecoder( file ) }, 'ex', Error );
 
 
-/// ogg decoding non-closed file
+/// ogg decoding non-closed file []
 
 	loadModule('jsio');
 	var file = new File(QA.cx.item.path + '/41_30secOgg-q0.ogg');
 	file.open('r');
 	file.close();
-	QA.ASSERTOP( function() { new OggVorbisDecoder( file ) }, 'ex', Error );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() { new OggVorbisDecoder( file ) }, 'ex', Error );
 
 
 /// split audio data

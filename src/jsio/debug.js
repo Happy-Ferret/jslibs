@@ -148,7 +148,8 @@ halt();
 //loadModule('jsstd'); loadModule('jsio');
 
 
-/// Socket shutdown(false) behavior [trm]
+
+/// Socket shutdown(false) behavior []
 
 try {
 

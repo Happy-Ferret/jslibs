@@ -5,24 +5,24 @@ loadModule('jsstd');
 	processEvents( timeoutEvents(1) );
 
 
-/// Stream prototype JL_ASSERT_INSTANCE [ftrm]
+/// Stream prototype JL_ASSERT_INSTANCE [p]
 
-	QA.ASSERTOP( function() { Stream.prototype.available }, 'ex', TypeError );
-	QA.ASSERTOP( function() { Stream.prototype.read.call({}) }, 'ex', TypeError );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() Stream.prototype.available, 'ex', TypeError );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() Stream.prototype.read.call({}), 'ex', TypeError );
 
 
-/// Handle prototype [ftrm]
+/// Handle prototype [p]
 
 	QA.ASSERT_STR( Handle._serialize, undefined, '_serialize access' );
 
 
-/// NativeInterface [ftrm]
+/// NativeInterface [p]
 
 	var stream = new Stream('456');
 	QA.ASSERT( !isNaN(stream._NI_StreamRead), true, 'NativeInterface system' )
 
 
-/// NativeInterface security [ftrm]
+/// NativeInterface security [p]
 
 	var stream = new Stream('456');
 	var prev = stream._NI_StreamRead;
@@ -32,7 +32,7 @@ loadModule('jsstd');
 	QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 
 
-/// Stream test [ftrm]
+/// Stream test [p]
 
 	var s = new Stream( String('hello') );
 
@@ -44,7 +44,7 @@ loadModule('jsstd');
 	QA.ASSERT( s.read(1), undefined, 'stream reading EOF' );
 
 
-/// Stream [ftrm]
+/// Stream [p]
 
 		var blob = stringify("1234567", true);
 		var stream = Stream(blob);
@@ -62,7 +62,7 @@ loadModule('jsstd');
 		QA.ASSERT( stringify(stream.read(blob.byteLength)), '1234567', 'read the exact length' )
 
 
-/// Stream add [ftrm d]
+/// Stream add [p]
 
 		var blob = stringify("1234", true);
 		var stream = Stream(blob);
@@ -81,7 +81,7 @@ loadModule('jsstd');
 		QA.ASSERT( stringify(s1.read(3)), '123', 'stream read()' )
 
 
-/// non-native Stream [ftrm]
+/// non-native Stream [p]
 
 		var buf = new Buffer();
 		buf.write('abcdefghi');
@@ -98,7 +98,7 @@ loadModule('jsstd');
 
 
 
-/// another non-native Stream [ftrm]
+/// another non-native Stream [p]
 
 		var buf = new Buffer();
 		buf.write('abcdefghijklmnopqrstuvwxyz');
@@ -106,7 +106,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( res, 'abcdefghijklmnopqrstuvwxyz', 'stringified stream' );
 
 
-/// Stringify function [ftr]
+/// Stringify function [p]
 	
 		QA.ASSERT( 'test', stringify('test'), 'force string conversion' );
 		
@@ -125,7 +125,7 @@ loadModule('jsstd');
 		QA.ASSERT( s.length, len, 'string length' );
 
 
-/// blob serialization [ftrm d]
+/// blob serialization [pd]
 
 		var b = Blob("my blob");
 		b.aPropertyOfMyBlob = 12345;
@@ -136,7 +136,7 @@ loadModule('jsstd');
 		QA.ASSERT_STR( val, "my blob", 'blob content' );
 
 
-/// map serialization [ftrm d]
+/// map serialization [pd]
 
 		var obj = {a:1, b:2, c:3};
 		var m = Map(obj);
@@ -145,45 +145,45 @@ loadModule('jsstd');
 		QA.ASSERT_STR( uneval(obj), uneval(val), 'map content' );
 
 
-/// Stringify StreamRead [ftmr]
+/// Stringify StreamRead [p]
 
 	var i = 10;
 	var res = stringify({ read: function(count) i-- ? 'Str' : '' } );
 	QA.ASSERT_STR( res, 'StrStrStrStrStrStrStrStrStrStr', 'Stringify streamRead object' );
 
 
-/// Stringify BufferGet [ftmr]
+/// Stringify BufferGet [p]
 
 	QA.ASSERT_STR( stringify({ get: function() { return 'ABCD' } }) , 'ABCD', 'Stringify bufferGet object' );
 
 
-/// Stringify TypedArray [ftmr]
+/// Stringify TypedArray [p]
 
 	QA.ASSERT_STR( stringify(Int8Array([100,101,102])), 'def', 'Int8Array to string' );
 
 
-/// Stringify Array [ftmr]
+/// Stringify Array [p]
 
 	QA.ASSERT_STR( stringify([100,101,102]), '100,101,102', 'JS Array to string' );
 
 
-/// Handle constructor [ft]
+/// Handle constructor []
 
 	Handle != '';
 	
 
-/// Handle object [ft]
+/// Handle object [p]
 
-	var h = timeoutEvents(100);
+	var h = timeoutEvents(1);
 
 	QA.ASSERT(Handle instanceof Object, true, 'instance test');
 	QA.ASSERTOP(h, 'instanceof', Handle, 'handle object type');
-//	QA.ASSERT_STR(h, '[Handle ????]', 'handle type string');
+	QA.ASSERT_STR(h, '[Handle  pev]', 'handle type string');
 //	QA.ASSERT(h.constructor, Math.constructor, 'constructor test');
-//	QA.ASSERT(h.prototype, Math.prototype, 'prototype test');
+	QA.ASSERT(h.prototype, Math.prototype, 'prototype test');
 
 
-/// Test InheritFrom() [ft d]
+/// Test InheritFrom() [pd]
 
 	function A() {}
 	function B() {}
@@ -201,7 +201,7 @@ loadModule('jsstd');
 	QA.ASSERT(inheritFrom(B, A), false, 'InheritFrom test B,A');
 
 
-/// processEvents() [t]
+/// processEvents() []
 
 	var timeout = timeoutEvents(123);
 	var t = timeCounter();

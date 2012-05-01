@@ -24,6 +24,22 @@ DEFINE_MODULE_PRIVATE
 #include FT_MODULE_H
 
 
+#undef __FTERRORS_H__
+#define FT_ERROR_START_LIST     {
+#define FT_ERRORDEF( e, v, s )  s,
+#define FT_ERROR_END_LIST       0 };
+
+const FTError_t ftErrorList[] =
+#include FT_ERRORS_H
+
+
+/* -D
+FT_DEBUG_LEVEL_ERROR
+FT_DEBUG_LEVEL_TRACE
+*/
+
+
+
 DECLARE_CLASS( Font )
 
 
@@ -54,7 +70,6 @@ void* JsfontRealloc( FT_Memory, long, long new_size, void* block ) {
 	return jl_realloc(block, new_size);
 }
 
-
 JSBool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
@@ -69,11 +84,8 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	memory->alloc = JsfontAlloc;
 	memory->free = JsfontFree;
 	memory->realloc = JsfontRealloc;
-	FT_Error status;
-	status = FT_New_Library(memory, &mpv->ftLibrary);
 
-	JL_ASSERT( status == 0, E_LIB, "freetype2", E_INIT, E_ERRNO(status) );
-
+	FTCHK( FT_New_Library(memory, &mpv->ftLibrary) );
 	FT_Add_Default_Modules(mpv->ftLibrary);
 
 	mpv->GetFTSymbols = GetFTSymbols;

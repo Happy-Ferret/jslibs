@@ -1,13 +1,12 @@
 loadModule('jsstd');
 loadModule('jsio');
 
-/// call all possible functions reachable in the scope [rmtf]
-
-	if ( host.unsafeMode )
-		throw "Cannot run this test in unsafe mode (else crash)";
+/// call all possible functions reachable in the scope
+	
+	if ( QA.IS_UNSAFE ) // Cannot run this test in unsafe mode (else crash)
+		return;
 
 	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', 'host.stdin', 'setPerfTestMode' , 'jslangTest' ]; // 
-
 
 	loadModule('jswinshell'); excludeList.push('fileOpenDialog', 'Console.close');
 	loadModule('jssdl'); excludeList.push('setVideoMode', 'iconify');
@@ -95,14 +94,14 @@ loadModule('jsio');
 	fct(global, '');
 
 
-/// host version info [rmtf]
+/// host version info [p]
 
-	QA.ASSERTOP( host.revision, '>', 3400, 'revision version validity' );
+	QA.ASSERTOP( host.sourceId, '>', 3400, 'sourceId version validity' );
 	QA.ASSERTOP( host.jsVersion, '>=', 185, 'javascript version validity' );
 	
 	
 	
-/// bug bz#522024 [rmtf]
+/// bug bz#522024 [p]
 
 		var list = [];
 		function add() {
@@ -123,13 +122,13 @@ loadModule('jsio');
 
 
 
-/// JSOPTION_ANONFUNFIX option [frm]
+/// JSOPTION_ANONFUNFIX option []
 	
 	113 == function(x, y) {return x+y} (100, 13);
 
 	
 	
-/// GC test [r]
+/// GC test []
 		
 		QA.gc();
 		var s = stringRepeat('x', 100000);
@@ -141,7 +140,7 @@ loadModule('jsio');
 		
 
 
-/// stdout standard output redirection [ftrm]
+/// stdout standard output redirection [p]
 
 		var buffer = '';
 
@@ -154,7 +153,7 @@ loadModule('jsio');
 
 
 
-/// error in stderr [ftrm]
+/// error in stderr [p]
 
 	var prev = host.stderr;
 	try { 
@@ -165,7 +164,7 @@ loadModule('jsio');
 
 
 
-/// loadModule function [ftrm]
+/// loadModule function [p]
 		
 		var id = loadModule('jsstd');
 		QA.ASSERTOP( loadModule('jsstd'), '===', id, 'reloading the same module' );
@@ -179,7 +178,7 @@ loadModule('jsio');
 
 
 
-/// String memory usage (disabled GC) [tr d]
+/// String memory usage (disabled GC) [d]
 
 		var length = 1024*1024;
 		var times = 3;
@@ -204,7 +203,7 @@ loadModule('jsio');
 
 
 
-/// undefined is read-only [ftrm]
+/// undefined is read-only [p]
 
 	QA.ASSERTOP( undefined, 'in', global, 'undefined is in global object' );
 	delete undefined;
@@ -217,7 +216,7 @@ loadModule('jsio');
 
 
 
-/// global object [f]
+/// global object []
 
 	QA.ASSERTOP( global, 'typeof', 'object', 'global type' );
 	delete global;
@@ -232,7 +231,7 @@ loadModule('jsio');
 	QA.ASSERTOP( host.arguments, 'instanceof', Array, 'arguments type' );
 
 
-/// global host object [f]
+/// global host object []
 
 	QA.ASSERTOP( global.host, 'typeof', 'object', 'host is object' );
 	QA.ASSERTOP( global.host, 'has', 'unsafeMode' );
@@ -242,7 +241,7 @@ loadModule('jsio');
 
 
 
-/// error messages []
+/// error messages [p]
 
 	var buffer = '';
 	var prev = host.stderr;
@@ -266,7 +265,7 @@ loadModule('jsio');
 
 
 
-/// catched error messages [rmtf]
+/// catched error messages [p]
 
 	var buffer = '';
 	var prev = host.stderr;
@@ -279,7 +278,7 @@ loadModule('jsio');
 
 
 
-/// mute error messages [rmtf]
+/// mute error messages [p]
 
 	var prev = host.stderr;
 	delete host.stderr;

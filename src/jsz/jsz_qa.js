@@ -1,17 +1,17 @@
 loadModule('jsz');
 
-/// empty operation [ftrm]
+/// empty operation [p]
 
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
 		inflate(deflate());
 
-/// no erport on GC [ftrm]
+/// no erport on GC [p]
 
 		var deflater = new Z(Z.DEFLATE, 9);
 		var compressedText = deflater('xxx');
 
-/// deflate ratio 1 [ftrm]
+/// deflate ratio 1 [p]
 		
 		var uncompressezText = 'jjjjjjjjjjjssssssssssssssssssslllllliiiiiiiibbsssssssssssssss';
 		var level = 9; // 0..9
@@ -20,7 +20,7 @@ loadModule('jsz');
 		QA.ASSERT( ratio, '37.70%', 'Bad compression ratio' );
 
 
-/// deflate ratio 2 [ftrm]
+/// deflate ratio 2 [p]
 		
 		var uncompressezText = 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
 
@@ -37,7 +37,7 @@ loadModule('jsz');
 		QA.ASSERT( deflater.adler32, 2686765097, 'adler32' );
 		QA.ASSERT( deflater.lengthIn, 3 * uncompressezText.length, 'lengthIn property' );
 
-/// inflate object reusability [ftrm]
+/// inflate object reusability [p]
 
 		var data = 'clear data';
 		var deflatedData = new Z(Z.DEFLATE)(data, true);
@@ -48,7 +48,7 @@ loadModule('jsz');
 		QA.ASSERT_STR( inflater(deflatedData,true), data, '3rd complete inflate' );
 		
 
-/// deflate object reusability [ftrm]
+/// deflate object reusability [p]
 
 		var data = 'clear data';
 		var deflatedData = new Z(Z.DEFLATE)(data, true);
@@ -59,7 +59,7 @@ loadModule('jsz');
 		QA.ASSERT_STR( deflater(data,true), deflatedData, '3rd complete deflate' );
 		QA.ASSERT( deflater(data,true).length, deflatedData.length, '4rd complete deflate length' );
 
-/// inflate / deflate [ftrm]
+/// inflate / deflate [p]
 		
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
@@ -70,7 +70,7 @@ loadModule('jsz');
 		QA.ASSERT_STR( result, source, 'inflate result' );
 
 
-/// inflate / deflate 2 [fr]
+/// inflate / deflate 2 [p]
 
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
@@ -80,7 +80,7 @@ loadModule('jsz');
 		QA.ASSERT_STR( result, source, 'inflate result' );
 
 
-/// inflate / deflate huge [r]
+/// inflate / deflate huge []
 
 		var deflate = new Z(Z.DEFLATE);
 		var inflate = new Z(Z.INFLATE);
@@ -94,7 +94,7 @@ loadModule('jsz');
 		QA.ASSERT( deflate.adler32, inflate.adler32, 'adler32 match' );
 
 
-/// end of data methods [ftr]
+/// end of data methods [p]
 
 		var source = QA.randomString(10000);
 

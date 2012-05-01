@@ -1,6 +1,6 @@
 loadModule('jsiconv');
 
-/// basic tests [rfmt]
+/// basic tests [p]
 
 	QA.ASSERT( new Iconv('UTF-8', 'ISO-8859-1')('é').length, 2, '"é" char length in UTF-8' );
 
@@ -20,7 +20,7 @@ loadModule('jsiconv');
 	QA.ASSERT_STR( result, 'été', 'char by char convertion' );
 
 
-/// invalid sequense detection [rfmt]
+/// invalid sequense detection [p]
 
 	var utf8 = (new Iconv('UTF-8', 'ISO-8859-1'))('été').split('');
 	utf8.splice(1,0,'x'); // insert an invalid multybyte sequense
@@ -31,7 +31,7 @@ loadModule('jsiconv');
 	QA.ASSERT_STR( res[2], '?', 'invalid sequense char' )
 
 
-/// identity [rmt]
+/// identity [p]
 
 	var ui = new Iconv('UTF-8', 'ISO-8859-1');
 	var iu = new Iconv('ISO-8859-1', 'UTF-8');
@@ -44,7 +44,7 @@ loadModule('jsiconv');
 	}
 
 
-/// encoding list [rfmt]
+/// encoding list [p]
 
 	var list = Iconv.list;
 //	QA.ASSERT( list.length, 387, 'encoding count' );
@@ -52,7 +52,7 @@ loadModule('jsiconv');
 	QA.ASSERT( list.indexOf('ISO-8859-1'), 48, 'has ISO-8859-1' );
 
 
-/// test javascrit unicode char [rmtf]
+/// test javascrit unicode char [p]
 
 	var conv = new Iconv(Iconv.jsUC, 'ISO-8859-1', true, true);
 	var res = conv('été');
@@ -61,7 +61,7 @@ loadModule('jsiconv');
 	QA.ASSERT( String.charCodeAt(res[0]), 233, 'the char' );
 
 
-/// store UTF-8 to JS unicode [rmtf]
+/// store UTF-8 to JS unicode [p]
 
 	var conv = new Iconv('UTF-8', 'ISO-8859-1', true, false); // source is not wide, dest is wide
 	var res = conv('é');
@@ -77,7 +77,7 @@ loadModule('jsiconv');
 	QA.ASSERT( String.charCodeAt(res[3]), 43459, '"é" is (c3 a9)' );
 
 
-/// store UTF-16 to JS string and unicode string [rmtf]
+/// store UTF-16 to JS string and unicode string [p]
 
 	var conv = new Iconv('UTF-16', 'ISO-8859-1', false, false);
 	var res = conv('abc');
@@ -88,7 +88,7 @@ loadModule('jsiconv');
 	QA.ASSERT( res.length, 4, 'UC string length' );
 
 
-/// store UTF-8 to JS string and unicode string [rmtf]
+/// store UTF-8 to JS string and unicode string [p]
 
 	var conv = new Iconv('UTF-8', 'ISO-8859-1', false, false); // source is not wide, dest is wide
 	var res = conv('été');
@@ -100,7 +100,7 @@ loadModule('jsiconv');
 	//QA.ASSERT( res.length, 3, 'UC string length' );
 
 
-/// store UCS-2le to JS unicode (1) [rmtf]
+/// store UCS-2le to JS unicode (1) [p]
 	
 	var conv = new Iconv(Iconv.jsUC, 'ISO-8859-1', true, false); // source is not wide, dest is wide
 	var res = conv('été');
@@ -109,7 +109,7 @@ loadModule('jsiconv');
 	QA.ASSERT( res, 'été', 'string test' );
 
 
-/// store UCS-2le to JS unicode (2) [rmtf]
+/// store UCS-2le to JS unicode (2) [p]
 
 	var conv = new Iconv(Iconv.jsUC, 'ISO-8859-1', true, false); // source is not wide, dest is wide
 
@@ -120,7 +120,7 @@ loadModule('jsiconv');
 	QA.ASSERT( res.length, 2, 'check the resulting string length' );
 	QA.ASSERT_STR( res, "zl", 'check the resulting string' );
 
-/// store UCS-2le to JS unicode (3) [rmtf]
+/// store UCS-2le to JS unicode (3) [p]
 
   var utf8str = "\xC3\xA9t\xC3\xA9 \xC3\xA0 la plage"; // été à la plage
   var conv = new Iconv(Iconv.jsUC, 'UTF-8', true, false); // source is not wide (8bit), dest is wide (16bit)
@@ -130,7 +130,7 @@ loadModule('jsiconv');
   QA.ASSERT_STR( conv(result), 'été à la plage', 'check the resulting string' );
 
 
-/// invalid char [rmtf]
+/// invalid char [p]
 
 	var conv = new Iconv('UTF-8', Iconv.jsUC, false, true);
 	QA.ASSERT_STR( conv.invalidChar, '?', 'default invalidChar' );
@@ -141,7 +141,7 @@ loadModule('jsiconv');
 	QA.ASSERT_STR( conv.invalidChar, '.', 'new invalidChar' );
 
 
-/// invalid multibyte sequence 1 [rmtf]
+/// invalid multibyte sequence 1 [p]
 
 	var conv = new Iconv('850', 'UTF-8');
 	
@@ -157,7 +157,7 @@ loadModule('jsiconv');
 	QA.ASSERT( conv.hasIncompleteSequence, false, 'last part' );
 
 
-/// invalid multibyte sequence 2 [rmtf]
+/// invalid multibyte sequence 2 [p]
 
 	var conv = new Iconv('ISO-8859-1', 'UTF-8');
 	var result = conv('\xC3');

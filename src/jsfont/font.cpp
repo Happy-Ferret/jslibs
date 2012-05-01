@@ -64,6 +64,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JsfontPrivate *pv = NULL;
+
 	JLData filePathName;
 
 	JL_ASSERT_CONSTRUCTING();
@@ -84,7 +86,6 @@ DEFINE_CONSTRUCTOR() {
 	JsfontModulePrivate *mpv;
 	mpv = (JsfontModulePrivate*)ModulePrivateGet();
 
-	JsfontPrivate *pv;
 	pv = (JsfontPrivate*)jl_malloc(sizeof(JsfontPrivate));
 	JL_ASSERT_ALLOC( pv );
 	JL_updateMallocCounter(cx, sizeof(JsfontPrivate));
@@ -96,7 +97,10 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_SetPrivate(cx, obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	jl_free(pv);
+	return JS_FALSE;
 }
 
 
@@ -258,7 +262,7 @@ DEFINE_FUNCTION( drawString ) {
 	pv = (JsfontPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	ASSERT( pv->face->size->metrics.height > 0 ); // JL_ASSERT_ERROR_NUM( pv->face->size->metrics.height > 0, JLSMSG_VALUE_OUTOFRANGE, "height > 0" );
+//	ASSERT( pv->face->size->metrics.height > 0 ); // JL_ASSERT_ERROR_NUM( pv->face->size->metrics.height > 0, JLSMSG_VALUE_OUTOFRANGE, "height > 0" );
 
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, JL_ARG(1));
@@ -447,6 +451,8 @@ DEFINE_FUNCTION( drawString ) {
 	JL_BAD;
 }
 
+
+
 /**doc
 === Properties ===
 **/
@@ -509,12 +515,22 @@ DEFINE_PROPERTY_SETTER( size ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	FT_UInt size;
-	if ( !JSVAL_IS_VOID( *vp ) )
-		JL_CHK( JL_JsvalToNative(cx, *vp, &size) );
-	else
-		size = 0;
+	JL_CHK( JL_JsvalToNative(cx, *vp, &size) );
 
-	FTCHK( FT_Set_Pixel_Sizes(pv->face, size, size) );
+	if ( size != 0 ) {
+		
+		FTCHK( FT_Set_Pixel_Sizes(pv->face, size, size) );
+	} else {
+
+		FT_Size_RequestRec  req;
+		req.type = FT_SIZE_REQUEST_TYPE_NOMINAL;
+		req.width = 0;
+		req.height = 0;
+		req.horiResolution = 0;
+		req.vertResolution = 0;
+		FTCHK( FT_Request_Size(pv->face, &req) );
+	}
+
 	return JL_StoreProperty(cx, obj, id, vp, false); // storing the value allow one to use the default getter of the property.
 	JL_BAD;
 }

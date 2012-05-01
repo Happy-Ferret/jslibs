@@ -136,9 +136,9 @@ DEFINE_CONSTRUCTOR() {
 	unser = new jl::Unserializer(str.GetStrZOwnership(), str.Length(), OBJECT_TO_JSVAL(JL_OBJ));
 	JL_ASSERT_ALLOC(unser);
 	JL_SetPrivate(cx, JL_OBJ, unser);
-	JLRevisionType rev;
-	JL_CHK( unser->Read(cx, rev) );
-	JL_ASSERT( rev == JL_THIS_CLASS_REVISION, E_ARG, E_NUM(1), E_VERSION, E_COMMENT("serialized data") );
+	JLSourceId_t srcId;
+	JL_CHK( unser->Read(cx, srcId) );
+	JL_ASSERT( srcId == JL_THIS_CLASS_REVISION, E_ARG, E_NUM(1), E_VERSION, E_COMMENT("serialized data") );
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -1,12 +1,12 @@
 loadModule('jsdebug');
 
 
-/// list all properties of the global object  [rt]
+/// list all properties of the global object  []
 
 	propertiesList( global );
 
 
-/// test OBJ_SCOPE in JS_PropertyIterator [rmtf]
+/// test OBJ_SCOPE in JS_PropertyIterator [p]
 
 //	PropertiesList([]); // see bug 688571 - JS_PropertyIterator is broken
 //	PropertiesList({}); // ... bug 688571

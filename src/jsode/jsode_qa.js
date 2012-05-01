@@ -12,31 +12,31 @@ loadModule('jsode');
 	new Space();
 
 
-/// JointGroup multiple destroy [rmtf]
+/// JointGroup multiple destroy [p]
 
 	var j = new JointGroup();
 	j.destroy();
-	QA.ASSERTOP( function() j.destroy(), 'ex', Error );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() j.destroy(), 'ex', Error );
 
 
-/// Geom multiple destroy [rmtf]
+/// Geom multiple destroy [p]
 
 	var g = new GeomSphere();
 	g.destroy();
-	QA.ASSERTOP( function() g.destroy(), 'ex', Error );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() g.destroy(), 'ex', Error );
 
 
-/// object type check [rmtf]
+/// object type check [p]
 
-	QA.ASSERTOP( function() World.prototype.env.mass.value, 'ex', TypeError );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() World.prototype.env.mass.value, 'ex', TypeError );
 
 
-/// crash 1 [rmtf]
+/// crash 1 [p]
 
   new Body(new World);
 
 
-/// crash 2 [rmtf]
+/// crash 2 [p]
 
   var world = new World;
   var floor = new GeomPlane(world.space);
@@ -44,20 +44,20 @@ loadModule('jsode');
   var a = floor.body;
 
 
-/// crash 3 [rmtf]
+/// crash 3 [p]
 
 	var w = new World();
 	var geom = new GeomPlane(w.space);
 
 
-/// crash 4 [rmtf]
+/// crash 4 [p]
 
 	var space = new Space();
 	var geom = new GeomPlane(space);
 	space.destroy();
 
 
-/// memory leak test [rmtf]
+/// memory leak test [p]
 
 	var w = new World();
 	var j1 = new JointFixed(w);

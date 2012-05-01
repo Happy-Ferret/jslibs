@@ -7,20 +7,20 @@ loadModule('jsimage');
 
 /// png memory leak
 
-	QA.ASSERTOP( function() decodePngImage(), 'ex', RangeError, 'invalid decodePngImage arguemnt count' );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() decodePngImage(), 'ex', RangeError, 'invalid decodePngImage arguemnt count' );
 
 
-/// invalid jpeg image
+/// invalid jpeg image []
 
 	QA.ASSERTOP( function() decodeJpegImage(new Stream('xxxxxxxxx')), 'ex', InternalError, 'invalid jpeg file' );
 
 
 /// jpeg memory leak
 
-	QA.ASSERTOP( function() decodeJpegImage(), 'ex', RangeError, 'invalid decodeJpegImage arguemnt count' );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() decodeJpegImage(), 'ex', RangeError, 'invalid decodeJpegImage arguemnt count' );
 
 
-/// png decode an compressed image
+/// png decode an compressed image [p]
 
 	loadModule('jsio');
 	var image = decodePngImage(new File(QA.cx.item.path + '/z09n2c08.png').open(File.RDONLY));
@@ -94,4 +94,4 @@ loadModule('jsimage');
 /// jpeg encode invalid argument
 
 	var image = { width:1, height:1, channels:1, data:'X' };
-	QA.ASSERTOP( function() encodeJpegImage(image, 0, 999), 'ex', RangeError );
+	QA.IS_UNSAFE || QA.ASSERTOP( function() encodeJpegImage(image, 0, 999), 'ex', RangeError );

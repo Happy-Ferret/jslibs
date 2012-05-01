@@ -1,5 +1,5 @@
 
-/// access all properties of the global object [ft]
+/// access all properties of the global object []
 
 	for each ( item in global ) {
 
@@ -7,21 +7,21 @@
 	}
 
 
-/// jshost arguments [ftm]
+/// jshost arguments []
 
 	var process = new Process('jshost', ['-u', '-i', 'host.stdout(host.arguments.toString())', '123', '-test']);
 	var res = stringify(process.stdout.read());
 	QA.ASSERT_STR( res, "123,-test", "jshost arguments" );
 
 
-/// jshost stderr [ftm]
+/// jshost stderr []
 
 	var process = new Process('jshost', ['-u', '-i', 'host.stderr("46t5be4qg6b5e46grb5we4g5rn4trnehirwerwer")']);
 	var res = stringify(process.stderr.read());
 	QA.ASSERT_STR( res, "46t5be4qg6b5e46grb5we4g5rn4trnehirwerwer", "jshost arguments" );
 
 
-/// global variables [ftrm]
+/// global variables [p]
 
 		QA.ASSERTOP( host.path.length, '>', 0, 'script host path' );
 		QA.ASSERTOP( host.name.substr(0, 6), '==', 'jshost', 'script host name' );
@@ -37,24 +37,24 @@
 		QA.ASSERT( host.arguments[0].substr(-5), 'qa.js', 'javascript program name' );
 
 
-/// eval function [ftrm]
+/// eval function [p]
 
 		QA.ASSERT( typeof eval, 'function', 'eval function availability' );
 
 
-/// undefined mutability [ftrm]
+/// undefined mutability [p]
 		
 		QA.ASSERT( undefined, (void 0), 'compare to void 0 (default)' );
 		undefined = 123;
 		QA.ASSERT( undefined, (void 0), 'compare to void 0 (changed)' );
 
 
-/// embedded bootstrap script [ftrm]
+/// embedded bootstrap script [p]
 
 		QA.ASSERT( 'bootstrapScript' in host, false, 'no embedded bootstrap script by default' );
 
 
-/// host.endSignalEvents() handle object [ft]
+/// host.endSignalEvents() handle object [p]
 
 	var h = host.endSignalEvents();
 	QA.ASSERTOP(h, 'instanceof', Handle, 'handle object type');

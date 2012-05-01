@@ -760,7 +760,7 @@ DEFINE_FUNCTION( timeoutEvents ) {
 }
 
 
-#if defined(DEBUG) // || 1
+#if defined(DEBUG)  || 1
 #define HAS_JL_API_TESTS
 #endif
 
@@ -983,6 +983,75 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 	/////////////////////////////////////////////////////////////////
 
+	// ptr -> native -> ptr ///////////////////////////////////////////////////////////////
+
+	{
+	void *ptr = (void*)0; // 00...00
+	
+	jsval v;
+	void *tmp = ptr;
+	JL_CHK( JL_NativeToJsval(cx, tmp, &v) );
+	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+	TEST( tmp == ptr );
+	}
+
+	{
+	void *ptr = (void*)1; // 00...01
+	
+	jsval v;
+	void *tmp = ptr;
+	JL_CHK( JL_NativeToJsval(cx, tmp, &v) );
+	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+	TEST( tmp == ptr );
+	}
+
+	{
+	void *ptr = (void*)-1; // ff...ff
+	
+	jsval v;
+	void *tmp = ptr;
+	JL_CHK( JL_NativeToJsval(cx, tmp, &v) );
+	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+	TEST( tmp == ptr );
+	}
+
+	{
+	void *ptr = (void*)(size_t((void*)-1)-1); // ff...fe
+	
+	jsval v;
+	void *tmp = ptr;
+	JL_CHK( JL_NativeToJsval(cx, tmp, &v) );
+	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+	TEST( tmp == ptr );
+	}
+
+	{
+	void *ptr = (void*)(size_t((void*)-1) >> 1); // 7f...ff
+	
+	jsval v;
+	void *tmp = ptr;
+	JL_CHK( JL_NativeToJsval(cx, tmp, &v) );
+	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+	TEST( tmp == ptr );
+	}
+
+	{
+	void *ptr = (void*)((size_t((void*)-1)>>1) - 1); // 7f...fe
+	
+	jsval v;
+	void *tmp = ptr;
+	JL_CHK( JL_NativeToJsval(cx, tmp, &v) );
+	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+	TEST( tmp == ptr );
+	}
+
+	/////////////////////////////////////////////////////////////////
+
+	// JLID ///////////////////////////////////////////////////////////////
+
+
+	/////////////////////////////////////////////////////////////////
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1179,7 +1248,7 @@ DEFINE_FUNCTION( jslangTest ) {
 
 CONFIGURE_STATIC
 
-//	REVISION(JL_SvnRevToInt("$Revision$")) // avoid to set a revision to the global context
+//	REVISION(JL_SvnRevToInt("$Revision$")) // avoid to set a sourceId property to the global context.
 	BEGIN_STATIC_FUNCTION_SPEC
 
 		FUNCTION_ARGC( isBoolean, 1 )
