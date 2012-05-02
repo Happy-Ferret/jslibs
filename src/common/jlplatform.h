@@ -12,8 +12,12 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-
 #pragma once
+
+
+#define JL_BEGIN_NAMESPACE namespace jl {
+#define JL_END_NAMESPACE }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
@@ -588,14 +592,17 @@ struct Wrap {
 	ALWAYS_INLINE operator T() { return _item; }
 };
 
+
 template<class T>
 struct DummyAlignStruct {
   unsigned char first;
   T second;
 };
 
+
 #define ALIGNOF(type) \
 	(offsetof(DummyAlignStruct<type>, second))
+
 
 #define COUNTOF(vector) \
 	(sizeof(vector)/sizeof(*vector))
@@ -611,6 +618,7 @@ static const union {
 	unsigned char bytes[4];
 	uint32_t value;
 } JLHostEndianType = { { 0, 1, 2, 3 } };
+
 
 #define JLHostEndian \
 	(JLHostEndianType.value)
@@ -633,8 +641,19 @@ S_ASSERT( DBL_MANT_DIG < 64 );
 //S_ASSERT( MAX_INT_TO_DOUBLE+(double)1 == MAX_INT_TO_DOUBLE+(double)2 );
 
 
+
+#define JL_MIN(a,b) ((a) < (b) ? (a) : (b))
+
+#define JL_MAX(a,b) ((a) > (b) ? (a) : (b))
+
+#define JL_MINMAX(v,a,b) ((v) > (b) ? (b) : (v) < (a) ? (a) : (v))
+
+
+JL_BEGIN_NAMESPACE
+
+
 ALWAYS_INLINE NOALIAS int
-DOUBLE_IS_NEGZERO(const double &d) {
+DoubleIsNegZero(const double &d) {
 #ifdef WIN32
 	return (d == 0 && (_fpclass(d) & _FPCLASS_NZ));
 #elif defined(SOLARIS)
@@ -644,10 +663,11 @@ DOUBLE_IS_NEGZERO(const double &d) {
 #endif
 }
 
+
 ALWAYS_INLINE NOALIAS bool
-DOUBLE_IS_NEG(const double &d) {
+DoubleIsNeg(const double &d) {
 #ifdef WIN32
-	return DOUBLE_IS_NEGZERO(d) || d < 0;
+	return jl::DoubleIsNegZero(d) || d < 0;
 #elif defined(SOLARIS)
 	return copysign(1, d) < 0;
 #else
@@ -655,95 +675,68 @@ DOUBLE_IS_NEG(const double &d) {
 #endif
 }
 
+
 ALWAYS_INLINE bool
-JL_DOUBLE_IS_INTEGER(double d) {
+IsInteger(double d) {
 
 	return d == floor(d);
 }
 
+
 template<class T>
 ALWAYS_INLINE T
-JL_IS_SIGNED(T a) {
+IsSigned(T a) {
+
 	return a > (T)-1;
 }
 
-#define JL_MIN(a,b) ((a) < (b) ? (a) : (b))
-#define JL_MAX(a,b) ((a) > (b) ? (a) : (b))
-#define JL_MINMAX(v,a,b) ((v) > (b) ? (b) : (v) < (a) ? (a) : (v))
-
-/*
-template<class T>
-ALWAYS_INLINE const T&
-JL_MIN(const T& a, const T& b) {
-	return (a) < (b) ? (a) : (b);
-}
-
-
-template<class T>
-ALWAYS_INLINE const T&
-JL_MAX(const T& a, const T& b) {
-	return (a) > (b) ? (a) : (b);
-}
-
-template<class T, class U>
-ALWAYS_INLINE const T&
-JL_MINMAX(const T& val, const U &vmin, const U &vmax) {
-	if ( val >= vmax )
-		return (T)vmax;
-	if ( val <= vmin )
-		return (T)vmin;
-	return val;
-}
-*/
 
 template<class T, class U>
 ALWAYS_INLINE bool
-JL_INRANGE(T val, U vmin, U vmax) {
+IsInRange(T val, U vmin, U vmax) {
 
 	return val >= vmin && val <= vmax; // note: unsigned(val - vmin) <= unsigned(vmax - vmin) is 10 cycles faster.
 }
 
 
-namespace jl {
+// eg. if ( IsSafeCast<int>(size_t(12345)) ) ...
+template <class D, class S>
+ALWAYS_INLINE bool
+IsSafeCast(S src) {
 
-	// eg. if ( IsSafeCast<int>(size_t(12345)) ) ...
-	template <class D, class S>
-	ALWAYS_INLINE bool
-	IsSafeCast(S src) {
-
-		D dsrc = static_cast<D>(src);
-		return static_cast<S>(dsrc) == src && (src < 0) == (dsrc < 0); // compare converted value and sign.
-	}
-
-	// eg. int i; if ( IsSafeCast(size_t(12345), i) ) ...
-	template <class D, class S>
-	ALWAYS_INLINE bool
-	IsSafeCast(S src, D) {
-
-		D dsrc = static_cast<D>(src);
-		return static_cast<S>(dsrc) == src && (src < 0) == (dsrc < 0); // compare converted value and sign.
-	}
-
-	// eg. int i = SafeCast<int>(size_t(12345));
-	template <class D, class S>
-	ALWAYS_INLINE D
-	SafeCast(S src) {
-
-		ASSERT( (IsSafeCast<D>(src)) );
-		return static_cast<D>(src);
-	}
-
-	// eg. int i; i = SafeCast(size_t(12345), i);
-	template <class D, class S>
-	ALWAYS_INLINE D
-	SafeCast(S src, D) {
-
-		ASSERT( (IsSafeCast<D>(src)) );
-		return static_cast<D>(src);
-	}
-
+	D dsrc = static_cast<D>(src);
+	return static_cast<S>(dsrc) == src && (src < 0) == (dsrc < 0); // compare converted value and sign.
 }
 
+
+// eg. int i; if ( IsSafeCast(size_t(12345), i) ) ...
+template <class D, class S>
+ALWAYS_INLINE bool
+IsSafeCast(S src, D) {
+
+	D dsrc = static_cast<D>(src);
+	return static_cast<S>(dsrc) == src && (src < 0) == (dsrc < 0); // compare converted value and sign.
+}
+
+
+// eg. int i = SafeCast<int>(size_t(12345));
+template <class D, class S>
+ALWAYS_INLINE D
+SafeCast(S src) {
+
+	ASSERT( (IsSafeCast<D>(src)) );
+	return static_cast<D>(src);
+}
+
+
+// eg. int i; i = SafeCast(size_t(12345), i);
+template <class D, class S>
+ALWAYS_INLINE D
+SafeCast(S src, D) {
+
+	ASSERT( (IsSafeCast<D>(src)) );
+	return static_cast<D>(src);
+}
 
 
 //Macro that avoid multicharacter constant: From gcc page:
@@ -753,33 +746,8 @@ namespace jl {
 //     implementation-defined values, and should not be used in portable
 //     code.
 
-// rise a "division by zero" if x is not a 5-char string.
-//#define JL_CAST_CSTR_TO_UINT32(x) ( JL_IGNORE(0/(sizeof(x) == 5 && x[3] == 0 ? 1 : 0)), (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
-//#define JL_CAST_CSTR_TO_UINT32(x) ( (x[0]<<24) | (x[1]<<16) | (x[2]<<8) | (x[3]) )
-//	return (cstr[0]<<24) | (cstr[1]<<16) | (cstr[2]<<8) | (cstr[3]);
-//	return *(uint32_t*)cstr;
-
-
-//ALWAYS_INLINE uint32_t JL_CAST_CSTR_TO_UINT32( const char cstr[5] ) {
-//
-////	ASSERT(strlen(cstr) == 4);
-//	if ( cstr[0] == '\0' )
-//		return 0;
-//	else
-//	if ( cstr[1] == '\0' )
-//		return cstr[0];
-//	else
-//	if ( cstr[2] == '\0' )
-//		return (cstr[0] << 8) | cstr[1];
-//	else
-//	if ( cstr[3] == '\0' )
-//		return (cstr[0] << 16) | (cstr[1] << 8) | cstr[2];
-//
-//	return *(uint32_t*)cstr;
-//}
-
 ALWAYS_INLINE NOALIAS uint32_t
-JL_CAST_CSTR_TO_UINT32( const char *cstr ) {
+CastCStrToUint32( const char *cstr ) {
 
 	ASSERT( cstr != NULL );
 	ASSERT( !(cstr[0] && cstr[1] && cstr[2] && cstr[3] && cstr[4]) );
@@ -793,18 +761,18 @@ JL_CAST_CSTR_TO_UINT32( const char *cstr ) {
 
 
 ALWAYS_INLINE void *
-jl_memcpy(void *dst_, const void *src_, size_t len) {
+memcpy(void *dst_, const void *src_, size_t len) {
     
 	char *dst = (char *) dst_;
     const char *src = (const char *) src_;
     ASSERT_IF(dst >= src, (size_t) (dst - src) >= len);
     ASSERT_IF(src >= dst, (size_t) (src - dst) >= len);
-    return memcpy(dst, src, len);
+	return ::memcpy(dst, src, len);
 }
 
 
 INLINE unsigned long FASTCALL
-int_sqrt(unsigned long x) {
+IntSqrt(unsigned long x) {
 
     register unsigned long op, res, one;
 
@@ -828,7 +796,7 @@ int_sqrt(unsigned long x) {
 
 
 INLINE int FASTCALL
-int_pow(int base, int exp) {
+IntPow(int base, int exp) {
 
 	int result = 1;
     while (exp) {
@@ -841,14 +809,16 @@ int_pow(int base, int exp) {
     return result;
 }
 
+
 ALWAYS_INLINE bool
-JL_IsPow2(uint32_t v) {
+IsPow2(uint32_t v) {
 
 	return (v & (v - 1)) == 0;
 }
 
+
 ALWAYS_INLINE uint32_t
-JL_NextPow2(uint32_t v) {
+NextPow2(uint32_t v) {
 
 	v--;
 	v |= v >> 1;
@@ -859,8 +829,9 @@ JL_NextPow2(uint32_t v) {
 	return v+1;
 }
 
+
 ALWAYS_INLINE int
-JL_CountSetBits(int32_t v) {
+CountSetBits(int32_t v) {
 
 	v = v - ((v >> 1) & 0x55555555);
 	v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
@@ -869,7 +840,7 @@ JL_CountSetBits(int32_t v) {
 
 
 ALWAYS_INLINE int
-JL_Parity(uint32_t v) {
+Parity(uint32_t v) {
 
     v ^= v >> 1;
     v ^= v >> 2;
@@ -879,14 +850,14 @@ JL_Parity(uint32_t v) {
 
 
 ALWAYS_INLINE uint8_t
-JL_ReverseBits(uint8_t b) {
+ReverseBits(uint8_t b) {
 
 	return (((b * 0x0802LU & 0x22110LU) | (b * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16) & 0xFF;
 }
 
 
 ALWAYS_INLINE uint32_t
-JL_MostSignificantBit(register uint32_t x) {
+MostSignificantBit(register uint32_t x) {
 
 	x |= (x >> 1);
 	x |= (x >> 2);
@@ -899,7 +870,7 @@ JL_MostSignificantBit(register uint32_t x) {
 
 template <class T>
 ALWAYS_INLINE T
-JL_LeastSignificantBit(register T x) {
+LeastSignificantBit(register T x) {
 
 	#ifdef XP_WIN
 	#pragma warning(push)
@@ -913,7 +884,7 @@ JL_LeastSignificantBit(register T x) {
 
 
 ALWAYS_INLINE NOALIAS uint32_t
-JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
+SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empty and "$Revision$" strings.
 
 	if ( r == NULL || r[0] == '\0' || r[10] == '\0' || r[11] == '\0' || r[12] == '\0' || r[13] == '\0' )
 		return 0;
@@ -944,12 +915,16 @@ JL_SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and e
 }
 
 
-//int posix_memalign(void **memptr, size_t alignment, size_t size) {
-//	if (alignment % sizeof(void *) != 0)
-//		return EINVAL;
-//	*memptr = memalign(alignment, size);
-//	return (*memptr != NULL ? 0 : ENOMEM);
-//}
+
+/*
+int posix_memalign(void **memptr, size_t alignment, size_t size) {
+
+	if (alignment % sizeof(void *) != 0)
+		return EINVAL;
+	*memptr = memalign(alignment, size);
+	return (*memptr != NULL ? 0 : ENOMEM);
+}
+*/
 
 
 /* unused
@@ -990,7 +965,7 @@ fpipe( FILE **read, FILE **write ) {
 
 
 #ifdef XP_UNIX
-INLINE void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath ) {
+INLINE void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath ) {
 
 	if ( modulePath[0] == PATH_SEPARATOR ) { //  /jshost
 
@@ -1063,49 +1038,53 @@ INLINE void JLGetAbsoluteModulePath( char* moduleFileName, size_t size, char *mo
 // cf. _swab() -or- _rotl();
 // 16 bits: #define SWAP_BYTES(X) ((X & 0xff) << 8) | (X >> 8)
 // 32 bits swap: #define SWAP_BYTE(x) ((x<<24) | (x>>24) | ((x&0xFF00)<<8) | ((x&0xFF0000)>>8))
-//#define JL_BYTESWAP(ptr,a,b) { register char tmp = ((int8_t*)ptr)[a]; ((int8_t*)ptr)[a] = ((int8_t*)ptr)[b]; ((int8_t*)ptr)[b] = tmp; }
+//#define BytesSwap(ptr,a,b) { register char tmp = ((int8_t*)ptr)[a]; ((int8_t*)ptr)[a] = ((int8_t*)ptr)[b]; ((int8_t*)ptr)[b] = tmp; }
 
 ALWAYS_INLINE NOALIAS void
-JL_BYTESWAP(void *ptr, size_t a, size_t b) {
+BytesSwap(void *ptr, size_t a, size_t b) {
 
 	register char tmp = ((int8_t*)ptr)[a];
 	((int8_t*)ptr)[a] = ((int8_t*)ptr)[b];
 	((int8_t*)ptr)[b] = tmp;
 }
 
+
 ALWAYS_INLINE NOALIAS void
 Host16ToNetwork16( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
-		JL_BYTESWAP( pval, 0, 1 );
+		BytesSwap( pval, 0, 1 );
 }
+
 
 ALWAYS_INLINE NOALIAS void
 Host24ToNetwork24( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
-		JL_BYTESWAP( pval, 0, 2 );
+		BytesSwap( pval, 0, 2 );
 }
+
 
 ALWAYS_INLINE NOALIAS void
 Host32ToNetwork32( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
 
-		JL_BYTESWAP( pval, 0, 3 );
-		JL_BYTESWAP( pval, 1, 2 );
+		BytesSwap( pval, 0, 3 );
+		BytesSwap( pval, 1, 2 );
 	}
 }
+
 
 ALWAYS_INLINE NOALIAS void
 Host64ToNetwork64( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
 
-		JL_BYTESWAP( pval, 0, 7 );
-		JL_BYTESWAP( pval, 1, 6 );
-		JL_BYTESWAP( pval, 2, 5 );
-		JL_BYTESWAP( pval, 3, 4 );
+		BytesSwap( pval, 0, 7 );
+		BytesSwap( pval, 1, 6 );
+		BytesSwap( pval, 2, 5 );
+		BytesSwap( pval, 3, 4 );
 	}
 }
 
@@ -1114,14 +1093,15 @@ ALWAYS_INLINE NOALIAS void
 Network16ToHost16( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
-		JL_BYTESWAP( pval, 0, 1 );
+		BytesSwap( pval, 0, 1 );
 }
+
 
 ALWAYS_INLINE NOALIAS void
 Network24ToHost24( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian )
-		JL_BYTESWAP( pval, 0, 2 );
+		BytesSwap( pval, 0, 2 );
 }
 
 
@@ -1130,34 +1110,34 @@ Network32ToHost32( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
 
-		JL_BYTESWAP( pval, 0, 3 );
-		JL_BYTESWAP( pval, 1, 2 );
+		BytesSwap( pval, 0, 3 );
+		BytesSwap( pval, 1, 2 );
 	}
 }
+
 
 ALWAYS_INLINE NOALIAS void
 Network64ToHost64( void *pval ) {
 
 	if ( JLHostEndian == JLLittleEndian ) {
 
-		JL_BYTESWAP( pval, 0, 7 );
-		JL_BYTESWAP( pval, 1, 6 );
-		JL_BYTESWAP( pval, 2, 5 );
-		JL_BYTESWAP( pval, 3, 4 );
+		BytesSwap( pval, 0, 7 );
+		BytesSwap( pval, 1, 6 );
+		BytesSwap( pval, 2, 5 );
+		BytesSwap( pval, 3, 4 );
 	}
 }
 
 
 INLINE NEVER_INLINE long FASTCALL
-JL_atoi(const char *buf, int base) {
+atoi(const char *buf, int base) {
 
 	return strtol(buf, NULL, base);
 }
 
 
-
 INLINE NEVER_INLINE char* FASTCALL
-JL_itoa(long val, char *buf, int base) {
+itoa(long val, char *buf, int base) {
 
 	char *p = buf;
 	long prev;
@@ -1182,10 +1162,10 @@ JL_itoa(long val, char *buf, int base) {
 }
 
 
-#define JL_ITOA10_MAX_DIGITS 12 // 12 = sign + base-10 max int32_t + '\0'
+#define JL_ITOA10_MAX_DIGITS (12) // 12 = sign + base-10 max int32_t + '\0'
 
 INLINE NEVER_INLINE char* FASTCALL
-JL_itoa10(uint32_t val, char *buf) {
+itoa10(uint32_t val, char *buf) {
 
 	char *tmp = buf + JL_ITOA10_MAX_DIGITS;
 	*--tmp = '\0';
@@ -1196,8 +1176,9 @@ JL_itoa10(uint32_t val, char *buf) {
 	return tmp;
 }
 
+
 INLINE NEVER_INLINE char* FASTCALL
-JL_itoa10(int32_t val, char *buf) {
+itoa10(int32_t val, char *buf) {
 
 	char *tmp = buf + JL_ITOA10_MAX_DIGITS;
 	*--tmp = '\0';
@@ -1218,52 +1199,13 @@ JL_itoa10(int32_t val, char *buf) {
 	return tmp;
 }
 
-#define JL_itoa10_alloca(val) \
-	JL_itoa10(val, (char*)alloca(JL_ITOA10_MAX_DIGITS))
-
-
-/* just a test
-#if defined(XP_WIN)
-
-#pragma comment(lib, "Winmm.lib")
-#include "Mmsystem.h"
-
-ALWAYS_INLINE void CALLBACK 
-AccurateSleepCallback(UINT uiID, UINT uiMsg, DWORD dwUser, DWORD dw1, DWORD dw2) {
-
-	LeaveCriticalSection((CRITICAL_SECTION*)dwUser);
-	EnterCriticalSection((CRITICAL_SECTION*)dwUser);
-}
-
-ALWAYS_INLINE void
-AccurateSleep(uint32_t ms) {
-	
-	CRITICAL_SECTION cs;
-	InitializeCriticalSection(&cs);
-	timeSetEvent(0, 0, AccurateSleepCallback, (DWORD)&cs, TIME_ONESHOT);
-
-	timeSetEvent(ms, 0, AccurateSleepCallback, (DWORD)&cs, TIME_ONESHOT);
-
-	EnterCriticalSection(&cs);
-	LeaveCriticalSection(&cs);
-
-	DeleteCriticalSection(&cs);
-}
-
-#endif
-*/
-
 
 ALWAYS_INLINE void
 SleepMilliseconds(uint32_t ms) {
 
 #if defined(XP_WIN)
-	
-//	if ( ms == 1 )
-//		AccurateSleep(ms);
-//	else
-		Sleep(ms); // winbase.h
 
+	Sleep(ms); // winbase.h
 #elif defined(XP_UNIX)
 	usleep(ms * 1000); // unistd.h // (TBD) obsolete, use nanosleep() instead.
 #else
@@ -1337,7 +1279,7 @@ AccurateTimeCounter() {
 		result = ::GetProcessAffinityMask(::GetCurrentProcess(), &processAffinityMask, &systemAffinityMask);
 		ASSERT( result );
 		ASSERT( processAffinityMask );
-		cpuMask = JL_LeastSignificantBit(processAffinityMask);
+		cpuMask = jl::LeastSignificantBit(processAffinityMask);
 	}
 	LARGE_INTEGER frequency, performanceCount;
 	HANDLE thread = ::GetCurrentThread();
@@ -1376,26 +1318,6 @@ AccurateTimeCounter() {
 //}
 
 
-
-#if defined(XP_WIN)
-INLINE NEVER_INLINE __declspec(naked) size_t 
-JLGetEIP() {
-
-	__asm pop eax;
-	__asm jmp eax;
-}
-#endif
-
-/*
-size_t JLIP() {
-#if defined(XP_WIN)
-	return (size_t)_ReturnAddress();
-#elif defined(XP_UNIX)
-	return (size_t)__builtin_return_address(0);
-#endif
-}
-*/
-
 #define JL_PAGESIZE 4096
 
 ALWAYS_INLINE size_t
@@ -1419,6 +1341,16 @@ JLPageSize() {
 }
 
 
+#if defined(XP_WIN)
+INLINE NEVER_INLINE __declspec(naked) size_t 
+GetEIP() {
+
+	__asm pop eax;
+	__asm jmp eax;
+}
+#endif
+
+
 ALWAYS_INLINE void
 cpuid( int info[4], int type ) {
 
@@ -1432,10 +1364,10 @@ cpuid( int info[4], int type ) {
 }
 
 
-typedef char JLCpuInfo_t[128];
+typedef char CpuInfo_t[128];
 
 ALWAYS_INLINE void
-JLCpuInfo( JLCpuInfo_t info ) {
+CPUInfo( CpuInfo_t info ) {
 
 	// see. http://msdn.microsoft.com/en-us/library/hskdteyh(v=vs.80).aspx
 	// see. http://faydoc.tripod.com/cpu/cpuid.htm
@@ -1459,13 +1391,13 @@ JLCpuInfo( JLCpuInfo_t info ) {
 	info += 16;
 	cpuid((int*)info, 0x80000006);
 
-	IFDEBUG( ASSERT( (info+16) - (char*)tmp == sizeof(JLCpuInfo_t) ) );
+	IFDEBUG( ASSERT( (info+16) - (char*)tmp == sizeof(CpuInfo_t) ) );
 }
 
 
 #if defined(XP_WIN)
 ALWAYS_INLINE HMODULE
-JLGetCurrentModule() {
+GetCurrentModule() {
 
 	// see also:
 	//   http://blogs.msdn.com/b/oldnewthing/archive/2004/10/25/247180.aspx
@@ -1483,7 +1415,7 @@ JLGetCurrentModule() {
 
 
 ALWAYS_INLINE int
-JLProcessId() {
+ProcessId() {
 
 #if defined(XP_WIN)
 	return getpid();
@@ -1496,11 +1428,11 @@ JLProcessId() {
 
 
 ALWAYS_INLINE uint32_t
-JLSessionId() {
+SessionId() {
 
 	uint32_t r = 0x12345678;
-	r ^= (uint32_t)AccurateTimeCounter();
-	r ^= (uint32_t)JLProcessId();
+	r ^= (uint32_t)jl::AccurateTimeCounter();
+	r ^= (uint32_t)ProcessId();
 #if defined(XP_WIN)
 //	r ^= (u_int32_t)GetModuleHandle(NULL);
 	MEMORYSTATUS status;
@@ -1512,7 +1444,7 @@ JLSessionId() {
 
 
 ALWAYS_INLINE size_t
-JLRemainingStackSize() {
+RemainingStackSize() {
 #if defined(XP_WIN)
 
 	#pragma warning(push)
@@ -1532,6 +1464,9 @@ JLRemainingStackSize() {
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 }
+
+
+JL_END_NAMESPACE
 
 
 // see http://unicode.org/faq/utf_bom.html#BOM
@@ -2902,7 +2837,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 			return;
 		}
 		int len = JL_MIN(strlen(info.dli_fname), maxFileNameLength-1);
-		jl_memcpy(fileName, info.dli_fname, len);
+		jl::memcpy(fileName, info.dli_fname, len);
 		fileName[len] = '\0';
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)

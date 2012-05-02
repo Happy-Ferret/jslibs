@@ -954,7 +954,7 @@ DEFINE_PROPERTY_SETTER( clipboard ) {
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
 		if ( lptstrCopy == NULL )
 			return JL_ThrowOSError(cx);
-		jl_memcpy(lptstrCopy, str.GetConstStr(), str.Length() + 1);
+		jl::memcpy(lptstrCopy, str.GetConstStr(), str.Length() + 1);
 		lptstrCopy[str.Length()] = 0;
 		GlobalUnlock(hglbCopy);
 		HANDLE h = SetClipboardData(CF_TEXT, hglbCopy);
@@ -1243,7 +1243,7 @@ DEFINE_FUNCTION( jswinshelltest ) {
 
 CONFIGURE_STATIC
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		#ifdef DEBUG
 		FUNCTION( jswinshelltest )

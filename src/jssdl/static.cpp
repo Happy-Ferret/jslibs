@@ -1196,7 +1196,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( version ) {
 
 	*vp = INT_TO_JSVAL( SDL_COMPILEDVERSION );
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	return jl::StoreProperty(cx, obj, id, vp, true);
 }
 
 
@@ -1449,7 +1449,7 @@ DEFINE_FUNCTION( sdlEvents ) {
 
 CONFIGURE_STATIC
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( getVideoModeList )

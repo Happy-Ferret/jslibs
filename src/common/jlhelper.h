@@ -300,7 +300,7 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 //	void *tmp = JS_malloc(cx, length);
 //	if ( !tmp )
 //		return NULL;
-//	jl_memcpy(tmp, bytes, length * sizeof(*jschar));
+//	jl::memcpy(tmp, bytes, length * sizeof(*jschar));
 //	jl_free(bytes);
 //	bytes = (char*)tmp;
 
@@ -911,7 +911,7 @@ ALWAYS_INLINE bool FASTCALL
 JL_ValueIsInteger( JSContext * RESTRICT cx, jsval & RESTRICT value ) {
 
 	JL_IGNORE(cx);
-	return JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && JL_DOUBLE_IS_INTEGER(JSVAL_TO_DOUBLE(value)));
+	return JSVAL_IS_INT(value) || (JSVAL_IS_DOUBLE(value) && jl::IsInteger(JSVAL_TO_DOUBLE(value)));
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -993,7 +993,7 @@ JL_ValueIsNegative( JSContext *cx, const jsval &val ) {
 	// handle string conversion and valueOf ?
 
 	return ( JSVAL_IS_INT(val) && JSVAL_TO_INT(val) < 0 )
-	    || ( JSVAL_IS_DOUBLE(val) && DOUBLE_IS_NEG(JSVAL_TO_DOUBLE(val)) ) // handle NEGZERO ?
+	    || ( JSVAL_IS_DOUBLE(val) && jl::DoubleIsNeg(JSVAL_TO_DOUBLE(val)) ) // handle NEGZERO ?
 	    || JL_ValueIsNInfinity(cx, val);
 }
 
@@ -1286,7 +1286,7 @@ enum E_TXTID {
 //
 
 #define JL_ASSERT_RANGE(val, valMin, valMax, context) \
-	JL_ASSERT( JL_INRANGE((int)val, (int)valMin, (int)valMax), E_VALUE, E_STR(context), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
+	JL_ASSERT( jl::IsInRange((int)val, (int)valMin, (int)valMax), E_VALUE, E_STR(context), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
 
 
 // arg
@@ -1298,7 +1298,7 @@ enum E_TXTID {
 	JL_ASSERT( JL_ARGC <= (maxCount), E_ARGC, E_MAX, E_NUM(maxCount) )
 
 #define JL_ASSERT_ARGC_RANGE(minCount, maxCount) \
-	JL_ASSERT( JL_INRANGE((int)JL_ARGC, (int)minCount, (int)maxCount), E_ARGC, E_RANGE, E_INTERVAL_NUM(unsigned(minCount), unsigned(maxCount)) )
+	JL_ASSERT( jl::IsInRange((int)JL_ARGC, (int)minCount, (int)maxCount), E_ARGC, E_RANGE, E_INTERVAL_NUM(unsigned(minCount), unsigned(maxCount)) )
 
 #define JL_ASSERT_ARGC(count) \
 	JL_ASSERT( JL_ARGC == (count), E_ARGC, E_EQUALS, E_NUM(count) )
@@ -1338,7 +1338,7 @@ enum E_TXTID {
 	JL_ASSERT( condition, E_ARG, E_NUM(argNum), E_TYPE, E_NAME(typeStr) )
 
 #define JL_ASSERT_ARG_VAL_RANGE(val, valMin, valMax, argNum) \
-	JL_ASSERT( JL_INRANGE((int)val, (int)valMin, (int)valMax), E_ARG, E_NUM(argNum), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
+	JL_ASSERT( jl::IsInRange((int)val, (int)valMin, (int)valMax), E_ARG, E_NUM(argNum), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
 
 
 
@@ -1451,7 +1451,7 @@ class JLData {
 			} else {
 			
 				//ASSERT( !_own );
-				jl_memcpy(dst, _buf, length * (wide ? 2 : 1));
+				jl::memcpy(dst, _buf, length * (wide ? 2 : 1));
 			}
 		} else
 		if ( !_w && wide ) {
@@ -1626,7 +1626,7 @@ public:
 		size_t length = Length();
 		if ( _w ) {
 
-			jl_memcpy(dst, _buf, length*2);
+			jl::memcpy(dst, _buf, length*2);
 		} else {
 
 			const char *src = (const char*)_buf;
@@ -1641,7 +1641,7 @@ public:
 		size_t length = Length();
 		if ( !_w ) {
 
-			jl_memcpy(dst, _buf, length);
+			jl::memcpy(dst, _buf, length);
 		} else {
 
 			const jschar *src = (const jschar*)_buf;
@@ -2017,7 +2017,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint8_t *num ) {
 
 	if (likely( d >= double(0) && d <= double(UINT8_MAX) )) {
 
-		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
 		*num = uint8_t(d);
 		return JS_TRUE;
 	}
@@ -2058,7 +2058,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int16_t *num ) {
 
 	if (likely( d >= double(INT16_MIN) && d <= double(INT16_MAX) )) {
 
-		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
 		*num = int16_t(d);
 		return JS_TRUE;
 	}
@@ -2107,7 +2107,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint16_t *num ) {
 
 	if (likely( d >= double(0) && d <= double(UINT16_MAX) )) {
 
-		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
 		*num = uint16_t(d);
 		return JS_TRUE;
 	}
@@ -2152,7 +2152,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int32_t *num ) {
 
 	if (likely( d >= double(INT32_MIN) && d <= double(INT32_MAX) )) {
 
-		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
 		*num = int32_t(d);
 		return JS_TRUE;
 	}
@@ -2226,7 +2226,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint32_t *num ) {
 
 	if (likely( d >= double(0) && d <= double(UINT32_MAX) )) {
 
-		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
 		*num = uint32_t(d);
 		return JS_TRUE;
 	}
@@ -2275,7 +2275,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, int64_t *num ) {
 
 	if (likely( d >= double(MIN_INT_TO_DOUBLE) && d <= double(MAX_INT_TO_DOUBLE) )) {
 
-		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
 		*num = int64_t(d);
 		return JS_TRUE;
 	}
@@ -2343,7 +2343,7 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, uint64_t *num ) {
 
 	if (likely( d >= double(0) && d <= double(MAX_INT_TO_DOUBLE) )) { // or d <= double(UINT64_MAX)
 
-		JL_ASSERT_WARN( JL_DOUBLE_IS_INTEGER(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
 		*num = uint64_t(d);
 		return JS_TRUE;
 	}
@@ -2763,7 +2763,7 @@ JL_ArrayBufferToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, 
 	ASSERT( buffer != NULL );
 	*actualLength = JS_GetArrayBufferByteLength(obj);
 	maxLength = JL_MIN( *actualLength, maxLength );
-	jl_memcpy((uint8_t*)vector, buffer, maxLength);
+	jl::memcpy((uint8_t*)vector, buffer, maxLength);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3037,7 +3037,7 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, jsval &val, float ** RESTRICT m ) {
 
 	if ( JSVAL_IS_NULL(val) ) {
 
-		jl_memcpy(*m, &Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
+		jl::memcpy(*m, &Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
 		return JS_TRUE;
 	}
 
@@ -3057,7 +3057,7 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, jsval &val, float ** RESTRICT m ) {
 			
 			if ( JS_GetTypedArrayLength(matrixObj) == 16 ) {
 
-				jl_memcpy(*m, JS_GetTypedArrayData(matrixObj), (32 / 8) * 16);
+				jl::memcpy(*m, JS_GetTypedArrayData(matrixObj), (32 / 8) * 16);
 				return JS_TRUE;
 			}
 		}
@@ -3223,7 +3223,7 @@ JL_ChangeBufferLength( JSContext *cx, jsval *rval, size_t nbytes ) {
 		if ( !newBufferObj )
 			return false;
 		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
-		jl_memcpy(newBufferData, bufferData, bufferLen);
+		jl::memcpy(newBufferData, bufferData, bufferLen);
 	}
 	*rval = OBJECT_TO_JSVAL(newBufferObj);
 	return (uint8_t*)newBufferData;

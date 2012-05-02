@@ -93,7 +93,7 @@ DEFINE_PROPERTY_SETTER( effect ) {
 	alAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_EFFECT, effect );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -166,7 +166,7 @@ DEFINE_PROPERTY_GETTER( effectSendAuto ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3455 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3455 $"))
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

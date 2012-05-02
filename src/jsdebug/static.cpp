@@ -605,7 +605,7 @@ DEFINE_PROPERTY_SETTER( gcZeal ) {
 	uint8_t zeal;
 	JL_CHKM( JL_JsvalToNative(cx, *vp, &zeal), E_VALUE, E_INVALID );
 	JS_SetGCZeal(cx, zeal, 1, JS_FALSE); // JS_DEFAULT_ZEAL_FREQ
-	return JL_StoreProperty(cx, obj, id, vp, false); // make the value available for default getter
+	return jl::StoreProperty(cx, obj, id, vp, false); // make the value available for default getter
 
 #else // JS_GC_ZEAL
 
@@ -1777,7 +1777,7 @@ DEFINE_FUNCTION( setPerfTestMode ) {
 	// detect thread availability
 	JL_CHK( ::GetProcessAffinityMask(currentProcess, &processAffinityMask, &systemAffinityMask) );
 	// select a thread
-	JL_CHK( ::SetThreadAffinityMask(currentThread, JL_LeastSignificantBit(processAffinityMask)) );
+	JL_CHK( ::SetThreadAffinityMask(currentThread, jl::LeastSignificantBit(processAffinityMask)) );
 	//   do not set time critical because this will set time critical for this thread only !
 	JL_CHK( ::SetPriorityClass(currentProcess, REALTIME_PRIORITY_CLASS) );
 	JL_CHK( ::SetProcessPriorityBoost(currentProcess, TRUE) ); // disable dynamic boosting
@@ -1828,7 +1828,7 @@ DEFINE_FUNCTION( test2Debug ) {
 
 CONFIGURE_STATIC
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( getObjectPrivate )
 //		FUNCTION( dumpStats )

@@ -19,8 +19,6 @@
 #include <jstypedarray.h>
 
 
-using namespace jl;
-
 
 DECLARE_CLASS(Handle)
 
@@ -257,7 +255,7 @@ DEFINE_FUNCTION( stringify ) {
 		NIStreamRead read = StreamReadInterface(cx, sobj);
 		if ( read ) {
 
-			Buf<char> buf;
+			jl::Buf<char> buf;
 
 			size_t length;
 			do {
@@ -522,7 +520,7 @@ DEFINE_FUNCTION( processEvents ) {
 	for ( i = 0; i < argc; ++i ) {
 
 		JL_ASSERT_ARG_TYPE( IsHandle(cx, JL_ARGV[i]), i+1, "(pev) Handle" );
-		JL_ASSERT_ARG_TYPE( IsHandleType(cx, JSVAL_TO_OBJECT(JL_ARGV[i]), JL_CAST_CSTR_TO_UINT32("pev")), i+1, "(pev) Handle" );
+		JL_ASSERT_ARG_TYPE( IsHandleType(cx, JSVAL_TO_OBJECT(JL_ARGV[i]), jl::CastCStrToUint32("pev")), i+1, "(pev) Handle" );
 		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, JL_ARGV[i]);
 		JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_STATE ); //JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_ANINVALID, E_NAME("pev Handle") );
 
@@ -760,7 +758,7 @@ DEFINE_FUNCTION( timeoutEvents ) {
 }
 
 
-#if defined(DEBUG)  || 1
+#if defined(DEBUG) // || 1
 #define HAS_JL_API_TESTS
 #endif
 
@@ -896,15 +894,14 @@ DEFINE_FUNCTION( _jsapiTests ) {
 		ref[i] = rand() & 0xff; // 0->255
 	int refPos = 0;
 
-	using namespace jl;
-	Buf<char> b;
+	jl::Buf<char> b;
 
 	for ( int i = 0; i < 100; i++ ) {
 
 		int rnd = rand() & 0xff; // 0->127
 		b.Reserve(rnd);
 		char *tmp = b.Ptr();
-		jl_memcpy(tmp, ref + refPos, rnd);
+		jl::memcpy(tmp, ref + refPos, rnd);
 		b.Advance(rnd);
 		refPos += rnd;
 	}
@@ -928,7 +925,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	// Buffer (2) ////////////////////////////////////////////////////
 
 	{
-	Buf<char> resultBuffer;
+	jl::Buf<char> resultBuffer;
 	resultBuffer.Reserve(10000);
 	resultBuffer.Advance(10000);
 	jl_free( resultBuffer.GetDataOwnership() );
@@ -964,12 +961,12 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	// misc inlining ////////////////////////////////////////////////
 
 	static JSObject *obj;
-	size_t a = JLGetEIP();
+	size_t a = jl::GetEIP();
 	{
 	obj = JL_CLASS_PROTOTYPE(cx, Handle);
 	JL_IGNORE(obj);
 	}
-	a = JLGetEIP() - a;
+	a = jl::GetEIP() - a;
 	TEST( a < 200 );
 	//printf("%d\n", a); exit(0);
 
@@ -1248,7 +1245,7 @@ DEFINE_FUNCTION( jslangTest ) {
 
 CONFIGURE_STATIC
 
-//	REVISION(JL_SvnRevToInt("$Revision$")) // avoid to set a sourceId property to the global context.
+//	REVISION(jl::SvnRevToInt("$Revision$")) // avoid to set a sourceId property to the global context.
 	BEGIN_STATIC_FUNCTION_SPEC
 
 		FUNCTION_ARGC( isBoolean, 1 )

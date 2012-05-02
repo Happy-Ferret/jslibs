@@ -20,7 +20,7 @@
 #define JL_HANDLE_PUBLIC_SLOT_COUNT 4
 
 #define JLHID(id) \
-	JL_CAST_CSTR_TO_UINT32(#id)
+	jl::CastCStrToUint32(#id)
 
 typedef void (*HandleFinalizeCallback_t)(void* data);
 

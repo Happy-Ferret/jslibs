@@ -170,7 +170,7 @@ DEFINE_FUNCTION( _unserialize ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3524 $"))
 
 	HAS_RESERVED_SLOTS(1)
 	

@@ -5810,9 +5810,9 @@ DEFINE_FUNCTION( readImage ) {
 		int mid = height / 2;
 		for ( int line = 0; line < mid; ++line ) {
 
-			jl_memcpy(tmp, data + (line*lineLength), lineLength);
-			jl_memcpy(data + (line*lineLength), data + ((height-1-line)*lineLength), lineLength);
-			jl_memcpy(data + ((height-1-line)*lineLength), tmp, lineLength);
+			jl::memcpy(tmp, data + (line*lineLength), lineLength);
+			jl::memcpy(data + (line*lineLength), data + ((height-1-line)*lineLength), lineLength);
+			jl::memcpy(data + ((height-1-line)*lineLength), tmp, lineLength);
 		}
 	}
 
@@ -6801,7 +6801,7 @@ DEFINE_INIT() {
 #ifdef DEBUG
 
 	// check GL const duplicates
-	JLConstValueSpec *it2, *it1 = sc->static_const;
+	jl::ConstValueSpec *it2, *it1 = sc->static_const;
 
 	int count;
 	for ( it1 = sc->static_const; it1->name != NULL; ++it1 ) {
@@ -6874,7 +6874,7 @@ DEFINE_FUNCTION( test ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_INIT
 
 	BEGIN_CONST

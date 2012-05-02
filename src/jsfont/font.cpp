@@ -234,7 +234,7 @@ DEFINE_FUNCTION( drawChar ) {
 	uint8_t *buf;
 	buf = JL_NewByteImageObject(cx, width, height, 1, JL_RVAL);
 	JL_CHK( buf );
-	jl_memcpy(buf, pv->face->glyph->bitmap.buffer, bufLength);
+	jl::memcpy(buf, pv->face->glyph->bitmap.buffer, bufLength);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -531,7 +531,7 @@ DEFINE_PROPERTY_SETTER( size ) {
 		FTCHK( FT_Request_Size(pv->face, &req) );
 	}
 
-	return JL_StoreProperty(cx, obj, id, vp, false); // storing the value allow one to use the default getter of the property.
+	return jl::StoreProperty(cx, obj, id, vp, false); // storing the value allow one to use the default getter of the property.
 	JL_BAD;
 }
 
@@ -551,7 +551,7 @@ DEFINE_PROPERTY_SETTER( encoding ) {
 	unsigned int encoding;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &encoding) );
 	FTCHK( FT_Select_Charmap(pv->face, (FT_Encoding)encoding) );
-	return JL_StoreProperty(cx, obj, id, vp, false); // storing the value allow one to use the default getter of the property.
+	return jl::StoreProperty(cx, obj, id, vp, false); // storing the value allow one to use the default getter of the property.
 	JL_BAD;
 }
 
@@ -720,7 +720,7 @@ DEFINE_PROPERTY_SETTER( bold ) {
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 	HAS_PRIVATE

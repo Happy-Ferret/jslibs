@@ -112,7 +112,7 @@ DEFINE_PROPERTY_GETTER( triangleCount ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3528 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3528 $"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(4)
 

@@ -29,7 +29,7 @@ ALWAYS_INLINE void* ModulePrivateAlloc(size_t size) {
 	if ( JLAtomicIncrement(&_modulePrivateCount) == 1 )
 		_modulePrivateKey = JLTLSAllocKey();
 	while ( _modulePrivateKey == JLTLSInvalidKey ) // (TBD) replace this UGLY hack with a mutex (however this case is extremely rare).
-		SleepMilliseconds(1);
+		jl::SleepMilliseconds(1);
 	ASSERT( _modulePrivateKey != JLTLSInvalidKey );
 	ASSERT( JLTLSGet(_modulePrivateKey) == NULL ); // already allocated
 	void *modulePrivate = malloc(size);

@@ -49,7 +49,7 @@ JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
 #ifdef XP_WIN
 	//  Disables the DLL_THREAD_ATTACH and DLL_THREAD_DETACH notifications for the specified dynamic-link library (DLL).
 	//  This can reduce the size of the working set for some applications.
-	BOOL st = ::DisableThreadLibraryCalls(JLGetCurrentModule());
+	BOOL st = ::DisableThreadLibraryCalls(jl::GetCurrentModule());
 	ASSERT(st);
 #endif // XP_WIN
 

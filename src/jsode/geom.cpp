@@ -271,7 +271,7 @@ DEFINE_PROPERTY_SETTER( body ) {
 	ode::dBodyID bodyId;
 	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
 	ode::dGeomSetBody(geom, bodyId);
-//	return JL_StoreProperty(cx, obj, id, vp, false);
+//	return jl::StoreProperty(cx, obj, id, vp, false);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -282,7 +282,7 @@ DEFINE_PROPERTY_GETTER( body ) {
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	JL_CHK( BodyToJsval(cx, ode::dGeomGetBody(geomId), vp) );
-//	return JL_StoreProperty(cx, obj, id, vp, false);
+//	return jl::StoreProperty(cx, obj, id, vp, false);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -367,7 +367,7 @@ DEFINE_PROPERTY_SETTER( tansformation ) {
 		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
 		ode::dGeomSetOffsetRotation(geom, m3);
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
-		return JL_StoreProperty(cx, obj, id, vp, false);
+		return jl::StoreProperty(cx, obj, id, vp, false);
 	}
 
 	JL_ERR( E_VALUE, E_TYPE, E_STR("matrix44") );
@@ -565,7 +565,7 @@ DEFINE_PROPERTY_GETTER( contact ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
 //	HAS_PRIVATE
 
 	BEGIN_FUNCTION_SPEC

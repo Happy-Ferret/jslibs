@@ -842,7 +842,7 @@ DEFINE_PROPERTY_GETTER( numberOfProcessors ) {
 		count = 1;
 	}
 	JL_CHK( JL_NativeToJsval(cx, count, vp) );
-	//	JL_CHK( JL_StoreProperty(cx, obj, id, vp, true) ); // may change ??
+	//	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) ); // may change ??
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -990,7 +990,7 @@ DEFINE_PROPERTY_GETTER( directorySeparator ) {
 
 	char tmp = PR_GetDirectorySeparator();
 	JL_CHK( JL_NativeToJsval(cx, &tmp, 1, vp) );
-	JL_CHK( JL_StoreProperty(cx, obj, id, vp, true) );
+	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1008,7 +1008,7 @@ DEFINE_PROPERTY_GETTER( pathSeparator ) {
 
 	char tmp = PR_GetPathSeparator();
 	JL_CHK( JL_NativeToJsval(cx, &tmp, 1, vp) );
-	JL_CHK( JL_StoreProperty(cx, obj, id, vp, true) );
+	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1021,7 +1021,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( version ) {
 
 	JL_CHK( JL_NativeToJsval(cx, PR_VERSION, vp) );
-	JL_CHK( JL_StoreProperty(cx, obj, id, vp, true) );
+	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1095,8 +1095,8 @@ DEFINE_FUNCTION( jsioTest ) {
 /*
 	jsval jsv[65535];
 
-	double err = AccurateTimeCounter();
-	double t0 = AccurateTimeCounter();
+	double err = jl::AccurateTimeCounter();
+	double t0 = jl::AccurateTimeCounter();
 	t0 = t0 - (t0 - err);
 
 //	for ( int i = 0; i < COUNTOF(jsv); i++ )
@@ -1110,7 +1110,7 @@ DEFINE_FUNCTION( jsioTest ) {
 	for ( int i = 0; i < COUNTOF(jsv); i++ )
 		JL_SetElement(cx, arr, i, &v);
 
-	double t = AccurateTimeCounter() - t0;
+	double t = jl::AccurateTimeCounter() - t0;
 */
 
 	*JL_RVAL = JSVAL_VOID;
@@ -1122,7 +1122,7 @@ DEFINE_FUNCTION( jsioTest ) {
 
 CONFIGURE_STATIC
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 
 		#ifdef HAS_JSIOTEST

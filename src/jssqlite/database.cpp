@@ -474,7 +474,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( version ) {
 
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, sqlite3_libversion()));
-  return JL_StoreProperty(cx, obj, id, vp, true);
+  return jl::StoreProperty(cx, obj, id, vp, true);
 }
 
 /**doc
@@ -638,7 +638,7 @@ DEFINE_SET_PROPERTY() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 
 	HAS_SET_PROPERTY

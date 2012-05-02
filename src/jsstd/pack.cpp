@@ -400,7 +400,7 @@ DEFINE_FUNCTION( readInt ) {
 			break;
 		case sizeof(int16_t):
 			if (netConv)
-				Network16ToHost16(data);
+				jl::Network16ToHost16(data);
 			if ( isSigned ) {
 				int16_t val = *(int16_t*)data;
 				*JL_RVAL = INT_TO_JSVAL( val );
@@ -411,7 +411,7 @@ DEFINE_FUNCTION( readInt ) {
 			break;
 		case 3: // 24-bit
 			if (netConv)
-				Network24ToHost24(data);
+				jl::Network24ToHost24(data);
 			if ( isSigned ) {
 
 				int32_t val = (int32_t)(*(uint32_t*)data << 8) >> 8;
@@ -431,7 +431,7 @@ DEFINE_FUNCTION( readInt ) {
 			break;
 		case sizeof(int32_t):
 			if (netConv)
-				Network32ToHost32(data);
+				jl::Network32ToHost32(data);
 			if ( isSigned ) {
 
 				int32_t val = *(int32_t*)data;
@@ -450,7 +450,7 @@ DEFINE_FUNCTION( readInt ) {
 			break;
 		case sizeof(int64_t):
 			if (netConv)
-				Network64ToHost64(data);
+				jl::Network64ToHost64(data);
 
 			if ( *(int64_t*)data > int64_t(MAX_INT_TO_DOUBLE) && *(int64_t*)data < int64_t(MIN_INT_TO_DOUBLE) )
 				JL_ERR( E_VALUE, E_INTERVAL_STR("-2^53", "2^53") );
@@ -531,7 +531,7 @@ DEFINE_FUNCTION( writeInt ) { // incompatible with NIStreamRead
 			else
 				JL_CHK( JL_JsvalToUInt16(cx, jsvalue, (uint16_t*)data, &outOfRange) );
 			if ( netConv )
-				Host16ToNetwork16(data);
+				jl::Host16ToNetwork16(data);
 			break;
 		case 3: // 24-bit
 			if ( isSigned )
@@ -539,7 +539,7 @@ DEFINE_FUNCTION( writeInt ) { // incompatible with NIStreamRead
 			else
 				JL_CHK( JL_JsvalToUInt24(cx, jsvalue, (uint32_t*)data, &outOfRange) );
 			if ( netConv )
-				Host24ToNetwork24(data);
+				jl::Host24ToNetwork24(data);
 			break;
 		case sizeof(int32_t):
 			if ( isSigned )
@@ -547,7 +547,7 @@ DEFINE_FUNCTION( writeInt ) { // incompatible with NIStreamRead
 			else
 				JL_CHK( JL_JsvalToUInt32(cx, jsvalue, (uint32_t*)data, &outOfRange) );
 			if ( netConv )
-				Host32ToNetwork32(data);
+				jl::Host32ToNetwork32(data);
 			break;
 		case sizeof(int64_t):
 			if ( isSigned )
@@ -555,7 +555,7 @@ DEFINE_FUNCTION( writeInt ) { // incompatible with NIStreamRead
 			else
 				JL_CHK( JL_JsvalToUInt64(cx, jsvalue, (uint64_t*)data, &outOfRange) );
 			if ( netConv )
-				Host64ToNetwork64(data);
+				jl::Host64ToNetwork64(data);
 			break;
 		default:
 			JL_ERR( E_DATATYPE, E_NOTSUPPORTED );
@@ -740,7 +740,7 @@ DEFINE_INIT() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
 	HAS_RESERVED_SLOTS(1)
 	HAS_PRIVATE
 

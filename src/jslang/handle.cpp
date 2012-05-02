@@ -84,7 +84,7 @@ DEFINE_FUNCTION( valueOf ) {
 DEFINE_INIT() {
 
 	JL_IGNORE(cx, sc, proto, obj);
-	JL_SAFE( globalKey = JLSessionId() );
+	JL_SAFE( globalKey = jl::SessionId() );
 	return JS_TRUE;
 }
 
@@ -138,7 +138,7 @@ DEFINE_FUNCTION( _unserialize ) {
 **/
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3524 $"))
 	HAS_INIT
 //	FROZEN_PROTOTYPE
 	HAS_PRIVATE
@@ -175,7 +175,7 @@ DEFINE_FINALIZE() {
 }
 
 CONFIGURE_CLASS
-	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3524 $"))
 	HAS_PRIVATE
 	HAS_FINALIZE
 	HAS_RESERVED_SLOTS(JL_HANDLE2_PUBLIC_SLOT_COUNT)

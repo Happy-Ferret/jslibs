@@ -125,7 +125,7 @@ StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount ) {
 	if ( position + *amount > length )
 		*amount = length - position;
 
-	jl_memcpy( buf, data.GetConstStr() + position, *amount ); // (TBD) possible optimization. see JLData::CopyTo() ?
+	jl::memcpy( buf, data.GetConstStr() + position, *amount ); // (TBD) possible optimization. see JLData::CopyTo() ?
 	JL_CHK( SetPosition(cx, streamObj, position + *amount) );
 	return JS_TRUE;
 	JL_BAD;
@@ -297,7 +297,7 @@ DEFINE_PROPERTY_GETTER( source ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
 	HAS_CONSTRUCTOR
 	HAS_RESERVED_SLOTS(2)
 

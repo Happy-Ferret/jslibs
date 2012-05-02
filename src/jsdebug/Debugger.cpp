@@ -534,7 +534,7 @@ DEFINE_PROPERTY_SETTER( interruptCounterLimit ) {
 		}
 	}
 
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -560,7 +560,7 @@ DEFINE_PROPERTY_SETTER( breakOnError ) {
 		JL_CHK( JS_SetDebugErrorHook(JL_GetRuntime(cx), b ? DebugErrorHookHandler : NULL, b ? obj : NULL) );
 	}
 
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -585,7 +585,7 @@ DEFINE_PROPERTY_SETTER( breakOnException ) {
 		JL_CHK( JS_SetThrowHook(JL_GetRuntime(cx), b ? ThrowHookHandler : NULL, b ? obj : NULL) );
 	}
 
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -610,7 +610,7 @@ DEFINE_PROPERTY_SETTER( breakOnDebuggerKeyword ) {
 		JL_CHK( JS_SetDebuggerHandler(JL_GetRuntime(cx), b ? DebuggerKeyword : NULL,  b ? obj : NULL) );
 	}
 
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -635,7 +635,7 @@ DEFINE_PROPERTY_SETTER( breakOnExecute ) {
 		JL_CHK( JS_SetExecuteHook(JL_GetRuntime(cx), b ? ExecuteHookHandler : NULL, b ? obj : NULL) );
 	}
 
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -660,7 +660,7 @@ DEFINE_PROPERTY_SETTER( breakOnFirstExecute ) {
 		JL_CHK( JS_SetExecuteHook(JL_GetRuntime(cx), b ? FirstExecuteHookHandler : NULL, b ? obj : NULL) );
 	}
 
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -694,14 +694,14 @@ DEFINE_PROPERTY_SETTER( excludedFileList ) {
 		AddExcludedFile(&pv->excludedFiles, fileName.GetStrZOwnership());
 	}
 
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

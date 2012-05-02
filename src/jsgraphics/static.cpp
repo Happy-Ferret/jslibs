@@ -685,7 +685,7 @@ DEFINE_FUNCTION( shadowMatrix ) {
 
 CONFIGURE_STATIC
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION_ARGC( vec3, 3 )
 		FUNCTION_ARGC( vec3Length, 3 )

@@ -383,7 +383,7 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 			}
 			break;
 		case CAIRO_FORMAT_A8:
-			jl_memcpy(image, buffer, pixelCount * channels);
+			jl::memcpy(image, buffer, pixelCount * channels);
 			break;
 	}
 
@@ -740,7 +740,7 @@ DEFINE_PROPERTY(images) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 
 	HAS_CONSTRUCTOR

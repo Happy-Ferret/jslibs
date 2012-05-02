@@ -86,7 +86,7 @@ DEFINE_PROPERTY_GETTER( radius ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3414 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3414 $"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(3)
 

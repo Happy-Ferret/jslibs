@@ -171,7 +171,7 @@ DEFINE_FUNCTION( aux ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_RESERVED_SLOTS(5)
 	HAS_CONSTRUCTOR
 

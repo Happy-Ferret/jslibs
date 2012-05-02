@@ -39,13 +39,13 @@ DEFINE_PROPERTY_GETTER( version ) {
 	audioMasterCallback audioMaster = (audioMasterCallback)JL_GetPrivate(obj);
 	VstIntPtr version = audioMaster(0, audioMasterVersion, 0, 0, 0, 0);
 	*vp = INT_TO_JSVAL( version );
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	return jl::StoreProperty(cx, obj, id, vp, true);
 }
 
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3455 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3455 $"))
 	HAS_PRIVATE
 
 	IS_UNCONSTRUCTIBLE

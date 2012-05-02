@@ -1118,7 +1118,7 @@ DEFINE_FUNCTION( playSound ) {
 	// Finally, play the sound!!!
 	alSourcePlay(sourceID);
 
-	SleepMilliseconds(totalTime);
+	jl::SleepMilliseconds(totalTime);
 
 	// Query the state of the souce
 	alGetSourcei(sourceID, AL_SOURCE_STATE, &state); // do { } while (state != AL_STOPPED);
@@ -1137,7 +1137,7 @@ DEFINE_FUNCTION( playSound ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	BEGIN_CONST
 		CONST_INTEGER( NONE                      ,AL_NONE                       )
 		CONST_INTEGER( FALSE                     ,AL_FALSE                      )

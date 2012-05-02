@@ -15,7 +15,7 @@
 
 #pragma once
 
-//static const uint32_t moduleId = JL_CAST_CSTR_TO_UINT32("io"); // replaced by _moduleId
+//static const uint32_t moduleId = jl::CastCStrToUint32("io"); // replaced by _moduleId
 
 struct JsioPrivate {
 

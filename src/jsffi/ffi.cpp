@@ -897,7 +897,7 @@ JSBool NativeData_setter_String(JSContext *cx, JSObject *obj, jsid id, JSBool st
   void** pptr = (void**)JL_GetPrivate( obj );
   char** sptr = (char**)jl_malloc( sizeof(char*) );
 //  *sptr = (char*)jl_malloc( len+1 ); // len+1 because we will add a '\0' at the end ( don't thrust JL_GetStringBytes about '\0' )
-//  jl_memcpy( *sptr, str, len );
+//  jl::memcpy( *sptr, str, len );
 //  *((*sptr)+len) = '\0';
   *sptr = str.GetStrZOwnership();
   *pptr = sptr;

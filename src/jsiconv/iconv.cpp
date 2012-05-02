@@ -268,7 +268,7 @@ DEFINE_CALL() {
 				case EINVAL: { // An incomplete multibyte sequence has been encountered in the input.
 
 					JL_CHKM( inLeft < sizeof(pv->remainderBuf), E_LIB, E_STR("iconv"), E_OPERATION, E_COMMENT("incomplete multibyte sequence"));
-					jl_memcpy(pv->remainderBuf + pv->remainderLen, inPtr, inLeft); // save
+					jl::memcpy(pv->remainderBuf + pv->remainderLen, inPtr, inLeft); // save
 					pv->remainderLen = inLeft;
 					inPtr += inLeft;
 					inLeft = 0;
@@ -406,7 +406,7 @@ DEFINE_PROPERTY_GETTER( list ) {
 	ipv.list = list;
 	ipv.listLen = 0;
 	iconvlist(do_one, &ipv);
-	return JL_StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
+	return jl::StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
 	JL_BAD;
 }
 #endif // JL_NOT_HAS_ICONVLIST
@@ -417,14 +417,14 @@ DEFINE_PROPERTY_GETTER( version ) {
 	char versionStr[16], tmp[JL_ITOA10_MAX_DIGITS];
 #ifdef _LIBICONV_VERSION
 
-	strcpy( versionStr, JL_itoa10(_LIBICONV_VERSION >> 8, tmp) );
+	strcpy( versionStr, jl::itoa10(_LIBICONV_VERSION >> 8, tmp) );
 	strcat( versionStr, ".");
-	strcat( versionStr, JL_itoa10(_LIBICONV_VERSION & 0xFF, tmp) );
+	strcat( versionStr, jl::itoa10(_LIBICONV_VERSION & 0xFF, tmp) );
 #else
 	strcpy( versionStr, "system");
 #endif
 	return JL_NativeToJsval(cx, versionStr, vp);
-	return JL_StoreProperty(cx, obj, id, vp, true);  // create and store store the value once for all.
+	return jl::StoreProperty(cx, obj, id, vp, true);  // create and store store the value once for all.
 }
 
 
@@ -441,14 +441,14 @@ DEFINE_PROPERTY_GETTER( jsUC ) {
 			*vp = JSVAL_VOID;
 			break;
 	}
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	return jl::StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
 
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 
 	HAS_CONSTRUCTOR

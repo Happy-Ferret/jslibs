@@ -21,10 +21,8 @@
 
 #include <jsvalserializer.h>
 
-
 #include <errno.h>
 
-using namespace jl;
 
 
 typedef struct SerializedData {
@@ -76,7 +74,7 @@ ALWAYS_INLINE bool SerializerIsEmpty( const SerializedData *ser ) {
 
 
 
-struct TaskPrivate : JLCppAllocators {
+struct TaskPrivate : jl::CppAllocators {
 
 	JLMutexHandler mutex;
 	JLThreadHandler threadHandle;
@@ -137,9 +135,9 @@ BEGIN_CLASS( Task )
 int
 TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
 
-	Buf<char> *errBuffer = static_cast<Buf<char>*>(privateData);
+	jl::Buf<char> *errBuffer = static_cast<jl::Buf<char>*>(privateData);
 	errBuffer->Reserve(length);
-	jl_memcpy(errBuffer->Ptr(), buffer, length);
+	jl::memcpy(errBuffer->Ptr(), buffer, length);
 	errBuffer->Advance(length);
 	return 0; // ok
 }
@@ -250,7 +248,7 @@ JLThreadFuncDecl
 TaskThreadProc( void *threadArg ) {
 
 	TaskPrivate *pv = NULL;
-	Buf<char> errBuffer;
+	jl::Buf<char> errBuffer;
 
 	JSContext *cx = CreateHost((uint32_t)-1, (uint32_t)-1, 0);
 	if ( cx == NULL ) // out of memory
@@ -821,7 +819,7 @@ DEFINE_FUNCTION( events ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 
 	HAS_CONSTRUCTOR

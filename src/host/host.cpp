@@ -82,7 +82,7 @@ Report( JSContext *cx, bool isWarning, ... ) {
 
 		if ( buf != message ) {
 
-			jl_memcpy(buf, " ", 1);
+			jl::memcpy(buf, " ", 1);
 			buf += 1;
 		}
 
@@ -94,12 +94,12 @@ Report( JSContext *cx, bool isWarning, ... ) {
 			const char *newPos = strchr(pos, '%');
 			if ( !newPos ) {
 
-				jl_memcpy(buf, pos, strEnd-pos);
+				jl::memcpy(buf, pos, strEnd-pos);
 				buf += strEnd-pos;
 				break;
 			} else {
 
-				jl_memcpy(buf, pos, newPos-pos);
+				jl::memcpy(buf, pos, newPos-pos);
 				buf += newPos-pos;
 			}
 			pos = newPos;
@@ -107,14 +107,14 @@ Report( JSContext *cx, bool isWarning, ... ) {
 			switch ( *++pos ) {
 				case 'd':
 					++pos;
-					JL_itoa(va_arg(vl, long), buf, 10);
+					jl::itoa(va_arg(vl, long), buf, 10);
 					buf += strlen(buf);
 					break;
 				case 'x':
 					++pos;
-					jl_memcpy(buf, "0x", 2);
+					jl::memcpy(buf, "0x", 2);
 					buf += 2;
-					JL_itoa(va_arg(vl, long), buf, 16);
+					jl::itoa(va_arg(vl, long), buf, 16);
 					buf += strlen(buf);
 					break;
 				case 's': {
@@ -123,13 +123,13 @@ Report( JSContext *cx, bool isWarning, ... ) {
 					int len = strlen(tmp);
 					if ( len > 128 ) {
 						
-						jl_memcpy(buf, tmp, 128);
+						jl::memcpy(buf, tmp, 128);
 						buf += 128;
-						jl_memcpy(buf, "...", 3);
+						jl::memcpy(buf, "...", 3);
 						buf += 3;
 					} else {
 
-						jl_memcpy(buf, tmp, len);
+						jl::memcpy(buf, tmp, len);
 						buf += len;
 					}
 					break;
@@ -140,7 +140,7 @@ Report( JSContext *cx, bool isWarning, ... ) {
 			}
 		}
 	}
-	jl_memcpy(buf, ".", 1);
+	jl::memcpy(buf, ".", 1);
 	buf += 1;
 	*buf = '\0';
 
@@ -234,7 +234,7 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 		size_t remaining = sizeof(buffer)-(buf-buffer); \
 		if ( remaining == 0 ) break; \
 		size_t len = JL_MIN(strlen(STR), remaining); \
-		jl_memcpy(buf, STR, len); \
+		jl::memcpy(buf, STR, len); \
 		buf += len; \
 	JL_MACRO_END
 
@@ -243,7 +243,7 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 		size_t remaining = sizeof(buffer)-(buf-buffer); \
 		if ( remaining == 0 ) break; \
 		size_t len = JL_MIN(size_t((SIZE)*(COUNT)), remaining); \
-		jl_memcpy(buf, (STR), len); \
+		jl::memcpy(buf, (STR), len); \
 		buf += len; \
 	JL_MACRO_END
 
@@ -652,7 +652,7 @@ DEFINE_INIT() {
 **/
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 
 	HAS_INIT
 
@@ -805,7 +805,7 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 	// global functions & properties
 	JL_CHKM( JS_DefinePropertyById(cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(globalObject), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
 
-	JL_CHK( JLInitClass(cx, globalObject, host::classSpec) ); // INIT_CLASS( host );
+	JL_CHK( jl::InitClass(cx, globalObject, host::classSpec) ); // INIT_CLASS( host );
 
 	// init static modules
 	if ( !jslangModuleInit(cx, globalObject) )

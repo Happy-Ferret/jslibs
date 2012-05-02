@@ -303,7 +303,7 @@ decoding_error:
 
 CONFIGURE_STATIC
 
-	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( accept )
 		FUNCTION( getParam )
@@ -455,7 +455,7 @@ DEFINE_FUNCTION( parsePairs ) { // arguments: data [, paramObject ]
 		else
 			name = (char*)JS_malloc(cx, nameLength +1);
 		name[nameLength] = '\0';
-		jl_memcpy(name, data, nameLength);
+		jl::memcpy(name, data, nameLength);
 		data += nameLength;
 		JSString *value = JS_NewDependentString(cx, JS_ValueToString(cx, argv[0]), data-start, valueLength);
 		JS_DefineProperty(cx, params, name, STRING_TO_JSVAL( value ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE);
@@ -583,10 +583,10 @@ DEFINE_FUNCTION( makePairs ) {
 			buffer = (unsigned char *)JS_realloc(cx, buffer, bufferLength);
 		}
 
-		jl_memcpy(buffer+bufferPos, key, keyLen);
+		jl::memcpy(buffer+bufferPos, key, keyLen);
 		bufferPos += keyLen;
 
-		jl_memcpy(buffer+bufferPos, value, valueLen);
+		jl::memcpy(buffer+bufferPos, value, valueLen);
 		bufferPos += valueLen;
 	}
 	JS_DestroyIdArray(cx, pairsArray);
@@ -695,7 +695,7 @@ DEFINE_FUNCTION( parseRecord ) {
 				else
 					name = (char*)JS_malloc(cx, nameLength +1);
 				name[nameLength] = '\0';
-				jl_memcpy(name, data, nameLength);
+				jl::memcpy(name, data, nameLength);
 				data += nameLength;
 				JSString *value = JS_NewDependentString(cx, JS_ValueToString(cx, argv[0]), data-start, valueLength);
 				JS_DefineProperty(cx, params, name, STRING_TO_JSVAL( value ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE);

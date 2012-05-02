@@ -164,7 +164,7 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 		char *buffer = (char *)jl::StackPop(&stack);
 		int size = *(int*)buffer;
 		buf = buf - size;
-		jl_memcpy( buf, buffer+sizeof(int), size );
+		jl::memcpy( buf, buffer+sizeof(int), size );
 		jl_free(buffer);
 	}
 
@@ -363,7 +363,7 @@ DEFINE_FUNCTION( decodeSound ) {
 		char *buffer = (char *)jl::StackPop(&stack);
 		int size = *(int*)buffer;
 		buf = buf - size;
-		jl_memcpy( buf, buffer+sizeof(int), size );
+		jl::memcpy( buf, buffer+sizeof(int), size );
 		jl_free(buffer);
 	}
 
@@ -433,7 +433,7 @@ DEFINE_FUNCTION( splitChannels ) {
 
 CONFIGURE_STATIC
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 //		FUNCTION( decodeOggVorbis )
 //		FUNCTION( decodeSound )

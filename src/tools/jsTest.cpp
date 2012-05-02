@@ -49,7 +49,7 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 		size_t remaining = sizeof(buffer)-(buf-buffer); \
 		if ( remaining == 0 ) break; \
 		size_t len = JL_MIN(strlen(STR), remaining); \
-		jl_memcpy(buf, STR, len); \
+		jl::memcpy(buf, STR, len); \
 		buf += len; \
 	JL_MACRO_END
 
@@ -58,7 +58,7 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 		size_t remaining = sizeof(buffer)-(buf-buffer); \
 		if ( remaining == 0 ) break; \
 		size_t len = JL_MIN(size_t((SIZE)*(COUNT)), remaining); \
-		jl_memcpy(buf, (STR), len); \
+		jl::memcpy(buf, (STR), len); \
 		buf += len; \
 	JL_MACRO_END
 

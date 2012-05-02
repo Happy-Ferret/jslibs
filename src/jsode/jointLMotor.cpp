@@ -111,7 +111,7 @@ DEFINE_FUNCTION( setAxis ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(2) // body1, body2
 

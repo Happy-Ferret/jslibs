@@ -566,7 +566,7 @@ DEFINE_FUNCTION( sleep ) {
 	JL_ASSERT_ARGC(1);
 	unsigned int time;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &time) );
-	SleepMilliseconds(time);
+	jl::SleepMilliseconds(time);
 	
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -600,7 +600,7 @@ DEFINE_FUNCTION( timeCounter ) {
 
 	JL_IGNORE(argc);
 
-	return JL_NativeToJsval(cx, AccurateTimeCounter(), JL_RVAL);
+	return JL_NativeToJsval(cx, jl::AccurateTimeCounter(), JL_RVAL);
 }
 
 
@@ -660,7 +660,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 	size_t i;
 	for ( i = 0; i < count; ++i ) {
 
-		jl_memcpy(tmp, buf, len * sizeof(jschar));
+		jl::memcpy(tmp, buf, len * sizeof(jschar));
 		tmp += len;
 	}
 
@@ -1259,8 +1259,8 @@ DEFINE_PROPERTY_GETTER( CPUID ) {
 	if ( !JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
 
-	JLCpuInfo_t info;
-	JLCpuInfo(info);
+	jl::CpuInfo_t info;
+	jl::CPUInfo(info);
 	return JL_NativeToJsval(cx, info, sizeof(info), vp);
 }
 
@@ -1310,10 +1310,10 @@ DEFINE_FUNCTION( jsstdTest ) {
 	JSObject *arr = JS_NewArrayObject(cx, 0, NULL);
 	jsval val;
 	val = JSVAL_ONE;
-	double t = AccurateTimeCounter();
+	double t = jl::AccurateTimeCounter();
 	for ( int i = 0; i < 100000; ++i )
 		JL_Push(cx, arr, &val); 
-	t = AccurateTimeCounter() - t;
+	t = jl::AccurateTimeCounter() - t;
 	printf( "%f\n", t );
 */
 /*
@@ -1367,7 +1367,7 @@ DEFINE_INIT() {
 
 CONFIGURE_STATIC
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 
 	HAS_INIT
 

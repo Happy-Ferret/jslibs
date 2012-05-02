@@ -158,7 +158,7 @@ CONFIGURE_STATIC
 
 	HAS_INIT
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( randSeed )
 		FUNCTION( randInt )

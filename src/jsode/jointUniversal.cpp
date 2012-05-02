@@ -222,7 +222,7 @@ DEFINE_PROPERTY_GETTER( angle2Rate ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3524 $"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(2) // body1, body2
 

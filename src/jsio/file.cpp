@@ -61,7 +61,7 @@ PRIntn FileOpenFlagsFromString( JLData &str ) {
 
 PRIntn FileOpenModeFromString( JLData &str ) {
 	
-	PRIntn mode = JL_atoi(str.GetConstStrZ(), 8);
+	PRIntn mode = jl::atoi(str.GetConstStrZ(), 8);
 	ASSERT( mode < (PR_IRWXU | PR_IRWXG | PR_IRWXO) );
 	return mode;
 }
@@ -696,7 +696,7 @@ DEFINE_PROPERTY_GETTER( info ) {
 	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "creationTime", fileInfo.creationTime / (double)1000) );
 	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "modifyTime", fileInfo.modifyTime / (double)1000) );
 	
-//	return JL_StoreProperty(cx, obj, id, vp, false); // file info may change between dwo calls
+//	return jl::StoreProperty(cx, obj, id, vp, false); // file info may change between dwo calls
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -833,7 +833,7 @@ $TOC_MEMBER $INAME
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_PROTOTYPE( Descriptor )
 
 	HAS_CONSTRUCTOR

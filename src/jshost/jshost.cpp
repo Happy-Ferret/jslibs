@@ -552,7 +552,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
 	JL_CHKM( GetModuleFileName(hInstance, hostFullPath, sizeof(hostFullPath)) != 0, E_HOST, E_INTERNAL ); // "Unable to GetModuleFileName."
 #elif defined(XP_UNIX)
-	JLGetAbsoluteModulePath(hostFullPath, sizeof(hostFullPath), argv[0]);
+	jl::GetAbsoluteModulePath(hostFullPath, sizeof(hostFullPath), argv[0]);
 	JL_CHKM( hostFullPath[0] != '\0', E_HOST, E_INTERNAL ); // "Unable to get module FileName."
 //	int len = readlink("/proc/self/exe", moduleFileName, sizeof(moduleFileName)); // doc: readlink does not append a NUL character to buf.
 //	moduleFileName[len] = '\0';

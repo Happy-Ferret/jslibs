@@ -49,7 +49,7 @@ JL_strdup(const char * src) {
 	dst = (char*)jl_malloc(size);
 	if ( dst == NULL )
 		return NULL;
-	jl_memcpy(dst, src, size);
+	jl::memcpy(dst, src, size);
 	return dst;
 }
 
@@ -174,7 +174,10 @@ JL_Realloc( T*&ptr, size_t count = 1 ) {
 // note: MSVC _ALLOCA_S_THRESHOLD is 1024
 #define JL_MALLOCA_THRESHOLD 1024
 
-namespace jlpv {
+
+JL_BEGIN_NAMESPACE
+
+namespace pv {
 
 	ALWAYS_INLINE void * FASTCALL
 	MallocaInternal(void *mem, size_t heapMem) {
@@ -190,8 +193,11 @@ namespace jlpv {
 	}
 }
 
+JL_END_NAMESPACE
+
+
 #define jl_malloca(size) \
-	( ( (size)+sizeof(size_t) > JL_MALLOCA_THRESHOLD ) ? jlpv::MallocaInternal(jl_malloc((size)+sizeof(size_t)), 1) : jlpv::MallocaInternal(alloca((size)+sizeof(size_t)), 0) )
+	( ( (size)+sizeof(size_t) > JL_MALLOCA_THRESHOLD ) ? jl::pv::MallocaInternal(jl_malloc((size)+sizeof(size_t)), 1) : jl::pv::MallocaInternal(alloca((size)+sizeof(size_t)), 0) )
 
 ALWAYS_INLINE void
 jl_freea(void *mem) {
@@ -201,239 +207,235 @@ jl_freea(void *mem) {
 }
 
 
+JL_BEGIN_NAMESPACE
 
 ///////////////////////////////////////////////////////////////////////////////
 // memory management
 
-namespace jl {
-
-	class NOVTABLE CppNoAlloc {
-		void* operator new(size_t);
-		void* operator new[](size_t);
-		void operator delete(void *, size_t);
-		void operator delete[](void *, size_t);
-	};
+class NOVTABLE CppNoAlloc {
+	void* operator new(size_t);
+	void* operator new[](size_t);
+	void operator delete(void *, size_t);
+	void operator delete[](void *, size_t);
+};
 
 
-	class NOVTABLE JLCppAllocators {
-	public:
-		ALWAYS_INLINE void* operator new(size_t size) NOTHROW {
-			return jl_malloc(size);
+class NOVTABLE CppAllocators {
+public:
+	ALWAYS_INLINE void* operator new(size_t size) NOTHROW {
+		return jl_malloc(size);
+	}
+	ALWAYS_INLINE void* operator new[](size_t size) NOTHROW {
+		return jl_malloc(size);
+	}
+	ALWAYS_INLINE void operator delete(void *ptr, size_t) {
+		jl_free(ptr);
+	}
+	ALWAYS_INLINE void operator delete[](void *ptr, size_t) {
+		jl_free(ptr);
+	}
+};
+
+
+template <class T>
+class NOVTABLE DefaultAlloc {
+public:
+	ALWAYS_INLINE void Free(void *ptr) {
+		jl_free(ptr);
+	}
+	ALWAYS_INLINE void* Alloc() {
+		return jl_malloc(sizeof(T));
+	}
+};
+
+
+template <class T, const size_t PREALLOC = 0, const bool SYNC = false>
+class NOVTABLE PreservAlloc {
+
+	void *_last;
+	uint32_t _count;
+	uint8_t *_prealloc;
+	uint8_t *_preallocEnd;
+	JLMutexHandler _mx;
+
+public:
+	ALWAYS_INLINE PreservAlloc() : _last(NULL), _prealloc(NULL), _count(0) {
+		
+		if ( SYNC )
+			_mx = JLMutexCreate();
+	}
+
+	ALWAYS_INLINE ~PreservAlloc() {
+
+		while ( _last != NULL ) {
+
+			void *tmp = _last;
+			_last = *(void**)_last;
+			if ( PREALLOC == 0 || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
+				jl_free(tmp);
 		}
-		ALWAYS_INLINE void* operator new[](size_t size) NOTHROW {
-			return jl_malloc(size);
+		if ( PREALLOC > 0 )
+			jl_free(_prealloc);
+		if ( SYNC )
+			JLMutexFree(&_mx);
+	}
+
+	ALWAYS_INLINE void Cleanup(size_t keepCount) {
+
+		if ( SYNC )
+			JLMutexAcquire(_mx);
+
+		while ( _last != NULL && _count > keepCount ) {
+
+			void *tmp = _last;
+			_last = *(void**)_last;
+			if ( PREALLOC == 0 || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
+				jl_free(tmp);
+			--_count;
 		}
-		ALWAYS_INLINE void operator delete(void *ptr, size_t) {
-			jl_free(ptr);
-		}
-		ALWAYS_INLINE void operator delete[](void *ptr, size_t) {
-			jl_free(ptr);
-		}
-	};
+
+		if ( SYNC )
+			JLMutexRelease(_mx);
+	}
 
 
-	template <class T>
-	class NOVTABLE DefaultAlloc {
-	public:
-		ALWAYS_INLINE void Free(void *ptr) {
-			jl_free(ptr);
-		}
-		ALWAYS_INLINE void* Alloc() {
-			return jl_malloc(sizeof(T));
-		}
-	};
+	ALWAYS_INLINE void Free(T *ptr) {
 
+		if ( SYNC )
+			JLMutexAcquire(_mx);
+		*(void**)ptr = _last;
+		_last = ptr;
+		_count++;
+		if ( SYNC )
+			JLMutexRelease(_mx);
+	}
 
-	template <class T, const size_t PREALLOC = 0, const bool SYNC = false>
-	class NOVTABLE PreservAlloc {
+	ALWAYS_INLINE T* Alloc() {
+		
+		size_t size = sizeof(T);
+		if ( size < sizeof(void*) )
+			size = sizeof(void*);
 
-		void *_last;
-		uint32_t _count;
-		uint8_t *_prealloc;
-		uint8_t *_preallocEnd;
-		JLMutexHandler _mx;
+		if ( SYNC )
+			JLMutexAcquire(_mx);
 
-	public:
-		ALWAYS_INLINE PreservAlloc() : _last(NULL), _prealloc(NULL), _count(0) {
+		if ( PREALLOC > 0 && _prealloc == NULL ) {
+
+			_count = PREALLOC / size;
+			_prealloc = (uint8_t*)jl_malloc(_count * size);
+			_preallocEnd = _prealloc + _count * size;
 			
-			if ( SYNC )
-				_mx = JLMutexCreate();
+			for ( uint8_t *it = _prealloc; it != _preallocEnd; it += size ) {
+
+				*(void**)it = _last;
+				_last = it;
+			}
 		}
 
-		ALWAYS_INLINE ~PreservAlloc() {
+		if ( _last != NULL ) {
 
-			while ( _last != NULL ) {
-
-				void *tmp = _last;
-				_last = *(void**)_last;
-				if ( PREALLOC == 0 || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
-					jl_free(tmp);
-			}
-			if ( PREALLOC > 0 )
-				jl_free(_prealloc);
-			if ( SYNC )
-				JLMutexFree(&_mx);
-		}
-
-		ALWAYS_INLINE void Cleanup(size_t keepCount) {
-
-			if ( SYNC )
-				JLMutexAcquire(_mx);
-
-			while ( _last != NULL && _count > keepCount ) {
-
-				void *tmp = _last;
-				_last = *(void**)_last;
-				if ( PREALLOC == 0 || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
-					jl_free(tmp);
-				--_count;
-			}
-
+			_count--;
+			void *tmp = _last;
+			_last = *(void**)_last;
 			if ( SYNC )
 				JLMutexRelease(_mx);
-		}
-
-
-		ALWAYS_INLINE void Free(T *ptr) {
-
-			if ( SYNC )
-				JLMutexAcquire(_mx);
-			*(void**)ptr = _last;
-			_last = ptr;
-			_count++;
+			return (T*)tmp;
+		} else {
+		
 			if ( SYNC )
 				JLMutexRelease(_mx);
-		}
-
-		ALWAYS_INLINE T* Alloc() {
-			
-			size_t size = sizeof(T);
-			if ( size < sizeof(void*) )
-				size = sizeof(void*);
-
-			if ( SYNC )
-				JLMutexAcquire(_mx);
-
-			if ( PREALLOC > 0 && _prealloc == NULL ) {
-
-				_count = PREALLOC / size;
-				_prealloc = (uint8_t*)jl_malloc(_count * size);
-				_preallocEnd = _prealloc + _count * size;
-				
-				for ( uint8_t *it = _prealloc; it != _preallocEnd; it += size ) {
-
-					*(void**)it = _last;
-					_last = it;
-				}
-			}
-
-			if ( _last != NULL ) {
-
-				_count--;
-				void *tmp = _last;
-				_last = *(void**)_last;
-				if ( SYNC )
-					JLMutexRelease(_mx);
-				return (T*)tmp;
-			} else {
-			
-				if ( SYNC )
-					JLMutexRelease(_mx);
-				return (T*)jl_malloc(size);
-			}
-		}
-	};
-
-	template <class T>
-	class NOVTABLE PreservAllocNone : public PreservAlloc<T, 0> {};
-
-	template <class T>
-	class NOVTABLE PreservAllocNone_threadsafe : public PreservAlloc<T, 0, true> {};
-
-
-	template <class T>
-	class NOVTABLE PreservAllocSmall : public PreservAlloc<T, 256> {};
-
-	template <class T>
-	class NOVTABLE PreservAllocMedium : public PreservAlloc<T, 4096> {};
-
-	template <class T>
-	class NOVTABLE PreservAllocBig : public PreservAlloc<T, 65536> {};
-
-
-
-
-	template <class T, const size_t PREALLOC_SIZE = 1024>
-	class NOVTABLE StaticAlloc {
-
-		void *_last;
-		uint8_t *_preallocEnd;
-		uint8_t _prealloc[PREALLOC_SIZE];
-
-	public:
-		ALWAYS_INLINE StaticAlloc() : _last(NULL), _preallocEnd(NULL) {
-		}
-
-		ALWAYS_INLINE ~StaticAlloc() {
-
-			while ( _last != NULL ) {
-
-				void *tmp = _last;
-				_last = *(void**)_last;
-				if ( _preallocEnd == NULL || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
-					jl_free(tmp);
-			}
-		}
-
-		ALWAYS_INLINE void Free(T *ptr) {
-
-			*(void**)ptr = _last;
-			_last = ptr;
-		}
-
-		ALWAYS_INLINE T* Alloc() {
-
-			size_t size = sizeof(T);
-			if ( size < sizeof(void*) )
-				size = sizeof(void*);
-
-			if ( _preallocEnd == NULL ) {
-
-				_preallocEnd = _prealloc + (sizeof(_prealloc)/size)*size;
-				for ( uint8_t *it = _prealloc; it < _preallocEnd; it += size ) {
-
-					*(void**)it = _last;
-					_last = it;
-				}
-			}
-			if ( _last != NULL ) {
-
-				void *tmp = _last;
-				_last = *(void**)_last;
-				return (T*)tmp;
-			}
-
 			return (T*)jl_malloc(size);
 		}
-	};
+	}
+};
+
+template <class T>
+class NOVTABLE PreservAllocNone : public PreservAlloc<T, 0> {};
+
+template <class T>
+class NOVTABLE PreservAllocNone_threadsafe : public PreservAlloc<T, 0, true> {};
+
+
+template <class T>
+class NOVTABLE PreservAllocSmall : public PreservAlloc<T, 256> {};
+
+template <class T>
+class NOVTABLE PreservAllocMedium : public PreservAlloc<T, 4096> {};
+
+template <class T>
+class NOVTABLE PreservAllocBig : public PreservAlloc<T, 65536> {};
 
 
 
 
-	template <class T>
-	class NOVTABLE StaticAllocSmall : public StaticAlloc<T, 256> {};
+template <class T, const size_t PREALLOC_SIZE = 1024>
+class NOVTABLE StaticAlloc {
 
-	template <class T>
-	class NOVTABLE StaticAllocMedium : public StaticAlloc<T, 4096> {};
+	void *_last;
+	uint8_t *_preallocEnd;
+	uint8_t _prealloc[PREALLOC_SIZE];
 
-	template <class T>
-	class NOVTABLE StaticAllocBig : public StaticAlloc<T, 65536> {};
+public:
+	ALWAYS_INLINE StaticAlloc() : _last(NULL), _preallocEnd(NULL) {
+	}
+
+	ALWAYS_INLINE ~StaticAlloc() {
+
+		while ( _last != NULL ) {
+
+			void *tmp = _last;
+			_last = *(void**)_last;
+			if ( _preallocEnd == NULL || tmp > _preallocEnd || tmp < _prealloc ) // do not free preallocated memory
+				jl_free(tmp);
+		}
+	}
+
+	ALWAYS_INLINE void Free(T *ptr) {
+
+		*(void**)ptr = _last;
+		_last = ptr;
+	}
+
+	ALWAYS_INLINE T* Alloc() {
+
+		size_t size = sizeof(T);
+		if ( size < sizeof(void*) )
+			size = sizeof(void*);
+
+		if ( _preallocEnd == NULL ) {
+
+			_preallocEnd = _prealloc + (sizeof(_prealloc)/size)*size;
+			for ( uint8_t *it = _prealloc; it < _preallocEnd; it += size ) {
+
+				*(void**)it = _last;
+				_last = it;
+			}
+		}
+		if ( _last != NULL ) {
+
+			void *tmp = _last;
+			_last = *(void**)_last;
+			return (T*)tmp;
+		}
+
+		return (T*)jl_malloc(size);
+	}
+};
 
 
 
 
+template <class T>
+class NOVTABLE StaticAllocSmall : public StaticAlloc<T, 256> {};
 
-} // namespace jl
+template <class T>
+class NOVTABLE StaticAllocMedium : public StaticAlloc<T, 4096> {};
+
+template <class T>
+class NOVTABLE StaticAllocBig : public StaticAlloc<T, 65536> {};
+
+
+JL_END_NAMESPACE
 
 
 /* memory pool, to be fixed: memory grows endless

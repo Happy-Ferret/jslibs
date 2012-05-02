@@ -14,8 +14,9 @@
 
 
 // note: JL_HOSTPRIVATE_KEY is supposed to change each time the structure is modified.
-#define JL_HOSTPRIVATE_KEY ( (JL_SvnRevToInt("$Revision: 3524 $") << 16) | ((sizeof(HostPrivate) ^ offsetof(HostPrivate, ids) ^ offsetof(HostPrivate, modulePrivate)) & 0xFFFF) )
+#define JL_HOSTPRIVATE_KEY ( (jl::SvnRevToInt("$Revision: 3524 $") << 16) | ((sizeof(HostPrivate) ^ offsetof(HostPrivate, ids) ^ offsetof(HostPrivate, modulePrivate)) & 0xFFFF) )
 #define JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT (9)
+
 
 struct ClassProtoCache {
 	JSClass *clasp;

@@ -580,7 +580,7 @@ typedef struct {
 void write_row_callback(png_structp png_ptr, png_bytep data, png_size_t size) {
 
 	PngWriteUserStruct *desc = (PngWriteUserStruct*)png_get_io_ptr(png_ptr);
-	jl_memcpy((char*)desc->buffer + desc->pos, data, size);
+	jl::memcpy((char*)desc->buffer + desc->pos, data, size);
 	desc->pos += size;
 }
 
@@ -669,7 +669,7 @@ bad:
 
 CONFIGURE_STATIC
 
-	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION_ARGC( decodePngImage, 1 )
 		FUNCTION_ARGC( encodePngImage, 2 )

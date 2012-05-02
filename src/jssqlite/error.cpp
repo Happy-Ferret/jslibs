@@ -197,7 +197,7 @@ DEFINE_FUNCTION( _unserialize ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_RESERVED_SLOTS(2)
 
 	IS_UNCONSTRUCTIBLE

@@ -425,13 +425,13 @@ DEFINE_PROPERTY_GETTER( list ) {
 	LTC_MUTEX_UNLOCK(&ltc_hash_mutex);
 
 	*vp = OBJECT_TO_JSVAL(list);
-	return JL_StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
+	return jl::StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
 }
 
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

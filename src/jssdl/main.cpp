@@ -190,16 +190,16 @@ void JLSwapBuffers(bool async) {
 			JLMutexRelease(surfaceLock);
 		} else {
 
-			double t0 = AccurateTimeCounter();
+			double t0 = jl::AccurateTimeCounter();
 
 			JLMutexAcquire(surfaceLock);
 			SDL_GL_SwapBuffers();
 			JLMutexRelease(surfaceLock);
 
-			double t1 = AccurateTimeCounter();
+			double t1 = jl::AccurateTimeCounter();
 			double wait = 1000/_maxFPS - (t1 - t0);
 			if ( wait > 0 )
-				SleepMilliseconds(uint32_t(wait));
+				jl::SleepMilliseconds(uint32_t(wait));
 		}
 		SurfaceReady();
 	} else {
@@ -213,7 +213,7 @@ int SwapBuffersThread( void * ) {
 
 	HGLRC hglrc = NULL; // SwapBuffersThread must have its own opengl context else SwapBuffers(GL_hdc); (in WIN_GL_SwapBuffers) will crash !
 
-	double t0 = AccurateTimeCounter();
+	double t0 = jl::AccurateTimeCounter();
 
 	JLSemaphoreRelease(threadReadySem);
 
@@ -243,7 +243,7 @@ int SwapBuffersThread( void * ) {
 			SDL_GL_SwapBuffers();
 			JLMutexRelease(surfaceLock);
 
-			double t1 = AccurateTimeCounter();
+			double t1 = jl::AccurateTimeCounter();
 			double wait = 1000/_maxFPS - (t1 - t0);
 			if ( wait > 0 ) {
 

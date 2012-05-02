@@ -67,7 +67,7 @@ bad:
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 2555 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 2555 $"))
 	HAS_PRIVATE
 	HAS_FINALIZE
 

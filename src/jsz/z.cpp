@@ -390,7 +390,7 @@ DEFINE_PROPERTY( idealInputLength ) {
 **/
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 
 	HAS_CONSTRUCTOR

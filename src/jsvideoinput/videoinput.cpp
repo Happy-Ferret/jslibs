@@ -405,13 +405,13 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( version ) {
 
 	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, J__TOSTRING(VI_VERSION)));
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	return jl::StoreProperty(cx, obj, id, vp, true);
 }
 
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
-	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
 //	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1) // JSVIDEOINPUT_SLOT_DEVICEID
 

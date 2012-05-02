@@ -958,7 +958,7 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 	}
 
 	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, *vp) );
-	JL_CHK( JL_StoreProperty(cx, obj, id, vp, false) );
+	JL_CHK( jl::StoreProperty(cx, obj, id, vp, false) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -990,7 +990,7 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 **/
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 
 	IS_UNCONSTRUCTIBLE
 

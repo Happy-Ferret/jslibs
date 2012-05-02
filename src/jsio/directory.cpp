@@ -291,7 +291,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, vp ) );
-	JL_CHK( JL_StoreProperty(cx, obj, id, vp, false) );
+	JL_CHK( jl::StoreProperty(cx, obj, id, vp, false) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -485,7 +485,7 @@ JSObject *jl::CreateIterator(JSContext *cx, JSNative call, void *private) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1)
 

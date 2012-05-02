@@ -335,7 +335,7 @@ DEFINE_PROPERTY_GETTER( stderr ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS( 3 )

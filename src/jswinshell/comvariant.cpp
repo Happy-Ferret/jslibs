@@ -155,7 +155,7 @@ JSBool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
 	HRESULT hr = SafeArrayAccessData(variant->parray, &pArrayData);
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
-	jl_memcpy(pArrayData, buf.GetConstStr(), buf.Length());
+	jl::memcpy(pArrayData, buf.GetConstStr(), buf.Length());
 	SafeArrayUnaccessData(variant->parray);
 
 	return JS_TRUE;
@@ -669,7 +669,7 @@ DEFINE_HAS_INSTANCE() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 2555 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 2555 $"))
 	HAS_PRIVATE
 	IS_UNCONSTRUCTIBLE
 	

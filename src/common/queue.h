@@ -17,7 +17,7 @@
 
 #include "jlalloc.h"
 
-namespace jl {
+JL_BEGIN_NAMESPACE
 
 typedef struct QueueCell {
 	struct QueueCell *prev, *next;
@@ -426,6 +426,4 @@ public:
 };
 
 
-
-}
-
+JL_END_NAMESPACE

@@ -1209,7 +1209,7 @@ $TOC_MEMBER RecvFrom
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_PROTOTYPE( Descriptor )
 
 	HAS_CONSTRUCTOR

@@ -76,9 +76,9 @@ public:
 		JS_AddValueRoot(_cx, &_rval);
 		JS_AddValueRoot(_cx, &_arg);
 
-		( JLInitClass(_cx, JL_GetGlobal(_cx), MidiEvent::classSpec ) ); // INIT_CLASS uses cx, not _cx
-		( JLInitClass(_cx, JL_GetGlobal(_cx), AudioMaster::classSpec ) );
-		( JLInitClass(_cx, JL_GetGlobal(_cx), VSTPlugin::classSpec ) );
+		( jl::InitClass(_cx, JL_GetGlobal(_cx), MidiEvent::classSpec ) ); // INIT_CLASS uses cx, not _cx
+		( jl::InitClass(_cx, JL_GetGlobal(_cx), AudioMaster::classSpec ) );
+		( jl::InitClass(_cx, JL_GetGlobal(_cx), VSTPlugin::classSpec ) );
 
 		JSObject *audioMasterObject = CreateAudioMasterObject(_cx, audioMaster);
 		_arg = OBJECT_TO_JSVAL(audioMasterObject);
@@ -847,7 +847,7 @@ DEFINE_PROPERTY_SETTER( numParams ) {
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	JL_ASSERT_IS_INTEGER(*vp, "");
 	vstPlugin->SetNumParams( JSVAL_TO_INT(*vp) );
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -857,7 +857,7 @@ DEFINE_PROPERTY_SETTER( numInputs ) {
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	JL_ASSERT_IS_INTEGER(*vp, "");
 	vstPlugin->setNumInputs( JSVAL_TO_INT(*vp) );
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -867,7 +867,7 @@ DEFINE_PROPERTY_SETTER( numOutputs ) {
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	JL_ASSERT_IS_INTEGER(*vp, "");
 	vstPlugin->setNumOutputs( JSVAL_TO_INT(*vp) );
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -1047,7 +1047,7 @@ DEFINE_PROPERTY_SETTER( inputLatency ) {
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	*vp = INT_TO_JSVAL( vstPlugin->getInputLatency() );
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -1056,7 +1056,7 @@ DEFINE_PROPERTY_SETTER( outputLatency ) {
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	*vp = INT_TO_JSVAL( vstPlugin->getOutputLatency() );
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -1067,7 +1067,7 @@ DEFINE_PROPERTY_SETTER( initialDelay ) {
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	vstPlugin->setInitialDelay( JSVAL_TO_INT( *vp ) );
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -1085,7 +1085,7 @@ DEFINE_PROPERTY_SETTER( uniqueID ) {
 	VstInt32 vstid = CCONST( str.GetConstStr()[0], str.GetConstStr()[1], str.GetConstStr()[2], str.GetConstStr()[3] );
 	vstPlugin->setUniqueID( vstid );
 	}
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -1134,7 +1134,7 @@ DEFINE_HAS_INSTANCE() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3526 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3526 $"))
 	HAS_PRIVATE
 
 	IS_UNCONSTRUCTIBLE

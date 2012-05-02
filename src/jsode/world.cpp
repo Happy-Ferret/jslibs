@@ -729,7 +729,7 @@ DEFINE_PROPERTY_GETTER( env ) {
 	JL_CHK(staticBody);
 	JL_SetPrivate(cx, staticBody, (ode::dBodyID)0);
 	*vp = OBJECT_TO_JSVAL(staticBody);
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	return jl::StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
 
@@ -746,7 +746,7 @@ $TOC_MEMBER $INAME
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(2)
 

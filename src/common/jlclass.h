@@ -12,30 +12,24 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-
 #pragma once
 
-#define JL_NO_TINYID (-1) // see JL_DefineClassProperties()
 
-typedef int32_t JLSourceId_t;
-/*
-struct JLConstIntegerSpec {
-    int ival;
-    const char *name;
-};
+JL_BEGIN_NAMESPACE
 
-struct JLConstDoubleSpec {
-	double dval;
-	const char *name;
-};
-*/
-struct JLConstValueSpec {
+namespace pv {
+	static const int NOTINYID = -1; // see DefineClassProperties()
+}
+
+typedef int32_t SourceId_t;
+
+struct ConstValueSpec {
 	const char *name;
 	jsval val;
 };
 
 
-struct JLClassSpec {
+struct ClassSpec {
 	JSClass clasp;
 	JSNative constructor;
 	unsigned nargs;
@@ -44,18 +38,18 @@ struct JLClassSpec {
 	JSPropertySpec *static_ps;
 	JSFunctionSpec *fs;
 	JSFunctionSpec *static_fs;
-	JLConstValueSpec *static_const;
-	JSBool (*init)(JSContext *cx, JLClassSpec *sc, JSObject *proto, JSObject *obj);
-	JLSourceId_t sourceId;
+	ConstValueSpec *static_const;
+	JSBool (*init)(JSContext *cx, ClassSpec *sc, JSObject *proto, JSObject *obj);
+	SourceId_t sourceId;
 	double buildDate;
 };
 
 
-// JL_StoreProperty is used to override a property definition (from the prototype to the obj). see bug 526979
+// StoreProperty is used to override a property definition (from the prototype to the obj). see bug 526979
 // if removeGetterAndSetter is false, it is up to the caller to filter calls using: if ( *vp != JSVAL_VOID ) return JS_TRUE;
 // if removeGetterAndSetter is true, the value is stored for r/w getter or setter will never be called again.
 ALWAYS_INLINE JSBool FASTCALL
-JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool removeGetterAndSetter ) {
+StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool removeGetterAndSetter ) {
 
 	unsigned int attrs;
 	JSBool found;
@@ -81,11 +75,11 @@ JL_StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool r
 // because it is difficult to override properties by tinyId (JSPropertyOp) see. bz#526979
 // note. PROPERTY_SWITCH uses enum values as tinyId
 ALWAYS_INLINE JSBool FASTCALL
-JL_DefineClassProperties(JSContext *cx, JSObject *obj, JSPropertySpec *ps) {
+DefineClassProperties(JSContext *cx, JSObject *obj, JSPropertySpec *ps) {
 
 	for ( ; ps->name; ++ps ) {
 
-		if ( ps->tinyid == JL_NO_TINYID )
+		if ( ps->tinyid == jl::pv::NOTINYID )
 			JL_CHK( JS_DefineProperty(cx, obj, ps->name, JSVAL_VOID, ps->getter, ps->setter, ps->flags) );
 		else
 			JL_CHK( JS_DefinePropertyWithTinyId(cx, obj, ps->name, ps->tinyid, JSVAL_VOID, ps->getter, ps->setter, ps->flags) );
@@ -96,25 +90,17 @@ JL_DefineClassProperties(JSContext *cx, JSObject *obj, JSPropertySpec *ps) {
 
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_DefineFunctions(JSContext *cx, JSObject *obj, JSFunctionSpec *fs) {
+DefineFunctions(JSContext *cx, JSObject *obj, JSFunctionSpec *fs) {
 
 	for ( ; fs->name; fs++ )
 		JL_CHK( JS_DefineFunction(cx, obj, fs->name, fs->call, fs->nargs, fs->flags) );
 	return JS_TRUE;
 	JL_BAD;
 }
-/*
-ALWAYS_INLINE JSBool FASTCALL
-JL_DefineConstDoubles(JSContext *cx, JSObject *obj, JLConstDoubleSpec *cds) {
 
-    for ( ; cds->name; cds++ )
-		JL_CHK( JS_DefineProperty(cx, obj, cds->name, DOUBLE_TO_JSVAL(cds->dval), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
+
 ALWAYS_INLINE JSBool FASTCALL
-JL_DefineConstValues(JSContext *cx, JSObject *obj, JLConstValueSpec *cs) {
+DefineConstValues(JSContext *cx, JSObject *obj, ConstValueSpec *cs) {
 
     for ( ; cs->name; cs++ )
 		JL_CHK( JS_DefineProperty(cx, obj, cs->name, cs->val, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
@@ -123,26 +109,18 @@ JL_DefineConstValues(JSContext *cx, JSObject *obj, JLConstValueSpec *cs) {
 }
 
 INLINE JSBool FASTCALL
-JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
+InitStatic( JSContext *cx, JSObject *obj, ClassSpec *cs ) {
 
 	JL_CHK(obj);
 
 	if ( cs->static_fs != NULL )
-		JL_CHK( JL_DefineFunctions(cx, obj, cs->static_fs) );
+		JL_CHK( DefineFunctions(cx, obj, cs->static_fs) );
 
 	if ( cs->static_ps != NULL )
-		JL_CHK( JL_DefineClassProperties(cx, obj, cs->static_ps) );
-/*
-	if ( cs->cis != NULL )
-		for ( JLConstIntegerSpec *it = cs->cis; it->name; ++it )
-			JL_CHK( JS_DefineProperty(cx, obj, it->name, INT_TO_JSVAL(jl::SafeCast<int32_t>(it->ival)), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-
-	if ( cs->cds != NULL )
-		JL_CHK( JL_DefineConstDoubles(cx, obj, cs->cds) );
-*/
+		JL_CHK( DefineClassProperties(cx, obj, cs->static_ps) );
 
 	if ( cs->static_const != NULL )
-		JL_CHK( JL_DefineConstValues(cx, obj, cs->static_const) );
+		JL_CHK( DefineConstValues(cx, obj, cs->static_const) );
 
 	if ( JS_IsExtensible(obj) ) {
 	
@@ -158,7 +136,7 @@ JLInitStatic( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 }
 
 INLINE JSBool FASTCALL
-JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
+InitClass( JSContext *cx, JSObject *obj, ClassSpec *cs ) {
 
 	JL_CHK(obj);
 
@@ -194,20 +172,20 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 	// functions
 	if ( cs->fs )
-		JL_CHK( JL_DefineFunctions(cx, proto, cs->fs) );
+		JL_CHK( DefineFunctions(cx, proto, cs->fs) );
 	
 	if ( cs->static_fs )
-		JL_CHK( JL_DefineFunctions(cx, ctor, cs->static_fs) );
+		JL_CHK( DefineFunctions(cx, ctor, cs->static_fs) );
 
 	// properties
 	if ( cs->ps != NULL )
-		JL_CHK( JL_DefineClassProperties(cx, proto, cs->ps) );
+		JL_CHK( DefineClassProperties(cx, proto, cs->ps) );
 
 	if ( cs->static_ps != NULL )
-		JL_CHK( JL_DefineClassProperties(cx, ctor, cs->static_ps) );
+		JL_CHK( DefineClassProperties(cx, ctor, cs->static_ps) );
 
 	if ( cs->static_const != NULL )
-		JL_CHK( JL_DefineConstValues(cx, ctor, cs->static_const) );
+		JL_CHK( DefineConstValues(cx, ctor, cs->static_const) );
 
 
 	// info
@@ -227,21 +205,52 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 	JL_BAD;
 }
 
+INLINE JSBool
+InvalidConstructor(JSContext *cx, unsigned, jsval *) {
+
+	JL_ERR( E_CLASS, E_NOTCONSTRUCT );
+	JL_BAD;
+}
+
+INLINE JSBool
+DefaultInstanceof(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp) {
+
+	// *bp = !JSVAL_IS_PRIMITIVE(*v) && js::GetObjectJSClass(JSVAL_TO_OBJECT(*v)) == js::GetObjectJSClass(obj); // incomplete
+
+	if ( !JSVAL_IS_PRIMITIVE(*v) ) {
+		
+		JSClass *objClass = js::GetObjectJSClass(obj);
+		JSObject *it = JSVAL_TO_OBJECT(*v);
+		do {
+
+			if ( js::GetObjectJSClass(it) == objClass ) {
+				
+				*bp = JS_TRUE;
+				return JS_TRUE;
+			}
+			it = JL_GetPrototype(cx, it);
+		} while ( it != NULL );
+	}
+	*bp = JS_FALSE;
+	return JS_TRUE;
+}
+
+JL_END_NAMESPACE
 
 
 #define DECLARE_STATIC() \
-	extern JLClassSpec *jlStaticSpec; \
+	extern jl::ClassSpec *jlStaticSpec; \
 
 #define INIT_STATIC() \
-	JL_CHK( JLInitStatic(cx, obj, jlStaticSpec ) ); \
+	JL_CHK( InitStatic(cx, obj, jlStaticSpec ) ); \
 
 #define BEGIN_STATIC \
-	static JLClassSpec *JLClassSpecInit(); \
-	JLClassSpec *jlStaticSpec = JLClassSpecInit(); \
+	static jl::ClassSpec *JLClassSpecInit(); \
+	jl::ClassSpec *jlStaticSpec = JLClassSpecInit(); \
 
 #define CONFIGURE_STATIC \
-	ALWAYS_INLINE JLClassSpec *JLClassSpecInit() { \
-		static JLClassSpec cs; \
+	ALWAYS_INLINE jl::ClassSpec *JLClassSpecInit() { \
+		static jl::ClassSpec cs; \
 
 #define END_STATIC \
 		return &cs; \
@@ -252,22 +261,22 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define DECLARE_CLASS(CLASSNAME) \
 	namespace CLASSNAME { \
 		extern const char *className; \
-		extern JLClassSpec *classSpec; \
+		extern jl::ClassSpec *classSpec; \
 	} \
 
 #define INIT_CLASS(CLASSNAME) \
-	JL_CHK( JLInitClass(cx, obj, CLASSNAME::classSpec ) ); \
+	JL_CHK( jl::InitClass(cx, obj, CLASSNAME::classSpec ) ); \
 
 
 #define BEGIN_CLASS(CLASSNAME) \
 	namespace CLASSNAME { \
 		const char *className = #CLASSNAME; \
-		ALWAYS_INLINE JLClassSpec *JLClassSpecInit(); \
-		JLClassSpec *classSpec = JLClassSpecInit(); \
+		ALWAYS_INLINE jl::ClassSpec *JLClassSpecInit(); \
+		jl::ClassSpec *classSpec = JLClassSpecInit(); \
 
 #define CONFIGURE_CLASS \
-		ALWAYS_INLINE JLClassSpec *JLClassSpecInit() { \
-			static JLClassSpec cs; \
+		ALWAYS_INLINE jl::ClassSpec *JLClassSpecInit() { \
+			static jl::ClassSpec cs; \
 			cs.clasp.name = className; \
 			cs.clasp.addProperty = JS_PropertyStub; \
 			cs.clasp.delProperty = JS_PropertyStub; \
@@ -302,7 +311,7 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 #define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.
 
 // const value
-#define BEGIN_CONST static JLConstValueSpec static_const[] = {
+#define BEGIN_CONST static jl::ConstValueSpec static_const[] = {
 #define END_CONST { NULL, 0 } }; cs.static_const = static_const;
 
 #define CONST_INTEGER(name, ival) { #name, INT_TO_JSVAL(ival) },
@@ -340,9 +349,9 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 //unused: #define FUNCTION_ALIAS(alias, name) JS_FN( #alias, _##name, 0, FUNCTION_DEFAULT_FLAGS ),
 
 // doc: JSPROP_SHARED - https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
-#define PROPERTY(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
-#define PROPERTY_GETTER(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name##Getter, NULL },
-#define PROPERTY_SETTER(name) { #name, JL_NO_TINYID, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name##Setter },
+#define PROPERTY(name) { #name, jl::pv::NOTINYID, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
+#define PROPERTY_GETTER(name) { #name, jl::pv::NOTINYID, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name##Getter, NULL },
+#define PROPERTY_SETTER(name) { #name, jl::pv::NOTINYID, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name##Setter },
 #define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter }, // Used to define multiple properties with only one pair of getter/setter functions (an enum has to be defiend with less than 256 items !)
 #define PROPERTY_SWITCH_GETTER(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##function##Getter, NULL },
 #define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, _##getter, _##setter },
@@ -371,42 +380,10 @@ JLInitClass( JSContext *cx, JSObject *obj, JLClassSpec *cs ) {
 
 #define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, unsigned argc, jsval *vp)
 
-
-INLINE JSBool
-InvalidConstructor(JSContext *cx, unsigned, jsval *) {
-
-	JL_ERR( E_CLASS, E_NOTCONSTRUCT );
-	JL_BAD;
-}
-
 // throw an error if one tries to construct it
 #define IS_UNCONSTRUCTIBLE \
 	ASSERT(cs.constructor == NULL); \
-	cs.constructor = InvalidConstructor;
-
-
-INLINE JSBool
-DefaultInstanceof(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp) {
-
-	// *bp = !JSVAL_IS_PRIMITIVE(*v) && js::GetObjectJSClass(JSVAL_TO_OBJECT(*v)) == js::GetObjectJSClass(obj); // incomplete
-
-	if ( !JSVAL_IS_PRIMITIVE(*v) ) {
-		
-		JSClass *objClass = js::GetObjectJSClass(obj);
-		JSObject *it = JSVAL_TO_OBJECT(*v);
-		do {
-
-			if ( js::GetObjectJSClass(it) == objClass ) {
-				
-				*bp = JS_TRUE;
-				return JS_TRUE;
-			}
-			it = JL_GetPrototype(cx, it);
-		} while ( it != NULL );
-	}
-	*bp = JS_FALSE;
-	return JS_TRUE;
-}
+	cs.constructor = jl::InvalidConstructor;
 
 #define HAS_DEFAULT_INSTANCEOF \
 	ASSERT(cs.clasp.hasInstance == NULL); \
@@ -449,7 +426,7 @@ DefaultInstanceof(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp) {
 #define DEFINE_WRAPPED_OBJECT() static JSObject* WrappedObject(JSContext *cx, JSObject *obj)
 
 #define HAS_INIT cs.init = Init;
-#define DEFINE_INIT() static JSBool Init(JSContext *cx, JLClassSpec *sc, JSObject *proto, JSObject *obj)
+#define DEFINE_INIT() static JSBool Init(JSContext *cx, jl::ClassSpec *sc, JSObject *proto, JSObject *obj)
 
 #define HAS_ADD_PROPERTY cs.clasp.addProperty = AddProperty;
 #define DEFINE_ADD_PROPERTY() static JSBool AddProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp)

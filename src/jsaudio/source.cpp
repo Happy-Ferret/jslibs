@@ -369,7 +369,7 @@ DEFINE_PROPERTY_SETTER( effectSlot ) {
 	alSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, effectSlot, 0, AL_FILTER_NULL);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -392,7 +392,7 @@ DEFINE_PROPERTY_SETTER( directFilter ) {
 	alSourcei(pv->sid, AL_DIRECT_FILTER, filter);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -418,7 +418,7 @@ DEFINE_PROPERTY_SETTER( buffer ) {
 
 	pv->totalTime = BufferSecTime(bid);
 
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -463,7 +463,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	JL_CHK( JL_NativeToJsval(cx, bid, vp) );
 
 out:
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -760,7 +760,7 @@ DEFINE_PROPERTY_GETTER( sourceBoolInd ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1)
 	HAS_CONSTRUCTOR

@@ -138,7 +138,7 @@ DEFINE_FUNCTION( trim ) {
 	data += channels * (width * y + x); // now, data points to the first byte to displace
 	for ( int i=0; i<newHeight; i++) {
 
-		jl_memcpy(newData, data, channels * newWidth);
+		jl::memcpy(newData, data, channels * newWidth);
 		newData += channels * newWidth;
 		data += channels * width;
 	}
@@ -184,7 +184,7 @@ DEFINE_FUNCTION( gamma ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1)
 

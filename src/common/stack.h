@@ -46,7 +46,7 @@
 	p = StackFind( &stack, (void*)4 );
 */
 
-namespace jl {
+JL_BEGIN_NAMESPACE
 
 inline void StackInit( void **stack ) {
 
@@ -384,6 +384,4 @@ public:
 };
 
 
-
-}
-
+JL_END_NAMESPACE

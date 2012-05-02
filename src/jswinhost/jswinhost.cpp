@@ -112,7 +112,7 @@ int HostStderr( void *privateData, const char *buffer, size_t length ) {
 
 	JL_IGNORE(privateData);
 	char *tmp = (char*)jl_malloca(length+1);
-	jl_memcpy(tmp, buffer, length);
+	jl::memcpy(tmp, buffer, length);
 	tmp[length] = '\0';
 	OutputDebugString(tmp);
 	return 1;

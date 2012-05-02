@@ -1056,7 +1056,7 @@ DEFINE_PROPERTY_GETTER( mass ) {
 
 	*vp = OBJECT_TO_JSVAL(massObject);
 	JL_CHK( JL_SetReservedSlot(cx, massObject, MASS_SLOT_BODY, OBJECT_TO_JSVAL(obj)) );
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	return jl::StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
 
@@ -1126,7 +1126,7 @@ DEFINE_PROPERTY_SETTER( onMove ) {
 		ode::dBodySetMovedCallback(bodyId, NULL);
 	else
 		ode::dBodySetMovedCallback(bodyId, moveCallback);
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -1138,7 +1138,7 @@ DEFINE_PROPERTY_SETTER( onMove ) {
 **/
 
 CONFIGURE_CLASS
-	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

@@ -17,7 +17,7 @@
 
 #include <jlalloc.h>
 
-namespace jl {
+JL_BEGIN_NAMESPACE
 
 typedef struct Pool {
 	
@@ -72,4 +72,4 @@ inline void* PoolPop( Pool *pool ) {
 	return pool->list[--pool->length];
 }
 
-}
+JL_END_NAMESPACE

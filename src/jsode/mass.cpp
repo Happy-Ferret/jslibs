@@ -226,7 +226,7 @@ DEFINE_PROPERTY_GETTER( center ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3533 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
 
 	HAS_RESERVED_SLOTS(1)
 

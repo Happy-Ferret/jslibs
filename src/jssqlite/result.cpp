@@ -615,7 +615,7 @@ DEFINE_PROPERTY_GETTER( columnNames ) {
 		JL_CHK( JL_SetElement(cx, columnNames, col, &colJsValue) );
 	}
 	
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -649,7 +649,7 @@ DEFINE_PROPERTY_GETTER( columnIndexes ) {
 		colJsValue = INT_TO_JSVAL(col);
 		JL_CHK( JS_SetProperty( cx, columnIndexes, sqlite3_column_name( pStmt, col ), &colJsValue ) );
 	}
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -671,7 +671,7 @@ DEFINE_PROPERTY_GETTER( sql ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 	JL_CHK( JL_NativeToJsval(cx, sqlite3_sql(pStmt), vp) );
 
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -719,7 +719,7 @@ bad:
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(3)

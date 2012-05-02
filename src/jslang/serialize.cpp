@@ -91,7 +91,7 @@ DEFINE_FUNCTION( done ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3321 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3321 $"))
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
@@ -136,7 +136,7 @@ DEFINE_CONSTRUCTOR() {
 	unser = new jl::Unserializer(str.GetStrZOwnership(), str.Length(), OBJECT_TO_JSVAL(JL_OBJ));
 	JL_ASSERT_ALLOC(unser);
 	JL_SetPrivate(cx, JL_OBJ, unser);
-	JLSourceId_t srcId;
+	jl::SourceId_t srcId;
 	JL_CHK( unser->Read(cx, srcId) );
 	JL_ASSERT( srcId == JL_THIS_CLASS_REVISION, E_ARG, E_NUM(1), E_VERSION, E_COMMENT("serialized data") );
 	return JS_TRUE;
@@ -183,7 +183,7 @@ DEFINE_PROPERTY_GETTER( eof ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3321 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3321 $"))
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
@@ -193,7 +193,7 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-	PROPERTY_GETTER(eof)
+		PROPERTY_GETTER(eof)
 	END_PROPERTY_SPEC
 
 END_CLASS

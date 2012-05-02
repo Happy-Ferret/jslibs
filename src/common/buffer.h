@@ -21,7 +21,7 @@
 // (TBD) use this Buffer in: jsz, jsio::Descriptor, jsiconv, jslang::Stringify, DecodeOggVorbis, DecodeSound
 //       AND perhaps in: jsstd::Buffer::ReadRawAmount, jsstd::Expand
 
-namespace jl {
+JL_BEGIN_NAMESPACE
 
 
 /* (TBD) replace BufferType and BufferGrowType by some flags:
@@ -216,7 +216,7 @@ inline char *BufferNewChunk( Buffer *buffer, size_t maxLength ) {
 				if ( buffer->chunkList == buffer->staticChunkList ) {
 
 					buffer->chunkList = (BufferChunk*)_BufferAlloc(buffer, buffer->chunkListSize * sizeof(BufferChunk));
-					jl_memcpy(buffer->chunkList, buffer->staticChunkList, sizeof(buffer->staticChunkList));
+					jl::memcpy(buffer->chunkList, buffer->staticChunkList, sizeof(buffer->staticChunkList));
 				} else {
 
 					buffer->chunkList = (BufferChunk*)_BufferRealloc(buffer, buffer->chunkList, buffer->chunkListSize * sizeof(BufferChunk));
@@ -266,7 +266,7 @@ inline const char *BufferGetData( Buffer *buffer ) {
 		return chunk0->begin;
 
 	if ( chunk0->begin == buffer->staticBuffer )
-		chunk0->begin = (char*)jl_memcpy(_BufferAlloc(buffer, buffer->length), chunk0->begin, chunk0->pos);
+		chunk0->begin = (char*)jl::memcpy(_BufferAlloc(buffer, buffer->length), chunk0->begin, chunk0->pos);
 	else
 		chunk0->begin = (char*)_BufferRealloc(buffer, chunk0->begin, buffer->length);
 	chunk0->pos = buffer->length;
@@ -277,7 +277,7 @@ inline const char *BufferGetData( Buffer *buffer ) {
 
 		BufferChunk *chunk = &buffer->chunkList[buffer->chunkPos];
 		dest -= chunk->pos;
-		jl_memcpy(dest, chunk->begin, chunk->pos);
+		jl::memcpy(dest, chunk->begin, chunk->pos);
 		_BufferFree(buffer, chunk->begin);
 	} while ( --buffer->chunkPos );
 
@@ -290,7 +290,7 @@ inline char *BufferGetDataOwnership( Buffer *buffer ) {
 	
 	char *buf = (char*)BufferGetData(buffer);
 	if ( buf == buffer->staticBuffer ) // unable to give ownership of the static buffer, (TBD) copy it
-		buf = (char*)jl_memcpy(_BufferAlloc(buffer, buffer->length), buf, buffer->length);
+		buf = (char*)jl::memcpy(_BufferAlloc(buffer, buffer->length), buf, buffer->length);
 
 	buffer->chunkList[0].begin = NULL;
 	return buf;
@@ -311,7 +311,7 @@ inline void BufferCopyData( const Buffer *buffer, char *dest, size_t length ) {
 
 		BufferChunk *chunk = &buffer->chunkList[chunkIndex++];
 		size_t amount = chunk->pos > length ? length : chunk->pos;
-		jl_memcpy(dest, chunk->begin, amount);
+		jl::memcpy(dest, chunk->begin, amount);
 		length -= amount;
 		dest += amount;
 	}
@@ -380,7 +380,7 @@ public:
 				if ( _chunkList == _staticChunkList ) {
 
 					_chunkList = (Chunk*)jl_malloc(_chunkListSize * sizeof(Chunk));
-					jl_memcpy(_chunkList, _staticChunkList, sizeof(_staticChunkList));
+					jl::memcpy(_chunkList, _staticChunkList, sizeof(_staticChunkList));
 				} else {
 
 					_chunkList = (Chunk*)jl_realloc(_chunkList, _chunkListSize * sizeof(Chunk));
@@ -425,7 +425,7 @@ public:
 
 			Chunk *chunk = &_chunkList[chunkIndex++];
 			size_t amount = chunk->pos > length ? length : chunk->pos;
-			jl_memcpy(dest, chunk->begin, amount);
+			jl::memcpy(dest, chunk->begin, amount);
 			length -= amount;
 			dest += amount;
 		}
@@ -438,7 +438,7 @@ public:
 			return chunk0->begin;
 
 		if ( chunk0->begin == _staticBuffer )
-			chunk0->begin = (T*)jl_memcpy(jl_malloc(_length), chunk0->begin, chunk0->pos);
+			chunk0->begin = (T*)jl::memcpy(jl_malloc(_length), chunk0->begin, chunk0->pos);
 		else
 			chunk0->begin = (T*)jl_realloc(chunk0->begin, _length);
 		chunk0->pos = _length;
@@ -449,7 +449,7 @@ public:
 
 			Chunk *chunk = &_chunkList[_chunkPos];
 			dest -= chunk->pos;
-			jl_memcpy(dest, chunk->begin, chunk->pos);
+			jl::memcpy(dest, chunk->begin, chunk->pos);
 			jl_free(chunk->begin);
 		} while ( --_chunkPos );
 
@@ -460,10 +460,10 @@ public:
 
 		T *buf = GetData();
 		if ( buf == _staticBuffer )
-			buf = (T*)jl_memcpy(jl_malloc(_length), buf, _length);
+			buf = (T*)jl::memcpy(jl_malloc(_length), buf, _length);
 		_chunkList[0].begin = NULL;
 		return buf;
 	}
 };
 
-} // namespace jl
+JL_END_NAMESPACE

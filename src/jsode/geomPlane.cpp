@@ -125,7 +125,7 @@ DEFINE_PROPERTY( lengthsGetter ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3524 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3524 $"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(3)
 

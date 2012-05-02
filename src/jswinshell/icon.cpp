@@ -132,7 +132,7 @@ DEFINE_FINALIZE() {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision: 3528 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3528 $"))
 	HAS_PRIVATE
 
 	HAS_CONSTRUCTOR

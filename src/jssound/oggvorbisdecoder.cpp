@@ -482,7 +482,7 @@ DEFINE_PROPERTY_GETTER( frames ) {
 
 CONFIGURE_CLASS
 
-	REVISION(JL_SvnRevToInt("$Revision$"))
+	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1)
 

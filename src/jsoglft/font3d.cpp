@@ -463,7 +463,7 @@ DEFINE_PROPERTY_GETTER( height ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->face->height(), vp) );
-	return JL_StoreProperty(cx, obj, id, vp, true);
+	return jl::StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }
 
@@ -530,7 +530,7 @@ DEFINE_PROPERTY_SETTER( tessellationSteps ) {
 	JL_ASSERT( tess >= 1, E_VALUE, E_MIN, E_NUM(1) ); 
 
 	poly->setTessellationSteps(tess);
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -579,7 +579,7 @@ DEFINE_PROPERTY_SETTER( colorCallback ) {
 		poly->setColorTess(colorTess);
 	}
 
-	return JL_StoreProperty(cx, obj, id, vp, false);
+	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
 
@@ -613,7 +613,7 @@ DEFINE_FUNCTION( setCharacterDisplayLists ) {
 
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
-	REVISION(JL_SvnRevToInt("$Revision: 3060 $"))
+	REVISION(jl::SvnRevToInt("$Revision: 3060 $"))
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(1) // OGLFT_SLOT_FONT
 
