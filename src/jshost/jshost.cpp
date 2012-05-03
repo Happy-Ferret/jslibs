@@ -60,18 +60,18 @@ nedblksize_msize(void *mem) NOTHROW {
 #endif // USE_NEDMALLOC
 
 
-static unsigned char embeddedBootstrapScript[] =
-	#include "embeddedBootstrapScript.js.xdr.cres"
-;
-
 #define HOST_MAIN_ASSERT( CONDITION, ERROR_MESSAGE ) \
 	JL_MACRO_BEGIN \
 		if ( !(CONDITION) ) { \
-			fprintf(stderr, ERROR_MESSAGE "\n"); \
+			fprintf(stderr, "%s\n", (ERROR_MESSAGE)); \
 			goto bad; \
 		} \
 	JL_MACRO_END
 
+
+static const unsigned char embeddedBootstrapScript[] =
+	#include "embeddedBootstrapScript.js.xdr.cres"
+;
 
 static volatile int32_t gEndSignalState = 0;
 static JLCondHandler gEndSignalCond;
@@ -124,7 +124,6 @@ void Interrupt(int CtrlType) {
 	gEndSignalState = 1;
 	JLCondBroadcast(gEndSignalCond);
 	JLMutexRelease(gEndSignalLock);
-
 }
 
 #else
@@ -330,7 +329,9 @@ EXTERN_C void jl_free_count( void *ptr ) {
 
 #endif // DBG_ALLOC
 
+
 //////////////////////////////////////////////////////////////////////////////////////////////
+
 
 /**qa
 	QA.ASSERTOP(host, 'has', 'path');
@@ -341,6 +342,7 @@ EXTERN_C void jl_free_count( void *ptr ) {
 		QA.ASSERTOP(host, 'has', 'endSignalEvents');
 	}
 **/
+
 int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[]) for UNICODE
 
 //	BOOL st = SetProcessAffinityMask(GetCurrentProcess(), 1);
@@ -367,10 +369,8 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	bool useFileBootstrapScript = false;
 	const char *inlineScript = NULL;
 	const char *scriptName = NULL;
-
 #ifdef DEBUG
-	bool debug;
-	debug = false;
+	bool debug = false;
 #endif
 
 	// (TBD) use getopt instead ?
@@ -435,6 +435,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		_CrtSetReportFile( _CRT_WARN, _CRTDBG_FILE_STDERR );
 	}
 #endif
+
 
 	if ( useJslibsMemoryManager ) {
 
@@ -540,10 +541,15 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
-
 	scriptName = *argumentVector;
 
-	JL_CHKM( inlineScript != NULL || scriptName != NULL || sizeof(embeddedBootstrapScript)-1 > 0, E_SCRIPT, E_NOTFOUND ); // "No script specified."
+	//JL_CHKM( inlineScript != NULL || scriptName != NULL || useFileBootstrapScript || sizeof(embeddedBootstrapScript)-1 > 0, E_SCRIPT, E_NOTFOUND ); // "No script specified."
+
+	if ( !(inlineScript != NULL || scriptName != NULL || useFileBootstrapScript || sizeof(embeddedBootstrapScript)-1 > 0) ) {
+		
+		JL_WARN( E_SCRIPT, E_NOTFOUND );
+	}
+
 
 	char hostFullPath[PATH_MAX +1];
 
@@ -560,6 +566,7 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
+
 
 	char *hostName;
 	const char *hostPath;
@@ -595,6 +602,11 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 	JL_CHK( JS_DefineProperty(cx, hostObj, "dbgAlloc", JSVAL_VOID, Tmp::dbgAllocGetter, NULL, JSPROP_SHARED) );
 #endif // DBG_ALLOC
 
+	rval = JSVAL_VOID;
+
+
+	// embedded bootstrap script
+
 	if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
 
 		uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
@@ -603,6 +615,9 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		JL_CHK( JS_ExecuteScript(cx, JL_GetGlobal(cx), script, &rval) );
 		JS_SetOptions(cx, prevOpt);
 	}
+
+
+	// file bootstrap script
 
 	if ( useFileBootstrapScript ) {
 
@@ -614,14 +629,29 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 		JL_CHK( ExecuteScriptFileName(cx, bootstrapFilename, compileOnly, &rval) );
 	}
 
+
 	ASSERT( !JL_IsExceptionPending(cx) );
 
-	JSBool executeStatus;
-	if ( inlineScript != NULL )
-		executeStatus = ExecuteScriptText(cx, inlineScript, compileOnly, &rval);
 
-	if ( (!inlineScript || inlineScript && executeStatus == JS_TRUE) && scriptName != NULL )
+	JSBool executeStatus;
+	executeStatus = JS_TRUE;
+
+
+	// inline (command-line) script
+
+	if ( inlineScript != NULL ) {
+
+		executeStatus = ExecuteScriptText(cx, inlineScript, compileOnly, &rval);
+	}
+
+
+	// file script
+
+	if ( scriptName != NULL && executeStatus == JS_TRUE ) {
+
 		executeStatus = ExecuteScriptFileName(cx, scriptName, compileOnly, &rval);
+	}
+
 
 	if ( executeStatus == JS_TRUE ) {
 
@@ -665,7 +695,6 @@ int main(int argc, char* argv[]) { // check int _tmain(int argc, _TCHAR* argv[])
 
 #if defined(XP_WIN)
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);
-//	RT_HOST_MAIN_ASSERT( status == TRUE, "Unable to remove console crtl handler" );
 #elif defined(XP_UNIX)
 	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);

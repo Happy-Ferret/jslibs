@@ -15,15 +15,15 @@
 #pragma once
 
 
+///////////////////////////////////////////////////////////////////////////////
+// Miscellaneous
+
 #define JL_BEGIN_NAMESPACE namespace jl {
 #define JL_END_NAMESPACE }
 
 
-///////////////////////////////////////////////////////////////////////////////
-// Miscellaneous
-
-#define J__STRINGIFY(x) #x
-#define J__TOSTRING(x) J__STRINGIFY(x)
+#define JL_STRINGIFY(x) #x
+#define JL_TOSTRING(x) JL_STRINGIFY(x)
 
 
 // from jstypes.h
@@ -35,7 +35,7 @@
 	#define JL_MACRO_END   } while (0)
 #endif
 
-#define JL_CODE_LOCATION __FILE__ ":" J__TOSTRING(__LINE__)
+#define JL_CODE_LOCATION __FILE__ ":" JL_TOSTRING(__LINE__)
 
 #define __DATE__YEAR ((((__DATE__ [7] - '0') * 10 + (__DATE__ [8] - '0')) * 10 + (__DATE__ [9] - '0')) * 10 + (__DATE__ [10] - '0'))
 #define __DATE__MONTH ((__DATE__ [2] == 'n' ? 0 : __DATE__ [2] == 'b' ? 1 : __DATE__ [2] == 'r' ? (__DATE__ [0] == 'M' ? 2 : 3) : __DATE__ [2] == 'y' ? 4 : __DATE__ [2] == 'n' ? 5 : __DATE__ [2] == 'l' ? 6 : __DATE__ [2] == 'g' ? 7 : __DATE__ [2] == 'p' ? 8 : __DATE__ [2] == 't' ? 9 : __DATE__ [2] == 'v' ? 10 : 11)+1)
@@ -46,11 +46,6 @@
 #define __DATE__EPOCH_DAYS (( __DATE__MONTH > 2 ? (__DATE__YEAR*365 + __DATE__YEAR/4 - __DATE__YEAR/100 + __DATE__YEAR/400 + (__DATE__MONTH+1) * 306001 / 10000 + __DATE__DAY) : ((__DATE__YEAR-1)*365 + (__DATE__YEAR-1)/4 - (__DATE__YEAR-1)/100 + (__DATE__YEAR-1)/400 + (__DATE__MONTH+13) * 306001 / 10000 + __DATE__DAY) ) - 719591)
 #define __DATE__EPOCH (__DATE__EPOCH_DAYS * 86400 + __DATE__HOUR * 3600 + __DATE__MINUTE * 60 + __DATE__SECOND)
 
-/* unused
-#define JL_BUILD ( (((__DATE__YEAR * 12 + __DATE__MONTH) * 31 + __DATE__DAY) * 24 + __DATE__HOUR) - (((2006*12 + 6)*31 + 22)*24 + 0) ) // - Aug 22, 2006
-*/
-
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -59,7 +54,7 @@
 #if defined(_MSC_VER)
 	// disable warnings:
 	#pragma warning(disable : 4127) // no "conditional expression is constant" complaints
-	#pragma warning(disable : 4996) // warning C4996: 'function': was declared deprecated
+	#pragma warning(disable : 4996) // 'function': was declared deprecated
 	#pragma warning(disable : 4201) // nonstandard extension used : nameless struct/union
 	#pragma warning(disable : 4102) // unreferenced label
 	#pragma warning(disable : 4702) // unreachable code
@@ -70,10 +65,10 @@
 	#endif
 	// force warning to error:
 	#pragma warning(error : 4715) // not all control paths return a value
-	#pragma warning(error : 4018) // warning C4018: '<' : signed/unsigned mismatch
-	#pragma warning(error : 4309) // warning C4309: 'initializing' : truncation of constant value
-	#pragma warning(error : 4700) // warning C4700: uninitialized local variable 'XXX' used
-	#pragma warning(error : 4533) // warning C4533: initialization of 'xxx' is skipped by 'goto YYY'
+	#pragma warning(error : 4018) // '<' : signed/unsigned mismatch
+	#pragma warning(error : 4309) // 'initializing' : truncation of constant value
+	#pragma warning(error : 4700) // uninitialized local variable 'XXX' used
+	#pragma warning(error : 4533) // initialization of 'xxx' is skipped by 'goto YYY'
 	#pragma warning(error : 4002) // too many actual parameters for macro 'XXX'
 	#pragma warning(error : 4003) // not enough actual parameters for macro 'XXX'
 	#pragma warning(error : 4239) // nonstandard extension used
@@ -250,6 +245,7 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 	#define DLLEXPORT __attribute__ ((visibility("default")))
 	#define DLLLOCAL __attribute__ ((visibility("hidden")))
 #else
+	#error NOT IMPLEMENTED YET	// (TBD)
 	#define DLLEXPORT
 	#define DLLLOCAL
 #endif
@@ -269,10 +265,8 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 #include <sys/types.h>
 #include <float.h>
 #include <wchar.h>
-//#include <limits>
 #include <limits.h>
 #include <cstddef>
-//#include <varargs.h>
 #include <stdarg.h>
 #include <errno.h>
 #include <malloc.h>
@@ -317,7 +311,6 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 	#ifndef WINVER         // Allow use of features specific to Windows 95 and Windows NT 4 or later.
 	#define WINVER _WIN32_WINNT_WS03  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
 	#endif
-
 
 	#ifndef _WIN32_WINNT         // Allow use of features specific to Windows NT 4 or later.
 	#define _WIN32_WINNT _WIN32_WINNT_WS03  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
@@ -371,9 +364,9 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 	#define PATH_MAX MAX_PATH
 	#define DLL_EXT ".dll"
 	#define PATH_SEPARATOR_STRING "\\"
-	#define PATH_SEPARATOR '\\'
+	#define PATH_SEPARATOR (PATH_SEPARATOR_STRING[0])
 	#define LIST_SEPARATOR_STRING ";"
-	#define LIST_SEPARATOR ';'
+	#define LIST_SEPARATOR (LIST_SEPARATOR_STRING[0])
 
 	#define finite _finite
 	#define isnan _isnan
@@ -441,9 +434,9 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 
 	#define DLL_EXT ".so"
 	#define PATH_SEPARATOR_STRING "/"
-	#define PATH_SEPARATOR '/'
+	#define PATH_SEPARATOR (PATH_SEPARATOR_STRING[0])
 	#define LIST_SEPARATOR_STRING ":"
-	#define LIST_SEPARATOR ':'
+	#define LIST_SEPARATOR (LIST_SEPARATOR_STRING[0])
 
 	static ALWAYS_INLINE size_t msize( void *ptr ) {
 
@@ -484,16 +477,13 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 #define UNLIKELY_SPLIT_END(...)
 #endif
 
-template<class T>
-ALWAYS_INLINE const T
-JL_CONSTIFY(T variable) {
-
-	return (const T)variable;
-}
 
 #ifdef WIN32
+
 #define L(CSTRING) (L##CSTRING)
+
 #else
+
 S_ASSERT(sizeof(wchar_t) == sizeof(uint16_t)); // see -fshort-wchar
 
 ALWAYS_INLINE const uint16_t
@@ -509,7 +499,6 @@ LL(const wchar_t *s) {
 #define L(CSTRING) (LL(L##CSTRING))
 
 #endif
-
 
 
 //template<class T>
@@ -1466,11 +1455,8 @@ RemainingStackSize() {
 }
 
 
-JL_END_NAMESPACE
-
-
 // see http://unicode.org/faq/utf_bom.html#BOM
-enum JLEncodingType {
+enum EncodingType {
 	ENC_UNKNOWN,
 	ENC_UTF32be,
 	ENC_UTF32le,
@@ -1482,7 +1468,7 @@ enum JLEncodingType {
 
 
 INLINE bool
-JLIsASCII(const uint8_t *buf, size_t len) {
+IsASCII(const uint8_t *buf, size_t len) {
 
 	for ( const uint8_t *end = buf + len; buf != end; ++buf )
 		if ( (*buf & 0x80) || !(*buf & 0xF8) )
@@ -1492,7 +1478,7 @@ JLIsASCII(const uint8_t *buf, size_t len) {
 
 
 INLINE bool
-JLIsUTF8(const uint8_t *str, size_t len) {
+IsUTF8(const uint8_t *str, size_t len) {
 
 	int n;
 	for ( size_t i = 0; i < len; ++i ) {
@@ -1514,8 +1500,8 @@ JLIsUTF8(const uint8_t *str, size_t len) {
 }
 
 
-INLINE JLEncodingType NOALIAS FASTCALL
-JLDetectEncoding(uint8_t **buf, size_t *size) {
+INLINE EncodingType NOALIAS FASTCALL
+DetectEncoding(uint8_t **buf, size_t *size) {
 
 	if ( *size >= 3 && (*buf)[0] == 0xEF && (*buf)[1] == 0xBB && (*buf)[2] == 0xBF ) {
 
@@ -1540,10 +1526,10 @@ JLDetectEncoding(uint8_t **buf, size_t *size) {
 
 	size_t scanLen = JL_MIN(*size, 1024);
 	
-	if ( JLIsASCII(*buf, scanLen) )
+	if ( IsASCII(*buf, scanLen) )
 		return ENC_ASCII;
 
-	if ( JLIsUTF8(*buf, scanLen) )
+	if ( IsUTF8(*buf, scanLen) )
 		return ENC_UTF8;
 
 /* no BOM, then guess // (TBD) find a better heuristic
@@ -1666,6 +1652,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 //    return(*outlen);
 	return(1);
 }
+
 #undef xmlLittleEndian
 
 #ifdef _MSC_VER
@@ -1675,7 +1662,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 
 template <typename T>
 static inline bool
-jl_Compare(T *a, T *b, size_t c) {
+MemCompare(T *a, T *b, size_t c) {
 	size_t n = (c + size_t(7)) / size_t(8);
 	switch (c % 8) {
 		case 0: do { if (*a++ != *b++) return false;
@@ -1703,6 +1690,7 @@ struct MemCmp { // from jsstr.cpp
     }
 };
 
+
 template <class T>
 struct ManualCmp { // from jsstr.cpp
     typedef const T *Extent;
@@ -1717,6 +1705,7 @@ struct ManualCmp { // from jsstr.cpp
         return true;
     }
 };
+
 
 template <class InnerMatch, class T> // from jsstr.cpp
 ALWAYS_INLINE int32_t
@@ -1764,6 +1753,7 @@ UnrolledMatch(const T *text, size_t textlen, const T *pat, size_t patlen)
     return -1;
 }
 
+
 template <class T>
 ALWAYS_INLINE int32_t
 Match(const T *text, size_t textlen, const T *pat, size_t patlen) {
@@ -1779,6 +1769,9 @@ Match(const T *text, size_t textlen, const T *pat, size_t patlen) {
 	#endif
 		UnrolledMatch< ManualCmp<T> >(text, textlen, pat, patlen);
 }
+
+
+JL_END_NAMESPACE
 
 
 ///////////////////////////////////////////////////////////////////////////////

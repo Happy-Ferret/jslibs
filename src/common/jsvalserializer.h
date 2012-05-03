@@ -412,13 +412,14 @@ public:
 				argv[1] = OBJECT_TO_JSVAL(serializerWrapper);
 			} else {
 
+				serializerWrapper = NULL;
 				argv[1] = _serializerObj;
 			}
 
 			JSBool ok;
 			ok = JS_CallFunctionValue(cx, obj, serializeFctVal, COUNTOF(argv)-1, argv+1, argv); // rval not used
 			
-			if ( JSVAL_IS_NULL(_serializerObj) ) {
+			if ( serializerWrapper != NULL ) {
 
 				JL_SetPrivate(cx, serializerWrapper, NULL);
 			}
@@ -745,11 +746,12 @@ public:
 					argv[1] = OBJECT_TO_JSVAL(unserializerWrapper);
 				} else {
 
+					unserializerWrapper = NULL;
 					argv[1] = _unserializerObj;
 				}
 
 				JSBool ok = JL_CallFunctionId(cx, newObj, JLID(cx, _unserialize), COUNTOF(argv)-1, argv+1, argv); // rval not used
-				if ( JSVAL_IS_NULL( _unserializerObj ) )
+				if ( unserializerWrapper != NULL )
 					JL_SetPrivate(cx, unserializerWrapper, NULL);
 				JL_CHK( ok );
 
@@ -774,11 +776,12 @@ public:
 					arg_1 = OBJECT_TO_JSVAL(unserializerWrapper);
 				} else {
 
+					unserializerWrapper = NULL;
 					arg_1 = _unserializerObj;
 				}
 
 				JSBool ok = JL_CallFunctionVA(cx, JL_GetGlobal(cx), funVal, &val, arg_1);
-				if ( JSVAL_IS_NULL( _unserializerObj ) )
+				if ( unserializerWrapper != NULL )
 					JL_SetPrivate(cx, unserializerWrapper, NULL);
 				JL_CHK( ok );
 

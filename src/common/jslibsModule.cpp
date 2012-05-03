@@ -42,13 +42,15 @@ EXTERN_C size_t jl_msize_fct( void *ptr ) { return jl_msize(ptr); }
 EXTERN_C void jl_free_fct( void *ptr ) { jl_free(ptr); }
 
 
-JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
+static JSBool FASTCALL
+InitJslibsModule( JSContext *cx, uint32_t id ) {
 
 	// printf("id=%u / &_moduleId=%p / _moduleId=%u\n", &_moduleId, _moduleId, id);
 	
 #ifdef XP_WIN
-	//  Disables the DLL_THREAD_ATTACH and DLL_THREAD_DETACH notifications for the specified dynamic-link library (DLL).
-	//  This can reduce the size of the working set for some applications.
+	// doc:
+	//   Disables the DLL_THREAD_ATTACH and DLL_THREAD_DETACH notifications for the specified dynamic-link library (DLL).
+	//   This can reduce the size of the working set for some applications.
 	BOOL st = ::DisableThreadLibraryCalls(jl::GetCurrentModule());
 	ASSERT(st);
 #endif // XP_WIN
@@ -60,14 +62,17 @@ JSBool InitJslibsModule( JSContext *cx, uint32_t id ) {
 	_unsafeMode = hpv ? hpv->unsafeMode : _unsafeMode;
 
 	ASSERT( _moduleId == 0 || _moduleId == id );
+
 	if ( _moduleId == 0 )
 		_moduleId = id;
+
 	jl_malloc = hpv && hpv->alloc.malloc ? hpv->alloc.malloc : jl_malloc; // ie. if we have a host and if the host has custom allocators, else keep the current one.
 	jl_calloc = hpv && hpv->alloc.calloc ? hpv->alloc.calloc : jl_calloc;
 	jl_memalign = hpv && hpv->alloc.memalign ? hpv->alloc.memalign : jl_memalign;
 	jl_realloc = hpv && hpv->alloc.realloc ? hpv->alloc.realloc : jl_realloc;
 	jl_msize = hpv && hpv->alloc.msize ? hpv->alloc.msize : jl_msize;
 	jl_free = hpv && hpv->alloc.free ? hpv->alloc.free : jl_free;
+
 	return JS_TRUE;
 	JL_BAD;
 }

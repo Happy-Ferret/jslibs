@@ -433,9 +433,9 @@ DEFINE_FUNCTION( indexOf ) {
 	}
 
 	if ( srcStr.IsWide() )
-		*JL_RVAL = INT_TO_JSVAL( Match(srcStr.GetConstWStr()+start, srcStr.Length()-start, patStr.GetConstWStr(), patStr.Length()) );
+		*JL_RVAL = INT_TO_JSVAL( jl::Match(srcStr.GetConstWStr()+start, srcStr.Length()-start, patStr.GetConstWStr(), patStr.Length()) );
 	else
-		*JL_RVAL = INT_TO_JSVAL( Match(srcStr.GetConstStr()+start, srcStr.Length()-start, patStr.GetConstStr(), patStr.Length()) );
+		*JL_RVAL = INT_TO_JSVAL( jl::Match(srcStr.GetConstStr()+start, srcStr.Length()-start, patStr.GetConstStr(), patStr.Length()) );
 
 	return JS_TRUE;
 	JL_BAD;

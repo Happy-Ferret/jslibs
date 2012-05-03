@@ -3622,7 +3622,7 @@ JL_JsvalToPrimitive( JSContext * RESTRICT cx, const jsval &val, jsval * RESTRICT
 //
 //	/be
 INLINE NEVER_INLINE JSScript* FASTCALL
-JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RESTRICT fileName, JLEncodingType encoding, bool useCompFile, bool saveCompFile) {
+JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RESTRICT fileName, jl::EncodingType encoding, bool useCompFile, bool saveCompFile) {
 
 	char *scriptBuffer = NULL;
 	size_t scriptFileSize;
@@ -3757,14 +3757,14 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 	ASSERT( (size_t)res == scriptFileSize );
 	scriptFileSize = (size_t)res;
 
-	if ( encoding == ENC_UNKNOWN )
-		encoding = JLDetectEncoding((uint8_t**)&scriptBuffer, &scriptFileSize);
+	if ( encoding == jl::ENC_UNKNOWN )
+		encoding = jl::DetectEncoding((uint8_t**)&scriptBuffer, &scriptFileSize);
 
 	switch ( encoding ) {
 		default:
 			JL_WARN( E_SCRIPT, E_ENCODING, E_INVALID, E_NAME(fileName) );
 			// then use ASCII as default.
-		case ENC_ASCII: {
+		case jl::ENC_ASCII: {
 
 			char *scriptText = scriptBuffer;
 			size_t scriptTextLength = scriptFileSize;
@@ -3776,7 +3776,7 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 			script = JS_CompileScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
 			break;
 		}
-		case ENC_UTF16le: { // (TBD) support big-endian
+		case jl::ENC_UTF16le: { // (TBD) support big-endian
 
 			jschar *scriptText = (jschar*)scriptBuffer;
 			size_t scriptTextLength = scriptFileSize / 2;
@@ -3788,11 +3788,11 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 			script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
 			break;
 		}
-		case ENC_UTF8: {
+		case jl::ENC_UTF8: {
 
 			scriptText = (jschar*)jl_malloca(scriptFileSize * 2);
 			scriptTextLength = scriptFileSize * 2;
-			JL_CHKM( UTF8ToUTF16LE((unsigned char*)scriptText, &scriptTextLength, (unsigned char*)scriptBuffer, &scriptFileSize) >= 0, E_SCRIPT, E_ENCODING, E_INVALID, E_COMMENT("UTF8") ); // "Unable do decode UTF8 data."
+			JL_CHKM( jl::UTF8ToUTF16LE((unsigned char*)scriptText, &scriptTextLength, (unsigned char*)scriptBuffer, &scriptFileSize) >= 0, E_SCRIPT, E_ENCODING, E_INVALID, E_COMMENT("UTF8") ); // "Unable do decode UTF8 data."
 
 			if ( scriptTextLength >= 2 && scriptText[0] == L'#' && scriptText[1] == L'!' ) { // shebang support
 
@@ -3902,7 +3902,7 @@ ExecuteScriptFileName( JSContext *cx, const char *scriptFileName, bool compileOn
 	JL_ASSERT( globalObject != NULL, E_HOST, E_INTERNAL ); // "Global object not found."
 
 	JSScript *script;
-	script = JL_LoadScript(cx, globalObject, scriptFileName, ENC_UNKNOWN, true, false); // use xdr if available, but don't save it.
+	script = JL_LoadScript(cx, globalObject, scriptFileName, jl::ENC_UNKNOWN, true, false); // use xdr if available, but don't save it.
 	JL_CHK( script );
 
 	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().

@@ -404,7 +404,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( version ) {
 
-	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, J__TOSTRING(VI_VERSION)));
+	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, JL_TOSTRING(VI_VERSION)));
 	return jl::StoreProperty(cx, obj, id, vp, true);
 }
 
