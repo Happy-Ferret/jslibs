@@ -840,7 +840,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	TEST( JS_HasProperty(cx, o, "test", &found) );
 	TEST( found );
 
-	JSString *jsstr = JS_NewUCStringCopyZ(cx, L"testtesttesttesttesttesttesttesttesttesttesttest");
+	JSString *jsstr = JS_NewUCStringCopyZ(cx, L("testtesttesttesttesttesttesttesttesttesttesttest"));
 	jsid pid;
 	pid = JL_StringToJsid(cx, jsstr);
 
@@ -862,10 +862,10 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 //	jsval ok;
 //	jsid pid;
-//	pid = JL_StringToJsid(cx, L"test");
+//	pid = JL_StringToJsid(cx, L("test"));
 //	JS_DeletePropertyById2(cx, o, pid, &ok);
 
-//	JL_RemovePropertyById(cx, o, JL_StringToJsid(cx, L"test"));
+//	JL_RemovePropertyById(cx, o, JL_StringToJsid(cx, L("test")));
 
 	JL_CHK( JS_HasProperty(cx, o, "test", &found) );
 	TEST( !found );

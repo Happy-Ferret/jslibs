@@ -37,91 +37,32 @@ size_t nedblksize_msize(void *mem) {
 }
 
 
-// to be used in the main() function only
-#define HOST_MAIN_ASSERT( condition, errorMessage ) \
-	JL_MACRO_BEGIN \
-		if ( !(condition) ) { goto bad; } \
-	JL_MACRO_END
-
-//#define HOST_MAIN_ASSERT( condition, errorMessage ) if ( !(condition) ) { fprintf(stderr, errorMessage ); goto bad; }
-
 static unsigned char embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
 ;
 
-/*
-int consoleStdOut( JSContext *cx, const char *data, int length ) {
 
-	JSObject *obj = GetHostObject(cx);
-	JL_ASSERT( obj != NULL, "Unable to get GetHostObject" );
-	jsval functionVal;
-	JS_GetProperty(cx, obj, "stdout", &functionVal);
-	if ( !JSVAL_IS_VOID( functionVal ) ) {
+int HostStderr( void *, const char *buffer, size_t length ) {
 
-		JL_ASSERT_FUNCTION( functionVal );
-		JSString *str = JS_NewStringCopyN(cx, data, length);
-		JL_CHK( str ); 
-		jsval rval, arg = STRING_TO_JSVAL(str);
-		JL_CHK ( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
-	}
-	return length;
-}
-
-int consoleStdErr( JSContext *cx, const char *data, int length ) {
-
-	JSObject *obj = GetHostObject(cx);
-	JL_ASSERT( obj != NULL, "Unable to get GetHostObject" );
-	jsval functionVal;
-	JS_GetProperty(cx, obj, "stderr", &functionVal);
-	if ( !JSVAL_IS_VOID( functionVal ) ) {
-
-		JL_ASSERT_FUNCTION( functionVal );
-		JSString *str = JS_NewStringCopyN(cx, data, length);
-		JL_CHK( str ); 
-		jsval rval, arg = STRING_TO_JSVAL(str);
-		JL_CHK( JS_CallFunctionValue(cx, obj, functionVal, 1, &arg, &rval) );
-	}
-	return length;
-}
-*/
-
-/*
-JSBool stderrFunction(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
-
-	JSString *str;
-	str = JS_ValueToString(cx, argv[0]);
-	JL_ASSERT( str != NULL, "Unable to convert argument to string.");
-	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
-	consoleStdErr( cx, JL_GetStringBytes(str), JS_GetStringLength(str) );
-	return JS_TRUE;
-}
-
-JSBool stdoutFunction(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
-
-	JSString *str;
-	str = JS_ValueToString(cx, argv[0]);
-	JL_ASSERT( str != NULL, "Unable to convert argument to string.");
-	argv[0] = STRING_TO_JSVAL(str); // (TBD) needed ?
-	consoleStdOut( cx, JL_GetStringBytes(str), JS_GetStringLength(str) );
-	return JS_TRUE;
-}
-*/
-
-
-int HostStderr( void *privateData, const char *buffer, size_t length ) {
-
-	JL_IGNORE(privateData);
-	char *tmp = (char*)jl_malloca(length+1);
+	char *tmp = (char*)alloca(length+1);
 	jl::memcpy(tmp, buffer, length);
 	tmp[length] = '\0';
-	OutputDebugString(tmp);
+	::OutputDebugString(tmp);
 	return 1;
 }
 
 
-int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
+// to be used in the main() function only
+#define HOST_MAIN_ASSERT( condition, errorMessage ) \
+	JL_MACRO_BEGIN \
+		if ( !(condition) ) { \
+			HostStderr(NULL, errorMessage, strlen(errorMessage)); \
+			goto bad; \
+		} \
+	JL_MACRO_END
 
-	JL_IGNORE(hPrevInstance, nCmdShow);
+
+int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 
 	HANDLE heap = GetProcessHeap();
 	ULONG enable = 2;
@@ -197,7 +138,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	hpv->alloc.free = jl_free;
 
 
-	JL_CHK( InitHost(cx, true, NULL, NULL, HostStderr, NULL) ); // DbgOutString ?
+	JL_CHK( InitHost(cx, true, NULL, NULL, HostStderr, NULL) );
 	CHAR moduleFileName[PATH_MAX];
 	strcpy(moduleFileName, moduleName);
 	char *name = strrchr(moduleFileName, '\\');
@@ -221,14 +162,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), name) );
 	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, isFirstInstance), isFirstInstance) );
 
-	const char *argv[] = { scriptName, lpCmdLine };
-
 	jsval arguments;
-	JL_CHK( JL_NativeVectorToJsval(cx, argv, COUNTOF(argv), &arguments) );
-	JL_CHK( JL_DefineProperty(cx, hostObj, JLID(cx, arguments), arguments) );
-
-	//#pragma comment (lib, "User32.lib")
-	//MessageBox(NULL, scriptName, "script name", 0);
+	JL_CHK( JL_NativeVectorToJsval(cx, __argv, __argc, &arguments) );
+	JL_CHK( JS_SetPropertyById(cx, hostObj, JLID(cx, arguments), &arguments) );
 
 	jsval rval;
 

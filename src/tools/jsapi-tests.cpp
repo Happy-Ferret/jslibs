@@ -87,7 +87,7 @@ END_TEST(soubokTest)
 
 BEGIN_TEST(soubokTest2)
 {
-	jschar str[] = L"ABCD";
+	jschar str[] = L("ABCD");
 	JSString *jsstr = JL_NewUCString(cx, str, 2);
 
 

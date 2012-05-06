@@ -8,6 +8,10 @@ loadModule('jsimage');
 loadModule('jsprotex');
 loadModule('jsio');
 
+
+throw 0;
+
+
 var QA = {cx:{item:{path:'.'}}};
 
 var f = new Font(QA.cx.item.path + '/AnarchySans.otf');

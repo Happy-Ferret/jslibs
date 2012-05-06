@@ -215,7 +215,7 @@ sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags, JSObject 
 		if ( !resolved && JSID_IS_STRING(id) ) {
 			jsval v;
 			JS_IdToValue(cx, id, &v);
-			if ( !wcscmp(JS_GetStringCharsZ(cx, JSVAL_TO_STRING(v)), L"Debugger" ) ) {
+			if ( !wcscmp(JS_GetStringCharsZ(cx, JSVAL_TO_STRING(v)), L("Debugger") ) ) {
 
 				if ( !JS_DefineDebuggerObject(cx, obj) ) // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
 					return JS_FALSE;
@@ -379,7 +379,7 @@ int main_depstring(int argc, char* argv[]) {
 	JS_InitStandardClasses(cx, globalObject);
 
 
-	const jschar *str = L"Hello World";
+	const jschar *str = L("Hello World");
 	int strlen = wcslen(str);
 
 	JSObject *ab = JS_NewArrayBuffer(cx, (strlen+1)*2);
@@ -393,11 +393,11 @@ int main_depstring(int argc, char* argv[]) {
 	JSString *jsstr = JS_NewExternalString(cx, (jschar*)data, strlen-1, &finalizer1);
 	
 
-	((jschar*)data)[0] = L'X';
+	((jschar*)data)[0] = L('X');
 
 	const jschar *tmp = JS_GetStringCharsZ(cx, jsstr); //JS_GetStringCharsZAndLength(cx, jsstr, &l);
 	
-	((jschar*)data)[0] = L'Y';
+	((jschar*)data)[0] = L('Y');
 
 
 
@@ -432,7 +432,7 @@ int main_arraylike(int argc, char* argv[]) {
 	unsigned len;
 	JSBool err = JS_GetArrayLength(cx, o, &len);
 
-	JSString *s = JS_NewStringCopyZ(cx, (const char *)L"hello");
+	JSString *s = JS_NewStringCopyZ(cx, (const char *)L("hello"));
 
 	JSBool tmp = JSVAL_IS_PRIMITIVE(STRING_TO_JSVAL(s));
 
@@ -743,9 +743,11 @@ int main_test_call(int argc, char* argv[]) {
 	JSScript *script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "test", 1);
 
 	jsval rval;
-	ASSERT( JS_ExecuteScript(cx, globalObject, script, &rval) );
+	JSBool ok = JS_ExecuteScript(cx, globalObject, script, &rval);
+	ASSERT( ok );
 
 	void *tmp = JS_EncodeInterpretedFunction(cx, JSVAL_TO_OBJECT(rval), &xdrLength);
+
 	xdrData = malloc(xdrLength);
 	memcpy(xdrData, tmp, xdrLength);
 

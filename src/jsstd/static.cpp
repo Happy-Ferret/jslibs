@@ -730,23 +730,21 @@ $TOC_MEMBER $INAME
 // function copied from mozilla/js/src/js.c
 DEFINE_FUNCTION( exec ) {
 
-	JLData str;
+	JLData fileName;
 //	JSObject *scriptObjRoot;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	bool useAndSaveCompiledScripts;
 	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || JL_ARG(2) == JSVAL_TRUE;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
 
-	uint32_t oldopts;
-	oldopts = JS_SetOptions(cx, JS_GetOptions(cx) /*| JSOPTION_COMPILE_N_GO*/); // JSOPTION_COMPILE_N_GO is properly removed in JLLoadScript if needed.
 	JSScript *script;
-	script = JL_LoadScript(cx, obj, str, jl::ENC_UNKNOWN, useAndSaveCompiledScripts, useAndSaveCompiledScripts);
-	JS_SetOptions(cx, oldopts);
+	script = JL_LoadScript(cx, obj, fileName, jl::ENC_UNKNOWN, useAndSaveCompiledScripts, useAndSaveCompiledScripts);
 	JL_CHK( script );
 
-	JL_CHK( JS_ExecuteScript(cx, obj, script, JL_RVAL) ); // Doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
+	// doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
+	JL_CHK( JS_ExecuteScript(cx, obj, script, JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;

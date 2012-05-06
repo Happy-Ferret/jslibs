@@ -3780,10 +3780,10 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 
 			jschar *scriptText = (jschar*)scriptBuffer;
 			size_t scriptTextLength = scriptFileSize / 2;
-			if ( scriptTextLength >= 2 && scriptText[0] == L'#' && scriptText[1] == L'!' ) { // shebang support
+			if ( scriptTextLength >= 2 && scriptText[0] == L('#') && scriptText[1] == L('!') ) { // shebang support
 
-				scriptText[0] = L'/';
-				scriptText[1] = L'/';
+				scriptText[0] = L('/');
+				scriptText[1] = L('/');
 			}
 			script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
 			break;
@@ -3794,10 +3794,10 @@ JL_LoadScript(JSContext * RESTRICT cx, JSObject * RESTRICT obj, const char * RES
 			scriptTextLength = scriptFileSize * 2;
 			JL_CHKM( jl::UTF8ToUTF16LE((unsigned char*)scriptText, &scriptTextLength, (unsigned char*)scriptBuffer, &scriptFileSize) >= 0, E_SCRIPT, E_ENCODING, E_INVALID, E_COMMENT("UTF8") ); // "Unable do decode UTF8 data."
 
-			if ( scriptTextLength >= 2 && scriptText[0] == L'#' && scriptText[1] == L'!' ) { // shebang support
+			if ( scriptTextLength >= 2 && scriptText[0] == L('#') && scriptText[1] == L('!') ) { // shebang support
 
-				scriptText[0] = L'/';
-				scriptText[1] = L'/';
+				scriptText[0] = L('/');
+				scriptText[1] = L('/');
 			}
 			script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, fileName, 1);
 			break;

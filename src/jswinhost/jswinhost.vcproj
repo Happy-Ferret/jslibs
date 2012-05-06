@@ -25,6 +25,8 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				CommandLine="copy /Y jswinhost.js $(TargetDir)"
+				Outputs="$(TargetDir)jswinhost.js"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -85,6 +87,8 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				CommandLine="copy /Y jswinhost.js $(TargetDir)"
+				Outputs="$(TargetDir)jswinhost.js"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -200,6 +204,10 @@
 		</Filter>
 		<File
 			RelativePath=".\debug.js"
+			>
+		</File>
+		<File
+			RelativePath=".\jswinhost.js"
 			>
 		</File>
 	</Files>

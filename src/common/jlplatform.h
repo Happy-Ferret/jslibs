@@ -83,6 +83,14 @@
 #endif // _MSC_VER
 
 
+#if defined(__GNUC__)
+	// # pragma GCC diagnostic ignored "-Wformat"  /* Ignore Warning about printf format /
+	// # pragma GCC diagnostic ignored "-Wunused-parameter"  / Ignore Warning about unused function parameter */
+	#pragma GCC diagnostic error "-Wdiv-by-zero"
+#endif // __GNUC__
+
+
+
 #if defined(_DEBUG)
 	#if !defined(DEBUG)
 		#define DEBUG
@@ -227,21 +235,14 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 	#define DLLEXPORT __declspec(dllexport)
 	#define DLLLOCAL
 #elif defined(__GNUC__)
-	// # pragma GCC diagnostic ignored "-Wformat"  /* Ignore Warning about printf format /
-	// # pragma GCC diagnostic ignored "-Wunused-parameter"  / Ignore Warning about unused function parameter */
-	#pragma GCC diagnostic error "-Wdiv-by-zero"
-
 	// info. http://gcc.gnu.org/wiki/Visibility
-	// support of visibility attribute is mandatory to manage _moduleId scope (must be private but global for the .so)
-	//
-	//	without #define DLLLOCAL __attribute__ ((visibility("hidden")))
+	// Support of visibility attribute is mandatory to manage _moduleId scope (must be private but global for the .so).
+	// If visibility hidden is not set for _moduleId,
 	// DLLLOCAL uint32_t _moduleId = 0;
-	// if __attribute__ ((visibility("hidden"))) is not set for _moduleId,
 	// nm build/default/src/jsstd/jsstd | grep moduleId
-	// 000168a8 B _moduleId => uppercase B = global
+	//   000168a8 B _moduleId   => uppercase B = global
 	// and should be:
-	// 000168a8 b _moduleId => lowercase b = local
-
+	//   000168a8 b _moduleId   => lowercase b = local
 	#define DLLEXPORT __attribute__ ((visibility("default")))
 	#define DLLLOCAL __attribute__ ((visibility("hidden")))
 #else
@@ -256,6 +257,7 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 #else
 #define NOVTABLE
 #endif
+
 
 #define NOTHROW throw()
 
@@ -303,10 +305,8 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 	#define XP_WIN // used by SpiderMonkey and jslibs
 	#endif
 
-//#include <windows.h>
-
-// doc: _WIN32_WINNT_WS03 = 0x0502 = Windows Server 2003 with SP1, Windows XP with SP2.
-// note: SpiderMionkey compilation option: --with-windows-version=502
+	// doc: _WIN32_WINNT_WS03 = 0x0502 = Windows Server 2003 with SP1, Windows XP with SP2.
+	// note: SpiderMionkey compilation option: --with-windows-version=502
 
 	#ifndef WINVER         // Allow use of features specific to Windows 95 and Windows NT 4 or later.
 	#define WINVER _WIN32_WINNT_WS03  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
@@ -656,7 +656,7 @@ DoubleIsNegZero(const double &d) {
 ALWAYS_INLINE NOALIAS bool
 DoubleIsNeg(const double &d) {
 #ifdef WIN32
-	return jl::DoubleIsNegZero(d) || d < 0;
+	return DoubleIsNegZero(d) || d < 0;
 #elif defined(SOLARIS)
 	return copysign(1, d) < 0;
 #else
@@ -1268,7 +1268,7 @@ AccurateTimeCounter() {
 		result = ::GetProcessAffinityMask(::GetCurrentProcess(), &processAffinityMask, &systemAffinityMask);
 		ASSERT( result );
 		ASSERT( processAffinityMask );
-		cpuMask = jl::LeastSignificantBit(processAffinityMask);
+		cpuMask = LeastSignificantBit(processAffinityMask);
 	}
 	LARGE_INTEGER frequency, performanceCount;
 	HANDLE thread = ::GetCurrentThread();
@@ -1420,7 +1420,7 @@ ALWAYS_INLINE uint32_t
 SessionId() {
 
 	uint32_t r = 0x12345678;
-	r ^= (uint32_t)jl::AccurateTimeCounter();
+	r ^= (uint32_t)AccurateTimeCounter();
 	r ^= (uint32_t)ProcessId();
 #if defined(XP_WIN)
 //	r ^= (u_int32_t)GetModuleHandle(NULL);

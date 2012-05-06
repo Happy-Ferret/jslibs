@@ -427,6 +427,8 @@ function launchTests(itemList, cfg) {
 		host.stderr = function() {};
 	}
 
+	var initDone = new Set();
+
 	testloop: for (;;) {
 
 		if ( cfg.loopForever )
@@ -438,13 +440,13 @@ function launchTests(itemList, cfg) {
 
 			if ( testCount >= cfg.rangeLength )
 				break testloop;
-				
+
 			try {
 
 				if ( !cfg.quiet )
 					print( pad(testIndex, 4, ' ')+' - '+cx.item.file+':'+cx.item.line+' - '+cx.item.name+' ');
 
-				if ( cx.item.init && !cx.item.init.done ) {
+				if ( cx.item.init && !initDone.has(cx.item.init) ) {
 
 					if ( exportFile ) {
 
@@ -452,7 +454,7 @@ function launchTests(itemList, cfg) {
 						exportFile.sync();
 					}
 					void cx.item.init.func(qaapi);
-					cx.item.init.done = true;
+					initDone.add(cx.item.init);
 				}
 
 
@@ -464,14 +466,9 @@ function launchTests(itemList, cfg) {
 						exportFile.sync();
 					}
 
-//					var t0 = timeCounter();
 					void cx.item.func(qaapi);
-//					var time = timeCounter() - t0;
 					++testCount;
 				}
-
-//				if ( !cfg.quiet )
-//					print( ' ...' + (time/cfg.repeatEachTest).toFixed(1) + 'ms' );
 
 			} catch(ex) {
 
@@ -492,6 +489,10 @@ function launchTests(itemList, cfg) {
 
 			if ( cfg.sleepBetweenTests )
 				sleep(cfg.sleepBetweenTests);
+		} else {
+
+			if ( !cfg.quiet )
+				print( pad(testIndex, 4, ' ')+' x '+cx.item.file+':'+cx.item.line+' - '+cx.item.name+'\n');
 		}
 
 		++testIndex;
@@ -513,6 +514,8 @@ function launchTests(itemList, cfg) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // perf tests
+
+/*
 
 function perfTest(itemList, cfg) {
 
@@ -665,6 +668,7 @@ function perfTest(itemList, cfg) {
 	exportFile.close();
 }
 
+*/
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -792,12 +796,13 @@ function main() {
 	var t = timeCounter() - t0;
 	processPriority = savePrio || 0; // savePrio may be undefined
 
-	var separator = stringRepeat('-',79);
+	var testsCount = testList.reduce(function(val, elt) { return elt != elt.init ? val+1 : val }, 0);
 
+	var separator = stringRepeat('-',79);
 	print('\n', separator);
 	print('\n', 'configuraion: '+['-'+k+' '+v for ([k,v] in Iterator(cfg))].join('  '));
 	print('\n', separator);
-	print('\n', pad(issueList.length, 4, ' ') +' issues ('+cfg.repeatEachTest+'x '+ [t for each (t in testList) if (!t.init)].length +' tests = ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms)');
+	print('\n', pad(issueList.length, 4, ' ') +' issues ('+cfg.repeatEachTest+'x '+ testsCount +' tests = ' + checkCount + ' checks in ' + t.toFixed(2) + 'ms)');
 	print('\n', separator);
 	print('\n');
 	issueList.sort();

@@ -1,5 +1,4 @@
-_jsapiTests(); throw 0;
-
+//_jsapiTests(); throw 0;
 
 var loadModule = host.loadModule;
 
@@ -8,7 +7,7 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile();
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
+loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
 
 

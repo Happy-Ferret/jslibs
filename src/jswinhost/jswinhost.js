@@ -1,12 +1,3 @@
-if ( !isfirstinstance ) throw('Already rnning...');
-loadModule('jswinshell');
+var loadModule = host.loadModule;
 loadModule('jsstd');
-
-
-/*
-var cons = new Console()
-host.stderr = configuration.stdout = cons.write;
-loadModule('jsstd');
-print('toto');
-*/
-messageBox(isfirstinstance);
+exec(host.arguments[1], false);
