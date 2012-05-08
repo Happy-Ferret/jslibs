@@ -22,7 +22,7 @@ BEGIN_CLASS( Handle )
 
 DEFINE_FINALIZE() { // see HandleClose()
 
-	JL_IGNORE(cx);
+	JL_IGNORE( fop );
 
 	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(obj);
 	if ( pv ) {
@@ -200,7 +200,7 @@ NewHandle2(JSContext *cx, jsval *rval) {
 	*rval = OBJECT_TO_JSVAL(handleObj);
 
 	UserClass* userData = ::new(jl_malloc(sizeof(UserClass))) UserClass;
-	JL_SetPrivate(cx, handleObj, userData);
+	JL_SetPrivate( handleObj, userData);
 	return userData;
 bad:
 	return NULL;

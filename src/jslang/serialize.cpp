@@ -23,7 +23,7 @@ BEGIN_CLASS( Serializer )
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	jl::Serializer *ser;
@@ -41,7 +41,7 @@ DEFINE_CONSTRUCTOR() {
 	jl::Serializer *ser;
 	ser = new jl::Serializer(OBJECT_TO_JSVAL(JL_OBJ));
 	JL_ASSERT_ALLOC(ser);
-	JL_SetPrivate(cx, JL_OBJ, ser);
+	JL_SetPrivate( JL_OBJ, ser);
 	ser->Write(cx, JL_THIS_CLASS_REVISION);
 	return JS_TRUE;
 	JL_BAD;
@@ -81,7 +81,7 @@ DEFINE_FUNCTION( done ) {
 	size_t length;
 	JL_CHKM( ser->GetBufferOwnership(&data, &length), E_MODULE, E_INTERNAL ); // "Serializer buffer error."
 	delete ser;
-	JL_SetPrivate(cx, JL_OBJ, NULL);
+	JL_SetPrivate( JL_OBJ, NULL);
 	//JL_updateMallocCounter(cx, length);
 	JL_CHK( JL_NewBufferGetOwnership(cx, data, length, vp) );
 	return JS_TRUE;
@@ -115,7 +115,7 @@ BEGIN_CLASS( Unserializer )
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	jl::Unserializer *unser;
@@ -135,7 +135,7 @@ DEFINE_CONSTRUCTOR() {
 	jl::Unserializer *unser;
 	unser = new jl::Unserializer(str.GetStrZOwnership(), str.Length(), OBJECT_TO_JSVAL(JL_OBJ));
 	JL_ASSERT_ALLOC(unser);
-	JL_SetPrivate(cx, JL_OBJ, unser);
+	JL_SetPrivate( JL_OBJ, unser);
 	jl::SourceId_t srcId;
 	JL_CHK( unser->Read(cx, srcId) );
 	JL_ASSERT( srcId == JL_THIS_CLASS_REVISION, E_ARG, E_NUM(1), E_VERSION, E_COMMENT("serialized data") );

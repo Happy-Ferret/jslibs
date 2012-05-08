@@ -63,7 +63,7 @@ DEFINE_FUNCTION( extractIcon ) {
 	HICON *phIcon = (HICON*)jl_malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
 	JL_ASSERT_ALLOC( phIcon );
 	*phIcon = hIcon;
-	JL_SetPrivate(cx, icon, phIcon);
+	JL_SetPrivate( icon, phIcon);
 	*JL_RVAL = OBJECT_TO_JSVAL(icon);
 	return JS_TRUE;
 	JL_BAD;

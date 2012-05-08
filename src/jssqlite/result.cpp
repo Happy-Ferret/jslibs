@@ -219,7 +219,7 @@ BEGIN_CLASS( Result )
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(obj);
@@ -261,7 +261,7 @@ DEFINE_FUNCTION( close ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 
 	jsval v;
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &v) );
+	JL_CHK( JL_GetReservedSlot(obj, SLOT_RESULT_DATABASE, &v) );
 	DatabasePrivate *dbpv;
 	dbpv = (DatabasePrivate*)JL_GetPrivate(JSVAL_TO_OBJECT(v));
 	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(JSVAL_TO_OBJECT(v)) );
@@ -270,8 +270,8 @@ DEFINE_FUNCTION( close ) {
 		JL_CHK( SqliteThrowError(cx, dbpv->db) );
 
 	jl::StackRemove(&dbpv->stmtList, pStmt);
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, JSVAL_VOID) );
-	JL_SetPrivate(cx, obj, NULL);
+	JL_CHK( JL_SetReservedSlot(obj, SLOT_RESULT_DATABASE, JSVAL_VOID) );
+	JL_SetPrivate(obj, NULL);
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -342,7 +342,7 @@ JSBool DoStep(JSContext *cx, JSObject *obj, jsval *rval) {
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 
 	jsval dbVal;
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_DATABASE, &dbVal) );
+	JL_CHK( JL_GetReservedSlot(obj, SLOT_RESULT_DATABASE, &dbVal) );
 	DatabasePrivate *dbpv;
 	dbpv = (DatabasePrivate*)JL_GetPrivate(JSVAL_TO_OBJECT(dbVal));
 	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(JSVAL_TO_OBJECT(dbVal)));
@@ -353,14 +353,14 @@ JSBool DoStep(JSContext *cx, JSObject *obj, jsval *rval) {
 
 	// check if bindings are up to date
 	jsval bindingUpToDate;
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, &bindingUpToDate) );
+	JL_CHK( JL_GetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, &bindingUpToDate) );
 
 	if ( bindingUpToDate != JSVAL_TRUE ) {
 
 		jsval queryArgument;
-		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, &queryArgument) );
+		JL_CHK( JL_GetReservedSlot(obj, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, &queryArgument) );
 		JL_CHK( SqliteSetupBindings(cx, pStmt, JSVAL_IS_PRIMITIVE( queryArgument ) ? NULL : JSVAL_TO_OBJECT( queryArgument ), obj) ); // ":" use result object. "@" is the object passed to Query()
-		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_TRUE) );
+		JL_CHK( JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_TRUE) );
 		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step().
 		//      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
 	}
@@ -548,7 +548,7 @@ DEFINE_FUNCTION( reset ) {
 	if ( sqlite3_reset(pStmt) != SQLITE_OK )
 		return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 	*JL_RVAL = JSVAL_VOID;
-	return JL_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
+	return JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 	JL_BAD;
 }
 
@@ -678,16 +678,16 @@ DEFINE_PROPERTY_GETTER( sql ) {
 
 DEFINE_DEL_PROPERTY() {
 
-	JL_IGNORE( id, vp );
+	JL_IGNORE( id, vp, cx );
 
-	return JL_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
+	return JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 }
 
 DEFINE_SET_PROPERTY() {
 
-	JL_IGNORE( id, vp, strict );
+	JL_IGNORE( id, vp, strict, cx );
 
-	return JL_SetReservedSlot(cx, obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
+	return JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 }
 
 

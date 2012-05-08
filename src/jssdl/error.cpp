@@ -36,7 +36,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( text ) {
 
 	JL_IGNORE(id);
-	return JL_GetReservedSlot( cx, obj, 0, vp );
+	return JL_GetReservedSlot(  obj, 0, vp );
 }
 
 DEFINE_FUNCTION( toString ) {
@@ -60,7 +60,7 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, 0, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
 	return JS_TRUE;
@@ -82,7 +82,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
 	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, 0, *JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot( JL_OBJ, 0, *JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -117,7 +117,7 @@ ThrowSdlError( JSContext *cx ) {
 	SDL_ClearError();
 //	if ( errorMessage == NULL || *errorMessage == '\0' )
 //		errorMessage = "Undefined error";
-	JL_CHK( JL_SetReservedSlot( cx, errorObj, 0, errorMessage != NULL && *errorMessage != '\0' ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID ) );
+	JL_CHK( JL_SetReservedSlot(  errorObj, 0, errorMessage != NULL && *errorMessage != '\0' ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, errorObj) );
 	JL_BAD;
 }

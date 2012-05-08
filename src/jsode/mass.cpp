@@ -28,7 +28,7 @@ BEGIN_CLASS( Mass )
 JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID, ode::dMass *pMass) {
 
 	jsval bodyVal;
-	JL_CHK( JL_GetReservedSlot(cx, massObject, MASS_SLOT_BODY, &bodyVal) );
+	JL_CHK( JL_GetReservedSlot( massObject, MASS_SLOT_BODY, &bodyVal) );
 	JL_ASSERT_THIS_OBJECT_STATE( JSVAL_IS_OBJECT(bodyVal) );
 	JSObject *bodyObject;
 	bodyObject = JSVAL_TO_OBJECT(bodyVal);

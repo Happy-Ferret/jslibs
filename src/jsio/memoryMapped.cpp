@@ -50,7 +50,7 @@ DEFINE_FINALIZE() {
 
 	PR_MemUnmap(pv->addr, pv->size);
 	PR_CloseFileMap(pv->fmap);
-	JS_free(cx, pv);
+	JS_freeop(fop, pv);
 }
 
 /**doc
@@ -71,7 +71,7 @@ DEFINE_CONSTRUCTOR() {
 	JSObject *fdObj;
 	fdObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_ASSERT_INSTANCE( fdObj, JL_CLASS(File) );
-	JL_CHK( JL_SetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, JL_ARG(1)) ); // avoid the file to be GCed while being used by MemoryMapped
+	JL_CHK( JL_SetReservedSlot( obj, MEMORYMAPPED_SLOT_FILE, JL_ARG(1)) ); // avoid the file to be GCed while being used by MemoryMapped
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc*)JL_GetPrivate(fdObj);
@@ -112,7 +112,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->addr = PR_MemMap(pv->fmap, 0, pv->size);
 	if ( pv->addr == NULL )
 		return ThrowIoError(cx);
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 
 	JL_CHK( SetBufferGetInterface(cx, obj, MemoryMappedBufferGet) );
 
@@ -133,7 +133,7 @@ DEFINE_PROPERTY_GETTER( file ) {
 
 	JL_IGNORE( id );
 
-	JL_CHK( JL_GetReservedSlot(cx, obj, MEMORYMAPPED_SLOT_FILE, vp) );
+	JL_CHK( JL_GetReservedSlot( obj, MEMORYMAPPED_SLOT_FILE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

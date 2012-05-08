@@ -114,7 +114,7 @@ DEFINE_CONSTRUCTOR() {
 	HICON *phIcon = (HICON*)JS_malloc(cx, sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
 	JL_CHK( phIcon );
 	*phIcon = hIcon;
-	JL_SetPrivate(cx, obj, phIcon);
+	JL_SetPrivate( obj, phIcon);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -127,7 +127,7 @@ DEFINE_FINALIZE() {
 
 	if ( *phIcon != NULL )
 		DestroyIcon(*phIcon);
-	JS_free(cx, phIcon);
+	JS_freeop(fop, phIcon);
 }
 
 CONFIGURE_CLASS

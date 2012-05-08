@@ -25,7 +25,7 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="copy /Y jswinhost.js $(TargetDir)"
+				CommandLine="copy /Y jswinhost.js &quot;$(TargetDir)&quot;"
 				Outputs="$(TargetDir)jswinhost.js"
 			/>
 			<Tool
@@ -87,7 +87,7 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="copy /Y jswinhost.js $(TargetDir)"
+				CommandLine="copy /Y jswinhost.js &quot;$(TargetDir)&quot;"
 				Outputs="$(TargetDir)jswinhost.js"
 			/>
 			<Tool

@@ -26,7 +26,7 @@ DEFINE_FINALIZE() {
 	ode::dSurfaceParameters *pv = (ode::dSurfaceParameters*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
-	JS_free(cx, pv);
+	JS_freeop(fop, pv);
 }
 
 /**doc
@@ -44,7 +44,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( pv );
 	pv->mu = dInfinity;
 	pv->mode = 0;
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }

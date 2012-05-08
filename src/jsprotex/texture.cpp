@@ -81,10 +81,10 @@ double PerlinNoise2(double x, double y, double z);
 #define PUNZNORM(p) ( (PUNNORM(p) + PTYPE(1) ) / PTYPE(2))
 
 
-ALWAYS_INLINE JSBool TextureInit( JSContext *cx, TextureStruct *tex, unsigned int width, unsigned int height, unsigned int channels ) {
+ALWAYS_INLINE JSBool TextureInit( TextureStruct *tex, unsigned int width, unsigned int height, unsigned int channels ) {
 
 	tex->cbufferSize = width * height * channels * sizeof(PTYPE);
-	tex->cbuffer = (PTYPE*)JS_malloc(cx, tex->cbufferSize);
+	tex->cbuffer = (PTYPE*)jl_malloc(tex->cbufferSize);
 	tex->cbackBuffer = NULL; // see TextureSetupBackBuffer()
 	tex->width = width;
 	tex->height = height;
@@ -92,21 +92,21 @@ ALWAYS_INLINE JSBool TextureInit( JSContext *cx, TextureStruct *tex, unsigned in
 	return JS_TRUE;
 }
 
-ALWAYS_INLINE JSBool TextureResizeBackBuffer( JSContext *cx, TextureStruct *tex, size_t newSize ) {
+ALWAYS_INLINE JSBool TextureResizeBackBuffer( TextureStruct *tex, size_t newSize ) {
 	
 	if ( tex->cbackBuffer != NULL && tex->cbackBufferSize == newSize )
 		return JS_TRUE;
 	if ( tex->cbackBuffer == NULL )
-		tex->cbackBuffer = (PTYPE*)JS_malloc(cx, newSize);
+		tex->cbackBuffer = (PTYPE*)jl_malloc(newSize);
 	else
-		tex->cbackBuffer = (PTYPE*)JS_realloc(cx, tex->cbackBuffer, newSize);
+		tex->cbackBuffer = (PTYPE*)jl_realloc(tex->cbackBuffer, newSize);
 	tex->cbackBufferSize = newSize;
 	return JS_TRUE;
 }
 
-ALWAYS_INLINE JSBool TextureSetupBackBuffer( JSContext *cx, TextureStruct *tex ) {
+ALWAYS_INLINE JSBool TextureSetupBackBuffer( TextureStruct *tex ) {
 
-	return TextureResizeBackBuffer(cx, tex, tex->cbufferSize);
+	return TextureResizeBackBuffer(tex, tex->cbufferSize);
 }
 
 ALWAYS_INLINE void TextureSwapBuffers( TextureStruct *tex ) {
@@ -120,17 +120,17 @@ ALWAYS_INLINE void TextureSwapBuffers( TextureStruct *tex ) {
 	tex->cbackBufferSize = tmpBufferSize;
 }
 
-ALWAYS_INLINE void TextureFreeBuffers( JSContext* cx, TextureStruct *tex ) {
+ALWAYS_INLINE void TextureFreeBuffers( TextureStruct *tex ) {
 
 	if ( tex->cbackBuffer != NULL ) {
 
-		JS_free(cx, tex->cbackBuffer);
+		jl_free(tex->cbackBuffer);
 		tex->cbackBuffer = NULL;
 	}
 
 	if ( tex->cbuffer != NULL ) {
 
-		JS_free(cx, tex->cbuffer);
+		jl_free(tex->cbuffer);
 		tex->cbuffer = NULL;
 	}
 }
@@ -391,16 +391,16 @@ DEFINE_FINALIZE() {
 //	if ( obj == JL_THIS_CLASS_PROTOTYPE )
 //		return;
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup ) // do not cleanup in unsafe mode.
 		return;
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(obj);
 	if ( !tex )
 		return;
 
-	TextureFreeBuffers(cx, tex);
-	JS_free(cx, tex);
-//	JL_SetPrivate(cx, obj, NULL);
+	TextureFreeBuffers(tex);
+	JS_freeop(fop, tex);
+//	JL_SetPrivate( obj, NULL);
 }
 
 /**doc
@@ -435,9 +435,9 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	TextureStruct *tex;
-	tex = (TextureStruct *)JS_malloc(cx, sizeof(TextureStruct));
+	tex = (TextureStruct *)jl_malloc(sizeof(TextureStruct));
 	JL_CHK( tex );
-	JL_SetPrivate(cx, obj, tex);
+	JL_SetPrivate( obj, tex);
 	JL_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
 
 	jsval *arg1;
@@ -454,7 +454,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_ASSERT( height > 0, E_ARG, E_NUM(2), E_MIN, E_NUM(1) );
 		JL_ASSERT( channels > 0, E_ARG, E_NUM(3), E_RANGE, E_INTERVAL_NUM(1, PMAXCHANNELS) );
 
-		JL_CHK( TextureInit(cx, tex, width, height, channels) );
+		JL_CHK( TextureInit(tex, width, height, channels) );
 
 		return JS_TRUE;
 	}
@@ -464,7 +464,7 @@ DEFINE_CONSTRUCTOR() {
 		TextureStruct *srcTex = (TextureStruct *)JL_GetPrivate(JSVAL_TO_OBJECT(*arg1));
 		JL_ASSERT_OBJECT_STATE(srcTex, JL_GetClassName(JSVAL_TO_OBJECT(*arg1)) );
 
-		JL_CHK( TextureInit(cx, tex, srcTex->width, srcTex->height, srcTex->channels) );
+		JL_CHK( TextureInit(tex, srcTex->width, srcTex->height, srcTex->channels) );
 		jl::memcpy( tex->cbuffer, srcTex->cbuffer, srcTex->width * srcTex->height * srcTex->channels * sizeof(PTYPE) );
 		return JS_TRUE;
 	}
@@ -474,7 +474,7 @@ DEFINE_CONSTRUCTOR() {
 		JLData data = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels);
 		tsize = data.Length();
 		const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
-		JL_CHK( TextureInit(cx, tex, sWidth, sHeight, sChannels) );
+		JL_CHK( TextureInit(tex, sWidth, sHeight, sChannels) );
 		for ( i = 0; i < tsize; ++i )
 			tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
 		return JS_TRUE;
@@ -502,7 +502,7 @@ DEFINE_FUNCTION( free ) {
 	TextureStruct *tex;
 	tex = (TextureStruct*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
-	TextureFreeBuffers(cx, tex);
+	TextureFreeBuffers(tex);
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -539,8 +539,8 @@ DEFINE_FUNCTION( swap ) {
 	JL_ASSERT_INSTANCE( texObj, JL_THIS_CLASS );
 	void *tmp;
 	tmp = JL_GetPrivate(obj);
-	JL_SetPrivate(cx, obj, JL_GetPrivate(texObj));
-	JL_SetPrivate(cx, texObj, tmp);
+	JL_SetPrivate( obj, JL_GetPrivate(texObj));
+	JL_SetPrivate( texObj, tmp);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
@@ -1408,7 +1408,7 @@ DEFINE_FUNCTION( desaturate ) {
 	channels = tex->channels;
 	size = tex->width * tex->height;
 
-	TextureResizeBackBuffer(cx, tex, size * sizeof(PTYPE));
+	TextureResizeBackBuffer(tex, size * sizeof(PTYPE));
 
 	dPos = tex->cbackBuffer;
 	for ( i = 0; i < size; i++ ) {
@@ -1508,7 +1508,7 @@ DEFINE_FUNCTION( set ) {
 		const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
 		for ( i = 0; i < tsize; i++ )
 			tex->cbuffer[i] = (PTYPE)buffer[i] / PTYPE(255); // map [0 -> 255] to [0.0 -> 1.0]
-		JL_SetPrivate(cx, obj, tex);
+		JL_SetPrivate( obj, tex);
 		return JS_TRUE;
 	}
 
@@ -1814,7 +1814,7 @@ DEFINE_FUNCTION( rotate90 ) { // (TBD) test it
 	height = tex->height;
 	channels = tex->channels;
 
-	TextureSetupBackBuffer(cx, tex);
+	TextureSetupBackBuffer(tex);
 
 	int pos, pos1;
 	unsigned int c;
@@ -1882,7 +1882,7 @@ DEFINE_FUNCTION( flip ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &flipX) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &flipY) );
 
-	TextureSetupBackBuffer(cx, tex);
+	TextureSetupBackBuffer(tex);
 
 	unsigned int width, height, channels, x, y, c;
 	width = tex->width;
@@ -1975,7 +1975,7 @@ DEFINE_FUNCTION( rotoZoom ) { // source: FxGen
 	float	yc;
 	yc = cosVal * -th2;
 
-	TextureSetupBackBuffer(cx, tex);
+	TextureSetupBackBuffer(tex);
 
 	unsigned int spx, spy; // position in the source
 	float prx, pry; // pixel ratio
@@ -2086,7 +2086,7 @@ DEFINE_FUNCTION( resize ) {
 	if ( newWidth == width && newHeight == height ) // optimization
 		return JS_TRUE;
 
-	JL_CHK( TextureResizeBackBuffer(cx, tex, newWidth * newHeight * channels * sizeof(PTYPE)) );
+	JL_CHK( TextureResizeBackBuffer(tex, newWidth * newHeight * channels * sizeof(PTYPE)) );
 
 	int spx, spy; // position in the source
 	float prx, pry; // pixel ratio
@@ -2248,7 +2248,7 @@ DEFINE_FUNCTION( convolution ) {
 	BorderMode borderMode;
 	JL_CHK( JL_JsvalToBorderMode(cx, JL_SARG(2), &borderMode) );
 
-	TextureSetupBackBuffer(cx, tex);
+	TextureSetupBackBuffer(tex);
 
 	int offset;
 	offset = size / 2;
@@ -2378,7 +2378,7 @@ DEFINE_FUNCTION( dilate ) {
 	height = tex->height;
 	channels = tex->channels;
 
-	TextureSetupBackBuffer(cx, tex);
+	TextureSetupBackBuffer(tex);
 
 	int i, x, y, c, u, v;
 	unsigned int pos;
@@ -2465,7 +2465,7 @@ DEFINE_FUNCTION( forEachPixel ) {
 	height = tex->height;
 	channels = tex->channels;
 
-	TextureSetupBackBuffer(cx, tex);
+	TextureSetupBackBuffer(tex);
 
 	jsval level, callArgv[4]; // callArgv[0] is the rval
 
@@ -2561,7 +2561,7 @@ DEFINE_FUNCTION( boxBlur ) {
 
 	PTYPE sum;
 
-	TextureSetupBackBuffer(cx, tex);
+	TextureSetupBackBuffer(tex);
 
 	int x, y, c;
 
@@ -2677,7 +2677,7 @@ DEFINE_FUNCTION( normals ) {
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 
-	JL_CHK( TextureResizeBackBuffer(cx, tex, tex->width * tex->height * 3 * sizeof(PTYPE)) ); // need a 3 channels back buffer
+	JL_CHK( TextureResizeBackBuffer(tex, tex->width * tex->height * 3 * sizeof(PTYPE)) ); // need a 3 channels back buffer
 
 	PTYPE amp;
 	if ( JL_ARG_ISDEF(1) )
@@ -2994,7 +2994,7 @@ DEFINE_FUNCTION( trim ) { // (TBD) test this new version that use jl::memcpy
 	srcLineLength = width * channels * sizeof(PTYPE);
 	dstLineLength = newWidth * channels * sizeof(PTYPE);
 
-	JL_CHK( TextureResizeBackBuffer(cx, tex, newHeight * dstLineLength) );
+	JL_CHK( TextureResizeBackBuffer(tex, newHeight * dstLineLength) );
 
 	char *pSrc, *pDst;
 	pSrc = (char*)tex->cbuffer + ( x0 + y0 * width ) * channels * sizeof(PTYPE);
@@ -3255,7 +3255,7 @@ DEFINE_FUNCTION( export ) { // (int)x, (int)y, (int)width, (int)height. Returns 
 	}
 
 	bufferLength = dWidth * dHeight * sChannels;
-	//buffer = (uint8_t*)JS_malloc(cx, bufferLength +1);
+	//buffer = (uint8_t*)jl_malloc(bufferLength +1);
 	buffer = JL_NewByteImageObject(cx, dWidth, dHeight, sChannels, JL_RVAL);
 	JL_CHK( buffer );
 
@@ -3425,7 +3425,7 @@ DEFINE_FUNCTION( shift ) {
 	height = tex->height;
 	channels = tex->channels;
 
-	TextureSetupBackBuffer(cx, tex);
+	TextureSetupBackBuffer(tex);
 
 	PTYPE *sPos, *dPos;
 	unsigned int x, y, c; // destination image x, y
@@ -3482,7 +3482,7 @@ DEFINE_FUNCTION( displace ) {
 	else
 		factor = PTYPE(1);
 
-	TextureSetupBackBuffer(cx, tex);
+	TextureSetupBackBuffer(tex);
 
 	BorderMode borderMode;
 	JL_CHK( JL_JsvalToBorderMode(cx, JL_SARG(3), &borderMode) );

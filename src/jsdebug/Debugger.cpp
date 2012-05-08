@@ -325,19 +325,19 @@ DEFINE_FINALIZE() {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
-	JSRuntime *rt = JL_GetRuntime(cx);
+	JSRuntime *rt = fop->runtime();
 	JL_CHK( JS_SetInterrupt(rt, NULL, NULL) );
 	JL_CHK( JS_SetDebuggerHandler(rt, NULL, NULL) );
 	JL_CHK( JS_SetDebugErrorHook(rt, NULL, NULL) );
 	JL_CHK( JS_SetThrowHook(rt, NULL,NULL) );
 	JL_CHK( JS_SetExecuteHook(rt, NULL, NULL) );
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	if ( pv->excludedFiles )
 		CleanExcludedFileList(&pv->excludedFiles);
-	JS_free(cx, pv);
+	JS_freeop(fop, pv);
 	return;
 bad:
 	// report a warning ?
@@ -378,7 +378,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( pv );
 	memset(pv, 0, sizeof(DebuggerPrivate));
 
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 
 	return JS_TRUE;
 	JL_BAD;

@@ -532,7 +532,7 @@ DEFINE_FUNCTION( collectGarbage ) {
 	JL_IGNORE(argc);
 
 	size_t gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES);
-	JS_GC( cx );
+	JS_GC(JL_GetRuntime(cx));
 	gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES) - gcBytesDiff;
 	return JL_NativeToJsval(cx, gcBytesDiff, JL_RVAL);
 }

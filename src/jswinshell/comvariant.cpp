@@ -512,7 +512,7 @@ BEGIN_CLASS( ComVariant )
 
 DEFINE_FINALIZE() {
 
-	if ( obj == JL_CLASS_PROTOTYPE(cx, ComVariant) )
+	if ( obj == JL_GetCachedProto(JL_GetHostPrivate(fop->runtime()), JL_THIS_CLASS_NAME) )
 		return;
 	VARIANT *variant = (VARIANT*)JL_GetPrivate(obj);
 	HRESULT hr = VariantClear(variant);
@@ -520,7 +520,7 @@ DEFINE_FINALIZE() {
 	JL_IGNORE(hr); // (TBD) error check
 	// (TBD) send to log !
 
-	JS_free(cx, variant);
+	JS_freeop(fop, variant);
 }
 
 
@@ -689,7 +689,7 @@ JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval ) {
 
 	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_CLASS_PROTOTYPE(cx, ComVariant), NULL);
 	*rval = OBJECT_TO_JSVAL( varObj );
-	JL_SetPrivate(cx, varObj, variant);
+	JL_SetPrivate( varObj, variant);
 	return JS_TRUE;
 }
 

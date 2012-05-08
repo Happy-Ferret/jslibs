@@ -70,7 +70,7 @@ void AddPopupMenuRoot(JSContext *cx, JSObject *obj, jsval value) {
 	*++pv->popupMenuRoots = value;
 }
 
-void FreePopupMenuRoots(JSContext *cx, JSObject *obj) {
+void FreePopupMenuRoots(JSObject *obj) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	pv->popupMenuRoots.Clear();
@@ -395,7 +395,7 @@ DEFINE_CONSTRUCTOR() {
 	Private *pv = new Private();
 	JL_ASSERT_ALLOC( pv );
 	JL_updateMallocCounter(cx, sizeof(Private));
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 
 	InitializeCriticalSection(&pv->cs);
 
@@ -412,11 +412,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_BAD;
 }
 
-
-DEFINE_FINALIZE() {
-
-//	if ( obj == JL_CLASS_PROTOTYPE(cx, Systray) )
-//		return;
+void
+CloseSystray(JSRuntime *rt, JSObject *obj) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( !pv )
@@ -435,16 +432,23 @@ DEFINE_FINALIZE() {
 	CloseHandle(pv->event);
 	DeleteCriticalSection(&pv->cs);
 	
-	if ( !JL_GetHostPrivate(cx)->canSkipCleanup ) { // do not cleanup in unsafe mode ?
+	if ( !JL_GetHostPrivate(rt)->canSkipCleanup ) { // do not cleanup in unsafe mode ?
 
 		while ( !jl::QueueIsEmpty(&pv->msgQueue) )
 			jl_free(jl::QueuePop(&pv->msgQueue));
 	}
 
-	FreePopupMenuRoots(cx, obj);
+	FreePopupMenuRoots(obj);
 
 	//jl_free(pv);
 	delete pv;
+}
+
+DEFINE_FINALIZE() {
+
+//	if ( obj == JL_CLASS_PROTOTYPE(cx, Systray) )
+//		return;
+	CloseSystray(fop->runtime(), obj);
 }
 
 
@@ -462,8 +466,8 @@ DEFINE_FUNCTION( close ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Finalize(cx, obj);
-	JL_SetPrivate(cx, obj, NULL);
+	CloseSystray(JL_GetRuntime(cx), obj);
+	JL_SetPrivate(obj, NULL);
 	
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -525,7 +529,7 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 				S_ASSERT( sizeof(jsid) == sizeof(wParam) );
 				JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) );
 				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, key, INT_TO_JSVAL( mButton ) ) );
-				FreePopupMenuRoots(cx, obj);
+				FreePopupMenuRoots(obj);
 			}
 			break;
 
@@ -998,7 +1002,7 @@ DEFINE_FUNCTION( popupMenu ) {
 //	ASSERT( st );
 	
 	// there is no way to detect the menu popup has been closed. Here we free previous items.
-	FreePopupMenuRoots(cx, obj);
+	FreePopupMenuRoots(obj);
 	JL_CHK( FillMenu(cx, obj, JSVAL_TO_OBJECT( JL_ARG(1) ), &hMenu) );
 
 	st = PostMessage(pv->nid.hWnd, MSG_POPUP_MENU, 0, 0);

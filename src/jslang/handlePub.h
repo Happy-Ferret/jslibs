@@ -65,7 +65,7 @@ HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruc
 	pv = (HandlePrivate*)jl_malloc(sizeof(HandlePrivate) + sizeof(Struct));
 	JL_ASSERT_ALLOC( pv );
 	JL_updateMallocCounter(cx, sizeof(HandlePrivate) + sizeof(Struct));
-	JL_SetPrivate(cx, handleObj, pv);
+	JL_SetPrivate( handleObj, pv);
 
 	pv->handleType = handleType;
 	pv->finalizeCallback = finalizeCallback;
@@ -91,7 +91,7 @@ HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
 	if ( pv->finalizeCallback )
 		pv->finalizeCallback(pv+1);
 	jl_free(pv);
-	JL_SetPrivate(cx, handleObj, NULL);
+	JL_SetPrivate( handleObj, NULL);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -162,7 +162,7 @@ SetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval value )
 	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
 	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
-	return JL_SetReservedSlot(cx, JSVAL_TO_OBJECT(handleVal), slotIndex, value);
+	return JL_SetReservedSlot( JSVAL_TO_OBJECT(handleVal), slotIndex, value);
 	JL_BAD;
 }
 
@@ -173,7 +173,7 @@ GetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval *value 
 	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
 	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
-	return JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(handleVal), slotIndex, value);
+	return JL_GetReservedSlot( JSVAL_TO_OBJECT(handleVal), slotIndex, value);
 	JL_BAD;
 }
 

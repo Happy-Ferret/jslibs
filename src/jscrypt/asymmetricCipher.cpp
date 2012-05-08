@@ -47,7 +47,7 @@ struct AsymmetricCipherPrivate {
 JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **prngState) {
 
 	jsval prngVal;
-	JL_CHK( JL_GetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
+	JL_CHK( JL_GetReservedSlot( obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
 	JL_ASSERT_OBJECT_STATE( JSVAL_IS_OBJECT(prngVal), JL_CLASS_NAME(Prng) );
 	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(prngVal), JL_CLASS(Prng) );
 	PrngPrivate *prngPrivate;
@@ -68,7 +68,7 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( AsymmetricCipher )
 
 ALWAYS_INLINE void
-FinalizeAsymmetricCipher( JSContext *cx, JSObject *obj, bool wipe ) {
+FinalizeAsymmetricCipher( JSObject *obj, bool wipe ) {
 
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate*)JL_GetPrivate(obj);
 	if ( pv ) {
@@ -95,16 +95,16 @@ FinalizeAsymmetricCipher( JSContext *cx, JSObject *obj, bool wipe ) {
 
 		if ( wipe )
 			zeromem(pv, sizeof(AsymmetricCipherPrivate));
-		JS_free(cx, pv);
+		jl_free(pv);
 	}
 }
 
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
-	FinalizeAsymmetricCipher(cx, obj, false);
+	FinalizeAsymmetricCipher(obj, false);
 }
 
 /**doc
@@ -153,7 +153,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 		JL_ERR( E_ARG, E_NUM(1), E_INVALID, E_SEP, E_NAME(asymmetricCipherName), E_NOTSUPPORTED );
 
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JS_malloc(cx, sizeof(AsymmetricCipherPrivate));
+	pv = (AsymmetricCipherPrivate *)jl_malloc(sizeof(AsymmetricCipherPrivate));
 	JL_CHK( pv );
 
 	pv->cipher = asymmetricCipher;
@@ -171,10 +171,10 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 
 		JL_ASSERT_ARG_IS_OBJECT(3);
 		JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(JL_ARG(3)), JL_CLASS(Prng) );
-		JL_CHK( JL_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JL_ARG(3)) );
+		JL_CHK( JL_SetReservedSlot( obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JL_ARG(3)) );
 	} else {
 
-		JL_CHK( JL_SetReservedSlot(cx, obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JSVAL_VOID) );
+		JL_CHK( JL_SetReservedSlot( obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JSVAL_VOID) );
 	}
 
 	if ( asymmetricCipher == rsa ) {
@@ -201,7 +201,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 	}
 
 	pv->hasKey = false;
-	JL_SetPrivate( cx, obj, pv );
+	JL_SetPrivate(  obj, pv );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -224,8 +224,8 @@ DEFINE_FUNCTION( wipe ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	FinalizeAsymmetricCipher(cx, obj, true);
-	JL_SetPrivate(cx, obj, NULL);
+	FinalizeAsymmetricCipher(obj, true);
+	JL_SetPrivate( obj, NULL);
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;

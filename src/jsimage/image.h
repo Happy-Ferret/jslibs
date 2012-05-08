@@ -36,7 +36,7 @@ inline JSObject* NewImage( JSContext *cx, int width, int height, int channels, v
 	JS_DefineProperty(cx, image, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, image, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	JS_DefineProperty(cx, image, "channels", INT_TO_JSVAL(channels), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
-	JL_SetPrivate(cx, image, data);
+	JL_SetPrivate( image, data);
 	return image;
 }
 */

@@ -49,7 +49,7 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		//   http://opende.sourceforge.net/wiki/index.php/Manual_(Joint_Types_and_Functions)#Contact
 
 		jsval obj1surf, obj2surf;
-		JL_CHK( JL_GetReservedSlot(cx, obj1, SLOT_GEOM_SURFACEPARAMETER, &obj1surf) );
+		JL_CHK( JL_GetReservedSlot( obj1, SLOT_GEOM_SURFACEPARAMETER, &obj1surf) );
 		if ( JL_IsClass(obj1surf, classSurfaceParameters) ) {
 			
 			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(JSVAL_TO_OBJECT(obj1surf));
@@ -60,7 +60,7 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 			contact[i].surface = *ccp->defaultSurfaceParameters;
 		}
 
-		JL_CHK( JL_GetReservedSlot(cx, obj2, SLOT_GEOM_SURFACEPARAMETER, &obj2surf) );
+		JL_CHK( JL_GetReservedSlot( obj2, SLOT_GEOM_SURFACEPARAMETER, &obj2surf) );
 		if ( JL_IsClass(obj2surf, classSurfaceParameters) ) {
 
 			ode::dSurfaceParameters *surf = (ode::dSurfaceParameters*)JL_GetPrivate(JSVAL_TO_OBJECT(obj1surf));
@@ -100,12 +100,12 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 
 		jsval func1, func2;
 		if ( geom1HasObj )
-			JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom1), SLOT_GEOM_CONTACT_FUNCTION, &func1) );
+			JL_CHK( JL_GetReservedSlot( JSVAL_TO_OBJECT(valGeom1), SLOT_GEOM_CONTACT_FUNCTION, &func1) );
 		else
 			func1 = JSVAL_VOID;
 
 		if ( geom2HasObj )
-			JL_CHK( JL_GetReservedSlot(cx, JSVAL_TO_OBJECT(valGeom2), SLOT_GEOM_CONTACT_FUNCTION, &func2) );
+			JL_CHK( JL_GetReservedSlot( JSVAL_TO_OBJECT(valGeom2), SLOT_GEOM_CONTACT_FUNCTION, &func2) );
 		else
 			func2 = JSVAL_VOID;
 
@@ -226,7 +226,7 @@ DEFINE_FINALIZE() {
 	
 		JSObject *bodyObj = (JSObject*)ode::dBodyGetData(bodyIt);
 		if ( bodyObj != NULL )
-			JL_SetPrivate(cx, bodyObj, NULL);
+			JL_SetPrivate( bodyObj, NULL);
 			// ode::dBodySetData(bodyIt, NULL);
 
 		// same rule for geoms
@@ -234,7 +234,7 @@ DEFINE_FINALIZE() {
 
 			JSObject *geomObj = (JSObject*)ode::dGeomGetData(geomIt);
 			if ( geomObj != NULL )
-				JL_SetPrivate(cx, geomObj, NULL);
+				JL_SetPrivate( geomObj, NULL);
 			// ode::dGeomSetData(geomIt, NULL);
 	  }
 
@@ -243,7 +243,7 @@ DEFINE_FINALIZE() {
 		
 			JSObject *jointObj = (JSObject*)ode::dJointGetData(jointIt->joint);
 			if ( jointObj != NULL )
-				JL_SetPrivate(cx, jointObj, NULL);
+				JL_SetPrivate( jointObj, NULL);
 			// ode::dJointSetData(jointIt, NULL);
 		}
 	}
@@ -253,7 +253,7 @@ DEFINE_FINALIZE() {
 	
 		JSObject *jointObj = (JSObject*)ode::dJointGetData(jointIt);
 		if ( jointObj != NULL )
-			JL_SetPrivate(cx, jointObj, NULL);
+			JL_SetPrivate( jointObj, NULL);
 		// ode::dJointSetData(jointIt, NULL);
 	}
 
@@ -265,14 +265,14 @@ DEFINE_FINALIZE() {
 
 		JSObject *geomObj = (JSObject*)ode::dGeomGetData(geomId);
 		if ( geomObj != NULL )
-			JL_SetPrivate(cx, geomObj, NULL);
+			JL_SetPrivate( geomObj, NULL);
 //		ode::dSpaceRemove(pv->spaceId, geomId);
 		ode::dGeomDestroy(geomId);
 	}
 	ode::dSpaceDestroy(pv->spaceId);
 
 	ode::dWorldDestroy(pv->worldId);
-	JS_free(cx, pv);
+	JS_freeop(fop, pv);
 }
 
 
@@ -292,7 +292,7 @@ DEFINE_CONSTRUCTOR() {
 
 	WorldPrivate *pv = (WorldPrivate*)JS_malloc(cx, sizeof(WorldPrivate));
 	JL_CHK( pv );
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	
 //	pv->stepTmpCx = NULL;
 
@@ -301,13 +301,13 @@ DEFINE_CONSTRUCTOR() {
 
 	JSObject *spaceObject = JS_ConstructObject(cx, JL_CLASS(Space), /*JL_CLASS_PROTOTYPE(cx, Space),*/ NULL); // no arguments = create a topmost space object
 	JL_CHK( spaceObject );
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_WORLD_SPACE, OBJECT_TO_JSVAL(spaceObject)) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_WORLD_SPACE, OBJECT_TO_JSVAL(spaceObject)) );
 	pv->spaceId = (ode::dSpaceID)JL_GetPrivate(spaceObject);
 
 
 	JSObject *surfaceParameters = JS_ConstructObject(cx, JL_CLASS(SurfaceParameters), /*JL_CLASS_PROTOTYPE(cx, SurfaceParameters),*/ NULL);
 	JL_CHK( surfaceParameters );
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, OBJECT_TO_JSVAL(surfaceParameters)) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, OBJECT_TO_JSVAL(surfaceParameters)) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -330,7 +330,7 @@ DEFINE_FUNCTION( destroy ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ode::dJointGroupDestroy(pv->contactGroupId);
 	ode::dWorldDestroy(pv->worldId);
-	JL_SetPrivate(cx, obj, NULL);
+	JL_SetPrivate( obj, NULL);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -355,7 +355,7 @@ DEFINE_FUNCTION( collide ) {
 
 
 	//jsval val;
-	//JL_GetReservedSlot(cx, obj, WORLD_SLOT_SPACE, &val);
+	//JL_GetReservedSlot( obj, WORLD_SLOT_SPACE, &val);
 	//ode::dSpaceID space = (ode::dSpaceID)JSVAL_TO_PRIVATE(val);
 	//ode::dSpaceCollide(space,0,&nearCallback);
 
@@ -400,12 +400,12 @@ DEFINE_FUNCTION( collide ) {
 	} else {
 
 		jsval val;
-		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_WORLD_SPACE, &val) );
+		JL_CHK( JL_GetReservedSlot( obj, SLOT_WORLD_SPACE, &val) );
 		JL_CHK( JL_JsvalToSpaceID(cx, val, (ode::dSpaceID*)&sg1Id) );
 	}
 
 	jsval defaultSurfaceParametersVal;
-	JL_GetReservedSlot(cx, obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, &defaultSurfaceParametersVal);
+	JL_GetReservedSlot( obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, &defaultSurfaceParametersVal);
 	//	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), JL_CLASS(SurfaceParameters) ); // (TBD) simplify RT_ASSERT
 	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JL_GetPrivate(JSVAL_TO_OBJECT(defaultSurfaceParametersVal)); // beware: local variable !
 	JL_ASSERT_OBJECT_STATE( defaultSurfaceParameters, JL_CLASS_NAME(SurfaceParameters) );
@@ -702,7 +702,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( defaultSurfaceParameters ) {
 
-	return JL_GetReservedSlot(cx, obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, vp);
+	return JL_GetReservedSlot( obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, vp);
 }
 
 
@@ -713,7 +713,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( space ) {
 
-	return JL_GetReservedSlot(cx, obj, SLOT_WORLD_SPACE, vp);
+	return JL_GetReservedSlot( obj, SLOT_WORLD_SPACE, vp);
 }
 
 
@@ -727,7 +727,7 @@ DEFINE_PROPERTY_GETTER( env ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JSObject *staticBody = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_CLASS_PROTOTYPE(cx, Body), NULL);
 	JL_CHK(staticBody);
-	JL_SetPrivate(cx, staticBody, (ode::dBodyID)0);
+	JL_SetPrivate( staticBody, (ode::dBodyID)0);
 	*vp = OBJECT_TO_JSVAL(staticBody);
 	return jl::StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;

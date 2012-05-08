@@ -35,7 +35,7 @@ DECLARE_CLASS( GeomTrimesh )
 
 JSBool SetupReadMatrix(JSContext *cx, JSObject *obj);
 
-void FinalizeGeom(JSContext *cx, JSObject *obj);
+void FinalizeGeom(JSObject *obj);
 
 JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj);
 

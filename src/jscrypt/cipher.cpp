@@ -40,7 +40,7 @@ $SVN_REVISION $Revision: 3533 $
 BEGIN_CLASS( Cipher )
 
 ALWAYS_INLINE void
-FinalizeCipher( JSContext *cx, JSObject *obj, bool wipe ) {
+FinalizeCipher( JSObject *obj, bool wipe ) {
 
 	CipherPrivate *pv = (CipherPrivate *)JL_GetPrivate( obj );
 	if ( pv ) {
@@ -85,22 +85,22 @@ FinalizeCipher( JSContext *cx, JSObject *obj, bool wipe ) {
 		if ( wipe ) {
 
 			zeromem(pv->symmetric_XXX, size);
-			JS_free(cx, pv->symmetric_XXX);
+			jl_free(pv->symmetric_XXX);
 			zeromem(pv, sizeof(CipherPrivate));
-			JS_free(cx, pv);
+			jl_free(pv);
 		} else {
 		
-			JS_free(cx, pv->symmetric_XXX);
-			JS_free(cx, pv);
+			jl_free(pv->symmetric_XXX);
+			jl_free(pv);
 		}
 	}
 }
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
-	FinalizeCipher(cx, obj, false);
+	FinalizeCipher(obj, false);
 }
 
 /**doc
@@ -195,7 +195,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( argc >= 6 && !JSVAL_IS_VOID( JL_ARG(6) ) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &numRounds) );
 
-	pv = (CipherPrivate*)JS_malloc(cx, sizeof(CipherPrivate));
+	pv = (CipherPrivate*)jl_malloc(sizeof(CipherPrivate));
 	JL_CHK( pv );
 
 	pv->symmetric_XXX = NULL; // see. bad label
@@ -214,7 +214,7 @@ DEFINE_CONSTRUCTOR() {
 	int err;
 	switch ( mode ) {
 		case mode_ecb: {
-			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_ECB));
+			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_ECB));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IV == NULL, "Initialization vector is invalid for this mode." );
@@ -223,7 +223,7 @@ DEFINE_CONSTRUCTOR() {
 			break;
 		}
 		case mode_cfb: {
-			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_CFB));
+			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_CFB));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
@@ -232,7 +232,7 @@ DEFINE_CONSTRUCTOR() {
 			break;
 		}
 		case mode_ofb: {
-			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_OFB));
+			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_OFB));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
@@ -241,7 +241,7 @@ DEFINE_CONSTRUCTOR() {
 			break;
 		}
 		case mode_cbc: {
-			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_CBC));
+			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_CBC));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
@@ -250,7 +250,7 @@ DEFINE_CONSTRUCTOR() {
 			break;
 		}
 		case mode_ctr: {
-			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_CTR));
+			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_CTR));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
@@ -259,7 +259,7 @@ DEFINE_CONSTRUCTOR() {
 			break;
 		}
 		case mode_lrw: {
-			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_LRW));
+			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_LRW));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
@@ -268,7 +268,7 @@ DEFINE_CONSTRUCTOR() {
 			break;
 		}
 		case mode_f8: {
-			pv->symmetric_XXX = JS_malloc(cx, sizeof(symmetric_F8));
+			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_F8));
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_ASSERT_RANGE( (int)key.Length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
@@ -284,7 +284,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( err != CRYPT_OK )
 		JL_CHK( ThrowCryptError(cx, err) );
 
-	JL_SetPrivate( cx, obj, pv );
+	JL_SetPrivate(  obj, pv );
 	return JS_TRUE;
 
 bad:
@@ -315,8 +315,8 @@ DEFINE_FUNCTION( wipe ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	FinalizeCipher(cx, obj, true);
-	JL_SetPrivate(cx, obj, NULL);
+	FinalizeCipher(obj, true);
+	JL_SetPrivate( obj, NULL);
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 	JL_BAD;
@@ -384,7 +384,7 @@ DEFINE_FUNCTION( encrypt ) {
 	//JL_CHK( JL_NewBlob( cx, ct, pt.Length(), JL_RVAL ) );
 
 //	JL_CHK( JL_NativeToJsval(cx, ct, pt.Length(), JL_RVAL ) );
-//	JS_free(cx, ct);
+//	jl_free(ct);
 
 
 	return JS_TRUE;

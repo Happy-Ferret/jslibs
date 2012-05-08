@@ -6160,45 +6160,52 @@ DEFINE_FUNCTION( defineTextureImage ) {
 		height = tex->height;
 		channels = tex->channels;
 		type = GL_FLOAT;
-	} else if ( js_IsTypedArray(tObj) ) {
-
-		switch ( JS_GetTypedArrayType(tObj) ) {
-			case js::TypedArray::TYPE_INT8:
-				type = GL_BYTE;
-				break;
-			case js::TypedArray::TYPE_UINT8:
-				type = GL_UNSIGNED_BYTE;
-				break;
-			case js::TypedArray::TYPE_INT16:
-				type = GL_SHORT;
-				break;
-			case js::TypedArray::TYPE_UINT16:
-				type = GL_UNSIGNED_SHORT;
-				break;
-			case js::TypedArray::TYPE_INT32:
-				type = GL_INT;
-				break;
-			case js::TypedArray::TYPE_UINT32:
-				type = GL_UNSIGNED_INT;
-				break;
-			case js::TypedArray::TYPE_FLOAT32:
-				type = GL_FLOAT;
-				break;
-			case js::TypedArray::TYPE_FLOAT64:
-				type = GL_DOUBLE;
-				break;
-			default:
-				JL_ERR( E_ARG, E_NUM(3), E_NOTSUPPORTED, E_COMMENT("TypedArray.type") );
-		}
+	} else if ( JS_IsTypedArrayObject(tObj, cx) ) {
 
 		JL_ASSERT_ARGC(6);
+
+		switch ( JS_GetTypedArrayType(tObj, cx) ) {
+			case js::ArrayBufferView::TYPE_INT8:
+				type = GL_BYTE;
+				data = JS_GetInt8ArrayData(tObj, cx);
+				break;
+			case js::ArrayBufferView::TYPE_UINT8:
+				type = GL_UNSIGNED_BYTE;
+				data = JS_GetUint8ArrayData(tObj, cx);
+				break;
+			case js::ArrayBufferView::TYPE_INT16:
+				type = GL_SHORT;
+				data = JS_GetInt16ArrayData(tObj, cx);
+				break;
+			case js::ArrayBufferView::TYPE_UINT16:
+				type = GL_UNSIGNED_SHORT;
+				data = JS_GetUint16ArrayData(tObj, cx);
+				break;
+			case js::ArrayBufferView::TYPE_INT32:
+				type = GL_INT;
+				data = JS_GetInt32ArrayData(tObj, cx);
+				break;
+			case js::ArrayBufferView::TYPE_UINT32:
+				type = GL_UNSIGNED_INT;
+				data = JS_GetUint32ArrayData(tObj, cx);
+				break;
+			case js::ArrayBufferView::TYPE_FLOAT32:
+				type = GL_FLOAT;
+				data = JS_GetFloat32ArrayData(tObj, cx);
+				break;
+			case js::ArrayBufferView::TYPE_FLOAT64:
+				type = GL_DOUBLE;
+				data = JS_GetFloat64ArrayData(tObj, cx);
+				break;
+			default:
+				JL_ERR( E_ARG, E_NUM(3), E_NOTSUPPORTED, E_COMMENT("ArrayBufferView.type") );
+		}
+
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &width) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &height) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &channels) );
 
-		JL_ASSERT( width*height*channels == (int)JS_GetTypedArrayByteLength(tObj), E_DATASIZE, E_INVALID );
-
-		data = JS_GetTypedArrayData(tObj);
+		JL_ASSERT( width*height*channels == (int)JS_GetTypedArrayByteLength(tObj, cx), E_DATASIZE, E_INVALID );
 	} else {
 
 		type = GL_UNSIGNED_BYTE;

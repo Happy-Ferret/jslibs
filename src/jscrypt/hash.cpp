@@ -32,13 +32,13 @@ BEGIN_CLASS( Hash )
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	HashPrivate *pv = (HashPrivate *)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
-	JS_free(cx, pv);
+	jl_free(pv);
 }
 
 /**doc
@@ -81,7 +81,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT( hashIndex != -1, E_STR("hash"), E_NAME(hashName), E_NOTFOUND );
 
 	HashPrivate *pv;
-	pv = (HashPrivate*)JS_malloc(cx, sizeof(HashPrivate));
+	pv = (HashPrivate*)jl_malloc(sizeof(HashPrivate));
 	JL_CHK( pv );
 
 	pv->descriptor = &hash_descriptor[hashIndex];
@@ -94,7 +94,7 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowCryptError(cx, err);
 	pv->inputLength = 0;
 
-	JL_SetPrivate( cx, obj, pv );
+	JL_SetPrivate(  obj, pv );
 
 	return JS_TRUE;
 	JL_BAD;

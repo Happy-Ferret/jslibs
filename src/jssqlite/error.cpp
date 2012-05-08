@@ -38,7 +38,7 @@ DEFINE_PROPERTY_GETTER( code ) {
 
 	JL_IGNORE( id );
 
-	return JL_GetReservedSlot( cx, obj, SLOT_SQLITE_ERROR_CODE, vp );
+	return JL_GetReservedSlot(  obj, SLOT_SQLITE_ERROR_CODE, vp );
 }
 
 /**doc
@@ -119,7 +119,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_IGNORE( id );
 
-	JL_GetReservedSlot( cx, obj, SLOT_SQLITE_ERROR_CODE, vp );
+	JL_GetReservedSlot(  obj, SLOT_SQLITE_ERROR_CODE, vp );
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
 	int errorCode = JSVAL_TO_INT(*vp);
@@ -136,7 +136,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 	JL_IGNORE( id );
 
-	return JL_GetReservedSlot( cx, obj, SLOT_SQLITE_ERROR_TEXT, vp );
+	return JL_GetReservedSlot(  obj, SLOT_SQLITE_ERROR_TEXT, vp );
 }
 
 DEFINE_FUNCTION( toString ) {
@@ -162,9 +162,9 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, SLOT_SQLITE_ERROR_CODE, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_SQLITE_ERROR_CODE, JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, SLOT_SQLITE_ERROR_TEXT, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_SQLITE_ERROR_TEXT, JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
 	return JS_TRUE;
@@ -186,9 +186,9 @@ DEFINE_FUNCTION( _unserialize ) {
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
 	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_SQLITE_ERROR_CODE, *JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_SQLITE_ERROR_CODE, *JL_RVAL) );
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_SQLITE_ERROR_TEXT, *JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_SQLITE_ERROR_TEXT, *JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -222,8 +222,8 @@ SqliteThrowErrorStatus( JSContext *cx, int status ) {
 
 	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_CLASS_PROTOTYPE(cx, SqliteError), NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(status) ) );
-	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, "???")) ) );
+	JL_CHK( JL_SetReservedSlot(  error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(status) ) );
+	JL_CHK( JL_SetReservedSlot(  error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, "???")) ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
 	return JS_FALSE;
 	JL_BAD;
@@ -235,8 +235,8 @@ SqliteThrowError( JSContext *cx, sqlite3 *db ) {
 
 	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_CLASS_PROTOTYPE(cx, SqliteError), NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(sqlite3_extended_errcode(db)) ) );
-	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, sqlite3_errmsg(db))) ) );
+	JL_CHK( JL_SetReservedSlot(  error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(sqlite3_extended_errcode(db)) ) );
+	JL_CHK( JL_SetReservedSlot(  error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, sqlite3_errmsg(db))) ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
 	return JS_FALSE;
 	JL_BAD;

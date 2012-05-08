@@ -60,14 +60,14 @@ BEGIN_CLASS( OglError )
 DEFINE_PROPERTY_GETTER( code ) {
 	
 	JL_IGNORE(id);
-	return JL_GetReservedSlot( cx, obj, 0, vp );
+	return JL_GetReservedSlot(  obj, 0, vp );
 }
 
 
 DEFINE_PROPERTY_GETTER( text ) {
 
 	JL_IGNORE(id);
-	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
+	JL_CHK( JL_GetReservedSlot(  obj, 0, vp ) );
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
 	int errorCode;
@@ -110,7 +110,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_IGNORE(id);
-	JL_CHK( JL_GetReservedSlot( cx, obj, 0, vp ) );
+	JL_CHK( JL_GetReservedSlot(  obj, 0, vp ) );
 	int errorCode;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &errorCode) );
 	return JL_NativeToJsval(cx, OpenGLErrorToConst(errorCode), vp);
@@ -139,7 +139,7 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, 0, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
 	return JS_TRUE;
@@ -161,7 +161,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
 	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, 0, *JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot( JL_OBJ, 0, *JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -199,7 +199,7 @@ ThrowOglError( JSContext *cx, GLenum err ) {
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	jsval errVal;
 	JL_CHK( JL_NativeToJsval(cx, err, &errVal) );
-	JL_CHK( JL_SetReservedSlot( cx, error, 0, errVal ) );
+	JL_CHK( JL_SetReservedSlot(  error, 0, errVal ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;
 }

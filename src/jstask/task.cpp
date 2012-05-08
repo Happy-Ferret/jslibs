@@ -380,7 +380,7 @@ DEFINE_CONSTRUCTOR() {
 		}
 	}
 
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 
 	pv->mutex = JLMutexCreate();
 	JL_CHKM( JLMutexOk(pv->mutex), E_THISOBJ, E_CREATE ); // "Unable to create the mutex."
@@ -425,15 +425,13 @@ bad:
 		if ( pv->mutex != 0 )
 			JLMutexFree(&pv->mutex);
 		delete pv;
-//		JL_SetPrivate(cx, obj, NULL);
+//		JL_SetPrivate( obj, NULL);
 	}
 	return JS_FALSE;
 }
 
-
-DEFINE_FINALIZE() {
-
-	JL_IGNORE( cx );
+static void FASTCALL
+CloseTask(JSObject *obj) {
 
 	TaskPrivate *pv = (TaskPrivate*)JL_GetPrivate(obj);
 	if ( !pv )
@@ -461,12 +459,13 @@ DEFINE_FINALIZE() {
 	}
 
 	delete pv;
-	return;
+}
 
-bad:
-	delete pv;
-	// (TBD) report a warning.
-	return;
+
+DEFINE_FINALIZE() {
+
+	JL_IGNORE( fop );
+	CloseTask(obj);
 }
 
 /**doc
@@ -482,8 +481,8 @@ DEFINE_FUNCTION( close ) {
 
 	if ( JL_GetPrivate(JL_OBJ) != NULL ) {
 
-		Finalize(cx, JL_OBJ);
-		JL_SetPrivate(cx, JL_OBJ, NULL);
+		CloseTask(JL_OBJ);
+		JL_SetPrivate( JL_OBJ, NULL);
 	} else {
 
 		JL_WARN( E_THISOBJ, E_CLOSED );

@@ -255,7 +255,7 @@ public:
 		JL_CHK( Write(cx, reservedSlotsCount) );
 		for ( uint32_t i = 0; i < reservedSlotsCount; ++i ) {
 
-			JL_CHK( JL_GetReservedSlot(cx, obj, i, &value) );
+			JL_CHK( JL_GetReservedSlot( obj, i, &value) );
 			JL_CHK( Write(cx, value) );
 		}
 		return JS_TRUE;
@@ -315,21 +315,21 @@ public:
 		JSObject *obj;
 		obj = JSVAL_TO_OBJECT(val);
 
-		if ( JS_IsArrayBufferObject(obj) ) {
+		if ( JS_IsArrayBufferObject(obj, cx) ) {
 
-			uint32_t length = JS_GetArrayBufferByteLength(obj);
-			uint8_t *data = length ? JS_GetArrayBufferData(obj) : NULL;
+			uint32_t length = JS_GetArrayBufferByteLength(obj, cx);
+			uint8_t *data = length ? JS_GetArrayBufferData(obj, cx) : NULL;
 			JL_CHK( Write(cx, JLSTArrayBuffer) );
 			JL_CHK( Write(cx, SerializerConstBufferInfo(data, length)) );
 			return JS_TRUE;
 		}
 
-		if ( js_IsTypedArray(obj) ) {
+		if ( JS_IsTypedArrayObject(obj, cx) ) {
 
-			uint32_t length = JS_GetTypedArrayByteLength(obj);
-			void *data = length ? JS_GetTypedArrayData(obj) : NULL;
+			uint32_t length = JS_GetTypedArrayByteLength(obj, cx);
+			void *data = length ? JS_GetInt8ArrayData(obj, cx) : NULL;
 			JL_CHK( Write(cx, JLSTTypedArray) );
-			JL_CHK( Write(cx, JS_GetTypedArrayType(obj)) );
+			JL_CHK( Write(cx, JS_GetTypedArrayType(obj, cx)) );
 			JL_CHK( Write(cx, SerializerConstBufferInfo(data, length)) );
 			return JS_TRUE;
 		}
@@ -408,7 +408,7 @@ public:
 				// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 				serializerWrapper = JL_NewJslibsObject(cx, "Serializer");
 				JL_CHK( serializerWrapper );
-				JL_SetPrivate(cx, serializerWrapper, this);
+				JL_SetPrivate( serializerWrapper, this);
 				argv[1] = OBJECT_TO_JSVAL(serializerWrapper);
 			} else {
 
@@ -421,7 +421,7 @@ public:
 			
 			if ( serializerWrapper != NULL ) {
 
-				JL_SetPrivate(cx, serializerWrapper, NULL);
+				JL_SetPrivate( serializerWrapper, NULL);
 			}
 
 			JL_CHK( ok );
@@ -608,7 +608,7 @@ public:
 		for ( uint32_t i = 0; i < reservedSlotsCount; ++i ) {
 
 			JL_CHK( Read(cx, value) );
-			JL_CHK( JL_SetReservedSlot(cx, obj, i, value) );
+			JL_CHK( JL_SetReservedSlot( obj, i, value) );
 		}
 		return JS_TRUE;
 		JL_BAD;
@@ -742,7 +742,7 @@ public:
 					// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 					unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
 					JL_CHK( unserializerWrapper );
-					JL_SetPrivate(cx, unserializerWrapper, this);
+					JL_SetPrivate( unserializerWrapper, this);
 					argv[1] = OBJECT_TO_JSVAL(unserializerWrapper);
 				} else {
 
@@ -752,7 +752,7 @@ public:
 
 				JSBool ok = JL_CallFunctionId(cx, newObj, JLID(cx, _unserialize), COUNTOF(argv)-1, argv+1, argv); // rval not used
 				if ( unserializerWrapper != NULL )
-					JL_SetPrivate(cx, unserializerWrapper, NULL);
+					JL_SetPrivate( unserializerWrapper, NULL);
 				JL_CHK( ok );
 
 				val = OBJECT_TO_JSVAL(newObj);
@@ -772,7 +772,7 @@ public:
 					// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 					unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
 					JL_CHK( unserializerWrapper );
-					JL_SetPrivate(cx, unserializerWrapper, this);
+					JL_SetPrivate( unserializerWrapper, this);
 					arg_1 = OBJECT_TO_JSVAL(unserializerWrapper);
 				} else {
 
@@ -782,7 +782,7 @@ public:
 
 				JSBool ok = JL_CallFunctionVA(cx, JL_GetGlobal(cx), funVal, &val, arg_1);
 				if ( unserializerWrapper != NULL )
-					JL_SetPrivate(cx, unserializerWrapper, NULL);
+					JL_SetPrivate( unserializerWrapper, NULL);
 				JL_CHK( ok );
 
 
@@ -804,9 +804,31 @@ public:
 				JL_CHK( Read(cx, type) );
 				JL_CHK( Read(cx, data) );
 				JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), &val) );
-				JSObject *arrayBuffer = js_CreateTypedArrayWithBuffer(cx, type, JSVAL_TO_OBJECT(val), -1, -1);
-				JL_CHK( arrayBuffer );
-				val = OBJECT_TO_JSVAL(arrayBuffer);
+				JSObject *typedArray; // = js_CreateTypedArrayWithBuffer(cx, type, JSVAL_TO_OBJECT(val), -1, -1);
+
+				switch ( type ) {
+					case js::ArrayBufferView::TYPE_INT8:
+						typedArray = JS_NewInt8ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+					case js::ArrayBufferView::TYPE_UINT8:
+						typedArray = JS_NewUint8ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+					case js::ArrayBufferView::TYPE_INT16:
+						typedArray = JS_NewInt16ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+					case js::ArrayBufferView::TYPE_UINT16:
+						typedArray = JS_NewUint16ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+					case js::ArrayBufferView::TYPE_INT32:
+						typedArray = JS_NewInt32ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+					case js::ArrayBufferView::TYPE_UINT32:
+						typedArray = JS_NewUint32ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+					case js::ArrayBufferView::TYPE_FLOAT32:
+						typedArray = JS_NewFloat32ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+					case js::ArrayBufferView::TYPE_FLOAT64:
+						typedArray = JS_NewFloat64ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+					case js::ArrayBufferView::TYPE_UINT8_CLAMPED:
+						typedArray = JS_NewUint8ClampedArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+				}
+
+				JL_CHK( typedArray );
+				val = OBJECT_TO_JSVAL(typedArray);
 				break;
 			}
 			case JLSTErrorObject: {

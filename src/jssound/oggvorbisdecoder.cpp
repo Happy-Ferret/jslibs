@@ -152,14 +152,14 @@ static const ov_callbacks ovCallbacks = { read_func, seek_func, 0, tell_func };
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( pv != NULL ) {
 
 		ov_clear(&pv->ofDescriptor); // beware: info must be valid
-		JS_free(cx, pv);
+		JS_freeop(fop, pv);
 	}
 }
 
@@ -197,9 +197,9 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_INPUT_STREAM, JL_ARG(1)) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_INPUT_STREAM, JL_ARG(1)) );
 	pv->streamObject = JSVAL_TO_OBJECT(JL_ARG(1));
 
 	pv->cx = cx;
@@ -398,7 +398,7 @@ DEFINE_PROPERTY_GETTER( inputStream ) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_INPUT_STREAM, vp) );
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_INPUT_STREAM, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

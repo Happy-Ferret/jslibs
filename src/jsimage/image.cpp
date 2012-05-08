@@ -20,7 +20,7 @@ BEGIN_CLASS( Image )
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	void *data = JL_GetPrivate(obj);
@@ -44,7 +44,7 @@ DEFINE_FUNCTION( alloc ) {
 	data = jl_malloc(size);
 	JL_ASSERT_ALLOC( data );
 	JL_updateMallocCounter(cx, size);
-	JL_SetPrivate(cx, obj, data);
+	JL_SetPrivate( obj, data);
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -62,7 +62,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ALLOC( allocFunction ); // "Unable to create allocation function."
 	JSObject *functionObject;
 	functionObject = JS_GetFunctionObject(allocFunction);
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_FUNCTION_ALLOC, OBJECT_TO_JSVAL(functionObject)) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_FUNCTION_ALLOC, OBJECT_TO_JSVAL(functionObject)) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -77,7 +77,7 @@ DEFINE_FUNCTION( free ) {
 	void *data = JL_GetPrivate(obj);
 	if ( data != NULL ) {
 
-		JL_SetPrivate(cx, obj, NULL);
+		JL_SetPrivate( obj, NULL);
 		jl_free(data);
 	}
 	return JS_TRUE;
@@ -128,7 +128,7 @@ DEFINE_FUNCTION( trim ) {
 	else {
 		newData = (char*)jl_malloc( channels * (x1-x) * (y1-y) );
 		JL_ASSERT_ALLOC( newData );
-		JL_SetPrivate(cx, obj, newData);
+		JL_SetPrivate( obj, newData);
 	}
 
 	int newWidth, newHeight;

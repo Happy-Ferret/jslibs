@@ -60,10 +60,10 @@ inline JSBool NotifyObject( int slotIndex, JSContext *cx, JSObject *obj, jsid id
 //	jsval prevValue;
 //	JL_CHK( JS_LookupPropertyWithFlags(cx, obj, JL_GetStringBytes(JS_ValueToString(cx, id)), JSRESOLVE_QUALIFIED|JSRESOLVE_ASSIGNING|JSRESOLVE_DECLARING, &prevValue) );
 
-	JL_CHK( JL_GetReservedSlot( cx, obj, slotIndex , &slot ) );
+	JL_CHK( JL_GetReservedSlot(  obj, slotIndex , &slot ) );
 	if ( JSVAL_IS_VOID(slot) )
 		return JS_TRUE;
-	JL_CHK( JL_GetReservedSlot( cx, obj, AUX_SLOT, &aux ) );
+	JL_CHK( JL_GetReservedSlot(  obj, AUX_SLOT, &aux ) );
 	// args[0] = id;
 	JL_CHK( JS_IdToValue(cx, id, &args[0]) );
 	args[1] = *vp;
@@ -133,10 +133,10 @@ DEFINE_CONSTRUCTOR() {
 		if ( JL_ARG_ISDEF(i+1) ) {
 
 			JL_ASSERT_ARG_IS_CALLABLE(i+1);
-			JL_CHK( JL_SetReservedSlot( cx, obj, i, JL_ARG(i+1) ) );
+			JL_CHK( JL_SetReservedSlot(  obj, i, JL_ARG(i+1) ) );
 		}
 	if ( JL_ARGC >= 5 ) // AUX object
-		JL_CHK( JL_SetReservedSlot( cx, obj, AUX_SLOT, JL_ARG(5) ) );
+		JL_CHK( JL_SetReservedSlot(  obj, AUX_SLOT, JL_ARG(5) ) );
 	JL_CHK( JS_SetPrototype(cx, obj, NULL) ); // this creates an empty object ( without __proto__, __parent__, toString, ... )
 	return JS_TRUE;
 	JL_BAD;
@@ -161,9 +161,9 @@ DEFINE_FUNCTION( aux ) {
 
 	JSObject *object;
 	object = JSVAL_TO_OBJECT(JL_ARG(1));  // beware, obj1 has no proto ! (see JS_SetPrototype(cx, obj, NULL) in the constructor)
-	JL_CHK( JL_GetReservedSlot( cx, object, AUX_SLOT, JL_RVAL ) );
+	JL_CHK( JL_GetReservedSlot(  object, AUX_SLOT, JL_RVAL ) );
 	if ( JL_ARG_ISDEF(2) )
-	  JL_CHK( JL_SetReservedSlot( cx, object, AUX_SLOT, JL_ARG(2) ) );
+	  JL_CHK( JL_SetReservedSlot(  object, AUX_SLOT, JL_ARG(2) ) );
 	return JS_TRUE;
 	JL_BAD;
 

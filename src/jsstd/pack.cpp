@@ -306,10 +306,8 @@ BEGIN_CLASS( Pack )
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
-
-	JL_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, JSVAL_VOID); // (TBD) check if it is legal
 }
 
 /**doc
@@ -328,14 +326,14 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT( JL_ARG(1) ), JL_CLASS(Buffer) );
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, JL_ARG(1)) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_PACK_BUFFEROBJECT, JL_ARG(1)) );
 
 	bool useNetworkEndian;
 	if ( JL_ARG_ISDEF(2) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &useNetworkEndian) );
 	else
 		useNetworkEndian = false;
-	JL_SetPrivate(cx, obj, (void*)(size_t)(useNetworkEndian ? 2 : 0));
+	JL_SetPrivate( obj, (void*)(size_t)(useNetworkEndian ? 2 : 0));
 
 	return JS_TRUE;
 	JL_BAD;
@@ -360,7 +358,7 @@ DEFINE_FUNCTION( readInt ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
 	JL_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
 
 	JSObject *bufferObject;
@@ -489,7 +487,7 @@ DEFINE_FUNCTION( writeInt ) { // incompatible with NIStreamRead
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1, 4);
 
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
 	JL_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
 
 	JSObject *bufferObject;
@@ -585,7 +583,7 @@ DEFINE_FUNCTION( readReal ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
 	JL_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
@@ -628,7 +626,7 @@ DEFINE_FUNCTION( readString ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_PACK_BUFFEROBJECT, &bufferVal) );
 	JL_ASSERT_OBJECT_STATE( !JSVAL_IS_VOID(bufferVal), JL_CLASS_NAME(Buffer) );
 	JSObject *bufferObject;
 	bufferObject = JSVAL_TO_OBJECT( bufferVal );
@@ -669,7 +667,7 @@ DEFINE_PROPERTY_SETTER( useNetworkEndian ) {
 	JL_ASSERT_THIS_INSTANCE();
 	bool useNetworkEndian;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &useNetworkEndian) );
-	JL_SetPrivate(cx, obj, (void*)(size_t)(useNetworkEndian ? 2 : 0));
+	JL_SetPrivate( obj, (void*)(size_t)(useNetworkEndian ? 2 : 0));
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -694,7 +692,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_PACK_BUFFEROBJECT, vp ) );
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_PACK_BUFFEROBJECT, vp ) );
 	return JS_TRUE;
 	JL_BAD;
 }

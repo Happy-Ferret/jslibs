@@ -28,10 +28,10 @@ BEGIN_CLASS( Stream )
 
 
 ALWAYS_INLINE JSBool
-GetStreamSource(JSContext *cx, JSObject *obj, JSObject **srcObj) {
+GetStreamSource(JSContext *, JSObject *obj, JSObject **srcObj) {
 
 	jsval val;
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, &val) );
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_STREAM_SOURCE, &val) );
 	ASSERT( JSVAL_IS_OBJECT( val ) );
 	*srcObj = JSVAL_TO_OBJECT( val );
 	return JS_TRUE;
@@ -48,7 +48,7 @@ SetStreamSource(JSContext *cx, JSObject *obj, jsval *srcVal) {
 		*srcVal = OBJECT_TO_JSVAL(tmpObj);
 	}
 
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, *srcVal) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_STREAM_SOURCE, *srcVal) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -112,7 +112,7 @@ StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount ) {
 	JL_ASSERT_INSTANCE(streamObj, JL_THIS_CLASS);
 
 	JL_CHK( GetPosition(cx, streamObj, &position) );
-	JL_CHK( JL_GetReservedSlot(cx, streamObj, SLOT_STREAM_SOURCE, &source) );
+	JL_CHK( JL_GetReservedSlot( streamObj, SLOT_STREAM_SOURCE, &source) );
 	JL_CHK( JL_JsvalToNative(cx, source, &data) );
 
 	size_t length = data.Length();
@@ -278,7 +278,7 @@ DEFINE_PROPERTY_GETTER( source ) {
 
 	JL_IGNORE(id);
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_STREAM_SOURCE, vp) );
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_STREAM_SOURCE, vp) );
 	return JS_TRUE;
 	JL_BAD;
 }

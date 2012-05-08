@@ -14,7 +14,7 @@
 
 #pragma once
 
-
+/*
 // from jsnum.h
 
 typedef union jsdpun {
@@ -37,6 +37,7 @@ JSDOUBLE_IS_NaN(double d)
     return (u.u64 & JSDOUBLE_EXPMASK) == JSDOUBLE_EXPMASK &&
            (u.u64 & JSDOUBLE_MANTMASK) != 0;
 }
+*/
 
 /*
 // declared friend in jsiter.h
@@ -90,3 +91,5 @@ JS_NewObjectForConstructor(JSContext *cx, const JSClass *cl, const jsval *vp) {
 	return NULL;
 }
 */
+
+

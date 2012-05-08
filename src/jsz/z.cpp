@@ -47,7 +47,7 @@ struct Private {
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -69,7 +69,7 @@ DEFINE_FINALIZE() {
 
 		//JL_ASSERT_WARN( status == Z_OK, E_OBJ, E_STR(JL_THIS_CLASS_NAME), E_FIN, E_COMMENT(pv->stream.msg ? pv->stream.msg : "") ); // "Unable to finalize zlib stream (%s).", pv->stream.msg ); // (TBD) send to log !
 	}
-	JS_free(cx, pv);
+	JS_freeop(fop, pv);
 bad:
 	return;
 }
@@ -114,7 +114,7 @@ DEFINE_CONSTRUCTOR() {
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK(pv);
 
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	pv->stream.state = Z_NULL; // mendatory
 
 //	pv->stream.zalloc = Z_NULL;

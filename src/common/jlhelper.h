@@ -32,8 +32,6 @@
 #include <jsdbgapi.h>
 #include "jsatom.h"
 
-#include <jstypedarray.h>
-
 #include "polyfill.h"
 
 #ifdef _MSC_VER
@@ -218,9 +216,8 @@ JL_GetPrivate( JSObject *obj ) {
 }
 
 ALWAYS_INLINE void FASTCALL
-JL_SetPrivate( JSContext *cx, JSObject *obj, void *data ) {
+JL_SetPrivate( JSObject *obj, void *data ) {
 
-	JL_IGNORE(cx);
 	ASSERT( JS_IsNative(obj) );
 	ASSERT( JL_HasPrivate(obj) );
 	JS_SetPrivate(obj, data);
@@ -275,7 +272,7 @@ JL_SetElement(JSContext *cx, JSObject *obj, unsigned index, jsval *vp) {
 
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_GetReservedSlot( JSContext *, JSObject *obj, uint32_t slot, jsval *vp ) {
+JL_GetReservedSlot(JSObject *obj, uint32_t slot, jsval *vp) {
 
 	ASSERT( slot < JSCLASS_RESERVED_SLOTS(JL_GetClass(obj)) );
 	ASSERT( JS_IsNative(obj) );
@@ -284,7 +281,7 @@ JL_GetReservedSlot( JSContext *, JSObject *obj, uint32_t slot, jsval *vp ) {
 }
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_SetReservedSlot(JSContext *, JSObject *obj, unsigned slot, const jsval &v) {
+JL_SetReservedSlot(JSObject *obj, unsigned slot, const jsval &v) {
 
 	ASSERT( JS_IsNative(obj) );
 	js::SetReservedSlot(obj, slot, v); // jsfriendapi
@@ -501,6 +498,17 @@ JL_SetContextPrivate( const JSContext *cx, JLContextPrivate *ContextPrivate ) {
 #include "jlhostprivate.h"
 
 ALWAYS_INLINE HostPrivate*
+JL_GetHostPrivate( JSRuntime *rt ) {
+
+	HostPrivate *hpv = static_cast<HostPrivate*>(JL_GetRuntimePrivate(rt));
+#ifdef DEBUG
+	hpv->tmp_count++;
+#endif
+	return hpv;
+}
+
+
+ALWAYS_INLINE HostPrivate*
 JL_GetHostPrivate( JSContext *cx ) {
 
 	HostPrivate *hpv = static_cast<HostPrivate*>(JL_GetRuntimePrivate(JL_GetRuntime(cx)));
@@ -566,11 +574,11 @@ JL_GetModulePrivateOrNULL( JSContext *cx, uint32_t moduleId ) {
 
 
 ALWAYS_INLINE void* FASTCALL
-JL_GetModulePrivate( JSContext *cx, uint32_t moduleId ) {
+JL_GetModulePrivate( JSRuntime *rt, uint32_t moduleId ) {
 
 	ASSERT( moduleId != 0 );
 	uint8_t id = JL_ModulePrivateHash(moduleId);
-	HostPrivate::ModulePrivate *mpv = JL_GetHostPrivate(cx)->modulePrivate;
+	HostPrivate::ModulePrivate *mpv = JL_GetHostPrivate(rt)->modulePrivate;
 
 #ifdef DEBUG
 	uint8_t maxid = id;
@@ -587,6 +595,14 @@ JL_GetModulePrivate( JSContext *cx, uint32_t moduleId ) {
 	}
 	return mpv[id].privateData;
 }
+
+ALWAYS_INLINE void* FASTCALL
+JL_GetModulePrivate( JSContext *cx, uint32_t moduleId ) {
+
+	return JL_GetModulePrivate(JL_GetRuntime(cx), moduleId);
+}
+
+
 // example of use: static uint32_t moduleId = 'dbug'; SetModulePrivate(cx, moduleId, mpv);
 
 
@@ -1050,7 +1066,7 @@ JL_ValueIsArrayLike( JSContext *cx, const jsval &val ) {
 ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsData( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 
-	return JS_IsArrayBufferObject(obj) || BufferGetInterface(cx, obj) != NULL || JL_ObjectIsArrayLike(cx, obj);
+	return JS_IsArrayBufferObject(obj, cx) || BufferGetInterface(cx, obj) != NULL || JL_ObjectIsArrayLike(cx, obj);
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -1826,25 +1842,25 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLData *str ) {
 		if ( fct )
 			return fct(cx, obj, str);
 
-		if ( JS_IsArrayBufferObject(obj) ) {
+		if ( JS_IsArrayBufferObject(obj, cx) ) {
 			
-			uint32_t length = JS_GetArrayBufferByteLength(obj);
+			uint32_t length = JS_GetArrayBufferByteLength(obj, cx);
 			if ( length )
-				*str = JLData((const char*)JS_GetArrayBufferData(obj), false, length);
+				*str = JLData((const char*)JS_GetArrayBufferData(obj, cx), false, length);
 			else
 				*str = JLData::Empty();
 			return JS_TRUE;
 		}
 		
-		if ( js_IsTypedArray(obj) ) {
+		if ( JS_IsTypedArrayObject(obj, cx) ) {
 
-			uint32_t length = JS_GetTypedArrayLength(obj);
+			uint32_t length = JS_GetTypedArrayLength(obj, cx);
 			if ( length ) {
 
-				if ( JS_GetTypedArrayType(obj) == js::TypedArray::TYPE_UINT16 )
-					*str = JLData((const jschar*)JS_GetTypedArrayData(obj), false, length);
+				if ( JS_GetTypedArrayType(obj, cx) == js::ArrayBufferView::TYPE_UINT16 )
+					*str = JLData((const jschar*)JS_GetArrayBufferData(obj, cx), false, length);
 				else
-					*str = JLData((const char*)JS_GetTypedArrayData(obj), false, length);
+					*str = JLData((const char*)JS_GetArrayBufferData(obj, cx), false, length);
 			} else {
 
 				*str = JLData::Empty();
@@ -2511,8 +2527,8 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, double *num ) {
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const jsval &val, double *num )
 
 	JL_CHK( JS_ValueToNumber(cx, val, num) );
-	ASSERT( JSDOUBLE_IS_NaN(JSVAL_TO_DOUBLE(JL_GetNaNValue(cx))) );
-	JL_CHKM( !JSDOUBLE_IS_NaN(*num), E_VALUE, E_TYPE, E_TY_NUMBER );
+	ASSERT( MOZ_DOUBLE_IS_NaN(JSVAL_TO_DOUBLE(JL_GetNaNValue(cx))) );
+	JL_CHKM( !MOZ_DOUBLE_IS_NaN(*num), E_VALUE, E_TYPE, E_TY_NUMBER );
 	return JS_TRUE;
 	JL_BAD;
 
@@ -2550,8 +2566,8 @@ JL_JsvalToNative( JSContext *cx, const jsval &val, float *num ) {
 	double tmp;
 	if ( !JS_ValueToNumber(cx, val, &tmp) )
 		return JS_FALSE;
-	ASSERT( JSDOUBLE_IS_NaN(JSVAL_TO_DOUBLE(JL_GetNaNValue(cx))) );
-	JL_CHKM( !JSDOUBLE_IS_NaN(tmp), E_VALUE, E_TYPE, E_TY_NUMBER );
+	ASSERT( MOZ_DOUBLE_IS_NaN(JSVAL_TO_DOUBLE(JL_GetNaNValue(cx))) );
+	JL_CHKM( !MOZ_DOUBLE_IS_NaN(tmp), E_VALUE, E_TYPE, E_TY_NUMBER );
 	*num = float(tmp);
 	return JS_TRUE;
 	JL_BAD;
@@ -2716,14 +2732,14 @@ JL_NativeVectorToJsval( JSContext * RESTRICT cx, const T * RESTRICT vector, unsi
 }
 
 
-ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const int8_t & ) { return js::TypedArray::TYPE_INT8; }
-ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const uint8_t & ) { return js::TypedArray::TYPE_UINT8; }
-ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const int16_t & ) { return js::TypedArray::TYPE_INT16; }
-ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const uint16_t & ) { return js::TypedArray::TYPE_UINT16; }
-ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const int32_t & ) { return js::TypedArray::TYPE_INT32; }
-ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const uint32_t & ) { return js::TypedArray::TYPE_UINT32; }
-ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const float32_t & ) { return js::TypedArray::TYPE_FLOAT32; }
-ALWAYS_INLINE uint32_t JLNativeTypeToTypedArrayType( const float64_t & ) { return js::TypedArray::TYPE_FLOAT64; }
+ALWAYS_INLINE int JLNativeTypeToTypedArrayType( const int8_t & ) { return js::ArrayBufferView::TYPE_INT8; }
+ALWAYS_INLINE int JLNativeTypeToTypedArrayType( const uint8_t & ) { return js::ArrayBufferView::TYPE_UINT8; }
+ALWAYS_INLINE int JLNativeTypeToTypedArrayType( const int16_t & ) { return js::ArrayBufferView::TYPE_INT16; }
+ALWAYS_INLINE int JLNativeTypeToTypedArrayType( const uint16_t & ) { return js::ArrayBufferView::TYPE_UINT16; }
+ALWAYS_INLINE int JLNativeTypeToTypedArrayType( const int32_t & ) { return js::ArrayBufferView::TYPE_INT32; }
+ALWAYS_INLINE int JLNativeTypeToTypedArrayType( const uint32_t & ) { return js::ArrayBufferView::TYPE_UINT32; }
+ALWAYS_INLINE int JLNativeTypeToTypedArrayType( const float32_t & ) { return js::ArrayBufferView::TYPE_FLOAT32; }
+ALWAYS_INLINE int JLNativeTypeToTypedArrayType( const float64_t & ) { return js::ArrayBufferView::TYPE_FLOAT64; }
 
 ALWAYS_INLINE const char * JLNativeTypeToString( const int8_t & ) { return "Int8Array"; }
 ALWAYS_INLINE const char * JLNativeTypeToString( const uint8_t & ) { return "Uint8Array"; }
@@ -2739,11 +2755,11 @@ template <class T>
 INLINE JSBool FASTCALL
 JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T * RESTRICT vector, unsigned maxLength, unsigned * RESTRICT actualLength ) {
 
-	ASSERT( js_IsTypedArray(obj) );
-	JL_ASSERT( JS_GetTypedArrayType(obj) == JLNativeTypeToTypedArrayType(*vector), E_TY_TYPEDARRAY, E_TYPE, E_NAME(JLNativeTypeToString(*vector)) );
+	ASSERT( JS_IsTypedArrayObject(obj, cx) );
+	JL_ASSERT( JS_GetTypedArrayType(obj, cx) == JLNativeTypeToTypedArrayType(*vector), E_TY_TYPEDARRAY, E_TYPE, E_NAME(JLNativeTypeToString(*vector)) );
 	void *data;
-	data = JS_GetTypedArrayData(obj);
-	*actualLength = JS_GetTypedArrayLength(obj);
+	data = JS_GetArrayBufferData(obj, cx);
+	*actualLength = JS_GetTypedArrayLength(obj, cx);
 	maxLength = JL_MIN( *actualLength, maxLength );
 	for ( unsigned i = 0; i < maxLength; ++i ) {
 
@@ -2758,10 +2774,10 @@ INLINE JSBool FASTCALL
 JL_ArrayBufferToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T * RESTRICT vector, unsigned maxLength, unsigned * RESTRICT actualLength ) {
 	
 	JL_IGNORE(cx);
-	ASSERT( js_IsArrayBuffer(obj) );
-	uint8_t *buffer = JS_GetArrayBufferData(obj);
+	ASSERT( JS_IsArrayBufferObject(obj, cx) );
+	uint8_t *buffer = JS_GetArrayBufferData(obj, cx);
 	ASSERT( buffer != NULL );
-	*actualLength = JS_GetArrayBufferByteLength(obj);
+	*actualLength = JS_GetArrayBufferByteLength(obj, cx);
 	maxLength = JL_MIN( *actualLength, maxLength );
 	jl::memcpy((uint8_t*)vector, buffer, maxLength);
 	return JS_TRUE;
@@ -2781,10 +2797,10 @@ JL_JsvalToNativeVector( JSContext * RESTRICT cx, jsval & RESTRICT val, T * RESTR
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(val);
 
-	if (unlikely( js_IsTypedArray(arrayObj) ))
+	if (unlikely( JS_IsTypedArrayObject(arrayObj, cx) ))
 		return JL_TypedArrayToNativeVector(cx, arrayObj, vector, maxLength, actualLength);
 
-	if (unlikely( js_IsArrayBuffer(arrayObj) )) {
+	if (unlikely( JS_IsArrayBufferObject(arrayObj, cx) )) {
 		
 		if ( sizeof(*vector) == 1 )
 			return JL_ArrayBufferToNativeVector(cx, arrayObj, (uint8_t *)vector, maxLength, actualLength);
@@ -2814,7 +2830,7 @@ JL_NativeToReservedSlot( JSContext * RESTRICT cx, JSObject * RESTRICT obj, unsig
 
 	jsval tmp;
 	JL_CHK( JL_NativeToJsval(cx, value, &tmp) );
-	JL_CHK( JL_SetReservedSlot(cx, obj, slot, tmp) );
+	JL_CHK( JL_SetReservedSlot( obj, slot, tmp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -2825,7 +2841,7 @@ ALWAYS_INLINE JSBool FASTCALL
 JL_ReservedSlotToNative( JSContext * RESTRICT cx, JSObject * RESTRICT obj, unsigned slot, T * RESTRICT value ) {
 
 	jsval tmp;
-	JL_CHK( JL_GetReservedSlot(cx, obj, slot, &tmp) );
+	JL_CHK( JL_GetReservedSlot( obj, slot, &tmp) );
 	JL_CHK( JL_JsvalToNative(cx, tmp, value) );
 	return JS_TRUE;
 	JL_BAD;
@@ -3051,13 +3067,13 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, jsval &val, float ** RESTRICT m ) {
 	if ( Matrix44Get )
 		return Matrix44Get(cx, matrixObj, m);
 
-	if ( js_IsTypedArray(matrixObj) ) {
+	if ( JS_IsTypedArrayObject(matrixObj, cx) ) {
 
-		if ( JS_GetTypedArrayType(matrixObj) == js::TypedArray::TYPE_FLOAT32 ) {
+		if ( JS_IsFloat32Array(matrixObj, cx) ) {
 			
-			if ( JS_GetTypedArrayLength(matrixObj) == 16 ) {
+			if ( JS_GetTypedArrayLength(matrixObj, cx) == 16 ) {
 
-				jl::memcpy(*m, JS_GetTypedArrayData(matrixObj), (32 / 8) * 16);
+				jl::memcpy(*m, JS_GetFloat32ArrayData(matrixObj, cx), (32 / 8) * 16);
 				return JS_TRUE;
 			}
 		}
@@ -3134,11 +3150,11 @@ JL_DataBufferFree( JSContext *cx, uint8_t *data ) {
 ALWAYS_INLINE uint8_t* FASTCALL
 JL_NewBuffer( JSContext *cx, size_t nbytes, jsval *rval ) {
 
-	JSObject *bufferObj = js::ArrayBuffer::create(cx, nbytes); // JS_NewArrayBuffer(cx, nbytes);
+	JSObject *bufferObj = JS_NewArrayBuffer(cx, nbytes); // JS_NewArrayBuffer(cx, nbytes);
 	if ( bufferObj ) {
 
 		*rval = OBJECT_TO_JSVAL(bufferObj);
-		return JS_GetArrayBufferData(bufferObj);
+		return JS_GetArrayBufferData(bufferObj, cx);
 	} else {
 
 		return NULL;
@@ -3149,7 +3165,11 @@ JL_NewBuffer( JSContext *cx, size_t nbytes, jsval *rval ) {
 ALWAYS_INLINE bool FASTCALL
 JL_NewBufferCopyN( JSContext *cx, const void *src, size_t nbytes, jsval *rval ) {
 
-	JSObject *bufferObj = js::ArrayBuffer::create(cx, nbytes, (uint8_t*)src); // JS_NewArrayBuffer(cx, nbytes);
+	// JSObject *bufferObj = js::ArrayBuffer::create(cx, nbytes, (uint8_t*)src); // JS_NewArrayBuffer(cx, nbytes);
+	JSObject *bufferObj = JS_NewArrayBuffer(cx, nbytes);
+	void *data = JS_GetArrayBufferData(bufferObj, cx);
+	jl::memcpy(data, src, nbytes);
+
 	if ( bufferObj ) {
 
 		*rval = OBJECT_TO_JSVAL(bufferObj);
@@ -3174,7 +3194,7 @@ JL_NewBufferGetOwnership( JSContext *cx, void *src, size_t nbytes, jsval *rval )
 ALWAYS_INLINE bool FASTCALL
 JL_NewEmptyBuffer( JSContext *cx, jsval *rval ) {
 	
-	JSObject *obj = js::ArrayBuffer::create(cx, 0);
+	JSObject *obj = JS_NewArrayBuffer(cx, 0);
 	if ( obj ) {
 
 		*rval = OBJECT_TO_JSVAL(obj);
@@ -3202,9 +3222,9 @@ JL_ChangeBufferLength( JSContext *cx, jsval *rval, size_t nbytes ) {
 
 	ASSERT( JSVAL_IS_OBJECT(*rval) );
 	JSObject *arrayBufferObj = JSVAL_TO_OBJECT(*rval);
-	ASSERT( JS_IsArrayBufferObject(arrayBufferObj) );
-	uint32_t bufferLen = JS_GetArrayBufferByteLength(arrayBufferObj);
-	void *bufferData = JS_GetArrayBufferData(arrayBufferObj);
+	ASSERT( JS_IsArrayBufferObject(arrayBufferObj, cx) );
+	uint32_t bufferLen = JS_GetArrayBufferByteLength(arrayBufferObj, cx);
+	void *bufferData = JS_GetArrayBufferData(arrayBufferObj, cx);
 
 	if ( nbytes == bufferLen )
 		return (uint8_t*)bufferData;
@@ -3213,16 +3233,20 @@ JL_ChangeBufferLength( JSContext *cx, jsval *rval, size_t nbytes ) {
 	void *newBufferData;
 	if ( nbytes < bufferLen ) {
 
-		newBufferObj = js::ArrayBuffer::create(cx, nbytes, (uint8_t*)bufferData); // JS_NewArrayBuffer(cx, nbytes);
+		//newBufferObj = js::ArrayBuffer::create(cx, nbytes, (uint8_t*)bufferData); // JS_NewArrayBuffer(cx, nbytes);
+		newBufferObj = JS_NewArrayBuffer(cx, nbytes);
+		void *data = JS_GetArrayBufferData(newBufferObj, cx);
+		jl::memcpy(data, bufferData, nbytes);
+
 		if ( !newBufferObj )
 			return false;
-		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
+		newBufferData = JS_GetArrayBufferData(arrayBufferObj, cx);
 	} else {
 
-		newBufferObj = js::ArrayBuffer::create(cx, nbytes);
+		newBufferObj = JS_NewArrayBuffer(cx, nbytes);
 		if ( !newBufferObj )
 			return false;
-		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
+		newBufferData = JS_GetArrayBufferData(arrayBufferObj, cx);
 		jl::memcpy(newBufferData, bufferData, bufferLen);
 	}
 	*rval = OBJECT_TO_JSVAL(newBufferObj);
@@ -3244,14 +3268,14 @@ JL_NewByteImageObject( JSContext *cx, T width, T height, U channels, jsval *rval
 	JSObject *imageObj = JL_NewObj(cx);
 	JL_CHK( imageObj );
 	*rval = OBJECT_TO_JSVAL(imageObj);
-	JSObject *dataObj = js::ArrayBuffer::create(cx, width * height* channels); // JS_NewArrayBuffer(cx, nbytes);
+	JSObject *dataObj = JS_NewArrayBuffer(cx, width * height* channels);
 	JL_CHK( dataObj );
 	dataVal = OBJECT_TO_JSVAL(dataObj);
 	JL_CHK( JS_SetPropertyById(cx, imageObj, JLID(cx, data), &dataVal) );
 	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, width), width) );
 	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, height), height) );
 	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, channels), channels) );
-	return JS_GetArrayBufferData(dataObj);
+	return JS_GetArrayBufferData(dataObj, cx);
 bad:
 	return NULL;
 }
@@ -3315,7 +3339,7 @@ JL_NewByteAudioObject( JSContext *cx, T bits, U channels, V frames, W rate, jsva
 	JSObject *audioObj = JL_NewObj(cx);
 	JL_CHK( audioObj );
 	*rval = OBJECT_TO_JSVAL(audioObj);
-	JSObject *dataObj = js::ArrayBuffer::create(cx, (bits/8) * channels * frames); // JS_NewArrayBuffer(cx, nbytes);
+	JSObject *dataObj = JS_NewArrayBuffer(cx, (bits/8) * channels * frames);
 	JL_CHK( dataObj );
 	dataVal = OBJECT_TO_JSVAL(dataObj);
 	JL_CHK( JS_SetPropertyById(cx, audioObj, JLID(cx, data), &dataVal) );
@@ -3323,7 +3347,7 @@ JL_NewByteAudioObject( JSContext *cx, T bits, U channels, V frames, W rate, jsva
 	JL_CHK( JL_NativeToProperty(cx, audioObj, JLID(cx, channels), channels) );
 	JL_CHK( JL_NativeToProperty(cx, audioObj, JLID(cx, frames), frames) );
 	JL_CHK( JL_NativeToProperty(cx, audioObj, JLID(cx, rate), rate) );
-	return JS_GetArrayBufferData(dataObj);
+	return JS_GetArrayBufferData(dataObj, cx);
 bad:
 	return NULL;
 }
@@ -3340,10 +3364,11 @@ JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, T bits, U channels, 
 	JSObject *audioObj = JL_NewObj(cx);
 	JL_CHK( audioObj );
 	*rval = OBJECT_TO_JSVAL(audioObj);
-	JSObject *dataObj = js::ArrayBuffer::create(cx, (bits/8) * channels * frames, buffer); // (TBD) handle ArrayBuffer ownership
-	jl_free(buffer);
-	JL_CHK( dataObj );
-	dataVal = OBJECT_TO_JSVAL(dataObj);
+	//JSObject *dataObj = js::ArrayBuffer::create(cx, (bits/8) * channels * frames, buffer); // (TBD) handle ArrayBuffer ownership
+	//jl_free(buffer);
+	//JL_CHK( dataObj );
+	JL_CHK( JL_NewBufferGetOwnership(cx, buffer, (bits/8) * channels * frames, &dataVal) );
+	//dataVal = OBJECT_TO_JSVAL(dataObj);
 	JL_CHK( JS_SetPropertyById(cx, audioObj, JLID(cx, data), &dataVal) );
 	JL_CHK( JL_NativeToProperty(cx, audioObj, JLID(cx, bits), bits) );
 	JL_CHK( JL_NativeToProperty(cx, audioObj, JLID(cx, channels), channels) );

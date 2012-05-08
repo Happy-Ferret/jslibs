@@ -565,10 +565,10 @@ DEFINE_FUNCTION( createProcess ) {
 //			return ThrowIoError(cx);
 
 		JSObject *fdin = JS_NewObject( cx, classPipe, NULL, NULL );
-		JL_SetPrivate( cx, fdin, stdin_parent );
+		JL_SetPrivate(  fdin, stdin_parent );
 
 		JSObject *fdout = JS_NewObject( cx, classPipe, NULL, NULL );
-		JL_SetPrivate( cx, fdout, stdout_parent );
+		JL_SetPrivate(  fdout, stdout_parent );
 
 		JL_CHK( ReserveStreamReadInterface(cx, fdout) );
 		JL_CHK( SetStreamReadInterface(cx, fdout, NativeInterfaceStreamRead) );

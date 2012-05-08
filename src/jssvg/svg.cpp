@@ -84,7 +84,7 @@ BEGIN_CLASS( SVG ) // Start the definition of the class. It defines some symbols
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -92,7 +92,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 		return;
 
 	g_object_unref(pv->handle);
-	JS_free(cx, pv);
+	JS_freeop(fop, pv);
 }
 
 
@@ -112,7 +112,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->handle = rsvg_handle_new();
 	JL_ASSERT( pv->handle != NULL, E_THISOBJ, E_CREATE ); // "Unable to create rsvg handler."
 	cairo_matrix_init_identity(&pv->transformation);
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -193,7 +193,7 @@ DEFINE_PROPERTY( xmlData ) {
 		g_object_unref(handle);
 	handle = rsvg_handle_new();
 	JL_ASSERT( handle != NULL, "Unable to create rsvg handler." );
-	JL_SetPrivate(cx, obj, handle);
+	JL_SetPrivate( obj, handle);
 
 	const char *data;
 	size_t length;
@@ -712,11 +712,11 @@ DEFINE_PROPERTY(images) {
 	RsvgHandle *handle = (RsvgHandle*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(handle);
 
-	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, SLOT_IMAGES_OBJECT, vp) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_IMAGES_OBJECT, vp) );
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		*vp = OBJECT_TO_JSVAL( JL_NewObj(cx) );
-		JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_IMAGES_OBJECT, *vp) );
+		JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_IMAGES_OBJECT, *vp) );
 	}
 	return JS_TRUE;
 }

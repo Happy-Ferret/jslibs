@@ -26,8 +26,8 @@ BEGIN_CLASS( WinError )
 DEFINE_PROPERTY_GETTER( code ) {
 
 	jsval hi, lo;
-	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
-	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, &hi );
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, &lo );
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 	JL_CHK( JL_NewNumberValue(cx, (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)), vp) );
 	return JS_TRUE;
@@ -49,8 +49,8 @@ const char *ErrorToConstName( DWORD err ) {
 DEFINE_PROPERTY_GETTER( const ) {
 
 	jsval hi, lo;
-	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
-	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, &hi );
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, &lo );
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, ErrorToConstName( (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)) )) );
@@ -62,8 +62,8 @@ DEFINE_PROPERTY_GETTER( const ) {
 DEFINE_PROPERTY_GETTER( text ) {
 
 	jsval hi, lo;
-	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_HI, &hi );
-	JL_GetReservedSlot( cx, obj, SLOT_WIN_ERROR_CODE_LO, &lo );
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, &hi );
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, &lo );
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 	DWORD err = (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi));
 
@@ -105,9 +105,9 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, SLOT_WIN_ERROR_CODE_HI, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_HI, JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, SLOT_WIN_ERROR_CODE_LO, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_LO, JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
 	return JS_TRUE;
@@ -129,9 +129,9 @@ DEFINE_FUNCTION( _unserialize ) {
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
 	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_WIN_ERROR_CODE_HI, *JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_HI, *JL_RVAL) );
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_WIN_ERROR_CODE_LO, *JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_LO, *JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -168,8 +168,8 @@ WinNewError( JSContext *cx, DWORD errorCode, jsval *rval ) {
 	
 	*rval = OBJECT_TO_JSVAL( error );
 
-	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(HIWORD(errorCode)) ) );
-	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(LOWORD(errorCode)) ) );
+	JL_CHK( JL_SetReservedSlot(  error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(HIWORD(errorCode)) ) );
+	JL_CHK( JL_SetReservedSlot(  error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(LOWORD(errorCode)) ) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -182,8 +182,8 @@ WinThrowError( JSContext *cx, DWORD errorCode ) {
 //	JL_ASSERT( error != NULL, "Unable to create WinError object." );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 
-	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(HIWORD(errorCode)) ) );
-	JL_CHK( JL_SetReservedSlot( cx, error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(LOWORD(errorCode)) ) );
+	JL_CHK( JL_SetReservedSlot(  error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(HIWORD(errorCode)) ) );
+	JL_CHK( JL_SetReservedSlot(  error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(LOWORD(errorCode)) ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
 	return JS_FALSE;
 	JL_BAD;

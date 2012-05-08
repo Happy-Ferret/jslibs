@@ -42,8 +42,7 @@ DEFINE_FINALIZE() {
 	if ( pv->owner )
 		status = PR_DeleteSemaphore(pv->name);
 
-	JS_free(cx, pv);
-//	JL_SetPrivate(cx, JL_OBJ, NULL);
+	JS_freeop(fop, pv);
 }
 
 
@@ -102,7 +101,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->semaphore = semaphore;
 	pv->owner = isCreation;
 
-	JL_SetPrivate(cx, JL_OBJ, pv);
+	JL_SetPrivate( JL_OBJ, pv);
 
 	return JS_TRUE;
 	JL_BAD;

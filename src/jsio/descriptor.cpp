@@ -89,14 +89,14 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 
 
 
-void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
+void FinalizeDescriptor(JSFreeOp *fop, JSObject *obj) {
 
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( obj );
 	if ( !fd ) // check if not already closed
 		return;
 
 	jsval imported;
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
 	if ( imported == JSVAL_TRUE ) // Descriptor was inported, then do not close it
 		return;
 
@@ -109,7 +109,6 @@ void FinalizeDescriptor(JSContext *cx, JSObject *obj) {
 			//JL_WARN( E_NAME(JL_CLASS_NAME(Descriptor)), E_FIN ); // "A descriptor cannot be closed while Finalize." // (TBD) send to log !
 		}
 	}
-	JL_SetPrivate(cx, obj, NULL);
 
 bad:
 	return;
@@ -153,7 +152,7 @@ DEFINE_FUNCTION( close ) {
 		if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
 			return ThrowIoError(cx);
 	}
-	JL_SetPrivate(cx, obj, NULL);
+	JL_SetPrivate( obj, NULL);
 	JL_CHK( SetStreamReadInterface(cx, obj, NULL) );
 
 	return JS_TRUE;
@@ -596,10 +595,10 @@ $TOC_MEMBER $INAME
   Is $TRUE if the end of the file has been reached or the socket has been disconnected.
 **/
 /*
-// 					JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, SLOT_JSIO_DESCRIPTOR_EOF, JSVAL_TRUE) );
+// 					JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_JSIO_DESCRIPTOR_EOF, JSVAL_TRUE) );
 DEFINE_PROPERTY( eof ) {
 
-	return JL_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_EOF, vp);
+	return JL_GetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_EOF, vp);
 }
 */
 
@@ -670,8 +669,8 @@ DEFINE_FUNCTION( import ) {
 		return ThrowIoError(cx);
 
 	JL_CHK( descriptorObject );
-	JL_SetPrivate(cx, descriptorObject, (void*)fd);
-	JL_CHK( JL_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
+	JL_SetPrivate( descriptorObject, (void*)fd);
+	JL_CHK( JL_SetReservedSlot( descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
 
 	*JL_RVAL = OBJECT_TO_JSVAL(descriptorObject);
 	return JS_TRUE;
@@ -957,7 +956,7 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 		JL_CHK( JL_NativeToJsval(cx, timeout, vp) );
 	}
 
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, *vp) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, *vp) );
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, false) );
 	return JS_TRUE;
 	JL_BAD;

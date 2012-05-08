@@ -139,7 +139,7 @@ bad: // and good:
 }
 
 
-void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
+void DestroyScriptHook(JSFreeOp *fop, JSScript *script, void *callerdata) {
 
 //	printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticLevel, script );
 
@@ -170,7 +170,7 @@ void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
 	}
 */
 
-	jl::Queue *scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;
+	jl::Queue *scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(fop->runtime(), _moduleId))->scriptFileList;
 
 	jl::QueueCell *it, *it1;
 	jl::Queue *scriptList = NULL;
@@ -320,7 +320,7 @@ ModuleRelease(JSContext *cx) {
 	JS_SetNewScriptHookProc(JL_GetRuntime(cx), NULL, NULL);
 	JS_SetDestroyScriptHookProc(JL_GetRuntime(cx), NULL, NULL);
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
+	if ( JL_GetHostPrivate(JL_GetRuntime(cx))->canSkipCleanup ) // do not cleanup in unsafe mode.
 		return JS_TRUE;
 
 	jl::Queue *scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;

@@ -25,7 +25,7 @@ BEGIN_CLASS( JointSlider )
 
 DEFINE_FINALIZE() {
 
-	FinalizeJoint(cx, obj);
+	FinalizeJoint(obj);
 }
 
 /**doc
@@ -56,7 +56,7 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointID jointId = ode::dJointCreateSlider(worldId, groupId); // The joint group ID is 0 to allocate the joint normally.
 	ode::dJointSetData(jointId, obj);
 	ode::dJointSetFeedback(jointId, NULL);
-	JL_SetPrivate(cx, obj, jointId);
+	JL_SetPrivate( obj, jointId);
 	return JS_TRUE;
 	JL_BAD;
 }

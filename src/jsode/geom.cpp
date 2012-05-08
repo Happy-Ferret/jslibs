@@ -62,7 +62,7 @@ JSBool SetupReadMatrix(JSContext *cx, JSObject *obj) {
 }
 
 
-void FinalizeGeom(JSContext *cx, JSObject *obj) {
+void FinalizeGeom(JSObject *obj) {
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	if ( !geomId )
@@ -106,7 +106,7 @@ JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // 
 	JL_CHK( *obj );
 
 	ode::dGeomSetData(geomId, *obj);
-	JL_SetPrivate(cx, *obj, geomId);
+	JL_SetPrivate( *obj, geomId);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -135,7 +135,7 @@ DEFINE_FUNCTION( destroy ) {
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	ode::dGeomDestroy(geomId);
-	JL_SetPrivate(cx, obj, NULL);
+	JL_SetPrivate( obj, NULL);
 	SetMatrix44GetInterface(cx, obj, NULL);
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -388,7 +388,7 @@ DEFINE_PROPERTY_GETTER( space ) {
 	ode::dGeomSetData((ode::dGeomID)space, obj);
 */
 	
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_GEOM_SPACEOBJECT, vp) );
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_GEOM_SPACEOBJECT, vp) );
 	if ( JSVAL_IS_VOID( *vp ) )
 		return JS_TRUE;
 
@@ -404,7 +404,7 @@ DEFINE_PROPERTY_GETTER( space ) {
 	if ( spaceId == NULL ) {
 	
 		*vp = JSVAL_VOID;
-		return JL_SetReservedSlot(cx, obj, SLOT_GEOM_SPACEOBJECT, *vp);
+		return JL_SetReservedSlot( obj, SLOT_GEOM_SPACEOBJECT, *vp);
 	}
 
 	return JS_TRUE;
@@ -547,13 +547,13 @@ DEFINE_PROPERTY_SETTER( contact ) {
 //	JL_ASSERT( JL_IsCallable(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
 	if ( !JSVAL_IS_VOID(*vp) )
 		JL_ASSERT_IS_CALLABLE(*vp, "");
-	return JL_SetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, *vp);
+	return JL_SetReservedSlot( obj, SLOT_GEOM_CONTACT_FUNCTION, *vp);
 	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( contact ) {
 
-	return JL_GetReservedSlot(cx, obj, SLOT_GEOM_CONTACT_FUNCTION, vp);
+	return JL_GetReservedSlot( obj, SLOT_GEOM_CONTACT_FUNCTION, vp);
 }
 
 

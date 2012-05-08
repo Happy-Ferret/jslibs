@@ -46,7 +46,7 @@ JSBool ReconstructSpace(JSContext *cx, ode::dSpaceID spaceId, JSObject **obj) { 
 	}
 
 	JL_CHK( SetMatrix44GetInterface(cx, *obj, ReadMatrix) );
-	JL_SetPrivate(cx, *obj, bodyId);
+	JL_SetPrivate( *obj, bodyId);
 	*/
 
 	return JS_TRUE;
@@ -94,7 +94,7 @@ DEFINE_CONSTRUCTOR() {
 
 	//ode::dHashSpaceSetLevels(spaceId, -3, 10);
 
-	JL_SetPrivate(cx, obj, spaceId);
+	JL_SetPrivate( obj, spaceId);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -122,7 +122,7 @@ DEFINE_FUNCTION( destroy ) {
 
 //		ode::dSpaceClean(spaceId);
 //		ode::dSpaceDestroy(spaceId);
-//		JL_SetPrivate(cx, obj, NULL);
+//		JL_SetPrivate( obj, NULL);
 	}
 
 	*JL_RVAL = JSVAL_VOID;

@@ -241,7 +241,7 @@ DEFINE_FINALIZE() {
 
 	delete pv->client;
 	delete pv->handlers;
-	JS_free(cx, pv);
+	JS_freeop(fop, pv);
 }
 
 
@@ -263,7 +263,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC_MIN(2);
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &jid) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &password) );
 	pv->handlers = new Handlers(obj);

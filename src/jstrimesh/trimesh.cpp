@@ -39,7 +39,7 @@ BEGIN_CLASS( Trimesh ) // Start the definition of the class. It defines some sym
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup ) // do not cleanup in unsafe mode.
 		return;
 
 	Surface *pv = (Surface*)JL_GetPrivate(obj);
@@ -47,18 +47,18 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 		return;
 
 	if ( pv->vertex )
-		JS_free(cx, pv->vertex);
+		JS_freeop(fop, pv->vertex);
 	if ( pv->normal )
-		JS_free(cx, pv->normal);
+		JS_freeop(fop, pv->normal);
 	if ( pv->textureCoordinate )
-		JS_free(cx, pv->textureCoordinate);
+		JS_freeop(fop, pv->textureCoordinate);
 	if ( pv->color )
-		JS_free(cx, pv->color);
+		JS_freeop(fop, pv->color);
 
 	if ( pv->index )
-		JS_free(cx, pv->index);
+		JS_freeop(fop, pv->index);
 
-	JS_free(cx, pv);
+	JS_freeop(fop, pv);
 }
 
 DEFINE_CONSTRUCTOR() {
@@ -71,7 +71,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( pv );
 	memset(pv, 0, sizeof(Surface));
 
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }

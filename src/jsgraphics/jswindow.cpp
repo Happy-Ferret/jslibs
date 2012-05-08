@@ -252,7 +252,7 @@ DEFINE_CONSTRUCTOR() {
 	HWND hWnd = CreateWindow( (LPSTR)rc, NULL,    WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
 	                          CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,    (HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL);
 	JL_ASSERT( hWnd != NULL, "Unable to CreateWindow." );
-	JL_SetPrivate(cx, obj, hWnd);
+	JL_SetPrivate( obj, hWnd);
 
 	CxObj *cxobj = (CxObj*)jl_malloc(sizeof(CxObj));
 	JL_ASSERT_ALLOC( cxobj );
@@ -423,7 +423,7 @@ DEFINE_FUNCTION( createOpenGLContext ) {
 	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( hWnd );
 
-//	JL_SetReservedSlot(cx, obj, SLOT_WINDOW_OBJECT, argv[0]); // avoid being GC while Gl is in use
+//	JL_SetReservedSlot( obj, SLOT_WINDOW_OBJECT, argv[0]); // avoid being GC while Gl is in use
 
 	BOOL res;
 	HDC hDC = GetDC(hWnd);

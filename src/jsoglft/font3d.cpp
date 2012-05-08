@@ -73,7 +73,7 @@ BEGIN_CLASS( Font3D ) // Start the definition of the class. It defines some symb
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -148,7 +148,7 @@ DEFINE_CONSTRUCTOR() {
 	Private *pv = (Private*)jl_calloc(1, sizeof(Private));
 	JL_ASSERT_ALLOC(pv);
 	JL_updateMallocCounter(cx, sizeof(Private));
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &pv->style) );
 	switch ( pv->style ) {
@@ -190,7 +190,7 @@ DEFINE_CONSTRUCTOR() {
 
 //	pv->face->setCompileMode(OGLFT::Face::COMPILE);
 
-	return JL_SetReservedSlot(cx, obj, OGLFT_SLOT_FONT, JL_ARG(1)); // GC protection
+	return JL_SetReservedSlot( obj, OGLFT_SLOT_FONT, JL_ARG(1)); // GC protection
 	JL_BAD;
 }
 

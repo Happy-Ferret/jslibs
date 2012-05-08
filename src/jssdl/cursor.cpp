@@ -25,7 +25,7 @@ BEGIN_CLASS( Cursor )
 
 DEFINE_FINALIZE() {
 
-	JL_IGNORE(cx);
+	JL_IGNORE(fop);
 
 	SDL_Cursor *cursor = (SDL_Cursor*)JL_GetPrivate(obj);
 	if ( cursor != NULL ) {
@@ -109,7 +109,7 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowSdlError(cx);
 	}
 
-	JL_SetPrivate(cx, obj, cursor);
+	JL_SetPrivate( obj, cursor);
 
 	jl_free(cursorImage);
 	return JS_TRUE;

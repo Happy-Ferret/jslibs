@@ -29,11 +29,11 @@ BEGIN_CLASS( VideoInput ) // Start the definition of the class. It defines some 
 
 DEFINE_FINALIZE() {
 
-	if ( obj == JL_THIS_CLASS_PROTOTYPE )
+	if ( obj == JL_GetCachedProto(JL_GetHostPrivate(fop->runtime()), className) )
 		return;
 
 	jsval deviceIdVal;
-	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot( obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	if ( deviceIdVal == JSVAL_VOID ) // the device is already closed
 		return;
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
@@ -77,7 +77,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHKM( deviceId != -1, E_ARG, E_NUM(1), E_NOTFOUND );
 	}
 
-	JL_CHK( JL_SetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, INT_TO_JSVAL(deviceId)) );
+	JL_CHK( JL_SetReservedSlot( obj, JSVIDEOINPUT_SLOT_DEVICEID, INT_TO_JSVAL(deviceId)) );
 	
 	if ( JL_ARG_ISDEF(4) ) {
 
@@ -115,7 +115,7 @@ DEFINE_FUNCTION( close ) {
 	*JL_RVAL = JSVAL_VOID;
 
 	jsval deviceIdVal;
-	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot( obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	if ( deviceIdVal == JSVAL_VOID ) { // the device is already closed
 		
 		JL_WARN( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED);
@@ -123,7 +123,7 @@ DEFINE_FUNCTION( close ) {
 	}
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	vi->stopDevice(deviceId);
-	JL_CHK( JL_SetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, JSVAL_VOID) );
+	JL_CHK( JL_SetReservedSlot( obj, JSVIDEOINPUT_SLOT_DEVICEID, JSVAL_VOID) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -215,7 +215,7 @@ DEFINE_FUNCTION( events ) {
 	upe->pe.endWait = VIEndWait;
 
 	jsval deviceIdVal;
-	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
 
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
@@ -242,7 +242,7 @@ DEFINE_FUNCTION( getImage ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE( 0,1 );
 	jsval deviceIdVal;
-	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 
@@ -288,7 +288,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( hasNewFrame ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot( obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK(JL_NativeToJsval(cx, vi->isFrameNew(deviceId), vp) ); 
@@ -303,7 +303,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( width ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot( obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( JL_NativeToJsval(cx, vi->getWidth(deviceId), vp) ); 
@@ -318,7 +318,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( height ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot( obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( JL_NativeToJsval(cx, vi->getHeight(deviceId), vp) ); 
@@ -333,7 +333,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( channels ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot( obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	int width = vi->getWidth(deviceId);
@@ -351,7 +351,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( name ) {
 
 	jsval deviceIdVal;
-	JL_CHK( JL_GetReservedSlot(cx, obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
+	JL_CHK( JL_GetReservedSlot( obj, JSVIDEOINPUT_SLOT_DEVICEID, &deviceIdVal) );
 	JL_ASSERT( deviceIdVal != JSVAL_VOID, E_THISOBJ, E_CLOSED );
 	int deviceId = JSVAL_TO_INT(deviceIdVal);
 	JL_CHK( JL_NativeToJsval(cx, videoInput::getDeviceName(deviceId), vp) );

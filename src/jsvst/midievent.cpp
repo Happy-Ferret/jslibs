@@ -33,9 +33,9 @@ DEFINE_FINALIZE() {
 		return;
 
 	jsval constructed;
-	JL_GetReservedSlot(cx, obj, 0, &constructed);
+	JL_GetReservedSlot( obj, 0, &constructed);
 	if ( !JSVAL_IS_VOID( constructed ) )
-		JS_free(cx, pv);
+		JS_freeop(fop, pv);
 }
 
 
@@ -44,13 +44,13 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_CHK( JL_SetReservedSlot(cx, obj, 0, JSVAL_TRUE) );
+	JL_CHK( JL_SetReservedSlot( obj, 0, JSVAL_TRUE) );
 	VstMidiEvent *pv = (VstMidiEvent*)JS_malloc(cx, sizeof(VstMidiEvent));
 	JL_CHK( pv );
 
 	pv->byteSize = sizeof(VstMidiEvent);
 	pv->type = kVstMidiType;
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -346,6 +346,6 @@ JSObject* CreateMidiEventObject( JSContext *cx, VstMidiEvent *midiEvent ) {
 	JSObject *midiEventObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(MidiEvent), JL_CLASS_PROTOTYPE(cx, MidiEvent), NULL);
 	if ( midiEventObject == NULL )
 		return NULL;
-	JL_SetPrivate(cx, midiEventObject, midiEvent);
+	JL_SetPrivate( midiEventObject, midiEvent);
 	return midiEventObject;
 }

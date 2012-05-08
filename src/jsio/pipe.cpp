@@ -31,7 +31,7 @@ BEGIN_CLASS( Pipe )
 
 DEFINE_FINALIZE() {
 
-	FinalizeDescriptor(cx, obj); // defined in descriptor.cpp
+	FinalizeDescriptor(fop, obj); // defined in descriptor.cpp
 }
 
 CONFIGURE_CLASS

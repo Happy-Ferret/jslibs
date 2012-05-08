@@ -386,7 +386,7 @@ int main_depstring(int argc, char* argv[]) {
 
 	JS_AddObjectRoot(cx, &ab);
 
-	char *data = (char*)JS_GetArrayBufferData(ab);
+	char *data = (char*)JS_GetArrayBufferData(ab, cx);
 
 	wcscpy((jschar*)data, str);
 

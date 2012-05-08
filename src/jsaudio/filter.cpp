@@ -37,10 +37,10 @@ DEFINE_FINALIZE() {
 			alDeleteFilters(1, &pv->filter);
 		}
 
-		if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 			return;
 
-		JS_free(cx, pv);
+		JS_freeop(fop, pv);
 	}
 }
 
@@ -60,7 +60,7 @@ DEFINE_CONSTRUCTOR() {
 	alGenFilters(1, &pv->filter);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }

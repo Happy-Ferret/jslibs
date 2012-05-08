@@ -22,7 +22,7 @@ BEGIN_CLASS( Template ) // Start the definition of the class. It defines some sy
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-//	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // skip cleanups if possible.
+//	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup ) // skip cleanups if possible.
 //		return JS_TRUE;
 
 }

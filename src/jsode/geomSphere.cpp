@@ -24,7 +24,8 @@ BEGIN_CLASS( GeomSphere )
 
 DEFINE_FINALIZE() {
 
-	FinalizeGeom(cx, obj);
+	FinalizeGeom(obj);
+	
 }
 
 /**doc
@@ -42,13 +43,13 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(1) ) { // place it in a space ?
 
 		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), &space) );
-		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_GEOM_SPACEOBJECT, JL_ARG(1)) );
+		JL_CHK( JL_SetReservedSlot( obj, SLOT_GEOM_SPACEOBJECT, JL_ARG(1)) );
 	} else {
 
 		space = 0;
 	}
 	ode::dGeomID geomId = ode::dCreateSphere(space, 1.0f); // default radius is 1
-	JL_SetPrivate(cx, obj, geomId);
+	JL_SetPrivate( obj, geomId);
 	JL_CHK( SetupReadMatrix(cx, obj) );
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;

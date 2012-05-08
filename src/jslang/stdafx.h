@@ -18,8 +18,6 @@
 #include <jlhelper.h>
 #include <jlclass.h>
 
-#include <jstypedarray.h>
-
 #include <cstring>
 
 #include <stack.h>

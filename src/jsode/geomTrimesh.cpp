@@ -56,7 +56,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(2) ) { // place it in a space ?
 
 		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(2), &space) );
-		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_GEOM_SPACEOBJECT, JL_ARG(2)) );
+		JL_CHK( JL_SetReservedSlot( obj, SLOT_GEOM_SPACEOBJECT, JL_ARG(2)) );
 	} else {
 
 		space = 0;
@@ -83,9 +83,9 @@ DEFINE_CONSTRUCTOR() {
 
 	ode::dGeomID geomId = ode::dCreateTriMesh(space, triMeshDataID, NULL, NULL, NULL);
 
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_TRIMESH_TRIMESH, trimeshVal) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_TRIMESH_TRIMESH, trimeshVal) );
 
-	JL_SetPrivate(cx, obj, geomId);
+	JL_SetPrivate( obj, geomId);
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	JL_CHK( SetupReadMatrix(cx, obj) );
 

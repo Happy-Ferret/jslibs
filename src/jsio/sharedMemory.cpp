@@ -65,12 +65,11 @@ JSBool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 }
 
 
-JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
+JSBool CloseSharedMemory( JSObject *obj ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
-	JL_ASSERT_OBJECT_STATE(pv, JL_CLASS_NAME(SharedMemory));
 
-	JL_CHKB( PR_WaitSemaphore( pv->accessSem ) == PR_SUCCESS, bad_ioerror );
+	JL_CHK( PR_WaitSemaphore( pv->accessSem ) == PR_SUCCESS );
 
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
@@ -79,27 +78,24 @@ JSBool CloseSharedMemory( JSContext *cx, JSObject *obj ) {
 	isLast = (mh->accessCount == 0);
 	mh->accessCount--;
 
-	JL_CHKB( PR_DetachSharedMemory(pv->shm, pv->mem) == PR_SUCCESS, bad_ioerror );
-	JL_CHKB( PR_CloseSharedMemory(pv->shm) == PR_SUCCESS, bad_ioerror );
+	JL_CHK( PR_DetachSharedMemory(pv->shm, pv->mem) == PR_SUCCESS );
+	JL_CHK( PR_CloseSharedMemory(pv->shm) == PR_SUCCESS );
 
-	JL_CHKB( PR_PostSemaphore(pv->accessSem) == PR_SUCCESS, bad_ioerror );
-	JL_CHKB( PR_CloseSemaphore(pv->accessSem) == PR_SUCCESS, bad_ioerror );
+	JL_CHK( PR_PostSemaphore(pv->accessSem) == PR_SUCCESS );
+	JL_CHK( PR_CloseSemaphore(pv->accessSem) == PR_SUCCESS );
 
 	if ( isLast ) {
 
-		JL_CHKB( PR_DeleteSharedMemory(pv->name) == PR_SUCCESS, bad_ioerror );
+		JL_CHK( PR_DeleteSharedMemory(pv->name) == PR_SUCCESS );
 		char semName[PATH_MAX];
 		strcpy(semName, pv->name);
 		strcat(semName, SEMAPHORE_EXTENSION);
-		JL_CHKB( PR_DeleteSemaphore(semName) == PR_SUCCESS, bad_ioerror );
+		JL_CHK( PR_DeleteSemaphore(semName) == PR_SUCCESS );
 	}
 
-	JS_free(cx, pv);
-	JL_SetPrivate(cx, JL_OBJ, NULL);
+	jl_free(pv);
 
 	return JS_TRUE;
-bad_ioerror:
-	ThrowIoError(cx);
 	JL_BAD;
 }
 
@@ -113,9 +109,11 @@ BEGIN_CLASS( SharedMemory )
 
 DEFINE_FINALIZE() {
 
+	JL_IGNORE( fop );
+
 	if ( !JL_GetPrivate(JL_OBJ) )
 		return;
-	CloseSharedMemory(cx, obj);
+	CloseSharedMemory(obj);
 }
 
 // doc.
@@ -175,7 +173,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHKB( mem != NULL, bad_ioerror ); // PR_SHM_READONLY
 
 	ClassPrivate *pv;
-	pv = (ClassPrivate*)JS_malloc(cx, sizeof(ClassPrivate));
+	pv = (ClassPrivate*)jl_malloc(sizeof(ClassPrivate));
 	JL_CHK( pv );
 
 	strcpy(pv->name, name);
@@ -197,7 +195,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	JL_CHKB( PR_PostSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	JL_CHK( SetBufferGetInterface(cx, obj, SharedMemoryBufferGet) );
 
 	return JS_TRUE;
@@ -285,7 +283,7 @@ DEFINE_FUNCTION( read ) {
 		dataLength = mh->currentDataLength;
 
 	uint8_t *data;
-	//data = (char*)JS_malloc(cx, dataLength +1);
+	//data = (char*)jl_malloc(dataLength +1);
 	data = JL_NewBuffer(cx, dataLength, JL_RVAL);
 	JL_CHK( data );
 
@@ -343,7 +341,9 @@ DEFINE_FUNCTION( close ) {
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_CHK( CloseSharedMemory(cx, obj) );
+	if ( !CloseSharedMemory(obj) )
+		return ThrowIoError(cx);
+	JL_SetPrivate( JL_OBJ, NULL);
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -413,7 +413,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 	size_t dataLength;
 	dataLength = mh->currentDataLength;
 	uint8_t *data;
-	//data = (char*)JS_malloc(cx, dataLength +1);
+	//data = (char*)jl_malloc(dataLength +1);
 	data = JL_NewBuffer(cx, dataLength, JL_RVAL);
 	JL_CHK( data );
 

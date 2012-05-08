@@ -43,14 +43,14 @@ BEGIN_CLASS( Font ) // Start the definition of the class. It defines some symbol
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(obj);
 	if ( pv == NULL )
 		return;
 	FT_Done_Face(pv->face);
-//	JL_SetPrivate(cx, obj, NULL);
+//	JL_SetPrivate( obj, NULL);
 	jl_free(pv);
 }
 
@@ -95,7 +95,7 @@ DEFINE_CONSTRUCTOR() {
 	// see. FT_Open_Face
 	JL_ASSERT_ALLOC(pv->face);
 
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	return JS_TRUE;
 
 bad:
@@ -295,37 +295,37 @@ DEFINE_FUNCTION( drawString ) {
 
 	int letterSpacing;
 	letterSpacing = 0;
-	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, &tmp) );
+	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_LETTERSPACING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		JL_CHK( JL_JsvalToNative(cx, tmp, &letterSpacing) );
 
 	int horizontalPadding;
 	horizontalPadding = 0;
-	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_HORIZONTALPADDING, &tmp) );
+	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_HORIZONTALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		JL_CHK( JL_JsvalToNative(cx, tmp, &horizontalPadding) );
 
 	int verticalPadding;
 	verticalPadding = 0;
-	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_VERTICALPADDING, &tmp) );
+	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_VERTICALPADDING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		JL_CHK( JL_JsvalToNative(cx, tmp, &verticalPadding) );
 
 	bool useKerning;
 	useKerning = true;
-	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, &tmp) );
+	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_USEKERNING, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		JL_CHK( JL_JsvalToNative(cx, tmp, &useKerning) );
 
 	bool isItalic;
 	isItalic = false;
-	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_ITALIC, &tmp) );
+	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_ITALIC, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		JL_CHK( JL_JsvalToNative(cx, tmp, &isItalic) );
 
 	bool isBold;
 	isBold = false;
-	JL_CHK( JL_GetReservedSlot(cx, obj, FONT_SLOT_BOLD, &tmp) );
+	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_BOLD, &tmp) );
 	if ( !JSVAL_IS_VOID( tmp ) )
 		JL_CHK( JL_JsvalToNative(cx, tmp, &isBold) );
 
@@ -582,12 +582,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( useKerning ) {
 
-	return JL_GetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, vp);
+	return JL_GetReservedSlot( obj, FONT_SLOT_USEKERNING, vp);
 }
 
 DEFINE_PROPERTY_SETTER( useKerning ) {
 
-	return JL_SetReservedSlot(cx, obj, FONT_SLOT_USEKERNING, *vp);
+	return JL_SetReservedSlot( obj, FONT_SLOT_USEKERNING, *vp);
 }
 
 
@@ -598,12 +598,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( horizontalPadding ) {
 
-	return JL_GetReservedSlot(cx, obj, FONT_SLOT_HORIZONTALPADDING, vp);
+	return JL_GetReservedSlot( obj, FONT_SLOT_HORIZONTALPADDING, vp);
 }
 
 DEFINE_PROPERTY_SETTER( horizontalPadding ) {
 
-	return JL_SetReservedSlot(cx, obj, FONT_SLOT_HORIZONTALPADDING, *vp);
+	return JL_SetReservedSlot( obj, FONT_SLOT_HORIZONTALPADDING, *vp);
 }
 
 
@@ -614,12 +614,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( verticalPadding ) {
 
-	return JL_GetReservedSlot(cx, obj, FONT_SLOT_VERTICALPADDING, vp);
+	return JL_GetReservedSlot( obj, FONT_SLOT_VERTICALPADDING, vp);
 }
 
 DEFINE_PROPERTY_SETTER( verticalPadding ) {
 
-	return JL_SetReservedSlot(cx, obj, FONT_SLOT_VERTICALPADDING, *vp);
+	return JL_SetReservedSlot( obj, FONT_SLOT_VERTICALPADDING, *vp);
 }
 
 
@@ -630,12 +630,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( letterSpacing ) {
 
-	return JL_GetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, vp);
+	return JL_GetReservedSlot( obj, FONT_SLOT_LETTERSPACING, vp);
 }
 
 DEFINE_PROPERTY_SETTER( letterSpacing ) {
 
-	return JL_SetReservedSlot(cx, obj, FONT_SLOT_LETTERSPACING, *vp);
+	return JL_SetReservedSlot( obj, FONT_SLOT_LETTERSPACING, *vp);
 }
 
 
@@ -646,12 +646,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( italic ) {
 
-	return JL_GetReservedSlot(cx, obj, FONT_SLOT_ITALIC, vp);
+	return JL_GetReservedSlot( obj, FONT_SLOT_ITALIC, vp);
 }
 
 DEFINE_PROPERTY_SETTER( italic ) {
 
-	return JL_SetReservedSlot(cx, obj, FONT_SLOT_ITALIC, *vp);
+	return JL_SetReservedSlot( obj, FONT_SLOT_ITALIC, *vp);
 }
 
 
@@ -662,12 +662,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( bold ) {
 
-	return JL_GetReservedSlot(cx, obj, FONT_SLOT_BOLD, vp);
+	return JL_GetReservedSlot( obj, FONT_SLOT_BOLD, vp);
 }
 
 DEFINE_PROPERTY_SETTER( bold ) {
 
-	return JL_SetReservedSlot(cx, obj, FONT_SLOT_BOLD, *vp);
+	return JL_SetReservedSlot( obj, FONT_SLOT_BOLD, *vp);
 }
 
 /**doc

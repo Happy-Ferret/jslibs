@@ -16,9 +16,6 @@
 #include "../jslang/handlePub.h"
 #include "jslang.h"
 
-#include <jstypedarray.h>
-
-
 
 DECLARE_CLASS(Handle)
 
@@ -974,9 +971,8 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 	// misc ////////////////////////////////////////////////
 
-	js::ArrayBuffer::create(cx, 0, NULL);
-
-	OBJECT_TO_JSVAL(NULL);
+//	js::ArrayBuffer::create(cx, 0, NULL);
+//	OBJECT_TO_JSVAL(NULL);
 
 	/////////////////////////////////////////////////////////////////
 

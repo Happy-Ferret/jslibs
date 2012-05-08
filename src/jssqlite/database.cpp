@@ -90,7 +90,7 @@ DEFINE_CONSTRUCTOR() {
 
 	jl::StackInit(&pv->fctpvList);
 	jl::StackInit(&pv->stmtList);
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	return JS_TRUE;
 bad:
 	jl_free(pv); // jl_free(NULL) is legal
@@ -100,7 +100,7 @@ bad:
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivate(obj);
@@ -111,7 +111,7 @@ DEFINE_FINALIZE() {
 
 	//// finalize open database statements
 	//
-	//JL_GetReservedSlot(cx, obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
+	//JL_GetReservedSlot( obj, SLOT_SQLITE_DATABASE_STATEMENT_STACK, &v);
 	//stack = JSVAL_TO_PRIVATE(v);
 	//while ( !jl::StackIsEnd(&stack) ) {
 	//	sqlite3_stmt *pStmt = (sqlite3_stmt*)jl::StackPop(&stack);
@@ -142,10 +142,10 @@ DEFINE_FINALIZE() {
 	int status = sqlite3_close(pv->db);
 	JL_IGNORE( status );
 	// JL_ASSERT_WARN( sqlite3_close(pv->db) == SQLITE_OK, E_NAME(JL_THIS_CLASS_NAME), E_FIN, E_DETAILS, E_STR(sqlite3_errmsg(pv->db)), E_ERRNO(sqlite3_extended_errcode(pv->db)) ); // (TBD) send to log !
-//	JL_SetPrivate( cx, obj, NULL );
+//	JL_SetPrivate(  obj, NULL );
 
 bad:
-	JS_free(cx, pv);
+	JS_freeop(fop, pv);
 	return;
 }
 
@@ -173,7 +173,7 @@ DEFINE_FUNCTION( close ) {
 
 	pv = (DatabasePrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_SetPrivate(cx, obj, NULL);
+	JL_SetPrivate( obj, NULL);
 
 	sqlite3_interrupt(pv->db);
 
@@ -298,13 +298,13 @@ DEFINE_FUNCTION( query ) {
 	dbStatement = JL_NewObjectWithGivenProto(cx, JL_CLASS(Result), JL_CLASS_PROTOTYPE(cx, Result), NULL);
 	JL_CHK( dbStatement );
 
-	JL_SetPrivate(cx, dbStatement, pStmt);
-	JL_CHK( JL_SetReservedSlot(cx, dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )) ); // link to avoid GC
+	JL_SetPrivate( dbStatement, pStmt);
+	JL_CHK( JL_SetReservedSlot( dbStatement, SLOT_RESULT_DATABASE, OBJECT_TO_JSVAL( obj )) ); // link to avoid GC
 	// (TBD) enhance
 	*JL_RVAL = OBJECT_TO_JSVAL( dbStatement );
 
 	if ( argc >= 2 && !JSVAL_IS_PRIMITIVE(JL_ARG(2)) )
-		JL_CHK( JL_SetReservedSlot(cx, dbStatement, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, JL_ARG(2)) );
+		JL_CHK( JL_SetReservedSlot( dbStatement, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, JL_ARG(2)) );
 
 	return JS_TRUE;
 	JL_BAD;

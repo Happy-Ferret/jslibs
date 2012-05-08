@@ -28,7 +28,7 @@ BEGIN_CLASS( Directory )
 
 DEFINE_FINALIZE() {
 
-	JL_IGNORE( cx );
+	JL_IGNORE(fop);
 
 	PRDir *dd = (PRDir*)JL_GetPrivate( obj );
 	if ( dd != NULL ) {
@@ -56,7 +56,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_ASSERT_ARGC_MIN( 1 );
-	JL_CHK( JL_SetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, JL_ARG(1) ) );
+	JL_CHK( JL_SetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, JL_ARG(1) ) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -79,7 +79,7 @@ DEFINE_FUNCTION( open ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
-	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
+	JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
@@ -90,7 +90,7 @@ DEFINE_FUNCTION( open ) {
 	if ( dd == NULL )
 		return ThrowIoError(cx);
 
-	JL_SetPrivate( cx, obj, dd );
+	JL_SetPrivate(  obj, dd );
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 	return JS_TRUE;
 	JL_BAD;
@@ -119,7 +119,7 @@ DEFINE_FUNCTION( close ) {
 
 	if ( PR_CloseDir(dd) != PR_SUCCESS )
 		return ThrowIoError(cx);
-	JL_SetPrivate( cx, obj, NULL );
+	JL_SetPrivate(  obj, NULL );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -185,7 +185,7 @@ DEFINE_FUNCTION( make ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
-	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
+	JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 	
 //	const char *directoryName;
@@ -217,7 +217,7 @@ DEFINE_FUNCTION( remove ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
-	JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
+	JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
@@ -255,7 +255,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 	JLData str;
 
 	jsval jsvalDirectoryName;
-	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName ) );
+	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName ) );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
@@ -290,7 +290,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( name ) {
 
-	JL_CHK( JL_GetReservedSlot( cx, obj, SLOT_JSIO_DIR_NAME, vp ) );
+	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, vp ) );
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, false) );
 	return JS_TRUE;
 	JL_BAD;

@@ -27,7 +27,7 @@ DECLARE_CLASS( JointAMotor );
 DECLARE_CLASS( JointLMotor );
 DECLARE_CLASS( JointPlane );
 
-void FinalizeJoint(JSContext *cx, JSObject *obj);
+void FinalizeJoint(JSObject *obj);
 
 JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj );
 

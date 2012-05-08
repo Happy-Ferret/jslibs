@@ -30,13 +30,13 @@ ALWAYS_INLINE JSBool CreateVector( JSContext *cx, JSObject *parent, void *userDa
 	
 	JSObject *obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(Vector), JL_CLASS_PROTOTYPE(cx, Vector), NULL);
 	JL_CHK(obj);
-	JL_CHK( JL_SetReservedSlot(cx, obj, 0, OBJECT_TO_JSVAL(parent)) );
+	JL_CHK( JL_SetReservedSlot( obj, 0, OBJECT_TO_JSVAL(parent)) );
 	VectorPrivate *pv = (VectorPrivate*)JS_malloc(cx, sizeof(VectorPrivate));
 	JL_CHK(pv);
 	pv->userData = userData;
 	pv->Set = set;
 	pv->Get = get;
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }

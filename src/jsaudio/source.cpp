@@ -123,13 +123,13 @@ DEFINE_FINALIZE() {
 			alDeleteSources(1, &pv->sid);
 		}
 
-		if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+		if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 			return;
 
 		while ( !QueueIsEmpty(pv->queue) ) {
 
 			jsval *pItem = (jsval*)QueuePop(pv->queue);
-			JS_free(cx, pItem);
+			JS_freeop(fop, pItem);
 		}
 		QueueDestruct(pv->queue);
 	}
@@ -153,7 +153,7 @@ DEFINE_CONSTRUCTOR() {
 	alGenSources(1, &pv->sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }

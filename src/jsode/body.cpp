@@ -72,7 +72,7 @@ JSBool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj) { // 
 	}
 
 	JL_CHK( SetMatrix44GetInterface(cx, *obj, BodyReadMatrix) );
-	JL_SetPrivate(cx, *obj, bodyId);
+	JL_SetPrivate( *obj, bodyId);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -117,7 +117,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT( bodyId != NULL, E_LIB, E_NAME("ODE"), E_SEP, E_STR(JL_THIS_CLASS_NAME), E_CREATE );
 	
 	JL_CHK( SetMatrix44GetInterface(cx, obj, BodyReadMatrix) );
-	JL_SetPrivate(cx, obj, bodyId);
+	JL_SetPrivate( obj, bodyId);
 	ode::dBodySetData(bodyId, obj);
 	return JS_TRUE;
 	JL_BAD;
@@ -140,8 +140,8 @@ DEFINE_FUNCTION( destroy ) {
 	JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId ); // (TBD) manage world-connected ( when bodyId == 0 )
-//	JL_SetReservedSlot(cx, obj, BODY_SLOT_WORLD, JSVAL_VOID);
-	JL_SetPrivate(cx, obj, NULL);
+//	JL_SetReservedSlot( obj, BODY_SLOT_WORLD, JSVAL_VOID);
+	JL_SetPrivate( obj, NULL);
 /*
 	ode::dGeomID geomId;
 	for ( geomId = ode::dBodyGetFirstGeom(bodyId); geomId; geomId = ode::dBodyGetNextGeom(geomId) ) {
@@ -1055,7 +1055,7 @@ DEFINE_PROPERTY_GETTER( mass ) {
 	//JL_ASSERT( bodyId != NULL, E_LIB, E_NAME("ODE"), E_SEP, E_STR(JL_CLASS_NAME(Mass)), E_CREATE );
 
 	*vp = OBJECT_TO_JSVAL(massObject);
-	JL_CHK( JL_SetReservedSlot(cx, massObject, MASS_SLOT_BODY, OBJECT_TO_JSVAL(obj)) );
+	JL_CHK( JL_SetReservedSlot( massObject, MASS_SLOT_BODY, OBJECT_TO_JSVAL(obj)) );
 	return jl::StoreProperty(cx, obj, id, vp, true);
 	JL_BAD;
 }

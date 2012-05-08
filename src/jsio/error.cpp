@@ -124,9 +124,9 @@ $TOC_MEMBER $INAME
 */
 DEFINE_PROPERTY_GETTER( code ) {
 
-	JL_IGNORE( id );
+	JL_IGNORE( id, cx );
 
-	return JL_GetReservedSlot( cx, obj, 0, vp );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
+	return JL_GetReservedSlot(  obj, 0, vp );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
 }
 
 
@@ -138,7 +138,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_IGNORE( id );
 
-	JL_CHK( JL_GetReservedSlot(cx, obj, 0, vp) );
+	JL_CHK( JL_GetReservedSlot( obj, 0, vp) );
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
 	int errorCode;
@@ -158,9 +158,9 @@ $TOC_MEMBER $INAME
 */
 DEFINE_PROPERTY_GETTER( os ) {
 
-	JL_IGNORE( id );
+	JL_IGNORE( id, cx );
 
-	return JL_GetReservedSlot( cx, obj, 1, vp );  // (TBD) use the obj.name proprety directly instead of slot 1 ?
+	return JL_GetReservedSlot(  obj, 1, vp );  // (TBD) use the obj.name proprety directly instead of slot 1 ?
 }
 
 
@@ -173,7 +173,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 	JL_IGNORE( id );
 
-	JL_CHK( JL_GetReservedSlot(cx, obj, 0, vp) );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
+	JL_CHK( JL_GetReservedSlot( obj, 0, vp) );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
 	PRErrorCode errorCode;
@@ -207,9 +207,9 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, 0, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot(cx, JL_OBJ, 1, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, 1, JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
 	return JS_TRUE;
@@ -231,9 +231,9 @@ DEFINE_FUNCTION( _unserialize ) {
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
 	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, 0, *JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot( JL_OBJ, 0, *JL_RVAL) );
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JL_SetReservedSlot(cx, JL_OBJ, 1, *JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot( JL_OBJ, 1, *JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -274,8 +274,8 @@ ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 
 	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(IoError), JL_CLASS_PROTOTYPE(cx, IoError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-	JL_CHK( JL_SetReservedSlot( cx, error, 0, INT_TO_JSVAL(errorCode) ) );
-	JL_CHK( JL_SetReservedSlot( cx, error, 1, INT_TO_JSVAL(osError) ) );
+	JL_CHK( JL_SetReservedSlot(  error, 0, INT_TO_JSVAL(errorCode) ) );
+	JL_CHK( JL_SetReservedSlot(  error, 1, INT_TO_JSVAL(osError) ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;
 }

@@ -25,7 +25,7 @@ BEGIN_CLASS( Prng )
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	PrngPrivate *pv = (PrngPrivate *)JL_GetPrivate( obj );
@@ -33,7 +33,7 @@ DEFINE_FINALIZE() {
 		return;
 
 	pv->prng.done(&pv->state);
-	JS_free(cx, pv);
+	jl_free(pv);
 }
 
 /**doc
@@ -65,7 +65,7 @@ DEFINE_CONSTRUCTOR() {
 
 
 	PrngPrivate *pv;
-	pv = (PrngPrivate*)JS_malloc(cx, sizeof(PrngPrivate));
+	pv = (PrngPrivate*)jl_malloc(sizeof(PrngPrivate));
 	JL_CHK( pv );
 
 	pv->prng = prng_descriptor[prngIndex];
@@ -78,7 +78,7 @@ DEFINE_CONSTRUCTOR() {
 	err = pv->prng.ready( &pv->state );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx,err);
-	JL_SetPrivate( cx, obj, pv );
+	JL_SetPrivate(  obj, pv );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -115,7 +115,7 @@ DEFINE_CALL() {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &readCount) );
 
 	uint8_t *pr;
-	//pr = (char*)JS_malloc( cx, readCount +1);
+	//pr = (char*)jl_malloc(readCount +1);
 	pr = JL_NewBuffer(cx, readCount, JL_RVAL);
 	JL_CHK( pr );
 	unsigned long hasRead;

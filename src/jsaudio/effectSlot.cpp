@@ -27,8 +27,6 @@ BEGIN_CLASS( OalEffectSlot )
 
 DEFINE_FINALIZE() {
 
-	JL_IGNORE( cx );
-
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
@@ -51,7 +49,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( pv );
 	alGenAuxiliaryEffectSlots(1, &pv->effectSlot);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }

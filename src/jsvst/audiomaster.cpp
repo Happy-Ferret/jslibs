@@ -62,6 +62,6 @@ JSObject * CreateAudioMasterObject( JSContext *cx, audioMasterCallback audioMast
 	JSObject *audioMasterObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(AudioMaster), JL_CLASS_PROTOTYPE(cx, AudioMaster), NULL);
 	if ( audioMasterObject == NULL )
 		return NULL;
-	JL_SetPrivate(cx, audioMasterObject, audioMaster);
+	JL_SetPrivate( audioMasterObject, audioMaster);
 	return audioMasterObject;
 }

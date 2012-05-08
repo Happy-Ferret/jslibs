@@ -19,8 +19,6 @@
 #include <jlclass.h>
 //#include <jsvalserializer.h>
 
-#include <jstypedarray.h>
-
 #include <pool.h>
 
 

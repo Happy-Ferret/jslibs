@@ -18,12 +18,12 @@
 #include "world.h"
 
 
-void FinalizeJoint(JSContext *cx, JSObject *obj) {
+void FinalizeJoint(JSObject *obj) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	if ( !jointId )
 		return;
-	JS_free(cx, ode::dJointGetFeedback(jointId)); // NULL is supported
+	jl_free(ode::dJointGetFeedback(jointId)); // NULL is supported
 	ode::dJointSetFeedback(jointId, NULL);
 	ode::dJointSetData(jointId, NULL);
 	if ( ode::dJointGetNumBodies(jointId) == 0 ) // joint is lost (limbo).
@@ -68,7 +68,7 @@ JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) 
 	}
 
 	ode::dJointSetData(jointId, *obj);
-	JL_SetPrivate(cx, *obj, jointId);
+	JL_SetPrivate( *obj, jointId);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -92,13 +92,13 @@ BEGIN_CLASS( Joint )
 /*
 DEFINE_PROPERTY( body1 ) {
 
-	JL_GetReservedSlot(cx, obj, JOINT_SLOT_BODY1, vp);
+	JL_GetReservedSlot( obj, JOINT_SLOT_BODY1, vp);
 	return JS_TRUE;
 	JL_BAD;
 }
 DEFINE_PROPERTY( body2 ) {
 
-	JL_GetReservedSlot(cx, obj, JOINT_SLOT_BODY2, vp);
+	JL_GetReservedSlot( obj, JOINT_SLOT_BODY2, vp);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -122,7 +122,7 @@ DEFINE_FUNCTION( destroy ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	JS_free(cx, ode::dJointGetFeedback(jointId)); // NULL is supported
-	JL_SetPrivate(cx, obj, NULL);
+	JL_SetPrivate( obj, NULL);
 	ode::dJointDestroy(jointId);
 	
 	*JL_RVAL = JSVAL_VOID;
@@ -172,13 +172,13 @@ DEFINE_FUNCTION( attach ) {
 
 	JS_ValueToObject(cx, argv[0], &body1Object);
 	JL_ASSERT_INSTANCE(body1Object, &classBody);
-	JL_SetReservedSlot(cx, obj, JOINT_SLOT_BODY1, argv[0]);
+	JL_SetReservedSlot( obj, JOINT_SLOT_BODY1, argv[0]);
 	ode::dBodyID bodyID1 = (ode::dBodyID)JL_GetPrivate(body1Object);
 //	JL_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
 
 	JS_ValueToObject(cx, argv[1], &body2Object);
 	JL_ASSERT_INSTANCE(body2Object, &classBody);
-	JL_SetReservedSlot(cx, obj, JOINT_SLOT_BODY2, argv[1]);
+	JL_SetReservedSlot( obj, JOINT_SLOT_BODY2, argv[1]);
 	ode::dBodyID bodyID2 = (ode::dBodyID)JL_GetPrivate(body2Object);
 //	JL_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
 

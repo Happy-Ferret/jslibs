@@ -25,7 +25,7 @@ BEGIN_CLASS( GeomConvex )
 
 DEFINE_FINALIZE() {
 
-	FinalizeGeom(cx, obj);
+	FinalizeGeom(obj);
 }
 
 /**doc
@@ -44,7 +44,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(1) ) { // place it in a space ?
 
 		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), &space) );
-		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_GEOM_SPACEOBJECT, JL_ARG(1)) );
+		JL_CHK( JL_SetReservedSlot( obj, SLOT_GEOM_SPACEOBJECT, JL_ARG(1)) );
 	} else {
 
 		space = 0;
@@ -57,7 +57,7 @@ DEFINE_CONSTRUCTOR() {
 
 
 	ode::dGeomID geomId = ode::dCreateConvex(space, NULL, 0, NULL, 0, NULL);
-	JL_SetPrivate(cx, obj, geomId);
+	JL_SetPrivate( obj, geomId);
 	JL_CHK( SetupReadMatrix(cx, obj) );
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	return JS_TRUE;

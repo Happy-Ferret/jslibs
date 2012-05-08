@@ -39,14 +39,14 @@ BEGIN_CLASS( Iconv ) // Start the definition of the class. It defines some symbo
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup )
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
 	int status = iconv_close(pv->cd); // if ( status == -1 ) error is in errno.
-	JS_free(cx, pv);
+	JS_freeop(fop, pv);
 	
 	// JL_ASSERT_WARN( status != -1, E_LIB, E_STR("iconv"), E_FIN, E_ERRNO(errno) ); // (TBD) send to log !
 
@@ -110,7 +110,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	pv->invalidChar = '?';
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }

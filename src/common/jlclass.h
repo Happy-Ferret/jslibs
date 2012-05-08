@@ -265,7 +265,7 @@ JL_END_NAMESPACE
 	} \
 
 #define INIT_CLASS(CLASSNAME) \
-	JL_CHK( jl::InitClass(cx, obj, CLASSNAME::classSpec ) ); \
+	JL_CHK( jl::InitClass(cx, obj, ::CLASSNAME::classSpec ) ); \
 
 
 #define BEGIN_CLASS(CLASSNAME) \
@@ -297,15 +297,15 @@ JL_END_NAMESPACE
 //jorendorff>	The best way is to keep the result of JS_InitClass around somewhere.
 //jorendorff>	Then just compare with == to see if you're finalizing that object.
 
-#define JL_CLASS(CLASSNAME) (&(CLASSNAME::classSpec->clasp))
+#define JL_CLASS(CLASSNAME) (&(::CLASSNAME::classSpec->clasp))
 #define JL_THIS_CLASS (&(classSpec->clasp))
 
-#define JL_CLASS_NAME(CLASSNAME) (CLASSNAME::className)
+#define JL_CLASS_NAME(CLASSNAME) (::CLASSNAME::className)
 #define JL_THIS_CLASS_NAME (className)
 
 #define JL_THIS_CLASS_REVISION (classSpec->sourceId)
 
-#define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (JL_GetCachedProto(JL_GetHostPrivate(cx), CLASSNAME::className))
+#define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (JL_GetCachedProto(JL_GetHostPrivate(cx), ::CLASSNAME::className))
 #define JL_THIS_CLASS_PROTOTYPE (JL_GetCachedProto(JL_GetHostPrivate(cx), className))
 
 #define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.
@@ -392,7 +392,7 @@ JL_END_NAMESPACE
 #define HAS_FINALIZE cs.clasp.finalize = Finalize;
 // make Finalize able to return a value ( good for bad: ):
 //  #define DEFINE_FINALIZE() Finalize_withReturnValue(JSContext *cx, JSObject *obj); static void Finalize(JSContext *cx, JSObject *obj) { Finalize_withReturnValue(cx, obj) } ALWAYS_INLINE JSBool Finalize_withReturnValue(JSContext *cx, JSObject *obj)
-#define DEFINE_FINALIZE() static void Finalize(JSContext *cx, JSObject *obj)
+#define DEFINE_FINALIZE() static void Finalize(JSFreeOp *fop, JSObject *obj)
 
 #define HAS_OBJECT_CONSTRUCTOR cs.clasp.construct = ObjectConstructor;
 #define DEFINE_OBJECT_CONSTRUCTOR() static JSBool ObjectConstructor(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval)

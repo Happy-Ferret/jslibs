@@ -20,7 +20,7 @@ BEGIN_CLASS( ComDispatch )
 
 DEFINE_FINALIZE() {
 
-	if ( obj == JL_CLASS_PROTOTYPE(cx, ComDispatch) )
+	if ( obj == JL_GetCachedProto(JL_GetHostPrivate(fop->runtime()), JL_THIS_CLASS_NAME) )
 		return;
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(obj);
 	disp->Release();
@@ -431,7 +431,7 @@ JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, jsval *rval ) {
 
 	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComDispatch), JL_CLASS_PROTOTYPE(cx, ComDispatch), NULL);
 	*rval = OBJECT_TO_JSVAL( varObj );
-	JL_SetPrivate(cx, varObj, pdisp);
+	JL_SetPrivate( varObj, pdisp);
 	pdisp->AddRef();
 	return JS_TRUE;
 }

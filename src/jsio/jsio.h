@@ -31,7 +31,7 @@ struct JsioPrivate {
 #define SLOT_JSIO_DIR_NAME 0
 
 
-void FinalizeDescriptor(JSContext *cx, JSObject *obj);
+void FinalizeDescriptor(JSFreeOp *fop, JSObject *obj);
 
 JSBool NativeInterfaceStreamRead(JSContext *cx, JSObject *obj, char *buf, size_t *amount);
 
@@ -43,7 +43,7 @@ GetTimeoutInterval(JSContext *cx, JSObject *obj, PRIntervalTime *timeout, PRInte
 	JL_IGNORE(cx);
 
 	jsval timeoutValue;
-	JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, &timeoutValue) );
+	JL_CHK( JL_GetReservedSlot(obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, &timeoutValue) );
 	
 	if ( !JSVAL_IS_VOID( timeoutValue ) ) {
 		

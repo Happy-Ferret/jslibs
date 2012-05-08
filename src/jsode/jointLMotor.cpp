@@ -25,7 +25,7 @@ BEGIN_CLASS( JointLMotor )
 
 DEFINE_FINALIZE() {
 
-	FinalizeJoint(cx, obj);
+	FinalizeJoint(obj);
 }
 
 /**doc
@@ -56,7 +56,7 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointID jointId = ode::dJointCreateLMotor(worldId, groupId);
 	ode::dJointSetData(jointId, obj);
 	ode::dJointSetFeedback(jointId, NULL);
-	JL_SetPrivate(cx, obj, jointId);
+	JL_SetPrivate( obj, jointId);
 	return JS_TRUE;
 	JL_BAD;
 }

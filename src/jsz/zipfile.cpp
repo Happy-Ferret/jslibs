@@ -100,7 +100,7 @@ JSBool PrepareReadCurrentFile( JSContext *cx, JSObject *obj ) {
 
 		JLData password;
 		jsval tmp;
-		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_CURRENTPASSWORD, &tmp) );
+		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTPASSWORD, &tmp) );
 		if ( !JSVAL_IS_VOID(tmp) )
 			JL_CHK( JL_JsvalToNative(cx, tmp, &password) );
 		if ( !password.IsSet() )
@@ -149,7 +149,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 
 DEFINE_FINALIZE() {
 
-	JL_IGNORE( cx );
+	JL_IGNORE( fop );
 
 	Private *pv = (Private *)JL_GetPrivate(obj);
 	if ( pv ) {
@@ -188,14 +188,14 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_FILENAME, JL_ARG(1)) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_FILENAME, JL_ARG(1)) );
 
 	Private *pv = (Private *)jl_calloc(sizeof(Private), 1);
 	JL_ASSERT_ALLOC(pv);
 	JL_updateMallocCounter(cx, sizeof(Private));
 	JL_ASSERT( !pv->uf && !pv->zf );
 	JL_ASSERT( !pv->inZipOpened );
-	JL_SetPrivate(cx, obj, pv);
+	JL_SetPrivate( obj, pv);
 
 	//JL_CHK( ReserveStreamReadInterface(cx, obj) );
 	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
@@ -282,14 +282,14 @@ DEFINE_FUNCTION( close ) {
 		ASSERT( !pv->uf );
 		JLData comment;
 		jsval tmp;
-		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_GLOBALCOMMENT, &tmp) );
+		JL_CHK( JL_GetReservedSlot( obj, SLOT_GLOBALCOMMENT, &tmp) );
 		if ( !JSVAL_IS_VOID(tmp) )
 			JL_CHK( JL_JsvalToNative(cx, tmp, &comment) );
 		ZIP_CHK( zipClose(pv->zf, comment.GetConstStrZOrNULL()) );
 	}
 
 	jl_free(pv);
-	JL_SetPrivate(cx, obj, NULL);
+	JL_SetPrivate( obj, NULL);
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -357,7 +357,7 @@ DEFINE_FUNCTION( select ) {
 			ZIP_CHK( zipCloseFileInZip(pv->zf) );
 			pv->inZipOpened = false;
 		}
-		JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_INZIPFILENAME, JL_ARG(1)) );
+		JL_CHK( JL_SetReservedSlot( obj, SLOT_INZIPFILENAME, JL_ARG(1)) );
 	}
 
 	return JS_TRUE;
@@ -589,7 +589,7 @@ DEFINE_FUNCTION( write ) {
 		zipfi.internal_fa = 0;
 
 		jsval tmp;
-		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_CURRENTDATE, &tmp) );
+		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTDATE, &tmp) );
 		if ( JSVAL_IS_VOID(tmp) ) {
 
 			//memset(&zipfi.tmz_date, 0, sizeof(zipfi.tmz_date));
@@ -613,14 +613,14 @@ DEFINE_FUNCTION( write ) {
 			zipfi.tmz_date.tm_year = js_DateGetYear(cx, dateObj);
 		}
 
-		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_CURRENTEXTRAFIELD, &tmp) );
+		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTEXTRAFIELD, &tmp) );
 		if ( !JSVAL_IS_VOID(tmp) )
 			JL_CHK( JL_JsvalToNative(cx, tmp, &currentExtraField) );
 
 		JL_CHK( JL_ReservedSlotToNative(cx, obj, SLOT_INZIPFILENAME, &inZipFilename) );
 
 		int level;
-		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_CURRENTLEVEL, &tmp) );
+		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTLEVEL, &tmp) );
 		if ( !JSVAL_IS_VOID(tmp) ) {
 
 			JL_CHK( JL_JsvalToNative(cx, tmp, &level) );
@@ -685,7 +685,7 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 	} else 
 	if ( pv->zf ) {
 
-		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_GLOBALCOMMENT, vp) );
+		JL_CHK( JL_GetReservedSlot( obj, SLOT_GLOBALCOMMENT, vp) );
 	}
 	
 	return JS_TRUE;
@@ -702,7 +702,7 @@ DEFINE_PROPERTY_SETTER( globalComment ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_GLOBALCOMMENT, *vp) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_GLOBALCOMMENT, *vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -786,7 +786,7 @@ DEFINE_PROPERTY_GETTER( filename ) {
 	} else
 	if ( pv->zf ) {
 
-		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_INZIPFILENAME, vp) );
+		JL_CHK( JL_GetReservedSlot( obj, SLOT_INZIPFILENAME, vp) );
 	}
 
 	return JS_TRUE;
@@ -835,7 +835,7 @@ DEFINE_PROPERTY_GETTER( level ) {
 	} else
 	if ( pv->zf ) {
 
-		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_CURRENTDATE, vp) );
+		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTDATE, vp) );
 	}
 
 	return JS_TRUE;
@@ -853,7 +853,7 @@ DEFINE_PROPERTY_SETTER( level ) {
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
 	JL_ASSERT( JSVAL_IS_VOID(*vp) || JSVAL_IS_NUMBER(*vp), E_TYPE, E_TY_NUMBER );
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_CURRENTLEVEL, *vp) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTLEVEL, *vp) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -905,7 +905,7 @@ DEFINE_PROPERTY_GETTER( date ) {
 	} else
 	if ( pv->zf ) {
 
-		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_CURRENTDATE, vp) );
+		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTDATE, vp) );
 	}
 
 	return JS_TRUE;
@@ -923,7 +923,7 @@ DEFINE_PROPERTY_SETTER( date ) {
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
 	JL_ASSERT( JSVAL_IS_VOID(*vp) || !JSVAL_IS_PRIMITIVE(*vp) && JS_ObjectIsDate(cx, JSVAL_TO_OBJECT(*vp)), E_VALUE, E_INVALID );
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_CURRENTDATE, *vp) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTDATE, *vp) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -972,7 +972,7 @@ DEFINE_PROPERTY_GETTER( extra ) {
 	} else
 	if ( pv->zf ) {
 
-		JL_CHK( JL_GetReservedSlot(cx, obj, SLOT_CURRENTEXTRAFIELD, vp) );
+		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTEXTRAFIELD, vp) );
 	}
 
 	return JS_TRUE;
@@ -989,7 +989,7 @@ DEFINE_PROPERTY_SETTER( extra ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_CURRENTEXTRAFIELD, *vp) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTEXTRAFIELD, *vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1012,7 +1012,7 @@ DEFINE_PROPERTY_SETTER( password ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->uf, E_THISOPERATION, E_INVALID );
 
-	JL_CHK( JL_SetReservedSlot(cx, obj, SLOT_CURRENTPASSWORD, *vp) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTPASSWORD, *vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1116,7 +1116,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_IGNORE(id);
 
-	JL_GetReservedSlot(cx, obj, 0, vp);
+	JL_GetReservedSlot( obj, 0, vp);
 	if ( JSVAL_IS_VOID(*vp) )
 		return JS_TRUE;
 	int errorCode = JSVAL_TO_INT(*vp);
@@ -1129,7 +1129,7 @@ DEFINE_PROPERTY_GETTER( code ) {
 
 	JL_IGNORE(id);
 
-	return JL_GetReservedSlot(cx, obj, 0, vp);
+	return JL_GetReservedSlot( obj, 0, vp);
 }
 
 DEFINE_FUNCTION( toString ) {
@@ -1166,7 +1166,7 @@ ThrowZipFileError( JSContext *cx, int errorCode ) {
 	ASSERT( errorCode <= 0 );
 	JSObject *error = JL_NewObjectWithGivenProto(cx, JL_CLASS(ZipFileError), JL_CLASS_PROTOTYPE(cx, ZipFileError), NULL);
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-	JL_CHK( JL_SetReservedSlot(cx, error, 0, INT_TO_JSVAL(errorCode)) );
+	JL_CHK( JL_SetReservedSlot( error, 0, INT_TO_JSVAL(errorCode)) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
 	return JS_FALSE;
 	JL_BAD;

@@ -23,8 +23,6 @@ BEGIN_CLASS( OalBuffer )
 
 DEFINE_FINALIZE() {
 
-	JL_IGNORE( cx );
-
 	ALuint bid = (ALuint) JL_GetPrivate(obj);
 	if ( bid )
 		alDeleteBuffers(1, &bid);
@@ -69,7 +67,7 @@ DEFINE_CONSTRUCTOR() {
 	alBufferData(bid, format, data.GetConstStr(), (ALsizei)data.Length(), rate); // Upload sound data to buffer
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_SetPrivate(cx, obj, (void*)bid);
+	JL_SetPrivate( obj, (void*)bid);
 	return JS_TRUE;
 	JL_BAD;
 }

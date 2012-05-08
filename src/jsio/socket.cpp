@@ -33,7 +33,7 @@ BEGIN_CLASS( Socket )
 
 DEFINE_FINALIZE() {
 
-	FinalizeDescriptor(cx, obj); // defined in descriptor.cpp
+	FinalizeDescriptor(fop, obj); // defined in descriptor.cpp
 }
 
 /**doc
@@ -64,7 +64,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 
-	JL_SetPrivate( cx, obj, fd );
+	JL_SetPrivate(  obj, fd );
 	JL_CHK( ReserveStreamReadInterface(cx, obj) );
 	return JS_TRUE;
 	JL_BAD;
@@ -274,8 +274,8 @@ DEFINE_FUNCTION( accept ) {
 
 	JSObject *object;
 	object = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket), NULL);
-	JL_SetPrivate(cx, object, newFd);
-//	JL_CHK( JL_SetReservedSlot(cx, descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_FALSE) );
+	JL_SetPrivate(object, newFd);
+//	JL_CHK( JL_SetReservedSlot( descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_FALSE) );
 
 	// JL_CHK( ReserveStreamReadInterface(cx, object) );
 	JL_CHK( SetStreamReadInterface(cx, object, NativeInterfaceStreamRead) );
