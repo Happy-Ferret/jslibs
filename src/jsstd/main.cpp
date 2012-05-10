@@ -19,9 +19,6 @@
 
 
 DECLARE_STATIC()
-DECLARE_CLASS( Buffer )
-DECLARE_CLASS( Pack )
-DECLARE_CLASS( ObjEx )
 
 /**doc t:header
 $MODULE_HEADER
@@ -49,9 +46,6 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	mpv->prevJSGCCallback = NULL;
 
 	INIT_STATIC();
-	INIT_CLASS( Buffer );
-	INIT_CLASS( Pack );
-	INIT_CLASS( ObjEx );
 
 	return JS_TRUE;
 	JL_BAD;
