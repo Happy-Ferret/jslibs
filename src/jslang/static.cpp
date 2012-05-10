@@ -155,38 +155,6 @@ DEFINE_FUNCTION( isCallable ) {
 }
 
 
-/* use gen.isGenerator() instead
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/ **doc
-$TOC_MEMBER $INAME
- $BOOL $INAME()
-  Returns $TRUE if the value is a generator function.
-** /
-DEFINE_FUNCTION( isGeneratorFunction ) {
-
-	JL_ASSERT_ARGC(1);
-	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_IsGeneratorFunction(cx, JL_ARG(1)) );
-	return JS_TRUE;
-	JL_BAD;
-}
-*/
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* <jimb>	Franck: Any object that has a 'next' method can act as an iterator.
-/ **doc
-$TOC_MEMBER $INAME
- $BOOL $INAME()
-  Returns $TRUE if the value is a generator instance.
-** /
-DEFINE_FUNCTION( isGeneratorObject ) {
-
-	JL_ASSERT_ARGC(1);
-	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_IsGeneratorObject(cx, JL_ARG(1)) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
 /**doc
 $TOC_MEMBER $INAME
  $STR $INAME( value )
@@ -1249,8 +1217,6 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( isNumber, 1 )
 		FUNCTION_ARGC( isPrimitive, 1 )
 		FUNCTION_ARGC( isCallable, 1 )
-//		FUNCTION_ARGC( isGeneratorFunction, 1 )
-//		FUNCTION_ARGC( isGeneratorObject, 1 )
 		
 		FUNCTION_ARGC( real, 1 )
 

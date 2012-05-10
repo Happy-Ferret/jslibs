@@ -327,7 +327,7 @@ public:
 		if ( JS_IsTypedArrayObject(obj, cx) ) {
 
 			uint32_t length = JS_GetTypedArrayByteLength(obj, cx);
-			void *data = length ? JS_GetInt8ArrayData(obj, cx) : NULL;
+			void *data = length ? JS_GetArrayBufferViewData(obj, cx) : NULL;
 			JL_CHK( Write(cx, JLSTTypedArray) );
 			JL_CHK( Write(cx, JS_GetTypedArrayType(obj, cx)) );
 			JL_CHK( Write(cx, SerializerConstBufferInfo(data, length)) );
@@ -800,7 +800,7 @@ public:
 
 				SerializerConstBufferInfo data;
 
-				uint32_t type;
+				JSArrayBufferViewType type;
 				JL_CHK( Read(cx, type) );
 				JL_CHK( Read(cx, data) );
 				JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), &val) );
@@ -809,22 +809,31 @@ public:
 				switch ( type ) {
 					case js::ArrayBufferView::TYPE_INT8:
 						typedArray = JS_NewInt8ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						break;
 					case js::ArrayBufferView::TYPE_UINT8:
 						typedArray = JS_NewUint8ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						break;
 					case js::ArrayBufferView::TYPE_INT16:
 						typedArray = JS_NewInt16ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						break;
 					case js::ArrayBufferView::TYPE_UINT16:
 						typedArray = JS_NewUint16ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						break;
 					case js::ArrayBufferView::TYPE_INT32:
 						typedArray = JS_NewInt32ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						break;
 					case js::ArrayBufferView::TYPE_UINT32:
 						typedArray = JS_NewUint32ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						break;
 					case js::ArrayBufferView::TYPE_FLOAT32:
 						typedArray = JS_NewFloat32ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						break;
 					case js::ArrayBufferView::TYPE_FLOAT64:
 						typedArray = JS_NewFloat64ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						break;
 					case js::ArrayBufferView::TYPE_UINT8_CLAMPED:
 						typedArray = JS_NewUint8ClampedArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						break;
 				}
 
 				JL_CHK( typedArray );

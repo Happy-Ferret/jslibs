@@ -1858,9 +1858,9 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLData *str ) {
 			if ( length ) {
 
 				if ( JS_GetTypedArrayType(obj, cx) == js::ArrayBufferView::TYPE_UINT16 )
-					*str = JLData((const jschar*)JS_GetArrayBufferData(obj, cx), false, length);
+					*str = JLData((const jschar*)JS_GetUint16ArrayData(obj, cx), false, length);
 				else
-					*str = JLData((const char*)JS_GetArrayBufferData(obj, cx), false, length);
+					*str = JLData((const char*)JS_GetInt8ArrayData(obj, cx), false, length);
 			} else {
 
 				*str = JLData::Empty();

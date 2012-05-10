@@ -1,7 +1,23 @@
 loadModule = host.loadModule;
 loadModule('jsstd');
 loadModule('jsio');
-loadModule('jsdebug');
+
+function getCurrentLineNumber() {
+
+	return +Error().stack.split('\n')[1].split(':')[1];
+}
+
+function getStackSize() {
+
+	return +Error().stack.split('\n').length - 1;
+}
+
+function getStackLocation(n) {
+	
+	var items = Error().stack.split('\n');
+
+	return items[items.length - n].split(':');
+}
 
 function pad(val, width, prefix) {
 
@@ -350,7 +366,8 @@ function compileTests(itemList) {
 		
 		try {
 
-			item.relativeLineNumber = locate()[1] +1 - item.line; // currentLineNumber
+			//item.relativeLineNumber = locate()[1] +1 - item.line; // currentLineNumber
+			item.relativeLineNumber = getCurrentLineNumber() + 1 - item.line;
 			item.func = new Function('QA', item.code);
 
 		} catch(ex) {
@@ -400,17 +417,19 @@ function launchTests(itemList, cfg) {
 	var cx = { 
 		checkCount: 0,
 		issueList: [],
-		stackIndex: stackSize-1,
+		stackIndex: getStackSize(),
 		cfg: cfg,
 		reportIssue: function(message, checkName) {
-			
-			reportInfo(this, 'ASSERT', this.item.file+':'+(locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message);
+		
+			reportInfo(this, 'ASSERT', this.item.file+':'+(getStackLocation(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, checkName, message);
 		},
 		checkpoint:function(title, testName) {
 			
 			this.checkCount++;
-			if ( cfg.verbose )
-				reportInfo(this, 'CHECK', this.item.file+':'+(locate(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, testName, title);
+			if ( cfg.verbose ) {
+
+				reportInfo(this, 'CHECK', this.item.file+':'+(getStackLocation(this.stackIndex+1)[1] - this.item.relativeLineNumber), this.item.name, testName, title);
+			}
 		}
 	};
 

@@ -16,7 +16,6 @@
 
 #include <jslibsModule.h>
 
-#define SVN_REVISION_STR "$Revision$"
 #include "host.h"
 #include "../jslang/jslang.h"
 

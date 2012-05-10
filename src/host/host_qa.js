@@ -96,7 +96,7 @@ loadModule('jsio');
 
 /// host version info [p]
 
-	QA.ASSERTOP( host.sourceId, '>', 3400, 'sourceId version validity' );
+	QA.ASSERTOP( host._sourceId, '>', 3400, 'sourceId version validity' );
 	QA.ASSERTOP( host.jsVersion, '>=', 185, 'javascript version validity' );
 	
 	

@@ -1053,7 +1053,7 @@ JSClass NativeProc = {
   "NativeProc", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(2),
   JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
   JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, NULL,
-  0,0, NativeProc_Call
+  0, NativeProc_Call
 };
 
 
