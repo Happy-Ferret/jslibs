@@ -387,7 +387,7 @@ loadModule('jsdebug');
 
 		serverSocket.bind( 9998, '127.0.0.1' );
 		
-		QA.ASSERT( !serverSocket.closed, 'descriptor' );
+		QA.ASSERT( serverSocket.closed, false, 'descriptor' );
 		
 		serverSocket.listen();
 		dlist.push(serverSocket);

@@ -36,12 +36,11 @@ loadModule('jsio');
 //	loadModule('jsgraphics');
 
 
-	var count = 0;
-	var done = {__proto__:null};
+	var done = new Set();
+
 	for ( var item of excludeList ) {
 		try {
-			var ob = eval(item);
-			done[objectGCId(ob)] = ob;
+			done.add(eval(item));
 		} catch(ex){}
 	}
 	
@@ -53,7 +52,7 @@ loadModule('jsio');
 		if ( isPrimitive(obj) )
 			return;
 
-		done[objectGCId(obj)] = obj;
+		done.add(obj);
 		var list = Object.getOwnPropertyNames(obj);
 		for ( var name of list ) {
 
@@ -69,7 +68,7 @@ loadModule('jsio');
 				continue;
 			}
 			
-			if ( done[objectGCId(nextObj)] )
+			if ( done.has(nextObj) )
 				continue;
 
 			try {

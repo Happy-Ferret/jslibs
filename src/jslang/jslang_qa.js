@@ -83,6 +83,24 @@ loadModule('jsstd');
 
 /// non-native Stream [p]
 
+		function Buffer() {
+			
+			_buf = [];
+			this.write = function(data) {
+
+				_buf.push(String(data));
+			}
+			this.read = function(amount) {
+
+				var tmp = '';
+				while ( tmp.length < amount && _buf.length > 0 )
+					tmp += _buf.shift();
+				var res = tmp.substr(0, amount);
+				_buf.push(tmp.substr(amount));
+				return res;
+			}
+		}
+
 		var buf = new Buffer();
 		buf.write('abcdefghi');
 
@@ -100,6 +118,24 @@ loadModule('jsstd');
 
 /// another non-native Stream [p]
 
+		function Buffer() {
+			
+			_buf = [];
+			this.write = function(data) {
+
+				_buf.push(String(data));
+			}
+			this.read = function(amount) {
+
+				var tmp = '';
+				while ( tmp.length < amount && _buf.length > 0 )
+					tmp += _buf.shift();
+				var res = tmp.substr(0, amount);
+				_buf.push(tmp.substr(amount));
+				return res;
+			}
+		}
+
 		var buf = new Buffer();
 		buf.write('abcdefghijklmnopqrstuvwxyz');
 		var res = stringify({ read:function(n) { return buf.read(3); } });
@@ -107,22 +143,16 @@ loadModule('jsstd');
 
 
 /// Stringify function [p]
-	
+
 		QA.ASSERT( 'test', stringify('test'), 'force string conversion' );
 		
-		var len = 0;
-		var b = new Buffer();
-		for ( var i = 0; i < 500; i++ ) {
-			
-			len += i;
-			b.write(QA.randomString(i));
-		}
+		var b = '';
+		for ( var i = 0; i < 100; i++ )
+			b += 'q68erg4b6qer8b4';
 
-		QA.ASSERT( b.length, len, 'buffer length' );
-		
-		var s = stringify(b);
+		var s = stringify(new Stream(b));
 
-		QA.ASSERT( s.length, len, 'string length' );
+		QA.ASSERT( s, b, 'strings are the same' );
 
 
 /// blob serialization [pd]

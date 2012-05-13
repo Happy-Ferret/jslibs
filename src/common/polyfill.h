@@ -56,13 +56,6 @@ js_GetClassPrototype(JSContext *cx, JSObject *scope, JSProtoKey protoKey,
                      JSObject **protop, js::Class *clasp = NULL);
 
 
-/*
-// only defined as JS_FRIEND_API in js/src/js/src/jstypedarray.h
-
-JS_FRIEND_API(JSObject *)
-js_CreateTypedArray(JSContext *cx, int atype, uint32_t nelements);
-*/
-
 // only defined as JS_FRIEND_API in js/src/js/src/jsdate.h
 
 extern JS_FRIEND_API(int)

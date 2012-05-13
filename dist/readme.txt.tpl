@@ -1,5 +1,5 @@
                                jslibs
-                               $(type) $(version) r$(revision) win32
+                               $(type) $(version) r$(sourceId) win32
 
 
 LICENSE:

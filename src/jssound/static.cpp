@@ -35,7 +35,6 @@ DECLARE_STATIC()
 typedef struct {
 	JSContext *cx;
 	JSObject *obj;
-//	NIStreamRead streamRead;
 } StreamReadInfo;
 
 
@@ -92,10 +91,6 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *streamObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-
-//	NIStreamRead streamReader;
-//	JL_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
-//	JL_ASSERT( streamReader != NULL, "Invalid stream." );
 
 	StreamReadInfo pv; // = { cx, StreamObj };
 	pv.cx = cx;
@@ -292,10 +287,6 @@ DEFINE_FUNCTION( decodeSound ) {
 
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *streamObj = JSVAL_TO_OBJECT( JL_ARG(1) );
-
-//	NIStreamRead streamReader;
-//	JL_CHK( GetStreamReadInterface(cx, StreamObj, &streamReader) );
-//	JL_ASSERT( streamReader != NULL, "Invalid stream." );
 
 	StreamReadInfo pv;// = { cx, streamObj };
 	pv.cx = cx;

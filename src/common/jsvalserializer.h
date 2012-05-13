@@ -804,8 +804,8 @@ public:
 				JL_CHK( Read(cx, type) );
 				JL_CHK( Read(cx, data) );
 				JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), &val) );
-				JSObject *typedArray; // = js_CreateTypedArrayWithBuffer(cx, type, JSVAL_TO_OBJECT(val), -1, -1);
 
+				JSObject *typedArray;
 				switch ( type ) {
 					case js::ArrayBufferView::TYPE_INT8:
 						typedArray = JS_NewInt8ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
@@ -834,6 +834,8 @@ public:
 					case js::ArrayBufferView::TYPE_UINT8_CLAMPED:
 						typedArray = JS_NewUint8ClampedArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
 						break;
+					default:
+						typedArray = NULL;
 				}
 
 				JL_CHK( typedArray );

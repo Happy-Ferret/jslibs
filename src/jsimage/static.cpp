@@ -51,7 +51,6 @@ typedef struct {
 	JOCTET *buffer;
 	JSContext *cx;
 	JSObject *obj;
-//	NIStreamRead read;
 } SourceMgr;
 
 
