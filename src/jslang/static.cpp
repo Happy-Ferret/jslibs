@@ -38,97 +38,6 @@ BEGIN_STATIC
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME()
-  Returns $TRUE if the value is a boolean value or object.
-**/
-/**qa
-	QA.ASSERT( isBoolean(true), true );
-	QA.ASSERT( isBoolean(false), true );
-	QA.ASSERT( isBoolean(new Boolean(true)), true );
-**/
-
-ADD_DOC(isBoolean, "boolean isBoolean(value)", "returns true if value is a boolean or a boolean object");
-
-DEFINE_FUNCTION( isBoolean ) {
-
-	JL_ASSERT_ARGC(1);
-
-	if ( JSVAL_IS_BOOLEAN(JL_ARG(1)) ) {
-
-		*JL_RVAL = JSVAL_TRUE;
-		return JS_TRUE;
-	}
-
-	if ( JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
-
-		*JL_RVAL = JSVAL_FALSE;
-		return JS_TRUE;
-	}
-
-	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_ValueIsBoolean(cx, JL_ARG(1)) );
-
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME()
-  Returns $TRUE if the value is a number value or object.
-**/
-DEFINE_FUNCTION( isNumber ) {
-
-	JL_ASSERT_ARGC(1);
-
-	if ( JSVAL_IS_NUMBER(JL_ARG(1)) ) {
-
-		*JL_RVAL = JSVAL_TRUE;
-		return JS_TRUE;
-	}
-
-	if ( JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
-
-		*JL_RVAL = JSVAL_FALSE;
-		return JS_TRUE;
-	}
-
-	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_ValueIsNumber(cx, JL_ARG(1)) );
-
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME()
-  Returns $TRUE if the value is a primitive ( null or not an object ).
-**/
-/**qa
-	QA.ASSERTOP( isPrimitive(true), '==', true );
-	QA.ASSERTOP( isPrimitive(false), '==', true );
-	QA.ASSERTOP( isPrimitive(1), '==', true );
-	QA.ASSERTOP( isPrimitive('a'), '==', true );
-	QA.ASSERTOP( isPrimitive(1.23), '==', true );
-	QA.ASSERTOP( isPrimitive(null), '==', true );
-	QA.ASSERTOP( isPrimitive(undefined), '==', true );
-**/
-DEFINE_FUNCTION( isPrimitive ) {
-
-	JL_IGNORE(cx);
-	JL_ASSERT_ARGC(1);
-	*JL_RVAL = BOOLEAN_TO_JSVAL( JSVAL_IS_PRIMITIVE(JL_ARG(1)) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME()
   Returns $TRUE if the value is callable (either a function or a callable object).
   $H example
   {{{
@@ -146,28 +55,13 @@ $TOC_MEMBER $INAME
 	QA.ASSERT( isCallable(new Hash('md5')), true );
 	QA.ASSERT( isCallable(function()0), true );
 **/
+
+ADD_DOC(isCallable, "boolean isCallable(value)", "returns true if the value can be called like a function");
+
 DEFINE_FUNCTION( isCallable ) {
 
 	JL_ASSERT_ARGC(1);
 	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_ValueIsCallable(cx, JL_ARG(1)) );
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-/**doc
-$TOC_MEMBER $INAME
- $STR $INAME( value )
-  This function converts any value into a floating point value.
-**/
-DEFINE_FUNCTION( real ) {
-
-	JL_ASSERT_ARGC(1);
-
-	double val;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &val) );
-	*JL_RVAL = DOUBLE_TO_JSVAL(val);
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1069,6 +963,11 @@ DEFINE_FUNCTION( jslangTest ) {
 	
 	JL_IGNORE(cx, argc, vp);
 
+	JL_DEFINE_FUNCTION_OBJ;
+
+
+//	JSBool st = JS_IsInt8Array(obj, cx);
+
 /*
 	static uint64_t xx[2];
 
@@ -1212,14 +1111,8 @@ CONFIGURE_STATIC
 //	REVISION(jl::SvnRevToInt("$Revision$")) // avoid to set a sourceId property to the global context.
 	BEGIN_STATIC_FUNCTION_SPEC
 
-		FUNCTION_ARGC( isBoolean, 1 )
-
-		FUNCTION_ARGC( isNumber, 1 )
-		FUNCTION_ARGC( isPrimitive, 1 )
 		FUNCTION_ARGC( isCallable, 1 )
 		
-		FUNCTION_ARGC( real, 1 )
-
 		FUNCTION_ARGC( stringify, 2 )
 		FUNCTION_ARGC( join, 2 )
 		FUNCTION_ARGC( indexOf, 3 )

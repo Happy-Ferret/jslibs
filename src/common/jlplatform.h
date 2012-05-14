@@ -1189,20 +1189,6 @@ itoa10(int32_t val, char *buf) {
 }
 
 
-ALWAYS_INLINE void
-SleepMilliseconds(uint32_t ms) {
-
-#if defined(XP_WIN)
-
-	Sleep(ms); // winbase.h
-#elif defined(XP_UNIX)
-	usleep(ms * 1000); // unistd.h // (TBD) obsolete, use nanosleep() instead.
-#else
-	#error NOT IMPLEMENTED YET	// (TBD)
-#endif
-}
-
-
 // ReaD Time Stamp Counter (rdtsc)
 
 #if defined(XP_WIN)
@@ -1251,6 +1237,12 @@ GetCurrentProcessor(void) {
 
 // Accurate FPS Limiting / High-precision 'Sleeps': see. http://www.geisswerks.com/ryan/FAQS/timing.html
 
+// Programs that use the QueryPerformanceCounter function may perform poorly in Windows Server 2000, in Windows Server 2003, and in Windows XP: http://support.microsoft.com/kb/895980
+
+// Win32 Performance Measurement Options: QueryPerformanceCounter is fine for individual short-interval timing.
+
+// http://www.drdobbs.com/article/print?articleId=184416651
+
 INLINE double FASTCALL
 AccurateTimeCounter() {
 
@@ -1282,16 +1274,21 @@ AccurateTimeCounter() {
 	if ( oldmask )
 		::SetThreadAffinityMask(thread, oldmask);
 	JL_IGNORE( result );
-	return (double)1000 * (performanceCount.QuadPart-initTime) / (double)frequency.QuadPart;
+	return (double)1000 * (performanceCount.QuadPart - initTime) / (double)frequency.QuadPart;
+
 #elif defined(XP_UNIX)
+
 	static volatile long initTime = 0; // initTime helps in avoiding precision waste.
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	if ( initTime == 0 )
 		initTime = tv.tv_sec;
-	return (double)(tv.tv_sec-initTime) * (double)1000 + tv.tv_usec / (double)1000;
+	return (double)(tv.tv_sec - initTime) * (double)1000 + tv.tv_usec / (double)1000;
+
 #else
+
 	#error NOT IMPLEMENTED YET
+
 #endif
 }
 
@@ -1305,6 +1302,51 @@ AccurateTimeCounter() {
 //    }
 //    return clock;
 //}
+
+ALWAYS_INLINE void
+SleepMilliseconds(uint32_t ms) {
+
+#if defined(XP_WIN)
+
+	Sleep(ms); // winbase.h
+
+#elif defined(XP_UNIX)
+
+	usleep(ms * 1000); // unistd.h // (TBD) obsolete, use nanosleep() instead.
+
+#else
+
+	#error NOT IMPLEMENTED YET	// (TBD)
+
+#endif
+
+}
+
+
+ALWAYS_INLINE void
+SleepMillisecondsAccurate(uint32_t ms) {
+
+	if ( ms == 0 )
+		return;
+
+#if defined(XP_WIN)
+
+	double aim = AccurateTimeCounter() + (double)ms;
+	Sleep(ms-1); // winbase.h
+	while ( AccurateTimeCounter() < aim )
+		Sleep(0);
+
+#elif defined(XP_UNIX)
+
+	usleep(ms * 1000); // unistd.h // (TBD) obsolete, use nanosleep() instead.
+
+#else
+
+	#error NOT IMPLEMENTED YET	// (TBD)
+
+#endif
+
+}
 
 
 #define JL_PAGESIZE 4096

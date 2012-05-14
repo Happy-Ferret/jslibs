@@ -2,6 +2,11 @@ loadModule = host.loadModule;
 loadModule('jsstd');
 loadModule('jsio');
 
+function isBoolean(val) {
+	
+	return typeof(val) == 'boolean' || val instanceof Boolean;
+}
+
 function getCurrentLineNumber() {
 
 	return +Error().stack.split('\n')[1].split(':')[1];

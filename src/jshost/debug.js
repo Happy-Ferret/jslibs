@@ -7,7 +7,34 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile();
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
-loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
+
+loadModule('jsstd');
+loadModule('jscrypt');
+
+
+var rnd = new Prng('yarrow');
+
+print( rnd.length );
+
+
+
+throw 0;
+
+
+
+loadModule('jsstd');
+
+sleep(1);
+timeCounter();
+
+timeCounter();
+var t = timeCounter();
+err = timeCounter() - t;
+
+var t = timeCounter();
+sleep(10);
+print( timeCounter() - t, '\n' );
 
 
 
@@ -191,7 +218,6 @@ throw 0;
 halt();
 
 
-print(isBoolean.length); halt();
 
 /*
 loadModule('jswinshell');

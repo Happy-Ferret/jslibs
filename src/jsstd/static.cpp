@@ -558,15 +558,26 @@ DEFINE_FUNCTION( maybeCollectGarbage ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
- $REAL $INAME( time )
-  Suspends the execution of the current program during _time_ milliseconds.
+ $REAL $INAME( time [, accurate] )
+  Suspends the execution of the current program during _time_ milliseconds. If _accurate_ is true, the precision of the pause is preferred to the performance of the function (CPU usage).
 **/
 DEFINE_FUNCTION( sleep ) {
 
-	JL_ASSERT_ARGC(1);
+	JL_ASSERT_ARGC_RANGE(1, 2);
+	
+	bool accurate;
+	if ( JL_ARG_ISDEF(2) )
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &accurate) );
+	else
+		accurate = false;
+
 	unsigned int time;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &time) );
-	jl::SleepMilliseconds(time);
+
+	if ( accurate )
+		jl::SleepMillisecondsAccurate(time);
+	else
+		jl::SleepMilliseconds(time);
 	
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;

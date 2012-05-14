@@ -40,22 +40,6 @@ loadModule('jsstd');
 	QA.ASSERT( switchCase( 2, [1, '1'], ['num', 'str'], 'def' ), 'def', 'SwitchCase default value' );
 
 
-/// IsBoolean function [p]
-
-		QA.ASSERT( isBoolean( false ), true, 'boolean value' );
-		QA.ASSERT( isBoolean( 0 ), false, 'not a boolean value' );
-		QA.ASSERT( isBoolean( new Number(123) ), false, 'not a boolean object' );
-		QA.ASSERT( isBoolean( new Boolean(123) ), true, 'boolean object' );
-
-
-/// IsNumber function [p]
-
-		QA.ASSERT( isNumber( 123 ), true, 'number value' );
-		QA.ASSERT( isNumber( true ), false, 'not a number value' );
-		QA.ASSERT( isNumber( new Boolean(123) ), false, 'number object' );
-		QA.ASSERT( isNumber( new Number(123) ), true, 'not a number object' );
-
-
 /// print returns undefined [p]
 		QA.ASSERT( print(), undefined, 'print return value' );
 
