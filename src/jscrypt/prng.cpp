@@ -98,33 +98,38 @@ $TOC_MEMBER $INAME
   loadModule('jscrypt');
   var myGen = new Prng('yarrow');
   myGen.autoEntropy(128); // give more entropy
-  print(hexEncode(myGen(100))); // prints random data
+  print(hexEncode(myGen.read(100))); // prints random data
   }}}
 **/
-DEFINE_CALL() {
+/**qa
+  loadModule('jscrypt');
+  var myGen = new Prng('yarrow');
+  myGen.autoEntropy(128);
+  QA.ASSERT( myGen.read(100).byteLength, 100 );
+**/
+DEFINE_FUNCTION( read ) {
 
-	JL_DEFINE_CALL_FUNCTION_OBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARGC_RANGE(0,1);
 
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	unsigned int readCount;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &readCount) );
+	unsigned long readCount, actualRead;
+
+	if ( JL_ARG_ISDEF(1) )
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &readCount) );
+	else
+		readCount = 1024;
 
 	uint8_t *pr;
-	//pr = (char*)jl_malloc(readCount +1);
 	pr = JL_NewBuffer(cx, readCount, JL_RVAL);
 	JL_CHK( pr );
-	unsigned long hasRead;
-	hasRead = pv->prng.read( (unsigned char*)pr, readCount, &pv->state );
-	JL_CHKM( hasRead == readCount, E_DATA, E_CREATE );
+	actualRead = pv->prng.read( (unsigned char*)pr, readCount, &pv->state );
+	JL_CHKM( actualRead == readCount, E_DATA, E_CREATE );
 	
-	//pr[readCount] = '\0';
-	//JL_CHK( JL_NewBlob( cx, pr, hasRead, JL_RVAL ) );
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -303,11 +308,11 @@ CONFIGURE_CLASS
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-	HAS_CALL
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( addEntropy )
-		FUNCTION( autoEntropy )
+		FUNCTION_ARGC( addEntropy, 1 )
+		FUNCTION_ARGC( autoEntropy, 1 )
+		FUNCTION_ARGC( read, 1 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

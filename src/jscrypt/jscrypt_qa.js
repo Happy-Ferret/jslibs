@@ -14,6 +14,14 @@
 	QA.ASSERT_STR( md5.done(), "\b\t\xAA\xC0\x10\xB1G\xA8\xC71'}*\x80\x07\xBF", 'digest integrity' );
 
 
+/// MD5 digest + undefined [p]
+
+	var md5 = new Hash('md5');
+	md5.process('foobarxxx');
+	md5.process(undefined);
+	QA.ASSERT_STR( md5.done(), "\b\t\xAA\xC0\x10\xB1G\xA8\xC71'}*\x80\x07\xBF", 'digest integrity' );
+
+
 /// Cipher, Hash, Prng list [p]
 	
 	function count(o) {

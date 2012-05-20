@@ -149,50 +149,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\jsjpeg.cpp"
-				>
-				<FileConfiguration
-					Name="DBG|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\..\libs\libjpeg\src"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="OPT|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\..\libs\libjpeg\src"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\jspng.cpp"
-				>
-				<FileConfiguration
-					Name="DBG|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\..\libs\libpng\src;..\..\libs\zlib\src"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="OPT|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="..\..\libs\libpng\src;..\..\libs\zlib\src"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath=".\main.cpp"
 				>
 			</File>

@@ -1,3 +1,8 @@
+var loadModule = host.loadModule;
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsiconv'); throw 0; // -inlineOnly
+
+
+
 loadModule('jsstd'); exec('../common/tools.js');
 //var QA = FakeQAApi;
 //runLocalQAFile();

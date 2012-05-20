@@ -1,86 +1,10 @@
-
+var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
-
-loadModule('jsstd'); exec('../common/tools.js'); RunQATests('-rep 1 -exclude jstask jsz');
-
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsz'); throw 0;
 
 loadModule('jsstd');
 loadModule('jsz');
 
-
-//a = new Uint8Array([100,101,102,100,101,102,100,101,102,100,101,102]);
-//print( uneval(Array.concat( a )), '\n' );
-//throw 0;
-
-
-
-var f = new ZipFile('test.zip');
-f.open(ZipFile.CREATE);
-f.level = 9;
-for ( var i = 0; i < 10; ++i ) {
-
-	f.select('file'+i+'.txt');
-	f.write('content data '+i+' '+stringRepeat('z',100));
-}
-f.close();
-print( '---\n' );
-
-
-var g = new ZipFile('test.zip');
-g.open(ZipFile.READ);
-
-//
-g.select('file9.txt');
-g.goNext();
-g.goTo(10);
-g.goTo(100);
-
-
-
-//g.GoTo(8); g.GoNext(); g.GoNext();
-
-//stringify(g);
-
-//for ( g.GoFirst(); !g.eol; g.GoNext() )  print( ' '+g.filename, ' : ', g.Read(), ' (lvl='+g.level+' eol=', g.eol, ')\n' ); 
-//print( ' '+g.filename, ' : ', g.Read(), ' (eol=', g.eol, ')\n' );
-
-
-
-g.close();
-
-
-
-
-throw 0;
-
-var f = new ZipFile('test.zip');
-f.open(ZipFile.CREATE);
-f.select('toto/xxx.txt');
-f.date = new Date(2008,6,4);
-f.globalComment = 'a comment';
-print( 'global comment:', f.globalComment, '\n' );
-print( 'date:', f.date, '\n' );
-f.extra = 'extra field';
-f.write('content data');
-f.close();
-
-print( '---\n' );
-
-var g = new ZipFile('test.zip');
-g.open(ZipFile.READ);
-g.select('toto/xxx.txt');
-print( 'global comment:', g.globalComment, '\n' );
-print( g.filename, ' / ', g.date, ' / ', '\n' );
-print( g.read(30), '\n' );
-print( g.read(30), '\n' );
-print( g.read(30), '\n' );
-print( g.read(30), '\n' );
-print( g.read(), '\n' );
-print( 'current extra:', g.extra, '\n' );
-
-
-//print( Stringify(g) );
-g.close();
 
 
 throw 0;
@@ -201,16 +125,6 @@ var result = inflate(str, true);
 
 
 halt(); //////////////////////////////////////////////////////////////////////////
-
-
-
-
-function randomString(size) {
-
-	var res = '';
-	while(size--)	res+=String.fromCharCode(Math.random()*256)
-	return res;
-}
 
 
 

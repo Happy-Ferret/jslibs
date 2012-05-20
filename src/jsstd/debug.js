@@ -4,6 +4,11 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 
 
+print( CPUID );
+
+throw 0;
+
+
 sleep(1);
 timeCounter();
 

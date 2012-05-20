@@ -399,6 +399,7 @@ JL_END_NAMESPACE
 
 #define HAS_CALL cs.clasp.call = Call;
 #define DEFINE_CALL() static JSBool Call(JSContext *cx, unsigned argc, jsval *vp)
+// see also JL_DEFINE_CALL_FUNCTION_OBJ
 
 #define HAS_CONVERT cs.clasp.convert = Convert;
 #define DEFINE_CONVERT() static JSBool Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)

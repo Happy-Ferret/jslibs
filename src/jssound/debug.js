@@ -1,7 +1,12 @@
 var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
-
 loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssound'); throw 0; // -inlineOnly
+
+
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jssound');
+
 
 
 throw 0;

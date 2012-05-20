@@ -32,6 +32,17 @@ loadModule('jsstd');
 	QA.ASSERT( stream._NI_StreamRead, prev, 'NativeInterface security' )
 
 
+/// Stream EOF [p]
+
+	var s = new Stream( String('hello') );
+	QA.ASSERT_STR( stringify(s), 'hello', 'stream reading' );
+	QA.ASSERT( stringify(s), '', 'stream EOF' );
+
+	var s = new Stream( String('hello') );
+	QA.ASSERT_STR( stringify(s.read()), 'hello', 'stream reading' );
+	QA.ASSERT( stringify(s.read()), undefined, 'stream EOF' );
+
+
 /// Stream test [p]
 
 	var s = new Stream( String('hello') );
@@ -85,7 +96,7 @@ loadModule('jsstd');
 
 		function Buffer() {
 			
-			_buf = [];
+			var _buf = [];
 			this.write = function(data) {
 
 				_buf.push(String(data));
@@ -120,7 +131,7 @@ loadModule('jsstd');
 
 		function Buffer() {
 			
-			_buf = [];
+			var _buf = [];
 			this.write = function(data) {
 
 				_buf.push(String(data));
@@ -438,3 +449,8 @@ loadModule('jsstd');
 	s.write(new URIError()); var ln = currentLineNumber;
 	var u = new Unserializer(s.done());
 	QA.ASSERT( u.read().lineNumber, ln );
+
+
+/// Stringify undefined value [p]
+	
+	QA.ASSERTOP( stringify(undefined), '==', undefined );

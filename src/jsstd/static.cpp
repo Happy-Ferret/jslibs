@@ -591,6 +591,8 @@ $TOC_MEMBER $INAME
  $REAL $INAME()
   Returns the current value of a high-resolution time counter in millisecond.
   The returned value is a relative time value.
+  $H beware
+   This function is not reliable over a long period of time. For long period of time, use Date.now()
   $H example
   {{{
   loadModule('jsstd');
@@ -610,7 +612,6 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( timeCounter ) {
 
 	JL_IGNORE(argc);
-
 	return JL_NativeToJsval(cx, jl::AccurateTimeCounter(), JL_RVAL);
 }
 

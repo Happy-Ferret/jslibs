@@ -2,7 +2,7 @@ loadModule('jsstd');
 loadModule('jsio');
 
 /// call all possible functions reachable in the scope
-	
+
 	if ( QA.IS_UNSAFE ) // Cannot run this test in unsafe mode (else crash)
 		return;
 
@@ -35,6 +35,10 @@ loadModule('jsio');
 //	loadModule('jsaudio');
 //	loadModule('jsgraphics');
 
+	function isPrimitive(val) {
+		
+		return typeof val != 'object' || val === null;
+	}
 
 	var done = new Set();
 

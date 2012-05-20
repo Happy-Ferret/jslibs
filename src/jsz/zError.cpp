@@ -47,14 +47,14 @@ BEGIN_CLASS( ZError )
 
 DEFINE_PROPERTY_GETTER( code ) {
 
-	JL_IGNORE(id);
+	JL_IGNORE(id, cx);
 
 	return JL_GetReservedSlot(  obj, 0, vp );
 }
 
 DEFINE_PROPERTY_GETTER( text ) {
 
-	JL_IGNORE(id);
+	JL_IGNORE(id, cx);
 
 	return JL_GetReservedSlot(  obj, 1, vp );
 }

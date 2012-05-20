@@ -1175,8 +1175,8 @@ enum E_TXTID {
 
 // simple helpers
 #define E_ERRNO( num )                E_ERRNO_1, num
-#define E_STR( str )                  E_STR_1, str
-#define E_NAME( str )                 E_NAME_1, str
+#define E_STR( str )                  E_STR_1, (const char *)str
+#define E_NAME( str )                 E_NAME_1, (const char *)str
 #define E_NUM( num )                  E_NUM_1, num
 #define E_COMMENT( str )              E_COMMENT_1, str
 #define E_COMMENT2( str1, str2 )      E_COMMENT_2, str1, str2
@@ -1873,7 +1873,7 @@ JL_JsvalToNative( JSContext *cx, jsval &val, JLData *str ) {
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, val);
 	JL_CHKM( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
-	val = STRING_TO_JSVAL(jsstr); // GC protection
+//	val = STRING_TO_JSVAL(jsstr); // GC protection
 	*str = JLData(cx, jsstr);
 	return JS_TRUE;
 
@@ -3114,11 +3114,10 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, jsval &val, float ** RESTRICT m ) {
 }
 
 // test:
-#define JL_ARG_GEN(N, type, defaultValue) \
+#define JL_ARG_GEN(N, type) \
 	TYPE arg##N; \
 	if ( JL_ARG_ISDEF(N) ) \
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(n), &arg##N) ); \
-	else arg##N = defaultValue; \
 		
 
 
@@ -4131,6 +4130,7 @@ JSStreamRead( JSContext * RESTRICT cx, JSObject * RESTRICT obj, char * RESTRICT 
 
 		JLData str;
 		JL_CHK( JL_JsvalToNative(cx, tmp, &str) );
+		JL_ASSERT( str.Length() <= *amount, E_DATASIZE, E_MAX, E_NUM(*amount) );
 		ASSERT( str.Length() <= *amount );
 		*amount = str.Length();
 		str.CopyTo(buffer);

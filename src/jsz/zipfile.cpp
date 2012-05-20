@@ -77,7 +77,6 @@ enum {
 };
 
 struct Private {
-
 	unzFile uf;
 	zipFile zf;
 	bool inZipOpened;
@@ -142,6 +141,9 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	pv->remainingLength -= rd;
 
 	*amount = rd;
+
+	// empty data mean EOF ?
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -195,7 +197,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_updateMallocCounter(cx, sizeof(Private));
 	JL_ASSERT( !pv->uf && !pv->zf );
 	JL_ASSERT( !pv->inZipOpened );
-	JL_SetPrivate( obj, pv);
+	JL_SetPrivate(obj, pv);
 
 	//JL_CHK( ReserveStreamReadInterface(cx, obj) );
 	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
@@ -287,6 +289,9 @@ DEFINE_FUNCTION( close ) {
 			JL_CHK( JL_JsvalToNative(cx, tmp, &comment) );
 		ZIP_CHK( zipClose(pv->zf, comment.GetConstStrZOrNULL()) );
 	}
+
+	// handle reusability
+	//memset(pv, 0, sizeof(Private));
 
 	jl_free(pv);
 	JL_SetPrivate( obj, NULL);
@@ -496,10 +501,10 @@ DEFINE_FUNCTION( goTo ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( [amount] )
+ $DATA | $VOID $INAME( [amount = $UNDEF] )
   Read _amount_ of data from the current file in the zip file.
   If _amount_ is omitted, the data is read from the current position to the end of the file.
-  If the returned data is an empty string, this mean that the end of the file is reached.
+  If the return value is $UNDEF this mean that the end of the file is reached.
   On error, a ZipFileError exception is rised.
 **/
 DEFINE_FUNCTION( read ) {
@@ -527,6 +532,12 @@ DEFINE_FUNCTION( read ) {
 		JL_CHK( PrepareReadCurrentFile(cx, obj) );
 	}
 
+	if ( pv->remainingLength == 0 ) {
+
+		*JL_RVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
 	uLong requestedLength;
 	if ( JL_ARG_ISDEF(1) ) {
 
@@ -538,7 +549,7 @@ DEFINE_FUNCTION( read ) {
 		requestedLength = pv->remainingLength;
 	}
 	
-	buffer = JL_DataBufferAlloc(cx, requestedLength);
+	buffer = JL_NewBuffer(cx, requestedLength, JL_RVAL);
 	JL_ASSERT_ALLOC(buffer);
 	int rd;
 	rd = unzReadCurrentFile(pv->uf, buffer, requestedLength);
@@ -547,15 +558,10 @@ DEFINE_FUNCTION( read ) {
 	
 	ASSERT( (uLong)rd <= requestedLength );
 
-//	if ( JL_MaybeRealloc(requestedLength, rd) )
-//		buffer = JL_DataBufferRealloc(buffer, rd);
-
-	JL_CHK( JL_NewBufferGetOwnership(cx, buffer, rd, JL_RVAL) );
 	pv->remainingLength -= rd;
 	ASSERT( unzeof(pv->uf) == (pv->remainingLength == 0) );
 	return JS_TRUE;
 bad:
-	JL_DataBufferFree(cx, buffer);
 	return JS_FALSE;
 }
 
@@ -592,13 +598,12 @@ DEFINE_FUNCTION( write ) {
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTDATE, &tmp) );
 		if ( JSVAL_IS_VOID(tmp) ) {
 
-			//memset(&zipfi.tmz_date, 0, sizeof(zipfi.tmz_date));
 			zipfi.tmz_date.tm_sec = 0;
 			zipfi.tmz_date.tm_min = 0;
 			zipfi.tmz_date.tm_hour = 0;
 			zipfi.tmz_date.tm_mday = 0;
-			zipfi.tmz_date.tm_mon = (uInt)-1;
-			zipfi.tmz_date.tm_year = 0;
+			zipfi.tmz_date.tm_mon = 0;
+			zipfi.tmz_date.tm_year = 1980;
 		} else {
 
 			ASSERT( !JSVAL_IS_PRIMITIVE(tmp) && JS_ObjectIsDate(cx, JSVAL_TO_OBJECT(tmp)) );
@@ -609,7 +614,7 @@ DEFINE_FUNCTION( write ) {
 			zipfi.tmz_date.tm_min = js_DateGetMinutes(cx, dateObj);
 			zipfi.tmz_date.tm_hour = js_DateGetHours(cx, dateObj);
 			zipfi.tmz_date.tm_mday = js_DateGetDate(cx, dateObj);
-			zipfi.tmz_date.tm_mon = js_DateGetMonth(cx, dateObj) - 1;
+			zipfi.tmz_date.tm_mon = js_DateGetMonth(cx, dateObj);
 			zipfi.tmz_date.tm_year = js_DateGetYear(cx, dateObj);
 		}
 
@@ -835,7 +840,7 @@ DEFINE_PROPERTY_GETTER( level ) {
 	} else
 	if ( pv->zf ) {
 
-		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTDATE, vp) );
+		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTLEVEL, vp) );
 	}
 
 	return JS_TRUE;
@@ -899,9 +904,15 @@ DEFINE_PROPERTY_GETTER( date ) {
 		UNZ_CHK( unzGetCurrentFileInfo(pv->uf, &pfile_info, NULL, 0, NULL, 0, NULL, 0) );
 
 		const tm_unz *d = &pfile_info.tmu_date;
-		JSObject *dateObj = JS_NewDateObject(cx, d->tm_year, d->tm_mon, d->tm_mday, d->tm_hour, d->tm_min, d->tm_sec);
-		JL_CHK( dateObj );
-		*vp = OBJECT_TO_JSVAL( dateObj );
+		if ( d->tm_year == 1980 && d->tm_mon == 0 && d->tm_mday == 0 && d->tm_hour == 0 && d->tm_min == 0 && d->tm_sec == 0 ) {
+
+			*vp = JSVAL_VOID;
+		} else {
+		
+			JSObject *dateObj = JS_NewDateObject(cx, d->tm_year, d->tm_mon, d->tm_mday, d->tm_hour, d->tm_min, d->tm_sec);
+			JL_CHK( dateObj );
+			*vp = OBJECT_TO_JSVAL( dateObj );
+		}
 	} else
 	if ( pv->zf ) {
 
@@ -1090,6 +1101,8 @@ CONFIGURE_CLASS
 END_CLASS
 
 
+
+
 /**doc
 $CLASS_HEADER
 $SVN_REVISION $Revision: 3471 $
@@ -1127,7 +1140,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 DEFINE_PROPERTY_GETTER( code ) {
 
-	JL_IGNORE(id);
+	JL_IGNORE(id, cx);
 
 	return JL_GetReservedSlot( obj, 0, vp);
 }

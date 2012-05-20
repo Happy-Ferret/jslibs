@@ -1,15 +1,82 @@
 loadModule('jssound');
 
-/// strimified
+
+/// chunked stream
 
 	loadModule('jsio');
+	var audioFileName = QA.cx.item.path + '/41_30secOgg-q0.ogg';
+	var data = new File(audioFileName).content;
 
+	var stream = { pos:0, reqIndex:0 };
+	stream.read = function(amount) {
+
+		if ( this.reqIndex != undefined && ++this.reqIndex % 2 == 0 )
+			return '';
+
+		amount = Math.min(amount, data.byteLength - this.pos);
+		var tmp = new Int8Array(data, this.pos, amount);
+		this.pos += amount;
+		return tmp;
+	}
+
+	var decoder = new OggVorbisDecoder( stream );
+	var block = decoder.read();
+	QA.ASSERT( block.frames, 310080, 'frames' );
+	var block = decoder.read();
+	QA.ASSERT( block.frames, 319104, 'frames' );
+	stream.reqIndex = undefined;
+	var block = decoder.read();
+	QA.ASSERT( block.frames, 693817, 'frames' );
+	var block = decoder.read();
+	QA.ASSERT( block, undefined, 'no more frames' );
+
+
+/// decode ogg using scripted stream
+
+	loadModule('jsio');
 	var audioFileName = QA.cx.item.path + '/41_30secOgg-q0.ogg';
 
 	var data = new File(audioFileName).content;
 
-	var decoder = new OggVorbisDecoder( new Stream(data) );
+	var stream = { pos:0 };
 
+	stream.read = function(amount) {
+
+		amount = Math.min(amount, data.byteLength - this.pos);
+		var tmp = new Int8Array(data, this.pos, amount);
+		this.pos += amount;
+		return tmp;
+	}
+
+	var decoder = new OggVorbisDecoder( stream );
+	var block = decoder.read();
+
+	QA.ASSERT( block.frames, 1323001, 'frames' );
+
+
+
+/// read partial sample
+
+	loadModule('jsio');
+	var audioFileName = QA.cx.item.path + '/41_30secOgg-q0.ogg';
+	var data = new File(audioFileName).content;
+
+	data = new Int8Array(data, 0, data.byteLength - 1);
+
+	var decoder = new OggVorbisDecoder( new Stream(data) );
+	var block = decoder.read();
+
+	QA.ASSERT( block.frames, 1310016, 'frames' );
+
+
+
+/// decode ogg using the Stream object
+
+	loadModule('jsio');
+	var audioFileName = QA.cx.item.path + '/41_30secOgg-q0.ogg';
+	var data = new File(audioFileName).content;
+
+	var decoder = new OggVorbisDecoder( new Stream(data) );
 	var block = decoder.read();
 
 	QA.ASSERT( block.frames, 1323001, 'frames' );

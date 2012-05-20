@@ -19,7 +19,7 @@ struct HashPrivate {
 
 	ltc_hash_descriptor *descriptor;
 	hash_state state;
-	size_t inputLength;
+	unsigned long inputLength;
 };
 
 
@@ -36,9 +36,7 @@ DEFINE_FINALIZE() {
 		return;
 
 	HashPrivate *pv = (HashPrivate *)JL_GetPrivate(obj);
-	if ( !pv )
-		return;
-	jl_free(pv);
+	jl_free(pv); // NULL is supported but is quite rare.
 }
 
 /**doc
@@ -113,7 +111,7 @@ DEFINE_FUNCTION( reset ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARGC_MAX( 0 );
+	JL_ASSERT_ARGC(0);
 
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(obj);
@@ -133,32 +131,34 @@ DEFINE_FUNCTION( reset ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( data )
-  Process a block of data though the hash.
+ $VOID $INAME( [data = undefined] )
+  Process a block of data though the hash. If _data_ is ommitted or undefined, the function does nothing.
 **/
-DEFINE_FUNCTION( process ) {
+DEFINE_FUNCTION( write ) {
 
 	JLData in;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARGC_MIN( 1 );
-	JL_ASSERT_ARG_IS_STRING(1);
+	JL_ASSERT_ARGC(1);
 
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	int err;
-//	const char *in;
-//	size_t inLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
+	if ( JL_ARG_ISDEF(1) ) {
+		
+		JL_ASSERT_ARG_IS_STRING(1);
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
 
-	err = pv->descriptor->process(&pv->state, (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length()); // Process a block of memory though the hash
-	if ( err != CRYPT_OK )
-		return ThrowCryptError(cx, err);
+		unsigned long length = in.Length();
 
-	pv->inputLength += in.Length();
+		int err;
+		err = pv->descriptor->process(&pv->state, (const unsigned char *)in.GetConstStr(), length); // Process a block of memory though the hash
+		if ( err != CRYPT_OK )
+			return ThrowCryptError(cx, err);
+
+		pv->inputLength += length;
+	}
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -186,6 +186,7 @@ DEFINE_FUNCTION( done ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(0);
 
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(obj);
@@ -202,9 +203,6 @@ DEFINE_FUNCTION( done ) {
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 
-//	out[outLength] = '\0';
-//	JL_CHK( JL_NewBlob(cx, out, outLength, JL_RVAL) );
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -213,9 +211,9 @@ DEFINE_FUNCTION( done ) {
 /**doc
 $TOC_MEMBER $INAME
  $DATA $INAME( data )
-  This is the call operator of the object. It simplifies the usage of hashes and allows a digest calculation in one call only.
-  When called with a string as argument, it Process a block of memory though the hash
-  Compute the hash until the function is called without arguments or end is $TRUE. In this case, the function returns the hash of the whole given data.
+  This is the call operator of the object. It simplifies the usage of hashes and allows a digest calculation in one go.
+  When called with a string as argument, it processes a block of memory though the hash.
+  In this case, the function returns the hash of the whole given data.
   $H beware
    Using this methode to compute a digest automaticaly resets previous state let by Init(), Process() or Done().
   $H example
@@ -232,7 +230,7 @@ DEFINE_CALL() {
 
 	JL_DEFINE_CALL_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_STRING(1);
 
 	HashPrivate *pv;
@@ -241,17 +239,11 @@ DEFINE_CALL() {
 
 	int err;
 
-	unsigned long outLength;
-	outLength = pv->descriptor->hashsize;
 	uint8_t *out;
-	out = JL_NewBuffer(cx, outLength, JL_RVAL);
+	out = JL_NewBuffer(cx, pv->descriptor->hashsize, JL_RVAL);
 	JL_CHK( out );
 
-//	const char *in;
-//	size_t inLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
-
 
 	err = pv->descriptor->init(&pv->state);
 	if (err != CRYPT_OK)
@@ -264,14 +256,6 @@ DEFINE_CALL() {
 	err = pv->descriptor->done(&pv->state, (unsigned char*)out);
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
-
-//	err = pv->descriptor->init(&pv->state);
-//	if (err != CRYPT_OK)
-//		return ThrowCryptError(cx, err);
-//	pv->inputLength = 0;
-
-	//out[outLength] = '\0';
-	//JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -438,9 +422,9 @@ CONFIGURE_CLASS
 	HAS_CALL
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION( reset )
-		FUNCTION( process )
-		FUNCTION( done )
+		FUNCTION_ARGC( reset, 0 )
+		FUNCTION_ARGC( write, 1 )
+		FUNCTION_ARGC( done, 0 )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC

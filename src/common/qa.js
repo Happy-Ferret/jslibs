@@ -465,39 +465,45 @@ function launchTests(itemList, cfg) {
 			if ( testCount >= cfg.rangeLength )
 				break testloop;
 
-			try {
 
-				if ( !cfg.quiet )
-					print( pad(testIndex, 4, ' ')+' - '+cx.item.file+':'+cx.item.line+' - '+cx.item.name+' ');
+			if ( !cfg.quiet )
+				print( pad(testIndex, 4, ' ')+' - '+cx.item.file+':'+cx.item.line+' - '+cx.item.name+' ');
 
-				if ( cx.item.init && !initDone.has(cx.item.init) ) {
+			if ( cx.item.init && !initDone.has(cx.item.init) ) {
 
-					if ( exportFile ) {
+				if ( exportFile ) {
 
-						exportFile.write('('+cx.item.init.func.toSource()+')(QA);\n');
-						exportFile.sync();
-					}
+					exportFile.write('('+cx.item.init.func.toSource()+')(QA);\n');
+					exportFile.sync();
+				}
+
+				try {
+
 					void cx.item.init.func(qaapi);
 					initDone.add(cx.item.init);
+				} catch(ex) {
+
+					reportInfo(cx, 'EXCEPTION', cx.item.init.file+':'+(ex.lineNumber - cx.item.init.relativeLineNumber), cx.item.init.name, '', '('+ex.constructor.name+') '+ex);
 				}
-
-
-				for ( var i = cfg.repeatEachTest; i && !host.endSignal ; --i ) {
-
-					if ( exportFile ) {
-
-						exportFile.write('('+cx.item.func.toSource()+')(QA);\n');
-						exportFile.sync();
-					}
-
-					void cx.item.func(qaapi);
-					++testCount;
-				}
-
-			} catch(ex) {
-
-				reportInfo(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', '('+ex.constructor.name+') '+ex);
 			}
+
+			for ( var i = cfg.repeatEachTest; i && !host.endSignal ; --i ) {
+
+				if ( exportFile ) {
+
+					exportFile.write('('+cx.item.func.toSource()+')(QA);\n');
+					exportFile.sync();
+				}
+
+				try {
+					void cx.item.func(qaapi);
+				} catch(ex) {
+
+					reportInfo(cx, 'EXCEPTION', cx.item.file+':'+(ex.lineNumber - cx.item.relativeLineNumber), cx.item.name, '', '('+ex.constructor.name+') '+ex);
+				}
+				++testCount;
+			}
+
 
 			if ( !cfg.quiet )
 				print('\n');

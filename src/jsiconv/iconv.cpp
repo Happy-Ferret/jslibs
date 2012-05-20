@@ -121,10 +121,10 @@ $TOC_MEMBER $INAME
  $STR $INAME( [ textData ] )
   Converts textData. If called without argument, this resets the conversion state to the initial state and returns $UNDEF.
 **/
-DEFINE_CALL() {
+DEFINE_FUNCTION( process ) {
 	
 	JLData data;
-	JL_DEFINE_CALL_FUNCTION_OBJ;
+	JL_DEFINE_FUNCTION_OBJ;
 
 	char *outBuf = NULL; // keep on top
 
@@ -454,7 +454,9 @@ CONFIGURE_CLASS
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
 
-	HAS_CALL
+	BEGIN_FUNCTION_SPEC
+		FUNCTION_ARGC( process, 1 )
+	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY( invalidChar )

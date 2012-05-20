@@ -32,18 +32,11 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( Z )
 
 struct Private {
-
 	z_stream stream;
 	int method;
 	int level;
 };
 
-
-
-//static JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
-//
-//	return ReadRawAmount(cx, obj, amount, buf);
-//}
 
 DEFINE_FINALIZE() {
 
@@ -90,16 +83,13 @@ $TOC_MEMBER $INAME
   }}}
 **/
 
+NOALIAS voidpf jsz_alloc(voidpf, uInt items, uInt size) NOTHROW {
 
-NOALIAS voidpf jsz_alloc(voidpf opaque, uInt items, uInt size) NOTHROW {
-
-	JL_IGNORE(opaque);
 	return jl_malloc(items*size);
 }
 
-void jsz_free(voidpf opaque, voidpf address) NOTHROW {
+void jsz_free(voidpf, voidpf address) NOTHROW {
 
-	JL_IGNORE(opaque);
 	jl_free(address);
 }
 
@@ -116,9 +106,6 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_SetPrivate( obj, pv);
 	pv->stream.state = Z_NULL; // mendatory
-
-//	pv->stream.zalloc = Z_NULL;
-//	pv->stream.zfree = Z_NULL;
 	pv->stream.zalloc = jsz_alloc;
 	pv->stream.zfree = jsz_free;
 
@@ -134,8 +121,6 @@ DEFINE_CONSTRUCTOR() {
 		pv->level = Z_DEFAULT_COMPRESSION; // default value
 	}
 
-	JL_CHK( ReserveStreamReadInterface(cx, obj) );
-
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -150,62 +135,35 @@ $TOC_MEMBER $INAME
   $H example
   {{{
   var compress = new Z( Z.DEFLATE );
-  var compressedData = compress( 'Hello ');
-  compressedData += compress( 'world' );
-  compressedData += compress(); // flush
+  var compressedData = Stringify(compress.process( 'Hello '));
+  compressedData += Stringify(compress.process( 'world' ));
+  compressedData += Stringify(compress.process()); // flush
   }}}
   $H example
   {{{
   var compress = new Z( Z.DEFLATE );
-  var compressedData = compress( 'Hello ');
-  compressedData += compress( 'world', true ); // flush
+  var compressedData = Stringify(compress.process( 'Hello '));
+  compressedData += Stringify(compress.process( 'world', true )); // flush
   }}}
   $H example
   {{{
-  var compressedData = new Z( Z.DEFLATE )( 'Hello world', true ); // flush
+  var compressedData = new Z( Z.DEFLATE ).process( 'Hello world', true ); // flush
   }}}
 **/
-
-void* wrapped_JS_malloc(void * opaqueAllocatorContext, size_t size) {
-
-	return JS_malloc((JSContext*)opaqueAllocatorContext, size);
-}
-
-void wrapped_JS_free(void * opaqueAllocatorContext, void* address) {
-
-	return JS_free((JSContext*)opaqueAllocatorContext, address);
-}
-
-void* wrapped_JS_realloc(void * opaqueAllocatorContext, void* address, size_t size) {
-
-	return JS_realloc((JSContext*)opaqueAllocatorContext, address, size);
-}
-
-DEFINE_CALL() {
+DEFINE_FUNCTION( process ) {
 
 	jl::Buf<Bytef> resultBuffer;
 	JLData inputData;
 
-	JL_DEFINE_CALL_FUNCTION_OBJ;
-
-	// (TBD) check JL_ObjectIsInstanceOf(cx, thisObj, &NativeProc)
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-
-// prepare input data
-//	const char *inputData;
-//	size_t inputLength;
 	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &inputData) ); // warning: GC on the returned buffer !
-//	else {
-//
-//		inputData = NULL;
-//		inputLength = 0;
-//	}
 
 // force finish
 	bool forceFinish;
@@ -229,8 +187,6 @@ DEFINE_CALL() {
 
 		if ( status < 0 )
 			JL_CHK( ThrowZError(cx, status, pv->stream.msg) );
-
-		//	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) ); (TBD) ???
 	}
 
 	ASSERT( inputData.LengthOrZero() <= UINT_MAX );
@@ -267,11 +223,9 @@ DEFINE_CALL() {
 //			length = length * 2 + 4096;
 	}
 
-//	JL_CHK( StringAndLengthToJsval(cx, rval, BufferGetData(&resultBuffer), BufferGetLength(&resultBuffer)) );
-
 	JL_CHK( JL_NewBufferGetOwnership(cx, resultBuffer.GetDataOwnership(), resultBuffer.Length(), JL_RVAL) );
 
-// close the stream and free resources
+	// close the stream and free resources
 	if ( xflateStatus == Z_STREAM_END && flushType == Z_FINISH ) {
 
 		int status;
@@ -280,7 +234,6 @@ DEFINE_CALL() {
 			JL_CHK( ThrowZError(cx, status, pv->stream.msg) );
 		JL_ASSERT( pv->stream.state == Z_NULL, E_THISOBJ, E_STATE );
 	}
-
 	return JS_TRUE;
 
 bad:
@@ -395,7 +348,10 @@ CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-	HAS_CALL
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION_ARGC( process, 1 )
+	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_GETTER( idle )
@@ -404,15 +360,11 @@ CONFIGURE_CLASS
 		PROPERTY_GETTER( lengthOut )
 	END_PROPERTY_SPEC
 
-	BEGIN_STATIC_PROPERTY_SPEC
-//		PROPERTY_GETTER(idealInputLength)
-	END_STATIC_PROPERTY_SPEC
-
 	BEGIN_CONST
-		CONST_INTEGER_SINGLE(INFLATE)
-		CONST_INTEGER_SINGLE(DEFLATE)
-		CONST_INTEGER(BEST_SPEED, Z_BEST_SPEED)
-		CONST_INTEGER(BEST_COMPRESSION, Z_BEST_COMPRESSION)
+		CONST_INTEGER_SINGLE( INFLATE )
+		CONST_INTEGER_SINGLE( DEFLATE )
+		CONST_INTEGER( BEST_SPEED, Z_BEST_SPEED )
+		CONST_INTEGER( BEST_COMPRESSION, Z_BEST_COMPRESSION )
 	END_CONST
 
 END_CLASS
@@ -467,8 +419,4 @@ About JS_NewString:
 	in the JS shell and any other 8-bit environment.
 
 	/be
-
-
-
-
 */

@@ -330,6 +330,7 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 	#define NOMINMAX
 
 	#include <windows.h>
+//	#include <Mmsystem.h> // timeGetTime()
 
 //	#include <direct.h> // function declarations for directory handling/creation
 	#include <process.h> // threads, ...
@@ -1236,19 +1237,21 @@ GetCurrentProcessor(void) {
 
 
 // Accurate FPS Limiting / High-precision 'Sleeps': see. http://www.geisswerks.com/ryan/FAQS/timing.html
-
 // Programs that use the QueryPerformanceCounter function may perform poorly in Windows Server 2000, in Windows Server 2003, and in Windows XP: http://support.microsoft.com/kb/895980
-
 // Win32 Performance Measurement Options: QueryPerformanceCounter is fine for individual short-interval timing.
-
 // http://www.drdobbs.com/article/print?articleId=184416651
+// (TBD) see GetTickCount() and CurrentClockTickTime()
+// -QueryPerformanceCounter is acurate to less than 1ms.
+// -GetTickCount() seems to vary. But has a max resolution of 1ms, but is often several ms.
+// -timeGetTime() can be forced to have a 1ms resolution. 
 
 INLINE double FASTCALL
 AccurateTimeCounter() {
 
 #if defined(XP_WIN)
-	// beware: rdtsc is a per-cpu operation. On multiprocessor systems, be careful that calls to rdtsc are actually executing on the same cpu.
 
+	// see article http://www.virtualdub.org/blog/pivot/entry.php?id=106
+	// beware: rdtsc is a per-cpu operation. On multiprocessor systems, be careful that calls to rdtsc are actually executing on the same cpu.
 	BOOL result;
 	static volatile LONGLONG initTime = 0; // initTime helps in avoiding precision waste by having a relative time.
 	static volatile DWORD_PTR cpuMask = 0;
