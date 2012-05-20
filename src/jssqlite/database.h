@@ -15,6 +15,7 @@
 
 #pragma once
 
+DECLARE_CLASS( BlobStream )
 DECLARE_CLASS( Database )
 
 #define MAX_FUNCTION_ARG 64
@@ -22,6 +23,7 @@ DECLARE_CLASS( Database )
 struct DatabasePrivate {
 	sqlite3 *db;
 	void *stmtList;
+	void *blobList;
 	void *fctpvList;
 	JSContext *tmpcx;
 };

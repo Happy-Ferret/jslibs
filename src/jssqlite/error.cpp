@@ -36,7 +36,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( code ) {
 
-	JL_IGNORE( id );
+	JL_IGNORE( id, cx );
 
 	return JL_GetReservedSlot(  obj, SLOT_SQLITE_ERROR_CODE, vp );
 }
@@ -134,7 +134,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( text ) {
 
-	JL_IGNORE( id );
+	JL_IGNORE( id, cx );
 
 	return JL_GetReservedSlot(  obj, SLOT_SQLITE_ERROR_TEXT, vp );
 }

@@ -1,5 +1,32 @@
 var loadModule = host.loadModule;
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssqlite');
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssqlite');
+
+loadModule('jsstd');
+loadModule('jssqlite');
+
+//try {
+
+var db = new Database(); // in-memory database
+
+db.exec('create table t1 (data);');
+db.exec('insert into t1 (data) values (zeroblob(100))');
+
+var stream = db.openBlobStream('t1', 'data', 1);
+
+print( stream.available, '\n' );
+
+stream.write('xxx');
+stream.position = 0;
+print( stream.read() );
+
+
+//var res = db.query('SELECT data from t1');
+
+//print(res.row());
+
+//} catch(ex) { print( ex.const, '\n' ); }
+
+throw 0;
 
 
 	loadModule('jstask');

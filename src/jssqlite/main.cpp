@@ -90,6 +90,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	INIT_CLASS( SqliteError );
 	INIT_CLASS( Result );
+	INIT_CLASS( BlobStream );
 	INIT_CLASS( Database );
 
 	return JS_TRUE;

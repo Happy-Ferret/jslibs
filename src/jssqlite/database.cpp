@@ -19,15 +19,239 @@
 #include "database.h"
 
 
-// (TBD) add User-defined Collation Sequences ( http://www.sqlite.org/datatype3.html )
 
+/**doc
+$CLASS_HEADER
+$SVN_REVISION $Revision$
+ $H note
+  You cannot construct this class.
+**/
+BEGIN_CLASS( BlobStream )
+
+enum {
+	SLOT_DATABASE
+};
+
+struct Private {
+	sqlite3_blob *pBlob;
+	int position;
+};
+
+DEFINE_FINALIZE() {
+
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+		return;
+
+	Private *pv = (Private*)JL_GetPrivate(obj);
+	if ( pv != NULL ) {
+		
+//		sqlite3_blob_close(pv->pBlob); // closed
+		jl_free(pv);
+	}
+}
+
+/**doc
+$TOC_MEMBER $INAME
+ $VAL $INAME()
+**/
+DEFINE_FUNCTION( close ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(0);
+
+	Private *pv;
+	pv = (Private*)JL_GetPrivate(obj);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+
+	jsval v;
+	JL_CHK( JL_GetReservedSlot(obj, SLOT_DATABASE, &v) );
+	DatabasePrivate *dbpv;
+	dbpv = (DatabasePrivate*)JL_GetPrivate(JSVAL_TO_OBJECT(v));
+	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(JSVAL_TO_OBJECT(v)) );
+
+	if ( sqlite3_blob_close(pv->pBlob) != SQLITE_OK )
+		JL_CHK( SqliteThrowError(cx, dbpv->db) );
+
+	jl::StackRemove(&dbpv->blobList, pv->pBlob);
+	JL_CHK( JL_SetReservedSlot(obj, SLOT_RESULT_DATABASE, JSVAL_VOID) );
+
+	jl_free(pv);
+
+	JL_SetPrivate(obj, NULL);
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VAL $INAME( [amount] )
+**/
+DEFINE_FUNCTION( read ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_RANGE(0, 1);
+
+	Private *pv;
+	pv = (Private*)JL_GetPrivate(obj);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+
+	int blobSize;
+	blobSize = sqlite3_blob_bytes(pv->pBlob);
+
+	int available;
+	available = blobSize - pv->position;
+
+	int amount;
+	if ( JL_ARG_ISDEF(1) ) {
+		
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
+
+		if ( amount == 0 && available > 0 ) { // not EOF
+
+			JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+			return JS_TRUE;
+		}
+
+		amount = js::Min(amount, available);
+	} else {
+
+		amount = available;
+	}
+
+	if ( available == 0 ) { // EOF
+
+		*JL_RVAL = JSVAL_VOID;
+		return JS_TRUE;
+	}
+
+	uint8_t *buffer;
+	buffer = JL_NewBuffer(cx, amount, JL_RVAL);
+	JL_CHK( buffer );
+
+	int st = sqlite3_blob_read(pv->pBlob, buffer, amount, pv->position);
+	if ( st != SQLITE_OK )
+		JL_CHK( SqliteThrowErrorStatus(cx, st) );
+
+	pv->position += amount;
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VAL $INAME( data )
+**/
+DEFINE_FUNCTION( write ) {
+
+	JLData data;
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(1);
+
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
+
+	Private *pv;
+	pv = (Private*)JL_GetPrivate(obj);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+
+	// doc: Use the UPDATE SQL command to change the size of a blob.
+	// see sqlite3_bind_zeroblob() and sqlite3_result_zeroblob()
+
+	int st = sqlite3_blob_write(pv->pBlob, data.GetConstStr(), data.Length(), pv->position);
+	if ( st != SQLITE_OK )
+		JL_CHK( SqliteThrowErrorStatus(cx, st) );
+
+	pv->position += data.Length();
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_GETTER( available ) {
+
+	JL_IGNORE(id);
+
+	Private *pv;
+	pv = (Private*)JL_GetPrivate(obj);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+
+	int available = sqlite3_blob_bytes(pv->pBlob) - pv->position;
+	JL_CHK( JL_NativeToJsval(cx, available, vp) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_GETTER( position ) {
+
+	JL_IGNORE(id);
+
+	Private *pv;
+	pv = (Private*)JL_GetPrivate(obj);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+
+	JL_CHK( JL_NativeToJsval(cx, pv->position, vp) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_SETTER( position ) {
+
+	JL_IGNORE(id, strict);
+
+	Private *pv;
+	pv = (Private*)JL_GetPrivate(obj);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+
+	JL_CHK( JL_JsvalToNative(cx, *vp, &pv->position) );
+
+	pv->position = JL_MINMAX(pv->position, 0, sqlite3_blob_bytes(pv->pBlob));
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+CONFIGURE_CLASS
+
+	REVISION(jl::SvnRevToInt("$Revision$"))
+
+	HAS_RESERVED_SLOTS(1)
+	HAS_PRIVATE
+	HAS_FINALIZE
+
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_GETTER( available )
+		PROPERTY( position )
+	END_PROPERTY_SPEC
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION( read )
+		FUNCTION( write )
+		FUNCTION( close )
+	END_FUNCTION_SPEC
+
+END_CLASS
+
+
+
+
+
+
+// (TBD) add User-defined Collation Sequences ( http://www.sqlite.org/datatype3.html )
 
 /**doc fileIndex:top
 $CLASS_HEADER
 $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( Database )
-
 
 /**doc
 $TOC_MEMBER $INAME
@@ -90,6 +314,8 @@ DEFINE_CONSTRUCTOR() {
 
 	jl::StackInit(&pv->fctpvList);
 	jl::StackInit(&pv->stmtList);
+	jl::StackInit(&pv->blobList);
+
 	JL_SetPrivate( obj, pv);
 	return JS_TRUE;
 bad:
@@ -127,6 +353,9 @@ DEFINE_FINALIZE() {
 
 	while ( !jl::StackIsEnd(&pv->stmtList) )
 		sqlite3_finalize( (sqlite3_stmt*)jl::StackPop( &pv->stmtList ) );
+
+	while ( !jl::StackIsEnd(&pv->blobList) )
+		sqlite3_blob_close( (sqlite3_blob*)jl::StackPop( &pv->blobList ) );
 
 /* crash
 	for ( sqlite3_stmt *pStmt = sqlite3_next_stmt(pv->db, NULL); pStmt; pStmt = sqlite3_next_stmt(pv->db, pStmt) ) {
@@ -173,7 +402,7 @@ DEFINE_FUNCTION( close ) {
 
 	pv = (DatabasePrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_SetPrivate( obj, NULL);
+	JL_SetPrivate(obj, NULL);
 
 	sqlite3_interrupt(pv->db);
 
@@ -182,6 +411,9 @@ DEFINE_FUNCTION( close ) {
 
 	while ( !jl::StackIsEnd(&pv->stmtList) )
 		sqlite3_finalize( (sqlite3_stmt*)jl::StackPop( &pv->stmtList ) );
+
+	while ( !jl::StackIsEnd(&pv->blobList) )
+		sqlite3_blob_close( (sqlite3_blob*)jl::StackPop( &pv->blobList ) );
 
 /* chash
 	for ( sqlite3_stmt *pStmt = sqlite3_next_stmt(pv->db, NULL); pStmt; pStmt = sqlite3_next_stmt(pv->db, pStmt) ) {
@@ -206,6 +438,69 @@ bad:
 	jl_free(pv);
 	return JS_FALSE;
 }
+
+/**doc
+$TOC_MEMBER $INAME
+ $TYPE BlobStream $INAME( tableName, columnName, rowid [, readOnly = false] )
+**/
+DEFINE_FUNCTION( openBlobStream ) {
+
+	JLData tableName, columnName;
+	sqlite3_int64 rowid;
+	int flags;
+	BlobStream::Private *blobStreamPv = NULL;
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_RANGE(3, 4);
+
+	DatabasePrivate *pv;
+	pv = (DatabasePrivate*)JL_GetPrivate(obj);
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &tableName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &columnName) );
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &rowid) );
+
+	// doc: If the flags parameter is non-zero, then the BLOB is opened for read and write access. If it is zero, the BLOB is opened for read access. 
+	if ( JL_ARG_ISDEF(4) )
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &flags) );
+	else
+		flags = 1;
+
+	sqlite3_blob *pBlob;
+	if ( sqlite3_blob_open(pv->db, "main", tableName, columnName, rowid, flags, &pBlob) != SQLITE_OK ) // (TBD) handle "temp" tables also.
+		JL_CHK( SqliteThrowError(cx, pv->db) );
+
+	jl::StackPush(&pv->blobList, pBlob);
+
+
+	blobStreamPv = (BlobStream::Private*)jl_malloc(sizeof(BlobStream::Private));
+	JL_ASSERT_ALLOC( blobStreamPv );
+
+	blobStreamPv->pBlob = pBlob;
+	blobStreamPv->position = 0;
+
+	JSObject *blobStreamBoj;
+	blobStreamBoj = JL_NewObjectWithGivenProto(cx, JL_CLASS(BlobStream), JL_CLASS_PROTOTYPE(cx, BlobStream), NULL);
+	JL_CHK( blobStreamBoj );
+
+	JL_SetPrivate(blobStreamBoj, blobStreamPv);
+	JL_CHK( JL_SetReservedSlot(blobStreamBoj, BlobStream::SLOT_DATABASE, OBJECT_TO_JSVAL( obj )) ); // link to avoid GC
+
+	*JL_RVAL = OBJECT_TO_JSVAL(blobStreamBoj);
+	return JS_TRUE;
+
+bad:
+	if ( blobStreamPv ) {
+
+		if ( blobStreamPv->pBlob )
+			sqlite3_blob_close( blobStreamPv->pBlob );
+		jl_free(blobStreamPv);
+	}
+	return JS_FALSE;
+}
+
 
 
 /**doc
@@ -266,11 +561,7 @@ DEFINE_FUNCTION( query ) {
 	pv = (DatabasePrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-//	const char *sqlQuery;
-//	size_t sqlQueryLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sql) );
-
 
 	const char *szTail;
 	sqlite3_stmt *pStmt;
@@ -649,6 +940,7 @@ CONFIGURE_CLASS
 		FUNCTION( query )
 		FUNCTION( exec )
 		FUNCTION( close )
+		FUNCTION( openBlobStream )
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
