@@ -89,7 +89,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 
 
 
-void FinalizeDescriptor(JSFreeOp *fop, JSObject *obj) {
+void FinalizeDescriptor(JSFreeOp *, JSObject *obj) {
 
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( obj );
 	if ( !fd ) // check if not already closed

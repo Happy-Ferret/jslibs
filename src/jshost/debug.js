@@ -13,7 +13,7 @@ loadModule('jsstd');
 loadModule('jscrypt');
 
 
-print( typeof stringify(undefined) );
+
 
 throw 0;
 

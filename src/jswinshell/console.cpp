@@ -87,7 +87,7 @@ DEFINE_FUNCTION( write ) {
 		return WinThrowError(cx, GetLastError());
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	DWORD written;
-	BOOL status = WriteConsole(hStdout, str.GetConstStr(), str.Length(), &written, NULL);
+	BOOL status = ::WriteConsole(hStdout, str.GetConstStr(), str.Length(), &written, NULL);
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
 
@@ -99,22 +99,37 @@ DEFINE_FUNCTION( write ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $STR $INAME( amount )
+ $STR $INAME( [amount] )
   Read _amount_ bytes of text from the console.
   $H arguments
    $ARG $INT amount
 **/
 DEFINE_FUNCTION( read ) {
 
-	JL_ASSERT_ARGC(1);
+	JL_ASSERT_ARGC_RANGE(0,1);
+
+	char buffer[8192];
+
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	if ( hStdin == NULL )
 		return WinThrowError(cx, GetLastError());
-	char buffer[8192];
+
+	BOOL st;
+
+	DWORD length;
+	if ( JL_ARG_ISDEF(1) ) {
+
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &length) );
+	} else {
+
+		length = sizeof(buffer);
+	}
+
 	DWORD read;
-	BOOL res = ReadConsole(hStdin, buffer, sizeof(buffer), &read, NULL);
-	if ( res == 0 )
+	st = ::ReadConsole(hStdin, buffer, length, &read, NULL);
+	if ( st == 0 )
 		return WinThrowError(cx, GetLastError());
+
 	*JL_RVAL = STRING_TO_JSVAL(JS_NewStringCopyN(cx, buffer, read));
 	return JS_TRUE;
 	JL_BAD;
@@ -420,7 +435,7 @@ struct ConsoleUserProcessEvent {
 
 S_ASSERT( offsetof(ConsoleUserProcessEvent, pe) == 0 );
 
-static JSBool ConsolePrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+static JSBool ConsolePrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
 	
 	return JS_TRUE;
 }
@@ -442,7 +457,7 @@ bool ConsoleCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-JSBool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+JSBool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
 
 	ConsoleUserProcessEvent *upe = (ConsoleUserProcessEvent*)pe;
 

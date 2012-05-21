@@ -268,24 +268,6 @@ DEFINE_FUNCTION( expandEnvironmentStrings ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( milliseconds )
-  Suspends the execution of the current process until the time-out interval elapses.
-**/
-DEFINE_FUNCTION( sleep ) {
-
-	JL_ASSERT_ARGC_MIN(1);
-	unsigned int timeout;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
-	Sleep(timeout);
-
-	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-/**doc
-$TOC_MEMBER $INAME
  $VOID $INAME( type )
   Plays a waveform sound. The waveform sound for each sound type is identified by an entry in the registry.
   $H arguments
@@ -762,7 +744,7 @@ struct DirectoryUserProcessEvent {
 
 S_ASSERT( offsetof(DirectoryUserProcessEvent, pe) == 0 );
 
-static JSBool DirectoryChangesPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+static JSBool DirectoryChangesPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
 	
 	return JS_TRUE;
 }
@@ -786,7 +768,7 @@ static bool DirectoryChangesCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
 	
 	DirectoryUserProcessEvent *upe = (DirectoryUserProcessEvent*)pe;
 
@@ -1254,7 +1236,6 @@ CONFIGURE_STATIC
 		FUNCTION( extractIcon )
 		FUNCTION( expandEnvironmentStrings )
 		FUNCTION( fileOpenDialog )
-		FUNCTION( sleep )
 		FUNCTION( messageBeep )
 		FUNCTION( beep )
 		FUNCTION( registryGet )

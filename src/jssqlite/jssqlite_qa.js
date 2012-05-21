@@ -233,3 +233,23 @@ loadModule('jssqlite');
 		var res = db.query('select "test", ?, ?aaa, ?, @0', [5,6,7]);
 		QA.ASSERT_STR( res.columnNames.join(','), '"test",?,aaa,?,@0', 'columns' );
 		QA.ASSERT_STR( res.row(), 'test,5,6,7,5', 'row' );
+
+
+/// db blob stream
+
+	var db = new Database(); // in-memory database
+
+	db.exec('create table t1 (data BLOB);');
+	db.exec('insert into t1 (data) values (zeroblob(50))');
+	var stream = db.openBlobStream('t1', 'data', 1);
+	
+	QA.ASSERT( stream.available, 50 );
+
+	stream.write('xxx');
+
+	QA.ASSERT( stream.available, 47 );
+
+	stream.position = 0;
+
+	QA.ASSERTOP(stringify(stream.read()).substr(0,3), '==', 'xxx' );
+

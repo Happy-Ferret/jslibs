@@ -154,6 +154,7 @@ DEFINE_FUNCTION( process ) {
 
 	jl::Buf<Bytef> resultBuffer;
 	JLData inputData;
+	int flushType;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
@@ -162,20 +163,21 @@ DEFINE_FUNCTION( process ) {
 	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &inputData) ); // warning: GC on the returned buffer !
-
-// force finish
+	// force finish
 	bool forceFinish;
 	if ( JL_ARG_ISDEF(2) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &forceFinish) );
 	else
 		forceFinish = false;
 
+	if ( JL_ARG_ISDEF(1) )
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &inputData) ); // warning: GC on the returned buffer !
+	else
+		forceFinish = true;
+
 	// doc. Z_SYNC_FLUSH: all pending output is flushed to the output buffer and the output is aligned on a byte boundary, so that the decompressor can get all input data available so far.
 	// doc. Z_FINISH: pending input is processed, pending output is flushed and deflate returns with Z_STREAM_END if there was enough output space; if deflate returns with Z_OK, this function must be called again with Z_FINISH and more output space.
-	int flushType;
-	flushType = (JL_ARGC == 0 || forceFinish) ? Z_FINISH : Z_SYNC_FLUSH;
+	flushType = forceFinish ? Z_FINISH : Z_SYNC_FLUSH;
 
 	if ( pv->stream.state == Z_NULL ) {
 

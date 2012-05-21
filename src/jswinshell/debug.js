@@ -6,6 +6,16 @@ loadModule('jsstd');
 loadModule('jswinshell');
 loadModule('jssvg');
 
+
+//Console.setConsoleMode( Console.ENABLE_LINE_INPUT );
+
+print( Console.read(), '\n' );
+
+
+throw 0; //////////////////////////////////////////////////////////////////////
+
+
+
 //jswinshelltest();
 
 
@@ -548,7 +558,7 @@ s.oncommand = function( id, button ) {
 		case 'add':
 			var fileName = fileOpenDialog( 'executable files|*.exe;*.com;*.cmd;*.bat|all files|*.*' );
 			if ( !fileName )
-				return;
+				return undefined;
 			var icon = function(val,key) { 
 				try {
 					return extractIcon( key )

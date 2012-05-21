@@ -84,11 +84,24 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_ASSERT_ARGC(1);
+	JL_ASSERT_ARGC_RANGE(0,1);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_FILE_NAME, JL_ARG(1)) );
+	jsval filename;
+	if ( !JL_ARG_ISDEF(1) ) {
+		
+		char tempFileName[PATH_MAX];
+		bool st = JLTemporaryFilename(tempFileName);
+		JL_ASSERT( st, E_OS, E_INTERNAL );
+		JL_CHK( JL_NativeToJsval(cx, (const char *)tempFileName, &filename) );
+	} else {
+		
+		filename = JL_ARG(1);
+	}
+
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_FILE_NAME, filename) );
+
 	ASSERT( JL_GetPrivate(obj) == NULL ); // JL_SetPrivate( obj, NULL); // (TBD) optional ?
 	JL_CHK( ReserveStreamReadInterface(cx, obj) );
 	return JS_TRUE;
@@ -836,7 +849,7 @@ CONFIGURE_CLASS
 	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_PROTOTYPE( Descriptor )
 
-	HAS_CONSTRUCTOR
+	HAS_CONSTRUCTOR_ARGC(1)
 	HAS_FINALIZE
 
 	HAS_PRIVATE

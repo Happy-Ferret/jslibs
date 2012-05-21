@@ -6,6 +6,21 @@ loadModule('jsstd');
 loadModule('jsz');
 
 
+	var deflate = new Z(Z.DEFLATE);
+	var inflate = new Z(Z.INFLATE);
+
+	var source = '123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789123456789';
+
+	var str = deflate.process(source);
+
+	var result = inflate.process(str, true);
+	
+	print( deflate.process().byteLength )
+	
+
+
+//	QA.ASSERT_STR( result, source, 'inflate result' );
+
 
 throw 0;
 

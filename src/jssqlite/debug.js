@@ -9,7 +9,7 @@ loadModule('jssqlite');
 var db = new Database(); // in-memory database
 
 db.exec('create table t1 (data);');
-db.exec('insert into t1 (data) values (zeroblob(100))');
+db.exec('insert into t1 (data) values (zeroblob(1000))');
 
 var stream = db.openBlobStream('t1', 'data', 1);
 

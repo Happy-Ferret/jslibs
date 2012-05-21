@@ -1870,6 +1870,41 @@ JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
  #endif
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+// Temporary Filename
+
+ALWAYS_INLINE bool FASTCALL
+JLTemporaryFilename(char *path) {
+
+#if defined(XP_WIN)
+
+	TCHAR lpTempPathBuffer[PATH_MAX];
+	DWORD dwRetVal;
+	UINT uRetVal;
+
+	dwRetVal = ::GetTempPath(PATH_MAX, lpTempPathBuffer);
+	if ( dwRetVal > MAX_PATH || dwRetVal == 0 )
+		return false;
+
+	uRetVal = ::GetTempFileName(lpTempPathBuffer, TEXT("jl"), 0, path);
+	if ( uRetVal == 0 )
+		return false;
+	return true;
+
+#elif defined(XP_UNIX)
+
+	tmpnam(path);
+	return path != NULL;
+
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
+
+}
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 // status

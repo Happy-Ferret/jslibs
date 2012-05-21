@@ -264,3 +264,20 @@ loadModule('jsz');
 	g.close();
 
 	new File('_qa_tmp.zip').content = undefined;
+
+
+/// deflate/unflate flush using undefined [p]
+
+	var deflate = new Z(Z.DEFLATE);
+	var inflate = new Z(Z.INFLATE);
+
+	var source = '123456789';
+
+	var tmp = deflate.process(source);
+	var result = stringify(inflate.process(tmp));
+
+	tmp = deflate.process(undefined);
+	QA.ASSERTOP( tmp.byteLength, '>', 0, 'incomplete inflate result' );
+
+	result += stringify(inflate.process(tmp));
+	QA.ASSERTOP( result, '==', source, 'complete inflate result' );

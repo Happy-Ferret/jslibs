@@ -9,6 +9,22 @@ loadModule('jssound');
 
 
 
+var audioFileName = './41_30secOgg-q0.ogg';
+
+var data = new File(audioFileName).content;
+
+var data = new File('tmpFile').content;
+
+
+var stream = new Stream(data);
+
+var decoder = new OggVorbisDecoder( stream );
+
+var block = decoder.read();
+
+print( block.frames, '\n' );
+
+
 throw 0;
 
 

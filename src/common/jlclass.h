@@ -32,7 +32,7 @@ struct ConstValueSpec {
 struct ClassSpec {
 	JSClass clasp;
 	JSNative constructor;
-	unsigned nargs;
+	unsigned ctorNArgs;
 	const char *parentProtoName;
 	JSPropertySpec *ps;
 	JSPropertySpec *static_ps;
@@ -158,7 +158,7 @@ InitClass( JSContext *cx, JSObject *obj, ClassSpec *cs ) {
 	JSObject *proto; // doc: object that is the prototype for the newly initialized class.
 	JSObject *ctor;
 
-	proto = JS_InitClass(cx, obj, parentProto, &cs->clasp, cs->constructor, cs->nargs, NULL, NULL, NULL, NULL);
+	proto = JS_InitClass(cx, obj, parentProto, &cs->clasp, cs->constructor, cs->ctorNArgs, NULL, NULL, NULL, NULL);
 
 	JL_ASSERT( proto != NULL, E_CLASS, E_NAME(cs->clasp.name), E_CREATE ); //RTE
 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
@@ -372,7 +372,7 @@ JL_END_NAMESPACE
 
 #define HAS_CONSTRUCTOR_ARGC(ARGC) \
 	ASSERT(cs.constructor == NULL); \
-	cs.constructor = Constructor; cs.argc = (ARGC);
+	cs.constructor = Constructor; cs.ctorNArgs = (ARGC);
 
 #define HAS_CONSTRUCTOR \
 	ASSERT(cs.constructor == NULL); \
