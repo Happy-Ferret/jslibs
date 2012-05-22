@@ -101,7 +101,6 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_FILE_NAME, filename) );
-
 	ASSERT( JL_GetPrivate(obj) == NULL ); // JL_SetPrivate( obj, NULL); // (TBD) optional ?
 	JL_CHK( ReserveStreamReadInterface(cx, obj) );
 	return JS_TRUE;

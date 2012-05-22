@@ -815,6 +815,15 @@ DEFINE_FUNCTION( events ) {
 }
 
 
+DEFINE_ITERATOR_OBJECT() {
+
+	JL_CHKM( !keysonly, E_NAME("for...in"), E_NOTSUPPORTED );
+	return obj;
+bad:
+	return NULL;
+}
+
+
 
 CONFIGURE_CLASS
 
@@ -823,11 +832,13 @@ CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
+	HAS_ITERATOR_OBJECT
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(close)
 		FUNCTION(request)
 		FUNCTION(response)
+		FUNCTION_ALIAS(next, response) // convenient for interation
 		FUNCTION(events)
 	END_FUNCTION_SPEC
 

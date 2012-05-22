@@ -1877,6 +1877,13 @@ JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 ALWAYS_INLINE bool FASTCALL
 JLTemporaryFilename(char *path) {
 
+	char *tmp = tempnam(NULL, "jltmp");
+	if ( tmp == NULL )
+		return false;
+	strcpy(path, tmp);
+	return true;
+
+/*
 #if defined(XP_WIN)
 
 	TCHAR lpTempPathBuffer[PATH_MAX];
@@ -1892,14 +1899,14 @@ JLTemporaryFilename(char *path) {
 		return false;
 	return true;
 
+
 #elif defined(XP_UNIX)
 
-	tmpnam(path);
-	return path != NULL;
 
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
+*/
 
 }
 

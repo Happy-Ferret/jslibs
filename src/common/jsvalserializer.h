@@ -19,7 +19,6 @@ JL_BEGIN_NAMESPACE
 
 
 typedef enum JLSerializeType {
-
 	JLDataawJsval,
 	JLSTHole,
 	JLSTVoid,
@@ -32,6 +31,7 @@ typedef enum JLSerializeType {
 	JLSTArray,
 	JLSTObject,
 	JLSTProtolessObject,
+	JLSTStopIteration,
 	JLSTErrorObject,
 	JLSTObjectValue,
 	JLSTSerializableNativeObject,
@@ -300,13 +300,10 @@ public:
 			if ( JSVAL_IS_NULL(val) ) {
 
 				JL_CHK( Write(cx, JLSTNull) );
+			} else {
+
+				JL_ERR( E_STR("serializer"), E_STATE );
 			}
-
-			// else {
-			//	JL_CHK( Write(cx, JLDataawJsval) );
-			//	JL_CHK( Write(cx, *(uint64*)&val) ); // JL_REPORT_ERROR("Unsupported value.");
-			//}
-
 			return JS_TRUE;
 		}
 
@@ -357,9 +354,7 @@ public:
 			return JS_TRUE;
 		}
 
-		//if ( JL_ObjectIsCallable(cx, obj) ) {
 		if ( JS_ObjectIsFunction(cx, obj) ) {
-
 /*				
 			JSString *src;
 			src = JS_ValueToSource(cx, OBJECT_TO_JSVAL(obj));
@@ -429,7 +424,6 @@ public:
 			return JS_TRUE;
 		}
 
-
 		// prototype-less object
 		if ( JL_GetPrototype(cx, obj) == NULL ) {
 
@@ -438,16 +432,22 @@ public:
 			return JS_TRUE;
 		}
 
+		// StopIteration object
+		if ( JL_IsStopIteration(cx, obj) ) {
+			
+			JL_CHK( Write(cx, JLSTStopIteration) );
+			return JS_TRUE;
+		}
 
 		// simple object
-		if ( obj != NULL && JL_ObjectIsObject(cx, obj) ) {
+		if ( JL_ObjectIsObject(cx, obj) ) {
 
 			JL_CHK( Write(cx, JLSTObject) );
 			JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) );
 			return JS_TRUE;
 		}
 
-
+		// all JS errors objects
 		if ( JL_ObjectIsError(cx, obj) ) {
 
 			JSObject *constructor;
@@ -477,7 +477,6 @@ public:
 			JL_CHK( Write(cx, tmp) );
 			return JS_TRUE;
 		}
-
 
 		// fallback (Date, Number, String, ...)
 		{
@@ -708,6 +707,13 @@ public:
 				JL_CHK( Read(cx, sop) );
 				break;
 			}
+			case JLSTStopIteration: {
+
+				JSObject *proto;
+				JL_GetClassPrototype(cx, JL_GetGlobal(cx), JSProto_StopIteration, &proto);
+				val = OBJECT_TO_JSVAL(proto);
+				break;
+			}
 			case JLSTObjectValue: {
 
 				const char *className;
@@ -718,6 +724,7 @@ public:
 				jsval prop;
 				JL_CHK( JS_GetProperty(cx, scope, className, &prop) );
 				JSObject *newObj = JS_New(cx, JSVAL_TO_OBJECT(prop), 1, &value);
+				JL_CHK( newObj );
 				val = OBJECT_TO_JSVAL(newObj);
 				break;
 			}

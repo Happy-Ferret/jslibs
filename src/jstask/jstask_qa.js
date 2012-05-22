@@ -57,6 +57,28 @@ loadModule('jsio');
 	QA.ASSERTOP( function() { myTask.response() }, 'ex', RangeError ); // unsafe issue
 
 
+/// task result iteration using StopIteration
+
+	var t = new Task(function(i) {
+
+		if ( i === StopIteration )
+			throw StopIteration;
+		return j;
+	});
+
+	for ( var i = 0; i < 10; ++i )
+		t.request();
+
+	t.request(StopIteration);
+
+	var res = '';
+	for ( var r of t )
+		res += r;
+
+	QA.ASSERT( res, '0123456789' );
+
+
+
 /// memory leak 4
 
 	var myTaskFct = function() {

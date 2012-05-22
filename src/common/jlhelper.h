@@ -854,7 +854,8 @@ namespace jlpv {
 // Initialise 'this' object (obj variable) for constructors native functions ( support constructing and non-constructing form, eg. |Stream()| and  |new Stream()| ).
 // If JL_THIS_CLASS or JL_THIS_CLASS_PROTOTYPE are not available, use JS_NewObjectForConstructor(cx, vp) instead.
 #define JL_DEFINE_CONSTRUCTOR_OBJ \
-	JSObject *obj; obj = jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, vp)
+	JSObject *obj; \
+	obj = jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, vp)
 
 
 
@@ -1089,16 +1090,21 @@ JL_ValueIsIterable( JSContext * RESTRICT cx, jsval &val ) {
 	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsIterable(cx, JSVAL_TO_OBJECT(val));
 }
 
+ALWAYS_INLINE bool FASTCALL
+JL_IsStopIteration( JSContext *cx, JSObject *obj ) {
+
+	JSObject *proto;
+	return JL_GetClassPrototype(cx, JL_GetGlobal(cx), JSProto_StopIteration, &proto)
+	    && JL_GetClass(obj) == JL_GetClass(proto);
+}
 
 ALWAYS_INLINE bool FASTCALL
 JL_IsStopIterationExceptionPending( JSContext *cx ) {
 
-	JSObject *proto;
 	jsval ex;
 	return JS_GetPendingException(cx, &ex) // note: JS_GetPendingException returns false if no exception is pending.
 	    && JSVAL_IS_OBJECT(ex)
-	    && JL_GetClassPrototype(cx, JL_GetGlobal(cx), JSProto_StopIteration, &proto)
-	    && JL_GetClass(JSVAL_TO_OBJECT(ex)) == JL_GetClass(proto);
+	    && JL_IsStopIteration(cx, JSVAL_TO_OBJECT(ex));
 }
 
 ALWAYS_INLINE bool FASTCALL

@@ -1,6 +1,5 @@
-//_jsapiTests(); throw 0;
-
 var loadModule = host.loadModule;
+//_jsapiTests(); throw 0;
 
  //RunJsircbot(false); throw 0;
  //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
@@ -11,12 +10,6 @@ loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -in
 
 loadModule('jsstd');
 loadModule('jscrypt');
-
-
-
-
-throw 0;
-
 
 
 loadModule('jsstd');

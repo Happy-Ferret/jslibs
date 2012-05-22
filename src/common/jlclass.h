@@ -346,7 +346,7 @@ JL_END_NAMESPACE
 
 #define FUNCTION_NARG(name) JS_FN( #name, _##name, _##name##_nargs, FUNCTION_DEFAULT_FLAGS ),
 
-//unused: #define FUNCTION_ALIAS(alias, name) JS_FN( #alias, _##name, 0, FUNCTION_DEFAULT_FLAGS ),
+#define FUNCTION_ALIAS(alias, existingName) JS_FN( #alias, _##existingName, 0, FUNCTION_DEFAULT_FLAGS ),
 
 // doc: JSPROP_SHARED - https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 #define PROPERTY(name) { #name, jl::pv::NOTINYID, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },

@@ -253,3 +253,17 @@ loadModule('jssqlite');
 
 	QA.ASSERTOP(stringify(stream.read()).substr(0,3), '==', 'xxx' );
 
+
+
+/// for of iteration over a Query result [p]
+
+	var db = new Database(); // in-memory database
+	db.exec('create table t1 (value);');
+	db.exec('insert into t1 (value) values ("red")');
+	db.exec('insert into t1 (value) values ("green")');
+	db.exec('insert into t1 (value) values ("blue")');
+	var res = db.query('SELECT * from t1');
+	var tmp = ''
+	for ( var i of res )
+		tmp += i.value;
+	QA.ASSERTOP(tmp, '==', 'redgreenblue');

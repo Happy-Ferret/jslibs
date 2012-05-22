@@ -4,6 +4,23 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 loadModule('jssqlite');
 
+
+	var db = new Database(); // in-memory database
+	db.exec('create table t1 (value);');
+	db.exec('insert into t1 (value) values ("red")');
+	db.exec('insert into t1 (value) values ("green")');
+	db.exec('insert into t1 (value) values ("blue")');
+
+	var res = db.query('SELECT * from t1');
+
+	var tmp = ''
+	for ( var i of res )
+		tmp += i.value;
+
+	print( tmp, '\n');
+
+throw 0;
+
 //try {
 
 var db = new Database(); // in-memory database

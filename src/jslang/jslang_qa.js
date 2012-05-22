@@ -252,6 +252,13 @@ loadModule('jsstd');
 //	QA.ASSERTOP( function() processEvents(timeout), 'ex', Error, 'processEvents reused' );
 
 
+/// StopIteration serialization
+
+	var s = new Serializer();
+	s.write(StopIteration);
+	var u = new Unserializer( s.done() );
+	QA.ASSERTOP(u.read(), '===', StopIteration);
+
 
 /// unserializer EOF
 

@@ -38,6 +38,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_IGNORE(argc);
 
 	JL_DEFINE_CONSTRUCTOR_OBJ;
+
 	jl::Serializer *ser;
 	ser = new jl::Serializer(OBJECT_TO_JSVAL(JL_OBJ));
 	JL_ASSERT_ALLOC(ser);
@@ -56,6 +57,7 @@ DEFINE_FUNCTION( write ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
+
 	*JL_RVAL = OBJECT_TO_JSVAL(JL_OBJ);
 	jl::Serializer *ser;
 	ser = static_cast<jl::Serializer*>(JL_GetPrivate(JL_OBJ));
@@ -74,6 +76,7 @@ DEFINE_FUNCTION( done ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
+
 	jl::Serializer* ser;
 	ser = (jl::Serializer*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(ser);
